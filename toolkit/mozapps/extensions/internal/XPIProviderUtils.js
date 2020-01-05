@@ -92,7 +92,7 @@ const PROP_JSON_FIELDS = ["id", "syncGUID", "location", "version", "type",
 
 
 
-const DB_MIGRATE_METADATA= ["installDate", "userDisabled", "softDisabled",
+const DB_MIGRATE_METADATA = ["installDate", "userDisabled", "softDisabled",
                             "sourceURI", "applyBackgroundUpdates",
                             "releaseNotesURI", "foreignInstall", "syncGUID"];
 

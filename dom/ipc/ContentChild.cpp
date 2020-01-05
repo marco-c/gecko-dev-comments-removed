@@ -590,8 +590,7 @@ ContentChild::Init(MessageLoop* aIOLoop,
                                 XRE_GetProcessType());
 #endif
 
-  SendGetProcessAttributes(&mID, &mIsForApp, &mIsForBrowser);
-  InitProcessAttributes();
+  SendGetProcessAttributes(&mID, &mIsForBrowser);
 
 #ifdef NS_PRINTING
   
@@ -599,21 +598,9 @@ ContentChild::Init(MessageLoop* aIOLoop,
   RefPtr<nsPrintingProxy> printingProxy = nsPrintingProxy::GetInstance();
 #endif
 
-  return true;
-}
-
-void
-ContentChild::InitProcessAttributes()
-{
-#ifdef MOZ_WIDGET_GONK
-  if (mIsForApp && !mIsForBrowser) {
-    SetProcessName(NS_LITERAL_STRING("(Preallocated app)"), false);
-  } else {
-    SetProcessName(NS_LITERAL_STRING("Browser"), false);
-  }
-#else
   SetProcessName(NS_LITERAL_STRING("Web Content"), true);
-#endif
+
+  return true;
 }
 
 void
@@ -722,7 +709,7 @@ ContentChild::ProvideWindowCommon(TabChild* aTabOpener,
     
     RefPtr<TabChild>(newChild).forget().take(),
     tabId, *ipcContext, aChromeFlags,
-    GetID(), IsForApp(), IsForBrowser());
+    GetID(), IsForBrowser());
 
   nsString name(aName);
   nsAutoCString features(aFeatures);
@@ -930,7 +917,8 @@ ContentChild::InitXPCOM()
   SendGetXPCOMProcessAttributes(&isOffline, &isConnected,
                                 &isLangRTL, &haveBidiKeyboards,
                                 &mAvailableDictionaries,
-                                &clipboardCaps, &domainPolicy, &initialData);
+                                &clipboardCaps, &domainPolicy, &initialData,
+                                &mFontFamilies);
   RecvSetOffline(isOffline);
   RecvSetConnectivity(isConnected);
   RecvBidiKeyboardNotify(isLangRTL, haveBidiKeyboards);
@@ -1474,14 +1462,6 @@ ContentChild::RecvBidiKeyboardNotify(const bool& aIsLangRTL,
   return IPC_OK();
 }
 
-static CancelableRunnable* sFirstIdleTask;
-
-static void FirstIdle(void)
-{
-  MOZ_ASSERT(sFirstIdleTask);
-  sFirstIdleTask = nullptr;
-  ContentChild::GetSingleton()->SendFirstIdle();
-}
 
 mozilla::jsipc::PJavaScriptChild *
 ContentChild::AllocPJavaScriptChild()
@@ -1502,14 +1482,12 @@ ContentChild::AllocPBrowserChild(const TabId& aTabId,
                                  const IPCTabContext& aContext,
                                  const uint32_t& aChromeFlags,
                                  const ContentParentId& aCpID,
-                                 const bool& aIsForApp,
                                  const bool& aIsForBrowser)
 {
   return nsIContentChild::AllocPBrowserChild(aTabId,
                                              aContext,
                                              aChromeFlags,
                                              aCpID,
-                                             aIsForApp,
                                              aIsForBrowser);
 }
 
@@ -1519,7 +1497,6 @@ ContentChild::SendPBrowserConstructor(PBrowserChild* aActor,
                                       const IPCTabContext& aContext,
                                       const uint32_t& aChromeFlags,
                                       const ContentParentId& aCpID,
-                                      const bool& aIsForApp,
                                       const bool& aIsForBrowser)
 {
   return PContentChild::SendPBrowserConstructor(aActor,
@@ -1527,7 +1504,6 @@ ContentChild::SendPBrowserConstructor(PBrowserChild* aActor,
                                                 aContext,
                                                 aChromeFlags,
                                                 aCpID,
-                                                aIsForApp,
                                                 aIsForBrowser);
 }
 
@@ -1537,7 +1513,6 @@ ContentChild::RecvPBrowserConstructor(PBrowserChild* aActor,
                                       const IPCTabContext& aContext,
                                       const uint32_t& aChromeFlags,
                                       const ContentParentId& aCpID,
-                                      const bool& aIsForApp,
                                       const bool& aIsForBrowser)
 {
   
@@ -1548,23 +1523,6 @@ ContentChild::RecvPBrowserConstructor(PBrowserChild* aActor,
     nsITabChild* tc =
       static_cast<nsITabChild*>(static_cast<TabChild*>(aActor));
     os->NotifyObservers(tc, "tab-child-created", nullptr);
-  }
-
-  static bool hasRunOnce = false;
-  if (!hasRunOnce) {
-      hasRunOnce = true;
-
-    MOZ_ASSERT(!sFirstIdleTask);
-    RefPtr<CancelableRunnable> firstIdleTask = NewCancelableRunnableFunction(FirstIdle);
-    sFirstIdleTask = firstIdleTask;
-    MessageLoop::current()->PostIdleTask(firstIdleTask.forget());
-
-    
-    
-    mID = aCpID;
-    mIsForApp = aIsForApp;
-    mIsForBrowser = aIsForBrowser;
-    InitProcessAttributes();
   }
 
   return IPC_OK();
@@ -2076,9 +2034,6 @@ ContentChild::ActorDestroy(ActorDestroyReason why)
   
   ProcessChild::QuickExit();
 #else
-  if (sFirstIdleTask) {
-    sFirstIdleTask->Cancel();
-  }
 
   nsHostObjectProtocolHandler::RemoveDataEntries();
 
@@ -2382,19 +2337,6 @@ ContentChild::RecvCycleCollect()
   return IPC_OK();
 }
 
-static void
-PreloadSlowThings()
-{
-  
-  
-  
-  
-  nsLayoutStylesheetCache::For(StyleBackendType::Gecko)->UserContentSheet();
-
-  TabChild::PreloadSlowThings();
-
-}
-
 mozilla::ipc::IPCResult
 ContentChild::RecvAppInfo(const nsCString& version, const nsCString& buildID,
                           const nsCString& name, const nsCString& UAName,
@@ -2406,25 +2348,6 @@ ContentChild::RecvAppInfo(const nsCString& version, const nsCString& buildID,
   mAppInfo.UAName.Assign(UAName);
   mAppInfo.ID.Assign(ID);
   mAppInfo.vendor.Assign(vendor);
-
-  return IPC_OK();
-}
-
-mozilla::ipc::IPCResult
-ContentChild::RecvAppInit()
-{
-  if (!Preferences::GetBool("dom.ipc.processPrelaunch.enabled", false)) {
-    return IPC_OK();
-  }
-
-  
-  
-  
-  
-  
-  if (mIsForApp || mIsForBrowser) {
-    PreloadSlowThings();
-  }
 
   return IPC_OK();
 }

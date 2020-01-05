@@ -32,7 +32,6 @@
 
 #define CHILD_PROCESS_SHUTDOWN_MESSAGE NS_LITERAL_STRING("child-process-shutdown")
 
-class mozIApplication;
 class nsConsoleService;
 class nsICycleCollectorLogSink;
 class nsIDumpGCAndCCLogsCallback;
@@ -123,8 +122,6 @@ public:
 
   static void JoinAllSubprocesses();
 
-  static bool PreallocatedProcessReady();
-
   
 
 
@@ -141,18 +138,13 @@ public:
   
 
 
-  static already_AddRefed<ContentParent> PreallocateAppProcess();
-
-  
-
-
 
 
   static TabParent*
-  CreateBrowserOrApp(const TabContext& aContext,
-                     Element* aFrameElement,
-                     ContentParent* aOpenerContentParent,
-                     bool aFreshProcess = false);
+  CreateBrowser(const TabContext& aContext,
+                Element* aFrameElement,
+                ContentParent* aOpenerContentParent,
+                bool aFreshProcess = false);
 
   static void GetAll(nsTArray<ContentParent*>& aArray);
 
@@ -240,7 +232,6 @@ public:
                                                          const hal::ProcessPriority& aPriority,
                                                          const TabId& aOpenerTabId,
                                                          ContentParentId* aCpId,
-                                                         bool* aIsForApp,
                                                          bool* aIsForBrowser,
                                                          TabId* aTabId) override;
 
@@ -287,16 +278,6 @@ public:
                                       JS::Handle<JSObject *> aCpows,
                                       nsIPrincipal* aPrincipal) override;
 
-  virtual bool CheckPermission(const nsAString& aPermission) override;
-
-  virtual bool CheckManifestURL(const nsAString& aManifestURL) override;
-
-  virtual bool CheckAppHasPermission(const nsAString& aPermission) override;
-
-  virtual bool CheckAppHasStatus(unsigned short aStatus) override;
-
-  virtual bool KillChild() override;
-
   
   static void NotifyTabDestroying(const TabId& aTabId,
                                   const ContentParentId& aCpId);
@@ -329,8 +310,6 @@ public:
 
   bool IsAlive() const;
 
-  virtual bool IsForApp() const override;
-
   virtual bool IsForBrowser() const override
   {
     return mIsForBrowser;
@@ -362,10 +341,6 @@ public:
   void KillHard(const char* aWhy);
 
   ContentParentId ChildID() const override { return mChildID; }
-
-  const nsString& AppManifestURL() const { return mAppManifestURL; }
-
-  bool IsPreallocated() const;
 
   
 
@@ -561,23 +536,13 @@ protected:
   void OnCompositorUnexpectedShutdown() override;
 
 private:
-  static nsDataHashtable<nsStringHashKey, ContentParent*> *sAppContentParents;
-  static nsTArray<ContentParent*>* sNonAppContentParents;
+  static nsTArray<ContentParent*>* sBrowserContentParents;
   static nsTArray<ContentParent*>* sLargeAllocationContentParents;
   static nsTArray<ContentParent*>* sPrivateContent;
   static StaticAutoPtr<LinkedList<ContentParent> > sContentParents;
 
   static void JoinProcessesIOThread(const nsTArray<ContentParent*>* aProcesses,
                                     Monitor* aMonitor, bool* aDone);
-
-  
-  
-  
-  static already_AddRefed<ContentParent>
-  GetNewOrPreallocatedAppProcess(mozIApplication* aApp,
-                                 hal::ProcessPriority aInitialPriority,
-                                 ContentParent* aOpener,
-                                  bool* aTookPreAllocated = nullptr);
 
   static hal::ProcessPriority GetInitialProcessPriority(Element* aFrameElement);
 
@@ -594,18 +559,13 @@ private:
       const IPCTabContext& context,
       const uint32_t& chromeFlags,
       const ContentParentId& aCpId,
-      const bool& aIsForApp,
       const bool& aIsForBrowser) override;
   using PContentParent::SendPTestShellConstructor;
 
   FORWARD_SHMEM_ALLOCATOR_TO(PContentParent)
 
-  
-  
-  ContentParent(mozIApplication* aApp,
-                ContentParent* aOpener,
-                bool aIsForBrowser,
-                bool aIsForPreallocated);
+  ContentParent(ContentParent* aOpener,
+                bool aIsForBrowser);
 
   
   void InitializeMembers();
@@ -633,15 +593,6 @@ private:
   
   
   bool SetPriorityAndCheckIsAlive(hal::ProcessPriority aPriority);
-
-  
-  
-  void TransformPreallocatedIntoApp(ContentParent* aOpener,
-                                    const nsAString& aAppManifestURL);
-
-  
-  
-  void TransformPreallocatedIntoBrowser(ContentParent* aOpener);
 
   
 
@@ -701,7 +652,6 @@ private:
                                  ProcessId aOtherProcess) override;
 
   virtual mozilla::ipc::IPCResult RecvGetProcessAttributes(ContentParentId* aCpId,
-                                                           bool* aIsForApp,
                                                            bool* aIsForBrowser) override;
 
   virtual mozilla::ipc::IPCResult
@@ -712,7 +662,9 @@ private:
                                 InfallibleTArray<nsString>* dictionaries,
                                 ClipboardCapabilities* clipboardCaps,
                                 DomainPolicyClone* domainPolicy,
-                                StructuredCloneData* initialData) override;
+                                StructuredCloneData* initialData,
+                                InfallibleTArray<FontFamilyListEntry>* fontFamilies)
+                                override;
 
   virtual bool
   DeallocPJavaScriptParent(mozilla::jsipc::PJavaScriptParent*) override;
@@ -724,7 +676,6 @@ private:
                                               const IPCTabContext& aContext,
                                               const uint32_t& aChromeFlags,
                                               const ContentParentId& aCpId,
-                                              const bool& aIsForApp,
                                               const bool& aIsForBrowser) override;
 
   virtual bool DeallocPBrowserParent(PBrowserParent* frame) override;
@@ -952,8 +903,6 @@ private:
 
   virtual mozilla::ipc::IPCResult RecvPrivateDocShellsExist(const bool& aExist) override;
 
-  virtual mozilla::ipc::IPCResult RecvFirstIdle() override;
-
   virtual mozilla::ipc::IPCResult RecvAudioChannelChangeDefVolChannel(const int32_t& aChannel,
                                                                       const bool& aHidden) override;
 
@@ -1098,16 +1047,7 @@ private:
   ContentParentId mChildID;
   int32_t mGeolocationWatchID;
 
-  nsString mAppManifestURL;
-
   nsCString mKillHardAnnotation;
-
-  
-
-
-
-
-  nsString mAppName;
 
   
   
