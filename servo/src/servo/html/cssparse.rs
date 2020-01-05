@@ -10,6 +10,7 @@ use newcss::util::DataStream;
 use std::cell::Cell;
 use std::net::url::Url;
 use std::net::url;
+use core::oldcomm::{Port, Chan};
 
 
 pub enum StylesheetProvenance {
