@@ -7,15 +7,15 @@
 const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 const myScope = this;
 
+Cu.import("resource://gre/modules/KeyValueParser.jsm");
 Cu.import("resource://gre/modules/Log.jsm", this);
 Cu.import("resource://gre/modules/osfile.jsm", this);
-Cu.import("resource://gre/modules/Promise.jsm", this);
+Cu.import("resource://gre/modules/PromiseUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm", this);
 Cu.import("resource://gre/modules/Task.jsm", this);
+Cu.import("resource://gre/modules/TelemetryController.jsm");
 Cu.import("resource://gre/modules/Timer.jsm", this);
 Cu.import("resource://gre/modules/XPCOMUtils.jsm", this);
-Cu.import("resource://gre/modules/TelemetryController.jsm");
-Cu.import("resource://gre/modules/KeyValueParser.jsm");
 
 this.EXPORTED_SYMBOLS = [
   "CrashManager",
@@ -110,6 +110,9 @@ this.CrashManager = function(options) {
   
   
   this._aggregatePromise = null;
+
+  
+  this._crashPromises = new Map();
 
   
   this._store = null;
@@ -345,7 +348,7 @@ this.CrashManager.prototype = Object.freeze({
 
 
   scheduleMaintenance: function(delay) {
-    let deferred = Promise.defer();
+    let deferred = PromiseUtils.defer();
 
     setTimeout(() => {
       this.runMaintenanceTasks().then(deferred.resolve, deferred.reject);
@@ -369,13 +372,44 @@ this.CrashManager.prototype = Object.freeze({
 
 
   addCrash: function(processType, crashType, id, date, metadata) {
-    return Task.spawn(function* () {
+    let promise = Task.spawn(function* () {
       let store = yield this._getStore();
       if (store.addCrash(processType, crashType, id, date, metadata)) {
         yield store.save();
       }
+
+      let deferred = this._crashPromises.get(id);
+
+      if (deferred) {
+        this._crashPromises.delete(id);
+        deferred.resolve();
+      }
     }.bind(this));
+
+    return promise;
   },
+
+  
+
+
+
+
+
+
+
+  ensureCrashIsPresent: Task.async(function* (id) {
+    let store = yield this._getStore();
+    let crash = store.getCrash(id);
+
+    if (crash) {
+      return Promise.resolve();
+    }
+
+    let deferred = PromiseUtils.defer();
+
+    this._crashPromises.set(id, deferred);
+    return deferred.promise;
+  }),
 
   
 
