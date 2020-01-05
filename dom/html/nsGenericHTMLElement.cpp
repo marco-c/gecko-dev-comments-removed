@@ -2008,12 +2008,6 @@ nsGenericHTMLFormElement::AfterSetAttr(int32_t aNameSpaceID, nsIAtom* aName,
       }
 
       mForm->AddElement(this, false, aNotify);
-
-      
-      
-      
-      
-      UpdateState(aNotify);
     }
 
     if (aName == nsGkAtoms::form) {
