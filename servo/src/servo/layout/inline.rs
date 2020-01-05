@@ -121,34 +121,34 @@ impl FlowContext : InlineLayout {
             box.d().position.size.width = match *box {
                 @ImageBox(_,img) => au::from_px(img.get_size().get_default(Size2D(0,0)).width),
                 @TextBox(_,d) => d.runs[0].size().width,
-                
+                // TODO: this should be set to the extents of its children
                 @GenericBox(*) => au(0)
             };
 
             box.d().position.size.height = match *box {
                 @ImageBox(_,img) => au::from_px(img.get_size().get_default(Size2D(0,0)).height),
                 @TextBox(_,d) => d.runs[0].size().height,
-                
+                // TODO: this should be set to the extents of its children
                 @GenericBox(*) => au(0)
             };
 
             box.d().position.origin = Point2D(au(0), cur_y);
             cur_y = cur_y.add(&au::max(line_height, box.d().position.size.height));
-        } 
+        } // for boxes.each |box|
 
     self.d().position.size.height = cur_y;
     
-    
+    /* There are no child contexts, so stop here. */
 
-    
-    
-    
-    
+    // TODO: once there are 'inline-block' elements, this won't be
+    // true.  In that case, perform inline flow, and then set the
+    // block flow context's width as the width of the
+    // 'inline-block' box that created this flow.
     }
 
     fn assign_height_inline(_ctx: &LayoutContext) {
-        
-        
+        // Don't need to set box or ctx heights, since that is done
+        // during inline flowing.
     }
 
     fn build_display_list_inline(builder: &dl::DisplayListBuilder, dirty: &Rect<au>, 
@@ -156,11 +156,12 @@ impl FlowContext : InlineLayout {
 
         assert self.starts_inline_flow();
 
-        
-        
+        // TODO: if the CSS box introducing this inline context is *not* anonymous,
+        // we need to draw it too, in a way similar to BlowFlowContext
 
-        
-        
+        // TODO: once we form line boxes and have their cached bounds, we can be 
+        // smarter and not recurse on a line if nothing in it can intersect dirty
+        debug!("building display list for %u", self.inline().boxes.len());
         for self.inline().boxes.each |box| {
             box.build_display_list(builder, dirty, offset, list)
         }
