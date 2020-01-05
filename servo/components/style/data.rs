@@ -2,14 +2,14 @@
 
 
 
-use properties::TComputedValues;
+use properties::ComputedValues;
 use selectors::parser::SelectorImpl;
 use std::collections::HashMap;
 use std::hash::BuildHasherDefault;
 use std::sync::Arc;
 use std::sync::atomic::AtomicIsize;
 
-pub struct PrivateStyleData<Impl: SelectorImpl, ConcreteComputedValues: TComputedValues> {
+pub struct PrivateStyleData<Impl: SelectorImpl, ConcreteComputedValues: ComputedValues> {
     
     pub style: Option<Arc<ConcreteComputedValues>>,
 
@@ -22,7 +22,7 @@ pub struct PrivateStyleData<Impl: SelectorImpl, ConcreteComputedValues: TCompute
 }
 
 impl<Impl, ConcreteComputedValues> PrivateStyleData<Impl, ConcreteComputedValues>
-    where Impl: SelectorImpl, ConcreteComputedValues: TComputedValues {
+    where Impl: SelectorImpl, ConcreteComputedValues: ComputedValues {
     pub fn new() -> PrivateStyleData<Impl, ConcreteComputedValues> {
         PrivateStyleData {
             style: None,

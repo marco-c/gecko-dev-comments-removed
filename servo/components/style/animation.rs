@@ -25,7 +25,7 @@ use properties::longhands::vertical_align::computed_value::T as VerticalAlign;
 use properties::longhands::visibility::computed_value::T as Visibility;
 use properties::longhands::z_index::computed_value::T as ZIndex;
 use properties::style_struct_traits::TAnimation;
-use properties::{ServoComputedValues, TComputedValues};
+use properties::{ComputedValues, ServoComputedValues};
 use std::cmp::Ordering;
 use std::iter::repeat;
 use std::sync::mpsc::Sender;
@@ -930,11 +930,11 @@ impl<T> GetMod for Vec<T> {
 
 
 
-pub fn start_transitions_if_applicable<C: TComputedValues>(new_animations_sender: &Mutex<Sender<Animation>>,
-                                                           node: OpaqueNode,
-                                                           old_style: &C,
-                                                           new_style: &mut C)
-                                                           -> bool {
+pub fn start_transitions_if_applicable<C: ComputedValues>(new_animations_sender: &Mutex<Sender<Animation>>,
+                                                          node: OpaqueNode,
+                                                          old_style: &C,
+                                                          new_style: &mut C)
+                                                          -> bool {
     let mut had_animations = false;
     for i in 0..new_style.get_animation().transition_count() {
         
@@ -965,7 +965,7 @@ pub fn start_transitions_if_applicable<C: TComputedValues>(new_animations_sender
 
 
 
-pub fn update_style_for_animation<C: TComputedValues,
+pub fn update_style_for_animation<C: ComputedValues,
                                   Damage: TRestyleDamage<ConcreteComputedValues=C>>(animation: &Animation,
                                                                                     style: &mut Arc<C>,
                                                                                     damage: Option<&mut Damage>) {
