@@ -268,8 +268,7 @@ LONG            nsWindow::sLastMouseDownTime      = 0L;
 LONG            nsWindow::sLastClickCount         = 0L;
 BYTE            nsWindow::sLastMouseButton        = 0;
 
-
-int             nsWindow::sTrimOnMinimize         = 2;
+bool            nsWindow::sHaveInitializedPrefs   = false;
 
 TriStateBool nsWindow::sHasBogusPopupsDropShadowOnMultiMonitor = TRI_UNKNOWN;
 
@@ -332,7 +331,60 @@ private:
 Maybe<TimeStamp> CurrentWindowsTimeGetter::sBackwardsSkewStamp;
 DWORD CurrentWindowsTimeGetter::sLastPostTime = 0;
 
-#if defined(ACCESSIBILITY)
+} 
+
+
+
+
+
+
+
+static const char *sScreenManagerContractID       = "@mozilla.org/gfx/screenmanager;1";
+
+extern mozilla::LazyLogModule gWindowsLog;
+
+
+static bool     gWindowsVisible                   = false;
+
+
+static bool     gIsSleepMode                      = false;
+
+static NS_DEFINE_CID(kCClipboardCID, NS_CLIPBOARD_CID);
+
+
+static WindowsDllInterceptor sUser32Intercept;
+
+
+
+
+static const int32_t kGlassMarginAdjustment = 2;
+
+
+
+
+
+static const int32_t kResizableBorderMinSize = 3;
+
+
+static bool gIsPointerEventsEnabled = false;
+
+
+
+
+
+
+#define MAX_ACCELERATED_DIMENSION 8192
+
+
+
+
+
+#define HITTEST_CACHE_LIFETIME_MS 50
+
+#if defined(ACCESSIBILITY) && defined(_M_IX86)
+
+namespace mozilla {
+
 
 
 
@@ -400,7 +452,6 @@ private:
                                ::GetCurrentThreadId());
     MOZ_ASSERT(mHook);
 
-#if defined(_M_IX86)
     if (!IsWin10OrLater()) {
       
       sTipTsfInterceptor.Init("tiptsf.dll");
@@ -409,7 +460,13 @@ private:
           (void**) &sProcessCaretEventsStub);
       MOZ_ASSERT(ok);
     }
-#endif 
+
+    MOZ_ASSERT(!sSendMessageTimeoutWStub);
+    sUser32Intercept.Init("user32.dll");
+    DebugOnly<bool> hooked = sUser32Intercept.AddHook("SendMessageTimeoutW",
+        reinterpret_cast<intptr_t>(&SendMessageTimeoutWHook),
+        (void**) &sSendMessageTimeoutWStub);
+    MOZ_ASSERT(hooked);
   }
 
   class MOZ_RAII A11yInstantiationBlocker
@@ -454,7 +511,6 @@ private:
     return ::CallNextHookEx(nullptr, aCode, aWParam, aLParam);
   }
 
-#if defined(_M_IX86)
   static void CALLBACK ProcessCaretEventsHook(HWINEVENTHOOK aWinEventHook,
                                               DWORD aEvent, HWND aHwnd,
                                               LONG aObjectId, LONG aChildId,
@@ -466,10 +522,34 @@ private:
                             aGeneratingTid, aEventTime);
   }
 
+  static LRESULT WINAPI SendMessageTimeoutWHook(HWND aHwnd, UINT aMsgCode,
+                                                WPARAM aWParam, LPARAM aLParam,
+                                                UINT aFlags, UINT aTimeout,
+                                                PDWORD_PTR aMsgResult)
+  {
+    
+    
+    
+    if (!aMsgResult || aMsgCode != WM_GETOBJECT || aLParam != OBJID_CLIENT ||
+        !WinUtils::GetNSWindowPtr(aHwnd) ||
+        ::GetWindowThreadProcessId(aHwnd, nullptr) != ::GetCurrentThreadId() ||
+        !IsA11yBlocked()) {
+      return sSendMessageTimeoutWStub(aHwnd, aMsgCode, aWParam, aLParam,
+                                      aFlags, aTimeout, aMsgResult);
+    }
+
+    
+    
+    
+    *aMsgResult = static_cast<DWORD_PTR>(::DefWindowProcW(aHwnd, aMsgCode,
+                                                          aWParam, aLParam));
+
+    return static_cast<LRESULT>(TRUE);
+  }
+
   static WindowsDllInterceptor sTipTsfInterceptor;
   static WINEVENTPROC sProcessCaretEventsStub;
-#endif 
-
+  static decltype(&SendMessageTimeoutW) sSendMessageTimeoutWStub;
   static StaticAutoPtr<TIPMessageHandler> sInstance;
 
   HHOOK                 mHook;
@@ -477,65 +557,14 @@ private:
   uint32_t              mA11yBlockCount;
 };
 
-#if defined(_M_IX86)
 WindowsDllInterceptor TIPMessageHandler::sTipTsfInterceptor;
 WINEVENTPROC TIPMessageHandler::sProcessCaretEventsStub;
-#endif 
-
+decltype(&SendMessageTimeoutW) TIPMessageHandler::sSendMessageTimeoutWStub;
 StaticAutoPtr<TIPMessageHandler> TIPMessageHandler::sInstance;
-
-#endif 
 
 } 
 
-
-
-
-
-
-
-static const char *sScreenManagerContractID       = "@mozilla.org/gfx/screenmanager;1";
-
-extern mozilla::LazyLogModule gWindowsLog;
-
-
-static bool     gWindowsVisible                   = false;
-
-
-static bool     gIsSleepMode                      = false;
-
-static NS_DEFINE_CID(kCClipboardCID, NS_CLIPBOARD_CID);
-
-
-static WindowsDllInterceptor sUser32Intercept;
-
-
-
-
-static const int32_t kGlassMarginAdjustment = 2;
-
-
-
-
-
-static const int32_t kResizableBorderMinSize = 3;
-
-
-static bool gIsPointerEventsEnabled = false;
-
-
-
-
-
-
-#define MAX_ACCELERATED_DIMENSION 8192
-
-
-
-
-
-#define HITTEST_CACHE_LIFETIME_MS 50
-
+#endif 
 
 
 
@@ -613,7 +642,7 @@ nsWindow::nsWindow()
     
     mozilla::widget::WinTaskbar::RegisterAppUserModelID();
     KeyboardLayout::GetInstance()->OnLayoutChange(::GetKeyboardLayout(0));
-#if defined(ACCESSIBILITY)
+#if defined(ACCESSIBILITY) && defined(_M_IX86)
     mozilla::TIPMessageHandler::Initialize();
 #endif 
     IMEHandler::Initialize();
@@ -753,7 +782,7 @@ nsWindow::Create(nsIWidget* aParent,
       parent = nullptr;
     }
 
-    if (IsVistaOrLater() && !IsWin8OrLater() &&
+    if (!IsWin8OrLater() &&
         HasBogusPopupsDropShadowOnMultiMonitor()) {
       extendedStyle |= WS_EX_COMPOSITED;
     }
@@ -881,17 +910,10 @@ nsWindow::Create(nsIWidget* aParent,
   
   
   
-  
-  if (sTrimOnMinimize == 2 && mWindowType == eWindowType_invisible) {
-    
-    
-    
-    
-    sTrimOnMinimize =
-      Preferences::GetBool("config.trim_on_minimize",
-        IsVistaOrLater() ? 1 : 0);
+  if (!sHaveInitializedPrefs && mWindowType == eWindowType_invisible) {
     sSwitchKeyboardLayout =
       Preferences::GetBool("intl.keyboard.per_window_layout", false);
+    sHaveInitializedPrefs = true;
   }
 
   
@@ -1233,7 +1255,13 @@ nsWindow::ReparentNativeWidget(nsIWidget* aNewParent)
 
 nsIWidget* nsWindow::GetParent(void)
 {
-  return GetParentWindow(false);
+  if (mIsTopWidgetWindow) {
+    return nullptr;
+  }
+  if (mInDtor || mOnDestroyCalled) {
+    return nullptr;
+  }
+  return mParent;
 }
 
 static int32_t RoundDown(double aDouble)
@@ -1614,9 +1642,10 @@ bool nsWindow::IsVisible() const
 
 
 
+
 void nsWindow::ClearThemeRegion()
 {
-  if (IsVistaOrLater() && !HasGlass() &&
+  if (!HasGlass() &&
       (mWindowType == eWindowType_popup && !IsPopupWithTitleBar() &&
        (mPopupType == ePopupTypeTooltip || mPopupType == ePopupTypePanel))) {
     SetWindowRgn(mWnd, nullptr, false);
@@ -1630,7 +1659,7 @@ void nsWindow::SetThemeRegion()
   
   
   
-  if (IsVistaOrLater() && !HasGlass() &&
+  if (!HasGlass() &&
       (mWindowType == eWindowType_popup && !IsPopupWithTitleBar() &&
        (mPopupType == ePopupTypeTooltip || mPopupType == ePopupTypePanel))) {
     HRGN hRgn = nullptr;
@@ -2047,13 +2076,7 @@ nsWindow::SetSizeMode(nsSizeMode aMode)
         break;
 
       case nsSizeMode_Minimized :
-        
-        
-        
-        
-        
-        
-        mode = sTrimOnMinimize ? SW_MINIMIZE : SW_SHOWMINIMIZED;
+        mode = SW_MINIMIZE;
         break;
 
       default :
@@ -5806,7 +5829,7 @@ nsWindow::ProcessMessage(UINT msg, WPARAM& wParam, LPARAM& lParam,
       
       
       int32_t objId = static_cast<DWORD>(lParam);
-      if (!TIPMessageHandler::IsA11yBlocked() && objId == OBJID_CLIENT) { 
+      if (objId == OBJID_CLIENT) { 
         a11y::Accessible* rootAccessible = GetAccessible(); 
         if (rootAccessible) {
           IAccessible *msaaAccessible = nullptr;
@@ -5825,12 +5848,6 @@ nsWindow::ProcessMessage(UINT msg, WPARAM& wParam, LPARAM& lParam,
     case WM_SYSCOMMAND:
     {
       WPARAM filteredWParam = (wParam &0xFFF0);
-      
-      if (!sTrimOnMinimize && filteredWParam == SC_MINIMIZE) {
-        ::ShowWindow(mWnd, SW_SHOWMINIMIZED);
-        result = true;
-      }
-
       if (mSizeMode == nsSizeMode_Fullscreen &&
           filteredWParam == SC_RESTORE &&
           GetCurrentShowCmd(mWnd) != SW_SHOWMINIMIZED) {
@@ -6448,14 +6465,6 @@ void nsWindow::OnWindowPosChanged(WINDOWPOS* wp)
     else
       mSizeMode = nsSizeMode_Normal;
 
-    
-    
-    
-    
-    
-    if (!sTrimOnMinimize && nsSizeMode_Minimized == mSizeMode)
-      ActivateOtherWindowHelper(mWnd);
-
 #ifdef WINSTATE_DEBUG_OUTPUT
     switch (mSizeMode) {
       case nsSizeMode_Normal:
@@ -6573,31 +6582,6 @@ void nsWindow::OnWindowPosChanged(WINDOWPOS* wp)
     
     
     OnResize(rect);
-  }
-}
-
-
-void nsWindow::ActivateOtherWindowHelper(HWND aWnd)
-{
-  
-  HWND hwndBelow = ::GetNextWindow(aWnd, GW_HWNDNEXT);
-  while (hwndBelow && (!::IsWindowEnabled(hwndBelow) || !::IsWindowVisible(hwndBelow) ||
-                       ::IsIconic(hwndBelow))) {
-    hwndBelow = ::GetNextWindow(hwndBelow, GW_HWNDNEXT);
-  }
-
-  
-  
-  ::SetWindowPos(aWnd, HWND_BOTTOM, 0, 0, 0, 0,
-                 SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE);
-  if (hwndBelow)
-    ::SetForegroundWindow(hwndBelow);
-
-  
-  
-  nsCOMPtr<nsISound> sound(do_CreateInstance("@mozilla.org/sound;1"));
-  if (sound) {
-    sound->PlaySystemSound(NS_LITERAL_STRING("Minimize"));
   }
 }
 
