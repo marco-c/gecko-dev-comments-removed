@@ -2441,6 +2441,9 @@ public:
   virtual void RemoveResponsiveContent(nsIContent* aContent) = 0;
   virtual void NotifyMediaFeatureValuesChanged() = 0;
 
+  virtual void AddMediaContent(nsIContent* aContent) = 0;
+  virtual void RemoveMediaContent(nsIContent* aContent) = 0;
+
   virtual nsresult GetStateObject(nsIVariant** aResult) = 0;
 
   virtual nsDOMNavigationTiming* GetNavigationTiming() const = 0;
@@ -3182,6 +3185,9 @@ protected:
 
   
   bool mPostedFlushUserFontSet : 1;
+
+  
+  bool mEverInForeground : 1;
 
   
   nsCompatibility mCompatMode;

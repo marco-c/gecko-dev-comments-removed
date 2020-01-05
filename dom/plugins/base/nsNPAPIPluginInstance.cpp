@@ -1738,11 +1738,6 @@ nsNPAPIPluginInstance::GetOrCreateAudioChannelAgent(nsIAudioChannelAgent** aAgen
 NS_IMETHODIMP
 nsNPAPIPluginInstance::WindowVolumeChanged(float aVolume, bool aMuted)
 {
-  MOZ_LOG(AudioChannelService::GetAudioChannelLog(), LogLevel::Debug,
-         ("nsNPAPIPluginInstance, WindowVolumeChanged, "
-          "this = %p, aVolume = %f, aMuted = %s\n",
-          this, aVolume, aMuted ? "true" : "false"));
-
   
   nsresult rv = SetMuted(aMuted);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "SetMuted failed");
@@ -1762,10 +1757,6 @@ nsNPAPIPluginInstance::WindowVolumeChanged(float aVolume, bool aMuted)
 NS_IMETHODIMP
 nsNPAPIPluginInstance::WindowSuspendChanged(nsSuspendedTypes aSuspend)
 {
-  MOZ_LOG(AudioChannelService::GetAudioChannelLog(), LogLevel::Debug,
-         ("nsNPAPIPluginInstance, WindowSuspendChanged, "
-          "this = %p, aSuspend = %s\n", this, SuspendTypeToStr(aSuspend)));
-
   
   WindowVolumeChanged(1.0, 
                       aSuspend != nsISuspendedTypes::NONE_SUSPENDED);

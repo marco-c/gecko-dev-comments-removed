@@ -989,8 +989,7 @@ nsPIDOMWindow<T>::nsPIDOMWindow(nsPIDOMWindowOuter *aOuterWindow)
   
   mWindowID(NextWindowID()), mHasNotifiedGlobalCreated(false),
   mMarkedCCGeneration(0), mServiceWorkersTestingEnabled(false),
-  mLargeAllocStatus(LargeAllocStatus::NONE),
-  mShouldResumeOnFirstActiveMediaComponent(false)
+  mLargeAllocStatus(LargeAllocStatus::NONE)
 {
   if (aOuterWindow) {
     mTimeoutManager =
@@ -4349,8 +4348,9 @@ nsPIDOMWindowInner::IsRunningTimeout()
 void
 nsPIDOMWindowOuter::NotifyCreatedNewMediaComponent()
 {
-  
-  mShouldResumeOnFirstActiveMediaComponent = true;
+  if (mMediaSuspend != nsISuspendedTypes::SUSPENDED_BLOCK) {
+    return;
+  }
 
   
   
@@ -4367,29 +4367,20 @@ nsPIDOMWindowOuter::MaybeActiveMediaComponents()
     return mOuterWindow->MaybeActiveMediaComponents();
   }
 
-  
-  
-  if (!mShouldResumeOnFirstActiveMediaComponent ||
-      mMediaSuspend != nsISuspendedTypes::SUSPENDED_BLOCK) {
-    return;
-  }
-
   nsCOMPtr<nsPIDOMWindowInner> inner = GetCurrentInnerWindow();
   if (!inner) {
     return;
   }
 
-  
   nsCOMPtr<nsIDocument> doc = inner->GetExtantDoc();
-  if (!doc || doc->Hidden()) {
+  if (!doc) {
     return;
   }
 
-  MOZ_LOG(AudioChannelService::GetAudioChannelLog(), LogLevel::Debug,
-         ("nsPIDOMWindowOuter, MaybeActiveMediaComponents, "
-          "resume the window from blocked, this = %p\n", this));
-
-  SetMediaSuspend(nsISuspendedTypes::NONE_SUSPENDED);
+  if (!doc->Hidden() &&
+      mMediaSuspend == nsISuspendedTypes::SUSPENDED_BLOCK) {
+    SetMediaSuspend(nsISuspendedTypes::NONE_SUSPENDED);
+  }
 }
 
 SuspendTypes

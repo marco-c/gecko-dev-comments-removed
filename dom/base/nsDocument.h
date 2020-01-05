@@ -1022,6 +1022,13 @@ public:
   
   virtual void NotifyMediaFeatureValuesChanged() override;
 
+  
+  virtual void AddMediaContent(nsIContent* aContent) override;
+
+  
+  
+  virtual void RemoveMediaContent(nsIContent* aContent) override;
+
   virtual nsresult GetStateObject(nsIVariant** aResult) override;
 
   virtual nsDOMNavigationTiming* GetNavigationTiming() const override;
@@ -1573,6 +1580,9 @@ private:
 
   
   nsTHashtable< nsPtrHashKey<nsIContent> > mResponsiveContent;
+
+  
+  nsTHashtable<nsPtrHashKey<nsIContent>> mMediaContent;
 
   
   nsString mLastStyleSheetSet;
