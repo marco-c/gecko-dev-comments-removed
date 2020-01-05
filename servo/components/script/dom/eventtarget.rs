@@ -425,7 +425,9 @@ impl EventTarget {
         };
         if !rv || handler.ptr.is_null() {
             
-            report_pending_exception(cx, self.reflector().get_jsobject().get());
+            unsafe {
+                report_pending_exception(cx, self.reflector().get_jsobject().get());
+            }
             
             return None;
         }
