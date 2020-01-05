@@ -6,43 +6,45 @@
 
 
 
-function* createTestContent(style) {
-  let html = `<style type="text/css">
-      ${style}
-      </style>
-      <div id="testid" class="testclass">Styled Node</div>`;
-  let tab = yield addTab("data:text/html;charset=utf-8," +
-                         encodeURIComponent(html));
 
-  let {inspector, view} = yield openRuleView();
-  yield selectNode("#testid", inspector);
-  return {view, tab};
-}
+
+
+
+
+
+
+const colors = [
+  {name: "hex", id: "test1", color: "#f0c", result: "#0f0"},
+  {name: "rgb", id: "test2", color: "rgb(0,128,250)", result: "rgb(0, 255, 0)"},
+  
+  {name: "hex", id: "test3", color: "#F0C", result: "#0F0"},
+];
 
 add_task(function* () {
-  let colors = [
-    {name: "hex", text: "#f0c", result: "#0f0"},
-    {name: "rgb", text: "rgb(0,128,250)", result: "rgb(0, 255, 0)"},
-    
-    {name: "hex", text: "#F0C", result: "#0F0"},
-  ];
-
   Services.prefs.setCharPref("devtools.defaultColorUnit", "authored");
 
-  for (let color of colors) {
-    let {view, tab} = yield createTestContent("#testid {" +
-                                              "  color: " + color.text + ";" +
-                                              "} ");
+  let html = "";
+  for (let {color, id} of colors) {
+    html += `<div id="${id}" style="color: ${color}">Styled Node</div>`;
+  }
 
+  let tab = yield addTab("data:text/html;charset=utf-8," + encodeURIComponent(html));
+
+  let {inspector, view} = yield openRuleView();
+
+  for (let color of colors) {
     let cPicker = view.tooltips.colorPicker;
-    let swatch = getRuleViewProperty(view, "#testid", "color").valueSpan
+    let selector = "#" + color.id;
+    yield selectNode(selector, inspector);
+
+    let swatch = getRuleViewProperty(view, "element", "color").valueSpan
         .querySelector(".ruleview-colorswatch");
     let onColorPickerReady = cPicker.once("ready");
     swatch.click();
     yield onColorPickerReady;
 
     yield simulateColorPickerChange(view, cPicker, [0, 255, 0, 1], {
-      selector: "#testid",
+      selector,
       name: "color",
       value: "rgb(0, 255, 0)"
     });
@@ -55,11 +57,11 @@ add_task(function* () {
     yield onHidden;
     yield onRuleViewChanged;
 
-    is(getRuleViewPropertyValue(view, "#testid", "color"), color.result,
+    is(getRuleViewPropertyValue(view, "element", "color"), color.result,
        "changing the color preserved the unit for " + color.name);
-
-    let target = TargetFactory.forTab(tab);
-    yield gDevTools.closeToolbox(target);
-    gBrowser.removeCurrentTab();
   }
+
+  let target = TargetFactory.forTab(tab);
+  yield gDevTools.closeToolbox(target);
+  gBrowser.removeCurrentTab();
 });
