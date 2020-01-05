@@ -29,7 +29,7 @@ use js::jsapi::{JS_GetProperty, JS_GetPrototype, JS_GetReservedSlot, JS_HasPrope
 use js::jsapi::{JS_HasPropertyById, JS_IsExceptionPending, JS_IsGlobalObject};
 use js::jsapi::{JS_ResolveStandardClass, JS_SetProperty, ToWindowProxyIfWindow};
 use js::jsapi::{JS_StringHasLatin1Chars, MutableHandleValue, ObjectOpResult};
-use js::jsval::{JSVal, ObjectValue, UndefinedValue};
+use js::jsval::{JSVal, UndefinedValue};
 use js::rust::{GCMethods, ToString};
 use libc;
 use std::ffi::CString;
@@ -127,32 +127,29 @@ pub type ProtoOrIfaceArray = [*mut JSObject; PROTO_OR_IFACE_LENGTH];
 
 
 
-pub fn get_property_on_prototype(cx: *mut JSContext,
-                                 proxy: HandleObject,
-                                 id: HandleId,
-                                 found: *mut bool,
-                                 vp: MutableHandleValue)
-                                 -> bool {
-    unsafe {
-        
-        rooted!(in(cx) let mut proto = ptr::null_mut());
-        if !JS_GetPrototype(cx, proxy, proto.handle_mut()) || proto.is_null() {
-            *found = false;
-            return true;
-        }
-        let mut has_property = false;
-        if !JS_HasPropertyById(cx, proto.handle(), id, &mut has_property) {
-            return false;
-        }
-        *found = has_property;
-        let no_output = vp.ptr.is_null();
-        if !has_property || no_output {
-            return true;
-        }
-
-        rooted!(in(cx) let receiver = ObjectValue(&*proxy.get()));
-        JS_ForwardGetPropertyTo(cx, proto.handle(), id, receiver.handle(), vp)
+pub unsafe fn get_property_on_prototype(cx: *mut JSContext,
+                                        proxy: HandleObject,
+                                        receiver: HandleValue,
+                                        id: HandleId,
+                                        found: *mut bool,
+                                        vp: MutableHandleValue)
+                                        -> bool {
+    rooted!(in(cx) let mut proto = ptr::null_mut());
+    if !JS_GetPrototype(cx, proxy, proto.handle_mut()) || proto.is_null() {
+        *found = false;
+        return true;
     }
+    let mut has_property = false;
+    if !JS_HasPropertyById(cx, proto.handle(), id, &mut has_property) {
+        return false;
+    }
+    *found = has_property;
+    let no_output = vp.ptr.is_null();
+    if !has_property || no_output {
+        return true;
+    }
+
+    JS_ForwardGetPropertyTo(cx, proto.handle(), id, receiver, vp)
 }
 
 
@@ -285,12 +282,17 @@ pub fn set_dictionary_property(cx: *mut JSContext,
 }
 
 
-pub fn has_property_on_prototype(cx: *mut JSContext, proxy: HandleObject, id: HandleId) -> bool {
-    
-    let mut found = false;
-    !get_property_on_prototype(cx, proxy, id, &mut found, unsafe {
-        MutableHandleValue::from_marked_location(ptr::null_mut())
-    }) || found
+pub unsafe fn has_property_on_prototype(cx: *mut JSContext,
+                                        proxy: HandleObject,
+                                        id: HandleId,
+                                        found: &mut bool)
+                                        -> bool {
+    rooted!(in(cx) let mut proto = ptr::null_mut());
+    if !JS_GetPrototype(cx, proxy, proto.handle_mut()) {
+        return false;
+    }
+    assert!(!proto.is_null());
+    JS_HasPropertyById(cx, proto.handle(), id, found)
 }
 
 
