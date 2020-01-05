@@ -8563,7 +8563,8 @@ UnionBorderBoxes(nsIFrame* aFrame, bool aApplyTransform,
   
   
   
-  aOutValid = !aFrame->IsFrameOfType(nsIFrame::eSVGContainer);
+  aOutValid = !aFrame->IsFrameOfType(nsIFrame::eSVGContainer)
+              || aFrame->GetType() == nsGkAtoms::svgTextFrame;
 
   
   
