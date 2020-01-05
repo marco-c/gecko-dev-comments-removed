@@ -262,9 +262,10 @@ NS_IMETHODIMP  nsTextToSubURI::UnEscapeURIForUI(const nsACString & aCharset,
   return NS_OK;
 }
 
-NS_IMETHODIMP  nsTextToSubURI::UnEscapeNonAsciiURI(const nsACString & aCharset, 
-                                                   const nsACString & aURIFragment, 
-                                                   nsAString &_retval)
+NS_IMETHODIMP
+nsTextToSubURI::UnEscapeNonAsciiURI(const nsACString& aCharset,
+                                    const nsACString& aURIFragment,
+                                    nsAString& _retval)
 {
   nsAutoCString unescapedSpec;
   NS_UnescapeURL(PromiseFlatCString(aURIFragment),
@@ -282,7 +283,11 @@ NS_IMETHODIMP  nsTextToSubURI::UnEscapeNonAsciiURI(const nsACString & aCharset,
     return NS_OK;
   }
 
-  return convertURItoUnicode(PromiseFlatCString(aCharset), unescapedSpec, _retval);
+  nsresult rv = convertURItoUnicode(PromiseFlatCString(aCharset),
+                                    unescapedSpec, _retval);
+  
+  
+  return rv == NS_OK_UDEC_MOREINPUT ? NS_ERROR_UDEC_ILLEGALINPUT : rv;
 }
 
 
