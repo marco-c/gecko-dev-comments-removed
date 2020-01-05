@@ -884,6 +884,12 @@ GMPParent::ReadGMPInfoFile(nsIFile* aFile)
       }
     }
 
+    
+    
+    if (cap.mAPIName.EqualsLiteral(GMP_API_DECRYPTOR_BACKWARDS_COMPAT)) {
+      cap.mAPIName.AssignLiteral(GMP_API_DECRYPTOR);
+    }
+
     if (cap.mAPIName.EqualsLiteral(GMP_API_DECRYPTOR)) {
       mCanDecrypt = true;
 
@@ -895,6 +901,15 @@ GMPParent::ReadGMPInfoFile(nsIFile* aFile)
         return GenericPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
       }
 #endif
+#ifdef XP_WIN
+      
+      
+      
+      if (cap.mAPITags.Contains(kEMEKeySystemPrimetime) &&
+          !mozilla::supports_sse2()) {
+        return GenericPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
+      }
+#endif 
     }
 
     mCapabilities.AppendElement(Move(cap));
@@ -943,22 +958,54 @@ GMPParent::ParseChromiumManifest(const nsAString& aJSON)
   mDescription = NS_ConvertUTF16toUTF8(m.mDescription);
   mVersion = NS_ConvertUTF16toUTF8(m.mVersion);
 
+  nsCString kEMEKeySystem;
+
+  
+  
+  if (mDisplayName.EqualsASCII("clearkey")) {
+    kEMEKeySystem = kEMEKeySystemClearkey;
+#if XP_WIN
+    mLibs = NS_LITERAL_CSTRING("dxva2.dll, msmpeg2vdec.dll, evr.dll, mfh264dec.dll, mfplat.dll");
+#endif
+  } else if (mDisplayName.EqualsASCII("WidevineCdm")) {
+    kEMEKeySystem = kEMEKeySystemWidevine;
+#if XP_WIN
+    mLibs = NS_LITERAL_CSTRING("dxva2.dll");
+#endif
+  } else {
+    return GenericPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
+  }
+
   GMPCapability video(NS_LITERAL_CSTRING(GMP_API_VIDEO_DECODER));
-  video.mAPITags.AppendElement(NS_LITERAL_CSTRING("h264"));
-  video.mAPITags.AppendElement(NS_LITERAL_CSTRING("vp8"));
-  video.mAPITags.AppendElement(NS_LITERAL_CSTRING("vp9"));
-  video.mAPITags.AppendElement(kEMEKeySystemWidevine);
+
+  nsCString codecsString = NS_ConvertUTF16toUTF8(m.mX_cdm_codecs);
+  nsTArray<nsCString> codecs;
+  SplitAt(",", codecsString, codecs);
+
+  for (const nsCString& chromiumCodec : codecs) {
+    nsCString codec;
+    if (chromiumCodec.EqualsASCII("vp8")) {
+      codec = NS_LITERAL_CSTRING("vp8");
+    } else if (chromiumCodec.EqualsASCII("vp9.0")) {
+      codec = NS_LITERAL_CSTRING("vp9");
+    } else if (chromiumCodec.EqualsASCII("avc1")) {
+      codec = NS_LITERAL_CSTRING("h264");
+    } else {
+      return GenericPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
+    }
+
+    video.mAPITags.AppendElement(codec);
+  }
+
+  video.mAPITags.AppendElement(kEMEKeySystem);
   mCapabilities.AppendElement(Move(video));
 
   GMPCapability decrypt(NS_LITERAL_CSTRING(GMP_API_DECRYPTOR));
-  decrypt.mAPITags.AppendElement(kEMEKeySystemWidevine);
+
+  decrypt.mAPITags.AppendElement(kEMEKeySystem);
   mCapabilities.AppendElement(Move(decrypt));
 
-  MOZ_ASSERT(mName.EqualsLiteral("widevinecdm"));
   mAdapter = NS_LITERAL_STRING("widevine");
-#ifdef XP_WIN
-  mLibs = NS_LITERAL_CSTRING("dxva2.dll");
-#endif
 
   return GenericPromise::CreateAndResolve(true, __func__);
 }
