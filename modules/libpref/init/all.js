@@ -1229,7 +1229,7 @@ pref("privacy.trackingprotection.enabled",  false);
 
 pref("privacy.trackingprotection.pbmode.enabled",  true);
 
-pref("privacy.trackingprotection.annotate_channels",  false);
+pref("privacy.trackingprotection.annotate_channels",  true);
 
 
 pref("privacy.trackingprotection.lower_network_priority",  false);
