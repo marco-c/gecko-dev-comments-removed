@@ -792,9 +792,6 @@ pref("layout.framevisibility.numscrollportwidths", 1);
 pref("layout.framevisibility.numscrollportheights", 1);
 
 
-pref("dom.identity.enabled", true);
-
-
 pref("layers.orientation.sync.timeout", 1000);
 
 
