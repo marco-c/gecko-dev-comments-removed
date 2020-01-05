@@ -13,9 +13,13 @@ class Theme {
   
 
 
-  constructor() {
+
+
+
+  constructor(baseURI) {
     
     this.lwtStyles = {};
+    this.baseURI = baseURI;
   }
 
   
@@ -50,14 +54,29 @@ class Theme {
 
 
   loadColors(colors) {
-    let {accentcolor, textcolor} = colors;
+    for (let color of Object.keys(colors)) {
+      Services.console.logStringMessage(`parsing color=${color}`);
+      let val = colors[color];
 
-    if (accentcolor) {
-      this.lwtStyles.accentcolor = accentcolor;
-    }
+      if (!val) {
+        continue;
+      }
 
-    if (textcolor) {
-      this.lwtStyles.textcolor = textcolor;
+      let cssColor = val;
+      if (Array.isArray(val)) {
+        cssColor = "rgb" + (val.length > 3 ? "a" : "") + "(" + val.join(",") + ")";
+      }
+
+      switch (color) {
+        case "accentcolor":
+        case "frame":
+          this.lwtStyles.accentcolor = cssColor;
+          break;
+        case "textcolor":
+        case "tab_text":
+          this.lwtStyles.textcolor = cssColor;
+          break;
+      }
     }
   }
 
@@ -67,10 +86,21 @@ class Theme {
 
 
   loadImages(images) {
-    let {headerURL} = images;
+    for (let image of Object.keys(images)) {
+      let val = images[image];
 
-    if (headerURL) {
-      this.lwtStyles.headerURL = headerURL;
+      if (!val) {
+        continue;
+      }
+
+      switch (image) {
+        case "headerURL":
+        case "theme_frame": {
+          let resolvedURL = this.baseURI.resolve(val);
+          this.lwtStyles.headerURL = resolvedURL;
+          break;
+        }
+      }
     }
   }
 
@@ -91,7 +121,7 @@ extensions.on("manifest_theme", (type, directive, extension, manifest) => {
     return;
   }
 
-  let theme = new Theme();
+  let theme = new Theme(extension.baseURI);
   theme.load(manifest.theme);
   themeMap.set(extension, theme);
 });
