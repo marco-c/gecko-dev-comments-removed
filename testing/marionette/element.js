@@ -8,6 +8,7 @@ const {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
 
 Cu.import("resource://gre/modules/Log.jsm");
 
+Cu.import("chrome://marionette/content/assert.js");
 Cu.import("chrome://marionette/content/atom.js");
 Cu.import("chrome://marionette/content/error.js");
 Cu.import("chrome://marionette/content/wait.js");
@@ -174,11 +175,14 @@ element.Store = class {
     if (container.shadowRoot) {
       wrappedShadowRoot = new XPCNativeWrapper(container.shadowRoot);
     }
-
     let wrappedEl = new XPCNativeWrapper(el);
+    let wrappedContainer = {
+      frame: wrappedFrame,
+      shadowRoot: wrappedShadowRoot,
+    };
     if (!el ||
         !(wrappedEl.ownerDocument == wrappedFrame.document) ||
-        element.isDisconnected(wrappedEl, wrappedFrame, wrappedShadowRoot)) {
+        element.isDisconnected(wrappedEl, wrappedContainer)) {
       throw new StaleElementReferenceError(
           error.pprint`The element reference of ${el} stale: ` +
               "either the element is no longer attached to the DOM " +
@@ -730,11 +734,12 @@ element.toJson = function (obj, seenEls) {
 
 
 
+element.isDisconnected = function (el, container = {}) {
+  const {frame, shadowRoot} = container;
+  assert.defined(frame);
 
-
-element.isDisconnected = function (el, frame, shadowRoot = undefined) {
   
-  if (shadowRoot && frame.ShadowRoot) {
+  if (frame.ShadowRoot && shadowRoot) {
     if (el.compareDocumentPosition(shadowRoot) &
         DOCUMENT_POSITION_DISCONNECTED) {
       return true;
@@ -745,7 +750,9 @@ element.isDisconnected = function (el, frame, shadowRoot = undefined) {
     while (parent && !(parent instanceof frame.ShadowRoot)) {
       parent = parent.parentNode;
     }
-    return element.isDisconnected(shadowRoot.host, frame, parent);
+    return element.isDisconnected(
+        shadowRoot.host,
+        {frame: frame, shadowRoot: parent});
 
   
   } else {
@@ -989,7 +996,7 @@ element.getPointerInteractablePaintTree = function (el) {
   const win = doc.defaultView;
 
   
-  if (element.isDisconnected(el, win)) {
+  if (element.isDisconnected(el, {frame: win})) {
     return [];
   }
 
