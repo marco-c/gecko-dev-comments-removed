@@ -54,7 +54,7 @@ public:
   
   NS_DECL_NSIDOMATTR
 
-  virtual nsresult PreHandleEvent(EventChainPreVisitor& aVisitor) override;
+  virtual nsresult GetEventTargetParent(EventChainPreVisitor& aVisitor) override;
 
   
   void SetMap(nsDOMAttributeMap *aMap) override;

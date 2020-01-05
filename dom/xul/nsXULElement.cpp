@@ -1269,7 +1269,7 @@ nsXULElement::List(FILE* out, int32_t aIndent) const
 #endif
 
 nsresult
-nsXULElement::PreHandleEvent(EventChainPreVisitor& aVisitor)
+nsXULElement::GetEventTargetParent(EventChainPreVisitor& aVisitor)
 {
     aVisitor.mForceContentDispatch = true; 
     if (IsRootOfNativeAnonymousSubtree() &&
@@ -1344,7 +1344,7 @@ nsXULElement::PreHandleEvent(EventChainPreVisitor& aVisitor)
         }
     }
 
-    return nsStyledElement::PreHandleEvent(aVisitor);
+    return nsStyledElement::GetEventTargetParent(aVisitor);
 }
 
 

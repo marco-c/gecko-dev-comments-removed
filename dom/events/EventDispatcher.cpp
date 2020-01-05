@@ -243,7 +243,7 @@ public:
 
 
 
-  void PreHandleEvent(EventChainPreVisitor& aVisitor);
+  void GetEventTargetParent(EventChainPreVisitor& aVisitor);
 
   
 
@@ -317,10 +317,10 @@ EventTargetChainItem::EventTargetChainItem(EventTarget* aTarget)
 }
 
 void
-EventTargetChainItem::PreHandleEvent(EventChainPreVisitor& aVisitor)
+EventTargetChainItem::GetEventTargetParent(EventChainPreVisitor& aVisitor)
 {
   aVisitor.Reset();
-  Unused << mTarget->PreHandleEvent(aVisitor);
+  Unused << mTarget->GetEventTargetParent(aVisitor);
   SetForceContentDispatch(aVisitor.mForceContentDispatch);
   SetWantsWillHandleEvent(aVisitor.mWantsWillHandleEvent);
   SetMayHaveListenerManager(aVisitor.mMayHaveListenerManager);
@@ -407,8 +407,7 @@ EventTargetChainItem::HandleEventTargetChain(
   }
   aVisitor.mEvent->mFlags.mInBubblingPhase = false;
 
-  if (!aVisitor.mEvent->mFlags.mInSystemGroup &&
-      aVisitor.mEvent->IsAllowedToDispatchInSystemGroup()) {
+  if (!aVisitor.mEvent->mFlags.mInSystemGroup) {
     
     
     aVisitor.mEvent->mFlags.mPropagationStopped = false;
@@ -636,7 +635,7 @@ EventDispatcher::Dispatch(nsISupports* aTarget,
   nsEventStatus status = aEventStatus ? *aEventStatus : nsEventStatus_eIgnore;
   EventChainPreVisitor preVisitor(aPresContext, aEvent, aDOMEvent, status,
                                   isInAnon);
-  targetEtci->PreHandleEvent(preVisitor);
+  targetEtci->GetEventTargetParent(preVisitor);
 
   if (!preVisitor.mCanHandle && preVisitor.mAutomaticChromeDispatch && content) {
     
@@ -644,7 +643,7 @@ EventDispatcher::Dispatch(nsISupports* aTarget,
     targetEtci = EventTargetChainItemForChromeTarget(chain, content);
     NS_ENSURE_STATE(targetEtci);
     MOZ_ASSERT(&chain[0] == targetEtci);
-    targetEtci->PreHandleEvent(preVisitor);
+    targetEtci->GetEventTargetParent(preVisitor);
   }
   if (preVisitor.mCanHandle) {
     
@@ -671,7 +670,7 @@ EventDispatcher::Dispatch(nsISupports* aTarget,
         parentEtci->SetNewTarget(preVisitor.mEventTargetAtParent);
       }
 
-      parentEtci->PreHandleEvent(preVisitor);
+      parentEtci->GetEventTargetParent(preVisitor);
       if (preVisitor.mCanHandle) {
         topEtci = parentEtci;
       } else {
@@ -686,7 +685,7 @@ EventDispatcher::Dispatch(nsISupports* aTarget,
                                                              disabledTarget,
                                                              topEtci);
             if (parentEtci) {
-              parentEtci->PreHandleEvent(preVisitor);
+              parentEtci->GetEventTargetParent(preVisitor);
               if (preVisitor.mCanHandle) {
                 chain[0].SetNewTarget(parentTarget);
                 topEtci = parentEtci;

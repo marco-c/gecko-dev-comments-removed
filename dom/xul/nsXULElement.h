@@ -355,7 +355,7 @@ public:
     NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(nsXULElement, nsStyledElement)
 
     
-    virtual nsresult PreHandleEvent(
+    virtual nsresult GetEventTargetParent(
                        mozilla::EventChainPreVisitor& aVisitor) override;
 
     

@@ -38,7 +38,8 @@ public:
                  ArchiveReader* aReader);
 
   
-  virtual nsresult PreHandleEvent(EventChainPreVisitor& aVisitor) override;
+  virtual nsresult GetEventTargetParent(
+                     EventChainPreVisitor& aVisitor) override;
 
 public:
   

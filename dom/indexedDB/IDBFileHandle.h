@@ -117,7 +117,7 @@ public:
 
   
   virtual nsresult
-  PreHandleEvent(EventChainPreVisitor& aVisitor) override;
+  GetEventTargetParent(EventChainPreVisitor& aVisitor) override;
 
   
   virtual JSObject*

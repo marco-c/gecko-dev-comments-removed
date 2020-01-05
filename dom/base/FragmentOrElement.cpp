@@ -675,7 +675,7 @@ FindChromeAccessOnlySubtreeOwner(nsIContent* aContent)
 }
 
 nsresult
-nsIContent::PreHandleEvent(EventChainPreVisitor& aVisitor)
+nsIContent::GetEventTargetParent(EventChainPreVisitor& aVisitor)
 {
   
   aVisitor.mCanHandle = true;
