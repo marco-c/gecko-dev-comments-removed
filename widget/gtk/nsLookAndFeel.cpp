@@ -18,7 +18,7 @@
 
 #include <fontconfig/fontconfig.h>
 #include "gfxPlatformGtk.h"
-#include "nsScreenGtk.h"
+#include "ScreenHelperGTK.h"
 
 #include "gtkdrawing.h"
 #include "nsStyleConsts.h"
@@ -925,7 +925,7 @@ GetSystemFontInfo(GtkWidget *aWidget,
     
     
     
-    size *= nsScreenGtk::GetGtkMonitorScaleFactor();
+    size *= ScreenHelperGTK::GetGTKMonitorScaleFactor();
 
     
 

@@ -1,0 +1,49 @@
+
+
+
+
+
+
+#ifndef mozilla_widget_gtk_ScreenHelperGTK_h
+#define mozilla_widget_gtk_ScreenHelperGTK_h
+
+#include "mozilla/widget/ScreenManager.h"
+
+#include "prlink.h"
+#include "gdk/gdk.h"
+#ifdef MOZ_X11
+#include <X11/Xlib.h>
+#endif
+
+namespace mozilla {
+namespace widget {
+
+class ScreenHelperGTK final : public ScreenManager::Helper
+{
+public:
+  ScreenHelperGTK();
+  ~ScreenHelperGTK() override;
+
+  float GetSystemDefaultScale() override;
+
+  static gint GetGTKMonitorScaleFactor();
+
+#ifdef MOZ_X11
+  Atom NetWorkareaAtom() { return mNetWorkareaAtom; }
+#endif
+
+  
+  void RefreshScreens();
+
+private:
+  PRLibrary* mXineramalib;
+  GdkWindow* mRootWindow;
+#ifdef MOZ_X11
+  Atom mNetWorkareaAtom;
+#endif
+};
+
+} 
+} 
+
+#endif 
