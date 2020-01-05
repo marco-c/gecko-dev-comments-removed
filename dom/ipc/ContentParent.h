@@ -656,7 +656,7 @@ public:
   
   
   
-  nsresult AboutToLoadDocumentForChild(nsIChannel* aChannel);
+  nsresult AboutToLoadHttpFtpWyciwygDocumentForChild(nsIChannel* aChannel);
 
   nsresult TransmitPermissionsForPrincipal(nsIPrincipal* aPrincipal);
 
