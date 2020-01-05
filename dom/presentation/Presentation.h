@@ -47,6 +47,10 @@ public:
 
   already_AddRefed<PresentationReceiver> GetReceiver();
 
+  
+  void SetStartSessionUnsettled(bool aIsUnsettled);
+  bool IsStartSessionUnsettled() const;
+
 private:
   explicit Presentation(nsPIDOMWindowInner* aWindow);
 
@@ -57,6 +61,7 @@ private:
   RefPtr<PresentationRequest> mDefaultRequest;
   RefPtr<PresentationReceiver> mReceiver;
   nsCOMPtr<nsPIDOMWindowInner> mWindow;
+  bool mStartSessionUnsettled = false;
 };
 
 } 
