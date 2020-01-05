@@ -94,16 +94,10 @@ add_task(function* test_crash_in_previous_frameloader() {
       
       
       
-      
-      
-      
-      
-      
-      
-      setTimeout(() => {
+      addEventListener("pagehide", function() {
         dump("\nEt tu, Brute?\n");
         dies();
-      }, 0);
+      });
     });
 
     gBrowser.updateBrowserRemoteness(browser, false);
