@@ -18,7 +18,7 @@ use shared_lock::{SharedRwLock, SharedRwLockReadGuard, Locked, ToCssWithGuard};
 use std::fmt;
 use std::sync::Arc;
 use style_traits::ToCss;
-use stylesheets::{CssRuleType, MemoryHoleReporter, Stylesheet};
+use stylesheets::{CssRuleType, MemoryHoleReporter, Stylesheet, VendorPrefix};
 
 
 
@@ -239,6 +239,8 @@ pub struct KeyframesAnimation {
     pub steps: Vec<KeyframesStep>,
     
     pub properties_changed: Vec<TransitionProperty>,
+    
+    pub vendor_prefix: Option<VendorPrefix>,
 }
 
 
@@ -275,11 +277,14 @@ impl KeyframesAnimation {
     
     
     
-    pub fn from_keyframes(keyframes: &[Arc<Locked<Keyframe>>], guard: &SharedRwLockReadGuard)
+    pub fn from_keyframes(keyframes: &[Arc<Locked<Keyframe>>],
+                          vendor_prefix: Option<VendorPrefix>,
+                          guard: &SharedRwLockReadGuard)
                           -> Self {
         let mut result = KeyframesAnimation {
             steps: vec![],
             properties_changed: vec![],
+            vendor_prefix: vendor_prefix,
         };
 
         if keyframes.is_empty() {
