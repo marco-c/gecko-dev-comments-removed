@@ -21893,8 +21893,9 @@ OpenDatabaseOp::LoadDatabaseInformation(mozIStorageConnection* aConnection)
     return rv;
   }
 
-  if (mOrigin != origin) {
-    NS_WARNING("Origins don't match!");
+  
+  if (NS_WARN_IF(!QuotaManager::AreOriginsEqualOnDisk(mOrigin, origin))) {
+    return NS_ERROR_FILE_CORRUPTED;
   }
 
   int64_t version;
