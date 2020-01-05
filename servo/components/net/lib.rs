@@ -37,6 +37,7 @@ pub mod data_loader;
 pub mod image_cache_task;
 pub mod local_image_cache;
 pub mod resource_task;
+mod sniffer_task;
 
 
 pub mod fetch {
