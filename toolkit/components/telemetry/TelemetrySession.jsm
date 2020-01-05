@@ -672,7 +672,7 @@ var Impl = {
   _slowSQLStartup: {},
   _hasWindowRestoredObserver: false,
   _hasXulWindowVisibleObserver: false,
-  _startupIO : {},
+  _startupIO: {},
   
   
   _previousBuildId: null,
