@@ -62,15 +62,22 @@ public:
 
 
 
-class ServiceWorkerPrivate final : public nsIObserver
+class ServiceWorkerPrivate final
 {
   friend class KeepAliveToken;
 
 public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_CLASS(ServiceWorkerPrivate)
-  NS_DECL_NSIOBSERVER
+  NS_IMETHOD_(MozExternalRefCountType) AddRef();
+  NS_IMETHOD_(MozExternalRefCountType) Release();
+  NS_DECL_CYCLE_COLLECTION_NATIVE_CLASS(ServiceWorkerPrivate)
 
+  typedef mozilla::FalseType HasThreadSafeRefCnt;
+
+protected:
+  nsCycleCollectingAutoRefCnt mRefCnt;
+  NS_DECL_OWNINGTHREAD
+
+public:
   explicit ServiceWorkerPrivate(ServiceWorkerInfo* aInfo);
 
   nsresult
@@ -151,9 +158,6 @@ public:
   IsIdle() const;
 
   void
-  AddPendingWindow(Runnable* aPendingWindow);
-
-  void
   SetHandlesFetch(bool aValue);
 
 private:
@@ -228,8 +232,6 @@ private:
   
   
   nsTArray<RefPtr<WorkerRunnable>> mPendingFunctionalEvents;
-
-  nsTArray<Runnable*> pendingWindows;
 };
 
 } 

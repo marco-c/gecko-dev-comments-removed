@@ -485,12 +485,22 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(WebProgressListener)
 NS_INTERFACE_MAP_END
 
 class OpenWindowRunnable final : public Runnable
+                               , public nsIObserver
+                               , public nsSupportsWeakReference
 {
   RefPtr<PromiseWorkerProxy> mPromiseProxy;
   nsString mUrl;
   nsString mScope;
 
 public:
+  NS_DECL_ISUPPORTS_INHERITED
+  
+  
+  
+  
+  
+  
+
   OpenWindowRunnable(PromiseWorkerProxy* aPromiseProxy,
                      const nsAString& aUrl,
                      const nsAString& aScope)
@@ -501,6 +511,30 @@ public:
     MOZ_ASSERT(aPromiseProxy);
     MOZ_ASSERT(aPromiseProxy->GetWorkerPrivate());
     aPromiseProxy->GetWorkerPrivate()->AssertIsOnWorkerThread();
+  }
+
+  NS_IMETHOD
+  Observe(nsISupports* aSubject, const char* aTopic, const char16_t* ) override
+  {
+    AssertIsOnMainThread();
+
+    nsCString topic(aTopic);
+    if (!topic.Equals(NS_LITERAL_CSTRING("BrowserChrome:Ready"))) {
+      MOZ_ASSERT(false, "Unexpected topic.");
+      return NS_ERROR_FAILURE;
+    }
+
+    nsCOMPtr<nsIObserverService> os = services::GetObserverService();
+    NS_ENSURE_STATE(os);
+    os->RemoveObserver(this, "BrowserChrome:Ready");
+
+    RefPtr<ServiceWorkerPrivate> swp = GetServiceWorkerPrivate();
+    NS_ENSURE_STATE(swp);
+
+    MOZ_ALWAYS_SUCCEEDS(NS_DispatchToMainThread(this));
+    swp->RemoveISupports(static_cast<nsIObserver*>(this));
+
+    return NS_OK;
   }
 
   NS_IMETHOD
@@ -546,28 +580,11 @@ public:
         return NS_ERROR_FAILURE;
       }
 
-      RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
-      if (!swm) {
-        
-        return NS_ERROR_FAILURE;
-      }
-
-      nsCOMPtr<nsIPrincipal> principal = workerPrivate->GetPrincipal();
-      MOZ_ASSERT(principal);
-      RefPtr<ServiceWorkerRegistrationInfo> registration =
-        swm->GetRegistration(principal, NS_ConvertUTF16toUTF8(mScope));
-      if (NS_WARN_IF(!registration)) {
-        return NS_ERROR_FAILURE;
-      }
-      RefPtr<ServiceWorkerInfo> serviceWorkerInfo =
-        registration->GetServiceWorkerInfoById(workerPrivate->ServiceWorkerID());
-      if (NS_WARN_IF(!serviceWorkerInfo)) {
-        return NS_ERROR_FAILURE;
-      }
+      RefPtr<ServiceWorkerPrivate> swp = GetServiceWorkerPrivate();
+      NS_ENSURE_STATE(swp);
 
       nsCOMPtr<nsIWebProgressListener> listener =
-        new WebProgressListener(mPromiseProxy, serviceWorkerInfo->WorkerPrivate(),
-                                window, baseURI);
+        new WebProgressListener(mPromiseProxy, swp, window, baseURI);
 
       rv = webProgress->AddProgressListener(listener,
                                             nsIWebProgress::NOTIFY_STATE_DOCUMENT);
@@ -579,36 +596,17 @@ public:
       
       
       
+      RefPtr<ServiceWorkerPrivate> swp = GetServiceWorkerPrivate();
+      NS_ENSURE_STATE(swp);
+
       nsCOMPtr<nsIObserverService> os = services::GetObserverService();
       NS_ENSURE_STATE(os);
 
-      WorkerPrivate* workerPrivate = mPromiseProxy->GetWorkerPrivate();
-      MOZ_ASSERT(workerPrivate);
+      rv = os->AddObserver(this, "BrowserChrome:Ready",  true);
+      NS_ENSURE_SUCCESS(rv, rv);
 
-      RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
-      if (!swm) {
-        
-        return NS_ERROR_FAILURE;
-      }
+      swp->StoreISupports(static_cast<nsIObserver*>(this));
 
-      nsCOMPtr<nsIPrincipal> principal = workerPrivate->GetPrincipal();
-      MOZ_ASSERT(principal);
-
-      RefPtr<ServiceWorkerRegistrationInfo> registration =
-        swm->GetRegistration(principal, NS_ConvertUTF16toUTF8(mScope));
-      if (NS_WARN_IF(!registration)) {
-        return NS_ERROR_FAILURE;
-      }
-
-      RefPtr<ServiceWorkerInfo> serviceWorkerInfo =
-        registration->GetServiceWorkerInfoById(workerPrivate->ServiceWorkerID());
-      if (NS_WARN_IF(!serviceWorkerInfo)) {
-        return NS_ERROR_FAILURE;
-      }
-
-      os->AddObserver(static_cast<nsIObserver*>(serviceWorkerInfo->WorkerPrivate()),
-                      "BrowserChrome:Ready", true);
-      serviceWorkerInfo->WorkerPrivate()->AddPendingWindow(this);
       return NS_OK;
     }
 #endif
@@ -622,6 +620,41 @@ public:
   }
 
 private:
+  ~OpenWindowRunnable()
+  { }
+
+  ServiceWorkerPrivate*
+  GetServiceWorkerPrivate() const
+  {
+    AssertIsOnMainThread();
+
+    RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
+    if (!swm) {
+      
+      return nullptr;
+    }
+
+    WorkerPrivate* workerPrivate = mPromiseProxy->GetWorkerPrivate();
+    MOZ_ASSERT(workerPrivate);
+
+    nsCOMPtr<nsIPrincipal> principal = workerPrivate->GetPrincipal();
+    MOZ_DIAGNOSTIC_ASSERT(principal);
+
+    RefPtr<ServiceWorkerRegistrationInfo> registration =
+      swm->GetRegistration(principal, NS_ConvertUTF16toUTF8(mScope));
+    if (NS_WARN_IF(!registration)) {
+      return nullptr;
+    }
+
+    RefPtr<ServiceWorkerInfo> serviceWorkerInfo =
+      registration->GetServiceWorkerInfoById(workerPrivate->ServiceWorkerID());
+    if (NS_WARN_IF(!serviceWorkerInfo)) {
+      return nullptr;
+    }
+
+    return serviceWorkerInfo->WorkerPrivate();
+  }
+
   nsresult
   OpenWindow(nsPIDOMWindowOuter** aWindow)
   {
@@ -729,6 +762,16 @@ private:
     return NS_OK;
   }
 };
+
+NS_IMPL_ADDREF_INHERITED(OpenWindowRunnable, Runnable)                                    \
+NS_IMPL_RELEASE_INHERITED(OpenWindowRunnable, Runnable)
+
+NS_INTERFACE_MAP_BEGIN(OpenWindowRunnable)
+NS_INTERFACE_MAP_ENTRY(nsISupportsWeakReference)
+NS_INTERFACE_MAP_ENTRY(nsIObserver)
+NS_INTERFACE_MAP_ENTRY(nsIRunnable)
+NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsIObserver)
+NS_INTERFACE_MAP_END
 
 } 
 
