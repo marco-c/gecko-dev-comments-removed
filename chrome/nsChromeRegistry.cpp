@@ -650,6 +650,11 @@ nsChromeRegistry::MustLoadURLRemotely(nsIURI *aURI, bool *aResult)
 bool
 nsChromeRegistry::GetDirectionForLocale(const nsACString& aLocale)
 {
+#ifdef ENABLE_INTL_API
+  nsAutoCString locale(aLocale);
+  SanitizeForBCP47(locale);
+  return uloc_isRightToLeft(locale.get());
+#else
   
   
   
@@ -670,6 +675,7 @@ nsChromeRegistry::GetDirectionForLocale(const nsACString& aLocale)
   }
 
   return dir.EqualsLiteral("rtl");
+#endif
 }
 
 NS_IMETHODIMP_(bool)
