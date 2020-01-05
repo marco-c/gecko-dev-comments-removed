@@ -167,6 +167,14 @@ XPCOM_API(nsresult) NS_NewNativeLocalFile(const nsACString& aPath,
                                           bool aFollowLinks,
                                           nsIFile** aResult);
 
+
+
+
+class NS_ConvertUTF16toUTF8;
+nsresult NS_NewNativeLocalFile(const NS_ConvertUTF16toUTF8& aPath,
+                               bool aFollowLinks,
+                               nsIFile** aResult) = delete;
+
 #endif
 
 
