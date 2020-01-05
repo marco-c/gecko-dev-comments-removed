@@ -179,11 +179,10 @@ add_task(function* test_sendNativeMessage() {
     let MSG = {test: "hello world"};
 
     
-    await browser.runtime.sendNativeMessage("nonexistent", MSG).then(() => {
-      browser.test.fail("sendNativeMessage() to a nonexistent app should have failed");
-    }, err => {
-      browser.test.succeed("sendNativeMessage() to a nonexistent app failed");
-    });
+    await browser.test.assertRejects(
+      browser.runtime.sendNativeMessage("nonexistent", MSG),
+      /Attempt to postMessage on disconnected port/,
+      "sendNativeMessage() to a nonexistent app failed");
 
     
     let reply = await browser.runtime.sendNativeMessage("echo", MSG);
