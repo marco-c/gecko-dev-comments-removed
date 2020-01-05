@@ -180,6 +180,10 @@ private:
   ParentLayerCoord mPreviousSpan;
 
   
+  ParentLayerCoord mFocusChange;
+  ParentLayerPoint mPreviousFocus;
+
+  
 
 
   MultiTouchInput mLastTouchInput;
