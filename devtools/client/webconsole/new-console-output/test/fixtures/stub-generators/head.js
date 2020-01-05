@@ -43,7 +43,7 @@ function getCleanedPacket(key, packet) {
   
   
   let res;
-  if(stubPackets.has(safeKey)) {
+  if (stubPackets.has(safeKey)) {
 
     let existingPacket = stubPackets.get(safeKey);
     res = Object.assign({}, packet, {
@@ -51,7 +51,7 @@ function getCleanedPacket(key, packet) {
     });
 
     
-    if(res.timestamp) {
+    if (res.timestamp) {
       res.timestamp = existingPacket.timestamp;
     }
 
@@ -70,7 +70,7 @@ function getCleanedPacket(key, packet) {
         }
       }
 
-      if(Array.isArray(res.message.arguments)) {
+      if (Array.isArray(res.message.arguments)) {
         
         res.message.arguments.forEach((argument, i) => {
           if (argument && argument.actor) {

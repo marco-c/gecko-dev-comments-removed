@@ -28,6 +28,10 @@ describe("PageError component:", () => {
   it("renders", () => {
     const message = stubPreparedMessages.get("ReferenceError: asdf is not defined");
     const wrapper = render(PageError({ message, serviceContainer }));
+    const L10n = require("devtools/client/webconsole/new-console-output/test/fixtures/L10n");
+    const { timestampString } = new L10n();
+
+    expect(wrapper.find(".timestamp").text()).toBe(timestampString(message.timeStamp));
 
     expect(wrapper.find(".message-body").text())
       .toBe("ReferenceError: asdf is not defined[Learn More]");
