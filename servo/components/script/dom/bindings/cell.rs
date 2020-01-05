@@ -94,6 +94,13 @@ impl<T> DOMRefCell<T> {
             _ => None,
         }
     }
+
+    
+    
+    pub fn borrow_mut_for_layout(&self) -> RefMut<T> {
+        debug_assert!(task_state::get().is_layout());
+        self.value.borrow_mut()
+    }
 }
 
 impl<T: JSTraceable> JSTraceable for DOMRefCell<T> {

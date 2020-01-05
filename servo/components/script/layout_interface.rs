@@ -174,7 +174,7 @@ pub struct ScriptReflow {
     
     pub reflow_info: Reflow,
     
-    pub document_root: TrustedNodeAddress,
+    pub document: TrustedNodeAddress,
     
     pub script_chan: Sender<ConstellationControlMsg>,
     
