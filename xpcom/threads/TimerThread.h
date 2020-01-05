@@ -65,7 +65,6 @@ private:
   
   int32_t AddTimerInternal(nsTimerImpl* aTimer);
   bool    RemoveTimerInternal(nsTimerImpl* aTimer);
-  void    ReleaseTimerInternal(nsTimerImpl* aTimer);
 
   already_AddRefed<nsTimerImpl> PostTimerEvent(already_AddRefed<nsTimerImpl> aTimerRef);
 
@@ -77,7 +76,7 @@ private:
   bool mNotified;
   bool mSleeping;
 
-  nsTArray<nsTimerImpl*> mTimers;
+  nsTArray<RefPtr<nsTimerImpl>> mTimers;
 };
 
 struct TimerAdditionComparator
