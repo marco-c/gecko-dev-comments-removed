@@ -190,7 +190,13 @@ private:
   nsUrlClassifierDBServiceWorker(nsUrlClassifierDBServiceWorker&);
 
   
-  nsresult ApplyUpdate();
+  nsresult ApplyUpdatesBackground(nsACString& aFailedTableName);
+
+  
+  nsresult ApplyUpdatesForeground(nsresult aBackgroundRv,
+                                 const nsACString& aFailedTableName);
+
+  nsresult NotifyUpdateObserver(nsresult aUpdateStatus);
 
   
   void ResetStream();

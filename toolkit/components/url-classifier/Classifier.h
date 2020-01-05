@@ -73,6 +73,28 @@ public:
   
 
 
+
+
+
+  nsresult ApplyUpdatesBackground(nsTArray<TableUpdate*>* aUpdates,
+                                  nsACString& aFailedTableName);
+
+  
+
+
+
+
+
+
+
+
+
+  nsresult ApplyUpdatesForeground(nsresult aBackgroundRv,
+                                  const nsACString& aFailedTableName);
+
+  
+
+
   nsresult ApplyFullHashes(nsTArray<TableUpdate*>* aUpdates);
 
   void SetLastUpdateTime(const nsACString& aTableName, uint64_t updateTime);
@@ -119,7 +141,6 @@ public:
 private:
   void DropStores();
   void DeleteTables(nsIFile* aDirectory, const nsTArray<nsCString>& aTables);
-  void AbortUpdateAndReset(const nsCString& aTable);
 
   nsresult CreateStoreDirectory();
   nsresult SetupPathNames();
