@@ -228,6 +228,37 @@ MainThreadHandoff::Release()
 }
 
 HRESULT
+MainThreadHandoff::FixIServiceProvider(ICallFrame* aFrame)
+{
+  MOZ_ASSERT(aFrame);
+
+  CALLFRAMEPARAMINFO iidOutParamInfo;
+  HRESULT hr = aFrame->GetParamInfo(1, &iidOutParamInfo);
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  VARIANT varIfaceOut;
+  hr = aFrame->GetParam(2, &varIfaceOut);
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  MOZ_ASSERT(varIfaceOut.vt == (VT_UNKNOWN | VT_BYREF));
+  if (varIfaceOut.vt != (VT_UNKNOWN | VT_BYREF)) {
+    return DISP_E_BADVARTYPE;
+  }
+
+  IID** iidOutParam = reinterpret_cast<IID**>(
+                        static_cast<BYTE*>(aFrame->GetStackLocation()) +
+                        iidOutParamInfo.stackOffset);
+
+  return OnWalkInterface(**iidOutParam,
+                         reinterpret_cast<void**>(varIfaceOut.ppunkVal), FALSE,
+                         TRUE);
+}
+
+HRESULT
 MainThreadHandoff::OnCall(ICallFrame* aFrame)
 {
   
@@ -281,14 +312,25 @@ MainThreadHandoff::OnCall(ICallFrame* aFrame)
     return S_OK;
   }
 
-  
-  
-  
-  
-  
-  
-  const ArrayData* arrayData = FindArrayData(iid, method);
-  if (arrayData) {
+  if (iid == IID_IServiceProvider) {
+    
+    
+    
+    MOZ_ASSERT(method == 3);
+    
+    
+    
+    hr = FixIServiceProvider(aFrame);
+    if (FAILED(hr)) {
+      return hr;
+    }
+  } else if (const ArrayData* arrayData = FindArrayData(iid, method)) {
+    
+    
+    
+    
+    
+    
     hr = FixArrayElements(aFrame, *arrayData);
     if (FAILED(hr)) {
       return hr;
