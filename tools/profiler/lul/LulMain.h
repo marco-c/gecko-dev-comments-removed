@@ -163,7 +163,8 @@ struct UnwindRegs {
 
 
 
-static const size_t N_STACK_BYTES = 32768;
+
+static const size_t N_STACK_BYTES = 160*1024;
 
 
 struct StackImage {

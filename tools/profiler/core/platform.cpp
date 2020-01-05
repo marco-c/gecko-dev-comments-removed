@@ -946,6 +946,32 @@ DoNativeBacktrace(PS::LockRef aLock, ProfileBuffer* aBuffer,
   
   
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
   lul::StackImage stackImg;
 
   {
