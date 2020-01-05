@@ -14,6 +14,10 @@ const {
   formDataURI,
 } = require("./utils/request-utils");
 const {
+  onFirefoxConnect,
+  onFirefoxDisconnect,
+} = require("./utils/client");
+const {
   getRequestById,
   getDisplayedRequestById,
 } = require("./selectors/index");
@@ -53,7 +57,8 @@ var NetMonitorController = {
     }
     this._shutdown = new Promise(async (resolve) => {
       gStore.dispatch(Actions.batchReset());
-      this.TargetEventsHandler.disconnect();
+      onFirefoxDisconnect(this._target);
+      this._target.off("close", this._onTabDetached);
       this.NetworkEventsHandler.disconnect();
       await this.disconnect();
       resolve();
@@ -75,6 +80,8 @@ var NetMonitorController = {
     if (this._connection) {
       return this._connection;
     }
+    this._onTabDetached = this.shutdownNetMonitor.bind(this);
+
     this._connection = new Promise(async (resolve) => {
       
       
@@ -95,7 +102,8 @@ var NetMonitorController = {
       };
       await connectTimeline();
 
-      this.TargetEventsHandler.connect();
+      onFirefoxConnect(this._target);
+      this._target.on("close", this._onTabDetached);
       this.NetworkEventsHandler.connect();
 
       window.emit(EVENTS.CONNECTED);
@@ -354,78 +362,6 @@ var NetMonitorController = {
       window.on(EVENTS.RECEIVED_EVENT_TIMINGS, onTimings);
     });
   },
-};
-
-
-
-
-function TargetEventsHandler() {
-  this._onTabNavigated = this._onTabNavigated.bind(this);
-  this._onTabDetached = this._onTabDetached.bind(this);
-}
-
-TargetEventsHandler.prototype = {
-  get target() {
-    return NetMonitorController._target;
-  },
-
-  
-
-
-  connect: function () {
-    this.target.on("close", this._onTabDetached);
-    this.target.on("navigate", this._onTabNavigated);
-    this.target.on("will-navigate", this._onTabNavigated);
-  },
-
-  
-
-
-  disconnect: function () {
-    if (!this.target) {
-      return;
-    }
-    this.target.off("close", this._onTabDetached);
-    this.target.off("navigate", this._onTabNavigated);
-    this.target.off("will-navigate", this._onTabNavigated);
-  },
-
-  
-
-
-
-
-
-
-
-  _onTabNavigated: function (type, packet) {
-    switch (type) {
-      case "will-navigate": {
-        
-        if (!Services.prefs.getBoolPref("devtools.webconsole.persistlog")) {
-          gStore.dispatch(Actions.batchReset());
-          gStore.dispatch(Actions.clearRequests());
-        } else {
-          
-          gStore.dispatch(Actions.clearTimingMarkers());
-        }
-
-        window.emit(EVENTS.TARGET_WILL_NAVIGATE);
-        break;
-      }
-      case "navigate": {
-        window.emit(EVENTS.TARGET_DID_NAVIGATE);
-        break;
-      }
-    }
-  },
-
-  
-
-
-  _onTabDetached: function () {
-    NetMonitorController.shutdownNetMonitor();
-  }
 };
 
 
@@ -889,7 +825,9 @@ NetworkEventsHandler.prototype = {
   }
 };
 
-NetMonitorController.TargetEventsHandler = new TargetEventsHandler();
+
+
+
 NetMonitorController.NetworkEventsHandler = new NetworkEventsHandler();
 window.gNetwork = NetMonitorController.NetworkEventsHandler;
 
