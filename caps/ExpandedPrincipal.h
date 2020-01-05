@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsExpandedPrincipal_h
-#define nsExpandedPrincipal_h
+#ifndef ExpandedPrincipal_h
+#define ExpandedPrincipal_h
 
 #include "nsCOMPtr.h"
 #include "nsJSPrincipals.h"
@@ -12,19 +12,20 @@
 #include "nsNetUtil.h"
 #include "mozilla/BasePrincipal.h"
 
-class nsExpandedPrincipal : public nsIExpandedPrincipal
-                          , public mozilla::BasePrincipal
+class ExpandedPrincipal : public nsIExpandedPrincipal
+                        , public mozilla::BasePrincipal
 {
-  nsExpandedPrincipal(nsTArray<nsCOMPtr<nsIPrincipal>> &aWhiteList,
-                      const mozilla::OriginAttributes& aAttrs);
+  ExpandedPrincipal(nsTArray<nsCOMPtr<nsIPrincipal>> &aWhiteList,
+                    const mozilla::OriginAttributes& aAttrs);
 
 public:
-  static already_AddRefed<nsExpandedPrincipal>
+  static already_AddRefed<ExpandedPrincipal>
   Create(nsTArray<nsCOMPtr<nsIPrincipal>>& aWhiteList,
          const mozilla::OriginAttributes& aAttrs);
 
   NS_DECL_NSIEXPANDEDPRINCIPAL
   NS_DECL_NSISERIALIZABLE
+
   NS_IMETHOD_(MozExternalRefCountType) AddRef() override { return nsJSPrincipals::AddRef(); };
   NS_IMETHOD_(MozExternalRefCountType) Release() override { return nsJSPrincipals::Release(); };
   NS_IMETHOD QueryInterface(REFNSIID aIID, void** aInstancePtr) override;
@@ -39,9 +40,11 @@ public:
   nsresult GetOriginInternal(nsACString& aOrigin) override;
 
 protected:
-  virtual ~nsExpandedPrincipal();
+  virtual ~ExpandedPrincipal();
 
-  bool SubsumesInternal(nsIPrincipal* aOther, DocumentDomainConsideration aConsideration) override;
+  bool SubsumesInternal(nsIPrincipal* aOther,
+                        DocumentDomainConsideration aConsideration) override;
+
   bool MayLoadInternal(nsIURI* aURI) override;
 
 private:

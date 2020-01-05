@@ -4,19 +4,19 @@
 
 
 
-#include "nsExpandedPrincipal.h"
+#include "ExpandedPrincipal.h"
 #include "nsIClassInfoImpl.h"
 
 using namespace mozilla;
 
-NS_IMPL_CLASSINFO(nsExpandedPrincipal, nullptr, nsIClassInfo::MAIN_THREAD_ONLY,
+NS_IMPL_CLASSINFO(ExpandedPrincipal, nullptr, nsIClassInfo::MAIN_THREAD_ONLY,
                   NS_EXPANDEDPRINCIPAL_CID)
-NS_IMPL_QUERY_INTERFACE_CI(nsExpandedPrincipal,
+NS_IMPL_QUERY_INTERFACE_CI(ExpandedPrincipal,
                            nsIPrincipal,
                            nsIExpandedPrincipal)
-NS_IMPL_CI_INTERFACE_GETTER(nsExpandedPrincipal,
-                             nsIPrincipal,
-                             nsIExpandedPrincipal)
+NS_IMPL_CI_INTERFACE_GETTER(ExpandedPrincipal,
+                            nsIPrincipal,
+                            nsIExpandedPrincipal)
 
 struct OriginComparator
 {
@@ -43,8 +43,8 @@ struct OriginComparator
   }
 };
 
-nsExpandedPrincipal::nsExpandedPrincipal(nsTArray<nsCOMPtr<nsIPrincipal>> &aWhiteList,
-                                         const OriginAttributes& aAttrs)
+ExpandedPrincipal::ExpandedPrincipal(nsTArray<nsCOMPtr<nsIPrincipal>> &aWhiteList,
+                                     const OriginAttributes& aAttrs)
   : BasePrincipal(eExpandedPrincipal)
 {
   
@@ -56,33 +56,33 @@ nsExpandedPrincipal::nsExpandedPrincipal(nsTArray<nsCOMPtr<nsIPrincipal>> &aWhit
   mOriginAttributes = aAttrs;
 }
 
-nsExpandedPrincipal::~nsExpandedPrincipal()
+ExpandedPrincipal::~ExpandedPrincipal()
 { }
 
-already_AddRefed<nsExpandedPrincipal>
-nsExpandedPrincipal::Create(nsTArray<nsCOMPtr<nsIPrincipal>>& aWhiteList,
-                            const OriginAttributes& aAttrs)
+already_AddRefed<ExpandedPrincipal>
+ExpandedPrincipal::Create(nsTArray<nsCOMPtr<nsIPrincipal>>& aWhiteList,
+                          const OriginAttributes& aAttrs)
 {
-  RefPtr<nsExpandedPrincipal> ep = new nsExpandedPrincipal(aWhiteList, aAttrs);
+  RefPtr<ExpandedPrincipal> ep = new ExpandedPrincipal(aWhiteList, aAttrs);
   ep->FinishInit();
   return ep.forget();
 }
 
 NS_IMETHODIMP
-nsExpandedPrincipal::GetDomain(nsIURI** aDomain)
+ExpandedPrincipal::GetDomain(nsIURI** aDomain)
 {
   *aDomain = nullptr;
   return NS_OK;
 }
 
 NS_IMETHODIMP
-nsExpandedPrincipal::SetDomain(nsIURI* aDomain)
+ExpandedPrincipal::SetDomain(nsIURI* aDomain)
 {
   return NS_OK;
 }
 
 nsresult
-nsExpandedPrincipal::GetOriginInternal(nsACString& aOrigin)
+ExpandedPrincipal::GetOriginInternal(nsACString& aOrigin)
 {
   aOrigin.AssignLiteral("[Expanded Principal [");
   for (size_t i = 0; i < mPrincipals.Length(); ++i) {
@@ -101,8 +101,8 @@ nsExpandedPrincipal::GetOriginInternal(nsACString& aOrigin)
 }
 
 bool
-nsExpandedPrincipal::SubsumesInternal(nsIPrincipal* aOther,
-                                      BasePrincipal::DocumentDomainConsideration aConsideration)
+ExpandedPrincipal::SubsumesInternal(nsIPrincipal* aOther,
+                                    BasePrincipal::DocumentDomainConsideration aConsideration)
 {
   
   
@@ -133,7 +133,7 @@ nsExpandedPrincipal::SubsumesInternal(nsIPrincipal* aOther,
 }
 
 bool
-nsExpandedPrincipal::MayLoadInternal(nsIURI* uri)
+ExpandedPrincipal::MayLoadInternal(nsIURI* uri)
 {
   for (uint32_t i = 0; i < mPrincipals.Length(); ++i){
     if (BasePrincipal::Cast(mPrincipals[i])->MayLoadInternal(uri)) {
@@ -145,40 +145,40 @@ nsExpandedPrincipal::MayLoadInternal(nsIURI* uri)
 }
 
 NS_IMETHODIMP
-nsExpandedPrincipal::GetHashValue(uint32_t* result)
+ExpandedPrincipal::GetHashValue(uint32_t* result)
 {
   MOZ_CRASH("extended principal should never be used as key in a hash map");
 }
 
 NS_IMETHODIMP
-nsExpandedPrincipal::GetURI(nsIURI** aURI)
+ExpandedPrincipal::GetURI(nsIURI** aURI)
 {
   *aURI = nullptr;
   return NS_OK;
 }
 
 NS_IMETHODIMP
-nsExpandedPrincipal::GetWhiteList(nsTArray<nsCOMPtr<nsIPrincipal> >** aWhiteList)
+ExpandedPrincipal::GetWhiteList(nsTArray<nsCOMPtr<nsIPrincipal> >** aWhiteList)
 {
   *aWhiteList = &mPrincipals;
   return NS_OK;
 }
 
 NS_IMETHODIMP
-nsExpandedPrincipal::GetBaseDomain(nsACString& aBaseDomain)
+ExpandedPrincipal::GetBaseDomain(nsACString& aBaseDomain)
 {
   return NS_ERROR_NOT_AVAILABLE;
 }
 
 NS_IMETHODIMP
-nsExpandedPrincipal::GetAddonId(nsAString& aAddonId)
+ExpandedPrincipal::GetAddonId(nsAString& aAddonId)
 {
   aAddonId.Truncate();
   return NS_OK;
 };
 
 bool
-nsExpandedPrincipal::AddonHasPermission(const nsAString& aPerm)
+ExpandedPrincipal::AddonHasPermission(const nsAString& aPerm)
 {
   for (size_t i = 0; i < mPrincipals.Length(); ++i) {
     if (BasePrincipal::Cast(mPrincipals[i])->AddonHasPermission(aPerm)) {
@@ -189,7 +189,7 @@ nsExpandedPrincipal::AddonHasPermission(const nsAString& aPerm)
 }
 
 nsresult
-nsExpandedPrincipal::GetScriptLocation(nsACString& aStr)
+ExpandedPrincipal::GetScriptLocation(nsACString& aStr)
 {
   aStr.Assign("[Expanded Principal [");
   for (size_t i = 0; i < mPrincipals.Length(); ++i) {
@@ -213,13 +213,13 @@ nsExpandedPrincipal::GetScriptLocation(nsACString& aStr)
 
 
 NS_IMETHODIMP
-nsExpandedPrincipal::Read(nsIObjectInputStream* aStream)
+ExpandedPrincipal::Read(nsIObjectInputStream* aStream)
 {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
 NS_IMETHODIMP
-nsExpandedPrincipal::Write(nsIObjectOutputStream* aStream)
+ExpandedPrincipal::Write(nsIObjectOutputStream* aStream)
 {
   return NS_ERROR_NOT_IMPLEMENTED;
 }

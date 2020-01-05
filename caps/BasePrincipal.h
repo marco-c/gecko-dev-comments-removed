@@ -19,7 +19,7 @@ class nsIObjectOutputStream;
 class nsIObjectInputStream;
 class nsIURI;
 
-class nsExpandedPrincipal;
+class ExpandedPrincipal;
 
 namespace mozilla {
 
@@ -283,7 +283,7 @@ protected:
   
   
   virtual bool MayLoadInternal(nsIURI* aURI) = 0;
-  friend class ::nsExpandedPrincipal;
+  friend class ::ExpandedPrincipal;
 
   
   
