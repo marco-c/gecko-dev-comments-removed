@@ -12,7 +12,6 @@ const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 const myScope = this;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm", this);
-Cu.import("resource://gre/modules/Task.jsm");
 Cu.import("resource://gre/modules/Log.jsm");
 Cu.import("resource://gre/modules/Preferences.jsm");
 Cu.import("resource://gre/modules/PromiseUtils.jsm");
@@ -518,7 +517,7 @@ EnvironmentAddonBuilder.prototype = {
 
 
 
-  _updateAddons: Task.async(function* () {
+  async _updateAddons() {
     this._environment._log.trace("_updateAddons");
     let personaId = null;
     if (AppConstants.platform !== "gonk") {
@@ -529,10 +528,10 @@ EnvironmentAddonBuilder.prototype = {
     }
 
     let addons = {
-      activeAddons: yield this._getActiveAddons(),
-      theme: yield this._getActiveTheme(),
+      activeAddons: await this._getActiveAddons(),
+      theme: await this._getActiveTheme(),
       activePlugins: this._getActivePlugins(),
-      activeGMPlugins: yield this._getActiveGMPlugins(),
+      activeGMPlugins: await this._getActiveGMPlugins(),
       activeExperiment: this._getActiveExperiment(),
       persona: personaId,
     };
@@ -549,15 +548,15 @@ EnvironmentAddonBuilder.prototype = {
     }
 
     return result;
-  }),
+  },
 
   
 
 
 
-  _getActiveAddons: Task.async(function* () {
+  async _getActiveAddons() {
     
-    let allAddons = yield AddonManager.getAddonsByTypes(["extension", "service"]);
+    let allAddons = await AddonManager.getAddonsByTypes(["extension", "service"]);
 
     let activeAddons = {};
     for (let addon of allAddons) {
@@ -600,15 +599,15 @@ EnvironmentAddonBuilder.prototype = {
     }
 
     return activeAddons;
-  }),
+  },
 
   
 
 
 
-  _getActiveTheme: Task.async(function* () {
+  async _getActiveTheme() {
     
-    let themes = yield AddonManager.getAddonsByTypes(["theme"]);
+    let themes = await AddonManager.getAddonsByTypes(["theme"]);
 
     let activeTheme = {};
     
@@ -635,7 +634,7 @@ EnvironmentAddonBuilder.prototype = {
     }
 
     return activeTheme;
-  }),
+  },
 
   
 
@@ -682,9 +681,9 @@ EnvironmentAddonBuilder.prototype = {
 
 
 
-  _getActiveGMPlugins: Task.async(function* () {
+  async _getActiveGMPlugins() {
     
-    let allPlugins = yield AddonManager.getAddonsByTypes(["plugin"]);
+    let allPlugins = await AddonManager.getAddonsByTypes(["plugin"]);
 
     let activeGMPlugins = {};
     for (let plugin of allPlugins) {
@@ -706,7 +705,7 @@ EnvironmentAddonBuilder.prototype = {
     }
 
     return activeGMPlugins;
-  }),
+  },
 
   
 
@@ -1198,12 +1197,12 @@ EnvironmentCache.prototype = {
 
 
 
-  _updateProfile: Task.async(function* () {
+  async _updateProfile() {
     const logger = Log.repository.getLoggerWithMessagePrefix(LOGGER_NAME, "ProfileAge - ");
     let profileAccessor = new ProfileAge(null, logger);
 
-    let creationDate = yield profileAccessor.created;
-    let resetDate = yield profileAccessor.reset;
+    let creationDate = await profileAccessor.created;
+    let resetDate = await profileAccessor.reset;
 
     this._currentEnvironment.profile.creationDate =
       Utils.millisecondsToDays(creationDate);
@@ -1211,14 +1210,14 @@ EnvironmentCache.prototype = {
       this._currentEnvironment.profile.resetDate =
         Utils.millisecondsToDays(resetDate);
     }
-  }),
+  },
 
   
 
 
 
-  _updateAttribution: Task.async(function* () {
-    let data = yield AttributionCode.getAttrDataAsync();
+  async _updateAttribution() {
+    let data = await AttributionCode.getAttrDataAsync();
     if (Object.keys(data).length > 0) {
       this._currentEnvironment.settings.attribution = {};
       for (let key in data) {
@@ -1226,7 +1225,7 @@ EnvironmentCache.prototype = {
           limitStringToLength(data[key], MAX_ATTRIBUTION_STRING_LENGTH);
       }
     }
-  }),
+  },
 
   
 
