@@ -41,7 +41,6 @@ WebGL1Context::WrapObject(JSContext* cx, JS::Handle<JSObject*> givenProto)
 bool
 WebGL1Context::ValidateQueryTarget(GLenum target, const char* info)
 {
-    
     return false;
 }
 
