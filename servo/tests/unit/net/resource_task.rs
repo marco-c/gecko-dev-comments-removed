@@ -11,7 +11,6 @@ use std::collections::HashMap;
 use std::sync::mpsc::channel;
 use url::Url;
 
-
 #[test]
 fn test_exit() {
     let resource_task = new_resource_task("".to_owned(), None);
@@ -23,7 +22,7 @@ fn test_bad_scheme() {
     let resource_task = new_resource_task("".to_owned(), None);
     let (start_chan, start) = ipc::channel().unwrap();
     let url = Url::parse("bogus://whatever").unwrap();
-    resource_task.send(ControlMsg::Load(LoadData::new(url, None), LoadConsumer::Channel(start_chan))).unwrap();
+    resource_task.send(ControlMsg::Load(LoadData::new(url, None), LoadConsumer::Channel(start_chan), None)).unwrap();
     let response = start.recv().unwrap();
     match response.progress_port.recv().unwrap() {
       ProgressMsg::Done(result) => { assert!(result.is_err()) }
@@ -170,4 +169,58 @@ fn test_replace_hosts() {
 
     let url = Url::parse("http://a.foo.bar.com").unwrap();
     assert_eq!(host_replacement(host_table, &url).domain().unwrap(), "a.foo.bar.com");
+}
+
+#[test]
+fn test_cancelled_listener() {
+    use std::io::Write;
+    use std::net::TcpListener;
+    use std::thread;
+
+    
+    let header = vec!["HTTP/1.1 200 OK",
+                      "Server: test-server",
+                      "Content-Type: text/plain",
+                      "\r\n"];
+    let body = vec!["Yay!", "We're doomed!"];
+
+    
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    let port = listener.local_addr().unwrap().port();
+    let (body_sender, body_receiver) = channel();
+    thread::spawn(move || {
+        if let Ok((mut stream, _)) = listener.accept() {
+            
+            let _ = stream.write(header.join("\r\n").as_bytes());
+            
+            
+            let body_vec: Vec<&str> = body_receiver.recv().unwrap();
+            let _ = stream.write(body_vec.join("\r\n").as_bytes());
+        }
+    });
+
+    let resource_task = new_resource_task("".to_owned(), None);
+    let (sender, receiver) = ipc::channel().unwrap();
+    let (id_sender, id_receiver) = ipc::channel().unwrap();
+    let (sync_sender, sync_receiver) = ipc::channel().unwrap();
+    let url = Url::parse(&format!("http://127.0.0.1:{}", port)).unwrap();
+
+    resource_task.send(ControlMsg::Load(LoadData::new(url, None),
+                                        LoadConsumer::Channel(sender),
+                                        Some(id_sender))).unwrap();
+    
+    let res_id = id_receiver.recv().unwrap();
+    resource_task.send(ControlMsg::Cancel(res_id)).unwrap();
+    
+    resource_task.send(ControlMsg::Synchronize(sync_sender)).unwrap();
+    let _ = sync_receiver.recv();
+    
+    
+    let _ = body_sender.send(body);
+    let response = receiver.recv().unwrap();
+    match response.progress_port.recv().unwrap() {
+        ProgressMsg::Done(result) => assert_eq!(result.unwrap_err(), "load cancelled".to_owned()),
+        _ => panic!("baaaah!"),
+    }
+    resource_task.send(ControlMsg::Exit).unwrap();
 }
