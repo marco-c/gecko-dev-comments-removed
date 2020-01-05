@@ -24,8 +24,8 @@
 }(this, function (exports) {
   
   'use strict';
-  var pdfjsVersion = '1.6.304';
-  var pdfjsBuild = 'b4100ba';
+  var pdfjsVersion = '1.6.315';
+  var pdfjsBuild = 'a139c75';
   var pdfjsFilePath = typeof document !== 'undefined' && document.currentScript ? document.currentScript.src : null;
   var pdfjsLibs = {};
   (function pdfjsWrapper() {
@@ -45079,6 +45079,29 @@
                 resultObj.action = namedAction.name;
               }
               break;
+            case 'JavaScript':
+              var jsAction = action.get('JS'), js;
+              if (isStream(jsAction)) {
+                js = bytesToString(jsAction.getBytes());
+              } else if (isString(jsAction)) {
+                js = jsAction;
+              }
+              if (js) {
+                
+                
+                
+                
+                var URL_OPEN_METHODS = [
+                  'app.launchURL',
+                  'window.open'
+                ];
+                var regex = new RegExp('^(?:' + URL_OPEN_METHODS.join('|') + ')' + '\\((?:\'|\")(\\S+)(?:\'|\")(?:,|\\))');
+                var jsUrl = regex.exec(stringToPDFString(js), 'i');
+                if (jsUrl && jsUrl[1]) {
+                  url = jsUrl[1];
+                  break;
+                }
+              }
             default:
               warn('Catalog_parseDestDictionary: Unrecognized link type "' + linkType + '".');
               break;
