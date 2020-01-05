@@ -365,7 +365,7 @@ nsBaseWidget::OnRenderingDeviceReset(uint64_t aSeqNo)
   FrameLayerBuilder::InvalidateAllLayers(mLayerManager);
 
   
-  clm->UpdateTextureFactoryIdentifier(identifier);
+  clm->UpdateTextureFactoryIdentifier(identifier, aSeqNo);
   ImageBridgeChild::IdentifyCompositorTextureHost(identifier);
   gfx::VRManagerChild::IdentifyTextureHost(identifier);
 }
@@ -1351,7 +1351,7 @@ void nsBaseWidget::CreateCompositor(int aWidth, int aHeight)
 
     lf->SetShadowManager(shadowManager);
     if (ClientLayerManager* clm = lm->AsClientLayerManager()) {
-      clm->UpdateTextureFactoryIdentifier(textureFactoryIdentifier);
+      clm->UpdateTextureFactoryIdentifier(textureFactoryIdentifier, 0);
     }
     
     

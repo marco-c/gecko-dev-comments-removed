@@ -91,7 +91,8 @@ public:
   virtual already_AddRefed<BorderLayer> CreateBorderLayer() override;
   virtual already_AddRefed<RefLayer> CreateRefLayer() override;
 
-  void UpdateTextureFactoryIdentifier(const TextureFactoryIdentifier& aNewIdentifier);
+  void UpdateTextureFactoryIdentifier(const TextureFactoryIdentifier& aNewIdentifier,
+                                      uint64_t aDeviceResetSeqNo);
   TextureFactoryIdentifier GetTextureFactoryIdentifier()
   {
     return AsShadowForwarder()->GetTextureFactoryIdentifier();
@@ -326,6 +327,10 @@ private:
   
   
   uint32_t mPaintSequenceNumber;
+
+  
+  
+  uint64_t mDeviceResetSequenceNumber;
 
   APZTestData mApzTestData;
 

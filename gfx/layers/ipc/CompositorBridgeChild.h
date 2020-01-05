@@ -109,7 +109,7 @@ public:
   virtual mozilla::ipc::IPCResult
   RecvCompositorUpdated(const uint64_t& aLayersId,
                         const TextureFactoryIdentifier& aNewIdentifier,
-                        const uint64_t& aSeqNo) override;
+                        const uint64_t& aSequenceNumber) override;
 
   virtual mozilla::ipc::IPCResult
   RecvOverfill(const uint32_t &aOverfill) override;
@@ -231,6 +231,10 @@ public:
 
   void WillEndTransaction();
 
+  uint64_t DeviceResetSequenceNumber() const {
+    return mDeviceResetSequenceNumber;
+  }
+
 private:
   
   virtual ~CompositorBridgeChild();
@@ -315,6 +319,11 @@ private:
 
 
   uint64_t mFwdTransactionId;
+
+  
+
+
+  uint64_t mDeviceResetSequenceNumber;
 
   
 

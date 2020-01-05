@@ -2118,7 +2118,6 @@ TabChild::RecvAsyncMessage(const nsString& aMessage,
                            const IPC::Principal& aPrincipal,
                            const ClonedMessageData& aData)
 {
-  CrossProcessCpowHolder cpows(Manager(), aCpows);
   if (!mTabChildGlobal) {
     return IPC_OK();
   }
@@ -2136,6 +2135,7 @@ TabChild::RecvAsyncMessage(const nsString& aMessage,
   UnpackClonedMessageDataForChild(aData, data);
   RefPtr<nsFrameMessageManager> mm =
     static_cast<nsFrameMessageManager*>(mTabChildGlobal->mMessageManager.get());
+  CrossProcessCpowHolder cpows(Manager(), aCpows);
   mm->ReceiveMessage(static_cast<EventTarget*>(mTabChildGlobal), nullptr,
                      aMessage, false, &data, &cpows, aPrincipal, nullptr);
   return IPC_OK();
@@ -3013,14 +3013,15 @@ TabChild::ReinitRendering()
 }
 
 void
-TabChild::CompositorUpdated(const TextureFactoryIdentifier& aNewIdentifier)
+TabChild::CompositorUpdated(const TextureFactoryIdentifier& aNewIdentifier,
+                            uint64_t aDeviceResetSeqNo)
 {
   RefPtr<LayerManager> lm = mPuppetWidget->GetLayerManager();
   ClientLayerManager* clm = lm->AsClientLayerManager();
   MOZ_ASSERT(clm);
 
   mTextureFactoryIdentifier = aNewIdentifier;
-  clm->UpdateTextureFactoryIdentifier(aNewIdentifier);
+  clm->UpdateTextureFactoryIdentifier(aNewIdentifier, aDeviceResetSeqNo);
   FrameLayerBuilder::InvalidateAllLayers(clm);
 }
 
