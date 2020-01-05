@@ -10868,7 +10868,7 @@ nsCSSFrameConstructor::AddFCItemsForAnonymousContent(
     
     nsIFrame* inheritFrame = aFrame;
     while (inheritFrame->GetContent()->IsNativeAnonymous()) {
-      inheritFrame = inheritFrame->GetParent();
+      inheritFrame = inheritFrame->GetInFlowParent();
     }
     if (inheritFrame->GetType() == nsGkAtoms::canvasFrame) {
       

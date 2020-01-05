@@ -798,6 +798,13 @@ public:
 
 
   nsContainerFrame* GetParent() const { return mParent; }
+
+  
+
+
+
+  inline nsContainerFrame* GetInFlowParent();
+
   
 
 
