@@ -171,8 +171,14 @@ this.TelemetryStopwatch = {
 
 
 
-  timeElapsed(aHistogram, aObj) {
-    return TelemetryStopwatchImpl.timeElapsed(aHistogram, aObj, null);
+
+
+
+
+
+  timeElapsed(aHistogram, aObj, aCanceledOkay) {
+    return TelemetryStopwatchImpl.timeElapsed(aHistogram, aObj, null,
+                                              aCanceledOkay);
   },
 
   
@@ -188,8 +194,13 @@ this.TelemetryStopwatch = {
 
 
 
-  finish(aHistogram, aObj) {
-    return TelemetryStopwatchImpl.finish(aHistogram, aObj, null);
+
+
+
+
+
+  finish(aHistogram, aObj, aCanceledOkay) {
+    return TelemetryStopwatchImpl.finish(aHistogram, aObj, null, aCanceledOkay);
   },
 
   
@@ -251,8 +262,9 @@ this.TelemetryStopwatch = {
 
 
 
-  timeElapsedKeyed(aHistogram, aKey, aObj) {
-    return TelemetryStopwatchImpl.timeElapsed(aHistogram, aObj, aKey);
+  timeElapsedKeyed(aHistogram, aKey, aObj, aCanceledOkay) {
+    return TelemetryStopwatchImpl.timeElapsed(aHistogram, aObj, aKey,
+                                              aCanceledOkay);
   },
 
   
@@ -270,8 +282,13 @@ this.TelemetryStopwatch = {
 
 
 
-  finishKeyed(aHistogram, aKey, aObj) {
-    return TelemetryStopwatchImpl.finish(aHistogram, aObj, aKey);
+
+
+
+
+
+  finishKeyed(aHistogram, aKey, aObj, aCanceledOkay) {
+    return TelemetryStopwatchImpl.finish(aHistogram, aObj, aKey, aCanceledOkay);
   }
 };
 
@@ -291,12 +308,14 @@ this.TelemetryStopwatchImpl = {
     return Timers.delete(histogram, object, key);
   },
 
-  timeElapsed(histogram, object, key) {
+  timeElapsed(histogram, object, key, aCanceledOkay) {
     let startTime = Timers.get(histogram, object, key);
     if (startTime === null) {
-      Cu.reportError("TelemetryStopwatch: requesting elapsed time for " +
-                     `nonexisting stopwatch. Histogram: "${histogram}", ` +
-                     `key: "${key}"`);
+      if (!aCanceledOkay) {
+        Cu.reportError("TelemetryStopwatch: requesting elapsed time for " +
+                       `nonexisting stopwatch. Histogram: "${histogram}", ` +
+                       `key: "${key}"`);
+      }
       return -1;
     }
 
@@ -311,8 +330,8 @@ this.TelemetryStopwatchImpl = {
     }
   },
 
-  finish(histogram, object, key) {
-    let delta = this.timeElapsed(histogram, object, key);
+  finish(histogram, object, key, aCanceledOkay) {
+    let delta = this.timeElapsed(histogram, object, key, aCanceledOkay);
     if (delta == -1) {
       return false;
     }
