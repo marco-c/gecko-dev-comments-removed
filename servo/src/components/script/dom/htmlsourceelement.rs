@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::HTMLSourceElementBinding;
+use dom::bindings::codegen::BindingDeclarations::HTMLSourceElementBinding;
 use dom::bindings::codegen::InheritTypes::HTMLSourceElementDerived;
 use dom::bindings::js::JS;
 use dom::bindings::error::ErrorResult;

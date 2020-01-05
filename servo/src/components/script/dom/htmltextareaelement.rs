@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::HTMLTextAreaElementBinding;
+use dom::bindings::codegen::BindingDeclarations::HTMLTextAreaElementBinding;
 use dom::bindings::codegen::InheritTypes::HTMLTextAreaElementDerived;
 use dom::bindings::js::JS;
 use dom::bindings::error::{ErrorResult, Fallible};

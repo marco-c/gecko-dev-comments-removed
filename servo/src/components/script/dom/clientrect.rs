@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::ClientRectBinding;
+use dom::bindings::codegen::BindingDeclarations::ClientRectBinding;
 use dom::bindings::js::JS;
 use dom::bindings::utils::{Reflectable, Reflector, reflect_dom_object};
 use dom::window::Window;

@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::ProcessingInstructionBinding;
+use dom::bindings::codegen::BindingDeclarations::ProcessingInstructionBinding;
 use dom::bindings::codegen::InheritTypes::ProcessingInstructionDerived;
 use dom::bindings::js::JS;
 use dom::characterdata::CharacterData;

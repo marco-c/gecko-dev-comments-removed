@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::HTMLQuoteElementBinding;
+use dom::bindings::codegen::BindingDeclarations::HTMLQuoteElementBinding;
 use dom::bindings::codegen::InheritTypes::HTMLQuoteElementDerived;
 use dom::bindings::js::JS;
 use dom::bindings::error::ErrorResult;

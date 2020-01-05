@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::HTMLMetaElementBinding;
+use dom::bindings::codegen::BindingDeclarations::HTMLMetaElementBinding;
 use dom::bindings::codegen::InheritTypes::HTMLMetaElementDerived;
 use dom::bindings::js::JS;
 use dom::bindings::error::ErrorResult;

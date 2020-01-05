@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::HTMLSelectElementBinding;
+use dom::bindings::codegen::BindingDeclarations::HTMLSelectElementBinding;
 use dom::bindings::codegen::InheritTypes::HTMLSelectElementDerived;
 use dom::bindings::codegen::UnionTypes::{HTMLElementOrLong, HTMLOptionElementOrHTMLOptGroupElement};
 use dom::bindings::js::JS;

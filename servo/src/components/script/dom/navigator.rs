@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::NavigatorBinding;
+use dom::bindings::codegen::BindingDeclarations::NavigatorBinding;
 use dom::bindings::js::JS;
 use dom::bindings::utils::{Reflectable, Reflector, reflect_dom_object};
 use dom::bindings::error::Fallible;

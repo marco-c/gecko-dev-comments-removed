@@ -2,8 +2,8 @@
 
 
 
-use dom::bindings::codegen::DOMExceptionBinding;
-use dom::bindings::codegen::DOMExceptionBinding::DOMExceptionConstants;
+use dom::bindings::codegen::BindingDeclarations::DOMExceptionBinding;
+use dom::bindings::codegen::BindingDeclarations::DOMExceptionBinding::DOMExceptionConstants;
 use dom::bindings::js::JS;
 use dom::bindings::utils::{Reflectable, Reflector, reflect_dom_object};
 use dom::window::Window;

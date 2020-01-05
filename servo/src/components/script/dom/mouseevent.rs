@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::MouseEventBinding;
+use dom::bindings::codegen::BindingDeclarations::MouseEventBinding;
 use dom::bindings::codegen::InheritTypes::MouseEventDerived;
 use dom::bindings::js::JS;
 use dom::bindings::error::Fallible;

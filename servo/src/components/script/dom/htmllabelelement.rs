@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::HTMLLabelElementBinding;
+use dom::bindings::codegen::BindingDeclarations::HTMLLabelElementBinding;
 use dom::bindings::codegen::InheritTypes::HTMLLabelElementDerived;
 use dom::bindings::js::JS;
 use dom::document::Document;

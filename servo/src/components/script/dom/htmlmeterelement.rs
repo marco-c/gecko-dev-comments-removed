@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::HTMLMeterElementBinding;
+use dom::bindings::codegen::BindingDeclarations::HTMLMeterElementBinding;
 use dom::bindings::codegen::InheritTypes::HTMLMeterElementDerived;
 use dom::bindings::js::JS;
 use dom::bindings::error::ErrorResult;

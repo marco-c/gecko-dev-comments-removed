@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::HTMLStyleElementBinding;
+use dom::bindings::codegen::BindingDeclarations::HTMLStyleElementBinding;
 use dom::bindings::codegen::InheritTypes::{HTMLElementCast, HTMLStyleElementDerived, NodeCast};
 use dom::bindings::js::JS;
 use dom::bindings::error::ErrorResult;

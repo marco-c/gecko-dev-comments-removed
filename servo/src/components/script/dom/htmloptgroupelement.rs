@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::HTMLOptGroupElementBinding;
+use dom::bindings::codegen::BindingDeclarations::HTMLOptGroupElementBinding;
 use dom::bindings::codegen::InheritTypes::HTMLOptGroupElementDerived;
 use dom::bindings::js::JS;
 use dom::bindings::error::ErrorResult;

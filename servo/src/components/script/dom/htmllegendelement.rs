@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::HTMLLegendElementBinding;
+use dom::bindings::codegen::BindingDeclarations::HTMLLegendElementBinding;
 use dom::bindings::codegen::InheritTypes::HTMLLegendElementDerived;
 use dom::bindings::js::JS;
 use dom::bindings::error::ErrorResult;

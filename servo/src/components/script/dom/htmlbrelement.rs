@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::HTMLBRElementBinding;
+use dom::bindings::codegen::BindingDeclarations::HTMLBRElementBinding;
 use dom::bindings::codegen::InheritTypes::HTMLBRElementDerived;
 use dom::bindings::error::ErrorResult;
 use dom::bindings::js::JS;

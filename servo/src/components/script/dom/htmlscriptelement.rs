@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::HTMLScriptElementBinding;
+use dom::bindings::codegen::BindingDeclarations::HTMLScriptElementBinding;
 use dom::bindings::codegen::InheritTypes::HTMLScriptElementDerived;
 use dom::bindings::codegen::InheritTypes::ElementCast;
 use dom::bindings::js::JS;

@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::HTMLUnknownElementBinding;
+use dom::bindings::codegen::BindingDeclarations::HTMLUnknownElementBinding;
 use dom::bindings::codegen::InheritTypes::HTMLUnknownElementDerived;
 use dom::bindings::js::JS;
 use dom::document::Document;

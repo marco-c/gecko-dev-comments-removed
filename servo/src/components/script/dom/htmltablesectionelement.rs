@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::HTMLTableSectionElementBinding;
+use dom::bindings::codegen::BindingDeclarations::HTMLTableSectionElementBinding;
 use dom::bindings::codegen::InheritTypes::HTMLTableSectionElementDerived;
 use dom::bindings::js::JS;
 use dom::bindings::error::ErrorResult;

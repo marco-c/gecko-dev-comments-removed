@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::HTMLIFrameElementBinding;
+use dom::bindings::codegen::BindingDeclarations::HTMLIFrameElementBinding;
 use dom::bindings::codegen::InheritTypes::{ElementCast, HTMLIFrameElementDerived, HTMLElementCast};
 use dom::bindings::error::ErrorResult;
 use dom::bindings::js::JS;

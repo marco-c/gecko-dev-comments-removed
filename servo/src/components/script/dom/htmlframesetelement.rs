@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::HTMLFrameSetElementBinding;
+use dom::bindings::codegen::BindingDeclarations::HTMLFrameSetElementBinding;
 use dom::bindings::codegen::InheritTypes::HTMLFrameSetElementDerived;
 use dom::bindings::js::JS;
 use dom::bindings::error::ErrorResult;

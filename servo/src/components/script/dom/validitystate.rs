@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::ValidityStateBinding;
+use dom::bindings::codegen::BindingDeclarations::ValidityStateBinding;
 use dom::bindings::js::JS;
 use dom::bindings::utils::{Reflectable, Reflector, reflect_dom_object};
 use dom::window::Window;

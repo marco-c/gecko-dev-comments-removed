@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::AttrBinding;
+use dom::bindings::codegen::BindingDeclarations::AttrBinding;
 use dom::bindings::codegen::InheritTypes::NodeCast;
 use dom::bindings::js::JS;
 use dom::bindings::utils::{Reflectable, Reflector, reflect_dom_object};

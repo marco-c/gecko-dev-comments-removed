@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::HTMLAppletElementBinding;
+use dom::bindings::codegen::BindingDeclarations::HTMLAppletElementBinding;
 use dom::bindings::codegen::InheritTypes::HTMLAppletElementDerived;
 use dom::bindings::js::JS;
 use dom::bindings::error::ErrorResult;

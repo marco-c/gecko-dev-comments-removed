@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::HTMLPreElementBinding;
+use dom::bindings::codegen::BindingDeclarations::HTMLPreElementBinding;
 use dom::bindings::codegen::InheritTypes::HTMLPreElementDerived;
 use dom::bindings::js::JS;
 use dom::bindings::error::ErrorResult;

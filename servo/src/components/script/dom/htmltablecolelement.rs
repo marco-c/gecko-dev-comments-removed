@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::HTMLTableColElementBinding;
+use dom::bindings::codegen::BindingDeclarations::HTMLTableColElementBinding;
 use dom::bindings::codegen::InheritTypes::HTMLTableColElementDerived;
 use dom::bindings::js::JS;
 use dom::bindings::error::ErrorResult;

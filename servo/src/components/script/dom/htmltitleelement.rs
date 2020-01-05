@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::HTMLTitleElementBinding;
+use dom::bindings::codegen::BindingDeclarations::HTMLTitleElementBinding;
 use dom::bindings::codegen::InheritTypes::HTMLTitleElementDerived;
 use dom::bindings::js::JS;
 use dom::bindings::error::ErrorResult;

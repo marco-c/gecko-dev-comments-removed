@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::HTMLFieldSetElementBinding;
+use dom::bindings::codegen::BindingDeclarations::HTMLFieldSetElementBinding;
 use dom::bindings::codegen::InheritTypes::{ElementCast, HTMLFieldSetElementDerived, NodeCast};
 use dom::bindings::js::JS;
 use dom::bindings::error::ErrorResult;

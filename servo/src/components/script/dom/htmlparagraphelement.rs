@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::HTMLParagraphElementBinding;
+use dom::bindings::codegen::BindingDeclarations::HTMLParagraphElementBinding;
 use dom::bindings::codegen::InheritTypes::HTMLParagraphElementDerived;
 use dom::bindings::js::JS;
 use dom::bindings::error::ErrorResult;

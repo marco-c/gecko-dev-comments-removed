@@ -3,7 +3,7 @@
 
 
 use dom::bindings::js::JS;
-use dom::bindings::codegen::TestBindingBinding;
+use dom::bindings::codegen::BindingDeclarations::TestBindingBinding;
 use dom::bindings::codegen::UnionTypes::HTMLElementOrLong;
 use self::TestBindingBinding::TestEnum;
 use self::TestBindingBinding::TestEnumValues::_empty;

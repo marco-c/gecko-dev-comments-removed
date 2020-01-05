@@ -3,7 +3,7 @@
 
 
 use dom::bindings::codegen::InheritTypes::DocumentTypeDerived;
-use dom::bindings::codegen::DocumentTypeBinding;
+use dom::bindings::codegen::BindingDeclarations::DocumentTypeBinding;
 use dom::bindings::js::JS;
 use dom::document::Document;
 use dom::eventtarget::{EventTarget, NodeTargetTypeId};

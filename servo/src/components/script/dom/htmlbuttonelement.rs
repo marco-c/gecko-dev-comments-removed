@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::HTMLButtonElementBinding;
+use dom::bindings::codegen::BindingDeclarations::HTMLButtonElementBinding;
 use dom::bindings::codegen::InheritTypes::HTMLButtonElementDerived;
 use dom::bindings::js::JS;
 use dom::bindings::error::ErrorResult;

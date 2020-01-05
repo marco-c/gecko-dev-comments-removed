@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::HTMLUListElementBinding;
+use dom::bindings::codegen::BindingDeclarations::HTMLUListElementBinding;
 use dom::bindings::codegen::InheritTypes::HTMLUListElementDerived;
 use dom::bindings::js::JS;
 use dom::bindings::error::ErrorResult;

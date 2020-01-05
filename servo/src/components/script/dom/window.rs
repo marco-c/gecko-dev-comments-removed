@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::WindowBinding;
+use dom::bindings::codegen::BindingDeclarations::WindowBinding;
 use dom::bindings::js::JS;
 use dom::bindings::trace::Untraceable;
 use dom::bindings::utils::{Reflectable, Reflector};

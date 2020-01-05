@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::TextBinding;
+use dom::bindings::codegen::BindingDeclarations::TextBinding;
 use dom::bindings::codegen::InheritTypes::TextDerived;
 use dom::bindings::js::JS;
 use dom::bindings::error::Fallible;

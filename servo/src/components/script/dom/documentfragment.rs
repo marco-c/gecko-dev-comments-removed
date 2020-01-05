@@ -3,7 +3,7 @@
 
 
 use dom::bindings::codegen::InheritTypes::{DocumentFragmentDerived, NodeCast};
-use dom::bindings::codegen::DocumentFragmentBinding;
+use dom::bindings::codegen::BindingDeclarations::DocumentFragmentBinding;
 use dom::bindings::js::JS;
 use dom::bindings::error::Fallible;
 use dom::document::Document;

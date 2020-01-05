@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::LocationBinding;
+use dom::bindings::codegen::BindingDeclarations::LocationBinding;
 use dom::bindings::js::JS;
 use dom::bindings::utils::{Reflectable, Reflector, reflect_dom_object};
 use dom::bindings::error::Fallible;

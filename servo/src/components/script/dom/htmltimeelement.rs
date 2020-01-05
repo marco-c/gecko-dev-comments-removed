@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::HTMLTimeElementBinding;
+use dom::bindings::codegen::BindingDeclarations::HTMLTimeElementBinding;
 use dom::bindings::codegen::InheritTypes::HTMLTimeElementDerived;
 use dom::bindings::js::JS;
 use dom::bindings::error::ErrorResult;

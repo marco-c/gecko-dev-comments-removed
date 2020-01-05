@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::HTMLEmbedElementBinding;
+use dom::bindings::codegen::BindingDeclarations::HTMLEmbedElementBinding;
 use dom::bindings::codegen::InheritTypes::HTMLEmbedElementDerived;
 use dom::bindings::js::JS;
 use dom::bindings::error::ErrorResult;

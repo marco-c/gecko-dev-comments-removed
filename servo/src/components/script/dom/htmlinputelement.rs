@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::HTMLInputElementBinding;
+use dom::bindings::codegen::BindingDeclarations::HTMLInputElementBinding;
 use dom::bindings::codegen::InheritTypes::HTMLInputElementDerived;
 use dom::bindings::js::JS;
 use dom::bindings::error::{ErrorResult, Fallible};

@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::HTMLHeadingElementBinding;
+use dom::bindings::codegen::BindingDeclarations::HTMLHeadingElementBinding;
 use dom::bindings::codegen::InheritTypes::HTMLHeadingElementDerived;
 use dom::bindings::js::JS;
 use dom::document::Document;

@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::HTMLParamElementBinding;
+use dom::bindings::codegen::BindingDeclarations::HTMLParamElementBinding;
 use dom::bindings::codegen::InheritTypes::HTMLParamElementDerived;
 use dom::bindings::js::JS;
 use dom::bindings::error::ErrorResult;

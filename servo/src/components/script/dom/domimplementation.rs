@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::DOMImplementationBinding;
+use dom::bindings::codegen::BindingDeclarations::DOMImplementationBinding;
 use dom::bindings::codegen::InheritTypes::NodeCast;
 use dom::bindings::js::JS;
 use dom::bindings::utils::{Reflector, Reflectable, reflect_dom_object};

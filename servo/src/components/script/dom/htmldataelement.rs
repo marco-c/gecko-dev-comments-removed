@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::HTMLDataElementBinding;
+use dom::bindings::codegen::BindingDeclarations::HTMLDataElementBinding;
 use dom::bindings::codegen::InheritTypes::HTMLDataElementDerived;
 use dom::bindings::js::JS;
 use dom::bindings::error::ErrorResult;

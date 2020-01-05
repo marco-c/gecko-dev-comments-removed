@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::HTMLOptionElementBinding;
+use dom::bindings::codegen::BindingDeclarations::HTMLOptionElementBinding;
 use dom::bindings::codegen::InheritTypes::HTMLOptionElementDerived;
 use dom::bindings::js::JS;
 use dom::bindings::error::ErrorResult;

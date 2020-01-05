@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::HTMLModElementBinding;
+use dom::bindings::codegen::BindingDeclarations::HTMLModElementBinding;
 use dom::bindings::codegen::InheritTypes::HTMLModElementDerived;
 use dom::bindings::js::JS;
 use dom::bindings::error::ErrorResult;

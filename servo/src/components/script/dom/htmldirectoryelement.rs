@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::HTMLDirectoryElementBinding;
+use dom::bindings::codegen::BindingDeclarations::HTMLDirectoryElementBinding;
 use dom::bindings::codegen::InheritTypes::HTMLDirectoryElementDerived;
 use dom::bindings::js::JS;
 use dom::bindings::error::ErrorResult;

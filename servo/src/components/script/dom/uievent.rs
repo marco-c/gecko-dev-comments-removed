@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::UIEventBinding;
+use dom::bindings::codegen::BindingDeclarations::UIEventBinding;
 use dom::bindings::codegen::InheritTypes::UIEventDerived;
 use dom::bindings::js::JS;
 use dom::bindings::error::Fallible;
