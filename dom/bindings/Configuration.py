@@ -49,6 +49,7 @@ class Configuration(DescriptorProvider):
                 
                 
                 
+                
                 if (thing.implementor.filename() != thing.filename() and
                     thing.implementee.identifier.name != "LegacyQueryInterface"):
                     raise TypeError(
@@ -66,6 +67,33 @@ class Configuration(DescriptorProvider):
             if not thing.isInterface() and not thing.isNamespace():
                 continue
             iface = thing
+            
+            
+            
+            
+            
+            if not iface.isExternal():
+                for partialIface in iface.getPartialInterfaces():
+                    if (partialIface.filename() != iface.filename() and
+                        
+                        
+                        
+                        
+                        
+                        
+                        (partialIface.identifier.name != "Navigator" or
+                         len(partialIface.members) != 1 or
+                         partialIface.members[0].location != partialIface.location or
+                         partialIface.members[0].identifier.location.filename() !=
+                           "<builtin>")):
+                        raise TypeError(
+                            "The binding build system doesn't really support "
+                            "partial interfaces which don't appear in the "
+                            "file in which the interface they are extending is "
+                            "defined.  Don't do this.\n"
+                            "%s\n"
+                            "%s" %
+                            (partialIface.location, iface.location))
             self.interfaces[iface.identifier.name] = iface
             if iface.identifier.name not in config:
                 
