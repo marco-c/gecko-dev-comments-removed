@@ -325,15 +325,6 @@ MediaEngineCameraVideoSource::SetName(nsString aName)
   VideoFacingModeEnum facingMode = VideoFacingModeEnum::User;
 
   
-#if defined(MOZ_B2G_CAMERA) && defined(MOZ_WIDGET_GONK)
-  if (aName.EqualsLiteral("back")) {
-    hasFacingMode = true;
-    facingMode = VideoFacingModeEnum::Environment;
-  } else if (aName.EqualsLiteral("front")) {
-    hasFacingMode = true;
-    facingMode = VideoFacingModeEnum::User;
-  }
-#endif 
 #if defined(ANDROID) && !defined(MOZ_WIDGET_GONK)
   
   
