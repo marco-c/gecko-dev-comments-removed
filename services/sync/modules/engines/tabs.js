@@ -211,12 +211,10 @@ TabStore.prototype = {
 
     
     
-    
-    let size = JSON.stringify(tabs).length;
+    let size = new TextEncoder("utf-8").encode(JSON.stringify(tabs)).byteLength;
     let origLength = tabs.length;
-    const MAX_TAB_SIZE = (this.engine.service.serverConfiguration ?
-                          this.engine.service.serverConfiguration.max_record_payload_bytes :
-                          28672) / 4 * 3 - 1500;
+    
+    const MAX_TAB_SIZE = this.engine.maxRecordPayloadBytes / 4 * 3 - 1500;
     if (size > MAX_TAB_SIZE) {
       
       let cutoff = Math.ceil(tabs.length * MAX_TAB_SIZE / size);

@@ -1343,8 +1343,8 @@ add_task(async function test_uploadOutgoing_toEmptyServer() {
   }
 });
 
-
-add_task(async function test_uploadOutgoing_huge() {
+async function test_uploadOutgoing_max_record_payload_bytes(allowSkippedRecord) {
+  _("SyncEngine._uploadOutgoing throws when payload is bigger than max_record_payload_bytes");
   let collection = new ServerCollection();
   collection._wbos.flying = new ServerWBO("flying");
   collection._wbos.scotsman = new ServerWBO("scotsman");
@@ -1352,17 +1352,19 @@ add_task(async function test_uploadOutgoing_huge() {
   let server = sync_httpd_setup({
       "/1.1/foo/storage/rotary": collection.handler(),
       "/1.1/foo/storage/rotary/flying": collection.wbo("flying").handler(),
+      "/1.1/foo/storage/rotary/scotsman": collection.wbo("scotsman").handler(),
   });
 
   await SyncTestingInfrastructure(server);
   generateNewKeys(Service.collectionKeys);
 
   let engine = makeRotaryEngine();
-  engine.allowSkippedRecord = true;
+  engine.allowSkippedRecord = allowSkippedRecord;
   engine.lastSync = 1;
-  engine._store.items = { flying: "a".repeat(1024 * 1024) };
+  engine._store.items = { flying: "a".repeat(1024 * 1024), scotsman: "abcd" };
 
   engine._tracker.addChangedID("flying", 1000);
+  engine._tracker.addChangedID("scotsman", 1000);
 
   let meta_global = Service.recordManager.set(engine.metaURL,
                                               new WBORecord(engine.metaURL));
@@ -1370,23 +1372,49 @@ add_task(async function test_uploadOutgoing_huge() {
                                          syncID: engine.syncID}};
 
   try {
-
     
     do_check_eq(engine.lastSyncLocal, 0);
     do_check_eq(collection.payload("flying"), undefined);
+    do_check_eq(collection.payload("scotsman"), undefined);
 
     engine._syncStartup();
     engine._uploadOutgoing();
+
+    if (!allowSkippedRecord) {
+      do_throw("should not get here");
+    }
+
     engine.trackRemainingChanges();
 
     
-    do_check_eq(collection.payload("flying"), undefined);
+    do_check_true(collection.payload("scotsman"));
     
     do_check_eq(engine._tracker.changedIDs["flying"], undefined);
 
+  } catch (e) {
+    if (allowSkippedRecord) {
+      do_throw("should not get here");
+    }
+
+    engine.trackRemainingChanges();
+
+    
+    do_check_eq(engine._tracker.changedIDs["flying"], 1000);
   } finally {
+    
+    do_check_eq(collection.payload("flying"), undefined);
     await cleanAndGo(engine, server);
   }
+}
+
+
+add_task(async function test_uploadOutgoing_max_record_payload_bytes_disallowSkippedRecords() {
+  return test_uploadOutgoing_max_record_payload_bytes(false);
+});
+
+
+add_task(async function test_uploadOutgoing_max_record_payload_bytes_allowSkippedRecords() {
+  return test_uploadOutgoing_max_record_payload_bytes(true);
 });
 
 
