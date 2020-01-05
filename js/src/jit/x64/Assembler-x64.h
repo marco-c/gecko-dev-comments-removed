@@ -361,6 +361,11 @@ class Assembler : public AssemblerX86Shared
     }
 
     
+    void patchAddq(CodeOffset offset, int32_t n) {
+        X86Encoding::SetInt32(masm.data() + offset.offset(), n);
+    }
+
+    
     
     
     void movq(ImmWord word, Register dest) {
@@ -553,6 +558,10 @@ class Assembler : public AssemblerX86Shared
 
     void addq(Imm32 imm, Register dest) {
         masm.addq_ir(imm.value, dest.encoding());
+    }
+    CodeOffset addqWithPatch(Imm32 imm, Register dest) {
+        masm.addq_i32r(imm.value, dest.encoding());
+        return CodeOffset(masm.currentOffset());
     }
     void addq(Imm32 imm, const Operand& dest) {
         switch (dest.kind()) {
