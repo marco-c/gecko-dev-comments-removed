@@ -229,7 +229,8 @@ public class MediaPlayerManager extends Fragment implements BundleEventListener 
                 saveAndNotifyOfPlayer("MediaPlayer:Changed", route, player);
                 updatePresentation();
 
-                final GeckoPresentationDisplay display = displays.get(route.getId());
+                
+                final GeckoPresentationDisplay display = getPresentationDisplayForRoute(route);
                 saveAndNotifyOfDisplay("AndroidCastDevice:Changed", route, display);
             }
 
