@@ -205,8 +205,9 @@ pub trait Flow: fmt::Show + ToString + Sync {
     
     
     
-    fn assign_block_size_for_inorder_child_if_necessary<'a>(&mut self, layout_context: &'a LayoutContext<'a>)
-                                                    -> bool {
+    fn assign_block_size_for_inorder_child_if_necessary<'a>(&mut self,
+                                                            layout_context: &'a LayoutContext<'a>)
+                                                            -> bool {
         let impacted = base(&*self).flags.impacted_by_floats();
         if impacted {
             self.assign_block_size(layout_context);
@@ -747,6 +748,10 @@ pub struct BaseFlow {
 
     
     
+    pub block_container_inline_size: Au,
+
+    
+    
     pub block_container_explicit_block_size: Option<Au>,
 
     
@@ -780,7 +785,8 @@ pub struct BaseFlow {
 impl fmt::Show for BaseFlow {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f,
-               "CC {}, ADC {}, CADC {}",
+               "@ {}, CC {}, ADC {}, CADC {}",
+               self.position,
                self.parallel.children_count.load(SeqCst),
                self.abs_descendants.len(),
                self.parallel.children_and_absolute_descendant_count.load(SeqCst))
@@ -837,8 +843,9 @@ impl BaseFlow {
             collapsible_margins: CollapsibleMargins::new(),
             abs_position: Zero::zero(),
             abs_descendants: Descendants::new(),
-            absolute_static_i_offset: Au::new(0),
-            fixed_static_i_offset: Au::new(0),
+            absolute_static_i_offset: Au(0),
+            fixed_static_i_offset: Au(0),
+            block_container_inline_size: Au(0),
             block_container_explicit_block_size: None,
             absolute_cb: ContainingBlockLink::new(),
             display_list: DisplayList::new(),
