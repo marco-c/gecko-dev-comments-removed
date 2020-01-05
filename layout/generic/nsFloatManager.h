@@ -596,7 +596,9 @@ private:
 
   
   nscoord mLineLeft, mBlockStart;
-  AutoTArray<FloatInfo, 10> mFloats;
+  
+  
+  AutoTArray<FloatInfo, 11> mFloats;
   nsIntervalSet   mFloatDamage;
 
   
