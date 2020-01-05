@@ -953,8 +953,8 @@ nsJARChannel::OnDownloadComplete(MemoryDownloader* aDownloader,
             
             
             nsAutoCString header;
-            httpChannel->GetResponseHeader(NS_LITERAL_CSTRING("Content-Type"),
-                                           header);
+            Unused << httpChannel->GetResponseHeader(
+              NS_LITERAL_CSTRING("Content-Type"), header);
             nsAutoCString contentType;
             nsAutoCString charset;
             NS_ParseResponseContentType(header, contentType, charset);
