@@ -5,21 +5,15 @@
 
 
 #include "EncodedBufferCache.h"
-#include "prio.h"
-#include "nsAnonymousTemporaryFile.h"
-#include "mozilla/Monitor.h"
-#include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/File.h"
-#include "nsThreadUtils.h"
-#include "nsXULAppAPI.h"
+#include "nsAnonymousTemporaryFile.h"
+#include "prio.h"
 
 namespace mozilla {
 
 void
 EncodedBufferCache::AppendBuffer(nsTArray<uint8_t> & aBuf)
 {
-  MOZ_ASSERT(!NS_IsMainThread());
-
   MutexAutoLock lock(mMutex);
   mDataSize += aBuf.Length();
 
@@ -30,39 +24,9 @@ EncodedBufferCache::AppendBuffer(nsTArray<uint8_t> & aBuf)
     PRFileDesc* tempFD = nullptr;
     {
       
+      
       MutexAutoUnlock unlock(mMutex);
-      if (XRE_IsParentProcess()) {
-        
-        
-        rv = NS_OpenAnonymousTemporaryFile(&tempFD);
-      } else {
-        
-        
-        
-        
-        
-        
-        
-        
-        typedef dom::ContentChild::AnonymousTemporaryFileCallback
-          AnonymousTemporaryFileCallback;
-        Monitor monitor("EncodeBufferCache::AppendBuffer");
-        RefPtr<dom::ContentChild> cc = dom::ContentChild::GetSingleton();
-        nsCOMPtr<nsIRunnable> runnable =
-          NewRunnableMethod<AnonymousTemporaryFileCallback>(cc,
-            &dom::ContentChild::AsyncOpenAnonymousTemporaryFile,
-            [&](PRFileDesc* aFile) {
-              rv = aFile ? NS_OK : NS_ERROR_FAILURE;
-              tempFD = aFile;
-              MonitorAutoLock lock(monitor);
-              lock.Notify();
-            });
-        rv = NS_DispatchToMainThread(runnable);
-        if (NS_SUCCEEDED(rv)) {
-          MonitorAutoLock lock(monitor);
-          lock.Wait();
-        }
-      }
+      rv = NS_OpenAnonymousTemporaryFile(&tempFD);
     }
     if (!NS_FAILED(rv)) {
       
