@@ -43,6 +43,22 @@ impl Default for ParserContextExtraData {
     }
 }
 
+#[cfg(feature = "gecko")]
+impl ParserContextExtraData {
+    
+    
+    
+    pub unsafe fn new(data: *const ::gecko_bindings::structs::GeckoParserExtraData) -> Self {
+        
+        
+        
+        unsafe { ParserContextExtraData {
+            base: Some((*data).mBaseURI.to_safe()),
+            referrer: Some((*data).mReferrer.to_safe()),
+            principal: Some((*data).mPrincipal.to_safe()),
+        }}
+    }
+}
 
 pub struct ParserContext<'a> {
     
