@@ -596,6 +596,13 @@ protected:
 
 public:
   
+
+
+
+  static void CreateViewForFrame(nsIFrame* aFrame,
+                                 bool aForce);
+
+  
   
   static void GetLastLeaf(nsPresContext* aPresContext, nsIFrame **aFrame);
   static void GetFirstLeaf(nsPresContext* aPresContext, nsIFrame **aFrame);

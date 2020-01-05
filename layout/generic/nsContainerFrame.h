@@ -156,13 +156,6 @@ public:
                                      bool      aDeletingEmptyFrames);
 
   
-
-
-
-  static void CreateViewForFrame(nsIFrame* aFrame,
-                                 bool aForce);
-
-  
   static void PositionFrameView(nsIFrame* aKidFrame);
 
   static nsresult ReparentFrameView(nsIFrame* aChildFrame,
@@ -197,18 +190,6 @@ public:
                                    nsView*              aView,
                                    nsRenderingContext*  aRC,
                                    uint32_t             aFlags);
-
-  
-  
-  
-  
-  
-  
-  static void SyncFrameViewProperties(nsPresContext*  aPresContext,
-                                      nsIFrame*        aFrame,
-                                      nsStyleContext*  aStyleContext,
-                                      nsView*         aView,
-                                      uint32_t         aFlags = 0);
 
   
 

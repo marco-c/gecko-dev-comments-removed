@@ -130,7 +130,7 @@ nsSubDocumentFrame::Init(nsIContent*       aContent,
   
   
   if (!HasView()) {
-    nsContainerFrame::CreateViewForFrame(this, true);
+    nsFrame::CreateViewForFrame(this, true);
   }
   EnsureInnerView();
 

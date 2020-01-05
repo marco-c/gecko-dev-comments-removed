@@ -2467,6 +2467,18 @@ public:
   nsIFrame* GetAncestorWithView() const;
 
   
+  
+  
+  
+  
+  
+  static void SyncFrameViewProperties(nsPresContext*  aPresContext,
+                                      nsIFrame*        aFrame,
+                                      nsStyleContext*  aStyleContext,
+                                      nsView*         aView,
+                                      uint32_t         aFlags = 0);
+
+  
 
 
 
@@ -3616,6 +3628,11 @@ public:
                             const nsStyleCoord& aCoord,
                             ComputeSizeFlags    aFlags = eDefault);
 protected:
+  static void ReparentFrameViewTo(nsIFrame* aFrame,
+                                  nsViewManager* aViewManager,
+                                  nsView*        aNewParentView,
+                                  nsView*        aOldParentView);
+
   
   nsRect           mRect;
   nsIContent*      mContent;
