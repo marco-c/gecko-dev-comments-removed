@@ -1016,7 +1016,7 @@ static MOZ_MUST_USE bool
 AddPromiseReaction(JSContext* cx, Handle<PromiseObject*> promise,
                    Handle<PromiseReactionRecord*> reaction);
 
-static MOZ_MUST_USE bool BlockOnPromise(JSContext* cx, HandleObject promise,
+static MOZ_MUST_USE bool BlockOnPromise(JSContext* cx, HandleValue promise,
                                         HandleObject blockedPromise,
                                         HandleValue onFulfilled, HandleValue onRejected);
 
@@ -1656,9 +1656,8 @@ PerformPromiseAll(JSContext *cx, JS::ForOfIterator& iterator, HandleObject C,
         dataHolder->increaseRemainingCount();
 
         
-        RootedObject nextPromiseObj(cx, &nextPromise.toObject());
         RootedValue resolveFunVal(cx, ObjectValue(*resolveFunc));
-        if (!BlockOnPromise(cx, nextPromiseObj, promiseObj, resolveFunVal, rejectFunVal))
+        if (!BlockOnPromise(cx, nextPromise, promiseObj, resolveFunVal, rejectFunVal))
             return false;
 
         
@@ -1845,8 +1844,7 @@ PerformPromiseRace(JSContext *cx, JS::ForOfIterator& iterator, HandleObject C,
             return false;
 
         
-        RootedObject nextPromiseObj(cx, &nextPromise.toObject());
-        if (!BlockOnPromise(cx, nextPromiseObj, promiseObj, resolveFunVal, rejectFunVal))
+        if (!BlockOnPromise(cx, nextPromise, promiseObj, resolveFunVal, rejectFunVal))
             return false;
     }
 
@@ -2176,14 +2174,18 @@ PerformPromiseThen(JSContext* cx, Handle<PromiseObject*> promise, HandleValue on
 
 
 static MOZ_MUST_USE bool
-BlockOnPromise(JSContext* cx, HandleObject promiseObj, HandleObject blockedPromise_,
+BlockOnPromise(JSContext* cx, HandleValue promiseVal, HandleObject blockedPromise_,
                HandleValue onFulfilled, HandleValue onRejected)
 {
     RootedValue thenVal(cx);
-    if (!GetProperty(cx, promiseObj, promiseObj, cx->names().then, &thenVal))
+    if (!GetProperty(cx, promiseVal, cx->names().then, &thenVal))
         return false;
 
-    if (promiseObj->is<PromiseObject>() && IsNativeFunction(thenVal, Promise_then)) {
+    RootedObject promiseObj(cx);
+    if (promiseVal.isObject())
+        promiseObj = &promiseVal.toObject();
+
+    if (promiseObj && promiseObj->is<PromiseObject>() && IsNativeFunction(thenVal, Promise_then)) {
         
         
         
@@ -2224,11 +2226,18 @@ BlockOnPromise(JSContext* cx, HandleObject promiseObj, HandleObject blockedPromi
             return true;
     } else {
         
-        RootedValue promiseVal(cx, ObjectValue(*promiseObj));
         RootedValue rval(cx);
         if (!Call(cx, thenVal, promiseVal, onFulfilled, onRejected, &rval))
             return false;
     }
+
+    
+    
+    
+    
+    
+    if (!promiseObj)
+        return true;
 
     
     
