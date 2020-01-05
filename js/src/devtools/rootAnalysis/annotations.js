@@ -10,10 +10,6 @@ var GCSuppressionTypes = [];
 var ignoreIndirectCalls = {
     "mallocSizeOf" : true,
     "aMallocSizeOf" : true,
-    "_malloc_message" : true,
-    "je_malloc_message" : true,
-    "chunk_dalloc" : true,
-    "chunk_alloc" : true,
     "__conv" : true,
     "__convf" : true,
     "prerrortable.c:callback_newtable" : true,
@@ -174,6 +170,12 @@ var ignoreFunctions = {
 
     
     "uint32 nsXPConnect::Release()" : true,
+
+    
+    "malloc": true,
+    "calloc": true,
+    "realloc": true,
+    "free": true,
 
     
     "NS_LogInit": true,
