@@ -189,6 +189,7 @@ JitRuntime::generateEnterJIT(JSContext* cx, EnterJitType type)
         masm.makeFrameDescriptor(r19, JitFrame_BaselineJS, ExitFrameLayout::Size());
         masm.asVIXL().Push(x19, xzr); 
         
+        masm.loadJSContext(r19);
         masm.enterFakeExitFrame(r19, ExitFrameLayoutBareToken);
 
         masm.push(BaselineFrameReg, reg_code);
@@ -586,8 +587,8 @@ JitRuntime::generateVMWrapper(JSContext* cx, const VMFunction& f)
     
     
     
-    masm.enterExitFrame(reg_cx, &f);
     masm.loadJSContext(reg_cx);
+    masm.enterExitFrame(reg_cx, &f);
 
     
     Register argsBase = InvalidReg;

@@ -688,14 +688,14 @@ class MacroAssembler : public MacroAssemblerSpecific
     inline bool hasSelfReference() const;
 
     
-    inline void enterExitFrame(Register temp, const VMFunction* f = nullptr);
+    inline void enterExitFrame(Register cxreg, const VMFunction* f = nullptr);
 
     
     
-    inline void enterFakeExitFrame(Register temp, enum ExitFrameTokenValues token);
+    inline void enterFakeExitFrame(Register cxreg, enum ExitFrameTokenValues token);
 
     
-    inline void enterFakeExitFrameForNative(Register temp, bool isConstructing);
+    inline void enterFakeExitFrameForNative(Register cxreg, bool isConstructing);
 
     
     inline void leaveExitFrame(size_t extraFrame = 0);
@@ -703,7 +703,7 @@ class MacroAssembler : public MacroAssemblerSpecific
   private:
     
     
-    void linkExitFrame(Register temp);
+    void linkExitFrame(Register cxreg);
 
     
     void linkSelfReference(JitCode* code);
