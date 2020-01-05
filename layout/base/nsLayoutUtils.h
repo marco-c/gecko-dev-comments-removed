@@ -2856,6 +2856,19 @@ public:
 
   static bool SupportsServoStyleBackend(nsIDocument* aDocument);
 
+  
+
+
+
+
+
+
+
+
+
+
+  static bool IsInvisibleBreak(nsINode* aNode, nsIFrame** aNextLineFrame = nullptr);
+
 private:
   static uint32_t sFontSizeInflationEmPerLine;
   static uint32_t sFontSizeInflationMinTwips;
