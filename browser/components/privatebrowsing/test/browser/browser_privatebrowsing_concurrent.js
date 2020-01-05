@@ -11,6 +11,12 @@
 
 
 
+add_task(function* setup() {
+  yield SpecialPowers.pushPrefEnv({
+    set: [["dom.ipc.processCount", 1]]
+  });
+});
+
 add_task(function test() {
   let prefix = 'http://mochi.test:8888/browser/browser/components/privatebrowsing/test/browser/browser_privatebrowsing_concurrent_page.html';
 
