@@ -139,13 +139,9 @@ gfxFontUtils::ReadCMAPTableFormat10(const uint8_t *aBuf, uint32_t aLength,
 }
 
 nsresult
-gfxFontUtils::ReadCMAPTableFormat12or13(const uint8_t *aBuf, uint32_t aLength,
-                                        gfxSparseBitSet& aCharacterMap)
+gfxFontUtils::ReadCMAPTableFormat12(const uint8_t *aBuf, uint32_t aLength,
+                                    gfxSparseBitSet& aCharacterMap) 
 {
-    
-    
-    
-
     
     NS_ENSURE_TRUE(aLength >= sizeof(Format12CmapHeader),
                     NS_ERROR_GFX_CMAP_MALFORMED);
@@ -153,10 +149,9 @@ gfxFontUtils::ReadCMAPTableFormat12or13(const uint8_t *aBuf, uint32_t aLength,
     
     const Format12CmapHeader *cmap12 =
         reinterpret_cast<const Format12CmapHeader*>(aBuf);
-    NS_ENSURE_TRUE(uint16_t(cmap12->format) == 12 ||
-                   uint16_t(cmap12->format) == 13,
+    NS_ENSURE_TRUE(uint16_t(cmap12->format) == 12, 
                    NS_ERROR_GFX_CMAP_MALFORMED);
-    NS_ENSURE_TRUE(uint16_t(cmap12->reserved) == 0,
+    NS_ENSURE_TRUE(uint16_t(cmap12->reserved) == 0, 
                    NS_ERROR_GFX_CMAP_MALFORMED);
 
     uint32_t tablelen = cmap12->length;
@@ -477,7 +472,7 @@ gfxFontUtils::FindPreferredSubtable(const uint8_t *aBuf, uint32_t aBufLength,
             keepFormat = format;
             *aTableOffset = offset;
             *aSymbolEncoding = false;
-        } else if ((format == 10 || format == 12 || format == 13) &&
+        } else if ((format == 10 || format == 12) &&
                    acceptableUCS4Encoding(platformID, encodingID, keepFormat)) {
             keepFormat = format;
             *aTableOffset = offset;
@@ -526,11 +521,10 @@ gfxFontUtils::ReadCMAP(const uint8_t *aBuf, uint32_t aBufLength,
                                      aCharacterMap);
 
     case 12:
-    case 13:
         aUnicodeFont = true;
         aSymbolFont = false;
-        return ReadCMAPTableFormat12or13(aBuf + offset, aBufLength - offset,
-                                         aCharacterMap);
+        return ReadCMAPTableFormat12(aBuf + offset, aBufLength - offset,
+                                     aCharacterMap);
 
     default:
         break;
@@ -657,12 +651,8 @@ gfxFontUtils::MapCharToGlyphFormat10(const uint8_t *aBuf, uint32_t aCh)
 }
 
 uint32_t
-gfxFontUtils::MapCharToGlyphFormat12or13(const uint8_t *aBuf, uint32_t aCh)
+gfxFontUtils::MapCharToGlyphFormat12(const uint8_t *aBuf, uint32_t aCh)
 {
-    
-    
-    
-
     const Format12CmapHeader *cmap12 =
         reinterpret_cast<const Format12CmapHeader*>(aBuf);
 
@@ -699,12 +689,9 @@ gfxFontUtils::MapCharToGlyphFormat12or13(const uint8_t *aBuf, uint32_t aCh)
 
     
     
-    
     startCharCode = groups[range].startCharCode;
     if (startCharCode <= aCh && groups[range].endCharCode >= aCh) {
-        return uint16_t(cmap12->format) == 12
-               ? uint16_t(groups[range].startGlyphId) + aCh - startCharCode
-               : uint16_t(groups[range].startGlyphId);
+        return groups[range].startGlyphId + aCh - startCharCode;
     }
 
     
@@ -780,8 +767,7 @@ gfxFontUtils::MapCharToGlyph(const uint8_t *aCmapBuf, uint32_t aBufLength,
         gid = MapCharToGlyphFormat10(aCmapBuf + offset, aUnicode);
         break;
     case 12:
-    case 13:
-        gid = MapCharToGlyphFormat12or13(aCmapBuf + offset, aUnicode);
+        gid = MapCharToGlyphFormat12(aCmapBuf + offset, aUnicode);
         break;
     default:
         NS_WARNING("unsupported cmap format, glyphs will be missing");
@@ -807,9 +793,8 @@ gfxFontUtils::MapCharToGlyph(const uint8_t *aCmapBuf, uint32_t aBufLength,
                                                     aUnicode);
                     break;
                 case 12:
-                case 13:
-                    varGID = MapCharToGlyphFormat12or13(aCmapBuf + offset,
-                                                        aUnicode);
+                    varGID = MapCharToGlyphFormat12(aCmapBuf + offset,
+                                                    aUnicode);
                     break;
                 }
             }
