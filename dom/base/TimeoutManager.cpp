@@ -73,12 +73,12 @@ const uint32_t kThrottledEventQueueBackPressure = 5000;
 
 
 
-const double kBackPressureDelayMS = 500;
+const double kBackPressureDelayMS = 250;
 
 
 
 
-const double kBackPressureDelayReductionThresholdMS = 400;
+const double kBackPressureDelayReductionThresholdMS = 1000;
 
 
 
