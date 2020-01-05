@@ -6,6 +6,7 @@ import os
 import sys
 
 from mozboot.base import BaseBootstrapper
+from mozboot.linux_common import StyloInstall
 
 
 MERCURIAL_INSTALL_PROMPT = '''
@@ -28,7 +29,7 @@ Choice:
 '''.strip()
 
 
-class DebianBootstrapper(BaseBootstrapper):
+class DebianBootstrapper(StyloInstall, BaseBootstrapper):
     
     
     COMMON_PACKAGES = [

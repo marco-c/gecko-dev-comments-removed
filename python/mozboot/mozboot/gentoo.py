@@ -3,9 +3,10 @@
 
 
 from mozboot.base import BaseBootstrapper
+from mozboot.linux_common import StyloInstall
 
 
-class GentooBootstrapper(BaseBootstrapper):
+class GentooBootstrapper(StyloInstall, BaseBootstrapper):
     def __init__(self, version, dist_id, **kwargs):
         BaseBootstrapper.__init__(self, **kwargs)
 
