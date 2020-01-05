@@ -9,8 +9,10 @@
 
 #include "mozilla/EnumeratedArray.h"
 #include "mozilla/EventStates.h"
+#include "mozilla/PostTraversalTask.h"
 #include "mozilla/ServoBindingTypes.h"
 #include "mozilla/ServoElementSnapshot.h"
+#include "mozilla/ServoUtils.h"
 #include "mozilla/StyleSheetInlines.h"
 #include "mozilla/SheetType.h"
 #include "mozilla/UniquePtr.h"
@@ -313,11 +315,27 @@ public:
   ComputeAnimationValue(RawServoDeclarationBlock* aDeclaration,
                         const ServoComputedValuesWithParent& aComputedValues);
 
+  void AppendTask(PostTraversalTask aTask)
+  {
+    MOZ_ASSERT(IsInServoTraversal());
+
+    
+    
+    
+    
+    AssertIsMainThreadOrServoFontMetricsLocked();
+
+    mPostTraversalTasks.AppendElement(aTask);
+  }
+
 private:
+  
+  
   class MOZ_STACK_CLASS AutoSetInServoTraversal
   {
   public:
     explicit AutoSetInServoTraversal(ServoStyleSet* aSet)
+      : mSet(aSet)
     {
       MOZ_ASSERT(!sInServoTraversal);
       MOZ_ASSERT(aSet);
@@ -328,7 +346,11 @@ private:
     {
       MOZ_ASSERT(sInServoTraversal);
       sInServoTraversal = nullptr;
+      mSet->RunPostTraversalTasks();
     }
+
+  private:
+    ServoStyleSet* mSet;
   };
 
   already_AddRefed<nsStyleContext> GetContext(already_AddRefed<ServoComputedValues>,
@@ -378,6 +400,8 @@ private:
   already_AddRefed<ServoComputedValues> ResolveStyleLazily(dom::Element* aElement,
                                                            nsIAtom* aPseudoTag);
 
+  void RunPostTraversalTasks();
+
   uint32_t FindSheetOfType(SheetType aType,
                            ServoStyleSheet* aSheet);
 
@@ -420,6 +444,12 @@ private:
   EnumeratedArray<nsCSSAnonBoxes::NonInheriting,
                   nsCSSAnonBoxes::NonInheriting::_Count,
                   RefPtr<nsStyleContext>> mNonInheritingStyleContexts;
+
+  
+  
+  
+  
+  nsTArray<PostTraversalTask> mPostTraversalTasks;
 
   static ServoStyleSet* sInServoTraversal;
 };
