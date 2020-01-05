@@ -59,10 +59,9 @@ exports.items = [
         }
       },
       offChange: function (aTarget, aChangeHandler) {
-        if (aTarget.tab) {
-          ResponsiveUIManager.off("on", aChangeHandler);
-          ResponsiveUIManager.off("off", aChangeHandler);
-        }
+        
+        ResponsiveUIManager.off("on", aChangeHandler);
+        ResponsiveUIManager.off("off", aChangeHandler);
       },
     },
     exec: gcli_cmd_resize
