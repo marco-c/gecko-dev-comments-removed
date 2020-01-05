@@ -215,7 +215,10 @@ impl ChildrenList {
                     },
                 };
                 list.last_visited.set(Some(JS::from_ref(visited)));
-            } else {
+            } else if added.len() != 1 {
+                
+                
+                
                 match (prev, next) {
                     (Some(_), None) => {},
                     (None, Some(next)) => {
