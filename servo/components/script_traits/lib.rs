@@ -6,6 +6,7 @@
 
 
 
+#![feature(core_intrinsics)]
 #![feature(custom_derive, plugin)]
 #![plugin(heapsize_plugin, plugins, serde_macros)]
 #![deny(missing_docs)]
