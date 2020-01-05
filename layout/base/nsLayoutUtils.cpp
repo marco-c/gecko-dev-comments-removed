@@ -551,7 +551,7 @@ GetSuitableScale(float aMaxScale, float aMinScale,
 
 static inline void
 UpdateMinMaxScale(const nsIFrame* aFrame,
-                  const StyleAnimationValue& aValue,
+                  const AnimationValue& aValue,
                   gfxSize& aMinScale,
                   gfxSize& aMaxScale)
 {
@@ -591,19 +591,19 @@ GetMinAndMaxScaleForAnimationProperty(const nsIFrame* aFrame,
         StyleAnimationValue baseStyle =
           EffectCompositor::GetBaseStyle(prop.mProperty, aFrame);
         MOZ_ASSERT(!baseStyle.IsNull(), "The base value should be set");
-        UpdateMinMaxScale(aFrame, baseStyle, aMinScale, aMaxScale);
+        
+        
+        UpdateMinMaxScale(aFrame, { baseStyle, nullptr }, aMinScale, aMaxScale);
       }
 
       for (const AnimationPropertySegment& segment : prop.mSegments) {
         
         
         if (segment.mFromComposite == dom::CompositeOperation::Replace) {
-          UpdateMinMaxScale(aFrame, segment.mFromValue.mGecko, aMinScale,
-                            aMaxScale);
+          UpdateMinMaxScale(aFrame, segment.mFromValue, aMinScale, aMaxScale);
         }
         if (segment.mToComposite == dom::CompositeOperation::Replace) {
-          UpdateMinMaxScale(aFrame, segment.mToValue.mGecko, aMinScale,
-                            aMaxScale);
+          UpdateMinMaxScale(aFrame, segment.mToValue, aMinScale, aMaxScale);
         }
       }
     }
