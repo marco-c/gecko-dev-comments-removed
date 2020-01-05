@@ -1,7 +1,7 @@
 
 
-use layout::base::{RenderBox, RenderBoxTree};
-use layout::base::{FlowContext, FlowTree};
+use layout::box::{RenderBox, RenderBoxTree};
+use layout::flow::{FlowContext, FlowTree};
 
 
 trait RenderBoxTraversals {
