@@ -29,7 +29,7 @@ function* testSidebar(toolbox) {
   info("Testing sidebar");
 
   let inspector = toolbox.getCurrentPanel();
-  let sidebarTools = ["ruleview", "computedview", "fontinspector",
+  let sidebarTools = ["ruleview", "computedview", "layoutview", "fontinspector",
                       "animationinspector"];
 
   
