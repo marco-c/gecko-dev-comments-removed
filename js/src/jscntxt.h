@@ -67,7 +67,7 @@ TraceCycleDetectionSet(JSTracer* trc, AutoCycleDetector::Set& set);
 
 struct AutoResolving;
 
-namespace frontend { class CompileError; }
+namespace frontend { struct CompileError; }
 
 
 
@@ -616,7 +616,7 @@ ReportErrorNumberUCArray(JSContext* cx, unsigned flags, JSErrorCallback callback
 extern bool
 ExpandErrorArgumentsVA(ExclusiveContext* cx, JSErrorCallback callback,
                        void* userRef, const unsigned errorNumber,
-                       const char16_t** messageArgs,
+                       char** message, const char16_t** messageArgs,
                        ErrorArgumentsType argumentsType,
                        JSErrorReport* reportp, va_list ap);
 
@@ -631,14 +631,14 @@ ReportUsageErrorASCII(JSContext* cx, HandleObject callee, const char* msg);
 
 
 extern bool
-PrintError(JSContext* cx, FILE* file, JS::ConstUTF8CharsZ toStringResult,
-           JSErrorReport* report, bool reportWarnings);
+PrintError(JSContext* cx, FILE* file, const char* message, JSErrorReport* report,
+           bool reportWarnings);
 
 
 
 
 void
-CallWarningReporter(JSContext* cx, JSErrorReport* report);
+CallWarningReporter(JSContext* cx, const char* message, JSErrorReport* report);
 
 extern bool
 ReportIsNotDefined(JSContext* cx, HandlePropertyName name);
