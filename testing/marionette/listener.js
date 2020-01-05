@@ -998,9 +998,11 @@ function get(msg) {
 
     
     
-    let loadedNonAboutBlank = docShell.hasLoadedNonBlankURI;
+    
+    let loadedRequestedURI = (requestedURL == "about:blank") ||
+        docShell.hasLoadedNonBlankURI;
 
-    if (correctFrame && sawLoad && loadedNonAboutBlank) {
+    if (correctFrame && sawLoad && loadedRequestedURI) {
       webProgress.removeProgressListener(loadListener);
       pollForReadyState(msg, start, () => {
         removeEventListener("DOMContentLoaded", onDOMContentLoaded, false);
