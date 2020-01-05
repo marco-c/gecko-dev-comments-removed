@@ -7,7 +7,7 @@
 #![allow(unsafe_code)]
 
 use atomic_refcell::{AtomicRef, AtomicRefMut};
-use data::NodeData;
+use data::{NodeStyles, NodeData};
 use element_state::ElementState;
 use parking_lot::RwLock;
 use properties::{ComputedValues, PropertyDeclarationBlock};
@@ -19,6 +19,8 @@ use std::fmt::Debug;
 use std::ops::BitOr;
 use std::sync::Arc;
 use string_cache::{Atom, Namespace};
+use traversal::DomTraversalContext;
+use util::opts;
 
 pub use style_traits::UnsafeNode;
 
@@ -41,6 +43,19 @@ impl OpaqueNode {
     pub fn id(&self) -> usize {
         self.0
     }
+}
+
+#[derive(Clone, Copy, PartialEq)]
+pub enum StylingMode {
+    
+    Initial,
+    
+    Restyle,
+    
+    
+    Traverse,
+    
+    Stop,
 }
 
 pub trait TRestyleDamage : Debug + PartialEq + BitOr<Output=Self> + Copy {
@@ -117,9 +132,11 @@ pub trait TNode : Sized + Copy + Clone + NodeInfo {
 
     fn as_document(&self) -> Option<Self::ConcreteDocument>;
 
-    fn is_dirty(&self) -> bool;
-
-    unsafe fn set_dirty(&self);
+    
+    
+    
+    
+    fn deprecated_dirty_bit_is_set(&self) -> bool;
 
     fn has_dirty_descendants(&self) -> bool;
 
@@ -140,6 +157,51 @@ pub trait TNode : Sized + Copy + Clone + NodeInfo {
     
     
     fn did_process_child(&self) -> isize;
+
+    
+    fn frame_has_style(&self) -> bool { false }
+
+    
+    
+    
+    
+    
+    fn get_styles_from_frame(&self) -> Option<NodeStyles> { None }
+
+    
+    
+    
+    
+    fn styling_mode(&self) -> StylingMode {
+        use self::StylingMode::*;
+
+        
+        if opts::get().nonincremental_layout {
+            return Initial;
+        }
+
+        
+        let mode_for_descendants = if self.has_dirty_descendants() {
+            Traverse
+        } else {
+            Stop
+        };
+
+        match self.borrow_data() {
+            
+            None if !self.frame_has_style() => Initial,
+            
+            None => mode_for_descendants,
+            Some(d) => {
+                if d.restyle_data.is_some() || self.deprecated_dirty_bit_is_set() {
+                    Restyle
+                } else {
+                    debug_assert!(!self.frame_has_style()); 
+                    mode_for_descendants
+                }
+            },
+        }
+    }
 
     
     
@@ -212,7 +274,7 @@ pub trait TElement : PartialEq + Debug + Sized + Copy + Clone + ElementExt + Pre
     fn attr_equals(&self, namespace: &Namespace, attr: &Atom, value: &Atom) -> bool;
 
     
-    fn note_restyle_hint(&self, hint: RestyleHint) {
+    fn note_restyle_hint<C: DomTraversalContext<Self::ConcreteNode>>(&self, hint: RestyleHint) {
         
         if hint.is_empty() {
             return;
@@ -230,13 +292,13 @@ pub trait TElement : PartialEq + Debug + Sized + Copy + Clone + ElementExt + Pre
 
         
         if hint.contains(RESTYLE_SELF) {
-            unsafe { node.set_dirty(); }
+            unsafe { C::ensure_node_data(&node).borrow_mut().ensure_restyle_data(); }
         
         } else if hint.contains(RESTYLE_DESCENDANTS) {
             unsafe { node.set_dirty_descendants(); }
             let mut current = node.first_child();
             while let Some(node) = current {
-                unsafe { node.set_dirty(); }
+                unsafe { C::ensure_node_data(&node).borrow_mut().ensure_restyle_data(); }
                 current = node.next_sibling();
             }
         }
@@ -245,7 +307,7 @@ pub trait TElement : PartialEq + Debug + Sized + Copy + Clone + ElementExt + Pre
             let mut next = ::selectors::Element::next_sibling_element(self);
             while let Some(sib) = next {
                 let sib_node = sib.as_node();
-                unsafe { sib_node.set_dirty() };
+                unsafe { C::ensure_node_data(&sib_node).borrow_mut().ensure_restyle_data() };
                 next = ::selectors::Element::next_sibling_element(&sib);
             }
         }

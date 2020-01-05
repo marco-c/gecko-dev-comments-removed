@@ -186,12 +186,8 @@ impl<'ln> TNode for ServoLayoutNode<'ln> {
         self.node.downcast().map(ServoLayoutDocument::from_layout_js)
     }
 
-    fn is_dirty(&self) -> bool {
+    fn deprecated_dirty_bit_is_set(&self) -> bool {
         unsafe { self.node.get_flag(IS_DIRTY) }
-    }
-
-    unsafe fn set_dirty(&self) {
-        self.node.set_flag(IS_DIRTY, true)
     }
 
     fn has_dirty_descendants(&self) -> bool {
@@ -242,6 +238,20 @@ impl<'ln> TNode for ServoLayoutNode<'ln> {
         data.style_data.style_text_node(style);
         if self.has_changed() {
             data.restyle_damage = RestyleDamage::rebuild_and_reflow();
+        } else {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            let parent = self.parent_node().unwrap();
+            let parent_data = parent.get_partial_layout_data().unwrap().borrow();
+            data.restyle_damage = parent_data.restyle_damage;
         }
     }
 
@@ -358,6 +368,14 @@ impl<'ln> LayoutNode for ServoLayoutNode<'ln> {
 }
 
 impl<'ln> ServoLayoutNode<'ln> {
+    pub fn is_dirty(&self) -> bool {
+        unsafe { self.node.get_flag(IS_DIRTY) }
+    }
+
+    pub unsafe fn set_dirty(&self) {
+        self.node.set_flag(IS_DIRTY, true)
+    }
+
     fn get_partial_layout_data(&self) -> Option<&AtomicRefCell<PartialPersistentLayoutData>> {
         unsafe {
             self.get_jsmanaged().get_style_and_layout_data().map(|d| {
@@ -397,7 +415,9 @@ impl<'ln> ServoLayoutNode<'ln> {
 
     fn debug_str(self) -> String {
         format!("{:?}: changed={} dirty={} dirty_descendants={}",
-                self.script_type_id(), self.has_changed(), self.is_dirty(), self.has_dirty_descendants())
+                self.script_type_id(), self.has_changed(),
+                self.deprecated_dirty_bit_is_set(),
+                self.has_dirty_descendants())
     }
 
     fn debug_style_str(self) -> String {

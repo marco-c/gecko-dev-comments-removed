@@ -8,7 +8,7 @@
 
 #![allow(unsafe_code)]
 
-use dom::{OpaqueNode, TNode, UnsafeNode};
+use dom::{OpaqueNode, StylingMode, TNode, UnsafeNode};
 use std::mem;
 use std::sync::atomic::Ordering;
 use traversal::{RestyleResult, DomTraversalContext};
@@ -47,6 +47,7 @@ pub fn traverse_dom<N, C>(root: N,
     where N: TNode,
           C: DomTraversalContext<N>
 {
+    debug_assert!(root.styling_mode() != StylingMode::Stop);
     if opts::get().style_sharing_stats {
         STYLE_SHARING_CACHE_HITS.store(0, Ordering::SeqCst);
         STYLE_SHARING_CACHE_MISSES.store(0, Ordering::SeqCst);
@@ -80,28 +81,13 @@ fn top_down_dom<N, C>(unsafe_nodes: UnsafeNodeList,
         
         let node = unsafe { N::from_unsafe(&unsafe_node) };
 
-        if !context.should_process(node) {
-            continue;
-        }
-
         
         let mut children_to_process = 0isize;
-        
         if let RestyleResult::Continue = context.process_preorder(node) {
-            for kid in node.children() {
-                
-                
-                
-                
-                
-                
-                
-                context.pre_process_child_hook(node, kid);
-                if context.should_process(kid) {
-                    children_to_process += 1;
-                    discovered_child_nodes.push(kid.to_unsafe())
-                }
-            }
+            C::traverse_children(node, |kid| {
+                children_to_process += 1;
+                discovered_child_nodes.push(kid.to_unsafe())
+            });
         }
 
         

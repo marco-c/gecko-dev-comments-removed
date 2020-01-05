@@ -4,8 +4,10 @@
 
 
 
+use atomic_refcell::AtomicRefCell;
 use context::{LocalStyleContext, SharedStyleContext, StyleContext};
-use dom::{OpaqueNode, TNode, UnsafeNode};
+use data::NodeData;
+use dom::{OpaqueNode, StylingMode, TNode, UnsafeNode};
 use matching::{ApplicableDeclarations, ElementMatchMethods, MatchMethods, StyleSharingResult};
 use selectors::bloom::BloomFilter;
 use selectors::matching::StyleRelations;
@@ -22,6 +24,7 @@ pub type Generation = u32;
 
 
 
+#[derive(Clone, Copy, PartialEq)]
 pub enum RestyleResult {
     Continue,
     Stop,
@@ -174,27 +177,27 @@ pub trait DomTraversalContext<N: TNode> {
 
     
     
-    
-    
-    
-    fn should_process(&self, node: N) -> bool {
-        opts::get().nonincremental_layout || node.is_dirty() || node.has_dirty_descendants()
+    fn traverse_children<F: FnMut(N)>(parent: N, mut f: F)
+    {
+        
+        
+        let mut marked_dirty_descendants = false;
+
+        for kid in parent.children() {
+            if kid.styling_mode() != StylingMode::Stop {
+                if !marked_dirty_descendants {
+                    unsafe { parent.set_dirty_descendants(); }
+                    marked_dirty_descendants = true;
+                }
+                f(kid);
+            }
+        }
     }
 
     
     
     
-    #[allow(unsafe_code)]
-    fn pre_process_child_hook(&self, parent: N, kid: N) {
-        
-        
-        if parent.is_dirty() {
-            unsafe {
-                kid.set_dirty();
-                parent.set_dirty_descendants();
-            }
-        }
-    }
+    fn ensure_node_data(node: &N) -> &AtomicRefCell<NodeData>;
 
     fn local_context(&self) -> &LocalStyleContext;
 }
@@ -281,11 +284,12 @@ fn ensure_node_styled_internal<'a, N, C>(node: N,
 
 #[inline]
 #[allow(unsafe_code)]
-pub fn recalc_style_at<'a, N, C>(context: &'a C,
-                                 root: OpaqueNode,
-                                 node: N) -> RestyleResult
+pub fn recalc_style_at<'a, N, C, D>(context: &'a C,
+                                    root: OpaqueNode,
+                                    node: N) -> RestyleResult
     where N: TNode,
-          C: StyleContext<'a>
+          C: StyleContext<'a>,
+          D: DomTraversalContext<N>
 {
     
     let parent_opt = match node.parent_node() {
@@ -296,9 +300,10 @@ pub fn recalc_style_at<'a, N, C>(context: &'a C,
     
     let mut bf = take_thread_local_bloom_filter(parent_opt, root, context.shared_context());
 
-    let nonincremental_layout = opts::get().nonincremental_layout;
     let mut restyle_result = RestyleResult::Continue;
-    if nonincremental_layout || node.is_dirty() {
+    let mode = node.styling_mode();
+    debug_assert!(mode != StylingMode::Stop, "Parent should not have enqueued us");
+    if mode != StylingMode::Traverse {
         
         let style_sharing_candidate_cache =
             &mut context.local_context().style_sharing_candidate_cache.borrow_mut();
@@ -370,6 +375,23 @@ pub fn recalc_style_at<'a, N, C>(context: &'a C,
         }
     }
 
+    
+    
+    
+    if mode == StylingMode::Restyle && restyle_result == RestyleResult::Continue {
+        for kid in node.children() {
+            let mut data = D::ensure_node_data(&kid).borrow_mut();
+            if kid.is_text_node() {
+                data.ensure_restyle_data();
+            } else {
+                data.gather_previous_styles(|| kid.get_styles_from_frame());
+                if data.previous_styles().is_some() {
+                    data.ensure_restyle_data();
+                }
+            }
+        }
+    }
+
     let unsafe_layout_node = node.to_unsafe();
 
     
@@ -380,9 +402,5 @@ pub fn recalc_style_at<'a, N, C>(context: &'a C,
     
     put_thread_local_bloom_filter(bf, &unsafe_layout_node, context.shared_context());
 
-    if nonincremental_layout {
-        RestyleResult::Continue
-    } else {
-        restyle_result
-    }
+    restyle_result
 }

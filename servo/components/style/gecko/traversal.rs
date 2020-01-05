@@ -2,7 +2,9 @@
 
 
 
+use atomic_refcell::AtomicRefCell;
 use context::{LocalStyleContext, SharedStyleContext, StyleContext};
+use data::NodeData;
 use dom::OpaqueNode;
 use gecko::context::StandaloneStyleContext;
 use gecko::wrapper::GeckoNode;
@@ -29,7 +31,7 @@ impl<'lc, 'ln> DomTraversalContext<GeckoNode<'ln>> for RecalcStyleOnly<'lc> {
     }
 
     fn process_preorder(&self, node: GeckoNode<'ln>) -> RestyleResult {
-        recalc_style_at(&self.context, self.root, node)
+        recalc_style_at::<_, _, Self>(&self.context, self.root, node)
     }
 
     fn process_postorder(&self, _: GeckoNode<'ln>) {
@@ -38,6 +40,10 @@ impl<'lc, 'ln> DomTraversalContext<GeckoNode<'ln>> for RecalcStyleOnly<'lc> {
 
     
     fn needs_postorder_traversal(&self) -> bool { false }
+
+    fn ensure_node_data<'a>(node: &'a GeckoNode<'ln>) -> &'a AtomicRefCell<NodeData> {
+        node.ensure_data()
+    }
 
     fn local_context(&self) -> &LocalStyleContext {
         self.context.local_context()
