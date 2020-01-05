@@ -202,18 +202,10 @@ var SessionHistoryInternal = {
     }
 
     
-    
-    
-    
-    
-    
-    
-    
     if (shEntry.principalToInherit) {
       try {
         let principalToInherit = Utils.serializePrincipal(shEntry.principalToInherit);
         if (principalToInherit) {
-          entry.triggeringPrincipal_b64 = principalToInherit;
           entry.principalToInherit_base64 = principalToInherit;
         }
       } catch (e) {
@@ -411,27 +403,11 @@ var SessionHistoryInternal = {
       }
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (entry.triggeringPrincipal_base64 || entry.principalToInherit_base64) {
-      if (entry.triggeringPrincipal_base64) {
-        shEntry.triggeringPrincipal =
-          Utils.deserializePrincipal(entry.triggeringPrincipal_base64);
-      }
-      if (entry.principalToInherit_base64) {
-        shEntry.principalToInherit =
-          Utils.deserializePrincipal(entry.principalToInherit_base64);
-      }
-    } else if (entry.triggeringPrincipal_b64) {
-      shEntry.triggeringPrincipal = Utils.deserializePrincipal(entry.triggeringPrincipal_b64);
-      shEntry.principalToInherit = shEntry.triggeringPrincipal;
+    if (entry.triggeringPrincipal_base64) {
+      shEntry.triggeringPrincipal = Utils.deserializePrincipal(entry.triggeringPrincipal_base64);
+    }
+    if (entry.principalToInherit_base64) {
+      shEntry.principalToInherit = Utils.deserializePrincipal(entry.principalToInherit_base64);
     }
 
     if (entry.children && shEntry instanceof Ci.nsISHContainer) {
