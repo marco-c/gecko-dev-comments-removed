@@ -215,19 +215,6 @@
 
 
 
-#if defined(__clang__)
-# define MOZ_UBSAN_BLACKLIST_FUNCTION MOZ_NEVER_INLINE __attribute__((no_sanitize("function")))
-#else
-# define MOZ_UBSAN_BLACKLIST_FUNCTION
-#endif
-
-
-
-
-
-
-
-
 
 
 
