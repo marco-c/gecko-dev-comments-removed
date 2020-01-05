@@ -127,7 +127,6 @@ pub enum LayoutControlMsg {
 
 
 
-
 #[derive(Clone, Deserialize, Serialize)]
 pub struct LoadData {
     
