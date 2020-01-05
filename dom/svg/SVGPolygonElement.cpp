@@ -42,7 +42,7 @@ NS_IMPL_ELEMENT_CLONE_WITH_INIT(SVGPolygonElement)
 void
 SVGPolygonElement::GetMarkPoints(nsTArray<nsSVGMark> *aMarks)
 {
-  nsSVGPolyElement::GetMarkPoints(aMarks);
+  SVGPolyElement::GetMarkPoints(aMarks);
 
   if (aMarks->IsEmpty() || aMarks->LastElement().type != nsSVGMark::eEnd) {
     return;

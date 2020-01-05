@@ -3,14 +3,12 @@
 
 
 
-
 #include "mozilla/dom/SVGPathElement.h"
 
 #include <algorithm>
 
 #include "DOMSVGPathSeg.h"
 #include "DOMSVGPathSegList.h"
-#include "DOMSVGPoint.h"
 #include "gfx2DGlue.h"
 #include "gfxPlatform.h"
 #include "mozilla/dom/SVGPathElementBinding.h"
@@ -36,9 +34,6 @@ SVGPathElement::WrapNode(JSContext *aCx, JS::Handle<JSObject*> aGivenProto)
   return SVGPathElementBinding::Wrap(aCx, this, aGivenProto);
 }
 
-nsSVGElement::NumberInfo SVGPathElement::sNumberInfo = 
-{ &nsGkAtoms::pathLength, 0, false };
-
 
 
 
@@ -61,45 +56,6 @@ SVGPathElement::SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
 
 
 NS_IMPL_ELEMENT_CLONE_WITH_INIT(SVGPathElement)
-
-already_AddRefed<SVGAnimatedNumber>
-SVGPathElement::PathLength()
-{
-  return mPathLength.ToDOMAnimatedNumber(this);
-}
-
-float
-SVGPathElement::GetTotalLength()
-{
-  RefPtr<Path> flat = GetOrBuildPathForMeasuring();
-  return flat ? flat->ComputeLength() : 0.f;
-}
-
-already_AddRefed<nsISVGPoint>
-SVGPathElement::GetPointAtLength(float distance, ErrorResult& rv)
-{
-  RefPtr<Path> path = GetOrBuildPathForMeasuring();
-  if (!path) {
-    rv.Throw(NS_ERROR_FAILURE);
-    return nullptr;
-  }
-
-  float totalLength = path->ComputeLength();
-  if (mPathLength.IsExplicitlySet()) {
-    float pathLength = mPathLength.GetAnimValue();
-    if (pathLength <= 0) {
-      rv.Throw(NS_ERROR_FAILURE);
-      return nullptr;
-    }
-    distance *= totalLength / pathLength;
-  }
-  distance = std::max(0.f,         distance);
-  distance = std::min(totalLength, distance);
-
-  nsCOMPtr<nsISVGPoint> point =
-    new DOMSVGPoint(path->ComputePointAtLength(distance));
-  return point.forget();
-}
 
 uint32_t
 SVGPathElement::GetPathSegAtLength(float distance)
@@ -283,12 +239,6 @@ SVGPathElement::AnimatedPathSegList()
 SVGPathElement::HasValidDimensions() const
 {
   return !mD.GetAnimValue().IsEmpty();
-}
-
-nsSVGElement::NumberAttributesInfo
-SVGPathElement::GetNumberInfo()
-{
-  return NumberAttributesInfo(&mPathLength, &sNumberInfo, 1);
 }
 
 
