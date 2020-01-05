@@ -136,7 +136,7 @@ impl ActorRegistry {
         
         
 
-        self.actors.find(&name.to_string()).unwrap().as_ref::<T>().unwrap()
+        self.actors.find(&name.to_string()).unwrap().downcast_ref::<T>().unwrap()
     }
 
     
@@ -162,7 +162,7 @@ impl ActorRegistry {
                 }
             }
         }
-        let mut new_actors = replace(&mut *self.new_actors.borrow_mut(), vec!());
+        let new_actors = replace(&mut *self.new_actors.borrow_mut(), vec!());
         for actor in new_actors.into_iter() {
             self.actors.insert(actor.name().to_string(), actor);
         }
