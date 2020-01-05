@@ -56,6 +56,7 @@ class nsDocument;
 class nsDOMStringMap;
 
 namespace mozilla {
+class DeclarationBlock;
 namespace dom {
   struct AnimationFilter;
   struct ScrollIntoViewOptions;
@@ -254,13 +255,13 @@ public:
   
 
 
-  virtual css::Declaration* GetInlineStyleDeclaration();
+  virtual DeclarationBlock* GetInlineStyleDeclaration();
 
   
 
 
 
-  virtual nsresult SetInlineStyleDeclaration(css::Declaration* aDeclaration,
+  virtual nsresult SetInlineStyleDeclaration(DeclarationBlock* aDeclaration,
                                              const nsAString* aSerialized,
                                              bool aNotify);
 

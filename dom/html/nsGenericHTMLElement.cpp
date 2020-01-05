@@ -5,6 +5,7 @@
 
 
 #include "mozilla/ArrayUtils.h"
+#include "mozilla/DeclarationBlockInlines.h"
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/EventListenerManager.h"
 #include "mozilla/EventStateManager.h"
@@ -187,12 +188,18 @@ nsGenericHTMLElement::CopyInnerTo(Element* aDst)
     value->ToString(valStr);
 
     if (name->Equals(nsGkAtoms::style, kNameSpaceID_None) &&
-        value->Type() == nsAttrValue::eGeckoCSSDeclaration) {
+        value->Type() == nsAttrValue::eCSSDeclaration) {
+      DeclarationBlock* decl = value->GetCSSDeclarationValue();
+      if (decl->IsServo()) {
+        MOZ_CRASH("stylo: clone not implemented");
+        continue;
+      }
+
       
       
       
-      RefPtr<css::Declaration> declClone =
-        new css::Declaration(*value->GetGeckoCSSDeclarationValue());
+      RefPtr<css::Declaration>
+        declClone = new css::Declaration(*decl->AsGecko());
 
       rv = aDst->SetInlineStyleDeclaration(declClone, &valStr, false);
       NS_ENSURE_SUCCESS(rv, rv);

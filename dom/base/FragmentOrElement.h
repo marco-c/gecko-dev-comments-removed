@@ -33,6 +33,9 @@ class nsDOMStringMap;
 class nsIURI;
 
 namespace mozilla {
+namespace css {
+class Declaration;
+} 
 namespace dom {
 class Element;
 } 
