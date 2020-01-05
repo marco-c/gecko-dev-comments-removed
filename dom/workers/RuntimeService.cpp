@@ -32,6 +32,7 @@
 #include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/CycleCollectedJSContext.h"
+#include "mozilla/CycleCollectedJSRuntime.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/dom/asmjscache/AsmJSCache.h"
@@ -1046,60 +1047,27 @@ static const JSWrapObjectCallbacks WrapObjectCallbacks = {
   nullptr,
 };
 
-class MOZ_STACK_CLASS WorkerJSContext final : public mozilla::CycleCollectedJSContext
+class WorkerJSRuntime final : public mozilla::CycleCollectedJSRuntime
 {
 public:
   
   
-  explicit WorkerJSContext(WorkerPrivate* aWorkerPrivate)
-    : mWorkerPrivate(aWorkerPrivate)
+  explicit WorkerJSRuntime(JSContext* aCx, WorkerPrivate* aWorkerPrivate)
+    : CycleCollectedJSRuntime(aCx)
+    , mWorkerPrivate(aWorkerPrivate)
   {
     MOZ_ASSERT(aWorkerPrivate);
   }
 
-  ~WorkerJSContext()
+  void Shutdown() override
   {
-    JSContext* cx = MaybeContext();
-    if (!cx) {
-      return;   
-    }
-
-    delete static_cast<WorkerThreadContextPrivate*>(JS_GetContextPrivate(cx));
-    JS_SetContextPrivate(cx, nullptr);
-
-    
-    
-    
-    
-    nsCycleCollector_shutdown();
-
     
     
     mWorkerPrivate = nullptr;
   }
 
-  nsresult Initialize(JSRuntime* aParentRuntime)
+  ~WorkerJSRuntime()
   {
-    nsresult rv =
-      CycleCollectedJSContext::Initialize(aParentRuntime,
-                                          WORKER_DEFAULT_RUNTIME_HEAPSIZE,
-                                          WORKER_DEFAULT_NURSERY_SIZE);
-     if (NS_WARN_IF(NS_FAILED(rv))) {
-       return rv;
-     }
-
-    JSContext* cx = Context();
-
-    JS_SetContextPrivate(cx, new WorkerThreadContextPrivate(mWorkerPrivate));
-
-    js::SetPreserveWrapperCallback(cx, PreserveWrapper);
-    JS_InitDestroyPrincipalsCallback(cx, DestroyWorkerPrincipals);
-    JS_SetWrapObjectCallbacks(cx, &WrapObjectCallbacks);
-    if (mWorkerPrivate->IsDedicatedWorker()) {
-      JS_SetFutexCanWait(cx);
-    }
-
-    return NS_OK;
   }
 
   virtual void
@@ -1138,6 +1106,71 @@ public:
     if (aStatus == JSGC_END) {
       nsCycleCollector_collect(nullptr);
     }
+  }
+
+private:
+  WorkerPrivate* mWorkerPrivate;
+};
+
+class MOZ_STACK_CLASS WorkerJSContext final : public mozilla::CycleCollectedJSContext
+{
+public:
+  
+  
+  explicit WorkerJSContext(WorkerPrivate* aWorkerPrivate)
+    : mWorkerPrivate(aWorkerPrivate)
+  {
+    MOZ_ASSERT(aWorkerPrivate);
+  }
+
+  ~WorkerJSContext()
+  {
+    JSContext* cx = MaybeContext();
+    if (!cx) {
+      return;   
+    }
+
+    delete static_cast<WorkerThreadContextPrivate*>(JS_GetContextPrivate(cx));
+    JS_SetContextPrivate(cx, nullptr);
+
+    
+    
+    
+    
+    nsCycleCollector_shutdown();
+
+    
+    
+    mWorkerPrivate = nullptr;
+  }
+
+  CycleCollectedJSRuntime* CreateRuntime(JSContext* aCx) override
+  {
+    return new WorkerJSRuntime(aCx, mWorkerPrivate);
+  }
+
+  nsresult Initialize(JSRuntime* aParentRuntime)
+  {
+    nsresult rv =
+      CycleCollectedJSContext::Initialize(aParentRuntime,
+                                          WORKER_DEFAULT_RUNTIME_HEAPSIZE,
+                                          WORKER_DEFAULT_NURSERY_SIZE);
+     if (NS_WARN_IF(NS_FAILED(rv))) {
+       return rv;
+     }
+
+    JSContext* cx = Context();
+
+    JS_SetContextPrivate(cx, new WorkerThreadContextPrivate(mWorkerPrivate));
+
+    js::SetPreserveWrapperCallback(cx, PreserveWrapper);
+    JS_InitDestroyPrincipalsCallback(cx, DestroyWorkerPrincipals);
+    JS_SetWrapObjectCallbacks(cx, &WrapObjectCallbacks);
+    if (mWorkerPrivate->IsDedicatedWorker()) {
+      JS_SetFutexCanWait(cx);
+    }
+
+    return NS_OK;
   }
 
   virtual void AfterProcessTask(uint32_t aRecursionDepth) override

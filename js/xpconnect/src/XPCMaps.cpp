@@ -43,7 +43,7 @@ HashNativeKey(const void* data)
 
 
 void
-JSObject2WrappedJSMap::UpdateWeakPointersAfterGC(XPCJSContext* context)
+JSObject2WrappedJSMap::UpdateWeakPointersAfterGC()
 {
     
     

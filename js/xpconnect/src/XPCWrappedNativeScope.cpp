@@ -487,7 +487,7 @@ XPCWrappedNativeScope::~XPCWrappedNativeScope()
 
 
 void
-XPCWrappedNativeScope::TraceWrappedNativesInAllScopes(JSTracer* trc, XPCJSContext* cx)
+XPCWrappedNativeScope::TraceWrappedNativesInAllScopes(JSTracer* trc)
 {
     
     
@@ -516,8 +516,7 @@ SuspectDOMExpandos(JSObject* obj, nsCycleCollectionNoteRootCallback& cb)
 
 
 void
-XPCWrappedNativeScope::SuspectAllWrappers(XPCJSContext* cx,
-                                          nsCycleCollectionNoteRootCallback& cb)
+XPCWrappedNativeScope::SuspectAllWrappers(nsCycleCollectionNoteRootCallback& cb)
 {
     for (XPCWrappedNativeScope* cur = gScopes; cur; cur = cur->mNext) {
         for (auto i = cur->mWrappedNativeMap->Iter(); !i.Done(); i.Next()) {
@@ -533,7 +532,7 @@ XPCWrappedNativeScope::SuspectAllWrappers(XPCJSContext* cx,
 
 
 void
-XPCWrappedNativeScope::UpdateWeakPointersAfterGC(XPCJSContext* cx)
+XPCWrappedNativeScope::UpdateWeakPointersAfterGC()
 {
     
     
