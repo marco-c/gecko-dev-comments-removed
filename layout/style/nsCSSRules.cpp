@@ -268,9 +268,9 @@ ImportRule::ImportRule(const ImportRule& aCopy)
   
   
   if (aCopy.mChildSheet) {
-    RefPtr<CSSStyleSheet> sheet =
+    RefPtr<StyleSheet> sheet =
       aCopy.mChildSheet->Clone(nullptr, this, nullptr, nullptr);
-    SetSheet(sheet);
+    SetSheet(static_cast<CSSStyleSheet*>(sheet.get()));
     
   } else {
     
