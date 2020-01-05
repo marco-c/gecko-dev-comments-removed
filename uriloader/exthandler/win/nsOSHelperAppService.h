@@ -46,9 +46,6 @@ public:
 
   static bool GetValueString(HKEY hKey, const char16_t* pValueName, nsAString& result);
 
-  
-  static bool CleanupCmdHandlerPath(nsAString& aCommandHandler);
-
 protected:
   nsresult GetDefaultAppInfo(const nsAString& aTypeName, nsAString& aDefaultDescription, nsIFile** aDefaultApplication);
   
