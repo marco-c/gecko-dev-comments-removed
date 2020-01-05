@@ -113,7 +113,7 @@ VRDisplayClient::NotifyVsync()
   
   if (bLastEventWasPresenting != isPresenting) {
     bLastEventWasPresenting = isPresenting;
-    vm->FireDOMVRDisplayPresentChangeEvent();
+    vm->FireDOMVRDisplayPresentChangeEvent(mDisplayInfo.mDisplayID);
   }
 
   
