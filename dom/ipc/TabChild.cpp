@@ -314,7 +314,12 @@ private:
     {
         MOZ_ASSERT(NS_IsMainThread());
         MOZ_ASSERT(mTabChild);
-        mTabChild->SendDeleteIfOpen();
+
+        
+        if (mTabChild->IPCOpen()) {
+            Unused << PBrowserChild::Send__delete__(mTabChild);
+        }
+
         mTabChild = nullptr;
         return NS_OK;
     }
@@ -1170,20 +1175,6 @@ TabChild::DestroyWindow()
       }
       mLayersId = 0;
     }
-}
-
-void
-TabChild::SendDeleteIfOpen()
-{
-  
-  if (mIPCOpen) {
-
-    
-    
-    mIPCOpen = false;
-
-    Unused << PBrowserChild::Send__delete__(this);
-  }
 }
 
 void
