@@ -280,8 +280,7 @@ gfxFontEntry::FindOrMakeFont(const gfxFontStyle *aStyle,
                              gfxCharacterMap* aUnicodeRangeMap)
 {
     
-    RefPtr<gfxFont> font =
-        gfxFontCache::GetCache()->Lookup(this, aStyle, aUnicodeRangeMap);
+    RefPtr<gfxFont> font = gfxFontCache::GetCache()->Lookup(this, aStyle);
 
     if (!font) {
         gfxFont *newFont = CreateFontInstance(aStyle, aNeedsBold);
