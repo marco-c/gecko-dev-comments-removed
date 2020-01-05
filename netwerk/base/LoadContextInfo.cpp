@@ -1,10 +1,11 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 #include "LoadContextInfo.h"
 
 #include "mozilla/dom/ToJSValue.h"
+#include "nsDocShell.h"
 #include "nsIChannel.h"
 #include "nsILoadContext.h"
 #include "nsIWebNavigation.h"
@@ -14,7 +15,7 @@ using namespace mozilla::dom;
 namespace mozilla {
 namespace net {
 
-// LoadContextInfo
+
 
 NS_IMPL_ISUPPORTS(LoadContextInfo, nsILoadContextInfo)
 
@@ -55,7 +56,7 @@ NS_IMETHODIMP LoadContextInfo::GetOriginAttributes(JSContext *aCx,
   return NS_OK;
 }
 
-// LoadContextInfoFactory
+
 
 NS_IMPL_ISUPPORTS(LoadContextInfoFactory, nsILoadContextInfoFactory)
 
@@ -113,7 +114,7 @@ NS_IMETHODIMP LoadContextInfoFactory::FromWindow(nsIDOMWindow *aWindow, bool aAn
   return NS_OK;
 }
 
-// Helper functions
+
 
 LoadContextInfo *
 GetLoadContextInfo(nsIChannel * aChannel)
@@ -143,12 +144,17 @@ GetLoadContextInfo(nsILoadContext *aLoadContext, bool aIsAnonymous)
     return new LoadContextInfo(aIsAnonymous, OriginAttributes());
   }
 
-  DebugOnly<bool> pb = aLoadContext->UsePrivateBrowsing();
   OriginAttributes oa;
   aLoadContext->GetOriginAttributes(oa);
   oa.StripAttributes(OriginAttributes::STRIP_ADDON_ID);
 
-  MOZ_ASSERT(pb == (oa.mPrivateBrowsingId > 0));
+#ifdef DEBUG
+  nsCOMPtr<nsIDocShellTreeItem> docShell = do_QueryInterface(aLoadContext);
+  if (!docShell || docShell->ItemType() != nsIDocShellTreeItem::typeChrome) {
+    MOZ_ASSERT(aLoadContext->UsePrivateBrowsing() == (oa.mPrivateBrowsingId > 0));
+  }
+#endif
+
   return new LoadContextInfo(aIsAnonymous, oa);
 }
 
@@ -176,5 +182,5 @@ GetLoadContextInfo(bool const aIsAnonymous,
   return new LoadContextInfo(aIsAnonymous, aOriginAttributes);
 }
 
-} // namespace net
-} // namespace mozilla
+} 
+} 
