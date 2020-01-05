@@ -959,7 +959,7 @@ static inline bool apply_lookup (hb_apply_context_t *c,
   TRACE_APPLY (NULL);
 
   hb_buffer_t *buffer = c->buffer;
-  unsigned int end;
+  int end;
 
   
 
@@ -998,8 +998,8 @@ static inline bool apply_lookup (hb_apply_context_t *c,
 
     
 
-    end = int (end) + delta;
-    if (end <= match_positions[idx])
+    end += delta;
+    if (end <= int (match_positions[idx]))
     {
       
 
