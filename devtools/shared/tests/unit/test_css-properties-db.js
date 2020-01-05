@@ -10,14 +10,20 @@
 
 
 
+
+
+
+
+
+
+
 "use strict";
 
 const DOMUtils = Components.classes["@mozilla.org/inspector/dom-utils;1"]
                            .getService(Components.interfaces.inIDOMUtils);
 
-const {PSEUDO_ELEMENTS, CSS_PROPERTIES, PREFERENCES} = require("devtools/shared/css/generated/properties-db");
+const {PSEUDO_ELEMENTS, CSS_PROPERTIES} = require("devtools/shared/css/generated/properties-db");
 const {generateCssProperties} = require("devtools/server/actors/css-properties");
-const { Preferences } = require("resource://gre/modules/Preferences.jsm");
 
 function run_test() {
   const propertiesErrorMessage = "If this assertion fails, then the client side CSS " +
@@ -31,8 +37,6 @@ function run_test() {
             `match on the client and platform. ${propertiesErrorMessage}`);
 
   
-
-
 
 
 
@@ -71,14 +75,8 @@ function run_test() {
   }
 
   mismatches.forEach(propertyName => {
-    if (getPreference(propertyName) === false) {
-      ok(true, `The static database and platform do not agree on the property ` +
-               `"${propertyName}" This is ok because it is currently disabled through ` +
-               `a preference.`);
-    } else {
-      ok(false, `The static database and platform do not agree on the property ` +
-                `"${propertyName}" ${propertiesErrorMessage}`);
-    }
+    ok(false, `The static database and platform do not agree on the property ` +
+              `"${propertyName}" ${propertiesErrorMessage}`);
   });
 }
 
@@ -117,24 +115,6 @@ function isJsonDeepEqual(a, b) {
 
   
   return false;
-}
-
-
-
-
-
-
-
-
-function getPreference(propertyName) {
-  const preference = PREFERENCES.find(([prefPropertyName, preferenceKey]) => {
-    return prefPropertyName === propertyName && !!preferenceKey;
-  });
-
-  if (preference) {
-    return Preferences.get(preference[1]);
-  }
-  return undefined;
 }
 
 

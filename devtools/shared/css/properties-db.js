@@ -10,7 +10,20 @@
 
 
 
-const { CSS_PROPERTIES, PSEUDO_ELEMENTS } = require("devtools/shared/css/generated/properties-db");
+let db;
+
+
+
+try {
+  db = require("devtools/shared/css/generated/properties-db");
+} catch (error) {
+  console.error(`If this error is being displayed and "mach devtools-css-db" is not ` +
+                `being run, then it needs to be fixed.`, error);
+  db = {
+    CSS_PROPERTIES: {},
+    PSEUDO_ELEMENTS: []
+  };
+}
 
 
 
@@ -57,7 +70,7 @@ exports.ANGLE_TAKING_FUNCTIONS = ["linear-gradient", "-moz-linear-gradient",
 
 
 
-exports.PSEUDO_ELEMENTS = PSEUDO_ELEMENTS;
+exports.PSEUDO_ELEMENTS = db.PSEUDO_ELEMENTS;
 
 
 
@@ -69,9 +82,9 @@ exports.PSEUDO_ELEMENTS = PSEUDO_ELEMENTS;
 
 
 
-exports.CSS_PROPERTIES = CSS_PROPERTIES;
+exports.CSS_PROPERTIES = db.CSS_PROPERTIES;
 
 exports.CSS_PROPERTIES_DB = {
-  properties: CSS_PROPERTIES,
-  pseudoElements: PSEUDO_ELEMENTS
+  properties: db.CSS_PROPERTIES,
+  pseudoElements: db.PSEUDO_ELEMENTS
 };

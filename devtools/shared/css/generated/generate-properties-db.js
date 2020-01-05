@@ -12,14 +12,16 @@ var {require} = Components.utils.import("resource://devtools/shared/Loader.jsm",
 var {generateCssProperties} = require("devtools/server/actors/css-properties");
 
 
+
+dump("DEVTOOLS_CSS_DB_DELIMITER");
+
+
 dump(JSON.stringify({
   cssProperties: cssProperties(),
   pseudoElements: pseudoElements()
 }));
 
-
-
-dump("\n");
+dump("DEVTOOLS_CSS_DB_DELIMITER");
 
 
 
