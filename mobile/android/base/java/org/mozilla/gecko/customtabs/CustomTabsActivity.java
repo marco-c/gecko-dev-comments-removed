@@ -12,12 +12,14 @@ import android.content.pm.ResolveInfo;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.ColorInt;
 import android.support.annotation.NonNull;
 import android.support.annotation.StyleRes;
 import android.support.annotation.VisibleForTesting;
+import android.support.v4.graphics.drawable.DrawableCompat;
 import android.support.v4.util.SparseArrayCompat;
 import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.ActionBar;
@@ -201,7 +203,7 @@ public class CustomTabsActivity extends GeckoApp implements Tabs.OnTabsChangedLi
     
     @Override
     public boolean onCreatePanelMenu(final int id, final Menu menu) {
-        insertActionButton(menu, getIntent());
+        insertActionButton(menu, getIntent(), actionBarPresenter.getTextPrimaryColor());
 
         popupMenu = createCustomPopupMenu();
 
@@ -265,19 +267,25 @@ public class CustomTabsActivity extends GeckoApp implements Tabs.OnTabsChangedLi
 
 
 
+
     @VisibleForTesting
-    MenuItem insertActionButton(Menu menu, Intent intent) {
+    MenuItem insertActionButton(final Menu menu,
+                                final Intent intent,
+                                @ColorInt final int tintColor) {
         if (!IntentUtil.hasActionButton(intent)) {
             return null;
         }
 
-        
         MenuItem item = menu.add(Menu.NONE,
                 R.id.action_button,
                 Menu.NONE,
                 IntentUtil.getActionButtonDescription(intent));
         Bitmap bitmap = IntentUtil.getActionButtonIcon(intent);
-        item.setIcon(new BitmapDrawable(getResources(), bitmap));
+        final Drawable icon = new BitmapDrawable(getResources(), bitmap);
+        if (IntentUtil.isActionButtonTinted(intent)) {
+            DrawableCompat.setTint(icon, tintColor);
+        }
+        item.setIcon(icon);
         MenuItemCompat.setShowAsAction(item, MenuItemCompat.SHOW_AS_ACTION_ALWAYS);
 
         return item;

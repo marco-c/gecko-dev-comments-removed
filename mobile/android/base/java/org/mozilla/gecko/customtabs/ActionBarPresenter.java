@@ -129,6 +129,16 @@ public class ActionBarPresenter {
 
 
 
+    @ColorInt
+    public int getTextPrimaryColor() {
+        return mTextPrimaryColor;
+    }
+
+    
+
+
+
+
 
 
     @UiThread
