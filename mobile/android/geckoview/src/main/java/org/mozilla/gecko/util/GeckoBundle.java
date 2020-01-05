@@ -358,14 +358,6 @@ public final class GeckoBundle {
 
 
 
-    public void put(final String key, final Object value) {
-        mMap.put(key, value);
-    }
-
-    
-
-
-
 
 
     public void putBoolean(final String key, final boolean value) {

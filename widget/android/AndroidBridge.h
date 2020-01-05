@@ -153,8 +153,6 @@ public:
     
     jobject GetGlobalContextRef(void);
 
-    void HandleGeckoMessage(JSContext* cx, JS::HandleObject message);
-
     void GetCurrentBatteryInformation(hal::BatteryInformation* aBatteryInfo);
 
     void GetCurrentNetworkInformation(hal::NetworkInformation* aNetworkInfo);

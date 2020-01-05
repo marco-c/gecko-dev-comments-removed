@@ -18,6 +18,5 @@ public interface BundleEventListener {
 
 
 
-
     void handleMessage(String event, GeckoBundle message, EventCallback callback);
 }

@@ -57,18 +57,10 @@ public interface Actions {
     }
 
     public enum EventType {
-        JSON,
         GECKO,
         UI,
         BACKGROUND
     }
-
-    
-
-
-
-
-    void sendGeckoEvent(String geckoEvent, String data);
 
     
 
@@ -119,15 +111,6 @@ public interface Actions {
     void setPref(String pref, Object value, boolean flush);
     PrefWaiter addPrefsObserver(String[] prefNames, PrefHandlerBase handler);
     void removePrefsObserver(PrefWaiter handler);
-
-    
-
-
-
-
-
-
-    RepeatedEventExpecter expectGeckoEvent(String geckoEvent);
 
     
 

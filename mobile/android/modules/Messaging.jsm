@@ -16,14 +16,14 @@ XPCOMUtils.defineLazyServiceGetter(this, "uuidgen",
                                    "nsIUUIDGenerator");
 
 function sendMessageToJava(aMessage, aCallback) {
-  Cu.reportError("sendMessageToJava is deprecated. Use Messaging API instead.");
+  Cu.reportError("sendMessageToJava is deprecated. Use EventDispatcher instead.");
 
   if (aCallback) {
-    Messaging.sendRequestForResult(aMessage)
+    EventDispatcher.instance.sendRequestForResult(aMessage)
       .then(result => aCallback(result, null),
             error => aCallback(null, error));
   } else {
-    Messaging.sendRequest(aMessage);
+    EventDispatcher.instance.sendRequest(aMessage);
   }
 }
 
@@ -188,161 +188,31 @@ var EventDispatcher = {
 };
 
 
-
-
-
-
-var Messaging = {
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  addListener: function (aListener, aMessage) {
-    requestHandler.addListener(aListener, aMessage);
-  },
-
-  
-
-
-
-
-  removeListener: function (aMessage) {
-    requestHandler.removeListener(aMessage);
-  },
-
-  
-
-
-
-
-  sendRequest: function (aMessage) {
-    Services.androidBridge.handleGeckoMessage(aMessage);
-  },
-
-  
-
-
-
-
-
-  sendRequestForResult: function (aMessage) {
-    return new Promise((resolve, reject) => {
-      let id = uuidgen.generateUUID().toString();
-      let obs = {
-        observe: function (aSubject, aTopic, aData) {
-          let data = JSON.parse(aData);
-          if (data.__guid__ != id) {
-            return;
-          }
-
-          Services.obs.removeObserver(obs, aMessage.type + ":Response");
-
-          if (data.status === "success") {
-            resolve(data.response);
-          } else {
-            reject(data.response);
-          }
-        }
-      };
-
-      aMessage.__guid__ = id;
-      Services.obs.addObserver(obs, aMessage.type + ":Response", false);
-
-      this.sendRequest(aMessage);
-    });
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-  handleRequest: Task.async(function* (aTopic, aData, aListener) {
-    let wrapper = JSON.parse(aData);
-
-    try {
-      let response = yield aListener(wrapper.data);
-      if (typeof response !== "object" || response === null) {
-        throw new Error("Gecko request listener did not return an object");
-      }
-
-      Messaging.sendRequest({
-        type: "Gecko:Request" + wrapper.id,
-        response: response
-      });
-    } catch (e) {
-      Cu.reportError("Error in Messaging handler for " + aTopic + ": " + e);
-
-      Messaging.sendRequest({
-        type: "Gecko:Request" + wrapper.id,
-        error: {
-          message: e.message || (e && e.toString()),
-          stack: e.stack || Components.stack.formattedStack,
-        }
-      });
-    }
-  })
-};
-
-var requestHandler = {
-  _listeners: {},
-
-  addListener: function (aListener, aMessage) {
-    if (aMessage in this._listeners) {
-      throw new Error("Error in addListener: A listener already exists for message " + aMessage);
+var Messaging = {};
+
+function _addMessagingGetter(name) {
+  Messaging[name] = function() {
+    Cu.reportError("Messaging." + name + " is deprecated. " +
+                   "Use EventDispatcher object instead.");
+
+    
+    let ret = EventDispatcher.instance[name].apply(EventDispatcher.instance, arguments);
+    if (ret) {
+      
+      return ret;
     }
 
-    if (typeof aListener !== "function") {
-      throw new Error("Error in addListener: Listener must be a function for message " + aMessage);
+    
+    let window = Services.wm.getMostRecentWindow("navigator:browser");
+    let dispatcher = window && window.WindowEventDispatcher;
+    let func = dispatcher && dispatcher[name];
+    if (typeof func === "function") {
+      return func.apply(dispatcher, arguments);
     }
+  };
+}
 
-    this._listeners[aMessage] = aListener;
-    Services.obs.addObserver(this, aMessage, false);
-  },
-
-  removeListener: function (aMessage) {
-    if (!(aMessage in this._listeners)) {
-      throw new Error("Error in removeListener: There is no listener for message " + aMessage);
-    }
-
-    delete this._listeners[aMessage];
-    Services.obs.removeObserver(this, aMessage);
-  },
-
-  observe: function(aSubject, aTopic, aData) {
-    let listener = this._listeners[aTopic];
-    Messaging.handleRequest(aTopic, aData, listener);
-  }
-};
+_addMessagingGetter("sendRequest");
+_addMessagingGetter("sendRequestForResult");
+_addMessagingGetter("addListener");
+_addMessagingGetter("removeListener");
