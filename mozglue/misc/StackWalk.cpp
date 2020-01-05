@@ -296,6 +296,24 @@ patched_LdrUnloadDll(HMODULE module)
   AutoSuppressStackWalking suppress;
   return stub_LdrUnloadDll(module);
 }
+
+
+typedef PVOID (WINAPI *LdrResolveDelayLoadedAPI_func)(PVOID ParentModuleBase,
+  PVOID DelayloadDescriptor, PVOID FailureDllHook, PVOID FailureSystemHook,
+  PVOID ThunkAddress, ULONG Flags);
+static LdrResolveDelayLoadedAPI_func stub_LdrResolveDelayLoadedAPI;
+
+static PVOID WINAPI patched_LdrResolveDelayLoadedAPI(PVOID ParentModuleBase,
+  PVOID DelayloadDescriptor, PVOID FailureDllHook, PVOID FailureSystemHook,
+  PVOID ThunkAddress, ULONG Flags)
+{
+  
+  
+  AutoSuppressStackWalking suppress;
+  return stub_LdrResolveDelayLoadedAPI(ParentModuleBase, DelayloadDescriptor,
+                                       FailureDllHook, FailureSystemHook,
+                                       ThunkAddress, Flags);
+}
 #endif 
 #endif 
 
@@ -388,6 +406,9 @@ EnsureWalkThreadReady()
   NtDllInterceptor.AddHook("LdrUnloadDll",
                            reinterpret_cast<intptr_t>(patched_LdrUnloadDll),
                            (void**)&stub_LdrUnloadDll);
+  NtDllInterceptor.AddHook("LdrResolveDelayLoadedAPI",
+                           reinterpret_cast<intptr_t>(patched_LdrResolveDelayLoadedAPI),
+                           (void**)&stub_LdrResolveDelayLoadedAPI);
 #endif
 
   InitializeDbgHelpCriticalSection();
