@@ -56,7 +56,7 @@ const Request = I.Record({
 
 const Requests = I.Record({
   
-  requests: I.List(),
+  requests: I.Map(),
   
   selectedId: null,
   preselectedId: null,
@@ -101,7 +101,7 @@ function requestsReducer(state = new Requests(), action) {
           action.data,
           { urlDetails: getUrlDetails(action.data.url) }
         ));
-        st.requests = st.requests.push(newRequest);
+        st.requests = st.requests.set(newRequest.id, newRequest);
 
         
         let { startedMillis } = action.data;
@@ -123,12 +123,12 @@ function requestsReducer(state = new Requests(), action) {
     case UPDATE_REQUEST: {
       let { requests, lastEndedMillis } = state;
 
-      let updateIdx = requests.findIndex(r => r.id === action.id);
-      if (updateIdx === -1) {
+      let updatedRequest = requests.get(action.id);
+      if (!updatedRequest) {
         return state;
       }
 
-      requests = requests.update(updateIdx, r => r.withMutations(request => {
+      updatedRequest = updatedRequest.withMutations(request => {
         for (let [key, value] of Object.entries(action.data)) {
           if (!UPDATE_PROPS.includes(key)) {
             continue;
@@ -153,10 +153,10 @@ function requestsReducer(state = new Requests(), action) {
               break;
           }
         }
-      }));
+      });
 
       return state.withMutations(st => {
-        st.requests = requests;
+        st.requests = requests.set(updatedRequest.id, updatedRequest);
         st.lastEndedMillis = lastEndedMillis;
       });
     }
@@ -176,12 +176,11 @@ function requestsReducer(state = new Requests(), action) {
         return state;
       }
 
-      let clonedIdx = requests.findIndex(r => r.id === selectedId);
-      if (clonedIdx === -1) {
+      let clonedRequest = requests.get(selectedId);
+      if (!clonedRequest) {
         return state;
       }
 
-      let clonedRequest = requests.get(clonedIdx);
       let newRequest = new Request({
         id: clonedRequest.id + "-clone",
         method: clonedRequest.method,
@@ -192,13 +191,8 @@ function requestsReducer(state = new Requests(), action) {
         isCustom: true
       });
 
-      
-      
-      
-      requests = requests.insert(clonedIdx + 1, newRequest);
-
       return state.withMutations(st => {
-        st.requests = requests;
+        st.requests = requests.set(newRequest.id, newRequest);
         st.selectedId = newRequest.id;
       });
     }
@@ -209,15 +203,14 @@ function requestsReducer(state = new Requests(), action) {
         return state;
       }
 
-      let removedRequest = requests.find(r => r.id === selectedId);
-
       
+      let removedRequest = requests.get(selectedId);
       if (!removedRequest || !removedRequest.isCustom) {
         return state;
       }
 
       return state.withMutations(st => {
-        st.requests = requests.filter(r => r !== removedRequest);
+        st.requests = requests.delete(selectedId);
         st.selectedId = null;
       });
     }
@@ -227,7 +220,7 @@ function requestsReducer(state = new Requests(), action) {
       }
 
       if (!state.selectedId && !state.requests.isEmpty()) {
-        return state.set("selectedId", state.requests.get(0).id);
+        return state.set("selectedId", state.requests.first().id);
       }
 
       return state;
