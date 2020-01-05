@@ -133,16 +133,16 @@ add_task(async function test_requestor_one_client_no_response() {
   
   checkOutgoingCommand(mockService, "client-a");
 
-  checkState(requestor.STATE.SENT_REQUEST);
+  checkState(BookmarkRepairRequestor.STATE.SENT_REQUEST);
   
   
   requestor.continueRepairs();
-  checkState(requestor.STATE.SENT_REQUEST);
+  checkState(BookmarkRepairRequestor.STATE.SENT_REQUEST);
 
   
   mockService.clientsEngine._sentCommands = {};
   requestor.continueRepairs();
-  checkState(requestor.STATE.SENT_SECOND_REQUEST);
+  checkState(BookmarkRepairRequestor.STATE.SENT_SECOND_REQUEST);
   
   checkOutgoingCommand(mockService, "client-a");
 
@@ -194,7 +194,7 @@ add_task(async function test_requestor_one_client_no_sync() {
   
   checkOutgoingCommand(mockService, "client-a");
 
-  checkState(requestor.STATE.SENT_REQUEST);
+  checkState(BookmarkRepairRequestor.STATE.SENT_REQUEST);
 
   
   let theFuture = Date.now() + 300000000;
@@ -245,7 +245,7 @@ add_task(async function test_requestor_latest_client_used() {
   requestor.startRepairs(validationInfo, Utils.makeGUID());
   
   checkOutgoingCommand(mockService, "client-late");
-  checkState(requestor.STATE.SENT_REQUEST);
+  checkState(BookmarkRepairRequestor.STATE.SENT_REQUEST);
   
   requestor.prefs.resetBranch();
 });
@@ -271,7 +271,7 @@ add_task(async function test_requestor_client_vanishes() {
   
   checkOutgoingCommand(mockService, "client-a");
 
-  checkState(requestor.STATE.SENT_REQUEST);
+  checkState(BookmarkRepairRequestor.STATE.SENT_REQUEST);
 
   mockService.clientsEngine._sentCommands = {};
   
@@ -279,7 +279,7 @@ add_task(async function test_requestor_client_vanishes() {
 
   requestor.continueRepairs();
   
-  checkState(requestor.STATE.SENT_REQUEST);
+  checkState(BookmarkRepairRequestor.STATE.SENT_REQUEST);
   checkOutgoingCommand(mockService, "client-b");
 
   
@@ -349,7 +349,7 @@ add_task(async function test_requestor_success_responses() {
   
   checkOutgoingCommand(mockService, "client-a");
 
-  checkState(requestor.STATE.SENT_REQUEST);
+  checkState(BookmarkRepairRequestor.STATE.SENT_REQUEST);
 
   mockService.clientsEngine._sentCommands = {};
   
@@ -362,7 +362,7 @@ add_task(async function test_requestor_success_responses() {
   }
   requestor.continueRepairs(response);
   
-  checkState(requestor.STATE.SENT_REQUEST);
+  checkState(BookmarkRepairRequestor.STATE.SENT_REQUEST);
   checkOutgoingCommand(mockService, "client-b");
 
   
@@ -469,7 +469,7 @@ add_task(async function test_requestor_already_repairing_continue() {
   
   checkOutgoingCommand(mockService, "client-a");
 
-  checkState(requestor.STATE.SENT_REQUEST);
+  checkState(BookmarkRepairRequestor.STATE.SENT_REQUEST);
   mockService.clientsEngine._sentCommands = {};
 
   

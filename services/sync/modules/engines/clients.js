@@ -406,7 +406,7 @@ ClientEngine.prototype = {
           continue;
         }
         
-        clientRecord.commands = this._store.createRecord(id);
+        this._store._remoteClients[id] =  this._store.createRecord(id);
         
         
       }

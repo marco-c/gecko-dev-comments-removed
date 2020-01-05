@@ -91,12 +91,6 @@ class BookmarkRepairRequestor extends CollectionRepairRequestor {
 
   
 
-  get STATE() {
-    return STATE;
-  }
-
-  
-
 
   anyClientsRepairing(flowID) {
     return Doctor.anyClientsRepairing(this.service, "bookmarks", flowID);
@@ -186,13 +180,6 @@ class BookmarkRepairRequestor extends CollectionRepairRequestor {
       return false;
     }
 
-    if (this.anyClientsRepairing()) {
-      log.info("Can't start repair, since other clients are already repairing bookmarks");
-      let extra = { flowID, reason: "other clients repairing" };
-      this.service.recordTelemetryEvent("repair", "aborted", undefined, extra)
-      return false;
-    }
-
     let ids = this.getProblemIDs(validationInfo);
     if (ids.size > MAX_REQUESTED_IDS) {
       log.info("Not starting a repair as there are over " + MAX_REQUESTED_IDS + " problems");
@@ -203,6 +190,13 @@ class BookmarkRepairRequestor extends CollectionRepairRequestor {
 
     if (ids.size == 0) {
       log.info("Not starting a repair as there are no problems");
+      return false;
+    }
+
+    if (this.anyClientsRepairing()) {
+      log.info("Can't start repair, since other clients are already repairing bookmarks");
+      let extra = { flowID, reason: "other clients repairing" };
+      this.service.recordTelemetryEvent("repair", "aborted", undefined, extra)
       return false;
     }
 
@@ -720,3 +714,8 @@ class BookmarkRepairResponder extends CollectionRepairResponder {
     
   }
 }
+
+
+
+BookmarkRepairRequestor.STATE = STATE;
+BookmarkRepairRequestor.PREF = PREF;
