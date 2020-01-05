@@ -673,7 +673,14 @@ SandboxBroker::ThreadMain(void)
             resp.mError = -errno;
           }
         } else {
-          AuditDenial(req.mOp, req.mFlags, perms, pathBuf);
+          struct stat sb;
+          
+          
+          if (lstat(pathBuf, &sb) == 0) {
+            resp.mError = -EEXIST;
+          } else {
+            AuditDenial(req.mOp, req.mFlags, perms, pathBuf);
+          }
         }
         break;
 
