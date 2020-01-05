@@ -126,10 +126,6 @@ impl RenderListener for CompositorChan {
         self.chan.send(SetLayerClipRect(pipeline_id, layer_id, new_rect))
     }
 
-    fn delete_layer_group(&self, id: PipelineId) {
-        self.chan.send(DeleteLayerGroup(id))
-    }
-
     fn set_render_state(&self, render_state: RenderState) {
         self.chan.send(ChangeRenderState(render_state))
     }
@@ -175,8 +171,6 @@ pub enum Msg {
     SetLayerPageSize(PipelineId, LayerId, Size2D<f32>, Epoch),
     
     SetLayerClipRect(PipelineId, LayerId, Rect<f32>),
-    
-    DeleteLayerGroup(PipelineId),
     
     ScrollFragmentPoint(PipelineId, LayerId, Point2D<f32>),
     

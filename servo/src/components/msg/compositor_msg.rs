@@ -134,8 +134,6 @@ pub trait RenderListener {
                            layer_id: LayerId,
                            new_rect: Rect<uint>);
 
-    fn delete_layer_group(&self, PipelineId);
-
     
     fn paint(&self,
              pipeline_id: PipelineId,
