@@ -505,7 +505,7 @@ public:
 #ifdef MOZ_WIDGET_ANDROID
     
     
-    java::GeckoAppShell::OpenWindowForNotification();
+    java::GeckoAppShell::LaunchOrBringToFront();
 #endif
 
     nsCOMPtr<nsPIDOMWindowOuter> window;
