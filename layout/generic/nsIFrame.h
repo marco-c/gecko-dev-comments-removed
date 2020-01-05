@@ -2787,8 +2787,8 @@ public:
 
 
 
-  virtual nsresult IsSelectable(bool* aIsSelectable,
-                            mozilla::StyleUserSelect* aSelectStyle) const = 0;
+  nsresult IsSelectable(bool* aIsSelectable,
+                        mozilla::StyleUserSelect* aSelectStyle) const;
 
   
 
