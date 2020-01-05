@@ -250,8 +250,7 @@ public:
 
 
 
-  bool HandleCharMessage(const MSG& aCharMsg,
-                         bool* aEventDispatched = nullptr) const;
+  bool HandleCharMessage(bool* aEventDispatched = nullptr) const;
 
   
 
@@ -582,6 +581,14 @@ private:
   {
     return mFocusedWndBeforeDispatch != ::GetFocus();
   }
+
+  
+
+
+
+
+  bool HandleCharMessage(const MSG& aCharMsg,
+                         bool* aEventDispatched = nullptr) const;
 
   
   
