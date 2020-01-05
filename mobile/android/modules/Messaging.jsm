@@ -6,10 +6,10 @@
 const { classes: Cc, interfaces: Ci, utils: Cu } = Components;
 
 Cu.import("resource://gre/modules/Services.jsm");
-Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Task.jsm");
+Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
-this.EXPORTED_SYMBOLS = ["sendMessageToJava", "Messaging"];
+this.EXPORTED_SYMBOLS = ["sendMessageToJava", "Messaging", "EventDispatcher"];
 
 XPCOMUtils.defineLazyServiceGetter(this, "uuidgen",
                                    "@mozilla.org/uuid-generator;1",
@@ -26,6 +26,171 @@ function sendMessageToJava(aMessage, aCallback) {
     Messaging.sendRequest(aMessage);
   }
 }
+
+function DispatcherDelegate(dispatcher) {
+  this._dispatcher = dispatcher;
+}
+
+DispatcherDelegate.prototype = {
+  
+
+
+
+
+
+  registerListener: function (listener, events) {
+    this._dispatcher.registerListener(listener, events);
+  },
+
+  
+
+
+
+
+
+  unregisterListener: function (listener, events) {
+    this._dispatcher.unregisterListener(listener, events);
+  },
+
+  
+
+
+
+
+
+
+
+
+  dispatch: function (event, data, callback) {
+    this._dispatcher.dispatch(event, data, callback);
+  },
+
+  
+
+
+
+  
+
+
+
+
+  sendRequest: function (msg) {
+    let type = msg.type;
+    msg.type = undefined;
+    this.dispatch(type, msg);
+  },
+
+  
+
+
+
+
+
+  sendRequestForResult: function (msg) {
+    return new Promise((resolve, reject) => {
+      let type = msg.type;
+      msg.type = undefined;
+
+      this.dispatch(type, msg, {
+        onSuccess: response => resolve(response),
+        onError: response => reject(response)
+      });
+    });
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  addListener: function (listener, event) {
+    if (this._requestHandler.listeners[event]) {
+      throw new Error("Error in addListener: A listener already exists for event " + event);
+    }
+    if (typeof listener !== "function") {
+      throw new Error("Error in addListener: Listener must be a function for event " + event);
+    }
+
+    this._requestHandler.listeners[event] = listener;
+    this.registerListener(this._requestHandler, event);
+  },
+
+  
+
+
+
+
+  removeListener: function (event) {
+    if (!this._requestHandler.listeners[event]) {
+      throw new Error("Error in removeListener: There is no listener for event " + event);
+    }
+
+    this._requestHandler.listeners[event] = undefined;
+    this.unregisterListener(this._requestHandler, event);
+  },
+
+  _requestHandler: {
+    listeners: {},
+
+    onEvent: Task.async(function* (event, data, callback) {
+      try {
+        let response = yield this.listeners[event](data.data);
+        callback.onSuccess(response);
+
+      } catch (e) {
+        Cu.reportError("Error in Messaging handler for " + event + ": " + e);
+
+        callback.onError({
+          message: e.message || (e && e.toString()),
+          stack: e.stack || Components.stack.formattedStack,
+        });
+      }
+    }),
+  },
+};
+
+const EventDispatcher = {
+  instance: new DispatcherDelegate(Services.androidBridge),
+
+  for: function (window) {
+    let view = window && window.arguments && window.arguments[0] &&
+        window.arguments[0].QueryInterface(Ci.nsIAndroidView);
+    if (!view) {
+      throw new Error("window is not a GeckoView-connected window");
+    }
+    return new DispatcherDelegate(view);
+  },
+};
+
+
+
+
+
 
 var Messaging = {
   
