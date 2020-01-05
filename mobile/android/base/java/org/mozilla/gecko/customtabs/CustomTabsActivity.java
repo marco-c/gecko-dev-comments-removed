@@ -44,6 +44,9 @@ public class CustomTabsActivity extends GeckoApp implements Tabs.OnTabsChangedLi
     private int toolbarColor;
     private String toolbarTitle;
 
+    
+    private boolean usingCustomAnimation = false;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -101,6 +104,32 @@ public class CustomTabsActivity extends GeckoApp implements Tabs.OnTabsChangedLi
             setTheme(R.style.Theme_AppCompat_NoActionBar);
         }
 
+    }
+
+    
+    
+    
+    @Override
+    public String getPackageName() {
+        if (usingCustomAnimation) {
+            
+            return IntentUtil.getAnimationPackageName(getIntent());
+        } else {
+            return super.getPackageName();
+        }
+    }
+
+    @Override
+    public void finish() {
+        super.finish();
+
+        
+        if (IntentUtil.hasExitAnimation(getIntent())) {
+            usingCustomAnimation = true;
+            overridePendingTransition(IntentUtil.getEnterAnimationRes(getIntent()),
+                    IntentUtil.getExitAnimationRes(getIntent()));
+            usingCustomAnimation = false;
+        }
     }
 
     @Override
