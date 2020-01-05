@@ -67,24 +67,28 @@ namespace {
 
 
 
-const uint32_t kThrottledEventQueueBackPressure = 5000;
+#define DEFAULT_THROTTLED_EVENT_QUEUE_BACK_PRESSURE 5000
+static uint32_t gThrottledEventQueueBackPressure;
 
 
 
 
 
-const double kBackPressureDelayMS = 250;
+#define DEFAULT_BACK_PRESSURE_DELAY_MS 250
+static uint32_t gBackPressureDelayMS;
 
 
 
 
-const double kBackPressureDelayReductionThresholdMS = 1000;
+#define DEFAULT_BACK_PRESSURE_DELAY_REDUCTION_THRESHOLD_MS 1000
+static uint32_t gBackPressureDelayReductionThresholdMS;
 
 
 
 
 
-const double kBackPressureDelayMinimumMS = 100;
+#define DEFAULT_BACK_PRESSURE_DELAY_MINIMUM_MS 100
+static uint32_t gBackPressureDelayMinimumMS;
 
 
 
@@ -92,8 +96,8 @@ int32_t
 CalculateNewBackPressureDelayMS(uint32_t aBacklogDepth)
 {
   double multiplier = static_cast<double>(aBacklogDepth) /
-                      static_cast<double>(kThrottledEventQueueBackPressure);
-  double value = kBackPressureDelayMS * multiplier;
+                      static_cast<double>(gThrottledEventQueueBackPressure);
+  double value = static_cast<double>(gBackPressureDelayMS) * multiplier;
   
   if (value > INT32_MAX) {
     value = INT32_MAX;
@@ -102,7 +106,7 @@ CalculateNewBackPressureDelayMS(uint32_t aBacklogDepth)
   
   
   
-  else if (value < kBackPressureDelayMinimumMS) {
+  else if (value < static_cast<double>(gBackPressureDelayMinimumMS)) {
     value = 0;
   }
   return static_cast<int32_t>(value);
@@ -153,6 +157,19 @@ TimeoutManager::Initialize()
   Preferences::AddBoolVarCache(&gAnnotateTrackingChannels,
                                "privacy.trackingprotection.annotate_channels",
                                false);
+
+  Preferences::AddUintVarCache(&gThrottledEventQueueBackPressure,
+                               "dom.timeout.throttled_event_queue_back_pressure",
+                               DEFAULT_THROTTLED_EVENT_QUEUE_BACK_PRESSURE);
+  Preferences::AddUintVarCache(&gBackPressureDelayMS,
+                               "dom.timeout.back_pressure_delay_ms",
+                               DEFAULT_BACK_PRESSURE_DELAY_MS);
+  Preferences::AddUintVarCache(&gBackPressureDelayReductionThresholdMS,
+                               "dom.timeout.back_pressure_delay_reduction_threshold_ms",
+                               DEFAULT_BACK_PRESSURE_DELAY_REDUCTION_THRESHOLD_MS);
+  Preferences::AddUintVarCache(&gBackPressureDelayMinimumMS,
+                               "dom.timeout.back_pressure_delay_minimum_ms",
+                               DEFAULT_BACK_PRESSURE_DELAY_MINIMUM_MS);
 }
 
 uint32_t
@@ -654,7 +671,7 @@ TimeoutManager::MaybeApplyBackPressure()
   
   
   
-  if (queue->Length() < kThrottledEventQueueBackPressure) {
+  if (queue->Length() < gThrottledEventQueueBackPressure) {
     return;
   }
 
@@ -712,8 +729,8 @@ TimeoutManager::CancelOrUpdateBackPressure(nsGlobalWindow* aWindow)
   
   
   else if (newBackPressureDelayMS == 0 ||
-           (mBackPressureDelayMS >
-           (newBackPressureDelayMS + kBackPressureDelayReductionThresholdMS))) {
+           (static_cast<uint32_t>(mBackPressureDelayMS) >
+           (newBackPressureDelayMS + gBackPressureDelayReductionThresholdMS))) {
     int32_t oldBackPressureDelayMS = mBackPressureDelayMS;
     mBackPressureDelayMS = newBackPressureDelayMS;
 
