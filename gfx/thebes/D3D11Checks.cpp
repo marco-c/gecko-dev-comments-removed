@@ -12,6 +12,7 @@
 #include "mozilla/gfx/Logging.h"
 #include "nsIGfxInfo.h"
 #include <dxgi.h>
+#include <dxgi1_2.h>
 #include <d3d10_1.h>
 #include <d3d11.h>
 
@@ -390,6 +391,14 @@ D3D11Checks::WarnOnAdapterMismatch(ID3D11Device *device)
   }
 }
 
+ bool
+D3D11Checks::DoesRemotePresentWork(IDXGIAdapter* adapter)
+{
+  
+  RefPtr<IDXGIAdapter2> check;
+  HRESULT hr = adapter->QueryInterface(__uuidof(IDXGIAdapter2), getter_AddRefs(check));
+  return SUCCEEDED(hr) && check;
+}
 
 } 
 } 
