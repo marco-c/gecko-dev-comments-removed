@@ -85,6 +85,9 @@ module.exports = {
     "no-labels": "error",
 
     
+    "no-lone-blocks": "error",
+
+    
     "no-else-return": "error",
 
     
