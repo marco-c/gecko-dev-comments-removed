@@ -59,46 +59,6 @@ fn inheritance_wrapper(layout_ctx: &LayoutContext, node : Node) {
     applicator.resolve_style(layout_ctx);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 impl StyleApplicator {
     fn apply_css_style(layout_ctx: &LayoutContext) {
 
@@ -116,9 +76,4 @@ impl StyleApplicator {
     fn resolve_style(_layout_ctx: &LayoutContext) {
         
     }
-}
-
-#[cfg(test)]
-mod test {
-    
 }
