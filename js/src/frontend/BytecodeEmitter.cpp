@@ -4906,6 +4906,14 @@ BytecodeEmitter::emitIteratorClose(Maybe<JumpTarget> yieldStarTryStart, bool all
             return false;
         if (!ifReturnDone.emitIfElse())                   
             return false;
+        if (!emitAtomOp(cx->names().value, JSOP_GETPROP)) 
+            return false;
+        if (!emitPrepareIteratorResult())                 
+            return false;
+        if (!emit1(JSOP_SWAP))                            
+            return false;
+        if (!emitFinishIteratorResult(true))              
+            return false;
         if (!emit1(JSOP_DUP))                             
             return false;
         if (!emit1(JSOP_SETRVAL))                         
@@ -8067,50 +8075,63 @@ BytecodeEmitter::emitYieldStar(ParseNode* iter, ParseNode* gen)
 
     
     stackDepth = uint32_t(depth);                                
-    if (!emit1(JSOP_POP))                                        
-        return false;
-    
     if (!emit1(JSOP_EXCEPTION))                                  
         return false;
-    if (!emit1(JSOP_SWAP))                                       
-        return false;
-    if (!emit1(JSOP_DUP))                                        
-        return false;
-    if (!emitAtomOp(cx->names().throw_, JSOP_STRING))            
-        return false;
-    if (!emit1(JSOP_SWAP))                                       
-        return false;
-    if (!emit1(JSOP_IN))                                         
-        return false;
-    
-    JumpList checkThrow;
-    if (!emitJump(JSOP_IFNE, &checkThrow))                       
-        return false;
-    if (!emit1(JSOP_POP))                                        
-        return false;
-    if (!emit1(JSOP_THROW))                                      
-        return false;
-
-    if (!emitJumpTargetAndPatch(checkThrow))                     
-        return false;
-    
-    stackDepth = uint32_t(depth);
-    if (!emit1(JSOP_DUP))                                        
+    if (!emitDupAt(2))                                           
         return false;
     if (!emit1(JSOP_DUP))                                        
         return false;
     if (!emitAtomOp(cx->names().throw_, JSOP_CALLPROP))          
         return false;
+    if (!emit1(JSOP_DUP))                                        
+        return false;
+    if (!emit1(JSOP_UNDEFINED))                                  
+        return false;
+    if (!emit1(JSOP_EQ))                                         
+        return false;
+
+    IfThenElseEmitter ifThrowMethodIsNotDefined(this);
+    if (!ifThrowMethodIsNotDefined.emitIf())                     
+        return false;
+    if (!emitUint16Operand(JSOP_THROWMSG, JSMSG_ITERATOR_NO_THROW)) 
+        return false;
+    if (!ifThrowMethodIsNotDefined.emitEnd())                    
+        return false;
+    
+    
     if (!emit1(JSOP_SWAP))                                       
         return false;
-    if (!emit2(JSOP_PICK, 3))                                    
+    if (!emit2(JSOP_PICK, 2))                                    
         return false;
     if (!emitCall(JSOP_CALL, 1, iter))                           
         return false;
     checkTypeSet(JSOP_CALL);
+    if (!emitCheckIsObj(CheckIsObjectKind::IteratorThrow))       
+        return false;
+    if (!emit1(JSOP_SWAP))                                       
+        return false;
+    if (!emit1(JSOP_POP))                                        
+        return false;
     MOZ_ASSERT(this->stackDepth == depth);
     JumpList checkResult;
+    
+    
+    
     if (!emitJump(JSOP_GOTO, &checkResult))                      
+        return false;
+
+    
+
+    JumpTarget finallyStart{ 0 };
+    if (!emitJumpTarget(&finallyStart))
+        return false;
+    if (!emit1(JSOP_FINALLY))                                    
+        return false;
+    if (!emitDupAt(3))                                           
+        return false;
+    if (!emitIteratorClose(Some(tryStart)))                      
+        return false;
+    if (!emit1(JSOP_RETSUB))                                     
         return false;
 
     
@@ -8118,7 +8139,10 @@ BytecodeEmitter::emitYieldStar(ParseNode* iter, ParseNode* gen)
     
     if (!emit1(JSOP_NOP))
         return false;
-    if (!tryNoteList.append(JSTRY_CATCH, depth, tryStart.offset + JSOP_TRY_LENGTH, tryEnd.offset))
+    size_t tryStartOffset = tryStart.offset + JSOP_TRY_LENGTH;
+    if (!tryNoteList.append(JSTRY_CATCH, depth, tryStartOffset, tryEnd.offset))
+        return false;
+    if (!tryNoteList.append(JSTRY_FINALLY, depth, tryStartOffset, finallyStart.offset))
         return false;
 
     

@@ -25,8 +25,8 @@ assertThrowsValue(function () { outer.throw(42) }, 42);
 inner = g1();
 outer = delegate(inner);
 assertIteratorNext(outer, 1);
-inner.throw = function(e) { return e*2; };
-assertEq(84, outer.throw(42));
+inner.throw = function(e) { return { value: e*2 }; };
+assertEq(84, outer.throw(42).value);
 assertIteratorDone(outer, undefined);
 
 
@@ -41,7 +41,9 @@ outer = delegate(inner);
 assertIteratorNext(outer, 1);
 delete GeneratorObjectPrototype.throw;
 var outer_throw_42 = GeneratorObjectPrototype_throw.bind(outer, 42);
-assertThrowsValue(outer_throw_42, 42);
+
+assertThrowsInstanceOf(outer_throw_42, TypeError);
+
 assertThrowsValue(outer_throw_42, 42);
 
 
@@ -49,11 +51,11 @@ inner = g2();
 outer = delegate(inner);
 outer_throw_42 = GeneratorObjectPrototype_throw.bind(outer, 42);
 assertIteratorNext(outer, 1);
-GeneratorObjectPrototype.throw = function(e) { return e*2; }
-assertEq(84, outer_throw_42());
-assertEq(84, outer_throw_42());
+GeneratorObjectPrototype.throw = function(e) { return { value: e*2 }; }
+assertEq(84, outer_throw_42().value);
+assertEq(84, outer_throw_42().value);
 
-assertEq(84, outer_throw_42());
+assertEq(84, outer_throw_42().value);
 assertIteratorDone(outer, undefined);
 
 
@@ -61,8 +63,8 @@ inner = g2();
 outer = delegate(inner);
 outer_throw_42 = GeneratorObjectPrototype_throw.bind(outer, 42);
 assertIteratorNext(outer, 1);
-assertEq(84, outer_throw_42());
-assertEq(84, outer_throw_42());
+assertEq(84, outer_throw_42().value);
+assertEq(84, outer_throw_42().value);
 GeneratorObjectPrototype.throw = GeneratorObjectPrototype_throw;
 assertIteratorResult(outer_throw_42(), 42, false);
 assertIteratorDone(outer, undefined);
