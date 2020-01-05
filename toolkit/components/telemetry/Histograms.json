@@ -1,3 +1,4 @@
+
 {
   "A11Y_INSTANTIATED_FLAG": {
     "expires_in_version": "never",
@@ -8185,6 +8186,30 @@
     "description": "Number of times the DevTools Eyedropper has been opened via the color picker.",
     "releaseChannelCollection": "opt-out"
   },
+  "DEVTOOLS_TOOLBAR_EYEDROPPER_OPENED_COUNT": {
+    "alert_emails": ["dev-developer-tools@lists.mozilla.org"],
+    "expires_in_version": "never",
+    "kind": "count",
+    "bug_numbers": [1247985, 1352115],
+    "description": "Number of times the DevTools Eyedropper has been opened via the inspector toolbar.",
+    "releaseChannelCollection": "opt-out"
+  },
+  "DEVTOOLS_COPY_UNIQUE_CSS_SELECTOR_OPENED_COUNT": {
+    "alert_emails": ["dev-developer-tools@lists.mozilla.org"],
+    "expires_in_version": "57",
+    "kind": "count",
+    "bug_numbers": [1323700, 1352115],
+    "description": "Number of times the DevTools copy unique css selector has been used.",
+    "releaseChannelCollection": "opt-out"
+  },
+  "DEVTOOLS_COPY_FULL_CSS_SELECTOR_OPENED_COUNT": {
+    "alert_emails": ["dev-developer-tools@lists.mozilla.org"],
+    "expires_in_version": "57",
+    "kind": "count",
+    "bug_numbers": [1323700, 1352115],
+    "description": "Number of times the DevTools copy full css selector has been used.",
+    "releaseChannelCollection": "opt-out"
+  },
   "DEVTOOLS_DEVELOPERTOOLBAR_OPENED_COUNT": {
     "alert_emails": ["dev-developer-tools@lists.mozilla.org"],
     "expires_in_version": "never",
@@ -10536,6 +10561,15 @@
     "releaseChannelCollection": "opt-out",
     "description": "Graphics Crash Reason (...)"
   },
+  "PLUGIN_ACTIVATION_COUNT": {
+    "alert_emails": ["cpeterson@mozilla.com"],
+    "expires_in_version": "53",
+    "kind": "count",
+    "keyed": true,
+    "releaseChannelCollection": "opt-out",
+    "bug_numbers": [722110,1260065],
+    "description": "Counts number of times a certain plugin has been activated."
+  },
   "SCROLL_INPUT_METHODS": {
     "alert_emails": ["botond@mozilla.com"],
     "bug_numbers": [1238137],
@@ -10703,6 +10737,22 @@
     "kind": "count",
     "description": "Number of origins that have shown a web notification. Excludes system alerts like update reminders and add-ons."
   },
+  "YOUTUBE_REWRITABLE_EMBED_SEEN": {
+    "alert_emails": ["cpeterson@mozilla.com"],
+    "expires_in_version": "53",
+    "kind": "flag",
+    "bug_numbers": [1229971],
+    "releaseChannelCollection": "opt-out",
+    "description": "Flag activated whenever a rewritable youtube flash embed is seen during a session."
+  },
+  "YOUTUBE_NONREWRITABLE_EMBED_SEEN": {
+    "alert_emails": ["cpeterson@mozilla.com"],
+    "expires_in_version": "53",
+    "kind": "flag",
+    "bug_numbers": [1237401],
+    "releaseChannelCollection": "opt-out",
+    "description": "Flag activated whenever a non-rewritable (enablejsapi=1) youtube flash embed is seen during a session."
+  },
   "PLUGIN_DRAWING_MODEL": {
     "alert_emails": ["danderson@mozilla.com"],
     "expires_in_version": "never",
@@ -10749,6 +10799,20 @@
     "kind": "enumerated",
     "n_values": 10,
     "description": "Media decoder backend (0=WMF Software, 1=DXVA2D3D9, 2=DXVA2D3D11)"
+  },
+  "PLUGIN_BLOCKED_FOR_STABILITY": {
+    "alert_emails": ["cpeterson@mozilla.com"],
+    "expires_in_version": "52",
+    "kind": "count",
+    "bug_numbers": [1237198],
+    "description": "Count plugins blocked for stability"
+  },
+  "PLUGIN_TINY_CONTENT": {
+    "alert_emails": ["cpeterson@mozilla.com"],
+    "expires_in_version": "52",
+    "kind": "count",
+    "bug_numbers": [1237198],
+    "description": "Count tiny plugin content"
   },
   "IPC_MESSAGE_SIZE": {
     "alert_emails": ["wmccloskey@mozilla.com"],
