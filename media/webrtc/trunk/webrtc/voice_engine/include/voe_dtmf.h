@@ -40,57 +40,51 @@ namespace webrtc {
 class VoiceEngine;
 
 
-class WEBRTC_DLLEXPORT VoEDtmf
-{
-public:
+class WEBRTC_DLLEXPORT VoEDtmf {
+ public:
+  
+  
+  
+  static VoEDtmf* GetInterface(VoiceEngine* voiceEngine);
 
-    
-    
-    
-    static VoEDtmf* GetInterface(VoiceEngine* voiceEngine);
+  
+  
+  
+  
+  virtual int Release() = 0;
 
-    
-    
-    
-    
-    virtual int Release() = 0;
+  
+  virtual int SendTelephoneEvent(int channel,
+                                 int eventCode,
+                                 bool outOfBand = true,
+                                 int lengthMs = 160,
+                                 int attenuationDb = 10) = 0;
 
-    
-    virtual int SendTelephoneEvent(int channel, int eventCode,
-                                   bool outOfBand = true, int lengthMs = 160,
-                                   int attenuationDb = 10) = 0;
+  
+  
+  virtual int SetSendTelephoneEventPayloadType(int channel,
+                                               unsigned char type) = 0;
 
+  
+  virtual int GetSendTelephoneEventPayloadType(int channel,
+                                               unsigned char& type) = 0;
 
-    
-    
-    virtual int SetSendTelephoneEventPayloadType(int channel,
-                                                 unsigned char type) = 0;
+  
+  
+  virtual int SetDtmfFeedbackStatus(bool enable,
+                                    bool directFeedback = false) = 0;
 
+  
+  virtual int GetDtmfFeedbackStatus(bool& enabled, bool& directFeedback) = 0;
 
-    
-    virtual int GetSendTelephoneEventPayloadType(int channel,
-                                                 unsigned char& type) = 0;
+  
+  virtual int PlayDtmfTone(int eventCode,
+                           int lengthMs = 200,
+                           int attenuationDb = 10) = 0;
 
-    
-    
-    virtual int SetDtmfFeedbackStatus(bool enable,
-                                      bool directFeedback = false) = 0;
-
-    
-    virtual int GetDtmfFeedbackStatus(bool& enabled, bool& directFeedback) = 0;
-
-    
-    virtual int PlayDtmfTone(int eventCode, int lengthMs = 200,
-                             int attenuationDb = 10) = 0;
-
-    
-    virtual int StartPlayingDtmfTone(int eventCode,
-        int attenuationDb = 10) { return -1; }
-    virtual int StopPlayingDtmfTone() { return -1; }
-
-protected:
-    VoEDtmf() {}
-    virtual ~VoEDtmf() {}
+ protected:
+  VoEDtmf() {}
+  virtual ~VoEDtmf() {}
 };
 
 }  

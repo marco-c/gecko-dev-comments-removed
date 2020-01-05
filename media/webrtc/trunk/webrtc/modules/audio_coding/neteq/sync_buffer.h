@@ -25,8 +25,6 @@ class SyncBuffer : public AudioMultiVector {
         end_timestamp_(0),
         dtmf_index_(0) {}
 
-  virtual ~SyncBuffer() {}
-
   
   size_t FutureLength() const;
 
@@ -34,7 +32,7 @@ class SyncBuffer : public AudioMultiVector {
   
   
   
-  void PushBack(const AudioMultiVector& append_this);
+  void PushBack(const AudioMultiVector& append_this) override;
 
   
   
@@ -94,7 +92,7 @@ class SyncBuffer : public AudioMultiVector {
   uint32_t end_timestamp_;  
   size_t dtmf_index_;  
 
-  DISALLOW_COPY_AND_ASSIGN(SyncBuffer);
+  RTC_DISALLOW_COPY_AND_ASSIGN(SyncBuffer);
 };
 
 }  

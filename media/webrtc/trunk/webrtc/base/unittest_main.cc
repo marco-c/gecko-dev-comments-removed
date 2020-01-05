@@ -19,9 +19,16 @@
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/ssladapter.h"
+#include "webrtc/test/field_trial.h"
 
 DEFINE_bool(help, false, "prints this message");
 DEFINE_string(log, "", "logging options to use");
+DEFINE_string(
+    force_fieldtrials,
+    "",
+    "Field trials control experimental feature code which can be forced. "
+    "E.g. running with --force_fieldtrials=WebRTC-FooFeature/Enable/"
+    " will assign the group Enable to field trial WebRTC-FooFeature.");
 #if defined(WEBRTC_WIN)
 DEFINE_int(crt_break_alloc, -1, "memory allocation to break on");
 DEFINE_bool(default_error_handlers, false,
@@ -61,6 +68,8 @@ int main(int argc, char** argv) {
     return 0;
   }
 
+  webrtc::test::InitFieldTrialsFromString(FLAG_force_fieldtrials);
+
 #if defined(WEBRTC_WIN)
   if (!FLAG_default_error_handlers) {
     
@@ -69,12 +78,12 @@ int main(int argc, char** argv) {
     _CrtSetReportHook2(_CRT_RPTHOOK_INSTALL, TestCrtReportHandler);
   }
 
-#ifdef _DEBUG  
+#if !defined(NDEBUG)  
   _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF |_CRTDBG_LEAK_CHECK_DF);
   if (FLAG_crt_break_alloc >= 0) {
     _crtBreakAlloc = FLAG_crt_break_alloc;
   }
-#endif  
+#endif
 #endif  
 
   rtc::Filesystem::SetOrganizationName("google");
@@ -83,7 +92,11 @@ int main(int argc, char** argv) {
   
   rtc::LogMessage::LogTimestamps();
   if (*FLAG_log != '\0') {
-    rtc::LogMessage::ConfigureLogging(FLAG_log, "unittest.log");
+    rtc::LogMessage::ConfigureLogging(FLAG_log);
+  } else if (rtc::LogMessage::GetLogToDebug() > rtc::LS_INFO) {
+    
+    
+    rtc::LogMessage::LogToDebug(rtc::LS_INFO);
   }
 
   
@@ -94,7 +107,7 @@ int main(int argc, char** argv) {
   rtc::CleanupSSL();
 
   
-  rtc::LogMessage::ConfigureLogging("", "");
+  rtc::LogMessage::ConfigureLogging("");
 
 #if defined(WEBRTC_WIN)
   

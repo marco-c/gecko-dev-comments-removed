@@ -22,7 +22,7 @@
 void WebRtcIlbcfix_InterpolateSamples(
     int16_t *interpSamples, 
     int16_t *CBmem,   
-    int16_t lMem    
+    size_t lMem    
                                       ) {
   int16_t *ppi, *ppo, i, j, temp1, temp2;
   int16_t *tmpPtr;

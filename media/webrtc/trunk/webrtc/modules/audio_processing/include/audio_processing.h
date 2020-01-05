@@ -11,10 +11,15 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_INCLUDE_AUDIO_PROCESSING_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_INCLUDE_AUDIO_PROCESSING_H_
 
+
+#define _USE_MATH_DEFINES
+
+#include <math.h>
 #include <stddef.h>  
 #include <stdio.h>  
 #include <vector>
 
+#include "webrtc/base/arraysize.h"
 #include "webrtc/base/platform_file.h"
 #include "webrtc/common.h"
 #include "webrtc/modules/audio_processing/beamformer/array_util.h"
@@ -29,6 +34,9 @@ class AudioFrame;
 template<typename T>
 class Beamformer;
 
+class StreamConfig;
+class ProcessingConfig;
+
 class EchoCancellation;
 class EchoControlMobile;
 class GainControl;
@@ -37,15 +45,39 @@ class LevelEstimator;
 class NoiseSuppression;
 class VoiceDetection;
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 struct ExtendedFilter {
   ExtendedFilter() : enabled(false) {}
   explicit ExtendedFilter(bool enabled) : enabled(enabled) {}
+  static const ConfigOptionID identifier = ConfigOptionID::kExtendedFilter;
   bool enabled;
 };
+
+
+
+
+
 
 struct DelayAgnostic {
   DelayAgnostic() : enabled(false) {}
   explicit DelayAgnostic(bool enabled) : enabled(enabled) {}
+  static const ConfigOptionID identifier = ConfigOptionID::kDelayAgnostic;
   bool enabled;
 };
 
@@ -55,41 +87,20 @@ struct DelayAgnostic {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-struct DelayCorrection {
-  DelayCorrection() : enabled(false) {}
-  explicit DelayCorrection(bool enabled) : enabled(enabled) {}
-  bool enabled;
-};
-
-
-
-
-
-
-
-struct ReportedDelay {
-  ReportedDelay() : enabled(true) {}
-  explicit ReportedDelay(bool enabled) : enabled(enabled) {}
-  bool enabled;
-};
-
-
-
+#if defined(WEBRTC_CHROMIUM_BUILD)
+static const int kAgcStartupMinVolume = 85;
+#else
+static const int kAgcStartupMinVolume = 0;
+#endif  
 struct ExperimentalAgc {
-  ExperimentalAgc() : enabled(true) {}
-  explicit ExperimentalAgc(bool enabled) : enabled(enabled) {}
+  ExperimentalAgc() : enabled(true), startup_min_volume(kAgcStartupMinVolume) {}
+  explicit ExperimentalAgc(bool enabled)
+      : enabled(enabled), startup_min_volume(kAgcStartupMinVolume) {}
+  ExperimentalAgc(bool enabled, int startup_min_volume)
+      : enabled(enabled), startup_min_volume(startup_min_volume) {}
+  static const ConfigOptionID identifier = ConfigOptionID::kExperimentalAgc;
   bool enabled;
+  int startup_min_volume;
 };
 
 
@@ -97,30 +108,47 @@ struct ExperimentalAgc {
 struct ExperimentalNs {
   ExperimentalNs() : enabled(false) {}
   explicit ExperimentalNs(bool enabled) : enabled(enabled) {}
+  static const ConfigOptionID identifier = ConfigOptionID::kExperimentalNs;
   bool enabled;
 };
 
 
 
 struct Beamforming {
-  Beamforming() : enabled(false) {}
+  Beamforming()
+      : enabled(false),
+        array_geometry(),
+        target_direction(
+            SphericalPointf(static_cast<float>(M_PI) / 2.f, 0.f, 1.f)) {}
   Beamforming(bool enabled, const std::vector<Point>& array_geometry)
+      : Beamforming(enabled,
+                    array_geometry,
+                    SphericalPointf(static_cast<float>(M_PI) / 2.f, 0.f, 1.f)) {
+  }
+  Beamforming(bool enabled,
+              const std::vector<Point>& array_geometry,
+              SphericalPointf target_direction)
       : enabled(enabled),
-        array_geometry(array_geometry) {}
+        array_geometry(array_geometry),
+        target_direction(target_direction) {}
+  static const ConfigOptionID identifier = ConfigOptionID::kBeamforming;
   const bool enabled;
   const std::vector<Point> array_geometry;
+  const SphericalPointf target_direction;
 };
 
 
 
 
-struct AudioProcessing48kHzSupport {
-  AudioProcessing48kHzSupport() : enabled(false) {}
-  explicit AudioProcessing48kHzSupport(bool enabled) : enabled(enabled) {}
+
+
+
+struct Intelligibility {
+  Intelligibility() : enabled(false) {}
+  explicit Intelligibility(bool enabled) : enabled(enabled) {}
+  static const ConfigOptionID identifier = ConfigOptionID::kIntelligibility;
   bool enabled;
 };
-
-static const int kAudioProcMaxNativeSampleRateHz = 32000;
 
 
 
@@ -197,6 +225,7 @@ static const int kAudioProcMaxNativeSampleRateHz = 32000;
 
 class AudioProcessing {
  public:
+  
   enum ChannelLayout {
     kMono,
     
@@ -238,6 +267,13 @@ class AudioProcessing {
   
   
   
+  
+  
+  virtual int Initialize(const ProcessingConfig& processing_config) = 0;
+
+  
+  
+  
   virtual int Initialize(int input_sample_rate_hz,
                          int output_sample_rate_hz,
                          int reverse_sample_rate_hz,
@@ -251,27 +287,22 @@ class AudioProcessing {
 
   
   
-  virtual int set_sample_rate_hz(int rate) = 0;
-  
-  
   virtual int input_sample_rate_hz() const = 0;
-  
-  virtual int sample_rate_hz() const = 0;
 
   
   
   virtual int proc_sample_rate_hz() const = 0;
   virtual int proc_split_sample_rate_hz() const = 0;
-  virtual int num_input_channels() const = 0;
-  virtual int num_output_channels() const = 0;
-  virtual int num_reverse_channels() const = 0;
+  virtual size_t num_input_channels() const = 0;
+  virtual size_t num_proc_channels() const = 0;
+  virtual size_t num_output_channels() const = 0;
+  virtual size_t num_reverse_channels() const = 0;
 
   
   
   
   
   virtual void set_output_will_be_muted(bool muted) = 0;
-  virtual bool output_will_be_muted() const = 0;
 
   
   
@@ -292,14 +323,30 @@ class AudioProcessing {
   
   
   
+  
+  
   virtual int ProcessStream(const float* const* src,
-                            int samples_per_channel,
+                            size_t samples_per_channel,
                             int input_sample_rate_hz,
                             ChannelLayout input_layout,
                             int output_sample_rate_hz,
                             ChannelLayout output_layout,
                             float* const* dest) = 0;
 
+  
+  
+  
+  
+  
+  
+  
+  virtual int ProcessStream(const float* const* src,
+                            const StreamConfig& input_config,
+                            const StreamConfig& output_config,
+                            float* const* dest) = 0;
+
+  
+  
   
   
   
@@ -319,10 +366,22 @@ class AudioProcessing {
 
   
   
+  virtual int ProcessReverseStream(AudioFrame* frame) = 0;
+
+  
+  
+  
   virtual int AnalyzeReverseStream(const float* const* data,
-                                   int samples_per_channel,
-                                   int sample_rate_hz,
+                                   size_t samples_per_channel,
+                                   int rev_sample_rate_hz,
                                    ChannelLayout layout) = 0;
+
+  
+  
+  virtual int ProcessReverseStream(const float* const* src,
+                                   const StreamConfig& reverse_input_config,
+                                   const StreamConfig& reverse_output_config,
+                                   float* const* dest) = 0;
 
   
   
@@ -344,7 +403,6 @@ class AudioProcessing {
   
   
   virtual void set_stream_key_pressed(bool key_pressed) = 0;
-  virtual bool stream_key_pressed() const = 0;
 
   
   
@@ -375,6 +433,10 @@ class AudioProcessing {
   
   
   virtual int StopDebugRecording() = 0;
+
+  
+  
+  virtual void UpdateHistogramsOnCallEnd() = 0;
 
   
   
@@ -423,7 +485,119 @@ class AudioProcessing {
     kSampleRate48kHz = 48000
   };
 
+  static const int kNativeSampleRatesHz[];
+  static const size_t kNumNativeSampleRates;
+  static const int kMaxNativeSampleRateHz;
+  static const int kMaxAECMSampleRateHz;
+
   static const int kChunkSizeMs = 10;
+};
+
+class StreamConfig {
+ public:
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  StreamConfig(int sample_rate_hz = 0,
+               size_t num_channels = 0,
+               bool has_keyboard = false)
+      : sample_rate_hz_(sample_rate_hz),
+        num_channels_(num_channels),
+        has_keyboard_(has_keyboard),
+        num_frames_(calculate_frames(sample_rate_hz)) {}
+
+  void set_sample_rate_hz(int value) {
+    sample_rate_hz_ = value;
+    num_frames_ = calculate_frames(value);
+  }
+  void set_num_channels(size_t value) { num_channels_ = value; }
+  void set_has_keyboard(bool value) { has_keyboard_ = value; }
+
+  int sample_rate_hz() const { return sample_rate_hz_; }
+
+  
+  
+  size_t num_channels() const { return num_channels_; }
+
+  bool has_keyboard() const { return has_keyboard_; }
+  size_t num_frames() const { return num_frames_; }
+  size_t num_samples() const { return num_channels_ * num_frames_; }
+
+  bool operator==(const StreamConfig& other) const {
+    return sample_rate_hz_ == other.sample_rate_hz_ &&
+           num_channels_ == other.num_channels_ &&
+           has_keyboard_ == other.has_keyboard_;
+  }
+
+  bool operator!=(const StreamConfig& other) const { return !(*this == other); }
+
+ private:
+  static size_t calculate_frames(int sample_rate_hz) {
+    return static_cast<size_t>(
+        AudioProcessing::kChunkSizeMs * sample_rate_hz / 1000);
+  }
+
+  int sample_rate_hz_;
+  size_t num_channels_;
+  bool has_keyboard_;
+  size_t num_frames_;
+};
+
+class ProcessingConfig {
+ public:
+  enum StreamName {
+    kInputStream,
+    kOutputStream,
+    kReverseInputStream,
+    kReverseOutputStream,
+    kNumStreamNames,
+  };
+
+  const StreamConfig& input_stream() const {
+    return streams[StreamName::kInputStream];
+  }
+  const StreamConfig& output_stream() const {
+    return streams[StreamName::kOutputStream];
+  }
+  const StreamConfig& reverse_input_stream() const {
+    return streams[StreamName::kReverseInputStream];
+  }
+  const StreamConfig& reverse_output_stream() const {
+    return streams[StreamName::kReverseOutputStream];
+  }
+
+  StreamConfig& input_stream() { return streams[StreamName::kInputStream]; }
+  StreamConfig& output_stream() { return streams[StreamName::kOutputStream]; }
+  StreamConfig& reverse_input_stream() {
+    return streams[StreamName::kReverseInputStream];
+  }
+  StreamConfig& reverse_output_stream() {
+    return streams[StreamName::kReverseOutputStream];
+  }
+
+  bool operator==(const ProcessingConfig& other) const {
+    for (int i = 0; i < StreamName::kNumStreamNames; ++i) {
+      if (this->streams[i] != other.streams[i]) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  bool operator!=(const ProcessingConfig& other) const {
+    return !(*this == other);
+  }
+
+  StreamConfig streams[StreamName::kNumStreamNames];
 };
 
 

@@ -30,7 +30,7 @@ static const SocketAddress kStunHostnameAddr("localhost", 5000);
 static const SocketAddress kBadHostnameAddr("not-a-real-hostname", 5000);
 static const int kTimeoutMs = 10000;
 
-static const uint32 kStunCandidatePriority = 1677729535;
+static const uint32_t kStunCandidatePriority = 1677729535;
 
 
 
@@ -82,7 +82,7 @@ class StunPortTest : public testing::Test,
         rtc::Thread::Current(), &socket_factory_,
         &network_, socket_.get(),
         rtc::CreateRandomString(16), rtc::CreateRandomString(22),
-        std::string()));
+        std::string(), false));
     ASSERT_TRUE(stun_port_ != NULL);
     ServerAddresses stun_servers;
     stun_servers.insert(server_addr);
@@ -250,6 +250,7 @@ TEST_F(StunPortTest, TestNoDuplicatedAddressWithTwoStunServers) {
   PrepareAddress();
   EXPECT_TRUE_WAIT(done(), kTimeoutMs);
   EXPECT_EQ(1U, port()->Candidates().size());
+  EXPECT_EQ(port()->Candidates()[0].relay_protocol(), "");
 }
 
 
@@ -281,4 +282,6 @@ TEST_F(StunPortTest, TestTwoCandidatesWithTwoStunServersAcrossNat) {
   PrepareAddress();
   EXPECT_TRUE_WAIT(done(), kTimeoutMs);
   EXPECT_EQ(2U, port()->Candidates().size());
+  EXPECT_EQ(port()->Candidates()[0].relay_protocol(), "");
+  EXPECT_EQ(port()->Candidates()[1].relay_protocol(), "");
 }

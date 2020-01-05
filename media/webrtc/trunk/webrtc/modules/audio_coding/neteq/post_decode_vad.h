@@ -46,7 +46,7 @@ class PostDecodeVad {
 
   
   
-  void Update(int16_t* signal, int length,
+  void Update(int16_t* signal, size_t length,
               AudioDecoder::SpeechType speech_type, bool sid_frame, int fs_hz);
 
   
@@ -65,7 +65,7 @@ class PostDecodeVad {
   int sid_interval_counter_;
   ::VadInst* vad_instance_;
 
-  DISALLOW_COPY_AND_ASSIGN(PostDecodeVad);
+  RTC_DISALLOW_COPY_AND_ASSIGN(PostDecodeVad);
 };
 
 }  

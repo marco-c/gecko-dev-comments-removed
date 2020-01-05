@@ -141,7 +141,7 @@ void WebRtcNsx_NoiseEstimationNeon(NoiseSuppressionFixedC* inst,
   const int16_t log2_const = 22713;
   const int16_t width_factor = 21845;
 
-  int i, s, offset;
+  size_t i, s, offset;
 
   tabind = inst->stages - inst->normData;
   assert(tabind < 9);
@@ -208,7 +208,7 @@ void WebRtcNsx_NoiseEstimationNeon(NoiseSuppressionFixedC* inst,
     uint16x8_t tmp16x8_4;
     int32x4_t tmp32x4;
 
-    for (i = 0; i < inst->magnLen - 7; i += 8) {
+    for (i = 0; i + 7 < inst->magnLen; i += 8) {
       
       
       
@@ -540,7 +540,6 @@ void WebRtcNsx_AnalysisUpdateNeon(NoiseSuppressionFixedC* inst,
   assert(inst->blockLen10ms % 16 == 0);
   assert(inst->anaLen % 16 == 0);
 
-  
   
   
   

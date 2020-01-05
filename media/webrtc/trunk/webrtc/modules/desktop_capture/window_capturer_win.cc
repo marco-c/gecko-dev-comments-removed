@@ -13,20 +13,17 @@
 #include <assert.h>
 
 #include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/win32.h"
 #include "webrtc/modules/desktop_capture/desktop_frame_win.h"
 #include "webrtc/modules/desktop_capture/win/window_capture_utils.h"
-#include "webrtc/system_wrappers/interface/logging.h"
-#include <VersionHelpers.h>
+#include "webrtc/system_wrappers/include/logging.h"
 
 namespace webrtc {
 
 namespace {
 
-typedef HRESULT (WINAPI *DwmIsCompositionEnabledFunc)(BOOL* enabled);
-
 BOOL CALLBACK WindowsEnumerationHandler(HWND hwnd, LPARAM param) {
-  assert(IsGUIThread(false));
   WindowCapturer::WindowList* list =
       reinterpret_cast<WindowCapturer::WindowList*>(param);
 
@@ -43,7 +40,10 @@ BOOL CALLBACK WindowsEnumerationHandler(HWND hwnd, LPARAM param) {
   
   const size_t kClassLength = 256;
   WCHAR class_name[kClassLength];
-  GetClassName(hwnd, class_name, kClassLength);
+  const int class_name_length = GetClassName(hwnd, class_name, kClassLength);
+  RTC_DCHECK(class_name_length)
+      << "Error retrieving the application's class name";
+
   
   
   
@@ -52,7 +52,9 @@ BOOL CALLBACK WindowsEnumerationHandler(HWND hwnd, LPARAM param) {
 
   
   
-  if (IsWindows8OrGreater() &&
+  
+  
+  if (rtc::IsWindows8OrLater() &&
       (wcscmp(class_name, L"ApplicationFrameWindow") == 0 ||
        wcscmp(class_name, L"Windows.UI.Core.CoreWindow") == 0)) {
     return TRUE;
@@ -60,10 +62,6 @@ BOOL CALLBACK WindowsEnumerationHandler(HWND hwnd, LPARAM param) {
 
   WindowCapturer::Window window;
   window.id = reinterpret_cast<WindowCapturer::WindowId>(hwnd);
-
-  DWORD pid;
-  GetWindowThreadProcessId(hwnd, &pid);
-  window.pid = (pid_t)pid;
 
   const size_t kTitleLength = 500;
   WCHAR window_title[kTitleLength];
@@ -74,12 +72,6 @@ BOOL CALLBACK WindowsEnumerationHandler(HWND hwnd, LPARAM param) {
   
   if (window.title.empty())
     return TRUE;
-  
-  RECT bounds;
-  if(GetClientRect(hwnd,&bounds) && !IsIconic(hwnd)
-    && IsRectEmpty(&bounds)){
-    return TRUE;
-  }
 
   list->push_back(window);
 
@@ -98,56 +90,31 @@ class WindowCapturerWin : public WindowCapturer {
 
   
   void Start(Callback* callback) override;
-  void Stop() override;
   void Capture(const DesktopRegion& region) override;
 
  private:
-  bool IsAeroEnabled();
-
   Callback* callback_;
 
   
   
   HWND window_;
 
-  
-  HMODULE dwmapi_library_;
-  DwmIsCompositionEnabledFunc is_composition_enabled_func_;
-
   DesktopSize previous_size_;
 
-  DISALLOW_COPY_AND_ASSIGN(WindowCapturerWin);
+  AeroChecker aero_checker_;
+
+  RTC_DISALLOW_COPY_AND_ASSIGN(WindowCapturerWin);
 };
 
 WindowCapturerWin::WindowCapturerWin()
     : callback_(NULL),
       window_(NULL) {
-  
-  dwmapi_library_ = LoadLibrary(L"dwmapi.dll");
-  if (dwmapi_library_) {
-    is_composition_enabled_func_ =
-        reinterpret_cast<DwmIsCompositionEnabledFunc>(
-            GetProcAddress(dwmapi_library_, "DwmIsCompositionEnabled"));
-    assert(is_composition_enabled_func_);
-  } else {
-    is_composition_enabled_func_ = NULL;
-  }
 }
 
 WindowCapturerWin::~WindowCapturerWin() {
-  if (dwmapi_library_)
-    FreeLibrary(dwmapi_library_);
-}
-
-bool WindowCapturerWin::IsAeroEnabled() {
-  BOOL result = FALSE;
-  if (is_composition_enabled_func_)
-    is_composition_enabled_func_(&result);
-  return result != FALSE;
 }
 
 bool WindowCapturerWin::GetWindowList(WindowList* windows) {
-  assert(IsGUIThread(false));
   WindowList result;
   LPARAM param = reinterpret_cast<LPARAM>(&result);
   if (!EnumWindows(&WindowsEnumerationHandler, param))
@@ -157,7 +124,6 @@ bool WindowCapturerWin::GetWindowList(WindowList* windows) {
 }
 
 bool WindowCapturerWin::SelectWindow(WindowId id) {
-  assert(IsGUIThread(false));
   HWND window = reinterpret_cast<HWND>(id);
   if (!IsWindow(window) || !IsWindowVisible(window) || IsIconic(window))
     return false;
@@ -167,7 +133,6 @@ bool WindowCapturerWin::SelectWindow(WindowId id) {
 }
 
 bool WindowCapturerWin::BringSelectedWindowToFront() {
-  assert(IsGUIThread(false));
   if (!window_)
     return false;
 
@@ -184,12 +149,7 @@ void WindowCapturerWin::Start(Callback* callback) {
   callback_ = callback;
 }
 
-void WindowCapturerWin::Stop() {
-  callback_ = NULL;
-}
-
 void WindowCapturerWin::Capture(const DesktopRegion& region) {
-  assert(IsGUIThread(false));
   if (!window_) {
     LOG(LS_ERROR) << "Window hasn't been selected: " << GetLastError();
     callback_->OnCaptureCompleted(NULL);
@@ -197,14 +157,15 @@ void WindowCapturerWin::Capture(const DesktopRegion& region) {
   }
 
   
-  if (!IsWindow(window_) || !IsWindowVisible(window_)) {
+  if (!IsWindow(window_)) {
     callback_->OnCaptureCompleted(NULL);
     return;
   }
 
   
   
-  if (IsIconic(window_)) {
+  
+  if (IsIconic(window_) || !IsWindowVisible(window_)) {
     BasicDesktopFrame* frame = new BasicDesktopFrame(DesktopSize(1, 1));
     memset(frame->data(), 0, frame->stride() * frame->size().height());
 
@@ -257,7 +218,7 @@ void WindowCapturerWin::Capture(const DesktopRegion& region) {
   
   
 
-  if (!IsAeroEnabled() || !previous_size_.equals(frame->size())) {
+  if (!aero_checker_.IsAeroEnabled() || !previous_size_.equals(frame->size())) {
     result = PrintWindow(window_, mem_dc, 0);
   }
 

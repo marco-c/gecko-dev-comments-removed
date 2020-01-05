@@ -38,8 +38,8 @@ TEST_F(VadTest, vad_filterbank) {
   
   
   int16_t speech[kMaxFrameLength];
-  for (int16_t i = 0; i < kMaxFrameLength; ++i) {
-    speech[i] = (i * i);
+  for (size_t i = 0; i < kMaxFrameLength; ++i) {
+    speech[i] = static_cast<int16_t>(i * i);
   }
 
   int frame_length_index = 0;
@@ -73,7 +73,7 @@ TEST_F(VadTest, vad_filterbank) {
 
   
   
-  for (int16_t i = 0; i < kMaxFrameLength; ++i) {
+  for (size_t i = 0; i < kMaxFrameLength; ++i) {
     speech[i] = 1;
   }
   for (size_t j = 0; j < kFrameLengthsSize; ++j) {

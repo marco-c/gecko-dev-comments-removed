@@ -27,15 +27,15 @@
 
 
 void WebRtcIlbcfix_CbMemEnergy(
-    int16_t range,
+    size_t range,
     int16_t *CB,   
     int16_t *filteredCB,  
-    int16_t lMem,   
-    int16_t lTarget,   
+    size_t lMem,   
+    size_t lTarget,   
     int16_t *energyW16,  
     int16_t *energyShifts, 
-    int16_t scale,   
-    int16_t base_size  
+    int scale,   
+    size_t base_size  
                                ) {
   int16_t *ppi, *ppo, *pp;
   int32_t energy, tmp32;

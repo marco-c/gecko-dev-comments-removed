@@ -75,7 +75,7 @@ class MultipartStream : public StreamInterface, public sigslot::has_slots<> {
   size_t current_;  
   size_t position_;  
 
-  DISALLOW_COPY_AND_ASSIGN(MultipartStream);
+  RTC_DISALLOW_COPY_AND_ASSIGN(MultipartStream);
 };
 
 }  

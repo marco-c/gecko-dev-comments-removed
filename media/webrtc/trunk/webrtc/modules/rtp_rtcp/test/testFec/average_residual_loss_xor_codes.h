@@ -7,8 +7,10 @@
 
 
 
+#ifndef WEBRTC_MODULES_RTP_RTCP_TEST_TESTFEC_AVERAGE_RESIDUAL_LOSS_XOR_CODES_H_
+#define WEBRTC_MODULES_RTP_RTCP_TEST_TESTFEC_AVERAGE_RESIDUAL_LOSS_XOR_CODES_H_
 
-namespace {
+namespace webrtc {
 
 
 
@@ -186,3 +188,4 @@ const float kMaxResidualLossBurstyMask[kNumberCodes] = {
 };
 
 }  
+#endif  

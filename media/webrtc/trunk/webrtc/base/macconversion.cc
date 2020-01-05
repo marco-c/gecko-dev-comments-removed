@@ -8,7 +8,7 @@
 
 
 
-#if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
+#if defined(WEBRTC_MAC) || defined(WEBRTC_IOS)
 
 #include <CoreFoundation/CoreFoundation.h>
 

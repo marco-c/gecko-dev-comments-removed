@@ -36,7 +36,7 @@ void WebRtcIlbcfix_AbsQuant(
     int16_t *weightDenum   
                             ) {
   int16_t *syntOut;
-  int16_t quantLen[2];
+  size_t quantLen[2];
 
   
   int16_t syntOutBuf[LPC_FILTERORDER+STATE_SHORT_LEN_30MS];

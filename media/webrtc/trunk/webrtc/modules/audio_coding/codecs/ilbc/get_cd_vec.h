@@ -22,9 +22,9 @@
 void WebRtcIlbcfix_GetCbVec(
     int16_t *cbvec,   
     int16_t *mem,   
-    int16_t index,   
-    int16_t lMem,   
-    int16_t cbveclen   
+    size_t index,   
+    size_t lMem,   
+    size_t cbveclen   
                             );
 
 #endif

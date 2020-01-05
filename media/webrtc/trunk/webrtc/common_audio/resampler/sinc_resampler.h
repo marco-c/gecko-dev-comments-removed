@@ -16,7 +16,7 @@
 
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/scoped_ptr.h"
-#include "webrtc/system_wrappers/interface/aligned_malloc.h"
+#include "webrtc/system_wrappers/include/aligned_malloc.h"
 #include "webrtc/test/testsupport/gtest_prod_util.h"
 #include "webrtc/typedefs.h"
 
@@ -28,28 +28,27 @@ namespace webrtc {
 class SincResamplerCallback {
  public:
   virtual ~SincResamplerCallback() {}
-  virtual void Run(int frames, float* destination) = 0;
+  virtual void Run(size_t frames, float* destination) = 0;
 };
 
 
 class SincResampler {
  public:
-  enum {
-    
-    
-    
-    kKernelSize = 32,
+  
+  
+  
+  static const size_t kKernelSize = 32;
 
-    
-    
-    kDefaultRequestSize = 512,
+  
+  
+  static const size_t kDefaultRequestSize = 512;
 
-    
-    
-    
-    kKernelOffsetCount = 32,
-    kKernelStorageSize = kKernelSize * (kKernelOffsetCount + 1),
-  };
+  
+  
+  
+  static const size_t kKernelOffsetCount = 32;
+  static const size_t kKernelStorageSize =
+      kKernelSize * (kKernelOffsetCount + 1);
 
   
   
@@ -58,18 +57,18 @@ class SincResampler {
   
   
   SincResampler(double io_sample_rate_ratio,
-                int request_frames,
+                size_t request_frames,
                 SincResamplerCallback* read_cb);
   virtual ~SincResampler();
 
   
-  void Resample(int frames, float* destination);
+  void Resample(size_t frames, float* destination);
 
   
   
-  int ChunkSize() const;
+  size_t ChunkSize() const;
 
-  int request_frames() const { return request_frames_; }
+  size_t request_frames() const { return request_frames_; }
 
   
   
@@ -107,7 +106,7 @@ class SincResampler {
   static float Convolve_SSE(const float* input_ptr, const float* k1,
                             const float* k2,
                             double kernel_interpolation_factor);
-#elif defined(WEBRTC_ARCH_ARM_V7) || defined(WEBRTC_ARCH_ARM64_NEON)
+#elif defined(WEBRTC_DETECT_NEON) || defined(WEBRTC_HAS_NEON)
   static float Convolve_NEON(const float* input_ptr, const float* k1,
                              const float* k2,
                              double kernel_interpolation_factor);
@@ -127,13 +126,13 @@ class SincResampler {
   SincResamplerCallback* read_cb_;
 
   
-  const int request_frames_;
+  const size_t request_frames_;
 
   
-  int block_size_;
+  size_t block_size_;
 
   
-  const int input_buffer_size_;
+  const size_t input_buffer_size_;
 
   
   
@@ -163,7 +162,7 @@ class SincResampler {
   float* r3_;
   float* r4_;
 
-  DISALLOW_COPY_AND_ASSIGN(SincResampler);
+  RTC_DISALLOW_COPY_AND_ASSIGN(SincResampler);
 };
 
 }  

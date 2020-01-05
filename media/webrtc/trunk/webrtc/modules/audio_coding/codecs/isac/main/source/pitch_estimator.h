@@ -61,11 +61,15 @@ void WebRtcIsac_PitchfilterPre_gains(double *indat,
 
 void WebRtcIsac_WeightingFilter(const double *in, double *weiout, double *whiout, WeightFiltstr *wfdata);
 
-void WebRtcIsac_Highpass(const double *in, double *out, double *state, int N);
+void WebRtcIsac_Highpass(const double *in,
+                         double *out,
+                         double *state,
+                         size_t N);
 
 void WebRtcIsac_DecimateAllpass(const double *in,
-                                double *state_in,        
-                                int N,                   
-                                double *out);            
+                                double *state_in,  
+
+                                size_t N,          
+                                double *out);      
 
 #endif 

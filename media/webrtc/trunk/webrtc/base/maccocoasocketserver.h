@@ -40,7 +40,7 @@ class MacCocoaSocketServer : public MacBaseSocketServer {
   
   int run_count_;
 
-  DISALLOW_EVIL_CONSTRUCTORS(MacCocoaSocketServer);
+  RTC_DISALLOW_COPY_AND_ASSIGN(MacCocoaSocketServer);
 };
 
 }  

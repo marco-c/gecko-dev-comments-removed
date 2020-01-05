@@ -39,6 +39,6 @@
 
 
 int16_t WebRtcVad_CalculateFeatures(VadInstT* self, const int16_t* data_in,
-                                    int data_length, int16_t* features);
+                                    size_t data_length, int16_t* features);
 
 #endif  

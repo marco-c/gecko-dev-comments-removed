@@ -20,7 +20,9 @@
 #include "settings.h"
 #include "isac.h"
 
+#include <assert.h>
 #include <math.h>
+#include <string.h>
 
 
 
@@ -119,6 +121,9 @@ int32_t WebRtcIsac_InitBandwidthEstimator(
   bwest_str->inWaitLatePkts = 0;
   bwest_str->senderTimestamp = 0;
   bwest_str->receiverTimestamp = 0;
+
+  bwest_str->external_bw_info.in_use = 0;
+
   return 0;
 }
 
@@ -132,12 +137,12 @@ int32_t WebRtcIsac_InitBandwidthEstimator(
 
 
 int16_t WebRtcIsac_UpdateBandwidthEstimator(
-    BwEstimatorstr *bwest_str,
+    BwEstimatorstr* bwest_str,
     const uint16_t rtp_number,
-    const int32_t  frame_length,
+    const int32_t frame_length,
     const uint32_t send_ts,
     const uint32_t arr_ts,
-    const int32_t  pksize
+    const size_t pksize
     )
 {
   float weight = 0.0f;
@@ -154,6 +159,7 @@ int16_t WebRtcIsac_UpdateBandwidthEstimator(
   int immediate_set = 0;
   int num_pkts_expected;
 
+  assert(!bwest_str->external_bw_info.in_use);
 
   
   
@@ -508,6 +514,8 @@ int16_t WebRtcIsac_UpdateUplinkBwImpl(
     int16_t               index,
     enum IsacSamplingRate encoderSamplingFreq)
 {
+  assert(!bwest_str->external_bw_info.in_use);
+
   if((index < 0) || (index > 23))
   {
     return -ISAC_RANGE_ERROR_BW_ESTIMATOR;
@@ -564,6 +572,8 @@ int16_t WebRtcIsac_UpdateUplinkJitter(
     BwEstimatorstr*              bwest_str,
     int32_t                  index)
 {
+  assert(!bwest_str->external_bw_info.in_use);
+
   if((index < 0) || (index > 23))
   {
     return -ISAC_RANGE_ERROR_BW_ESTIMATOR;
@@ -589,7 +599,7 @@ int16_t WebRtcIsac_UpdateUplinkJitter(
 
 
 
-uint16_t
+void
 WebRtcIsac_GetDownlinkBwJitIndexImpl(
     BwEstimatorstr*           bwest_str,
     int16_t*              bottleneckIndex,
@@ -608,6 +618,12 @@ WebRtcIsac_GetDownlinkBwJitIndexImpl(
   int16_t minInd;
   int16_t maxInd;
   int16_t midInd;
+
+  if (bwest_str->external_bw_info.in_use) {
+    *bottleneckIndex = bwest_str->external_bw_info.bottleneck_idx;
+    *jitterInfo = bwest_str->external_bw_info.jitter_info;
+    return;
+  }
 
   
   
@@ -684,8 +700,6 @@ WebRtcIsac_GetDownlinkBwJitIndexImpl(
 
   bwest_str->rec_bw_avg = (1 - weight) * bwest_str->rec_bw_avg + weight *
       (rate + bwest_str->rec_header_rate);
-
-  return 0;
 }
 
 
@@ -696,6 +710,8 @@ int32_t WebRtcIsac_GetDownlinkBandwidth( const BwEstimatorstr *bwest_str)
   int32_t  rec_bw;
   float   jitter_sign;
   float   bw_adjust;
+
+  assert(!bwest_str->external_bw_info.in_use);
 
   
   jitter_sign = bwest_str->rec_jitter_short_term /
@@ -725,6 +741,8 @@ WebRtcIsac_GetDownlinkMaxDelay(const BwEstimatorstr *bwest_str)
 {
   int32_t rec_max_delay;
 
+  assert(!bwest_str->external_bw_info.in_use);
+
   rec_max_delay = (int32_t)(bwest_str->rec_max_delay);
 
   
@@ -740,47 +758,40 @@ WebRtcIsac_GetDownlinkMaxDelay(const BwEstimatorstr *bwest_str)
 }
 
 
-void
-WebRtcIsac_GetUplinkBandwidth(
-    const BwEstimatorstr* bwest_str,
-    int32_t*          bitRate)
-{
-  
-  if (bwest_str->send_bw_avg < MIN_ISAC_BW)
-  {
-    *bitRate = MIN_ISAC_BW;
-  }
-  else if (bwest_str->send_bw_avg > MAX_ISAC_BW)
-  {
-    *bitRate = MAX_ISAC_BW;
-  }
-  else
-  {
-    *bitRate = (int32_t)(bwest_str->send_bw_avg);
-  }
-  return;
+static int32_t clamp(int32_t val, int32_t min, int32_t max) {
+  assert(min <= max);
+  return val < min ? min : (val > max ? max : val);
 }
 
-
-int32_t
-WebRtcIsac_GetUplinkMaxDelay(const BwEstimatorstr *bwest_str)
-{
-  int32_t send_max_delay;
-
-  send_max_delay = (int32_t)(bwest_str->send_max_delay_avg);
-
-  
-  if (send_max_delay < MIN_ISAC_MD)
-  {
-    send_max_delay = MIN_ISAC_MD;
-  }
-  else if (send_max_delay > MAX_ISAC_MD)
-  {
-    send_max_delay = MAX_ISAC_MD;
-  }
-  return send_max_delay;
+int32_t WebRtcIsac_GetUplinkBandwidth(const BwEstimatorstr* bwest_str) {
+  return bwest_str->external_bw_info.in_use
+             ? bwest_str->external_bw_info.send_bw_avg
+             : clamp(bwest_str->send_bw_avg, MIN_ISAC_BW, MAX_ISAC_BW);
 }
 
+int32_t WebRtcIsac_GetUplinkMaxDelay(const BwEstimatorstr* bwest_str) {
+  return bwest_str->external_bw_info.in_use
+             ? bwest_str->external_bw_info.send_max_delay_avg
+             : clamp(bwest_str->send_max_delay_avg, MIN_ISAC_MD, MAX_ISAC_MD);
+}
+
+void WebRtcIsacBw_GetBandwidthInfo(BwEstimatorstr* bwest_str,
+                                   enum IsacSamplingRate decoder_sample_rate_hz,
+                                   IsacBandwidthInfo* bwinfo) {
+  assert(!bwest_str->external_bw_info.in_use);
+  bwinfo->in_use = 1;
+  bwinfo->send_bw_avg = WebRtcIsac_GetUplinkBandwidth(bwest_str);
+  bwinfo->send_max_delay_avg = WebRtcIsac_GetUplinkMaxDelay(bwest_str);
+  WebRtcIsac_GetDownlinkBwJitIndexImpl(bwest_str, &bwinfo->bottleneck_idx,
+                                       &bwinfo->jitter_info,
+                                       decoder_sample_rate_hz);
+}
+
+void WebRtcIsacBw_SetBandwidthInfo(BwEstimatorstr* bwest_str,
+                                   const IsacBandwidthInfo* bwinfo) {
+  memcpy(&bwest_str->external_bw_info, bwinfo,
+         sizeof bwest_str->external_bw_info);
+}
 
 
 

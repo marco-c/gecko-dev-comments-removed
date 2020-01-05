@@ -21,7 +21,7 @@ namespace rtc {
 
 class SoundOutputStreamInterface {
  public:
-  virtual ~SoundOutputStreamInterface() {}
+  virtual ~SoundOutputStreamInterface();
 
   
   virtual bool EnableBufferMonitoring() = 0;
@@ -61,10 +61,10 @@ class SoundOutputStreamInterface {
   sigslot::signal2<size_t, SoundOutputStreamInterface *> SignalBufferSpace;
 
  protected:
-  SoundOutputStreamInterface() {}
+  SoundOutputStreamInterface();
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(SoundOutputStreamInterface);
+  RTC_DISALLOW_COPY_AND_ASSIGN(SoundOutputStreamInterface);
 };
 
 }  

@@ -61,12 +61,26 @@ extern "C"
 
 
 
+int WebRtcAgc_GetAddFarendError(void* state, size_t samples);
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
 int WebRtcAgc_AddFarend(void* agcInst,
                         const int16_t* inFar,
-                        int16_t samples);
+                        size_t samples);
 
 
 
@@ -90,8 +104,8 @@ int WebRtcAgc_AddFarend(void* agcInst,
 
 int WebRtcAgc_AddMic(void* agcInst,
                      int16_t* const* inMic,
-                     int16_t num_bands,
-                     int16_t samples);
+                     size_t num_bands,
+                     size_t samples);
 
 
 
@@ -118,8 +132,8 @@ int WebRtcAgc_AddMic(void* agcInst,
 
 int WebRtcAgc_VirtualMic(void* agcInst,
                          int16_t* const* inMic,
-                         int16_t num_bands,
-                         int16_t samples,
+                         size_t num_bands,
+                         size_t samples,
                          int32_t micLevelIn,
                          int32_t* micLevelOut);
 
@@ -159,8 +173,8 @@ int WebRtcAgc_VirtualMic(void* agcInst,
 
 int WebRtcAgc_Process(void* agcInst,
                       const int16_t* const* inNear,
-                      int16_t num_bands,
-                      int16_t samples,
+                      size_t num_bands,
+                      size_t samples,
                       int16_t* const* out,
                       int32_t inMicLevel,
                       int32_t* outMicLevel,
@@ -203,11 +217,7 @@ int WebRtcAgc_get_config(void* agcInst, WebRtcAgcConfig* config);
 
 
 
-
-
-
-int WebRtcAgc_Create(void **agcInst);
-
+void* WebRtcAgc_Create();
 
 
 
@@ -215,9 +225,7 @@ int WebRtcAgc_Create(void **agcInst);
 
 
 
-
-
-int WebRtcAgc_Free(void *agcInst);
+void WebRtcAgc_Free(void* agcInst);
 
 
 

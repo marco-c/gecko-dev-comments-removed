@@ -30,11 +30,11 @@
 
 
 void WebRtcIlbcfix_Refiner(
-    int16_t *updStartPos, 
+    size_t *updStartPos, 
     int16_t *idata,   
-    int16_t idatal,   
-    int16_t centerStartPos, 
-    int16_t estSegPos,  
+    size_t idatal,   
+    size_t centerStartPos, 
+    size_t estSegPos,  
     int16_t *surround,  
 
     int16_t gain    

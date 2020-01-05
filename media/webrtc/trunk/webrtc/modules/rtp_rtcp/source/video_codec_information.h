@@ -15,14 +15,13 @@
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
 
 namespace webrtc {
-class VideoCodecInformation
-{
-public:
-    virtual void Reset() = 0;
+class VideoCodecInformation {
+ public:
+  virtual void Reset() = 0;
 
-    virtual RtpVideoCodecTypes Type() = 0;
-    virtual ~VideoCodecInformation(){};
+  virtual RtpVideoCodecTypes Type() = 0;
+  virtual ~VideoCodecInformation() {}
 };
 }  
 
-#endif 
+#endif  

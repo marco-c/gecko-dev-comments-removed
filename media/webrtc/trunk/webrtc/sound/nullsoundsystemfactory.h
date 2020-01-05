@@ -20,12 +20,12 @@ namespace rtc {
 class NullSoundSystemFactory : public SoundSystemFactory {
  public:
   NullSoundSystemFactory();
-  virtual ~NullSoundSystemFactory();
+  ~NullSoundSystemFactory() override;
 
  protected:
   
-  virtual bool SetupInstance();
-  virtual void CleanupInstance();
+  bool SetupInstance() override;
+  void CleanupInstance() override;
 };
 
 }  

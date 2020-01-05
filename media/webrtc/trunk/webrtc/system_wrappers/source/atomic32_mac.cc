@@ -8,7 +8,7 @@
 
 
 
-#include "webrtc/system_wrappers/interface/atomic32.h"
+#include "webrtc/system_wrappers/include/atomic32.h"
 
 #include <assert.h>
 #include <libkern/OSAtomic.h>

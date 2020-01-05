@@ -7,8 +7,8 @@
 
 
 
-#include "webrtc/system_wrappers/interface/field_trial.h"
-#include "webrtc/system_wrappers/interface/field_trial_default.h"
+#include "webrtc/system_wrappers/include/field_trial.h"
+#include "webrtc/system_wrappers/include/field_trial_default.h"
 
 #include <string>
 
@@ -56,6 +56,10 @@ std::string FindFullName(const std::string& name) {
 
 void InitFieldTrialsFromString(const char* trials_string) {
   trials_init_string = trials_string;
+}
+
+const char* GetFieldTrialString() {
+  return trials_init_string;
 }
 
 }  

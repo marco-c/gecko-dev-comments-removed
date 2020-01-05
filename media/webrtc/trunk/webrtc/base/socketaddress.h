@@ -36,7 +36,7 @@ class SocketAddress {
 
   
   
-  SocketAddress(uint32 ip_as_host_order_integer, int port);
+  SocketAddress(uint32_t ip_as_host_order_integer, int port);
 
   
   SocketAddress(const IPAddress& ip, int port);
@@ -58,7 +58,7 @@ class SocketAddress {
 
   
   
-  void SetIP(uint32 ip_as_host_order_integer);
+  void SetIP(uint32_t ip_as_host_order_integer);
 
   
   void SetIP(const IPAddress& ip);
@@ -70,7 +70,7 @@ class SocketAddress {
   
   
   
-  void SetResolvedIP(uint32 ip_as_host_order_integer);
+  void SetResolvedIP(uint32_t ip_as_host_order_integer);
 
   
   
@@ -84,14 +84,14 @@ class SocketAddress {
 
   
   
-  uint32 ip() const;
+  uint32_t ip() const;
 
   const IPAddress& ipaddr() const;
 
   int family() const {return ip_.family(); }
 
   
-  uint16 port() const;
+  uint16_t port() const;
 
   
   
@@ -128,7 +128,6 @@ class SocketAddress {
   
   
   bool IsAnyIP() const;
-  inline bool IsAny() const { return IsAnyIP(); }  
 
   
   
@@ -142,7 +141,6 @@ class SocketAddress {
 
   
   bool IsUnresolvedIP() const;
-  inline bool IsUnresolved() const { return IsUnresolvedIP(); }  
 
   
   bool operator ==(const SocketAddress& addr) const;
@@ -178,29 +176,10 @@ class SocketAddress {
   size_t ToDualStackSockAddrStorage(sockaddr_storage* saddr) const;
   size_t ToSockAddrStorage(sockaddr_storage* saddr) const;
 
-  
-  
-  
-  static std::string IPToString(uint32 ip_as_host_order_integer);
-
-  
-  
-  static std::string IPToSensitiveString(uint32 ip_as_host_order_integer);
-
-  
-  
-  
-  
-  static bool StringToIP(const std::string& str, uint32* ip);
-  static uint32 StringToIP(const std::string& str);
-
-  
-  static bool StringToIP(const std::string& str, IPAddress* ip);
-
  private:
   std::string hostname_;
   IPAddress ip_;
-  uint16 port_;
+  uint16_t port_;
   int scope_id_;
   bool literal_;  
 };

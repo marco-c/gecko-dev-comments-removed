@@ -36,25 +36,38 @@ class VolumeCallbacks {
 
 
 
-
-class AgcManagerDirect {
+class AgcManagerDirect final {
  public:
   
   
-  AgcManagerDirect(GainControl* gctrl, VolumeCallbacks* volume_callbacks);
+  
+  
+  AgcManagerDirect(GainControl* gctrl,
+                   VolumeCallbacks* volume_callbacks,
+                   int startup_min_level);
   
   
   AgcManagerDirect(Agc* agc,
                    GainControl* gctrl,
-                   VolumeCallbacks* volume_callbacks);
+                   VolumeCallbacks* volume_callbacks,
+                   int startup_min_level);
   ~AgcManagerDirect();
 
   int Initialize();
   void AnalyzePreProcess(int16_t* audio,
                          int num_channels,
-                         int samples_per_channel);
-  void Process(const int16_t* audio, int length, int sample_rate_hz);
+                         size_t samples_per_channel);
+  void Process(const int16_t* audio, size_t length, int sample_rate_hz);
 
+  
+  
+  
+  void SetCaptureMuted(bool muted);
+  bool capture_muted() { return capture_muted_; }
+
+  float voice_probability();
+
+ private:
   
   
   void SetLevel(int new_level);
@@ -64,12 +77,6 @@ class AgcManagerDirect {
   
   void SetMaxLevel(int level);
 
-  void SetCaptureMuted(bool muted);
-  bool capture_muted() { return capture_muted_; }
-
-  float voice_probability();
-
- private:
   int CheckVolumeAndReset();
   void UpdateGain();
   void UpdateCompressor();
@@ -88,9 +95,12 @@ class AgcManagerDirect {
   bool capture_muted_;
   bool check_volume_on_next_process_;
   bool startup_;
+  int startup_min_level_;
 
   rtc::scoped_ptr<DebugFile> file_preproc_;
   rtc::scoped_ptr<DebugFile> file_postproc_;
+
+  RTC_DISALLOW_COPY_AND_ASSIGN(AgcManagerDirect);
 };
 
 }  

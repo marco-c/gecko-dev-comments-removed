@@ -8,9 +8,8 @@
 
 
 
+#include "webrtc/base/checks.h"
 #include "webrtc/p2p/base/portallocator.h"
-
-#include "webrtc/p2p/base/portallocatorsessionproxy.h"
 
 namespace cricket {
 
@@ -18,26 +17,15 @@ PortAllocatorSession::PortAllocatorSession(const std::string& content_name,
                                            int component,
                                            const std::string& ice_ufrag,
                                            const std::string& ice_pwd,
-                                           uint32 flags)
+                                           uint32_t flags)
     : content_name_(content_name),
       component_(component),
       flags_(flags),
       generation_(0),
-      
-      
-      
-      username_(flags_ & PORTALLOCATOR_ENABLE_SHARED_UFRAG ? ice_ufrag : ""),
-      password_(flags_ & PORTALLOCATOR_ENABLE_SHARED_UFRAG ? ice_pwd : "") {
-  
-  ASSERT((!(flags_ & PORTALLOCATOR_ENABLE_BUNDLE)) ||
-         (flags_ & PORTALLOCATOR_ENABLE_SHARED_UFRAG));
-}
-
-PortAllocator::~PortAllocator() {
-  for (SessionMuxerMap::iterator iter = muxers_.begin();
-       iter != muxers_.end(); ++iter) {
-    delete iter->second;
-  }
+      ice_ufrag_(ice_ufrag),
+      ice_pwd_(ice_pwd) {
+  RTC_DCHECK(!ice_ufrag.empty());
+  RTC_DCHECK(!ice_pwd.empty());
 }
 
 PortAllocatorSession* PortAllocator::CreateSession(
@@ -46,50 +34,7 @@ PortAllocatorSession* PortAllocator::CreateSession(
     int component,
     const std::string& ice_ufrag,
     const std::string& ice_pwd) {
-  if (flags_ & PORTALLOCATOR_ENABLE_BUNDLE) {
-    
-    
-    
-    
-    
-    
-    std::string key_str = ice_ufrag + ":" + ice_pwd;
-    PortAllocatorSessionMuxer* muxer = GetSessionMuxer(key_str);
-    if (!muxer) {
-      PortAllocatorSession* session_impl = CreateSessionInternal(
-          content_name, component, ice_ufrag, ice_pwd);
-      
-      muxer = new PortAllocatorSessionMuxer(session_impl);
-      muxer->SignalDestroyed.connect(
-          this, &PortAllocator::OnSessionMuxerDestroyed);
-      
-      muxers_[key_str] = muxer;
-    }
-    PortAllocatorSessionProxy* proxy =
-        new PortAllocatorSessionProxy(content_name, component, flags_);
-    muxer->RegisterSessionProxy(proxy);
-    return proxy;
-  }
   return CreateSessionInternal(content_name, component, ice_ufrag, ice_pwd);
-}
-
-PortAllocatorSessionMuxer* PortAllocator::GetSessionMuxer(
-    const std::string& key) const {
-  SessionMuxerMap::const_iterator iter = muxers_.find(key);
-  if (iter != muxers_.end())
-    return iter->second;
-  return NULL;
-}
-
-void PortAllocator::OnSessionMuxerDestroyed(
-    PortAllocatorSessionMuxer* session) {
-  SessionMuxerMap::iterator iter;
-  for (iter = muxers_.begin(); iter != muxers_.end(); ++iter) {
-    if (iter->second == session)
-      break;
-  }
-  if (iter != muxers_.end())
-    muxers_.erase(iter);
 }
 
 }  

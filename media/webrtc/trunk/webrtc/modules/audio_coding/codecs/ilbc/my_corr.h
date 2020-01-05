@@ -26,11 +26,11 @@
 
 
 void WebRtcIlbcfix_MyCorr(
-    int32_t *corr,  
-    int16_t *seq1,  
-    int16_t dim1,  
-    const int16_t *seq2, 
-    int16_t dim2   
+    int32_t* corr,  
+    const int16_t* seq1,  
+    size_t dim1,  
+    const int16_t* seq2, 
+    size_t dim2   
                           );
 
 #endif

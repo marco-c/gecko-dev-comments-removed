@@ -32,6 +32,9 @@ struct AnalysisResult {
 };
 
 struct ResultsContainer {
+  ResultsContainer();
+  ~ResultsContainer();
+
   std::vector<AnalysisResult> frames;
 };
 
@@ -59,8 +62,10 @@ void RunAnalysis(const char* reference_file_name, const char* test_file_name,
 
 
 double CalculateMetrics(VideoAnalysisMetricsType video_metrics_type,
-                        const uint8* ref_frame,  const uint8* test_frame,
-                        int width, int height);
+                        const uint8_t* ref_frame,
+                        const uint8_t* test_frame,
+                        int width,
+                        int height);
 
 
 
@@ -98,14 +103,19 @@ bool IsThereBarcodeError(std::string line);
 int ExtractDecodedFrameNumber(std::string line);
 
 
-bool ExtractFrameFromYuvFile(const char* i420_file_name, int width, int height,
-                             int frame_number, uint8* result_frame);
+bool ExtractFrameFromYuvFile(const char* i420_file_name,
+                             int width,
+                             int height,
+                             int frame_number,
+                             uint8_t* result_frame);
 
 
 
-bool ExtractFrameFromY4mFile(const char* i420_file_name, int width, int height,
-                             int frame_number, uint8* result_frame);
-
+bool ExtractFrameFromY4mFile(const char* i420_file_name,
+                             int width,
+                             int height,
+                             int frame_number,
+                             uint8_t* result_frame);
 
 }  
 }  

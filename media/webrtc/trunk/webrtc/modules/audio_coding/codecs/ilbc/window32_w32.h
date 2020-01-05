@@ -29,7 +29,7 @@ void WebRtcIlbcfix_Window32W32(
     int32_t *z,    
     int32_t *x,    
     const int32_t  *y,  
-    int16_t N     
+    size_t N     
                                );
 
 #endif

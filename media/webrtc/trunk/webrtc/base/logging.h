@@ -54,12 +54,12 @@
 #include <sstream>
 #include <string>
 #include <utility>
+
 #include "webrtc/base/basictypes.h"
-#include "webrtc/base/criticalsection.h"
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/base/thread_annotations.h"
 
 namespace rtc {
-
-class StreamInterface;
 
 
 
@@ -81,7 +81,7 @@ struct ConstantLabel { int value; const char * label; };
 #define TLABEL(x, y) { x, y }
 #define LASTLABEL { 0, 0 }
 
-const char * FindLabel(int value, const ConstantLabel entries[]);
+const char* FindLabel(int value, const ConstantLabel entries[]);
 std::string ErrorName(int err, const ConstantLabel* err_table);
 
 
@@ -96,10 +96,18 @@ std::string ErrorName(int err, const ConstantLabel* err_table);
 
 
 
-enum LoggingSeverity { LS_SENSITIVE, LS_VERBOSE, LS_INFO, LS_WARNING, LS_ERROR,
-                       INFO = LS_INFO,
-                       WARNING = LS_WARNING,
-                       LERROR = LS_ERROR };
+
+enum LoggingSeverity {
+  LS_SENSITIVE,
+  LS_VERBOSE,
+  LS_INFO,
+  LS_WARNING,
+  LS_ERROR,
+  LS_NONE,
+  INFO = LS_INFO,
+  WARNING = LS_WARNING,
+  LERROR = LS_ERROR
+};
 
 
 enum LogErrorContext {
@@ -114,14 +122,25 @@ enum LogErrorContext {
   ERRCTX_OS = ERRCTX_OSSTATUS,  
 };
 
+
+class LogSink {
+ public:
+  LogSink() {}
+  virtual ~LogSink() {}
+  virtual void OnLogMessage(const std::string& message) = 0;
+};
+
 class LogMessage {
  public:
-  static const int NO_LOGGING;
-  static const uint32 WARN_SLOW_LOGS_DELAY = 50;  
-
   LogMessage(const char* file, int line, LoggingSeverity sev,
              LogErrorContext err_ctx = ERRCTX_NONE, int err = 0,
              const char* module = NULL);
+
+  LogMessage(const char* file,
+             int line,
+             LoggingSeverity sev,
+             const std::string& tag);
+
   ~LogMessage();
 
   static inline bool Loggable(LoggingSeverity sev) { return (sev >= min_sev_); }
@@ -132,24 +151,25 @@ class LogMessage {
   
   
   
-  static uint32 LogStartTime();
+  static uint32_t LogStartTime();
 
   
   
-  static uint32 WallClockStartTime();
+  static uint32_t WallClockStartTime();
 
-  
-  
-  static void LogContext(int min_sev);
   
   static void LogThreads(bool on = true);
+
   
   static void LogTimestamps(bool on = true);
 
   
   
-  static void LogToDebug(int min_sev);
-  static int GetLogToDebug() { return dbg_sev_; }
+  static void LogToDebug(LoggingSeverity min_sev);
+  static LoggingSeverity GetLogToDebug() { return dbg_sev_; }
+
+  
+  static void SetLogToStderr(bool log_to_stderr);
 
   
   
@@ -158,39 +178,29 @@ class LogMessage {
   
   
   
-  static void LogToStream(StreamInterface* stream, int min_sev);
-  static int GetLogToStream(StreamInterface* stream = NULL);
-  static void AddLogToStream(StreamInterface* stream, int min_sev);
-  static void RemoveLogToStream(StreamInterface* stream);
+  static int GetLogToStream(LogSink* stream = NULL);
+  static void AddLogToStream(LogSink* stream, LoggingSeverity min_sev);
+  static void RemoveLogToStream(LogSink* stream);
 
   
   
   static int GetMinLogSeverity() { return min_sev_; }
 
-  static void SetDiagnosticMode(bool f) { is_diagnostic_mode_ = f; }
-  static bool IsDiagnosticMode() { return is_diagnostic_mode_; }
-
   
   
-  
-  static void ConfigureLogging(const char* params, const char* filename);
-
-  
-  static int ParseLogSeverity(const std::string& value);
+  static void ConfigureLogging(const char* params);
 
  private:
-  typedef std::list<std::pair<StreamInterface*, int> > StreamList;
+  typedef std::pair<LogSink*, LoggingSeverity> StreamAndSeverity;
+  typedef std::list<StreamAndSeverity> StreamList;
 
   
   static void UpdateMinLogSeverity();
 
   
-  static const char* Describe(LoggingSeverity sev);
-  static const char* DescribeFile(const char* file);
-
-  
-  static void OutputToDebug(const std::string& msg, LoggingSeverity severity_);
-  static void OutputToStream(StreamInterface* stream, const std::string& msg);
+  static void OutputToDebug(const std::string& msg,
+                            LoggingSeverity severity,
+                            const std::string& tag);
 
   
   std::ostringstream print_stream_;
@@ -199,22 +209,18 @@ class LogMessage {
   LoggingSeverity severity_;
 
   
+  std::string tag_;
+
+  
   
   std::string extra_;
 
   
   
-  uint32 warn_slow_logs_delay_;
-
-  
-  static CriticalSection crit_;
-
   
   
   
-  
-  
-  static int min_sev_, dbg_sev_, ctx_sev_;
+  static LoggingSeverity min_sev_, dbg_sev_, ctx_sev_;
 
   
   static StreamList streams_;
@@ -223,9 +229,9 @@ class LogMessage {
   static bool thread_, timestamp_;
 
   
-  static bool is_diagnostic_mode_;
+  static bool log_to_stderr_;
 
-  DISALLOW_EVIL_CONSTRUCTORS(LogMessage);
+  RTC_DISALLOW_COPY_AND_ASSIGN(LogMessage);
 };
 
 
@@ -279,7 +285,7 @@ class LogMessageVoidify {
     rtc::LogMessage(__FILE__, __LINE__, sev).stream()
 
 
-#if (defined(__GNUC__) && defined(_DEBUG)) || defined(WANT_PRETTY_LOG_F)
+#if (defined(__GNUC__) && !defined(NDEBUG)) || defined(WANT_PRETTY_LOG_F)
 #define LOG_F(sev) LOG(sev) << __PRETTY_FUNCTION__ << ": "
 #define LOG_T_F(sev) LOG(sev) << this << ": " << __PRETTY_FUNCTION__ << ": "
 #else
@@ -291,6 +297,7 @@ class LogMessageVoidify {
   rtc::LogCheckLevel(rtc::sev)
 #define LOG_CHECK_LEVEL_V(sev) \
   rtc::LogCheckLevel(sev)
+
 inline bool LogCheckLevel(LoggingSeverity sev) {
   return (LogMessage::GetMinLogSeverity() <= sev);
 }
@@ -336,6 +343,10 @@ inline bool LogCheckLevel(LoggingSeverity sev) {
 #define LAST_SYSTEM_ERROR \
   (errno)
 #endif  
+
+#define LOG_TAG(sev, tag) \
+  LOG_SEVERITY_PRECONDITION(sev) \
+    rtc::LogMessage(NULL, 0, sev, tag).stream()
 
 #define PLOG(sev, err) \
   LOG_ERR_EX(sev, err)

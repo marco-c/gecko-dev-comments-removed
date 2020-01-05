@@ -32,32 +32,32 @@ enum WavFormat {
 };
 
 
-bool CheckWavParameters(int num_channels,
+bool CheckWavParameters(size_t num_channels,
                         int sample_rate,
                         WavFormat format,
-                        int bytes_per_sample,
-                        uint32_t num_samples);
+                        size_t bytes_per_sample,
+                        size_t num_samples);
 
 
 
 
 
 void WriteWavHeader(uint8_t* buf,
-                    int num_channels,
+                    size_t num_channels,
                     int sample_rate,
                     WavFormat format,
-                    int bytes_per_sample,
-                    uint32_t num_samples);
+                    size_t bytes_per_sample,
+                    size_t num_samples);
 
 
 
 
 bool ReadWavHeader(ReadableWav* readable,
-                   int* num_channels,
+                   size_t* num_channels,
                    int* sample_rate,
                    WavFormat* format,
-                   int* bytes_per_sample,
-                   uint32_t* num_samples);
+                   size_t* bytes_per_sample,
+                   size_t* num_samples);
 
 }  
 

@@ -43,11 +43,11 @@ class Candidate {
   Candidate(int component,
             const std::string& protocol,
             const rtc::SocketAddress& address,
-            uint32 priority,
+            uint32_t priority,
             const std::string& username,
             const std::string& password,
             const std::string& type,
-            uint32 generation,
+            uint32_t generation,
             const std::string& foundation)
       : id_(rtc::CreateRandomString(8)),
         component_(component),
@@ -70,18 +70,22 @@ class Candidate {
   const std::string & protocol() const { return protocol_; }
   void set_protocol(const std::string & protocol) { protocol_ = protocol; }
 
+  
+  const std::string& relay_protocol() const { return relay_protocol_; }
+  void set_relay_protocol(const std::string& protocol) {
+    relay_protocol_ = protocol;
+  }
+
   const rtc::SocketAddress & address() const { return address_; }
   void set_address(const rtc::SocketAddress & address) {
     address_ = address;
   }
 
-  uint32 priority() const { return priority_; }
-  void set_priority(const uint32 priority) { priority_ = priority; }
+  uint32_t priority() const { return priority_; }
+  void set_priority(const uint32_t priority) { priority_ = priority; }
 
-
-
-
-
+  
+  
   
   
   
@@ -91,14 +95,17 @@ class Candidate {
     return static_cast<float>(((priority_ >> 24) * 100 / 127) / 100.0);
   }
 
+  
+  
   void set_preference(float preference) {
     
     
-    uint64 prio_val = static_cast<uint64>(preference * 127) << 24;
-    priority_ =
-        static_cast<uint32>(std::min(prio_val, static_cast<uint64>(UINT_MAX)));
+    uint64_t prio_val = static_cast<uint64_t>(preference * 127) << 24;
+    priority_ = static_cast<uint32_t>(
+        std::min(prio_val, static_cast<uint64_t>(UINT_MAX)));
   }
 
+  
   const std::string & username() const { return username_; }
   void set_username(const std::string & username) { username_ = username; }
 
@@ -119,8 +126,8 @@ class Candidate {
   }
 
   
-  uint32 generation() const { return generation_; }
-  void set_generation(uint32 generation) { generation_ = generation; }
+  uint32_t generation() const { return generation_; }
+  void set_generation(uint32_t generation) { generation_ = generation; }
   const std::string generation_str() const {
     std::ostringstream ost;
     ost << generation_;
@@ -171,9 +178,9 @@ class Candidate {
     return ToStringInternal(true);
   }
 
-  uint32 GetPriority(uint32 type_preference,
-                     int network_adapter_preference,
-                     int relay_preference) const {
+  uint32_t GetPriority(uint32_t type_preference,
+                       int network_adapter_preference,
+                       int relay_preference) const {
     
     
     
@@ -214,14 +221,15 @@ class Candidate {
   std::string id_;
   int component_;
   std::string protocol_;
+  std::string relay_protocol_;
   rtc::SocketAddress address_;
-  uint32 priority_;
+  uint32_t priority_;
   std::string username_;
   std::string password_;
   std::string type_;
   std::string network_name_;
   rtc::AdapterType network_type_;
-  uint32 generation_;
+  uint32_t generation_;
   std::string foundation_;
   rtc::SocketAddress related_address_;
   std::string tcptype_;

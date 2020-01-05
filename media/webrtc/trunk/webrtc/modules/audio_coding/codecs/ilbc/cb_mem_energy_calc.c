@@ -23,16 +23,17 @@
 
 void WebRtcIlbcfix_CbMemEnergyCalc(
     int32_t energy,   
-    int16_t range,   
+    size_t range,   
     int16_t *ppi,   
     int16_t *ppo,   
     int16_t *energyW16,  
     int16_t *energyShifts, 
-    int16_t scale,   
-    int16_t base_size  
+    int scale,   
+    size_t base_size  
                                    )
 {
-  int16_t j,shft;
+  size_t j;
+  int16_t shft;
   int32_t tmp;
   int16_t *eSh_ptr;
   int16_t *eW16_ptr;
@@ -41,7 +42,7 @@ void WebRtcIlbcfix_CbMemEnergyCalc(
   eSh_ptr  = &energyShifts[1+base_size];
   eW16_ptr = &energyW16[1+base_size];
 
-  for(j=0;j<range-1;j++) {
+  for (j = 0; j + 1 < range; j++) {
 
     
 

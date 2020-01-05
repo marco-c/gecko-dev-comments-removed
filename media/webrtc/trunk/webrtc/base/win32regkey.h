@@ -24,6 +24,7 @@
 #include <vector>
 
 #include "webrtc/base/basictypes.h"
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/win32.h"
 
 namespace rtc {
@@ -63,7 +64,7 @@ class RegKey {
   bool HasValue(const wchar_t* value_name) const;
 
   
-  uint32 GetValueCount();
+  uint32_t GetValueCount();
 
   
   
@@ -79,7 +80,7 @@ class RegKey {
   bool HasSubkey(const wchar_t* key_name) const;
 
   
-  uint32 GetSubkeyCount();
+  uint32_t GetSubkeyCount();
 
   
   
@@ -102,12 +103,12 @@ class RegKey {
 
   
   HRESULT SetValue(const wchar_t* value_name,
-                   const uint8* value,
+                   const uint8_t* value,
                    DWORD byte_count) const;
 
   
   HRESULT SetValue(const wchar_t* value_name,
-                   const uint8* value,
+                   const uint8_t* value,
                    DWORD byte_count,
                    DWORD type) const;
 
@@ -131,12 +132,12 @@ class RegKey {
 
   
   HRESULT GetValue(const wchar_t* value_name,
-                   uint8** value,
+                   uint8_t** value,
                    DWORD* byte_count) const;
 
   
   HRESULT GetValue(const wchar_t* value_name,
-                   uint8** value,
+                   uint8_t** value,
                    DWORD* byte_count,
                    DWORD* type) const;
 
@@ -181,13 +182,13 @@ class RegKey {
   
   static HRESULT SetValue(const wchar_t* full_key_name,
                           const wchar_t* value_name,
-                          const uint8* value,
+                          const uint8_t* value,
                           DWORD byte_count);
 
   
   static HRESULT SetValueMultiSZ(const wchar_t* full_key_name,
                                  const TCHAR* value_name,
-                                 const uint8* value,
+                                 const uint8_t* value,
                                  DWORD byte_count);
 
   
@@ -232,7 +233,7 @@ class RegKey {
   
   static HRESULT GetValue(const wchar_t* full_key_name,
                           const wchar_t* value_name,
-                          uint8** value,
+                          uint8_t** value,
                           DWORD* byte_count);
 
   
@@ -296,7 +297,8 @@ class RegKey {
   
   
   HRESULT GetValueHelper(const wchar_t* value_name,
-                         DWORD* type, uint8** value,
+                         DWORD* type,
+                         uint8_t** value,
                          DWORD* byte_count) const;
 
   
@@ -319,7 +321,7 @@ class RegKey {
                                       DWORD* byte_count = NULL);
 
   
-  static HRESULT MultiSZBytesToStringArray(const uint8* buffer,
+  static HRESULT MultiSZBytesToStringArray(const uint8_t* buffer,
                                            DWORD byte_count,
                                            std::vector<std::wstring>* value);
 
@@ -329,7 +331,7 @@ class RegKey {
   
   friend void RegKeyHelperFunctionsTest();
 
-  DISALLOW_EVIL_CONSTRUCTORS(RegKey);
+  RTC_DISALLOW_COPY_AND_ASSIGN(RegKey);
 };
 
 }  

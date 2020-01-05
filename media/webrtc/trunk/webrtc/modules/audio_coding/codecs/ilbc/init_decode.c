@@ -23,7 +23,7 @@
 
 
 
-int16_t WebRtcIlbcfix_InitDecode(  
+int WebRtcIlbcfix_InitDecode(  
     IlbcDecoder *iLBCdec_inst,  
     int16_t mode,  
     int use_enhancer) {  
@@ -92,5 +92,5 @@ int16_t WebRtcIlbcfix_InitDecode(
 
   iLBCdec_inst->prev_enh_pl = 0;
 
-  return (iLBCdec_inst->blockl);
+  return (int)(iLBCdec_inst->blockl);
 }

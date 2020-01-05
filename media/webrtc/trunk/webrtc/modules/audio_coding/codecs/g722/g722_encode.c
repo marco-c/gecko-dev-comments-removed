@@ -202,8 +202,8 @@ int16_t limitValues (int16_t rl)
 }
 #endif
 
-int WebRtc_g722_encode(G722EncoderState *s, uint8_t g722_data[],
-                       const int16_t amp[], int len)
+size_t WebRtc_g722_encode(G722EncoderState *s, uint8_t g722_data[],
+                          const int16_t amp[], size_t len)
 {
     static const int q6[32] =
     {
@@ -275,11 +275,11 @@ int WebRtc_g722_encode(G722EncoderState *s, uint8_t g722_data[],
     int eh;
     int mih;
     int i;
-    int j;
+    size_t j;
     
     int xlow;
     int xhigh;
-    int g722_bytes;
+    size_t g722_bytes;
     
     int sumeven;
     int sumodd;

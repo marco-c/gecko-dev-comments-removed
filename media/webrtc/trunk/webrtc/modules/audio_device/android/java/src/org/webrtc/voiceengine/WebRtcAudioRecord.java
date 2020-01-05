@@ -16,19 +16,14 @@ import java.util.concurrent.TimeUnit;
 
 import android.content.Context;
 import android.media.AudioFormat;
-import android.media.audiofx.AcousticEchoCanceler;
-import android.media.audiofx.AudioEffect;
-import android.media.audiofx.AudioEffect.Descriptor;
 import android.media.AudioRecord;
 import android.media.MediaRecorder.AudioSource;
 import android.os.Build;
 import android.os.Process;
 import android.os.SystemClock;
-import android.util.Log;
 
-import org.mozilla.gecko.annotation.WebRTCJNITarget;
+import org.webrtc.Logging;
 
-@WebRTCJNITarget
 class  WebRtcAudioRecord {
   private static final boolean DEBUG = false;
 
@@ -44,16 +39,20 @@ class  WebRtcAudioRecord {
   
   private static final int BUFFERS_PER_SECOND = 1000 / CALLBACK_BUFFER_SIZE_MS;
 
+  
+  
+  
+  private static final int BUFFER_SIZE_FACTOR = 2;
+
   private final long nativeAudioRecord;
   private final Context context;
 
+  private WebRtcAudioEffects effects = null;
+
   private ByteBuffer byteBuffer;
 
-  private AudioRecord audioRecord;
+  private AudioRecord audioRecord = null;
   private AudioRecordThread audioThread = null;
-
-  private AcousticEchoCanceler aec = null;
-  private boolean useBuiltInAEC = false;
 
   
 
@@ -71,14 +70,7 @@ class  WebRtcAudioRecord {
     @Override
     public void run() {
       Process.setThreadPriority(Process.THREAD_PRIORITY_URGENT_AUDIO);
-      Logd("AudioRecordThread" + WebRtcAudioUtils.getThreadInfo());
-
-      try {
-        audioRecord.startRecording();
-      } catch (IllegalStateException e) {
-          Loge("AudioRecord.startRecording failed: " + e.getMessage());
-        return;
-      }
+      Logging.d(TAG, "AudioRecordThread" + WebRtcAudioUtils.getThreadInfo());
       assertTrue(audioRecord.getRecordingState()
           == AudioRecord.RECORDSTATE_RECORDING);
 
@@ -88,7 +80,7 @@ class  WebRtcAudioRecord {
         if (bytesRead == byteBuffer.capacity()) {
           nativeDataIsRecorded(bytesRead, nativeAudioRecord);
         } else {
-          Loge("AudioRecord.read failed: " + bytesRead);
+          Logging.e(TAG,"AudioRecord.read failed: " + bytesRead);
           if (bytesRead == AudioRecord.ERROR_INVALID_OPERATION) {
             keepAlive = false;
           }
@@ -98,14 +90,14 @@ class  WebRtcAudioRecord {
           long durationInMs =
               TimeUnit.NANOSECONDS.toMillis((nowTime - lastTime));
           lastTime = nowTime;
-          Logd("bytesRead[" + durationInMs + "] " + bytesRead);
+          Logging.d(TAG, "bytesRead[" + durationInMs + "] " + bytesRead);
         }
       }
 
       try {
         audioRecord.stop();
       } catch (IllegalStateException e) {
-        Loge("AudioRecord.stop failed: " + e.getMessage());
+        Logging.e(TAG,"AudioRecord.stop failed: " + e.getMessage());
       }
     }
 
@@ -122,52 +114,58 @@ class  WebRtcAudioRecord {
   }
 
   WebRtcAudioRecord(Context context, long nativeAudioRecord) {
-    Logd("ctor" + WebRtcAudioUtils.getThreadInfo());
+    Logging.d(TAG, "ctor" + WebRtcAudioUtils.getThreadInfo());
     this.context = context;
     this.nativeAudioRecord = nativeAudioRecord;
     if (DEBUG) {
       WebRtcAudioUtils.logDeviceInfo(TAG);
     }
+    effects = WebRtcAudioEffects.create();
   }
 
-  public static boolean BuiltInAECIsAvailable() {
-    
-    if (!WebRtcAudioUtils.runningOnJellyBeanOrHigher()) {
+  private boolean enableBuiltInAEC(boolean enable) {
+    Logging.d(TAG, "enableBuiltInAEC(" + enable + ')');
+    if (effects == null) {
+      Logging.e(TAG,"Built-in AEC is not supported on this platform");
       return false;
     }
-    
-    
-    
-    return AcousticEchoCanceler.isAvailable();
+    return effects.setAEC(enable);
   }
 
-  private boolean EnableBuiltInAEC(boolean enable) {
-    Logd("EnableBuiltInAEC(" + enable + ')');
-    
-    if (!WebRtcAudioUtils.runningOnJellyBeanOrHigher()) {
+  private boolean enableBuiltInAGC(boolean enable) {
+    Logging.d(TAG, "enableBuiltInAGC(" + enable + ')');
+    if (effects == null) {
+      Logging.e(TAG,"Built-in AGC is not supported on this platform");
       return false;
     }
-    
-    useBuiltInAEC = enable;
-    
-    if (aec != null) {
-      int ret = aec.setEnabled(enable);
-      if (ret != AudioEffect.SUCCESS) {
-        Loge("AcousticEchoCanceler.setEnabled failed");
-        return false;
-      }
-      Logd("AcousticEchoCanceler.getEnabled: " + aec.getEnabled());
-    }
-    return true;
+    return effects.setAGC(enable);
   }
 
-  private int InitRecording(int sampleRate, int channels) {
-    Logd("InitRecording(sampleRate=" + sampleRate + ", channels=" +
+  private boolean enableBuiltInNS(boolean enable) {
+    Logging.d(TAG, "enableBuiltInNS(" + enable + ')');
+    if (effects == null) {
+      Logging.e(TAG,"Built-in NS is not supported on this platform");
+      return false;
+    }
+    return effects.setNS(enable);
+  }
+
+  private int initRecording(int sampleRate, int channels) {
+    Logging.d(TAG, "initRecording(sampleRate=" + sampleRate + ", channels=" +
         channels + ")");
+    if (!WebRtcAudioUtils.hasPermission(
+        context, android.Manifest.permission.RECORD_AUDIO)) {
+      Logging.e(TAG,"RECORD_AUDIO permission is missing");
+      return -1;
+    }
+    if (audioRecord != null) {
+      Logging.e(TAG,"InitRecording() called twice without StopRecording()");
+      return -1;
+    }
     final int bytesPerFrame = channels * (BITS_PER_SAMPLE / 8);
     final int framesPerBuffer = sampleRate / BUFFERS_PER_SECOND;
     byteBuffer = ByteBuffer.allocateDirect(bytesPerFrame * framesPerBuffer);
-    Logd("byteBuffer.capacity: " + byteBuffer.capacity());
+    Logging.d(TAG, "byteBuffer.capacity: " + byteBuffer.capacity());
     
     
     
@@ -176,86 +174,87 @@ class  WebRtcAudioRecord {
     
     
     
-    
     int minBufferSize = AudioRecord.getMinBufferSize(
           sampleRate,
           AudioFormat.CHANNEL_IN_MONO,
           AudioFormat.ENCODING_PCM_16BIT);
-    Logd("AudioRecord.getMinBufferSize: " + minBufferSize);
-
-    if (aec != null) {
-      aec.release();
-      aec = null;
+    if (minBufferSize == AudioRecord.ERROR
+        || minBufferSize == AudioRecord.ERROR_BAD_VALUE) {
+      Logging.e(TAG, "AudioRecord.getMinBufferSize failed: " + minBufferSize);
+      return -1;
     }
-    assertTrue(audioRecord == null);
+    Logging.d(TAG, "AudioRecord.getMinBufferSize: " + minBufferSize);
 
-    int bufferSizeInBytes = Math.max(byteBuffer.capacity(), minBufferSize);
-    Logd("bufferSizeInBytes: " + bufferSizeInBytes);
-
-    int audioSource = AudioSource.VOICE_COMMUNICATION;
-    if (android.os.Build.VERSION.SDK_INT < 11) {
-        audioSource = AudioSource.DEFAULT;
-    }
-
+    
+    
+    
+    int bufferSizeInBytes =
+        Math.max(BUFFER_SIZE_FACTOR * minBufferSize, byteBuffer.capacity());
+    Logging.d(TAG, "bufferSizeInBytes: " + bufferSizeInBytes);
     try {
-      audioRecord = new AudioRecord(audioSource,
+      audioRecord = new AudioRecord(AudioSource.VOICE_COMMUNICATION,
                                     sampleRate,
                                     AudioFormat.CHANNEL_IN_MONO,
                                     AudioFormat.ENCODING_PCM_16BIT,
                                     bufferSizeInBytes);
-
     } catch (IllegalArgumentException e) {
-      Logd(e.getMessage());
+      Logging.e(TAG,e.getMessage());
       return -1;
     }
-    assertTrue(audioRecord.getState() == AudioRecord.STATE_INITIALIZED);
+    if (audioRecord == null ||
+        audioRecord.getState() != AudioRecord.STATE_INITIALIZED) {
+      Logging.e(TAG,"Failed to create a new AudioRecord instance");
+      return -1;
+    }
+    Logging.d(TAG, "AudioRecord "
+        + "session ID: " + audioRecord.getAudioSessionId() + ", "
+        + "audio format: " + audioRecord.getAudioFormat() + ", "
+        + "channels: " + audioRecord.getChannelCount() + ", "
+        + "sample rate: " + audioRecord.getSampleRate());
+    if (effects != null) {
+      effects.enable(audioRecord.getAudioSessionId());
+    }
+    
+    
+    
+      
+      
+      
+      
+      
 
-    Logd("AudioRecord " +
-          "session ID: " + audioRecord.getAudioSessionId() + ", " +
-          "audio format: " + audioRecord.getAudioFormat() + ", " +
-          "channels: " + audioRecord.getChannelCount() + ", " +
-          "sample rate: " + audioRecord.getSampleRate());
-    Logd("AcousticEchoCanceler.isAvailable: " + BuiltInAECIsAvailable());
-    if (!BuiltInAECIsAvailable()) {
-      return framesPerBuffer;
-    }
-
-    aec = AcousticEchoCanceler.create(audioRecord.getAudioSessionId());
-    if (aec == null) {
-      Loge("AcousticEchoCanceler.create failed");
-      return -1;
-    }
-    int ret = aec.setEnabled(useBuiltInAEC);
-    if (ret != AudioEffect.SUCCESS) {
-      Loge("AcousticEchoCanceler.setEnabled failed");
-      return -1;
-    }
-    Descriptor descriptor = aec.getDescriptor();
-    Logd("AcousticEchoCanceler " +
-          "name: " + descriptor.name + ", " +
-          "implementor: " + descriptor.implementor + ", " +
-          "uuid: " + descriptor.uuid);
-    Logd("AcousticEchoCanceler.getEnabled: " + aec.getEnabled());
+      
+      
+    
     return framesPerBuffer;
   }
 
-  private boolean StartRecording() {
-    Logd("StartRecording");
+  private boolean startRecording() {
+    Logging.d(TAG, "startRecording");
     assertTrue(audioRecord != null);
     assertTrue(audioThread == null);
+    try {
+      audioRecord.startRecording();
+    } catch (IllegalStateException e) {
+      Logging.e(TAG,"AudioRecord.startRecording failed: " + e.getMessage());
+      return false;
+    }
+    if (audioRecord.getRecordingState() != AudioRecord.RECORDSTATE_RECORDING) {
+      Logging.e(TAG,"AudioRecord.startRecording failed");
+      return false;
+    }
     audioThread = new AudioRecordThread("AudioRecordJavaThread");
     audioThread.start();
     return true;
   }
 
-  private boolean StopRecording() {
-    Logd("StopRecording");
+  private boolean stopRecording() {
+    Logging.d(TAG, "stopRecording");
     assertTrue(audioThread != null);
     audioThread.joinThread();
     audioThread = null;
-    if (aec != null) {
-      aec.release();
-      aec = null;
+    if (effects != null) {
+      effects.release();
     }
     audioRecord.release();
     audioRecord = null;
@@ -267,14 +266,6 @@ class  WebRtcAudioRecord {
     if (!condition) {
       throw new AssertionError("Expected condition to be true");
     }
-  }
-
-  private static void Logd(String msg) {
-    Log.d(TAG, msg);
-  }
-
-  private static void Loge(String msg) {
-    Log.e(TAG, msg);
   }
 
   private native void nativeCacheDirectBufferAddress(

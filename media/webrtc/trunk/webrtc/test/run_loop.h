@@ -7,8 +7,8 @@
 
 
 
-#ifndef WEBRTC_VIDEO_ENGINE_TEST_COMMON_RUN_LOOP_H_
-#define WEBRTC_VIDEO_ENGINE_TEST_COMMON_RUN_LOOP_H_
+#ifndef WEBRTC_TEST_RUN_LOOP_H_
+#define WEBRTC_TEST_RUN_LOOP_H_
 
 namespace webrtc {
 namespace test {

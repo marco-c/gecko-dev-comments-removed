@@ -106,7 +106,7 @@ class AudioMultiVector {
                          size_t fade_length);
 
   
-  virtual size_t Channels() const { return num_channels_; }
+  virtual size_t Channels() const;
 
   
   virtual size_t Size() const;
@@ -132,7 +132,7 @@ class AudioMultiVector {
   size_t num_channels_;
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(AudioMultiVector);
+  RTC_DISALLOW_COPY_AND_ASSIGN(AudioMultiVector);
 };
 
 }  

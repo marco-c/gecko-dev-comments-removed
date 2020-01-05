@@ -23,12 +23,12 @@
 void WebRtcIlbcfix_EnergyInverse(
     int16_t *energy,    
 
-    int noOfEnergies)  
+    size_t noOfEnergies)  
 
 {
   int32_t Nom=(int32_t)0x1FFFFFFF;
   int16_t *energyPtr;
-  int i;
+  size_t i;
 
   
   energyPtr=energy;

@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+#include "webrtc/sound/soundoutputstreaminterface.h"
+
+namespace rtc {
+
+SoundOutputStreamInterface::~SoundOutputStreamInterface() {}
+
+SoundOutputStreamInterface::SoundOutputStreamInterface() {}
+
+}  

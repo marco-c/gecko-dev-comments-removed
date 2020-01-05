@@ -27,9 +27,9 @@ void WebRtcIlbcfix_CompCorr(
     int32_t *corr, 
     int32_t *ener, 
     int16_t *buffer, 
-    int16_t lag,  
-    int16_t bLen, 
-    int16_t sRange, 
+    size_t lag,  
+    size_t bLen, 
+    size_t sRange, 
     int16_t scale 
                             ){
   int16_t *w16ptr;

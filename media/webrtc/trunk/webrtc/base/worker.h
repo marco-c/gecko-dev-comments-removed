@@ -64,7 +64,7 @@ class Worker : private MessageHandler {
   
   Thread *worker_thread_;
 
-  DISALLOW_COPY_AND_ASSIGN(Worker);
+  RTC_DISALLOW_COPY_AND_ASSIGN(Worker);
 };
 
 }  

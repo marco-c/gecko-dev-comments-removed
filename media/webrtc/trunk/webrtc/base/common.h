@@ -54,14 +54,16 @@ inline void RtcUnused(const void*) {}
 
 #endif  
 
-#define ARRAY_SIZE(x) (static_cast<int>(sizeof(x) / sizeof(x[0])))
-
 
 
 
 
 #ifndef ENABLE_DEBUG
-#define ENABLE_DEBUG _DEBUG
+#if !defined(NDEBUG)
+#define ENABLE_DEBUG 1
+#else
+#define ENABLE_DEBUG 0
+#endif
 #endif  
 
 
@@ -176,7 +178,7 @@ inline bool ImplicitCastToBool(bool result) { return result; }
 
 
 #if defined(__GNUC__)
-#define FORCE_INLINE __attribute__((always_inline))
+#define FORCE_INLINE __attribute__ ((__always_inline__))
 #elif defined(WEBRTC_WIN)
 #define FORCE_INLINE __forceinline
 #else
@@ -190,8 +192,8 @@ inline bool ImplicitCastToBool(bool result) { return result; }
 
 
 #if !defined(WARN_UNUSED_RESULT)
-#if defined(__GNUC__)
-#define WARN_UNUSED_RESULT __attribute__((warn_unused_result))
+#if defined(__GNUC__) || defined(__clang__)
+#define WARN_UNUSED_RESULT __attribute__ ((__warn_unused_result__))
 #else
 #define WARN_UNUSED_RESULT
 #endif

@@ -78,9 +78,9 @@ class DspHelper {
   
   
   
-  static void PeakDetection(int16_t* data, int data_length,
-                            int num_peaks, int fs_mult,
-                            int* peak_index, int16_t* peak_value);
+  static void PeakDetection(int16_t* data, size_t data_length,
+                            size_t num_peaks, int fs_mult,
+                            size_t* peak_index, int16_t* peak_value);
 
   
   
@@ -89,14 +89,15 @@ class DspHelper {
   
   
   static void ParabolicFit(int16_t* signal_points, int fs_mult,
-                           int* peak_index, int16_t* peak_value);
+                           size_t* peak_index, int16_t* peak_value);
 
   
   
   
   
-  static int MinDistortion(const int16_t* signal, int min_lag,
-                           int max_lag, int length, int32_t* distortion_value);
+  static size_t MinDistortion(const int16_t* signal, size_t min_lag,
+                           size_t max_lag, size_t length,
+                           int32_t* distortion_value);
 
   
   
@@ -110,11 +111,11 @@ class DspHelper {
   
   
   static void UnmuteSignal(const int16_t* input, size_t length, int16_t* factor,
-                           int16_t increment, int16_t* output);
+                           int increment, int16_t* output);
 
   
   
-  static void MuteSignal(int16_t* signal, int16_t mute_slope, size_t length);
+  static void MuteSignal(int16_t* signal, int mute_slope, size_t length);
 
   
   
@@ -122,14 +123,14 @@ class DspHelper {
   
   
   static int DownsampleTo4kHz(const int16_t* input, size_t input_length,
-                              int output_length, int input_rate_hz,
+                              size_t output_length, int input_rate_hz,
                               bool compensate_delay, int16_t* output);
 
  private:
   
   static const int16_t kParabolaCoefficients[17][3];
 
-  DISALLOW_COPY_AND_ASSIGN(DspHelper);
+  RTC_DISALLOW_COPY_AND_ASSIGN(DspHelper);
 };
 
 }  

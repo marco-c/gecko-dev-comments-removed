@@ -19,6 +19,7 @@
 
 #include "webrtc/base/buffer.h"
 #include "webrtc/base/messagedigest.h"
+#include "webrtc/base/timeutils.h"
 
 namespace rtc {
 
@@ -68,6 +69,10 @@ class SSLCertificate {
                              unsigned char* digest,
                              size_t size,
                              size_t* length) const = 0;
+
+  
+  
+  virtual int64_t CertificateExpirationTime() const = 0;
 };
 
 
@@ -104,17 +109,73 @@ class SSLCertChain {
 
   std::vector<SSLCertificate*> certs_;
 
-  DISALLOW_COPY_AND_ASSIGN(SSLCertChain);
+  RTC_DISALLOW_COPY_AND_ASSIGN(SSLCertChain);
 };
 
 
 
 
 
+
+
+enum KeyType { KT_RSA, KT_ECDSA, KT_LAST, KT_DEFAULT = KT_RSA };
+
+static const int kRsaDefaultModSize = 1024;
+static const int kRsaDefaultExponent = 0x10001;  
+static const int kRsaMinModSize = 1024;
+static const int kRsaMaxModSize = 8192;
+
+struct RSAParams {
+  unsigned int mod_size;
+  unsigned int pub_exp;
+};
+
+enum ECCurve { EC_NIST_P256,  EC_LAST };
+
+class KeyParams {
+ public:
+  
+  explicit KeyParams(KeyType key_type = KT_DEFAULT);
+
+  
+  static KeyParams RSA(int mod_size = kRsaDefaultModSize,
+                       int pub_exp = kRsaDefaultExponent);
+
+  
+  static KeyParams ECDSA(ECCurve curve = EC_NIST_P256);
+
+  
+  
+  
+  bool IsValid() const;
+
+  RSAParams rsa_params() const;
+
+  ECCurve ec_curve() const;
+
+  KeyType type() const { return type_; }
+
+ private:
+  KeyType type_;
+  union {
+    RSAParams rsa;
+    ECCurve curve;
+  } params_;
+};
+
+
+
+
+KeyType IntKeyTypeFamilyToKeyType(int key_type_family);
+
+
+
+
 struct SSLIdentityParams {
   std::string common_name;
-  int not_before;  
-  int not_after;  
+  time_t not_before;  
+  time_t not_after;   
+  KeyParams key_params;
 };
 
 
@@ -127,7 +188,12 @@ class SSLIdentity {
   
   
   
-  static SSLIdentity* Generate(const std::string& common_name);
+  static SSLIdentity* Generate(const std::string& common_name,
+                               const KeyParams& key_param);
+  static SSLIdentity* Generate(const std::string& common_name,
+                               KeyType key_type) {
+    return Generate(common_name, KeyParams(key_type));
+  }
 
   
   static SSLIdentity* GenerateForTest(const SSLIdentityParams& params);
@@ -138,6 +204,7 @@ class SSLIdentity {
 
   virtual ~SSLIdentity() {}
 
+  
   
   
   
@@ -155,8 +222,14 @@ class SSLIdentity {
                               size_t length);
 };
 
+
+
+
+int64_t ASN1TimeToSec(const unsigned char* s, size_t length, bool long_format);
+
 extern const char kPemTypeCertificate[];
 extern const char kPemTypeRsaPrivateKey[];
+extern const char kPemTypeEcPrivateKey[];
 
 }  
 

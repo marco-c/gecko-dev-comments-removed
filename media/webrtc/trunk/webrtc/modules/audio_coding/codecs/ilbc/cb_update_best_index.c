@@ -23,13 +23,13 @@
 void WebRtcIlbcfix_CbUpdateBestIndex(
     int32_t CritNew,    
     int16_t CritNewSh,   
-    int16_t IndexNew,   
+    size_t IndexNew,   
     int32_t cDotNew,    
     int16_t invEnergyNew,  
     int16_t energyShiftNew,  
     int32_t *CritMax,   
     int16_t *shTotMax,   
-    int16_t *bestIndex,   
+    size_t *bestIndex,   
 
     int16_t *bestGain)   
 

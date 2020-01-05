@@ -13,87 +13,40 @@
 
 #include <list>
 #include <string>
+#include <vector>
 
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
+#include "webrtc/modules/audio_processing/audio_buffer.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
+#include "webrtc/system_wrappers/include/file_wrapper.h"
+
+#ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
+
+#ifdef WEBRTC_ANDROID_PLATFORM_BUILD
+#include "external/webrtc/webrtc/modules/audio_processing/debug.pb.h"
+#else
+#include "webrtc/audio_processing/debug.pb.h"
+#endif
+#endif  
 
 namespace webrtc {
 
 class AgcManagerDirect;
-class AudioBuffer;
+class AudioConverter;
 
 template<typename T>
 class Beamformer;
 
-class CriticalSectionWrapper;
-class EchoCancellationImpl;
-class EchoControlMobileImpl;
-class FileWrapper;
-class GainControlImpl;
-class GainControlForNewAgc;
-class HighPassFilterImpl;
-class LevelEstimatorImpl;
-class NoiseSuppressionImpl;
-class ProcessingComponent;
-class TransientSuppressor;
-class VoiceDetectionImpl;
-
-#ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
-namespace audioproc {
-
-class Event;
-
-}  
-#endif
-
-class AudioRate {
- public:
-  explicit AudioRate(int sample_rate_hz)
-      : rate_(sample_rate_hz),
-        samples_per_channel_(AudioProcessing::kChunkSizeMs * rate_ / 1000) {}
-  virtual ~AudioRate() {}
-
-  void set(int rate) {
-    rate_ = rate;
-    samples_per_channel_ = AudioProcessing::kChunkSizeMs * rate_ / 1000;
-  }
-
-  int rate() const { return rate_; }
-  int samples_per_channel() const { return samples_per_channel_; }
-
- private:
-  int rate_;
-  int samples_per_channel_;
-};
-
-class AudioFormat : public AudioRate {
- public:
-  AudioFormat(int sample_rate_hz, int num_channels)
-      : AudioRate(sample_rate_hz),
-        num_channels_(num_channels) {}
-  virtual ~AudioFormat() {}
-
-  void set(int rate, int num_channels) {
-    AudioRate::set(rate);
-    num_channels_ = num_channels;
-  }
-
-  int num_channels() const { return num_channels_; }
-
- private:
-  int num_channels_;
-};
-
 class AudioProcessingImpl : public AudioProcessing {
  public:
+  
+  
   explicit AudioProcessingImpl(const Config& config);
-
   
   AudioProcessingImpl(const Config& config, Beamformer<float>* beamformer);
   virtual ~AudioProcessingImpl();
-
-  
   int Initialize() override;
   int Initialize(int input_sample_rate_hz,
                  int output_sample_rate_hz,
@@ -101,41 +54,66 @@ class AudioProcessingImpl : public AudioProcessing {
                  ChannelLayout input_layout,
                  ChannelLayout output_layout,
                  ChannelLayout reverse_layout) override;
+  int Initialize(const ProcessingConfig& processing_config) override;
   void SetExtraOptions(const Config& config) override;
-  int set_sample_rate_hz(int rate) override;
-  int input_sample_rate_hz() const override;
-  int sample_rate_hz() const override;
-  int proc_sample_rate_hz() const override;
-  int proc_split_sample_rate_hz() const override;
-  int num_input_channels() const override;
-  int num_output_channels() const override;
-  int num_reverse_channels() const override;
-  void set_output_will_be_muted(bool muted) override;
-  bool output_will_be_muted() const override;
+  void UpdateHistogramsOnCallEnd() override;
+  int StartDebugRecording(const char filename[kMaxFilenameSize]) override;
+  int StartDebugRecording(FILE* handle) override;
+  int StartDebugRecordingForPlatformFile(rtc::PlatformFile handle) override;
+  int StopDebugRecording() override;
+
+  
+  
   int ProcessStream(AudioFrame* frame) override;
   int ProcessStream(const float* const* src,
-                    int samples_per_channel,
+                    size_t samples_per_channel,
                     int input_sample_rate_hz,
                     ChannelLayout input_layout,
                     int output_sample_rate_hz,
                     ChannelLayout output_layout,
                     float* const* dest) override;
-  int AnalyzeReverseStream(AudioFrame* frame) override;
-  int AnalyzeReverseStream(const float* const* data,
-                           int samples_per_channel,
-                           int sample_rate_hz,
-                           ChannelLayout layout) override;
+  int ProcessStream(const float* const* src,
+                    const StreamConfig& input_config,
+                    const StreamConfig& output_config,
+                    float* const* dest) override;
+  void set_output_will_be_muted(bool muted) override;
   int set_stream_delay_ms(int delay) override;
-  int stream_delay_ms() const override;
-  bool was_stream_delay_set() const override;
   void set_delay_offset_ms(int offset) override;
   int delay_offset_ms() const override;
   void set_stream_key_pressed(bool key_pressed) override;
-  bool stream_key_pressed() const override;
-  int StartDebugRecording(const char filename[kMaxFilenameSize]) override;
-  int StartDebugRecording(FILE* handle) override;
-  int StartDebugRecordingForPlatformFile(rtc::PlatformFile handle) override;
-  int StopDebugRecording() override;
+  int input_sample_rate_hz() const override;
+
+  
+  
+  int AnalyzeReverseStream(AudioFrame* frame) override;
+  int ProcessReverseStream(AudioFrame* frame) override;
+  int AnalyzeReverseStream(const float* const* data,
+                           size_t samples_per_channel,
+                           int sample_rate_hz,
+                           ChannelLayout layout) override;
+  int ProcessReverseStream(const float* const* src,
+                           const StreamConfig& reverse_input_config,
+                           const StreamConfig& reverse_output_config,
+                           float* const* dest) override;
+
+  
+  
+  
+  int proc_sample_rate_hz() const override;
+  int proc_split_sample_rate_hz() const override;
+  size_t num_input_channels() const override;
+  size_t num_proc_channels() const override;
+  size_t num_output_channels() const override;
+  size_t num_reverse_channels() const override;
+  int stream_delay_ms() const override;
+  bool was_stream_delay_set() const override
+      EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
+
+  
+  
+  
+  
+  
   EchoCancellation* echo_cancellation() const override;
   EchoControlMobile* echo_control_mobile() const override;
   GainControl* gain_control() const override;
@@ -146,85 +124,216 @@ class AudioProcessingImpl : public AudioProcessing {
 
  protected:
   
-  virtual int InitializeLocked() EXCLUSIVE_LOCKS_REQUIRED(crit_);
+  virtual int InitializeLocked()
+      EXCLUSIVE_LOCKS_REQUIRED(crit_render_, crit_capture_);
 
  private:
-  int InitializeLocked(int input_sample_rate_hz,
-                       int output_sample_rate_hz,
-                       int reverse_sample_rate_hz,
-                       int num_input_channels,
-                       int num_output_channels,
-                       int num_reverse_channels)
-      EXCLUSIVE_LOCKS_REQUIRED(crit_);
-  int MaybeInitializeLocked(int input_sample_rate_hz,
-                            int output_sample_rate_hz,
-                            int reverse_sample_rate_hz,
-                            int num_input_channels,
-                            int num_output_channels,
-                            int num_reverse_channels)
-      EXCLUSIVE_LOCKS_REQUIRED(crit_);
-  int ProcessStreamLocked() EXCLUSIVE_LOCKS_REQUIRED(crit_);
-  int AnalyzeReverseStreamLocked() EXCLUSIVE_LOCKS_REQUIRED(crit_);
+  struct ApmPublicSubmodules;
+  struct ApmPrivateSubmodules;
 
-  bool is_data_processed() const;
-  bool output_copy_needed(bool is_data_processed) const;
-  bool synthesis_needed(bool is_data_processed) const;
-  bool analysis_needed(bool is_data_processed) const;
-  int InitializeExperimentalAgc() EXCLUSIVE_LOCKS_REQUIRED(crit_);
-  int InitializeTransient() EXCLUSIVE_LOCKS_REQUIRED(crit_);
-  void InitializeBeamformer() EXCLUSIVE_LOCKS_REQUIRED(crit_);
+#ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
+  
+  struct ApmDebugDumpThreadState {
+    ApmDebugDumpThreadState() : event_msg(new audioproc::Event()) {}
+    rtc::scoped_ptr<audioproc::Event> event_msg;  
+    std::string event_str;  
 
-  EchoCancellationImpl* echo_cancellation_;
-  EchoControlMobileImpl* echo_control_mobile_;
-  GainControlImpl* gain_control_;
-  HighPassFilterImpl* high_pass_filter_;
-  LevelEstimatorImpl* level_estimator_;
-  NoiseSuppressionImpl* noise_suppression_;
-  VoiceDetectionImpl* voice_detection_;
-  rtc::scoped_ptr<GainControlForNewAgc> gain_control_for_new_agc_;
+    
+    std::string last_serialized_config;
+  };
 
-  std::list<ProcessingComponent*> component_list_;
-  CriticalSectionWrapper* crit_;
-  rtc::scoped_ptr<AudioBuffer> render_audio_;
-  rtc::scoped_ptr<AudioBuffer> capture_audio_;
+  struct ApmDebugDumpState {
+    ApmDebugDumpState() : debug_file(FileWrapper::Create()) {}
+    rtc::scoped_ptr<FileWrapper> debug_file;
+    ApmDebugDumpThreadState render;
+    ApmDebugDumpThreadState capture;
+  };
+#endif
+
+  
+  
+  
+  
+  
+  
+  int MaybeInitialize(const ProcessingConfig& config)
+      EXCLUSIVE_LOCKS_REQUIRED(crit_render_);
+
+  int MaybeInitializeRender(const ProcessingConfig& processing_config)
+      EXCLUSIVE_LOCKS_REQUIRED(crit_render_);
+
+  int MaybeInitializeCapture(const ProcessingConfig& processing_config)
+      EXCLUSIVE_LOCKS_REQUIRED(crit_render_);
+
+  
+  
+  
+  bool rev_conversion_needed() const EXCLUSIVE_LOCKS_REQUIRED(crit_render_);
+  bool render_check_rev_conversion_needed() const
+      EXCLUSIVE_LOCKS_REQUIRED(crit_render_);
+
+  
+  
+  
+  void InitializeExperimentalAgc()
+      EXCLUSIVE_LOCKS_REQUIRED(crit_render_, crit_capture_);
+  void InitializeTransient()
+      EXCLUSIVE_LOCKS_REQUIRED(crit_render_, crit_capture_);
+  void InitializeBeamformer()
+      EXCLUSIVE_LOCKS_REQUIRED(crit_render_, crit_capture_);
+  void InitializeIntelligibility()
+      EXCLUSIVE_LOCKS_REQUIRED(crit_render_, crit_capture_);
+  void InitializeHighPassFilter()
+      EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
+  void InitializeNoiseSuppression()
+      EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
+  void InitializeLevelEstimator()
+      EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
+  void InitializeVoiceDetection()
+      EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
+  int InitializeLocked(const ProcessingConfig& config)
+      EXCLUSIVE_LOCKS_REQUIRED(crit_render_, crit_capture_);
+
+  
+  
+  int ProcessStreamLocked() EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
+  bool output_copy_needed(bool is_data_processed) const
+      EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
+  bool is_data_processed() const EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
+  bool synthesis_needed(bool is_data_processed) const
+      EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
+  bool analysis_needed(bool is_data_processed) const
+      EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
+  void MaybeUpdateHistograms() EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
+
+  
+  
+  
+  int AnalyzeReverseStreamLocked(const float* const* src,
+                                 const StreamConfig& input_config,
+                                 const StreamConfig& output_config)
+      EXCLUSIVE_LOCKS_REQUIRED(crit_render_);
+  bool is_rev_processed() const EXCLUSIVE_LOCKS_REQUIRED(crit_render_);
+  int ProcessReverseStreamLocked() EXCLUSIVE_LOCKS_REQUIRED(crit_render_);
+
+
+
 #ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
   
   
-  int WriteMessageToDebugFile();
-  int WriteInitMessage();
-  rtc::scoped_ptr<FileWrapper> debug_file_;
-  rtc::scoped_ptr<audioproc::Event> event_msg_;  
-  std::string event_str_;  
+  static int WriteMessageToDebugFile(FileWrapper* debug_file,
+                                     rtc::CriticalSection* crit_debug,
+                                     ApmDebugDumpThreadState* debug_state);
+  int WriteInitMessage() EXCLUSIVE_LOCKS_REQUIRED(crit_render_, crit_capture_);
+
+  
+  
+  
+  int WriteConfigMessage(bool forced) EXCLUSIVE_LOCKS_REQUIRED(crit_capture_)
+      EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
+
+  
+  mutable rtc::CriticalSection crit_debug_;
+
+  
+  ApmDebugDumpState debug_dump_;
 #endif
 
-  AudioFormat fwd_in_format_;
   
-  
-  AudioRate fwd_proc_format_;
-  AudioFormat fwd_out_format_;
-  AudioFormat rev_in_format_;
-  AudioFormat rev_proc_format_;
-  int split_rate_;
-
-  int stream_delay_ms_;
-  int delay_offset_ms_;
-  bool was_stream_delay_set_;
-
-  bool output_will_be_muted_ GUARDED_BY(crit_);
-
-  bool key_pressed_;
+  mutable rtc::CriticalSection crit_render_ ACQUIRED_BEFORE(crit_capture_);
+  mutable rtc::CriticalSection crit_capture_;
 
   
-  const bool use_new_agc_;
-  rtc::scoped_ptr<AgcManagerDirect> agc_manager_ GUARDED_BY(crit_);
+  rtc::scoped_ptr<ApmPublicSubmodules> public_submodules_;
+  rtc::scoped_ptr<ApmPrivateSubmodules> private_submodules_
+      GUARDED_BY(crit_capture_);
 
-  bool transient_suppressor_enabled_;
-  rtc::scoped_ptr<TransientSuppressor> transient_suppressor_;
-  const bool beamformer_enabled_;
-  rtc::scoped_ptr<Beamformer<float>> beamformer_;
-  const std::vector<Point> array_geometry_;
+  
+  
+  
+  
+  
+  struct ApmFormatState {
+    ApmFormatState()
+        :  
+          api_format({{{kSampleRate16kHz, 1, false},
+                       {kSampleRate16kHz, 1, false},
+                       {kSampleRate16kHz, 1, false},
+                       {kSampleRate16kHz, 1, false}}}),
+          rev_proc_format(kSampleRate16kHz, 1) {}
+    ProcessingConfig api_format;
+    StreamConfig rev_proc_format;
+  } formats_;
 
-  const bool supports_48kHz_;
+  
+  const struct ApmConstants {
+    ApmConstants(int agc_startup_min_volume,
+                 bool use_new_agc,
+                 bool intelligibility_enabled)
+        :  
+          agc_startup_min_volume(agc_startup_min_volume),
+          use_new_agc(use_new_agc),
+          intelligibility_enabled(intelligibility_enabled) {}
+    int agc_startup_min_volume;
+    bool use_new_agc;
+    bool intelligibility_enabled;
+  } constants_;
+
+  struct ApmCaptureState {
+    ApmCaptureState(bool transient_suppressor_enabled,
+                    const std::vector<Point>& array_geometry,
+                    SphericalPointf target_direction)
+        : aec_system_delay_jumps(-1),
+          delay_offset_ms(0),
+          was_stream_delay_set(false),
+          last_stream_delay_ms(0),
+          last_aec_system_delay_ms(0),
+          stream_delay_jumps(-1),
+          output_will_be_muted(false),
+          key_pressed(false),
+          transient_suppressor_enabled(transient_suppressor_enabled),
+          array_geometry(array_geometry),
+          target_direction(target_direction),
+          fwd_proc_format(kSampleRate16kHz),
+          split_rate(kSampleRate16kHz) {}
+    int aec_system_delay_jumps;
+    int delay_offset_ms;
+    bool was_stream_delay_set;
+    int last_stream_delay_ms;
+    int last_aec_system_delay_ms;
+    int stream_delay_jumps;
+    bool output_will_be_muted;
+    bool key_pressed;
+    bool transient_suppressor_enabled;
+    std::vector<Point> array_geometry;
+    SphericalPointf target_direction;
+    rtc::scoped_ptr<AudioBuffer> capture_audio;
+    
+    
+    
+    StreamConfig fwd_proc_format;
+    int split_rate;
+  } capture_ GUARDED_BY(crit_capture_);
+
+  struct ApmCaptureNonLockedState {
+    ApmCaptureNonLockedState(bool beamformer_enabled)
+        : fwd_proc_format(kSampleRate16kHz),
+          split_rate(kSampleRate16kHz),
+          stream_delay_ms(0),
+          beamformer_enabled(beamformer_enabled) {}
+    
+    
+    
+    StreamConfig fwd_proc_format;
+    int split_rate;
+    int stream_delay_ms;
+    bool beamformer_enabled;
+  } capture_nonlocked_;
+
+  struct ApmRenderState {
+    rtc::scoped_ptr<AudioConverter> render_converter;
+    rtc::scoped_ptr<AudioBuffer> render_audio;
+  } render_ GUARDED_BY(crit_render_);
 };
 
 }  

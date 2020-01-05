@@ -135,7 +135,7 @@ readParamString(
 void
 get_arrival_time(
     int              current_framesamples,   
-    int              packet_size,            
+    size_t           packet_size,            
     int              bottleneck,             
     BottleNeckModel* BN_data,
     short            senderSampFreqHz,

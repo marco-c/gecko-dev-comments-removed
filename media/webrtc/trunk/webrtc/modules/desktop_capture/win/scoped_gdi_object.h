@@ -56,7 +56,7 @@ class ScopedGDIObject {
  private:
   T handle_;
 
-  DISALLOW_COPY_AND_ASSIGN(ScopedGDIObject);
+  RTC_DISALLOW_COPY_AND_ASSIGN(ScopedGDIObject);
 };
 
 
@@ -70,7 +70,7 @@ class DeleteObjectTraits {
   }
 
  private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(DeleteObjectTraits);
+  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(DeleteObjectTraits);
 };
 
 
@@ -83,7 +83,7 @@ class DestroyCursorTraits {
   }
 
  private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(DestroyCursorTraits);
+  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(DestroyCursorTraits);
 };
 
 typedef ScopedGDIObject<HBITMAP, DeleteObjectTraits<HBITMAP> > ScopedBitmap;

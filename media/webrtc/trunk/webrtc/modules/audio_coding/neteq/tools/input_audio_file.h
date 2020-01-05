@@ -32,7 +32,13 @@ class InputAudioFile {
   
   
   
-  bool Read(size_t samples, int16_t* destination);
+  virtual bool Read(size_t samples, int16_t* destination);
+
+  
+  
+  
+  
+  virtual bool Seek(int samples);
 
   
   
@@ -44,7 +50,7 @@ class InputAudioFile {
 
  private:
   FILE* fp_;
-  DISALLOW_COPY_AND_ASSIGN(InputAudioFile);
+  RTC_DISALLOW_COPY_AND_ASSIGN(InputAudioFile);
 };
 
 }  

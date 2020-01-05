@@ -95,8 +95,8 @@ struct AecCore {
 
   int xfBufBlockPos;
 
-  RingBuffer* far_buf;
-  RingBuffer* far_buf_windowed;
+  RingBuffer* far_time_buf;
+
   int system_delay;  
 
   int mult;  
@@ -152,6 +152,10 @@ struct AecCore {
   
   int num_partitions;
 
+  
+  
+  int extreme_filter_divergence;
+
 #ifdef WEBRTC_AEC_DEBUG_DUMP
   
   
@@ -161,23 +165,33 @@ struct AecCore {
   
   int debug_dump_count;
 
-  RingBuffer* far_time_buf;
   rtc_WavWriter* farFile;
   rtc_WavWriter* nearFile;
   rtc_WavWriter* outFile;
   rtc_WavWriter* outLinearFile;
-  rtc_WavWriter* e_fft_file;
-  uint32_t debugWritten;
+  FILE* e_fft_file;
 #endif
 };
 
-typedef void (*WebRtcAecFilterFar)(AecCore* aec, float yf[2][PART_LEN1]);
+typedef void (*WebRtcAecFilterFar)(
+    int num_partitions,
+    int x_fft_buf_block_pos,
+    float x_fft_buf[2][kExtendedNumPartitions * PART_LEN1],
+    float h_fft_buf[2][kExtendedNumPartitions * PART_LEN1],
+    float y_fft[2][PART_LEN1]);
 extern WebRtcAecFilterFar WebRtcAec_FilterFar;
-typedef void (*WebRtcAecScaleErrorSignal)(AecCore* aec, float ef[2][PART_LEN1]);
-extern WebRtcAecScaleErrorSignal WebRtcAec_ScaleErrorSignal;
-typedef void (*WebRtcAecFilterAdaptation)(AecCore* aec,
-                                          float* fft,
+typedef void (*WebRtcAecScaleErrorSignal)(int extended_filter_enabled,
+                                          float normal_mu,
+                                          float normal_error_threshold,
+                                          float x_pow[PART_LEN1],
                                           float ef[2][PART_LEN1]);
+extern WebRtcAecScaleErrorSignal WebRtcAec_ScaleErrorSignal;
+typedef void (*WebRtcAecFilterAdaptation)(
+    int num_partitions,
+    int x_fft_buf_block_pos,
+    float x_fft_buf[2][kExtendedNumPartitions * PART_LEN1],
+    float e_fft[2][PART_LEN1],
+    float h_fft_buf[2][kExtendedNumPartitions * PART_LEN1]);
 extern WebRtcAecFilterAdaptation WebRtcAec_FilterAdaptation;
 typedef void (*WebRtcAecOverdriveAndSuppress)(AecCore* aec,
                                               float hNl[PART_LEN1],
@@ -187,17 +201,29 @@ extern WebRtcAecOverdriveAndSuppress WebRtcAec_OverdriveAndSuppress;
 
 typedef void (*WebRtcAecComfortNoise)(AecCore* aec,
                                       float efw[2][PART_LEN1],
-                                      complex_t* comfortNoiseHband,
+                                      float comfortNoiseHband[2][PART_LEN1],
                                       const float* noisePow,
                                       const float* lambda);
 extern WebRtcAecComfortNoise WebRtcAec_ComfortNoise;
 
 typedef void (*WebRtcAecSubBandCoherence)(AecCore* aec,
                                           float efw[2][PART_LEN1],
+                                          float dfw[2][PART_LEN1],
                                           float xfw[2][PART_LEN1],
                                           float* fft,
                                           float* cohde,
-                                          float* cohxd);
+                                          float* cohxd,
+                                          int* extreme_filter_divergence);
 extern WebRtcAecSubBandCoherence WebRtcAec_SubbandCoherence;
+
+typedef int (*WebRtcAecPartitionDelay)(const AecCore* aec);
+extern WebRtcAecPartitionDelay WebRtcAec_PartitionDelay;
+
+typedef void (*WebRtcAecStoreAsComplex)(const float* data,
+                                        float data_complex[2][PART_LEN1]);
+extern WebRtcAecStoreAsComplex WebRtcAec_StoreAsComplex;
+
+typedef void (*WebRtcAecWindowData)(float* x_windowed, const float* x);
+extern WebRtcAecWindowData WebRtcAec_WindowData;
 
 #endif  

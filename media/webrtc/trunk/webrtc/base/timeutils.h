@@ -11,72 +11,75 @@
 #ifndef WEBRTC_BASE_TIMEUTILS_H_
 #define WEBRTC_BASE_TIMEUTILS_H_
 
+#include <ctime>
 #include <time.h>
 
 #include "webrtc/base/basictypes.h"
 
 namespace rtc {
 
-static const int64 kNumMillisecsPerSec = INT64_C(1000);
-static const int64 kNumMicrosecsPerSec = INT64_C(1000000);
-static const int64 kNumNanosecsPerSec = INT64_C(1000000000);
+static const int64_t kNumMillisecsPerSec = INT64_C(1000);
+static const int64_t kNumMicrosecsPerSec = INT64_C(1000000);
+static const int64_t kNumNanosecsPerSec = INT64_C(1000000000);
 
-static const int64 kNumMicrosecsPerMillisec = kNumMicrosecsPerSec /
-    kNumMillisecsPerSec;
-static const int64 kNumNanosecsPerMillisec =  kNumNanosecsPerSec /
-    kNumMillisecsPerSec;
-static const int64 kNumNanosecsPerMicrosec =  kNumNanosecsPerSec /
-    kNumMicrosecsPerSec;
-
-
-static const int64 kJan1970AsNtpMillisecs = INT64_C(2208988800000);
-
-typedef uint32 TimeStamp;
+static const int64_t kNumMicrosecsPerMillisec =
+    kNumMicrosecsPerSec / kNumMillisecsPerSec;
+static const int64_t kNumNanosecsPerMillisec =
+    kNumNanosecsPerSec / kNumMillisecsPerSec;
+static const int64_t kNumNanosecsPerMicrosec =
+    kNumNanosecsPerSec / kNumMicrosecsPerSec;
 
 
-uint32 Time();
+static const int64_t kJan1970AsNtpMillisecs = INT64_C(2208988800000);
 
-uint64 TimeMicros();
+typedef uint32_t TimeStamp;
 
-uint64 TimeNanos();
+
+uint32_t Time();
+
+uint64_t TimeMicros();
+
+uint64_t TimeNanos();
 
 
 void CurrentTmTime(struct tm *tm, int *microseconds);
 
 
-uint32 TimeAfter(int32 elapsed);
+uint32_t TimeAfter(int32_t elapsed);
 
 
-bool TimeIsBetween(uint32 earlier, uint32 middle, uint32 later);  
-bool TimeIsLaterOrEqual(uint32 earlier, uint32 later);  
-bool TimeIsLater(uint32 earlier, uint32 later);  
+bool TimeIsBetween(uint32_t earlier,
+                   uint32_t middle,
+                   uint32_t later);                         
+bool TimeIsLaterOrEqual(uint32_t earlier, uint32_t later);  
+bool TimeIsLater(uint32_t earlier, uint32_t later);         
 
 
-inline uint32 TimeMax(uint32 ts1, uint32 ts2) {
+inline uint32_t TimeMax(uint32_t ts1, uint32_t ts2) {
   return TimeIsLaterOrEqual(ts1, ts2) ? ts2 : ts1;
 }
 
 
-inline uint32 TimeMin(uint32 ts1, uint32 ts2) {
+inline uint32_t TimeMin(uint32_t ts1, uint32_t ts2) {
   return TimeIsLaterOrEqual(ts1, ts2) ? ts1 : ts2;
 }
 
 
 
-int32 TimeDiff(uint32 later, uint32 earlier);
+int32_t TimeDiff(uint32_t later, uint32_t earlier);
 
 
-inline int32 TimeSince(uint32 earlier) {
+inline int32_t TimeSince(uint32_t earlier) {
   return TimeDiff(Time(), earlier);
 }
 
 
-inline int32 TimeUntil(uint32 later) {
+inline int32_t TimeUntil(uint32_t later) {
   return TimeDiff(later, Time());
 }
 
 
-inline int64 UnixTimestampNanosecsToNtpMillisecs(int64 unix_ts_ns) {
+inline int64_t UnixTimestampNanosecsToNtpMillisecs(int64_t unix_ts_ns) {
   return unix_ts_ns / kNumNanosecsPerMillisec + kJan1970AsNtpMillisecs;
 }
 
@@ -84,12 +87,17 @@ class TimestampWrapAroundHandler {
  public:
   TimestampWrapAroundHandler();
 
-  int64 Unwrap(uint32 ts);
+  int64_t Unwrap(uint32_t ts);
 
  private:
-  uint32 last_ts_;
-  int64 num_wrap_;
+  uint32_t last_ts_;
+  int64_t num_wrap_;
 };
+
+
+
+
+int64_t TmToSeconds(const std::tm& tm);
 
 }  
 

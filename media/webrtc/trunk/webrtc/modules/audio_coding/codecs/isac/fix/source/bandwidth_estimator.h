@@ -62,7 +62,7 @@ int32_t WebRtcIsacfix_UpdateUplinkBwImpl(BwEstimatorstr       *bwest_str,
                                          const int16_t         frameSize,
                                          const uint32_t        send_ts,
                                          const uint32_t        arr_ts,
-                                         const int16_t         pksize,
+                                         const size_t          pksize,
                                          const uint16_t        Index);
 
 
@@ -94,6 +94,14 @@ int16_t WebRtcIsacfix_GetDownlinkMaxDelay(const BwEstimatorstr *bwest_str);
 
 
 int16_t WebRtcIsacfix_GetUplinkMaxDelay(const BwEstimatorstr *bwest_str);
+
+
+void WebRtcIsacfixBw_GetBandwidthInfo(BwEstimatorstr* bwest_str,
+                                      IsacBandwidthInfo* bwinfo);
+
+
+void WebRtcIsacfixBw_SetBandwidthInfo(BwEstimatorstr* bwest_str,
+                                      const IsacBandwidthInfo* bwinfo);
 
 
 

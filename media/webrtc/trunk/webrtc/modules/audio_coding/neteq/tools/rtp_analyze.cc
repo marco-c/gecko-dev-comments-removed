@@ -38,6 +38,9 @@ static const bool red_dummy =
 DEFINE_int32(audio_level, 1, "Extension ID for audio level (RFC 6464)");
 static const bool audio_level_dummy =
     google::RegisterFlagValidator(&FLAGS_audio_level, &ValidateExtensionId);
+DEFINE_int32(abs_send_time, 3, "Extension ID for absolute sender time");
+static const bool abs_send_time_dummy =
+    google::RegisterFlagValidator(&FLAGS_abs_send_time, &ValidateExtensionId);
 
 int main(int argc, char* argv[]) {
   std::string program_name = argv[0];
@@ -70,6 +73,12 @@ int main(int argc, char* argv[]) {
     file_source->RegisterRtpHeaderExtension(webrtc::kRtpExtensionAudioLevel,
                                             FLAGS_audio_level);
   }
+  bool print_abs_send_time = false;
+  if (!google::GetCommandLineFlagInfoOrDie("abs_send_time").is_default) {
+    print_abs_send_time = true;
+    file_source->RegisterRtpHeaderExtension(
+        webrtc::kRtpExtensionAbsoluteSendTime, FLAGS_abs_send_time);
+  }
 
   FILE* out_file;
   if (argc == 3) {
@@ -88,8 +97,13 @@ int main(int argc, char* argv[]) {
   if (print_audio_level) {
     fprintf(out_file, " AuLvl (V)");
   }
+  if (print_abs_send_time) {
+    fprintf(out_file, " AbsSendTime");
+  }
   fprintf(out_file, "\n");
 
+  uint32_t max_abs_send_time = 0;
+  int cycles = -1;
   rtc::scoped_ptr<webrtc::test::Packet> packet;
   while (true) {
     packet.reset(file_source->NextPacket());
@@ -98,21 +112,50 @@ int main(int argc, char* argv[]) {
       break;
     }
     
+    
     fprintf(out_file,
             "%5u %10u %10u %5i %5i %2i %#08X",
             packet->header().sequenceNumber,
             packet->header().timestamp,
             static_cast<unsigned int>(packet->time_ms()),
-            static_cast<int>(packet->packet_length_bytes()),
+            static_cast<int>(packet->virtual_packet_length_bytes()),
             packet->header().payloadType,
             packet->header().markerBit,
             packet->header().ssrc);
     if (print_audio_level && packet->header().extension.hasAudioLevel) {
-      
       fprintf(out_file,
               " %5u (%1i)",
-              packet->header().extension.audioLevel & 0x7F,
-              (packet->header().extension.audioLevel & 0x80) == 0 ? 0 : 1);
+              packet->header().extension.audioLevel,
+              packet->header().extension.voiceActivity);
+    }
+    if (print_abs_send_time && packet->header().extension.hasAbsoluteSendTime) {
+      if (cycles == -1) {
+        
+        max_abs_send_time = packet->header().extension.absoluteSendTime;
+        cycles = 0;
+      }
+      
+      
+      
+      
+      if (static_cast<int32_t>(
+              (packet->header().extension.absoluteSendTime << 8) -
+              (max_abs_send_time << 8)) >= 0) {
+        
+        
+        if (packet->header().extension.absoluteSendTime < max_abs_send_time) {
+          
+          cycles++;
+        }
+        max_abs_send_time = packet->header().extension.absoluteSendTime;
+      }
+      
+      
+      double send_time_seconds =
+          static_cast<double>(packet->header().extension.absoluteSendTime) /
+              262144 +
+          64.0 * cycles;
+      fprintf(out_file, " %11f", send_time_seconds);
     }
     fprintf(out_file, "\n");
 

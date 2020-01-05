@@ -23,7 +23,7 @@
 
 
 
-int16_t WebRtcIlbcfix_InitEncode(  
+int WebRtcIlbcfix_InitEncode(  
     IlbcEncoder *iLBCenc_inst,  
     int16_t mode) {  
   iLBCenc_inst->mode = mode;
@@ -67,5 +67,5 @@ int16_t WebRtcIlbcfix_InitEncode(
   iLBCenc_inst->section = 0;
 #endif
 
-  return (iLBCenc_inst->no_of_bytes);
+  return (int)(iLBCenc_inst->no_of_bytes);
 }

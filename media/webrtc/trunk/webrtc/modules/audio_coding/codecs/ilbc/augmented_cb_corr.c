@@ -28,14 +28,14 @@ void WebRtcIlbcfix_AugmentedCbCorr(
     int32_t *crossDot,  
 
 
-    int16_t low,    
+    size_t low,    
 
-    int16_t high,   
-    int16_t scale)   
+    size_t high,   
+    int scale)   
 
 {
-  int lagcount;
-  int16_t ilow;
+  size_t lagcount;
+  size_t ilow;
   int16_t *targetPtr;
   int32_t *crossDotPtr;
   int16_t *iSPtr=interpSamples;
@@ -46,7 +46,7 @@ void WebRtcIlbcfix_AugmentedCbCorr(
   crossDotPtr=crossDot;
   for (lagcount=low; lagcount<=high; lagcount++) {
 
-    ilow = (int16_t) (lagcount-4);
+    ilow = lagcount - 4;
 
     
     (*crossDotPtr) = WebRtcSpl_DotProductWithScale(target, buffer-lagcount, ilow, scale);

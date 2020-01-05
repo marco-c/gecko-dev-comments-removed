@@ -11,14 +11,14 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ_NETEQ_IMPL_H_
 #define WEBRTC_MODULES_AUDIO_CODING_NETEQ_NETEQ_IMPL_H_
 
-#include <vector>
+#include <string>
 
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/audio_coding/neteq/audio_multi_vector.h"
 #include "webrtc/modules/audio_coding/neteq/defines.h"
-#include "webrtc/modules/audio_coding/neteq/interface/neteq.h"
+#include "webrtc/modules/audio_coding/neteq/include/neteq.h"
 #include "webrtc/modules/audio_coding/neteq/packet.h"  
 #include "webrtc/modules/audio_coding/neteq/random_vector.h"
 #include "webrtc/modules/audio_coding/neteq/rtcp.h"
@@ -41,6 +41,7 @@ class DtmfBuffer;
 class DtmfToneGenerator;
 class Expand;
 class Merge;
+class Nack;
 class Normal;
 class PacketBuffer;
 class PayloadSplitter;
@@ -73,15 +74,14 @@ class NetEqImpl : public webrtc::NetEq {
             PreemptiveExpandFactory* preemptive_expand_factory,
             bool create_components = true);
 
-  virtual ~NetEqImpl();
+  ~NetEqImpl() override;
 
   
   
   
   
   int InsertPacket(const WebRtcRTPHeader& rtp_header,
-                   const uint8_t* payload,
-                   size_t length_bytes,
+                   rtc::ArrayView<const uint8_t> payload,
                    uint32_t receive_timestamp) override;
 
   
@@ -106,22 +106,19 @@ class NetEqImpl : public webrtc::NetEq {
   
   int GetAudio(size_t max_length,
                int16_t* output_audio,
-               int* samples_per_channel,
-               int* num_channels,
+               size_t* samples_per_channel,
+               size_t* num_channels,
                NetEqOutputType* type) override;
 
-  
-  
-  int RegisterPayloadType(enum NetEqDecoder codec,
+  int RegisterPayloadType(NetEqDecoder codec,
+                          const std::string& codec_name,
                           uint8_t rtp_payload_type) override;
 
-  
-  
-  
-  
   int RegisterExternalDecoder(AudioDecoder* decoder,
-                              enum NetEqDecoder codec,
-                              uint8_t rtp_payload_type) override;
+                              NetEqDecoder codec,
+                              const std::string& codec_name,
+                              uint8_t rtp_payload_type,
+                              int sample_rate_hz) override;
 
   
   
@@ -133,11 +130,11 @@ class NetEqImpl : public webrtc::NetEq {
 
   int LeastRequiredDelayMs() const override;
 
-  int SetTargetDelay() override { return kNotImplemented; }
+  int SetTargetDelay() override;
 
-  int TargetDelay() override { return kNotImplemented; }
+  int TargetDelay() override;
 
-  int CurrentDelay() override { return kNotImplemented; }
+  int CurrentDelayMs() const override;
 
   
   
@@ -155,11 +152,6 @@ class NetEqImpl : public webrtc::NetEq {
 
   
   
-  
-  void WaitingTimes(std::vector<int>* waiting_times) override;
-
-  
-  
   void GetRtcpStatistics(RtcpStatistics* stats) override;
 
   
@@ -174,9 +166,11 @@ class NetEqImpl : public webrtc::NetEq {
 
   bool GetPlayoutTimestamp(uint32_t* timestamp) override;
 
-  int SetTargetNumberOfChannels() override { return kNotImplemented; }
+  int last_output_sample_rate_hz() const override;
 
-  int SetTargetSampleRate() override { return kNotImplemented; }
+  int SetTargetNumberOfChannels() override;
+
+  int SetTargetSampleRate() override;
 
   
   
@@ -193,25 +187,26 @@ class NetEqImpl : public webrtc::NetEq {
   void PacketBufferStatistics(int* current_num_packets,
                               int* max_num_packets) const override;
 
-  
-  
-  int DecodedRtpInfo(int* sequence_number, uint32_t* timestamp) const override;
+  void EnableNack(size_t max_nack_list_size) override;
+
+  void DisableNack() override;
+
+  std::vector<uint16_t> GetNackList(int64_t round_trip_time_ms) const override;
 
   
   const SyncBuffer* sync_buffer_for_test() const;
 
  protected:
   static const int kOutputSizeMs = 10;
-  static const int kMaxFrameSize = 2880;  
+  static const size_t kMaxFrameSize = 2880;  
   
-  static const int kSyncBufferSize = 2 * kMaxFrameSize;
+  static const size_t kSyncBufferSize = 2 * kMaxFrameSize;
 
   
   
   
   int InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
-                           const uint8_t* payload,
-                           size_t length_bytes,
+                           rtc::ArrayView<const uint8_t> payload,
                            uint32_t receive_timestamp,
                            bool is_sync_packet)
       EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
@@ -224,8 +219,9 @@ class NetEqImpl : public webrtc::NetEq {
   
   int GetAudioInternal(size_t max_length,
                        int16_t* output,
-                       int* samples_per_channel,
-                       int* num_channels) EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
+                       size_t* samples_per_channel,
+                       size_t* num_channels)
+      EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   
   
@@ -250,8 +246,13 @@ class NetEqImpl : public webrtc::NetEq {
       EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   
+  int DecodeCng(AudioDecoder* decoder, int* decoded_length,
+                AudioDecoder::SpeechType* speech_type)
+      EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
+
+  
   int DecodeLoop(PacketList* packet_list,
-                 Operations* operation,
+                 const Operations& operation,
                  AudioDecoder* decoder,
                  int* decoded_length,
                  AudioDecoder::SpeechType* speech_type)
@@ -277,7 +278,8 @@ class NetEqImpl : public webrtc::NetEq {
   int DoAccelerate(int16_t* decoded_buffer,
                    size_t decoded_length,
                    AudioDecoder::SpeechType speech_type,
-                   bool play_dtmf) EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
+                   bool play_dtmf,
+                   bool fast_accelerate) EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   
   
@@ -295,7 +297,8 @@ class NetEqImpl : public webrtc::NetEq {
 
   
   
-  void DoCodecInternalCng() EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
+  void DoCodecInternalCng(const int16_t* decoded_buffer, size_t decoded_length)
+      EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   
   int DoDtmf(const DtmfEvent& dtmf_event, bool* play_dtmf)
@@ -316,7 +319,7 @@ class NetEqImpl : public webrtc::NetEq {
   
   
   
-  int ExtractPackets(int required_samples, PacketList* packet_list)
+  int ExtractPackets(size_t required_samples, PacketList* packet_list)
       EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   
@@ -373,8 +376,9 @@ class NetEqImpl : public webrtc::NetEq {
   StatisticsCalculator stats_ GUARDED_BY(crit_sect_);
   int fs_hz_ GUARDED_BY(crit_sect_);
   int fs_mult_ GUARDED_BY(crit_sect_);
-  int output_size_samples_ GUARDED_BY(crit_sect_);
-  int decoder_frame_length_ GUARDED_BY(crit_sect_);
+  int last_output_sample_rate_hz_ GUARDED_BY(crit_sect_);
+  size_t output_size_samples_ GUARDED_BY(crit_sect_);
+  size_t decoder_frame_length_ GUARDED_BY(crit_sect_);
   Modes last_mode_ GUARDED_BY(crit_sect_);
   rtc::scoped_ptr<int16_t[]> mute_factor_array_ GUARDED_BY(crit_sect_);
   size_t decoded_buffer_length_ GUARDED_BY(crit_sect_);
@@ -391,19 +395,12 @@ class NetEqImpl : public webrtc::NetEq {
   int decoder_error_code_ GUARDED_BY(crit_sect_);
   const BackgroundNoiseMode background_noise_mode_ GUARDED_BY(crit_sect_);
   NetEqPlayoutMode playout_mode_ GUARDED_BY(crit_sect_);
-
-  
-  
-  
-  
-  
-  
-  
-  int decoded_packet_sequence_number_ GUARDED_BY(crit_sect_);
-  uint32_t decoded_packet_timestamp_ GUARDED_BY(crit_sect_);
+  bool enable_fast_accelerate_ GUARDED_BY(crit_sect_);
+  rtc::scoped_ptr<Nack> nack_ GUARDED_BY(crit_sect_);
+  bool nack_enabled_ GUARDED_BY(crit_sect_);
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(NetEqImpl);
+  RTC_DISALLOW_COPY_AND_ASSIGN(NetEqImpl);
 };
 
 }  

@@ -23,7 +23,7 @@
 #endif  
 
 #if defined(WEBRTC_POSIX)
-#ifdef WEBRTC_BSD
+#ifdef BSD
 #include <stdlib.h>
 #else  
 #include <alloca.h>
@@ -292,10 +292,10 @@ struct Traits<char> {
 template<>
 struct Traits<wchar_t> {
   typedef std::wstring string;
-  inline static const wchar_t* Traits<wchar_t>::empty_str() { return L""; }
+  inline static const wchar_t* empty_str() { return L""; }
 };
 
-#endif
+#endif  
 
 
 void replace_substrs(const char *search,

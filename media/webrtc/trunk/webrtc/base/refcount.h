@@ -8,20 +8,20 @@
 
 
 
-#ifndef TALK_APP_BASE_REFCOUNT_H_
-#define TALK_APP_BASE_REFCOUNT_H_
+#ifndef WEBRTC_BASE_REFCOUNT_H_
+#define WEBRTC_BASE_REFCOUNT_H_
 
 #include <string.h>
 
-#include "webrtc/base/criticalsection.h"
+#include "webrtc/base/atomicops.h"
 
 namespace rtc {
 
 
 class RefCountInterface {
  public:
-  virtual int AddRef() = 0;
-  virtual int Release() = 0;
+  virtual int AddRef() const = 0;
+  virtual int Release() const = 0;
  protected:
   virtual ~RefCountInterface() {}
 };
@@ -95,12 +95,12 @@ class RefCountedObject : public T {
   : T(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11), ref_count_(0) {
   }
 
-  virtual int AddRef() {
-    return rtc::AtomicOps::Increment(&ref_count_);
+  virtual int AddRef() const {
+    return AtomicOps::Increment(&ref_count_);
   }
 
-  virtual int Release() {
-    int count = rtc::AtomicOps::Decrement(&ref_count_);
+  virtual int Release() const {
+    int count = AtomicOps::Decrement(&ref_count_);
     if (!count) {
       delete this;
     }
@@ -114,14 +114,14 @@ class RefCountedObject : public T {
   
   
   virtual bool HasOneRef() const {
-    return rtc::AtomicOps::Load(&ref_count_) == 1;
+    return AtomicOps::AcquireLoad(&ref_count_) == 1;
   }
 
  protected:
   virtual ~RefCountedObject() {
   }
 
-  volatile int ref_count_;
+  mutable volatile int ref_count_;
 };
 
 }  

@@ -27,14 +27,14 @@
 
 
 
-int16_t WebRtcIsacfix_DecodeImpl(int16_t       *signal_out16,
-                                 IsacFixDecoderInstance *ISACdec_obj,
-                                 int16_t       *current_framesamples)
+int WebRtcIsacfix_DecodeImpl(int16_t* signal_out16,
+                             IsacFixDecoderInstance* ISACdec_obj,
+                             size_t* current_framesamples)
 {
   int k;
   int err;
   int16_t BWno;
-  int16_t len = 0;
+  int len = 0;
 
   int16_t model;
 
@@ -58,9 +58,9 @@ int16_t WebRtcIsacfix_DecodeImpl(int16_t       *signal_out16,
   int16_t gainQ13;
 
 
-  int16_t frame_nb; 
-  int16_t frame_mode; 
-  static const int16_t kProcessedSamples = 480; 
+  size_t frame_nb; 
+  size_t frame_mode; 
+  static const size_t kProcessedSamples = 480; 
 
   
   int16_t overlapWin[ 240 ];
@@ -130,14 +130,15 @@ int16_t WebRtcIsacfix_DecodeImpl(int16_t       *signal_out16,
       ISACdec_obj->plcstr_obj.decayCoeffNoise = WEBRTC_SPL_WORD16_MAX;    
       ISACdec_obj->plcstr_obj.pitchCycles = 0;
 
-      PitchGains_Q12[0] = (int16_t)WEBRTC_SPL_MUL_16_16_RSFT(PitchGains_Q12[0], 700, 10 );
+      PitchGains_Q12[0] = (int16_t)(PitchGains_Q12[0] * 700 >> 10);
 
       
       WebRtcSpl_GetHanningWindow( overlapWin, RECOVERY_OVERLAP );
       for( k = 0; k < RECOVERY_OVERLAP; k++ )
         Vector_Word16_1[k] = WebRtcSpl_AddSatW16(
-            (int16_t)WEBRTC_SPL_MUL_16_16_RSFT( (ISACdec_obj->plcstr_obj).overlapLP[k], overlapWin[RECOVERY_OVERLAP - k - 1], 14),
-            (int16_t)WEBRTC_SPL_MUL_16_16_RSFT( Vector_Word16_1[k], overlapWin[k], 14) );
+            (int16_t)(ISACdec_obj->plcstr_obj.overlapLP[k] *
+                overlapWin[RECOVERY_OVERLAP - k - 1] >> 14),
+            (int16_t)(Vector_Word16_1[k] * overlapWin[k] >> 14));
 
 
 
@@ -176,7 +177,7 @@ int16_t WebRtcIsacfix_DecodeImpl(int16_t       *signal_out16,
 
     
     
-    tmp32a = WEBRTC_SPL_MUL_16_16_RSFT(AvgPitchGain_Q12, 29, 0); 
+    tmp32a = AvgPitchGain_Q12 * 29;  
     gainQ13 = (int16_t)((262144 - tmp32a) >> 5);  
 
     for (k = 0; k < FRAMESAMPLES/2; k++)

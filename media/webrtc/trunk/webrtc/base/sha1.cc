@@ -95,6 +95,16 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
 #define SHA1HANDSOFF
 
 #include "webrtc/base/sha1.h"
@@ -104,14 +114,14 @@
 
 namespace rtc {
 
-void SHA1Transform(uint32 state[5], const uint8 buffer[64]);
+namespace {
 
 #define rol(value, bits) (((value) << (bits)) | ((value) >> (32 - (bits))))
 
 
 
 
-#ifdef ARCH_CPU_BIG_ENDIAN
+#ifdef RTC_ARCH_CPU_BIG_ENDIAN
 #define blk0(i) block->l[i]
 #else
 #define blk0(i) (block->l[i] = (rol(block->l[i], 24) & 0xFF00FF00) | \
@@ -151,13 +161,13 @@ void SHAPrintContext(SHA1_CTX *context, char *msg) {
 #endif 
 
 
-void SHA1Transform(uint32 state[5], const uint8 buffer[64]) {
+void SHA1Transform(uint32_t state[5], const uint8_t buffer[64]) {
   union CHAR64LONG16 {
-    uint8 c[64];
-    uint32 l[16];
+    uint8_t c[64];
+    uint32_t l[16];
   };
 #ifdef SHA1HANDSOFF
-  static uint8 workspace[64];
+  uint8_t workspace[64];
   memcpy(workspace, buffer, 64);
   CHAR64LONG16* block = reinterpret_cast<CHAR64LONG16*>(workspace);
 #else
@@ -167,11 +177,11 @@ void SHA1Transform(uint32 state[5], const uint8 buffer[64]) {
 #endif
 
   
-  uint32 a = state[0];
-  uint32 b = state[1];
-  uint32 c = state[2];
-  uint32 d = state[3];
-  uint32 e = state[4];
+  uint32_t a = state[0];
+  uint32_t b = state[1];
+  uint32_t c = state[2];
+  uint32_t d = state[3];
+  uint32_t e = state[4];
 
   
   
@@ -206,6 +216,8 @@ void SHA1Transform(uint32 state[5], const uint8 buffer[64]) {
   state[4] += e;
 }
 
+}  
+
 
 void SHA1Init(SHA1_CTX* context) {
   
@@ -218,7 +230,7 @@ void SHA1Init(SHA1_CTX* context) {
 }
 
 
-void SHA1Update(SHA1_CTX* context, const uint8* data, size_t input_len) {
+void SHA1Update(SHA1_CTX* context, const uint8_t* data, size_t input_len) {
   size_t i = 0;
 
 #ifdef VERBOSE
@@ -233,11 +245,11 @@ void SHA1Update(SHA1_CTX* context, const uint8* data, size_t input_len) {
   
   
   
-  context->count[0] += static_cast<uint32>(input_len << 3);
-  if (context->count[0] < static_cast<uint32>(input_len << 3)) {
+  context->count[0] += static_cast<uint32_t>(input_len << 3);
+  if (context->count[0] < static_cast<uint32_t>(input_len << 3)) {
     ++context->count[1];  
   }
-  context->count[1] += static_cast<uint32>(input_len >> 29);
+  context->count[1] += static_cast<uint32_t>(input_len >> 29);
   if ((index + input_len) > 63) {
     i = 64 - index;
     memcpy(&context->buffer[index], data, i);
@@ -255,21 +267,21 @@ void SHA1Update(SHA1_CTX* context, const uint8* data, size_t input_len) {
 }
 
 
-void SHA1Final(SHA1_CTX* context, uint8 digest[SHA1_DIGEST_SIZE]) {
-  uint8 finalcount[8];
+void SHA1Final(SHA1_CTX* context, uint8_t digest[SHA1_DIGEST_SIZE]) {
+  uint8_t finalcount[8];
   for (int i = 0; i < 8; ++i) {
     
-    finalcount[i] = static_cast<uint8>(
-        (context->count[(i >= 4 ? 0 : 1)] >> ((3 - (i & 3)) * 8) ) & 255);
+    finalcount[i] = static_cast<uint8_t>(
+        (context->count[(i >= 4 ? 0 : 1)] >> ((3 - (i & 3)) * 8)) & 255);
   }
-  SHA1Update(context, reinterpret_cast<const uint8*>("\200"), 1);
+  SHA1Update(context, reinterpret_cast<const uint8_t*>("\200"), 1);
   while ((context->count[0] & 504) != 448) {
-    SHA1Update(context, reinterpret_cast<const uint8*>("\0"), 1);
+    SHA1Update(context, reinterpret_cast<const uint8_t*>("\0"), 1);
   }
   SHA1Update(context, finalcount, 8);  
   for (int i = 0; i < SHA1_DIGEST_SIZE; ++i) {
-    digest[i] = static_cast<uint8>(
-        (context->state[i >> 2] >> ((3 - (i & 3)) * 8) ) & 255);
+    digest[i] = static_cast<uint8_t>(
+        (context->state[i >> 2] >> ((3 - (i & 3)) * 8)) & 255);
   }
 
   

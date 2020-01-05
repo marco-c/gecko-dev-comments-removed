@@ -29,10 +29,10 @@ void WebRtcIlbcfix_CbConstruct(
     int16_t *index,   
     int16_t *gain_index,  
     int16_t *mem,   
-    int16_t lMem,   
-    int16_t veclen   
+    size_t lMem,   
+    size_t veclen   
                                ){
-  int j;
+  size_t j;
   int16_t gain[CB_NSTAGES];
   
   int16_t cbvec0[SUBL];
@@ -50,9 +50,9 @@ void WebRtcIlbcfix_CbConstruct(
   
 
   
-  WebRtcIlbcfix_GetCbVec(cbvec0, mem, index[0], lMem, veclen);
-  WebRtcIlbcfix_GetCbVec(cbvec1, mem, index[1], lMem, veclen);
-  WebRtcIlbcfix_GetCbVec(cbvec2, mem, index[2], lMem, veclen);
+  WebRtcIlbcfix_GetCbVec(cbvec0, mem, (size_t)index[0], lMem, veclen);
+  WebRtcIlbcfix_GetCbVec(cbvec1, mem, (size_t)index[1], lMem, veclen);
+  WebRtcIlbcfix_GetCbVec(cbvec2, mem, (size_t)index[2], lMem, veclen);
 
   gainPtr = &gain[0];
   for (j=0;j<veclen;j++) {

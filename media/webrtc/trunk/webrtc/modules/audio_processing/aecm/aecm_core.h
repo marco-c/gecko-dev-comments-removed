@@ -400,8 +400,7 @@ extern ResetAdaptiveChannel WebRtcAecm_ResetAdaptiveChannel;
 
 
 
-#if (defined WEBRTC_DETECT_ARM_NEON) || defined (WEBRTC_ARCH_ARM_NEON) || \
-     defined (WEBRTC_ARCH_ARM64_NEON)
+#if defined(WEBRTC_DETECT_NEON) || defined(WEBRTC_HAS_NEON)
 void WebRtcAecm_CalcLinearEnergiesNeon(AecmCore* aecm,
                                        const uint16_t* far_spectrum,
                                        int32_t* echo_est,

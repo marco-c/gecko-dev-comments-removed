@@ -8,7 +8,7 @@
 
 
 
-#include "webrtc/system_wrappers/interface/stringize_macros.h"
+#include "webrtc/system_wrappers/include/stringize_macros.h"
 
 #include "testing/gtest/include/gtest/gtest.h"
 

@@ -12,7 +12,7 @@
 #define MODULES_AUDIO_DEVICE_INCLUDE_AUDIO_DEVICE_H_
 
 #include "webrtc/modules/audio_device/include/audio_device_defines.h"
-#include "webrtc/modules/interface/module.h"
+#include "webrtc/modules/include/module.h"
 
 namespace webrtc {
 
@@ -30,8 +30,7 @@ class AudioDeviceModule : public RefCountedModule {
     kLinuxAlsaAudio = 3,
     kLinuxPulseAudio = 4,
     kAndroidJavaAudio = 5,
-    kAndroidOpenSLESAudio = 6,
-    kSndioAudio = 7,
+    kAndroidJavaInputAndOpenSLESOutputAudio = 6,
     kDummyAudio = 8
   };
 
@@ -188,23 +187,28 @@ class AudioDeviceModule : public RefCountedModule {
   
   
   virtual bool BuiltInAECIsAvailable() const { return false; }
+  virtual bool BuiltInAGCIsAvailable() const { return false; }
+  virtual bool BuiltInNSIsAvailable() const { return false; }
 
-  
-  
-  
-  
-  
-  
-  
   
   
   virtual int32_t EnableBuiltInAEC(bool enable) { return -1; }
-
+  virtual int32_t EnableBuiltInAGC(bool enable) { return -1; }
+  virtual int32_t EnableBuiltInNS(bool enable) { return -1; }
   
   virtual bool BuiltInAECIsEnabled() const { return false; }
 
+  
+  
+  virtual int GetPlayoutAudioParameters(AudioParameters* params) const {
+    return -1;
+  }
+  virtual int GetRecordAudioParameters(AudioParameters* params) const {
+    return -1;
+  }
+
  protected:
-  virtual ~AudioDeviceModule() {};
+  virtual ~AudioDeviceModule() {}
 };
 
 AudioDeviceModule* CreateAudioDeviceModule(

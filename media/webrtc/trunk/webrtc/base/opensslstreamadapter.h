@@ -74,6 +74,7 @@ class OpenSSLStreamAdapter : public SSLStreamAdapter {
   int StartSSLWithServer(const char* server_name) override;
   int StartSSLWithPeer() override;
   void SetMode(SSLMode mode) override;
+  void SetMaxProtocolVersion(SSLProtocolVersion version) override;
 
   StreamResult Read(void* data,
                     size_t data_len,
@@ -86,30 +87,31 @@ class OpenSSLStreamAdapter : public SSLStreamAdapter {
   void Close() override;
   StreamState GetState() const override;
 
-#ifndef OPENSSL_IS_BORINGSSL
   
-  static const char* GetRfcSslCipherName(const SSL_CIPHER* cipher);
-#endif
+  static std::string SslCipherSuiteToName(int crypto_suite);
 
-  bool GetSslCipher(std::string* cipher) override;
+  bool GetSslCipherSuite(int* cipher) override;
 
   
   bool ExportKeyingMaterial(const std::string& label,
-                            const uint8* context,
+                            const uint8_t* context,
                             size_t context_len,
                             bool use_context,
-                            uint8* result,
+                            uint8_t* result,
                             size_t result_len) override;
 
   
-  bool SetDtlsSrtpCiphers(const std::vector<std::string>& ciphers) override;
-  bool GetDtlsSrtpCipher(std::string* cipher) override;
+  bool SetDtlsSrtpCryptoSuites(const std::vector<int>& crypto_suites) override;
+  bool GetDtlsSrtpCryptoSuite(int* crypto_suite) override;
 
   
   static bool HaveDtls();
   static bool HaveDtlsSrtp();
   static bool HaveExporter();
-  static std::string GetDefaultSslCipher();
+
+  
+  static int GetDefaultSslCipherForTest(SSLProtocolVersion version,
+                                        KeyType key_type);
 
  protected:
   void OnEvent(StreamInterface* stream, int events, int err) override;
@@ -201,6 +203,9 @@ class OpenSSLStreamAdapter : public SSLStreamAdapter {
 
   
   SSLMode ssl_mode_;
+
+  
+  SSLProtocolVersion ssl_max_version_;
 };
 
 

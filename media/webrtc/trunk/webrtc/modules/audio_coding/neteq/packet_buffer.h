@@ -43,7 +43,7 @@ class PacketBuffer {
   virtual void Flush();
 
   
-  virtual bool Empty() const { return buffer_.empty(); }
+  virtual bool Empty() const;
 
   
   
@@ -88,7 +88,7 @@ class PacketBuffer {
   
   
   
-  virtual Packet* GetNextPacket(int* discard_count);
+  virtual Packet* GetNextPacket(size_t* discard_count);
 
   
   
@@ -105,20 +105,16 @@ class PacketBuffer {
                                 uint32_t horizon_samples);
 
   
-  virtual int DiscardAllOldPackets(uint32_t timestamp_limit) {
-    return DiscardOldPackets(timestamp_limit, 0);
-  }
+  virtual int DiscardAllOldPackets(uint32_t timestamp_limit);
 
   
   
-  virtual int NumPacketsInBuffer() const {
-    return static_cast<int>(buffer_.size());
-  }
+  virtual size_t NumPacketsInBuffer() const;
 
   
   
-  virtual int NumSamplesInBuffer(DecoderDatabase* decoder_database,
-                                 int last_decoded_length) const;
+  virtual size_t NumSamplesInBuffer(DecoderDatabase* decoder_database,
+                                    size_t last_decoded_length) const;
 
   
   
@@ -152,7 +148,7 @@ class PacketBuffer {
  private:
   size_t max_number_of_packets_;
   PacketList buffer_;
-  DISALLOW_COPY_AND_ASSIGN(PacketBuffer);
+  RTC_DISALLOW_COPY_AND_ASSIGN(PacketBuffer);
 };
 
 }  

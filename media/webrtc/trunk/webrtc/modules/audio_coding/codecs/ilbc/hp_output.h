@@ -29,6 +29,6 @@ void WebRtcIlbcfix_HpOutput(
     int16_t *y,      
 
     int16_t *x,      
-    int16_t len);      
+    size_t len);      
 
 #endif

@@ -8,24 +8,39 @@
 
 
 
+
+
+
+
+
+
+#include <math.h>
 #include <algorithm>
+#include <vector>
 
+#include "webrtc/base/arraysize.h"
+#include "webrtc/base/common.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/estimators/nada.h"
-
-#include "webrtc/modules/rtp_rtcp/interface/receive_statistics.h"
+#include "webrtc/modules/remote_bitrate_estimator/test/bwe_test_logging.h"
+#include "webrtc/modules/rtp_rtcp/include/receive_statistics.h"
 
 namespace webrtc {
 namespace testing {
 namespace bwe {
 
+const int64_t NadaBweReceiver::kReceivingRateTimeWindowMs = 500;
+
 NadaBweReceiver::NadaBweReceiver(int flow_id)
-    : BweReceiver(flow_id),
+    : BweReceiver(flow_id, kReceivingRateTimeWindowMs),
       clock_(0),
       last_feedback_ms_(0),
       recv_stats_(ReceiveStatistics::Create(&clock_)),
-      baseline_delay_ms_(0),
+      baseline_delay_ms_(10000),  
       delay_signal_ms_(0),
-      last_congestion_signal_ms_(0) {
+      last_congestion_signal_ms_(0),
+      last_delays_index_(0),
+      exp_smoothed_delay_ms_(-1),
+      est_queuing_delay_signal_ms_(0) {
 }
 
 NadaBweReceiver::~NadaBweReceiver() {
@@ -33,34 +48,59 @@ NadaBweReceiver::~NadaBweReceiver() {
 
 void NadaBweReceiver::ReceivePacket(int64_t arrival_time_ms,
                                     const MediaPacket& media_packet) {
+  const float kAlpha = 0.1f;                 
+  const int64_t kDelayLowThresholdMs = 50;   
+  const int64_t kDelayMaxThresholdMs = 400;  
+
   clock_.AdvanceTimeMilliseconds(arrival_time_ms - clock_.TimeInMilliseconds());
   recv_stats_->IncomingPacket(media_packet.header(),
                               media_packet.payload_size(), false);
-  int64_t delay_ms = arrival_time_ms - media_packet.creation_time_us() / 1000;
   
-  if (delay_ms < baseline_delay_ms_) {
-    baseline_delay_ms_ = delay_ms;
+  int64_t delay_ms = arrival_time_ms - media_packet.sender_timestamp_ms();
+
+  
+  if (clock_.TimeInMilliseconds() < 10 * 60 * 1000) {
+    baseline_delay_ms_ = std::min(baseline_delay_ms_, delay_ms);
   }
-  delay_signal_ms_ = delay_ms - baseline_delay_ms_;
+
+  delay_signal_ms_ = delay_ms - baseline_delay_ms_;  
+  const int kMedian = arraysize(last_delays_ms_);
+  last_delays_ms_[(last_delays_index_++) % kMedian] = delay_signal_ms_;
+  int size = std::min(last_delays_index_, kMedian);
+
+  int64_t median_filtered_delay_ms_ = MedianFilter(last_delays_ms_, size);
+  exp_smoothed_delay_ms_ = ExponentialSmoothingFilter(
+      median_filtered_delay_ms_, exp_smoothed_delay_ms_, kAlpha);
+
+  if (exp_smoothed_delay_ms_ < kDelayLowThresholdMs) {
+    est_queuing_delay_signal_ms_ = exp_smoothed_delay_ms_;
+  } else if (exp_smoothed_delay_ms_ < kDelayMaxThresholdMs) {
+    est_queuing_delay_signal_ms_ = static_cast<int64_t>(
+        pow((static_cast<double>(kDelayMaxThresholdMs -
+                                 exp_smoothed_delay_ms_)) /
+                (kDelayMaxThresholdMs - kDelayLowThresholdMs),
+            4.0) *
+        kDelayLowThresholdMs);
+  } else {
+    est_queuing_delay_signal_ms_ = 0;
+  }
+
+  
+  BweReceiver::ReceivePacket(arrival_time_ms, media_packet);
 }
 
 FeedbackPacket* NadaBweReceiver::GetFeedback(int64_t now_ms) {
-  if (now_ms - last_feedback_ms_ < 100)
-    return NULL;
+  const int64_t kPacketLossPenaltyMs = 1000;  
 
-  StatisticianMap statisticians = recv_stats_->GetActiveStatisticians();
-  int64_t loss_signal_ms = 0.0f;
-  if (!statisticians.empty()) {
-    RtcpStatistics stats;
-    if (!statisticians.begin()->second->GetStatistics(&stats, true)) {
-      const float kLossSignalWeight = 1000.0f;
-      loss_signal_ms =
-          (kLossSignalWeight * static_cast<float>(stats.fraction_lost) + 127) /
-          255;
-    }
+  if (now_ms - last_feedback_ms_ < 100) {
+    return NULL;
   }
 
-  int64_t congestion_signal_ms = delay_signal_ms_ + loss_signal_ms;
+  float loss_fraction = RecentPacketLossRatio();
+
+  int64_t loss_signal_ms =
+      static_cast<int64_t>(loss_fraction * kPacketLossPenaltyMs + 0.5f);
+  int64_t congestion_signal_ms = est_queuing_delay_signal_ms_ + loss_signal_ms;
 
   float derivative = 0.0f;
   if (last_feedback_ms_ > 0) {
@@ -69,14 +109,61 @@ FeedbackPacket* NadaBweReceiver::GetFeedback(int64_t now_ms) {
   }
   last_feedback_ms_ = now_ms;
   last_congestion_signal_ms_ = congestion_signal_ms;
-  return new NadaFeedback(flow_id_, now_ms, congestion_signal_ms, derivative);
+
+  int64_t corrected_send_time_ms = 0L;
+
+  if (!received_packets_.empty()) {
+    PacketIdentifierNode* latest = *(received_packets_.begin());
+    corrected_send_time_ms =
+        latest->send_time_ms + now_ms - latest->arrival_time_ms;
+  }
+
+  
+  
+  return new NadaFeedback(flow_id_, now_ms * 1000, exp_smoothed_delay_ms_,
+                          est_queuing_delay_signal_ms_, congestion_signal_ms,
+                          derivative, RecentKbps(), corrected_send_time_ms);
 }
 
+
+int64_t NadaBweReceiver::MedianFilter(int64_t* last_delays_ms, int size) {
+  std::vector<int64_t> array_copy(last_delays_ms, last_delays_ms + size);
+  std::nth_element(array_copy.begin(), array_copy.begin() + size / 2,
+                   array_copy.end());
+  if (size % 2 == 1) {
+    
+    return array_copy.at(size / 2);
+  }
+  int64_t right = array_copy.at(size / 2);
+  std::nth_element(array_copy.begin(), array_copy.begin() + (size - 1) / 2,
+                   array_copy.end());
+  int64_t left = array_copy.at((size - 1) / 2);
+  return (left + right + 1) / 2;
+}
+
+int64_t NadaBweReceiver::ExponentialSmoothingFilter(int64_t new_value,
+                                                    int64_t last_smoothed_value,
+                                                    float alpha) {
+  if (last_smoothed_value < 0) {
+    return new_value;  
+  }
+  return static_cast<int64_t>(alpha * new_value +
+                              (1.0f - alpha) * last_smoothed_value + 0.5f);
+}
+
+
 NadaBweSender::NadaBweSender(int kbps, BitrateObserver* observer, Clock* clock)
-    : clock_(clock),
+    : BweSender(kbps),  
+      clock_(clock),
       observer_(observer),
-      bitrate_kbps_(kbps),
-      last_feedback_ms_(0) {
+      original_operating_mode_(true) {
+}
+
+NadaBweSender::NadaBweSender(BitrateObserver* observer, Clock* clock)
+    : BweSender(kMinBitrateKbps),  
+      clock_(clock),
+      observer_(observer),
+      original_operating_mode_(true) {
 }
 
 NadaBweSender::~NadaBweSender() {
@@ -90,29 +177,60 @@ void NadaBweSender::GiveFeedback(const FeedbackPacket& feedback) {
   const NadaFeedback& fb = static_cast<const NadaFeedback&>(feedback);
 
   
-
-  const float kEta = 2.0f;
-  const float kTaoO = 500.0f;
-  float x_hat = fb.congestion_signal() + kEta * kTaoO * fb.derivative();
+  const int64_t kQueuingDelayUpperBoundMs = 10;
+  const float kDerivativeUpperBound = 10.0f / min_feedback_delay_ms_;
+  
+  
+  const float kProportionalityDelayBits = 20.0f;
 
   int64_t now_ms = clock_->TimeInMilliseconds();
   float delta_s = now_ms - last_feedback_ms_;
   last_feedback_ms_ = now_ms;
+  
+  min_feedback_delay_ms_ =
+      std::min(min_feedback_delay_ms_, static_cast<int64_t>(delta_s));
 
-  const float kPriorityWeight = 1.0f;
-  const float kReferenceDelayS = 10.0f;
-  float kTheta =
-      kPriorityWeight * (kMaxBitrateKbps - kMinBitrateKbps) * kReferenceDelayS;
+  
+  int64_t rtt_ms = now_ms - fb.latest_send_time_ms();
+  min_round_trip_time_ms_ = std::min(min_round_trip_time_ms_, rtt_ms);
 
-  const float kKappa = 1.0f;
-  bitrate_kbps_ = bitrate_kbps_ +
-                  kKappa * delta_s / (kTaoO * kTaoO) *
-                      (kTheta - (bitrate_kbps_ - kMinBitrateKbps) * x_hat) +
-                  0.5f;
+  
+  
+  
+  
+  if (original_operating_mode_) {
+    
+    if (fb.congestion_signal() == fb.est_queuing_delay_signal_ms() &&
+        fb.est_queuing_delay_signal_ms() < kQueuingDelayUpperBoundMs &&
+        fb.derivative() < kDerivativeUpperBound) {
+      AcceleratedRampUp(fb);
+    } else {
+      GradualRateUpdate(fb, delta_s, 1.0);
+    }
+  } else {
+    
+    if (fb.congestion_signal() == fb.est_queuing_delay_signal_ms() &&
+        fb.est_queuing_delay_signal_ms() < kQueuingDelayUpperBoundMs &&
+        fb.exp_smoothed_delay_ms() <
+            kMinBitrateKbps / kProportionalityDelayBits &&
+        fb.derivative() < kDerivativeUpperBound &&
+        fb.receiving_rate() > kMinBitrateKbps) {
+      AcceleratedRampUp(fb);
+    } else if (fb.congestion_signal() > kMaxCongestionSignalMs ||
+               fb.exp_smoothed_delay_ms() > kMaxCongestionSignalMs) {
+      AcceleratedRampDown(fb);
+    } else {
+      double bitrate_reference =
+          (2.0 * bitrate_kbps_) / (kMaxBitrateKbps + kMinBitrateKbps);
+      double smoothing_factor = pow(bitrate_reference, 0.75);
+      GradualRateUpdate(fb, delta_s, smoothing_factor);
+    }
+  }
+
   bitrate_kbps_ = std::min(bitrate_kbps_, kMaxBitrateKbps);
   bitrate_kbps_ = std::max(bitrate_kbps_, kMinBitrateKbps);
 
-  observer_->OnNetworkChanged(1000 * bitrate_kbps_, 0, 0);
+  observer_->OnNetworkChanged(1000 * bitrate_kbps_, 0, rtt_ms);
 }
 
 int64_t NadaBweSender::TimeUntilNextProcess() {
@@ -121,6 +239,48 @@ int64_t NadaBweSender::TimeUntilNextProcess() {
 
 int NadaBweSender::Process() {
   return 0;
+}
+
+void NadaBweSender::AcceleratedRampUp(const NadaFeedback& fb) {
+  const int kMaxRampUpQueuingDelayMs = 50;  
+  const float kGamma0 = 0.5f;               
+
+  float gamma =
+      std::min(kGamma0, static_cast<float>(kMaxRampUpQueuingDelayMs) /
+                            (min_round_trip_time_ms_ + min_feedback_delay_ms_));
+
+  bitrate_kbps_ = static_cast<int>((1.0f + gamma) * fb.receiving_rate() + 0.5f);
+}
+
+void NadaBweSender::AcceleratedRampDown(const NadaFeedback& fb) {
+  const float kGamma0 = 0.9f;
+  float gamma = 3.0f * kMaxCongestionSignalMs /
+                (fb.congestion_signal() + fb.exp_smoothed_delay_ms());
+  gamma = std::min(gamma, kGamma0);
+  bitrate_kbps_ = gamma * fb.receiving_rate() + 0.5f;
+}
+
+void NadaBweSender::GradualRateUpdate(const NadaFeedback& fb,
+                                      float delta_s,
+                                      double smoothing_factor) {
+  const float kTauOMs = 500.0f;           
+  const float kEta = 2.0f;                
+  const float kKappa = 1.0f;              
+  const float kReferenceDelayMs = 10.0f;  
+  const float kPriorityWeight = 1.0f;     
+
+  float x_hat = fb.congestion_signal() + kEta * kTauOMs * fb.derivative();
+
+  float kTheta =
+      kPriorityWeight * (kMaxBitrateKbps - kMinBitrateKbps) * kReferenceDelayMs;
+
+  int original_increase =
+      static_cast<int>((kKappa * delta_s *
+                        (kTheta - (bitrate_kbps_ - kMinBitrateKbps) * x_hat)) /
+                           (kTauOMs * kTauOMs) +
+                       0.5f);
+
+  bitrate_kbps_ = bitrate_kbps_ + smoothing_factor * original_increase;
 }
 
 }  

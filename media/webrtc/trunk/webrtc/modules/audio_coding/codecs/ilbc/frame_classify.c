@@ -23,7 +23,7 @@
 
 
 
-int16_t WebRtcIlbcfix_FrameClassify(
+size_t WebRtcIlbcfix_FrameClassify(
     
     IlbcEncoder *iLBCenc_inst,
     
@@ -35,8 +35,8 @@ int16_t WebRtcIlbcfix_FrameClassify(
   int32_t *seqEnPtr;
   int32_t maxW32;
   int16_t scale1;
-  int16_t pos;
-  int n;
+  size_t pos;
+  size_t n;
 
   
 
@@ -62,7 +62,7 @@ int16_t WebRtcIlbcfix_FrameClassify(
   }
 
   
-  maxW32 = WebRtcSpl_MaxValueW32(ssqEn, (int16_t)(iLBCenc_inst->nsub-1));
+  maxW32 = WebRtcSpl_MaxValueW32(ssqEn, iLBCenc_inst->nsub - 1);
   scale = WebRtcSpl_GetSizeInBits(maxW32) - 20;
   scale1 = WEBRTC_SPL_MAX(0, scale);
 
@@ -82,7 +82,7 @@ int16_t WebRtcIlbcfix_FrameClassify(
   }
 
   
-  pos = WebRtcSpl_MaxIndexW32(ssqEn, (int16_t)(iLBCenc_inst->nsub-1)) + 1;
+  pos = WebRtcSpl_MaxIndexW32(ssqEn, iLBCenc_inst->nsub - 1) + 1;
 
   return(pos);
 }

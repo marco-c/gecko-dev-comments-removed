@@ -34,8 +34,8 @@ class Accelerate : public TimeStretch {
       : TimeStretch(sample_rate_hz, num_channels, background_noise) {
   }
 
-  virtual ~Accelerate() {}
-
+  
+  
   
   
   
@@ -43,15 +43,16 @@ class Accelerate : public TimeStretch {
   
   ReturnCodes Process(const int16_t* input,
                       size_t input_length,
+                      bool fast_accelerate,
                       AudioMultiVector* output,
-                      int16_t* length_change_samples);
+                      size_t* length_change_samples);
 
  protected:
   
   
   void SetParametersForPassiveSpeech(size_t len,
                                      int16_t* best_correlation,
-                                     int* peak_index) const override;
+                                     size_t* peak_index) const override;
 
   
   
@@ -60,10 +61,11 @@ class Accelerate : public TimeStretch {
                                       size_t peak_index,
                                       int16_t best_correlation,
                                       bool active_speech,
+                                      bool fast_mode,
                                       AudioMultiVector* output) const override;
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(Accelerate);
+  RTC_DISALLOW_COPY_AND_ASSIGN(Accelerate);
 };
 
 struct AccelerateFactory {

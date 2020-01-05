@@ -15,8 +15,8 @@
 
 #include <string>
 #include <vector>
-#include <algorithm>
 
+#include "webrtc/common.h"
 #include "webrtc/common_types.h"
 #include "webrtc/typedefs.h"
 
@@ -35,25 +35,36 @@ struct NackConfig {
 
 
 struct FecConfig {
-  FecConfig() : ulpfec_payload_type(-1), red_payload_type(-1) {}
+  FecConfig()
+      : ulpfec_payload_type(-1),
+        red_payload_type(-1),
+        red_rtx_payload_type(-1) {}
   std::string ToString() const;
   
   int ulpfec_payload_type;
 
   
   int red_payload_type;
+
+  
+  int red_rtx_payload_type;
 };
 
 
 struct RtpExtension {
   RtpExtension(const std::string& name, int id) : name(name), id(id) {}
   std::string ToString() const;
-  static bool IsSupported(const std::string& name);
+  bool operator==(const RtpExtension& rhs) const {
+    return name == rhs.name && id == rhs.id;
+  }
+  static bool IsSupportedForAudio(const std::string& name);
+  static bool IsSupportedForVideo(const std::string& name);
 
   static const char* kTOffset;
   static const char* kAbsSendTime;
   static const char* kVideoRotation;
-  static const char* kRtpStreamId;
+  static const char* kAudioLevel;
+  static const char* kTransportSequenceNumber;
   std::string name;
   int id;
 };
@@ -73,18 +84,6 @@ struct VideoStream {
 
   int max_qp;
 
-  char rid[kRIDSize+1];
-
-  const std::string Rid() const {
-    return std::string(rid);
-  }
-
-  void SetRid(const std::string& aRid) {
-    static_assert(sizeof(rid) > kRIDSize,
-      "mRid must be large enought to hold a RID + null termination");
-    strncpy(&rid[0], aRid.c_str(), std::min((size_t)kRIDSize, aRid.length()));
-    rid[kRIDSize] = 0;
-  }
   
   
   
@@ -99,9 +98,9 @@ struct VideoStream {
 };
 
 struct VideoEncoderConfig {
-  enum ContentType {
+  enum class ContentType {
     kRealtimeVideo,
-    kScreenshare,
+    kScreen,
   };
 
   VideoEncoderConfig();
@@ -109,6 +108,7 @@ struct VideoEncoderConfig {
   std::string ToString() const;
 
   std::vector<VideoStream> streams;
+  std::vector<SpatialLayer> spatial_layers;
   ContentType content_type;
   void* encoder_specific_settings;
 
@@ -117,6 +117,35 @@ struct VideoEncoderConfig {
   
   
   int min_transmit_bitrate_bps;
+};
+
+
+
+
+
+
+
+
+struct NetEqCapacityConfig {
+  NetEqCapacityConfig() : enabled(false), capacity(0) {}
+  explicit NetEqCapacityConfig(int value) : enabled(true), capacity(value) {}
+  static const ConfigOptionID identifier = ConfigOptionID::kNetEqCapacityConfig;
+  bool enabled;
+  int capacity;
+};
+
+struct NetEqFastAccelerate {
+  NetEqFastAccelerate() : enabled(false) {}
+  explicit NetEqFastAccelerate(bool value) : enabled(value) {}
+  static const ConfigOptionID identifier = ConfigOptionID::kNetEqFastAccelerate;
+  bool enabled;
+};
+
+struct VoicePacing {
+  VoicePacing() : enabled(false) {}
+  explicit VoicePacing(bool value) : enabled(value) {}
+  static const ConfigOptionID identifier = ConfigOptionID::kVoicePacing;
+  bool enabled;
 };
 
 }  

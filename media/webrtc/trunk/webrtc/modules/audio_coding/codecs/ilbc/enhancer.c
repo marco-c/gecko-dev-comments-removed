@@ -29,11 +29,11 @@
 void WebRtcIlbcfix_Enhancer(
     int16_t *odata,   
     int16_t *idata,   
-    int16_t idatal,   
-    int16_t centerStartPos, 
-    int16_t *period,   
-    int16_t *plocs,   
-    int16_t periodl   
+    size_t idatal,   
+    size_t centerStartPos, 
+    size_t *period,   
+    const size_t *plocs,   
+    size_t periodl   
                             ){
   
   int16_t surround[ENH_BLOCKL];
@@ -47,5 +47,5 @@ void WebRtcIlbcfix_Enhancer(
 
   
 
-  WebRtcIlbcfix_Smooth(odata, idata+centerStartPos, surround);
+  WebRtcIlbcfix_Smooth(odata, idata + centerStartPos, surround);
 }

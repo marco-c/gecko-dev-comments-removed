@@ -16,7 +16,7 @@
 #include <cstdio>
 #include <cstdlib>
 
-#if defined(__GLIBC__) && !defined(__UCLIBC__)
+#if defined(__GLIBCXX__) && !defined(__UCLIBC__)
 #include <cxxabi.h>
 #include <execinfo.h>
 #endif
@@ -55,7 +55,7 @@ void PrintError(const char* format, ...) {
 
 
 void DumpBacktrace() {
-#if defined(__GLIBC__) && !defined(__UCLIBC__)
+#if defined(__GLIBCXX__) && !defined(__UCLIBC__)
   void* trace[100];
   int size = backtrace(trace, sizeof(trace) / sizeof(*trace));
   char** symbols = backtrace_symbols(trace, size);
@@ -110,9 +110,6 @@ void FatalMessage::Init(const char* file, int line) {
 }
 
 
-#ifndef WEBRTC_CHROMIUM_BUILD
-
-
 #if !defined(COMPILER_MSVC)
 
 template std::string* MakeCheckOpString<int, int>(
@@ -126,7 +123,5 @@ template std::string* MakeCheckOpString<unsigned int, unsigned long>(
 template std::string* MakeCheckOpString<std::string, std::string>(
     const std::string&, const std::string&, const char* name);
 #endif
-
-#endif  
 
 }  

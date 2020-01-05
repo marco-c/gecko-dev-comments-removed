@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+#include "webrtc/modules/rtp_rtcp/source/rtp_format_h264.h"
+
+namespace webrtc {
+void FuzzOneInput(const uint8_t* data, size_t size) {
+  RtpDepacketizerH264 depacketizer;
+  RtpDepacketizer::ParsedPayload parsed_payload;
+  depacketizer.Parse(&parsed_payload, data, size);
+}
+}  

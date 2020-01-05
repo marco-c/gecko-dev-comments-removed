@@ -16,82 +16,78 @@
 
 namespace webrtc {
 
-class VoEFileImpl : public VoEFile
-{
-public:
-    
+class VoEFileImpl : public VoEFile {
+ public:
+  
 
-    virtual int StartPlayingFileLocally(
-        int channel,
-        const char fileNameUTF8[1024],
-        bool loop = false,
-        FileFormats format = kFileFormatPcm16kHzFile,
-        float volumeScaling = 1.0,
-        int startPointMs = 0,
-        int stopPointMs = 0);
+  int StartPlayingFileLocally(int channel,
+                              const char fileNameUTF8[1024],
+                              bool loop = false,
+                              FileFormats format = kFileFormatPcm16kHzFile,
+                              float volumeScaling = 1.0,
+                              int startPointMs = 0,
+                              int stopPointMs = 0) override;
 
-    virtual int StartPlayingFileLocally(
-        int channel,
-        InStream* stream,
-        FileFormats format = kFileFormatPcm16kHzFile,
-        float volumeScaling = 1.0,
-        int startPointMs = 0, int stopPointMs = 0);
+  int StartPlayingFileLocally(int channel,
+                              InStream* stream,
+                              FileFormats format = kFileFormatPcm16kHzFile,
+                              float volumeScaling = 1.0,
+                              int startPointMs = 0,
+                              int stopPointMs = 0) override;
 
-    virtual int StopPlayingFileLocally(int channel);
+  int StopPlayingFileLocally(int channel) override;
 
-    virtual int IsPlayingFileLocally(int channel);
+  int IsPlayingFileLocally(int channel) override;
 
-    
+  
 
-    virtual int StartPlayingFileAsMicrophone(
-        int channel,
-        const char fileNameUTF8[1024],
-        bool loop = false ,
-        bool mixWithMicrophone = false,
-        FileFormats format = kFileFormatPcm16kHzFile,
-        float volumeScaling = 1.0);
+  int StartPlayingFileAsMicrophone(int channel,
+                                   const char fileNameUTF8[1024],
+                                   bool loop = false,
+                                   bool mixWithMicrophone = false,
+                                   FileFormats format = kFileFormatPcm16kHzFile,
+                                   float volumeScaling = 1.0) override;
 
-    virtual int StartPlayingFileAsMicrophone(
-        int channel,
-        InStream* stream,
-        bool mixWithMicrophone = false,
-        FileFormats format = kFileFormatPcm16kHzFile,
-        float volumeScaling = 1.0);
+  int StartPlayingFileAsMicrophone(int channel,
+                                   InStream* stream,
+                                   bool mixWithMicrophone = false,
+                                   FileFormats format = kFileFormatPcm16kHzFile,
+                                   float volumeScaling = 1.0) override;
 
-    virtual int StopPlayingFileAsMicrophone(int channel);
+  int StopPlayingFileAsMicrophone(int channel) override;
 
-    virtual int IsPlayingFileAsMicrophone(int channel);
+  int IsPlayingFileAsMicrophone(int channel) override;
 
-    
+  
 
-    virtual int StartRecordingPlayout(int channel,
-                                      const char* fileNameUTF8,
-                                      CodecInst* compression = NULL,
-                                      int maxSizeBytes = -1);
+  int StartRecordingPlayout(int channel,
+                            const char* fileNameUTF8,
+                            CodecInst* compression = NULL,
+                            int maxSizeBytes = -1) override;
 
-    virtual int StartRecordingPlayout(int channel,
-                                      OutStream* stream,
-                                      CodecInst* compression = NULL);
+  int StartRecordingPlayout(int channel,
+                            OutStream* stream,
+                            CodecInst* compression = NULL) override;
 
-    virtual int StopRecordingPlayout(int channel);
+  int StopRecordingPlayout(int channel) override;
 
-    
+  
 
-    virtual int StartRecordingMicrophone(const char* fileNameUTF8,
-                                         CodecInst* compression = NULL,
-                                         int maxSizeBytes = -1);
+  int StartRecordingMicrophone(const char* fileNameUTF8,
+                               CodecInst* compression = NULL,
+                               int maxSizeBytes = -1) override;
 
-    virtual int StartRecordingMicrophone(OutStream* stream,
-                                         CodecInst* compression = NULL);
+  int StartRecordingMicrophone(OutStream* stream,
+                               CodecInst* compression = NULL) override;
 
-    virtual int StopRecordingMicrophone();
+  int StopRecordingMicrophone() override;
 
-protected:
-    VoEFileImpl(voe::SharedData* shared);
-    virtual ~VoEFileImpl();
+ protected:
+  VoEFileImpl(voe::SharedData* shared);
+  ~VoEFileImpl() override;
 
-private:
-    voe::SharedData* _shared;
+ private:
+  voe::SharedData* _shared;
 };
 
 }  

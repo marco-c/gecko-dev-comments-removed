@@ -20,6 +20,12 @@ namespace test {
 
 int LastHistogramSample(const std::string& name);
 
+
+int NumHistogramSamples(const std::string& name);
+
+
+void ClearHistograms();
+
 }  
 }  
 

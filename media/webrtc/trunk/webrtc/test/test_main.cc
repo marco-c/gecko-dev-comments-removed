@@ -10,6 +10,7 @@
 
 #include "gflags/gflags.h"
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/base/logging.h"
 #include "webrtc/test/field_trial.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
@@ -20,6 +21,11 @@ DEFINE_string(force_fieldtrials, "",
 
 int main(int argc, char* argv[]) {
   ::testing::InitGoogleTest(&argc, argv);
+
+  
+  
+  if (rtc::LogMessage::GetLogToDebug() > rtc::LS_INFO)
+    rtc::LogMessage::LogToDebug(rtc::LS_INFO);
 
   
   

@@ -160,10 +160,15 @@ class SessionDescription {
   
   void RemoveGroupByName(const std::string& name);
 
+  
+  void set_msid_supported(bool supported) { msid_supported_ = supported; }
+  bool msid_supported() const { return msid_supported_; }
+
  private:
   ContentInfos contents_;
   TransportInfos transport_infos_;
   ContentGroups content_groups_;
+  bool msid_supported_ = true;
 };
 
 

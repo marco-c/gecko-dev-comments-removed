@@ -88,7 +88,7 @@ TEST_F(DelayManagerTest, VectorInitialization) {
   const DelayManager::IATVector& vec = dm_->iat_vector();
   double sum = 0.0;
   for (size_t i = 0; i < vec.size(); i++) {
-    EXPECT_NEAR(ldexp(pow(0.5, static_cast<int>(i + 1)), 30), vec[i], 65536);
+    EXPECT_NEAR(ldexp(pow(0.5, static_cast<int>(i + 1)), 30), vec[i], 65537);
     
     sum += vec[i];
   }

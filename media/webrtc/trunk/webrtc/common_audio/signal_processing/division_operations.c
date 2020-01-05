@@ -106,8 +106,7 @@ int32_t WebRtcSpl_DivW32HiLow(int32_t num, int16_t den_hi, int16_t den_low)
     
 
     
-    tmpW32 = (WEBRTC_SPL_MUL_16_16(den_hi, approx) << 1)
-            + ((WEBRTC_SPL_MUL_16_16(den_low, approx) >> 15) << 1);
+    tmpW32 = (den_hi * approx << 1) + ((den_low * approx >> 15) << 1);
     
 
     tmpW32 = (int32_t)0x7fffffffL - tmpW32; 
@@ -117,8 +116,7 @@ int32_t WebRtcSpl_DivW32HiLow(int32_t num, int16_t den_hi, int16_t den_low)
     tmp_low = (int16_t)((tmpW32 - ((int32_t)tmp_hi << 16)) >> 1);
 
     
-    tmpW32 = ((WEBRTC_SPL_MUL_16_16(tmp_hi, approx) + (WEBRTC_SPL_MUL_16_16(tmp_low, approx)
-            >> 15)) << 1);
+    tmpW32 = (tmp_hi * approx + (tmp_low * approx >> 15)) << 1;
 
     
     tmp_hi = (int16_t)(tmpW32 >> 16);
@@ -130,8 +128,8 @@ int32_t WebRtcSpl_DivW32HiLow(int32_t num, int16_t den_hi, int16_t den_low)
 
     
 
-    tmpW32 = (WEBRTC_SPL_MUL_16_16(num_hi, tmp_hi) + (WEBRTC_SPL_MUL_16_16(num_hi, tmp_low)
-            >> 15) + (WEBRTC_SPL_MUL_16_16(num_low, tmp_hi) >> 15));
+    tmpW32 = num_hi * tmp_hi + (num_hi * tmp_low >> 15) +
+        (num_low * tmp_hi >> 15);
 
     
     tmpW32 = WEBRTC_SPL_LSHIFT_W32(tmpW32, 3);

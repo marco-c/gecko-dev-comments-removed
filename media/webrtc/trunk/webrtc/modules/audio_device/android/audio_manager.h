@@ -11,58 +11,18 @@
 #ifndef WEBRTC_MODULES_AUDIO_DEVICE_ANDROID_AUDIO_MANAGER_H_
 #define WEBRTC_MODULES_AUDIO_DEVICE_ANDROID_AUDIO_MANAGER_H_
 
-#if !defined(MOZ_WIDGET_GONK)
 #include <jni.h>
-#endif
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/modules/audio_device/android/audio_common.h"
+#include "webrtc/modules/audio_device/audio_device_config.h"
 #include "webrtc/modules/audio_device/include/audio_device_defines.h"
 #include "webrtc/modules/audio_device/audio_device_generic.h"
-#if !defined(MOZ_WIDGET_GONK)
-#include "webrtc/modules/utility/interface/helpers_android.h"
-#endif
+#include "webrtc/modules/utility/include/helpers_android.h"
+#include "webrtc/modules/utility/include/jvm_android.h"
 
 namespace webrtc {
-
-class AudioParameters {
- public:
-  enum { kBitsPerSample = 16 };
-  AudioParameters()
-      : sample_rate_(0),
-        channels_(0),
-        frames_per_buffer_(0),
-        bits_per_sample_(kBitsPerSample) {}
-  AudioParameters(int sample_rate, int channels)
-      : sample_rate_(sample_rate),
-        channels_(channels),
-        frames_per_buffer_(sample_rate / 100),
-        bits_per_sample_(kBitsPerSample) {}
-  void reset(int sample_rate, int channels) {
-    sample_rate_ = sample_rate;
-    channels_ = channels;
-    
-    frames_per_buffer_ = (sample_rate / 100);
-  }
-  int sample_rate() const { return sample_rate_; }
-  int channels() const { return channels_; }
-  int frames_per_buffer() const { return frames_per_buffer_; }
-  bool is_valid() const {
-    return ((sample_rate_ > 0) && (channels_ > 0) && (frames_per_buffer_ > 0));
-  }
-  int GetBytesPerFrame() const { return channels_ * bits_per_sample_ / 8; }
-  int GetBytesPerBuffer() const {
-    return frames_per_buffer_ * GetBytesPerFrame();
-  }
-
- private:
-  int sample_rate_;
-  int channels_;
-  int frames_per_buffer_;
-  const int bits_per_sample_;
-};
-
-
 
 
 
@@ -76,58 +36,124 @@ class AudioManager {
   
   
   
-  
-  static void SetAndroidAudioDeviceObjects(void* jvm, void* context);
-  
-  
-  static void ClearAndroidAudioDeviceObjects();
+  class JavaAudioManager {
+   public:
+    JavaAudioManager(NativeRegistration* native_registration,
+                     rtc::scoped_ptr<GlobalRef> audio_manager);
+    ~JavaAudioManager();
+
+    bool Init();
+    void Close();
+    bool IsCommunicationModeEnabled();
+    bool IsDeviceBlacklistedForOpenSLESUsage();
+
+   private:
+    rtc::scoped_ptr<GlobalRef> audio_manager_;
+    jmethodID init_;
+    jmethodID dispose_;
+    jmethodID is_communication_mode_enabled_;
+    jmethodID is_device_blacklisted_for_open_sles_usage_;
+  };
 
   AudioManager();
   ~AudioManager();
 
   
   
-  
+  void SetActiveAudioLayer(AudioDeviceModule::AudioLayer audio_layer);
+
   
   bool Init();
   
   bool Close();
 
   
-  AudioParameters GetPlayoutAudioParameters() const;
-  AudioParameters GetRecordAudioParameters() const;
+  bool IsCommunicationModeEnabled() const;
 
-  bool initialized() const { return initialized_; }
+  
+  const AudioParameters& GetPlayoutAudioParameters();
+  const AudioParameters& GetRecordAudioParameters();
+
+  
+  
+  
+  
+  
+  bool IsAcousticEchoCancelerSupported() const;
+  bool IsAutomaticGainControlSupported() const;
+  bool IsNoiseSuppressorSupported() const;
+
+  
+  
+  bool IsLowLatencyPlayoutSupported() const;
+
+  
+  
+  
+  
+  int GetDelayEstimateInMilliseconds() const;
 
  private:
-#if !defined(MOZ_WIDGET_GONK)
   
   
   
-  static void JNICALL CacheAudioParameters(JNIEnv* env, jobject obj,
-      jint sample_rate, jint channels, jlong nativeAudioManager);
-  void OnCacheAudioParameters(JNIEnv* env, jint sample_rate, jint channels);
-#endif
-  
-  
-  
-  bool HasDeviceObjects();
-
-  
-  void CreateJavaInstance();
+  static void JNICALL CacheAudioParameters(JNIEnv* env,
+                                           jobject obj,
+                                           jint sample_rate,
+                                           jint channels,
+                                           jboolean hardware_aec,
+                                           jboolean hardware_agc,
+                                           jboolean hardware_ns,
+                                           jboolean low_latency_output,
+                                           jint output_buffer_size,
+                                           jint input_buffer_size,
+                                           jlong native_audio_manager);
+  void OnCacheAudioParameters(JNIEnv* env,
+                              jint sample_rate,
+                              jint channels,
+                              jboolean hardware_aec,
+                              jboolean hardware_agc,
+                              jboolean hardware_ns,
+                              jboolean low_latency_output,
+                              jint output_buffer_size,
+                              jint input_buffer_size);
 
   
   
   
   rtc::ThreadChecker thread_checker_;
 
-#if !defined(MOZ_WIDGET_GONK)
   
-  jobject j_audio_manager_;
-#endif
+  
+  AttachCurrentThreadIfNeeded attach_thread_if_needed_;
+
+  
+  rtc::scoped_ptr<JNIEnvironment> j_environment_;
+
+  
+  rtc::scoped_ptr<NativeRegistration> j_native_registration_;
+
+  
+  rtc::scoped_ptr<AudioManager::JavaAudioManager> j_audio_manager_;
+
+  AudioDeviceModule::AudioLayer audio_layer_;
 
   
   bool initialized_;
+
+  
+  bool hardware_aec_;
+  
+  bool hardware_agc_;
+  
+  bool hardware_ns_;
+
+  
+  bool low_latency_playout_;
+
+  
+  
+  int delay_estimate_in_milliseconds_;
 
   
   

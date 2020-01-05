@@ -26,10 +26,10 @@ void WebRtcIlbcfix_CbSearch(
     int16_t *gain_index, 
     int16_t *intarget, 
     int16_t *decResidual,
-    int16_t lMem,  
-    int16_t lTarget,  
+    size_t lMem,  
+    size_t lTarget,  
     int16_t *weightDenum,
-    int16_t block  
+    size_t block  
                             );
 
 #endif

@@ -11,11 +11,12 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ_TOOLS_NETEQ_QUALITY_TEST_H_
 #define WEBRTC_MODULES_AUDIO_CODING_NETEQ_TOOLS_NETEQ_QUALITY_TEST_H_
 
+#include <fstream>
 #include <gflags/gflags.h>
-#include <string>
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/scoped_ptr.h"
-#include "webrtc/modules/audio_coding/neteq/interface/neteq.h"
+#include "webrtc/modules/audio_coding/neteq/include/neteq.h"
+#include "webrtc/modules/audio_coding/neteq/tools/audio_sink.h"
 #include "webrtc/modules/audio_coding/neteq/tools/input_audio_file.h"
 #include "webrtc/modules/audio_coding/neteq/tools/rtp_generator.h"
 #include "webrtc/typedefs.h"
@@ -65,20 +66,18 @@ class NetEqQualityTest : public ::testing::Test {
   NetEqQualityTest(int block_duration_ms,
                    int in_sampling_khz,
                    int out_sampling_khz,
-                   enum NetEqDecoder decoder_type,
-                   int channels,
-                   std::string in_filename,
-                   std::string out_filename);
+                   NetEqDecoder decoder_type);
+  virtual ~NetEqQualityTest();
+
   void SetUp() override;
-  void TearDown() override;
 
   
   
   
   
   
-  virtual int EncodeBlock(int16_t* in_data, int block_size_samples,
-                          uint8_t* payload, int max_bytes) = 0;
+  virtual int EncodeBlock(int16_t* in_data, size_t block_size_samples,
+                          uint8_t* payload, size_t max_bytes) = 0;
 
   
   
@@ -94,9 +93,13 @@ class NetEqQualityTest : public ::testing::Test {
   int Transmit();
 
   
+  void Simulate();
+
   
-  
-  void Simulate(int end_time_ms);
+  std::ofstream& Log();
+
+  NetEqDecoder decoder_type_;
+  const size_t channels_;
 
  private:
   int decoded_time_ms_;
@@ -106,24 +109,19 @@ class NetEqQualityTest : public ::testing::Test {
   const int block_duration_ms_;
   const int in_sampling_khz_;
   const int out_sampling_khz_;
-  const enum NetEqDecoder decoder_type_;
-  const int channels_;
-  const std::string in_filename_;
-  const std::string out_filename_;
-  const std::string log_filename_;
 
   
-  const int in_size_samples_;
+  const size_t in_size_samples_;
 
   
-  const int out_size_samples_;
+  const size_t out_size_samples_;
 
   size_t payload_size_bytes_;
-  int max_payload_bytes_;
+  size_t max_payload_bytes_;
 
   rtc::scoped_ptr<InputAudioFile> in_file_;
-  FILE* out_file_;
-  FILE* log_file_;
+  rtc::scoped_ptr<AudioSink> output_;
+  std::ofstream log_file_;
 
   rtc::scoped_ptr<RtpGenerator> rtp_generator_;
   rtc::scoped_ptr<NetEq> neteq_;

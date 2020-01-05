@@ -8,7 +8,7 @@
 
 
 
-#include "webrtc/modules/audio_processing/aecm/include/echo_control_mobile.h"
+#include "webrtc/modules/audio_processing/aecm/echo_control_mobile.h"
 
 #ifdef AEC_DEBUG
 #include <stdio.h>

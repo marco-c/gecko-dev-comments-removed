@@ -22,10 +22,6 @@
 
 
 
-
-
-
-
 #ifndef WEBRTC_P2P_BASE_TRANSPORT_H_
 #define WEBRTC_P2P_BASE_TRANSPORT_H_
 
@@ -36,14 +32,10 @@
 #include "webrtc/p2p/base/constants.h"
 #include "webrtc/p2p/base/sessiondescription.h"
 #include "webrtc/p2p/base/transportinfo.h"
-#include "webrtc/base/criticalsection.h"
 #include "webrtc/base/messagequeue.h"
+#include "webrtc/base/rtccertificate.h"
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/sslstreamadapter.h"
-
-namespace rtc {
-class Thread;
-}
 
 namespace cricket {
 
@@ -55,10 +47,35 @@ typedef std::vector<Candidate> Candidates;
 
 
 
-enum TransportState {
-  TRANSPORT_STATE_NONE = 0,
-  TRANSPORT_STATE_SOME,
-  TRANSPORT_STATE_ALL
+
+enum IceConnectionState {
+  kIceConnectionConnecting = 0,
+  kIceConnectionFailed,
+  kIceConnectionConnected,  
+                            
+  kIceConnectionCompleted,
+};
+
+enum DtlsTransportState {
+  
+  DTLS_TRANSPORT_NEW = 0,
+  
+  DTLS_TRANSPORT_CONNECTING,
+  
+  DTLS_TRANSPORT_CONNECTED,
+  
+  DTLS_TRANSPORT_CLOSED,
+  
+  DTLS_TRANSPORT_FAILED,
+};
+
+
+
+
+enum IceGatheringState {
+  kIceGatheringNew = 0,
+  kIceGatheringGathering,
+  kIceGatheringComplete,
 };
 
 
@@ -67,7 +84,7 @@ struct ConnectionInfo {
   ConnectionInfo()
       : best_connection(false),
         writable(false),
-        readable(false),
+        receiving(false),
         timeout(false),
         new_connection(false),
         rtt(0),
@@ -81,7 +98,7 @@ struct ConnectionInfo {
 
   bool best_connection;        
   bool writable;               
-  bool readable;               
+  bool receiving;              
   bool timeout;                
   bool new_connection;         
   size_t rtt;                  
@@ -104,10 +121,10 @@ typedef std::vector<ConnectionInfo> ConnectionInfos;
 
 
 struct TransportChannelStats {
-  int component;
+  int component = 0;
   ConnectionInfos connection_infos;
-  std::string srtp_cipher;
-  std::string ssl_cipher;
+  int srtp_crypto_suite = rtc::SRTP_INVALID_CRYPTO_SUITE;
+  int ssl_cipher_suite = rtc::TLS_NULL_WITH_NULL_NULL;
 };
 
 
@@ -116,8 +133,20 @@ typedef std::vector<TransportChannelStats> TransportChannelStatsList;
 
 
 struct TransportStats {
-  std::string content_name;
+  std::string transport_name;
   TransportChannelStatsList channel_stats;
+};
+
+
+struct IceConfig {
+  
+  
+  int receiving_timeout_ms = -1;
+  
+  
+  int backup_connection_ping_interval = -1;
+  
+  bool gather_continually = false;
 };
 
 bool BadTransportDescription(const std::string& desc, std::string* err_desc);
@@ -127,55 +156,20 @@ bool IceCredentialsChanged(const std::string& old_ufrag,
                            const std::string& new_ufrag,
                            const std::string& new_pwd);
 
-class Transport : public rtc::MessageHandler,
-                  public sigslot::has_slots<> {
+class Transport : public sigslot::has_slots<> {
  public:
-  Transport(rtc::Thread* signaling_thread,
-            rtc::Thread* worker_thread,
-            const std::string& content_name,
-            const std::string& type,
-            PortAllocator* allocator);
+  Transport(const std::string& name, PortAllocator* allocator);
   virtual ~Transport();
 
   
-  rtc::Thread* signaling_thread() { return signaling_thread_; }
-  
-  rtc::Thread* worker_thread() { return worker_thread_; }
-
-  
-  const std::string& content_name() const { return content_name_; }
-  
-  const std::string& type() const { return type_; }
+  const std::string& name() const { return name_; }
 
   
   PortAllocator* port_allocator() { return allocator_; }
 
-  
-  
-  
-  
-  
-  bool readable() const { return any_channels_readable(); }
-  bool writable() const { return any_channels_writable(); }
-  bool was_writable() const { return was_writable_; }
-  bool any_channels_readable() const {
-    return (readable_ == TRANSPORT_STATE_SOME ||
-            readable_ == TRANSPORT_STATE_ALL);
+  bool ready_for_remote_candidates() const {
+    return local_description_set_ && remote_description_set_;
   }
-  bool any_channels_writable() const {
-    return (writable_ == TRANSPORT_STATE_SOME ||
-            writable_ == TRANSPORT_STATE_ALL);
-  }
-  bool all_channels_readable() const {
-    return (readable_ == TRANSPORT_STATE_ALL);
-  }
-  bool all_channels_writable() const {
-    return (writable_ == TRANSPORT_STATE_ALL);
-  }
-  sigslot::signal1<Transport*> SignalReadableState;
-  sigslot::signal1<Transport*> SignalWritableState;
-  sigslot::signal1<Transport*> SignalCompleted;
-  sigslot::signal1<Transport*> SignalFailed;
 
   
   bool connect_requested() const { return connect_requested_; }
@@ -183,33 +177,36 @@ class Transport : public rtc::MessageHandler,
   void SetIceRole(IceRole role);
   IceRole ice_role() const { return ice_role_; }
 
-  void SetIceTiebreaker(uint64 IceTiebreaker) { tiebreaker_ = IceTiebreaker; }
-  uint64 IceTiebreaker() { return tiebreaker_; }
+  void SetIceTiebreaker(uint64_t IceTiebreaker) { tiebreaker_ = IceTiebreaker; }
+  uint64_t IceTiebreaker() { return tiebreaker_; }
+
+  void SetIceConfig(const IceConfig& config);
 
   
-  void SetIdentity(rtc::SSLIdentity* identity);
+  virtual void SetLocalCertificate(
+      const rtc::scoped_refptr<rtc::RTCCertificate>& certificate) {}
 
   
-  bool GetIdentity(rtc::SSLIdentity** identity);
+  virtual bool GetLocalCertificate(
+      rtc::scoped_refptr<rtc::RTCCertificate>* certificate) {
+    return false;
+  }
 
   
-  bool GetRemoteCertificate(rtc::SSLCertificate** cert);
-
-  TransportProtocol protocol() const { return protocol_; }
+  bool GetRemoteSSLCertificate(rtc::SSLCertificate** cert);
 
   
   TransportChannelImpl* CreateChannel(int component);
-  
-  
+
   TransportChannelImpl* GetChannel(int component);
-  
+
   bool HasChannel(int component) {
     return (NULL != GetChannel(component));
   }
   bool HasChannels();
+
   void DestroyChannel(int component);
 
-  
   
   bool SetLocalTransportDescription(const TransportDescription& description,
                                     ContentAction action,
@@ -221,9 +218,12 @@ class Transport : public rtc::MessageHandler,
                                      std::string* error_desc);
 
   
-  
   void ConnectChannels();
-  sigslot::signal1<Transport*> SignalConnecting;
+
+  
+  
+  
+  void MaybeStartGathering();
 
   
   
@@ -235,43 +235,26 @@ class Transport : public rtc::MessageHandler,
   bool GetStats(TransportStats* stats);
 
   
-  
-  
-  
-  
-  sigslot::signal1<Transport*> SignalRequestSignaling;
-  void OnSignalingReady();
-
-  
-  sigslot::signal2<Transport*,
-                   const std::vector<Candidate>&> SignalCandidatesReady;
-
-  sigslot::signal1<Transport*> SignalCandidatesAllocationDone;
-  void OnRemoteCandidates(const std::vector<Candidate>& candidates);
+  bool AddRemoteCandidates(const std::vector<Candidate>& candidates,
+                           std::string* error);
 
   
   
   virtual bool VerifyCandidate(const Candidate& candidate,
                                std::string* error);
 
-  
-  sigslot::signal3<Transport*,
-                   int,  
-                   const Candidate&> SignalRouteChange;
+  virtual bool GetSslRole(rtc::SSLRole* ssl_role) const { return false; }
 
   
-  sigslot::signal0<> SignalRoleConflict;
-
-  virtual bool GetSslRole(rtc::SSLRole* ssl_role) const;
+  virtual bool SetSslMaxProtocolVersion(rtc::SSLProtocolVersion version) {
+    return false;
+  }
 
  protected:
   
   
   virtual TransportChannelImpl* CreateTransportChannel(int component) = 0;
   virtual void DestroyTransportChannel(TransportChannelImpl* channel) = 0;
-
-  
-  virtual void OnTransportSignalingReady() {}
 
   
   
@@ -285,167 +268,58 @@ class Transport : public rtc::MessageHandler,
     return remote_description_.get();
   }
 
-  virtual void SetIdentity_w(rtc::SSLIdentity* identity) {}
-
-  virtual bool GetIdentity_w(rtc::SSLIdentity** identity) {
-    return false;
-  }
-
   
   
   
-  virtual bool ApplyLocalTransportDescription_w(TransportChannelImpl* channel,
-                                                std::string* error_desc);
+  virtual bool ApplyLocalTransportDescription(TransportChannelImpl* channel,
+                                              std::string* error_desc);
 
   
   
-  virtual bool ApplyRemoteTransportDescription_w(TransportChannelImpl* ch,
-                                                 std::string* error_desc);
-
-  
-  
-  
-  
-  
-  virtual bool NegotiateTransportDescription_w(ContentAction local_role,
+  virtual bool ApplyRemoteTransportDescription(TransportChannelImpl* ch,
                                                std::string* error_desc);
 
   
   
   
-  virtual bool ApplyNegotiatedTransportDescription_w(
-      TransportChannelImpl* channel, std::string* error_desc);
+  
+  
+  virtual bool NegotiateTransportDescription(ContentAction local_role,
+                                             std::string* error_desc);
 
-  virtual bool GetSslRole_w(rtc::SSLRole* ssl_role) const {
-    return false;
-  }
+  
+  
+  
+  virtual bool ApplyNegotiatedTransportDescription(
+      TransportChannelImpl* channel,
+      std::string* error_desc);
 
  private:
-  struct ChannelMapEntry {
-    ChannelMapEntry() : impl_(NULL), candidates_allocated_(false), ref_(0) {}
-    explicit ChannelMapEntry(TransportChannelImpl *impl)
-        : impl_(impl),
-          candidates_allocated_(false),
-          ref_(0) {
-    }
-
-    void AddRef() { ++ref_; }
-    void DecRef() {
-      ASSERT(ref_ > 0);
-      --ref_;
-    }
-    int ref() const { return ref_; }
-
-    TransportChannelImpl* get() const { return impl_; }
-    TransportChannelImpl* operator->() const  { return impl_; }
-    void set_candidates_allocated(bool status) {
-      candidates_allocated_ = status;
-    }
-    bool candidates_allocated() const { return candidates_allocated_; }
-
-  private:
-    TransportChannelImpl *impl_;
-    bool candidates_allocated_;
-    int ref_;
-  };
-
   
-  typedef std::map<int, ChannelMapEntry> ChannelMap;
-
-  
-  void OnChannelReadableState(TransportChannel* channel);
-  void OnChannelWritableState(TransportChannel* channel);
-
-  
-  void OnChannelRequestSignaling(TransportChannelImpl* channel);
-
-  
-  void OnRemoteCandidate(const Candidate& candidate);
-  
-  void OnChannelCandidateReady(TransportChannelImpl* channel,
-                               const Candidate& candidate);
-  void OnChannelRouteChange(TransportChannel* channel,
-                            const Candidate& remote_candidate);
-  void OnChannelCandidatesAllocationDone(TransportChannelImpl* channel);
-  
-  void OnRoleConflict(TransportChannelImpl* channel);
-  
-  void OnChannelConnectionRemoved(TransportChannelImpl* channel);
-
-  
-  void OnMessage(rtc::Message* msg);
-
-  
-  
-  
-  TransportChannelImpl* CreateChannel_w(int component);
-  void DestroyChannel_w(int component);
-  void ConnectChannels_w();
-  void ResetChannels_w();
-  void DestroyAllChannels_w();
-  void OnRemoteCandidate_w(const Candidate& candidate);
-  void OnChannelReadableState_s();
-  void OnChannelWritableState_s();
-  void OnChannelRequestSignaling_s();
-  void OnConnecting_s();
-  void OnChannelRouteChange_s(const TransportChannel* channel,
-                              const Candidate& remote_candidate);
-  void OnChannelCandidatesAllocationDone_s();
+  typedef std::map<int, TransportChannelImpl*> ChannelMap;
 
   
   typedef void (TransportChannelImpl::* TransportChannelFunc)();
-  void CallChannels_w(TransportChannelFunc func);
+  void CallChannels(TransportChannelFunc func);
 
-  
-  TransportState GetTransportState_s(bool read);
-
-  void OnChannelCandidateReady_s();
-
-  void SetIceRole_w(IceRole role);
-  void SetRemoteIceMode_w(IceMode mode);
-  bool SetLocalTransportDescription_w(const TransportDescription& desc,
-                                      ContentAction action,
-                                      std::string* error_desc);
-  bool SetRemoteTransportDescription_w(const TransportDescription& desc,
-                                       ContentAction action,
-                                       std::string* error_desc);
-  bool GetStats_w(TransportStats* infos);
-  bool GetRemoteCertificate_w(rtc::SSLCertificate** cert);
-
-  
-  void MaybeCompleted_w();
-
-  rtc::Thread* const signaling_thread_;
-  rtc::Thread* const worker_thread_;
-  const std::string content_name_;
-  const std::string type_;
+  const std::string name_;
   PortAllocator* const allocator_;
-  bool destroyed_;
-  TransportState readable_;
-  TransportState writable_;
-  bool was_writable_;
-  bool connect_requested_;
-  IceRole ice_role_;
-  uint64 tiebreaker_;
-  TransportProtocol protocol_;
-  IceMode remote_ice_mode_;
+  bool channels_destroyed_ = false;
+  bool connect_requested_ = false;
+  IceRole ice_role_ = ICEROLE_UNKNOWN;
+  uint64_t tiebreaker_ = 0;
+  IceMode remote_ice_mode_ = ICEMODE_FULL;
+  IceConfig ice_config_;
   rtc::scoped_ptr<TransportDescription> local_description_;
   rtc::scoped_ptr<TransportDescription> remote_description_;
+  bool local_description_set_ = false;
+  bool remote_description_set_ = false;
 
-  
   ChannelMap channels_;
-  
-  
-  std::vector<Candidate> ready_candidates_;
-  
-  rtc::CriticalSection crit_;
 
-  DISALLOW_EVIL_CONSTRUCTORS(Transport);
+  RTC_DISALLOW_COPY_AND_ASSIGN(Transport);
 };
 
-
-TransportProtocol TransportProtocolFromDescription(
-    const TransportDescription* desc);
 
 }  
 

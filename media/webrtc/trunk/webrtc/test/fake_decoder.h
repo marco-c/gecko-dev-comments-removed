@@ -8,13 +8,13 @@
 
 
 
-#ifndef WEBRTC_VIDEO_ENGINE_TEST_COMMON_FAKE_DECODER_H_
-#define WEBRTC_VIDEO_ENGINE_TEST_COMMON_FAKE_DECODER_H_
+#ifndef WEBRTC_TEST_FAKE_DECODER_H_
+#define WEBRTC_TEST_FAKE_DECODER_H_
 
 #include <vector>
 
-#include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
-#include "webrtc/system_wrappers/interface/clock.h"
+#include "webrtc/modules/video_coding/include/video_codec_interface.h"
+#include "webrtc/system_wrappers/include/clock.h"
 
 namespace webrtc {
 namespace test {
@@ -39,9 +39,13 @@ class FakeDecoder : public VideoDecoder {
   int32_t Release() override;
   int32_t Reset() override;
 
+  const char* ImplementationName() const override;
+
+  static const char* kImplementationName;
+
  private:
   VideoCodec config_;
-  I420VideoFrame frame_;
+  VideoFrame frame_;
   DecodedImageCallback* callback_;
 };
 

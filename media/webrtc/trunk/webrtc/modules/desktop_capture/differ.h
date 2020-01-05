@@ -18,8 +18,6 @@
 
 namespace webrtc {
 
-typedef uint8_t DiffInfo;
-
 
 
 
@@ -40,7 +38,7 @@ class Differ {
 
   
   
-  void CalcDirtyRegion(const void* prev_buffer, const void* curr_buffer,
+  void CalcDirtyRegion(const uint8_t* prev_buffer, const uint8_t* curr_buffer,
                        DesktopRegion* region);
 
  private:
@@ -48,7 +46,7 @@ class Differ {
   friend class DifferTest;
 
   
-  void MarkDirtyBlocks(const void* prev_buffer, const void* curr_buffer);
+  void MarkDirtyBlocks(const uint8_t* prev_buffer, const uint8_t* curr_buffer);
 
   
   
@@ -59,10 +57,10 @@ class Differ {
   
   
   
-  DiffInfo DiffPartialBlock(const uint8_t* prev_buffer,
-                            const uint8_t* curr_buffer,
-                            int stride,
-                            int width, int height);
+  bool PartialBlocksEqual(const uint8_t* prev_buffer,
+                          const uint8_t* curr_buffer,
+                          int stride,
+                          int width, int height);
 
   
   int width_;
@@ -76,14 +74,14 @@ class Differ {
   int bytes_per_row_;
 
   
-  rtc::scoped_ptr<DiffInfo[]> diff_info_;
+  rtc::scoped_ptr<bool[]> diff_info_;
 
   
   int diff_info_width_;
   int diff_info_height_;
   int diff_info_size_;
 
-  DISALLOW_COPY_AND_ASSIGN(Differ);
+  RTC_DISALLOW_COPY_AND_ASSIGN(Differ);
 };
 
 }  

@@ -32,4 +32,3 @@ class VP8EncoderFactoryConfig {
 }  
 
 #endif  
-

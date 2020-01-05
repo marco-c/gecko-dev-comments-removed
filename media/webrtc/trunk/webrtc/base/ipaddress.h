@@ -62,7 +62,7 @@ class IPAddress {
     u_.ip6 = ip6;
   }
 
-  explicit IPAddress(uint32 ip_in_host_byte_order) : family_(AF_INET) {
+  explicit IPAddress(uint32_t ip_in_host_byte_order) : family_(AF_INET) {
     memset(&u_, 0, sizeof(u_));
     u_.ip4.s_addr = HostToNetwork32(ip_in_host_byte_order);
   }
@@ -107,9 +107,10 @@ class IPAddress {
   IPAddress AsIPv6Address() const;
 
   
-  uint32 v4AddressAsHostOrderInteger() const;
+  uint32_t v4AddressAsHostOrderInteger() const;
 
-  static void set_strip_sensitive(bool enable);
+  
+  bool IsNil() const;
 
  private:
   int family_;
@@ -117,8 +118,6 @@ class IPAddress {
     in_addr ip4;
     in6_addr ip6;
   } u_;
-
-  static bool strip_sensitive_;
 };
 
 
@@ -175,6 +174,9 @@ int IPAddressPrecedence(const IPAddress& ip);
 
 
 IPAddress TruncateIP(const IPAddress& ip, int length);
+
+IPAddress GetLoopbackIP(int family);
+IPAddress GetAnyIP(int family);
 
 
 

@@ -228,7 +228,7 @@ class StreamInterface : public MessageHandler {
   void OnMessage(Message* msg) override;
 
  private:
-  DISALLOW_EVIL_CONSTRUCTORS(StreamInterface);
+  RTC_DISALLOW_COPY_AND_ASSIGN(StreamInterface);
 };
 
 
@@ -305,7 +305,7 @@ class StreamAdapterInterface : public StreamInterface,
  private:
   StreamInterface* stream_;
   bool owned_;
-  DISALLOW_EVIL_CONSTRUCTORS(StreamAdapterInterface);
+  RTC_DISALLOW_COPY_AND_ASSIGN(StreamAdapterInterface);
 };
 
 
@@ -337,37 +337,7 @@ class StreamTap : public StreamAdapterInterface {
   scoped_ptr<StreamInterface> tap_;
   StreamResult tap_result_;
   int tap_error_;
-  DISALLOW_EVIL_CONSTRUCTORS(StreamTap);
-};
-
-
-
-
-
-
-
-
-
-class StreamSegment : public StreamAdapterInterface {
- public:
-  
-  
-  explicit StreamSegment(StreamInterface* stream);
-  explicit StreamSegment(StreamInterface* stream, size_t length);
-
-  
-  StreamResult Read(void* buffer,
-                    size_t buffer_len,
-                    size_t* read,
-                    int* error) override;
-  bool SetPosition(size_t position) override;
-  bool GetPosition(size_t* position) const override;
-  bool GetSize(size_t* size) const override;
-  bool GetAvailable(size_t* size) const override;
-
- private:
-  size_t start_, pos_, length_;
-  DISALLOW_EVIL_CONSTRUCTORS(StreamSegment);
+  RTC_DISALLOW_COPY_AND_ASSIGN(StreamTap);
 };
 
 
@@ -445,112 +415,8 @@ class FileStream : public StreamInterface {
   FILE* file_;
 
  private:
-  DISALLOW_EVIL_CONSTRUCTORS(FileStream);
+  RTC_DISALLOW_COPY_AND_ASSIGN(FileStream);
 };
-
-
-
-
-class CircularFileStream : public FileStream {
- public:
-  explicit CircularFileStream(size_t max_size);
-
-  bool Open(const std::string& filename, const char* mode, int* error) override;
-  StreamResult Read(void* buffer,
-                    size_t buffer_len,
-                    size_t* read,
-                    int* error) override;
-  StreamResult Write(const void* data,
-                     size_t data_len,
-                     size_t* written,
-                     int* error) override;
-
- private:
-  enum ReadSegment {
-    READ_MARKED,  
-    READ_MIDDLE,  
-    READ_LATEST,  
-                  
-  };
-
-  size_t max_write_size_;
-  size_t position_;
-  size_t marked_position_;
-  size_t last_write_position_;
-  ReadSegment read_segment_;
-  size_t read_segment_available_;
-};
-
-
-
-class AsyncWriteStream : public StreamInterface {
- public:
-  
-  AsyncWriteStream(StreamInterface* stream, rtc::Thread* write_thread);
-  ~AsyncWriteStream() override;
-
-  
-  StreamState GetState() const override;
-  
-  bool GetPosition(size_t* position) const override;
-  StreamResult Read(void* buffer,
-                    size_t buffer_len,
-                    size_t* read,
-                    int* error) override;
-  StreamResult Write(const void* data,
-                     size_t data_len,
-                     size_t* written,
-                     int* error) override;
-  void Close() override;
-  bool Flush() override;
-
- protected:
-  
-  void OnMessage(rtc::Message* pmsg) override;
-  virtual void ClearBufferAndWrite();
-
- private:
-  rtc::scoped_ptr<StreamInterface> stream_;
-  Thread* write_thread_;
-  StreamState state_;
-  Buffer buffer_;
-  mutable CriticalSection crit_stream_;
-  CriticalSection crit_buffer_;
-
-  DISALLOW_EVIL_CONSTRUCTORS(AsyncWriteStream);
-};
-
-
-#if defined(WEBRTC_POSIX) && !defined(__native_client__)
-
-
-
-class POpenStream : public FileStream {
- public:
-  POpenStream() : wait_status_(-1) {}
-  ~POpenStream() override;
-
-  bool Open(const std::string& subcommand,
-            const char* mode,
-            int* error) override;
-  
-  bool OpenShare(const std::string& subcommand,
-                 const char* mode,
-                 int shflag,
-                 int* error) override;
-
-  
-  
-  
-  int GetWaitStatus() const { return wait_status_; }
-
- protected:
-  void DoClose() override;
-
- private:
-  int wait_status_;
-};
-#endif  
 
 
 
@@ -592,7 +458,7 @@ class MemoryStreamBase : public StreamInterface {
   size_t seek_position_;
 
  private:
-  DISALLOW_EVIL_CONSTRUCTORS(MemoryStreamBase);
+  RTC_DISALLOW_COPY_AND_ASSIGN(MemoryStreamBase);
 };
 
 
@@ -690,7 +556,7 @@ class FifoBuffer : public StreamInterface {
   size_t read_position_;  
   Thread* owner_;  
   mutable CriticalSection crit_;  
-  DISALLOW_EVIL_CONSTRUCTORS(FifoBuffer);
+  RTC_DISALLOW_COPY_AND_ASSIGN(FifoBuffer);
 };
 
 
@@ -721,7 +587,7 @@ class LoggingAdapter : public StreamAdapterInterface {
   bool hex_mode_;
   LogMultilineState lms_;
 
-  DISALLOW_EVIL_CONSTRUCTORS(LoggingAdapter);
+  RTC_DISALLOW_COPY_AND_ASSIGN(LoggingAdapter);
 };
 
 
@@ -730,7 +596,7 @@ class LoggingAdapter : public StreamAdapterInterface {
 
 class StringStream : public StreamInterface {
  public:
-  explicit StringStream(std::string& str);
+  explicit StringStream(std::string* str);
   explicit StringStream(const std::string& str);
 
   StreamState GetState() const override;
@@ -804,7 +670,7 @@ class StreamReference : public StreamAdapterInterface {
     StreamInterface* stream_;
     int ref_count_;
     CriticalSection cs_;
-    DISALLOW_EVIL_CONSTRUCTORS(StreamRefCount);
+    RTC_DISALLOW_COPY_AND_ASSIGN(StreamRefCount);
   };
 
   
@@ -812,7 +678,7 @@ class StreamReference : public StreamAdapterInterface {
                            StreamInterface* stream);
 
   StreamRefCount* stream_ref_count_;
-  DISALLOW_EVIL_CONSTRUCTORS(StreamReference);
+  RTC_DISALLOW_COPY_AND_ASSIGN(StreamReference);
 };
 
 

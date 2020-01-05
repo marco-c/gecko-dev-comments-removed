@@ -8,6 +8,62 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #include "webrtc/p2p/base/tcpport.h"
 
 #include "webrtc/p2p/base/common.h"
@@ -20,13 +76,20 @@ TCPPort::TCPPort(rtc::Thread* thread,
                  rtc::PacketSocketFactory* factory,
                  rtc::Network* network,
                  const rtc::IPAddress& ip,
-                 uint16 min_port,
-                 uint16 max_port,
+                 uint16_t min_port,
+                 uint16_t max_port,
                  const std::string& username,
                  const std::string& password,
                  bool allow_listen)
-    : Port(thread, LOCAL_PORT_TYPE, factory, network, ip, min_port, max_port,
-           username, password),
+    : Port(thread,
+           LOCAL_PORT_TYPE,
+           factory,
+           network,
+           ip,
+           min_port,
+           max_port,
+           username,
+           password),
       incoming_only_(false),
       allow_listen_(allow_listen),
       socket_(NULL),
@@ -62,9 +125,7 @@ TCPPort::~TCPPort() {
 
 Connection* TCPPort::CreateConnection(const Candidate& address,
                                       CandidateOrigin origin) {
-  
-  if ((address.protocol() != TCP_PROTOCOL_NAME) &&
-      (address.protocol() != SSLTCP_PROTOCOL_NAME)) {
+  if (!SupportsProtocol(address.protocol())) {
     return NULL;
   }
 
@@ -115,16 +176,18 @@ void TCPPort::PrepareAddress() {
     if (socket_->GetState() == rtc::AsyncPacketSocket::STATE_BOUND ||
         socket_->GetState() == rtc::AsyncPacketSocket::STATE_CLOSED)
       AddAddress(socket_->GetLocalAddress(), socket_->GetLocalAddress(),
-                 rtc::SocketAddress(),
-                 TCP_PROTOCOL_NAME, TCPTYPE_PASSIVE_STR, LOCAL_PORT_TYPE,
+                 rtc::SocketAddress(), TCP_PROTOCOL_NAME, "",
+                 TCPTYPE_PASSIVE_STR, LOCAL_PORT_TYPE,
                  ICE_TYPE_PREFERENCE_HOST_TCP, 0, true);
   } else {
     LOG_J(LS_INFO, this) << "Not listening due to firewall restrictions.";
     
     
-    AddAddress(rtc::SocketAddress(ip(), 0),
+    
+    
+    AddAddress(rtc::SocketAddress(ip(), DISCARD_PORT),
                rtc::SocketAddress(ip(), 0), rtc::SocketAddress(),
-               TCP_PROTOCOL_NAME, TCPTYPE_ACTIVE_STR, LOCAL_PORT_TYPE,
+               TCP_PROTOCOL_NAME, "", TCPTYPE_ACTIVE_STR, LOCAL_PORT_TYPE,
                ICE_TYPE_PREFERENCE_HOST_TCP, 0, true);
   }
 }
@@ -134,7 +197,16 @@ int TCPPort::SendTo(const void* data, size_t size,
                     const rtc::PacketOptions& options,
                     bool payload) {
   rtc::AsyncPacketSocket * socket = NULL;
-  if (TCPConnection * conn = static_cast<TCPConnection*>(GetConnection(addr))) {
+  TCPConnection* conn = static_cast<TCPConnection*>(GetConnection(addr));
+
+  
+  
+  
+  if (conn) {
+    if (!conn->connected()) {
+      conn->MaybeReconnect();
+      return SOCKET_ERROR;
+    }
     socket = conn->socket();
   } else {
     socket = GetIncoming(addr);
@@ -142,12 +214,15 @@ int TCPPort::SendTo(const void* data, size_t size,
   if (!socket) {
     LOG_J(LS_ERROR, this) << "Attempted to send to an unknown destination, "
                           << addr.ToSensitiveString();
-    return -1;  
+    return SOCKET_ERROR;  
   }
 
   int sent = socket->Send(data, size, options);
   if (sent < 0) {
     error_ = socket->GetError();
+    
+    
+    
     LOG_J(LS_ERROR, this) << "TCP send of " << size
                           << " bytes failed with error " << error_;
   }
@@ -183,6 +258,7 @@ void TCPPort::OnNewConnection(rtc::AsyncPacketSocket* socket,
   incoming.socket = new_socket;
   incoming.socket->SignalReadPacket.connect(this, &TCPPort::OnReadPacket);
   incoming.socket->SignalReadyToSend.connect(this, &TCPPort::OnReadyToSend);
+  incoming.socket->SignalSentPacket.connect(this, &TCPPort::OnSentPacket);
 
   LOG_J(LS_VERBOSE, this) << "Accepted connection from "
                           << incoming.addr.ToSensitiveString();
@@ -211,53 +287,45 @@ void TCPPort::OnReadPacket(rtc::AsyncPacketSocket* socket,
   Port::OnReadPacket(data, size, remote_addr, PROTO_TCP);
 }
 
+void TCPPort::OnSentPacket(rtc::AsyncPacketSocket* socket,
+                           const rtc::SentPacket& sent_packet) {
+  PortInterface::SignalSentPacket(sent_packet);
+}
+
 void TCPPort::OnReadyToSend(rtc::AsyncPacketSocket* socket) {
   Port::OnReadyToSend();
 }
 
 void TCPPort::OnAddressReady(rtc::AsyncPacketSocket* socket,
                              const rtc::SocketAddress& address) {
-  AddAddress(address, address, rtc::SocketAddress(),
-             TCP_PROTOCOL_NAME, TCPTYPE_PASSIVE_STR, LOCAL_PORT_TYPE,
-             ICE_TYPE_PREFERENCE_HOST_TCP, 0, true);
+  AddAddress(address, address, rtc::SocketAddress(), TCP_PROTOCOL_NAME, "",
+             TCPTYPE_PASSIVE_STR, LOCAL_PORT_TYPE, ICE_TYPE_PREFERENCE_HOST_TCP,
+             0, true);
 }
 
-TCPConnection::TCPConnection(TCPPort* port, const Candidate& candidate,
+TCPConnection::TCPConnection(TCPPort* port,
+                             const Candidate& candidate,
                              rtc::AsyncPacketSocket* socket)
-    : Connection(port, 0, candidate), socket_(socket), error_(0) {
-  bool outgoing = (socket_ == NULL);
-  if (outgoing) {
-    
-    int opts = (candidate.protocol() == SSLTCP_PROTOCOL_NAME) ?
-        rtc::PacketSocketFactory::OPT_SSLTCP : 0;
-    socket_ = port->socket_factory()->CreateClientTcpSocket(
-        rtc::SocketAddress(port->ip(), 0),
-        candidate.address(), port->proxy(), port->user_agent(), opts);
-    if (socket_) {
-      LOG_J(LS_VERBOSE, this) << "Connecting from "
-                              << socket_->GetLocalAddress().ToSensitiveString()
-                              << " to "
-                              << candidate.address().ToSensitiveString();
-      set_connected(false);
-      socket_->SignalConnect.connect(this, &TCPConnection::OnConnect);
-    } else {
-      LOG_J(LS_WARNING, this) << "Failed to create connection to "
-                              << candidate.address().ToSensitiveString();
-    }
+    : Connection(port, 0, candidate),
+      socket_(socket),
+      error_(0),
+      outgoing_(socket == NULL),
+      connection_pending_(false),
+      pretending_to_be_writable_(false),
+      reconnection_timeout_(cricket::CONNECTION_WRITE_CONNECT_TIMEOUT) {
+  if (outgoing_) {
+    CreateOutgoingTcpSocket();
   } else {
     
+    LOG_J(LS_VERBOSE, this)
+        << "socket ipaddr: " << socket_->GetLocalAddress().ToString()
+        << ",port() ip:" << port->ip().ToString();
     ASSERT(socket_->GetLocalAddress().ipaddr() == port->ip());
-  }
-
-  if (socket_) {
-    socket_->SignalReadPacket.connect(this, &TCPConnection::OnReadPacket);
-    socket_->SignalReadyToSend.connect(this, &TCPConnection::OnReadyToSend);
-    socket_->SignalClose.connect(this, &TCPConnection::OnClose);
+    ConnectSocketSignals(socket);
   }
 }
 
 TCPConnection::~TCPConnection() {
-  delete socket_;
 }
 
 int TCPConnection::Send(const void* data, size_t size,
@@ -267,7 +335,18 @@ int TCPConnection::Send(const void* data, size_t size,
     return SOCKET_ERROR;
   }
 
-  if (write_state() != STATE_WRITABLE) {
+  
+  
+  
+  
+  if (!connected()) {
+    MaybeReconnect();
+    return SOCKET_ERROR;
+  }
+
+  
+  
+  if (pretending_to_be_writable_ || write_state() != STATE_WRITABLE) {
     
     error_ = EWOULDBLOCK;
     return SOCKET_ERROR;
@@ -278,13 +357,28 @@ int TCPConnection::Send(const void* data, size_t size,
     sent_packets_discarded_++;
     error_ = socket_->GetError();
   } else {
-    send_rate_tracker_.Update(sent);
+    send_rate_tracker_.AddSamples(sent);
   }
   return sent;
 }
 
 int TCPConnection::GetError() {
   return error_;
+}
+
+void TCPConnection::OnConnectionRequestResponse(ConnectionRequest* req,
+                                                StunMessage* response) {
+  
+  Connection::OnConnectionRequestResponse(req, response);
+
+  
+  
+  
+  if (pretending_to_be_writable_) {
+    Connection::OnReadyToSend();
+  }
+  pretending_to_be_writable_ = false;
+  ASSERT(write_state() == STATE_WRITABLE);
 }
 
 void TCPConnection::OnConnect(rtc::AsyncPacketSocket* socket) {
@@ -294,24 +388,83 @@ void TCPConnection::OnConnect(rtc::AsyncPacketSocket* socket) {
   
   
   const rtc::IPAddress& socket_ip = socket->GetLocalAddress().ipaddr();
-  if (socket_ip == port()->ip()) {
-    LOG_J(LS_VERBOSE, this) << "Connection established to "
-                            << socket->GetRemoteAddress().ToSensitiveString();
+  if (socket_ip == port()->ip() || IPIsAny(port()->ip())) {
+    if (socket_ip == port()->ip()) {
+      LOG_J(LS_VERBOSE, this) << "Connection established to "
+                              << socket->GetRemoteAddress().ToSensitiveString();
+    } else {
+      LOG(LS_WARNING) << "Socket is bound to a different address:"
+                      << socket->GetLocalAddress().ipaddr().ToString()
+                      << ", rather then the local port:"
+                      << port()->ip().ToString()
+                      << ". Still allowing it since it's any address"
+                      << ", possibly caused by multi-routes being disabled.";
+    }
     set_connected(true);
+    connection_pending_ = false;
   } else {
     LOG_J(LS_WARNING, this) << "Dropping connection as TCP socket bound to IP "
                             << socket_ip.ToSensitiveString()
                             << ", different from the local candidate IP "
                             << port()->ip().ToSensitiveString();
-    socket_->Close();
+    OnClose(socket, 0);
   }
 }
 
 void TCPConnection::OnClose(rtc::AsyncPacketSocket* socket, int error) {
   ASSERT(socket == socket_);
   LOG_J(LS_INFO, this) << "Connection closed with error " << error;
-  set_connected(false);
-  set_write_state(STATE_WRITE_TIMEOUT);
+
+  
+  
+  if (connected()) {
+    set_connected(false);
+
+    
+    
+    pretending_to_be_writable_ = true;
+
+    
+    
+    
+    port()->thread()->PostDelayed(reconnection_timeout(), this,
+                                  MSG_TCPCONNECTION_DELAYED_ONCLOSE);
+  } else if (!pretending_to_be_writable_) {
+    
+    
+    
+    
+    Destroy();
+  }
+}
+
+void TCPConnection::OnMessage(rtc::Message* pmsg) {
+  switch (pmsg->message_id) {
+    case MSG_TCPCONNECTION_DELAYED_ONCLOSE:
+      
+      
+      
+      if (pretending_to_be_writable_) {
+        Destroy();
+      }
+      break;
+    default:
+      Connection::OnMessage(pmsg);
+  }
+}
+
+void TCPConnection::MaybeReconnect() {
+  
+  
+  if (connected() || connection_pending_ || !outgoing_) {
+    return;
+  }
+
+  LOG_J(LS_INFO, this) << "TCP Connection with remote is closed, "
+                       << "trying to reconnect";
+
+  CreateOutgoingTcpSocket();
+  error_ = EPIPE;
 }
 
 void TCPConnection::OnReadPacket(
@@ -325,6 +478,37 @@ void TCPConnection::OnReadPacket(
 void TCPConnection::OnReadyToSend(rtc::AsyncPacketSocket* socket) {
   ASSERT(socket == socket_);
   Connection::OnReadyToSend();
+}
+
+void TCPConnection::CreateOutgoingTcpSocket() {
+  ASSERT(outgoing_);
+  
+  int opts = (remote_candidate().protocol() == SSLTCP_PROTOCOL_NAME)
+                 ? rtc::PacketSocketFactory::OPT_SSLTCP
+                 : 0;
+  socket_.reset(port()->socket_factory()->CreateClientTcpSocket(
+      rtc::SocketAddress(port()->ip(), 0), remote_candidate().address(),
+      port()->proxy(), port()->user_agent(), opts));
+  if (socket_) {
+    LOG_J(LS_VERBOSE, this)
+        << "Connecting from " << socket_->GetLocalAddress().ToSensitiveString()
+        << " to " << remote_candidate().address().ToSensitiveString();
+    set_connected(false);
+    connection_pending_ = true;
+    ConnectSocketSignals(socket_.get());
+  } else {
+    LOG_J(LS_WARNING, this) << "Failed to create connection to "
+                            << remote_candidate().address().ToSensitiveString();
+  }
+}
+
+void TCPConnection::ConnectSocketSignals(rtc::AsyncPacketSocket* socket) {
+  if (outgoing_) {
+    socket->SignalConnect.connect(this, &TCPConnection::OnConnect);
+  }
+  socket->SignalReadPacket.connect(this, &TCPConnection::OnReadPacket);
+  socket->SignalReadyToSend.connect(this, &TCPConnection::OnReadyToSend);
+  socket->SignalClose.connect(this, &TCPConnection::OnClose);
 }
 
 }  

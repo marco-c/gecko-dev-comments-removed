@@ -14,6 +14,7 @@
 #include <algorithm>
 #include <vector>
 
+#include "webrtc/base/array_view.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -23,18 +24,11 @@ namespace webrtc {
 class AudioEncoder {
  public:
   struct EncodedInfoLeaf {
-    EncodedInfoLeaf()
-        : encoded_bytes(0),
-          encoded_timestamp(0),
-          payload_type(0),
-          send_even_if_empty(false),
-          speech(true) {}
-
-    size_t encoded_bytes;
-    uint32_t encoded_timestamp;
-    int payload_type;
-    bool send_even_if_empty;
-    bool speech;
+    size_t encoded_bytes = 0;
+    uint32_t encoded_timestamp = 0;
+    int payload_type = 0;
+    bool send_even_if_empty = false;
+    bool speech = true;
   };
 
   
@@ -54,24 +48,7 @@ class AudioEncoder {
     std::vector<EncodedInfoLeaf> redundant;
   };
 
-  virtual ~AudioEncoder() {}
-
-  
-  
-  
-  
-  
-  
-  EncodedInfo Encode(uint32_t rtp_timestamp,
-                     const int16_t* audio,
-                     size_t num_samples_per_channel,
-                     size_t max_encoded_bytes,
-                     uint8_t* encoded);
-
-  
-  
-  virtual int SampleRateHz() const = 0;
-  virtual int NumChannels() const = 0;
+  virtual ~AudioEncoder() = default;
 
   
   
@@ -83,6 +60,11 @@ class AudioEncoder {
 
   
   
+  virtual int SampleRateHz() const = 0;
+  virtual size_t NumChannels() const = 0;
+
+  
+  
   virtual int RtpTimestampRateHz() const;
 
   
@@ -90,27 +72,72 @@ class AudioEncoder {
   
   
   
-  virtual int Num10MsFramesInNextPacket() const = 0;
+  virtual size_t Num10MsFramesInNextPacket() const = 0;
 
   
   
-  virtual int Max10MsFramesInAPacket() const = 0;
-
-  
-  
-  virtual void SetTargetBitrate(int bits_per_second) {}
+  virtual size_t Max10MsFramesInAPacket() const = 0;
 
   
   
   
-  virtual void SetProjectedPacketLossRate(double fraction) {}
+  virtual int GetTargetBitrate() const = 0;
 
- protected:
+  
+  
+  
+  
+  
+  
+  
+  
+  EncodedInfo Encode(uint32_t rtp_timestamp,
+                     rtc::ArrayView<const int16_t> audio,
+                     size_t max_encoded_bytes,
+                     uint8_t* encoded);
+
   virtual EncodedInfo EncodeInternal(uint32_t rtp_timestamp,
-                                     const int16_t* audio,
+                                     rtc::ArrayView<const int16_t> audio,
                                      size_t max_encoded_bytes,
                                      uint8_t* encoded) = 0;
-};
 
+  
+  
+  virtual void Reset() = 0;
+
+  
+  
+  
+  
+  virtual bool SetFec(bool enable);
+
+  
+  
+  
+  
+  virtual bool SetDtx(bool enable);
+
+  
+  
+  enum class Application { kSpeech, kAudio };
+  virtual bool SetApplication(Application application);
+
+  
+  
+  
+  
+  virtual void SetMaxPlaybackRate(int frequency_hz);
+
+  
+  
+  
+  
+  virtual void SetProjectedPacketLossRate(double fraction);
+
+  
+  
+  
+  virtual void SetTargetBitrate(int target_bps);
+};
 }  
 #endif  

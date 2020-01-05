@@ -22,43 +22,49 @@
 #include <list>
 
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/modules/rtp_rtcp/source/fec_private_tables_bursty.h"
+#include "webrtc/base/random.h"
+#include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/rtp_rtcp/source/forward_error_correction.h"
 #include "webrtc/modules/rtp_rtcp/source/forward_error_correction_internal.h"
-
-#include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
 
 
 namespace webrtc {
+namespace fec_private_tables {
+extern const uint8_t** kPacketMaskBurstyTbl[12];
+}
 namespace test {
+using fec_private_tables::kPacketMaskBurstyTbl;
 
 void ReceivePackets(
     ForwardErrorCorrection::ReceivedPacketList* toDecodeList,
     ForwardErrorCorrection::ReceivedPacketList* receivedPacketList,
-    uint32_t numPacketsToDecode, float reorderRate, float duplicateRate) {
+    size_t numPacketsToDecode,
+    float reorderRate,
+    float duplicateRate,
+    Random* random) {
   assert(toDecodeList->empty());
   assert(numPacketsToDecode <= receivedPacketList->size());
 
   ForwardErrorCorrection::ReceivedPacketList::iterator it;
-  for (uint32_t i = 0; i < numPacketsToDecode; i++) {
+  for (size_t i = 0; i < numPacketsToDecode; i++) {
     it = receivedPacketList->begin();
     
-    float randomVariable = static_cast<float>(rand()) / RAND_MAX;
+    float randomVariable = random->Rand<float>();
     while (randomVariable < reorderRate) {
       ++it;
       if (it == receivedPacketList->end()) {
         --it;
         break;
       }
-      randomVariable = static_cast<float>(rand()) / RAND_MAX;
+      randomVariable = random->Rand<float>();
     }
     ForwardErrorCorrection::ReceivedPacket* receivedPacket = *it;
     toDecodeList->push_back(receivedPacket);
 
     
-    randomVariable = static_cast<float>(rand()) / RAND_MAX;
+    randomVariable = random->Rand<float>();
     while (randomVariable < duplicateRate) {
       ForwardErrorCorrection::ReceivedPacket* duplicatePacket =
           new ForwardErrorCorrection::ReceivedPacket;
@@ -69,7 +75,7 @@ void ReceivePackets(
       duplicatePacket->pkt->length = receivedPacket->pkt->length;
 
       toDecodeList->push_back(duplicatePacket);
-      randomVariable = static_cast<float>(rand()) / RAND_MAX;
+      randomVariable = random->Rand<float>();
     }
     receivedPacketList->erase(it);
   }
@@ -77,12 +83,8 @@ void ReceivePackets(
 
 TEST(FecTest, FecTest) {
   
-  enum {
-    kMaxNumberMediaPackets = 48
-  };
-  enum {
-    kMaxNumberFecPackets = 48
-  };
+  enum { kMaxNumberMediaPackets = 48 };
+  enum { kMaxNumberFecPackets = 48 };
 
   const uint32_t kNumMaskBytesL0 = 2;
   const uint32_t kNumMaskBytesL1 = 6;
@@ -91,15 +93,12 @@ TEST(FecTest, FecTest) {
   const bool kUseUnequalProtection = true;
 
   
-  const FecMaskType kMaskTypes[] = { kFecMaskRandom, kFecMaskBursty };
+  const FecMaskType kMaskTypes[] = {kFecMaskRandom, kFecMaskBursty};
   const int kNumFecMaskTypes = sizeof(kMaskTypes) / sizeof(*kMaskTypes);
 
   
-  
-  (void) kPacketMaskBurstyTbl;
-
-  
-  const uint16_t kMaxMediaPackets[] = {kMaxNumberMediaPackets,
+  const uint16_t kMaxMediaPackets[] = {
+      kMaxNumberMediaPackets,
       sizeof(kPacketMaskBurstyTbl) / sizeof(*kPacketMaskBurstyTbl)};
 
   ASSERT_EQ(12, kMaxMediaPackets[1]) << "Max media packets for bursty mode not "
@@ -115,7 +114,7 @@ TEST(FecTest, FecTest) {
 
   ForwardErrorCorrection::Packet* mediaPacket = NULL;
   
-  const float lossRate[] = { 0.5f };
+  const float lossRate[] = {0.5f};
   const uint32_t lossRateSize = sizeof(lossRate) / sizeof(*lossRate);
   const float reorderRate = 0.1f;
   const float duplicateRate = 0.1f;
@@ -127,7 +126,7 @@ TEST(FecTest, FecTest) {
   
   
   const unsigned int randomSeed = static_cast<unsigned int>(time(NULL));
-  srand(randomSeed);
+  Random random(randomSeed);
   std::string filename = webrtc::test::OutputPath() + "randomSeedLog.txt";
   FILE* randomSeedFile = fopen(filename.c_str(), "a");
   fprintf(randomSeedFile, "%u\n", randomSeed);
@@ -135,15 +134,13 @@ TEST(FecTest, FecTest) {
   randomSeedFile = NULL;
 
   uint16_t seqNum = 0;
-  uint32_t timeStamp = static_cast<uint32_t>(rand());
-  const uint32_t ssrc = static_cast<uint32_t>(rand());
+  uint32_t timeStamp = random.Rand<uint32_t>();
+  const uint32_t ssrc = random.Rand(1u, 0xfffffffe);
 
   
   for (int mask_type_idx = 0; mask_type_idx < kNumFecMaskTypes;
        ++mask_type_idx) {
-
     for (uint32_t lossRateIdx = 0; lossRateIdx < lossRateSize; ++lossRateIdx) {
-
       printf("Loss rate: %.2f, Mask type %d \n", lossRate[lossRateIdx],
              mask_type_idx);
 
@@ -159,14 +156,12 @@ TEST(FecTest, FecTest) {
         for (uint32_t numFecPackets = 1;
              numFecPackets <= numMediaPackets && numFecPackets <= packetMaskMax;
              numFecPackets++) {
-
           
           
           uint32_t maxNumImpPackets = numMediaPackets / 4 + 1;
           for (uint32_t numImpPackets = 0; numImpPackets <= maxNumImpPackets &&
-                                               numImpPackets <= packetMaskMax;
+                                           numImpPackets <= packetMaskMax;
                numImpPackets++) {
-
             uint8_t protectionFactor =
                 static_cast<uint8_t>(numFecPackets * 255 / numMediaPackets);
 
@@ -181,10 +176,11 @@ TEST(FecTest, FecTest) {
                                           mask_table, packetMask);
 
 #ifdef VERBOSE_OUTPUT
-            printf("%u media packets, %u FEC packets, %u numImpPackets, "
-                   "loss rate = %.2f \n",
-                   numMediaPackets, numFecPackets, numImpPackets,
-                   lossRate[lossRateIdx]);
+            printf(
+                "%u media packets, %u FEC packets, %u numImpPackets, "
+                "loss rate = %.2f \n",
+                numMediaPackets, numFecPackets, numImpPackets,
+                lossRate[lossRateIdx]);
             printf("Packet mask matrix \n");
 #endif
 
@@ -232,16 +228,15 @@ TEST(FecTest, FecTest) {
             for (uint32_t i = 0; i < numMediaPackets; ++i) {
               mediaPacket = new ForwardErrorCorrection::Packet;
               mediaPacketList.push_back(mediaPacket);
-              mediaPacket->length = static_cast<size_t>(
-                  (static_cast<float>(rand()) / RAND_MAX) *
-                  (IP_PACKET_SIZE - 12 - 28 -
-                   ForwardErrorCorrection::PacketOverhead()));
-              if (mediaPacket->length < 12) {
-                mediaPacket->length = 12;
-              }
+              const uint32_t kMinPacketSize = 12;
+              const uint32_t kMaxPacketSize = static_cast<uint32_t>(
+                  IP_PACKET_SIZE - 12 - 28 -
+                  ForwardErrorCorrection::PacketOverhead());
+              mediaPacket->length = random.Rand(kMinPacketSize, kMaxPacketSize);
+
               
-              mediaPacket->data[0] = static_cast<uint8_t>(rand() % 256);
-              mediaPacket->data[1] = static_cast<uint8_t>(rand() % 256);
+              mediaPacket->data[0] = random.Rand<uint8_t>();
+              mediaPacket->data[1] = random.Rand<uint8_t>();
 
               
               
@@ -266,7 +261,7 @@ TEST(FecTest, FecTest) {
               ByteWriter<uint32_t>::WriteBigEndian(&mediaPacket->data[8], ssrc);
               
               for (size_t j = 12; j < mediaPacket->length; ++j) {
-                mediaPacket->data[j] = static_cast<uint8_t>(rand() % 256);
+                mediaPacket->data[j] = random.Rand<uint8_t>();
               }
               seqNum++;
             }
@@ -289,8 +284,7 @@ TEST(FecTest, FecTest) {
             while (mediaPacketListItem != mediaPacketList.end()) {
               mediaPacket = *mediaPacketListItem;
               
-              const float lossRandomVariable =
-                  (static_cast<float>(rand()) / (RAND_MAX));
+              const float lossRandomVariable = random.Rand<float>();
 
               if (lossRandomVariable >= lossRate[lossRateIdx]) {
                 mediaLossMask[mediaPacketIdx] = 1;
@@ -315,8 +309,7 @@ TEST(FecTest, FecTest) {
             uint32_t fecPacketIdx = 0;
             while (fecPacketListItem != fecPacketList.end()) {
               fecPacket = *fecPacketListItem;
-              const float lossRandomVariable =
-                  (static_cast<float>(rand()) / (RAND_MAX));
+              const float lossRandomVariable = random.Rand<float>();
               if (lossRandomVariable >= lossRate[lossRateIdx]) {
                 fecLossMask[fecPacketIdx] = 1;
                 receivedPacket = new ForwardErrorCorrection::ReceivedPacket;
@@ -387,18 +380,15 @@ TEST(FecTest, FecTest) {
             
             bool fecPacketReceived = false;
             while (!receivedPacketList.empty()) {
-              uint32_t numPacketsToDecode = static_cast<uint32_t>(
-                  (static_cast<float>(rand()) / RAND_MAX) *
-                      receivedPacketList.size() + 0.5);
-              if (numPacketsToDecode < 1) {
-                numPacketsToDecode = 1;
-              }
+              size_t numPacketsToDecode = random.Rand(
+                  1u, static_cast<uint32_t>(receivedPacketList.size()));
               ReceivePackets(&toDecodeList, &receivedPacketList,
-                             numPacketsToDecode, reorderRate, duplicateRate);
+                             numPacketsToDecode, reorderRate, duplicateRate,
+                             &random);
 
               if (fecPacketReceived == false) {
                 ForwardErrorCorrection::ReceivedPacketList::iterator
-                toDecodeIt = toDecodeList.begin();
+                    toDecodeIt = toDecodeList.begin();
                 while (toDecodeIt != toDecodeList.end()) {
                   receivedPacket = *toDecodeIt;
                   if (receivedPacket->is_fec) {
@@ -418,11 +408,11 @@ TEST(FecTest, FecTest) {
               if (mediaLossMask[mediaPacketIdx] == 1) {
                 
                 ForwardErrorCorrection::RecoveredPacketList::iterator
-                recoveredPacketListItem = recoveredPacketList.begin();
+                    recoveredPacketListItem = recoveredPacketList.begin();
 
-                ASSERT_FALSE(
-                    recoveredPacketListItem == recoveredPacketList.end())
-                  << "Insufficient number of recovered packets.";
+                ASSERT_FALSE(recoveredPacketListItem ==
+                             recoveredPacketList.end())
+                    << "Insufficient number of recovered packets.";
                 mediaPacket = *mediaPacketListItem;
                 ForwardErrorCorrection::RecoveredPacket* recoveredPacket =
                     *recoveredPacketListItem;
@@ -462,7 +452,7 @@ TEST(FecTest, FecTest) {
             
             
             ForwardErrorCorrection::ReceivedPacketList::iterator
-            receivedPacketIt = receivedPacketList.begin();
+                receivedPacketIt = receivedPacketList.begin();
             while (receivedPacketIt != receivedPacketList.end()) {
               receivedPacket = *receivedPacketIt;
               delete receivedPacket;
@@ -476,11 +466,11 @@ TEST(FecTest, FecTest) {
             }
             timeStamp += 90000 / 30;
           }  
-        }  
-      }  
+        }    
+      }      
       delete[] packetMask;
     }  
-  }  
+  }    
 
   
   fec.ResetState(&recoveredPacketList);

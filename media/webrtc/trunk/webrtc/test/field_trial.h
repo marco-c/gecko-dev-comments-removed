@@ -12,6 +12,7 @@
 #define WEBRTC_TEST_FIELD_TRIAL_H_
 
 #include <string>
+#include <map>
 
 namespace webrtc {
 namespace test {
@@ -30,6 +31,17 @@ namespace test {
 
 
 void InitFieldTrialsFromString(const std::string& config);
+
+
+
+class ScopedFieldTrials {
+ public:
+  explicit ScopedFieldTrials(const std::string& config);
+  ~ScopedFieldTrials();
+ private:
+  std::string current_field_trials_;
+  const char* previous_field_trials_;
+};
 
 }  
 }  

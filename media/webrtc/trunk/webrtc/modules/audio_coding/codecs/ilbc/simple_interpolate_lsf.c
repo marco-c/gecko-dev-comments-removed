@@ -42,7 +42,8 @@ void WebRtcIlbcfix_SimpleInterpolateLsf(
     IlbcEncoder *iLBCenc_inst
     
                                         ) {
-  int i, pos, lp_length;
+  size_t i;
+  int pos, lp_length;
 
   int16_t *lsf2, *lsfdeq2;
   

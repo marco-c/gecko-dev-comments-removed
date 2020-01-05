@@ -21,13 +21,13 @@
 
 void WebRtcIlbcfix_CbMemEnergyCalc(
     int32_t energy,   
-    int16_t range,   
+    size_t range,   
     int16_t *ppi,   
     int16_t *ppo,   
     int16_t *energyW16,  
     int16_t *energyShifts, 
-    int16_t scale,   
-    int16_t base_size  
+    int scale,   
+    size_t base_size  
                                    );
 
 #endif

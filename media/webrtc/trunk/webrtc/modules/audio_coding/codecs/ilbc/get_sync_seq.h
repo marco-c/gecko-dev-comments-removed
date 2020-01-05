@@ -27,12 +27,12 @@
 
 void WebRtcIlbcfix_GetSyncSeq(
     int16_t *idata,   
-    int16_t idatal,   
-    int16_t centerStartPos, 
-    int16_t *period,   
-    int16_t *plocs,   
-    int16_t periodl,   
-    int16_t hl,    
+    size_t idatal,   
+    size_t centerStartPos, 
+    size_t *period,   
+    const size_t *plocs, 
+    size_t periodl,   
+    size_t hl,    
     int16_t *surround  
 
                               );

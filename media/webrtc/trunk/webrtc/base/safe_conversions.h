@@ -32,7 +32,7 @@ inline bool IsValueInRangeForNumericType(Src value) {
 
 template <typename Dst, typename Src>
 inline Dst checked_cast(Src value) {
-  CHECK(IsValueInRangeForNumericType<Dst>(value));
+  RTC_CHECK(IsValueInRangeForNumericType<Dst>(value));
   return static_cast<Dst>(value);
 }
 

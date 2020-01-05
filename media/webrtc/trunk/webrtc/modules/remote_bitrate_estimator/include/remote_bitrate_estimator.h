@@ -17,18 +17,14 @@
 #include <vector>
 
 #include "webrtc/common_types.h"
-#include "webrtc/modules/interface/module.h"
-#include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/modules/include/module.h"
+#include "webrtc/modules/include/module_common_types.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
 
 class Clock;
-
-enum RateControlType {
-  kMimdControl,
-  kAimdControl
-};
 
 
 
@@ -63,30 +59,9 @@ struct ReceiveBandwidthEstimatorStats {
   std::vector<int64_t> recent_arrival_time_ms;
 };
 
-struct PacketInfo {
-  PacketInfo(int64_t arrival_time_ms,
-             int64_t send_time_ms,
-             uint16_t sequence_number,
-             size_t payload_size)
-      : arrival_time_ms(arrival_time_ms),
-        send_time_ms(send_time_ms),
-        sequence_number(sequence_number),
-        payload_size(payload_size) {}
-  
-  
-  int64_t arrival_time_ms;
-  
-  
-  int64_t send_time_ms;
-  
-  
-  uint16_t sequence_number;
-  
-  size_t payload_size;
-};
-
 class RemoteBitrateEstimator : public CallStatsObserver, public Module {
  public:
+  static const int kDefaultMinBitrateBps = 30000;
   virtual ~RemoteBitrateEstimator() {}
 
   virtual void IncomingPacketFeedbackVector(
@@ -101,7 +76,8 @@ class RemoteBitrateEstimator : public CallStatsObserver, public Module {
   
   virtual void IncomingPacket(int64_t arrival_time_ms,
                               size_t payload_size,
-                              const RTPHeader& header) = 0;
+                              const RTPHeader& header,
+                              bool was_paced) = 0;
 
   
   virtual void RemoveStream(unsigned int ssrc) = 0;
@@ -115,33 +91,13 @@ class RemoteBitrateEstimator : public CallStatsObserver, public Module {
   
   virtual bool GetStats(ReceiveBandwidthEstimatorStats* output) const = 0;
 
+  virtual void SetMinBitrate(int min_bitrate_bps) = 0;
+
  protected:
-  static const int64_t kProcessIntervalMs = 1000;
+  static const int64_t kProcessIntervalMs = 500;
   static const int64_t kStreamTimeOutMs = 2000;
 };
 
-struct RemoteBitrateEstimatorFactory {
-  RemoteBitrateEstimatorFactory() {}
-  virtual ~RemoteBitrateEstimatorFactory() {}
-
-  virtual RemoteBitrateEstimator* Create(
-      RemoteBitrateObserver* observer,
-      Clock* clock,
-      RateControlType control_type,
-      uint32_t min_bitrate_bps) const;
-};
-
-struct AbsoluteSendTimeRemoteBitrateEstimatorFactory
-    : public RemoteBitrateEstimatorFactory {
-  AbsoluteSendTimeRemoteBitrateEstimatorFactory() {}
-  virtual ~AbsoluteSendTimeRemoteBitrateEstimatorFactory() {}
-
-  virtual RemoteBitrateEstimator* Create(
-      RemoteBitrateObserver* observer,
-      Clock* clock,
-      RateControlType control_type,
-      uint32_t min_bitrate_bps) const;
-};
 }  
 
 #endif  

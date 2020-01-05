@@ -7,9 +7,9 @@
 
 
 
-
 #ifndef WEBRTC_COMMON_AUDIO_AUDIO_RING_BUFFER_H_
 #define WEBRTC_COMMON_AUDIO_AUDIO_RING_BUFFER_H_
+
 #include <stddef.h>
 #include <vector>
 
@@ -40,7 +40,10 @@ class AudioRingBuffer final {
 
   
   
-  void MoveReadPosition(int frames);
+  
+  
+  void MoveReadPositionForward(size_t frames);
+  void MoveReadPositionBackward(size_t frames);
 
  private:
   
@@ -49,4 +52,5 @@ class AudioRingBuffer final {
 };
 
 }  
-#endif
+
+#endif  

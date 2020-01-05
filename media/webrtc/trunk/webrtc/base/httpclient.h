@@ -68,7 +68,7 @@ public:
 
   void set_agent(const std::string& agent) { agent_ = agent; }
   const std::string& agent() const { return agent_; }
-  
+
   void set_proxy(const ProxyInfo& proxy) { proxy_ = proxy; }
   const ProxyInfo& proxy() const { return proxy_; }
 
@@ -83,11 +83,6 @@ public:
   enum RedirectAction { REDIRECT_DEFAULT, REDIRECT_ALWAYS, REDIRECT_NEVER };
   void set_redirect_action(RedirectAction action) { redirect_action_ = action; }
   RedirectAction redirect_action() const { return redirect_action_; }
-  
-  void set_fail_redirect(bool fail_redirect) {
-    redirect_action_ = REDIRECT_NEVER;
-  }
-  bool fail_redirect() const { return (REDIRECT_NEVER == redirect_action_); }
 
   enum UriForm { URI_DEFAULT, URI_ABSOLUTE, URI_RELATIVE };
   void set_uri_form(UriForm form) { uri_form_ = form; }
@@ -99,12 +94,10 @@ public:
   
   
   void reset();
-  
+
   void set_server(const SocketAddress& address);
   const SocketAddress& server() const { return server_; }
 
-  
-  
   
   
   
@@ -114,7 +107,7 @@ public:
   const HttpRequestData& request() const { return transaction_->request; }
   HttpResponseData& response() { return transaction_->response; }
   const HttpResponseData& response() const { return transaction_->response; }
-  
+
   
   void prepare_get(const std::string& url);
   void prepare_post(const std::string& url, const std::string& content_type,
@@ -125,7 +118,7 @@ public:
 
   
   void start();
-  
+
   
   
   

@@ -16,7 +16,7 @@
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_audio/blocker.h"
 #include "webrtc/common_audio/real_fourier.h"
-#include "webrtc/system_wrappers/interface/aligned_array.h"
+#include "webrtc/system_wrappers/include/aligned_array.h"
 
 namespace webrtc {
 
@@ -35,8 +35,8 @@ class LappedTransform {
     virtual ~Callback() {}
 
     virtual void ProcessAudioBlock(const std::complex<float>* const* in_block,
-                                   int in_channels, int frames,
-                                   int out_channels,
+                                   size_t num_in_channels, size_t frames,
+                                   size_t num_out_channels,
                                    std::complex<float>* const* out_block) = 0;
   };
 
@@ -46,8 +46,12 @@ class LappedTransform {
   
   
   
-  LappedTransform(int in_channels, int out_channels, int chunk_length,
-                  const float* window, int block_length, int shift_amount,
+  LappedTransform(size_t num_in_channels,
+                  size_t num_out_channels,
+                  size_t chunk_length,
+                  const float* window,
+                  size_t block_length,
+                  size_t shift_amount,
                   Callback* callback);
   ~LappedTransform() {}
 
@@ -57,6 +61,31 @@ class LappedTransform {
   
   void ProcessChunk(const float* const* in_chunk, float* const* out_chunk);
 
+  
+  
+  
+  
+  
+  
+  size_t chunk_length() const { return chunk_length_; }
+
+  
+  
+  
+  
+  
+  
+  size_t num_in_channels() const { return num_in_channels_; }
+
+  
+  
+  
+  
+  
+  
+  
+  size_t num_out_channels() const { return num_out_channels_; }
+
  private:
   
   
@@ -64,25 +93,27 @@ class LappedTransform {
    public:
     explicit BlockThunk(LappedTransform* parent) : parent_(parent) {}
 
-    virtual void ProcessBlock(const float* const* input, int num_frames,
-                              int num_input_channels, int num_output_channels,
+    virtual void ProcessBlock(const float* const* input,
+                              size_t num_frames,
+                              size_t num_input_channels,
+                              size_t num_output_channels,
                               float* const* output);
 
    private:
     LappedTransform* const parent_;
   } blocker_callback_;
 
-  const int in_channels_;
-  const int out_channels_;
+  const size_t num_in_channels_;
+  const size_t num_out_channels_;
 
-  const int block_length_;
-  const int chunk_length_;
+  const size_t block_length_;
+  const size_t chunk_length_;
 
   Callback* const block_processor_;
   Blocker blocker_;
 
   rtc::scoped_ptr<RealFourier> fft_;
-  const int cplx_length_;
+  const size_t cplx_length_;
   AlignedArray<float> real_buf_;
   AlignedArray<std::complex<float> > cplx_pre_;
   AlignedArray<std::complex<float> > cplx_post_;

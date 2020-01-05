@@ -16,9 +16,10 @@
 #include <set>
 #include <string>
 
+#include "webrtc/base/asyncinvoker.h"
+#include "webrtc/base/asyncpacketsocket.h"
 #include "webrtc/p2p/base/port.h"
 #include "webrtc/p2p/client/basicportallocator.h"
-#include "webrtc/base/asyncpacketsocket.h"
 
 namespace rtc {
 class AsyncResolver;
@@ -33,6 +34,12 @@ class TurnEntry;
 
 class TurnPort : public Port {
  public:
+  enum PortState {
+    STATE_CONNECTING,    
+    STATE_CONNECTED,     
+    STATE_READY,         
+    STATE_DISCONNECTED,  
+  };
   static TurnPort* Create(rtc::Thread* thread,
                           rtc::PacketSocketFactory* factory,
                           rtc::Network* network,
@@ -51,8 +58,8 @@ class TurnPort : public Port {
                           rtc::PacketSocketFactory* factory,
                           rtc::Network* network,
                           const rtc::IPAddress& ip,
-                          uint16 min_port,
-                          uint16 max_port,
+                          uint16_t min_port,
+                          uint16_t max_port,
                           const std::string& username,  
                           const std::string& password,  
                           const ProtocolAddress& server_address,
@@ -70,7 +77,10 @@ class TurnPort : public Port {
   
   rtc::SocketAddress GetLocalAddress() const;
 
-  bool connected() const { return connected_; }
+  bool ready() const { return state_ == STATE_READY; }
+  bool connected() const {
+    return state_ == STATE_READY || state_ == STATE_CONNECTED;
+  }
   const RelayCredentials& credentials() const { return credentials_; }
 
   virtual void PrepareAddress();
@@ -96,7 +106,13 @@ class TurnPort : public Port {
                             const rtc::SocketAddress& remote_addr,
                             const rtc::PacketTime& packet_time);
 
+  virtual void OnSentPacket(rtc::AsyncPacketSocket* socket,
+                            const rtc::SentPacket& sent_packet);
   virtual void OnReadyToSend(rtc::AsyncPacketSocket* socket);
+  virtual bool SupportsProtocol(const std::string& protocol) const {
+    
+    return protocol == UDP_PROTOCOL_NAME;
+  }
 
   void OnSocketConnect(rtc::AsyncPacketSocket* socket);
   void OnSocketClose(rtc::AsyncPacketSocket* socket, int error);
@@ -114,6 +130,9 @@ class TurnPort : public Port {
   }
 
   
+  rtc::AsyncInvoker* invoker() { return &invoker_; }
+
+  
   
   
   sigslot::signal3<TurnPort*,
@@ -121,8 +140,17 @@ class TurnPort : public Port {
                    const rtc::SocketAddress&> SignalResolvedServerAddress;
 
   
+  sigslot::signal2<TurnPort*, int> SignalTurnRefreshResult;
   sigslot::signal3<TurnPort*, const rtc::SocketAddress&, int>
       SignalCreatePermissionResult;
+  void FlushRequests(int msg_type) { request_manager_.Flush(msg_type); }
+  bool HasRequests() { return !request_manager_.empty(); }
+  void set_credentials(RelayCredentials& credentials) {
+    credentials_ = credentials;
+  }
+  
+  
+  bool SetEntryChannelId(const rtc::SocketAddress& address, int channel_id);
 
  protected:
   TurnPort(rtc::Thread* thread,
@@ -140,8 +168,8 @@ class TurnPort : public Port {
            rtc::PacketSocketFactory* factory,
            rtc::Network* network,
            const rtc::IPAddress& ip,
-           uint16 min_port,
-           uint16 max_port,
+           uint16_t min_port,
+           uint16_t max_port,
            const std::string& username,
            const std::string& password,
            const ProtocolAddress& server_address,
@@ -151,9 +179,10 @@ class TurnPort : public Port {
 
  private:
   enum {
-    MSG_ERROR = MSG_FIRST_AVAILABLE,
+    MSG_ALLOCATE_ERROR = MSG_FIRST_AVAILABLE,
     MSG_ALLOCATE_MISMATCH,
-    MSG_TRY_ALTERNATE_SERVER
+    MSG_TRY_ALTERNATE_SERVER,
+    MSG_REFRESH_ERROR
   };
 
   typedef std::list<TurnEntry*> EntryList;
@@ -172,6 +201,9 @@ class TurnPort : public Port {
     }
   }
 
+  
+  void Close();
+  void OnTurnRefreshError();
   bool SetAlternateServer(const rtc::SocketAddress& address);
   void ResolveTurnAddress(const rtc::SocketAddress& address);
   void OnResolveResult(rtc::AsyncResolverInterface* resolver);
@@ -204,9 +236,19 @@ class TurnPort : public Port {
   bool HasPermission(const rtc::IPAddress& ipaddr) const;
   TurnEntry* FindEntry(const rtc::SocketAddress& address) const;
   TurnEntry* FindEntry(int channel_id) const;
-  TurnEntry* CreateEntry(const rtc::SocketAddress& address);
-  void DestroyEntry(const rtc::SocketAddress& address);
+  bool EntryExists(TurnEntry* e);
+  void CreateOrRefreshEntry(const rtc::SocketAddress& address);
+  void DestroyEntry(TurnEntry* entry);
+  
+  
+  void DestroyEntryIfNotCancelled(TurnEntry* entry, uint32_t timestamp);
+  void ScheduleEntryDestruction(TurnEntry* entry);
+  void CancelEntryDestruction(TurnEntry* entry);
   void OnConnectionDestroyed(Connection* conn);
+
+  
+  
+  bool DestroyConnection(const rtc::SocketAddress& address);
 
   ProtocolAddress server_address_;
   RelayCredentials credentials_;
@@ -225,13 +267,15 @@ class TurnPort : public Port {
   int next_channel_number_;
   EntryList entries_;
 
-  bool connected_;
+  PortState state_;
   
   
   int server_priority_;
 
   
   size_t allocate_mismatch_retries_;
+
+  rtc::AsyncInvoker invoker_;
 
   friend class TurnEntry;
   friend class TurnAllocateRequest;

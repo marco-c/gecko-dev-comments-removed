@@ -29,18 +29,18 @@ class PushResampler {
   
   
   int InitializeIfNeeded(int src_sample_rate_hz, int dst_sample_rate_hz,
-                         int num_channels);
+                         size_t num_channels);
 
   
   
-  int Resample(const T* src, int src_length, T* dst, int dst_capacity);
+  int Resample(const T* src, size_t src_length, T* dst, size_t dst_capacity);
 
  private:
   rtc::scoped_ptr<PushSincResampler> sinc_resampler_;
   rtc::scoped_ptr<PushSincResampler> sinc_resampler_right_;
   int src_sample_rate_hz_;
   int dst_sample_rate_hz_;
-  int num_channels_;
+  size_t num_channels_;
   rtc::scoped_ptr<T[]> src_left_;
   rtc::scoped_ptr<T[]> src_right_;
   rtc::scoped_ptr<T[]> dst_left_;

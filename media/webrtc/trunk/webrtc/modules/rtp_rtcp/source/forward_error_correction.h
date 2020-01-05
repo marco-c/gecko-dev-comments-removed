@@ -14,9 +14,9 @@
 #include <list>
 #include <vector>
 
-#include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
-#include "webrtc/system_wrappers/interface/ref_count.h"
-#include "webrtc/system_wrappers/interface/scoped_refptr.h"
+#include "webrtc/base/scoped_ref_ptr.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "webrtc/system_wrappers/include/ref_count.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -92,7 +92,7 @@ class ForwardErrorCorrection {
                     
     bool is_fec;    
                     
-    scoped_refptr<Packet> pkt;  
+    rtc::scoped_refptr<Packet> pkt;  
   };
 
   
@@ -110,7 +110,7 @@ class ForwardErrorCorrection {
                     
     uint8_t length_recovery[2];  
                                  
-    scoped_refptr<Packet> pkt;   
+    rtc::scoped_refptr<Packet> pkt;  
   };
 
   typedef std::list<Packet*> PacketList;
@@ -279,7 +279,7 @@ class ForwardErrorCorrection {
   void AttemptRecover(RecoveredPacketList* recovered_packet_list);
 
   
-  static void InitRecovery(const FecPacket* fec_packet,
+  static bool InitRecovery(const FecPacket* fec_packet,
                            RecoveredPacket* recovered);
 
   
@@ -287,10 +287,10 @@ class ForwardErrorCorrection {
   static void XorPackets(const Packet* src_packet, RecoveredPacket* dst_packet);
 
   
-  static void FinishRecovery(RecoveredPacket* recovered);
+  static bool FinishRecovery(RecoveredPacket* recovered);
 
   
-  void RecoverPacket(const FecPacket* fec_packet,
+  bool RecoverPacket(const FecPacket* fec_packet,
                      RecoveredPacket* rec_packet_to_insert);
 
   

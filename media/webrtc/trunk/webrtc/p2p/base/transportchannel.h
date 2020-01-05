@@ -37,16 +37,24 @@ enum PacketFlags {
 };
 
 
-enum TransportChannelState { STATE_CONNECTING, STATE_COMPLETED, STATE_FAILED };
+enum TransportChannelState {
+  STATE_INIT,
+  STATE_CONNECTING,  
+  STATE_COMPLETED,
+  STATE_FAILED
+};
+
+
 
 
 
 class TransportChannel : public sigslot::has_slots<> {
  public:
-  explicit TransportChannel(const std::string& content_name, int component)
-      : content_name_(content_name),
+  TransportChannel(const std::string& transport_name, int component)
+      : transport_name_(transport_name),
         component_(component),
-        readable_(false), writable_(false) {}
+        writable_(false),
+        receiving_(false) {}
   virtual ~TransportChannel() {}
 
   
@@ -59,18 +67,21 @@ class TransportChannel : public sigslot::has_slots<> {
   
   virtual const std::string SessionId() const { return std::string(); }
 
-  const std::string& content_name() const { return content_name_; }
+  const std::string& transport_name() const { return transport_name_; }
   int component() const { return component_; }
 
   
   
-  
-  bool readable() const { return readable_; }
   bool writable() const { return writable_; }
-  sigslot::signal1<TransportChannel*> SignalReadableState;
+  bool receiving() const { return receiving_; }
+  DtlsTransportState dtls_state() const { return dtls_state_; }
   sigslot::signal1<TransportChannel*> SignalWritableState;
   
   sigslot::signal1<TransportChannel*> SignalReadyToSend;
+  sigslot::signal1<TransportChannel*> SignalReceivingState;
+  
+  
+  sigslot::signal2<TransportChannel*, DtlsTransportState> SignalDtlsState;
 
   
   
@@ -98,31 +109,42 @@ class TransportChannel : public sigslot::has_slots<> {
   virtual bool GetSslRole(rtc::SSLRole* role) const = 0;
 
   
-  virtual bool SetSrtpCiphers(const std::vector<std::string>& ciphers) = 0;
+  
+  virtual bool SetSrtpCryptoSuites(const std::vector<int>& ciphers);
 
   
-  virtual bool GetSrtpCipher(std::string* cipher) = 0;
+  
+  virtual bool SetSrtpCiphers(const std::vector<std::string>& ciphers);
 
   
-  virtual bool GetSslCipher(std::string* cipher) = 0;
+  
+  virtual bool GetSrtpCryptoSuite(int* cipher) { return false; }
 
   
-  virtual bool GetLocalIdentity(rtc::SSLIdentity** identity) const = 0;
+  
+  virtual bool GetSslCipherSuite(int* cipher) { return false; }
 
   
-  virtual bool GetRemoteCertificate(rtc::SSLCertificate** cert) const = 0;
+  virtual rtc::scoped_refptr<rtc::RTCCertificate>
+  GetLocalCertificate() const = 0;
+
+  
+  virtual bool GetRemoteSSLCertificate(rtc::SSLCertificate** cert) const = 0;
 
   
   virtual bool ExportKeyingMaterial(const std::string& label,
-      const uint8* context,
-      size_t context_len,
-      bool use_context,
-      uint8* result,
-      size_t result_len) = 0;
+                                    const uint8_t* context,
+                                    size_t context_len,
+                                    bool use_context,
+                                    uint8_t* result,
+                                    size_t result_len) = 0;
 
   
   sigslot::signal5<TransportChannel*, const char*,
                    size_t, const rtc::PacketTime&, int> SignalReadPacket;
+
+  
+  sigslot::signal2<TransportChannel*, const rtc::SentPacket&> SignalSentPacket;
 
   
   
@@ -137,20 +159,23 @@ class TransportChannel : public sigslot::has_slots<> {
 
  protected:
   
-  void set_readable(bool readable);
-
-  
   void set_writable(bool writable);
 
+  
+  void set_receiving(bool receiving);
+
+  
+  void set_dtls_state(DtlsTransportState state);
 
  private:
   
-  std::string content_name_;
+  std::string transport_name_;
   int component_;
-  bool readable_;
   bool writable_;
+  bool receiving_;
+  DtlsTransportState dtls_state_ = DTLS_TRANSPORT_NEW;
 
-  DISALLOW_EVIL_CONSTRUCTORS(TransportChannel);
+  RTC_DISALLOW_COPY_AND_ASSIGN(TransportChannel);
 };
 
 }  

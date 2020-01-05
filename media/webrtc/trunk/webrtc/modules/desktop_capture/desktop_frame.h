@@ -91,20 +91,20 @@ class DesktopFrame {
   rtc::scoped_ptr<DesktopRegion> shape_;
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(DesktopFrame);
+  RTC_DISALLOW_COPY_AND_ASSIGN(DesktopFrame);
 };
 
 
 class BasicDesktopFrame : public DesktopFrame {
  public:
   explicit BasicDesktopFrame(DesktopSize size);
-  virtual ~BasicDesktopFrame();
+  ~BasicDesktopFrame() override;
 
   
   static DesktopFrame* CopyOf(const DesktopFrame& frame);
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(BasicDesktopFrame);
+  RTC_DISALLOW_COPY_AND_ASSIGN(BasicDesktopFrame);
 };
 
 
@@ -114,10 +114,10 @@ class SharedMemoryDesktopFrame : public DesktopFrame {
   SharedMemoryDesktopFrame(DesktopSize size,
                            int stride,
                            SharedMemory* shared_memory);
-  virtual ~SharedMemoryDesktopFrame();
+  ~SharedMemoryDesktopFrame() override;
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(SharedMemoryDesktopFrame);
+  RTC_DISALLOW_COPY_AND_ASSIGN(SharedMemoryDesktopFrame);
 };
 
 }  

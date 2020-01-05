@@ -119,7 +119,7 @@ class CSecBufferBundle : public SecBufferBundleBase {
   }
 
   
-  const PSecBufferDesc desc() const {
+  PSecBufferDesc desc() const {
     return &desc_;
   }
 

@@ -11,6 +11,7 @@
 #ifndef WEBRTC_P2P_BASE_TRANSPORTDESCRIPTIONFACTORY_H_
 #define WEBRTC_P2P_BASE_TRANSPORTDESCRIPTIONFACTORY_H_
 
+#include "webrtc/base/rtccertificate.h"
 #include "webrtc/p2p/base/transportdescription.h"
 
 namespace rtc {
@@ -34,14 +35,17 @@ class TransportDescriptionFactory {
   TransportDescriptionFactory();
   SecurePolicy secure() const { return secure_; }
   
-  rtc::SSLIdentity* identity() const { return identity_; }
+  const rtc::scoped_refptr<rtc::RTCCertificate>& certificate() const {
+    return certificate_;
+  }
 
-  
-  void set_protocol(TransportProtocol protocol) { protocol_ = protocol; }
   
   void set_secure(SecurePolicy s) { secure_ = s; }
   
-  void set_identity(rtc::SSLIdentity* identity) { identity_ = identity; }
+  void set_certificate(
+      const rtc::scoped_refptr<rtc::RTCCertificate>& certificate) {
+    certificate_ = certificate;
+  }
 
   
   TransportDescription* CreateOffer(const TransportOptions& options,
@@ -56,9 +60,8 @@ class TransportDescriptionFactory {
   bool SetSecurityInfo(TransportDescription* description,
                        ConnectionRole role) const;
 
-  TransportProtocol protocol_;
   SecurePolicy secure_;
-  rtc::SSLIdentity* identity_;
+  rtc::scoped_refptr<rtc::RTCCertificate> certificate_;
 };
 
 }  

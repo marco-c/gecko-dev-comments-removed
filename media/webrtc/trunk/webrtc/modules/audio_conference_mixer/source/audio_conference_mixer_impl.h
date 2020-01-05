@@ -16,11 +16,10 @@
 
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/engine_configurations.h"
-#include "webrtc/modules/audio_conference_mixer/interface/audio_conference_mixer.h"
-#include "webrtc/modules/audio_conference_mixer/source/level_indicator.h"
+#include "webrtc/modules/audio_conference_mixer/include/audio_conference_mixer.h"
 #include "webrtc/modules/audio_conference_mixer/source/memory_pool.h"
 #include "webrtc/modules/audio_conference_mixer/source/time_scheduler.h"
-#include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/modules/include/module_common_types.h"
 
 namespace webrtc {
 class AudioProcessing;
@@ -37,14 +36,14 @@ public:
     ~MixHistory();
 
     
-    int32_t IsMixed(bool& mixed) const;
+    bool IsMixed() const;
 
     
     
-    int32_t WasMixed(bool& wasMixed) const;
+    bool WasMixed() const;
 
     
-    int32_t SetIsMixed(const bool mixed);
+    int32_t SetIsMixed(bool mixed);
 
     void ResetMixedStatus();
 private:
@@ -69,30 +68,24 @@ public:
 
     
     int32_t RegisterMixedStreamCallback(
-        AudioMixerOutputReceiver& mixReceiver) override;
+        AudioMixerOutputReceiver* mixReceiver) override;
     int32_t UnRegisterMixedStreamCallback() override;
-    int32_t RegisterMixerStatusCallback(
-        AudioMixerStatusReceiver& mixerStatusCallback,
-        const uint32_t amountOf10MsBetweenCallbacks) override;
-    int32_t UnRegisterMixerStatusCallback() override;
-    int32_t SetMixabilityStatus(MixerParticipant& participant,
+    int32_t SetMixabilityStatus(MixerParticipant* participant,
                                 bool mixable) override;
-    int32_t MixabilityStatus(MixerParticipant& participant,
-                             bool& mixable) override;
+    bool MixabilityStatus(const MixerParticipant& participant) const override;
     int32_t SetMinimumMixingFrequency(Frequency freq) override;
-    int32_t SetAnonymousMixabilityStatus(MixerParticipant& participant,
-                                         const bool mixable) override;
-    int32_t AnonymousMixabilityStatus(MixerParticipant& participant,
-                                      bool& mixable) override;
+    int32_t SetAnonymousMixabilityStatus(
+        MixerParticipant* participant, bool mixable) override;
+    bool AnonymousMixabilityStatus(
+        const MixerParticipant& participant) const override;
 
 private:
     enum{DEFAULT_AUDIO_FRAME_POOLSIZE = 50};
 
     
-    int32_t SetOutputFrequency(const Frequency frequency);
+    int32_t SetOutputFrequency(const Frequency& frequency);
     Frequency OutputFrequency() const;
 
-    
     
     
     
@@ -104,65 +97,54 @@ private:
         AudioFrameList* mixList,
         AudioFrameList* rampOutList,
         std::map<int, MixerParticipant*>* mixParticipantList,
-        size_t& maxAudioFrameCounter);
+        size_t* maxAudioFrameCounter) const;
 
     
     
-    int32_t GetLowestMixingFrequency();
-    int32_t GetLowestMixingFrequencyFromList(MixerParticipantList* mixList);
+    int32_t GetLowestMixingFrequency() const;
+    int32_t GetLowestMixingFrequencyFromList(
+        const MixerParticipantList& mixList) const;
 
     
-    void GetAdditionalAudio(AudioFrameList* additionalFramesList);
+    void GetAdditionalAudio(AudioFrameList* additionalFramesList) const;
 
     
     
     void UpdateMixedStatus(
-        std::map<int, MixerParticipant*>& mixedParticipantsList);
+        const std::map<int, MixerParticipant*>& mixedParticipantsList) const;
 
     
-    void ClearAudioFrameList(AudioFrameList* audioFrameList);
-
-    
-    
-    void UpdateVADPositiveParticipants(
-        AudioFrameList* mixList);
+    void ClearAudioFrameList(AudioFrameList* audioFrameList) const;
 
     
     
-    bool IsParticipantInList(
-        MixerParticipant& participant,
-        MixerParticipantList* participantList) const;
+    void UpdateVADPositiveParticipants(AudioFrameList* mixList) const;
+
+    
+    
+    bool IsParticipantInList(const MixerParticipant& participant,
+                             const MixerParticipantList& participantList) const;
 
     
     
     bool AddParticipantToList(
-        MixerParticipant& participant,
-        MixerParticipantList* participantList);
+        MixerParticipant* participant,
+        MixerParticipantList* participantList) const;
     bool RemoveParticipantFromList(
-        MixerParticipant& removeParticipant,
-        MixerParticipantList* participantList);
+        MixerParticipant* removeParticipant,
+        MixerParticipantList* participantList) const;
 
     
-    int32_t MixFromList(
-        AudioFrame& mixedAudio,
-        const AudioFrameList* audioFrameList);
-    
-    
-    
-    int32_t MixAnonomouslyFromList(AudioFrame& mixedAudio,
-                                   const AudioFrameList* audioFrameList);
-
-    bool LimitMixedAudio(AudioFrame& mixedAudio);
+    int32_t MixFromList(AudioFrame* mixedAudio,
+                        const AudioFrameList& audioFrameList) const;
 
     
     
     
-    size_t         _scratchParticipantsToMixAmount;
-    ParticipantStatistics  _scratchMixedParticipants[
-        kMaximumAmountOfMixedParticipants];
-    uint32_t         _scratchVadPositiveParticipantsAmount;
-    ParticipantStatistics  _scratchVadPositiveParticipants[
-        kMaximumAmountOfMixedParticipants];
+    int32_t MixAnonomouslyFromList(AudioFrame* mixedAudio,
+                                   const AudioFrameList& audioFrameList) const;
+
+    bool LimitMixedAudio(AudioFrame* mixedAudio) const;
 
     rtc::scoped_ptr<CriticalSectionWrapper> _crit;
     rtc::scoped_ptr<CriticalSectionWrapper> _cbCrit;
@@ -174,14 +156,9 @@ private:
     
     AudioMixerOutputReceiver* _mixReceiver;
 
-    AudioMixerStatusReceiver* _mixerStatusCallback;
-    uint32_t _amountOf10MsBetweenCallbacks;
-    uint32_t _amountOf10MsUntilNextCallback;
-    bool _mixerStatusCb;
-
     
     Frequency _outputFrequency;
-    uint16_t _sampleSize;
+    size_t _sampleSize;
 
     
     MemoryPool<AudioFrame>* _audioFramePool;
@@ -200,9 +177,6 @@ private:
 
     
     TimeScheduler _timeScheduler;
-
-    
-    LevelIndicator _mixedAudioLevel;
 
     
     

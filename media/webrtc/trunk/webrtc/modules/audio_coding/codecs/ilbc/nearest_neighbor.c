@@ -18,29 +18,18 @@
 
 #include "defines.h"
 
-
-
-
-
-
-
-void WebRtcIlbcfix_NearestNeighbor(
-    int16_t *index, 
-    int16_t *array, 
-    int16_t value, 
-    int16_t arlength 
-                                   ){
-  int i;
-  int16_t diff;
-  
-  int32_t crit[8];
-
-  
-  for(i=0;i<arlength;i++){
-    diff=array[i]-value;
-    crit[i] = diff * diff;
+void WebRtcIlbcfix_NearestNeighbor(size_t* index,
+                                   const size_t* array,
+                                   size_t value,
+                                   size_t arlength) {
+  size_t i;
+  size_t min_diff = (size_t)-1;
+  for (i = 0; i < arlength; i++) {
+    const size_t diff =
+        (array[i] < value) ? (value - array[i]) : (array[i] - value);
+    if (diff < min_diff) {
+      *index = i;
+      min_diff = diff;
+    }
   }
-
-  
-  *index=WebRtcSpl_MinIndexW32(crit, (int16_t)arlength);
 }

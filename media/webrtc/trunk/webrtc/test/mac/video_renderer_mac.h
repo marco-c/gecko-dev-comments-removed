@@ -8,8 +8,8 @@
 
 
 
-#ifndef WEBRTC_VIDEO_ENGINE_TEST_COMMON_MAC_VIDEO_RENDERER_MAC_H_
-#define WEBRTC_VIDEO_ENGINE_TEST_COMMON_MAC_VIDEO_RENDERER_MAC_H_
+#ifndef WEBRTC_TEST_MAC_VIDEO_RENDERER_MAC_H_
+#define WEBRTC_TEST_MAC_VIDEO_RENDERER_MAC_H_
 
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/test/gl/gl_renderer.h"
@@ -27,13 +27,13 @@ class MacRenderer : public GlRenderer {
   bool Init(const char* window_title, int width, int height);
 
   
-  void RenderFrame(const I420VideoFrame& frame, int delta) override;
+  void RenderFrame(const VideoFrame& frame, int delta) override;
   bool IsTextureSupported() const override { return false; }
 
  private:
   CocoaWindow* window_;
 
-  DISALLOW_COPY_AND_ASSIGN(MacRenderer);
+  RTC_DISALLOW_COPY_AND_ASSIGN(MacRenderer);
 };
 }  
 }  

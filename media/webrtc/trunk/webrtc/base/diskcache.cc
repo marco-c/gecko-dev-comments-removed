@@ -15,6 +15,7 @@
 #endif
 
 #include <algorithm>
+#include "webrtc/base/arraysize.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/diskcache.h"
 #include "webrtc/base/fileutils.h"
@@ -23,11 +24,11 @@
 #include "webrtc/base/stringencode.h"
 #include "webrtc/base/stringutils.h"
 
-#ifdef _DEBUG
+#if !defined(NDEBUG)
 #define TRANSPARENT_CACHE_NAMES 1
-#else  
+#else
 #define TRANSPARENT_CACHE_NAMES 0
-#endif  
+#endif
 
 namespace rtc {
 
@@ -211,14 +212,14 @@ bool DiskCache::DeleteResource(const std::string& id) {
 }
 
 bool DiskCache::CheckLimit() {
-#ifdef _DEBUG
+#if !defined(NDEBUG)
   
   size_t cache_size = 0;
   for (EntryMap::iterator it = map_.begin(); it != map_.end(); ++it) {
     cache_size += it->second.size;
   }
   ASSERT(cache_size == total_size_);
-#endif  
+#endif
 
   
   
@@ -263,7 +264,7 @@ std::string DiskCache::IdToFilename(const std::string& id, size_t index) const {
 #endif  
 
   char extension[32];
-  sprintfn(extension, ARRAY_SIZE(extension), ".%u", index);
+  sprintfn(extension, arraysize(extension), ".%u", index);
 
   Pathname pathname;
   pathname.SetFolder(folder_);

@@ -46,7 +46,7 @@ class PacketSource {
   uint32_t ssrc_;  
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(PacketSource);
+  RTC_DISALLOW_COPY_AND_ASSIGN(PacketSource);
 };
 
 }  

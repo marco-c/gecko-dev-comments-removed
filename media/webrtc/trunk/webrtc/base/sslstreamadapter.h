@@ -20,6 +20,30 @@
 namespace rtc {
 
 
+const int TLS_NULL_WITH_NULL_NULL = 0;
+
+
+const int SRTP_INVALID_CRYPTO_SUITE = 0;
+const int SRTP_AES128_CM_SHA1_80 = 0x0001;
+const int SRTP_AES128_CM_SHA1_32 = 0x0002;
+
+
+
+
+
+extern const char CS_AES_CM_128_HMAC_SHA1_80[];
+
+extern const char CS_AES_CM_128_HMAC_SHA1_32[];
+
+
+
+
+std::string SrtpCryptoSuiteToName(int crypto_suite);
+
+
+int SrtpCryptoSuiteFromName(const std::string& crypto_suite);
+
+
 
 
 
@@ -36,6 +60,13 @@ namespace rtc {
 
 enum SSLRole { SSL_CLIENT, SSL_SERVER };
 enum SSLMode { SSL_MODE_TLS, SSL_MODE_DTLS };
+enum SSLProtocolVersion {
+  SSL_PROTOCOL_TLS_10,
+  SSL_PROTOCOL_TLS_11,
+  SSL_PROTOCOL_TLS_12,
+  SSL_PROTOCOL_DTLS_10 = SSL_PROTOCOL_TLS_11,
+  SSL_PROTOCOL_DTLS_12 = SSL_PROTOCOL_TLS_12,
+};
 
 
 enum { SSE_MSG_TRUNC = 0xff0001 };
@@ -73,6 +104,13 @@ class SSLStreamAdapter : public StreamAdapterInterface {
 
   
   virtual void SetMode(SSLMode mode) = 0;
+
+  
+  
+  
+  
+  
+  virtual void SetMaxProtocolVersion(SSLProtocolVersion version) = 0;
 
   
   
@@ -121,7 +159,7 @@ class SSLStreamAdapter : public StreamAdapterInterface {
 
   
   
-  virtual bool GetSslCipher(std::string* cipher);
+  virtual bool GetSslCipherSuite(int* cipher_suite);
 
   
   
@@ -136,15 +174,15 @@ class SSLStreamAdapter : public StreamAdapterInterface {
   
   
   virtual bool ExportKeyingMaterial(const std::string& label,
-                                    const uint8* context,
+                                    const uint8_t* context,
                                     size_t context_len,
                                     bool use_context,
-                                    uint8* result,
+                                    uint8_t* result,
                                     size_t result_len);
 
   
-  virtual bool SetDtlsSrtpCiphers(const std::vector<std::string>& ciphers);
-  virtual bool GetDtlsSrtpCipher(std::string* cipher);
+  virtual bool SetDtlsSrtpCryptoSuites(const std::vector<int>& crypto_suites);
+  virtual bool GetDtlsSrtpCryptoSuite(int* crypto_suite);
 
   
   static bool HaveDtls();
@@ -153,7 +191,14 @@ class SSLStreamAdapter : public StreamAdapterInterface {
 
   
   
-  static std::string GetDefaultSslCipher();
+  
+  static int GetDefaultSslCipherForTest(SSLProtocolVersion version,
+                                        KeyType key_type);
+
+  
+  
+  
+  static std::string SslCipherSuiteToName(int cipher_suite);
 
  private:
   

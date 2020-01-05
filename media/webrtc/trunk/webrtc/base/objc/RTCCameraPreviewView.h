@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+#import <Foundation/Foundation.h>
+#import <UIKit/UIKit.h>
+
+@class AVCaptureSession;
+@class RTCAVFoundationVideoSource;
+
+
+
+
+@interface RTCCameraPreviewView : UIView
+
+
+
+
+
+@property(nonatomic, strong) AVCaptureSession *captureSession;
+
+@end

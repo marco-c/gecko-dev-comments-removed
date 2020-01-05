@@ -12,6 +12,7 @@
 #define WEBRTC_MODULES_AUDIO_PROCESSING_BEAMFORMER_BEAMFORMER_H_
 
 #include "webrtc/common_audio/channel_buffer.h"
+#include "webrtc/modules/audio_processing/beamformer/array_util.h"
 
 namespace webrtc {
 
@@ -30,6 +31,12 @@ class Beamformer {
   
   
   virtual void Initialize(int chunk_size_ms, int sample_rate_hz) = 0;
+
+  
+  virtual void AimAt(const SphericalPointf& spherical_point) = 0;
+
+  
+  virtual bool IsInBeam(const SphericalPointf& spherical_point) { return true; }
 
   
   

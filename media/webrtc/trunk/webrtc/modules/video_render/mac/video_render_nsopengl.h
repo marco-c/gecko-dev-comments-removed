@@ -23,29 +23,29 @@
 #include <map>
 
 #include "webrtc/base/thread_annotations.h"
-#include "webrtc/modules/video_render/include/video_render_defines.h"
+#include "webrtc/modules/video_render/video_render_defines.h"
 
 #import "webrtc/modules/video_render/mac/cocoa_full_screen_window.h"
 #import "webrtc/modules/video_render/mac/cocoa_render_view.h"
 
 class Trace;
 
+namespace rtc {
+class PlatformThread;
+}  
+
 namespace webrtc {
-class EventWrapper;
-class ThreadWrapper;
+class EventTimerWrapper;
 class VideoRenderNSOpenGL;
 class CriticalSectionWrapper;
 
-class VideoChannelNSOpenGL : public VideoRenderCallback
-{
-
+class VideoChannelNSOpenGL : public VideoRenderCallback {
 public:
-
     VideoChannelNSOpenGL(NSOpenGLContext *nsglContext, int iId, VideoRenderNSOpenGL* owner);
     virtual ~VideoChannelNSOpenGL();
 
     
-    virtual int DeliverFrame(const I420VideoFrame& videoFrame);
+    virtual int DeliverFrame(const VideoFrame& videoFrame);
 
     
     
@@ -66,7 +66,7 @@ public:
 
     
     virtual int32_t RenderFrame(const uint32_t streamId,
-                                const I420VideoFrame& videoFrame);
+                                const VideoFrame& videoFrame);
 
     
     int ChangeContext(NSOpenGLContext *nsglContext);
@@ -169,8 +169,9 @@ private:
     bool _fullScreen;
     int _id;
     CriticalSectionWrapper& _nsglContextCritSec;
-    rtc::scoped_ptr<ThreadWrapper> _screenUpdateThread;
-    EventWrapper* _screenUpdateEvent;
+    
+    rtc::scoped_ptr<rtc::PlatformThread> _screenUpdateThread;
+    EventTimerWrapper* _screenUpdateEvent;
     NSOpenGLContext* _nsglContext;
     NSOpenGLContext* _nsglFullScreenContext;
     CocoaFullScreenWindow* _fullScreenWindow;

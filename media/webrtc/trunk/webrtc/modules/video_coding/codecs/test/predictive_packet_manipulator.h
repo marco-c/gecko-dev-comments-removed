@@ -31,6 +31,7 @@ class PredictivePacketManipulator : public PacketManipulatorImpl {
   
   
   void AddRandomResult(double result);
+
  protected:
   
   double RandomUniform() override;

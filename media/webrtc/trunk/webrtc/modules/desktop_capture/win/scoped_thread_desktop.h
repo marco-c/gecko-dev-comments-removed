@@ -45,7 +45,7 @@ class ScopedThreadDesktop {
   
   rtc::scoped_ptr<Desktop> initial_;
 
-  DISALLOW_COPY_AND_ASSIGN(ScopedThreadDesktop);
+  RTC_DISALLOW_COPY_AND_ASSIGN(ScopedThreadDesktop);
 };
 
 }  

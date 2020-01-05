@@ -41,8 +41,7 @@ static const int16_t kCoefficients44To32[4][9] = {
 
 
 
-void WebRtcSpl_Resample48khzTo32khz(const int32_t *In, int32_t *Out,
-                                    int32_t K)
+void WebRtcSpl_Resample48khzTo32khz(const int32_t *In, int32_t *Out, size_t K)
 {
     
     
@@ -50,7 +49,7 @@ void WebRtcSpl_Resample48khzTo32khz(const int32_t *In, int32_t *Out,
     
     
     int32_t tmp;
-    int32_t m;
+    size_t m;
 
     for (m = 0; m < K; m++)
     {
@@ -87,15 +86,14 @@ void WebRtcSpl_Resample48khzTo32khz(const int32_t *In, int32_t *Out,
 
 
 
-void WebRtcSpl_Resample32khzTo24khz(const int32_t *In, int32_t *Out,
-                                    int32_t K)
+void WebRtcSpl_Resample32khzTo24khz(const int32_t *In, int32_t *Out, size_t K)
 {
     
     
     
     
     
-    int32_t m;
+    size_t m;
     int32_t tmp;
 
     for (m = 0; m < K; m++)
@@ -196,8 +194,7 @@ static void WebRtcSpl_ResampDotProduct(const int32_t *in1, const int32_t *in2,
 
 
 
-void WebRtcSpl_Resample44khzTo32khz(const int32_t *In, int32_t *Out,
-                                    int32_t K)
+void WebRtcSpl_Resample44khzTo32khz(const int32_t *In, int32_t *Out, size_t K)
 {
     
     
@@ -205,7 +202,7 @@ void WebRtcSpl_Resample44khzTo32khz(const int32_t *In, int32_t *Out,
     
     
     int32_t tmp;
-    int32_t m;
+    size_t m;
 
     for (m = 0; m < K; m++)
     {

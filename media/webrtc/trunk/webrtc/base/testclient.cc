@@ -34,7 +34,7 @@ TestClient::~TestClient() {
 
 bool TestClient::CheckConnState(AsyncPacketSocket::State state) {
   
-  uint32 end = TimeAfter(kTimeoutMs);
+  uint32_t end = TimeAfter(kTimeoutMs);
   while (socket_->GetState() != state && TimeUntil(end) > 0)
     Thread::Current()->ProcessMessages(1);
   return (socket_->GetState() == state);
@@ -63,7 +63,7 @@ TestClient::Packet* TestClient::NextPacket(int timeout_ms) {
   
   
 
-  uint32 end = TimeAfter(timeout_ms);
+  uint32_t end = TimeAfter(timeout_ms);
   while (TimeUntil(end) > 0) {
     {
       CritScope cs(&crit_);

@@ -74,7 +74,7 @@ int16_t WebRtcIsacfix_EncTerminate(Bitstr_enc *streamData);
 
 
 
-int16_t WebRtcIsacfix_DecLogisticMulti2(
+int WebRtcIsacfix_DecLogisticMulti2(
     int16_t *data,
     Bitstr_dec *streamData,
     const int32_t *env,

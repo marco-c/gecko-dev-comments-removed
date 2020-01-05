@@ -14,6 +14,7 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/p2p/base/port.h"
 #include "webrtc/p2p/base/portinterface.h"
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/proxyinfo.h"
@@ -28,25 +29,43 @@ namespace cricket {
 
 
 enum {
+  
+  
   PORTALLOCATOR_DISABLE_UDP = 0x01,
   PORTALLOCATOR_DISABLE_STUN = 0x02,
   PORTALLOCATOR_DISABLE_RELAY = 0x04,
+  
+  
   PORTALLOCATOR_DISABLE_TCP = 0x08,
   PORTALLOCATOR_ENABLE_SHAKER = 0x10,
-  PORTALLOCATOR_ENABLE_BUNDLE = 0x20,
   PORTALLOCATOR_ENABLE_IPV6 = 0x40,
+  
+  
+  
+  
+  
   PORTALLOCATOR_ENABLE_SHARED_UFRAG = 0x80,
   PORTALLOCATOR_ENABLE_SHARED_SOCKET = 0x100,
   PORTALLOCATOR_ENABLE_STUN_RETRANSMIT_ATTRIBUTE = 0x200,
+  
+  
+  
   PORTALLOCATOR_DISABLE_ADAPTER_ENUMERATION = 0x400,
+  
+  
+  
+  PORTALLOCATOR_DISABLE_DEFAULT_LOCAL_CANDIDATE = 0x800,
+  
+  
+  PORTALLOCATOR_DISABLE_UDP_RELAY = 0x1000,
 };
 
-const uint32 kDefaultPortAllocatorFlags = 0;
+const uint32_t kDefaultPortAllocatorFlags = 0;
 
-const uint32 kDefaultStepDelay = 1000;  
+const uint32_t kDefaultStepDelay = 1000;  
 
 
-const uint32 kMinimumStepDelay = 50;
+const uint32_t kMinimumStepDelay = 50;
 
 
 enum {
@@ -57,29 +76,61 @@ enum {
   CF_ALL = 0x7,
 };
 
-class PortAllocatorSessionMuxer;
+
+struct RelayCredentials {
+  RelayCredentials() {}
+  RelayCredentials(const std::string& username, const std::string& password)
+      : username(username), password(password) {}
+
+  std::string username;
+  std::string password;
+};
+
+typedef std::vector<ProtocolAddress> PortList;
+
+struct RelayServerConfig {
+  RelayServerConfig(RelayType type) : type(type), priority(0) {}
+
+  RelayServerConfig(const std::string& address,
+                    int port,
+                    const std::string& username,
+                    const std::string& password,
+                    ProtocolType proto,
+                    bool secure)
+      : type(RELAY_TURN), credentials(username, password) {
+    ports.push_back(
+        ProtocolAddress(rtc::SocketAddress(address, port), proto, secure));
+  }
+
+  RelayType type;
+  PortList ports;
+  RelayCredentials credentials;
+  int priority;
+};
 
 class PortAllocatorSession : public sigslot::has_slots<> {
  public:
   
-  
   PortAllocatorSession(const std::string& content_name,
                        int component,
-                       const std::string& username,
-                       const std::string& password,
-                       uint32 flags);
+                       const std::string& ice_ufrag,
+                       const std::string& ice_pwd,
+                       uint32_t flags);
 
   
   virtual ~PortAllocatorSession() {}
 
-  uint32 flags() const { return flags_; }
-  void set_flags(uint32 flags) { flags_ = flags; }
+  uint32_t flags() const { return flags_; }
+  void set_flags(uint32_t flags) { flags_ = flags; }
   std::string content_name() const { return content_name_; }
   int component() const { return component_; }
 
   
   virtual void StartGettingPorts() = 0;
   virtual void StopGettingPorts() = 0;
+  
+  virtual void ClearGettingPorts() = 0;
+  
   virtual bool IsGettingPorts() = 0;
 
   sigslot::signal2<PortAllocatorSession*, PortInterface*> SignalPortReady;
@@ -87,22 +138,27 @@ class PortAllocatorSession : public sigslot::has_slots<> {
                    const std::vector<Candidate>&> SignalCandidatesReady;
   sigslot::signal1<PortAllocatorSession*> SignalCandidatesAllocationDone;
 
-  virtual uint32 generation() { return generation_; }
-  virtual void set_generation(uint32 generation) { generation_ = generation; }
+  virtual uint32_t generation() { return generation_; }
+  virtual void set_generation(uint32_t generation) { generation_ = generation; }
   sigslot::signal1<PortAllocatorSession*> SignalDestroyed;
 
+  const std::string& ice_ufrag() const { return ice_ufrag_; }
+  const std::string& ice_pwd() const { return ice_pwd_; }
+
  protected:
-  const std::string& username() const { return username_; }
-  const std::string& password() const { return password_; }
+  
+  
+  const std::string& username() const { return ice_ufrag_; }
+  const std::string& password() const { return ice_pwd_; }
 
   std::string content_name_;
   int component_;
 
  private:
-  uint32 flags_;
-  uint32 generation_;
-  std::string username_;
-  std::string password_;
+  uint32_t flags_;
+  uint32_t generation_;
+  std::string ice_ufrag_;
+  std::string ice_pwd_;
 };
 
 class PortAllocator : public sigslot::has_slots<> {
@@ -116,7 +172,19 @@ class PortAllocator : public sigslot::has_slots<> {
       candidate_filter_(CF_ALL) {
     
   }
-  virtual ~PortAllocator();
+  virtual ~PortAllocator() {}
+
+  
+  virtual void SetIceServers(
+      const ServerAddresses& stun_servers,
+      const std::vector<RelayServerConfig>& turn_servers) = 0;
+
+  
+  
+  
+  
+  
+  virtual void SetNetworkIgnoreMask(int network_ignore_mask) = 0;
 
   PortAllocatorSession* CreateSession(
       const std::string& sid,
@@ -125,11 +193,8 @@ class PortAllocator : public sigslot::has_slots<> {
       const std::string& ice_ufrag,
       const std::string& ice_pwd);
 
-  PortAllocatorSessionMuxer* GetSessionMuxer(const std::string& key) const;
-  void OnSessionMuxerDestroyed(PortAllocatorSessionMuxer* session);
-
-  uint32 flags() const { return flags_; }
-  void set_flags(uint32 flags) { flags_ = flags; }
+  uint32_t flags() const { return flags_; }
+  void set_flags(uint32_t flags) { flags_ = flags; }
 
   const std::string& user_agent() const { return agent_; }
   const rtc::ProxyInfo& proxy() const { return proxy_; }
@@ -151,18 +216,16 @@ class PortAllocator : public sigslot::has_slots<> {
     return true;
   }
 
-  uint32 step_delay() const { return step_delay_; }
-  void set_step_delay(uint32 delay) {
-    step_delay_ = delay;
-  }
+  uint32_t step_delay() const { return step_delay_; }
+  void set_step_delay(uint32_t delay) { step_delay_ = delay; }
 
   bool allow_tcp_listen() const { return allow_tcp_listen_; }
   void set_allow_tcp_listen(bool allow_tcp_listen) {
     allow_tcp_listen_ = allow_tcp_listen;
   }
 
-  uint32 candidate_filter() { return candidate_filter_; }
-  bool set_candidate_filter(uint32 filter) {
+  uint32_t candidate_filter() { return candidate_filter_; }
+  bool set_candidate_filter(uint32_t filter) {
     
     candidate_filter_ = filter;
     return true;
@@ -179,17 +242,14 @@ class PortAllocator : public sigslot::has_slots<> {
       const std::string& ice_ufrag,
       const std::string& ice_pwd) = 0;
 
-  typedef std::map<std::string, PortAllocatorSessionMuxer*> SessionMuxerMap;
-
-  uint32 flags_;
+  uint32_t flags_;
   std::string agent_;
   rtc::ProxyInfo proxy_;
   int min_port_;
   int max_port_;
-  uint32 step_delay_;
-  SessionMuxerMap muxers_;
+  uint32_t step_delay_;
   bool allow_tcp_listen_;
-  uint32 candidate_filter_;
+  uint32_t candidate_filter_;
   std::string origin_;
 };
 

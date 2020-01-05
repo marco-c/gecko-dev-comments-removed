@@ -16,9 +16,9 @@
 
 
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
-#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
-#include "webrtc/system_wrappers/interface/event_wrapper.h"
-#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/include/event_wrapper.h"
+#include "webrtc/system_wrappers/include/trace.h"
 
 namespace webrtc {
 
@@ -80,7 +80,7 @@ VideoChannelAGL::~VideoChannelAGL()
 }
 
 int32_t VideoChannelAGL::RenderFrame(const uint32_t streamId,
-                                     I420VideoFrame& videoFrame) {
+                                     VideoFrame& videoFrame) {
   _owner->LockAGLCntx();
   if (_width != videoFrame.width() ||
       _height != videoFrame.height()) {
@@ -219,7 +219,7 @@ int VideoChannelAGL::FrameSizeChange(int width, int height, int numberOfStreams)
 }
 
 
-int VideoChannelAGL::DeliverFrame(const I420VideoFrame& videoFrame) {
+int VideoChannelAGL::DeliverFrame(const VideoFrame& videoFrame) {
   _owner->LockAGLCntx();
 
   if (_texture == 0) {
@@ -395,8 +395,8 @@ _renderingIsPaused( false),
 {
     
 
-    _screenUpdateThread = ThreadWrapper::CreateThread(
-        ScreenUpdateThreadProc, this, "ScreenUpdate");
+    _screenUpdateThread.reset(
+        new rtc::PlatformThread(ScreenUpdateThreadProc, this, "ScreenUpdate"));
     _screenUpdateEvent = EventWrapper::Create();
 
     if(!IsValidWindowPtr(_windowRef))
@@ -512,8 +512,8 @@ _renderingIsPaused( false),
     
     
 
-    _screenUpdateThread = ThreadWrapper::CreateThread(
-        ScreenUpdateThreadProc, this, "ScreenUpdateThread");
+    _screenUpdateThread.reset(new rtc::PlatformThread(
+        ScreenUpdateThreadProc, this, "ScreenUpdateThread"));
     _screenUpdateEvent = EventWrapper::Create();
 
     GetWindowRect(_windowRect);
@@ -677,7 +677,7 @@ VideoRenderAGL::~VideoRenderAGL()
 #endif
 
     
-    ThreadWrapper* tmpPtr = _screenUpdateThread.release();
+    rtc::PlatformThread* tmpPtr = _screenUpdateThread.release();
 
     if (tmpPtr)
     {
@@ -739,7 +739,7 @@ int VideoRenderAGL::Init()
         return -1;
     }
     _screenUpdateThread->Start();
-    _screenUpdateThread->SetPriority(kRealtimePriority);
+    _screenUpdateThread->SetPriority(rtc::kRealtimePriority);
 
     
     unsigned int monitorFreq = 60;
@@ -856,7 +856,7 @@ int VideoRenderAGL::DeleteAGLChannel(int channel)
 int VideoRenderAGL::StopThread()
 {
     CriticalSectionScoped cs(&_renderCritSec);
-    ThreadWrapper* tmpPtr = _screenUpdateThread.release();
+    rtc::PlatformThread* tmpPtr = _screenUpdateThread.release();
 
     if (tmpPtr)
     {
@@ -1880,7 +1880,7 @@ int32_t VideoRenderAGL::StartRender()
             UnlockAGLCntx();
             return -1;
         }
-        _screenUpdateThread->SetPriority(kRealtimePriority);
+        _screenUpdateThread->SetPriority(rtc::kRealtimePriority);
         if(FALSE == _screenUpdateEvent->StartTimer(true, 1000/MONITOR_FREQ))
         {
             
@@ -1891,8 +1891,8 @@ int32_t VideoRenderAGL::StartRender()
         return 0;
     }
 
-    _screenUpdateThread = ThreadWrapper::CreateThread(ScreenUpdateThreadProc,
-        this, "ScreenUpdate");
+    _screenUpdateThread.reset(
+        new rtc::PlatformThread(ScreenUpdateThreadProc, this, "ScreenUpdate"));
     _screenUpdateEvent = EventWrapper::Create();
 
     if (!_screenUpdateThread)
@@ -1903,14 +1903,13 @@ int32_t VideoRenderAGL::StartRender()
     }
 
     _screenUpdateThread->Start();
-    _screenUpdateThread->SetPriority(kRealtimePriority);
+    _screenUpdateThread->SetPriority(rtc::kRealtimePriority);
     _screenUpdateEvent->StartTimer(true, 1000/MONITOR_FREQ);
 
     
 
     UnlockAGLCntx();
     return 0;
-
 }
 
 int32_t VideoRenderAGL::StopRender()

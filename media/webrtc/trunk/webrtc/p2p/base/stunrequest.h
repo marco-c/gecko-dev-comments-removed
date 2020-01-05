@@ -21,6 +21,8 @@ namespace cricket {
 
 class StunRequest;
 
+const int kAllRequests = 0;
+
 
 
 class StunRequestManager {
@@ -31,6 +33,11 @@ class StunRequestManager {
   
   void Send(StunRequest* request);
   void SendDelayed(StunRequest* request, int delay);
+
+  
+  
+  
+  void Flush(int msg_type);
 
   
   
@@ -90,7 +97,7 @@ class StunRequest : public rtc::MessageHandler {
   const StunMessage* msg() const;
 
   
-  uint32 Elapsed() const;
+  uint32_t Elapsed() const;
 
  protected:
   int count_;
@@ -105,7 +112,10 @@ class StunRequest : public rtc::MessageHandler {
   virtual void OnResponse(StunMessage* response) {}
   virtual void OnErrorResponse(StunMessage* response) {}
   virtual void OnTimeout() {}
-  virtual int GetNextDelay();
+  
+  virtual void OnSent();
+  
+  virtual int resend_delay();
 
  private:
   void set_manager(StunRequestManager* manager);
@@ -115,7 +125,7 @@ class StunRequest : public rtc::MessageHandler {
 
   StunRequestManager* manager_;
   StunMessage* msg_;
-  uint32 tstamp_;
+  uint32_t tstamp_;
 
   friend class StunRequestManager;
 };

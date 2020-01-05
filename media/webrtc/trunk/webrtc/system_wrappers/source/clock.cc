@@ -8,20 +8,20 @@
 
 
 
-#include "webrtc/system_wrappers/interface/clock.h"
+#include "webrtc/system_wrappers/include/clock.h"
 
 #if defined(_WIN32)
 
 #include "webrtc/base/win32.h"
 #include <MMSystem.h>
-#elif ((defined WEBRTC_LINUX) || (defined WEBRTC_BSD) || (defined WEBRTC_MAC))
+#elif ((defined WEBRTC_LINUX) || (defined WEBRTC_MAC))
 #include <sys/time.h>
 #include <time.h>
 #endif
 
 #include "webrtc/base/criticalsection.h"
-#include "webrtc/system_wrappers/interface/rw_lock_wrapper.h"
-#include "webrtc/system_wrappers/interface/tick_util.h"
+#include "webrtc/system_wrappers/include/rw_lock_wrapper.h"
+#include "webrtc/system_wrappers/include/tick_util.h"
 
 namespace webrtc {
 
@@ -155,9 +155,9 @@ class WindowsRealTimeClock : public RealTimeClock {
   }
 
   static ReferencePoint GetSystemReferencePoint() {
-    ReferencePoint ref = {0};
-    FILETIME ft0 = {0};
-    FILETIME ft1 = {0};
+    ReferencePoint ref = {};
+    FILETIME ft0 = {};
+    FILETIME ft1 = {};
     
     
     
@@ -185,7 +185,7 @@ class WindowsRealTimeClock : public RealTimeClock {
   const ReferencePoint ref_point_;
 };
 
-#elif ((defined WEBRTC_LINUX) || (defined WEBRTC_BSD) || (defined WEBRTC_MAC))
+#elif ((defined WEBRTC_LINUX) || (defined WEBRTC_MAC))
 class UnixRealTimeClock : public RealTimeClock {
  public:
   UnixRealTimeClock() {}
@@ -223,7 +223,7 @@ Clock* Clock::GetRealTimeClock() {
     delete clock;
   }
   return g_shared_clock;
-#elif ((defined WEBRTC_LINUX) || (defined WEBRTC_BSD) || (defined WEBRTC_MAC))
+#elif defined(WEBRTC_LINUX) || defined(WEBRTC_MAC)
   static UnixRealTimeClock clock;
   return &clock;
 #else

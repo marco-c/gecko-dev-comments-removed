@@ -35,58 +35,59 @@
 #define WEBRTC_VOICE_ENGINE_VOE_NETWORK_H
 
 #include "webrtc/common_types.h"
+#include "webrtc/transport.h"
 
 namespace webrtc {
 
 class VoiceEngine;
 
 
-class WEBRTC_DLLEXPORT VoENetwork
-{
-public:
-    
-    
-    
-    static VoENetwork* GetInterface(VoiceEngine* voiceEngine);
+class WEBRTC_DLLEXPORT VoENetwork {
+ public:
+  
+  
+  
+  static VoENetwork* GetInterface(VoiceEngine* voiceEngine);
 
-    
-    
-    
-    
-    virtual int Release() = 0;
+  
+  
+  
+  
+  virtual int Release() = 0;
 
-    
-    
-    virtual int RegisterExternalTransport(
-        int channel, Transport& transport) = 0;
+  
+  
+  virtual int RegisterExternalTransport(int channel, Transport& transport) = 0;
 
-    
-    
-    virtual int DeRegisterExternalTransport(int channel) = 0;
+  
+  
+  virtual int DeRegisterExternalTransport(int channel) = 0;
 
-    
-    
-    
-    virtual int ReceivedRTPPacket(int channel,
-                                  const void* data,
-                                  size_t length) = 0;
-    virtual int ReceivedRTPPacket(int channel,
-                                  const void* data,
-                                  size_t length,
-                                  const PacketTime& packet_time) {
-      return 0;
-    }
+  
+  
+  
+  
+  virtual int ReceivedRTPPacket(int channel,
+                                const void* data,
+                                size_t length) = 0;
+  virtual int ReceivedRTPPacket(int channel,
+                                const void* data,
+                                size_t length,
+                                const PacketTime& packet_time) {
+    return 0;
+  }
 
-    
-    
-    
-    virtual int ReceivedRTCPPacket(int channel,
-                                   const void* data,
-                                   size_t length) = 0;
+  
+  
+  
+  
+  virtual int ReceivedRTCPPacket(int channel,
+                                 const void* data,
+                                 size_t length) = 0;
 
-protected:
-    VoENetwork() {}
-    virtual ~VoENetwork() {}
+ protected:
+  VoENetwork() {}
+  virtual ~VoENetwork() {}
 };
 
 }  

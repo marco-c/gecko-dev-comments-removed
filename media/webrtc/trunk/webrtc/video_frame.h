@@ -12,25 +12,20 @@
 #define WEBRTC_VIDEO_FRAME_H_
 
 #include "webrtc/base/scoped_ref_ptr.h"
-#include "webrtc/common_video/interface/native_handle.h"
-#include "webrtc/common_video/interface/video_frame_buffer.h"
+#include "webrtc/common_types.h"
+#include "webrtc/common_video/include/video_frame_buffer.h"
 #include "webrtc/common_video/rotation.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
 
-class I420VideoFrame {
+class VideoFrame {
  public:
-  I420VideoFrame();
-  I420VideoFrame(const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& buffer,
-                 uint32_t timestamp,
-                 int64_t render_time_ms,
-                 VideoRotation rotation);
-  I420VideoFrame(NativeHandle* handle,
-                 int width,
-                 int height,
-                 uint32_t timestamp,
-                 int64_t render_time_ms);
+  VideoFrame();
+  VideoFrame(const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& buffer,
+             uint32_t timestamp,
+             int64_t render_time_ms,
+             VideoRotation rotation);
 
   
   
@@ -81,11 +76,11 @@ class I420VideoFrame {
   
   
   
-  int CopyFrame(const I420VideoFrame& videoFrame);
+  int CopyFrame(const VideoFrame& videoFrame);
 
   
   
-  void ShallowCopy(const I420VideoFrame& videoFrame);
+  void ShallowCopy(const VideoFrame& videoFrame);
 
   
   void Reset();
@@ -159,6 +154,12 @@ class I420VideoFrame {
   void set_video_frame_buffer(
       const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& buffer);
 
+  
+  
+  VideoFrame ConvertNativeToI420Frame() const;
+
+  bool EqualsFrame(const VideoFrame& frame) const;
+
  private:
   
   rtc::scoped_refptr<webrtc::VideoFrameBuffer> video_frame_buffer_;
@@ -168,13 +169,6 @@ class I420VideoFrame {
   VideoRotation rotation_;
 };
 
-enum VideoFrameType {
-  kKeyFrame = 0,
-  kDeltaFrame = 1,
-  kGoldenFrame = 2,
-  kAltRefFrame = 3,
-  kSkipFrame = 4
-};
 
 
 class EncodedImage {
@@ -183,18 +177,31 @@ class EncodedImage {
   EncodedImage(uint8_t* buffer, size_t length, size_t size)
       : _buffer(buffer), _length(length), _size(size) {}
 
+  struct AdaptReason {
+    AdaptReason()
+        : quality_resolution_downscales(-1),
+          bw_resolutions_disabled(-1) {}
+
+    int quality_resolution_downscales;  
+                                        
+                                        
+    int bw_resolutions_disabled;  
+                                  
+                                  
+  };
   uint32_t _encodedWidth = 0;
   uint32_t _encodedHeight = 0;
   uint32_t _timeStamp = 0;
   
   int64_t ntp_time_ms_ = 0;
   int64_t capture_time_ms_ = 0;
-  
-  VideoFrameType _frameType = kDeltaFrame;
+  FrameType _frameType = kVideoFrameDelta;
   uint8_t* _buffer;
   size_t _length;
   size_t _size;
   bool _completeFrame = false;
+  AdaptReason adapt_reason_;
+  int qp_ = -1;  
 };
 
 }  

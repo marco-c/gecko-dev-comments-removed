@@ -33,10 +33,9 @@ void WebRtcIlbcfix_AugmentedCbCorr(
     int32_t *crossDot,  
 
 
-    int16_t low,    
+    size_t low,    
 
-    int16_t high,   
-    int16_t scale);   
-
+    size_t high,   
+    int scale);   
 
 #endif

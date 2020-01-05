@@ -29,8 +29,8 @@ void WebRtcIlbcfix_FilteredCbVecs(
     int16_t *cbvectors, 
     int16_t *CBmem,  
 
-    int lMem,  
-    int16_t samples    
+    size_t lMem,  
+    size_t samples    
                                   ) {
 
   

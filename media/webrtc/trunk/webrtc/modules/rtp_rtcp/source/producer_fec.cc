@@ -88,7 +88,6 @@ ProducerFec::ProducerFec(ForwardErrorCorrection* fec)
       media_packets_fec_(),
       fec_packets_(),
       num_frames_(0),
-      incomplete_frame_(false),
       num_first_partition_(0),
       minimum_media_packets_fec_(1),
       params_(),
@@ -125,9 +124,8 @@ RedPacket* ProducerFec::BuildRedPacket(const uint8_t* data_buffer,
                                        size_t payload_length,
                                        size_t rtp_header_length,
                                        int red_pl_type) {
-  RedPacket* red_packet = new RedPacket(payload_length +
-                                        kREDForFECHeaderLength +
-                                        rtp_header_length);
+  RedPacket* red_packet = new RedPacket(
+      payload_length + kREDForFECHeaderLength + rtp_header_length);
   int pl_type = data_buffer[1] & 0x7f;
   red_packet->CreateHeader(data_buffer, rtp_header_length,
                            red_pl_type, pl_type);
@@ -142,7 +140,7 @@ int ProducerFec::AddRtpPacketAndGenerateFec(const uint8_t* data_buffer,
   if (media_packets_fec_.empty()) {
     params_ = new_params_;
   }
-  incomplete_frame_ = true;
+  bool complete_frame = false;
   const bool marker_bit = (data_buffer[1] & kRtpMarkerBitMask) ? true : false;
   if (media_packets_fec_.size() < ForwardErrorCorrection::kMaxMediaPackets) {
     
@@ -153,13 +151,13 @@ int ProducerFec::AddRtpPacketAndGenerateFec(const uint8_t* data_buffer,
   }
   if (marker_bit) {
     ++num_frames_;
-    incomplete_frame_ = false;
+    complete_frame = true;
   }
   
   
   
   
-  if (!incomplete_frame_ &&
+  if (complete_frame &&
       (num_frames_ == params_.max_fec_frames ||
           (ExcessOverheadBelowMax() && MinimumMediaPacketsReached()))) {
     assert(num_first_partition_ <=
@@ -206,37 +204,43 @@ bool ProducerFec::MinimumMediaPacketsReached() {
 }
 
 bool ProducerFec::FecAvailable() const {
-  return (fec_packets_.size() > 0);
+  return !fec_packets_.empty();
 }
 
-RedPacket* ProducerFec::GetFecPacket(int red_pl_type,
-                                     int fec_pl_type,
-                                     uint16_t seq_num,
-                                     size_t rtp_header_length) {
-  if (fec_packets_.empty())
-    return NULL;
-  
-  
-  
-  ForwardErrorCorrection::Packet* packet_to_send = fec_packets_.front();
-  ForwardErrorCorrection::Packet* last_media_packet = media_packets_fec_.back();
-  RedPacket* return_packet = new RedPacket(packet_to_send->length +
-                                           kREDForFECHeaderLength +
-                                           rtp_header_length);
-  return_packet->CreateHeader(last_media_packet->data,
-                              rtp_header_length,
-                              red_pl_type,
-                              fec_pl_type);
-  return_packet->SetSeqNum(seq_num);
-  return_packet->ClearMarkerBit();
-  return_packet->AssignPayload(packet_to_send->data, packet_to_send->length);
-  fec_packets_.pop_front();
-  if (fec_packets_.empty()) {
+size_t ProducerFec::NumAvailableFecPackets() const {
+  return fec_packets_.size();
+}
+
+std::vector<RedPacket*> ProducerFec::GetFecPackets(int red_pl_type,
+                                                   int fec_pl_type,
+                                                   uint16_t first_seq_num,
+                                                   size_t rtp_header_length) {
+  std::vector<RedPacket*> fec_packets;
+  fec_packets.reserve(fec_packets_.size());
+  uint16_t sequence_number = first_seq_num;
+  while (!fec_packets_.empty()) {
     
-    DeletePackets();
-    num_frames_ = 0;
+    
+    
+    ForwardErrorCorrection::Packet* packet_to_send = fec_packets_.front();
+    ForwardErrorCorrection::Packet* last_media_packet =
+        media_packets_fec_.back();
+
+    RedPacket* red_packet = new RedPacket(
+        packet_to_send->length + kREDForFECHeaderLength + rtp_header_length);
+    red_packet->CreateHeader(last_media_packet->data, rtp_header_length,
+                             red_pl_type, fec_pl_type);
+    red_packet->SetSeqNum(sequence_number++);
+    red_packet->ClearMarkerBit();
+    red_packet->AssignPayload(packet_to_send->data, packet_to_send->length);
+
+    fec_packets.push_back(red_packet);
+
+    fec_packets_.pop_front();
   }
-  return return_packet;
+  DeletePackets();
+  num_frames_ = 0;
+  return fec_packets;
 }
 
 int ProducerFec::Overhead() const {

@@ -13,9 +13,9 @@
 
 #include "webrtc/common_audio/resampler/include/push_resampler.h"
 #include "webrtc/common_types.h"
-#include "webrtc/modules/audio_conference_mixer/interface/audio_conference_mixer.h"
-#include "webrtc/modules/audio_conference_mixer/interface/audio_conference_mixer_defines.h"
-#include "webrtc/modules/utility/interface/file_recorder.h"
+#include "webrtc/modules/audio_conference_mixer/include/audio_conference_mixer.h"
+#include "webrtc/modules/audio_conference_mixer/include/audio_conference_mixer_defines.h"
+#include "webrtc/modules/utility/include/file_recorder.h"
 #include "webrtc/voice_engine/dtmf_inband.h"
 #include "webrtc/voice_engine/level_indicator.h"
 #include "webrtc/voice_engine/voice_engine_defines.h"
@@ -32,7 +32,6 @@ namespace voe {
 class Statistics;
 
 class OutputMixer : public AudioMixerOutputReceiver,
-                    public AudioMixerStatusReceiver,
                     public FileCallback
 {
 public:
@@ -64,7 +63,7 @@ public:
     int32_t SetAnonymousMixabilityStatus(MixerParticipant& participant,
                                          bool mixable);
 
-    int GetMixedAudio(int sample_rate_hz, int num_channels,
+    int GetMixedAudio(int sample_rate_hz, size_t num_channels,
                       AudioFrame* audioFrame);
 
     
@@ -94,30 +93,12 @@ public:
         uint32_t size);
 
     
-    virtual void MixedParticipants(
-        int32_t id,
-        const ParticipantStatistics* participantStatistics,
-        uint32_t size);
-
-    virtual void VADPositiveParticipants(
-        int32_t id,
-        const ParticipantStatistics* participantStatistics,
-        uint32_t size);
-
-    virtual void MixedAudioLevel(int32_t id, uint32_t level);
-
-    
     void PlayNotification(int32_t id, uint32_t durationMs);
 
     void RecordNotification(int32_t id, uint32_t durationMs);
 
     void PlayFileEnded(int32_t id);
     void RecordFileEnded(int32_t id);
-
-    
-    void APMAnalyzeReverseStream(AudioFrame &audioFrame);
-
-    int GetOutputChannelCount();
 
 private:
     OutputMixer(uint32_t instanceId);

@@ -10,7 +10,7 @@
 
 
 
-#include "webrtc/system_wrappers/interface/cpu_features_wrapper.h"
+#include "webrtc/system_wrappers/include/cpu_features_wrapper.h"
 
 #if defined(WEBRTC_ARCH_X86_FAMILY) && defined(_MSC_VER)
 #include <intrin.h>
@@ -66,19 +66,6 @@ static int GetCPUInfo(CPUFeature feature) {
   (void)feature;
   return 0;
 }
-
-#if !defined(WEBRTC_GONK) && !defined(ANDROID)
-#ifdef WEBRTC_ARCH_ARM_V7
-uint64_t WebRtc_GetCPUFeaturesARM(void) {
-  return kCPUFeatureARMv7
-#ifdef WEBRTC_ARCH_ARM_NEON
-         | kCPUFeatureNEON
-#endif
-         | kCPUFeatureVFPv3;
-}
-#endif 
-#endif 
-
 #endif
 
 WebRtc_CPUInfo WebRtc_GetCPUInfo = GetCPUInfo;

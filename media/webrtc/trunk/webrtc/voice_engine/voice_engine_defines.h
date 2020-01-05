@@ -19,7 +19,6 @@
 #include "webrtc/common_types.h"
 #include "webrtc/engine_configurations.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
-#include "webrtc/system_wrappers/interface/logging.h"
 
 
 
@@ -29,7 +28,7 @@ namespace webrtc {
 
 
 
-static const int kMaxMonoDataSizeSamples = 1920;
+static const size_t kMaxMonoDataSizeSamples = 1920;
 
 
 enum { kMinVolumeLevel = 0 };
@@ -44,36 +43,33 @@ const float kMinOutputVolumePanning = 0.0f;
 const float kMaxOutputVolumePanning = 1.0f;
 
 
-enum { kMinDtmfEventCode = 0 };                 
-enum { kMaxDtmfEventCode = 15 };                
-enum { kMinTelephoneEventCode = 0 };            
-enum { kMaxTelephoneEventCode = 255 };          
+enum { kMinDtmfEventCode = 0 };         
+enum { kMaxDtmfEventCode = 15 };        
+enum { kMinTelephoneEventCode = 0 };    
+enum { kMaxTelephoneEventCode = 255 };  
 enum { kMinTelephoneEventDuration = 100 };
-enum { kMaxTelephoneEventDuration = 60000 };    
-enum { kMinTelephoneEventAttenuation = 0 };     
-enum { kMaxTelephoneEventAttenuation = 36 };    
-enum { kMinTelephoneEventSeparationMs = 100 };  
-                                                
-enum { kVoiceEngineMaxIpPacketSizeBytes = 1500 };       
+enum { kMaxTelephoneEventDuration = 60000 };       
+enum { kMinTelephoneEventAttenuation = 0 };        
+enum { kMaxTelephoneEventAttenuation = 36 };       
+enum { kMinTelephoneEventSeparationMs = 100 };     
+                                                   
+enum { kVoiceEngineMaxIpPacketSizeBytes = 1500 };  
 
 enum { kVoiceEngineMaxModuleVersionSize = 960 };
 
 
-enum { kVoiceEngineVersionMaxMessageSize = 1024 };
-
-
 const NoiseSuppression::Level kDefaultNsMode = NoiseSuppression::kModerate;
 const GainControl::Mode kDefaultAgcMode =
-#if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS) || defined(WEBRTC_GONK) 
-  GainControl::kAdaptiveDigital;
+#if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)
+    GainControl::kAdaptiveDigital;
 #else
-  GainControl::kAdaptiveAnalog;
+    GainControl::kAdaptiveAnalog;
 #endif
 const bool kDefaultAgcState =
-#if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS) || defined(WEBRTC_GONK) 
-  false;
+#if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)
+    false;
 #else
-  true;
+    true;
 #endif
 const GainControl::Mode kDefaultRxAgcMode = GainControl::kAdaptiveDigital;
 
@@ -131,53 +127,50 @@ enum { kVoiceEngineMaxRtpExtensionId = 14 };
 
 
 
-#define NOT_SUPPORTED(stat)                  \
-  LOG_F(LS_ERROR) << "not supported";        \
-  stat.SetLastError(VE_FUNC_NOT_SUPPORTED);  \
+#define NOT_SUPPORTED(stat)                 \
+  LOG_F(LS_ERROR) << "not supported";       \
+  stat.SetLastError(VE_FUNC_NOT_SUPPORTED); \
   return -1;
 
-#if (defined(_DEBUG) && defined(_WIN32) && (_MSC_VER >= 1400))
-  #include <windows.h>
-  #include <stdio.h>
-  #define DEBUG_PRINT(...)      \
-  {                             \
-    char msg[256];              \
-    sprintf(msg, __VA_ARGS__);  \
-    OutputDebugStringA(msg);    \
+#if (!defined(NDEBUG) && defined(_WIN32) && (_MSC_VER >= 1400))
+#include <windows.h>
+#include <stdio.h>
+#define DEBUG_PRINT(...)       \
+  {                            \
+    char msg[256];             \
+    sprintf(msg, __VA_ARGS__); \
+    OutputDebugStringA(msg);   \
   }
 #else
-  
-  #define DEBUG_PRINT(exp)      ((void)0)
+
+#define DEBUG_PRINT(exp) ((void)0)
 #endif  
 
-#define CHECK_CHANNEL(channel)  if (CheckChannel(channel) == -1) return -1;
+#define CHECK_CHANNEL(channel)     \
+  if (CheckChannel(channel) == -1) \
+    return -1;
 
 
 
 
 
-namespace webrtc
-{
+namespace webrtc {
 
-inline int VoEId(int veId, int chId)
-{
-    if (chId == -1)
-    {
-        const int dummyChannel(99);
-        return (int) ((veId << 16) + dummyChannel);
-    }
-    return (int) ((veId << 16) + chId);
+inline int VoEId(int veId, int chId) {
+  if (chId == -1) {
+    const int dummyChannel(99);
+    return (int)((veId << 16) + dummyChannel);
+  }
+  return (int)((veId << 16) + chId);
 }
 
-inline int VoEModuleId(int veId, int chId)
-{
-    return (int) ((veId << 16) + chId);
+inline int VoEModuleId(int veId, int chId) {
+  return (int)((veId << 16) + chId);
 }
 
 
-inline int VoEChannelId(int moduleId)
-{
-    return (int) (moduleId & 0xffff);
+inline int VoEChannelId(int moduleId) {
+  return (int)(moduleId & 0xffff);
 }
 
 }  
@@ -190,21 +183,21 @@ inline int VoEChannelId(int moduleId)
 
 #if defined(_WIN32)
 
-  #include <windows.h>
+#include <windows.h>
 
-  #pragma comment( lib, "winmm.lib" )
+#pragma comment(lib, "winmm.lib")
 
-  #ifndef WEBRTC_EXTERNAL_TRANSPORT
-    #pragma comment( lib, "ws2_32.lib" )
-  #endif
-
-
+#ifndef WEBRTC_EXTERNAL_TRANSPORT
+#pragma comment(lib, "ws2_32.lib")
+#endif
 
 
 
 
-  #define WEBRTC_VOICE_ENGINE_DEFAULT_DEVICE \
-    AudioDeviceModule::kDefaultCommunicationDevice
+
+
+#define WEBRTC_VOICE_ENGINE_DEFAULT_DEVICE \
+  AudioDeviceModule::kDefaultCommunicationDevice
 
 #endif  
 
@@ -218,11 +211,11 @@ inline int VoEChannelId(int moduleId)
 #include <sys/socket.h>
 #include <sys/types.h>
 #ifndef QNX
-  #include <linux/net.h>
+#include <linux/net.h>
 #ifndef ANDROID
-  #include <sys/soundcard.h>
-#endif 
-#endif 
+#include <sys/soundcard.h>
+#endif  
+#endif  
 #include <errno.h>
 #include <fcntl.h>
 #include <sched.h>
@@ -250,8 +243,8 @@ inline int VoEChannelId(int moduleId)
 #endif
 #define GetLastError() errno
 #define WSAGetLastError() errno
-#define LPCTSTR const char*
-#define LPCSTR const char*
+#define LPCTSTR const char *
+#define LPCSTR const char *
 #define wsprintf sprintf
 #define TEXT(a) a
 #define _ftprintf fprintf
@@ -268,11 +261,9 @@ inline int VoEChannelId(int moduleId)
 
 
 
-#if defined(WEBRTC_BSD) || defined(WEBRTC_MAC)
+#ifdef WEBRTC_MAC
 
-#if !defined(WEBRTC_BSD)
 #include <AudioUnit/AudioUnit.h>
-#endif
 #include <arpa/inet.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -288,12 +279,12 @@ inline int VoEChannelId(int moduleId)
 #include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
-#if !defined(WEBRTC_BSD) && !defined(WEBRTC_IOS)
-  #include <CoreServices/CoreServices.h>
-  #include <CoreAudio/CoreAudio.h>
-  #include <AudioToolbox/DefaultAudioOutput.h>
-  #include <AudioToolbox/AudioConverter.h>
-  #include <CoreAudio/HostTime.h>
+#if !defined(WEBRTC_IOS)
+#include <CoreServices/CoreServices.h>
+#include <CoreAudio/CoreAudio.h>
+#include <AudioToolbox/DefaultAudioOutput.h>
+#include <AudioToolbox/AudioConverter.h>
+#include <CoreAudio/HostTime.h>
 #endif
 
 #define DWORD unsigned long int
@@ -308,7 +299,7 @@ inline int VoEChannelId(int moduleId)
 #define _stricmp strcasecmp
 #define GetLastError() errno
 #define WSAGetLastError() errno
-#define LPCTSTR const char*
+#define LPCTSTR const char *
 #define wsprintf sprintf
 #define TEXT(a) a
 #define _ftprintf fprintf
@@ -316,11 +307,11 @@ inline int VoEChannelId(int moduleId)
 #define FAR
 #define __cdecl
 #define LPSOCKADDR struct sockaddr *
-#define LPCSTR const char*
+#define LPCSTR const char *
 #define ULONG unsigned long
 
 
 #define WEBRTC_VOICE_ENGINE_DEFAULT_DEVICE 0
 #endif  
 
-#endif 
+#endif  

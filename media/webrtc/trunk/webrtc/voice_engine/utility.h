@@ -28,6 +28,9 @@ namespace voe {
 
 
 
+
+
+
 void RemixAndResample(const AudioFrame& src_frame,
                       PushResampler<int16_t>* resampler,
                       AudioFrame* dst_frame);
@@ -35,27 +38,18 @@ void RemixAndResample(const AudioFrame& src_frame,
 
 
 
-
-
-
-
-
-
-void DownConvertToCodecFormat(const int16_t* src_data,
-                              int samples_per_channel,
-                              int num_channels,
-                              int sample_rate_hz,
-                              int codec_num_channels,
-                              int codec_rate_hz,
-                              int16_t* mono_buffer,
-                              PushResampler<int16_t>* resampler,
-                              AudioFrame* dst_af);
+void RemixAndResample(const int16_t* src_data,
+                      size_t samples_per_channel,
+                      size_t num_channels,
+                      int sample_rate_hz,
+                      PushResampler<int16_t>* resampler,
+                      AudioFrame* dst_frame);
 
 void MixWithSat(int16_t target[],
-                int target_channel,
+                size_t target_channel,
                 const int16_t source[],
-                int source_channel,
-                int source_len);
+                size_t source_channel,
+                size_t source_len);
 
 }  
 }  

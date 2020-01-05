@@ -8,12 +8,12 @@
 
 
 
-#include "webrtc/system_wrappers/interface/logcat_trace_context.h"
+#include "webrtc/system_wrappers/include/logcat_trace_context.h"
 
 #include <android/log.h>
 #include <assert.h>
 
-#include "webrtc/system_wrappers/interface/logging.h"
+#include "webrtc/system_wrappers/include/logging.h"
 
 namespace webrtc {
 

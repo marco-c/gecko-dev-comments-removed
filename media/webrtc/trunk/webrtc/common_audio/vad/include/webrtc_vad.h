@@ -16,6 +16,8 @@
 #ifndef WEBRTC_COMMON_AUDIO_VAD_INCLUDE_WEBRTC_VAD_H_  
 #define WEBRTC_COMMON_AUDIO_VAD_INCLUDE_WEBRTC_VAD_H_
 
+#include <stddef.h>
+
 #include "webrtc/typedefs.h"
 
 typedef struct WebRtcVadInst VadInst;
@@ -25,11 +27,7 @@ extern "C" {
 #endif
 
 
-
-
-
-
-int WebRtcVad_Create(VadInst** handle);
+VadInst* WebRtcVad_Create();
 
 
 
@@ -70,7 +68,7 @@ int WebRtcVad_set_mode(VadInst* handle, int mode);
 
 
 int WebRtcVad_Process(VadInst* handle, int fs, const int16_t* audio_frame,
-                      int frame_length);
+                      size_t frame_length);
 
 
 
@@ -79,7 +77,7 @@ int WebRtcVad_Process(VadInst* handle, int fs, const int16_t* audio_frame,
 
 
 
-int WebRtcVad_ValidRateAndFrameLength(int rate, int frame_length);
+int WebRtcVad_ValidRateAndFrameLength(int rate, size_t frame_length);
 
 #ifdef __cplusplus
 }

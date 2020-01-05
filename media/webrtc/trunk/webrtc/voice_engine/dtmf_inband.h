@@ -14,8 +14,6 @@
 #include "webrtc/typedefs.h"
 #include "webrtc/voice_engine/voice_engine_defines.h"
 
-#define MAX_DTMF_SAMPLERATE 48000
-
 namespace webrtc {
 class CriticalSectionWrapper;
 
@@ -43,7 +41,7 @@ public:
 
     bool IsAddingTone();
 
-    int Get10msTone(int16_t output[MAX_DTMF_SAMPLERATE/100], uint16_t& outputSizeInSamples);
+    int Get10msTone(int16_t output[320], uint16_t& outputSizeInSamples);
 
     uint32_t DelaySinceLastTone() const;
 
@@ -55,7 +53,7 @@ private:
                              int16_t value,
                              int16_t volume,
                              int16_t frameLen,
-                             uint16_t fs);
+                             int16_t fs);
 
 private:
     enum {kDtmfFrameSizeMs = 10};

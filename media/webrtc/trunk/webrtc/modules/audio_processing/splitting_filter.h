@@ -11,24 +11,15 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_SPLITTING_FILTER_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_SPLITTING_FILTER_H_
 
-#include <string.h>
+#include <cstring>
+#include <vector>
 
-#include "webrtc/base/scoped_ptr.h"
-#include "webrtc/common_audio/resampler/push_sinc_resampler.h"
-#include "webrtc/system_wrappers/interface/scoped_vector.h"
-#include "webrtc/typedefs.h"
+#include "webrtc/modules/audio_processing/three_band_filter_bank.h"
+#include "webrtc/system_wrappers/include/scoped_vector.h"
 
 namespace webrtc {
 
 class IFChannelBuffer;
-
-enum {
-  kSamplesPer8kHzChannel = 80,
-  kSamplesPer16kHzChannel = 160,
-  kSamplesPer32kHzChannel = 320,
-  kSamplesPer48kHzChannel = 480,
-  kSamplesPer64kHzChannel = 640
-};
 
 struct TwoBandsStates {
   TwoBandsStates() {
@@ -54,7 +45,7 @@ struct TwoBandsStates {
 
 class SplittingFilter {
  public:
-  SplittingFilter(int channels);
+  SplittingFilter(size_t num_channels, size_t num_bands, size_t num_frames);
 
   void Analysis(const IFChannelBuffer* data, IFChannelBuffer* bands);
   void Synthesis(const IFChannelBuffer* bands, IFChannelBuffer* data);
@@ -63,18 +54,13 @@ class SplittingFilter {
   
   void TwoBandsAnalysis(const IFChannelBuffer* data, IFChannelBuffer* bands);
   void TwoBandsSynthesis(const IFChannelBuffer* bands, IFChannelBuffer* data);
-  
   void ThreeBandsAnalysis(const IFChannelBuffer* data, IFChannelBuffer* bands);
   void ThreeBandsSynthesis(const IFChannelBuffer* bands, IFChannelBuffer* data);
   void InitBuffers();
 
-  int channels_;
-  rtc::scoped_ptr<TwoBandsStates[]> two_bands_states_;
-  rtc::scoped_ptr<TwoBandsStates[]> band1_states_;
-  rtc::scoped_ptr<TwoBandsStates[]> band2_states_;
-  ScopedVector<PushSincResampler> analysis_resamplers_;
-  ScopedVector<PushSincResampler> synthesis_resamplers_;
-  rtc::scoped_ptr<int16_t[]> int_buffer_;
+  const size_t num_bands_;
+  std::vector<TwoBandsStates> two_bands_states_;
+  ScopedVector<ThreeBandFilterBank> three_band_filter_banks_;
 };
 
 }  

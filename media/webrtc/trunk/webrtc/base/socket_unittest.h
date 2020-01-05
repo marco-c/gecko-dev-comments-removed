@@ -21,8 +21,9 @@ namespace rtc {
 
 class SocketTest : public testing::Test {
  protected:
-  SocketTest() : ss_(NULL), kIPv4Loopback(INADDR_LOOPBACK),
-                 kIPv6Loopback(in6addr_loopback) {}
+  SocketTest() : kIPv4Loopback(INADDR_LOOPBACK),
+                 kIPv6Loopback(in6addr_loopback),
+                 ss_(nullptr) {}
   virtual void SetUp() { ss_ = Thread::Current()->socketserver(); }
   void TestConnectIPv4();
   void TestConnectIPv6();
@@ -57,6 +58,10 @@ class SocketTest : public testing::Test {
   void TestGetSetOptionsIPv4();
   void TestGetSetOptionsIPv6();
 
+  static const int kTimeout = 5000;  
+  const IPAddress kIPv4Loopback;
+  const IPAddress kIPv6Loopback;
+
  private:
   void ConnectInternal(const IPAddress& loopback);
   void ConnectWithDnsLookupInternal(const IPAddress& loopback,
@@ -77,11 +82,12 @@ class SocketTest : public testing::Test {
   void UdpReadyToSend(const IPAddress& loopback);
   void GetSetOptionsInternal(const IPAddress& loopback);
 
-  static const int kTimeout = 5000;  
   SocketServer* ss_;
-  const IPAddress kIPv4Loopback;
-  const IPAddress kIPv6Loopback;
 };
+
+
+
+bool IsUnspecOrEmptyIP(const IPAddress& address);
 
 }  
 

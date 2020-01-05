@@ -13,10 +13,11 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/common_video/interface/i420_video_frame.h"
 #include "webrtc/typedefs.h"
+#include "webrtc/video_frame.h"
 
 namespace webrtc {
+class Clock;
 namespace test {
 
 class FrameGenerator {
@@ -25,7 +26,7 @@ class FrameGenerator {
   virtual ~FrameGenerator() {}
 
   
-  virtual I420VideoFrame* NextFrame() = 0;
+  virtual VideoFrame* NextFrame() = 0;
 
   
   
@@ -38,6 +39,24 @@ class FrameGenerator {
                                            size_t width,
                                            size_t height,
                                            int frame_repeat_count);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  static FrameGenerator* CreateScrollingInputFromYuvFiles(
+      Clock* clock,
+      std::vector<std::string> filenames,
+      size_t source_width,
+      size_t source_height,
+      size_t target_width,
+      size_t target_height,
+      int64_t scroll_time_ms,
+      int64_t pause_time_ms);
 };
 }  
 }  

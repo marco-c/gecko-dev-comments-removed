@@ -28,7 +28,7 @@ TEST(SendSideBweTest, InitialRembWithProbing) {
   bwe.UpdateReceiverBlock(0, 50, 1, now_ms);
 
   
-  bwe.UpdateReceiverEstimate(kRembBps);
+  bwe.UpdateReceiverEstimate(now_ms, kRembBps);
   bwe.UpdateEstimate(now_ms);
   int bitrate;
   uint8_t fraction_loss;
@@ -38,10 +38,61 @@ TEST(SendSideBweTest, InitialRembWithProbing) {
 
   
   now_ms += 2001;
-  bwe.UpdateReceiverEstimate(kSecondRembBps);
+  bwe.UpdateReceiverEstimate(now_ms, kSecondRembBps);
   bwe.UpdateEstimate(now_ms);
   bitrate = 0;
   bwe.CurrentEstimate(&bitrate, &fraction_loss, &rtt);
   EXPECT_EQ(kRembBps, bitrate);
 }
+
+TEST(SendSideBweTest, DoesntReapplyBitrateDecreaseWithoutFollowingRemb) {
+  SendSideBandwidthEstimation bwe;
+  static const int kMinBitrateBps = 100000;
+  static const int kInitialBitrateBps = 1000000;
+  bwe.SetMinMaxBitrate(kMinBitrateBps, 1500000);
+  bwe.SetSendBitrate(kInitialBitrateBps);
+
+  static const uint8_t kFractionLoss = 128;
+  static const int64_t kRttMs = 50;
+
+  int64_t now_ms = 0;
+  int bitrate_bps;
+  uint8_t fraction_loss;
+  int64_t rtt_ms;
+  bwe.CurrentEstimate(&bitrate_bps, &fraction_loss, &rtt_ms);
+  EXPECT_EQ(kInitialBitrateBps, bitrate_bps);
+  EXPECT_EQ(0, fraction_loss);
+  EXPECT_EQ(0, rtt_ms);
+
+  
+  bwe.UpdateReceiverBlock(kFractionLoss, kRttMs, 100, now_ms);
+  
+  now_ms += 2000;
+  bwe.UpdateEstimate(now_ms);
+
+  bwe.CurrentEstimate(&bitrate_bps, &fraction_loss, &rtt_ms);
+  EXPECT_LT(bitrate_bps, kInitialBitrateBps);
+  
+  
+  
+  EXPECT_GT(bitrate_bps, kMinBitrateBps);
+  EXPECT_EQ(kFractionLoss, fraction_loss);
+  EXPECT_EQ(kRttMs, rtt_ms);
+
+  
+  
+  
+  int last_bitrate_bps = bitrate_bps;
+  
+  
+  now_ms += 2000;
+  bwe.UpdateEstimate(now_ms);
+  bwe.CurrentEstimate(&bitrate_bps, &fraction_loss, &rtt_ms);
+
+  EXPECT_EQ(last_bitrate_bps, bitrate_bps);
+  
+  EXPECT_EQ(kFractionLoss, fraction_loss);
+  EXPECT_EQ(kRttMs, rtt_ms);
+}
+
 }  

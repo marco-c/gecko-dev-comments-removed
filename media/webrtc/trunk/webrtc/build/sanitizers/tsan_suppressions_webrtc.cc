@@ -27,7 +27,7 @@ char kTSanDefaultSuppressions[] =
 "race:rtc::MessageQueue::Quit\n"
 "race:FileVideoCapturerTest::VideoCapturerListener::OnFrameCaptured\n"
 "race:vp8cx_remove_encoder_threads\n"
-"race:third_party/libvpx/source/libvpx/vp9/common/vp9_scan.h\n"
+"race:third_party/libvpx_new/source/libvpx/vp9/common/vp9_scan.h\n"
 
 
 
@@ -44,10 +44,16 @@ char kTSanDefaultSuppressions[] =
 
 
 
+"race:webrtc::AudioDeviceLinuxPulse::Init\n"
+
+
+
 "race:rtc::AsyncInvoker::OnMessage\n"
 "race:rtc::FireAndForgetAsyncClosure<FunctorB>::Execute\n"
 "race:rtc::MessageQueueManager::Clear\n"
 "race:rtc::Thread::Clear\n"
+
+"race:rtc::AsyncInvoker::~AsyncInvoker\n"
 
 "race:webrtc/base/logging.cc\n"
 "race:webrtc/base/sharedexclusivelock_unittest.cc\n"
@@ -67,19 +73,26 @@ char kTSanDefaultSuppressions[] =
 "race:user_sctp_timer_iterate\n"
 
 
+"race:sctp_close\n"
+
+
 
 "deadlock:webrtc::RTCPReceiver::SetSsrcs\n"
 "deadlock:webrtc::test::UdpSocketManagerPosixImpl::RemoveSocket\n"
 "deadlock:webrtc::vcm::VideoReceiver::RegisterPacketRequestCallback\n"
-"deadlock:webrtc::ViECaptureImpl::ConnectCaptureDevice\n"
-"deadlock:webrtc::ViEChannel::StartSend\n"
-"deadlock:webrtc::ViECodecImpl::GetSendSideDelay\n"
 "deadlock:webrtc::ViEEncoder::OnLocalSsrcChanged\n"
-"deadlock:webrtc::ViESender::RegisterSendTransport\n"
 
 
 
 "race:*trace_event_unique_catstatic*\n"
+
+
+"race:webrtc::voe::TransmitMixer::PrepareDemux\n"
+"race:webrtc::voe::TransmitMixer::EnableStereoChannelSwapping\n"
+
+
+
+"race:InitCpuFlags\n"
 
 
 ;  

@@ -16,7 +16,7 @@
 #include <limits>
 #include <vector>
 
-#include "webrtc/system_wrappers/interface/cpu_info.h"
+#include "webrtc/system_wrappers/include/cpu_info.h"
 
 namespace webrtc {
 namespace test {
@@ -59,6 +59,7 @@ VideoProcessorImpl::VideoProcessorImpl(webrtc::VideoEncoder* encoder,
       last_frame_missing_(false),
       initialized_(false),
       encoded_frame_size_(0),
+      encoded_frame_type_(kVideoFrameKey),
       prev_time_stamp_(0),
       num_dropped_frames_(0),
       num_spatial_resizes_(0),
@@ -92,14 +93,18 @@ bool VideoProcessorImpl::Init() {
   int32_t register_result =
       encoder_->RegisterEncodeCompleteCallback(encode_callback_);
   if (register_result != WEBRTC_VIDEO_CODEC_OK) {
-    fprintf(stderr, "Failed to register encode complete callback, return code: "
-        "%d\n", register_result);
+    fprintf(stderr,
+            "Failed to register encode complete callback, return code: "
+            "%d\n",
+            register_result);
     return false;
   }
   register_result = decoder_->RegisterDecodeCompleteCallback(decode_callback_);
   if (register_result != WEBRTC_VIDEO_CODEC_OK) {
-    fprintf(stderr, "Failed to register decode complete callback, return code: "
-            "%d\n", register_result);
+    fprintf(stderr,
+            "Failed to register decode complete callback, return code: "
+            "%d\n",
+            register_result);
     return false;
   }
   
@@ -145,13 +150,14 @@ VideoProcessorImpl::~VideoProcessorImpl() {
   delete decode_callback_;
 }
 
-
 void VideoProcessorImpl::SetRates(int bit_rate, int frame_rate) {
   int set_rates_result = encoder_->SetRates(bit_rate, frame_rate);
   assert(set_rates_result >= 0);
   if (set_rates_result < 0) {
-    fprintf(stderr, "Failed to update encoder with new rate %d, "
-            "return code: %d\n", bit_rate, set_rates_result);
+    fprintf(stderr,
+            "Failed to update encoder with new rate %d, "
+            "return code: %d\n",
+            bit_rate, set_rates_result);
   }
   num_dropped_frames_ = 0;
   num_spatial_resizes_ = 0;
@@ -159,6 +165,10 @@ void VideoProcessorImpl::SetRates(int bit_rate, int frame_rate) {
 
 size_t VideoProcessorImpl::EncodedFrameSize() {
   return encoded_frame_size_;
+}
+
+FrameType VideoProcessorImpl::EncodedFrameType() {
+  return encoded_frame_type_;
 }
 
 int VideoProcessorImpl::NumberDroppedFrames() {
@@ -170,7 +180,7 @@ int VideoProcessorImpl::NumberSpatialResizes() {
 }
 
 bool VideoProcessorImpl::ProcessFrame(int frame_number) {
-  assert(frame_number >=0);
+  assert(frame_number >= 0);
   if (!initialized_) {
     fprintf(stderr, "Attempting to use uninitialized VideoProcessor!\n");
     return false;
@@ -181,10 +191,8 @@ bool VideoProcessorImpl::ProcessFrame(int frame_number) {
   }
   if (frame_reader_->ReadFrame(source_buffer_)) {
     
-    source_frame_.CreateFrame(source_buffer_,
-                              config_.codec_settings->width,
-                              config_.codec_settings->height,
-                              kVideoRotation_0);
+    source_frame_.CreateFrame(source_buffer_, config_.codec_settings->width,
+                              config_.codec_settings->height, kVideoRotation_0);
 
     
     FrameStatistic& stat = stats_->NewFrame(frame_number);
@@ -194,14 +202,15 @@ bool VideoProcessorImpl::ProcessFrame(int frame_number) {
     source_frame_.set_timestamp(frame_number);
 
     
-    std::vector<VideoFrameType> frame_types(1, kDeltaFrame);
+    std::vector<FrameType> frame_types(1, kVideoFrameDelta);
     if (config_.keyframe_interval > 0 &&
         frame_number % config_.keyframe_interval == 0) {
-      frame_types[0] = kKeyFrame;
+      frame_types[0] = kVideoFrameKey;
     }
 
     
     encoded_frame_size_ = 0;
+    encoded_frame_type_ = kVideoFrameDelta;
 
     int32_t encode_result = encoder_->Encode(source_frame_, NULL, &frame_types);
 
@@ -218,10 +227,10 @@ bool VideoProcessorImpl::ProcessFrame(int frame_number) {
 
 void VideoProcessorImpl::FrameEncoded(const EncodedImage& encoded_image) {
   
-  int num_dropped_from_prev_encode =  encoded_image._timeStamp -
-      prev_time_stamp_ - 1;
-  num_dropped_frames_ +=  num_dropped_from_prev_encode;
-  prev_time_stamp_ =  encoded_image._timeStamp;
+  int num_dropped_from_prev_encode =
+      encoded_image._timeStamp - prev_time_stamp_ - 1;
+  num_dropped_frames_ += num_dropped_from_prev_encode;
+  prev_time_stamp_ = encoded_image._timeStamp;
   if (num_dropped_from_prev_encode > 0) {
     
     
@@ -233,23 +242,26 @@ void VideoProcessorImpl::FrameEncoded(const EncodedImage& encoded_image) {
   
   encoded_frame_size_ = encoded_image._length;
 
+  encoded_frame_type_ = encoded_image._frameType;
+
   TickTime encode_stop = TickTime::Now();
   int frame_number = encoded_image._timeStamp;
   FrameStatistic& stat = stats_->stats_[frame_number];
-  stat.encode_time_in_us = GetElapsedTimeMicroseconds(encode_start_,
-                                                      encode_stop);
+  stat.encode_time_in_us =
+      GetElapsedTimeMicroseconds(encode_start_, encode_stop);
   stat.encoding_successful = true;
   stat.encoded_frame_length_in_bytes = encoded_image._length;
   stat.frame_number = encoded_image._timeStamp;
   stat.frame_type = encoded_image._frameType;
   stat.bit_rate_in_kbps = encoded_image._length * bit_rate_factor_;
-  stat.total_packets = encoded_image._length /
-      config_.networking_config.packet_size_in_bytes + 1;
+  stat.total_packets =
+      encoded_image._length / config_.networking_config.packet_size_in_bytes +
+      1;
 
   
   bool exclude_this_frame = false;
   
-  if (encoded_image._frameType == kKeyFrame) {
+  if (encoded_image._frameType == kVideoFrameKey) {
     switch (config_.exclude_frame_types) {
       case kExcludeOnlyFirstKeyFrame:
         if (!first_key_frame_has_been_excluded_) {
@@ -272,7 +284,7 @@ void VideoProcessorImpl::FrameEncoded(const EncodedImage& encoded_image) {
   copied_image._buffer = copied_buffer.get();
   if (!exclude_this_frame) {
     stat.packets_dropped =
-          packet_manipulator_->ManipulatePackets(&copied_image);
+        packet_manipulator_->ManipulatePackets(&copied_image);
   }
 
   
@@ -292,31 +304,30 @@ void VideoProcessorImpl::FrameEncoded(const EncodedImage& encoded_image) {
   last_frame_missing_ = copied_image._length == 0;
 }
 
-void VideoProcessorImpl::FrameDecoded(const I420VideoFrame& image) {
+void VideoProcessorImpl::FrameDecoded(const VideoFrame& image) {
   TickTime decode_stop = TickTime::Now();
   int frame_number = image.timestamp();
   
   FrameStatistic& stat = stats_->stats_[frame_number];
-  stat.decode_time_in_us = GetElapsedTimeMicroseconds(decode_start_,
-                                                      decode_stop);
+  stat.decode_time_in_us =
+      GetElapsedTimeMicroseconds(decode_start_, decode_stop);
   stat.decoding_successful = true;
 
   
   if (static_cast<int>(image.width()) != last_encoder_frame_width_ ||
-      static_cast<int>(image.height()) != last_encoder_frame_height_ ) {
+      static_cast<int>(image.height()) != last_encoder_frame_height_) {
     ++num_spatial_resizes_;
     last_encoder_frame_width_ = image.width();
     last_encoder_frame_height_ = image.height();
   }
   
   
-  if (image.width() !=  config_.codec_settings->width ||
+  if (image.width() != config_.codec_settings->width ||
       image.height() != config_.codec_settings->height) {
-    I420VideoFrame up_image;
-    int ret_val = scaler_.Set(image.width(), image.height(),
-                              config_.codec_settings->width,
-                              config_.codec_settings->height,
-                              kI420, kI420, kScaleBilinear);
+    VideoFrame up_image;
+    int ret_val = scaler_.Set(
+        image.width(), image.height(), config_.codec_settings->width,
+        config_.codec_settings->height, kI420, kI420, kScaleBilinear);
     assert(ret_val >= 0);
     if (ret_val < 0) {
       fprintf(stderr, "Failed to set scalar for frame: %d, return code: %d\n",
@@ -358,7 +369,8 @@ void VideoProcessorImpl::FrameDecoded(const I420VideoFrame& image) {
 }
 
 int VideoProcessorImpl::GetElapsedTimeMicroseconds(
-    const webrtc::TickTime& start, const webrtc::TickTime& stop) {
+    const webrtc::TickTime& start,
+    const webrtc::TickTime& stop) {
   uint64_t encode_time = (stop - start).Microseconds();
   assert(encode_time <
          static_cast<unsigned int>(std::numeric_limits<int>::max()));
@@ -396,17 +408,15 @@ const char* VideoCodecTypeToStr(webrtc::VideoCodecType e) {
 }
 
 
-int32_t
-VideoProcessorImpl::VideoProcessorEncodeCompleteCallback::Encoded(
+int32_t VideoProcessorImpl::VideoProcessorEncodeCompleteCallback::Encoded(
     const EncodedImage& encoded_image,
     const webrtc::CodecSpecificInfo* codec_specific_info,
     const webrtc::RTPFragmentationHeader* fragmentation) {
   video_processor_->FrameEncoded(encoded_image);  
   return 0;
 }
-int32_t
-VideoProcessorImpl::VideoProcessorDecodeCompleteCallback::Decoded(
-    I420VideoFrame& image) {
+int32_t VideoProcessorImpl::VideoProcessorDecodeCompleteCallback::Decoded(
+    VideoFrame& image) {
   video_processor_->FrameDecoded(image);  
   return 0;
 }

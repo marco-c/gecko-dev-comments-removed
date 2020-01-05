@@ -104,11 +104,6 @@ class ProcCpuInfo {
   ConfigParser::MapVector sections_;
 };
 
-#if !defined(WEBRTC_CHROMIUM_BUILD)
-
-std::string ReadLinuxLsbRelease();
-#endif
-
 
 std::string ReadLinuxUname();
 

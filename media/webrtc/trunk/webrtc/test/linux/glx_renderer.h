@@ -8,8 +8,8 @@
 
 
 
-#ifndef WEBRTC_VIDEO_ENGINE_TEST_COMMON_LINUX_GLX_RENDERER_H_
-#define WEBRTC_VIDEO_ENGINE_TEST_COMMON_LINUX_GLX_RENDERER_H_
+#ifndef WEBRTC_TEST_LINUX_GLX_RENDERER_H_
+#define WEBRTC_TEST_LINUX_GLX_RENDERER_H_
 
 #include <GL/glx.h>
 #include <X11/Xlib.h>
@@ -26,7 +26,7 @@ class GlxRenderer : public GlRenderer {
                              size_t height);
   virtual ~GlxRenderer();
 
-  void RenderFrame(const webrtc::I420VideoFrame& frame, int delta) override;
+  void RenderFrame(const webrtc::VideoFrame& frame, int delta) override;
   bool IsTextureSupported() const override { return false; }
 
  private:

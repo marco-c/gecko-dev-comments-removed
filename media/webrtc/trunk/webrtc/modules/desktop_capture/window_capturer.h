@@ -29,7 +29,6 @@ class WindowCapturer : public DesktopCapturer {
 
   struct Window {
     WindowId id;
-    pid_t pid;
 
     
     std::string title;

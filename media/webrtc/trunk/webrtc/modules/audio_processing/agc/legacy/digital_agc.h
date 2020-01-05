@@ -56,20 +56,20 @@ int32_t WebRtcAgc_InitDigital(DigitalAgc* digitalAgcInst, int16_t agcMode);
 
 int32_t WebRtcAgc_ProcessDigital(DigitalAgc* digitalAgcInst,
                                  const int16_t* const* inNear,
-                                 int16_t num_bands,
+                                 size_t num_bands,
                                  int16_t* const* out,
                                  uint32_t FS,
                                  int16_t lowLevelSignal);
 
 int32_t WebRtcAgc_AddFarendToDigital(DigitalAgc* digitalAgcInst,
                                      const int16_t* inFar,
-                                     int16_t nrSamples);
+                                     size_t nrSamples);
 
 void WebRtcAgc_InitVad(AgcVad* vadInst);
 
 int16_t WebRtcAgc_ProcessVad(AgcVad* vadInst,     
                              const int16_t* in,   
-                             int16_t nrSamples);  
+                             size_t nrSamples);  
 
 int32_t WebRtcAgc_CalculateGainTable(int32_t *gainTable, 
                                      int16_t compressionGaindB, 

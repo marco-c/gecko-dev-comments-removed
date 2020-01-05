@@ -10,6 +10,7 @@
 
 #include "webrtc/p2p/client/basicportallocator.h"
 
+#include <algorithm>
 #include <string>
 #include <vector>
 
@@ -21,6 +22,7 @@
 #include "webrtc/p2p/base/tcpport.h"
 #include "webrtc/p2p/base/turnport.h"
 #include "webrtc/p2p/base/udpport.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/logging.h"
@@ -58,109 +60,27 @@ int ShakeDelay() {
 }  
 
 namespace cricket {
-
-const uint32 DISABLE_ALL_PHASES =
-  PORTALLOCATOR_DISABLE_UDP
-  | PORTALLOCATOR_DISABLE_TCP
-  | PORTALLOCATOR_DISABLE_STUN
-  | PORTALLOCATOR_DISABLE_RELAY;
-
-
-
-class AllocationSequence : public rtc::MessageHandler,
-                           public sigslot::has_slots<> {
- public:
-  enum State {
-    kInit,       
-    kRunning,    
-    kStopped,    
-    kCompleted,  
-
-    
-  };
-
-  AllocationSequence(BasicPortAllocatorSession* session,
-                     rtc::Network* network,
-                     PortConfiguration* config,
-                     uint32 flags);
-  ~AllocationSequence();
-  bool Init();
-  void Clear();
-
-  State state() const { return state_; }
-
-  
-  
-  void DisableEquivalentPhases(rtc::Network* network,
-      PortConfiguration* config, uint32* flags);
-
-  
-  
-  void Start();
-  void Stop();
-
-  
-  void OnMessage(rtc::Message* msg);
-
-  void EnableProtocol(ProtocolType proto);
-  bool ProtocolEnabled(ProtocolType proto) const;
-
-  
-  
-  
-  
-  
-  
-  sigslot::signal1<AllocationSequence*> SignalPortAllocationComplete;
-
- private:
-  typedef std::vector<ProtocolType> ProtocolList;
-
-  bool IsFlagSet(uint32 flag) {
-    return ((flags_ & flag) != 0);
-  }
-  void CreateUDPPorts();
-  void CreateTCPPorts();
-  void CreateStunPorts();
-  void CreateRelayPorts();
-  void CreateGturnPort(const RelayServerConfig& config);
-  void CreateTurnPort(const RelayServerConfig& config);
-
-  void OnReadPacket(rtc::AsyncPacketSocket* socket,
-                    const char* data, size_t size,
-                    const rtc::SocketAddress& remote_addr,
-                    const rtc::PacketTime& packet_time);
-
-  void OnPortDestroyed(PortInterface* port);
-
-  BasicPortAllocatorSession* session_;
-  rtc::Network* network_;
-  rtc::IPAddress ip_;
-  PortConfiguration* config_;
-  State state_;
-  uint32 flags_;
-  ProtocolList protocols_;
-  rtc::scoped_ptr<rtc::AsyncPacketSocket> udp_socket_;
-  
-  UDPPort* udp_port_;
-  std::vector<TurnPort*> turn_ports_;
-  int phase_;
-};
+const uint32_t DISABLE_ALL_PHASES =
+    PORTALLOCATOR_DISABLE_UDP | PORTALLOCATOR_DISABLE_TCP |
+    PORTALLOCATOR_DISABLE_STUN | PORTALLOCATOR_DISABLE_RELAY;
 
 
 BasicPortAllocator::BasicPortAllocator(
     rtc::NetworkManager* network_manager,
     rtc::PacketSocketFactory* socket_factory)
     : network_manager_(network_manager),
-      socket_factory_(socket_factory) {
-  ASSERT(socket_factory_ != NULL);
+      socket_factory_(socket_factory),
+      stun_servers_() {
+  ASSERT(network_manager_ != nullptr);
+  ASSERT(socket_factory_ != nullptr);
   Construct();
 }
 
-BasicPortAllocator::BasicPortAllocator(
-    rtc::NetworkManager* network_manager)
+BasicPortAllocator::BasicPortAllocator(rtc::NetworkManager* network_manager)
     : network_manager_(network_manager),
-      socket_factory_(NULL) {
+      socket_factory_(nullptr),
+      stun_servers_() {
+  ASSERT(network_manager_ != nullptr);
   Construct();
 }
 
@@ -186,15 +106,19 @@ BasicPortAllocator::BasicPortAllocator(
       stun_servers_(stun_servers) {
 
   RelayServerConfig config(RELAY_GTURN);
-  if (!relay_address_udp.IsNil())
+  if (!relay_address_udp.IsNil()) {
     config.ports.push_back(ProtocolAddress(relay_address_udp, PROTO_UDP));
-  if (!relay_address_tcp.IsNil())
+  }
+  if (!relay_address_tcp.IsNil()) {
     config.ports.push_back(ProtocolAddress(relay_address_tcp, PROTO_TCP));
-  if (!relay_address_ssl.IsNil())
+  }
+  if (!relay_address_ssl.IsNil()) {
     config.ports.push_back(ProtocolAddress(relay_address_ssl, PROTO_SSLTCP));
+  }
 
-  if (!config.ports.empty())
-    AddRelay(config);
+  if (!config.ports.empty()) {
+    AddTurnServer(config);
+  }
 
   Construct();
 }
@@ -206,7 +130,7 @@ void BasicPortAllocator::Construct() {
 BasicPortAllocator::~BasicPortAllocator() {
 }
 
-PortAllocatorSession *BasicPortAllocator::CreateSessionInternal(
+PortAllocatorSession* BasicPortAllocator::CreateSessionInternal(
     const std::string& content_name, int component,
     const std::string& ice_ufrag, const std::string& ice_pwd) {
   return new BasicPortAllocatorSession(
@@ -239,7 +163,7 @@ BasicPortAllocatorSession::~BasicPortAllocatorSession() {
   if (network_thread_ != NULL)
     network_thread_->Clear(this);
 
-  for (uint32 i = 0; i < sequences_.size(); ++i) {
+  for (uint32_t i = 0; i < sequences_.size(); ++i) {
     
     
     sequences_[i]->Clear();
@@ -249,10 +173,10 @@ BasicPortAllocatorSession::~BasicPortAllocatorSession() {
   for (it = ports_.begin(); it != ports_.end(); it++)
     delete it->port();
 
-  for (uint32 i = 0; i < configs_.size(); ++i)
+  for (uint32_t i = 0; i < configs_.size(); ++i)
     delete configs_[i];
 
-  for (uint32 i = 0; i < sequences_.size(); ++i)
+  for (uint32_t i = 0; i < sequences_.size(); ++i)
     delete sequences_[i];
 }
 
@@ -274,10 +198,14 @@ void BasicPortAllocatorSession::StartGettingPorts() {
 void BasicPortAllocatorSession::StopGettingPorts() {
   ASSERT(rtc::Thread::Current() == network_thread_);
   running_ = false;
-  network_thread_->Clear(this, MSG_ALLOCATE);
-  for (uint32 i = 0; i < sequences_.size(); ++i)
-    sequences_[i]->Stop();
   network_thread_->Post(this, MSG_CONFIG_STOP);
+  ClearGettingPorts();
+}
+
+void BasicPortAllocatorSession::ClearGettingPorts() {
+  network_thread_->Clear(this, MSG_ALLOCATE);
+  for (uint32_t i = 0; i < sequences_.size(); ++i)
+    sequences_[i]->Stop();
 }
 
 void BasicPortAllocatorSession::OnMessage(rtc::Message *message) {
@@ -319,8 +247,8 @@ void BasicPortAllocatorSession::GetPortConfigurations() {
                                                     username(),
                                                     password());
 
-  for (size_t i = 0; i < allocator_->relays().size(); ++i) {
-    config->AddRelay(allocator_->relays()[i]);
+  for (const RelayServerConfig& turn_server : allocator_->turn_servers()) {
+    config->AddRelay(turn_server);
   }
   ConfigReady(config);
 }
@@ -331,8 +259,9 @@ void BasicPortAllocatorSession::ConfigReady(PortConfiguration* config) {
 
 
 void BasicPortAllocatorSession::OnConfigReady(PortConfiguration* config) {
-  if (config)
+  if (config) {
     configs_.push_back(config);
+  }
 
   AllocatePorts();
 }
@@ -380,31 +309,51 @@ void BasicPortAllocatorSession::OnAllocate() {
   allocation_started_ = true;
 }
 
-
-
-void BasicPortAllocatorSession::DoAllocate() {
-  bool done_signal_needed = false;
-  std::vector<rtc::Network*> networks;
-
+void BasicPortAllocatorSession::GetNetworks(
+    std::vector<rtc::Network*>* networks) {
+  networks->clear();
+  rtc::NetworkManager* network_manager = allocator_->network_manager();
+  ASSERT(network_manager != nullptr);
+  
+  
+  if (network_manager->enumeration_permission() ==
+      rtc::NetworkManager::ENUMERATION_BLOCKED) {
+    set_flags(flags() | PORTALLOCATOR_DISABLE_ADAPTER_ENUMERATION);
+  }
   
   
   
   
   if (flags() & PORTALLOCATOR_DISABLE_ADAPTER_ENUMERATION) {
-    allocator_->network_manager()->GetAnyAddressNetworks(&networks);
+    network_manager->GetAnyAddressNetworks(networks);
   } else {
-    allocator_->network_manager()->GetNetworks(&networks);
+    network_manager->GetNetworks(networks);
   }
+  networks->erase(std::remove_if(networks->begin(), networks->end(),
+                                 [this](rtc::Network* network) {
+                                   return allocator_->network_ignore_mask() &
+                                          network->type();
+                                 }),
+                  networks->end());
+}
+
+
+
+void BasicPortAllocatorSession::DoAllocate() {
+  bool done_signal_needed = false;
+  std::vector<rtc::Network*> networks;
+  GetNetworks(&networks);
+
   if (networks.empty()) {
     LOG(LS_WARNING) << "Machine has no networks; no ports will be allocated";
     done_signal_needed = true;
   } else {
-    for (uint32 i = 0; i < networks.size(); ++i) {
+    for (uint32_t i = 0; i < networks.size(); ++i) {
       PortConfiguration* config = NULL;
       if (configs_.size() > 0)
         config = configs_.back();
 
-      uint32 sequence_flags = flags();
+      uint32_t sequence_flags = flags();
       if ((sequence_flags & DISABLE_ALL_PHASES) == DISABLE_ALL_PHASES) {
         
         
@@ -412,11 +361,6 @@ void BasicPortAllocatorSession::DoAllocate() {
         break;
       }
 
-      
-      if (!config || config->StunServers().empty()) {
-        
-        sequence_flags |= PORTALLOCATOR_DISABLE_STUN;
-      }
       if (!config || config->relays.empty()) {
         
         sequence_flags |= PORTALLOCATOR_DISABLE_RELAY;
@@ -457,15 +401,30 @@ void BasicPortAllocatorSession::DoAllocate() {
 }
 
 void BasicPortAllocatorSession::OnNetworksChanged() {
+  std::vector<rtc::Network*> networks;
+  GetNetworks(&networks);
+  for (AllocationSequence* sequence : sequences_) {
+    
+    
+    if (!sequence->network_removed() &&
+        std::find(networks.begin(), networks.end(), sequence->network()) ==
+            networks.end()) {
+      sequence->OnNetworkRemoved();
+    }
+  }
+
   network_manager_started_ = true;
   if (allocation_started_)
     DoAllocate();
 }
 
 void BasicPortAllocatorSession::DisableEquivalentPhases(
-    rtc::Network* network, PortConfiguration* config, uint32* flags) {
-  for (uint32 i = 0; i < sequences_.size() &&
-      (*flags & DISABLE_ALL_PHASES) != DISABLE_ALL_PHASES; ++i) {
+    rtc::Network* network,
+    PortConfiguration* config,
+    uint32_t* flags) {
+  for (uint32_t i = 0; i < sequences_.size() &&
+                           (*flags & DISABLE_ALL_PHASES) != DISABLE_ALL_PHASES;
+       ++i) {
     sequences_[i]->DisableEquivalentPhases(network, config, flags);
   }
 }
@@ -486,11 +445,12 @@ void BasicPortAllocatorSession::AddAllocatedPort(Port* port,
       PORTALLOCATOR_ENABLE_STUN_RETRANSMIT_ATTRIBUTE) != 0);
 
   
-  uint32 candidate_filter = allocator_->candidate_filter();
+  uint32_t candidate_filter = allocator_->candidate_filter();
 
   
   
-  if (flags() & PORTALLOCATOR_DISABLE_ADAPTER_ENUMERATION) {
+  if ((flags() & PORTALLOCATOR_DISABLE_ADAPTER_ENUMERATION) &&
+      (flags() & PORTALLOCATOR_DISABLE_DEFAULT_LOCAL_CANDIDATE)) {
     candidate_filter &= ~CF_HOST;
   }
   port->set_candidate_filter(candidate_filter);
@@ -528,26 +488,44 @@ void BasicPortAllocatorSession::OnCandidateReady(
   if (data->complete())
     return;
 
-  
-  std::vector<Candidate> candidates;
   ProtocolType pvalue;
-  bool candidate_allowed_to_send = CheckCandidateFilter(c);
-  if (StringToProto(c.protocol().c_str(), &pvalue) &&
-      data->sequence()->ProtocolEnabled(pvalue) &&
-      candidate_allowed_to_send) {
-    candidates.push_back(c);
-  }
+  bool candidate_signalable = CheckCandidateFilter(c);
 
-  if (!candidates.empty()) {
+  
+  
+  
+  
+  
+  
+  bool network_enumeration_disabled = c.address().IsAnyIP();
+  bool can_ping_from_candidate =
+      (port->SharedSocket() || c.protocol() == TCP_PROTOCOL_NAME);
+  bool host_canidates_disabled = !(allocator_->candidate_filter() & CF_HOST);
+
+  bool candidate_pairable =
+      candidate_signalable ||
+      (network_enumeration_disabled && can_ping_from_candidate &&
+       !host_canidates_disabled);
+  bool candidate_protocol_enabled =
+      StringToProto(c.protocol().c_str(), &pvalue) &&
+      data->sequence()->ProtocolEnabled(pvalue);
+
+  if (candidate_signalable && candidate_protocol_enabled) {
+    std::vector<Candidate> candidates;
+    candidates.push_back(c);
     SignalCandidatesReady(this, candidates);
   }
 
   
+  if (data->ready()) {
+    return;
+  }
+
   
   
   
   
-  if (!data->ready() && candidate_allowed_to_send) {
+  if (candidate_pairable) {
     data->set_ready();
     SignalPortReady(this, port);
   }
@@ -596,9 +574,10 @@ void BasicPortAllocatorSession::OnProtocolEnabled(AllocationSequence* seq,
       if (!CheckCandidateFilter(potentials[i]))
         continue;
       ProtocolType pvalue;
-      if (!StringToProto(potentials[i].protocol().c_str(), &pvalue))
-        continue;
-      if (pvalue == proto) {
+      bool candidate_protocol_enabled =
+          StringToProto(potentials[i].protocol().c_str(), &pvalue) &&
+          pvalue == proto;
+      if (candidate_protocol_enabled) {
         candidates.push_back(potentials[i]);
       }
     }
@@ -610,7 +589,7 @@ void BasicPortAllocatorSession::OnProtocolEnabled(AllocationSequence* seq,
 }
 
 bool BasicPortAllocatorSession::CheckCandidateFilter(const Candidate& c) {
-  uint32 filter = allocator_->candidate_filter();
+  uint32_t filter = allocator_->candidate_filter();
 
   
   
@@ -633,17 +612,6 @@ bool BasicPortAllocatorSession::CheckCandidateFilter(const Candidate& c) {
       
       
       return true;
-    }
-
-    
-    
-    
-    
-    if (flags() & PORTALLOCATOR_DISABLE_ADAPTER_ENUMERATION) {
-      LOG(LS_WARNING) << "Received non-0 host address: "
-                      << c.address().ToString()
-                      << " when adapter enumeration is disabled";
-      return false;
     }
 
     return ((filter & CF_HOST) != 0);
@@ -744,7 +712,7 @@ BasicPortAllocatorSession::PortData* BasicPortAllocatorSession::FindPort(
 AllocationSequence::AllocationSequence(BasicPortAllocatorSession* session,
                                        rtc::Network* network,
                                        PortConfiguration* config,
-                                       uint32 flags)
+                                       uint32_t flags)
     : session_(session),
       network_(network),
       ip_(network->GetBestIP()),
@@ -757,14 +725,6 @@ AllocationSequence::AllocationSequence(BasicPortAllocatorSession* session,
 }
 
 bool AllocationSequence::Init() {
-  if (IsFlagSet(PORTALLOCATOR_ENABLE_SHARED_SOCKET) &&
-      !IsFlagSet(PORTALLOCATOR_ENABLE_SHARED_UFRAG)) {
-    LOG(LS_ERROR) << "Shared socket option can't be set without "
-                  << "shared ufrag.";
-    ASSERT(false);
-    return false;
-  }
-
   if (IsFlagSet(PORTALLOCATOR_ENABLE_SHARED_SOCKET)) {
     udp_socket_.reset(session_->socket_factory()->CreateUdpSocket(
         rtc::SocketAddress(ip_, 0), session_->allocator()->min_port(),
@@ -784,12 +744,24 @@ void AllocationSequence::Clear() {
   turn_ports_.clear();
 }
 
+void AllocationSequence::OnNetworkRemoved() {
+  
+  Stop();
+  network_removed_ = true;
+}
+
 AllocationSequence::~AllocationSequence() {
   session_->network_thread()->Clear(this);
 }
 
 void AllocationSequence::DisableEquivalentPhases(rtc::Network* network,
-    PortConfiguration* config, uint32* flags) {
+    PortConfiguration* config, uint32_t* flags) {
+  if (network_removed_) {
+    
+    
+    return;
+  }
+
   if (!((network == network_) && (ip_ == network->GetBestIP()))) {
     
     return;
@@ -905,20 +877,19 @@ void AllocationSequence::CreateUDPPorts() {
   
   
   UDPPort* port = NULL;
+  bool emit_local_candidate_for_anyaddress =
+      !IsFlagSet(PORTALLOCATOR_DISABLE_DEFAULT_LOCAL_CANDIDATE);
   if (IsFlagSet(PORTALLOCATOR_ENABLE_SHARED_SOCKET) && udp_socket_) {
-    port = UDPPort::Create(session_->network_thread(),
-                           session_->socket_factory(), network_,
-                           udp_socket_.get(),
-                           session_->username(), session_->password(),
-                           session_->allocator()->origin());
+    port = UDPPort::Create(
+        session_->network_thread(), session_->socket_factory(), network_,
+        udp_socket_.get(), session_->username(), session_->password(),
+        session_->allocator()->origin(), emit_local_candidate_for_anyaddress);
   } else {
-    port = UDPPort::Create(session_->network_thread(),
-                           session_->socket_factory(),
-                           network_, ip_,
-                           session_->allocator()->min_port(),
-                           session_->allocator()->max_port(),
-                           session_->username(), session_->password(),
-                           session_->allocator()->origin());
+    port = UDPPort::Create(
+        session_->network_thread(), session_->socket_factory(), network_, ip_,
+        session_->allocator()->min_port(), session_->allocator()->max_port(),
+        session_->username(), session_->password(),
+        session_->allocator()->origin(), emit_local_candidate_for_anyaddress);
   }
 
   if (port) {
@@ -930,18 +901,10 @@ void AllocationSequence::CreateUDPPorts() {
 
       
       if (!IsFlagSet(PORTALLOCATOR_DISABLE_STUN)) {
-        
-        
         if (config_ && !config_->StunServers().empty()) {
           LOG(LS_INFO) << "AllocationSequence: UDPPort will be handling the "
                        <<  "STUN candidate generation.";
           port->set_server_addresses(config_->StunServers());
-        } else if (config_ &&
-                   config_->SupportsProtocol(RELAY_TURN, PROTO_UDP)) {
-          port->set_server_addresses(config_->GetRelayServerAddresses(
-              RELAY_TURN, PROTO_UDP));
-          LOG(LS_INFO) << "AllocationSequence: TURN Server address will be "
-                       << " used for generating STUN candidate.";
         }
       }
     }
@@ -980,9 +943,6 @@ void AllocationSequence::CreateStunPorts() {
     return;
   }
 
-  
-  
-  ASSERT(config_ && !config_->StunServers().empty());
   if (!(config_ && !config_->StunServers().empty())) {
     LOG(LS_WARNING)
         << "AllocationSequence: No STUN server configured, skipping.";
@@ -1068,12 +1028,19 @@ void AllocationSequence::CreateTurnPort(const RelayServerConfig& config) {
   for (relay_port = config.ports.begin();
        relay_port != config.ports.end(); ++relay_port) {
     TurnPort* port = NULL;
+
+    
+    if (IsFlagSet(PORTALLOCATOR_DISABLE_UDP_RELAY) &&
+        relay_port->proto == PROTO_UDP) {
+      continue;
+    }
+
     
     
     
     
     if (IsFlagSet(PORTALLOCATOR_ENABLE_SHARED_SOCKET) &&
-        relay_port->proto == PROTO_UDP) {
+        relay_port->proto == PROTO_UDP && udp_socket_) {
       port = TurnPort::Create(session_->network_thread(),
                               session_->socket_factory(),
                               network_, udp_socket_.get(),
@@ -1176,6 +1143,13 @@ ServerAddresses PortConfiguration::StunServers() {
   if (!stun_address.IsNil() &&
       stun_servers.find(stun_address) == stun_servers.end()) {
     stun_servers.insert(stun_address);
+  }
+  
+  ServerAddresses turn_servers = GetRelayServerAddresses(RELAY_TURN, PROTO_UDP);
+  for (const rtc::SocketAddress& turn_server : turn_servers) {
+    if (stun_servers.find(turn_server) == stun_servers.end()) {
+      stun_servers.insert(turn_server);
+    }
   }
   return stun_servers;
 }

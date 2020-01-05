@@ -24,14 +24,14 @@
 
 
 void WebRtcIlbcfix_StateConstruct(
-    int16_t idxForMax,   
+    size_t idxForMax,   
 
     int16_t *idxVec,   
     int16_t *syntDenum,  
     int16_t *Out_fix,  
-    int16_t len    
+    size_t len    
                                   ) {
-  int k;
+  size_t k;
   int16_t maxVal;
   int16_t *tmp1, *tmp2, *tmp3;
   
@@ -96,11 +96,11 @@ void WebRtcIlbcfix_StateConstruct(
   
   WebRtcSpl_FilterMAFastQ12(
       sampleVal, sampleMa,
-      numerator, LPC_FILTERORDER+1, (int16_t)(len + LPC_FILTERORDER));
+      numerator, LPC_FILTERORDER+1, len + LPC_FILTERORDER);
   WebRtcSpl_MemSetW16(&sampleMa[len + LPC_FILTERORDER], 0, (len - LPC_FILTERORDER));
   WebRtcSpl_FilterARFastQ12(
       sampleMa, sampleAr,
-      syntDenum, LPC_FILTERORDER+1, (int16_t)(2*len));
+      syntDenum, LPC_FILTERORDER+1, 2 * len);
 
   tmp1 = &sampleAr[len-1];
   tmp2 = &sampleAr[2*len-1];

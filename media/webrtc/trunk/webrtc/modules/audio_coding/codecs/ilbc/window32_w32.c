@@ -26,9 +26,9 @@ void WebRtcIlbcfix_Window32W32(
     int32_t *z,    
     int32_t *x,    
     const int32_t  *y,  
-    int16_t N     
+    size_t N     
                                ) {
-  int16_t i;
+  size_t i;
   int16_t x_low, x_hi, y_low, y_hi;
   int16_t left_shifts;
   int32_t temp;

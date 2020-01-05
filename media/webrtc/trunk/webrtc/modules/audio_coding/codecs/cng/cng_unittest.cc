@@ -99,7 +99,7 @@ TEST_F(CngTest, CngInitFail) {
 
 TEST_F(CngTest, CngEncode) {
   uint8_t sid_data[WEBRTC_CNG_MAX_LPC_ORDER + 1];
-  int16_t number_bytes;
+  size_t number_bytes;
 
   
   EXPECT_EQ(0, WebRtcCng_CreateEnc(&cng_enc_inst_));
@@ -151,7 +151,7 @@ TEST_F(CngTest, CngEncode) {
 
 TEST_F(CngTest, CngEncodeTooLong) {
   uint8_t sid_data[WEBRTC_CNG_MAX_LPC_ORDER + 1];
-  int16_t number_bytes;
+  size_t number_bytes;
 
   
   EXPECT_EQ(0, WebRtcCng_CreateEnc(&cng_enc_inst_));
@@ -170,7 +170,7 @@ TEST_F(CngTest, CngEncodeTooLong) {
 
 TEST_F(CngTest, CngEncodeNoInit) {
   uint8_t sid_data[WEBRTC_CNG_MAX_LPC_ORDER + 1];
-  int16_t number_bytes;
+  size_t number_bytes;
 
   
   EXPECT_EQ(0, WebRtcCng_CreateEnc(&cng_enc_inst_));
@@ -187,14 +187,14 @@ TEST_F(CngTest, CngEncodeNoInit) {
 
 TEST_F(CngTest, CngUpdateSid) {
   uint8_t sid_data[WEBRTC_CNG_MAX_LPC_ORDER + 1];
-  int16_t number_bytes;
+  size_t number_bytes;
 
   
   EXPECT_EQ(0, WebRtcCng_CreateEnc(&cng_enc_inst_));
   EXPECT_EQ(0, WebRtcCng_CreateDec(&cng_dec_inst_));
   EXPECT_EQ(0, WebRtcCng_InitEnc(cng_enc_inst_, 16000, kSidNormalIntervalUpdate,
                                  kCNGNumParamsNormal));
-  EXPECT_EQ(0, WebRtcCng_InitDec(cng_dec_inst_));
+  WebRtcCng_InitDec(cng_dec_inst_);
 
   
   EXPECT_EQ(kCNGNumParamsNormal + 1, WebRtcCng_Encode(
@@ -205,7 +205,7 @@ TEST_F(CngTest, CngUpdateSid) {
   
   EXPECT_EQ(0, WebRtcCng_InitEnc(cng_enc_inst_, 16000, kSidNormalIntervalUpdate,
                                  kCNGNumParamsHigh));
-  EXPECT_EQ(0, WebRtcCng_InitDec(cng_dec_inst_));
+  WebRtcCng_InitDec(cng_dec_inst_);
 
   
   EXPECT_EQ(0, WebRtcCng_Encode(cng_enc_inst_, speech_data_, 160, sid_data,
@@ -224,7 +224,7 @@ TEST_F(CngTest, CngUpdateSid) {
 
 TEST_F(CngTest, CngUpdateSidErroneous) {
   uint8_t sid_data[WEBRTC_CNG_MAX_LPC_ORDER + 1];
-  int16_t number_bytes;
+  size_t number_bytes;
 
   
   EXPECT_EQ(0, WebRtcCng_CreateEnc(&cng_enc_inst_));
@@ -242,7 +242,7 @@ TEST_F(CngTest, CngUpdateSidErroneous) {
   EXPECT_EQ(6220, WebRtcCng_GetErrorCodeDec(cng_dec_inst_));
 
   
-  EXPECT_EQ(0, WebRtcCng_InitDec(cng_dec_inst_));
+  WebRtcCng_InitDec(cng_dec_inst_);
 
   
   
@@ -261,14 +261,14 @@ TEST_F(CngTest, CngUpdateSidErroneous) {
 TEST_F(CngTest, CngGenerate) {
   uint8_t sid_data[WEBRTC_CNG_MAX_LPC_ORDER + 1];
   int16_t out_data[640];
-  int16_t number_bytes;
+  size_t number_bytes;
 
   
   EXPECT_EQ(0, WebRtcCng_CreateEnc(&cng_enc_inst_));
   EXPECT_EQ(0, WebRtcCng_CreateDec(&cng_dec_inst_));
   EXPECT_EQ(0, WebRtcCng_InitEnc(cng_enc_inst_, 16000, kSidNormalIntervalUpdate,
                                  kCNGNumParamsNormal));
-  EXPECT_EQ(0, WebRtcCng_InitDec(cng_dec_inst_));
+  WebRtcCng_InitDec(cng_dec_inst_);
 
   
   EXPECT_EQ(kCNGNumParamsNormal + 1, WebRtcCng_Encode(
@@ -294,14 +294,14 @@ TEST_F(CngTest, CngGenerate) {
 
 TEST_F(CngTest, CngAutoSid) {
   uint8_t sid_data[WEBRTC_CNG_MAX_LPC_ORDER + 1];
-  int16_t number_bytes;
+  size_t number_bytes;
 
   
   EXPECT_EQ(0, WebRtcCng_CreateEnc(&cng_enc_inst_));
   EXPECT_EQ(0, WebRtcCng_CreateDec(&cng_dec_inst_));
   EXPECT_EQ(0, WebRtcCng_InitEnc(cng_enc_inst_, 16000, kSidNormalIntervalUpdate,
                                  kCNGNumParamsNormal));
-  EXPECT_EQ(0, WebRtcCng_InitDec(cng_dec_inst_));
+  WebRtcCng_InitDec(cng_dec_inst_);
 
   
   for (int i = 0; i < 10; i++) {
@@ -321,14 +321,14 @@ TEST_F(CngTest, CngAutoSid) {
 
 TEST_F(CngTest, CngAutoSidShort) {
   uint8_t sid_data[WEBRTC_CNG_MAX_LPC_ORDER + 1];
-  int16_t number_bytes;
+  size_t number_bytes;
 
   
   EXPECT_EQ(0, WebRtcCng_CreateEnc(&cng_enc_inst_));
   EXPECT_EQ(0, WebRtcCng_CreateDec(&cng_dec_inst_));
   EXPECT_EQ(0, WebRtcCng_InitEnc(cng_enc_inst_, 16000, kSidShortIntervalUpdate,
                                  kCNGNumParamsNormal));
-  EXPECT_EQ(0, WebRtcCng_InitDec(cng_dec_inst_));
+  WebRtcCng_InitDec(cng_dec_inst_);
 
   
   EXPECT_EQ(0, WebRtcCng_Encode(cng_enc_inst_, speech_data_, 160, sid_data,

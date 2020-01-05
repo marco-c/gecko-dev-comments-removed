@@ -14,43 +14,56 @@
 
 namespace webrtc {
 
-Accelerate::ReturnCodes Accelerate::Process(
-    const int16_t* input,
-    size_t input_length,
-    AudioMultiVector* output,
-    int16_t* length_change_samples) {
+Accelerate::ReturnCodes Accelerate::Process(const int16_t* input,
+                                            size_t input_length,
+                                            bool fast_accelerate,
+                                            AudioMultiVector* output,
+                                            size_t* length_change_samples) {
   
-  static const int k15ms = 120;  
-  if (num_channels_ == 0 || static_cast<int>(input_length) / num_channels_ <
-      (2 * k15ms - 1) * fs_mult_) {
+  static const size_t k15ms = 120;  
+  if (num_channels_ == 0 ||
+      input_length / num_channels_ < (2 * k15ms - 1) * fs_mult_) {
     
     
     output->PushBackInterleaved(input, input_length);
     return kError;
   }
-  return TimeStretch::Process(input, input_length, output,
+  return TimeStretch::Process(input, input_length, fast_accelerate, output,
                               length_change_samples);
 }
 
 void Accelerate::SetParametersForPassiveSpeech(size_t ,
                                                int16_t* best_correlation,
-                                               int* ) const {
+                                               size_t* ) const {
   
   
   *best_correlation = 0;
 }
 
 Accelerate::ReturnCodes Accelerate::CheckCriteriaAndStretch(
-    const int16_t* input, size_t input_length, size_t peak_index,
-    int16_t best_correlation, bool active_speech,
+    const int16_t* input,
+    size_t input_length,
+    size_t peak_index,
+    int16_t best_correlation,
+    bool active_speech,
+    bool fast_mode,
     AudioMultiVector* output) const {
   
-  if ((best_correlation > kCorrelationThreshold) || !active_speech) {
+  
+  const int correlation_threshold = fast_mode ? 8192 : kCorrelationThreshold;
+  if ((best_correlation > correlation_threshold) || !active_speech) {
     
 
     
     
     size_t fs_mult_120 = fs_mult_ * 120;
+
+    if (fast_mode) {
+      
+      
+      
+      peak_index = (fs_mult_120 / peak_index) * peak_index;
+    }
 
     assert(fs_mult_120 >= peak_index);  
     

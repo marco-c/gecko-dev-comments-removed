@@ -8,8 +8,8 @@
 
 
 
-#ifndef WEBRTC_VIDEO_ENGINE_TEST_COMMON_GL_GL_RENDERER_H_
-#define WEBRTC_VIDEO_ENGINE_TEST_COMMON_GL_GL_RENDERER_H_
+#ifndef WEBRTC_TEST_GL_GL_RENDERER_H_
+#define WEBRTC_TEST_GL_GL_RENDERER_H_
 
 #ifdef WEBRTC_MAC
 #include <OpenGL/gl.h>
@@ -26,7 +26,7 @@ namespace test {
 
 class GlRenderer : public VideoRenderer {
  public:
-  void RenderFrame(const webrtc::I420VideoFrame& frame,
+  void RenderFrame(const webrtc::VideoFrame& frame,
                    int time_to_render_ms) override;
 
  protected:

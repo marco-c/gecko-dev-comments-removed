@@ -23,11 +23,18 @@ class Candidate;
 
 
 
+enum IceProtocolType {
+  ICEPROTO_RFC5245  
+};
+
+
+
 
 class TransportChannelImpl : public TransportChannel {
  public:
-  explicit TransportChannelImpl(const std::string& content_name, int component)
-      : TransportChannel(content_name, component) {}
+  explicit TransportChannelImpl(const std::string& transport_name,
+                                int component)
+      : TransportChannel(transport_name, component) {}
 
   
   virtual Transport* GetTransport() = 0;
@@ -35,10 +42,10 @@ class TransportChannelImpl : public TransportChannel {
   
   virtual IceRole GetIceRole() const = 0;
   virtual void SetIceRole(IceRole role) = 0;
-  virtual void SetIceTiebreaker(uint64 tiebreaker) = 0;
+  virtual void SetIceTiebreaker(uint64_t tiebreaker) = 0;
   
-  virtual bool GetIceProtocolType(IceProtocolType* type) const = 0;
-  virtual void SetIceProtocolType(IceProtocolType type) = 0;
+  
+  virtual void SetIceProtocolType(IceProtocolType type) {}
   
   
   
@@ -52,46 +59,41 @@ class TransportChannelImpl : public TransportChannel {
   
   virtual void SetRemoteIceMode(IceMode mode) = 0;
 
+  virtual void SetIceConfig(const IceConfig& config) = 0;
+
   
   virtual void Connect() = 0;
 
   
-  virtual void Reset() = 0;
+  
+  virtual void MaybeStartGathering() = 0;
 
-  
-  
-  
-  sigslot::signal1<TransportChannelImpl*> SignalRequestSignaling;
-  virtual void OnSignalingReady() = 0;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  sigslot::signal2<TransportChannelImpl*,
-                   const Candidate&> SignalCandidateReady;
-  virtual void OnCandidate(const Candidate& candidate) = 0;
+  sigslot::signal1<TransportChannelImpl*> SignalGatheringState;
 
   
   
   
   
   
-  virtual bool SetLocalIdentity(rtc::SSLIdentity* identity) = 0;
+  
+  
+  
+  sigslot::signal2<TransportChannelImpl*, const Candidate&>
+      SignalCandidateGathered;
+  virtual void AddRemoteCandidate(const Candidate& candidate) = 0;
+
+  virtual IceGatheringState gathering_state() const = 0;
+
+  
+  virtual bool SetLocalCertificate(
+      const rtc::scoped_refptr<rtc::RTCCertificate>& certificate) = 0;
 
   
   virtual bool SetRemoteFingerprint(const std::string& digest_alg,
-    const uint8* digest,
-    size_t digest_len) = 0;
+                                    const uint8_t* digest,
+                                    size_t digest_len) = 0;
 
   virtual bool SetSslRole(rtc::SSLRole role) = 0;
-
-  
-  sigslot::signal1<TransportChannelImpl*> SignalCandidatesAllocationDone;
 
   
   
@@ -102,7 +104,7 @@ class TransportChannelImpl : public TransportChannel {
   sigslot::signal1<TransportChannelImpl*> SignalConnectionRemoved;
 
  private:
-  DISALLOW_EVIL_CONSTRUCTORS(TransportChannelImpl);
+  RTC_DISALLOW_COPY_AND_ASSIGN(TransportChannelImpl);
 };
 
 }  

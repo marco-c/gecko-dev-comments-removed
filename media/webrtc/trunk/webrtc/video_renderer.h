@@ -8,22 +8,27 @@
 
 
 
-#ifndef WEBRTC_VIDEO_ENGINE_NEW_INCLUDE_VIDEO_RENDERER_H_
-#define WEBRTC_VIDEO_ENGINE_NEW_INCLUDE_VIDEO_RENDERER_H_
+#ifndef WEBRTC_VIDEO_RENDERER_H_
+#define WEBRTC_VIDEO_RENDERER_H_
 
 namespace webrtc {
 
-class I420VideoFrame;
+class VideoFrame;
 
 class VideoRenderer {
  public:
   
   
   
-  virtual void RenderFrame(const I420VideoFrame& video_frame,
+  virtual void RenderFrame(const VideoFrame& video_frame,
                            int time_to_render_ms) = 0;
 
   virtual bool IsTextureSupported() const = 0;
+
+  
+  
+  
+  virtual bool SmoothsRenderedFrames() const { return false; }
 
  protected:
   virtual ~VideoRenderer() {}

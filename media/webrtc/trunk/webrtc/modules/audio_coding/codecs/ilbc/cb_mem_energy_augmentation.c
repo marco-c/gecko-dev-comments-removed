@@ -22,14 +22,15 @@
 void WebRtcIlbcfix_CbMemEnergyAugmentation(
     int16_t *interpSamples, 
     int16_t *CBmem,   
-    int16_t scale,   
-    int16_t base_size,  
+    int scale,   
+    size_t base_size,  
     int16_t *energyW16,  
     int16_t *energyShifts 
                                            ){
   int32_t energy, tmp32;
   int16_t *ppe, *pp, *interpSamplesPtr;
-  int16_t *CBmemPtr, lagcount;
+  int16_t *CBmemPtr;
+  size_t lagcount;
   int16_t *enPtr=&energyW16[base_size-20];
   int16_t *enShPtr=&energyShifts[base_size-20];
   int32_t nrjRecursive;

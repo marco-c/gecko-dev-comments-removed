@@ -27,12 +27,12 @@
 void WebRtcIlbcfix_GetCbVec(
     int16_t *cbvec,   
     int16_t *mem,   
-    int16_t index,   
-    int16_t lMem,   
-    int16_t cbveclen   
+    size_t index,   
+    size_t lMem,   
+    size_t cbveclen   
                             ){
-  int16_t k, base_size;
-  int16_t lag;
+  size_t k, base_size;
+  size_t lag;
   
   int16_t tempbuff2[SUBL+5];
 
@@ -58,7 +58,7 @@ void WebRtcIlbcfix_GetCbVec(
 
     
 
-    k = (int16_t)(2 * (index - (lMem - cbveclen + 1))) + cbveclen;
+    k = (2 * (index - (lMem - cbveclen + 1))) + cbveclen;
 
     lag = k / 2;
 
@@ -70,7 +70,7 @@ void WebRtcIlbcfix_GetCbVec(
 
   else {
 
-    int16_t memIndTest;
+    size_t memIndTest;
 
     
 
@@ -100,7 +100,7 @@ void WebRtcIlbcfix_GetCbVec(
       
       WebRtcSpl_FilterMAFastQ12(
           &mem[memIndTest+7], tempbuff2, (int16_t*)WebRtcIlbcfix_kCbFiltersRev,
-          CB_FILTERLEN, (int16_t)(cbveclen+5));
+          CB_FILTERLEN, cbveclen+5);
 
       
       lag = (cbveclen<<1)-20+index-base_size-lMem-1;

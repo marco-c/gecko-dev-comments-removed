@@ -76,22 +76,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef WEBRTC_BASE_SCOPED_PTR_H__
 #define WEBRTC_BASE_SCOPED_PTR_H__
 
@@ -103,24 +87,12 @@
 #include <stdlib.h>
 
 #include <algorithm>  
+#include <cstddef>
 
 #include "webrtc/base/constructormagic.h"
-#include "webrtc/base/move.h"
+#include "webrtc/base/deprecation.h"
 #include "webrtc/base/template_util.h"
 #include "webrtc/typedefs.h"
-
-
-
-
-
-
-
-#if defined(__GNUC__)
-#if !defined(__clang__) && ((__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 8))
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-local-typedefs"
-#endif 
-#endif 
 
 namespace rtc {
 
@@ -312,7 +284,7 @@ class scoped_ptr_impl {
 
   Data data_;
 
-  DISALLOW_COPY_AND_ASSIGN(scoped_ptr_impl);
+  RTC_DISALLOW_COPY_AND_ASSIGN(scoped_ptr_impl);
 };
 
 }  
@@ -335,7 +307,6 @@ class scoped_ptr_impl {
 
 template <class T, class D = rtc::DefaultDeleter<T> >
 class scoped_ptr {
-  RTC_MOVE_ONLY_TYPE_WITH_MOVE_CONSTRUCTOR_FOR_CPP_03(scoped_ptr)
 
   
   
@@ -357,7 +328,7 @@ class scoped_ptr {
   scoped_ptr(element_type* p, const D& d) : impl_(p, d) {}
 
   
-  scoped_ptr(decltype(nullptr)) : impl_(nullptr) {}
+  scoped_ptr(std::nullptr_t) : impl_(nullptr) {}
 
   
   
@@ -394,9 +365,19 @@ class scoped_ptr {
 
   
   
-  scoped_ptr& operator=(decltype(nullptr)) {
+  scoped_ptr& operator=(std::nullptr_t) {
     reset();
     return *this;
+  }
+
+  
+  scoped_ptr(const scoped_ptr& other) = delete;
+  scoped_ptr& operator=(const scoped_ptr& other) = delete;
+
+  
+  
+  RTC_DEPRECATED scoped_ptr&& Pass() {
+    return std::move(*this);
   }
 
   
@@ -483,8 +464,6 @@ class scoped_ptr {
 
 template <class T, class D>
 class scoped_ptr<T[], D> {
-  RTC_MOVE_ONLY_TYPE_WITH_MOVE_CONSTRUCTOR_FOR_CPP_03(scoped_ptr)
-
  public:
   
   typedef T element_type;
@@ -509,7 +488,7 @@ class scoped_ptr<T[], D> {
   explicit scoped_ptr(element_type* array) : impl_(array) {}
 
   
-  scoped_ptr(decltype(nullptr)) : impl_(nullptr) {}
+  scoped_ptr(std::nullptr_t) : impl_(nullptr) {}
 
   
   scoped_ptr(scoped_ptr&& other) : impl_(&other.impl_) {}
@@ -522,9 +501,19 @@ class scoped_ptr<T[], D> {
 
   
   
-  scoped_ptr& operator=(decltype(nullptr)) {
+  scoped_ptr& operator=(std::nullptr_t) {
     reset();
     return *this;
+  }
+
+  
+  scoped_ptr(const scoped_ptr& other) = delete;
+  scoped_ptr& operator=(const scoped_ptr& other) = delete;
+
+  
+  
+  RTC_DEPRECATED scoped_ptr&& Pass() {
+    return std::move(*this);
   }
 
   
@@ -611,12 +600,12 @@ class scoped_ptr<T[], D> {
   template <class U> bool operator!=(scoped_ptr<U> const& p2) const;
 };
 
-}  
-
 template <class T, class D>
 void swap(rtc::scoped_ptr<T, D>& p1, rtc::scoped_ptr<T, D>& p2) {
   p1.swap(p2);
 }
+
+}  
 
 template <class T, class D>
 bool operator==(T* p1, const rtc::scoped_ptr<T, D>& p2) {
@@ -635,12 +624,5 @@ template <typename T>
 rtc::scoped_ptr<T> rtc_make_scoped_ptr(T* ptr) {
   return rtc::scoped_ptr<T>(ptr);
 }
-
-
-#if defined(__GNUC__)
-#if !defined(__clang__) && ((__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 8))
-#pragma GCC diagnostic pop
-#endif 
-#endif 
 
 #endif  

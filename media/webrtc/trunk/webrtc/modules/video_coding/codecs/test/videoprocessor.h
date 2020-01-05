@@ -13,15 +13,16 @@
 
 #include <string>
 
-#include "webrtc/common_video/interface/i420_video_frame.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/common_video/libyuv/include/scaler.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
-#include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
+#include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/modules/video_coding/codecs/test/packet_manipulator.h"
 #include "webrtc/modules/video_coding/codecs/test/stats.h"
-#include "webrtc/system_wrappers/interface/tick_util.h"
+#include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/test/testsupport/frame_reader.h"
 #include "webrtc/test/testsupport/frame_writer.h"
+#include "webrtc/video_frame.h"
 
 namespace webrtc {
 namespace test {
@@ -147,6 +148,9 @@ class VideoProcessor {
   virtual size_t EncodedFrameSize() = 0;
 
   
+  virtual FrameType EncodedFrameType() = 0;
+
+  
   virtual int NumberDroppedFrames() = 0;
 
   
@@ -170,7 +174,7 @@ class VideoProcessorImpl : public VideoProcessor {
   
   void FrameEncoded(const webrtc::EncodedImage& encodedImage);
   
-  void FrameDecoded(const webrtc::I420VideoFrame& image);
+  void FrameDecoded(const webrtc::VideoFrame& image);
   
   
   int GetElapsedTimeMicroseconds(const webrtc::TickTime& start,
@@ -179,6 +183,8 @@ class VideoProcessorImpl : public VideoProcessor {
   void SetRates(int bit_rate, int frame_rate) override;
   
   size_t EncodedFrameSize() override;
+  
+  FrameType EncodedFrameType() override;
   
   int NumberDroppedFrames() override;
   
@@ -199,7 +205,7 @@ class VideoProcessorImpl : public VideoProcessor {
   
   
   uint8_t* last_successful_frame_buffer_;
-  webrtc::I420VideoFrame source_frame_;
+  webrtc::VideoFrame source_frame_;
   
   bool first_key_frame_has_been_excluded_;
   
@@ -207,6 +213,7 @@ class VideoProcessorImpl : public VideoProcessor {
   
   bool initialized_;
   size_t encoded_frame_size_;
+  FrameType encoded_frame_type_;
   int prev_time_stamp_;
   int num_dropped_frames_;
   int num_spatial_resizes_;
@@ -236,12 +243,16 @@ class VideoProcessorImpl : public VideoProcessor {
 
   
   class VideoProcessorDecodeCompleteCallback
-    : public webrtc::DecodedImageCallback {
+      : public webrtc::DecodedImageCallback {
    public:
-      explicit VideoProcessorDecodeCompleteCallback(VideoProcessorImpl* vp)
-      : video_processor_(vp) {
+    explicit VideoProcessorDecodeCompleteCallback(VideoProcessorImpl* vp)
+        : video_processor_(vp) {}
+    int32_t Decoded(webrtc::VideoFrame& image) override;
+    int32_t Decoded(webrtc::VideoFrame& image,
+                    int64_t decode_time_ms) override {
+      RTC_NOTREACHED();
+      return -1;
     }
-      int32_t Decoded(webrtc::I420VideoFrame& image) override;
 
    private:
     VideoProcessorImpl* video_processor_;

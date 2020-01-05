@@ -68,7 +68,7 @@ class ThreadManager {
   DWORD key_;
 #endif
 
-  DISALLOW_COPY_AND_ASSIGN(ThreadManager);
+  RTC_DISALLOW_COPY_AND_ASSIGN(ThreadManager);
 };
 
 struct _SendMessage {
@@ -76,13 +76,6 @@ struct _SendMessage {
   Thread *thread;
   Message msg;
   bool *ready;
-};
-
-enum ThreadPriority {
-  PRIORITY_IDLE = -1,
-  PRIORITY_NORMAL = 0,
-  PRIORITY_ABOVE_NORMAL = 1,
-  PRIORITY_HIGH = 2,
 };
 
 class Runnable {
@@ -94,7 +87,7 @@ class Runnable {
   Runnable() {}
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(Runnable);
+  RTC_DISALLOW_COPY_AND_ASSIGN(Runnable);
 };
 
 
@@ -138,10 +131,6 @@ class Thread : public MessageQueue {
   bool SetName(const std::string& name, const void* obj);
 
   
-  ThreadPriority priority() const { return priority_; }
-  bool SetPriority(ThreadPriority priority);
-
-  
   bool Start(Runnable* runnable = NULL);
 
   
@@ -155,8 +144,9 @@ class Thread : public MessageQueue {
   
   virtual void Run();
 
-  virtual void Send(MessageHandler *phandler, uint32 id = 0,
-      MessageData *pdata = NULL);
+  virtual void Send(MessageHandler* phandler,
+                    uint32_t id = 0,
+                    MessageData* pdata = NULL);
 
   
   
@@ -176,7 +166,7 @@ class Thread : public MessageQueue {
 
   
   void Clear(MessageHandler* phandler,
-             uint32 id = MQID_ANY,
+             uint32_t id = MQID_ANY,
              MessageList* removed = NULL) override;
   void ReceiveSends() override;
 
@@ -270,7 +260,6 @@ class Thread : public MessageQueue {
 
   std::list<_SendMessage> sendlist_;
   std::string name_;
-  ThreadPriority priority_;
   Event running_;  
 
 #if defined(WEBRTC_POSIX)
@@ -287,7 +276,7 @@ class Thread : public MessageQueue {
 
   friend class ThreadManager;
 
-  DISALLOW_COPY_AND_ASSIGN(Thread);
+  RTC_DISALLOW_COPY_AND_ASSIGN(Thread);
 };
 
 
@@ -300,7 +289,7 @@ class AutoThread : public Thread {
   ~AutoThread() override;
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(AutoThread);
+  RTC_DISALLOW_COPY_AND_ASSIGN(AutoThread);
 };
 
 
@@ -314,7 +303,7 @@ class ComThread : public Thread {
   virtual void Run();
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(ComThread);
+  RTC_DISALLOW_COPY_AND_ASSIGN(ComThread);
 };
 #endif
 
@@ -332,7 +321,7 @@ class SocketServerScope {
  private:
   SocketServer* old_ss_;
 
-  DISALLOW_IMPLICIT_CONSTRUCTORS(SocketServerScope);
+  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(SocketServerScope);
 };
 
 }  

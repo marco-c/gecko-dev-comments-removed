@@ -40,6 +40,10 @@ class BitrateProber {
 
   
   
+  size_t RecommendedPacketSize() const;
+
+  
+  
   void PacketSent(int64_t now_ms, size_t packet_size);
 
  private:

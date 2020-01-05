@@ -26,12 +26,11 @@
 
 
 
-
 void WebRtcIlbcfix_NearestNeighbor(
-    int16_t *index, 
-    int16_t *array, 
-    int16_t value, 
-    int16_t arlength 
+    size_t* index, 
+    const size_t* array, 
+    size_t value, 
+    size_t arlength 
                                    );
 
 #endif

@@ -107,7 +107,7 @@ class UnixFilesystem : public FilesystemInterface {
   
   bool GetAppTempFolder(Pathname* path) override;
 
-  bool GetDiskFreeSpace(const Pathname& path, int64* freebytes) override;
+  bool GetDiskFreeSpace(const Pathname& path, int64_t* freebytes) override;
 
   
   Pathname GetCurrentDirectory() override;

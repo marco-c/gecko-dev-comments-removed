@@ -13,7 +13,6 @@
 
 
 
-
 #include "webrtc/system_wrappers/source/critical_section_posix.h"
 
 namespace webrtc {

@@ -29,52 +29,19 @@ class SystemInfo {
   SystemInfo();
 
   
-  int GetMaxPhysicalCpus();
+  static int GetMaxCpus();
   
-  int GetMaxCpus();
-  
-  int GetCurCpus();
+  static int GetCurCpus();
   
   Architecture GetCpuArchitecture();
   std::string GetCpuVendor();
-  int GetCpuFamily();
-  int GetCpuModel();
-  int GetCpuStepping();
   
-  int GetCpuCacheSize();
-  
-  int GetMaxCpuSpeed();
-  int GetCurCpuSpeed();
-  
-  int64 GetMemorySize();
+  int64_t GetMemorySize();
   
   std::string GetMachineModel();
 
-  
-  struct GpuInfo {
-    GpuInfo();
-    ~GpuInfo();
-    std::string device_name;
-    std::string description;
-    int vendor_id;
-    int device_id;
-    std::string driver;
-    std::string driver_version;
-  };
-  bool GetGpuInfo(GpuInfo *info);
-
  private:
-  int physical_cpus_;
-  int logical_cpus_;
-  int cache_size_;
-  Architecture cpu_arch_;
-  std::string cpu_vendor_;
-  int cpu_family_;
-  int cpu_model_;
-  int cpu_stepping_;
-  int cpu_speed_;
-  int64 memory_;
-  std::string machine_model_;
+  static int logical_cpus_;
 };
 
 }  

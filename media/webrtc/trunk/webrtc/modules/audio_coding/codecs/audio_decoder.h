@@ -8,13 +8,13 @@
 
 
 
-#ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ_INTERFACE_AUDIO_DECODER_H_
-#define WEBRTC_MODULES_AUDIO_CODING_NETEQ_INTERFACE_AUDIO_DECODER_H_
+#ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ_INCLUDE_AUDIO_DECODER_H_
+#define WEBRTC_MODULES_AUDIO_CODING_NETEQ_INCLUDE_AUDIO_DECODER_H_
 
 #include <stdlib.h>  
 
 #include "webrtc/base/constructormagic.h"
-#include "webrtc/modules/audio_coding/codecs/cng/include/webrtc_cng.h"
+#include "webrtc/modules/audio_coding/codecs/cng/webrtc_cng.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -32,7 +32,7 @@ class AudioDecoder {
   enum { kNotImplemented = -2 };
 
   AudioDecoder() = default;
-  virtual ~AudioDecoder() {} 
+  virtual ~AudioDecoder() = default;
 
   
   
@@ -41,31 +41,32 @@ class AudioDecoder {
   
   
   
-  virtual int Decode(const uint8_t* encoded,
-                     size_t encoded_len,
-                     int sample_rate_hz,
-                     size_t max_decoded_bytes,
-                     int16_t* decoded,
-                     SpeechType* speech_type);
+  int Decode(const uint8_t* encoded,
+             size_t encoded_len,
+             int sample_rate_hz,
+             size_t max_decoded_bytes,
+             int16_t* decoded,
+             SpeechType* speech_type);
 
   
   
-  virtual int DecodeRedundant(const uint8_t* encoded,
-                              size_t encoded_len,
-                              int sample_rate_hz,
-                              size_t max_decoded_bytes,
-                              int16_t* decoded,
-                              SpeechType* speech_type);
+  int DecodeRedundant(const uint8_t* encoded,
+                      size_t encoded_len,
+                      int sample_rate_hz,
+                      size_t max_decoded_bytes,
+                      int16_t* decoded,
+                      SpeechType* speech_type);
 
   
   virtual bool HasDecodePlc() const;
 
   
   
-  virtual int DecodePlc(int num_frames, int16_t* decoded);
+  
+  virtual size_t DecodePlc(size_t num_frames, int16_t* decoded);
 
   
-  virtual int Init() = 0;
+  virtual void Reset() = 0;
 
   
   virtual int IncomingPacket(const uint8_t* payload,
@@ -106,7 +107,7 @@ class AudioDecoder {
                              size_t encoded_len,
                              int sample_rate_hz,
                              int16_t* decoded,
-                             SpeechType* speech_type);
+                             SpeechType* speech_type) = 0;
 
   virtual int DecodeRedundantInternal(const uint8_t* encoded,
                                       size_t encoded_len,
@@ -115,7 +116,7 @@ class AudioDecoder {
                                       SpeechType* speech_type);
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(AudioDecoder);
+  RTC_DISALLOW_COPY_AND_ASSIGN(AudioDecoder);
 };
 
 }  

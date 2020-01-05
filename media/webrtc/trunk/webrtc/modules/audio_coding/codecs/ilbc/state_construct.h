@@ -24,12 +24,12 @@
 
 
 void WebRtcIlbcfix_StateConstruct(
-    int16_t idxForMax,   
+    size_t idxForMax,   
 
     int16_t *idxVec,   
     int16_t *syntDenum,  
     int16_t *Out_fix,  
-    int16_t len    
+    size_t len    
                                   );
 
 #endif

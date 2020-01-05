@@ -55,14 +55,12 @@ class DtmfBuffer {
   };
 
   
-  explicit DtmfBuffer(int fs_hz) {
-    SetSampleRate(fs_hz);
-  }
+  explicit DtmfBuffer(int fs_hz);
 
-  virtual ~DtmfBuffer() {}
+  virtual ~DtmfBuffer();
 
   
-  virtual void Flush() { buffer_.clear(); }
+  virtual void Flush();
 
   
   
@@ -82,9 +80,9 @@ class DtmfBuffer {
   virtual bool GetEvent(uint32_t current_timestamp, DtmfEvent* event);
 
   
-  virtual size_t Length() const { return buffer_.size(); }
+  virtual size_t Length() const;
 
-  virtual bool Empty() const { return buffer_.empty(); }
+  virtual bool Empty() const;
 
   
   virtual int SetSampleRate(int fs_hz);
@@ -109,7 +107,7 @@ class DtmfBuffer {
 
   DtmfList buffer_;
 
-  DISALLOW_COPY_AND_ASSIGN(DtmfBuffer);
+  RTC_DISALLOW_COPY_AND_ASSIGN(DtmfBuffer);
 };
 
 }  

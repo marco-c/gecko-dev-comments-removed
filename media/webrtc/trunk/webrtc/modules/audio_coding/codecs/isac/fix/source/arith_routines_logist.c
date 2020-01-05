@@ -226,10 +226,10 @@ int WebRtcIsacfix_EncLogisticMulti2(Bitstr_enc *streamData,
 
 
 
-int16_t WebRtcIsacfix_DecLogisticMulti2(int16_t *dataQ7,
-                                        Bitstr_dec *streamData,
-                                        const int32_t *envQ8,
-                                        const int16_t lenData)
+int WebRtcIsacfix_DecLogisticMulti2(int16_t *dataQ7,
+                                    Bitstr_dec *streamData,
+                                    const int32_t *envQ8,
+                                    const int16_t lenData)
 {
   uint32_t    W_lower;
   uint32_t    W_upper;

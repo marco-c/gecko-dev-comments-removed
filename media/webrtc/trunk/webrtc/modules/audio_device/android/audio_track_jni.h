@@ -18,7 +18,8 @@
 #include "webrtc/modules/audio_device/android/audio_manager.h"
 #include "webrtc/modules/audio_device/include/audio_device_defines.h"
 #include "webrtc/modules/audio_device/audio_device_generic.h"
-#include "webrtc/modules/utility/interface/helpers_android.h"
+#include "webrtc/modules/utility/include/helpers_android.h"
+#include "webrtc/modules/utility/include/jvm_android.h"
 
 namespace webrtc {
 
@@ -35,24 +36,33 @@ namespace webrtc {
 
 
 
-
-
-
-
-class AudioTrackJni : public PlayoutDelayProvider {
+class AudioTrackJni {
  public:
   
-  
-  
-  
-  
-  
-  static void SetAndroidAudioDeviceObjects(void* jvm, void* context);
-  
-  
-  static void ClearAndroidAudioDeviceObjects();
+  class JavaAudioTrack {
+   public:
+    JavaAudioTrack(NativeRegistration* native_registration,
+                   rtc::scoped_ptr<GlobalRef> audio_track);
+    ~JavaAudioTrack();
 
-  AudioTrackJni(AudioManager* audio_manager);
+    void InitPlayout(int sample_rate, int channels);
+    bool StartPlayout();
+    bool StopPlayout();
+    bool SetStreamVolume(int volume);
+    int GetStreamMaxVolume();
+    int GetStreamVolume();
+
+   private:
+    rtc::scoped_ptr<GlobalRef> audio_track_;
+    jmethodID init_playout_;
+    jmethodID start_playout_;
+    jmethodID stop_playout_;
+    jmethodID set_stream_volume_;
+    jmethodID get_stream_max_volume_;
+    jmethodID get_stream_volume_;
+  };
+
+  explicit AudioTrackJni(AudioManager* audio_manager);
   ~AudioTrackJni();
 
   int32_t Init();
@@ -71,16 +81,7 @@ class AudioTrackJni : public PlayoutDelayProvider {
   int MaxSpeakerVolume(uint32_t& max_volume) const;
   int MinSpeakerVolume(uint32_t& min_volume) const;
 
-  int32_t PlayoutDelay(uint16_t& delayMS) const;
   void AttachAudioBuffer(AudioDeviceBuffer* audioBuffer);
-
-  int32_t PlayoutDeviceName(uint16_t index,
-                            char name[kAdmMaxDeviceNameSize],
-                            char guid[kAdmMaxGuidSize]);
-
- protected:
-  
-  virtual int PlayoutDelayMs();
 
  private:
   
@@ -98,17 +99,8 @@ class AudioTrackJni : public PlayoutDelayProvider {
   
   static void JNICALL GetPlayoutData(
     JNIEnv* env, jobject obj, jint length, jlong nativeAudioTrack);
-  void OnGetPlayoutData(int length);
+  void OnGetPlayoutData(size_t length);
 
-  
-  
-  bool HasDeviceObjects();
-
-  
-  void CreateJavaInstance();
-
-  
-  
   
   rtc::ThreadChecker thread_checker_;
 
@@ -118,22 +110,32 @@ class AudioTrackJni : public PlayoutDelayProvider {
 
   
   
-  const AudioParameters audio_parameters_;
+  AttachCurrentThreadIfNeeded attach_thread_if_needed_;
 
   
-  jobject j_audio_track_;
+  rtc::scoped_ptr<JNIEnvironment> j_environment_;
+
+  
+  rtc::scoped_ptr<NativeRegistration> j_native_registration_;
+
+  
+  rtc::scoped_ptr<AudioTrackJni::JavaAudioTrack> j_audio_track_;
+
+  
+  
+  const AudioParameters audio_parameters_;
 
   
   void* direct_buffer_address_;
 
   
-  int direct_buffer_capacity_in_bytes_;
+  size_t direct_buffer_capacity_in_bytes_;
 
   
   
   
   
-  int frames_per_buffer_;
+  size_t frames_per_buffer_;
 
   bool initialized_;
 
@@ -144,12 +146,6 @@ class AudioTrackJni : public PlayoutDelayProvider {
   
   
   AudioDeviceBuffer* audio_device_buffer_;
-
-  
-  
-  
-  
-  int delay_in_milliseconds_;
 };
 
 }  

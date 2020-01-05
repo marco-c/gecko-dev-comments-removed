@@ -60,13 +60,6 @@ enum { kMaxNumberMediaPackets = 48 };
 const uint16_t kMaxMediaPackets[] = {kMaxNumberMediaPackets, 12};
 
 
-
-const int kMaxMediaPacketsTest = 12;
-
-
-const int kNumberCodes = kMaxMediaPacketsTest * (kMaxMediaPacketsTest + 1) / 2;
-
-
 const int kMaxGapSize = 2 * kMaxMediaPacketsTest;
 
 
@@ -427,7 +420,7 @@ class FecPacketMaskMetricsTest : public ::testing::Test {
 
       
       for (int j = 0; j < tot_num_packets; j++) {
-        state[j]=0;  
+        state[j] = 0;  
         int bit_value = i >> (tot_num_packets - j - 1) & 1;
         if (bit_value == 1) {
           state[j] = 1;  
@@ -860,9 +853,9 @@ TEST_F(FecPacketMaskMetricsTest, FecXorVsRS) {
         EXPECT_GE(kMetricsXorBursty[code_index].average_residual_loss[k],
                   kMetricsReedSolomon[code_index].average_residual_loss[k]);
        }
-      
-      
-      
+       
+       
+       
     }
   }
 }

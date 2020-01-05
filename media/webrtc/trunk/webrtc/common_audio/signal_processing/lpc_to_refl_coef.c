@@ -30,7 +30,7 @@ void WebRtcSpl_LpcToReflCoef(int16_t* a16, int use_order, int16_t* k16)
     for (m = use_order - 1; m > 0; m--)
     {
         
-        tmp_inv_denom32 = ((int32_t)1073741823) - WEBRTC_SPL_MUL_16_16(k16[m], k16[m]);
+        tmp_inv_denom32 = 1073741823 - k16[m] * k16[m];
         
         tmp_inv_denom16 = (int16_t)(tmp_inv_denom32 >> 15);
 
@@ -39,8 +39,7 @@ void WebRtcSpl_LpcToReflCoef(int16_t* a16, int use_order, int16_t* k16)
             
 
             
-            tmp32[k] = WEBRTC_SPL_LSHIFT_W32((int32_t)a16[k], 16)
-                    - WEBRTC_SPL_LSHIFT_W32(WEBRTC_SPL_MUL_16_16(k16[m], a16[m-k+1]), 1);
+            tmp32[k] = (a16[k] << 16) - (k16[m] * a16[m - k + 1] << 1);
 
             tmp32[k] = WebRtcSpl_DivW32W16(tmp32[k], tmp_inv_denom16); 
         }

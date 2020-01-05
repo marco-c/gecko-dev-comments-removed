@@ -13,6 +13,8 @@
 
 #import <AVFoundation/AVFoundation.h>
 
+#include "webrtc/modules/video_capture/video_capture_defines.h"
+
 @interface DeviceInfoIosObjC : NSObject
 + (int)captureDeviceCount;
 + (AVCaptureDevice*)captureDeviceForIndex:(int)index;
@@ -20,6 +22,8 @@
 + (NSString*)deviceNameForIndex:(int)index;
 + (NSString*)deviceUniqueIdForIndex:(int)index;
 + (NSString*)deviceNameForUniqueId:(NSString*)uniqueId;
++ (webrtc::VideoCaptureCapability)capabilityForPreset:(NSString*)preset;
+
 @end
 
 #endif  

@@ -18,50 +18,31 @@
 #include "webrtc/common_types.h"
 #include "webrtc/config.h"
 #include "webrtc/frame_callback.h"
+#include "webrtc/stream.h"
 #include "webrtc/transport.h"
 #include "webrtc/video_renderer.h"
 
 namespace webrtc {
 
-namespace newapi {
-
-
-enum RtcpMode { kRtcpCompound, kRtcpReducedSize };
-}  
-
 class VideoDecoder;
 
-class VideoReceiveStream {
+class VideoReceiveStream : public ReceiveStream {
  public:
   
   
   struct Decoder {
-    Decoder()
-        : decoder(NULL),
-          payload_type(0),
-          is_renderer(false),
-          expected_delay_ms(0) {}
     std::string ToString() const;
 
     
-    VideoDecoder* decoder;
+    VideoDecoder* decoder = nullptr;
 
     
     
-    int payload_type;
+    int payload_type = 0;
 
     
     
     std::string payload_name;
-
-    
-    bool is_renderer;
-
-    
-    
-    
-    
-    int expected_delay_ms;
   };
 
   struct Stats {
@@ -70,6 +51,7 @@ class VideoReceiveStream {
     int render_frame_rate = 0;
 
     
+    std::string decoder_implementation_name = "unknown";
     FrameCounts frame_counts;
     int decode_ms = 0;
     int max_decode_ms = 0;
@@ -77,7 +59,9 @@ class VideoReceiveStream {
     int target_delay_ms = 0;
     int jitter_buffer_ms = 0;
     int min_playout_delay_ms = 0;
-    int render_delay_ms = 0;
+    int render_delay_ms = 10;
+
+    int current_payload_type = -1;
 
     int total_bitrate_bps = 0;
     int discarded_packets = 0;
@@ -90,13 +74,10 @@ class VideoReceiveStream {
   };
 
   struct Config {
-    Config()
-        : renderer(NULL),
-          render_delay_ms(0),
-          audio_channel_id(-1),
-          pre_decode_callback(NULL),
-          pre_render_callback(NULL),
-          target_delay_ms(0) {}
+    Config() = delete;
+    explicit Config(Transport* rtcp_send_transport)
+        : rtcp_send_transport(rtcp_send_transport) {}
+
     std::string ToString() const;
 
     
@@ -104,32 +85,28 @@ class VideoReceiveStream {
 
     
     struct Rtp {
-      Rtp()
-          : remote_ssrc(0),
-            local_ssrc(0),
-            rtcp_mode(newapi::kRtcpReducedSize),
-            remb(true) {}
       std::string ToString() const;
 
       
-      uint32_t remote_ssrc;
+      uint32_t remote_ssrc = 0;
       
-      uint32_t local_ssrc;
+      uint32_t local_ssrc = 0;
 
       
-      newapi::RtcpMode rtcp_mode;
+      RtcpMode rtcp_mode = RtcpMode::kCompound;
 
       
       struct RtcpXr {
-        RtcpXr() : receiver_reference_time_report(false) {}
-
         
         
-        bool receiver_reference_time_report;
+        bool receiver_reference_time_report = false;
       } rtcp_xr;
 
       
-      bool remb;
+      bool remb = false;
+
+      
+      bool transport_cc = false;
 
       
       NackConfig nack;
@@ -140,13 +117,11 @@ class VideoReceiveStream {
       
       
       struct Rtx {
-        Rtx() : ssrc(0), payload_type(0) {}
+        
+        uint32_t ssrc = 0;
 
         
-        uint32_t ssrc;
-
-        
-        int payload_type;
+        int payload_type = 0;
       };
 
       
@@ -154,46 +129,48 @@ class VideoReceiveStream {
       RtxMap rtx;
 
       
+      
+      
+      bool use_rtx_payload_mapping_on_restore = false;
+
+      
       std::vector<RtpExtension> extensions;
     } rtp;
 
     
+    Transport* rtcp_send_transport = nullptr;
+
     
-    VideoRenderer* renderer;
+    
+    VideoRenderer* renderer = nullptr;
 
     
     
     
-    int render_delay_ms;
+    int render_delay_ms = 10;
 
     
     
     
-    int audio_channel_id;
+    std::string sync_group;
 
     
     
     
-    EncodedFrameObserver* pre_decode_callback;
+    EncodedFrameObserver* pre_decode_callback = nullptr;
 
     
     
     
-    I420FrameCallback* pre_render_callback;
+    I420FrameCallback* pre_render_callback = nullptr;
 
     
     
-    int target_delay_ms;
+    int target_delay_ms = 0;
   };
-
-  virtual void Start() = 0;
-  virtual void Stop() = 0;
 
   
   virtual Stats GetStats() const = 0;
-
- protected:
-  virtual ~VideoReceiveStream() {}
 };
 
 }  

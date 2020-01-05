@@ -38,9 +38,9 @@ static const int16_t kOffsetVector[6] = { 368, 368, 272, 176, 176, 176 };
 
 
 
-static void HighPassFilter(const int16_t* data_in, int data_length,
+static void HighPassFilter(const int16_t* data_in, size_t data_length,
                            int16_t* filter_state, int16_t* data_out) {
-  int i;
+  size_t i;
   const int16_t* in_ptr = data_in;
   int16_t* out_ptr = data_out;
   int32_t tmp32 = 0;
@@ -80,7 +80,7 @@ static void HighPassFilter(const int16_t* data_in, int data_length,
 
 
 
-static void AllPassFilter(const int16_t* data_in, int data_length,
+static void AllPassFilter(const int16_t* data_in, size_t data_length,
                           int16_t filter_coefficient, int16_t* filter_state,
                           int16_t* data_out) {
   
@@ -89,17 +89,16 @@ static void AllPassFilter(const int16_t* data_in, int data_length,
   
   
 
-  int i;
+  size_t i;
   int16_t tmp16 = 0;
   int32_t tmp32 = 0;
   int32_t state32 = ((int32_t) (*filter_state) << 16);  
 
   for (i = 0; i < data_length; i++) {
-    tmp32 = state32 + WEBRTC_SPL_MUL_16_16(filter_coefficient, *data_in);
+    tmp32 = state32 + filter_coefficient * *data_in;
     tmp16 = (int16_t) (tmp32 >> 16);  
     *data_out++ = tmp16;
-    state32 = (((int32_t) (*data_in)) << 14); 
-    state32 -= WEBRTC_SPL_MUL_16_16(filter_coefficient, tmp16);  
+    state32 = (*data_in << 14) - filter_coefficient * tmp16;  
     state32 <<= 1;  
     data_in += 2;
   }
@@ -118,11 +117,11 @@ static void AllPassFilter(const int16_t* data_in, int data_length,
 
 
 
-static void SplitFilter(const int16_t* data_in, int data_length,
+static void SplitFilter(const int16_t* data_in, size_t data_length,
                         int16_t* upper_state, int16_t* lower_state,
                         int16_t* hp_data_out, int16_t* lp_data_out) {
-  int i;
-  int half_length = data_length >> 1;  
+  size_t i;
+  size_t half_length = data_length >> 1;  
   int16_t tmp_out;
 
   
@@ -152,7 +151,7 @@ static void SplitFilter(const int16_t* data_in, int data_length,
 
 
 
-static void LogOfEnergy(const int16_t* data_in, int data_length,
+static void LogOfEnergy(const int16_t* data_in, size_t data_length,
                         int16_t offset, int16_t* total_energy,
                         int16_t* log_energy) {
   
@@ -244,7 +243,7 @@ static void LogOfEnergy(const int16_t* data_in, int data_length,
 }
 
 int16_t WebRtcVad_CalculateFeatures(VadInstT* self, const int16_t* data_in,
-                                    int data_length, int16_t* features) {
+                                    size_t data_length, int16_t* features) {
   int16_t total_energy = 0;
   
   
@@ -252,9 +251,9 @@ int16_t WebRtcVad_CalculateFeatures(VadInstT* self, const int16_t* data_in,
   
   int16_t hp_120[120], lp_120[120];
   int16_t hp_60[60], lp_60[60];
-  const int half_data_length = data_length >> 1;
-  int length = half_data_length;  
-                                  
+  const size_t half_data_length = data_length >> 1;
+  size_t length = half_data_length;  
+                                     
 
   
   int frequency_band = 0;
@@ -262,7 +261,6 @@ int16_t WebRtcVad_CalculateFeatures(VadInstT* self, const int16_t* data_in,
   int16_t* hp_out_ptr = hp_120;  
   int16_t* lp_out_ptr = lp_120;  
 
-  assert(data_length >= 0);
   assert(data_length <= 240);
   assert(4 < kNumChannels - 1);  
 

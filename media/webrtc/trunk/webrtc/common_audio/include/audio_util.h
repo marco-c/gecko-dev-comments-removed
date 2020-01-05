@@ -12,7 +12,9 @@
 #define WEBRTC_COMMON_AUDIO_INCLUDE_AUDIO_UTIL_H_
 
 #include <limits>
+#include <cstring>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/typedefs.h"
 
@@ -26,10 +28,10 @@ typedef std::numeric_limits<int16_t> limits_int16;
 
 static inline int16_t FloatToS16(float v) {
   if (v > 0)
-    return v >= 1 ? limits_int16::max() :
-                    static_cast<int16_t>(v * limits_int16::max() + 0.5f);
-  return v <= -1 ? limits_int16::min() :
-                   static_cast<int16_t>(-v * limits_int16::min() - 0.5f);
+    return v >= 1 ? limits_int16::max()
+                  : static_cast<int16_t>(v * limits_int16::max() + 0.5f);
+  return v <= -1 ? limits_int16::min()
+                 : static_cast<int16_t>(-v * limits_int16::min() - 0.5f);
 }
 
 static inline float S16ToFloat(int16_t v) {
@@ -42,10 +44,9 @@ static inline int16_t FloatS16ToS16(float v) {
   static const float kMaxRound = limits_int16::max() - 0.5f;
   static const float kMinRound = limits_int16::min() + 0.5f;
   if (v > 0)
-    return v >= kMaxRound ? limits_int16::max() :
-                            static_cast<int16_t>(v + 0.5f);
-  return v <= kMinRound ? limits_int16::min() :
-                          static_cast<int16_t>(v - 0.5f);
+    return v >= kMaxRound ? limits_int16::max()
+                          : static_cast<int16_t>(v + 0.5f);
+  return v <= kMinRound ? limits_int16::min() : static_cast<int16_t>(v - 0.5f);
 }
 
 static inline float FloatToFloatS16(float v) {
@@ -67,14 +68,31 @@ void FloatS16ToFloat(const float* src, size_t size, float* dest);
 
 
 
+template <typename T>
+void CopyAudioIfNeeded(const T* const* src,
+                       int num_frames,
+                       int num_channels,
+                       T* const* dest) {
+  for (int i = 0; i < num_channels; ++i) {
+    if (src[i] != dest[i]) {
+      std::copy(src[i], src[i] + num_frames, dest[i]);
+    }
+  }
+}
+
+
+
+
 
 template <typename T>
-void Deinterleave(const T* interleaved, int samples_per_channel,
-                  int num_channels, T* const* deinterleaved) {
-  for (int i = 0; i < num_channels; ++i) {
+void Deinterleave(const T* interleaved,
+                  size_t samples_per_channel,
+                  size_t num_channels,
+                  T* const* deinterleaved) {
+  for (size_t i = 0; i < num_channels; ++i) {
     T* channel = deinterleaved[i];
-    int interleaved_idx = i;
-    for (int j = 0; j < samples_per_channel; ++j) {
+    size_t interleaved_idx = i;
+    for (size_t j = 0; j < samples_per_channel; ++j) {
       channel[j] = interleaved[interleaved_idx];
       interleaved_idx += num_channels;
     }
@@ -85,17 +103,85 @@ void Deinterleave(const T* interleaved, int samples_per_channel,
 
 
 template <typename T>
-void Interleave(const T* const* deinterleaved, int samples_per_channel,
-                int num_channels, T* interleaved) {
-  for (int i = 0; i < num_channels; ++i) {
+void Interleave(const T* const* deinterleaved,
+                size_t samples_per_channel,
+                size_t num_channels,
+                T* interleaved) {
+  for (size_t i = 0; i < num_channels; ++i) {
     const T* channel = deinterleaved[i];
-    int interleaved_idx = i;
-    for (int j = 0; j < samples_per_channel; ++j) {
+    size_t interleaved_idx = i;
+    for (size_t j = 0; j < samples_per_channel; ++j) {
       interleaved[interleaved_idx] = channel[j];
       interleaved_idx += num_channels;
     }
   }
 }
+
+
+
+
+template <typename T>
+void UpmixMonoToInterleaved(const T* mono,
+                            int num_frames,
+                            int num_channels,
+                            T* interleaved) {
+  int interleaved_idx = 0;
+  for (int i = 0; i < num_frames; ++i) {
+    for (int j = 0; j < num_channels; ++j) {
+      interleaved[interleaved_idx++] = mono[i];
+    }
+  }
+}
+
+template <typename T, typename Intermediate>
+void DownmixToMono(const T* const* input_channels,
+                   size_t num_frames,
+                   int num_channels,
+                   T* out) {
+  for (size_t i = 0; i < num_frames; ++i) {
+    Intermediate value = input_channels[0][i];
+    for (int j = 1; j < num_channels; ++j) {
+      value += input_channels[j][i];
+    }
+    out[i] = value / num_channels;
+  }
+}
+
+
+
+template <typename T, typename Intermediate>
+void DownmixInterleavedToMonoImpl(const T* interleaved,
+                                  size_t num_frames,
+                                  int num_channels,
+                                  T* deinterleaved) {
+  RTC_DCHECK_GT(num_channels, 0);
+  RTC_DCHECK_GT(num_frames, 0u);
+
+  const T* const end = interleaved + num_frames * num_channels;
+
+  while (interleaved < end) {
+    const T* const frame_end = interleaved + num_channels;
+
+    Intermediate value = *interleaved++;
+    while (interleaved < frame_end) {
+      value += *interleaved++;
+    }
+
+    *deinterleaved++ = value / num_channels;
+  }
+}
+
+template <typename T>
+void DownmixInterleavedToMono(const T* interleaved,
+                              size_t num_frames,
+                              int num_channels,
+                              T* deinterleaved);
+
+template <>
+void DownmixInterleavedToMono<int16_t>(const int16_t* interleaved,
+                                       size_t num_frames,
+                                       int num_channels,
+                                       int16_t* deinterleaved);
 
 }  
 

@@ -28,16 +28,17 @@ struct PacketTimeUpdateParams {
   int rtp_sendtime_extension_id;    
   std::vector<char> srtp_auth_key;  
   int srtp_auth_tag_len;            
-  int64 srtp_packet_index;          
+  int64_t srtp_packet_index;        
 };
 
 
 
 struct PacketOptions {
-  PacketOptions() : dscp(DSCP_NO_CHANGE) {}
-  explicit PacketOptions(DiffServCodePoint dscp) : dscp(dscp) {}
+  PacketOptions() : dscp(DSCP_NO_CHANGE), packet_id(-1) {}
+  explicit PacketOptions(DiffServCodePoint dscp) : dscp(dscp), packet_id(-1) {}
 
   DiffServCodePoint dscp;
+  int packet_id;  
   PacketTimeUpdateParams packet_time_params;
 };
 
@@ -45,19 +46,19 @@ struct PacketOptions {
 
 struct PacketTime {
   PacketTime() : timestamp(-1), not_before(-1) {}
-  PacketTime(int64 timestamp, int64 not_before)
-      : timestamp(timestamp), not_before(not_before) {
-  }
+  PacketTime(int64_t timestamp, int64_t not_before)
+      : timestamp(timestamp), not_before(not_before) {}
 
-  int64 timestamp;  
-  int64 not_before; 
-                    
-                    
-                    
-                    
+  int64_t timestamp;   
+
+  
+  
+  
+  
+  int64_t not_before;
 };
 
-inline PacketTime CreatePacketTime(int64 not_before) {
+inline PacketTime CreatePacketTime(int64_t not_before) {
   return PacketTime(TimeMicros(), not_before);
 }
 
@@ -110,6 +111,9 @@ class AsyncPacketSocket : public sigslot::has_slots<> {
                    const PacketTime&> SignalReadPacket;
 
   
+  sigslot::signal2<AsyncPacketSocket*, const SentPacket&> SignalSentPacket;
+
+  
   sigslot::signal1<AsyncPacketSocket*> SignalReadyToSend;
 
   
@@ -130,7 +134,7 @@ class AsyncPacketSocket : public sigslot::has_slots<> {
   sigslot::signal2<AsyncPacketSocket*, AsyncPacketSocket*> SignalNewConnection;
 
  private:
-  DISALLOW_EVIL_CONSTRUCTORS(AsyncPacketSocket);
+  RTC_DISALLOW_COPY_AND_ASSIGN(AsyncPacketSocket);
 };
 
 }  

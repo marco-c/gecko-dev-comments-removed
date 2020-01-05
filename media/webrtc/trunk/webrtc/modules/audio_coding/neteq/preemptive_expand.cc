@@ -18,14 +18,14 @@ namespace webrtc {
 
 PreemptiveExpand::ReturnCodes PreemptiveExpand::Process(
     const int16_t* input,
-    int input_length,
-    int old_data_length,
+    size_t input_length,
+    size_t old_data_length,
     AudioMultiVector* output,
-    int16_t* length_change_samples) {
+    size_t* length_change_samples) {
   old_data_length_per_channel_ = old_data_length;
   
   
-  static const int k15ms = 120;  
+  static const size_t k15ms = 120;  
   if (num_channels_ == 0 ||
       input_length / num_channels_ < (2 * k15ms - 1) * fs_mult_ ||
       old_data_length >= input_length / num_channels_ - overlap_samples_) {
@@ -34,13 +34,14 @@ PreemptiveExpand::ReturnCodes PreemptiveExpand::Process(
     output->PushBackInterleaved(input, input_length);
     return kError;
   }
-  return TimeStretch::Process(input, input_length, output,
+  const bool kFastMode = false;  
+  return TimeStretch::Process(input, input_length, kFastMode, output,
                               length_change_samples);
 }
 
 void PreemptiveExpand::SetParametersForPassiveSpeech(size_t len,
                                                      int16_t* best_correlation,
-                                                     int* peak_index) const {
+                                                     size_t* peak_index) const {
   
   
   *best_correlation = 0;
@@ -50,17 +51,20 @@ void PreemptiveExpand::SetParametersForPassiveSpeech(size_t len,
   
   
   *peak_index = std::min(*peak_index,
-                         static_cast<int>(len - old_data_length_per_channel_));
+                         len - old_data_length_per_channel_);
 }
 
 PreemptiveExpand::ReturnCodes PreemptiveExpand::CheckCriteriaAndStretch(
-    const int16_t *input, size_t input_length, size_t peak_index,
-    int16_t best_correlation, bool active_speech,
+    const int16_t* input,
+    size_t input_length,
+    size_t peak_index,
+    int16_t best_correlation,
+    bool active_speech,
+    bool ,
     AudioMultiVector* output) const {
   
   
-  int fs_mult_120 = fs_mult_ * 120;
-  assert(old_data_length_per_channel_ >= 0);  
+  size_t fs_mult_120 = static_cast<size_t>(fs_mult_ * 120);
   
   
   if (((best_correlation > kCorrelationThreshold) &&
@@ -102,7 +106,7 @@ PreemptiveExpand* PreemptiveExpandFactory::Create(
     int sample_rate_hz,
     size_t num_channels,
     const BackgroundNoise& background_noise,
-    int overlap_samples) const {
+    size_t overlap_samples) const {
   return new PreemptiveExpand(
       sample_rate_hz, num_channels, background_noise, overlap_samples);
 }

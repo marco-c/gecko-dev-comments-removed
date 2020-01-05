@@ -75,13 +75,16 @@ class Converter {
 
   
   
-  bool AddYUVToFile(uint8* y_plane, int y_plane_size,
-                    uint8* u_plane, int u_plane_size,
-                    uint8* v_plane, int v_plane_size,
+  bool AddYUVToFile(uint8_t* y_plane,
+                    int y_plane_size,
+                    uint8_t* u_plane,
+                    int u_plane_size,
+                    uint8_t* v_plane,
+                    int v_plane_size,
                     FILE* output_file);
 
   
-  bool AddYUVPlaneToFile(uint8* yuv_plane, int yuv_plane_size, FILE* file);
+  bool AddYUVPlaneToFile(uint8_t* yuv_plane, int yuv_plane_size, FILE* file);
 
   
   

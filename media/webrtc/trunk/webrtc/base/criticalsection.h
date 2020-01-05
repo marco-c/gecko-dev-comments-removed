@@ -8,9 +8,10 @@
 
 
 
-#ifndef WEBRTC_BASE_CRITICALSECTION_H__
-#define WEBRTC_BASE_CRITICALSECTION_H__
+#ifndef WEBRTC_BASE_CRITICALSECTION_H_
+#define WEBRTC_BASE_CRITICALSECTION_H_
 
+#include "webrtc/base/atomicops.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/thread_annotations.h"
 
@@ -21,107 +22,57 @@
 
 #include <winsock2.h>
 #include <windows.h>
-#endif
+#include <sal.h>  
+#endif  
 
 #if defined(WEBRTC_POSIX)
 #include <pthread.h>
 #endif
 
-#ifdef _DEBUG
-#define CS_TRACK_OWNER 1
-#endif  
+#if (!defined(NDEBUG) || defined(DCHECK_ALWAYS_ON))
+#define CS_DEBUG_CHECKS 1
+#endif
 
-#if CS_TRACK_OWNER
-#define TRACK_OWNER(x) x
+#if CS_DEBUG_CHECKS
+#define CS_DEBUG_CODE(x) x
 #else  
-#define TRACK_OWNER(x)
+#define CS_DEBUG_CODE(x)
 #endif  
 
 namespace rtc {
 
+class LOCKABLE CriticalSection {
+ public:
+  CriticalSection();
+  ~CriticalSection();
+
+  void Enter() EXCLUSIVE_LOCK_FUNCTION();
+  bool TryEnter() EXCLUSIVE_TRYLOCK_FUNCTION(true);
+  void Leave() UNLOCK_FUNCTION();
+
+  
+  bool CurrentThreadIsOwner() const;
+  
+  bool IsLocked() const;
+
+ private:
 #if defined(WEBRTC_WIN)
-class LOCKABLE CriticalSection {
- public:
-  CriticalSection() { InitializeCriticalSection(&crit_); }
-  ~CriticalSection() { DeleteCriticalSection(&crit_); }
-  void Enter() EXCLUSIVE_LOCK_FUNCTION() {
-    EnterCriticalSection(&crit_);
-  }
-  bool TryEnter() EXCLUSIVE_TRYLOCK_FUNCTION(true) {
-    return TryEnterCriticalSection(&crit_) != FALSE;
-  }
-  void Leave() UNLOCK_FUNCTION() {
-    LeaveCriticalSection(&crit_);
-  }
-
-  
-  bool CurrentThreadIsOwner() const {
-    return crit_.OwningThread == reinterpret_cast<HANDLE>(GetCurrentThreadId());
-  }
-
- private:
   CRITICAL_SECTION crit_;
-};
-#endif 
-
-#if defined(WEBRTC_POSIX)
-class LOCKABLE CriticalSection {
- public:
-  CriticalSection() {
-    pthread_mutexattr_t mutex_attribute;
-    pthread_mutexattr_init(&mutex_attribute);
-    pthread_mutexattr_settype(&mutex_attribute, PTHREAD_MUTEX_RECURSIVE);
-    pthread_mutex_init(&mutex_, &mutex_attribute);
-    pthread_mutexattr_destroy(&mutex_attribute);
-    TRACK_OWNER(thread_ = 0);
-  }
-  ~CriticalSection() {
-    pthread_mutex_destroy(&mutex_);
-  }
-  void Enter() EXCLUSIVE_LOCK_FUNCTION() {
-    pthread_mutex_lock(&mutex_);
-    TRACK_OWNER(thread_ = pthread_self());
-  }
-  bool TryEnter() EXCLUSIVE_TRYLOCK_FUNCTION(true) {
-    if (pthread_mutex_trylock(&mutex_) == 0) {
-      TRACK_OWNER(thread_ = pthread_self());
-      return true;
-    }
-    return false;
-  }
-  void Leave() UNLOCK_FUNCTION() {
-    TRACK_OWNER(thread_ = 0);
-    pthread_mutex_unlock(&mutex_);
-  }
-
-  
-  bool CurrentThreadIsOwner() const {
-#if CS_TRACK_OWNER
-    return pthread_equal(thread_, pthread_self());
-#else
-    return true;
-#endif  
-  }
-
- private:
+#elif defined(WEBRTC_POSIX)
   pthread_mutex_t mutex_;
-  TRACK_OWNER(pthread_t thread_);
+  CS_DEBUG_CODE(pthread_t thread_);
+  CS_DEBUG_CODE(int recursion_count_);
+#endif
 };
-#endif 
 
 
 class SCOPED_LOCKABLE CritScope {
  public:
-  explicit CritScope(CriticalSection *pcrit) EXCLUSIVE_LOCK_FUNCTION(pcrit) {
-    pcrit_ = pcrit;
-    pcrit_->Enter();
-  }
-  ~CritScope() UNLOCK_FUNCTION() {
-    pcrit_->Leave();
-  }
+  explicit CritScope(CriticalSection* cs) EXCLUSIVE_LOCK_FUNCTION(cs);
+  ~CritScope() UNLOCK_FUNCTION();
  private:
-  CriticalSection *pcrit_;
-  DISALLOW_COPY_AND_ASSIGN(CritScope);
+  CriticalSection* const cs_;
+  RTC_DISALLOW_COPY_AND_ASSIGN(CritScope);
 };
 
 
@@ -133,68 +84,19 @@ class SCOPED_LOCKABLE CritScope {
 
 class TryCritScope {
  public:
-  explicit TryCritScope(CriticalSection *pcrit) {
-    pcrit_ = pcrit;
-    locked_ = pcrit_->TryEnter();
-  }
-  ~TryCritScope() {
-    if (locked_) {
-      pcrit_->Leave();
-    }
-  }
-  bool locked() const {
-    return locked_;
-  }
- private:
-  CriticalSection *pcrit_;
-  bool locked_;
-  DISALLOW_COPY_AND_ASSIGN(TryCritScope);
-};
-
-
-
-class AtomicOps {
- public:
+  explicit TryCritScope(CriticalSection* cs);
+  ~TryCritScope();
 #if defined(WEBRTC_WIN)
-  
-  static int Increment(volatile int* i) {
-    return ::InterlockedIncrement(reinterpret_cast<volatile LONG*>(i));
-  }
-  static int Decrement(volatile int* i) {
-    return ::InterlockedDecrement(reinterpret_cast<volatile LONG*>(i));
-  }
-  static int Load(volatile const int* i) {
-    return *i;
-  }
-  static void Store(volatile int* i, int value) {
-    *i = value;
-  }
-  static int CompareAndSwap(volatile int* i, int old_value, int new_value) {
-    return ::InterlockedCompareExchange(reinterpret_cast<volatile LONG*>(i),
-                                        new_value,
-                                        old_value);
-  }
+  _Check_return_ bool locked() const;
 #else
-  static int Increment(volatile int* i) {
-    return __sync_add_and_fetch(i, 1);
-  }
-  static int Decrement(volatile int* i) {
-    return __sync_sub_and_fetch(i, 1);
-  }
-  static int Load(volatile const int* i) {
-    
-    return __sync_add_and_fetch(const_cast<volatile int*>(i), 0);
-  }
-  static void Store(volatile int* i, int value) {
-    __sync_synchronize();
-    *i = value;
-  }
-  static int CompareAndSwap(volatile int* i, int old_value, int new_value) {
-    return __sync_val_compare_and_swap(i, old_value, new_value);
-  }
+  bool locked() const __attribute__ ((__warn_unused_result__));
 #endif
+ private:
+  CriticalSection* const cs_;
+  const bool locked_;
+  CS_DEBUG_CODE(mutable bool lock_was_called_);
+  RTC_DISALLOW_COPY_AND_ASSIGN(TryCritScope);
 };
-
 
 
 
@@ -210,6 +112,16 @@ class LOCKABLE GlobalLockPod {
 class GlobalLock : public GlobalLockPod {
  public:
   GlobalLock();
+};
+
+
+class SCOPED_LOCKABLE GlobalLockScope {
+ public:
+  explicit GlobalLockScope(GlobalLockPod* lock) EXCLUSIVE_LOCK_FUNCTION(lock);
+  ~GlobalLockScope() UNLOCK_FUNCTION();
+ private:
+  GlobalLockPod* const lock_;
+  RTC_DISALLOW_COPY_AND_ASSIGN(GlobalLockScope);
 };
 
 } 

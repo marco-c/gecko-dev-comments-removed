@@ -21,13 +21,13 @@
 
 void WebRtcIlbcfix_CbSearchCore(
     int32_t *cDot,    
-    int16_t range,    
+    size_t range,    
     int16_t stage,    
     int16_t *inverseEnergy,  
     int16_t *inverseEnergyShift, 
 
     int32_t *Crit,    
-    int16_t *bestIndex,   
+    size_t *bestIndex,   
 
 
     int32_t *bestCrit,   
@@ -37,7 +37,7 @@ void WebRtcIlbcfix_CbSearchCore(
 {
   int32_t maxW32, tmp32;
   int16_t max, sh, tmp16;
-  int i;
+  size_t i;
   int32_t *cDotPtr;
   int16_t cDotSqW16;
   int16_t *inverseEnergyPtr;

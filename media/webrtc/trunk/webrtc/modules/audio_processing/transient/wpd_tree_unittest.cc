@@ -17,7 +17,7 @@
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_processing/transient/daubechies_8_wavelet_coeffs.h"
 #include "webrtc/modules/audio_processing/transient/file_utils.h"
-#include "webrtc/system_wrappers/interface/file_wrapper.h"
+#include "webrtc/system_wrappers/include/file_wrapper.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
 namespace webrtc {
@@ -68,8 +68,12 @@ TEST(WPDTreeTest, Construction) {
 
 
 
+#if defined(WEBRTC_IOS)
+TEST(WPDTreeTest, DISABLED_CorrectnessBasedOnMatlabFiles) {
+#else
 TEST(WPDTreeTest, CorrectnessBasedOnMatlabFiles) {
-  
+#endif
+
   const size_t kTestBufferSize = 160;
   const int kLevels = 3;
   const int kLeaves = 1 << kLevels;

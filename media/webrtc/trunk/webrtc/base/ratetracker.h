@@ -17,24 +17,51 @@
 namespace rtc {
 
 
+
+
 class RateTracker {
  public:
-  RateTracker();
-  virtual ~RateTracker() {}
+  RateTracker(uint32_t bucket_milliseconds, size_t bucket_count);
+  virtual ~RateTracker();
 
-  size_t total_units() const;
-  size_t units_second();
-  void Update(size_t units);
+  
+  
+  
+  double ComputeRateForInterval(uint32_t interval_milliseconds) const;
+
+  
+  
+  double ComputeRate() const {
+    return ComputeRateForInterval(bucket_milliseconds_ *
+                                  static_cast<uint32_t>(bucket_count_));
+  }
+
+  
+  
+  double ComputeTotalRate() const;
+
+  
+  size_t TotalSampleCount() const;
+
+  
+  
+  void AddSamples(size_t sample_count);
 
  protected:
   
-  virtual uint32 Time() const;
+  virtual uint32_t Time() const;
 
  private:
-  size_t total_units_;
-  size_t units_second_;
-  uint32 last_units_second_time_;
-  size_t last_units_second_calc_;
+  void EnsureInitialized();
+  size_t NextBucketIndex(size_t bucket_index) const;
+
+  const uint32_t bucket_milliseconds_;
+  const size_t bucket_count_;
+  size_t* sample_buckets_;
+  size_t total_sample_count_;
+  size_t current_bucket_;
+  uint32_t bucket_start_time_milliseconds_;
+  uint32_t initialization_time_milliseconds_;
 };
 
 }  

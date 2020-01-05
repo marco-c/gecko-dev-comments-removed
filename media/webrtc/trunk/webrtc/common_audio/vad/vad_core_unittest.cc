@@ -82,8 +82,8 @@ TEST_F(VadTest, CalcVad) {
 
   
   
-  for (int16_t i = 0; i < kMaxFrameLength; ++i) {
-    speech[i] = (i * i);
+  for (size_t i = 0; i < kMaxFrameLength; ++i) {
+    speech[i] = static_cast<int16_t>(i * i);
   }
   for (size_t j = 0; j < kFrameLengthsSize; ++j) {
     if (ValidRatesAndFrameLengths(8000, kFrameLengths[j])) {

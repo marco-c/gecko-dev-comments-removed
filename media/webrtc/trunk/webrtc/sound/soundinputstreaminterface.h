@@ -21,7 +21,7 @@ namespace rtc {
 
 class SoundInputStreamInterface {
  public:
-  virtual ~SoundInputStreamInterface() {}
+  virtual ~SoundInputStreamInterface();
 
   
   virtual bool StartReading() = 0;
@@ -57,10 +57,10 @@ class SoundInputStreamInterface {
       SoundInputStreamInterface *> SignalSamplesRead;
 
  protected:
-  SoundInputStreamInterface() {}
+  SoundInputStreamInterface();
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(SoundInputStreamInterface);
+  RTC_DISALLOW_COPY_AND_ASSIGN(SoundInputStreamInterface);
 };
 
 }  

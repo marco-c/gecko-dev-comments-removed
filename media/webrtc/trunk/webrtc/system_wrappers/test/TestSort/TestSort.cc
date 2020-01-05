@@ -13,8 +13,8 @@
 
 #include <algorithm>
 
-#include "webrtc/system_wrappers/interface/sort.h"
-#include "webrtc/system_wrappers/interface/tick_util.h"
+#include "webrtc/system_wrappers/include/sort.h"
+#include "webrtc/system_wrappers/include/tick_util.h"
 
 
 #undef max

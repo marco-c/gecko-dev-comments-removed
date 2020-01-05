@@ -24,16 +24,7 @@
 
 
 
-template <typename T, size_t N>
-char (&ArraySizeHelper(T (&array)[N]))[N];
-
-
-
-
-#ifndef _MSC_VER
-template <typename T, size_t N>
-char (&ArraySizeHelper(const T (&array)[N]))[N];
-#endif
+template <typename T, size_t N> char (&ArraySizeHelper(T (&array)[N]))[N];
 
 #define arraysize(array) (sizeof(ArraySizeHelper(array)))
 

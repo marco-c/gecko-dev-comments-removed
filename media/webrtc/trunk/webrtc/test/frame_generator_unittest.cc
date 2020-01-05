@@ -55,10 +55,7 @@ class FrameGeneratorTest : public ::testing::Test {
     fwrite(plane_buffer.get(), 1, uv_size, file);
   }
 
-  void CheckFrameAndMutate(I420VideoFrame* frame,
-                           uint8_t y,
-                           uint8_t u,
-                           uint8_t v) {
+  void CheckFrameAndMutate(VideoFrame* frame, uint8_t y, uint8_t u, uint8_t v) {
     
     ASSERT_NE(nullptr, frame);
     uint8_t* buffer;

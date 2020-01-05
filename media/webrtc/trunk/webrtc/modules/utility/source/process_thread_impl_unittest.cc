@@ -8,11 +8,13 @@
 
 
 
+#include <utility>
+
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/modules/interface/module.h"
+#include "webrtc/modules/include/module.h"
 #include "webrtc/modules/utility/source/process_thread_impl.h"
-#include "webrtc/system_wrappers/interface/tick_util.h"
+#include "webrtc/system_wrappers/include/tick_util.h"
 
 namespace webrtc {
 
@@ -52,13 +54,13 @@ ACTION_P(SetTimestamp, ptr) {
 }
 
 TEST(ProcessThreadImpl, StartStop) {
-  ProcessThreadImpl thread;
+  ProcessThreadImpl thread("ProcessThread");
   thread.Start();
   thread.Stop();
 }
 
 TEST(ProcessThreadImpl, MultipleStartStop) {
-  ProcessThreadImpl thread;
+  ProcessThreadImpl thread("ProcessThread");
   for (int i = 0; i < 5; ++i) {
     thread.Start();
     thread.Stop();
@@ -67,7 +69,7 @@ TEST(ProcessThreadImpl, MultipleStartStop) {
 
 
 TEST(ProcessThreadImpl, ProcessCall) {
-  ProcessThreadImpl thread;
+  ProcessThreadImpl thread("ProcessThread");
   thread.Start();
 
   rtc::scoped_ptr<EventWrapper> event(EventWrapper::Create());
@@ -89,7 +91,7 @@ TEST(ProcessThreadImpl, ProcessCall) {
 
 
 TEST(ProcessThreadImpl, ProcessCall2) {
-  ProcessThreadImpl thread;
+  ProcessThreadImpl thread("ProcessThread");
   rtc::scoped_ptr<EventWrapper> event(EventWrapper::Create());
 
   MockModule module;
@@ -111,7 +113,7 @@ TEST(ProcessThreadImpl, ProcessCall2) {
 
 
 TEST(ProcessThreadImpl, Deregister) {
-  ProcessThreadImpl thread;
+  ProcessThreadImpl thread("ProcessThread");
   rtc::scoped_ptr<EventWrapper> event(EventWrapper::Create());
 
   int process_count = 0;
@@ -146,7 +148,7 @@ TEST(ProcessThreadImpl, Deregister) {
 
 
 void ProcessCallAfterAFewMs(int64_t milliseconds) {
-  ProcessThreadImpl thread;
+  ProcessThreadImpl thread("ProcessThread");
   thread.Start();
 
   rtc::scoped_ptr<EventWrapper> event(EventWrapper::Create());
@@ -211,7 +213,7 @@ TEST(ProcessThreadImpl, DISABLED_ProcessCallAfter200ms) {
 
 
 TEST(ProcessThreadImpl, DISABLED_Process50Times) {
-  ProcessThreadImpl thread;
+  ProcessThreadImpl thread("ProcessThread");
   thread.Start();
 
   rtc::scoped_ptr<EventWrapper> event(EventWrapper::Create());
@@ -244,15 +246,16 @@ TEST(ProcessThreadImpl, DISABLED_Process50Times) {
 
 
 TEST(ProcessThreadImpl, WakeUp) {
-  ProcessThreadImpl thread;
+  ProcessThreadImpl thread("ProcessThread");
   thread.Start();
 
   rtc::scoped_ptr<EventWrapper> started(EventWrapper::Create());
   rtc::scoped_ptr<EventWrapper> called(EventWrapper::Create());
 
   MockModule module;
-  int64_t start_time = 0;
-  int64_t called_time = 0;
+  int64_t start_time;
+  int64_t called_time;
+
   
   
   
@@ -281,8 +284,6 @@ TEST(ProcessThreadImpl, WakeUp) {
   EXPECT_CALL(module, ProcessThreadAttached(nullptr)).Times(1);
   thread.Stop();
 
-  ASSERT_GT(start_time, 0);
-  ASSERT_GT(called_time, 0);
   EXPECT_GE(called_time, start_time);
   uint32_t diff = called_time - start_time;
   
@@ -292,11 +293,11 @@ TEST(ProcessThreadImpl, WakeUp) {
 
 
 TEST(ProcessThreadImpl, PostTask) {
-  ProcessThreadImpl thread;
+  ProcessThreadImpl thread("ProcessThread");
   rtc::scoped_ptr<EventWrapper> task_ran(EventWrapper::Create());
   rtc::scoped_ptr<RaiseEventTask> task(new RaiseEventTask(task_ran.get()));
   thread.Start();
-  thread.PostTask(task.Pass());
+  thread.PostTask(std::move(task));
   EXPECT_EQ(kEventSignaled, task_ran->Wait(100));
   thread.Stop();
 }

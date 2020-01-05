@@ -26,6 +26,7 @@
 #endif
 
 #include "webrtc/base/basictypes.h"
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/socketaddress.h"
 
 
@@ -123,6 +124,15 @@ inline bool IsBlockingError(int e) {
   return (e == EWOULDBLOCK) || (e == EAGAIN) || (e == EINPROGRESS);
 }
 
+struct SentPacket {
+  SentPacket() : packet_id(-1), send_time_ms(-1) {}
+  SentPacket(int packet_id, int64_t send_time_ms)
+      : packet_id(packet_id), send_time_ms(send_time_ms) {}
+
+  int packet_id;
+  int64_t send_time_ms;
+};
+
 
 
 class Socket {
@@ -160,7 +170,7 @@ class Socket {
   
   
   
-  virtual int EstimateMTU(uint16* mtu) = 0;
+  virtual int EstimateMTU(uint16_t* mtu) = 0;
 
   enum Option {
     OPT_DONTFRAGMENT,
@@ -180,7 +190,7 @@ class Socket {
   Socket() {}
 
  private:
-  DISALLOW_EVIL_CONSTRUCTORS(Socket);
+  RTC_DISALLOW_COPY_AND_ASSIGN(Socket);
 };
 
 }  

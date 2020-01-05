@@ -17,15 +17,10 @@
 #include "webrtc/modules/audio_device/android/audio_manager.h"
 #include "webrtc/modules/audio_device/include/audio_device_defines.h"
 #include "webrtc/modules/audio_device/audio_device_generic.h"
-#include "webrtc/modules/utility/interface/helpers_android.h"
+#include "webrtc/modules/utility/include/helpers_android.h"
+#include "webrtc/modules/utility/include/jvm_android.h"
 
 namespace webrtc {
-
-class PlayoutDelayProvider;
-
-
-
-
 
 
 
@@ -48,18 +43,30 @@ class PlayoutDelayProvider;
 class AudioRecordJni {
  public:
   
-  
-  
-  
-  
-  
-  static void SetAndroidAudioDeviceObjects(void* jvm, void* context);
-  
-  
-  static void ClearAndroidAudioDeviceObjects();
+  class JavaAudioRecord {
+   public:
+    JavaAudioRecord(NativeRegistration* native_registration,
+                   rtc::scoped_ptr<GlobalRef> audio_track);
+    ~JavaAudioRecord();
 
-  AudioRecordJni(
-      PlayoutDelayProvider* delay_provider, AudioManager* audio_manager);
+    int InitRecording(int sample_rate, size_t channels);
+    bool StartRecording();
+    bool StopRecording();
+    bool EnableBuiltInAEC(bool enable);
+    bool EnableBuiltInAGC(bool enable);
+    bool EnableBuiltInNS(bool enable);
+
+   private:
+    rtc::scoped_ptr<GlobalRef> audio_record_;
+    jmethodID init_recording_;
+    jmethodID start_recording_;
+    jmethodID stop_recording_;
+    jmethodID enable_built_in_aec_;
+    jmethodID enable_built_in_agc_;
+    jmethodID enable_built_in_ns_;
+  };
+
+  explicit AudioRecordJni(AudioManager* audio_manager);
   ~AudioRecordJni();
 
   int32_t Init();
@@ -69,18 +76,14 @@ class AudioRecordJni {
   bool RecordingIsInitialized() const { return initialized_; }
 
   int32_t StartRecording();
-  int32_t StopRecording ();
+  int32_t StopRecording();
   bool Recording() const { return recording_; }
-
-  int32_t RecordingDelay(uint16_t& delayMS) const;
 
   void AttachAudioBuffer(AudioDeviceBuffer* audioBuffer);
 
-  bool BuiltInAECIsAvailable() const;
   int32_t EnableBuiltInAEC(bool enable);
-  int32_t RecordingDeviceName(uint16_t index,
-                              char name[kAdmMaxDeviceNameSize],
-                              char guid[kAdmMaxGuidSize]);
+  int32_t EnableBuiltInAGC(bool enable);
+  int32_t EnableBuiltInNS(bool enable);
 
  private:
   
@@ -103,16 +106,6 @@ class AudioRecordJni {
   void OnDataIsRecorded(int length);
 
   
-  
-  bool HasDeviceObjects();
-
-  
-  void CreateJavaInstance();
-
-  
-  
-  
-  
   rtc::ThreadChecker thread_checker_;
 
   
@@ -121,28 +114,40 @@ class AudioRecordJni {
 
   
   
+  AttachCurrentThreadIfNeeded attach_thread_if_needed_;
+
   
+  rtc::scoped_ptr<JNIEnvironment> j_environment_;
+
   
-  PlayoutDelayProvider* delay_provider_;
+  rtc::scoped_ptr<NativeRegistration> j_native_registration_;
+
+  
+  rtc::scoped_ptr<AudioRecordJni::JavaAudioRecord> j_audio_record_;
+
+  
+  const AudioManager* audio_manager_;
 
   
   
   const AudioParameters audio_parameters_;
 
   
-  jobject j_audio_record_;
+  
+  
+  int total_delay_in_milliseconds_;
 
   
   void* direct_buffer_address_;
 
   
-  int direct_buffer_capacity_in_bytes_;
+  size_t direct_buffer_capacity_in_bytes_;
 
   
   
   
   
-  int frames_per_buffer_;
+  size_t frames_per_buffer_;
 
   bool initialized_;
 
@@ -151,9 +156,6 @@ class AudioRecordJni {
   
   
   AudioDeviceBuffer* audio_device_buffer_;
-
-  
-  int playout_delay_in_milliseconds_;
 };
 
 }  

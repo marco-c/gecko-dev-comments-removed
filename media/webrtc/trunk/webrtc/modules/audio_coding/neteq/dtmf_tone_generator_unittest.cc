@@ -172,8 +172,6 @@ TEST(DtmfToneGenerator, TestErrors) {
   ASSERT_EQ(0, tone_gen.Init(fs, event, attenuation));
   EXPECT_TRUE(tone_gen.initialized());
   
-  EXPECT_EQ(DtmfToneGenerator::kParameterError, tone_gen.Generate(-1, &signal));
-  
   EXPECT_EQ(DtmfToneGenerator::kParameterError,
             tone_gen.Generate(kNumSamples, NULL));
 }

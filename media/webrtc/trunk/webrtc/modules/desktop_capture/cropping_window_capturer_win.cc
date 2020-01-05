@@ -14,7 +14,7 @@
 #include "webrtc/modules/desktop_capture/win/scoped_gdi_object.h"
 #include "webrtc/modules/desktop_capture/win/screen_capture_utils.h"
 #include "webrtc/modules/desktop_capture/win/window_capture_utils.h"
-#include "webrtc/system_wrappers/interface/logging.h"
+#include "webrtc/system_wrappers/include/logging.h"
 
 namespace webrtc {
 
@@ -119,10 +119,12 @@ class CroppingWindowCapturerWin : public CroppingWindowCapturer {
   
   
   DesktopRect window_region_rect_;
+
+  AeroChecker aero_checker_;
 };
 
 bool CroppingWindowCapturerWin::ShouldUseScreenCapturer() {
-  if (!rtc::IsWindows8OrLater())
+  if (!rtc::IsWindows8OrLater() && aero_checker_.IsAeroEnabled())
     return false;
 
   

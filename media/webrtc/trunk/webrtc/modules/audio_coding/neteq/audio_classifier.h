@@ -37,7 +37,7 @@ class AudioClassifier {
   bool Analysis(const int16_t* input, int input_length, int channels);
 
   
-  virtual bool is_music() const { return is_music_; }
+  virtual bool is_music() const;
 
   
   float music_probability() const { return music_probability_; }

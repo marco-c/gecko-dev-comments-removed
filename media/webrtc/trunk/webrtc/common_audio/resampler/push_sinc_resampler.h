@@ -27,7 +27,7 @@ class PushSincResampler : public SincResamplerCallback {
   
   
   
-  PushSincResampler(int source_frames, int destination_frames);
+  PushSincResampler(size_t source_frames, size_t destination_frames);
   ~PushSincResampler() override;
 
   
@@ -35,12 +35,12 @@ class PushSincResampler : public SincResamplerCallback {
   
   
   
-  int Resample(const int16_t* source, int source_frames,
-               int16_t* destination, int destination_capacity);
-  int Resample(const float* source,
-               int source_frames,
-               float* destination,
-               int destination_capacity);
+  size_t Resample(const int16_t* source, size_t source_frames,
+                  int16_t* destination, size_t destination_capacity);
+  size_t Resample(const float* source,
+                  size_t source_frames,
+                  float* destination,
+                  size_t destination_capacity);
 
   
   
@@ -50,7 +50,7 @@ class PushSincResampler : public SincResamplerCallback {
 
  protected:
   
-  void Run(int frames, float* destination) override;
+  void Run(size_t frames, float* destination) override;
 
  private:
   friend class PushSincResamplerTest;
@@ -60,15 +60,15 @@ class PushSincResampler : public SincResamplerCallback {
   rtc::scoped_ptr<float[]> float_buffer_;
   const float* source_ptr_;
   const int16_t* source_ptr_int_;
-  const int destination_frames_;
+  const size_t destination_frames_;
 
   
   bool first_pass_;
 
   
-  int source_available_;
+  size_t source_available_;
 
-  DISALLOW_COPY_AND_ASSIGN(PushSincResampler);
+  RTC_DISALLOW_COPY_AND_ASSIGN(PushSincResampler);
 };
 
 }  

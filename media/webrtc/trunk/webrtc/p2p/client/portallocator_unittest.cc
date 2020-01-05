@@ -11,7 +11,6 @@
 #include "webrtc/p2p/base/basicpacketsocketfactory.h"
 #include "webrtc/p2p/base/constants.h"
 #include "webrtc/p2p/base/p2ptransportchannel.h"
-#include "webrtc/p2p/base/portallocatorsessionproxy.h"
 #include "webrtc/p2p/base/testrelayserver.h"
 #include "webrtc/p2p/base/teststunserver.h"
 #include "webrtc/p2p/base/testturnserver.h"
@@ -21,6 +20,7 @@
 #include "webrtc/base/firewallsocketserver.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/helpers.h"
+#include "webrtc/base/ipaddress.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/natserver.h"
 #include "webrtc/base/natsocketfactory.h"
@@ -32,16 +32,19 @@
 #include "webrtc/base/virtualsocketserver.h"
 
 using cricket::ServerAddresses;
+using rtc::IPAddress;
 using rtc::SocketAddress;
 using rtc::Thread;
 
 static const SocketAddress kClientAddr("11.11.11.11", 0);
+static const SocketAddress kLoopbackAddr("127.0.0.1", 0);
 static const SocketAddress kPrivateAddr("192.168.1.11", 0);
 static const SocketAddress kPrivateAddr2("192.168.1.12", 0);
 static const SocketAddress kClientIPv6Addr(
     "2401:fa00:4:1000:be30:5bff:fee5:c3", 0);
 static const SocketAddress kClientAddr2("22.22.22.22", 0);
-static const SocketAddress kNatAddr("77.77.77.77", rtc::NAT_SERVER_PORT);
+static const SocketAddress kNatUdpAddr("77.77.77.77", rtc::NAT_SERVER_UDP_PORT);
+static const SocketAddress kNatTcpAddr("77.77.77.77", rtc::NAT_SERVER_TCP_PORT);
 static const SocketAddress kRemoteClientAddr("22.22.22.22", 0);
 static const SocketAddress kStunAddr("99.99.99.1", cricket::STUN_SERVER_PORT);
 static const SocketAddress kRelayUdpIntAddr("99.99.99.2", 5000);
@@ -86,8 +89,8 @@ class PortAllocatorTest : public testing::Test, public sigslot::has_slots<> {
         vss_(new rtc::VirtualSocketServer(pss_.get())),
         fss_(new rtc::FirewallSocketServer(vss_.get())),
         ss_scope_(fss_.get()),
-        nat_factory_(vss_.get(), kNatAddr),
-        nat_socket_factory_(&nat_factory_),
+        nat_factory_(vss_.get(), kNatUdpAddr, kNatTcpAddr),
+        nat_socket_factory_(new rtc::BasicPacketSocketFactory(&nat_factory_)),
         stun_server_(cricket::TestStunServer::Create(Thread::Current(),
                                                      kStunAddr)),
         relay_server_(Thread::Current(), kRelayUdpIntAddr, kRelayUdpExtAddr,
@@ -109,43 +112,67 @@ class PortAllocatorTest : public testing::Test, public sigslot::has_slots<> {
   void AddInterface(const SocketAddress& addr) {
     network_manager_.AddInterface(addr);
   }
+  void AddInterface(const SocketAddress& addr, const std::string& if_name) {
+    network_manager_.AddInterface(addr, if_name);
+  }
+  void AddInterface(const SocketAddress& addr,
+                    const std::string& if_name,
+                    rtc::AdapterType type) {
+    network_manager_.AddInterface(addr, if_name, type);
+  }
+  
+  
+  
+  
+  
+  
+  void AddInterfaceAsDefaultRoute(const SocketAddress& addr) {
+    AddInterface(addr);
+    
+    
+    vss_->SetDefaultRoute(addr.ipaddr());
+  }
+  void RemoveInterface(const SocketAddress& addr) {
+    network_manager_.RemoveInterface(addr);
+  }
   bool SetPortRange(int min_port, int max_port) {
     return allocator_->SetPortRange(min_port, max_port);
   }
-  void ResetWithNatServer(const rtc::SocketAddress& stun_server) {
-    nat_server_.reset(new rtc::NATServer(
-        rtc::NAT_OPEN_CONE, vss_.get(), kNatAddr, vss_.get(), kNatAddr));
-
-    ServerAddresses stun_servers;
-    stun_servers.insert(stun_server);
-    allocator_.reset(new cricket::BasicPortAllocator(
-        &network_manager_, &nat_socket_factory_, stun_servers));
-    allocator().set_step_delay(cricket::kMinimumStepDelay);
-  }
-
   
-  void ResetWithTurnServers(const rtc::SocketAddress& udp_turn,
-                            const rtc::SocketAddress& tcp_turn) {
+  void ResetWithNoServersOrNat() {
     allocator_.reset(new cricket::BasicPortAllocator(&network_manager_));
-    allocator().set_step_delay(cricket::kMinimumStepDelay);
+    allocator_->set_step_delay(cricket::kMinimumStepDelay);
+  }
+  
+  void ResetWithStunServerAndNat(const rtc::SocketAddress& stun_server) {
+    ResetWithStunServer(stun_server, true);
+  }
+  
+  void ResetWithStunServerNoNat(const rtc::SocketAddress& stun_server) {
+    ResetWithStunServer(stun_server, false);
+  }
+  
+  void ResetWithTurnServersNoNat(const rtc::SocketAddress& udp_turn,
+                                 const rtc::SocketAddress& tcp_turn) {
+    ResetWithNoServersOrNat();
     AddTurnServers(udp_turn, tcp_turn);
   }
 
   void AddTurnServers(const rtc::SocketAddress& udp_turn,
                       const rtc::SocketAddress& tcp_turn) {
-    cricket::RelayServerConfig relay_server(cricket::RELAY_TURN);
+    cricket::RelayServerConfig turn_server(cricket::RELAY_TURN);
     cricket::RelayCredentials credentials(kTurnUsername, kTurnPassword);
-    relay_server.credentials = credentials;
+    turn_server.credentials = credentials;
 
     if (!udp_turn.IsNil()) {
-      relay_server.ports.push_back(cricket::ProtocolAddress(
-          kTurnUdpIntAddr, cricket::PROTO_UDP, false));
+      turn_server.ports.push_back(
+          cricket::ProtocolAddress(kTurnUdpIntAddr, cricket::PROTO_UDP, false));
     }
     if (!tcp_turn.IsNil()) {
-      relay_server.ports.push_back(cricket::ProtocolAddress(
-          kTurnTcpIntAddr, cricket::PROTO_TCP, false));
+      turn_server.ports.push_back(
+          cricket::ProtocolAddress(kTurnTcpIntAddr, cricket::PROTO_TCP, false));
     }
-    allocator_->AddRelay(relay_server);
+    allocator_->AddTurnServer(turn_server);
   }
 
   bool CreateSession(int component) {
@@ -228,27 +255,68 @@ class PortAllocatorTest : public testing::Test, public sigslot::has_slots<> {
     }
   }
 
-  void CheckDisableAdapterEnumeration() {
-    EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
-    session_->set_flags(cricket::PORTALLOCATOR_DISABLE_ADAPTER_ENUMERATION);
+  
+  
+  
+  
+  
+  void CheckDisableAdapterEnumeration(
+      uint32_t total_ports,
+      const rtc::IPAddress& host_candidate_addr,
+      const rtc::IPAddress& stun_candidate_addr,
+      const rtc::IPAddress& relay_candidate_udp_transport_addr,
+      const rtc::IPAddress& relay_candidate_tcp_transport_addr) {
+    network_manager_.set_default_local_addresses(kPrivateAddr.ipaddr(),
+                                                 rtc::IPAddress());
+    if (!session_) {
+      EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
+    }
+    session_->set_flags(session_->flags() |
+                        cricket::PORTALLOCATOR_DISABLE_ADAPTER_ENUMERATION |
+                        cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET);
+    allocator().set_allow_tcp_listen(false);
     session_->StartGettingPorts();
     EXPECT_TRUE_WAIT(candidate_allocation_done_, kDefaultAllocationTimeout);
 
-    
-    EXPECT_EQ(2U, candidates_.size());
-    EXPECT_EQ(2U, ports_.size());  
+    uint32_t total_candidates = 0;
+    if (!host_candidate_addr.IsNil()) {
+      EXPECT_PRED5(CheckCandidate, candidates_[total_candidates],
+                   cricket::ICE_CANDIDATE_COMPONENT_RTP, "local", "udp",
+                   rtc::SocketAddress(kPrivateAddr.ipaddr(), 0));
+      ++total_candidates;
+    }
+    if (!stun_candidate_addr.IsNil()) {
+      EXPECT_PRED5(CheckCandidate, candidates_[total_candidates],
+                   cricket::ICE_CANDIDATE_COMPONENT_RTP, "stun", "udp",
+                   rtc::SocketAddress(stun_candidate_addr, 0));
+      rtc::IPAddress related_address = host_candidate_addr;
+      if (host_candidate_addr.IsNil()) {
+        related_address =
+            rtc::GetAnyIP(candidates_[total_candidates].address().family());
+      }
+      EXPECT_EQ(related_address,
+                candidates_[total_candidates].related_address().ipaddr());
+      ++total_candidates;
+    }
+    if (!relay_candidate_udp_transport_addr.IsNil()) {
+      EXPECT_PRED5(CheckCandidate, candidates_[total_candidates],
+                   cricket::ICE_CANDIDATE_COMPONENT_RTP, "relay", "udp",
+                   rtc::SocketAddress(relay_candidate_udp_transport_addr, 0));
+      EXPECT_EQ(stun_candidate_addr,
+                candidates_[total_candidates].related_address().ipaddr());
+      ++total_candidates;
+    }
+    if (!relay_candidate_tcp_transport_addr.IsNil()) {
+      EXPECT_PRED5(CheckCandidate, candidates_[total_candidates],
+                   cricket::ICE_CANDIDATE_COMPONENT_RTP, "relay", "udp",
+                   rtc::SocketAddress(relay_candidate_tcp_transport_addr, 0));
+      EXPECT_EQ(stun_candidate_addr,
+                candidates_[total_candidates].related_address().ipaddr());
+      ++total_candidates;
+    }
 
-    EXPECT_PRED5(CheckCandidate, candidates_[0],
-                 cricket::ICE_CANDIDATE_COMPONENT_RTP, "stun", "udp",
-                 rtc::SocketAddress(kNatAddr.ipaddr(), 0));
-    EXPECT_EQ(
-        rtc::EmptySocketAddressWithFamily(candidates_[0].address().family()),
-        candidates_[0].related_address());
-
-    EXPECT_PRED5(CheckCandidate, candidates_[1],
-                 cricket::ICE_CANDIDATE_COMPONENT_RTP, "relay", "udp",
-                 rtc::SocketAddress(kTurnUdpExtAddr.ipaddr(), 0));
-    EXPECT_EQ(kNatAddr.ipaddr(), candidates_[1].related_address().ipaddr());
+    EXPECT_EQ(total_candidates, candidates_.size());
+    EXPECT_EQ(total_ports, ports_.size());
   }
 
  protected:
@@ -270,8 +338,8 @@ class PortAllocatorTest : public testing::Test, public sigslot::has_slots<> {
   }
 
   bool HasRelayAddress(const cricket::ProtocolAddress& proto_addr) {
-    for (size_t i = 0; i < allocator_->relays().size(); ++i) {
-      cricket::RelayServerConfig server_config = allocator_->relays()[i];
+    for (size_t i = 0; i < allocator_->turn_servers().size(); ++i) {
+      cricket::RelayServerConfig server_config = allocator_->turn_servers()[i];
       cricket::PortList::const_iterator relay_port;
       for (relay_port = server_config.ports.begin();
           relay_port != server_config.ports.end(); ++relay_port) {
@@ -283,13 +351,32 @@ class PortAllocatorTest : public testing::Test, public sigslot::has_slots<> {
     return false;
   }
 
+  void ResetWithStunServer(const rtc::SocketAddress& stun_server,
+                           bool with_nat) {
+    if (with_nat) {
+      nat_server_.reset(new rtc::NATServer(
+          rtc::NAT_OPEN_CONE, vss_.get(), kNatUdpAddr, kNatTcpAddr, vss_.get(),
+          rtc::SocketAddress(kNatUdpAddr.ipaddr(), 0)));
+    } else {
+      nat_socket_factory_.reset(new rtc::BasicPacketSocketFactory());
+    }
+
+    ServerAddresses stun_servers;
+    if (!stun_server.IsNil()) {
+      stun_servers.insert(stun_server);
+    }
+    allocator_.reset(new cricket::BasicPortAllocator(
+        &network_manager_, nat_socket_factory_.get(), stun_servers));
+    allocator().set_step_delay(cricket::kMinimumStepDelay);
+  }
+
   rtc::scoped_ptr<rtc::PhysicalSocketServer> pss_;
   rtc::scoped_ptr<rtc::VirtualSocketServer> vss_;
   rtc::scoped_ptr<rtc::FirewallSocketServer> fss_;
   rtc::SocketServerScope ss_scope_;
   rtc::scoped_ptr<rtc::NATServer> nat_server_;
   rtc::NATSocketFactory nat_factory_;
-  rtc::BasicPacketSocketFactory nat_socket_factory_;
+  rtc::scoped_ptr<rtc::BasicPacketSocketFactory> nat_socket_factory_;
   rtc::scoped_ptr<cricket::TestStunServer> stun_server_;
   cricket::TestRelayServer relay_server_;
   cricket::TestTurnServer turn_server_;
@@ -305,11 +392,11 @@ class PortAllocatorTest : public testing::Test, public sigslot::has_slots<> {
 TEST_F(PortAllocatorTest, TestBasic) {
   EXPECT_EQ(&network_manager_, allocator().network_manager());
   EXPECT_EQ(kStunAddr, *allocator().stun_servers().begin());
-  ASSERT_EQ(1u, allocator().relays().size());
-  EXPECT_EQ(cricket::RELAY_GTURN, allocator().relays()[0].type);
+  ASSERT_EQ(1u, allocator().turn_servers().size());
+  EXPECT_EQ(cricket::RELAY_GTURN, allocator().turn_servers()[0].type);
   
-  EXPECT_TRUE(allocator().relays()[0].credentials.username.empty());
-  EXPECT_TRUE(allocator().relays()[0].credentials.password.empty());
+  EXPECT_TRUE(allocator().turn_servers()[0].credentials.username.empty());
+  EXPECT_TRUE(allocator().turn_servers()[0].credentials.password.empty());
   EXPECT_TRUE(HasRelayAddress(cricket::ProtocolAddress(
       kRelayUdpIntAddr, cricket::PROTO_UDP)));
   EXPECT_TRUE(HasRelayAddress(cricket::ProtocolAddress(
@@ -317,6 +404,50 @@ TEST_F(PortAllocatorTest, TestBasic) {
   EXPECT_TRUE(HasRelayAddress(cricket::ProtocolAddress(
       kRelaySslTcpIntAddr, cricket::PROTO_SSLTCP)));
   EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
+}
+
+
+TEST_F(PortAllocatorTest, TestIgnoreOnlyLoopbackNetworkByDefault) {
+  AddInterface(SocketAddress(IPAddress(0x12345600U), 0), "test_eth0",
+               rtc::ADAPTER_TYPE_ETHERNET);
+  AddInterface(SocketAddress(IPAddress(0x12345601U), 0), "test_wlan0",
+               rtc::ADAPTER_TYPE_WIFI);
+  AddInterface(SocketAddress(IPAddress(0x12345602U), 0), "test_cell0",
+               rtc::ADAPTER_TYPE_CELLULAR);
+  AddInterface(SocketAddress(IPAddress(0x12345603U), 0), "test_vpn0",
+               rtc::ADAPTER_TYPE_VPN);
+  AddInterface(SocketAddress(IPAddress(0x12345604U), 0), "test_lo",
+               rtc::ADAPTER_TYPE_LOOPBACK);
+  EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
+  session_->set_flags(cricket::PORTALLOCATOR_DISABLE_STUN |
+                      cricket::PORTALLOCATOR_DISABLE_RELAY |
+                      cricket::PORTALLOCATOR_DISABLE_TCP);
+  session_->StartGettingPorts();
+  EXPECT_TRUE_WAIT(candidate_allocation_done_, kDefaultAllocationTimeout);
+  EXPECT_EQ(4U, candidates_.size());
+  for (cricket::Candidate candidate : candidates_) {
+    EXPECT_LT(candidate.address().ip(), 0x12345604U);
+  }
+}
+
+TEST_F(PortAllocatorTest, TestIgnoreNetworksAccordingToIgnoreMask) {
+  AddInterface(SocketAddress(IPAddress(0x12345600U), 0), "test_eth0",
+               rtc::ADAPTER_TYPE_ETHERNET);
+  AddInterface(SocketAddress(IPAddress(0x12345601U), 0), "test_wlan0",
+               rtc::ADAPTER_TYPE_WIFI);
+  AddInterface(SocketAddress(IPAddress(0x12345602U), 0), "test_cell0",
+               rtc::ADAPTER_TYPE_CELLULAR);
+  allocator_->SetNetworkIgnoreMask(rtc::ADAPTER_TYPE_ETHERNET |
+                                   rtc::ADAPTER_TYPE_LOOPBACK |
+                                   rtc::ADAPTER_TYPE_WIFI);
+  EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
+  session_->set_flags(cricket::PORTALLOCATOR_DISABLE_STUN |
+                      cricket::PORTALLOCATOR_DISABLE_RELAY |
+                      cricket::PORTALLOCATOR_DISABLE_TCP);
+  session_->StartGettingPorts();
+  EXPECT_TRUE_WAIT(candidate_allocation_done_, kDefaultAllocationTimeout);
+  EXPECT_EQ(1U, candidates_.size());
+  EXPECT_EQ(0x12345602U, candidates_[0].address().ip());
 }
 
 
@@ -330,6 +461,19 @@ TEST_F(PortAllocatorTest, TestNoNetworkInterface) {
   rtc::Thread::Current()->ProcessMessages(1000);
   EXPECT_TRUE(candidate_allocation_done_);
   EXPECT_EQ(0U, candidates_.size());
+}
+
+
+TEST_F(PortAllocatorTest, TestLoopbackNetworkInterface) {
+  AddInterface(kLoopbackAddr, "test_loopback", rtc::ADAPTER_TYPE_LOOPBACK);
+  allocator_->SetNetworkIgnoreMask(0);
+  EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
+  session_->set_flags(cricket::PORTALLOCATOR_DISABLE_STUN |
+                      cricket::PORTALLOCATOR_DISABLE_RELAY |
+                      cricket::PORTALLOCATOR_DISABLE_TCP);
+  session_->StartGettingPorts();
+  EXPECT_TRUE_WAIT(candidate_allocation_done_, kDefaultAllocationTimeout);
+  EXPECT_EQ(1U, candidates_.size());
 }
 
 
@@ -354,6 +498,61 @@ TEST_F(PortAllocatorTest, TestGetAllPortsWithMinimumStepDelay) {
   EXPECT_PRED5(CheckCandidate, candidates_[6],
       cricket::ICE_CANDIDATE_COMPONENT_RTP,
       "relay", "ssltcp", kRelaySslTcpIntAddr);
+  EXPECT_TRUE(candidate_allocation_done_);
+}
+
+
+
+
+TEST_F(PortAllocatorTest, TestSameNetworkDownAndUpWhenSessionNotStopped) {
+  std::string if_name("test_net0");
+  AddInterface(kClientAddr, if_name);
+  EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
+  session_->StartGettingPorts();
+  ASSERT_EQ_WAIT(7U, candidates_.size(), kDefaultAllocationTimeout);
+  EXPECT_EQ(4U, ports_.size());
+  EXPECT_TRUE(candidate_allocation_done_);
+  candidate_allocation_done_ = false;
+  candidates_.clear();
+  ports_.clear();
+
+  RemoveInterface(kClientAddr);
+  ASSERT_EQ_WAIT(0U, candidates_.size(), kDefaultAllocationTimeout);
+  EXPECT_EQ(0U, ports_.size());
+  EXPECT_FALSE(candidate_allocation_done_);
+
+  
+  
+  AddInterface(kClientAddr, if_name);
+  ASSERT_EQ_WAIT(7U, candidates_.size(), kDefaultAllocationTimeout);
+  EXPECT_EQ(4U, ports_.size());
+  EXPECT_TRUE(candidate_allocation_done_);
+}
+
+
+
+
+TEST_F(PortAllocatorTest, TestSameNetworkDownAndUpWhenSessionStopped) {
+  std::string if_name("test_net0");
+  AddInterface(kClientAddr, if_name);
+  EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
+  session_->StartGettingPorts();
+  ASSERT_EQ_WAIT(7U, candidates_.size(), kDefaultAllocationTimeout);
+  EXPECT_EQ(4U, ports_.size());
+  EXPECT_TRUE(candidate_allocation_done_);
+  session_->StopGettingPorts();
+  candidates_.clear();
+  ports_.clear();
+
+  RemoveInterface(kClientAddr);
+  ASSERT_EQ_WAIT(0U, candidates_.size(), kDefaultAllocationTimeout);
+  EXPECT_EQ(0U, ports_.size());
+
+  
+  
+  AddInterface(kClientAddr, if_name);
+  ASSERT_EQ_WAIT(0U, candidates_.size(), kDefaultAllocationTimeout);
+  EXPECT_EQ(0U, ports_.size());
   EXPECT_TRUE(candidate_allocation_done_);
 }
 
@@ -451,25 +650,140 @@ TEST_F(PortAllocatorTest, TestGetAllPortsNoAdapters) {
 
 
 
-TEST_F(PortAllocatorTest, TestDisableAdapterEnumeration) {
-  AddInterface(kClientAddr);
+TEST_F(PortAllocatorTest,
+       TestDisableAdapterEnumerationWithoutNatRelayTransportOnly) {
+  ResetWithStunServerNoNat(kStunAddr);
+  allocator().set_candidate_filter(cricket::CF_RELAY);
   
-  ResetWithNatServer(kStunAddr);
-  AddTurnServers(kTurnUdpIntAddr, rtc::SocketAddress());
-
-  CheckDisableAdapterEnumeration();
+  CheckDisableAdapterEnumeration(0U, rtc::IPAddress(), rtc::IPAddress(),
+                                 rtc::IPAddress(), rtc::IPAddress());
 }
 
 
 
-TEST_F(PortAllocatorTest, TestDisableAdapterEnumerationMultipleInterfaces) {
+
+TEST_F(PortAllocatorTest,
+       TestDisableAdapterEnumerationBehindNatMultipleInterfaces) {
   AddInterface(kPrivateAddr);
   AddInterface(kPrivateAddr2);
-  ResetWithNatServer(kStunAddr);
+  ResetWithStunServerAndNat(kStunAddr);
   AddTurnServers(kTurnUdpIntAddr, rtc::SocketAddress());
 
-  CheckDisableAdapterEnumeration();
+  
+  
+  
+  EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
+  session_->set_flags(cricket::PORTALLOCATOR_ENABLE_IPV6);
+
+  
+  
+  
+  CheckDisableAdapterEnumeration(5U, kPrivateAddr.ipaddr(),
+                                 kNatUdpAddr.ipaddr(), kTurnUdpExtAddr.ipaddr(),
+                                 rtc::IPAddress());
 }
+
+
+
+TEST_F(PortAllocatorTest, TestDisableAdapterEnumerationBehindNatWithTcp) {
+  turn_server_.AddInternalSocket(kTurnTcpIntAddr, cricket::PROTO_TCP);
+  AddInterface(kPrivateAddr);
+  ResetWithStunServerAndNat(kStunAddr);
+  AddTurnServers(kTurnUdpIntAddr, kTurnTcpIntAddr);
+  
+  
+  CheckDisableAdapterEnumeration(4U, kPrivateAddr.ipaddr(),
+                                 kNatUdpAddr.ipaddr(), kTurnUdpExtAddr.ipaddr(),
+                                 kTurnUdpExtAddr.ipaddr());
+}
+
+
+
+TEST_F(PortAllocatorTest, TestDisableAdapterEnumerationWithoutNatOrServers) {
+  ResetWithNoServersOrNat();
+  
+  CheckDisableAdapterEnumeration(2U, kPrivateAddr.ipaddr(), rtc::IPAddress(),
+                                 rtc::IPAddress(), rtc::IPAddress());
+}
+
+
+
+
+TEST_F(PortAllocatorTest,
+       TestDisableAdapterEnumerationWithoutNatLocalhostCandidateDisabled) {
+  ResetWithStunServerNoNat(kStunAddr);
+  EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
+  session_->set_flags(cricket::PORTALLOCATOR_DISABLE_DEFAULT_LOCAL_CANDIDATE);
+  
+  
+  CheckDisableAdapterEnumeration(2U, rtc::IPAddress(), rtc::IPAddress(),
+                                 rtc::IPAddress(), rtc::IPAddress());
+}
+
+
+
+
+
+
+TEST_F(
+    PortAllocatorTest,
+    TestDisableAdapterEnumerationWithoutNatLocalhostCandidateDisabledWithDifferentDefaultRoute) {
+  ResetWithStunServerNoNat(kStunAddr);
+  AddInterfaceAsDefaultRoute(kClientAddr);
+  EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
+  session_->set_flags(cricket::PORTALLOCATOR_DISABLE_DEFAULT_LOCAL_CANDIDATE);
+  
+  
+  CheckDisableAdapterEnumeration(2U, rtc::IPAddress(), kClientAddr.ipaddr(),
+                                 rtc::IPAddress(), rtc::IPAddress());
+}
+
+
+
+
+TEST_F(PortAllocatorTest,
+       TestDisableAdapterEnumerationWithNatLocalhostCandidateDisabled) {
+  ResetWithStunServerAndNat(kStunAddr);
+  EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
+  session_->set_flags(cricket::PORTALLOCATOR_DISABLE_DEFAULT_LOCAL_CANDIDATE);
+  
+  CheckDisableAdapterEnumeration(2U, rtc::IPAddress(), kNatUdpAddr.ipaddr(),
+                                 rtc::IPAddress(), rtc::IPAddress());
+}
+
+
+
+TEST_F(PortAllocatorTest, TestDisableUdpTurn) {
+  turn_server_.AddInternalSocket(kTurnTcpIntAddr, cricket::PROTO_TCP);
+  AddInterface(kClientAddr);
+  ResetWithStunServerAndNat(kStunAddr);
+  AddTurnServers(kTurnUdpIntAddr, kTurnTcpIntAddr);
+  EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
+  session_->set_flags(cricket::PORTALLOCATOR_DISABLE_UDP_RELAY |
+                      cricket::PORTALLOCATOR_DISABLE_UDP |
+                      cricket::PORTALLOCATOR_DISABLE_STUN |
+                      cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET);
+
+  session_->StartGettingPorts();
+  EXPECT_TRUE_WAIT(candidate_allocation_done_, kDefaultAllocationTimeout);
+
+  
+  
+  EXPECT_EQ(2U, ports_.size());
+  EXPECT_EQ(2U, candidates_.size());
+  EXPECT_PRED5(CheckCandidate, candidates_[0],
+               cricket::ICE_CANDIDATE_COMPONENT_RTP, "relay", "udp",
+               kTurnUdpExtAddr);
+  
+  EXPECT_EQ(cricket::TCP_PROTOCOL_NAME, candidates_[0].relay_protocol());
+  EXPECT_PRED5(CheckCandidate, candidates_[1],
+               cricket::ICE_CANDIDATE_COMPONENT_RTP, "local", "tcp",
+               kClientAddr);
+}
+
+
+
+#if !defined(ADDRESS_SANITIZER)
 
 
 
@@ -507,6 +821,8 @@ TEST_F(PortAllocatorTest, TestGetAllPortsNoUdpSockets) {
       "relay", "ssltcp", kRelaySslTcpIntAddr);
   EXPECT_TRUE(candidate_allocation_done_);
 }
+
+#endif 
 
 
 
@@ -611,7 +927,7 @@ TEST_F(PortAllocatorTest, TestGetAllPortsRestarts) {
 TEST_F(PortAllocatorTest, TestCandidateFilterWithRelayOnly) {
   AddInterface(kClientAddr);
   
-  ResetWithTurnServers(kTurnUdpIntAddr, rtc::SocketAddress());
+  ResetWithTurnServersNoNat(kTurnUdpIntAddr, rtc::SocketAddress());
   allocator().set_candidate_filter(cricket::CF_RELAY);
   EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
@@ -635,8 +951,7 @@ TEST_F(PortAllocatorTest, TestCandidateFilterWithRelayOnly) {
 
 TEST_F(PortAllocatorTest, TestCandidateFilterWithHostOnly) {
   AddInterface(kClientAddr);
-  allocator().set_flags(cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG |
-                        cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET);
+  allocator().set_flags(cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET);
   allocator().set_candidate_filter(cricket::CF_HOST);
   EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
@@ -651,10 +966,9 @@ TEST_F(PortAllocatorTest, TestCandidateFilterWithHostOnly) {
 
 TEST_F(PortAllocatorTest, TestCandidateFilterWithReflexiveOnly) {
   AddInterface(kPrivateAddr);
-  ResetWithNatServer(kStunAddr);
+  ResetWithStunServerAndNat(kStunAddr);
 
-  allocator().set_flags(cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG |
-                        cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET);
+  allocator().set_flags(cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET);
   allocator().set_candidate_filter(cricket::CF_REFLEXIVE);
   EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
@@ -674,8 +988,7 @@ TEST_F(PortAllocatorTest, TestCandidateFilterWithReflexiveOnly) {
 
 TEST_F(PortAllocatorTest, TestCandidateFilterWithReflexiveOnlyAndNoNAT) {
   AddInterface(kClientAddr);
-  allocator().set_flags(cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG |
-                        cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET);
+  allocator().set_flags(cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET);
   allocator().set_candidate_filter(cricket::CF_REFLEXIVE);
   EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
@@ -688,94 +1001,8 @@ TEST_F(PortAllocatorTest, TestCandidateFilterWithReflexiveOnlyAndNoNAT) {
   }
 }
 
-TEST_F(PortAllocatorTest, TestBasicMuxFeatures) {
-  AddInterface(kClientAddr);
-  allocator().set_flags(cricket::PORTALLOCATOR_ENABLE_BUNDLE |
-      cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG);
-  
-  rtc::scoped_ptr<cricket::PortAllocatorSession> session1(
-      CreateSession("session1", cricket::ICE_CANDIDATE_COMPONENT_RTP));
-  rtc::scoped_ptr<cricket::PortAllocatorSession> session2(
-      CreateSession("session1", cricket::ICE_CANDIDATE_COMPONENT_RTCP));
-  session1->StartGettingPorts();
-  session2->StartGettingPorts();
-  
-  ASSERT_EQ_WAIT(14U, candidates_.size(), kDefaultAllocationTimeout);
-  EXPECT_EQ(8U, ports_.size());
-
-  rtc::scoped_ptr<cricket::PortAllocatorSession> session3(
-      CreateSession("session1", cricket::ICE_CANDIDATE_COMPONENT_RTP));
-  session3->StartGettingPorts();
-  
-  
-  ASSERT_EQ_WAIT(21U, candidates_.size(), kDefaultAllocationTimeout);
-  EXPECT_EQ(12U, ports_.size());
-}
-
-
-
-
-
-TEST_F(PortAllocatorTest, TestBundleIceRestart) {
-  AddInterface(kClientAddr);
-  allocator().set_flags(cricket::PORTALLOCATOR_ENABLE_BUNDLE |
-      cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG);
-  
-  rtc::scoped_ptr<cricket::PortAllocatorSession> session1(
-      CreateSession("session1", kContentName,
-                    cricket::ICE_CANDIDATE_COMPONENT_RTP,
-                    kIceUfrag0, kIcePwd0));
-  session1->StartGettingPorts();
-  ASSERT_EQ_WAIT(7U, candidates_.size(), kDefaultAllocationTimeout);
-  EXPECT_EQ(4U, ports_.size());
-
-  
-  rtc::scoped_ptr<cricket::PortAllocatorSession> session2(
-      CreateSession("session1", kContentName,
-                    cricket::ICE_CANDIDATE_COMPONENT_RTP,
-                    "TestIceUfrag", kIcePwd0));
-  session2->StartGettingPorts();
-  ASSERT_EQ_WAIT(14U, candidates_.size(), kDefaultAllocationTimeout);
-  EXPECT_EQ(8U, ports_.size());
-  
-  
-  
-  EXPECT_NE(candidates_[0].address(), candidates_[7].address());
-  EXPECT_NE(candidates_[1].address(), candidates_[8].address());
-
-  
-  
-  rtc::scoped_ptr<cricket::PortAllocatorSession> session3(
-      CreateSession("session1", kContentName,
-                    cricket::ICE_CANDIDATE_COMPONENT_RTP,
-                    kIceUfrag0, "TestIcePwd"));
-  session3->StartGettingPorts();
-  ASSERT_EQ_WAIT(21U, candidates_.size(), kDefaultAllocationTimeout);
-  EXPECT_EQ(12U, ports_.size());
-  
-  
-  EXPECT_NE(candidates_[7].address(), candidates_[14].address());
-  EXPECT_NE(candidates_[8].address(), candidates_[15].address());
-
-  
-  rtc::scoped_ptr<cricket::PortAllocatorSession> session4(
-      CreateSession("session1", kContentName,
-                    cricket::ICE_CANDIDATE_COMPONENT_RTP,
-                    "TestIceUfrag", "TestIcePwd"));
-  session4->StartGettingPorts();
-  ASSERT_EQ_WAIT(28U, candidates_.size(), kDefaultAllocationTimeout);
-  EXPECT_EQ(16U, ports_.size());
-  
-  
-  EXPECT_NE(candidates_[14].address(), candidates_[21].address());
-  EXPECT_NE(candidates_[15].address(), candidates_[22].address());
-}
-
-
 
 TEST_F(PortAllocatorTest, TestEnableSharedUfrag) {
-  allocator().set_flags(allocator().flags() |
-                        cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG);
   AddInterface(kClientAddr);
   EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
@@ -797,36 +1024,11 @@ TEST_F(PortAllocatorTest, TestEnableSharedUfrag) {
 
 
 
-TEST_F(PortAllocatorTest, TestDisableSharedUfrag) {
-  allocator().set_flags(allocator().flags() &
-                        ~cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG);
-  AddInterface(kClientAddr);
-  EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
-  session_->StartGettingPorts();
-  ASSERT_EQ_WAIT(7U, candidates_.size(), kDefaultAllocationTimeout);
-  EXPECT_PRED5(CheckCandidate, candidates_[0],
-      cricket::ICE_CANDIDATE_COMPONENT_RTP, "local", "udp", kClientAddr);
-  EXPECT_PRED5(CheckCandidate, candidates_[1],
-      cricket::ICE_CANDIDATE_COMPONENT_RTP, "stun", "udp", kClientAddr);
-  EXPECT_EQ(4U, ports_.size());
-  
-  EXPECT_NE(kIceUfrag0, candidates_[0].username());
-  EXPECT_NE(kIceUfrag0, candidates_[1].username());
-  EXPECT_NE(candidates_[0].username(), candidates_[1].username());
-  EXPECT_NE(kIcePwd0, candidates_[0].password());
-  EXPECT_NE(kIcePwd0, candidates_[1].password());
-  EXPECT_NE(candidates_[0].password(), candidates_[1].password());
-  EXPECT_TRUE(candidate_allocation_done_);
-}
-
-
-
 
 
 TEST_F(PortAllocatorTest, TestSharedSocketWithoutNat) {
   AddInterface(kClientAddr);
   allocator_->set_flags(allocator().flags() |
-                        cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG |
                         cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET);
   EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
@@ -842,10 +1044,9 @@ TEST_F(PortAllocatorTest, TestSharedSocketWithoutNat) {
 
 TEST_F(PortAllocatorTest, TestSharedSocketWithNat) {
   AddInterface(kClientAddr);
-  ResetWithNatServer(kStunAddr);
+  ResetWithStunServerAndNat(kStunAddr);
 
   allocator_->set_flags(allocator().flags() |
-                        cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG |
                         cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET);
   EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
@@ -855,7 +1056,7 @@ TEST_F(PortAllocatorTest, TestSharedSocketWithNat) {
       cricket::ICE_CANDIDATE_COMPONENT_RTP, "local", "udp", kClientAddr);
   EXPECT_PRED5(CheckCandidate, candidates_[1],
       cricket::ICE_CANDIDATE_COMPONENT_RTP, "stun", "udp",
-      rtc::SocketAddress(kNatAddr.ipaddr(), 0));
+      rtc::SocketAddress(kNatUdpAddr.ipaddr(), 0));
   EXPECT_TRUE_WAIT(candidate_allocation_done_, kDefaultAllocationTimeout);
   EXPECT_EQ(3U, candidates_.size());
 }
@@ -870,7 +1071,6 @@ TEST_F(PortAllocatorTest, TestSharedSocketWithoutNatUsingTurn) {
 
   allocator_->set_step_delay(cricket::kMinimumStepDelay);
   allocator_->set_flags(allocator().flags() |
-                        cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG |
                         cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET |
                         cricket::PORTALLOCATOR_DISABLE_TCP);
 
@@ -898,17 +1098,15 @@ TEST_F(PortAllocatorTest, TestSharedSocketWithServerAddressResolve) {
                                  cricket::PROTO_UDP);
   AddInterface(kClientAddr);
   allocator_.reset(new cricket::BasicPortAllocator(&network_manager_));
-  cricket::RelayServerConfig relay_server(cricket::RELAY_TURN);
+  cricket::RelayServerConfig turn_server(cricket::RELAY_TURN);
   cricket::RelayCredentials credentials(kTurnUsername, kTurnPassword);
-  relay_server.credentials = credentials;
-  relay_server.ports.push_back(cricket::ProtocolAddress(
-      rtc::SocketAddress("localhost", 3478),
-      cricket::PROTO_UDP, false));
-  allocator_->AddRelay(relay_server);
+  turn_server.credentials = credentials;
+  turn_server.ports.push_back(cricket::ProtocolAddress(
+      rtc::SocketAddress("localhost", 3478), cricket::PROTO_UDP, false));
+  allocator_->AddTurnServer(turn_server);
 
   allocator_->set_step_delay(cricket::kMinimumStepDelay);
   allocator_->set_flags(allocator().flags() |
-                        cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG |
                         cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET |
                         cricket::PORTALLOCATOR_DISABLE_TCP);
 
@@ -923,12 +1121,11 @@ TEST_F(PortAllocatorTest, TestSharedSocketWithServerAddressResolve) {
 
 TEST_F(PortAllocatorTest, TestSharedSocketWithNatUsingTurn) {
   AddInterface(kClientAddr);
-  ResetWithNatServer(kStunAddr);
+  ResetWithStunServerAndNat(kStunAddr);
 
   AddTurnServers(kTurnUdpIntAddr, rtc::SocketAddress());
 
   allocator_->set_flags(allocator().flags() |
-                        cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG |
                         cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET |
                         cricket::PORTALLOCATOR_DISABLE_TCP);
 
@@ -941,7 +1138,7 @@ TEST_F(PortAllocatorTest, TestSharedSocketWithNatUsingTurn) {
       cricket::ICE_CANDIDATE_COMPONENT_RTP, "local", "udp", kClientAddr);
   EXPECT_PRED5(CheckCandidate, candidates_[1],
       cricket::ICE_CANDIDATE_COMPONENT_RTP, "stun", "udp",
-      rtc::SocketAddress(kNatAddr.ipaddr(), 0));
+      rtc::SocketAddress(kNatUdpAddr.ipaddr(), 0));
   EXPECT_PRED5(CheckCandidate, candidates_[2],
       cricket::ICE_CANDIDATE_COMPONENT_RTP, "relay", "udp",
       rtc::SocketAddress(kTurnUdpExtAddr.ipaddr(), 0));
@@ -957,7 +1154,8 @@ TEST_F(PortAllocatorTest, TestSharedSocketWithNatUsingTurn) {
 
 TEST_F(PortAllocatorTest, TestSharedSocketWithNatUsingTurnAsStun) {
   AddInterface(kClientAddr);
-  ResetWithNatServer(kTurnUdpIntAddr);
+  
+  ResetWithStunServerAndNat(SocketAddress());
   AddTurnServers(kTurnUdpIntAddr, rtc::SocketAddress());
 
   
@@ -966,7 +1164,6 @@ TEST_F(PortAllocatorTest, TestSharedSocketWithNatUsingTurnAsStun) {
   
   allocator_->set_step_delay(0);
   allocator_->set_flags(allocator().flags() |
-                        cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG |
                         cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET |
                         cricket::PORTALLOCATOR_DISABLE_TCP);
 
@@ -978,7 +1175,7 @@ TEST_F(PortAllocatorTest, TestSharedSocketWithNatUsingTurnAsStun) {
       cricket::ICE_CANDIDATE_COMPONENT_RTP, "local", "udp", kClientAddr);
   EXPECT_PRED5(CheckCandidate, candidates_[1],
       cricket::ICE_CANDIDATE_COMPONENT_RTP, "stun", "udp",
-      rtc::SocketAddress(kNatAddr.ipaddr(), 0));
+      rtc::SocketAddress(kNatUdpAddr.ipaddr(), 0));
   EXPECT_PRED5(CheckCandidate, candidates_[2],
       cricket::ICE_CANDIDATE_COMPONENT_RTP, "relay", "udp",
       rtc::SocketAddress(kTurnUdpExtAddr.ipaddr(), 0));
@@ -994,11 +1191,112 @@ TEST_F(PortAllocatorTest, TestSharedSocketWithNatUsingTurnAsStun) {
 
 
 
+TEST_F(PortAllocatorTest, TestSharedSocketWithNatUsingTurnTcpOnly) {
+  turn_server_.AddInternalSocket(kTurnTcpIntAddr, cricket::PROTO_TCP);
+  AddInterface(kClientAddr);
+  ResetWithStunServerAndNat(rtc::SocketAddress());
+  AddTurnServers(rtc::SocketAddress(), kTurnTcpIntAddr);
+
+  allocator_->set_flags(allocator().flags() |
+                        cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET |
+                        cricket::PORTALLOCATOR_DISABLE_TCP);
+
+  EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
+  session_->StartGettingPorts();
+
+  ASSERT_EQ_WAIT(2U, candidates_.size(), kDefaultAllocationTimeout);
+  ASSERT_EQ(2U, ports_.size());
+  EXPECT_PRED5(CheckCandidate, candidates_[0],
+               cricket::ICE_CANDIDATE_COMPONENT_RTP, "local", "udp",
+               kClientAddr);
+  EXPECT_PRED5(CheckCandidate, candidates_[1],
+               cricket::ICE_CANDIDATE_COMPONENT_RTP, "relay", "udp",
+               rtc::SocketAddress(kTurnUdpExtAddr.ipaddr(), 0));
+  EXPECT_TRUE_WAIT(candidate_allocation_done_, kDefaultAllocationTimeout);
+  EXPECT_EQ(2U, candidates_.size());
+  EXPECT_EQ(1U, ports_[0]->Candidates().size());
+  EXPECT_EQ(1U, ports_[1]->Candidates().size());
+}
+
+
+
+
+
+
+TEST_F(PortAllocatorTest, TestNonSharedSocketWithNatUsingTurnAsStun) {
+  AddInterface(kClientAddr);
+  
+  ResetWithStunServerAndNat(SocketAddress());
+  AddTurnServers(kTurnUdpIntAddr, rtc::SocketAddress());
+
+  allocator_->set_flags(allocator().flags() |
+                        cricket::PORTALLOCATOR_DISABLE_TCP);
+
+  EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
+  session_->StartGettingPorts();
+
+  ASSERT_EQ_WAIT(3U, candidates_.size(), kDefaultAllocationTimeout);
+  ASSERT_EQ(3U, ports_.size());
+  EXPECT_PRED5(CheckCandidate, candidates_[0],
+               cricket::ICE_CANDIDATE_COMPONENT_RTP, "local", "udp",
+               kClientAddr);
+  EXPECT_PRED5(CheckCandidate, candidates_[1],
+               cricket::ICE_CANDIDATE_COMPONENT_RTP, "stun", "udp",
+               rtc::SocketAddress(kNatUdpAddr.ipaddr(), 0));
+  EXPECT_PRED5(CheckCandidate, candidates_[2],
+               cricket::ICE_CANDIDATE_COMPONENT_RTP, "relay", "udp",
+               rtc::SocketAddress(kTurnUdpExtAddr.ipaddr(), 0));
+  
+  
+  EXPECT_NE(candidates_[2].related_address(), candidates_[1].address());
+
+  EXPECT_TRUE_WAIT(candidate_allocation_done_, kDefaultAllocationTimeout);
+  EXPECT_EQ(3U, candidates_.size());
+  EXPECT_EQ(1U, ports_[0]->Candidates().size());
+  EXPECT_EQ(1U, ports_[1]->Candidates().size());
+  EXPECT_EQ(1U, ports_[2]->Candidates().size());
+}
+
+
+
+TEST_F(PortAllocatorTest, TestSharedSocketWithNatUsingTurnAndStun) {
+  AddInterface(kClientAddr);
+  
+  
+  ResetWithStunServerAndNat(kStunAddr);
+  stun_server_.reset();
+  AddTurnServers(kTurnUdpIntAddr, rtc::SocketAddress());
+
+  allocator_->set_flags(allocator().flags() |
+                        cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET |
+                        cricket::PORTALLOCATOR_DISABLE_TCP);
+
+  EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
+  session_->StartGettingPorts();
+
+  ASSERT_EQ_WAIT(3U, candidates_.size(), kDefaultAllocationTimeout);
+  EXPECT_PRED5(CheckCandidate, candidates_[0],
+               cricket::ICE_CANDIDATE_COMPONENT_RTP, "local", "udp",
+               kClientAddr);
+  EXPECT_PRED5(CheckCandidate, candidates_[1],
+               cricket::ICE_CANDIDATE_COMPONENT_RTP, "stun", "udp",
+               rtc::SocketAddress(kNatUdpAddr.ipaddr(), 0));
+  EXPECT_PRED5(CheckCandidate, candidates_[2],
+               cricket::ICE_CANDIDATE_COMPONENT_RTP, "relay", "udp",
+               rtc::SocketAddress(kTurnUdpExtAddr.ipaddr(), 0));
+  EXPECT_EQ(candidates_[2].related_address(), candidates_[1].address());
+
+  
+  
+}
+
+
+
+
 TEST_F(PortAllocatorTest, TestSharedSocketNoUdpAllowed) {
   allocator().set_flags(allocator().flags() |
                         cricket::PORTALLOCATOR_DISABLE_RELAY |
                         cricket::PORTALLOCATOR_DISABLE_TCP |
-                        cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG |
                         cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET);
   fss_->AddRule(false, rtc::FP_UDP, rtc::FD_ANY, kClientAddr);
   AddInterface(kClientAddr);
@@ -1014,11 +1312,37 @@ TEST_F(PortAllocatorTest, TestSharedSocketNoUdpAllowed) {
 }
 
 
+
+
+TEST_F(PortAllocatorTest, TestNetworkPermissionBlocked) {
+  network_manager_.set_default_local_addresses(kPrivateAddr.ipaddr(),
+                                               rtc::IPAddress());
+  network_manager_.set_enumeration_permission(
+      rtc::NetworkManager::ENUMERATION_BLOCKED);
+  allocator().set_flags(allocator().flags() |
+                        cricket::PORTALLOCATOR_DISABLE_RELAY |
+                        cricket::PORTALLOCATOR_DISABLE_TCP |
+                        cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET);
+  EXPECT_EQ(0U, allocator_->flags() &
+                    cricket::PORTALLOCATOR_DISABLE_ADAPTER_ENUMERATION);
+  EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
+  EXPECT_EQ(0U, session_->flags() &
+                    cricket::PORTALLOCATOR_DISABLE_ADAPTER_ENUMERATION);
+  session_->StartGettingPorts();
+  EXPECT_EQ_WAIT(1U, ports_.size(), kDefaultAllocationTimeout);
+  EXPECT_EQ(1U, candidates_.size());
+  EXPECT_PRED5(CheckCandidate, candidates_[0],
+               cricket::ICE_CANDIDATE_COMPONENT_RTP, "local", "udp",
+               kPrivateAddr);
+  EXPECT_TRUE((session_->flags() &
+               cricket::PORTALLOCATOR_DISABLE_ADAPTER_ENUMERATION) != 0);
+}
+
+
 TEST_F(PortAllocatorTest, TestEnableIPv6Addresses) {
   allocator().set_flags(allocator().flags() |
                         cricket::PORTALLOCATOR_DISABLE_RELAY |
                         cricket::PORTALLOCATOR_ENABLE_IPV6 |
-                        cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG |
                         cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET);
   AddInterface(kClientIPv6Addr);
   AddInterface(kClientAddr);
@@ -1043,87 +1367,44 @@ TEST_F(PortAllocatorTest, TestEnableIPv6Addresses) {
   EXPECT_EQ(4U, candidates_.size());
 }
 
-
-
-TEST(HttpPortAllocatorTest, TestHttpPortAllocatorHostLists) {
-  rtc::FakeNetworkManager network_manager;
-  cricket::HttpPortAllocator alloc(&network_manager, "unit test agent");
-  EXPECT_EQ(1U, alloc.relay_hosts().size());
-  EXPECT_EQ(1U, alloc.stun_hosts().size());
-
-  std::vector<std::string> relay_servers;
-  std::vector<rtc::SocketAddress> stun_servers;
-
-  alloc.SetRelayHosts(relay_servers);
-  alloc.SetStunHosts(stun_servers);
-  EXPECT_EQ(1U, alloc.relay_hosts().size());
-  EXPECT_EQ(1U, alloc.stun_hosts().size());
-
-  relay_servers.push_back("1.unittest.corp.google.com");
-  relay_servers.push_back("2.unittest.corp.google.com");
-  stun_servers.push_back(
-      rtc::SocketAddress("1.unittest.corp.google.com", 0));
-  stun_servers.push_back(
-      rtc::SocketAddress("2.unittest.corp.google.com", 0));
-
-  alloc.SetRelayHosts(relay_servers);
-  alloc.SetStunHosts(stun_servers);
-  EXPECT_EQ(2U, alloc.relay_hosts().size());
-  EXPECT_EQ(2U, alloc.stun_hosts().size());
-}
-
-
-TEST(HttpPortAllocatorTest, TestSessionRequestUrl) {
-  rtc::FakeNetworkManager network_manager;
-  cricket::HttpPortAllocator alloc(&network_manager, "unit test agent");
-
-  
-  alloc.set_flags(alloc.flags() & ~cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG);
-  rtc::scoped_ptr<cricket::HttpPortAllocatorSessionBase> session(
-      static_cast<cricket::HttpPortAllocatorSession*>(
-          alloc.CreateSessionInternal(
-              "test content", 0, kIceUfrag0, kIcePwd0)));
-  std::string url = session->GetSessionRequestUrl();
-  LOG(LS_INFO) << "url: " << url;
-  EXPECT_EQ(std::string(cricket::HttpPortAllocator::kCreateSessionURL), url);
-
-  
-  alloc.set_flags(alloc.flags() | cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG);
-  session.reset(static_cast<cricket::HttpPortAllocatorSession*>(
-      alloc.CreateSessionInternal("test content", 0, kIceUfrag0, kIcePwd0)));
-  url = session->GetSessionRequestUrl();
-  LOG(LS_INFO) << "url: " << url;
-  std::vector<std::string> parts;
-  rtc::split(url, '?', &parts);
-  ASSERT_EQ(2U, parts.size());
-
-  std::vector<std::string> args_parts;
-  rtc::split(parts[1], '&', &args_parts);
-
-  std::map<std::string, std::string> args;
-  for (std::vector<std::string>::iterator it = args_parts.begin();
-       it != args_parts.end(); ++it) {
-    std::vector<std::string> parts;
-    rtc::split(*it, '=', &parts);
-    ASSERT_EQ(2U, parts.size());
-    args[rtc::s_url_decode(parts[0])] = rtc::s_url_decode(parts[1]);
-  }
-
-  EXPECT_EQ(kIceUfrag0, args["username"]);
-  EXPECT_EQ(kIcePwd0, args["password"]);
-}
-
-
-
-TEST_F(PortAllocatorTest, TestDestroyPortsNonSharedSockets) {
+TEST_F(PortAllocatorTest, TestStopGettingPorts) {
   AddInterface(kClientAddr);
+  allocator_->set_step_delay(cricket::kDefaultStepDelay);
   EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
-  ASSERT_EQ_WAIT(7U, candidates_.size(), kDefaultAllocationTimeout);
-  EXPECT_EQ(4U, ports_.size());
+  ASSERT_EQ_WAIT(2U, candidates_.size(), 1000);
+  EXPECT_EQ(2U, ports_.size());
+  session_->StopGettingPorts();
+  EXPECT_TRUE_WAIT(candidate_allocation_done_, 1000);
 
-  auto it = ports_.begin();
-  for (; it != ports_.end(); ++it) {
-    (reinterpret_cast<cricket::Port*>(*it))->Destroy();
-  }
+  
+  
+  candidates_.clear();
+  ports_.clear();
+  candidate_allocation_done_ = false;
+  network_manager_.AddInterface(kClientAddr2);
+  rtc::Thread::Current()->ProcessMessages(1000);
+  EXPECT_EQ(0U, candidates_.size());
+  EXPECT_EQ(0U, ports_.size());
+}
+
+TEST_F(PortAllocatorTest, TestClearGettingPorts) {
+  AddInterface(kClientAddr);
+  allocator_->set_step_delay(cricket::kDefaultStepDelay);
+  EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
+  session_->StartGettingPorts();
+  ASSERT_EQ_WAIT(2U, candidates_.size(), 1000);
+  EXPECT_EQ(2U, ports_.size());
+  session_->ClearGettingPorts();
+  WAIT(candidate_allocation_done_, 1000);
+  EXPECT_FALSE(candidate_allocation_done_);
+
+  
+  
+  candidates_.clear();
+  ports_.clear();
+  candidate_allocation_done_ = false;
+  network_manager_.AddInterface(kClientAddr2);
+  ASSERT_EQ_WAIT(2U, candidates_.size(), 1000);
+  EXPECT_EQ(2U, ports_.size());
 }

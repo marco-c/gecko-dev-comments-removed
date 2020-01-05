@@ -10,6 +10,7 @@
 
 #include "webrtc/p2p/base/p2ptransportchannel.h"
 
+#include <algorithm>
 #include <set>
 #include "webrtc/p2p/base/common.h"
 #include "webrtc/p2p/base/relayport.h"  
@@ -18,27 +19,12 @@
 #include "webrtc/base/crc32.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/stringencode.h"
+#include "webrtc/system_wrappers/include/field_trial.h"
 
 namespace {
 
 
-enum {
-  MSG_SORT = 1,
-  MSG_PING,
-};
-
-
-
-
-
-
-static const uint32 PING_PACKET_SIZE = 60 * 8;
-static const uint32 WRITABLE_DELAY = 1000 * PING_PACKET_SIZE / 1000;  
-static const uint32 UNWRITABLE_DELAY = 1000 * PING_PACKET_SIZE / 10000;  
-
-
-
-static const uint32 MAX_CURRENT_WRITABLE_DELAY = 900;  
+enum { MSG_SORT = 1, MSG_CHECK_AND_PING };
 
 
 static const double kMinImprovement = 10;
@@ -68,13 +54,61 @@ int CompareConnectionCandidates(cricket::Connection* a,
 }
 
 
-int CompareConnections(cricket::Connection *a, cricket::Connection *b) {
+
+int CompareConnectionStates(cricket::Connection* a, cricket::Connection* b) {
   
   if (a->write_state() < b->write_state())
     return 1;
   if (a->write_state() > b->write_state())
     return -1;
 
+  
+  
+  
+  if (a->receiving() && !b->receiving())
+    return 1;
+  if (!a->receiving() && b->receiving())
+    return -1;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  
+  
+  if (a->write_state() == cricket::Connection::STATE_WRITABLE &&
+      b->write_state() == cricket::Connection::STATE_WRITABLE) {
+    if (a->connected() && !b->connected()) {
+      return 1;
+    }
+    if (!a->connected() && b->connected()) {
+      return -1;
+    }
+  }
+  return 0;
+}
+
+int CompareConnections(cricket::Connection* a, cricket::Connection* b) {
+  int state_cmp = CompareConnectionStates(a, b);
+  if (state_cmp != 0) {
+    return state_cmp;
+  }
   
   return CompareConnectionCandidates(a, b);
 }
@@ -87,14 +121,6 @@ class ConnectionCompare {
                   const cricket::Connection *cb) {
     cricket::Connection* a = const_cast<cricket::Connection*>(ca);
     cricket::Connection* b = const_cast<cricket::Connection*>(cb);
-
-    
-    
-    
-    
-    ASSERT(a->port()->IceProtocol() == b->port()->IceProtocol() ||
-           a->port()->IceProtocol() == cricket::ICEPROTO_HYBRID ||
-           b->port()->IceProtocol() == cricket::ICEPROTO_HYBRID);
 
     
     int cmp = CompareConnections(a, b);
@@ -121,18 +147,32 @@ class ConnectionCompare {
 
 
 
-bool ShouldSwitch(cricket::Connection* a_conn, cricket::Connection* b_conn) {
+
+bool ShouldSwitch(cricket::Connection* a_conn,
+                  cricket::Connection* b_conn,
+                  cricket::IceRole ice_role) {
   if (a_conn == b_conn)
     return false;
 
   if (!a_conn || !b_conn)  
     return true;
 
-  int prefs_cmp = CompareConnections(a_conn, b_conn);
-  if (prefs_cmp < 0)
-    return true;
-  if (prefs_cmp > 0)
+  
+  
+  
+  int state_cmp = CompareConnectionStates(a_conn, b_conn);
+  if (state_cmp != 0) {
+    return state_cmp < 0;
+  }
+  if (ice_role == cricket::ICEROLE_CONTROLLED && a_conn->nominated()) {
+    LOG(LS_VERBOSE) << "Controlled side did not switch due to nominated status";
     return false;
+  }
+
+  int prefs_cmp = CompareConnectionCandidates(a_conn, b_conn);
+  if (prefs_cmp != 0) {
+    return prefs_cmp < 0;
+  }
 
   return b_conn->rtt() <= a_conn->rtt() + kMinImprovement;
 }
@@ -141,39 +181,68 @@ bool ShouldSwitch(cricket::Connection* a_conn, cricket::Connection* b_conn) {
 
 namespace cricket {
 
-P2PTransportChannel::P2PTransportChannel(const std::string& content_name,
+
+
+
+
+
+static const uint32_t PING_PACKET_SIZE = 60 * 8;
+
+
+
+static const uint32_t STRONG_PING_DELAY = 1000 * PING_PACKET_SIZE / 1000;
+
+
+const uint32_t WEAK_PING_DELAY = 1000 * PING_PACKET_SIZE / 10000;
+
+
+
+
+static const uint32_t MAX_CURRENT_STRONG_DELAY = 900;
+
+static const int MIN_CHECK_RECEIVING_DELAY = 50;  
+
+P2PTransportChannel::P2PTransportChannel(const std::string& transport_name,
                                          int component,
                                          P2PTransport* transport,
-                                         PortAllocator *allocator) :
-    TransportChannelImpl(content_name, component),
-    transport_(transport),
-    allocator_(allocator),
-    worker_thread_(rtc::Thread::Current()),
-    incoming_only_(false),
-    waiting_for_signaling_(false),
-    error_(0),
-    best_connection_(NULL),
-    pending_best_connection_(NULL),
-    sort_dirty_(false),
-    was_writable_(false),
-    protocol_type_(ICEPROTO_HYBRID),
-    remote_ice_mode_(ICEMODE_FULL),
-    ice_role_(ICEROLE_UNKNOWN),
-    tiebreaker_(0),
-    remote_candidate_generation_(0) {
+                                         PortAllocator* allocator)
+    : TransportChannelImpl(transport_name, component),
+      transport_(transport),
+      allocator_(allocator),
+      worker_thread_(rtc::Thread::Current()),
+      incoming_only_(false),
+      error_(0),
+      best_connection_(NULL),
+      pending_best_connection_(NULL),
+      sort_dirty_(false),
+      remote_ice_mode_(ICEMODE_FULL),
+      ice_role_(ICEROLE_UNKNOWN),
+      tiebreaker_(0),
+      gathering_state_(kIceGatheringNew),
+      check_receiving_delay_(MIN_CHECK_RECEIVING_DELAY * 5),
+      receiving_timeout_(MIN_CHECK_RECEIVING_DELAY * 50),
+      backup_connection_ping_interval_(0) {
+  uint32_t weak_ping_delay = ::strtoul(
+      webrtc::field_trial::FindFullName("WebRTC-StunInterPacketDelay").c_str(),
+      nullptr, 10);
+  if (weak_ping_delay) {
+    weak_ping_delay_ =  weak_ping_delay;
+  }
 }
 
 P2PTransportChannel::~P2PTransportChannel() {
   ASSERT(worker_thread_ == rtc::Thread::Current());
 
-  for (uint32 i = 0; i < allocator_sessions_.size(); ++i)
+  for (size_t i = 0; i < allocator_sessions_.size(); ++i)
     delete allocator_sessions_[i];
 }
 
 
 
 void P2PTransportChannel::AddAllocatorSession(PortAllocatorSession* session) {
-  session->set_generation(static_cast<uint32>(allocator_sessions_.size()));
+  ASSERT(worker_thread_ == rtc::Thread::Current());
+
+  session->set_generation(static_cast<uint32_t>(allocator_sessions_.size()));
   allocator_sessions_.push_back(session);
 
   
@@ -192,6 +261,7 @@ void P2PTransportChannel::AddAllocatorSession(PortAllocatorSession* session) {
 void P2PTransportChannel::AddConnection(Connection* connection) {
   connections_.push_back(connection);
   connection->set_remote_ice_mode(remote_ice_mode_);
+  connection->set_receiving_timeout(receiving_timeout_);
   connection->SignalReadPacket.connect(
       this, &P2PTransportChannel::OnReadPacket);
   connection->SignalReadyToSend.connect(
@@ -200,8 +270,8 @@ void P2PTransportChannel::AddConnection(Connection* connection) {
       this, &P2PTransportChannel::OnConnectionStateChange);
   connection->SignalDestroyed.connect(
       this, &P2PTransportChannel::OnConnectionDestroyed);
-  connection->SignalUseCandidate.connect(
-      this, &P2PTransportChannel::OnUseCandidate);
+  connection->SignalNominated.connect(this, &P2PTransportChannel::OnNominated);
+  had_connection_ = true;
 }
 
 void P2PTransportChannel::SetIceRole(IceRole ice_role) {
@@ -215,7 +285,7 @@ void P2PTransportChannel::SetIceRole(IceRole ice_role) {
   }
 }
 
-void P2PTransportChannel::SetIceTiebreaker(uint64 tiebreaker) {
+void P2PTransportChannel::SetIceTiebreaker(uint64_t tiebreaker) {
   ASSERT(worker_thread_ == rtc::Thread::Current());
   if (!ports_.empty()) {
     LOG(LS_ERROR)
@@ -226,22 +296,30 @@ void P2PTransportChannel::SetIceTiebreaker(uint64 tiebreaker) {
   tiebreaker_ = tiebreaker;
 }
 
-
-
-
-
-
-
-
 TransportChannelState P2PTransportChannel::GetState() const {
-  std::set<rtc::Network*> networks;
+  return state_;
+}
 
-  if (connections_.size() == 0) {
+
+
+TransportChannelState P2PTransportChannel::ComputeState() const {
+  if (!had_connection_) {
+    return TransportChannelState::STATE_INIT;
+  }
+
+  std::vector<Connection*> active_connections;
+  for (Connection* connection : connections_) {
+    if (connection->active()) {
+      active_connections.push_back(connection);
+    }
+  }
+  if (active_connections.empty()) {
     return TransportChannelState::STATE_FAILED;
   }
 
-  for (uint32 i = 0; i < connections_.size(); ++i) {
-    rtc::Network* network = connections_[i]->port()->Network();
+  std::set<rtc::Network*> networks;
+  for (Connection* connection : active_connections) {
+    rtc::Network* network = connection->port()->Network();
     if (networks.find(network) == networks.end()) {
       networks.insert(network);
     } else {
@@ -251,74 +329,71 @@ TransportChannelState P2PTransportChannel::GetState() const {
       return TransportChannelState::STATE_CONNECTING;
     }
   }
+
   LOG_J(LS_VERBOSE, this) << "Ice is completed for this channel.";
-
   return TransportChannelState::STATE_COMPLETED;
-}
-
-bool P2PTransportChannel::GetIceProtocolType(IceProtocolType* type) const {
-  *type = protocol_type_;
-  return true;
-}
-
-void P2PTransportChannel::SetIceProtocolType(IceProtocolType type) {
-  ASSERT(worker_thread_ == rtc::Thread::Current());
-
-  protocol_type_ = type;
-  for (std::vector<PortInterface *>::iterator it = ports_.begin();
-       it != ports_.end(); ++it) {
-    (*it)->SetIceProtocolType(protocol_type_);
-  }
 }
 
 void P2PTransportChannel::SetIceCredentials(const std::string& ice_ufrag,
                                             const std::string& ice_pwd) {
   ASSERT(worker_thread_ == rtc::Thread::Current());
-  bool ice_restart = false;
-  if (!ice_ufrag_.empty() && !ice_pwd_.empty()) {
-    
-    
-    ice_restart =
-        IceCredentialsChanged(ice_ufrag_, ice_pwd_, ice_ufrag, ice_pwd);
-  }
-
   ice_ufrag_ = ice_ufrag;
   ice_pwd_ = ice_pwd;
-
-  if (ice_restart) {
-    
-    Allocate();
-  }
+  
+  
 }
 
 void P2PTransportChannel::SetRemoteIceCredentials(const std::string& ice_ufrag,
                                                   const std::string& ice_pwd) {
   ASSERT(worker_thread_ == rtc::Thread::Current());
-  bool ice_restart = false;
-  if (!remote_ice_ufrag_.empty() && !remote_ice_pwd_.empty()) {
-    ice_restart = (remote_ice_ufrag_ != ice_ufrag) ||
-                  (remote_ice_pwd_!= ice_pwd);
+  IceParameters* current_ice = remote_ice();
+  IceParameters new_ice(ice_ufrag, ice_pwd);
+  if (!current_ice || *current_ice != new_ice) {
+    
+    
+    remote_ice_parameters_.push_back(new_ice);
   }
-
-  remote_ice_ufrag_ = ice_ufrag;
-  remote_ice_pwd_ = ice_pwd;
 
   
-  std::vector<Connection*>::iterator it = connections_.begin();
-  for (; it != connections_.end(); ++it) {
-    (*it)->MaybeSetRemoteIceCredentials(ice_ufrag, ice_pwd);
+  for (RemoteCandidate& candidate : remote_candidates_) {
+    if (candidate.username() == ice_ufrag && candidate.password().empty()) {
+      candidate.set_password(ice_pwd);
+    }
   }
-
-  if (ice_restart) {
-    
-    
-    
-    ++remote_candidate_generation_;
+  
+  for (Connection* conn : connections_) {
+    conn->MaybeSetRemoteIceCredentials(ice_ufrag, ice_pwd);
   }
 }
 
 void P2PTransportChannel::SetRemoteIceMode(IceMode mode) {
   remote_ice_mode_ = mode;
+}
+
+void P2PTransportChannel::SetIceConfig(const IceConfig& config) {
+  gather_continually_ = config.gather_continually;
+  LOG(LS_INFO) << "Set gather_continually to " << gather_continually_;
+
+  if (config.backup_connection_ping_interval >= 0 &&
+      backup_connection_ping_interval_ !=
+          config.backup_connection_ping_interval) {
+    backup_connection_ping_interval_ = config.backup_connection_ping_interval;
+    LOG(LS_INFO) << "Set backup connection ping interval to "
+                 << backup_connection_ping_interval_ << " milliseconds.";
+  }
+
+  if (config.receiving_timeout_ms >= 0 &&
+      receiving_timeout_ != config.receiving_timeout_ms) {
+    receiving_timeout_ = config.receiving_timeout_ms;
+    check_receiving_delay_ =
+        std::max(MIN_CHECK_RECEIVING_DELAY, receiving_timeout_ / 10);
+
+    for (Connection* connection : connections_) {
+      connection->set_receiving_timeout(receiving_timeout_);
+    }
+    LOG(LS_INFO) << "Set ICE receiving timeout to " << receiving_timeout_
+                 << " milliseconds";
+  }
 }
 
 
@@ -332,43 +407,23 @@ void P2PTransportChannel::Connect() {
   }
 
   
-  Allocate();
-
-  
-  thread()->Post(this, MSG_PING);
+  thread()->Post(this, MSG_CHECK_AND_PING);
 }
 
-
-void P2PTransportChannel::Reset() {
-  ASSERT(worker_thread_ == rtc::Thread::Current());
-
+void P2PTransportChannel::MaybeStartGathering() {
   
-  for (uint32 i = 0; i < allocator_sessions_.size(); ++i)
-    delete allocator_sessions_[i];
-
-  allocator_sessions_.clear();
-  ports_.clear();
-  connections_.clear();
-  best_connection_ = NULL;
-
-  
-  remote_candidates_.clear();
-
-  
-  set_readable(false);
-  set_writable(false);
-
-  
-  waiting_for_signaling_ = false;
-  sort_dirty_ = false;
-
-  
-  if (transport_->connect_requested())
-    Allocate();
-
-  
-  thread()->Clear(this);
-  thread()->Post(this, MSG_PING);
+  if (allocator_sessions_.empty() ||
+      IceCredentialsChanged(allocator_sessions_.back()->ice_ufrag(),
+                            allocator_sessions_.back()->ice_pwd(), ice_ufrag_,
+                            ice_pwd_)) {
+    if (gathering_state_ != kIceGatheringGathering) {
+      gathering_state_ = kIceGatheringGathering;
+      SignalGatheringState(this);
+    }
+    
+    AddAllocatorSession(allocator_->CreateSession(
+        SessionId(), transport_name(), component(), ice_ufrag_, ice_pwd_));
+  }
 }
 
 
@@ -392,7 +447,6 @@ void P2PTransportChannel::OnPortReady(PortAllocatorSession *session,
   
   
 
-  port->SetIceProtocolType(protocol_type_);
   port->SetIceRole(ice_role_);
   port->SetIceTiebreaker(tiebreaker_);
   ports_.push_back(port);
@@ -401,6 +455,7 @@ void P2PTransportChannel::OnPortReady(PortAllocatorSession *session,
   port->SignalDestroyed.connect(this, &P2PTransportChannel::OnPortDestroyed);
   port->SignalRoleConflict.connect(
       this, &P2PTransportChannel::OnRoleConflict);
+  port->SignalSentPacket.connect(this, &P2PTransportChannel::OnSentPacket);
 
   
   
@@ -408,7 +463,7 @@ void P2PTransportChannel::OnPortReady(PortAllocatorSession *session,
   std::vector<RemoteCandidate>::iterator iter;
   for (iter = remote_candidates_.begin(); iter != remote_candidates_.end();
        ++iter) {
-    CreateConnection(port, *iter, iter->origin_port(), false);
+    CreateConnection(port, *iter, iter->origin_port());
   }
 
   SortConnections();
@@ -416,17 +471,21 @@ void P2PTransportChannel::OnPortReady(PortAllocatorSession *session,
 
 
 void P2PTransportChannel::OnCandidatesReady(
-    PortAllocatorSession *session, const std::vector<Candidate>& candidates) {
+    PortAllocatorSession* session,
+    const std::vector<Candidate>& candidates) {
   ASSERT(worker_thread_ == rtc::Thread::Current());
   for (size_t i = 0; i < candidates.size(); ++i) {
-    SignalCandidateReady(this, candidates[i]);
+    SignalCandidateGathered(this, candidates[i]);
   }
 }
 
 void P2PTransportChannel::OnCandidatesAllocationDone(
     PortAllocatorSession* session) {
   ASSERT(worker_thread_ == rtc::Thread::Current());
-  SignalCandidatesAllocationDone(this);
+  gathering_state_ = kIceGatheringComplete;
+  LOG(LS_INFO) << "P2PTransportChannel: " << transport_name() << ", component "
+               << component() << " gathering complete";
+  SignalGatheringState(this);
 }
 
 
@@ -471,55 +530,29 @@ void P2PTransportChannel::OnUnknownAddress(
     }
   }
 
+  uint32_t remote_generation = 0;
   
   
   
-  if (remote_password.empty() && remote_username == remote_ice_ufrag_) {
-    remote_password = remote_ice_pwd_;
+  if (remote_password.empty()) {
+    const IceParameters* ice_param =
+        FindRemoteIceFromUfrag(remote_username, &remote_generation);
+    
+    if (ice_param != nullptr) {
+      remote_password = ice_param->pwd;
+    }
   }
 
-  Candidate new_remote_candidate;
-  if (candidate != NULL) {
-    new_remote_candidate = *candidate;
+  Candidate remote_candidate;
+  bool remote_candidate_is_new = (candidate == nullptr);
+  if (!remote_candidate_is_new) {
+    remote_candidate = *candidate;
     if (ufrag_per_port) {
-      new_remote_candidate.set_address(address);
+      remote_candidate.set_address(address);
     }
   } else {
     
-    std::string type;
-    if (port->IceProtocol() == ICEPROTO_RFC5245) {
-      type = PRFLX_PORT_TYPE;
-    } else {
-      
-      
-      
-      
-      if (port->Type() == RELAY_PORT_TYPE || port->SharedSocket()) {
-        type = STUN_PORT_TYPE;
-      } else {
-        type = port->Type();
-      }
-    }
-
-    new_remote_candidate =
-        Candidate(component(), ProtoToString(proto), address, 0,
-                  remote_username, remote_password, type, 0U, "");
-
-    
-    
-    
-    new_remote_candidate.set_foundation(
-        rtc::ToString<uint32>(rtc::ComputeCrc32(new_remote_candidate.id())));
-
-    new_remote_candidate.set_priority(new_remote_candidate.GetPriority(
-        ICE_TYPE_PREFERENCE_PRFLX, port->Network()->preference(), 0));
-  }
-
-  if (port->IceProtocol() == ICEPROTO_RFC5245) {
-    
-    
-    
-    
+    int remote_candidate_priority;
 
     
     
@@ -529,79 +562,71 @@ void P2PTransportChannel::OnUnknownAddress(
       LOG(LS_WARNING) << "P2PTransportChannel::OnUnknownAddress - "
                       << "No STUN_ATTR_PRIORITY found in the "
                       << "stun request message";
-      port->SendBindingErrorResponse(stun_msg, address,
-                                     STUN_ERROR_BAD_REQUEST,
+      port->SendBindingErrorResponse(stun_msg, address, STUN_ERROR_BAD_REQUEST,
                                      STUN_ERROR_REASON_BAD_REQUEST);
       return;
     }
-    new_remote_candidate.set_priority(priority_attr->value());
+    remote_candidate_priority = priority_attr->value();
 
     
     
     
     
+    remote_candidate = Candidate(component(), ProtoToString(proto), address, 0,
+                                 remote_username, remote_password,
+                                 PRFLX_PORT_TYPE, remote_generation, "");
 
     
     
     
-    
-    if (port->GetConnection(new_remote_candidate.address())) {
-      if (port_muxed) {
-        LOG(LS_INFO) << "Connection already exists for peer reflexive "
-                     << "candidate: " << new_remote_candidate.ToString();
-        return;
-      } else {
-        ASSERT(false);
-        port->SendBindingErrorResponse(stun_msg, address,
-                                       STUN_ERROR_SERVER_ERROR,
-                                       STUN_ERROR_REASON_SERVER_ERROR);
-        return;
-      }
-    }
+    remote_candidate.set_foundation(
+        rtc::ToString<uint32_t>(rtc::ComputeCrc32(remote_candidate.id())));
 
-    Connection* connection = port->CreateConnection(
-        new_remote_candidate, cricket::PortInterface::ORIGIN_THIS_PORT);
-    if (!connection) {
+    remote_candidate.set_priority(remote_candidate_priority);
+  }
+
+  
+  
+  
+  
+
+  
+  
+  
+  
+  if (port->GetConnection(remote_candidate.address())) {
+    if (port_muxed) {
+      LOG(LS_INFO) << "Connection already exists for peer reflexive "
+                   << "candidate: " << remote_candidate.ToString();
+      return;
+    } else {
       ASSERT(false);
       port->SendBindingErrorResponse(stun_msg, address,
                                      STUN_ERROR_SERVER_ERROR,
                                      STUN_ERROR_REASON_SERVER_ERROR);
       return;
     }
-
-    LOG(LS_INFO) << "Adding connection from peer reflexive candidate: "
-                 << new_remote_candidate.ToString();
-    AddConnection(connection);
-    connection->ReceivedPing();
-
-    
-    port->SendBindingResponse(stun_msg, address);
-
-    
-    
-    
-    SortConnections();
-  } else {
-    
-    
-    
-    if (!CreateConnections(new_remote_candidate, port, true)) {
-      
-      
-      ASSERT(false);
-      port->SendBindingErrorResponse(stun_msg, address, STUN_ERROR_SERVER_ERROR,
-          STUN_ERROR_REASON_SERVER_ERROR);
-      return;
-    }
-
-    
-    port->SendBindingResponse(stun_msg, address);
-
-    
-    
-    
-    SortConnections();
   }
+
+  Connection* connection = port->CreateConnection(
+      remote_candidate, cricket::PortInterface::ORIGIN_THIS_PORT);
+  if (!connection) {
+    ASSERT(false);
+    port->SendBindingErrorResponse(stun_msg, address, STUN_ERROR_SERVER_ERROR,
+                                   STUN_ERROR_REASON_SERVER_ERROR);
+    return;
+  }
+
+  LOG(LS_INFO) << "Adding connection from "
+               << (remote_candidate_is_new ? "peer reflexive" : "resurrected")
+               << " candidate: " << remote_candidate.ToString();
+  AddConnection(connection);
+  connection->HandleBindingRequest(stun_msg);
+
+  
+  
+  
+  SortConnections();
 }
 
 void P2PTransportChannel::OnRoleConflict(PortInterface* port) {
@@ -609,38 +634,78 @@ void P2PTransportChannel::OnRoleConflict(PortInterface* port) {
                              
 }
 
-
-void P2PTransportChannel::OnSignalingReady() {
-  ASSERT(worker_thread_ == rtc::Thread::Current());
-  if (waiting_for_signaling_) {
-    waiting_for_signaling_ = false;
-    AddAllocatorSession(allocator_->CreateSession(
-        SessionId(), content_name(), component(), ice_ufrag_, ice_pwd_));
+const IceParameters* P2PTransportChannel::FindRemoteIceFromUfrag(
+    const std::string& ufrag,
+    uint32_t* generation) {
+  const auto& params = remote_ice_parameters_;
+  auto it = std::find_if(
+      params.rbegin(), params.rend(),
+      [ufrag](const IceParameters& param) { return param.ufrag == ufrag; });
+  if (it == params.rend()) {
+    
+    return nullptr;
   }
+  *generation = params.rend() - it - 1;
+  return &(*it);
 }
 
-void P2PTransportChannel::OnUseCandidate(Connection* conn) {
+void P2PTransportChannel::OnNominated(Connection* conn) {
   ASSERT(worker_thread_ == rtc::Thread::Current());
   ASSERT(ice_role_ == ICEROLE_CONTROLLED);
-  ASSERT(protocol_type_ == ICEPROTO_RFC5245);
+
   if (conn->write_state() == Connection::STATE_WRITABLE) {
     if (best_connection_ != conn) {
       pending_best_connection_ = NULL;
+      LOG(LS_INFO) << "Switching best connection on controlled side: "
+                   << conn->ToString();
       SwitchBestConnectionTo(conn);
       
       
       RequestSort();
     }
   } else {
+    LOG(LS_INFO) << "Not switching the best connection on controlled side yet,"
+                 << " because it's not writable: " << conn->ToString();
     pending_best_connection_ = conn;
   }
 }
 
-void P2PTransportChannel::OnCandidate(const Candidate& candidate) {
+void P2PTransportChannel::AddRemoteCandidate(const Candidate& candidate) {
   ASSERT(worker_thread_ == rtc::Thread::Current());
 
+  uint32_t generation = GetRemoteCandidateGeneration(candidate);
   
-  CreateConnections(candidate, NULL, false);
+  if (generation < remote_ice_generation()) {
+    LOG(LS_WARNING) << "Dropping a remote candidate because its ufrag "
+                    << candidate.username()
+                    << " indicates it was for a previous generation.";
+    return;
+  }
+
+  Candidate new_remote_candidate(candidate);
+  new_remote_candidate.set_generation(generation);
+  
+  
+  
+  
+  if (remote_ice()) {
+    if (candidate.username().empty()) {
+      new_remote_candidate.set_username(remote_ice()->ufrag);
+    }
+    if (new_remote_candidate.username() == remote_ice()->ufrag) {
+      if (candidate.password().empty()) {
+        new_remote_candidate.set_password(remote_ice()->pwd);
+      }
+    } else {
+      
+      
+      LOG(LS_WARNING) << "A remote candidate arrives with an unknown ufrag: "
+                      << candidate.username();
+    }
+  }
+
+  
+  CreateConnections(new_remote_candidate, NULL);
 
   
   SortConnections();
@@ -650,24 +715,9 @@ void P2PTransportChannel::OnCandidate(const Candidate& candidate) {
 
 
 bool P2PTransportChannel::CreateConnections(const Candidate& remote_candidate,
-                                            PortInterface* origin_port,
-                                            bool readable) {
+                                            PortInterface* origin_port) {
   ASSERT(worker_thread_ == rtc::Thread::Current());
 
-  Candidate new_remote_candidate(remote_candidate);
-  new_remote_candidate.set_generation(
-      GetRemoteCandidateGeneration(remote_candidate));
-  
-  
-  
-  
-  if (remote_candidate.username().empty()) {
-    new_remote_candidate.set_username(remote_ice_ufrag_);
-  }
-  if (remote_candidate.password().empty()) {
-    new_remote_candidate.set_password(remote_ice_pwd_);
-  }
-
   
   
   
@@ -676,7 +726,7 @@ bool P2PTransportChannel::CreateConnections(const Candidate& remote_candidate,
   
   
   
-  if (!origin_port && IsDuplicateRemoteCandidate(new_remote_candidate)) {
+  if (!origin_port && IsDuplicateRemoteCandidate(remote_candidate)) {
     
     return true;
   }
@@ -689,7 +739,7 @@ bool P2PTransportChannel::CreateConnections(const Candidate& remote_candidate,
   bool created = false;
   std::vector<PortInterface *>::reverse_iterator it;
   for (it = ports_.rbegin(); it != ports_.rend(); ++it) {
-    if (CreateConnection(*it, new_remote_candidate, origin_port, readable)) {
+    if (CreateConnection(*it, remote_candidate, origin_port)) {
       if (*it == origin_port)
         created = true;
     }
@@ -697,13 +747,12 @@ bool P2PTransportChannel::CreateConnections(const Candidate& remote_candidate,
 
   if ((origin_port != NULL) &&
       std::find(ports_.begin(), ports_.end(), origin_port) == ports_.end()) {
-    if (CreateConnection(
-        origin_port, new_remote_candidate, origin_port, readable))
+    if (CreateConnection(origin_port, remote_candidate, origin_port))
       created = true;
   }
 
   
-  RememberRemoteCandidate(new_remote_candidate, origin_port);
+  RememberRemoteCandidate(remote_candidate, origin_port);
 
   return created;
 }
@@ -712,8 +761,10 @@ bool P2PTransportChannel::CreateConnections(const Candidate& remote_candidate,
 
 bool P2PTransportChannel::CreateConnection(PortInterface* port,
                                            const Candidate& remote_candidate,
-                                           PortInterface* origin_port,
-                                           bool readable) {
+                                           PortInterface* origin_port) {
+  if (!port->SupportsProtocol(remote_candidate.protocol())) {
+    return false;
+  }
   
   
   Connection* connection = port->GetConnection(remote_candidate.address());
@@ -748,11 +799,6 @@ bool P2PTransportChannel::CreateConnection(PortInterface* port,
                          << connections_.size() << " total)";
   }
 
-  
-  
-  if (readable)
-    connection->ReceivedPing();
-
   return true;
 }
 
@@ -763,24 +809,29 @@ bool P2PTransportChannel::FindConnection(
   return citer != connections_.end();
 }
 
-uint32 P2PTransportChannel::GetRemoteCandidateGeneration(
+uint32_t P2PTransportChannel::GetRemoteCandidateGeneration(
     const Candidate& candidate) {
-  if (protocol_type_ == ICEPROTO_GOOGLE) {
-    
+  
+  if (!candidate.username().empty()) {
+    uint32_t generation = 0;
+    if (!FindRemoteIceFromUfrag(candidate.username(), &generation)) {
+      
+      generation = static_cast<uint32_t>(remote_ice_parameters_.size());
+    }
+    return generation;
+  }
+  
+  if (candidate.generation() > 0) {
     return candidate.generation();
   }
   
-  
-  
-  ASSERT(candidate.generation() == 0 ||
-         candidate.generation() == remote_candidate_generation_);
-  return remote_candidate_generation_;
+  return remote_ice_generation();
 }
 
 
 bool P2PTransportChannel::IsDuplicateRemoteCandidate(
     const Candidate& candidate) {
-  for (uint32 i = 0; i < remote_candidates_.size(); ++i) {
+  for (size_t i = 0; i < remote_candidates_.size(); ++i) {
     if (remote_candidates_[i].IsEquivalent(candidate)) {
       return true;
     }
@@ -793,7 +844,7 @@ void P2PTransportChannel::RememberRemoteCandidate(
     const Candidate& remote_candidate, PortInterface* origin_port) {
   
   
-  uint32 i = 0;
+  size_t i = 0;
   while (i < remote_candidates_.size()) {
     if (remote_candidates_[i].generation() < remote_candidate.generation()) {
       LOG(INFO) << "Pruning candidate from old generation: "
@@ -827,7 +878,7 @@ int P2PTransportChannel::SetOption(rtc::Socket::Option opt, int value) {
     it->second = value;
   }
 
-  for (uint32 i = 0; i < ports_.size(); ++i) {
+  for (size_t i = 0; i < ports_.size(); ++i) {
     int val = ports_[i]->SetOption(opt, value);
     if (val < 0) {
       
@@ -878,12 +929,10 @@ bool P2PTransportChannel::GetStats(ConnectionInfos *infos) {
   infos->clear();
 
   std::vector<Connection *>::const_iterator it;
-  for (it = connections_.begin(); it != connections_.end(); ++it) {
-    Connection *connection = *it;
+  for (Connection* connection : connections_) {
     ConnectionInfo info;
     info.best_connection = (best_connection_ == connection);
-    info.readable =
-        (connection->read_state() == Connection::STATE_READABLE);
+    info.receiving = connection->receiving();
     info.writable =
         (connection->write_state() == Connection::STATE_WRITABLE);
     info.timeout =
@@ -915,20 +964,12 @@ rtc::DiffServCodePoint P2PTransportChannel::DefaultDscpValue() const {
 }
 
 
-void P2PTransportChannel::Allocate() {
-  
-  
-  waiting_for_signaling_ = true;
-  SignalRequestSignaling(this);
-}
-
-
 void P2PTransportChannel::UpdateConnectionStates() {
-  uint32 now = rtc::Time();
+  uint32_t now = rtc::Time();
 
   
   
-  for (uint32 i = 0; i < connections_.size(); ++i)
+  for (size_t i = 0; i < connections_.size(); ++i)
     connections_[i]->UpdateState(now);
 }
 
@@ -949,73 +990,42 @@ void P2PTransportChannel::SortConnections() {
   
   UpdateConnectionStates();
 
-  if (protocol_type_ == ICEPROTO_HYBRID) {
-    
-    
-    
-    
-    UpdateChannelState();
-    return;
-  }
-
   
   sort_dirty_ = false;
 
   
-  std::set<rtc::Network*> networks;
-  for (uint32 i = 0; i < connections_.size(); ++i)
-    networks.insert(connections_[i]->port()->Network());
-
   
   
   
-  
-
   ConnectionCompare cmp;
   std::stable_sort(connections_.begin(), connections_.end(), cmp);
-  LOG(LS_VERBOSE) << "Sorting available connections:";
-  for (uint32 i = 0; i < connections_.size(); ++i) {
+  LOG(LS_VERBOSE) << "Sorting " << connections_.size()
+                  << " available connections:";
+  for (size_t i = 0; i < connections_.size(); ++i) {
     LOG(LS_VERBOSE) << connections_[i]->ToString();
   }
 
-  Connection* top_connection = NULL;
-  if (connections_.size() > 0)
-    top_connection = connections_[0];
+  Connection* top_connection =
+      (connections_.size() > 0) ? connections_[0] : nullptr;
 
   
   
   
-
-  
-  if (protocol_type_ != ICEPROTO_RFC5245 || ice_role_ == ICEROLE_CONTROLLING) {
-    if (ShouldSwitch(best_connection_, top_connection))
-      SwitchBestConnectionTo(top_connection);
+  if (ShouldSwitch(best_connection_, top_connection, ice_role_)) {
+    LOG(LS_INFO) << "Switching best connection: " << top_connection->ToString();
+    SwitchBestConnectionTo(top_connection);
   }
 
   
   
   
-  
-  
-  
-  std::set<rtc::Network*>::iterator network;
-  for (network = networks.begin(); network != networks.end(); ++network) {
-    Connection* primier = GetBestConnectionOnNetwork(*network);
-    if (!primier || (primier->write_state() != Connection::STATE_WRITABLE))
-      continue;
-
-    for (uint32 i = 0; i < connections_.size(); ++i) {
-      if ((connections_[i] != primier) &&
-          (connections_[i]->port()->Network() == *network) &&
-          (CompareConnectionCandidates(primier, connections_[i]) >= 0)) {
-        connections_[i]->Prune();
-      }
-    }
+  if (ice_role_ == ICEROLE_CONTROLLING || best_nominated_connection()) {
+    PruneConnections();
   }
 
   
   bool all_connections_timedout = true;
-  for (uint32 i = 0; i < connections_.size(); ++i) {
+  for (size_t i = 0; i < connections_.size(); ++i) {
     if (connections_[i]->write_state() != Connection::STATE_WRITE_TIMEOUT) {
       all_connections_timedout = false;
       break;
@@ -1024,19 +1034,52 @@ void P2PTransportChannel::SortConnections() {
 
   
   
-  if (best_connection_ && best_connection_->writable()) {
-    HandleWritable();
-  } else if (all_connections_timedout) {
+  if (all_connections_timedout) {
     HandleAllTimedOut();
-  } else {
-    HandleNotWritable();
   }
 
   
   
-  UpdateChannelState();
+  UpdateState();
 }
 
+Connection* P2PTransportChannel::best_nominated_connection() const {
+  return (best_connection_ && best_connection_->nominated()) ? best_connection_
+                                                             : nullptr;
+}
+
+void P2PTransportChannel::PruneConnections() {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  std::set<rtc::Network*> networks;
+  for (const Connection* conn : connections_) {
+    networks.insert(conn->port()->Network());
+  }
+  for (rtc::Network* network : networks) {
+    Connection* premier = GetBestConnectionOnNetwork(network);
+    
+    
+    if (!premier || premier->weak()) {
+      continue;
+    }
+
+    for (Connection* conn : connections_) {
+      if ((conn != premier) && (conn->port()->Network() == network) &&
+          (CompareConnectionCandidates(premier, conn) >= 0)) {
+        conn->Prune();
+      }
+    }
+  }
+}
 
 
 void P2PTransportChannel::SwitchBestConnectionTo(Connection* conn) {
@@ -1057,54 +1100,56 @@ void P2PTransportChannel::SwitchBestConnectionTo(Connection* conn) {
   }
 }
 
-void P2PTransportChannel::UpdateChannelState() {
-  
-  
-  bool writable = ((best_connection_ != NULL)  &&
-      (best_connection_->write_state() ==
-      Connection::STATE_WRITABLE));
-  ASSERT(writable == this->writable());
-  if (writable != this->writable())
-    LOG(LS_ERROR) << "UpdateChannelState: writable state mismatch";
 
-  bool readable = false;
-  for (uint32 i = 0; i < connections_.size(); ++i) {
-    if (connections_[i]->read_state() == Connection::STATE_READABLE) {
-      readable = true;
+
+
+
+
+
+void P2PTransportChannel::UpdateState() {
+  state_ = ComputeState();
+
+  bool writable = best_connection_ && best_connection_->writable();
+  set_writable(writable);
+
+  bool receiving = false;
+  for (const Connection* connection : connections_) {
+    if (connection->receiving()) {
+      receiving = true;
       break;
     }
   }
-  set_readable(readable);
+  set_receiving(receiving);
 }
 
+void P2PTransportChannel::MaybeStopPortAllocatorSessions() {
+  if (!IsGettingPorts()) {
+    return;
+  }
 
-
-void P2PTransportChannel::HandleWritable() {
-  ASSERT(worker_thread_ == rtc::Thread::Current());
-  if (!writable()) {
-    for (uint32 i = 0; i < allocator_sessions_.size(); ++i) {
-      if (allocator_sessions_[i]->IsGettingPorts()) {
-        allocator_sessions_[i]->StopGettingPorts();
-      }
+  for (PortAllocatorSession* session : allocator_sessions_) {
+    if (!session->IsGettingPorts()) {
+      continue;
     }
-  }
-
-  was_writable_ = true;
-  set_writable(true);
-}
-
-
-void P2PTransportChannel::HandleNotWritable() {
-  ASSERT(worker_thread_ == rtc::Thread::Current());
-  if (was_writable_) {
-    was_writable_ = false;
-    set_writable(false);
+    
+    
+    if (gather_continually_ && session == allocator_sessions_.back()) {
+      session->ClearGettingPorts();
+      break;
+    }
+    session->StopGettingPorts();
   }
 }
+
 
 void P2PTransportChannel::HandleAllTimedOut() {
-  
-  HandleNotWritable();
+  for (Connection* connection : connections_) {
+    connection->Destroy();
+  }
+}
+
+bool P2PTransportChannel::weak() const {
+  return !best_connection_ || best_connection_->weak();
 }
 
 
@@ -1116,7 +1161,7 @@ Connection* P2PTransportChannel::GetBestConnectionOnNetwork(
     return best_connection_;
 
   
-  for (uint32 i = 0; i < connections_.size(); ++i) {
+  for (size_t i = 0; i < connections_.size(); ++i) {
     if (connections_[i]->port()->Network() == network)
       return connections_[i];
   }
@@ -1130,8 +1175,8 @@ void P2PTransportChannel::OnMessage(rtc::Message *pmsg) {
     case MSG_SORT:
       OnSort();
       break;
-    case MSG_PING:
-      OnPing();
+    case MSG_CHECK_AND_PING:
+      OnCheckAndPing();
       break;
     default:
       ASSERT(false);
@@ -1146,23 +1191,34 @@ void P2PTransportChannel::OnSort() {
 }
 
 
-void P2PTransportChannel::OnPing() {
+void P2PTransportChannel::OnCheckAndPing() {
   
   
   UpdateConnectionStates();
-
   
-  Connection* conn = FindNextPingableConnection();
-  if (conn)
-    PingConnection(conn);
-
   
-  uint32 delay = writable() ? WRITABLE_DELAY : UNWRITABLE_DELAY;
-  thread()->PostDelayed(delay, this, MSG_PING);
+  int ping_delay = weak() ? weak_ping_delay_ : STRONG_PING_DELAY;
+  if (rtc::Time() >= last_ping_sent_ms_ + ping_delay) {
+    Connection* conn = FindNextPingableConnection();
+    if (conn) {
+      PingConnection(conn);
+    }
+  }
+  int check_delay = std::min(ping_delay, check_receiving_delay_);
+  thread()->PostDelayed(check_delay, this, MSG_CHECK_AND_PING);
 }
 
 
-bool P2PTransportChannel::IsPingable(Connection* conn) {
+
+bool P2PTransportChannel::IsBackupConnection(Connection* conn) const {
+  return state_ == STATE_COMPLETED && conn != best_connection_ &&
+         conn->active();
+}
+
+
+
+
+bool P2PTransportChannel::IsPingable(Connection* conn, uint32_t now) {
   const Candidate& remote = conn->remote_candidate();
   
   ASSERT(!remote.username().empty());
@@ -1173,47 +1229,69 @@ bool P2PTransportChannel::IsPingable(Connection* conn) {
 
   
   
-  if (!conn->connected())
+  
+  if (!conn->connected() && !conn->writable()) {
     return false;
-
-  if (writable()) {
-    
-    
-    return (conn->write_state() != Connection::STATE_WRITE_TIMEOUT);
-  } else {
-    
-    
-    
-    
-    
-    return (conn->write_state() != Connection::STATE_WRITE_TIMEOUT) ||
-           (conn->read_state() != Connection::STATE_READ_TIMEOUT);
   }
+
+  
+  if (weak()) {
+    return true;
+  }
+
+  
+  
+  if (IsBackupConnection(conn)) {
+    return (now >= conn->last_ping_response_received() +
+                       backup_connection_ping_interval_);
+  }
+  return conn->active();
 }
 
 
 
 
+
+
+
 Connection* P2PTransportChannel::FindNextPingableConnection() {
-  uint32 now = rtc::Time();
-  if (best_connection_ &&
-      (best_connection_->write_state() == Connection::STATE_WRITABLE) &&
-      (best_connection_->last_ping_sent()
-       + MAX_CURRENT_WRITABLE_DELAY <= now)) {
+  uint32_t now = rtc::Time();
+  if (best_connection_ && best_connection_->connected() &&
+      best_connection_->writable() &&
+      (best_connection_->last_ping_sent() + MAX_CURRENT_STRONG_DELAY <= now)) {
     return best_connection_;
   }
 
-  Connection* oldest_conn = NULL;
-  uint32 oldest_time = 0xFFFFFFFF;
-  for (uint32 i = 0; i < connections_.size(); ++i) {
-    if (IsPingable(connections_[i])) {
-      if (connections_[i]->last_ping_sent() < oldest_time) {
-        oldest_time = connections_[i]->last_ping_sent();
-        oldest_conn = connections_[i];
-      }
+  
+  
+  
+  
+  Connection* oldest_needing_triggered_check = nullptr;
+  Connection* oldest = nullptr;
+  for (Connection* conn : connections_) {
+    if (!IsPingable(conn, now)) {
+      continue;
+    }
+    bool needs_triggered_check =
+        (!conn->writable() &&
+         conn->last_ping_received() > conn->last_ping_sent());
+    if (needs_triggered_check &&
+        (!oldest_needing_triggered_check ||
+         (conn->last_ping_received() <
+          oldest_needing_triggered_check->last_ping_received()))) {
+      oldest_needing_triggered_check = conn;
+    }
+    if (!oldest || (conn->last_ping_sent() < oldest->last_ping_sent())) {
+      oldest = conn;
     }
   }
-  return oldest_conn;
+
+  if (oldest_needing_triggered_check) {
+    LOG(LS_INFO) << "Selecting connection for triggered check: " <<
+        oldest_needing_triggered_check->ToString();
+    return oldest_needing_triggered_check;
+  }
+  return oldest;
 }
 
 
@@ -1230,18 +1308,16 @@ Connection* P2PTransportChannel::FindNextPingableConnection() {
 
 void P2PTransportChannel::PingConnection(Connection* conn) {
   bool use_candidate = false;
-  if (protocol_type_ == ICEPROTO_RFC5245) {
-    if (remote_ice_mode_ == ICEMODE_FULL && ice_role_ == ICEROLE_CONTROLLING) {
-      use_candidate = (conn == best_connection_) ||
-                      (best_connection_ == NULL) ||
-                      (!best_connection_->writable()) ||
-                      (conn->priority() > best_connection_->priority());
-    } else if (remote_ice_mode_ == ICEMODE_LITE && conn == best_connection_) {
-      use_candidate = best_connection_->writable();
-    }
+  if (remote_ice_mode_ == ICEMODE_FULL && ice_role_ == ICEROLE_CONTROLLING) {
+    use_candidate = (conn == best_connection_) || (best_connection_ == NULL) ||
+                    (!best_connection_->writable()) ||
+                    (conn->priority() > best_connection_->priority());
+  } else if (remote_ice_mode_ == ICEMODE_LITE && conn == best_connection_) {
+    use_candidate = best_connection_->writable();
   }
   conn->set_use_candidate_attr(use_candidate);
-  conn->Ping(rtc::Time());
+  last_ping_sent_ms_ = rtc::Time();
+  conn->Ping(last_ping_sent_ms_);
 }
 
 
@@ -1251,11 +1327,21 @@ void P2PTransportChannel::OnConnectionStateChange(Connection* connection) {
 
   
   
-  if (protocol_type_ == ICEPROTO_RFC5245 && ice_role_ == ICEROLE_CONTROLLED) {
+  if (ice_role_ == ICEROLE_CONTROLLED) {
     if (connection == pending_best_connection_ && connection->writable()) {
       pending_best_connection_ = NULL;
+      LOG(LS_INFO) << "Switching best connection on controlled side"
+                   << " because it's now writable: " << connection->ToString();
       SwitchBestConnectionTo(connection);
     }
+  }
+
+  
+  
+  
+  
+  if (!connection->weak()) {
+    MaybeStopPortAllocatorSessions();
   }
 
   
@@ -1290,10 +1376,14 @@ void P2PTransportChannel::OnConnectionDestroyed(Connection* connection) {
   
   
   if (best_connection_ == connection) {
+    LOG(LS_INFO) << "Best connection destroyed.  Will choose a new one.";
     SwitchBestConnectionTo(NULL);
     RequestSort();
   }
 
+  UpdateState();
+  
+  
   SignalConnectionRemoved(this);
 }
 
@@ -1313,9 +1403,10 @@ void P2PTransportChannel::OnPortDestroyed(PortInterface* port) {
 }
 
 
-void P2PTransportChannel::OnReadPacket(
-    Connection *connection, const char *data, size_t len,
-    const rtc::PacketTime& packet_time) {
+void P2PTransportChannel::OnReadPacket(Connection* connection,
+                                       const char* data,
+                                       size_t len,
+                                       const rtc::PacketTime& packet_time) {
   ASSERT(worker_thread_ == rtc::Thread::Current());
 
   
@@ -1324,6 +1415,19 @@ void P2PTransportChannel::OnReadPacket(
 
   
   SignalReadPacket(this, data, len, packet_time, 0);
+
+  
+  
+  if (ice_role_ == ICEROLE_CONTROLLED && !best_nominated_connection() &&
+      connection->writable() && best_connection_ != connection) {
+    SwitchBestConnectionTo(connection);
+  }
+}
+
+void P2PTransportChannel::OnSentPacket(const rtc::SentPacket& sent_packet) {
+  ASSERT(worker_thread_ == rtc::Thread::Current());
+
+  SignalSentPacket(this, sent_packet);
 }
 
 void P2PTransportChannel::OnReadyToSend(Connection* connection) {

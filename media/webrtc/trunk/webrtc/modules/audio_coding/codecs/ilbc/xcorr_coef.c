@@ -23,16 +23,16 @@
 
 
 
-int WebRtcIlbcfix_XcorrCoef(
+size_t WebRtcIlbcfix_XcorrCoef(
     int16_t *target,  
     int16_t *regressor, 
-    int16_t subl,  
-    int16_t searchLen, 
-    int16_t offset,  
+    size_t subl,  
+    size_t searchLen, 
+    size_t offset,  
     int16_t step   
                             ){
-  int k;
-  int16_t maxlag;
+  size_t k;
+  size_t maxlag;
   int16_t pos;
   int16_t max;
   int16_t crossCorrScale, Energyscale;
@@ -55,13 +55,13 @@ int WebRtcIlbcfix_XcorrCoef(
 
   
   if (step==1) {
-    max=WebRtcSpl_MaxAbsValueW16(regressor, (int16_t)(subl+searchLen-1));
+    max=WebRtcSpl_MaxAbsValueW16(regressor, subl + searchLen - 1);
     rp_beg = regressor;
-    rp_end = &regressor[subl];
+    rp_end = regressor + subl;
   } else { 
-    max=WebRtcSpl_MaxAbsValueW16(&regressor[-searchLen], (int16_t)(subl+searchLen-1));
-    rp_beg = &regressor[-1];
-    rp_end = &regressor[subl-1];
+    max = WebRtcSpl_MaxAbsValueW16(regressor - searchLen, subl + searchLen - 1);
+    rp_beg = regressor - 1;
+    rp_end = regressor + subl - 1;
   }
 
   

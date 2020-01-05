@@ -25,8 +25,7 @@ ReferencePictureSelection::ReferencePictureSelection()
       last_sent_ref_update_time_(0),
       established_ref_picture_id_(0),
       last_refresh_time_(0),
-      rtt_(0) {
-}
+      rtt_(0) {}
 
 void ReferencePictureSelection::Init() {
   update_golden_next_ = true;
@@ -62,7 +61,8 @@ bool ReferencePictureSelection::ReceivedSLI(uint32_t now_ts) {
   return send_refresh;
 }
 
-int ReferencePictureSelection::EncodeFlags(int picture_id, bool send_refresh,
+int ReferencePictureSelection::EncodeFlags(int picture_id,
+                                           bool send_refresh,
                                            uint32_t now_ts) {
   int flags = 0;
   
@@ -87,12 +87,12 @@ int ReferencePictureSelection::EncodeFlags(int picture_id, bool send_refresh,
       received_ack_) {
     flags |= VP8_EFLAG_NO_REF_LAST;  
     if (update_golden_next_) {
-      flags |= VP8_EFLAG_FORCE_GF;  
+      flags |= VP8_EFLAG_FORCE_GF;    
       flags |= VP8_EFLAG_NO_UPD_ARF;  
-      flags |= VP8_EFLAG_NO_REF_GF;  
+      flags |= VP8_EFLAG_NO_REF_GF;   
     } else {
-      flags |= VP8_EFLAG_FORCE_ARF;  
-      flags |= VP8_EFLAG_NO_UPD_GF;  
+      flags |= VP8_EFLAG_FORCE_ARF;   
+      flags |= VP8_EFLAG_NO_UPD_GF;   
       flags |= VP8_EFLAG_NO_REF_ARF;  
     }
     last_sent_ref_picture_id_ = picture_id;
@@ -103,9 +103,9 @@ int ReferencePictureSelection::EncodeFlags(int picture_id, bool send_refresh,
     if (established_golden_)
       flags |= VP8_EFLAG_NO_REF_ARF;  
     else
-      flags |= VP8_EFLAG_NO_REF_GF;   
-    flags |= VP8_EFLAG_NO_UPD_GF;  
-    flags |= VP8_EFLAG_NO_UPD_ARF;  
+      flags |= VP8_EFLAG_NO_REF_GF;  
+    flags |= VP8_EFLAG_NO_UPD_GF;    
+    flags |= VP8_EFLAG_NO_UPD_ARF;   
   }
   return flags;
 }

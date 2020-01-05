@@ -19,8 +19,8 @@
 
 #include <string>
 
-#include "webrtc/system_wrappers/interface/atomic32.h"
-#include "webrtc/system_wrappers/interface/scoped_refptr.h"
+#include "webrtc/base/scoped_ref_ptr.h"
+#include "webrtc/system_wrappers/include/atomic32.h"
 
 namespace webrtc {
 
@@ -41,11 +41,12 @@ class SharedXDisplay {
   
   
   
-  static scoped_refptr<SharedXDisplay> Create(const std::string& display_name);
+  static rtc::scoped_refptr<SharedXDisplay> Create(
+      const std::string& display_name);
 
   
   
-  static scoped_refptr<SharedXDisplay> CreateDefault();
+  static rtc::scoped_refptr<SharedXDisplay> CreateDefault();
 
   void AddRef() { ++ref_count_; }
   void Release() {
@@ -75,7 +76,7 @@ class SharedXDisplay {
 
   EventHandlersMap event_handlers_;
 
-  DISALLOW_COPY_AND_ASSIGN(SharedXDisplay);
+  RTC_DISALLOW_COPY_AND_ASSIGN(SharedXDisplay);
 };
 
 }  

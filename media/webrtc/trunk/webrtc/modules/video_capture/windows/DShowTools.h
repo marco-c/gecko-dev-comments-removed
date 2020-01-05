@@ -24,7 +24,7 @@ public:
 
 
 
-    explicit CriticalSection(const char* aName)
+    CriticalSection(const char* aName)
     {
       ::InitializeCriticalSection(&mCriticalSection);
     }
@@ -81,13 +81,13 @@ public:
 
 
 
-    explicit CriticalSectionAutoEnter(mozilla::CriticalSection &aCriticalSection) :
+    CriticalSectionAutoEnter(mozilla::CriticalSection &aCriticalSection) :
         mCriticalSection(&aCriticalSection)
     {
         assert(mCriticalSection);
         mCriticalSection->Enter();
     }
-
+    
     ~CriticalSectionAutoEnter(void)
     {
         mCriticalSection->Leave();

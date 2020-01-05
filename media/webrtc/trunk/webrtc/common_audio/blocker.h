@@ -25,9 +25,9 @@ class BlockerCallback {
   virtual ~BlockerCallback() {}
 
   virtual void ProcessBlock(const float* const* input,
-                            int num_frames,
-                            int num_input_channels,
-                            int num_output_channels,
+                            size_t num_frames,
+                            size_t num_input_channels,
+                            size_t num_output_channels,
                             float* const* output) = 0;
 };
 
@@ -63,34 +63,34 @@ class BlockerCallback {
 
 class Blocker {
  public:
-  Blocker(int chunk_size,
-          int block_size,
-          int num_input_channels,
-          int num_output_channels,
+  Blocker(size_t chunk_size,
+          size_t block_size,
+          size_t num_input_channels,
+          size_t num_output_channels,
           const float* window,
-          int shift_amount,
+          size_t shift_amount,
           BlockerCallback* callback);
 
   void ProcessChunk(const float* const* input,
-                    int num_frames,
-                    int num_input_channels,
-                    int num_output_channels,
+                    size_t chunk_size,
+                    size_t num_input_channels,
+                    size_t num_output_channels,
                     float* const* output);
 
  private:
-  const int chunk_size_;
-  const int block_size_;
-  const int num_input_channels_;
-  const int num_output_channels_;
+  const size_t chunk_size_;
+  const size_t block_size_;
+  const size_t num_input_channels_;
+  const size_t num_output_channels_;
 
   
-  const int initial_delay_;
+  const size_t initial_delay_;
 
   
   
   
   
-  int frame_offset_;
+  size_t frame_offset_;
 
   
   
@@ -113,7 +113,7 @@ class Blocker {
 
   
   
-  int shift_amount_;
+  size_t shift_amount_;
 
   BlockerCallback* callback_;
 };

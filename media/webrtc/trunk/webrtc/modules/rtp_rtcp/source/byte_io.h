@@ -45,37 +45,104 @@ namespace webrtc {
 
 
 
-template<typename T, unsigned int B = sizeof(T),
-    bool is_signed = std::numeric_limits<T>::is_signed>
-class ByteReader {
+
+
+
+
+
+
+
+
+static_assert(
+    (-1 & 0x03) == 0x03,
+    "Only two's complement representation of signed integers supported.");
+
+
+#define kSizeErrorMsg "Byte size must be less than or equal to data type size."
+
+
+template <typename T>
+struct UnsignedOf;
+
+
+
+
+template <typename T,
+          unsigned int B = sizeof(T),
+          bool is_signed = std::numeric_limits<T>::is_signed>
+class ByteReader;
+
+
+template <typename T, unsigned int B>
+class ByteReader<T, B, false> {
  public:
   static T ReadBigEndian(const uint8_t* data) {
-    if (is_signed && B < sizeof(T)) {
-      return SignExtend(InternalReadBigEndian(data));
-    }
+    static_assert(B <= sizeof(T), kSizeErrorMsg);
     return InternalReadBigEndian(data);
   }
 
   static T ReadLittleEndian(const uint8_t* data) {
-    if (is_signed && B < sizeof(T)) {
-      return SignExtend(InternalReadLittleEndian(data));
-    }
+    static_assert(B <= sizeof(T), kSizeErrorMsg);
     return InternalReadLittleEndian(data);
   }
 
  private:
   static T InternalReadBigEndian(const uint8_t* data) {
     T val(0);
-    for (unsigned int i = 0; i < B; ++i) {
+    for (unsigned int i = 0; i < B; ++i)
       val |= static_cast<T>(data[i]) << ((B - 1 - i) * 8);
-    }
     return val;
   }
 
   static T InternalReadLittleEndian(const uint8_t* data) {
     T val(0);
-    for (unsigned int i = 0; i < B; ++i) {
+    for (unsigned int i = 0; i < B; ++i)
       val |= static_cast<T>(data[i]) << (i * 8);
+    return val;
+  }
+};
+
+
+template <typename T, unsigned int B>
+class ByteReader<T, B, true> {
+ public:
+  typedef typename UnsignedOf<T>::Type U;
+
+  static T ReadBigEndian(const uint8_t* data) {
+    U unsigned_val = ByteReader<T, B, false>::ReadBigEndian(data);
+    if (B < sizeof(T))
+      unsigned_val = SignExtend(unsigned_val);
+    return ReinterpretAsSigned(unsigned_val);
+  }
+
+  static T ReadLittleEndian(const uint8_t* data) {
+    U unsigned_val = ByteReader<T, B, false>::ReadLittleEndian(data);
+    if (B < sizeof(T))
+      unsigned_val = SignExtend(unsigned_val);
+    return ReinterpretAsSigned(unsigned_val);
+  }
+
+ private:
+  
+  
+  
+  
+  static T ReinterpretAsSigned(U unsigned_val) {
+    
+    const U kUnsignedHighestBitMask =
+        static_cast<U>(1) << ((sizeof(U) * 8) - 1);
+    
+    
+    const T kSignedHighestBitMask = std::numeric_limits<T>::min();
+
+    T val;
+    if ((unsigned_val & kUnsignedHighestBitMask) != 0) {
+      
+      
+      val = static_cast<T>(unsigned_val & ~kUnsignedHighestBitMask);
+      val |= kSignedHighestBitMask;
+    } else {
+      val = static_cast<T>(unsigned_val);
     }
     return val;
   }
@@ -85,16 +152,16 @@ class ByteReader {
   
   
   
-  static T SignExtend(const T val) {
-    uint8_t msb = static_cast<uint8_t>(val >> ((B - 1) * 8));
-    if (msb & 0x80) {
+  static U SignExtend(const U val) {
+    const uint8_t kMsb = static_cast<uint8_t>(val >> ((B - 1) * 8));
+    if ((kMsb & 0x80) != 0) {
       
       
       
-      T sign_extend = (sizeof(T) == B ? 0 :
-          (static_cast<T>(-1L) << ((B % sizeof(T)) * 8)));
-
-      return val | sign_extend;
+      
+      
+      const U kUsedBitsMask = (1 << ((B % sizeof(T)) * 8)) - 1;
+      return ~kUsedBitsMask | val;
     }
     return val;
   }
@@ -102,16 +169,24 @@ class ByteReader {
 
 
 
-template<typename T, unsigned int B = sizeof(T)>
-class ByteWriter {
+template <typename T,
+          unsigned int B = sizeof(T),
+          bool is_signed = std::numeric_limits<T>::is_signed>
+class ByteWriter;
+
+
+template <typename T, unsigned int B>
+class ByteWriter<T, B, false> {
  public:
   static void WriteBigEndian(uint8_t* data, T val) {
+    static_assert(B <= sizeof(T), kSizeErrorMsg);
     for (unsigned int i = 0; i < B; ++i) {
       data[i] = val >> ((B - 1 - i) * 8);
     }
   }
 
   static void WriteLittleEndian(uint8_t* data, T val) {
+    static_assert(B <= sizeof(T), kSizeErrorMsg);
     for (unsigned int i = 0; i < B; ++i) {
       data[i] = val >> (i * 8);
     }
@@ -119,54 +194,137 @@ class ByteWriter {
 };
 
 
+template <typename T, unsigned int B>
+class ByteWriter<T, B, true> {
+ public:
+  typedef typename UnsignedOf<T>::Type U;
+
+  static void WriteBigEndian(uint8_t* data, T val) {
+    ByteWriter<U, B, false>::WriteBigEndian(data, ReinterpretAsUnsigned(val));
+  }
+
+  static void WriteLittleEndian(uint8_t* data, T val) {
+    ByteWriter<U, B, false>::WriteLittleEndian(data,
+                                               ReinterpretAsUnsigned(val));
+  }
+
+ private:
+  static U ReinterpretAsUnsigned(T val) {
+    
+    
+    
+    
+    
+    
+    return static_cast<U>(val);
+  }
+};
+
+
+
+template <>
+struct UnsignedOf<int8_t> {
+  typedef uint8_t Type;
+};
+template <>
+struct UnsignedOf<int16_t> {
+  typedef uint16_t Type;
+};
+template <>
+struct UnsignedOf<int32_t> {
+  typedef uint32_t Type;
+};
+template <>
+struct UnsignedOf<int64_t> {
+  typedef uint64_t Type;
+};
 
 
 
 
-template<typename T, bool is_signed>
-class ByteReader<T, 2, is_signed> {
+
+
+
+template <typename T>
+class ByteReader<T, 1, false> {
  public:
   static T ReadBigEndian(const uint8_t* data) {
+    static_assert(sizeof(T) == 1, kSizeErrorMsg);
+    return data[0];
+  }
+
+  static T ReadLittleEndian(const uint8_t* data) {
+    static_assert(sizeof(T) == 1, kSizeErrorMsg);
+    return data[0];
+  }
+};
+
+template <typename T>
+class ByteWriter<T, 1, false> {
+ public:
+  static void WriteBigEndian(uint8_t* data, T val) {
+    static_assert(sizeof(T) == 1, kSizeErrorMsg);
+    data[0] = val;
+  }
+
+  static void WriteLittleEndian(uint8_t* data, T val) {
+    static_assert(sizeof(T) == 1, kSizeErrorMsg);
+    data[0] = val;
+  }
+};
+
+
+template <typename T>
+class ByteReader<T, 2, false> {
+ public:
+  static T ReadBigEndian(const uint8_t* data) {
+    static_assert(sizeof(T) >= 2, kSizeErrorMsg);
     return (data[0] << 8) | data[1];
   }
 
   static T ReadLittleEndian(const uint8_t* data) {
+    static_assert(sizeof(T) >= 2, kSizeErrorMsg);
     return data[0] | (data[1] << 8);
   }
 };
 
-template<typename T>
-class ByteWriter<T, 2> {
+template <typename T>
+class ByteWriter<T, 2, false> {
  public:
   static void WriteBigEndian(uint8_t* data, T val) {
+    static_assert(sizeof(T) >= 2, kSizeErrorMsg);
     data[0] = val >> 8;
     data[1] = val;
   }
 
   static void WriteLittleEndian(uint8_t* data, T val) {
+    static_assert(sizeof(T) >= 2, kSizeErrorMsg);
     data[0] = val;
     data[1] = val >> 8;
   }
 };
 
 
-template<typename T, bool is_signed>
-class ByteReader<T, 4, is_signed> {
+template <typename T>
+class ByteReader<T, 4, false> {
  public:
   static T ReadBigEndian(const uint8_t* data) {
+    static_assert(sizeof(T) >= 4, kSizeErrorMsg);
     return (data[0] << 24) | (data[1] << 16) | (data[2] << 8) | data[3];
   }
 
   static T ReadLittleEndian(const uint8_t* data) {
+    static_assert(sizeof(T) >= 4, kSizeErrorMsg);
     return data[0] | (data[1] << 8) | (data[2] << 16) | (data[3] << 24);
   }
 };
 
 
-template<typename T>
-class ByteWriter<T, 4> {
+template <typename T>
+class ByteWriter<T, 4, false> {
  public:
   static void WriteBigEndian(uint8_t* data, T val) {
+    static_assert(sizeof(T) >= 4, kSizeErrorMsg);
     data[0] = val >> 24;
     data[1] = val >> 16;
     data[2] = val >> 8;
@@ -174,6 +332,7 @@ class ByteWriter<T, 4> {
   }
 
   static void WriteLittleEndian(uint8_t* data, T val) {
+    static_assert(sizeof(T) >= 4, kSizeErrorMsg);
     data[0] = val;
     data[1] = val >> 8;
     data[2] = val >> 16;
@@ -182,10 +341,11 @@ class ByteWriter<T, 4> {
 };
 
 
-template<typename T, bool is_signed>
-class ByteReader<T, 8, is_signed> {
+template <typename T>
+class ByteReader<T, 8, false> {
  public:
   static T ReadBigEndian(const uint8_t* data) {
+    static_assert(sizeof(T) >= 8, kSizeErrorMsg);
     return
         (Get(data, 0) << 56) | (Get(data, 1) << 48) |
         (Get(data, 2) << 40) | (Get(data, 3) << 32) |
@@ -194,6 +354,7 @@ class ByteReader<T, 8, is_signed> {
   }
 
   static T ReadLittleEndian(const uint8_t* data) {
+    static_assert(sizeof(T) >= 8, kSizeErrorMsg);
     return
          Get(data, 0)        | (Get(data, 1) << 8)  |
         (Get(data, 2) << 16) | (Get(data, 3) << 24) |
@@ -207,10 +368,11 @@ class ByteReader<T, 8, is_signed> {
   }
 };
 
-template<typename T>
-class ByteWriter<T, 8> {
+template <typename T>
+class ByteWriter<T, 8, false> {
  public:
   static void WriteBigEndian(uint8_t* data, T val) {
+    static_assert(sizeof(T) >= 8, kSizeErrorMsg);
     data[0] = val >> 56;
     data[1] = val >> 48;
     data[2] = val >> 40;
@@ -222,6 +384,7 @@ class ByteWriter<T, 8> {
   }
 
   static void WriteLittleEndian(uint8_t* data, T val) {
+    static_assert(sizeof(T) >= 8, kSizeErrorMsg);
     data[0] = val;
     data[1] = val >> 8;
     data[2] = val >> 16;

@@ -23,7 +23,7 @@ namespace {
 
 TEST_F(VadTest, vad_sp) {
   VadInstT* self = reinterpret_cast<VadInstT*>(malloc(sizeof(VadInstT)));
-  const int kMaxFrameLenSp = 960;  
+  const size_t kMaxFrameLenSp = 960;  
   int16_t zeros[kMaxFrameLenSp] = { 0 };
   int32_t state[2] = { 0 };
   int16_t data_in[kMaxFrameLenSp];
@@ -40,14 +40,14 @@ TEST_F(VadTest, vad_sp) {
 
   
   
-  for (int16_t i = 0; i < kMaxFrameLenSp; ++i) {
-    data_in[i] = (i * i);
+  for (size_t i = 0; i < kMaxFrameLenSp; ++i) {
+    data_in[i] = static_cast<int16_t>(i * i);
   }
   
   WebRtcVad_Downsampling(zeros, data_out, state, kMaxFrameLenSp);
   EXPECT_EQ(0, state[0]);
   EXPECT_EQ(0, state[1]);
-  for (int16_t i = 0; i < kMaxFrameLenSp / 2; ++i) {
+  for (size_t i = 0; i < kMaxFrameLenSp / 2; ++i) {
     EXPECT_EQ(0, data_out[i]);
   }
   

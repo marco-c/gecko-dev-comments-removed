@@ -11,7 +11,7 @@
 #ifndef WEBRTC_BASE_MACCONVERSION_H_
 #define WEBRTC_BASE_MACCONVERSION_H_
 
-#if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
+#if defined(WEBRTC_MAC) || defined(WEBRTC_IOS)
 
 #include <CoreFoundation/CoreFoundation.h>
 

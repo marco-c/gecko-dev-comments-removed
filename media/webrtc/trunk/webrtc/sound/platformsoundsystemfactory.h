@@ -20,16 +20,14 @@ namespace rtc {
 class PlatformSoundSystemFactory : public SoundSystemFactory {
  public:
   PlatformSoundSystemFactory();
-  virtual ~PlatformSoundSystemFactory();
+  ~PlatformSoundSystemFactory() override;
 
  protected:
   
-  virtual bool SetupInstance();
-  virtual void CleanupInstance();
+  bool SetupInstance() override;
+  void CleanupInstance() override;
 };
 
 }  
 
 #endif  
-
-

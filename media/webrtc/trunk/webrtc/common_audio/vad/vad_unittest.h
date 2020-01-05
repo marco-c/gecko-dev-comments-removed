@@ -28,8 +28,8 @@ const int kRates[] = { 8000, 12000, 16000, 24000, 32000, 48000 };
 const size_t kRatesSize = sizeof(kRates) / sizeof(*kRates);
 
 
-const int kMaxFrameLength = 1440;
-const int kFrameLengths[] = { 80, 120, 160, 240, 320, 480, 640, 960,
+const size_t kMaxFrameLength = 1440;
+const size_t kFrameLengths[] = { 80, 120, 160, 240, 320, 480, 640, 960,
     kMaxFrameLength };
 const size_t kFrameLengthsSize = sizeof(kFrameLengths) / sizeof(*kFrameLengths);
 
@@ -42,7 +42,7 @@ class VadTest : public ::testing::Test {
   virtual void TearDown();
 
   
-  bool ValidRatesAndFrameLengths(int rate, int frame_length);
+  bool ValidRatesAndFrameLengths(int rate, size_t frame_length);
 };
 
 #endif  

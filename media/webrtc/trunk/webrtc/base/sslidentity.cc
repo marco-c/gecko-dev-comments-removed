@@ -15,21 +15,17 @@
 
 #include "webrtc/base/sslidentity.h"
 
+#include <ctime>
 #include <string>
 
 #include "webrtc/base/base64.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/sslconfig.h"
 
-#if SSL_USE_SCHANNEL
-
-#elif SSL_USE_OPENSSL  
+#if SSL_USE_OPENSSL
 
 #include "webrtc/base/opensslidentity.h"
-
-#elif SSL_USE_NSS  
-
-#include "webrtc/base/nssidentity.h"
 
 #endif  
 
@@ -37,6 +33,60 @@ namespace rtc {
 
 const char kPemTypeCertificate[] = "CERTIFICATE";
 const char kPemTypeRsaPrivateKey[] = "RSA PRIVATE KEY";
+const char kPemTypeEcPrivateKey[] = "EC PRIVATE KEY";
+
+KeyParams::KeyParams(KeyType key_type) {
+  if (key_type == KT_ECDSA) {
+    type_ = KT_ECDSA;
+    params_.curve = EC_NIST_P256;
+  } else if (key_type == KT_RSA) {
+    type_ = KT_RSA;
+    params_.rsa.mod_size = kRsaDefaultModSize;
+    params_.rsa.pub_exp = kRsaDefaultExponent;
+  } else {
+    RTC_NOTREACHED();
+  }
+}
+
+
+KeyParams KeyParams::RSA(int mod_size, int pub_exp) {
+  KeyParams kt(KT_RSA);
+  kt.params_.rsa.mod_size = mod_size;
+  kt.params_.rsa.pub_exp = pub_exp;
+  return kt;
+}
+
+
+KeyParams KeyParams::ECDSA(ECCurve curve) {
+  KeyParams kt(KT_ECDSA);
+  kt.params_.curve = curve;
+  return kt;
+}
+
+bool KeyParams::IsValid() const {
+  if (type_ == KT_RSA) {
+    return (params_.rsa.mod_size >= kRsaMinModSize &&
+            params_.rsa.mod_size <= kRsaMaxModSize &&
+            params_.rsa.pub_exp > params_.rsa.mod_size);
+  } else if (type_ == KT_ECDSA) {
+    return (params_.curve == EC_NIST_P256);
+  }
+  return false;
+}
+
+RSAParams KeyParams::rsa_params() const {
+  RTC_DCHECK(type_ == KT_RSA);
+  return params_.rsa;
+}
+
+ECCurve KeyParams::ec_curve() const {
+  RTC_DCHECK(type_ == KT_ECDSA);
+  return params_.curve;
+}
+
+KeyType IntKeyTypeFamilyToKeyType(int key_type_family) {
+  return static_cast<KeyType>(key_type_family);
+}
 
 bool SSLIdentity::PemToDer(const std::string& pem_type,
                            const std::string& pem_string,
@@ -102,33 +152,15 @@ SSLCertChain::~SSLCertChain() {
   std::for_each(certs_.begin(), certs_.end(), DeleteCert);
 }
 
-#if SSL_USE_SCHANNEL
-
-SSLCertificate* SSLCertificate::FromPEMString(const std::string& pem_string) {
-  return NULL;
-}
-
-SSLIdentity* SSLIdentity::Generate(const std::string& common_name) {
-  return NULL;
-}
-
-SSLIdentity* GenerateForTest(const SSLIdentityParams& params) {
-  return NULL;
-}
-
-SSLIdentity* SSLIdentity::FromPEMStrings(const std::string& private_key,
-                                         const std::string& certificate) {
-  return NULL;
-}
-
-#elif SSL_USE_OPENSSL  
+#if SSL_USE_OPENSSL
 
 SSLCertificate* SSLCertificate::FromPEMString(const std::string& pem_string) {
   return OpenSSLCertificate::FromPEMString(pem_string);
 }
 
-SSLIdentity* SSLIdentity::Generate(const std::string& common_name) {
-  return OpenSSLIdentity::Generate(common_name);
+SSLIdentity* SSLIdentity::Generate(const std::string& common_name,
+                                   const KeyParams& key_params) {
+  return OpenSSLIdentity::Generate(common_name, key_params);
 }
 
 SSLIdentity* SSLIdentity::GenerateForTest(const SSLIdentityParams& params) {
@@ -140,29 +172,80 @@ SSLIdentity* SSLIdentity::FromPEMStrings(const std::string& private_key,
   return OpenSSLIdentity::FromPEMStrings(private_key, certificate);
 }
 
-#elif SSL_USE_NSS  
-
-SSLCertificate* SSLCertificate::FromPEMString(const std::string& pem_string) {
-  return NSSCertificate::FromPEMString(pem_string);
-}
-
-SSLIdentity* SSLIdentity::Generate(const std::string& common_name) {
-  return NSSIdentity::Generate(common_name);
-}
-
-SSLIdentity* SSLIdentity::GenerateForTest(const SSLIdentityParams& params) {
-  return NSSIdentity::GenerateForTest(params);
-}
-
-SSLIdentity* SSLIdentity::FromPEMStrings(const std::string& private_key,
-                                         const std::string& certificate) {
-  return NSSIdentity::FromPEMStrings(private_key, certificate);
-}
-
 #else  
 
 #error "No SSL implementation"
 
 #endif  
+
+
+
+static inline int ASN1ReadInt(const unsigned char** pp, size_t* np, size_t n) {
+  const unsigned char* p = *pp;
+  int x = 0;
+  for (size_t i = 0; i < n; i++)
+    x = 10 * x + p[i] - '0';
+  *pp = p + n;
+  *np = *np - n;
+  return x;
+}
+
+int64_t ASN1TimeToSec(const unsigned char* s, size_t length, bool long_format) {
+  size_t bytes_left = length;
+
+  
+  
+  if (length == 0 || s[length - 1] != 'Z')
+    return -1;
+
+  
+  
+  size_t n = strspn(reinterpret_cast<const char*>(s), "0123456789");
+  if (n + 1 != length)
+    return -1;
+
+  int year;
+
+  
+  
+  if (long_format) {
+    
+    
+
+    if (bytes_left < 11)
+      return -1;
+
+    year = ASN1ReadInt(&s, &bytes_left, 4);
+    year -= 1900;
+  } else {
+    
+    
+
+    if (bytes_left < 9)
+      return -1;
+
+    year = ASN1ReadInt(&s, &bytes_left, 2);
+    if (year < 50)  
+      year += 100;
+  }
+
+  std::tm tm;
+  tm.tm_year = year;
+
+  
+  
+  tm.tm_mon = ASN1ReadInt(&s, &bytes_left, 2) - 1;
+  tm.tm_mday = ASN1ReadInt(&s, &bytes_left, 2);
+  tm.tm_hour = ASN1ReadInt(&s, &bytes_left, 2);
+  tm.tm_min = ASN1ReadInt(&s, &bytes_left, 2);
+  tm.tm_sec = ASN1ReadInt(&s, &bytes_left, 2);
+
+  if (bytes_left != 1) {
+    
+    return -1;
+  }
+
+  return TmToSeconds(tm);
+}
 
 }  

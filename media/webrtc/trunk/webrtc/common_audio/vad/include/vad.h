@@ -12,11 +12,11 @@
 #define WEBRTC_COMMON_AUDIO_VAD_INCLUDE_VAD_H_
 
 #include "webrtc/base/checks.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_audio/vad/include/webrtc_vad.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
-
 
 class Vad {
  public:
@@ -29,17 +29,22 @@ class Vad {
 
   enum Activity { kPassive = 0, kActive = 1, kError = -1 };
 
-  explicit Vad(enum Aggressiveness mode);
+  virtual ~Vad() = default;
 
-  virtual ~Vad();
-
+  
+  
+  
   virtual Activity VoiceActivity(const int16_t* audio,
                                  size_t num_samples,
-                                 int sample_rate_hz);
+                                 int sample_rate_hz) = 0;
 
- private:
-  VadInst* handle_;
+  
+  virtual void Reset() = 0;
 };
 
+
+rtc::scoped_ptr<Vad> CreateVad(Vad::Aggressiveness aggressiveness);
+
 }  
+
 #endif  

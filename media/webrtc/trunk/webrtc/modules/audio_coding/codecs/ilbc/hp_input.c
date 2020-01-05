@@ -30,9 +30,9 @@ void WebRtcIlbcfix_HpInput(
     int16_t *y,      
 
     int16_t *x,      
-    int16_t len)      
+    size_t len)      
 {
-  int i;
+  size_t i;
   int32_t tmpW32;
   int32_t tmpW32b;
 

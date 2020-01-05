@@ -12,8 +12,10 @@
 #define WEBRTC_MODULES_AUDIO_CODING_NETEQ_DECODER_DATABASE_H_
 
 #include <map>
+#include <string>
 
 #include "webrtc/base/constructormagic.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_types.h"  
 #include "webrtc/modules/audio_coding/neteq/audio_decoder_impl.h"
 #include "webrtc/modules/audio_coding/neteq/packet.h"
@@ -35,26 +37,28 @@ class DecoderDatabase {
 
   
   struct DecoderInfo {
-    
-    DecoderInfo()
-        : codec_type(kDecoderArbitrary),
-          fs_hz(8000),
-          decoder(NULL),
-          external(false) {
-    }
+    DecoderInfo() = default;
     DecoderInfo(NetEqDecoder ct, int fs, AudioDecoder* dec, bool ext)
+        : DecoderInfo(ct, "", fs, dec, ext) {}
+    DecoderInfo(NetEqDecoder ct,
+                const std::string& nm,
+                int fs,
+                AudioDecoder* dec,
+                bool ext)
         : codec_type(ct),
+          name(nm),
           fs_hz(fs),
+          rtp_sample_rate_hz(fs),
           decoder(dec),
-          external(ext) {
-    }
-    
+          external(ext) {}
     ~DecoderInfo();
 
-    NetEqDecoder codec_type;
-    int fs_hz;
-    AudioDecoder* decoder;
-    bool external;
+    NetEqDecoder codec_type = NetEqDecoder::kDecoderArbitrary;
+    std::string name;
+    int fs_hz = 8000;
+    int rtp_sample_rate_hz = 8000;
+    AudioDecoder* decoder = nullptr;
+    bool external = false;
   };
 
   
@@ -78,14 +82,19 @@ class DecoderDatabase {
 
   
   
+  
+  
   virtual int RegisterPayload(uint8_t rtp_payload_type,
-                              NetEqDecoder codec_type);
+                              NetEqDecoder codec_type,
+                              const std::string& name);
 
   
   
   virtual int InsertExternal(uint8_t rtp_payload_type,
                              NetEqDecoder codec_type,
-                             int fs_hz, AudioDecoder* decoder);
+                             const std::string& codec_name,
+                             int fs_hz,
+                             AudioDecoder* decoder);
 
   
   
@@ -147,7 +156,7 @@ class DecoderDatabase {
   int active_decoder_;
   int active_cng_decoder_;
 
-  DISALLOW_COPY_AND_ASSIGN(DecoderDatabase);
+  RTC_DISALLOW_COPY_AND_ASSIGN(DecoderDatabase);
 };
 
 }  

@@ -13,17 +13,19 @@
 #include <list>
 
 #include "webrtc/base/constructormagic.h"
-#include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/bwe_defines.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
 enum RateControlRegion;
 
+bool AdaptiveThresholdExperimentIsEnabled();
+
 class OveruseDetector {
  public:
   explicit OveruseDetector(const OverUseDetectorOptions& options);
-  ~OveruseDetector();
+  virtual ~OveruseDetector();
 
   
   
@@ -31,27 +33,33 @@ class OveruseDetector {
   
   
   
-  BandwidthUsage Detect(double offset, double timestamp_delta,
-                        int num_of_deltas);
+  BandwidthUsage Detect(double offset,
+                        double timestamp_delta,
+                        int num_of_deltas,
+                        int64_t now_ms);
 
   
   BandwidthUsage State() const;
 
-  
-  
-  void SetRateControlRegion(webrtc::RateControlRegion region);
-
  private:
+  void UpdateThreshold(double modified_offset, int64_t now_ms);
+  void InitializeExperiment();
+
+  const bool in_experiment_;
+  double k_up_;
+  double k_down_;
+  double overusing_time_threshold_;
   
   
   webrtc::OverUseDetectorOptions options_;
   double threshold_;
+  int64_t last_update_ms_;
   double prev_offset_;
   double time_over_using_;
   int overuse_counter_;
   BandwidthUsage hypothesis_;
 
-  DISALLOW_COPY_AND_ASSIGN(OveruseDetector);
+  RTC_DISALLOW_COPY_AND_ASSIGN(OveruseDetector);
 };
 }  
 

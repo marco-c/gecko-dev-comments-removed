@@ -11,88 +11,218 @@
 #ifndef WEBRTC_BASE_BUFFER_H_
 #define WEBRTC_BASE_BUFFER_H_
 
-#include <string.h>
+#include <algorithm>  
+#include <cassert>
+#include <cstring>
+#include <utility>  
 
-
-
+#include "webrtc/base/deprecation.h"
 #include "webrtc/base/scoped_ptr.h"
 
 namespace rtc {
+
+namespace internal {
+
+
+
+
+
+
+
+
+
+template <typename T>
+struct ByteType {
+ private:
+  static int F(uint8_t*);
+  static int F(int8_t*);
+  static int F(char*);
+
+ public:
+  using t = decltype(F(static_cast<T*>(nullptr)));
+};
+
+}  
 
 
 
 class Buffer {
  public:
-  Buffer();
+  Buffer();                   
+  Buffer(const Buffer& buf);  
+  Buffer(Buffer&& buf);       
+
+  
   explicit Buffer(size_t size);
-  Buffer(const void* data, size_t size);
-  Buffer(const void* data, size_t size, size_t capacity);
-  Buffer(const Buffer& buf);
+  Buffer(size_t size, size_t capacity);
+
+  
+  
+  template <typename T, typename internal::ByteType<T>::t = 0>
+  Buffer(const T* data, size_t size)
+      : Buffer(data, size, size) {}
+  template <typename T, typename internal::ByteType<T>::t = 0>
+  Buffer(const T* data, size_t size, size_t capacity)
+      : Buffer(size, capacity) {
+    std::memcpy(data_.get(), data, size);
+  }
+
+  
+  template <typename T, size_t N, typename internal::ByteType<T>::t = 0>
+  Buffer(const T(&array)[N])
+      : Buffer(array, N) {}
+
   ~Buffer();
 
-  const char* data() const { return data_.get(); }
-  char* data() { return data_.get(); }
-  size_t size() const { return size_; }
-  size_t capacity() const { return capacity_; }
+  
+  
+  template <typename T = uint8_t, typename internal::ByteType<T>::t = 0>
+  const T* data() const {
+    assert(IsConsistent());
+    return reinterpret_cast<T*>(data_.get());
+  }
+  template <typename T = uint8_t, typename internal::ByteType<T>::t = 0>
+  T* data() {
+    assert(IsConsistent());
+    return reinterpret_cast<T*>(data_.get());
+  }
 
-  
-  
-  size_t length() const { return size(); }
+  size_t size() const {
+    assert(IsConsistent());
+    return size_;
+  }
+  size_t capacity() const {
+    assert(IsConsistent());
+    return capacity_;
+  }
 
   Buffer& operator=(const Buffer& buf) {
-    if (&buf != this) {
-      Construct(buf.data(), buf.size(), buf.size());
-    }
+    if (&buf != this)
+      SetData(buf.data(), buf.size());
     return *this;
   }
-  bool operator==(const Buffer& buf) const {
-    return (size_ == buf.size() && memcmp(data_.get(), buf.data(), size_) == 0);
-  }
-  bool operator!=(const Buffer& buf) const {
-    return !operator==(buf);
+  Buffer& operator=(Buffer&& buf) {
+    assert(IsConsistent());
+    assert(buf.IsConsistent());
+    size_ = buf.size_;
+    capacity_ = buf.capacity_;
+    data_ = std::move(buf.data_);
+    buf.OnMovedFrom();
+    return *this;
   }
 
-  void SetData(const void* data, size_t size) {
-    assert(data != NULL || size == 0);
-    SetSize(size);
-    memcpy(data_.get(), data, size);
+  bool operator==(const Buffer& buf) const {
+    assert(IsConsistent());
+    return size_ == buf.size() && memcmp(data_.get(), buf.data(), size_) == 0;
   }
-  void AppendData(const void* data, size_t size) {
-    assert(data != NULL || size == 0);
-    size_t old_size = size_;
-    SetSize(size_ + size);
-    memcpy(data_.get() + old_size, data, size);
+
+  bool operator!=(const Buffer& buf) const { return !(*this == buf); }
+
+  
+  
+  template <typename T, typename internal::ByteType<T>::t = 0>
+  void SetData(const T* data, size_t size) {
+    assert(IsConsistent());
+    size_ = 0;
+    AppendData(data, size);
   }
+  template <typename T, size_t N, typename internal::ByteType<T>::t = 0>
+  void SetData(const T(&array)[N]) {
+    SetData(array, N);
+  }
+  void SetData(const Buffer& buf) { SetData(buf.data(), buf.size()); }
+
+  
+  template <typename T, typename internal::ByteType<T>::t = 0>
+  void AppendData(const T* data, size_t size) {
+    assert(IsConsistent());
+    const size_t new_size = size_ + size;
+    EnsureCapacity(new_size);
+    std::memcpy(data_.get() + size_, data, size);
+    size_ = new_size;
+    assert(IsConsistent());
+  }
+  template <typename T, size_t N, typename internal::ByteType<T>::t = 0>
+  void AppendData(const T(&array)[N]) {
+    AppendData(array, N);
+  }
+  void AppendData(const Buffer& buf) { AppendData(buf.data(), buf.size()); }
+
+  
+  
+  
+  
   void SetSize(size_t size) {
-    SetCapacity(size);
+    EnsureCapacity(size);
     size_ = size;
   }
-  void SetCapacity(size_t capacity) {
-    if (capacity > capacity_) {
-      rtc::scoped_ptr<char[]> data(new char[capacity]);
-      memcpy(data.get(), data_.get(), size_);
-      data_.swap(data);
-      capacity_ = capacity;
-    }
+
+  
+  
+  
+  void EnsureCapacity(size_t capacity) {
+    assert(IsConsistent());
+    if (capacity <= capacity_)
+      return;
+    scoped_ptr<uint8_t[]> new_data(new uint8_t[capacity]);
+    std::memcpy(new_data.get(), data_.get(), size_);
+    data_ = std::move(new_data);
+    capacity_ = capacity;
+    assert(IsConsistent());
   }
 
-  void TransferTo(Buffer* buf) {
-    assert(buf != NULL);
-    buf->data_.reset(data_.release());
-    buf->size_ = size_;
-    buf->capacity_ = capacity_;
-    Construct(NULL, 0, 0);
+  
+  
+  RTC_DEPRECATED Buffer&& Pass() { return DEPRECATED_Pass(); }
+  Buffer&& DEPRECATED_Pass() {
+    assert(IsConsistent());
+    return std::move(*this);
   }
 
- protected:
-  void Construct(const void* data, size_t size, size_t capacity) {
-    data_.reset(new char[capacity_ = capacity]);
-    SetData(data, size);
+  
+  
+  void Clear() {
+    data_.reset();
+    size_ = 0;
+    capacity_ = 0;
+    assert(IsConsistent());
   }
 
-  scoped_ptr<char[]> data_;
+  
+  friend void swap(Buffer& a, Buffer& b) {
+    using std::swap;
+    swap(a.size_, b.size_);
+    swap(a.capacity_, b.capacity_);
+    swap(a.data_, b.data_);
+  }
+
+ private:
+  
+  
+  
+  
+  bool IsConsistent() const {
+    return (data_ || capacity_ == 0) && capacity_ >= size_;
+  }
+
+  
+  
+  void OnMovedFrom() {
+#ifdef NDEBUG
+    
+    
+    size_ = 0;
+    capacity_ = 0;
+#else
+    
+    size_ = 1;
+    capacity_ = 0;
+#endif
+  }
+
   size_t size_;
   size_t capacity_;
+  scoped_ptr<uint8_t[]> data_;
 };
 
 }  

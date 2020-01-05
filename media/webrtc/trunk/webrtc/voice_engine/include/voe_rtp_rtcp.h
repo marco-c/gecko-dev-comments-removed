@@ -44,38 +44,35 @@
 
 namespace webrtc {
 
-class ViENetwork;
 class VoiceEngine;
 
 
-class WEBRTC_DLLEXPORT VoERTPObserver
-{
-public:
-    virtual void OnIncomingCSRCChanged(
-        int channel, unsigned int CSRC, bool added) = 0;
+class WEBRTC_DLLEXPORT VoERTPObserver {
+ public:
+  virtual void OnIncomingCSRCChanged(int channel,
+                                     unsigned int CSRC,
+                                     bool added) = 0;
 
-    virtual void OnIncomingSSRCChanged(
-        int channel, unsigned int SSRC) = 0;
+  virtual void OnIncomingSSRCChanged(int channel, unsigned int SSRC) = 0;
 
-protected:
-    virtual ~VoERTPObserver() {}
+ protected:
+  virtual ~VoERTPObserver() {}
 };
 
 
-struct CallStatistics
-{
-    unsigned short fractionLost;
-    unsigned int cumulativeLost;
-    unsigned int extendedMax;
-    unsigned int jitterSamples;
-    int64_t rttMs;
-    size_t bytesSent;
-    int packetsSent;
-    size_t bytesReceived;
-    int packetsReceived;
-    
-    
-    int64_t capture_start_ntp_time_ms_;
+struct CallStatistics {
+  unsigned short fractionLost;
+  unsigned int cumulativeLost;
+  unsigned int extendedMax;
+  unsigned int jitterSamples;
+  int64_t rttMs;
+  size_t bytesSent;
+  int packetsSent;
+  size_t bytesReceived;
+  int packetsReceived;
+  
+  
+  int64_t capture_start_ntp_time_ms_;
 };
 
 
@@ -89,7 +86,7 @@ struct SenderInfo {
 
 
 struct ReportBlock {
-  uint32_t sender_SSRC; 
+  uint32_t sender_SSRC;  
   uint32_t source_SSRC;
   uint8_t fraction_lost;
   uint32_t cumulative_num_packets_lost;
@@ -100,179 +97,119 @@ struct ReportBlock {
 };
 
 
-class WEBRTC_DLLEXPORT VoERTP_RTCP
-{
-public:
+class WEBRTC_DLLEXPORT VoERTP_RTCP {
+ public:
+  
+  
+  
+  static VoERTP_RTCP* GetInterface(VoiceEngine* voiceEngine);
 
-    
-    
-    
-    static VoERTP_RTCP* GetInterface(VoiceEngine* voiceEngine);
+  
+  
+  
+  
+  virtual int Release() = 0;
 
-    
-    
-    
-    
-    virtual int Release() = 0;
+  
+  virtual int SetLocalSSRC(int channel, unsigned int ssrc) = 0;
 
-    
-    virtual int SetLocalSSRC(int channel, unsigned int ssrc) = 0;
+  
+  virtual int GetLocalSSRC(int channel, unsigned int& ssrc) = 0;
 
-    
-    virtual int GetLocalSSRC(int channel, unsigned int& ssrc) = 0;
+  
+  virtual int GetRemoteSSRC(int channel, unsigned int& ssrc) = 0;
 
-    
-    virtual int GetRemoteSSRC(int channel, unsigned int& ssrc) = 0;
-
-    
-    virtual int SetSendAudioLevelIndicationStatus(int channel,
-                                                  bool enable,
-                                                  unsigned char id = 1) = 0;
-
-    
-    
-    virtual int SetReceiveAudioLevelIndicationStatus(int channel,
-                                                     bool enable,
-                                                     unsigned char id = 1) {
-      
-      return 0;
-    }
-
-    
-    virtual int SetSendAbsoluteSenderTimeStatus(int channel,
+  
+  virtual int SetSendAudioLevelIndicationStatus(int channel,
                                                 bool enable,
-                                                unsigned char id) = 0;
+                                                unsigned char id = 1) = 0;
 
-    
-    virtual int SetReceiveAbsoluteSenderTimeStatus(int channel,
+  
+  
+  virtual int SetReceiveAudioLevelIndicationStatus(int channel,
                                                    bool enable,
-                                                   unsigned char id) = 0;
+                                                   unsigned char id = 1) {
+    
+    return 0;
+  }
 
-    
-    virtual int SetRTCPStatus(int channel, bool enable) = 0;
+  
+  virtual int SetSendAbsoluteSenderTimeStatus(int channel,
+                                              bool enable,
+                                              unsigned char id) = 0;
 
-    
-    virtual int GetRTCPStatus(int channel, bool& enabled) = 0;
+  
+  virtual int SetReceiveAbsoluteSenderTimeStatus(int channel,
+                                                 bool enable,
+                                                 unsigned char id) = 0;
 
-    
-    
-    virtual int SetRTCP_CNAME(int channel, const char cName[256]) = 0;
+  
+  virtual int SetRTCPStatus(int channel, bool enable) = 0;
 
-    
-    
-    virtual int GetRTCP_CNAME(int channel, char cName[256]) {
-      return -1;
-    }
+  
+  virtual int GetRTCPStatus(int channel, bool& enabled) = 0;
 
-    
-    
-    virtual int GetRemoteRTCP_CNAME(int channel, char cName[256]) = 0;
+  
+  
+  virtual int SetRTCP_CNAME(int channel, const char cName[256]) = 0;
 
-    
-    virtual int GetRemoteRTCPReceiverInfo(
-        int channel, uint32_t& NTPHigh, uint32_t& NTPLow,
-        uint32_t& receivedPacketCount, uint64_t& receivedOctetCount,
-        uint32_t& jitter, uint16_t& fractionLost,
-        uint32_t& cumulativeLost,
-        int32_t& rttMs) = 0;
+  
+  
+  virtual int GetRTCP_CNAME(int channel, char cName[256]) { return -1; }
 
-    
-    virtual int GetRTPStatistics(
-        int channel, unsigned int& averageJitterMs, unsigned int& maxJitterMs,
-        unsigned int& discardedPackets, unsigned int& cumulativeLost) = 0;
+  
+  
+  virtual int GetRemoteRTCP_CNAME(int channel, char cName[256]) = 0;
 
-    
-    virtual int GetRTCPStatistics(int channel, CallStatistics& stats) = 0;
+  
+  virtual int GetRemoteRTCPData(int channel,
+                                unsigned int& NTPHigh,
+                                unsigned int& NTPLow,
+                                unsigned int& timestamp,
+                                unsigned int& playoutTimestamp,
+                                unsigned int* jitter = NULL,
+                                unsigned short* fractionLost = NULL) = 0;
 
-    
-    
-    
-    
-    virtual int GetRemoteRTCPReportBlocks(
-        int channel, std::vector<ReportBlock>* receive_blocks) = 0;
+  
+  virtual int GetRTPStatistics(int channel,
+                               unsigned int& averageJitterMs,
+                               unsigned int& maxJitterMs,
+                               unsigned int& discardedPackets) = 0;
 
-    
-    
-    
-    virtual int SetREDStatus(
-        int channel, bool enable, int redPayloadtype = -1) { return -1; }
+  
+  virtual int GetRTCPStatistics(int channel, CallStatistics& stats) = 0;
 
-    
-    
-    
-    virtual int GetREDStatus(
-        int channel, bool& enabled, int& redPayloadtype) { return -1; }
+  
+  
+  
+  
+  virtual int GetRemoteRTCPReportBlocks(
+      int channel,
+      std::vector<ReportBlock>* receive_blocks) = 0;
 
-    
-    
-    
-    virtual int SetFECStatus(
-        int channel, bool enable, int redPayloadtype = -1) {
-      return SetREDStatus(channel, enable, redPayloadtype);
-    };
+  
+  
+  
+  virtual int SetREDStatus(int channel, bool enable, int redPayloadtype = -1) {
+    return -1;
+  }
 
-    
-    
-    
-    virtual int GetFECStatus(
-        int channel, bool& enabled, int& redPayloadtype) {
-      return SetREDStatus(channel, enabled, redPayloadtype);
-    }
+  
+  
+  
+  virtual int GetREDStatus(int channel, bool& enabled, int& redPayloadtype) {
+    return -1;
+  }
 
-    
-    
-    
-    
-    virtual int SetNACKStatus(int channel,
-                              bool enable,
-                              int maxNoPackets) = 0;
+  
+  
+  
+  
+  virtual int SetNACKStatus(int channel, bool enable, int maxNoPackets) = 0;
 
-    
-    
-    
-    
-    virtual int StartRTPDump(
-        int channel, const char fileNameUTF8[1024],
-        RTPDirections direction = kRtpIncoming) = 0;
-
-    
-    
-    virtual int StopRTPDump(
-        int channel, RTPDirections direction = kRtpIncoming) = 0;
-
-    
-    
-    virtual int RTPDumpIsActive(
-        int channel, RTPDirections direction = kRtpIncoming) = 0;
-
-    
-    
-    
-    virtual int SetVideoEngineBWETarget(int channel, ViENetwork* vie_network,
-                                        int video_channel) {
-      return 0;
-    }
-
-    
-    virtual int RegisterRTPObserver(int channel,
-            VoERTPObserver& observer) { return -1; };
-    virtual int DeRegisterRTPObserver(int channel) { return -1; };
-    virtual int GetRemoteCSRCs(int channel,
-            unsigned int arrCSRC[15]) { return -1; };
-    virtual int InsertExtraRTPPacket(
-            int channel, unsigned char payloadType, bool markerBit,
-            const char* payloadData, unsigned short payloadSize) { return -1; };
-    virtual int GetRemoteRTCPSenderInfo(
-            int channel, SenderInfo* sender_info) { return -1; };
-    virtual int SendApplicationDefinedRTCPPacket(
-            int channel, unsigned char subType, unsigned int name,
-            const char* data, unsigned short dataLengthInBytes) { return -1; };
-    virtual int GetLastRemoteTimeStamp(int channel,
-            uint32_t* lastRemoteTimeStamp) { return -1; };
-
-protected:
-    VoERTP_RTCP() {}
-    virtual ~VoERTP_RTCP() {}
+ protected:
+  VoERTP_RTCP() {}
+  virtual ~VoERTP_RTCP() {}
 };
 
 }  

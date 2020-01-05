@@ -8,16 +8,13 @@
 
 
 
-#include "webrtc/modules/audio_coding/codecs/isac/fix/interface/audio_encoder_isacfix.h"
+#include "webrtc/modules/audio_coding/codecs/isac/fix/include/audio_encoder_isacfix.h"
 
 #include "webrtc/modules/audio_coding/codecs/isac/audio_encoder_isac_t_impl.h"
 
 namespace webrtc {
 
-const uint16_t IsacFix::kFixSampleRate;
 
-
-
-template class AudioEncoderDecoderIsacT<IsacFix>;
+template class AudioEncoderIsacT<IsacFix>;
 
 }  

@@ -8,8 +8,8 @@
 
 
 
-#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
-#include "webrtc/system_wrappers/interface/tick_util.h"
+#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/voice_engine/monitor_module.h"
 
 namespace webrtc  {

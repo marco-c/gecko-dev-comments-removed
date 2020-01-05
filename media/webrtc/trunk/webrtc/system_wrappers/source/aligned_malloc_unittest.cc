@@ -8,7 +8,7 @@
 
 
 
-#include "webrtc/system_wrappers/interface/aligned_malloc.h"
+#include "webrtc/system_wrappers/include/aligned_malloc.h"
 
 #if _WIN32
 #include <windows.h>

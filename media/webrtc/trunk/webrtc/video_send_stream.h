@@ -17,25 +17,35 @@
 #include "webrtc/common_types.h"
 #include "webrtc/config.h"
 #include "webrtc/frame_callback.h"
+#include "webrtc/stream.h"
+#include "webrtc/transport.h"
 #include "webrtc/video_renderer.h"
 
 namespace webrtc {
 
+class LoadObserver;
 class VideoEncoder;
 
+class EncodingTimeObserver {
+ public:
+  virtual ~EncodingTimeObserver() {}
 
-class VideoSendStreamInput {
+  virtual void OnReportEncodedTime(int64_t ntp_time_ms, int encode_time_ms) = 0;
+};
+
+
+class VideoCaptureInput {
  public:
   
   
   
-  virtual void IncomingCapturedFrame(const I420VideoFrame& video_frame) = 0;
+  virtual void IncomingCapturedFrame(const VideoFrame& video_frame) = 0;
 
  protected:
-  virtual ~VideoSendStreamInput() {}
+  virtual ~VideoCaptureInput() {}
 };
 
-class VideoSendStream {
+class VideoSendStream : public SendStream {
  public:
   struct StreamStats {
     FrameCounts frame_counts;
@@ -52,56 +62,51 @@ class VideoSendStream {
   };
 
   struct Stats {
-    Stats()
-        : input_frame_rate(0),
-          encode_frame_rate(0),
-          avg_encode_time_ms(0),
-          encode_usage_percent(0),
-          target_media_bitrate_bps(0),
-          media_bitrate_bps(0),
-          suspended(false) {}
-    int input_frame_rate;
-    int encode_frame_rate;
-    int avg_encode_time_ms;
-    int encode_usage_percent;
-    int target_media_bitrate_bps;
-    int media_bitrate_bps;
-    bool suspended;
+    std::string encoder_implementation_name = "unknown";
+    int input_frame_rate = 0;
+    int encode_frame_rate = 0;
+    int avg_encode_time_ms = 0;
+    int encode_usage_percent = 0;
+    int target_media_bitrate_bps = 0;
+    int media_bitrate_bps = 0;
+    bool suspended = false;
+    bool bw_limited_resolution = false;
     std::map<uint32_t, StreamStats> substreams;
   };
 
   struct Config {
-    Config()
-        : pre_encode_callback(NULL),
-          post_encode_callback(NULL),
-          local_renderer(NULL),
-          render_delay_ms(0),
-          target_delay_ms(0),
-          suspend_below_min_bitrate(false) {}
+    Config() = delete;
+    explicit Config(Transport* send_transport)
+        : send_transport(send_transport) {}
+
     std::string ToString() const;
 
     struct EncoderSettings {
-      EncoderSettings() : payload_type(-1), encoder(NULL) {}
-
       std::string ToString() const;
 
       std::string payload_name;
-      int payload_type;
+      int payload_type = -1;
 
       
       
-      VideoEncoder* encoder;
+      bool internal_source = false;
+
+      
+      
+      VideoEncoder* encoder = nullptr;
     } encoder_settings;
 
     static const size_t kDefaultMaxPacketSize = 1500 - 40;  
     struct Rtp {
-      Rtp() : max_packet_size(kDefaultMaxPacketSize) {}
       std::string ToString() const;
 
       std::vector<uint32_t> ssrcs;
 
       
-      size_t max_packet_size;
+      RtcpMode rtcp_mode = RtcpMode::kCompound;
+
+      
+      size_t max_packet_size = kDefaultMaxPacketSize;
 
       
       std::vector<RtpExtension> extensions;
@@ -115,13 +120,12 @@ class VideoSendStream {
       
       
       struct Rtx {
-        Rtx() : payload_type(-1) {}
         std::string ToString() const;
         
         std::vector<uint32_t> ssrcs;
 
         
-        int payload_type;
+        int payload_type = -1;
       } rtx;
 
       
@@ -129,38 +133,47 @@ class VideoSendStream {
     } rtp;
 
     
-    
-    I420FrameCallback* pre_encode_callback;
+    Transport* send_transport = nullptr;
 
     
     
-    EncodedFrameObserver* post_encode_callback;
+    LoadObserver* overuse_callback = nullptr;
 
     
     
-    VideoRenderer* local_renderer;
+    I420FrameCallback* pre_encode_callback = nullptr;
+
+    
+    
+    EncodedFrameObserver* post_encode_callback = nullptr;
+
+    
+    
+    VideoRenderer* local_renderer = nullptr;
 
     
     
     
-    int render_delay_ms;
+    int render_delay_ms = 0;
 
     
     
-    int target_delay_ms;
+    int target_delay_ms = 0;
 
     
     
     
-    bool suspend_below_min_bitrate;
+    bool suspend_below_min_bitrate = false;
+
+    
+    
+    
+    EncodingTimeObserver* encoding_time_observer = nullptr;
   };
 
   
   
-  virtual VideoSendStreamInput* Input() = 0;
-
-  virtual void Start() = 0;
-  virtual void Stop() = 0;
+  virtual VideoCaptureInput* Input() = 0;
 
   
   
@@ -168,9 +181,6 @@ class VideoSendStream {
   virtual bool ReconfigureVideoEncoder(const VideoEncoderConfig& config) = 0;
 
   virtual Stats GetStats() = 0;
-
- protected:
-  virtual ~VideoSendStream() {}
 };
 
 }  

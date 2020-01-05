@@ -12,7 +12,7 @@
 
 #include <algorithm>
 
-#include "webrtc/system_wrappers/interface/logging.h"
+#include "webrtc/system_wrappers/include/logging.h"
 
 namespace webrtc {
 
@@ -27,7 +27,7 @@ SharedXDisplay::~SharedXDisplay() {
 }
 
 
-scoped_refptr<SharedXDisplay> SharedXDisplay::Create(
+rtc::scoped_refptr<SharedXDisplay> SharedXDisplay::Create(
     const std::string& display_name) {
   Display* display =
       XOpenDisplay(display_name.empty() ? NULL : display_name.c_str());
@@ -39,7 +39,7 @@ scoped_refptr<SharedXDisplay> SharedXDisplay::Create(
 }
 
 
-scoped_refptr<SharedXDisplay> SharedXDisplay::CreateDefault() {
+rtc::scoped_refptr<SharedXDisplay> SharedXDisplay::CreateDefault() {
   return Create(std::string());
 }
 
@@ -64,7 +64,7 @@ void SharedXDisplay::RemoveEventHandler(int type, XEventHandler* handler) {
 void SharedXDisplay::ProcessPendingXEvents() {
   
   
-  scoped_refptr<SharedXDisplay> self(this);
+  rtc::scoped_refptr<SharedXDisplay> self(this);
 
   
   

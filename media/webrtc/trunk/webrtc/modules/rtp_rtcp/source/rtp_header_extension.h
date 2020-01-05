@@ -8,12 +8,12 @@
 
 
 
-#ifndef WEBRTC_MODULES_RTP_RTCP_RTP_HEADER_EXTENSION_H_
-#define WEBRTC_MODULES_RTP_RTCP_RTP_HEADER_EXTENSION_H_
+#ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_HEADER_EXTENSION_H_
+#define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_HEADER_EXTENSION_H_
 
 #include <map>
 
-#include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -27,10 +27,8 @@ const size_t kAbsoluteSendTimeLength = 4;
 const size_t kVideoRotationLength = 2;
 const size_t kTransportSequenceNumberLength = 3;
 
-const size_t kRtpStreamIdLength = 4; 
-
 struct HeaderExtension {
-  HeaderExtension(RTPExtensionType extension_type)
+  explicit HeaderExtension(RTPExtensionType extension_type)
       : type(extension_type), length(0), active(true) {
     Init();
   }
@@ -59,9 +57,6 @@ struct HeaderExtension {
         break;
       case kRtpExtensionTransportSequenceNumber:
         length = kTransportSequenceNumberLength;
-        break;
-      case kRtpExtensionRtpStreamId:
-        length = kRtpStreamIdLength;
         break;
       default:
         assert(false);
@@ -117,6 +112,7 @@ class RtpHeaderExtensionMap {
   int32_t Register(const RTPExtensionType type, const uint8_t id, bool active);
   std::map<uint8_t, HeaderExtension*> extensionMap_;
 };
-}
+}  
 
-#endif 
+#endif  
+

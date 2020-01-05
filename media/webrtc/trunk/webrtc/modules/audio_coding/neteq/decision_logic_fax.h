@@ -23,7 +23,7 @@ class DecisionLogicFax : public DecisionLogic {
  public:
   
   DecisionLogicFax(int fs_hz,
-                   int output_size_samples,
+                   size_t output_size_samples,
                    NetEqPlayoutMode playout_mode,
                    DecoderDatabase* decoder_database,
                    const PacketBuffer& packet_buffer,
@@ -33,9 +33,6 @@ class DecisionLogicFax : public DecisionLogic {
                       decoder_database, packet_buffer, delay_manager,
                       buffer_level_filter) {
   }
-
-  
-  virtual ~DecisionLogicFax() {}
 
  protected:
   
@@ -49,14 +46,14 @@ class DecisionLogicFax : public DecisionLogic {
   
   Operations GetDecisionSpecialized(const SyncBuffer& sync_buffer,
                                     const Expand& expand,
-                                    int decoder_frame_length,
+                                    size_t decoder_frame_length,
                                     const RTPHeader* packet_header,
                                     Modes prev_mode,
                                     bool play_dtmf,
                                     bool* reset_decoder) override;
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(DecisionLogicFax);
+  RTC_DISALLOW_COPY_AND_ASSIGN(DecisionLogicFax);
 };
 
 }  

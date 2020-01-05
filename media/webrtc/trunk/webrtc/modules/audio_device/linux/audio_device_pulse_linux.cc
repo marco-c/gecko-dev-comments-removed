@@ -10,12 +10,13 @@
 
 #include <assert.h>
 
+#include "webrtc/base/checks.h"
+
 #include "webrtc/modules/audio_device/audio_device_config.h"
-#include "webrtc/modules/audio_device/audio_device_utility.h"
 #include "webrtc/modules/audio_device/linux/audio_device_pulse_linux.h"
 
-#include "webrtc/system_wrappers/interface/event_wrapper.h"
-#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/system_wrappers/include/event_wrapper.h"
+#include "webrtc/system_wrappers/include/trace.h"
 
 webrtc_adm_linux_pulse::PulseAudioSymbolTable PaSymbolTable;
 
@@ -27,10 +28,6 @@ webrtc_adm_linux_pulse::PulseAudioSymbolTable PaSymbolTable;
 
 namespace webrtc
 {
-
-
-
-
 
 AudioDeviceLinuxPulse::AudioDeviceLinuxPulse(const int32_t id) :
     _ptrAudioBuffer(NULL),
@@ -109,7 +106,7 @@ AudioDeviceLinuxPulse::~AudioDeviceLinuxPulse()
 {
     WEBRTC_TRACE(kTraceMemory, kTraceAudioDevice, _id,
                  "%s destroyed", __FUNCTION__);
-
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     Terminate();
 
     if (_recBuffer)
@@ -142,8 +139,7 @@ AudioDeviceLinuxPulse::~AudioDeviceLinuxPulse()
 
 void AudioDeviceLinuxPulse::AttachAudioBuffer(AudioDeviceBuffer* audioBuffer)
 {
-
-    CriticalSectionScoped lock(&_critSect);
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
 
     _ptrAudioBuffer = audioBuffer;
 
@@ -169,9 +165,7 @@ int32_t AudioDeviceLinuxPulse::ActiveAudioLayer(
 
 int32_t AudioDeviceLinuxPulse::Init()
 {
-
-    CriticalSectionScoped lock(&_critSect);
-
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     if (_initialized)
     {
         return 0;
@@ -197,7 +191,6 @@ int32_t AudioDeviceLinuxPulse::Init()
     _recWarning = 0;
     _recError = 0;
 
-#ifdef USE_X11
     
     _XDisplay = XOpenDisplay(NULL);
     if (!_XDisplay)
@@ -205,36 +198,19 @@ int32_t AudioDeviceLinuxPulse::Init()
         WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
           "  failed to open X display, typing detection will not work");
     }
-#endif
 
     
-    const char* threadName = "webrtc_audio_module_rec_thread";
-    _ptrThreadRec = ThreadWrapper::CreateThread(RecThreadFunc, this,
-                                                threadName);
-    if (!_ptrThreadRec->Start())
-    {
-        WEBRTC_TRACE(kTraceCritical, kTraceAudioDevice, _id,
-                     "  failed to start the rec audio thread");
+    _ptrThreadRec.reset(new rtc::PlatformThread(
+        RecThreadFunc, this, "webrtc_audio_module_rec_thread"));
 
-        _ptrThreadRec.reset();
-        return -1;
-    }
-
-    _ptrThreadRec->SetPriority(kRealtimePriority);
+    _ptrThreadRec->Start();
+    _ptrThreadRec->SetPriority(rtc::kRealtimePriority);
 
     
-    threadName = "webrtc_audio_module_play_thread";
-    _ptrThreadPlay = ThreadWrapper::CreateThread(PlayThreadFunc, this,
-                                                 threadName);
-    if (!_ptrThreadPlay->Start())
-    {
-        WEBRTC_TRACE(kTraceCritical, kTraceAudioDevice, _id,
-                     "  failed to start the play audio thread");
-
-        _ptrThreadPlay.reset();
-        return -1;
-    }
-    _ptrThreadPlay->SetPriority(kRealtimePriority);
+    _ptrThreadPlay.reset(new rtc::PlatformThread(
+        PlayThreadFunc, this, "webrtc_audio_module_play_thread"));
+    _ptrThreadPlay->Start();
+    _ptrThreadPlay->SetPriority(rtc::kRealtimePriority);
 
     _initialized = true;
 
@@ -243,40 +219,32 @@ int32_t AudioDeviceLinuxPulse::Init()
 
 int32_t AudioDeviceLinuxPulse::Terminate()
 {
-
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     if (!_initialized)
     {
         return 0;
     }
-
-    Lock();
 
     _mixerManager.Close();
 
     
     if (_ptrThreadRec)
     {
-        ThreadWrapper* tmpThread = _ptrThreadRec.release();
-        UnLock();
+        rtc::PlatformThread* tmpThread = _ptrThreadRec.release();
 
         _timeEventRec.Set();
         tmpThread->Stop();
         delete tmpThread;
-        
-        Lock();
     }
 
     
     if (_ptrThreadPlay)
     {
-        ThreadWrapper* tmpThread = _ptrThreadPlay.release();
-        _critSect.Leave();
+        rtc::PlatformThread* tmpThread = _ptrThreadPlay.release();
 
         _timeEventPlay.Set();
         tmpThread->Stop();
         delete tmpThread;
-    } else {
-      UnLock();
     }
 
     
@@ -287,13 +255,11 @@ int32_t AudioDeviceLinuxPulse::Terminate()
         return -1;
     }
 
-#ifdef USE_X11
     if (_XDisplay)
     {
       XCloseDisplay(_XDisplay);
       _XDisplay = NULL;
     }
-#endif
 
     _initialized = false;
     _outputDeviceIsSpecified = false;
@@ -304,13 +270,13 @@ int32_t AudioDeviceLinuxPulse::Terminate()
 
 bool AudioDeviceLinuxPulse::Initialized() const
 {
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     return (_initialized);
 }
 
 int32_t AudioDeviceLinuxPulse::InitSpeaker()
 {
-
-    CriticalSectionScoped lock(&_critSect);
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
 
     if (_playing)
     {
@@ -354,9 +320,7 @@ int32_t AudioDeviceLinuxPulse::InitSpeaker()
 
 int32_t AudioDeviceLinuxPulse::InitMicrophone()
 {
-
-    CriticalSectionScoped lock(&_critSect);
-
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     if (_recording)
     {
         return -1;
@@ -399,17 +363,19 @@ int32_t AudioDeviceLinuxPulse::InitMicrophone()
 
 bool AudioDeviceLinuxPulse::SpeakerIsInitialized() const
 {
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     return (_mixerManager.SpeakerIsInitialized());
 }
 
 bool AudioDeviceLinuxPulse::MicrophoneIsInitialized() const
 {
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     return (_mixerManager.MicrophoneIsInitialized());
 }
 
 int32_t AudioDeviceLinuxPulse::SpeakerVolumeIsAvailable(bool& available)
 {
-
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     bool wasInitialized = _mixerManager.SpeakerIsInitialized();
 
     
@@ -436,6 +402,7 @@ int32_t AudioDeviceLinuxPulse::SpeakerVolumeIsAvailable(bool& available)
 
 int32_t AudioDeviceLinuxPulse::SetSpeakerVolume(uint32_t volume)
 {
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     if (!_playing) {
       
       update_speaker_volume_at_startup_ = true;
@@ -445,7 +412,7 @@ int32_t AudioDeviceLinuxPulse::SetSpeakerVolume(uint32_t volume)
 
 int32_t AudioDeviceLinuxPulse::SpeakerVolume(uint32_t& volume) const
 {
-
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     uint32_t level(0);
 
     if (_mixerManager.SpeakerVolume(level) == -1)
@@ -481,7 +448,7 @@ int32_t AudioDeviceLinuxPulse::WaveOutVolume(
 int32_t AudioDeviceLinuxPulse::MaxSpeakerVolume(
     uint32_t& maxVolume) const
 {
-
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     uint32_t maxVol(0);
 
     if (_mixerManager.MaxSpeakerVolume(maxVol) == -1)
@@ -497,7 +464,7 @@ int32_t AudioDeviceLinuxPulse::MaxSpeakerVolume(
 int32_t AudioDeviceLinuxPulse::MinSpeakerVolume(
     uint32_t& minVolume) const
 {
-
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     uint32_t minVol(0);
 
     if (_mixerManager.MinSpeakerVolume(minVol) == -1)
@@ -513,7 +480,7 @@ int32_t AudioDeviceLinuxPulse::MinSpeakerVolume(
 int32_t AudioDeviceLinuxPulse::SpeakerVolumeStepSize(
     uint16_t& stepSize) const
 {
-
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     uint16_t delta(0);
 
     if (_mixerManager.SpeakerVolumeStepSize(delta) == -1)
@@ -528,7 +495,7 @@ int32_t AudioDeviceLinuxPulse::SpeakerVolumeStepSize(
 
 int32_t AudioDeviceLinuxPulse::SpeakerMuteIsAvailable(bool& available)
 {
-
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     bool isAvailable(false);
     bool wasInitialized = _mixerManager.SpeakerIsInitialized();
 
@@ -560,13 +527,13 @@ int32_t AudioDeviceLinuxPulse::SpeakerMuteIsAvailable(bool& available)
 
 int32_t AudioDeviceLinuxPulse::SetSpeakerMute(bool enable)
 {
-
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     return (_mixerManager.SetSpeakerMute(enable));
 }
 
 int32_t AudioDeviceLinuxPulse::SpeakerMute(bool& enabled) const
 {
-
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     bool muted(0);
     if (_mixerManager.SpeakerMute(muted) == -1)
     {
@@ -579,7 +546,7 @@ int32_t AudioDeviceLinuxPulse::SpeakerMute(bool& enabled) const
 
 int32_t AudioDeviceLinuxPulse::MicrophoneMuteIsAvailable(bool& available)
 {
-
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     bool isAvailable(false);
     bool wasInitialized = _mixerManager.MicrophoneIsInitialized();
 
@@ -612,13 +579,13 @@ int32_t AudioDeviceLinuxPulse::MicrophoneMuteIsAvailable(bool& available)
 
 int32_t AudioDeviceLinuxPulse::SetMicrophoneMute(bool enable)
 {
-
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     return (_mixerManager.SetMicrophoneMute(enable));
 }
 
 int32_t AudioDeviceLinuxPulse::MicrophoneMute(bool& enabled) const
 {
-
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     bool muted(0);
     if (_mixerManager.MicrophoneMute(muted) == -1)
     {
@@ -631,7 +598,7 @@ int32_t AudioDeviceLinuxPulse::MicrophoneMute(bool& enabled) const
 
 int32_t AudioDeviceLinuxPulse::MicrophoneBoostIsAvailable(bool& available)
 {
-
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     bool isAvailable(false);
     bool wasInitialized = _mixerManager.MicrophoneIsInitialized();
 
@@ -662,13 +629,13 @@ int32_t AudioDeviceLinuxPulse::MicrophoneBoostIsAvailable(bool& available)
 
 int32_t AudioDeviceLinuxPulse::SetMicrophoneBoost(bool enable)
 {
-
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     return (_mixerManager.SetMicrophoneBoost(enable));
 }
 
 int32_t AudioDeviceLinuxPulse::MicrophoneBoost(bool& enabled) const
 {
-
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     bool onOff(0);
 
     if (_mixerManager.MicrophoneBoost(onOff) == -1)
@@ -683,7 +650,7 @@ int32_t AudioDeviceLinuxPulse::MicrophoneBoost(bool& enabled) const
 
 int32_t AudioDeviceLinuxPulse::StereoRecordingIsAvailable(bool& available)
 {
-
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     if (_recChannels == 2 && _recording) {
       available = true;
       return 0;
@@ -717,7 +684,7 @@ int32_t AudioDeviceLinuxPulse::StereoRecordingIsAvailable(bool& available)
 
 int32_t AudioDeviceLinuxPulse::SetStereoRecording(bool enable)
 {
-
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     if (enable)
         _recChannels = 2;
     else
@@ -728,7 +695,7 @@ int32_t AudioDeviceLinuxPulse::SetStereoRecording(bool enable)
 
 int32_t AudioDeviceLinuxPulse::StereoRecording(bool& enabled) const
 {
-
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     if (_recChannels == 2)
         enabled = true;
     else
@@ -739,7 +706,7 @@ int32_t AudioDeviceLinuxPulse::StereoRecording(bool& enabled) const
 
 int32_t AudioDeviceLinuxPulse::StereoPlayoutIsAvailable(bool& available)
 {
-
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     if (_playChannels == 2 && _playing) {
       available = true;
       return 0;
@@ -772,7 +739,7 @@ int32_t AudioDeviceLinuxPulse::StereoPlayoutIsAvailable(bool& available)
 
 int32_t AudioDeviceLinuxPulse::SetStereoPlayout(bool enable)
 {
-
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     if (enable)
         _playChannels = 2;
     else
@@ -783,7 +750,7 @@ int32_t AudioDeviceLinuxPulse::SetStereoPlayout(bool enable)
 
 int32_t AudioDeviceLinuxPulse::StereoPlayout(bool& enabled) const
 {
-
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     if (_playChannels == 2)
         enabled = true;
     else
@@ -794,7 +761,7 @@ int32_t AudioDeviceLinuxPulse::StereoPlayout(bool& enabled) const
 
 int32_t AudioDeviceLinuxPulse::SetAGC(bool enable)
 {
-
+    CriticalSectionScoped lock(&_critSect);
     _AGC = enable;
 
     return 0;
@@ -802,14 +769,14 @@ int32_t AudioDeviceLinuxPulse::SetAGC(bool enable)
 
 bool AudioDeviceLinuxPulse::AGC() const
 {
-
+    CriticalSectionScoped lock(&_critSect);
     return _AGC;
 }
 
 int32_t AudioDeviceLinuxPulse::MicrophoneVolumeIsAvailable(
     bool& available)
 {
-
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     bool wasInitialized = _mixerManager.MicrophoneIsInitialized();
 
     
@@ -837,7 +804,6 @@ int32_t AudioDeviceLinuxPulse::MicrophoneVolumeIsAvailable(
 
 int32_t AudioDeviceLinuxPulse::SetMicrophoneVolume(uint32_t volume)
 {
-
     return (_mixerManager.SetMicrophoneVolume(volume));
 }
 
@@ -894,7 +860,7 @@ int32_t AudioDeviceLinuxPulse::MinMicrophoneVolume(
 int32_t AudioDeviceLinuxPulse::MicrophoneVolumeStepSize(
     uint16_t& stepSize) const
 {
-
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     uint16_t delta(0);
 
     if (_mixerManager.MicrophoneVolumeStepSize(delta) == -1)
@@ -909,7 +875,6 @@ int32_t AudioDeviceLinuxPulse::MicrophoneVolumeStepSize(
 
 int16_t AudioDeviceLinuxPulse::PlayoutDevices()
 {
-
     PaLock();
 
     pa_operation* paOperation = NULL;
@@ -929,7 +894,7 @@ int16_t AudioDeviceLinuxPulse::PlayoutDevices()
 
 int32_t AudioDeviceLinuxPulse::SetPlayoutDevice(uint16_t index)
 {
-
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     if (_playIsInitialized)
     {
         return -1;
@@ -966,7 +931,7 @@ int32_t AudioDeviceLinuxPulse::PlayoutDeviceName(
     char name[kAdmMaxDeviceNameSize],
     char guid[kAdmMaxGuidSize])
 {
-
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     const uint16_t nDevices = PlayoutDevices();
 
     if ((index > (nDevices - 1)) || (name == NULL))
@@ -1008,7 +973,7 @@ int32_t AudioDeviceLinuxPulse::RecordingDeviceName(
     char name[kAdmMaxDeviceNameSize],
     char guid[kAdmMaxGuidSize])
 {
-
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     const uint16_t nDevices(RecordingDevices());
 
     if ((index > (nDevices - 1)) || (name == NULL))
@@ -1047,7 +1012,6 @@ int32_t AudioDeviceLinuxPulse::RecordingDeviceName(
 
 int16_t AudioDeviceLinuxPulse::RecordingDevices()
 {
-
     PaLock();
 
     pa_operation* paOperation = NULL;
@@ -1067,7 +1031,7 @@ int16_t AudioDeviceLinuxPulse::RecordingDevices()
 
 int32_t AudioDeviceLinuxPulse::SetRecordingDevice(uint16_t index)
 {
-
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     if (_recIsInitialized)
     {
         return -1;
@@ -1101,7 +1065,7 @@ int32_t AudioDeviceLinuxPulse::SetRecordingDevice(
 
 int32_t AudioDeviceLinuxPulse::PlayoutIsAvailable(bool& available)
 {
-
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     available = false;
 
     
@@ -1120,7 +1084,7 @@ int32_t AudioDeviceLinuxPulse::PlayoutIsAvailable(bool& available)
 
 int32_t AudioDeviceLinuxPulse::RecordingIsAvailable(bool& available)
 {
-
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     available = false;
 
     
@@ -1139,8 +1103,7 @@ int32_t AudioDeviceLinuxPulse::RecordingIsAvailable(bool& available)
 
 int32_t AudioDeviceLinuxPulse::InitPlayout()
 {
-
-    CriticalSectionScoped lock(&_critSect);
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
 
     if (_playing)
     {
@@ -1193,7 +1156,8 @@ int32_t AudioDeviceLinuxPulse::InitPlayout()
     }
 
     WEBRTC_TRACE(kTraceDebug, kTraceAudioDevice, _id,
-                 "  stream state %d\n", LATE(pa_stream_get_state)(_playStream));
+                 "  stream state %d\n",
+                 LATE(pa_stream_get_state)(_playStream));
 
     
     _playStreamFlags = (pa_stream_flags_t) (PA_STREAM_AUTO_TIMING_UPDATE
@@ -1222,16 +1186,18 @@ int32_t AudioDeviceLinuxPulse::InitPlayout()
         }
 
         size_t bytesPerSec = LATE(pa_bytes_per_second)(spec);
-        uint32_t latency = bytesPerSec
-            * WEBRTC_PA_PLAYBACK_LATENCY_MINIMUM_MSECS / WEBRTC_PA_MSECS_PER_SEC;
+        uint32_t latency = bytesPerSec *
+                           WEBRTC_PA_PLAYBACK_LATENCY_MINIMUM_MSECS /
+                           WEBRTC_PA_MSECS_PER_SEC;
 
         
         _playBufferAttr.maxlength = latency; 
         _playBufferAttr.tlength = latency; 
         
         _playBufferAttr.minreq = latency / WEBRTC_PA_PLAYBACK_REQUEST_FACTOR;
-        _playBufferAttr.prebuf = _playBufferAttr.tlength
-            - _playBufferAttr.minreq; 
+        
+        _playBufferAttr.prebuf = _playBufferAttr.tlength -
+                                 _playBufferAttr.minreq;
 
         _configuredLatencyPlay = latency;
     }
@@ -1246,7 +1212,8 @@ int32_t AudioDeviceLinuxPulse::InitPlayout()
                                            PaStreamUnderflowCallback, this);
 
     
-    LATE(pa_stream_set_state_callback)(_playStream, PaStreamStateCallback, this);
+    LATE(pa_stream_set_state_callback)(_playStream,
+                                       PaStreamStateCallback, this);
 
     
     _playIsInitialized = true;
@@ -1258,8 +1225,7 @@ int32_t AudioDeviceLinuxPulse::InitPlayout()
 
 int32_t AudioDeviceLinuxPulse::InitRecording()
 {
-
-    CriticalSectionScoped lock(&_critSect);
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
 
     if (_recording)
     {
@@ -1354,11 +1320,14 @@ int32_t AudioDeviceLinuxPulse::InitRecording()
     _recBuffer = new int8_t[_recordBufferSize];
 
     
-    LATE(pa_stream_set_overflow_callback)(_recStream, PaStreamOverflowCallback,
+    LATE(pa_stream_set_overflow_callback)(_recStream,
+                                          PaStreamOverflowCallback,
                                           this);
 
     
-    LATE(pa_stream_set_state_callback)(_recStream, PaStreamStateCallback, this);
+    LATE(pa_stream_set_state_callback)(_recStream,
+                                       PaStreamStateCallback,
+                                       this);
 
     
     _recIsInitialized = true;
@@ -1368,7 +1337,7 @@ int32_t AudioDeviceLinuxPulse::InitRecording()
 
 int32_t AudioDeviceLinuxPulse::StartRecording()
 {
-
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     if (!_recIsInitialized)
     {
         return -1;
@@ -1401,6 +1370,7 @@ int32_t AudioDeviceLinuxPulse::StartRecording()
         if (_recording)
         {
             
+            
         } else
         {
             WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
@@ -1414,7 +1384,7 @@ int32_t AudioDeviceLinuxPulse::StartRecording()
 
 int32_t AudioDeviceLinuxPulse::StopRecording()
 {
-
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     CriticalSectionScoped lock(&_critSect);
 
     if (!_recIsInitialized)
@@ -1477,22 +1447,26 @@ int32_t AudioDeviceLinuxPulse::StopRecording()
 
 bool AudioDeviceLinuxPulse::RecordingIsInitialized() const
 {
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     return (_recIsInitialized);
 }
 
 bool AudioDeviceLinuxPulse::Recording() const
 {
-    CriticalSectionScoped lock(&_critSect);
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     return (_recording);
 }
 
 bool AudioDeviceLinuxPulse::PlayoutIsInitialized() const
 {
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     return (_playIsInitialized);
 }
 
 int32_t AudioDeviceLinuxPulse::StartPlayout()
 {
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
+
     if (!_playIsInitialized)
     {
         return -1;
@@ -1504,7 +1478,10 @@ int32_t AudioDeviceLinuxPulse::StartPlayout()
     }
 
     
-    _startPlay = true;
+    {
+        CriticalSectionScoped lock(&_critSect);
+        _startPlay = true;
+    }
 
     
     
@@ -1528,6 +1505,7 @@ int32_t AudioDeviceLinuxPulse::StartPlayout()
         if (_playing)
         {
             
+            
         } else
         {
             WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
@@ -1541,7 +1519,7 @@ int32_t AudioDeviceLinuxPulse::StartPlayout()
 
 int32_t AudioDeviceLinuxPulse::StopPlayout()
 {
-
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     CriticalSectionScoped lock(&_critSect);
 
     if (!_playIsInitialized)
@@ -1613,14 +1591,14 @@ int32_t AudioDeviceLinuxPulse::PlayoutDelay(uint16_t& delayMS) const
 
 int32_t AudioDeviceLinuxPulse::RecordingDelay(uint16_t& delayMS) const
 {
-    CriticalSectionScoped lock(&_critSect);
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     delayMS = (uint16_t) _sndCardRecDelay;
     return 0;
 }
 
 bool AudioDeviceLinuxPulse::Playing() const
 {
-    CriticalSectionScoped lock(&_critSect);
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     return (_playing);
 }
 
@@ -1628,7 +1606,7 @@ int32_t AudioDeviceLinuxPulse::SetPlayoutBuffer(
     const AudioDeviceModule::BufferType type,
     uint16_t sizeMS)
 {
-
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     if (type != AudioDeviceModule::kFixedBufferSize)
     {
         WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
@@ -1646,7 +1624,7 @@ int32_t AudioDeviceLinuxPulse::PlayoutBuffer(
     AudioDeviceModule::BufferType& type,
     uint16_t& sizeMS) const
 {
-
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     type = _playBufType;
     sizeMS = _playBufDelayFixed;
 
@@ -1715,8 +1693,8 @@ void AudioDeviceLinuxPulse::ClearRecordingError()
 
 void AudioDeviceLinuxPulse::PaContextStateCallback(pa_context *c, void *pThis)
 {
-    static_cast<AudioDeviceLinuxPulse*> (pThis)->PaContextStateCallbackHandler(
-        c);
+    static_cast<AudioDeviceLinuxPulse*> (pThis)->
+        PaContextStateCallbackHandler(c);
 }
 
 
@@ -1743,12 +1721,14 @@ void AudioDeviceLinuxPulse::PaServerInfoCallback(pa_context *,
                                                  const pa_server_info *i,
                                                  void *pThis)
 {
-    static_cast<AudioDeviceLinuxPulse*> (pThis)->PaServerInfoCallbackHandler(i);
+    static_cast<AudioDeviceLinuxPulse*> (pThis)->
+        PaServerInfoCallbackHandler(i);
 }
 
 void AudioDeviceLinuxPulse::PaStreamStateCallback(pa_stream *p, void *pThis)
 {
-    static_cast<AudioDeviceLinuxPulse*> (pThis)->PaStreamStateCallbackHandler(p);
+    static_cast<AudioDeviceLinuxPulse*> (pThis)->
+        PaStreamStateCallbackHandler(p);
 }
 
 void AudioDeviceLinuxPulse::PaContextStateCallbackHandler(pa_context *c)
@@ -1856,7 +1836,8 @@ void AudioDeviceLinuxPulse::PaSourceInfoCallbackHandler(
     }
 }
 
-void AudioDeviceLinuxPulse::PaServerInfoCallbackHandler(const pa_server_info *i)
+void AudioDeviceLinuxPulse::PaServerInfoCallbackHandler(
+    const pa_server_info *i)
 {
     
     sample_rate_hz_ = i->sample_spec.rate;
@@ -1922,7 +1903,8 @@ int32_t AudioDeviceLinuxPulse::CheckPulseAudioVersion()
 
     
     paOperation = LATE(pa_context_get_server_info)(_paContext,
-                                                   PaServerInfoCallback, this);
+                                                   PaServerInfoCallback,
+                                                   this);
 
     WaitForOperationCompletion(paOperation);
 
@@ -1942,7 +1924,8 @@ int32_t AudioDeviceLinuxPulse::InitSamplingFrequency()
 
     
     paOperation = LATE(pa_context_get_server_info)(_paContext,
-                                                   PaServerInfoCallback, this);
+                                                   PaServerInfoCallback,
+                                                   this);
 
     WaitForOperationCompletion(paOperation);
 
@@ -1989,7 +1972,8 @@ int32_t AudioDeviceLinuxPulse::GetDefaultDeviceInfo(bool recDevice,
 
     
     paOperation = LATE(pa_context_get_server_info)(_paContext,
-                                                   PaServerInfoCallback, this);
+                                                   PaServerInfoCallback,
+                                                   this);
 
     WaitForOperationCompletion(paOperation);
 
@@ -2006,7 +1990,8 @@ int32_t AudioDeviceLinuxPulse::GetDefaultDeviceInfo(bool recDevice,
         paOperation
             = LATE(pa_context_get_sink_info_by_name)(_paContext,
                                                      (char *) tmpName,
-                                                     PaSinkInfoCallback, this);
+                                                     PaSinkInfoCallback,
+                                                     this);
     }
 
     WaitForOperationCompletion(paOperation);
@@ -2108,7 +2093,9 @@ int32_t AudioDeviceLinuxPulse::InitPulseAudio()
 
     
     _paStateChanged = false;
-    retVal = LATE(pa_context_connect)(_paContext, NULL, PA_CONTEXT_NOAUTOSPAWN,
+    retVal = LATE(pa_context_connect)(_paContext,
+                                      NULL,
+                                      PA_CONTEXT_NOAUTOSPAWN,
                                       NULL);
 
     if (retVal != PA_OK)
@@ -2158,7 +2145,8 @@ int32_t AudioDeviceLinuxPulse::InitPulseAudio()
     if (CheckPulseAudioVersion() < 0)
     {
         WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                     "  PulseAudio version %s not supported", _paServerVersion);
+                     "  PulseAudio version %s not supported",
+                     _paServerVersion);
         return -1;
     }
 
@@ -2166,7 +2154,8 @@ int32_t AudioDeviceLinuxPulse::InitPulseAudio()
     if (InitSamplingFrequency() < 0 || sample_rate_hz_ == 0)
     {
         WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                     "  failed to initialize sampling frequency, set to %d Hz",
+                     "  failed to initialize sampling frequency,"
+                     " set to %d Hz",
                      sample_rate_hz_);
         return -1;
     }
@@ -2298,7 +2287,8 @@ void AudioDeviceLinuxPulse::PaStreamWriteCallbackHandler(size_t bufferSpace)
 void AudioDeviceLinuxPulse::PaStreamUnderflowCallback(pa_stream *,
                                                       void *pThis)
 {
-    static_cast<AudioDeviceLinuxPulse*> (pThis)->PaStreamUnderflowCallbackHandler();
+    static_cast<AudioDeviceLinuxPulse*> (pThis)->
+        PaStreamUnderflowCallbackHandler();
 }
 
 void AudioDeviceLinuxPulse::PaStreamUnderflowCallbackHandler()
@@ -2324,8 +2314,9 @@ void AudioDeviceLinuxPulse::PaStreamUnderflowCallbackHandler()
     }
 
     size_t bytesPerSec = LATE(pa_bytes_per_second)(spec);
-    uint32_t newLatency = _configuredLatencyPlay + bytesPerSec
-        * WEBRTC_PA_PLAYBACK_LATENCY_INCREMENT_MSECS / WEBRTC_PA_MSECS_PER_SEC;
+    uint32_t newLatency = _configuredLatencyPlay + bytesPerSec *
+                          WEBRTC_PA_PLAYBACK_LATENCY_INCREMENT_MSECS /
+                          WEBRTC_PA_MSECS_PER_SEC;
 
     
     _playBufferAttr.maxlength = newLatency;
@@ -2352,7 +2343,9 @@ void AudioDeviceLinuxPulse::PaStreamUnderflowCallbackHandler()
 
 void AudioDeviceLinuxPulse::EnableReadCallback()
 {
-    LATE(pa_stream_set_read_callback)(_recStream, &PaStreamReadCallback, this);
+    LATE(pa_stream_set_read_callback)(_recStream,
+                                      &PaStreamReadCallback,
+                                      this);
 }
 
 void AudioDeviceLinuxPulse::DisableReadCallback()
@@ -2364,30 +2357,20 @@ void AudioDeviceLinuxPulse::PaStreamReadCallback(pa_stream *,
                                                  size_t ,
                                                  void *pThis)
 {
-    static_cast<AudioDeviceLinuxPulse*> (pThis)->PaStreamReadCallbackHandler();
+    static_cast<AudioDeviceLinuxPulse*> (pThis)->
+        PaStreamReadCallbackHandler();
 }
 
 void AudioDeviceLinuxPulse::PaStreamReadCallbackHandler()
 {
     
     
-    if (LATE(pa_stream_peek)(_recStream, &_tempSampleData, &_tempSampleDataSize)
-        != 0)
+    if (LATE(pa_stream_peek)(_recStream,
+                             &_tempSampleData,
+                             &_tempSampleDataSize) != 0)
     {
         WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
                      "  Can't read data!");
-        return;
-    }
-
-    
-    
-    
-    
-    
-    
-    if (_tempSampleDataSize && !_tempSampleData) {
-        LATE(pa_stream_drop)(_recStream);
-        _tempSampleDataSize = 0; 
         return;
     }
 
@@ -2401,7 +2384,8 @@ void AudioDeviceLinuxPulse::PaStreamReadCallbackHandler()
 void AudioDeviceLinuxPulse::PaStreamOverflowCallback(pa_stream *,
                                                      void *pThis)
 {
-    static_cast<AudioDeviceLinuxPulse*> (pThis)->PaStreamOverflowCallbackHandler();
+    static_cast<AudioDeviceLinuxPulse*> (pThis)->
+        PaStreamOverflowCallbackHandler();
 }
 
 void AudioDeviceLinuxPulse::PaStreamOverflowCallbackHandler()
@@ -2436,7 +2420,8 @@ int32_t AudioDeviceLinuxPulse::LatencyUsecs(pa_stream *stream)
     if (negative)
     {
         WEBRTC_TRACE(kTraceDebug, kTraceAudioDevice, _id,
-                     "  warning: pa_stream_get_latency reported negative delay");
+                     "  warning: pa_stream_get_latency reported negative "
+                     "delay");
 
         
         
@@ -2455,8 +2440,9 @@ int32_t AudioDeviceLinuxPulse::LatencyUsecs(pa_stream *stream)
     }
 }
 
-int32_t AudioDeviceLinuxPulse::ReadRecordedData(const void* bufferData,
-                                                size_t bufferSize)
+int32_t AudioDeviceLinuxPulse::ReadRecordedData(
+    const void* bufferData,
+    size_t bufferSize)  EXCLUSIVE_LOCKS_REQUIRED(_critSect)
 {
     size_t size = bufferSize;
     uint32_t numRecSamples = _recordBufferSize / (2 * _recChannels);
@@ -2515,7 +2501,8 @@ int32_t AudioDeviceLinuxPulse::ReadRecordedData(const void* bufferData,
             return -1;
         }
 
-        bufferData = static_cast<const char *> (bufferData) + _recordBufferSize;
+        bufferData = static_cast<const char *> (bufferData) +
+                     _recordBufferSize;
         size -= _recordBufferSize;
 
         
@@ -2625,7 +2612,7 @@ bool AudioDeviceLinuxPulse::PlayThreadProcess()
             return true;
     }
 
-    Lock();
+    CriticalSectionScoped lock(&_critSect);
 
     if (_startPlay)
     {
@@ -2718,7 +2705,6 @@ bool AudioDeviceLinuxPulse::PlayThreadProcess()
         _playing = true;
         _playStartEvent.Set();
 
-        UnLock();
         return true;
     }
 
@@ -2742,10 +2728,10 @@ bool AudioDeviceLinuxPulse::PlayThreadProcess()
 
             PaLock();
             if (LATE(pa_stream_write)(
-                                      _playStream,
-                                      (void *) &_playBuffer[_playbackBufferUnused],
-                                      write, NULL, (int64_t) 0,
-                                      PA_SEEK_RELATIVE) != PA_OK)
+                _playStream,
+                (void *) &_playBuffer[_playbackBufferUnused],
+                write, NULL, (int64_t) 0,
+                PA_SEEK_RELATIVE) != PA_OK)
             {
                 _writeErrors++;
                 if (_writeErrors > 10)
@@ -2756,7 +2742,8 @@ bool AudioDeviceLinuxPulse::PlayThreadProcess()
                                      kTraceUtility, _id,
                                      "  pending playout error exists");
                     }
-                    _playError = 1; 
+                    
+                    _playError = 1;
                     WEBRTC_TRACE(
                                  kTraceError,
                                  kTraceUtility,
@@ -2775,7 +2762,8 @@ bool AudioDeviceLinuxPulse::PlayThreadProcess()
         }
 
         uint32_t numPlaySamples = _playbackBufferSize / (2 * _playChannels);
-        if (_tempBufferSpace > 0) 
+        
+        if (_tempBufferSpace > 0)
         {
             
             
@@ -2790,7 +2778,6 @@ bool AudioDeviceLinuxPulse::PlayThreadProcess()
             
             if (!_playing)
             {
-                UnLock();
                 return true;
             }
 
@@ -2824,7 +2811,8 @@ bool AudioDeviceLinuxPulse::PlayThreadProcess()
                                      kTraceUtility, _id,
                                      "  pending playout error exists");
                     }
-                    _playError = 1; 
+                     
+                    _playError = 1;
                     WEBRTC_TRACE(
                                  kTraceError,
                                  kTraceUtility,
@@ -2848,7 +2836,6 @@ bool AudioDeviceLinuxPulse::PlayThreadProcess()
 
     }  
 
-    UnLock();
     return true;
 }
 
@@ -2866,7 +2853,7 @@ bool AudioDeviceLinuxPulse::RecThreadProcess()
             return true;
     }
 
-    Lock();
+    CriticalSectionScoped lock(&_critSect);
 
     if (_startRec)
     {
@@ -2890,10 +2877,10 @@ bool AudioDeviceLinuxPulse::RecThreadProcess()
                      "  connecting stream");
 
         
-        if (LATE(pa_stream_connect_record)(_recStream, _recDeviceName,
-                                           &_recBufferAttr,
-                                           (pa_stream_flags_t) _recStreamFlags)
-            != PA_OK)
+        if (LATE(pa_stream_connect_record)(_recStream,
+            _recDeviceName,
+            &_recBufferAttr,
+            (pa_stream_flags_t) _recStreamFlags) != PA_OK)
         {
             WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
                          "  failed to connect rec stream, err=%d",
@@ -2928,7 +2915,6 @@ bool AudioDeviceLinuxPulse::RecThreadProcess()
         _recording = true;
         _recStartEvent.Set();
 
-        UnLock();
         return true;
     }
 
@@ -2937,7 +2923,6 @@ bool AudioDeviceLinuxPulse::RecThreadProcess()
         
         if (ReadRecordedData(_tempSampleData, _tempSampleDataSize) == -1)
         {
-            UnLock();
             return true;
         }
 
@@ -2983,7 +2968,6 @@ bool AudioDeviceLinuxPulse::RecThreadProcess()
             
             if (ReadRecordedData(sampleData, sampleDataSize) == -1)
             {
-                UnLock();
                 return true;
             }
             PaLock();
@@ -2996,12 +2980,11 @@ bool AudioDeviceLinuxPulse::RecThreadProcess()
 
     }  
 
-    UnLock();
     return true;
 }
 
 bool AudioDeviceLinuxPulse::KeyPressed() const{
-#ifdef USE_X11
+
   char szKey[32];
   unsigned int i = 0;
   char state = 0;
@@ -3019,8 +3002,5 @@ bool AudioDeviceLinuxPulse::KeyPressed() const{
   
   memcpy((char*)_oldKeyState, (char*)szKey, sizeof(_oldKeyState));
   return (state != 0);
-#else
-  return false;
-#endif
 }
 }

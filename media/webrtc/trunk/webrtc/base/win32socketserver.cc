@@ -28,26 +28,26 @@ namespace rtc {
 
 
 
-static const uint16 PACKET_MAXIMUMS[] = {
-  65535,    
-  32000,    
-  17914,    
-  8166,     
-  
-  4352,     
-  
-  2002,     
-  
-  
-  1492,     
-  1006,     
-  
-  
-  
-  508,      
-  296,      
-  68,       
-  0,        
+static const uint16_t PACKET_MAXIMUMS[] = {
+    65535,  
+    32000,  
+    17914,  
+    8166,   
+    
+    4352,   
+    
+    2002,   
+    
+    
+    1492,   
+    1006,   
+    
+    
+    
+    508,    
+    296,    
+    68,     
+    0,      
 };
 
 static const int IP_HEADER_SIZE = 20u;
@@ -55,7 +55,7 @@ static const int ICMP_HEADER_SIZE = 8u;
 static const int ICMP_PING_TIMEOUT_MILLIS = 10000u;
 
 
-#ifdef _DEBUG
+#if !defined(NDEBUG)
 LPCSTR WSAErrorToString(int error, LPCSTR *description_result) {
   LPCSTR string = "Unspecified";
   LPCSTR description = "Unspecified description";
@@ -143,7 +143,7 @@ void ReportWSAError(LPCSTR context, int error, const SocketAddress& address) {}
 
 struct Win32Socket::DnsLookup {
   HANDLE handle;
-  uint16 port;
+  uint16_t port;
   char buffer[MAXGETHOSTSTRUCT];
 };
 
@@ -512,9 +512,9 @@ int Win32Socket::Close() {
   return err;
 }
 
-int Win32Socket::EstimateMTU(uint16* mtu) {
+int Win32Socket::EstimateMTU(uint16_t* mtu) {
   SocketAddress addr = GetRemoteAddress();
-  if (addr.IsAny()) {
+  if (addr.IsAnyIP()) {
     error_ = ENOTCONN;
     return -1;
   }
@@ -526,7 +526,7 @@ int Win32Socket::EstimateMTU(uint16* mtu) {
   }
 
   for (int level = 0; PACKET_MAXIMUMS[level + 1] > 0; ++level) {
-    int32 size = PACKET_MAXIMUMS[level] - IP_HEADER_SIZE - ICMP_HEADER_SIZE;
+    int32_t size = PACKET_MAXIMUMS[level] - IP_HEADER_SIZE - ICMP_HEADER_SIZE;
     WinPing::PingResult result = ping.Ping(addr.ipaddr(), size,
                                            ICMP_PING_TIMEOUT_MILLIS, 1, false);
     if (result == WinPing::PING_FAIL) {
@@ -626,8 +626,8 @@ void Win32Socket::OnSocketNotify(SOCKET socket, int event, int error) {
     case FD_CONNECT:
       if (error != ERROR_SUCCESS) {
         ReportWSAError("WSAAsync:connect notify", error, addr_);
-#ifdef _DEBUG
-        int32 duration = TimeSince(connect_time_);
+#if !defined(NDEBUG)
+        int32_t duration = TimeSince(connect_time_);
         LOG(LS_INFO) << "WSAAsync:connect error (" << duration
                      << " ms), faking close";
 #endif
@@ -639,8 +639,8 @@ void Win32Socket::OnSocketNotify(SOCKET socket, int event, int error) {
         
         SignalCloseEvent(this, error);
       } else {
-#ifdef _DEBUG
-        int32 duration = TimeSince(connect_time_);
+#if !defined(NDEBUG)
+        int32_t duration = TimeSince(connect_time_);
         LOG(LS_INFO) << "WSAAsync:connect (" << duration << " ms)";
 #endif
         state_ = CS_CONNECTED;
@@ -679,10 +679,10 @@ void Win32Socket::OnDnsNotify(HANDLE task, int error) {
   if (!dns_ || dns_->handle != task)
     return;
 
-  uint32 ip = 0;
+  uint32_t ip = 0;
   if (error == 0) {
     hostent* pHost = reinterpret_cast<hostent*>(dns_->buffer);
-    uint32 net_ip = *reinterpret_cast<uint32*>(pHost->h_addr_list[0]);
+    uint32_t net_ip = *reinterpret_cast<uint32_t*>(pHost->h_addr_list[0]);
     ip = NetworkToHost32(net_ip);
   }
 
@@ -762,7 +762,7 @@ bool Win32SocketServer::Wait(int cms, bool process_io) {
   if (process_io) {
     
     
-    uint32 start = Time();
+    uint32_t start = Time();
     do {
       MSG msg;
       SetTimer(wnd_.handle(), 0, cms, NULL);

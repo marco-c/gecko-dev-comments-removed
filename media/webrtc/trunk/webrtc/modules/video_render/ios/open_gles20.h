@@ -13,7 +13,7 @@
 
 #include <OpenGLES/ES2/glext.h>
 
-#include "webrtc/modules/video_render/include/video_render_defines.h"
+#include "webrtc/modules/video_render/video_render_defines.h"
 
 
 
@@ -26,7 +26,7 @@ class OpenGles20 {
   ~OpenGles20();
 
   bool Setup(int32_t width, int32_t height);
-  bool Render(const I420VideoFrame& frame);
+  bool Render(const VideoFrame& frame);
 
   
   
@@ -45,10 +45,10 @@ class OpenGles20 {
   GLuint CreateProgram(const char* vertex_source, const char* fragment_source);
 
   
-  void SetupTextures(const I420VideoFrame& frame);
+  void SetupTextures(const VideoFrame& frame);
 
   
-  void UpdateTextures(const I420VideoFrame& frame);
+  void UpdateTextures(const VideoFrame& frame);
 
   GLuint texture_ids_[3];  
   GLuint program_;

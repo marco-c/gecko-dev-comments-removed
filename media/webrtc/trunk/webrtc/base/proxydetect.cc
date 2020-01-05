@@ -27,8 +27,14 @@
 #include "macconversion.h"
 #endif
 
+#ifdef WEBRTC_IOS
+#include <CFNetwork/CFNetwork.h>
+#include "macconversion.h"
+#endif
+
 #include <map>
 
+#include "webrtc/base/arraysize.h"
 #include "webrtc/base/fileutils.h"
 #include "webrtc/base/httpcommon.h"
 #include "webrtc/base/httpcommon-inl.h"
@@ -208,16 +214,16 @@ bool ProxyItemMatch(const Url<char>& url, char * item, size_t len) {
   int a, b, c, d, m;
   int match = sscanf(item, "%d.%d.%d.%d/%d", &a, &b, &c, &d, &m);
   if (match >= 4) {
-    uint32 ip = ((a & 0xFF) << 24) | ((b & 0xFF) << 16) | ((c & 0xFF) << 8) |
-        (d & 0xFF);
+    uint32_t ip = ((a & 0xFF) << 24) | ((b & 0xFF) << 16) | ((c & 0xFF) << 8) |
+                  (d & 0xFF);
     if ((match < 5) || (m > 32))
       m = 32;
     else if (m < 0)
       m = 0;
-    uint32 mask = (m == 0) ? 0 : (~0UL) << (32 - m);
+    uint32_t mask = (m == 0) ? 0 : (~0UL) << (32 - m);
     SocketAddress addr(url.host(), 0);
     
-    return !addr.IsUnresolved() &&
+    return !addr.IsUnresolvedIP() &&
         ((addr.ipaddr().v4AddressAsHostOrderInteger() & mask) == (ip & mask));
   }
 
@@ -284,7 +290,7 @@ bool ParseProxy(const std::string& saddress, ProxyInfo* proxy) {
 
   ProxyType ptype;
   std::string host;
-  uint16 port;
+  uint16_t port;
 
   const char* address = saddress.c_str();
   while (*address) {
@@ -318,7 +324,7 @@ bool ParseProxy(const std::string& saddress, ProxyInfo* proxy) {
 
     *colon = 0;
     char * endptr;
-    port = static_cast<uint16>(strtol(colon + 1, &endptr, 0));
+    port = static_cast<uint16_t>(strtol(colon + 1, &endptr, 0));
     if (*endptr != 0) {
       LOG(LS_WARNING) << "Proxy address with invalid port [" << buffer << "]";
       continue;
@@ -392,8 +398,8 @@ bool GetFirefoxProfilePath(Pathname* path) {
     return false;
   }
   char buffer[NAME_MAX + 1];
-  if (0 != FSRefMakePath(&fr, reinterpret_cast<uint8*>(buffer),
-                         ARRAY_SIZE(buffer))) {
+  if (0 != FSRefMakePath(&fr, reinterpret_cast<uint8_t*>(buffer),
+                         arraysize(buffer))) {
     LOG(LS_ERROR) << "FSRefMakePath failed";
     return false;
   }
@@ -1179,6 +1185,56 @@ bool GetMacProxySettings(ProxyInfo* proxy) {
 }
 #endif  
 
+#ifdef WEBRTC_IOS
+
+bool GetiOSProxySettings(ProxyInfo* proxy) {
+
+  bool result = false;
+
+  CFDictionaryRef proxy_dict = CFNetworkCopySystemProxySettings();
+  if (!proxy_dict) {
+    LOG(LS_ERROR) << "CFNetworkCopySystemProxySettings failed";
+    return false;
+  }
+
+  CFNumberRef proxiesHTTPEnable = (CFNumberRef)CFDictionaryGetValue(
+    proxy_dict, kCFNetworkProxiesHTTPEnable);
+  if (!p_isCFNumberTrue(proxiesHTTPEnable)) {
+    CFRelease(proxy_dict);
+    return false;
+  }
+
+  CFStringRef proxy_address = (CFStringRef)CFDictionaryGetValue(
+    proxy_dict, kCFNetworkProxiesHTTPProxy);
+  CFNumberRef proxy_port = (CFNumberRef)CFDictionaryGetValue(
+    proxy_dict, kCFNetworkProxiesHTTPPort);
+
+  
+  std::string hostname;
+  int port;
+  if (p_convertHostCFStringRefToCPPString(proxy_address, hostname) &&
+      p_convertCFNumberToInt(proxy_port, &port)) {
+      
+      
+      
+      
+      
+      proxy->type = PROXY_HTTPS;
+
+      proxy->address.SetIP(hostname);
+      proxy->address.SetPort(port);
+      result = true;
+  }
+
+  
+  
+  
+  CFRelease(proxy_dict);
+
+  return result;
+}
+#endif 
+
 bool AutoDetectProxySettings(const char* agent, const char* url,
                              ProxyInfo* proxy) {
 #if defined(WEBRTC_WIN)
@@ -1195,6 +1251,8 @@ bool GetSystemDefaultProxySettings(const char* agent, const char* url,
   return GetIeProxySettings(agent, url, proxy);
 #elif defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
   return GetMacProxySettings(proxy);
+#elif defined(WEBRTC_IOS)
+  return GetiOSProxySettings(proxy);
 #else
   
   return GetFirefoxProxySettings(url, proxy);

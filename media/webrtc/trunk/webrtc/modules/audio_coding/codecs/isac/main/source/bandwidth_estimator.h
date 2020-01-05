@@ -90,12 +90,12 @@ extern "C" {
   
   
   int16_t WebRtcIsac_UpdateBandwidthEstimator(
-      BwEstimatorstr*    bwest_str,
+      BwEstimatorstr* bwest_str,
       const uint16_t rtp_number,
-      const int32_t  frame_length,
+      const int32_t frame_length,
       const uint32_t send_ts,
       const uint32_t arr_ts,
-      const int32_t  pksize);
+      const size_t pksize);
 
   
   int16_t WebRtcIsac_UpdateUplinkBwImpl(
@@ -104,10 +104,10 @@ extern "C" {
       enum IsacSamplingRate encoderSamplingFreq);
 
   
-  uint16_t WebRtcIsac_GetDownlinkBwJitIndexImpl(
-      BwEstimatorstr*           bwest_str,
-      int16_t*              bottleneckIndex,
-      int16_t*              jitterInfo,
+  void WebRtcIsac_GetDownlinkBwJitIndexImpl(
+      BwEstimatorstr* bwest_str,
+      int16_t* bottleneckIndex,
+      int16_t* jitterInfo,
       enum IsacSamplingRate decoderSamplingFreq);
 
   
@@ -119,14 +119,21 @@ extern "C" {
       const BwEstimatorstr *bwest_str);
 
   
-  void WebRtcIsac_GetUplinkBandwidth(
-      const BwEstimatorstr* bwest_str,
-      int32_t*          bitRate);
+  int32_t WebRtcIsac_GetUplinkBandwidth(const BwEstimatorstr* bwest_str);
 
   
   int32_t WebRtcIsac_GetUplinkMaxDelay(
       const BwEstimatorstr *bwest_str);
 
+  
+  void WebRtcIsacBw_GetBandwidthInfo(
+      BwEstimatorstr* bwest_str,
+      enum IsacSamplingRate decoder_sample_rate_hz,
+      IsacBandwidthInfo* bwinfo);
+
+  
+  void WebRtcIsacBw_SetBandwidthInfo(BwEstimatorstr* bwest_str,
+                                     const IsacBandwidthInfo* bwinfo);
 
   
 

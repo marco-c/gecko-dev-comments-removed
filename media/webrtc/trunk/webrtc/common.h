@@ -13,7 +13,26 @@
 
 #include <map>
 
+#include "webrtc/base/basictypes.h"
+
 namespace webrtc {
+
+
+
+enum class ConfigOptionID {
+  kMyExperimentForTest,
+  kAlgo1CostFunctionForTest,
+  kTemporalLayersFactory,
+  kNetEqCapacityConfig,
+  kNetEqFastAccelerate,
+  kVoicePacing,
+  kExtendedFilter,
+  kDelayAgnostic,
+  kExperimentalAgc,
+  kExperimentalNs,
+  kBeamforming,
+  kIntelligibility
+};
 
 
 
@@ -59,8 +78,6 @@ class Config {
   }
 
  private:
-  typedef void* OptionIdentifier;
-
   struct BaseOption {
     virtual ~BaseOption() {}
   };
@@ -74,11 +91,9 @@ class Config {
     T* value;
   };
 
-  
   template<typename T>
-  static OptionIdentifier identifier() {
-    static char id_placeholder;
-    return &id_placeholder;
+  static ConfigOptionID identifier() {
+    return T::identifier;
   }
 
   
@@ -86,11 +101,11 @@ class Config {
   
   template<typename T>
   static const T& default_value() {
-    static const T def;
+    RTC_DEFINE_STATIC_LOCAL(const T, def, ());
     return def;
   }
 
-  typedef std::map<OptionIdentifier, BaseOption*> OptionMap;
+  typedef std::map<ConfigOptionID, BaseOption*> OptionMap;
   OptionMap options_;
 
   

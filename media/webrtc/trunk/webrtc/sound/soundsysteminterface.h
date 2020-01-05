@@ -66,7 +66,7 @@ class SoundSystemInterface {
   
   
   static const int kLowLatency = 0;
- 
+
   
   static const int kMaxVolume = 255;
   
@@ -104,7 +104,7 @@ class SoundSystemInterface {
   SoundSystemInterface() {}
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(SoundSystemInterface);
+  RTC_DISALLOW_COPY_AND_ASSIGN(SoundSystemInterface);
 };
 
 }  

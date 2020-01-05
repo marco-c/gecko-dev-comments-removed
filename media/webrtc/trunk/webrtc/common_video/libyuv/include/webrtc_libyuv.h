@@ -19,8 +19,8 @@
 
 #include "webrtc/common_types.h"  
 #include "webrtc/common_video/rotation.h"
-#include "webrtc/common_video/interface/i420_video_frame.h"
 #include "webrtc/typedefs.h"
+#include "webrtc/video_frame.h"
 
 namespace webrtc {
 
@@ -83,7 +83,7 @@ size_t CalcBufferSize(VideoType type, int width, int height);
 
 
 
-int PrintI420VideoFrame(const I420VideoFrame& frame, FILE* file);
+int PrintVideoFrame(const VideoFrame& frame, FILE* file);
 
 
 
@@ -92,8 +92,7 @@ int PrintI420VideoFrame(const I420VideoFrame& frame, FILE* file);
 
 
 
-int ExtractBuffer(const I420VideoFrame& input_frame,
-                  size_t size, uint8_t* buffer);
+int ExtractBuffer(const VideoFrame& input_frame, size_t size, uint8_t* buffer);
 
 
 
@@ -115,7 +114,7 @@ int ConvertToI420(VideoType src_video_type,
                   int src_height,
                   size_t sample_size,
                   VideoRotation rotation,
-                  I420VideoFrame* dst_frame);
+                  VideoFrame* dst_frame);
 
 
 
@@ -125,13 +124,15 @@ int ConvertToI420(VideoType src_video_type,
 
 
 
-int ConvertFromI420(const I420VideoFrame& src_frame,
-                    VideoType dst_video_type, int dst_sample_size,
+int ConvertFromI420(const VideoFrame& src_frame,
+                    VideoType dst_video_type,
+                    int dst_sample_size,
                     uint8_t* dst_frame);
 
 
-int ConvertFromYV12(const I420VideoFrame& src_frame,
-                    VideoType dst_video_type, int dst_sample_size,
+int ConvertFromYV12(const VideoFrame& src_frame,
+                    VideoType dst_video_type,
+                    int dst_sample_size,
                     uint8_t* dst_frame);
 
 
@@ -148,11 +149,10 @@ int ConvertNV12ToRGB565(const uint8_t* src_frame,
 
 
 
-double I420PSNR(const I420VideoFrame* ref_frame,
-                const I420VideoFrame* test_frame);
+double I420PSNR(const VideoFrame* ref_frame, const VideoFrame* test_frame);
 
-double I420SSIM(const I420VideoFrame* ref_frame,
-                const I420VideoFrame* test_frame);
-}
+double I420SSIM(const VideoFrame* ref_frame, const VideoFrame* test_frame);
+
+}  
 
 #endif  

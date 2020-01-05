@@ -11,6 +11,8 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_RMS_LEVEL_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_RMS_LEVEL_H_
 
+#include <cstddef>
+
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -35,11 +37,11 @@ class RMSLevel {
   void Reset();
 
   
-  void Process(const int16_t* data, int length);
+  void Process(const int16_t* data, size_t length);
 
   
   
-  void ProcessMuted(int length);
+  void ProcessMuted(size_t length);
 
   
   
@@ -48,7 +50,7 @@ class RMSLevel {
 
  private:
   float sum_square_;
-  int sample_count_;
+  size_t sample_count_;
 };
 
 }  

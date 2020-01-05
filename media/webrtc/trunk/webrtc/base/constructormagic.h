@@ -12,42 +12,23 @@
 #define WEBRTC_BASE_CONSTRUCTORMAGIC_H_
 
 
-
-
-#undef DISALLOW_ASSIGN
-#define DISALLOW_ASSIGN(TypeName) \
-  void operator=(const TypeName&)
 #define RTC_DISALLOW_ASSIGN(TypeName) \
   void operator=(const TypeName&) = delete
 
 
 
-#undef DISALLOW_COPY_AND_ASSIGN
-#define DISALLOW_COPY_AND_ASSIGN(TypeName)    \
-  TypeName(const TypeName&);                    \
-  DISALLOW_ASSIGN(TypeName)
 #define RTC_DISALLOW_COPY_AND_ASSIGN(TypeName) \
   TypeName(const TypeName&) = delete;          \
   RTC_DISALLOW_ASSIGN(TypeName)
 
 
-#undef DISALLOW_EVIL_CONSTRUCTORS
-#define DISALLOW_EVIL_CONSTRUCTORS(TypeName) \
-  DISALLOW_COPY_AND_ASSIGN(TypeName)
 
 
 
 
 
-
-
-#undef DISALLOW_IMPLICIT_CONSTRUCTORS
-#define DISALLOW_IMPLICIT_CONSTRUCTORS(TypeName) \
-  TypeName();                                    \
-  DISALLOW_EVIL_CONSTRUCTORS(TypeName)
 #define RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(TypeName) \
   TypeName() = delete;                               \
   RTC_DISALLOW_COPY_AND_ASSIGN(TypeName)
-
 
 #endif  

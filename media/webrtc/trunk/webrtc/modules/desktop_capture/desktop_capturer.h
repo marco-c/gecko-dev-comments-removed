@@ -46,7 +46,6 @@ class DesktopCapturer {
   
   
   virtual void Start(Callback* callback) = 0;
-  virtual void Stop() = 0;
 
   
   

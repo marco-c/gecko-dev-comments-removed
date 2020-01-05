@@ -53,14 +53,6 @@ TEST(SystemInfoTest, GetCpuArchitecture) {
 }
 
 
-TEST(SystemInfoTest, CpuCacheSize) {
-  rtc::SystemInfo info;
-  LOG(LS_INFO) << "CpuCacheSize: " << info.GetCpuCacheSize();
-  EXPECT_GE(info.GetCpuCacheSize(), 8192);  
-  EXPECT_LE(info.GetCpuCacheSize(), 1024 * 1024 * 1024);  
-}
-
-
 TEST(SystemInfoTest, MachineModelKnown) {
   rtc::SystemInfo info;
   EXPECT_FALSE(info.GetMachineModel().empty());
@@ -87,22 +79,6 @@ TEST(SystemInfoTest, MachineModelKnown) {
 }
 
 
-TEST(SystemInfoTest, CpuMaxCpuSpeed) {
-  rtc::SystemInfo info;
-  LOG(LS_INFO) << "MaxCpuSpeed: " << info.GetMaxCpuSpeed();
-  EXPECT_GT(info.GetMaxCpuSpeed(), 0);
-  EXPECT_LT(info.GetMaxCpuSpeed(), 100000);  
-}
-
-
-TEST(SystemInfoTest, CpuCurCpuSpeed) {
-  rtc::SystemInfo info;
-  LOG(LS_INFO) << "MaxCurSpeed: " << info.GetCurCpuSpeed();
-  EXPECT_GT(info.GetCurCpuSpeed(), 0);
-  EXPECT_LT(info.GetMaxCpuSpeed(), 100000);
-}
-
-
 TEST(SystemInfoTest, MemorySize) {
   rtc::SystemInfo info;
   LOG(LS_INFO) << "MemorySize: " << info.GetMemorySize();
@@ -114,14 +90,6 @@ TEST(SystemInfoTest, MaxCpus) {
   rtc::SystemInfo info;
   LOG(LS_INFO) << "MaxCpus: " << info.GetMaxCpus();
   EXPECT_GT(info.GetMaxCpus(), 0);
-}
-
-
-TEST(SystemInfoTest, MaxPhysicalCpus) {
-  rtc::SystemInfo info;
-  LOG(LS_INFO) << "MaxPhysicalCpus: " << info.GetMaxPhysicalCpus();
-  EXPECT_GT(info.GetMaxPhysicalCpus(), 0);
-  EXPECT_LE(info.GetMaxPhysicalCpus(), info.GetMaxCpus());
 }
 
 
@@ -180,15 +148,3 @@ TEST(SystemInfoTest, CpuStepping) {
   EXPECT_EQ(0, info.GetCpuStepping());
 }
 #endif  
-
-#if WEBRTC_WIN && !defined(EXCLUDE_D3D9)
-TEST(SystemInfoTest, GpuInfo) {
-  rtc::SystemInfo info;
-  rtc::SystemInfo::GpuInfo gi;
-  EXPECT_TRUE(info.GetGpuInfo(&gi));
-  LOG(LS_INFO) << "GpuDriver: " << gi.driver;
-  EXPECT_FALSE(gi.driver.empty());
-  LOG(LS_INFO) << "GpuDriverVersion: " << gi.driver_version;
-  EXPECT_FALSE(gi.driver_version.empty());
-}
-#endif

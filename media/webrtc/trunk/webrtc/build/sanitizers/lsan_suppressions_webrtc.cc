@@ -32,23 +32,6 @@ char kLSanDefaultSuppressions[] =
 "leak:libGL.so\n"
 
 
-
-"leak:net::NSSCertDatabase::ImportFromPKCS12\n"
-"leak:net::NSSCertDatabase::ListCerts\n"
-"leak:net::NSSCertDatabase::DeleteCertAndKey\n"
-"leak:crypto::ScopedTestNSSDB::ScopedTestNSSDB\n"
-
-"leak:error_get_my_stack\n"
-
-
-
-"leak:libnssutil3\n"
-"leak:libnspr4\n"
-"leak:libnss3\n"
-"leak:libplds4\n"
-"leak:libnssckbi\n"
-
-
 "leak:libxrandr\n"
 
 

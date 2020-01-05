@@ -28,7 +28,12 @@ struct ifaddrs;
 
 namespace rtc {
 
+extern const char kPublicIPv4Host[];
+extern const char kPublicIPv6Host[];
+
+class IfAddrsConverter;
 class Network;
+class NetworkMonitorInterface;
 class Thread;
 
 enum AdapterType {
@@ -50,14 +55,32 @@ const int kDefaultNetworkIgnoreMask = ADAPTER_TYPE_LOOPBACK;
 std::string MakeNetworkKey(const std::string& name, const IPAddress& prefix,
                            int prefix_length);
 
+class DefaultLocalAddressProvider {
+ public:
+  virtual ~DefaultLocalAddressProvider() = default;
+  
+  
+  
+  virtual bool GetDefaultLocalAddress(int family, IPAddress* ipaddr) const = 0;
+};
 
 
-class NetworkManager {
+
+class NetworkManager : public DefaultLocalAddressProvider {
  public:
   typedef std::vector<Network*> NetworkList;
 
+  
+  enum EnumerationPermission {
+    ENUMERATION_ALLOWED,  
+                          
+                          
+    ENUMERATION_BLOCKED,  
+                          
+  };
+
   NetworkManager();
-  virtual ~NetworkManager();
+  ~NetworkManager() override;
 
   
   sigslot::signal0<> SignalNetworksChanged;
@@ -80,6 +103,9 @@ class NetworkManager {
   virtual void GetNetworks(NetworkList* networks) const = 0;
 
   
+  virtual EnumerationPermission enumeration_permission() const;
+
+  
   
   
   
@@ -87,7 +113,8 @@ class NetworkManager {
   virtual void GetAnyAddressNetworks(NetworkList* networks) {}
 
   
-  virtual void DumpNetworks(bool include_ignored) {}
+  virtual void DumpNetworks() {}
+  bool GetDefaultLocalAddress(int family, IPAddress* ipaddr) const override;
 
   struct Stats {
     int ipv4_network_count;
@@ -113,6 +140,10 @@ class NetworkManagerBase : public NetworkManager {
   void set_max_ipv6_networks(int networks) { max_ipv6_networks_ = networks; }
   int max_ipv6_networks() { return max_ipv6_networks_; }
 
+  EnumerationPermission enumeration_permission() const override;
+
+  bool GetDefaultLocalAddress(int family, IPAddress* ipaddr) const override;
+
  protected:
   typedef std::map<std::string, Network*> NetworkMap;
   
@@ -127,9 +158,17 @@ class NetworkManagerBase : public NetworkManager {
                         bool* changed,
                         NetworkManager::Stats* stats);
 
+  void set_enumeration_permission(EnumerationPermission state) {
+    enumeration_permission_ = state;
+  }
+
+  void set_default_local_addresses(const IPAddress& ipv4,
+                                   const IPAddress& ipv6);
+
  private:
   friend class NetworkTest;
-  void DoUpdateNetworks();
+
+  EnumerationPermission enumeration_permission_;
 
   NetworkList networks_;
   int max_ipv6_networks_;
@@ -139,12 +178,16 @@ class NetworkManagerBase : public NetworkManager {
 
   rtc::scoped_ptr<rtc::Network> ipv4_any_address_network_;
   rtc::scoped_ptr<rtc::Network> ipv6_any_address_network_;
+
+  IPAddress default_local_ipv4_address_;
+  IPAddress default_local_ipv6_address_;
 };
 
 
 
 class BasicNetworkManager : public NetworkManagerBase,
-                            public MessageHandler {
+                            public MessageHandler,
+                            public sigslot::has_slots<> {
  public:
   BasicNetworkManager();
   ~BasicNetworkManager() override;
@@ -152,8 +195,7 @@ class BasicNetworkManager : public NetworkManagerBase,
   void StartUpdating() override;
   void StopUpdating() override;
 
-  
-  void DumpNetworks(bool include_ignored) override;
+  void DumpNetworks() override;
 
   
   void OnMessage(Message* msg) override;
@@ -164,18 +206,6 @@ class BasicNetworkManager : public NetworkManagerBase,
   void set_network_ignore_list(const std::vector<std::string>& list) {
     network_ignore_list_ = list;
   }
-
-  
-  
-  
-  void set_network_ignore_mask(int network_ignore_mask) {
-    
-    
-    
-    network_ignore_mask_ = network_ignore_mask;
-  }
-
-  int network_ignore_mask() const { return network_ignore_mask_; }
 
 #if defined(WEBRTC_LINUX)
   
@@ -188,6 +218,7 @@ class BasicNetworkManager : public NetworkManagerBase,
 #if defined(WEBRTC_POSIX)
   
   void ConvertIfAddrs(ifaddrs* interfaces,
+                      IfAddrsConverter* converter,
                       bool include_ignored,
                       NetworkList* networks) const;
 #endif  
@@ -199,28 +230,56 @@ class BasicNetworkManager : public NetworkManagerBase,
   
   bool IsIgnoredNetwork(const Network& network) const;
 
+  
+  
+  
+  IPAddress QueryDefaultLocalAddress(int family) const;
+
  private:
   friend class NetworkTest;
 
-  void DoUpdateNetworks();
+  
+  void StartNetworkMonitor();
+  
+  void StopNetworkMonitor();
+  
+  void OnNetworksChanged();
+
+  
+  void UpdateNetworksContinually();
+  
+  void UpdateNetworksOnce();
 
   Thread* thread_;
   bool sent_first_update_;
   int start_count_;
   std::vector<std::string> network_ignore_list_;
-  int network_ignore_mask_;
   bool ignore_non_default_routes_;
+  scoped_ptr<NetworkMonitorInterface> network_monitor_;
 };
 
 
 class Network {
  public:
-  Network(const std::string& name, const std::string& description,
-          const IPAddress& prefix, int prefix_length);
+  Network(const std::string& name,
+          const std::string& description,
+          const IPAddress& prefix,
+          int prefix_length);
 
-  Network(const std::string& name, const std::string& description,
-          const IPAddress& prefix, int prefix_length, AdapterType type);
+  Network(const std::string& name,
+          const std::string& description,
+          const IPAddress& prefix,
+          int prefix_length,
+          AdapterType type);
   ~Network();
+
+  const DefaultLocalAddressProvider* default_local_address_provider() {
+    return default_local_address_provider_;
+  }
+  void set_default_local_address_provider(
+      const DefaultLocalAddressProvider* provider) {
+    default_local_address_provider_ = provider;
+  }
 
   
   const std::string& name() const { return name_; }
@@ -288,9 +347,16 @@ class Network {
   void set_preference(int preference) { preference_ = preference; }
 
   
+  
+  
+  bool active() const { return active_; }
+  void set_active(bool active) { active_ = active; }
+
+  
   std::string ToString() const;
 
  private:
+  const DefaultLocalAddressProvider* default_local_address_provider_ = nullptr;
   std::string name_;
   std::string description_;
   IPAddress prefix_;
@@ -301,6 +367,7 @@ class Network {
   bool ignored_;
   AdapterType type_;
   int preference_;
+  bool active_ = true;
 
   friend class NetworkManager;
 };

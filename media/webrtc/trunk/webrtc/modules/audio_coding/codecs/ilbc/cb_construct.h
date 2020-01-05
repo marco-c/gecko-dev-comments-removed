@@ -30,8 +30,8 @@ void WebRtcIlbcfix_CbConstruct(
     int16_t *index,   
     int16_t *gain_index,  
     int16_t *mem,   
-    int16_t lMem,   
-    int16_t veclen   
+    size_t lMem,   
+    size_t veclen   
                                );
 
 

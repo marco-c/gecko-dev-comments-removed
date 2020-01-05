@@ -11,15 +11,18 @@
 #include "webrtc/sound/alsasoundsystem.h"
 
 #include <algorithm>
-#include "webrtc/sound/sounddevicelocator.h"
-#include "webrtc/sound/soundinputstreaminterface.h"
-#include "webrtc/sound/soundoutputstreaminterface.h"
+#include <string>
+
+#include "webrtc/base/arraysize.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/stringutils.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/base/worker.h"
+#include "webrtc/sound/sounddevicelocator.h"
+#include "webrtc/sound/soundinputstreaminterface.h"
+#include "webrtc/sound/soundoutputstreaminterface.h"
 
 namespace rtc {
 
@@ -62,7 +65,7 @@ class AlsaDeviceLocator : public SoundDeviceLocator {
                                &name_);
   }
 
-  virtual SoundDeviceLocator *Copy() const {
+  SoundDeviceLocator *Copy() const override {
     return new AlsaDeviceLocator(*this);
   }
 };
@@ -223,7 +226,7 @@ class AlsaStream {
   int flags_;
   int freq_;
 
-  DISALLOW_COPY_AND_ASSIGN(AlsaStream);
+  RTC_DISALLOW_COPY_AND_ASSIGN(AlsaStream);
 };
 
 
@@ -242,46 +245,46 @@ class AlsaInputStream :
         buffer_size_(0) {
   }
 
-  virtual ~AlsaInputStream() {
+  ~AlsaInputStream() override {
     bool success = StopReading();
     
     VERIFY(success);
   }
 
-  virtual bool StartReading() {
+  bool StartReading() override {
     return StartWork();
   }
 
-  virtual bool StopReading() {
+  bool StopReading() override {
     return StopWork();
   }
 
-  virtual bool GetVolume(int *volume) {
+  bool GetVolume(int *volume) override {
     
     return false;
   }
 
-  virtual bool SetVolume(int volume) {
+  bool SetVolume(int volume) override {
     
     return false;
   }
 
-  virtual bool Close() {
+  bool Close() override {
     return StopReading() && stream_.Close();
   }
 
-  virtual int LatencyUsecs() {
+  int LatencyUsecs() override {
     return stream_.CurrentDelayUsecs();
   }
 
  private:
   
-  virtual void OnStart() {
+  void OnStart() override {
     HaveWork();
   }
 
   
-  virtual void OnHaveWork() {
+  void OnHaveWork() override {
     
     snd_pcm_uframes_t avail = stream_.Wait();
     if (avail > 0) {
@@ -317,7 +320,7 @@ class AlsaInputStream :
   }
 
   
-  virtual void OnStop() {
+  void OnStop() override {
     
   }
 
@@ -329,14 +332,13 @@ class AlsaInputStream :
   rtc::scoped_ptr<char[]> buffer_;
   size_t buffer_size_;
 
-  DISALLOW_COPY_AND_ASSIGN(AlsaInputStream);
+  RTC_DISALLOW_COPY_AND_ASSIGN(AlsaInputStream);
 };
 
 
 
-class AlsaOutputStream :
-    public SoundOutputStreamInterface,
-    private rtc::Worker {
+class AlsaOutputStream : public SoundOutputStreamInterface,
+                         private rtc::Worker {
  public:
   AlsaOutputStream(AlsaSoundSystem *alsa,
                    snd_pcm_t *handle,
@@ -347,22 +349,21 @@ class AlsaOutputStream :
       : stream_(alsa, handle, frame_size, wait_timeout_ms, flags, freq) {
   }
 
-  virtual ~AlsaOutputStream() {
+  ~AlsaOutputStream() override {
     bool success = DisableBufferMonitoring();
     
     VERIFY(success);
   }
 
-  virtual bool EnableBufferMonitoring() {
+  bool EnableBufferMonitoring() override {
     return StartWork();
   }
 
-  virtual bool DisableBufferMonitoring() {
+  bool DisableBufferMonitoring() override {
     return StopWork();
   }
 
-  virtual bool WriteSamples(const void *sample_data,
-                            size_t size) {
+  bool WriteSamples(const void *sample_data, size_t size) override {
     if (size % stream_.frame_size() != 0) {
       
       
@@ -389,32 +390,32 @@ class AlsaOutputStream :
     return true;
   }
 
-  virtual bool GetVolume(int *volume) {
+  bool GetVolume(int *volume) override {
     
     return false;
   }
 
-  virtual bool SetVolume(int volume) {
+  bool SetVolume(int volume) override {
     
     return false;
   }
 
-  virtual bool Close() {
+  bool Close() override {
     return DisableBufferMonitoring() && stream_.Close();
   }
 
-  virtual int LatencyUsecs() {
+  int LatencyUsecs() override {
     return stream_.CurrentDelayUsecs();
   }
 
  private:
   
-  virtual void OnStart() {
+  void OnStart() override {
     HaveWork();
   }
 
   
-  virtual void OnHaveWork() {
+  void OnHaveWork() override {
     snd_pcm_uframes_t avail = stream_.Wait();
     if (avail > 0) {
       size_t space = avail * stream_.frame_size();
@@ -424,7 +425,7 @@ class AlsaOutputStream :
   }
 
   
-  virtual void OnStop() {
+  void OnStop() override {
     
   }
 
@@ -434,7 +435,7 @@ class AlsaOutputStream :
 
   AlsaStream stream_;
 
-  DISALLOW_COPY_AND_ASSIGN(AlsaOutputStream);
+  RTC_DISALLOW_COPY_AND_ASSIGN(AlsaOutputStream);
 };
 
 AlsaSoundSystem::AlsaSoundSystem() : initialized_(false) {}
@@ -569,7 +570,6 @@ bool AlsaSoundSystem::EnumerateDevices(
         strcmp(name, ignore_null) != 0 &&
         strcmp(name, ignore_pulse) != 0 &&
         !rtc::starts_with(name, ignore_prefix)) {
-
       
       char *desc = symbol_table_.snd_device_name_get_hint()(*list, "DESC");
       if (!desc) {
@@ -608,8 +608,6 @@ bool AlsaSoundSystem::GetDefaultDevice(SoundDeviceLocator **device) {
 }
 
 inline size_t AlsaSoundSystem::FrameSize(const OpenParams &params) {
-  ASSERT(static_cast<int>(params.format) <
-         ARRAY_SIZE(kCricketFormatToSampleSizeTable));
   return kCricketFormatToSampleSizeTable[params.format] * params.channels;
 }
 
@@ -624,7 +622,6 @@ StreamInterface *AlsaSoundSystem::OpenDevice(
         int wait_timeout_ms,
         int flags,
         int freq)) {
-
   if (!IsInitialized()) {
     return NULL;
   }
@@ -664,8 +661,7 @@ StreamInterface *AlsaSoundSystem::OpenDevice(
     latency = std::max(latency, kMinimumLatencyUsecs);
   }
 
-  ASSERT(static_cast<int>(params.format) <
-         ARRAY_SIZE(kCricketFormatToAlsaFormatTable));
+  ASSERT(params.format < arraysize(kCricketFormatToAlsaFormatTable));
 
   err = symbol_table_.snd_pcm_set_params()(
       handle,

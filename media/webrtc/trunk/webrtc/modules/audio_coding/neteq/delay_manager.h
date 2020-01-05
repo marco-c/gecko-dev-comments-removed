@@ -32,7 +32,7 @@ class DelayManager {
   
   
   
-  DelayManager(int max_packets_in_buffer, DelayPeakDetector* peak_detector);
+  DelayManager(size_t max_packets_in_buffer, DelayPeakDetector* peak_detector);
 
   virtual ~DelayManager();
 
@@ -132,7 +132,7 @@ class DelayManager {
   void LimitTargetLevel();
 
   bool first_packet_received_;
-  const int max_packets_in_buffer_;  
+  const size_t max_packets_in_buffer_;  
   IATVector iat_vector_;  
   int iat_factor_;  
   int packet_iat_count_ms_;  
@@ -157,7 +157,7 @@ class DelayManager {
   DelayPeakDetector& peak_detector_;
   int last_pack_cng_or_dtmf_;
 
-  DISALLOW_COPY_AND_ASSIGN(DelayManager);
+  RTC_DISALLOW_COPY_AND_ASSIGN(DelayManager);
 };
 
 }  

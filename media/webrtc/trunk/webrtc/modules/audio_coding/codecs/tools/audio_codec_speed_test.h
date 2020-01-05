@@ -20,7 +20,8 @@ namespace webrtc {
 
 
 
-typedef std::tr1::tuple<int, int, std::string, std::string, bool> coding_param;
+typedef std::tr1::tuple<size_t, int, std::string, std::string, bool>
+    coding_param;
 
 class AudioCodecSpeedTest : public testing::TestWithParam<coding_param> {
  protected:
@@ -36,14 +37,14 @@ class AudioCodecSpeedTest : public testing::TestWithParam<coding_param> {
   
   
   virtual float EncodeABlock(int16_t* in_data, uint8_t* bit_stream,
-                             int max_bytes, int* encoded_bytes) = 0;
+                             size_t max_bytes, size_t* encoded_bytes) = 0;
 
   
   
   
   
   
-  virtual float DecodeABlock(const uint8_t* bit_stream, int encoded_bytes,
+  virtual float DecodeABlock(const uint8_t* bit_stream, size_t encoded_bytes,
                              int16_t* out_data) = 0;
 
   
@@ -55,10 +56,10 @@ class AudioCodecSpeedTest : public testing::TestWithParam<coding_param> {
   int output_sampling_khz_;
 
   
-  int input_length_sample_;
+  size_t input_length_sample_;
 
   
-  int output_length_sample_;
+  size_t output_length_sample_;
 
   rtc::scoped_ptr<int16_t[]> in_data_;
   rtc::scoped_ptr<int16_t[]> out_data_;
@@ -67,14 +68,14 @@ class AudioCodecSpeedTest : public testing::TestWithParam<coding_param> {
   rtc::scoped_ptr<uint8_t[]> bit_stream_;
 
   
-  int max_bytes_;
+  size_t max_bytes_;
 
-  int encoded_bytes_;
+  size_t encoded_bytes_;
   float encoding_time_ms_;
   float decoding_time_ms_;
   FILE* out_file_;
 
-  int channels_;
+  size_t channels_;
 
   
   int bit_rate_;

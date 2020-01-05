@@ -13,23 +13,19 @@
 
 namespace webrtc {
 
-enum {
-  kDefaultSampleRate = 44100,
-  kNumChannels = 1,
-  kDefaultBufSizeInSamples = kDefaultSampleRate * 10 / 1000,
-  
-  
-  kBytesPerFrame = kNumChannels * (16 / 8),
-};
+const int kDefaultSampleRate = 44100;
+const int kNumChannels = 1;
 
-class PlayoutDelayProvider {
- public:
-  virtual int PlayoutDelayMs() = 0;
 
- protected:
-  PlayoutDelayProvider() {}
-  virtual ~PlayoutDelayProvider() {}
-};
+const size_t kBytesPerFrame = kNumChannels * (16 / 8);
+
+
+
+
+
+
+const int kLowLatencyModeDelayEstimateInMilliseconds = 50;
+const int kHighLatencyModeDelayEstimateInMilliseconds = 150;
 
 }  
 

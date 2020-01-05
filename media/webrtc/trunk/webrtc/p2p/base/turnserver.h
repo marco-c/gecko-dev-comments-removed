@@ -184,6 +184,11 @@ class TurnServer : public sigslot::has_slots<> {
   void set_enable_otu_nonce(bool enable) { enable_otu_nonce_ = enable; }
 
   
+  void set_reject_private_addresses(bool filter) {
+    reject_private_addresses_ = filter;
+  }
+
+  
   void AddInternalSocket(rtc::AsyncPacketSocket* socket,
                          ProtocolType proto);
   
@@ -255,6 +260,7 @@ class TurnServer : public sigslot::has_slots<> {
   
   
   bool enable_otu_nonce_;
+  bool reject_private_addresses_ = false;
 
   InternalSocketMap server_sockets_;
   ServerSocketMap server_listen_sockets_;

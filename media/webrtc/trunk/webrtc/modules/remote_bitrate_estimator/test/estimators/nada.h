@@ -8,10 +8,21 @@
 
 
 
+
+
+
+
+
+
 #ifndef WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_ESTIMATORS_NADA_H_
 #define WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_ESTIMATORS_NADA_H_
 
+#include <list>
+#include <map>
+
+#include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe.h"
+#include "webrtc/voice_engine/channel.h"
 
 namespace webrtc {
 
@@ -29,33 +40,66 @@ class NadaBweReceiver : public BweReceiver {
                      const MediaPacket& media_packet) override;
   FeedbackPacket* GetFeedback(int64_t now_ms) override;
 
+  static int64_t MedianFilter(int64_t* v, int size);
+  static int64_t ExponentialSmoothingFilter(int64_t new_value,
+                                            int64_t last_smoothed_value,
+                                            float alpha);
+
+  static const int64_t kReceivingRateTimeWindowMs;
+
  private:
   SimulatedClock clock_;
   int64_t last_feedback_ms_;
   rtc::scoped_ptr<ReceiveStatistics> recv_stats_;
-  int64_t baseline_delay_ms_;
-  int64_t delay_signal_ms_;
+  int64_t baseline_delay_ms_;  
+  int64_t delay_signal_ms_;    
   int64_t last_congestion_signal_ms_;
+  int last_delays_index_;
+  int64_t exp_smoothed_delay_ms_;        
+  int64_t est_queuing_delay_signal_ms_;  
+  int64_t last_delays_ms_[5];            
 };
 
 class NadaBweSender : public BweSender {
  public:
   NadaBweSender(int kbps, BitrateObserver* observer, Clock* clock);
+  NadaBweSender(BitrateObserver* observer, Clock* clock);
   virtual ~NadaBweSender();
 
   int GetFeedbackIntervalMs() const override;
+  
   void GiveFeedback(const FeedbackPacket& feedback) override;
   void OnPacketsSent(const Packets& packets) override {}
   int64_t TimeUntilNextProcess() override;
   int Process() override;
+  void AcceleratedRampUp(const NadaFeedback& fb);
+  void AcceleratedRampDown(const NadaFeedback& fb);
+  void GradualRateUpdate(const NadaFeedback& fb,
+                         float delta_s,
+                         double smoothing_factor);
+
+  int bitrate_kbps() const { return bitrate_kbps_; }
+  void set_bitrate_kbps(int bitrate_kbps) { bitrate_kbps_ = bitrate_kbps; }
+  bool original_operating_mode() const { return original_operating_mode_; }
+  void set_original_operating_mode(bool original_operating_mode) {
+    original_operating_mode_ = original_operating_mode;
+  }
+  int64_t NowMs() const { return clock_->TimeInMilliseconds(); }
 
  private:
   Clock* const clock_;
   BitrateObserver* const observer_;
-  int bitrate_kbps_;
-  int64_t last_feedback_ms_;
+  
+  const float kMaxCongestionSignalMs = 40.0f + kMinBitrateKbps / 15;
+  
+  int64_t last_feedback_ms_ = 0;
+  
+  int64_t min_feedback_delay_ms_ = 200;
+  
+  int64_t min_round_trip_time_ms_ = 100;
+  bool original_operating_mode_;
 
-  DISALLOW_IMPLICIT_CONSTRUCTORS(NadaBweSender);
+  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(NadaBweSender);
 };
 
 }  

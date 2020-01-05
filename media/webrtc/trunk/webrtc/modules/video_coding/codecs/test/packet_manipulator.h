@@ -13,8 +13,8 @@
 
 #include <stdlib.h>
 
-#include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
-#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/modules/video_coding/include/video_codec_interface.h"
+#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/test/testsupport/packet_reader.h"
 
 namespace webrtc {
@@ -36,10 +36,11 @@ const char* PacketLossModeToStr(PacketLossMode e);
 
 struct NetworkingConfig {
   NetworkingConfig()
-  : packet_size_in_bytes(1500), max_payload_size_in_bytes(1440),
-    packet_loss_mode(kUniform), packet_loss_probability(0.0),
-    packet_loss_burst_length(1) {
-  }
+      : packet_size_in_bytes(1500),
+        max_payload_size_in_bytes(1440),
+        packet_loss_mode(kUniform),
+        packet_loss_probability(0.0),
+        packet_loss_burst_length(1) {}
 
   
   size_t packet_size_in_bytes;
@@ -93,9 +94,11 @@ class PacketManipulatorImpl : public PacketManipulator {
   virtual ~PacketManipulatorImpl();
   int ManipulatePackets(webrtc::EncodedImage* encoded_image) override;
   virtual void InitializeRandomSeed(unsigned int seed);
+
  protected:
   
   virtual double RandomUniform();
+
  private:
   PacketReader* packet_reader_;
   const NetworkingConfig& config_;

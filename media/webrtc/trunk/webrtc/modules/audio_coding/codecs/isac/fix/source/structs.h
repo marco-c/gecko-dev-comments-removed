@@ -20,6 +20,7 @@
 
 
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
+#include "webrtc/modules/audio_coding/codecs/isac/bandwidth_info.h"
 #include "webrtc/modules/audio_coding/codecs/isac/fix/source/settings.h"
 #include "webrtc/typedefs.h"
 
@@ -33,7 +34,7 @@ typedef struct Bitstreamstruct_dec {
   int16_t   full;             
   
 
-  int stream_size;  
+  size_t stream_size;  
 } Bitstr_dec;
 
 
@@ -177,8 +178,8 @@ typedef struct {
   int16_t pitchCycles;
   int16_t A;
   int16_t B;
-  int16_t pitchIndex;
-  int16_t stretchLag;
+  size_t pitchIndex;
+  size_t stretchLag;
   int16_t *prevPitchLP;                                  
   int16_t seed;
 
@@ -245,9 +246,7 @@ typedef struct {
 
   int16_t   highSpeedSend;
 
-
-
-
+  IsacBandwidthInfo external_bw_info;
 } BwEstimatorstr;
 
 

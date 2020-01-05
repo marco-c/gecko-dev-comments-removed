@@ -14,7 +14,7 @@
 #include <complex>
 
 #include "webrtc/base/scoped_ptr.h"
-#include "webrtc/system_wrappers/interface/aligned_malloc.h"
+#include "webrtc/system_wrappers/include/aligned_malloc.h"
 
 
 
@@ -30,7 +30,7 @@ class RealFourier {
       fft_cplx_scoper;
 
   
-  static const int kFftBufferAlignment;
+  static const size_t kFftBufferAlignment;
 
   
   
@@ -39,14 +39,14 @@ class RealFourier {
 
   
   
-  static int FftOrder(int length);
+  static int FftOrder(size_t length);
 
   
-  static int FftLength(int order);
+  static size_t FftLength(int order);
 
   
   
-  static int ComplexLength(int order);
+  static size_t ComplexLength(int order);
 
   
   

@@ -27,71 +27,68 @@
 
 void WebRtcIlbcfix_GetSyncSeq(
     int16_t *idata,   
-    int16_t idatal,   
-    int16_t centerStartPos, 
-    int16_t *period,   
-    int16_t *plocs,   
-    int16_t periodl,   
-    int16_t hl,    
+    size_t idatal,   
+    size_t centerStartPos, 
+    size_t *period,   
+    const size_t *plocs, 
+    size_t periodl,   
+    size_t hl,    
     int16_t *surround  
 
                               ){
-  int16_t i,centerEndPos,q;
+  size_t i, centerEndPos, q;
   
-  int16_t lagBlock[2*ENH_HL+1];
-  int16_t blockStartPos[2*ENH_HL+1]; 
-  int16_t plocs2[ENH_PLOCSL];
+  size_t lagBlock[2 * ENH_HL + 1];
+  size_t blockStartPos[2 * ENH_HL + 1]; 
+  size_t plocs2[ENH_PLOCSL];
 
-  centerEndPos=centerStartPos+ENH_BLOCKL-1;
+  centerEndPos = centerStartPos + ENH_BLOCKL - 1;
 
   
 
   WebRtcIlbcfix_NearestNeighbor(lagBlock + hl,
                                 plocs,
-                                (int16_t)(2 * (centerStartPos + centerEndPos)),
+                                2 * (centerStartPos + centerEndPos),
                                 periodl);
 
-  blockStartPos[hl] = (int16_t)(4 * centerStartPos);
+  blockStartPos[hl] = 4 * centerStartPos;
 
   
 
 
-  for(q=hl-1;q>=0;q--) {
-    blockStartPos[q]=blockStartPos[q+1]-period[lagBlock[q+1]];
+  for (q = hl; q > 0; q--) {
+    size_t qq = q - 1;
+    size_t period_q = period[lagBlock[q]];
+    
 
-    WebRtcIlbcfix_NearestNeighbor(
-        lagBlock + q,
-        plocs,
-        (int16_t)(blockStartPos[q] + 4 * ENH_BLOCKL_HALF -
-            period[lagBlock[q + 1]]),
-        periodl);
+    if (blockStartPos[q] < period_q + (4 * ENH_OVERHANG))
+      break;
+    blockStartPos[qq] = blockStartPos[q] - period_q;
 
-    if (blockStartPos[q] - 4 * ENH_OVERHANG >= 0) {
+    size_t value = blockStartPos[qq] + 4 * ENH_BLOCKL_HALF;
+    value = (value > period_q) ? (value - period_q) : 0;
+    WebRtcIlbcfix_NearestNeighbor(lagBlock + qq, plocs, value, periodl);
 
-      
+    
 
-      WebRtcIlbcfix_Refiner(blockStartPos+q,idata,idatal,
-                            centerStartPos,blockStartPos[q],surround,WebRtcIlbcfix_kEnhWt[q]);
-
-    } else {
-      
-
-    }
+    WebRtcIlbcfix_Refiner(blockStartPos + qq, idata, idatal, centerStartPos,
+                          blockStartPos[qq], surround,
+                          WebRtcIlbcfix_kEnhWt[qq]);
   }
 
   
 
 
-  for(i=0;i<periodl;i++) {
-    plocs2[i]=(plocs[i]-period[i]);
+  for (i = 0; i < periodl; i++) {
+    plocs2[i] = plocs[i] - period[i];
   }
 
-  for (q = hl + 1; q <= (int16_t)(2 * hl); q++) {
+  for (q = hl + 1; q <= (2 * hl); q++) {
 
     WebRtcIlbcfix_NearestNeighbor(
         lagBlock + q,
         plocs2,
-        (int16_t)(blockStartPos[q - 1] + 4 * ENH_BLOCKL_HALF),
+        blockStartPos[q - 1] + 4 * ENH_BLOCKL_HALF,
         periodl);
 
     blockStartPos[q]=blockStartPos[q-1]+period[lagBlock[q]];
@@ -100,11 +97,11 @@ void WebRtcIlbcfix_GetSyncSeq(
 
       
 
-      WebRtcIlbcfix_Refiner(blockStartPos+q, idata, idatal,
-                            centerStartPos,blockStartPos[q],surround,WebRtcIlbcfix_kEnhWt[2*hl-q]);
+      WebRtcIlbcfix_Refiner(blockStartPos + q, idata, idatal, centerStartPos,
+                            blockStartPos[q], surround,
+                            WebRtcIlbcfix_kEnhWt[2 * hl - q]);
 
-    }
-    else {
+    } else {
       
 
     }
