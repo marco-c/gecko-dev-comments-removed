@@ -181,8 +181,8 @@
 #include "nsPlaceholderFrame.h"
 #include "nsTransitionManager.h"
 #include "ChildIterator.h"
-#include "mozilla/RestyleManager.h"
-#include "mozilla/RestyleManagerInlines.h"
+#include "mozilla/RestyleManagerHandle.h"
+#include "mozilla/RestyleManagerHandleInlines.h"
 #include "nsIDOMHTMLElement.h"
 #include "nsIDragSession.h"
 #include "nsIFrameInlines.h"
@@ -2971,7 +2971,7 @@ PresShell::RecreateFramesFor(nsIContent* aContent)
 
   
   ++mChangeNestCount;
-  RestyleManager* restyleManager = mPresContext->RestyleManager();
+  RestyleManagerHandle restyleManager = mPresContext->RestyleManager();
   nsresult rv = restyleManager->ProcessRestyledFrames(changeList);
   restyleManager->FlushOverflowChangedTracker();
   --mChangeNestCount;
@@ -3758,7 +3758,7 @@ void
 PresShell::DispatchSynthMouseMove(WidgetGUIEvent* aEvent,
                                   bool aFlushOnHoverChange)
 {
-  RestyleManager* restyleManager = mPresContext->RestyleManager();
+  RestyleManagerHandle restyleManager = mPresContext->RestyleManager();
   uint32_t hoverGenerationBefore =
     restyleManager->GetHoverGeneration();
   nsEventStatus status;
@@ -4112,14 +4112,6 @@ PresShell::FlushPendingNotifications(mozilla::ChangesToFlush aFlush)
 
   NS_ASSERTION(flushType >= FlushType::Frames, "Why did we get called?");
 
-  
-  
-  
-  
-  
-  AutoRestore<bool> guard(mInFlush);
-  mInFlush = true;
-
   mNeedStyleFlush = false;
   mNeedThrottledAnimationFlush =
     mNeedThrottledAnimationFlush && !aFlush.mFlushAnimations;
@@ -4143,6 +4135,14 @@ PresShell::FlushPendingNotifications(mozilla::ChangesToFlush aFlush)
   bool didLayoutFlush = false;
   nsCOMPtr<nsIPresShell> kungFuDeathGrip;
   if (isSafeToFlush && viewManager) {
+    
+    
+    
+    
+    
+    AutoRestore<bool> guard(mInFlush);
+    mInFlush = true;
+
     
     
     kungFuDeathGrip = this;
@@ -4603,7 +4603,7 @@ nsIPresShell::RestyleForCSSRuleChanges()
     return;
   }
 
-  RestyleManager* restyleManager = mPresContext->RestyleManager();
+  RestyleManagerHandle restyleManager = mPresContext->RestyleManager();
 
   if (mStyleSet->IsServo()) {
     
@@ -9601,7 +9601,7 @@ PresShell::Observe(nsISupports* aSubject,
         {
           nsAutoScriptBlocker scriptBlocker;
           ++mChangeNestCount;
-          RestyleManager* restyleManager = mPresContext->RestyleManager();
+          RestyleManagerHandle restyleManager = mPresContext->RestyleManager();
           if (restyleManager->IsServo()) {
             MOZ_CRASH("stylo: PresShell::Observe(\"chrome-flush-skin-caches\") "
                       "not implemented for Servo-backed style system");
