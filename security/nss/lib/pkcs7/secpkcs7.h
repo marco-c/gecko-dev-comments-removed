@@ -299,6 +299,26 @@ SEC_PKCS7CreateEncryptedData(SECOidTag algorithm, int keysize,
 
 
 
+extern SEC_PKCS7ContentInfo *
+SEC_PKCS7CreateEncryptedDataWithPBEV2(SECOidTag pbe_algorithm,
+                                      SECOidTag cipher_algorithm,
+                                      SECOidTag prf_algorithm,
+                                      int keysize,
+                                      SECKEYGetPasswordKey pwfn, void *pwfn_arg);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

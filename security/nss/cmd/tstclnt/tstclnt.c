@@ -875,6 +875,10 @@ restartHandshakeAfterServerCertIfNeeded(PRFileDesc *fd,
 
     if (SSL_AuthCertificateComplete(fd, error) != SECSuccess) {
         rv = SECFailure;
+    } else {
+        
+
+        PORT_SetError(error);
     }
 
     return rv;

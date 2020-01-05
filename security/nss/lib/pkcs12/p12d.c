@@ -177,6 +177,9 @@ sec_pkcs12_decoder_get_decrypt_key(void *arg, SECAlgorithmID *algid)
     SEC_PKCS12DecoderContext *p12dcx = (SEC_PKCS12DecoderContext *)arg;
     PK11SlotInfo *slot;
     PK11SymKey *bulkKey;
+    SECItem *pwitem;
+    SECItem decodedPwitem = { 0 };
+    SECOidTag algorithm;
 
     if (!p12dcx) {
         return NULL;
@@ -189,7 +192,24 @@ sec_pkcs12_decoder_get_decrypt_key(void *arg, SECAlgorithmID *algid)
         slot = PK11_GetInternalKeySlot();
     }
 
-    bulkKey = PK11_PBEKeyGen(slot, algid, p12dcx->pwitem,
+    algorithm = SECOID_GetAlgorithmTag(algid);
+    pwitem = p12dcx->pwitem;
+
+    
+
+
+
+    if (!sec_pkcs12_is_pkcs12_pbe_algorithm(algorithm)) {
+        if (!sec_pkcs12_convert_item_to_unicode(NULL, &decodedPwitem,
+                                                p12dcx->pwitem,
+                                                PR_TRUE, PR_FALSE, PR_FALSE)) {
+            PORT_SetError(SEC_ERROR_NO_MEMORY);
+            return NULL;
+        }
+        pwitem = &decodedPwitem;
+    }
+
+    bulkKey = PK11_PBEKeyGen(slot, algid, pwitem,
                              PR_FALSE, p12dcx->wincx);
     
 
@@ -198,7 +218,7 @@ sec_pkcs12_decoder_get_decrypt_key(void *arg, SECAlgorithmID *algid)
     if (!bulkKey && !PK11_IsInternal(slot)) {
         PK11_FreeSlot(slot);
         slot = PK11_GetInternalKeySlot();
-        bulkKey = PK11_PBEKeyGen(slot, algid, p12dcx->pwitem,
+        bulkKey = PK11_PBEKeyGen(slot, algid, pwitem,
                                  PR_FALSE, p12dcx->wincx);
     }
     PK11_FreeSlot(slot);
@@ -206,6 +226,10 @@ sec_pkcs12_decoder_get_decrypt_key(void *arg, SECAlgorithmID *algid)
     
     if (bulkKey) {
         PK11_SetSymKeyUserData(bulkKey, p12dcx->pwitem, NULL);
+    }
+
+    if (decodedPwitem.data) {
+        SECITEM_ZfreeItem(&decodedPwitem, PR_FALSE);
     }
 
     return bulkKey;
