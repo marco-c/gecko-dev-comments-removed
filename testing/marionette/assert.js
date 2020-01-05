@@ -30,6 +30,26 @@ this.assert = {};
 
 
 
+
+
+
+
+
+assert.session = function (driver, msg = "") {
+  assert.that(sessionID => sessionID,
+      msg, InvalidSessionIdError)(driver.sessionId);
+  return driver.sessionId;
+};
+
+
+
+
+
+
+
+
+
+
 assert.firefox = function (msg = "") {
   msg = msg || "Only supported in Firefox";
   assert.that(isFirefox, msg, UnsupportedOperationError)();
