@@ -111,5 +111,7 @@ pub enum ScriptMsg {
     
     GetScrollOffset(PipelineId, LayerId, IpcSender<Point2D<f32>>),
     
+    PipelineExited(PipelineId),
+    
     Exit,
 }
