@@ -415,15 +415,6 @@ pref("media.realtime_decoder.enabled", true);
 pref("dom.mozTCPSocket.enabled", true);
 
 
-
-
-
-
-
-
-pref("layout.frame_rate.precise", true);
-
-
 pref("b2g.keys.menu.enabled", true);
 
 
