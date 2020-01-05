@@ -18,6 +18,7 @@ use std::fs::File;
 use std::io::{Read, Error as IoError};
 use std::ops::Deref;
 use std::sync::Mutex;
+use webrender_traits::NativeFontHandle;
 
 
 
@@ -106,8 +107,8 @@ impl FontTemplateData {
     }
 
     
-    pub fn native_font(&self) -> Option<CGFont> {
-        self.ctfont(0.0).map(|ctfont| ctfont.copy_to_CGFont())
+    pub fn native_font(&self) -> Option<NativeFontHandle> {
+        self.ctfont(0.0).map(|ctfont| NativeFontHandle(ctfont.copy_to_CGFont()))
     }
 }
 
