@@ -885,7 +885,6 @@ function _persistProgressListener(successCallback) {
         if (aRequest.QueryInterface(Ci.nsIHttpChannel).requestSucceeded) {
           
           successCallback();
-          return;
         }
       } catch (e) { }
       

@@ -155,7 +155,6 @@ add_task(function* testAltReturn() {
 
 
 add_task(function* testShiftAltReturn() {
-  return;
   
 
 

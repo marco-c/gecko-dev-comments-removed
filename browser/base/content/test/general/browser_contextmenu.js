@@ -374,7 +374,6 @@ add_task(function* test_textarea() {
   
   
   todo(false, "spell checker tests are failing, bug 1246296");
-  return;
 
   
 
@@ -398,7 +397,6 @@ add_task(function* test_textarea() {
 
 add_task(function* test_textarea_spellcheck() {
   todo(false, "spell checker tests are failing, bug 1246296");
-  return;
 
   
 
@@ -438,7 +436,6 @@ add_task(function* test_plaintext2() {
 
 add_task(function* test_undo_add_to_dictionary() {
   todo(false, "spell checker tests are failing, bug 1246296");
-  return;
 
   
 
@@ -472,7 +469,6 @@ add_task(function* test_undo_add_to_dictionary() {
 
 add_task(function* test_contenteditable() {
   todo(false, "spell checker tests are failing, bug 1246296");
-  return;
 
   
 
@@ -726,7 +722,6 @@ add_task(function* test_imagelink() {
 
 add_task(function* test_select_input_text() {
   todo(false, "spell checker tests are failing, bug 1246296");
-  return;
 
   
 
@@ -759,7 +754,6 @@ add_task(function* test_select_input_text() {
 
 add_task(function* test_select_input_text_password() {
   todo(false, "spell checker tests are failing, bug 1246296");
-  return;
 
   
 
@@ -878,7 +872,6 @@ add_task(function* test_srcdoc() {
 
 add_task(function* test_input_spell_false() {
   todo(false, "spell checker tests are failing, bug 1246296");
-  return;
 
   
 

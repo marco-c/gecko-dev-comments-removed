@@ -491,7 +491,6 @@ function whenSearchInitDone() {
             
             if (content.gSearch._contentSearchController.defaultEngine) {
               resolve();
-              return;
             }
           }
           content.setTimeout(resolver, 0);

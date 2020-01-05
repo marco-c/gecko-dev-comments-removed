@@ -354,7 +354,7 @@ add_task(function* canUndoUninstallDisabled() {
 
 add_task(function* uninstallLWTOffersUndo() {
   
-  return;
+
   
 
 

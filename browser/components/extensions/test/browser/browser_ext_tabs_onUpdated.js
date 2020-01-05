@@ -122,7 +122,6 @@ add_task(function* test_pinned() {
           
           browser.tabs.remove(tabId);
           browser.test.notifyPass("finish");
-          return;
         }
       });
       browser.tabs.update(tab.id, {pinned: true});
@@ -144,7 +143,6 @@ add_task(function* test_unpinned() {
           
           browser.tabs.remove(tabId);
           browser.test.notifyPass("finish");
-          return;
         }
       });
       browser.tabs.update(tab.id, {pinned: false});
@@ -167,7 +165,6 @@ add_task(function* test_url() {
           
           browser.tabs.remove(tabId);
           browser.test.notifyPass("finish");
-          return;
         }
       });
       browser.tabs.update(tab.id, {url: "about:blank"});

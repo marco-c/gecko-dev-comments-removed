@@ -2082,7 +2082,6 @@ UpdateService.prototype = {
       let prompter = Cc["@mozilla.org/updates/update-prompt;1"].
                      createInstance(Ci.nsIUpdatePrompt);
       prompter.showUpdateElevationRequired();
-      return;
     } else {
       
       

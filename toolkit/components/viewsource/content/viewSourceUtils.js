@@ -335,7 +335,6 @@ var gViewSourceUtils = {
       
       Components.utils.reportError(ex);
       this.handleCallBack(aCallBack, false, data);
-      return;
     }
   },
 
