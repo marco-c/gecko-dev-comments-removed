@@ -11,6 +11,10 @@
 using namespace nss_test;
 
 
+
+static size_t gExtraHeaderBytes = 0;
+
+
 class Record {
  public:
   static std::unique_ptr<Record> Create(const uint8_t *data, size_t size,
@@ -33,9 +37,9 @@ class Record {
   }
 
   void truncate(size_t length) {
-    assert(length >= 5);
+    assert(length >= 5 + gExtraHeaderBytes);
     uint8_t *dest = const_cast<uint8_t *>(data_);
-    (void)ssl_EncodeUintX(length - 5, 2, &dest[3]);
+    (void)ssl_EncodeUintX(length - 5 - gExtraHeaderBytes, 2, &dest[3]);
     memmove(dest + length, data_ + size_, remaining_);
   }
 
@@ -66,13 +70,8 @@ std::vector<std::unique_ptr<Record>> ParseRecords(const uint8_t *data,
   while (parser.remaining()) {
     size_t offset = parser.consumed();
 
-    uint32_t type;
-    if (!parser.Read(&type, 1)) {
-      break;
-    }
-
-    uint32_t version;
-    if (!parser.Read(&version, 2)) {
+    
+    if (!parser.Skip(3 + gExtraHeaderBytes)) {
       break;
     }
 
@@ -81,16 +80,22 @@ std::vector<std::unique_ptr<Record>> ParseRecords(const uint8_t *data,
       break;
     }
 
-    records.push_back(
-        Record::Create(data + offset, fragment.len() + 5, parser.remaining()));
+    records.push_back(Record::Create(data + offset,
+                                     fragment.len() + 5 + gExtraHeaderBytes,
+                                     parser.remaining()));
   }
 
   return records;
 }
 
+namespace TlsMutators {
 
-size_t TlsMutatorDropRecord(uint8_t *data, size_t size, size_t max_size,
-                            unsigned int seed) {
+
+void SetIsDTLS() { gExtraHeaderBytes = 8; }
+
+
+size_t DropRecord(uint8_t *data, size_t size, size_t max_size,
+                  unsigned int seed) {
   std::mt19937 rng(seed);
 
   
@@ -111,8 +116,8 @@ size_t TlsMutatorDropRecord(uint8_t *data, size_t size, size_t max_size,
 }
 
 
-size_t TlsMutatorShuffleRecords(uint8_t *data, size_t size, size_t max_size,
-                                unsigned int seed) {
+size_t ShuffleRecords(uint8_t *data, size_t size, size_t max_size,
+                      unsigned int seed) {
   std::mt19937 rng(seed);
 
   
@@ -142,8 +147,8 @@ size_t TlsMutatorShuffleRecords(uint8_t *data, size_t size, size_t max_size,
 }
 
 
-size_t TlsMutatorDuplicateRecord(uint8_t *data, size_t size, size_t max_size,
-                                 unsigned int seed) {
+size_t DuplicateRecord(uint8_t *data, size_t size, size_t max_size,
+                       unsigned int seed) {
   std::mt19937 rng(seed);
 
   
@@ -167,8 +172,8 @@ size_t TlsMutatorDuplicateRecord(uint8_t *data, size_t size, size_t max_size,
 }
 
 
-size_t TlsMutatorTruncateRecord(uint8_t *data, size_t size, size_t max_size,
-                                unsigned int seed) {
+size_t TruncateRecord(uint8_t *data, size_t size, size_t max_size,
+                      unsigned int seed) {
   std::mt19937 rng(seed);
 
   
@@ -182,12 +187,13 @@ size_t TlsMutatorTruncateRecord(uint8_t *data, size_t size, size_t max_size,
   auto &rec = records.at(dist(rng));
 
   
-  if (rec->size() <= 5) {
+  if (rec->size() <= 5 + gExtraHeaderBytes) {
     return 0;
   }
 
   
-  std::uniform_int_distribution<size_t> dist2(5, rec->size() - 1);
+  std::uniform_int_distribution<size_t> dist2(5 + gExtraHeaderBytes,
+                                              rec->size() - 1);
   size_t new_length = dist2(rng);
   rec->truncate(new_length);
 
@@ -196,9 +202,14 @@ size_t TlsMutatorTruncateRecord(uint8_t *data, size_t size, size_t max_size,
 }
 
 
-size_t TlsMutatorFragmentRecord(uint8_t *data, size_t size, size_t max_size,
-                                unsigned int seed) {
+size_t FragmentRecord(uint8_t *data, size_t size, size_t max_size,
+                      unsigned int seed) {
   std::mt19937 rng(seed);
+
+  
+  if (gExtraHeaderBytes > 0) {
+    return 0;
+  }
 
   if (size + 5 > max_size) {
     return 0;
@@ -238,9 +249,9 @@ size_t TlsMutatorFragmentRecord(uint8_t *data, size_t size, size_t max_size,
 }
 
 
-size_t TlsCrossOver(const uint8_t *data1, size_t size1, const uint8_t *data2,
-                    size_t size2, uint8_t *out, size_t max_out_size,
-                    unsigned int seed) {
+size_t CrossOver(const uint8_t *data1, size_t size1, const uint8_t *data2,
+                 size_t size2, uint8_t *out, size_t max_out_size,
+                 unsigned int seed) {
   std::mt19937 rng(seed);
 
   
@@ -274,3 +285,5 @@ size_t TlsCrossOver(const uint8_t *data1, size_t size1, const uint8_t *data2,
 
   return total;
 }
+
+}  
