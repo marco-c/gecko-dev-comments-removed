@@ -7,6 +7,8 @@
 #ifndef js_SliceBudget_h
 #define js_SliceBudget_h
 
+#include "mozilla/Atomics.h"
+
 #include <stdint.h>
 
 namespace js {
@@ -36,7 +38,7 @@ class JS_PUBLIC_API(SliceBudget)
     static const int64_t unlimitedDeadline = INT64_MAX;
     static const intptr_t unlimitedStartCounter = INTPTR_MAX;
 
-    bool checkOverBudget();
+    bool checkOverBudget(JSContext* maybeCx);
 
     SliceBudget();
 
@@ -48,7 +50,7 @@ class JS_PUBLIC_API(SliceBudget)
     WorkBudget workBudget;
 
     int64_t deadline; 
-    intptr_t counter;
+    mozilla::Atomic<intptr_t, mozilla::Relaxed> counter;
 
     static const intptr_t CounterReset = 1000;
 
@@ -64,19 +66,44 @@ class JS_PUBLIC_API(SliceBudget)
     
     explicit SliceBudget(WorkBudget work);
 
+    
+    SliceBudget(const SliceBudget& other)
+        : timeBudget(other.timeBudget),
+          workBudget(other.workBudget),
+          deadline(other.deadline),
+          counter(other.counter)
+    {}
+
+    
+    SliceBudget& operator=(const SliceBudget& other) {
+        timeBudget = other.timeBudget;
+        workBudget = other.workBudget;
+        deadline = other.deadline;
+        counter = intptr_t(other.counter);
+        return *this;
+    }
+
     void makeUnlimited() {
         deadline = unlimitedDeadline;
         counter = unlimitedStartCounter;
+    }
+
+    
+    
+    void requestFullCheck() {
+        counter = 0;
     }
 
     void step(intptr_t amt = 1) {
         counter -= amt;
     }
 
-    bool isOverBudget() {
+    
+    
+    bool isOverBudget(JSContext* maybeCx = nullptr) {
         if (counter > 0)
             return false;
-        return checkOverBudget();
+        return checkOverBudget(maybeCx);
     }
 
     bool isWorkBudget() const { return deadline == 0; }
