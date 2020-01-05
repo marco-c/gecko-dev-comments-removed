@@ -209,7 +209,9 @@ nsRubyFrame::ReflowSegment(nsPresContext* aPresContext,
     if (aBaseContainer != mFrames.FirstChild()) {
       
       
-      aStatus = NS_INLINE_LINE_BREAK_AFTER(NS_FRAME_NOT_COMPLETE);
+      aStatus.Reset();
+      aStatus.SetInlineLineBreakAfter();
+      aStatus.SetIncomplete();
       PushChildren(aBaseContainer, aBaseContainer->GetPrevSibling());
       aReflowInput.mLineLayout->SetDirtyNextLine();
     }

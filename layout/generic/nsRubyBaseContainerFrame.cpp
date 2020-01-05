@@ -527,7 +527,7 @@ nsRubyBaseContainerFrame::ReflowColumns(const RubyReflowInput& aReflowInput,
       aStatus.SetInlineLineBreakBeforeAndReset();
       return 0;
     }
-    aStatus = NS_INLINE_LINE_BREAK_AFTER(aStatus);
+    aStatus.SetInlineLineBreakAfter();
     MOZ_ASSERT(aStatus.IsComplete() || aReflowInput.mAllowLineBreak);
 
     
@@ -565,7 +565,7 @@ nsRubyBaseContainerFrame::ReflowColumns(const RubyReflowInput& aReflowInput,
     
     
     MOZ_ASSERT(e.AtEnd());
-    aStatus = NS_INLINE_LINE_BREAK_AFTER(aStatus);
+    aStatus.SetInlineLineBreakAfter();
   }
 
   return icoord;

@@ -5413,7 +5413,7 @@ nsGridContainerFrame::ReflowInFragmentainer(GridReflowInput&     aState,
       } else {
         
         
-        aStatus = NS_INLINE_LINE_BREAK_AFTER(aStatus); 
+        aStatus.SetInlineLineBreakAfter(); 
       }
     }
   }
