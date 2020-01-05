@@ -190,7 +190,6 @@ StackWalkInitCriticalAddress()
 #include <malloc.h>
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/StackWalk_windows.h"
-#include "nsWindowsDllInterceptor.h"
 
 #include <imagehlp.h>
 
@@ -226,20 +225,6 @@ CRITICAL_SECTION gDbgHelpCS;
 #ifdef _M_AMD64
 static uint8_t* sJitCodeRegionStart;
 static size_t sJitCodeRegionSize;
-
-static WindowsDllInterceptor NtDllInterceptor;
-typedef NTSTATUS (NTAPI *LdrUnloadDll_func)(HMODULE module);
-static LdrUnloadDll_func stub_LdrUnloadDll;
-static NTSTATUS NTAPI
-patched_LdrUnloadDll(HMODULE module)
-{
-  
-  
-  AcquireStackWalkWorkaroundLock();
-  NTSTATUS ret = stub_LdrUnloadDll(module);
-  ReleaseStackWalkWorkaroundLock();
-  return ret;
-}
 #endif
 
 
@@ -315,12 +300,6 @@ EnsureWalkThreadReady()
   stackWalkThread = nullptr;
   readyEvent = nullptr;
 
-#ifdef _M_AMD64
-  NtDllInterceptor.Init("ntdll.dll");
-  NtDllInterceptor.AddHook("LdrUnloadDll",
-                           reinterpret_cast<intptr_t>(patched_LdrUnloadDll),
-                           (void**)&stub_LdrUnloadDll);
-#endif
 
   ::InitializeCriticalSection(&gDbgHelpCS);
 
