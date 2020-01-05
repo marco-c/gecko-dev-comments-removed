@@ -932,28 +932,6 @@ protected:
 
 
 
-  static bool IsValidEmailAddress(const nsAString& aValue);
-
-  
-
-
-
-
-
-
-
-
-
-  static bool IsValidEmailAddressList(const nsAString& aValue);
-
-  
-
-
-
-
-
-
-
 
 
 

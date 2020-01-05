@@ -85,6 +85,8 @@ public:
     return new (aMemory) URLInputType(aInputElement);
   }
 
+  bool HasTypeMismatch() const override;
+
 private:
   explicit URLInputType(mozilla::dom::HTMLInputElement* aInputElement)
     : SingleLineTextInputTypeBase(aInputElement)
@@ -101,10 +103,54 @@ public:
     return new (aMemory) EmailInputType(aInputElement);
   }
 
+  bool HasTypeMismatch() const override;
+
 private:
   explicit EmailInputType(mozilla::dom::HTMLInputElement* aInputElement)
     : SingleLineTextInputTypeBase(aInputElement)
   {}
+
+  
+
+
+
+
+
+
+
+  static bool IsValidEmailAddress(const nsAString& aValue);
+
+  
+
+
+
+
+
+
+
+
+
+  static bool IsValidEmailAddressList(const nsAString& aValue);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ static bool PunycodeEncodeEmailAddress(const nsAString& aEmail,
+                                        nsAutoCString& aEncodedEmail,
+                                        uint32_t* aIndexOfAt);
 };
 
 
