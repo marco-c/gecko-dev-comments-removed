@@ -716,11 +716,20 @@ TimeoutManager::RescheduleTimeout(Timeout* aTimeout, const TimeStamp& now,
   }
 
   if (!aTimeout->mTimer) {
-    NS_ASSERTION(mWindow.IsFrozen() || mWindow.IsSuspended(),
-                 "How'd our timer end up null if we're not frozen or "
-                 "suspended?");
-
-    aTimeout->mTimeRemaining = delay;
+    if (mWindow.IsFrozen()) {
+      
+      
+      
+      
+      aTimeout->mTimeRemaining = delay;
+    } else if (mWindow.IsSuspended()) {
+    
+    
+    
+      aTimeout->mWhen = currentNow + delay;
+    } else {
+      MOZ_ASSERT_UNREACHABLE("Window should be frozen or suspended.");
+    }
     return true;
   }
 
