@@ -194,10 +194,39 @@ Module gModules[] = {
 
 
 
-void tracefunc (void *aClosure, const char *aStmt)
+int tracefunc (unsigned aReason, void *aClosure, void *aP, void *aX)
 {
-  MOZ_LOG(gStorageLog, LogLevel::Debug, ("sqlite3_trace on %p for '%s'", aClosure,
-                                     aStmt));
+  switch (aReason) {
+    case SQLITE_TRACE_STMT: {
+      
+      sqlite3_stmt* stmt = static_cast<sqlite3_stmt*>(aP);
+      
+      
+      char* expanded = static_cast<char*>(aX);
+      
+      if (!::strncmp(expanded, "--", 2)) {
+        MOZ_LOG(gStorageLog, LogLevel::Debug,
+          ("TRACE_STMT on %p: '%s'", aClosure, expanded));
+      } else {
+        char* sql = ::sqlite3_expanded_sql(stmt);
+        MOZ_LOG(gStorageLog, LogLevel::Debug,
+          ("TRACE_STMT on %p: '%s'", aClosure, sql));
+        ::sqlite3_free(sql);
+      }
+      break;
+    }
+    case SQLITE_TRACE_PROFILE: {
+      
+      
+      sqlite_int64 time = *(static_cast<sqlite_int64*>(aX)) / 1000000;
+      if (time > 0) {
+        MOZ_LOG(gStorageLog, LogLevel::Debug,
+          ("TRACE_TIME on %p: %dms", aClosure, time));
+      }
+      break;
+    }
+  }
+  return 0;
 }
 
 void
@@ -701,7 +730,9 @@ Connection::initializeInternal()
   
   
   if (MOZ_LOG_TEST(gStorageLog, LogLevel::Debug)) {
-    ::sqlite3_trace(mDBConn, tracefunc, this);
+    ::sqlite3_trace_v2(mDBConn,
+                       SQLITE_TRACE_STMT | SQLITE_TRACE_PROFILE,
+                       tracefunc, this);
 
     MOZ_LOG(gStorageLog, LogLevel::Debug, ("Opening connection to '%s' (%p)",
                                         mTelemetryFilename.get(), this));
