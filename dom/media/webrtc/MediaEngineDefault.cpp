@@ -13,6 +13,7 @@
 #include "ImageTypes.h"
 #include "prmem.h"
 #include "nsContentUtils.h"
+#include "MediaStreamGraph.h"
 
 #include "nsIFilePicker.h"
 #include "nsIPrefService.h"
@@ -367,14 +368,13 @@ private:
 
 
 
-NS_IMPL_ISUPPORTS(MediaEngineDefaultAudioSource, nsITimerCallback)
+
+NS_IMPL_ISUPPORTS0(MediaEngineDefaultAudioSource)
 
 MediaEngineDefaultAudioSource::MediaEngineDefaultAudioSource()
   : MediaEngineAudioSource(kReleased)
-  , mPrincipalHandle(PRINCIPAL_HANDLE_NONE)
-  , mTimer(nullptr)
-{
-}
+  , mLastNotify(0)
+{}
 
 MediaEngineDefaultAudioSource::~MediaEngineDefaultAudioSource()
 {}
@@ -453,43 +453,15 @@ MediaEngineDefaultAudioSource::Start(SourceMediaStream* aStream, TrackID aID,
     return NS_ERROR_FAILURE;
   }
 
-  mTimer = do_CreateInstance(NS_TIMER_CONTRACTID);
-  if (!mTimer) {
-    return NS_ERROR_FAILURE;
-  }
-
-  mSource = aStream;
-
-  
-  
-  mBufferSize = 2 * (AUDIO_RATE * DEFAULT_AUDIO_TIMER_MS) / 1000;
-
   
   AudioSegment* segment = new AudioSegment();
-  AppendToSegment(*segment, mBufferSize);
-  mSource->AddAudioTrack(aID, AUDIO_RATE, 0, segment, SourceMediaStream::ADDTRACK_QUEUED);
+  aStream->AddAudioTrack(aID, AUDIO_RATE, 0, segment, SourceMediaStream::ADDTRACK_QUEUED);
 
   
   mTrackID = aID;
 
-  
-  mPrincipalHandle = aPrincipalHandle;
-
-  mLastNotify = TimeStamp::Now();
-
-  
-  
-  
-#if defined(MOZ_WIDGET_GONK) && defined(DEBUG)
-
-  mTimer->InitWithCallback(this, DEFAULT_AUDIO_TIMER_MS*10,
-                           nsITimer::TYPE_REPEATING_PRECISE_CAN_SKIP);
-#else
-  mTimer->InitWithCallback(this, DEFAULT_AUDIO_TIMER_MS,
-                           nsITimer::TYPE_REPEATING_PRECISE_CAN_SKIP);
-#endif
+  mLastNotify = 0;
   mState = kStarted;
-
   return NS_OK;
 }
 
@@ -499,13 +471,6 @@ MediaEngineDefaultAudioSource::Stop(SourceMediaStream *aSource, TrackID aID)
   if (mState != kStarted) {
     return NS_ERROR_FAILURE;
   }
-  if (!mTimer) {
-    return NS_ERROR_FAILURE;
-  }
-
-  mTimer->Cancel();
-  mTimer = nullptr;
-
   aSource->EndTrack(aID);
 
   mState = kStopped;
@@ -524,7 +489,8 @@ MediaEngineDefaultAudioSource::Restart(AllocationHandle* aHandle,
 
 void
 MediaEngineDefaultAudioSource::AppendToSegment(AudioSegment& aSegment,
-                                               TrackTicks aSamples)
+                                               TrackTicks aSamples,
+                                               const PrincipalHandle& aPrincipalHandle)
 {
   RefPtr<SharedBuffer> buffer = SharedBuffer::Create(aSamples * sizeof(int16_t));
   int16_t* dest = static_cast<int16_t*>(buffer->Data());
@@ -532,28 +498,24 @@ MediaEngineDefaultAudioSource::AppendToSegment(AudioSegment& aSegment,
   mSineGenerator->generate(dest, aSamples);
   AutoTArray<const int16_t*,1> channels;
   channels.AppendElement(dest);
-  aSegment.AppendFrames(buffer.forget(), channels, aSamples, mPrincipalHandle);
+  aSegment.AppendFrames(buffer.forget(), channels, aSamples, aPrincipalHandle);
 }
 
-NS_IMETHODIMP
-MediaEngineDefaultAudioSource::Notify(nsITimer* aTimer)
+void
+MediaEngineDefaultAudioSource::NotifyPull(MediaStreamGraph* aGraph,
+                                          SourceMediaStream *aSource,
+                                          TrackID aID,
+                                          StreamTime aDesiredTime,
+                                          const PrincipalHandle& aPrincipalHandle)
 {
-  TimeStamp now = TimeStamp::Now();
-  TimeDuration timeSinceLastNotify = now - mLastNotify;
-  mLastNotify = now;
-  TrackTicks samplesSinceLastNotify =
-    RateConvertTicksRoundUp(AUDIO_RATE, 1000000, timeSinceLastNotify.ToMicroseconds());
-
-  
-  
-  
-  TrackTicks samplesToAppend = std::min(samplesSinceLastNotify, mBufferSize);
-
+  MOZ_ASSERT(aID == mTrackID);
   AudioSegment segment;
-  AppendToSegment(segment, samplesToAppend);
-  mSource->AppendToTrack(mTrackID, &segment);
-
-  return NS_OK;
+  
+  TrackTicks desired = aSource->TimeToTicksRoundUp(AUDIO_RATE, aDesiredTime);
+  TrackTicks delta = desired - mLastNotify;
+  mLastNotify += delta;
+  AppendToSegment(segment, delta, aPrincipalHandle);
+  aSource->AppendToTrack(mTrackID, &segment);
 }
 
 void
