@@ -767,6 +767,11 @@ public:
   
   void NotifyActiveVRDisplaysChanged();
 
+  
+  uint32_t GetAutoActivateVRDisplayID();
+  
+  void SetAutoActivateVRDisplayID(uint32_t aAutoActivateVRDisplayID);
+
   void DispatchVRDisplayActivate(uint32_t aDisplayID,
                                  mozilla::dom::VRDisplayEventReason aReason);
   void DispatchVRDisplayDeactivate(uint32_t aDisplayID,
@@ -2039,6 +2044,11 @@ protected:
   nsTArray<RefPtr<mozilla::dom::VRDisplay>> mVRDisplays;
 
   RefPtr<mozilla::dom::VREventObserver> mVREventObserver;
+
+  
+  
+  
+  uint32_t mAutoActivateVRDisplayID; 
 
 #ifdef ENABLE_INTL_API
   RefPtr<mozilla::dom::IntlUtils> mIntlUtils;
