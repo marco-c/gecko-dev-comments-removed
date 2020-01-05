@@ -189,13 +189,21 @@ var MessageListener = {
       }
     });
 
-    
-    
-    
-    
-    
-    
-    sendSyncMessage("SessionStore:restoreHistoryComplete", {epoch, isRemotenessUpdate});
+    if (Services.appinfo.processType == Services.appinfo.PROCESS_TYPE_DEFAULT) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      sendSyncMessage("SessionStore:restoreHistoryComplete", {epoch, isRemotenessUpdate});
+    } else {
+      sendAsyncMessage("SessionStore:restoreHistoryComplete", {epoch, isRemotenessUpdate});
+    }
   },
 
   restoreTabContent({loadArguments, isRemotenessUpdate, reason}) {
