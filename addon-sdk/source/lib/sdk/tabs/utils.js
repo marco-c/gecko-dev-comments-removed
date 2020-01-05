@@ -106,7 +106,7 @@ exports.getActiveTab = getActiveTab;
 function getOwnerWindow(tab) {
   
   if (tab.ownerDocument)
-    return tab.ownerDocument.defaultView;
+    return tab.ownerGlobal;
 
   
   return getWindowHoldingTab(tab);

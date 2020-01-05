@@ -18,7 +18,7 @@ Cu.import("resource://gre/modules/ExtensionUtils.jsm");
 Cu.import("resource://gre/modules/Task.jsm");
 
 var {
-  SingletonEventManager,
+  EventManager,
   IconDetails,
 } = ExtensionUtils;
 
@@ -186,7 +186,7 @@ BrowserAction.prototype = {
 
   handleEvent(event) {
     let button = event.target;
-    let window = button.ownerDocument.defaultView;
+    let window = button.ownerGlobal;
 
     switch (event.type) {
       case "mousedown":
@@ -446,10 +446,10 @@ extensions.registerSchemaAPI("browserAction", "addon_parent", context => {
   let {extension} = context;
   return {
     browserAction: {
-      onClicked: new SingletonEventManager(context, "browserAction.onClicked", fire => {
+      onClicked: new EventManager(context, "browserAction.onClicked", fire => {
         let listener = () => {
           let tab = TabManager.activeTab;
-          fire.async(TabManager.convert(extension, tab));
+          fire(TabManager.convert(extension, tab));
         };
         BrowserAction.for(extension).on("click", listener);
         return () => {

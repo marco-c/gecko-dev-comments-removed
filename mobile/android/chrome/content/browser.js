@@ -1538,7 +1538,7 @@ var BrowserApp = {
         
         
         
-        focused = focused.ownerDocument.defaultView.frameElement;
+        focused = focused.ownerGlobal.frameElement;
       }
       return focused;
     }
@@ -2924,7 +2924,7 @@ var NativeWindow = {
 
       let useTabs = Object.keys(this.menus).length > 1;
       let prompt = new Prompt({
-        window: target.ownerDocument.defaultView,
+        window: target.ownerGlobal,
         title: useTabs ? undefined : title
       });
 
@@ -3081,7 +3081,7 @@ var LightWeightThemeWebInstaller = {
       case "PreviewBrowserTheme":
       case "ResetBrowserThemePreview":
         
-        if (event.target.ownerDocument.defaultView.top != content)
+        if (event.target.ownerGlobal.top != content)
           return;
     }
 
@@ -3158,7 +3158,7 @@ var LightWeightThemeWebInstaller = {
       return;
     this._resetPreview();
 
-    this._previewWindow = event.target.ownerDocument.defaultView;
+    this._previewWindow = event.target.ownerGlobal;
     this._previewWindow.addEventListener("pagehide", this, true);
     BrowserApp.deck.addEventListener("TabSelect", this);
     this._manager.previewTheme(data);
@@ -4807,7 +4807,7 @@ const ElementTouchHelper = {
     let r = aElement.getBoundingClientRect();
 
     
-    for (let frame = aElement.ownerDocument.defaultView; frame.frameElement && frame != content; frame = frame.parent) {
+    for (let frame = aElement.ownerGlobal; frame.frameElement && frame != content; frame = frame.parent) {
       
       let rect = frame.frameElement.getBoundingClientRect();
       let left = frame.getComputedStyle(frame.frameElement).borderLeftWidth;
@@ -5032,7 +5032,7 @@ var FormAssistant = {
     
     let currentElement = aInvalidElements.queryElementAt(0, Ci.nsISupports);
     if (BrowserApp.selectedBrowser.contentDocument !=
-        currentElement.ownerDocument.defaultView.top.document)
+        currentElement.ownerGlobal.top.document)
       return;
 
     this._invalidSubmit = true;

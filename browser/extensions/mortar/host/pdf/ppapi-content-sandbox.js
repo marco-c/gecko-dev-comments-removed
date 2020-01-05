@@ -19,7 +19,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "PrivateBrowsingUtils",
                              "resource://gre/modules/PrivateBrowsingUtils.jsm");
 
 let mm = pluginElement.frameLoader.messageManager;
-let containerWindow = pluginElement.ownerDocument.defaultView;
+let containerWindow = pluginElement.ownerGlobal;
 
 
 pluginElement.addEventListener("dragstart",

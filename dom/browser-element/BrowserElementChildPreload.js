@@ -580,7 +580,7 @@ BrowserElementChild.prototype = {
 
   
   _linkAddedHandler: function(e) {
-    let win = e.target.ownerDocument.defaultView;
+    let win = e.target.ownerGlobal;
     
     
     if (win != content) {
@@ -606,7 +606,7 @@ BrowserElementChild.prototype = {
   },
 
   _metaChangedHandler: function(e) {
-    let win = e.target.ownerDocument.defaultView;
+    let win = e.target.ownerGlobal;
     
     
     if (win != content) {

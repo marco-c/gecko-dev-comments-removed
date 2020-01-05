@@ -112,7 +112,7 @@ function _onInputKeyPress(event, callback) {
   }
 
   let currentlyFocused = event.target;
-  let currentlyFocusedWindow = currentlyFocused.ownerDocument.defaultView;
+  let currentlyFocusedWindow = currentlyFocused.ownerGlobal;
   let bestElementToFocus = null;
 
   

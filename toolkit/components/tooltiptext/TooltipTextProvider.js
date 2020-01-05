@@ -19,7 +19,7 @@ TooltipTextProvider.prototype = {
       return false;
     }
 
-    var defView = tipElement.ownerDocument.defaultView;
+    var defView = tipElement.ownerGlobal;
     
     
     if (!defView)

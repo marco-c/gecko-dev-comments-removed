@@ -50,7 +50,7 @@ RemoteController.prototype = {
       
       
       let rect = this._browser.getBoundingClientRect();
-      let scale = this._browser.ownerDocument.defaultView.devicePixelRatio;
+      let scale = this._browser.ownerGlobal.devicePixelRatio;
       cmd.params = {
         x:  {
           type: "long",
@@ -90,6 +90,6 @@ RemoteController.prototype = {
       this._supportedCommands[aDisabledCommands[c]] = false;
     }
 
-    this._browser.ownerDocument.defaultView.updateCommands(aAction);
+    this._browser.ownerGlobal.updateCommands(aAction);
   }
 };

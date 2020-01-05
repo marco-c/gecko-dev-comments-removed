@@ -138,7 +138,7 @@ function display(panel, options, anchor) {
     
     
     panel.style.margin = "";
-    let { CustomizableUI, window } = anchor.ownerDocument.defaultView;
+    let { CustomizableUI, window } = anchor.ownerGlobal;
 
     
     

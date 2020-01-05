@@ -34,7 +34,7 @@ this.PrivateBrowsingUtils = {
   },
 
   isBrowserPrivate(aBrowser) {
-    let chromeWin = aBrowser.ownerDocument.defaultView;
+    let chromeWin = aBrowser.ownerGlobal;
     if (chromeWin.gMultiProcessBrowser) {
       
       

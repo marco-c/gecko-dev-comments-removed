@@ -266,7 +266,7 @@ var Manager = {
   onContentClick(target, data) {
     
     if (data.href && !data.bookmark) {
-      let ownerWin = target.ownerDocument.defaultView;
+      let ownerWin = target.ownerGlobal;
       let where = ownerWin.whereToOpenLink(data);
       if (where == "current") {
         this.setRecentTabTransitionData({link: true});

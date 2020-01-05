@@ -56,7 +56,7 @@ this.SelectContentHelper.prototype = {
     this.global.addMessageListener("Forms:MouseUp", this);
     this.global.addEventListener("pagehide", this);
     this.global.addEventListener("mozhidedropdown", this);
-    let MutationObserver = this.element.ownerDocument.defaultView.MutationObserver;
+    let MutationObserver = this.element.ownerGlobal.MutationObserver;
     this.mut = new MutationObserver(mutations => {
       
       
@@ -132,7 +132,7 @@ this.SelectContentHelper.prototype = {
       case "Forms:DismissedDropDown":
         let selectedOption = this.element.item(this.element.selectedIndex);
         if (this.initialSelection != selectedOption) {
-          let win = this.element.ownerDocument.defaultView;
+          let win = this.element.ownerGlobal;
           
           
           
@@ -172,7 +172,7 @@ this.SelectContentHelper.prototype = {
         break;
 
       case "Forms:MouseUp":
-        let win = this.element.ownerDocument.defaultView;
+        let win = this.element.ownerGlobal;
         if (message.data.onAnchor) {
           this.dispatchMouseEvent(win, this.element, "mouseup");
         }
@@ -204,7 +204,7 @@ this.SelectContentHelper.prototype = {
 }
 
 function getComputedStyles(element) {
-  return element.ownerDocument.defaultView.getComputedStyle(element);
+  return element.ownerGlobal.getComputedStyle(element);
 }
 
 function buildOptionListForChildren(node) {

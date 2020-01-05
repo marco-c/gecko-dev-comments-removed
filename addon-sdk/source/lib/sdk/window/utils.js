@@ -415,7 +415,7 @@ function getOwnerBrowserWindow(node) {
   
 
 
-  let window = getToplevelWindow(node.ownerDocument.defaultView);
+  let window = getToplevelWindow(node.ownerGlobal);
   
   return isBrowser(window) ? window : null;
 }

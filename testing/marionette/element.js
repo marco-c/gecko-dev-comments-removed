@@ -882,7 +882,7 @@ element.coordinates = function (
 
 
 element.inViewport = function (el, x = undefined, y = undefined) {
-  let win = el.ownerDocument.defaultView;
+  let win = el.ownerGlobal;
   let c = element.coordinates(el, x, y);
   let vp = {
     top: win.pageYOffset,
@@ -916,7 +916,7 @@ element.inViewport = function (el, x = undefined, y = undefined) {
 
 
 element.isVisible = function (el, x = undefined, y = undefined) {
-  let win = el.ownerDocument.defaultView;
+  let win = el.ownerGlobal;
 
   
   if (!element.isXULElement(el) && !atom.isElementDisplayed(el, win)) {

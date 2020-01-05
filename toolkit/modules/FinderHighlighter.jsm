@@ -281,7 +281,7 @@ FinderHighlighter.prototype = {
   highlightRange(range) {
     let node = range.startContainer;
     let editableNode = this._getEditableNode(node);
-    let window = node.ownerDocument.defaultView;
+    let window = node.ownerGlobal;
     let controller = this.finder._getSelectionController(window);
     if (editableNode) {
       controller = editableNode.editor.selectionController;
@@ -642,7 +642,7 @@ FinderHighlighter.prototype = {
     let node = range.startContainer;
     while (node.nodeType != 1)
       node = node.parentNode;
-    let style = node.ownerDocument.defaultView.getComputedStyle(node);
+    let style = node.ownerGlobal.getComputedStyle(node);
     let props = {};
     for (let prop of kFontPropsCamelCase) {
       if (prop in style && style[prop])
@@ -792,7 +792,7 @@ FinderHighlighter.prototype = {
 
 
   _getRangeRectsAndTexts(range, dict = null) {
-    let window = range.startContainer.ownerDocument.defaultView;
+    let window = range.startContainer.ownerGlobal;
     let bounds;
     
     if (dict && dict.frames.has(window)) {
@@ -836,7 +836,7 @@ FinderHighlighter.prototype = {
 
 
   _updateRangeRects(range, checkIfDynamic = true, dict = null) {
-    let window = range.startContainer.ownerDocument.defaultView;
+    let window = range.startContainer.ownerGlobal;
     let rectsAndTexts = this._getRangeRectsAndTexts(range, dict);
 
     
@@ -899,7 +899,7 @@ FinderHighlighter.prototype = {
       rectCount != 1);
     dict.previousRangeRectsAndTexts = rectsAndTexts;
 
-    let window = range.startContainer.ownerDocument.defaultView.top;
+    let window = range.startContainer.ownerGlobal.top;
     let document = window.document;
     
     if (rebuildOutline)

@@ -667,7 +667,7 @@ DevToolsUtils.makeInfallible(function (window) {
 
     for (let [browser, actor] of this._actorByBrowser) {
       
-      if (!browser.ownerDocument.defaultView) {
+      if (!browser.ownerGlobal) {
         this._handleActorClose(actor, browser);
       }
     }

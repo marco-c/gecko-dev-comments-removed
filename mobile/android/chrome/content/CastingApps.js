@@ -607,7 +607,7 @@ var CastingApps = {
     }
 
     
-    if (BrowserApp.selectedTab != BrowserApp.getTabForWindow(aVideo.ownerDocument.defaultView.top)) {
+    if (BrowserApp.selectedTab != BrowserApp.getTabForWindow(aVideo.ownerGlobal.top)) {
       return;
     }
 
@@ -690,7 +690,7 @@ var CastingApps = {
         return;
 
       if (aVideo.element) {
-        aVideo.title = aVideo.element.ownerDocument.defaultView.top.document.title;
+        aVideo.title = aVideo.element.ownerGlobal.top.document.title;
 
         
         if (!aVideo.element.paused) {

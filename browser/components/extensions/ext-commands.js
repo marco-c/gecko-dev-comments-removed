@@ -6,7 +6,7 @@ Cu.import("resource://devtools/shared/event-emitter.js");
 Cu.import("resource://gre/modules/ExtensionUtils.jsm");
 
 var {
-  SingletonEventManager,
+  EventManager,
   PlatformInfo,
 } = ExtensionUtils;
 
@@ -126,10 +126,10 @@ CommandList.prototype = {
     
     keyElement.addEventListener("command", (event) => {
       if (name == "_execute_page_action") {
-        let win = event.target.ownerDocument.defaultView;
+        let win = event.target.ownerGlobal;
         pageActionFor(this.extension).triggerAction(win);
       } else if (name == "_execute_browser_action") {
-        let win = event.target.ownerDocument.defaultView;
+        let win = event.target.ownerGlobal;
         browserActionFor(this.extension).triggerAction(win);
       } else {
         TabManager.for(this.extension)
@@ -245,9 +245,9 @@ extensions.registerSchemaAPI("commands", "addon_parent", context => {
           });
         }));
       },
-      onCommand: new SingletonEventManager(context, "commands.onCommand", fire => {
+      onCommand: new EventManager(context, "commands.onCommand", fire => {
         let listener = (eventName, commandName) => {
-          fire.async(commandName);
+          fire(commandName);
         };
         commandsMap.get(extension).on("command", listener);
         return () => {

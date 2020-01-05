@@ -613,7 +613,7 @@ this.FinderIterator = {
     let window = windowOrRange;
     
     if (windowOrRange instanceof Ci.nsIDOMRange)
-      window = windowOrRange.startContainer.ownerDocument.defaultView;
+      window = windowOrRange.startContainer.ownerGlobal;
     return window.QueryInterface(Ci.nsIInterfaceRequestor)
                  .getInterface(Ci.nsIWebNavigation)
                  .QueryInterface(Ci.nsIDocShell);

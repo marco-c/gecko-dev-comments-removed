@@ -166,7 +166,7 @@ handlers.wifi = {
 
       
       
-      node.ownerDocument.defaultView.setTimeout(function() {
+      node.ownerGlobal.setTimeout(function() {
         node.ownerDocument.location.reload(false);
       }, 500);
     }

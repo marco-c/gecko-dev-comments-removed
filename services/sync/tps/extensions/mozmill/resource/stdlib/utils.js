@@ -269,7 +269,7 @@ function waitFor(callback, message, timeout, interval, thisObject) {
 
 
 function getChromeOffset(elem) {
-  var win = elem.ownerDocument.defaultView;
+  var win = elem.ownerGlobal;
   
   var chromeWidth = 0;
 
@@ -304,7 +304,7 @@ function takeScreenshot(node, highlights) {
   
   try {
     
-    win = node.ownerDocument.defaultView;
+    win = node.ownerGlobal;
     rect = node.getBoundingClientRect();
     width = rect.width;
     height = rect.height;

@@ -11,6 +11,8 @@ Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/Task.jsm");
 
+XPCOMUtils.defineLazyModuleGetter(this, "UserAutoCompleteResult",
+                                  "resource://gre/modules/LoginManagerContent.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "AutoCompletePopup",
                                   "resource://gre/modules/AutoCompletePopup.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "DeferredTask",
@@ -224,9 +226,9 @@ var LoginManagerParent = {
   }),
 
   doAutocompleteSearch({ formOrigin, actionOrigin,
-                         searchString, previousResult,
-                         rect, requestId, isSecure, isPasswordField,
-                       }, target) {
+                                   searchString, previousResult,
+                                   rect, requestId, isSecure, isPasswordField,
+                                   remote }, target) {
     
     
 
@@ -269,6 +271,16 @@ var LoginManagerParent = {
 
     
     
+    
+    
+    
+    if (remote) {
+      let results = new UserAutoCompleteResult(searchString, matchingLogins, {isSecure});
+      AutoCompletePopup.showPopupWithResults({ browser: target.ownerGlobal, rect, results });
+    }
+
+    
+    
     var jsLogins = LoginHelper.loginsToVanillaObjects(matchingLogins);
     target.messageManager.sendAsyncMessage("RemoteLogins:loginsAutoCompleted", {
       requestId,
@@ -283,7 +295,7 @@ var LoginManagerParent = {
     function getPrompter() {
       var prompterSvc = Cc["@mozilla.org/login-manager/prompter;1"].
                         createInstance(Ci.nsILoginManagerPrompter);
-      prompterSvc.init(target.ownerDocument.defaultView);
+      prompterSvc.init(target.ownerGlobal);
       prompterSvc.browser = target;
       prompterSvc.opener = openerTopWindow;
       return prompterSvc;
@@ -472,7 +484,7 @@ var LoginManagerParent = {
     state.hasInsecureLoginForms = hasInsecureLoginForms;
 
     
-    browser.dispatchEvent(new browser.ownerDocument.defaultView
+    browser.dispatchEvent(new browser.ownerGlobal
                                  .CustomEvent("InsecureLoginFormsStateChange"));
   },
 };

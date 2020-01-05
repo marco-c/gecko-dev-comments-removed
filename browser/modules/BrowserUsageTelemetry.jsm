@@ -152,7 +152,7 @@ let URICountListener = {
 
     
     
-    if (browser.ownerDocument.defaultView.gInitialPages.includes(uriSpec)) {
+    if (browser.ownerGlobal.gInitialPages.includes(uriSpec)) {
       return;
     }
 

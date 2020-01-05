@@ -67,7 +67,7 @@ const Tab = Class({
 
     getURL.implement(this, tab => tab.url);
     isPrivate.implement(this, tab => {
-      return isWindowPrivate(viewsFor.get(tab).ownerDocument.defaultView);
+      return isWindowPrivate(viewsFor.get(tab).ownerGlobal);
     });
   },
 
@@ -123,7 +123,7 @@ const Tab = Class({
     
     require('../windows');
     let tabElement = viewsFor.get(this);
-    let domWindow = tabElement.ownerDocument.defaultView;
+    let domWindow = tabElement.ownerGlobal;
     return modelFor(domWindow);
   },
 
@@ -256,7 +256,7 @@ function tabEmit(tab, event, ...args) {
   
   
   let tabElement = viewsFor.get(tab);
-  let window = maybeWindowFor(tabElement.ownerDocument.defaultView);
+  let window = maybeWindowFor(tabElement.ownerGlobal);
   if (window)
     emit(window.tabs, event, tab, ...args);
 
@@ -281,7 +281,7 @@ when(_ => {
 
 
 function tabEventListener(event, tabElement, ...args) {
-  let domWindow = tabElement.ownerDocument.defaultView;
+  let domWindow = tabElement.ownerGlobal;
 
   if (ignoreWindow(domWindow))
     return;

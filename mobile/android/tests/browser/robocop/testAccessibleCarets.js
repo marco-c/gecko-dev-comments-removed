@@ -1,4 +1,4 @@
-﻿
+
 
 
 
@@ -57,7 +57,7 @@ function isInputOrTextarea(element) {
 function elementSelection(element) {
   return (isInputOrTextarea(element)) ?
     element.editor.selection :
-    element.ownerDocument.defaultView.getSelection();
+    element.ownerGlobal.getSelection();
 }
 
 
