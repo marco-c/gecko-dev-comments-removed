@@ -1,0 +1,23 @@
+
+
+
+
+"use strict";
+
+const {
+  UPDATE_LAYOUT,
+} = require("./index");
+
+module.exports = {
+
+  
+
+
+  updateLayout(layout) {
+    return {
+      type: UPDATE_LAYOUT,
+      layout,
+    };
+  },
+
+};
