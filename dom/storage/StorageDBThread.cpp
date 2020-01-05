@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "StorageDBThread.h"
 #include "StorageDBUpdater.h"
@@ -29,24 +29,24 @@
 #include "mozilla/Tokenizer.h"
 #include "GeckoProfiler.h"
 
-
-
-
+// How long we collect write oprerations
+// before they are flushed to the database
+// In milliseconds.
 #define FLUSHING_INTERVAL_MS 5000
 
-
+// Write Ahead Log's maximum size is 512KB
 #define MAX_WAL_SIZE_BYTES 512 * 1024
 
-
+// Current version of the database schema
 #define CURRENT_SCHEMA_VERSION 1
 
 namespace mozilla {
 namespace dom {
 
-namespace { 
+namespace { // anon
 
-
-
+// This is only a compatibility code for schema version 0.  Returns the 'scope'
+// key in the schema version 0 format for the scope column.
 nsCString
 Scheme0Scope(StorageCacheBridge* aCache)
 {
@@ -54,7 +54,7 @@ Scheme0Scope(StorageCacheBridge* aCache)
 
   nsCString suffix = aCache->OriginSuffix();
 
-  PrincipalOriginAttributes oa;
+  OriginAttributes oa;
   if (!suffix.IsEmpty()) {
     DebugOnly<bool> success = oa.PopulateFromSuffix(suffix);
     MOZ_ASSERT(success);
@@ -68,11 +68,11 @@ Scheme0Scope(StorageCacheBridge* aCache)
     result.Append(':');
   }
 
-  
-  
-  
-  
-  
+  // If there is more than just appid and/or inbrowser stored in origin
+  // attributes, put it to the schema 0 scope as well.  We must do that
+  // to keep the scope column unique (same resolution as schema 1 has
+  // with originAttributes and originKey columns) so that switch between
+  // schema 1 and 0 always works in both ways.
   nsAutoCString remaining;
   oa.mAppId = 0;
   oa.mInIsolatedMozBrowser = false;
@@ -81,17 +81,17 @@ Scheme0Scope(StorageCacheBridge* aCache)
     MOZ_ASSERT(!suffix.IsEmpty());
 
     if (result.IsEmpty()) {
-      
-      
+      // Must contain the old prefix, otherwise we won't search for the whole
+      // origin attributes suffix.
       result.Append(NS_LITERAL_CSTRING("0:f:"));
     }
-    
-    
-    
-    
-    
-    
-    
+    // Append the whole origin attributes suffix despite we have already stored
+    // appid and inbrowser.  We are only looking for it when the scope string
+    // starts with "$appid:$inbrowser:" (with whatever valid values).
+    //
+    // The OriginAttributes suffix is a string in a form like:
+    // "^addonId=101&userContextId=5" and it's ensured it always starts with '^'
+    // and never contains ':'.  See OriginAttributes::CreateSuffix.
     result.Append(suffix);
     result.Append(':');
   }
@@ -101,7 +101,7 @@ Scheme0Scope(StorageCacheBridge* aCache)
   return result;
 }
 
-} 
+} // anon
 
 
 StorageDBBridge::StorageDBBridge()
@@ -129,9 +129,9 @@ StorageDBThread::Init()
 {
   nsresult rv;
 
-  
-  
-  
+  // Need to determine location on the main thread, since
+  // NS_GetSpecialDirectory access the atom table that can
+  // be accessed only on the main thread.
   rv = NS_GetSpecialDirectory(NS_APP_USER_PROFILE_50_DIR,
                               getter_AddRefs(mDatabaseFile));
   NS_ENSURE_SUCCESS(rv, rv);
@@ -139,13 +139,13 @@ StorageDBThread::Init()
   rv = mDatabaseFile->Append(NS_LITERAL_STRING("webappsstore.sqlite"));
   NS_ENSURE_SUCCESS(rv, rv);
 
-  
+  // Ensure mozIStorageService init on the main thread first.
   nsCOMPtr<mozIStorageService> service =
     do_GetService(MOZ_STORAGE_SERVICE_CONTRACTID, &rv);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  
-  
+  // Need to keep the lock to avoid setting mThread later then
+  // the thread body executes.
   MonitorAutoLock monitor(mThreadObserver->GetMonitor());
 
   mThread = PR_CreateThread(PR_USER_THREAD, &StorageDBThread::ThreadFunc, this,
@@ -170,7 +170,7 @@ StorageDBThread::Shutdown()
   {
     MonitorAutoLock monitor(mThreadObserver->GetMonitor());
 
-    
+    // After we stop, no other operations can be accepted
     mFlushImmediately = true;
     mStopIOThread = true;
     monitor.Notify();
@@ -187,17 +187,17 @@ StorageDBThread::SyncPreload(StorageCacheBridge* aCache, bool aForceSync)
 {
   PROFILER_LABEL_FUNC(js::ProfileEntry::Category::STORAGE);
   if (!aForceSync && aCache->LoadedCount()) {
-    
-    
+    // Preload already started for this cache, just wait for it to finish.
+    // LoadWait will exit after LoadDone on the cache has been called.
     SetHigherPriority();
     aCache->LoadWait();
     SetDefaultPriority();
     return;
   }
 
-  
-  
-  
+  // Bypass sync load when an update is pending in the queue to write, we would
+  // get incosistent data in the cache.  Also don't allow sync main-thread
+  // preload when DB open and init is still pending on the background thread.
   if (mDBReady && mWALModeEnabled) {
     bool pendingTasks;
     {
@@ -207,19 +207,19 @@ StorageDBThread::SyncPreload(StorageCacheBridge* aCache, bool aForceSync)
     }
 
     if (!pendingTasks) {
-      
+      // WAL is enabled, thus do the load synchronously on the main thread.
       DBOperation preload(DBOperation::opPreload, aCache);
       preload.PerformAndFinalize(this);
       return;
     }
   }
 
-  
-  
-  
+  // Need to go asynchronously since WAL is not allowed or scheduled updates
+  // need to be flushed first.
+  // Schedule preload for this cache as the first operation.
   nsresult rv = InsertDBOp(new DBOperation(DBOperation::opPreloadUrgent, aCache));
 
-  
+  // LoadWait exits after LoadDone of the cache has been called.
   if (NS_SUCCEEDED(rv)) {
     aCache->LoadWait();
   }
@@ -254,7 +254,7 @@ StorageDBThread::InsertDBOp(StorageDBThread::DBOperation* aOperation)
 {
   MonitorAutoLock monitor(mThreadObserver->GetMonitor());
 
-  
+  // Sentinel to don't forget to delete the operation when we exit early.
   nsAutoPtr<StorageDBThread::DBOperation> opScope(aOperation);
 
   if (NS_FAILED(mStatus)) {
@@ -264,7 +264,7 @@ StorageDBThread::InsertDBOp(StorageDBThread::DBOperation* aOperation)
   }
 
   if (mStopIOThread) {
-    
+    // Thread use after shutdown demanded.
     MOZ_ASSERT(false);
     return NS_ERROR_NOT_INITIALIZED;
   }
@@ -273,19 +273,19 @@ StorageDBThread::InsertDBOp(StorageDBThread::DBOperation* aOperation)
   case DBOperation::opPreload:
   case DBOperation::opPreloadUrgent:
     if (mPendingTasks.IsOriginUpdatePending(aOperation->OriginSuffix(), aOperation->OriginNoSuffix())) {
-      
-      
-      
-      
-      
-      
+      // If there is a pending update operation for the scope first do the flush
+      // before we preload the cache.  This may happen in an extremely rare case
+      // when a child process throws away its cache before flush on the parent
+      // has finished.  If we would preloaded the cache as a priority operation
+      // before the pending flush, we would have got an inconsistent cache
+      // content.
       mFlushImmediately = true;
     } else if (mPendingTasks.IsOriginClearPending(aOperation->OriginSuffix(), aOperation->OriginNoSuffix())) {
-      
-      
-      
-      
-      
+      // The scope is scheduled to be cleared, so just quickly load as empty.
+      // We need to do this to prevent load of the DB data before the scope has
+      // actually been cleared from the database.  Preloads are processed
+      // immediately before update and clear operations on the database that are
+      // flushed periodically in batches.
       MonitorAutoUnlock unlock(mThreadObserver->GetMonitor());
       aOperation->Finalize(NS_OK);
       return NS_OK;
@@ -294,25 +294,25 @@ StorageDBThread::InsertDBOp(StorageDBThread::DBOperation* aOperation)
 
   case DBOperation::opGetUsage:
     if (aOperation->Type() == DBOperation::opPreloadUrgent) {
-      SetHigherPriority(); 
+      SetHigherPriority(); // Dropped back after urgent preload execution
       mPreloads.InsertElementAt(0, aOperation);
     } else {
       mPreloads.AppendElement(aOperation);
     }
 
-    
+    // DB operation adopted, don't delete it.
     opScope.forget();
 
-    
+    // Immediately start executing this.
     monitor.Notify();
     break;
 
   default:
-    
-    
+    // Update operations are first collected, coalesced and then flushed
+    // after a short time.
     mPendingTasks.Add(aOperation);
 
-    
+    // DB operation adopted, don't delete it.
     opScope.forget();
 
     ScheduleFlush();
@@ -362,17 +362,17 @@ StorageDBThread::ThreadFunc()
     return;
   }
 
-  
-  
+  // Create an nsIThread for the current PRThread, so we can observe runnables
+  // dispatched to it.
   nsCOMPtr<nsIThread> thread = NS_GetCurrentThread();
   nsCOMPtr<nsIThreadInternal> threadInternal = do_QueryInterface(thread);
-  MOZ_ASSERT(threadInternal); 
+  MOZ_ASSERT(threadInternal); // Should always succeed.
   threadInternal->SetObserver(mThreadObserver);
 
   while (MOZ_LIKELY(!mStopIOThread || mPreloads.Length() ||
                     mPendingTasks.HasTasks() ||
                     mThreadObserver->HasPendingEvents())) {
-    
+    // Process xpcom events first.
     while (MOZ_UNLIKELY(mThreadObserver->HasPendingEvents())) {
       mThreadObserver->ClearPendingEvents();
       MonitorAutoUnlock unlock(mThreadObserver->GetMonitor());
@@ -383,7 +383,7 @@ StorageDBThread::ThreadFunc()
     }
 
     if (MOZ_UNLIKELY(TimeUntilFlush() == 0)) {
-      
+      // Flush time is up or flush has been forced, do it now.
       UnscheduleFlush();
       if (mPendingTasks.Prepare()) {
         {
@@ -406,12 +406,12 @@ StorageDBThread::ThreadFunc()
       }
 
       if (op->Type() == DBOperation::opPreloadUrgent) {
-        SetDefaultPriority(); 
+        SetDefaultPriority(); // urgent preload unscheduled
       }
     } else if (MOZ_UNLIKELY(!mStopIOThread)) {
       lockMonitor.Wait(TimeUntilFlush());
     }
-  } 
+  } // thread loop
 
   mStatus = ShutdownDatabase();
 
@@ -463,7 +463,7 @@ StorageDBThread::OpenDatabaseConnection()
 
   rv = service->OpenUnsharedDatabase(mDatabaseFile, getter_AddRefs(mWorkerConnection));
   if (rv == NS_ERROR_FILE_CORRUPTED) {
-    
+    // delete the db and try opening again
     rv = mDatabaseFile->Remove(false);
     NS_ENSURE_SUCCESS(rv, rv);
     rv = service->OpenUnsharedDatabase(mDatabaseFile, getter_AddRefs(mWorkerConnection));
@@ -478,7 +478,7 @@ StorageDBThread::OpenAndUpdateDatabase()
 {
   nsresult rv;
 
-  
+  // Here we are on the worker thread. This opens the worker connection.
   MOZ_ASSERT(!NS_IsMainThread());
 
   rv = OpenDatabaseConnection();
@@ -495,7 +495,7 @@ StorageDBThread::InitDatabase()
 {
   nsresult rv;
 
-  
+  // Here we are on the worker thread. This opens the worker connection.
   MOZ_ASSERT(!NS_IsMainThread());
 
   rv = OpenAndUpdateDatabase();
@@ -503,8 +503,8 @@ StorageDBThread::InitDatabase()
 
   rv = StorageDBUpdater::Update(mWorkerConnection);
   if (NS_FAILED(rv)) {
-    
-    
+    // Update has failed, rather throw the database away and try
+    // opening and setting it up again.
     rv = mWorkerConnection->Close();
     mWorkerConnection = nullptr;
     NS_ENSURE_SUCCESS(rv, rv);
@@ -516,19 +516,19 @@ StorageDBThread::InitDatabase()
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
-  
+  // Create a read-only clone
   (void)mWorkerConnection->Clone(true, getter_AddRefs(mReaderConnection));
   NS_ENSURE_TRUE(mReaderConnection, NS_ERROR_FAILURE);
 
-  
-  
-  
-  
+  // Database open and all initiation operation are done.  Switching this flag
+  // to true allow main thread to read directly from the database.  If we would
+  // allow this sooner, we would have opened a window where main thread read
+  // might operate on a totally broken and incosistent database.
   mDBReady = true;
 
-  
+  // List scopes having any stored data
   nsCOMPtr<mozIStorageStatement> stmt;
-  
+  // Note: result of this select must match StorageManager::CreateOrigin()
   rv = mWorkerConnection->CreateStatement(NS_LITERAL_CSTRING(
         "SELECT DISTINCT originAttributes || ':' || originKey FROM webappsstore2"),
         getter_AddRefs(stmt));
@@ -608,7 +608,7 @@ StorageDBThread::TryJournalMode()
 nsresult
 StorageDBThread::ConfigureWALBehavior()
 {
-  
+  // Get the DB's page size
   nsCOMPtr<mozIStorageStatement> stmt;
   nsresult rv = mWorkerConnection->CreateStatement(NS_LITERAL_CSTRING(
     MOZ_STORAGE_UNIQUIFY_QUERY_STR "PRAGMA page_size"
@@ -623,19 +623,19 @@ StorageDBThread::ConfigureWALBehavior()
   rv = stmt->GetInt32(0, &pageSize);
   NS_ENSURE_TRUE(NS_SUCCEEDED(rv) && pageSize > 0, NS_ERROR_UNEXPECTED);
 
-  
-  
+  // Set the threshold for auto-checkpointing the WAL.
+  // We don't want giant logs slowing down reads & shutdown.
   int32_t thresholdInPages = static_cast<int32_t>(MAX_WAL_SIZE_BYTES / pageSize);
   nsAutoCString thresholdPragma("PRAGMA wal_autocheckpoint = ");
   thresholdPragma.AppendInt(thresholdInPages);
   rv = mWorkerConnection->ExecuteSimpleSQL(thresholdPragma);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  
-  
+  // Set the maximum WAL log size to reduce footprint on mobile (large empty
+  // WAL files will be truncated)
   nsAutoCString journalSizePragma("PRAGMA journal_size_limit = ");
-  
-  
+  // bug 600307: mak recommends setting this to 3 times the auto-checkpoint
+  // threshold
   journalSizePragma.AppendInt(MAX_WAL_SIZE_BYTES * 3);
   rv = mWorkerConnection->ExecuteSimpleSQL(journalSizePragma);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -646,20 +646,20 @@ StorageDBThread::ConfigureWALBehavior()
 nsresult
 StorageDBThread::ShutdownDatabase()
 {
-  
+  // Has to be called on the worker thread.
   MOZ_ASSERT(!NS_IsMainThread());
 
   nsresult rv = mStatus;
 
   mDBReady = false;
 
-  
+  // Finalize the cached statements.
   mReaderStatements.FinalizeStatements();
   mWorkerStatements.FinalizeStatements();
 
   if (mReaderConnection) {
-    
-    
+    // No need to sync access to mReaderConnection since the main thread
+    // is right now joining this thread, unable to execute any events.
     mReaderConnection->Close();
     mReaderConnection = nullptr;
   }
@@ -676,20 +676,20 @@ void
 StorageDBThread::ScheduleFlush()
 {
   if (mDirtyEpoch) {
-    return; 
+    return; // Already scheduled
   }
 
-  
+  // Must be non-zero to indicate we are scheduled
   mDirtyEpoch = PR_IntervalNow() | 1;
 
-  
+  // Wake the monitor from indefinite sleep...
   (mThreadObserver->GetMonitor()).Notify();
 }
 
 void
 StorageDBThread::UnscheduleFlush()
 {
-  
+  // We are just about to do the flush, drop flags
   mFlushImmediately = false;
   mDirtyEpoch = 0;
 }
@@ -698,14 +698,14 @@ PRIntervalTime
 StorageDBThread::TimeUntilFlush()
 {
   if (mFlushImmediately) {
-    return 0; 
+    return 0; // Do it now regardless the timeout.
   }
 
   static_assert(PR_INTERVAL_NO_TIMEOUT != 0,
       "PR_INTERVAL_NO_TIMEOUT must be non-zero");
 
   if (!mDirtyEpoch) {
-    return PR_INTERVAL_NO_TIMEOUT; 
+    return PR_INTERVAL_NO_TIMEOUT; // No pending task...
   }
 
   static const PRIntervalTime kMaxAge = PR_MillisecondsToInterval(FLUSHING_INTERVAL_MS);
@@ -713,10 +713,10 @@ StorageDBThread::TimeUntilFlush()
   PRIntervalTime now = PR_IntervalNow() | 1;
   PRIntervalTime age = now - mDirtyEpoch;
   if (age > kMaxAge) {
-    return 0; 
+    return 0; // It is time.
   }
 
-  return kMaxAge - age; 
+  return kMaxAge - age; // Time left, this is used to sleep the monitor
 }
 
 void
@@ -737,7 +737,7 @@ StorageDBThread::NotifyFlushCompletion()
 #endif
 }
 
-
+// Helper SQL function classes
 
 namespace {
 
@@ -768,7 +768,7 @@ OriginAttrsPatternMatchSQLFunction::OnFunctionCall(
   rv = aFunctionArguments->GetUTF8String(0, suffix);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  PrincipalOriginAttributes oa;
+  OriginAttributes oa;
   bool success = oa.PopulateFromSuffix(suffix);
   NS_ENSURE_TRUE(success, NS_ERROR_FAILURE);
   bool result = mPattern.Matches(oa);
@@ -781,9 +781,9 @@ OriginAttrsPatternMatchSQLFunction::OnFunctionCall(
   return NS_OK;
 }
 
-} 
+} // namespace
 
-
+// StorageDBThread::DBOperation
 
 StorageDBThread::DBOperation::DBOperation(const OperationType aType,
                                           StorageCacheBridge* aCache,
@@ -897,7 +897,7 @@ StorageDBThread::DBOperation::Perform(StorageDBThread* aThread)
   case opPreload:
   case opPreloadUrgent:
   {
-    
+    // Already loaded?
     if (mCache->Loaded()) {
       break;
     }
@@ -909,9 +909,9 @@ StorageDBThread::DBOperation::Perform(StorageDBThread* aThread)
       statements = &aThread->mWorkerStatements;
     }
 
-    
-    
-    
+    // OFFSET is an optimization when we have to do a sync load
+    // and cache has already loaded some parts asynchronously.
+    // It skips keys we have already loaded.
     nsCOMPtr<mozIStorageStatement> stmt = statements->GetCachedStatement(
         "SELECT key, value FROM webappsstore2 "
         "WHERE originAttributes = :originAttributes AND originKey = :originKey "
@@ -997,7 +997,7 @@ StorageDBThread::DBOperation::Perform(StorageDBThread* aThread)
     rv = stmt->BindUTF8StringByName(NS_LITERAL_CSTRING("originKey"),
                                     mCache->OriginNoSuffix());
     NS_ENSURE_SUCCESS(rv, rv);
-    
+    // Filling the 'scope' column just for downgrade compatibility reasons
     rv = stmt->BindUTF8StringByName(NS_LITERAL_CSTRING("scope"),
                                     Scheme0Scope(mCache));
     NS_ENSURE_SUCCESS(rv, rv);
@@ -1106,9 +1106,9 @@ StorageDBThread::DBOperation::Perform(StorageDBThread* aThread)
     rv = stmt->Execute();
     NS_ENSURE_SUCCESS(rv, rv);
 
-    
-    
-    
+    // No need to selectively clear mOriginsHavingData here.  That hashtable
+    // only prevents preload for scopes with no data.  Leaving a false record in
+    // it has a negligible effect on performance.
     break;
   }
 
@@ -1116,8 +1116,8 @@ StorageDBThread::DBOperation::Perform(StorageDBThread* aThread)
   {
     MOZ_ASSERT(!NS_IsMainThread());
 
-    
-    
+    // Register the ORIGIN_ATTRS_PATTERN_MATCH function, initialized with the
+    // pattern
     nsCOMPtr<mozIStorageFunction> patternMatchFunction(
       new OriginAttrsPatternMatchSQLFunction(mOriginPattern));
 
@@ -1137,15 +1137,15 @@ StorageDBThread::DBOperation::Perform(StorageDBThread* aThread)
       rv = NS_ERROR_UNEXPECTED;
     }
 
-    
+    // Always remove the function
     aThread->mWorkerConnection->RemoveFunction(
       NS_LITERAL_CSTRING("ORIGIN_ATTRS_PATTERN_MATCH"));
 
     NS_ENSURE_SUCCESS(rv, rv);
 
-    
-    
-    
+    // No need to selectively clear mOriginsHavingData here.  That hashtable
+    // only prevents preload for scopes with no data.  Leaving a false record in
+    // it has a negligible effect on performance.
     break;
   }
 
@@ -1164,9 +1164,9 @@ StorageDBThread::DBOperation::Finalize(nsresult aRv)
   case opPreloadUrgent:
   case opPreload:
     if (NS_FAILED(aRv)) {
-      
-      
-      
+      // When we are here, something failed when loading from the database.
+      // Notify that the storage is loaded to prevent deadlock of the main
+      // thread, even though it is actually empty or incomplete.
       NS_WARNING("Failed to preload localStorage");
     }
 
@@ -1190,7 +1190,7 @@ StorageDBThread::DBOperation::Finalize(nsresult aRv)
   }
 }
 
-
+// StorageDBThread::PendingOperations
 
 StorageDBThread::PendingOperations::PendingOperations()
 : mFlushFailureCount(0)
@@ -1208,13 +1208,13 @@ namespace {
 bool OriginPatternMatches(const nsACString& aOriginSuffix,
                           const OriginAttributesPattern& aPattern)
 {
-  PrincipalOriginAttributes oa;
+  OriginAttributes oa;
   DebugOnly<bool> rv = oa.PopulateFromSuffix(aOriginSuffix);
   MOZ_ASSERT(rv);
   return aPattern.Matches(oa);
 }
 
-} 
+} // namespace
 
 bool
 StorageDBThread::PendingOperations::CheckForCoalesceOpportunity(DBOperation* aNewOp,
@@ -1240,9 +1240,9 @@ StorageDBThread::PendingOperations::CheckForCoalesceOpportunity(DBOperation* aNe
 void
 StorageDBThread::PendingOperations::Add(StorageDBThread::DBOperation* aOperation)
 {
-  
-  
-  
+  // Optimize: when a key to remove has never been written to disk
+  // just bypass this operation.  A key is new when an operation scheduled
+  // to write it to the database is of type opAddItem.
   if (CheckForCoalesceOpportunity(aOperation, DBOperation::opAddItem,
                                   DBOperation::opRemoveItem)) {
     mUpdates.Remove(aOperation->Target());
@@ -1250,19 +1250,19 @@ StorageDBThread::PendingOperations::Add(StorageDBThread::DBOperation* aOperation
     return;
   }
 
-  
-  
-  
-  
+  // Optimize: when changing a key that is new and has never been
+  // written to disk, keep type of the operation to store it at opAddItem.
+  // This allows optimization to just forget adding a new key when
+  // it is removed from the storage before flush.
   if (CheckForCoalesceOpportunity(aOperation, DBOperation::opAddItem,
                                   DBOperation::opUpdateItem)) {
     aOperation->mType = DBOperation::opAddItem;
   }
 
-  
-  
-  
-  
+  // Optimize: to prevent lose of remove operation on a key when doing
+  // remove/set/remove on a previously existing key we have to change
+  // opAddItem to opUpdateItem on the new operation when there is opRemoveItem
+  // pending for the key.
   if (CheckForCoalesceOpportunity(aOperation, DBOperation::opRemoveItem,
                                   DBOperation::opAddItem)) {
     aOperation->mType = DBOperation::opUpdateItem;
@@ -1270,24 +1270,24 @@ StorageDBThread::PendingOperations::Add(StorageDBThread::DBOperation* aOperation
 
   switch (aOperation->Type())
   {
-  
+  // Operations on single keys
 
   case DBOperation::opAddItem:
   case DBOperation::opUpdateItem:
   case DBOperation::opRemoveItem:
-    
+    // Override any existing operation for the target (=scope+key).
     mUpdates.Put(aOperation->Target(), aOperation);
     break;
 
-  
+  // Clear operations
 
   case DBOperation::opClear:
   case DBOperation::opClearMatchingOrigin:
   case DBOperation::opClearMatchingOriginAttributes:
-    
-    
-    
-    
+    // Drop all update (insert/remove) operations for equivavelent or matching
+    // scope.  We do this as an optimization as well as a must based on the
+    // logic, if we would not delete the update tasks, changes would have been
+    // stored to the database after clear operations have been executed.
     for (auto iter = mUpdates.Iter(); !iter.Done(); iter.Next()) {
       nsAutoPtr<DBOperation>& pendingTask = iter.Data();
 
@@ -1314,7 +1314,7 @@ StorageDBThread::PendingOperations::Add(StorageDBThread::DBOperation* aOperation
     break;
 
   case DBOperation::opClearAll:
-    
+    // Drop simply everything, this is a super-operation.
     mUpdates.Clear();
     mClears.Clear();
     mClears.Put(aOperation->Target(), aOperation);
@@ -1329,13 +1329,13 @@ StorageDBThread::PendingOperations::Add(StorageDBThread::DBOperation* aOperation
 bool
 StorageDBThread::PendingOperations::Prepare()
 {
-  
+  // Called under the lock
 
-  
-  
-  
-  
-  
+  // First collect clear operations and then updates, we can
+  // do this since whenever a clear operation for a scope is
+  // scheduled, we drop all updates matching that scope. So,
+  // all scope-related update operations we have here now were
+  // scheduled after the clear operations.
   for (auto iter = mClears.Iter(); !iter.Done(); iter.Next()) {
     mExecList.AppendElement(iter.Data().forget());
   }
@@ -1352,7 +1352,7 @@ StorageDBThread::PendingOperations::Prepare()
 nsresult
 StorageDBThread::PendingOperations::Execute(StorageDBThread* aThread)
 {
-  
+  // Called outside the lock
 
   mozStorageTransaction transaction(aThread->mWorkerConnection, false);
 
@@ -1377,16 +1377,16 @@ StorageDBThread::PendingOperations::Execute(StorageDBThread* aThread)
 bool
 StorageDBThread::PendingOperations::Finalize(nsresult aRv)
 {
-  
+  // Called under the lock
 
-  
+  // The list is kept on a failure to retry it
   if (NS_FAILED(aRv)) {
-    
-    
-    
-    
-    
-    
+    // XXX Followup: we may try to reopen the database and flush these
+    // pending tasks, however testing showed that even though I/O is actually
+    // broken some amount of operations is left in sqlite+system buffers and
+    // seems like successfully flushed to disk.
+    // Tested by removing a flash card and disconnecting from network while
+    // using a network drive on Windows system.
     NS_WARNING("Flush operation on localStorage database failed");
 
     ++mFlushFailureCount;
@@ -1429,13 +1429,13 @@ FindPendingClearForOrigin(const nsACString& aOriginSuffix,
   return false;
 }
 
-} 
+} // namespace
 
 bool
 StorageDBThread::PendingOperations::IsOriginClearPending(const nsACString& aOriginSuffix,
                                                          const nsACString& aOriginNoSuffix) const
 {
-  
+  // Called under the lock
 
   for (auto iter = mClears.ConstIter(); !iter.Done(); iter.Next()) {
     if (FindPendingClearForOrigin(aOriginSuffix, aOriginNoSuffix, iter.UserData())) {
@@ -1470,13 +1470,13 @@ FindPendingUpdateForOrigin(const nsACString& aOriginSuffix,
   return false;
 }
 
-} 
+} // namespace
 
 bool
 StorageDBThread::PendingOperations::IsOriginUpdatePending(const nsACString& aOriginSuffix,
                                                           const nsACString& aOriginNoSuffix) const
 {
-  
+  // Called under the lock
 
   for (auto iter = mUpdates.ConstIter(); !iter.Done(); iter.Next()) {
     if (FindPendingUpdateForOrigin(aOriginSuffix, aOriginNoSuffix, iter.UserData())) {
@@ -1493,5 +1493,5 @@ StorageDBThread::PendingOperations::IsOriginUpdatePending(const nsACString& aOri
   return false;
 }
 
-} 
-} 
+} // namespace dom
+} // namespace mozilla

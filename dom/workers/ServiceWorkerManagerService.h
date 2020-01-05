@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef mozilla_dom_ServiceWorkerManagerService_h
 #define mozilla_dom_ServiceWorkerManagerService_h
@@ -13,11 +13,11 @@
 
 namespace mozilla {
 
-class PrincipalOriginAttributes;
+class OriginAttributes;
 
 namespace ipc {
 class PrincipalInfo;
-} 
+} // namespace ipc
 
 namespace dom {
 
@@ -42,7 +42,7 @@ public:
                              ServiceWorkerRegistrationData& aData);
 
   void PropagateSoftUpdate(uint64_t aParentID,
-                           const PrincipalOriginAttributes& aOriginAttributes,
+                           const OriginAttributes& aOriginAttributes,
                            const nsAString& aScope);
 
   void PropagateUnregister(uint64_t aParentID,
@@ -60,8 +60,8 @@ private:
   nsTHashtable<nsPtrHashKey<ServiceWorkerManagerParent>> mAgents;
 };
 
-} 
-} 
-} 
+} // namespace workers
+} // namespace dom
+} // namespace mozilla
 
-#endif 
+#endif // mozilla_dom_ServiceWorkerManagerService_h

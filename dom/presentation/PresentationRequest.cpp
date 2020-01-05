@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim:set ts=2 sw=2 sts=2 et cindent: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "PresentationRequest.h"
 
@@ -65,7 +65,7 @@ GetAbsoluteURL(const nsAString& aUrl,
   return NS_OK;
 }
 
- already_AddRefed<PresentationRequest>
+/* static */ already_AddRefed<PresentationRequest>
 PresentationRequest::Constructor(const GlobalObject& aGlobal,
                                  const nsAString& aUrl,
                                  ErrorResult& aRv)
@@ -75,7 +75,7 @@ PresentationRequest::Constructor(const GlobalObject& aGlobal,
   return Constructor(aGlobal, urls, aRv);
 }
 
- already_AddRefed<PresentationRequest>
+/* static */ already_AddRefed<PresentationRequest>
 PresentationRequest::Constructor(const GlobalObject& aGlobal,
                                  const Sequence<nsString>& aUrls,
                                  ErrorResult& aRv)
@@ -91,7 +91,7 @@ PresentationRequest::Constructor(const GlobalObject& aGlobal,
     return nullptr;
   }
 
-  
+  // Resolve relative URL to absolute URL
   nsCOMPtr<nsIURI> baseUri = window->GetDocBaseURI();
   nsTArray<nsString> urls;
   for (const auto& url : aUrls) {
@@ -128,7 +128,7 @@ PresentationRequest::Init()
   return true;
 }
 
- JSObject*
+/* virtual */ JSObject*
 PresentationRequest::WrapObject(JSContext* aCx,
                                 JS::Handle<JSObject*> aGivenProto)
 {
@@ -151,7 +151,7 @@ PresentationRequest::StartWithDevice(const nsAString& aDeviceId,
     return nullptr;
   }
 
-  
+  // Get the origin.
   nsAutoString origin;
   nsresult rv = nsContentUtils::GetUTFOrigin(global->PrincipalOrNull(), origin);
   if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -197,7 +197,7 @@ PresentationRequest::StartWithDevice(const nsAString& aDeviceId,
     return promise.forget();
   }
 
-  
+  // Generate a session ID.
   nsCOMPtr<nsIUUIDGenerator> uuidgen =
     do_GetService("@mozilla.org/uuid-generator;1");
   if(NS_WARN_IF(!uuidgen)) {
@@ -221,10 +221,10 @@ PresentationRequest::StartWithDevice(const nsAString& aDeviceId,
 
   presentation->SetStartSessionUnsettled(true);
 
-  
-  
-  
-  
+  // Get xul:browser element in parent process or nsWindowRoot object in child
+  // process. If it's in child process, the corresponding xul:browser element
+  // will be obtained at PresentationRequestParent::DoRequest in its parent
+  // process.
   nsCOMPtr<nsIDOMEventTarget> handler =
     do_QueryInterface(GetOwner()->GetChromeEventHandler());
   nsCOMPtr<nsIPrincipal> principal = doc->NodePrincipal();
@@ -320,14 +320,14 @@ PresentationRequest::FindOrCreatePresentationConnection(
     if (mUrls.Contains(url)) {
       switch (connection->State()) {
         case PresentationConnectionState::Closed:
-          
+          // We found the matched connection.
           break;
         case PresentationConnectionState::Connecting:
         case PresentationConnectionState::Connected:
           aPromise->MaybeResolve(connection);
           return;
         case PresentationConnectionState::Terminated:
-          
+          // A terminated connection cannot be reused.
           connection = nullptr;
           break;
         default:
@@ -423,8 +423,8 @@ PresentationRequest::FindOrCreatePresentationAvailability(RefPtr<Promise>& aProm
   } else {
     PRES_DEBUG(">resolve with same object\n");
 
-    
-    
+    // Fetching cached available devices is asynchronous in our implementation,
+    // we need to ensure the promise is resolved in order.
     if (availability->IsCachedValueReady()) {
       aPromise->MaybeResolve(availability);
       return;
@@ -532,7 +532,7 @@ PresentationRequest::IsPrioriAuthenticatedURL(const nsAString& aUrl)
     return true;
   }
 
-  PrincipalOriginAttributes attrs;
+  OriginAttributes attrs;
   nsCOMPtr<nsIPrincipal> principal =
     BasePrincipal::CreateCodebasePrincipal(uri, attrs);
   if (NS_WARN_IF(!principal)) {

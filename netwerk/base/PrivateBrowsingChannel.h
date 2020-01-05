@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
+/* vim:set ts=4 sts=4 sw=4 et cin: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef mozilla_net_PrivateBrowsingChannel_h__
 #define mozilla_net_PrivateBrowsingChannel_h__
@@ -31,9 +31,9 @@ public:
 
   NS_IMETHOD SetPrivate(bool aPrivate)
   {
-      
-      
-      
+      // Make sure that we don't have a load context
+      // This is a fatal error in debug builds, and a runtime error in release
+      // builds.
       nsCOMPtr<nsILoadContext> loadContext;
       NS_QueryNotificationCallbacks(static_cast<Channel*>(this), loadContext);
       MOZ_ASSERT(!loadContext);
@@ -64,10 +64,10 @@ public:
       return NS_OK;
   }
 
-  
+  // Must be called every time the channel's callbacks or loadGroup is updated
   void UpdatePrivateBrowsing()
   {
-      
+      // once marked as private we never go un-private
       if (mPrivateBrowsing) {
           return;
       }
@@ -84,16 +84,16 @@ public:
       nsCOMPtr<nsILoadInfo> loadInfo;
       Unused << channel->GetLoadInfo(getter_AddRefs(loadInfo));
       if (loadInfo) {
-          NeckoOriginAttributes attrs = loadInfo->GetOriginAttributes();
+          OriginAttributes attrs = loadInfo->GetOriginAttributes();
           mPrivateBrowsing = attrs.mPrivateBrowsingId > 0;
       }
   }
 
   bool CanSetCallbacks(nsIInterfaceRequestor* aCallbacks) const
   {
-      
-      
-      
+      // Make sure that the private bit override flag is not set.
+      // This is a fatal error in debug builds, and a runtime error in release
+      // builds.
       if (!aCallbacks) {
           return true;
       }
@@ -107,16 +107,16 @@ public:
 
   bool CanSetLoadGroup(nsILoadGroup* aLoadGroup) const
   {
-      
-      
-      
+      // Make sure that the private bit override flag is not set.
+      // This is a fatal error in debug builds, and a runtime error in release
+      // builds.
       if (!aLoadGroup) {
           return true;
       }
       nsCOMPtr<nsIInterfaceRequestor> callbacks;
       aLoadGroup->GetNotificationCallbacks(getter_AddRefs(callbacks));
-      
-      
+      // From this point on, we just hand off the work to CanSetCallbacks,
+      // because the logic is exactly the same.
       return CanSetCallbacks(callbacks);
   }
 
@@ -125,8 +125,8 @@ protected:
   bool mPrivateBrowsing;
 };
 
-} 
-} 
+} // namespace net
+} // namespace mozilla
 
 #endif
 

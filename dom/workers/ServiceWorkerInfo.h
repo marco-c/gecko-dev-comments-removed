@@ -32,7 +32,7 @@ private:
   const nsString mCacheName;
   const nsLoadFlags mLoadFlags;
   ServiceWorkerState mState;
-  PrincipalOriginAttributes mOriginAttributes;
+  OriginAttributes mOriginAttributes;
 
   
   
@@ -113,7 +113,7 @@ public:
     return mState;
   }
 
-  const PrincipalOriginAttributes&
+  const OriginAttributes&
   GetOriginAttributes() const
   {
     return mOriginAttributes;

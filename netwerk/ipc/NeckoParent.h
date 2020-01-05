@@ -38,7 +38,7 @@ public:
   GetValidatedOriginAttributes(const SerializedLoadContext& aSerialized,
                                PContentParent* aBrowser,
                                nsIPrincipal* aRequestingPrincipal,
-                               mozilla::DocShellOriginAttributes& aAttrs);
+                               mozilla::OriginAttributes& aAttrs);
 
   
 

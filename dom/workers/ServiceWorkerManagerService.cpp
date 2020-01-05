@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "ServiceWorkerManagerService.h"
 #include "ServiceWorkerManagerParent.h"
@@ -23,13 +23,13 @@ namespace {
 
 ServiceWorkerManagerService* sInstance = nullptr;
 
-} 
+} // namespace
 
 ServiceWorkerManagerService::ServiceWorkerManagerService()
 {
   AssertIsOnBackgroundThread();
 
-  
+  // sInstance is a raw ServiceWorkerManagerService*.
   MOZ_ASSERT(!sInstance);
   sInstance = this;
 }
@@ -43,7 +43,7 @@ ServiceWorkerManagerService::~ServiceWorkerManagerService()
   sInstance = nullptr;
 }
 
- already_AddRefed<ServiceWorkerManagerService>
+/* static */ already_AddRefed<ServiceWorkerManagerService>
 ServiceWorkerManagerService::Get()
 {
   AssertIsOnBackgroundThread();
@@ -52,7 +52,7 @@ ServiceWorkerManagerService::Get()
   return instance.forget();
 }
 
- already_AddRefed<ServiceWorkerManagerService>
+/* static */ already_AddRefed<ServiceWorkerManagerService>
 ServiceWorkerManagerService::GetOrCreate()
 {
   AssertIsOnBackgroundThread();
@@ -113,7 +113,7 @@ ServiceWorkerManagerService::PropagateRegistration(
 void
 ServiceWorkerManagerService::PropagateSoftUpdate(
                                       uint64_t aParentID,
-                                      const PrincipalOriginAttributes& aOriginAttributes,
+                                      const OriginAttributes& aOriginAttributes,
                                       const nsAString& aScope)
 {
   AssertIsOnBackgroundThread();
@@ -151,8 +151,8 @@ ServiceWorkerManagerService::PropagateUnregister(
     dom::ServiceWorkerRegistrar::Get();
   MOZ_ASSERT(service);
 
-  
-  
+  // It's possible that we don't have any ServiceWorkerManager managing this
+  // scope but we still need to unregister it from the ServiceWorkerRegistrar.
   service->UnregisterServiceWorker(aPrincipalInfo,
                                    NS_ConvertUTF16toUTF8(aScope));
 
@@ -232,6 +232,6 @@ ServiceWorkerManagerService::PropagateRemoveAll(uint64_t aParentID)
 #endif
 }
 
-} 
-} 
-} 
+} // namespace workers
+} // namespace dom
+} // namespace mozilla

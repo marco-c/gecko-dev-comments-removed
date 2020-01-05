@@ -39,7 +39,7 @@ class nsIDocShellTreeOwner;
 
 namespace mozilla {
 
-class DocShellOriginAttributes;
+class OriginAttributes;
 
 namespace dom {
 class ContentParent;
@@ -308,7 +308,7 @@ private:
   void MaybeUpdatePrimaryTabParent(TabParentChange aChange);
 
   nsresult
-  PopulateUserContextIdFromAttribute(mozilla::DocShellOriginAttributes& aAttr);
+  PopulateUserContextIdFromAttribute(mozilla::OriginAttributes& aAttr);
 
   
   

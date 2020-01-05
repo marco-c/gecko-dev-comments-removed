@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsPermission.h"
 #include "nsContentUtils.h"
@@ -9,7 +9,7 @@
 #include "nsIEffectiveTLDService.h"
 #include "mozilla/BasePrincipal.h"
 
-
+// nsPermission Implementation
 
 NS_IMPL_CLASSINFO(nsPermission, nullptr, 0, {0})
 NS_IMPL_ISUPPORTS_CI(nsPermission, nsIPermission)
@@ -97,21 +97,21 @@ nsPermission::Matches(nsIPrincipal* aPrincipal, bool aExactHost, bool* aMatches)
     return NS_OK;
   }
 
-  
+  // If the principals are equal, then they match.
   if (mPrincipal->Equals(principal)) {
     *aMatches = true;
     return NS_OK;
   }
 
-  
-  
+  // If we are matching with an exact host, we're done now - the permissions don't match
+  // otherwise, we need to start comparing subdomains!
   if (aExactHost) {
       return NS_OK;
   }
 
-  
-  const mozilla::PrincipalOriginAttributes& theirAttrs = principal->OriginAttributesRef();
-  const mozilla::PrincipalOriginAttributes& ourAttrs = mPrincipal->OriginAttributesRef();
+  // Compare their OriginAttributes
+  const mozilla::OriginAttributes& theirAttrs = principal->OriginAttributesRef();
+  const mozilla::OriginAttributes& ourAttrs = mPrincipal->OriginAttributesRef();
 
   if (theirAttrs != ourAttrs) {
       return NS_OK;
@@ -125,7 +125,7 @@ nsPermission::Matches(nsIPrincipal* aPrincipal, bool aExactHost, bool* aMatches)
   rv = mPrincipal->GetURI(getter_AddRefs(ourURI));
   NS_ENSURE_SUCCESS(rv, rv);
 
-  
+  // Compare schemes
   nsAutoCString theirScheme;
   rv = theirURI->GetScheme(theirScheme);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -138,7 +138,7 @@ nsPermission::Matches(nsIPrincipal* aPrincipal, bool aExactHost, bool* aMatches)
     return NS_OK;
   }
 
-  
+  // Compare ports
   int32_t theirPort;
   rv = theirURI->GetPort(&theirPort);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -151,7 +151,7 @@ nsPermission::Matches(nsIPrincipal* aPrincipal, bool aExactHost, bool* aMatches)
     return NS_OK;
   }
 
-  
+  // Check if the host or any subdomain of their host matches.
   nsAutoCString theirHost;
   rv = theirURI->GetHost(theirHost);
   if (NS_FAILED(rv) || theirHost.IsEmpty()) {
@@ -171,8 +171,8 @@ nsPermission::Matches(nsIPrincipal* aPrincipal, bool aExactHost, bool* aMatches)
     return NS_ERROR_FAILURE;
   }
 
-  
-  
+  // This loop will not loop forever, as GetNextSubDomain will eventually fail
+  // with NS_ERROR_INSUFFICIENT_DOMAIN_LEVELS.
   while (theirHost != ourHost) {
     rv = tldService->GetNextSubDomain(theirHost, theirHost);
     if (NS_FAILED(rv)) {
@@ -193,7 +193,7 @@ nsPermission::MatchesURI(nsIURI* aURI, bool aExactHost, bool* aMatches)
 {
   NS_ENSURE_ARG_POINTER(aURI);
 
-  mozilla::PrincipalOriginAttributes attrs;
+  mozilla::OriginAttributes attrs;
   nsCOMPtr<nsIPrincipal> principal = mozilla::BasePrincipal::CreateCodebasePrincipal(aURI, attrs);
   NS_ENSURE_TRUE(principal, NS_ERROR_FAILURE);
 

@@ -292,7 +292,7 @@ RemoveEntriesForPattern(PLHashEntry *entry, int32_t number, void *arg)
     oaSuffix.Rebind(key.BeginReading(), colon);
 
     
-    NeckoOriginAttributes oa;
+    OriginAttributes oa;
     DebugOnly<bool> rv = oa.PopulateFromSuffix(oaSuffix);
     MOZ_ASSERT(rv);
 

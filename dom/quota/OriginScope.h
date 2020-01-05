@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef mozilla_dom_quota_originorpatternstring_h__
 #define mozilla_dom_quota_originorpatternstring_h__
@@ -28,7 +28,7 @@ private:
   struct OriginAndAttributes
   {
     nsCString mOrigin;
-    PrincipalOriginAttributes mAttributes;
+    OriginAttributes mAttributes;
 
     OriginAndAttributes(const OriginAndAttributes& aOther)
       : mOrigin(aOther.mOrigin)
@@ -53,16 +53,16 @@ private:
   };
 
   union {
-    
+    // eOrigin
     OriginAndAttributes* mOriginAndAttributes;
 
-    
+    // ePattern
     mozilla::OriginAttributesPattern* mPattern;
 
-    
+    // ePrefix
     nsCString* mPrefix;
 
-    
+    // eNull
     void* mDummy;
   };
 
@@ -291,9 +291,9 @@ public:
       match = mPattern->Overlaps(*aOther.mPattern);
     } else if (IsPrefix()) {
       MOZ_ASSERT(mPrefix);
-      
-      
-      
+      // The match will be always true here because any origin attributes
+      // pattern overlaps any origin prefix (an origin prefix targets all
+      // origin attributes).
       match = true;
     } else {
       match = true;
@@ -314,9 +314,9 @@ public:
       match = StringBeginsWith(mOriginAndAttributes->mOrigin, *aOther.mPrefix);
     } else if (IsPattern()) {
       MOZ_ASSERT(mPattern);
-      
-      
-      
+      // The match will be always true here because any origin attributes
+      // pattern overlaps any origin prefix (an origin prefix targets all
+      // origin attributes).
       match = true;
     } else if (IsPrefix()) {
       MOZ_ASSERT(mPrefix);
@@ -425,4 +425,4 @@ private:
 
 END_QUOTA_NAMESPACE
 
-#endif 
+#endif // mozilla_dom_quota_originorpatternstring_h__

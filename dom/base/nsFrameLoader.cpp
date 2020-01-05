@@ -1361,12 +1361,12 @@ nsFrameLoader::SwapWithOtherRemoteLoader(nsFrameLoader* aOther,
   
   
   
-  DocShellOriginAttributes ourOriginAttributes =
+  OriginAttributes ourOriginAttributes =
     mRemoteBrowser->OriginAttributesRef();
   rv = PopulateUserContextIdFromAttribute(ourOriginAttributes);
   NS_ENSURE_SUCCESS(rv,rv);
 
-  DocShellOriginAttributes otherOriginAttributes =
+  OriginAttributes otherOriginAttributes =
     aOther->mRemoteBrowser->OriginAttributesRef();
   rv = aOther->PopulateUserContextIdFromAttribute(otherOriginAttributes);
   NS_ENSURE_SUCCESS(rv,rv);
@@ -1759,12 +1759,12 @@ nsFrameLoader::SwapWithOtherLoader(nsFrameLoader* aOther,
   
   
   
-  DocShellOriginAttributes ourOriginAttributes =
+  OriginAttributes ourOriginAttributes =
     ourDocshell->GetOriginAttributes();
   rv = PopulateUserContextIdFromAttribute(ourOriginAttributes);
   NS_ENSURE_SUCCESS(rv,rv);
 
-  DocShellOriginAttributes otherOriginAttributes =
+  OriginAttributes otherOriginAttributes =
     otherDocshell->GetOriginAttributes();
   rv = aOther->PopulateUserContextIdFromAttribute(otherOriginAttributes);
   NS_ENSURE_SUCCESS(rv,rv);
@@ -2406,7 +2406,7 @@ nsFrameLoader::MaybeCreateDocShell()
     }
   }
 
-  DocShellOriginAttributes attrs;
+  OriginAttributes attrs;
   if (docShell->ItemType() == mDocShell->ItemType()) {
     attrs = nsDocShell::Cast(docShell)->GetOriginAttributes();
   }
@@ -2421,7 +2421,7 @@ nsFrameLoader::MaybeCreateDocShell()
   if (parentType == nsIDocShellTreeItem::typeContent &&
       !nsContentUtils::IsSystemPrincipal(doc->NodePrincipal()) &&
       !OwnerIsMozBrowserFrame()) {
-    PrincipalOriginAttributes poa = doc->NodePrincipal()->OriginAttributesRef();
+    OriginAttributes oa = doc->NodePrincipal()->OriginAttributesRef();
 
     
     if (mIsTopLevelContent) {
@@ -2431,16 +2431,16 @@ nsFrameLoader::MaybeCreateDocShell()
 
     
     
-    MOZ_ASSERT(attrs.mAppId == poa.mAppId,
+    MOZ_ASSERT(attrs.mAppId == oa.mAppId,
               "docshell and document should have the same appId attribute.");
-    MOZ_ASSERT(attrs.mUserContextId == poa.mUserContextId,
+    MOZ_ASSERT(attrs.mUserContextId == oa.mUserContextId,
               "docshell and document should have the same userContextId attribute.");
-    MOZ_ASSERT(attrs.mInIsolatedMozBrowser == poa.mInIsolatedMozBrowser,
+    MOZ_ASSERT(attrs.mInIsolatedMozBrowser == oa.mInIsolatedMozBrowser,
               "docshell and document should have the same inIsolatedMozBrowser attribute.");
-    MOZ_ASSERT(attrs.mPrivateBrowsingId == poa.mPrivateBrowsingId,
+    MOZ_ASSERT(attrs.mPrivateBrowsingId == oa.mPrivateBrowsingId,
               "docshell and document should have the same privateBrowsingId attribute.");
 
-    attrs.InheritFromDocToChildDocShell(poa);
+    attrs.Inherit(oa);
   }
 
   if (OwnerIsMozBrowserFrame()) {
@@ -3592,7 +3592,7 @@ nsresult
 nsFrameLoader::GetNewTabContext(MutableTabContext* aTabContext,
                                 nsIURI* aURI)
 {
-  DocShellOriginAttributes attrs;
+  OriginAttributes attrs;
   attrs.mInIsolatedMozBrowser = OwnerIsIsolatedMozBrowserFrame();
   nsresult rv;
 
@@ -3641,7 +3641,7 @@ nsFrameLoader::GetNewTabContext(MutableTabContext* aTabContext,
 }
 
 nsresult
-nsFrameLoader::PopulateUserContextIdFromAttribute(DocShellOriginAttributes& aAttr)
+nsFrameLoader::PopulateUserContextIdFromAttribute(OriginAttributes& aAttr)
 {
   if (aAttr.mUserContextId ==
         nsIScriptSecurityManager::DEFAULT_USER_CONTEXT_ID)  {

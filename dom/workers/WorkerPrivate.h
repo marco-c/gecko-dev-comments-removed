@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef mozilla_dom_workers_workerprivate_h__
 #define mozilla_dom_workers_workerprivate_h__
@@ -57,7 +57,7 @@ template<class T> class nsMainThreadPtrHandle;
 
 namespace JS {
 struct RuntimeStats;
-} 
+} // namespace JS
 
 namespace mozilla {
 class ThrottledEventQueue;
@@ -69,11 +69,11 @@ class PromiseNativeHandler;
 class StructuredCloneHolder;
 class WorkerDebuggerGlobalScope;
 class WorkerGlobalScope;
-} 
+} // namespace dom
 namespace ipc {
 class PrincipalInfo;
-} 
-} 
+} // namespace ipc
+} // namespace mozilla
 
 struct PRThread;
 
@@ -91,9 +91,9 @@ class WorkerPrivate;
 class WorkerRunnable;
 class WorkerThread;
 
-
-
-
+// SharedMutex is a small wrapper around an (internal) reference-counted Mutex
+// object. It exists to avoid changing a lot of code to use Mutex* instead of
+// Mutex&.
 class SharedMutex
 {
   typedef mozilla::Mutex Mutex;
@@ -169,58 +169,58 @@ protected:
   SharedMutex mMutex;
   mozilla::CondVar mCondVar;
 
-  
+  // Protected by mMutex.
   RefPtr<EventTarget> mEventTarget;
   nsTArray<RefPtr<WorkerRunnable>> mPreStartRunnables;
 
 private:
   WorkerPrivate* mParent;
   nsString mScriptURL;
-  
-  
+  // This is the worker name for shared workers or the worker scope
+  // for service workers.
   nsCString mWorkerName;
   LocationInfo mLocationInfo;
-  
-  
+  // The lifetime of these objects within LoadInfo is managed explicitly;
+  // they do not need to be cycle collected.
   WorkerLoadInfo mLoadInfo;
 
   Atomic<bool> mLoadingWorkerScript;
 
-  
+  // Only used for top level workers.
   nsTArray<nsCOMPtr<nsIRunnable>> mQueuedRunnables;
 
-  
+  // Protected by mMutex.
   JSSettings mJSSettings;
 
-  
-  
+  // Only touched on the parent thread (currently this is always the main
+  // thread as SharedWorkers are always top-level).
   nsTArray<RefPtr<SharedWorker>> mSharedWorkers;
 
   uint64_t mBusyCount;
-  
-  
+  // SharedWorkers may have multiple windows paused, so this must be
+  // a count instead of just a boolean.
   uint32_t mParentWindowPausedDepth;
   Status mParentStatus;
   bool mParentFrozen;
   bool mIsChromeWorker;
   bool mMainThreadObjectsForgotten;
-  
-  
-  
-  
-  
-  
-  
-  
+  // mIsSecureContext is set once in our constructor; after that it can be read
+  // from various threads.  We could make this const if we were OK with setting
+  // it in the initializer list via calling some function that takes all sorts
+  // of state (loadinfo, worker type, parent).
+  //
+  // It's a bit unfortunate that we have to have an out-of-band boolean for
+  // this, but we need access to this state from the parent thread, and we can't
+  // use our global object's secure state there.
   bool mIsSecureContext;
   WorkerType mWorkerType;
   TimeStamp mCreationTimeStamp;
   DOMHighResTimeStamp mCreationTimeHighRes;
 
 protected:
-  
-  
-  
+  // The worker is owned by its thread, which is represented here.  This is set
+  // in Construct() and emptied by WorkerFinishedRunnable, and conditionally
+  // traversed by the cycle collector if the busy count is zero.
   RefPtr<WorkerPrivate> mSelfRef;
 
   WorkerPrivateParent(WorkerPrivate* aParent,
@@ -295,11 +295,11 @@ public:
   already_AddRefed<nsIEventTarget>
   GetEventTarget();
 
-  
+  // May be called on any thread...
   bool
   Start();
 
-  
+  // Called on the parent thread.
   bool
   Notify(Status aStatus)
   {
@@ -318,21 +318,21 @@ public:
     return Notify(Killing);
   }
 
-  
-  
-  
-  
-  
-  
+  // We can assume that an nsPIDOMWindow will be available for Freeze, Thaw
+  // as these are only used for globals going in and out of the bfcache.
+  //
+  // XXXbz: This is a bald-faced lie given the uses in RegisterSharedWorker and
+  // CloseSharedWorkersForWindow, which pass null for aWindow to Thaw and Freeze
+  // respectively.  See bug 1251722.
   bool
   Freeze(nsPIDOMWindowInner* aWindow);
 
   bool
   Thaw(nsPIDOMWindowInner* aWindow);
 
-  
-  
-  
+  // When we debug a worker, we want to disconnect the window and the worker
+  // communication. This happens calling this method.
+  // Note: this method doesn't suspend the worker! Use Freeze/Thaw instead.
   void
   ParentWindowPaused();
 
@@ -545,14 +545,14 @@ public:
     mLoadInfo.mChannelInfo = aChannelInfo;
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
+  // This is used to handle importScripts(). When the worker is first loaded
+  // and executed, it happens in a sync loop. At this point it sets
+  // mLoadingWorkerScript to true. importScripts() calls that occur during the
+  // execution run in nested sync loops and so this continues to return true,
+  // leading to these scripts being cached offline.
+  // mLoadingWorkerScript is set to false when the top level loop ends.
+  // importScripts() in function calls or event handlers are always fetched
+  // from the network.
   bool
   LoadScriptAsPartOfLoadingServiceWorkerScript()
   {
@@ -563,7 +563,7 @@ public:
   void
   SetLoadingWorkerScript(bool aLoadingWorkerScript)
   {
-    
+    // any thread
     MOZ_ASSERT(IsServiceWorker());
     mLoadingWorkerScript = aLoadingWorkerScript;
   }
@@ -599,9 +599,9 @@ public:
     return mLoadInfo.mLoadGroup;
   }
 
-  
-  
-  
+  // This method allows the principal to be retrieved off the main thread.
+  // Principals are main-thread objects so the caller must ensure that all
+  // access occurs on the main thread.
   nsIPrincipal*
   GetPrincipalDontAssertMainThread() const
   {
@@ -722,8 +722,8 @@ public:
                                 : mJSSettings.content.compartmentOptions;
   }
 
-  
-  
+  // The ability to be a chrome worker is orthogonal to the type of
+  // worker [Dedicated|Shared|Service].
   bool
   IsChromeWorker() const
   {
@@ -789,13 +789,13 @@ public:
     return mLoadInfo.mStorageAllowed;
   }
 
-  const PrincipalOriginAttributes&
+  const OriginAttributes&
   GetOriginAttributes() const
   {
     return mLoadInfo.mOriginAttributes;
   }
 
-  
+  // Determine if the SW testing per-window flag is set by devtools
   bool
   ServiceWorkersTestingInWindow() const
   {
@@ -826,11 +826,11 @@ public:
   IMPL_EVENT_HANDLER(message)
   IMPL_EVENT_HANDLER(error)
 
-  
-  
-  
-  
-  
+  // Check whether this worker is a secure context.  For use from the parent
+  // thread only; the canonical "is secure context" boolean is stored on the
+  // compartment of the worker global.  The only reason we don't
+  // AssertIsOnParentThread() here is so we can assert that this value matches
+  // the one on the compartment, which has to be done from the worker thread.
   bool IsSecureContext() const
   {
     return mIsSecureContext;
@@ -920,14 +920,14 @@ class WorkerPrivate : public WorkerPrivateParent<WorkerPrivate>
   Queue<WorkerControlRunnable*, 4> mControlQueue;
   Queue<WorkerRunnable*, 4> mDebuggerQueue;
 
-  
+  // Touched on multiple threads, protected with mMutex.
   JSContext* mJSContext;
   RefPtr<WorkerCrossThreadDispatcher> mCrossThreadDispatcher;
   nsTArray<nsCOMPtr<nsIRunnable>> mUndispatchedRunnablesForSyncLoop;
   RefPtr<WorkerThread> mThread;
   PRThread* mPRThread;
 
-  
+  // Things touched on worker thread only.
   RefPtr<WorkerGlobalScope> mScope;
   RefPtr<WorkerDebuggerGlobalScope> mDebuggerScope;
   nsTArray<ParentType*> mChildWorkers;
@@ -949,9 +949,9 @@ class WorkerPrivate : public WorkerPrivateParent<WorkerPrivate>
 #endif
   };
 
-  
-  
-  
+  // This is only modified on the worker thread, but in DEBUG builds
+  // AssertValidSyncLoop function iterates it on other threads. Therefore
+  // modifications are done with mMutex held *only* in DEBUG builds.
   nsTArray<nsAutoPtr<SyncLoopInfo>> mSyncLoopStack;
 
   nsCOMPtr<nsITimer> mTimer;
@@ -963,10 +963,10 @@ class WorkerPrivate : public WorkerPrivateParent<WorkerPrivate>
 
   RefPtr<MemoryReporter> mMemoryReporter;
 
-  
+  // fired on the main thread if the worker script fails to load
   nsCOMPtr<nsIRunnable> mLoadFailedRunnable;
 
-  JS::UniqueChars mDefaultLocale; 
+  JS::UniqueChars mDefaultLocale; // nulled during worker JSContext init
   TimeStamp mKillTime;
   uint32_t mErrorHandlerRecursionCount;
   uint32_t mNextTimeoutId;
@@ -1003,7 +1003,7 @@ public:
               WorkerLoadInfo* aLoadInfo, ErrorResult& aRv);
 
   static bool
-  WorkerAvailable(JSContext* , JSObject* );
+  WorkerAvailable(JSContext* /* unused */, JSObject* /* unused */);
 
   enum LoadGroupBehavior
   {
@@ -1026,7 +1026,7 @@ public:
   {
     AssertIsOnMainThread();
 
-    
+    // No need to lock here since this is only ever modified by the same thread.
     return mDebuggerRegistered;
   }
 
@@ -1269,27 +1269,27 @@ public:
   WorkerCrossThreadDispatcher*
   GetCrossThreadDispatcher();
 
-  
+  // This may block!
   void
   BeginCTypesCall();
 
-  
+  // This may block!
   void
   EndCTypesCall();
 
   void
   BeginCTypesCallback()
   {
-    
-    
+    // If a callback is beginning then we need to do the exact same thing as
+    // when a ctypes call ends.
     EndCTypesCall();
   }
 
   void
   EndCTypesCallback()
   {
-    
-    
+    // If a callback is ending then we need to do the exact same thing as
+    // when a ctypes call begins.
     BeginCTypesCall();
   }
 
@@ -1360,12 +1360,12 @@ public:
   SetWorkerScriptExecutedSuccessfully()
   {
     AssertIsOnWorkerThread();
-    
+    // Should only be called once!
     MOZ_ASSERT(!mWorkerScriptExecutedSuccessfully);
     mWorkerScriptExecutedSuccessfully = true;
   }
 
-  
+  // Only valid after CompileScriptRunnable has finished running!
   bool
   WorkerScriptExecutedSuccessfully() const
   {
@@ -1376,9 +1376,9 @@ public:
   void
   MaybeDispatchLoadFailedRunnable();
 
-  
-  
-  
+  // Get the event target to use when dispatching to the main thread
+  // from this Worker thread.  This may be the main thread itself or
+  // a ThrottledEventQueue to the main thread.
   nsIEventTarget*
   MainThreadEventTarget();
 
@@ -1419,12 +1419,12 @@ private:
 
   enum class ProcessAllControlRunnablesResult
   {
-    
+    // We did not process anything.
     Nothing,
-    
-    
+    // We did process something, states may have changed, but we can keep
+    // executing script.
     MayContinue,
-    
+    // We did process something, and should not continue executing script.
     Abort
   };
 
@@ -1460,9 +1460,9 @@ private:
     memcpy(aPreferences, mPreferences, WORKERPREF_COUNT * sizeof(bool));
   }
 
-  
-  
-  
+  // If the worker shutdown status is equal or greater then aFailStatus, this
+  // operation will fail and nullptr will be returned. See WorkerHolder.h for
+  // more information about the correct value to use.
   already_AddRefed<nsIEventTarget>
   CreateNewSyncLoop(Status aFailStatus);
 
@@ -1498,9 +1498,9 @@ private:
   }
 };
 
-
-
-
+// This class is only used to trick the DOM bindings.  We never create
+// instances of it, and static_casting to it is fine since it doesn't add
+// anything to WorkerPrivate.
 class ChromeWorkerPrivate : public WorkerPrivate
 {
 public:
@@ -1509,7 +1509,7 @@ public:
               ErrorResult& rv);
 
   static bool
-  WorkerAvailable(JSContext* aCx, JSObject* );
+  WorkerAvailable(JSContext* aCx, JSObject* /* unused */);
 
 private:
   ChromeWorkerPrivate() = delete;
@@ -1539,8 +1539,8 @@ class AutoSyncLoopHolder
   uint32_t mIndex;
 
 public:
-  
-  
+  // See CreateNewSyncLoop() for more information about the correct value to use
+  // for aFailStatus.
   AutoSyncLoopHolder(WorkerPrivate* aWorkerPrivate, Status aFailStatus)
   : mWorkerPrivate(aWorkerPrivate)
   , mTarget(aWorkerPrivate->CreateNewSyncLoop(aFailStatus))
@@ -1572,7 +1572,7 @@ public:
   nsIEventTarget*
   GetEventTarget() const
   {
-    
+    // This can be null if CreateNewSyncLoop() fails.
     return mTarget;
   }
 };
@@ -1606,4 +1606,4 @@ protected:
 
 END_WORKERS_NAMESPACE
 
-#endif 
+#endif /* mozilla_dom_workers_workerprivate_h__ */

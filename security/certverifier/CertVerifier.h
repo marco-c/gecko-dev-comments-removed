@@ -120,8 +120,8 @@ public:
                     Flags flags = 0,
      const SECItem* stapledOCSPResponse = nullptr,
      const SECItem* sctsFromTLS = nullptr,
-     const NeckoOriginAttributes& originAttributes =
-                      NeckoOriginAttributes(),
+     const OriginAttributes& originAttributes =
+                      OriginAttributes(),
     SECOidTag* evOidPolicy = nullptr,
     OCSPStaplingStatus* ocspStaplingStatus = nullptr,
     KeySizeStatus* keySizeStatus = nullptr,
@@ -139,8 +139,8 @@ public:
              UniqueCERTCertList& builtChain,
         bool saveIntermediatesInPermanentDatabase = false,
         Flags flags = 0,
-        const NeckoOriginAttributes& originAttributes =
-                      NeckoOriginAttributes(),
+        const OriginAttributes& originAttributes =
+                      OriginAttributes(),
     SECOidTag* evOidPolicy = nullptr,
     OCSPStaplingStatus* ocspStaplingStatus = nullptr,
     KeySizeStatus* keySizeStatus = nullptr,

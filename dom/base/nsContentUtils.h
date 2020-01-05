@@ -805,13 +805,13 @@ public:
   
 
 
-  static mozilla::PrincipalOriginAttributes
+  static mozilla::OriginAttributes
   GetOriginAttributes(nsIDocument* aDoc);
 
   
 
 
-  static mozilla::PrincipalOriginAttributes
+  static mozilla::OriginAttributes
   GetOriginAttributes(nsILoadGroup* aLoadGroup);
 
   

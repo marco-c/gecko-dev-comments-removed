@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "gtest/gtest.h"
 #include "mozilla/BasePrincipal.h"
@@ -239,7 +239,7 @@ TEST(ServiceWorkerRegistrar, TestWriteData)
       nsAutoCString spec;
       spec.AppendPrintf("spec write %d", i);
       reg.principal() =
-        mozilla::ipc::ContentPrincipalInfo(mozilla::PrincipalOriginAttributes(i, i % 2), spec);
+        mozilla::ipc::ContentPrincipalInfo(mozilla::OriginAttributes(i, i % 2), spec);
 
       swr->TestRegisterServiceWorker(reg);
     }
@@ -262,7 +262,7 @@ TEST(ServiceWorkerRegistrar, TestWriteData)
     ASSERT_EQ(data[i].principal().type(), mozilla::ipc::PrincipalInfo::TContentPrincipalInfo);
     const mozilla::ipc::ContentPrincipalInfo& cInfo = data[i].principal();
 
-    mozilla::PrincipalOriginAttributes attrs(i, i % 2);
+    mozilla::OriginAttributes attrs(i, i % 2);
     nsAutoCString suffix, expectSuffix;
     attrs.CreateSuffix(expectSuffix);
     cInfo.attrs().CreateSuffix(suffix);
@@ -429,7 +429,7 @@ TEST(ServiceWorkerRegistrar, TestVersion4Migration)
   ASSERT_STREQ("scope 0", cInfo0.spec().get());
   ASSERT_STREQ("scope 0", data[0].scope().get());
   ASSERT_STREQ("currentWorkerURL 0", data[0].currentWorkerURL().get());
-  
+  // default is true
   ASSERT_EQ(true, data[0].currentWorkerHandlesFetch());
   ASSERT_STREQ("cacheName 0", NS_ConvertUTF16toUTF8(data[0].cacheName()).get());
   ASSERT_EQ(nsIRequest::VALIDATE_ALWAYS, data[0].loadFlags());
@@ -445,7 +445,7 @@ TEST(ServiceWorkerRegistrar, TestVersion4Migration)
   ASSERT_STREQ("scope 1", cInfo1.spec().get());
   ASSERT_STREQ("scope 1", data[1].scope().get());
   ASSERT_STREQ("currentWorkerURL 1", data[1].currentWorkerURL().get());
-  
+  // default is true
   ASSERT_EQ(true, data[1].currentWorkerHandlesFetch());
   ASSERT_STREQ("cacheName 1", NS_ConvertUTF16toUTF8(data[1].cacheName()).get());
   ASSERT_EQ(nsIRequest::VALIDATE_ALWAYS, data[1].loadFlags());
@@ -512,7 +512,7 @@ TEST(ServiceWorkerRegistrar, TestDedupeRead)
 {
   nsAutoCString buffer("3" "\n");
 
-  
+  // unique entries
   buffer.Append("^appId=123&inBrowser=1\n");
   buffer.Append("spec 0\nscope 0\ncurrentWorkerURL 0\ncacheName 0\n");
   buffer.Append(SERVICEWORKERREGISTRAR_TERMINATOR "\n");
@@ -521,7 +521,7 @@ TEST(ServiceWorkerRegistrar, TestDedupeRead)
   buffer.Append("spec 1\nscope 1\ncurrentWorkerURL 1\ncacheName 1\n");
   buffer.Append(SERVICEWORKERREGISTRAR_TERMINATOR "\n");
 
-  
+  // dupe entries
   buffer.Append("^appId=123&inBrowser=1\n");
   buffer.Append("spec 1\nscope 0\ncurrentWorkerURL 0\ncacheName 0\n");
   buffer.Append(SERVICEWORKERREGISTRAR_TERMINATOR "\n");
@@ -593,7 +593,7 @@ TEST(ServiceWorkerRegistrar, TestDedupeWrite)
       nsAutoCString spec;
       spec.AppendPrintf("spec write dedupe/%d", i);
       reg.principal() =
-        mozilla::ipc::ContentPrincipalInfo(mozilla::PrincipalOriginAttributes(0, false), spec);
+        mozilla::ipc::ContentPrincipalInfo(mozilla::OriginAttributes(0, false), spec);
 
       swr->TestRegisterServiceWorker(reg);
     }
@@ -607,20 +607,20 @@ TEST(ServiceWorkerRegistrar, TestDedupeWrite)
   nsresult rv = swr->TestReadData();
   ASSERT_EQ(NS_OK, rv) << "ReadData() should not fail";
 
-  
+  // Duplicate entries should be removed.
   const nsTArray<ServiceWorkerRegistrationData>& data = swr->TestGetData();
   ASSERT_EQ((uint32_t)1, data.Length()) << "1 entry should be found";
 
   ASSERT_EQ(data[0].principal().type(), mozilla::ipc::PrincipalInfo::TContentPrincipalInfo);
   const mozilla::ipc::ContentPrincipalInfo& cInfo = data[0].principal();
 
-  mozilla::PrincipalOriginAttributes attrs(0, false);
+  mozilla::OriginAttributes attrs(0, false);
   nsAutoCString suffix, expectSuffix;
   attrs.CreateSuffix(expectSuffix);
   cInfo.attrs().CreateSuffix(suffix);
 
-  
-  
+  // Last entry passed to RegisterServiceWorkerInternal() should overwrite
+  // previous values.  So expect "9" in values here.
   ASSERT_STREQ(expectSuffix.get(), suffix.get());
   ASSERT_STREQ("scope write dedupe", cInfo.spec().get());
   ASSERT_STREQ("scope write dedupe", data[0].scope().get());

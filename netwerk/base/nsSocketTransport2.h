@@ -91,7 +91,7 @@ public:
     uint64_t ByteCount()    { return mByteCount; }
 
     
-    void OnSocketReady(nsresult condition); 
+    void OnSocketReady(nsresult condition);
 
 private:
     static nsresult WriteFromSegments(nsIInputStream *, void *,
@@ -309,8 +309,8 @@ private:
     
     
     
-    NeckoOriginAttributes mOriginAttributes;
-    
+    OriginAttributes mOriginAttributes;
+
     uint16_t         SocketPort() { return (!mProxyHost.IsEmpty() && !mProxyTransparent) ? mProxyPort : mPort; }
     const nsCString &SocketHost() { return (!mProxyHost.IsEmpty() && !mProxyTransparent) ? mProxyHost : mHost; }
 
@@ -351,7 +351,7 @@ private:
 
     void     SendStatus(nsresult status);
     nsresult ResolveHost();
-    nsresult BuildSocket(PRFileDesc *&, bool &, bool &); 
+    nsresult BuildSocket(PRFileDesc *&, bool &, bool &);
     nsresult InitiateSocket();
     bool     RecoverFromError();
 
