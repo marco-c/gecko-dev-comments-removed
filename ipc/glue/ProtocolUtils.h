@@ -8,7 +8,6 @@
 #ifndef mozilla_ipc_ProtocolUtils_h
 #define mozilla_ipc_ProtocolUtils_h 1
 
-#include "base/id_map.h"
 #include "base/process.h"
 #include "base/process_util.h"
 #include "chrome/common/ipc_message_utils.h"
@@ -65,8 +64,6 @@ class NeckoParent;
 } 
 
 namespace ipc {
-
-class MessageChannel;
 
 #ifdef XP_WIN
 const base::ProcessHandle kInvalidProcessHandle = INVALID_HANDLE_VALUE;
@@ -133,14 +130,33 @@ struct Trigger
     uint32_t mMessage : 31;
 };
 
+class ProtocolCloneContext
+{
+  typedef mozilla::dom::ContentParent ContentParent;
+  typedef mozilla::net::NeckoParent NeckoParent;
 
-enum RacyInterruptPolicy {
-    RIPError,
-    RIPChildWins,
-    RIPParentWins
+  RefPtr<ContentParent> mContentParent;
+  NeckoParent* mNeckoParent;
+
+public:
+  ProtocolCloneContext();
+
+  ~ProtocolCloneContext();
+
+  void SetContentParent(ContentParent* aContentParent);
+
+  ContentParent* GetContentParent() { return mContentParent; }
+
+  void SetNeckoParent(NeckoParent* aNeckoParent)
+  {
+    mNeckoParent = aNeckoParent;
+  }
+
+  NeckoParent* GetNeckoParent() { return mNeckoParent; }
 };
 
-class IProtocol : public HasResultCodes
+template<class ListenerT>
+class IProtocolManager
 {
 public:
     enum ActorDestroyReason {
@@ -152,62 +168,46 @@ public:
     };
 
     typedef base::ProcessId ProcessId;
-    typedef IPC::Message Message;
-    typedef IPC::MessageInfo MessageInfo;
 
-    IProtocol(Side aSide) : mId(0), mSide(aSide), mManager(nullptr), mChannel(nullptr) {}
-
-    virtual int32_t Register(IProtocol*);
-    virtual int32_t RegisterID(IProtocol*, int32_t);
-    virtual IProtocol* Lookup(int32_t);
-    virtual void Unregister(int32_t);
-    virtual void RemoveManagee(int32_t, IProtocol*) = 0;
+    virtual int32_t Register(ListenerT*) = 0;
+    virtual int32_t RegisterID(ListenerT*, int32_t) = 0;
+    virtual ListenerT* Lookup(int32_t) = 0;
+    virtual void Unregister(int32_t) = 0;
+    virtual void RemoveManagee(int32_t, ListenerT*) = 0;
 
     virtual Shmem::SharedMemory* CreateSharedMemory(
-        size_t, SharedMemory::SharedMemoryType, bool, int32_t*);
-    virtual Shmem::SharedMemory* LookupSharedMemory(int32_t);
-    virtual bool IsTrackingSharedMemory(Shmem::SharedMemory*);
-    virtual bool DestroySharedMemory(Shmem&);
+        size_t, SharedMemory::SharedMemoryType, bool, int32_t*) = 0;
+    virtual Shmem::SharedMemory* LookupSharedMemory(int32_t) = 0;
+    virtual bool IsTrackingSharedMemory(Shmem::SharedMemory*) = 0;
+    virtual bool DestroySharedMemory(Shmem&) = 0;
 
     
-    virtual ProcessId OtherPid() const;
-    Side GetSide() const { return mSide; }
+    virtual ProcessId OtherPid() const = 0;
+    virtual MessageChannel* GetIPCChannel() = 0;
 
-    virtual const char* ProtocolName() const = 0;
-    void FatalError(const char* const aErrorMsg) const;
-    virtual void HandleFatalError(const char* aProtocolName, const char* aErrorMsg) const;
+    virtual void FatalError(const char* const aProtocolName, const char* const aErrorMsg) const = 0;
 
-    Maybe<IProtocol*> ReadActor(const IPC::Message* aMessage, PickleIterator* aIter, bool aNullable,
+    Maybe<ListenerT*> ReadActor(const IPC::Message* aMessage, PickleIterator* aIter, bool aNullable,
                                 const char* aActorDescription, int32_t aProtocolTypeId);
-
-    virtual Result OnMessageReceived(const Message& aMessage) = 0;
-    virtual Result OnMessageReceived(const Message& aMessage, Message *& aReply) = 0;
-    virtual Result OnCallReceived(const Message& aMessage, Message *& aReply) = 0;
-
-    virtual int32_t GetProtocolTypeId() = 0;
-
-    int32_t Id() const { return mId; }
-    IProtocol* Manager() const { return mManager; }
-    virtual const MessageChannel* GetIPCChannel() const { return mChannel; }
-    virtual MessageChannel* GetIPCChannel() { return mChannel; }
-
-    bool AllocShmem(size_t aSize, Shmem::SharedMemory::SharedMemoryType aType, Shmem* aOutMem);
-    bool AllocUnsafeShmem(size_t aSize, Shmem::SharedMemory::SharedMemoryType aType, Shmem* aOutMem);
-    bool DeallocShmem(Shmem& aMem);
-
-protected:
-    void SetId(int32_t aId) { mId = aId; }
-    void SetManager(IProtocol* aManager) { mManager = aManager; }
-    void SetIPCChannel(MessageChannel* aChannel) { mChannel = aChannel; }
-
-private:
-    int32_t mId;
-    Side mSide;
-    IProtocol* mManager;
-    MessageChannel* mChannel;
 };
 
 typedef IPCMessageStart ProtocolId;
+
+
+
+
+class IProtocol : public MessageListener
+{
+public:
+    
+
+
+
+
+    virtual IProtocol*
+    CloneProtocol(MessageChannel* aChannel,
+                  ProtocolCloneContext* aCtx) = 0;
+};
 
 template<class PFooSide>
 class Endpoint;
@@ -218,12 +218,12 @@ class Endpoint;
 
 
 
-class IToplevelProtocol : public IProtocol
+class IToplevelProtocol
 {
     template<class PFooSide> friend class Endpoint;
 
 protected:
-    explicit IToplevelProtocol(ProtocolId aProtoId, Side aSide);
+    explicit IToplevelProtocol(ProtocolId aProtoId);
     ~IToplevelProtocol();
 
 public:
@@ -236,116 +236,11 @@ public:
 
     ProtocolId GetProtocolId() const { return mProtocolId; }
 
-    base::ProcessId OtherPid() const;
-    void SetOtherProcessId(base::ProcessId aOtherPid);
-
-    bool TakeMinidump(nsIFile** aDump, uint32_t* aSequence);
-
-    virtual void OnChannelClose() = 0;
-    virtual void OnChannelError() = 0;
-    virtual void ProcessingError(Result aError, const char* aMsgName) {}
-    virtual void OnChannelConnected(int32_t peer_pid) {}
-
-    bool Open(mozilla::ipc::Transport* aTransport,
-              base::ProcessId aOtherPid,
-              MessageLoop* aThread = nullptr,
-              mozilla::ipc::Side aSide = mozilla::ipc::UnknownSide);
-
-    bool Open(MessageChannel* aChannel,
-              MessageLoop* aMessageLoop,
-              mozilla::ipc::Side aSide = mozilla::ipc::UnknownSide);
-
-    void Close();
-
-    void SetReplyTimeoutMs(int32_t aTimeoutMs);
-
-    virtual int32_t Register(IProtocol*);
-    virtual int32_t RegisterID(IProtocol*, int32_t);
-    virtual IProtocol* Lookup(int32_t);
-    virtual void Unregister(int32_t);
-
-    virtual Shmem::SharedMemory* CreateSharedMemory(
-        size_t, SharedMemory::SharedMemoryType, bool, int32_t*);
-    virtual Shmem::SharedMemory* LookupSharedMemory(int32_t);
-    virtual bool IsTrackingSharedMemory(Shmem::SharedMemory*);
-    virtual bool DestroySharedMemory(Shmem&);
-
-    void DeallocShmems();
-
-    bool ShmemCreated(const Message& aMsg);
-    bool ShmemDestroyed(const Message& aMsg);
-
-    virtual bool ShouldContinueFromReplyTimeout() {
-        return false;
-    }
-
-    
-    virtual void IntentionalCrash() {
-        MOZ_CRASH("Intentional IPDL crash");
-    }
-
-    
-    
-#ifdef DEBUG
-    
-    
-    
-    
-    virtual bool ArtificialTimeout() {
-        return false;
-    }
-
-    
-    
-    virtual bool NeedArtificialSleep() {
-        return false;
-    }
-
-    
-    
-    
-    virtual void ArtificialSleep() {}
-#else
-    bool ArtificialTimeout() { return false; }
-    bool NeedArtificialSleep() { return false; }
-    void ArtificialSleep() {}
-#endif
-
-    virtual void EnteredCxxStack() {}
-    virtual void ExitedCxxStack() {}
-    virtual void EnteredCall() {}
-    virtual void ExitedCall() {}
-
-    bool IsOnCxxStack() const;
-
-    virtual RacyInterruptPolicy MediateInterruptRace(const MessageInfo& parent,
-                                                     const MessageInfo& child)
-    {
-        return RIPChildWins;
-    }
-
-    
-
-
-
-    virtual bool HandleWindowsMessages(const Message& aMsg) const { return true; }
-
-    virtual void OnEnteredSyncSend() {
-    }
-    virtual void OnExitedSyncSend() {
-    }
-
-    virtual void ProcessRemoteNativeEventsInInterruptCall() {
-    }
+    virtual MessageChannel* GetIPCChannel() = 0;
 
 private:
     ProtocolId mProtocolId;
     UniquePtr<Transport> mTrans;
-    base::ProcessId mOtherPid;
-    IDMap<IProtocol> mActorMap;
-    int32_t mLastRouteId;
-    IDMap<Shmem::SharedMemory> mShmemMap;
-    Shmem::id_t mLastShmemId;
 };
 
 class IShmemAllocator
@@ -457,6 +352,40 @@ bool
 UnpackChannelOpened(const PrivateIPDLInterface&,
                     const IPC::Message&,
                     TransportDescriptor*, base::ProcessId*, ProtocolId*);
+
+template<typename ListenerT>
+Maybe<ListenerT*>
+IProtocolManager<ListenerT>::ReadActor(const IPC::Message* aMessage, PickleIterator* aIter, bool aNullable,
+                                       const char* aActorDescription, int32_t aProtocolTypeId)
+{
+    int32_t id;
+    if (!IPC::ReadParam(aMessage, aIter, &id)) {
+        ActorIdReadError(aActorDescription);
+        return Nothing();
+    }
+
+    if (id == 1 || (id == 0 && !aNullable)) {
+        BadActorIdError(aActorDescription);
+        return Nothing();
+    }
+
+    if (id == 0) {
+        return Some(static_cast<ListenerT*>(nullptr));
+    }
+
+    ListenerT* listener = this->Lookup(id);
+    if (!listener) {
+        ActorLookupError(aActorDescription);
+        return Nothing();
+    }
+
+    if (static_cast<MessageListener*>(listener)->GetProtocolTypeId() != aProtocolTypeId) {
+        MismatchedActorTypeError(aActorDescription);
+        return Nothing();
+    }
+
+    return Some(listener);
+}
 
 #if defined(XP_WIN)
 

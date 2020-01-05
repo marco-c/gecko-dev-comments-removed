@@ -33,7 +33,6 @@ namespace mozilla {
 namespace ipc {
 
 class MessageChannel;
-class IToplevelProtocol;
 
 class RefCountedMonitor : public Monitor
 {
@@ -61,15 +60,6 @@ enum class SyncSendError {
     ReplyError,
 };
 
-enum ChannelState {
-    ChannelClosed,
-    ChannelOpening,
-    ChannelConnected,
-    ChannelTimeout,
-    ChannelClosing,
-    ChannelError
-};
-
 class AutoEnterTransaction;
 
 class MessageChannel : HasResultCodes
@@ -89,7 +79,7 @@ class MessageChannel : HasResultCodes
     typedef IPC::MessageInfo MessageInfo;
     typedef mozilla::ipc::Transport Transport;
 
-    explicit MessageChannel(IToplevelProtocol *aListener);
+    explicit MessageChannel(MessageListener *aListener);
     ~MessageChannel();
 
     
@@ -338,16 +328,29 @@ class MessageChannel : HasResultCodes
     
     
     
-    void EnteredCxxStack();
+    void EnteredCxxStack() {
+       mListener->OnEnteredCxxStack();
+    }
+
     void ExitedCxxStack();
 
-    void EnteredCall();
-    void ExitedCall();
+    void EnteredCall() {
+        mListener->OnEnteredCall();
+    }
 
-    void EnteredSyncSend();
-    void ExitedSyncSend();
+    void ExitedCall() {
+        mListener->OnExitedCall();
+    }
 
-    IToplevelProtocol *Listener() const {
+    void EnteredSyncSend() {
+        mListener->OnEnteredSyncSend();
+    }
+
+    void ExitedSyncSend() {
+        mListener->OnExitedSyncSend();
+    }
+
+    MessageListener *Listener() const {
         return mListener;
     }
 
@@ -492,7 +495,7 @@ class MessageChannel : HasResultCodes
   private:
     
     
-    IToplevelProtocol* mListener;
+    MessageListener* mListener;
     ChannelState mChannelState;
     RefPtr<RefCountedMonitor> mMonitor;
     Side mSide;
