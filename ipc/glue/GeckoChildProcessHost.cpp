@@ -42,6 +42,7 @@
 
 #ifdef XP_WIN
 #include "nsIWinTaskbar.h"
+#include <stdlib.h>
 #define NS_TASKBAR_CONTRACTID "@mozilla.org/windows-taskbar;1"
 
 #if defined(MOZ_SANDBOX)
@@ -519,7 +520,19 @@ GeckoChildProcessHost::SetChildLogName(const char* varName, const char* origLogN
   
   
   buffer.Assign(varName);
-  buffer.Append(origLogName);
+
+#ifdef XP_WIN
+  
+  
+  
+  char absPath[MAX_PATH + 2];
+  if (_fullpath(absPath, origLogName, sizeof(absPath))) {
+    buffer.Append(absPath);
+  } else
+#endif
+  {
+    buffer.Append(origLogName);
+  }
 
   
   buffer.AppendLiteral(".child-");
@@ -651,48 +664,6 @@ AddAppDirToCommandLine(std::vector<std::string>& aCmdLine)
 }
 
 #if defined(XP_WIN) && defined(MOZ_SANDBOX)
-static void
-MaybeAddNsprLogFileAccess(std::vector<std::wstring>& aAllowedFilesReadWrite)
-{
-  const char* nsprLogFileEnv = PR_GetEnv("NSPR_LOG_FILE");
-  if (!nsprLogFileEnv) {
-    return;
-  }
-
-  nsDependentCString nsprLogFilePath(nsprLogFileEnv);
-  nsCOMPtr<nsIFile> nsprLogFile;
-  nsresult rv = NS_NewNativeLocalFile(nsprLogFilePath, true,
-                                      getter_AddRefs(nsprLogFile));
-  if (NS_FAILED(rv)) {
-    
-    nsresult rv = NS_GetSpecialDirectory(NS_OS_CURRENT_WORKING_DIR,
-                                         getter_AddRefs(nsprLogFile));
-    if (NS_FAILED(rv) || !nsprLogFile) {
-      NS_WARNING("Failed to get current working directory");
-      return;
-    }
-
-    rv = nsprLogFile->AppendRelativeNativePath(nsprLogFilePath);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return;
-    }
-  }
-
-  nsAutoString resolvedFilePath;
-  rv = nsprLogFile->GetPath(resolvedFilePath);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-      return;
-  }
-
-  
-  
-  
-  
-  aAllowedFilesReadWrite.push_back(std::wstring(resolvedFilePath.get()));
-  nsAutoCString resolvedEnvVar("NSPR_LOG_FILE=");
-  AppendUTF16toUTF8(resolvedFilePath, resolvedEnvVar);
-  PR_SetEnv(resolvedEnvVar.get());
-}
 
 static void
 AddContentSandboxAllowedFiles(int32_t aSandboxLevel,
@@ -733,6 +704,7 @@ AddContentSandboxAllowedFiles(int32_t aSandboxLevel,
 
   aAllowedFilesRead.push_back(std::wstring(binDirPath.get()));
 }
+
 #endif
 
 bool
@@ -1113,7 +1085,6 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
   };
 
   if (shouldSandboxCurrentProcess) {
-    MaybeAddNsprLogFileAccess(mAllowedFilesReadWrite);
     for (auto it = mAllowedFilesRead.begin();
          it != mAllowedFilesRead.end();
          ++it) {
