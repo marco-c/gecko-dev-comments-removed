@@ -85,7 +85,12 @@ StyleSheet::UnlinkInner()
   while (child) {
     MOZ_ASSERT(child->mParent == this, "We have a unique inner!");
     child->mParent = nullptr;
-    child->mDocument = nullptr;
+    
+    
+    
+    
+    
+    child->SetAssociatedDocument(nullptr, NotOwnedByDocument);
 
     RefPtr<StyleSheet> next;
     
@@ -504,6 +509,9 @@ StyleSheet::UnparentChildren()
        child = child->mNext) {
     if (child->mParent == this) {
       child->mParent = nullptr;
+      MOZ_ASSERT(child->mDocumentAssociationMode == NotOwnedByDocument,
+                 "How did we get to the destructor, exactly, if we're owned "
+                 "by a document?");
       child->mDocument = nullptr;
     }
   }
@@ -614,7 +622,7 @@ StyleSheet::AppendStyleSheet(StyleSheet* aSheet)
   
   
   aSheet->mParent = this;
-  aSheet->mDocument = mDocument;
+  aSheet->SetAssociatedDocument(mDocument, mDocumentAssociationMode);
   DidDirty();
 }
 
