@@ -378,7 +378,8 @@ public abstract class GeckoApp
     private volatile HealthRecorder mHealthRecorder;
     private volatile Locale mLastLocale;
 
-    protected Intent mRestartIntent;
+    private boolean mShutdownOnDestroy;
+    private boolean mRestartOnShutdown;
 
     private boolean mWasFirstTabShownAfterActivityUnhidden;
 
@@ -755,17 +756,6 @@ public abstract class GeckoApp
                     getSharedPreferences().edit().putInt(PREFS_CRASHED_COUNT, 0).apply();
                 }
             }, STARTUP_PHASE_DURATION_MS);
-
-        } else if ("Gecko:Exited".equals(event)) {
-            
-            doShutdown();
-
-        } else if ("Sanitize:Finished".equals(event)) {
-            if (message.getBoolean("shutdown", false)) {
-                
-                
-                doShutdown();
-            }
 
         } else if ("Accessibility:Ready".equals(event)) {
             GeckoAccessibility.updateAccessibilitySettings(this);
@@ -1311,7 +1301,7 @@ public abstract class GeckoApp
         
         if (BrowserLocaleManager.getInstance().systemLocaleDidChange()) {
             Log.i(LOGTAG, "System locale changed. Restarting.");
-            doRestart();
+            finishAndShutdown( true);
             return;
         }
 
@@ -1352,13 +1342,11 @@ public abstract class GeckoApp
         
         EventDispatcher.getInstance().registerGeckoThreadListener(this,
             "Accessibility:Ready",
-            "Gecko:Exited",
             "Gecko:Ready",
             "PluginHelper:playFlash",
             null);
 
         EventDispatcher.getInstance().registerUiThreadListener(this,
-            "Sanitize:Finished",
             "Update:Check",
             "Update:Download",
             "Update:Install",
@@ -2592,13 +2580,11 @@ public abstract class GeckoApp
 
         EventDispatcher.getInstance().unregisterGeckoThreadListener(this,
             "Accessibility:Ready",
-            "Gecko:Exited",
             "Gecko:Ready",
             "PluginHelper:playFlash",
             null);
 
         EventDispatcher.getInstance().unregisterUiThreadListener(this,
-            "Sanitize:Finished",
             "Update:Check",
             "Update:Download",
             "Update:Install",
@@ -2649,6 +2635,11 @@ public abstract class GeckoApp
         super.onDestroy();
 
         Tabs.unregisterOnTabsChangedListener(this);
+
+        if (mShutdownOnDestroy) {
+            GeckoApplication.shutdown(!mRestartOnShutdown ? null : new Intent(
+                    Intent.ACTION_MAIN,  null, getApplicationContext(), getClass()));
+        }
     }
 
     public void showSDKVersionError() {
@@ -2710,6 +2701,19 @@ public abstract class GeckoApp
             intent.putExtra("env" + c, entry.getKey() + "="
                             + entry.getValue());
             c++;
+        }
+    }
+
+    @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
+    protected void finishAndShutdown(final boolean restart) {
+        ThreadUtils.assertOnUiThread();
+
+        mShutdownOnDestroy = true;
+        mRestartOnShutdown = restart;
+
+        
+        if (!isFinishing() && (Versions.preJBMR1 || !isDestroyed())) {
+            finish();
         }
     }
 
@@ -3109,24 +3113,28 @@ public abstract class GeckoApp
             rec.onEnvironmentChanged(startNewSession, SESSION_END_LOCALE_CHANGED);
         }
 
-        if (!shouldRestart) {
-            ThreadUtils.postToUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    GeckoApp.this.onLocaleReady(locale);
-                }
-            });
-            return;
-        }
-
-        
-        
-        ThreadUtils.postToBackgroundThread(new Runnable() {
+        final Runnable runnable = new Runnable() {
             @Override
             public void run() {
-                GeckoApp.this.doRestart();
+                if (!ThreadUtils.isOnUiThread()) {
+                    ThreadUtils.postToUiThread(this);
+                    return;
+                }
+                if (!shouldRestart) {
+                    GeckoApp.this.onLocaleReady(locale);
+                } else {
+                    finishAndShutdown( true);
+                }
             }
-        });
+        };
+
+        if (!shouldRestart) {
+            ThreadUtils.postToUiThread(runnable);
+        } else {
+            
+            
+            ThreadUtils.postToBackgroundThread(runnable);
+        }
     }
 
     
