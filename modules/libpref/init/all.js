@@ -2153,9 +2153,6 @@ pref("security.sri.enable", true);
 pref("security.block_script_with_wrong_mime", true);
 
 
-pref("security.xcto_nosniff_block_images", false);
-
-
 pref("security.ssl.enable_ocsp_must_staple", true);
 
 
