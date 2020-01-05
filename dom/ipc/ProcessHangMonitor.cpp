@@ -246,6 +246,12 @@ public:
 private:
   bool TakeBrowserMinidump(const PluginHangData& aPhd, nsString& aCrashId);
 
+  void SendHangNotification(const HangData& aHangData,
+                            const nsString& aBrowserDumpId,
+                            bool aTakeMinidump);
+
+  void ClearHangNotification();
+
   void DispatchTabChildNotReady(TabId aTabId);
 
   void ForcePaintOnThread(TabId aTabId, uint64_t aLayerObserverEpoch);
@@ -701,55 +707,45 @@ HangMonitorParent::Bind(Endpoint<PProcessHangMonitorParent>&& aEndpoint)
   MOZ_ASSERT(ok);
 }
 
-class HangObserverNotifier final : public Runnable
+void
+HangMonitorParent::SendHangNotification(const HangData& aHangData,
+                                        const nsString& aBrowserDumpId,
+                                        bool aTakeMinidump)
 {
-public:
-  HangObserverNotifier(HangMonitoredProcess* aProcess,
-                       HangMonitorParent *aParent,
-                       const HangData& aHangData,
-                       const nsString& aBrowserDumpId,
-                       bool aTakeMinidump)
-    : mProcess(aProcess),
-      mParent(aParent),
-      mHangData(aHangData),
-      mBrowserDumpId(aBrowserDumpId),
-      mTakeMinidump(aTakeMinidump)
-  {}
+  
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
-  NS_IMETHOD
-  Run() override
-  {
+  nsString dumpId;
+  if ((aHangData.type() == HangData::TPluginHangData) && aTakeMinidump) {
     
-    MOZ_RELEASE_ASSERT(NS_IsMainThread());
-
-    nsString dumpId;
-    if ((mHangData.type() == HangData::TPluginHangData) && mTakeMinidump) {
-      
-      
-      const PluginHangData& phd = mHangData.get_PluginHangData();
-      plugins::TakeFullMinidump(phd.pluginId(), phd.contentProcessId(),
-                                mBrowserDumpId, dumpId);
-      mParent->UpdateMinidump(phd.pluginId(), dumpId);
-    } else {
-      
-      dumpId = mBrowserDumpId;
-    }
-
-    mProcess->SetHangData(mHangData, dumpId);
-
-    nsCOMPtr<nsIObserverService> observerService =
-      mozilla::services::GetObserverService();
-    observerService->NotifyObservers(mProcess, "process-hang-report", nullptr);
-    return NS_OK;
+    
+    const PluginHangData& phd = aHangData.get_PluginHangData();
+    plugins::TakeFullMinidump(phd.pluginId(), phd.contentProcessId(),
+                              aBrowserDumpId, dumpId);
+    UpdateMinidump(phd.pluginId(), dumpId);
+  } else {
+    
+    dumpId = aBrowserDumpId;
   }
 
-private:
-  RefPtr<HangMonitoredProcess> mProcess;
-  HangMonitorParent* mParent;
-  HangData mHangData;
-  nsAutoString mBrowserDumpId;
-  bool mTakeMinidump;
-};
+  mProcess->SetHangData(aHangData, dumpId);
+
+  nsCOMPtr<nsIObserverService> observerService =
+    mozilla::services::GetObserverService();
+  observerService->NotifyObservers(mProcess, "process-hang-report", nullptr);
+}
+
+void
+HangMonitorParent::ClearHangNotification()
+{
+  
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
+  mProcess->ClearHang();
+
+  nsCOMPtr<nsIObserverService> observerService =
+    mozilla::services::GetObserverService();
+  observerService->NotifyObservers(mProcess, "clear-hang-report", nullptr);
+}
 
 
 
@@ -817,36 +813,13 @@ HangMonitorParent::RecvHangEvidence(const HangData& aHangData)
 
   MonitorAutoLock lock(mMonitor);
 
-  nsCOMPtr<nsIRunnable> notifier =
-    new HangObserverNotifier(mProcess, this, aHangData, crashId, takeMinidump);
-  NS_DispatchToMainThread(notifier);
+  NS_DispatchToMainThread(
+    mMainThreadTaskFactory.NewRunnableMethod(
+      &HangMonitorParent::SendHangNotification, aHangData, crashId,
+      takeMinidump));
 
   return IPC_OK();
 }
-
-class ClearHangNotifier final : public Runnable
-{
-public:
-  explicit ClearHangNotifier(HangMonitoredProcess* aProcess)
-    : mProcess(aProcess)
-  {}
-
-  NS_IMETHOD
-  Run() override
-  {
-    
-    MOZ_RELEASE_ASSERT(NS_IsMainThread());
-    mProcess->ClearHang();
-
-    nsCOMPtr<nsIObserverService> observerService =
-      mozilla::services::GetObserverService();
-    observerService->NotifyObservers(mProcess, "clear-hang-report", nullptr);
-    return NS_OK;
-  }
-
-private:
-  RefPtr<HangMonitoredProcess> mProcess;
-};
 
 mozilla::ipc::IPCResult
 HangMonitorParent::RecvClearHang()
@@ -862,9 +835,9 @@ HangMonitorParent::RecvClearHang()
 
   MonitorAutoLock lock(mMonitor);
 
-  nsCOMPtr<nsIRunnable> notifier =
-    new ClearHangNotifier(mProcess);
-  NS_DispatchToMainThread(notifier);
+  NS_DispatchToMainThread(
+    mMainThreadTaskFactory.NewRunnableMethod(
+      &HangMonitorParent::ClearHangNotification));
 
   return IPC_OK();
 }
