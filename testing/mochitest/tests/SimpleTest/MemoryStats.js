@@ -103,20 +103,11 @@ MemoryStats.dump = function (testNumber,
         }, null,  false);
     }
 
-    
-    if (dumpDMD && typeof(DMDReportAndDump) != "undefined") {
-        var basename = "dmd-" + testNumber + "-deprecated.txt";
-        var dumpfile = MemoryStats.constructPathname(dumpOutputDirectory,
-                                                     basename);
-        info(testURL + " | DMD-DUMP-deprecated " + dumpfile);
-        DMDReportAndDump(dumpfile);
-    }
-
-    if (dumpDMD && typeof(DMDAnalyzeReports) != "undefined") {
-        var basename = "dmd-" + testNumber + ".txt";
-        var dumpfile = MemoryStats.constructPathname(dumpOutputDirectory,
-                                                     basename);
-        info(testURL + " | DMD-DUMP " + dumpfile);
-        DMDAnalyzeReports(dumpfile);
+    if (dumpDMD) {
+        var md = MemoryStats._getService("@mozilla.org/memory-info-dumper;1",
+                                         "nsIMemoryInfoDumper");
+        md.dumpMemoryInfoToTempDir(String(testNumber),
+                                    false,
+                                    false);
     }
 };
