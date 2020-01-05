@@ -935,6 +935,13 @@ nsXULAppInfo::GetBrowserTabsRemoteAutostart(bool* aResult)
 }
 
 NS_IMETHODIMP
+nsXULAppInfo::GetMaxWebProcessCount(uint32_t* aResult)
+{
+  *aResult = mozilla::GetMaxWebProcessCount();
+  return NS_OK;
+}
+
+NS_IMETHODIMP
 nsXULAppInfo::GetMultiprocessBlockPolicy(uint32_t* aResult)
 {
   *aResult = MultiprocessBlockPolicy();
@@ -5018,8 +5025,10 @@ MultiprocessBlockPolicy() {
   return 0;
 }
 
+namespace mozilla {
+
 bool
-mozilla::BrowserTabsRemoteAutostart()
+BrowserTabsRemoteAutostart()
 {
   if (gBrowserTabsRemoteAutostartInitialized) {
     return gBrowserTabsRemoteAutostart;
@@ -5078,13 +5087,47 @@ mozilla::BrowserTabsRemoteAutostart()
   return gBrowserTabsRemoteAutostart;
 }
 
-namespace mozilla {
+uint32_t
+GetMaxWebProcessCount()
+{
+  
+  
+  if (Preferences::GetInt("dom.ipc.multiOptOut", 0) >=
+          nsIXULRuntime::E10S_MULTI_EXPERIMENT) {
+    return 1;
+  }
+
+  const char* optInPref = "dom.ipc.processCount";
+  uint32_t optInPrefValue = Preferences::GetInt(optInPref, 1);
+
+  
+  
+  
+  if (Preferences::HasUserValue(optInPref)) {
+    return std::max(1u, optInPrefValue);
+  }
+
+  
+  
+  if (Preferences::GetBool("extensions.e10sMultiBlocksEnabling", false) &&
+      Preferences::GetBool("extensions.e10sMultiBlockedByAddons", false)) {
+    return 1;
+  }
+
+  if (Preferences::HasUserValue("dom.ipc.processCount.web")) {
+    
+    return std::max(1, Preferences::GetInt("dom.ipc.processCount.web", 1));
+  }
+  return optInPrefValue;
+}
+
 const char*
 PlatformBuildID()
 {
   return gToolkitBuildID;
 }
-}
+
+} 
 
 void
 SetupErrorHandling(const char* progname)

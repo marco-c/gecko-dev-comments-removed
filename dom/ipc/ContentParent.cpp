@@ -712,18 +712,12 @@ ContentParent::GetOrCreatePool(const nsAString& aContentProcessType)
  uint32_t
 ContentParent::GetMaxProcessCount(const nsAString& aContentProcessType)
 {
+  if (aContentProcessType.EqualsLiteral("web")) {
+    return GetMaxWebProcessCount();
+  }
+
   nsAutoCString processCountPref("dom.ipc.processCount.");
   processCountPref.Append(NS_ConvertUTF16toUTF8(aContentProcessType));
-  bool hasUserValue = Preferences::HasUserValue(processCountPref.get()) ||
-                      Preferences::HasUserValue("dom.ipc.processCount");
-
-  
-  
-  if (!hasUserValue &&
-      Preferences::GetBool("extensions.e10sMultiBlocksEnabling", false) &&
-      Preferences::GetBool("extensions.e10sMultiBlockedByAddons", false)) {
-    return 1;
-  }
 
   int32_t maxContentParents;
   if (NS_FAILED(Preferences::GetInt(processCountPref.get(), &maxContentParents))) {
