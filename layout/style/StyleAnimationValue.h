@@ -65,6 +65,15 @@ public:
 
 
 
+  static StyleAnimationValue
+  Add(nsCSSPropertyID aProperty,
+      const StyleAnimationValue& aA,
+      StyleAnimationValue&& aB);
+
+  
+
+
+
 
 
 
