@@ -31,10 +31,7 @@
 #ifndef COMMON_DWARF_BYTEREADER_H__
 #define COMMON_DWARF_BYTEREADER_H__
 
-#include <stdint.h>
-
 #include <string>
-
 #include "common/dwarf/types.h"
 #include "common/dwarf/dwarf2enums.h"
 
@@ -62,41 +59,22 @@ class ByteReader {
 
   
   
-  uint8 ReadOneByte(const uint8_t *buffer) const;
+  uint8 ReadOneByte(const char* buffer) const;
 
   
   
-  uint16 ReadTwoBytes(const uint8_t *buffer) const;
-
-  
-  
-  
-  
-  
-  uint64 ReadFourBytes(const uint8_t *buffer) const;
-
-  
-  
-  uint64 ReadEightBytes(const uint8_t *buffer) const;
+  uint16 ReadTwoBytes(const char* buffer) const;
 
   
   
   
   
   
+  uint64 ReadFourBytes(const char* buffer) const;
+
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  uint64 ReadUnsignedLEB128(const uint8_t *buffer, size_t *len) const;
+  uint64 ReadEightBytes(const char* buffer) const;
 
   
   
@@ -115,7 +93,26 @@ class ByteReader {
   
   
   
-  int64 ReadSignedLEB128(const uint8_t *buffer, size_t *len) const;
+  uint64 ReadUnsignedLEB128(const char* buffer, size_t* len) const;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  int64 ReadSignedLEB128(const char* buffer, size_t* len) const;
 
   
   
@@ -138,7 +135,7 @@ class ByteReader {
   
   
   
-  uint64 ReadAddress(const uint8_t *buffer) const;
+  uint64 ReadAddress(const char* buffer) const;
 
   
   
@@ -175,14 +172,14 @@ class ByteReader {
   
   
   
-  uint64 ReadInitialLength(const uint8_t *start, size_t *len);
+  uint64 ReadInitialLength(const char* start, size_t* len);
 
   
   
   
   
   
-  uint64 ReadOffset(const uint8_t *buffer) const;
+  uint64 ReadOffset(const char* buffer) const;
 
   
   
@@ -237,7 +234,7 @@ class ByteReader {
   
   
   
-  void SetCFIDataBase(uint64 section_base, const uint8_t *buffer_base);
+  void SetCFIDataBase(uint64 section_base, const char *buffer_base);
 
   
   
@@ -276,15 +273,13 @@ class ByteReader {
   
   
   
-  uint64 ReadEncodedPointer(const uint8_t *buffer,
-                            DwarfPointerEncoding encoding,
+  uint64 ReadEncodedPointer(const char *buffer, DwarfPointerEncoding encoding,
                             size_t *len) const;
 
-  Endianness GetEndianness() const;
  private:
 
   
-  typedef uint64 (ByteReader::*AddressReader)(const uint8_t *) const;
+  typedef uint64 (ByteReader::*AddressReader)(const char*) const;
 
   
   
@@ -307,7 +302,7 @@ class ByteReader {
   bool have_section_base_, have_text_base_, have_data_base_;
   bool have_function_base_;
   uint64 section_base_, text_base_, data_base_, function_base_;
-  const uint8_t *buffer_base_;
+  const char *buffer_base_;
 };
 
 }  

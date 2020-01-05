@@ -328,10 +328,6 @@ typedef enum {
   MD_MEMORY_INFO_LIST_STREAM     = 16,  
   MD_THREAD_INFO_LIST_STREAM     = 17,
   MD_HANDLE_OPERATION_LIST_STREAM = 18,
-  MD_TOKEN_STREAM                = 19,
-  MD_JAVASCRIPT_DATA_STREAM      = 20,
-  MD_SYSTEM_MEMORY_INFO_STREAM   = 21,
-  MD_PROCESS_VM_COUNTERS_STREAM  = 22,
   MD_LAST_RESERVED_STREAM        = 0x0000ffff,
 
   
@@ -453,25 +449,14 @@ static const size_t MDCVInfoPDB70_minsize = offsetof(MDCVInfoPDB70,
 
 #define MD_CVINFOPDB70_SIGNATURE 0x53445352  /* cvSignature = 'SDSR' */
 
-
-
-
-
-
-
-
-
 typedef struct {
-  uint32_t cv_signature;
-  uint8_t  build_id[1];  
-
-
+  uint32_t data1[2];
+  uint32_t data2;
+  uint32_t data3;
+  uint32_t data4;
+  uint32_t data5[3];
+  uint8_t  extra[2];
 } MDCVInfoELF;
-
-static const size_t MDCVInfoELF_minsize = offsetof(MDCVInfoELF,
-                                                   build_id[0]);
-
-#define MD_CVINFOELF_SIGNATURE 0x4270454c  /* cvSignature = 'BpEL' */
 
 
 
@@ -653,7 +638,6 @@ typedef enum {
   MD_CPU_ARCHITECTURE_SPARC     = 0x8001, 
   MD_CPU_ARCHITECTURE_PPC64     = 0x8002, 
   MD_CPU_ARCHITECTURE_ARM64     = 0x8003, 
-  MD_CPU_ARCHITECTURE_MIPS64    = 0x8004, 
   MD_CPU_ARCHITECTURE_UNKNOWN   = 0xffff  
 } MDCPUArchitecture;
 
@@ -722,41 +706,6 @@ typedef struct {
 #define MD_MAX_PATH 260
 
 
-typedef struct {
-  uint32_t offset;
-  uint32_t size;
-} MDXStateFeature;
-
-
-typedef enum {
-  MD_XSTATE_LEGACY_FLOATING_POINT = 0, 
-  MD_XSTATE_LEGACY_SSE            = 1, 
-  MD_XSTATE_GSSE                  = 2, 
-  MD_XSTATE_AVX                   = MD_XSTATE_GSSE, 
-  MD_XSTATE_MPX_BNDREGS           = 3, 
-  MD_XSTATE_MPX_BNDCSR            = 4, 
-  MD_XSTATE_AVX512_KMASK          = 5, 
-  MD_XSTATE_AVX512_ZMM_H          = 6, 
-  MD_XSTATE_AVX512_ZMM            = 7, 
-  MD_XSTATE_IPT                   = 8, 
-  MD_XSTATE_LWP                   = 62 
-} MDXStateFeatureFlag;
-
-
-#define MD_MAXIMUM_XSTATE_FEATURES 64
-
-
-typedef struct {
-  uint32_t size_of_info;
-  uint32_t context_size;
-  
-
-  uint64_t enabled_features;
-  MDXStateFeature features[MD_MAXIMUM_XSTATE_FEATURES];
-} MDXStateConfigFeatureMscInfo;
-
-
-
 
 
 
@@ -816,19 +765,6 @@ typedef struct {
 
   uint16_t build_string[MD_MAX_PATH];  
   uint16_t dbg_bld_str[40];            
-
-  
-
-
-
-
-  
-
-  MDXStateConfigFeatureMscInfo xstate_data;
-
-  
-
-  uint32_t process_cookie;
 } MDRawMiscInfo;  
 
 
@@ -839,14 +775,7 @@ static const size_t MD_MISCINFO2_SIZE =
     offsetof(MDRawMiscInfo, process_integrity_level);
 static const size_t MD_MISCINFO3_SIZE =
     offsetof(MDRawMiscInfo, build_string[0]);
-static const size_t MD_MISCINFO4_SIZE =
-    offsetof(MDRawMiscInfo, xstate_data);
-
-
-
-
-static const size_t MD_MISCINFO5_SIZE =
-    offsetof(MDRawMiscInfo, process_cookie) + sizeof(uint32_t);
+static const size_t MD_MISCINFO4_SIZE = sizeof(MDRawMiscInfo);
 
 
 
@@ -866,8 +795,6 @@ typedef enum {
   MD_MISCINFO_FLAGS1_PROTECTED_PROCESS     = 0x00000080,
       
   MD_MISCINFO_FLAGS1_BUILDSTRING           = 0x00000100,
-      
-  MD_MISCINFO_FLAGS1_PROCESS_COOKIE        = 0x00000200,
       
 } MDMiscInfoFlags1;
 

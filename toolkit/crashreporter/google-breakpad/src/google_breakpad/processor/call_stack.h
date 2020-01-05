@@ -45,7 +45,6 @@
 #ifndef GOOGLE_BREAKPAD_PROCESSOR_CALL_STACK_H__
 #define GOOGLE_BREAKPAD_PROCESSOR_CALL_STACK_H__
 
-#include <cstdint>
 #include <vector>
 
 namespace google_breakpad {
@@ -62,13 +61,8 @@ class CallStack {
 
   
   void Clear();
-
-  const vector<StackFrame*>* frames() const { return &frames_; }
-
   
-  void set_tid(uint32_t tid) { tid_ = tid; }
-
-  uint32_t tid() const { return tid_; }
+  const vector<StackFrame*>* frames() const { return &frames_; }
 
  private:
   
@@ -76,10 +70,6 @@ class CallStack {
 
   
   vector<StackFrame*> frames_;
-
-  
-  
-  uint32_t tid_;
 };
 
 }  

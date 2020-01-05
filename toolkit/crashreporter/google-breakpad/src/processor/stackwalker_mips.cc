@@ -53,25 +53,14 @@ StackwalkerMIPS::StackwalkerMIPS(const SystemInfo* system_info,
                                  MemoryRegion* memory,
                                  const CodeModules* modules,
                                  StackFrameSymbolizer* resolver_helper)
-: Stackwalker(system_info, memory, modules, resolver_helper),
-  context_(context) {
-  if (context_->context_flags & MD_CONTEXT_MIPS64 ) {
-    if ((memory_ && memory_->GetBase() + memory_->GetSize() - 1)
-        > 0xffffffffffffffff) {
-      BPLOG(ERROR) << "Memory out of range for stackwalking mips64: "
-          << HexString(memory_->GetBase())
-          << "+"
-          << HexString(memory_->GetSize());
-      memory_ = NULL;
-    }
-  } else {
-    if ((memory_ && memory_->GetBase() + memory_->GetSize() - 1) > 0xffffffff) {
-      BPLOG(ERROR) << "Memory out of range for stackwalking mips32: "
-          << HexString(memory_->GetBase())
-          << "+"
-          << HexString(memory_->GetSize());
-      memory_ = NULL;
-    }
+    : Stackwalker(system_info, memory, modules, resolver_helper),
+      context_(context) {
+  if (memory_ && memory_->GetBase() + memory_->GetSize() - 1 > 0xffffffff) {
+    BPLOG(ERROR) << "Memory out of range for stackwalking: "
+                 << HexString(memory_->GetBase())
+                 << "+"
+                 << HexString(memory_->GetSize());
+    memory_ = NULL;
   }
 }
 
@@ -107,143 +96,73 @@ StackFrameMIPS* StackwalkerMIPS::GetCallerByCFIFrameInfo(
     CFIFrameInfo* cfi_frame_info) {
   StackFrameMIPS* last_frame = static_cast<StackFrameMIPS*>(frames.back());
 
-  if (context_->context_flags & MD_CONTEXT_MIPS) {
-    uint32_t sp = 0, pc = 0;
+  uint32_t sp = 0, pc = 0;
 
-    
-    CFIFrameInfo::RegisterValueMap<uint32_t> callee_registers;
-    
-    CFIFrameInfo::RegisterValueMap<uint32_t> caller_registers;
+  
+  CFIFrameInfo::RegisterValueMap<uint32_t> callee_registers;
+  
+  CFIFrameInfo::RegisterValueMap<uint32_t> caller_registers;
 
-    for (int i = 0; kRegisterNames[i]; ++i) {
-      caller_registers[kRegisterNames[i]] = last_frame->context.iregs[i];
-      callee_registers[kRegisterNames[i]] = last_frame->context.iregs[i];
-    }
-
-    if (!cfi_frame_info->FindCallerRegs(callee_registers, *memory_,
-        &caller_registers))  {
-      return NULL;
-    }
-
-    CFIFrameInfo::RegisterValueMap<uint32_t>::const_iterator entry =
-        caller_registers.find(".cfa");
-
-    if (entry != caller_registers.end()) {
-      sp = entry->second;
-      caller_registers["$sp"] = entry->second;
-    }
-
-    entry = caller_registers.find(".ra");
-    if (entry != caller_registers.end()) {
-      caller_registers["$ra"] = entry->second;
-      pc = entry->second - 2 * sizeof(pc);
-    }
-    caller_registers["$pc"] = pc;
-    
-    scoped_ptr<StackFrameMIPS> frame(new StackFrameMIPS());
-
-    for (int i = 0; kRegisterNames[i]; ++i) {
-      CFIFrameInfo::RegisterValueMap<uint32_t>::const_iterator caller_entry =
-          caller_registers.find(kRegisterNames[i]);
-
-      if (caller_entry != caller_registers.end()) {
-        
-        
-        frame->context.iregs[i] = caller_entry->second;
-        frame->context_validity |= StackFrameMIPS::RegisterValidFlag(i);
-      } else if (((i >= INDEX_MIPS_REG_S0 && i <= INDEX_MIPS_REG_S7) ||
-          (i > INDEX_MIPS_REG_GP && i < INDEX_MIPS_REG_RA)) &&
-          (last_frame->context_validity &
-              StackFrameMIPS::RegisterValidFlag(i))) {
-        
-        
-        
-        
-        
-        frame->context.iregs[i] = last_frame->context.iregs[i];
-        frame->context_validity |= StackFrameMIPS::RegisterValidFlag(i);
-      }
-    }
-
-    frame->context.epc = caller_registers["$pc"];
-    frame->instruction = caller_registers["$pc"];
-    frame->context_validity |= StackFrameMIPS::CONTEXT_VALID_PC;
-
-    frame->context.iregs[MD_CONTEXT_MIPS_REG_RA] = caller_registers["$ra"];
-    frame->context_validity |= StackFrameMIPS::CONTEXT_VALID_RA;
-
-    frame->trust = StackFrame::FRAME_TRUST_CFI;
-
-    return frame.release();
-  } else {
-    uint64_t sp = 0, pc = 0;
-
-    
-    CFIFrameInfo::RegisterValueMap<uint64_t> callee_registers;
-    
-    CFIFrameInfo::RegisterValueMap<uint64_t> caller_registers;
-
-    for (int i = 0; kRegisterNames[i]; ++i) {
-      caller_registers[kRegisterNames[i]] = last_frame->context.iregs[i];
-      callee_registers[kRegisterNames[i]] = last_frame->context.iregs[i];
-    }
-
-    if (!cfi_frame_info->FindCallerRegs(callee_registers, *memory_,
-        &caller_registers))  {
-      return NULL;
-    }
-
-    CFIFrameInfo::RegisterValueMap<uint64_t>::const_iterator entry =
-        caller_registers.find(".cfa");
-
-    if (entry != caller_registers.end()) {
-      sp = entry->second;
-      caller_registers["$sp"] = entry->second;
-    }
-
-    entry = caller_registers.find(".ra");
-    if (entry != caller_registers.end()) {
-      caller_registers["$ra"] = entry->second;
-      pc = entry->second - 2 * sizeof(pc);
-    }
-    caller_registers["$pc"] = pc;
-    
-    scoped_ptr<StackFrameMIPS> frame(new StackFrameMIPS());
-
-    for (int i = 0; kRegisterNames[i]; ++i) {
-      CFIFrameInfo::RegisterValueMap<uint64_t>::const_iterator caller_entry =
-          caller_registers.find(kRegisterNames[i]);
-
-      if (caller_entry != caller_registers.end()) {
-        
-        
-        frame->context.iregs[i] = caller_entry->second;
-        frame->context_validity |= StackFrameMIPS::RegisterValidFlag(i);
-      } else if (((i >= INDEX_MIPS_REG_S0 && i <= INDEX_MIPS_REG_S7) ||
-          (i >= INDEX_MIPS_REG_GP && i < INDEX_MIPS_REG_RA)) &&
-          (last_frame->context_validity &
-              StackFrameMIPS::RegisterValidFlag(i))) {
-        
-        
-        
-        
-        
-        frame->context.iregs[i] = last_frame->context.iregs[i];
-        frame->context_validity |= StackFrameMIPS::RegisterValidFlag(i);
-      }
-    }
-
-    frame->context.epc = caller_registers["$pc"];
-    frame->instruction = caller_registers["$pc"];
-    frame->context_validity |= StackFrameMIPS::CONTEXT_VALID_PC;
-
-    frame->context.iregs[MD_CONTEXT_MIPS_REG_RA] = caller_registers["$ra"];
-    frame->context_validity |= StackFrameMIPS::CONTEXT_VALID_RA;
-
-    frame->trust = StackFrame::FRAME_TRUST_CFI;
-
-    return frame.release();
+  for (int i = 0; kRegisterNames[i]; ++i) {
+    caller_registers[kRegisterNames[i]] = last_frame->context.iregs[i];
+    callee_registers[kRegisterNames[i]] = last_frame->context.iregs[i];
   }
+
+  if (!cfi_frame_info->FindCallerRegs(callee_registers, *memory_,
+                                      &caller_registers))  {
+    return NULL;
+  }
+
+  CFIFrameInfo::RegisterValueMap<uint32_t>::const_iterator entry =
+      caller_registers.find(".cfa");
+
+  if (entry != caller_registers.end()) {
+    sp = entry->second;
+    caller_registers["$sp"] = entry->second;
+  }
+
+  entry = caller_registers.find(".ra");
+  if (entry != caller_registers.end()) {
+    caller_registers["$ra"] = entry->second;
+    pc = entry->second - 2 * sizeof(pc);
+  }
+  caller_registers["$pc"] = pc;
+  
+  scoped_ptr<StackFrameMIPS> frame(new StackFrameMIPS());
+
+  for (int i = 0; kRegisterNames[i]; ++i) {
+    CFIFrameInfo::RegisterValueMap<uint32_t>::const_iterator caller_entry =
+        caller_registers.find(kRegisterNames[i]);
+
+    if (caller_entry != caller_registers.end()) {
+      
+      
+      frame->context.iregs[i] = caller_entry->second;
+      frame->context_validity |= StackFrameMIPS::RegisterValidFlag(i);
+    } else if (((i >= INDEX_MIPS_REG_S0 && i <= INDEX_MIPS_REG_S7) ||
+                (i > INDEX_MIPS_REG_GP && i < INDEX_MIPS_REG_RA)) &&
+               (last_frame->context_validity &
+                StackFrameMIPS::RegisterValidFlag(i))) {
+      
+      
+      
+      
+      
+      frame->context.iregs[i] = last_frame->context.iregs[i];
+      frame->context_validity |= StackFrameMIPS::RegisterValidFlag(i);
+    }
+  }
+
+  frame->context.epc = caller_registers["$pc"];
+  frame->instruction = caller_registers["$pc"];
+  frame->context_validity |= StackFrameMIPS::CONTEXT_VALID_PC;
+  
+  frame->context.iregs[MD_CONTEXT_MIPS_REG_RA] = caller_registers["$ra"];
+  frame->context_validity |= StackFrameMIPS::CONTEXT_VALID_RA;
+
+  frame->trust = StackFrame::FRAME_TRUST_CFI;
+
+  return frame.release();
 }
 
 StackFrame* StackwalkerMIPS::GetCallerFrame(const CallStack* stack,
@@ -285,7 +204,7 @@ StackFrame* StackwalkerMIPS::GetCallerFrame(const CallStack* stack,
       last_frame->context.iregs[MD_CONTEXT_MIPS_REG_SP]) {
     return NULL;
   }
-
+  
   return new_frame.release();
 }
 
@@ -296,20 +215,19 @@ StackFrameMIPS* StackwalkerMIPS::GetCallerByStackScan(
 
   StackFrameMIPS* last_frame = static_cast<StackFrameMIPS*>(frames.back());
 
-  if (context_->context_flags & MD_CONTEXT_MIPS) {
-    uint32_t last_sp = last_frame->context.iregs[MD_CONTEXT_MIPS_REG_SP];
-    uint32_t caller_pc, caller_sp, caller_fp;
+  uint32_t last_sp = last_frame->context.iregs[MD_CONTEXT_MIPS_REG_SP];
+  uint32_t caller_pc, caller_sp, caller_fp;
 
-    
-    
+  
+  
 
-    
-    
-    
-    
-    int count = kMaxFrameStackSize / sizeof(caller_pc);
+  
+  
+  
+  
+  int count = kMaxFrameStackSize / sizeof(caller_pc);
 
-    if (frames.size() > 1) {
+  if (frames.size() > 1) {
       
       
       
@@ -320,128 +238,62 @@ StackFrameMIPS* StackwalkerMIPS::GetCallerByStackScan(
       
       
       count -= kMinArgsOnStack;
-    }
-
-    do {
-      
-      if (!ScanForReturnAddress(last_sp, &caller_sp, &caller_pc, count)) {
-        
-        
-        BPLOG(ERROR) << " ScanForReturnAddress failed ";
-        return NULL;
-      }
-      
-      if (!memory_->GetMemoryAtAddress(caller_sp - sizeof(caller_pc),
-          &caller_fp)) {
-        BPLOG(INFO) << " GetMemoryAtAddress for fp failed " ;
-        return NULL;
-      }
-
-      count = count - (caller_sp - last_sp) / sizeof(caller_pc);
-      
-      last_sp = caller_sp + sizeof(caller_pc);
-    } while ((caller_fp - caller_sp >= kMaxFrameStackSize) && count > 0);
-
-    if (!count) {
-      BPLOG(INFO) << " No frame found " ;
-      return NULL;
-    }
-
-    
-    
-    
-    caller_sp += sizeof(caller_pc);
-    
-    
-    
-    caller_pc -= 2 * sizeof(caller_pc);
-
-    
-    
-    StackFrameMIPS* frame = new StackFrameMIPS();
-    frame->trust = StackFrame::FRAME_TRUST_SCAN;
-    frame->context = last_frame->context;
-    frame->context.epc = caller_pc;
-    frame->context_validity |= StackFrameMIPS::CONTEXT_VALID_PC;
-    frame->instruction = caller_pc;
-
-    frame->context.iregs[MD_CONTEXT_MIPS_REG_SP] = caller_sp;
-    frame->context_validity |= StackFrameMIPS::CONTEXT_VALID_SP;
-    frame->context.iregs[MD_CONTEXT_MIPS_REG_FP] = caller_fp;
-    frame->context_validity |= StackFrameMIPS::CONTEXT_VALID_FP;
-
-    frame->context.iregs[MD_CONTEXT_MIPS_REG_RA] =
-        caller_pc + 2 * sizeof(caller_pc);
-    frame->context_validity |= StackFrameMIPS::CONTEXT_VALID_RA;
-
-    return frame;
-  } else {
-    uint64_t last_sp = last_frame->context.iregs[MD_CONTEXT_MIPS_REG_SP];
-    uint64_t caller_pc, caller_sp, caller_fp;
-
-    
-    
-
-    
-    
-    
-    
-    int count = kMaxFrameStackSize / sizeof(caller_pc);
-
-    do {
-      
-      if (!ScanForReturnAddress(last_sp, &caller_sp, &caller_pc, count)) {
-        
-        
-        BPLOG(ERROR) << " ScanForReturnAddress failed ";
-        return NULL;
-      }
-      
-      if (!memory_->GetMemoryAtAddress(caller_sp - sizeof(caller_pc),
-          &caller_fp)) {
-        BPLOG(INFO) << " GetMemoryAtAddress for fp failed " ;
-        return NULL;
-      }
-
-      count = count - (caller_sp - last_sp) / sizeof(caller_pc);
-      
-      last_sp = caller_sp + sizeof(caller_pc);
-    } while ((caller_fp - caller_sp >= kMaxFrameStackSize) && count > 0);
-
-    if (!count) {
-      BPLOG(INFO) << " No frame found " ;
-      return NULL;
-    }
-
-    
-    
-    
-    caller_sp += sizeof(caller_pc);
-    
-    
-    
-    caller_pc -= 2 * sizeof(caller_pc);
-
-    
-    
-    StackFrameMIPS* frame = new StackFrameMIPS();
-    frame->trust = StackFrame::FRAME_TRUST_SCAN;
-    frame->context = last_frame->context;
-    frame->context.epc = caller_pc;
-    frame->context_validity |= StackFrameMIPS::CONTEXT_VALID_PC;
-    frame->instruction = caller_pc;
-
-    frame->context.iregs[MD_CONTEXT_MIPS_REG_SP] = caller_sp;
-    frame->context_validity |= StackFrameMIPS::CONTEXT_VALID_SP;
-    frame->context.iregs[MD_CONTEXT_MIPS_REG_FP] = caller_fp;
-    frame->context_validity |= StackFrameMIPS::CONTEXT_VALID_FP;
-
-    frame->context.iregs[MD_CONTEXT_MIPS_REG_RA] =
-        caller_pc + 2 * sizeof(caller_pc);
-    frame->context_validity |= StackFrameMIPS::CONTEXT_VALID_RA;
-
-    return frame;
   }
+
+  do {
+    
+    if (!ScanForReturnAddress(last_sp, &caller_sp, &caller_pc, count)) {
+      
+      
+      BPLOG(ERROR) << " ScanForReturnAddress failed ";
+      return NULL;
+    }
+    
+    if (!memory_->GetMemoryAtAddress(caller_sp - sizeof(caller_pc),
+                                     &caller_fp)) {
+      BPLOG(INFO) << " GetMemoryAtAddress for fp failed " ;
+      return NULL;
+    }
+
+    count = count - (caller_sp - last_sp) / sizeof(caller_pc);
+    
+    last_sp = caller_sp + sizeof(caller_pc);
+  } while ((caller_fp - caller_sp >= kMaxFrameStackSize) && count > 0);
+
+  if (!count) {
+    BPLOG(INFO) << " No frame found " ;
+    return NULL;
+  }
+
+  
+  
+  
+  caller_sp += sizeof(caller_pc);
+  
+  
+  
+  caller_pc -= 2 * sizeof(caller_pc);
+
+
+  
+  
+  StackFrameMIPS* frame = new StackFrameMIPS();
+  frame->trust = StackFrame::FRAME_TRUST_SCAN;
+  frame->context = last_frame->context;
+  frame->context.epc = caller_pc;
+  frame->context_validity |= StackFrameMIPS::CONTEXT_VALID_PC;
+  frame->instruction = caller_pc;
+
+  frame->context.iregs[MD_CONTEXT_MIPS_REG_SP] = caller_sp;
+  frame->context_validity |= StackFrameMIPS::CONTEXT_VALID_SP;
+  frame->context.iregs[MD_CONTEXT_MIPS_REG_FP] = caller_fp;
+  frame->context_validity |= StackFrameMIPS::CONTEXT_VALID_FP;
+
+  frame->context.iregs[MD_CONTEXT_MIPS_REG_RA] =
+      caller_pc + 2 * sizeof(caller_pc);
+  frame->context_validity |= StackFrameMIPS::CONTEXT_VALID_RA;
+
+  return frame;
 }
 
 }  

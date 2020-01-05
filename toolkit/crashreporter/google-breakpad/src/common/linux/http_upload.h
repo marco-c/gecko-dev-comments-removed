@@ -75,9 +75,6 @@ class HTTPUpload {
   static bool CheckParameters(const map<string, string> &parameters);
 
   
-  static bool CheckCurlLib(void* curl_lib);
-
-  
   
   HTTPUpload();
   explicit HTTPUpload(const HTTPUpload &);
