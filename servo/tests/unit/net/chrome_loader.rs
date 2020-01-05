@@ -2,7 +2,7 @@
 
 
 
-use net::chrome_loader::resolve_chrome_url;
+use net::test::resolve_chrome_url;
 use url::Url;
 
 fn c(s: &str) -> Result<Url, ()> {
