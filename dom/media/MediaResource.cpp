@@ -222,7 +222,9 @@ ChannelMediaResource::OnStartRequest(nsIRequest* aRequest)
 
     int64_t contentLength = -1;
     hc->GetContentLength(&contentLength);
-    if (contentLength >= 0 && responseStatus == HTTP_OK_CODE) {
+    if (contentLength >= 0 &&
+        (responseStatus == HTTP_OK_CODE ||
+         responseStatus == HTTP_PARTIAL_RESPONSE_CODE)) {
       
       
       dataIsBounded = true;
