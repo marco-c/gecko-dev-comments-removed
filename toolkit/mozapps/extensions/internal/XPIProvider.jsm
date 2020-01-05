@@ -61,10 +61,9 @@ XPCOMUtils.defineLazyModuleGetter(this, "isAddonPartOfE10SRollout",
 XPCOMUtils.defineLazyModuleGetter(this, "LegacyExtensionsUtils",
                                   "resource://gre/modules/LegacyExtensionsUtils.jsm");
 
-const {nsIBlocklistService} = Ci;
 XPCOMUtils.defineLazyServiceGetter(this, "Blocklist",
                                    "@mozilla.org/extensions/blocklist;1",
-                                   "nsIBlocklistService");
+                                   Ci.nsIBlocklistService);
 XPCOMUtils.defineLazyServiceGetter(this,
                                    "ChromeRegistry",
                                    "@mozilla.org/chrome/chrome-registry;1",
@@ -93,6 +92,7 @@ XPCOMUtils.defineLazyGetter(this, "IconDetails", () => {
   return ExtensionUtils.IconDetails;
 });
 
+Services.ppmm.loadProcessScript("chrome://extensions/content/extension-process-script.js", true);
 
 Cu.importGlobalProperties(["URL"]);
 
@@ -206,10 +206,10 @@ const PENDING_INSTALL_METADATA =
 
 const STATIC_BLOCKLIST_PATTERNS = [
   { creator: "Mozilla Corp.",
-    level: nsIBlocklistService.STATE_BLOCKED,
+    level: Blocklist.STATE_BLOCKED,
     blockID: "i162" },
   { creator: "Mozilla.org",
-    level: nsIBlocklistService.STATE_BLOCKED,
+    level: Blocklist.STATE_BLOCKED,
     blockID: "i162" }
 ];
 
@@ -770,7 +770,7 @@ function isUsableAddon(aAddon) {
     return false;
   }
 
-  if (aAddon.blocklistState == nsIBlocklistService.STATE_BLOCKED) {
+  if (aAddon.blocklistState == Blocklist.STATE_BLOCKED) {
     logger.warn(`Add-on ${aAddon.id} is blocklisted.`);
     return false;
   }
@@ -1076,7 +1076,7 @@ var loadManifestFromWebManifest = Task.async(function*(aUri) {
   addon.targetPlatforms = [];
   
   addon.userDisabled = theme;
-  addon.softDisabled = addon.blocklistState == nsIBlocklistService.STATE_SOFTBLOCKED;
+  addon.softDisabled = addon.blocklistState == Blocklist.STATE_SOFTBLOCKED;
 
   return addon;
 });
@@ -1349,7 +1349,7 @@ let loadManifestFromRDF = Task.async(function*(aUri, aStream) {
     addon.userDisabled = false;
   }
 
-  addon.softDisabled = addon.blocklistState == nsIBlocklistService.STATE_SOFTBLOCKED;
+  addon.softDisabled = addon.blocklistState == Blocklist.STATE_SOFTBLOCKED;
   addon.applyBackgroundUpdates = AddonManager.AUTOUPDATE_DEFAULT;
 
   
@@ -4834,9 +4834,8 @@ this.XPIProvider = {
         activeAddon.bootstrapScope[feature] = gGlobalScope[feature];
 
       
-      XPCOMUtils.defineLazyGetter(
-        activeAddon.bootstrapScope, "console",
-        () => new ConsoleAPI({ consoleID: "addon/" + aId }));
+      activeAddon.bootstrapScope["console"] = new ConsoleAPI(
+        { consoleID: "addon/" + aId });
 
       
       
