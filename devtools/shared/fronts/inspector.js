@@ -991,11 +991,7 @@ var InspectorFront = FrontClassWithSpec(inspectorSpec, {
     if (toolbox) {
       
       
-      let {target} = toolbox;
-      let requisition = yield CommandUtils.createRequisition(target, {
-        environment: CommandUtils.createEnvironment({target})
-      });
-      yield requisition.updateExec("eyedropper --hide");
+      CommandUtils.executeOnTarget(toolbox.target, "eyedropper --hide");
     }
 
     yield this._pickColorFromPage(options);

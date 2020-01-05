@@ -19,6 +19,9 @@ try {
 const EventEmitter = require("devtools/shared/event-emitter");
 const eventEmitter = new EventEmitter();
 
+
+exports.eventEmitter = eventEmitter;
+
 const gcli = require("gcli/index");
 const l10n = require("gcli/l10n");
 

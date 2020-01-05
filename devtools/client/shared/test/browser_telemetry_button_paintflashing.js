@@ -44,16 +44,13 @@ function* delayedClicks(toolbox, node, clicks) {
       setTimeout(() => resolve(), TOOL_DELAY);
     });
 
-    
-    
-    let clicked = toolbox._requisition.commandOutputManager.onOutput.once();
+    let PaintFlashingCmd = require("devtools/shared/gcli/commands/paintflashing");
+    let clicked = PaintFlashingCmd.eventEmitter.once("changed");
 
     info("Clicking button " + node.id);
     node.click();
 
-    let outputEvent = yield clicked;
-    
-    yield outputEvent.output.promise;
+    yield clicked;
   }
 }
 

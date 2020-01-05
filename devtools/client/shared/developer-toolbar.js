@@ -38,6 +38,28 @@ var CommandUtils = {
   
 
 
+
+  _requisitions: new WeakMap(),
+
+  
+
+
+  executeOnTarget: Task.async(function* (target, command) {
+    let requisitionPromise = this._requisitions.get(target);
+    if (!requisitionPromise) {
+      requisitionPromise = this.createRequisition(target, {
+        environment: CommandUtils.createEnvironment({ target }, "target")
+      });
+      
+      this._requisitions.set(target, requisitionPromise);
+    }
+    let requisition = yield requisitionPromise;
+    requisition.updateExec(command);
+  }),
+
+  
+
+
   createRequisition: function (target, options) {
     if (!gcliInit) {
       return promise.reject("Unable to load gcli");
