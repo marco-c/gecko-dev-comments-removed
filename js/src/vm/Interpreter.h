@@ -1,15 +1,15 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=8 sts=4 et sw=4 tw=99:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef vm_Interpreter_h
 #define vm_Interpreter_h
 
-/*
- * JS interpreter interface.
- */
+
+
+
 
 #include "jsiter.h"
 #include "jspubtd.h"
@@ -22,10 +22,10 @@ namespace js {
 
 class EnvironmentIter;
 
-/*
- * Convert null/undefined |thisv| into the current global object for the
- * compartment, and replace other primitives with boxed versions.
- */
+
+
+
+
 extern bool
 BoxNonStrictThis(JSContext* cx, HandleValue thisv, MutableHandleValue vp);
 
@@ -35,48 +35,48 @@ GetFunctionThis(JSContext* cx, AbstractFramePtr frame, MutableHandleValue res);
 extern bool
 GetNonSyntacticGlobalThis(JSContext* cx, HandleObject envChain, MutableHandleValue res);
 
-/*
- * numToSkip is the number of stack values the expression decompiler should skip
- * before it reaches |v|. If it's -1, the decompiler will search the stack.
- */
+
+
+
+
 extern bool
 ReportIsNotFunction(JSContext* cx, HandleValue v, int numToSkip,
                     MaybeConstruct construct = NO_CONSTRUCT);
 
-/* See ReportIsNotFunction comment for the meaning of numToSkip. */
+
 extern JSObject*
 ValueToCallable(JSContext* cx, HandleValue v, int numToSkip = -1,
                 MaybeConstruct construct = NO_CONSTRUCT);
 
-/*
- * Call or construct arguments that are stored in rooted memory.
- *
- * NOTE: Any necessary |GetThisValue| computation must have been performed on
- *       |args.thisv()|, likely by the interpreter when pushing |this| onto the
- *       stack.  If you're not sure whether |GetThisValue| processing has been
- *       performed, use |Invoke|.
- */
+
+
+
+
+
+
+
+
 extern bool
 InternalCallOrConstruct(JSContext* cx, const CallArgs& args,
                         MaybeConstruct construct);
 
-/*
- * These helpers take care of the infinite-recursion check necessary for
- * getter/setter calls.
- */
+
+
+
+
 extern bool
 CallGetter(JSContext* cx, HandleValue thisv, HandleValue getter, MutableHandleValue rval);
 
 extern bool
 CallSetter(JSContext* cx, HandleValue thisv, HandleValue setter, HandleValue rval);
 
-// ES7 rev 0c1bd3004329336774cbc90de727cd0cf5f11e93 7.3.12 Call(F, V, argumentsList).
-// All parameters are required, hopefully forcing callers to be careful not to
-// (say) blindly pass callee as |newTarget| when a different value should have
-// been passed.  Behavior is unspecified if any element of |args| isn't initialized.
-//
-// |rval| is written to *only* after |fval| and |thisv| have been consumed, so
-// |rval| *may* alias either argument.
+
+
+
+
+
+
+
 extern bool
 Call(JSContext* cx, HandleValue fval, HandleValue thisv, const AnyInvokeArgs& args,
      MutableHandleValue rval);
@@ -135,75 +135,75 @@ Call(JSContext* cx, HandleValue fval, JSObject* thisObj,
     return Call(cx, fval, thisv, args, rval);
 }
 
-// Perform the above Call() operation using the given arguments.  Similar to
-// ConstructFromStack() below, this handles |!IsCallable(args.calleev())|.
-//
-// This internal operation is intended only for use with arguments known to be
-// on the JS stack, or at least in carefully-rooted memory. The vast majority of
-// potential users should instead use InvokeArgs in concert with Call().
+
+
+
+
+
+
 extern bool
 CallFromStack(JSContext* cx, const CallArgs& args);
 
-// ES6 7.3.13 Construct(F, argumentsList, newTarget).  All parameters are
-// required, hopefully forcing callers to be careful not to (say) blindly pass
-// callee as |newTarget| when a different value should have been passed.
-// Behavior is unspecified if any element of |args| isn't initialized.
-//
-// |rval| is written to *only* after |fval| and |newTarget| have been consumed,
-// so |rval| *may* alias either argument.
-//
-// NOTE: As with the ES6 spec operation, it's the caller's responsibility to
-//       ensure |fval| and |newTarget| are both |IsConstructor|.
+
+
+
+
+
+
+
+
+
+
 extern bool
 Construct(JSContext* cx, HandleValue fval, const AnyConstructArgs& args, HandleValue newTarget,
           MutableHandleObject objp);
 
-// Check that in the given |args|, which must be |args.isConstructing()|, that
-// |IsConstructor(args.callee())|. If this is not the case, throw a TypeError.
-// Otherwise, the user must ensure that, additionally, |IsConstructor(args.newTarget())|.
-// (If |args| comes directly from the interpreter stack, as set up by JSOP_NEW,
-// this comes for free.) Then perform a Construct() operation using |args|.
-//
-// This internal operation is intended only for use with arguments known to be
-// on the JS stack, or at least in carefully-rooted memory. The vast majority of
-// potential users should instead use ConstructArgs in concert with Construct().
+
+
+
+
+
+
+
+
+
 extern bool
 ConstructFromStack(JSContext* cx, const CallArgs& args);
 
-// Call Construct(fval, args, newTarget), but use the given |thisv| as |this|
-// during construction of |fval|.
-//
-// |rval| is written to *only* after |fval|, |thisv|, and |newTarget| have been
-// consumed, so |rval| *may* alias any of these arguments.
-//
-// This method exists only for very rare cases where a |this| was created
-// caller-side for construction of |fval|: basically only for JITs using
-// |CreateThis|.  If that's not you, use Construct()!
+
+
+
+
+
+
+
+
+
 extern bool
 InternalConstructWithProvidedThis(JSContext* cx, HandleValue fval, HandleValue thisv,
                                   const AnyConstructArgs& args, HandleValue newTarget,
                                   MutableHandleValue rval);
 
-/*
- * Executes a script with the given scopeChain/this. The 'type' indicates
- * whether this is eval code or global code. To support debugging, the
- * evalFrame parameter can point to an arbitrary frame in the context's call
- * stack to simulate executing an eval in that frame.
- */
+
+
+
+
+
+
 extern bool
 ExecuteKernel(JSContext* cx, HandleScript script, JSObject& scopeChain,
               const Value& newTargetVal, AbstractFramePtr evalInFrame, Value* result);
 
-/* Execute a script with the given scopeChain as global code. */
+
 extern bool
 Execute(JSContext* cx, HandleScript script, JSObject& scopeChain, Value* rval);
 
 class ExecuteState;
 class InvokeState;
 
-// RunState is passed to RunScript and RunScript then either passes it to the
-// interpreter or to the JITs. RunState contains all information we need to
-// construct an interpreter or JIT frame.
+
+
+
 class RunState
 {
   protected:
@@ -244,7 +244,7 @@ class RunState
     void operator=(const RunState& other) = delete;
 };
 
-// Eval or global script.
+
 class ExecuteState : public RunState
 {
     RootedValue newTargetValue_;
@@ -275,7 +275,7 @@ class ExecuteState : public RunState
     }
 };
 
-// Data to invoke a function.
+
 class InvokeState final : public RunState
 {
     const CallArgs& args_;
@@ -312,7 +312,7 @@ StrictlyEqual(JSContext* cx, HandleValue lval, HandleValue rval, bool* equal);
 extern bool
 LooselyEqual(JSContext* cx, HandleValue lval, HandleValue rval, bool* equal);
 
-/* === except that NaN is the same as NaN and -0 is not the same as +0. */
+
 extern bool
 SameValue(JSContext* cx, HandleValue v1, HandleValue v2, bool* same);
 
@@ -328,17 +328,17 @@ InstanceOfOperator(JSContext* cx, HandleObject obj, HandleValue v, bool* bp);
 extern bool
 HasInstance(JSContext* cx, HandleObject obj, HandleValue v, bool* bp);
 
-// Unwind environment chain and iterator to match the scope corresponding to
-// the given bytecode position.
+
+
 extern void
 UnwindEnvironment(JSContext* cx, EnvironmentIter& ei, jsbytecode* pc);
 
-// Unwind all environments.
+
 extern void
 UnwindAllEnvironmentsInFrame(JSContext* cx, EnvironmentIter& ei);
 
-// Compute the pc needed to unwind the scope to the beginning of the block
-// pointed to by the try note.
+
+
 extern jsbytecode*
 UnwindEnvironmentToTryPc(JSScript* script, JSTryNote* tn);
 
@@ -353,29 +353,29 @@ class MOZ_STACK_CLASS TryNoteIter
 
     void settle() {
         for (; tn_ != tnEnd_; ++tn_) {
-            /* If pc is out of range, try the next one. */
+            
             if (pcOffset_ - tn_->start >= tn_->length)
                 continue;
 
-            /*
-             * We have a note that covers the exception pc but we must check
-             * whether the interpreter has already executed the corresponding
-             * handler. This is possible when the executed bytecode implements
-             * break or return from inside a for-in loop.
-             *
-             * In this case the emitter generates additional [enditer] and [gosub]
-             * opcodes to close all outstanding iterators and execute the finally
-             * blocks. If such an [enditer] throws an exception, its pc can still
-             * be inside several nested for-in loops and try-finally statements
-             * even if we have already closed the corresponding iterators and
-             * invoked the finally blocks.
-             *
-             * To address this, we make [enditer] always decrease the stack even
-             * when its implementation throws an exception. Thus already executed
-             * [enditer] and [gosub] opcodes will have try notes with the stack
-             * depth exceeding the current one and this condition is what we use to
-             * filter them out.
-             */
+            
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
             if (tn_->stackDepth <= getStackDepth_())
                 break;
         }
@@ -409,7 +409,7 @@ class MOZ_STACK_CLASS TryNoteIter
 bool
 HandleClosingGeneratorReturn(JSContext* cx, AbstractFramePtr frame, bool ok);
 
-/************************************************************************/
+
 
 bool
 Throw(JSContext* cx, HandleValue v);
@@ -554,15 +554,14 @@ ReportRuntimeLexicalError(JSContext* cx, unsigned errorNumber, HandlePropertyNam
 void
 ReportRuntimeLexicalError(JSContext* cx, unsigned errorNumber, HandleScript script, jsbytecode* pc);
 
-// The parser only reports redeclarations that occurs within a single
-// script. Due to the extensibility of the global lexical scope, we also check
-// for redeclarations during runtime in JSOP_DEF{VAR,LET,CONST}.
+
+
+
 void
 ReportRuntimeRedeclaration(JSContext* cx, HandlePropertyName name, const char* redeclKind);
 
 enum class CheckIsObjectKind : uint8_t {
     IteratorNext,
-    IteratorReturn,
     GetIterator
 };
 
@@ -578,6 +577,6 @@ DefaultClassConstructor(JSContext* cx, unsigned argc, Value* vp);
 bool
 Debug_CheckSelfHosted(JSContext* cx, HandleValue v);
 
-}  /* namespace js */
+}  
 
-#endif /* vm_Interpreter_h */
+#endif 

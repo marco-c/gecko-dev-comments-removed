@@ -58,7 +58,6 @@ using mozilla::Some;
 class BreakableControl;
 class LabelControl;
 class LoopControl;
-class ForOfLoopControl;
 class TryFinallyControl;
 
 static bool
@@ -149,13 +148,6 @@ bool
 BytecodeEmitter::NestableControl::is<LoopControl>() const
 {
     return StatementKindIsLoop(kind_);
-}
-
-template <>
-bool
-BytecodeEmitter::NestableControl::is<ForOfLoopControl>() const
-{
-    return kind_ == StatementKind::ForOfLoop;
 }
 
 template <>
@@ -275,64 +267,6 @@ class LoopControl : public BreakableControl
             return false;
         bce->patchJumpsToTarget(continues, continueTarget);
         return true;
-    }
-};
-
-class ForOfLoopControl : public LoopControl
-{
-    
-    int32_t iterDepth_;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    ptrdiff_t iterCloseTryStart_;
-
-  public:
-    ForOfLoopControl(BytecodeEmitter* bce, int32_t iterDepth)
-      : LoopControl(bce, StatementKind::ForOfLoop),
-        iterDepth_(iterDepth),
-        iterCloseTryStart_(-1)
-    {
-        MOZ_ASSERT(bce->stackDepth >= iterDepth);
-    }
-
-    MOZ_MUST_USE bool finishIterCloseTryNote(BytecodeEmitter* bce) {
-        ptrdiff_t end = bce->offset();
-        MOZ_ASSERT(end >= iterCloseTryStart_);
-        if (end != iterCloseTryStart_)
-            return bce->tryNoteList.append(JSTRY_ITERCLOSE, iterDepth_, iterCloseTryStart_, end);
-        return true;
-    }
-
-    void startNewIterCloseTryNote(BytecodeEmitter* bce) {
-        MOZ_ASSERT(bce->offset() > iterCloseTryStart_);
-        iterCloseTryStart_ = bce->offset();
     }
 };
 
@@ -1569,156 +1503,6 @@ BytecodeEmitter::TDZCheckCache::noteTDZCheck(BytecodeEmitter* bce, JSAtom* name,
     return true;
 }
 
-class MOZ_STACK_CLASS IfThenElseEmitter
-{
-    BytecodeEmitter* bce_;
-    JumpList jumpAroundThen_;
-    JumpList jumpsAroundElse_;
-    unsigned noteIndex_;
-    int32_t thenDepth_;
-#ifdef DEBUG
-    int32_t pushed_;
-    bool calculatedPushed_;
-#endif
-    enum State {
-        Start,
-        If,
-        Cond,
-        IfElse,
-        Else,
-        End
-    };
-    State state_;
-
-  public:
-    explicit IfThenElseEmitter(BytecodeEmitter* bce)
-      : bce_(bce),
-        noteIndex_(-1),
-        thenDepth_(0),
-#ifdef DEBUG
-        pushed_(0),
-        calculatedPushed_(false),
-#endif
-        state_(Start)
-    {}
-
-    ~IfThenElseEmitter()
-    {}
-
-  private:
-    bool emitIf(State nextState) {
-        MOZ_ASSERT(state_ == Start || state_ == Else);
-        MOZ_ASSERT(nextState == If || nextState == IfElse || nextState == Cond);
-
-        
-        if (state_ == Else)
-            jumpAroundThen_ = JumpList();
-
-        
-        SrcNoteType type = nextState == If ? SRC_IF : nextState == IfElse ? SRC_IF_ELSE : SRC_COND;
-        if (!bce_->newSrcNote(type, &noteIndex_))
-            return false;
-        if (!bce_->emitJump(JSOP_IFEQ, &jumpAroundThen_))
-            return false;
-
-        
-#ifdef DEBUG
-        
-        thenDepth_ = bce_->stackDepth;
-#else
-        if (nextState == IfElse || nextState == Cond)
-            thenDepth_ = bce_->stackDepth;
-#endif
-        state_ = nextState;
-        return true;
-    }
-
-  public:
-    bool emitIf() {
-        return emitIf(If);
-    }
-
-    bool emitCond() {
-        return emitIf(Cond);
-    }
-
-    bool emitIfElse() {
-        return emitIf(IfElse);
-    }
-
-    bool emitElse() {
-        MOZ_ASSERT(state_ == IfElse || state_ == Cond);
-
-        calculateOrCheckPushed();
-
-        
-        
-        
-        if (!bce_->emitJump(JSOP_GOTO, &jumpsAroundElse_))
-            return false;
-
-        
-        if (!bce_->emitJumpTargetAndPatch(jumpAroundThen_))
-            return false;
-
-        
-        
-        
-        
-        
-        if (!bce_->setSrcNoteOffset(noteIndex_, 0,
-                                    jumpsAroundElse_.offset - jumpAroundThen_.offset))
-        {
-            return false;
-        }
-
-        
-        bce_->stackDepth = thenDepth_;
-        state_ = Else;
-        return true;
-    }
-
-    bool emitEnd() {
-        MOZ_ASSERT(state_ == If || state_ == Else);
-
-        calculateOrCheckPushed();
-
-        if (state_ == If) {
-            
-            if (!bce_->emitJumpTargetAndPatch(jumpAroundThen_))
-                return false;
-        }
-
-        
-        if (!bce_->emitJumpTargetAndPatch(jumpsAroundElse_))
-            return false;
-
-        state_ = End;
-        return true;
-    }
-
-    void calculateOrCheckPushed() {
-#ifdef DEBUG
-        if (!calculatedPushed_) {
-            pushed_ = bce_->stackDepth - thenDepth_;
-            calculatedPushed_ = true;
-        } else {
-            MOZ_ASSERT(pushed_ == bce_->stackDepth - thenDepth_);
-        }
-#endif
-    }
-
-#ifdef DEBUG
-    int32_t pushed() const {
-        return pushed_;
-    }
-
-    int32_t popped() const {
-        return -pushed_;
-    }
-#endif
-};
-
 BytecodeEmitter::BytecodeEmitter(BytecodeEmitter* parent,
                                  Parser<FullParseHandler>* parser, SharedContext* sc,
                                  HandleScript script, Handle<LazyScript*> lazyScript,
@@ -2235,43 +2019,22 @@ BytecodeEmitter::flushPops(int* npops)
 
 namespace {
 
-class NonLocalExitControl
-{
-  public:
-    enum Kind
-    {
-        
-        Throw,
-
-        
-        
-        Continue,
-
-        
-        
-        
-        Break,
-        Return
-    };
-
-  private:
+class NonLocalExitControl {
     BytecodeEmitter* bce_;
     const uint32_t savedScopeNoteIndex_;
     const int savedDepth_;
     uint32_t openScopeNoteIndex_;
-    Kind kind_;
 
     NonLocalExitControl(const NonLocalExitControl&) = delete;
 
     MOZ_MUST_USE bool leaveScope(BytecodeEmitter::EmitterScope* scope);
 
   public:
-    NonLocalExitControl(BytecodeEmitter* bce, Kind kind)
+    explicit NonLocalExitControl(BytecodeEmitter* bce)
       : bce_(bce),
         savedScopeNoteIndex_(bce->scopeNoteList.length()),
         savedDepth_(bce->stackDepth),
-        openScopeNoteIndex_(bce->innermostEmitterScope->noteIndex()),
-        kind_(kind)
+        openScopeNoteIndex_(bce->innermostEmitterScope->noteIndex())
     { }
 
     ~NonLocalExitControl() {
@@ -2318,14 +2081,6 @@ NonLocalExitControl::prepareForNonLocalJump(BytecodeEmitter::NestableControl* ta
 
     EmitterScope* es = bce_->innermostEmitterScope;
     int npops = 0;
-    bool hasForOfLoopsWithIteratorClose = false;
-
-    
-    
-    
-    
-    bool emitIteratorClose = kind_ == Continue || kind_ == Break || kind_ == Return;
-    bool emitIteratorCloseAtTarget = emitIteratorClose && kind_ != Continue;
 
     auto flushPops = [&npops](BytecodeEmitter* bce) {
         if (npops && !bce->flushPops(&npops))
@@ -2365,29 +2120,15 @@ NonLocalExitControl::prepareForNonLocalJump(BytecodeEmitter::NestableControl* ta
           }
 
           case StatementKind::ForOfLoop:
-            
-            
-            if (emitIteratorClose) {
-                hasForOfLoopsWithIteratorClose = true;
-                if (!control->as<ForOfLoopControl>().finishIterCloseTryNote(bce_))
-                    return false;
-                if (!bce_->emit1(JSOP_POP))               
-                    return false;
-                if (!bce_->emitIteratorClose())           
-                    return false;
-            } else {
-                if (!bce_->emit1(JSOP_POP))               
-                    return false;
-                if (!bce_->emit1(JSOP_POP))               
-                    return false;
-            }
+            npops += 2;
             break;
 
           case StatementKind::ForInLoop:
             
-            if (!bce_->emit1(JSOP_POP))                   
+            npops += 1;
+            if (!flushPops(bce_))
                 return false;
-            if (!bce_->emit1(JSOP_ENDITER))               
+            if (!bce_->emit1(JSOP_ENDITER))
                 return false;
             break;
 
@@ -2396,45 +2137,13 @@ NonLocalExitControl::prepareForNonLocalJump(BytecodeEmitter::NestableControl* ta
         }
     }
 
-    if (target && target->is<ForOfLoopControl>() && emitIteratorCloseAtTarget) {
-        hasForOfLoopsWithIteratorClose = true;
-        if (!target->as<ForOfLoopControl>().finishIterCloseTryNote(bce_))
-            return false;
-
-        
-        
-        
-        
-        if (!bce_->emitDupAt(1))                          
-            return false;
-        if (!bce_->emitIteratorClose())                   
-            return false;
-    }
-
     EmitterScope* targetEmitterScope = target ? target->emitterScope() : bce_->varEmitterScope;
     for (; es != targetEmitterScope; es = es->enclosingInFrame()) {
         if (!leaveScope(es))
             return false;
     }
 
-    if (!flushPops(bce_))
-        return false;
-
-    
-    if (hasForOfLoopsWithIteratorClose) {
-        for (NestableControl* control = bce_->innermostNestableControl;
-             control != target;
-             control = control->enclosing())
-        {
-            if (control->is<ForOfLoopControl>())
-                control->as<ForOfLoopControl>().startNewIterCloseTryNote(bce_);
-        }
-
-        if (target && target->is<ForOfLoopControl>() && emitIteratorCloseAtTarget)
-            target->as<ForOfLoopControl>().startNewIterCloseTryNote(bce_);
-    }
-
-    return true;
+    return flushPops(bce_);
 }
 
 }  
@@ -2442,9 +2151,7 @@ NonLocalExitControl::prepareForNonLocalJump(BytecodeEmitter::NestableControl* ta
 bool
 BytecodeEmitter::emitGoto(NestableControl* target, JumpList* jumplist, SrcNoteType noteType)
 {
-    NonLocalExitControl nle(this, noteType == SRC_CONTINUE
-                                  ? NonLocalExitControl::Continue
-                                  : NonLocalExitControl::Break);
+    NonLocalExitControl nle(this);
 
     if (!nle.prepareForNonLocalJump(target))
         return false;
@@ -4831,144 +4538,6 @@ BytecodeEmitter::emitIteratorNext(ParseNode* pn, bool allowSelfHosted)
 }
 
 bool
-BytecodeEmitter::emitIteratorClose(Maybe<JumpTarget> yieldStarTryStart, bool allowSelfHosted)
-{
-    MOZ_ASSERT(allowSelfHosted || emitterMode != BytecodeEmitter::SelfHosting,
-               ".close() on iterators is prohibited in self-hosted code because it "
-               "can run user-modifiable iteration code");
-
-    
-    
-    
-    
-
-    if (!emit1(JSOP_DUP))                                 
-        return false;
-
-    
-    
-    
-    if (!emitAtomOp(cx->names().return_, JSOP_CALLPROP))  
-        return false;
-
-    
-    
-    
-    IfThenElseEmitter ifReturnMethodIsDefined(this);
-    if (!emit1(JSOP_DUP))                                 
-        return false;
-    if (!emit1(JSOP_UNDEFINED))                           
-        return false;
-    if (!emit1(JSOP_NE))                                  
-        return false;
-    if (!ifReturnMethodIsDefined.emitIfElse())
-        return false;
-
-    
-    
-    
-    
-    if (!emit1(JSOP_SWAP))                                
-        return false;
-
-    
-    
-    
-    
-    
-    if (yieldStarTryStart) {
-        IfThenElseEmitter ifGeneratorClosing(this);
-        if (!emitDupAt(2))                                
-            return false;
-        if (!emit1(JSOP_ISGENCLOSING))                    
-            return false;
-        if (!emit1(JSOP_SWAP))                            
-            return false;
-        if (!emit1(JSOP_POP))                             
-            return false;
-        if (!ifGeneratorClosing.emitIfElse())             
-            return false;
-
-        if (!emit1(JSOP_GETRVAL))                         
-            return false;
-        if (!emitAtomOp(cx->names().value, JSOP_GETPROP)) 
-            return false;
-        if (!emitCall(JSOP_CALL, 1))                      
-            return false;
-        checkTypeSet(JSOP_CALL);
-        if (!emitCheckIsObj(CheckIsObjectKind::IteratorReturn)) 
-            return false;
-
-        IfThenElseEmitter ifReturnDone(this);
-        if (!emit1(JSOP_DUP))                             
-            return false;
-        if (!emitAtomOp(cx->names().done, JSOP_GETPROP))  
-            return false;
-        if (!ifReturnDone.emitIfElse())                   
-            return false;
-        if (!emit1(JSOP_DUP))                             
-            return false;
-        if (!emit1(JSOP_SETRVAL))                         
-            return false;
-        if (!ifReturnDone.emitElse())                     
-            return false;
-        int32_t savedDepth = this->stackDepth;
-        if (!emit2(JSOP_UNPICK, 3))                       
-            return false;
-        if (!emitUint16Operand(JSOP_POPN, 3))             
-            return false;
-        JumpList beq;
-        JumpTarget breakTarget{ -1 };
-        if (!emitBackwardJump(JSOP_GOTO, *yieldStarTryStart, &beq, &breakTarget)) 
-            return false;
-        this->stackDepth = savedDepth;
-        if (!ifReturnDone.emitEnd())
-            return false;
-
-        if (!ifGeneratorClosing.emitElse())               
-            return false;
-        if (!emitCall(JSOP_CALL, 0))                      
-            return false;
-        checkTypeSet(JSOP_CALL);
-        if (!emitCheckIsObj(CheckIsObjectKind::IteratorReturn)) 
-            return false;
-
-        if (!ifGeneratorClosing.emitEnd())
-            return false;
-    } else {
-        if (!emitCall(JSOP_CALL, 0))                      
-            return false;
-        checkTypeSet(JSOP_CALL);
-        if (!emitCheckIsObj(CheckIsObjectKind::IteratorReturn)) 
-            return false;
-    }
-
-    if (!ifReturnMethodIsDefined.emitElse())
-        return false;
-    if (!emit1(JSOP_POP))                                 
-        return false;
-    if (!ifReturnMethodIsDefined.emitEnd())
-        return false;
-
-    return emit1(JSOP_POP);                               
-}
-
-template <typename InnerEmitter>
-bool
-BytecodeEmitter::wrapWithIteratorCloseTryNote(int32_t iterDepth, InnerEmitter emitter)
-{
-    MOZ_ASSERT(this->stackDepth >= iterDepth);
-
-    ptrdiff_t start = offset();
-    if (!emitter(this))
-        return false;
-    ptrdiff_t end = offset();
-    if (start != end)
-        return tryNoteList.append(JSTRY_ITERCLOSE, iterDepth, start, end);
-    return true;
-}
-
-bool
 BytecodeEmitter::emitDefault(ParseNode* defaultExpr, ParseNode* pattern)
 {
     if (!emit1(JSOP_DUP))                                 
@@ -5055,6 +4624,156 @@ BytecodeEmitter::emitInitializerInBranch(ParseNode* initializer, ParseNode* patt
     TDZCheckCache tdzCache(this);
     return emitInitializer(initializer, pattern);
 }
+
+class MOZ_STACK_CLASS IfThenElseEmitter
+{
+    BytecodeEmitter* bce_;
+    JumpList jumpAroundThen_;
+    JumpList jumpsAroundElse_;
+    unsigned noteIndex_;
+    int32_t thenDepth_;
+#ifdef DEBUG
+    int32_t pushed_;
+    bool calculatedPushed_;
+#endif
+    enum State {
+        Start,
+        If,
+        Cond,
+        IfElse,
+        Else,
+        End
+    };
+    State state_;
+
+  public:
+    explicit IfThenElseEmitter(BytecodeEmitter* bce)
+      : bce_(bce),
+        noteIndex_(-1),
+        thenDepth_(0),
+#ifdef DEBUG
+        pushed_(0),
+        calculatedPushed_(false),
+#endif
+        state_(Start)
+    {}
+
+    ~IfThenElseEmitter()
+    {}
+
+  private:
+    bool emitIf(State nextState) {
+        MOZ_ASSERT(state_ == Start || state_ == Else);
+        MOZ_ASSERT(nextState == If || nextState == IfElse || nextState == Cond);
+
+        
+        if (state_ == Else)
+            jumpAroundThen_ = JumpList();
+
+        
+        SrcNoteType type = nextState == If ? SRC_IF : nextState == IfElse ? SRC_IF_ELSE : SRC_COND;
+        if (!bce_->newSrcNote(type, &noteIndex_))
+            return false;
+        if (!bce_->emitJump(JSOP_IFEQ, &jumpAroundThen_))
+            return false;
+
+        
+#ifdef DEBUG
+        
+        thenDepth_ = bce_->stackDepth;
+#else
+        if (nextState == IfElse || nextState == Cond)
+            thenDepth_ = bce_->stackDepth;
+#endif
+        state_ = nextState;
+        return true;
+    }
+
+  public:
+    bool emitIf() {
+        return emitIf(If);
+    }
+
+    bool emitCond() {
+        return emitIf(Cond);
+    }
+
+    bool emitIfElse() {
+        return emitIf(IfElse);
+    }
+
+    bool emitElse() {
+        MOZ_ASSERT(state_ == IfElse || state_ == Cond);
+
+        calculateOrCheckPushed();
+
+        
+        
+        
+        if (!bce_->emitJump(JSOP_GOTO, &jumpsAroundElse_))
+            return false;
+
+        
+        if (!bce_->emitJumpTargetAndPatch(jumpAroundThen_))
+            return false;
+
+        
+        
+        
+        
+        
+        if (!bce_->setSrcNoteOffset(noteIndex_, 0,
+                                    jumpsAroundElse_.offset - jumpAroundThen_.offset))
+        {
+            return false;
+        }
+
+        
+        bce_->stackDepth = thenDepth_;
+        state_ = Else;
+        return true;
+    }
+
+    bool emitEnd() {
+        MOZ_ASSERT(state_ == If || state_ == Else);
+
+        calculateOrCheckPushed();
+
+        if (state_ == If) {
+            
+            if (!bce_->emitJumpTargetAndPatch(jumpAroundThen_))
+                return false;
+        }
+
+        
+        if (!bce_->emitJumpTargetAndPatch(jumpsAroundElse_))
+            return false;
+
+        state_ = End;
+        return true;
+    }
+
+    void calculateOrCheckPushed() {
+#ifdef DEBUG
+        if (!calculatedPushed_) {
+            pushed_ = bce_->stackDepth - thenDepth_;
+            calculatedPushed_ = true;
+        } else {
+            MOZ_ASSERT(pushed_ == bce_->stackDepth - thenDepth_);
+        }
+#endif
+    }
+
+#ifdef DEBUG
+    int32_t pushed() const {
+        return pushed_;
+    }
+
+    int32_t popped() const {
+        return -pushed_;
+    }
+#endif
+};
 
 bool
 BytecodeEmitter::emitDestructuringOpsArray(ParseNode* pattern, DestructuringFlavor flav)
@@ -5999,7 +5718,7 @@ BytecodeEmitter::emitCatch(ParseNode* pn)
             return false;
 
         {
-            NonLocalExitControl nle(this, NonLocalExitControl::Throw);
+            NonLocalExitControl nle(this);
 
             
             
@@ -6592,14 +6311,12 @@ BytecodeEmitter::emitForOf(ParseNode* forOfLoop, EmitterScope* headLexicalEmitte
     if (!emitIterator())                                  
         return false;
 
-    int32_t iterDepth = stackDepth;
-
     
     
     if (!emit1(JSOP_UNDEFINED))                           
         return false;
 
-    ForOfLoopControl loopInfo(this, iterDepth);
+    LoopControl loopInfo(this, StatementKind::ForOfLoop);
 
     
     unsigned noteIndex;
@@ -6645,15 +6362,10 @@ BytecodeEmitter::emitForOf(ParseNode* forOfLoop, EmitterScope* headLexicalEmitte
 #endif
 
         
-        
-        
-        
         if (!emit1(JSOP_DUP))                             
             return false;
         if (!emitAtomOp(cx->names().value, JSOP_GETPROP)) 
             return false;
-
-        loopInfo.startNewIterCloseTryNote(this);
 
         if (!emitInitializeForInOrOfTarget(forOfHead))    
             return false;
@@ -6661,16 +6373,13 @@ BytecodeEmitter::emitForOf(ParseNode* forOfLoop, EmitterScope* headLexicalEmitte
         if (!emit1(JSOP_POP))                             
             return false;
 
-        MOZ_ASSERT(stackDepth == loopDepth,
+        MOZ_ASSERT(this->stackDepth == loopDepth,
                    "the stack must be balanced around the initializing "
                    "operation");
 
         
         ParseNode* forBody = forOfLoop->pn_right;
         if (!emitTree(forBody))                           
-            return false;
-
-        if (!loopInfo.finishIterCloseTryNote(this))
             return false;
 
         
@@ -7908,7 +7617,7 @@ BytecodeEmitter::emitReturn(ParseNode* pn)
             return false;
     }
 
-    NonLocalExitControl nle(this, NonLocalExitControl::Return);
+    NonLocalExitControl nle(this);
 
     if (!nle.prepareForNonLocalJumpToOutermost())
         return false;

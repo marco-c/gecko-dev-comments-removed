@@ -1437,7 +1437,7 @@ function TypedArrayStaticFrom(source, mapfn = undefined, thisArg = undefined) {
             
             var next = callContentFunction(iterator.next, iterator);
             if (!IsObject(next))
-                ThrowTypeError(JSMSG_ITER_METHOD_RETURNED_PRIMITIVE, "next");
+                ThrowTypeError(JSMSG_NEXT_RETURNED_PRIMITIVE);
 
             
             if (next.done)
@@ -1564,7 +1564,7 @@ function IterableToList(items, method) {
         
         var next = callContentFunction(iterator.next, iterator);
         if (!IsObject(next))
-            ThrowTypeError(JSMSG_ITER_METHOD_RETURNED_PRIMITIVE, "next");
+            ThrowTypeError(JSMSG_NEXT_RETURNED_PRIMITIVE);
 
         
         if (next.done)
