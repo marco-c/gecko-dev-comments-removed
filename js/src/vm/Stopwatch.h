@@ -299,7 +299,8 @@ struct PerformanceMonitoring {
     uint64_t highestTimestampCounter_;
 };
 
-#if WINVER >= 0x0600
+
+#if 0 
 struct cpuid_t {
     uint16_t group_;
     uint8_t number_;
