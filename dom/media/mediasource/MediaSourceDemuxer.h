@@ -44,12 +44,11 @@ public:
 
   bool ShouldComputeStartTime() const override { return false; }
 
-  void NotifyDataArrived() override;
-
   
   void AttachSourceBuffer(TrackBuffersManager* aSourceBuffer);
   void DetachSourceBuffer(TrackBuffersManager* aSourceBuffer);
   AutoTaskQueue* GetTaskQueue() { return mTaskQueue; }
+  void NotifyInitDataArrived();
 
   
   
