@@ -90,6 +90,8 @@ public:
   const VRControllerInfo& GetControllerInfo() const;
   void SetButtonPressed(uint64_t aBit);
   uint64_t GetButtonPressed();
+  void SetButtonTouched(uint64_t aBit);
+  uint64_t GetButtonTouched();
   void SetPose(const dom::GamepadPoseState& aPose);
   const dom::GamepadPoseState& GetPose();
   dom::GamepadHand GetHand();
@@ -103,6 +105,8 @@ protected:
   VRControllerInfo mControllerInfo;
   
   uint64_t mButtonPressed;
+  
+  uint64_t mButtonTouched;
   uint64_t mVibrateIndex;
   dom::GamepadPoseState mPose;
 };
