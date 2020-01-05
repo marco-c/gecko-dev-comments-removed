@@ -1631,7 +1631,7 @@ ShmemTextureReadLock::ReadUnlock() {
   int32_t readCount = PR_ATOMIC_DECREMENT(&info->readCount);
   MOZ_ASSERT(readCount >= 0);
   if (readCount <= 0) {
-    if (mClientAllocator) {
+    if (mClientAllocator && mClientAllocator->GetTileLockAllocator()) {
       mClientAllocator->GetTileLockAllocator()->DeallocShmemSection(mShmemSection);
     } else {
       
