@@ -20,14 +20,12 @@
 namespace js {
 namespace vtune {
 
+bool Initialize();
 
 
 
-inline bool
-IsProfilingActive()
-{
-    return iJIT_IsProfilingActive() == iJIT_SAMPLING_ON;
-}
+
+bool IsProfilingActive();
 
 
 uint32_t GenerateUniqueMethodID();

@@ -111,7 +111,7 @@ static iJIT_IsProfilingActiveFlags executionMode = iJIT_NOTHING_RUNNING;
 
 
 
-static int loadiJIT_Funcs(void);
+int loadiJIT_Funcs(void);
 
 
 static int iJIT_DLL_is_missing = 0;
@@ -173,7 +173,7 @@ ITT_EXTERN_C iJIT_IsProfilingActiveFlags JITAPI iJIT_IsProfilingActive()
 
 
 
-static int loadiJIT_Funcs()
+int loadiJIT_Funcs()
 {
     static int bDllWasLoaded = 0;
     char *dllName = (char*)rcsid; 
