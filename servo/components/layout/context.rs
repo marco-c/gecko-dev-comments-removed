@@ -4,7 +4,8 @@
 
 
 
-#![deny(unsafe_code)]
+
+#![allow(unsafe_code)]
 
 use app_units::Au;
 use canvas_traits::CanvasMsg;

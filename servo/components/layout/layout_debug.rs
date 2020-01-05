@@ -5,6 +5,9 @@
 
 
 
+
+#![allow(unsafe_code)]
+
 use flow;
 use flow_ref::FlowRef;
 use rustc_serialize::json;

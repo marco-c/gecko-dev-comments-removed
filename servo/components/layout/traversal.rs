@@ -4,6 +4,9 @@
 
 
 
+
+#![allow(unsafe_code)]
+
 use construct::FlowConstructor;
 use context::{LayoutContext, SharedLayoutContext};
 use flow::{PostorderFlowTraversal, PreorderFlowTraversal};

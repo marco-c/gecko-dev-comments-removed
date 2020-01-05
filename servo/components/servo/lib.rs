@@ -252,3 +252,12 @@ pub fn run_content_process(token: String) {
                                      script::script_thread::ScriptThread>(true);
 }
 
+
+
+
+#[cfg(target_os = "android")]
+#[no_mangle]
+pub unsafe extern fn __errno_location() -> *mut i32 {
+    extern { fn __errno() -> *mut i32; }
+    __errno()
+}
