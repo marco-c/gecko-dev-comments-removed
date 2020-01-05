@@ -2590,6 +2590,11 @@ gfxPlatform::AsyncPanZoomEnabled()
 #ifdef MOZ_WIDGET_ANDROID
   return true;
 #else
+  if (!gfxPrefs::SingletonExists()) {
+    
+    MOZ_ASSERT(NS_IsMainThread());
+    gfxPrefs::GetSingleton();
+  }
   return gfxPrefs::AsyncPanZoomEnabledDoNotUseDirectly();
 #endif
 }
