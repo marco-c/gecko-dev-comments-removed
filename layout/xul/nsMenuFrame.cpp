@@ -408,8 +408,13 @@ nsMenuFrame::HandleEvent(nsPresContext* aPresContext,
     
     if (!IsOpen() && ((keyEvent->mCharCode == ' ' && !keyEvent->IsMeta()) ||
         (keyCode == NS_VK_UP || keyCode == NS_VK_DOWN))) {
-      *aEventStatus = nsEventStatus_eConsumeNoDefault;
-      OpenMenu(false);
+
+      
+      if (keyEvent->mCharCode != ' ' ||
+          !nsMenuPopupFrame::IsWithinIncrementalTime(keyEvent->mTime)) {
+        *aEventStatus = nsEventStatus_eConsumeNoDefault;
+        OpenMenu(false);
+      }
     }
 #else
     

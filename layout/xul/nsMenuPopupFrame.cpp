@@ -61,6 +61,8 @@ using mozilla::dom::PopupBoxObject;
 
 int8_t nsMenuPopupFrame::sDefaultLevelIsTop = -1;
 
+DOMTimeStamp nsMenuPopupFrame::sLastKeyTime = 0;
+
 
 
 
@@ -2007,7 +2009,6 @@ nsMenuPopupFrame::FindMenuWithShortcut(nsIDOMKeyEvent* aKeyEvent, bool& doAction
   bool isMenu = parentContent &&
                   !parentContent->NodeInfo()->Equals(nsGkAtoms::menulist, kNameSpaceID_XUL);
 
-  static DOMTimeStamp lastKeyTime = 0;
   DOMTimeStamp keyTime;
   aKeyEvent->AsEvent()->GetTimeStamp(&keyTime);
 
@@ -2032,12 +2033,11 @@ nsMenuPopupFrame::FindMenuWithShortcut(nsIDOMKeyEvent* aKeyEvent, bool& doAction
     if (isMenu) {
       
       mIncrementalString = uniChar;
-    } else if (sTimeoutOfIncrementalSearch &&
-               keyTime - lastKeyTime > sTimeoutOfIncrementalSearch) {
+    } else if (IsWithinIncrementalTime(keyTime)) {
+      mIncrementalString.Append(uniChar);
+    } else {
       
       mIncrementalString = uniChar;
-    } else {
-      mIncrementalString.Append(uniChar);
     }
   }
 
@@ -2052,7 +2052,7 @@ nsMenuPopupFrame::FindMenuWithShortcut(nsIDOMKeyEvent* aKeyEvent, bool& doAction
     stringLength = 1;
   }
 
-  lastKeyTime = keyTime;
+  sLastKeyTime = keyTime;
 
   
   
