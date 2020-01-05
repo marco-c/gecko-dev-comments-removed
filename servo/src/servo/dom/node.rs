@@ -1,5 +1,5 @@
 
-use newcss::SelectResults;
+use newcss::select::SelectResults;
 use dom::bindings;
 use dom::document::Document;
 use dom::element::{Attr, ElementData};
