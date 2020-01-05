@@ -19,11 +19,7 @@
 #include "nsPresContext.h"
 
 struct nsRuleData;
-
 namespace mozilla {
-
-class ServoSpecifiedValues;
-
 
 
 
@@ -34,7 +30,7 @@ protected:
         : mType(aType), mPresContext(aPresContext), mSIDs(aSIDs) {}
 
 public:
-    MOZ_DECL_STYLO_METHODS(nsRuleData, ServoSpecifiedValues)
+    MOZ_DECL_STYLO_METHODS(nsRuleData, nsRuleData)
 
     
     inline bool PropertyIsSet(nsCSSPropertyID aId);
