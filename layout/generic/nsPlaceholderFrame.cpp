@@ -206,10 +206,25 @@ nsPlaceholderFrame::GetParentStyleContext(nsIFrame** aProviderFrame) const
     }
   }
 
+  nsIFrame* parentFrame = GetParent();
   
   
   
-  *aProviderFrame = CorrectStyleParentFrame(GetParent(), nsGkAtoms::placeholderFrame);
+  
+  
+  if ((GetStateBits() & PLACEHOLDER_FOR_TOPLAYER) &&
+      parentFrame->GetType() == nsGkAtoms::tableWrapperFrame) {
+    MOZ_ASSERT(mOutOfFlowFrame->GetType() == nsGkAtoms::backdropFrame,
+               "Only placeholder of backdrop frame can be put inside "
+               "a table wrapper frame");
+    return parentFrame->StyleContext();
+  }
+
+  
+  
+  
+  *aProviderFrame = CorrectStyleParentFrame(parentFrame,
+                                            nsGkAtoms::placeholderFrame);
   return *aProviderFrame ? (*aProviderFrame)->StyleContext() : nullptr;
 }
 
