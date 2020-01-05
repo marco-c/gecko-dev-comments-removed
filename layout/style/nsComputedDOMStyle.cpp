@@ -448,12 +448,52 @@ nsComputedDOMStyle::GetStyleContextForElement(Element* aElement,
                                           aStyleType);
 }
 
+namespace {
+class MOZ_STACK_CLASS AutoSkipAnimationRules final
+{
+public:
+  AutoSkipAnimationRules(nsPresContext* aPresContext,
+                         nsComputedDOMStyle::AnimationFlag aAnimationFlag)
+  {
+    MOZ_ASSERT(aPresContext);
+
+    
+    if (aAnimationFlag == nsComputedDOMStyle::eWithAnimation) {
+      return;
+    }
+
+    
+    
+    if (aPresContext->RestyleManager()->IsGecko()) {
+      mRestyleManager = aPresContext->RestyleManager()->AsGecko();
+
+      mOldSkipAnimationRules = mRestyleManager->SkipAnimationRules();
+      mRestyleManager->SetSkipAnimationRules(true);
+    } else {
+      NS_WARNING("stylo: can't skip animaition rules yet");
+    }
+  }
+
+  ~AutoSkipAnimationRules()
+  {
+    if (mRestyleManager) {
+      mRestyleManager->SetSkipAnimationRules(mOldSkipAnimationRules);
+    }
+  }
+
+private:
+  RestyleManager* mRestyleManager = nullptr;
+  bool mOldSkipAnimationRules = false;
+};
+}
 
 already_AddRefed<nsStyleContext>
-nsComputedDOMStyle::GetStyleContextForElementNoFlush(Element* aElement,
-                                                     nsIAtom* aPseudo,
-                                                     nsIPresShell* aPresShell,
-                                                     StyleType aStyleType)
+nsComputedDOMStyle::DoGetStyleContextForElementNoFlush(
+  Element* aElement,
+  nsIAtom* aPseudo,
+  nsIPresShell* aPresShell,
+  StyleType aStyleType,
+  AnimationFlag aAnimationFlag)
 {
   MOZ_ASSERT(aElement, "NULL element");
   
@@ -521,10 +561,13 @@ nsComputedDOMStyle::GetStyleContextForElementNoFlush(Element* aElement,
   RefPtr<nsStyleContext> parentContext;
   nsIContent* parent = aPseudo ? aElement : aElement->GetParent();
   
-  if (parent && parent->IsElement())
+  if (parent && parent->IsElement()) {
     parentContext = GetStyleContextForElementNoFlush(parent->AsElement(),
                                                      nullptr, aPresShell,
                                                      aStyleType);
+  }
+
+  AutoSkipAnimationRules autoSkipAnimationRule(presContext, aAnimationFlag);
 
   if (type != CSSPseudoElementType::NotPseudo) {
     nsIFrame* frame = nsLayoutUtils::GetStyleFrame(aElement);
@@ -561,6 +604,49 @@ nsComputedDOMStyle::GetStyleContextForElementNoFlush(Element* aElement,
   }
 
   return sc.forget();
+}
+
+
+
+already_AddRefed<nsStyleContext>
+nsComputedDOMStyle::GetStyleContextForElementNoFlush(Element* aElement,
+                                                     nsIAtom* aPseudo,
+                                                     nsIPresShell* aPresShell,
+                                                     StyleType aStyleType)
+{
+  return DoGetStyleContextForElementNoFlush(aElement,
+                                            aPseudo,
+                                            aPresShell,
+                                            aStyleType,
+                                            eWithAnimation);
+}
+
+
+already_AddRefed<nsStyleContext>
+nsComputedDOMStyle::GetStyleContextForElementWithoutAnimation(
+  Element* aElement,
+  nsIAtom* aPseudo,
+  nsIPresShell* aPresShell)
+{
+  
+  
+  
+  
+  
+  nsCOMPtr<nsIPresShell> presShell = GetPresShellForContent(aElement);
+  if (!presShell) {
+    presShell = aPresShell;
+    if (!presShell)
+      return nullptr;
+  }
+
+  presShell->FlushPendingNotifications(FlushType::Style);
+
+  return DoGetStyleContextForElementNoFlush(aElement,
+                                            aPseudo,
+                                            presShell,
+                                            eAll,
+                                            eWithoutAnimation);
 }
 
 nsMargin
