@@ -835,7 +835,8 @@ nsGlobalWindow::RequestIdleCallback(JSContext* aCx,
   
   
   
-  bool needsScheduling = mIdleRequestCallbacks.isEmpty();
+  
+  bool needsScheduling = !IsSuspended() && mIdleRequestCallbacks.isEmpty();
   
   InsertIdleCallback(request);
 
