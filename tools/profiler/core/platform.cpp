@@ -140,7 +140,7 @@ bool stack_key_initialized;
 
 
 
-mozilla::TimeStamp gStartTime;
+static mozilla::TimeStamp gStartTime;
 
 
 
