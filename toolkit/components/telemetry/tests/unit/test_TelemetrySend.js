@@ -15,6 +15,8 @@ Cu.import("resource://gre/modules/Services.jsm", this);
 Cu.import("resource://gre/modules/Preferences.jsm", this);
 Cu.import("resource://gre/modules/osfile.jsm", this);
 
+const PREF_TELEMETRY_SERVER = "toolkit.telemetry.server";
+
 const MS_IN_A_MINUTE = 60 * 1000;
 
 function countPingTypes(pings) {
@@ -77,7 +79,7 @@ add_task(function* test_setup() {
   do_get_profile(true);
   
   yield setEmptyPrefWatchlist();
-  Services.prefs.setBoolPref(TelemetryUtils.Preferences.TelemetryEnabled, true);
+  Services.prefs.setBoolPref(PREF_TELEMETRY_ENABLED, true);
 });
 
 
@@ -135,7 +137,7 @@ add_task(function* test_sendPendingPings() {
   
   now = fakeNow(futureDate(now, MS_IN_A_MINUTE));
   PingServer.start();
-  Preferences.set(TelemetryUtils.Preferences.Server, "http://localhost:" + PingServer.port);
+  Preferences.set(PREF_TELEMETRY_SERVER, "http://localhost:" + PingServer.port);
 
   let timerPromise = waitForTimer();
   yield TelemetryController.testReset();
@@ -427,6 +429,7 @@ add_task(function* test_persistCurrentPingsOnShutdown() {
 
 add_task(function* test_sendCheckOverride() {
   const TEST_PING_TYPE = "test-sendCheckOverride";
+  const PREF_OVERRIDE_OFFICIAL_CHECK = "toolkit.telemetry.send.overrideOfficialCheck";
 
   
   yield TelemetryController.testShutdown();
@@ -434,7 +437,7 @@ add_task(function* test_sendCheckOverride() {
 
   
   PingServer.start();
-  Preferences.set(TelemetryUtils.Preferences.Server, "http://localhost:" + PingServer.port);
+  Preferences.set(PREF_TELEMETRY_SERVER, "http://localhost:" + PingServer.port);
 
   
   
@@ -451,7 +454,7 @@ add_task(function* test_sendCheckOverride() {
   }
 
   
-  Preferences.set(TelemetryUtils.Preferences.OverrideOfficialCheck, true);
+  Preferences.set(PREF_OVERRIDE_OFFICIAL_CHECK, true);
   PingServer.resetPingHandler();
   yield TelemetrySend.reset();
   yield TelemetryController.submitExternalPing(TEST_PING_TYPE, { test: "test" });
@@ -462,7 +465,7 @@ add_task(function* test_sendCheckOverride() {
 
   
   TelemetrySend.setTestModeEnabled(true);
-  Preferences.reset(TelemetryUtils.Preferences.OverrideOfficialCheck);
+  Preferences.reset(PREF_OVERRIDE_OFFICIAL_CHECK);
 });
 
 add_task(function* cleanup() {

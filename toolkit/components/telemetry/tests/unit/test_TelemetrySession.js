@@ -60,6 +60,12 @@ var gNumberOfThreadsLaunched = 0;
 const MS_IN_ONE_HOUR  = 60 * 60 * 1000;
 const MS_IN_ONE_DAY   = 24 * MS_IN_ONE_HOUR;
 
+const PREF_BRANCH = "toolkit.telemetry.";
+const PREF_SERVER = PREF_BRANCH + "server";
+const PREF_FHR_UPLOAD_ENABLED = "datareporting.healthreport.uploadEnabled";
+const PREF_BYPASS_NOTIFICATION = "datareporting.policy.dataSubmissionPolicyBypassNotification";
+const PREF_SHUTDOWN_PINGSENDER = "toolkit.telemetry.shutdownPingSender.enabled";
+
 const DATAREPORTING_DIR = "datareporting";
 const ABORTED_PING_FILE_NAME = "aborted-session-ping";
 const ABORTED_SESSION_UPDATE_INTERVAL_MS = 5 * 60 * 1000;
@@ -489,8 +495,8 @@ add_task(function* test_setup() {
   
   yield setEmptyPrefWatchlist();
 
-  Services.prefs.setBoolPref(TelemetryUtils.Preferences.TelemetryEnabled, true);
-  Services.prefs.setBoolPref(TelemetryUtils.Preferences.FhrUploadEnabled, true);
+  Services.prefs.setBoolPref(PREF_TELEMETRY_ENABLED, true);
+  Services.prefs.setBoolPref(PREF_FHR_UPLOAD_ENABLED, true);
 
   
   write_fake_failedprofilelocks_file();
@@ -556,7 +562,7 @@ add_task(function* test_noServerPing() {
 add_task(function* test_simplePing() {
   yield TelemetryStorage.testClearPendingPings();
   PingServer.start();
-  Preferences.set(TelemetryUtils.Preferences.Server, "http://localhost:" + PingServer.port);
+  Preferences.set(PREF_SERVER, "http://localhost:" + PingServer.port);
 
   let now = new Date(2020, 1, 1, 12, 5, 6);
   let expectedDate = new Date(2020, 1, 1, 12, 0, 0);
@@ -1370,7 +1376,7 @@ add_task(function* test_sendShutdownPing() {
     return;
   }
 
-  Preferences.set(TelemetryUtils.Preferences.ShutdownPingSender, true);
+  Preferences.set(PREF_SHUTDOWN_PINGSENDER, true);
   PingServer.clearRequests();
 
   
@@ -1386,7 +1392,7 @@ add_task(function* test_sendShutdownPing() {
   
   
   PingServer.registerPingHandler(() => Assert.ok(false, "Telemetry must not send pings if not allowed to."));
-  Preferences.set(TelemetryUtils.Preferences.FhrUploadEnabled, false);
+  Preferences.set(PREF_FHR_UPLOAD_ENABLED, false);
   yield TelemetryController.testReset();
   yield TelemetryController.testShutdown();
 
@@ -1395,17 +1401,17 @@ add_task(function* test_sendShutdownPing() {
 
   
   
-  Preferences.set(TelemetryUtils.Preferences.FhrUploadEnabled, true);
-  Preferences.set(TelemetryUtils.Preferences.BypassNotification, false);
+  Preferences.set(PREF_FHR_UPLOAD_ENABLED, true);
+  Preferences.set(PREF_BYPASS_NOTIFICATION, false);
   yield TelemetryController.testReset();
   yield TelemetryController.testShutdown();
 
 
   
-  Preferences.reset(TelemetryUtils.Preferences.ShutdownPingSender);
+  Preferences.reset(PREF_SHUTDOWN_PINGSENDER);
   
   
-  Preferences.set(TelemetryUtils.Preferences.BypassNotification, true);
+  Preferences.set(PREF_BYPASS_NOTIFICATION, true);
   PingServer.resetPingHandler();
   yield TelemetryController.testReset();
 });

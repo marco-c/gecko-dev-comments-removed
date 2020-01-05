@@ -13,7 +13,6 @@ Cu.import("resource://gre/modules/osfile.jsm", this);
 Cu.import("resource://gre/modules/Services.jsm", this);
 Cu.import("resource://gre/modules/Promise.jsm", this);
 Cu.import("resource://gre/modules/TelemetryStorage.jsm", this);
-Cu.import("resource://gre/modules/TelemetryUtils.jsm", this);
 Cu.import("resource://gre/modules/TelemetryController.jsm", this);
 Cu.import("resource://gre/modules/TelemetrySend.jsm", this);
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
@@ -32,6 +31,8 @@ const OLD_FORMAT_PINGS = 4;
 const RECENT_PINGS = 4;
 
 const TOTAL_EXPECTED_PINGS = OVERDUE_PINGS + RECENT_PINGS + OLD_FORMAT_PINGS;
+
+const PREF_FHR_UPLOAD = "datareporting.healthreport.uploadEnabled";
 
 var gCreatedPings = 0;
 var gSeenPings = 0;
@@ -150,9 +151,9 @@ add_task(function* test_setup() {
   
   yield setEmptyPrefWatchlist();
 
-  Services.prefs.setBoolPref(TelemetryUtils.Preferences.FhrUploadEnabled, true);
-  Services.prefs.setCharPref(TelemetryUtils.Preferences.Server,
-                              "http://localhost:" + PingServer.port);
+  Services.prefs.setBoolPref(PREF_TELEMETRY_ENABLED, true);
+  Services.prefs.setCharPref(TelemetryController.Constants.PREF_SERVER,
+                             "http://localhost:" + PingServer.port);
 });
 
 
@@ -161,7 +162,7 @@ add_task(function* test_setup() {
 
 add_task(function* setupEnvironment() {
   
-  Services.prefs.setBoolPref(TelemetryUtils.Preferences.FhrUploadEnabled, true);
+  Services.prefs.setBoolPref(PREF_FHR_UPLOAD, true);
 
   yield TelemetryController.testSetup();
 
@@ -386,7 +387,7 @@ add_task(function* test_pendingPingsQuota() {
   const PING_TYPE = "foo";
 
   
-  Services.prefs.setBoolPref(TelemetryUtils.Preferences.FhrUploadEnabled, false);
+  Services.prefs.setBoolPref(PREF_FHR_UPLOAD, false);
 
   
   
@@ -537,7 +538,7 @@ add_task(function* test_pendingPingsQuota() {
   h = Telemetry.getHistogramById("TELEMETRY_DISCARDED_PENDING_PINGS_SIZE_MB").snapshot();
   Assert.equal(h.counts[2], 2, "Telemetry must report two 2MB, oversized, pings.");
 
-  Services.prefs.setBoolPref(TelemetryUtils.Preferences.FhrUploadEnabled, true);
+  Services.prefs.setBoolPref(PREF_FHR_UPLOAD, true);
 });
 
 add_task(function* teardown() {
