@@ -108,8 +108,6 @@ var Harness = {
       Services.prefs.setBoolPref(PREF_LOGGING_ENABLED, true);
       Services.obs.addObserver(this, "addon-install-started", false);
       Services.obs.addObserver(this, "addon-install-disabled", false);
-      
-      
       Services.obs.addObserver(this, "addon-install-origin-blocked", false);
       Services.obs.addObserver(this, "addon-install-blocked", false);
       Services.obs.addObserver(this, "addon-install-failed", false);
@@ -125,7 +123,6 @@ var Harness = {
         Services.prefs.clearUserPref(PREF_INSTALL_REQUIRESECUREORIGIN);
         Services.obs.removeObserver(self, "addon-install-started");
         Services.obs.removeObserver(self, "addon-install-disabled");
-        
         Services.obs.removeObserver(self, "addon-install-origin-blocked");
         Services.obs.removeObserver(self, "addon-install-blocked");
         Services.obs.removeObserver(self, "addon-install-failed");
@@ -368,23 +365,6 @@ var Harness = {
     if (this.installFailedCallback)
       this.installFailedCallback(install);
     this.checkTestEnded();
-  },
-
-  onInstallCancelled(install) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    let idx = this.runningInstalls.indexOf(install);
-    if (idx != -1) {
-      this.runningInstalls.splice(this.runningInstalls.indexOf(install), 1);
-      this.checkTestEnded();
-    }
   },
 
   checkTestEnded() {
