@@ -288,7 +288,8 @@ public:
               const mozilla::LogicalSize&   aCBSize,
               const mozilla::LogicalSize&   aMargin,
               const mozilla::LogicalSize&   aBorder,
-              const mozilla::LogicalSize&   aPadding);
+              const mozilla::LogicalSize&   aPadding,
+              ComputeSizeFlags              aFlags);
 
   
   
