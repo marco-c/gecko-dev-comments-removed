@@ -2,7 +2,7 @@
 
 
 
-use bindings::Gecko_EnsureTArrayCapacity;
+use bindings;
 use std::mem;
 use std::ops::{Deref, DerefMut};
 use std::os::raw::c_void;
@@ -38,6 +38,7 @@ impl<T> nsTArray<T> {
     
     unsafe fn header_mut<'a>(&'a mut self) -> &'a mut nsTArrayHeader {
         debug_assert!(!self.mBuffer.is_null());
+
         mem::transmute(self.mBuffer)
     }
 
@@ -47,10 +48,35 @@ impl<T> nsTArray<T> {
         (self.mBuffer as *const nsTArrayHeader).offset(1) as *mut _
     }
 
-    fn ensure_capacity(&mut self, cap: usize) {
-        unsafe {
-            Gecko_EnsureTArrayCapacity(self as *mut nsTArray<T> as *mut c_void, cap, mem::size_of::<T>())
+    
+    
+    
+    pub fn ensure_capacity(&mut self, cap: usize) {
+        if cap >= self.len() {
+            unsafe {
+                bindings::Gecko_EnsureTArrayCapacity(self as *mut nsTArray<T> as *mut _,
+                                                     cap, mem::size_of::<T>())
+            }
         }
+    }
+
+    
+    #[inline]
+    pub unsafe fn clear(&mut self) {
+        if self.len() != 0 {
+            bindings::Gecko_ClearPODTArray(self as *mut nsTArray<T> as *mut _,
+                                           mem::size_of::<T>(),
+                                           mem::align_of::<T>());
+        }
+    }
+
+
+    
+    #[inline]
+    pub fn clear_pod(&mut self)
+        where T: Copy
+    {
+        unsafe { self.clear() }
     }
 
     
