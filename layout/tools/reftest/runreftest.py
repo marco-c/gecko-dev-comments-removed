@@ -293,6 +293,12 @@ class RefTest(object):
            '5.1' in platform.version() and options.e10s:
             prefs['layers.acceleration.disabled'] = True
 
+        
+        
+        if platform.system() in ("Windows", "Microsoft") and \
+           '6.1' in platform.version():
+            prefs['reftest.nocache'] = True
+
         if options.marionette:
             port = options.marionette.split(':')[1]
             prefs['marionette.defaultPrefs.port'] = int(port)
