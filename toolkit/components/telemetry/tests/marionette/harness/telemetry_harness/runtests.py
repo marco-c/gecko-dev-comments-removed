@@ -1,0 +1,13 @@
+
+
+
+
+from marionette_harness.runtests import cli as mn_cli
+from testcase import TelemetryTestCase
+
+
+def cli():
+    mn_cli(testcase_class=TelemetryTestCase)
+
+if __name__ == '__main__':
+    cli()
