@@ -176,7 +176,10 @@ impl OneshotTimers {
         let base_time = self.base_time();
 
         
-        assert!(base_time >= self.timers.borrow().last().unwrap().scheduled_for);
+        if base_time < self.timers.borrow().last().unwrap().scheduled_for {
+            warn!("Unexpected timing!");
+            return;
+        }
 
         
         
