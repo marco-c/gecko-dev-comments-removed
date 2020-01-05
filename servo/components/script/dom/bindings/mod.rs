@@ -129,6 +129,10 @@
 
 
 
+#![allow(unsafe_code)]
+#![deny(missing_docs)]
+#![deny(non_snake_case)]
+
 pub mod callback;
 pub mod cell;
 pub mod constant;
@@ -153,7 +157,7 @@ pub mod weakref;
 pub mod xmlname;
 
 
-#[allow(missing_docs, non_snake_case)]
+#[allow(dead_code, missing_docs, non_snake_case)]
 pub mod codegen {
     #[allow(unrooted_must_root)]
     pub mod Bindings {

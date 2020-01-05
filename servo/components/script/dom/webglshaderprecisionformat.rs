@@ -2,6 +2,8 @@
 
 
 
+#![allow(dead_code)]
+
 
 use dom::bindings::codegen::Bindings::WebGLShaderPrecisionFormatBinding;
 use dom::bindings::codegen::Bindings::WebGLShaderPrecisionFormatBinding::WebGLShaderPrecisionFormatMethods;

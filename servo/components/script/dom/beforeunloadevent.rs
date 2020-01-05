@@ -2,6 +2,8 @@
 
 
 
+#![allow(dead_code)]
+
 use dom::bindings::cell::DOMRefCell;
 use dom::bindings::codegen::Bindings::BeforeUnloadEventBinding;
 use dom::bindings::codegen::Bindings::BeforeUnloadEventBinding::BeforeUnloadEventMethods;

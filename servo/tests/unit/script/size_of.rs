@@ -2,25 +2,16 @@
 
 
 
-use script::dom::characterdata::CharacterData;
-use script::dom::element::Element;
-use script::dom::eventtarget::EventTarget;
-use script::dom::htmldivelement::HTMLDivElement;
-use script::dom::htmlelement::HTMLElement;
-use script::dom::htmlspanelement::HTMLSpanElement;
-use script::dom::node::Node;
-use script::dom::text::Text;
-use script::layout_wrapper::ServoThreadSafeLayoutNode;
-use std::mem::size_of;
+use script::test::size_of;
 
 
 
 
 macro_rules! sizeof_checker (
-    ($testname: ident, $t:ty, $known_size:expr) => (
+    ($testname: ident, $t: ident, $known_size: expr) => (
         #[test]
         fn $testname() {
-            let new = size_of::<$t>();
+            let new = size_of::$t();
             let old = $known_size;
             if new < old {
                 panic!("Your changes have decreased the stack size of commonly used DOM struct {} from {} to {}. \

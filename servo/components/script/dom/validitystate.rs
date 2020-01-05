@@ -10,8 +10,8 @@ use dom::element::Element;
 use dom::window::Window;
 
 
-#[derive(JSTraceable)]
-#[derive(HeapSizeOf)]
+#[derive(JSTraceable, HeapSizeOf)]
+#[allow(dead_code)]
 pub enum ValidityStatus {
     ValueMissing,
     TypeMismatch,

@@ -20,6 +20,7 @@ pub struct ConstantSpec {
 
 
 #[derive(Clone)]
+#[allow(dead_code)]
 pub enum ConstantVal {
     
     IntVal(i32),

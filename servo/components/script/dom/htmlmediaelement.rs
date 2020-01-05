@@ -243,11 +243,6 @@ impl HTMLMediaElement {
         }
     }
 
-    #[inline]
-    pub fn htmlelement(&self) -> &HTMLElement {
-        &self.htmlelement
-    }
-
     
     fn internal_pause_steps(&self) {
         
