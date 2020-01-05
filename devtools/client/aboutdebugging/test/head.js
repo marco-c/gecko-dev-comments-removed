@@ -35,13 +35,12 @@ function* openAboutDebugging(page, win) {
   let tab = yield addTab(url, { window: win });
   let browser = tab.linkedBrowser;
   let document = browser.contentDocument;
-  let window = browser.contentWindow;
 
   if (!document.querySelector(".app")) {
     yield waitForMutation(document.body, { childList: true });
   }
 
-  return { tab, document, window };
+  return { tab, document };
 }
 
 
@@ -95,6 +94,37 @@ function getAddonList(document) {
 
 
 
+function getTemporaryAddonList(document) {
+  return document.querySelector("#temporary-addons .target-list") ||
+    document.querySelector("#temporary-addons .targets");
+}
+
+
+
+
+
+
+
+
+function getAddonListWithAddon(document, id) {
+  const addon = document.querySelector(`[data-addon-id="${id}"]`);
+  if (!addon) {
+    throw new Error("couldn't find add-on by id");
+  }
+  return addon.closest(".target-list");
+}
+
+function getInstalledAddonNames(document) {
+  const selector = "#addons .target-name, #temporary-addons .target-name";
+  return [...document.querySelectorAll(selector)];
+}
+
+
+
+
+
+
+
 function getServiceWorkerList(document) {
   return document.querySelector("#service-workers .target-list") ||
     document.querySelector("#service-workers.targets");
@@ -114,11 +144,11 @@ function getTabList(document) {
 function* installAddon({document, path, name, isWebExtension}) {
   
   let MockFilePicker = SpecialPowers.MockFilePicker;
-  MockFilePicker.init(window);
+  MockFilePicker.init(null);
   let file = getSupportsFile(path);
-  MockFilePicker.setFiles([file.file]);
+  MockFilePicker.returnFiles = [file.file];
 
-  let addonList = getAddonList(document);
+  let addonList = getTemporaryAddonList(document);
   let addonListMutation = waitForMutation(addonList, { childList: true });
 
   let onAddonInstalled;
@@ -159,7 +189,7 @@ function* installAddon({document, path, name, isWebExtension}) {
 }
 
 function* uninstallAddon({document, id, name}) {
-  let addonList = getAddonList(document);
+  let addonList = getAddonListWithAddon(document, id);
   let addonListMutation = waitForMutation(addonList, { childList: true });
 
   
@@ -340,7 +370,7 @@ function* setupTestAboutDebuggingWebExtension(name, path) {
   });
 
   
-  let names = [...document.querySelectorAll("#addons .target-name")];
+  let names = getInstalledAddonNames(document);
   let nameEl = names.filter(element => element.textContent === name)[0];
   ok(name, "Found the addon in the list");
   let targetElement = nameEl.parentNode.parentNode;
