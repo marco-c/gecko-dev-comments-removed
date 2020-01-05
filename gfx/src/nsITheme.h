@@ -128,6 +128,11 @@ public:
   virtual Transparency GetWidgetTransparency(nsIFrame* aFrame, uint8_t aWidgetType)
   { return eUnknownTransparency; }
 
+  
+
+
+
+
   NS_IMETHOD WidgetStateChanged(nsIFrame* aFrame, uint8_t aWidgetType, 
                                 nsIAtom* aAttribute, bool* aShouldRepaint,
                                 const nsAttrValue* aOldValue)=0;
