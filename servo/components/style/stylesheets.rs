@@ -24,7 +24,8 @@ use viewport::ViewportRule;
 
 
 
-#[derive(Clone, PartialEq, Eq, Copy, Debug, HeapSizeOf)]
+#[derive(Clone, PartialEq, Eq, Copy, Debug)]
+#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub enum Origin {
     
     UserAgent,
@@ -37,7 +38,8 @@ pub enum Origin {
 }
 
 
-#[derive(Debug, HeapSizeOf, PartialEq)]
+#[derive(Debug, PartialEq)]
+#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct Stylesheet<Impl: SelectorImpl> {
     
     
@@ -49,7 +51,8 @@ pub struct Stylesheet<Impl: SelectorImpl> {
 }
 
 
-#[derive(Debug, HeapSizeOf, PartialEq)]
+#[derive(Debug, PartialEq)]
+#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub enum CSSRule<Impl: SelectorImpl> {
     Charset(String),
     Namespace(Option<String>, Namespace),
@@ -59,7 +62,8 @@ pub enum CSSRule<Impl: SelectorImpl> {
     Viewport(ViewportRule),
 }
 
-#[derive(Debug, HeapSizeOf, PartialEq)]
+#[derive(Debug, PartialEq)]
+#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct MediaRule<Impl: SelectorImpl> {
     pub media_queries: MediaQueryList,
     pub rules: Vec<CSSRule<Impl>>,
@@ -72,7 +76,8 @@ impl<Impl: SelectorImpl> MediaRule<Impl> {
     }
 }
 
-#[derive(Debug, HeapSizeOf, PartialEq)]
+#[derive(Debug, PartialEq)]
+#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct StyleRule<Impl: SelectorImpl> {
     pub selectors: Vec<Selector<Impl>>,
     pub declarations: PropertyDeclarationBlock,

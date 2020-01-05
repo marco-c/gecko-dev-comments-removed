@@ -44,7 +44,7 @@ lazy_static! {
                         None,
                         None,
                         Origin::UserAgent,
-                        box StdoutErrorReporter,
+                        Box::new(StdoutErrorReporter),
                         ParserContextExtraData::default());
                     stylesheets.push(ua_stylesheet);
                 }
@@ -56,7 +56,7 @@ lazy_static! {
         }
         for &(ref contents, ref url) in &opts::get().user_stylesheets {
             stylesheets.push(Stylesheet::from_bytes(
-                &contents, url.clone(), None, None, Origin::User, box StdoutErrorReporter,
+                &contents, url.clone(), None, None, Origin::User, Box::new(StdoutErrorReporter),
                 ParserContextExtraData::default()));
         }
         stylesheets
@@ -73,7 +73,7 @@ lazy_static! {
                     None,
                     None,
                     Origin::UserAgent,
-                    box StdoutErrorReporter,
+                    Box::new(StdoutErrorReporter),
                     ParserContextExtraData::default())
             },
             Err(..) => {
@@ -100,7 +100,7 @@ lazy_static! {
 
 
 
-#[derive(HeapSizeOf)]
+#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct Stylist<Impl: SelectorImplExt> {
     
     pub device: Device,
@@ -269,7 +269,7 @@ impl<Impl: SelectorImplExt> Stylist<Impl> {
                 properties::cascade(self.device.au_viewport_size(),
                                     &declarations, false,
                                     parent.map(|p| &**p), None,
-                                    box StdoutErrorReporter);
+                                    Box::new(StdoutErrorReporter));
             Some(Arc::new(computed))
         } else {
             parent.map(|p| p.clone())
@@ -290,8 +290,8 @@ impl<Impl: SelectorImplExt> Stylist<Impl> {
 
         let mut declarations = vec![];
 
-        // NB: This being cached could be worth it, maybe allow an optional
-        // ApplicableDeclarationsCache?.
+        
+        
         self.push_applicable_declarations(element,
                                           None,
                                           None,
@@ -302,16 +302,16 @@ impl<Impl: SelectorImplExt> Stylist<Impl> {
             properties::cascade(self.device.au_viewport_size(),
                                 &declarations, false,
                                 Some(&**parent), None,
-                                box StdoutErrorReporter);
+                                Box::new(StdoutErrorReporter));
         Some(Arc::new(computed))
     }
 
     pub fn compute_restyle_hint<E>(&self, element: &E,
                                    snapshot: &ElementSnapshot,
-                                   // NB: We need to pass current_state as an argument because
-                                   // selectors::Element doesn't provide access to ElementState
-                                   // directly, and computing it from the ElementState would be
-                                   // more expensive than getting it directly from the caller.
+                                   
+                                   
+                                   
+                                   
                                    current_state: ElementState)
                                    -> RestyleHint
                                    where E: Element<Impl=Impl> + Clone {
@@ -344,13 +344,13 @@ impl<Impl: SelectorImplExt> Stylist<Impl> {
         self.quirks_mode = enabled;
     }
 
-    /// Returns the applicable CSS declarations for the given element.
-    /// This corresponds to `ElementRuleCollector` in WebKit.
-    ///
-    /// The returned boolean indicates whether the style is *shareable*;
-    /// that is, whether the matched selectors are simple enough to allow the
-    /// matching logic to be reduced to the logic in
-    /// `css::matching::PrivateMatchMethods::candidate_element_allows_for_style_sharing`.
+    
+    
+    
+    
+    
+    
+    
     pub fn push_applicable_declarations<E, V>(
                                         &self,
                                         element: &E,
@@ -438,7 +438,7 @@ impl<Impl: SelectorImplExt> Stylist<Impl> {
 }
 
 
-#[derive(HeapSizeOf)]
+#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 struct PerOriginSelectorMap<Impl: SelectorImpl> {
     
     
@@ -460,7 +460,7 @@ impl<Impl: SelectorImpl> PerOriginSelectorMap<Impl> {
 
 
 
-#[derive(HeapSizeOf)]
+#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 struct PerPseudoElementSelectorMap<Impl: SelectorImpl> {
     
     user_agent: PerOriginSelectorMap<Impl>,

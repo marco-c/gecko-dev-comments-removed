@@ -50,7 +50,8 @@ bitflags! {
 
 
 
-#[derive(HeapSizeOf, Clone)]
+#[derive(Clone)]
+#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct ElementSnapshot {
     pub state: Option<ElementState>,
     pub attrs: Option<Vec<(AttrIdentifier, AttrValue)>>,
@@ -225,7 +226,8 @@ fn combinator_to_restyle_hint(combinator: Option<Combinator>) -> RestyleHint {
     }
 }
 
-#[derive(Debug, HeapSizeOf)]
+#[derive(Debug)]
+#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 struct Sensitivities {
     pub states: ElementState,
     pub attrs: bool,
@@ -262,14 +264,16 @@ impl Sensitivities {
 
 
 
-#[derive(Debug, HeapSizeOf)]
+#[derive(Debug)]
+#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 struct Dependency<Impl: SelectorImplExt> {
     selector: Arc<CompoundSelector<Impl>>,
     combinator: Option<Combinator>,
     sensitivities: Sensitivities,
 }
 
-#[derive(Debug, HeapSizeOf)]
+#[derive(Debug)]
+#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct DependencySet<Impl: SelectorImplExt> {
     deps: Vec<Dependency<Impl>>,
 }

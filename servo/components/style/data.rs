@@ -33,7 +33,7 @@ impl<Impl, ConcreteComputedValues> PrivateStyleData<Impl, ConcreteComputedValues
 }
 
 
-#[derive(HeapSizeOf)]
+#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct DomParallelInfo {
     
     pub children_count: AtomicIsize,

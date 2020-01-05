@@ -2,17 +2,14 @@
 
 
 
-#![feature(box_syntax)]
-#![feature(box_patterns)]
-#![feature(concat_idents)]
-#![feature(core_intrinsics)]
-#![feature(custom_attribute)]
-#![feature(custom_derive)]
-#![feature(plugin)]
 
-#![plugin(heapsize_plugin)]
-#![plugin(plugins)]
-#![plugin(serde_macros)]
+#![feature(core_intrinsics)]
+
+#![cfg_attr(feature = "servo", feature(custom_attribute))]
+#![cfg_attr(feature = "servo", feature(custom_derive))]
+#![cfg_attr(feature = "servo", feature(plugin))]
+#![cfg_attr(feature = "servo", plugin(heapsize_plugin))]
+#![cfg_attr(feature = "servo", plugin(serde_macros))]
 
 #![deny(unsafe_code)]
 
@@ -30,7 +27,7 @@ extern crate euclid;
 extern crate fnv;
 #[cfg(feature = "gecko")]
 extern crate gecko_bindings;
-extern crate heapsize;
+#[cfg(feature = "servo")] extern crate heapsize;
 #[allow(unused_extern_crates)]
 #[macro_use]
 extern crate lazy_static;
@@ -42,7 +39,7 @@ extern crate matches;
 extern crate num_traits;
 extern crate rustc_serialize;
 extern crate selectors;
-extern crate serde;
+#[cfg(feature = "servo")] extern crate serde;
 extern crate smallvec;
 #[macro_use(atom, ns)] extern crate string_cache;
 #[macro_use]

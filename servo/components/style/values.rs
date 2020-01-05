@@ -41,8 +41,8 @@ macro_rules! define_numbered_css_keyword_enum {
     };
     ($name: ident: $( $css: expr => $variant: ident = $value: expr ),+) => {
         #[allow(non_camel_case_types)]
-        #[derive(Clone, Eq, PartialEq, PartialOrd, Ord, Copy, RustcEncodable, Debug, HeapSizeOf)]
-        #[derive(Deserialize, Serialize)]
+        #[derive(Clone, Eq, PartialEq, PartialOrd, Ord, Copy, RustcEncodable, Debug)]
+        #[cfg_attr(feature = "servo", derive(HeapSizeOf, Deserialize, Serialize))]
         pub enum $name {
             $( $variant = $value ),+
         }
@@ -104,7 +104,8 @@ pub mod specified {
     use super::{CSSFloat, FONT_MEDIUM_PX};
     use url::Url;
 
-    #[derive(Clone, PartialEq, Debug, HeapSizeOf)]
+    #[derive(Clone, PartialEq, Debug)]
+    #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
     pub struct CSSColor {
         pub parsed: cssparser::Color,
         pub authored: Option<String>,
@@ -133,7 +134,8 @@ pub mod specified {
         }
     }
 
-    #[derive(Clone, PartialEq, Debug, HeapSizeOf)]
+    #[derive(Clone, PartialEq, Debug)]
+    #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
     pub struct CSSRGBA {
         pub parsed: cssparser::RGBA,
         pub authored: Option<String>,
@@ -148,7 +150,8 @@ pub mod specified {
         }
     }
 
-    #[derive(Clone, PartialEq, Copy, Debug, HeapSizeOf)]
+    #[derive(Clone, PartialEq, Copy, Debug)]
+    #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
     pub enum FontRelativeLength {
         Em(CSSFloat),
         Ex(CSSFloat),
@@ -185,7 +188,8 @@ pub mod specified {
         }
     }
 
-    #[derive(Clone, PartialEq, Copy, Debug, HeapSizeOf)]
+    #[derive(Clone, PartialEq, Copy, Debug)]
+    #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
     pub enum ViewportPercentageLength {
         Vw(CSSFloat),
         Vh(CSSFloat),
@@ -226,7 +230,8 @@ pub mod specified {
         }
     }
 
-    #[derive(Clone, PartialEq, Copy, Debug, HeapSizeOf)]
+    #[derive(Clone, PartialEq, Copy, Debug)]
+    #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
     pub struct CharacterWidth(pub i32);
 
     impl CharacterWidth {
@@ -241,7 +246,8 @@ pub mod specified {
         }
     }
 
-    #[derive(Clone, PartialEq, Copy, Debug, HeapSizeOf)]
+    #[derive(Clone, PartialEq, Copy, Debug)]
+    #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
     pub enum Length {
         Absolute(Au),  
         FontRelative(FontRelativeLength),
@@ -439,9 +445,9 @@ pub mod specified {
                 SimplifiedValueNode::Angle(Angle(a)) => SimplifiedValueNode::Angle(Angle(a * scalar)),
                 SimplifiedValueNode::Time(Time(t)) => SimplifiedValueNode::Time(Time(t * scalar)),
                 SimplifiedValueNode::Number(n) => SimplifiedValueNode::Number(n * scalar),
-                SimplifiedValueNode::Sum(box ref s) => {
-                    let sum = s * scalar;
-                    SimplifiedValueNode::Sum(box sum)
+                SimplifiedValueNode::Sum(ref s) => {
+                    let sum = &**s * scalar;
+                    SimplifiedValueNode::Sum(Box::new(sum))
                 }
             }
         }
@@ -507,7 +513,8 @@ pub mod specified {
         Time,
     }
 
-    #[derive(Clone, PartialEq, Copy, Debug, HeapSizeOf)]
+    #[derive(Clone, PartialEq, Copy, Debug)]
+    #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
     pub struct CalcLengthOrPercentage {
         pub absolute: Option<Au>,
         pub vw: Option<ViewportPercentageLength>,
@@ -589,7 +596,7 @@ pub mod specified {
                     Ok(CalcValueNode::Percentage(value.unit_value)),
                 (Token::ParenthesisBlock, _) => {
                     input.parse_nested_block(|i| CalcLengthOrPercentage::parse_sum(i, expected_unit))
-                         .map(|result| CalcValueNode::Sum(box result))
+                         .map(|result| CalcValueNode::Sum(Box::new(result)))
                 },
                 _ => Err(())
             }
@@ -598,7 +605,7 @@ pub mod specified {
         fn simplify_value_to_number(node: &CalcValueNode) -> Option<CSSFloat> {
             match *node {
                 CalcValueNode::Number(number) => Some(number),
-                CalcValueNode::Sum(box ref sum) => CalcLengthOrPercentage::simplify_sum_to_number(sum),
+                CalcValueNode::Sum(ref sum) => CalcLengthOrPercentage::simplify_sum_to_number(sum),
                 _ => None
             }
         }
@@ -629,7 +636,7 @@ pub mod specified {
             let mut simplified = Vec::new();
             for product in &node.products {
                 match try!(CalcLengthOrPercentage::simplify_product(product)) {
-                    SimplifiedValueNode::Sum(box sum) => simplified.extend_from_slice(&sum.values),
+                    SimplifiedValueNode::Sum(ref sum) => simplified.extend_from_slice(&sum.values),
                     val => simplified.push(val),
                 }
             }
@@ -637,7 +644,7 @@ pub mod specified {
             if simplified.len() == 1 {
                 Ok(simplified[0].clone())
             } else {
-                Ok(SimplifiedValueNode::Sum(box SimplifiedSumNode { values: simplified } ))
+                Ok(SimplifiedValueNode::Sum(Box::new(SimplifiedSumNode { values: simplified })))
             }
         }
 
@@ -649,7 +656,7 @@ pub mod specified {
                     Some(number) => multiplier *= number,
                     _ if node_with_unit.is_none() => {
                         node_with_unit = Some(match *node {
-                            CalcValueNode::Sum(box ref sum) =>
+                            CalcValueNode::Sum(ref sum) =>
                                 try!(CalcLengthOrPercentage::simplify_products_in_sum(sum)),
                             CalcValueNode::Length(l) => SimplifiedValueNode::Length(l),
                             CalcValueNode::Angle(a) => SimplifiedValueNode::Angle(a),
@@ -855,8 +862,9 @@ pub mod specified {
          }
     }
 
-    #[derive(Clone, PartialEq, Copy, Debug, HeapSizeOf)]
-    pub struct Percentage(pub CSSFloat); // [0 .. 100%] maps to [0.0 .. 1.0]
+    #[derive(Clone, PartialEq, Copy, Debug)]
+    #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+    pub struct Percentage(pub CSSFloat); 
 
     impl ToCss for Percentage {
         fn to_css<W>(&self, dest: &mut W) -> fmt::Result where W: fmt::Write {
@@ -864,7 +872,8 @@ pub mod specified {
         }
     }
 
-    #[derive(Clone, PartialEq, Copy, Debug, HeapSizeOf)]
+    #[derive(Clone, PartialEq, Copy, Debug)]
+    #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
     pub enum LengthOrPercentage {
         Length(Length),
         Percentage(Percentage),
@@ -912,7 +921,8 @@ pub mod specified {
         }
     }
 
-    #[derive(Clone, PartialEq, Copy, Debug, HeapSizeOf)]
+    #[derive(Clone, PartialEq, Copy, Debug)]
+    #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
     pub enum LengthOrPercentageOrAuto {
         Length(Length),
         Percentage(Percentage),
@@ -961,7 +971,8 @@ pub mod specified {
         }
     }
 
-    #[derive(Clone, PartialEq, Copy, Debug, HeapSizeOf)]
+    #[derive(Clone, PartialEq, Copy, Debug)]
+    #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
     pub enum LengthOrPercentageOrNone {
         Length(Length),
         Percentage(Percentage),
@@ -1009,7 +1020,8 @@ pub mod specified {
         }
     }
 
-    #[derive(Clone, PartialEq, Copy, Debug, HeapSizeOf)]
+    #[derive(Clone, PartialEq, Copy, Debug)]
+    #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
     pub enum LengthOrNone {
         Length(Length),
         None,
@@ -1049,7 +1061,8 @@ pub mod specified {
         }
     }
 
-    #[derive(Clone, PartialEq, Copy, Debug, HeapSizeOf)]
+    #[derive(Clone, PartialEq, Copy, Debug)]
+    #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
     pub enum LengthOrPercentageOrAutoOrContent {
         Length(Length),
         Percentage(Percentage),
@@ -1093,7 +1106,8 @@ pub mod specified {
         }
     }
 
-    #[derive(Clone, PartialEq, Copy, Debug, HeapSizeOf)]
+    #[derive(Clone, PartialEq, Copy, Debug)]
+    #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
     pub struct BorderRadiusSize(pub Size2D<LengthOrPercentage>);
 
     impl BorderRadiusSize {
@@ -1126,7 +1140,7 @@ pub mod specified {
         }
     }
 
-    // http://dev.w3.org/csswg/css2/colors.html#propdef-background-position
+    
     #[derive(Clone, PartialEq, Copy)]
     pub enum PositionComponent {
         LengthOrPercentage(LengthOrPercentage),
@@ -1169,7 +1183,8 @@ pub mod specified {
         }
     }
 
-    #[derive(Clone, PartialEq, PartialOrd, Copy, Debug, HeapSizeOf, Deserialize, Serialize)]
+    #[derive(Clone, PartialEq, PartialOrd, Copy, Debug)]
+    #[cfg_attr(feature = "servo", derive(HeapSizeOf, Deserialize, Serialize))]
     pub struct Angle(pub CSSFloat);
 
     impl ToCss for Angle {
@@ -1191,7 +1206,7 @@ pub mod specified {
     const RAD_PER_TURN: CSSFloat = PI * 2.0;
 
     impl Angle {
-        /// Parses an angle according to CSS-VALUES § 6.1.
+        
         pub fn parse(input: &mut Parser) -> Result<Angle, ()> {
             match try!(input.next()) {
                 Token::Dimension(ref value, ref unit) => Angle::parse_dimension(value.value, unit),
@@ -1214,8 +1229,9 @@ pub mod specified {
         }
     }
 
-    /// Specified values for an image according to CSS-IMAGES.
-    #[derive(Clone, PartialEq, Debug, HeapSizeOf)]
+    
+    #[derive(Clone, PartialEq, Debug)]
+    #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
     pub enum Image {
         Url(Url),
         LinearGradient(LinearGradient),
@@ -1249,13 +1265,14 @@ pub mod specified {
         }
     }
 
-    /// Specified values for a CSS linear gradient.
-    #[derive(Clone, PartialEq, Debug, HeapSizeOf)]
+    
+    #[derive(Clone, PartialEq, Debug)]
+    #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
     pub struct LinearGradient {
-        /// The angle or corner of the gradient.
+        
         pub angle_or_corner: AngleOrCorner,
 
-        /// The color stops.
+        
         pub stops: Vec<ColorStop>,
     }
 
@@ -1272,8 +1289,9 @@ pub mod specified {
         }
     }
 
-    /// Specified values for an angle or a corner in a linear gradient.
-    #[derive(Clone, PartialEq, Copy, Debug, HeapSizeOf)]
+    
+    #[derive(Clone, PartialEq, Copy, Debug)]
+    #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
     pub enum AngleOrCorner {
         Angle(Angle),
         Corner(HorizontalDirection, VerticalDirection),
@@ -1294,14 +1312,15 @@ pub mod specified {
         }
     }
 
-    /// Specified values for one color stop in a linear gradient.
-    #[derive(Clone, PartialEq, Debug, HeapSizeOf)]
+    
+    #[derive(Clone, PartialEq, Debug)]
+    #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
     pub struct ColorStop {
-        /// The color of this stop.
+        
         pub color: CSSColor,
 
-        /// The position of this stop. If not specified, this stop is placed halfway between the
-        /// point that precedes it and the point that follows it.
+        
+        
         pub position: Option<LengthOrPercentage>,
     }
 
@@ -1327,7 +1346,7 @@ pub mod specified {
     }
 
     impl LinearGradient {
-        /// Parses a linear gradient from the given arguments.
+        
         pub fn parse_function(input: &mut Parser) -> Result<LinearGradient, ()> {
             let angle_or_corner = if input.try(|input| input.expect_ident_matching("to")).is_ok() {
                 let (horizontal, vertical) =
@@ -1362,7 +1381,7 @@ pub mod specified {
             } else {
                 AngleOrCorner::Angle(Angle(PI))
             };
-            // Parse the color stops.
+            
             let stops = try!(input.parse_comma_separated(parse_one_color_stop));
             if stops.len() < 2 {
                 return Err(())
@@ -1402,8 +1421,8 @@ pub mod specified {
         })
     }
 
-    // The integer values here correspond to the border conflict resolution rules in CSS 2.1 §
-    // 17.6.2.1. Higher values override lower values.
+    
+    
     define_numbered_css_keyword_enum! { BorderStyle:
         "none" => none = -1,
         "solid" => solid = 6,
@@ -1423,18 +1442,19 @@ pub mod specified {
         }
     }
 
-    /// A time in seconds according to CSS-VALUES § 6.2.
-    #[derive(Clone, Copy, Debug, PartialEq, PartialOrd, HeapSizeOf)]
+    
+    #[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
+    #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
     pub struct Time(pub CSSFloat);
 
     impl Time {
-        /// Returns the time in fractional seconds.
+        
         pub fn seconds(self) -> f32 {
             let Time(seconds) = self;
             seconds
         }
 
-        /// Parses a time according to CSS-VALUES § 6.2.
+        
         fn parse_dimension(value: CSSFloat, unit: &str) -> Result<Time, ()> {
             if unit.eq_ignore_ascii_case("s") {
                 Ok(Time(value))
@@ -1473,7 +1493,8 @@ pub mod specified {
         }
     }
 
-    #[derive(Clone, Copy, Debug, PartialEq, PartialOrd, HeapSizeOf)]
+    #[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
+    #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
     pub struct Number(pub CSSFloat);
 
     impl Number {
@@ -1510,7 +1531,8 @@ pub mod specified {
         }
     }
 
-    #[derive(Clone, Copy, Debug, PartialEq, PartialOrd, HeapSizeOf)]
+    #[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
+    #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
     pub struct Opacity(pub CSSFloat);
 
     impl Opacity {
@@ -1568,8 +1590,8 @@ pub mod computed {
         pub viewport_size: Size2D<Au>,
         pub inherited_style: &'a C,
 
-        /// Values access through this need to be in the properties "computed early":
-        /// color, text-decoration, font-size, display, position, float, border-*-style, outline-style
+        
+        
         pub style: C,
     }
 
@@ -1630,7 +1652,8 @@ pub mod computed {
         }
     }
 
-    #[derive(Clone, PartialEq, Copy, Debug, HeapSizeOf)]
+    #[derive(Clone, PartialEq, Copy, Debug)]
+    #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
     pub struct CalcLengthOrPercentage {
         pub length: Option<Au>,
         pub percentage: Option<CSSFloat>,
@@ -1734,7 +1757,8 @@ pub mod computed {
     }
 
 
-    #[derive(PartialEq, Clone, Copy, HeapSizeOf)]
+    #[derive(PartialEq, Clone, Copy)]
+    #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
     pub struct BorderRadiusSize(pub Size2D<LengthOrPercentage>);
 
     impl BorderRadiusSize {
@@ -1762,7 +1786,8 @@ pub mod computed {
         }
     }
 
-    #[derive(PartialEq, Clone, Copy, HeapSizeOf)]
+    #[derive(PartialEq, Clone, Copy)]
+    #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
     pub enum LengthOrPercentage {
         Length(Au),
         Percentage(CSSFloat),
@@ -1775,9 +1800,9 @@ pub mod computed {
             LengthOrPercentage::Length(Au(0))
         }
 
-        /// Returns true if the computed value is absolute 0 or 0%.
-        ///
-        /// (Returns false for calc() values, even if ones that may resolve to zero.)
+        
+        
+        
         #[inline]
         pub fn is_definitely_zero(&self) -> bool {
             use self::LengthOrPercentage::*;
@@ -1827,7 +1852,8 @@ pub mod computed {
         }
     }
 
-    #[derive(PartialEq, Clone, Copy, HeapSizeOf)]
+    #[derive(PartialEq, Clone, Copy)]
+    #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
     pub enum LengthOrPercentageOrAuto {
         Length(Au),
         Percentage(CSSFloat),
@@ -1836,9 +1862,9 @@ pub mod computed {
     }
 
     impl LengthOrPercentageOrAuto {
-        /// Returns true if the computed value is absolute 0 or 0%.
-        ///
-        /// (Returns false for calc() values, even if ones that may resolve to zero.)
+        
+        
+        
         #[inline]
         pub fn is_definitely_zero(&self) -> bool {
             use self::LengthOrPercentageOrAuto::*;
@@ -1894,7 +1920,8 @@ pub mod computed {
         }
     }
 
-    #[derive(PartialEq, Clone, Copy, HeapSizeOf)]
+    #[derive(PartialEq, Clone, Copy)]
+    #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
     pub enum LengthOrPercentageOrAutoOrContent {
         Length(Au),
         Percentage(CSSFloat),
@@ -1952,7 +1979,8 @@ pub mod computed {
         }
     }
 
-    #[derive(PartialEq, Clone, Copy, HeapSizeOf)]
+    #[derive(PartialEq, Clone, Copy)]
+    #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
     pub enum LengthOrPercentageOrNone {
         Length(Au),
         Percentage(CSSFloat),
@@ -2004,7 +2032,8 @@ pub mod computed {
         }
     }
 
-    #[derive(PartialEq, Clone, Copy, HeapSizeOf)]
+    #[derive(PartialEq, Clone, Copy)]
+    #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
     pub enum LengthOrNone {
         Length(Au),
         None,
@@ -2061,8 +2090,9 @@ pub mod computed {
     }
 
 
-    /// Computed values for an image according to CSS-IMAGES.
-    #[derive(Clone, PartialEq, HeapSizeOf)]
+    
+    #[derive(Clone, PartialEq)]
+    #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
     pub enum Image {
         Url(Url),
         LinearGradient(LinearGradient),
@@ -2077,13 +2107,14 @@ pub mod computed {
         }
     }
 
-    /// Computed values for a CSS linear gradient.
-    #[derive(Clone, PartialEq, HeapSizeOf)]
+    
+    #[derive(Clone, PartialEq)]
+    #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
     pub struct LinearGradient {
-        /// The angle or corner of the gradient.
+        
         pub angle_or_corner: AngleOrCorner,
 
-        /// The color stops.
+        
         pub stops: Vec<ColorStop>,
     }
 
@@ -2110,14 +2141,15 @@ pub mod computed {
         }
     }
 
-    /// Computed values for one color stop in a linear gradient.
-    #[derive(Clone, PartialEq, Copy, HeapSizeOf)]
+    
+    #[derive(Clone, PartialEq, Copy)]
+    #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
     pub struct ColorStop {
-        /// The color of this stop.
+        
         pub color: CSSColor,
 
-        /// The position of this stop. If not specified, this stop is placed halfway between the
-        /// point that precedes it and the point that follows it per CSS-IMAGES § 3.4.
+        
+        
         pub position: Option<LengthOrPercentage>,
     }
 

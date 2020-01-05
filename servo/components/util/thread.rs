@@ -2,13 +2,13 @@
 
 
 
-use backtrace::Backtrace;
-use ipc_channel::ipc::IpcSender;
-use panicking;
-use serde::Serialize;
-use std::any::Any;
+#[cfg(feature = "servo")] use backtrace::Backtrace;
+#[cfg(feature = "servo")] use ipc_channel::ipc::IpcSender;
+#[cfg(feature = "servo")] use panicking;
+#[cfg(feature = "servo")] use serde::Serialize;
+#[cfg(feature = "servo")] use std::any::Any;
+#[cfg(feature = "servo")] use thread_state;
 use std::thread;
-use thread_state;
 
 pub fn spawn_named<F>(name: String, f: F)
     where F: FnOnce() + Send + 'static
@@ -17,6 +17,7 @@ pub fn spawn_named<F>(name: String, f: F)
 }
 
 
+#[cfg(feature = "servo")]
 pub fn spawn_named_with_send_on_panic<F, Id>(name: String,
                                              state: thread_state::ThreadState,
                                              f: F,

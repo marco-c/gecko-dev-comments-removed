@@ -31,7 +31,8 @@ pub type UnsafeNode = (usize, usize);
 
 
 
-#[derive(Clone, PartialEq, Copy, Debug, HeapSizeOf, Hash, Eq, Deserialize, Serialize)]
+#[derive(Clone, PartialEq, Copy, Debug, Hash, Eq)]
+#[cfg_attr(feature = "servo", derive(HeapSizeOf, Deserialize, Serialize))]
 pub struct OpaqueNode(pub usize);
 
 impl OpaqueNode {

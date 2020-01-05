@@ -23,7 +23,7 @@ use std::i32;
 
 
 
-#[derive(Clone, Copy, Debug, HeapSizeOf)]
+#[derive(Clone, Copy, Debug)]
 pub enum ScreenPx {}
 
 
@@ -35,7 +35,7 @@ pub enum ScreenPx {}
 
 
 
-#[derive(Clone, Copy, Debug, HeapSizeOf)]
+#[derive(Clone, Copy, Debug)]
 pub enum ViewportPx {}
 
 
@@ -44,8 +44,10 @@ pub enum ViewportPx {}
 
 
 
-#[derive(Clone, Copy, Debug, HeapSizeOf)]
+#[derive(Clone, Copy, Debug)]
 pub enum PagePx {}
+
+known_heap_size!(0, ScreenPx, ViewportPx, PagePx);
 
 
 

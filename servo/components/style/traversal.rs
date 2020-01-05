@@ -53,11 +53,11 @@ fn take_thread_local_bloom_filter<N, Impl: SelectorImplExt>(parent_node: Option<
             
             (None,     _  ) => {
                 debug!("[{}] No parent, but new bloom filter!", tid());
-                box BloomFilter::new()
+                Box::new(BloomFilter::new())
             }
             
             (Some(parent), None) => {
-                let mut bloom_filter = box BloomFilter::new();
+                let mut bloom_filter = Box::new(BloomFilter::new());
                 insert_ancestors_into_bloom_filter(&mut bloom_filter, parent, root);
                 bloom_filter
             }

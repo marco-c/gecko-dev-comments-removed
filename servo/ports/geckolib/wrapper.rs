@@ -85,7 +85,7 @@ impl<'ln> GeckoNode<'ln> {
     pub fn initialize_data(self) {
         unsafe {
             if self.get_node_data().is_null() {
-                let ptr: NonOpaqueStyleData = Box::into_raw(box RefCell::new(PrivateStyleData::new()));
+                let ptr: NonOpaqueStyleData = Box::into_raw(Box::new(RefCell::new(PrivateStyleData::new())));
                 Gecko_SetNodeData(self.node, ptr as *mut ServoNodeData);
             }
         }
@@ -172,7 +172,7 @@ impl<'ln> TNode for GeckoNode<'ln> {
     }
 
     fn has_changed(&self) -> bool {
-        // FIXME(bholley) - Implement this to allow incremental reflows!
+        
         true
     }
 
@@ -181,7 +181,7 @@ impl<'ln> TNode for GeckoNode<'ln> {
     }
 
     fn is_dirty(&self) -> bool {
-        // FIXME(bholley)
+        
         true
     }
 
@@ -190,7 +190,7 @@ impl<'ln> TNode for GeckoNode<'ln> {
     }
 
     fn has_dirty_descendants(&self) -> bool {
-        // FIXME(bholley)
+        
         true
     }
 
@@ -199,14 +199,14 @@ impl<'ln> TNode for GeckoNode<'ln> {
     }
 
     fn can_be_fragmented(&self) -> bool {
-        // FIXME(SimonSapin): Servo uses this to implement CSS multicol / fragmentation
-        // Maybe this isn’t useful for Gecko?
+        
+        
         false
     }
 
     unsafe fn set_can_be_fragmented(&self, _value: bool) {
-        // FIXME(SimonSapin): Servo uses this to implement CSS multicol / fragmentation
-        // Maybe this isn’t useful for Gecko?
+        
+        
     }
 
     #[inline(always)]
@@ -294,9 +294,9 @@ impl<'ld> TDocument for GeckoDocument<'ld> {
 
     fn drain_modified_elements(&self) -> Vec<(GeckoElement<'ld>, ElementSnapshot)> {
         unimplemented!()
-        /*
-        let elements =  unsafe { self.document.drain_modified_elements() };
-        elements.into_iter().map(|(el, snapshot)| (ServoLayoutElement::from_layout_js(el), snapshot)).collect()*/
+        
+
+
     }
 }
 
@@ -335,19 +335,19 @@ impl<'le> TElement for GeckoElement<'le> {
 
     fn style_attribute(&self) -> &Option<PropertyDeclarationBlock> {
         panic!("Requires signature modification - only implemented in stylo branch");
-        /*
-        // FIXME(bholley): We should do what Servo does here. Gecko needs to
-        // call into the Servo CSS parser and then cache the resulting block
-        // in the nsAttrValue. That will allow us to borrow it from here.
-        let attr = self.get_attr(&ns!(), &atom!("style"));
         
-        let base_url = &*DUMMY_BASE_URL;
-        
-        
-        let extra_data = ParserContextExtraData::default();
-        attr.map(|v| parse_style_attribute(&v, &base_url, Box::new(StdoutErrorReporter),
-                                           extra_data))
-        */
+
+
+
+
+
+
+
+
+
+
+
+
     }
 
     fn get_state(&self) -> ElementState {
