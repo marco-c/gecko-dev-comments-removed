@@ -103,14 +103,17 @@ WebRenderLayer::TransformedVisibleBoundsRelativeToParent()
 }
 
 Maybe<WrImageMask>
-WebRenderLayer::BuildWrMaskLayer()
+WebRenderLayer::BuildWrMaskLayer(bool aUnapplyLayerTransform)
 {
   if (GetLayer()->GetMaskLayer()) {
     WebRenderLayer* maskLayer = ToWebRenderLayer(GetLayer()->GetMaskLayer());
     
     
-    gfx::Matrix4x4 transform = GetWrBoundTransform();
-    return maskLayer->RenderMaskLayer(transform.Inverse());
+    gfx::Matrix4x4 transform;
+    if (aUnapplyLayerTransform) {
+      transform = GetWrBoundTransform().Inverse();
+    }
+    return maskLayer->RenderMaskLayer(transform);
   }
 
   return Nothing();
