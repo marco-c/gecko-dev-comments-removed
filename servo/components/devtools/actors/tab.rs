@@ -7,7 +7,7 @@
 
 
 use actor::{Actor, ActorRegistry};
-use protocol::JsonPacketSender;
+use protocol::JsonPacketStream;
 
 use serialize::json;
 use std::io::TcpStream;
