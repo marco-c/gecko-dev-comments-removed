@@ -372,6 +372,11 @@ void Gecko_nsStyleFont_CopyLangFrom(nsStyleFont* aFont, const nsStyleFont* aSour
 const nsMediaFeature* Gecko_GetMediaFeatures();
 
 
+
+nscolor Gecko_GetLookAndFeelSystemColor(int32_t color_id,
+                                        RawGeckoPresContextBorrowed pres_context);
+
+
 #define STYLE_STRUCT(name, checkdata_cb)                                       \
   void Gecko_Construct_Default_nsStyle##name(                                  \
     nsStyle##name* ptr,                                                        \
