@@ -185,32 +185,14 @@ enum eNPPStreamTypeInternal {
   eNPPStreamTypeInternal_Post
 };
 
-PRIntervalTime NS_NotifyBeginPluginCall(NSPluginCallReentry aReentryState)
+void NS_NotifyBeginPluginCall(NSPluginCallReentry aReentryState)
 {
   nsNPAPIPluginInstance::BeginPluginCall(aReentryState);
-  return PR_IntervalNow();
 }
 
-
-
-
-
-void NS_NotifyPluginCall(PRIntervalTime startTime, NSPluginCallReentry aReentryState)
+void NS_NotifyPluginCall(NSPluginCallReentry aReentryState)
 {
   nsNPAPIPluginInstance::EndPluginCall(aReentryState);
-
-  PRIntervalTime endTime = PR_IntervalNow() - startTime;
-  nsCOMPtr<nsIObserverService> notifyUIService =
-    mozilla::services::GetObserverService();
-  if (!notifyUIService)
-    return;
-
-  float runTimeInSeconds = float(endTime) / PR_TicksPerSecond();
-  nsAutoString runTimeString;
-  runTimeString.AppendFloat(runTimeInSeconds);
-  const char16_t* runTime = runTimeString.get();
-  notifyUIService->NotifyObservers(nullptr, "experimental-notify-plugin-call",
-                                   runTime);
 }
 
 static void CheckClassInitialized()
