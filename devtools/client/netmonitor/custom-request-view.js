@@ -24,7 +24,7 @@ CustomRequestView.prototype = {
   
 
 
-  initialize: function () {
+  initialize() {
     dumpn("Initializing the CustomRequestView");
 
     this.updateCustomRequestEvent = getKeyWithEvent(this.onUpdate.bind(this));
@@ -35,7 +35,7 @@ CustomRequestView.prototype = {
   
 
 
-  destroy: function () {
+  destroy() {
     dumpn("Destroying the CustomRequestView");
 
     $("#custom-pane").removeEventListener("input",
@@ -73,7 +73,7 @@ CustomRequestView.prototype = {
 
 
 
-  onUpdate: function (field) {
+  onUpdate(field) {
     let selectedItem = NetMonitorView.RequestsMenu.selectedItem;
     let store = NetMonitorView.RequestsMenu.store;
     let value;
@@ -118,7 +118,7 @@ CustomRequestView.prototype = {
 
 
 
-  updateCustomQuery: function (url) {
+  updateCustomQuery(url) {
     const paramsArray = parseQueryString(getUrlQuery(url));
 
     if (!paramsArray) {
@@ -136,7 +136,7 @@ CustomRequestView.prototype = {
 
 
 
-  updateCustomUrl: function (queryText) {
+  updateCustomUrl(queryText) {
     let params = parseQueryText(queryText);
     let queryString = writeQueryString(params);
 
@@ -189,7 +189,7 @@ function parseRequestText(text, namereg, divider) {
     let matches;
     if (matches = regex.exec(line)) { 
       let [, name, value] = matches;
-      pairs.push({name: name, value: value});
+      pairs.push({name, value});
     }
   }
   return pairs;

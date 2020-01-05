@@ -73,7 +73,7 @@ MarkupElementContainer.prototype = Heritage.extend(MarkupContainer.prototype, {
 
 
 
-  _getPreview: function () {
+  _getPreview() {
     if (!this.isPreviewable()) {
       return promise.reject("_getPreview called on a non-previewable element.");
     }
@@ -139,7 +139,7 @@ MarkupElementContainer.prototype = Heritage.extend(MarkupContainer.prototype, {
     return true;
   }),
 
-  copyImageDataUri: function () {
+  copyImageDataUri() {
     
     
     this.node.getImageData().then(data => {
@@ -149,12 +149,12 @@ MarkupElementContainer.prototype = Heritage.extend(MarkupContainer.prototype, {
     });
   },
 
-  setInlineTextChild: function (inlineTextChild) {
+  setInlineTextChild(inlineTextChild) {
     this.inlineTextChild = inlineTextChild;
     this.editor.updateTextEditor();
   },
 
-  clearInlineTextChild: function () {
+  clearInlineTextChild() {
     this.inlineTextChild = undefined;
     this.editor.updateTextEditor();
   },
@@ -162,14 +162,14 @@ MarkupElementContainer.prototype = Heritage.extend(MarkupContainer.prototype, {
   
 
 
-  addAttribute: function () {
+  addAttribute() {
     this.editor.newAttr.editMode();
   },
 
   
 
 
-  editAttribute: function (attrName) {
+  editAttribute(attrName) {
     this.editor.attrElements.get(attrName).editMode();
   },
 
@@ -177,7 +177,7 @@ MarkupElementContainer.prototype = Heritage.extend(MarkupContainer.prototype, {
 
 
 
-  removeAttribute: function (attrName) {
+  removeAttribute(attrName) {
     let doMods = this.editor._startModifyingAttributes();
     let undoMods = this.editor._startModifyingAttributes();
     this.editor._saveAttribute(attrName, undoMods);

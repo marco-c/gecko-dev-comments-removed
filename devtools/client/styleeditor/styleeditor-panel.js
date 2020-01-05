@@ -84,7 +84,7 @@ StyleEditorPanel.prototype = {
 
 
 
-  _showError: function (event, data) {
+  _showError(event, data) {
     if (!this._toolbox) {
       
       return;
@@ -121,7 +121,7 @@ StyleEditorPanel.prototype = {
 
 
 
-  selectStyleSheet: function (href, line, col) {
+  selectStyleSheet(href, line, col) {
     if (!this._debuggee || !this.UI) {
       return null;
     }
@@ -131,7 +131,7 @@ StyleEditorPanel.prototype = {
   
 
 
-  destroy: function () {
+  destroy() {
     if (!this._destroyed) {
       this._destroyed = true;
 

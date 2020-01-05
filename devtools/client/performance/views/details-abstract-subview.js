@@ -13,7 +13,7 @@ var DetailsSubview = {
   
 
 
-  initialize: function () {
+  initialize() {
     this._onRecordingStoppedOrSelected = this._onRecordingStoppedOrSelected.bind(this);
     this._onOverviewRangeChange = this._onOverviewRangeChange.bind(this);
     this._onDetailsViewSelected = this._onDetailsViewSelected.bind(this);
@@ -43,7 +43,7 @@ var DetailsSubview = {
   
 
 
-  destroy: function () {
+  destroy() {
     clearNamedTimeout("range-change-debounce");
 
     PerformanceController.off(EVENTS.RECORDING_STATE_CHANGE,
@@ -111,7 +111,7 @@ var DetailsSubview = {
   
 
 
-  _onRecordingStoppedOrSelected: function (_, state, recording) {
+  _onRecordingStoppedOrSelected(_, state, recording) {
     if (typeof state !== "string") {
       recording = state;
     }
@@ -132,7 +132,7 @@ var DetailsSubview = {
   
 
 
-  _onOverviewRangeChange: function (_, interval) {
+  _onOverviewRangeChange(_, interval) {
     if (!this.requiresUpdateOnRangeChange) {
       return;
     }
@@ -155,7 +155,7 @@ var DetailsSubview = {
   
 
 
-  _onDetailsViewSelected: function () {
+  _onDetailsViewSelected() {
     if (DetailsView.isViewSelected(this) && this.shouldUpdateWhenShown) {
       this.render(OverviewView.getTimeInterval());
       this.shouldUpdateWhenShown = false;
@@ -165,7 +165,7 @@ var DetailsSubview = {
   
 
 
-  _onPrefChanged: function (_, prefName) {
+  _onPrefChanged(_, prefName) {
     if (~this.observedPrefs.indexOf(prefName) && this._onObservedPrefChange) {
       this._onObservedPrefChange(_, prefName);
     }

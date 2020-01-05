@@ -46,7 +46,7 @@ EditingSession.prototype = {
 
 
 
-  getPropertyFromRule: function (rule, property) {
+  getPropertyFromRule(rule, property) {
     
     let index = this.getPropertyIndex(property, rule);
     if (index !== -1) {
@@ -65,7 +65,7 @@ EditingSession.prototype = {
 
 
 
-  getProperty: function (property) {
+  getProperty(property) {
     
     let div = this._doc.createElement("div");
     div.setAttribute("style", "display: none");
@@ -93,7 +93,7 @@ EditingSession.prototype = {
 
 
 
-  getPropertyIndex: function (name, rule = this._rules[0]) {
+  getPropertyIndex(name, rule = this._rules[0]) {
     let elementStyleRule = this._rules[0];
     if (!elementStyleRule.declarations.length) {
       return -1;
@@ -175,7 +175,7 @@ EditingSession.prototype = {
     }
   }),
 
-  destroy: function () {
+  destroy() {
     this._doc = null;
     this._rules = null;
     this._modifications.clear();
@@ -204,7 +204,7 @@ function BoxModelView(inspector, document) {
 }
 
 BoxModelView.prototype = {
-  init: function () {
+  init() {
     this.update = this.update.bind(this);
 
     this.onNewSelection = this.onNewSelection.bind(this);
@@ -325,7 +325,7 @@ BoxModelView.prototype = {
     nodeGeometry.addEventListener("click", this.onGeometryButtonClick);
   },
 
-  initBoxModelHighlighter: function () {
+  initBoxModelHighlighter() {
     let highlightElts = this.doc.querySelectorAll("#boxmodel-container *[title]");
     this.onHighlightMouseOver = this.onHighlightMouseOver.bind(this);
     this.onHighlightMouseOut = this.onHighlightMouseOut.bind(this);
@@ -339,7 +339,7 @@ BoxModelView.prototype = {
   
 
 
-  trackReflows: function () {
+  trackReflows() {
     if (!this.reflowFront) {
       let { target } = this.inspector;
       if (target.form.reflowActor) {
@@ -357,7 +357,7 @@ BoxModelView.prototype = {
   
 
 
-  untrackReflows: function () {
+  untrackReflows() {
     if (!this.reflowFront) {
       return;
     }
@@ -369,13 +369,13 @@ BoxModelView.prototype = {
   
 
 
-  initEditor: function (element, event, dimension) {
+  initEditor(element, event, dimension) {
     let { property } = dimension;
     let session = new EditingSession(this);
     let initialValue = session.getProperty(property);
 
     let editor = new InplaceEditor({
-      element: element,
+      element,
       initial: initialValue,
       contentType: InplaceEditor.CONTENT_TYPES.CSS_VALUE,
       property: {
@@ -390,7 +390,7 @@ BoxModelView.prototype = {
         }
 
         let properties = [
-          { name: property, value: value }
+          { name: property, value }
         ];
 
         if (property.substring(0, 7) == "border-") {
@@ -420,7 +420,7 @@ BoxModelView.prototype = {
 
 
 
-  isViewVisible: function () {
+  isViewVisible() {
     return this.inspector &&
            this.inspector.sidebar.getCurrentTabID() == "computedview";
   },
@@ -430,7 +430,7 @@ BoxModelView.prototype = {
 
 
 
-  isViewVisibleAndNodeValid: function () {
+  isViewVisibleAndNodeValid() {
     return this.isViewVisible() &&
            this.inspector.selection.isConnected() &&
            this.inspector.selection.isElementNode();
@@ -439,7 +439,7 @@ BoxModelView.prototype = {
   
 
 
-  destroy: function () {
+  destroy() {
     let highlightElts = this.doc.querySelectorAll("#boxmodel-container *[title]");
 
     for (let element of highlightElts) {
@@ -485,14 +485,14 @@ BoxModelView.prototype = {
     }
   },
 
-  onSidebarSelect: function (e, sidebar) {
+  onSidebarSelect(e, sidebar) {
     this.setActive(sidebar === "computedview");
   },
 
   
 
 
-  onNewSelection: function () {
+  onNewSelection() {
     let done = this.inspector.updating("computed-view");
     this.onNewNode()
       .then(() => this.hideGeometryEditor())
@@ -505,12 +505,12 @@ BoxModelView.prototype = {
   
 
 
-  onNewNode: function () {
+  onNewNode() {
     this.setActive(this.isViewVisibleAndNodeValid());
     return this.update();
   },
 
-  onHighlightMouseOver: function (e) {
+  onHighlightMouseOver(e) {
     let region = e.target.getAttribute("data-box");
     if (!region) {
       return;
@@ -523,11 +523,11 @@ BoxModelView.prototype = {
     });
   },
 
-  onHighlightMouseOut: function () {
+  onHighlightMouseOut() {
     this.hideBoxModel();
   },
 
-  onGeometryButtonClick: function ({target}) {
+  onGeometryButtonClick({target}) {
     if (target.hasAttribute("checked")) {
       target.removeAttribute("checked");
       this.hideGeometryEditor();
@@ -537,11 +537,11 @@ BoxModelView.prototype = {
     }
   },
 
-  onPickerStarted: function () {
+  onPickerStarted() {
     this.hideGeometryEditor();
   },
 
-  onToggleExpander: function () {
+  onToggleExpander() {
     let isOpen = this.expander.hasAttribute("open");
 
     if (isOpen) {
@@ -553,15 +553,15 @@ BoxModelView.prototype = {
     }
   },
 
-  onMarkupViewLeave: function () {
+  onMarkupViewLeave() {
     this.showGeometryEditor(true);
   },
 
-  onMarkupViewNodeHover: function () {
+  onMarkupViewNodeHover() {
     this.hideGeometryEditor(false);
   },
 
-  onWillNavigate: function () {
+  onWillNavigate() {
     this._geometryEditorHighlighter.release().catch(console.error);
     this._geometryEditorHighlighter = null;
   },
@@ -572,7 +572,7 @@ BoxModelView.prototype = {
 
 
 
-  onFilterComputedView: function (reason, hidden) {
+  onFilterComputedView(reason, hidden) {
     this.wrapper.hidden = hidden;
   },
 
@@ -581,7 +581,7 @@ BoxModelView.prototype = {
 
 
 
-  setActive: function (isActive) {
+  setActive(isActive) {
     if (isActive === this.isActive) {
       return;
     }
@@ -599,7 +599,7 @@ BoxModelView.prototype = {
 
 
 
-  update: function () {
+  update() {
     let lastRequest = Task.spawn((function* () {
       if (!this.isViewVisibleAndNodeValid()) {
         this.wrapper.hidden = true;
@@ -704,7 +704,7 @@ BoxModelView.prototype = {
 
 
 
-  updateSourceRuleTooltip: function (el, property, rules) {
+  updateSourceRuleTooltip(el, property, rules) {
     
     let dummyEl = this.doc.createElement("div");
 
@@ -740,7 +740,7 @@ BoxModelView.prototype = {
 
 
 
-  showBoxModel: function (options = {}) {
+  showBoxModel(options = {}) {
     let toolbox = this.inspector.toolbox;
     let nodeFront = this.inspector.selection.nodeFront;
 
@@ -750,7 +750,7 @@ BoxModelView.prototype = {
   
 
 
-  hideBoxModel: function () {
+  hideBoxModel() {
     let toolbox = this.inspector.toolbox;
 
     toolbox.highlighterUtils.unhighlight();
@@ -762,7 +762,7 @@ BoxModelView.prototype = {
 
 
 
-  showGeometryEditor: function (showOnlyIfActive = false) {
+  showGeometryEditor(showOnlyIfActive = false) {
     let toolbox = this.inspector.toolbox;
     let nodeFront = this.inspector.selection.nodeFront;
     let nodeGeometry = this.doc.getElementById("layout-geometry-editor");
@@ -800,7 +800,7 @@ BoxModelView.prototype = {
 
 
 
-  hideGeometryEditor: function (updateButton = true) {
+  hideGeometryEditor(updateButton = true) {
     if (this._geometryEditorHighlighter) {
       this._geometryEditorHighlighter.hide().catch(console.error);
     }
@@ -827,7 +827,7 @@ BoxModelView.prototype = {
     nodeGeometry.style.visibility = isEditable ? "visible" : "hidden";
   }),
 
-  manageOverflowingText: function (span) {
+  manageOverflowingText(span) {
     let classList = span.parentNode.classList;
 
     if (classList.contains("boxmodel-left") ||

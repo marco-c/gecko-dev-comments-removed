@@ -80,7 +80,7 @@ function setTooltipVariableContent(tooltip, objectActor,
   
   
   widget.controller.setSingleVariable(
-    { objectActor: objectActor }, controllerOptions);
+    { objectActor }, controllerOptions);
 
   tooltip.content = vbox;
   tooltip.panel.setAttribute("clamped-dimensions", "");

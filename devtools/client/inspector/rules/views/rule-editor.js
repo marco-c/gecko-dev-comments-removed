@@ -78,7 +78,7 @@ function RuleEditor(ruleView, rule) {
 }
 
 RuleEditor.prototype = {
-  destroy: function () {
+  destroy() {
     this.rule.domRule.off("location-changed");
     this.toolbox.off("tool-registered", this.updateSourceLink);
     this.toolbox.off("tool-unregistered", this.updateSourceLink);
@@ -95,7 +95,7 @@ RuleEditor.prototype = {
     return trait && !this.rule.elementStyle.element.isAnonymous;
   },
 
-  _create: function () {
+  _create() {
     this.element = this.doc.createElement("div");
     this.element.className = "ruleview-rule theme-separator";
     this.element.setAttribute("uneditable", !this.isEditable);
@@ -215,11 +215,11 @@ RuleEditor.prototype = {
 
 
 
-  _locationChanged: function () {
+  _locationChanged() {
     this.updateSourceLink();
   },
 
-  updateSourceLink: function () {
+  updateSourceLink() {
     let sourceLabel = this.element.querySelector(".ruleview-rule-source-label");
     let title = this.rule.title;
     let sourceHref = (this.rule.sheet && this.rule.sheet.href) ?
@@ -277,7 +277,7 @@ RuleEditor.prototype = {
   
 
 
-  populate: function () {
+  populate() {
     
     while (this.selectorText.hasChildNodes()) {
       this.selectorText.removeChild(this.selectorText.lastChild);
@@ -360,7 +360,7 @@ RuleEditor.prototype = {
 
 
 
-  addProperty: function (name, value, priority, enabled, siblingProp) {
+  addProperty(name, value, priority, enabled, siblingProp) {
     let prop = this.rule.createProperty(name, value, priority, enabled,
       siblingProp);
     let index = this.rule.textProps.indexOf(prop);
@@ -392,7 +392,7 @@ RuleEditor.prototype = {
 
 
 
-  addProperties: function (properties, siblingProp) {
+  addProperties(properties, siblingProp) {
     if (!properties || !properties.length) {
       return;
     }
@@ -418,7 +418,7 @@ RuleEditor.prototype = {
 
 
 
-  newProperty: function () {
+  newProperty() {
     
     if (!this.closeBrace.hasAttribute("tabindex")) {
       return;
@@ -464,7 +464,7 @@ RuleEditor.prototype = {
 
 
 
-  _onNewProperty: function (value, commit) {
+  _onNewProperty(value, commit) {
     if (!value || !commit) {
       return;
     }
@@ -486,7 +486,7 @@ RuleEditor.prototype = {
 
 
 
-  _newPropertyDestroy: function () {
+  _newPropertyDestroy() {
     
     this.closeBrace.setAttribute("tabindex", "0");
 
@@ -604,7 +604,7 @@ RuleEditor.prototype = {
 
 
 
-  _moveSelectorFocus: function (direction) {
+  _moveSelectorFocus(direction) {
     if (!direction || direction === Services.focus.MOVEFOCUS_BACKWARD) {
       return;
     }

@@ -19,7 +19,7 @@ loader.lazyRequireGetter(this, "extend", "sdk/util/object", true);
 
 
 exports.ProfilerFront = FrontClassWithSpec(profilerSpec, {
-  initialize: function (client, form) {
+  initialize(client, form) {
     Front.prototype.initialize.call(this, client, form);
     this.actorID = form.profilerActor;
     this.manage(this);
@@ -28,7 +28,7 @@ exports.ProfilerFront = FrontClassWithSpec(profilerSpec, {
     events.on(this, "*", this._onProfilerEvent);
   },
 
-  destroy: function () {
+  destroy() {
     events.off(this, "*", this._onProfilerEvent);
     Front.prototype.destroy.call(this);
   },
@@ -48,7 +48,7 @@ exports.ProfilerFront = FrontClassWithSpec(profilerSpec, {
   
 
 
-  _onProfilerEvent: function (eventName, data) {
+  _onProfilerEvent(eventName, data) {
     
     if (data.relayed) {
       return;

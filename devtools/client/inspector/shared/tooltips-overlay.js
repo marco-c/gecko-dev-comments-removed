@@ -65,7 +65,7 @@ TooltipsOverlay.prototype = {
 
 
 
-  addToView: function () {
+  addToView() {
     if (this._isStarted || this._isDestroyed) {
       return;
     }
@@ -105,7 +105,7 @@ TooltipsOverlay.prototype = {
 
 
 
-  removeFromView: function () {
+  removeFromView() {
     if (!this._isStarted || this._isDestroyed) {
       return;
     }
@@ -139,7 +139,7 @@ TooltipsOverlay.prototype = {
 
 
 
-  _getTooltipType: function ({type, value: prop}) {
+  _getTooltipType({type, value: prop}) {
     let tooltipType = null;
     let inspector = this.view.inspector;
 
@@ -283,7 +283,7 @@ TooltipsOverlay.prototype = {
       {hideDimensionLabel: true, maxDim, naturalWidth, naturalHeight});
   }),
 
-  _onNewSelection: function () {
+  _onNewSelection() {
     if (this.previewTooltip) {
       this.previewTooltip.hide();
     }
@@ -308,7 +308,7 @@ TooltipsOverlay.prototype = {
   
 
 
-  destroy: function () {
+  destroy() {
     this.removeFromView();
 
     this.view.inspector.selection.off("new-node-front", this._onNewSelection);

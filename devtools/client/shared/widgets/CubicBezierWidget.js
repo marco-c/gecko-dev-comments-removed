@@ -71,7 +71,7 @@ CubicBezier.prototype = {
     return this.coordinates.slice(2);
   },
 
-  toString: function () {
+  toString() {
     
     let predefName = Object.keys(PREDEFINED)
                            .find(key => coordsAreEqual(PREDEFINED[key],
@@ -126,7 +126,7 @@ BezierCanvas.prototype = {
   
 
 
-  offsetsToCoordinates: function (element) {
+  offsetsToCoordinates(element) {
     let p = this.padding, w = this.canvas.width, h = this.canvas.height;
 
     
@@ -141,7 +141,7 @@ BezierCanvas.prototype = {
   
 
 
-  plot: function (settings = {}) {
+  plot(settings = {}) {
     let xy = this.bezier.coordinates;
 
     let defaultSettings = {
@@ -251,7 +251,7 @@ function CubicBezierWidget(parent,
 exports.CubicBezierWidget = CubicBezierWidget;
 
 CubicBezierWidget.prototype = {
-  _initMarkup: function () {
+  _initMarkup() {
     let doc = this.parent.ownerDocument;
 
     let wrap = doc.createElementNS(XHTML_NS, "div");
@@ -285,11 +285,11 @@ CubicBezierWidget.prototype = {
     };
   },
 
-  _removeMarkup: function () {
+  _removeMarkup() {
     this.parent.querySelector(".display-wrap").remove();
   },
 
-  _initEvents: function () {
+  _initEvents() {
     this.p1.addEventListener("mousedown", this._onPointMouseDown);
     this.p2.addEventListener("mousedown", this._onPointMouseDown);
 
@@ -301,7 +301,7 @@ CubicBezierWidget.prototype = {
     this.presets.on("new-coordinates", this._onNewCoordinates);
   },
 
-  _removeEvents: function () {
+  _removeEvents() {
     this.p1.removeEventListener("mousedown", this._onPointMouseDown);
     this.p2.removeEventListener("mousedown", this._onPointMouseDown);
 
@@ -313,7 +313,7 @@ CubicBezierWidget.prototype = {
     this.presets.off("new-coordinates", this._onNewCoordinates);
   },
 
-  _onPointMouseDown: function (event) {
+  _onPointMouseDown(event) {
     
     this.curveBoundingBox = this.curve.getBoundingClientRect();
 
@@ -346,7 +346,7 @@ CubicBezierWidget.prototype = {
     };
   },
 
-  _onPointKeyDown: function (event) {
+  _onPointKeyDown(event) {
     let point = event.target;
     let code = event.keyCode;
 
@@ -369,7 +369,7 @@ CubicBezierWidget.prototype = {
     }
   },
 
-  _onCurveClick: function (event) {
+  _onCurveClick(event) {
     this.curveBoundingBox = this.curve.getBoundingClientRect();
 
     let left = this.curveBoundingBox.left;
@@ -390,14 +390,14 @@ CubicBezierWidget.prototype = {
     this._updateFromPoints();
   },
 
-  _onNewCoordinates: function (event, coordinates) {
+  _onNewCoordinates(event, coordinates) {
     this.coordinates = coordinates;
   },
 
   
 
 
-  _updateFromPoints: function () {
+  _updateFromPoints() {
     
     let coordinates = this.bezierCanvas.offsetsToCoordinates(this.p1);
     coordinates = coordinates.concat(
@@ -412,7 +412,7 @@ CubicBezierWidget.prototype = {
 
 
 
-  _redraw: function (coordinates) {
+  _redraw(coordinates) {
     
     this.bezierCanvas.bezier = new CubicBezier(coordinates);
     this.bezierCanvas.plot();
@@ -455,7 +455,7 @@ CubicBezierWidget.prototype = {
     this.coordinates = coordinates;
   },
 
-  destroy: function () {
+  destroy() {
     this._removeEvents();
     this._removeMarkup();
 
@@ -515,7 +515,7 @@ CubicBezierPresetWidget.prototype = {
 
 
 
-  _initMarkup: function () {
+  _initMarkup() {
     let doc = this.parent.ownerDocument;
 
     let presetPane = doc.createElementNS(XHTML_NS, "div");
@@ -544,13 +544,13 @@ CubicBezierPresetWidget.prototype = {
     let allPresets = presetPane.querySelectorAll(".preset");
 
     return {
-      presetPane: presetPane,
+      presetPane,
       presets: allPresets,
       categories: allCategories
     };
   },
 
-  _createCategory: function (categoryLabel) {
+  _createCategory(categoryLabel) {
     let doc = this.parent.ownerDocument;
 
     let category = doc.createElementNS(XHTML_NS, "div");
@@ -564,11 +564,11 @@ CubicBezierPresetWidget.prototype = {
     return category;
   },
 
-  _normalizeCategoryLabel: function (categoryLabel) {
+  _normalizeCategoryLabel(categoryLabel) {
     return categoryLabel.replace("/-/g", " ");
   },
 
-  _createPresetList: function (categoryLabel) {
+  _createPresetList(categoryLabel) {
     let doc = this.parent.ownerDocument;
 
     let presetList = doc.createElementNS(XHTML_NS, "div");
@@ -583,7 +583,7 @@ CubicBezierPresetWidget.prototype = {
     return presetList;
   },
 
-  _createPreset: function (categoryLabel, presetLabel) {
+  _createPreset(categoryLabel, presetLabel) {
     let doc = this.parent.ownerDocument;
 
     let preset = doc.createElementNS(XHTML_NS, "div");
@@ -613,11 +613,11 @@ CubicBezierPresetWidget.prototype = {
     return preset;
   },
 
-  _normalizePresetLabel: function (categoryLabel, presetLabel) {
+  _normalizePresetLabel(categoryLabel, presetLabel) {
     return presetLabel.replace(categoryLabel + "-", "").replace("/-/g", " ");
   },
 
-  _initEvents: function () {
+  _initEvents() {
     for (let category of this.categories) {
       category.addEventListener("click", this._onCategoryClick);
     }
@@ -627,7 +627,7 @@ CubicBezierPresetWidget.prototype = {
     }
   },
 
-  _removeEvents: function () {
+  _removeEvents() {
     for (let category of this.categories) {
       category.removeEventListener("click", this._onCategoryClick);
     }
@@ -637,16 +637,16 @@ CubicBezierPresetWidget.prototype = {
     }
   },
 
-  _onPresetClick: function (event) {
+  _onPresetClick(event) {
     this.emit("new-coordinates", event.currentTarget.coordinates);
     this.activePreset = event.currentTarget;
   },
 
-  _onCategoryClick: function (event) {
+  _onCategoryClick(event) {
     this.activeCategory = event.target;
   },
 
-  _setActivePresetList: function (presetListId) {
+  _setActivePresetList(presetListId) {
     let presetList = this.presetPane.querySelector("#" + presetListId);
     swapClassName("active-preset-list", this._activePresetList, presetList);
     this._activePresetList = presetList;
@@ -678,7 +678,7 @@ CubicBezierPresetWidget.prototype = {
 
 
 
-  refreshMenu: function (coordinates) {
+  refreshMenu(coordinates) {
     
     
     let category = this._activeCategory;
@@ -708,7 +708,7 @@ CubicBezierPresetWidget.prototype = {
     this.activePreset = preset;
   },
 
-  destroy: function () {
+  destroy() {
     this._removeEvents();
     this.parent.querySelector(".preset-pane").remove();
   }
@@ -730,7 +730,7 @@ function TimingFunctionPreviewWidget(parent) {
 TimingFunctionPreviewWidget.prototype = {
   PREVIEW_DURATION: 1000,
 
-  _initMarkup: function () {
+  _initMarkup() {
     let doc = this.parent.ownerDocument;
 
     let container = doc.createElementNS(XHTML_NS, "div");
@@ -747,7 +747,7 @@ TimingFunctionPreviewWidget.prototype = {
     this.parent.appendChild(container);
   },
 
-  destroy: function () {
+  destroy() {
     clearTimeout(this.autoRestartAnimation);
     this.parent.querySelector(".timing-function-preview").remove();
     this.parent = this.dot = null;
@@ -759,7 +759,7 @@ TimingFunctionPreviewWidget.prototype = {
 
 
 
-  preview: function (value) {
+  preview(value) {
     
     if (value === this.previousValue) {
       return;
@@ -778,7 +778,7 @@ TimingFunctionPreviewWidget.prototype = {
   
 
 
-  restartAnimation: function () {
+  restartAnimation() {
     
     this.dot.animate([
       { left: "-7px", offset: 0 },

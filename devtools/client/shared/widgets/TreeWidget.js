@@ -101,7 +101,7 @@ TreeWidget.prototype = {
 
 
 
-  isSelected: function (item) {
+  isSelected(item) {
     if (!this._selectedItem || this._selectedItem.length != item.length) {
       return false;
     }
@@ -115,7 +115,7 @@ TreeWidget.prototype = {
     return true;
   },
 
-  destroy: function () {
+  destroy() {
     this.root.remove();
     this.root = null;
   },
@@ -123,7 +123,7 @@ TreeWidget.prototype = {
   
 
 
-  setupRoot: function () {
+  setupRoot() {
     this.root = new TreeItem(this.document);
     if (this.contextMenuId) {
       this.root.children.addEventListener("contextmenu", (event) => {
@@ -141,7 +141,7 @@ TreeWidget.prototype = {
   
 
 
-  setPlaceholderText: function (text) {
+  setPlaceholderText(text) {
     this.placeholder.textContent = text;
   },
 
@@ -151,14 +151,14 @@ TreeWidget.prototype = {
 
 
 
-  selectItem: function (id) {
+  selectItem(id) {
     this.selectedItem = id;
   },
 
   
 
 
-  selectNextItem: function () {
+  selectNextItem() {
     let next = this.getNextVisibleItem();
     if (next) {
       this.selectedItem = next;
@@ -168,7 +168,7 @@ TreeWidget.prototype = {
   
 
 
-  selectPreviousItem: function () {
+  selectPreviousItem() {
     let prev = this.getPreviousVisibleItem();
     if (prev) {
       this.selectedItem = prev;
@@ -178,7 +178,7 @@ TreeWidget.prototype = {
   
 
 
-  getNextVisibleItem: function () {
+  getNextVisibleItem() {
     let node = this._selectedLabel;
     if (node.hasAttribute("expanded") && node.nextSibling.firstChild) {
       return JSON.parse(node.nextSibling.firstChild.getAttribute("data-id"));
@@ -200,7 +200,7 @@ TreeWidget.prototype = {
   
 
 
-  getPreviousVisibleItem: function () {
+  getPreviousVisibleItem() {
     let node = this._selectedLabel.parentNode;
     if (node.previousSibling) {
       node = node.previousSibling.firstChild;
@@ -226,7 +226,7 @@ TreeWidget.prototype = {
     return null;
   },
 
-  clearSelection: function () {
+  clearSelection() {
     this.selectedItem = -1;
   },
 
@@ -259,7 +259,7 @@ TreeWidget.prototype = {
 
 
 
-  add: function (items) {
+  add(items) {
     this.root.add(items, this.defaultType, this.sorted);
     for (let i = 0; i < items.length; i++) {
       if (items[i].attachment) {
@@ -278,7 +278,7 @@ TreeWidget.prototype = {
 
 
 
-  remove: function (item) {
+  remove(item) {
     this.root.remove(item);
     this.attachments.delete(JSON.stringify(item));
     
@@ -290,7 +290,7 @@ TreeWidget.prototype = {
   
 
 
-  clear: function () {
+  clear() {
     this.root.remove();
     this.setupRoot();
     this.attachments.clear();
@@ -302,21 +302,21 @@ TreeWidget.prototype = {
   
 
 
-  expandAll: function () {
+  expandAll() {
     this.root.expandAll();
   },
 
   
 
 
-  collapseAll: function () {
+  collapseAll() {
     this.root.collapseAll();
   },
 
   
 
 
-  onClick: function (event) {
+  onClick(event) {
     let target = event.originalTarget;
     while (target && !target.classList.contains("tree-widget-item")) {
       if (target == this.root.children) {
@@ -344,7 +344,7 @@ TreeWidget.prototype = {
 
 
 
-  onKeypress: function (event) {
+  onKeypress(event) {
     switch (event.keyCode) {
       case KeyCodes.DOM_VK_UP:
         this.selectPreviousItem();
@@ -380,7 +380,7 @@ TreeWidget.prototype = {
 
 
 
-  ensureSelectedVisible: function () {
+  ensureSelectedVisible() {
     let {top, bottom} = this._selectedLabel.getBoundingClientRect();
     let height = this.root.children.parentNode.clientHeight;
     if (top < 0) {
@@ -468,7 +468,7 @@ TreeItem.prototype = {
 
 
 
-  add: function (items, defaultType, sorted) {
+  add(items, defaultType, sorted) {
     if (items.length == this.level) {
       
       return;
@@ -532,7 +532,7 @@ TreeItem.prototype = {
 
 
 
-  remove: function (items = []) {
+  remove(items = []) {
     let id = items.shift();
     if (id && this.items.has(id)) {
       let deleted = this.items.get(id);
@@ -555,7 +555,7 @@ TreeItem.prototype = {
 
 
 
-  setSelectedItem: function (items) {
+  setSelectedItem(items) {
     if (!items[this.level]) {
       this.label.classList.add("theme-selected");
       this.label.setAttribute("expanded", "true");
@@ -574,7 +574,7 @@ TreeItem.prototype = {
   
 
 
-  collapseAll: function () {
+  collapseAll() {
     if (this.label) {
       this.label.removeAttribute("expanded");
     }
@@ -586,7 +586,7 @@ TreeItem.prototype = {
   
 
 
-  expandAll: function () {
+  expandAll() {
     if (this.label) {
       this.label.setAttribute("expanded", "true");
     }
@@ -595,7 +595,7 @@ TreeItem.prototype = {
     }
   },
 
-  destroy: function () {
+  destroy() {
     this.children.remove();
     this.node.remove();
     this.label = null;

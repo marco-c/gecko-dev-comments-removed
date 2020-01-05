@@ -53,7 +53,7 @@ HighlightersOverlay.prototype = {
 
 
 
-  addToView: function (view) {
+  addToView(view) {
     if (!this.supportsHighlighters) {
       return;
     }
@@ -75,7 +75,7 @@ HighlightersOverlay.prototype = {
 
 
 
-  removeFromView: function (view) {
+  removeFromView(view) {
     if (!this.supportsHighlighters) {
       return;
     }
@@ -160,7 +160,7 @@ HighlightersOverlay.prototype = {
 
 
 
-  _getHighlighter: function (type) {
+  _getHighlighter(type) {
     let utils = this.highlighterUtils;
 
     if (this.highlighters[type]) {
@@ -182,7 +182,7 @@ HighlightersOverlay.prototype = {
 
 
 
-  _toggleRuleViewGridIcon: function (node, active) {
+  _toggleRuleViewGridIcon(node, active) {
     if (this.inspector.selection.nodeFront != node) {
       return;
     }
@@ -197,7 +197,7 @@ HighlightersOverlay.prototype = {
   
 
 
-  _hideHoveredHighlighter: function () {
+  _hideHoveredHighlighter() {
     if (!this.hoveredHighlighterShown ||
         !this.highlighters[this.hoveredHighlighterShown]) {
       return;
@@ -223,7 +223,7 @@ HighlightersOverlay.prototype = {
 
 
 
-  _isComputedViewTransform: function (nodeInfo) {
+  _isComputedViewTransform(nodeInfo) {
     let isTransform = nodeInfo.type === VIEW_NODE_VALUE_TYPE &&
                       nodeInfo.value.property === "transform";
     return !this.isRuleView && isTransform;
@@ -236,7 +236,7 @@ HighlightersOverlay.prototype = {
 
 
 
-  _isRuleViewDisplayGrid: function (node) {
+  _isRuleViewDisplayGrid(node) {
     return this.isRuleView && node.classList.contains("ruleview-grid");
   },
 
@@ -246,7 +246,7 @@ HighlightersOverlay.prototype = {
 
 
 
-  _isRuleViewTransform: function (nodeInfo) {
+  _isRuleViewTransform(nodeInfo) {
     let isTransform = nodeInfo.type === VIEW_NODE_VALUE_TYPE &&
                       nodeInfo.value.property === "transform";
     let isEnabled = nodeInfo.value.enabled &&
@@ -255,7 +255,7 @@ HighlightersOverlay.prototype = {
     return this.isRuleView && isTransform && isEnabled;
   },
 
-  onClick: function (event) {
+  onClick(event) {
     
     if (!this._isRuleViewDisplayGrid(event.target)) {
       return;
@@ -265,7 +265,7 @@ HighlightersOverlay.prototype = {
     this.toggleGridHighlighter(this.inspector.selection.nodeFront);
   },
 
-  onMouseMove: function (event) {
+  onMouseMove(event) {
     
     if (event.target === this._lastHovered) {
       return;
@@ -303,7 +303,7 @@ HighlightersOverlay.prototype = {
     }
   },
 
-  onMouseOut: function (event) {
+  onMouseOut(event) {
     
     if (!this._lastHovered ||
         (event && this._lastHovered.contains(event.relatedTarget))) {
@@ -318,7 +318,7 @@ HighlightersOverlay.prototype = {
   
 
 
-  onWillNavigate: function () {
+  onWillNavigate() {
     this.gridHighlighterShown = null;
     this.hoveredHighlighterShown = null;
     this.selectorHighlighterShown = null;
@@ -328,7 +328,7 @@ HighlightersOverlay.prototype = {
 
 
 
-  destroy: function () {
+  destroy() {
     for (let type in this.highlighters) {
       if (this.highlighters[type]) {
         this.highlighters[type].finalize();

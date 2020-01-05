@@ -19,7 +19,7 @@ const prefDomain = "devtools.netmonitor.har.";
 
 
 const trace = {
-  log: function (...args) {
+  log(...args) {
   }
 };
 
@@ -40,7 +40,7 @@ const trace = {
 var HarAutomation = Class({
   
 
-  initialize: function (toolbox) {
+  initialize(toolbox) {
     this.toolbox = toolbox;
 
     let target = toolbox.target;
@@ -49,7 +49,7 @@ var HarAutomation = Class({
     });
   },
 
-  destroy: function () {
+  destroy() {
     if (this.collector) {
       this.collector.stop();
     }
@@ -61,7 +61,7 @@ var HarAutomation = Class({
 
   
 
-  startMonitoring: function (client, tabGrip, callback) {
+  startMonitoring(client, tabGrip, callback) {
     if (!client) {
       return;
     }
@@ -78,11 +78,11 @@ var HarAutomation = Class({
     this.tabWatcher.connect();
   },
 
-  pageLoadBegin: function (response) {
+  pageLoadBegin(response) {
     this.resetCollector();
   },
 
-  resetCollector: function () {
+  resetCollector() {
     if (this.collector) {
       this.collector.stop();
     }
@@ -107,7 +107,7 @@ var HarAutomation = Class({
 
 
 
-  pageLoadDone: function (response) {
+  pageLoadDone(response) {
     trace.log("HarAutomation.pageLoadDone; ", response);
 
     if (this.collector) {
@@ -117,7 +117,7 @@ var HarAutomation = Class({
     }
   },
 
-  autoExport: function () {
+  autoExport() {
     let autoExport = Services.prefs.getBoolPref(prefDomain +
       "enableAutoExportToFile");
 
@@ -139,7 +139,7 @@ var HarAutomation = Class({
   
 
 
-  triggerExport: function (data) {
+  triggerExport(data) {
     if (!data.fileName) {
       data.fileName = Services.prefs.getCharPref(prefDomain +
         "defaultFileName");
@@ -151,7 +151,7 @@ var HarAutomation = Class({
   
 
 
-  clear: function () {
+  clear() {
     this.resetCollector();
   },
 
@@ -161,7 +161,7 @@ var HarAutomation = Class({
 
 
 
-  executeExport: function (data) {
+  executeExport(data) {
     let items = this.collector.getItems();
     let form = this.toolbox.target.form;
     let title = form.title || form.url;
@@ -169,7 +169,7 @@ var HarAutomation = Class({
     let options = {
       getString: this.getString.bind(this),
       view: this,
-      items: items,
+      items,
     };
 
     options.defaultFileName = data.fileName;
@@ -199,7 +199,7 @@ var HarAutomation = Class({
   
 
 
-  getString: function (stringGrip) {
+  getString(stringGrip) {
     return this.webConsoleClient.getString(stringGrip);
   },
 });
@@ -216,12 +216,12 @@ function TabWatcher(toolbox, listener) {
 TabWatcher.prototype = {
   
 
-  connect: function () {
+  connect() {
     this.target.on("navigate", this.onTabNavigated);
     this.target.on("will-navigate", this.onTabNavigated);
   },
 
-  disconnect: function () {
+  disconnect() {
     if (!this.target) {
       return;
     }
@@ -240,7 +240,7 @@ TabWatcher.prototype = {
 
 
 
-  onTabNavigated: function (type, packet) {
+  onTabNavigated(type, packet) {
     switch (type) {
       case "will-navigate": {
         this.listener.pageLoadBegin(packet);

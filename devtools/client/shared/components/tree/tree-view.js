@@ -107,7 +107,7 @@ define(function (require, exports, module) {
       }))
     },
 
-    getDefaultProps: function () {
+    getDefaultProps() {
       return {
         object: null,
         renderRow: null,
@@ -118,14 +118,14 @@ define(function (require, exports, module) {
       };
     },
 
-    getInitialState: function () {
+    getInitialState() {
       return {
         expandedNodes: this.props.expandedNodes,
         columns: ensureDefaultColumn(this.props.columns)
       };
     },
 
-    componentWillReceiveProps: function (nextProps) {
+    componentWillReceiveProps(nextProps) {
       let { expandedNodes } = nextProps;
       this.setState(Object.assign({}, this.state, {
         expandedNodes,
@@ -134,7 +134,7 @@ define(function (require, exports, module) {
 
     
 
-    toggle: function (nodePath) {
+    toggle(nodePath) {
       let nodes = this.state.expandedNodes;
       if (this.isExpanded(nodePath)) {
         nodes.delete(nodePath);
@@ -148,13 +148,13 @@ define(function (require, exports, module) {
       }));
     },
 
-    isExpanded: function (nodePath) {
+    isExpanded(nodePath) {
       return this.state.expandedNodes.has(nodePath);
     },
 
     
 
-    onClickRow: function (nodePath, event) {
+    onClickRow(nodePath, event) {
       event.stopPropagation();
       this.toggle(nodePath);
     },
@@ -165,12 +165,12 @@ define(function (require, exports, module) {
 
 
 
-    onFilter: function (object) {
+    onFilter(object) {
       let onFilter = this.props.onFilter;
       return onFilter ? onFilter(object) : true;
     },
 
-    onSort: function (parent, children) {
+    onSort(parent, children) {
       let onSort = this.props.onSort;
       return onSort ? onSort(parent, children) : children;
     },
@@ -181,7 +181,7 @@ define(function (require, exports, module) {
 
 
 
-    getMembers: function (parent, level, path) {
+    getMembers(parent, level, path) {
       
       
       
@@ -223,15 +223,15 @@ define(function (require, exports, module) {
           
           name: provider.getLabel(child),
           
-          type: type,
+          type,
           
           rowClass: "treeRow-" + type,
           
-          level: level,
+          level,
           
-          hasChildren: hasChildren,
+          hasChildren,
           
-          value: value,
+          value,
           
           open: this.isExpanded(nodePath),
           
@@ -245,7 +245,7 @@ define(function (require, exports, module) {
     
 
 
-    renderRows: function (parent, level = 0, path = "") {
+    renderRows(parent, level = 0, path = "") {
       let rows = [];
       let decorator = this.props.decorator;
       let renderRow = this.props.renderRow || TreeRow;
@@ -266,7 +266,7 @@ define(function (require, exports, module) {
 
         let props = Object.assign({}, this.props, {
           key: member.path,
-          member: member,
+          member,
           columns: this.state.columns,
           onClick: this.onClickRow.bind(this, member.path)
         });
@@ -295,7 +295,7 @@ define(function (require, exports, module) {
       return rows;
     },
 
-    render: function () {
+    render() {
       let root = this.props.object;
       let classNames = ["treeTable"];
 

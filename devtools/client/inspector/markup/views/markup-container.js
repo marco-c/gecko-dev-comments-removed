@@ -42,7 +42,7 @@ MarkupContainer.prototype = {
 
 
 
-  initialize: function (markupView, node, templateID) {
+  initialize(markupView, node, templateID) {
     this.markup = markupView;
     this.node = node;
     this.undo = this.markup.undo;
@@ -78,11 +78,11 @@ MarkupContainer.prototype = {
     this.updateIsDisplayed();
   },
 
-  toString: function () {
+  toString() {
     return "[MarkupContainer for " + this.node + "]";
   },
 
-  isPreviewable: function () {
+  isPreviewable() {
     if (this.node.tagName && !this.node.isPseudoElement) {
       let tagName = this.node.tagName.toLowerCase();
       let srcAttr = this.editor.getAttributeElement("src");
@@ -101,7 +101,7 @@ MarkupContainer.prototype = {
 
 
 
-  updateIsDisplayed: function () {
+  updateIsDisplayed() {
     this.elt.classList.remove("not-displayed");
     if (!this.node.isDisplayed || this.node.hidden) {
       this.elt.classList.add("not-displayed");
@@ -161,7 +161,7 @@ MarkupContainer.prototype = {
 
 
 
-  clearFocus: function () {
+  clearFocus() {
     if (!this.canFocus) {
       return;
     }
@@ -205,7 +205,7 @@ MarkupContainer.prototype = {
     return this.canExpand && !this.mustExpand;
   },
 
-  updateExpander: function () {
+  updateExpander() {
     if (!this.expander) {
       return;
     }
@@ -228,7 +228,7 @@ MarkupContainer.prototype = {
 
 
 
-  setChildrenRole: function () {
+  setChildrenRole() {
     this.children.setAttribute("role",
       this.hasChildren ? "group" : "presentation");
   },
@@ -236,7 +236,7 @@ MarkupContainer.prototype = {
   
 
 
-  updateLevel: function () {
+  updateLevel() {
     
     let currentLevel = this.tagLine.getAttribute("aria-level");
     let newLevel = this.level;
@@ -256,7 +256,7 @@ MarkupContainer.prototype = {
 
 
 
-  getChildContainers: function () {
+  getChildContainers() {
     if (!this.hasChildren) {
       return null;
     }
@@ -272,7 +272,7 @@ MarkupContainer.prototype = {
     return !this.elt.classList.contains("collapsed");
   },
 
-  setExpanded: function (value) {
+  setExpanded(value) {
     if (!this.expander) {
       return;
     }
@@ -325,7 +325,7 @@ MarkupContainer.prototype = {
     }
   },
 
-  parentContainer: function () {
+  parentContainer() {
     return this.elt.parentNode ? this.elt.parentNode.container : null;
   },
 
@@ -372,7 +372,7 @@ MarkupContainer.prototype = {
   
 
 
-  isDraggable: function () {
+  isDraggable() {
     let tagName = this.node.tagName && this.node.tagName.toLowerCase();
 
     return !this.node.isPseudoElement &&
@@ -393,7 +393,7 @@ MarkupContainer.prototype = {
 
 
 
-  _wrapMoveFocus: function (current, back) {
+  _wrapMoveFocus(current, back) {
     let elms = this.focusableElms;
     let next;
     if (back) {
@@ -408,7 +408,7 @@ MarkupContainer.prototype = {
     return next;
   },
 
-  _onKeyDown: function (event) {
+  _onKeyDown(event) {
     let {target, keyCode, shiftKey} = event;
     let isInput = this.markup._isInputOrTextarea(target);
 
@@ -455,7 +455,7 @@ MarkupContainer.prototype = {
     event.stopPropagation();
   },
 
-  _onMouseDown: function (event) {
+  _onMouseDown(event) {
     let {target, button, metaKey, ctrlKey} = event;
     let isLeftClick = button === 0;
     let isMiddleClick = button === 1;
@@ -524,7 +524,7 @@ MarkupContainer.prototype = {
   
 
 
-  _onMouseMove: function (event) {
+  _onMouseMove(event) {
     
     
     let initialDiff = Math.abs(event.pageY - this._dragStartY);
@@ -559,7 +559,7 @@ MarkupContainer.prototype = {
     }
   },
 
-  cancelDragging: function () {
+  cancelDragging() {
     if (!this.isDragging) {
       return;
     }
@@ -573,7 +573,7 @@ MarkupContainer.prototype = {
 
 
 
-  flashMutation: function () {
+  flashMutation() {
     if (!this.selected) {
       flashElementOn(this.tagState, this.editor.elt);
       if (this._flashMutationTimer) {
@@ -651,7 +651,7 @@ MarkupContainer.prototype = {
 
 
 
-  update: function () {
+  update() {
     if (this.node.pseudoClassLocks.length) {
       this.elt.classList.add("pseudoclass-locked");
     } else {
@@ -666,7 +666,7 @@ MarkupContainer.prototype = {
   
 
 
-  focus: function () {
+  focus() {
     
     let focusable = this.editor.elt.querySelector("[tabindex='0']");
     if (focusable) {
@@ -674,7 +674,7 @@ MarkupContainer.prototype = {
     }
   },
 
-  _onToggle: function (event) {
+  _onToggle(event) {
     
     if (event.target.dataset.event) {
       event.stopPropagation();
@@ -692,7 +692,7 @@ MarkupContainer.prototype = {
 
 
 
-  destroy: function () {
+  destroy() {
     
     this.elt.removeEventListener("mousedown", this._onMouseDown, false);
     this.elt.removeEventListener("dblclick", this._onToggle, false);

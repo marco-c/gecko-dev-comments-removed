@@ -154,7 +154,7 @@ var NetMonitorController = {
 
 
 
-  isConnected: function () {
+  isConnected() {
     return !!this._connected;
   },
 
@@ -162,7 +162,7 @@ var NetMonitorController = {
 
 
 
-  getCurrentActivity: function () {
+  getCurrentActivity() {
     return this._currentActivity || ACTIVITY_TYPE.NONE;
   },
 
@@ -176,7 +176,7 @@ var NetMonitorController = {
 
 
 
-  triggerActivity: function (type) {
+  triggerActivity(type) {
     
     let standBy = () => {
       this._currentActivity = ACTIVITY_TYPE.NONE;
@@ -255,7 +255,7 @@ var NetMonitorController = {
 
 
 
-  inspectRequest: function (requestId) {
+  inspectRequest(requestId) {
     
     
     let deferred = promise.defer();
@@ -385,7 +385,7 @@ TargetEventsHandler.prototype = {
   
 
 
-  connect: function () {
+  connect() {
     dumpn("TargetEventsHandler is connecting...");
     this.target.on("close", this._onTabDetached);
     this.target.on("navigate", this._onTabNavigated);
@@ -395,7 +395,7 @@ TargetEventsHandler.prototype = {
   
 
 
-  disconnect: function () {
+  disconnect() {
     if (!this.target) {
       return;
     }
@@ -413,7 +413,7 @@ TargetEventsHandler.prototype = {
 
 
 
-  _onTabNavigated: function (type, packet) {
+  _onTabNavigated(type, packet) {
     switch (type) {
       case "will-navigate": {
         
@@ -441,7 +441,7 @@ TargetEventsHandler.prototype = {
   
 
 
-  _onTabDetached: function () {
+  _onTabDetached() {
     NetMonitorController.shutdownNetMonitor();
   }
 };
@@ -478,7 +478,7 @@ NetworkEventsHandler.prototype = {
   
 
 
-  connect: function () {
+  connect() {
     dumpn("NetworkEventsHandler is connecting...");
     this.webConsoleClient.on("networkEvent", this._onNetworkEvent);
     this.webConsoleClient.on("networkEventUpdate", this._onNetworkEventUpdate);
@@ -493,7 +493,7 @@ NetworkEventsHandler.prototype = {
   
 
 
-  disconnect: function () {
+  disconnect() {
     if (!this.client) {
       return;
     }
@@ -509,7 +509,7 @@ NetworkEventsHandler.prototype = {
   
 
 
-  _displayCachedEvents: function () {
+  _displayCachedEvents() {
     for (let cachedEvent of this.webConsoleClient.getNetworkEvents()) {
       
       this._onNetworkEvent("networkEvent", cachedEvent);
@@ -529,7 +529,7 @@ NetworkEventsHandler.prototype = {
 
 
 
-  _onDocLoadingMarker: function (marker) {
+  _onDocLoadingMarker(marker) {
     window.emit(EVENTS.TIMELINE_EVENT, marker);
     gStore.dispatch(Actions.addTimingMarker(marker));
   },
@@ -542,7 +542,7 @@ NetworkEventsHandler.prototype = {
 
 
 
-  _onNetworkEvent: function (type, networkInfo) {
+  _onNetworkEvent(type, networkInfo) {
     let { actor,
       startedDateTime,
       request: { method, url },
@@ -568,7 +568,7 @@ NetworkEventsHandler.prototype = {
 
 
 
-  _onNetworkEventUpdate: function (type, { packet, networkInfo }) {
+  _onNetworkEventUpdate(type, { packet, networkInfo }) {
     let { actor } = networkInfo;
 
     switch (packet.updateType) {
@@ -639,7 +639,7 @@ NetworkEventsHandler.prototype = {
 
 
 
-  _onRequestHeaders: function (response) {
+  _onRequestHeaders(response) {
     NetMonitorView.RequestsMenu.updateRequest(response.from, {
       requestHeaders: response
     }).then(() => {
@@ -653,7 +653,7 @@ NetworkEventsHandler.prototype = {
 
 
 
-  _onRequestCookies: function (response) {
+  _onRequestCookies(response) {
     NetMonitorView.RequestsMenu.updateRequest(response.from, {
       requestCookies: response
     }).then(() => {
@@ -667,7 +667,7 @@ NetworkEventsHandler.prototype = {
 
 
 
-  _onRequestPostData: function (response) {
+  _onRequestPostData(response) {
     NetMonitorView.RequestsMenu.updateRequest(response.from, {
       requestPostData: response
     }).then(() => {
@@ -681,7 +681,7 @@ NetworkEventsHandler.prototype = {
 
 
 
-  _onSecurityInfo: function (response) {
+  _onSecurityInfo(response) {
     NetMonitorView.RequestsMenu.updateRequest(response.from, {
       securityInfo: response.securityInfo
     }).then(() => {
@@ -695,7 +695,7 @@ NetworkEventsHandler.prototype = {
 
 
 
-  _onResponseHeaders: function (response) {
+  _onResponseHeaders(response) {
     NetMonitorView.RequestsMenu.updateRequest(response.from, {
       responseHeaders: response
     }).then(() => {
@@ -709,7 +709,7 @@ NetworkEventsHandler.prototype = {
 
 
 
-  _onResponseCookies: function (response) {
+  _onResponseCookies(response) {
     NetMonitorView.RequestsMenu.updateRequest(response.from, {
       responseCookies: response
     }).then(() => {
@@ -723,7 +723,7 @@ NetworkEventsHandler.prototype = {
 
 
 
-  _onResponseContent: function (response) {
+  _onResponseContent(response) {
     NetMonitorView.RequestsMenu.updateRequest(response.from, {
       responseContent: response
     }).then(() => {
@@ -737,7 +737,7 @@ NetworkEventsHandler.prototype = {
 
 
 
-  _onEventTimings: function (response) {
+  _onEventTimings(response) {
     NetMonitorView.RequestsMenu.updateRequest(response.from, {
       eventTimings: response
     }).then(() => {
@@ -756,7 +756,7 @@ NetworkEventsHandler.prototype = {
 
 
 
-  getString: function (stringGrip) {
+  getString(stringGrip) {
     
     
     if (typeof stringGrip === "string") {
@@ -783,7 +783,7 @@ NetMonitorController.NetworkEventsHandler = new NetworkEventsHandler();
 
 Object.defineProperties(window, {
   "gNetwork": {
-    get: function () {
+    get() {
       return NetMonitorController.NetworkEventsHandler;
     },
     configurable: true

@@ -55,7 +55,7 @@ TextProperty.prototype = {
 
 
 
-  updateEditor: function () {
+  updateEditor() {
     if (this.editor) {
       this.editor.update();
     }
@@ -64,7 +64,7 @@ TextProperty.prototype = {
   
 
 
-  updateComputed: function () {
+  updateComputed() {
     if (!this.name) {
       return;
     }
@@ -101,7 +101,7 @@ TextProperty.prototype = {
 
 
 
-  set: function (prop) {
+  set(prop) {
     let changed = false;
     for (let item of ["name", "value", "priority", "enabled"]) {
       if (this[item] !== prop[item]) {
@@ -115,7 +115,7 @@ TextProperty.prototype = {
     }
   },
 
-  setValue: function (value, priority, force = false) {
+  setValue(value, priority, force = false) {
     let store = this.rule.elementStyle.store;
 
     if (this.editor && value !== this.editor.committed.value || force) {
@@ -130,14 +130,14 @@ TextProperty.prototype = {
 
 
 
-  noticeNewValue: function (value) {
+  noticeNewValue(value) {
     if (value !== this.value) {
       this.value = value;
       this.updateEditor();
     }
   },
 
-  setName: function (name) {
+  setName(name) {
     let store = this.rule.elementStyle.store;
 
     if (name !== this.name) {
@@ -149,19 +149,19 @@ TextProperty.prototype = {
     this.updateEditor();
   },
 
-  setEnabled: function (value) {
+  setEnabled(value) {
     this.rule.setPropertyEnabled(this, value);
     this.updateEditor();
   },
 
-  remove: function () {
+  remove() {
     this.rule.removeProperty(this);
   },
 
   
 
 
-  stringifyProperty: function () {
+  stringifyProperty() {
     
     let declaration = this.name + ": " + this.editor.valueSpan.textContent +
       ";";
@@ -179,7 +179,7 @@ TextProperty.prototype = {
 
 
 
-  isKnownProperty: function () {
+  isKnownProperty() {
     return this.cssProperties.isKnown(this.name);
   },
 
@@ -189,7 +189,7 @@ TextProperty.prototype = {
 
 
 
-  isValid: function () {
+  isValid() {
     
     
     

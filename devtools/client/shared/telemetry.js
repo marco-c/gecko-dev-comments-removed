@@ -206,7 +206,7 @@ Telemetry.prototype = {
 
 
 
-  toolOpened: function (id) {
+  toolOpened(id) {
     let charts = this._histograms[id] || this._histograms.custom;
 
     if (charts.histogram) {
@@ -226,7 +226,7 @@ Telemetry.prototype = {
     this.toolOpened(id);
   },
 
-  toolClosed: function (id) {
+  toolClosed(id) {
     let charts = this._histograms[id];
 
     if (!charts || !charts.timerHistogram) {
@@ -242,7 +242,7 @@ Telemetry.prototype = {
 
 
 
-  startTimer: function (histogramId) {
+  startTimer(histogramId) {
     this._timers.set(histogramId, new Date());
   },
 
@@ -254,7 +254,7 @@ Telemetry.prototype = {
 
 
 
-  stopTimer: function (histogramId, key) {
+  stopTimer(histogramId, key) {
     let startTime = this._timers.get(histogramId);
     if (startTime) {
       let time = (new Date() - startTime) / 1000;
@@ -275,7 +275,7 @@ Telemetry.prototype = {
 
 
 
-  log: function (histogramId, value) {
+  log(histogramId, value) {
     if (histogramId) {
       try {
         let histogram = Services.telemetry.getHistogramById(histogramId);
@@ -297,7 +297,7 @@ Telemetry.prototype = {
 
 
 
-  logKeyed: function (histogramId, key, value) {
+  logKeyed(histogramId, key, value) {
     if (histogramId) {
       try {
         let histogram = Services.telemetry.getKeyedHistogramById(histogramId);
@@ -316,7 +316,7 @@ Telemetry.prototype = {
 
 
 
-  logOncePerBrowserVersion: function (perUserHistogram, value) {
+  logOncePerBrowserVersion(perUserHistogram, value) {
     let currentVersion = Services.appinfo.version;
     let latest = Services.prefs.getCharPref(TOOLS_OPENED_PREF);
     let latestObj = JSON.parse(latest);
@@ -332,7 +332,7 @@ Telemetry.prototype = {
     }
   },
 
-  destroy: function () {
+  destroy() {
     for (let histogramId of this._timers.keys()) {
       this.stopTimer(histogramId);
     }

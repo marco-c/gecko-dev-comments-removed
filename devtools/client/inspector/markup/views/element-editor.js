@@ -123,7 +123,7 @@ ElementEditor.prototype = {
     }
   },
 
-  flashAttribute: function (attrName) {
+  flashAttribute(attrName) {
     if (this.animationTimers[attrName]) {
       clearTimeout(this.animationTimers[attrName]);
     }
@@ -143,7 +143,7 @@ ElementEditor.prototype = {
 
 
 
-  getInfoAtNode: function (node) {
+  getInfoAtNode(node) {
     if (!node) {
       return null;
     }
@@ -166,7 +166,7 @@ ElementEditor.prototype = {
   
 
 
-  update: function () {
+  update() {
     let nodeAttributes = this.node.attributes || [];
 
     
@@ -215,7 +215,7 @@ ElementEditor.prototype = {
   
 
 
-  updateTextEditor: function () {
+  updateTextEditor() {
     let node = this.node.inlineTextChild;
 
     if (this.textEditor && this.textEditor.node != node) {
@@ -237,7 +237,7 @@ ElementEditor.prototype = {
     }
   },
 
-  _startModifyingAttributes: function () {
+  _startModifyingAttributes() {
     return this.node.startModifyingAttributes();
   },
 
@@ -248,7 +248,7 @@ ElementEditor.prototype = {
 
 
 
-  getAttributeElement: function (attrName) {
+  getAttributeElement(attrName) {
     return this.attrList.querySelector(
       ".attreditor[data-attr=" + CSS.escape(attrName) + "] .attr-value");
   },
@@ -259,7 +259,7 @@ ElementEditor.prototype = {
 
 
 
-  removeAttribute: function (attrName) {
+  removeAttribute(attrName) {
     let attr = this.attrElements.get(attrName);
     if (attr) {
       this.attrElements.delete(attrName);
@@ -267,7 +267,7 @@ ElementEditor.prototype = {
     }
   },
 
-  _createAttribute: function (attribute, before = null) {
+  _createAttribute(attribute, before = null) {
     
     let data = {
       attrName: attribute.name,
@@ -302,7 +302,7 @@ ElementEditor.prototype = {
       trigger: "dblclick",
       stopOnReturn: true,
       selectAll: false,
-      initial: initial,
+      initial,
       multiline: true,
       maxWidth: () => getAutocompleteMaxWidth(inner, this.container.elt),
       contentType: InplaceEditor.CONTENT_TYPES.CSS_MIXED,
@@ -410,7 +410,7 @@ ElementEditor.prototype = {
 
 
 
-  _applyAttributes: function (value, attrNode, doMods, undoMods) {
+  _applyAttributes(value, attrNode, doMods, undoMods) {
     let attrs = parseAttributeValues(value, this.doc);
     for (let attr of attrs) {
       
@@ -424,7 +424,7 @@ ElementEditor.prototype = {
 
 
 
-  _saveAttribute: function (name, undoMods) {
+  _saveAttribute(name, undoMods) {
     let node = this.node;
     if (node.hasAttribute(name)) {
       let oldValue = node.getAttribute(name);
@@ -439,7 +439,7 @@ ElementEditor.prototype = {
 
 
 
-  refocusOnEdit: function (attrName, attrNode, direction) {
+  refocusOnEdit(attrName, attrNode, direction) {
     
     
     if (this._editedAttributeObserver) {
@@ -534,7 +534,7 @@ ElementEditor.prototype = {
   
 
 
-  onTagEdit: function (newTagName, isCommit) {
+  onTagEdit(newTagName, isCommit) {
     if (!isCommit ||
         newTagName.toLowerCase() === this.node.tagName.toLowerCase() ||
         !("editTagName" in this.markup.walker)) {
@@ -550,7 +550,7 @@ ElementEditor.prototype = {
     });
   },
 
-  destroy: function () {
+  destroy() {
     for (let key in this.animationTimers) {
       clearTimeout(this.animationTimers[key]);
     }

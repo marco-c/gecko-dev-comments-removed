@@ -96,7 +96,7 @@ StreamCopier._nextId = 0;
 
 StreamCopier.prototype = {
 
-  copy: function () {
+  copy() {
     
     
     Services.tm.currentThread.dispatch(() => {
@@ -109,7 +109,7 @@ StreamCopier.prototype = {
     return this;
   },
 
-  _copy: function () {
+  _copy() {
     let bytesAvailable = this.input.available();
     let amountToCopy = Math.min(bytesAvailable, this._amountLeft);
     this._debug("Trying to copy: " + amountToCopy);
@@ -142,14 +142,14 @@ StreamCopier.prototype = {
     this.input.asyncWait(this, 0, 0, Services.tm.currentThread);
   },
 
-  _emitProgress: function () {
+  _emitProgress() {
     this.emit("progress", {
       bytesSent: this._length - this._amountLeft,
       totalBytes: this._length
     });
   },
 
-  _flush: function () {
+  _flush() {
     try {
       this.output.flush();
     } catch (e) {
@@ -166,7 +166,7 @@ StreamCopier.prototype = {
     this._deferred.resolve();
   },
 
-  _destroy: function () {
+  _destroy() {
     this._destroy = null;
     this._copy = null;
     this._flush = null;
@@ -175,16 +175,16 @@ StreamCopier.prototype = {
   },
 
   
-  onInputStreamReady: function () {
+  onInputStreamReady() {
     this._streamReadyCallback();
   },
 
   
-  onOutputStreamReady: function () {
+  onOutputStreamReady() {
     this._streamReadyCallback();
   },
 
-  _debug: function (msg) {
+  _debug(msg) {
     
     
     dumpv("Copier: " + this._id + " " + msg);
@@ -241,6 +241,6 @@ function delimitedRead(stream, delimiter, count) {
 }
 
 module.exports = {
-  copyStream: copyStream,
-  delimitedRead: delimitedRead
+  copyStream,
+  delimitedRead
 };

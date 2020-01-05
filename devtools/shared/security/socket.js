@@ -403,7 +403,7 @@ SocketListener.prototype = {
   
 
 
-  _validateOptions: function () {
+  _validateOptions() {
     if (this.portOrPath === null) {
       throw new Error("Must set a port / path to listen on.");
     }
@@ -419,7 +419,7 @@ SocketListener.prototype = {
   
 
 
-  open: function () {
+  open() {
     this._validateOptions();
     DebuggerServer._addListener(this);
 
@@ -455,7 +455,7 @@ SocketListener.prototype = {
     });
   },
 
-  _advertise: function () {
+  _advertise() {
     if (!this.discoverable || !this.port) {
       return;
     }
@@ -470,7 +470,7 @@ SocketListener.prototype = {
     discovery.addService("devtools", advertisement);
   },
 
-  _createSocketInstance: function () {
+  _createSocketInstance() {
     if (this.encryption) {
       return Cc["@mozilla.org/network/tls-server-socket;1"]
              .createInstance(Ci.nsITLSServerSocket);
@@ -494,7 +494,7 @@ SocketListener.prototype = {
 
 
 
-  close: function () {
+  close() {
     if (this.discoverable && this.port) {
       discovery.removeService("devtools");
     }
@@ -549,7 +549,7 @@ SocketListener.prototype = {
     new ServerSocketConnection(this, socketTransport);
   }, "SocketListener.onSocketAccepted"),
 
-  onStopListening: function (socket, status) {
+  onStopListening(socket, status) {
     dumpn("onStopListening, status: " + status);
   }
 

@@ -22,7 +22,7 @@ ToolbarView.prototype = {
   
 
 
-  initialize: function (store) {
+  initialize(store) {
     dumpn("Initializing the ToolbarView");
 
     this._toolbarNode = $("#react-toolbar-hook");
@@ -36,7 +36,7 @@ ToolbarView.prototype = {
   
 
 
-  destroy: function () {
+  destroy() {
     dumpn("Destroying the ToolbarView");
 
     ReactDOM.unmountComponentAtNode(this._toolbarNode);

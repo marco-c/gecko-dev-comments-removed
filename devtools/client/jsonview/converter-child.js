@@ -71,15 +71,15 @@ Converter.prototype = {
 
 
 
-  convert: function (fromStream, fromType, toType, ctx) {
+  convert(fromStream, fromType, toType, ctx) {
     return fromStream;
   },
 
-  asyncConvertData: function (fromType, toType, listener, ctx) {
+  asyncConvertData(fromType, toType, listener, ctx) {
     this.listener = listener;
   },
 
-  onDataAvailable: function (request, context, inputStream, offset, count) {
+  onDataAvailable(request, context, inputStream, offset, count) {
     
     let is = Cc["@mozilla.org/intl/converter-input-stream;1"]
       .createInstance(Ci.nsIConverterInputStream);
@@ -98,7 +98,7 @@ Converter.prototype = {
     }
   },
 
-  onStartRequest: function (request, context) {
+  onStartRequest(request, context) {
     this.data = "";
     this.uri = request.QueryInterface(Ci.nsIChannel).URI.spec;
 
@@ -122,7 +122,7 @@ Converter.prototype = {
 
 
 
-  onStopRequest: function (request, context, statusCode) {
+  onStopRequest(request, context, statusCode) {
     let headers = {
       response: [],
       request: []
@@ -152,14 +152,14 @@ Converter.prototype = {
     
     if (request instanceof Ci.nsIHttpChannel) {
       request.visitResponseHeaders({
-        visitHeader: function (name, value) {
-          headers.response.push({name: name, value: value});
+        visitHeader(name, value) {
+          headers.response.push({name, value});
         }
       });
 
       request.visitRequestHeaders({
-        visitHeader: function (name, value) {
-          headers.request.push({name: name, value: value});
+        visitHeader(name, value) {
+          headers.request.push({name, value});
         }
       });
     }
@@ -200,7 +200,7 @@ Converter.prototype = {
     this.listener = null;
   },
 
-  htmlEncode: function (t) {
+  htmlEncode(t) {
     return t !== null ? t.toString()
       .replace(/&/g, "&amp;")
       .replace(/"/g, "&quot;")
@@ -208,7 +208,7 @@ Converter.prototype = {
       .replace(/>/g, "&gt;") : "";
   },
 
-  toHTML: function (json, headers, title) {
+  toHTML(json, headers, title) {
     let themeClassName = "theme-" + JsonViewUtils.getCurrentTheme();
     let clientBaseUrl = "resource://devtools/client/";
     let baseUrl = clientBaseUrl + "jsonview/";
@@ -247,7 +247,7 @@ Converter.prototype = {
       "</body></html>";
   },
 
-  toErrorPage: function (error, data, uri) {
+  toErrorPage(error, data, uri) {
     
     data = data.replace("\u0000", "\uFFFD");
 
@@ -275,7 +275,7 @@ Converter.prototype = {
 
   
 
-  onContentMessage: function (e) {
+  onContentMessage(e) {
     
     let win = NetworkHelper.getWindowForRequest(this.channel);
     if (win != e.target) {
@@ -298,7 +298,7 @@ Converter.prototype = {
     }
   },
 
-  copyHeaders: function (headers) {
+  copyHeaders(headers) {
     let value = "";
     let eol = (Services.appinfo.OS !== "WINNT") ? "\n" : "\r\n";
 
@@ -321,7 +321,7 @@ Converter.prototype = {
 };
 
 const Factory = {
-  createInstance: function (outer, iid) {
+  createInstance(outer, iid) {
     if (outer) {
       throw Cr.NS_ERROR_NO_AGGREGATION;
     }
@@ -350,6 +350,6 @@ function unregister() {
 }
 
 exports.JsonViewService = {
-  register: register,
-  unregister: unregister
+  register,
+  unregister
 };

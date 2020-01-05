@@ -22,7 +22,7 @@ function FontInspector(inspector, window) {
 }
 
 FontInspector.prototype = {
-  init: function () {
+  init() {
     this.update = this.update.bind(this);
     this.onNewNode = this.onNewNode.bind(this);
     this.onThemeChanged = this.onThemeChanged.bind(this);
@@ -46,7 +46,7 @@ FontInspector.prototype = {
   
 
 
-  isActive: function () {
+  isActive() {
     return this.inspector.sidebar &&
            this.inspector.sidebar.getCurrentTabID() == "fontinspector";
   },
@@ -54,7 +54,7 @@ FontInspector.prototype = {
   
 
 
-  destroy: function () {
+  destroy() {
     this.chromeDoc = null;
     this.inspector.sidebar.off("fontinspector-selected", this.onNewNode);
     this.inspector.selection.off("new-node-front", this.onNewNode);
@@ -73,7 +73,7 @@ FontInspector.prototype = {
   
 
 
-  onNewNode: function () {
+  onNewNode() {
     if (this.isActive() &&
         this.inspector.selection.isConnected() &&
         this.inspector.selection.isElementNode()) {
@@ -89,7 +89,7 @@ FontInspector.prototype = {
 
 
 
-  getPreviewText: function () {
+  getPreviewText() {
     let inputText = this.previewInput.value.trim();
     if (inputText === "") {
       return DEFAULT_PREVIEW_TEXT;
@@ -101,7 +101,7 @@ FontInspector.prototype = {
   
 
 
-  previewTextChanged: function () {
+  previewTextChanged() {
     if (this._previewUpdateTimeout) {
       clearTimeout(this._previewUpdateTimeout);
     }
@@ -114,7 +114,7 @@ FontInspector.prototype = {
   
 
 
-  onThemeChanged: function (event, frame) {
+  onThemeChanged(event, frame) {
     if (frame === this.chromeDoc.defaultView) {
       this.update(this._lastUpdateShowedAllFonts);
     }
@@ -123,7 +123,7 @@ FontInspector.prototype = {
   
 
 
-  dim: function () {
+  dim() {
     let panel = this.chromeDoc.getElementById("sidebar-panel-fontinspector");
     panel.classList.add("dim");
     this.clear();
@@ -132,7 +132,7 @@ FontInspector.prototype = {
   
 
 
-  undim: function () {
+  undim() {
     let panel = this.chromeDoc.getElementById("sidebar-panel-fontinspector");
     panel.classList.remove("dim");
   },
@@ -140,7 +140,7 @@ FontInspector.prototype = {
   
 
 
-  clear: function () {
+  clear() {
     this.chromeDoc.querySelector("#all-fonts").innerHTML = "";
   },
 
@@ -204,7 +204,7 @@ FontInspector.prototype = {
   
 
 
-  render: function (font) {
+  render(font) {
     let s = this.chromeDoc.querySelector("#font-template > section");
     s = s.cloneNode(true);
 
@@ -242,7 +242,7 @@ FontInspector.prototype = {
   
 
 
-  showAll: function () {
+  showAll() {
     this.update(true);
   },
 };

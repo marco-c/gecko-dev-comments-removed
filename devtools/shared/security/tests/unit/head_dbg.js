@@ -47,7 +47,7 @@ function scriptErrorFlagsToKind(flags) {
 
 
 var listener = {
-  observe: function (message) {
+  observe(message) {
     let string;
     try {
       message.QueryInterface(Ci.nsIScriptError);

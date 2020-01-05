@@ -150,7 +150,7 @@ var PerformanceController = {
   
 
 
-  destroy: function () {
+  destroy() {
     this._telemetry.destroy();
     this._prefs.off("pref-changed", this._onPrefChanged);
     this._prefs.unregisterObserver();
@@ -178,21 +178,21 @@ var PerformanceController = {
 
 
 
-  enableFrontEventListeners: function () {
+  enableFrontEventListeners() {
     gFront.on("*", this._onFrontEvent);
   },
 
   
 
 
-  disableFrontEventListeners: function () {
+  disableFrontEventListeners() {
     gFront.off("*", this._onFrontEvent);
   },
 
   
 
 
-  getTheme: function () {
+  getTheme() {
     return Services.prefs.getCharPref("devtools.theme");
   },
 
@@ -204,7 +204,7 @@ var PerformanceController = {
 
 
 
-  getOption: function (prefName) {
+  getOption(prefName) {
     return ToolbarView.optionsView.getPref(prefName);
   },
 
@@ -215,7 +215,7 @@ var PerformanceController = {
 
 
 
-  getPref: function (prefName) {
+  getPref(prefName) {
     return this._prefs[prefName];
   },
 
@@ -226,7 +226,7 @@ var PerformanceController = {
 
 
 
-  setPref: function (prefName, prefValue) {
+  setPref(prefName, prefValue) {
     this._prefs[prefName] = prefValue;
   },
 
@@ -356,7 +356,7 @@ var PerformanceController = {
 
 
 
-  setCurrentRecording: function (recording) {
+  setCurrentRecording(recording) {
     if (this._currentRecording !== recording) {
       this._currentRecording = recording;
       this.emit(EVENTS.RECORDING_SELECTED, recording);
@@ -367,7 +367,7 @@ var PerformanceController = {
 
 
 
-  getCurrentRecording: function () {
+  getCurrentRecording() {
     return this._currentRecording;
   },
 
@@ -375,7 +375,7 @@ var PerformanceController = {
 
 
 
-  getLatestManualRecording: function () {
+  getLatestManualRecording() {
     for (let i = this._recordings.length - 1; i >= 0; i--) {
       let model = this._recordings[i];
       if (!model.isConsole() && !model.isImported()) {
@@ -389,7 +389,7 @@ var PerformanceController = {
 
 
 
-  _onRecordingSelectFromView: function (_, recording) {
+  _onRecordingSelectFromView(_, recording) {
     this.setCurrentRecording(recording);
   },
 
@@ -397,14 +397,14 @@ var PerformanceController = {
 
 
 
-  _onPrefChanged: function (_, prefName, prefValue) {
+  _onPrefChanged(_, prefName, prefValue) {
     this.emit(EVENTS.PREF_CHANGED, prefName, prefValue);
   },
 
   
 
 
-  _onThemeChanged: function () {
+  _onThemeChanged() {
     let newValue = Services.prefs.getCharPref("devtools.theme");
     this.emit(EVENTS.THEME_CHANGED, newValue);
   },
@@ -412,7 +412,7 @@ var PerformanceController = {
   
 
 
-  _onFrontEvent: function (eventName, ...data) {
+  _onFrontEvent(eventName, ...data) {
     switch (eventName) {
       case "profiler-status":
         let [profilerStatus] = data;
@@ -433,7 +433,7 @@ var PerformanceController = {
 
 
 
-  _addRecordingIfUnknown: function (recording) {
+  _addRecordingIfUnknown(recording) {
     if (this._recordings.indexOf(recording) === -1) {
       this._recordings.push(recording);
       this.emit(EVENTS.RECORDING_ADDED, recording);
@@ -444,28 +444,28 @@ var PerformanceController = {
 
 
 
-  getBufferUsageForRecording: function (recording) {
+  getBufferUsageForRecording(recording) {
     return gFront.getBufferUsageForRecording(recording);
   },
 
   
 
 
-  isRecording: function () {
+  isRecording() {
     return this._recordings.some(r => r.isRecording());
   },
 
   
 
 
-  getRecordings: function () {
+  getRecordings() {
     return this._recordings;
   },
 
   
 
 
-  getTraits: function () {
+  getTraits() {
     return gFront.traits;
   },
 
@@ -480,7 +480,7 @@ var PerformanceController = {
 
 
 
-  isFeatureSupported: function (features) {
+  isFeatureSupported(features) {
     if (!features) {
       return true;
     }
@@ -502,7 +502,7 @@ var PerformanceController = {
 
 
 
-  populateWithRecordings: function (recordings = []) {
+  populateWithRecordings(recordings = []) {
     for (let recording of recordings) {
       PerformanceController._addRecordingIfUnknown(recording);
     }
@@ -516,7 +516,7 @@ var PerformanceController = {
 
 
 
-  getMultiprocessStatus: function () {
+  getMultiprocessStatus() {
     
     
     
@@ -555,7 +555,7 @@ var PerformanceController = {
 
 
 
-  _setMultiprocessAttributes: function () {
+  _setMultiprocessAttributes() {
     let { enabled, supported } = this.getMultiprocessStatus();
     if (!enabled && supported) {
       $("#performance-view").setAttribute("e10s", "disabled");
@@ -568,7 +568,7 @@ var PerformanceController = {
   
 
 
-  _pipe: function (eventName, ...data) {
+  _pipe(eventName, ...data) {
     this.emit(eventName, ...data);
   },
 

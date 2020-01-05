@@ -20,7 +20,7 @@ function Keyframes() {
 exports.Keyframes = Keyframes;
 
 Keyframes.prototype = {
-  init: function (containerEl) {
+  init(containerEl) {
     this.containerEl = containerEl;
 
     this.keyframesEl = createNode({
@@ -31,13 +31,13 @@ Keyframes.prototype = {
     this.containerEl.addEventListener("click", this.onClick);
   },
 
-  destroy: function () {
+  destroy() {
     this.containerEl.removeEventListener("click", this.onClick);
     this.keyframesEl.remove();
     this.containerEl = this.keyframesEl = this.animation = null;
   },
 
-  render: function ({keyframes, propertyName, animation}) {
+  render({keyframes, propertyName, animation}) {
     this.keyframes = keyframes;
     this.propertyName = propertyName;
     this.animation = animation;
@@ -63,7 +63,7 @@ Keyframes.prototype = {
     }
   },
 
-  onClick: function (e) {
+  onClick(e) {
     
     if (!e.target.classList.contains("frame")) {
       return;

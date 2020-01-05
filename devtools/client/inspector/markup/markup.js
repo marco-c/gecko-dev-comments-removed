@@ -158,13 +158,13 @@ MarkupView.prototype = {
 
 
 
-  _handleRejectionIfNotDestroyed: function (e) {
+  _handleRejectionIfNotDestroyed(e) {
     if (!this._destroyer) {
       console.error(e);
     }
   },
 
-  _initTooltips: function () {
+  _initTooltips() {
     
     this.eventDetailsTooltip = new HTMLTooltip(this.toolbox.doc,
       {type: "arrow"});
@@ -173,16 +173,16 @@ MarkupView.prototype = {
     this._enableImagePreviewTooltip();
   },
 
-  _enableImagePreviewTooltip: function () {
+  _enableImagePreviewTooltip() {
     this.imagePreviewTooltip.startTogglingOnHover(this._elt,
       this._isImagePreviewTarget);
   },
 
-  _disableImagePreviewTooltip: function () {
+  _disableImagePreviewTooltip() {
     this.imagePreviewTooltip.stopTogglingOnHover();
   },
 
-  _onToolboxPickerHover: function (event, nodeFront) {
+  _onToolboxPickerHover(event, nodeFront) {
     this.showNode(nodeFront).then(() => {
       this._showContainerAsHovered(nodeFront);
     }, e => console.error(e));
@@ -192,7 +192,7 @@ MarkupView.prototype = {
 
 
 
-  _onToolboxPickerCanceled: function () {
+  _onToolboxPickerCanceled() {
     if (this._selectedContainer) {
       scrollIntoViewIfNeeded(this._selectedContainer.editor.elt);
     }
@@ -200,7 +200,7 @@ MarkupView.prototype = {
 
   isDragging: false,
 
-  _onMouseMove: function (event) {
+  _onMouseMove(event) {
     let target = event.target;
 
     
@@ -232,7 +232,7 @@ MarkupView.prototype = {
 
 
 
-  _onBlur: function (event) {
+  _onBlur(event) {
     if (!this._selectedContainer) {
       return;
     }
@@ -252,7 +252,7 @@ MarkupView.prototype = {
 
 
 
-  _autoScroll: function (event) {
+  _autoScroll(event) {
     let docEl = this.doc.documentElement;
 
     if (this._autoScrollAnimationFrame) {
@@ -301,7 +301,7 @@ MarkupView.prototype = {
   
 
 
-  _runUpdateLoop: function (update) {
+  _runUpdateLoop(update) {
     let loop = () => {
       update();
       this._autoScrollAnimationFrame = this.win.requestAnimationFrame(loop);
@@ -309,7 +309,7 @@ MarkupView.prototype = {
     loop();
   },
 
-  _onMouseClick: function (event) {
+  _onMouseClick(event) {
     
     
     let parentNode = event.target;
@@ -330,7 +330,7 @@ MarkupView.prototype = {
     }
   },
 
-  _onMouseUp: function () {
+  _onMouseUp() {
     this.indicateDropTarget(null);
     this.indicateDragTarget(null);
     if (this._autoScrollAnimationFrame) {
@@ -338,7 +338,7 @@ MarkupView.prototype = {
     }
   },
 
-  _onCollapseAttributesPrefChange: function () {
+  _onCollapseAttributesPrefChange() {
     this.collapseAttributes =
       Services.prefs.getBoolPref(ATTR_COLLAPSE_ENABLED_PREF);
     this.collapseAttributeLength =
@@ -346,7 +346,7 @@ MarkupView.prototype = {
     this.update();
   },
 
-  cancelDragging: function () {
+  cancelDragging() {
     if (!this.isDragging) {
       return;
     }
@@ -373,7 +373,7 @@ MarkupView.prototype = {
 
 
 
-  _showContainerAsHovered: function (nodeFront) {
+  _showContainerAsHovered(nodeFront) {
     if (this._hoveredNode === nodeFront) {
       return;
     }
@@ -389,7 +389,7 @@ MarkupView.prototype = {
     this.emit("showcontainerhovered");
   },
 
-  _onMouseOut: function (event) {
+  _onMouseOut(event) {
     
     if (this._elt.contains(event.relatedTarget)) {
       return;
@@ -420,7 +420,7 @@ MarkupView.prototype = {
 
 
 
-  _showBoxModel: function (nodeFront) {
+  _showBoxModel(nodeFront) {
     return this.toolbox.highlighterUtils.highlightNodeFront(nodeFront);
   },
 
@@ -433,13 +433,13 @@ MarkupView.prototype = {
 
 
 
-  _hideBoxModel: function (forceHide) {
+  _hideBoxModel(forceHide) {
     return this.toolbox.highlighterUtils.unhighlight(forceHide);
   },
 
   _briefBoxModelTimer: null,
 
-  _clearBriefBoxModelTimer: function () {
+  _clearBriefBoxModelTimer() {
     if (this._briefBoxModelTimer) {
       clearTimeout(this._briefBoxModelTimer);
       this._briefBoxModelPromise.resolve();
@@ -448,7 +448,7 @@ MarkupView.prototype = {
     }
   },
 
-  _brieflyShowBoxModel: function (nodeFront) {
+  _brieflyShowBoxModel(nodeFront) {
     this._clearBriefBoxModelTimer();
     let onShown = this._showBoxModel(nodeFront);
     this._briefBoxModelPromise = defer();
@@ -462,7 +462,7 @@ MarkupView.prototype = {
     return promise.all([onShown, this._briefBoxModelPromise.promise]);
   },
 
-  template: function (name, dest, options = {stack: "markup.xhtml"}) {
+  template(name, dest, options = {stack: "markup.xhtml"}) {
     let node = this.doc.getElementById("template-" + name).cloneNode(true);
     node.removeAttribute("id");
     template(node, dest, options);
@@ -473,11 +473,11 @@ MarkupView.prototype = {
 
 
 
-  getContainer: function (node) {
+  getContainer(node) {
     return this._containers.get(node);
   },
 
-  update: function () {
+  update() {
     let updateChildren = (node) => {
       this.getContainer(node).update();
       for (let child of node.treeChildren()) {
@@ -547,7 +547,7 @@ MarkupView.prototype = {
 
 
 
-  _shouldNewSelectionBeHighlighted: function () {
+  _shouldNewSelectionBeHighlighted() {
     let reason = this.inspector.selection.reason;
     let unwantedReasons = [
       "inspector-open",
@@ -564,7 +564,7 @@ MarkupView.prototype = {
 
 
 
-  _onNewSelection: function () {
+  _onNewSelection() {
     let selection = this.inspector.selection;
 
     if (this.htmlEditor) {
@@ -609,7 +609,7 @@ MarkupView.prototype = {
 
 
 
-  maybeNavigateToNewSelection: function () {
+  maybeNavigateToNewSelection() {
     let {reason, nodeFront} = this.inspector.selection;
 
     
@@ -634,7 +634,7 @@ MarkupView.prototype = {
 
 
 
-  _selectionWalker: function (start) {
+  _selectionWalker(start) {
     let walker = this.doc.createTreeWalker(
       start || this._elt,
       nodeFilterConstants.SHOW_ELEMENT,
@@ -651,7 +651,7 @@ MarkupView.prototype = {
     return walker;
   },
 
-  _onCopy: function (evt) {
+  _onCopy(evt) {
     
     if (this._isInputOrTextarea(evt.target)) {
       return;
@@ -668,7 +668,7 @@ MarkupView.prototype = {
   
 
 
-  _initShortcuts: function () {
+  _initShortcuts() {
     let shortcuts = new KeyShortcuts({
       window: this.win,
     });
@@ -827,7 +827,7 @@ MarkupView.prototype = {
   
 
 
-  _isInputOrTextarea: function (element) {
+  _isInputOrTextarea(element) {
     let name = element.tagName.toLowerCase();
     return name === "input" || name === "textarea";
   },
@@ -840,7 +840,7 @@ MarkupView.prototype = {
 
 
 
-  deleteNodeOrAttribute: function (moveBackward) {
+  deleteNodeOrAttribute(moveBackward) {
     let focusedAttribute = this.doc.activeElement
                            ? this.doc.activeElement.closest(".attreditor")
                            : null;
@@ -862,7 +862,7 @@ MarkupView.prototype = {
 
 
 
-  deleteNode: function (node, moveBackward) {
+  deleteNode(node, moveBackward) {
     if (node.isDocumentElement ||
         node.nodeType == nodeConstants.DOCUMENT_TYPE_NODE ||
         node.isAnonymous) {
@@ -915,7 +915,7 @@ MarkupView.prototype = {
   
 
 
-  _onFocus: function (event) {
+  _onFocus(event) {
     let parent = event.target;
     while (!parent.container) {
       parent = parent.parentNode;
@@ -932,7 +932,7 @@ MarkupView.prototype = {
 
 
 
-  navigate: function (container) {
+  navigate(container) {
     if (!container) {
       return;
     }
@@ -950,7 +950,7 @@ MarkupView.prototype = {
 
 
 
-  importNode: function (node, flashNode) {
+  importNode(node, flashNode) {
     if (!node) {
       return null;
     }
@@ -991,7 +991,7 @@ MarkupView.prototype = {
   
 
 
-  _mutationObserver: function (mutations) {
+  _mutationObserver(mutations) {
     for (let mutation of mutations) {
       let type = mutation.type;
       let target = mutation.target;
@@ -1056,7 +1056,7 @@ MarkupView.prototype = {
 
 
 
-  _onDisplayChange: function (nodes) {
+  _onDisplayChange(nodes) {
     for (let node of nodes) {
       let container = this.getContainer(node);
       if (container) {
@@ -1069,7 +1069,7 @@ MarkupView.prototype = {
 
 
 
-  _flashMutatedNodes: function (mutations) {
+  _flashMutatedNodes(mutations) {
     let addedOrEditedContainers = new Set();
     let removedContainers = new Set();
 
@@ -1120,7 +1120,7 @@ MarkupView.prototype = {
 
 
 
-  showNode: function (node, centered = true) {
+  showNode(node, centered = true) {
     let parent = node;
 
     this.importNode(node);
@@ -1143,7 +1143,7 @@ MarkupView.prototype = {
   
 
 
-  _expandContainer: function (container) {
+  _expandContainer(container) {
     return this._updateChildren(container, {expand: true}).then(() => {
       if (this._destroyer) {
         
@@ -1157,7 +1157,7 @@ MarkupView.prototype = {
   
 
 
-  expandNode: function (node) {
+  expandNode(node) {
     let container = this.getContainer(node);
     this._expandContainer(container);
   },
@@ -1168,7 +1168,7 @@ MarkupView.prototype = {
 
 
 
-  _expandAll: function (container) {
+  _expandAll(container) {
     return this._expandContainer(container).then(() => {
       let child = container.children.firstChild;
       let promises = [];
@@ -1186,7 +1186,7 @@ MarkupView.prototype = {
 
 
 
-  expandAll: function (node) {
+  expandAll(node) {
     node = node || this._rootNode;
     return this._expandAll(this.getContainer(node));
   },
@@ -1194,7 +1194,7 @@ MarkupView.prototype = {
   
 
 
-  collapseNode: function (node) {
+  collapseNode(node) {
     let container = this.getContainer(node);
     container.setExpanded(false);
   },
@@ -1209,7 +1209,7 @@ MarkupView.prototype = {
 
 
 
-  _getNodeHTML: function (node, isOuter) {
+  _getNodeHTML(node, isOuter) {
     let walkerPromise = null;
 
     if (isOuter) {
@@ -1233,7 +1233,7 @@ MarkupView.prototype = {
 
 
 
-  getNodeOuterHTML: function (node) {
+  getNodeOuterHTML(node) {
     return this._getNodeHTML(node, true);
   },
 
@@ -1244,7 +1244,7 @@ MarkupView.prototype = {
 
 
 
-  getNodeInnerHTML: function (node) {
+  getNodeInnerHTML(node) {
     return this._getNodeHTML(node);
   },
 
@@ -1254,7 +1254,7 @@ MarkupView.prototype = {
 
 
 
-  reselectOnRemoved: function (removedNode, reason) {
+  reselectOnRemoved(removedNode, reason) {
     
     
     this.cancelReselectOnRemoved();
@@ -1308,7 +1308,7 @@ MarkupView.prototype = {
 
 
 
-  cancelReselectOnRemoved: function () {
+  cancelReselectOnRemoved() {
     if (this._removedNodeObserver) {
       this.inspector.off("markupmutation", this._removedNodeObserver);
       this._removedNodeObserver = null;
@@ -1328,7 +1328,7 @@ MarkupView.prototype = {
 
 
 
-  updateNodeOuterHTML: function (node, newValue) {
+  updateNodeOuterHTML(node, newValue) {
     let container = this.getContainer(node);
     if (!container) {
       return promise.reject();
@@ -1353,7 +1353,7 @@ MarkupView.prototype = {
 
 
 
-  updateNodeInnerHTML: function (node, newValue, oldValue) {
+  updateNodeInnerHTML(node, newValue, oldValue) {
     let container = this.getContainer(node);
     if (!container) {
       return promise.reject();
@@ -1383,7 +1383,7 @@ MarkupView.prototype = {
 
 
 
-  insertAdjacentHTMLToNode: function (node, position, value) {
+  insertAdjacentHTMLToNode(node, position, value) {
     let container = this.getContainer(node);
     if (!container) {
       return promise.reject();
@@ -1410,7 +1410,7 @@ MarkupView.prototype = {
 
 
 
-  beginEditingOuterHTML: function (node) {
+  beginEditingOuterHTML(node) {
     this.getNodeOuterHTML(node).then(oldValue => {
       let container = this.getContainer(node);
       if (!container) {
@@ -1446,7 +1446,7 @@ MarkupView.prototype = {
 
 
 
-  setNodeExpanded: function (node, expanded, expandDescendants) {
+  setNodeExpanded(node, expanded, expandDescendants) {
     if (expanded) {
       if (expandDescendants) {
         this.expandAll(node);
@@ -1469,7 +1469,7 @@ MarkupView.prototype = {
 
 
 
-  markNodeAsSelected: function (node, reason) {
+  markNodeAsSelected(node, reason) {
     let container = this.getContainer(node);
 
     if (this._selectedContainer === container) {
@@ -1500,7 +1500,7 @@ MarkupView.prototype = {
 
 
 
-  _ensureVisible: function (node) {
+  _ensureVisible(node) {
     while (node) {
       let container = this.getContainer(node);
       let parent = node.parentNode();
@@ -1520,7 +1520,7 @@ MarkupView.prototype = {
   
 
 
-  unmarkSelectedNode: function () {
+  unmarkSelectedNode() {
     if (this._selectedContainer) {
       this._selectedContainer.selected = false;
       this._selectedContainer = null;
@@ -1534,7 +1534,7 @@ MarkupView.prototype = {
 
 
 
-  _checkSelectionVisible: function (container) {
+  _checkSelectionVisible(container) {
     let centered = null;
     let node = this.inspector.selection.nodeFront;
     while (node) {
@@ -1569,7 +1569,7 @@ MarkupView.prototype = {
 
 
 
-  _updateChildren: function (container, options) {
+  _updateChildren(container, options) {
     let expand = options && options.expand;
     let flash = options && options.flash;
 
@@ -1696,7 +1696,7 @@ MarkupView.prototype = {
     return updatePromise;
   },
 
-  _waitForChildren: function () {
+  _waitForChildren() {
     if (!this._queuedChildUpdates) {
       return promise.resolve(undefined);
     }
@@ -1707,7 +1707,7 @@ MarkupView.prototype = {
   
 
 
-  _getVisibleChildren: function (container, centered) {
+  _getVisibleChildren(container, centered) {
     let maxChildren = container.maxChildren || this.maxChildren;
     if (maxChildren == -1) {
       maxChildren = undefined;
@@ -1722,7 +1722,7 @@ MarkupView.prototype = {
   
 
 
-  destroy: function () {
+  destroy() {
     if (this._destroyer) {
       return this._destroyer;
     }
@@ -1792,7 +1792,7 @@ MarkupView.prototype = {
 
 
 
-  findClosestDragDropTarget: function (el) {
+  findClosestDragDropTarget(el) {
     return el.classList.contains("tag-line")
            ? el
            : el.querySelector(".tag-line") || el.closest(".tag-line");
@@ -1802,7 +1802,7 @@ MarkupView.prototype = {
 
 
 
-  indicateDropTarget: function (el) {
+  indicateDropTarget(el) {
     if (this._lastDropTarget) {
       this._lastDropTarget.classList.remove("drop-target");
     }
@@ -1821,7 +1821,7 @@ MarkupView.prototype = {
   
 
 
-  indicateDragTarget: function (el) {
+  indicateDragTarget(el) {
     if (this._lastDragTarget) {
       this._lastDragTarget.classList.remove("drag-target");
     }

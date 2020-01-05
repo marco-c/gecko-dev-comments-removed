@@ -34,17 +34,17 @@ define(function (require, exports, module) {
       isInterestingEntry: React.PropTypes.func,
     },
 
-    getTitle: function (object) {
+    getTitle(object) {
       let title = object && object.class ? object.class : "Map";
       if (this.props.objectLink) {
         return this.props.objectLink({
-          object: object
+          object
         }, title);
       }
       return title;
     },
 
-    safeEntriesIterator: function (object, max) {
+    safeEntriesIterator(object, max) {
       max = (typeof max === "undefined") ? 3 : max;
       try {
         return this.entriesIterator(object, max);
@@ -54,7 +54,7 @@ define(function (require, exports, module) {
       return [];
     },
 
-    entriesIterator: function (object, max) {
+    entriesIterator(object, max) {
       
       let isInterestingEntry = this.props.isInterestingEntry || ((type, value) => {
         return (
@@ -85,7 +85,7 @@ define(function (require, exports, module) {
         entries.push(Caption({
           key: "more",
           object: objectLink({
-            object: object
+            object
           }, `${mapEntries.length - max} more…`)
         }));
       }
@@ -100,7 +100,7 @@ define(function (require, exports, module) {
 
 
 
-    getEntries: function (entries, indexes) {
+    getEntries(entries, indexes) {
       
       indexes.sort(function (a, b) {
         return a - b;
@@ -132,7 +132,7 @@ define(function (require, exports, module) {
 
 
 
-    getEntriesIndexes: function (entries, max, filter) {
+    getEntriesIndexes(entries, max, filter) {
       return entries
         .reduce((indexes, [key, entry], i) => {
           if (indexes.length < max) {
@@ -162,7 +162,7 @@ define(function (require, exports, module) {
             this.getTitle(object),
             objectLink({
               className: "objectLeftBrace",
-              object: object
+              object
             }, "")
           )
         );
@@ -173,12 +173,12 @@ define(function (require, exports, module) {
           this.getTitle(object),
           objectLink({
             className: "objectLeftBrace",
-            object: object
+            object
           }, " { "),
           props,
           objectLink({
             className: "objectRightBrace",
-            object: object
+            object
           }, " }")
         )
       );
@@ -195,6 +195,6 @@ define(function (require, exports, module) {
   
   exports.GripMap = {
     rep: GripMap,
-    supportsObject: supportsObject
+    supportsObject
   };
 });

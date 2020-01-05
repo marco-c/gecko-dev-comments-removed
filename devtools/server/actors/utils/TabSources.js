@@ -56,7 +56,7 @@ TabSources.prototype = {
   
 
 
-  setOptions: function (options) {
+  setOptions(options) {
     let shouldReset = false;
 
     if ("useSourceMaps" in options) {
@@ -81,7 +81,7 @@ TabSources.prototype = {
 
 
 
-  reset: function (opts = {}) {
+  reset(opts = {}) {
     this._sourceActors = new Map();
     this._sourceMaps = new Map();
     this._sourceMappedSourceActors = Object.create(null);
@@ -107,7 +107,7 @@ TabSources.prototype = {
 
 
 
-  source: function ({ source, originalUrl, generatedSource,
+  source({ source, originalUrl, generatedSource,
                        isInlineSource, contentType }) {
     assert(source || (originalUrl && generatedSource),
            "TabSources.prototype.source needs an originalUrl or a source");
@@ -157,11 +157,11 @@ TabSources.prototype = {
 
     let actor = new SourceActor({
       thread: this._thread,
-      source: source,
-      originalUrl: originalUrl,
-      generatedSource: generatedSource,
-      isInlineSource: isInlineSource,
-      contentType: contentType
+      source,
+      originalUrl,
+      generatedSource,
+      isInlineSource,
+      contentType
     });
 
     let sourceActorStore = this._thread.sourceActorStore;
@@ -190,7 +190,7 @@ TabSources.prototype = {
     return actor;
   },
 
-  _emitNewSource: function (actor) {
+  _emitNewSource(actor) {
     if (!actor.source) {
       
       
@@ -213,7 +213,7 @@ TabSources.prototype = {
     }
   },
 
-  getSourceActor: function (source) {
+  getSourceActor(source) {
     if (source.url in this._sourceMappedSourceActors) {
       return this._sourceMappedSourceActors[source.url];
     }
@@ -226,7 +226,7 @@ TabSources.prototype = {
                     (source.url || "source"));
   },
 
-  getSourceActorByURL: function (url) {
+  getSourceActorByURL(url) {
     if (url) {
       for (let [source, actor] of this._sourceActors) {
         if (source.url === url) {
@@ -250,7 +250,7 @@ TabSources.prototype = {
 
 
 
-  _isMinifiedURL: function (uri) {
+  _isMinifiedURL(uri) {
     if (!uri) {
       return false;
     }
@@ -275,7 +275,7 @@ TabSources.prototype = {
 
 
 
-  createNonSourceMappedActor: function (source) {
+  createNonSourceMappedActor(source) {
     
     
     
@@ -351,7 +351,7 @@ TabSources.prototype = {
 
 
 
-  _createSourceMappedActors: function (source) {
+  _createSourceMappedActors(source) {
     if (!this._useSourceMaps || !source.sourceMapURL) {
       return resolve(null);
     }
@@ -377,7 +377,7 @@ TabSources.prototype = {
 
 
 
-  createSourceActors: function (source) {
+  createSourceActors(source) {
     return this._createSourceMappedActors(source).then(actors => {
       let actor = this.createNonSourceMappedActor(source);
       return (actors || [actor]).filter(isNotNull);
@@ -394,7 +394,7 @@ TabSources.prototype = {
 
 
 
-  fetchSourceMap: function (source) {
+  fetchSourceMap(source) {
     if (!this._useSourceMaps) {
       return resolve(null);
     } else if (this._sourceMaps.has(source)) {
@@ -421,14 +421,14 @@ TabSources.prototype = {
 
 
 
-  getSourceMap: function (source) {
+  getSourceMap(source) {
     return resolve(this._sourceMaps.get(source));
   },
 
   
 
 
-  setSourceMap: function (source, map) {
+  setSourceMap(source, map) {
     this._sourceMaps.set(source, resolve(map));
   },
 
@@ -445,7 +445,7 @@ TabSources.prototype = {
 
 
 
-  _fetchSourceMap: function (absSourceMapURL, sourceURL) {
+  _fetchSourceMap(absSourceMapURL, sourceURL) {
     assert(this._useSourceMaps,
            "Cannot fetch sourcemaps if they are disabled");
 
@@ -472,7 +472,7 @@ TabSources.prototype = {
   
 
 
-  _setSourceMapRoot: function (sourceMap, absSourceMapURL, scriptURL) {
+  _setSourceMapRoot(sourceMap, absSourceMapURL, scriptURL) {
     
     
     if (sourceMap.hasContentsOfAllSources()) {
@@ -488,7 +488,7 @@ TabSources.prototype = {
       : base;
   },
 
-  _dirname: function (path) {
+  _dirname(path) {
     let url = new URL(path);
     let href = url.href;
     return href.slice(0, href.lastIndexOf("/"));
@@ -509,7 +509,7 @@ TabSources.prototype = {
 
 
 
-  clearSourceMapCache: function (sourceMapURL, opts = { hard: false }) {
+  clearSourceMapCache(sourceMapURL, opts = { hard: false }) {
     let oldSm = this._sourceMapCache[sourceMapURL];
 
     if (opts.hard) {
@@ -540,7 +540,7 @@ TabSources.prototype = {
 
 
 
-  setSourceMapHard: function (source, url, map) {
+  setSourceMapHard(source, url, map) {
     if (!url) {
       
       
@@ -568,7 +568,7 @@ TabSources.prototype = {
 
 
 
-  getFrameLocation: function (frame) {
+  getFrameLocation(frame) {
     if (!frame || !frame.script) {
       return new GeneratedLocation();
     }
@@ -588,7 +588,7 @@ TabSources.prototype = {
 
 
 
-  getOriginalLocation: function (generatedLocation) {
+  getOriginalLocation(generatedLocation) {
     let {
       generatedSourceActor,
       generatedLine,
@@ -622,7 +622,7 @@ TabSources.prototype = {
         
         return new OriginalLocation(
           originalUrl ? this.source({
-            originalUrl: originalUrl,
+            originalUrl,
             generatedSource: source
           }) : null,
           originalLine,
@@ -636,7 +636,7 @@ TabSources.prototype = {
     });
   },
 
-  getAllGeneratedLocations: function (originalLocation) {
+  getAllGeneratedLocations(originalLocation) {
     let {
       originalSourceActor,
       originalLine,
@@ -677,7 +677,7 @@ TabSources.prototype = {
 
 
 
-  getGeneratedLocation: function (originalLocation) {
+  getGeneratedLocation(originalLocation) {
     let { originalSourceActor } = originalLocation;
 
     
@@ -722,7 +722,7 @@ TabSources.prototype = {
 
 
 
-  isBlackBoxed: function (url) {
+  isBlackBoxed(url) {
     return this.blackBoxedSources.has(url);
   },
 
@@ -732,7 +732,7 @@ TabSources.prototype = {
 
 
 
-  blackBox: function (url) {
+  blackBox(url) {
     this.blackBoxedSources.add(url);
   },
 
@@ -742,7 +742,7 @@ TabSources.prototype = {
 
 
 
-  unblackBox: function (url) {
+  unblackBox(url) {
     this.blackBoxedSources.delete(url);
   },
 
@@ -752,7 +752,7 @@ TabSources.prototype = {
 
 
 
-  isPrettyPrinted: function (url) {
+  isPrettyPrinted(url) {
     return this.prettyPrintedSources.has(url);
   },
 
@@ -762,14 +762,14 @@ TabSources.prototype = {
 
 
 
-  prettyPrint: function (url, indent) {
+  prettyPrint(url, indent) {
     this.prettyPrintedSources.set(url, indent);
   },
 
   
 
 
-  prettyPrintIndent: function (url) {
+  prettyPrintIndent(url) {
     return this.prettyPrintedSources.get(url);
   },
 
@@ -779,11 +779,11 @@ TabSources.prototype = {
 
 
 
-  disablePrettyPrint: function (url) {
+  disablePrettyPrint(url) {
     this.prettyPrintedSources.delete(url);
   },
 
-  iter: function () {
+  iter() {
     let actors = Object.keys(this._sourceMappedSourceActors).map(k => {
       return this._sourceMappedSourceActors[k];
     });

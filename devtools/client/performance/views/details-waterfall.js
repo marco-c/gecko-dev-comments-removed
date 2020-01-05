@@ -38,7 +38,7 @@ var WaterfallView = Heritage.extend(DetailsSubview, {
   
 
 
-  initialize: function () {
+  initialize() {
     DetailsSubview.initialize.call(this);
 
     this._cache = new WeakMap();
@@ -69,7 +69,7 @@ var WaterfallView = Heritage.extend(DetailsSubview, {
   
 
 
-  destroy: function () {
+  destroy() {
     DetailsSubview.destroy.call(this);
 
     clearNamedTimeout("waterfall-resize");
@@ -90,7 +90,7 @@ var WaterfallView = Heritage.extend(DetailsSubview, {
 
 
 
-  render: function (interval = {}) {
+  render(interval = {}) {
     let recording = PerformanceController.getCurrentRecording();
     if (recording.isRecording()) {
       return;
@@ -108,7 +108,7 @@ var WaterfallView = Heritage.extend(DetailsSubview, {
 
 
 
-  _onMarkerSelected: function (event, marker) {
+  _onMarkerSelected(event, marker) {
     let recording = PerformanceController.getCurrentRecording();
     let frames = recording.getFrames();
     let allocations = recording.getConfiguration().withAllocations;
@@ -125,7 +125,7 @@ var WaterfallView = Heritage.extend(DetailsSubview, {
   
 
 
-  _onResize: function () {
+  _onResize() {
     setNamedTimeout("waterfall-resize", WATERFALL_RESIZE_EVENTS_DRAIN, () => {
       this.render(OverviewView.getTimeInterval());
     });
@@ -134,7 +134,7 @@ var WaterfallView = Heritage.extend(DetailsSubview, {
   
 
 
-  _onObservedPrefChange: function (_, prefName) {
+  _onObservedPrefChange(_, prefName) {
     this._hiddenMarkers = PerformanceController.getPref("hidden-markers");
 
     
@@ -145,14 +145,14 @@ var WaterfallView = Heritage.extend(DetailsSubview, {
   
 
 
-  _onViewSource: function (_, data) {
+  _onViewSource(_, data) {
     gToolbox.viewSourceInDebugger(data.url, data.line);
   },
 
   
 
 
-  _onShowAllocations: function (_, data) {
+  _onShowAllocations(_, data) {
     let { endTime } = data;
     let startTime = 0;
     let recording = PerformanceController.getCurrentRecording();
@@ -192,7 +192,7 @@ var WaterfallView = Heritage.extend(DetailsSubview, {
 
 
 
-  _prepareWaterfallTree: function (markers) {
+  _prepareWaterfallTree(markers) {
     let cached = this._cache.get(markers);
     if (cached) {
       return cached;
@@ -214,7 +214,7 @@ var WaterfallView = Heritage.extend(DetailsSubview, {
 
 
 
-  _recalculateBounds: function () {
+  _recalculateBounds() {
     this.waterfallWidth = this.treeContainer.clientWidth
       - this.WATERFALL_MARKER_SIDEBAR_WIDTH
       - this.WATERFALL_MARKER_SIDEBAR_SAFE_BOUNDS;
@@ -223,7 +223,7 @@ var WaterfallView = Heritage.extend(DetailsSubview, {
   
 
 
-  _populateWaterfallTree: function (rootMarkerNode, interval) {
+  _populateWaterfallTree(rootMarkerNode, interval) {
     this._recalculateBounds();
 
     let doc = this.treeContainer.ownerDocument;

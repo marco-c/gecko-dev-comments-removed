@@ -37,22 +37,22 @@ const HIDDEN_CLASS = "__fx-devtools-hide-shortcut__";
 
 
 const AttributeModificationList = Class({
-  initialize: function (node) {
+  initialize(node) {
     this.node = node;
     this.modifications = [];
   },
 
-  apply: function () {
+  apply() {
     let ret = this.node.modifyAttributes(this.modifications);
     return ret;
   },
 
-  destroy: function () {
+  destroy() {
     this.node = null;
     this.modification = null;
   },
 
-  setAttributeNS: function (ns, name, value) {
+  setAttributeNS(ns, name, value) {
     this.modifications.push({
       attributeNamespace: ns,
       attributeName: name,
@@ -60,15 +60,15 @@ const AttributeModificationList = Class({
     });
   },
 
-  setAttribute: function (name, value) {
+  setAttribute(name, value) {
     this.setAttributeNS(undefined, name, value);
   },
 
-  removeAttributeNS: function (ns, name) {
+  removeAttributeNS(ns, name) {
     this.setAttributeNS(ns, name, undefined);
   },
 
-  removeAttribute: function (name) {
+  removeAttribute(name) {
     this.setAttributeNS(undefined, name, undefined);
   }
 });
@@ -88,7 +88,7 @@ const AttributeModificationList = Class({
 
 
 const NodeFront = FrontClassWithSpec(nodeSpec, {
-  initialize: function (conn, form, detail, ctx) {
+  initialize(conn, form, detail, ctx) {
     
     this._parent = null;
     
@@ -105,12 +105,12 @@ const NodeFront = FrontClassWithSpec(nodeSpec, {
 
 
 
-  destroy: function () {
+  destroy() {
     Front.prototype.destroy.call(this);
   },
 
   
-  form: function (form, detail, ctx) {
+  form(form, detail, ctx) {
     if (detail === "actorid") {
       this.actorID = form;
       return;
@@ -147,7 +147,7 @@ const NodeFront = FrontClassWithSpec(nodeSpec, {
   
 
 
-  parentNode: function () {
+  parentNode() {
     return this._parent;
   },
 
@@ -157,7 +157,7 @@ const NodeFront = FrontClassWithSpec(nodeSpec, {
 
 
 
-  updateMutation: function (change) {
+  updateMutation(change) {
     if (change.type === "attributes") {
       
       this._attrMap = undefined;
@@ -275,11 +275,11 @@ const NodeFront = FrontClassWithSpec(nodeSpec, {
     return this._form.systemId;
   },
 
-  getAttribute: function (name) {
+  getAttribute(name) {
     let attr = this._getAttribute(name);
     return attr ? attr.value : null;
   },
-  hasAttribute: function (name) {
+  hasAttribute(name) {
     this._cacheAttributes();
     return (name in this._attrMap);
   },
@@ -296,7 +296,7 @@ const NodeFront = FrontClassWithSpec(nodeSpec, {
   get pseudoClassLocks() {
     return this._form.pseudoClassLocks || [];
   },
-  hasPseudoClassLock: function (pseudo) {
+  hasPseudoClassLock(pseudo) {
     return this.pseudoClassLocks.some(locked => locked === pseudo);
   },
 
@@ -332,11 +332,11 @@ const NodeFront = FrontClassWithSpec(nodeSpec, {
 
   
 
-  getFormProperty: function (name) {
+  getFormProperty(name) {
     return this._form.props ? this._form.props[name] : null;
   },
 
-  hasFormProperty: function (name) {
+  hasFormProperty(name) {
     return this._form.props ? (name in this._form.props) : null;
   },
 
@@ -347,11 +347,11 @@ const NodeFront = FrontClassWithSpec(nodeSpec, {
   
 
 
-  startModifyingAttributes: function () {
+  startModifyingAttributes() {
     return AttributeModificationList(this);
   },
 
-  _cacheAttributes: function () {
+  _cacheAttributes() {
     if (typeof this._attrMap != "undefined") {
       return;
     }
@@ -361,7 +361,7 @@ const NodeFront = FrontClassWithSpec(nodeSpec, {
     }
   },
 
-  _getAttribute: function (name) {
+  _getAttribute(name) {
     this._cacheAttributes();
     return this._attrMap[name] || undefined;
   },
@@ -371,7 +371,7 @@ const NodeFront = FrontClassWithSpec(nodeSpec, {
 
 
 
-  reparent: function (parent) {
+  reparent(parent) {
     if (this._parent === parent) {
       return;
     }
@@ -402,7 +402,7 @@ const NodeFront = FrontClassWithSpec(nodeSpec, {
   
 
 
-  treeChildren: function () {
+  treeChildren() {
     let ret = [];
     for (let child = this._child; child != null; child = child._next) {
       ret.push(child);
@@ -417,7 +417,7 @@ const NodeFront = FrontClassWithSpec(nodeSpec, {
 
 
 
-  isLocalToBeDeprecated: function () {
+  isLocalToBeDeprecated() {
     return !!this.conn._transport._serverConnection;
   },
 
@@ -426,7 +426,7 @@ const NodeFront = FrontClassWithSpec(nodeSpec, {
 
 
 
-  rawNode: function (rawNode) {
+  rawNode(rawNode) {
     if (!this.isLocalToBeDeprecated()) {
       console.warn("Tried to use rawNode on a remote connection.");
       return null;
@@ -448,20 +448,20 @@ exports.NodeFront = NodeFront;
 
 
 const NodeListFront = FrontClassWithSpec(nodeListSpec, {
-  initialize: function (client, form) {
+  initialize(client, form) {
     Front.prototype.initialize.call(this, client, form);
   },
 
-  destroy: function () {
+  destroy() {
     Front.prototype.destroy.call(this);
   },
 
-  marshallPool: function () {
+  marshallPool() {
     return this.parent();
   },
 
   
-  form: function (json) {
+  form(json) {
     this.length = json.length;
   },
 
@@ -501,19 +501,19 @@ const WalkerFront = FrontClassWithSpec(walkerSpec, {
     });
   }, {impl: "_pick"}),
 
-  initialize: function (client, form) {
+  initialize(client, form) {
     this._createRootNodePromise();
     Front.prototype.initialize.call(this, client, form);
     this._orphaned = new Set();
     this._retainedOrphans = new Set();
   },
 
-  destroy: function () {
+  destroy() {
     Front.prototype.destroy.call(this);
   },
 
   
-  form: function (json) {
+  form(json) {
     this.actorID = json.actor;
     this.rootNode = types.getType("domnode").read(json.root, this);
     this._rootNodeDeferred.resolve(this.rootNode);
@@ -527,7 +527,7 @@ const WalkerFront = FrontClassWithSpec(walkerSpec, {
 
 
 
-  getRootNode: function () {
+  getRootNode() {
     return this._rootNodeDeferred.promise;
   },
 
@@ -535,7 +535,7 @@ const WalkerFront = FrontClassWithSpec(walkerSpec, {
 
 
 
-  _createRootNodePromise: function () {
+  _createRootNodePromise() {
     this._rootNodeDeferred = defer();
     this._rootNodeDeferred.promise.then(() => {
       events.emit(this, "new-root");
@@ -550,7 +550,7 @@ const WalkerFront = FrontClassWithSpec(walkerSpec, {
 
 
 
-  ensureParentFront: function (id) {
+  ensureParentFront(id) {
     let front = this.get(id);
     if (front) {
       return front;
@@ -604,7 +604,7 @@ const WalkerFront = FrontClassWithSpec(walkerSpec, {
     
     let actorID = node.actorID;
     this._releaseFront(node, !!options.force);
-    return this._releaseNode({ actorID: actorID });
+    return this._releaseNode({ actorID });
   }, {
     impl: "_releaseNode"
   }),
@@ -710,7 +710,7 @@ const WalkerFront = FrontClassWithSpec(walkerSpec, {
     let node = yield nodeList.item(searchData.index);
     return {
       type: searchType,
-      node: node,
+      node,
       resultsLength: nodeList.length,
       resultsIndex: searchData.index,
     };
@@ -718,7 +718,7 @@ const WalkerFront = FrontClassWithSpec(walkerSpec, {
     impl: "_search"
   }),
 
-  _releaseFront: function (node, force) {
+  _releaseFront(node, force) {
     if (node.retained && !force) {
       node.reparent(null);
       this._retainedOrphans.add(node);
@@ -893,13 +893,13 @@ const WalkerFront = FrontClassWithSpec(walkerSpec, {
     this.getMutations({cleanup: this.autoCleanup}).catch(() => {});
   }),
 
-  isLocal: function () {
+  isLocal() {
     return !!this.conn._transport._serverConnection;
   },
 
   
   
-  frontForRawNode: function (rawNode) {
+  frontForRawNode(rawNode) {
     if (!this.isLocal()) {
       console.warn("Tried to use frontForRawNode on a remote connection.");
       return null;
@@ -934,8 +934,8 @@ const WalkerFront = FrontClassWithSpec(walkerSpec, {
     let previousSibling = yield this.previousSibling(node);
     let nextSibling = yield this._removeNode(node);
     return {
-      previousSibling: previousSibling,
-      nextSibling: nextSibling,
+      previousSibling,
+      nextSibling,
     };
   }), {
     impl: "_removeNode"
@@ -949,7 +949,7 @@ exports.WalkerFront = WalkerFront;
 
 
 var InspectorFront = FrontClassWithSpec(inspectorSpec, {
-  initialize: function (client, tabForm) {
+  initialize(client, tabForm) {
     Front.prototype.initialize.call(this, client);
     this.actorID = tabForm.inspectorActor;
 
@@ -958,7 +958,7 @@ var InspectorFront = FrontClassWithSpec(inspectorSpec, {
     this.manage(this);
   },
 
-  destroy: function () {
+  destroy() {
     delete this.walker;
     Front.prototype.destroy.call(this);
   },

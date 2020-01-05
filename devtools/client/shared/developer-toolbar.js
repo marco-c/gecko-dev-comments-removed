@@ -38,7 +38,7 @@ var CommandUtils = {
   
 
 
-  createRequisition: function (target, options) {
+  createRequisition(target, options) {
     if (!gcliInit) {
       return promise.reject("Unable to load gcli");
     }
@@ -51,7 +51,7 @@ var CommandUtils = {
   
 
 
-  destroyRequisition: function (requisition, target) {
+  destroyRequisition(requisition, target) {
     requisition.destroy();
     gcliInit.releaseSystem(target);
   },
@@ -60,7 +60,7 @@ var CommandUtils = {
 
 
 
-  getCommandbarSpec: function (pref) {
+  getCommandbarSpec(pref) {
     let value = prefBranch.getComplexValue(pref, Ci.nsISupportsString).data;
     return JSON.parse(value);
   },
@@ -81,7 +81,7 @@ var CommandUtils = {
 
 
 
-  createCommandButtons: function (toolbarSpec, target, document, requisition,
+  createCommandButtons(toolbarSpec, target, document, requisition,
                                   createButtonState) {
     return util.promiseEach(toolbarSpec, typed => {
       
@@ -133,7 +133,7 @@ var CommandUtils = {
           };
 
           command.state.onChange(target, onChange);
-          onChange("", { target: target });
+          onChange("", { target });
 
           document.defaultView.addEventListener("unload", function (event) {
             if (command.state.offChange) {
@@ -155,7 +155,7 @@ var CommandUtils = {
 
 
 
-  createEnvironment: function (container, targetProperty = "target") {
+  createEnvironment(container, targetProperty = "target") {
     if (!container[targetProperty].toString ||
         !/TabTarget/.test(container[targetProperty].toString())) {
       throw new Error("Missing target");
@@ -259,7 +259,7 @@ DeveloperToolbar.prototype.NOTIFICATIONS = NOTIFICATIONS;
 
 
 Object.defineProperty(DeveloperToolbar.prototype, "visible", {
-  get: function () {
+  get() {
     return this._element && !this._element.hidden;
   },
   enumerable: true
@@ -271,7 +271,7 @@ var _gSequenceId = 0;
 
 
 Object.defineProperty(DeveloperToolbar.prototype, "sequenceId", {
-  get: function () {
+  get() {
     return _gSequenceId++;
   },
   enumerable: true

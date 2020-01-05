@@ -27,7 +27,7 @@ var WebConsoleUtils = {
 
 
 
-  getWorkerType: function (message) {
+  getWorkerType(message) {
     let id = message ? message.innerID : null;
     return CONSOLE_WORKER_IDS[CONSOLE_WORKER_IDS.indexOf(id)] || null;
   },
@@ -48,7 +48,7 @@ var WebConsoleUtils = {
 
 
 
-  cloneObject: function (object, recursive, filter) {
+  cloneObject(object, recursive, filter) {
     if (typeof object != "object") {
       return object;
     }
@@ -83,7 +83,7 @@ var WebConsoleUtils = {
 
 
 
-  getInnerWindowId: function (window) {
+  getInnerWindowId(window) {
     return window.QueryInterface(Ci.nsIInterfaceRequestor)
              .getInterface(Ci.nsIDOMWindowUtils).currentInnerWindowID;
   },
@@ -96,7 +96,7 @@ var WebConsoleUtils = {
 
 
 
-  getInnerWindowIDsForFrames: function (window) {
+  getInnerWindowIDsForFrames(window) {
     let innerWindowID = this.getInnerWindowId(window);
     let ids = [innerWindowID];
 
@@ -120,7 +120,7 @@ var WebConsoleUtils = {
 
 
 
-  getPropertyDescriptor: function (object, prop) {
+  getPropertyDescriptor(object, prop) {
     let desc = null;
     while (object) {
       try {
@@ -162,7 +162,7 @@ var WebConsoleUtils = {
 
 
 
-  createValueGrip: function (value, objectWrapper) {
+  createValueGrip(value, objectWrapper) {
     switch (typeof value) {
       case "boolean":
         return value;
@@ -216,7 +216,7 @@ var WebConsoleCommands = {
 
 
 
-  _registerOriginal: function (name, command) {
+  _registerOriginal(name, command) {
     this.register(name, command);
     this._originalCommands.set(name, this.getCommand(name));
   },
@@ -248,7 +248,7 @@ var WebConsoleCommands = {
 
 
 
-  register: function (name, command) {
+  register(name, command) {
     this._registeredCommands.set(name, command);
   },
 
@@ -260,7 +260,7 @@ var WebConsoleCommands = {
 
 
 
-  unregister: function (name) {
+  unregister(name) {
     this._registeredCommands.delete(name);
     if (this._originalCommands.has(name)) {
       this.register(name, this._originalCommands.get(name));
@@ -274,7 +274,7 @@ var WebConsoleCommands = {
 
 
 
-  getCommand: function (name) {
+  getCommand(name) {
     return this._registeredCommands.get(name);
   },
 
@@ -285,7 +285,7 @@ var WebConsoleCommands = {
 
 
 
-  hasCommand: function (name) {
+  hasCommand(name) {
     return this._registeredCommands.has(name);
   },
 };
@@ -338,7 +338,7 @@ WebConsoleCommands._registerOriginal("$$", function (owner, selector) {
 
 
 WebConsoleCommands._registerOriginal("$_", {
-  get: function (owner) {
+  get(owner) {
     return owner.consoleActor.getLastConsoleInputEvaluation();
   }
 });
@@ -377,7 +377,7 @@ WebConsoleCommands._registerOriginal("$x", function (owner, xPath, context) {
 
 
 WebConsoleCommands._registerOriginal("$0", {
-  get: function (owner) {
+  get(owner) {
     return owner.makeDebuggeeValue(owner.selectedNode);
   }
 });

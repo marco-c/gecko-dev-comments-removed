@@ -346,9 +346,7 @@ module.exports = {
     
     "no-with": "error",
     
-    
-    
-    "object-shorthand": "off",
+    "object-shorthand": "error",
     
     "one-var": "off",
     

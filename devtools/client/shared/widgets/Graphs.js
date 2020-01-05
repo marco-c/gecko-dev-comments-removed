@@ -184,7 +184,7 @@ AbstractCanvasGraph.prototype = {
   
 
 
-  ready: function () {
+  ready() {
     return this._ready.promise;
   },
 
@@ -251,7 +251,7 @@ AbstractCanvasGraph.prototype = {
 
 
 
-  buildBackgroundImage: function () {
+  buildBackgroundImage() {
     return null;
   },
 
@@ -260,7 +260,7 @@ AbstractCanvasGraph.prototype = {
 
 
 
-  buildGraphImage: function () {
+  buildGraphImage() {
     let error = "This method needs to be implemented by inheriting classes.";
     throw new Error(error);
   },
@@ -270,7 +270,7 @@ AbstractCanvasGraph.prototype = {
 
 
 
-  buildMaskImage: function () {
+  buildMaskImage() {
     return null;
   },
 
@@ -287,7 +287,7 @@ AbstractCanvasGraph.prototype = {
 
 
 
-  setData: function (data) {
+  setData(data) {
     this._data = data;
     this._cachedBackgroundImage = this.buildBackgroundImage();
     this._cachedGraphImage = this.buildGraphImage();
@@ -313,7 +313,7 @@ AbstractCanvasGraph.prototype = {
 
 
 
-  setMask: function (mask, ...options) {
+  setMask(mask, ...options) {
     this._mask = mask;
     this._maskArgs = [mask, ...options];
     this._cachedMaskImage = this.buildMaskImage.apply(this, this._maskArgs);
@@ -329,7 +329,7 @@ AbstractCanvasGraph.prototype = {
 
 
 
-  setRegions: function (regions) {
+  setRegions(regions) {
     if (!this._cachedGraphImage) {
       throw new Error("Can't highlight regions on a graph with " +
                       "no data displayed.");
@@ -349,7 +349,7 @@ AbstractCanvasGraph.prototype = {
 
 
 
-  hasData: function () {
+  hasData() {
     return !!this._data;
   },
 
@@ -357,7 +357,7 @@ AbstractCanvasGraph.prototype = {
 
 
 
-  hasMask: function () {
+  hasMask() {
     return !!this._mask;
   },
 
@@ -365,7 +365,7 @@ AbstractCanvasGraph.prototype = {
 
 
 
-  hasRegions: function () {
+  hasRegions() {
     return !!this._regions;
   },
 
@@ -381,7 +381,7 @@ AbstractCanvasGraph.prototype = {
 
 
 
-  setSelection: function (selection) {
+  setSelection(selection) {
     if (!selection || selection.start == null || selection.end == null) {
       throw new Error("Invalid selection coordinates");
     }
@@ -401,7 +401,7 @@ AbstractCanvasGraph.prototype = {
 
 
 
-  getSelection: function () {
+  getSelection() {
     if (this.hasSelection()) {
       return { start: this._selection.start, end: this._selection.end };
     }
@@ -421,7 +421,7 @@ AbstractCanvasGraph.prototype = {
 
 
 
-  setMappedSelection: function (selection, mapping = {}) {
+  setMappedSelection(selection, mapping = {}) {
     if (!this.hasData()) {
       throw new Error("A data source is necessary for retrieving " +
                       "a mapped selection.");
@@ -454,7 +454,7 @@ AbstractCanvasGraph.prototype = {
 
 
 
-  getMappedSelection: function (mapping = {}) {
+  getMappedSelection(mapping = {}) {
     if (!this.hasData()) {
       throw new Error("A data source is necessary for retrieving a " +
                       "mapped selection.");
@@ -476,13 +476,13 @@ AbstractCanvasGraph.prototype = {
     min = map(min, 0, this._width, startTime, endTime);
     max = map(max, 0, this._width, startTime, endTime);
 
-    return { min: min, max: max };
+    return { min, max };
   },
 
   
 
 
-  dropSelection: function () {
+  dropSelection() {
     if (!this.hasSelection() && !this.hasSelectionInProgress()) {
       return;
     }
@@ -496,7 +496,7 @@ AbstractCanvasGraph.prototype = {
 
 
 
-  hasSelection: function () {
+  hasSelection() {
     return this._selection &&
       this._selection.start != null && this._selection.end != null;
   },
@@ -506,7 +506,7 @@ AbstractCanvasGraph.prototype = {
 
 
 
-  hasSelectionInProgress: function () {
+  hasSelectionInProgress() {
     return this._selection &&
       this._selection.start != null && this._selection.end == null;
   },
@@ -524,7 +524,7 @@ AbstractCanvasGraph.prototype = {
 
 
 
-  setCursor: function (cursor) {
+  setCursor(cursor) {
     if (!cursor || cursor.x == null || cursor.y == null) {
       throw new Error("Invalid cursor coordinates");
     }
@@ -543,14 +543,14 @@ AbstractCanvasGraph.prototype = {
 
 
 
-  getCursor: function () {
+  getCursor() {
     return { x: this._cursor.x, y: this._cursor.y };
   },
 
   
 
 
-  dropCursor: function () {
+  dropCursor() {
     if (!this.hasCursor()) {
       return;
     }
@@ -563,7 +563,7 @@ AbstractCanvasGraph.prototype = {
 
 
 
-  hasCursor: function () {
+  hasCursor() {
     return this._cursor && this._cursor.x != null;
   },
 
@@ -573,7 +573,7 @@ AbstractCanvasGraph.prototype = {
 
 
 
-  isSelectionDifferent: function (other) {
+  isSelectionDifferent(other) {
     if (!other) {
       return true;
     }
@@ -587,7 +587,7 @@ AbstractCanvasGraph.prototype = {
 
 
 
-  isCursorDifferent: function (other) {
+  isCursorDifferent(other) {
     if (!other) {
       return true;
     }
@@ -602,7 +602,7 @@ AbstractCanvasGraph.prototype = {
 
 
 
-  getSelectionWidth: function () {
+  getSelectionWidth() {
     let selection = this.getSelection();
     return Math.abs(selection.start - selection.end);
   },
@@ -614,7 +614,7 @@ AbstractCanvasGraph.prototype = {
 
 
 
-  getHoveredRegion: function () {
+  getHoveredRegion() {
     if (!this.hasRegions() || !this.hasCursor()) {
       return null;
     }
@@ -630,7 +630,7 @@ AbstractCanvasGraph.prototype = {
 
 
 
-  refresh: function (options = {}) {
+  refresh(options = {}) {
     let bounds = this._parent.getBoundingClientRect();
     let newWidth = this.fixedWidth || bounds.width;
     let newHeight = this.fixedHeight || bounds.height;
@@ -685,7 +685,7 @@ AbstractCanvasGraph.prototype = {
 
 
 
-  _getNamedCanvas: function (name, width = this._width, height = this._height) {
+  _getNamedCanvas(name, width = this._width, height = this._height) {
     let cachedRenderTarget = this._renderTargets.get(name);
     if (cachedRenderTarget) {
       let { canvas, ctx } = cachedRenderTarget;
@@ -700,7 +700,7 @@ AbstractCanvasGraph.prototype = {
     canvas.width = width;
     canvas.height = height;
 
-    let renderTarget = { canvas: canvas, ctx: ctx };
+    let renderTarget = { canvas, ctx };
     this._renderTargets.set(name, renderTarget);
     return renderTarget;
   },
@@ -715,7 +715,7 @@ AbstractCanvasGraph.prototype = {
   
 
 
-  _onAnimationFrame: function () {
+  _onAnimationFrame() {
     this._animationId =
       this._window.requestAnimationFrame(this._onAnimationFrame);
     this._drawWidget();
@@ -725,7 +725,7 @@ AbstractCanvasGraph.prototype = {
 
 
 
-  _drawWidget: function () {
+  _drawWidget() {
     if (!this._shouldRedraw) {
       return;
     }
@@ -763,7 +763,7 @@ AbstractCanvasGraph.prototype = {
   
 
 
-  _drawCliphead: function () {
+  _drawCliphead() {
     if (this._isHoveringSelectionContentsOrBoundaries() ||
         this._isHoveringRegion()) {
       return;
@@ -781,7 +781,7 @@ AbstractCanvasGraph.prototype = {
   
 
 
-  _drawSelection: function () {
+  _drawSelection() {
     let { start, end } = this.getSelection();
     let input = this._canvas.getAttribute("input");
 
@@ -829,7 +829,7 @@ AbstractCanvasGraph.prototype = {
 
 
 
-  _bakeRegions: function (regions, destination) {
+  _bakeRegions(regions, destination) {
     let ctx = destination.getContext("2d");
 
     let pattern = AbstractCanvasGraph.getStripePattern({
@@ -856,7 +856,7 @@ AbstractCanvasGraph.prototype = {
 
 
 
-  _isHoveringStartBoundary: function () {
+  _isHoveringStartBoundary() {
     if (!this.hasSelection() || !this.hasCursor()) {
       return false;
     }
@@ -870,7 +870,7 @@ AbstractCanvasGraph.prototype = {
 
 
 
-  _isHoveringEndBoundary: function () {
+  _isHoveringEndBoundary() {
     if (!this.hasSelection() || !this.hasCursor()) {
       return false;
     }
@@ -884,7 +884,7 @@ AbstractCanvasGraph.prototype = {
 
 
 
-  _isHoveringSelectionContents: function () {
+  _isHoveringSelectionContents() {
     if (!this.hasSelection() || !this.hasCursor()) {
       return false;
     }
@@ -898,7 +898,7 @@ AbstractCanvasGraph.prototype = {
 
 
 
-  _isHoveringSelectionContentsOrBoundaries: function () {
+  _isHoveringSelectionContentsOrBoundaries() {
     return this._isHoveringSelectionContents() ||
            this._isHoveringStartBoundary() ||
            this._isHoveringEndBoundary();
@@ -908,7 +908,7 @@ AbstractCanvasGraph.prototype = {
 
 
 
-  _isHoveringRegion: function () {
+  _isHoveringRegion() {
     return !!this.getHoveredRegion();
   },
 
@@ -916,7 +916,7 @@ AbstractCanvasGraph.prototype = {
 
 
 
-  _getRelativeEventCoordinates: function (e) {
+  _getRelativeEventCoordinates(e) {
     
     
     if ("testX" in e && "testY" in e) {
@@ -968,7 +968,7 @@ AbstractCanvasGraph.prototype = {
   
 
 
-  _onMouseMove: function (e) {
+  _onMouseMove(e) {
     let resizer = this._selectionResizer;
     let dragger = this._selectionDragger;
 
@@ -1045,7 +1045,7 @@ AbstractCanvasGraph.prototype = {
   
 
 
-  _onMouseDown: function (e) {
+  _onMouseDown(e) {
     this._isMouseActive = true;
     let {mouseX} = this._getRelativeEventCoordinates(e);
 
@@ -1088,7 +1088,7 @@ AbstractCanvasGraph.prototype = {
   
 
 
-  _onMouseUp: function () {
+  _onMouseUp() {
     this._isMouseActive = false;
     switch (this._canvas.getAttribute("input")) {
       case "hovering-background":
@@ -1135,7 +1135,7 @@ AbstractCanvasGraph.prototype = {
   
 
 
-  _onMouseWheel: function (e) {
+  _onMouseWheel(e) {
     if (!this.hasSelection()) {
       return;
     }
@@ -1203,7 +1203,7 @@ AbstractCanvasGraph.prototype = {
 
 
 
-  _onMouseOut: function (e) {
+  _onMouseOut(e) {
     if (!this._isMouseActive) {
       this._cursor.x = null;
       this._cursor.y = null;
@@ -1215,7 +1215,7 @@ AbstractCanvasGraph.prototype = {
   
 
 
-  _onResize: function () {
+  _onResize() {
     if (this.hasData()) {
       
       
@@ -1345,7 +1345,7 @@ this.CanvasGraphUtils = {
   
 
 
-  linkSelection: function (graph1, graph2) {
+  linkSelection(graph1, graph2) {
     if (!graph1 || !graph2) {
       return;
     }
@@ -1380,7 +1380,7 @@ this.CanvasGraphUtils = {
 
 
 
-  _performTaskInWorker: function (task, data) {
+  _performTaskInWorker(task, data) {
     let worker = this._graphUtilsWorker || new DevToolsWorker(WORKER_URL);
     return worker.performTask(task, data);
   }

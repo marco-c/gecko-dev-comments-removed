@@ -215,7 +215,7 @@ BrowserLoaderBuilder.prototype = {
 
 
 
-  lazyRequireGetter: function (obj, property, module, destructure) {
+  lazyRequireGetter(obj, property, module, destructure) {
     devtools.lazyGetter(obj, property, () => {
       return destructure
           ? this.require(module)[property]
@@ -223,7 +223,7 @@ BrowserLoaderBuilder.prototype = {
     });
   },
 
-  hotReloadFile: function (componentProxies, fileURI) {
+  hotReloadFile(componentProxies, fileURI) {
     if (fileURI.match(/\.js$/)) {
       
       const proxy = componentProxies.get(fileURI);

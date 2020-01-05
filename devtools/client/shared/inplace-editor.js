@@ -323,7 +323,7 @@ InplaceEditor.prototype = {
     return val;
   },
 
-  _createInput: function () {
+  _createInput() {
     this.input =
       this.doc.createElementNS(HTML_NS, this.multiline ? "textarea" : "input");
     this.input.inplaceEditor = this;
@@ -344,7 +344,7 @@ InplaceEditor.prototype = {
   
 
 
-  _clear: function () {
+  _clear() {
     if (!this.input) {
       
       return;
@@ -383,7 +383,7 @@ InplaceEditor.prototype = {
 
 
 
-  _autosize: function () {
+  _autosize() {
     
     
 
@@ -419,7 +419,7 @@ InplaceEditor.prototype = {
   
 
 
-  _stopAutosize: function () {
+  _stopAutosize() {
     if (!this._measurement) {
       return;
     }
@@ -430,7 +430,7 @@ InplaceEditor.prototype = {
   
 
 
-  _updateSize: function () {
+  _updateSize() {
     
     
     
@@ -470,7 +470,7 @@ InplaceEditor.prototype = {
 
 
 
-  _getInputCharDimensions: function () {
+  _getInputCharDimensions() {
     
     
     this._measurement.textContent = "x";
@@ -486,7 +486,7 @@ InplaceEditor.prototype = {
 
 
 
-  _incrementValue: function (increment) {
+  _incrementValue(increment) {
     let value = this.input.value;
     let selectionStart = this.input.selectionStart;
     let selectionEnd = this.input.selectionEnd;
@@ -523,7 +523,7 @@ InplaceEditor.prototype = {
 
 
 
-  _incrementCSSValue: function (value, increment, selStart, selEnd) {
+  _incrementCSSValue(value, increment, selStart, selEnd) {
     let range = this._parseCSSValue(value, selStart);
     let type = (range && range.type) || "";
     let rawValue = range ? value.substring(range.start, range.end) : "";
@@ -604,7 +604,7 @@ InplaceEditor.prototype = {
 
 
 
-  _findCompatibleUnit: function (beforeValue, afterValue) {
+  _findCompatibleUnit(beforeValue, afterValue) {
     if (!this.property || !this.property.name) {
       return "";
     }
@@ -634,7 +634,7 @@ InplaceEditor.prototype = {
 
 
 
-  _parseCSSValue: function (value, offset) {
+  _parseCSSValue(value, offset) {
     
     const reSplitCSS = /(url\("?[^"\)]+"?\)?)|(rgba?\([^)]*\)?)|(hsla?\([^)]*\)?)|(#[\dA-Fa-f]+)|(-?\d*\.?\d+(%|[a-z]{1,4})?)|"([^"]*)"?|'([^']*)'?|([^,\s\/!\(\)]+)|(!(.*)?)/;
     
@@ -670,7 +670,7 @@ InplaceEditor.prototype = {
       value: m[0],
       start: start + m.index,
       end: start + m.index + m[0].length,
-      type: type
+      type
     };
   },
 
@@ -690,7 +690,7 @@ InplaceEditor.prototype = {
 
 
 
-  _incrementGenericValue: function (value, increment, offset, offsetEnd, info) {
+  _incrementGenericValue(value, increment, offset, offsetEnd, info) {
     
     let start, end;
     
@@ -737,7 +737,7 @@ InplaceEditor.prototype = {
       if (mid !== null) {
         return {
           value: first + mid + last,
-          start: start,
+          start,
           end: start + mid.length
         };
       }
@@ -757,7 +757,7 @@ InplaceEditor.prototype = {
 
 
 
-  _incrementRawValue: function (rawValue, increment, info) {
+  _incrementRawValue(rawValue, increment, info) {
     let num = parseFloat(rawValue);
 
     if (isNaN(num)) {
@@ -799,7 +799,7 @@ InplaceEditor.prototype = {
 
 
 
-  _incHexColor: function (rawValue, increment, offset, offsetEnd) {
+  _incHexColor(rawValue, increment, offset, offsetEnd) {
     
     if (offsetEnd > rawValue.length && offset >= rawValue.length) {
       return null;
@@ -899,7 +899,7 @@ InplaceEditor.prototype = {
 
 
 
-  _cycleCSSSuggestion: function (reverse, noSelect) {
+  _cycleCSSSuggestion(reverse, noSelect) {
     
     let {label, preLabel} = this.popup.selectedItem ||
                             {label: "", preLabel: ""};
@@ -940,7 +940,7 @@ InplaceEditor.prototype = {
   
 
 
-  _apply: function (event, direction) {
+  _apply(event, direction) {
     if (this._applied) {
       return null;
     }
@@ -958,7 +958,7 @@ InplaceEditor.prototype = {
   
 
 
-  _onWindowBlur: function () {
+  _onWindowBlur() {
     if (this.popup && this.popup.isOpen) {
       this.popup.hidePopup();
     }
@@ -971,7 +971,7 @@ InplaceEditor.prototype = {
   
 
 
-  _onBlur: function (event) {
+  _onBlur(event) {
     if (event && this.popup && this.popup.isOpen &&
       this.popup.selectedIndex >= 0) {
       this._acceptPopupSuggestion();
@@ -985,11 +985,11 @@ InplaceEditor.prototype = {
 
 
 
-  _onAutocompletePopupClick: function () {
+  _onAutocompletePopupClick() {
     this._acceptPopupSuggestion();
   },
 
-  _acceptPopupSuggestion: function () {
+  _acceptPopupSuggestion() {
     let label, preLabel;
 
     if (this._selectedIndex === undefined) {
@@ -1038,7 +1038,7 @@ InplaceEditor.prototype = {
   
 
 
-  _onKeyPress: function (event) {
+  _onKeyPress(event) {
     let prevent = false;
 
     let key = event.keyCode;
@@ -1168,7 +1168,7 @@ InplaceEditor.prototype = {
     }
   },
 
-  _onContextMenu: function (event) {
+  _onContextMenu(event) {
     if (this.contextMenu) {
       this.contextMenu(event);
     }
@@ -1183,7 +1183,7 @@ InplaceEditor.prototype = {
 
 
 
-  _openAutocompletePopup: function (offset, selectedIndex) {
+  _openAutocompletePopup(offset, selectedIndex) {
     this.popup.on("popup-click", this._onAutocompletePopupClick);
     this.popup.openPopup(this.input, offset, 0, selectedIndex);
   },
@@ -1192,7 +1192,7 @@ InplaceEditor.prototype = {
 
 
 
-  _hideAutocompletePopup: function () {
+  _hideAutocompletePopup() {
     this.popup.off("popup-click", this._onAutocompletePopupClick);
     this.popup.hidePopup();
   },
@@ -1200,7 +1200,7 @@ InplaceEditor.prototype = {
   
 
 
-  _getIncrement: function (event) {
+  _getIncrement(event) {
     const largeIncrement = 100;
     const mediumIncrement = 10;
     const smallIncrement = 0.1;
@@ -1230,14 +1230,14 @@ InplaceEditor.prototype = {
   
 
 
-  _onKeyup: function () {
+  _onKeyup() {
     this._applied = false;
   },
 
   
 
 
-  _onInput: function () {
+  _onInput() {
     
     this._doValidation();
 
@@ -1255,14 +1255,14 @@ InplaceEditor.prototype = {
   
 
 
-  _stopEventPropagation: function (e) {
+  _stopEventPropagation(e) {
     e.stopPropagation();
   },
 
   
 
 
-  _doValidation: function () {
+  _doValidation() {
     if (this.validate && this.input) {
       this.validate(this.input.value);
     }
@@ -1274,7 +1274,7 @@ InplaceEditor.prototype = {
 
 
 
-  _maybeSuggestCompletion: function (autoInsert) {
+  _maybeSuggestCompletion(autoInsert) {
     
     if (!this.input) {
       return;
@@ -1461,7 +1461,7 @@ InplaceEditor.prototype = {
 
 
 
-  _isSingleLine: function () {
+  _isSingleLine() {
     let inputRect = this.input.getBoundingClientRect();
     return inputRect.height < 2 * this.inputCharDimensions.height;
   },
@@ -1472,7 +1472,7 @@ InplaceEditor.prototype = {
 
 
 
-  _getCSSPropertyList: function () {
+  _getCSSPropertyList() {
     return this.cssProperties.getNames().sort();
   },
 
@@ -1484,7 +1484,7 @@ InplaceEditor.prototype = {
 
 
 
-  _getCSSValuesForPropertyName: function (propertyName) {
+  _getCSSValuesForPropertyName(propertyName) {
     return this.cssProperties.getValues(propertyName);
   },
 };

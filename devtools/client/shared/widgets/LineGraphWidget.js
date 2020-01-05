@@ -165,7 +165,7 @@ LineGraphWidget.prototype = Heritage.extend(AbstractCanvasGraph.prototype, {
 
 
 
-  buildGraphImage: function () {
+  buildGraphImage() {
     let { canvas, ctx } = this._getNamedCanvas("line-graph-data");
     let width = this._width;
     let height = this._height;
@@ -246,7 +246,7 @@ LineGraphWidget.prototype = Heritage.extend(AbstractCanvasGraph.prototype, {
 
 
 
-  _drawOverlays: function (ctx, minValue, maxValue, avgValue, dataScaleY) {
+  _drawOverlays(ctx, minValue, maxValue, avgValue, dataScaleY) {
     let width = this._width;
     let height = this._height;
     let totalTicks = this._data.length;
@@ -345,7 +345,7 @@ LineGraphWidget.prototype = Heritage.extend(AbstractCanvasGraph.prototype, {
 
 
 
-  _createGutter: function () {
+  _createGutter() {
     let gutter = this._document.createElementNS(HTML_NS, "div");
     gutter.className = "line-graph-widget-gutter";
     gutter.setAttribute("hidden", true);
@@ -358,7 +358,7 @@ LineGraphWidget.prototype = Heritage.extend(AbstractCanvasGraph.prototype, {
 
 
 
-  _createGutterLine: function (type) {
+  _createGutterLine(type) {
     let line = this._document.createElementNS(HTML_NS, "div");
     line.className = "line-graph-widget-gutter-line";
     line.setAttribute("type", type);
@@ -371,7 +371,7 @@ LineGraphWidget.prototype = Heritage.extend(AbstractCanvasGraph.prototype, {
 
 
 
-  _createTooltip: function (type, arrow, info, metric) {
+  _createTooltip(type, arrow, info, metric) {
     let tooltip = this._document.createElementNS(HTML_NS, "div");
     tooltip.className = "line-graph-widget-tooltip";
     tooltip.setAttribute("type", type);

@@ -12,14 +12,14 @@ const { Class } = require("sdk/core/heritage");
 
 
 exports.Framerate = Class({
-  initialize: function (tabActor) {
+  initialize(tabActor) {
     this.tabActor = tabActor;
     this._contentWin = tabActor.window;
     this._onRefreshDriverTick = this._onRefreshDriverTick.bind(this);
     this._onGlobalCreated = this._onGlobalCreated.bind(this);
     on(this.tabActor, "window-ready", this._onGlobalCreated);
   },
-  destroy: function (conn) {
+  destroy(conn) {
     off(this.tabActor, "window-ready", this._onGlobalCreated);
     this.stopRecording();
   },
@@ -27,7 +27,7 @@ exports.Framerate = Class({
   
 
 
-  startRecording: function () {
+  startRecording() {
     if (this._recording) {
       return;
     }
@@ -40,7 +40,7 @@ exports.Framerate = Class({
   
 
 
-  stopRecording: function (beginAt = 0, endAt = Number.MAX_SAFE_INTEGER) {
+  stopRecording(beginAt = 0, endAt = Number.MAX_SAFE_INTEGER) {
     if (!this._recording) {
       return [];
     }
@@ -52,7 +52,7 @@ exports.Framerate = Class({
   
 
 
-  cancelRecording: function () {
+  cancelRecording() {
     this._contentWin.cancelAnimationFrame(this._rafID);
     this._recording = false;
     this._ticks = null;
@@ -62,14 +62,14 @@ exports.Framerate = Class({
   
 
 
-  isRecording: function () {
+  isRecording() {
     return !!this._recording;
   },
 
   
 
 
-  getPendingTicks: function (beginAt = 0, endAt = Number.MAX_SAFE_INTEGER) {
+  getPendingTicks(beginAt = 0, endAt = Number.MAX_SAFE_INTEGER) {
     if (!this._ticks) {
       return [];
     }
@@ -79,7 +79,7 @@ exports.Framerate = Class({
   
 
 
-  _onRefreshDriverTick: function () {
+  _onRefreshDriverTick() {
     if (!this._recording) {
       return;
     }
@@ -90,7 +90,7 @@ exports.Framerate = Class({
   
 
 
-  _onGlobalCreated: function (win) {
+  _onGlobalCreated(win) {
     if (this._recording) {
       this._contentWin.cancelAnimationFrame(this._rafID);
       this._rafID = this._contentWin.requestAnimationFrame(this._onRefreshDriverTick);

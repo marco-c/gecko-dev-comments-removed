@@ -37,7 +37,7 @@ var NetMonitorView = {
   
 
 
-  initialize: function () {
+  initialize() {
     this._initializePanes();
 
     this.Toolbar.initialize(gStore);
@@ -58,7 +58,7 @@ var NetMonitorView = {
   
 
 
-  destroy: function () {
+  destroy() {
     this._isDestroyed = true;
     this.Toolbar.destroy();
     this.RequestsMenu.destroy();
@@ -73,7 +73,7 @@ var NetMonitorView = {
   
 
 
-  _initializePanes: function () {
+  _initializePanes() {
     dumpn("Initializing the NetMonitorView panes");
 
     this._body = $("#body");
@@ -116,7 +116,7 @@ var NetMonitorView = {
 
 
 
-  toggleDetailsPane: function (flags, tabIndex) {
+  toggleDetailsPane(flags, tabIndex) {
     ViewHelpers.togglePane(flags, this._detailsPane);
 
     if (flags.visible) {
@@ -147,7 +147,7 @@ var NetMonitorView = {
   
 
 
-  toggleFrontendMode: function () {
+  toggleFrontendMode() {
     if (gStore.getState().ui.statisticsOpen) {
       this.showNetworkStatisticsView();
     } else {
@@ -158,14 +158,14 @@ var NetMonitorView = {
   
 
 
-  showNetworkInspectorView: function () {
+  showNetworkInspectorView() {
     this._body.selectedPanel = $("#network-inspector-view");
   },
 
   
 
 
-  showNetworkStatisticsView: function () {
+  showNetworkStatisticsView() {
     this._body.selectedPanel = $("#network-statistics-view");
 
     let controller = NetMonitorController;
@@ -196,7 +196,7 @@ var NetMonitorView = {
     });
   },
 
-  reloadPage: function () {
+  reloadPage() {
     NetMonitorController.triggerActivity(
       ACTIVITY_TYPE.RELOAD.WITH_CACHE_DEFAULT);
   },

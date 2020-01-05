@@ -16,7 +16,7 @@ var StackFrameCache = Class({
   
 
 
-  initialize: function () {
+  initialize() {
     this._framesToIndices = null;
     this._framesToForms = null;
     this._lastEventSize = 0;
@@ -25,7 +25,7 @@ var StackFrameCache = Class({
   
 
 
-  initFrames: function () {
+  initFrames() {
     if (this._framesToIndices) {
       
       return;
@@ -39,7 +39,7 @@ var StackFrameCache = Class({
   
 
 
-  clearFrames: function () {
+  clearFrames() {
     this._framesToIndices.clear();
     this._framesToIndices = null;
     this._framesToForms.clear();
@@ -51,7 +51,7 @@ var StackFrameCache = Class({
 
 
 
-  addFrame: function (frame) {
+  addFrame(frame) {
     this._assignFrameIndices(frame);
     this._createFrameForms(frame);
     return this._framesToIndices.get(frame);
@@ -68,7 +68,7 @@ var StackFrameCache = Class({
 
 
 
-  updateFramePacket: function (packet) {
+  updateFramePacket(packet) {
     
     
     
@@ -113,7 +113,7 @@ var StackFrameCache = Class({
 
 
 
-  makeEvent: function () {
+  makeEvent() {
     const size = this._framesToForms.size;
     if (!size || size <= this._lastEventSize) {
       return null;
@@ -138,7 +138,7 @@ var StackFrameCache = Class({
 
 
 
-  _assignFrameIndices: function (frame) {
+  _assignFrameIndices(frame) {
     if (this._framesToIndices.has(frame)) {
       return;
     }
@@ -158,7 +158,7 @@ var StackFrameCache = Class({
 
 
 
-  _createFrameForms: function (frame) {
+  _createFrameForms(frame) {
     if (this._framesToForms.has(frame)) {
       return;
     }

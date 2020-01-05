@@ -71,7 +71,7 @@ ToolSidebar.prototype = {
 
   
 
-  render: function () {
+  render() {
     let Tabbar = this.React.createFactory(this.browserRequire(
       "devtools/client/shared/components/tabs/tabbar"));
 
@@ -92,7 +92,7 @@ ToolSidebar.prototype = {
 
 
 
-  addTab: function (id, title, panel, selected) {
+  addTab(id, title, panel, selected) {
     this._tabbar.addTab(id, title, selected, panel);
     this.emit("new-tab-registered", id);
   },
@@ -105,12 +105,12 @@ ToolSidebar.prototype = {
 
 
 
-  addExistingTab: function (id, title, selected) {
+  addExistingTab(id, title, selected) {
     let panel = this.InspectorTabPanel({
-      id: id,
+      id,
       idPrefix: this.TABPANEL_ID_PREFIX,
       key: id,
-      title: title,
+      title,
     });
 
     this.addTab(id, title, panel, selected);
@@ -126,20 +126,20 @@ ToolSidebar.prototype = {
 
 
 
-  addFrameTab: function (id, title, url, selected) {
+  addFrameTab(id, title, url, selected) {
     let panel = this.InspectorTabPanel({
-      id: id,
+      id,
       idPrefix: this.TABPANEL_ID_PREFIX,
       key: id,
-      title: title,
-      url: url,
+      title,
+      url,
       onMount: this.onSidePanelMounted.bind(this),
     });
 
     this.addTab(id, title, panel, selected);
   },
 
-  onSidePanelMounted: function (content, props) {
+  onSidePanelMounted(content, props) {
     let iframe = content.querySelector("iframe");
     if (!iframe || iframe.getAttribute("src")) {
       return;
@@ -184,21 +184,21 @@ ToolSidebar.prototype = {
 
 
 
-  toggleTab: function (isVisible, id) {
+  toggleTab(isVisible, id) {
     this._tabbar.toggleTab(id, isVisible);
   },
 
   
 
 
-  select: function (id) {
+  select(id) {
     this._tabbar.select(id);
   },
 
   
 
 
-  getCurrentTabID: function () {
+  getCurrentTabID() {
     return this._currentTool;
   },
 
@@ -207,7 +207,7 @@ ToolSidebar.prototype = {
 
 
 
-  getTabPanel: function (id) {
+  getTabPanel(id) {
     
     
     return this._panelDoc.querySelector("#" +
@@ -217,7 +217,7 @@ ToolSidebar.prototype = {
   
 
 
-  handleSelectionChange: function (id) {
+  handleSelectionChange(id) {
     if (this._destroyed) {
       return;
     }
@@ -246,7 +246,7 @@ ToolSidebar.prototype = {
 
 
 
-  show: function (id) {
+  show(id) {
     this._tabbox.removeAttribute("hidden");
 
     
@@ -265,7 +265,7 @@ ToolSidebar.prototype = {
   
 
 
-  hide: function () {
+  hide() {
     this._tabbox.setAttribute("hidden", "true");
 
     this.emit("hide");
@@ -274,7 +274,7 @@ ToolSidebar.prototype = {
   
 
 
-  getWindowForTab: function (id) {
+  getWindowForTab(id) {
     
     let panel = this.getTabPanel(id);
     if (!panel || !panel.firstElementChild || !panel.firstElementChild.contentWindow) {

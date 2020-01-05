@@ -45,6 +45,6 @@ define(function (require, exports, module) {
   
   exports.SymbolRep = {
     rep: SymbolRep,
-    supportsObject: supportsObject,
+    supportsObject,
   };
 });

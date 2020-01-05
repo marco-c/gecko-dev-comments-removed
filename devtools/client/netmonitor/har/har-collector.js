@@ -10,7 +10,7 @@ const Services = require("Services");
 
 
 const trace = {
-  log: function (...args) {
+  log(...args) {
   }
 };
 
@@ -40,19 +40,19 @@ function HarCollector(options) {
 HarCollector.prototype = {
   
 
-  start: function () {
+  start() {
     this.debuggerClient.addListener("networkEvent", this.onNetworkEvent);
     this.debuggerClient.addListener("networkEventUpdate",
       this.onNetworkEventUpdate);
   },
 
-  stop: function () {
+  stop() {
     this.debuggerClient.removeListener("networkEvent", this.onNetworkEvent);
     this.debuggerClient.removeListener("networkEventUpdate",
       this.onNetworkEventUpdate);
   },
 
-  clear: function () {
+  clear() {
     
     
     this.files = new Map();
@@ -62,7 +62,7 @@ HarCollector.prototype = {
     this.requests = [];
   },
 
-  waitForHarLoad: function () {
+  waitForHarLoad() {
     
     
     
@@ -75,7 +75,7 @@ HarCollector.prototype = {
     return deferred.promise;
   },
 
-  waitForResponses: function () {
+  waitForResponses() {
     trace.log("HarCollector.waitForResponses; " + this.requests.length);
 
     
@@ -108,7 +108,7 @@ HarCollector.prototype = {
 
 
 
-  waitForTimeout: function () {
+  waitForTimeout() {
     
     
     
@@ -129,14 +129,14 @@ HarCollector.prototype = {
     return this.pageLoadDeferred.promise;
   },
 
-  onPageLoadTimeout: function () {
+  onPageLoadTimeout() {
     trace.log("HarCollector.onPageLoadTimeout;");
 
     
     this.pageLoadDeferred.resolve();
   },
 
-  resetPageLoadTimeout: function () {
+  resetPageLoadTimeout() {
     
     if (this.pageLoadTimeout) {
       trace.log("HarCollector.resetPageLoadTimeout;");
@@ -154,17 +154,17 @@ HarCollector.prototype = {
 
   
 
-  getFile: function (actorId) {
+  getFile(actorId) {
     return this.files.get(actorId);
   },
 
-  getItems: function () {
+  getItems() {
     return this.items;
   },
 
   
 
-  onNetworkEvent: function (type, packet) {
+  onNetworkEvent(type, packet) {
     
     if (packet.from != this.webConsoleClient.actor) {
       return;
@@ -193,9 +193,9 @@ HarCollector.prototype = {
     file = {
       startedDeltaMillis: startTime - this.firstRequestStart,
       startedMillis: startTime,
-      method: method,
-      url: url,
-      isXHR: isXHR
+      method,
+      url,
+      isXHR
     };
 
     this.files.set(actor, file);
@@ -204,7 +204,7 @@ HarCollector.prototype = {
     this.items.push(file);
   },
 
-  onNetworkEventUpdate: function (type, packet) {
+  onNetworkEventUpdate(type, packet) {
     let actor = packet.from;
 
     
@@ -272,7 +272,7 @@ HarCollector.prototype = {
     this.resetPageLoadTimeout();
   },
 
-  getData: function (actor, method, callback) {
+  getData(actor, method, callback) {
     let deferred = defer();
 
     if (!this.webConsoleClient[method]) {
@@ -303,7 +303,7 @@ HarCollector.prototype = {
 
 
 
-  onRequestHeaders: function (response) {
+  onRequestHeaders(response) {
     let file = this.getFile(response.from);
     file.requestHeaders = response;
 
@@ -316,7 +316,7 @@ HarCollector.prototype = {
 
 
 
-  onRequestCookies: function (response) {
+  onRequestCookies(response) {
     let file = this.getFile(response.from);
     file.requestCookies = response;
 
@@ -329,7 +329,7 @@ HarCollector.prototype = {
 
 
 
-  onRequestPostData: function (response) {
+  onRequestPostData(response) {
     trace.log("HarCollector.onRequestPostData;", response);
 
     let file = this.getFile(response.from);
@@ -350,7 +350,7 @@ HarCollector.prototype = {
 
 
 
-  onResponseHeaders: function (response) {
+  onResponseHeaders(response) {
     let file = this.getFile(response.from);
     file.responseHeaders = response;
 
@@ -363,7 +363,7 @@ HarCollector.prototype = {
 
 
 
-  onResponseCookies: function (response) {
+  onResponseCookies(response) {
     let file = this.getFile(response.from);
     file.responseCookies = response;
 
@@ -376,7 +376,7 @@ HarCollector.prototype = {
 
 
 
-  onResponseContent: function (response) {
+  onResponseContent(response) {
     let file = this.getFile(response.from);
     file.responseContent = response;
 
@@ -395,7 +395,7 @@ HarCollector.prototype = {
 
 
 
-  onEventTimings: function (response) {
+  onEventTimings(response) {
     let file = this.getFile(response.from);
     file.eventTimings = response;
 
@@ -427,7 +427,7 @@ HarCollector.prototype = {
 
 
 
-  getString: function (stringGrip) {
+  getString(stringGrip) {
     let promise = this.webConsoleClient.getString(stringGrip);
     this.requests.push(promise);
     return promise;

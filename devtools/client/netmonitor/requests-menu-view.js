@@ -64,7 +64,7 @@ RequestsMenuView.prototype = {
   
 
 
-  initialize: function (store) {
+  initialize(store) {
     dumpn("Initializing the RequestsMenuView");
 
     this.store = store;
@@ -382,7 +382,7 @@ RequestsMenuView.prototype = {
   
 
 
-  toggleRawHeaders: function () {
+  toggleRawHeaders() {
     let requestTextarea = $("#raw-request-headers-textarea");
     let responseTextarea = $("#raw-response-headers-textarea");
     let rawHeadersHidden = $("#raw-headers").getAttribute("hidden");
@@ -404,7 +404,7 @@ RequestsMenuView.prototype = {
   
 
 
-  sendCustomRequest: function () {
+  sendCustomRequest() {
     let selected = getSelectedRequest(this.store.getState());
 
     let data = {

@@ -15,7 +15,7 @@ loader.lazyGetter(this, "NetworkHelper", () => require("devtools/shared/webconso
 
 
 const trace = {
-  log: function (...args) {
+  log(...args) {
   }
 };
 
@@ -38,7 +38,7 @@ const acceptableHeaders = ["x-chromelogger-data"];
 var ServerLoggerMonitor = {
   
 
-  initialize: function () {
+  initialize() {
     this.onChildMessage = this.onChildMessage.bind(this);
     this.onExamineResponse = this.onExamineResponse.bind(this);
 
@@ -76,7 +76,7 @@ var ServerLoggerMonitor = {
 
   
 
-  onChildMessage: function (msg) {
+  onChildMessage(msg) {
     let method = msg.data.method;
 
     trace.log("ServerLoggerMonitor.onChildMessage; ", method, msg);
@@ -92,7 +92,7 @@ var ServerLoggerMonitor = {
     }
   },
 
-  onAttachChild: function (event) {
+  onAttachChild(event) {
     let target = event.target;
     let size = this.targets.size;
 
@@ -110,7 +110,7 @@ var ServerLoggerMonitor = {
     this.targets.add(target);
   },
 
-  onDetachChild: function (event) {
+  onDetachChild(event) {
     let target = event.target;
     this.targets.delete(target);
 
@@ -158,7 +158,7 @@ var ServerLoggerMonitor = {
     httpChannel.visitResponseHeaders((header, value) => {
       header = header.toLowerCase();
       if (acceptableHeaders.indexOf(header) !== -1) {
-        headers.push({header: header, value: value});
+        headers.push({header, value});
       }
     });
 
@@ -169,7 +169,7 @@ var ServerLoggerMonitor = {
     let { messageManager } = requestFrame;
     messageManager.sendAsyncMessage("debug:server-logger", {
       method: "examineHeaders",
-      headers: headers,
+      headers,
     });
 
     trace.log("ServerLoggerMonitor.onExamineResponse; headers ",

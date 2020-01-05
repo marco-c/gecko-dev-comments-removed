@@ -102,7 +102,7 @@ TextPropertyEditor.prototype = {
   
 
 
-  _create: function () {
+  _create() {
     this.element = this.doc.createElementNS(HTML_NS, "li");
     this.element.classList.add("ruleview-property");
     this.element._textPropertyEditor = this;
@@ -313,7 +313,7 @@ TextPropertyEditor.prototype = {
   
 
 
-  update: function () {
+  update() {
     if (this.ruleView.isDestroyed) {
       return;
     }
@@ -461,7 +461,7 @@ TextPropertyEditor.prototype = {
     this.ruleView._updatePropertyHighlight(this);
   },
 
-  _onStartEditing: function () {
+  _onStartEditing() {
     this.element.classList.remove("ruleview-overridden");
     this.filterProperty.hidden = true;
     this.enable.style.visibility = "hidden";
@@ -471,7 +471,7 @@ TextPropertyEditor.prototype = {
 
 
 
-  updatePropertyState: function () {
+  updatePropertyState() {
     if (this.prop.enabled) {
       this.enable.style.removeProperty("visibility");
       this.enable.setAttribute("checked", "");
@@ -499,7 +499,7 @@ TextPropertyEditor.prototype = {
 
 
 
-  _updateComputed: function () {
+  _updateComputed() {
     this.computed.innerHTML = "";
 
     let showExpander = this.prop.computed.some(c => c.name !== this.prop.name);
@@ -514,7 +514,7 @@ TextPropertyEditor.prototype = {
   
 
 
-  _populateComputed: function () {
+  _populateComputed() {
     if (this._populatedComputed) {
       return;
     }
@@ -569,7 +569,7 @@ TextPropertyEditor.prototype = {
   
 
 
-  _onEnableClicked: function (event) {
+  _onEnableClicked(event) {
     let checked = this.enable.hasAttribute("checked");
     if (checked) {
       this.enable.removeAttribute("checked");
@@ -587,7 +587,7 @@ TextPropertyEditor.prototype = {
 
 
 
-  _onExpandClicked: function (event) {
+  _onExpandClicked(event) {
     if (this.computed.hasAttribute("filter-open") ||
         this.computed.hasAttribute("user-open")) {
       this.expander.removeAttribute("open");
@@ -607,7 +607,7 @@ TextPropertyEditor.prototype = {
 
 
 
-  expandForFilter: function () {
+  expandForFilter() {
     if (!this.computed.hasAttribute("user-open")) {
       this.expander.setAttribute("open", "true");
       this.computed.setAttribute("filter-open", "");
@@ -618,7 +618,7 @@ TextPropertyEditor.prototype = {
   
 
 
-  collapseForFilter: function () {
+  collapseForFilter() {
     this.computed.removeAttribute("filter-open");
 
     if (!this.computed.hasAttribute("user-open")) {
@@ -638,7 +638,7 @@ TextPropertyEditor.prototype = {
 
 
 
-  _onNameDone: function (value, commit, direction) {
+  _onNameDone(value, commit, direction) {
     let isNameUnchanged = (!commit && !this.ruleEditor.isEditing) ||
                           this.committed.name === value;
     if (this.prop.value && isNameUnchanged) {
@@ -686,7 +686,7 @@ TextPropertyEditor.prototype = {
 
 
 
-  remove: function (direction) {
+  remove(direction) {
     if (this._colorSwatchSpans && this._colorSwatchSpans.length) {
       for (let span of this._colorSwatchSpans) {
         this.ruleView.tooltips.colorPicker.removeSwatch(span);
@@ -718,7 +718,7 @@ TextPropertyEditor.prototype = {
 
 
 
-  _onValueDone: function (value = "", commit, direction) {
+  _onValueDone(value = "", commit, direction) {
     let parsedProperties = this._getValueAndExtraProperties(value);
     let val = parseSingleValue(this.cssProperties.isKnown,
                                parsedProperties.firstValue);
@@ -769,7 +769,7 @@ TextPropertyEditor.prototype = {
   
 
 
-  _onSwatchCommit: function () {
+  _onSwatchCommit() {
     this._onValueDone(this.valueSpan.textContent, true);
     this.update();
   },
@@ -777,7 +777,7 @@ TextPropertyEditor.prototype = {
   
 
 
-  _onSwatchPreview: function () {
+  _onSwatchPreview() {
     this._previewValue(this.valueSpan.textContent);
   },
 
@@ -785,7 +785,7 @@ TextPropertyEditor.prototype = {
 
 
 
-  _onSwatchRevert: function () {
+  _onSwatchRevert() {
     this._previewValue(this.prop.value, true);
     this.update();
   },
@@ -805,7 +805,7 @@ TextPropertyEditor.prototype = {
 
 
 
-  _getValueAndExtraProperties: function (value) {
+  _getValueAndExtraProperties(value) {
     
     
     
@@ -832,8 +832,8 @@ TextPropertyEditor.prototype = {
     }
 
     return {
-      propertiesToAdd: propertiesToAdd,
-      firstValue: firstValue
+      propertiesToAdd,
+      firstValue
     };
   },
 
@@ -845,7 +845,7 @@ TextPropertyEditor.prototype = {
 
 
 
-  _previewValue: function (value, reverting = false) {
+  _previewValue(value, reverting = false) {
     
     
     if (!reverting && (!this.editing || this.ruleEditor.isEditing)) {
@@ -863,7 +863,7 @@ TextPropertyEditor.prototype = {
 
 
 
-  isValid: function () {
+  isValid() {
     return this.prop.isValid();
   },
 
@@ -872,7 +872,7 @@ TextPropertyEditor.prototype = {
 
 
 
-  isDisplayGrid: function () {
+  isDisplayGrid() {
     return this.prop.name === "display" && this.prop.value === "grid";
   }
 };

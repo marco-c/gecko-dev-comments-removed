@@ -28,7 +28,7 @@ const MAX_UNUSED_RULES = 10000;
 
 const l10n = exports.l10n = {
   _URI: "chrome://devtools-shared/locale/csscoverage.properties",
-  lookup: function (msg) {
+  lookup(msg) {
     if (this._stringBundle == null) {
       this._stringBundle = Services.strings.createBundle(this._URI);
     }
@@ -68,7 +68,7 @@ const l10n = exports.l10n = {
 
 
 var CSSUsageActor = protocol.ActorClassWithSpec(cssUsageSpec, {
-  initialize: function (conn, tabActor) {
+  initialize(conn, tabActor) {
     protocol.Actor.prototype.initialize.call(this, conn);
 
     this._tabActor = tabActor;
@@ -81,7 +81,7 @@ var CSSUsageActor = protocol.ActorClassWithSpec(cssUsageSpec, {
                      Ci.nsIWebProgress.NOTIFY_STATE_ALL;
   },
 
-  destroy: function () {
+  destroy() {
     this._tabActor = undefined;
 
     delete this._onTabLoad;
@@ -97,7 +97,7 @@ var CSSUsageActor = protocol.ActorClassWithSpec(cssUsageSpec, {
 
 
 
-  start: function (noreload) {
+  start(noreload) {
     if (this._running) {
       throw new Error(l10n.lookup("csscoverageRunningError"));
     }
@@ -146,7 +146,7 @@ var CSSUsageActor = protocol.ActorClassWithSpec(cssUsageSpec, {
   
 
 
-  stop: function () {
+  stop() {
     if (!this._running) {
       throw new Error(l10n.lookup("csscoverageNotRunningError"));
     }
@@ -161,7 +161,7 @@ var CSSUsageActor = protocol.ActorClassWithSpec(cssUsageSpec, {
   
 
 
-  toggle: function () {
+  toggle() {
     return this._running ? this.stop() : this.start();
   },
 
@@ -169,7 +169,7 @@ var CSSUsageActor = protocol.ActorClassWithSpec(cssUsageSpec, {
 
 
 
-  oneshot: function () {
+  oneshot() {
     if (this._running) {
       throw new Error(l10n.lookup("csscoverageRunningError"));
     }
@@ -185,7 +185,7 @@ var CSSUsageActor = protocol.ActorClassWithSpec(cssUsageSpec, {
   
 
 
-  _onTabLoad: function (document) {
+  _onTabLoad(document) {
     this._populateKnownRules(document);
     this._updateUsage(document, true);
 
@@ -195,7 +195,7 @@ var CSSUsageActor = protocol.ActorClassWithSpec(cssUsageSpec, {
   
 
 
-  _observeMutations: function (document) {
+  _observeMutations(document) {
     let MutationObserver = document.defaultView.MutationObserver;
     let observer = new MutationObserver(mutations => {
       
@@ -215,7 +215,7 @@ var CSSUsageActor = protocol.ActorClassWithSpec(cssUsageSpec, {
 
 
 
-  _onChange: function (document) {
+  _onChange(document) {
     
     if (!this._visitedPages.has(getURL(document))) {
       return;
@@ -227,7 +227,7 @@ var CSSUsageActor = protocol.ActorClassWithSpec(cssUsageSpec, {
 
 
 
-  _populateKnownRules: function (document) {
+  _populateKnownRules(document) {
     let url = getURL(document);
     this._visitedPages.add(url);
     
@@ -255,7 +255,7 @@ var CSSUsageActor = protocol.ActorClassWithSpec(cssUsageSpec, {
   
 
 
-  _updateUsage: function (document, isLoad) {
+  _updateUsage(document, isLoad) {
     let qsaCount = 0;
 
     
@@ -312,7 +312,7 @@ var CSSUsageActor = protocol.ActorClassWithSpec(cssUsageSpec, {
 
 
 
-  createEditorReport: function (url) {
+  createEditorReport(url) {
     if (this._knownRules == null) {
       return { reports: [] };
     }
@@ -326,7 +326,7 @@ var CSSUsageActor = protocol.ActorClassWithSpec(cssUsageSpec, {
 
       let ruleReport = {
         selectorText: ruleData.selectorText,
-        start: { line: line, column: column }
+        start: { line, column }
       };
 
       if (ruleData.end) {
@@ -336,7 +336,7 @@ var CSSUsageActor = protocol.ActorClassWithSpec(cssUsageSpec, {
       reports.push(ruleReport);
     }
 
-    return { reports: reports };
+    return { reports };
   },
 
   
@@ -346,7 +346,7 @@ var CSSUsageActor = protocol.ActorClassWithSpec(cssUsageSpec, {
 
 
 
-  createEditorReportForSheet: function (stylesheetActor) {
+  createEditorReportForSheet(stylesheetActor) {
     let url = sheetToUrl(stylesheetActor.rawSheet);
     return this.createEditorReport(url);
   },
@@ -386,7 +386,7 @@ var CSSUsageActor = protocol.ActorClassWithSpec(cssUsageSpec, {
 
 
 
-  createPageReport: function () {
+  createPageReport() {
     if (this._running) {
       throw new Error(l10n.lookup("csscoverageRunningError"));
     }
@@ -432,9 +432,9 @@ var CSSUsageActor = protocol.ActorClassWithSpec(cssUsageSpec, {
     let unused = [];
     for (let [url, rules] of unusedMap) {
       unused.push({
-        url: url,
+        url,
         shortUrl: url.split("/").slice(-1),
-        rules: rules
+        rules
       });
     }
 
@@ -442,7 +442,7 @@ var CSSUsageActor = protocol.ActorClassWithSpec(cssUsageSpec, {
     let preload = [];
     for (let url of this._visitedPages) {
       let page = {
-        url: url,
+        url,
         shortUrl: url.split("/").slice(-1),
         rules: []
       };
@@ -464,16 +464,16 @@ var CSSUsageActor = protocol.ActorClassWithSpec(cssUsageSpec, {
     }
 
     return {
-      summary: summary,
-      preload: preload,
-      unused: unused
+      summary,
+      preload,
+      unused
     };
   },
 
   
 
 
-  _testOnlyVisitedPages: function () {
+  _testOnlyVisitedPages() {
     return [...this._visitedPages];
   },
 });
@@ -564,7 +564,7 @@ const deconstructRuleId = exports.deconstructRuleId = function (ruleId) {
   }
   let [ url, line, column ] = split;
   return {
-    url: url,
+    url,
     line: parseInt(line, 10),
     column: parseInt(column, 10)
   };

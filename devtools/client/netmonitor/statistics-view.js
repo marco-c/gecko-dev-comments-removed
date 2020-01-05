@@ -33,7 +33,7 @@ StatisticsView.prototype = {
   
 
 
-  initialize: function (store) {
+  initialize(store) {
     this.store = store;
     this.Chart = Chart;
     this._backButton = $("#react-statistics-back-hook");
@@ -53,14 +53,14 @@ StatisticsView.prototype = {
   
 
 
-  destroy: function () {
+  destroy() {
     ReactDOM.unmountComponentAtNode(this._backButton);
   },
 
   
 
 
-  displayPlaceholderCharts: function () {
+  displayPlaceholderCharts() {
     this._createChart({
       id: "#primed-cache-chart",
       title: "charts.cacheEnabled"
@@ -78,7 +78,7 @@ StatisticsView.prototype = {
 
 
 
-  createPrimedCacheChart: function (items) {
+  createPrimedCacheChart(items) {
     this._createChart({
       id: "#primed-cache-chart",
       title: "charts.cacheEnabled",
@@ -96,7 +96,7 @@ StatisticsView.prototype = {
 
 
 
-  createEmptyCacheChart: function (items) {
+  createEmptyCacheChart(items) {
     this._createChart({
       id: "#empty-cache-chart",
       title: "charts.cacheDisabled",
@@ -149,7 +149,7 @@ StatisticsView.prototype = {
 
 
 
-  _createChart: function ({ id, title, data, strings, totals, sorted }) {
+  _createChart({ id, title, data, strings, totals, sorted }) {
     let container = $(id);
 
     
@@ -161,10 +161,10 @@ StatisticsView.prototype = {
     let chart = this.Chart.PieTable(document, {
       diameter: NETWORK_ANALYSIS_PIE_CHART_DIAMETER,
       title: L10N.getStr(title),
-      data: data,
-      strings: strings,
-      totals: totals,
-      sorted: sorted
+      data,
+      strings,
+      totals,
+      sorted
     });
 
     chart.on("click", (_, item) => {
@@ -185,7 +185,7 @@ StatisticsView.prototype = {
 
 
 
-  _sanitizeChartDataSource: function (items, emptyCache) {
+  _sanitizeChartDataSource(items, emptyCache) {
     let data = [
       "html", "css", "js", "xhr", "fonts", "images", "media", "flash", "ws", "other"
     ].map(e => ({

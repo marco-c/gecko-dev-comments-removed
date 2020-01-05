@@ -17,7 +17,7 @@ loader.lazyGetter(this, "NetworkHelper", () => require("devtools/shared/webconso
 
 
 const trace = {
-  log: function () {
+  log() {
   }
 };
 
@@ -47,7 +47,7 @@ var ServerLoggingListener = Class({
 
 
 
-  initialize: function (win, owner) {
+  initialize(win, owner) {
     trace.log("ServerLoggingListener.initialize; ", owner.actorID,
       ", child process: ", DebuggerServer.isInChildProcess);
 
@@ -64,7 +64,7 @@ var ServerLoggingListener = Class({
   
 
 
-  destroy: function () {
+  destroy() {
     trace.log("ServerLoggingListener.destroy; ", this.owner.actorID,
       ", child process: ", DebuggerServer.isInChildProcess);
 
@@ -107,7 +107,7 @@ var ServerLoggingListener = Class({
 
   
 
-  attachParentProcess: function () {
+  attachParentProcess() {
     trace.log("ServerLoggingListener.attachParentProcess;");
 
     this.owner.conn.setupInParent({
@@ -162,7 +162,7 @@ var ServerLoggingListener = Class({
 
   
 
-  onExamineHeaders: function (event) {
+  onExamineHeaders(event) {
     let headers = event.data.headers;
 
     trace.log("ServerLoggingListener.onExamineHeaders;", headers);
@@ -204,13 +204,13 @@ var ServerLoggingListener = Class({
     httpChannel.visitResponseHeaders((header, value) => {
       header = header.toLowerCase();
       if (acceptableHeaders.indexOf(header) !== -1) {
-        headers.push({header: header, value: value});
+        headers.push({header, value});
       }
     });
 
     this.onExamineHeaders({
       data: {
-        headers: headers,
+        headers,
       }
     });
   }),
@@ -225,7 +225,7 @@ var ServerLoggingListener = Class({
 
 
 
-  _matchRequest: function (channel) {
+  _matchRequest(channel) {
     trace.log("_matchRequest ", this.window, ", ", this.topFrame);
 
     
@@ -265,7 +265,7 @@ var ServerLoggingListener = Class({
 
 
 
-  parse: function (header, value) {
+  parse(header, value) {
     let data;
 
     try {
@@ -314,15 +314,15 @@ var ServerLoggingListener = Class({
 
       parsedMessage.push({
         logs: rawLogs,
-        location: location,
-        type: type
+        location,
+        type
       });
     }
 
     return parsedMessage;
   },
 
-  getColumnMap: function (data) {
+  getColumnMap(data) {
     let columnMap = new Map();
     let columnName;
 
@@ -334,7 +334,7 @@ var ServerLoggingListener = Class({
     return columnMap;
   },
 
-  sendMessage: function (msg) {
+  sendMessage(msg) {
     trace.log("ServerLoggingListener.sendMessage; message", msg);
 
     let formatted = format(msg);
@@ -346,7 +346,7 @@ var ServerLoggingListener = Class({
 
     let message = {
       category: "server",
-      innerID: innerID,
+      innerID,
       level: msg.type,
       filename: location ? location.url : null,
       lineNumber: location ? location.line : null,

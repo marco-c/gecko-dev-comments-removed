@@ -197,7 +197,7 @@ StorageUI.prototype = {
     this._panelDoc.documentElement.classList.toggle("no-animate", !value);
   },
 
-  destroy: function () {
+  destroy() {
     this.table.off(TableWidget.EVENTS.ROW_SELECTED, this.displayObjectSidebar);
     this.table.off(TableWidget.EVENTS.SCROLL_END, this.handleScrollEnd);
     this.table.off(TableWidget.EVENTS.CELL_EDIT, this.editItem);
@@ -222,13 +222,13 @@ StorageUI.prototype = {
   
 
 
-  hideSidebar: function () {
+  hideSidebar() {
     this.view.empty();
     this.sidebar.hidden = true;
     this.table.clearSelection();
   },
 
-  getCurrentActor: function () {
+  getCurrentActor() {
     let type = this.table.datatype;
 
     return this.storageTypes[type];
@@ -240,7 +240,7 @@ StorageUI.prototype = {
 
 
 
-  makeFieldsEditable: function* (editableFields) {
+  * makeFieldsEditable(editableFields) {
     if (editableFields && editableFields.length > 0) {
       this.table.makeFieldsEditable(editableFields);
     } else if (this.table._editableFieldsEngine) {
@@ -248,7 +248,7 @@ StorageUI.prototype = {
     }
   },
 
-  editItem: function (eventType, data) {
+  editItem(eventType, data) {
     let actor = this.getCurrentActor();
 
     actor.editItem(data);
@@ -259,7 +259,7 @@ StorageUI.prototype = {
 
 
 
-  removeItemFromTable: function (name) {
+  removeItemFromTable(name) {
     if (this.table.isSelected(name)) {
       if (this.table.selectedIndex == 0) {
         this.table.selectNextRow();
@@ -279,7 +279,7 @@ StorageUI.prototype = {
 
 
 
-  onCleared: function (response) {
+  onCleared(response) {
     function* enumPaths() {
       for (let type in response) {
         if (Array.isArray(response[type])) {
@@ -343,7 +343,7 @@ StorageUI.prototype = {
 
 
 
-  onUpdate: function ({ changed, added, deleted }) {
+  onUpdate({ changed, added, deleted }) {
     if (deleted) {
       this.handleDeletedItems(deleted);
     }
@@ -366,7 +366,7 @@ StorageUI.prototype = {
 
 
 
-  handleAddedItems: function (added) {
+  handleAddedItems(added) {
     for (let type in added) {
       for (let host in added[type]) {
         this.tree.add([type, {id: host, type: "url"}]);
@@ -400,7 +400,7 @@ StorageUI.prototype = {
 
 
 
-  handleDeletedItems: function (deleted) {
+  handleDeletedItems(deleted) {
     for (let type in deleted) {
       for (let host in deleted[type]) {
         if (!deleted[type][host].length) {
@@ -452,7 +452,7 @@ StorageUI.prototype = {
 
 
 
-  handleChangedItems: function (changed) {
+  handleChangedItems(changed) {
     let [type, host, db, objectStore] = this.tree.selectedItem;
     if (!changed[type] || !changed[type][host] ||
         changed[type][host].length == 0) {
@@ -533,7 +533,7 @@ StorageUI.prototype = {
 
 
 
-  populateStorageTree: function (storageTypes) {
+  populateStorageTree(storageTypes) {
     this.storageTypes = {};
     for (let type in storageTypes) {
       
@@ -654,7 +654,7 @@ StorageUI.prototype = {
 
 
 
-  parseItemValue: function (name, originalValue) {
+  parseItemValue(name, originalValue) {
     
     let decodedValue = "";
     try {
@@ -707,7 +707,7 @@ StorageUI.prototype = {
 
 
 
-  _extractKeyValPairs: function (value) {
+  _extractKeyValPairs(value) {
     let makeObject = (keySep, pairSep) => {
       let object = {};
       for (let pair of value.split(pairSep)) {
@@ -759,7 +759,7 @@ StorageUI.prototype = {
 
 
 
-  onHostSelect: function (event, item) {
+  onHostSelect(event, item) {
     this.table.clear();
     this.hideSidebar();
     this.searchBox.value = "";
@@ -788,7 +788,7 @@ StorageUI.prototype = {
 
 
 
-  resetColumns: function* (type, host, subtype) {
+  * resetColumns(type, host, subtype) {
     this.table.host = host;
     this.table.datatype = type;
 
@@ -848,7 +848,7 @@ StorageUI.prototype = {
 
 
 
-  populateTable: function (data, reason) {
+  populateTable(data, reason) {
     for (let item of data) {
       if (item.value) {
         item.valueActor = item.value;
@@ -894,7 +894,7 @@ StorageUI.prototype = {
 
 
 
-  handleKeypress: function (event) {
+  handleKeypress(event) {
     if (event.keyCode == KeyCodes.DOM_VK_ESCAPE && !this.sidebar.hidden) {
       
       this.hideSidebar();
@@ -915,7 +915,7 @@ StorageUI.prototype = {
   
 
 
-  handleScrollEnd: function () {
+  handleScrollEnd() {
     if (!this.shouldLoadMoreItems) {
       return;
     }
@@ -936,7 +936,7 @@ StorageUI.prototype = {
 
 
 
-  onTablePopupShowing: function (event) {
+  onTablePopupShowing(event) {
     let selectedItem = this.tree.selectedItem;
     let type = selectedItem[0];
     let actor = this.getCurrentActor();
@@ -968,7 +968,7 @@ StorageUI.prototype = {
     }
   },
 
-  onTreePopupShowing: function (event) {
+  onTreePopupShowing(event) {
     let showMenu = false;
     let selectedItem = this.tree.selectedItem;
 
@@ -1020,7 +1020,7 @@ StorageUI.prototype = {
   
 
 
-  onRemoveItem: function () {
+  onRemoveItem() {
     let [, host, ...path] = this.tree.selectedItem;
     let actor = this.getCurrentActor();
     let rowId = this.table.contextMenuRowId;
@@ -1035,7 +1035,7 @@ StorageUI.prototype = {
   
 
 
-  onRemoveAll: function () {
+  onRemoveAll() {
     
     
     
@@ -1049,7 +1049,7 @@ StorageUI.prototype = {
 
 
 
-  onRemoveAllFrom: function () {
+  onRemoveAllFrom() {
     let [, host] = this.tree.selectedItem;
     let actor = this.getCurrentActor();
     let rowId = this.table.contextMenuRowId;
@@ -1058,7 +1058,7 @@ StorageUI.prototype = {
     actor.removeAll(host, data.host);
   },
 
-  onRemoveTreeItem: function () {
+  onRemoveTreeItem() {
     let [type, host, ...path] = this.tree.selectedItem;
 
     if (type == "indexedDB" && path.length == 1) {
@@ -1068,7 +1068,7 @@ StorageUI.prototype = {
     }
   },
 
-  removeDatabase: function (host, dbName) {
+  removeDatabase(host, dbName) {
     let actor = this.storageTypes.indexedDB;
 
     actor.removeDatabase(host, dbName).then(result => {
@@ -1090,7 +1090,7 @@ StorageUI.prototype = {
     });
   },
 
-  removeCache: function (host, cacheName) {
+  removeCache(host, cacheName) {
     let actor = this.storageTypes.Cache;
 
     actor.removeItem(host, JSON.stringify([ cacheName ]));

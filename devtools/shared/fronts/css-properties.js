@@ -40,7 +40,7 @@ var cachedCssProperties = new WeakMap();
 
 
 const CssPropertiesFront = FrontClassWithSpec(cssPropertiesSpec, {
-  initialize: function (client, { cssPropertiesActor }) {
+  initialize(client, { cssPropertiesActor }) {
     Front.prototype.initialize.call(this, client, {actor: cssPropertiesActor});
     this.manage(this);
   }

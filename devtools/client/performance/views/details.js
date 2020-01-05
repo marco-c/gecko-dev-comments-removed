@@ -130,7 +130,7 @@ var DetailsView = {
 
 
 
-  _isViewSupported: function (viewName) {
+  _isViewSupported(viewName) {
     let { features, prefs } = this.components[viewName];
     let recording = PerformanceController.getCurrentRecording();
 
@@ -176,7 +176,7 @@ var DetailsView = {
 
 
 
-  selectDefaultView: function () {
+  selectDefaultView() {
     
     
     
@@ -194,7 +194,7 @@ var DetailsView = {
 
 
 
-  isViewSelected: function (viewObject) {
+  isViewSelected(viewObject) {
     
     
     if (!this._initialized) {
@@ -240,7 +240,7 @@ var DetailsView = {
   
 
 
-  _onRecordingStoppedOrSelected: function (_, state, recording) {
+  _onRecordingStoppedOrSelected(_, state, recording) {
     if (typeof state === "string" && state !== "recording-stopped") {
       return;
     }
@@ -250,7 +250,7 @@ var DetailsView = {
   
 
 
-  _onViewToggle: function (e) {
+  _onViewToggle(e) {
     this.selectView(e.target.getAttribute("data-view"));
   },
 

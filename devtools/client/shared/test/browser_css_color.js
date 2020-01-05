@@ -78,7 +78,7 @@ function testColorMatch(name, hex, hsl, rgb, rgba, canvas) {
     
     setColor(rgba);
     let [r, g, b, a] = ctx.getImageData(0, 0, 1, 1).data;
-    target = {r: r, g: g, b: b, a: a};
+    target = {r, g, b, a};
   };
   let test = function (color, type) {
     

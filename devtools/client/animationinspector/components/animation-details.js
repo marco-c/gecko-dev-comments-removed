@@ -35,17 +35,17 @@ AnimationDetails.prototype = {
   
   NON_PROPERTIES: ["easing", "composite", "computedOffset", "offset"],
 
-  init: function (containerEl) {
+  init(containerEl) {
     this.containerEl = containerEl;
   },
 
-  destroy: function () {
+  destroy() {
     this.unrender();
     this.containerEl = null;
     this.serverTraits = null;
   },
 
-  unrender: function () {
+  unrender() {
     for (let component of this.keyframeComponents) {
       component.off("frame-selected", this.onFrameSelected);
       component.destroy();
@@ -57,7 +57,7 @@ AnimationDetails.prototype = {
     }
   },
 
-  getPerfDataForProperty: function (animation, propertyName) {
+  getPerfDataForProperty(animation, propertyName) {
     let warning = "";
     let className = "";
     if (animation.state.propertyState) {
@@ -195,8 +195,8 @@ AnimationDetails.prototype = {
       keyframesComponent.init(framesEl);
       keyframesComponent.render({
         keyframes: this.tracks[propertyName],
-        propertyName: propertyName,
-        animation: animation
+        propertyName,
+        animation
       });
       keyframesComponent.on("frame-selected", this.onFrameSelected);
 
@@ -204,7 +204,7 @@ AnimationDetails.prototype = {
     }
   }),
 
-  onFrameSelected: function (e, args) {
+  onFrameSelected(e, args) {
     
     this.emit(e, args);
   }

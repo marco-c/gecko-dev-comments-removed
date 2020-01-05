@@ -35,7 +35,7 @@ SimpleOutlineHighlighter.prototype = {
   
 
 
-  destroy: function () {
+  destroy() {
     this.hide();
     this.chromeDoc = null;
   },
@@ -44,7 +44,7 @@ SimpleOutlineHighlighter.prototype = {
 
 
 
-  show: function (node) {
+  show(node) {
     if (isNodeValid(node) && (!this.currentNode || node !== this.currentNode)) {
       this.hide();
       this.currentNode = node;
@@ -57,7 +57,7 @@ SimpleOutlineHighlighter.prototype = {
   
 
 
-  hide: function () {
+  hide() {
     if (this.currentNode) {
       removePseudoClassLock(this.currentNode, HIGHLIGHTED_PSEUDO_CLASS);
       this.currentNode = null;

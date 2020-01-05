@@ -51,7 +51,7 @@ Canvases.prototype = {
 
 
 
-  destroy: function () {
+  destroy() {
     this.removeHandlers();
     this.container.removeChild(this.main.canvas);
     this.container.removeChild(this.zoom.canvas);
