@@ -25,10 +25,6 @@ const RELOAD_ACTION_MOVE = 3;
 
 
 
-const REMOVE_PAGES_CHUNKLEN = 300;
-
-
-
 
 
 
@@ -892,7 +888,7 @@ PlacesController.prototype = {
                PlacesUtils.asQuery(node.parent).queryOptions.queryType ==
                  Ci.nsINavHistoryQueryOptions.QUERY_TYPE_HISTORY) {
         
-        PlacesUtils.bhistory.removePage(NetUtil.newURI(node.uri));
+        PlacesUtils.history.removePage(node.uri).catch(Components.utils.reportError);
         
       } else if (node.itemId == -1 &&
                PlacesUtils.nodeIsQuery(node) &&
@@ -951,15 +947,11 @@ PlacesController.prototype = {
 
   _removeRowsFromHistory: function PC__removeRowsFromHistory() {
     let nodes = this._view.selectedNodes;
-    let URIs = [];
+    let URIs = new Set();
     for (let i = 0; i < nodes.length; ++i) {
       let node = nodes[i];
       if (PlacesUtils.nodeIsURI(node)) {
-        let uri = NetUtil.newURI(node.uri);
-        
-        if (URIs.indexOf(uri) < 0) {
-          URIs.push(uri);
-        }
+        URIs.add(node.uri);
       } else if (PlacesUtils.nodeIsQuery(node) &&
                PlacesUtils.asQuery(node).queryOptions.queryType ==
                  Ci.nsINavHistoryQueryOptions.QUERY_TYPE_HISTORY) {
@@ -967,18 +959,7 @@ PlacesController.prototype = {
       }
     }
 
-    
-    function* pagesChunkGenerator(aURIs) {
-      while (aURIs.length) {
-        let URIslice = aURIs.splice(0, REMOVE_PAGES_CHUNKLEN);
-        PlacesUtils.bhistory.removePages(URIslice, URIslice.length);
-        Services.tm.mainThread.dispatch(() => gen.next(),
-                                        Ci.nsIThread.DISPATCH_NORMAL);
-        yield undefined;
-      }
-    }
-    let gen = pagesChunkGenerator(URIs);
-    gen.next();
+    PlacesUtils.history.remove([...URIs]).catch(Components.utils.reportError);
   },
 
   
