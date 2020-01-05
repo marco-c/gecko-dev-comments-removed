@@ -118,26 +118,6 @@ struct ActorHandle
 };
 
 
-
-
-
-
-struct Trigger
-{
-    enum Action { Send, Recv };
-
-    Trigger(Action action, int32_t msg) :
-        mAction(action),
-        mMessage(msg)
-    {
-      MOZ_ASSERT(0 <= msg && msg < INT32_MAX);
-    }
-
-    uint32_t mAction : 1;
-    uint32_t mMessage : 31;
-};
-
-
 enum RacyInterruptPolicy {
     RIPError,
     RIPChildWins,
