@@ -589,7 +589,8 @@ nsHttpAuthNode::SetAuthEntry(const char *path,
     }
     else {
         
-        entry->Set(path, realm, creds, challenge, ident, metadata);
+        nsresult rv = entry->Set(path, realm, creds, challenge, ident, metadata);
+        NS_ENSURE_SUCCESS(rv, rv);
     }
 
     return NS_OK;

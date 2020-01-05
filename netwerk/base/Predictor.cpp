@@ -1369,7 +1369,8 @@ Predictor::Prefetch(nsIURI *uri, nsIURI *referrer,
     return NS_ERROR_UNEXPECTED;
   }
 
-  httpChannel->SetReferrer(referrer);
+  rv = httpChannel->SetReferrer(referrer);
+  NS_ENSURE_SUCCESS(rv, rv);
   
 
   nsCOMPtr<nsIStreamListener> listener = new PrefetchListener(verifier, uri,
