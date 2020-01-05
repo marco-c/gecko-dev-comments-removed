@@ -1727,6 +1727,12 @@ public class GeckoAppShell
         public Activity getActivity();
         public String getDefaultUAString();
         public void doRestart();
+
+        
+
+
+
+
         public void setFullScreen(boolean fullscreen);
         public void addPluginView(View view);
         public void removePluginView(final View view);
