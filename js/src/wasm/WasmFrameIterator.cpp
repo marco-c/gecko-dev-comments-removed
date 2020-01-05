@@ -210,7 +210,7 @@ FrameIterator::lineOrBytecode() const
 Instance*
 FrameIterator::instance() const
 {
-    MOZ_ASSERT(!done() && debugEnabled());
+    MOZ_ASSERT(!done());
     return FrameToDebugFrame(fp_)->instance();
 }
 
@@ -249,39 +249,45 @@ FrameIterator::debugTrapCallsite() const
 #if defined(JS_CODEGEN_X64)
 # if defined(DEBUG)
 static const unsigned PushedRetAddr = 0;
-static const unsigned PostStorePrePopFP = 0;
 # endif
-static const unsigned PushedFP = 26;
-static const unsigned StoredFP = 33;
+static const unsigned PushedFP = 16;
+static const unsigned PushedTLS = 18;
+static const unsigned StoredFP = 25;
+static const unsigned RestoreFP = 4;
 #elif defined(JS_CODEGEN_X86)
 # if defined(DEBUG)
 static const unsigned PushedRetAddr = 0;
-static const unsigned PostStorePrePopFP = 0;
 # endif
-static const unsigned PushedFP = 16;
-static const unsigned StoredFP = 19;
+static const unsigned PushedFP = 11;
+static const unsigned PushedTLS = 12;
+static const unsigned StoredFP = 15;
+static const unsigned RestoreFP = 3;
 #elif defined(JS_CODEGEN_ARM)
 static const unsigned PushedRetAddr = 4;
-static const unsigned PushedFP = 28;
-static const unsigned StoredFP = 32;
-static const unsigned PostStorePrePopFP = 4;
+static const unsigned PushedFP = 20;
+static const unsigned PushedTLS = 24;
+static const unsigned StoredFP = 28;
+static const unsigned RestoreFP = 4;
 #elif defined(JS_CODEGEN_ARM64)
 static const unsigned PushedRetAddr = 0;
 static const unsigned PushedFP = 0;
+static const unsigned PushedTLS = 0;
 static const unsigned StoredFP = 0;
-static const unsigned PostStorePrePopFP = 0;
+static const unsigned RestoreFP = 0;
 #elif defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
 static const unsigned PushedRetAddr = 8;
-static const unsigned PushedFP = 36;
-static const unsigned StoredFP = 40;
-static const unsigned PostStorePrePopFP = 4;
+static const unsigned PushedFP = 28;
+static const unsigned PushedTLS = 32;
+static const unsigned StoredFP = 36;
+static const unsigned RestoreFP = 4;
 #elif defined(JS_CODEGEN_NONE)
 # if defined(DEBUG)
 static const unsigned PushedRetAddr = 0;
-static const unsigned PostStorePrePopFP = 0;
 # endif
 static const unsigned PushedFP = 1;
+static const unsigned PushedTLS = 1;
 static const unsigned StoredFP = 1;
+static const unsigned RestoreFP = 0;
 #else
 # error "Unknown architecture!"
 #endif
@@ -321,9 +327,12 @@ GenerateCallablePrologue(MacroAssembler& masm, unsigned framePushed, ExitReason 
         PushRetAddr(masm);
         MOZ_ASSERT_IF(!masm.oom(), PushedRetAddr == masm.currentOffset() - *entry);
 
-        masm.loadWasmActivationFromSymbolicAddress(scratch);
+        masm.loadWasmActivationFromTls(scratch);
         masm.push(Address(scratch, WasmActivation::offsetOfFP()));
         MOZ_ASSERT_IF(!masm.oom(), PushedFP == masm.currentOffset() - *entry);
+
+        masm.push(WasmTlsReg);
+        MOZ_ASSERT_IF(!masm.oom(), PushedTLS == masm.currentOffset() - *entry);
 
         masm.storePtr(masm.getStackPointer(), Address(scratch, WasmActivation::offsetOfFP()));
         MOZ_ASSERT_IF(!masm.oom(), StoredFP == masm.currentOffset() - *entry);
@@ -342,15 +351,12 @@ GenerateCallableEpilogue(MacroAssembler& masm, unsigned framePushed, ExitReason 
                          uint32_t* ret)
 {
     Register scratch = ABINonArgReturnReg0;
-#if defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_ARM64) || \
-    defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
     Register scratch2 = ABINonArgReturnReg1;
-#endif
 
     if (framePushed)
         masm.addToStackPtr(Imm32(framePushed));
 
-    masm.loadWasmActivationFromSymbolicAddress(scratch);
+    masm.loadWasmActivationFromTls(scratch);
 
     if (reason != ExitReason::None) {
         masm.store32(Imm32(int32_t(ExitReason::None)),
@@ -359,29 +365,22 @@ GenerateCallableEpilogue(MacroAssembler& masm, unsigned framePushed, ExitReason 
 
 #if defined(JS_CODEGEN_ARM)
     
-    
-    
-    AutoForbidPools afp(&masm,  4);
+    AutoForbidPools afp(&masm,  5);
 #endif
 
     
     
     
     
-#if defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_ARM64) || defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
-    masm.loadPtr(Address(masm.getStackPointer(), 0), scratch2);
+
+    masm.loadPtr(Address(masm.getStackPointer(), offsetof(Frame, callerFP)), scratch2);
     masm.storePtr(scratch2, Address(scratch, WasmActivation::offsetOfFP()));
-
-    DebugOnly<uint32_t> prePop = masm.currentOffset();
-    masm.addToStackPtr(Imm32(sizeof(void *)));
-    MOZ_ASSERT_IF(!masm.oom(), PostStorePrePopFP == masm.currentOffset() - prePop);
-#else
-    masm.pop(Address(scratch, WasmActivation::offsetOfFP()));
-    MOZ_ASSERT(PostStorePrePopFP == 0);
-#endif
-
+    DebugOnly<uint32_t> afterRestoreFP = masm.currentOffset();
+    masm.addToStackPtr(Imm32(2 * sizeof(void*)));
     *ret = masm.currentOffset();
     masm.ret();
+
+    MOZ_ASSERT_IF(!masm.oom(), RestoreFP == *ret - afterRestoreFP);
 }
 
 void
@@ -620,26 +619,31 @@ ProfilingFrameIterator::ProfilingFrameIterator(const WasmActivation& activation,
             callerPC_ = state.lr;
             callerFP_ = fp;
             AssertMatchesCallSite(*activation_, callerPC_, callerFP_);
-        } else if (offsetInModule == codeRange->ret() - PostStorePrePopFP) {
-            
-            
-            callerPC_ = ReturnAddressFromFP(sp);
-            callerFP_ = CallerFPFromFP(sp);
-            AssertMatchesCallSite(*activation_, callerPC_, callerFP_);
         } else
 #endif
-        if (offsetFromEntry < PushedFP || codeRange->isThunk() || offsetInModule == codeRange->ret()) {
+        if (offsetFromEntry < PushedFP || codeRange->isThunk()) {
             
             
-            callerPC_ = *sp;
+            callerPC_ = sp[0];
             callerFP_ = fp;
             AssertMatchesCallSite(*activation_, callerPC_, callerFP_);
-        } else if (offsetFromEntry < StoredFP) {
+        } else if (offsetFromEntry < PushedTLS) {
             
+            
+            callerPC_ = sp[1];
+            callerFP_ = fp;
+            AssertMatchesCallSite(*activation_, callerPC_, callerFP_);
+        } else if (offsetFromEntry < StoredFP || offsetInModule == codeRange->ret() - RestoreFP) {
             
             MOZ_ASSERT(fp == CallerFPFromFP(sp));
             callerPC_ = ReturnAddressFromFP(sp);
-            callerFP_ = CallerFPFromFP(sp);
+            callerFP_ = fp;
+            AssertMatchesCallSite(*activation_, callerPC_, callerFP_);
+        } else if (offsetInModule == codeRange->ret()) {
+            
+            
+            callerPC_ = sp[0];
+            callerFP_ = fp;
             AssertMatchesCallSite(*activation_, callerPC_, callerFP_);
         } else {
             

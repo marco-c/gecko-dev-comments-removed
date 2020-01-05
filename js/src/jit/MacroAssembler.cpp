@@ -2936,6 +2936,13 @@ MacroAssembler::wasmEmitTrapOutOfLineCode()
             
             
             
+            loadWasmTlsRegFromFrame();
+
+            
+            
+            
+            
+            
             
             wasm::CallSiteDesc desc(site.bytecodeOffset, wasm::CallSiteDesc::TrapExit);
             call(desc, site.trap);
@@ -2956,6 +2963,27 @@ MacroAssembler::wasmEmitTrapOutOfLineCode()
 }
 
 
+
+void
+MacroAssembler::loadWasmActivationFromTls(Register dest)
+{
+    loadPtr(Address(WasmTlsReg, offsetof(wasm::TlsData, cx)), dest);
+    loadPtr(Address(dest, JSContext::offsetOfWasmActivation()), dest);
+}
+
+void
+MacroAssembler::loadWasmActivationFromSymbolicAddress(Register dest)
+{
+    movePtr(wasm::SymbolicAddress::ContextPtr, dest);
+    loadPtr(Address(dest, 0), dest);
+    loadPtr(Address(dest, JSContext::offsetOfWasmActivation()), dest);
+}
+
+void
+MacroAssembler::loadWasmTlsRegFromFrame()
+{
+    loadPtr(Address(getStackPointer(), framePushed() + offsetof(wasm::Frame, tls)), WasmTlsReg);
+}
 
 void
 MacroAssembler::BranchType::emit(MacroAssembler& masm)
