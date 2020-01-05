@@ -5,6 +5,7 @@
 
 #include "WebRenderTextureHost.h"
 
+#include "mozilla/layers/ImageDataSerializer.h"
 #include "mozilla/webrender/RenderTextureHost.h"
 #include "mozilla/webrender/RenderThread.h"
 
@@ -103,6 +104,21 @@ WebRenderTextureHost::GetFormat() const
     return gfx::SurfaceFormat::UNKNOWN;
   }
   return mWrappedTextureHost->GetFormat();
+}
+
+int32_t
+WebRenderTextureHost::GetRGBStride()
+{
+  if (!mWrappedTextureHost) {
+    return 0;
+  }
+  gfx::SurfaceFormat format = GetFormat();
+  if (GetFormat() == SurfaceFormat::YUV) {
+    
+    
+    return GetAlignedStride<16>(GetSize().width, BytesPerPixel(SurfaceFormat::B8G8R8A8));
+  }
+  return ImageDataSerializer::ComputeRGBStride(format, GetSize().width);
 }
 
 } 
