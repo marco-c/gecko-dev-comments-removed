@@ -3712,6 +3712,16 @@ MeasuringReflow(nsIFrame*           aChild,
     aChild->Properties().Delete(nsIFrame::BClampMarginBoxMinSizeProperty());
   }
   ReflowInput childRI(pc, *rs, aChild, aAvailableSize, &aCBSize, riFlags);
+
+  
+  
+  
+  
+  
+  
+  
+  childRI.SetBResize(true);
+
   ReflowOutput childSize(childRI);
   nsReflowStatus childStatus;
   const uint32_t flags = NS_FRAME_NO_MOVE_FRAME | NS_FRAME_NO_SIZE_VIEW;
@@ -5240,6 +5250,15 @@ nsGridContainerFrame::ReflowInFlowChild(nsIFrame*              aChild,
   ReflowInput childRI(pc, *aState.mReflowInput, aChild, childCBSize,
                       &percentBasis, flags);
   childRI.mFlags.mIsTopOfPage = aFragmentainer ? aFragmentainer->mIsTopOfPage : false;
+
+  
+  
+  
+  
+  
+  
+  
+  childRI.SetBResize(true);
 
   
   
