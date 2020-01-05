@@ -30,27 +30,17 @@ public class Zipper {
 
     public static String unzipData(byte[] data) throws IOException {
         StringBuilder result = new StringBuilder();
-
         final ByteArrayInputStream bs = new ByteArrayInputStream(data);
-        BufferedReader in = null;
+        GZIPInputStream gstream = new GZIPInputStream(bs);
         try {
-            in = new BufferedReader(new InputStreamReader(new GZIPInputStream(bs), StringUtils.UTF_8));
+            InputStreamReader reader = new InputStreamReader(gstream, StringUtils.UTF_8);
+            BufferedReader in = new BufferedReader(reader);
             String read;
             while ((read = in.readLine()) != null) {
                 result.append(read);
             }
         } finally {
-            
-            
-            if (in != null) {
-                try {
-                    in.close();
-                } catch (IOException e) {
-                    
-                }
-            }
-
-            
+            gstream.close();
             bs.close();
         }
         return result.toString();
