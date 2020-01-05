@@ -600,10 +600,6 @@ GMPCapability::Supports(const nsTArray<GMPCapability>& aCapabilities,
             if (!WMFDecoderModule::HasH264()) {
               continue;
             }
-          } else if (capabilities.mAPIName.EqualsLiteral(GMP_API_AUDIO_DECODER)) {
-            if (!WMFDecoderModule::HasAAC()) {
-              continue;
-            }
           }
         }
 #endif
@@ -1053,17 +1049,32 @@ GMPParent::RecvAsyncShutdownComplete()
   return IPC_OK();
 }
 
-void
-GMPParent::ResolveGetContentParentPromises()
+class RunCreateContentParentCallbacks : public Runnable
 {
-  nsTArray<UniquePtr<MozPromiseHolder<GetGMPContentParentPromise>>> promises;
-  promises.SwapElements(mGetContentParentPromises);
-  MOZ_ASSERT(mGetContentParentPromises.IsEmpty());
-  RefPtr<GMPContentParent::CloseBlocker> blocker(new GMPContentParent::CloseBlocker(mGMPContentParent));
-  for (auto& holder : promises) {
-    holder->Resolve(blocker, __func__);
+public:
+  explicit RunCreateContentParentCallbacks(GMPContentParent* aGMPContentParent)
+    : mGMPContentParent(aGMPContentParent)
+  {
   }
-}
+
+  void TakeCallbacks(nsTArray<UniquePtr<GetGMPContentParentCallback>>& aCallbacks)
+  {
+    mCallbacks.SwapElements(aCallbacks);
+  }
+
+  NS_IMETHOD
+  Run() override
+  {
+    for (uint32_t i = 0, length = mCallbacks.Length(); i < length; ++i) {
+      mCallbacks[i]->Done(mGMPContentParent);
+    }
+    return NS_OK;
+  }
+
+private:
+  RefPtr<GMPContentParent> mGMPContentParent;
+  nsTArray<UniquePtr<GetGMPContentParentCallback>> mCallbacks;
+};
 
 PGMPContentParent*
 GMPParent::AllocPGMPContentParent(Transport* aTransport, ProcessId aOtherPid)
@@ -1075,42 +1086,33 @@ GMPParent::AllocPGMPContentParent(Transport* aTransport, ProcessId aOtherPid)
   mGMPContentParent->Open(aTransport, aOtherPid, XRE_GetIOMessageLoop(),
                           ipc::ParentSide);
 
-  ResolveGetContentParentPromises();
+  RefPtr<RunCreateContentParentCallbacks> runCallbacks =
+    new RunCreateContentParentCallbacks(mGMPContentParent);
+  runCallbacks->TakeCallbacks(mCallbacks);
+  NS_DispatchToCurrentThread(runCallbacks);
+  MOZ_ASSERT(mCallbacks.IsEmpty());
 
   return mGMPContentParent;
 }
 
-void
-GMPParent::RejectGetContentParentPromises()
-{
-  nsTArray<UniquePtr<MozPromiseHolder<GetGMPContentParentPromise>>> promises;
-  promises.SwapElements(mGetContentParentPromises);
-  MOZ_ASSERT(mGetContentParentPromises.IsEmpty());
-  for (auto& holder : promises) {
-    holder->Reject(NS_ERROR_FAILURE, __func__);
-  }
-}
-
-void
-GMPParent::GetGMPContentParent(UniquePtr<MozPromiseHolder<GetGMPContentParentPromise>>&& aPromiseHolder)
+bool
+GMPParent::GetGMPContentParent(UniquePtr<GetGMPContentParentCallback>&& aCallback)
 {
   LOGD("%s %p", __FUNCTION__, this);
   MOZ_ASSERT(GMPThread() == NS_GetCurrentThread());
 
   if (mGMPContentParent) {
-    RefPtr<GMPContentParent::CloseBlocker> blocker(new GMPContentParent::CloseBlocker(mGMPContentParent));
-    aPromiseHolder->Resolve(blocker, __func__);
+    aCallback->Done(mGMPContentParent);
   } else {
-    mGetContentParentPromises.AppendElement(Move(aPromiseHolder));
+    mCallbacks.AppendElement(Move(aCallback));
     
     
     
     
     
-    if (mGetContentParentPromises.Length() == 1) {
+    if (mCallbacks.Length() == 1) {
       if (!EnsureProcessLoaded() || !PGMPContent::Open(this)) {
-        RejectGetContentParentPromises();
-        return;
+        return false;
       }
       
       
@@ -1118,12 +1120,13 @@ GMPParent::GetGMPContentParent(UniquePtr<MozPromiseHolder<GetGMPContentParentPro
       ++mGMPContentChildCount;
     }
   }
+  return true;
 }
 
 already_AddRefed<GMPContentParent>
 GMPParent::ForgetGMPContentParent()
 {
-  MOZ_ASSERT(mGetContentParentPromises.IsEmpty());
+  MOZ_ASSERT(mCallbacks.IsEmpty());
   return Move(mGMPContentParent.forget());
 }
 

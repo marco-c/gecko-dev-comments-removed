@@ -37,13 +37,13 @@ WMFH264Decoder::Init(int32_t aCoreCount)
   HRESULT hr;
 
   hr = CreateMFT(__uuidof(CMSH264DecoderMFT),
-                 WMFDecoderDllNameFor(H264),
+                 WMFDecoderDllName(),
                  mDecoder);
   if (FAILED(hr)) {
     
     
     hr = CreateMFT(CLSID_CMSH264DecMFT,
-                   WMFDecoderDllNameFor(H264),
+                   WMFDecoderDllName(),
                    mDecoder);
   }
   ENSURE(SUCCEEDED(hr), hr);

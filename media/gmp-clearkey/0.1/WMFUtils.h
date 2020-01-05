@@ -250,14 +250,9 @@ CreateMFT(const CLSID& clsid,
           const char* aDllName,
           CComPtr<IMFTransform>& aOutMFT);
 
-enum CodecType {
-  H264,
-  AAC,
-};
 
 
-
-const char* WMFDecoderDllNameFor(CodecType aCodec);
+const char* WMFDecoderDllName();
 
 
 
