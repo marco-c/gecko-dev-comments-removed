@@ -398,8 +398,10 @@ static PRStatus
 rng_init(void)
 {
     PRUint8 bytes[PRNG_SEEDLEN * 2]; 
+#ifndef UNSAFE_FUZZER_MODE
     unsigned int numBytes;
     SECStatus rv = SECSuccess;
+#endif
 
     if (globalrng == NULL) {
         
@@ -416,6 +418,7 @@ rng_init(void)
             return PR_FAILURE;
         }
 
+#ifndef UNSAFE_FUZZER_MODE
         
         numBytes = (unsigned int)RNG_SystemRNG(bytes, sizeof bytes);
         PORT_Assert(numBytes == 0 || numBytes == sizeof bytes);
@@ -435,10 +438,11 @@ rng_init(void)
             globalrng = NULL;
             return PR_FAILURE;
         }
-
         if (rv != SECSuccess) {
             return PR_FAILURE;
         }
+#endif
+
         
         globalrng->isValid = PR_TRUE;
 

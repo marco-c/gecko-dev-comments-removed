@@ -2041,15 +2041,11 @@ ssl_GenerateSessionTicketKeys(void *pwArg, unsigned char *keyName,
     SECStatus rv;
     cacheDesc *cache = &globalCache;
 
-    if (!cache->cacheMem) {
+    rv = ssl_GetSessionTicketKeyPair(&svrPubKey, &svrPrivKey);
+    if (rv != SECSuccess || !cache->cacheMem) {
         
 
         return GenerateTicketKeys(pwArg, keyName, encKey, macKey);
-    }
-
-    rv = ssl_GetSessionTicketKeyPair(&svrPubKey, &svrPrivKey);
-    if (rv != SECSuccess) {
-        return SECFailure;
     }
 
     now = LockSidCacheLock(cache->keyCacheLock, 0);

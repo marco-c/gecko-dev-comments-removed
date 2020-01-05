@@ -737,7 +737,8 @@ ssl_AddCertChain(sslSocket *ss, CERTCertificate *cert,
 
     keyPair = ssl_MakeKeyPairForCert(key, cert);
     if (!keyPair) {
-        return SECFailure;
+        
+        goto loser;
     }
     rv = ssl_PopulateKeyPair(sc, keyPair);
     ssl_FreeKeyPair(keyPair);
