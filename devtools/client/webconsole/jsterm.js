@@ -252,13 +252,11 @@ JSTerm.prototype = {
     };
 
     let doc = this.hud.document;
-
     let toolbox = gDevTools.getToolbox(this.hud.owner.target);
-    if (!toolbox) {
-      
-      toolbox = { doc };
-    }
-    this.autocompletePopup = new AutocompletePopup(toolbox, autocompleteOptions);
+    let tooltipDoc = toolbox ? toolbox.doc : doc;
+    
+    
+    this.autocompletePopup = new AutocompletePopup(tooltipDoc, autocompleteOptions);
 
     let inputContainer = doc.querySelector(".jsterm-input-container");
     this.completeNode = doc.querySelector(".jsterm-complete-node");

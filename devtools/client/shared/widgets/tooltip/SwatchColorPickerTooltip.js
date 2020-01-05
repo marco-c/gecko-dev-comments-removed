@@ -25,9 +25,11 @@ const XHTML_NS = "http://www.w3.org/1999/xhtml";
 
 
 
-function SwatchColorPickerTooltip(toolbox, inspector) {
+
+
+function SwatchColorPickerTooltip(document, inspector) {
   let stylesheet = "chrome://devtools/content/shared/widgets/spectrum.css";
-  SwatchBasedEditorTooltip.call(this, toolbox, stylesheet);
+  SwatchBasedEditorTooltip.call(this, document, stylesheet);
 
   this.inspector = inspector;
 

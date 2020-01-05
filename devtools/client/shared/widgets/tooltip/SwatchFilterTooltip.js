@@ -25,9 +25,11 @@ const XHTML_NS = "http://www.w3.org/1999/xhtml";
 
 
 
-function SwatchFilterTooltip(toolbox, cssIsValid) {
+
+
+function SwatchFilterTooltip(document, cssIsValid) {
   let stylesheet = "chrome://devtools/content/shared/widgets/filter-widget.css";
-  SwatchBasedEditorTooltip.call(this, toolbox, stylesheet);
+  SwatchBasedEditorTooltip.call(this, document, stylesheet);
   this._cssIsValid = cssIsValid;
 
   
