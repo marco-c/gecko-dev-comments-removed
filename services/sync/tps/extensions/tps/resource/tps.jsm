@@ -137,6 +137,8 @@ var TPS = {
 
     
     Weave.Svc.Prefs.set("log.appender.dump", "Debug");
+
+    
     Cu.import("resource://tps/auth/fxaccounts.jsm", module);
   },
 
