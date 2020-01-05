@@ -404,7 +404,7 @@ Cu.import('resource://gre/modules/Services.jsm');
           
           continue;
         }
-        var ts = collectTimeStamp(t.substr(1, t.length - 1));
+        var ts = collectTimeStamp(t.substr(1, t.length - 2));
         var node;
         if (ts) {
           
