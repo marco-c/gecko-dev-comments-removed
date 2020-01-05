@@ -26,6 +26,7 @@ registerCleanupFunction(() => {
 
 
 
+
 function* selectAndHighlightNode(selectorOrNodeFront, inspector) {
   info("Highlighting and selecting the node " + selectorOrNodeFront);
 
@@ -34,6 +35,7 @@ function* selectAndHighlightNode(selectorOrNodeFront, inspector) {
   inspector.selection.setNodeFront(nodeFront, "test-highlight");
   yield updated;
 }
+
 
 
 
@@ -68,8 +70,35 @@ function openBoxModelView() {
 
 
 
-function waitForUpdate(inspector) {
-  return inspector.once("boxmodel-view-updated");
+
+
+
+
+
+function waitForUpdate(inspector, waitForSelectionUpdate) {
+  return new Promise(resolve => {
+    inspector.on("boxmodel-view-updated", function onUpdate(e, reasons) {
+      
+      if (waitForSelectionUpdate && !reasons.includes("new-selection")) {
+        return;
+      }
+
+      inspector.off("boxmodel-view-updated", onUpdate);
+      resolve();
+    });
+  });
+}
+
+
+
+
+
+
+function waitForMarkupLoaded(inspector) {
+  return Promise.all([
+    waitForUpdate(inspector),
+    inspector.once("markuploaded"),
+  ]);
 }
 
 function getStyle(testActor, selector, propertyName) {
@@ -93,6 +122,7 @@ function setStyle(testActor, selector, propertyName, value) {
 
 var _selectNode = selectNode;
 selectNode = function* (node, inspector, reason) {
+  let onUpdate = waitForUpdate(inspector, true);
   yield _selectNode(node, inspector, reason);
-  yield waitForUpdate(inspector);
+  yield onUpdate;
 };
