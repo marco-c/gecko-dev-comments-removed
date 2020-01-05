@@ -36,6 +36,7 @@ class LayerMetricsWrapper;
 class InputQueue;
 class GeckoContentController;
 class HitTestingTreeNode;
+class WebRenderScrollData;
 
 
 
@@ -123,6 +124,18 @@ public:
 
   void UpdateHitTestingTree(uint64_t aRootLayerTreeId,
                             Layer* aRoot,
+                            bool aIsFirstPaint,
+                            uint64_t aOriginatingLayersId,
+                            uint32_t aPaintSequenceNumber);
+
+  
+
+
+
+
+
+  void UpdateHitTestingTree(uint64_t aRootLayerTreeId,
+                            const WebRenderScrollData& aScrollData,
                             bool aIsFirstPaint,
                             uint64_t aOriginatingLayersId,
                             uint32_t aPaintSequenceNumber);

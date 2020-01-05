@@ -22,6 +22,7 @@
 #include "mozilla/layers/AsyncDragMetrics.h" 
 #include "mozilla/layers/CompositorBridgeParent.h" 
 #include "mozilla/layers/LayerMetricsWrapper.h"
+#include "mozilla/layers/WebRenderScrollDataWrapper.h"
 #include "mozilla/MouseEvents.h"
 #include "mozilla/mozalloc.h"           
 #include "mozilla/TouchEvents.h"
@@ -345,6 +346,18 @@ APZCTreeManager::UpdateHitTestingTree(uint64_t aRootLayerTreeId,
 {
   LayerMetricsWrapper root(aRoot);
   UpdateHitTestingTreeImpl(aRootLayerTreeId, root, aIsFirstPaint,
+                           aOriginatingLayersId, aPaintSequenceNumber);
+}
+
+void
+APZCTreeManager::UpdateHitTestingTree(uint64_t aRootLayerTreeId,
+                                      const WebRenderScrollData& aScrollData,
+                                      bool aIsFirstPaint,
+                                      uint64_t aOriginatingLayersId,
+                                      uint32_t aPaintSequenceNumber)
+{
+  WebRenderScrollDataWrapper wrapper(&aScrollData);
+  UpdateHitTestingTreeImpl(aRootLayerTreeId, wrapper, aIsFirstPaint,
                            aOriginatingLayersId, aPaintSequenceNumber);
 }
 
