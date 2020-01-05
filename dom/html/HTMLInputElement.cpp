@@ -3442,7 +3442,7 @@ HTMLInputElement::Focus(ErrorResult& aError)
   return;
 }
 
-#if defined(XP_WIN) || defined(XP_LINUX)
+#if !defined(ANDROID) && !defined(XP_MACOSX)
 bool
 HTMLInputElement::IsNodeApzAwareInternal() const
 {
@@ -4538,7 +4538,7 @@ HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor)
           }
           break;
         }
-#if defined(XP_WIN) || defined(XP_LINUX)
+#if !defined(ANDROID) && !defined(XP_MACOSX)
         case eWheel: {
           
           
@@ -6203,7 +6203,7 @@ FireEventForAccessibility(nsIDOMHTMLInputElement* aTarget,
 void
 HTMLInputElement::UpdateApzAwareFlag()
 {
-#if defined(XP_WIN) || defined(XP_LINUX)
+#if !defined(ANDROID) && !defined(XP_MACOSX)
   if ((mType == NS_FORM_INPUT_NUMBER) || (mType == NS_FORM_INPUT_RANGE)) {
     SetMayBeApzAware();
   }
