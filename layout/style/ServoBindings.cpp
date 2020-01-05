@@ -1642,7 +1642,6 @@ Gecko_GetFontMetrics(RawGeckoPresContextBorrowed aPresContext,
   GeckoFontMetrics ret;
   
   
-  MOZ_ASSERT(ServoStyleSet::IsInServoTraversal());
   nsPresContext* presContext = const_cast<nsPresContext*>(aPresContext);
   RefPtr<nsFontMetrics> fm = nsRuleNode::GetMetricsFor(presContext, aIsVertical,
                                                        aFont, aFontSize,
