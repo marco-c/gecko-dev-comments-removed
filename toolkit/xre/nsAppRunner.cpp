@@ -4557,6 +4557,8 @@ XREMain::XRE_main(int argc, char* argv[], const BootstrapConfig& aConfig)
 {
   ScopedLogging log;
 
+  mozilla::LogModule::Init();
+
   
   
   
