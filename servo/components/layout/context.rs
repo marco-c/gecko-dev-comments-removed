@@ -4,7 +4,7 @@
 
 
 
-#![allow(unsafe_code)]
+#![deny(unsafe_code)]
 
 use css::matching::{ApplicableDeclarationsCache, StyleSharingCandidateCache};
 
@@ -138,6 +138,7 @@ pub struct SharedLayoutContext {
 
 
 
+#[allow(unsafe_code)]
 unsafe impl Sync for SharedLayoutContext {}
 
 pub struct LayoutContext<'a> {
