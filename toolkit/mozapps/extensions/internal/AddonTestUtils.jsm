@@ -1092,6 +1092,10 @@ var AddonTestUtils = {
 
 
 
+
+
+
+
   promiseFindAddonUpdates(addon, reason = AddonManager.UPDATE_WHEN_PERIODIC_UPDATE) {
     let equal = this.testScope.equal;
     return new Promise((resolve, reject) => {
