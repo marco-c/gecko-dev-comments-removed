@@ -271,9 +271,9 @@ PROFILER_FUNC_VOID(profiler_unregister_thread())
 
 
 
-PROFILER_FUNC_VOID(profiler_sleep_start())
-PROFILER_FUNC_VOID(profiler_sleep_end())
-PROFILER_FUNC(bool profiler_is_sleeping(), false)
+PROFILER_FUNC_VOID(profiler_thread_sleep())
+PROFILER_FUNC_VOID(profiler_thread_wake())
+PROFILER_FUNC(bool profiler_thread_is_sleeping(), false)
 
 
 
@@ -558,13 +558,13 @@ public:
   }
 };
 
-class MOZ_RAII GeckoProfilerSleepRAII {
+class MOZ_RAII GeckoProfilerThreadSleepRAII {
 public:
-  GeckoProfilerSleepRAII() {
-    profiler_sleep_start();
+  GeckoProfilerThreadSleepRAII() {
+    profiler_thread_sleep();
   }
-  ~GeckoProfilerSleepRAII() {
-    profiler_sleep_end();
+  ~GeckoProfilerThreadSleepRAII() {
+    profiler_thread_wake();
   }
 };
 
@@ -572,19 +572,19 @@ public:
 
 
 
-class MOZ_RAII GeckoProfilerWakeRAII {
+class MOZ_RAII GeckoProfilerThreadWakeRAII {
 public:
-  GeckoProfilerWakeRAII()
-    : mIssuedWake(profiler_is_sleeping())
+  GeckoProfilerThreadWakeRAII()
+    : mIssuedWake(profiler_thread_is_sleeping())
   {
     if (mIssuedWake) {
-      profiler_sleep_end();
+      profiler_thread_wake();
     }
   }
-  ~GeckoProfilerWakeRAII() {
+  ~GeckoProfilerThreadWakeRAII() {
     if (mIssuedWake) {
-      MOZ_ASSERT(!profiler_is_sleeping());
-      profiler_sleep_start();
+      MOZ_ASSERT(!profiler_thread_is_sleeping());
+      profiler_thread_sleep();
     }
   }
 private:

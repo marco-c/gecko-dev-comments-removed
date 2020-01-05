@@ -73,7 +73,7 @@ public:
   {
 
 #ifdef MOZILLA_INTERNAL_API
-    GeckoProfilerSleepRAII profiler_sleep;
+    GeckoProfilerThreadSleepRAII sleep;
 #endif 
     
     return PR_WaitCondVar(mCvar, aInterval) == PR_SUCCESS ? NS_OK :

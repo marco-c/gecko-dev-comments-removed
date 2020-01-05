@@ -2413,7 +2413,7 @@ profiler_unregister_thread()
 }
 
 void
-profiler_sleep_start()
+profiler_thread_sleep()
 {
   
 
@@ -2429,7 +2429,7 @@ profiler_sleep_start()
 }
 
 void
-profiler_sleep_end()
+profiler_thread_wake()
 {
   
 
@@ -2445,7 +2445,7 @@ profiler_sleep_end()
 }
 
 bool
-profiler_is_sleeping()
+profiler_thread_is_sleeping()
 {
   
   
