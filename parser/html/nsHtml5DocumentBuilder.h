@@ -120,9 +120,6 @@ protected:
 
 
 
-
-
-
   nsresult                             mBroken;
   eHtml5FlushState                     mFlushState;
 };

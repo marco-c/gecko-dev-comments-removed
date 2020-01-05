@@ -65,10 +65,16 @@ static nsITimer* gFlushTimer = nullptr;
 
 nsHtml5TreeOpExecutor::nsHtml5TreeOpExecutor()
   : nsHtml5DocumentBuilder(false)
+  , mSuppressEOF(false)
+  , mReadingFromStage(false)
+  , mStreamParser(nullptr)
   , mPreloadedURLs(23)  
   , mSpeculationReferrerPolicy(mozilla::net::RP_Unset)
+  , mStarted(false)
+  , mRunFlushLoopOnStack(false)
+  , mCallContinueInterruptedParsingIfEnabled(false)
+  , mAlreadyComplainedAboutCharset(false)
 {
-  
 }
 
 nsHtml5TreeOpExecutor::~nsHtml5TreeOpExecutor()
