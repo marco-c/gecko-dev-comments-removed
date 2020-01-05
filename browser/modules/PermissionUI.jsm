@@ -351,10 +351,6 @@ this.PermissionPromptPrototype = {
     
     options.persistent = true;
     options.hideClose = !Services.prefs.getBoolPref("privacy.permissionPrompts.showCloseButton");
-    
-    
-    
-    options.eventCallback = topic => topic == "swapping";
 
     this.onBeforeShow();
     chromeWin.PopupNotifications.show(this.browser,
