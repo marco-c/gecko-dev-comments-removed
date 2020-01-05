@@ -238,6 +238,18 @@ public:
 
     virtual void
     NotifyTrackRemoved(const RefPtr<MediaStreamTrack>& aTrack) {};
+
+    
+
+
+    virtual void
+    NotifyActive() {};
+
+    
+
+
+    virtual void
+    NotifyInactive() {};
   };
 
   
@@ -362,6 +374,8 @@ public:
 
   
   already_AddRefed<DOMMediaStream> Clone();
+
+  bool Active() const;
 
   IMPL_EVENT_HANDLER(addtrack)
 
@@ -600,6 +614,12 @@ protected:
   void NotifyTracksCreated();
 
   
+  void NotifyActive();
+
+  
+  void NotifyInactive();
+
+  
   void NotifyTrackAdded(const RefPtr<MediaStreamTrack>& aTrack);
 
   
@@ -698,6 +718,9 @@ protected:
 
   
   nsTArray<TrackListener*> mTrackListeners;
+
+  
+  bool mActive;
 
 private:
   void NotifyPrincipalChanged();

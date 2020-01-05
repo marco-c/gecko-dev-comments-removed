@@ -366,7 +366,8 @@ DOMMediaStream::DOMMediaStream(nsPIDOMWindowInner* aWindow,
   : mLogicalStreamStartTime(0), mWindow(aWindow),
     mInputStream(nullptr), mOwnedStream(nullptr), mPlaybackStream(nullptr),
     mTracksPendingRemoval(0), mTrackSourceGetter(aTrackSourceGetter),
-    mTracksCreated(false), mNotifiedOfMediaStreamGraphShutdown(false)
+    mTracksCreated(false), mNotifiedOfMediaStreamGraphShutdown(false),
+    mActive(false)
 {
   nsresult rv;
   nsCOMPtr<nsIUUIDGenerator> uuidgen =
@@ -618,12 +619,12 @@ DOMMediaStream::RemoveTrack(MediaStreamTrack& aTrack)
   
   if (!aTrack.Ended()) {
     BlockPlaybackTrack(toRemove);
+
+    bool removed = mTracks.RemoveElement(toRemove);
+    if (removed) {
+      NotifyTrackRemoved(&aTrack);
+    }
   }
-
-  DebugOnly<bool> removed = mTracks.RemoveElement(toRemove);
-  MOZ_ASSERT(removed);
-
-  NotifyTrackRemoved(&aTrack);
 
   LOG(LogLevel::Debug, ("DOMMediaStream %p Removed track %p", this, &aTrack));
 }
@@ -728,6 +729,12 @@ DOMMediaStream::CloneInternal(TrackForwardingOption aForwarding)
   }
 
   return newStream.forget();
+}
+
+bool
+DOMMediaStream::Active() const
+{
+  return mActive;
 }
 
 MediaStreamTrack*
@@ -1180,6 +1187,28 @@ DOMMediaStream::NotifyTracksCreated()
 }
 
 void
+DOMMediaStream::NotifyActive()
+{
+  LOG(LogLevel::Info, ("DOMMediaStream %p NotifyActive(). ", this));
+
+  MOZ_ASSERT(mActive);
+  for (int32_t i = mTrackListeners.Length() - 1; i >= 0; --i) {
+    mTrackListeners[i]->NotifyActive();
+  }
+}
+
+void
+DOMMediaStream::NotifyInactive()
+{
+  LOG(LogLevel::Info, ("DOMMediaStream %p NotifyInactive(). ", this));
+
+  MOZ_ASSERT(!mActive);
+  for (int32_t i = mTrackListeners.Length() - 1; i >= 0; --i) {
+    mTrackListeners[i]->NotifyInactive();
+  }
+}
+
+void
 DOMMediaStream::CheckTracksAvailable()
 {
   if (!mTracksCreated) {
@@ -1243,6 +1272,24 @@ DOMMediaStream::NotifyTrackAdded(const RefPtr<MediaStreamTrack>& aTrack)
   for (int32_t i = mTrackListeners.Length() - 1; i >= 0; --i) {
     mTrackListeners[i]->NotifyTrackAdded(aTrack);
   }
+
+  if (mActive) {
+    return;
+  }
+
+  
+  bool active = false;
+  for (auto port : mTracks) {
+    if (!port->GetTrack()->Ended()) {
+      active = true;
+      break;
+    }
+  }
+
+  if (active) {
+    mActive = true;
+    NotifyActive();
+  }
 }
 
 void
@@ -1254,11 +1301,31 @@ DOMMediaStream::NotifyTrackRemoved(const RefPtr<MediaStreamTrack>& aTrack)
 
   for (int32_t i = mTrackListeners.Length() - 1; i >= 0; --i) {
     mTrackListeners[i]->NotifyTrackRemoved(aTrack);
+
   }
 
   
   
   
+
+  if (!mActive) {
+    NS_ASSERTION(false, "Shouldn't remove a live track if already inactive");
+    return;
+  }
+
+  
+  bool active = false;
+  for (auto port : mTracks) {
+    if (!port->GetTrack()->Ended()) {
+      active = true;
+      break;
+    }
+  }
+
+  if (!active) {
+    mActive = false;
+    NotifyInactive();
+  }
 }
 
 nsresult
