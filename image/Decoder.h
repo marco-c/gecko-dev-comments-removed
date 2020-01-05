@@ -221,14 +221,6 @@ public:
 
 
 
-  virtual void SetSampleSize(int aSampleSize) { }
-
-  
-
-
-
-
-
 
   void SetIterator(SourceBufferIterator&& aIterator)
   {

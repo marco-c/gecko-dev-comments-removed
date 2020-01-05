@@ -335,19 +335,6 @@ bool nsMediaFragmentURIParser::ParseXYWH(nsDependentSubstring aString)
   return false;
 }
 
-bool nsMediaFragmentURIParser::ParseMozSampleSize(nsDependentSubstring aString)
-{
-  int32_t sampleSize;
-
-  
-  if (ParseInteger(aString, sampleSize) && sampleSize > 0) {
-    mSampleSize.emplace(sampleSize);
-    return true;
-  }
-
-  return false;
-}
-
 void nsMediaFragmentURIParser::Parse(nsACString& aRef)
 {
   
@@ -368,9 +355,9 @@ void nsMediaFragmentURIParser::Parse(nsACString& aRef)
   }
 
   
-  bool gotTemporal = false, gotSpatial = false, gotSampleSize = false;
+  bool gotTemporal = false, gotSpatial = false;
   for (int i = fragments.Length() - 1 ; i >= 0 ; --i) {
-    if (gotTemporal && gotSpatial && gotSampleSize) {
+    if (gotTemporal && gotSpatial) {
       
       break;
     } else if (!gotTemporal && fragments[i].first.EqualsLiteral("t")) {
@@ -379,9 +366,6 @@ void nsMediaFragmentURIParser::Parse(nsACString& aRef)
     } else if (!gotSpatial && fragments[i].first.EqualsLiteral("xywh")) {
       nsAutoString value = NS_ConvertUTF8toUTF16(fragments[i].second);
       gotSpatial = ParseXYWH(nsDependentSubstring(value, 0));
-    } else if (!gotSampleSize && fragments[i].first.EqualsLiteral("-moz-samplesize")) {
-      nsAutoString value = NS_ConvertUTF8toUTF16(fragments[i].second);
-      gotSampleSize = ParseMozSampleSize(nsDependentSubstring(value, 0));
     }
   }
 }

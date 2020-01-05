@@ -73,7 +73,6 @@ RasterImage::RasterImage(ImageURL* aURI ) :
   mSize(0,0),
   mLockCount(0),
   mDecodeCount(0),
-  mRequestedSampleSize(0),
   mImageProducerID(ImageContainer::AllocateProducerID()),
   mLastFrameID(0),
   mLastImageContainerDrawResult(DrawResult::NOT_READY),
@@ -1164,8 +1163,7 @@ RasterImage::Decode(const IntSize& aSize,
   } else {
     task = DecoderFactory::CreateDecoder(mDecoderType, WrapNotNull(this),
                                          mSourceBuffer, mSize, aSize,
-                                         decoderFlags, surfaceFlags,
-                                         mRequestedSampleSize);
+                                         decoderFlags, surfaceFlags);
   }
 
   
@@ -1192,7 +1190,7 @@ RasterImage::DecodeMetadata(uint32_t aFlags)
   
   RefPtr<IDecodingTask> task =
     DecoderFactory::CreateMetadataDecoder(mDecoderType, WrapNotNull(this),
-                                          mSourceBuffer, mRequestedSampleSize);
+                                          mSourceBuffer);
 
   
   if (!task) {

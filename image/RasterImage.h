@@ -264,11 +264,6 @@ public:
 
   nsresult SetSourceSizeHint(uint32_t aSizeHint);
 
-  
-  void SetRequestedSampleSize(int requestedSampleSize) {
-    mRequestedSampleSize = requestedSampleSize;
-  }
-
  nsCString GetURIString() {
     nsCString spec;
     if (GetURI()) {
@@ -405,9 +400,6 @@ private:
   
   
   int32_t                        mDecodeCount;
-
-  
-  int                        mRequestedSampleSize;
 
   
   

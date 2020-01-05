@@ -64,8 +64,6 @@ public:
 
 
 
-
-
   static already_AddRefed<IDecodingTask>
   CreateDecoder(DecoderType aType,
                 NotNull<RasterImage*> aImage,
@@ -73,8 +71,7 @@ public:
                 const gfx::IntSize& aIntrinsicSize,
                 const gfx::IntSize& aOutputSize,
                 DecoderFlags aDecoderFlags,
-                SurfaceFlags aSurfaceFlags,
-                int aSampleSize);
+                SurfaceFlags aSurfaceFlags);
 
   
 
@@ -111,13 +108,10 @@ public:
 
 
 
-
-
   static already_AddRefed<IDecodingTask>
   CreateMetadataDecoder(DecoderType aType,
                         NotNull<RasterImage*> aImage,
-                        NotNull<SourceBuffer*> aSourceBuffer,
-                        int aSampleSize);
+                        NotNull<SourceBuffer*> aSourceBuffer);
 
   
 

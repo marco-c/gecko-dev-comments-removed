@@ -77,7 +77,6 @@ nsJPEGDecoder::nsJPEGDecoder(RasterImage* aImage,
                                    SIZE_MAX),
           Transition::TerminateSuccess())
  , mDecodeStyle(aDecodeStyle)
- , mSampleSize(0)
 {
   mState = JPEG_HEADER;
   mReading = true;
@@ -243,16 +242,7 @@ nsJPEGDecoder::ReadJPEGData(const char* aData, size_t aLength)
       }
 
       
-      if (mSampleSize > 0) {
-        mInfo.scale_num = 1;
-        mInfo.scale_denom = mSampleSize;
-      }
-
-      
-      jpeg_calc_output_dimensions(&mInfo);
-
-      
-      PostSize(mInfo.output_width, mInfo.output_height,
+      PostSize(mInfo.image_width, mInfo.image_height,
                ReadOrientationFromEXIF());
       if (HasError()) {
         
@@ -387,6 +377,9 @@ nsJPEGDecoder::ReadJPEGData(const char* aData, size_t aLength)
     mInfo.buffered_image = mDecodeStyle == PROGRESSIVE &&
                            jpeg_has_multiple_scans(&mInfo);
 
+    
+    jpeg_calc_output_dimensions(&mInfo);
+
     MOZ_ASSERT(!mImageData, "Already have a buffer allocated?");
     nsresult rv = AllocateFrame( 0, OutputSize(),
                                 FullOutputFrame(), SurfaceFormat::B8G8R8X8);
@@ -412,7 +405,7 @@ nsJPEGDecoder::ReadJPEGData(const char* aData, size_t aLength)
     MOZ_LOG(sJPEGDecoderAccountingLog, LogLevel::Debug,
            ("        JPEGDecoderAccounting: nsJPEGDecoder::"
             "Write -- created image frame with %ux%u pixels",
-            mInfo.output_width, mInfo.output_height));
+            mInfo.image_width, mInfo.image_height));
 
     mState = JPEG_START_DECOMPRESS;
     MOZ_FALLTHROUGH; 

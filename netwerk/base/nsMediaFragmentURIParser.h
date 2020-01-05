@@ -64,10 +64,6 @@ public:
   
   ClipUnit GetClipUnit() const { return mClipUnit; }
 
-  bool HasSampleSize() const { return mSampleSize.isSome(); }
-
-  int GetSampleSize() const { return *mSampleSize; }
-
 private:
   
   
@@ -90,14 +86,12 @@ private:
   bool ParseNPTSS(nsDependentSubstring& aString, uint32_t& aSecond);
   bool ParseXYWH(nsDependentSubstring aString);
   bool ParseMozResolution(nsDependentSubstring aString);
-  bool ParseMozSampleSize(nsDependentSubstring aString);
 
   
   Maybe<double>    mStart;
   Maybe<double>    mEnd;
   Maybe<nsIntRect> mClip;
   ClipUnit         mClipUnit;
-  Maybe<int>       mSampleSize;
 };
 
 } 
