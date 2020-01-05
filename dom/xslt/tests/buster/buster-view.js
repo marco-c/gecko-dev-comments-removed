@@ -3,6 +3,8 @@
 
 
 
+Components.utils.import("resource://gre/modules/Services.jsm");
+
 var view = 
 {
     onRun : function()
@@ -101,7 +103,8 @@ var view =
         var req = this.mIframe.webNavigation.QueryInterface(nsIIRequestor);
         var prog = req.getInterface(nsIWebProgress);
         prog.addProgressListener(aListener, nsIWebProgress.NOTIFY_ALL);
-        this.mIframe.webNavigation.loadURI(aUrl, 0,null,null,null);
+        this.mIframe.webNavigation.loadURI(aUrl, 0,null,null,null,
+                                           Services.scriptSecurityManager.getSystemPrincipal());
     },
     fillItemContext : function()
     {

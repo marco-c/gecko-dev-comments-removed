@@ -139,7 +139,9 @@ add_task(function* save_worthy_tabs_remote_final() {
   ok(browser.isRemoteBrowser, "browser is remote");
 
   
-  let snippet = 'webNavigation.loadURI("https://example.com/", null, null, null, null)';
+  let snippet = 'webNavigation.loadURI("https://example.com/",\
+                                       null, null, null, null,\
+                                       Services.scriptSecurityManager.getSystemPrincipal())';
   yield promiseNewLocationAndHistoryEntryReplaced(browser, snippet);
 
   

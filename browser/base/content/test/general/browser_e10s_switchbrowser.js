@@ -62,7 +62,9 @@ function clear_history() {
 var waitForLoad = Task.async(function*(uri) {
   info("Loading " + uri);
   
-  gBrowser.selectedBrowser.webNavigation.loadURI(uri, Ci.nsIWebNavigation.LOAD_FLAGS_NONE, null, null, null);
+  gBrowser.selectedBrowser.webNavigation.loadURI(uri, Ci.nsIWebNavigation.LOAD_FLAGS_NONE,
+                                                 null, null, null,
+                                                 Services.scriptSecurityManager.getSystemPrincipal());
 
   yield waitForDocLoadComplete();
   gExpectedHistory.index++;
