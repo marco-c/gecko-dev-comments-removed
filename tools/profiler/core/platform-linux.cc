@@ -340,7 +340,7 @@ static void* SignalSender(void* arg) {
           continue;
         }
 
-        info->GetThreadResponsiveness()->Update();
+        info->UpdateThreadResponsiveness();
 
         
         
