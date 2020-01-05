@@ -58,7 +58,7 @@ ThrowExceptionValueIfSafe(JSContext* aCx, JS::Handle<JS::Value> exnVal,
   
   
   RefPtr<Exception> syntheticException =
-    CreateException(aCx, NS_ERROR_UNEXPECTED);
+    CreateException(NS_ERROR_UNEXPECTED);
   JS::Rooted<JS::Value> syntheticVal(aCx);
   if (!GetOrCreateDOMReflector(aCx, syntheticException, &syntheticVal)) {
     return;
@@ -163,7 +163,7 @@ Throw(JSContext* aCx, nsresult aRv, const nsACString& aMessage)
     }
   }
 
-  RefPtr<Exception> finalException = CreateException(aCx, aRv, aMessage);
+  RefPtr<Exception> finalException = CreateException(aRv, aMessage);
   MOZ_ASSERT(finalException);
 
   ThrowExceptionObject(aCx, finalException);
@@ -184,7 +184,7 @@ ThrowAndReport(nsPIDOMWindowInner* aWindow, nsresult aRv)
 }
 
 already_AddRefed<Exception>
-CreateException(JSContext* aCx, nsresult aRv, const nsACString& aMessage)
+CreateException(nsresult aRv, const nsACString& aMessage)
 {
   
   switch (NS_ERROR_GET_MODULE(aRv)) {

@@ -47,8 +47,7 @@ ThrowExceptionObject(JSContext* aCx, nsIException* aException);
 
 
 already_AddRefed<Exception>
-CreateException(JSContext* aCx, nsresult aRv,
-                const nsACString& aMessage = EmptyCString());
+CreateException(nsresult aRv, const nsACString& aMessage = EmptyCString());
 
 
 
