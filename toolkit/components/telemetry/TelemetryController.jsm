@@ -320,6 +320,7 @@ this.TelemetryController = Object.freeze({
 var Impl = {
   _initialized: false,
   _initStarted: false, 
+  _shuttingDown: false, 
   _logger: null,
   _prevValues: {},
   
@@ -494,6 +495,13 @@ var Impl = {
     this._log.trace("submitExternalPing - type: " + aType + ", aOptions: " + JSON.stringify(aOptions));
 
     
+    if (this._shuttingDown) {
+      const errorMessage = "submitExternalPing - Submission is not allowed after shutdown, discarding ping of type: " + aType;
+      this._log.error(errorMessage);
+      return Promise.reject(new Error(errorMessage));
+    }
+
+    
     const typeUuid = /^[a-z0-9][a-z0-9-]+[a-z0-9]$/i;
     if (!typeUuid.test(aType)) {
       this._log.error("submitExternalPing - invalid ping type: " + aType);
@@ -658,6 +666,7 @@ var Impl = {
 
   setupTelemetry: function setupTelemetry(testing) {
     this._initStarted = true;
+    this._shuttingDown = false;
     this._testMode = testing;
 
     this._log.trace("setupTelemetry");
@@ -789,6 +798,7 @@ var Impl = {
       
       this._initialized = false;
       this._initStarted = false;
+      this._shuttingDown = true;
     }
   }),
 
@@ -804,6 +814,7 @@ var Impl = {
 
     
     if (!this._initStarted) {
+      this._shuttingDown = true;
       return Promise.resolve();
     }
 
