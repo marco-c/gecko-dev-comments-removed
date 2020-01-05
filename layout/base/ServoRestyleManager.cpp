@@ -309,6 +309,11 @@ ServoRestyleManager::ProcessPendingRestyles()
     return;
   }
 
+  
+  
+  
+  AnimationsWithDestroyedFrame animationsWithDestroyedFrame(this);
+
   ServoStyleSet* styleSet = StyleSet();
   nsIDocument* doc = PresContext()->Document();
 
@@ -358,6 +363,11 @@ ServoRestyleManager::ProcessPendingRestyles()
   }
 
   IncrementRestyleGeneration();
+
+  
+  
+  MOZ_ASSERT(mAnimationsWithDestroyedFrame);
+  mAnimationsWithDestroyedFrame->StopAnimationsForElementsWithoutFrames();
 }
 
 void

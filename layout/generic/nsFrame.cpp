@@ -700,16 +700,12 @@ nsFrame::DestroyFrom(nsIFrame* aDestructRoot)
       EffectSet::GetEffectSet(this)) {
     
     
-    if (presContext->RestyleManager()->IsGecko()) {
-      RestyleManagerBase::AnimationsWithDestroyedFrame* adf =
-        presContext->RestyleManager()->AsGecko()
-                   ->GetAnimationsWithDestroyedFrame();
-      
-      if (adf) {
-        adf->Put(mContent, mStyleContext);
-      }
-    } else {
-      NS_ERROR("stylo: ServoRestyleManager does not support animations yet");
+    RestyleManagerBase::AnimationsWithDestroyedFrame* adf =
+      presContext->RestyleManager()->AsBase()
+                 ->GetAnimationsWithDestroyedFrame();
+    
+    if (adf) {
+      adf->Put(mContent, mStyleContext);
     }
   }
 
