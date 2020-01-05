@@ -110,6 +110,7 @@ class EventStates;
 class PendingAnimationTracker;
 class StyleSetHandle;
 template<typename> class OwningNonNull;
+struct URLExtraData;
 
 namespace css {
 class Loader;
@@ -483,6 +484,15 @@ public:
   virtual already_AddRefed<nsIURI> GetBaseURI(bool aTryUseXHRDocBaseURI = false) const override;
 
   virtual void SetBaseURI(nsIURI* aURI) = 0;
+
+  
+
+
+
+
+
+
+  mozilla::URLExtraData* DefaultStyleAttrURLData();
 
   
 
@@ -2983,6 +2993,11 @@ protected:
   nsCOMPtr<nsIURI> mChromeXHRDocURI;
   nsCOMPtr<nsIURI> mDocumentBaseURI;
   nsCOMPtr<nsIURI> mChromeXHRDocBaseURI;
+
+#ifdef MOZ_STYLO
+  
+  RefPtr<mozilla::URLExtraData> mCachedURLData;
+#endif
 
   nsWeakPtr mDocumentLoadGroup;
 

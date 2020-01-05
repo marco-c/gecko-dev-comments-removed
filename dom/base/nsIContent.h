@@ -24,6 +24,7 @@ class nsXBLBinding;
 
 namespace mozilla {
 class EventChainPreVisitor;
+struct URLExtraData;
 namespace dom {
 class ShadowRoot;
 } 
@@ -960,6 +961,9 @@ public:
 
   
   already_AddRefed<nsIURI> GetBaseURIForStyleAttr() const;
+
+  
+  mozilla::URLExtraData* GetURLDataForStyleAttr() const;
 
   virtual nsresult GetEventTargetParent(
                      mozilla::EventChainPreVisitor& aVisitor) override;

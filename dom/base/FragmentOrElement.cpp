@@ -24,6 +24,7 @@
 #include "mozilla/EventListenerManager.h"
 #include "mozilla/EventStates.h"
 #include "mozilla/ServoRestyleManager.h"
+#include "mozilla/URLExtraData.h"
 #include "mozilla/dom/Attr.h"
 #include "nsDOMAttributeMap.h"
 #include "nsIAtom.h"
@@ -348,7 +349,7 @@ nsIContent::GetBaseURI(bool aTryUseXHRDocBaseURI) const
     MOZ_ASSERT(bindingParent);
     SVGUseElement* useElement = static_cast<SVGUseElement*>(bindingParent);
     
-    return do_AddRef(useElement->GetContentBaseURI());
+    return do_AddRef(useElement->GetContentURLData()->BaseURI());
   }
 
   nsIDocument* doc = OwnerDoc();
@@ -418,7 +419,7 @@ nsIContent::GetBaseURIWithoutXMLBase() const
     nsIContent* bindingParent = GetBindingParent();
     MOZ_ASSERT(bindingParent);
     SVGUseElement* useElement = static_cast<SVGUseElement*>(bindingParent);
-    return useElement->GetContentBaseURI();
+    return useElement->GetContentURLData()->BaseURI();
   }
   
   
@@ -443,6 +444,23 @@ nsIContent::GetBaseURIForStyleAttr() const
   }
   return nsLayoutUtils::StyleAttrWithXMLBaseDisabled()
     ? do_AddRef(baseWithoutXMLBase) : base.forget();
+}
+
+URLExtraData*
+nsIContent::GetURLDataForStyleAttr() const
+{
+  if (IsInAnonymousSubtree() && IsAnonymousContentInSVGUseSubtree()) {
+    nsIContent* bindingParent = GetBindingParent();
+    MOZ_ASSERT(bindingParent);
+    SVGUseElement* useElement = static_cast<SVGUseElement*>(bindingParent);
+    return useElement->GetContentURLData();
+  }
+  
+  
+  MOZ_ASSERT(nsLayoutUtils::StyleAttrWithXMLBaseDisabled());
+  
+  
+  return OwnerDoc()->DefaultStyleAttrURLData();
 }
 
 
