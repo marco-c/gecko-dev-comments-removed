@@ -760,6 +760,27 @@ GetWidgetRootStyle(WidgetNodeType aNodeType)
       style = CreateStyleForWidget(gtk_radio_menu_item_new(nullptr),
                                    MOZ_GTK_MENUPOPUP);
       break;
+    case MOZ_GTK_TOOLTIP:
+      if (gtk_check_version(3, 20, 0) != nullptr) {
+          
+          
+          GtkWidget* tooltipWindow = CreateTooltipWidget();
+          style = CreateStyleForWidget(tooltipWindow, nullptr);
+          gtk_widget_destroy(tooltipWindow); 
+      } else {
+          
+          style = CreateCSSNode("tooltip", nullptr, GTK_TYPE_TOOLTIP);
+          gtk_style_context_add_class(style, GTK_STYLE_CLASS_BACKGROUND);
+      }
+      break;
+    case MOZ_GTK_TOOLTIP_BOX:
+      style = CreateStyleForWidget(gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0),
+                                   MOZ_GTK_TOOLTIP);
+      break;
+    case MOZ_GTK_TOOLTIP_BOX_LABEL:
+      style = CreateStyleForWidget(gtk_label_new(nullptr),
+                                   MOZ_GTK_TOOLTIP_BOX);
+      break;
     default:
       GtkWidget* widget = GetWidget(aNodeType);
       MOZ_ASSERT(widget);
@@ -850,11 +871,6 @@ GetCssNodeStyleInternal(WidgetNodeType aNodeType)
       style = CreateChildCSSNode("progress",
                                  MOZ_GTK_PROGRESS_TROUGH);
       break;
-    case MOZ_GTK_TOOLTIP:
-      
-      style = CreateCSSNode("tooltip", nullptr, GTK_TYPE_TOOLTIP);
-      gtk_style_context_add_class(style, GTK_STYLE_CLASS_BACKGROUND);
-      break; 
     case MOZ_GTK_GRIPPER:
       
       return GetWidgetStyleWithClass(MOZ_GTK_GRIPPER,
@@ -986,20 +1002,6 @@ GetWidgetStyleInternal(WidgetNodeType aNodeType)
     case MOZ_GTK_PROGRESS_TROUGH:
       return GetWidgetStyleWithClass(MOZ_GTK_PROGRESSBAR,
                                      GTK_STYLE_CLASS_TROUGH);
-    case MOZ_GTK_TOOLTIP: {
-      GtkStyleContext* style = sStyleStorage[aNodeType];
-      if (style)
-        return style;
-
-      
-      
-      
-      GtkWidget* tooltipWindow = CreateTooltipWidget();
-      style = CreateStyleForWidget(tooltipWindow, nullptr);
-      gtk_widget_destroy(tooltipWindow); 
-      sStyleStorage[aNodeType] = style;
-      return style;
-    }
     case MOZ_GTK_GRIPPER:
       return GetWidgetStyleWithClass(MOZ_GTK_GRIPPER,
                                      GTK_STYLE_CLASS_GRIP);
