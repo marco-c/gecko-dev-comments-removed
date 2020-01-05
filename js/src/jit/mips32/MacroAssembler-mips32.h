@@ -70,8 +70,10 @@ class MacroAssemblerMIPS : public MacroAssemblerMIPSShared
 
     
     
-    void ma_addTestOverflow(Register rd, Register rs, Register rt, Label* overflow);
-    void ma_addTestOverflow(Register rd, Register rs, Imm32 imm, Label* overflow);
+    template <typename L>
+    void ma_addTestOverflow(Register rd, Register rs, Register rt, L overflow);
+    template <typename L>
+    void ma_addTestOverflow(Register rd, Register rs, Imm32 imm, L overflow);
 
     
     void ma_subTestOverflow(Register rd, Register rs, Register rt, Label* overflow);
