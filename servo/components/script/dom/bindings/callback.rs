@@ -5,16 +5,16 @@
 
 
 use dom::bindings::error::{Error, Fallible, report_pending_exception};
-use dom::bindings::js::Root;
+use dom::bindings::js::{Root, MutHeapJSVal};
 use dom::bindings::reflector::DomObject;
 use dom::bindings::settings_stack::AutoEntryScript;
 use dom::globalscope::GlobalScope;
 use js::jsapi::{Heap, MutableHandleObject};
-use js::jsapi::{IsCallable, JSContext, JSObject, JS_WrapObject};
-use js::jsapi::{JSCompartment, JS_EnterCompartment, JS_LeaveCompartment};
+use js::jsapi::{IsCallable, JSContext, JSObject, JS_WrapObject, AddRawValueRoot};
+use js::jsapi::{JSCompartment, JS_EnterCompartment, JS_LeaveCompartment, RemoveRawValueRoot};
 use js::jsapi::JSAutoCompartment;
 use js::jsapi::JS_GetProperty;
-use js::jsval::{JSVal, UndefinedValue};
+use js::jsval::{JSVal, UndefinedValue, ObjectValue};
 use std::default::Default;
 use std::ffi::CString;
 use std::mem::drop;
@@ -33,22 +33,52 @@ pub enum ExceptionHandling {
 
 
 
-#[derive(Default, JSTraceable)]
+#[derive(JSTraceable)]
+#[must_root]
 pub struct CallbackObject {
     
     callback: Heap<*mut JSObject>,
+    permanent_js_root: MutHeapJSVal,
+}
+
+impl Default for CallbackObject {
+    #[allow(unrooted_must_root)]
+    fn default() -> CallbackObject {
+        CallbackObject::new()
+    }
 }
 
 impl CallbackObject {
+    #[allow(unrooted_must_root)]
     fn new() -> CallbackObject {
         CallbackObject {
             callback: Heap::default(),
+            permanent_js_root: MutHeapJSVal::new(),
         }
     }
 
     pub fn get(&self) -> *mut JSObject {
         self.callback.get()
     }
+
+    #[allow(unsafe_code)]
+    unsafe fn init(&mut self, cx: *mut JSContext, callback: *mut JSObject) {
+        self.callback.set(callback);
+        self.permanent_js_root.set(ObjectValue(callback));
+        assert!(AddRawValueRoot(cx, self.permanent_js_root.get_unsafe(),
+                                b"CallbackObject::root\n" as *const _ as *const _));
+    }
+}
+
+impl Drop for CallbackObject {
+    #[allow(unsafe_code)]
+    fn drop(&mut self) {
+        unsafe {
+            let cx = GlobalScope::from_object(self.callback.get()).get_cx();
+            RemoveRawValueRoot(cx, self.permanent_js_root.get_unsafe());
+        }
+    }
+
 }
 
 impl PartialEq for CallbackObject {
@@ -62,7 +92,7 @@ impl PartialEq for CallbackObject {
 
 pub trait CallbackContainer {
     
-    fn new(callback: *mut JSObject) -> Rc<Self>;
+    unsafe fn new(cx: *mut JSContext, callback: *mut JSObject) -> Rc<Self>;
     
     fn callback_holder(&self) -> &CallbackObject;
     
@@ -74,12 +104,14 @@ pub trait CallbackContainer {
 
 
 #[derive(JSTraceable, PartialEq)]
+#[must_root]
 pub struct CallbackFunction {
     object: CallbackObject,
 }
 
 impl CallbackFunction {
     
+    #[allow(unrooted_must_root)]
     pub fn new() -> CallbackFunction {
         CallbackFunction {
             object: CallbackObject::new(),
@@ -93,14 +125,17 @@ impl CallbackFunction {
 
     
     
-    pub fn init(&mut self, callback: *mut JSObject) {
-        self.object.callback.set(callback);
+    pub unsafe fn init(&mut self, cx: *mut JSContext, callback: *mut JSObject) {
+        self.object.init(cx, callback);
     }
 }
 
 
 
+
+
 #[derive(JSTraceable, PartialEq)]
+#[must_root]
 pub struct CallbackInterface {
     object: CallbackObject,
 }
@@ -120,8 +155,8 @@ impl CallbackInterface {
 
     
     
-    pub fn init(&mut self, callback: *mut JSObject) {
-        self.object.callback.set(callback);
+    pub unsafe fn init(&mut self, cx: *mut JSContext, callback: *mut JSObject) {
+        self.object.init(cx, callback);
     }
 
     
