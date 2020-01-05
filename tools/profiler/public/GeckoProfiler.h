@@ -14,40 +14,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef SAMPLER_H
 #define SAMPLER_H
 
@@ -143,6 +109,8 @@ using UniqueProfilerBacktrace =
 
 
 
+
+
 PROFILER_FUNC_VOID(profiler_tracing(const char* aCategory, const char* aInfo,
                                     TracingMetadata metaData = TRACING_DEFAULT))
 PROFILER_FUNC_VOID(profiler_tracing(const char* aCategory, const char* aInfo,
@@ -165,8 +133,6 @@ PROFILER_FUNC_VOID(profiler_shutdown())
 
 
 
-
-
 PROFILER_FUNC_VOID(profiler_start(int aEntries, double aInterval,
                                   const char** aFeatures,
                                   uint32_t aFeatureCount,
@@ -182,12 +148,17 @@ PROFILER_FUNC_VOID(profiler_stop())
 
 
 
-PROFILER_FUNC(bool profiler_is_paused(), false)
+
 PROFILER_FUNC_VOID(profiler_pause())
 PROFILER_FUNC_VOID(profiler_resume())
 
 
+PROFILER_FUNC(bool profiler_is_paused(), false)
+
+
+
 PROFILER_FUNC(UniqueProfilerBacktrace profiler_get_backtrace(), nullptr)
+
 PROFILER_FUNC_VOID(profiler_get_backtrace_noalloc(char *output,
                                                   size_t outputSize))
 
@@ -218,28 +189,38 @@ PROFILER_FUNC(bool profiler_is_active(), false)
 
 
 
+
 PROFILER_FUNC(bool profiler_feature_active(const char*), false)
 
 
+
 PROFILER_FUNC_VOID(profiler_set_frame_number(int frameNumber))
+
 
 
 PROFILER_FUNC(mozilla::UniquePtr<char[]> profiler_get_profile(double aSinceTime = 0),
               nullptr)
 
 
+
 PROFILER_FUNC(JSObject* profiler_get_profile_jsobject(JSContext* aCx,
-                                                       double aSinceTime = 0),
-	       nullptr)
+                                                      double aSinceTime = 0),
+              nullptr)
+
 
 
 PROFILER_FUNC_VOID(profiler_get_profile_jsobject_async(double aSinceTime = 0,
                                                        mozilla::dom::Promise* = 0))
 
+
+
 PROFILER_FUNC_VOID(profiler_get_start_params(int* aEntrySize,
                                              double* aInterval,
                                              mozilla::Vector<const char*>* aFilters,
                                              mozilla::Vector<const char*>* aFeatures))
+
+
+
 
 
 
@@ -250,7 +231,11 @@ PROFILER_FUNC_VOID(profiler_save_profile_to_file(const char* aFilename))
 
 
 
+
 PROFILER_FUNC(const char** profiler_get_features(), nullptr)
+
+
+
 
 PROFILER_FUNC_VOID(profiler_get_buffer_info_helper(uint32_t* aCurrentPosition,
                                                    uint32_t* aEntries,
@@ -275,9 +260,11 @@ static inline void profiler_get_buffer_info(uint32_t* aCurrentPosition,
 }
 
 
+
 PROFILER_FUNC_VOID(profiler_register_thread(const char* name,
                                             void* guessStackTop))
 PROFILER_FUNC_VOID(profiler_unregister_thread())
+
 
 
 
@@ -288,7 +275,10 @@ PROFILER_FUNC(bool profiler_thread_is_sleeping(), false)
 
 
 
+
 PROFILER_FUNC_VOID(profiler_js_interrupt_callback())
+
+
 
 PROFILER_FUNC(double profiler_time(), 0)
 
@@ -385,8 +375,12 @@ profiler_call_exit(void* aHandle)
   stack->pop();
 }
 
+
+
 void profiler_add_marker(const char *aMarker,
                          ProfilerMarkerPayload *aPayload = nullptr);
+
+
 
 MOZ_EXPORT  
 void profiler_save_profile_to_file_async(double aSinceTime,
@@ -454,7 +448,6 @@ void profiler_OOP_exit_profile(const nsCString& aProfile);
 
 
 
-
 # define PROFILE_DEFAULT_INTERVAL 10
 #else
 #define PROFILE_DEFAULT_INTERVAL 1
@@ -467,6 +460,7 @@ namespace mozilla {
 
 class MOZ_RAII SamplerStackFrameRAII {
 public:
+  
   
   SamplerStackFrameRAII(const char *aInfo,
     js::ProfileEntry::Category aCategory, uint32_t line
@@ -486,6 +480,7 @@ private:
 static const int SAMPLER_MAX_STRING = 128;
 class MOZ_RAII SamplerStackFramePrintfRAII {
 public:
+  
   
   SamplerStackFramePrintfRAII(const char *aInfo,
     js::ProfileEntry::Category aCategory, uint32_t line, const char *aFormat, ...)
@@ -570,8 +565,6 @@ public:
 
 
 
-
-
 class MOZ_RAII GeckoProfilerThreadWakeRAII {
 public:
   GeckoProfilerThreadWakeRAII()
@@ -621,8 +614,6 @@ protected:
   const char* mCategory;
   const char* mInfo;
 };
-
-
 
 
 
