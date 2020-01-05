@@ -42,8 +42,6 @@ use compositing::{CompositorProxy, CompositorTask, Constellation};
 use msg::constellation_msg::ConstellationChan;
 use msg::constellation_msg::Msg as ConstellationMsg;
 
-use script::dom::bindings::codegen::RegisterBindings;
-
 use net::image_cache_task::new_image_cache_task;
 use net::resource_task::new_resource_task;
 use net::storage_task::StorageTaskFactory;
@@ -82,9 +80,6 @@ impl Browser {
         let opts = opts::get();
 
         script::init();
-        
-        
-        RegisterBindings::RegisterProxyHandlers();
 
         
         
