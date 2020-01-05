@@ -387,9 +387,7 @@ pref("browser.search.context.loadInBackground", false);
 
 pref("browser.search.hiddenOneOffs", "");
 
-#ifndef RELEASE_OR_BETA
 pref("browser.search.reset.enabled", true);
-#endif
 
 pref("browser.sessionhistory.max_entries", 50);
 
@@ -1560,4 +1558,4 @@ pref("services.sync.validation.enabled", true);
 #endif
 
 
-pref("browser.formautofill.enabled", false);
+pref("browser.formautofill.experimental", false);

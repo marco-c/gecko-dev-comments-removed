@@ -17,7 +17,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "FormAutofillParent",
 function startup() {
   
   
-  if (!Services.prefs.getBoolPref("browser.formautofill.enabled")) {
+  if (!Services.prefs.getBoolPref("browser.formautofill.experimental")) {
     return;
   }
 
