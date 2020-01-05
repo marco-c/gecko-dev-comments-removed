@@ -15,6 +15,7 @@
 #include "mozilla/FloatingPoint.h" 
 #include "mozilla/LookAndFeel.h" 
 #include "mozilla/KeyframeUtils.h"
+#include "mozilla/ServoBindings.h"
 #include "mozilla/StyleAnimationValue.h"
 #include "Layers.h" 
 #include "nsComputedDOMStyle.h" 
@@ -26,6 +27,23 @@
 #include "nsIScriptError.h"
 
 namespace mozilla {
+
+bool
+PropertyValuePair::operator==(const PropertyValuePair& aOther) const
+{
+  if (mProperty != aOther.mProperty || mValue != aOther.mValue) {
+    return false;
+  }
+  if (mServoDeclarationBlock == aOther.mServoDeclarationBlock) {
+    return true;
+  }
+  if (!mServoDeclarationBlock || !aOther.mServoDeclarationBlock) {
+    return false;
+  }
+  return Servo_DeclarationBlock_Equals(mServoDeclarationBlock,
+                                       aOther.mServoDeclarationBlock);
+}
+
 namespace dom {
 
 NS_IMPL_CYCLE_COLLECTION_INHERITED(KeyframeEffectReadOnly,
