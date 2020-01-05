@@ -462,6 +462,10 @@ CycleCollectedJSContext::CycleCollectedJSContext()
   , mDisableMicroTaskCheckpoint(false)
   , mOutOfMemoryState(OOMState::OK)
   , mLargeAllocationFailureState(OOMState::OK)
+#ifdef DEBUG
+  , mNumTraversedGCThings(0)
+  , mNumTraceChildren(0)
+#endif 
 {
   nsCOMPtr<nsIThread> thread = do_GetCurrentThread();
   mOwningThread = thread.forget().downcast<nsThread>().take();
@@ -710,6 +714,10 @@ CycleCollectedJSContext::TraverseGCThing(TraverseSelect aTs, JS::GCCellPtr aThin
   if (!isMarkedGray && !aCb.WantAllTraces()) {
     return;
   }
+
+#ifdef DEBUG
+  ++mNumTraversedGCThings;
+#endif
 
   if (aTs == TRAVERSE_FULL) {
     NoteGCThingJSChildren(aThing, aCb);
@@ -1353,11 +1361,35 @@ CycleCollectedJSContext::DumpJSHeap(FILE* aFile)
 void
 CycleCollectedJSContext::BeginCycleCollectionCallback()
 {
+#ifdef DEBUG
+  mNumTraversedGCThings = 0;
+  mNumTraceChildren = 0;
+#endif
 }
 
 void
 CycleCollectedJSContext::EndCycleCollectionCallback(CycleCollectorResults& aResults)
 {
+#ifdef DEBUG
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (mNumTraceChildren > 1000 && mNumTraversedGCThings > 0) {
+    double traceRatio = ((double)mNumTraceChildren) / ((double)mNumTraversedGCThings);
+    MOZ_ASSERT(traceRatio < 2.2, "Excessive calls to JS::TraceChildren by the cycle collector");
+  }
+
+  mNumTraversedGCThings = 0;
+  mNumTraceChildren = 0;
+#endif
 }
 
 void
@@ -1702,6 +1734,9 @@ CycleCollectedJSContext::OnLargeAllocationFailure()
 void
 CycleCollectedJSContext::TraceJSChildren(JSTracer* aTrc, JS::GCCellPtr aThing)
 {
+#ifdef DEBUG
+  ++mNumTraceChildren;
+#endif 
   JS::TraceChildren(aTrc, aThing);
 }
 
