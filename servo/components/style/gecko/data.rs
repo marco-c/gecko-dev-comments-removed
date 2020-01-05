@@ -36,9 +36,6 @@ pub struct PerDocumentStyleDataImpl {
     pub stylesheets_changed: bool,
 
     
-    pub device_changed: bool,
-
-    
     
     
     pub new_animations_sender: Sender<Animation>,
@@ -85,7 +82,6 @@ impl PerDocumentStyleData {
             stylist: Arc::new(Stylist::new(device)),
             stylesheets: vec![],
             stylesheets_changed: true,
-            device_changed: true,
             new_animations_sender: new_anims_sender,
             new_animations_receiver: new_anims_receiver,
             running_animations: Arc::new(RwLock::new(HashMap::new())),
@@ -114,29 +110,28 @@ impl PerDocumentStyleData {
 
 impl PerDocumentStyleDataImpl {
     
-    pub fn flush_stylesheets(&mut self) {
-        let mut stylist = if self.device_changed || self.stylesheets_changed {
-            Some(Arc::get_mut(&mut self.stylist).unwrap())
-        } else {
-            None
-        };
-
-        if self.device_changed {
-            Arc::get_mut(&mut stylist.as_mut().unwrap().device).unwrap().reset();
-            self.device_changed = false;
-            
-            self.stylesheets_changed = true;
+    
+    
+    pub fn reset_device(&mut self) {
+        {
+            let mut stylist = Arc::get_mut(&mut self.stylist).unwrap();
+            Arc::get_mut(&mut stylist.device).unwrap().reset();
         }
+        self.stylesheets_changed = true;
+        self.flush_stylesheets();
+    }
 
+    
+    pub fn flush_stylesheets(&mut self) {
         if self.stylesheets_changed {
-            let _ = stylist.unwrap().update(&self.stylesheets, None, true);
+            let mut stylist = Arc::get_mut(&mut self.stylist).unwrap();
+            stylist.update(&self.stylesheets, None, true);
             self.stylesheets_changed = false;
         }
     }
 
     
     pub fn default_computed_values(&self) -> &Arc<ComputedValues> {
-        debug_assert!(!self.device_changed, "A device flush was pending");
         self.stylist.device.default_values_arc()
     }
 }
