@@ -27,6 +27,9 @@ class nsITextControlElement;
 class nsFrame;
 
 namespace mozilla {
+
+class ErrorResult;
+
 namespace dom {
 class HTMLInputElement;
 } 
@@ -153,7 +156,11 @@ public:
     
     eSetValue_ByContent             = 1 << 1,
     
-    eSetValue_Notify                = 1 << 2
+    eSetValue_Notify                = 1 << 2,
+    
+    
+    
+    eSetValue_MoveCursorToEnd       = 1 << 3,
   };
   MOZ_MUST_USE bool SetValue(const nsAString& aValue, uint32_t aFlags);
   void GetValue(nsAString& aValue, bool aIgnoreWrap) const;
@@ -267,7 +274,8 @@ public:
   void SyncUpSelectionPropertiesBeforeDestruction();
 
   
-  nsresult GetSelectionRange(int32_t* aSelectionStart, int32_t* aSelectionEnd);
+  void GetSelectionRange(int32_t* aSelectionStart, int32_t* aSelectionEnd,
+                         mozilla::ErrorResult& aRv);
 
   
   nsresult GetSelectionDirection(nsITextControlFrame::SelectionDirection* aDirection);
@@ -330,6 +338,7 @@ private:
   
   
   nsITextControlElement* const MOZ_NON_OWNING_REF mTextCtrlElement;
+  
   RefPtr<nsTextInputSelectionImpl> mSelCon;
   RefPtr<RestoreSelectionState> mRestoringSelection;
   nsCOMPtr<nsIEditor> mEditor;
