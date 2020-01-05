@@ -57,12 +57,53 @@ use js::jsval::{StringValue, ObjectValue, ObjectOrNullValue};
 
 use libc;
 use num::Float;
+use num::traits::{Bounded, Zero};
 use std::borrow::ToOwned;
-use std::default;
 use std::slice;
 use std::ptr;
 use std::rc::Rc;
 use core::nonzero::NonZero;
+
+trait As<O>: Copy {
+    fn cast(self) -> O;
+}
+
+macro_rules! impl_as {
+    ($I:ty, $O:ty) => (
+        impl As<$O> for $I {
+            fn cast(self) -> $O {
+                self as $O
+            }
+        }
+    )
+}
+
+impl_as!(f64, u8);
+impl_as!(f64, u16);
+impl_as!(f64, u32);
+impl_as!(f64, u64);
+impl_as!(f64, i8);
+impl_as!(f64, i16);
+impl_as!(f64, i32);
+impl_as!(f64, i64);
+
+impl_as!(u8, f64);
+impl_as!(u16, f64);
+impl_as!(u32, f64);
+impl_as!(u64, f64);
+impl_as!(i8, f64);
+impl_as!(i16, f64);
+impl_as!(i32, f64);
+impl_as!(i64, f64);
+
+impl_as!(i32, i8);
+impl_as!(i32, u8);
+impl_as!(i32, i16);
+impl_as!(u16, u16);
+impl_as!(i32, i32);
+impl_as!(u32, u32);
+impl_as!(i64, i64);
+impl_as!(u64, u64);
 
 
 
@@ -92,6 +133,54 @@ pub trait FromJSValConvertible {
 }
 
 
+#[derive(PartialEq, Eq)]
+pub enum ConversionBehavior {
+    
+    Default,
+    
+    EnforceRange,
+    
+    Clamp
+}
+
+
+
+fn enforce_range<D>(cx: *mut JSContext, d: f64) -> Result<D, ()>
+    where D: Bounded + As<f64>,
+          f64: As<D>
+{
+    if d.is_infinite() {
+        throw_type_error(cx, "value out of range in an EnforceRange argument");
+        return Err(());
+    }
+
+    let rounded = d.round();
+    if D::min_value().cast() <= rounded && rounded <= D::max_value().cast() {
+        Ok(rounded.cast())
+    } else {
+        throw_type_error(cx, "value out of range in an EnforceRange argument");
+        Err(())
+    }
+}
+
+
+
+
+fn clamp_to<D>(d: f64) -> D
+    where D: Bounded + As<f64> + Zero,
+          f64: As<D>
+{
+    if d.is_nan() {
+        D::zero()
+    } else if d > D::max_value().cast() {
+        D::max_value()
+    } else if d < D::min_value().cast() {
+        D::min_value()
+    } else {
+        d.cast()
+    }
+}
+
 impl ToJSValConvertible for () {
     fn to_jsval(&self, _cx: *mut JSContext, rval: MutableHandleValue) {
         rval.set(UndefinedValue());
@@ -116,6 +205,22 @@ impl ToJSValConvertible for HandleValue {
     }
 }
 
+#[inline]
+fn convert_int_from_jsval<T, M>(cx: *mut JSContext, value: HandleValue,
+                                option: ConversionBehavior,
+                                convert_fn: fn(*mut JSContext, HandleValue) -> Result<M, ()>)
+                                -> Result<T, ()>
+    where T: Bounded + Zero + As<f64>,
+          M: Zero + As<T>,
+          f64: As<T>
+{
+    match option {
+        ConversionBehavior::Default => Ok(try!(convert_fn(cx, value)).cast()),
+        ConversionBehavior::EnforceRange => enforce_range(cx, try!(ToNumber(cx, value))),
+        ConversionBehavior::Clamp => Ok(clamp_to(try!(ToNumber(cx, value)))),
+    }
+}
+
 impl ToJSValConvertible for bool {
     fn to_jsval(&self, _cx: *mut JSContext, rval: MutableHandleValue) {
         rval.set(BooleanValue(*self));
@@ -136,10 +241,9 @@ impl ToJSValConvertible for i8 {
 }
 
 impl FromJSValConvertible for i8 {
-    type Config = ();
-    fn from_jsval(cx: *mut JSContext, val: HandleValue, _option: ()) -> Result<i8, ()> {
-        let result = ToInt32(cx, val);
-        result.map(|v| v as i8)
+    type Config = ConversionBehavior;
+    fn from_jsval(cx: *mut JSContext, val: HandleValue, option: ConversionBehavior) -> Result<i8, ()> {
+        convert_int_from_jsval(cx, val, option, ToInt32)
     }
 }
 
@@ -150,10 +254,9 @@ impl ToJSValConvertible for u8 {
 }
 
 impl FromJSValConvertible for u8 {
-    type Config = ();
-    fn from_jsval(cx: *mut JSContext, val: HandleValue, _option: ()) -> Result<u8, ()> {
-        let result = ToInt32(cx, val);
-        result.map(|v| v as u8)
+    type Config = ConversionBehavior;
+    fn from_jsval(cx: *mut JSContext, val: HandleValue, option: ConversionBehavior) -> Result<u8, ()> {
+        convert_int_from_jsval(cx, val, option, ToInt32)
     }
 }
 
@@ -164,10 +267,9 @@ impl ToJSValConvertible for i16 {
 }
 
 impl FromJSValConvertible for i16 {
-    type Config = ();
-    fn from_jsval(cx: *mut JSContext, val: HandleValue, _option: ()) -> Result<i16, ()> {
-        let result = ToInt32(cx, val);
-        result.map(|v| v as i16)
+    type Config = ConversionBehavior;
+    fn from_jsval(cx: *mut JSContext, val: HandleValue, option: ConversionBehavior) -> Result<i16, ()> {
+        convert_int_from_jsval(cx, val, option, ToInt32)
     }
 }
 
@@ -178,9 +280,9 @@ impl ToJSValConvertible for u16 {
 }
 
 impl FromJSValConvertible for u16 {
-    type Config = ();
-    fn from_jsval(cx: *mut JSContext, val: HandleValue, _option: ()) -> Result<u16, ()> {
-        ToUint16(cx, val)
+    type Config = ConversionBehavior;
+    fn from_jsval(cx: *mut JSContext, val: HandleValue, option: ConversionBehavior) -> Result<u16, ()> {
+        convert_int_from_jsval(cx, val, option, ToUint16)
     }
 }
 
@@ -191,9 +293,9 @@ impl ToJSValConvertible for i32 {
 }
 
 impl FromJSValConvertible for i32 {
-    type Config = ();
-    fn from_jsval(cx: *mut JSContext, val: HandleValue, _option: ()) -> Result<i32, ()> {
-        ToInt32(cx, val)
+    type Config = ConversionBehavior;
+    fn from_jsval(cx: *mut JSContext, val: HandleValue, option: ConversionBehavior) -> Result<i32, ()> {
+        convert_int_from_jsval(cx, val, option, ToInt32)
     }
 }
 
@@ -204,9 +306,9 @@ impl ToJSValConvertible for u32 {
 }
 
 impl FromJSValConvertible for u32 {
-    type Config = ();
-    fn from_jsval(cx: *mut JSContext, val: HandleValue, _option: ()) -> Result<u32, ()> {
-        ToUint32(cx, val)
+    type Config = ConversionBehavior;
+    fn from_jsval(cx: *mut JSContext, val: HandleValue, option: ConversionBehavior) -> Result<u32, ()> {
+        convert_int_from_jsval(cx, val, option, ToUint32)
     }
 }
 
@@ -219,9 +321,9 @@ impl ToJSValConvertible for i64 {
 }
 
 impl FromJSValConvertible for i64 {
-    type Config = ();
-    fn from_jsval(cx: *mut JSContext, val: HandleValue, _option: ()) -> Result<i64, ()> {
-        ToInt64(cx, val)
+    type Config = ConversionBehavior;
+    fn from_jsval(cx: *mut JSContext, val: HandleValue, option: ConversionBehavior) -> Result<i64, ()> {
+        convert_int_from_jsval(cx, val, option, ToInt64)
     }
 }
 
@@ -234,9 +336,9 @@ impl ToJSValConvertible for u64 {
 }
 
 impl FromJSValConvertible for u64 {
-    type Config = ();
-    fn from_jsval(cx: *mut JSContext, val: HandleValue, _option: ()) -> Result<u64, ()> {
-        ToUint64(cx, val)
+    type Config = ConversionBehavior;
+    fn from_jsval(cx: *mut JSContext, val: HandleValue, option: ConversionBehavior) -> Result<u64, ()> {
+        convert_int_from_jsval(cx, val, option, ToUint64)
     }
 }
 
@@ -323,14 +425,8 @@ pub enum StringificationBehavior {
     Empty,
 }
 
-impl default::Default for StringificationBehavior {
-    fn default() -> StringificationBehavior {
-        StringificationBehavior::Default
-    }
-}
 
-/// Convert the given `JSString` to a `DOMString`. Fails if the string does not
-/// contain valid UTF-16.
+
 pub fn jsstring_to_str(cx: *mut JSContext, s: *mut JSString) -> DOMString {
     let mut length = 0;
     let latin1 = unsafe { JS_StringHasLatin1Chars(s) != 0 };
@@ -361,7 +457,7 @@ pub fn jsstring_to_str(cx: *mut JSContext, s: *mut JSString) -> DOMString {
             match item {
                 ScalarValue(c) => s.push(c),
                 LoneSurrogate(_) => {
-                    // FIXME: Add more info like document URL in the message?
+                    
                     macro_rules! message {
                         () => {
                             "Found an unpaired surrogate in a DOM string. \
@@ -383,8 +479,8 @@ pub fn jsstring_to_str(cx: *mut JSContext, s: *mut JSString) -> DOMString {
     }
 }
 
-/// Convert the given `jsid` to a `DOMString`. Fails if the `jsid` is not a
-/// string, or if the string does not contain valid UTF-16.
+
+
 pub fn jsid_to_str(cx: *mut JSContext, id: HandleId) -> DOMString {
     unsafe {
         assert!(RUST_JSID_IS_STRING(id) != 0);
@@ -485,7 +581,7 @@ impl FromJSValConvertible for ByteString {
             let char_vec = slice::from_raw_parts(chars, length as usize);
 
             if char_vec.iter().any(|&c| c > 0xFF) {
-                // XXX Throw
+                
                 Err(())
             } else {
                 Ok(ByteString::new(char_vec.iter().map(|&c| c as u8).collect()))
@@ -505,14 +601,14 @@ impl ToJSValConvertible for Reflector {
     }
 }
 
-/// Returns whether the given `clasp` is one for a DOM object.
+
 pub fn is_dom_class(clasp: *const JSClass) -> bool {
     unsafe {
         ((*clasp).flags & js::JSCLASS_IS_DOMJSCLASS) != 0
     }
 }
 
-/// Returns whether `obj` is a DOM object implemented as a proxy.
+
 pub fn is_dom_proxy(obj: *mut JSObject) -> bool {
     use js::glue::IsProxyHandlerFamily;
     unsafe {
@@ -521,13 +617,13 @@ pub fn is_dom_proxy(obj: *mut JSObject) -> bool {
     }
 }
 
-/// The index of the slot wherein a pointer to the reflected DOM object is
-/// stored for non-proxy bindings.
-// We use slot 0 for holding the raw object.  This is safe for both
-// globals and non-globals.
+
+
+
+
 pub const DOM_OBJECT_SLOT: u32 = 0;
 
-/// Get the private pointer of a DOM object from a given reflector.
+
 unsafe fn private_from_reflector(obj: *mut JSObject) -> *const libc::c_void {
     let clasp = JS_GetClass(obj);
     let value = if is_dom_class(clasp) {
@@ -543,12 +639,12 @@ unsafe fn private_from_reflector(obj: *mut JSObject) -> *const libc::c_void {
     }
 }
 
-/// Get the DOM object from the given reflector.
+
 pub unsafe fn native_from_reflector<T>(obj: *mut JSObject) -> *const T {
     private_from_reflector(obj) as *const T
 }
 
-/// Get the `DOMClass` from `obj`, or `Err(())` if `obj` is not a DOM object.
+
 unsafe fn get_dom_class(obj: *mut JSObject) -> Result<DOMClass, ()> {
     use dom::bindings::utils::DOMJSClass;
     use js::glue::GetProxyHandlerExtra;
@@ -568,12 +664,12 @@ unsafe fn get_dom_class(obj: *mut JSObject) -> Result<DOMClass, ()> {
     return Err(());
 }
 
-/// Get a `*const libc::c_void` for the given DOM object, unwrapping any
-/// wrapper around it first, and checking if the object is of the correct type.
-///
-/// Returns Err(()) if `obj` is an opaque security wrapper or if the object is
-/// not an object for a DOM object of the given type (as defined by the
-/// proto_id and proto_depth).
+
+
+
+
+
+
 pub unsafe fn private_from_proto_chain(mut obj: *mut JSObject,
                                        proto_id: u16, proto_depth: u16)
                                        -> Result<*const libc::c_void, ()> {
@@ -666,13 +762,12 @@ impl<T: ToJSValConvertible> ToJSValConvertible for Option<Rc<T>> {
     }
 }
 
-impl<X: default::Default, T: FromJSValConvertible<Config=X>> FromJSValConvertible for Option<T> {
-    type Config = ();
-    fn from_jsval(cx: *mut JSContext, value: HandleValue, _: ()) -> Result<Option<T>, ()> {
+impl<T: FromJSValConvertible> FromJSValConvertible for Option<T> {
+    type Config = T::Config;
+    fn from_jsval(cx: *mut JSContext, value: HandleValue, option: T::Config) -> Result<Option<T>, ()> {
         if value.get().is_null_or_undefined() {
             Ok(None)
         } else {
-            let option: X = default::Default::default();
             let result: Result<T, ()> = FromJSValConvertible::from_jsval(cx, value, option);
             result.map(Some)
         }
