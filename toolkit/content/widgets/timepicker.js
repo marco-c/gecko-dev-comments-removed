@@ -2,7 +2,7 @@
 
 
 
-'use strict';
+"use strict";
 
 function TimePicker(context) {
   this.context = context;
@@ -10,7 +10,7 @@ function TimePicker(context) {
 }
 
 {
-  const debug = 0 ? console.log.bind(console, '[timepicker]') : function() {};
+  const debug = 0 ? console.log.bind(console, "[timepicker]") : function() {};
 
   const DAY_PERIOD_IN_HOURS = 12,
         SECOND_IN_MS = 1000,
@@ -61,9 +61,6 @@ function TimePicker(context) {
       timeKeeper.setState({ hour: timerHour, minute: timerMinute });
 
       this.state = { timeKeeper };
-
-      
-      document.documentElement.style.fontSize = "10px";
     },
 
     
@@ -118,6 +115,13 @@ function TimePicker(context) {
         }, this.context)
       };
 
+      this._insertLayoutElement({
+        tag: "div",
+        textContent: ":",
+        className: "colon",
+        insertBefore: this.components.minute.elements.container
+      });
+
       
       
       if (format == "12") {
@@ -126,9 +130,34 @@ function TimePicker(context) {
             timeKeeper.setDayPeriod(value);
             this.state.isDayPeriodSet = true;
           }),
-          getDisplayString: dayPeriod => dayPeriod == 0 ? "AM" : "PM"
+          getDisplayString: dayPeriod => dayPeriod == 0 ? "AM" : "PM",
+          hideButtons: true
         }, this.context);
+
+        this._insertLayoutElement({
+          tag: "div",
+          className: "spacer",
+          insertBefore: this.components.dayPeriod.elements.container
+        });
       }
+    },
+
+    
+
+
+
+
+
+
+
+
+
+
+    _insertLayoutElement({ tag, insertBefore, className, textContent }) {
+      let el = document.createElement(tag);
+      el.textContent = textContent;
+      el.className = className;
+      this.context.insertBefore(el, insertBefore);
     },
 
     
@@ -188,7 +217,7 @@ function TimePicker(context) {
       }, "*");
     },
     _attachEventListeners() {
-      window.addEventListener('message', this);
+      window.addEventListener("message", this);
     },
 
     
