@@ -46,29 +46,6 @@ class ServoStyleSet
 {
   friend class ServoRestyleManager;
 public:
-  class AutoAllowStaleStyles
-  {
-  public:
-    AutoAllowStaleStyles(ServoStyleSet* aStyleSet)
-      : mStyleSet(aStyleSet)
-    {
-      if (mStyleSet) {
-        MOZ_ASSERT(!mStyleSet->mAllowResolveStaleStyles);
-        mStyleSet->mAllowResolveStaleStyles = true;
-      }
-    }
-
-    ~AutoAllowStaleStyles()
-    {
-      if (mStyleSet) {
-        mStyleSet->mAllowResolveStaleStyles = false;
-      }
-    }
-
-  private:
-    ServoStyleSet* mStyleSet;
-  };
-
   static bool IsInServoTraversal()
   {
     
@@ -319,7 +296,6 @@ private:
   EnumeratedArray<SheetType, SheetType::Count,
                   nsTArray<RefPtr<ServoStyleSheet>>> mSheets;
   int32_t mBatching;
-  bool mAllowResolveStaleStyles;
 
   
   
