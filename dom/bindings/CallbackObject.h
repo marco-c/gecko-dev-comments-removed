@@ -232,7 +232,7 @@ protected:
   
   
   
-  CallbackObject(JSContext* aCx, JS::Handle<JSObject*> aCallback,
+  CallbackObject(JS::Handle<JSObject*> aCallback,
                  nsIGlobalObject* aIncumbentGlobal,
                  const FastCallbackConstructor&)
   {
