@@ -21,6 +21,7 @@
 #include "nsHTMLStyleSheet.h"
 #include "nsIDocumentInlines.h"
 #include "nsPrintfCString.h"
+#include "nsSMILAnimationController.h"
 #include "nsStyleContext.h"
 #include "nsStyleSet.h"
 
@@ -263,10 +264,18 @@ ServoStyleSet::PreTraverse(Element* aRoot)
 
   
   
+  nsSMILAnimationController* smilController =
+    mPresContext->Document()->GetAnimationController();
   if (aRoot) {
     mPresContext->EffectCompositor()->PreTraverseInSubtree(aRoot);
+    if (smilController) {
+      smilController->PreTraverseInSubtree(aRoot);
+    }
   } else {
     mPresContext->EffectCompositor()->PreTraverse();
+    if (smilController) {
+      smilController->PreTraverse();
+    }
   }
 }
 
@@ -293,6 +302,11 @@ ServoStyleSet::PrepareAndTraverseSubtree(RawGeckoElementBorrowed aRoot,
 
   auto root = const_cast<Element*>(aRoot);
 
+  
+  
+  
+  
+  
   
   
   EffectCompositor* compositor = mPresContext->EffectCompositor();
