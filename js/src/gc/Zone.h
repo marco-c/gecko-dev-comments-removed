@@ -293,7 +293,7 @@ struct Zone : public JS::shadow::Zone,
     }
 
     
-    js::ZoneGroupData<js::gc::UniqueIdMap> uniqueIds_;
+    js::ZoneGroupOrGCTaskData<js::gc::UniqueIdMap> uniqueIds_;
 
     js::gc::UniqueIdMap& uniqueIds() { return uniqueIds_.ref(); }
 
