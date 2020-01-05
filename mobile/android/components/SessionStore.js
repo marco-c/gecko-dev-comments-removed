@@ -1631,44 +1631,24 @@ SessionStore.prototype = {
     }
 
     let window = Services.wm.getMostRecentWindow("navigator:browser");
-
     let tabs = state.windows[0].tabs;
-    let selected = state.windows[0].selected;
-    log("_restoreWindow() selected tab in aData is " + selected + " of " + tabs.length)
-    if (selected == null || selected > tabs.length) { 
-      log("_restoreWindow() resetting selected tab");
-      selected = 1;
-    }
-    log("restoreWindow() window.BrowserApp.selectedTab is " + window.BrowserApp.selectedTab.id);
 
     for (let i = 0; i < tabs.length; i++) {
       let tabData = tabs[i];
       let entry = tabData.entries[tabData.index - 1];
 
       
-      let tab;
-      let parentId = tabData.parentId;
-      if (tabData.tabId == null) {
-        let params = {
-          selected: (selected == i+1),
-          delayLoad: true,
-          title: entry.title,
-          desktopMode: (tabData.desktopMode == true),
-          isPrivate: (tabData.isPrivate == true),
-          parentId: parentId
-        };
-        tab = window.BrowserApp.addTab(entry.url, params);
-      } else {
-        tab = window.BrowserApp.getTabForId(tabData.tabId);
+      let tab = window.BrowserApp.getTabForId(tabData.tabId);
 
-        
-        if (tab == null) {
-          delete tabData.tabId;
-          continue;
-        }
-        if (parentId > -1) {
-          tab.setParentId(parentId);
-        }
+      
+      if (tab == null) {
+        delete tabData.tabId;
+        continue;
+      }
+
+      let parentId = tabData.parentId;
+      if (parentId > -1) {
+        tab.setParentId(parentId);
       }
 
       tab.browser.__SS_data = tabData;
