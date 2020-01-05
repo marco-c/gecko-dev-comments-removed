@@ -139,12 +139,13 @@ class ArtifactJob(object):
     
     _test_archive_suffix = '.common.tests.zip'
 
-    def __init__(self, package_re, tests_re, log=None, download_symbols=False):
+    def __init__(self, package_re, tests_re, log=None, download_symbols=False, substs=None):
         self._package_re = re.compile(package_re)
         self._tests_re = None
         if tests_re:
             self._tests_re = re.compile(tests_re)
         self._log = log
+        self._substs = substs
         self._symbols_archive_suffix = None
         if download_symbols:
             self._symbols_archive_suffix = 'crashreporter-symbols.zip'
@@ -308,28 +309,28 @@ class MacArtifactJob(ArtifactJob):
 
     def process_package_artifact(self, filename, processed_filename):
         tempdir = tempfile.mkdtemp()
+        oldcwd = os.getcwd()
         try:
             self.log(logging.INFO, 'artifact',
                 {'tempdir': tempdir},
                 'Unpacking DMG into {tempdir}')
-            mozinstall.install(filename, tempdir) 
-
-            
-
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
+            if self._substs['HOST_OS_ARCH'] == 'Linux':
+                
+                os.chdir(tempdir)
+                with open(os.devnull, 'wb') as devnull:
+                    subprocess.check_call([
+                        self._substs['DMG_TOOL'],
+                        'extract',
+                        filename,
+                        'extracted_img',
+                    ], stdout=devnull)
+                    subprocess.check_call([
+                        self._substs['HFS_TOOL'],
+                        'extracted_img',
+                        'extractall'
+                    ], stdout=devnull)
+            else:
+                mozinstall.install(filename, tempdir)
 
             bundle_dirs = glob.glob(mozpath.join(tempdir, '*.app'))
             if len(bundle_dirs) != 1:
@@ -395,6 +396,7 @@ class MacArtifactJob(ArtifactJob):
                         writer.add(destpath.encode('utf-8'), f.open(), mode=f.mode)
 
         finally:
+            os.chdir(oldcwd)
             try:
                 shutil.rmtree(tempdir)
             except (OSError, IOError):
@@ -487,9 +489,10 @@ JOB_DETAILS = {
 
 
 
-def get_job_details(job, log=None, download_symbols=False):
+def get_job_details(job, log=None, download_symbols=False, substs=None):
     cls, (package_re, tests_re) = JOB_DETAILS[job]
-    return cls(package_re, tests_re, log=log, download_symbols=download_symbols)
+    return cls(package_re, tests_re, log=log, download_symbols=download_symbols,
+               substs=substs)
 
 def cachedmethod(cachefunc):
     '''Decorator to wrap a class or instance method with a memoizing callable that
@@ -800,7 +803,9 @@ class Artifacts(object):
         self._topsrcdir = topsrcdir
 
         try:
-            self._artifact_job = get_job_details(self._job, log=self._log, download_symbols=self._download_symbols)
+            self._artifact_job = get_job_details(self._job, log=self._log,
+                                                 download_symbols=self._download_symbols,
+                                                 substs=self._substs)
         except KeyError:
             self.log(logging.INFO, 'artifact',
                 {'job': self._job},
