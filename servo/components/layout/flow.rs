@@ -61,7 +61,7 @@ use std::iter::Zip;
 use std::raw;
 use std::sync::atomics::{AtomicUint, Relaxed, SeqCst};
 use std::slice::MutItems;
-use style::computed_values::{clear, position, text_align};
+use style::computed_values::{clear, float, position, text_align};
 
 
 
@@ -193,6 +193,10 @@ pub trait Flow: fmt::Show + ToString + Share {
     
     fn float_clearance(&self) -> clear::T {
         clear::none
+    }
+
+    fn float_kind(&self) -> float::T {
+        float::none
     }
 
     
