@@ -1736,7 +1736,25 @@ ServiceWorkerPrivate::SpawnWorkerIfNeeded(WakeUpReason aWhy,
     return rv;
   }
 
-  info.mPrincipal = mInfo->GetPrincipal();
+  nsCOMPtr<nsIURI> uri;
+  rv = mInfo->GetPrincipal()->GetURI(getter_AddRefs(uri));
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  if (NS_WARN_IF(!uri)) {
+    return NS_ERROR_FAILURE;
+  }
+
+  
+  
+  
+  
+  info.mPrincipal =
+    BasePrincipal::CreateCodebasePrincipal(uri, mInfo->GetOriginAttributes());
+  if (NS_WARN_IF(!info.mPrincipal)) {
+    return NS_ERROR_FAILURE;
+  }
 
   nsContentUtils::StorageAccess access =
     nsContentUtils::StorageAllowedForPrincipal(info.mPrincipal);
@@ -1744,15 +1762,9 @@ ServiceWorkerPrivate::SpawnWorkerIfNeeded(WakeUpReason aWhy,
   info.mOriginAttributes = mInfo->GetOriginAttributes();
 
   
-  
-  
 #if defined(DEBUG) || !defined(RELEASE_OR_BETA)
   nsCOMPtr<nsIContentSecurityPolicy> csp;
-  rv = info.mPrincipal->GetCsp(getter_AddRefs(csp));
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-
+  Unused << info.mPrincipal->GetCsp(getter_AddRefs(csp));
   MOZ_DIAGNOSTIC_ASSERT(!csp);
 #endif
 
