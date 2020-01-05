@@ -3662,7 +3662,7 @@ PeerConnectionImpl::ExecuteStatsQuery_s(RTCStatsQuery *query) {
 
           
           webrtc::RtcpPacketTypeCounter counters;
-          if (mp.Conduit()->GetPacketTypeStats(&counters)) {
+          if (mp.Conduit()->GetSendPacketTypeStats(&counters)) {
             s.mNackCount.Construct(counters.nack_packets);
             
             if (!isAudio) {
@@ -3764,7 +3764,7 @@ PeerConnectionImpl::ExecuteStatsQuery_s(RTCStatsQuery *query) {
         }
         
         webrtc::RtcpPacketTypeCounter counters;
-        if (mp.Conduit()->GetPacketTypeStats(&counters)) {
+        if (mp.Conduit()->GetRecvPacketTypeStats(&counters)) {
           s.mNackCount.Construct(counters.nack_packets);
           
           if (!isAudio) {
