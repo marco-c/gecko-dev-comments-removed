@@ -21,6 +21,8 @@ user_pref("app.update.enabled", false);
 user_pref("app.update.staging.enabled", false);
 user_pref("app.update.url.android", "");
 
+user_pref("extensions.allow-non-mpc-extensions", true);
+
 user_pref("extensions.update.enabled", false);
 user_pref("extensions.systemAddon.update.url", "http://localhost/dummy-system-addons.xml");
 user_pref("extensions.getAddons.cache.enabled", false);
