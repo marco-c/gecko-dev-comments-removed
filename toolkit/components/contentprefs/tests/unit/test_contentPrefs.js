@@ -310,8 +310,8 @@ function run_test() {
 
   
   
-  cps.setPref(uri, "test.observer.private", "test value", {usePrivateBrowsing: true});
-  cps.setPref(uri, "test.observer.normal", "test value", {usePrivateBrowsing: false});
+  cps.setPref(uri, "test.observer.private", "test value", privateLoadContext);
+  cps.setPref(uri, "test.observer.normal", "test value", loadContext);
   cps.removePref(uri, "test.observer.private");
   cps.removePref(uri, "test.observer.normal");
 

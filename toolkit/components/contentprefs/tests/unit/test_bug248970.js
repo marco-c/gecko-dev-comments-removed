@@ -3,8 +3,6 @@
 
 
 function run_test() {
-    let loadContext = { get usePrivateBrowsing() { return gInPrivateBrowsing; } };
-
     ContentPrefTest.deleteDatabase();
     var cp = new ContentPrefInstance(loadContext);
     do_check_neq(cp, null, "Retrieving the content prefs service failed");
@@ -19,7 +17,7 @@ function run_test() {
       
       do_check_eq(cp.getPref(uri1, pref_name), zoomA);
       
-      enterPBMode();
+      enterPBMode(cp);
       
       do_check_eq(cp.getPref(uri1, pref_name), zoomA);
       
@@ -31,7 +29,7 @@ function run_test() {
       
       do_check_eq(cp.getPref(uri1, pref_name), zoomA_new);
       
-      exitPBMode();
+      exitPBMode(cp);
       
       do_check_eq(cp.getPref(uri1, pref_name), zoomA);
       
