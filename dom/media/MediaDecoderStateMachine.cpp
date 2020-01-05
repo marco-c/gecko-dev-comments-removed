@@ -562,7 +562,11 @@ class MediaDecoderStateMachine::DecodingState
   : public MediaDecoderStateMachine::StateObject
 {
 public:
-  explicit DecodingState(Master* aPtr) : StateObject(aPtr) {}
+  explicit DecodingState(Master* aPtr)
+    : StateObject(aPtr)
+    , mDormantTimer(OwnerThread())
+  {
+  }
 
   void Enter();
 
@@ -572,6 +576,7 @@ public:
       TimeDuration decodeDuration = TimeStamp::Now() - mDecodeStartTime;
       SLOG("Exiting DECODING, decoded for %.3lfs", decodeDuration.ToSeconds());
     }
+    mDormantTimer.Reset();
   }
 
   void Step() override
@@ -650,6 +655,12 @@ public:
       
       mMaster->ScheduleStateMachine();
     }
+
+    if (aPlayState == MediaDecoder::PLAY_STATE_PAUSED) {
+      StartDormantTimer();
+    } else {
+      mDormantTimer.Reset();
+    }
   }
 
   void DumpDebugInfo() override
@@ -716,6 +727,30 @@ private:
     }
   }
 
+  void StartDormantTimer()
+  {
+    auto timeout = MediaPrefs::DormantOnPauseTimeout();
+    if (timeout < 0) {
+      
+      return;
+    } else if (timeout == 0) {
+      
+      HandleDormant(true);
+      return;
+    }
+
+    TimeStamp target = TimeStamp::Now() +
+      TimeDuration::FromMilliseconds(timeout);
+
+    mDormantTimer.Ensure(target,
+      [this] () {
+        mDormantTimer.CompleteRequest();
+        HandleDormant(true);
+      }, [this] () {
+        mDormantTimer.CompleteRequest();
+      });
+  }
+
   
   TimeStamp mDecodeStartTime;
 
@@ -727,6 +762,9 @@ private:
   
   
   bool mIsPrerolling = true;
+
+  
+  DelayedScheduler mDormantTimer;
 };
 
 
@@ -1442,6 +1480,11 @@ DecodingState::Enter()
   mMaster->DispatchDecodeTasksIfNeeded();
 
   mMaster->ScheduleStateMachine();
+
+  
+  if (mMaster->mPlayState == MediaDecoder::PLAY_STATE_PAUSED) {
+    StartDormantTimer();
+  }
 }
 
 RefPtr<MediaDecoder::SeekPromise>

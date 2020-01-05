@@ -312,6 +312,13 @@ pref("dom.MediaError.message.enabled", true);
 #endif
 
 
+#ifdef NIGHTLY_BUILD
+pref("media.dormant-on-pause-timeout-ms", 5000);
+#else
+pref("media.dormant-on-pause-timeout-ms", -1);
+#endif
+
+
 pref("media.cache_size", 512000);
 
 
