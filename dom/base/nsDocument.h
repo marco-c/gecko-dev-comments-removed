@@ -1305,7 +1305,7 @@ protected:
 
   void UpdateScreenOrientation();
 
-  virtual FlashClassification DocumentFlashClassification() override;
+  virtual mozilla::dom::FlashClassification DocumentFlashClassification() override;
 
 #define NS_DOCUMENT_NOTIFY_OBSERVERS(func_, params_)                        \
   NS_OBSERVER_ARRAY_NOTIFY_XPCOM_OBSERVERS(mObservers, nsIDocumentObserver, \
@@ -1329,11 +1329,11 @@ protected:
 
   
   
-  FlashClassification PrincipalFlashClassification(bool aIsTopLevel);
+  mozilla::dom::FlashClassification PrincipalFlashClassification(bool aIsTopLevel);
 
   
   
-  FlashClassification ComputeFlashClassification();
+  mozilla::dom::FlashClassification ComputeFlashClassification();
 
   nsTArray<nsIObserver*> mCharSetObservers;
 
@@ -1379,7 +1379,7 @@ protected:
   
   nsWeakPtr mFullscreenRoot;
 
-  FlashClassification mFlashClassification;
+  mozilla::dom::FlashClassification mFlashClassification;
 private:
   static bool CustomElementConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp);
 

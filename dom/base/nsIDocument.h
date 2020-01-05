@@ -2893,14 +2893,7 @@ public:
 
   
   
-  enum class FlashClassification {
-    Unclassified,   
-                    
-    Unknown,        
-    Allowed,        
-    Denied          
-  };
-  virtual FlashClassification DocumentFlashClassification() = 0;
+  virtual mozilla::dom::FlashClassification DocumentFlashClassification() = 0;
 
 protected:
   bool GetUseCounter(mozilla::UseCounter aUseCounter)

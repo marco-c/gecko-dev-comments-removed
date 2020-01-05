@@ -13048,7 +13048,7 @@ ArrayContainsTable(const nsTArray<nsCString>& aTableArray,
 
 
 
-nsIDocument::FlashClassification
+FlashClassification
 nsDocument::PrincipalFlashClassification(bool aIsTopLevel)
 {
   nsresult rv;
@@ -13137,7 +13137,7 @@ nsDocument::PrincipalFlashClassification(bool aIsTopLevel)
   return FlashClassification::Unknown;
 }
 
-nsIDocument::FlashClassification
+FlashClassification
 nsDocument::ComputeFlashClassification()
 {
   nsCOMPtr<nsIDocShellTreeItem> current = this->GetDocShell();
@@ -13186,7 +13186,7 @@ nsDocument::ComputeFlashClassification()
 
 
 
-nsIDocument::FlashClassification
+FlashClassification
 nsDocument::DocumentFlashClassification()
 {
   if (mFlashClassification == FlashClassification::Unclassified) {
