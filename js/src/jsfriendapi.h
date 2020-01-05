@@ -451,9 +451,9 @@ IsAtomsZone(JS::Zone* zone);
 
 struct WeakMapTracer
 {
-    JSContext* context;
+    JSRuntime* runtime;
 
-    explicit WeakMapTracer(JSContext* cx) : context(cx) {}
+    explicit WeakMapTracer(JSRuntime* rt) : runtime(rt) {}
 
     
     
@@ -468,7 +468,7 @@ extern JS_FRIEND_API(void)
 TraceWeakMaps(WeakMapTracer* trc);
 
 extern JS_FRIEND_API(bool)
-AreGCGrayBitsValid(JSContext* cx);
+AreGCGrayBitsValid(JSRuntime* rt);
 
 extern JS_FRIEND_API(bool)
 ZoneGlobalsAreAllGray(JS::Zone* zone);
@@ -505,7 +505,7 @@ IterateGrayObjectsUnderCC(JS::Zone* zone, GCThingCallback cellCallback, void* da
 
 
 extern JS_FRIEND_API(bool)
-CheckGrayMarkingState(JSContext* cx);
+CheckGrayMarkingState(JSRuntime* rt);
 #endif
 
 #ifdef JS_HAS_CTYPES

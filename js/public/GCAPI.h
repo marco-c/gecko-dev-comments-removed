@@ -428,6 +428,13 @@ IsIncrementalGCInProgress(JSContext* cx);
 
 
 
+extern JS_PUBLIC_API(bool)
+IsIncrementalGCInProgress(JSRuntime* rt);
+
+
+
+
+
 
 
 extern JS_PUBLIC_API(bool)
@@ -451,7 +458,7 @@ IncrementalReadBarrier(GCCellPtr thing);
 
 
 extern JS_PUBLIC_API(bool)
-WasIncrementalGC(JSContext* cx);
+WasIncrementalGC(JSRuntime* rt);
 
 
 
