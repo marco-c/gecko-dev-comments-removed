@@ -5581,17 +5581,11 @@ nsCSSFrameConstructor::FindSVGData(Element* aElement,
 
 void
 nsCSSFrameConstructor::AddPageBreakItem(nsIContent* aContent,
-                                        nsStyleContext* aMainStyleContext,
                                         FrameConstructionItemList& aItems)
 {
-  
-  
-  
-  
   RefPtr<nsStyleContext> pseudoStyle =
     mPresShell->StyleSet()->
-      ResolveInheritingAnonymousBoxStyle(nsCSSAnonBoxes::pageBreak,
-                                         aMainStyleContext->GetParent());
+      ResolveNonInheritingAnonymousBoxStyle(nsCSSAnonBoxes::pageBreak);
 
   MOZ_ASSERT(pseudoStyle->StyleDisplay()->mDisplay == StyleDisplay::Block,
              "Unexpected display");
@@ -5925,7 +5919,7 @@ nsCSSFrameConstructor::AddFrameConstructionItemsInternal(nsFrameConstructorState
     !(bits & FCDATA_IS_SVG_TEXT);
 
   if (canHavePageBreak && display->mBreakBefore) {
-    AddPageBreakItem(aContent, aStyleContext, aItems);
+    AddPageBreakItem(aContent, aItems);
   }
 
   if (MOZ_UNLIKELY(bits & FCDATA_IS_CONTENTS)) {
@@ -5983,7 +5977,7 @@ nsCSSFrameConstructor::AddFrameConstructionItemsInternal(nsFrameConstructorState
     CreateGeneratedContentItem(aState, aParentFrame, aContent, styleContext,
                                CSSPseudoElementType::after, aItems);
     if (canHavePageBreak && display->mBreakAfter) {
-      AddPageBreakItem(aContent, aStyleContext, aItems);
+      AddPageBreakItem(aContent, aItems);
     }
     return;
   }
@@ -6023,7 +6017,7 @@ nsCSSFrameConstructor::AddFrameConstructionItemsInternal(nsFrameConstructorState
                             aTag == nsGkAtoms::a;
 
   if (canHavePageBreak && display->mBreakAfter) {
-    AddPageBreakItem(aContent, aStyleContext, aItems);
+    AddPageBreakItem(aContent, aItems);
   }
 
   if (bits & FCDATA_IS_INLINE) {
