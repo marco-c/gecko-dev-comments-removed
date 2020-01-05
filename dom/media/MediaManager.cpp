@@ -1853,7 +1853,7 @@ MediaManager::GetNonE10sParent()
 MediaManager::StartupInit()
 {
 #ifdef WIN32
-  if (IsVistaOrLater() && !IsWin8OrLater()) {
+  if (!IsWin8OrLater()) {
     
     
     
