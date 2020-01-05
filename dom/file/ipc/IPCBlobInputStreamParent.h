@@ -21,8 +21,10 @@ public:
   
   
   
+  template<typename M>
   static IPCBlobInputStreamParent*
-  Create(nsIInputStream* aInputStream, uint64_t aSize, nsresult* aRv);
+  Create(nsIInputStream* aInputStream, uint64_t aSize, nsresult* aRv,
+         M* aManager);
 
   void
   ActorDestroy(IProtocol::ActorDestroyReason aReason) override;
@@ -39,11 +41,23 @@ public:
     return mSize;
   }
 
+  mozilla::ipc::IPCResult
+  RecvStreamNeeded() override;
+
 private:
-  IPCBlobInputStreamParent(const nsID& aID, uint64_t aSize);
+  IPCBlobInputStreamParent(const nsID& aID, uint64_t aSize,
+                           nsIContentParent* aManager);
+
+  IPCBlobInputStreamParent(const nsID& aID, uint64_t aSize,
+                           mozilla::ipc::PBackgroundParent* aManager);
 
   const nsID mID;
   const uint64_t mSize;
+
+  
+  
+  nsIContentParent* mContentManager;
+  mozilla::ipc::PBackgroundParent* mPBackgroundManager;
 };
 
 } 
