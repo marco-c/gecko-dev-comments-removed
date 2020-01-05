@@ -274,7 +274,9 @@ pub fn parse_html(document: JSRef<Document>,
                     parser.parse_chunk(data);
                 }
                 ProgressMsg::Done(Err(err)) => {
-                    panic!("Failed to load page URL {}, error: {}", url.serialize(), err);
+                    debug!("Failed to load page URL {}, error: {}", url.serialize(), err);
+                    
+                    break;
                 }
                 ProgressMsg::Done(Ok(())) => break,
             }
