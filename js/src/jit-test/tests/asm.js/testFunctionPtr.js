@@ -1,4 +1,3 @@
-
 load(libdir + "asm.js");
 
 assertAsmTypeFail('imp', USE_ASM + "function f() {} var imp=[f]; return f");

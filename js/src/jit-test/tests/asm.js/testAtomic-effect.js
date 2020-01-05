@@ -1,4 +1,3 @@
-
 if (!this.Atomics)
     quit();
 

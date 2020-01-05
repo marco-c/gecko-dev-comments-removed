@@ -4,7 +4,6 @@
 
 
 
-
 load(libdir + "asm.js");
 if (!isSimdAvailable() || typeof SIMD === 'undefined') {
     print("won't run tests as simd extensions aren't activated yet");

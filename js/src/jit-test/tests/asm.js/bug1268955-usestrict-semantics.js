@@ -1,5 +1,4 @@
 
-
 var scope = {};
 scope.mod = eval(`"use strict"; (function() { "use asm"; function f() {} return f; });`);
 

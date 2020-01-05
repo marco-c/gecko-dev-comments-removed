@@ -1,6 +1,5 @@
 
 
-
 function asmModule(g, foreign, heap) {
     "use asm";
     let HEAP8 = new g.Int8Array(heap);

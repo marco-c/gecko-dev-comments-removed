@@ -1,4 +1,3 @@
-
 load(libdir + "asm.js");
 
 function f(stdlib, foreign, buffer)

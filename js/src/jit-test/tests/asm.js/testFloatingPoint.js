@@ -1,4 +1,3 @@
-
 load(libdir + "asm.js");
 
 assertEq(asmLink(asmCompile(USE_ASM + "function f() { return 1.1 } return f"))(), 1.1);

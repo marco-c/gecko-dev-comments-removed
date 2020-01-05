@@ -1,4 +1,3 @@
-
 load(libdir + 'asm.js');
 
 assertAsmTypeFail(USE_ASM + 'function f(d) { d=+d; var e=0; e=d; return +e } return f');

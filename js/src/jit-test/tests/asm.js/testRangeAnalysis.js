@@ -1,5 +1,4 @@
 
-
 function m(stdlib)
 {
   "use asm";
