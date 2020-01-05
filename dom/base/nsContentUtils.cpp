@@ -6323,7 +6323,7 @@ nsContentUtils::AllocClassMatchingInfo(nsINode* aRootNode,
   nsAttrValue attrValue;
   attrValue.ParseAtomArray(*aClasses);
   
-  ClassMatchingInfo* info = new ClassMatchingInfo;
+  auto* info = new ClassMatchingInfo;
   if (attrValue.Type() == nsAttrValue::eAtomArray) {
     info->mClasses.SwapElements(*(attrValue.GetAtomArrayValue()));
   } else if (attrValue.Type() == nsAttrValue::eAtom) {
@@ -9064,7 +9064,7 @@ StartElement(Element* aContent, StringBuilder& aBuilder)
       continue;
     }
 
-    nsAutoString* attValue = new nsAutoString();
+    auto* attValue = new nsAutoString();
     aContent->GetAttr(attNs, attName, *attValue);
 
     
