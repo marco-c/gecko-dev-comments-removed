@@ -52,13 +52,10 @@ class SyncPreference extends Preference {
                 public void run() {
                     setTitle(R.string.pref_sync);
                     setSummary(R.string.pref_sync_summary);
-                    if (AppConstants.Versions.feature11Plus) {
                         
                         Picasso.with(mContext).cancelRequest(profileAvatarTarget);
                         
                         setIcon(R.drawable.sync_avatar_default);
-                    }
-
                 }
             });
             return;
@@ -72,11 +69,6 @@ class SyncPreference extends Preference {
                 setSummary("");
             }
         });
-
-        
-        if (!AppConstants.Versions.feature11Plus) {
-            return;
-        }
 
         final ExtendedJSONObject profileJSON = fxAccount.getProfileJSON();
         if (profileJSON == null) {

@@ -866,8 +866,7 @@ public class Tabs implements GeckoEventListener {
                 needsNewTab = (flags & LOADURL_NEW_TAB) != 0;
             } else {
                 
-                final boolean extraCreateNewTab = (Versions.feature12Plus) ?
-                        intent.getBooleanExtra(Browser.EXTRA_CREATE_NEW_TAB, false) : false;
+                final boolean extraCreateNewTab = intent.getBooleanExtra(Browser.EXTRA_CREATE_NEW_TAB, false);
                 final Tab applicationTab = getTabForApplicationId(applicationId);
                 if (applicationTab == null || extraCreateNewTab) {
                     needsNewTab = true;

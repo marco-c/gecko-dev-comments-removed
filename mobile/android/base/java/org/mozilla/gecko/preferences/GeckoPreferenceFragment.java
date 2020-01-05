@@ -166,7 +166,7 @@ public class GeckoPreferenceFragment extends PreferenceFragment {
         }
 
         final GeckoPreferences activity = (GeckoPreferences) getActivity();
-        if (Versions.feature11Plus && activity.isMultiPane()) {
+        if (activity.isMultiPane()) {
             
             
             activity.showBreadCrumbs(newTitle, newTitle);
@@ -237,8 +237,7 @@ public class GeckoPreferenceFragment extends PreferenceFragment {
             
             Log.e(LOGTAG, "Failed to find resource: " + resourceName + ". Displaying default settings.");
 
-            boolean isMultiPane = Versions.feature11Plus &&
-                                  ((GeckoPreferences) activity).isMultiPane();
+            boolean isMultiPane = ((GeckoPreferences) activity).isMultiPane();
             resid = isMultiPane ? R.xml.preferences_general_tablet : R.xml.preferences;
         }
 

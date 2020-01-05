@@ -409,21 +409,8 @@ public class DBUtils {
                 statement.execute();
                 return 0;
             }
-
-            if (AppConstants.Versions.feature11Plus) {
-                
-                return executeStatementReturningChangedRows(statement);
-            } else {
-                statement.execute();
-                final Cursor cursor = db.rawQuery("SELECT changes()", null);
-                try {
-                    cursor.moveToFirst();
-                    return cursor.getInt(0);
-                } finally {
-                    cursor.close();
-                }
-
-            }
+            
+            return executeStatementReturningChangedRows(statement);
         } finally {
             statement.close();
         }

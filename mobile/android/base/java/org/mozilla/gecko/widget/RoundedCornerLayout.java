@@ -41,7 +41,7 @@ public class RoundedCornerLayout extends LinearLayout {
 
     private void init(Context context) {
         
-        cannotClipPath = AppConstants.Versions.feature11Plus && !AppConstants.Versions.feature19Plus;
+        cannotClipPath = !AppConstants.Versions.feature19Plus;
 
         final DisplayMetrics metrics = context.getResources().getDisplayMetrics();
 

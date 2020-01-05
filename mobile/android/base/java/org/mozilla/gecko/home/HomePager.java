@@ -213,7 +213,7 @@ public class HomePager extends ViewPager implements HomeScreen {
         }
 
         
-        final boolean shouldAnimate = Versions.feature11Plus && animator != null;
+        final boolean shouldAnimate = animator != null;
 
         final HomeAdapter adapter = new HomeAdapter(mContext, fm);
         adapter.setOnAddPanelListener(mAddPanelListener);

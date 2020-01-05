@@ -222,13 +222,11 @@ OnSharedPreferenceChangeListener
         }
     }
     private void updateActionBarTitle(int title) {
-        if (Versions.feature14Plus) {
-            final String newTitle = getString(title);
-            if (newTitle != null) {
-                Log.v(LOGTAG, "Setting action bar title to " + newTitle);
+        final String newTitle = getString(title);
+        if (newTitle != null) {
+            Log.v(LOGTAG, "Setting action bar title to " + newTitle);
 
-                setTitle(newTitle);
-            }
+            setTitle(newTitle);
         }
     }
 
@@ -341,11 +339,9 @@ OnSharedPreferenceChangeListener
         
         
         
-        if (Versions.feature11Plus) {
-            if (!getIntent().hasExtra(PreferenceActivity.EXTRA_SHOW_FRAGMENT)) {
-                
-                setupTopLevelFragmentIntent();
-            }
+        if (!getIntent().hasExtra(PreferenceActivity.EXTRA_SHOW_FRAGMENT)) {
+            
+            setupTopLevelFragmentIntent();
         }
 
         
@@ -354,7 +350,7 @@ OnSharedPreferenceChangeListener
         
         super.onCreate(savedInstanceState);
 
-        if (Versions.feature11Plus && onIsMultiPane()) {
+        if (onIsMultiPane()) {
             
             
             updateActionBarTitle(R.string.settings_title);
@@ -521,11 +517,9 @@ OnSharedPreferenceChangeListener
     @Override
     public void onPause() {
         
-        if (Versions.feature11Plus) {
-            if (isMultiPane()) {
-                SharedPreferences prefs = GeckoSharedPrefs.forApp(this);
-                prefs.unregisterOnSharedPreferenceChangeListener(this);
-            }
+        if (isMultiPane()) {
+            SharedPreferences prefs = GeckoSharedPrefs.forApp(this);
+            prefs.unregisterOnSharedPreferenceChangeListener(this);
         }
 
         super.onPause();
@@ -543,14 +537,12 @@ OnSharedPreferenceChangeListener
             ((GeckoApplication) getApplication()).onActivityResume(this);
         }
 
-        if (Versions.feature11Plus) {
-            
-            
-            
-            if (isMultiPane()) {
-                SharedPreferences prefs = GeckoSharedPrefs.forApp(this);
-                prefs.registerOnSharedPreferenceChangeListener(this);
-            }
+        
+        
+        
+        if (isMultiPane()) {
+            SharedPreferences prefs = GeckoSharedPrefs.forApp(this);
+            prefs.registerOnSharedPreferenceChangeListener(this);
         }
     }
 

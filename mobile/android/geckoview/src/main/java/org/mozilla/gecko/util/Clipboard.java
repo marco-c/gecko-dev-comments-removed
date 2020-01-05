@@ -63,26 +63,19 @@ public final class Clipboard {
     public static void setText(final CharSequence text) {
         ThreadUtils.postToBackgroundThread(new Runnable() {
             @Override
-            @SuppressWarnings("deprecation")
             public void run() {
                 
                 
-                if (Versions.feature11Plus) {
-                    final android.content.ClipboardManager cm = (android.content.ClipboardManager) mContext.getSystemService(Context.CLIPBOARD_SERVICE);
-                    final ClipData clip = ClipData.newPlainText("Text", text);
-                    try {
-                        cm.setPrimaryClip(clip);
-                    } catch (NullPointerException e) {
-                        
-                        
-                        
-                    }
-                    return;
+                final android.content.ClipboardManager cm = (android.content.ClipboardManager) mContext.getSystemService(Context.CLIPBOARD_SERVICE);
+                final ClipData clip = ClipData.newPlainText("Text", text);
+                try {
+                    cm.setPrimaryClip(clip);
+                } catch (NullPointerException e) {
+                    
+                    
+                    
                 }
-
-                
-                android.text.ClipboardManager cm = (android.text.ClipboardManager) mContext.getSystemService(Context.CLIPBOARD_SERVICE);
-                cm.setText(text);
+                return;
             }
         });
     }
@@ -92,14 +85,8 @@ public final class Clipboard {
 
     @WrapForJNI(calledFrom = "gecko")
     public static boolean hasText() {
-        if (Versions.feature11Plus) {
-            android.content.ClipboardManager cm = (android.content.ClipboardManager) mContext.getSystemService(Context.CLIPBOARD_SERVICE);
-            return cm.hasPrimaryClip();
-        }
-
-        
-        android.text.ClipboardManager cm = (android.text.ClipboardManager) mContext.getSystemService(Context.CLIPBOARD_SERVICE);
-        return cm.hasText();
+        android.content.ClipboardManager cm = (android.content.ClipboardManager) mContext.getSystemService(Context.CLIPBOARD_SERVICE);
+        return cm.hasPrimaryClip();
     }
 
     
@@ -117,19 +104,12 @@ public final class Clipboard {
 
     @SuppressWarnings("deprecation")
     static String getClipboardTextImpl() {
-        if (Versions.feature11Plus) {
-            android.content.ClipboardManager cm = (android.content.ClipboardManager) mContext.getSystemService(Context.CLIPBOARD_SERVICE);
-            if (cm.hasPrimaryClip()) {
-                ClipData clip = cm.getPrimaryClip();
-                if (clip != null) {
-                    ClipData.Item item = clip.getItemAt(0);
-                    return item.coerceToText(mContext).toString();
-                }
-            }
-        } else {
-            android.text.ClipboardManager cm = (android.text.ClipboardManager) mContext.getSystemService(Context.CLIPBOARD_SERVICE);
-            if (cm.hasText()) {
-                return cm.getText().toString();
+        android.content.ClipboardManager cm = (android.content.ClipboardManager) mContext.getSystemService(Context.CLIPBOARD_SERVICE);
+        if (cm.hasPrimaryClip()) {
+            ClipData clip = cm.getPrimaryClip();
+            if (clip != null) {
+                ClipData.Item item = clip.getItemAt(0);
+                return item.coerceToText(mContext).toString();
             }
         }
         return null;

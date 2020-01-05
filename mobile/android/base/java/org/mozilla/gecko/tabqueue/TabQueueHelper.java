@@ -38,7 +38,7 @@ public class TabQueueHelper {
     private static final String LOGTAG = "Gecko" + TabQueueHelper.class.getSimpleName();
 
     
-    public static final boolean TAB_QUEUE_ENABLED = AppConstants.Versions.feature11Plus;
+    public static final boolean TAB_QUEUE_ENABLED = true;
 
     public static final String FILE_NAME = "tab_queue_url_list.json";
     public static final String LOAD_URLS_ACTION = "TAB_QUEUE_LOAD_URLS_ACTION";

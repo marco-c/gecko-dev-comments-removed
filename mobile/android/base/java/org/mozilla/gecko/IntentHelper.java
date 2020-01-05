@@ -372,10 +372,6 @@ public final class IntentHelper implements GeckoEventListener,
     
     @TargetApi(15)
     private static void nullIntentSelector(final Intent intent) {
-        if (!AppConstants.Versions.feature15Plus) {
-            return;
-        }
-
         intent.setSelector(null);
     }
 

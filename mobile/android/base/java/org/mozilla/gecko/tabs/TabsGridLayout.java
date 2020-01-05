@@ -294,9 +294,7 @@ class TabsGridLayout extends GridView
                         ((TabsLayoutItemView) tabView).setChecked(checked);
                     }
                     
-                    if (AppConstants.Versions.feature11Plus) {
-                        setItemChecked(i, checked);
-                    }
+                    setItemChecked(i, checked);
                 }
             }
         });

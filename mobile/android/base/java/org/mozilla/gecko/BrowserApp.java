@@ -515,7 +515,7 @@ public class BrowserApp extends GeckoApp
 
         
         final Tab tab = Tabs.getInstance().getSelectedTab();
-        if (Versions.feature11Plus && tab != null && event.isCtrlPressed()) {
+        if (tab != null && event.isCtrlPressed()) {
             switch (keyCode) {
                 case KeyEvent.KEYCODE_LEFT_BRACKET:
                     tab.doBack();
@@ -2770,10 +2770,6 @@ public class BrowserApp extends GeckoApp
             mMenu.clear();
             onCreateOptionsMenu(mMenu);
         }
-
-        if (!Versions.feature14Plus) {
-            conditionallyNotifyEOL();
-        }
     }
 
     @Override
@@ -3189,12 +3185,8 @@ public class BrowserApp extends GeckoApp
             destination = menu;
         } else if (info.parent == GECKO_TOOLS_MENU) {
             
-            if (Versions.feature11Plus) {
-                final MenuItem tools = menu.findItem(R.id.tools);
-                destination = tools != null ? tools.getSubMenu() : menu;
-            } else {
-                destination = menu;
-            }
+            final MenuItem tools = menu.findItem(R.id.tools);
+            destination = tools != null ? tools.getSubMenu() : menu;
         } else {
             final MenuItem parent = menu.findItem(info.parent);
             if (parent == null) {
@@ -3319,13 +3311,11 @@ public class BrowserApp extends GeckoApp
         }
 
         
-        if (Versions.feature14Plus) {
-            GeckoMenuItem share = (GeckoMenuItem) mMenu.findItem(R.id.share);
+        GeckoMenuItem share = (GeckoMenuItem) mMenu.findItem(R.id.share);
 
-            GeckoActionProvider provider = GeckoActionProvider.getForType(GeckoActionProvider.DEFAULT_MIME_TYPE, this);
+        GeckoActionProvider provider = GeckoActionProvider.getForType(GeckoActionProvider.DEFAULT_MIME_TYPE, this);
 
-            share.setActionProvider(provider);
-        }
+        share.setActionProvider(provider);
 
         return true;
     }
@@ -3454,10 +3444,7 @@ public class BrowserApp extends GeckoApp
 
             
             
-            if (Versions.feature11Plus) {
-                
-                MenuUtils.safeSetEnabled(aMenu, R.id.page, false);
-            }
+            MenuUtils.safeSetEnabled(aMenu, R.id.page, false);
             MenuUtils.safeSetEnabled(aMenu, R.id.subscribe, false);
             MenuUtils.safeSetEnabled(aMenu, R.id.add_search_engine, false);
             MenuUtils.safeSetEnabled(aMenu, R.id.add_to_launcher, false);
@@ -3478,10 +3465,8 @@ public class BrowserApp extends GeckoApp
         bookmark.setChecked(tab.isBookmark());
         bookmark.setTitle(resolveBookmarkTitleID(tab.isBookmark()));
 
-        if (Versions.feature11Plus) {
-            
-            bookmark.setIcon(resolveBookmarkIconID(tab.isBookmark()));
-        }
+        
+        bookmark.setIcon(resolveBookmarkIconID(tab.isBookmark()));
 
         back.setEnabled(tab.canDoBack());
         forward.setEnabled(tab.canDoForward());
@@ -3535,63 +3520,58 @@ public class BrowserApp extends GeckoApp
 
         
         
-        if (Versions.feature11Plus) {
-            MenuUtils.safeSetEnabled(aMenu, R.id.page, !isAboutHome(tab));
-        }
+        MenuUtils.safeSetEnabled(aMenu, R.id.page, !isAboutHome(tab));
         MenuUtils.safeSetEnabled(aMenu, R.id.subscribe, tab.hasFeeds());
         MenuUtils.safeSetEnabled(aMenu, R.id.add_search_engine, tab.hasOpenSearch());
         MenuUtils.safeSetEnabled(aMenu, R.id.add_to_launcher, !isAboutHome(tab));
 
         
-        if (Versions.feature14Plus) {
+        final GeckoActionProvider provider = ((GeckoMenuItem) share).getGeckoActionProvider();
+        if (provider != null) {
+            Intent shareIntent = provider.getIntent();
+
             
-            final GeckoActionProvider provider = ((GeckoMenuItem) share).getGeckoActionProvider();
-            if (provider != null) {
-                Intent shareIntent = provider.getIntent();
+            if (shareIntent == null) {
+                shareIntent = new Intent(Intent.ACTION_SEND);
+                shareIntent.setType("text/plain");
+                provider.setIntent(shareIntent);
+            }
+
+            
+            shareIntent.putExtra(Intent.EXTRA_TEXT, url);
+            shareIntent.putExtra(Intent.EXTRA_SUBJECT, tab.getDisplayTitle());
+            shareIntent.putExtra(Intent.EXTRA_TITLE, tab.getDisplayTitle());
+            shareIntent.putExtra(ShareDialog.INTENT_EXTRA_DEVICES_ONLY, true);
+
+            
+            shareIntent.removeExtra("share_screenshot_uri");
+
+            
+            BitmapDrawable drawable = tab.getThumbnail();
+            if (drawable != null) {
+                Bitmap thumbnail = drawable.getBitmap();
 
                 
-                if (shareIntent == null) {
-                    shareIntent = new Intent(Intent.ACTION_SEND);
-                    shareIntent.setType("text/plain");
-                    provider.setIntent(shareIntent);
-                }
+                if (Build.MANUFACTURER.equals("Kobo") && thumbnail != null) {
+                    File cacheDir = getExternalCacheDir();
 
-                
-                shareIntent.putExtra(Intent.EXTRA_TEXT, url);
-                shareIntent.putExtra(Intent.EXTRA_SUBJECT, tab.getDisplayTitle());
-                shareIntent.putExtra(Intent.EXTRA_TITLE, tab.getDisplayTitle());
-                shareIntent.putExtra(ShareDialog.INTENT_EXTRA_DEVICES_ONLY, true);
+                    if (cacheDir != null) {
+                        File outFile = new File(cacheDir, "thumbnail.png");
 
-                
-                shareIntent.removeExtra("share_screenshot_uri");
-
-                
-                BitmapDrawable drawable = tab.getThumbnail();
-                if (drawable != null) {
-                    Bitmap thumbnail = drawable.getBitmap();
-
-                    
-                    if (Build.MANUFACTURER.equals("Kobo") && thumbnail != null) {
-                        File cacheDir = getExternalCacheDir();
-
-                        if (cacheDir != null) {
-                            File outFile = new File(cacheDir, "thumbnail.png");
-
+                        try {
+                            final java.io.FileOutputStream out = new java.io.FileOutputStream(outFile);
                             try {
-                                final java.io.FileOutputStream out = new java.io.FileOutputStream(outFile);
+                                thumbnail.compress(Bitmap.CompressFormat.PNG, 90, out);
+                            } finally {
                                 try {
-                                    thumbnail.compress(Bitmap.CompressFormat.PNG, 90, out);
-                                } finally {
-                                    try {
-                                        out.close();
-                                    } catch (final IOException e) {  }
-                                }
-                            } catch (FileNotFoundException e) {
-                                Log.e(LOGTAG, "File not found", e);
+                                    out.close();
+                                } catch (final IOException e) {  }
                             }
-
-                            shareIntent.putExtra("share_screenshot_uri", Uri.parse(outFile.getPath()));
+                        } catch (FileNotFoundException e) {
+                            Log.e(LOGTAG, "File not found", e);
                         }
+
+                        shareIntent.putExtra("share_screenshot_uri", Uri.parse(outFile.getPath()));
                     }
                 }
             }
@@ -3680,18 +3660,12 @@ public class BrowserApp extends GeckoApp
                     Telemetry.sendUIEvent(TelemetryContract.Event.UNSAVE, TelemetryContract.Method.MENU, extra);
                     tab.removeBookmark();
                     item.setTitle(resolveBookmarkTitleID(false));
-                    if (Versions.feature11Plus) {
-                        
-                        item.setIcon(resolveBookmarkIconID(false));
-                    }
+                    item.setIcon(resolveBookmarkIconID(false));
                 } else {
                     Telemetry.sendUIEvent(TelemetryContract.Event.SAVE, TelemetryContract.Method.MENU, extra);
                     tab.addBookmark();
                     item.setTitle(resolveBookmarkTitleID(true));
-                    if (Versions.feature11Plus) {
-                        
-                        item.setIcon(resolveBookmarkIconID(true));
-                    }
+                    item.setIcon(resolveBookmarkIconID(true));
                 }
             }
             return true;

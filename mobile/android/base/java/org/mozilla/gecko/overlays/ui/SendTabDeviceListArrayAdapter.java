@@ -71,13 +71,7 @@ public class SendTabDeviceListArrayAdapter extends ArrayAdapter<RemoteClient> {
         clear();
 
         setNotifyOnChange(false);    
-        if (AppConstants.Versions.feature11Plus) {
-             addAll(records);
-        } else {
-            for (RemoteClient record : records) {
-                add(record);
-            }
-        }
+        addAll(records);
 
         notifyDataSetChanged();
     }

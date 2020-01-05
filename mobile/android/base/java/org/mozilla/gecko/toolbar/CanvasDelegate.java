@@ -48,20 +48,8 @@ class CanvasDelegate {
         if (path != null && !path.isEmpty()) {
             
             
-            if (Versions.feature14Plus) {
-                mPaint.setXfermode(mMode);
-                canvas.drawPath(path, mPaint);
-            } else {
-                
-                Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-                (new Canvas(bitmap)).drawPath(path, mPaint);
-
-                mPaint.setXfermode(mMode);
-                canvas.drawBitmap(bitmap, 0, 0, mPaint);
-                bitmap.recycle();
-
-                mPaint.setXfermode(null);
-            }
+            mPaint.setXfermode(mMode);
+            canvas.drawPath(path, mPaint);
         }
 
         

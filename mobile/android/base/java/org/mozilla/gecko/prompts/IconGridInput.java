@@ -85,7 +85,7 @@ public class IconGridInput extends PromptInput implements OnItemClickListener {
         
         
         
-        if (Versions.feature11Plus && mSelected > -1) {
+        if (mSelected > -1) {
             view.setItemChecked(mSelected, true);
         }
 

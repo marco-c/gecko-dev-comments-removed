@@ -624,12 +624,6 @@ public class FxAccountStatusFragment
     }
 
     
-    if (!AppConstants.Versions.feature11Plus) {
-      Logger.info(LOG_TAG, "Skipping profile image fetch for older pre-API 11 devices.");
-      return;
-    }
-
-    
     final String avatarURI = profileJSON.getString(FxAccountConstants.KEY_PROFILE_JSON_AVATAR);
     if (TextUtils.isEmpty(avatarURI)) {
       Logger.info(LOG_TAG, "AvatarURI is empty, skipping profile image fetch.");

@@ -323,12 +323,7 @@ public class DoorHangerPopup extends AnchoredPopup
             return;
         }
 
-        
-        
-        
-        if (Versions.feature14Plus) {
-            setFocusable(true);
-        }
+        setFocusable(true);
 
         show();
     }
