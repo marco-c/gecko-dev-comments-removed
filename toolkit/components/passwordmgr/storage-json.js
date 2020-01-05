@@ -151,7 +151,6 @@ this.LoginManagerStorage_json.prototype = {
 
     
     LoginHelper.notifyStorageChanged("addLogin", loginClone);
-    return loginClone;
   },
 
   removeLogin(login) {
