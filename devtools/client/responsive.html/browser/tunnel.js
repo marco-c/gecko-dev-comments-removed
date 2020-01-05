@@ -407,6 +407,8 @@ MessageManagerTunnel.prototype = {
 
   OUTER_TO_INNER_MESSAGE_PREFIXES: [
     
+    "ContextMenu:",
+    
     "debug:",
     
     "Findbar:",
@@ -420,6 +422,8 @@ MessageManagerTunnel.prototype = {
   ],
 
   INNER_TO_OUTER_MESSAGE_PREFIXES: [
+    
+    "ContextMenu:",
     
     "debug:",
     
