@@ -305,12 +305,7 @@ pref("mathml.disabled",    false);
 
 pref("mathml.scale_stretchy_operators.enabled", true);
 
-
-#ifdef NIGHTLY_BUILD
 pref("media.dormant-on-pause-timeout-ms", 5000);
-#else
-pref("media.dormant-on-pause-timeout-ms", -1);
-#endif
 
 
 pref("media.cache_size", 512000);
@@ -4680,15 +4675,10 @@ pref("layers.allow-d3d9-fallback", false);
 #endif
 
 
-pref("layers.shared-buffer-provider.enabled", true);
-
 #ifdef XP_WIN
 pref("layers.shared-buffer-provider.enabled", false);
-#endif
-
-#ifdef XP_MACOSX
-
-pref("layers.shared-buffer-provider.enabled", false);
+#else
+pref("layers.shared-buffer-provider.enabled", true);
 #endif
 
 
