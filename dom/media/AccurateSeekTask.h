@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef ACCURATE_SEEK_TASK_H
 #define ACCURATE_SEEK_TASK_H
@@ -43,10 +43,6 @@ public:
 
   ~AccurateSeekTask();
 
-  void RequestVideoData();
-
-  void RequestAudioData();
-
   nsresult DropAudioUpToSeekTarget(MediaData* aSample);
 
   nsresult DropVideoUpToSeekTarget(MediaData* aSample);
@@ -55,21 +51,21 @@ public:
 
   void AdjustFastSeekIfNeeded(MediaData* aSample);
 
-  
-
-
+  /*
+   * Internal state.
+   */
   const media::TimeUnit mCurrentTimeBeforeSeek;
-  const uint32_t mAudioRate;  
+  const uint32_t mAudioRate;  // Audio sample rate.
   bool mDoneAudioSeeking;
   bool mDoneVideoSeeking;
 
-  
-  
-  
-  
+  // This temporarily stores the first frame we decode after we seek.
+  // This is so that if we hit end of stream while we're decoding to reach
+  // the seek target, we will still have a frame that we can display as the
+  // last frame in the media.
   RefPtr<MediaData> mFirstVideoFrameAfterSeek;
 };
 
-} 
+} // namespace mozilla
 
-#endif 
+#endif /* ACCURATE_SEEK_TASK_H */
