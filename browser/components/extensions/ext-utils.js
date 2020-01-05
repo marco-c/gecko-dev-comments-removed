@@ -644,7 +644,7 @@ ExtensionTabManager.prototype = {
       mutedInfo,
     };
     if (this.extension.hasPermission("cookies")) {
-      result.cookieStoreId = getCookieStoreIdForTab(result, tab);
+      result.cookieStoreId = getCookieStoreIdForTab(result);
     }
 
     if (this.hasTabPermission(tab)) {
@@ -658,6 +658,23 @@ ExtensionTabManager.prototype = {
         result.favIconUrl = icon;
       }
     }
+
+    return result;
+  },
+
+  
+  
+  convertFromSessionStoreClosedData(tab, window) {
+    let result = {
+      sessionId: String(tab.closedId),
+      index: tab.pos ? tab.pos : 0,
+      windowId: WindowManager.getId(window),
+      selected: false,
+      highlighted: false,
+      active: false,
+      pinned: false,
+      incognito: Boolean(tab.state && tab.state.isPrivate),
+    };
 
     return result;
   },
@@ -909,6 +926,19 @@ global.WindowManager = {
     return null;
   },
 
+  getState(window) {
+    const STATES = {
+      [window.STATE_MAXIMIZED]: "maximized",
+      [window.STATE_MINIMIZED]: "minimized",
+      [window.STATE_NORMAL]: "normal",
+    };
+    let state = STATES[window.windowState];
+    if (window.fullScreen) {
+      state = "fullscreen";
+    }
+    return state;
+  },
+
   setState(window, state) {
     if (state != "fullscreen" && window.fullScreen) {
       window.fullScreen = false;
@@ -949,16 +979,6 @@ global.WindowManager = {
   },
 
   convert(extension, window, getInfo) {
-    const STATES = {
-      [window.STATE_MAXIMIZED]: "maximized",
-      [window.STATE_MINIMIZED]: "minimized",
-      [window.STATE_NORMAL]: "normal",
-    };
-    let state = STATES[window.windowState];
-    if (window.fullScreen) {
-      state = "fullscreen";
-    }
-
     let xulWindow = window.QueryInterface(Ci.nsIInterfaceRequestor)
                           .getInterface(Ci.nsIDocShell)
                           .treeOwner.QueryInterface(Ci.nsIInterfaceRequestor)
@@ -973,12 +993,34 @@ global.WindowManager = {
       height: window.outerHeight,
       incognito: PrivateBrowsingUtils.isWindowPrivate(window),
       type: this.windowType(window),
-      state,
+      state: this.getState(window),
       alwaysOnTop: xulWindow.zLevel >= Ci.nsIXULWindow.raisedZ,
     };
 
     if (getInfo && getInfo.populate) {
       result.tabs = TabManager.for(extension).getTabs(window);
+    }
+
+    return result;
+  },
+
+  
+  
+  convertFromSessionStoreClosedData(window, extension) {
+    let result = {
+      sessionId: String(window.closedId),
+      focused: false,
+      incognito: false,
+      type: "normal", 
+      state: this.getState(window),
+      alwaysOnTop: false,
+    };
+
+    if (window.tabs.length) {
+      result.tabs = [];
+      window.tabs.forEach((tab, index) => {
+        result.tabs.push(TabManager.for(extension).convertFromSessionStoreClosedData(tab, window, index));
+      });
     }
 
     return result;
