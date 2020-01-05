@@ -46,7 +46,7 @@ public:
 
     
     
-    TimeDuration sampleDuration = TimeDuration::FromMicroseconds(aSample->mDuration);
+    TimeDuration sampleDuration = aSample->mDuration.ToTimeDuration();
     TimeDuration durationDecrypted = sampleDuration;
     for (const DecryptedJob& job : mDecrypts) {
       durationDecrypted += job.mSampleDuration;

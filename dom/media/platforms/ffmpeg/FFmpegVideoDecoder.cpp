@@ -241,7 +241,7 @@ FFmpegVideoDecoder<LIBAV_VER>::DoDecode(MediaRawData* aSample,
   
   
   
-  mDurationMap.Insert(aSample->mTimecode, aSample->mDuration);
+  mDurationMap.Insert(aSample->mTimecode, aSample->mDuration.ToMicroseconds());
 
   if (!PrepareFrame()) {
     NS_WARNING("FFmpeg h264 decoder failed to allocate frame.");
@@ -282,7 +282,7 @@ FFmpegVideoDecoder<LIBAV_VER>::DoDecode(MediaRawData* aSample,
   int64_t duration;
   if (!mDurationMap.Find(mFrame->pkt_dts, duration)) {
     NS_WARNING("Unable to retrieve duration from map");
-    duration = aSample->mDuration;
+    duration = aSample->mDuration.ToMicroseconds();
     
     
     
