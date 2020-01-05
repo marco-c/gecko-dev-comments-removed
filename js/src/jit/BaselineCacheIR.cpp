@@ -227,11 +227,12 @@ class MOZ_RAII CacheRegisterAllocator
 
     
     
-    ValueOperand useRegister(MacroAssembler& masm, ValOperandId val);
+    ValueOperand useValueRegister(MacroAssembler& masm, ValOperandId val);
     Register useRegister(MacroAssembler& masm, ObjOperandId obj);
 
     
     Register defineRegister(MacroAssembler& masm, ObjOperandId obj);
+    ValueOperand defineValueRegister(MacroAssembler& masm, ValOperandId val);
 };
 
 
@@ -620,7 +621,7 @@ BaselineCacheIRCompiler::compile()
 }
 
 ValueOperand
-CacheRegisterAllocator::useRegister(MacroAssembler& masm, ValOperandId op)
+CacheRegisterAllocator::useValueRegister(MacroAssembler& masm, ValOperandId op)
 {
     OperandLocation& loc = operandLocations_[op.id()];
 
@@ -727,6 +728,17 @@ CacheRegisterAllocator::defineRegister(MacroAssembler& masm, ObjOperandId op)
 
     Register reg = allocateRegister(masm);
     loc.setPayloadReg(reg, JSVAL_TYPE_OBJECT);
+    return reg;
+}
+
+ValueOperand
+CacheRegisterAllocator::defineValueRegister(MacroAssembler& masm, ValOperandId val)
+{
+    OperandLocation& loc = operandLocations_[val.id()];
+    MOZ_ASSERT(loc.kind() == OperandLocation::Uninitialized);
+
+    ValueOperand reg = allocateValueRegister(masm);
+    loc.setValueReg(reg);
     return reg;
 }
 
@@ -879,7 +891,7 @@ CacheRegisterAllocator::allocateValueRegister(MacroAssembler& masm)
 bool
 BaselineCacheIRCompiler::emitGuardIsObject()
 {
-    ValueOperand input = allocator.useRegister(masm, reader.valOperandId());
+    ValueOperand input = allocator.useValueRegister(masm, reader.valOperandId());
     FailurePath* failure;
     if (!addFailurePath(&failure))
         return false;
@@ -890,7 +902,7 @@ BaselineCacheIRCompiler::emitGuardIsObject()
 bool
 BaselineCacheIRCompiler::emitGuardType()
 {
-    ValueOperand input = allocator.useRegister(masm, reader.valOperandId());
+    ValueOperand input = allocator.useValueRegister(masm, reader.valOperandId());
     JSValueType type = reader.valueType();
 
     FailurePath* failure;
@@ -909,6 +921,9 @@ BaselineCacheIRCompiler::emitGuardType()
         break;
       case JSVAL_TYPE_BOOLEAN:
         masm.branchTestBoolean(Assembler::NotEqual, input, failure->label());
+        break;
+      case JSVAL_TYPE_UNDEFINED:
+        masm.branchTestUndefined(Assembler::NotEqual, input, failure->label());
         break;
       default:
         MOZ_CRASH("Unexpected type");
@@ -1407,6 +1422,75 @@ BaselineCacheIRCompiler::emitLoadProto()
     Register obj = allocator.useRegister(masm, reader.objOperandId());
     Register reg = allocator.defineRegister(masm, reader.objOperandId());
     masm.loadObjProto(obj, reg);
+    return true;
+}
+
+bool
+BaselineCacheIRCompiler::emitLoadDOMExpandoValue()
+{
+    Register obj = allocator.useRegister(masm, reader.objOperandId());
+    ValueOperand val = allocator.defineValueRegister(masm, reader.valOperandId());
+
+    masm.loadPtr(Address(obj, ProxyObject::offsetOfValues()), val.scratchReg());
+    masm.loadValue(Address(val.scratchReg(),
+                           ProxyObject::offsetOfExtraSlotInValues(GetDOMProxyExpandoSlot())),
+                   val);
+    return true;
+}
+
+bool
+BaselineCacheIRCompiler::emitGuardDOMExpandoObject()
+{
+    ValueOperand val = allocator.useValueRegister(masm, reader.valOperandId());
+    AutoScratchRegister shapeScratch(allocator, masm);
+    AutoScratchRegister objScratch(allocator, masm);
+    Address shapeAddr(stubAddress(reader.stubOffset()));
+
+    FailurePath* failure;
+    if (!addFailurePath(&failure))
+        return false;
+
+    Label done;
+    masm.branchTestUndefined(Assembler::Equal, val, &done);
+
+    masm.loadPtr(shapeAddr, shapeScratch);
+    masm.unboxObject(val, objScratch);
+    masm.branchTestObjShape(Assembler::NotEqual, objScratch, shapeScratch, failure->label());
+
+    masm.bind(&done);
+    return true;
+}
+
+bool
+BaselineCacheIRCompiler::emitGuardDOMExpandoGeneration()
+{
+    Register obj = allocator.useRegister(masm, reader.objOperandId());
+    Address expandoAndGenerationAddr(stubAddress(reader.stubOffset()));
+    Address generationAddr(stubAddress(reader.stubOffset()));
+
+    AutoScratchRegister scratch(allocator, masm);
+    ValueOperand output = allocator.defineValueRegister(masm, reader.valOperandId());
+
+    FailurePath* failure;
+    if (!addFailurePath(&failure))
+        return false;
+
+    masm.loadPtr(Address(obj, ProxyObject::offsetOfValues()), scratch);
+    Address expandoAddr(scratch, ProxyObject::offsetOfExtraSlotInValues(GetDOMProxyExpandoSlot()));
+
+    
+    
+    masm.loadPtr(expandoAndGenerationAddr, output.scratchReg());
+    masm.branchPrivatePtr(Assembler::NotEqual, expandoAddr, output.scratchReg(), failure->label());
+
+    
+    masm.branch64(Assembler::NotEqual,
+                  Address(output.scratchReg(), ExpandoAndGeneration::offsetOfGeneration()),
+                  generationAddr,
+                  scratch, failure->label());
+
+    
+    masm.loadValue(Address(output.scratchReg(), ExpandoAndGeneration::offsetOfExpando()), output);
     return true;
 }
 
