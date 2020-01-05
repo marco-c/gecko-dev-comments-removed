@@ -30,7 +30,7 @@ module.exports = createClass({
     onBrowserMounted: PropTypes.func.isRequired,
     onChangeDevice: PropTypes.func.isRequired,
     onContentResize: PropTypes.func.isRequired,
-    onRemoveDevice: PropTypes.func.isRequired,
+    onRemoveDeviceAssociation: PropTypes.func.isRequired,
     onResizeViewport: PropTypes.func.isRequired,
     onRotateViewport: PropTypes.func.isRequired,
     onUpdateDeviceModal: PropTypes.func.isRequired,
@@ -114,7 +114,7 @@ module.exports = createClass({
       
       
       
-      this.props.onRemoveDevice();
+      this.props.onRemoveDeviceAssociation();
     }
 
     this.setState({
