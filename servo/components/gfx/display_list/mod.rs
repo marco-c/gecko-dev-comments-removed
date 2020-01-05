@@ -474,16 +474,33 @@ pub struct GradientDisplayItem {
 
 #[deriving(Clone)]
 pub struct BorderDisplayItem {
+    
     pub base: BaseDisplayItem,
 
     
-    pub border: SideOffsets2D<Au>,
+    pub border_widths: SideOffsets2D<Au>,
 
     
     pub color: SideOffsets2D<Color>,
 
     
-    pub style: SideOffsets2D<border_style::T>
+    pub style: SideOffsets2D<border_style::T>,
+
+    
+    
+    
+    pub radius: BorderRadii<Au>,
+}
+
+
+
+
+#[deriving(Clone, Default, Show)]
+pub struct BorderRadii<T> {
+    pub top_left:     T,
+    pub top_right:    T,
+    pub bottom_right: T,
+    pub bottom_left:  T,
 }
 
 
@@ -565,7 +582,8 @@ impl DisplayItem {
 
             BorderDisplayItemClass(ref border) => {
                 render_context.draw_border(&border.base.bounds,
-                                           border.border,
+                                           border.border_widths,
+                                           &border.radius,
                                            border.color,
                                            border.style)
             }
@@ -658,4 +676,3 @@ impl OpaqueNodeMethods for OpaqueNode {
         }
     }
 }
-
