@@ -194,6 +194,10 @@ ImageClientSingle::UpdateImage(ImageContainer* aContainer, uint32_t aContentFlag
     
     
     
+    for (auto& b : mBuffers) {
+      RemoveTexture(b.mTextureClient);
+    }
+    mBuffers.Clear();
     return true;
   }
 
