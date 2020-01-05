@@ -1415,7 +1415,10 @@ ReflowInput::CalculateHypotheticalPosition
   
   
   
-  if (mStyleDisplay->IsOriginalDisplayInlineOutsideStyle()) {
+  if (mStyleDisplay->IsOriginalDisplayInlineOutsideStyle() ||
+      mFlags.mIOffsetsNeedCSSAlign) {
+    
+    
     
     aHypotheticalPos.mIStart = placeholderOffset.I(wm);
   } else {
