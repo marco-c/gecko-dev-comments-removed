@@ -1048,7 +1048,7 @@ ShutdownXPCOM(nsIServiceManager* aServMgr)
   
   
   
-  if (PseudoStack* stack = mozilla_get_pseudo_stack()) {
+  if (PseudoStack* stack = profiler_get_pseudo_stack()) {
     stack->sampleContext(nullptr);
   }
 #endif
