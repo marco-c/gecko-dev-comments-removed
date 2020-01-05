@@ -87,11 +87,11 @@ static_assert(kEventCount < kExpiredEventId, "Should not overflow.");
 
 
 
-const uint32_t kMaxEventRecords = 1000;
+const uint32_t kMaxEventRecords = 10000;
 
-const uint32_t kMaxValueByteLength = 80;
+const uint32_t kMaxValueByteLength = 100;
 
-const uint32_t kMaxExtraValueByteLength = 80;
+const uint32_t kMaxExtraValueByteLength = 100;
 
 typedef nsDataHashtable<nsCStringHashKey, uint32_t> EventMapType;
 typedef nsClassHashtable<nsCStringHashKey, nsCString> StringMap;
@@ -519,13 +519,9 @@ TelemetryEvent::RecordEvent(const nsACString& aCategory, const nsACString& aMeth
 
   
   switch (res) {
-    case RecordEventResult::UnknownEvent: {
-      JS_ReportErrorASCII(cx, R"(Unknown event: ["%s", "%s", "%s"])",
-                          PromiseFlatCString(aCategory).get(),
-                          PromiseFlatCString(aMethod).get(),
-                          PromiseFlatCString(aObject).get());
+    case RecordEventResult::UnknownEvent:
+      JS_ReportErrorASCII(cx, "Unknown event.");
       return NS_ERROR_INVALID_ARG;
-    }
     case RecordEventResult::InvalidExtraKey:
       LogToBrowserConsole(nsIScriptError::warningFlag,
                           NS_LITERAL_STRING("Invalid extra key for event."));
@@ -579,13 +575,16 @@ TelemetryEvent::CreateSnapshots(uint32_t aDataset, bool aClear, JSContext* cx,
 
     
     
-    
-    
-    JS::AutoValueVector items(cx);
+    JS::RootedObject itemsArray(cx, JS_NewArrayObject(cx, 6));
+    if (!itemsArray) {
+      return NS_ERROR_FAILURE;
+    }
 
     
     JS::Rooted<JS::Value> val(cx);
-    if (!items.append(JS::NumberValue(floor(record.Timestamp())))) {
+    uint32_t itemIndex = 0;
+    val.setDouble(floor(record.Timestamp()));
+    if (!JS_DefineElement(cx, itemsArray, itemIndex++, val, JSPROP_ENUMERATE)) {
       return NS_ERROR_FAILURE;
     }
 
@@ -595,35 +594,34 @@ TelemetryEvent::CreateSnapshots(uint32_t aDataset, bool aClear, JSContext* cx,
       info.method(),
       info.object(),
     };
-    for (const char* s : strings) {
-      const NS_ConvertUTF8toUTF16 wide(s);
-      if (!items.append(JS::StringValue(JS_NewUCStringCopyN(cx, wide.Data(), wide.Length())))) {
+    for (uint32_t s = 0; s < ArrayLength(strings); ++s) {
+      const NS_ConvertUTF8toUTF16 wide(strings[s]);
+      val.setString(JS_NewUCStringCopyN(cx, wide.Data(), wide.Length()));
+      if (!JS_DefineElement(cx, itemsArray, itemIndex++, val, JSPROP_ENUMERATE)) {
         return NS_ERROR_FAILURE;
       }
     }
 
     
-    
-    if (record.Value()) {
+    if (!record.Value()) {
+      val.setNull();
+    } else {
       const NS_ConvertUTF8toUTF16 wide(record.Value().value());
-      if (!items.append(JS::StringValue(JS_NewUCStringCopyN(cx, wide.Data(), wide.Length())))) {
-        return NS_ERROR_FAILURE;
-      }
-    } else if (!record.Extra().IsEmpty()) {
-      if (!items.append(JS::NullValue())) {
-        return NS_ERROR_FAILURE;
-      }
+      val.setString(JS_NewUCStringCopyN(cx, wide.Data(), wide.Length()));
+    }
+    if (!JS_DefineElement(cx, itemsArray, itemIndex++, val, JSPROP_ENUMERATE)) {
+      return NS_ERROR_FAILURE;
     }
 
     
-    
-    if (!record.Extra().IsEmpty()) {
+    if (record.Extra().IsEmpty()) {
+      val.setNull();
+    } else {
       JS::RootedObject obj(cx, JS_NewPlainObject(cx));
       if (!obj) {
         return NS_ERROR_FAILURE;
       }
 
-      
       const ExtraArray& extra = record.Extra();
       for (uint32_t i = 0; i < extra.Length(); ++i) {
         const NS_ConvertUTF8toUTF16 wide(extra[i].value);
@@ -635,14 +633,12 @@ TelemetryEvent::CreateSnapshots(uint32_t aDataset, bool aClear, JSContext* cx,
         }
       }
       val.setObject(*obj);
-
-      if (!items.append(val)) {
-        return NS_ERROR_FAILURE;
-      }
+    }
+    if (!JS_DefineElement(cx, itemsArray, itemIndex++, val, JSPROP_ENUMERATE)) {
+      return NS_ERROR_FAILURE;
     }
 
     
-    JS::RootedObject itemsArray(cx, JS_NewArrayObject(cx, items));
     if (!JS_DefineElement(cx, eventsArray, i, itemsArray, JSPROP_ENUMERATE)) {
       return NS_ERROR_FAILURE;
     }

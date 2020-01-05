@@ -81,7 +81,6 @@ add_task(function* setup() {
 add_task(function* test_plainQuery() {
   
   Services.telemetry.clearScalars();
-  Services.telemetry.clearEvents();
   let search_hist = getSearchCountsHistogram();
 
   let tab = yield BrowserTestUtils.openNewForegroundTab(gBrowser, "about:blank");
@@ -102,18 +101,12 @@ add_task(function* test_plainQuery() {
   
   checkKeyedHistogram(search_hist, 'other-MozSearch.searchbar', 1);
 
-  
-  let events = Services.telemetry.snapshotBuiltinEvents(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN, false);
-  events = events.filter(e => e[1] == "navigation" && e[2] == "search");
-  checkEvents(events, [["navigation", "search", "searchbar", "enter", {engine: "other-MozSearch"}]]);
-
   yield BrowserTestUtils.removeTab(tab);
 });
 
 add_task(function* test_oneOff() {
   
   Services.telemetry.clearScalars();
-  Services.telemetry.clearEvents();
   let search_hist = getSearchCountsHistogram();
 
   let tab = yield BrowserTestUtils.openNewForegroundTab(gBrowser, "about:blank");
@@ -137,18 +130,12 @@ add_task(function* test_oneOff() {
   
   checkKeyedHistogram(search_hist, 'other-MozSearch2.searchbar', 1);
 
-  
-  let events = Services.telemetry.snapshotBuiltinEvents(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN, false);
-  events = events.filter(e => e[1] == "navigation" && e[2] == "search");
-  checkEvents(events, [["navigation", "search", "searchbar", "oneoff", {engine: "other-MozSearch2"}]]);
-
   yield BrowserTestUtils.removeTab(tab);
 });
 
 add_task(function* test_suggestion() {
   
   Services.telemetry.clearScalars();
-  Services.telemetry.clearEvents();
   let search_hist = getSearchCountsHistogram();
 
   
@@ -181,13 +168,7 @@ add_task(function* test_suggestion() {
                "This search must only increment one entry in the scalar.");
 
   
-  let searchEngineId = 'other-' + suggestionEngine.name;
-  checkKeyedHistogram(search_hist, searchEngineId + '.searchbar', 1);
-
-  
-  let events = Services.telemetry.snapshotBuiltinEvents(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN, false);
-  events = events.filter(e => e[1] == "navigation" && e[2] == "search");
-  checkEvents(events, [["navigation", "search", "searchbar", "suggestion", {engine: searchEngineId}]]);
+  checkKeyedHistogram(search_hist, 'other-' + suggestionEngine.name + '.searchbar', 1);
 
   Services.search.currentEngine = previousEngine;
   Services.search.removeEngine(suggestionEngine);

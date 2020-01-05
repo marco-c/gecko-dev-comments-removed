@@ -293,34 +293,29 @@ let BrowserUsageTelemetry = {
     }
 
     
-    this._handleSearchAction(engine, source, details);
+    this._handleSearchAction(source, details);
   },
 
-  _recordSearch(engine, source, action = null) {
-    let scalarKey = action ? "search_" + action : "search";
-    Services.telemetry.keyedScalarAdd("browser.engagement.navigation." + source,
-                                      scalarKey, 1);
-    Services.telemetry.recordEvent("navigation", "search", source, action,
-                                   { engine: getSearchEngineId(engine) });
-  },
-
-  _handleSearchAction(engine, source, details) {
+  _handleSearchAction(source, details) {
     switch (source) {
       case "urlbar":
       case "oneoff-urlbar":
       case "searchbar":
       case "oneoff-searchbar":
       case "unknown": 
-        this._handleSearchAndUrlbar(engine, source, details);
+        this._handleSearchAndUrlbar(source, details);
         break;
       case "abouthome":
-        this._recordSearch(engine, "about_home", "enter");
+        Services.telemetry.keyedScalarAdd("browser.engagement.navigation.about_home",
+                                          "search_enter", 1);
         break;
       case "newtab":
-        this._recordSearch(engine, "about_newtab", "enter");
+        Services.telemetry.keyedScalarAdd("browser.engagement.navigation.about_newtab",
+                                          "search_enter", 1);
         break;
       case "contextmenu":
-        this._recordSearch(engine, "contextmenu");
+        Services.telemetry.keyedScalarAdd("browser.engagement.navigation.contextmenu",
+                                          "search", 1);
         break;
     }
   },
@@ -329,14 +324,15 @@ let BrowserUsageTelemetry = {
 
 
 
-  _handleSearchAndUrlbar(engine, source, details) {
+  _handleSearchAndUrlbar(source, details) {
     
     
 
     
     
-    const sourceName =
+    const plainSourceName =
       (source === "unknown") ? "searchbar" : source.replace("oneoff-", "");
+    const scalarName = "browser.engagement.navigation." + plainSourceName;
 
     const isOneOff = !!details.isOneOff;
     if (isOneOff) {
@@ -351,23 +347,24 @@ let BrowserUsageTelemetry = {
       }
 
       
-      this._recordSearch(engine, sourceName, "oneoff");
+      
+      Services.telemetry.keyedScalarAdd(scalarName, "search_oneoff", 1);
       return;
     }
 
     
     if (details.isSuggestion) {
       
-      this._recordSearch(engine, sourceName, "suggestion");
+      Services.telemetry.keyedScalarAdd(scalarName, "search_suggestion", 1);
       return;
     } else if (details.isAlias) {
       
-      this._recordSearch(engine, sourceName, "alias");
+      Services.telemetry.keyedScalarAdd(scalarName, "search_alias", 1);
       return;
     }
 
     
-    this._recordSearch(engine, sourceName, "enter");
+    Services.telemetry.keyedScalarAdd(scalarName, "search_enter", 1);
   },
 
   

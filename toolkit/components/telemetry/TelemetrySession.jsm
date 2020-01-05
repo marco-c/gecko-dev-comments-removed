@@ -1020,7 +1020,7 @@ var Impl = {
 
     
     if (!this._testing) {
-      events = events.filter(e => !e[1].startsWith("telemetry.test"));
+      events = events.filter(e => e[1].startsWith("telemetry.test"));
     }
 
     return events;
