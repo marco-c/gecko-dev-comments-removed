@@ -12,6 +12,8 @@
 
 #include "nsNetUtil.h"
 
+#include "FileChannelChild.h"
+
 
 #ifdef XP_WIN
 #include <shlobj.h>
@@ -188,7 +190,12 @@ nsFileProtocolHandler::NewChannel2(nsIURI* uri,
                                    nsILoadInfo* aLoadInfo,
                                    nsIChannel** result)
 {
-    nsFileChannel *chan = new nsFileChannel(uri);
+    nsFileChannel *chan;
+    if (IsNeckoChild()) {
+        chan = new mozilla::net::FileChannelChild(uri);
+    } else {
+        chan = new nsFileChannel(uri);
+    }
     if (!chan)
         return NS_ERROR_OUT_OF_MEMORY;
     NS_ADDREF(chan);
