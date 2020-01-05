@@ -132,8 +132,6 @@ enum class DrawTargetType : int8_t {
 enum class BackendType : int8_t {
   NONE = 0,
   DIRECT2D, 
-  COREGRAPHICS,
-  COREGRAPHICS_ACCELERATED,
   CAIRO,
   SKIA,
   RECORDING,

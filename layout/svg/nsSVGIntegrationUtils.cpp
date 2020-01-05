@@ -466,10 +466,7 @@ GenerateMaskSurface(const PaintFramesParams& aParams,
   
   
   RefPtr<DrawTarget> maskDT =
-    (ctx.GetDrawTarget()->GetBackendType() == BackendType::COREGRAPHICS)
-    ? Factory::CreateDrawTarget(BackendType::SKIA, maskSurfaceRect.Size(),
-                                SurfaceFormat::A8)
-    : ctx.GetDrawTarget()->CreateSimilarDrawTarget(maskSurfaceRect.Size(),
+      ctx.GetDrawTarget()->CreateSimilarDrawTarget(maskSurfaceRect.Size(),
                                                    SurfaceFormat::A8);
   if (!maskDT || !maskDT->IsValid()) {
     return DrawResult::TEMPORARY_ERROR;
