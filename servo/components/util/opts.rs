@@ -192,6 +192,9 @@ pub struct Opts {
     pub webrender_stats: bool,
 
     
+    pub webrender_debug: bool,
+
+    
     pub use_msaa: bool,
 
     
@@ -290,6 +293,9 @@ pub struct DebugOptions {
     pub webrender_stats: bool,
 
     
+    pub webrender_debug: bool,
+
+    
     pub use_msaa: bool,
 
     
@@ -328,6 +334,7 @@ impl DebugOptions {
                 "load-webfonts-synchronously" => debug_options.load_webfonts_synchronously = true,
                 "disable-vsync" => debug_options.disable_vsync = true,
                 "wr-stats" => debug_options.webrender_stats = true,
+                "wr-debug" => debug_options.webrender_debug = true,
                 "msaa" => debug_options.use_msaa = true,
                 "full-backtraces" => debug_options.full_backtraces = true,
                 "" => {},
@@ -377,6 +384,7 @@ pub fn print_debug_usage(app: &str) -> ! {
     print_option("wr-stats", "Show WebRender profiler on screen.");
     print_option("msaa", "Use multisample antialiasing in WebRender.");
     print_option("full-backtraces", "Print full backtraces for all errors");
+    print_option("wr-debug", "Display webrender tile borders. Must be used with -w option.");
 
     println!("");
 
@@ -511,6 +519,7 @@ pub fn default_opts() -> Opts {
         config_dir: None,
         full_backtraces: false,
         is_printing_version: false,
+        webrender_debug: false,
     }
 }
 
@@ -569,7 +578,6 @@ pub fn from_cmdline_args(args: &[String]) -> ArgumentParsingResult {
     opts.optopt("", "config-dir",
                     "config directory following xdg spec on linux platform", "");
     opts.optflag("v", "version", "Display servo version information");
-
 
     let opt_match = match opts.parse(args) {
         Ok(m) => m,
@@ -815,6 +823,7 @@ pub fn from_cmdline_args(args: &[String]) -> ArgumentParsingResult {
         config_dir: opt_match.opt_str("config-dir"),
         full_backtraces: debug_options.full_backtraces,
         is_printing_version: is_printing_version,
+        webrender_debug: debug_options.webrender_debug,
     };
 
     set_defaults(opts);
