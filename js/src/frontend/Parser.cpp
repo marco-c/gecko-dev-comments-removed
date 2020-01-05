@@ -5973,11 +5973,6 @@ Parser<ParseHandler>::forHeadStart(YieldHandling yieldHandling,
     if (!matchInOrOf(&isForIn, &isForOf))
         return false;
 
-    if (iterKind == IteratorKind::Async && !isForOf) {
-        error(JSMSG_FOR_AWAIT_NOT_OF);
-        return false;
-    }
-
     
     
     
@@ -6125,14 +6120,18 @@ Parser<ParseHandler>::forStatement(YieldHandling yieldHandling)
 
     MOZ_ASSERT(headKind == PNK_FORIN || headKind == PNK_FOROF || headKind == PNK_FORHEAD);
 
+    if (iterKind == IteratorKind::Async && headKind != PNK_FOROF) {
+        errorAt(begin, JSMSG_FOR_AWAIT_NOT_OF);
+        return null();
+    }
+    if (isForEach && headKind != PNK_FORIN) {
+        errorAt(begin, JSMSG_BAD_FOR_EACH_LOOP);
+        return null();
+    }
+
     Node forHead;
     if (headKind == PNK_FORHEAD) {
         Node init = startNode;
-
-        if (isForEach) {
-            errorAt(begin, JSMSG_BAD_FOR_EACH_LOOP);
-            return null();
-        }
 
         
         
@@ -6189,11 +6188,6 @@ Parser<ParseHandler>::forStatement(YieldHandling yieldHandling)
             stmt.refineForKind(StatementKind::ForInLoop);
             iflags |= JSITER_ENUMERATE;
         } else {
-            if (isForEach) {
-                errorAt(begin, JSMSG_BAD_FOR_EACH_LOOP);
-                return null();
-            }
-
             stmt.refineForKind(StatementKind::ForOfLoop);
         }
 
