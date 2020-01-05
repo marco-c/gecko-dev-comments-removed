@@ -139,6 +139,10 @@ SandboxBrokerPolicyFactory::SandboxBrokerPolicyFactory()
 
   
   policy->AddPrefix(rdwr, "/dev", "nvidia");
+
+  
+  policy->AddDir(rdwr, "/dev/dri");
+
   mCommonContentPolicy.reset(policy);
 #endif
 }
