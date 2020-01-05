@@ -169,7 +169,7 @@ impl EventMethods for Event {
 
     
     fn Type(&self) -> DOMString {
-        (*self.type_()).to_owned()
+        DOMString((*self.type_()).to_owned())
     }
 
     

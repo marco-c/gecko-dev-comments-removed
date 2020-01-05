@@ -21,12 +21,12 @@ use util::str::DOMString;
 pub struct Blob {
     reflector_: Reflector,
     bytes: Option<Vec<u8>>,
-    typeString: DOMString,
+    typeString: String,
     global: GlobalField,
     isClosed_: Cell<bool>
 }
 
-fn is_ascii_printable(string: &DOMString) -> bool {
+fn is_ascii_printable(string: &str) -> bool {
     
     
     string.chars().all(|c| { c >= '\x20' && c <= '\x7E' })
@@ -60,7 +60,7 @@ impl Blob {
     pub fn Constructor_(global: GlobalRef, blobParts: DOMString,
                         blobPropertyBag: &BlobBinding::BlobPropertyBag) -> Fallible<Root<Blob>> {
         //TODO: accept other blobParts types - ArrayBuffer or ArrayBufferView or Blob
-        let bytes: Option<Vec<u8>> = Some(blobParts.into_bytes());
+        let bytes: Option<Vec<u8>> = Some(blobParts.0.into_bytes());
         let typeString = if is_ascii_printable(&blobPropertyBag.type_) {
             &*blobPropertyBag.type_
         } else {
@@ -75,7 +75,7 @@ impl Blob {
 }
 
 impl BlobMethods for Blob {
-    // https://dev.w3.org/2006/webapi/FileAPI/#dfn-size
+    
     fn Size(&self) -> u64 {
         match self.bytes {
             None => 0,
@@ -83,12 +83,12 @@ impl BlobMethods for Blob {
         }
     }
 
-    // https://dev.w3.org/2006/webapi/FileAPI/#dfn-type
+    
     fn Type(&self) -> DOMString {
-        self.typeString.clone()
+        DOMString(self.typeString.clone())
     }
 
-    // https://dev.w3.org/2006/webapi/FileAPI/#slice-method-algo
+    
     fn Slice(&self, start: Option<i64>, end: Option<i64>,
              contentType: Option<DOMString>) -> Root<Blob> {
         let size: i64 = self.Size().to_i64().unwrap();
@@ -113,13 +113,13 @@ impl BlobMethods for Blob {
             }
         };
         let relativeContentType = match contentType {
-            None => "".to_owned(),
+            None => DOMString::new(),
             Some(mut str) => {
                 if is_ascii_printable(&str) {
                     str.make_ascii_lowercase();
                     str
                 } else {
-                    "".to_owned()
+                    DOMString::new()
                 }
             }
         };

@@ -188,7 +188,7 @@ impl URLMethods for URL {
 
     
     fn Stringifier(&self) -> DOMString {
-        self.Href().0
+        DOMString(self.Href().0)
     }
 
     

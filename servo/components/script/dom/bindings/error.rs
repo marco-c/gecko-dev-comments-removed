@@ -18,7 +18,6 @@ use libc;
 use std::ffi::CString;
 use std::{mem, ptr};
 use util::mem::HeapSizeOf;
-use util::str::DOMString;
 
 
 #[derive(Debug, Clone, HeapSizeOf)]
@@ -65,9 +64,9 @@ pub enum Error {
     TypeMismatch,
 
     
-    Type(DOMString),
+    Type(String),
     
-    Range(DOMString),
+    Range(String),
 
     
     JSFailed,

@@ -183,7 +183,7 @@ impl StorageManager {
         let data = self.select_data(storage_type);
         sender.send(data.get(&origin)
                     .and_then(|&(_, ref entry)| entry.get(&name))
-                    .map(|value| value.to_string())).unwrap();
+                    .map(|value| DOMString(value.to_string()))).unwrap();
     }
 
     
