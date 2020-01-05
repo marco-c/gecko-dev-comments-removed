@@ -1789,6 +1789,21 @@ class BaseScript(ScriptMixin, LogMixin, object):
         
         
         
+        self.topsrcdir = None
+
+        srcreldir = 'testing/mozharness/mozharness/base'
+        here = os.path.normpath(os.path.dirname(__file__))
+        if here.replace('\\', '/').endswith(srcreldir):
+            topsrcdir = os.path.normpath(os.path.join(here, '..', '..',
+                                                      '..', '..'))
+            hg_dir = os.path.join(topsrcdir, '.hg')
+            git_dir = os.path.join(topsrcdir, '.git')
+            if os.path.isdir(hg_dir) or os.path.isdir(git_dir):
+                self.topsrcdir = topsrcdir
+
+        
+        
+        
         
         
         
