@@ -16,12 +16,9 @@ class TestGeckoInstance(MarionetteTestCase):
                              apps[app])
 
         
-        
-        self.assertNotEqual(GeckoInstance.create(bin=self.marionette.bin),
-                            GeckoInstance)
-
-        
         self.assertRaises(NotImplementedError, GeckoInstance.create,
-                          app="n/a", binary=self.marionette.bin)
-        self.assertRaises(IOError, GeckoInstance.create,
+                          app="n/a", bin=self.marionette.bin)
+        self.assertRaises(NotImplementedError, GeckoInstance.create,
                           bin="n/a")
+        self.assertRaises(NotImplementedError, GeckoInstance.create,
+                          bin=None)
