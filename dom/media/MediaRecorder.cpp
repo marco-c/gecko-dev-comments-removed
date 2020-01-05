@@ -1328,17 +1328,6 @@ MediaRecorder::IsTypeSupported(const nsAString& aMIMEType)
     codeclist = gWebMVideoEncoderCodecs;
   }
 #endif
-#ifdef MOZ_OMX_ENCODER
-    
-  else if (mimeType.EqualsLiteral(VIDEO_MP4) ||
-           mimeType.EqualsLiteral(AUDIO_3GPP) ||
-           mimeType.EqualsLiteral(AUDIO_3GPP2)) {
-    if (MediaEncoder::IsOMXEncoderEnabled()) {
-      
-      return true;
-    }
-  }
-#endif
 
   
   if (!codeclist) {
