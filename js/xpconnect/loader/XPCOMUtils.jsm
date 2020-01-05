@@ -300,15 +300,10 @@ this.XPCOMUtils = {
 
 
 
-
-
-
-
   defineLazyPreferenceGetter: function XPCU_defineLazyPreferenceGetter(
                                    aObject, aName, aPreference,
                                    aDefaultValue = null,
-                                   aOnUpdate = null,
-                                   aTransform = val => val)
+                                   aOnUpdate = null)
   {
     
     
@@ -328,7 +323,7 @@ this.XPCOMUtils = {
             
             this.value = undefined;
             let latest = lazyGetter();
-            aOnUpdate.apply(aObject, data, previous, latest);
+            aOnUpdate(data, previous, latest);
           } else {
 
             
@@ -348,7 +343,7 @@ this.XPCOMUtils = {
 
     function lazyGetter() {
       if (observer.value === undefined) {
-        observer.value = aTransform(Preferences.get(aPreference, aDefaultValue));
+        observer.value = Preferences.get(aPreference, aDefaultValue);
       }
       return observer.value;
     }
