@@ -97,7 +97,7 @@ static const LONGLONG kGTCTickLeapTolerance = 4;
 
 
 
-static LONGLONG sGTCResulutionThreshold;
+static LONGLONG sGTCResolutionThreshold;
 
 
 
@@ -232,7 +232,7 @@ InitThresholds()
     (int64_t(timeIncrementCeil) * sFrequencyPerSec) / 10000LL;
 
   
-  sGTCResulutionThreshold =
+  sGTCResolutionThreshold =
     LONGLONG(kGTCTickLeapTolerance * ticksPerGetTickCountResolutionCeiling);
 
   sHardFailureLimit = ms2mt(kHardFailureLimit);
@@ -329,13 +329,13 @@ TimeStampValue::CheckQPC(const TimeStampValue& aOther) const
 
   
   int64_t diff = DeprecatedAbs(int64_t(deltaQPC) - int64_t(deltaGTC));
-  if (diff <= sGTCResulutionThreshold) {
+  if (diff <= sGTCResolutionThreshold) {
     return deltaQPC;
   }
 
   
   int64_t duration = DeprecatedAbs(int64_t(deltaGTC));
-  int64_t overflow = diff - sGTCResulutionThreshold;
+  int64_t overflow = diff - sGTCResolutionThreshold;
 
   LOG(("TimeStamp: QPC check after %llums with overflow %1.4fms",
        mt2ms(duration), mt2ms_f(overflow)));
