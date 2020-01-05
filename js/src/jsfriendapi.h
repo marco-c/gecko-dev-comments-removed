@@ -275,6 +275,14 @@ FormatStackDump(JSContext* cx, char* buf, bool showArgs, bool showLocals, bool s
 extern JS_FRIEND_API(bool)
 ForceLexicalInitialization(JSContext *cx, HandleObject obj);
 
+
+
+
+
+
+extern JS_FRIEND_API(int)
+IsGCPoisoning();
+
 } 
 
 
