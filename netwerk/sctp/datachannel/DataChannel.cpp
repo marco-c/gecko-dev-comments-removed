@@ -1748,15 +1748,12 @@ DataChannelConnection::HandleStreamResetEvent(const struct sctp_stream_reset_eve
             
             ResetOutgoingStream(channel->mStream);
           }
-          NS_DispatchToMainThread(do_AddRef(new DataChannelOnMessageAvailable(
-                                    DataChannelOnMessageAvailable::ON_CHANNEL_CLOSED, this,
-                                    channel)));
           mStreams[channel->mStream] = nullptr;
 
           LOG(("Disconnected DataChannel %p from connection %p",
                (void *) channel.get(), (void *) channel->mConnection.get()));
-          channel->DestroyLocked();
           
+          channel->StreamClosedLocked();
         } else {
           LOG(("Can't find incoming channel %d",i));
         }
@@ -2492,7 +2489,7 @@ DataChannelConnection::CloseInt(DataChannel *aChannel)
   aChannel->mState = CLOSING;
   if (mState == CLOSED) {
     
-    channel->DestroyLocked();
+    channel->StreamClosedLocked();
   }
   
 }
@@ -2545,14 +2542,16 @@ DataChannel::~DataChannel()
 void
 DataChannel::Close()
 {
-  ENSURE_DATACONNECTION;
-  RefPtr<DataChannelConnection> connection(mConnection);
-  connection->Close(this);
+  if (mConnection) {
+    
+    RefPtr<DataChannelConnection> connection(mConnection);
+    connection->Close(this);
+  }
 }
 
 
 void
-DataChannel::DestroyLocked()
+DataChannel::StreamClosedLocked()
 {
   mConnection->mLock.AssertCurrentThreadOwns();
   ENSURE_DATACONNECTION;
@@ -2565,6 +2564,13 @@ DataChannel::DestroyLocked()
   NS_DispatchToMainThread(do_AddRef(new DataChannelOnMessageAvailable(
                                       DataChannelOnMessageAvailable::ON_CHANNEL_CLOSED,
                                       mConnection, this)));
+  
+}
+
+void
+DataChannel::ReleaseConnection()
+{
+  ASSERT_WEBRTC(NS_IsMainThread());
   mConnection = nullptr;
 }
 

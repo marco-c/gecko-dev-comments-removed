@@ -285,10 +285,10 @@ private:
 };
 
 #define ENSURE_DATACONNECTION \
-  do { if (!mConnection) { DATACHANNEL_LOG(("%s: %p no connection!",__FUNCTION__, this)); return; } } while (0)
+  do { MOZ_ASSERT(mConnection); if (!mConnection) { return; } } while (0)
 
 #define ENSURE_DATACONNECTION_RET(x) \
-  do { if (!mConnection) { DATACHANNEL_LOG(("%s: %p no connection!",__FUNCTION__, this)); return (x); } } while (0)
+  do { MOZ_ASSERT(mConnection); if (!mConnection) { return (x); } } while (0)
 
 class DataChannel {
 public:
@@ -334,7 +334,12 @@ public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(DataChannel)
 
   
-  void DestroyLocked();
+  void StreamClosedLocked();
+
+  
+  
+  
+  void ReleaseConnection();
 
   
   
