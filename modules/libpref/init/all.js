@@ -5044,10 +5044,11 @@ pref("dom.browserElement.maxScreenshotDelayMS", 2000);
 pref("dom.placeholder.show_on_focus", true);
 
 
-#ifdef RELEASE_OR_BETA
-pref("dom.vr.enabled", false);
-#else
+
+#if defined(XP_WIN) || !defined(RELEASE_OR_BETA)
 pref("dom.vr.enabled", true);
+#else
+pref("dom.vr.enabled", false);
 #endif
 
 
