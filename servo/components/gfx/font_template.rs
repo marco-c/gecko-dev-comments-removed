@@ -15,7 +15,7 @@ use style::computed_values::{font_stretch, font_weight};
 
 
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Eq, Hash)]
 pub struct FontTemplateDescriptor {
     pub weight: font_weight::T,
     pub stretch: font_stretch::T,
