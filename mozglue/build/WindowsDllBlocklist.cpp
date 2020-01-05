@@ -229,6 +229,10 @@ static const DllBlockInfo sWindowsDllBlocklist[] = {
   { "smci32.dll", ALL_VERSIONS },
   { "smci64.dll", ALL_VERSIONS },
 
+  
+  { "idmcchandler7.dll", ALL_VERSIONS },
+  { "idmcchandler7_64.dll", ALL_VERSIONS },
+
   { nullptr, 0 }
 };
 
