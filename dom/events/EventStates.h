@@ -289,6 +289,8 @@ private:
 
 #define NS_EVENT_STATE_RTL NS_DEFINE_EVENT_STATE_MACRO(45)
 
+#define NS_EVENT_STATE_AUTOFILL NS_DEFINE_EVENT_STATE_MACRO(50)
+
 
 #define NS_EVENT_STATE_IGNORE NS_DEFINE_EVENT_STATE_MACRO(63)
 
@@ -306,7 +308,7 @@ private:
 
 
 #define MANUALLY_MANAGED_STATES (             \
-  mozilla::EventStates() /* none so far */    \
+  NS_EVENT_STATE_AUTOFILL                     \
 )
 
 

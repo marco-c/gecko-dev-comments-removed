@@ -4230,7 +4230,7 @@ struct StateTableEntry
 };
 
 static constexpr StateTableEntry kManuallyManagedStates[] = {
-  
+  { "-moz-autofill", NS_EVENT_STATE_AUTOFILL },
   { nullptr, EventStates() },
 };
 
