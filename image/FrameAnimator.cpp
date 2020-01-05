@@ -203,10 +203,8 @@ FrameAnimator::AdvanceFrame(AnimationState& aState, TimeStamp aTime)
   
   
   
-  bool canDisplay = aState.mDoneDecoding ||
-                    (nextFrame && nextFrame->IsFinished());
-
-  if (!canDisplay) {
+  
+  if (!nextFrame || !nextFrame->IsFinished()) {
     
     
     return ret;
