@@ -388,7 +388,7 @@ this.SessionStore = {
       let win = aState.windows[i];
       for (let j = win.tabs.length - 1; j >= 0; j--) {
         let tab = win.tabs[j];
-        if (!SessionStoreInternal._shouldSaveTab(tab)) {
+        if (!SessionStoreInternal._shouldSaveTabState(tab)) {
           win.tabs.splice(j, 1);
           if (win.selected > j) {
             win.selected--;
@@ -4196,27 +4196,8 @@ var SessionStoreInternal = {
            !(aTabState.entries.length == 1 &&
                 (aTabState.entries[0].url == "about:blank" ||
                  aTabState.entries[0].url == "about:newtab" ||
-                 aTabState.entries[0].url == "about:printpreview" ||
                  aTabState.entries[0].url == "about:privatebrowsing") &&
                  !aTabState.userTypedValue);
-  },
-
-  
-
-
-
-
-
-
-
-
-
-  _shouldSaveTab: function ssi_shouldSaveTab(aTabState) {
-    
-    
-    return aTabState.entries.length &&
-           !(aTabState.entries[0].url == "about:printpreview" ||
-             aTabState.entries[0].url == "about:privatebrowsing");
   },
 
   
