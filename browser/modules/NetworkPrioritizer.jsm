@@ -92,12 +92,22 @@ var BrowserHelper = {
   },
 
   increasePriority: function NP_BH_increasePriority(aBrowser) {
+    
+    
+    if (!aBrowser.isConnected) {
+      return;
+    }
     aBrowser.adjustPriority(PRIORITY_DELTA);
     _priorityBackup.set(aBrowser.permanentKey,
                         _priorityBackup.get(aBrowser.permanentKey) + PRIORITY_DELTA);
   },
 
   decreasePriority: function NP_BH_decreasePriority(aBrowser) {
+    
+    
+    if (!aBrowser.isConnected) {
+      return;
+    }
     aBrowser.adjustPriority(PRIORITY_DELTA * -1);
     _priorityBackup.set(aBrowser.permanentKey,
                         _priorityBackup.get(aBrowser.permanentKey) - PRIORITY_DELTA);

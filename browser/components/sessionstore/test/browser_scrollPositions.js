@@ -147,7 +147,6 @@ add_task(function* test_scroll_background_tabs() {
 
   
   tab = newWin.gBrowser.tabs[1];
-  yield promiseTabRestoring(tab);
 
   ok(tab.hasAttribute("pending"), "Tab should be pending");
   browser = tab.linkedBrowser;

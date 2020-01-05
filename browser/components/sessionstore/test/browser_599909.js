@@ -6,9 +6,8 @@ var stateBackup = ss.getBrowserState();
 
 function cleanup() {
   
-  try {
-    Services.prefs.clearUserPref("browser.sessionstore.restore_on_demand");
-  } catch (e) {}
+  Services.prefs.clearUserPref("browser.sessionstore.restore_on_demand");
+  Services.prefs.clearUserPref("browser.sessionstore.restore_tabs_lazily");
   ss.setBrowserState(stateBackup);
   executeSoon(finish);
 }
@@ -20,6 +19,8 @@ function test() {
   
   
   Services.prefs.setBoolPref("browser.sessionstore.restore_on_demand", true);
+  
+  Services.prefs.setBoolPref("browser.sessionstore.restore_tabs_lazily", false);
 
   let state = { windows: [{ tabs: [
     { entries: [{ url: "http://example.org/#1", triggeringPrincipal_base64 }] },

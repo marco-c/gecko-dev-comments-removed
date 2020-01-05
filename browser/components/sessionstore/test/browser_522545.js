@@ -32,11 +32,27 @@ function test() {
          "We still know that no load is ongoing");
       is(gURLBar.value, "example.com",
          "Address bar's value correctly restored");
+
       
-      gBrowser.selectedTab = gBrowser.tabContainer.getItemAtIndex(0);
-      is(gURLBar.value, "about:mozilla",
-         "Address bar's value correctly updated");
-      runNextTest();
+      
+      let tabToSelect = gBrowser.tabContainer.getItemAtIndex(0);
+      if (tabToSelect.linkedBrowser.isConnected) {
+        gBrowser.selectedTab = tabToSelect;
+        is(gURLBar.value, "about:mozilla",
+           "Address bar's value correctly updated");
+        runNextTest();
+      } else {
+        gBrowser.tabContainer.addEventListener("SSTabRestored",
+          function SSTabRestored(event) {
+            if (event.target == tabToSelect) {
+              gBrowser.tabContainer.removeEventListener("SSTabRestored", SSTabRestored, true);
+                is(gURLBar.value, "about:mozilla",
+                   "Address bar's value correctly updated");
+              runNextTest();
+            }
+          }, true);
+        gBrowser.selectedTab = tabToSelect;
+      }
     });
   }
 
@@ -60,15 +76,34 @@ function test() {
          "No history entries still sets currentURI to about:blank");
       is(browser.userTypedValue, "example.org",
          "userTypedValue was correctly restored");
-      ok(!browser.didStartLoadSinceLastUserTyping(),
-         "We still know that no load is ongoing");
+      
+      if (browser.didStartLoadSinceLastUserTyping) {
+        ok(!browser.didStartLoadSinceLastUserTyping(),
+           "We still know that no load is ongoing");
+      }
       is(gURLBar.value, "about:mozilla",
          "Address bar's value correctly restored");
+
       
-      gBrowser.selectedTab = gBrowser.tabContainer.getItemAtIndex(1);
-      is(gURLBar.value, "example.org",
-         "Address bar's value correctly updated");
-      runNextTest();
+      
+      let tabToSelect = gBrowser.tabContainer.getItemAtIndex(1);
+      if (tabToSelect.linkedBrowser.isConnected) {
+        gBrowser.selectedTab = tabToSelect;
+        is(gURLBar.value, "example.org",
+           "Address bar's value correctly updated");
+        runNextTest();
+      } else {
+        gBrowser.tabContainer.addEventListener("SSTabRestored",
+          function SSTabRestored(event) {
+            if (event.target == tabToSelect) {
+              gBrowser.tabContainer.removeEventListener("SSTabRestored", SSTabRestored, true);
+                is(gURLBar.value, "example.org",
+                   "Address bar's value correctly updated");
+              runNextTest();
+            }
+          }, true);
+        gBrowser.selectedTab = tabToSelect;
+      }
     });
   }
 

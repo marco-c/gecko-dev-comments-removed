@@ -334,6 +334,10 @@ this.SessionStore = {
     SessionStoreInternal.deleteTabValue(aTab, aKey);
   },
 
+  getLazyTabValue(aTab, aKey) {
+    return SessionStoreInternal.getLazyTabValue(aTab, aKey);
+  },
+
   getGlobalValue: function ss_getGlobalValue(aKey) {
     return SessionStoreInternal.getGlobalValue(aKey);
   },
@@ -1871,6 +1875,15 @@ var SessionStoreInternal = {
     if (browser.frameLoader) {
       this._lastKnownFrameLoader.set(browser.permanentKey, browser.frameLoader);
     }
+
+    
+    if (aTab.__SS_lazyData && !browser.__SS_restoreState && TabStateCache.get(browser)) {
+      let tabState = TabState.clone(aTab);
+      this.restoreTab(aTab, tabState);
+    }
+
+    
+    delete aTab.__SS_lazyData;
   },
 
   
@@ -2543,6 +2556,19 @@ var SessionStoreInternal = {
       delete aTab.__SS_extdata[aKey];
       this.saveStateDelayed(aTab.ownerGlobal);
     }
+  },
+
+  
+
+
+
+
+
+
+
+
+  getLazyTabValue(aTab, aKey) {
+    return (aTab.__SS_lazyData || {})[aKey];
   },
 
   getGlobalValue: function ssi_getGlobalValue(aKey) {
@@ -3272,6 +3298,9 @@ var SessionStoreInternal = {
 
     let numVisibleTabs = 0;
 
+    let createLazyBrowser = this._prefBranch.getBoolPref("sessionstore.restore_tabs_lazily") &&
+      this._prefBranch.getBoolPref("sessionstore.restore_on_demand");
+
     for (var t = 0; t < newTabCount; t++) {
       
       
@@ -3280,7 +3309,8 @@ var SessionStoreInternal = {
                           (tabbrowser.tabs[t].getAttribute("usercontextid") == (userContextId || ""));
       let tab = reuseExisting ? this._maybeUpdateBrowserRemoteness(tabbrowser.tabs[t])
                               : tabbrowser.addTab("about:blank",
-                                                  { skipAnimation: true,
+                                                  { createLazyBrowser,
+                                                    skipAnimation: true,
                                                     userContextId,
                                                     skipBackgroundNotify: true });
 
@@ -3595,9 +3625,7 @@ var SessionStoreInternal = {
                                  tabbrowser.selectedBrowser == browser ||
                                  loadArguments;
 
-    if (!willRestoreImmediately && !forceOnDemand) {
-      TabRestoreQueue.add(tab);
-    }
+    let isBrowserInserted = browser.isConnected;
 
     
     this._setWindowStateBusy(window);
@@ -3665,14 +3693,6 @@ var SessionStoreInternal = {
     
     tabData.index = activeIndex + 1;
 
-    
-    
-    
-    let epoch = this.startNextEpoch(browser);
-
-    
-    
-    browser.__SS_restoreState = TAB_STATE_NEEDS_RESTORE;
     browser.setAttribute("pending", "true");
     tab.setAttribute("pending", "true");
 
@@ -3700,25 +3720,56 @@ var SessionStoreInternal = {
       userTypedClear: tabData.userTypedClear || 0
     });
 
-    this._sendRestoreHistory(browser, {tabData, epoch, loadArguments});
-
-    
-    
-    this.updateTabLabelAndIcon(tab, tabData);
-
     
     if ("attributes" in tabData) {
       TabAttributes.set(tab, tabData.attributes);
     }
 
-    
-    
-    if (willRestoreImmediately) {
-      this.restoreTabContent(tab, loadArguments, reloadInFreshProcess,
-                             restoreContentReason);
-    } else if (!forceOnDemand) {
-      this.restoreNextTab();
+    if (isBrowserInserted) {
+      
+      
+      
+      let epoch = this.startNextEpoch(browser);
+
+      
+      
+      
+      browser.__SS_restoreState = TAB_STATE_NEEDS_RESTORE;
+
+      this._sendRestoreHistory(browser, {tabData, epoch, loadArguments});
+
+      
+      
+      if (willRestoreImmediately) {
+        this.restoreTabContent(tab, loadArguments, reloadInFreshProcess,
+                               restoreContentReason);
+      } else if (!forceOnDemand) {
+        TabRestoreQueue.add(tab);
+        this.restoreNextTab();
+      }
+    } else {
+      
+      
+      
+      
+      let url = "about:blank";
+      let title = "";
+
+      if (activeIndex in tabData.entries) {
+        url = tabData.entries[activeIndex].url;
+        title = tabData.entries[activeIndex].title || url;
+      }
+      tab.__SS_lazyData = {
+        url,
+        title,
+        userTypedValue: tabData.userTypedValue || "",
+        userTypedClear: tabData.userTypedClear || 0
+      };
     }
+
+    
+    
+    this.updateTabLabelAndIcon(tab, tabData);
 
     
     this._setWindowStateReady(window);

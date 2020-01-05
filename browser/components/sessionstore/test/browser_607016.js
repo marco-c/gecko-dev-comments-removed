@@ -9,6 +9,8 @@ add_task(function* () {
   
   
   Services.prefs.setBoolPref("browser.sessionstore.restore_on_demand", true);
+  
+  Services.prefs.setBoolPref("browser.sessionstore.restore_tabs_lazily", false);
 
   let state = { windows: [{ tabs: [
     { entries: [{ url: "http://example.org#1", triggeringPrincipal_base64 }], extData: { "uniq": r() } },
@@ -92,5 +94,7 @@ add_task(function* () {
   yield progressCallback();
 
   
+  Services.prefs.clearUserPref("browser.sessionstore.restore_on_demand");
+  Services.prefs.clearUserPref("browser.sessionstore.restore_tabs_lazily");
   yield promiseBrowserState(stateBackup);
 });

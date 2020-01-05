@@ -35,7 +35,8 @@ this.PrivateBrowsingUtils = {
 
   isBrowserPrivate(aBrowser) {
     let chromeWin = aBrowser.ownerGlobal;
-    if (chromeWin.gMultiProcessBrowser) {
+    if (chromeWin.gMultiProcessBrowser || !aBrowser.isConnected) {
+      
       
       
       
