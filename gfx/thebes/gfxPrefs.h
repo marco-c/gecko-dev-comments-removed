@@ -113,6 +113,9 @@ public:
     virtual bool HasDefaultValue() const = 0;
 
     
+    virtual void GetLiveValue(GfxPrefValue* aOutValue) const = 0;
+
+    
     virtual void GetCachedValue(GfxPrefValue* aOutValue) const = 0;
 
     
@@ -227,6 +230,10 @@ private:
     }
     const char *Name() const override {
       return Prefname();
+    }
+    void GetLiveValue(GfxPrefValue* aOutValue) const override {
+      T value = GetLiveValue();
+      CopyPrefValue(&value, aOutValue);
     }
     
     
