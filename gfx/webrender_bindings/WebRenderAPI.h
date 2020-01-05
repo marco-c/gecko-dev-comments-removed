@@ -108,7 +108,8 @@ public:
   void PushStackingContext(const WrRect& aBounds, 
                            const WrRect& aOverflow,
                            const WrImageMask* aMask, 
-                           const gfx::Matrix4x4& aTransform);
+                           const gfx::Matrix4x4& aTransform,
+                           const WrMixBlendMode& aMixBlendMode);
 
   void PopStackingContext();
 
