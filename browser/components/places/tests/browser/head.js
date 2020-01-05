@@ -6,6 +6,11 @@ XPCOMUtils.defineLazyModuleGetter(this, "PlacesTestUtils",
   "resource://testing-common/PlacesTestUtils.jsm");
 
 
+
+
+
+
+
 var cachedLeftPaneFolderIdGetter;
 var getter = PlacesUIUtils.__lookupGetter__("leftPaneFolderId");
 if (!cachedLeftPaneFolderIdGetter && typeof(getter) == "function") {
