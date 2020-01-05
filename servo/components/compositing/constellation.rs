@@ -54,7 +54,6 @@ use std::borrow::ToOwned;
 use std::collections::HashMap;
 use std::env;
 use std::io::Error as IOError;
-use std::io::{self, Write};
 use std::marker::PhantomData;
 use std::mem::replace;
 use std::process;
@@ -182,6 +181,9 @@ pub struct Constellation<LTF, STF> {
 
     
     webrender_api_sender: Option<webrender_traits::RenderApiSender>,
+
+    
+    handled_panic: bool,
 
     
     
@@ -369,6 +371,7 @@ impl<LTF: LayoutThreadFactory, STF: ScriptThreadFactory> Constellation<LTF, STF>
                 child_processes: Vec::new(),
                 document_states: HashMap::new(),
                 webrender_api_sender: state.webrender_api_sender,
+                handled_panic: false,
                 random_pipeline_closure: opts::get().random_pipeline_closure_probability.map(|prob| {
                     let seed = opts::get().random_pipeline_closure_seed.unwrap_or_else(random);
                     let rng = StdRng::from_seed(&[seed]);
@@ -810,9 +813,9 @@ impl<LTF: LayoutThreadFactory, STF: ScriptThreadFactory> Constellation<LTF, STF>
 
             
 
-            Request::Panic((pipeline_id, panic_reason)) => {
+            Request::Panic((pipeline_id, panic_reason, backtrace)) => {
                 debug!("handling panic message ({:?})", pipeline_id);
-                self.handle_panic(pipeline_id, panic_reason);
+                self.handle_panic(pipeline_id, panic_reason, backtrace);
             }
         }
         true
@@ -842,55 +845,58 @@ impl<LTF: LayoutThreadFactory, STF: ScriptThreadFactory> Constellation<LTF, STF>
     fn handle_send_error(&mut self, pipeline_id: PipelineId, err: IOError) {
         
         debug!("Pipeline {:?} send error ({}).", pipeline_id, err);
-        self.handle_panic(Some(pipeline_id), format!("Send failed ({})", err));
+        self.handle_panic(Some(pipeline_id), format!("Send failed ({})", err), String::from("<none>"));
     }
 
-    fn handle_panic(&mut self, pipeline_id: Option<PipelineId>, reason: String) {
+    fn handle_panic(&mut self, pipeline_id: Option<PipelineId>, reason: String, backtrace: String) {
+        error!("Panic: {}", reason);
+        if !self.handled_panic || opts::get().full_backtraces {
+            
+            error!("Backtrace:\n{}", backtrace);
+        } else {
+            error!("Backtrace skipped (run with -Z full-backtraces to see every backtrace).");
+        }
+
         if opts::get().hard_fail {
             
             
-            let mut stderr = io::stderr();
-            stderr.write_all("Pipeline failed in hard-fail mode.  Crashing!\n".as_bytes())
-                .expect("Failed to write to stderr!");
+            error!("Pipeline failed in hard-fail mode.  Crashing!");
             process::exit(1);
         }
 
         debug!("Panic handler for pipeline {:?}: {}.", pipeline_id, reason);
 
         if let Some(pipeline_id) = pipeline_id {
-            self.replace_pipeline_with_about_failure(pipeline_id);
+
+            let parent_info = self.pipelines.get(&pipeline_id).and_then(|pipeline| pipeline.parent_info);
+            let window_size = self.pipelines.get(&pipeline_id).and_then(|pipeline| pipeline.size);
+
+            
+            self.trigger_mozbrowsererror(pipeline_id);
+
+            self.close_pipeline(pipeline_id, ExitPipelineMode::Force);
+
+            while let Some(pending_pipeline_id) = self.pending_frames.iter().find(|pending| {
+                pending.old_pipeline_id == Some(pipeline_id)
+            }).map(|frame| frame.new_pipeline_id) {
+                warn!("removing pending frame change for failed pipeline");
+                self.close_pipeline(pending_pipeline_id, ExitPipelineMode::Force);
+            }
+
+            warn!("creating replacement pipeline for about:failure");
+
+            let new_pipeline_id = PipelineId::new();
+            self.new_pipeline(new_pipeline_id,
+                              parent_info,
+                              window_size,
+                              None,
+                              LoadData::new(Url::parse("about:failure").expect("infallible"), None, None));
+
+            self.push_pending_frame(new_pipeline_id, Some(pipeline_id));
+
         }
 
-    }
-
-    fn replace_pipeline_with_about_failure(&mut self, pipeline_id: PipelineId) {
-
-        let parent_info = self.pipelines.get(&pipeline_id).and_then(|pipeline| pipeline.parent_info);
-        let window_size = self.pipelines.get(&pipeline_id).and_then(|pipeline| pipeline.size);
-
-        
-        self.trigger_mozbrowsererror(pipeline_id);
-
-        self.close_pipeline(pipeline_id, ExitPipelineMode::Force);
-
-        while let Some(pending_pipeline_id) = self.pending_frames.iter().find(|pending| {
-            pending.old_pipeline_id == Some(pipeline_id)
-        }).map(|frame| frame.new_pipeline_id) {
-            warn!("removing pending frame change for failed pipeline");
-            self.close_pipeline(pending_pipeline_id, ExitPipelineMode::Force);
-        }
-
-        warn!("creating replacement pipeline for about:failure");
-
-        let new_pipeline_id = PipelineId::new();
-        self.new_pipeline(new_pipeline_id,
-                          parent_info,
-                          window_size,
-                          None,
-                          LoadData::new(Url::parse("about:failure").expect("infallible"), None, None));
-
-        self.push_pending_frame(new_pipeline_id, Some(pipeline_id));
-
+        self.handled_panic = true;
     }
 
     fn handle_init_load(&mut self, url: Url) {

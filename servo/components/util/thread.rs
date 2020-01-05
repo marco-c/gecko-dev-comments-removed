@@ -2,6 +2,7 @@
 
 
 
+use backtrace::Backtrace;
 use ipc_channel::ipc::IpcSender;
 use panicking;
 use serde::Serialize;
@@ -20,7 +21,7 @@ pub fn spawn_named_with_send_on_panic<F, Id>(name: String,
                                              state: thread_state::ThreadState,
                                              f: F,
                                              id: Id,
-                                             panic_chan: IpcSender<(Id, String)>)
+                                             panic_chan: IpcSender<(Id, String, String)>)
     where F: FnOnce() + Send + 'static,
           Id: Copy + Send + Serialize + 'static,
 {
@@ -31,7 +32,20 @@ pub fn spawn_named_with_send_on_panic<F, Id>(name: String,
             let reason = payload.downcast_ref::<String>().map(|s| String::from(&**s))
                 .or(payload.downcast_ref::<&'static str>().map(|s| String::from(*s)))
                 .unwrap_or_else(|| String::from("<unknown reason>"));
-            let _ = panic_chan.send((id, reason));
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            let backtrace = format!("{:?}", Backtrace::new());
+            let _ = panic_chan.send((id, reason, backtrace));
         }));
         f()
     }).expect("Thread spawn failed");

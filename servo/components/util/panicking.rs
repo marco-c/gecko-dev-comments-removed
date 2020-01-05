@@ -2,11 +2,9 @@
 
 
 
-use opts;
 use std::any::Any;
 use std::boxed::FnBox;
 use std::cell::RefCell;
-use std::io::{Write, stderr};
 use std::panic::{PanicInfo, take_hook, set_hook};
 use std::sync::{Once, ONCE_INIT};
 use std::thread;
@@ -32,9 +30,6 @@ pub fn set_thread_local_hook(local: Box<FnBox(&Any)>) {
 pub fn initiate_panic_hook() {
 
     
-    let full_backtraces = opts::get().full_backtraces;
-
-    
     HOOK_SET.call_once(|| {
         
         let hook = take_hook();
@@ -44,34 +39,15 @@ pub fn initiate_panic_hook() {
             let name = thread::current().name().unwrap_or("<unknown thread>").to_string();
             
             LOCAL_INFO.with(|i| {
-                if let Some(info) = i.borrow_mut().take() {
+                if let Some(local_info) = i.borrow_mut().take() {
                     debug!("Thread `{}` failed, notifying error handlers", name);
-                    (info.fail).call_box((payload, ));
+                    (local_info.fail).call_box((payload, ));
+                } else {
+                    hook(&info);
                 }
             });
-
-            
-            if !full_backtraces {
-                if let Some(s) = payload.downcast_ref::<String>() {
-                    if s.contains("SendError") {
-                        let err = stderr();
-                        let _ = write!(err.lock(), "Thread \"{}\" panicked with an unwrap of \
-                                                    `SendError` (backtrace skipped)\n", name);
-                        return;
-                    } else if s.contains("RecvError")  {
-                        let err = stderr();
-                        let _ = write!(err.lock(), "Thread \"{}\" panicked with an unwrap of \
-                                                    `RecvError` (backtrace skipped)\n", name);
-                        return;
-                    }
-                }
-            }
-
-            
-            hook(&info);
         };
         set_hook(Box::new(new_hook));
     });
-
 
 }
