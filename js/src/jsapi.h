@@ -5318,8 +5318,8 @@ JS_ResetDefaultLocale(JSContext* cx);
 
 
 struct JSLocaleCallbacks {
-    JSLocaleToUpperCase     localeToUpperCase; 
-    JSLocaleToLowerCase     localeToLowerCase; 
+    JSLocaleToUpperCase     localeToUpperCase;
+    JSLocaleToLowerCase     localeToLowerCase;
     JSLocaleCompare         localeCompare; 
     JSLocaleToUnicode       localeToUnicode;
 };

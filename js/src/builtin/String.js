@@ -602,88 +602,6 @@ function String_localeCompare(that) {
 }
 
 
-
-
-
-
-function String_toLocaleLowerCase() {
-    
-    RequireObjectCoercible(this);
-
-    
-    var string = ToString(this);
-
-    
-    
-    var locales = arguments.length > 0 ? arguments[0] : undefined;
-    var requestedLocale;
-    if (locales === undefined) {
-        
-        requestedLocale = undefined;
-    } else if (typeof locales === "string") {
-        
-        requestedLocale = ValidateAndCanonicalizeLanguageTag(locales);
-    } else {
-        
-        var requestedLocales = CanonicalizeLocaleList(locales);
-
-        
-        requestedLocale = requestedLocales.length > 0 ? requestedLocales[0] : undefined;
-    }
-
-    
-    if (string.length === 0)
-        return "";
-
-    if (requestedLocale === undefined)
-        requestedLocale = DefaultLocale();
-
-    
-    return intl_toLocaleLowerCase(string, requestedLocale);
-}
-
-
-
-
-
-
-function String_toLocaleUpperCase() {
-    
-    RequireObjectCoercible(this);
-
-    
-    var string = ToString(this);
-
-    
-    
-    var locales = arguments.length > 0 ? arguments[0] : undefined;
-    var requestedLocale;
-    if (locales === undefined) {
-        
-        requestedLocale = undefined;
-    } else if (typeof locales === "string") {
-        
-        requestedLocale = ValidateAndCanonicalizeLanguageTag(locales);
-    } else {
-        
-        var requestedLocales = CanonicalizeLocaleList(locales);
-
-        
-        requestedLocale = requestedLocales.length > 0 ? requestedLocales[0] : undefined;
-    }
-
-    
-    if (string.length === 0)
-        return "";
-
-    if (requestedLocale === undefined)
-        requestedLocale = DefaultLocale();
-
-    
-    return intl_toLocaleUpperCase(string, requestedLocale);
-}
-
-
 function String_static_raw(callSite, ...substitutions) {
     
     
@@ -951,28 +869,14 @@ function String_static_toLocaleLowerCase(string) {
     WarnDeprecatedStringMethod(STRING_GENERICS_TO_LOCALE_LOWER_CASE, "toLocaleLowerCase");
     if (arguments.length < 1)
         ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "String.toLocaleLowerCase");
-
-#if EXPOSE_INTL_API
-    var locales = arguments.length > 1 ? arguments[1] : undefined;
-    return callFunction(String_toLocaleLowerCase, string, locales);
-#else
     return callFunction(std_String_toLocaleLowerCase, string);
-#endif
-
 }
 
 function String_static_toLocaleUpperCase(string) {
     WarnDeprecatedStringMethod(STRING_GENERICS_TO_LOCALE_UPPER_CASE, "toLocaleUpperCase");
     if (arguments.length < 1)
         ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "String.toLocaleUpperCase");
-
-#if EXPOSE_INTL_API
-    var locales = arguments.length > 1 ? arguments[1] : undefined;
-    return callFunction(String_toLocaleUpperCase, string, locales);
-#else
     return callFunction(std_String_toLocaleUpperCase, string);
-#endif
-
 }
 
 #if EXPOSE_INTL_API
