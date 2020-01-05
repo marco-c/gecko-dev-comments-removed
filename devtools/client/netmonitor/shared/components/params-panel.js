@@ -57,31 +57,13 @@ function ParamsPanel({
 
   
   if (query) {
-    object[PARAMS_QUERY_STRING] =
-      parseQueryString(query)
-        .reduce((acc, { name, value }) =>
-          name ? Object.assign(acc, { [name]: value }) : acc
-        , {});
+    object[PARAMS_QUERY_STRING] = getProperties(parseQueryString(query));
   }
 
   
   if (formDataSections && formDataSections.length > 0) {
     let sections = formDataSections.filter((str) => /\S/.test(str)).join("&");
-    object[PARAMS_FORM_DATA] =
-      parseQueryString(sections)
-        .reduce((map, obj) => {
-          let value = map[obj.name];
-          
-          if (value) {
-            if (typeof value !== "object") {
-              map[obj.name] = [value];
-            }
-            map[obj.name].push(obj.value);
-          } else {
-            map[obj.name] = obj.value;
-          }
-          return map;
-        }, {});
+    object[PARAMS_FORM_DATA] = getProperties(parseQueryString(sections));
   }
 
   
@@ -122,5 +104,29 @@ ParamsPanel.displayName = "ParamsPanel";
 ParamsPanel.propTypes = {
   request: PropTypes.object.isRequired,
 };
+
+
+
+
+
+
+
+
+
+
+function getProperties(arr) {
+  return arr.reduce((map, obj) => {
+    let value = map[obj.name];
+    if (value) {
+      if (typeof value !== "object") {
+        map[obj.name] = [value];
+      }
+      map[obj.name].push(obj.value);
+    } else {
+      map[obj.name] = obj.value;
+    }
+    return map;
+  }, {});
+}
 
 module.exports = ParamsPanel;
