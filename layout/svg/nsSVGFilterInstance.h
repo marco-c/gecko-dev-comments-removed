@@ -85,8 +85,7 @@ public:
                       nsIContent* aTargetContent,
                       const UserSpaceMetrics& aMetrics,
                       const gfxRect& aTargetBBox,
-                      const gfxSize& aUserSpaceToFilterSpaceScale,
-                      const gfxSize& aFilterSpaceToUserSpaceScale);
+                      const gfxSize& aUserSpaceToFilterSpaceScale);
 
   
 
@@ -109,19 +108,6 @@ public:
   nsresult BuildPrimitives(nsTArray<FilterPrimitiveDescription>& aPrimitiveDescrs,
                            nsTArray<RefPtr<SourceSurface>>& aInputImages,
                            bool aInputIsTainted);
-
-  
-
-
-
-
-
-  gfxRect GetFilterRegion() const { return mUserSpaceBounds; }
-
-  
-
-
-  nsIntRect GetFilterSpaceBounds() const { return mFilterSpaceBounds; }
 
   float GetPrimitiveNumber(uint8_t aCtxType, const nsSVGNumber2 *aNumber) const
   {
@@ -176,11 +162,6 @@ private:
   
 
 
-  gfxRect FilterSpaceToUserSpace(const gfxRect& aFilterSpaceRect) const;
-
-  
-
-
 
 
   gfxMatrix GetUserSpaceToFrameSpaceInCSSPxTransform() const;
@@ -207,7 +188,7 @@ private:
                             const nsDataHashtable<nsStringHashKey, int32_t>& aImageTable,
                             nsTArray<int32_t>& aSourceIndices);
 
-  
+   
 
 
 
@@ -246,14 +227,12 @@ private:
   
 
 
-  gfxRect mUserSpaceBounds;
   nsIntRect mFilterSpaceBounds;
 
   
 
 
   gfxSize mUserSpaceToFilterSpaceScale;
-  gfxSize mFilterSpaceToUserSpaceScale;
 
   
 
