@@ -1239,7 +1239,7 @@ js::fun_call(JSContext* cx, unsigned argc, Value* vp)
         argCount--; 
 
     InvokeArgs iargs(cx);
-    if (!iargs.init(argCount))
+    if (!iargs.init(cx, argCount))
         return false;
 
     for (size_t i = 0; i < argCount; i++)
@@ -1279,7 +1279,7 @@ js::fun_apply(JSContext* cx, unsigned argc, Value* vp)
         
         ScriptFrameIter iter(cx);
         MOZ_ASSERT(iter.numActualArgs() <= ARGS_LENGTH_MAX);
-        if (!args2.init(iter.numActualArgs()))
+        if (!args2.init(cx, iter.numActualArgs()))
             return false;
 
         
@@ -1300,13 +1300,10 @@ js::fun_apply(JSContext* cx, unsigned argc, Value* vp)
             return false;
 
         
-        if (length > ARGS_LENGTH_MAX) {
-            JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_TOO_MANY_FUN_APPLY_ARGS);
+        if (!args2.init(cx, length))
             return false;
-        }
 
-        if (!args2.init(length))
-            return false;
+        MOZ_ASSERT(length <= ARGS_LENGTH_MAX);
 
         
         if (!GetElements(cx, aobj, length, args2.array()))
