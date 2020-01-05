@@ -202,7 +202,8 @@ for (var i = 1; i < 3; i++)
 
 
 assertEq(callSiteObj[1], callSiteObj[2]);
-assertEq(callSiteObj[0] !== callSiteObj[1], true);
+
+assertEq(callSiteObj[0], callSiteObj[1]);
 assertEq("raw" in callSiteObj[0], true);
 
 
@@ -226,7 +227,7 @@ function test() {
         a[i] = eval("x``");
 }
 test();
-assertEq(a[0] !== a[1], true);
+assertEq(a[0], a[1]);
 
 
 var newObj = {
