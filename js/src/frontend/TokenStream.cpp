@@ -1938,9 +1938,9 @@ TokenStream::getTokenInternal(TokenKind* ttp, Modifier modifier)
     return true;
 
   error:
-    flags.isDirtyLine = true;
-    tp->pos.end = userbuf.offset();
-    MOZ_MAKE_MEM_UNDEFINED(&tp->type, sizeof(tp->type));
+    
+    
+    
     flags.hadError = true;
 #ifdef DEBUG
     
