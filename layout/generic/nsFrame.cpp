@@ -8315,27 +8315,12 @@ nsIFrame::GetFrameFromDirection(nsDirection aDirection, bool aVisual,
     if (NS_FAILED(result))
       return result;
 
-    auto Advance = [&frameTraversal, aDirection] () {
-      if (aDirection == eDirNext) {
-        frameTraversal->Next();
-      } else {
-        frameTraversal->Prev();
-      }
-      return frameTraversal->CurrentItem();
-    };
+    if (aDirection == eDirNext)
+      frameTraversal->Next();
+    else
+      frameTraversal->Prev();
 
-    traversedFrame = Advance();
-
-    if (nsIContent* content = GetContent()) {
-      
-      for (nsIContent* traversedContent;
-           traversedFrame &&
-             !traversedFrame->IsGeneratedContentFrame() &&
-             (traversedContent = traversedFrame->GetContent()) &&
-             !nsContentUtils::IsInSameAnonymousTree(content, traversedContent);) {
-        traversedFrame = Advance();
-      }
-    }
+    traversedFrame = frameTraversal->CurrentItem();
 
     
     if (!traversedFrame ||
@@ -9192,31 +9177,23 @@ nsFrame::DoGetParentStyleContext(nsIFrame** aProviderFrame) const
 void
 nsFrame::GetLastLeaf(nsPresContext* aPresContext, nsIFrame **aFrame)
 {
-  if (!aFrame || !*aFrame) {
+  if (!aFrame || !*aFrame)
     return;
-  }
-
-  nsIFrame* child = *aFrame;
-  while (true) {
+  nsIFrame *child = *aFrame;
+  
+  while (1){
     child = child->PrincipalChildList().FirstChild();
-    if (!child) {
-      return; 
-    }
-
-    
-    
-    nsIFrame* nonAnonymousChild = nullptr;
-    const nsIContent* content;
-    while (child &&
-           (content = child->GetContent()) &&
-           !content->IsRootOfNativeAnonymousSubtree()) {
-      nonAnonymousChild = child;
-      child = child->GetNextSibling();
-    }
-    if (!nonAnonymousChild) {
+    if (!child)
       return;
-    }
-    *aFrame = child = nonAnonymousChild;
+    nsIFrame* siblingFrame;
+    nsIContent* content;
+    
+    
+    while ((siblingFrame = child->GetNextSibling()) &&
+           (content = siblingFrame->GetContent()) &&
+           !content->IsRootOfNativeAnonymousSubtree())
+      child = siblingFrame;
+    *aFrame = child;
   }
 }
 
