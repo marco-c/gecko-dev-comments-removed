@@ -8,9 +8,6 @@ var {
   SingletonEventManager,
 } = ExtensionUtils;
 
-
-let gKeywordMap = new WeakMap();
-
 this.omnibox = class extends ExtensionAPI {
   onManifestEntry(entryName) {
     let {extension} = this;
@@ -20,31 +17,24 @@ this.omnibox = class extends ExtensionAPI {
     try {
       
       ExtensionSearchHandler.registerKeyword(keyword, extension);
-      gKeywordMap.set(extension, keyword);
+      this.keyword = keyword;
     } catch (e) {
       extension.manifestError(e.message);
     }
   }
 
   onShutdown(reason) {
-    let {extension} = this;
-
-    let keyword = gKeywordMap.get(extension);
-    if (keyword) {
-      ExtensionSearchHandler.unregisterKeyword(keyword);
-      gKeywordMap.delete(extension);
-    }
+    ExtensionSearchHandler.unregisterKeyword(this.keyword);
   }
 
   getAPI(context) {
     let {extension} = context;
     return {
       omnibox: {
-        setDefaultSuggestion(suggestion) {
-          let keyword = gKeywordMap.get(extension);
+        setDefaultSuggestion: (suggestion) => {
           try {
             
-            ExtensionSearchHandler.setDefaultSuggestion(keyword, suggestion);
+            ExtensionSearchHandler.setDefaultSuggestion(this.keyword, suggestion);
           } catch (e) {
             return Promise.reject(e.message);
           }
@@ -82,10 +72,9 @@ this.omnibox = class extends ExtensionAPI {
       },
 
       omnibox_internal: {
-        addSuggestions(id, suggestions) {
-          let keyword = gKeywordMap.get(extension);
+        addSuggestions: (id, suggestions) => {
           try {
-            ExtensionSearchHandler.addSuggestions(keyword, id, suggestions);
+            ExtensionSearchHandler.addSuggestions(this.keyword, id, suggestions);
           } catch (e) {
             
             
