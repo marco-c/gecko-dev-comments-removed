@@ -151,11 +151,11 @@ impl RuleTree {
     
     
     pub fn insert_ordered_rules<'a, I>(&self, iter: I) -> StrongRuleNode
-        where I: Iterator<Item=(StyleSource, Importance)>,
+        where I: Iterator<Item=(StyleSource, CascadeLevel)>,
     {
         let mut current = self.root.clone();
-        for (source, importance) in iter {
-            current = current.ensure_child(self.root.downgrade(), source, importance);
+        for (source, level) in iter {
+            current = current.ensure_child(self.root.downgrade(), source, level);
         }
         current
     }
@@ -176,6 +176,66 @@ impl RuleTree {
 
 const RULE_TREE_GC_INTERVAL: usize = 300;
 
+
+
+
+
+
+
+#[repr(u8)]
+#[derive(Eq, PartialEq, Copy, Clone, Debug)]
+#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+pub enum CascadeLevel {
+    
+    UANormal = 0,
+    
+    PresHints,
+    
+    UserNormal,
+    
+    AuthorNormal,
+    
+    StyleAttributeNormal,
+    
+    Animations,
+    
+    AuthorImportant,
+    
+    StyleAttributeImportant,
+    
+    UserImportant,
+    
+    UAImportant,
+    
+    Transitions,
+}
+
+impl CascadeLevel {
+    
+    
+    #[inline]
+    pub fn is_important(&self) -> bool {
+        match *self {
+            CascadeLevel::AuthorImportant |
+            CascadeLevel::StyleAttributeImportant |
+            CascadeLevel::UserImportant |
+            CascadeLevel::UAImportant => true,
+            _ => false,
+        }
+    }
+
+    
+    
+    #[inline]
+    pub fn importance(&self) -> Importance {
+        if self.is_important() {
+            Importance::Important
+        } else {
+            Importance::Normal
+        }
+    }
+}
+
 struct RuleNode {
     
     root: Option<WeakRuleNode>,
@@ -188,8 +248,7 @@ struct RuleNode {
     source: Option<StyleSource>,
 
     
-    
-    importance: Importance,
+    cascade_level: CascadeLevel,
 
     refcount: AtomicUsize,
     first_child: AtomicPtr<RuleNode>,
@@ -215,13 +274,13 @@ impl RuleNode {
     fn new(root: WeakRuleNode,
            parent: StrongRuleNode,
            source: StyleSource,
-           importance: Importance) -> Self {
+           cascade_level: CascadeLevel) -> Self {
         debug_assert!(root.upgrade().parent().is_none());
         RuleNode {
             root: Some(root),
             parent: Some(parent),
             source: Some(source),
-            importance: importance,
+            cascade_level: cascade_level,
             refcount: AtomicUsize::new(1),
             first_child: AtomicPtr::new(ptr::null_mut()),
             next_sibling: AtomicPtr::new(ptr::null_mut()),
@@ -236,7 +295,7 @@ impl RuleNode {
             root: None,
             parent: None,
             source: None,
-            importance: Importance::Normal,
+            cascade_level: CascadeLevel::UANormal,
             refcount: AtomicUsize::new(1),
             first_child: AtomicPtr::new(ptr::null_mut()),
             next_sibling: AtomicPtr::new(ptr::null_mut()),
@@ -385,10 +444,10 @@ impl StrongRuleNode {
     fn ensure_child(&self,
                     root: WeakRuleNode,
                     source: StyleSource,
-                    importance: Importance) -> StrongRuleNode {
+                    cascade_level: CascadeLevel) -> StrongRuleNode {
         let mut last = None;
         for child in self.get().iter_children() {
-            if child .get().importance == importance &&
+            if child .get().cascade_level == cascade_level &&
                 child.get().source.as_ref().unwrap().ptr_equals(&source) {
                 return child;
             }
@@ -398,7 +457,7 @@ impl StrongRuleNode {
         let mut node = Box::new(RuleNode::new(root,
                                              self.clone(),
                                              source.clone(),
-                                             importance));
+                                             cascade_level));
         let new_ptr: *mut RuleNode = &mut *node;
 
         loop {
@@ -462,7 +521,7 @@ impl StrongRuleNode {
 
     
     pub fn importance(&self) -> Importance {
-        self.get().importance
+        self.get().cascade_level.importance()
     }
 
     
