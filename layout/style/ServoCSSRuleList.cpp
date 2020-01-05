@@ -42,6 +42,13 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(ServoCSSRuleList,
     if (!aRule->IsCCLeaf()) {
       NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb, "mRules[i]");
       cb.NoteXPCOMChild(aRule);
+      
+      
+      
+      if (aRule->Type() == nsIDOMCSSRule::FONT_FACE_RULE) {
+        NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb, "mRawRules[i]");
+        cb.NoteXPCOMChild(aRule);
+      }
     }
   });
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
@@ -139,6 +146,7 @@ ServoCSSRuleList::DropAllRules()
     DropRule(already_AddRefed<css::Rule>(rule));
   });
   mRules.Clear();
+  mRawRules = nullptr;
 }
 
 void
