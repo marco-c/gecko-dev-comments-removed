@@ -89,7 +89,6 @@ extern crate time;
 extern crate unicode_segmentation;
 
 pub mod animation;
-#[allow(missing_docs)] 
 pub mod atomic_refcell;
 #[allow(missing_docs)] 
 pub mod attr;
