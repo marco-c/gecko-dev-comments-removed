@@ -136,7 +136,7 @@ this.PushServiceAndroidGCM = {
   },
 
   _configure: function(serverURL, debug) {
-    return Messaging.sendRequestForResult({
+    return EventDispatcher.instance.sendRequestForResult({
       type: "PushServiceAndroidGCM:Configure",
       endpoint: serverURL.spec,
       debug: debug,
@@ -152,7 +152,7 @@ this.PushServiceAndroidGCM = {
     Services.obs.addObserver(this, "PushServiceAndroidGCM:ReceivedPushMessage", false);
 
     return this._configure(serverURL, !!prefs.get("debug")).then(() => {
-      Messaging.sendRequestForResult({
+      EventDispatcher.instance.sendRequestForResult({
         type: "PushServiceAndroidGCM:Initialized"
       });
     });
@@ -160,7 +160,7 @@ this.PushServiceAndroidGCM = {
 
   uninit: function() {
     console.debug("uninit()");
-    Messaging.sendRequestForResult({
+    EventDispatcher.instance.sendRequestForResult({
       type: "PushServiceAndroidGCM:Uninitialized"
     });
 
@@ -178,7 +178,7 @@ this.PushServiceAndroidGCM = {
     
     
     
-    return Messaging.sendRequestForResult({
+    return EventDispatcher.instance.sendRequestForResult({
       type: "PushServiceAndroidGCM:DumpSubscriptions",
     })
     .then(subscriptions => {
@@ -223,7 +223,7 @@ this.PushServiceAndroidGCM = {
       message.service = "fxa";
     }
     
-    return Messaging.sendRequestForResult(message)
+    return EventDispatcher.instance.sendRequestForResult(message)
     .then(data => {
       console.debug("Got data:", data);
       return PushCrypto.generateKeys()
@@ -249,7 +249,7 @@ this.PushServiceAndroidGCM = {
 
   unregister: function(record) {
     console.debug("unregister: ", record);
-    return Messaging.sendRequestForResult({
+    return EventDispatcher.instance.sendRequestForResult({
       type: "PushServiceAndroidGCM:UnsubscribeChannel",
       channelID: record.keyID,
     });

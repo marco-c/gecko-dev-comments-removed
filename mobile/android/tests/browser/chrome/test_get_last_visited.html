@@ -25,7 +25,7 @@
   let BrowserApp = chromeWin.BrowserApp;
 
   function get_last_visited(prePath) {
-    return Messaging.sendRequestForResult({
+    return EventDispatcher.instance.sendRequestForResult({
       type: "History:GetPrePathLastVisitedTimeMilliseconds",
       prePath: prePath,
     });

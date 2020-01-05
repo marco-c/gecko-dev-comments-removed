@@ -301,7 +301,7 @@ ChromecastRemoteDisplayDevice.prototype = {
       Services.obs.addObserver(this, TOPIC_PRESENTATION_VIEW_READY, true);
 
       
-      Messaging.sendRequestForResult({
+      EventDispatcher.instance.sendRequestForResult({
         type: TOPIC_ANDROID_CAST_DEVICE_START,
         id:   this.id
       }).then(result => {
@@ -323,7 +323,7 @@ ChromecastRemoteDisplayDevice.prototype = {
 
   disconnect: function CRDD_disconnect() {
     
-    Messaging.sendRequestForResult({
+    EventDispatcher.instance.sendRequestForResult({
       type: TOPIC_ANDROID_CAST_DEVICE_STOP,
       id:   this.id
     });
@@ -410,7 +410,7 @@ AndroidCastDeviceProvider.prototype = {
     }
 
     
-    Messaging.sendRequest({ type: TOPIC_ANDROID_CAST_DEVICE_SYNCDEVICE });
+    EventDispatcher.instance.sendRequest({ type: TOPIC_ANDROID_CAST_DEVICE_SYNCDEVICE });
     
     Services.obs.addObserver(this, TOPIC_ANDROID_CAST_DEVICE_ADDED, false);
     Services.obs.addObserver(this, TOPIC_ANDROID_CAST_DEVICE_CHANGED, false);
