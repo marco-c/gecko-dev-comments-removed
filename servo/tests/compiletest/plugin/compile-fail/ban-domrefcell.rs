@@ -1,0 +1,19 @@
+
+
+
+
+#![feature(plugin)]
+#![plugin(plugins)]
+
+extern crate script;
+
+use script::dom::bindings::cell::DOMRefCell;
+use script::dom::bindings::js::JS;
+use script::dom::node::Node;
+
+struct Foo {
+    bar: DOMRefCell<JS<Node>>
+    
+}
+
+fn main() {}
