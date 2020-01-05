@@ -7,18 +7,6 @@
 #ifndef WMF_H_
 #define WMF_H_
 
-#if WINVER < _WIN32_WINNT_WIN7
-#error \
-You must include WMF.h before including mozilla headers, \
-otherwise mozconfig.h will be included \
-and that sets WINVER to WinXP, \
-which makes Windows Media Foundation unavailable.
-#endif
-
-#pragma push_macro("WINVER")
-#undef WINVER
-#define WINVER _WIN32_WINNT_WIN7
-
 #include <windows.h>
 #include <mfapi.h>
 #include <mfidl.h>
@@ -96,9 +84,5 @@ HRESULT MFCreateDXGISurfaceBuffer(REFIID riid,
 
 } 
 } 
-
-
-
-#pragma pop_macro("WINVER")
 
 #endif
