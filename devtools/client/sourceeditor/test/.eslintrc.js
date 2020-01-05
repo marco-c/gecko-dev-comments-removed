@@ -2,5 +2,9 @@
 
 module.exports = {
   
-  "extends": "../../../.eslintrc.mochitests.js"
+  "extends": "../../../.eslintrc.mochitests.js",
+  "globals": {
+    "runCodeMirrorTest": true,
+    "gBrowser": true
+  }
 };

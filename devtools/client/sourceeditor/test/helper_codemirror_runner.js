@@ -3,6 +3,8 @@
 
 
 
+
+
 "use strict";
 
 function runCodeMirrorTest(browser) {
@@ -24,6 +26,7 @@ function runCodeMirrorTest(browser) {
   
   
   
+  
   mm.loadFrameScript("data:," +
     "content.wrappedJSObject.mozilla_setStatus = function(statusMsg, type, customMsg) {" +
     "  sendSyncMessage('setStatus', {statusMsg: statusMsg, type: type, customMsg: customMsg});" +
@@ -35,4 +38,5 @@ function runCodeMirrorTest(browser) {
     "}" +
     "check();"
   , true);
+  
 }

@@ -15,7 +15,8 @@ const FIND_KEY = L10N.getStr("find.key");
 const FINDNEXT_KEY = L10N.getStr("findNext.key");
 const FINDPREV_KEY = L10N.getStr("findPrev.key");
 
-const REPLACE_KEY = OS == "Darwin" ? L10N.getStr("replaceAllMac.key") : L10N.getStr("replaceAll.key");
+const REPLACE_KEY = OS == "Darwin" ? L10N.getStr("replaceAllMac.key")
+                                   : L10N.getStr("replaceAll.key");
 
 
 
