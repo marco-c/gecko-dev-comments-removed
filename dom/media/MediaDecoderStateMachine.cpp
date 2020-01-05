@@ -632,6 +632,8 @@ public:
     if (aPlayState == MediaDecoder::PLAY_STATE_PLAYING) {
       
       mMaster->ScheduleStateMachine();
+      
+      mMaster->DispatchDecodeTasksIfNeeded();
     }
 
     if (aPlayState == MediaDecoder::PLAY_STATE_PAUSED) {
@@ -2832,7 +2834,6 @@ void MediaDecoderStateMachine::PlayStateChanged()
     
     
     mMinimizePreroll = false;
-    DispatchDecodeTasksIfNeeded();
   }
 
   mStateObj->HandlePlayStateChanged(mPlayState);
