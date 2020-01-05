@@ -780,6 +780,35 @@ Animation::CancelNoUpdate()
   }
 }
 
+bool
+Animation::ShouldBeSynchronizedWithMainThread(
+  nsCSSPropertyID aProperty,
+  const nsIFrame* aFrame,
+  AnimationPerformanceWarning::Type& aPerformanceWarning) const
+{
+  
+  if (!IsPlaying()) {
+    return false;
+  }
+
+  
+  if (aProperty != eCSSProperty_transform) {
+    return false;
+  }
+
+  
+  
+  KeyframeEffectReadOnly* keyframeEffect = mEffect
+                                           ? mEffect->AsKeyframeEffect()
+                                           : nullptr;
+  if (!keyframeEffect) {
+    return false;
+  }
+
+  return keyframeEffect->
+           ShouldBlockAsyncTransformAnimations(aFrame, aPerformanceWarning);
+}
+
 void
 Animation::UpdateRelevance()
 {

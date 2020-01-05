@@ -85,19 +85,15 @@ IsMatchForCompositor(const KeyframeEffectReadOnly& aEffect,
     return MatchForCompositor::No;
   }
 
-  bool isPlaying = animation->IsPlaying();
-
-  
-  
-  
-  
   AnimationPerformanceWarning::Type warningType;
-  if (aProperty == eCSSProperty_transform &&
-      isPlaying &&
-      aEffect.ShouldBlockAsyncTransformAnimations(aFrame, warningType)) {
+  if (animation->ShouldBeSynchronizedWithMainThread(aProperty, aFrame,
+                                                    warningType)) {
     EffectCompositor::SetPerformanceWarning(
       aFrame, aProperty,
       AnimationPerformanceWarning(warningType));
+    
+    
+    
     return MatchForCompositor::NoAndBlockThisProperty;
   }
 
@@ -105,7 +101,9 @@ IsMatchForCompositor(const KeyframeEffectReadOnly& aEffect,
     return MatchForCompositor::No;
   }
 
-  return isPlaying ? MatchForCompositor::Yes : MatchForCompositor::IfNeeded;
+  return animation->IsPlaying()
+         ? MatchForCompositor::Yes
+         : MatchForCompositor::IfNeeded;
 }
 
 
@@ -190,6 +188,9 @@ FindAnimationsForCompositor(const nsIFrame* aFrame,
       IsMatchForCompositor(*effect, aProperty, aFrame);
 
     if (matchResult == MatchForCompositor::NoAndBlockThisProperty) {
+      
+      
+      
       if (aMatches) {
         aMatches->Clear();
       }
