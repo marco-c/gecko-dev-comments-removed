@@ -35,8 +35,6 @@
 
 #include "LateWriteChecks.h"
 
-#define OBSERVE_LATE_WRITES
-
 using namespace mozilla;
 
 
@@ -112,7 +110,6 @@ private:
 void
 LateWriteObserver::Observe(IOInterposeObserver::Observation& aOb)
 {
-#ifdef OBSERVE_LATE_WRITES
   
   if (gShutdownChecks == SCM_CRASH) {
     MOZ_CRASH();
@@ -207,7 +204,6 @@ LateWriteObserver::Observe(IOInterposeObserver::Observation& aOb)
   }
   PR_Delete(finalName.get());
   PR_Rename(name, finalName.get());
-#endif
 }
 
 
