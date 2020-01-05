@@ -30,6 +30,12 @@ OuterDocAccessible::
 {
   mType = eOuterDocType;
 
+#ifdef XP_WIN
+  if (DocAccessibleParent* remoteDoc = RemoteChildDoc()) {
+    remoteDoc->SendParentCOMProxy();
+  }
+#endif
+
   
   
   nsIDocument* outerDoc = mContent->GetUncomposedDoc();
