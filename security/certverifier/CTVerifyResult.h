@@ -12,7 +12,41 @@
 
 namespace mozilla { namespace ct {
 
-typedef Vector<SignedCertificateTimestamp> SCTList;
+
+
+
+struct VerifiedSCT
+{
+  VerifiedSCT();
+
+  
+  SignedCertificateTimestamp sct;
+
+  enum class Status {
+    None,
+    
+    Valid,
+    
+    UnknownLog,
+    
+    InvalidSignature,
+    
+    
+    InvalidTimestamp,
+  };
+
+  enum class Origin {
+    Unknown,
+    Embedded,
+    TLSExtension,
+    OCSPResponse,
+  };
+
+  Status status;
+  Origin origin;
+};
+
+typedef Vector<VerifiedSCT> VerifiedSCTList;
 
 
 class CTVerifyResult
@@ -20,7 +54,7 @@ class CTVerifyResult
 public:
   
   
-  SCTList scts;
+  VerifiedSCTList verifiedScts;
 
   
   
