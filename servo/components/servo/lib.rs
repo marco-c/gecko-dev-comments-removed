@@ -172,6 +172,10 @@ impl<Window> Browser<Window> where Window: WindowMethods + 'static {
 
         
         
+        script::init();
+
+        
+        
         
         let (constellation_chan, sw_senders) = create_constellation(opts.clone(),
                                                                     compositor_proxy.clone_compositor_proxy(),
@@ -183,7 +187,7 @@ impl<Window> Browser<Window> where Window: WindowMethods + 'static {
                                                                     webrender_api_sender.clone());
 
         
-        script::init(sw_senders);
+        script::init_service_workers(sw_senders);
 
         if cfg!(feature = "webdriver") {
             if let Some(port) = opts.webdriver_port {
@@ -339,7 +343,8 @@ pub fn run_content_process(token: String) {
 
     
     let sw_senders = unprivileged_content.swmanager_senders();
-    script::init(sw_senders);
+    script::init();
+    script::init_service_workers(sw_senders);
 
     unprivileged_content.start_all::<script_layout_interface::message::Msg,
                                      layout_thread::LayoutThread,

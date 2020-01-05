@@ -163,14 +163,16 @@ fn perform_platform_specific_initialization() {
 #[cfg(not(target_os = "linux"))]
 fn perform_platform_specific_initialization() {}
 
+pub fn init_service_workers(sw_senders: SWManagerSenders) {
+    
+    ServiceWorkerManager::spawn_manager(sw_senders);
+}
+
 #[allow(unsafe_code)]
-pub fn init(sw_senders: SWManagerSenders) {
+pub fn init() {
     unsafe {
         proxyhandler::init();
     }
-
-    
-    ServiceWorkerManager::spawn_manager(sw_senders);
 
     
     
