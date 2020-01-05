@@ -224,14 +224,8 @@ HTMLFieldSetElement::AddElement(nsGenericHTMLFormElement* aElement)
   
   HTMLFieldSetElement* fieldSet = FromContent(aElement);
   if (fieldSet) {
-    if (fieldSet->mInvalidElementsCount > 0) {
-      
-      
-      
-      
-      
+    for (int32_t i = 0; i < fieldSet->mInvalidElementsCount; i++) {
       UpdateValidity(false);
-      mInvalidElementsCount += fieldSet->mInvalidElementsCount - 1;
     }
     return;
   }
@@ -272,12 +266,7 @@ HTMLFieldSetElement::RemoveElement(nsGenericHTMLFormElement* aElement)
   
   HTMLFieldSetElement* fieldSet = FromContent(aElement);
   if (fieldSet) {
-    if (fieldSet->mInvalidElementsCount > 0) {
-      
-      
-      
-      
-      mInvalidElementsCount -= fieldSet->mInvalidElementsCount - 1;
+    for (int32_t i = 0; i < fieldSet->mInvalidElementsCount; i++) {
       UpdateValidity(true);
     }
     return;
