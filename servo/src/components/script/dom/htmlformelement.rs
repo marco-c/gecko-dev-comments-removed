@@ -117,9 +117,6 @@ impl HTMLFormElement {
     }
 
     pub fn IndexedGetter(&self, _index: u32, _found: &mut bool) -> AbstractNode<ScriptView> {
-        let (_scope, cx) = self.get_scope_and_cx();
-        
-        let node = @Node::new(ElementNodeTypeId(HTMLFormElementTypeId));
-        unsafe { return Node::as_abstract_node(cx, node) }
+        fail!("Not implemented.")
     }
 }
