@@ -6021,7 +6021,7 @@ class AddonInstall {
 
 
 
-  postpone(resumeFunction) {
+  postpone(resumeFn) {
     return Task.spawn((function*() {
       this.state = AddonManager.STATE_POSTPONED;
 
@@ -6041,24 +6041,27 @@ class AddonInstall {
 
       
       
-      if (resumeFunction) {
-        let callback = AddonManagerPrivate.getUpgradeListener(this.addon.id);
-        if (callback) {
-          callback({
-            version: this.version,
-            install: () => {
-              switch (this.state) {
-              case AddonManager.STATE_POSTPONED:
-                resumeFunction();
-                break;
-              default:
-                logger.warn(`${this.addon.id} cannot resume postponed upgrade from state (${this.state})`);
-                break;
+      let callback = AddonManagerPrivate.getUpgradeListener(this.addon.id);
+      if (callback) {
+        callback({
+          version: this.version,
+          install: () => {
+            switch (this.state) {
+            case AddonManager.STATE_POSTPONED:
+              if (resumeFn) {
+                resumeFn();
               }
-            },
-          });
-        }
+              break;
+            default:
+              logger.warn(`${this.addon.id} cannot resume postponed upgrade from state (${this.state})`);
+              break;
+            }
+          },
+        });
       }
+      
+      
+      
       this.installLocation.releaseStagingDir();
     }).bind(this));
   }
@@ -6613,57 +6616,6 @@ class DownloadAddonInstall extends AddonInstall {
     }
 
     return this.badCertHandler.getInterface(iid);
-  }
-
-  
-
-
-
-
-
-  postpone(resumeFn) {
-    return Task.spawn((function*() {
-      this.state = AddonManager.STATE_POSTPONED;
-
-      let stagingDir = this.installLocation.getStagingDir();
-      let stagedAddon = stagingDir.clone();
-
-      yield this.installLocation.requestStagingDir();
-      yield this.unstageInstall(stagedAddon);
-
-      stagedAddon.append(this.addon.id);
-      stagedAddon.leafName = this.addon.id + ".xpi";
-
-      yield this.stageInstall(true, stagedAddon, true);
-
-      AddonManagerPrivate.callInstallListeners("onInstallPostponed",
-                                               this.listeners, this.wrapper)
-
-      
-      
-      let callback = AddonManagerPrivate.getUpgradeListener(this.addon.id);
-      if (callback) {
-        callback({
-          version: this.version,
-          install: () => {
-            switch (this.state) {
-            case AddonManager.STATE_POSTPONED:
-              if (resumeFn) {
-                resumeFn();
-              }
-              break;
-            default:
-              logger.warn(`${this.addon.id} cannot resume postponed upgrade from state (${this.state})`);
-              break;
-            }
-          },
-        });
-      }
-      
-      
-      
-      this.installLocation.releaseStagingDir();
-    }).bind(this));
   }
 }
 
