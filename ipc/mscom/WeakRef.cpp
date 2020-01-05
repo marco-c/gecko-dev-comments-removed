@@ -11,6 +11,7 @@
 #include "mozilla/Mutex.h"
 #include "nsThreadUtils.h"
 #include "nsWindowsHelpers.h"
+#include "nsProxyRelease.h"
 
 static void
 InitializeCS(CRITICAL_SECTION& aCS)
@@ -149,12 +150,9 @@ WeakReferenceSupport::Release()
     } else {
       
       
-      mozilla::DebugOnly<nsresult> rv =
-        NS_DispatchToMainThread(NS_NewRunnableFunction([this]() -> void
-        {
-          delete this;
-        }));
-      MOZ_ASSERT(NS_SUCCEEDED(rv));
+      
+      RefPtr<WeakReferenceSupport> self = this;
+      NS_ReleaseOnMainThread(self.forget());
     }
   }
   return newRefCnt;

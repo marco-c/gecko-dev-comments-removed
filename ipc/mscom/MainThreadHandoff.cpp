@@ -13,6 +13,7 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/DebugOnly.h"
 #include "nsThreadUtils.h"
+#include "nsProxyRelease.h"
 
 using mozilla::DebugOnly;
 
@@ -107,12 +108,11 @@ MainThreadHandoff::Release()
     if (NS_IsMainThread()) {
       delete this;
     } else {
-      mozilla::DebugOnly<nsresult> rv =
-        NS_DispatchToMainThread(NS_NewRunnableFunction([=]() -> void
-        {
-          delete this;
-        }));
-      MOZ_ASSERT(NS_SUCCEEDED(rv));
+      
+      
+      
+      RefPtr<MainThreadHandoff> self = this;
+      NS_ReleaseOnMainThread(self.forget());
     }
   }
   return newRefCnt;
