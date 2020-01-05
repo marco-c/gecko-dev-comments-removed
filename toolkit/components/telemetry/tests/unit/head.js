@@ -311,6 +311,9 @@ if (runningInParent) {
   
   
   Services.prefs.setBoolPref("toolkit.telemetry.shutdownPingSender.enabled", false);
+  
+  
+  Services.prefs.setBoolPref("experiments.enabled", false);
 
 
   fakePingSendTimer((callback, timeout) => {
