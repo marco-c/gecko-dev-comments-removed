@@ -910,7 +910,7 @@ HttpChannelChild::OnStopRequest(const nsresult& channelStatus,
   
   
   
-  MOZ_DIAGNOSTIC_ASSERT(mAsyncOpenTime <= timing.fetchStart);
+  
 
   mRedirectStartTimeStamp = timing.redirectStart;
   mRedirectEndTimeStamp = timing.redirectEnd;
