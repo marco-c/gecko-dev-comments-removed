@@ -353,6 +353,15 @@ SubAllocatedExecutableBytes(size_t bytes);
 extern void
 AssertAllocatedExecutableBytesIsZero();
 
+
+
+
+
+
+
+extern bool
+CanLikelyAllocateMoreExecutableMemory();
+
 } 
 } 
 
