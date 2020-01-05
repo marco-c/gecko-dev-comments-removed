@@ -86,9 +86,9 @@ JS::RootingContext::traceStackRoots(JSTracer* trc)
 }
 
 static void
-TraceExactStackRoots(JSRuntime* rt, JSTracer* trc)
+TraceExactStackRoots(const CooperatingContext& target, JSTracer* trc)
 {
-    TlsContext.get()->traceStackRoots(trc);
+    target.context()->traceStackRoots(trc);
 }
 
 template <typename T, TraceFunction<T> TraceFn = TraceNullableRoot>
@@ -201,18 +201,16 @@ AutoGCRooter::trace(JSTracer* trc)
 }
 
  void
-AutoGCRooter::traceAll(JSTracer* trc)
+AutoGCRooter::traceAll(const CooperatingContext& target, JSTracer* trc)
 {
-    for (AutoGCRooter* gcr = TlsContext.get()->autoGCRooters_; gcr; gcr = gcr->down)
+    for (AutoGCRooter* gcr = target.context()->autoGCRooters_; gcr; gcr = gcr->down)
         gcr->trace(trc);
 }
 
  void
-AutoGCRooter::traceAllWrappers(JSTracer* trc)
+AutoGCRooter::traceAllWrappers(const CooperatingContext& target, JSTracer* trc)
 {
-    JSContext* cx = TlsContext.get();
-
-    for (AutoGCRooter* gcr = cx->autoGCRooters_; gcr; gcr = gcr->down) {
+    for (AutoGCRooter* gcr = target.context()->autoGCRooters_; gcr; gcr = gcr->down) {
         if (gcr->tag_ == WRAPVECTOR || gcr->tag_ == WRAPPER)
             gcr->trace(trc);
     }
@@ -290,7 +288,8 @@ js::TraceRuntime(JSTracer* trc)
     MOZ_ASSERT(!trc->isMarkingTracer());
 
     JSRuntime* rt = trc->runtime();
-    rt->zoneGroupFromMainThread()->evictNursery();
+    for (ZoneGroupsIter group(rt); !group.done(); group.next())
+        group->evictNursery();
     AutoPrepareForTracing prep(TlsContext.get(), WithAtoms);
     gcstats::AutoPhase ap(rt->gc.stats(), gcstats::PHASE_TRACE_HEAP);
     rt->gc.traceRuntime(trc, prep.session().lock);
@@ -330,18 +329,18 @@ js::gc::GCRuntime::traceRuntimeCommon(JSTracer* trc, TraceOrMarkRuntime traceOrM
             
             TraceInterpreterActivations(cx, target, trc);
             jit::TraceJitActivations(cx, target, trc);
-        }
 
-        
-        AutoGCRooter::traceAll(trc);
+            
+            AutoGCRooter::traceAll(target, trc);
+
+            
+            TraceExactStackRoots(target, trc);
+        }
 
         for (RootRange r = rootsHash.ref().all(); !r.empty(); r.popFront()) {
             const RootEntry& entry = r.front();
             TraceRoot(trc, entry.key(), entry.value());
         }
-
-        
-        TraceExactStackRoots(rt, trc);
     }
 
     
@@ -354,8 +353,8 @@ js::gc::GCRuntime::traceRuntimeCommon(JSTracer* trc, TraceOrMarkRuntime traceOrM
     rt->traceSharedIntlData(trc);
 
     
-    
-    TlsContext.get()->trace(trc);
+    for (const CooperatingContext& target : rt->cooperatingContexts())
+        target.context()->trace(trc);
 
     
     

@@ -13,6 +13,8 @@
 #include "jscompartmentinlines.h"
 #include "jsobjinlines.h"
 
+#include "gc/Nursery-inl.h"
+
 using namespace js;
 
 #define PIERCE(cx, wrapper, pre, op, post)                      \
@@ -516,7 +518,7 @@ js::NukeCrossCompartmentWrappers(JSContext* cx,
     CHECK_REQUEST(cx);
     JSRuntime* rt = cx->runtime();
 
-    rt->zoneGroupFromMainThread()->evictNursery(JS::gcreason::EVICT_NURSERY);
+    EvictAllNurseries(rt);
 
     
     
@@ -656,7 +658,7 @@ js::RecomputeWrappers(JSContext* cx, const CompartmentFilter& sourceFilter,
                       const CompartmentFilter& targetFilter)
 {
     
-    cx->runtime()->zoneGroupFromMainThread()->evictNursery(JS::gcreason::EVICT_NURSERY);
+    EvictAllNurseries(cx->runtime());
 
     AutoWrapperVector toRecompute(cx);
     for (CompartmentsIter c(cx->runtime(), SkipAtoms); !c.done(); c.next()) {

@@ -3044,10 +3044,12 @@ Debugger::traceIncomingCrossCompartmentEdges(JSTracer* trc)
     gc::State state = rt->gc.state();
     MOZ_ASSERT(state == gc::State::MarkRoots || state == gc::State::Compact);
 
-    for (Debugger* dbg : rt->zoneGroupFromMainThread()->debuggerList()) {
-        Zone* zone = MaybeForwarded(dbg->object.get())->zone();
-        if (!zone->isCollecting() || state == gc::State::Compact)
-            dbg->traceCrossCompartmentEdges(trc);
+    for (ZoneGroupsIter group(rt); !group.done(); group.next()) {
+        for (Debugger* dbg : group->debuggerList()) {
+            Zone* zone = MaybeForwarded(dbg->object.get())->zone();
+            if (!zone->isCollecting() || state == gc::State::Compact)
+                dbg->traceCrossCompartmentEdges(trc);
+        }
     }
 }
 
@@ -3144,41 +3146,48 @@ Debugger::markIteratively(GCMarker* marker)
     return markedAny;
 }
 
-
-
-
-
-
  void
-Debugger::traceAll(JSTracer* trc)
+Debugger::traceAllForMovingGC(JSTracer* trc)
 {
     JSRuntime* rt = trc->runtime();
-    for (Debugger* dbg : rt->zoneGroupFromMainThread()->debuggerList()) {
-        for (WeakGlobalObjectSet::Enum e(dbg->debuggees); !e.empty(); e.popFront())
-            TraceManuallyBarrieredEdge(trc, e.mutableFront().unsafeGet(), "Global Object");
+    for (ZoneGroupsIter group(rt); !group.done(); group.next()) {
+        for (Debugger* dbg : group->debuggerList())
+            dbg->traceForMovingGC(trc);
+    }
+}
 
-        GCPtrNativeObject& dbgobj = dbg->toJSObjectRef();
-        TraceEdge(trc, &dbgobj, "Debugger Object");
 
-        dbg->scripts.trace(trc);
-        dbg->sources.trace(trc);
-        dbg->objects.trace(trc);
-        dbg->environments.trace(trc);
-        dbg->wasmInstanceScripts.trace(trc);
-        dbg->wasmInstanceSources.trace(trc);
 
-        for (Breakpoint* bp = dbg->firstBreakpoint(); bp; bp = bp->nextInDebugger()) {
-            switch (bp->site->type()) {
-              case BreakpointSite::Type::JS:
-                TraceManuallyBarrieredEdge(trc, &bp->site->asJS()->script,
-                                           "breakpoint script");
-                break;
-              case BreakpointSite::Type::Wasm:
-                TraceManuallyBarrieredEdge(trc, &bp->asWasm()->wasmInstance, "breakpoint wasm instance");
-                break;
-            }
-            TraceEdge(trc, &bp->getHandlerRef(), "breakpoint handler");
+
+
+
+void
+Debugger::traceForMovingGC(JSTracer* trc)
+{
+    for (WeakGlobalObjectSet::Enum e(debuggees); !e.empty(); e.popFront())
+        TraceManuallyBarrieredEdge(trc, e.mutableFront().unsafeGet(), "Global Object");
+
+    GCPtrNativeObject& dbgobj = toJSObjectRef();
+    TraceEdge(trc, &dbgobj, "Debugger Object");
+
+    scripts.trace(trc);
+    sources.trace(trc);
+    objects.trace(trc);
+    environments.trace(trc);
+    wasmInstanceScripts.trace(trc);
+    wasmInstanceSources.trace(trc);
+
+    for (Breakpoint* bp = firstBreakpoint(); bp; bp = bp->nextInDebugger()) {
+        switch (bp->site->type()) {
+          case BreakpointSite::Type::JS:
+            TraceManuallyBarrieredEdge(trc, &bp->site->asJS()->script,
+                                       "breakpoint script");
+            break;
+          case BreakpointSite::Type::Wasm:
+            TraceManuallyBarrieredEdge(trc, &bp->asWasm()->wasmInstance, "breakpoint wasm instance");
+            break;
         }
+        TraceEdge(trc, &bp->getHandlerRef(), "breakpoint handler");
     }
 }
 
@@ -3234,15 +3243,17 @@ Debugger::sweepAll(FreeOp* fop)
 {
     JSRuntime* rt = fop->runtime();
 
-    for (Debugger* dbg : rt->zoneGroupFromMainThread()->debuggerList()) {
-        if (IsAboutToBeFinalized(&dbg->object)) {
-            
+    for (ZoneGroupsIter group(rt); !group.done(); group.next()) {
+        for (Debugger* dbg : group->debuggerList()) {
+            if (IsAboutToBeFinalized(&dbg->object)) {
+                
 
 
 
 
-            for (WeakGlobalObjectSet::Enum e(dbg->debuggees); !e.empty(); e.popFront())
-                dbg->removeDebuggeeGlobal(fop, e.front().unbarrieredGet(), &e);
+                for (WeakGlobalObjectSet::Enum e(dbg->debuggees); !e.empty(); e.popFront())
+                    dbg->removeDebuggeeGlobal(fop, e.front().unbarrieredGet(), &e);
+            }
         }
     }
 }
@@ -3265,7 +3276,10 @@ Debugger::findZoneEdges(Zone* zone, js::gc::ZoneComponentFinder& finder)
 
 
 
-    for (Debugger* dbg : zone->runtimeFromMainThread()->zoneGroupFromMainThread()->debuggerList()) {
+
+    if (zone->isAtomsZone())
+        return;
+    for (Debugger* dbg : zone->group()->debuggerList()) {
         Zone* w = dbg->object->zone();
         if (w == zone || !w->isGCMarking())
             continue;
@@ -11773,14 +11787,16 @@ FireOnGarbageCollectionHook(JSContext* cx, JS::dbg::GarbageCollectionEvent::Ptr&
         
         AutoCheckCannotGC noGC;
 
-        for (Debugger* dbg : cx->runtime()->zoneGroupFromMainThread()->debuggerList()) {
-            if (dbg->enabled &&
-                dbg->observedGC(data->majorGCNumber()) &&
-                dbg->getHook(Debugger::OnGarbageCollection))
-            {
-                if (!triggered.append(dbg->object)) {
-                    JS_ReportOutOfMemory(cx);
-                    return false;
+        for (ZoneGroupsIter group(cx->runtime()); !group.done(); group.next()) {
+            for (Debugger* dbg : group->debuggerList()) {
+                if (dbg->enabled &&
+                    dbg->observedGC(data->majorGCNumber()) &&
+                    dbg->getHook(Debugger::OnGarbageCollection))
+                {
+                    if (!triggered.append(dbg->object)) {
+                        JS_ReportOutOfMemory(cx);
+                        return false;
+                    }
                 }
             }
         }

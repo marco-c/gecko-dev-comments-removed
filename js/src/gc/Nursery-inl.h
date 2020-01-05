@@ -80,6 +80,13 @@ ReallocateObjectBuffer(JSContext* cx, JSObject* obj, T* oldBuffer,
     return obj->zone()->pod_realloc<T>(oldBuffer, oldCount, newCount);
 }
 
+static inline void
+EvictAllNurseries(JSRuntime* rt, JS::gcreason::Reason reason = JS::gcreason::EVICT_NURSERY)
+{
+    for (ZoneGroupsIter group(rt); !group.done(); group.next())
+        group->evictNursery(reason);
+}
+
 } 
 
 #endif 

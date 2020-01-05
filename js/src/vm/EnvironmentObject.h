@@ -911,6 +911,8 @@ class DebugEnvironmentProxy : public ProxyObject
 
 class DebugEnvironments
 {
+    Zone* zone_;
+
     
     ObjectWeakMap proxiedEnvs;
 
@@ -939,8 +941,10 @@ class DebugEnvironments
     LiveEnvironmentMap liveEnvs;
 
   public:
-    explicit DebugEnvironments(JSContext* cx);
+    DebugEnvironments(JSContext* cx, Zone* zone);
     ~DebugEnvironments();
+
+    Zone* zone() const { return zone_; }
 
   private:
     bool init();
