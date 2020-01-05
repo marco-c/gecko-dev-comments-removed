@@ -368,14 +368,12 @@ TokenServerClient.prototype = {
         
         error.message = "Authentication failed.";
         error.cause = result.status;
-      }
-
-      
-      
-      
-      
-      
-      else if (response.status == 403) {
+      } else if (response.status == 403) {
+        
+        
+        
+        
+        
         if (!("urls" in result)) {
           this._log.warn("403 response without proper fields!");
           this._log.warn("Response body: " + response.body);

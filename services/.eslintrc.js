@@ -8,7 +8,6 @@ module.exports = {
     
 
 
-    "brace-style": "warn",
     "consistent-return": "warn",
     "no-cond-assign": "warn",
     "no-ex-assign": "warn",
