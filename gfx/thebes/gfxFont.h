@@ -46,7 +46,6 @@ class gfxGlyphExtents;
 class gfxShapedText;
 class gfxShapedWord;
 class gfxSkipChars;
-class gfxMathTable;
 
 #define FONT_MAX_SIZE                  2000.0
 
@@ -1848,10 +1847,19 @@ public:
     
     
     
-    bool          TryGetMathTable();
-    gfxMathTable* MathTable() {
-        MOZ_RELEASE_ASSERT(mMathTable, "A successful call to TryGetMathTable() must be performed before calling this function");
-        return mMathTable.get();
+    nscoord GetMathConstant(gfxFontEntry::MathConstant aConstant,
+                            uint32_t aAppUnitsPerDevPixel)
+    {
+        return NSToCoordRound(mFontEntry->GetMathConstant(aConstant) *
+                              GetAdjustedSize() * aAppUnitsPerDevPixel);
+    }
+
+    
+    
+    
+    float GetMathConstant(gfxFontEntry::MathConstant aConstant)
+    {
+        return mFontEntry->GetMathConstant(aConstant);
     }
 
     
@@ -2088,8 +2096,6 @@ protected:
     bool                       mKerningSet;     
     bool                       mKerningEnabled; 
 
-    bool                       mMathInitialized; 
-
     nsExpirationState          mExpirationState;
     gfxFontStyle               mStyle;
     nsTArray<mozilla::UniquePtr<gfxGlyphExtents>> mGlyphExtentsArray;
@@ -2124,9 +2130,6 @@ protected:
 
     
     mozilla::UniquePtr<const Metrics> mVerticalMetrics;
-
-    
-    mozilla::UniquePtr<gfxMathTable> mMathTable;
 
     
     

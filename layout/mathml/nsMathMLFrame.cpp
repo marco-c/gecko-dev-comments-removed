@@ -12,7 +12,6 @@
 #include "nsMathMLChar.h"
 #include "nsCSSPseudoElements.h"
 #include "nsMathMLElement.h"
-#include "gfxMathTable.h"
 
 
 #include "mozilla/StyleSetHandle.h"
@@ -194,8 +193,8 @@ nsMathMLFrame::GetAxisHeight(DrawTarget*    aDrawTarget,
   gfxFont* mathFont = aFontMetrics->GetThebesFontGroup()->GetFirstMathFont();
   if (mathFont) {
     aAxisHeight =
-      mathFont->MathTable()->Constant(gfxMathTable::AxisHeight,
-                                      aFontMetrics->AppUnitsPerDevPixel());
+      mathFont->GetMathConstant(gfxFontEntry::AxisHeight,
+                                aFontMetrics->AppUnitsPerDevPixel());
     return;
   }
 
@@ -394,16 +393,18 @@ nsMathMLFrame::GetRadicalParameters(nsFontMetrics* aFontMetrics,
 
   
   if (mathFont) {
-    aRadicalRuleThickness = mathFont->MathTable()->
-      Constant(gfxMathTable::RadicalRuleThickness, oneDevPixel);
+    aRadicalRuleThickness =
+      mathFont->GetMathConstant(gfxFontEntry::RadicalRuleThickness,
+                                oneDevPixel);
   } else {
     GetRuleThickness(aFontMetrics, aRadicalRuleThickness);
   }
 
   
   if (mathFont) {
-    aRadicalExtraAscender = mathFont->MathTable()->
-      Constant(gfxMathTable::RadicalExtraAscender, oneDevPixel);
+    aRadicalExtraAscender =
+      mathFont->GetMathConstant(gfxFontEntry::RadicalExtraAscender,
+                                oneDevPixel);
   } else {
     
     
@@ -414,11 +415,11 @@ nsMathMLFrame::GetRadicalParameters(nsFontMetrics* aFontMetrics,
 
   
   if (mathFont) {
-    aRadicalVerticalGap = mathFont->MathTable()->
-      Constant(aDisplayStyle ?
-               gfxMathTable::RadicalDisplayStyleVerticalGap :
-               gfxMathTable::RadicalVerticalGap,
-               oneDevPixel);
+    aRadicalVerticalGap =
+      mathFont->GetMathConstant(aDisplayStyle ?
+                                gfxFontEntry::RadicalDisplayStyleVerticalGap :
+                                gfxFontEntry::RadicalVerticalGap,
+                                oneDevPixel);
   } else {
     
     aRadicalVerticalGap = aRadicalRuleThickness +
