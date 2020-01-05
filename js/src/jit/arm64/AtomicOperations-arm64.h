@@ -122,6 +122,8 @@ inline void
 js::jit::AtomicOperations::memcpySafeWhenRacy(void* dest, const void* src,
                                               size_t nbytes)
 {
+    MOZ_ASSERT(!((char*)dest <= (char*)src && (char*)src < (char*)dest+nbytes));
+    MOZ_ASSERT(!((char*)src <= (char*)dest && (char*)dest < (char*)src+nbytes));
     memcpy(dest, src, nbytes); 
 }
 
