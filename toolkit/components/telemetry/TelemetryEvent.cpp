@@ -575,16 +575,13 @@ TelemetryEvent::CreateSnapshots(uint32_t aDataset, bool aClear, JSContext* cx,
 
     
     
-    JS::RootedObject itemsArray(cx, JS_NewArrayObject(cx, 6));
-    if (!itemsArray) {
-      return NS_ERROR_FAILURE;
-    }
+    
+    
+    JS::AutoValueVector items(cx);
 
     
     JS::Rooted<JS::Value> val(cx);
-    uint32_t itemIndex = 0;
-    val.setDouble(floor(record.Timestamp()));
-    if (!JS_DefineElement(cx, itemsArray, itemIndex++, val, JSPROP_ENUMERATE)) {
+    if (!items.append(JS::NumberValue(floor(record.Timestamp())))) {
       return NS_ERROR_FAILURE;
     }
 
@@ -594,34 +591,35 @@ TelemetryEvent::CreateSnapshots(uint32_t aDataset, bool aClear, JSContext* cx,
       info.method(),
       info.object(),
     };
-    for (uint32_t s = 0; s < ArrayLength(strings); ++s) {
-      const NS_ConvertUTF8toUTF16 wide(strings[s]);
-      val.setString(JS_NewUCStringCopyN(cx, wide.Data(), wide.Length()));
-      if (!JS_DefineElement(cx, itemsArray, itemIndex++, val, JSPROP_ENUMERATE)) {
+    for (const char* s : strings) {
+      const NS_ConvertUTF8toUTF16 wide(s);
+      if (!items.append(JS::StringValue(JS_NewUCStringCopyN(cx, wide.Data(), wide.Length())))) {
         return NS_ERROR_FAILURE;
       }
     }
 
     
-    if (!record.Value()) {
-      val.setNull();
-    } else {
+    
+    if (record.Value()) {
       const NS_ConvertUTF8toUTF16 wide(record.Value().value());
-      val.setString(JS_NewUCStringCopyN(cx, wide.Data(), wide.Length()));
-    }
-    if (!JS_DefineElement(cx, itemsArray, itemIndex++, val, JSPROP_ENUMERATE)) {
-      return NS_ERROR_FAILURE;
+      if (!items.append(JS::StringValue(JS_NewUCStringCopyN(cx, wide.Data(), wide.Length())))) {
+        return NS_ERROR_FAILURE;
+      }
+    } else if (!record.Extra().IsEmpty()) {
+      if (!items.append(JS::NullValue())) {
+        return NS_ERROR_FAILURE;
+      }
     }
 
     
-    if (record.Extra().IsEmpty()) {
-      val.setNull();
-    } else {
+    
+    if (!record.Extra().IsEmpty()) {
       JS::RootedObject obj(cx, JS_NewPlainObject(cx));
       if (!obj) {
         return NS_ERROR_FAILURE;
       }
 
+      
       const ExtraArray& extra = record.Extra();
       for (uint32_t i = 0; i < extra.Length(); ++i) {
         const NS_ConvertUTF8toUTF16 wide(extra[i].value);
@@ -633,12 +631,14 @@ TelemetryEvent::CreateSnapshots(uint32_t aDataset, bool aClear, JSContext* cx,
         }
       }
       val.setObject(*obj);
-    }
-    if (!JS_DefineElement(cx, itemsArray, itemIndex++, val, JSPROP_ENUMERATE)) {
-      return NS_ERROR_FAILURE;
+
+      if (!items.append(val)) {
+        return NS_ERROR_FAILURE;
+      }
     }
 
     
+    JS::RootedObject itemsArray(cx, JS_NewArrayObject(cx, items));
     if (!JS_DefineElement(cx, eventsArray, i, itemsArray, JSPROP_ENUMERATE)) {
       return NS_ERROR_FAILURE;
     }

@@ -726,6 +726,13 @@ add_task(function* test_checkSubsessionEvents() {
   }
 
   
+  for (let e of expected) {
+    while ((e.length >= 3) && (e[e.length - 1] === null)) {
+      e.pop();
+    }
+  }
+
+  
   
   let classic = TelemetrySession.getPayload();
   let subsession = TelemetrySession.getPayload("environment-change", true);
