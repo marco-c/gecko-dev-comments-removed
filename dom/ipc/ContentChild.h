@@ -96,6 +96,8 @@ public:
             base::ProcessId aParentPid,
             IPC::Channel* aChannel);
 
+  void InitProcessAttributes();
+
   void InitXPCOM();
 
   void InitGraphicsDeviceData();
@@ -191,6 +193,7 @@ public:
                                             const IPCTabContext& aContext,
                                             const uint32_t& aChromeFlags,
                                             const ContentParentId& aCpID,
+                                            const bool& aIsForApp,
                                             const bool& aIsForBrowser) override;
 
   virtual bool DeallocPBrowserChild(PBrowserChild*) override;
@@ -372,8 +375,6 @@ public:
 
   virtual mozilla::ipc::IPCResult RecvNotifyLayerAllocated(const dom::TabId& aTabId, const uint64_t& aLayersId) override;
 
-  virtual mozilla::ipc::IPCResult RecvSpeakerManagerNotify() override;
-
   virtual mozilla::ipc::IPCResult RecvBidiKeyboardNotify(const bool& isLangRTL,
                                                          const bool& haveBidiKeyboards) override;
 
@@ -423,6 +424,8 @@ public:
   virtual mozilla::ipc::IPCResult RecvAppInfo(const nsCString& version, const nsCString& buildID,
                                               const nsCString& name, const nsCString& UAName,
                                               const nsCString& ID, const nsCString& vendor) override;
+
+  virtual mozilla::ipc::IPCResult RecvAppInit() override;
 
   virtual mozilla::ipc::IPCResult
   RecvInitServiceWorkers(const ServiceWorkerConfiguration& aConfig) override;
@@ -537,6 +540,7 @@ public:
   uint32_t GetMsaaID() const { return mMsaaID; }
 #endif
 
+  bool IsForApp() const { return mIsForApp; }
   bool IsForBrowser() const { return mIsForBrowser; }
 
   virtual PBlobChild*
@@ -557,6 +561,7 @@ public:
                                        const IPCTabContext& context,
                                        const uint32_t& chromeFlags,
                                        const ContentParentId& aCpID,
+                                       const bool& aIsForApp,
                                        const bool& aIsForBrowser) override;
 
   virtual mozilla::ipc::IPCResult RecvPBrowserConstructor(PBrowserChild* aCctor,
@@ -564,6 +569,7 @@ public:
                                                           const IPCTabContext& aContext,
                                                           const uint32_t& aChromeFlags,
                                                           const ContentParentId& aCpID,
+                                                          const bool& aIsForApp,
                                                           const bool& aIsForBrowser) override;
 
   FORWARD_SHMEM_ALLOCATOR_TO(PContentChild)
@@ -626,13 +632,6 @@ public:
 #endif 
 
   
-  
-  InfallibleTArray<mozilla::dom::FontFamilyListEntry>&
-  SystemFontFamilyList() {
-    return mFontFamilies;
-  }
-
-  
 
 
 
@@ -658,11 +657,6 @@ private:
   InfallibleTArray<nsString> mAvailableDictionaries;
 
   
-  
-  
-  InfallibleTArray<mozilla::dom::FontFamilyListEntry> mFontFamilies;
-
-  
 
 
 
@@ -681,6 +675,7 @@ private:
 
   AppInfo mAppInfo;
 
+  bool mIsForApp;
   bool mIsForBrowser;
   bool mCanOverrideProcessName;
   bool mIsAlive;

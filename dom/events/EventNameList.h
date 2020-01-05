@@ -751,11 +751,6 @@ NON_IDL_EVENT(warning,
               EventNameType_None,
               eBasicEventClass)
 
-NON_IDL_EVENT(speakerforcedchange,
-              eSpeakerForcedChange,
-              EventNameType_None,
-              eBasicEventClass)
-
 
 
  

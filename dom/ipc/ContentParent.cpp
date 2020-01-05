@@ -24,6 +24,7 @@
 #include "chrome/common/process_watcher.h"
 
 #include "mozilla/a11y/PDocAccessible.h"
+#include "AppProcessChecker.h"
 #include "AudioChannelService.h"
 #include "BlobParent.h"
 #include "CrashReporterParent.h"
@@ -32,6 +33,7 @@
 #include "HandlerServiceParent.h"
 #include "IHistory.h"
 #include "imgIContainer.h"
+#include "mozIApplication.h"
 #if defined(XP_WIN) && defined(ACCESSIBILITY)
 #include "mozilla/a11y/AccessibleWrap.h"
 #include "mozilla/WindowsVersion.h"
@@ -156,6 +158,7 @@
 #include "nsThreadUtils.h"
 #include "nsToolkitCompsCID.h"
 #include "nsWidgetsCID.h"
+#include "PreallocatedProcessManager.h"
 #include "ProcessPriorityManager.h"
 #include "SandboxHal.h"
 #include "ScreenManagerParent.h"
@@ -204,14 +207,6 @@
 
 #ifdef MOZ_WIDGET_ANDROID
 # include "AndroidBridge.h"
-#endif
-
-#ifdef MOZ_WIDGET_GONK
-#include "nsIVolume.h"
-#include "nsVolumeService.h"
-#include "nsIVolumeService.h"
-#include "SpeakerManagerService.h"
-using namespace mozilla::system;
 #endif
 
 #ifdef MOZ_WIDGET_GTK
@@ -502,7 +497,8 @@ ContentParentsMemoryReporter::CollectReports(
   return NS_OK;
 }
 
-nsTArray<ContentParent*>* ContentParent::sBrowserContentParents;
+nsDataHashtable<nsStringHashKey, ContentParent*>* ContentParent::sAppContentParents;
+nsTArray<ContentParent*>* ContentParent::sNonAppContentParents;
 nsTArray<ContentParent*>* ContentParent::sLargeAllocationContentParents;
 nsTArray<ContentParent*>* ContentParent::sPrivateContent;
 StaticAutoPtr<LinkedList<ContentParent> > ContentParent::sContentParents;
@@ -520,6 +516,11 @@ static bool sDisableUnsafeCPOWWarnings = false;
 
 
 static uint64_t gContentChildID = 1;
+
+
+
+
+#define MAGIC_PREALLOCATED_APP_MANIFEST_URL NS_LITERAL_STRING("{{template}}")
 
 static const char* sObserverTopics[] = {
   "xpcom-shutdown",
@@ -550,6 +551,77 @@ static const char* sObserverTopics[] = {
 #endif
   "cacheservice:empty-cache",
 };
+
+
+
+
+ already_AddRefed<ContentParent>
+ContentParent::PreallocateAppProcess()
+{
+  RefPtr<ContentParent> process =
+    new ContentParent( nullptr,
+                       nullptr,
+                       false,
+                       true);
+
+  if (!process->LaunchSubprocess(PROCESS_PRIORITY_PREALLOC)) {
+    return nullptr;
+  }
+
+  process->Init();
+  return process.forget();
+}
+
+ already_AddRefed<ContentParent>
+ContentParent::GetNewOrPreallocatedAppProcess(mozIApplication* aApp,
+                                              ProcessPriority aInitialPriority,
+                                              ContentParent* aOpener,
+                                               bool* aTookPreAllocated)
+{
+  MOZ_ASSERT(aApp);
+  RefPtr<ContentParent> process = PreallocatedProcessManager::Take();
+
+  if (process) {
+    if (!process->SetPriorityAndCheckIsAlive(aInitialPriority)) {
+      
+      
+      process->KillHard("GetNewOrPreallocatedAppProcess");
+    }
+    else {
+      nsAutoString manifestURL;
+      if (NS_FAILED(aApp->GetManifestURL(manifestURL))) {
+        NS_ERROR("Failed to get manifest URL");
+        return nullptr;
+      }
+      process->TransformPreallocatedIntoApp(aOpener, manifestURL);
+      process->ForwardKnownInfo();
+
+      if (aTookPreAllocated) {
+        *aTookPreAllocated = true;
+      }
+      return process.forget();
+    }
+  }
+
+  NS_WARNING("Unable to use pre-allocated app process");
+  process = new ContentParent(aApp,
+                               aOpener,
+                               false,
+                               false);
+
+  if (!process->LaunchSubprocess(aInitialPriority)) {
+    return nullptr;
+  }
+
+  process->Init();
+  process->ForwardKnownInfo();
+
+  if (aTookPreAllocated) {
+    *aTookPreAllocated = false;
+  }
+
+  return process.forget();
+}
 
  void
 ContentParent::StartUp()
@@ -583,6 +655,9 @@ ContentParent::StartUp()
   BlobParent::Startup(BlobParent::FriendKey());
 
   BackgroundChild::Startup();
+
+  
+  PreallocatedProcessManager::AllocateAfterDelay();
 
   sDisableUnsafeCPOWWarnings = PR_GetEnv("DISABLE_UNSAFE_CPOW_WARNINGS");
 
@@ -669,10 +744,10 @@ ContentParent::GetNewOrUsedBrowserProcess(bool aForBrowserElement,
 
     maxContentParents = Preferences::GetInt("dom.ipc.dedicatedProcessCount", 2);
   } else {
-    if (!sBrowserContentParents) {
-      sBrowserContentParents = new nsTArray<ContentParent*>();
+    if (!sNonAppContentParents) {
+      sNonAppContentParents = new nsTArray<ContentParent*>();
     }
-    contentParents = sBrowserContentParents;
+    contentParents = sNonAppContentParents;
 
     maxContentParents = Preferences::GetInt("dom.ipc.processCount", 1);
   }
@@ -688,7 +763,7 @@ ContentParent::GetNewOrUsedBrowserProcess(bool aForBrowserElement,
     uint32_t currIdx = startIdx;
     do {
       RefPtr<ContentParent> p = (*contentParents)[currIdx];
-      NS_ASSERTION(p->IsAlive(), "Non-alive contentparent in sBrowserContentParents?");
+      NS_ASSERTION(p->IsAlive(), "Non-alive contentparent in sNonAppContntParents?");
       if (p->mOpener == aOpener) {
         return p.forget();
       }
@@ -696,14 +771,23 @@ ContentParent::GetNewOrUsedBrowserProcess(bool aForBrowserElement,
     } while (currIdx != startIdx);
   }
 
-  RefPtr<ContentParent> p = new ContentParent(aOpener,
-                                              aForBrowserElement);
+  
+  RefPtr<ContentParent> p = PreallocatedProcessManager::Take();
+  if (p) {
+    p->TransformPreallocatedIntoBrowser(aOpener);
+  } else {
+    
+    p = new ContentParent( nullptr,
+                          aOpener,
+                          aForBrowserElement,
+                           false);
 
-  if (!p->LaunchSubprocess(aPriority)) {
-    return nullptr;
+    if (!p->LaunchSubprocess(aPriority)) {
+      return nullptr;
+    }
+
+    p->Init();
   }
-
-  p->Init();
 
   p->mLargeAllocationProcess = aLargeAllocationProcess;
 
@@ -759,11 +843,18 @@ ContentParent::SendAsyncUpdate(nsIWidget* aWidget)
 }
 #endif 
 
+bool
+ContentParent::PreallocatedProcessReady()
+{
+  return true;
+}
+
 mozilla::ipc::IPCResult
 ContentParent::RecvCreateChildProcess(const IPCTabContext& aContext,
                                       const hal::ProcessPriority& aPriority,
                                       const TabId& aOpenerTabId,
                                       ContentParentId* aCpId,
+                                      bool* aIsForApp,
                                       bool* aIsForBrowser,
                                       TabId* aTabId)
 {
@@ -781,16 +872,24 @@ ContentParent::RecvCreateChildProcess(const IPCTabContext& aContext,
     return IPC_FAIL_NO_REASON(this);
   }
 
-  cp = GetNewOrUsedBrowserProcess( true,
-                                  aPriority, this);
+  nsCOMPtr<mozIApplication> ownApp = tc.GetTabContext().GetOwnApp();
+  if (ownApp) {
+    cp = GetNewOrPreallocatedAppProcess(ownApp, aPriority, this);
+  }
+  else {
+   cp = GetNewOrUsedBrowserProcess( true,
+                                   aPriority, this);
+  }
 
   if (!cp) {
     *aCpId = 0;
+    *aIsForApp = false;
     *aIsForBrowser = false;
     return IPC_OK();
   }
 
   *aCpId = cp->ChildID();
+  *aIsForApp = cp->IsForApp();
   *aIsForBrowser = cp->IsForBrowser();
 
   ContentProcessManager *cpm = ContentProcessManager::GetSingleton();
@@ -939,10 +1038,10 @@ ContentParent::RecvFindPlugins(const uint32_t& aPluginEpoch,
 }
 
  TabParent*
-ContentParent::CreateBrowser(const TabContext& aContext,
-                             Element* aFrameElement,
-                             ContentParent* aOpenerContentParent,
-                             bool aFreshProcess)
+ContentParent::CreateBrowserOrApp(const TabContext& aContext,
+                                  Element* aFrameElement,
+                                  ContentParent* aOpenerContentParent,
+                                  bool aFreshProcess)
 {
   PROFILER_LABEL_FUNC(js::ProfileEntry::Category::OTHER);
 
@@ -965,75 +1064,222 @@ ContentParent::CreateBrowser(const TabContext& aContext,
     openerTabId = TabParent::GetTabIdFrom(docShell);
   }
 
-  RefPtr<nsIContentParent> constructorSender;
-  if (isInContentProcess) {
-    MOZ_ASSERT(aContext.IsMozBrowserElement());
-    constructorSender = CreateContentBridgeParent(aContext, initialPriority,
-                                                  openerTabId, &tabId);
-  } else {
-    if (aOpenerContentParent) {
-      constructorSender = aOpenerContentParent;
+  if (aContext.IsMozBrowserElement() || !aContext.HasOwnApp()) {
+    RefPtr<nsIContentParent> constructorSender;
+    if (isInContentProcess) {
+      MOZ_ASSERT(aContext.IsMozBrowserElement());
+      constructorSender = CreateContentBridgeParent(aContext, initialPriority,
+                                                    openerTabId, &tabId);
     } else {
-      constructorSender =
-        GetNewOrUsedBrowserProcess(aContext.IsMozBrowserElement(),
-                                   initialPriority, nullptr, aFreshProcess);
-      if (!constructorSender) {
+      if (aOpenerContentParent) {
+        constructorSender = aOpenerContentParent;
+      } else {
+        constructorSender =
+          GetNewOrUsedBrowserProcess(aContext.IsMozBrowserElement(),
+                                     initialPriority,
+                                     nullptr,
+                                     aFreshProcess);
+        if (!constructorSender) {
+          return nullptr;
+        }
+      }
+      tabId = AllocateTabId(openerTabId,
+                            aContext.AsIPCTabContext(),
+                            constructorSender->ChildID());
+    }
+    if (constructorSender) {
+      nsCOMPtr<nsIDocShellTreeOwner> treeOwner;
+      docShell->GetTreeOwner(getter_AddRefs(treeOwner));
+      if (!treeOwner) {
         return nullptr;
       }
+
+      nsCOMPtr<nsIWebBrowserChrome> wbc = do_GetInterface(treeOwner);
+      if (!wbc) {
+        return nullptr;
+      }
+      uint32_t chromeFlags = 0;
+      wbc->GetChromeFlags(&chromeFlags);
+
+      nsCOMPtr<nsILoadContext> loadContext = do_QueryInterface(docShell);
+      if (loadContext && loadContext->UsePrivateBrowsing()) {
+        chromeFlags |= nsIWebBrowserChrome::CHROME_PRIVATE_WINDOW;
+      }
+      if (docShell->GetAffectPrivateSessionLifetime()) {
+        chromeFlags |= nsIWebBrowserChrome::CHROME_PRIVATE_LIFETIME;
+      }
+
+      if (tabId == 0) {
+        return nullptr;
+      }
+      RefPtr<TabParent> tp(new TabParent(constructorSender, tabId,
+                                         aContext, chromeFlags));
+      tp->SetInitedByParent();
+
+      PBrowserParent* browser =
+      constructorSender->SendPBrowserConstructor(
+        
+        tp.forget().take(), tabId,
+        aContext.AsIPCTabContext(),
+        chromeFlags,
+        constructorSender->ChildID(),
+        constructorSender->IsForApp(),
+        constructorSender->IsForBrowser());
+
+      if (aFreshProcess) {
+        Unused << browser->SendSetFreshProcess();
+      }
+
+      if (browser) {
+        RefPtr<TabParent> constructedTabParent = TabParent::GetFrom(browser);
+        constructedTabParent->SetOwnerElement(aFrameElement);
+        return constructedTabParent;
+      }
     }
-    tabId = AllocateTabId(openerTabId,
-                          aContext.AsIPCTabContext(),
-                          constructorSender->ChildID());
+    return nullptr;
   }
-  if (constructorSender) {
-    nsCOMPtr<nsIDocShellTreeOwner> treeOwner;
-    docShell->GetTreeOwner(getter_AddRefs(treeOwner));
-    if (!treeOwner) {
+
+  
+  
+  
+  RefPtr<nsIContentParent> parent;
+  bool reused = false;
+  bool tookPreallocated = false;
+  nsAutoString manifestURL;
+
+  if (isInContentProcess) {
+    parent = CreateContentBridgeParent(aContext,
+                                       initialPriority,
+                                       openerTabId,
+                                       &tabId);
+  }
+  else {
+    nsCOMPtr<mozIApplication> ownApp = aContext.GetOwnApp();
+
+    if (!sAppContentParents) {
+      sAppContentParents =
+        new nsDataHashtable<nsStringHashKey, ContentParent*>();
+    }
+
+    
+    
+    if (NS_FAILED(ownApp->GetManifestURL(manifestURL))) {
+      NS_ERROR("Failed to get manifest URL");
       return nullptr;
     }
 
-    nsCOMPtr<nsIWebBrowserChrome> wbc = do_GetInterface(treeOwner);
-    if (!wbc) {
-      return nullptr;
-    }
-    uint32_t chromeFlags = 0;
-    wbc->GetChromeFlags(&chromeFlags);
+    RefPtr<ContentParent> p = sAppContentParents->Get(manifestURL);
 
-    nsCOMPtr<nsILoadContext> loadContext = do_QueryInterface(docShell);
-    if (loadContext && loadContext->UsePrivateBrowsing()) {
-      chromeFlags |= nsIWebBrowserChrome::CHROME_PRIVATE_WINDOW;
-    }
-    if (docShell->GetAffectPrivateSessionLifetime()) {
-      chromeFlags |= nsIWebBrowserChrome::CHROME_PRIVATE_LIFETIME;
+    if (!p && Preferences::GetBool("dom.ipc.reuse_parent_app")) {
+      nsAutoString parentAppManifestURL;
+      aFrameElement->GetAttr(kNameSpaceID_None,
+                             nsGkAtoms::parentapp, parentAppManifestURL);
+      nsAdoptingString systemAppManifestURL =
+        Preferences::GetString("b2g.system_manifest_url");
+      nsCOMPtr<nsIAppsService> appsService =
+        do_GetService(APPS_SERVICE_CONTRACTID);
+      if (!parentAppManifestURL.IsEmpty() &&
+        !parentAppManifestURL.Equals(systemAppManifestURL) &&
+        appsService) {
+        nsCOMPtr<mozIApplication> parentApp;
+        nsCOMPtr<mozIApplication> app;
+        appsService->GetAppByManifestURL(parentAppManifestURL,
+                                         getter_AddRefs(parentApp));
+        appsService->GetAppByManifestURL(manifestURL,
+                                         getter_AddRefs(app));
+
+        
+        unsigned short parentAppStatus = 0;
+        unsigned short appStatus = 0;
+        if (app &&
+          NS_SUCCEEDED(app->GetAppStatus(&appStatus)) &&
+          appStatus == nsIPrincipal::APP_STATUS_CERTIFIED &&
+          parentApp &&
+          NS_SUCCEEDED(parentApp->GetAppStatus(&parentAppStatus)) &&
+          parentAppStatus == nsIPrincipal::APP_STATUS_CERTIFIED) {
+          
+          p = sAppContentParents->Get(parentAppManifestURL);
+        }
+      }
     }
 
-    if (tabId == 0) {
-      return nullptr;
-    }
-    RefPtr<TabParent> tp(new TabParent(constructorSender, tabId,
-                                       aContext, chromeFlags));
-    tp->SetInitedByParent();
-
-    PBrowserParent* browser =
-    constructorSender->SendPBrowserConstructor(
+    if (p) {
       
-      tp.forget().take(), tabId,
-      aContext.AsIPCTabContext(),
-      chromeFlags,
-      constructorSender->ChildID(),
-      constructorSender->IsForBrowser());
-
-    if (aFreshProcess) {
-      Unused << browser->SendSetFreshProcess();
+      
+      
+      if (!p->SetPriorityAndCheckIsAlive(initialPriority)) {
+        p = nullptr;
+      }
     }
 
-    if (browser) {
-      RefPtr<TabParent> constructedTabParent = TabParent::GetFrom(browser);
-      constructedTabParent->SetOwnerElement(aFrameElement);
-      return constructedTabParent;
+    reused = !!p;
+    if (!p) {
+      p = GetNewOrPreallocatedAppProcess(ownApp, initialPriority, nullptr,
+                                         &tookPreallocated);
+      MOZ_ASSERT(p);
+      sAppContentParents->Put(manifestURL, p);
     }
+    tabId = AllocateTabId(openerTabId, aContext.AsIPCTabContext(),
+                          p->ChildID());
+    parent = static_cast<nsIContentParent*>(p);
   }
-  return nullptr;
+
+  if (!parent || (tabId == 0)) {
+    return nullptr;
+  }
+
+  uint32_t chromeFlags = 0;
+
+  RefPtr<TabParent> tp = new TabParent(parent, tabId, aContext, chromeFlags);
+  tp->SetInitedByParent();
+  PBrowserParent* browser = parent->SendPBrowserConstructor(
+    
+    RefPtr<TabParent>(tp).forget().take(),
+    tabId,
+    aContext.AsIPCTabContext(),
+    chromeFlags,
+    parent->ChildID(),
+    parent->IsForApp(),
+    parent->IsForBrowser());
+
+  if (aFreshProcess) {
+    Unused << browser->SendSetFreshProcess();
+  }
+
+  if (browser) {
+    RefPtr<TabParent> constructedTabParent = TabParent::GetFrom(browser);
+    constructedTabParent->SetOwnerElement(aFrameElement);
+  }
+
+  if (isInContentProcess) {
+    
+    return TabParent::GetFrom(browser);
+  }
+
+  if (!browser) {
+    
+    
+    if (!reused) {
+      
+      parent->AsContentParent()->KillHard("CreateBrowserOrApp");
+      sAppContentParents->Remove(manifestURL);
+      parent = nullptr;
+    }
+
+    
+    
+    
+    
+    if (tookPreallocated) {
+      return ContentParent::CreateBrowserOrApp(aContext, aFrameElement,
+                                               aOpenerContentParent);
+    }
+
+    
+    return nullptr;
+  }
+
+  return TabParent::GetFrom(browser);
 }
 
  ContentBridgeParent*
@@ -1046,11 +1292,13 @@ ContentParent::CreateContentBridgeParent(const TabContext& aContext,
 
   ContentChild* child = ContentChild::GetSingleton();
   ContentParentId cpId;
+  bool isForApp;
   bool isForBrowser;
   if (!child->SendCreateChildProcess(aContext.AsIPCTabContext(),
                                      aPriority,
                                      aOpenerTabId,
                                      &cpId,
+                                     &isForApp,
                                      &isForBrowser,
                                      aTabId)) {
     return nullptr;
@@ -1063,6 +1311,7 @@ ContentParent::CreateContentBridgeParent(const TabContext& aContext,
   }
   ContentBridgeParent* parent = child->GetLastBridge();
   parent->SetChildID(cpId);
+  parent->SetIsForApp(isForApp);
   parent->SetIsForBrowser(isForBrowser);
   return parent;
 }
@@ -1225,6 +1474,51 @@ ContentParent::SetPriorityAndCheckIsAlive(ProcessPriority aPriority)
   return true;
 }
 
+
+static void
+TryGetNameFromManifestURL(const nsAString& aManifestURL,
+              nsAString& aName)
+{
+  aName.Truncate();
+  if (aManifestURL.IsEmpty() ||
+    aManifestURL == MAGIC_PREALLOCATED_APP_MANIFEST_URL) {
+    return;
+  }
+
+  nsCOMPtr<nsIAppsService> appsService = do_GetService(APPS_SERVICE_CONTRACTID);
+  NS_ENSURE_TRUE_VOID(appsService);
+
+  nsCOMPtr<mozIApplication> app;
+  appsService->GetAppByManifestURL(aManifestURL, getter_AddRefs(app));
+
+  if (!app) {
+    return;
+  }
+
+  app->GetName(aName);
+}
+
+void
+ContentParent::TransformPreallocatedIntoApp(ContentParent* aOpener,
+                                            const nsAString& aAppManifestURL)
+{
+  MOZ_ASSERT(IsPreallocated());
+  mMetamorphosed = true;
+  mOpener = aOpener;
+  mAppManifestURL = aAppManifestURL;
+  TryGetNameFromManifestURL(aAppManifestURL, mAppName);
+}
+
+void
+ContentParent::TransformPreallocatedIntoBrowser(ContentParent* aOpener)
+{
+  
+  mMetamorphosed = true;
+  mOpener = aOpener;
+  mAppManifestURL.Truncate();
+  mIsForBrowser = true;
+}
+
 void
 ContentParent::ShutDownProcess(ShutDownMethod aMethod)
 {
@@ -1308,19 +1602,29 @@ ContentParent::ShutDownMessageManager()
 void
 ContentParent::MarkAsDead()
 {
-  if (sBrowserContentParents) {
-    sBrowserContentParents->RemoveElement(this);
-    if (!sBrowserContentParents->Length()) {
-      delete sBrowserContentParents;
-      sBrowserContentParents = nullptr;
+  if (!mAppManifestURL.IsEmpty()) {
+    if (sAppContentParents) {
+      sAppContentParents->Remove(mAppManifestURL);
+      if (!sAppContentParents->Count()) {
+        delete sAppContentParents;
+        sAppContentParents = nullptr;
+      }
     }
-  }
+  } else {
+    if (sNonAppContentParents) {
+      sNonAppContentParents->RemoveElement(this);
+      if (!sNonAppContentParents->Length()) {
+        delete sNonAppContentParents;
+        sNonAppContentParents = nullptr;
+      }
+    }
 
-  if (sLargeAllocationContentParents) {
-    sLargeAllocationContentParents->RemoveElement(this);
-    if (!sLargeAllocationContentParents->Length()) {
-      delete sLargeAllocationContentParents;
-      sLargeAllocationContentParents = nullptr;
+    if (sLargeAllocationContentParents) {
+      sLargeAllocationContentParents->RemoveElement(this);
+      if (!sLargeAllocationContentParents->Length()) {
+        delete sLargeAllocationContentParents;
+        sLargeAllocationContentParents = nullptr;
+      }
     }
   }
 
@@ -1560,6 +1864,17 @@ ContentParent::ActorDestroy(ActorDestroyReason why)
 
         
         
+        
+        
+        
+        
+        if (!mAppManifestURL.IsEmpty()) {
+          crashReporter->AnnotateCrashReport(NS_LITERAL_CSTRING("URL"),
+                                             NS_ConvertUTF16toUTF8(mAppManifestURL));
+        }
+
+        
+        
         if (!mCreatedPairedMinidumps) {
           crashReporter->GenerateCrashReport(this, nullptr);
         }
@@ -1649,7 +1964,7 @@ ContentParent::NotifyTabDestroying(const TabId& aTabId,
         return;
     }
 
-    uint32_t numberOfParents = sBrowserContentParents ? sBrowserContentParents->Length() : 0;
+    uint32_t numberOfParents = sNonAppContentParents ? sNonAppContentParents->Length() : 0;
     int32_t processesToKeepAlive = Preferences::GetInt("dom.ipc.keepProcessesAlive", 0);
     if (!cp->mLargeAllocationProcess && static_cast<int32_t>(numberOfParents) <= processesToKeepAlive) {
       return;
@@ -1706,7 +2021,7 @@ ContentParent::NotifyTabDestroyed(const TabId& aTabId,
 
   
   
-  uint32_t numberOfParents = sBrowserContentParents ? sBrowserContentParents->Length() : 0;
+  uint32_t numberOfParents = sNonAppContentParents ? sNonAppContentParents->Length() : 0;
   int32_t processesToKeepAlive = Preferences::GetInt("dom.ipc.keepProcessesAlive", 0);
   bool shouldKeepAliveAny = !mLargeAllocationProcess && processesToKeepAlive > 0;
   bool shouldKeepAliveThis = shouldKeepAliveAny && static_cast<int32_t>(numberOfParents) <= processesToKeepAlive;
@@ -1795,14 +2110,20 @@ ContentParent::LaunchSubprocess(ProcessPriority aInitialPriority )
   return true;
 }
 
-ContentParent::ContentParent(ContentParent* aOpener,
-                             bool aIsForBrowser)
+ContentParent::ContentParent(mozIApplication* aApp,
+                             ContentParent* aOpener,
+                             bool aIsForBrowser,
+                             bool aIsForPreallocated)
   : nsIContentParent()
   , mOpener(aOpener)
   , mIsForBrowser(aIsForBrowser)
   , mLargeAllocationProcess(false)
 {
   InitializeMembers();  
+
+  
+  
+  MOZ_ASSERT(!!aApp + aIsForBrowser + aIsForPreallocated <= 1);
 
   mMetamorphosed = true;
 
@@ -1811,6 +2132,13 @@ ContentParent::ContentParent(ContentParent* aOpener,
     sContentParents = new LinkedList<ContentParent>();
   }
   sContentParents->insertBack(this);
+
+  if (aApp) {
+    aApp->GetManifestURL(mAppManifestURL);
+    aApp->GetName(mAppName);
+  } else if (aIsForPreallocated) {
+    mAppManifestURL = MAGIC_PREALLOCATED_APP_MANIFEST_URL;
+  }
 
   
   
@@ -1838,10 +2166,19 @@ ContentParent::~ContentParent()
 
   
   MOZ_ASSERT(!sPrivateContent || !sPrivateContent->Contains(this));
-  MOZ_ASSERT((!sBrowserContentParents ||
-              !sBrowserContentParents->Contains(this)) &&
-             (!sLargeAllocationContentParents ||
-              !sLargeAllocationContentParents->Contains(this)));
+  if (mAppManifestURL.IsEmpty()) {
+    MOZ_ASSERT((!sNonAppContentParents ||
+                !sNonAppContentParents->Contains(this)) &&
+               (!sLargeAllocationContentParents ||
+                !sLargeAllocationContentParents->Contains(this)));
+  } else {
+    
+    
+    
+    
+    MOZ_ASSERT(!sAppContentParents ||
+               sAppContentParents->Get(mAppManifestURL) != this);
+  }
 }
 
 void
@@ -1914,6 +2251,11 @@ ContentParent::InitInternal(ProcessPriority aInitialPriority,
 
       gpm->AddListener(this);
     }
+  }
+
+  if (gAppData) {
+    
+    Unused << SendAppInit();
   }
 
   nsStyleSheetService *sheetService = nsStyleSheetService::GetInstance();
@@ -2004,6 +2346,12 @@ bool
 ContentParent::IsAlive() const
 {
   return mIsAlive;
+}
+
+bool
+ContentParent::IsForApp() const
+{
+  return !mAppManifestURL.IsEmpty();
 }
 
 int32_t
@@ -2276,6 +2624,17 @@ ContentParent::RecvGetShowPasswordSetting(bool* showPassword)
 }
 
 mozilla::ipc::IPCResult
+ContentParent::RecvFirstIdle()
+{
+  
+  
+  
+  
+  PreallocatedProcessManager::AllocateAfterDelay();
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult
 ContentParent::RecvAudioChannelChangeDefVolChannel(const int32_t& aChannel,
                                                    const bool& aHidden)
 {
@@ -2524,9 +2883,10 @@ ContentParent::AllocPProcessHangMonitorParent(Transport* aTransport,
 
 mozilla::ipc::IPCResult
 ContentParent::RecvGetProcessAttributes(ContentParentId* aCpId,
-                                        bool* aIsForBrowser)
+                                        bool* aIsForApp, bool* aIsForBrowser)
 {
   *aCpId = mChildID;
+  *aIsForApp = IsForApp();
   *aIsForBrowser = mIsForBrowser;
 
   return IPC_OK();
@@ -2540,8 +2900,7 @@ ContentParent::RecvGetXPCOMProcessAttributes(bool* aIsOffline,
                                              InfallibleTArray<nsString>* dictionaries,
                                              ClipboardCapabilities* clipboardCaps,
                                              DomainPolicyClone* domainPolicy,
-                                             StructuredCloneData* aInitialData,
-                                             InfallibleTArray<FontFamilyListEntry>* fontFamilies)
+                                             StructuredCloneData* aInitialData)
 {
   nsCOMPtr<nsIIOService> io(do_GetIOService());
   MOZ_ASSERT(io, "No IO service?");
@@ -2598,9 +2957,6 @@ ContentParent::RecvGetXPCOMProcessAttributes(bool* aIsOffline,
     }
   }
 
-  
-  gfxPlatform::GetPlatform()->GetSystemFontFamilyList(fontFamilies);
-
   return IPC_OK();
 }
 
@@ -2622,12 +2978,14 @@ ContentParent::AllocPBrowserParent(const TabId& aTabId,
                                    const IPCTabContext& aContext,
                                    const uint32_t& aChromeFlags,
                                    const ContentParentId& aCpId,
+                                   const bool& aIsForApp,
                                    const bool& aIsForBrowser)
 {
   return nsIContentParent::AllocPBrowserParent(aTabId,
                                                aContext,
                                                aChromeFlags,
                                                aCpId,
+                                               aIsForApp,
                                                aIsForBrowser);
 }
 
@@ -2641,6 +2999,9 @@ PDeviceStorageRequestParent*
 ContentParent::AllocPDeviceStorageRequestParent(const DeviceStorageParams& aParams)
 {
   RefPtr<DeviceStorageRequestParent> result = new DeviceStorageRequestParent(aParams);
+  if (!result->EnsureRequiredPermissions(this)) {
+    return nullptr;
+  }
   result->Dispatch();
   return result.forget().take();
 }
@@ -2771,14 +3132,27 @@ ContentParent::KillHard(const char* aReason)
                         otherProcessHandle, true));
 }
 
+bool
+ContentParent::IsPreallocated() const
+{
+  return mAppManifestURL == MAGIC_PREALLOCATED_APP_MANIFEST_URL;
+}
+
 void
 ContentParent::FriendlyName(nsAString& aName, bool aAnonymize)
 {
   aName.Truncate();
-  if (mIsForBrowser) {
+  if (IsPreallocated()) {
+    aName.AssignLiteral("(Preallocated)");
+  } else if (mIsForBrowser) {
     aName.AssignLiteral("Browser");
   } else if (aAnonymize) {
     aName.AssignLiteral("<anonymized-name>");
+  } else if (!mAppName.IsEmpty()) {
+    aName = mAppName;
+  } else if (!mAppManifestURL.IsEmpty()) {
+    aName.AssignLiteral("Unknown app: ");
+    aName.Append(mAppManifestURL);
   } else {
     aName.AssignLiteral("???");
   }
@@ -3135,35 +3509,6 @@ ContentParent::RecvPSpeechSynthesisConstructor(PSpeechSynthesisParent* aActor)
 #else
   return false;
 #endif
-}
-
-mozilla::ipc::IPCResult
-ContentParent::RecvSpeakerManagerGetSpeakerStatus(bool* aValue)
-{
-#ifdef MOZ_WIDGET_GONK
-  *aValue = false;
-  RefPtr<SpeakerManagerService> service =
-  SpeakerManagerService::GetOrCreateSpeakerManagerService();
-  MOZ_ASSERT(service);
-
-  *aValue = service->GetSpeakerStatus();
-  return IPC_OK();
-#endif
-  return IPC_FAIL_NO_REASON(this);
-}
-
-mozilla::ipc::IPCResult
-ContentParent::RecvSpeakerManagerForceSpeaker(const bool& aEnable)
-{
-#ifdef MOZ_WIDGET_GONK
-  RefPtr<SpeakerManagerService> service =
-  SpeakerManagerService::GetOrCreateSpeakerManagerService();
-  MOZ_ASSERT(service);
-  service->ForceSpeaker(aEnable, mChildID);
-
-  return IPC_OK();
-#endif
-  return IPC_FAIL_NO_REASON(this);
 }
 
 mozilla::ipc::IPCResult
@@ -3692,6 +4037,37 @@ ContentParent::DoSendAsyncMessage(JSContext* aCx,
   return NS_OK;
 }
 
+bool
+ContentParent::CheckPermission(const nsAString& aPermission)
+{
+  return AssertAppProcessPermission(this, NS_ConvertUTF16toUTF8(aPermission).get());
+}
+
+bool
+ContentParent::CheckManifestURL(const nsAString& aManifestURL)
+{
+  return AssertAppProcessManifestURL(this, NS_ConvertUTF16toUTF8(aManifestURL).get());
+}
+
+bool
+ContentParent::CheckAppHasPermission(const nsAString& aPermission)
+{
+  return AssertAppHasPermission(this, NS_ConvertUTF16toUTF8(aPermission).get());
+}
+
+bool
+ContentParent::CheckAppHasStatus(unsigned short aStatus)
+{
+  return AssertAppHasStatus(this, aStatus);
+}
+
+bool
+ContentParent::KillChild()
+{
+  KillHard("KillChild");
+  return true;
+}
+
 PBlobParent*
 ContentParent::SendPBlobConstructor(PBlobParent* aActor,
                                     const BlobConstructorParams& aParams)
@@ -3705,6 +4081,7 @@ ContentParent::SendPBrowserConstructor(PBrowserParent* aActor,
                                        const IPCTabContext& aContext,
                                        const uint32_t& aChromeFlags,
                                        const ContentParentId& aCpId,
+                                       const bool& aIsForApp,
                                        const bool& aIsForBrowser)
 {
   return PContentParent::SendPBrowserConstructor(aActor,
@@ -3712,6 +4089,7 @@ ContentParent::SendPBrowserConstructor(PBrowserParent* aActor,
                                                  aContext,
                                                  aChromeFlags,
                                                  aCpId,
+                                                 aIsForApp,
                                                  aIsForBrowser);
 }
 
@@ -3856,9 +4234,12 @@ ContentParent::RecvRecordingDeviceEvents(const nsString& aRecordingStatus,
     
     RefPtr<nsHashPropertyBag> props = new nsHashPropertyBag();
     props->SetPropertyAsUint64(NS_LITERAL_STRING("childID"), ChildID());
+    props->SetPropertyAsBool(NS_LITERAL_STRING("isApp"), IsForApp());
     props->SetPropertyAsBool(NS_LITERAL_STRING("isAudio"), aIsAudio);
     props->SetPropertyAsBool(NS_LITERAL_STRING("isVideo"), aIsVideo);
-    props->SetPropertyAsAString(NS_LITERAL_STRING("requestURL"), aPageURL);
+
+    nsString requestURL = IsForApp() ? AppManifestURL() : aPageURL;
+    props->SetPropertyAsAString(NS_LITERAL_STRING("requestURL"), requestURL);
 
     obs->NotifyObservers((nsIPropertyBag2*) props,
                          "recording-device-ipc-events",
@@ -4313,7 +4694,7 @@ ContentParent::RecvCreateWindow(PBrowserParent* aThisTab,
     thisTabParent = TabParent::GetFrom(aThisTab);
   }
 
-  if (NS_WARN_IF(thisTabParent && thisTabParent->IsMozBrowser())) {
+  if (NS_WARN_IF(thisTabParent && thisTabParent->IsMozBrowserOrApp())) {
     return IPC_FAIL_NO_REASON(this);
   }
 
