@@ -16,6 +16,7 @@ use servo_geometry::ScreenPx;
 use servo_url::ServoUrl;
 use std::fmt::{Debug, Error, Formatter};
 use style_traits::cursor::Cursor;
+use webrender_traits::ScrollLocation;
 
 #[derive(Clone)]
 pub enum MouseWindowEvent {
@@ -62,7 +63,7 @@ pub enum WindowEvent {
     Touch(TouchEventType, TouchId, TypedPoint2D<f32, DevicePixel>),
     
     
-    Scroll(TypedPoint2D<f32, DevicePixel>, TypedPoint2D<i32, DevicePixel>, TouchEventType),
+    Scroll(ScrollLocation, TypedPoint2D<i32, DevicePixel>, TouchEventType),
     
     Zoom(f32),
     
