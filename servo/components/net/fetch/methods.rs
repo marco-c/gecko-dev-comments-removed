@@ -63,7 +63,7 @@ type DoneChannel = Option<(Sender<Data>, Receiver<Data>)>;
 
 pub fn fetch<UI: 'static + UIProvider>(request: Rc<Request>,
                                        target: &mut Target,
-                                       context: FetchContext<UI>)
+                                       context: &FetchContext<UI>)
                                        -> Response {
     fetch_with_cors_cache(request, &mut CORSCache::new(), target, context)
 }
@@ -71,7 +71,7 @@ pub fn fetch<UI: 'static + UIProvider>(request: Rc<Request>,
 pub fn fetch_with_cors_cache<UI: 'static + UIProvider>(request: Rc<Request>,
                                                        cache: &mut CORSCache,
                                                        target: &mut Target,
-                                                       context: FetchContext<UI>)
+                                                       context: &FetchContext<UI>)
                                                        -> Response {
     
     if request.window.get() == Window::Client {
