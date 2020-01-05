@@ -152,10 +152,6 @@ const nsHTMLElement gHTMLElements[] = {
      kPhrase, false
   },
   {
-             eHTMLTag_dialog,
-     kBlock, false
-  },
-  {
              eHTMLTag_dir,
      kList, false
   },
