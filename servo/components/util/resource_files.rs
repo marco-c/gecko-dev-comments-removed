@@ -34,6 +34,8 @@ pub fn resources_dir_path() -> PathBuf {
             
             
             let mut path = env::current_exe().expect("can't get exe path");
+            
+            path = path.canonicalize().expect("path does not exist");
             path.pop();
             path.push("resources");
             if !path.is_dir() {   
