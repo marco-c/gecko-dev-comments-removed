@@ -14,13 +14,6 @@
 #include "nsCycleCollectionParticipant.h"
 #include "nsWrapperCache.h"
 
-
-
-
-#ifdef CreateDirectory
-#undef CreateDirectory
-#endif
-
 namespace mozilla {
 namespace dom {
 
@@ -64,9 +57,6 @@ public:
 
   void
   GetName(nsAString& aRetval, ErrorResult& aRv);
-
-  already_AddRefed<Promise>
-  CreateDirectory(const nsAString& aPath, ErrorResult& aRv);
 
   already_AddRefed<Promise>
   Get(const nsAString& aPath, ErrorResult& aRv);
