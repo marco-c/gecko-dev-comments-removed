@@ -140,7 +140,11 @@ public:
 
 
 
-    static void SendSetTargetAPZCNotification(nsIWidget* aWidget,
+
+
+
+
+    static bool SendSetTargetAPZCNotification(nsIWidget* aWidget,
                                               nsIDocument* aDocument,
                                               const WidgetGUIEvent& aEvent,
                                               const ScrollableLayerGuid& aGuid,

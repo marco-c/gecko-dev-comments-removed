@@ -1595,14 +1595,18 @@ TabChild::RecvRealMouseButtonEvent(const WidgetMouseEvent& aEvent,
   
   
   
+  bool pendingLayerization = false;
   if (aInputBlockId && aEvent.mFlags.mHandledByAPZ) {
     nsCOMPtr<nsIDocument> document(GetDocument());
-    APZCCallbackHelper::SendSetTargetAPZCNotification(
+    pendingLayerization = APZCCallbackHelper::SendSetTargetAPZCNotification(
       mPuppetWidget, document, aEvent, aGuid, aInputBlockId);
   }
 
   nsEventStatus unused;
   InputAPZContext context(aGuid, aInputBlockId, unused);
+  if (pendingLayerization) {
+    context.SetPendingLayerization();
+  }
 
   WidgetMouseEvent localEvent(aEvent);
   localEvent.mWidget = mPuppetWidget;

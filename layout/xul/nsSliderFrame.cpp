@@ -37,6 +37,7 @@
 #include "nsContentUtils.h"
 #include "nsLayoutUtils.h"
 #include "nsDisplayList.h"
+#include "nsRefreshDriver.h"            
 #include "mozilla/Assertions.h"         
 #include "mozilla/Preferences.h"
 #include "mozilla/LookAndFeel.h"
@@ -929,6 +930,43 @@ nsSliderMediator::HandleEvent(nsIDOMEvent* aEvent)
   return NS_OK;
 }
 
+class AsyncScrollbarDragStarter : public nsAPostRefreshObserver {
+public:
+  AsyncScrollbarDragStarter(nsIPresShell* aPresShell,
+                            nsIWidget* aWidget,
+                            const AsyncDragMetrics& aDragMetrics)
+    : mPresShell(aPresShell)
+    , mWidget(aWidget)
+    , mDragMetrics(aDragMetrics)
+  {
+  }
+  virtual ~AsyncScrollbarDragStarter() {}
+
+  void DidRefresh() override {
+    if (!mPresShell) {
+      MOZ_ASSERT_UNREACHABLE("Post-refresh observer fired again after failed attempt at unregistering it");
+      return;
+    }
+
+    mWidget->StartAsyncScrollbarDrag(mDragMetrics);
+
+    if (!mPresShell->RemovePostRefreshObserver(this)) {
+      MOZ_ASSERT_UNREACHABLE("Unable to unregister post-refresh observer! Leaking it instead of leaving garbage registered");
+      
+      mPresShell = nullptr;
+      mWidget = nullptr;
+      return;
+    }
+
+    delete this;
+  }
+
+private:
+  RefPtr<nsIPresShell> mPresShell;
+  RefPtr<nsIWidget> mWidget;
+  AsyncDragMetrics mDragMetrics;
+};
+
 bool
 nsSliderFrame::StartAPZDrag(WidgetGUIEvent* aEvent)
 {
@@ -974,8 +1012,9 @@ nsSliderFrame::StartAPZDrag(WidgetGUIEvent* aEvent)
                 scrollFrameAsScrollable->GetScrollPortRect().TopLeft();
   CSSRect sliderTrackCSS = CSSRect::FromAppUnits(sliderTrack);
 
+  nsIPresShell* shell = PresContext()->PresShell();
   uint64_t inputblockId = InputAPZContext::GetInputBlockId();
-  uint32_t presShellId = PresContext()->PresShell()->GetPresShellId();
+  uint32_t presShellId = shell->GetPresShellId();
   AsyncDragMetrics dragMetrics(scrollTargetId, presShellId, inputblockId,
                                NSAppUnitsToFloatPixels(mDragStart,
                                  float(AppUnitsPerCSSPixel())),
@@ -989,7 +1028,15 @@ nsSliderFrame::StartAPZDrag(WidgetGUIEvent* aEvent)
 
   
   
-  this->GetNearestWidget()->StartAsyncScrollbarDrag(dragMetrics);
+  bool waitForRefresh = InputAPZContext::HavePendingLayerization();
+  nsIWidget* widget = this->GetNearestWidget();
+  if (waitForRefresh) {
+    waitForRefresh = shell->AddPostRefreshObserver(
+        new AsyncScrollbarDragStarter(shell, widget, dragMetrics));
+  }
+  if (!waitForRefresh) {
+    widget->StartAsyncScrollbarDrag(dragMetrics);
+  }
   return true;
 }
 
