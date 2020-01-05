@@ -45,7 +45,6 @@
 #include "nsMediaList.h"
 #include "nsStyleUtil.h"
 #include "nsIPrincipal.h"
-#include "nsICSSUnprefixingService.h"
 #include "mozilla/Sprintf.h"
 #include "nsContentUtils.h"
 #include "nsAutoPtr.h"
@@ -69,10 +68,6 @@ typedef nsCSSProps::KTableEntry KTableEntry;
 static bool sOpentypeSVGEnabled;
 static bool sWebkitPrefixedAliasesEnabled;
 static bool sWebkitDevicePixelRatioEnabled;
-static bool sUnprefixingServiceEnabled;
-#ifdef NIGHTLY_BUILD
-static bool sUnprefixingServiceGloballyWhitelisted;
-#endif
 static bool sMozGradientsEnabled;
 static bool sControlCharVisibility;
 
@@ -802,9 +797,7 @@ protected:
 
   enum {
     eParseDeclaration_InBraces           = 1 << 0,
-    eParseDeclaration_AllowImportant     = 1 << 1,
-    
-    eParseDeclaration_FromUnprefixingSvc = 1 << 2
+    eParseDeclaration_AllowImportant     = 1 << 1
   };
   enum nsCSSContextType {
     eCSSContext_General,
@@ -826,20 +819,6 @@ protected:
   
   nsCSSKeyword LookupKeywordPrefixAware(nsAString& aKeywordStr,
                                         const KTableEntry aKeywordTable[]);
-
-  bool ShouldUseUnprefixingService() const;
-  bool ParsePropertyWithUnprefixingService(const nsAString& aPropertyName,
-                                           css::Declaration* aDeclaration,
-                                           uint32_t aFlags,
-                                           bool aMustCallValueAppended,
-                                           bool* aChanged,
-                                           nsCSSContextType aContext);
-  
-  
-  
-  
-  bool ParseWebkitPrefixedGradientWithService(nsAString& aPrefixedFuncName,
-                                              nsCSSValue& aValue);
 
   bool ParseProperty(nsCSSPropertyID aPropID);
   bool ParsePropertyByFunction(nsCSSPropertyID aPropID);
@@ -1515,7 +1494,6 @@ protected:
   
   bool mSheetPrincipalRequired;
 
-  
   
   
   
@@ -7151,7 +7129,9 @@ CSSParserImpl::LookupKeywordPrefixAware(nsAString& aKeywordStr,
     
     if ((keyword == eCSSKeyword__webkit_box ||
          keyword == eCSSKeyword__webkit_inline_box)) {
-      const bool usingUnprefixingService = ShouldUseUnprefixingService();
+      const bool usingUnprefixingService = false;
+      
+      
       if (sWebkitPrefixedAliasesEnabled || usingUnprefixingService) {
         
         
@@ -7180,10 +7160,9 @@ CSSParserImpl::LookupKeywordPrefixAware(nsAString& aKeywordStr,
     if (mWebkitBoxUnprefixState == eHaveUnprefixed &&
         (keyword == eCSSKeyword__moz_box ||
          keyword == eCSSKeyword__moz_inline_box)) {
-      MOZ_ASSERT(sWebkitPrefixedAliasesEnabled || ShouldUseUnprefixingService(),
-                 "mDidUnprefixWebkitBoxInEarlierDecl should only be set if "
-                 "we're supporting webkit-prefixed aliases, or if we're using "
-                 "the css unprefixing service on this site");
+      MOZ_ASSERT(sWebkitPrefixedAliasesEnabled,
+                 "The only way mWebkitBoxUnprefixState can be eHaveUnprefixed "
+                 "is if we're supporting webkit-prefixed aliases");
       if (sWebkitPrefixedAliasesEnabled) {
         return (keyword == eCSSKeyword__moz_box) ?
           eCSSKeyword__webkit_box : eCSSKeyword__webkit_inline_box;
@@ -7196,153 +7175,6 @@ CSSParserImpl::LookupKeywordPrefixAware(nsAString& aKeywordStr,
   }
 
   return keyword;
-}
-
-bool
-CSSParserImpl::ShouldUseUnprefixingService() const
-{
-  if (!sUnprefixingServiceEnabled) {
-    
-    return false;
-  }
-  if (sWebkitPrefixedAliasesEnabled) {
-    
-    
-    return false;
-  }
-
-#ifdef NIGHTLY_BUILD
-  if (sUnprefixingServiceGloballyWhitelisted) {
-    
-    
-    return true;
-  }
-#endif
-  
-  return mSheetPrincipal && mSheetPrincipal->IsOnCSSUnprefixingWhitelist();
-}
-
-bool
-CSSParserImpl::ParsePropertyWithUnprefixingService(
-  const nsAString& aPropertyName,
-  css::Declaration* aDeclaration,
-  uint32_t aFlags,
-  bool aMustCallValueAppended,
-  bool* aChanged,
-  nsCSSContextType aContext)
-{
-  MOZ_ASSERT(ShouldUseUnprefixingService(),
-             "Caller should've checked ShouldUseUnprefixingService()");
-
-  nsCOMPtr<nsICSSUnprefixingService> unprefixingSvc =
-    do_GetService(NS_CSSUNPREFIXINGSERVICE_CONTRACTID);
-  NS_ENSURE_TRUE(unprefixingSvc, false);
-
-  
-  
-  nsAutoCSSParserInputStateRestorer parserStateBeforeTryingToUnprefix(this);
-
-  
-  
-  
-  
-  
-  bool checkForBraces = (aFlags & eParseDeclaration_InBraces) != 0;
-  nsAutoString rightHalfOfDecl;
-  mScanner->StartRecording();
-  SkipDeclaration(checkForBraces);
-  mScanner->StopRecording(rightHalfOfDecl);
-
-  
-  bool success;
-  nsAutoString unprefixedDecl;
-  nsresult rv =
-    unprefixingSvc->GenerateUnprefixedDeclaration(aPropertyName,
-                                                  rightHalfOfDecl,
-                                                  unprefixedDecl, &success);
-  if (NS_FAILED(rv) || !success) {
-    return false;
-  }
-
-  
-  nsAutoScannerChanger scannerChanger(this, unprefixedDecl);
-  success = ParseDeclaration(aDeclaration,
-                             aFlags | eParseDeclaration_FromUnprefixingSvc,
-                             aMustCallValueAppended, aChanged, aContext);
-  if (success) {
-    
-    
-    parserStateBeforeTryingToUnprefix.DoNotRestore();
-  }
-
-  return success;
-}
-
-bool
-CSSParserImpl::ParseWebkitPrefixedGradientWithService(
-  nsAString& aPrefixedFuncName,
-  nsCSSValue& aValue)
-{
-  MOZ_ASSERT(ShouldUseUnprefixingService(),
-             "Should only call if we're allowed to use unprefixing service");
-
-  
-  
-  nsAutoString prefixedFuncBody;
-  mScanner->StartRecording();
-  bool gotCloseParen = SkipUntil(')');
-  mScanner->StopRecording(prefixedFuncBody);
-  if (gotCloseParen) {
-    
-    
-    prefixedFuncBody.Truncate(prefixedFuncBody.Length() - 1);
-  }
-
-  
-  
-  
-  
-  
-  nsCOMPtr<nsICSSUnprefixingService> unprefixingSvc =
-    do_GetService(NS_CSSUNPREFIXINGSERVICE_CONTRACTID);
-  NS_ENSURE_TRUE(unprefixingSvc, false);
-
-  bool success;
-  nsAutoString unprefixedFuncName;
-  nsAutoString unprefixedFuncBody;
-  nsresult rv =
-    unprefixingSvc->GenerateUnprefixedGradientValue(aPrefixedFuncName,
-                                                    prefixedFuncBody,
-                                                    unprefixedFuncName,
-                                                    unprefixedFuncBody,
-                                                    &success);
-
-  if (NS_FAILED(rv) || !success) {
-    return false;
-  }
-
-  
-  
-
-  
-  
-  
-  if (gotCloseParen) {
-    unprefixedFuncBody.Append(char16_t(')'));
-  }
-
-  nsAutoScannerChanger scannerChanger(this, unprefixedFuncBody);
-  if (unprefixedFuncName.EqualsLiteral("linear-gradient")) {
-    return ParseLinearGradient(aValue, 0);
-  }
-  if (unprefixedFuncName.EqualsLiteral("radial-gradient")) {
-    return ParseRadialGradient(aValue, 0);
-  }
-
-  NS_ERROR("CSSUnprefixingService returned an unrecognized type of "
-           "gradient function");
-
-  return false;
 }
 
 
@@ -7434,19 +7266,7 @@ CSSParserImpl::ParseDeclaration(css::Declaration* aDeclaration,
         (aContext == eCSSContext_Page &&
          !nsCSSProps::PropHasFlags(propID,
                                    CSS_PROPERTY_APPLIES_TO_PAGE_RULE))) { 
-      if (NonMozillaVendorIdentifier(propertyName)) {
-        if (!mInSupportsCondition &&
-            aContext == eCSSContext_General &&
-            !(aFlags & eParseDeclaration_FromUnprefixingSvc) && 
-            ShouldUseUnprefixingService()) {
-          if (ParsePropertyWithUnprefixingService(propertyName,
-                                                  aDeclaration, aFlags,
-                                                  aMustCallValueAppended,
-                                                  aChanged, aContext)) {
-            return true;
-          }
-        }
-      } else {
+      if (!NonMozillaVendorIdentifier(propertyName)) {
         REPORT_UNEXPECTED_P(PEUnknownProperty, propertyName);
         REPORT_UNEXPECTED(PEDeclDropped);
         OUTPUT_ERROR();
@@ -8053,18 +7873,6 @@ CSSParserImpl::ParseVariant(nsCSSValue& aValue,
       
       
       if (!ParseWebkitGradient(aValue)) {
-        return CSSParseResult::Error;
-      }
-      return CSSParseResult::Ok;
-    }
-
-    if (ShouldUseUnprefixingService() &&
-        !gradientFlags &&
-        StringBeginsWith(tmp, NS_LITERAL_STRING("-webkit-"))) {
-      
-      
-      nsAutoString prefixedFuncName(tmp);
-      if (!ParseWebkitPrefixedGradientWithService(prefixedFuncName, aValue)) {
         return CSSParseResult::Error;
       }
       return CSSParseResult::Ok;
@@ -12401,7 +12209,7 @@ CSSParserImpl::IsFunctionTokenValidForImageLayerImage(
     funcName.LowerCaseEqualsLiteral("-moz-repeating-radial-gradient") ||
     funcName.LowerCaseEqualsLiteral("-moz-image-rect") ||
     funcName.LowerCaseEqualsLiteral("-moz-element") ||
-    ((sWebkitPrefixedAliasesEnabled || ShouldUseUnprefixingService()) &&
+    (sWebkitPrefixedAliasesEnabled &&
      (funcName.LowerCaseEqualsLiteral("-webkit-gradient") ||
       funcName.LowerCaseEqualsLiteral("-webkit-linear-gradient") ||
       funcName.LowerCaseEqualsLiteral("-webkit-radial-gradient") ||
@@ -18036,12 +17844,6 @@ nsCSSParser::Startup()
                                "layout.css.prefixes.webkit");
   Preferences::AddBoolVarCache(&sWebkitDevicePixelRatioEnabled,
                                "layout.css.prefixes.device-pixel-ratio-webkit");
-  Preferences::AddBoolVarCache(&sUnprefixingServiceEnabled,
-                               "layout.css.unprefixing-service.enabled");
-#ifdef NIGHTLY_BUILD
-  Preferences::AddBoolVarCache(&sUnprefixingServiceGloballyWhitelisted,
-                               "layout.css.unprefixing-service.globally-whitelisted");
-#endif
   Preferences::AddBoolVarCache(&sMozGradientsEnabled,
                                "layout.css.prefixes.gradients");
   Preferences::AddBoolVarCache(&sControlCharVisibility,

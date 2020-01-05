@@ -32,7 +32,6 @@
 
 using namespace mozilla;
 
-static bool gIsWhitelistingTestDomains = false;
 static bool gCodeBasePrincipalSupport = false;
 
 static bool URIIsImmutable(nsIURI* aURI)
@@ -58,10 +57,6 @@ NS_IMPL_CI_INTERFACE_GETTER(nsPrincipal,
  void
 nsPrincipal::InitializeStatics()
 {
-  Preferences::AddBoolVarCache(
-    &gIsWhitelistingTestDomains,
-    "layout.css.unprefixing-service.include-test-domains");
-
   Preferences::AddBoolVarCache(&gCodeBasePrincipalSupport,
                                "signed.applets.codebase_principal_support",
                                false);
@@ -466,196 +461,6 @@ nsPrincipal::Write(nsIObjectOutputStream* aStream)
 
 
 
-
-static inline bool
-IsWhitelistingTestDomains()
-{
-  return gIsWhitelistingTestDomains;
-}
-
-
-
-static bool
-IsOnFullDomainWhitelist(nsIURI* aURI)
-{
-  nsAutoCString hostStr;
-  nsresult rv = aURI->GetHost(hostStr);
-  NS_ENSURE_SUCCESS(rv, false);
-
-  
-  
-  static const nsLiteralCString sFullDomainsOnWhitelist[] = {
-    
-    NS_LITERAL_CSTRING("test1.example.org"),
-    NS_LITERAL_CSTRING("map.baidu.com"),
-    NS_LITERAL_CSTRING("3g.163.com"),
-    NS_LITERAL_CSTRING("3glogo.gtimg.com"), 
-    NS_LITERAL_CSTRING("info.3g.qq.com"), 
-    NS_LITERAL_CSTRING("3gimg.qq.com"), 
-    NS_LITERAL_CSTRING("img.m.baidu.com"), 
-    NS_LITERAL_CSTRING("m.mogujie.com"),
-    NS_LITERAL_CSTRING("touch.qunar.com"),
-    NS_LITERAL_CSTRING("mjs.sinaimg.cn"), 
-    NS_LITERAL_CSTRING("static.qiyi.com"), 
-    NS_LITERAL_CSTRING("cdn.kuaidi100.com"), 
-    NS_LITERAL_CSTRING("m.pc6.com"),
-    NS_LITERAL_CSTRING("m.haosou.com"),
-    NS_LITERAL_CSTRING("m.mi.com"),
-    NS_LITERAL_CSTRING("wappass.baidu.com"),
-    NS_LITERAL_CSTRING("m.video.baidu.com"),
-    NS_LITERAL_CSTRING("m.video.baidu.com"),
-    NS_LITERAL_CSTRING("imgcache.gtimg.cn"), 
-    NS_LITERAL_CSTRING("s.tabelog.jp"),
-    NS_LITERAL_CSTRING("s.yimg.jp"), 
-    NS_LITERAL_CSTRING("i.yimg.jp"), 
-    NS_LITERAL_CSTRING("ai.yimg.jp"), 
-    NS_LITERAL_CSTRING("m.finance.yahoo.co.jp"),
-    NS_LITERAL_CSTRING("daily.c.yimg.jp"), 
-    NS_LITERAL_CSTRING("stat100.ameba.jp"), 
-    NS_LITERAL_CSTRING("user.ameba.jp"), 
-    NS_LITERAL_CSTRING("www.goo.ne.jp"),
-    NS_LITERAL_CSTRING("x.gnst.jp"), 
-    NS_LITERAL_CSTRING("c.x.gnst.jp"), 
-    NS_LITERAL_CSTRING("www.smbc-card.com"),
-    NS_LITERAL_CSTRING("static.card.jp.rakuten-static.com"), 
-    NS_LITERAL_CSTRING("img.travel.rakuten.co.jp"), 
-    NS_LITERAL_CSTRING("img.mixi.net"), 
-    NS_LITERAL_CSTRING("girlschannel.net"),
-    NS_LITERAL_CSTRING("www.fancl.co.jp"),
-    NS_LITERAL_CSTRING("s.cosme.net"),
-    NS_LITERAL_CSTRING("www.sapporobeer.jp"),
-    NS_LITERAL_CSTRING("www.mapion.co.jp"),
-    NS_LITERAL_CSTRING("touch.navitime.co.jp"),
-    NS_LITERAL_CSTRING("sp.mbga.jp"),
-    NS_LITERAL_CSTRING("ava-a.sp.mbga.jp"), 
-    NS_LITERAL_CSTRING("www.ntv.co.jp"),
-    NS_LITERAL_CSTRING("mobile.suntory.co.jp"), 
-    NS_LITERAL_CSTRING("www.aeonsquare.net"),
-    NS_LITERAL_CSTRING("mw.nikkei.com"),
-    NS_LITERAL_CSTRING("www.nhk.or.jp"),
-    NS_LITERAL_CSTRING("www.tokyo-sports.co.jp"),
-    NS_LITERAL_CSTRING("www.bellemaison.jp"),
-    NS_LITERAL_CSTRING("www.kuronekoyamato.co.jp"),
-    NS_LITERAL_CSTRING("formassist.jp"), 
-    NS_LITERAL_CSTRING("sp.m.reuters.co.jp"),
-    NS_LITERAL_CSTRING("www.atre.co.jp"),
-    NS_LITERAL_CSTRING("www.jtb.co.jp"),
-    NS_LITERAL_CSTRING("www.sharp.co.jp"),
-    NS_LITERAL_CSTRING("www.biccamera.com"),
-    NS_LITERAL_CSTRING("weathernews.jp"),
-    NS_LITERAL_CSTRING("cache.ymail.jp"), 
-  };
-  static const size_t sNumFullDomainsOnWhitelist =
-    MOZ_ARRAY_LENGTH(sFullDomainsOnWhitelist);
-
-  
-  const size_t firstWhitelistIdx = IsWhitelistingTestDomains() ? 0 : 1;
-
-  for (size_t i = firstWhitelistIdx; i < sNumFullDomainsOnWhitelist; ++i) {
-    if (hostStr == sFullDomainsOnWhitelist[i]) {
-      return true;
-    }
-  }
-  return false;
-}
-
-
-
-
-static bool
-IsOnBaseDomainWhitelist(nsIURI* aURI)
-{
-  static const nsLiteralCString sBaseDomainsOnWhitelist[] = {
-    
-    NS_LITERAL_CSTRING("test2.example.org"),
-    NS_LITERAL_CSTRING("tbcdn.cn"), 
-    NS_LITERAL_CSTRING("alicdn.com"), 
-    NS_LITERAL_CSTRING("dpfile.com"), 
-    NS_LITERAL_CSTRING("hao123img.com"), 
-    NS_LITERAL_CSTRING("tabelog.k-img.com"), 
-    NS_LITERAL_CSTRING("tsite.jp"), 
-  };
-  static const size_t sNumBaseDomainsOnWhitelist =
-    MOZ_ARRAY_LENGTH(sBaseDomainsOnWhitelist);
-
-  nsCOMPtr<nsIEffectiveTLDService> tldService =
-    do_GetService(NS_EFFECTIVETLDSERVICE_CONTRACTID);
-
-  if (tldService) {
-    
-    const size_t firstWhitelistIdx = IsWhitelistingTestDomains() ? 0 : 1;
-
-    
-    
-    
-    
-    
-    
-    const uint32_t maxSubdomainDepth = IsWhitelistingTestDomains() ? 1 : 0;
-
-    for (uint32_t subdomainDepth = 0;
-         subdomainDepth <= maxSubdomainDepth; ++subdomainDepth) {
-
-      
-      nsAutoCString baseDomainStr;
-      nsresult rv = tldService->GetBaseDomain(aURI, subdomainDepth,
-                                              baseDomainStr);
-      if (NS_FAILED(rv)) {
-        
-        
-        return false;
-      }
-
-      
-      for (size_t i = firstWhitelistIdx; i < sNumBaseDomainsOnWhitelist; ++i) {
-        if (baseDomainStr == sBaseDomainsOnWhitelist[i]) {
-          return true;
-        }
-      }
-    }
-  }
-
-  return false;
-}
-
-
-static bool
-IsOnCSSUnprefixingWhitelistImpl(nsIURI* aURI)
-{
-  
-  nsAutoCString schemeStr;
-  nsresult rv = aURI->GetScheme(schemeStr);
-  NS_ENSURE_SUCCESS(rv, false);
-
-  
-  if (!(StringBeginsWith(schemeStr, NS_LITERAL_CSTRING("http")) &&
-        (schemeStr.Length() == 4 ||
-         (schemeStr.Length() == 5 && schemeStr[4] == 's')))) {
-    return false;
-  }
-
-  return (IsOnFullDomainWhitelist(aURI) ||
-          IsOnBaseDomainWhitelist(aURI));
-}
-
-
-bool
-nsPrincipal::IsOnCSSUnprefixingWhitelist()
-{
-  if (mIsOnCSSUnprefixingWhitelist.isNothing()) {
-    
-    
-    
-    mIsOnCSSUnprefixingWhitelist.emplace(
-      mCodebaseImmutable &&
-      IsOnCSSUnprefixingWhitelistImpl(mCodebase));
-  }
-
-  return *mIsOnCSSUnprefixingWhitelist;
-}
-
-
-
 NS_IMPL_CLASSINFO(nsExpandedPrincipal, nullptr, nsIClassInfo::MAIN_THREAD_ONLY,
                   NS_EXPANDEDPRINCIPAL_CID)
 NS_IMPL_QUERY_INTERFACE_CI(nsExpandedPrincipal,
@@ -817,15 +622,6 @@ nsExpandedPrincipal::AddonHasPermission(const nsAString& aPerm)
   }
   return false;
 }
-
-bool
-nsExpandedPrincipal::IsOnCSSUnprefixingWhitelist()
-{
-  
-  
-  return false;
-}
-
 
 nsresult
 nsExpandedPrincipal::GetScriptLocation(nsACString& aStr)

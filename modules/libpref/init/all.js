@@ -2575,16 +2575,6 @@ pref("layout.css.prefixes.webkit", true);
 pref("layout.css.prefixes.device-pixel-ratio-webkit", false);
 
 
-
-pref("layout.css.unprefixing-service.enabled", true);
-#ifdef NIGHTLY_BUILD
-
-
-
-pref("layout.css.unprefixing-service.globally-whitelisted", false);
-#endif
-
-
 pref("layout.css.scope-pseudo.enabled", true);
 
 
