@@ -21,7 +21,6 @@
 #include "nsISupportsImpl.h"            
 #include "nsThreadUtils.h"              
 #include "mozilla/gfx/Point.h"          
-#include "mozilla/gfx/DataSurfaceHelpers.h"
 #include "gfx2DGlue.h"
 #include "YCbCrUtils.h"                 
 
@@ -111,7 +110,8 @@ BasicPlanarYCbCrImage::CopyData(const Data& aData)
     return false;
   }
 
-  mStride = gfx::StrideForFormatAndWidth(format, size.width);
+  gfxImageFormat iFormat = gfx::SurfaceFormatToImageFormat(format);
+  mStride = gfxASurface::FormatStrideForWidth(iFormat, size.width);
   mozilla::CheckedInt32 requiredBytes =
     mozilla::CheckedInt32(size.height) * mozilla::CheckedInt32(mStride);
   if (!requiredBytes.isValid()) {
@@ -125,7 +125,7 @@ BasicPlanarYCbCrImage::CopyData(const Data& aData)
   }
 
   gfx::ConvertYCbCrToRGB(aData, format, size, mDecodedBuffer.get(), mStride);
-  SetOffscreenFormat(gfx::SurfaceFormatToImageFormat(format));
+  SetOffscreenFormat(iFormat);
   mSize = size;
 
   return true;
