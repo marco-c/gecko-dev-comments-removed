@@ -191,6 +191,7 @@ StaticPresData::GetFontPrefsForLangHelper(nsIAtom *aLanguage,
     
     
     if (eType == eDefaultFont_Variable) {
+      
       MAKE_FONT_PREF_KEY(pref, "font.name.variable.", langGroup);
 
       nsAdoptingString value = Preferences::GetString(pref.get());
