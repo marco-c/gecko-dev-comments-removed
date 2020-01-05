@@ -644,6 +644,12 @@ AudioContext::Shutdown()
     RefPtr<Promise> ignored = Close(dummy);
   }
 
+  for (auto p : mPromiseGripArray) {
+    p->MaybeReject(NS_ERROR_DOM_INVALID_STATE_ERR);
+  }
+
+  mPromiseGripArray.Clear();
+
   
   
   
@@ -789,9 +795,15 @@ AudioContext::OnStateChanged(void* aPromise, AudioContextState aNewState)
 
   if (aPromise) {
     Promise* promise = reinterpret_cast<Promise*>(aPromise);
-    promise->MaybeResolveWithUndefined();
-    DebugOnly<bool> rv = mPromiseGripArray.RemoveElement(promise);
-    MOZ_ASSERT(rv, "Promise wasn't in the grip array?");
+    
+    
+    
+    
+    if (mPromiseGripArray.Contains(promise)) {
+      promise->MaybeResolveWithUndefined();
+      DebugOnly<bool> rv = mPromiseGripArray.RemoveElement(promise);
+      MOZ_DIAGNOSTIC_ASSERT(rv, "Promise wasn't in the grip array?");
+    }
   }
 
   if (mAudioContextState != aNewState) {
