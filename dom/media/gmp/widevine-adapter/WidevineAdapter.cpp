@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "WidevineAdapter.h"
 #include "content_decryption_module.h"
@@ -23,7 +23,7 @@ GMPErr GMPGetCurrentTime(GMPTimestamp* aOutTime) {
   return sPlatform->getcurrenttime(aOutTime);
 }
 
-
+// Call on main thread only.
 GMPErr GMPSetTimerOnMainThread(GMPTask* aTask, int64_t aTimeoutMS) {
   return sPlatform->settimer(aTask, aTimeoutMS);
 }
@@ -83,7 +83,7 @@ WidevineAdapter::GMPGetAPI(const char* aAPIName,
       aAPIName, aHostAPI, aPluginAPI, aDecryptorId, this);
   if (!strcmp(aAPIName, GMP_API_DECRYPTOR)) {
     if (WidevineDecryptor::GetInstance(aDecryptorId)) {
-      
+      // We only support one CDM instance per PGMPDecryptor. Fail!
       Log("WidevineAdapter::GMPGetAPI() Tried to create more than once CDM per IPDL actor! FAIL!");
       return GMPQuotaExceededErr;
     }
@@ -108,7 +108,7 @@ WidevineAdapter::GMPGetAPI(const char* aAPIName,
           aAPIName, aHostAPI, aPluginAPI, aDecryptorId, this);
       return GMPGenericErr;
     }
-    Log("cdm: 0x%x", cdm);
+    Log("cdm: 0x%p", cdm);
     RefPtr<CDMWrapper> wrapper(new CDMWrapper(cdm, decryptor));
     decryptor->SetCDM(wrapper, aDecryptorId);
     *aPluginAPI = decryptor;
@@ -116,9 +116,9 @@ WidevineAdapter::GMPGetAPI(const char* aAPIName,
   } else if (!strcmp(aAPIName, GMP_API_VIDEO_DECODER)) {
     RefPtr<CDMWrapper> wrapper = WidevineDecryptor::GetInstance(aDecryptorId);
 
-    
-    
-    
+    // There is a possible race condition, where the decryptor will be destroyed
+    // before we are able to create the video decoder, so we create a dummy
+    // decoder to avoid crashing.
     if (!wrapper) {
       Log("WidevineAdapter::GMPGetAPI(%s, 0x%p, 0x%p, %u) this=0x%p No cdm for video decoder. Using a DummyDecoder",
           aAPIName, aHostAPI, aPluginAPI, aDecryptorId, this);
@@ -145,7 +145,7 @@ WidevineAdapter::GMPShutdown()
   }
 }
 
-
+/* static */
 bool
 WidevineAdapter::Supports(int32_t aModuleVersion,
                           int32_t aInterfaceVersion,
@@ -156,4 +156,4 @@ WidevineAdapter::Supports(int32_t aModuleVersion,
          aHostVersion == cdm::Host_8::kVersion;
 }
 
-} 
+} // namespace mozilla

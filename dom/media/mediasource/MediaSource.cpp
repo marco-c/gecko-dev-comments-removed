@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "MediaSource.h"
 
@@ -55,19 +55,19 @@ mozilla::LogModule* GetMediaSourceAPILog()
 #define MSE_DEBUG(arg, ...) MOZ_LOG(GetMediaSourceLog(), mozilla::LogLevel::Debug, ("MediaSource(%p)::%s: " arg, this, __func__, ##__VA_ARGS__))
 #define MSE_API(arg, ...) MOZ_LOG(GetMediaSourceAPILog(), mozilla::LogLevel::Debug, ("MediaSource(%p)::%s: " arg, this, __func__, ##__VA_ARGS__))
 
-
+// Arbitrary limit.
 static const unsigned int MAX_SOURCE_BUFFERS = 16;
 
 namespace mozilla {
 
-
-
-
-
-
-
-
-
+// Returns true if we should enable MSE webm regardless of preferences.
+// 1. If MP4/H264 isn't supported:
+//   * Windows XP
+//   * Windows Vista and Server 2008 without the optional "Platform Update Supplement"
+//   * N/KN editions (Europe and Korea) of Windows 7/8/8.1/10 without the
+//     optional "Windows Media Feature Pack"
+// 2. If H264 hardware acceleration is not available.
+// 3. The CPU is considered to be fast enough
 static bool
 IsWebMForced(DecoderDoctorDiagnostics* aDiagnostics)
 {
@@ -85,7 +85,7 @@ IsWebMForced(DecoderDoctorDiagnostics* aDiagnostics)
 
 namespace dom {
 
-
+/* static */
 nsresult
 MediaSource::IsTypeSupported(const nsAString& aType, DecoderDoctorDiagnostics* aDiagnostics)
 {
@@ -103,8 +103,8 @@ MediaSource::IsTypeSupported(const nsAString& aType, DecoderDoctorDiagnostics* a
     return NS_ERROR_DOM_NOT_SUPPORTED_ERR;
   }
 
-  
-  
+  // Now we know that this media type could be played.
+  // MediaSource imposes extra restrictions, and some prefs.
   const MediaMIMEType& mimeType = containerType->Type();
   if (mimeType == MEDIAMIMETYPE("video/mp4") ||
       mimeType == MEDIAMIMETYPE("audio/mp4")) {
@@ -131,7 +131,7 @@ MediaSource::IsTypeSupported(const nsAString& aType, DecoderDoctorDiagnostics* a
   return NS_ERROR_DOM_NOT_SUPPORTED_ERR;
 }
 
- already_AddRefed<MediaSource>
+/* static */ already_AddRefed<MediaSource>
 MediaSource::Constructor(const GlobalObject& aGlobal,
                          ErrorResult& aRv)
 {
@@ -245,7 +245,7 @@ MediaSource::AddSourceBuffer(const nsAString& aType, ErrorResult& aRv)
   }
   RefPtr<SourceBuffer> sourceBuffer = new SourceBuffer(this, *containerType);
   if (!sourceBuffer) {
-    aRv.Throw(NS_ERROR_FAILURE); 
+    aRv.Throw(NS_ERROR_FAILURE); // XXX need a better error here
     return nullptr;
   }
   mSourceBuffers->Append(sourceBuffer);
@@ -282,21 +282,21 @@ MediaSource::RemoveSourceBuffer(SourceBuffer& aSourceBuffer, ErrorResult& aRv)
   }
 
   sourceBuffer->AbortBufferAppend();
-  
-  
+  // TODO:
+  // abort stream append loop (if running)
 
-  
-  
-  
-  
-  
-  
-  
+  // TODO:
+  // For all sourceBuffer audioTracks, videoTracks, textTracks:
+  //     set sourceBuffer to null
+  //     remove sourceBuffer video, audio, text Tracks from MediaElement tracks
+  //     remove sourceBuffer video, audio, text Tracks and fire "removetrack" at affected lists
+  //     fire "removetrack" at modified MediaElement track lists
+  // If removed enabled/selected, fire "change" at affected MediaElement list.
   if (mActiveSourceBuffers->Contains(sourceBuffer)) {
     mActiveSourceBuffers->Remove(sourceBuffer);
   }
   mSourceBuffers->Remove(sourceBuffer);
-  
+  // TODO: Free all resources associated with sourceBuffer
 }
 
 void
@@ -315,7 +315,7 @@ MediaSource::EndOfStream(const Optional<MediaSourceEndOfStreamError>& aError, Er
   mSourceBuffers->Ended();
   if (!aError.WasPassed()) {
     DurationChange(mSourceBuffers->GetHighestBufferedEndTime(), aRv);
-    
+    // Notify reader that all data is now available.
     mDecoder->Ended(true);
     return;
   }
@@ -335,14 +335,14 @@ void
 MediaSource::EndOfStream(const MediaResult& aError)
 {
   MOZ_ASSERT(NS_IsMainThread());
-  MSE_API("EndOfStream(aError=%d)", aError.Code());
+  MSE_API("EndOfStream(aError=%" PRId32")", static_cast<uint32_t>(aError.Code()));
 
   SetReadyState(MediaSourceReadyState::Ended);
   mSourceBuffers->Ended();
   mDecoder->DecodeError(aError);
 }
 
- bool
+/* static */ bool
 MediaSource::IsTypeSupported(const GlobalObject& aOwner, const nsAString& aType)
 {
   MOZ_ASSERT(NS_IsMainThread());
@@ -358,7 +358,7 @@ MediaSource::IsTypeSupported(const GlobalObject& aOwner, const nsAString& aType)
   return NS_SUCCEEDED(rv);
 }
 
- bool
+/* static */ bool
 MediaSource::Enabled(JSContext* cx, JSObject* aGlobal)
 {
   return Preferences::GetBool("media.mediasource.enabled");
@@ -369,23 +369,23 @@ MediaSource::SetLiveSeekableRange(double aStart, double aEnd, ErrorResult& aRv)
 {
   MOZ_ASSERT(NS_IsMainThread());
 
-  
-  
+  // 1. If the readyState attribute is not "open" then throw an InvalidStateError
+  // exception and abort these steps.
   if (mReadyState != MediaSourceReadyState::Open) {
     aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
     return;
   }
 
-  
-  
+  // 2. If start is negative or greater than end, then throw a TypeError
+  // exception and abort these steps.
   if (aStart < 0 || aStart > aEnd) {
     aRv.Throw(NS_ERROR_DOM_TYPE_ERR);
     return;
   }
 
-  
-  
-  
+  // 3. Set live seekable range to be a new normalized TimeRanges object
+  // containing a single range whose start position is start and end position is
+  // end.
   mLiveSeekableRange =
     Some(media::TimeInterval(media::TimeUnit::FromSeconds(aStart),
                              media::TimeUnit::FromSeconds(aEnd)));
@@ -396,15 +396,15 @@ MediaSource::ClearLiveSeekableRange(ErrorResult& aRv)
 {
   MOZ_ASSERT(NS_IsMainThread());
 
-  
-  
+  // 1. If the readyState attribute is not "open" then throw an InvalidStateError
+  // exception and abort these steps.
   if (mReadyState != MediaSourceReadyState::Open) {
     aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
     return;
   }
 
-  
-  
+  // 2. If live seekable range contains a range, then set live seekable range to
+  // be a new empty TimeRanges object.
   mLiveSeekableRange.reset();
 }
 
@@ -475,7 +475,8 @@ MediaSource::SetReadyState(MediaSourceReadyState aState)
 {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aState != mReadyState);
-  MSE_DEBUG("SetReadyState(aState=%d) mReadyState=%d", aState, mReadyState);
+  MSE_DEBUG("SetReadyState(aState=%" PRIu32 ") mReadyState=%" PRIu32,
+            static_cast<uint32_t>(aState), static_cast<uint32_t>(mReadyState));
 
   MediaSourceReadyState oldState = mReadyState;
   mReadyState = aState;
@@ -485,7 +486,7 @@ MediaSource::SetReadyState(MediaSourceReadyState aState)
        oldState == MediaSourceReadyState::Ended)) {
     QueueAsyncSimpleEvent("sourceopen");
     if (oldState == MediaSourceReadyState::Ended) {
-      
+      // Notify reader that more data may come.
       mDecoder->Ended(false);
     }
     return;
@@ -529,29 +530,29 @@ MediaSource::DurationChange(double aNewDuration, ErrorResult& aRv)
   MOZ_ASSERT(NS_IsMainThread());
   MSE_DEBUG("DurationChange(aNewDuration=%f)", aNewDuration);
 
-  
+  // 1. If the current value of duration is equal to new duration, then return.
   if (mDecoder->GetDuration() == aNewDuration) {
     return;
   }
 
-  
-  
-  
+  // 2. If new duration is less than the highest starting presentation timestamp
+  // of any buffered coded frames for all SourceBuffer objects in sourceBuffers,
+  // then throw an InvalidStateError exception and abort these steps.
   if (aNewDuration < mSourceBuffers->HighestStartTime()) {
     aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
     return;
   }
 
-  
-  
+  // 3. Let highest end time be the largest track buffer ranges end time across
+  // all the track buffers across all SourceBuffer objects in sourceBuffers.
   double highestEndTime = mSourceBuffers->HighestEndTime();
-  
-  
+  // 4. If new duration is less than highest end time, then
+  //    4.1 Update new duration to equal highest end time.
   aNewDuration =
     std::max(aNewDuration, highestEndTime);
 
-  
-  
+  // 5. Update the media duration to new duration and run the HTMLMediaElement
+  // duration change algorithm.
   mDecoder->SetMediaSourceDuration(aNewDuration);
 }
 
@@ -589,6 +590,6 @@ NS_INTERFACE_MAP_END_INHERITING(DOMEventTargetHelper)
 #undef MSE_DEBUG
 #undef MSE_API
 
-} 
+} // namespace dom
 
-} 
+} // namespace mozilla

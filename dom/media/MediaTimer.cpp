@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim:set ts=2 sw=2 sts=2 et cindent: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "MediaTimer.h"
 
@@ -27,8 +27,8 @@ MediaTimer::MediaTimer()
 {
   TIMER_LOG("MediaTimer::MediaTimer");
 
-  
-  
+  // Use the SharedThreadPool to create an nsIThreadPool with a maximum of one
+  // thread, which is equivalent to an nsIThread for our purposes.
   RefPtr<SharedThreadPool> threadPool(
     SharedThreadPool::Get(NS_LITERAL_CSTRING("MediaTimer"), 1));
   mThread = threadPool.get();
@@ -38,9 +38,9 @@ MediaTimer::MediaTimer()
 void
 MediaTimer::DispatchDestroy()
 {
-  
-  
-  
+  // Hold a strong reference to the thread so that it doesn't get deleted in
+  // Destroy(), which may run completely before the stack if Dispatch() begins
+  // to unwind.
   nsCOMPtr<nsIEventTarget> thread = mThread;
   nsresult rv = thread->Dispatch(NewNonOwningRunnableMethod(this, &MediaTimer::Destroy),
                                  NS_DISPATCH_NORMAL);
@@ -54,15 +54,15 @@ MediaTimer::Destroy()
   MOZ_ASSERT(OnMediaTimerThread());
   TIMER_LOG("MediaTimer::Destroy");
 
-  
-  
-  
+  // Reject any outstanding entries. There's no need to acquire the monitor
+  // here, because we're on the timer thread and all other references to us
+  // must be gone.
   while (!mEntries.empty()) {
     mEntries.top().mPromise->Reject(false, __func__);
     mEntries.pop();
   }
 
-  
+  // Cancel the timer if necessary.
   CancelTimerIfArmed();
 
   delete this;
@@ -80,7 +80,7 @@ RefPtr<MediaTimerPromise>
 MediaTimer::WaitUntil(const TimeStamp& aTimeStamp, const char* aCallSite)
 {
   MonitorAutoLock mon(mMonitor);
-  TIMER_LOG("MediaTimer::WaitUntil %lld", RelativeMicroseconds(aTimeStamp));
+  TIMER_LOG("MediaTimer::WaitUntil %" PRId64, RelativeMicroseconds(aTimeStamp));
   Entry e(aTimeStamp, aCallSite);
   RefPtr<MediaTimerPromise> p = e.mPromise.get();
   mEntries.push(e);
@@ -119,7 +119,7 @@ MediaTimer::UpdateLocked()
 
   TIMER_LOG("MediaTimer::UpdateLocked");
 
-  
+  // Resolve all the promises whose time is up.
   TimeStamp now = TimeStamp::Now();
   while (!mEntries.empty() && mEntries.top().mTimeStamp <= now) {
     mEntries.top().mPromise->Resolve(true, __func__);
@@ -128,27 +128,27 @@ MediaTimer::UpdateLocked()
     MOZ_ASSERT_IF(!mEntries.empty(), *&poppedTimeStamp <= mEntries.top().mTimeStamp);
   }
 
-  
+  // If we've got no more entries, cancel any pending timer and bail out.
   if (mEntries.empty()) {
     CancelTimerIfArmed();
     return;
   }
 
-  
+  // We've got more entries - (re)arm the timer for the soonest one.
   if (!TimerIsArmed() || mEntries.top().mTimeStamp < mCurrentTimerTarget) {
     CancelTimerIfArmed();
     ArmTimer(mEntries.top().mTimeStamp, now);
   }
 }
 
+/*
+ * We use a callback function, rather than a callback method, to ensure that
+ * the nsITimer does not artifically keep the refcount of the MediaTimer above
+ * zero. When the MediaTimer is destroyed, it safely cancels the nsITimer so that
+ * we never fire against a dangling closure.
+ */
 
-
-
-
-
-
-
- void
+/* static */ void
 MediaTimer::TimerCallback(nsITimer* aTimer, void* aClosure)
 {
   static_cast<MediaTimer*>(aClosure)->TimerFired();
@@ -169,8 +169,8 @@ MediaTimer::ArmTimer(const TimeStamp& aTarget, const TimeStamp& aNow)
   MOZ_DIAGNOSTIC_ASSERT(!TimerIsArmed());
   MOZ_DIAGNOSTIC_ASSERT(aTarget > aNow);
 
-  
-  
+  // XPCOM timer resolution is in milliseconds. It's important to never resolve
+  // a timer when mTarget might compare < now (even if very close), so round up.
   unsigned long delay = std::ceil((aTarget - aNow).ToMilliseconds());
   TIMER_LOG("MediaTimer::ArmTimer delay=%lu", delay);
   mCurrentTimerTarget = aTarget;
@@ -181,4 +181,4 @@ MediaTimer::ArmTimer(const TimeStamp& aTarget, const TimeStamp& aNow)
   (void) rv;
 }
 
-} 
+} // namespace mozilla

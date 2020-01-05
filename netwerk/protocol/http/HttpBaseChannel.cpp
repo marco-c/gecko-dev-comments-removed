@@ -205,7 +205,7 @@ HttpBaseChannel::HttpBaseChannel()
   , mForceMainDocumentChannel(false)
   , mIsTrackingResource(false)
 {
-  LOG(("Creating HttpBaseChannel @%x\n", this));
+  LOG(("Creating HttpBaseChannel @%p\n", this));
 
   
 #ifdef MOZ_VALGRIND
@@ -221,7 +221,7 @@ HttpBaseChannel::HttpBaseChannel()
 
 HttpBaseChannel::~HttpBaseChannel()
 {
-  LOG(("Destroying HttpBaseChannel @%x\n", this));
+  LOG(("Destroying HttpBaseChannel @%p\n", this));
 
   
   CleanRedirectCacheChainIfNecessary();
@@ -1043,7 +1043,8 @@ public:
   NS_IMETHOD OnStopRequest(nsIRequest *aRequest, nsISupports *aContext, nsresult aStatusCode) override
   {
     if (NS_FAILED(aStatusCode) && NS_SUCCEEDED(mChannel->mStatus)) {
-      LOG(("HttpBaseChannel::InterceptFailedOnStop %p seting status %x", mChannel, aStatusCode));
+      LOG(("HttpBaseChannel::InterceptFailedOnStop %p seting status %" PRIx32,
+           mChannel, static_cast<uint32_t>(aStatusCode)));
       mChannel->mStatus = aStatusCode;
     }
     return mNext->OnStopRequest(aRequest, aContext, aStatusCode);

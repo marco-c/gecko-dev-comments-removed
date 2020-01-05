@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "WidevineDecryptor.h"
 
@@ -20,7 +20,7 @@ namespace mozilla {
 
 static map<uint32_t, RefPtr<CDMWrapper>> sDecryptors;
 
-
+/* static */
 RefPtr<CDMWrapper>
 WidevineDecryptor::GetInstance(uint32_t aInstanceId)
 {
@@ -36,7 +36,7 @@ WidevineDecryptor::WidevineDecryptor()
   : mCallback(nullptr)
 {
   Log("WidevineDecryptor created this=%p, instanceId=%u", this, mInstanceId);
-  AddRef(); 
+  AddRef(); // Released in DecryptingComplete().
 }
 
 WidevineDecryptor::~WidevineDecryptor()
@@ -77,9 +77,9 @@ ToCDMSessionType(GMPSessionType aSessionType)
     case kGMPTemporySession: return kTemporary;
     case kGMPPersistentSession: return kPersistentLicense;
     case kGMPSessionInvalid: return kTemporary;
-    
+    // TODO: kPersistentKeyRelease
   }
-  MOZ_ASSERT(false); 
+  MOZ_ASSERT(false); // Not supposed to get here.
   return kTemporary;
 }
 
@@ -101,7 +101,7 @@ WidevineDecryptor::CreateSession(uint32_t aCreateSessionToken,
   } else if (!strcmp(aInitDataType, "keyids")) {
     initDataType = kKeyIds;
   } else {
-    
+    // Invalid init data type
     const char* errorMsg = "Invalid init data type when creating session.";
     OnRejectPromise(aPromiseId, kNotSupportedError, 0, errorMsg, sizeof(errorMsg));
     return;
@@ -119,7 +119,7 @@ WidevineDecryptor::LoadSession(uint32_t aPromiseId,
                                uint32_t aSessionIdLength)
 {
   Log("Decryptor::LoadSession(pid=%d, %s)", aPromiseId, aSessionId);
-  
+  // TODO: session type??
   CDM()->LoadSession(aPromiseId, kPersistentLicense, aSessionId, aSessionIdLength);
 }
 
@@ -204,21 +204,21 @@ WidevineDecryptor::ThrottleDecrypt(cdm::Time aWallTime, cdm::Time aSampleDuratio
   const cdm::Time WindowSize = 1.0;
   const cdm::Time MaxThroughput = 2.0;
 
-  
+  // Forget decrypts that happened before the start of our window.
   while (!mDecrypts.empty() && mDecrypts.front().mWallTime < aWallTime - WindowSize) {
     mDecrypts.pop_front();
   }
 
-  
-  
+  // How much time duration of the media would we have decrypted inside the
+  // time window if we did decrypt this block?
   cdm::Time durationDecrypted = aSampleDuration;
   for (const DecryptJob& job : mDecrypts) {
     durationDecrypted += job.mSampleDuration;
   }
 
   if (durationDecrypted > MaxThroughput) {
-    
-    
+    // If we decrypted a sample of this duration, we would have decrypted more than
+    // our threshold for max throughput, over the preceding wall time window.
     return durationDecrypted - MaxThroughput;
   }
 
@@ -254,16 +254,16 @@ WidevineDecryptor::ProcessDecrypts()
   while (!mPendingDecrypts.empty()) {
     PendingDecrypt job = mPendingDecrypts.front();
 
-    
-    
-    
+    // We throttle our decrypt so that we don't decrypt more than a certain
+    // duration of samples per second. This is to work around bugs in the
+    // Widevine CDM. See bug 1338924.
     cdm::Time now = GetCurrentWallTime();
     cdm::Time delay = ThrottleDecrypt(now, job.mSampleDuration);
 
     if (delay > 0.0) {
-      
-      
-      
+      // If we decrypted this sample now, we'd decrypt more than our threshold
+      // per second of samples. Enqueue the sample, and wait until we'd be able
+      // to decrypt it without breaking our throughput threshold.
       if (!mPendingDecryptTimerSet) {
         mPendingDecryptTimerSet = true;
         RefPtr<WidevineDecryptor> self = this;
@@ -291,7 +291,7 @@ WidevineDecryptor::DecryptBuffer(const PendingDecrypt& aJob)
   InitInputBuffer(crypto, buffer->Id(), buffer->Data(), buffer->Size(), sample, subsamples);
   WidevineDecryptedBlock decrypted;
   Status rv = CDM()->Decrypt(sample, &decrypted);
-  Log("Decryptor::Decrypt(timestamp=%lld) rv=%d sz=%d",
+  Log("Decryptor::Decrypt(timestamp=%" PRId64 ") rv=%d sz=%d",
       sample.timestamp, rv, decrypted.DecryptedBuffer()->Size());
   if (rv == kSuccess) {
     buffer->Resize(decrypted.DecryptedBuffer()->Size());
@@ -307,7 +307,7 @@ WidevineDecryptor::DecryptingComplete()
 {
   Log("WidevineDecryptor::DecryptingComplete() this=%p, instanceId=%u", this, mInstanceId);
 
-  
+  // Ensure buffers are freed.
   while (!mPendingDecrypts.empty()) {
     PendingDecrypt& job = mPendingDecrypts.front();
     if (mCallback) {
@@ -316,10 +316,10 @@ WidevineDecryptor::DecryptingComplete()
     mPendingDecrypts.pop();
   }
 
-  
-  
-  
-  
+  // Drop our references to the CDMWrapper. When any other references
+  // held elsewhere are dropped (for example references held by a
+  // WidevineVideoDecoder, or a runnable), the CDMWrapper destroys
+  // the CDM.
   mCDM = nullptr;
   sDecryptors.erase(mInstanceId);
   mCallback = nullptr;
@@ -329,11 +329,11 @@ WidevineDecryptor::DecryptingComplete()
 class WidevineBuffer : public cdm::Buffer {
 public:
   explicit WidevineBuffer(size_t aSize) {
-    Log("WidevineBuffer(size=" PRIuSIZE ") created", aSize);
+    Log("WidevineBuffer(size=%" PRIuSIZE ") created", aSize);
     mBuffer.SetLength(aSize);
   }
   ~WidevineBuffer() override {
-    Log("WidevineBuffer(size=" PRIuSIZE ") destroyed", Size());
+    Log("WidevineBuffer(size=%" PRIu32 ") destroyed", Size());
   }
   void Destroy() override { delete this; }
   uint32_t Capacity() const override { return mBuffer.Length(); };
@@ -379,7 +379,7 @@ private:
 void
 WidevineDecryptor::SetTimer(int64_t aDelayMs, void* aContext)
 {
-  Log("Decryptor::SetTimer(delay_ms=%lld, context=0x%x)", aDelayMs, aContext);
+  Log("Decryptor::SetTimer(delay_ms=%" PRId64 ", context=0x%p)", aDelayMs, aContext);
   if (mCDM) {
     GMPSetTimerOnMainThread(new TimerTask(this, mCDM, aContext), aDelayMs);
   }
@@ -405,10 +405,10 @@ WidevineDecryptor::OnResolveNewSessionPromise(uint32_t aPromiseId,
     return;
   }
 
-  
-  
-  
-  
+  // This is laid out in the API. If we fail to load a session we should
+  // call OnResolveNewSessionPromise with nullptr as the sessionId.
+  // We can safely assume this means that we have failed to load a session
+  // as the other methods specify calling 'OnRejectPromise' when they fail.
   if (!aSessionId) {
     Log("Decryptor::OnResolveNewSessionPromise(aPromiseId=0x%d) Failed to load session", aPromiseId);
     mCallback->ResolveLoadSessionPromise(aPromiseId, false);
@@ -444,17 +444,17 @@ ToGMPDOMException(cdm::Error aError)
     case kNotSupportedError: return kGMPNotSupportedError;
     case kInvalidStateError: return kGMPInvalidStateError;
     case kInvalidAccessError:
-      
-      
-      
-      
+      // Note: Chrome converts kInvalidAccessError to TypeError, since the
+      // Chromium CDM API doesn't have a type error enum value. The EME spec
+      // requires TypeError in some places, so we do the same conversion.
+      // See bug 1313202.
       return kGMPTypeError;
     case kQuotaExceededError: return kGMPQuotaExceededError;
-    case kUnknownError: return kGMPInvalidModificationError; 
-    case kClientError: return kGMPAbortError; 
-    case kOutputError: return kGMPSecurityError; 
+    case kUnknownError: return kGMPInvalidModificationError; // Note: Unique placeholder.
+    case kClientError: return kGMPAbortError; // Note: Unique placeholder.
+    case kOutputError: return kGMPSecurityError; // Note: Unique placeholder.
   };
-  return kGMPTimeoutError; 
+  return kGMPTimeoutError; // Note: Unique placeholder.
 }
 
 void
@@ -643,4 +643,4 @@ WidevineDecryptor::CreateFileIO(FileIOClient* aClient)
   return new WidevineFileIO(aClient);
 }
 
-} 
+} // namespace mozilla

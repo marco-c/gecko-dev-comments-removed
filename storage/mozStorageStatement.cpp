@@ -400,7 +400,8 @@ Statement::internalFinalize(bool aDestructing)
     NS_WARNING(msg);
 #endif 
 
-    MOZ_LOG(gStorageLog, LogLevel::Warning, (msg));
+    
+    MOZ_LOG(gStorageLog, LogLevel::Warning, ("%s", msg));
 
     ::mozilla::SmprintfFree(msg);
   }

@@ -304,7 +304,7 @@ nsHttp::ParseInt64(const char *input, const char **next, int64_t *r)
     
     
     if (errno != 0 || end == input || value < 0) {
-        LOG(("nsHttp::ParseInt64 value=%ld errno=%d", value, errno));
+        LOG(("nsHttp::ParseInt64 value=%" PRId64 " errno=%d", value, errno));
         return false;
     }
 

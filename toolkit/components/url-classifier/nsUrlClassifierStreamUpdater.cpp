@@ -57,9 +57,10 @@ static void TrimAndLog(const char* aFmt, ...)
     trimmed = EmptyString();
   }
 
+  
   MOZ_LOG(gUrlClassifierStreamUpdaterLog,
           mozilla::LogLevel::Debug,
-          (NS_ConvertUTF16toUTF8(trimmed).get()));
+          ("%s", NS_ConvertUTF16toUTF8(trimmed).get()));
 }
 
 

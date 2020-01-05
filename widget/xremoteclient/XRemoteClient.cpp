@@ -7,6 +7,7 @@
 
 
 #include "mozilla/ArrayUtils.h"
+#include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/Sprintf.h"
 #include "XRemoteClient.h"
 #include "prmem.h"
@@ -208,7 +209,8 @@ XRemoteClient::SendCommandLine (const char *aProgram, const char *aUsername,
 
   XSetErrorHandler(sOldHandler);
 
-  MOZ_LOG(sRemoteLm, LogLevel::Debug, ("SendCommandInternal returning 0x%x\n", rv));
+  MOZ_LOG(sRemoteLm, LogLevel::Debug, ("SendCommandInternal returning 0x%" PRIx32 "\n",
+                                       static_cast<uint32_t>(rv)));
 
   return rv;
 }

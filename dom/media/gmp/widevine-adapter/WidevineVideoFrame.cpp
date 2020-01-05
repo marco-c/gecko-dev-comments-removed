@@ -1,11 +1,12 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "WidevineVideoFrame.h"
 
 #include "WidevineUtils.h"
+#include "mozilla/IntegerPrintfMacros.h"
 
 using namespace cdm;
 
@@ -113,7 +114,7 @@ WidevineVideoFrame::Stride(cdm::VideoFrame::VideoPlane aPlane)
 void
 WidevineVideoFrame::SetTimestamp(int64_t timestamp)
 {
-  Log("WidevineVideoFrame::SetTimestamp(%lld) this=%p", timestamp, this);
+  Log("WidevineVideoFrame::SetTimestamp(%" PRId64 ") this=%p", timestamp, this);
   mTimestamp = timestamp;
 }
 
@@ -123,4 +124,4 @@ WidevineVideoFrame::Timestamp() const
   return mTimestamp;
 }
 
-} 
+} // namespace mozilla

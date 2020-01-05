@@ -62,8 +62,8 @@ CacheIndexIterator::Close()
 nsresult
 CacheIndexIterator::CloseInternal(nsresult aStatus)
 {
-  LOG(("CacheIndexIterator::CloseInternal() [this=%p, status=0x%08x]", this,
-       aStatus));
+  LOG(("CacheIndexIterator::CloseInternal() [this=%p, status=0x%08" PRIx32 "]", this,
+       static_cast<uint32_t>(aStatus)));
 
   
   MOZ_ASSERT(NS_FAILED(aStatus));

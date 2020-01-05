@@ -1,11 +1,12 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "GMPDecryptorParent.h"
 #include "GMPContentParent.h"
 #include "MediaData.h"
+#include "mozilla/SizePrintfMacros.h"
 #include "mozilla/Unused.h"
 
 namespace mozilla {
@@ -84,7 +85,7 @@ GMPDecryptorParent::CreateSession(uint32_t aCreateSessionToken,
     NS_WARNING("Trying to use a dead GMP decrypter!");
     return;
   }
-  
+  // Caller should ensure parameters passed in from JS are valid.
   MOZ_ASSERT(!aInitDataType.IsEmpty() && !aInitData.IsEmpty());
   Unused << SendCreateSession(aCreateSessionToken, aPromiseId, aInitDataType, aInitData, aSessionType);
 }
@@ -99,7 +100,7 @@ GMPDecryptorParent::LoadSession(uint32_t aPromiseId,
     NS_WARNING("Trying to use a dead GMP decrypter!");
     return;
   }
-  
+  // Caller should ensure parameters passed in from JS are valid.
   MOZ_ASSERT(!aSessionId.IsEmpty());
   Unused << SendLoadSession(aPromiseId, aSessionId);
 }
@@ -116,7 +117,7 @@ GMPDecryptorParent::UpdateSession(uint32_t aPromiseId,
     NS_WARNING("Trying to use a dead GMP decrypter!");
     return;
   }
-  
+  // Caller should ensure parameters passed in from JS are valid.
   MOZ_ASSERT(!aSessionId.IsEmpty() && !aResponse.IsEmpty());
   Unused << SendUpdateSession(aPromiseId, aSessionId, aResponse);
 }
@@ -132,7 +133,7 @@ GMPDecryptorParent::CloseSession(uint32_t aPromiseId,
     NS_WARNING("Trying to use a dead GMP decrypter!");
     return;
   }
-  
+  // Caller should ensure parameters passed in from JS are valid.
   MOZ_ASSERT(!aSessionId.IsEmpty());
   Unused << SendCloseSession(aPromiseId, aSessionId);
 }
@@ -148,7 +149,7 @@ GMPDecryptorParent::RemoveSession(uint32_t aPromiseId,
     NS_WARNING("Trying to use a dead GMP decrypter!");
     return;
   }
-  
+  // Caller should ensure parameters passed in from JS are valid.
   MOZ_ASSERT(!aSessionId.IsEmpty());
   Unused << SendRemoveSession(aPromiseId, aSessionId);
 }
@@ -164,7 +165,7 @@ GMPDecryptorParent::SetServerCertificate(uint32_t aPromiseId,
     NS_WARNING("Trying to use a dead GMP decrypter!");
     return;
   }
-  
+  // Caller should ensure parameters passed in from JS are valid.
   MOZ_ASSERT(!aServerCert.IsEmpty());
   Unused << SendSetServerCertificate(aPromiseId, aServerCert);
 }
@@ -182,7 +183,7 @@ GMPDecryptorParent::Decrypt(uint32_t aId,
     return;
   }
 
-  
+  // Caller should ensure parameters passed in are valid.
   MOZ_ASSERT(!aBuffer.IsEmpty());
 
   if (aCrypto.mValid) {
@@ -374,7 +375,7 @@ mozilla::ipc::IPCResult
 GMPDecryptorParent::RecvBatchedKeyStatusChanged(const nsCString& aSessionId,
                                                 InfallibleTArray<GMPKeyInformation>&& aKeyInfos)
 {
-  LOGD(("GMPDecryptorParent[%p]::RecvBatchedKeyStatusChanged(sessionId='%s', KeyInfos len='%d')",
+  LOGD(("GMPDecryptorParent[%p]::RecvBatchedKeyStatusChanged(sessionId='%s', KeyInfos len='%" PRIuSIZE "')",
         this, aSessionId.get(), aKeyInfos.Length()));
 
   if (mIsOpen) {
@@ -382,7 +383,7 @@ GMPDecryptorParent::RecvBatchedKeyStatusChanged(const nsCString& aSessionId,
     for (uint32_t i = 0; i < aKeyInfos.Length(); i++) {
       LOGD(("GMPDecryptorParent[%p]::RecvBatchedKeyStatusChanged(keyId=%s, gmp-status=%d)",
             this, ToHexString(aKeyInfos[i].keyId()).get(), aKeyInfos[i].status()));
-      
+      // If the status is kGMPUnknown, we're going to forget(remove) that key info.
       if (aKeyInfos[i].status() != kGMPUnknown) {
         auto status = ToMediaKeyStatus(aKeyInfos[i].status());
         cdmKeyInfos.AppendElement(CDMKeyInfo(aKeyInfos[i].keyId(),
@@ -432,19 +433,19 @@ GMPDecryptorParent::RecvShutdown()
   return IPC_OK();
 }
 
-
+// Note: may be called via Terminated()
 void
 GMPDecryptorParent::Close()
 {
   LOGD(("GMPDecryptorParent[%p]::Close()", this));
   MOZ_ASSERT(mGMPThread == NS_GetCurrentThread());
 
-  
-  
+  // Consumer is done with us; we can shut down.  No more callbacks should
+  // be made to mCallback. Note: do this before Shutdown()!
   mCallback = nullptr;
-  
+  // Let Shutdown mark us as dead so it knows if we had been alive
 
-  
+  // In case this is the last reference
   RefPtr<GMPDecryptorParent> kungfudeathgrip(this);
   this->Release();
   Shutdown();
@@ -461,7 +462,7 @@ GMPDecryptorParent::Shutdown()
   }
   mShuttingDown = true;
 
-  
+  // Notify client we're gone!  Won't occur after Close()
   if (mCallback) {
     mCallback->Terminated();
     mCallback = nullptr;
@@ -473,7 +474,7 @@ GMPDecryptorParent::Shutdown()
   }
 }
 
-
+// Note: Keep this sync'd up with Shutdown
 void
 GMPDecryptorParent::ActorDestroy(ActorDestroyReason aWhy)
 {
@@ -482,7 +483,7 @@ GMPDecryptorParent::ActorDestroy(ActorDestroyReason aWhy)
   mIsOpen = false;
   mActorDestroyed = true;
   if (mCallback) {
-    
+    // May call Close() (and Shutdown()) immediately or with a delay
     mCallback->Terminated();
     mCallback = nullptr;
   }
@@ -505,5 +506,5 @@ GMPDecryptorParent::Recv__delete__()
   return IPC_OK();
 }
 
-} 
-} 
+} // namespace gmp
+} // namespace mozilla
