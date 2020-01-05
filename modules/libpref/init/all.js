@@ -385,7 +385,11 @@ pref("media.gmp.storage.version.expected", 1);
 
 
 
+#ifdef NIGHTLY_BUILD
+pref("media.decoder-doctor.notifications-allowed", "MediaWMFNeeded,MediaWidevineNoWMF,MediaCannotInitializePulseAudio,MediaCannotPlayNoDecoders,MediaUnsupportedLibavcodec,MediaDecodeError");
+#else
 pref("media.decoder-doctor.notifications-allowed", "MediaWMFNeeded,MediaWidevineNoWMF,MediaCannotInitializePulseAudio,MediaCannotPlayNoDecoders,MediaUnsupportedLibavcodec");
+#endif
 
 pref("media.decoder-doctor.verbose", false);
 
@@ -3085,10 +3089,14 @@ pref("dom.ipc.plugins.unloadTimeoutSecs", 30);
 
 pref("dom.ipc.plugins.asyncInit.enabled", false);
 
+#ifdef RELEASE_OR_BETA
+pref("dom.ipc.plugins.asyncdrawing.enabled", false);
+#else
 
 pref("dom.ipc.plugins.asyncdrawing.enabled", true);
 
 pref("dom.ipc.plugins.forcedirect.enabled", true);
+#endif
 
 #ifdef RELEASE_OR_BETA
 pref("dom.ipc.processCount", 1);
