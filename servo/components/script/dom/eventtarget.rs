@@ -9,20 +9,22 @@ use dom::bindings::codegen::Bindings::EventHandlerBinding::EventHandlerNonNull;
 use dom::bindings::codegen::Bindings::EventHandlerBinding::OnErrorEventHandlerNonNull;
 use dom::bindings::codegen::Bindings::EventListenerBinding::EventListener;
 use dom::bindings::codegen::Bindings::EventTargetBinding::EventTargetMethods;
+use dom::bindings::codegen::Bindings::WindowBinding::WindowMethods;
 use dom::bindings::codegen::UnionTypes::EventOrString;
 use dom::bindings::error::{Error, Fallible, report_pending_exception};
 use dom::bindings::inheritance::{Castable, EventTargetTypeId};
 use dom::bindings::js::Root;
 use dom::bindings::reflector::{Reflectable, Reflector};
+use dom::element::Element;
 use dom::errorevent::ErrorEvent;
 use dom::event::{Event, EventBubbles, EventCancelable};
 use dom::eventdispatcher::dispatch_event;
+use dom::node::document_from_node;
 use dom::virtualmethods::VirtualMethods;
 use dom::window::Window;
 use fnv::FnvHasher;
 use heapsize::HeapSizeOf;
-use js::jsapi::{CompileFunction, JS_GetFunctionObject, RootedValue};
-use js::jsapi::{HandleObject, JSContext, RootedFunction};
+use js::jsapi::{CompileFunction, JS_GetFunctionObject, RootedValue, RootedFunction};
 use js::jsapi::{JSAutoCompartment, JSAutoRequest};
 use js::rust::{AutoObjectVectorWrapper, CompileOptionsWrapper};
 use libc::{c_char, size_t};
@@ -31,6 +33,8 @@ use std::collections::hash_map::Entry::{Occupied, Vacant};
 use std::default::Default;
 use std::ffi::CString;
 use std::hash::BuildHasherDefault;
+use std::mem;
+use std::ops::{Deref, DerefMut};
 use std::rc::Rc;
 use std::{intrinsics, ptr};
 use string_cache::Atom;
@@ -94,10 +98,49 @@ impl EventTargetTypeId {
     }
 }
 
+
 #[derive(JSTraceable, Clone, PartialEq)]
-pub enum EventListenerType {
+pub struct InternalRawUncompiledHandler {
+    source: DOMString,
+    url: Url,
+    line: usize,
+}
+
+
+#[derive(JSTraceable, PartialEq, Clone)]
+pub enum InlineEventListener {
+    Uncompiled(InternalRawUncompiledHandler),
+    Compiled(CommonEventHandler),
+    Null,
+}
+
+impl InlineEventListener {
+    
+    
+    
+    fn get_compiled_handler(&mut self, owner: &EventTarget, ty: &Atom)
+                            -> Option<CommonEventHandler> {
+        match mem::replace(self, InlineEventListener::Null) {
+            InlineEventListener::Null => None,
+            InlineEventListener::Uncompiled(handler) => {
+                let result = owner.get_compiled_event_handler(handler, ty);
+                if let Some(ref compiled) = result {
+                    *self = InlineEventListener::Compiled(compiled.clone());
+                }
+                result
+            }
+            InlineEventListener::Compiled(handler) => {
+                *self = InlineEventListener::Compiled(handler.clone());
+                Some(handler)
+            }
+        }
+    }
+}
+
+#[derive(JSTraceable, Clone, PartialEq)]
+enum EventListenerType {
     Additive(Rc<EventListener>),
-    Inline(CommonEventHandler),
+    Inline(InlineEventListener),
 }
 
 impl HeapSizeOf for EventListenerType {
@@ -108,6 +151,26 @@ impl HeapSizeOf for EventListenerType {
 }
 
 impl EventListenerType {
+    fn get_compiled_listener(&mut self, owner: &EventTarget, ty: &Atom)
+                             -> Option<CompiledEventListener> {
+        match self {
+            &mut EventListenerType::Inline(ref mut inline) =>
+                inline.get_compiled_handler(owner, ty)
+                      .map(CompiledEventListener::Handler),
+            &mut EventListenerType::Additive(ref listener) =>
+                Some(CompiledEventListener::Listener(listener.clone())),
+        }
+    }
+}
+
+
+
+pub enum CompiledEventListener {
+    Listener(Rc<EventListener>),
+    Handler(CommonEventHandler),
+}
+
+impl CompiledEventListener {
     
     pub fn call_or_handle_event<T: Reflectable>(&self,
                                                 object: &T,
@@ -115,10 +178,10 @@ impl EventListenerType {
                                                 exception_handle: ExceptionHandling) {
         
         match *self {
-            EventListenerType::Additive(ref listener) => {
+            CompiledEventListener::Listener(ref listener) => {
                 let _ = listener.HandleEvent_(object, event, exception_handle);
             },
-            EventListenerType::Inline(ref handler) => {
+            CompiledEventListener::Handler(ref handler) => {
                 match *handler {
                     CommonEventHandler::ErrorEventHandler(ref handler) => {
                         if let Some(event) = event.downcast::<ErrorEvent>() {
@@ -152,15 +215,61 @@ impl EventListenerType {
 
 #[derive(JSTraceable, Clone, PartialEq, HeapSizeOf)]
 #[privatize]
-pub struct EventListenerEntry {
+
+struct EventListenerEntry {
     phase: ListenerPhase,
     listener: EventListenerType
+}
+
+#[derive(JSTraceable, HeapSizeOf)]
+
+struct EventListeners(Vec<EventListenerEntry>);
+
+impl Deref for EventListeners {
+    type Target = Vec<EventListenerEntry>;
+    fn deref(&self) -> &Vec<EventListenerEntry> {
+        &self.0
+    }
+}
+
+impl DerefMut for EventListeners {
+    fn deref_mut(&mut self) -> &mut Vec<EventListenerEntry> {
+        &mut self.0
+    }
+}
+
+impl EventListeners {
+    
+    fn get_inline_listener(&mut self, owner: &EventTarget, ty: &Atom) -> Option<CommonEventHandler> {
+        for entry in &mut self.0 {
+            if let EventListenerType::Inline(ref mut inline) = entry.listener {
+                
+                return inline.get_compiled_handler(owner, ty);
+            }
+        }
+
+        
+        None
+    }
+
+    
+    fn get_listeners(&mut self, phase: Option<ListenerPhase>, owner: &EventTarget, ty: &Atom)
+                     -> Vec<CompiledEventListener> {
+        self.0.iter_mut().filter_map(|entry| {
+            if phase.is_none() || Some(entry.phase) == phase {
+                
+                entry.listener.get_compiled_listener(owner, ty)
+            } else {
+                None
+            }
+        }).collect()
+    }
 }
 
 #[dom_struct]
 pub struct EventTarget {
     reflector_: Reflector,
-    handlers: DOMRefCell<HashMap<Atom, Vec<EventListenerEntry>, BuildHasherDefault<FnvHasher>>>,
+    handlers: DOMRefCell<HashMap<Atom, EventListeners, BuildHasherDefault<FnvHasher>>>,
 }
 
 impl EventTarget {
@@ -171,17 +280,16 @@ impl EventTarget {
         }
     }
 
-    pub fn get_listeners(&self, type_: &Atom) -> Option<Vec<EventListenerType>> {
-        self.handlers.borrow().get(type_).map(|listeners| {
-            listeners.iter().map(|entry| entry.listener.clone()).collect()
+    pub fn get_listeners(&self, type_: &Atom) -> Option<Vec<CompiledEventListener>> {
+        self.handlers.borrow_mut().get_mut(type_).map(|listeners| {
+            listeners.get_listeners(None, self, type_)
         })
     }
 
     pub fn get_listeners_for(&self, type_: &Atom, desired_phase: ListenerPhase)
-        -> Option<Vec<EventListenerType>> {
-        self.handlers.borrow().get(type_).map(|listeners| {
-            let filtered = listeners.iter().filter(|entry| entry.phase == desired_phase);
-            filtered.map(|entry| entry.listener.clone()).collect()
+                             -> Option<Vec<CompiledEventListener>> {
+        self.handlers.borrow_mut().get_mut(type_).map(|listeners| {
+            listeners.get_listeners(Some(desired_phase), self, type_)
         })
     }
 
@@ -195,13 +303,14 @@ impl EventTarget {
         dispatch_event(self, None, event)
     }
 
+    
     pub fn set_inline_event_listener(&self,
                                      ty: Atom,
-                                     listener: Option<CommonEventHandler>) {
+                                     listener: Option<InlineEventListener>) {
         let mut handlers = self.handlers.borrow_mut();
         let entries = match handlers.entry(ty) {
             Occupied(entry) => entry.into_mut(),
-            Vacant(entry) => entry.insert(vec!()),
+            Vacant(entry) => entry.insert(EventListeners(vec!())),
         };
 
         let idx = entries.iter().position(|ref entry| {
@@ -213,12 +322,8 @@ impl EventTarget {
 
         match idx {
             Some(idx) => {
-                match listener {
-                    Some(listener) => entries[idx].listener = EventListenerType::Inline(listener),
-                    None => {
-                        entries.remove(idx);
-                    }
-                }
+                entries[idx].listener =
+                    EventListenerType::Inline(listener.unwrap_or(InlineEventListener::Null));
             }
             None => {
                 if listener.is_some() {
@@ -231,28 +336,52 @@ impl EventTarget {
         }
     }
 
-    pub fn get_inline_event_listener(&self, ty: &Atom) -> Option<CommonEventHandler> {
-        let handlers = self.handlers.borrow();
-        let entries = handlers.get(ty);
-        entries.and_then(|entries| entries.iter().filter_map(|entry| {
-            match entry.listener {
-                EventListenerType::Inline(ref handler) => Some(handler.clone()),
-                _ => None,
-            }
-        }).next())
+    fn get_inline_event_listener(&self, ty: &Atom) -> Option<CommonEventHandler> {
+        let mut handlers = self.handlers.borrow_mut();
+        handlers.get_mut(ty).and_then(|entry| entry.get_inline_listener(self, ty))
     }
 
-    #[allow(unsafe_code)]
+    
     
     pub fn set_event_handler_uncompiled(&self,
-                                    cx: *mut JSContext,
-                                    url: Url,
-                                    scope: HandleObject,
-                                    ty: &str,
-                                    source: DOMString) {
-        let url = CString::new(url.serialize()).unwrap();
-        let name = CString::new(ty).unwrap();
-        let lineno = 0; 
+                                        url: Url,
+                                        line: usize,
+                                        ty: &str,
+                                        source: DOMString) {
+        let handler = InternalRawUncompiledHandler {
+            source: source,
+            line: line,
+            url: url,
+        };
+        self.set_inline_event_listener(Atom::from(ty),
+                                       Some(InlineEventListener::Uncompiled(handler)));
+    }
+
+    
+    #[allow(unsafe_code)]
+    pub fn get_compiled_event_handler(&self,
+                                      handler: InternalRawUncompiledHandler,
+                                      ty: &Atom)
+                                      -> Option<CommonEventHandler> {
+        
+        let element = self.downcast::<Element>();
+        let document = match element {
+            Some(element) => document_from_node(element),
+            None => self.downcast::<Window>().unwrap().Document(),
+        };
+
+        
+
+        
+        let body: Vec<u16> = handler.source.utf16_units().collect();
+
+        
+
+        
+        let window = document.window();
+
+        let url_serialized = CString::new(handler.url.serialize()).unwrap();
+        let name = CString::new(&**ty).unwrap();
 
         static mut ARG_NAMES: [*const c_char; 1] = [b"event\0" as *const u8 as *const c_char];
         static mut ERROR_ARG_NAMES: [*const c_char; 5] = [b"event\0" as *const u8 as *const c_char,
@@ -261,7 +390,7 @@ impl EventTarget {
                                                           b"colno\0" as *const u8 as *const c_char,
                                                           b"error\0" as *const u8 as *const c_char];
         
-        let is_error = ty == "error" && self.is::<Window>();
+        let is_error = ty == &Atom::from("error") && self.is::<Window>();
         let args = unsafe {
             if is_error {
                 &ERROR_ARG_NAMES[..]
@@ -270,12 +399,14 @@ impl EventTarget {
             }
         };
 
-        let source: Vec<u16> = source.utf16_units().collect();
-        let options = CompileOptionsWrapper::new(cx, url.as_ptr(), lineno);
+        let cx = window.get_cx();
+        let options = CompileOptionsWrapper::new(cx, url_serialized.as_ptr(), handler.line as u32);
+        
+
         let scopechain = AutoObjectVectorWrapper::new(cx);
 
         let _ar = JSAutoRequest::new(cx);
-        let _ac = JSAutoCompartment::new(cx, scope.get());
+        let _ac = JSAutoCompartment::new(cx, window.reflector().get_jsobject().get());
         let mut handler = RootedFunction::new(cx, ptr::null_mut());
         let rv = unsafe {
             CompileFunction(cx,
@@ -284,21 +415,25 @@ impl EventTarget {
                             name.as_ptr(),
                             args.len() as u32,
                             args.as_ptr(),
-                            source.as_ptr(),
-                            source.len() as size_t,
+                            body.as_ptr(),
+                            body.len() as size_t,
                             handler.handle_mut())
         };
         if !rv || handler.ptr.is_null() {
+            
             report_pending_exception(cx, self.reflector().get_jsobject().get());
-            return;
+            
+            return None;
         }
 
+        
         let funobj = unsafe { JS_GetFunctionObject(handler.ptr) };
         assert!(!funobj.is_null());
+        
         if is_error {
-            self.set_error_event_handler(ty, Some(OnErrorEventHandlerNonNull::new(funobj)));
+            Some(CommonEventHandler::ErrorEventHandler(OnErrorEventHandlerNonNull::new(funobj)))
         } else {
-            self.set_event_handler_common(ty, Some(EventHandlerNonNull::new(funobj)));
+            Some(CommonEventHandler::EventHandler(EventHandlerNonNull::new(funobj)))
         }
     }
 
@@ -306,8 +441,9 @@ impl EventTarget {
         &self, ty: &str, listener: Option<Rc<T>>)
     {
         let event_listener = listener.map(|listener|
-                                          CommonEventHandler::EventHandler(
-                                              EventHandlerNonNull::new(listener.callback())));
+                                          InlineEventListener::Compiled(
+                                              CommonEventHandler::EventHandler(
+                                                  EventHandlerNonNull::new(listener.callback()))));
         self.set_inline_event_listener(Atom::from(ty), event_listener);
     }
 
@@ -315,8 +451,9 @@ impl EventTarget {
         &self, ty: &str, listener: Option<Rc<T>>)
     {
         let event_listener = listener.map(|listener|
-                                          CommonEventHandler::ErrorEventHandler(
-                                              OnErrorEventHandlerNonNull::new(listener.callback())));
+                                          InlineEventListener::Compiled(
+                                              CommonEventHandler::ErrorEventHandler(
+                                                  OnErrorEventHandlerNonNull::new(listener.callback()))));
         self.set_inline_event_listener(Atom::from(ty), event_listener);
     }
 
@@ -359,7 +496,7 @@ impl EventTargetMethods for EventTarget {
             let mut handlers = self.handlers.borrow_mut();
             let entry = match handlers.entry(Atom::from(&*ty)) {
                 Occupied(entry) => entry.into_mut(),
-                Vacant(entry) => entry.insert(vec!()),
+                Vacant(entry) => entry.insert(EventListeners(vec!())),
             };
 
             let phase = if capture { ListenerPhase::Capturing } else { ListenerPhase::Bubbling };
