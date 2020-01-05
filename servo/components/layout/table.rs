@@ -38,7 +38,7 @@ use table_wrapper::TableLayout;
 
 
 
-#[derive(RustcEncodable)]
+#[derive(Serialize)]
 pub struct TableFlow {
     pub block_flow: BlockFlow,
 
@@ -578,7 +578,7 @@ impl ISizeAndMarginsComputer for InternalTable {
 
 
 
-#[derive(Clone, RustcEncodable, Debug, Copy)]
+#[derive(Clone, Serialize, Debug, Copy)]
 pub struct ColumnIntrinsicInlineSize {
     
     pub preferred: Au,
@@ -615,7 +615,7 @@ impl ColumnIntrinsicInlineSize {
 
 
 
-#[derive(RustcEncodable, Clone, Copy, Debug)]
+#[derive(Serialize, Clone, Copy, Debug)]
 pub struct ColumnComputedInlineSize {
     
     pub size: Au,

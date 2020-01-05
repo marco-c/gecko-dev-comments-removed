@@ -65,7 +65,7 @@ use unicode_bidi;
 
 
 
-#[derive(RustcEncodable, Debug, Clone)]
+#[derive(Serialize, Debug, Clone)]
 pub struct Line {
     
     
@@ -207,7 +207,7 @@ impl Line {
 }
 
 int_range_index! {
-    #[derive(RustcEncodable)]
+    #[derive(Serialize)]
     #[doc = "The index of a fragment in a flattened vector of DOM elements."]
     struct FragmentIndex(isize)
 }
@@ -791,7 +791,7 @@ impl LineBreaker {
 }
 
 
-#[derive(RustcEncodable, Clone)]
+#[derive(Serialize, Clone)]
 pub struct InlineFragments {
     
     pub fragments: Vec<Fragment>,
@@ -828,7 +828,7 @@ impl InlineFragments {
 }
 
 
-#[derive(RustcEncodable)]
+#[derive(Serialize)]
 pub struct InlineFlow {
     
     pub base: BaseFlow,
@@ -1780,7 +1780,7 @@ fn inline_contexts_are_equal(inline_context_a: &Option<InlineFragmentContext>,
 
 
 
-#[derive(Clone, Copy, Debug, RustcEncodable)]
+#[derive(Clone, Copy, Debug, Serialize)]
 pub struct InlineMetrics {
     
     pub space_above_baseline: Au,
@@ -1831,7 +1831,7 @@ enum LineFlushMode {
     Flush,
 }
 
-#[derive(Copy, Clone, Debug, RustcEncodable)]
+#[derive(Copy, Clone, Debug, Serialize)]
 pub struct LineMetrics {
     pub space_above_baseline: Au,
     pub space_below_baseline: Au,

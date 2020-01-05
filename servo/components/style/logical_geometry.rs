@@ -22,9 +22,9 @@ pub enum InlineBaseDirection {
     RightToLeft
 }
 
+
 bitflags!(
-    #[derive(RustcEncodable)]
-    #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+    #[cfg_attr(feature = "servo", derive(HeapSizeOf, Serialize))]
     pub flags WritingMode: u8 {
         const FLAG_RTL = 1 << 0,
         const FLAG_VERTICAL = 1 << 1,
@@ -157,11 +157,13 @@ impl fmt::Display for WritingMode {
 
 
 #[cfg(not(debug_assertions))]
-#[derive(RustcEncodable, PartialEq, Eq, Clone, Copy)]
+#[derive(PartialEq, Eq, Clone, Copy)]
+#[cfg_attr(feature = "servo", derive(Serialize))]
 struct DebugWritingMode;
 
 #[cfg(debug_assertions)]
-#[derive(RustcEncodable, PartialEq, Eq, Clone, Copy)]
+#[derive(PartialEq, Eq, Clone, Copy)]
+#[cfg_attr(feature = "servo", derive(Serialize))]
 struct DebugWritingMode {
     mode: WritingMode
 }
@@ -212,7 +214,8 @@ impl Debug for DebugWritingMode {
 
 
 
-#[derive(RustcEncodable, PartialEq, Eq, Clone, Copy)]
+#[derive(PartialEq, Eq, Clone, Copy)]
+#[cfg_attr(feature = "servo", derive(Serialize))]
 pub struct LogicalSize<T> {
     pub inline: T,  
     pub block: T,  
@@ -348,7 +351,8 @@ impl<T: Sub<T, Output=T>> Sub for LogicalSize<T> {
 
 
 
-#[derive(PartialEq, RustcEncodable, Eq, Clone, Copy)]
+#[derive(PartialEq, Eq, Clone, Copy)]
+#[cfg_attr(feature = "servo", derive(Serialize))]
 pub struct LogicalPoint<T> {
     
     pub i: T,
@@ -520,7 +524,8 @@ impl<T: Copy + Sub<T, Output=T>> Sub<LogicalSize<T>> for LogicalPoint<T> {
 
 
 
-#[derive(RustcEncodable, PartialEq, Eq, Clone, Copy)]
+#[derive(PartialEq, Eq, Clone, Copy)]
+#[cfg_attr(feature = "servo", derive(Serialize))]
 pub struct LogicalMargin<T> {
     pub block_start: T,
     pub inline_end: T,
@@ -813,7 +818,8 @@ impl<T: Sub<T, Output=T>> Sub for LogicalMargin<T> {
 
 
 
-#[derive(RustcEncodable, PartialEq, Eq, Clone, Copy)]
+#[derive(PartialEq, Eq, Clone, Copy)]
+#[cfg_attr(feature = "servo", derive(Serialize))]
 pub struct LogicalRect<T> {
     pub start: LogicalPoint<T>,
     pub size: LogicalSize<T>,

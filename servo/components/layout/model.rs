@@ -301,7 +301,7 @@ pub enum MarginCollapseState {
 }
 
 
-#[derive(RustcEncodable, Copy, Clone)]
+#[derive(Serialize, Copy, Clone)]
 pub struct IntrinsicISizes {
     
     pub minimum_inline_size: Au,
