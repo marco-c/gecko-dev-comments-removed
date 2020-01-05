@@ -32,6 +32,18 @@ class SETA(object):
         
         self.failed_json_push_calls = []
 
+    def _get_task_string(self, task_tuple):
+        
+        
+        task_tuple = [x for x in task_tuple if len(x) != 0]
+
+        if len(task_tuple) == 0:
+            return ''
+        if len(task_tuple) != 3:
+            return ' '.join(task_tuple)
+
+        return 'test-%s/%s-%s' % (task_tuple[0], task_tuple[1], task_tuple[2])
+
     def query_low_value_tasks(self, project):
         
         
@@ -47,12 +59,17 @@ class SETA(object):
                              args=(url, ),
                              kwargs={'timeout': 5, 'headers': headers})
             task_list = json.loads(response.content).get('jobtypes', '')
-            if len(task_list) > 0:
-                low_value_tasks = task_list.values()[0]
+
+            if type(task_list) == dict and len(task_list) > 0:
+                if type(task_list.values()[0]) == list and len(task_list.values()[0]) > 0:
+                    low_value_tasks = task_list.values()[0]
+                    
+                    
+                    if type(low_value_tasks[0]) == list:
+                        low_value_tasks = [self._get_task_string(x) for x in low_value_tasks]
 
             
-            low_value_tasks = [x for x in low_value_tasks if x.find('debug') == -1]
-            low_value_tasks = [x for x in low_value_tasks if x.find('asan') == -1]
+            low_value_tasks = [x for x in low_value_tasks if 'build' not in x.lower()]
 
         
         except exceptions.Timeout:
