@@ -658,6 +658,31 @@ nsCSPParser::schemeSource()
   return new nsCSPSchemeSrc(scheme);
 }
 
+bool IsValidBase64Value(const char16_t* cur, const char16_t* end)
+{
+  
+  if (end > cur && *(end-1) == EQUALS) end--;
+  if (end > cur && *(end-1) == EQUALS) end--;
+
+  
+  if (end == cur) {
+    return false;
+  }
+
+  
+  for (; cur < end; ++cur) {
+    if (!((*cur >= 'a' && *cur <= 'z') ||
+          (*cur >= 'A' && *cur <= 'Z') ||
+          (*cur >= '0' && *cur <= '9') ||
+          *cur == PLUS || *cur == SLASH ||
+          *cur == DASH || *cur == UNDERLINE)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 
 nsCSPNonceSrc*
 nsCSPParser::nonceSource()
@@ -680,6 +705,10 @@ nsCSPParser::nonceSource()
   if (dashIndex < 0) {
     return nullptr;
   }
+  if (!IsValidBase64Value(expr.BeginReading() + dashIndex + 1, expr.EndReading())) {
+    return nullptr;
+  }
+
   
   mHasHashOrNonce = true;
   return new nsCSPNonceSrc(Substring(expr,
@@ -706,6 +735,10 @@ nsCSPParser::hashSource()
 
   int32_t dashIndex = expr.FindChar(DASH);
   if (dashIndex < 0) {
+    return nullptr;
+  }
+
+  if (!IsValidBase64Value(expr.BeginReading() + dashIndex + 1, expr.EndReading())) {
     return nullptr;
   }
 
