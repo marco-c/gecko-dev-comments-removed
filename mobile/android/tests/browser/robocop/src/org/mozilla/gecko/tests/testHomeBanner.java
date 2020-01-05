@@ -39,10 +39,12 @@ public class testHomeBanner extends UITest {
 
     private void addBannerTest() {
         
-        Actions.EventExpecter eventExpecter = getActions().expectGeckoEvent("TestHomeBanner:MessageShown");
+        Actions.EventExpecter eventExpecter = getActions().expectGlobalEvent(
+                Actions.EventType.GECKO, "TestHomeBanner:MessageShown");
         addBannerMessage();
         NavigationHelper.enterAndLoadUrl(mStringHelper.ABOUT_HOME_URL);
         eventExpecter.blockForEvent();
+        eventExpecter.unregisterListener();
 
         
         mAboutHome.assertBannerText(TEXT);
@@ -76,9 +78,11 @@ public class testHomeBanner extends UITest {
         mAboutHome.assertVisible();
 
         
-        final Actions.EventExpecter eventExpecter = getActions().expectGeckoEvent("TestHomeBanner:MessageDismissed");
+        final Actions.EventExpecter eventExpecter = getActions().expectGlobalEvent(
+                Actions.EventType.GECKO, "TestHomeBanner:MessageDismissed");
         mAboutHome.dismissBanner();
         eventExpecter.blockForEvent();
+        eventExpecter.unregisterListener();
 
         mAboutHome.assertBannerNotVisible();
     }
@@ -87,8 +91,10 @@ public class testHomeBanner extends UITest {
 
 
     private void addBannerMessage() {
-        final Actions.EventExpecter eventExpecter = getActions().expectGeckoEvent("TestHomeBanner:MessageAdded");
+        final Actions.EventExpecter eventExpecter = getActions().expectGlobalEvent(
+                Actions.EventType.GECKO, "TestHomeBanner:MessageAdded");
         NavigationHelper.enterAndLoadUrl(TEST_URL + "#addMessage");
         eventExpecter.blockForEvent();
+        eventExpecter.unregisterListener();
     }
 }

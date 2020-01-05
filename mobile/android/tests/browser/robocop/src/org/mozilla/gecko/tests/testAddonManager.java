@@ -30,7 +30,7 @@ public class testAddonManager extends PixelTest  {
 
         
         tabEventExpecter = mActions.expectGlobalEvent(Actions.EventType.UI, "Tab:Added");
-        contentEventExpecter = mActions.expectGeckoEvent("DOMContentLoaded");
+        contentEventExpecter = mActions.expectGlobalEvent(Actions.EventType.GECKO, "Content:DOMContentLoaded");
 
         
         tabEventExpecter.blockForEvent();
@@ -51,7 +51,7 @@ public class testAddonManager extends PixelTest  {
 
         
         tabEventExpecter = mActions.expectGlobalEvent(Actions.EventType.UI, "Tab:Added");
-        contentEventExpecter = mActions.expectGeckoEvent("DOMContentLoaded");
+        contentEventExpecter = mActions.expectGlobalEvent(Actions.EventType.GECKO, "Content:DOMContentLoaded");
 
         
         final String blankURL = getAbsoluteUrl(mStringHelper.ROBOCOP_BLANK_PAGE_01_URL);

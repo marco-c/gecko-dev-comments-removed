@@ -30,7 +30,7 @@ public class testAboutPage extends PixelTest {
 
         
         Actions.EventExpecter tabEventExpecter = mActions.expectGlobalEvent(Actions.EventType.UI, "Tab:Added");
-        Actions.EventExpecter contentEventExpecter = mActions.expectGeckoEvent("DOMContentLoaded");
+        Actions.EventExpecter contentEventExpecter = mActions.expectGlobalEvent(Actions.EventType.GECKO, "Content:DOMContentLoaded");
 
         selectSettingsItem(mStringHelper.MOZILLA_SECTION_LABEL, mStringHelper.ABOUT_LABEL);
 
