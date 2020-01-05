@@ -7,7 +7,7 @@ function test() {
 
   
   Services.prefs.setIntPref(phishyUserPassPref, 32);
-  registerCleanupFunction(function () {
+  registerCleanupFunction(function() {
     Services.prefs.clearUserPref(phishyUserPassPref);
   });
 
@@ -19,7 +19,7 @@ const phishyUserPassPref = "network.http.phishy-userpass-length";
 function nextTest() {
   let test = tests.shift();
   if (test) {
-    test(function () {
+    test(function() {
       executeSoon(nextTest);
     });
   } else {
@@ -29,7 +29,7 @@ function nextTest() {
 
 var tests = [
   function revert(next) {
-    loadTabInWindow(window, function (tab) {
+    loadTabInWindow(window, function(tab) {
       gURLBar.handleRevert();
       is(gURLBar.textValue, "example.com", "URL bar had user/pass stripped after reverting");
       gBrowser.removeTab(tab);
@@ -40,9 +40,9 @@ var tests = [
     
     
     BrowserTestUtils.openNewBrowserWindow().then(function(win) {
-      loadTabInWindow(win, function () {
-        openToolbarCustomizationUI(function () {
-          closeToolbarCustomizationUI(function () {
+      loadTabInWindow(win, function() {
+        openToolbarCustomizationUI(function() {
+          closeToolbarCustomizationUI(function() {
             is(win.gURLBar.textValue, "example.com", "URL bar had user/pass stripped after customize");
             win.close();
             next();
@@ -52,7 +52,7 @@ var tests = [
     });
   },
   function pageloaderror(next) {
-    loadTabInWindow(window, function (tab) {
+    loadTabInWindow(window, function(tab) {
       
       
       tab.linkedBrowser.loadURI("http://test1.example.com");

@@ -15,7 +15,7 @@ var gAdvancedPane = {
   
 
 
-  init: function ()
+  init: function()
   {
     function setEventListener(aId, aEventType, aCallback)
     {
@@ -31,7 +31,7 @@ var gAdvancedPane = {
         advancedPrefs.selectedIndex = preference.value;
 
     if (AppConstants.MOZ_UPDATER) {
-      let onUnload = function () {
+      let onUnload = function() {
         window.removeEventListener("unload", onUnload, false);
         Services.prefs.removeObserver("app.update.", this);
       }.bind(this);
@@ -103,7 +103,7 @@ var gAdvancedPane = {
 
 
 
-  tabSelectionChanged: function ()
+  tabSelectionChanged: function()
   {
     if (!this._inited)
       return;
@@ -155,7 +155,7 @@ var gAdvancedPane = {
 
 
 
-  readCheckSpelling: function ()
+  readCheckSpelling: function()
   {
     var pref = document.getElementById("layout.spellcheckDefault");
     this._storedSpellCheck = pref.value;
@@ -168,7 +168,7 @@ var gAdvancedPane = {
 
 
 
-  writeCheckSpelling: function ()
+  writeCheckSpelling: function()
   {
     var checkbox = document.getElementById("checkSpelling");
     if (checkbox.checked) {
@@ -184,7 +184,7 @@ var gAdvancedPane = {
 
 
 
-  readEnableOCSP: function ()
+  readEnableOCSP: function()
   {
     var preference = document.getElementById("security.OCSP.enabled");
     
@@ -197,7 +197,7 @@ var gAdvancedPane = {
   
 
 
-  writeEnableOCSP: function ()
+  writeEnableOCSP: function()
   {
     var checkbox = document.getElementById("enableOCSP");
     return checkbox.checked ? 1 : 0;
@@ -221,7 +221,7 @@ var gAdvancedPane = {
   
 
 
-  _setupLearnMoreLink: function (pref, element) {
+  _setupLearnMoreLink: function(pref, element) {
     
     let url = Services.prefs.getCharPref(pref);
     let el = document.getElementById(element);
@@ -236,7 +236,7 @@ var gAdvancedPane = {
   
 
 
-  initSubmitCrashes: function ()
+  initSubmitCrashes: function()
   {
     this._setupLearnMoreLink("toolkit.crashreporter.infoURL",
                              "crashReporterLearnMore");
@@ -247,7 +247,7 @@ var gAdvancedPane = {
 
 
 
-  initTelemetry: function ()
+  initTelemetry: function()
   {
     if (AppConstants.MOZ_TELEMETRY_REPORTING) {
       this._setupLearnMoreLink("toolkit.telemetry.infoURL", "telemetryLearnMore");
@@ -258,7 +258,7 @@ var gAdvancedPane = {
 
 
 
-  setTelemetrySectionEnabled: function (aEnabled)
+  setTelemetrySectionEnabled: function(aEnabled)
   {
     if (AppConstants.MOZ_TELEMETRY_REPORTING) {
       
@@ -275,7 +275,7 @@ var gAdvancedPane = {
   
 
 
-  initSubmitHealthReport: function () {
+  initSubmitHealthReport: function() {
     if (AppConstants.MOZ_TELEMETRY_REPORTING) {
       this._setupLearnMoreLink("datareporting.healthreport.infoURL", "FHRLearnMore");
 
@@ -294,7 +294,7 @@ var gAdvancedPane = {
   
 
 
-  updateSubmitHealthReport: function () {
+  updateSubmitHealthReport: function() {
     if (AppConstants.MOZ_TELEMETRY_REPORTING) {
       let checkbox = document.getElementById("submitHealthReportBox");
       Services.prefs.setBoolPref(PREF_UPLOAD_ENABLED, checkbox.checked);
@@ -324,13 +324,13 @@ var gAdvancedPane = {
   
 
 
-  showConnections: function ()
+  showConnections: function()
   {
     gSubDialog.open("chrome://browser/content/preferences/connection.xul");
   },
 
   
-  updateActualCacheSize: function ()
+  updateActualCacheSize: function()
   {
     var actualSizeLabel = document.getElementById("actualDiskCacheSize");
     var prefStrBundle = document.getElementById("bundlePreferences");
@@ -364,10 +364,10 @@ var gAdvancedPane = {
   },
 
   
-  updateActualAppCacheSize: function ()
+  updateActualAppCacheSize: function()
   {
     var visitor = {
-      onCacheStorageInfo: function (aEntryCount, aConsumption, aCapacity, aDiskDirectory)
+      onCacheStorageInfo: function(aEntryCount, aConsumption, aCapacity, aDiskDirectory)
       {
         var actualSizeLabel = document.getElementById("actualAppCacheSize");
         var sizeStrings = DownloadUtils.convertByteUnits(aConsumption);
@@ -391,14 +391,14 @@ var gAdvancedPane = {
     } catch (e) {}
   },
 
-  updateCacheSizeUI: function (smartSizeEnabled)
+  updateCacheSizeUI: function(smartSizeEnabled)
   {
     document.getElementById("useCacheBefore").disabled = smartSizeEnabled;
     document.getElementById("cacheSize").disabled = smartSizeEnabled;
     document.getElementById("useCacheAfter").disabled = smartSizeEnabled;
   },
 
-  readSmartSizeEnabled: function ()
+  readSmartSizeEnabled: function()
   {
     
     
@@ -437,7 +437,7 @@ var gAdvancedPane = {
   
 
 
-  clearCache: function ()
+  clearCache: function()
   {
     try {
       var cache = Components.classes["@mozilla.org/netwerk/cache-storage-service;1"]
@@ -450,7 +450,7 @@ var gAdvancedPane = {
   
 
 
-  clearOfflineAppCache: function ()
+  clearOfflineAppCache: function()
   {
     Components.utils.import("resource:///modules/offlineAppCache.jsm");
     OfflineAppCacheHelper.clear();
@@ -509,7 +509,7 @@ var gAdvancedPane = {
   
 
 
-  updateOfflineApps: function ()
+  updateOfflineApps: function()
   {
     var pm = Components.classes["@mozilla.org/permissionmanager;1"]
                        .getService(Components.interfaces.nsIPermissionManager);
@@ -642,7 +642,7 @@ var gAdvancedPane = {
 
 
 
-  updateReadPrefs: function ()
+  updateReadPrefs: function()
   {
     if (AppConstants.MOZ_UPDATER) {
       var enabledPref = document.getElementById("app.update.enabled");
@@ -688,7 +688,7 @@ var gAdvancedPane = {
   
 
 
-  updateWritePrefs: function ()
+  updateWritePrefs: function()
   {
     if (AppConstants.MOZ_UPDATER) {
       var enabledPref = document.getElementById("app.update.enabled");
@@ -713,7 +713,7 @@ var gAdvancedPane = {
   
 
 
-  showUpdates: function ()
+  showUpdates: function()
   {
     gSubDialog.open("chrome://mozapps/content/update/history.xul");
   },
@@ -735,7 +735,7 @@ var gAdvancedPane = {
   
 
 
-  showCertificates: function ()
+  showCertificates: function()
   {
     gSubDialog.open("chrome://pippki/content/certManager.xul");
   },
@@ -743,12 +743,12 @@ var gAdvancedPane = {
   
 
 
-  showSecurityDevices: function ()
+  showSecurityDevices: function()
   {
     gSubDialog.open("chrome://pippki/content/device_manager.xul");
   },
 
-  observe: function (aSubject, aTopic, aData) {
+  observe: function(aSubject, aTopic, aData) {
     if (AppConstants.MOZ_UPDATER) {
       switch (aTopic) {
         case "nsPref:changed":

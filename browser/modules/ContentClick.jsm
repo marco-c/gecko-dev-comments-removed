@@ -21,7 +21,7 @@ var ContentClick = {
     mm.addMessageListener("Content:Click", this);
   },
 
-  receiveMessage: function (message) {
+  receiveMessage: function(message) {
     switch (message.name) {
       case "Content:Click":
         this.contentAreaClick(message.json, message.target)
@@ -29,7 +29,7 @@ var ContentClick = {
     }
   },
 
-  contentAreaClick: function (json, browser) {
+  contentAreaClick: function(json, browser) {
     
     
     let window = browser.ownerGlobal;

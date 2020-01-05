@@ -118,7 +118,7 @@ add_task(function* test() {
     let tabInfo = yield* openTabInUserContext(testURL, userContextId);
 
     
-    yield ContentTask.spawn(tabInfo.browser, { userContext: USER_CONTEXTS[userContextId] }, function (arg) {
+    yield ContentTask.spawn(tabInfo.browser, { userContext: USER_CONTEXTS[userContextId] }, function(arg) {
       content.document.cookie = "userContext=" + arg.userContext;
     });
 

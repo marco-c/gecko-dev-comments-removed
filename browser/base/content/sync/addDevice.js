@@ -150,7 +150,7 @@ var gSyncAddDevice = {
 };
 
 
-["wizard", "pin1", "pin2", "pin3"].forEach(function (id) {
+["wizard", "pin1", "pin2", "pin3"].forEach(function(id) {
   XPCOMUtils.defineLazyGetter(gSyncAddDevice, id, function() {
     return document.getElementById(id);
   });

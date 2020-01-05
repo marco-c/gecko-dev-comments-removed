@@ -56,7 +56,7 @@ var gTabsListener = {
 
       this._openTabsCount = 0;
 
-      executeSoon(function () {
+      executeSoon(function() {
         
         while (gBrowser.tabs.length > 1)
           gBrowser.removeCurrentTab();
@@ -220,7 +220,7 @@ function test() {
   gPrefService.setBoolPref(ENABLE_HISTORY_PREF, false);
 
   
-  openLibrary(function (library) {
+  openLibrary(function(library) {
     gLibrary = library;
     
     runNextTest();

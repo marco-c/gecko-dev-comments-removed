@@ -22,7 +22,7 @@ var MigrationWizard = {
   _migrator: null,
   _autoMigrate: null,
 
-  init: function ()
+  init: function()
   {
     let os = Services.obs;
     os.addObserver(this, "Migration:Started", false);
@@ -58,7 +58,7 @@ var MigrationWizard = {
     this.onImportSourcePageShow();
   },
 
-  uninit: function ()
+  uninit: function()
   {
     var os = Components.classes["@mozilla.org/observer-service;1"]
                        .getService(Components.interfaces.nsIObserverService);
@@ -71,7 +71,7 @@ var MigrationWizard = {
   },
 
   
-  onImportSourcePageShow: function ()
+  onImportSourcePageShow: function()
   {
     
     function toggleCloseBrowserWarning() {
@@ -137,7 +137,7 @@ var MigrationWizard = {
     }
   },
 
-  onImportSourcePageAdvanced: function ()
+  onImportSourcePageAdvanced: function()
   {
     var newSource = document.getElementById("importSourceGroup").selectedItem.id;
 
@@ -183,7 +183,7 @@ var MigrationWizard = {
   },
 
   
-  onSelectProfilePageShow: function ()
+  onSelectProfilePageShow: function()
   {
     
     
@@ -210,7 +210,7 @@ var MigrationWizard = {
     profiles.selectedItem = this._selectedProfile ? document.getElementById(this._selectedProfile.id) : profiles.firstChild;
   },
 
-  onSelectProfilePageRewound: function ()
+  onSelectProfilePageRewound: function()
   {
     var profiles = document.getElementById("profiles");
     this._selectedProfile = this._migrator.sourceProfiles.find(
@@ -218,7 +218,7 @@ var MigrationWizard = {
     ) || null;
   },
 
-  onSelectProfilePageAdvanced: function ()
+  onSelectProfilePageAdvanced: function()
   {
     var profiles = document.getElementById("profiles");
     this._selectedProfile = this._migrator.sourceProfiles.find(
@@ -231,7 +231,7 @@ var MigrationWizard = {
   },
 
   
-  onImportItemsPageShow: function ()
+  onImportItemsPageShow: function()
   {
     var dataSources = document.getElementById("dataSources");
     while (dataSources.hasChildNodes())
@@ -252,13 +252,13 @@ var MigrationWizard = {
     }
   },
 
-  onImportItemsPageRewound: function ()
+  onImportItemsPageRewound: function()
   {
     this._wiz.canAdvance = true;
     this.onImportItemsPageAdvanced();
   },
 
-  onImportItemsPageAdvanced: function ()
+  onImportItemsPageAdvanced: function()
   {
     var dataSources = document.getElementById("dataSources");
     this._itemsFlags = 0;
@@ -269,7 +269,7 @@ var MigrationWizard = {
     }
   },
 
-  onImportItemCommand: function ()
+  onImportItemCommand: function()
   {
     var items = document.getElementById("dataSources");
     var checkboxes = items.getElementsByTagName("checkbox");
@@ -286,7 +286,7 @@ var MigrationWizard = {
   },
 
   
-  onHomePageMigrationPageShow: function ()
+  onHomePageMigrationPageShow: function()
   {
     
     if (!this._autoMigrate) {
@@ -338,7 +338,7 @@ var MigrationWizard = {
     }
   },
 
-  onHomePageMigrationPageAdvanced: function ()
+  onHomePageMigrationPageAdvanced: function()
   {
     
     try {
@@ -349,7 +349,7 @@ var MigrationWizard = {
   },
 
   
-  onMigratingPageShow: function ()
+  onMigratingPageShow: function()
   {
     this._wiz.getButton("cancel").disabled = true;
     this._wiz.canRewind = false;
@@ -363,7 +363,7 @@ var MigrationWizard = {
     setTimeout(() => this.onMigratingMigrate(), 0);
   },
 
-  onMigratingMigrate: function ()
+  onMigratingMigrate: function()
   {
     this._migrator.migrate(this._itemsFlags, this._autoMigrate, this._selectedProfile);
 
@@ -383,7 +383,7 @@ var MigrationWizard = {
     }
   },
 
-  _listItems: function (aID)
+  _listItems: function(aID)
   {
     var items = document.getElementById(aID);
     while (items.hasChildNodes())
@@ -409,7 +409,7 @@ var MigrationWizard = {
     }
   },
 
-  observe: function (aSubject, aTopic, aData)
+  observe: function(aSubject, aTopic, aData)
   {
     var label;
     switch (aTopic) {
@@ -514,7 +514,7 @@ var MigrationWizard = {
     }
   },
 
-  onDonePageShow: function ()
+  onDonePageShow: function()
   {
     this._wiz.getButton("cancel").disabled = true;
     this._wiz.canRewind = false;

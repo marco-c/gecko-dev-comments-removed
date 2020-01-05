@@ -1,15 +1,25 @@
-add_task(function* () {
-  const PREF_TRIMURLS = "browser.urlbar.trimURLs";
 
-  let tab = yield BrowserTestUtils.openNewForegroundTab(gBrowser);
 
-  registerCleanupFunction(function* () {
-    yield BrowserTestUtils.removeTab(tab);
-    Services.prefs.clearUserPref(PREF_TRIMURLS);
+
+
+function testVal(originalValue, targetValue) {
+  gURLBar.value = originalValue;
+  gURLBar.valueIsTyped = false;
+  is(gURLBar.textValue, targetValue || originalValue, "url bar value set");
+}
+
+function test() {
+  const prefname = "browser.urlbar.trimURLs";
+
+  gBrowser.selectedTab = gBrowser.addTab();
+
+  registerCleanupFunction(function() {
+    gBrowser.removeCurrentTab();
+    Services.prefs.clearUserPref(prefname);
     URLBarSetURI();
   });
 
-  Services.prefs.setBoolPref(PREF_TRIMURLS, true);
+  Services.prefs.setBoolPref(prefname, true);
 
   testVal("http://mozilla.org/", "mozilla.org");
   testVal("https://mozilla.org/", "https://mozilla.org");
@@ -61,38 +71,35 @@ add_task(function* () {
   testVal("http://localhost/ foo bar baz");
   testVal("http://localhost.localdomain/ foo bar baz", "localhost.localdomain/ foo bar baz");
 
-  Services.prefs.setBoolPref(PREF_TRIMURLS, false);
+  Services.prefs.setBoolPref(prefname, false);
 
   testVal("http://mozilla.org/");
 
-  Services.prefs.setBoolPref(PREF_TRIMURLS, true);
+  Services.prefs.setBoolPref(prefname, true);
 
-  let promiseLoaded = BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser,
-                                                     false, "http://example.com/");
+  waitForExplicitFinish();
+
+  gBrowser.selectedBrowser.addEventListener("load", function() {
+    gBrowser.selectedBrowser.removeEventListener("load", arguments.callee, true);
+
+    is(gBrowser.currentURI.spec, "http://example.com/", "expected page should have loaded");
+
+    testCopy("example.com", "http://example.com/", function() {
+      SetPageProxyState("invalid");
+      gURLBar.valueIsTyped = true;
+      testCopy("example.com", "example.com", finish);
+    });
+  }, true);
+
   gBrowser.loadURI("http://example.com/");
-  yield promiseLoaded;
-
-  yield testCopy("example.com", "http://example.com/")
-
-  SetPageProxyState("invalid");
-  gURLBar.valueIsTyped = true;
-  yield testCopy("example.com", "example.com");
-});
-
-function testVal(originalValue, targetValue) {
-  gURLBar.value = originalValue;
-  gURLBar.valueIsTyped = false;
-  is(gURLBar.textValue, targetValue || originalValue, "url bar value set");
 }
 
-function testCopy(originalValue, targetValue) {
-  return new Promise((resolve, reject) => {
-    waitForClipboard(targetValue, function () {
-      is(gURLBar.textValue, originalValue, "url bar copy value set");
+function testCopy(originalValue, targetValue, cb) {
+  waitForClipboard(targetValue, function() {
+    is(gURLBar.textValue, originalValue, "url bar copy value set");
 
-      gURLBar.focus();
-      gURLBar.select();
-      goDoCommand("cmd_copy");
-    }, resolve, reject);
-  });
+    gURLBar.focus();
+    gURLBar.select();
+    goDoCommand("cmd_copy");
+  }, cb, cb);
 }

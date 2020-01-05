@@ -26,7 +26,7 @@ var gPrivacyPane = {
 
 
 
-  _initTrackingProtection: function () {
+  _initTrackingProtection: function() {
     if (!Services.prefs.getBoolPref("privacy.trackingprotection.ui.enabled")) {
       return;
     }
@@ -45,7 +45,7 @@ var gPrivacyPane = {
 
 
 
-  _initTrackingProtectionPBM: function () {
+  _initTrackingProtectionPBM: function() {
     let link = document.getElementById("trackingProtectionPBMLearnMore");
     let url = Services.urlFormatter.formatURLPref("app.support.baseURL") + "tracking-protection-pbm";
     link.setAttribute("href", url);
@@ -54,7 +54,7 @@ var gPrivacyPane = {
   
 
 
-  _initAutocomplete: function () {
+  _initAutocomplete: function() {
     Components.classes["@mozilla.org/autocomplete/search;1?name=unifiedcomplete"]
               .getService(Components.interfaces.mozIPlacesAutoComplete);
   },
@@ -62,7 +62,7 @@ var gPrivacyPane = {
   
 
 
-  _initBrowserContainers: function () {
+  _initBrowserContainers: function() {
     if (!Services.prefs.getBoolPref("privacy.userContext.ui.enabled")) {
       return;
     }
@@ -116,7 +116,7 @@ var gPrivacyPane = {
 
 
 
-  init: function ()
+  init: function()
   {
     function setEventListener(aId, aEventType, aCallback)
     {
@@ -138,25 +138,25 @@ var gPrivacyPane = {
                      gPrivacyPane._updateSanitizeSettingsButton);
     setEventListener("browser.privatebrowsing.autostart", "change",
                      gPrivacyPane.updatePrivacyMicroControls);
-    setEventListener("historyMode", "command", function () {
+    setEventListener("historyMode", "command", function() {
       gPrivacyPane.updateHistoryModePane();
       gPrivacyPane.updateHistoryModePrefs();
       gPrivacyPane.updatePrivacyMicroControls();
       gPrivacyPane.updateAutostart();
     });
-    setEventListener("historyRememberClear", "click", function () {
+    setEventListener("historyRememberClear", "click", function() {
       gPrivacyPane.clearPrivateDataNow(false);
       return false;
     });
-    setEventListener("historyRememberCookies", "click", function () {
+    setEventListener("historyRememberCookies", "click", function() {
       gPrivacyPane.showCookies();
       return false;
     });
-    setEventListener("historyDontRememberClear", "click", function () {
+    setEventListener("historyDontRememberClear", "click", function() {
       gPrivacyPane.clearPrivateDataNow(true);
       return false;
     });
-    setEventListener("doNotTrackSettings", "click", function () {
+    setEventListener("doNotTrackSettings", "click", function() {
       gPrivacyPane.showDoNotTrackSettings();
       return false;
     });
@@ -363,7 +363,7 @@ var gPrivacyPane = {
     if (document.getElementById("historyMode").value == "custom") {
       let disabled = this._autoStartPrivateBrowsing =
         document.getElementById("privateBrowsingAutoStart").checked;
-      this.dependentControls.forEach(function (aElement) {
+      this.dependentControls.forEach(function(aElement) {
         let control = document.getElementById(aElement);
         let preferenceId = control.getAttribute("preference");
         if (!preferenceId) {
@@ -487,7 +487,7 @@ var gPrivacyPane = {
   
 
 
-  showBlockLists: function ()
+  showBlockLists: function()
   {
     var bundlePreferences = document.getElementById("bundlePreferences");
     let brandName = document.getElementById("bundleBrand")
@@ -542,7 +542,7 @@ var gPrivacyPane = {
 
 
 
-  readAcceptCookies: function ()
+  readAcceptCookies: function()
   {
     var pref = document.getElementById("network.cookie.cookieBehavior");
     var acceptThirdPartyLabel = document.getElementById("acceptThirdPartyLabel");
@@ -563,7 +563,7 @@ var gPrivacyPane = {
 
 
 
-  writeAcceptCookies: function ()
+  writeAcceptCookies: function()
   {
     var accept = document.getElementById("acceptCookies");
     var acceptThirdPartyMenu = document.getElementById("acceptThirdPartyMenu");
@@ -578,7 +578,7 @@ var gPrivacyPane = {
   
 
 
-  readAcceptThirdPartyCookies: function ()
+  readAcceptThirdPartyCookies: function()
   {
     var pref = document.getElementById("network.cookie.cookieBehavior");
     switch (pref.value)
@@ -596,7 +596,7 @@ var gPrivacyPane = {
     }
   },
 
-  writeAcceptThirdPartyCookies: function ()
+  writeAcceptThirdPartyCookies: function()
   {
     var accept = document.getElementById("acceptThirdPartyMenu").selectedItem;
     switch (accept.value)
@@ -615,7 +615,7 @@ var gPrivacyPane = {
   
 
 
-  showCookieExceptions: function ()
+  showCookieExceptions: function()
   {
     var bundlePreferences = document.getElementById("bundlePreferences");
     var params = { blockVisible   : true,
@@ -632,7 +632,7 @@ var gPrivacyPane = {
   
 
 
-  showCookies: function (aCategory)
+  showCookies: function(aCategory)
   {
     gSubDialog.open("chrome://browser/content/preferences/cookies.xul");
   },
@@ -650,7 +650,7 @@ var gPrivacyPane = {
   
 
 
-  showClearPrivateDataSettings: function ()
+  showClearPrivateDataSettings: function()
   {
     gSubDialog.open("chrome://browser/content/preferences/sanitize.xul", "resizable=no");
   },
@@ -660,7 +660,7 @@ var gPrivacyPane = {
 
 
 
-  clearPrivateDataNow: function (aClearEverything) {
+  clearPrivateDataNow: function(aClearEverything) {
     var ts = document.getElementById("privacy.sanitize.timeSpan");
     var timeSpanOrig = ts.value;
 
@@ -682,7 +682,7 @@ var gPrivacyPane = {
 
 
 
-  _updateSanitizeSettingsButton: function () {
+  _updateSanitizeSettingsButton: function() {
     var settingsButton = document.getElementById("clearDataSettings");
     var sanitizeOnShutdownPref = document.getElementById("privacy.sanitize.sanitizeOnShutdown");
 
@@ -701,7 +701,7 @@ var gPrivacyPane = {
    
 
 
-   readBrowserContainersCheckbox: function ()
+   readBrowserContainersCheckbox: function()
    {
      var pref = document.getElementById("privacy.userContext.enabled");
      var settings = document.getElementById("browserContainersSettings");

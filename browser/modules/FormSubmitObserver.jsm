@@ -72,7 +72,7 @@ FormSubmitObserver.prototype =
 
 
 
-  handleEvent: function (aEvent) {
+  handleEvent: function(aEvent) {
     switch (aEvent.type) {
       case "pageshow":
         if (this._isRootDocumentEvent(aEvent)) {
@@ -95,7 +95,7 @@ FormSubmitObserver.prototype =
 
 
 
-  notifyInvalidSubmit : function (aFormElement, aInvalidElements)
+  notifyInvalidSubmit : function(aFormElement, aInvalidElements)
   {
     
     
@@ -149,7 +149,7 @@ FormSubmitObserver.prototype =
 
 
 
-  _onInput: function (aEvent) {
+  _onInput: function(aEvent) {
     let element = aEvent.originalTarget;
 
     
@@ -170,7 +170,7 @@ FormSubmitObserver.prototype =
 
 
 
-  _onBlur: function (aEvent) {
+  _onBlur: function(aEvent) {
     aEvent.originalTarget.removeEventListener("input", this, false);
     aEvent.originalTarget.removeEventListener("blur", this, false);
     this._element = null;
@@ -182,7 +182,7 @@ FormSubmitObserver.prototype =
 
 
 
-  _showPopup: function (aElement) {
+  _showPopup: function(aElement) {
     
     let panelData = {};
 
@@ -214,15 +214,15 @@ FormSubmitObserver.prototype =
     this._mm.sendAsyncMessage("FormValidation:ShowPopup", panelData);
   },
 
-  _hidePopup: function () {
+  _hidePopup: function() {
     this._mm.sendAsyncMessage("FormValidation:HidePopup", {});
   },
 
-  _getWindowUtils: function () {
+  _getWindowUtils: function() {
     return this._content.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIDOMWindowUtils);
   },
 
-  _isRootDocumentEvent: function (aEvent) {
+  _isRootDocumentEvent: function(aEvent) {
     if (this._content == null) {
       return true;
     }

@@ -20,7 +20,7 @@ function test() {
   ok(PlacesUIUtils, "PlacesUIUtils in context");
 
   
-  openLibrary(function (library) {
+  openLibrary(function(library) {
     gLibrary = library;
     startTest();
   });
@@ -120,7 +120,7 @@ function startTest() {
   bs.moveItem(id, bs.unfiledBookmarksFolder, 0);
 
   
-  addedBookmarks.forEach(function (aItem) {
+  addedBookmarks.forEach(function(aItem) {
     
     
     try {

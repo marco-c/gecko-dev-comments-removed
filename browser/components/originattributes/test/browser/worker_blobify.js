@@ -1,7 +1,7 @@
 
 
 
-self.addEventListener("message", function (e) {
+self.addEventListener("message", function(e) {
   try {
     var blobURL = URL.createObjectURL(new Blob([e.data]));
     postMessage({ blobURL });

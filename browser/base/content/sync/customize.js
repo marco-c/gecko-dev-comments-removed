@@ -6,7 +6,7 @@
 
 Components.utils.import("resource://gre/modules/Services.jsm");
 
-addEventListener("dialogaccept", function () {
+addEventListener("dialogaccept", function() {
   let pane = document.getElementById("sync-customize-pane");
   
   

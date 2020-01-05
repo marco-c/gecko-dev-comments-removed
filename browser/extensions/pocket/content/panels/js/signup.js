@@ -2,7 +2,7 @@
 
 
 
-var PKT_SIGNUP_OVERLAY = function (options)
+var PKT_SIGNUP_OVERLAY = function(options)
 {
     var myself = this;
     this.inited = false;
@@ -49,7 +49,7 @@ var PKT_SIGNUP_OVERLAY = function (options)
         {
             return '';
         }
-        return String(s).replace(/[&<>"']/g, function (str) {
+        return String(s).replace(/[&<>"']/g, function(str) {
             return sanitizeMap[str];
         });
     };
@@ -142,10 +142,10 @@ PKT_SIGNUP_OVERLAY.prototype = {
 
 
 
-var PKT_SIGNUP = function () {};
+var PKT_SIGNUP = function() {};
 
 PKT_SIGNUP.prototype = {
-    init: function () {
+    init: function() {
         if (this.inited) {
             return;
         }

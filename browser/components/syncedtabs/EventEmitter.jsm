@@ -11,7 +11,7 @@ this.EXPORTED_SYMBOLS = [
 ];
 
 
-function EventEmitter () {
+function EventEmitter() {
   this._events = new Map();
 }
 

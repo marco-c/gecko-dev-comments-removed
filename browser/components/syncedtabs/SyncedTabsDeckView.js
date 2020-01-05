@@ -23,7 +23,7 @@ this.EXPORTED_SYMBOLS = [
 
 
 
-const SyncedTabsDeckView = function (window, tabListComponent, props) {
+const SyncedTabsDeckView = function(window, tabListComponent, props) {
   this.props = props;
 
   this._window = window;

@@ -987,7 +987,7 @@ var gApplicationsPane = {
 
   
 
-  observe: function (aSubject, aTopic, aData) {
+  observe: function(aSubject, aTopic, aData) {
     
     
     if (aTopic == "nsPref:changed" && !this._storingAction) {
@@ -1539,7 +1539,7 @@ var gApplicationsPane = {
   
 
 
-  sort: function (event) {
+  sort: function(event) {
     var column = event.target;
 
     

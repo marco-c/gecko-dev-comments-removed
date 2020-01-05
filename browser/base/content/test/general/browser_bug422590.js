@@ -10,7 +10,7 @@ function testChromeless() {
                           "chrome,dialog=no,location=yes,toolbar=no", "about:blank");
   ok(newWin, "got new window");
 
-  whenDelayedStartupFinished(newWin, function () {
+  whenDelayedStartupFinished(newWin, function() {
     
     var searchBar = newWin.BrowserSearch.searchBar;
     ok(searchBar, "got search bar");
@@ -19,7 +19,7 @@ function testChromeless() {
     is(searchBarBO.width, 0, "search bar hidden");
     is(searchBarBO.height, 0, "search bar hidden");
 
-    testCustomize(newWin, function () {
+    testCustomize(newWin, function() {
       newWin.close();
       finish();
     });
@@ -31,7 +31,7 @@ function testCustomize(aWindow, aCallback) {
   ok(fileMenu, "got file menu");
   is(fileMenu.disabled, false, "file menu initially enabled");
 
-  openToolbarCustomizationUI(function () {
+  openToolbarCustomizationUI(function() {
     
     
     is(fileMenu.getAttribute("disabled"), "true",

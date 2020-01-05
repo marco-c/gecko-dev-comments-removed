@@ -131,7 +131,7 @@ function handleGUMRequest(aSubject, aTopic, aData) {
 
   contentWindow.navigator.mozGetUserMediaDevices(
     constraints,
-    function (devices) {
+    function(devices) {
       
       
       if (contentWindow.closed)
@@ -140,7 +140,7 @@ function handleGUMRequest(aSubject, aTopic, aData) {
       prompt(contentWindow, aSubject.windowID, aSubject.callID,
              constraints, devices, secure);
     },
-    function (error) {
+    function(error) {
       
       
       denyGUMRequest({callID: aSubject.callID}, error);

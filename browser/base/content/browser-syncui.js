@@ -39,7 +39,7 @@ var gSyncUI = {
   _syncStartTime: 0,
   _syncAnimationTimer: 0,
 
-  init: function () {
+  init: function() {
     Cu.import("resource://services-common/stringbundle.js");
 
     
@@ -137,7 +137,7 @@ var gSyncUI = {
   
   
   
-  _loginFailed: function () {
+  _loginFailed: function() {
     
     
     
@@ -242,7 +242,7 @@ var gSyncUI = {
     this.updateUI();
   },
 
-  _getAppName: function () {
+  _getAppName: function() {
     let brand = new StringBundle("chrome://branding/locale/brand.properties");
     return brand.get("brandShortName");
   },
@@ -304,7 +304,7 @@ var gSyncUI = {
   },
 
   
-  openAddDevice: function () {
+  openAddDevice: function() {
     if (!Weave.Utils.ensureMPUnlocked())
       return;
 
@@ -316,11 +316,11 @@ var gSyncUI = {
                         "syncAddDevice", "centerscreen,chrome,resizable=no");
   },
 
-  openPrefs: function (entryPoint) {
+  openPrefs: function(entryPoint) {
     openPreferences("paneSync", { urlParams: { entrypoint: entryPoint } });
   },
 
-  openSignInAgainPage: function (entryPoint = "syncbutton") {
+  openSignInAgainPage: function(entryPoint = "syncbutton") {
     gFxAccounts.openSignInAgainPage(entryPoint);
   },
 

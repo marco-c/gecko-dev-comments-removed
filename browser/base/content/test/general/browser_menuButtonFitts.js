@@ -2,7 +2,7 @@
 
 
 
-function test () {
+function test() {
   waitForExplicitFinish();
   window.maximize();
 

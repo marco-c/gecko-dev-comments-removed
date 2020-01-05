@@ -120,7 +120,7 @@ add_task(function* () {
 
   
   
-  NewTabUtils.links.compareLinks = function (aLink1, aLink2) {
+  NewTabUtils.links.compareLinks = function(aLink1, aLink2) {
     if (aLink1.type == aLink2.type) {
       return aLink2.frecency - aLink1.frecency ||
              aLink2.lastVisitDate - aLink1.lastVisitDate;

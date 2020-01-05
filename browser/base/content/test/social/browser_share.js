@@ -26,7 +26,7 @@ function test() {
   Services.prefs.setCharPref("social.shareDirectory", activationPage);
 
   let frameScript = "data:,(" + function frame_script() {
-    addEventListener("OpenGraphData", function (aEvent) {
+    addEventListener("OpenGraphData", function(aEvent) {
       sendAsyncMessage("sharedata", aEvent.detail);
     }, true, true);
     
@@ -45,7 +45,7 @@ function test() {
 
   
   SocialShare.panel.setAttribute("animate", "false");
-  registerCleanupFunction(function () {
+  registerCleanupFunction(function() {
     SocialShare.panel.removeAttribute("animate");
     mm.removeDelayedFrameScript(frameScript);
     Services.prefs.clearUserPref("social.directories");

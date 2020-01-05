@@ -298,7 +298,7 @@ TranslationUI.prototype = {
 
 this.TranslationTelemetry = {
 
-  init: function () {
+  init: function() {
     
     const plain = (id) => Services.telemetry.getHistogramById(id);
     const keyed = (id) => Services.telemetry.getKeyedHistogramById(id);
@@ -326,7 +326,7 @@ this.TranslationTelemetry = {
 
 
 
-  recordTranslationOpportunity: function (language) {
+  recordTranslationOpportunity: function(language) {
     return this._recordOpportunity(language, true);
   },
 
@@ -337,7 +337,7 @@ this.TranslationTelemetry = {
 
 
 
-  recordMissedTranslationOpportunity: function (language) {
+  recordMissedTranslationOpportunity: function(language) {
     return this._recordOpportunity(language, false);
   },
 
@@ -351,7 +351,7 @@ this.TranslationTelemetry = {
 
 
 
-  recordAutoRejectedTranslationOffer: function () {
+  recordAutoRejectedTranslationOffer: function() {
     if (!this._canRecord) return;
     this.HISTOGRAMS.AUTO_REJECTED().add();
   },
@@ -365,7 +365,7 @@ this.TranslationTelemetry = {
 
 
 
-  recordTranslation: function (langFrom, langTo, numCharacters) {
+  recordTranslation: function(langFrom, langTo, numCharacters) {
     if (!this._canRecord) return;
     this.HISTOGRAMS.PAGES().add();
     this.HISTOGRAMS.PAGES_BY_LANG().add(langFrom + " -> " + langTo);
@@ -384,7 +384,7 @@ this.TranslationTelemetry = {
 
 
 
-  recordDetectedLanguageChange: function (beforeFirstTranslation) {
+  recordDetectedLanguageChange: function(beforeFirstTranslation) {
     if (!this._canRecord) return;
     this.HISTOGRAMS.DETECTION_CHANGES().add(beforeFirstTranslation);
   },
@@ -394,7 +394,7 @@ this.TranslationTelemetry = {
 
 
 
-  recordTargetLanguageChange: function () {
+  recordTargetLanguageChange: function() {
     if (!this._canRecord) return;
     this.HISTOGRAMS.TARGET_CHANGES().add();
   },
@@ -402,7 +402,7 @@ this.TranslationTelemetry = {
   
 
 
-  recordDeniedTranslationOffer: function () {
+  recordDeniedTranslationOffer: function() {
     if (!this._canRecord) return;
     this.HISTOGRAMS.DENIED().add();
   },
@@ -410,7 +410,7 @@ this.TranslationTelemetry = {
   
 
 
-  recordShowOriginalContent: function () {
+  recordShowOriginalContent: function() {
     if (!this._canRecord) return;
     this.HISTOGRAMS.SHOW_ORIGINAL().add();
   },
@@ -418,7 +418,7 @@ this.TranslationTelemetry = {
   
 
 
-  recordPreferences: function () {
+  recordPreferences: function() {
     if (!this._canRecord) return;
     if (Services.prefs.getBoolPref(TRANSLATION_PREF_SHOWUI)) {
       this.HISTOGRAMS.SHOW_UI().add(1);
@@ -438,7 +438,7 @@ this.TranslationTelemetry = {
 
 
 
-  _canRecord: function () {
+  _canRecord: function() {
     return Services.prefs.getBoolPref("toolkit.telemetry.enabled");
   }
 };

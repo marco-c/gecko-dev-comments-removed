@@ -88,7 +88,7 @@ function do_initialize_social(enabledOnStartup, cb) {
 
   if (enabledOnStartup) {
     
-    manifests.forEach(function (manifest) {
+    manifests.forEach(function(manifest) {
       setManifestPref(manifest);
     });
     
@@ -102,7 +102,7 @@ function do_initialize_social(enabledOnStartup, cb) {
                                    Ci.nsISupportsString, activeVal);
 
     do_register_cleanup(function() {
-      manifests.forEach(function (manifest) {
+      manifests.forEach(function(manifest) {
         Services.prefs.clearUserPref("social.manifest." + manifest.origin);
       });
       Services.prefs.clearUserPref("social.activeProviders");
@@ -132,7 +132,7 @@ function AsyncRunner() {
 
   this._callbacks = {
     done: do_test_finished,
-    error: function (err) {
+    error: function(err) {
       
       
       if (err !== Cr.NS_ERROR_ABORT) {
@@ -143,7 +143,7 @@ function AsyncRunner() {
         do_throw(err);
       }
     },
-    consoleError: function (scriptErr) {
+    consoleError: function(scriptErr) {
       
       let filename = scriptErr.sourceName || scriptErr.toString() || "";
       if (filename.indexOf("/toolkit/components/social/") >= 0)

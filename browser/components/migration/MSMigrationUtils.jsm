@@ -721,7 +721,7 @@ function getTypedURLs(registryKeyPath) {
 
 
 
-function WindowsVaultFormPasswords () {
+function WindowsVaultFormPasswords() {
 }
 
 WindowsVaultFormPasswords.prototype = {

@@ -50,7 +50,7 @@ this.Social = {
     
     if (SocialService.hasEnabledProviders) {
       
-      SocialService.getOrderedProviderList(function (providers) {
+      SocialService.getOrderedProviderList(function(providers) {
         Social._updateProviderCache(providers);
         Social._updateEnabledState(SocialService.enabled);
         deferred.resolve(false);
@@ -99,7 +99,7 @@ this.Social = {
   },
 
   
-  _updateProviderCache: function (providers) {
+  _updateProviderCache: function(providers) {
     this.providers = providers;
     Services.obs.notifyObservers(null, "social:providers-changed", null);
   },
@@ -108,7 +108,7 @@ this.Social = {
     return !this._disabledForSafeMode && this.providers.length > 0;
   },
 
-  _getProviderFromOrigin: function (origin) {
+  _getProviderFromOrigin: function(origin) {
     for (let p of this.providers) {
       if (p.origin == origin) {
         return p;
@@ -130,7 +130,7 @@ this.Social = {
   },
 
   
-  activateFromOrigin: function (origin, callback) {
+  activateFromOrigin: function(origin, callback) {
     
     
     SocialService.enableProvider(origin, callback);
@@ -233,7 +233,7 @@ this.OpenGraphBuilder = {
     let [endpointURL, queryString] = URLTemplate.split("?");
     let query = {};
     if (queryString) {
-      queryString.split('&').forEach(function (val) {
+      queryString.split('&').forEach(function(val) {
         let [name, value] = val.split('=');
         let p = /%\{(.+)\}/.exec(value);
         if (!p) {

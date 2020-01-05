@@ -39,14 +39,14 @@ addEventListener("DOMContentLoaded", function domContentLoaded(event) {
     sendAsyncMessage("test:iframe:load", {url: iframe.contentDocument.location.href});
     
     
-    iframe.contentWindow.addEventListener("FirefoxAccountsTestResponse", function (fxAccountsEvent) {
+    iframe.contentWindow.addEventListener("FirefoxAccountsTestResponse", function(fxAccountsEvent) {
       sendAsyncMessage("test:response", {data: fxAccountsEvent.detail.data});
     }, true);
   }, true);
 }, true);
 
 
-addMessageListener("test:check-visibilities", function (message) {
+addMessageListener("test:check-visibilities", function(message) {
   let result = {};
   for (let id of message.data.ids) {
     let elt = content.document.getElementById(id);
@@ -66,7 +66,7 @@ addMessageListener("test:check-visibilities", function (message) {
   sendAsyncMessage("test:check-visibilities-response", result);
 });
 
-addMessageListener("test:load-with-mocked-profile-path", function (message) {
+addMessageListener("test:load-with-mocked-profile-path", function(message) {
   addEventListener("DOMContentLoaded", function domContentLoaded(event) {
     removeEventListener("DOMContentLoaded", domContentLoaded, true);
     content.getDefaultProfilePath = () => message.data.profilePath;

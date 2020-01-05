@@ -79,7 +79,7 @@ function run_test() {
   run_next_test();
 }
 
-do_register_cleanup(function () {
+do_register_cleanup(function() {
   
   
   let distDir = gProfD.clone();

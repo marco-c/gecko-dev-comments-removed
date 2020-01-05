@@ -15,41 +15,41 @@ function test() {
 var tests = [
   
   { id: "Test#1",
-    run: function () {
+    run: function() {
       this.testNotif = new ErrorNotification();
       showNotification(this.testNotif);
     },
-    onShown: function (popup) {
+    onShown: function(popup) {
       checkPopup(popup, this.testNotif);
       triggerMainCommand(popup);
     },
-    onHidden: function (popup) {
+    onHidden: function(popup) {
       ok(this.testNotif.mainActionClicked, "main action has been triggered");
     }
   },
   
   { id: "Test#2",
-    run: function () {
+    run: function() {
       this.testNotif = new ErrorNotification();
       showNotification(this.testNotif);
     },
-    onShown: function (popup) {
+    onShown: function(popup) {
       checkPopup(popup, this.testNotif);
       triggerSecondaryCommand(popup, 0);
     },
-    onHidden: function (popup) {
+    onHidden: function(popup) {
       ok(this.testNotif.secondaryActionClicked, "secondary action has been triggered");
     }
   },
   
   { id: "Test#3",
-    run: function () {
+    run: function() {
       this.notifyObj1 = new BasicNotification(this.id);
       this.notifyObj1.id += "_1";
       this.notifyObj1.anchorID = "default-notification-icon";
       this.notification1 = showNotification(this.notifyObj1);
     },
-    onShown: function (popup) {
+    onShown: function(popup) {
       
       
       this.notifyObj2 = new BasicNotification(this.id);
@@ -78,7 +78,7 @@ var tests = [
     run: function() {
       this.notifyObj = new BasicNotification(this.id);
       let normalCallback = this.notifyObj.options.eventCallback;
-      this.notifyObj.options.eventCallback = function (eventName) {
+      this.notifyObj.options.eventCallback = function(eventName) {
         if (eventName == "showing") {
           this.mainAction.label = "Alternate Label";
         }
@@ -123,7 +123,7 @@ var tests = [
       gBrowser.selectedTab = gBrowser.addTab("about:blank");
       let notifyObj = new BasicNotification(this.id);
       let originalCallback = notifyObj.options.eventCallback;
-      notifyObj.options.eventCallback = function (eventName) {
+      notifyObj.options.eventCallback = function(eventName) {
         originalCallback(eventName);
         return eventName == "swapping";
       };
@@ -134,7 +134,7 @@ var tests = [
 
       yield new Promise(resolve => {
         let originalCallback = notification.options.eventCallback;
-        notification.options.eventCallback = function (eventName) {
+        notification.options.eventCallback = function(eventName) {
           originalCallback(eventName);
           if (eventName == "shown") {
             resolve();
@@ -162,33 +162,33 @@ var tests = [
   },
   
   { id: "Test#7",
-    run: function () {
+    run: function() {
       this.notifyObj = new BasicNotification(this.id);
       this.notifyObj.options.hideNotNow = true;
       this.notifyObj.mainAction.dismiss = true;
       this.notification = showNotification(this.notifyObj);
     },
-    onShown: function (popup) {
+    onShown: function(popup) {
       
       checkPopup(popup, this.notifyObj);
       triggerMainCommand(popup);
     },
-    onHidden: function (popup) {
+    onHidden: function(popup) {
       this.notification.remove();
     }
   },
   
   { id: "Test#8",
-    run: function () {
+    run: function() {
       this.notifyObj = new BasicNotification(this.id);
       this.notifyObj.mainAction.dismiss = true;
       this.notification = showNotification(this.notifyObj);
     },
-    onShown: function (popup) {
+    onShown: function(popup) {
       checkPopup(popup, this.notifyObj);
       triggerMainCommand(popup);
     },
-    onHidden: function (popup) {
+    onHidden: function(popup) {
       ok(this.notifyObj.dismissalCallbackTriggered, "dismissal callback was triggered");
       ok(!this.notifyObj.removedCallbackTriggered, "removed callback wasn't triggered");
       this.notification.remove();
@@ -196,16 +196,16 @@ var tests = [
   },
   
   { id: "Test#9",
-    run: function () {
+    run: function() {
       this.notifyObj = new BasicNotification(this.id);
       this.notifyObj.secondaryActions[0].dismiss = true;
       this.notification = showNotification(this.notifyObj);
     },
-    onShown: function (popup) {
+    onShown: function(popup) {
       checkPopup(popup, this.notifyObj);
       triggerSecondaryCommand(popup, 0);
     },
-    onHidden: function (popup) {
+    onHidden: function(popup) {
       ok(this.notifyObj.dismissalCallbackTriggered, "dismissal callback was triggered");
       ok(!this.notifyObj.removedCallbackTriggered, "removed callback wasn't triggered");
       this.notification.remove();
@@ -216,7 +216,7 @@ var tests = [
     run: function() {
       let notifyObj = new BasicNotification(this.id);
       let originalCallback = notifyObj.options.eventCallback;
-      notifyObj.options.eventCallback = function (eventName) {
+      notifyObj.options.eventCallback = function(eventName) {
         originalCallback(eventName);
         return eventName == "showing";
       };
@@ -234,7 +234,7 @@ var tests = [
       this.notifyObj = new BasicNotification(this.id);
       this.notification = showNotification(this.notifyObj);
     },
-    onShown: function (popup) {
+    onShown: function(popup) {
       checkPopup(popup, this.notifyObj);
 
       this.notifyObj.showingCallbackTriggered = false;
@@ -253,7 +253,7 @@ var tests = [
   },
   
   { id: "Test#12",
-    run: function () {
+    run: function() {
       this.notifyObj1 = new BasicNotification(this.id);
       this.notifyObj1.id += "_1";
       this.notifyObj1.anchorID = "default-notification-icon";
@@ -269,7 +269,7 @@ var tests = [
       this.notification2.dismissed = false;
       PopupNotifications._update();
     },
-    onShown: function (popup) {
+    onShown: function(popup) {
       checkPopup(popup, this.notifyObj2);
       this.notification1.remove();
       this.notification2.remove();

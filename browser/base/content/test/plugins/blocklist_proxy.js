@@ -41,33 +41,33 @@ var BlocklistProxy = {
     }
   },
 
-  notify: function (aTimer) {
+  notify: function(aTimer) {
   },
 
-  observe: function (aSubject, aTopic, aData) {
+  observe: function(aSubject, aTopic, aData) {
   },
 
-  isAddonBlocklisted: function (aAddon, aAppVersion, aToolkitVersion) {
+  isAddonBlocklisted: function(aAddon, aAppVersion, aToolkitVersion) {
     return false;
   },
 
-  getAddonBlocklistState: function (aAddon, aAppVersion, aToolkitVersion) {
+  getAddonBlocklistState: function(aAddon, aAppVersion, aToolkitVersion) {
     return 0; 
   },
 
-  getPluginBlocklistState: function (aPluginTag, aAppVersion, aToolkitVersion) {
+  getPluginBlocklistState: function(aPluginTag, aAppVersion, aToolkitVersion) {
     return 0; 
   },
 
-  getAddonBlocklistURL: function (aAddon, aAppVersion, aToolkitVersion) {
+  getAddonBlocklistURL: function(aAddon, aAppVersion, aToolkitVersion) {
     return "";
   },
 
-  getPluginBlocklistURL: function (aPluginTag) {
+  getPluginBlocklistURL: function(aPluginTag) {
     return "";
   },
 
-  getPluginInfoURL: function (aPluginTag) {
+  getPluginInfoURL: function(aPluginTag) {
     return "";
   },
 }

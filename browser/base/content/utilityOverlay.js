@@ -568,7 +568,7 @@ function eventMatchesKey(aEvent, aKey)
 }
 
 
-function gatherTextUnder ( root )
+function gatherTextUnder( root )
 {
   var text = "";
   var node = root.firstChild;

@@ -31,7 +31,7 @@ var MetricsChecker = {
     this.updateMetrics();
   },
 
-  updateMetrics: function () {
+  updateMetrics: function() {
     this._metrics = {
       opportunitiesCount: this.HISTOGRAMS.OPPORTUNITIES.snapshot().sum || 0,
       pageCount: this.HISTOGRAMS.PAGES.snapshot().sum || 0,
@@ -65,7 +65,7 @@ var MetricsChecker = {
   
 
 
-  _assertionLoop: function (prevMetrics, metrics, additions) {
+  _assertionLoop: function(prevMetrics, metrics, additions) {
     for (let metric of Object.keys(additions)) {
       let addition = additions[metric];
       
@@ -77,7 +77,7 @@ var MetricsChecker = {
     }
   },
 
-  checkAdditions: function (additions) {
+  checkAdditions: function(additions) {
     let prevMetrics = this._metrics;
     this.updateMetrics();
     this._assertionLoop(prevMetrics, this._metrics, additions);

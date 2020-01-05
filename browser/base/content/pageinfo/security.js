@@ -15,7 +15,7 @@ var security = {
   },
 
   
-  viewCert : function () {
+  viewCert : function() {
     var cert = security._cert;
     viewCertHelper(window, cert);
   },

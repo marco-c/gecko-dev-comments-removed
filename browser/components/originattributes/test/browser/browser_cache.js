@@ -62,7 +62,7 @@ function cacheDataForContext(loadContextInfo) {
   });
 }
 
-let countMatchingCacheEntries = function (cacheEntries, domain, fileSuffix) {
+let countMatchingCacheEntries = function(cacheEntries, domain, fileSuffix) {
   return cacheEntries.map(entry => entry.uri.asciiSpec)
                      .filter(spec => spec.includes(domain))
                      .filter(spec => spec.includes("file_thirdPartyChild." + fileSuffix))
@@ -73,7 +73,7 @@ function observeChannels(onChannel) {
   
   
   let proxyFilter = {
-    applyFilter : function (aProxyService, aChannel, aProxy) {
+    applyFilter : function(aProxyService, aChannel, aProxy) {
       
       onChannel(aChannel);
       
@@ -86,7 +86,7 @@ function observeChannels(onChannel) {
 }
 
 function startObservingChannels(aMode) {
-  let stopObservingChannels = observeChannels(function (channel) {
+  let stopObservingChannels = observeChannels(function(channel) {
     let originalURISpec = channel.originalURI.spec;
     if (originalURISpec.includes("example.net")) {
       let loadInfo = channel.loadInfo;

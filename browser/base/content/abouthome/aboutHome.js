@@ -27,7 +27,7 @@ var searchText;
 
 
 var gInitialized = false;
-var gObserver = new MutationObserver(function (mutations) {
+var gObserver = new MutationObserver(function(mutations) {
   for (let mutation of mutations) {
     
     if (mutation.attributeName == "session") {
@@ -43,7 +43,7 @@ var gObserver = new MutationObserver(function (mutations) {
   }
 });
 
-window.addEventListener("pageshow", function () {
+window.addEventListener("pageshow", function() {
   
   
   window.gObserver.observe(document.documentElement, { attributes: true });
@@ -118,7 +118,7 @@ function ensureSnippetsMapThen(aCallback)
     return;
   }
 
-  let invokeCallbacks = function () {
+  let invokeCallbacks = function() {
     if (!gSnippetsMap) {
       gSnippetsMap = Object.freeze(new Map());
     }
@@ -132,28 +132,28 @@ function ensureSnippetsMapThen(aCallback)
   let openRequest = indexedDB.open(DATABASE_NAME, {version: DATABASE_VERSION,
                                                    storage: DATABASE_STORAGE});
 
-  openRequest.onerror = function (event) {
+  openRequest.onerror = function(event) {
     
     
     indexedDB.deleteDatabase(DATABASE_NAME);
     invokeCallbacks();
   };
 
-  openRequest.onupgradeneeded = function (event) {
+  openRequest.onupgradeneeded = function(event) {
     let db = event.target.result;
     if (!db.objectStoreNames.contains(SNIPPETS_OBJECTSTORE_NAME)) {
       db.createObjectStore(SNIPPETS_OBJECTSTORE_NAME);
     }
   }
 
-  openRequest.onsuccess = function (event) {
+  openRequest.onsuccess = function(event) {
     let db = event.target.result;
 
-    db.onerror = function (event) {
+    db.onerror = function(event) {
       invokeCallbacks();
     }
 
-    db.onversionchange = function (event) {
+    db.onversionchange = function(event) {
       event.target.close();
       invokeCallbacks();
     }
@@ -169,7 +169,7 @@ function ensureSnippetsMapThen(aCallback)
       return;
     }
 
-    cursorRequest.onerror = function (event) {
+    cursorRequest.onerror = function(event) {
       invokeCallbacks();
     }
 
@@ -186,18 +186,18 @@ function ensureSnippetsMapThen(aCallback)
       
       gSnippetsMap = Object.freeze({
         get: (aKey) => cache.get(aKey),
-        set: function (aKey, aValue) {
+        set: function(aKey, aValue) {
           db.transaction(SNIPPETS_OBJECTSTORE_NAME, "readwrite")
             .objectStore(SNIPPETS_OBJECTSTORE_NAME).put(aValue, aKey);
           return cache.set(aKey, aValue);
         },
         has: (aKey) => cache.has(aKey),
-        delete: function (aKey) {
+        delete: function(aKey) {
           db.transaction(SNIPPETS_OBJECTSTORE_NAME, "readwrite")
             .objectStore(SNIPPETS_OBJECTSTORE_NAME).delete(aKey);
           return cache.delete(aKey);
         },
-        clear: function () {
+        clear: function() {
           db.transaction(SNIPPETS_OBJECTSTORE_NAME, "readwrite")
             .objectStore(SNIPPETS_OBJECTSTORE_NAME).clear();
           return cache.clear();
@@ -283,7 +283,7 @@ function loadSnippets()
     
     
     gSnippetsMap.set("snippets-last-update", Date.now());
-    xhr.onloadend = function (event) {
+    xhr.onloadend = function(event) {
       if (xhr.status == 200) {
         gSnippetsMap.set("snippets", xhr.responseText);
         gSnippetsMap.set("snippets-cached-version", currentVersion);

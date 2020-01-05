@@ -74,7 +74,7 @@ function isBrowserAppTab(browser) {
     }
     
     
-    executeSoon(function () {
+    executeSoon(function() {
       browser.messageManager.addMessageListener("Test:IsAppTab", listener);
       browser.messageManager.sendAsyncMessage("Test:GetIsAppTab");
     });

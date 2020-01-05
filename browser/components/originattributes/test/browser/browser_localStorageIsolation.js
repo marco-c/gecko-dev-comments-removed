@@ -10,7 +10,7 @@ const key = Math.random().toString();
 
 
 function* doTest(aBrowser) {
-  return yield ContentTask.spawn(aBrowser, key, function (key) {
+  return yield ContentTask.spawn(aBrowser, key, function(key) {
     let value = content.localStorage.getItem(key);
     if (value === null) {
       

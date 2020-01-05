@@ -147,7 +147,7 @@ const TESTS = [
     Services.obs.addObserver(vacuumObserver, "test-begin-vacuum", false);
 
     
-    do_timeout(2000, function () {
+    do_timeout(2000, function() {
       print("Check VACUUM did not run.");
       do_check_false(vacuumObserver.gotNotification);
       Services.obs.removeObserver(vacuumObserver, "test-begin-vacuum");
@@ -194,7 +194,7 @@ const TESTS = [
     Services.obs.addObserver(vacuumObserver, "test-begin-vacuum", false);
 
     
-    do_timeout(2000, function () {
+    do_timeout(2000, function() {
       print("Check VACUUM did not run.");
       do_check_false(vacuumObserver.gotNotification);
       Services.obs.removeObserver(vacuumObserver, "test-begin-vacuum");
@@ -287,7 +287,7 @@ const TESTS = [
     Services.obs.addObserver(vacuumObserver, "test-begin-vacuum", false);
 
     
-    do_timeout(2000, function () {
+    do_timeout(2000, function() {
       print("Check VACUUM did not run.");
       do_check_false(vacuumObserver.gotNotification);
       Services.obs.removeObserver(vacuumObserver, "test-begin-vacuum");

@@ -57,8 +57,8 @@ add_task(function* test() {
   
   let mimeTypes = ["text/plain", "text/unicode", "text/x-moz-url"];
   let effects = ["move", "copy", "link"];
-  effects.forEach(function (effect) {
-    mimeTypes.forEach(function (mimeType) {
+  effects.forEach(function(effect) {
+    mimeTypes.forEach(function(mimeType) {
       simulateDragDrop(effect, mimeType);
     });
   });

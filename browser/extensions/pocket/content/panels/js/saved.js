@@ -2,7 +2,7 @@
 
 
 
-var PKT_SAVED_OVERLAY = function (options)
+var PKT_SAVED_OVERLAY = function(options)
 {
     var myself = this;
     this.inited = false;
@@ -427,7 +427,7 @@ var PKT_SAVED_OVERLAY = function (options)
         {
             return '';
         }
-        return String(s).replace(/[&<>"']/g, function (str) {
+        return String(s).replace(/[&<>"']/g, function(str) {
             return sanitizeMap[str];
         });
     };
@@ -507,10 +507,10 @@ PKT_SAVED_OVERLAY.prototype = {
 
 
 
-var PKT_SAVED = function () {};
+var PKT_SAVED = function() {};
 
 PKT_SAVED.prototype = {
-    init: function () {
+    init: function() {
         if (this.inited) {
             return;
         }

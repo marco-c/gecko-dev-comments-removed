@@ -36,7 +36,7 @@ var StarUI = {
   },
 
   _blockCommands: function SU__blockCommands() {
-    this._blockedCommands.forEach(function (elt) {
+    this._blockedCommands.forEach(function(elt) {
       
       if (elt.hasAttribute("wasDisabled"))
         return;
@@ -50,7 +50,7 @@ var StarUI = {
   },
 
   _restoreCommandsState: function SU__restoreCommandsState() {
-    this._blockedCommands.forEach(function (elt) {
+    this._blockedCommands.forEach(function(elt) {
       if (elt.getAttribute("wasDisabled") != "true")
         elt.removeAttribute("disabled");
       elt.removeAttribute("wasDisabled");
@@ -198,7 +198,7 @@ var StarUI = {
     this._overlayLoading = true;
     document.loadOverlay(
       "chrome://browser/content/places/editBookmarkOverlay.xul",
-      (function (aSubject, aTopic, aData) {
+      (function(aSubject, aTopic, aData) {
         
         
         let header = this._element("editBookmarkPanelHeader");
@@ -1144,7 +1144,7 @@ var PlacesToolbarHelper = {
     return !area || CustomizableUI.TYPE_MENU_PANEL == areaType;
   },
 
-  onPlaceholderCommand: function () {
+  onPlaceholderCommand: function() {
     let widgetGroup = CustomizableUI.getWidget("personal-bookmarks");
     let widget = widgetGroup.forWindow(window);
     if (widget.overflowed ||
@@ -1903,11 +1903,11 @@ var BookmarkingUI = {
     }
   },
 
-  onBeginUpdateBatch: function () {},
-  onEndUpdateBatch: function () {},
-  onBeforeItemRemoved: function () {},
-  onItemVisited: function () {},
-  onItemMoved: function () {},
+  onBeginUpdateBatch: function() {},
+  onEndUpdateBatch: function() {},
+  onBeforeItemRemoved: function() {},
+  onItemVisited: function() {},
+  onItemMoved: function() {},
 
   
   _starButtonLabel: null,

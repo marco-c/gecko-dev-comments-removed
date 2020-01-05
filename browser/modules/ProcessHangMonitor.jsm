@@ -95,7 +95,7 @@ var ProcessHangMonitor = {
 
 
 
-  stopIt: function (win) {
+  stopIt: function(win) {
     let report = this.findActiveReport(win.gBrowser.selectedBrowser);
     if (!report) {
       return;
