@@ -68,11 +68,13 @@
 #endif  
 
 
-#if defined(COMPILER_GCC)
-#define ALLOW_UNUSED __attribute__((unused))
+
+
+
+#undef WARN_UNUSED_RESULT
+#if defined(COMPILER_GCC) || defined(__clang__)
 #define WARN_UNUSED_RESULT __attribute__((warn_unused_result))
-#else  
-#define ALLOW_UNUSED
+#else
 #define WARN_UNUSED_RESULT
 #endif
 
