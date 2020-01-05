@@ -239,8 +239,7 @@ void ProfilerSignalHandler(int signal, siginfo_t* info, void* context) {
 static void
 ProfilerSignalThread(ThreadInfo* aInfo, bool aIsFirstProfiledThread)
 {
-  
-  if (aIsFirstProfiledThread && gSampler->ProfileMemory()) {
+  if (aIsFirstProfiledThread && gProfileMemory) {
     aInfo->mRssMemory = nsMemoryReporterManager::ResidentFast();
     aInfo->mUssMemory = nsMemoryReporterManager::ResidentUnique();
   } else {

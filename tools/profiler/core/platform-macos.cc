@@ -205,8 +205,7 @@ public:
     sample->ussMemory = 0;
     sample->rssMemory = 0;
 
-    
-    if (isFirstProfiledThread && gSampler->ProfileMemory()) {
+    if (isFirstProfiledThread && gProfileMemory) {
       sample->rssMemory = nsMemoryReporterManager::ResidentFast();
     }
 
