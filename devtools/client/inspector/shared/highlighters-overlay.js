@@ -46,6 +46,10 @@ function HighlightersOverlay(inspector) {
   this.onNavigate = this.onNavigate.bind(this);
   this._handleRejection = this._handleRejection.bind(this);
 
+  
+  this.inspector.target.on("navigate", this.onNavigate);
+  this.inspector.target.on("will-navigate", this.onWillNavigate);
+
   EventEmitter.decorate(this);
 }
 
@@ -72,9 +76,6 @@ HighlightersOverlay.prototype = {
     el.addEventListener("mousemove", this.onMouseMove);
     el.addEventListener("mouseout", this.onMouseOut);
     el.ownerDocument.defaultView.addEventListener("mouseout", this.onMouseOut);
-
-    this.inspector.target.on("navigate", this.onNavigate);
-    this.inspector.target.on("will-navigate", this.onWillNavigate);
   },
 
   
@@ -94,9 +95,6 @@ HighlightersOverlay.prototype = {
     el.removeEventListener("click", this.onClick, true);
     el.removeEventListener("mousemove", this.onMouseMove);
     el.removeEventListener("mouseout", this.onMouseOut);
-
-    this.inspector.target.off("navigate", this.onNavigate);
-    this.inspector.target.off("will-navigate", this.onWillNavigate);
   },
 
   
@@ -137,14 +135,19 @@ HighlightersOverlay.prototype = {
 
     this._toggleRuleViewGridIcon(node, true);
 
-    node.getUniqueSelector().then(selector => {
+    try {
       
-      this.state.grid = { selector, options };
+      let { url } = this.inspector.target;
+      let selector = yield node.getUniqueSelector();
+      this.state.grid = { selector, options, url };
+
       this.gridHighlighterShown = node;
       
       
       this.emit("grid-highlighter-shown", node, options);
-    }).catch(this._handleRejection);
+    } catch (e) {
+      this._handleRejection(e);
+    }
   }),
 
   
@@ -179,9 +182,11 @@ HighlightersOverlay.prototype = {
 
 
   restoreState: Task.async(function* () {
-    let { selector, options } = this.state.grid;
+    let { selector, options, url } = this.state.grid;
 
-    if (!selector) {
+    if (!selector || url !== this.inspector.target.url) {
+      
+      this.emit("state-restored", { restored: false });
       return;
     }
 
@@ -194,7 +199,10 @@ HighlightersOverlay.prototype = {
 
     if (nodeFront) {
       yield this.showGridHighlighter(nodeFront, options);
+      this.emit("state-restored", { restored: true });
     }
+
+    this.emit("state-restored", { restored: false });
   }),
 
   
@@ -370,9 +378,13 @@ HighlightersOverlay.prototype = {
   
 
 
-  onNavigate: function () {
-    this.restoreState().catch(this._handleRejection);
-  },
+  onNavigate: Task.async(function* () {
+    try {
+      yield this.restoreState();
+    } catch (e) {
+      this._handleRejection(e);
+    }
+  }),
 
   
 
@@ -397,6 +409,10 @@ HighlightersOverlay.prototype = {
         this.highlighters[type] = null;
       }
     }
+
+    
+    this.inspector.target.off("navigate", this.onNavigate);
+    this.inspector.target.off("will-navigate", this.onWillNavigate);
 
     this._lastHovered = null;
 
