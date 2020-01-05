@@ -191,6 +191,9 @@ impl YuvImagePrimitiveGpu {
 
 #[derive(Debug, Clone)]
 pub struct BorderPrimitiveCpu {
+    
+    
+    pub use_new_border_path: bool,
 }
 
 #[derive(Debug, Clone)]
