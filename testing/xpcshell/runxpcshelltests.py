@@ -921,6 +921,8 @@ class XPCShellTests(object):
         
         
         self.env.setdefault('MOZ_DISABLE_NONLOCAL_CONNECTIONS', '1')
+        if self.mozInfo.get("topsrcdir") is not None:
+            self.env["MOZ_DEVELOPER_REPO_DIR"] = self.mozInfo["topsrcdir"].encode()
 
     def buildEnvironment(self):
         """
