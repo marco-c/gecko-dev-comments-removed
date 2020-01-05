@@ -43,13 +43,13 @@ nsHTMLFormatConverter::GetInputDataFlavors(nsIArray **_retval)
 {
   if ( !_retval )
     return NS_ERROR_INVALID_ARG;
-  
+
   nsCOMPtr<nsIMutableArray> array = nsArray::Create();
   nsresult rv = AddFlavorToList ( array, kHTMLMime );
-  
+
   array.forget(_retval);
   return rv;
-  
+
 } 
 
 
@@ -68,7 +68,7 @@ nsHTMLFormatConverter::GetOutputDataFlavors(nsIArray **_retval)
 {
   if ( !_retval )
     return NS_ERROR_INVALID_ARG;
-  
+
   nsCOMPtr<nsIMutableArray> array = nsArray::Create();
   nsresult rv = AddFlavorToList ( array, kHTMLMime );
   if ( NS_FAILED(rv) )
@@ -93,7 +93,7 @@ nsresult
 nsHTMLFormatConverter :: AddFlavorToList ( nsCOMPtr<nsIMutableArray>& inList, const char* inFlavor )
 {
   nsresult rv;
-  
+
   nsCOMPtr<nsISupportsCString> dataFlavor =
       do_CreateInstance(NS_SUPPORTS_CSTRING_CONTRACTID, &rv);
   if ( dataFlavor ) {
@@ -152,7 +152,7 @@ nsHTMLFormatConverter::CanConvert(const char *aFromDataFlavor, const char *aToDa
 
 
 NS_IMETHODIMP
-nsHTMLFormatConverter::Convert(const char *aFromDataFlavor, nsISupports *aFromData, uint32_t aDataLen, 
+nsHTMLFormatConverter::Convert(const char *aFromDataFlavor, nsISupports *aFromData, uint32_t aDataLen,
                                const char *aToDataFlavor, nsISupports **aToData, uint32_t *aDataToLen)
 {
   if ( !aToData || !aDataToLen )
@@ -190,7 +190,7 @@ nsHTMLFormatConverter::Convert(const char *aFromDataFlavor, nsISupports *aFromDa
         if (NS_SUCCEEDED(res)) {
           int32_t dataLen = outStr.Length() * 2;
           nsPrimitiveHelpers::CreatePrimitiveForData ( toFlavor.get(), outStr.get(), dataLen, aToData );
-          if ( *aToData ) 
+          if ( *aToData )
             *aDataToLen = dataLen;
         }
       }
@@ -200,7 +200,7 @@ nsHTMLFormatConverter::Convert(const char *aFromDataFlavor, nsISupports *aFromDa
       if ( NS_SUCCEEDED(ConvertFromHTMLToAOLMail(dataStr, outStr)) ) {
         int32_t dataLen = outStr.Length() * 2;
         nsPrimitiveHelpers::CreatePrimitiveForData ( toFlavor.get(), outStr.get(), dataLen, aToData );
-        if ( *aToData ) 
+        if ( *aToData )
           *aDataToLen = dataLen;
       }
     } 
@@ -209,10 +209,10 @@ nsHTMLFormatConverter::Convert(const char *aFromDataFlavor, nsISupports *aFromDa
     }
   } 
   else
-    rv = NS_ERROR_FAILURE;      
-    
+    rv = NS_ERROR_FAILURE;
+
   return rv;
-  
+
 } 
 
 
