@@ -18,6 +18,7 @@ extern crate style_traits;
 
 #[allow(non_snake_case)]
 pub mod glue;
+mod stylesheet_loader;
 
 
 #[no_mangle]
