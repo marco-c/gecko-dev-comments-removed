@@ -7,6 +7,8 @@ this.EXPORTED_SYMBOLS = ["fxAccounts", "FxAccounts"];
 
 const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 
+Cu.importGlobalProperties(["URL"]);
+
 Cu.import("resource://gre/modules/Log.jsm");
 Cu.import("resource://gre/modules/Promise.jsm");
 Cu.import("resource://services-common/utils.js");
@@ -59,6 +61,7 @@ var publicProperties = [
   "promiseAccountsChangeProfileURI",
   "promiseAccountsForceSigninURI",
   "promiseAccountsManageURI",
+  "promiseAccountsManageDevicesURI",
   "promiseAccountsSignUpURI",
   "promiseAccountsSignInURI",
   "removeCachedOAuthToken",
@@ -1264,79 +1267,65 @@ FxAccountsInternal.prototype = {
   },
 
   
-  
-  promiseAccountsForceSigninURI: Task.async(function *() {
-    yield FxAccountsConfig.ensureConfigured();
-    let url = Services.urlFormatter.formatURLPref("identity.fxaccounts.remote.force_auth.uri");
-    if (this.requiresHttps() && !/^https:/.test(url)) { 
+
+
+
+
+
+
+
+
+  async _formatPrefURL(prefName, entrypoint, extraParams) {
+    let url = new URL(Services.urlFormatter.formatURLPref(prefName));
+    if (this.requiresHttps() && url.protocol != "https:") {
       throw new Error("Firefox Accounts server must use HTTPS");
     }
-    let currentState = this.currentAccountState;
-    
-    return this.getSignedInUser().then(accountData => {
-      if (!accountData) {
-        return null;
-      }
-      let newQueryPortion = url.indexOf("?") == -1 ? "?" : "&";
-      newQueryPortion += "email=" + encodeURIComponent(accountData.email);
-      return url + newQueryPortion;
-    }).then(result => currentState.resolve(result));
-  }),
-
-  
-  
-  
-  
-  promiseAccountsChangeProfileURI(entrypoint, settingToEdit = null) {
-    let url = Services.urlFormatter.formatURLPref("identity.fxaccounts.settings.uri");
-
-    if (settingToEdit) {
-      url += (url.indexOf("?") == -1 ? "?" : "&") +
-             "setting=" + encodeURIComponent(settingToEdit);
+    let accountData = await this.getSignedInUser();
+    if (!accountData) {
+      return Promise.resolve(null);
     }
-
-    if (this.requiresHttps() && !/^https:/.test(url)) { 
-      throw new Error("Firefox Accounts server must use HTTPS");
+    url.searchParams.append("uid", accountData.uid);
+    url.searchParams.append("email", accountData.email);
+    if (entrypoint) {
+      url.searchParams.append("entrypoint", entrypoint);
     }
-    let currentState = this.currentAccountState;
-    
-    return this.getSignedInUser().then(accountData => {
-      if (!accountData) {
-        return null;
+    if (extraParams) {
+      for (let [k, v] of Object.entries(extraParams)) {
+        url.searchParams.append(k, v);
       }
-      let newQueryPortion = url.indexOf("?") == -1 ? "?" : "&";
-      newQueryPortion += "email=" + encodeURIComponent(accountData.email);
-      newQueryPortion += "&uid=" + encodeURIComponent(accountData.uid);
-      if (entrypoint) {
-        newQueryPortion += "&entrypoint=" + encodeURIComponent(entrypoint);
-      }
-      return url + newQueryPortion;
-    }).then(result => currentState.resolve(result));
+    }
+    return this.currentAccountState.resolve(url.href);
   },
 
   
   
-  promiseAccountsManageURI(entrypoint) {
-    let url = Services.urlFormatter.formatURLPref("identity.fxaccounts.settings.uri");
-    if (this.requiresHttps() && !/^https:/.test(url)) { 
-      throw new Error("Firefox Accounts server must use HTTPS");
+  async promiseAccountsForceSigninURI() {
+    await FxAccountsConfig.ensureConfigured();
+    return this._formatPrefURL("identity.fxaccounts.remote.force_auth.uri");
+  },
+
+  
+  
+  
+  
+  async promiseAccountsChangeProfileURI(entrypoint, settingToEdit = null) {
+    let extraParams;
+    if (settingToEdit) {
+      extraParams = { setting: settingToEdit };
     }
-    let currentState = this.currentAccountState;
-    
-    
-    
-    return this.getSignedInUser().then(accountData => {
-      if (!accountData) {
-        return null;
-      }
-      let newQueryPortion = url.indexOf("?") == -1 ? "?" : "&";
-      newQueryPortion += "uid=" + encodeURIComponent(accountData.uid) +
-                         "&email=" + encodeURIComponent(accountData.email);
-      if (entrypoint) {
-        newQueryPortion += "&entrypoint=" + encodeURIComponent(entrypoint);
-      }
-      return url + newQueryPortion;
-    }).then(result => currentState.resolve(result));
+    return this._formatPrefURL("identity.fxaccounts.settings.uri", entrypoint, extraParams);
+  },
+
+  
+  
+  async promiseAccountsManageURI(entrypoint) {
+    return this._formatPrefURL("identity.fxaccounts.settings.uri", entrypoint);
+  },
+
+  
+  
+  async promiseAccountsManageDevicesURI(entrypoint) {
+    return this._formatPrefURL("identity.fxaccounts.settings.devices.uri", entrypoint);
   },
 
   
