@@ -7,12 +7,20 @@ function evalWithCache(code, ctx) {
   });
   code = code instanceof Object ? code : cacheEntry(code);
 
+  var incremental = ctx.incremental || false;
+
   
   if (!("global" in ctx))
-    ctx.global = newGlobal({ cloneSingletons: true });
+    ctx.global = newGlobal({ cloneSingletons: !incremental });
 
   if (!("isRunOnce" in ctx))
     ctx.isRunOnce = true;
+
+  var ctx_save;
+  if (incremental)
+    ctx_save = Object.create(ctx, {saveIncrementalBytecode: { value: true } });
+  else
+    ctx_save = Object.create(ctx, {saveBytecode: { value: true } });
 
   
   
@@ -23,11 +31,11 @@ function evalWithCache(code, ctx) {
   
   
   ctx.global.generation = 0;
-  var res1 = evaluate(code, Object.create(ctx, {saveBytecode: { value: true } }));
+  var res1 = evaluate(code, ctx_save);
   checkAfter(ctx);
 
   ctx.global.generation = 1;
-  var res2 = evaluate(code, Object.create(ctx, {loadBytecode: { value: true }, saveBytecode: { value: true } }));
+  var res2 = evaluate(code, Object.create(ctx_save, {loadBytecode: { value: true } }));
   checkAfter(ctx);
 
   ctx.global.generation = 2;

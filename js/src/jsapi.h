@@ -6019,6 +6019,25 @@ extern JS_PUBLIC_API(TranscodeResult)
 DecodeInterpretedFunction(JSContext* cx, TranscodeBuffer& buffer, JS::MutableHandleFunction funp,
                           size_t cursorIndex = 0);
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+extern JS_PUBLIC_API(bool)
+StartIncrementalEncoding(JSContext* cx, TranscodeBuffer& buffer, JS::HandleScript script);
+
+extern JS_PUBLIC_API(bool)
+FinishIncrementalEncoding(JSContext* cx, JS::HandleScript script);
+
 } 
 
 namespace js {

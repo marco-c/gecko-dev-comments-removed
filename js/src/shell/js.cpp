@@ -1612,6 +1612,7 @@ Evaluate(JSContext* cx, unsigned argc, Value* vp)
     bool catchTermination = false;
     bool loadBytecode = false;
     bool saveBytecode = false;
+    bool saveIncrementalBytecode = false;
     bool assertEqBytecode = false;
     RootedObject callerGlobal(cx, cx->global());
 
@@ -1675,6 +1676,11 @@ Evaluate(JSContext* cx, unsigned argc, Value* vp)
         if (!v.isUndefined())
             saveBytecode = ToBoolean(v);
 
+        if (!JS_GetProperty(cx, opts, "saveIncrementalBytecode", &v))
+            return false;
+        if (!v.isUndefined())
+            saveIncrementalBytecode = ToBoolean(v);
+
         if (!JS_GetProperty(cx, opts, "assertEqBytecode", &v))
             return false;
         if (!v.isUndefined())
@@ -1682,10 +1688,15 @@ Evaluate(JSContext* cx, unsigned argc, Value* vp)
 
         
         
-        if (loadBytecode || saveBytecode) {
+        if (loadBytecode || saveBytecode || saveIncrementalBytecode) {
             if (!cacheEntry) {
                 JS_ReportErrorNumberASCII(cx, my_GetErrorMessage, nullptr, JSSMSG_INVALID_ARGS,
                                           "evaluate");
+                return false;
+            }
+            if (saveIncrementalBytecode && saveBytecode) {
+                JS_ReportErrorASCII(cx, "saveIncrementalBytecode and saveBytecode cannot be used"
+                                    " at the same time.");
                 return false;
             }
         }
@@ -1765,6 +1776,15 @@ Evaluate(JSContext* cx, unsigned argc, Value* vp)
             if (!script->scriptSource()->setSourceMapURL(cx, smurl))
                 return false;
         }
+
+        
+        
+        
+        if (saveIncrementalBytecode) {
+            if (!StartIncrementalEncoding(cx, saveBuffer, script))
+                return false;
+        }
+
         if (!JS_ExecuteScript(cx, script, args.rval())) {
             if (catchTermination && !JS_IsExceptionPending(cx)) {
                 JSAutoCompartment ac1(cx, callerGlobal);
@@ -1777,14 +1797,22 @@ Evaluate(JSContext* cx, unsigned argc, Value* vp)
             return false;
         }
 
+        
         if (saveBytecode) {
             JS::TranscodeResult rv = JS::EncodeScript(cx, saveBuffer, script);
             if (!ConvertTranscodeResultToJSException(cx, rv))
                 return false;
         }
+
+        
+        
+        if (saveIncrementalBytecode) {
+            if (!FinishIncrementalEncoding(cx, script))
+                return false;
+        }
     }
 
-    if (saveBytecode) {
+    if (saveBytecode || saveIncrementalBytecode) {
         
         
         if (loadBytecode && assertEqBytecode) {
