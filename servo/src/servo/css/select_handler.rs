@@ -40,7 +40,7 @@ impl NodeSelectHandler: SelectHandler<Node> {
         tree::parent(&NodeTree, node)
     }
 
-    
+    // TODO: Use a Bloom filter.
     fn named_ancestor_node(node: &Node, name: &str) -> Option<Node> {
         let mut node = *node;
         loop {
@@ -65,5 +65,28 @@ impl NodeSelectHandler: SelectHandler<Node> {
 
     fn node_is_root(node: &Node) -> bool {
         self.parent_node(node).is_none()
+    }
+
+    fn node_id(node: &Node) -> Option<~str> {
+        do node.read |data| {
+            match *data.kind {
+                Element(ref data) => data.get_attr("id"),
+                _ => fail ~"attempting to style non-element node"
+            }
+        }
+    }
+
+    fn node_has_id(node: &Node, id: &str) -> bool {
+        do node.read |data| {
+            match *data.kind {
+                Element(ref data) => {
+                    match data.get_attr("id") {
+                        None => false,
+                        Some(existing_id) => str::eq_slice(id, existing_id)
+                    }
+                }
+                _ => fail ~"attempting to style non-element node"
+            }
+        }
     }
 }
