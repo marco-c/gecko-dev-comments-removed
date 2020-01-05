@@ -985,7 +985,7 @@ function TypedArraySlice(start, end) {
         return callFunction(CallTypedArrayMethodIfWrapped, O, start, end, "TypedArraySlice");
     }
 
-    GetAttachedArrayBuffer(O);
+    var buffer = GetAttachedArrayBuffer(O);
 
     
     var len = TypedArrayLength(O);
@@ -1013,15 +1013,30 @@ function TypedArraySlice(start, end) {
     var A = TypedArraySpeciesCreateWithLength(O, count);
 
     
-    var n = 0;
 
     
-    while (k < final) {
+    if (count > 0) {
         
-        A[n++] = O[k++];
-    }
+        var n = 0;
 
-    
+        
+        if (buffer === null) {
+            
+            
+            buffer = ViewedArrayBufferIfReified(O);
+        }
+
+        if (IsDetachedBuffer(buffer))
+            ThrowTypeError(JSMSG_TYPED_ARRAY_DETACHED);
+
+        
+        while (k < final) {
+            
+            A[n++] = O[k++];
+        }
+
+        
+    }
 
     
     return A;
