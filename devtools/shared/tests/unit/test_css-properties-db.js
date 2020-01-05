@@ -22,9 +22,8 @@
 const DOMUtils = Components.classes["@mozilla.org/inspector/dom-utils;1"]
                            .getService(Components.interfaces.inIDOMUtils);
 
-const {PSEUDO_ELEMENTS, CSS_PROPERTIES, PREFERENCES} = require("devtools/shared/css/generated/properties-db");
+const {PSEUDO_ELEMENTS, CSS_PROPERTIES} = require("devtools/shared/css/generated/properties-db");
 const {generateCssProperties} = require("devtools/server/actors/css-properties");
-const {Preferences} = require("resource://gre/modules/Preferences.jsm");
 
 function run_test() {
   const propertiesErrorMessage = "If this assertion fails, then the client side CSS " +
@@ -41,8 +40,6 @@ function run_test() {
 
 
 
-
-
   const platformProperties = generateCssProperties();
 
   for (let propertyName in CSS_PROPERTIES) {
@@ -50,18 +47,17 @@ function run_test() {
     const clientProperty = CSS_PROPERTIES[propertyName];
     const deepEqual = isJsonDeepEqual(platformProperty, clientProperty);
 
-    
-    
-    
-    if (propertyName === "all") {
-      continue;
-    }
-
     if (deepEqual) {
       ok(true, `The static database and platform match for "${propertyName}".`);
     } else {
-      ok(false, `The static database and platform do not match for ` + `
-        "${propertyName}". ${propertiesErrorMessage}`);
+      const prefMessage = `The static database and platform do not match ` +
+                          `for "${propertyName}".`;
+      if (getPreference(propertyName) === false) {
+        ok(true, `${prefMessage} However, there is a preference for disabling this ` +
+                 `property on the current build.`);
+      } else {
+        ok(false, `${prefMessage} ${propertiesErrorMessage}`);
+      }
     }
   }
 
@@ -79,14 +75,8 @@ function run_test() {
   }
 
   mismatches.forEach(propertyName => {
-    if (getPreference(propertyName) === false) {
-      ok(true, `The static database and platform do not agree on the property ` +
-               `"${propertyName}" This is ok because it is currently disabled through ` +
-               `a preference.`);
-    } else {
-      ok(false, `The static database and platform do not agree on the property ` +
-                `"${propertyName}" ${propertiesErrorMessage}`);
-    }
+    ok(false, `The static database and platform do not agree on the property ` +
+              `"${propertyName}" ${propertiesErrorMessage}`);
   });
 }
 
@@ -143,22 +133,4 @@ function getKeyMismatches(a, b) {
   });
 
   return aMismatches.concat(bMismatches);
-}
-
-
-
-
-
-
-
-
-function getPreference(propertyName) {
-  const preference = PREFERENCES.find(([prefPropertyName, preferenceKey]) => {
-    return prefPropertyName === propertyName && !!preferenceKey;
-  });
-
-  if (preference) {
-    return Preferences.get(preference[1]);
-  }
-  return undefined;
 }

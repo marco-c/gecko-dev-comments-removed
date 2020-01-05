@@ -68,12 +68,17 @@ function generateCssProperties() {
 
     let subproperties = DOMUtils.getSubpropertiesForCSSProperty(name);
 
-    properties[name] = {
+    
+    
+    
+    const clientDefinition = CSS_PROPERTIES[name] || {};
+    const serverDefinition = {
       isInherited: DOMUtils.isInheritedProperty(name),
       values,
       supports,
       subproperties,
     };
+    properties[name] = Object.assign(clientDefinition, serverDefinition);
   });
 
   return properties;
