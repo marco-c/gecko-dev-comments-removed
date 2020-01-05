@@ -40,6 +40,13 @@
 
 
 
+
+
+
+
+
+
+
 "use strict";
 
 this.EXPORTED_SYMBOLS = ["ProfileStorage"];
@@ -65,7 +72,6 @@ this.log = null;
 FormAutofillUtils.defineLazyLogGetter(this, this.EXPORTED_SYMBOLS[0]);
 
 const SCHEMA_VERSION = 1;
-
 
 const VALID_FIELDS = [
   "given-name",
@@ -128,7 +134,8 @@ ProfileStorage.prototype = {
     log.debug("add:", profile);
     this._store.ensureDataReady();
 
-    let profileToSave = this._normalizeProfile(profile);
+    let profileToSave = this._clone(profile);
+    this._normalizeProfile(profileToSave);
 
     profileToSave.guid = gUUIDGenerator.generateUUID().toString()
                                        .replace(/[{}-]/g, "").substring(0, 12);
@@ -163,7 +170,9 @@ ProfileStorage.prototype = {
       throw new Error("No matching profile.");
     }
 
-    let profileToUpdate = this._normalizeProfile(profile);
+    let profileToUpdate = this._clone(profile);
+    this._normalizeProfile(profileToUpdate);
+
     for (let field of VALID_FIELDS) {
       if (profileToUpdate[field] !== undefined) {
         profileFound[field] = profileToUpdate[field];
@@ -234,7 +243,9 @@ ProfileStorage.prototype = {
     }
 
     
-    return this._clone(profileFound);
+    let clonedProfile = this._clone(profileFound);
+    this._computeFields(clonedProfile);
+    return clonedProfile;
   },
 
   
@@ -248,7 +259,9 @@ ProfileStorage.prototype = {
     this._store.ensureDataReady();
 
     
-    return this._store.data.profiles.map(this._clone);
+    let clonedProfiles = this._store.data.profiles.map(this._clone);
+    clonedProfiles.forEach(this._computeFields);
+    return clonedProfiles;
   },
 
   
@@ -259,10 +272,21 @@ ProfileStorage.prototype = {
 
   getByFilter({info, searchString}) {
     log.debug("getByFilter:", info, searchString);
-    this._store.ensureDataReady();
 
-    
-    let result = this._findByFilter({info, searchString}).map(this._clone);
+    let lcSearchString = searchString.toLowerCase();
+    let result = this.getAll().filter(profile => {
+      
+      
+      
+      let name = profile[info.fieldName];
+
+      if (!searchString) {
+        return !!name;
+      }
+
+      return name.toLowerCase().startsWith(lcSearchString);
+    });
+
     log.debug("getByFilter: Returning", result.length, "result(s)");
     return result;
   },
@@ -275,25 +299,47 @@ ProfileStorage.prototype = {
     return this._store.data.profiles.find(profile => profile.guid == guid);
   },
 
-  _findByFilter({info, searchString}) {
-    let profiles = this._store.data.profiles;
-    let lcSearchString = searchString.toLowerCase();
-
-    return profiles.filter(profile => {
+  _computeFields(profile) {
+    if (profile["street-address"]) {
+      let streetAddress = profile["street-address"].split("\n");
       
       
-      let name = profile[info.fieldName];
+      for (let i = 0; i < 3; i++) {
+        if (streetAddress[i]) {
+          profile["address-line" + (i + 1)] = streetAddress[i];
+        }
+      }
+    }
+  },
 
-      if (!searchString) {
-        return !!name;
+  _normalizeAddress(profile) {
+    if (profile["address-line1"] || profile["address-line2"] ||
+        profile["address-line3"]) {
+      
+      
+      if (!profile["address-line1"] && profile["street-address"] &&
+          !profile["street-address"].includes("\n")) {
+        profile["address-line1"] = profile["street-address"];
+        delete profile["street-address"];
       }
 
-      return name.toLowerCase().startsWith(lcSearchString);
-    });
+      
+      let addressLines = [1, 2, 3].map(i => {
+        let value = profile["address-line" + i];
+        delete profile["address-line" + i];
+        return value;
+      });
+
+      
+      if (!profile["street-address"]) {
+        profile["street-address"] = addressLines.join("\n");
+      }
+    }
   },
 
   _normalizeProfile(profile) {
-    let result = {};
+    this._normalizeAddress(profile);
+
     for (let key in profile) {
       if (!VALID_FIELDS.includes(key)) {
         throw new Error(`"${key}" is not a valid field.`);
@@ -302,10 +348,7 @@ ProfileStorage.prototype = {
           typeof profile[key] !== "number") {
         throw new Error(`"${key}" contains invalid data type.`);
       }
-
-      result[key] = profile[key];
     }
-    return result;
   },
 
   _dataPostProcessor(data) {
