@@ -1138,6 +1138,8 @@ public:
         return LOCAL_GL_COLOR_ATTACHMENT0 + mImplMaxColorAttachments - 1;
     }
 
+    const decltype(mOptions)& Options() const { return mOptions; }
+
 protected:
 
     

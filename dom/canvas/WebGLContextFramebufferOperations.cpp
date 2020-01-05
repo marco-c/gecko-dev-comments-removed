@@ -144,76 +144,37 @@ WebGLContext::DrawBuffers(const dom::Sequence<GLenum>& buffers)
     if (IsContextLost())
         return;
 
-    if (!mBoundDrawFramebuffer) {
-        
-        
-        
-        
-        
-        if (buffers.Length() != 1) {
-            ErrorInvalidOperation("%s: For the default framebuffer, `buffers` must have a"
-                                  " length of 1.",
-                                  funcName);
-            return;
-        }
-
-        switch (buffers[0]) {
-        case LOCAL_GL_NONE:
-        case LOCAL_GL_BACK:
-            break;
-
-        default:
-            ErrorInvalidOperation("%s: For the default framebuffer, `buffers[0]` must be"
-                                  " BACK or NONE.",
-                                  funcName);
-            return;
-        }
-
-        mDefaultFB_DrawBuffer0 = buffers[0];
-        gl->Screen()->SetDrawBuffer(buffers[0]);
+    if (mBoundDrawFramebuffer) {
+        mBoundDrawFramebuffer->DrawBuffers(funcName, buffers);
         return;
     }
 
     
-
-    if (buffers.Length() > mImplMaxDrawBuffers) {
-        
-        ErrorInvalidValue("%s: `buffers` must have a length <= MAX_DRAW_BUFFERS.",
-                          funcName);
+    
+    
+    
+    
+    if (buffers.Length() != 1) {
+        ErrorInvalidOperation("%s: For the default framebuffer, `buffers` must have a"
+                              " length of 1.",
+                              funcName);
         return;
     }
 
-    for (size_t i = 0; i < buffers.Length(); i++) {
-        
-        
-        
-        
+    switch (buffers[0]) {
+    case LOCAL_GL_NONE:
+    case LOCAL_GL_BACK:
+        break;
 
-        
-        
-        
-        
-        
-        if (buffers[i] != LOCAL_GL_NONE &&
-            buffers[i] != LOCAL_GL_COLOR_ATTACHMENT0 + i)
-        {
-            ErrorInvalidOperation("%s: `buffers[i]` must be NONE or COLOR_ATTACHMENTi.",
-                                  funcName);
-            return;
-        }
+    default:
+        ErrorInvalidOperation("%s: For the default framebuffer, `buffers[0]` must be"
+                              " BACK or NONE.",
+                              funcName);
+        return;
     }
 
-    MakeContextCurrent();
-
-    const GLenum* ptr = nullptr;
-    if (buffers.Length()) {
-        ptr = buffers.Elements();
-    }
-
-    gl->fDrawBuffers(buffers.Length(), ptr);
-
-    const auto end = ptr + buffers.Length();
-    mBoundDrawFramebuffer->mDrawBuffers.assign(ptr, end);
+    mDefaultFB_DrawBuffer0 = buffers[0];
+    gl->Screen()->SetDrawBuffer(buffers[0]);
 }
 
 void
