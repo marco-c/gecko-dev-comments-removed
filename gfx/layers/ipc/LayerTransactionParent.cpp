@@ -149,9 +149,7 @@ LayerTransactionParent::RecvUpdate(const TransactionInfo& aInfo)
   PROFILER_LABEL("LayerTransactionParent", "RecvUpdate",
     js::ProfileEntry::Category::GRAPHICS);
 
-#ifdef COMPOSITOR_PERFORMANCE_WARNING
   TimeStamp updateStart = TimeStamp::Now();
-#endif
 
   MOZ_LAYERS_LOG(("[ParentSide] received txn with %" PRIuSIZE " edits", aInfo.cset().Length()));
 
@@ -506,6 +504,8 @@ LayerTransactionParent::RecvUpdate(const TransactionInfo& aInfo)
                     OtherPid(),
                     latency.ToMilliseconds());
     }
+
+    mLayerManager->RecordUpdateTime((TimeStamp::Now() - updateStart).ToMilliseconds());
   }
 
   return IPC_OK();
@@ -1023,6 +1023,18 @@ mozilla::ipc::IPCResult
 LayerTransactionParent::RecvReleaseCompositable(const CompositableHandle& aHandle)
 {
   ReleaseCompositable(aHandle);
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult
+LayerTransactionParent::RecvRecordPaintTimes(const PaintTiming& aTiming)
+{
+  
+  
+  
+  if (mLayerManager && mCompositorBridge->IsRemote()) {
+    mLayerManager->RecordPaintTimes(aTiming);
+  }
   return IPC_OK();
 }
 

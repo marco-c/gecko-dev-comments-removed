@@ -15,6 +15,7 @@
 #include "RenderTrace.h"                
 #include "gfx2DGlue.h"                  
 #include "gfxPlatform.h"                
+#include "gfxPrefs.h"
 
 #include "ipc/IPCMessageUtils.h"        
 #include "IPDLActor.h"
@@ -586,6 +587,11 @@ ShadowLayerForwarder::EndTransaction(const nsIntRegion& aRegionToClear,
     return false;
   }
 
+  Maybe<TimeStamp> startTime;
+  if (gfxPrefs::LayersDrawFPS()) {
+    startTime = Some(TimeStamp::Now());
+  }
+
   GetCompositorBridgeChild()->WillEndTransaction();
 
   MOZ_ASSERT(aId);
@@ -724,6 +730,11 @@ ShadowLayerForwarder::EndTransaction(const nsIntRegion& aRegionToClear,
     PlatformSyncBeforeUpdate();
   }
 
+  if (startTime) {
+    mPaintTiming.serializeMs() = (TimeStamp::Now() - startTime.value()).ToMilliseconds();
+    startTime = Some(TimeStamp::Now());
+  }
+
   for (ReadLockVector& locks : mTxn->mReadLocks) {
     if (locks.Length()) {
       if (!mShadowManager->SendInitReadLocks(locks)) {
@@ -738,6 +749,11 @@ ShadowLayerForwarder::EndTransaction(const nsIntRegion& aRegionToClear,
   if (!mShadowManager->SendUpdate(info)) {
     MOZ_LAYERS_LOG(("[LayersForwarder] WARNING: sending transaction failed!"));
     return false;
+  }
+
+  if (startTime) {
+    mPaintTiming.sendMs() = (TimeStamp::Now() - startTime.value()).ToMilliseconds();
+    mShadowManager->SendRecordPaintTimes(mPaintTiming);
   }
 
   *aSent = true;
