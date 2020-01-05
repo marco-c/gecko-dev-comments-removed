@@ -16,7 +16,14 @@ def gen_test_backend():
         config = build_obj.config_environment
     except BuildEnvironmentNotFoundException:
         print("No build detected, test metadata may be incomplete.")
-        config = EmptyConfig(build_obj.topsrcdir)
+
+        
+        
+        substs = EmptyConfig.default_substs
+        if 'JS_STANDALONE' in substs:
+            del substs['JS_STANDALONE']
+
+        config = EmptyConfig(build_obj.topsrcdir, substs)
         config.topobjdir = build_obj.topobjdir
 
     reader = BuildReader(config)

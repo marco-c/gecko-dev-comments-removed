@@ -113,21 +113,23 @@ class EmptyConfig(object):
         def get(self, key, default=None):
             return self[key]
 
-    def __init__(self, topsrcdir):
+    default_substs = {
+        
+        
+        b'MOZ_APP_NAME': b'empty',
+        b'MOZ_CHILD_PROCESS_NAME': b'empty',
+        
+        
+        b'NECKO_PROTOCOLS': set(),
+        
+        b'JS_STANDALONE': b'1',
+    }
+
+    def __init__(self, topsrcdir, substs=None):
         self.topsrcdir = topsrcdir
         self.topobjdir = ''
 
-        self.substs = self.PopulateOnGetDict(EmptyValue, {
-            
-            
-            b'MOZ_APP_NAME': b'empty',
-            b'MOZ_CHILD_PROCESS_NAME': b'empty',
-            
-            
-            b'NECKO_PROTOCOLS': set(),
-            
-            b'JS_STANDALONE': b'1',
-        })
+        self.substs = self.PopulateOnGetDict(EmptyValue, substs or self.default_substs)
         udict = {}
         for k, v in self.substs.items():
             if isinstance(v, str):
