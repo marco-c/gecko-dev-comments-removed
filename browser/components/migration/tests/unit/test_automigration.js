@@ -174,16 +174,9 @@ add_task(function* checkUndoPreconditions() {
                    "migrate called with 'null' as a profile");
 
   yield migrationFinishedPromise;
-  Assert.ok(Preferences.has("browser.migrate.automigrate.started"),
-            "Should have set start time pref");
-  Assert.ok(Preferences.has("browser.migrate.automigrate.finished"),
-            "Should have set finish time pref");
-  Assert.ok(AutoMigrate.canUndo(), "Should be able to undo migration");
-
-  let [beginRange, endRange] = AutoMigrate.getUndoRange();
-  let stringRange = `beginRange: ${beginRange}; endRange: ${endRange}`;
-  Assert.ok(beginRange <= endRange,
-            "Migration should have started before or when it ended " + stringRange);
+  Assert.ok(Preferences.has("browser.migrate.automigrate.browser"),
+            "Should have set browser pref");
+  Assert.ok((yield AutoMigrate.canUndo()), "Should be able to undo migration");
 
   yield AutoMigrate.undo();
   Assert.ok(true, "Should be able to finish an undo cycle.");
@@ -193,18 +186,20 @@ add_task(function* checkUndoPreconditions() {
 
 
 add_task(function* checkUndoRemoval() {
-  let startTime = "" + Date.now();
-
+  MigrationUtils.initializeUndoData();
   
-  let login = Cc["@mozilla.org/login-manager/loginInfo;1"].createInstance(Ci.nsILoginInfo);
-  login.init("www.mozilla.org", "http://www.mozilla.org", null, "user", "pass", "userEl", "passEl");
-  Services.logins.addLogin(login);
+  MigrationUtils.insertLoginWrapper({
+    hostname: "www.mozilla.org",
+    formSubmitURL: "http://www.mozilla.org",
+    username: "user",
+    password: "pass",
+  });
   let storedLogins = Services.logins.findLogins({}, "www.mozilla.org",
                                                 "http://www.mozilla.org", null);
   Assert.equal(storedLogins.length, 1, "Should have 1 login");
 
   
-  yield PlacesUtils.bookmarks.insert({
+  yield MigrationUtils.insertBookmarkWrapper({
     parentGuid: PlacesUtils.bookmarks.toolbarGuid,
     url: "http://www.example.org/",
     title: "Some example bookmark",
@@ -217,10 +212,32 @@ add_task(function* checkUndoRemoval() {
   
   let now_uSec = Date.now() * 1000;
   let visitedURI = Services.io.newURI("http://www.example.com/", null, null);
-  yield PlacesTestUtils.addVisits([
-    {uri: visitedURI, visitDate: now_uSec},
-    {uri: visitedURI, visitDate: now_uSec - 100 * kUsecPerMin},
-  ]);
+  let frecencyUpdatePromise = new Promise(resolve => {
+    let expectedChanges = 2;
+    let observer = {
+      onFrecencyChanged: function() {
+        if (!--expectedChanges) {
+          PlacesUtils.history.removeObserver(observer);
+          resolve();
+        }
+      },
+    };
+    PlacesUtils.history.addObserver(observer, false);
+  });
+  yield MigrationUtils.insertVisitsWrapper([{
+    uri: visitedURI,
+    visits: [
+      {
+        transitionType: PlacesUtils.history.TRANSITION_LINK,
+        visitDate: now_uSec,
+      },
+      {
+        transitionType: PlacesUtils.history.TRANSITION_LINK,
+        visitDate: now_uSec - 100 * kUsecPerMin,
+      },
+    ]
+  }]);
+  yield frecencyUpdatePromise;
 
   
   let opts = PlacesUtils.history.getNewQueryOptions();
@@ -233,10 +250,7 @@ add_task(function* checkUndoRemoval() {
   
   visits.root.containerOpen = false;
 
-  
-  let endTime = "" + Date.now();
-  Preferences.set("browser.migrate.automigrate.started", startTime);
-  Preferences.set("browser.migrate.automigrate.finished", endTime);
+  yield AutoMigrate.saveUndoState();
 
   
   Assert.ok(AutoMigrate.canUndo(), "Should be possible to undo migration");
@@ -256,47 +270,6 @@ add_task(function* checkUndoRemoval() {
   storedLogins = Services.logins.findLogins({}, "www.mozilla.org",
                                             "http://www.mozilla.org", null);
   Assert.equal(storedLogins.length, 0, "Should have no logins");
-
-  
-  Assert.ok(!Preferences.has("browser.migrate.automigrate.started"),
-            "Should no longer have pref for migration start time.");
-  Assert.ok(!Preferences.has("browser.migrate.automigrate.finished"),
-            "Should no longer have pref for migration finish time.");
-});
-
-add_task(function* checkUndoDisablingByBookmarksAndPasswords() {
-  let startTime = "" + Date.now();
-  Services.prefs.setCharPref("browser.migrate.automigrate.started", startTime);
-  
-  let endTime = "" + (Date.now() + 1000);
-  Services.prefs.setCharPref("browser.migrate.automigrate.finished", endTime);
-  AutoMigrate.maybeInitUndoObserver();
-
-  Assert.ok(AutoMigrate.canUndo(), "Should be able to undo.");
-
-  
-  let login = Cc["@mozilla.org/login-manager/loginInfo;1"].createInstance(Ci.nsILoginInfo);
-  login.init("www.mozilla.org", "http://www.mozilla.org", null, "user", "pass", "userEl", "passEl");
-  Services.logins.addLogin(login);
-
-  Assert.ok(!AutoMigrate.canUndo(), "Should no longer be able to undo.");
-  Services.prefs.setCharPref("browser.migrate.automigrate.started", startTime);
-  Services.prefs.setCharPref("browser.migrate.automigrate.finished", endTime);
-  Assert.ok(AutoMigrate.canUndo(), "Should be able to undo.");
-  AutoMigrate.maybeInitUndoObserver();
-
-  
-  yield PlacesUtils.bookmarks.insert({
-    parentGuid: PlacesUtils.bookmarks.toolbarGuid,
-    url: "http://www.example.org/",
-    title: "Some example bookmark",
-  });
-  Assert.ok(!AutoMigrate.canUndo(), "Should no longer be able to undo.");
-
-  try {
-    Services.logins.removeAllLogins();
-  } catch (ex) {}
-  yield PlacesUtils.bookmarks.eraseEverything();
 });
 
 add_task(function* checkUndoBookmarksState() {
