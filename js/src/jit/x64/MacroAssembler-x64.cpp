@@ -426,13 +426,32 @@ MacroAssembler::subFromStackPtr(Imm32 imm32)
         
         
         
+        
+        
+        
+        
         uint32_t amountLeft = imm32.value;
-        while (amountLeft > 4096) {
+        uint32_t fullPages = amountLeft / 4096;
+        if (fullPages <= 8) {
+            while (amountLeft > 4096) {
+                subq(Imm32(4096), StackPointer);
+                store32(Imm32(0), Address(StackPointer, 0));
+                amountLeft -= 4096;
+            }
+            subq(Imm32(amountLeft), StackPointer);
+        } else {
+            ScratchRegisterScope scratch(*this);
+            Label top;
+            move32(Imm32(fullPages), scratch);
+            bind(&top);
             subq(Imm32(4096), StackPointer);
             store32(Imm32(0), Address(StackPointer, 0));
-            amountLeft -= 4096;
+            subl(Imm32(1), scratch);
+            j(Assembler::NonZero, &top);
+            amountLeft -= fullPages * 4096;
+            if (amountLeft)
+                subq(Imm32(amountLeft), StackPointer);
         }
-        subq(Imm32(amountLeft), StackPointer);
     }
 }
 
