@@ -863,24 +863,13 @@ protected:
 
 
 
-  bool NeedToApplyFilter()
-  {
-    return EnsureUpdatedFilter().mPrimitives.Length() > 0;
-  }
+  bool NeedToApplyFilter();
 
   
 
 
 
-  const gfx::FilterDescription& EnsureUpdatedFilter() {
-    const ContextState& state = CurrentState();
-    bool isWriteOnly = mCanvasElement && mCanvasElement->IsWriteOnly();
-    if (state.filterSourceGraphicTainted != isWriteOnly) {
-      UpdateFilter();
-    }
-    MOZ_ASSERT(state.filterSourceGraphicTainted == isWriteOnly);
-    return state.filter;
-  }
+  const gfx::FilterDescription& EnsureUpdatedFilter();
 
   bool NeedToCalculateBounds()
   {
@@ -1101,6 +1090,11 @@ protected:
   };
 
   AutoTArray<ContextState, 3> mStyleStack;
+
+  
+  static CanvasRenderingContext2D* sThisContext;
+  static bool sThisContextWasDestroyed;
+  static bool sThisContextHadItsFilterUpdated;
 
   inline ContextState& CurrentState() {
     return mStyleStack[mStyleStack.Length() - 1];
