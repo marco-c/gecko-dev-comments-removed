@@ -410,6 +410,33 @@ AllowNotification(const NotificationAndReportStringId& aNotification)
          StringListContains(filter, aNotification.mReportStringId);
 }
 
+static bool
+AllowDecodeIssue(const MediaResult& aDecodeIssue, bool aDecodeIssueIsError)
+{
+  if (aDecodeIssue == NS_OK) {
+    
+    
+    return true;
+  }
+
+  
+  
+  
+  
+  
+  nsAdoptingCString filter =
+    Preferences::GetCString(aDecodeIssueIsError
+                            ? "media.decoder-doctor.decode-errors-allowed"
+                            : "media.decoder-doctor.decode-warnings-allowed");
+  if (filter.EqualsLiteral("*")) {
+    return true;
+  }
+
+  nsCString decodeIssueName;
+  GetErrorName(aDecodeIssue.Code(), static_cast<nsACString&>(decodeIssueName));
+  return StringListContains(filter, decodeIssueName);
+}
+
 static void
 ReportAnalysis(nsIDocument* aDocument,
                const NotificationAndReportStringId& aNotification,
@@ -462,7 +489,8 @@ ReportAnalysis(nsIDocument* aDocument,
     ReportToConsole(aDocument, aNotification.mReportStringId, params);
   }
 
-  if (AllowNotification(aNotification)) {
+  if (AllowNotification(aNotification) &&
+      AllowDecodeIssue(aDecodeIssue, aDecodeIssueIsError)) {
     DispatchNotification(
       aDocument->GetInnerWindow(), aNotification, aIsSolved,
       aFormats,
