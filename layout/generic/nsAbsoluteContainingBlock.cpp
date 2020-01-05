@@ -636,6 +636,9 @@ nsAbsoluteContainingBlock::ReflowAbsoluteFrame(nsIFrame*                aDelegat
     
     
     
+    
+    
+    
     nsIFrame* placeholder =
       aPresContext->PresShell()->GetPlaceholderFrameFor(aKidFrame);
     if (placeholder && placeholder->GetParent() == aDelegatingFrame) {

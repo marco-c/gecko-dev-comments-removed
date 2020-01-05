@@ -234,8 +234,6 @@ public:
     
     
     
-    
-    
     uint32_t mIOffsetsNeedCSSAlign:1;
     uint32_t mBOffsetsNeedCSSAlign:1;
   };
@@ -729,6 +727,8 @@ public:
     
     COMPUTE_SIZE_USE_AUTO_BSIZE = (1<<3),
 
+    
+    
     
     
     STATIC_POS_IS_CB_ORIGIN = (1<<4),
