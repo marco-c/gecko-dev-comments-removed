@@ -220,13 +220,46 @@ SimpleTest._tests = [];
 SimpleTest._stopOnLoad = true;
 SimpleTest._cleanupFunctions = [];
 SimpleTest._timeoutFunctions = [];
+SimpleTest._inChaosMode = false;
+
+
+
+
 SimpleTest.expected = 'pass';
 SimpleTest.num_failed = 0;
-SimpleTest._inChaosMode = false;
+
+function usesFailurePatterns() {
+  return Array.isArray(SimpleTest.expected);
+}
+
+
+
+
+
+
+function recordIfMatchesFailurePattern(name, diag) {
+  let index = SimpleTest.expected.findIndex(([pat, count]) => {
+    return pat == null ||
+      (typeof name == "string" && name.includes(pat)) ||
+      (typeof diag == "string" && diag.includes(pat));
+  });
+  if (index >= 0) {
+    SimpleTest.num_failed[index]++;
+    return true;
+  }
+  return false;
+}
 
 SimpleTest.setExpected = function () {
   if (parent.TestRunner) {
-    SimpleTest.expected = parent.TestRunner.expected;
+    if (!Array.isArray(parent.TestRunner.expected)) {
+      SimpleTest.expected = parent.TestRunner.expected;
+    } else {
+      
+      SimpleTest.expected = parent.TestRunner.expected.filter(([pat]) => pat != "ASSERTION");
+      SimpleTest.num_failed = new Array(SimpleTest.expected.length);
+      SimpleTest.num_failed.fill(0);
+    }
   }
 }
 SimpleTest.setExpected();
@@ -244,6 +277,12 @@ SimpleTest.ok = function (condition, name, diag, stack = null) {
       }
       var successInfo = {status:"FAIL", expected:"FAIL", message:"TEST-KNOWN-FAIL"};
       var failureInfo = {status:"PASS", expected:"FAIL", message:"TEST-UNEXPECTED-PASS"};
+    } else if (!test.result && usesFailurePatterns()) {
+      if (recordIfMatchesFailurePattern(name, diag)) {
+        test.result = true;
+      }
+      var successInfo = {status:"FAIL", expected:"FAIL", message:"TEST-KNOWN-FAIL"};
+      var failureInfo = {status:"FAIL", expected:"PASS", message:"TEST-UNEXPECTED-FAIL"};
     } else {
       var successInfo = {status:"PASS", expected:"PASS", message:"TEST-PASS"};
       var failureInfo = {status:"FAIL", expected:"PASS", message:"TEST-UNEXPECTED-FAIL"};
@@ -298,6 +337,14 @@ SimpleTest.doesThrow = function(fn, name) {
 
 SimpleTest.todo = function(condition, name, diag) {
     var test = {'result': !!condition, 'name': name, 'diag': diag, todo: true};
+    if (test.result && usesFailurePatterns() &&
+        recordIfMatchesFailurePattern(name, diag)) {
+      
+      
+      
+      
+      test.result = false;
+    }
     var successInfo = {status:"PASS", expected:"FAIL", message:"TEST-UNEXPECTED-PASS"};
     var failureInfo = {status:"FAIL", expected:"FAIL", message:"TEST-KNOWN-FAIL"};
     SimpleTest._logResult(test, successInfo, failureInfo);
@@ -1080,6 +1127,24 @@ SimpleTest.finish = function() {
 
         SimpleTest._logResult(test, successInfo, failureInfo);
         SimpleTest._tests.push(test);
+    } else if (usesFailurePatterns()) {
+        SimpleTest.expected.forEach(([pat, expected_count], i) => {
+            let count = SimpleTest.num_failed[i];
+            let diag;
+            if (expected_count === null && count == 0) {
+                diag = "expected some failures but got none";
+            } else if (expected_count !== null && expected_count != count) {
+                diag = `expected ${expected_count} failures but got ${count}`;
+            } else {
+                return;
+            }
+            var name = pat ? `failure pattern \`${pat}\` in this test` : "failures in this test";
+            var test = {'result': false, name, diag};
+            var successInfo = {status:"PASS", expected:"PASS", message:"TEST-PASS"};
+            var failureInfo = {status:"FAIL", expected:"PASS", message:"TEST-UNEXPECTED-FAIL"};
+            SimpleTest._logResult(test, successInfo, failureInfo);
+            SimpleTest._tests.push(test);
+        });
     }
 
     SimpleTest._timeoutFunctions = [];

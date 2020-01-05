@@ -616,6 +616,14 @@ TestRunner.testUnloaded = function() {
         var url = TestRunner.getNextUrl();
         var max = TestRunner._expectedMaxAsserts;
         var min = TestRunner._expectedMinAsserts;
+        if (Array.isArray(TestRunner.expected)) {
+            
+            let additionalAsserts = TestRunner.expected.reduce((acc, [pat, count]) => {
+                return pat == "ASSERTION" ? acc + count : acc;
+            });
+            min += additionalAsserts;
+            max += additionalAsserts;
+        }
         if (numAsserts > max) {
             TestRunner.structuredLogger.testEnd(url,
                                                 "ERROR",
