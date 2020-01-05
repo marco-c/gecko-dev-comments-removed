@@ -11,6 +11,8 @@
 
 #define LIR_CPU_OPCODE_LIST(_)  \
     _(ModMaskI)                 \
-    _(UDivOrMod)
+    _(DivOrModI64)              \
+    _(UDivOrMod)                \
+    _(UDivOrModI64)
 
 #endif 
