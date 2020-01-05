@@ -9,47 +9,12 @@
 
 #include <stdint.h>                     
 #include "gfxTypes.h"
-#include "mozilla/Attributes.h"         
 #include "mozilla/layers/ISurfaceAllocator.h"  
 #include "mozilla/layers/LayersTypes.h"  
 #include "mozilla/layers/TextureClient.h"  
-#include "nsRegion.h"                   
-#include "mozilla/gfx/Rect.h"
-#include "nsExpirationTracker.h"
 
 namespace mozilla {
 namespace layers {
-
-
-
-
-
-class ActiveResource
-{
-public:
- virtual void NotifyInactive() = 0;
-  nsExpirationState* GetExpirationState() { return &mExpirationState; }
-  bool IsActivityTracked() { return mExpirationState.IsTracked(); }
-private:
-  nsExpirationState mExpirationState;
-};
-
-
-
-
-class ActiveResourceTracker : public nsExpirationTracker<ActiveResource, 3>
-{
-public:
-  ActiveResourceTracker(uint32_t aExpirationCycle, const char* aName)
-  : nsExpirationTracker(aExpirationCycle, aName)
-  {}
-
-  virtual void NotifyExpired(ActiveResource* aResource) override
-  {
-    RemoveObject(aResource);
-    aResource->NotifyInactive();
-  }
-};
 
 
 
@@ -115,9 +80,7 @@ public:
 
   KnowsCompositor()
     : mSerial(++sSerialCounter)
-  {
-    mActiveResourceTracker = MakeUnique<ActiveResourceTracker>(1000, "CompositableForwarder");
-  }
+  {}
 
   void IdentifyTextureHost(const TextureFactoryIdentifier& aIdentifier);
 
@@ -155,8 +118,6 @@ public:
 
   int32_t GetSerial() { return mSerial; }
 
-  ActiveResourceTracker& GetActiveResourceTracker() { return *mActiveResourceTracker.get(); }
-
   
 
 
@@ -165,10 +126,7 @@ public:
 
 protected:
   TextureFactoryIdentifier mTextureFactoryIdentifier;
-
   RefPtr<SyncObject> mSyncObject;
-
-  UniquePtr<ActiveResourceTracker> mActiveResourceTracker;
 
   const int32_t mSerial;
   static mozilla::Atomic<int32_t> sSerialCounter;

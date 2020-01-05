@@ -9,7 +9,7 @@
 #include "mozilla/Assertions.h"         
 #include "mozilla/RefPtr.h"             
 #include "mozilla/layers/LayersTypes.h"
-#include "mozilla/layers/TextureForwarder.h"
+#include "mozilla/layers/ShadowLayers.h"
 #include "mozilla/gfx/Types.h"
 #include "mozilla/Vector.h"
 
@@ -64,7 +64,7 @@ public:
 
   virtual void OnShutdown() {}
 
-  virtual bool SetForwarder(KnowsCompositor* aFwd) { return true; }
+  virtual bool SetForwarder(ShadowLayerForwarder* aFwd) { return true; }
 
   
 
@@ -117,7 +117,7 @@ public:
 
   static already_AddRefed<PersistentBufferProviderShared>
   Create(gfx::IntSize aSize, gfx::SurfaceFormat aFormat,
-         KnowsCompositor* aFwd);
+         ShadowLayerForwarder* aFwd);
 
   virtual LayersBackend GetType() override { return LayersBackend::LAYERS_CLIENT; }
 
@@ -135,12 +135,12 @@ public:
 
   virtual void OnShutdown() override { Destroy(); }
 
-  virtual bool SetForwarder(KnowsCompositor* aFwd) override;
+  virtual bool SetForwarder(ShadowLayerForwarder* aFwd) override;
 
   virtual bool PreservesDrawingState() const override { return false; }
 protected:
   PersistentBufferProviderShared(gfx::IntSize aSize, gfx::SurfaceFormat aFormat,
-                                 KnowsCompositor* aFwd,
+                                 ShadowLayerForwarder* aFwd,
                                  RefPtr<TextureClient>& aTexture);
 
   ~PersistentBufferProviderShared();
@@ -152,7 +152,7 @@ protected:
 
   gfx::IntSize mSize;
   gfx::SurfaceFormat mFormat;
-  RefPtr<KnowsCompositor> mFwd;
+  RefPtr<ShadowLayerForwarder> mFwd;
   Vector<RefPtr<TextureClient>, 4> mTextures;
   
   Maybe<uint32_t> mBack;
