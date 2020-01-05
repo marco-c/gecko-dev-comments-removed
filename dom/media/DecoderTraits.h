@@ -48,7 +48,7 @@ public:
 
   
   
-  static MediaDecoderReader* CreateReader(const nsACString& aType,
+  static MediaDecoderReader* CreateReader(const MediaContentType& aType,
                                           AbstractMediaDecoder* aDecoder);
 
   
