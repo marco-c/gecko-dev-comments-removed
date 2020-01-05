@@ -1053,8 +1053,7 @@ public:
     
     mMaster->StopPlayback();
 
-    if (mMaster->mPlayState == MediaDecoder::PLAY_STATE_PLAYING &&
-        !mSentPlaybackEndedEvent) {
+    if (!mSentPlaybackEndedEvent) {
       int64_t clockTime = std::max(mMaster->AudioEndTime(), mMaster->VideoEndTime());
       clockTime = std::max(int64_t(0), std::max(clockTime, mMaster->Duration().ToMicroseconds()));
       mMaster->UpdatePlaybackPosition(clockTime);
@@ -1507,6 +1506,12 @@ SeekingState::SeekCompleted()
     
     AudioQueue().Finish();
     VideoQueue().Finish();
+
+    
+    
+    
+    mMaster->mAudioCompleted = true;
+    mMaster->mVideoCompleted = true;
   }
 
   
