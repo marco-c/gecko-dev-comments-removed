@@ -806,9 +806,7 @@ var TelemetrySendImpl = {
         AppConstants.platform != "android") {
       const url = this._buildSubmissionURL(ping);
       
-      let savePromise = savePing(ping);
-      savePromise.then(() => this._sendWithPingSender(ping.id, url));
-      return savePromise;
+      return savePing(ping).then(() => this._sendWithPingSender(ping.id, url));
     }
 
     if (!this.canSendNow) {
