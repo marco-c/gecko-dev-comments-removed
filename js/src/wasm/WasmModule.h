@@ -83,28 +83,6 @@ typedef UniquePtr<const LinkData> UniqueConstLinkData;
 
 
 
-struct Import
-{
-    CacheableChars module;
-    CacheableChars field;
-    DefinitionKind kind;
-
-    Import() = default;
-    Import(UniqueChars&& module, UniqueChars&& field, DefinitionKind kind)
-      : module(Move(module)), field(Move(field)), kind(kind)
-    {}
-
-    WASM_DECLARE_SERIALIZABLE(Import)
-};
-
-typedef Vector<Import, 0, SystemAllocPolicy> ImportVector;
-
-
-
-
-
-
-
 
 
 
