@@ -1094,7 +1094,7 @@ MediaFormatReader::OnDemuxerInitDone(nsresult)
   
   
   
-  if (ForceZeroStartTime()) {
+  if (!mDemuxer->ShouldComputeStartTime()) {
     mAudio.mFirstDemuxedSampleTime.emplace(TimeUnit::FromMicroseconds(0));
     mVideo.mFirstDemuxedSampleTime.emplace(TimeUnit::FromMicroseconds(0));
   } else {
@@ -2632,12 +2632,6 @@ MediaFormatReader::UpdateBuffered()
     mBuffered =
       intervals.Shift(media::TimeUnit() - mInfo.mStartTime);
   }
-}
-
-bool
-MediaFormatReader::ForceZeroStartTime() const
-{
-  return !mDemuxer->ShouldComputeStartTime();
 }
 
 layers::ImageContainer*

@@ -165,9 +165,6 @@ public:
   }
 
   
-  virtual bool ForceZeroStartTime() const { return false; }
-
-  
   
   
   
