@@ -1357,7 +1357,7 @@ OggTrackDemuxer::NextSample()
     
     
     
-    mParent->ReadOggChain(TimeUnit::FromMicroseconds(data->GetEndTime()));
+    mParent->ReadOggChain(data->GetEndTime());
   }
   return data;
 }

@@ -410,11 +410,11 @@ VideoSink::UpdateRenderedVideoFrames()
 
   
   TimeStamp nowTime;
-  const int64_t clockTime = mAudioSink->GetPosition(&nowTime).ToMicroseconds();
-  NS_ASSERTION(clockTime >= 0, "Should have positive clock time.");
+  const auto clockTime = mAudioSink->GetPosition(&nowTime);
+  MOZ_ASSERT(!clockTime.IsNegative(), "Should have positive clock time.");
 
   
-  int64_t lastFrameEndTime = 0;
+  TimeUnit lastFrameEndTime;
   while (VideoQueue().GetSize() > mMinVideoQueueSize &&
          clockTime >= VideoQueue().PeekFront()->GetEndTime()) {
     RefPtr<VideoData> frame = VideoQueue().PopFront();
@@ -424,7 +424,7 @@ VideoSink::UpdateRenderedVideoFrames()
     } else {
       mFrameStats.NotifyDecodedFrames({ 0, 0, 1 });
       VSINK_LOG_V("discarding video frame mTime=%" PRId64 " clock_time=%" PRId64,
-                  frame->mTime, clockTime);
+                  frame->mTime, clockTime.ToMicroseconds());
     }
   }
 
@@ -432,12 +432,14 @@ VideoSink::UpdateRenderedVideoFrames()
   
   
   RefPtr<VideoData> currentFrame = VideoQueue().PeekFront();
-  mVideoFrameEndTime = std::max(mVideoFrameEndTime, TimeUnit::FromMicroseconds(
-    currentFrame ? currentFrame->GetEndTime() : lastFrameEndTime));
+  mVideoFrameEndTime = std::max(mVideoFrameEndTime,
+    currentFrame ? currentFrame->GetEndTime() : lastFrameEndTime);
 
   MaybeResolveEndPromise();
 
-  RenderVideoFrames(mVideoQueueSendToCompositorSize, clockTime, nowTime);
+  RenderVideoFrames(
+    mVideoQueueSendToCompositorSize,
+    clockTime.ToMicroseconds(), nowTime);
 
   
   
@@ -449,7 +451,8 @@ VideoSink::UpdateRenderedVideoFrames()
   }
 
   int64_t nextFrameTime = frames[1]->mTime;
-  int64_t delta = std::max<int64_t>((nextFrameTime - clockTime), MIN_UPDATE_INTERVAL_US);
+  int64_t delta = std::max(
+    nextFrameTime - clockTime.ToMicroseconds(), MIN_UPDATE_INTERVAL_US);
   TimeStamp target = nowTime + TimeDuration::FromMicroseconds(
      delta / mAudioSink->GetPlaybackParams().mPlaybackRate);
 

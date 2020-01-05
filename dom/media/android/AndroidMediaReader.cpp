@@ -253,7 +253,7 @@ bool AndroidMediaReader::DecodeVideoFrame(bool& aKeyframeSkip,
     
     
     
-    if (mLastVideoFrame->GetEndTime() < aTimeThreshold.ToMicroseconds()) {
+    if (mLastVideoFrame->GetEndTime() < aTimeThreshold) {
       mLastVideoFrame = nullptr;
       continue;
     }
