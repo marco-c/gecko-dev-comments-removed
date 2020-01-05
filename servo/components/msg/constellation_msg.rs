@@ -214,6 +214,10 @@ pub enum Msg {
     SetCursor(Cursor),
     
     MozBrowserEventMsg(PipelineId, SubpageId, MozBrowserEvent),
+    
+    ChangeRunningAnimationsState(PipelineId, bool),
+    
+    TickAnimation(PipelineId),
 }
 
 

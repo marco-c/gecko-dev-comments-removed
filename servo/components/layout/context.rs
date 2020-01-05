@@ -10,19 +10,20 @@ use css::matching::{ApplicableDeclarationsCache, StyleSharingCandidateCache};
 
 use geom::{Rect, Size2D};
 use gfx::display_list::OpaqueNode;
-use gfx::font_context::FontContext;
 use gfx::font_cache_task::FontCacheTask;
-use script::layout_interface::LayoutChan;
-use script_traits::UntrustedNodeAddress;
+use gfx::font_context::FontContext;
 use msg::constellation_msg::ConstellationChan;
 use net::local_image_cache::LocalImageCache;
-use util::geometry::Au;
+use script::layout_interface::{Animation, LayoutChan};
+use script_traits::UntrustedNodeAddress;
 use std::boxed;
 use std::cell::Cell;
 use std::ptr;
+use std::sync::mpsc::Sender;
 use std::sync::{Arc, Mutex};
 use style::selector_matching::Stylist;
 use url::Url;
+use util::geometry::Au;
 
 struct LocalLayoutContext {
     font_context: FontContext,
@@ -32,7 +33,8 @@ struct LocalLayoutContext {
 
 thread_local!(static LOCAL_CONTEXT_KEY: Cell<*mut LocalLayoutContext> = Cell::new(ptr::null_mut()));
 
-fn create_or_get_local_context(shared_layout_context: &SharedLayoutContext) -> *mut LocalLayoutContext {
+fn create_or_get_local_context(shared_layout_context: &SharedLayoutContext)
+                               -> *mut LocalLayoutContext {
     LOCAL_CONTEXT_KEY.with(|ref r| {
         if r.get().is_null() {
             let context = box LocalLayoutContext {
@@ -50,6 +52,7 @@ fn create_or_get_local_context(shared_layout_context: &SharedLayoutContext) -> *
         r.get()
     })
 }
+
 
 pub struct SharedLayoutContext {
     
@@ -76,7 +79,7 @@ pub struct SharedLayoutContext {
     pub stylist: *const Stylist,
 
     
-    pub reflow_root: OpaqueNode,
+    pub reflow_root: Option<OpaqueNode>,
 
     
     pub url: Url,
@@ -87,9 +90,14 @@ pub struct SharedLayoutContext {
     
     
     pub generation: u32,
+
+    
+    
+    pub new_animations_sender: Sender<Animation>,
 }
 
 pub struct SharedLayoutContextWrapper(pub *const SharedLayoutContext);
+
 unsafe impl Send for SharedLayoutContextWrapper {}
 
 pub struct LayoutContext<'a> {

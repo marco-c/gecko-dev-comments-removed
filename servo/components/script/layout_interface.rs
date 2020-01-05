@@ -10,14 +10,16 @@ use dom::node::LayoutData;
 
 use geom::point::Point2D;
 use geom::rect::Rect;
+use libc::uintptr_t;
 use msg::constellation_msg::{PipelineExitType, WindowSizeData};
 use profile::mem::{Reporter, ReportsChan};
 use script_traits::{ScriptControlChan, OpaqueScriptLayoutChannel, UntrustedNodeAddress};
 use std::any::Any;
 use std::sync::mpsc::{channel, Receiver, Sender};
 use std::boxed::BoxAny;
-use style::stylesheets::Stylesheet;
+use style::animation::PropertyAnimation;
 use style::media_queries::MediaQueryList;
+use style::stylesheets::Stylesheet;
 use url::Url;
 use util::geometry::Au;
 
@@ -35,10 +37,13 @@ pub enum Msg {
     SetQuirksMode,
 
     
-    Reflow(Box<Reflow>),
+    Reflow(Box<ScriptReflow>),
 
     
     GetRPC(Sender<Box<LayoutRPC + Send>>),
+
+    
+    TickAnimations,
 
     
     
@@ -101,13 +106,21 @@ pub enum ReflowQueryType {
 
 pub struct Reflow {
     
-    pub document_root: TrustedNodeAddress,
-    
     pub goal: ReflowGoal,
     
     pub url: Url,
     
     pub iframe: bool,
+    
+    pub page_clip_rect: Rect<Au>,
+}
+
+
+pub struct ScriptReflow {
+    
+    pub reflow_info: Reflow,
+    
+    pub document_root: TrustedNodeAddress,
     
     pub script_chan: ScriptControlChan,
     
@@ -118,8 +131,6 @@ pub struct Reflow {
     pub id: u32,
     
     pub query_type: ReflowQueryType,
-    
-    pub page_clip_rect: Rect<Au>,
 }
 
 
@@ -165,3 +176,28 @@ impl ScriptLayoutChan for OpaqueScriptLayoutChannel {
         *receiver.downcast::<Receiver<Msg>>().unwrap()
     }
 }
+
+
+pub type OpaqueNode = uintptr_t;
+
+
+#[derive(Copy, Clone)]
+pub struct Animation {
+    
+    pub node: OpaqueNode,
+    
+    pub property_animation: PropertyAnimation,
+    
+    pub start_time: f64,
+    
+    pub end_time: f64,
+}
+
+impl Animation {
+    
+    #[inline]
+    pub fn duration(&self) -> f64 {
+        self.end_time - self.start_time
+    }
+}
+

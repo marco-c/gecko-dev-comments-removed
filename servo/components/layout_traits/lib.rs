@@ -29,6 +29,7 @@ use url::Url;
 
 pub enum LayoutControlMsg {
     ExitNowMsg(PipelineExitType),
+    TickAnimationsMsg,
 }
 
 

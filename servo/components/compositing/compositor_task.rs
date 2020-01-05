@@ -202,6 +202,8 @@ pub enum Msg {
     
     ChangePageUrl(PipelineId, Url),
     
+    ChangeRunningAnimationsState(PipelineId, bool),
+    
     PaintMsgDiscarded,
     
     SetFrameTree(SendableFrameTree, Sender<()>, ConstellationChan),
@@ -231,6 +233,7 @@ impl Debug for Msg {
             Msg::AssignPaintedBuffers(..) => write!(f, "AssignPaintedBuffers"),
             Msg::ChangeReadyState(..) => write!(f, "ChangeReadyState"),
             Msg::ChangePaintState(..) => write!(f, "ChangePaintState"),
+            Msg::ChangeRunningAnimationsState(..) => write!(f, "ChangeRunningAnimationsState"),
             Msg::ChangePageTitle(..) => write!(f, "ChangePageTitle"),
             Msg::ChangePageUrl(..) => write!(f, "ChangePageUrl"),
             Msg::PaintMsgDiscarded(..) => write!(f, "PaintMsgDiscarded"),
