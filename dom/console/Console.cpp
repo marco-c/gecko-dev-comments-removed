@@ -593,7 +593,7 @@ private:
         innerID = NS_LITERAL_STRING("ServiceWorker");
         
         
-        id.AssignWithConversion(mWorkerPrivate->WorkerName());
+        id.AssignWithConversion(mWorkerPrivate->ServiceWorkerScope());
       } else {
         innerID = NS_LITERAL_STRING("Worker");
       }

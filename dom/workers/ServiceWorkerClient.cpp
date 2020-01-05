@@ -265,7 +265,7 @@ ServiceWorkerClient::PostMessage(JSContext* aCx, JS::Handle<JS::Value> aMessage,
   
   MOZ_ASSERT(workerPrivate->IsServiceWorker());
   uint32_t serviceWorkerID = workerPrivate->ServiceWorkerID();
-  nsCString scope = workerPrivate->WorkerName();
+  nsCString scope = workerPrivate->ServiceWorkerScope();
 
   RefPtr<ServiceWorkerClientPostMessageRunnable> runnable =
     new ServiceWorkerClientPostMessageRunnable(serviceWorkerID, scope,
