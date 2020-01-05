@@ -8,12 +8,57 @@
 
 const {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
 
+Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://testing-common/MockDocument.jsm");
 
 
 function importAutofillModule(module) {
   return Cu.import(Services.io.newFileURI(do_get_file(module)).spec);
+}
+
+XPCOMUtils.defineLazyModuleGetter(this, "DownloadPaths",
+                                  "resource://gre/modules/DownloadPaths.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "FileUtils",
+                                  "resource://gre/modules/FileUtils.jsm");
+
+
+
+
+
+let gFileCounter = Math.floor(Math.random() * 1000000);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function getTempFile(leafName) {
+  
+  let [base, ext] = DownloadPaths.splitBaseNameAndExtension(leafName);
+  let finalLeafName = base + "-" + gFileCounter + ext;
+  gFileCounter++;
+
+  
+  let file = FileUtils.getFile("TmpD", [finalLeafName]);
+  do_check_false(file.exists());
+
+  do_register_cleanup(function() {
+    if (file.exists()) {
+      file.remove(false);
+    }
+  });
+
+  return file;
 }
 
 add_task(function* test_common_initialize() {
