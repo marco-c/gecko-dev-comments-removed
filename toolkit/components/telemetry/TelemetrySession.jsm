@@ -17,7 +17,6 @@ Cu.import("resource://gre/modules/XPCOMUtils.jsm", this);
 Cu.import("resource://gre/modules/Promise.jsm", this);
 Cu.import("resource://gre/modules/DeferredTask.jsm", this);
 Cu.import("resource://gre/modules/Preferences.jsm");
-Cu.import("resource://gre/modules/Task.jsm");
 Cu.import("resource://gre/modules/Timer.jsm");
 Cu.import("resource://gre/modules/TelemetrySend.jsm", this);
 Cu.import("resource://gre/modules/TelemetryUtils.jsm", this);
@@ -673,7 +672,7 @@ var Impl = {
   _slowSQLStartup: {},
   _hasWindowRestoredObserver: false,
   _hasXulWindowVisibleObserver: false,
-  _startupIO: {},
+  _startupIO : {},
   
   
   _previousBuildId: null,
@@ -1529,14 +1528,14 @@ var Impl = {
   delayedInit() {
     this._log.trace("delayedInit");
 
-    this._delayedInitTask = Task.spawn(function* () {
+    this._delayedInitTask = (async function() {
       try {
         this._initialized = true;
 
-        yield this._loadSessionData();
+        await this._loadSessionData();
         
         
-        yield TelemetryStorage.saveSessionData(this._getSessionDataObject());
+        await TelemetryStorage.saveSessionData(this._getSessionDataObject());
 
         this.attachObservers();
         this.gatherMemory();
@@ -1548,18 +1547,18 @@ var Impl = {
         Telemetry.asyncFetchTelemetryData(function() {});
 
         
-        annotateCrashReport(this._sessionId, yield ClientID.getClientID(),
+        annotateCrashReport(this._sessionId, await ClientID.getClientID(),
                             Preferences.get(PREF_SERVER, undefined));
 
         if (IS_UNIFIED_TELEMETRY) {
           
-          yield TelemetryController.checkAbortedSessionPing();
+          await TelemetryController.checkAbortedSessionPing();
 
           
           
           
           if (!this._testing) {
-            yield this._saveAbortedSessionPing();
+            await this._saveAbortedSessionPing();
           }
 
           
@@ -1578,7 +1577,7 @@ var Impl = {
         this._delayedInitTask = null;
         throw e;
       }
-    }.bind(this));
+    }.bind(this))();
 
     return this._delayedInitTask;
   },
@@ -1988,15 +1987,15 @@ var Impl = {
         this._initialized = false;
       };
 
-      return Task.spawn(function*() {
-        yield this.saveShutdownPings();
+      return (async function() {
+        await this.saveShutdownPings();
 
         if (IS_UNIFIED_TELEMETRY) {
-          yield TelemetryController.removeAbortedSessionPing();
+          await TelemetryController.removeAbortedSessionPing();
         }
 
         reset();
-      }.bind(this));
+      }.bind(this))();
     };
 
     
@@ -2049,8 +2048,8 @@ var Impl = {
 
 
 
-  _loadSessionData: Task.async(function* () {
-    let data = yield TelemetryStorage.loadSessionData();
+  async _loadSessionData() {
+    let data = await TelemetryStorage.loadSessionData();
 
     if (!data) {
       return null;
@@ -2072,7 +2071,7 @@ var Impl = {
     this._profileSubsessionCounter = data.profileSubsessionCounter +
                                      this._subsessionCounter;
     return data;
-  }),
+  },
 
   
 
