@@ -683,10 +683,6 @@ pref("plugin.defaultXpi.state", 2);
 pref("plugin.state.flash", 2);
 pref("plugin.state.java", 1);
 
-#ifdef NIGHTLY_BUILD
-pref("plugins.flashBlock.enabled", true);
-#endif
-
 #ifdef XP_WIN
 pref("browser.preferences.instantApply", false);
 #else
@@ -1387,9 +1383,6 @@ pref("identity.fxaccounts.remote.profile.uri", "https://profile.accounts.firefox
 
 
 pref("identity.fxaccounts.remote.oauth.uri", "https://oauth.accounts.firefox.com/v1");
-
-
-pref("identity.fxaccounts.profile_image.enabled", true);
 
 
 pref("identity.sync.tokenserver.uri", "https://token.services.mozilla.com/1.0/sync/1.5");
