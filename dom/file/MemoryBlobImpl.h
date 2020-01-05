@@ -11,7 +11,10 @@
 #include "mozilla/LinkedList.h"
 #include "mozilla/StaticMutex.h"
 #include "mozilla/StaticPtr.h"
+#include "nsIInputStream.h"
+#include "nsIIPCSerializableInputStream.h"
 #include "nsIMemoryReporter.h"
+#include "nsISeekableStream.h"
 
 namespace mozilla {
 namespace dom {
@@ -92,6 +95,45 @@ public:
 
     void* mData;
     uint64_t mLength;
+  };
+
+  class DataOwnerAdapter final : public nsIInputStream,
+                                 public nsISeekableStream,
+                                 public nsIIPCSerializableInputStream
+  {
+    typedef MemoryBlobImpl::DataOwner DataOwner;
+  public:
+    static nsresult Create(DataOwner* aDataOwner,
+                           uint32_t aStart,
+                           uint32_t aLength,
+                           nsIInputStream** _retval);
+
+    NS_DECL_THREADSAFE_ISUPPORTS
+
+    
+    NS_FORWARD_NSIINPUTSTREAM(mStream->)
+    NS_FORWARD_NSISEEKABLESTREAM(mSeekableStream->)
+
+    
+    
+    NS_FORWARD_NSIIPCSERIALIZABLEINPUTSTREAM(mSerializableInputStream->)
+
+  private:
+    ~DataOwnerAdapter() {}
+
+    DataOwnerAdapter(DataOwner* aDataOwner,
+                     nsIInputStream* aStream)
+      : mDataOwner(aDataOwner), mStream(aStream),
+        mSeekableStream(do_QueryInterface(aStream)),
+        mSerializableInputStream(do_QueryInterface(aStream))
+    {
+      MOZ_ASSERT(mSeekableStream, "Somebody gave us the wrong stream!");
+    }
+
+    RefPtr<DataOwner> mDataOwner;
+    nsCOMPtr<nsIInputStream> mStream;
+    nsCOMPtr<nsISeekableStream> mSeekableStream;
+    nsCOMPtr<nsIIPCSerializableInputStream> mSerializableInputStream;
   };
 
 private:
