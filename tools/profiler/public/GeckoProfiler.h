@@ -329,6 +329,14 @@ class ProfilerMarkerPayload;
 
 extern MOZ_THREAD_LOCAL(PseudoStack*) tlsPseudoStack;
 
+class ProfilerState;
+
+
+
+
+
+extern ProfilerState* gPS;
+
 #ifndef SAMPLE_FUNCTION_NAME
 # if defined(__GNUC__) || defined(_MSC_VER)
 #  define SAMPLE_FUNCTION_NAME __FUNCTION__
@@ -347,6 +355,8 @@ profiler_call_enter(const char* aInfo,
 {
   
 
+  MOZ_RELEASE_ASSERT(gPS);
+
   PseudoStack* stack = tlsPseudoStack.get();
   if (!stack) {
     return stack;
@@ -362,6 +372,8 @@ static inline void
 profiler_call_exit(void* aHandle)
 {
   
+
+  MOZ_RELEASE_ASSERT(gPS);
 
   if (!aHandle) {
     return;
@@ -485,6 +497,8 @@ inline PseudoStack*
 profiler_get_pseudo_stack(void)
 {
   
+
+  MOZ_RELEASE_ASSERT(gPS);
 
   return tlsPseudoStack.get();
 }

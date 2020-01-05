@@ -110,12 +110,6 @@ class SamplerThread;
 
 MOZ_THREAD_LOCAL(PseudoStack *) tlsPseudoStack;
 
-class PSMutex : public mozilla::StaticMutex {};
-
-typedef mozilla::BaseAutoLock<PSMutex> PSAutoLock;
-
-
-typedef const PSAutoLock& PSLockRef;
 
 
 
@@ -130,13 +124,20 @@ typedef const PSAutoLock& PSLockRef;
 
 
 
-
-class PS
+class ProfilerState
 {
 public:
+  
+  class Mutex : public mozilla::StaticMutex {};
+
+  typedef mozilla::BaseAutoLock<Mutex> AutoLock;
+
+  
+  typedef const AutoLock& LockRef;
+
   typedef std::vector<ThreadInfo*> ThreadVector;
 
-  PS()
+  ProfilerState()
     : mEntries(0)
     , mInterval(0)
     , mFeatureDisplayListDump(false)
@@ -154,7 +155,7 @@ public:
     , mFeatureThreads(false)
     , mBuffer(nullptr)
     , mIsPaused(false)
-#if defined(GP_OS_linux)
+#if defined(GP_OS_linux) || defined(GP_OS_android)
     , mWasPaused(false)
 #endif
     , mSamplerThread(nullptr)
@@ -167,18 +168,18 @@ public:
   {}
 
   #define GET_AND_SET(type_, name_) \
-    type_ name_(PSLockRef) const { return m##name_; } \
-    void Set##name_(PSLockRef, type_ a##name_) { m##name_ = a##name_; }
+    type_ name_(LockRef) const { return m##name_; } \
+    void Set##name_(LockRef, type_ a##name_) { m##name_ = a##name_; }
 
-  GET_AND_SET(TimeStamp, ProcessStartTime)
+  GET_AND_SET(TimeStamp, StartTime)
 
   GET_AND_SET(int, Entries)
 
   GET_AND_SET(double, Interval)
 
-  Vector<std::string>& Features(PSLockRef) { return mFeatures; }
+  Vector<std::string>& Features(LockRef) { return mFeatures; }
 
-  Vector<std::string>& Filters(PSLockRef) { return mFilters; }
+  Vector<std::string>& ThreadNameFilters(LockRef) { return mThreadNameFilters; }
 
   GET_AND_SET(bool, FeatureDisplayListDump)
   GET_AND_SET(bool, FeatureGPU)
@@ -196,13 +197,13 @@ public:
 
   GET_AND_SET(ProfileBuffer*, Buffer)
 
-  ThreadVector& LiveThreads(PSLockRef) { return mLiveThreads; }
-  ThreadVector& DeadThreads(PSLockRef) { return mDeadThreads; }
+  ThreadVector& LiveThreads(LockRef) { return mLiveThreads; }
+  ThreadVector& DeadThreads(LockRef) { return mDeadThreads; }
 
-  static bool IsActive(PSLockRef) { return sActivityGeneration > 0; }
-  static uint32_t ActivityGeneration(PSLockRef) { return sActivityGeneration; }
-  static void SetInactive(PSLockRef) { sActivityGeneration = 0; }
-  static void SetActive(PSLockRef)
+  static bool IsActive(LockRef) { return sActivityGeneration > 0; }
+  static uint32_t ActivityGeneration(LockRef) { return sActivityGeneration; }
+  static void SetInactive(LockRef) { sActivityGeneration = 0; }
+  static void SetActive(LockRef)
   {
     sActivityGeneration = sNextActivityGeneration;
     
@@ -213,7 +214,7 @@ public:
 
   GET_AND_SET(bool, IsPaused)
 
-#if defined(GP_OS_linux)
+#if defined(GP_OS_linux) || defined(GP_OS_android)
   GET_AND_SET(bool, WasPaused)
 #endif
 
@@ -232,7 +233,7 @@ public:
 
 private:
   
-  mozilla::TimeStamp mProcessStartTime;
+  mozilla::TimeStamp mStartTime;
 
   
   int mEntries;
@@ -247,7 +248,7 @@ private:
 
   
   
-  Vector<std::string> mFilters;
+  Vector<std::string> mThreadNameFilters;
 
   
   
@@ -305,7 +306,7 @@ private:
   
   bool mIsPaused;
 
-#if defined(GP_OS_linux)
+#if defined(GP_OS_linux) || defined(GP_OS_android)
   
   
   bool mWasPaused;
@@ -329,17 +330,17 @@ private:
   int mLatestRecordedFrameNumber;
 };
 
+
+typedef ProfilerState PS;
+
 uint32_t PS::sActivityGeneration = 0;
 uint32_t PS::sNextActivityGeneration = 1;
 
 
+PS* gPS = nullptr;
 
 
-
-static PS* gPS = nullptr;
-
-
-static PSMutex gPSMutex;
+static PS::Mutex gPSMutex;
 
 
 static const char* const kMainThreadName = "GeckoMain";
@@ -472,7 +473,7 @@ AddDynamicCodeLocationTag(ProfileBuffer* aBuffer, const char* aStr)
 static const int SAMPLER_MAX_STRING_LENGTH = 128;
 
 static void
-AddPseudoEntry(PSLockRef aLock, ProfileBuffer* aBuffer,
+AddPseudoEntry(PS::LockRef aLock, ProfileBuffer* aBuffer,
                volatile js::ProfileEntry& entry, PseudoStack* stack,
                void* lastpc)
 {
@@ -574,7 +575,7 @@ struct AutoWalkJSStack
 };
 
 static void
-MergeStacksIntoProfile(PSLockRef aLock, ProfileBuffer* aBuffer,
+MergeStacksIntoProfile(PS::LockRef aLock, ProfileBuffer* aBuffer,
                        const TickSample& aSample, NativeStack& aNativeStack)
 {
   NotNull<PseudoStack*> pseudoStack = aSample.mPseudoStack;
@@ -784,7 +785,7 @@ StackWalkCallback(uint32_t aFrameNumber, void* aPC, void* aSP, void* aClosure)
 }
 
 static void
-DoNativeBacktrace(PSLockRef aLock, ProfileBuffer* aBuffer,
+DoNativeBacktrace(PS::LockRef aLock, ProfileBuffer* aBuffer,
                   const TickSample& aSample)
 {
   void* pc_array[1000];
@@ -826,7 +827,7 @@ DoNativeBacktrace(PSLockRef aLock, ProfileBuffer* aBuffer,
 
 #ifdef USE_EHABI_STACKWALK
 static void
-DoNativeBacktrace(PSLockRef aLock, ProfileBuffer* aBuffer,
+DoNativeBacktrace(PS::LockRef aLock, ProfileBuffer* aBuffer,
                   const TickSample& aSample)
 {
   void* pc_array[1000];
@@ -915,7 +916,7 @@ ASAN_memcpy(void* aDst, const void* aSrc, size_t aLen)
 #endif
 
 static void
-DoNativeBacktrace(PSLockRef aLock, ProfileBuffer* aBuffer,
+DoNativeBacktrace(PS::LockRef aLock, ProfileBuffer* aBuffer,
                   const TickSample& aSample)
 {
   const mcontext_t* mc =
@@ -1058,7 +1059,7 @@ DoNativeBacktrace(PSLockRef aLock, ProfileBuffer* aBuffer,
 #endif
 
 static void
-DoSampleStackTrace(PSLockRef aLock, ProfileBuffer* aBuffer,
+DoSampleStackTrace(PS::LockRef aLock, ProfileBuffer* aBuffer,
                    const TickSample& aSample)
 {
   NativeStack nativeStack = { nullptr, nullptr, 0, 0 };
@@ -1072,12 +1073,11 @@ DoSampleStackTrace(PSLockRef aLock, ProfileBuffer* aBuffer,
 
 
 static void
-Tick(PSLockRef aLock, ProfileBuffer* aBuffer, const TickSample& aSample)
+Tick(PS::LockRef aLock, ProfileBuffer* aBuffer, const TickSample& aSample)
 {
   aBuffer->addTagThreadId(aSample.mThreadId, aSample.mLastSample);
 
-  mozilla::TimeDuration delta =
-    aSample.mTimeStamp - gPS->ProcessStartTime(aLock);
+  mozilla::TimeDuration delta = aSample.mTimeStamp - gPS->StartTime(aLock);
   aBuffer->addTag(ProfileBufferEntry::Time(delta.ToMilliseconds()));
 
   NotNull<PseudoStack*> pseudoStack = aSample.mPseudoStack;
@@ -1186,13 +1186,13 @@ StreamNameAndThreadId(JSONWriter& aWriter, const char* aName, int aThreadId)
 #endif
 
 static void
-StreamTaskTracer(PSLockRef aLock, SpliceableJSONWriter& aWriter)
+StreamTaskTracer(PS::LockRef aLock, SpliceableJSONWriter& aWriter)
 {
 #ifdef MOZ_TASK_TRACER
   aWriter.StartArrayProperty("data");
   {
     UniquePtr<nsTArray<nsCString>> data =
-      mozilla::tasktracer::GetLoggedData(gPS->ProcessStartTime(aLock));
+      mozilla::tasktracer::GetLoggedData(gPS->StartTime(aLock));
     for (uint32_t i = 0; i < data->Length(); ++i) {
       aWriter.StringElement((data->ElementAt(i)).get());
     }
@@ -1221,7 +1221,7 @@ StreamTaskTracer(PSLockRef aLock, SpliceableJSONWriter& aWriter)
 }
 
 static void
-StreamMetaJSCustomObject(PSLockRef aLock, SpliceableJSONWriter& aWriter)
+StreamMetaJSCustomObject(PS::LockRef aLock, SpliceableJSONWriter& aWriter)
 {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
@@ -1244,7 +1244,7 @@ StreamMetaJSCustomObject(PSLockRef aLock, SpliceableJSONWriter& aWriter)
   
   
   mozilla::TimeDuration delta =
-    mozilla::TimeStamp::Now() - gPS->ProcessStartTime(aLock);
+    mozilla::TimeStamp::Now() - gPS->StartTime(aLock);
   aWriter.DoubleProperty(
     "startTime", static_cast<double>(PR_Now()/1000.0 - delta.ToMilliseconds()));
 
@@ -1353,9 +1353,7 @@ BuildJavaThreadJSObject(SpliceableJSONWriter& aWriter)
 #endif
 
 static void
-locked_profiler_stream_json_for_this_process(PSLockRef aLock,
-                                             SpliceableJSONWriter& aWriter,
-                                             double aSinceTime)
+locked_profiler_stream_json_for_this_process(PS::LockRef aLock, SpliceableJSONWriter& aWriter, double aSinceTime)
 {
   LOG("locked_profiler_stream_json_for_this_process");
 
@@ -1386,23 +1384,23 @@ locked_profiler_stream_json_for_this_process(PSLockRef aLock,
   {
     gPS->SetIsPaused(aLock, true);
 
-    const PS::ThreadVector& liveThreads = gPS->LiveThreads(aLock);
-    for (size_t i = 0; i < liveThreads.size(); i++) {
-      ThreadInfo* info = liveThreads.at(i);
-      if (!info->IsBeingProfiled()) {
-        continue;
+      const PS::ThreadVector& liveThreads = gPS->LiveThreads(aLock);
+      for (size_t i = 0; i < liveThreads.size(); i++) {
+        ThreadInfo* info = liveThreads.at(i);
+        if (!info->IsBeingProfiled()) {
+          continue;
+        }
+        info->StreamJSON(gPS->Buffer(aLock), aWriter, gPS->StartTime(aLock),
+                         aSinceTime);
       }
-      info->StreamJSON(gPS->Buffer(aLock), aWriter,
-                       gPS->ProcessStartTime(aLock), aSinceTime);
-    }
 
-    const PS::ThreadVector& deadThreads = gPS->DeadThreads(aLock);
-    for (size_t i = 0; i < deadThreads.size(); i++) {
-      ThreadInfo* info = deadThreads.at(i);
-      MOZ_ASSERT(info->IsBeingProfiled());
-      info->StreamJSON(gPS->Buffer(aLock), aWriter,
-                       gPS->ProcessStartTime(aLock), aSinceTime);
-    }
+      const PS::ThreadVector& deadThreads = gPS->DeadThreads(aLock);
+      for (size_t i = 0; i < deadThreads.size(); i++) {
+        ThreadInfo* info = deadThreads.at(i);
+        MOZ_ASSERT(info->IsBeingProfiled());
+        info->StreamJSON(gPS->Buffer(aLock), aWriter, gPS->StartTime(aLock),
+                         aSinceTime);
+      }
 
 #if defined(PROFILE_JAVA)
     if (gPS->FeatureJava(aLock)) {
@@ -1431,7 +1429,7 @@ profiler_stream_json_for_this_process(SpliceableJSONWriter& aWriter, double aSin
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
   MOZ_RELEASE_ASSERT(gPS);
 
-  PSAutoLock lock(gPSMutex);
+  PS::AutoLock lock(gPSMutex);
 
   if (!gPS->IsActive(lock)) {
     return false;
@@ -1469,7 +1467,7 @@ ProfilerMarker::GetTime() const {
 }
 
 void ProfilerMarker::StreamJSON(SpliceableJSONWriter& aWriter,
-                                const TimeStamp& aProcessStartTime,
+                                const TimeStamp& aStartTime,
                                 UniqueStacks& aUniqueStacks) const
 {
   
@@ -1485,7 +1483,7 @@ void ProfilerMarker::StreamJSON(SpliceableJSONWriter& aWriter,
     if (mPayload) {
       aWriter.StartObjectElement();
       {
-        mPayload->StreamPayload(aWriter, aProcessStartTime, aUniqueStacks);
+          mPayload->StreamPayload(aWriter, aStartTime, aUniqueStacks);
       }
       aWriter.EndObject();
     }
@@ -1560,19 +1558,19 @@ class SamplerThread
 {
 public:
   
-  SamplerThread(PSLockRef aLock, uint32_t aActivityGeneration,
+  SamplerThread(PS::LockRef aLock, uint32_t aActivityGeneration,
                 double aIntervalMilliseconds);
   ~SamplerThread();
 
   
   
-  void SuspendAndSampleAndResumeThread(PSLockRef aLock, TickSample& aSample);
+  void SuspendAndSampleAndResumeThread(PS::LockRef aLock, TickSample& aSample);
 
   
   void Run();
 
   
-  void Stop(PSLockRef aLock);
+  void Stop(PS::LockRef aLock);
 
 private:
   
@@ -1626,7 +1624,7 @@ SamplerThread::Run()
   while (true) {
     
     {
-      PSAutoLock lock(gPSMutex);
+      PS::AutoLock lock(gPSMutex);
 
       
       
@@ -1656,9 +1654,9 @@ SamplerThread::Run()
           
           if (info->Stack()->CanDuplicateLastSampleDueToSleep()) {
             bool dup_ok =
-              gPS->Buffer(lock)->DuplicateLastSample(
-                info->ThreadId(), gPS->ProcessStartTime(lock),
-                info->LastSample());
+              gPS->Buffer(lock)->DuplicateLastSample(info->ThreadId(),
+                                                     gPS->StartTime(lock),
+                                                     info->LastSample());
             if (dup_ok) {
               continue;
             }
@@ -1759,7 +1757,7 @@ GeckoProfilerReporter::CollectReports(nsIHandleReportCallback* aHandleReport,
 #endif
 
   {
-    PSAutoLock lock(gPSMutex);
+    PS::AutoLock lock(gPSMutex);
 
     if (gPS) {
       profSize = GeckoProfilerMallocSizeOf(gPS);
@@ -1798,8 +1796,8 @@ GeckoProfilerReporter::CollectReports(nsIHandleReportCallback* aHandleReport,
 
   MOZ_COLLECT_REPORT(
     "explicit/profiler/profiler-state", KIND_HEAP, UNITS_BYTES, profSize,
-    "Memory used by the Gecko Profiler's global state (excluding memory used "
-    "by LUL).");
+    "Memory used by the Gecko Profiler's ProfilerState object (excluding "
+    "memory used by LUL).");
 
 #if defined(USE_LUL_STACKWALK)
   MOZ_COLLECT_REPORT(
@@ -1813,23 +1811,23 @@ GeckoProfilerReporter::CollectReports(nsIHandleReportCallback* aHandleReport,
 NS_IMPL_ISUPPORTS(GeckoProfilerReporter, nsIMemoryReporter)
 
 static bool
-ThreadSelected(PSLockRef aLock, const char* aThreadName)
+ThreadSelected(PS::LockRef aLock, const char* aThreadName)
 {
   
 
   MOZ_RELEASE_ASSERT(gPS);
 
-  const Vector<std::string>& filters = gPS->Filters(aLock);
+  const Vector<std::string>& threadNameFilters = gPS->ThreadNameFilters(aLock);
 
-  if (filters.empty()) {
+  if (threadNameFilters.empty()) {
     return true;
   }
 
   std::string name = aThreadName;
   std::transform(name.begin(), name.end(), name.begin(), ::tolower);
 
-  for (uint32_t i = 0; i < filters.length(); ++i) {
-    std::string filter = filters[i];
+  for (uint32_t i = 0; i < threadNameFilters.length(); ++i) {
+    std::string filter = threadNameFilters[i];
     std::transform(filter.begin(), filter.end(), filter.begin(), ::tolower);
 
     
@@ -1842,7 +1840,7 @@ ThreadSelected(PSLockRef aLock, const char* aThreadName)
 }
 
 static bool
-ShouldProfileThread(PSLockRef aLock, ThreadInfo* aInfo)
+ShouldProfileThread(PS::LockRef aLock, ThreadInfo* aInfo)
 {
   
 
@@ -1855,7 +1853,7 @@ ShouldProfileThread(PSLockRef aLock, ThreadInfo* aInfo)
 
 
 static ThreadInfo*
-FindLiveThreadInfo(PSLockRef aLock, int* aIndexOut = nullptr)
+FindLiveThreadInfo(PS::LockRef aLock, int* aIndexOut = nullptr)
 {
   
 
@@ -1874,7 +1872,7 @@ FindLiveThreadInfo(PSLockRef aLock, int* aIndexOut = nullptr)
 }
 
 static void
-locked_register_thread(PSLockRef aLock, const char* aName, void* stackTop)
+locked_register_thread(PS::LockRef aLock, const char* aName, void* stackTop)
 {
   
 
@@ -1908,7 +1906,7 @@ locked_register_thread(PSLockRef aLock, const char* aName, void* stackTop)
 static void
 NotifyProfilerStarted(const int aEntries, double aInterval,
                       const char** aFeatures, uint32_t aFeatureCount,
-                      const char** aFilters, uint32_t aFilterCount)
+                      const char** aThreadNameFilters, uint32_t aFilterCount)
 {
   if (!CanNotifyObservers()) {
     return;
@@ -1924,13 +1922,14 @@ NotifyProfilerStarted(const int aEntries, double aInterval,
     featuresArray.AppendElement(aFeatures[i]);
   }
 
-  nsTArray<nsCString> filtersArray;
+  nsTArray<nsCString> threadNameFiltersArray;
   for (size_t i = 0; i < aFilterCount; ++i) {
-    filtersArray.AppendElement(aFilters[i]);
+    threadNameFiltersArray.AppendElement(aThreadNameFilters[i]);
   }
 
   nsCOMPtr<nsIProfilerStartParams> params =
-    new nsProfilerStartParams(aEntries, aInterval, featuresArray, filtersArray);
+    new nsProfilerStartParams(aEntries, aInterval, featuresArray,
+                              threadNameFiltersArray);
 
   os->NotifyObservers(params, "profiler-started", nullptr);
 }
@@ -1951,9 +1950,9 @@ NotifyObservers(const char* aTopic)
 }
 
 static void
-locked_profiler_start(PSLockRef aLock, const int aEntries, double aInterval,
+locked_profiler_start(PS::LockRef aLock, const int aEntries, double aInterval,
                       const char** aFeatures, uint32_t aFeatureCount,
-                      const char** aFilters, uint32_t aFilterCount);
+                      const char** aThreadNameFilters, uint32_t aFilterCount);
 
 void
 profiler_init(void* aStackTop)
@@ -1980,14 +1979,14 @@ profiler_init(void* aStackTop)
   }
 
   {
-    PSAutoLock lock(gPSMutex);
+    PS::AutoLock lock(gPSMutex);
 
     
     
     gPS = new PS();
 
     bool ignore;
-    gPS->SetProcessStartTime(lock, mozilla::TimeStamp::ProcessCreation(ignore));
+    gPS->SetStartTime(lock, mozilla::TimeStamp::ProcessCreation(ignore));
 
     locked_register_thread(lock, kMainThreadName, aStackTop);
 
@@ -2053,10 +2052,10 @@ profiler_init(void* aStackTop)
 }
 
 static void
-locked_profiler_save_profile_to_file(PSLockRef aLock, const char* aFilename);
+locked_profiler_save_profile_to_file(PS::LockRef aLock, const char* aFilename);
 
 static SamplerThread*
-locked_profiler_stop(PSLockRef aLock);
+locked_profiler_stop(PS::LockRef aLock);
 
 void
 profiler_shutdown()
@@ -2070,7 +2069,7 @@ profiler_shutdown()
   
   SamplerThread* samplerThread = nullptr;
   {
-    PSAutoLock lock(gPSMutex);
+    PS::AutoLock lock(gPSMutex);
 
     
     if (gPS->IsActive(lock)) {
@@ -2161,7 +2160,7 @@ profiler_get_start_params(int* aEntries, double* aInterval,
     return;
   }
 
-  PSAutoLock lock(gPSMutex);
+  PS::AutoLock lock(gPSMutex);
 
   *aEntries = gPS->Entries(lock);
   *aInterval = gPS->Interval(lock);
@@ -2172,15 +2171,15 @@ profiler_get_start_params(int* aEntries, double* aInterval,
     (*aFeatures)[i] = features[i].c_str();
   }
 
-  const Vector<std::string>& filters = gPS->Filters(lock);
-  MOZ_ALWAYS_TRUE(aFilters->resize(filters.length()));
-  for (uint32_t i = 0; i < filters.length(); ++i) {
-    (*aFilters)[i] = filters[i].c_str();
+  const Vector<std::string>& threadNameFilters = gPS->ThreadNameFilters(lock);
+  MOZ_ALWAYS_TRUE(aFilters->resize(threadNameFilters.length()));
+  for (uint32_t i = 0; i < threadNameFilters.length(); ++i) {
+    (*aFilters)[i] = threadNameFilters[i].c_str();
   }
 }
 
 static void
-locked_profiler_save_profile_to_file(PSLockRef aLock, const char* aFilename)
+locked_profiler_save_profile_to_file(PS::LockRef aLock, const char* aFilename)
 {
   LOG("locked_profiler_save_profile_to_file(%s)", aFilename);
 
@@ -2214,7 +2213,7 @@ profiler_save_profile_to_file(const char* aFilename)
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
   MOZ_RELEASE_ASSERT(gPS);
 
-  PSAutoLock lock(gPSMutex);
+  PS::AutoLock lock(gPSMutex);
 
   if (!gPS->IsActive(lock)) {
     return;
@@ -2278,7 +2277,7 @@ profiler_get_buffer_info_helper(uint32_t* aCurrentPosition,
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
   MOZ_RELEASE_ASSERT(gPS);
 
-  PSAutoLock lock(gPSMutex);
+  PS::AutoLock lock(gPSMutex);
 
   if (!gPS->IsActive(lock)) {
     return;
@@ -2301,9 +2300,9 @@ hasFeature(const char** aFeatures, uint32_t aFeatureCount, const char* aFeature)
 }
 
 static void
-locked_profiler_start(PSLockRef aLock, int aEntries, double aInterval,
+locked_profiler_start(PS::LockRef aLock, int aEntries, double aInterval,
                       const char** aFeatures, uint32_t aFeatureCount,
-                      const char** aFilters, uint32_t aFilterCount)
+                      const char** aThreadNameFilters, uint32_t aFilterCount)
 {
   if (LOG_TEST) {
     LOG("locked_profiler_start");
@@ -2313,12 +2312,15 @@ locked_profiler_start(PSLockRef aLock, int aEntries, double aInterval,
       LOG("- feature  = %s", aFeatures[i]);
     }
     for (uint32_t i = 0; i < aFilterCount; i++) {
-      LOG("- threads  = %s", aFilters[i]);
+      LOG("- threads  = %s", aThreadNameFilters[i]);
     }
   }
 
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
   MOZ_RELEASE_ASSERT(gPS && !gPS->IsActive(aLock));
+
+  bool ignore;
+  gPS->SetStartTime(aLock, mozilla::TimeStamp::ProcessCreation(ignore));
 
   
   int entries = aEntries > 0 ? aEntries : PROFILE_DEFAULT_ENTRIES;
@@ -2336,10 +2338,11 @@ locked_profiler_start(PSLockRef aLock, int aEntries, double aInterval,
   }
 
   
-  Vector<std::string>& filters = gPS->Filters(aLock);
-  MOZ_ALWAYS_TRUE(filters.resize(aFilterCount));
+  
+  Vector<std::string>& threadNameFilters = gPS->ThreadNameFilters(aLock);
+  MOZ_ALWAYS_TRUE(threadNameFilters.resize(aFilterCount));
   for (uint32_t i = 0; i < aFilterCount; ++i) {
-    filters[i] = aFilters[i];
+    threadNameFilters[i] = aThreadNameFilters[i];
   }
 
 #define HAS_FEATURE(feature) hasFeature(aFeatures, aFeatureCount, feature)
@@ -2438,7 +2441,7 @@ locked_profiler_start(PSLockRef aLock, int aEntries, double aInterval,
 void
 profiler_start(int aEntries, double aInterval,
                const char** aFeatures, uint32_t aFeatureCount,
-               const char** aFilters, uint32_t aFilterCount)
+               const char** aThreadNameFilters, uint32_t aFilterCount)
 {
   LOG("profiler_start");
 
@@ -2446,7 +2449,7 @@ profiler_start(int aEntries, double aInterval,
 
   SamplerThread* samplerThread = nullptr;
   {
-    PSAutoLock lock(gPSMutex);
+    PS::AutoLock lock(gPSMutex);
 
     
     if (!gPS) {
@@ -2459,7 +2462,7 @@ profiler_start(int aEntries, double aInterval,
     }
 
     locked_profiler_start(lock, aEntries, aInterval, aFeatures, aFeatureCount,
-                          aFilters, aFilterCount);
+                          aThreadNameFilters, aFilterCount);
   }
 
   
@@ -2469,11 +2472,11 @@ profiler_start(int aEntries, double aInterval,
     delete samplerThread;
   }
   NotifyProfilerStarted(aEntries, aInterval, aFeatures, aFeatureCount,
-                        aFilters, aFilterCount);
+                        aThreadNameFilters, aFilterCount);
 }
 
 static MOZ_MUST_USE SamplerThread*
-locked_profiler_stop(PSLockRef aLock)
+locked_profiler_stop(PS::LockRef aLock)
 {
   LOG("locked_profiler_stop");
 
@@ -2551,7 +2554,7 @@ locked_profiler_stop(PSLockRef aLock)
   gPS->SetFeatureTaskTracer(aLock, false);
   gPS->SetFeatureThreads(aLock, false);
 
-  gPS->Filters(aLock).clear();
+  gPS->ThreadNameFilters(aLock).clear();
 
   gPS->Features(aLock).clear();
 
@@ -2572,7 +2575,7 @@ profiler_stop()
 
   SamplerThread* samplerThread;
   {
-    PSAutoLock lock(gPSMutex);
+    PS::AutoLock lock(gPSMutex);
 
     if (!gPS->IsActive(lock)) {
       return;
@@ -2604,7 +2607,7 @@ profiler_is_paused()
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
   MOZ_RELEASE_ASSERT(gPS);
 
-  PSAutoLock lock(gPSMutex);
+  PS::AutoLock lock(gPSMutex);
 
   if (!gPS->IsActive(lock)) {
     return false;
@@ -2622,7 +2625,7 @@ profiler_pause()
   MOZ_RELEASE_ASSERT(gPS);
 
   {
-    PSAutoLock lock(gPSMutex);
+    PS::AutoLock lock(gPSMutex);
 
     if (!gPS->IsActive(lock)) {
       return;
@@ -2643,7 +2646,7 @@ profiler_resume()
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
   MOZ_RELEASE_ASSERT(gPS);
 
-  PSAutoLock lock(gPSMutex);
+  PS::AutoLock lock(gPSMutex);
 
   {
     if (!gPS->IsActive(lock)) {
@@ -2664,7 +2667,7 @@ profiler_feature_active(const char* aName)
 
   MOZ_RELEASE_ASSERT(gPS);
 
-  PSAutoLock lock(gPSMutex);
+  PS::AutoLock lock(gPSMutex);
 
   if (!gPS->IsActive(lock)) {
     return false;
@@ -2696,7 +2699,7 @@ profiler_is_active()
 
   MOZ_RELEASE_ASSERT(gPS);
 
-  PSAutoLock lock(gPSMutex);
+  PS::AutoLock lock(gPSMutex);
 
   return gPS->IsActive(lock);
 }
@@ -2708,7 +2711,7 @@ profiler_set_frame_number(int aFrameNumber)
 
   MOZ_RELEASE_ASSERT(gPS);
 
-  PSAutoLock lock(gPSMutex);
+  PS::AutoLock lock(gPSMutex);
 
   gPS->SetFrameNumber(lock, aFrameNumber);
 }
@@ -2721,7 +2724,7 @@ profiler_register_thread(const char* aName, void* aGuessStackTop)
   MOZ_RELEASE_ASSERT(!NS_IsMainThread());
   MOZ_RELEASE_ASSERT(gPS);
 
-  PSAutoLock lock(gPSMutex);
+  PS::AutoLock lock(gPSMutex);
 
   void* stackTop = GetStackTop(aGuessStackTop);
   locked_register_thread(lock, aName, stackTop);
@@ -2733,7 +2736,7 @@ profiler_unregister_thread()
   MOZ_RELEASE_ASSERT(!NS_IsMainThread());
   MOZ_RELEASE_ASSERT(gPS);
 
-  PSAutoLock lock(gPSMutex);
+  PS::AutoLock lock(gPSMutex);
 
   
   
@@ -2831,10 +2834,10 @@ profiler_time()
 
   MOZ_RELEASE_ASSERT(gPS);
 
-  PSAutoLock lock(gPSMutex);
+  PS::AutoLock lock(gPSMutex);
 
   mozilla::TimeDuration delta =
-    mozilla::TimeStamp::Now() - gPS->ProcessStartTime(lock);
+    mozilla::TimeStamp::Now() - gPS->StartTime(lock);
   return delta.ToMilliseconds();
 }
 
@@ -2844,7 +2847,7 @@ profiler_get_backtrace()
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
   MOZ_RELEASE_ASSERT(gPS);
 
-  PSAutoLock lock(gPSMutex);
+  PS::AutoLock lock(gPSMutex);
 
   if (!gPS->IsActive(lock) || gPS->FeaturePrivacy(lock)) {
     return nullptr;
@@ -2907,7 +2910,7 @@ profiler_get_backtrace_noalloc(char *output, size_t outputSize)
 
   bool includeDynamicString = true;
   {
-    PSAutoLock lock(gPSMutex);
+    PS::AutoLock lock(gPSMutex);
     includeDynamicString = !gPS->FeaturePrivacy(lock);
   }
 
@@ -2944,7 +2947,7 @@ profiler_get_backtrace_noalloc(char *output, size_t outputSize)
 }
 
 static void
-locked_profiler_add_marker(PSLockRef aLock, const char* aMarker,
+locked_profiler_add_marker(PS::LockRef aLock, const char* aMarker,
                            ProfilerMarkerPayload* aPayload)
 {
   
@@ -2963,7 +2966,7 @@ locked_profiler_add_marker(PSLockRef aLock, const char* aMarker,
   mozilla::TimeStamp origin = (payload && !payload->GetStartTime().IsNull())
                             ? payload->GetStartTime()
                             : mozilla::TimeStamp::Now();
-  mozilla::TimeDuration delta = origin - gPS->ProcessStartTime(aLock);
+  mozilla::TimeDuration delta = origin - gPS->StartTime(aLock);
   stack->addMarker(aMarker, payload.release(), delta.ToMilliseconds());
 }
 
@@ -2974,7 +2977,7 @@ profiler_add_marker(const char* aMarker, ProfilerMarkerPayload* aPayload)
 
   MOZ_RELEASE_ASSERT(gPS);
 
-  PSAutoLock lock(gPSMutex);
+  PS::AutoLock lock(gPSMutex);
 
   
   mozilla::UniquePtr<ProfilerMarkerPayload> payload(aPayload);
@@ -2994,7 +2997,7 @@ profiler_tracing(const char* aCategory, const char* aInfo,
 
   MOZ_RELEASE_ASSERT(gPS);
 
-  PSAutoLock lock(gPSMutex);
+  PS::AutoLock lock(gPSMutex);
 
   if (!gPS->IsActive(lock) || gPS->FeaturePrivacy(lock)) {
     return;
@@ -3012,7 +3015,7 @@ profiler_tracing(const char* aCategory, const char* aInfo,
 
   MOZ_RELEASE_ASSERT(gPS);
 
-  PSAutoLock lock(gPSMutex);
+  PS::AutoLock lock(gPSMutex);
 
   if (!gPS->IsActive(lock) || gPS->FeaturePrivacy(lock)) {
     return;
@@ -3065,7 +3068,7 @@ profiler_clear_js_context()
   
   
 
-  PSAutoLock lock(gPSMutex);
+  PS::AutoLock lock(gPSMutex);
 
   if (gPS->IsActive(lock)) {
     gPS->SetIsPaused(lock, true);
@@ -3074,8 +3077,7 @@ profiler_clear_js_context()
     ThreadInfo* info = FindLiveThreadInfo(lock);
     MOZ_RELEASE_ASSERT(info);
     if (info->IsBeingProfiled()) {
-      info->FlushSamplesAndMarkers(gPS->Buffer(lock),
-                                   gPS->ProcessStartTime(lock));
+      info->FlushSamplesAndMarkers(gPS->Buffer(lock), gPS->StartTime(lock));
     }
 
     gPS->SetIsPaused(lock, false);
