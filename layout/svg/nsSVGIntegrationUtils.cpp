@@ -905,6 +905,10 @@ nsSVGIntegrationUtils::PaintMaskAndClipPath(const PaintFramesParams& aParams)
       if (clipMaskSurface) {
         maskSurface = clipMaskSurface;
         maskTransform = clippedMaskTransform;
+      } else {
+        
+        
+        return result;
       }
     }
 
