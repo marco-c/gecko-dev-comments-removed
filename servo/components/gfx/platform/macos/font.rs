@@ -25,10 +25,24 @@ use std::ptr;
 use std::sync::Arc;
 use style::computed_values::{font_stretch, font_weight};
 use text::glyph::GlyphId;
-use util::geometry::{Au, px_to_pt};
+use util::geometry::Au;
 
 pub struct FontTable {
     data: CFData,
+}
+
+
+fn px_to_pt(px: f64) -> f64 {
+    px / 96. * 72.
+}
+
+
+fn pt_to_px(pt: f64) -> f64 {
+    pt / 72. * 96.
+}
+
+fn au_from_pt(pt: f64) -> Au {
+    Au::from_f64_px(pt_to_px(pt))
 }
 
 impl FontTable {
@@ -161,27 +175,27 @@ impl FontHandleMethods for FontHandle {
         let scale = px_to_pt(self.ctfont.pt_size() as f64) / (ascent + descent);
         let line_gap = (ascent + descent + leading + 0.5).floor();
 
-        let max_advance_width = Au::from_pt(bounding_rect.size.width as f64);
+        let max_advance_width = au_from_pt(bounding_rect.size.width as f64);
         let average_advance = self.glyph_index('0')
                                   .and_then(|idx| self.glyph_h_advance(idx))
                                   .map(|advance| Au::from_f64_px(advance))
                                   .unwrap_or(max_advance_width);
 
         let metrics =  FontMetrics {
-            underline_size:   Au::from_pt(self.ctfont.underline_thickness() as f64),
+            underline_size:   au_from_pt(self.ctfont.underline_thickness() as f64),
             
             
             
             
             
-            underline_offset: Au::from_pt(self.ctfont.underline_position() as f64),
+            underline_offset: au_from_pt(self.ctfont.underline_position() as f64),
             strikeout_size:   Au(0), 
             strikeout_offset: Au(0), 
-            leading:          Au::from_pt(leading),
-            x_height:         Au::from_pt(self.ctfont.x_height() as f64),
+            leading:          au_from_pt(leading),
+            x_height:         au_from_pt(self.ctfont.x_height() as f64),
             em_size:          em_size,
-            ascent:           Au::from_pt(ascent * scale),
-            descent:          Au::from_pt(descent * scale),
+            ascent:           au_from_pt(ascent * scale),
+            descent:          au_from_pt(descent * scale),
             max_advance:      max_advance_width,
             average_advance:  average_advance,
             line_gap:         Au::from_f64_px(line_gap),

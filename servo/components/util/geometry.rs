@@ -3,7 +3,6 @@
 
 
 use cssparser::ToCss;
-use euclid::length::Length;
 use euclid::num::Zero;
 use euclid::point::Point2D;
 use euclid::rect::Rect;
@@ -205,27 +204,10 @@ impl Au {
         Au((px * AU_PER_PX) as i32)
     }
 
-    #[inline]
-    pub fn from_page_px(px: Length<PagePx, f32>) -> Au {
-        Au((px.get() * (AU_PER_PX as f32)) as i32)
-    }
-
     
     #[inline]
     pub fn to_px(self) -> i32 {
         self.0 / AU_PER_PX
-    }
-
-    
-    #[inline]
-    pub fn to_prev_px(self) -> i32 {
-        ((self.0 as f64) / (AU_PER_PX as f64)).floor() as i32
-    }
-
-    
-    #[inline]
-    pub fn to_next_px(self) -> i32 {
-        ((self.0 as f64) / (AU_PER_PX as f64)).ceil() as i32
     }
 
     #[inline]
@@ -249,36 +231,14 @@ impl Au {
     }
 
     #[inline]
-    pub fn to_snapped(self) -> Au {
-        let res = self.0 % AU_PER_PX;
-        return if res >= 30i32 { return Au(self.0 - res + AU_PER_PX) }
-                       else { return Au(self.0 - res) };
-    }
-
-    #[inline]
     pub fn from_f32_px(px: f32) -> Au {
         Au((px * (AU_PER_PX as f32)) as i32)
-    }
-
-    #[inline]
-    pub fn from_pt(pt: f64) -> Au {
-        Au::from_f64_px(pt_to_px(pt))
     }
 
     #[inline]
     pub fn from_f64_px(px: f64) -> Au {
         Au((px * (AU_PER_PX as f64)) as i32)
     }
-}
-
-
-pub fn pt_to_px(pt: f64) -> f64 {
-    pt / 72. * 96.
-}
-
-
-pub fn px_to_pt(px: f64) -> f64 {
-    px / 96. * 72.
 }
 
 
