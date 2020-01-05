@@ -1293,13 +1293,14 @@ Sync11Service.prototype = {
       this.wipeServer(engines);
 
       
+      let extra = { reason: "wipe-remote" };
       if (engines) {
         engines.forEach(function(e) {
-            this.clientsEngine.sendCommand("wipeEngine", [e]);
+            this.clientsEngine.sendCommand("wipeEngine", [e], null, extra);
           }, this);
       } else {
         
-        this.clientsEngine.sendCommand("wipeAll", []);
+        this.clientsEngine.sendCommand("wipeAll", [], null, extra);
       }
 
       
