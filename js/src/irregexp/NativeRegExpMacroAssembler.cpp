@@ -720,7 +720,7 @@ NativeRegExpMacroAssembler::CheckNotBackReference(int start_reg, Label* on_no_ma
 
     Label loop;
     masm.bind(&loop);
-    if (mode_ == ASCII) {
+    if (mode_ == LATIN1) {
         masm.load8ZeroExtend(Address(current_character, 0), temp0);
         masm.load8ZeroExtend(Address(temp1, 0), temp2);
     } else {
@@ -782,7 +782,7 @@ NativeRegExpMacroAssembler::CheckNotBackReferenceIgnoreCase(int start_reg, Label
     masm.addPtr(temp1, temp0);
     masm.branchPtr(Assembler::GreaterThan, temp0, ImmWord(0), BranchOrBacktrack(on_no_match));
 
-    if (mode_ == ASCII) {
+    if (mode_ == LATIN1) {
         Label success, fail;
 
         
@@ -1000,7 +1000,7 @@ NativeRegExpMacroAssembler::LoadCurrentCharacterUnchecked(int cp_offset, int cha
 {
     JitSpew(SPEW_PREFIX "LoadCurrentCharacterUnchecked(%d, %d)", cp_offset, characters);
 
-    if (mode_ == ASCII) {
+    if (mode_ == LATIN1) {
         BaseIndex address(input_end_pointer, current_position, TimesOne, cp_offset);
         if (characters == 4) {
             masm.load32(address, current_character);
@@ -1276,7 +1276,7 @@ NativeRegExpMacroAssembler::CheckSpecialCharacterClass(char16_t type, Label* on_
     switch (type) {
       case 's':
         
-        if (mode_ == ASCII) {
+        if (mode_ == LATIN1) {
             
             Label success;
             masm.branch32(Assembler::Equal, current_character, Imm32(' '), &success);
@@ -1323,7 +1323,7 @@ NativeRegExpMacroAssembler::CheckSpecialCharacterClass(char16_t type, Label* on_
         return true;
       }
       case 'w': {
-        if (mode_ != ASCII) {
+        if (mode_ != LATIN1) {
             
             masm.branch32(Assembler::Above, current_character, Imm32('z'), branch);
         }
@@ -1335,7 +1335,7 @@ NativeRegExpMacroAssembler::CheckSpecialCharacterClass(char16_t type, Label* on_
       }
       case 'W': {
         Label done;
-        if (mode_ != ASCII) {
+        if (mode_ != LATIN1) {
             
             masm.branch32(Assembler::Above, current_character, Imm32('z'), &done);
         }
@@ -1343,7 +1343,7 @@ NativeRegExpMacroAssembler::CheckSpecialCharacterClass(char16_t type, Label* on_
         masm.movePtr(ImmPtr(word_character_map), temp0);
         masm.load8ZeroExtend(BaseIndex(temp0, current_character, TimesOne), temp0);
         masm.branchTest32(Assembler::NonZero, temp0, temp0, branch);
-        if (mode_ != ASCII)
+        if (mode_ != LATIN1)
             masm.bind(&done);
         return true;
       }
@@ -1360,7 +1360,7 @@ NativeRegExpMacroAssembler::CheckSpecialCharacterClass(char16_t type, Label* on_
         
         masm.sub32(Imm32(0x0b), temp0);
 
-        if (mode_ == ASCII) {
+        if (mode_ == LATIN1) {
             masm.branch32(Assembler::Above, temp0, Imm32(0x0c - 0x0b), branch);
         } else {
             Label done;

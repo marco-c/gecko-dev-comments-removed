@@ -88,7 +88,7 @@ struct RegExpCode
 RegExpCode
 CompilePattern(JSContext* cx, HandleRegExpShared shared, RegExpCompileData* data,
                HandleLinearString sample,  bool is_global, bool ignore_case,
-               bool is_ascii, bool match_only, bool force_bytecode, bool sticky,
+               bool is_latin1, bool match_only, bool force_bytecode, bool sticky,
                bool unicode);
 
 
@@ -199,7 +199,7 @@ class CharacterRange
     bool is_valid() { return from_ <= to_; }
     bool IsEverything(char16_t max) { return from_ == 0 && to_ >= max; }
     bool IsSingleton() { return (from_ == to_); }
-    void AddCaseEquivalents(bool is_ascii, bool unicode, CharacterRangeVector* ranges);
+    void AddCaseEquivalents(bool is_latin1, bool unicode, CharacterRangeVector* ranges);
 
     static void Split(const LifoAlloc* alloc,
                       CharacterRangeVector base,
@@ -440,13 +440,13 @@ class QuickCheckDetails
         cannot_match_(false)
     {}
 
-    bool Rationalize(bool ascii);
+    bool Rationalize(bool latin1);
 
     
     void Merge(QuickCheckDetails* other, int from_index);
 
     
-    void Advance(int by, bool ascii);
+    void Advance(int by);
 
     void Clear();
 
@@ -552,7 +552,7 @@ class RegExpNode
     
     
     
-    virtual RegExpNode* FilterASCII(int depth, bool ignore_case, bool unicode) { return this; }
+    virtual RegExpNode* FilterLATIN1(int depth, bool ignore_case, bool unicode) { return this; }
 
     
     RegExpNode* replacement() {
@@ -659,7 +659,7 @@ class SeqRegExpNode : public RegExpNode
 
     RegExpNode* on_success() { return on_success_; }
     void set_on_success(RegExpNode* node) { on_success_ = node; }
-    virtual RegExpNode* FilterASCII(int depth, bool ignore_case, bool unicode);
+    virtual RegExpNode* FilterLATIN1(int depth, bool ignore_case, bool unicode);
     virtual bool FillInBMInfo(int offset,
                               int budget,
                               BoyerMooreLookahead* bm,
@@ -784,7 +784,7 @@ class TextNode : public SeqRegExpNode
                                       int characters_filled_in,
                                       bool not_at_start);
     TextElementVector& elements() { return *elements_; }
-    void MakeCaseIndependent(bool is_ascii, bool unicode);
+    void MakeCaseIndependent(bool is_latin1, bool unicode);
     virtual int GreedyLoopTextLength();
     virtual RegExpNode* GetSuccessorOfOmnivorousTextNode(
                                                          RegExpCompiler* compiler);
@@ -793,11 +793,11 @@ class TextNode : public SeqRegExpNode
                               BoyerMooreLookahead* bm,
                               bool not_at_start);
     void CalculateOffsets();
-    virtual RegExpNode* FilterASCII(int depth, bool ignore_case, bool unicode);
+    virtual RegExpNode* FilterLATIN1(int depth, bool ignore_case, bool unicode);
 
   private:
     enum TextEmitPassType {
-        NON_ASCII_MATCH,             
+        NON_LATIN1_MATCH,             
         SIMPLE_CHARACTER_MATCH,      
         CASE_SINGLE_CHARACTER_MATCH, 
         CASE_MUTLI_CHARACTER_MATCH,  
@@ -1053,7 +1053,7 @@ class ChoiceNode : public RegExpNode
     void set_not_at_start() { not_at_start_ = true; }
     void set_being_calculated(bool b) { being_calculated_ = b; }
     virtual bool try_to_emit_quick_check_for_alternative(int i) { return true; }
-    virtual RegExpNode* FilterASCII(int depth, bool ignore_case, bool unicode);
+    virtual RegExpNode* FilterLATIN1(int depth, bool ignore_case, bool unicode);
 
   protected:
     int GreedyLoopTextLengthForAlternative(GuardedAlternative* alternative);
@@ -1106,7 +1106,7 @@ class NegativeLookaheadChoiceNode : public ChoiceNode
     
     
     virtual bool try_to_emit_quick_check_for_alternative(int i) { return i != 0; }
-    virtual RegExpNode* FilterASCII(int depth, bool ignore_case, bool unicode);
+    virtual RegExpNode* FilterLATIN1(int depth, bool ignore_case, bool unicode);
 };
 
 class LoopChoiceNode : public ChoiceNode
@@ -1135,7 +1135,7 @@ class LoopChoiceNode : public ChoiceNode
     RegExpNode* continue_node() { return continue_node_; }
     bool body_can_be_zero_length() { return body_can_be_zero_length_; }
     virtual void Accept(NodeVisitor* visitor);
-    virtual RegExpNode* FilterASCII(int depth, bool ignore_case, bool unicode);
+    virtual RegExpNode* FilterLATIN1(int depth, bool ignore_case, bool unicode);
 
   private:
     
@@ -1510,10 +1510,10 @@ class NodeVisitor
 class Analysis : public NodeVisitor
 {
   public:
-    Analysis(JSContext* cx, bool ignore_case, bool is_ascii, bool unicode)
+    Analysis(JSContext* cx, bool ignore_case, bool is_latin1, bool unicode)
       : cx(cx),
         ignore_case_(ignore_case),
-        is_ascii_(is_ascii),
+        is_latin1_(is_latin1),
         unicode_(unicode),
         error_message_(nullptr)
     {}
@@ -1538,7 +1538,7 @@ class Analysis : public NodeVisitor
   private:
     JSContext* cx;
     bool ignore_case_;
-    bool is_ascii_;
+    bool is_latin1_;
     bool unicode_;
     const char* error_message_;
 
