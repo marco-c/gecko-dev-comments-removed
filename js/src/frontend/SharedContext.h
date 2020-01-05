@@ -472,6 +472,9 @@ class FunctionBox : public ObjectBox, public SharedContext
     bool            usesThis:1;             
     bool            usesReturn:1;           
     bool            hasRest_:1;             
+    bool            isExprBody_:1;          
+
+
 
     FunctionContextFlags funCxFlags;
 
@@ -543,6 +546,11 @@ class FunctionBox : public ObjectBox, public SharedContext
     bool hasRest() const { return hasRest_; }
     void setHasRest() {
         hasRest_ = true;
+    }
+
+    bool isExprBody() const { return isExprBody_; }
+    void setIsExprBody() {
+        isExprBody_ = true;
     }
 
     void setGeneratorKind(GeneratorKind kind) {

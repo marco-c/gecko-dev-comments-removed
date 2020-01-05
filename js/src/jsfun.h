@@ -52,8 +52,6 @@ class JSFunction : public js::NativeObject
         CONSTRUCTOR      = 0x0002,  
         EXTENDED         = 0x0004,  
         BOUND_FUN        = 0x0008,  
-        EXPR_BODY        = 0x0010,  
-
         HAS_GUESSED_ATOM = 0x0020,  
 
         LAMBDA           = 0x0040,  
@@ -93,7 +91,7 @@ class JSFunction : public js::NativeObject
         INTERPRETED_GENERATOR = INTERPRETED,
         NO_XDR_FLAGS = RESOLVED_LENGTH | RESOLVED_NAME,
 
-        STABLE_ACROSS_CLONES = CONSTRUCTOR | EXPR_BODY | HAS_GUESSED_ATOM | LAMBDA |
+        STABLE_ACROSS_CLONES = CONSTRUCTOR | HAS_GUESSED_ATOM | LAMBDA |
                                SELF_HOSTED | FUNCTION_KIND_MASK
     };
 
@@ -178,7 +176,6 @@ class JSFunction : public js::NativeObject
     bool isAsmJSNative()            const { return kind() == AsmJS; }
 
     
-    bool isExprBody()               const { return flags() & EXPR_BODY; }
     bool hasGuessedAtom()           const { return flags() & HAS_GUESSED_ATOM; }
     bool isLambda()                 const { return flags() & LAMBDA; }
     bool isBoundFunction()          const { return flags() & BOUND_FUN; }
@@ -278,11 +275,6 @@ class JSFunction : public js::NativeObject
         MOZ_ASSERT(isNative());
         MOZ_ASSERT(!isIntrinsic());
         flags_ |= SELF_HOSTED;
-    }
-
-    
-    void setIsExprBody() {
-        flags_ |= EXPR_BODY;
     }
 
     void setArrow() {
