@@ -11,6 +11,7 @@ use geom::scale_factor::ScaleFactor;
 use hyper::header::Headers;
 use hyper::method::Method;
 use layers::geometry::DevicePixel;
+use png;
 use util::cursor::Cursor;
 use util::geometry::{PagePx, ViewportPx};
 use std::sync::mpsc::{channel, Sender, Receiver};
@@ -237,6 +238,8 @@ pub enum Msg {
     WebDriverCommand(PipelineId, WebDriverScriptCommand),
     
     ViewportConstrained(PipelineId, ViewportConstraints),
+    
+    CompositePng(Sender<Option<png::Image>>)
 }
 
 #[derive(Clone, Eq, PartialEq)]
