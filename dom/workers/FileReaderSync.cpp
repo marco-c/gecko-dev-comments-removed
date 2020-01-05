@@ -21,7 +21,6 @@
 #include "nsIConverterInputStream.h"
 #include "nsIInputStream.h"
 #include "nsIMultiplexInputStream.h"
-#include "nsStreamUtils.h"
 #include "nsStringStream.h"
 #include "nsISupportsImpl.h"
 #include "nsNetUtil.h"
@@ -79,16 +78,11 @@ FileReaderSync::ReadAsArrayBuffer(JSContext* aCx,
   }
 
   uint32_t numRead;
-  aRv = SyncRead(stream, bufferData.get(), blobSize, &numRead);
+  aRv = Read(stream, bufferData.get(), blobSize, &numRead);
   if (NS_WARN_IF(aRv.Failed())) {
     return;
   }
-
-  
-  if (numRead != blobSize) {
-    aRv.Throw(NS_ERROR_FAILURE);
-    return;
-  }
+  NS_ASSERTION(numRead == blobSize, "failed to read data");
 
   JSObject* arrayBuffer = JS_NewArrayBufferWithContents(aCx, blobSize, bufferData.get());
   if (!arrayBuffer) {
@@ -116,7 +110,7 @@ FileReaderSync::ReadAsBinaryString(Blob& aBlob,
   uint32_t numRead;
   do {
     char readBuf[4096];
-    aRv = SyncRead(stream, readBuf, sizeof(readBuf), &numRead);
+    aRv = Read(stream, readBuf, sizeof(readBuf), &numRead);
     if (NS_WARN_IF(aRv.Failed())) {
       return;
     }
@@ -151,14 +145,8 @@ FileReaderSync::ReadAsText(Blob& aBlob,
   }
 
   uint32_t numRead = 0;
-  aRv = SyncRead(stream, sniffBuf.BeginWriting(), sniffBuf.Length(), &numRead);
+  aRv = Read(stream, sniffBuf.BeginWriting(), sniffBuf.Length(), &numRead);
   if (NS_WARN_IF(aRv.Failed())) {
-    return;
-  }
-
-  
-  if (numRead == 0) {
-    aResult.Truncate();
     return;
   }
 
@@ -198,6 +186,12 @@ FileReaderSync::ReadAsText(Blob& aBlob,
   
   
 
+  nsCOMPtr<nsIInputStream> stringStream;
+  aRv = NS_NewCStringInputStream(getter_AddRefs(stringStream), sniffBuf);
+  if (NS_WARN_IF(aRv.Failed())) {
+    return;
+  }
+
   nsCOMPtr<nsIMultiplexInputStream> multiplexStream =
     do_CreateInstance("@mozilla.org/io/multiplex-input-stream;1");
   if (NS_WARN_IF(!multiplexStream)) {
@@ -205,24 +199,12 @@ FileReaderSync::ReadAsText(Blob& aBlob,
     return;
   }
 
-  nsCOMPtr<nsIInputStream> sniffStringStream;
-  aRv = NS_NewCStringInputStream(getter_AddRefs(sniffStringStream), sniffBuf);
+  aRv = multiplexStream->AppendStream(stringStream);
   if (NS_WARN_IF(aRv.Failed())) {
     return;
   }
 
-  aRv = multiplexStream->AppendStream(sniffStringStream);
-  if (NS_WARN_IF(aRv.Failed())) {
-    return;
-  }
-
-  nsCOMPtr<nsIInputStream> syncStream;
-  aRv = ConvertAsyncToSyncStream(stream, getter_AddRefs(syncStream));
-  if (NS_WARN_IF(aRv.Failed())) {
-    return;
-  }
-
-  aRv = multiplexStream->AppendStream(syncStream);
+  aRv = multiplexStream->AppendStream(stream);
   if (NS_WARN_IF(aRv.Failed())) {
     return;
   }
@@ -256,30 +238,19 @@ FileReaderSync::ReadAsDataURL(Blob& aBlob, nsAString& aResult,
     return;
   }
 
-  nsCOMPtr<nsIInputStream> syncStream;
-  aRv = ConvertAsyncToSyncStream(stream, getter_AddRefs(syncStream));
-  if (NS_WARN_IF(aRv.Failed())) {
-    return;
-  }
-
-  uint64_t size;
-  aRv = syncStream->Available(&size);
-  if (NS_WARN_IF(aRv.Failed())) {
-    return;
-  }
-
-  uint64_t blobSize = aBlob.GetSize(aRv);
+  uint64_t size = aBlob.GetSize(aRv);
   if (NS_WARN_IF(aRv.Failed())){
     return;
   }
 
-  
-  if (blobSize != size) {
+  nsCOMPtr<nsIInputStream> bufferedStream;
+  aRv = NS_NewBufferedInputStream(getter_AddRefs(bufferedStream), stream, size);
+  if (NS_WARN_IF(aRv.Failed())){
     return;
   }
 
   nsAutoString encodedData;
-  aRv = Base64EncodeInputStream(syncStream, encodedData, size);
+  aRv = Base64EncodeInputStream(bufferedStream, encodedData, size);
   if (NS_WARN_IF(aRv.Failed())){
     return;
   }
@@ -390,8 +361,8 @@ NS_INTERFACE_MAP_END
 } 
 
 nsresult
-FileReaderSync::SyncRead(nsIInputStream* aStream, char* aBuffer,
-                         uint32_t aBufferSize, uint32_t* aRead)
+FileReaderSync::Read(nsIInputStream* aStream, char* aBuffer, uint32_t aBufferSize,
+                     uint32_t* aRead)
 {
   MOZ_ASSERT(aStream);
   MOZ_ASSERT(aBuffer);
@@ -399,32 +370,8 @@ FileReaderSync::SyncRead(nsIInputStream* aStream, char* aBuffer,
 
   
   nsresult rv = aStream->Read(aBuffer, aBufferSize, aRead);
-
-  
-  if (rv == NS_BASE_STREAM_CLOSED ||
-      (NS_SUCCEEDED(rv) && *aRead == 0)) {
-    return NS_OK;
-  }
-
-  
-  if (NS_FAILED(rv) && rv != NS_BASE_STREAM_WOULD_BLOCK) {
+  if (NS_SUCCEEDED(rv) || rv != NS_BASE_STREAM_WOULD_BLOCK) {
     return rv;
-  }
-
-  
-  if (NS_SUCCEEDED(rv)) {
-    
-    if (*aRead != aBufferSize) {
-      uint32_t byteRead = 0;
-      rv = SyncRead(aStream, aBuffer + *aRead, aBufferSize - *aRead, &byteRead);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
-      }
-
-      *aRead += byteRead;
-    }
-
-    return NS_OK;
   }
 
   
@@ -461,44 +408,5 @@ FileReaderSync::SyncRead(nsIInputStream* aStream, char* aBuffer,
   }
 
   
-  return SyncRead(aStream, aBuffer, aBufferSize, aRead);
-}
-
-nsresult
-FileReaderSync::ConvertAsyncToSyncStream(nsIInputStream* aAsyncStream,
-                                         nsIInputStream** aSyncStream)
-{
-  
-  nsCOMPtr<nsIAsyncInputStream> asyncStream = do_QueryInterface(aAsyncStream);
-  if (!asyncStream) {
-    return NS_NewBufferedInputStream(aSyncStream, aAsyncStream, 4096);
-  }
-
-  uint64_t length;
-  nsresult rv = aAsyncStream->Available(&length);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-
-  nsAutoCString buffer;
-  if (!buffer.SetLength(length, fallible)) {
-    return NS_ERROR_OUT_OF_MEMORY;
-  }
-
-  uint32_t read;
-  rv = SyncRead(aAsyncStream, buffer.BeginWriting(), length, &read);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-
-  if (read != length) {
-    return NS_ERROR_FAILURE;
-  }
-
-  rv = NS_NewCStringInputStream(aSyncStream, buffer);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-
-  return NS_OK;
+  return Read(aStream, aBuffer, aBufferSize, aRead);
 }
