@@ -231,6 +231,7 @@ nsPrintEngine::nsPrintEngine() :
 nsPrintEngine::~nsPrintEngine()
 {
   Destroy(); 
+  DisconnectPagePrintTimer();
 }
 
 
@@ -1488,7 +1489,7 @@ nsresult nsPrintEngine::CleanupOnFailure(nsresult aResult, bool aIsPrinting)
   
   if (mPagePrintTimer) {
     mPagePrintTimer->Stop();
-    NS_RELEASE(mPagePrintTimer);
+    DisconnectPagePrintTimer();
   }
   
   if (aIsPrinting) {
@@ -3055,7 +3056,7 @@ nsPrintEngine::DonePrintingPages(nsPrintObject* aPO, nsresult aResult)
 
   
   
-  NS_IF_RELEASE(mPagePrintTimer);
+  DisconnectPagePrintTimer();
 
   return true;
 }
@@ -3536,6 +3537,15 @@ nsPrintEngine::FirePrintCompletionEvent()
   nsCOMPtr<nsIRunnable> event = new nsPrintCompletionEvent(mDocViewerPrint);
   if (NS_FAILED(NS_DispatchToCurrentThread(event)))
     NS_WARNING("failed to dispatch print completion event");
+}
+
+void
+nsPrintEngine::DisconnectPagePrintTimer()
+{
+  if (mPagePrintTimer) {
+    mPagePrintTimer->Disconnect();
+    NS_RELEASE(mPagePrintTimer);
+  }
 }
 
 
