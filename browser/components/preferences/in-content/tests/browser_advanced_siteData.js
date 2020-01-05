@@ -136,20 +136,34 @@ function getQuotaUsage(origin) {
   });
 }
 
-function getCacheUsage() {
-  return new Promise(resolve => {
-    let obs = {
-      onNetworkCacheDiskConsumption(usage) {
-        resolve(usage);
-      },
-      QueryInterface: XPCOMUtils.generateQI([
-        Components.interfaces.nsICacheStorageConsumptionObserver,
-        Components.interfaces.nsISupportsWeakReference
-      ]),
-    };
-    Services.cache2.asyncGetDiskConsumption(obs);
-  });
-}
+
+
+
+
+
+
+const cacheUsageGetter = {
+  _promise: null,
+  _resolve: null,
+  get() {
+    if (!this._promise) {
+      this._promise = new Promise(resolve => {
+        this._resolve = resolve;
+        Services.cache2.asyncGetDiskConsumption(this);
+      });
+    }
+    return this._promise;
+  },
+  
+  onNetworkCacheDiskConsumption(usage) {
+    cacheUsageGetter._promise = null;
+    cacheUsageGetter._resolve(usage);
+  },
+  QueryInterface: XPCOMUtils.generateQI([
+    Components.interfaces.nsICacheStorageConsumptionObserver,
+    Components.interfaces.nsISupportsWeakReference
+  ]),
+};
 
 function openSettingsDialog() {
   let doc = gBrowser.selectedBrowser.contentDocument;
@@ -222,7 +236,7 @@ add_task(function* () {
   yield openPreferencesViaOpenPreferencesAPI("advanced", "networkTab", { leaveOpen: true });
 
   
-  let cacheUsage = yield getCacheUsage();
+  let cacheUsage = yield cacheUsageGetter.get();
   let quotaUsage = yield getQuotaUsage(TEST_ORIGIN);
   let totalUsage = yield SiteDataManager.getTotalUsage();
   Assert.greater(cacheUsage, 0, "The cache usage should not be 0");
@@ -241,7 +255,7 @@ add_task(function* () {
   let status = getPersistentStoragePermStatus(TEST_ORIGIN);
   is(status, Ci.nsIPermissionManager.ALLOW_ACTION, "Should not remove permission");
 
-  cacheUsage = yield getCacheUsage();
+  cacheUsage = yield cacheUsageGetter.get();
   quotaUsage = yield getQuotaUsage(TEST_ORIGIN);
   totalUsage = yield SiteDataManager.getTotalUsage();
   Assert.greater(cacheUsage, 0, "The cache usage should not be 0");
@@ -269,7 +283,7 @@ add_task(function* () {
   status = getPersistentStoragePermStatus(TEST_ORIGIN);
   is(status, Ci.nsIPermissionManager.UNKNOWN_ACTION, "Should remove permission");
 
-  cacheUsage = yield getCacheUsage();
+  cacheUsage = yield cacheUsageGetter.get();
   quotaUsage = yield getQuotaUsage(TEST_ORIGIN);
   totalUsage = yield SiteDataManager.getTotalUsage();
   is(cacheUsage, 0, "The cahce usage should be removed");
