@@ -87,6 +87,8 @@ pub enum Msg {
     
     LoadComplete(bool, bool, bool),
     
+    AllowNavigation(ServoUrl, IpcSender<bool>),
+    
     DelayedCompositionTimeout(u64),
     
     Recomposite(CompositingReason),
@@ -144,6 +146,7 @@ impl Debug for Msg {
             Msg::ChangePageUrl(..) => write!(f, "ChangePageUrl"),
             Msg::SetFrameTree(..) => write!(f, "SetFrameTree"),
             Msg::LoadComplete(..) => write!(f, "LoadComplete"),
+            Msg::AllowNavigation(..) => write!(f, "AllowNavigation"),
             Msg::LoadStart(..) => write!(f, "LoadStart"),
             Msg::DelayedCompositionTimeout(..) => write!(f, "DelayedCompositionTimeout"),
             Msg::Recomposite(..) => write!(f, "Recomposite"),

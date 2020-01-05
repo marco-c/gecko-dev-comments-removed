@@ -138,6 +138,8 @@ pub trait WindowMethods {
     
     fn load_error(&self, code: NetError, url: String);
     
+    fn allow_navigation(&self, url: ServoUrl) -> bool;
+    
     fn head_parsed(&self);
 
     

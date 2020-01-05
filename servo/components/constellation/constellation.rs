@@ -1575,6 +1575,13 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
     }
 
     fn load_url(&mut self, source_id: PipelineId, load_data: LoadData, replace: bool) -> Option<PipelineId> {
+        
+        let (chan, port) = ipc::channel().expect("Failed to create IPC channel!");
+        self.compositor_proxy.send(ToCompositorMsg::AllowNavigation(load_data.url.clone(), chan));
+        if let Ok(false) = port.recv() {
+            return None;
+        }
+
         debug!("Loading {} in pipeline {}.", load_data.url, source_id);
         
         
