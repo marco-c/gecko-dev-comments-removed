@@ -294,7 +294,8 @@ add_task(function* test_check_signatures() {
 
   
   
-  yield OneCRLBlocklistClient.maybeSync(1000, startTime);
+  
+  yield OneCRLBlocklistClient.maybeSync(1000, startTime, {loadDump: false});
 
   
   
