@@ -347,6 +347,18 @@ ResolvePromiseInternal(JSContext* cx, HandleObject promise, HandleValue resoluti
     RootedObject resolution(cx, &resolutionVal.toObject());
 
     
+    if (resolution == promise) {
+        
+        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                  JSMSG_CANNOT_RESOLVE_PROMISE_WITH_ITSELF);
+        RootedValue selfResolutionError(cx);
+        MOZ_ALWAYS_TRUE(GetAndClearException(cx, &selfResolutionError));
+
+        
+        return RejectMaybeWrappedPromise(cx, promise, selfResolutionError);
+    }
+
+    
     RootedValue thenVal(cx);
     bool status = GetProperty(cx, resolution, resolution, cx->names().then, &thenVal);
 
@@ -410,22 +422,6 @@ ResolvePromiseFunction(JSContext* cx, unsigned argc, Value* vp)
     
     
     ClearResolutionFunctionSlots(resolve);
-
-    
-    if (resolutionVal == promiseVal) {
-        
-        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                  JSMSG_CANNOT_RESOLVE_PROMISE_WITH_ITSELF);
-        RootedValue selfResolutionError(cx);
-        bool status = GetAndClearException(cx, &selfResolutionError);
-        MOZ_ASSERT(status);
-
-        
-        status = RejectMaybeWrappedPromise(cx, promise, selfResolutionError);
-        if (status)
-            args.rval().setUndefined();
-        return status;
-    }
 
     bool status = ResolvePromiseInternal(cx, promise, resolutionVal);
     if (status)
