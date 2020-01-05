@@ -80,6 +80,11 @@ public:
   nscoord GetLogicalBaseline(mozilla::WritingMode aWM) const override;
 
   
+  uint16_t CSSAlignmentForAbsPosChild(
+            const ReflowInput& aChildRI,
+            mozilla::LogicalAxis aLogicalAxis) const override;
+
+  
   bool IsHorizontal();
 
   
@@ -267,8 +272,6 @@ protected:
                       const nsSize& aContainerSize);
 
   
-
-
 
 
 
