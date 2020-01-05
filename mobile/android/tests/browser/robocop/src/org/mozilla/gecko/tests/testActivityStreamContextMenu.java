@@ -4,65 +4,149 @@
 
 package org.mozilla.gecko.tests;
 
+import android.content.ContentResolver;
+import android.content.ContentValues;
+import android.content.Context;
+import android.database.Cursor;
+import android.net.Uri;
 import android.view.MenuItem;
 import android.view.View;
 
 import com.robotium.solo.Condition;
 
+import org.mozilla.gecko.GeckoProfile;
 import org.mozilla.gecko.R;
-import org.mozilla.gecko.activitystream.ActivityStream;
 import org.mozilla.gecko.activitystream.ActivityStreamTelemetry;
+import org.mozilla.gecko.db.BrowserContract;
 import org.mozilla.gecko.db.BrowserDB;
+import org.mozilla.gecko.db.DBUtils;
 import org.mozilla.gecko.home.activitystream.menu.ActivityStreamContextMenu;
+import org.mozilla.gecko.home.activitystream.model.Highlight;
+import org.mozilla.gecko.home.activitystream.model.Item;
+import org.mozilla.gecko.home.activitystream.model.TopSite;
 
 
 
 
 
 public class testActivityStreamContextMenu extends BaseTest {
+    private static final String TEST_URL = "http://example.com/test/url";
+
+    private BrowserDB db;
+    private ContentResolver contentResolver;
+
+    @Override
+    public void setUp() throws Exception {
+        super.setUp();
+
+        cleanup();
+    }
+
+    @Override
+    public void tearDown() throws Exception {
+        super.tearDown();
+
+        cleanup();
+    }
+
+    
+
+
     public void testActivityStreamContextMenu() {
         blockForGeckoReady();
 
-        final String testURL = "http://mozilla.org";
+        testActivityStreamContextMenuForHighlights();
 
-        BrowserDB db = BrowserDB.from(getActivity());
-        db.removeHistoryEntry(getActivity().getContentResolver(), testURL);
-        db.removeBookmarksWithURL(getActivity().getContentResolver(), testURL);
+        cleanup();
 
-        testMenuForUrl(testURL, null, false, null, false, false);
-
-        db.addBookmark(getActivity().getContentResolver(), "foobar", testURL);
-        testMenuForUrl(testURL, null, true, null, false, false);
-        testMenuForUrl(testURL, null, true, Boolean.FALSE, false, false);
-        testMenuForUrl(testURL, Boolean.TRUE, true, null, false, false);
-        testMenuForUrl(testURL, Boolean.TRUE, true, Boolean.FALSE, false, false);
-
-        db.updateVisitedHistory(getActivity().getContentResolver(), testURL);
-        testMenuForUrl(testURL, null, true, null, false, true);
-        testMenuForUrl(testURL, null, true, Boolean.FALSE, false, true);
-        testMenuForUrl(testURL, Boolean.TRUE, true, null, false, true);
-        testMenuForUrl(testURL, Boolean.TRUE, true, Boolean.FALSE, false, true);
-
-        db.removeBookmarksWithURL(getActivity().getContentResolver(), testURL);
-        testMenuForUrl(testURL, null, false, null, false, true);
-        testMenuForUrl(testURL, Boolean.FALSE, false, null, false, true);
-
-        db.pinSiteForAS(getActivity().getContentResolver(), testURL, "test title");
-        testMenuForUrl(testURL, null, false, null, true, true);
-        testMenuForUrl(testURL, null, false, Boolean.TRUE, true, true);
-
-        db.addBookmark(getActivity().getContentResolver(), "foobar", testURL);
-        testMenuForUrl(testURL, null, true, null, true, true);
-        testMenuForUrl(testURL, Boolean.TRUE, true, Boolean.TRUE, true, true);
+        testActivityStreamContextMenuForTopSites();
     }
 
     
 
 
 
-    private void testMenuForUrl(final String url, final Boolean isBookmarkedKnownState, final boolean isBookmarked, final Boolean isPinnedKnownState, final boolean isPinned, final boolean isVisited) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    private void testActivityStreamContextMenuForHighlights() {
         
+        insertVisit(TEST_URL, System.currentTimeMillis() - 60 * 1000 * 1000);
+
+        mAsserter.info("ContextMenu", "Highlight (Visited)");
+        testMenuForHighlight(TEST_URL,
+                 false,
+                 false,
+                 true);
+
         
+        db.addBookmark(contentResolver, "foobar", TEST_URL);
+
+        mAsserter.info("ContextMenu", "Highlight (Bookmarked, Visited)");
+        testMenuForHighlight(TEST_URL,
+                 true,
+                 false,
+                 true);
+
+        
+        db.pinSiteForAS(contentResolver, TEST_URL, "barfoo");
+
+        mAsserter.info("ContextMenu", "Highlight (Bookmarked, Pinned, Visited)");
+        testMenuForHighlight(TEST_URL,
+                 true,
+                 true,
+                 true);
+
+        
+        db.removeHistoryEntry(contentResolver, TEST_URL);
+
+        mAsserter.info("ContextMenu", "Highlight (Bookmarked, Pinned)");
+        testMenuForHighlight(TEST_URL,
+                 true,
+                 true,
+                 false);
+
+        
+        db.unpinSiteForAS(contentResolver, TEST_URL);
+
+        mAsserter.info("ContextMenu", "Highlight (Bookmarked)");
+        testMenuForHighlight(TEST_URL,
+                 true,
+                 false,
+                 false);
+
+        
+        db.removeBookmarksWithURL(contentResolver, TEST_URL);
+        db.pinSiteForAS(contentResolver, TEST_URL, "barfoo");
+        insertVisit(TEST_URL, System.currentTimeMillis() - 60 * 1000 * 1000);
+
+        mAsserter.info("ContextMenu", "Highlight (Pinned, Visited)");
+        testMenuForHighlight(TEST_URL,
+                 false,
+                 true,
+                 true);
+    }
+
+    
 
 
 
@@ -88,10 +172,110 @@ public class testActivityStreamContextMenu extends BaseTest {
 
 
 
+    private void testActivityStreamContextMenuForTopSites() {
+        
+        insertVisit(TEST_URL, System.currentTimeMillis());
+
+        insertVisit(TEST_URL, System.currentTimeMillis());
+        insertVisit(TEST_URL, System.currentTimeMillis());
+        insertVisit(TEST_URL, System.currentTimeMillis());
+
+        mAsserter.info("ContextMenu", "Top Site (Visited)");
+        testMenuForTopSite(TEST_URL,
+                 false,
+                 false,
+                 true);
+
+        
+        db.addBookmark(contentResolver, "foobar", TEST_URL);
+
+        mAsserter.info("ContextMenu", "Top Site (Bookmarked, Visited)");
+        testMenuForTopSite(TEST_URL,
+                 true,
+                 false,
+                 true);
+
+        
+        db.pinSiteForAS(contentResolver, TEST_URL, "foobar");
+
+        mAsserter.info("ContextMenu", "Top Site (Pinned, Bookmarked, Visited)");
+        testMenuForTopSite(TEST_URL,
+                 true,
+                 true,
+                 true);
+
+        
+        db.removeHistoryEntry(contentResolver, TEST_URL);
+
+        mAsserter.info("ContextMenu", "Top Site (Pinned, Bookmarked)");
+        testMenuForTopSite(TEST_URL,
+                 true,
+                 true,
+                 false);
+
+        
+        db.removeBookmarksWithURL(contentResolver, TEST_URL);
+
+        mAsserter.info("ContextMenu", "Top Site (Pinned)");
+        testMenuForTopSite(TEST_URL,
+                 false,
+                 true,
+                 false);
+
+        
+        insertVisit(TEST_URL, System.currentTimeMillis());
+
+        testMenuForTopSite(TEST_URL,
+                 false,
+                 true,
+                 true);
+    }
+
+    private void testMenuForHighlight(String url, boolean bookmarked, boolean pinned, boolean visited) {
+        final Highlight highlight = findHighlightByUrl(url);
+
+        testMenuForItem(highlight, bookmarked, pinned, visited);
+    }
+
+    private void testMenuForTopSite(String url, boolean bookmarked, boolean pinned, boolean visited) {
+        final TopSite topSite = findTopSiteByUrl(url);
+
+        testMenuForItem(topSite, bookmarked, pinned, visited);
+    }
+
+    
 
 
 
+    private void testMenuForItem(Item item, boolean bookmarked, boolean pinned, boolean visited) {
+        final View anchor = new View(getActivity());
+        final ActivityStreamContextMenu menu = ActivityStreamContextMenu.show(
+                getActivity(), anchor, ActivityStreamTelemetry.Extras.builder(), ActivityStreamContextMenu.MenuMode.HIGHLIGHT, item, null, null, 100, 100);
 
+        final int expectedBookmarkString;
+        if (bookmarked) {
+            expectedBookmarkString = R.string.bookmark_remove;
+        } else {
+            expectedBookmarkString = R.string.bookmark;
+        }
+
+        final int expectedPinnedString;
+        if (pinned) {
+            expectedPinnedString = R.string.contextmenu_top_sites_unpin;
+        } else {
+            expectedPinnedString = R.string.contextmenu_top_sites_pin;
+        }
+
+        final MenuItem pinItem = menu.getItemByID(R.id.pin);
+        assertMenuItemHasString(pinItem, expectedPinnedString);
+
+        final MenuItem bookmarkItem = menu.getItemByID(R.id.bookmark);
+        assertMenuItemHasString(bookmarkItem, expectedBookmarkString);
+
+        final MenuItem deleteItem = menu.getItemByID(R.id.delete);
+        assertMenuItemIsVisible(deleteItem, visited);
+
+        menu.dismiss();
     }
 
     private void assertMenuItemIsVisible(final MenuItem item, final boolean shouldBeVisible) {
@@ -115,6 +299,88 @@ public class testActivityStreamContextMenu extends BaseTest {
 
         final String expectedTitle = getActivity().getResources().getString(stringID);
         mAsserter.is(item.getTitle(), expectedTitle, "Title does not match expected title");
+    }
+
+
+    private Highlight findHighlightByUrl(String url) {
+        final Cursor cursor = db.getHighlights(getActivity(), 20).loadInBackground();
+        mAsserter.isnot(cursor, null, "Highlights cursor is not null");
+
+        try {
+            mAsserter.ok(cursor.getCount() > 0, "Highlights cursor has entries", null);
+
+            mAsserter.dumpLog("Database returned " + cursor.getCount() + " highlights");
+
+            mAsserter.ok(cursor.moveToFirst(), "Move to beginning of cursor", null);
+
+            do {
+                final Highlight highlight = Highlight.fromCursor(cursor);
+                if (url.equals(highlight.getUrl())) {
+                    return highlight;
+                }
+            } while (cursor.moveToNext());
+
+            mAsserter.ok(false, "Could not find highlight for URL: " + url, null);
+            return null; 
+        } finally {
+            cursor.close();
+        }
+    }
+
+    private TopSite findTopSiteByUrl(String url) {
+        final Cursor cursor = db.getActivityStreamTopSites(getActivity(), 5, 20).loadInBackground();
+        mAsserter.isnot(cursor, null, "Top Sites cursor is not null");
+
+        try {
+            mAsserter.ok(cursor.getCount() > 0, "Top Sites cursor has entries", null);
+
+            mAsserter.ok(cursor.moveToFirst(), "Move to beginning of cursor", null);
+
+            do {
+                final TopSite topSite = TopSite.fromCursor(cursor);
+                if (url.equals(topSite.getUrl())) {
+                    return topSite;
+                }
+            } while (cursor.moveToNext());
+
+            mAsserter.ok(false, "Could not find Top Site for URL: " + url, null);
+            return null; 
+        } finally {
+            cursor.close();
+        }
+    }
+
+    private void insertVisit(String url, long dateLastVisited) {
+        ContentValues values = new ContentValues();
+        values.put(BrowserContract.History.URL, url);
+        values.put(BrowserContract.History.DATE_LAST_VISITED, dateLastVisited);
+        values.put(BrowserContract.History.IS_DELETED, 0);
+
+        Uri mHistoryUriWithProfile = DBUtils.appendProfile(
+                GeckoProfile.get(getActivity()).getName(), BrowserContract.History.CONTENT_URI);
+
+        Uri mUpdateHistoryUriWithProfile =
+                mHistoryUriWithProfile.buildUpon()
+                        .appendQueryParameter(BrowserContract.PARAM_INCREMENT_VISITS, "true")
+                        .appendQueryParameter(BrowserContract.PARAM_INSERT_IF_NEEDED, "true")
+                        .build();
+
+        contentResolver.update(mUpdateHistoryUriWithProfile,
+                values,
+                BrowserContract.History.URL + " = ?",
+                new String[] { url });
+    }
+
+    private void cleanup() {
+        final Context context = getActivity();
+
+        contentResolver = context.getContentResolver();
+
+        
+        db = BrowserDB.from(context);
+        db.removeHistoryEntry(contentResolver, TEST_URL);
+        db.removeBookmarksWithURL(contentResolver, TEST_URL);
+        db.unpinSiteForAS(contentResolver, TEST_URL);
     }
 }
 
