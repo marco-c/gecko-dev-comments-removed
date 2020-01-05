@@ -45,6 +45,9 @@ import android.util.Log;
 public class GeckoNetworkManager extends BroadcastReceiver implements BundleEventListener {
     private static final String LOGTAG = "GeckoNetworkManager";
 
+    
+    
+    
     private static final String LINK_DATA_CHANGED = "changed";
 
     private static GeckoNetworkManager instance;
@@ -321,8 +324,9 @@ public class GeckoNetworkManager extends BroadcastReceiver implements BundleEven
 
 
     private void sendNetworkStateToListeners(final Context context) {
-        if (currentConnectionType != previousConnectionType ||
-                currentConnectionSubtype != previousConnectionSubtype) {
+        final boolean connectionTypeOrSubtypeChanged = currentConnectionType != previousConnectionType ||
+                currentConnectionSubtype != previousConnectionSubtype;
+        if (connectionTypeOrSubtypeChanged) {
             previousConnectionType = currentConnectionType;
             previousConnectionSubtype = currentConnectionSubtype;
 
@@ -341,20 +345,26 @@ public class GeckoNetworkManager extends BroadcastReceiver implements BundleEven
             }
         }
 
-        final String status;
+        
+        if (currentNetworkStatus == previousNetworkStatus && !connectionTypeOrSubtypeChanged) {
+            return;
+        }
 
-        if (currentNetworkStatus != previousNetworkStatus) {
+        
+        
+        final String status;
+        if (currentNetworkStatus == previousNetworkStatus) {
+            status = LINK_DATA_CHANGED;
+        } else {
             previousNetworkStatus = currentNetworkStatus;
             status = currentNetworkStatus.value;
-        } else {
-            status = LINK_DATA_CHANGED;
         }
 
         if (GeckoThread.isRunning()) {
             onStatusChanged(status);
         } else {
             GeckoThread.queueNativeCall(GeckoNetworkManager.class, "onStatusChanged",
-                                        String.class, status);
+                    String.class, status);
         }
     }
 
