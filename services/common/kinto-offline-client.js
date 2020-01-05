@@ -157,12 +157,16 @@ const currentSchemaVersion = 1;
 class FirefoxAdapter extends _base2.default {
   constructor(collection, options = {}) {
     super();
+    const { sqliteHandle = null } = options;
     this.collection = collection;
-    this._connection = null;
+    this._connection = sqliteHandle;
     this._options = options;
   }
 
-  _init(connection) {
+  
+  
+  
+  static _init(connection) {
     return Task.spawn(function* () {
       yield connection.executeTransaction(function* doSetup() {
         const schema = yield connection.getSchemaVersion();
@@ -192,10 +196,10 @@ class FirefoxAdapter extends _base2.default {
   open() {
     const self = this;
     return Task.spawn(function* () {
-      const path = self._options.path || SQLITE_PATH;
-      const opts = { path, sharedMemoryCache: false };
       if (!self._connection) {
-        self._connection = yield Sqlite.openConnection(opts).then(self._init);
+        const path = self._options.path || SQLITE_PATH;
+        const opts = { path, sharedMemoryCache: false };
+        self._connection = yield Sqlite.openConnection(opts).then(FirefoxAdapter._init);
       }
     });
   }
