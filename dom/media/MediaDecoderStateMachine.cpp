@@ -1453,32 +1453,7 @@ void
 MediaDecoderStateMachine::
 SeekingState::SeekCompleted()
 {
-  int64_t seekTime = mSeekTask->GetSeekTarget().GetTime().ToMicroseconds();
-  int64_t newCurrentTime = seekTime;
-
-  
-  RefPtr<MediaData> video = mMaster->VideoQueue().PeekFront();
-  if (seekTime == mMaster->Duration().ToMicroseconds()) {
-    newCurrentTime = seekTime;
-  } else if (mMaster->HasAudio()) {
-    RefPtr<MediaData> audio = AudioQueue().PeekFront();
-    
-    
-    
-    
-    
-    
-    int64_t audioStart = audio ? audio->mTime : seekTime;
-    
-    
-    if (video && video->mTime <= seekTime && video->GetEndTime() > seekTime) {
-      newCurrentTime = std::min(audioStart, video->mTime);
-    } else {
-      newCurrentTime = audioStart;
-    }
-  } else {
-    newCurrentTime = video ? video->mTime : seekTime;
-  }
+  const int64_t newCurrentTime = mSeekTask->CalculateNewCurrentTime();
 
   bool isLiveStream = Resource()->IsLiveStream();
   if (newCurrentTime == mMaster->Duration().ToMicroseconds() && !isLiveStream) {
@@ -1519,7 +1494,7 @@ SeekingState::SeekCompleted()
   
   SLOG("Seek completed, mCurrentPosition=%lld", mMaster->mCurrentPosition.Ref());
 
-  if (video) {
+  if (mMaster->VideoQueue().PeekFront()) {
     mMaster->mMediaSink->Redraw(Info().mVideo);
     mMaster->mOnPlaybackEvent.Notify(MediaEventType::Invalidate);
   }

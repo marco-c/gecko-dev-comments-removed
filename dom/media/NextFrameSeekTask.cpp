@@ -68,6 +68,16 @@ NextFrameSeekTask::NeedToResetMDSM() const
   return false;
 }
 
+int64_t
+NextFrameSeekTask::CalculateNewCurrentTime() const
+{
+  AssertOwnerThread();
+
+  
+  
+  return mTarget.GetTime().ToMicroseconds();
+}
+
 
 
 
