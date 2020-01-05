@@ -2256,8 +2256,6 @@ ZeroTexImageWithClear(WebGLContext* webgl, GLContext* gl, TexImageTarget target,
 
     {
         gl::GLContext::LocalErrorScope errorScope(*gl);
-        MOZ_ASSERT(target != LOCAL_GL_TEXTURE_2D_ARRAY &&
-                   target != LOCAL_GL_TEXTURE_3D);
         gl->fFramebufferTexture2D(LOCAL_GL_FRAMEBUFFER, attachPoint, target.get(), tex,
                                   level);
         if (errorScope.GetError()) {
@@ -2365,12 +2363,18 @@ ZeroTextureData(WebGLContext* webgl, const char* funcName, GLuint tex,
     const auto driverUnpackInfo = usage->idealUnpack;
     MOZ_RELEASE_ASSERT(driverUnpackInfo, "GFX: ideal unpack info not set.");
 
-    if (!webgl->IsWebGL2() && usage->format->d) {
+    if (usage->IsRenderable() && depth == 1 &&
+        !xOffset && !yOffset && !zOffset)
+    {
         
-        const bool success = ZeroTexImageWithClear(webgl, gl, target, tex, level, usage,
-                                                   width, height);
-        MOZ_ASSERT(success);
-        return success;
+        
+        do {
+            if (ZeroTexImageWithClear(webgl, gl, target, tex, level, usage, width,
+                                      height))
+            {
+                return true;
+            }
+        } while (false);
     }
 
     const webgl::PackingInfo packing = driverUnpackInfo->ToPacking();
