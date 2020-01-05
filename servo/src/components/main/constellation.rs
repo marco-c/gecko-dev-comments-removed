@@ -2,7 +2,7 @@
 
 
 
-use compositing::{CompositorChan, SetIds, SetLayerClipRect};
+use compositing::{CompositorChan, SetIds, SetLayerClipRect, ShutdownComplete};
 
 use extra::url::Url;
 use geom::rect::Rect;
@@ -315,9 +315,9 @@ impl Constellation {
     /// Handles loading pages, navigation, and granting access to the compositor
     fn handle_request(&mut self, request: Msg) -> bool {
         match request {
-            ExitMsg(sender) => {
+            ExitMsg => {
                 debug!("constellation exiting");
-                self.handle_exit(sender);
+                self.handle_exit();
                 return false;
             }
             FailureMsg(pipeline_id, subpage_id) => {
@@ -363,14 +363,13 @@ impl Constellation {
         true
     }
 
-    fn handle_exit(&self, sender: Chan<()>) {
+    fn handle_exit(&self) {
         for (_id, ref pipeline) in self.pipelines.iter() {
             pipeline.exit();
         }
         self.image_cache_task.exit();
         self.resource_task.send(resource_task::Exit);
-
-        sender.send(());
+        self.compositor_chan.send(ShutdownComplete);
     }
 
     fn handle_failure_msg(&mut self, pipeline_id: PipelineId, subpage_id: Option<SubpageId>) {
@@ -764,10 +763,10 @@ impl Constellation {
         self.window_size = new_size;
     }
 
-    
+    // Close all pipelines at and beneath a given frame
     fn close_pipelines(&mut self, frame_tree: @mut FrameTree) {
-        
-        
+        // TODO(tkuehn): should only exit once per unique script task,
+        // and then that script task will handle sub-exits
         for @FrameTree { pipeline, .. } in frame_tree.iter() {
             pipeline.exit();
             self.pipelines.remove(&pipeline.id);
@@ -786,13 +785,13 @@ impl Constellation {
         }
     }
 
-    
+    // Grants a frame tree permission to paint; optionally updates navigation to reflect a new page
     fn grant_paint_permission(&mut self, frame_tree: @mut FrameTree, navigation_type: NavigationType) {
-        
+        // Give permission to paint to the new frame and all child frames
         self.set_ids(frame_tree);
 
-        
-        
+        // Don't call navigation_context.load() on a Navigate type (or None, as in the case of
+        // parsed iframes that finish loading)
         match navigation_type {
             constellation_msg::Load => {
                 let evicted = self.navigation_context.load(frame_tree);
@@ -804,6 +803,7 @@ impl Constellation {
 
     fn set_ids(&self, frame_tree: @mut FrameTree) {
         let (port, chan) = Chan::new();
+        debug!("Constellation sending SetIds");
         self.compositor_chan.send(SetIds(frame_tree.to_sendable(), chan, self.chan.clone()));
         match port.recv_opt() {
             Some(()) => {

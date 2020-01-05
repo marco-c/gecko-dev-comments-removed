@@ -32,7 +32,7 @@ use layers::scene::Scene;
 use opengles::gl2;
 use png;
 use servo_msg::compositor_msg::{Epoch, IdleRenderState, LayerBufferSet, RenderState};
-use servo_msg::constellation_msg::{ConstellationChan, NavigateMsg, ResizedWindowMsg, LoadUrlMsg, PipelineId};
+use servo_msg::constellation_msg::{ConstellationChan, ExitMsg, NavigateMsg, ResizedWindowMsg, LoadUrlMsg, PipelineId};
 use servo_msg::constellation_msg;
 use servo_util::time::{profile, ProfilerChan, Timer};
 use servo_util::{time, url};
@@ -129,7 +129,7 @@ impl IOCompositor {
             zoom_action: false,
             zoom_time: 0f64,
             compositor_layer: None,
-            constellation_chan: constellation_chan.clone(),
+            constellation_chan: constellation_chan,
             profiler_chan: profiler_chan,
             fragment_point: None
         }
@@ -202,8 +202,14 @@ impl IOCompositor {
                 None => break,
 
                 Some(Exit(chan)) => {
-                    self.done = true;
+                    debug!("shutting down the constellation");
+                    self.constellation_chan.send(ExitMsg);
                     chan.send(());
+                }
+
+                Some(ShutdownComplete) => {
+                    debug!("constellation completed shutdown");
+                    self.done = true;
                 }
 
                 Some(ChangeReadyState(ready_state)) => {
@@ -496,12 +502,14 @@ impl IOCompositor {
             FinishedWindowEvent => {
                 let exit = self.opts.exit_after_load;
                 if exit {
-                    self.done = true;
+                    debug!("shutting down the constellation for FinishedWindowEvent");
+                    self.constellation_chan.send(ExitMsg);
                 }
             }
 
             QuitWindowEvent => {
-                self.done = true;
+                debug!("shutting down the constellation for QuitWindowEvent");
+                self.constellation_chan.send(ExitMsg);
             }
         }
     }
@@ -610,9 +618,9 @@ impl IOCompositor {
     fn composite(&mut self) {
         profile(time::CompositingCategory, self.profiler_chan.clone(), || {
             debug!("compositor: compositing");
-            
+            // Adjust the layer dimensions as necessary to correspond to the size of the window.
             self.scene.size = self.window.size();
-            
+            // Render the scene.
             match self.compositor_layer {
                 Some(ref mut layer) => {
                     self.scene.background_color.r = layer.unrendered_color.r;
@@ -625,8 +633,8 @@ impl IOCompositor {
             rendergl::render_scene(self.context, &self.scene);
         });
 
-        
-        
+        // Render to PNG. We must read from the back buffer (ie, before
+        // self.window.present()) as OpenGL ES 2 does not have glReadBuffer().
         let write_png = self.opts.output_file.is_some();
         if write_png {
             let (width, height) = (self.window_size.width as uint, self.window_size.height as uint);
@@ -635,7 +643,7 @@ impl IOCompositor {
                                               width as gl2::GLsizei,
                                               height as gl2::GLsizei,
                                               gl2::RGB, gl2::UNSIGNED_BYTE);
-            
+            // flip image vertically (texture is upside down)
             let orig_pixels = pixels.clone();
             let stride = width * 3;
             for y in range(0, height) {
@@ -655,14 +663,16 @@ impl IOCompositor {
             let res = png::store_png(&img, &path);
             assert!(res.is_ok());
 
-            self.done = true;
+            debug!("shutting down the constellation after generating an output file");
+            self.constellation_chan.send(ExitMsg);
         }
 
         self.window.present();
 
         let exit = self.opts.exit_after_load;
         if exit {
-            self.done = true;
+            debug!("shutting down the constellation for exit_after_load");
+            self.constellation_chan.send(ExitMsg);
         }
     }
 
