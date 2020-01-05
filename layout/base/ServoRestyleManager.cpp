@@ -373,11 +373,11 @@ ServoRestyleManager::ProcessPendingRestyles()
     mReentrantChanges = nullptr;
 
     styleSet->AssertTreeIsClean();
+
+    IncrementRestyleGeneration();
   }
 
   mInStyleRefresh = false;
-
-  IncrementRestyleGeneration();
 
   
   
