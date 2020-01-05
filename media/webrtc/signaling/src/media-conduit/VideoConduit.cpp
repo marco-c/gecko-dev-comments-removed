@@ -49,6 +49,12 @@ static const char* logTag ="WebrtcVideoSessionConduit";
 
 const unsigned int WebrtcVideoConduit::CODEC_PLNAME_SIZE = 32;
 
+template<typename T>
+T MinIgnoreZero(const T& a, const T& b)
+{
+  return std::min(a? a:b, b? b:a);
+}
+
 
 
 
@@ -95,7 +101,8 @@ WebrtcVideoConduit::WebrtcVideoConduit():
   mVideoLatencyAvg(0),
   mMinBitrate(0),
   mStartBitrate(0),
-  mMaxBitrate(0),
+  mPrefMaxBitrate(0),
+  mNegotiatedMaxBitrate(0),
   mMinBitrateEstimate(0),
   mRtpStreamIdEnabled(false),
   mRtpStreamIdExtId(0),
@@ -295,7 +302,8 @@ WebrtcVideoConduit::InitMain()
       if (!NS_WARN_IF(NS_FAILED(branch->GetIntPref("media.peerconnection.video.max_bitrate", &temp))))
       {
         if (temp >= 0) {
-          mMaxBitrate = temp;
+          mPrefMaxBitrate = temp;
+          mNegotiatedMaxBitrate = temp; 
         }
       }
       if (mMinBitrate != 0 && mMinBitrate < webrtc::kViEMinCodecBitrate) {
@@ -304,8 +312,8 @@ WebrtcVideoConduit::InitMain()
       if (mStartBitrate < mMinBitrate) {
         mStartBitrate = mMinBitrate;
       }
-      if (mStartBitrate > mMaxBitrate) {
-        mStartBitrate = mMaxBitrate;
+      if (mPrefMaxBitrate && mStartBitrate > mPrefMaxBitrate) {
+        mStartBitrate = mPrefMaxBitrate;
       }
       if (!NS_WARN_IF(NS_FAILED(branch->GetIntPref("media.peerconnection.video.min_bitrate_estimate", &temp))))
       {
@@ -743,6 +751,8 @@ WebrtcVideoConduit::ConfigureSendMediaCodec(const VideoCodecConfig* codecConfig)
     mSendingHeight = 0;
     mSendingFramerate = video_codec.maxFramerate;
   }
+  
+  mNegotiatedMaxBitrate = MinIgnoreZero(mPrefMaxBitrate, video_codec.maxBitrate);
 
   video_codec.mode = mCodecMode;
 
@@ -1094,12 +1104,6 @@ WebrtcVideoConduit::ConfigureRecvMediaCodecs(
   return kMediaConduitNoError;
 }
 
-template<typename T>
-T MinIgnoreZero(const T& a, const T& b)
-{
-  return std::min(a? a:b, b? b:a);
-}
-
 struct ResolutionAndBitrateLimits {
   uint32_t resolution_in_mb;
   uint16_t min_bitrate;
@@ -1182,9 +1186,11 @@ WebrtcVideoConduit::SelectBitrates(unsigned short width,
   
   
   
-  if (mMaxBitrate && mMaxBitrate > out_max) {
-    out_max = mMaxBitrate;
+  
+  if (mNegotiatedMaxBitrate != 0 && mNegotiatedMaxBitrate > out_max) {
+    out_max = mNegotiatedMaxBitrate;
   }
+  MOZ_ASSERT(mPrefMaxBitrate == 0 || out_max <= mPrefMaxBitrate);
 }
 
 static void ConstrainPreservingAspectRatioExact(uint32_t max_fs,
@@ -1969,7 +1975,9 @@ WebrtcVideoConduit::CodecConfigToWebRTCCodec(const VideoCodecConfig* codecInfo,
   cinst.minBitrate = mMinBitrate ? mMinBitrate : 200;
   cinst.startBitrate = mStartBitrate ? mStartBitrate : 300;
   cinst.targetBitrate = cinst.startBitrate;
-  cinst.maxBitrate = mMaxBitrate ? mMaxBitrate : 2000;
+  cinst.maxBitrate = MinIgnoreZero(2000U, codecInfo->mEncodingConstraints.maxBr)/1000;
+  
+  cinst.maxBitrate = MinIgnoreZero(cinst.maxBitrate, mPrefMaxBitrate);
 
   if (cinst.codecType == webrtc::kVideoCodecH264)
   {
@@ -1981,12 +1989,6 @@ WebrtcVideoConduit::CodecConfigToWebRTCCodec(const VideoCodecConfig* codecInfo,
     cinst.codecSpecific.H264.constraints = codecInfo->mConstraints;
     cinst.codecSpecific.H264.level = codecInfo->mLevel;
     cinst.codecSpecific.H264.packetizationMode = codecInfo->mPacketizationMode;
-    if (codecInfo->mEncodingConstraints.maxBr > 0) {
-      
-      cinst.maxBitrate =
-        MinIgnoreZero(cinst.maxBitrate,
-                      codecInfo->mEncodingConstraints.maxBr)/1000;
-    }
     if (codecInfo->mEncodingConstraints.maxMbps > 0) {
       
       CSFLogError(logTag,  "%s H.264 max_mbps not supported yet  ", __FUNCTION__);
