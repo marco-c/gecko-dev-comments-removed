@@ -138,7 +138,7 @@
 
 
 
-    bool EnsureBufferSpace(size_t aLength);
+    bool EnsureBufferSpace(int32_t aLength);
 
     void EnableViewSource(nsHtml5Highlighter* aHighlighter);
 

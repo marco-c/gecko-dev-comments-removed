@@ -4,39 +4,56 @@
 
 #include "mozilla/Likely.h"
 
+
+
+
+
+
+#define MAX_POWER_OF_TWO_IN_INT32 0x40000000
+
 bool
 nsHtml5Tokenizer::EnsureBufferSpace(int32_t aLength)
 {
-  MOZ_ASSERT(aLength >= 0, "Negative length.");
-  
-  
-  
-  
-  size_t worstCase = size_t(strBufLen) +
-                     size_t(aLength) +
-                     size_t(charRefBufLen) +
-                     size_t(2);
-  if (worstCase > INT32_MAX) {
+  MOZ_RELEASE_ASSERT(aLength >= 0, "Negative length.");
+  if (aLength > MAX_POWER_OF_TWO_IN_INT32) {
     
-    
+    return false;
+  }
+  CheckedInt<int32_t> worstCase(strBufLen);
+  worstCase += aLength;
+  worstCase += charRefBufLen;
+  
+  
+  
+  
+  worstCase += 2;
+  if (!worstCase.isValid()) {
+    return false;
+  }
+  if (worstCase.value() > MAX_POWER_OF_TWO_IN_INT32) {
     return false;
   }
   
   
-  tokenHandler->EnsureBufferSpace(worstCase);
+  if (!tokenHandler->EnsureBufferSpace(worstCase.value())) {
+    return false;
+  }
   if (!strBuf) {
-    
-    
-    strBuf = jArray<char16_t,int32_t>::newFallibleJArray(mozilla::RoundUpPow2(worstCase + 1));
+    if (worstCase.value() < MAX_POWER_OF_TWO_IN_INT32) {
+      
+      
+      worstCase += 1;
+    }
+    strBuf = jArray<char16_t,int32_t>::newFallibleJArray(mozilla::RoundUpPow2(worstCase.value()));
     if (!strBuf) {
       return false;
     }
-  } else if (worstCase > size_t(strBuf.length)) {
-    jArray<char16_t,int32_t> newBuf = jArray<char16_t,int32_t>::newFallibleJArray(mozilla::RoundUpPow2(worstCase));
+  } else if (worstCase.value() > strBuf.length) {
+    jArray<char16_t,int32_t> newBuf = jArray<char16_t,int32_t>::newFallibleJArray(mozilla::RoundUpPow2(worstCase.value()));
     if (!newBuf) {
       return false;
     }
-    memcpy(newBuf,strBuf, sizeof(char16_t) * strBufLen);
+    memcpy(newBuf, strBuf, sizeof(char16_t) * size_t(strBufLen));
     strBuf = newBuf;
   }
   return true;

@@ -961,30 +961,42 @@ nsHtml5TreeBuilder::accumulateCharacters(const char16_t* aBuf, int32_t aStart, i
   charBufferLen += aLength;
 }
 
+
+
+
+
+
+#define MAX_POWER_OF_TWO_IN_INT32 0x40000000
+
 bool
-nsHtml5TreeBuilder::EnsureBufferSpace(size_t aLength)
+nsHtml5TreeBuilder::EnsureBufferSpace(int32_t aLength)
 {
   
   
-  size_t worstCase = size_t(charBufferLen) + aLength;
-  if (worstCase > INT32_MAX) {
-    
-    
+  CheckedInt<int32_t> worstCase(charBufferLen);
+  worstCase += aLength;
+  if (!worstCase.isValid()) {
+    return false;
+  }
+  if (worstCase.value() > MAX_POWER_OF_TWO_IN_INT32) {
     return false;
   }
   if (!charBuffer) {
-    
-    
-    charBuffer = jArray<char16_t,int32_t>::newFallibleJArray(mozilla::RoundUpPow2(worstCase + 1));
+    if (worstCase.value() < MAX_POWER_OF_TWO_IN_INT32) {
+      
+      
+      worstCase += 1;
+    }
+    charBuffer = jArray<char16_t,int32_t>::newFallibleJArray(mozilla::RoundUpPow2(worstCase.value()));
     if (!charBuffer) {
       return false;
     }
-  } else if (worstCase > size_t(charBuffer.length)) {
-    jArray<char16_t,int32_t> newBuf = jArray<char16_t,int32_t>::newFallibleJArray(mozilla::RoundUpPow2(worstCase));
+  } else if (worstCase.value() > charBuffer.length) {
+    jArray<char16_t,int32_t> newBuf = jArray<char16_t,int32_t>::newFallibleJArray(mozilla::RoundUpPow2(worstCase.value()));
     if (!newBuf) {
       return false;
     }
-    memcpy(newBuf, charBuffer, sizeof(char16_t) * charBufferLen);
+    memcpy(newBuf, charBuffer, sizeof(char16_t) * size_t(charBufferLen));
     charBuffer = newBuf;
   }
   return true;
