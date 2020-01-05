@@ -714,6 +714,21 @@ CreateCSSNode(const char* aName, GtkStyleContext* aParentStyle, GType aType)
   gtk_style_context_set_parent(context, aParentStyle);
   gtk_widget_path_unref(path);
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (GTK_MAJOR_VERSION == 3 && gtk_get_minor_version() < 6) {
+    GdkRGBA unused;
+    gtk_style_context_get_color(context, GTK_STATE_FLAG_NORMAL, &unused);
+  }
+
   return context;
 }
 
