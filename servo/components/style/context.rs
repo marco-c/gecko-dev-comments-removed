@@ -19,6 +19,7 @@ use font_metrics::FontMetricsProvider;
 #[cfg(feature = "gecko")] use gecko_bindings::structs;
 use matching::StyleSharingCandidateCache;
 use parking_lot::RwLock;
+#[cfg(feature = "gecko")] use properties::ComputedValues;
 #[cfg(feature = "gecko")] use selector_parser::PseudoElement;
 use selectors::matching::ElementSelectorFlags;
 #[cfg(feature = "servo")] use servo_config::opts;
@@ -285,10 +286,22 @@ bitflags! {
 pub enum SequentialTask<E: TElement> {
     
     Unused(SendElement<E>),
+
+    
+    
+    
     #[cfg(feature = "gecko")]
-    
-    
-    UpdateAnimations(SendElement<E>, Option<PseudoElement>, UpdateAnimationsTasks),
+    UpdateAnimations {
+        
+        el: SendElement<E>,
+        
+        pseudo: Option<PseudoElement>,
+        
+        
+        before_change_style: Option<Arc<ComputedValues>>,
+        
+        tasks: UpdateAnimationsTasks
+    },
 }
 
 impl<E: TElement> SequentialTask<E> {
@@ -299,18 +312,24 @@ impl<E: TElement> SequentialTask<E> {
         match self {
             Unused(_) => unreachable!(),
             #[cfg(feature = "gecko")]
-            UpdateAnimations(el, pseudo, tasks) => {
-                unsafe { el.update_animations(pseudo.as_ref(), tasks) };
+            UpdateAnimations { el, pseudo, before_change_style, tasks } => {
+                unsafe { el.update_animations(pseudo.as_ref(), before_change_style, tasks) };
             }
         }
     }
 
-    #[cfg(feature = "gecko")]
     
-    pub fn update_animations(el: E, pseudo: Option<PseudoElement>,
+    
+    #[cfg(feature = "gecko")]
+    pub fn update_animations(el: E,
+                             pseudo: Option<PseudoElement>,
+                             before_change_style: Option<Arc<ComputedValues>>,
                              tasks: UpdateAnimationsTasks) -> Self {
         use self::SequentialTask::*;
-        UpdateAnimations(unsafe { SendElement::new(el) }, pseudo, tasks)
+        UpdateAnimations { el: unsafe { SendElement::new(el) },
+                           pseudo: pseudo,
+                           before_change_style: before_change_style,
+                           tasks: tasks }
     }
 }
 

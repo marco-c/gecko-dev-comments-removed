@@ -14,11 +14,15 @@ use data::ElementData;
 use element_state::ElementState;
 use font_metrics::FontMetricsProvider;
 use properties::{ComputedValues, PropertyDeclarationBlock};
+#[cfg(feature = "gecko")] use properties::animated_properties::AnimationValue;
+#[cfg(feature = "gecko")] use properties::animated_properties::TransitionProperty;
+use rule_tree::CascadeLevel;
 use selector_parser::{ElementExt, PreExistingComputedValues, PseudoElement};
 use selectors::matching::ElementSelectorFlags;
 use shared_lock::Locked;
 use sink::Push;
 use std::fmt;
+#[cfg(feature = "gecko")] use std::collections::HashMap;
 use std::fmt::Debug;
 use std::hash::Hash;
 use std::ops::Deref;
@@ -321,6 +325,14 @@ pub trait TElement : Eq + PartialEq + Debug + Hash + Sized + Copy + Clone +
     }
 
     
+    fn get_animation_rule_by_cascade(&self,
+                                     _pseudo: Option<&PseudoElement>,
+                                     _cascade_level: CascadeLevel)
+                                     -> Option<Arc<Locked<PropertyDeclarationBlock>>> {
+        None
+    }
+
+    
     fn get_animation_rule(&self, _pseudo: Option<&PseudoElement>)
                           -> Option<Arc<Locked<PropertyDeclarationBlock>>> {
         None
@@ -453,6 +465,7 @@ pub trait TElement : Eq + PartialEq + Debug + Hash + Sized + Copy + Clone +
     
     #[cfg(feature = "gecko")]
     fn update_animations(&self, _pseudo: Option<&PseudoElement>,
+                         before_change_style: Option<Arc<ComputedValues>>,
                          tasks: UpdateAnimationsTasks);
 
     
@@ -464,6 +477,10 @@ pub trait TElement : Eq + PartialEq + Debug + Hash + Sized + Copy + Clone +
     fn has_css_animations(&self, _pseudo: Option<&PseudoElement>) -> bool;
 
     
+    
+    fn has_css_transitions(&self, _pseudo: Option<&PseudoElement>) -> bool;
+
+    
     fn has_animation_restyle_hints(&self) -> bool {
         let data = match self.borrow_data() {
             Some(d) => d,
@@ -472,6 +489,44 @@ pub trait TElement : Eq + PartialEq + Debug + Hash + Sized + Copy + Clone +
         return data.get_restyle()
                    .map_or(false, |r| r.hint.has_animation_hint());
     }
+
+    
+    #[cfg(feature = "gecko")]
+    fn get_css_transitions_info(&self,
+                                pseudo: Option<&PseudoElement>)
+                                -> HashMap<TransitionProperty, Arc<AnimationValue>>;
+
+    
+    
+    
+    
+    
+    #[cfg(feature = "gecko")]
+    fn might_need_transitions_update(&self,
+                                     old_values: &Option<&Arc<ComputedValues>>,
+                                     new_values: &Arc<ComputedValues>,
+                                     pseudo: Option<&PseudoElement>) -> bool;
+
+    
+    
+    
+    
+    #[cfg(feature = "gecko")]
+    fn needs_transitions_update(&self,
+                                before_change_style: &Arc<ComputedValues>,
+                                after_change_style: &Arc<ComputedValues>,
+                                pseudo: Option<&PseudoElement>) -> bool;
+
+    
+    #[cfg(feature = "gecko")]
+    fn needs_transitions_update_per_property(&self,
+                                             property: TransitionProperty,
+                                             combined_duration: f32,
+                                             before_change_style: &Arc<ComputedValues>,
+                                             after_change_style: &Arc<ComputedValues>,
+                                             existing_transitions: &HashMap<TransitionProperty,
+                                                                            Arc<AnimationValue>>)
+                                             -> bool;
 }
 
 
