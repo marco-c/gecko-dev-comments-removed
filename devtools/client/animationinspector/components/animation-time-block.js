@@ -24,10 +24,11 @@ const DURATION_RESOLUTION = 4;
 
 const MIN_PROGRESS_THRESHOLD = 0.1;
 
-
-const MAX_INFINITE_ANIMATIONS_ITERATIONS = 10;
-
 const SVG_NS = "http://www.w3.org/2000/svg";
+
+const FADE_MASK_ID = "animationinspector-fade-mask";
+
+const FADE_GRADIENT_ID = "animationinspector-fade-gradient";
 
 
 
@@ -75,36 +76,13 @@ AnimationTimeBlock.prototype = {
     let backgroundIterations = TimeScale.getIterationsBackgroundData(animation);
 
     
-    const summaryEl = createNode({
-      parent: this.containerEl,
-      namespace: "http://www.w3.org/2000/svg",
-      nodeType: "svg",
-      attributes: {
-        "class": "summary",
-        "preserveAspectRatio": "none",
-        "style": `left: ${ x - (state.delay > 0 ? delayW : 0) }%`
-      }
-    });
-
-    
-    const totalDisplayedDuration = state.playbackRate * TimeScale.getDuration();
-
-    
-    const strokeHeightForViewBox = 0.5 / this.containerEl.clientHeight;
-
-    
-    summaryEl.setAttribute("viewBox",
-                           `${ state.delay < 0 ? state.delay : 0 }
-                            -${ 1 + strokeHeightForViewBox }
-                            ${ totalDisplayedDuration }
-                            ${ 1 + strokeHeightForViewBox * 2 }`);
+    const totalDuration = TimeScale.getDuration() * state.playbackRate;
 
     
     const segmentHelperFn = getSegmentHelper(state, this.win);
 
     
-    const minSegmentDuration =
-      totalDisplayedDuration / this.containerEl.clientWidth;
+    const minSegmentDuration = totalDuration / this.containerEl.clientWidth;
     
     let minProgressThreshold = MIN_PROGRESS_THRESHOLD;
     
@@ -115,80 +93,69 @@ AnimationTimeBlock.prototype = {
     }
 
     
-    let mainIterationStartTime = 0;
-    let iterationStart = state.iterationStart;
-    let iterationCount = state.iterationCount ? state.iterationCount : Infinity;
+    const strokeHeightForViewBox = 0.5 / this.containerEl.clientHeight;
+
+    
+    const summaryEl = createNode({
+      parent: this.containerEl,
+      namespace: SVG_NS,
+      nodeType: "svg",
+      attributes: {
+        "class": "summary",
+        "viewBox": `${ state.delay < 0 ? state.delay : 0 }
+                    -${ 1 + strokeHeightForViewBox }
+                    ${ totalDuration }
+                    ${ 1 + strokeHeightForViewBox * 2 }`,
+        "preserveAspectRatio": "none",
+        "style": `left: ${ x - (state.delay > 0 ? delayW : 0) }%;`,
+      }
+    });
+
+    
+    const iterationCount = state.iterationCount ? state.iterationCount : 1;
+
+    
+    if (state.fill === "both" || state.fill === "forwards") {
+      renderForwardsFill(summaryEl, state, iterationCount,
+                         totalDuration, segmentHelperFn);
+    }
 
     
     if (state.delay > 0) {
       renderDelay(summaryEl, state, segmentHelperFn);
-      mainIterationStartTime = state.delay;
-    } else {
-      const negativeDelayCount = -state.delay / state.duration;
-      
-      iterationStart += negativeDelayCount;
-      
-      if (iterationCount !== Infinity) {
-        iterationCount -= negativeDelayCount;
-      }
     }
 
-    
-    
     
     
     const firstSectionCount =
-      iterationStart % 1 === 0
-      ? 0 : Math.min(iterationCount, 1) - iterationStart % 1;
+      state.iterationStart % 1 === 0
+      ? 0 : Math.min(iterationCount, 1) - state.iterationStart % 1;
     if (firstSectionCount) {
-      renderFirstIteration(summaryEl, state, mainIterationStartTime,
-                           firstSectionCount, minSegmentDuration,
-                           minProgressThreshold, segmentHelperFn);
+      renderFirstIteration(summaryEl, state, firstSectionCount,
+                           minSegmentDuration, minProgressThreshold,
+                           segmentHelperFn);
     }
 
-    if (iterationCount === Infinity) {
-      
-      
-      renderInfinity(summaryEl, state, mainIterationStartTime,
-                     firstSectionCount, totalDisplayedDuration,
-                     minSegmentDuration, minProgressThreshold, segmentHelperFn);
-    } else {
-      
+    
+    const middleSectionCount =
+      Math.floor(state.iterationCount - firstSectionCount);
+    renderMiddleIterations(summaryEl, state, firstSectionCount,
+                           middleSectionCount, minSegmentDuration,
+                           minProgressThreshold, segmentHelperFn);
 
-      
-      if (state.fill === "both" || state.fill === "forwards") {
-        renderForwardsFill(summaryEl, state, mainIterationStartTime,
-                           iterationCount, totalDisplayedDuration,
-                           segmentHelperFn);
-      }
+    
+    const lastSectionCount =
+      iterationCount - middleSectionCount - firstSectionCount;
+    if (lastSectionCount) {
+      renderLastIteration(summaryEl, state, firstSectionCount,
+                          middleSectionCount, lastSectionCount,
+                          minSegmentDuration, minProgressThreshold,
+                          segmentHelperFn);
+    }
 
-      
-      
-      
-      const middleSectionCount =
-        Math.floor(iterationCount - firstSectionCount);
-      renderMiddleIterations(summaryEl, state, mainIterationStartTime,
-                             firstSectionCount, middleSectionCount,
-                             minSegmentDuration, minProgressThreshold,
-                             segmentHelperFn);
-
-      
-      
-      
-      const lastSectionCount =
-        iterationCount - middleSectionCount - firstSectionCount;
-      if (lastSectionCount) {
-        renderLastIteration(summaryEl, state, mainIterationStartTime,
-                            firstSectionCount, middleSectionCount,
-                            lastSectionCount, minSegmentDuration,
-                            minProgressThreshold, segmentHelperFn);
-      }
-
-      
-      if (state.endDelay > 0) {
-        renderEndDelay(summaryEl, state,
-                       mainIterationStartTime, iterationCount, segmentHelperFn);
-      }
+    
+    if (state.endDelay > 0) {
+      renderEndDelay(summaryEl, state, iterationCount, segmentHelperFn);
     }
 
     
@@ -358,11 +325,10 @@ function renderDelay(parentEl, state, getSegment) {
 
 
 
-
-function renderFirstIteration(parentEl, state, mainIterationStartTime,
-                              firstSectionCount, minSegmentDuration,
-                              minProgressThreshold, getSegment) {
-  const startTime = mainIterationStartTime;
+function renderFirstIteration(parentEl, state, firstSectionCount,
+                              minSegmentDuration, minProgressThreshold,
+                              getSegment) {
+  const startTime = state.delay;
   const endTime = startTime + firstSectionCount * state.duration;
   const segments =
     createPathSegments(startTime, endTime, minSegmentDuration,
@@ -380,12 +346,10 @@ function renderFirstIteration(parentEl, state, mainIterationStartTime,
 
 
 
-
-function renderMiddleIterations(parentEl, state, mainIterationStartTime,
-                                firstSectionCount, middleSectionCount,
-                                minSegmentDuration, minProgressThreshold,
-                                getSegment) {
-  const offset = mainIterationStartTime + firstSectionCount * state.duration;
+function renderMiddleIterations(parentEl, state, firstSectionCount,
+                                middleSectionCount, minSegmentDuration,
+                                minProgressThreshold, getSegment) {
+  const offset = state.delay + firstSectionCount * state.duration;
   for (let i = 0; i < middleSectionCount; i++) {
     
     const startTime = offset + i * state.duration;
@@ -408,13 +372,12 @@ function renderMiddleIterations(parentEl, state, mainIterationStartTime,
 
 
 
-
-function renderLastIteration(parentEl, state, mainIterationStartTime,
-                             firstSectionCount, middleSectionCount,
-                             lastSectionCount, minSegmentDuration,
-                             minProgressThreshold, getSegment) {
-  const startTime = mainIterationStartTime +
-                      (firstSectionCount + middleSectionCount) * state.duration;
+function renderLastIteration(parentEl, state, firstSectionCount,
+                             middleSectionCount, lastSectionCount,
+                             minSegmentDuration, minProgressThreshold,
+                             getSegment) {
+  const startTime = state.delay + firstSectionCount * state.duration
+                    + middleSectionCount * state.duration;
   const endTime = startTime + lastSectionCount * state.duration;
   const segments =
     createPathSegments(startTime, endTime, minSegmentDuration,
@@ -429,60 +392,8 @@ function renderLastIteration(parentEl, state, mainIterationStartTime,
 
 
 
-
-
-
-
-function renderInfinity(parentEl, state, mainIterationStartTime,
-                        firstSectionCount, totalDuration, minSegmentDuration,
-                        minProgressThreshold, getSegment) {
-  
-  
-  const infinityIterationCount =
-    Math.min(MAX_INFINITE_ANIMATIONS_ITERATIONS,
-             Math.ceil((totalDuration - firstSectionCount * state.duration)
-               / state.duration));
-
-  
-  const firstStartTime =
-    mainIterationStartTime + firstSectionCount * state.duration;
-  const firstEndTime = firstStartTime + state.duration;
-  const firstSegments =
-    createPathSegments(firstStartTime, firstEndTime, minSegmentDuration,
-                       minProgressThreshold, getSegment);
-  appendPathElement(parentEl, firstSegments, "iteration-path infinity");
-
-  
-  const isAlternate = state.direction.match(/alternate/);
-  for (let i = 1; i < infinityIterationCount; i++) {
-    const startTime = firstStartTime + i * state.duration;
-    let segments;
-    if (isAlternate && i % 2) {
-      
-      segments = firstSegments.map(segment => {
-        return { x: firstEndTime - segment.x + startTime, y: segment.y };
-      });
-    } else {
-      
-      segments = firstSegments.map(segment => {
-        return { x: segment.x - firstStartTime + startTime, y: segment.y };
-      });
-    }
-    appendPathElement(parentEl, segments, "iteration-path infinity copied");
-  }
-}
-
-
-
-
-
-
-
-
-
-function renderEndDelay(parentEl, state,
-                        mainIterationStartTime, iterationCount, getSegment) {
-  const startTime = mainIterationStartTime + iterationCount * state.duration;
+function renderEndDelay(parentEl, state, iterationCount, getSegment) {
+  const startTime = state.delay + iterationCount * state.duration;
   const startSegment = getSegment(startTime);
   const endSegment = { x: startTime + state.endDelay, y: startSegment.y };
   appendPathElement(parentEl, [startSegment, endSegment], "enddelay-path");
@@ -496,14 +407,15 @@ function renderEndDelay(parentEl, state,
 
 
 
-
-function renderForwardsFill(parentEl, state, mainIterationStartTime,
-                            iterationCount, totalDuration, getSegment) {
-  const startTime = mainIterationStartTime + iterationCount * state.duration +
-                      (state.endDelay > 0 ? state.endDelay : 0);
+function renderForwardsFill(parentEl, state, iterationCount,
+                            totalDuration, getSegment) {
+  const startTime = state.delay + iterationCount * state.duration +
+                    (state.endDelay > 0 ? state.endDelay : 0);
   const startSegment = getSegment(startTime);
   const endSegment = { x: totalDuration, y: startSegment.y };
-  appendPathElement(parentEl, [startSegment, endSegment], "fill-forwards-path");
+  const pathEl = appendPathElement(parentEl, [startSegment, endSegment],
+                                   "fill-forwards-path");
+  appendFadeEffect(parentEl, pathEl);
 }
 
 
@@ -516,7 +428,7 @@ function getSegmentHelper(state, win) {
   
   
   const timing = Object.assign({}, state, {
-    iterations: state.iterationCount ? state.iterationCount : Infinity
+    iterations: state.iterationCount ? state.iterationCount : 1
   });
   
   const dummyAnimation =
@@ -614,4 +526,68 @@ function appendPathElement(parentEl, pathSegments, cls) {
       "transform": "scale(1, -1)"
     }
   });
+}
+
+
+
+
+
+
+function appendFadeEffect(parentEl, el) {
+  
+  
+  if (!parentEl.ownerDocument.body.querySelector(`#${ FADE_MASK_ID }`)) {
+    const svgEl = parentEl.closest(".summary");
+    const defsEl = createNode({
+      parent: svgEl,
+      namespace: SVG_NS,
+      nodeType: "defs"
+    });
+    const gradientEl = createNode({
+      parent: defsEl,
+      namespace: SVG_NS,
+      nodeType: "linearGradient",
+      attributes: {
+        "id": FADE_GRADIENT_ID
+      }
+    });
+    createNode({
+      parent: gradientEl,
+      namespace: SVG_NS,
+      nodeType: "stop",
+      attributes: {
+        "offset": 0
+      }
+    });
+    createNode({
+      parent: gradientEl,
+      namespace: SVG_NS,
+      nodeType: "stop",
+      attributes: {
+        "offset": 1
+      }
+    });
+
+    const maskEl = createNode({
+      parent: defsEl,
+      namespace: SVG_NS,
+      nodeType: "mask",
+      attributes: {
+        "id": FADE_MASK_ID,
+        "maskContentUnits": "objectBoundingBox",
+      }
+    });
+    createNode({
+      parent: maskEl,
+      namespace: SVG_NS,
+      nodeType: "rect",
+      attributes: {
+        "y": `${ 1 + svgEl.viewBox.animVal.y }`,
+        "width": "1",
+        "height": `${ svgEl.viewBox.animVal.height }`,
+        "fill": `url(#${ FADE_GRADIENT_ID })`
+      }
+    });
+  }
+  el.setAttribute("mask", `url(#${ FADE_MASK_ID })`);
 }
