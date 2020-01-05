@@ -2975,21 +2975,23 @@ NativeKey::GetFollowingCharMessage(MSG& aCharMsg)
         nextKeyMsg = nextKeyMsgInAllWindows;
         continue;
       }
-      if (MayBeSameCharMessage(nextKeyMsgInAllWindows, nextKeyMsg)) {
+      
+      
+      
+      
+      
+      
+      
+      
+      if (WinUtils::GetMessage(&removedMsg, mMsg.hwnd,
+                               nextKeyMsg.message, nextKeyMsg.message)) {
+        MOZ_LOG(sNativeKeyLogger, LogLevel::Warning,
+          ("%p   NativeKey::GetFollowingCharMessage(), WARNING, failed to "
+           "remove a char message, but succeeded with GetMessage(), "
+           "removedMsg=%s, kFoundCharMsg=%s",
+           this, ToString(removedMsg).get(), ToString(kFoundCharMsg).get()));
         
-        
-        
-        
-        if (WinUtils::GetMessage(&removedMsg, mMsg.hwnd,
-                                 nextKeyMsg.message, nextKeyMsg.message)) {
-          MOZ_LOG(sNativeKeyLogger, LogLevel::Warning,
-            ("%p   NativeKey::GetFollowingCharMessage(), WARNING, failed to "
-             "remove a char message, but succeeded with GetMessage(), "
-             "removedMsg=%s, kFoundCharMsg=%s",
-             this, ToString(removedMsg).get(), ToString(kFoundCharMsg).get()));
-          
-          doCrash = false;
-        }
+        doCrash = false;
       }
       
       
