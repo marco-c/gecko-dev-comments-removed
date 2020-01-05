@@ -59,6 +59,10 @@ signing_description_schema = Schema({
     
     
     Optional('treeherder'): task_description_schema['treeherder'],
+
+    
+    
+    Optional('use-funsize-route'): bool,
 })
 
 
@@ -117,5 +121,9 @@ def make_task_description(config, jobs):
             'run-on-projects': dep_job.attributes.get('run_on_projects'),
             'treeherder': treeherder,
         }
+
+        if job.get('use-funsize-route', False):
+            task['routes'] = ["index.project.releng.funsize.level-{level}.{project}".format(
+                project=config.params['project'], level=config.params['level'])]
 
         yield task

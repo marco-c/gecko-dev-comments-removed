@@ -51,4 +51,8 @@ def make_signing_description(config, jobs):
         label = dep_job.label.replace("build-", "signing-")
         job['label'] = label
 
+        
+        
+        job['use-funsize-route'] = True
+
         yield job
