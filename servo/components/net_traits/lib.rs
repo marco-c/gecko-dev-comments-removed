@@ -28,12 +28,9 @@ use hyper::header::{ContentType, Headers};
 use hyper::http::RawStatus;
 use hyper::method::Method;
 use hyper::mime::{Attr, Mime};
-use hyper::status::StatusCode;
 use ipc_channel::ipc::{self, IpcReceiver, IpcSender};
 use msg::constellation_msg::{PipelineId};
 use serde::{Deserializer, Serializer};
-use std::cell::RefCell;
-use std::rc::Rc;
 use std::thread;
 use url::Url;
 use util::mem::HeapSizeOf;
@@ -42,100 +39,8 @@ use websocket::header;
 pub mod hosts;
 pub mod image_cache_task;
 pub mod net_error_list;
+pub mod response;
 pub mod storage_task;
-
-
-#[derive(Clone, PartialEq, Copy)]
-pub enum ResponseType {
-    Basic,
-    CORS,
-    Default,
-    Error,
-    Opaque,
-    OpaqueRedirect
-}
-
-
-#[derive(Clone, Copy)]
-pub enum TerminationReason {
-    EndUserAbort,
-    Fatal,
-    Timeout
-}
-
-
-
-#[derive(Clone)]
-pub enum ResponseBody {
-    Empty, 
-    Receiving(Vec<u8>),
-    Done(Vec<u8>),
-}
-
-
-#[derive(Clone)]
-pub enum CacheState {
-    None,
-    Local,
-    Validated,
-    Partial
-}
-
-
-#[derive(Clone)]
-pub enum HttpsState {
-    None,
-    Deprecated,
-    Modern
-}
-
-pub enum ResponseMsg {
-    Chunk(Vec<u8>),
-    Finished,
-    Errored
-}
-
-
-#[derive(Clone)]
-pub struct Response {
-    pub response_type: ResponseType,
-    pub termination_reason: Option<TerminationReason>,
-    pub url: Option<Url>,
-    pub url_list: Vec<Url>,
-    
-    pub status: Option<StatusCode>,
-    pub headers: Headers,
-    pub body: ResponseBody,
-    pub cache_state: CacheState,
-    pub https_state: HttpsState,
-    
-    
-    pub internal_response: Option<Rc<RefCell<Response>>>,
-}
-
-impl Response {
-    pub fn network_error() -> Response {
-        Response {
-            response_type: ResponseType::Error,
-            termination_reason: None,
-            url: None,
-            url_list: vec![],
-            status: None,
-            headers: Headers::new(),
-            body: ResponseBody::Empty,
-            cache_state: CacheState::None,
-            https_state: HttpsState::None,
-            internal_response: None
-        }
-    }
-
-    pub fn is_network_error(&self) -> bool {
-        match self.response_type {
-            ResponseType::Error => true,
-            _ => false
-        }
-    }
-}
 
 
 
@@ -197,7 +102,7 @@ impl LoadData {
 
 
 pub trait AsyncFetchListener {
-    fn response_available(&self, response: Response);
+    fn response_available(&self, response: response::Response);
 }
 
 
