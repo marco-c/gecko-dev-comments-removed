@@ -316,42 +316,9 @@ void nsBaseWidget::DestroyLayerManager()
 }
 
 void
-nsBaseWidget::OnRenderingDeviceReset(uint64_t aSeqNo)
+nsBaseWidget::OnRenderingDeviceReset()
 {
-  if (!mLayerManager || !mCompositorSession) {
-    return;
-  }
-
-  nsTArray<LayersBackend> backendHints;
-  gfxPlatform::GetPlatform()->GetCompositorBackends(ComputeShouldAccelerate(), backendHints);
-
-  
-  
-  
-  
-  
-  
-  RefPtr<ClientLayerManager> clm = mLayerManager->AsClientLayerManager();
-  if (!ComputeShouldAccelerate() &&
-      clm->GetCompositorBackendType() == LayersBackend::LAYERS_BASIC)
-  {
-    return;
-  }
-
-  
-  TextureFactoryIdentifier identifier;
-  if (!mCompositorSession->Reset(backendHints, aSeqNo, &identifier)) {
-    
-    return;
-  }
-
-  
-  FrameLayerBuilder::InvalidateAllLayers(mLayerManager);
-
-  
-  clm->UpdateTextureFactoryIdentifier(identifier, aSeqNo);
-  ImageBridgeChild::IdentifyCompositorTextureHost(identifier);
-  gfx::VRManagerChild::IdentifyTextureHost(identifier);
+  DestroyLayerManager();
 }
 
 void

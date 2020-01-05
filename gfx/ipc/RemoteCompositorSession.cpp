@@ -45,13 +45,6 @@ RemoteCompositorSession::~RemoteCompositorSession()
 }
 
 void
-RemoteCompositorSession::NotifyDeviceReset(uint64_t aSeqNo)
-{
-  MOZ_ASSERT(mWidget);
-  mWidget->OnRenderingDeviceReset(aSeqNo);
-}
-
-void
 RemoteCompositorSession::NotifySessionLost()
 {
   

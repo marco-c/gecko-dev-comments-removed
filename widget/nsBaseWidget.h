@@ -586,7 +586,7 @@ protected:
   void EnsureTextEventDispatcher();
 
   
-  void OnRenderingDeviceReset(uint64_t aSeqNo);
+  void OnRenderingDeviceReset();
 
   bool UseAPZ();
 
