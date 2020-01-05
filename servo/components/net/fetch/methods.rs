@@ -112,9 +112,9 @@ fn main_fetch(request: Rc<Request>, cors_flag: bool, recursive_flag: bool) -> Re
     
     if request.local_urls_only {
         match &*request.current_url().scheme {
-            "about" | "blob" | "data" | "filesystem" => response = Some(Response::network_error()),
-            _ => { }
-        };
+            "about" | "blob" | "data" | "filesystem" => (), 
+            _ => response = Some(Response::network_error())
+        }
     }
 
     
