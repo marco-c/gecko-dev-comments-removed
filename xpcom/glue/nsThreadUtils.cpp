@@ -440,13 +440,20 @@ NS_GetCurrentThread()
 #endif
 
 
-void
-nsThreadPoolNaming::SetThreadPoolName(const nsACString& aPoolName,
-                                      nsIThread* aThread)
+nsCString
+nsThreadPoolNaming::GetNextThreadName(const nsACString& aPoolName)
 {
   nsCString name(aPoolName);
   name.AppendLiteral(" #");
   name.AppendInt(++mCounter, 10); 
+  return name;
+}
+ 
+void
+nsThreadPoolNaming::SetThreadPoolName(const nsACString& aPoolName,
+                                      nsIThread* aThread)
+{
+  nsCString name = GetNextThreadName(aPoolName);
 
   if (aThread) {
     
