@@ -24,6 +24,7 @@ import android.content.res.Configuration;
 import android.graphics.Matrix;
 import android.graphics.RectF;
 import android.media.AudioManager;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
@@ -345,7 +346,7 @@ class GeckoInputConnection
 
     @Override
     public void updateCompositionRects(final RectF[] aRects) {
-        if (!Versions.feature21Plus) {
+        if (!(Build.VERSION.SDK_INT >= 21)) {
             return;
         }
 
@@ -810,7 +811,7 @@ class GeckoInputConnection
                 
                 
                 
-                if (AppConstants.Versions.feature19Plus) {
+                if (Build.VERSION.SDK_INT >= 19) {
                     
                     Context viewContext = getView().getContext();
                     AudioManager am = (AudioManager)viewContext.getSystemService(Context.AUDIO_SERVICE);
