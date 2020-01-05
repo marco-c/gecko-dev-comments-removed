@@ -224,6 +224,13 @@ const PanelUI = {
       
       notifications = this.notifications.filter(n => id.test(n.id));
     }
+    
+    
+    
+    
+    if (!notifications.length) {
+      return;
+    }
 
     notifications.forEach(n => {
       this._removeNotification(n);
@@ -686,14 +693,8 @@ const PanelUI = {
         this._showMenuItem(this.notifications[0]);
       }
     } else if (doorhangers.length > 0) {
-      if (window.fullScreen) {
-        this._hidePopup();
-        this._showBadge(doorhangers[0]);
-        this._showMenuItem(doorhangers[0]);
-      } else {
-        this._clearBadge();
-        this._showNotificationPanel(doorhangers[0]);
-      }
+      this._clearBadge();
+      this._showNotificationPanel(doorhangers[0]);
     } else {
       this._hidePopup();
       this._showBadge(this.notifications[0]);
