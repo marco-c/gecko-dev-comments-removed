@@ -4,13 +4,6 @@
 
 
 
-
-
-
-
-
-
-
 "use strict";
 
 const {Task} = require("devtools/shared/task");
