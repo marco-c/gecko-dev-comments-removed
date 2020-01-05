@@ -151,9 +151,16 @@ XPCOMUtils.defineLazyGetter(this, "PopupNotifications", function() {
   let tmp = {};
   Cu.import("resource://gre/modules/PopupNotifications.jsm", tmp);
   try {
+    
+    
+    let shouldSuppress = () => {
+      return gURLBar.getAttribute("pageproxystate") != "valid" &&
+             gURLBar.focused;
+    };
     return new tmp.PopupNotifications(gBrowser,
                                       document.getElementById("notification-popup"),
-                                      document.getElementById("notification-popup-box"));
+                                      document.getElementById("notification-popup-box"),
+                                      { shouldSuppress });
   } catch (ex) {
     Cu.reportError(ex);
     return null;
@@ -1285,6 +1292,8 @@ var gBrowserInit = {
     PanelUI.init();
     LightweightThemeListener.init();
 
+    SidebarUI.startDelayedLoad();
+
     UpdateUrlbarSearchSplitterState();
 
     if (!(isBlankPageURL(uriToLoad) || uriToLoad == "about:privatebrowsing") ||
@@ -1458,7 +1467,6 @@ var gBrowserInit = {
       
       RestoreLastSessionObserver.init();
 
-      SidebarUI.startDelayedLoad();
       SocialUI.init();
 
       
@@ -2442,16 +2450,7 @@ function BrowserPageInfo(documentURL, initialTab, imageElement, frameOuterWindow
 
 
 
-
-
-
-
-
-
-
-
-
-function URLBarSetURI(aURI, aOptions = {}) {
+function URLBarSetURI(aURI) {
   var value = gBrowser.userTypedValue;
   var valid = false;
 
@@ -2484,7 +2483,7 @@ function URLBarSetURI(aURI, aOptions = {}) {
 
   gURLBar.value = value;
   gURLBar.valueIsTyped = !valid;
-  SetPageProxyState(valid ? "valid" : "invalid", aOptions);
+  SetPageProxyState(valid ? "valid" : "invalid");
 }
 
 function losslessDecodeURI(aURI) {
@@ -2592,18 +2591,14 @@ function UpdatePageProxyState() {
 
 
 
-
-
-
-
-
-
-
-
-function SetPageProxyState(aState, aOptions = {}) {
+function SetPageProxyState(aState) {
   if (!gURLBar)
     return;
 
+  let oldPageProxyState = gURLBar.getAttribute("pageproxystate");
+  
+  
+  
   gURLBar.setAttribute("pageproxystate", aState);
 
   
@@ -2617,12 +2612,24 @@ function SetPageProxyState(aState, aOptions = {}) {
 
   
   
-  
-  
-  if (!Object.getOwnPropertyDescriptor(window, "PopupNotifications").get &&
-      !aOptions.isForLocationChange) {
-    PopupNotifications.anchorVisibilityChange();
+  if (oldPageProxyState == aState) {
+    return;
   }
+
+  UpdatePopupNotificationsVisibility();
+}
+
+function UpdatePopupNotificationsVisibility() {
+  
+  
+  if (Object.getOwnPropertyDescriptor(window, "PopupNotifications").get) {
+    return;
+  }
+
+  
+  
+  
+  PopupNotifications.anchorVisibilityChange();
 }
 
 function PageProxyClickHandler(aEvent) {
@@ -4541,7 +4548,7 @@ var XULBrowserWindow = {
         this.reloadCommand.removeAttribute("disabled");
       }
 
-      URLBarSetURI(aLocationURI, { isForLocationChange: true });
+      URLBarSetURI(aLocationURI);
 
       BookmarkingUI.onLocationChange();
 

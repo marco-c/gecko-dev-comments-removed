@@ -203,13 +203,25 @@ Notification.prototype = {
 
 
 
-this.PopupNotifications = function PopupNotifications(tabbrowser, panel, iconBox) {
+
+
+
+
+
+
+
+
+this.PopupNotifications = function PopupNotifications(tabbrowser, panel,
+                                                      iconBox, options = {}) {
   if (!(tabbrowser instanceof Ci.nsIDOMXULElement))
     throw "Invalid tabbrowser";
   if (iconBox && !(iconBox instanceof Ci.nsIDOMXULElement))
     throw "Invalid iconBox";
   if (!(panel instanceof Ci.nsIDOMXULElement))
     throw "Invalid panel";
+
+  this._shouldSuppress = options.shouldSuppress || (() => false);
+  this._suppress = this._shouldSuppress();
 
   this.window = tabbrowser.ownerGlobal;
   this.panel = panel;
@@ -524,11 +536,7 @@ PopupNotifications.prototype = {
     this._setNotificationsForBrowser(aBrowser, notifications);
 
     if (this._isActiveBrowser(aBrowser)) {
-      
-      
-      
-      this._update(notifications, this._getAnchorsForNotifications(notifications,
-        getAnchorFromBrowser(aBrowser)));
+      this.anchorVisibilityChange();
     }
   },
 
@@ -538,11 +546,25 @@ PopupNotifications.prototype = {
 
 
 
+
+
   anchorVisibilityChange() {
-    let notifications =
-      this._getNotificationsForBrowser(this.tabbrowser.selectedBrowser);
-    this._update(notifications, this._getAnchorsForNotifications(notifications,
-      getAnchorFromBrowser(this.tabbrowser.selectedBrowser)));
+    let suppress = this._shouldSuppress();
+    if (!suppress) {
+      
+      this._suppress = false;
+      let notifications =
+        this._getNotificationsForBrowser(this.tabbrowser.selectedBrowser);
+      this._update(notifications, this._getAnchorsForNotifications(notifications,
+        getAnchorFromBrowser(this.tabbrowser.selectedBrowser)));
+      return;
+    }
+
+    
+    if (!this._suppress) {
+      this._suppress = true;
+      this._hidePanel().catch(Cu.reportError);
+    }
   },
 
   
@@ -1015,9 +1037,11 @@ PopupNotifications.prototype = {
 
     
     
-    let notificationsToShow = notifications.filter(function(n) {
-      return (!n.dismissed || n.options.persistent) && !n.options.neverShow;
-    });
+    let notificationsToShow = [];
+    if (!this._suppress) {
+      notificationsToShow = notifications.filter(
+        n => (!n.dismissed || n.options.persistent) && !n.options.neverShow);
+    }
 
     if (useIconBox) {
       
@@ -1283,17 +1307,22 @@ PopupNotifications.prototype = {
   },
 
   _onPopupHidden: function PopupNotifications_onPopupHidden(event) {
-    if (event.target != this.panel || this._ignoreDismissal) {
-      if (this._ignoreDismissal) {
-        this._ignoreDismissal.resolve();
-        this._ignoreDismissal = null;
-      }
+    if (event.target != this.panel) {
       return;
     }
 
     
     
+    
+    
     this.panel.setAttribute("noautofocus", "true");
+
+    
+    if (this._ignoreDismissal) {
+      this._ignoreDismissal.resolve();
+      this._ignoreDismissal = null;
+      return;
+    }
 
     this._dismissOrRemoveCurrentNotifications();
 

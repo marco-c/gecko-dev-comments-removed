@@ -107,44 +107,121 @@ var tests = [
   
   { id: "Test#4",
     *run() {
-      this.oldSelectedTab = gBrowser.selectedTab;
-      yield BrowserTestUtils.openNewForegroundTab(gBrowser, "http://example.com/");
+      for (let persistent of [false, true]) {
+        let shown = waitForNotificationPanel();
+        this.notifyObj = new BasicNotification(this.id);
+        this.notifyObj.anchorID = "geo-notification-icon";
+        this.notifyObj.addOptions({ persistent });
+        this.notification = showNotification(this.notifyObj);
+        yield shown;
 
-      let shownInitially = waitForNotificationPanel();
+        checkPopup(PopupNotifications.panel, this.notifyObj);
+
+        
+        let hidden = waitForNotificationPanelHidden();
+        gURLBar.select();
+        EventUtils.synthesizeKey("*", {});
+        yield hidden;
+
+        is(document.getElementById("geo-notification-icon").boxObject.width, 0,
+           "geo anchor shouldn't be visible");
+
+        
+        
+        
+        shown = waitForNotificationPanel();
+        EventUtils.synthesizeKey("VK_BACK_SPACE", {});
+        EventUtils.synthesizeKey("VK_TAB", {});
+        yield shown;
+
+        is(PopupNotifications.panel.anchorNode.id, "identity-icon",
+           "notification anchored to identity icon");
+
+        
+        hidden = waitForNotificationPanelHidden();
+        EventUtils.synthesizeKey("VK_TAB", { shiftKey: true });
+        yield hidden;
+
+        
+        shown = waitForNotificationPanel();
+        EventUtils.synthesizeKey("VK_ESCAPE", {});
+        yield shown;
+
+        checkPopup(PopupNotifications.panel, this.notifyObj);
+
+        hidden = waitForNotificationPanelHidden();
+        this.notification.remove();
+        yield hidden;
+      }
+      goNext();
+    }
+  },
+  
+  
+  { id: "Test#5",
+    *run() {
+      for (let persistent of [false, true]) {
+        
+        gURLBar.select();
+        EventUtils.synthesizeKey("*", {});
+        EventUtils.synthesizeKey("VK_BACK_SPACE", {});
+
+        
+        let notShowing = promiseTopicObserved("PopupNotifications-updateNotShowing");
+        this.notifyObj = new BasicNotification(this.id);
+        this.notifyObj.anchorID = "geo-notification-icon";
+        this.notifyObj.addOptions({ persistent });
+        this.notification = showNotification(this.notifyObj);
+        yield notShowing;
+
+        
+        let shown = waitForNotificationPanel();
+        EventUtils.synthesizeKey("VK_ESCAPE", {});
+        yield shown;
+
+        checkPopup(PopupNotifications.panel, this.notifyObj);
+
+        let hidden = waitForNotificationPanelHidden();
+        this.notification.remove();
+        yield hidden;
+      }
+
+      goNext();
+    }
+  },
+  
+  
+  { id: "Test#6",
+    *run() {
+      let shown = waitForNotificationPanel();
       this.notifyObj = new BasicNotification(this.id);
       this.notifyObj.anchorID = "geo-notification-icon";
       this.notifyObj.addOptions({
         persistent: true,
       });
       this.notification = showNotification(this.notifyObj);
-      yield shownInitially;
+      yield shown;
 
-      checkPopup(PopupNotifications.panel, this.notifyObj);
+      
+      let hidden = waitForNotificationPanelHidden();
+      this.oldSelectedTab = gBrowser.selectedTab;
+      yield BrowserTestUtils.openNewForegroundTab(gBrowser, "http://example.com/");
+      yield hidden;
 
-      let shownAgain = waitForNotificationPanel();
       
       gURLBar.select();
       EventUtils.synthesizeKey("*", {});
-      
-      EventUtils.synthesizeKey("VK_BACK_SPACE", {});
-      yield shownAgain;
 
-      is(document.getElementById("geo-notification-icon").boxObject.width, 0,
-         "geo anchor shouldn't be visible");
-      is(PopupNotifications.panel.anchorNode.id, "identity-icon",
-         "notification anchored to identity icon");
-
-      let shownLastTime = waitForNotificationPanel();
       
-      EventUtils.synthesizeKey("VK_ESCAPE", {});
-      yield shownLastTime;
+      shown = waitForNotificationPanel();
+      gBrowser.removeTab(gBrowser.selectedTab);
+      gBrowser.selectedTab = this.oldSelectedTab;
+      yield shown;
 
       checkPopup(PopupNotifications.panel, this.notifyObj);
 
-      let hidden = new Promise(resolve => onPopupEvent("popuphidden", resolve));
+      hidden = waitForNotificationPanelHidden();
       this.notification.remove();
-      gBrowser.removeTab(gBrowser.selectedTab);
-      gBrowser.selectedTab = this.oldSelectedTab;
       yield hidden;
 
       goNext();
