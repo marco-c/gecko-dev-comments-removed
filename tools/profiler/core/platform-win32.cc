@@ -37,6 +37,9 @@
 
 #include "nsMemoryReporterManager.h"
 
+#include "mozilla/StackWalk_windows.h"
+
+
 class PlatformData {
  public:
   
@@ -101,7 +104,7 @@ class SamplerThread : public Thread {
     } else {
       ASSERT(instance_->interval_ == sampler->interval());
     }
-  } 
+  }
 
   static void StopSampler() {
     instance_->Join();
@@ -187,6 +190,29 @@ class SamplerThread : public Thread {
     static const DWORD kSuspendFailed = static_cast<DWORD>(-1);
     if (SuspendThread(profiled_thread) == kSuspendFailed)
       return;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    if (thread_profile->CanInvokeJS()) {
+      if (!TryAcquireStackWalkWorkaroundLock()) {
+        ResumeThread(profiled_thread);
+        return;
+      }
+
+      
+      
+      
+      
+      
+      
+      ReleaseStackWalkWorkaroundLock();
+    }
 
     
     

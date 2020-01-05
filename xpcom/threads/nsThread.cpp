@@ -230,11 +230,9 @@ class DelayedRunnable : public Runnable,
                         public nsITimerCallback
 {
 public:
-  DelayedRunnable(already_AddRefed<nsIThread> aTargetThread,
-                  already_AddRefed<nsIRunnable> aRunnable,
+  DelayedRunnable(already_AddRefed<nsIRunnable> aRunnable,
                   uint32_t aDelay)
-    : mTargetThread(aTargetThread),
-      mWrappedRunnable(aRunnable),
+    : mWrappedRunnable(aRunnable),
       mDelayedFrom(TimeStamp::NowLoRes()),
       mDelay(aDelay)
   { }
@@ -248,9 +246,6 @@ public:
     NS_ENSURE_SUCCESS(rv, rv);
 
     MOZ_ASSERT(mTimer);
-    rv = mTimer->SetTarget(mTargetThread);
-
-    NS_ENSURE_SUCCESS(rv, rv);
     return mTimer->InitWithCallback(this, mDelay, nsITimer::TYPE_ONE_SHOT);
   }
 
@@ -288,7 +283,6 @@ public:
 private:
   ~DelayedRunnable() {}
 
-  nsCOMPtr<nsIThread> mTargetThread;
   nsCOMPtr<nsIRunnable> mWrappedRunnable;
   nsCOMPtr<nsITimer> mTimer;
   TimeStamp mDelayedFrom;
@@ -602,6 +596,7 @@ nsThread::nsThread(MainThreadFlag aMainThread, uint32_t aStackSize)
   , mShutdownRequired(false)
   , mEventsAreDoomed(false)
   , mIsMainThread(aMainThread)
+  , mCanInvokeJS(false)
 {
 }
 
@@ -782,9 +777,7 @@ nsThread::DelayedDispatch(already_AddRefed<nsIRunnable> aEvent, uint32_t aDelayM
 {
   NS_ENSURE_TRUE(!!aDelayMs, NS_ERROR_UNEXPECTED);
 
-  RefPtr<DelayedRunnable> r = new DelayedRunnable(Move(do_AddRef(this)),
-                                                  Move(aEvent),
-                                                  aDelayMs);
+  RefPtr<DelayedRunnable> r = new DelayedRunnable(Move(aEvent), aDelayMs);
   nsresult rv = r->Init();
   NS_ENSURE_SUCCESS(rv, rv);
 
@@ -805,6 +798,20 @@ NS_IMETHODIMP
 nsThread::GetPRThread(PRThread** aResult)
 {
   *aResult = mThread;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsThread::GetCanInvokeJS(bool* aResult)
+{
+  *aResult = mCanInvokeJS;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsThread::SetCanInvokeJS(bool aCanInvokeJS)
+{
+  mCanInvokeJS = aCanInvokeJS;
   return NS_OK;
 }
 
