@@ -17,6 +17,8 @@
 #include "gfxPlatform.h"
 #include <algorithm>
 
+#include "mozilla/gfx/UnscaledFontDWrite.h"
+
 
 
 
@@ -201,6 +203,9 @@ protected:
 
     int8_t mIsCJK;
     bool mForceGDIClassic;
+
+    mozilla::WeakPtr<mozilla::gfx::UnscaledFont> mUnscaledFont;
+    mozilla::WeakPtr<mozilla::gfx::UnscaledFont> mUnscaledFontBold;
 };
 
 

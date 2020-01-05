@@ -17,13 +17,16 @@
 #include "nsDataHashtable.h"
 #include "nsHashKeys.h"
 
+#include "mozilla/gfx/UnscaledFontDWrite.h"
+
 
 
 
 class gfxDWriteFont : public gfxFont 
 {
 public:
-    gfxDWriteFont(gfxFontEntry *aFontEntry,
+    gfxDWriteFont(const RefPtr<mozilla::gfx::UnscaledFontDWrite>& aUnscaledFont,
+                  gfxFontEntry *aFontEntry,
                   const gfxFontStyle *aFontStyle,
                   bool aNeedsBold = false,
                   AntialiasOption = kAntialiasDefault);

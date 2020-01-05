@@ -17,9 +17,11 @@ namespace gfx {
 
 
 
-ScaledFontCairo::ScaledFontCairo(cairo_scaled_font_t* aScaledFont, Float aSize)
-  : ScaledFontBase(aSize)
-{ 
+ScaledFontCairo::ScaledFontCairo(cairo_scaled_font_t* aScaledFont,
+                                 const RefPtr<UnscaledFont>& aUnscaledFont,
+                                 Float aSize)
+  : ScaledFontBase(aUnscaledFont, aSize)
+{
   SetCairoScaledFont(aScaledFont);
 }
 

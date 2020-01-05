@@ -20,6 +20,8 @@
 #include "nsTArray.h"
 #include "mozilla/LookAndFeel.h"
 
+#include "mozilla/gfx/UnscaledFontMac.h"
+
 class gfxMacPlatformFontList;
 
 
@@ -76,6 +78,8 @@ protected:
     bool mHasVariations;
     bool mHasVariationsInitialized;
     nsTHashtable<nsUint32HashKey> mAvailableTables;
+
+    mozilla::WeakPtr<mozilla::gfx::UnscaledFont> mUnscaledFont;
 };
 
 class gfxMacPlatformFontList : public gfxPlatformFontList {

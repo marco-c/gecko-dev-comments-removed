@@ -50,7 +50,7 @@ NativeFontResourceGDI::CreateScaledFont(uint32_t aIndex, Float aGlyphSize,
 
   
   
-  RefPtr<ScaledFontBase> scaledFont = new ScaledFontWin(logFont, aGlyphSize);
+  RefPtr<ScaledFontBase> scaledFont = new ScaledFontWin(logFont, nullptr, aGlyphSize);
   if (mNeedsCairo && !scaledFont->PopulateCairoScaledFont()) {
     gfxWarning() << "Unable to create cairo scaled font GDI font.";
     return nullptr;
