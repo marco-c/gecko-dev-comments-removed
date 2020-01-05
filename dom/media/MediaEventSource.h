@@ -58,11 +58,6 @@ enum class ListenerPolicy : int8_t {
   NonExclusive
 };
 
-enum class DispatchPolicy : int8_t {
-  Sync, 
-  Async 
-};
-
 namespace detail {
 
 
@@ -97,10 +92,10 @@ public:
 template <typename T>
 struct TakeArgs : public TakeArgsHelper<T>::Type {};
 
-template <DispatchPolicy Dp, typename T> struct EventTarget;
+template <typename T> struct EventTarget;
 
 template <>
-struct EventTarget<DispatchPolicy::Async, nsIEventTarget> {
+struct EventTarget<nsIEventTarget> {
   static void
   Dispatch(nsIEventTarget* aTarget, already_AddRefed<nsIRunnable> aTask) {
     aTarget->Dispatch(Move(aTask), NS_DISPATCH_NORMAL);
@@ -108,35 +103,10 @@ struct EventTarget<DispatchPolicy::Async, nsIEventTarget> {
 };
 
 template <>
-struct EventTarget<DispatchPolicy::Async, AbstractThread> {
+struct EventTarget<AbstractThread> {
   static void
   Dispatch(AbstractThread* aTarget, already_AddRefed<nsIRunnable> aTask) {
     aTarget->Dispatch(Move(aTask), AbstractThread::DontAssertDispatchSuccess);
-  }
-};
-
-template <>
-struct EventTarget<DispatchPolicy::Sync, nsIEventTarget> {
-  static bool IsOnCurrentThread(nsIEventTarget* aTarget) {
-    bool current = false;
-    auto rv = aTarget->IsOnCurrentThread(&current);
-    return NS_SUCCEEDED(rv) && current;
-  }
-  static void
-  Dispatch(nsIEventTarget* aTarget, already_AddRefed<nsIRunnable> aTask) {
-    MOZ_ASSERT(IsOnCurrentThread(aTarget));
-    nsCOMPtr<nsIRunnable> r = aTask;
-    r->Run();
-  }
-};
-
-template <>
-struct EventTarget<DispatchPolicy::Sync, AbstractThread> {
-  static void
-  Dispatch(AbstractThread* aTarget, already_AddRefed<nsIRunnable> aTask) {
-    MOZ_ASSERT(aTarget->IsCurrentThreadIn());
-    nsCOMPtr<nsIRunnable> r = aTask;
-    r->Run();
   }
 };
 
@@ -157,7 +127,7 @@ private:
 
 
 
-template<DispatchPolicy Dp, typename Target, typename Function>
+template<typename Target, typename Function>
 class ListenerHelper {
   
   
@@ -204,7 +174,7 @@ public:
   DispatchHelper(const F& aFunc, Ts&&... aEvents) {
     nsCOMPtr<nsIRunnable> r =
       new R<Ts...>(mToken, aFunc, Forward<Ts>(aEvents)...);
-    EventTarget<Dp, Target>::Dispatch(mTarget.get(), r.forget());
+    EventTarget<Target>::Dispatch(mTarget.get(), r.forget());
   }
 
   
@@ -218,7 +188,7 @@ public:
         aFunc();
       }
     });
-    EventTarget<Dp, Target>::Dispatch(mTarget.get(), r.forget());
+    EventTarget<Target>::Dispatch(mTarget.get(), r.forget());
   }
 
   template <typename... Ts>
@@ -279,8 +249,7 @@ public:
 
 
 
-template <DispatchPolicy Dp, typename Target,
-          typename Function, EventPassMode, typename... As>
+template <typename Target, typename Function, EventPassMode, typename... As>
 class ListenerImpl : public Listener<EventPassMode::Copy, As...> {
 public:
   ListenerImpl(Target* aTarget, const Function& aFunction)
@@ -289,11 +258,11 @@ public:
     mHelper.Dispatch(aEvents...);
   }
 private:
-  ListenerHelper<Dp, Target, Function> mHelper;
+  ListenerHelper<Target, Function> mHelper;
 };
 
-template <DispatchPolicy Dp, typename Target, typename Function, typename... As>
-class ListenerImpl<Dp, Target, Function, EventPassMode::Move, As...>
+template <typename Target, typename Function, typename... As>
+class ListenerImpl<Target, Function, EventPassMode::Move, As...>
   : public Listener<EventPassMode::Move, As...> {
 public:
   ListenerImpl(Target* aTarget, const Function& aFunction)
@@ -302,7 +271,7 @@ public:
     mHelper.Dispatch(Move(aEvents)...);
   }
 private:
-  ListenerHelper<Dp, Target, Function> mHelper;
+  ListenerHelper<Target, Function> mHelper;
 };
 
 
@@ -337,8 +306,7 @@ struct IsAnyReference<T> {
 
 } 
 
-template <DispatchPolicy, ListenerPolicy, typename... Ts>
-class MediaEventSourceImpl;
+template <ListenerPolicy, typename... Ts> class MediaEventSourceImpl;
 
 
 
@@ -347,7 +315,7 @@ class MediaEventSourceImpl;
 
 
 class MediaEventListener {
-  template <DispatchPolicy, ListenerPolicy, typename... Ts>
+  template <ListenerPolicy, typename... Ts>
   friend class MediaEventSourceImpl;
 
 public:
@@ -387,7 +355,7 @@ private:
 
 
 
-template <DispatchPolicy Dp, ListenerPolicy Lp, typename... Es>
+template <ListenerPolicy Lp, typename... Es>
 class MediaEventSourceImpl {
   static_assert(!detail::IsAnyReference<Es...>::value,
                 "Ref-type not supported!");
@@ -402,7 +370,7 @@ class MediaEventSourceImpl {
 
   template<typename Target, typename Func>
   using ListenerImpl =
-    detail::ListenerImpl<Dp, Target, Func, PassMode, ArgType<Es>...>;
+    detail::ListenerImpl<Target, Func, PassMode, ArgType<Es>...>;
 
   template <typename Method>
   using TakeArgs = detail::TakeArgs<Method>;
@@ -496,9 +464,8 @@ public:
 protected:
   MediaEventSourceImpl() : mMutex("MediaEventSourceImpl::mMutex") {}
 
-  template <DispatchPolicy P, typename... Ts>
-  typename EnableIf<P == DispatchPolicy::Async, void>::Type
-  NotifyInternal(IntegralConstant<DispatchPolicy, P>, Ts&&... aEvents) {
+  template <typename... Ts>
+  void NotifyInternal(Ts&&... aEvents) {
     MutexAutoLock lock(mMutex);
     int32_t last = static_cast<int32_t>(mListeners.Length()) - 1;
     for (int32_t i = last; i >= 0; --i) {
@@ -513,34 +480,6 @@ protected:
     }
   }
 
-  template <DispatchPolicy P, typename... Ts>
-  typename EnableIf<P == DispatchPolicy::Sync, void>::Type
-  NotifyInternal(IntegralConstant<DispatchPolicy, P>, Ts&&... aEvents) {
-    
-    
-    
-    nsTArray<UniquePtr<Listener>> listeners;
-    listeners.SwapElements(mListeners);
-    for (auto&& l : listeners) {
-      l->Dispatch(Forward<Ts>(aEvents)...);
-    }
-    PruneListeners();
-    
-    for (auto&& l : listeners) {
-      if (!l->Token()->IsRevoked()) {
-        mListeners.AppendElement(Move(l));
-      }
-    }
-    
-    MOZ_ASSERT(Lp == ListenerPolicy::NonExclusive || mListeners.Length() <= 1);
-  }
-
-  template <typename... Ts>
-  void Notify(Ts&&... aEvents) {
-    NotifyInternal(IntegralConstant<DispatchPolicy, Dp>(),
-                   Forward<Ts>(aEvents)...);
-  }
-
 private:
   Mutex mMutex;
   nsTArray<UniquePtr<Listener>> mListeners;
@@ -548,12 +487,11 @@ private:
 
 template <typename... Es>
 using MediaEventSource =
-  MediaEventSourceImpl<DispatchPolicy::Async,
-                       ListenerPolicy::NonExclusive, Es...>;
+  MediaEventSourceImpl<ListenerPolicy::NonExclusive, Es...>;
 
 template <typename... Es>
 using MediaEventSourceExc =
-  MediaEventSourceImpl<DispatchPolicy::Async, ListenerPolicy::Exclusive, Es...>;
+  MediaEventSourceImpl<ListenerPolicy::Exclusive, Es...>;
 
 
 
@@ -563,7 +501,10 @@ using MediaEventSourceExc =
 template <typename... Es>
 class MediaEventProducer : public MediaEventSource<Es...> {
 public:
-  using MediaEventSource<Es...>::Notify;
+  template <typename... Ts>
+  void Notify(Ts&&... aEvents) {
+    this->NotifyInternal(Forward<Ts>(aEvents)...);
+  }
 };
 
 
@@ -574,7 +515,7 @@ template <>
 class MediaEventProducer<void> : public MediaEventSource<void> {
 public:
   void Notify() {
-    MediaEventSource<void>::Notify(false );
+    this->NotifyInternal(true );
   }
 };
 
@@ -584,33 +525,10 @@ public:
 template <typename... Es>
 class MediaEventProducerExc : public MediaEventSourceExc<Es...> {
 public:
-  using MediaEventSourceExc<Es...>::Notify;
-};
-
-
-
-
-
-
-template <typename... Es>
-class MediaCallback
-  : public MediaEventSourceImpl<DispatchPolicy::Sync,
-                                ListenerPolicy::NonExclusive, Es...> {
-public:
-  using MediaEventSourceImpl<DispatchPolicy::Sync,
-                             ListenerPolicy::NonExclusive, Es...>::Notify;
-};
-
-
-
-
-template <typename... Es>
-class MediaCallbackExc
-  : public MediaEventSourceImpl<DispatchPolicy::Sync,
-                                ListenerPolicy::Exclusive, Es...> {
-public:
-  using MediaEventSourceImpl<DispatchPolicy::Sync,
-                             ListenerPolicy::Exclusive, Es...>::Notify;
+  template <typename... Ts>
+  void Notify(Ts&&... aEvents) {
+    this->NotifyInternal(Forward<Ts>(aEvents)...);
+  }
 };
 
 } 
