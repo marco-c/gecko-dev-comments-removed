@@ -5,8 +5,7 @@ Cu.import("resource://gre/modules/TelemetryController.jsm", this);
 Cu.import("resource://gre/modules/AppConstants.jsm", this);
 
 
-const ENABLE_TESTS = AppConstants.MOZ_ENABLE_PROFILER_SPS &&
-                     AppConstants.MOZ_STACKWALKING;
+const ENABLE_TESTS = AppConstants.MOZ_ENABLE_PROFILER_SPS;
 
 
 
