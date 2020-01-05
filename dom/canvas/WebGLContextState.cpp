@@ -402,12 +402,14 @@ WebGLContext::GetParameter(JSContext* cx, GLenum pname, ErrorResult& rv)
                 return JS::NullValue();
 
             GLint i = 0;
-            if (gl->IsSupported(gl::GLFeature::ES2_compatibility)) {
+            if (gl->IsGLES()) {
+                
+                
+                
                 gl->fGetIntegerv(pname, &i);
             } else {
                 i = LOCAL_GL_UNSIGNED_BYTE;
             }
-
             return JS::NumberValue(uint32_t(i));
         }
         case LOCAL_GL_IMPLEMENTATION_COLOR_READ_FORMAT: {
@@ -417,7 +419,10 @@ WebGLContext::GetParameter(JSContext* cx, GLenum pname, ErrorResult& rv)
                 return JS::NullValue();
 
             GLint i = 0;
-            if (gl->IsSupported(gl::GLFeature::ES2_compatibility)) {
+            if (gl->IsGLES()) {
+                
+                
+                
                 gl->fGetIntegerv(pname, &i);
             } else {
                 i = LOCAL_GL_RGBA;
