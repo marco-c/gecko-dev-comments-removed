@@ -8,6 +8,7 @@ package org.mozilla.gecko.widget;
 import android.graphics.Rect;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.ViewUtils;
 import android.view.View;
 
 
@@ -38,10 +39,13 @@ public class GridSpacingDecoration extends RecyclerView.ItemDecoration {
 
         final GridLayoutManager layoutManager = (GridLayoutManager) parent.getLayoutManager();
         final int spanCount = layoutManager.getSpanCount();
-        final int column = position % spanCount;
+        
+        
+        
+        final int LTRColumn = ViewUtils.isLayoutRtl(parent) ? (spanCount - 1) - (position % spanCount) : position % spanCount;
 
-        final int columnLeftOffset = (int) (((float) column / (float) spanCount) * horizontalSpacing);
-        final int columnRightOffset = (int) (((float) (spanCount - (column + 1)) / (float) spanCount) * horizontalSpacing);
+        final int columnLeftOffset = (int) (((float) LTRColumn / (float) spanCount) * horizontalSpacing);
+        final int columnRightOffset = (int) (((float) (spanCount - (LTRColumn + 1)) / (float) spanCount) * horizontalSpacing);
 
         outRect.set(columnLeftOffset, verticalPadding, columnRightOffset, verticalPadding);
     }
