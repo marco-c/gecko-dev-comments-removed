@@ -187,23 +187,6 @@ ContentPrincipal::GenerateOriginNoSuffixFromURI(nsIURI* aURI,
   }
 #endif
 
-  nsAutoCString hostPort;
-
-  
-  
-  
-  
-  bool isChrome;
-  rv = origin->SchemeIs("chrome", &isChrome);
-  if (NS_SUCCEEDED(rv) && !isChrome) {
-    rv = origin->GetAsciiHostPort(hostPort);
-    
-    
-    if (hostPort.IsEmpty()) {
-      rv = NS_ERROR_FAILURE;
-    }
-  }
-
   
   
   
@@ -233,14 +216,6 @@ ContentPrincipal::GenerateOriginNoSuffixFromURI(nsIURI* aURI,
     return NS_OK;
   }
 
-  if (NS_SUCCEEDED(rv) && !isChrome) {
-    rv = origin->GetScheme(aOriginNoSuffix);
-    NS_ENSURE_SUCCESS(rv, rv);
-    aOriginNoSuffix.AppendLiteral("://");
-    aOriginNoSuffix.Append(hostPort);
-    return NS_OK;
-  }
-
   
   
   nsCOMPtr<nsIURIWithPrincipal> uriWithPrincipal = do_QueryInterface(origin);
@@ -266,6 +241,24 @@ ContentPrincipal::GenerateOriginNoSuffixFromURI(nsIURI* aURI,
     return NS_ERROR_FAILURE;
   }
 
+  
+  nsAutoCString hostPort;
+  bool isChrome = false;
+  rv = origin->SchemeIs("chrome", &isChrome);
+  NS_ENSURE_SUCCESS(rv, rv);
+  if (!isChrome) {
+    rv = origin->GetAsciiHostPort(hostPort);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+  if (!hostPort.IsEmpty()) {
+    rv = origin->GetScheme(aOriginNoSuffix);
+    NS_ENSURE_SUCCESS(rv, rv);
+    aOriginNoSuffix.AppendLiteral("://");
+    aOriginNoSuffix.Append(hostPort);
+    return NS_OK;
+  }
+
+  
   return AssignFullSpecToOriginNoSuffix(origin, aOriginNoSuffix);
 }
 
