@@ -1274,27 +1274,60 @@ GeckoDriver.prototype.getWindowPosition = function (cmd, resp) {
 
 
 
-GeckoDriver.prototype.setWindowPosition = function* (cmd, resp) {
+
+
+
+
+
+GeckoDriver.prototype.setWindowRect = function* (cmd, resp) {
   assert.firefox()
 
-  let {x, y} = cmd.parameters;
-  assert.integer(x);
-  assert.integer(y);
+  let win = assert.window(this.getCurrentWindow());
 
-  let win = this.getCurrentWindow();
-  let orig = {screenX: win.screenX, screenY: win.screenY};
+  let {x, y, height, width} = cmd.parameters;
 
-  win.moveTo(x, y);
-  yield wait.until((resolve, reject) => {
-    if ((x == win.screenX && y == win.screenY) ||
-      (win.screenX != orig.screenX || win.screenY != orig.screenY)) {
-      resolve();
-    } else {
-      reject();
-    }
-  });
+  if (height != null && width != null) {
+    assert.positiveInteger(height);
+    assert.positiveInteger(width);
+    yield new Promise(resolve => {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      const fps15 = 66;
+      const synchronousResize = () => win.setTimeout(resolve, fps15);
+      win.addEventListener("resize", synchronousResize, {once: true});
+      win.resizeTo(width, height);
+    });
+  }
 
-  return this.curBrowser.position;
+  if (x != null && y != null) {
+    assert.integer(x);
+    assert.integer(y);
+    let orig = {screenX: win.screenX, screenY: win.screenY};
+    win.moveTo(x, y);
+    yield wait.until((resolve, reject) => {
+      if ((x == win.screenX && y == win.screenY) ||
+        (win.screenX != orig.screenX || win.screenY != orig.screenY)) {
+        resolve();
+      } else {
+        reject();
+      }
+    });
+  }
+
+  return {
+    "x": win.screenX,
+    "y": win.screenY,
+    "width": win.outerWidth,
+    "height": win.outerHeight,
+  };
+
 };
 
 
@@ -2568,49 +2601,6 @@ GeckoDriver.prototype.getWindowSize = function (cmd, resp) {
 
 
 
-
-
-
-
-
-
-
-
-
-GeckoDriver.prototype.setWindowSize = function* (cmd, resp) {
-  assert.firefox()
-  let win = assert.window(this.getCurrentWindow());
-
-  const {width, height} = cmd.parameters;
-
-  yield new Promise(resolve => {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    const fps15 = 66;
-    const synchronousResize = () => win.setTimeout(resolve, fps15);
-    win.addEventListener("resize", synchronousResize, {once: true});
-    win.resizeTo(width, height);
-  });
-
-  return {
-    width: win.outerWidth,
-    height: win.outerHeight,
-  };
-};
-
-
-
-
-
-
-
 GeckoDriver.prototype.maximizeWindow = function (cmd, resp) {
   assert.firefox()
   let win = assert.window(this.getCurrentWindow());
@@ -3025,7 +3015,8 @@ GeckoDriver.prototype.commands = {
   "getWindowHandles": GeckoDriver.prototype.getWindowHandles,
   "getChromeWindowHandles": GeckoDriver.prototype.getChromeWindowHandles,
   "getWindowPosition": GeckoDriver.prototype.getWindowPosition,
-  "setWindowPosition": GeckoDriver.prototype.setWindowPosition,
+  "setWindowPosition": GeckoDriver.prototype.setWindowRect, 
+  "setWindowRect": GeckoDriver.prototype.setWindowRect,
   "getActiveFrame": GeckoDriver.prototype.getActiveFrame,
   "switchToFrame": GeckoDriver.prototype.switchToFrame,
   "switchToParentFrame": GeckoDriver.prototype.switchToParentFrame,
@@ -3047,7 +3038,7 @@ GeckoDriver.prototype.commands = {
   "getScreenOrientation": GeckoDriver.prototype.getScreenOrientation,
   "setScreenOrientation": GeckoDriver.prototype.setScreenOrientation,
   "getWindowSize": GeckoDriver.prototype.getWindowSize,
-  "setWindowSize": GeckoDriver.prototype.setWindowSize,
+  "setWindowSize": GeckoDriver.prototype.setWindowRect, 
   "maximizeWindow": GeckoDriver.prototype.maximizeWindow,
   "dismissDialog": GeckoDriver.prototype.dismissDialog,
   "acceptDialog": GeckoDriver.prototype.acceptDialog,
