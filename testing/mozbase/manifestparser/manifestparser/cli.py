@@ -18,7 +18,8 @@ from .manifestparser import (
 
 
 class ParserError(Exception):
-  """error for exceptions while parsing the command line"""
+    """error for exceptions while parsing the command line"""
+
 
 def parse_args(_args):
     """
@@ -61,36 +62,41 @@ def parse_args(_args):
     
     return (_dict, tags, args)
 
+
 class CLICommand(object):
     usage = '%prog [options] command'
+
     def __init__(self, parser):
-      self._parser = parser 
+        self._parser = parser  
+
     def parser(self):
-      return OptionParser(usage=self.usage, description=self.__doc__,
-                          add_help_option=False)
+        return OptionParser(usage=self.usage, description=self.__doc__,
+                            add_help_option=False)
+
 
 class Copy(CLICommand):
     usage = '%prog [options] copy manifest directory -tag1 -tag2 --key1=value1 --key2=value2 ...'
+
     def __call__(self, options, args):
-      
-      try:
-        kwargs, tags, args = parse_args(args)
-      except ParserError, e:
-        self._parser.error(e.message)
+        
+        try:
+            kwargs, tags, args = parse_args(args)
+        except ParserError, e:
+            self._parser.error(e.message)
 
-      
-      
-      if not len(args) == 2:
-        HelpCLI(self._parser)(options, ['copy'])
-        return
+        
+        
+        if not len(args) == 2:
+            HelpCLI(self._parser)(options, ['copy'])
+            return
 
-      
-      
-      manifests = ManifestParser()
-      manifests.read(args[0])
+        
+        
+        manifests = ManifestParser()
+        manifests.read(args[0])
 
-      
-      manifests.copy(args[1], None, *tags, **kwargs)
+        
+        manifests.copy(args[1], None, *tags, **kwargs)
 
 
 class CreateCLI(CLICommand):
@@ -134,6 +140,7 @@ class WriteCLI(CLICommand):
     write a manifest based on a query
     """
     usage = '%prog [options] write manifest <manifest> -tag1 -tag2 --key1=value1 --key2=value2 ...'
+
     def __call__(self, options, args):
 
         
@@ -157,7 +164,6 @@ class WriteCLI(CLICommand):
         manifests.write(global_tags=tags, global_kwargs=kwargs)
 
 
-
 class HelpCLI(CLICommand):
     """
     get help on a command
@@ -172,6 +178,7 @@ class HelpCLI(CLICommand):
             print '\nCommands:'
             for command in sorted(commands):
                 print '  %s : %s' % (command, commands[command].__doc__.strip())
+
 
 class UpdateCLI(CLICommand):
     """
@@ -202,10 +209,11 @@ class UpdateCLI(CLICommand):
 
 
 
-commands = { 'create': CreateCLI,
-             'help': HelpCLI,
-             'update': UpdateCLI,
-             'write': WriteCLI }
+commands = {'create': CreateCLI,
+            'help': HelpCLI,
+            'update': UpdateCLI,
+            'write': WriteCLI}
+
 
 def main(args=sys.argv[1:]):
     """console_script entry point"""
@@ -228,7 +236,8 @@ def main(args=sys.argv[1:]):
     
     command = args[0]
     if command not in commands:
-        parser.error("Command must be one of %s (you gave '%s')" % (', '.join(sorted(commands.keys())), command))
+        parser.error("Command must be one of %s (you gave '%s')" %
+                     (', '.join(sorted(commands.keys())), command))
 
     handler = commands[command](parser)
     handler(options, args[1:])

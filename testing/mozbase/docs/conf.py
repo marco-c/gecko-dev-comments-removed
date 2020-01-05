@@ -11,7 +11,8 @@
 
 
 
-import sys, os
+import sys
+import os
 
 
 
@@ -185,21 +186,21 @@ htmlhelp_basename = 'MozBasedoc'
 
 
 latex_elements = {
+    
+    
 
+    
+    
 
-
-
-
-
-
-
+    
+    
 }
 
 
 
 latex_documents = [
-  ('index', 'MozBase.tex', u'MozBase Documentation',
-   u'Mozilla Automation and Tools team', 'manual'),
+    ('index', 'MozBase.tex', u'MozBase Documentation',
+     u'Mozilla Automation and Tools team', 'manual'),
 ]
 
 
@@ -242,9 +243,9 @@ man_pages = [
 
 
 texinfo_documents = [
-  ('index', 'MozBase', u'MozBase Documentation',
-   u'Mozilla Automation and Tools team', 'MozBase', 'One line description of project.',
-   'Miscellaneous'),
+    ('index', 'MozBase', u'MozBase Documentation',
+     u'Mozilla Automation and Tools team', 'MozBase', 'One line description of project.',
+     'Miscellaneous'),
 ]
 
 

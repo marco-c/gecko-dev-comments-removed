@@ -20,23 +20,28 @@ from .string_version import StringVersion
 
 _os = os
 
+
 class unknown(object):
     """marker class for unknown information"""
+
     def __nonzero__(self):
         return False
+
     def __str__(self):
         return 'UNKNOWN'
-unknown = unknown() 
+unknown = unknown()  
+
 
 def get_windows_version():
     import ctypes
+
     class OSVERSIONINFOEXW(ctypes.Structure):
         _fields_ = [('dwOSVersionInfoSize', ctypes.c_ulong),
                     ('dwMajorVersion', ctypes.c_ulong),
                     ('dwMinorVersion', ctypes.c_ulong),
                     ('dwBuildNumber', ctypes.c_ulong),
                     ('dwPlatformId', ctypes.c_ulong),
-                    ('szCSDVersion', ctypes.c_wchar*128),
+                    ('szCSDVersion', ctypes.c_wchar * 128),
                     ('wServicePackMajor', ctypes.c_ushort),
                     ('wServicePackMinor', ctypes.c_ushort),
                     ('wSuiteMask', ctypes.c_ushort),
@@ -57,7 +62,7 @@ info = {'os': unknown,
         'version': unknown,
         'os_version': unknown,
         'bits': unknown,
-        'has_sandbox': unknown }
+        'has_sandbox': unknown}
 (system, node, release, version, machine, processor) = platform.uname()
 (bits, linkage) = platform.architecture()
 
@@ -138,7 +143,7 @@ elif processor == "Power Macintosh":
 bits = re.search('(\d+)bit', bits).group(1)
 info.update({'processor': processor,
              'bits': int(bits),
-            })
+             })
 
 if info['os'] == 'linux':
     import ctypes
@@ -161,12 +166,14 @@ def sanitize(info):
     to handle universal Mac builds."""
     if "processor" in info and info["processor"] == "universal-x86-x86_64":
         
-        if release[:4] >= "10.6": 
+        if release[:4] >= "10.6":  
             info["processor"] = "x86_64"
             info["bits"] = 64
         else:
             info["processor"] = "x86"
             info["bits"] = 32
+
+
 
 
 def update(new_info):
@@ -193,8 +200,9 @@ def update(new_info):
     for os_name in choices['os']:
         globals()['is' + os_name.title()] = info['os'] == os_name
     
-    if isLinux or isBsd:
+    if isLinux or isBsd:  
         globals()['isUnix'] = True
+
 
 def find_and_update_from_json(*dirs):
     """
@@ -229,10 +237,11 @@ def find_and_update_from_json(*dirs):
 
     return None
 
+
 def output_to_file(path):
     import json
     with open(path, 'w') as f:
-        f.write(json.dumps(info));
+        f.write(json.dumps(info))
 
 update({})
 
@@ -248,7 +257,8 @@ __all__ += [
     'find_and_update_from_json',
     'output_to_file',
     'StringVersion',
-    ]
+]
+
 
 def main(args=None):
 
@@ -279,7 +289,8 @@ def main(args=None):
             print '%s choices: %s' % (key, ' '.join([str(choice)
                                                      for choice in choices[key]]))
             flag = True
-    if flag: return
+    if flag:
+        return
 
     
     for key, value in info.items():

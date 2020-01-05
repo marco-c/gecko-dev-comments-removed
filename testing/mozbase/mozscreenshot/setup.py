@@ -14,7 +14,7 @@ setup(
     version=PACKAGE_VERSION,
     description="Library for taking screenshots in tests harness",
     long_description="see http://mozbase.readthedocs.org/",
-    classifiers=[], 
+    classifiers=[],  
     keywords='mozilla',
     author='Mozilla Automation and Tools team',
     author_email='tools@lists.mozilla.org',

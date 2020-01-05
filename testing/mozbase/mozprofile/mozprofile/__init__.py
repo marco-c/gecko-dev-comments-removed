@@ -2,6 +2,7 @@
 
 
 
+
 """
 To use mozprofile as an API you can import mozprofile.profile_ and/or the AddonManager_.
 

@@ -6,18 +6,17 @@
 
 """Utility functions for mozrunner"""
 
-__all__ = ['findInPath', 'get_metadata_from_egg', 'uses_marionette']
-
-
-from functools import wraps
 import mozinfo
 import os
 import sys
+
+__all__ = ['findInPath', 'get_metadata_from_egg']
 
 
 
 try:
     import pkg_resources
+
     def get_metadata_from_egg(module):
         ret = {}
         try:
@@ -26,6 +25,7 @@ try:
             return {}
         if dist.has_metadata("PKG-INFO"):
             key = None
+            value = ""
             for line in dist.get_metadata("PKG-INFO").splitlines():
                 
                 if key == 'Description':
@@ -236,8 +236,6 @@ def get_stack_fixer_function(utilityPath, symbolsPath):
     if not mozinfo.info.get('debug'):
         return None
 
-    stack_fixer_function = None
-
     def import_stack_fixer_module(module_name):
         sys.path.insert(0, utilityPath)
         module = __import__(module_name, globals(), locals(), [])
@@ -248,10 +246,12 @@ def get_stack_fixer_function(utilityPath, symbolsPath):
         
         
         
+        
         stack_fixer_module = import_stack_fixer_module(
             'fix_stack_using_bpsyms')
-        stack_fixer_function = lambda line: stack_fixer_module.fixSymbols(
-            line, symbolsPath)
+
+        def stack_fixer_function(line):
+            return stack_fixer_module.fixSymbols(line, symbolsPath)
 
     elif mozinfo.isMac:
         
@@ -259,8 +259,9 @@ def get_stack_fixer_function(utilityPath, symbolsPath):
         
         stack_fixer_module = import_stack_fixer_module(
             'fix_macosx_stack')
-        stack_fixer_function = lambda line: stack_fixer_module.fixSymbols(
-            line)
+
+        def stack_fixer_function(line):
+            return stack_fixer_module.fixSymbols(line)
 
     elif mozinfo.isLinux:
         
@@ -268,7 +269,11 @@ def get_stack_fixer_function(utilityPath, symbolsPath):
         
         stack_fixer_module = import_stack_fixer_module(
             'fix_linux_stack')
-        stack_fixer_function = lambda line: stack_fixer_module.fixSymbols(
-            line)
+
+        def stack_fixer_function(line):
+            return stack_fixer_module.fixSymbols(line)
+
+    else:
+        return None
 
     return stack_fixer_function

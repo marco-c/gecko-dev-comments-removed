@@ -11,7 +11,7 @@ setup(name=PACKAGE_NAME,
       version=PACKAGE_VERSION,
       description="Library to create and manage test manifests",
       long_description="see http://mozbase.readthedocs.org/",
-      classifiers=[], 
+      classifiers=[],  
       keywords='mozilla manifests',
       author='Mozilla Automation and Testing Team',
       author_email='tools@lists.mozilla.org',
@@ -24,4 +24,4 @@ setup(name=PACKAGE_NAME,
       [console_scripts]
       manifestparser = manifestparser.cli:main
       """,
-     )
+      )

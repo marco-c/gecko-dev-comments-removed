@@ -17,9 +17,9 @@ BASE = 1
 
 BASE_1_1 = 2
 
-CUPCAKE  = 3
+CUPCAKE = 3
 
-DONUT  = 4
+DONUT = 4
 
 ECLAIR = 5
 

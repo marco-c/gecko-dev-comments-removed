@@ -14,10 +14,11 @@ from .utils import findInPath
 
 
 DEBUGGERS = {'gdb': {'interactive': True,
-                     'args': ['-q', '--args'],},
+                     'args': ['-q', '--args'], },
              'valgrind': {'interactive': False,
                           'args': ['--leak-check=full']}
              }
+
 
 def debugger_arguments(debugger, arguments=None, interactive=None):
     """Finds debugger arguments from debugger given and defaults
@@ -122,7 +123,8 @@ class CLI(MozProfileCLI):
             debug_args = debug_args.split()
         interactive = self.options.interactive
         if self.options.debugger:
-            debug_args, interactive = debugger_arguments(self.options.debugger, debug_args, interactive)
+            debug_args, interactive = debugger_arguments(self.options.debugger, debug_args,
+                                                         interactive)
         return debug_args, interactive
 
     def start(self, runner):

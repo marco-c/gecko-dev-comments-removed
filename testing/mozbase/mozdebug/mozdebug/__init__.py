@@ -2,6 +2,7 @@
 
 
 
+
 """
 This module contains a set of function to gather information about the
 debugging capabilities of the platform. It allows to look for a specific

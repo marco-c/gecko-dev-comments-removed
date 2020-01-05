@@ -131,7 +131,7 @@ class DeviceManagerADB(DeviceManager):
             cmdline = envstr + "; " + cmdline
 
         
-        args=[self._adbPath]
+        args = [self._adbPath]
         if self._serverHost is not None:
             args.extend(['-H', self._serverHost])
         if self._serverPort is not None:
@@ -147,6 +147,7 @@ class DeviceManagerADB(DeviceManager):
         proc = ProcessHandler(args, processOutputLine=self._log, onTimeout=_timeout)
 
         if not timeout:
+            
             
             timeout = self.default_timeout
 
@@ -164,7 +165,7 @@ class DeviceManagerADB(DeviceManager):
                     for line in output:
                         outputfile.write(line + '\n')
                     outputfile.seek(-2, 2)
-                    outputfile.truncate() 
+                    outputfile.truncate()  
                     return int(return_code)
 
         return None
@@ -196,7 +197,6 @@ class DeviceManagerADB(DeviceManager):
         if not self._checkCmd(cmd, timeout=self.short_timeout) == 0:
             raise DMError("Failed to remove connection forwarding.")
 
-
     def remount(self):
         "Remounts the /system partition on the device read-write."
         return self._checkCmd(['remount'], timeout=self.short_timeout)
@@ -204,7 +204,7 @@ class DeviceManagerADB(DeviceManager):
     def devices(self):
         "Return a list of connected devices as (serial, status) tuples."
         proc = self._runCmd(['devices'])
-        proc.output.pop(0) 
+        proc.output.pop(0)  
         devices = []
         for line in proc.output:
             result = re.match('(.*?)\t(.*)', line)
@@ -231,9 +231,10 @@ class DeviceManagerADB(DeviceManager):
             raise DMError("File not found: %s" % localname)
 
         proc = self._runCmd(["push", os.path.realpath(localname), destname],
-                retryLimit=retryLimit)
+                            retryLimit=retryLimit)
         if proc.returncode != 0:
-            raise DMError("Error pushing file %s -> %s; output: %s" % (localname, destname, proc.output))
+            raise DMError("Error pushing file %s -> %s; output: %s" %
+                          (localname, destname, proc.output))
 
     def mkDir(self, name):
         result = self._runCmd(["shell", "mkdir", name], timeout=self.short_timeout).output
@@ -248,12 +249,12 @@ class DeviceManagerADB(DeviceManager):
         retryLimit = retryLimit or self.retryLimit
         if self._useZip:
             self.removeDir(remoteDir)
-            self.mkDirs(remoteDir+"/x")
+            self.mkDirs(remoteDir + "/x")
             try:
                 localZip = tempfile.mktemp() + ".zip"
                 remoteZip = remoteDir + "/adbdmtmp.zip"
                 proc = ProcessHandler(["zip", "-r", localZip, '.'], cwd=localDir,
-                              processOutputLine=self._log)
+                                      processOutputLine=self._log)
                 proc.run()
                 proc.wait()
                 self.pushFile(localZip, remoteZip, retryLimit=retryLimit, createDir=False)
@@ -273,7 +274,7 @@ class DeviceManagerADB(DeviceManager):
             
             
             
-            self.mkDirs(remoteDir+"/x")
+            self.mkDirs(remoteDir + "/x")
             self.removeDir(remoteDir)
             tmpDir = tempfile.mkdtemp()
             
@@ -366,12 +367,12 @@ class DeviceManagerADB(DeviceManager):
         DEPRECATED: Use shell() or launchApplication() for new code
         """
         
-        parts = appname.split('"');
+        parts = appname.split('"')
         if (len(parts) > 2):
             parts = parts[2:]
         return self.launchProcess(parts, failIfRunning)
 
-    def launchProcess(self, cmd, outputFile = "process.txt", cwd = '', env = '', failIfRunning=False):
+    def launchProcess(self, cmd, outputFile="process.txt", cwd='', env='', failIfRunning=False):
         """
         Launches a process, redirecting output to standard out
 
@@ -403,13 +404,13 @@ class DeviceManagerADB(DeviceManager):
             acmd.append("--es")
             acmd.append("args")
             acmd.append(args)
-        if env != '' and env != None:
+        if env != '' and env is not None:
             envCnt = 0
             
             for envkey, envval in env.iteritems():
                 acmd.append("--es")
                 acmd.append("env" + str(envCnt))
-                acmd.append(envkey + "=" + envval);
+                acmd.append(envkey + "=" + envval)
                 envCnt += 1
         if uri != "":
             acmd.append("-d")
@@ -504,7 +505,7 @@ class DeviceManagerADB(DeviceManager):
                     pass
 
         raise DMError("Unable to set up device root using paths: [%s]"
-                        % ", ".join(["'%s'" % os.path.join(b, s) for b, s in paths]))
+                      % ", ".join(["'%s'" % os.path.join(b, s) for b, s in paths]))
 
     def getTempDir(self):
         
@@ -515,7 +516,7 @@ class DeviceManagerADB(DeviceManager):
 
         return self._tempDir
 
-    def reboot(self, wait = False, **kwargs):
+    def reboot(self, wait=False, **kwargs):
         self._checkCmd(["reboot"])
         if wait:
             self._checkCmd(["wait-for-device"])
@@ -530,7 +531,7 @@ class DeviceManagerADB(DeviceManager):
         timestr = str(self._runCmd(["shell", "date", "+%s"], timeout=self.short_timeout).output[0])
         if (not timestr or not timestr.isdigit()):
             raise DMError("Unable to get current time using date (got: '%s')" % timestr)
-        return int(timestr)*1000
+        return int(timestr) * 1000
 
     def getInfo(self, directive=None):
         directive = directive or "all"
@@ -538,7 +539,8 @@ class DeviceManagerADB(DeviceManager):
         if directive == "id" or directive == "all":
             ret["id"] = self._runCmd(["get-serialno"], timeout=self.short_timeout).output[0]
         if directive == "os" or directive == "all":
-            ret["os"] = self.shellCheckOutput(["getprop", "ro.build.display.id"], timeout=self.short_timeout)
+            ret["os"] = self.shellCheckOutput(
+                ["getprop", "ro.build.display.id"], timeout=self.short_timeout)
         if directive == "uptime" or directive == "all":
             uptime = self.shellCheckOutput(["uptime"], timeout=self.short_timeout)
             if not uptime:
@@ -560,7 +562,8 @@ class DeviceManagerADB(DeviceManager):
                 meminfo[key] = value.strip()
             ret["memtotal"] = meminfo["MemTotal"]
         if directive == "disk" or directive == "all":
-            data = self.shellCheckOutput(["df", "/data", "/system", "/sdcard"], timeout=self.short_timeout)
+            data = self.shellCheckOutput(
+                ["df", "/data", "/system", "/sdcard"], timeout=self.short_timeout)
             ret["disk"] = data.split('\n')
         self._logger.debug("getInfo: %s" % ret)
         return ret
@@ -600,10 +603,10 @@ class DeviceManagerADB(DeviceManager):
         retries = 0
         while retries < retryLimit:
             proc = ProcessHandler(finalArgs, storeOutput=True,
-                    processOutputLine=self._log, onTimeout=_timeout)
+                                  processOutputLine=self._log, onTimeout=_timeout)
             proc.run(timeout=timeout)
             proc.returncode = proc.wait()
-            if proc.returncode == None:
+            if proc.returncode is None:
                 proc.kill()
                 retries += 1
             else:
@@ -642,7 +645,7 @@ class DeviceManagerADB(DeviceManager):
             proc = ProcessHandler(finalArgs, processOutputLine=self._log, onTimeout=_timeout)
             proc.run(timeout=timeout)
             ret_code = proc.wait()
-            if ret_code == None:
+            if ret_code is None:
                 proc.kill()
                 retries += 1
             else:
@@ -661,7 +664,8 @@ class DeviceManagerADB(DeviceManager):
                     if (self.dirExists(remoteEntry)):
                         self.chmodDir(remoteEntry)
                     else:
-                        self._checkCmd(["shell", "chmod", mask, remoteEntry], timeout=self.short_timeout)
+                        self._checkCmd(["shell", "chmod", mask, remoteEntry],
+                                       timeout=self.short_timeout)
                         self._logger.info("chmod %s" % remoteEntry)
                 self._checkCmd(["shell", "chmod", mask, remoteDir], timeout=self.short_timeout)
                 self._logger.debug("chmod %s" % remoteDir)
@@ -680,7 +684,9 @@ class DeviceManagerADB(DeviceManager):
         try:
             self._checkCmd(["version"], timeout=self.short_timeout)
         except os.error as err:
-            raise DMError("unable to execute ADB (%s): ensure Android SDK is installed and adb is in your $PATH" % err)
+            raise DMError(
+                "unable to execute ADB (%s): ensure Android SDK is installed "
+                "and adb is in your $PATH" % err)
 
     def _verifyDevice(self):
         
@@ -691,7 +697,7 @@ class DeviceManagerADB(DeviceManager):
                 if m:
                     if self._deviceSerial == m.group(1):
                         deviceStatus = m.group(2)
-            if deviceStatus == None:
+            if deviceStatus is None:
                 raise DMError("device not found: %s" % self._deviceSerial)
             elif deviceStatus != "device":
                 raise DMError("bad status for device %s: %s" % (self._deviceSerial, deviceStatus))
@@ -730,7 +736,7 @@ class DeviceManagerADB(DeviceManager):
             retcode = None
             while (time.time() - start_time) <= 15 and retcode is None:
                 retcode = proc.poll()
-            if retcode is None: 
+            if retcode is None:  
                 proc.kill()
 
             if proc.output and 'uid=0(root)' in proc.output[0]:
@@ -789,7 +795,7 @@ class DeviceManagerADB(DeviceManager):
             
             
             output = self._runCmd(["shell", "ls", "-1A", "/"],
-                         timeout=self.short_timeout).output
+                                  timeout=self.short_timeout).output
             output = ' '.join(output)
             if 'error: device not found' in output:
                 raise DMError(output)
@@ -799,4 +805,3 @@ class DeviceManagerADB(DeviceManager):
                 self._lsModifier = "-a"
             else:
                 self._lsModifier = "-1A"
-

@@ -18,9 +18,11 @@ class TestTestManifest(unittest.TestCase):
         
         filter_example = os.path.join(here, 'filter-example.ini')
         manifest = TestManifest(manifests=(filter_example,), strict=False)
-        self.assertEqual([i['name'] for i in manifest.active_tests(os='win', disabled=False, exists=False)],
+        self.assertEqual([i['name'] for i in manifest.active_tests(os='win', disabled=False,
+                                                                   exists=False)],
                          ['windowstest', 'fleem'])
-        self.assertEqual([i['name'] for i in manifest.active_tests(os='linux', disabled=False, exists=False)],
+        self.assertEqual([i['name'] for i in manifest.active_tests(os='linux', disabled=False,
+                                                                   exists=False)],
                          ['fleem', 'linuxtest'])
 
         

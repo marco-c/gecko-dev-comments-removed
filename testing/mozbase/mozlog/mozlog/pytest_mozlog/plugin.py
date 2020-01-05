@@ -6,6 +6,7 @@ import mozlog
 import os
 import time
 
+
 def pytest_addoption(parser):
     
     
@@ -31,6 +32,7 @@ def pytest_configure(config):
 
 
 class MozLog(object):
+
     def __init__(self):
         self.results = {}
         self.start_time = int(time.time() * 1000)  

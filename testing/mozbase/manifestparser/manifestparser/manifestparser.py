@@ -2,8 +2,6 @@
 
 
 
-__all__ = ['ManifestParser', 'TestManifest', 'convert']
-
 from StringIO import StringIO
 import json
 import fnmatch
@@ -20,6 +18,8 @@ from .filters import (
     filterlist,
 )
 
+__all__ = ['ManifestParser', 'TestManifest', 'convert']
+
 relpath = os.path.relpath
 string = (basestring,)
 
@@ -31,6 +31,7 @@ def normalize_path(path):
     if sys.platform.startswith('win'):
         return path.replace('/', os.path.sep)
     return path
+
 
 def denormalize_path(path):
     """denormalize a relative path"""
@@ -186,7 +187,7 @@ class ManifestParser(object):
             
             path = test.get('path', section)
             _relpath = path
-            if '://' not in path: 
+            if '://' not in path:  
                 path = normalize_path(path)
                 if here and not os.path.isabs(path):
                     
@@ -260,7 +261,7 @@ class ManifestParser(object):
             here = None
             if isinstance(filename, string):
                 here = os.path.dirname(os.path.abspath(filename))
-                defaults['here'] = here 
+                defaults['here'] = here  
 
             if self.rootdir is None:
                 
@@ -268,7 +269,6 @@ class ManifestParser(object):
                 self.rootdir = here
 
             self._read(here, filename, defaults)
-
 
     
 
@@ -304,14 +304,18 @@ class ManifestParser(object):
 
         
         if inverse:
-            has_tags = lambda test: not tags.intersection(test.keys())
+            def has_tags(test):
+                return not tags.intersection(test.keys())
+
             def dict_query(test):
                 for key, value in kwargs.items():
                     if test.get(key) == value:
                         return False
                 return True
         else:
-            has_tags = lambda test: tags.issubset(test.keys())
+            def has_tags(test):
+                return tags.issubset(test.keys())
+
             def dict_query(test):
                 for key, value in kwargs.items():
                     if test.get(key) != value:
@@ -349,7 +353,6 @@ class ManifestParser(object):
     def paths(self):
         return [i['path'] for i in self.tests]
 
-
     
 
     def missing(self, tests=None):
@@ -370,7 +373,7 @@ class ManifestParser(object):
                               "The following test(s) are missing: %s" %
                               json.dumps(missing_paths, indent=2))
             print >> sys.stderr, "Warning: The following test(s) are missing: %s" % \
-                                  json.dumps(missing_paths, indent=2)
+                json.dumps(missing_paths, indent=2)
         return missing
 
     def verifyDirectory(self, directories, pattern=None, extensions=None):
@@ -403,7 +406,6 @@ class ManifestParser(object):
         missing_from_filesystem = paths.difference(files)
         missing_from_manifest = files.difference(paths)
         return (missing_from_filesystem, missing_from_manifest)
-
 
     
 
@@ -454,7 +456,7 @@ class ManifestParser(object):
             print >> fp
 
         for test in tests:
-            test = test.copy() 
+            test = test.copy()  
 
             path = test['name']
             if not os.path.isabs(path):
@@ -509,7 +511,7 @@ class ManifestParser(object):
         
         tests = self.get(tags=tags, **kwargs)
         if not tests:
-            return 
+            return  
 
         
         if rootdir is None:
@@ -582,7 +584,8 @@ class ManifestParser(object):
         ignore = set(ignore)
 
         if not patterns:
-            accept_filename = lambda filename: True
+            def accept_filename(filename):
+                return True
         else:
             def accept_filename(filename):
                 for pattern in patterns:
@@ -590,9 +593,11 @@ class ManifestParser(object):
                         return True
 
         if not ignore:
-            accept_dirname = lambda dirname: True
+            def accept_dirname(dirname):
+                return True
         else:
-            accept_dirname = lambda dirname: dirname not in ignore
+            def accept_dirname(dirname):
+                return dirname not in ignore
 
         rootdirectories = directories[:]
         seen_directories = set()
@@ -632,12 +637,12 @@ class ManifestParser(object):
                 if subdirs or files:
                     callback(rootdirectory, directory, subdirs, files)
 
-
     @classmethod
-    def populate_directory_manifests(cls, directories, filename, pattern=None, ignore=(), overwrite=False):
+    def populate_directory_manifests(cls, directories, filename, pattern=None, ignore=(),
+                                     overwrite=False):
         """
-        walks directories and writes manifests of name `filename` in-place; returns `cls` instance populated
-        with the given manifests
+        walks directories and writes manifests of name `filename` in-place;
+        returns `cls` instance populated with the given manifests
 
         filename -- filename of manifests to write
         pattern -- shell pattern (glob) or patterns of filenames to match
@@ -692,10 +697,9 @@ class ManifestParser(object):
                        if false then the paths are absolute
         """
 
-
         
-        opened_manifest_file = None 
-        absolute = not relative_to 
+        opened_manifest_file = None  
+        absolute = not relative_to  
         if isinstance(write, string):
             opened_manifest_file = write
             write = file(write, 'w')
@@ -718,8 +722,7 @@ class ManifestParser(object):
 
             
             print >> write, '\n'.join(['[%s]' % denormalize_path(filename)
-                                               for filename in filenames])
-
+                                       for filename in filenames])
 
         cls._walk_directories(directories, callback, pattern=pattern, ignore=ignore)
 
@@ -733,7 +736,6 @@ class ManifestParser(object):
             write.flush()
             write.seek(0)
             manifests = [write]
-
 
         
         return cls(manifests=manifests)
@@ -762,7 +764,7 @@ class TestManifest(ManifestParser):
         :param filters: list of filters to apply to the tests
         :returns: list of test objects that were not filtered out
         """
-        tests = [i.copy() for i in self.tests] 
+        tests = [i.copy() for i in self.tests]  
 
         
         for test in tests:

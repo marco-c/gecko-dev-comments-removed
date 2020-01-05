@@ -20,6 +20,7 @@ import moznetwork
 import time
 from SocketServer import ThreadingMixIn
 
+
 class EasyServer(ThreadingMixIn, BaseHTTPServer.HTTPServer):
     allow_reuse_address = True
     acceptable_errors = (errno.EPIPE, errno.ECONNABORTED)
@@ -62,7 +63,7 @@ class Request(object):
 
 class RequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
 
-    docroot = os.getcwd() 
+    docroot = os.getcwd()  
     proxy_host_dirs = False
     request_log = []
     log_requests = False
@@ -74,9 +75,9 @@ class RequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
 
     def _try_handler(self, method):
         if self.log_requests:
-            self.request_log.append({ 'method': method,
-                                      'path': self.request.path,
-                                      'time': time.time() })
+            self.request_log.append({'method': method,
+                                     'path': self.request.path,
+                                     'time': time.time()})
 
         handlers = [handler for handler in self.urlhandlers
                     if handler['method'] == method]
@@ -162,10 +163,10 @@ class RequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
         for word in words:
             drive, word = os.path.splitdrive(word)
             head, word = os.path.split(word)
-            if word in (os.curdir, os.pardir): continue
+            if word in (os.curdir, os.pardir):
+                continue
             path = os.path.join(path, word)
         return path
-
 
     
     
@@ -261,7 +262,7 @@ class MozHttpd(object):
             self.httpd.serve_forever()
         else:
             self.server = threading.Thread(target=self.httpd.serve_forever)
-            self.server.setDaemon(True) 
+            self.server.setDaemon(True)  
             self.server.start()
 
     def stop(self):

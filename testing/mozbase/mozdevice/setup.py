@@ -11,13 +11,13 @@ deps = ['mozfile >= 1.0',
         'mozlog >= 3.0',
         'moznetwork >= 0.24',
         'mozprocess >= 0.19',
-       ]
+        ]
 
 setup(name=PACKAGE_NAME,
       version=PACKAGE_VERSION,
       description="Mozilla-authored device management",
       long_description="see http://mozbase.readthedocs.org/",
-      classifiers=[], 
+      classifiers=[],  
       keywords='',
       author='Mozilla Automation and Testing Team',
       author_email='tools@lists.mozilla.org',

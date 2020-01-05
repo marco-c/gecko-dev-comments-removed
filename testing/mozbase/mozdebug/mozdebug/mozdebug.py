@@ -61,12 +61,13 @@ _DEBUGGER_INFO = {
 
 
 _DEBUGGER_PRIORITIES = {
-      'win': ['devenv.exe', 'wdexpress.exe'],
-      'linux': ['gdb', 'cgdb', 'lldb'],
-      'mac': ['lldb', 'gdb'],
-      'android': ['gdb'],
-      'unknown': ['gdb']
+    'win': ['devenv.exe', 'wdexpress.exe'],
+    'linux': ['gdb', 'cgdb', 'lldb'],
+    'mac': ['lldb', 'gdb'],
+    'android': ['gdb'],
+    'unknown': ['gdb']
 }
+
 
 def _windbg_installation_paths():
     programFilesSuffixes = ['', ' (x86)']
@@ -80,6 +81,7 @@ def _windbg_installation_paths():
         for version in windowsKitsVersions:
             yield os.path.join(windowsKitsPrefix, version,
                                'Debuggers', 'x86', 'windbg.exe')
+
 
 def get_debugger_path(debugger):
     '''
@@ -105,7 +107,8 @@ def get_debugger_path(debugger):
 
     return find_executable(debugger)
 
-def get_debugger_info(debugger, debuggerArgs = None, debuggerInteractive = False):
+
+def get_debugger_info(debugger, debuggerArgs=None, debuggerInteractive=False):
     '''
     Get the information about the requested debugger.
 
@@ -127,7 +130,7 @@ def get_debugger_info(debugger, debuggerArgs = None, debuggerInteractive = False
         
         
         if (os.name == 'nt'
-            and not debugger.lower().endswith('.exe')):
+                and not debugger.lower().endswith('.exe')):
             debugger += '.exe'
 
         debuggerPath = get_debugger_path(debugger)
@@ -186,9 +189,12 @@ def get_debugger_info(debugger, debuggerArgs = None, debuggerInteractive = False
     return d
 
 
+
+
 class DebuggerSearch:
-  OnlyFirst = 1
-  KeepLooking = 2
+    OnlyFirst = 1
+    KeepLooking = 2
+
 
 def get_default_debugger_name(search=DebuggerSearch.OnlyFirst):
     '''
@@ -259,6 +265,8 @@ def get_default_debugger_name(search=DebuggerSearch.OnlyFirst):
 
 
 
+
+
 def get_default_valgrind_args():
     return (['--fair-sched=yes',
              '--smc-check=all-non-file',
@@ -269,8 +277,10 @@ def get_default_valgrind_args():
               + '/usr/bin/hg,/bin/rm,*/bin/certutil,*/bin/pk12util,'
               + '*/bin/ssltunnel,*/bin/uname,*/bin/which,*/bin/ps,'
               + '*/bin/grep,*/bin/java'),
-            ]
+             ]
             + get_default_valgrind_tool_specific_args())
+
+
 
 
 
@@ -278,4 +288,4 @@ def get_default_valgrind_tool_specific_args():
     return ['--partial-loads-ok=yes',
             '--leak-check=full',
             '--show-possibly-lost=no',
-           ]
+            ]

@@ -3,6 +3,7 @@ from xml.etree import ElementTree
 
 import base
 
+
 def format_test_id(test_id):
     """Take a test id and return something that looks a bit like
     a class path"""

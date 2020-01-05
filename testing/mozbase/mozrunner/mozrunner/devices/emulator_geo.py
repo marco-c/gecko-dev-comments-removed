@@ -2,6 +2,7 @@
 
 
 
+
 class EmulatorGeo(object):
 
     def __init__(self, emulator):
@@ -14,4 +15,3 @@ class EmulatorGeo(object):
 
     def set_location(self, lon, lat):
         self.emulator._run_telnet('geo fix %0.5f %0.5f' % (self.lon, self.lat))
-

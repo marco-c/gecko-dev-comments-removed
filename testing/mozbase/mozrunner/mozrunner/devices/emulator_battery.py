@@ -2,6 +2,7 @@
 
 
 
+
 class EmulatorBattery(object):
 
     def __init__(self, emulator):
@@ -50,4 +51,3 @@ class EmulatorBattery(object):
 
     charging = property(get_charging, set_charging)
     level = property(get_level, set_level)
-

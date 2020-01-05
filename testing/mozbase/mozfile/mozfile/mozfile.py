@@ -29,6 +29,7 @@ __all__ = ['extract_tarball',
 
 
 
+
 def extract_tarball(src, dest):
     """extract a .tar file"""
 
@@ -161,7 +162,7 @@ def _call_windows_retry(func, args=(), retry_max=5, retry_delay=0.5):
             retry_count += 1
 
             print '%s() failed for "%s". Reason: %s (%s). Retrying...' % \
-                    (func.__name__, args, e.strerror, e.errno)
+                (func.__name__, args, e.strerror, e.errno)
             time.sleep(retry_count * retry_delay)
         else:
             
@@ -261,17 +262,18 @@ def depth(directory):
 
 
 ascii_delimeters = {
-    'vertical_line' : '|',
-    'item_marker'   : '+',
-    'last_child'    : '\\'
-    }
+    'vertical_line': '|',
+    'item_marker': '+',
+    'last_child': '\\'
+}
 
 
 unicode_delimeters = {
-    'vertical_line' : '│',
-    'item_marker'   : '├',
-    'last_child'    : '└'
-    }
+    'vertical_line': '│',
+    'item_marker': '├',
+    'last_child': '└'
+}
+
 
 def tree(directory,
          item_marker=unicode_delimeters['item_marker'],
@@ -319,16 +321,16 @@ def tree(directory,
 
         
         
-        retval.append('%s%s%s'% (''.join(indent[:-1]),
-                                 dirpath_mark,
-                                 basename if retval else directory))
+        retval.append('%s%s%s' % (''.join(indent[:-1]),
+                                  dirpath_mark,
+                                  basename if retval else directory))
         
         if filenames:
             last_file = filenames[-1]
             retval.extend([('%s%s%s' % (''.join(indent),
                                         files_end if filename == last_file else item_marker,
                                         filename))
-                                        for index, filename in enumerate(filenames)])
+                           for index, filename in enumerate(filenames)])
 
     return '\n'.join(retval)
 
@@ -353,6 +355,7 @@ class NamedTemporaryFile(object):
 
     see https://bugzilla.mozilla.org/show_bug.cgi?id=821362
     """
+
     def __init__(self, mode='w+b', bufsize=-1, suffix='', prefix='tmp',
                  dir=None, delete=True):
 
@@ -425,6 +428,7 @@ def is_url(thing):
     else:
         return len(parsed[0]) >= 2
 
+
 def load(resource):
     """
     open a file or URL for reading.  If the passed resource string is not a URL,
@@ -443,4 +447,3 @@ def load(resource):
         return file(resource)
 
     return urllib2.urlopen(resource)
-

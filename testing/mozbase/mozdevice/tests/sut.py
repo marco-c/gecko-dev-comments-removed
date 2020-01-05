@@ -9,12 +9,13 @@ import time
 
 from threading import Thread
 
+
 class MockAgent(object):
 
     MAX_WAIT_TIME_SECONDS = 10
     SOCKET_TIMEOUT_SECONDS = 5
 
-    def __init__(self, tester, start_commands = None, commands = []):
+    def __init__(self, tester, start_commands=None, commands=[]):
         if start_commands:
             self.commands = start_commands
         else:
@@ -60,11 +61,11 @@ class MockAgent(object):
             
             
             
-            if response is None: 
+            if response is None:  
                 conn.shutdown(socket.SHUT_RDWR)
                 conn.close()
                 conn = None
-            elif type(response) is int: 
+            elif type(response) is int:  
                 max_timeout = 15.0
                 timeout = 0.0
                 interval = 0.1

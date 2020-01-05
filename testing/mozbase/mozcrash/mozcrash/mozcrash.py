@@ -2,14 +2,6 @@
 
 
 
-__all__ = [
-    'check_for_crashes',
-    'check_for_java_exception',
-    'kill_and_get_minidump',
-    'log_crashes',
-    'cleanup_pending_crash_reports',
-]
-
 import glob
 import os
 import re
@@ -25,6 +17,14 @@ from collections import namedtuple
 import mozfile
 import mozinfo
 import mozlog
+
+__all__ = [
+    'check_for_crashes',
+    'check_for_java_exception',
+    'kill_and_get_minidump',
+    'log_crashes',
+    'cleanup_pending_crash_reports',
+]
 
 
 StackInfo = namedtuple("StackInfo",
@@ -193,7 +193,8 @@ class CrashInfo(object):
                                 glob.glob(os.path.join(self.dump_directory, '*.dmp'))]
             max_dumps = 10
             if len(self._dump_files) > max_dumps:
-                self.logger.warning("Found %d dump files -- limited to %d!" % (len(self._dump_files), max_dumps))
+                self.logger.warning("Found %d dump files -- limited to %d!" %
+                                    (len(self._dump_files), max_dumps))
                 del self._dump_files[max_dumps:]
 
         return self._dump_files
@@ -238,7 +239,7 @@ class CrashInfo(object):
         retcode = None
         if (self.symbols_path and self.stackwalk_binary and
             os.path.exists(self.stackwalk_binary) and
-            os.access(self.stackwalk_binary, os.X_OK)):
+                os.access(self.stackwalk_binary, os.X_OK)):
 
             command = [
                 self.stackwalk_binary,
@@ -264,10 +265,11 @@ class CrashInfo(object):
                 
                 
                 
+                
                 lines = out.splitlines()
                 for i, line in enumerate(lines):
                     if "(crashed)" in line:
-                        match = re.search(r"^ 0  (?:.*!)?(?:void )?([^\[]+)", lines[i+1])
+                        match = re.search(r"^ 0  (?:.*!)?(?:void )?([^\[]+)", lines[i + 1])
                         if match:
                             signature = "@ %s" % match.group(1).strip()
                         break
@@ -325,7 +327,7 @@ def check_for_java_exception(logcat, quiet=False):
     logcat output.
 
     Example:
-    PROCESS-CRASH | java-exception | java.lang.NullPointerException at org.mozilla.gecko.GeckoApp$21.run(GeckoApp.java:1833)
+    PROCESS-CRASH | java-exception | java.lang.NullPointerException at org.mozilla.gecko.GeckoApp$21.run(GeckoApp.java:1833) # noqa
 
     `logcat` should be a list of strings.
 
@@ -349,16 +351,18 @@ def check_for_java_exception(logcat, quiet=False):
             found_exception = True
             if len(logcat) >= i + 3:
                 logre = re.compile(r".*\): \t?(.*)")
-                m = logre.search(logcat[i+1])
+                m = logre.search(logcat[i + 1])
                 if m and m.group(1):
                     exception_type = m.group(1)
-                m = logre.search(logcat[i+2])
+                m = logre.search(logcat[i + 2])
                 if m and m.group(1):
                     exception_location = m.group(1)
                 if not quiet:
-                    print "PROCESS-CRASH | java-exception | %s %s" % (exception_type, exception_location)
+                    print "PROCESS-CRASH | java-exception | %s %s" % (exception_type,
+                                                                      exception_location)
             else:
-                print "Automation Error: java exception in logcat at line %d of %d: %s" % (i, len(logcat), line)
+                print "Automation Error: java exception in logcat at line " \
+                    "%d of %d: %s" % (i, len(logcat), line)
             break
 
     return found_exception
@@ -390,7 +394,7 @@ if mozinfo.isWin:
                                  str(uuid.uuid4()) + ".dmp")
 
         if (mozinfo.info['bits'] != ctypes.sizeof(ctypes.c_voidp) * 8 and
-            utility_path):
+                utility_path):
             
             
             
@@ -465,6 +469,7 @@ else:
         """
         os.kill(pid, signal.SIGKILL)
 
+
 def kill_and_get_minidump(pid, dump_directory, utility_path=None):
     """
     Attempt to kill a process and leave behind a minidump describing its
@@ -491,6 +496,7 @@ def kill_and_get_minidump(pid, dump_directory, utility_path=None):
         needs_killing = False
     if needs_killing:
         kill_pid(pid)
+
 
 def cleanup_pending_crash_reports():
     """

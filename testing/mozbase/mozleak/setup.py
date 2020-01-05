@@ -14,7 +14,7 @@ setup(
     version=PACKAGE_VERSION,
     description="Library for extracting memory leaks from leak logs files",
     long_description="see http://mozbase.readthedocs.org/",
-    classifiers=[], 
+    classifiers=[],  
     keywords='mozilla',
     author='Mozilla Automation and Tools team',
     author_email='tools@lists.mozilla.org',

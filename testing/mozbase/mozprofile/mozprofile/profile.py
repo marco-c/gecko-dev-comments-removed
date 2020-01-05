@@ -2,15 +2,9 @@
 
 
 
-__all__ = ['Profile',
-           'FirefoxProfile',
-           'MetroFirefoxProfile',
-           'ThunderbirdProfile']
-
 import os
 import time
 import tempfile
-import types
 import uuid
 
 from addons import AddonManager
@@ -19,6 +13,11 @@ from permissions import Permissions
 from prefs import Preferences
 from shutil import copytree
 from webapps import WebappCollection
+
+__all__ = ['Profile',
+           'FirefoxProfile',
+           'MetroFirefoxProfile',
+           'ThunderbirdProfile']
 
 
 class Profile(object):
@@ -175,8 +174,8 @@ class Profile(object):
         - kwargs: arguments to the profile constructor
         """
         if not path_to:
-            tempdir = tempfile.mkdtemp() 
-            mozfile.remove(tempdir) 
+            tempdir = tempfile.mkdtemp()  
+            mozfile.remove(tempdir)  
             path_to = tempdir
         copytree(path_from, path_to)
 
@@ -241,6 +240,7 @@ class Profile(object):
         path = os.path.join(self.profile, filename)
         with file(path) as f:
             lines = f.read().splitlines()
+
         def last_index(_list, value):
             """
             returns the last index of an item;
@@ -255,15 +255,16 @@ class Profile(object):
         
         if s is None:
             assert e is None, '%s found without %s' % (self.delimeters[1], self.delimeters[0])
-            return False 
+            return False  
         elif e is None:
             assert s is None, '%s found without %s' % (self.delimeters[0], self.delimeters[1])
 
         
-        assert e > s, '%s found at %s, while %s found at %s' % (self.delimeters[1], e, self.delimeters[0], s)
+        assert e > s, '%s found at %s, while %s found at %s' % (self.delimeters[1], e,
+                                                                self.delimeters[0], s)
 
         
-        cleaned_prefs = '\n'.join(lines[:s] + lines[e+1:])
+        cleaned_prefs = '\n'.join(lines[:s] + lines[e + 1:])
         with file(path, 'w') as f:
             f.write(cleaned_prefs)
         return True
@@ -277,7 +278,7 @@ class Profile(object):
         of tuples instead of the assembled string
         """
 
-        parts = [('Path', self.profile)] 
+        parts = [('Path', self.profile)]  
 
         
         parts.append(('Files', '\n%s' % mozfile.tree(self.profile)))
@@ -292,8 +293,11 @@ class Profile(object):
                 
                 section_prefs = ['network.proxy.autoconfig_url']
                 line_length = 80
-                line_length_buffer = 10 
+                
+                
+                line_length_buffer = 10
                 line_length_buffer += len(': ')
+
                 def format_value(key, value):
                     if key not in section_prefs:
                         return value
@@ -306,9 +310,9 @@ class Profile(object):
                 if prefs:
                     prefs = dict(prefs)
                     parts.append((prefs_file,
-                    '\n%s' %('\n'.join(['%s: %s' % (key, format_value(key, prefs[key]))
-                                        for key in sorted(prefs.keys())
-                                        ]))))
+                                  '\n%s' % ('\n'.join(
+                                      ['%s: %s' % (key, format_value(key, prefs[key]))
+                                       for key in sorted(prefs.keys())]))))
 
                     
                     
@@ -322,11 +326,12 @@ class Profile(object):
                         origins_end = '];'
                         if origins_string in lines[0]:
                             start = lines[0].find(origins_string)
-                            end = lines[0].find(origins_end, start);
+                            end = lines[0].find(origins_end, start)
                             splitline = [lines[0][:start],
-                                         lines[0][start:start+len(origins_string)-1],
+                                         lines[0][start:start + len(origins_string) - 1],
                                          ]
-                            splitline.extend(lines[0][start+len(origins_string):end].replace(',', ',\n').splitlines())
+                            splitline.extend(lines[0][start + len(origins_string):end].replace(
+                                ',', ',\n').splitlines())
                             splitline.append(lines[0][end:])
                             lines[0:1] = [i.strip() for i in splitline]
                         parts.append(('Network Proxy Autoconfig, %s' % (prefs_file),
@@ -345,101 +350,103 @@ class Profile(object):
 class FirefoxProfile(Profile):
     """Specialized Profile subclass for Firefox"""
 
-    preferences = {
-                   'app.update.enabled' : False,
-                   
-                   'browser.sessionstore.resume_from_crash': False,
-                   
-                   'browser.shell.checkDefaultBrowser' : False,
-                   
-                   'browser.tabs.warnOnClose' : False,
-                   
-                   'browser.warnOnQuit': False,
-                   
-                   'datareporting.healthreport.documentServerURI' : 'http://%(server)s/healthreport/',
-                   
-                   
-                   
-                   'extensions.enabledScopes' : 5,
-                   'extensions.autoDisableScopes' : 10,
-                   
-                   'extensions.getAddons.cache.enabled' : False,
-                   
-                   'extensions.installDistroAddons' : False,
-                   
-                   'extensions.showMismatchUI' : False,
-                   
-                   'extensions.update.enabled'    : False,
-                   
-                   'extensions.update.notifyUser' : False,
-                   
-                   'focusmanager.testmode' : True,
-                   
-                   'geo.provider.testing' : True,
-                   
-                   'security.notification_enable_delay' : 0,
-                   
-                   'toolkit.startup.max_resumed_crashes' : -1,
-                   
-                   'toolkit.telemetry.enabled' : False,
-                   
-                   
-                   'toolkit.telemetry.server' : 'http://%(server)s/telemetry-dummy/',
-                   }
+    preferences = {  
+        'app.update.enabled': False,
+        
+        'browser.sessionstore.resume_from_crash': False,
+        
+        'browser.shell.checkDefaultBrowser': False,
+        
+        'browser.tabs.warnOnClose': False,
+        
+        'browser.warnOnQuit': False,
+        
+        'datareporting.healthreport.documentServerURI': 'http://%(server)s/healthreport/',
+        
+        
+        
+        'extensions.enabledScopes': 5,
+        'extensions.autoDisableScopes': 10,
+        
+        'extensions.getAddons.cache.enabled': False,
+        
+        'extensions.installDistroAddons': False,
+        
+        'extensions.showMismatchUI': False,
+        
+        'extensions.update.enabled': False,
+        
+        'extensions.update.notifyUser': False,
+        
+        'focusmanager.testmode': True,
+        
+        'geo.provider.testing': True,
+        
+        'security.notification_enable_delay': 0,
+        
+        'toolkit.startup.max_resumed_crashes': -1,
+        
+        'toolkit.telemetry.enabled': False,
+        
+        
+        'toolkit.telemetry.server': 'http://%(server)s/telemetry-dummy/',
+    }
+
 
 class MetroFirefoxProfile(Profile):
     """Specialized Profile subclass for Firefox Metro"""
 
-    preferences = {
-                   'app.update.enabled' : False,
-                   'app.update.metro.enabled' : False,
-                   
-                   'browser.firstrun-content.dismissed' : True,
-                   
-                   'browser.sessionstore.resume_from_crash': False,
-                   
-                   'browser.shell.checkDefaultBrowser' : False,
-                   
-                   'datareporting.healthreport.documentServerURI' : 'http://%(server)s/healthreport/',
-                   
-                   'extensions.defaultProviders.enabled' : True,
-                   
-                   
-                   
-                   'extensions.enabledScopes' : 5,
-                   'extensions.autoDisableScopes' : 10,
-                   
-                   'extensions.getAddons.cache.enabled' : False,
-                   
-                   'extensions.installDistroAddons' : False,
-                   
-                   'extensions.showMismatchUI' : False,
-                   
-                   'extensions.strictCompatibility' : False,
-                   
-                   'extensions.update.enabled'    : False,
-                   
-                   'extensions.update.notifyUser' : False,
-                   
-                   'focusmanager.testmode' : True,
-                   
-                   'security.notification_enable_delay' : 0,
-                   
-                   'toolkit.startup.max_resumed_crashes' : -1,
-                   
-                   'toolkit.telemetry.enabled' : False,
-                   
-                   
-                   'toolkit.telemetry.server' : 'http://%(server)s/telemetry-dummy/',
-                   }
+    preferences = {  
+        'app.update.enabled': False,
+        'app.update.metro.enabled': False,
+        
+        'browser.firstrun-content.dismissed': True,
+        
+        'browser.sessionstore.resume_from_crash': False,
+        
+        'browser.shell.checkDefaultBrowser': False,
+        
+        'datareporting.healthreport.documentServerURI': 'http://%(server)s/healthreport/',
+        
+        'extensions.defaultProviders.enabled': True,
+        
+        
+        
+        'extensions.enabledScopes': 5,
+        'extensions.autoDisableScopes': 10,
+        
+        'extensions.getAddons.cache.enabled': False,
+        
+        'extensions.installDistroAddons': False,
+        
+        'extensions.showMismatchUI': False,
+        
+        'extensions.strictCompatibility': False,
+        
+        'extensions.update.enabled': False,
+        
+        'extensions.update.notifyUser': False,
+        
+        'focusmanager.testmode': True,
+        
+        'security.notification_enable_delay': 0,
+        
+        'toolkit.startup.max_resumed_crashes': -1,
+        
+        'toolkit.telemetry.enabled': False,
+        
+        
+        'toolkit.telemetry.server': 'http://%(server)s/telemetry-dummy/',
+    }
+
 
 class ThunderbirdProfile(Profile):
     """Specialized Profile subclass for Thunderbird"""
 
-    preferences = {'extensions.update.enabled'    : False,
-                   'extensions.update.notifyUser' : False,
-                   'browser.shell.checkDefaultBrowser' : False,
-                   'browser.tabs.warnOnClose' : False,
+    preferences = {'extensions.update.enabled': False,
+                   'extensions.update.notifyUser': False,
+                   'browser.shell.checkDefaultBrowser': False,
+                   'browser.tabs.warnOnClose': False,
                    'browser.warnOnQuit': False,
                    'browser.sessionstore.resume_from_crash': False,
                    
