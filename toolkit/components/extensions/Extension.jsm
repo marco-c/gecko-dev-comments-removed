@@ -429,21 +429,10 @@ this.ExtensionData = class {
         
       }
 
-      let containersEnabled = true;
-      try {
-        containerEnabled = Services.prefs.getBoolPref("privacy.userContext.enabled");
-      } catch(e) {
-        
-      }
-
       let permissions = this.manifest.permissions || [];
 
       let whitelist = [];
       for (let perm of permissions) {
-        if (perm == "contextualIdentities" && !containersEnabled) {
-          continue;
-        }
-
         this.permissions.add(perm);
 
         let match = /^(\w+)(?:\.(\w+)(?:\.\w+)*)?$/.exec(perm);
