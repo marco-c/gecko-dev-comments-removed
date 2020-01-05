@@ -16,7 +16,7 @@ import java.util.Comparator;
 
  class IconDescriptorComparator implements Comparator<IconDescriptor> {
     @Override
-    public int compare(IconDescriptor lhs, IconDescriptor rhs) {
+    public int compare(final IconDescriptor lhs, final IconDescriptor rhs) {
         if (lhs.getUrl().equals(rhs.getUrl())) {
             
             
@@ -44,7 +44,9 @@ import java.util.Comparator;
         }
 
         
-        return 1;
+        
+        
+        return lhs.getUrl().compareTo(rhs.getUrl());
     }
 
     private int compareType(IconDescriptor lhs, IconDescriptor rhs) {
