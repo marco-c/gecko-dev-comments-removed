@@ -53,6 +53,7 @@ use selectors::matching::ElementSelectorFlags;
 use selectors::parser::{AttrSelector, NamespaceConstraint};
 use servo_atoms::Atom;
 use servo_url::ServoUrl;
+use std::ascii::AsciiExt;
 use std::fmt;
 use std::fmt::Debug;
 use std::marker::PhantomData;
@@ -617,6 +618,10 @@ impl<'le> ::selectors::Element for ServoLayoutElement<'le> {
                 }
             },
             NonTSPseudoClass::Visited => false,
+
+            
+            
+            NonTSPseudoClass::Lang(ref lang) => lang.eq_ignore_ascii_case(&self.element.get_lang_for_layout()),
 
             NonTSPseudoClass::ServoNonZeroBorder => unsafe {
                 match (*self.element.unsafe_get()).get_attr_for_layout(&ns!(), &local_name!("border")) {
