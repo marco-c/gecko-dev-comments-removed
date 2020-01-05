@@ -5,6 +5,7 @@
 
 
 #include "AppTrustDomain.h"
+
 #include "MainThreadUtils.h"
 #include "certdb.h"
 #include "mozilla/ArrayUtils.h"
@@ -20,15 +21,7 @@
 #include "prerror.h"
 
 
-#include "marketplace-prod-public.inc"
-#include "marketplace-prod-reviewers.inc"
-#include "marketplace-dev-public.inc"
-#include "marketplace-dev-reviewers.inc"
-#include "marketplace-stage.inc"
 #include "xpcshell.inc"
-
-#include "manifest-signing-root.inc"
-#include "manifest-signing-test-root.inc"
 
 #include "addons-public.inc"
 #include "addons-stage.inc"
@@ -39,7 +32,6 @@ using namespace mozilla::pkix;
 
 extern mozilla::LazyLogModule gPIPNSSLog;
 
-static const unsigned int DEFAULT_MIN_RSA_BITS = 2048;
 static char kDevImportedDER[] =
   "network.http.signed-packages.developer-root";
 
@@ -52,7 +44,6 @@ unsigned int AppTrustDomain::sDevImportedDERLen = 0;
 AppTrustDomain::AppTrustDomain(UniqueCERTCertList& certChain, void* pinArg)
   : mCertChain(certChain)
   , mPinArg(pinArg)
-  , mMinRSABits(DEFAULT_MIN_RSA_BITS)
 {
 }
 
@@ -66,33 +57,6 @@ AppTrustDomain::SetTrustedRoot(AppTrustedRoot trustedRoot)
 
   switch (trustedRoot)
   {
-    case nsIX509CertDB::AppMarketplaceProdPublicRoot:
-      trustedDER.data = const_cast<uint8_t*>(marketplaceProdPublicRoot);
-      trustedDER.len = mozilla::ArrayLength(marketplaceProdPublicRoot);
-      break;
-
-    case nsIX509CertDB::AppMarketplaceProdReviewersRoot:
-      trustedDER.data = const_cast<uint8_t*>(marketplaceProdReviewersRoot);
-      trustedDER.len = mozilla::ArrayLength(marketplaceProdReviewersRoot);
-      break;
-
-    case nsIX509CertDB::AppMarketplaceDevPublicRoot:
-      trustedDER.data = const_cast<uint8_t*>(marketplaceDevPublicRoot);
-      trustedDER.len = mozilla::ArrayLength(marketplaceDevPublicRoot);
-      break;
-
-    case nsIX509CertDB::AppMarketplaceDevReviewersRoot:
-      trustedDER.data = const_cast<uint8_t*>(marketplaceDevReviewersRoot);
-      trustedDER.len = mozilla::ArrayLength(marketplaceDevReviewersRoot);
-      break;
-
-    case nsIX509CertDB::AppMarketplaceStageRoot:
-      trustedDER.data = const_cast<uint8_t*>(marketplaceStageRoot);
-      trustedDER.len = mozilla::ArrayLength(marketplaceStageRoot);
-      
-      mMinRSABits = 1024u;
-      break;
-
     case nsIX509CertDB::AppXPCShellRoot:
       trustedDER.data = const_cast<uint8_t*>(xpcshellRoot);
       trustedDER.len = mozilla::ArrayLength(xpcshellRoot);
@@ -318,7 +282,7 @@ Result
 AppTrustDomain::CheckRSAPublicKeyModulusSizeInBits(
   EndEntityOrCA , unsigned int modulusSizeInBits)
 {
-  if (modulusSizeInBits < mMinRSABits) {
+  if (modulusSizeInBits < 2048u) {
     return Result::ERROR_INADEQUATE_KEY_SIZE;
   }
   return Success;

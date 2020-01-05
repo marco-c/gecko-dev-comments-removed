@@ -76,7 +76,6 @@ private:
    UniqueCERTCertList& mCertChain;
   void* mPinArg; 
   UniqueCERTCertificate mTrustedRoot;
-  unsigned int mMinRSABits;
 
   static StaticMutex sMutex;
   static UniquePtr<unsigned char[]> sDevImportedDERData;
