@@ -359,6 +359,7 @@ impl<'a, E> Element for ElementWrapper<'a, E>
 }
 
 
+
 pub fn complex_selector_to_state(sel: &ComplexSelector<SelectorImpl>) -> ElementState {
     sel.compound_selector.iter().fold(ElementState::empty(), |state, s| {
         state | selector_to_state(s)
@@ -368,6 +369,11 @@ pub fn complex_selector_to_state(sel: &ComplexSelector<SelectorImpl>) -> Element
 fn selector_to_state(sel: &SimpleSelector<SelectorImpl>) -> ElementState {
     match *sel {
         SimpleSelector::NonTSPseudoClass(ref pc) => SelectorImpl::pseudo_class_state_flag(pc),
+        SimpleSelector::Negation(ref negated) => {
+            negated.iter().fold(ElementState::empty(), |state, s| {
+                state | complex_selector_to_state(s)
+            })
+        }
         _ => ElementState::empty(),
     }
 }
@@ -502,6 +508,15 @@ impl DependencySet {
                 if !sensitivities.attrs {
                     sensitivities.attrs = is_attr_selector(s);
                 }
+
+                
+                
+                
+                
+                
+                
+                
+                
             }
             if !sensitivities.is_empty() {
                 self.add_dependency(Dependency {
