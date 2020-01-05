@@ -196,6 +196,17 @@ impl webrender_traits::RenderNotifier for CppNotifier {
     }
 }
 
+
+
+
+
+
+
+
+
+
+
+
 pub struct WebRenderFrameBuilder {
     pub root_pipeline_id: PipelineId,
     pub dl_builder: webrender_traits::DisplayListBuilder,
@@ -209,6 +220,7 @@ impl WebRenderFrameBuilder {
         }
     }
 }
+
 
 struct Notifier {
     render_notifier: Arc<(Mutex<bool>, Condvar)>,
@@ -230,6 +242,7 @@ impl webrender_traits::RenderNotifier for Notifier {
                              _: Option<LayoutSize>) {
     }
 }
+
 
 pub struct WrWindowState {
     renderer: Renderer,

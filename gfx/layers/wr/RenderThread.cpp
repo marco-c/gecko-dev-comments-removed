@@ -157,7 +157,11 @@ RenderThread::UpdateAndRender(gfx::WindowId aWindowId)
 
   auto& renderer = it->second;
 
-  auto transactionId = 0; 
+  
+  
+  
+  
+  auto transactionId = 0;
 
   renderer->Update();
   renderer->Render(transactionId);

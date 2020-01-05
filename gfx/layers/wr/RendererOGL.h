@@ -8,6 +8,7 @@
 #define MOZILLA_LAYERS_RENDEREROGL_H
 
 #include "mozilla/layers/RenderThread.h"
+#include "mozilla/layers/WebRenderTypes.h"
 #include "mozilla/gfx/webrender.h"
 
 namespace mozilla {
@@ -28,29 +29,39 @@ namespace layers {
 
 class WebRenderBridgeParent;
 
+
+
+
+
+
 class RendererOGL
 {
 public:
 
+  
   static RendererOGL* Create(already_AddRefed<RenderThread> aThread,
                              already_AddRefed<widget::CompositorWidget> aWidget,
                              WrRenderer* aWrRenderer,
-                             uint64_t aPipelineId,
+                             gfx::WindowId aWindowId,
                              WebRenderBridgeParent* aBridge);
 
+  
   void Update();
 
+  
   bool Render(uint64_t aTransactionId);
 
+  
   bool RenderToTarget(gfx::DrawTarget& aTarget);
 
+  
   ~RendererOGL();
 
 protected:
   RendererOGL(already_AddRefed<RenderThread> aThread,
               already_AddRefed<gl::GLContext> aGL,
               already_AddRefed<widget::CompositorWidget>,
-              uint64_t aPipelineId,
+              gfx::WindowId aWindowId,
               WrRenderer* aWrRenderer,
               WebRenderBridgeParent* aBridge);
 
@@ -59,7 +70,7 @@ protected:
   RefPtr<widget::CompositorWidget> mWidget;
   WrRenderer* mWrRenderer;
   WebRenderBridgeParent* mBridge;
-  uint64_t mPipelineId;
+  gfx::WindowId mWindowId;
 };
 
 }
