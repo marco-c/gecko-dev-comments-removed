@@ -25,14 +25,18 @@ class TestSafeBrowsingNotificationBar(PuppeteerMixin, MarionetteTestCase):
             },
             
             {
-                'button_property': 'safebrowsing.notADeceptiveSiteButton.label',
-                'report_page': 'google.com/safebrowsing/report_error',
+                
+                
+                'button_property': None,
+                'report_page': None,
                 'unsafe_page': 'https://www.itisatrap.org/firefox/its-a-trap.html'
             },
             
             {
-                'button_property': 'safebrowsing.notAnAttackButton.label',
-                'report_page': 'stopbadware.org',
+                
+                
+                'button_property': None,
+                'report_page': None,
                 'unsafe_page': 'https://www.itisatrap.org/firefox/its-an-attack.html'
             }
         ]
