@@ -426,10 +426,6 @@ impl Node {
         self.get_flag(HAS_DIRTY_DESCENDANTS)
     }
 
-    pub fn set_has_dirty_descendants(&self, state: bool) {
-        self.set_flag(HAS_DIRTY_DESCENDANTS, state)
-    }
-
     pub fn rev_version(&self) {
         
         
