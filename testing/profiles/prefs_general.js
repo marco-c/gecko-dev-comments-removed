@@ -229,6 +229,7 @@ user_pref("browser.snippets.firstrunHomepage.enabled", false);
 
 
 user_pref("general.useragent.updates.enabled", false);
+user_pref("general.useragent.updates.url", "https://example.com/0/%%APP_ID%%");
 
 
 user_pref("browser.webapps.checkForUpdates", 0);
