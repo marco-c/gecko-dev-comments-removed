@@ -188,6 +188,25 @@ assert.number = function (obj, msg = "") {
 
 
 
+assert.callable = function (obj, msg = "") {
+  msg = msg || error.pprint`${obj} is not callable`;
+  return assert.that(o => typeof o == "function", msg)(obj);
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 assert.integer = function (obj, msg = "") {
   msg = msg || error.pprint`Expected ${obj} to be an integer`;
   return assert.that(Number.isInteger, msg)(obj);
