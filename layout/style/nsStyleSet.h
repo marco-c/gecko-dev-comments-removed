@@ -280,9 +280,16 @@ class nsStyleSet final
   
   
   
+  
   already_AddRefed<nsStyleContext>
   ResolveAnonymousBoxStyle(nsIAtom* aPseudoTag, nsStyleContext* aParentContext,
                            uint32_t aFlags = eNoFlags);
+
+  
+  
+  
+  already_AddRefed<nsStyleContext>
+  ResolveNonInheritingAnonymousBoxStyle(nsIAtom* aPseudoTag);
 
 #ifdef MOZ_XUL
   

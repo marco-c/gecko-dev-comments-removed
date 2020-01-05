@@ -666,7 +666,8 @@ ShouldSuppressLineBreak(const nsStyleContext* aContext,
   
   
   
-  if (aContext->GetPseudoType() == CSSPseudoElementType::AnonBox &&
+  if ((aContext->GetPseudoType() == CSSPseudoElementType::InheritingAnonBox ||
+       aContext->GetPseudoType() == CSSPseudoElementType::NonInheritingAnonBox) &&
       !nsCSSAnonBoxes::IsNonElement(aContext->GetPseudo()) &&
       !RubyUtils::IsRubyPseudo(aContext->GetPseudo())) {
     return false;

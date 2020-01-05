@@ -547,11 +547,13 @@ IsNativeAnonymousImplementationOfPseudoElement(nsIContent* aContent)
   
   
   
-  if (pseudoType == CSSPseudoElementType::AnonBox) {
+  if (pseudoType == CSSPseudoElementType::InheritingAnonBox) {
     MOZ_ASSERT(f->StyleContext()->GetPseudo() == nsCSSAnonBoxes::mozText ||
                f->StyleContext()->GetPseudo() == nsCSSAnonBoxes::tableWrapper);
     return false;
   }
+
+  MOZ_ASSERT(pseudoType != CSSPseudoElementType::NonInheritingAnonBox);
 
   
   bool isImpl = pseudoType != CSSPseudoElementType::NotPseudo;
