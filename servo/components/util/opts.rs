@@ -807,6 +807,10 @@ pub fn from_cmdline_args(args: &[String]) -> ArgumentParsingResult {
 
     
     
+    
+    if get().profile_dir.is_some() {
+        prefs::add_user_prefs();
+    }
     for pref in opt_match.opt_strs("pref").iter() {
         let split: Vec<&str> = pref.splitn(2, '=').collect();
         let pref_name = split[0];
