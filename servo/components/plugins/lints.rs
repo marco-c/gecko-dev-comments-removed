@@ -5,11 +5,13 @@
 use syntax::{ast, ast_map, ast_util, codemap, visit};
 use syntax::ast::Public;
 use syntax::attr::AttrMetaMethods;
-use rustc::lint::{Context, LintPass, LintArray};
+use rustc::lint::{Context, LintPass, LintArray, Level};
 use rustc::middle::ty::expr_ty;
 use rustc::middle::{ty, def};
 use rustc::middle::typeck::astconv::AstConv;
 use rustc::util::ppaux::Repr;
+
+use utils::match_lang_ty;
 
 declare_lint!(TRANSMUTE_TYPE_LINT, Allow,
               "Warn and report types being transmuted")
@@ -17,6 +19,8 @@ declare_lint!(UNROOTED_MUST_ROOT, Deny,
               "Warn and report usage of unrooted jsmanaged objects")
 declare_lint!(PRIVATIZE, Deny,
               "Allows to enforce private fields for struct definitions")
+declare_lint!(INHERITANCE_INTEGRITY, Deny,
+              "Ensures that struct fields are properly laid out for inheritance to work")
 
 
 
@@ -40,6 +44,12 @@ pub struct UnrootedPass;
 
 
 pub struct PrivatizePass;
+
+
+
+
+
+pub struct InheritancePass;
 
 impl LintPass for TransmutePass {
     fn get_lints(&self) -> LintArray {
@@ -247,6 +257,77 @@ impl LintPass for PrivatizePass {
                     }
                     _ => {}
                 }
+            }
+        }
+    }
+}
+
+impl LintPass for InheritancePass {
+    fn get_lints(&self) -> LintArray {
+        lint_array!(INHERITANCE_INTEGRITY)
+    }
+
+    fn check_struct_def(&mut self, cx: &Context, def: &ast::StructDef, _i: ast::Ident, _gen: &ast::Generics, id: ast::NodeId) {
+        
+        
+        if ty::has_attr(cx.tcx, ast_util::local_def(id), "_dom_struct_marker") {
+            
+            let reflector_span = def.fields.iter().enumerate()
+                                    .find(|&(ctr, f)| {
+                                        if match_lang_ty(cx, &*f.node.ty, "reflector") {
+                                            if ctr > 0 {
+                                                cx.span_lint(INHERITANCE_INTEGRITY, f.span,
+                                                             "The Reflector should be the first field of the DOM struct");
+                                            }
+                                            return true;
+                                        }
+                                        false
+                                    })
+                                    .map(|(_, f)| f.span);
+            
+            let dom_spans: Vec<_> = def.fields.iter().enumerate().filter_map(|(ctr, f)| {
+                if let ast::TyPath(_, _, ty_id) = f.node.ty.node {
+                    if let Some(def::DefTy(def_id, _)) = cx.tcx.def_map.borrow().get(&ty_id).cloned() {
+                        if ty::has_attr(cx.tcx, def_id, "_dom_struct_marker") {
+                            
+                            
+                            if ctr > 0 {
+                                cx.span_lint(INHERITANCE_INTEGRITY, f.span,
+                                             "Bare DOM structs should only be used as the first field of a \
+                                              DOM struct. Consider using JS<T> instead.");
+                            }
+                            return Some(f.span)
+                        }
+                    }
+                }
+                None
+            }).collect();
+
+            
+            if let Some(sp) = reflector_span {
+                if dom_spans.len() > 0 {
+                    cx.span_lint(INHERITANCE_INTEGRITY, cx.tcx.map.expect_item(id).span,
+                                 "This DOM struct has both Reflector and bare DOM struct members");
+                    if cx.current_level(INHERITANCE_INTEGRITY) != Level::Allow {
+                        let sess = cx.sess();
+                        sess.span_note(sp, "Reflector found here");
+                        for span in dom_spans.iter() {
+                            sess.span_note(*span, "Bare DOM struct found here");
+                        }
+                    }
+                }
+            
+            } else if dom_spans.len() > 1 {
+                cx.span_lint(INHERITANCE_INTEGRITY, cx.tcx.map.expect_item(id).span,
+                             "This DOM struct has multiple DOM struct members, only one is allowed");
+                if cx.current_level(INHERITANCE_INTEGRITY) != Level::Allow {
+                    for span in dom_spans.iter() {
+                        cx.sess().span_note(*span, "Bare DOM struct found here");
+                    }
+                }
+            } else if dom_spans.len() == 0 {
+                cx.span_lint(INHERITANCE_INTEGRITY, cx.tcx.map.expect_item(id).span,
+                             "This DOM struct has no reflector or parent DOM struct");
             }
         }
     }

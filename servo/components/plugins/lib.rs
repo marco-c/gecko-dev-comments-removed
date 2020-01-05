@@ -12,7 +12,7 @@
 
 
 
-#![feature(macro_rules, plugin_registrar, quote, phase)]
+#![feature(macro_rules, plugin_registrar, quote, phase, if_let)]
 
 #![deny(unused_imports)]
 #![deny(unused_variables)]
@@ -33,14 +33,20 @@ use syntax::parse::token::intern;
 
 
 pub mod jstraceable;
+
+pub mod reflector;
 pub mod lints;
+
+pub mod utils;
 
 #[plugin_registrar]
 pub fn plugin_registrar(reg: &mut Registry) {
     reg.register_syntax_extension(intern("dom_struct"), Modifier(box jstraceable::expand_dom_struct));
     reg.register_syntax_extension(intern("jstraceable"), Decorator(box jstraceable::expand_jstraceable));
+    reg.register_syntax_extension(intern("_generate_reflector"), Decorator(box reflector::expand_reflector));
     reg.register_lint_pass(box lints::TransmutePass as LintPassObject);
     reg.register_lint_pass(box lints::UnrootedPass as LintPassObject);
     reg.register_lint_pass(box lints::PrivatizePass as LintPassObject);
+    reg.register_lint_pass(box lints::InheritancePass as LintPassObject);
 }
 
