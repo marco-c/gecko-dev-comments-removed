@@ -12,7 +12,7 @@ module.exports = {
   "rules": {
     
     "mozilla/balanced-listeners": "error",
-    "mozilla/no-aArgs": "warn",
+    "mozilla/no-aArgs": "error",
     "mozilla/no-cpows-in-tests": "error",
     "mozilla/var-only-at-top-level": "error",
 
