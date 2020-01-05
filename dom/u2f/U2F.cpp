@@ -535,9 +535,7 @@ U2FRegisterRunnable::U2FRegisterRunnable(const nsAString& aOrigin,
 
   
   
-  for (size_t i = 0; i < aRegisterRequests.Length(); ++i) {
-    RegisterRequest req(aRegisterRequests[i]);
-
+  for (const RegisterRequest& req : aRegisterRequests) {
     
     if (!req.mChallenge.WasPassed() || !req.mVersion.WasPassed()) {
       continue;
@@ -556,9 +554,7 @@ U2FRegisterRunnable::U2FRegisterRunnable(const nsAString& aOrigin,
     mRegisterRequests.AppendElement(localReq);
   }
 
-  for (size_t i = 0; i < aRegisteredKeys.Length(); ++i) {
-    RegisteredKey key(aRegisteredKeys[i]);
-
+  for (const RegisteredKey& key : aRegisteredKeys) {
     
     if (!key.mVersion.WasPassed() || !key.mKeyHandle.WasPassed()) {
       continue;
@@ -624,10 +620,9 @@ U2FRegisterRunnable::Run()
 
   
   
-  for (LocalRegisteredKey key: mRegisteredKeys) {
+  for (LocalRegisteredKey key : mRegisteredKeys) {
     nsTArray<RefPtr<U2FPrepPromise>> prepPromiseList;
-    for (size_t a = 0; a < mAuthenticators.Length(); ++a) {
-      Authenticator token(mAuthenticators[a]);
+    for (const Authenticator& token : mAuthenticators) {
       RefPtr<U2FIsRegisteredTask> compTask =
         new U2FIsRegisteredTask(token, key, mAbstractMainThread);
       prepPromiseList.AppendElement(compTask->Execute());
@@ -704,8 +699,7 @@ U2FRegisterRunnable::Run()
       continue;
     }
 
-    for (size_t a = 0; a < mAuthenticators.Length(); ++a) {
-      Authenticator token(mAuthenticators[a]);
+    for (const Authenticator& token : mAuthenticators) {
       RefPtr<U2FRegisterTask> registerTask = new U2FRegisterTask(mOrigin, mAppId,
                                                                  token, appParam,
                                                                  challengeParam,
@@ -774,9 +768,7 @@ U2FSignRunnable::U2FSignRunnable(const nsAString& aOrigin,
   MOZ_ASSERT(NS_IsMainThread());
 
   
-  for (size_t i = 0; i < aRegisteredKeys.Length(); ++i) {
-    RegisteredKey key(aRegisteredKeys[i]);
-
+  for (const RegisteredKey& key : aRegisteredKeys) {
     
     if (!key.mVersion.WasPassed() || !key.mKeyHandle.WasPassed()) {
       continue;
@@ -889,9 +881,7 @@ U2FSignRunnable::Run()
     
     
 
-    for (size_t a = 0; a < mAuthenticators.Length() ; ++a) {
-      Authenticator token(mAuthenticators[a]);
-
+    for (const Authenticator& token : mAuthenticators) {
       RefPtr<U2FSignTask> signTask = new U2FSignTask(mOrigin, mAppId,
                                                      key.mVersion, token,
                                                      appParam, challengeParam,
