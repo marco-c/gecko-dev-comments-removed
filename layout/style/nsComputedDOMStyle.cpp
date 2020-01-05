@@ -809,8 +809,8 @@ nsComputedDOMStyle::UpdateCurrentStyleSources(bool aNeedsLayoutFlush)
 
     mInnerFrame = mOuterFrame;
     if (mOuterFrame) {
-      FrameType type = mOuterFrame->Type();
-      if (type == FrameType::TableWrapper) {
+      LayoutFrameType type = mOuterFrame->Type();
+      if (type == LayoutFrameType::TableWrapper) {
         
         
         mInnerFrame = mOuterFrame->PrincipalChildList().FirstChild();
