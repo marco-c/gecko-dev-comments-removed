@@ -6,7 +6,7 @@
 
 
 use dom::bindings::js::{RootCollection, RootCollectionPtr, trace_roots};
-use dom::bindings::refcounted::{LiveDOMReferences, TrustedReference, trace_refcounted_objects};
+use dom::bindings::refcounted::{LiveDOMReferences, trace_refcounted_objects};
 use dom::bindings::trace::trace_traceables;
 use dom::bindings::utils::DOM_CALLBACKS;
 use js::glue::CollectServoSizes;
@@ -35,8 +35,6 @@ pub enum CommonScriptMsg {
     
     
     CollectReports(ReportsChan),
-    
-    RefcountCleanup(TrustedReference),
     
     RunnableMsg(ScriptThreadEventCategory, Box<Runnable + Send>),
 }
