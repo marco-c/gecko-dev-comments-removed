@@ -762,11 +762,12 @@ TextureClient::AsTextureClient(PTextureChild* actor)
 
   TextureChild* tc = static_cast<TextureChild*>(actor);
 
-  
-  
-  
   tc->Lock();
 
+  
+  
+  
+  
   if (tc->mDestroyed) {
     tc->Unlock();
     return nullptr;
