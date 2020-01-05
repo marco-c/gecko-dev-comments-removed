@@ -743,7 +743,7 @@ profiler_get_features()
     
     "stackwalk",
 #endif
-#if defined(ENABLE_SPS_LEAF_DATA)
+#if defined(ENABLE_LEAF_DATA)
     
     
     "leaf",
