@@ -157,6 +157,7 @@ public:
     
     NS_IMETHOD SetupFallbackChannel(const char *aFallbackKey) override;
     NS_IMETHOD ForceIntercepted(uint64_t aInterceptionID) override;
+    NS_IMETHOD SetChannelIsForDownload(bool aChannelIsForDownload) override;
     
     NS_IMETHOD SetPriority(int32_t value) override;
     

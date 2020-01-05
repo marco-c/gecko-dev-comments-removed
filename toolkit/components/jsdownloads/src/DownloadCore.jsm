@@ -1978,6 +1978,12 @@ this.DownloadCopySaver.prototype = {
 
           
           
+          if (channel instanceof Ci.nsIHttpChannelInternal) {
+            channel.channelIsForDownload = true;
+          }
+
+          
+          
           let resumeAttempted = false;
           let resumeFromBytes = 0;
           if (channel instanceof Ci.nsIResumableChannel && this.entityID &&
