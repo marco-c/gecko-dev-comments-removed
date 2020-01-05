@@ -1906,7 +1906,6 @@ OptimizeMIR(MIRGenerator* mir)
         if (mir->shouldCancel("Make loops contiguous"))
             return false;
     }
-    AssertExtendedGraphCoherency(graph,  false,  true);
 
     
     
@@ -1949,8 +1948,6 @@ OptimizeMIR(MIRGenerator* mir)
         gs.spewPass("Redundant Bounds Check Elimination");
         AssertGraphCoherency(graph);
     }
-
-    AssertGraphCoherency(graph,  true);
 
     DumpMIRExpressions(graph);
 
@@ -1995,10 +1992,8 @@ GenerateLIR(MIRGenerator* mir)
           case RegisterAllocator_Backtracking:
           case RegisterAllocator_Testbed: {
 #ifdef DEBUG
-            if (JitOptions.fullDebugChecks) {
-                if (!integrity.record())
-                    return nullptr;
-            }
+            if (!integrity.record())
+                return nullptr;
 #endif
 
             BacktrackingAllocator regalloc(mir, &lirgen, *lir,
@@ -2007,10 +2002,8 @@ GenerateLIR(MIRGenerator* mir)
                 return nullptr;
 
 #ifdef DEBUG
-            if (JitOptions.fullDebugChecks) {
-                if (!integrity.check(false))
-                    return nullptr;
-            }
+            if (!integrity.check(false))
+                return nullptr;
 #endif
 
             gs.spewPass("Allocate Registers [Backtracking]");

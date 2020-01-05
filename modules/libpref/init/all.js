@@ -1259,9 +1259,6 @@ pref("javascript.options.asyncstack",       false);
 #endif
 pref("javascript.options.throw_on_asmjs_validation_failure", false);
 pref("javascript.options.ion.offthread_compilation", true);
-#ifdef DEBUG
-pref("javascript.options.jit.full_debug_checks", true);
-#endif
 
 
 

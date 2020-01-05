@@ -2701,12 +2701,9 @@ AssertOperandsBeforeSafeInsertTop(MResumePoint* resume)
 #endif 
 
 void
-jit::AssertBasicGraphCoherency(MIRGraph& graph, bool force)
+jit::AssertBasicGraphCoherency(MIRGraph& graph)
 {
 #ifdef DEBUG
-    if (!JitOptions.fullDebugChecks && !force)
-        return;
-
     MOZ_ASSERT(graph.entryBlock()->numPredecessors() == 0);
     MOZ_ASSERT(graph.entryBlock()->phisEmpty());
     MOZ_ASSERT(!graph.entryBlock()->unreachable());
@@ -2889,14 +2886,12 @@ AssertDominatorTree(MIRGraph& graph)
 #endif
 
 void
-jit::AssertGraphCoherency(MIRGraph& graph, bool force)
+jit::AssertGraphCoherency(MIRGraph& graph)
 {
 #ifdef DEBUG
     if (!JitOptions.checkGraphConsistency)
         return;
-    if (!JitOptions.fullDebugChecks && !force)
-        return;
-    AssertBasicGraphCoherency(graph, force);
+    AssertBasicGraphCoherency(graph);
     AssertReversePostorder(graph);
 #endif
 }
@@ -2980,7 +2975,7 @@ AssertResumePointDominatedByOperands(MResumePoint* resume)
 #endif 
 
 void
-jit::AssertExtendedGraphCoherency(MIRGraph& graph, bool underValueNumberer, bool force)
+jit::AssertExtendedGraphCoherency(MIRGraph& graph, bool underValueNumberer)
 {
     
     
@@ -2989,10 +2984,8 @@ jit::AssertExtendedGraphCoherency(MIRGraph& graph, bool underValueNumberer, bool
 #ifdef DEBUG
     if (!JitOptions.checkGraphConsistency)
         return;
-    if (!JitOptions.fullDebugChecks && !force)
-        return;
 
-    AssertGraphCoherency(graph, force);
+    AssertGraphCoherency(graph);
 
     AssertDominatorTree(graph);
 

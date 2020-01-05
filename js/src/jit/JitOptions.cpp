@@ -165,10 +165,6 @@ DefaultJitOptions::DefaultJitOptions()
     SET_DEFAULT(frequentBailoutThreshold, 10);
 
     
-    
-    SET_DEFAULT(fullDebugChecks, true);
-
-    
     SET_DEFAULT(maxStackArgs, 4096);
 
     

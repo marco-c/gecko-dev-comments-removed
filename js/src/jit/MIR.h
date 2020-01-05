@@ -359,7 +359,7 @@ class MNode : public TempObject
 
   protected:
     
-    friend void AssertBasicGraphCoherency(MIRGraph& graph, bool force);
+    friend void AssertBasicGraphCoherency(MIRGraph& graph);
 
     
     virtual MUse* getUseFor(size_t index) = 0;
@@ -12923,7 +12923,7 @@ class MResumePoint final :
 
   private:
     friend class MBasicBlock;
-    friend void AssertBasicGraphCoherency(MIRGraph& graph, bool force);
+    friend void AssertBasicGraphCoherency(MIRGraph& graph);
 
     
     
