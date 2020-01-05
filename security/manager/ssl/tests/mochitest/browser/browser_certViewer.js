@@ -106,8 +106,11 @@ add_task(function* testRevoked() {
     "VCIlmPM9NkgFQtrs4Oa5TeFcDu6MWRTKSNdePEhOgD8="); 
   let cert = yield readCertificate("revoked.pem", ",,");
   let win = yield displayCertificate(cert);
-  checkError(win,
-             "Could not verify this certificate because it has been revoked.");
+  
+  
+  
+  checkUsages(win, ["Email Recipient Certificate", "Email Signer Certificate",
+                    "Object Signer", "SSL Client Certificate"]);
   yield BrowserTestUtils.closeWindow(win);
 });
 
