@@ -526,6 +526,23 @@ Toolbox.prototype = {
   },
 
   
+
+
+
+  get sourceMapService() {
+    if (!Services.prefs.getBoolPref("devtools.source-map.client-service.enabled")) {
+      return null;
+    }
+    if (this._sourceMapService) {
+      return this._sourceMapService;
+    }
+    
+    this._sourceMapService =
+      this.browserRequire("devtools/client/shared/source-map/index");
+    return this._sourceMapService;
+  },
+
+  
   _getTelemetryHostId: function () {
     switch (this.hostType) {
       case Toolbox.HostType.BOTTOM: return 0;
@@ -2269,6 +2286,11 @@ Toolbox.prototype = {
     if (this._deprecatedServerSourceMapService) {
       this._deprecatedServerSourceMapService.destroy();
       this._deprecatedServerSourceMapService = null;
+    }
+
+    if (this._sourceMapService) {
+      this._sourceMapService.destroyWorker();
+      this._sourceMapService = null;
     }
 
     if (this.webconsolePanel) {
