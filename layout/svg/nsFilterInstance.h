@@ -119,6 +119,7 @@ public:
                                     const gfxRect *aOverrideBBox = nullptr,
                                     const nsRect *aPreFilterBounds = nullptr);
 
+private:
   
 
 
@@ -201,7 +202,6 @@ public:
 
   nsRect ComputeSourceNeededRect();
 
-
   
 
 
@@ -209,7 +209,6 @@ public:
     return mFilterSpaceToDeviceSpaceTransform;
   }
 
-private:
   struct SourceInfo {
     
     
