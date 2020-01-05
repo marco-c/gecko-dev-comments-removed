@@ -1279,6 +1279,30 @@ IsDevelopmentBuild()
   return path == nullptr;
 }
 
+
+#ifdef DEBUG
+
+static nsAutoCString
+GetDirectoryPath(const char *aPath) {
+  nsCOMPtr<nsIFile> file = do_CreateInstance(NS_LOCAL_FILE_CONTRACTID);
+  if (!file ||
+      NS_FAILED(file->InitWithNativePath(nsDependentCString(aPath)))) {
+    MOZ_CRASH("Failed to create or init an nsIFile");
+  }
+  nsCOMPtr<nsIFile> directoryFile;
+  if (NS_FAILED(file->GetParent(getter_AddRefs(directoryFile))) ||
+      !directoryFile) {
+    MOZ_CRASH("Failed to get parent for an nsIFile");
+  }
+  directoryFile->Normalize();
+  nsAutoCString directoryPath;
+  if (NS_FAILED(directoryFile->GetNativePath(directoryPath))) {
+    MOZ_CRASH("Failed to get path for an nsIFile");
+  }
+  return directoryPath;
+}
+#endif 
+
 static bool
 StartMacOSContentSandbox()
 {
@@ -1351,6 +1375,19 @@ StartMacOSContentSandbox()
   } else {
     info.hasSandboxedProfile = false;
   }
+
+#ifdef DEBUG
+  
+  
+  
+  char *bloatLog = PR_GetEnv("XPCOM_MEM_BLOAT_LOG");
+  if (bloatLog != nullptr) {
+    
+    
+    nsAutoCString bloatDirectoryPath = GetDirectoryPath(bloatLog);
+    info.debugWriteDir.assign(bloatDirectoryPath.get());
+  }
+#endif 
 
   std::string err;
   if (!mozilla::StartMacSandbox(info, err)) {
