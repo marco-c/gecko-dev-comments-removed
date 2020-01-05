@@ -5553,3 +5553,4 @@ pref("dom.storageManager.enabled", false);
 
 pref("browser.storageManager.enabled", false);
 
+pref("dom.IntersectionObserver.enabled", true);
