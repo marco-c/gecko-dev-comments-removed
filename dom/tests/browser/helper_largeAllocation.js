@@ -57,13 +57,20 @@ function getInLAProc(aBrowser) {
   });
 }
 
-add_task(function*() {
+function* largeAllocSuccessTests() {
   
   requestLongerTimeout(2);
 
+  
+  let isWin32 = /Windows/.test(navigator.userAgent) && !/x64/.test(navigator.userAgent);
+
   yield SpecialPowers.pushPrefEnv({
     set: [
+      
       ["dom.largeAllocationHeader.enabled", true],
+      
+      
+      ["dom.largeAllocation.forceEnable", !isWin32],
       
       
       ["dom.ipc.processCount.webLargeAllocation", 20]
@@ -386,4 +393,28 @@ add_task(function*() {
 
   
   
-});
+}
+
+function* largeAllocFailTests() {
+  yield BrowserTestUtils.withNewTab("http://example.com", function*(aBrowser) {
+    info("Starting test 1");
+    let pid1 = yield getPID(aBrowser);
+    is(false, yield getInLAProc(aBrowser));
+
+    
+    let stopExpectNoProcess = expectNoProcess();
+
+    yield ContentTask.spawn(aBrowser, TEST_URI, TEST_URI => {
+      content.document.location = TEST_URI;
+    });
+
+    yield BrowserTestUtils.browserLoaded(aBrowser);
+
+    let pid2 = yield getPID(aBrowser);
+
+    is(pid1, pid2, "The PID should not have changed");
+    is(false, yield getInLAProc(aBrowser));
+
+    stopExpectNoProcess();
+  });
+}
