@@ -20,6 +20,8 @@
 
 namespace mozilla {
 
+class AbstractThread;
+
 namespace dom {
 
 class AudioContext;
@@ -225,6 +227,8 @@ public:
   
   virtual const char* NodeType() const = 0;
 
+  AbstractThread* AbstractMainThread() const { return mAbstractMainThread; }
+
 private:
   
   
@@ -289,6 +293,8 @@ private:
   
   
   bool mPassThrough;
+  
+  const RefPtr<AbstractThread> mAbstractMainThread;
 };
 
 } 

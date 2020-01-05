@@ -37,9 +37,11 @@ struct PlaybackInfoInit {
 class DecodedStreamGraphListener : public MediaStreamListener {
 public:
   DecodedStreamGraphListener(MediaStream* aStream,
-                             MozPromiseHolder<GenericPromise>&& aPromise)
+                             MozPromiseHolder<GenericPromise>&& aPromise,
+                             AbstractThread* aMainThread)
     : mMutex("DecodedStreamGraphListener::mMutex")
     , mStream(aStream)
+    , mAbstractMainThread(aMainThread)
   {
     mFinishPromise = Move(aPromise);
   }
@@ -57,9 +59,9 @@ public:
   void NotifyEvent(MediaStreamGraph* aGraph, MediaStreamGraphEvent event) override
   {
     if (event == MediaStreamGraphEvent::EVENT_FINISHED) {
-      nsCOMPtr<nsIRunnable> event =
-        NewRunnableMethod(this, &DecodedStreamGraphListener::DoNotifyFinished);
-      aGraph->DispatchToMainThreadAfterStreamStateUpdate(event.forget());
+      aGraph->DispatchToMainThreadAfterStreamStateUpdate(
+        mAbstractMainThread,
+        NewRunnableMethod(this, &DecodedStreamGraphListener::DoNotifyFinished));
     }
   }
 
@@ -92,6 +94,8 @@ private:
   RefPtr<MediaStream> mStream;
   
   MozPromiseHolder<GenericPromise> mFinishPromise;
+
+  const RefPtr<AbstractThread> mAbstractMainThread;
 };
 
 static void
@@ -174,7 +178,7 @@ DecodedStreamData::DecodedStreamData(OutputStreamManager* aOutputStreamManager,
   , mHaveSentFinish(false)
   , mHaveSentFinishAudio(false)
   , mHaveSentFinishVideo(false)
-  , mStream(aOutputStreamManager->Graph()->CreateSourceStream())
+  , mStream(aOutputStreamManager->Graph()->CreateSourceStream(aMainThread))
   
   , mListener(new DecodedStreamGraphListener(mStream, Move(aPromise), aMainThread))
   

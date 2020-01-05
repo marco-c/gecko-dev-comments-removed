@@ -1050,7 +1050,7 @@ public:
   Run() override
   {
     MOZ_ASSERT(NS_IsMainThread());
-    auto* globalWindow = nsGlobalWindow::GetInnerWindowWithId(mWindowID);
+    nsGlobalWindow* globalWindow = nsGlobalWindow::GetInnerWindowWithId(mWindowID);
     nsPIDOMWindowInner* window = globalWindow ? globalWindow->AsInner() : nullptr;
 
     
@@ -1082,7 +1082,8 @@ public:
       domStream =
         DOMMediaStream::CreateAudioCaptureStreamAsInput(window, principal, msg);
 
-      stream = msg->CreateSourceStream(); 
+      stream = msg->CreateSourceStream(
+        globalWindow->AbstractMainThreadFor(dom::TaskCategory::Other)); 
       msg->RegisterCaptureStreamForWindow(
             mWindowID, domStream->GetInputStream()->AsProcessedStream());
       window->SetAudioCapture(true);
