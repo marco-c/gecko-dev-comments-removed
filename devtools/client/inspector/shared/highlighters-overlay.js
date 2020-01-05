@@ -11,6 +11,8 @@ const {Task} = require("devtools/shared/task");
 const EventEmitter = require("devtools/shared/event-emitter");
 const { VIEW_NODE_VALUE_TYPE } = require("devtools/client/inspector/shared/node-types");
 
+const DEFAULT_GRID_COLOR = "#4B0082";
+
 
 
 
@@ -141,7 +143,7 @@ HighlightersOverlay.prototype = {
       this.gridHighlighterShown = node;
       
       
-      this.emit("grid-highlighter-shown", node);
+      this.emit("grid-highlighter-shown", node, options);
     }).catch(this._handleRejection);
   }),
 
@@ -162,7 +164,8 @@ HighlightersOverlay.prototype = {
 
     
     
-    this.emit("grid-highlighter-hidden", this.gridHighlighterShown);
+    this.emit("grid-highlighter-hidden", this.gridHighlighterShown,
+      this.state.grid.options);
     this.gridHighlighterShown = null;
 
     
@@ -309,7 +312,9 @@ HighlightersOverlay.prototype = {
     }
 
     event.stopPropagation();
-    this.toggleGridHighlighter(this.inspector.selection.nodeFront);
+    this.toggleGridHighlighter(this.inspector.selection.nodeFront, {
+      color: DEFAULT_GRID_COLOR
+    });
   },
 
   onMouseMove: function (event) {
