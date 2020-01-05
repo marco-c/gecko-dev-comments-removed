@@ -1659,12 +1659,18 @@ function collatorSearchLocaleData(locale) {
 
 function collatorCompareToBind(x, y) {
     
+    var collator = this;
+
     
+    assert(IsObject(collator), "collatorCompareToBind called with non-object");
+    assert(IsCollator(collator), "collatorCompareToBind called with non-Collator");
 
     
     var X = ToString(x);
     var Y = ToString(y);
-    return intl_CompareStrings(this, X, Y);
+
+    
+    return intl_CompareStrings(collator, X, Y);
 }
 
 
@@ -1679,10 +1685,13 @@ function collatorCompareToBind(x, y) {
 
 function Intl_Collator_compare_get() {
     
-    if (!IsObject(this) || !IsCollator(this))
+    var collator = this;
+
+    
+    if (!IsObject(collator) || !IsCollator(collator))
         ThrowTypeError(JSMSG_INTL_OBJECT_NOT_INITED, "Collator", "compare", "Collator");
 
-    var internals = getCollatorInternals(this);
+    var internals = getCollatorInternals(collator);
 
     
     if (internals.boundCompare === undefined) {
@@ -1690,7 +1699,7 @@ function Intl_Collator_compare_get() {
         var F = collatorCompareToBind;
 
         
-        var bc = callFunction(FunctionBind, F, this);
+        var bc = callFunction(FunctionBind, F, collator);
         internals.boundCompare = bc;
     }
 
@@ -2108,11 +2117,17 @@ function numberFormatLocaleData(locale) {
 
 function numberFormatFormatToBind(value) {
     
+    var nf = this;
+
     
+    assert(IsObject(nf), "InitializeNumberFormat called with non-object");
+    assert(IsNumberFormat(nf), "InitializeNumberFormat called with non-NumberFormat");
 
     
     var x = ToNumber(value);
-    return intl_FormatNumber(this, x,  false);
+
+    
+    return intl_FormatNumber(nf, x,  false);
 }
 
 
@@ -2795,13 +2810,19 @@ function dateTimeFormatLocaleData(locale) {
 
 
 
-function dateTimeFormatFormatToBind() {
+function dateTimeFormatFormatToBind(date) {
     
-    var date = arguments.length > 0 ? arguments[0] : undefined;
+    var dtf = this;
+
+    
+    assert(IsObject(dtf), "dateTimeFormatFormatToBind called with non-Object");
+    assert(IsDateTimeFormat(dtf), "dateTimeFormatFormatToBind called with non-DateTimeFormat");
+
+    
     var x = (date === undefined) ? std_Date_now() : ToNumber(date);
 
     
-    return intl_FormatDateTime(this, x,  false);
+    return intl_FormatDateTime(dtf, x,  false);
 }
 
 
@@ -2833,7 +2854,10 @@ function Intl_DateTimeFormat_format_get() {
 _SetCanonicalName(Intl_DateTimeFormat_format_get, "get format");
 
 
-function Intl_DateTimeFormat_formatToParts() {
+
+
+
+function Intl_DateTimeFormat_formatToParts(date) {
     
     var dtf = UnwrapDateTimeFormat(this, "formatToParts");
 
@@ -2841,7 +2865,6 @@ function Intl_DateTimeFormat_formatToParts() {
     getDateTimeFormatInternals(dtf);
 
     
-    var date = arguments.length > 0 ? arguments[0] : undefined;
     var x = (date === undefined) ? std_Date_now() : ToNumber(date);
 
     
