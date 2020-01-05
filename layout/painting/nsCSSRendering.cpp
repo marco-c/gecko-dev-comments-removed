@@ -1944,9 +1944,9 @@ nsCSSRendering::GetImageLayerClip(const nsStyleImageLayers::Layer& aLayer,
                                   bool aWillPaintBorder, nscoord aAppUnitsPerPixel,
                                    ImageLayerClipState* aClipState)
 {
-  StyleGeometryBox backgroundClip = ComputeBoxValue(aForFrame, aLayer.mClip);
+  StyleGeometryBox layerClip = ComputeBoxValue(aForFrame, aLayer.mClip);
 
-  if (IsSVGStyleGeometryBox(backgroundClip)) {
+  if (IsSVGStyleGeometryBox(layerClip)) {
     MOZ_ASSERT(aForFrame->IsFrameOfType(nsIFrame::eSVG) &&
                (aForFrame->GetType() != nsGkAtoms::svgOuterSVGFrame));
 
@@ -1955,9 +1955,9 @@ nsCSSRendering::GetImageLayerClip(const nsStyleImageLayers::Layer& aLayer,
 
     
     nsRect clipArea =
-      nsLayoutUtils::ComputeGeometryBox(aForFrame, backgroundClip);
+      nsLayoutUtils::ComputeGeometryBox(aForFrame, layerClip);
 
-    nsRect strokeBox = (backgroundClip == StyleGeometryBox::Stroke)
+    nsRect strokeBox = (layerClip == StyleGeometryBox::Stroke)
       ? clipArea
       : nsLayoutUtils::ComputeGeometryBox(aForFrame, StyleGeometryBox::Stroke);
     nsRect clipAreaRelativeToStrokeBox = clipArea - strokeBox.TopLeft();
@@ -1979,7 +1979,7 @@ nsCSSRendering::GetImageLayerClip(const nsStyleImageLayers::Layer& aLayer,
     return;
   }
 
-  if (backgroundClip == StyleGeometryBox::NoClip) {
+  if (layerClip == StyleGeometryBox::NoClip) {
     aClipState->mBGClipArea = aCallerDirtyRect;
     aClipState->mHasAdditionalBGClipArea = false;
     aClipState->mCustomClip = false;
@@ -2004,11 +2004,11 @@ nsCSSRendering::GetImageLayerClip(const nsStyleImageLayers::Layer& aLayer,
 
   bool isSolidBorder =
       aWillPaintBorder && IsOpaqueBorder(aBorder);
-  if (isSolidBorder && backgroundClip == StyleGeometryBox::Border) {
+  if (isSolidBorder && layerClip == StyleGeometryBox::Border) {
     
     
     
-    backgroundClip = haveRoundedCorners
+    layerClip = haveRoundedCorners
                      ? StyleGeometryBox::MozAlmostPadding
                      : StyleGeometryBox::Padding;
   }
@@ -2026,7 +2026,7 @@ nsCSSRendering::GetImageLayerClip(const nsStyleImageLayers::Layer& aLayer,
     
     
     
-    if (backgroundClip == StyleGeometryBox::Content) {
+    if (layerClip == StyleGeometryBox::Content) {
       nsIScrollableFrame* scrollableFrame = do_QueryFrame(aForFrame);
       
       aClipState->mHasAdditionalBGClipArea = true;
@@ -2046,13 +2046,13 @@ nsCSSRendering::GetImageLayerClip(const nsStyleImageLayers::Layer& aLayer,
 
     
     
-    backgroundClip = StyleGeometryBox::Padding;
+    layerClip = StyleGeometryBox::Padding;
   }
 
-  if (backgroundClip != StyleGeometryBox::Border &&
-      backgroundClip != StyleGeometryBox::Text) {
+  if (layerClip != StyleGeometryBox::Border &&
+      layerClip != StyleGeometryBox::Text) {
     nsMargin border = aForFrame->GetUsedBorder();
-    if (backgroundClip == StyleGeometryBox::MozAlmostPadding) {
+    if (layerClip == StyleGeometryBox::MozAlmostPadding) {
       
       
       
@@ -2060,8 +2060,8 @@ nsCSSRendering::GetImageLayerClip(const nsStyleImageLayers::Layer& aLayer,
       border.right = std::max(0, border.right - aAppUnitsPerPixel);
       border.bottom = std::max(0, border.bottom - aAppUnitsPerPixel);
       border.left = std::max(0, border.left - aAppUnitsPerPixel);
-    } else if (backgroundClip != StyleGeometryBox::Padding) {
-      NS_ASSERTION(backgroundClip == StyleGeometryBox::Content,
+    } else if (layerClip != StyleGeometryBox::Padding) {
+      NS_ASSERTION(layerClip == StyleGeometryBox::Content,
                    "unexpected background-clip");
       border += aForFrame->GetUsedPadding();
     }
@@ -3466,29 +3466,29 @@ nsCSSRendering::ComputeImageLayerPositioningArea(nsPresContext* aPresContext,
 {
   
   
-  nsRect bgPositioningArea;
+  nsRect positionArea;
 
-  StyleGeometryBox backgroundOrigin =
+  StyleGeometryBox layerOrigin =
     ComputeBoxValue(aForFrame, aLayer.mOrigin);
 
-  if (IsSVGStyleGeometryBox(backgroundOrigin)) {
+  if (IsSVGStyleGeometryBox(layerOrigin)) {
     MOZ_ASSERT(aForFrame->IsFrameOfType(nsIFrame::eSVG) &&
                (aForFrame->GetType() != nsGkAtoms::svgOuterSVGFrame));
     *aAttachedToFrame = aForFrame;
 
-    bgPositioningArea =
-      nsLayoutUtils::ComputeGeometryBox(aForFrame, backgroundOrigin);
+    positionArea =
+      nsLayoutUtils::ComputeGeometryBox(aForFrame, layerOrigin);
 
     nsPoint toStrokeBoxOffset = nsPoint(0, 0);
-    if (backgroundOrigin != StyleGeometryBox::Stroke) {
+    if (layerOrigin != StyleGeometryBox::Stroke) {
       nsRect strokeBox =
         nsLayoutUtils::ComputeGeometryBox(aForFrame,
                                           StyleGeometryBox::Stroke);
-      toStrokeBoxOffset = bgPositioningArea.TopLeft() - strokeBox.TopLeft();
+      toStrokeBoxOffset = positionArea.TopLeft() - strokeBox.TopLeft();
     }
 
     
-    return nsRect(toStrokeBoxOffset, bgPositioningArea.Size());
+    return nsRect(toStrokeBoxOffset, positionArea.Size());
   }
 
   MOZ_ASSERT(!aForFrame->IsFrameOfType(nsIFrame::eSVG) ||
@@ -3499,7 +3499,7 @@ nsCSSRendering::ComputeImageLayerPositioningArea(nsPresContext* aPresContext,
   if (MOZ_UNLIKELY(frameType == nsGkAtoms::scrollFrame &&
                    NS_STYLE_IMAGELAYER_ATTACHMENT_LOCAL == aLayer.mAttachment)) {
     nsIScrollableFrame* scrollableFrame = do_QueryFrame(aForFrame);
-    bgPositioningArea = nsRect(
+    positionArea = nsRect(
       scrollableFrame->GetScrolledFrame()->GetPosition()
         
         + scrollableFrame->GetScrollRange().TopLeft(),
@@ -3507,20 +3507,20 @@ nsCSSRendering::ComputeImageLayerPositioningArea(nsPresContext* aPresContext,
     
     
     
-    if (backgroundOrigin == StyleGeometryBox::Border) {
+    if (layerOrigin == StyleGeometryBox::Border) {
       nsMargin border = geometryFrame->GetUsedBorder();
       border.ApplySkipSides(geometryFrame->GetSkipSides());
-      bgPositioningArea.Inflate(border);
-      bgPositioningArea.Inflate(scrollableFrame->GetActualScrollbarSizes());
-    } else if (backgroundOrigin != StyleGeometryBox::Padding) {
+      positionArea.Inflate(border);
+      positionArea.Inflate(scrollableFrame->GetActualScrollbarSizes());
+    } else if (layerOrigin != StyleGeometryBox::Padding) {
       nsMargin padding = geometryFrame->GetUsedPadding();
       padding.ApplySkipSides(geometryFrame->GetSkipSides());
-      bgPositioningArea.Deflate(padding);
-      NS_ASSERTION(backgroundOrigin == StyleGeometryBox::Content,
+      positionArea.Deflate(padding);
+      NS_ASSERTION(layerOrigin == StyleGeometryBox::Content,
                    "unknown background-origin value");
     }
     *aAttachedToFrame = aForFrame;
-    return bgPositioningArea;
+    return positionArea;
   }
 
   if (MOZ_UNLIKELY(frameType == nsGkAtoms::canvasFrame)) {
@@ -3530,22 +3530,22 @@ nsCSSRendering::ComputeImageLayerPositioningArea(nsPresContext* aPresContext,
     
     
     if (geometryFrame) {
-      bgPositioningArea = geometryFrame->GetRect();
+      positionArea = geometryFrame->GetRect();
     }
   } else {
-    bgPositioningArea = nsRect(nsPoint(0,0), aBorderArea.Size());
+    positionArea = nsRect(nsPoint(0,0), aBorderArea.Size());
   }
-
   
   
-  if (backgroundOrigin != StyleGeometryBox::Border && geometryFrame) {
+  
+  if (layerOrigin != StyleGeometryBox::Border && geometryFrame) {
     nsMargin border = geometryFrame->GetUsedBorder();
-    if (backgroundOrigin != StyleGeometryBox::Padding) {
+    if (layerOrigin != StyleGeometryBox::Padding) {
       border += geometryFrame->GetUsedPadding();
-      NS_ASSERTION(backgroundOrigin == StyleGeometryBox::Content,
+      NS_ASSERTION(layerOrigin == StyleGeometryBox::Content,
                    "unknown background-origin value");
     }
-    bgPositioningArea.Deflate(border);
+    positionArea.Deflate(border);
   }
 
   nsIFrame* attachedToFrame = aForFrame;
@@ -3573,7 +3573,7 @@ nsCSSRendering::ComputeImageLayerPositioningArea(nsPresContext* aPresContext,
     } else {
       
       
-      bgPositioningArea =
+      positionArea =
         nsRect(-aForFrame->GetOffsetTo(attachedToFrame), attachedToFrame->GetSize());
 
       if (!pageContentFrame) {
@@ -3582,14 +3582,14 @@ nsCSSRendering::ComputeImageLayerPositioningArea(nsPresContext* aPresContext,
           aPresContext->PresShell()->GetRootScrollFrameAsScrollable();
         if (scrollableFrame) {
           nsMargin scrollbars = scrollableFrame->GetActualScrollbarSizes();
-          bgPositioningArea.Deflate(scrollbars);
+          positionArea.Deflate(scrollbars);
         }
       }
     }
   }
   *aAttachedToFrame = attachedToFrame;
 
-  return bgPositioningArea;
+  return positionArea;
 }
 
 
@@ -3817,7 +3817,7 @@ nsCSSRendering::PrepareImageLayer(nsPresContext* aPresContext,
   bool transformedFixed = false;
   
   
-  nsRect bgPositioningArea =
+  nsRect positionArea =
     ComputeImageLayerPositioningArea(aPresContext, aForFrame, aBorderArea,
                                      aLayer, &attachedToFrame, &transformedFixed);
   if (aOutIsTransformedFixed) {
@@ -3842,7 +3842,7 @@ nsCSSRendering::PrepareImageLayer(nsPresContext* aPresContext,
       
       
       
-      bgClipRect.IntersectRect(bgClipRect, bgPositioningArea + aBorderArea.TopLeft());
+      bgClipRect.IntersectRect(bgClipRect, positionArea + aBorderArea.TopLeft());
     }
   }
 
@@ -3853,7 +3853,7 @@ nsCSSRendering::PrepareImageLayer(nsPresContext* aPresContext,
   
   
   CSSSizeOrRatio intrinsicSize = state.mImageRenderer.ComputeIntrinsicSize();
-  nsSize bgPositionSize = bgPositioningArea.Size();
+  nsSize bgPositionSize = positionArea.Size();
   nsSize imageSize = ComputeDrawnSizeForBackground(intrinsicSize,
                                                    bgPositionSize,
                                                    aLayer.mSize,
@@ -3898,8 +3898,8 @@ nsCSSRendering::PrepareImageLayer(nsPresContext* aPresContext,
     }
   }
 
-  imageTopLeft += bgPositioningArea.TopLeft();
-  state.mAnchor += bgPositioningArea.TopLeft();
+  imageTopLeft += positionArea.TopLeft();
+  state.mAnchor += positionArea.TopLeft();
   state.mDestArea = nsRect(imageTopLeft + aBorderArea.TopLeft(), imageSize);
   state.mFillArea = state.mDestArea;
 
