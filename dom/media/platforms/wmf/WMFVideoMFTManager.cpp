@@ -208,11 +208,19 @@ FindDXVABlacklistedDLL(
   unsigned int modulesNum = 0;
   if (hProcess != NULL) {
     DWORD modulesSize;
-    EnumProcessModules(hProcess, nullptr, 0, &modulesSize);
-    modulesNum = modulesSize / sizeof(HMODULE);
-    hMods = mozilla::MakeUnique<HMODULE[]>(modulesNum);
-    EnumProcessModules(
-      hProcess, hMods.get(), modulesNum * sizeof(HMODULE), &modulesSize);
+    if (EnumProcessModules(hProcess, nullptr, 0, &modulesSize)) {
+      modulesNum = modulesSize / sizeof(HMODULE);
+      hMods = mozilla::MakeUnique<HMODULE[]>(modulesNum);
+      if (EnumProcessModules(hProcess, hMods.get(),
+            modulesNum * sizeof(HMODULE), &modulesSize)) {
+        
+        if (modulesSize / sizeof(HMODULE) < modulesNum) {
+          modulesNum = modulesSize / sizeof(HMODULE);
+        }
+      } else {
+        modulesNum = 0;
+      }
+    }
   }
 
   
