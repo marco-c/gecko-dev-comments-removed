@@ -1873,10 +1873,9 @@ NS_IMETHODIMP
 CanvasRenderingContext2D::SetDimensions(int32_t aWidth, int32_t aHeight)
 {
   bool retainBuffer = false;
-  
-  
-  
-  
+  if (aWidth == mWidth && aHeight == mHeight) {
+    retainBuffer = true;
+  }
   ClearTarget(retainBuffer);
 
   

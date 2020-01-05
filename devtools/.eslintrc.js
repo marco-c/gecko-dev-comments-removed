@@ -142,7 +142,7 @@ module.exports = {
     
     "handle-callback-err": "off",
     
-    "indent": ["error", 2, {"SwitchCase": 1}],
+    "indent": ["error", 2, {"SwitchCase": 1, "ArrayExpression": "first", "ObjectExpression": "first"}],
     
     "key-spacing": ["error", {"beforeColon": false, "afterColon": true}],
     
