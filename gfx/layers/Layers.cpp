@@ -1182,6 +1182,43 @@ ContainerLayer::InsertAfter(Layer* aChild, Layer* aAfter)
   return true;
 }
 
+void
+ContainerLayer::RemoveAllChildren()
+{
+  
+  Layer* current = mFirstChild;
+
+  
+  
+  
+  while (current) {
+    Layer* next = current->GetNextSibling();
+    if (current->GetType() == TYPE_READBACK) {
+      static_cast<ReadbackLayer*>(current)->NotifyRemoved();
+    }
+    current = next;
+  }
+
+  current = mFirstChild;
+  mFirstChild = nullptr;
+  while (current) {
+    MOZ_ASSERT(!current->GetPrevSibling());
+
+    Layer* next = current->GetNextSibling();
+    current->SetParent(nullptr);
+    current->SetNextSibling(nullptr);
+    if (next) {
+      next->SetPrevSibling(nullptr);
+    }
+    NS_RELEASE(current);
+    current = next;
+  }
+}
+
+
+
+
+
 bool
 ContainerLayer::RemoveChild(Layer *aChild)
 {
@@ -1624,6 +1661,10 @@ ContainerLayer::HasOpaqueAncestorLayer(Layer* aLayer)
   }
   return false;
 }
+
+
+
+
 
 void
 ContainerLayer::DidRemoveChild(Layer* aLayer)
