@@ -5,7 +5,8 @@
 
 
 #include "mozilla/Logging.h"
-#include "mozilla/Function.h"
+
+#include <functional>
 
 namespace mozilla {
 
@@ -17,6 +18,6 @@ namespace mozilla {
 
 
 void NSPRLogModulesParser(const char* aLogModules,
-                          function<void(const char*, LogLevel, int32_t)> aCallback);
+                          std::function<void(const char*, LogLevel, int32_t)> aCallback);
 
 } 

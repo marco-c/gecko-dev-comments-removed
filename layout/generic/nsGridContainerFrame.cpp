@@ -9,10 +9,10 @@
 #include "nsGridContainerFrame.h"
 
 #include <algorithm> 
+#include <functional>
 #include <limits>
 #include "mozilla/CSSAlignUtils.h"
 #include "mozilla/dom/GridBinding.h"
-#include "mozilla/Function.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/PodOperations.h" 
 #include "mozilla/Poison.h"
@@ -1467,7 +1467,7 @@ struct nsGridContainerFrame::Tracks
   }
 
   using FitContentClamper =
-    function<bool(uint32_t aTrack, nscoord aMinSize, nscoord* aSize)>;
+    std::function<bool(uint32_t aTrack, nscoord aMinSize, nscoord* aSize)>;
   
 
 

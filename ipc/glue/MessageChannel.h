@@ -11,7 +11,6 @@
 #include "base/basictypes.h"
 #include "base/message_loop.h"
 
-#include "mozilla/Function.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/Vector.h"
@@ -26,6 +25,7 @@
 #include "MessageLink.h"
 
 #include <deque>
+#include <functional>
 #include <stack>
 #include <math.h>
 
@@ -130,7 +130,7 @@ class MessageChannel : HasResultCodes
     
     
     
-    void PeekMessages(mozilla::function<bool(const Message& aMsg)> aInvoke);
+    void PeekMessages(std::function<bool(const Message& aMsg)> aInvoke);
 
     
     enum ChannelFlags {

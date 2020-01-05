@@ -992,7 +992,7 @@ MessageChannel::OnMessageReceivedFromLink(Message&& aMsg)
 }
 
 void
-MessageChannel::PeekMessages(mozilla::function<bool(const Message& aMsg)> aInvoke)
+MessageChannel::PeekMessages(std::function<bool(const Message& aMsg)> aInvoke)
 {
     
     MonitorAutoLock lock(*mMonitor);

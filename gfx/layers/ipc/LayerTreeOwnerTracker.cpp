@@ -11,6 +11,7 @@
 #include "mozilla/gfx/GPUChild.h"           
 #include "mozilla/gfx/GPUProcessManager.h"  
 
+#include <functional>
 #include <utility> 
 
 namespace mozilla {
@@ -70,7 +71,7 @@ LayerTreeOwnerTracker::IsMapped(uint64_t aLayersId, base::ProcessId aProcessId)
 }
 
 void
-LayerTreeOwnerTracker::Iterate(function<void(uint64_t aLayersId, base::ProcessId aProcessId)> aCallback)
+LayerTreeOwnerTracker::Iterate(std::function<void(uint64_t aLayersId, base::ProcessId aProcessId)> aCallback)
 {
   MutexAutoLock lock(mLayerIdsLock);
 

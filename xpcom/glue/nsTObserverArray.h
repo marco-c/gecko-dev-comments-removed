@@ -11,6 +11,8 @@
 #include "nsTArray.h"
 #include "nsCycleCollectionNoteChild.h"
 
+#include <functional>
+
 
 
 
@@ -249,7 +251,7 @@ public:
   }
 
   
-  void RemoveElementsBy(mozilla::function<bool(const elem_type&)> aPredicate)
+  void RemoveElementsBy(std::function<bool(const elem_type&)> aPredicate)
   {
     index_type i = 0;
     mArray.RemoveElementsBy([&](const elem_type& aItem) {
