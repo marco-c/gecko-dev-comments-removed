@@ -591,7 +591,7 @@ private:
   
   
   
-  media::TimeUnit mAmpleAudioThresholdUsecs;
+  media::TimeUnit mAmpleAudioThreshold;
 
   
   
@@ -602,7 +602,7 @@ private:
   uint32_t AudioPrerollUsecs() const
   {
     MOZ_ASSERT(OnTaskQueue());
-    return mAmpleAudioThresholdUsecs.ToMicroseconds() / 2;
+    return mAmpleAudioThreshold.ToMicroseconds() / 2;
   }
 
   uint32_t VideoPrerollFrames() const
