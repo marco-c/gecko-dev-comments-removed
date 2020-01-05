@@ -622,7 +622,9 @@ function loadMemoryReportsFromFile(aFilename, aTitleNote, aFn) {
 
     
     if (!aFilename.endsWith(".gz")) {
-      reader.readAsText(File.createFromFileName(aFilename));
+      File.createFromFileName(aFilename).then(file => {
+        reader.readAsText(file);
+      });
       return;
     }
 
