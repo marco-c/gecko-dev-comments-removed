@@ -20,6 +20,7 @@ import org.mozilla.gecko.sync.net.SyncResponse;
 import org.mozilla.gecko.sync.net.SyncStorageCollectionRequest;
 import org.mozilla.gecko.sync.net.SyncStorageResponse;
 import org.mozilla.gecko.sync.repositories.RepositorySession;
+import org.mozilla.gecko.sync.repositories.RepositoryStateProvider;
 import org.mozilla.gecko.sync.repositories.delegates.RepositorySessionFetchRecordsDelegate;
 
 import java.io.UnsupportedEncodingException;
@@ -61,6 +62,9 @@ public class BatchingDownloader {
     private final Uri baseCollectionUri;
     private final long fetchDeadline;
     private final boolean allowMultipleBatches;
+    private final boolean keepTrackOfHighWaterMark;
+
+    private RepositoryStateProvider stateProvider;
 
      final AuthHeaderProvider authHeaderProvider;
 
@@ -74,12 +78,16 @@ public class BatchingDownloader {
             Uri baseCollectionUri,
             long fetchDeadline,
             boolean allowMultipleBatches,
+            boolean keepTrackOfHighWaterMark,
+            RepositoryStateProvider stateProvider,
             RepositorySession repositorySession) {
         this.repositorySession = repositorySession;
         this.authHeaderProvider = authHeaderProvider;
         this.baseCollectionUri = baseCollectionUri;
         this.allowMultipleBatches = allowMultipleBatches;
+        this.keepTrackOfHighWaterMark = keepTrackOfHighWaterMark;
         this.fetchDeadline = fetchDeadline;
+        this.stateProvider = stateProvider;
     }
 
     @VisibleForTesting
@@ -130,11 +138,6 @@ public class BatchingDownloader {
         return new SyncStorageCollectionRequest(collectionURI);
     }
 
-    public void fetchSince(RepositorySessionFetchRecordsDelegate fetchRecordsDelegate, long timestamp, long batchLimit, String sortOrder) {
-        this.fetchSince(fetchRecordsDelegate, timestamp, batchLimit, sortOrder, null);
-    }
-
-    @VisibleForTesting
     public void fetchSince(RepositorySessionFetchRecordsDelegate fetchRecordsDelegate, long timestamp, long batchLimit, String sortOrder, String offset) {
         try {
             SyncStorageCollectionRequest request = makeSyncStorageCollectionRequest(timestamp,
@@ -199,6 +202,16 @@ public class BatchingDownloader {
             final long normalizedTimestamp = response.normalizedTimestampForHeader(SyncResponse.X_LAST_MODIFIED);
             Logger.debug(LOG_TAG, "Fetch completed. Timestamp is " + normalizedTimestamp);
 
+            
+            
+            
+            
+            
+            
+            if (!BatchingDownloaderController.resetResumeContextAndCommit(this.stateProvider)) {
+                Logger.warn(LOG_TAG, "Failed to reset resume context while completing a batch");
+            }
+
             this.workTracker.delayWorkItem(new Runnable() {
                 @Override
                 public void run() {
@@ -207,6 +220,19 @@ public class BatchingDownloader {
                 }
             });
             return;
+        }
+
+        
+        
+        
+        if (BatchingDownloaderController.isResumeContextSet(this.stateProvider)) {
+            if (!BatchingDownloaderController.updateResumeContextAndCommit(this.stateProvider, offset)) {
+                Logger.warn(LOG_TAG, "Failed to update resume context while processing a batch.");
+            }
+        } else {
+            if (!BatchingDownloaderController.setInitialResumeContextAndCommit(this.stateProvider, offset, newer, sort)) {
+                Logger.warn(LOG_TAG, "Failed to set initial resume context while processing a batch.");
+            }
         }
 
         
@@ -233,6 +259,9 @@ public class BatchingDownloader {
                     limit, full, sort, ids, offset);
             this.fetchWithParameters(newer, limit, full, sort, ids, newRequest, fetchRecordsDelegate);
         } catch (final URISyntaxException | UnsupportedEncodingException e) {
+            if (!this.stateProvider.commit()) {
+                Logger.warn(LOG_TAG, "Failed to commit repository state while handling request creation error");
+            }
             this.workTracker.delayWorkItem(new Runnable() {
                 @Override
                 public void run() {
@@ -253,6 +282,25 @@ public class BatchingDownloader {
                               @Nullable final SyncStorageCollectionRequest request) {
         this.removeRequestFromPending(request);
         this.abortRequests();
+
+        
+        
+        
+        if (!(ex instanceof SyncDeadlineReachedException)) {
+            
+            
+            
+            if (!BatchingDownloaderController.resetResumeContextAndCommit(stateProvider)) {
+                Logger.warn(LOG_TAG, "Failed to reset resume context while processing a non-deadline exception");
+            }
+        } else {
+            
+            
+            if (!this.stateProvider.commit()) {
+                Logger.warn(LOG_TAG, "Failed to commit resume context while processing a deadline exception");
+            }
+        }
+
         this.workTracker.delayWorkItem(new Runnable() {
             @Override
             public void run() {
@@ -265,8 +313,13 @@ public class BatchingDownloader {
     public void onFetchedRecord(CryptoRecord record,
                                 RepositorySessionFetchRecordsDelegate fetchRecordsDelegate) {
         this.workTracker.incrementOutstanding();
+
         try {
             fetchRecordsDelegate.onFetchedRecord(record);
+            
+            if (this.keepTrackOfHighWaterMark) {
+                this.stateProvider.setLong(RepositoryStateProvider.KEY_HIGH_WATER_MARK, record.lastModified);
+            }
         } catch (Exception ex) {
             Logger.warn(LOG_TAG, "Got exception calling onFetchedRecord with WBO.", ex);
             throw new RuntimeException(ex);

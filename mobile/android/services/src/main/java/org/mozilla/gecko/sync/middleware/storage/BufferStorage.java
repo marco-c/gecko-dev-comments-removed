@@ -27,9 +27,5 @@ public interface BufferStorage {
 
     void clear();
 
-    
-    
-    long latestModifiedTimestamp();
-
     boolean isPersistent();
 }

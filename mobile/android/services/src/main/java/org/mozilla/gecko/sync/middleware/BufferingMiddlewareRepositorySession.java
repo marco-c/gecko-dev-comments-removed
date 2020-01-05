@@ -158,11 +158,6 @@ import java.util.concurrent.Executors;
         this.storeDelegate = delegate;
     }
 
-    @Override
-    public long getHighWaterMarkTimestamp() {
-        return bufferStorage.latestModifiedTimestamp();
-    }
-
     private boolean mayProceedToMergeBuffer() {
         
         

@@ -6,6 +6,7 @@ package org.mozilla.gecko.sync.synchronizer;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.VisibleForTesting;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
@@ -176,16 +177,7 @@ public class RecordsChannel implements
     this.consumer = new ConcurrentRecordConsumer(this);
     ThreadPool.run(this.consumer);
     waitingForQueueDone = true;
-
-    
-    
-    
-    
-    
-    final long highWaterMark = sink.getHighWaterMarkTimestamp();
-    final long lastSync = source.getLastSyncTimestamp();
-    final long sinceTimestamp = Math.max(highWaterMark, lastSync);
-    source.fetchSince(sinceTimestamp, this);
+    source.fetchSince(source.getLastSyncTimestamp(), this);
   }
 
   
@@ -215,9 +207,9 @@ public class RecordsChannel implements
     if (ex instanceof ReflowIsNecessaryException) {
       setReflowException((ReflowIsNecessaryException) ex);
     }
+    delegate.onFlowFetchFailed(this, ex);
     
     this.consumer.halt();
-    delegate.onFlowFetchFailed(this, ex);
   }
 
   @Override
@@ -318,6 +310,7 @@ public class RecordsChannel implements
     
     this.consumer.halt();
 
+    delegate.onFlowStoreFailed(this, ex, null);
     delegate.onFlowCompleted(this, fetchEnd, System.currentTimeMillis());
   }
 
@@ -363,7 +356,8 @@ public class RecordsChannel implements
   }
 
   @Nullable
-   synchronized ReflowIsNecessaryException getReflowException() {
+  @VisibleForTesting
+  public synchronized ReflowIsNecessaryException getReflowException() {
     return reflowException;
   }
 

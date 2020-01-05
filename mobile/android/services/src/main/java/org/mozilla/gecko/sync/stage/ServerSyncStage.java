@@ -27,10 +27,12 @@ import org.mozilla.gecko.sync.net.SyncStorageRequestDelegate;
 import org.mozilla.gecko.sync.net.SyncStorageResponse;
 import org.mozilla.gecko.sync.repositories.InactiveSessionException;
 import org.mozilla.gecko.sync.repositories.InvalidSessionTransitionException;
+import org.mozilla.gecko.sync.repositories.NonPersistentRepositoryStateProvider;
 import org.mozilla.gecko.sync.repositories.RecordFactory;
 import org.mozilla.gecko.sync.repositories.Repository;
 import org.mozilla.gecko.sync.repositories.RepositorySession;
 import org.mozilla.gecko.sync.repositories.RepositorySessionBundle;
+import org.mozilla.gecko.sync.repositories.RepositoryStateProvider;
 import org.mozilla.gecko.sync.repositories.Server15Repository;
 import org.mozilla.gecko.sync.repositories.delegates.RepositorySessionBeginDelegate;
 import org.mozilla.gecko.sync.repositories.delegates.RepositorySessionCreationDelegate;
@@ -59,6 +61,20 @@ public abstract class ServerSyncStage extends AbstractSessionManagingSyncStage i
 
   protected long stageStartTimestamp = -1;
   protected long stageCompleteTimestamp = -1;
+
+  
+
+
+
+  public enum HighWaterMark {
+    Enabled,
+    Disabled
+  }
+
+  public enum MultipleBatches {
+    Enabled,
+    Disabled
+  }
 
   
 
@@ -142,6 +158,34 @@ public abstract class ServerSyncStage extends AbstractSessionManagingSyncStage i
   protected abstract RecordFactory getRecordFactory();
 
   
+
+
+
+
+
+  protected RepositoryStateProvider getRepositoryStateProvider() {
+    return new NonPersistentRepositoryStateProvider();
+  }
+
+  
+
+
+
+  protected MultipleBatches getAllowedMultipleBatches() {
+    return MultipleBatches.Enabled;
+  }
+
+  
+
+
+
+
+
+  protected HighWaterMark getAllowedToUseHighWaterMark() {
+    return HighWaterMark.Disabled;
+  }
+
+  
   protected Repository getRemoteRepository() throws URISyntaxException {
     String collection = getCollection();
     return new Server15Repository(collection,
@@ -149,7 +193,8 @@ public abstract class ServerSyncStage extends AbstractSessionManagingSyncStage i
                                   session.config.storageURL(),
                                   session.getAuthHeaderProvider(),
                                   session.config.infoCollections,
-                                  session.config.infoConfiguration);
+                                  session.config.infoConfiguration,
+                                  new NonPersistentRepositoryStateProvider());
   }
 
   
@@ -168,6 +213,10 @@ public abstract class ServerSyncStage extends AbstractSessionManagingSyncStage i
 
   protected String bundlePrefix() {
     return this.getCollection() + ".";
+  }
+
+  protected String statePreferencesPrefix() {
+    return this.getCollection() + ".state.";
   }
 
   protected SynchronizerConfiguration getConfig() throws NonObjectJSONException, IOException {
@@ -195,6 +244,16 @@ public abstract class ServerSyncStage extends AbstractSessionManagingSyncStage i
   @Override
   protected void resetLocal() {
     resetLocalWithSyncID(null);
+    if (!getRepositoryStateProvider().resetAndCommit()) {
+      
+      
+      
+      
+      
+      
+      
+      Logger.warn(LOG_TAG, "Failed to reset repository state");
+    }
   }
 
   

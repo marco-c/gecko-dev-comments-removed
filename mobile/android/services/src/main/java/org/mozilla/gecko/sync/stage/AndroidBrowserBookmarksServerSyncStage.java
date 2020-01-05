@@ -10,6 +10,7 @@ import org.mozilla.gecko.sync.MetaGlobalException;
 import org.mozilla.gecko.sync.middleware.BufferingMiddlewareRepository;
 import org.mozilla.gecko.sync.middleware.storage.MemoryBufferStorage;
 import org.mozilla.gecko.sync.repositories.ConfigurableServer15Repository;
+import org.mozilla.gecko.sync.repositories.NonPersistentRepositoryStateProvider;
 import org.mozilla.gecko.sync.repositories.RecordFactory;
 import org.mozilla.gecko.sync.repositories.Repository;
 import org.mozilla.gecko.sync.repositories.android.AndroidBrowserBookmarksRepository;
@@ -39,6 +40,27 @@ public class AndroidBrowserBookmarksServerSyncStage extends ServerSyncStage {
     return VersionConstants.BOOKMARKS_ENGINE_VERSION;
   }
 
+  
+
+
+
+
+
+  @Override
+  protected HighWaterMark getAllowedToUseHighWaterMark() {
+    return HighWaterMark.Disabled;
+  }
+
+  
+
+
+
+
+  @Override
+  protected MultipleBatches getAllowedMultipleBatches() {
+    return MultipleBatches.Enabled;
+  }
+
   @Override
   protected Repository getRemoteRepository() throws URISyntaxException {
     return new ConfigurableServer15Repository(
@@ -50,7 +72,10 @@ public class AndroidBrowserBookmarksServerSyncStage extends ServerSyncStage {
             session.config.infoConfiguration,
             BOOKMARKS_BATCH_LIMIT,
             BOOKMARKS_SORT,
-            true );
+            getAllowedMultipleBatches(),
+            getAllowedToUseHighWaterMark(),
+            getRepositoryStateProvider()
+    );
   }
 
   @Override

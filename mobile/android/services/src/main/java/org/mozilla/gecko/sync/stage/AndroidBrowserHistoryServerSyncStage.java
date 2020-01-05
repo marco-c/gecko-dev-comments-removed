@@ -8,8 +8,10 @@ import java.net.URISyntaxException;
 
 import org.mozilla.gecko.sync.MetaGlobalException;
 import org.mozilla.gecko.sync.repositories.ConfigurableServer15Repository;
+import org.mozilla.gecko.sync.repositories.PersistentRepositoryStateProvider;
 import org.mozilla.gecko.sync.repositories.RecordFactory;
 import org.mozilla.gecko.sync.repositories.Repository;
+import org.mozilla.gecko.sync.repositories.RepositoryStateProvider;
 import org.mozilla.gecko.sync.repositories.android.AndroidBrowserHistoryRepository;
 import org.mozilla.gecko.sync.repositories.domain.HistoryRecordFactory;
 import org.mozilla.gecko.sync.repositories.domain.VersionConstants;
@@ -42,6 +44,42 @@ public class AndroidBrowserHistoryServerSyncStage extends ServerSyncStage {
     return new AndroidBrowserHistoryRepository();
   }
 
+  
+
+
+
+
+
+
+  @Override
+  protected RepositoryStateProvider getRepositoryStateProvider() {
+    return new PersistentRepositoryStateProvider(
+            session.config.getBranch(statePreferencesPrefix())
+    );
+  }
+
+  
+
+
+
+
+
+
+  @Override
+  protected HighWaterMark getAllowedToUseHighWaterMark() {
+    return HighWaterMark.Enabled;
+  }
+
+  
+
+
+
+
+  @Override
+  protected MultipleBatches getAllowedMultipleBatches() {
+    return MultipleBatches.Enabled;
+  }
+
   @Override
   protected Repository getRemoteRepository() throws URISyntaxException {
     return new ConfigurableServer15Repository(
@@ -53,7 +91,10 @@ public class AndroidBrowserHistoryServerSyncStage extends ServerSyncStage {
             session.config.infoConfiguration,
             HISTORY_BATCH_LIMIT,
             HISTORY_SORT,
-            true );
+            getAllowedMultipleBatches(),
+            getAllowedToUseHighWaterMark(),
+            getRepositoryStateProvider()
+    );
   }
 
   @Override

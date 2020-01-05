@@ -10,7 +10,10 @@ import org.mozilla.gecko.sync.SynchronizerConfiguration;
 import org.mozilla.gecko.sync.middleware.BufferingMiddlewareRepository;
 import org.mozilla.gecko.sync.middleware.storage.MemoryBufferStorage;
 import org.mozilla.gecko.sync.repositories.ConfigurableServer15Repository;
+import org.mozilla.gecko.sync.repositories.NonPersistentRepositoryStateProvider;
+import org.mozilla.gecko.sync.repositories.PersistentRepositoryStateProvider;
 import org.mozilla.gecko.sync.repositories.Repository;
+import org.mozilla.gecko.sync.repositories.RepositoryStateProvider;
 import org.mozilla.gecko.sync.repositories.android.AndroidBrowserHistoryRepository;
 
 import java.io.IOException;
@@ -39,6 +42,37 @@ public class AndroidBrowserRecentHistoryServerSyncStage extends AndroidBrowserHi
         return BUNDLE_NAME;
     }
 
+    
+
+
+
+
+    @Override
+    protected RepositoryStateProvider getRepositoryStateProvider() {
+        return new NonPersistentRepositoryStateProvider();
+    }
+
+    
+
+
+
+
+
+    @Override
+    protected MultipleBatches getAllowedMultipleBatches() {
+        return MultipleBatches.Disabled;
+    }
+
+    
+
+
+
+
+    @Override
+    protected HighWaterMark getAllowedToUseHighWaterMark() {
+        return HighWaterMark.Disabled;
+    }
+
     @Override
     protected Repository getLocalRepository() {
         return new BufferingMiddlewareRepository(
@@ -59,7 +93,9 @@ public class AndroidBrowserRecentHistoryServerSyncStage extends AndroidBrowserHi
                 session.config.infoConfiguration,
                 HISTORY_BATCH_LIMIT,
                 HISTORY_SORT,
-                false );
+                getAllowedMultipleBatches(),
+                getAllowedToUseHighWaterMark(),
+                getRepositoryStateProvider());
     }
 
     

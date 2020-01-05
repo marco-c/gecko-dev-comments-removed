@@ -9,6 +9,11 @@ import java.net.URISyntaxException;
 import org.mozilla.gecko.sync.InfoCollections;
 import org.mozilla.gecko.sync.InfoConfiguration;
 import org.mozilla.gecko.sync.net.AuthHeaderProvider;
+import org.mozilla.gecko.sync.stage.ServerSyncStage;
+
+
+
+
 
 
 
@@ -20,7 +25,8 @@ import org.mozilla.gecko.sync.net.AuthHeaderProvider;
 public class ConfigurableServer15Repository extends Server15Repository {
   private final String sortOrder;
   private final long batchLimit;
-  private final boolean allowMultipleBatches;
+  private final ServerSyncStage.MultipleBatches multipleBatches;
+  private final ServerSyncStage.HighWaterMark highWaterMark;
 
   public ConfigurableServer15Repository(
           String collection,
@@ -31,18 +37,29 @@ public class ConfigurableServer15Repository extends Server15Repository {
           InfoConfiguration infoConfiguration,
           long batchLimit,
           String sort,
-          boolean allowMultipleBatches) throws URISyntaxException {
+          ServerSyncStage.MultipleBatches multipleBatches,
+          ServerSyncStage.HighWaterMark highWaterMark,
+          RepositoryStateProvider stateProvider) throws URISyntaxException {
     super(
             collection,
             syncDeadline,
             storageURL,
             authHeaderProvider,
             infoCollections,
-            infoConfiguration
+            infoConfiguration,
+            stateProvider
     );
     this.batchLimit = batchLimit;
     this.sortOrder  = sort;
-    this.allowMultipleBatches = allowMultipleBatches;
+    this.multipleBatches = multipleBatches;
+    this.highWaterMark = highWaterMark;
+
+    
+    
+    
+    if (!stateProvider.isPersistent() && highWaterMark.equals(ServerSyncStage.HighWaterMark.Enabled)) {
+      throw new IllegalArgumentException("Can not use H.W.M. with NonPersistentRepositoryStateProvider");
+    }
   }
 
   @Override
@@ -57,6 +74,11 @@ public class ConfigurableServer15Repository extends Server15Repository {
 
   @Override
   public boolean getAllowMultipleBatches() {
-    return allowMultipleBatches;
+    return multipleBatches.equals(ServerSyncStage.MultipleBatches.Enabled);
+  }
+
+  @Override
+  public boolean getAllowHighWaterMark() {
+    return highWaterMark.equals(ServerSyncStage.HighWaterMark.Enabled);
   }
 }
