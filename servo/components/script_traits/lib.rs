@@ -41,7 +41,6 @@ use net_traits::storage_task::StorageTask;
 use profile_traits::mem;
 use std::any::Any;
 use std::sync::mpsc::{Receiver, Sender};
-use url::Url;
 use util::mem::HeapSizeOf;
 
 
@@ -91,13 +90,6 @@ pub struct NewLayoutInfo {
 }
 
 
-
-pub trait StylesheetLoadResponder {
-    
-    fn respond(self: Box<Self>);
-}
-
-
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum ScriptState {
     
@@ -141,8 +133,6 @@ pub enum ConstellationControlMsg {
     
     
     WebFontLoaded(PipelineId),
-    
-    StylesheetLoadComplete(PipelineId, Url, Box<StylesheetLoadResponder + Send>),
     
     GetCurrentState(Sender<ScriptState>, PipelineId),
 }

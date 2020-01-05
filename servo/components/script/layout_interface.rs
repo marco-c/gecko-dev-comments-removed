@@ -16,32 +16,24 @@ use msg::compositor_msg::Epoch;
 use msg::compositor_msg::LayerId;
 use msg::constellation_msg::{ConstellationChan, Failure, PipelineId};
 use msg::constellation_msg::{WindowSizeData};
-use net_traits::PendingAsyncLoad;
 use net_traits::image_cache_task::ImageCacheTask;
 use profile_traits::mem::ReportsChan;
 use script_traits::{ConstellationControlMsg, LayoutControlMsg};
-use script_traits::{OpaqueScriptLayoutChannel, StylesheetLoadResponder, UntrustedNodeAddress};
+use script_traits::{OpaqueScriptLayoutChannel, UntrustedNodeAddress};
 use selectors::parser::PseudoElement;
 use std::any::Any;
+use std::sync::Arc;
 use std::sync::mpsc::{Receiver, Sender, channel};
 use string_cache::Atom;
 use style::animation::PropertyAnimation;
-use style::media_queries::MediaQueryList;
 use style::stylesheets::Stylesheet;
-use style::viewport::ViewportRule;
 use url::Url;
 pub use dom::node::TrustedNodeAddress;
 
 
 pub enum Msg {
     
-    AddStylesheet(Stylesheet, MediaQueryList),
-
-    
-    LoadStylesheet(Url, MediaQueryList, PendingAsyncLoad, Box<StylesheetLoadResponder + Send>),
-
-    
-    AddMetaViewport(ViewportRule),
+    AddStylesheet(Arc<Stylesheet>),
 
     
     SetQuirksMode,
@@ -175,6 +167,10 @@ pub struct ScriptReflow {
     pub reflow_info: Reflow,
     
     pub document: TrustedNodeAddress,
+    
+    pub document_stylesheets: Vec<Arc<Stylesheet>>,
+    
+    pub stylesheets_changed: bool,
     
     pub window_size: WindowSizeData,
     

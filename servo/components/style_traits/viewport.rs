@@ -20,7 +20,7 @@ define_css_keyword_enum!(Orientation:
                          "landscape" => Landscape);
 
 
-#[derive(Debug, PartialEq, Deserialize, Serialize)]
+#[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
 pub struct ViewportConstraints {
     pub size: TypedSize2D<ViewportPx, f32>,
 
@@ -54,7 +54,7 @@ impl ToCss for ViewportConstraints {
 
 
 
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, HeapSizeOf, PartialEq)]
 pub enum Zoom {
     Number(f32),
     Percentage(f32),

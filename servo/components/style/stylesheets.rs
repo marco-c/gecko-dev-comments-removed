@@ -17,12 +17,13 @@ use std::iter::Iterator;
 use std::slice;
 use string_cache::{Atom, Namespace};
 use url::Url;
+use util::mem::HeapSizeOf;
 use viewport::ViewportRule;
 
 
 
 
-#[derive(Clone, PartialEq, Eq, Copy, Debug)]
+#[derive(Clone, PartialEq, Eq, Copy, Debug, HeapSizeOf)]
 pub enum Origin {
     
     UserAgent,
@@ -35,16 +36,18 @@ pub enum Origin {
 }
 
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, HeapSizeOf, PartialEq)]
 pub struct Stylesheet {
     
     
     pub rules: Vec<CSSRule>,
+    
+    pub media: Option<MediaQueryList>,
     pub origin: Origin,
 }
 
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, HeapSizeOf, PartialEq)]
 pub enum CSSRule {
     Charset(String),
     Namespace(Option<String>, Namespace),
@@ -54,7 +57,7 @@ pub enum CSSRule {
     Viewport(ViewportRule),
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, HeapSizeOf, PartialEq)]
 pub struct MediaRule {
     pub media_queries: MediaQueryList,
     pub rules: Vec<CSSRule>,
@@ -67,7 +70,7 @@ impl MediaRule {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, HeapSizeOf, PartialEq)]
 pub struct StyleRule {
     pub selectors: Vec<Selector>,
     pub declarations: PropertyDeclarationBlock,
@@ -131,6 +134,23 @@ impl Stylesheet {
         Stylesheet {
             origin: origin,
             rules: rules,
+            media: None,
+        }
+    }
+
+    
+    pub fn set_media(&mut self, media: Option<MediaQueryList>) {
+        self.media = media;
+    }
+
+    
+    
+    
+    
+    pub fn is_effective_for_device(&self, device: &Device) -> bool {
+        match self.media {
+            Some(ref media) => media.evaluate(device),
+            None => true
         }
     }
 
