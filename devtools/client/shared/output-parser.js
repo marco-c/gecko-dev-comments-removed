@@ -52,8 +52,6 @@ function OutputParser(document, {supportsType, isValidOnClient}) {
   this._onAngleSwatchMouseDown = this._onAngleSwatchMouseDown.bind(this);
 }
 
-exports.OutputParser = OutputParser;
-
 OutputParser.prototype = {
   
 
@@ -693,3 +691,5 @@ OutputParser.prototype = {
     return defaults;
   }
 };
+
+module.exports = OutputParser;
