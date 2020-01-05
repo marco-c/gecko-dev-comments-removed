@@ -204,7 +204,7 @@ public:
 
 
 
-  LookupResult GetCompositedFrame(uint32_t aFrameNum);
+  LookupResult GetCompositedFrame(AnimationState& aState);
 
   
 

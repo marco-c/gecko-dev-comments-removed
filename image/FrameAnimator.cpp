@@ -293,10 +293,11 @@ FrameAnimator::RequestRefresh(AnimationState& aState, const TimeStamp& aTime)
 }
 
 LookupResult
-FrameAnimator::GetCompositedFrame(uint32_t aFrameNum)
+FrameAnimator::GetCompositedFrame(AnimationState& aState)
 {
   
-  if (mLastCompositedFrameIndex == int32_t(aFrameNum)) {
+  if (mLastCompositedFrameIndex >= 0 &&
+      (uint32_t(mLastCompositedFrameIndex) == aState.mCurrentAnimationFrameIndex)) {
     return LookupResult(DrawableSurface(mCompositingFrame->DrawableRef()),
                         MatchType::EXACT);
   }
@@ -314,7 +315,7 @@ FrameAnimator::GetCompositedFrame(uint32_t aFrameNum)
 
   
   
-  if (NS_FAILED(result.Surface().Seek(aFrameNum))) {
+  if (NS_FAILED(result.Surface().Seek(aState.mCurrentAnimationFrameIndex))) {
     return LookupResult(MatchType::NOT_FOUND);
   }
 
