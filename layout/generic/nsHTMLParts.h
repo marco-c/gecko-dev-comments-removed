@@ -30,8 +30,7 @@ class ViewportFrame;
 
 
 
-#define NS_BLOCK_FLAGS_MASK (NS_BLOCK_MARGIN_ROOT              | \
-                             NS_BLOCK_FLOAT_MGR                | \
+#define NS_BLOCK_FLAGS_MASK (NS_BLOCK_FORMATTING_CONTEXT_STATE_BITS | \
                              NS_BLOCK_CLIP_PAGINATED_OVERFLOW  | \
                              NS_BLOCK_HAS_FIRST_LETTER_STYLE   | \
                              NS_BLOCK_FRAME_HAS_OUTSIDE_BULLET | \
