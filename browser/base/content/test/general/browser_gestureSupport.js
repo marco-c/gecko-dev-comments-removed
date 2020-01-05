@@ -546,7 +546,6 @@ function test_rotateHelperOneGesture(aImageElement, aCurrentRotation,
 
   
   let clockwise = SimpleGestureEvent.ROTATION_CLOCKWISE;
-  let cclockwise = SimpleGestureEvent.ROTATION_COUNTERCLOCKWISE;
 
   let delta = aAmount * (aDirection == clockwise ? 1 : -1);
 

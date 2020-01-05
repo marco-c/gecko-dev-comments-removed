@@ -116,8 +116,6 @@ var TabsInTitlebar = {
       return;
     }
 
-    let allowed = true;
-
     if (!aForce) {
       
       
@@ -138,10 +136,7 @@ var TabsInTitlebar = {
       }
     }
 
-    for (let something in this._disallowed) {
-      allowed = false;
-      break;
-    }
+    let allowed = (Object.keys(this._disallowed)).length == 0;
 
     let titlebar = $("titlebar");
     let titlebarContent = $("titlebar-content");

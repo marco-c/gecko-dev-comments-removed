@@ -6,7 +6,7 @@ function test() {
   
   let originalTab = gBrowser.selectedTab;
   let newTab1 = gBrowser.addTab();
-  let newTab2 = gBrowser.addTab();
+  gBrowser.addTab();
   gBrowser.pinTab(newTab1);
 
   

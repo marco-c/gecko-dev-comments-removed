@@ -92,7 +92,7 @@ var checkInfobarButton = Task.async(function* (aNotification) {
   button.click();
 
   
-  let preferenceWindow = yield paneLoadedPromise;
+  yield paneLoadedPromise;
   yield promiseNextTick();
 });
 

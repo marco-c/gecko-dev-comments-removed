@@ -32,7 +32,6 @@ var Change = {
   onLoad: function Change_onLoad() {
     
     let introText = document.getElementById("introText");
-    let introText2 = document.getElementById("introText2");
     let warningText = document.getElementById("warningText");
 
     

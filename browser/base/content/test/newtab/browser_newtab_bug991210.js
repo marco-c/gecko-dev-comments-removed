@@ -15,7 +15,7 @@ add_task(function* () {
   NewTabUtils.links.addProvider(afterLoadProvider);
 
   
-  let tab = yield BrowserTestUtils.openNewForegroundTab(gBrowser, "about:newtab");
+  yield BrowserTestUtils.openNewForegroundTab(gBrowser, "about:newtab");
 
   afterLoadProvider.callback([]);
 

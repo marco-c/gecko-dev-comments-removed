@@ -45,7 +45,6 @@ add_task(function*() {
   is(selected.getAttribute("label"), "6", "Should have '6' stylesheet selected by default");
 
   
-  let targets = menupopup.querySelectorAll("menuitem");
   let target = menupopup.querySelector("menuitem[label='1']");
   target.click();
 

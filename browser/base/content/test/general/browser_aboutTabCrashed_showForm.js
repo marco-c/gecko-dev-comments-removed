@@ -16,8 +16,6 @@ add_task(function* test_show_form() {
     gBrowser,
     url: PAGE,
   }, function*(browser) {
-    let tab = gBrowser.getTabForBrowser(browser);
-
     
     
     let pref = TabCrashHandler.prefs.root + "sendReport";

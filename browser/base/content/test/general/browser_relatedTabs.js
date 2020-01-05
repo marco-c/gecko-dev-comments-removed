@@ -10,7 +10,6 @@ add_task(function*() {
   
   
   let tabs = [];
-  let promises = [];
   function addTab(aURL, aReferrer) {
     let tab = gBrowser.addTab(aURL, {referrerURI: aReferrer});
     tabs.push(tab);

@@ -211,7 +211,7 @@ var RemoteTabViewer = {
     let seenURLs = new Set();
     let localURLs = engine.getOpenURLs();
 
-    for (let [guid, client] of Object.entries(engine.getAllClients())) {
+    for (let [, client] of Object.entries(engine.getAllClients())) {
       
       let appendClient = true;
 

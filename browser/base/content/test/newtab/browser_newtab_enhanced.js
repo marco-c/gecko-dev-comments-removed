@@ -121,7 +121,6 @@ add_task(function* () {
 
 
   
-  let origIsTopPlacesSite = NewTabUtils.isTopPlacesSite;
   NewTabUtils.isTopPlacesSite = () => true;
   yield setLinks("-1,2,3,4,5,6,7,8");
 

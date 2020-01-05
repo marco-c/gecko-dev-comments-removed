@@ -44,7 +44,7 @@ add_task(function*() {
   
   
   
-  let dialogNode = yield new Promise(resolveOuter => {
+  yield new Promise(resolveOuter => {
     waitForDialog(dialogNode => {
       waitForDialogDestroyed(dialogNode, () => {
         let doCompletion = () => setTimeout(resolveOuter, 0);
@@ -78,5 +78,3 @@ registerCleanupFunction(function() {
     gBrowser.removeTab(testTab);
   }
 });
-
-

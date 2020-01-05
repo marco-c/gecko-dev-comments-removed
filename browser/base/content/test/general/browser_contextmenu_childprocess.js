@@ -12,7 +12,7 @@ add_task(function *() {
   
   let popupShownPromise = BrowserTestUtils.waitForEvent(contextMenu, "popupshown");
   yield BrowserTestUtils.synthesizeMouse("#test-pagemenu", 5, 5, { type : "contextmenu", button : 2 }, tab.linkedBrowser);
-  let event = yield popupShownPromise;
+  yield popupShownPromise;
 
   checkMenu(contextMenu);
 

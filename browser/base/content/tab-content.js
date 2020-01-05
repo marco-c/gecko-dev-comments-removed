@@ -272,7 +272,6 @@ var AboutReaderListener = {
   receiveMessage: function(message) {
     switch (message.name) {
       case "Reader:ToggleReaderMode":
-        let url = content.document.location.href;
         if (!this.isAboutReader) {
           this._articlePromise = ReaderMode.parseDocument(content.document).catch(Cu.reportError);
           ReaderMode.enterReaderMode(docShell, content);
@@ -622,12 +621,6 @@ var WebBrowserChrome = {
 
     return true;
   },
-
-  
-  reloadInFreshProcess: function(aDocShell, aURI, aReferrer) {
-    E10SUtils.redirectLoad(aDocShell, aURI, aReferrer, true);
-    return true;
-  }
 };
 
 if (Services.appinfo.processType == Services.appinfo.PROCESS_TYPE_CONTENT) {
