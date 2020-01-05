@@ -11,6 +11,7 @@ use geom::scale_factor::ScaleFactor;
 use hyper::header::Headers;
 use hyper::method::{Method, Get};
 use layers::geometry::DevicePixel;
+use servo_util::cursor::Cursor;
 use servo_util::geometry::{PagePx, ViewportPx};
 use std::comm::{channel, Sender, Receiver};
 use url::Url;
@@ -208,6 +209,8 @@ pub enum Msg {
     
     
     GetPipelineTitleMsg(PipelineId),
+    
+    SetCursorMsg(Cursor),
 }
 
 

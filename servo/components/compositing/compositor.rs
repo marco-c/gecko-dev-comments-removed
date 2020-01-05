@@ -3,8 +3,8 @@
 
 
 use compositor_layer::{CompositorData, CompositorLayer, WantsScrollEventsFlag};
-use compositor_task::{CompositorEventListener, CompositorProxy, CompositorReceiver, CompositorTask};
-use compositor_task::{LayerProperties, Msg};
+use compositor_task::{CompositorEventListener, CompositorProxy, CompositorReceiver};
+use compositor_task::{CompositorTask, LayerProperties, Msg};
 use constellation::{FrameId, FrameTreeDiff, SendableFrameTree};
 use pipeline::CompositionPipeline;
 use scrolling::ScrollingTimerProxy;
@@ -336,6 +336,10 @@ impl<Window: WindowMethods> IOCompositor<Window> {
 
             (Msg::KeyEvent(key, modified), ShutdownState::NotShuttingDown) => {
                 self.window.handle_key(key, modified);
+            }
+
+            (Msg::SetCursor(cursor), ShutdownState::NotShuttingDown) => {
+                self.window.set_cursor(cursor)
             }
 
             
