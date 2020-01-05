@@ -657,7 +657,7 @@ static bool
 CreateFilteredListFromArrayLike(JSContext* cx, HandleValue v, AutoIdVector& props)
 {
     
-    RootedObject obj(cx, NonNullObject(cx, v));
+    RootedObject obj(cx, NonNullObjectWithName(cx, "return value of the ownKeys trap", v));
     if (!obj)
         return false;
 
@@ -1319,7 +1319,7 @@ ProxyCreate(JSContext* cx, CallArgs& args, const char* callerName)
     }
 
     
-    RootedObject target(cx, NonNullObject(cx, args[0]));
+    RootedObject target(cx, NonNullObjectArg(cx, "`target`", callerName, args[0]));
     if (!target)
         return false;
 
@@ -1330,7 +1330,7 @@ ProxyCreate(JSContext* cx, CallArgs& args, const char* callerName)
     }
 
     
-    RootedObject handler(cx, NonNullObject(cx, args[1]));
+    RootedObject handler(cx, NonNullObjectArg(cx, "`handler`", callerName, args[1]));
     if (!handler)
         return false;
 
