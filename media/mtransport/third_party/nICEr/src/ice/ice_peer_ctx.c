@@ -466,7 +466,7 @@ static void nr_ice_peer_ctx_destroy_cb(NR_SOCKET s, int how, void *cb_arg)
     nr_ice_peer_ctx *pctx=cb_arg;
     nr_ice_media_stream *str1,*str2;
 
-    NR_async_timer_cancel(pctx->done_cb_timer);
+    NR_async_timer_cancel(pctx->connected_cb_timer);
     RFREE(pctx->label);
     RFREE(pctx->peer_ufrag);
     RFREE(pctx->peer_pwd);
@@ -527,17 +527,17 @@ int nr_ice_peer_ctx_start_checks2(nr_ice_peer_ctx *pctx, int allow_non_first)
     int started = 0;
 
     
-    pctx->reported_done = 0;
-    NR_async_timer_cancel(pctx->done_cb_timer);
-    pctx->done_cb_timer = 0;
+    pctx->reported_connected = 0;
+    NR_async_timer_cancel(pctx->connected_cb_timer);
+    pctx->connected_cb_timer = 0;
     pctx->checks_started = 0;
 
-    if((r=nr_ice_peer_ctx_check_if_done(pctx))) {
-      r_log(LOG_ICE,LOG_ERR,"ICE(%s): peer (%s) initial done check failed",pctx->ctx->label,pctx->label);
+    if((r=nr_ice_peer_ctx_check_if_connected(pctx))) {
+      r_log(LOG_ICE,LOG_ERR,"ICE(%s): peer (%s) initial connected check failed",pctx->ctx->label,pctx->label);
       ABORT(r);
     }
 
-    if (pctx->reported_done) {
+    if (pctx->reported_connected) {
       r_log(LOG_ICE,LOG_ERR,"ICE(%s): peer (%s) in %s all streams were done",pctx->ctx->label,pctx->label,__FUNCTION__);
       return (0);
     }
@@ -648,21 +648,33 @@ int nr_ice_peer_ctx_dump_state(nr_ice_peer_ctx *pctx,FILE *out)
   }
 #endif
 
-static void nr_ice_peer_ctx_fire_done(NR_SOCKET s, int how, void *cb_arg)
+void nr_ice_peer_ctx_disconnected(nr_ice_peer_ctx *pctx)
+  {
+    if (pctx->handler && pctx->handler->vtbl->ice_disconnected) {
+      pctx->handler->vtbl->ice_disconnected(pctx->handler->obj, pctx);
+    }
+  }
+
+void nr_ice_peer_ctx_connected(nr_ice_peer_ctx *pctx)
+  {
+    
+    if (pctx->handler) {
+      pctx->handler->vtbl->ice_connected(pctx->handler->obj, pctx);
+    }
+  }
+
+static void nr_ice_peer_ctx_fire_connected(NR_SOCKET s, int how, void *cb_arg)
   {
     nr_ice_peer_ctx *pctx=cb_arg;
 
-    pctx->done_cb_timer=0;
+    pctx->connected_cb_timer=0;
 
-    
-    if (pctx->handler) {
-      pctx->handler->vtbl->ice_completed(pctx->handler->obj, pctx);
-    }
+    nr_ice_peer_ctx_connected(pctx);
   }
 
 
 
-int nr_ice_peer_ctx_check_if_done(nr_ice_peer_ctx *pctx)
+int nr_ice_peer_ctx_check_if_connected(nr_ice_peer_ctx *pctx)
   {
     int _status;
     nr_ice_media_stream *str;
@@ -692,10 +704,10 @@ int nr_ice_peer_ctx_check_if_done(nr_ice_peer_ctx *pctx)
     
 
 
-    if (!pctx->reported_done) {
-      pctx->reported_done = 1;
-      assert(!pctx->done_cb_timer);
-      NR_ASYNC_TIMER_SET(0,nr_ice_peer_ctx_fire_done,pctx,&pctx->done_cb_timer);
+    if (!pctx->reported_connected) {
+      pctx->reported_connected = 1;
+      assert(!pctx->connected_cb_timer);
+      NR_ASYNC_TIMER_SET(0,nr_ice_peer_ctx_fire_connected,pctx,&pctx->connected_cb_timer);
     }
 
   done:
