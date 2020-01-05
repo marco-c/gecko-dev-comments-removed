@@ -170,7 +170,16 @@ public class RecordsChannel implements
     this.consumer = new ConcurrentRecordConsumer(this);
     ThreadPool.run(this.consumer);
     waitingForQueueDone = true;
-    source.fetchSince(source.getLastSyncTimestamp(), this);
+
+    
+    
+    
+    
+    
+    final long highWaterMark = sink.getHighWaterMarkTimestamp();
+    final long lastSync = source.getLastSyncTimestamp();
+    final long sinceTimestamp = Math.max(highWaterMark, lastSync);
+    source.fetchSince(sinceTimestamp, this);
   }
 
   
