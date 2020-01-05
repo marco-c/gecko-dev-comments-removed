@@ -91,6 +91,11 @@ typedef uint8_t nsHttpVersion;
 
 
 
+#define NS_HTTP_BE_CONSERVATIVE      (1<<11)
+
+
+
+
 
 #define NS_HTTP_DEFAULT_PORT  80
 #define NS_HTTPS_DEFAULT_PORT 443

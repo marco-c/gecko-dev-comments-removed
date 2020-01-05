@@ -87,6 +87,7 @@ HttpBaseChannel::HttpBaseChannel()
   , mTimingEnabled(false)
   , mAllowSpdy(true)
   , mAllowAltSvc(true)
+  , mBeConservative(false)
   , mResponseTimeoutEnabled(true)
   , mAllRedirectsSameOrigin(true)
   , mAllRedirectsPassTimingAllowCheck(true)
@@ -2305,6 +2306,22 @@ HttpBaseChannel::SetAllowAltSvc(bool aAllowAltSvc)
 }
 
 NS_IMETHODIMP
+HttpBaseChannel::GetBeConservative(bool *aBeConservative)
+{
+  NS_ENSURE_ARG_POINTER(aBeConservative);
+
+  *aBeConservative = mBeConservative;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+HttpBaseChannel::SetBeConservative(bool aBeConservative)
+{
+  mBeConservative = aBeConservative;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
 HttpBaseChannel::GetApiRedirectToURI(nsIURI ** aResult)
 {
   NS_ENSURE_ARG_POINTER(aResult);
@@ -3073,6 +3090,7 @@ HttpBaseChannel::SetupReplacementChannel(nsIURI       *newURI,
     httpInternal->SetThirdPartyFlags(mThirdPartyFlags);
     httpInternal->SetAllowSpdy(mAllowSpdy);
     httpInternal->SetAllowAltSvc(mAllowAltSvc);
+    httpInternal->SetBeConservative(mBeConservative);
 
     RefPtr<nsHttpChannel> realChannel;
     CallQueryInterface(newChannel, realChannel.StartAssignment());

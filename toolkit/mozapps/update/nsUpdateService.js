@@ -3260,6 +3260,8 @@ Checker.prototype = {
     this._request.channel.loadFlags |= Ci.nsIRequest.LOAD_BYPASS_CACHE;
     
     this._request.channel.loadFlags |= Ci.nsIRequest.INHIBIT_CACHING;
+    
+    this._request.channel.QueryInterface(Ci.nsIHttpChannelInternal).beConservative = true;
 
     this._request.overrideMimeType("text/xml");
     
