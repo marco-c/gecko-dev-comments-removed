@@ -11,10 +11,6 @@ function IsConstructor(o) {
   }
 }
 
-function IsObject(o) {
-    return Object(o) === o;
-}
-
 function thisValues() {
     const intlConstructors = Object.getOwnPropertyNames(Intl).map(name => Intl[name]).filter(IsConstructor);
 
@@ -43,28 +39,11 @@ function thisValues() {
 }
 
 
-for (let thisValue of thisValues()) {
-    let obj = Intl.PluralRules.call(thisValue);
-    assertEq(Object.is(obj, thisValue), false);
-    assertEq(obj instanceof Intl.PluralRules, true);
-
-    
-    if (IsObject(thisValue))
-        assertEqArray(Object.getOwnPropertySymbols(thisValue), []);
-}
+assertThrowsInstanceOf(() => Intl.PluralRules(), TypeError);
 
 
 for (let thisValue of thisValues()) {
-    
-    Object.defineProperty(Intl.PluralRules, Symbol.hasInstance, {
-        get() {
-            assertEq(false, true, "@@hasInstance operator called");
-        }, configurable: true
-    });
-    let obj = Intl.PluralRules.call(thisValue);
-    delete Intl.PluralRules[Symbol.hasInstance];
-    assertEq(Object.is(obj, thisValue), false);
-    assertEq(obj instanceof Intl.PluralRules, true);
+    assertThrowsInstanceOf(() => Intl.PluralRules.call(thisValue), TypeError);
 }
 
 if (typeof reportCompare === "function")
