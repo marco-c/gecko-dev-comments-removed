@@ -405,16 +405,10 @@ public:
   int mRate;        
   int mChannels;    
   uint16_t mPreSkip; 
-#ifdef MOZ_SAMPLE_TYPE_FLOAT32
-  float mGain;      
-#else
-  int32_t mGain_Q16; 
-#endif
 
   nsAutoPtr<OpusParser> mParser;
   OpusMSDecoder* mDecoder;
 
-  int mSkip;        
   
   
   int64_t mPrevPacketGranulepos;
