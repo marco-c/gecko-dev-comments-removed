@@ -24,7 +24,6 @@
 #include "nsIDOMKeyEvent.h"
 #include "nsIDOMDocument.h"
 #include "nsIDOMElement.h"
-#include "nsIFormControl.h"
 #include "nsIDocument.h"
 #include "nsIContent.h"
 #include "nsIPresShell.h"
@@ -41,7 +40,9 @@
 #include "nsIFrame.h"
 #include "nsIScriptSecurityManager.h"
 #include "nsFocusManager.h"
+#include "nsThreadUtils.h"
 
+using namespace mozilla;
 using namespace mozilla::dom;
 
 NS_IMPL_CYCLE_COLLECTION(nsFormFillController,
@@ -67,10 +68,13 @@ nsFormFillController::nsFormFillController() :
   mFocusedInput(nullptr),
   mFocusedInputNode(nullptr),
   mListNode(nullptr),
+  
+  
+  mFocusAfterContextMenuThreshold(250),
   mTimeout(50),
   mMinResultsForPopup(1),
   mMaxRows(0),
-  mContextMenuFiredBeforeFocus(false),
+  mLastContextMenuEventTimeStamp(TimeStamp::Now()),
   mDisableAutoComplete(false),
   mCompleteDefaultIndex(false),
   mCompleteSelectedIndex(false),
@@ -934,7 +938,9 @@ nsFormFillController::HandleEvent(nsIDOMEvent* aEvent)
     return NS_OK;
   }
   if (type.EqualsLiteral("contextmenu")) {
-    mContextMenuFiredBeforeFocus = true;
+    
+    
+    mLastContextMenuEventTimeStamp = TimeStamp::Now();
     if (mFocusedPopup)
       mFocusedPopup->ClosePopup();
     return NS_OK;
@@ -1018,6 +1024,27 @@ nsFormFillController::MaybeStartControllingInput(nsIDOMHTMLInputElement* aInput)
   }
 }
 
+void
+nsFormFillController::FocusEventDelayedCallback(nsIFormControl* aFormControl)
+{
+  nsCOMPtr<nsIFormControl> formControl = do_QueryInterface(mFocusedInputNode);
+
+  if (!formControl || formControl != aFormControl) {
+    return;
+  }
+
+  uint64_t timeDiff = fabs((TimeStamp::Now() - mLastContextMenuEventTimeStamp).ToMilliseconds());
+  
+  
+  
+  
+  
+  if (timeDiff > mFocusAfterContextMenuThreshold
+      && formControl->GetType() == NS_FORM_INPUT_PASSWORD) {
+   ShowPopup();
+  }
+}
+
 nsresult
 nsFormFillController::Focus(nsIDOMEvent* aEvent)
 {
@@ -1027,7 +1054,6 @@ nsFormFillController::Focus(nsIDOMEvent* aEvent)
 
   
   if (!mFocusedInputNode) {
-    mContextMenuFiredBeforeFocus = false;
     return NS_OK;
   }
 
@@ -1035,15 +1061,10 @@ nsFormFillController::Focus(nsIDOMEvent* aEvent)
   nsCOMPtr<nsIFormControl> formControl = do_QueryInterface(mFocusedInputNode);
   MOZ_ASSERT(formControl);
 
-  
-  
-  if (!mContextMenuFiredBeforeFocus
-      && formControl->GetType() == NS_FORM_INPUT_PASSWORD) {
-    ShowPopup();
-  }
+  NS_DispatchToMainThread(NewRunnableMethod<nsCOMPtr<nsIFormControl>>(
+      this, &nsFormFillController::FocusEventDelayedCallback, formControl));
 #endif
 
-  mContextMenuFiredBeforeFocus = false;
   return NS_OK;
 }
 

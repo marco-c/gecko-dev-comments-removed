@@ -7,8 +7,6 @@
 const TEST_HOSTNAME = "https://example.com";
 const BASIC_FORM_PAGE_PATH = DIRECTORY_PATH + "form_basic.html";
 
-var gUnexpectedIsTODO = false;
-
 
 
 
@@ -40,7 +38,6 @@ add_task(function* test_context_menu_username() {
 });
 
 add_task(function* test_context_menu_password() {
-  gUnexpectedIsTODO = true;
   yield BrowserTestUtils.withNewTab({
     gBrowser,
     url: TEST_HOSTNAME + BASIC_FORM_PAGE_PATH,
@@ -54,11 +51,7 @@ add_task(function* test_context_menu_password() {
 });
 
 function autocompleteUnexpectedPopupShowing(event) {
-  if (gUnexpectedIsTODO) {
-    todo(false, "Autocomplete shouldn't appear");
-  } else {
-    Assert.ok(false, "Autocomplete shouldn't appear");
-  }
+  Assert.ok(false, "Autocomplete shouldn't appear");
   event.target.hidePopup();
 }
 
