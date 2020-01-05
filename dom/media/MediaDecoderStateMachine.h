@@ -595,11 +595,6 @@ private:
 
   UniquePtr<StateObject> mStateObj;
 
-  
-  
-  
-  TimeStamp mBufferingStart;
-
   media::TimeUnit Duration() const { MOZ_ASSERT(OnTaskQueue()); return mDuration.Ref().ref(); }
 
   
