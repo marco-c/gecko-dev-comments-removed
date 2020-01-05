@@ -45,7 +45,7 @@ var Manager = {
 
   uninit() {
     
-    Services.obs.removeObserver(this, "autocomplete-did-enter-text", true);
+    Services.obs.removeObserver(this, "autocomplete-did-enter-text");
     this.recentTabTransitionData = new WeakMap();
 
     Services.mm.removeMessageListener("Content:Click", this);

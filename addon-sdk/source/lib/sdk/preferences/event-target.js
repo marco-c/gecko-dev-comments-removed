@@ -56,6 +56,6 @@ function destroy() {
 
   
   let branch = prefTargetNS(this).branch;
-  branch.removeObserver('', prefTargetNS(this).observer, false);
+  branch.removeObserver('', prefTargetNS(this).observer);
   prefTargetNS(this).observer = null;
 }

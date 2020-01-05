@@ -32,7 +32,7 @@ var isParent = Cc['@mozilla.org/xre/runtime;1']
 
 
 Services.obs.addObserver(function observe(subject, topic, data) {
-  Services.obs.removeObserver(observe, topic, false);
+  Services.obs.removeObserver(observe, topic);
   serviceExports.PushService.uninit();
   
   
@@ -92,7 +92,7 @@ function promiseObserverNotification(topic, matchFunc) {
       if (!matches) {
         return;
       }
-      Services.obs.removeObserver(observe, topic, false);
+      Services.obs.removeObserver(observe, topic);
       resolve({subject, data});
     }, topic, false);
   });

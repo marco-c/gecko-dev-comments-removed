@@ -1535,7 +1535,7 @@ var BrowserApp = {
     }
 
     let apzFlushDone = function() {
-      Services.obs.removeObserver(apzFlushDone, "apz-repaints-flushed", false);
+      Services.obs.removeObserver(apzFlushDone, "apz-repaints-flushed");
       dwu.zoomToFocusedInput();
     };
 
@@ -3647,8 +3647,8 @@ Tab.prototype = {
     this.browser.removeEventListener("VideoBindingCast", this, true, true);
 
     Services.obs.removeObserver(this, "before-first-paint");
-    Services.obs.removeObserver(this, "media-playback", false);
-    Services.obs.removeObserver(this, "media-playback-resumed", false);
+    Services.obs.removeObserver(this, "media-playback");
+    Services.obs.removeObserver(this, "media-playback-resumed");
 
     
     

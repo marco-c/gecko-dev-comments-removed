@@ -60,7 +60,7 @@ exports.asyncWindowLeakTest = function*(assert, asyncTestFunc) {
 
   
   
-  Services.obs.removeObserver(windowObserver, "domwindowopened", false);
+  Services.obs.removeObserver(windowObserver, "domwindowopened");
   yield gc();
 
   
