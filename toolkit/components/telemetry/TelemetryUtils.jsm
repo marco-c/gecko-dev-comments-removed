@@ -136,7 +136,7 @@ this.TelemetryUtils = {
 
     let sign = (n) => n >= 0 ? "+" : "-";
     
-    let tzOffset = - date.getTimezoneOffset();
+    let tzOffset = -date.getTimezoneOffset();
 
     
     return    padNumber(date.getFullYear(), 4)
