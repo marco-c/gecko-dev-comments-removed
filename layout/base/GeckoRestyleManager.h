@@ -57,8 +57,6 @@ public:
   void ContentStateChanged(nsIContent* aContent,
                            EventStates aStateMask);
 
-  void PostRestyleEventForLazyConstruction() { PostRestyleEventInternal(true); }
-
   
   void AttributeWillChange(Element* aElement,
                            int32_t  aNameSpaceID,
@@ -115,8 +113,10 @@ public:
     mPendingRestyles.ClearSelectors();
   }
 
+  void PostRestyleEventForLazyConstruction() { PostRestyleEventInternal(); }
+
 private:
-  void PostRestyleEventInternal(bool aForLazyConstruction);
+  void PostRestyleEventInternal();
 
   
   void ComputeAndProcessStyleChange(nsIFrame*              aFrame,

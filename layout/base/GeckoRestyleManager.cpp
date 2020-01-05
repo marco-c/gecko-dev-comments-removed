@@ -605,14 +605,13 @@ GeckoRestyleManager::UpdateOnlyAnimationStyles()
 }
 
 void
-GeckoRestyleManager::PostRestyleEventInternal(bool aForLazyConstruction)
+GeckoRestyleManager::PostRestyleEventInternal()
 {
   
   
   
-  bool inRefresh = !aForLazyConstruction && mInStyleRefresh;
   nsIPresShell* presShell = PresContext()->PresShell();
-  if (!inRefresh) {
+  if (!mInStyleRefresh) {
     presShell->ObserveStyleFlushes();
   }
 
@@ -650,7 +649,7 @@ GeckoRestyleManager::PostRestyleEvent(Element* aElement,
     mHavePendingNonAnimationRestyles = true;
   }
 
-  PostRestyleEventInternal(false);
+  PostRestyleEventInternal();
 }
 
 void
@@ -669,7 +668,7 @@ GeckoRestyleManager::PostRebuildAllStyleDataEvent(nsChangeHint aExtraHint,
   mRebuildAllRestyleHint |= aRestyleHint;
 
   
-  PostRestyleEventInternal(false);
+  PostRestyleEventInternal();
 }
 
 
