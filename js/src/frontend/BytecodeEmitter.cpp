@@ -244,9 +244,9 @@ class LoopControl : public BreakableControl
         loopDepth_ = enclosingLoop ? enclosingLoop->loopDepth_ + 1 : 1;
 
         int loopSlots;
-        if (loopKind == StatementKind::Spread || loopKind == StatementKind::ForOfLoop)
+        if (loopKind == StatementKind::Spread)
             loopSlots = 3;
-        else if (loopKind == StatementKind::ForInLoop)
+        else if (loopKind == StatementKind::ForInLoop || loopKind == StatementKind::ForOfLoop)
             loopSlots = 2;
         else
             loopSlots = 0;
@@ -267,6 +267,20 @@ class LoopControl : public BreakableControl
 
     bool canIonOsr() const {
         return canIonOsr_;
+    }
+
+    MOZ_MUST_USE bool emitSpecialBreakForDone(BytecodeEmitter* bce) {
+        
+        
+        MOZ_ASSERT(bce->stackDepth == stackDepth_);
+        MOZ_ASSERT(bce->innermostNestableControl == this);
+
+        if (!bce->newSrcNote(SRC_BREAK))
+            return false;
+        if (!bce->emitJump(JSOP_GOTO, &breaks))
+            return false;
+
+        return true;
     }
 
     MOZ_MUST_USE bool patchBreaksAndContinues(BytecodeEmitter* bce) {
@@ -2084,7 +2098,7 @@ class ForOfLoopControl : public LoopControl
         
         
         
-        if (!bce->emitPopN(2))                            
+        if (!bce->emit1(JSOP_POP))                        
             return false;
 
         
@@ -2101,8 +2115,6 @@ class ForOfLoopControl : public LoopControl
             
             
             
-            if (!bce->emit1(JSOP_UNDEFINED))              
-                return false;
             if (!bce->emit1(JSOP_UNDEFINED))              
                 return false;
         } else {
@@ -2780,7 +2792,7 @@ NonLocalExitControl::prepareForNonLocalJump(BytecodeEmitter::NestableControl* ta
                 if (!loopinfo.emitPrepareForNonLocalJump(bce_,  false)) 
                     return false;
             } else {
-                npops += 3;
+                npops += 2;
             }
             break;
 
@@ -7030,8 +7042,6 @@ BytecodeEmitter::emitForOf(ParseNode* forOfLoop, EmitterScope* headLexicalEmitte
     
     if (!emit1(JSOP_UNDEFINED))                           
         return false;
-    if (!emit1(JSOP_UNDEFINED))                           
-        return false;
 
     ForOfLoopControl loopInfo(this, iterDepth, allowSelfHostedIter, iterKind);
 
@@ -7078,14 +7088,42 @@ BytecodeEmitter::emitForOf(ParseNode* forOfLoop, EmitterScope* headLexicalEmitte
         auto loopDepth = this->stackDepth;
 #endif
 
-        
-        
-        
-        
         if (!emit1(JSOP_POP))                             
             return false;
         if (!emit1(JSOP_DUP))                             
             return false;
+
+        if (!emitIteratorNext(forOfHead, iterKind, allowSelfHostedIter))
+            return false;                                 
+
+        if (!emit1(JSOP_DUP))                             
+            return false;
+        if (!emitAtomOp(cx->names().done, JSOP_GETPROP))  
+            return false;
+
+        IfThenElseEmitter ifDone(this);
+
+        if (!ifDone.emitIf())                             
+            return false;
+
+        
+        if (!emit1(JSOP_POP))                             
+            return false;
+        if (!emit1(JSOP_UNDEFINED))                       
+            return false;
+
+        
+        
+        if (!loopInfo.emitSpecialBreakForDone(this))      
+            return false;
+
+        if (!ifDone.emitEnd())                            
+            return false;
+
+        
+        
+        
+        
         if (!emitAtomOp(cx->names().value, JSOP_GETPROP)) 
             return false;
 
@@ -7122,24 +7160,8 @@ BytecodeEmitter::emitForOf(ParseNode* forOfLoop, EmitterScope* headLexicalEmitte
         if (!emitLoopEntry(forHeadExpr, initialJump))     
             return false;
 
-        if (!emit1(JSOP_SWAP))                            
+        if (!emit1(JSOP_FALSE))                           
             return false;
-        if (!emit1(JSOP_POP))                             
-            return false;
-        if (!emitDupAt(1))                                
-            return false;
-
-        if (!emitIteratorNext(forOfHead, iterKind, allowSelfHostedIter)) 
-            return false;
-
-        if (!emit1(JSOP_SWAP))                            
-            return false;
-
-        if (!emitDupAt(1))                                
-            return false;
-        if (!emitAtomOp(cx->names().done, JSOP_GETPROP))  
-            return false;
-
         if (!emitBackwardJump(JSOP_IFEQ, top, &beq, &breakTarget))
             return false;                                 
 
@@ -7156,7 +7178,7 @@ BytecodeEmitter::emitForOf(ParseNode* forOfLoop, EmitterScope* headLexicalEmitte
     if (!tryNoteList.append(JSTRY_FOR_OF, stackDepth, top.offset, breakTarget.offset))
         return false;
 
-    return emitPopN(3);                                   
+    return emitPopN(2);                                   
 }
 
 bool
@@ -7568,8 +7590,6 @@ BytecodeEmitter::emitComprehensionForOf(ParseNode* pn)
     
     if (!emit1(JSOP_UNDEFINED))                
         return false;
-    if (!emit1(JSOP_UNDEFINED))                
-        return false;
 
     
     
@@ -7606,17 +7626,42 @@ BytecodeEmitter::emitComprehensionForOf(ParseNode* pn)
     int loopDepth = this->stackDepth;
 #endif
 
-    
     if (!emit1(JSOP_POP))                                 
         return false;
     if (!emit1(JSOP_DUP))                                 
         return false;
+    if (!emitIteratorNext(forHead))                       
+        return false;
+    if (!emit1(JSOP_DUP))                                 
+        return false;
+    if (!emitAtomOp(cx->names().done, JSOP_GETPROP))      
+        return false;
+
+    IfThenElseEmitter ifDone(this);
+
+    if (!ifDone.emitIf())                                 
+        return false;
+
+    
+    if (!emit1(JSOP_POP))                                 
+        return false;
+    if (!emit1(JSOP_UNDEFINED))                           
+        return false;
+
+    
+    
+    if (!loopInfo.emitSpecialBreakForDone(this))          
+        return false;
+
+    if (!ifDone.emitEnd())                                
+        return false;
+
+    
     if (!emitAtomOp(cx->names().value, JSOP_GETPROP))     
         return false;
 
     
     
-
     if (!emitAssignment(loopVariableName, JSOP_NOP, nullptr)) 
         return false;
 
@@ -7642,25 +7687,13 @@ BytecodeEmitter::emitComprehensionForOf(ParseNode* pn)
     if (!emitLoopEntry(forHeadExpr, jmp))
         return false;
 
-    if (!emit1(JSOP_SWAP))                                
-        return false;
-    if (!emit1(JSOP_POP))                                 
-        return false;
-    if (!emitDupAt(1))                                    
-        return false;
-    if (!emitIteratorNext(forHead))                       
-        return false;
-    if (!emit1(JSOP_SWAP))                                
-        return false;
-    if (!emitDupAt(1))                                    
-        return false;
-    if (!emitAtomOp(cx->names().done, JSOP_GETPROP))      
+    if (!emit1(JSOP_FALSE))                               
         return false;
 
     JumpList beq;
     JumpTarget breakTarget{ -1 };
-    if (!emitBackwardJump(JSOP_IFEQ, top, &beq, &breakTarget)) 
-        return false;
+    if (!emitBackwardJump(JSOP_IFEQ, top, &beq, &breakTarget))
+        return false;                                     
 
     MOZ_ASSERT(this->stackDepth == loopDepth);
 
@@ -7681,7 +7714,7 @@ BytecodeEmitter::emitComprehensionForOf(ParseNode* pn)
     }
 
     
-    return emitPopN(3);                                   
+    return emitPopN(2);                                   
 }
 
 bool
