@@ -145,7 +145,7 @@ var loadListener = {
     this.seenUnload = false;
 
     this.timerPageLoad = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
-    this.timerPageUnload = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
+    this.timerPageUnload = null;
 
     
     timeout = startTime + timeout - new Date().getTime();
@@ -161,6 +161,7 @@ var loadListener = {
 
       
       
+      curContainer.frame.addEventListener("beforeunload", this, false);
       curContainer.frame.addEventListener("unload", this, false);
 
       Services.obs.addObserver(this, "outer-window-destroyed");
@@ -192,6 +193,7 @@ var loadListener = {
     
     
     try {
+      curContainer.frame.removeEventListener("beforeunload", this);
       curContainer.frame.removeEventListener("unload", this);
     } catch (e if e.name == "TypeError") {}
 
@@ -210,6 +212,20 @@ var loadListener = {
     logger.debug(`Received DOM event "${event.type}" for "${location}"`);
 
     switch (event.type) {
+      case "beforeunload":
+        if (this.timerPageUnload) {
+          
+          
+          
+          
+          
+          
+          
+          this.timerPageUnload.cancel();
+          this.timerPageUnload.initWithCallback(this, 5000, Ci.nsITimer.TYPE_ONE_SHOT)
+        }
+        break;
+
       case "unload":
         this.seenUnload = true;
         break;
@@ -352,6 +368,7 @@ var loadListener = {
 
       
       if (useUnloadTimer) {
+        this.timerPageUnload = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
         this.timerPageUnload.initWithCallback(this, 200, Ci.nsITimer.TYPE_ONE_SHOT);
       }
 
