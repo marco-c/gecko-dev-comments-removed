@@ -188,7 +188,32 @@ Script.prototype = {
     }
   },
 
-  tryInject(window, sandbox, shouldRun) {
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  tryInject(window, sandbox, shouldRun, when) {
     if (!this.matches(window)) {
       this.deferred.reject({message: "No matching window"});
       return;
@@ -218,7 +243,9 @@ Script.prototype = {
         let options = {
           target: sandbox,
           charset: "UTF-8",
-          async: false,
+          
+          
+          async: this.run_at !== "document_start" || when !== "document_start",
         };
         try {
           result = Services.scriptloader.loadSubScriptWithOptions(url, options);
@@ -363,13 +390,13 @@ class ExtensionContext extends BaseContext {
     return this.sandbox;
   }
 
-  execute(script, shouldRun) {
-    script.tryInject(this.contentWindow, this.sandbox, shouldRun);
+  execute(script, shouldRun, when) {
+    script.tryInject(this.contentWindow, this.sandbox, shouldRun, when);
   }
 
-  addScript(script) {
+  addScript(script, when) {
     let state = DocumentManager.getWindowState(this.contentWindow);
-    this.execute(script, scheduled => isWhenBeforeOrSame(scheduled, state));
+    this.execute(script, scheduled => isWhenBeforeOrSame(scheduled, state), when);
 
     
     
@@ -380,7 +407,7 @@ class ExtensionContext extends BaseContext {
 
   triggerScripts(documentState) {
     for (let script of this.scripts) {
-      this.execute(script, scheduled => scheduled == documentState);
+      this.execute(script, scheduled => scheduled == documentState, documentState);
     }
     if (documentState == "document_idle") {
       
@@ -715,7 +742,7 @@ DocumentManager = {
         for (let script of extension.scripts) {
           if (script.matches(window)) {
             let context = this.getContentScriptContext(extension, window);
-            context.addScript(script);
+            context.addScript(script, when);
           }
         }
       }
