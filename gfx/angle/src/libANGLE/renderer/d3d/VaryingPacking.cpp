@@ -73,6 +73,10 @@ bool VaryingPacking::packVarying(const PackedVarying &packedVarying)
 
     unsigned int maxVaryingVectors = static_cast<unsigned int>(mRegisterMap.size());
 
+    if (varyingRows > maxVaryingVectors) {
+        return false;
+    }
+
     
     
     if (varyingColumns >= 2 && varyingColumns <= 4)
