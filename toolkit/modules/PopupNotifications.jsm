@@ -219,6 +219,33 @@ this.PopupNotifications = function PopupNotifications(tabbrowser, panel, iconBox
 
   this.panel.addEventListener("popuphidden", this, true);
 
+  
+  
+  this._handleWindowKeyPress = aEvent => {
+    if (aEvent.keyCode != aEvent.DOM_VK_ESCAPE) {
+      return;
+    }
+
+    
+    let notification = this.panel.firstChild;
+    if (!notification) {
+      return;
+    }
+
+    let doc = this.window.document;
+    let activeElement = doc.activeElement;
+
+    
+    if (!activeElement ||
+        activeElement == doc.body ||
+        activeElement == this.tabbrowser.selectedBrowser ||
+        
+        getNotificationFromElement(activeElement) == notification ||
+        notification.contains(activeElement)) {
+      this._onButtonEvent(aEvent, "secondarybuttoncommand", notification);
+    }
+  };
+
   this.window.addEventListener("activate", this, true);
   if (this.tabbrowser.tabContainer)
     this.tabbrowser.tabContainer.addEventListener("TabSelect", this, true);
@@ -1002,6 +1029,10 @@ PopupNotifications.prototype = {
       if (anchorElement) {
         this._showPanel(notificationsToShow, anchorElement);
       }
+
+      
+      
+      this.window.addEventListener("keypress", this._handleWindowKeyPress, true);
     } else {
       
       this._notify("updateNotShowing");
@@ -1023,6 +1054,9 @@ PopupNotifications.prototype = {
             anchorElement.removeAttribute(ICON_ATTRIBUTE_SHOWING);
         }
       }
+
+      
+      this.window.removeEventListener("keypress", this._handleWindowKeyPress, true);
     }
   },
 
@@ -1281,8 +1315,10 @@ PopupNotifications.prototype = {
     }, this);
   },
 
-  _onButtonEvent(event, type) {
-    let notificationEl = getNotificationFromElement(event.originalTarget);
+  _onButtonEvent(event, type, notificationEl = null) {
+    if (!notificationEl) {
+      notificationEl = getNotificationFromElement(event.originalTarget);
+    }
 
     if (!notificationEl)
       throw "PopupNotifications._onButtonEvent: couldn't find notification element";
