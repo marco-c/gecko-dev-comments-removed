@@ -56,14 +56,12 @@ namespace unicode {
 
 
 
-
-struct CharFlag {
-    enum temp {
-        SPACE  = 1 << 0,
-        LETTER = 1 << 1,
-        IDENTIFIER_PART = 1 << 2,
-    };
-};
+namespace CharFlag {
+    const uint8_t SPACE = 1 << 0;
+    const uint8_t UNICODE_ID_START = 1 << 1;
+    const uint8_t UNICODE_ID_CONTINUE_ONLY = 1 << 2;
+    const uint8_t UNICODE_ID_CONTINUE = UNICODE_ID_START + UNICODE_ID_CONTINUE_ONLY;
+}
 
 const char16_t BYTE_ORDER_MARK2 = 0xFFFE;
 const char16_t NO_BREAK_SPACE  = 0x00A0;
@@ -103,12 +101,13 @@ class CharacterInfo {
         return flags & CharFlag::SPACE;
     }
 
-    inline bool isLetter() const {
-        return flags & CharFlag::LETTER;
+    inline bool isUnicodeIDStart() const {
+        return flags & CharFlag::UNICODE_ID_START;
     }
 
-    inline bool isIdentifierPart() const {
-        return flags & (CharFlag::IDENTIFIER_PART | CharFlag::LETTER);
+    inline bool isUnicodeIDContinue() const {
+        
+        return flags & CharFlag::UNICODE_ID_CONTINUE;
     }
 };
 
@@ -141,7 +140,7 @@ IsIdentifierStart(char16_t ch)
     if (ch < 128)
         return js_isidstart[ch];
 
-    return CharInfo(ch).isLetter();
+    return CharInfo(ch).isUnicodeIDStart();
 }
 
 inline bool
@@ -156,10 +155,19 @@ IsIdentifierPart(char16_t ch)
 {
     
 
+
+
+
+
+
+
+
+
+
     if (ch < 128)
         return js_isident[ch];
 
-    return CharInfo(ch).isIdentifierPart();
+    return CharInfo(ch).isUnicodeIDContinue();
 }
 
 inline bool
@@ -170,9 +178,9 @@ IsIdentifierPart(uint32_t codePoint)
 }
 
 inline bool
-IsLetter(char16_t ch)
+IsUnicodeIDStart(char16_t ch)
 {
-    return CharInfo(ch).isLetter();
+    return CharInfo(ch).isUnicodeIDStart();
 }
 
 inline bool
