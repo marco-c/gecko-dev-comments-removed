@@ -4624,17 +4624,9 @@ nsCookieService::FindStaleCookie(nsCookieEntry *aEntry,
 
   const nsCookieEntry::ArrayType &cookies = aEntry->GetCookies();
 
-  int64_t oldestNonMatchingSessionCookieTime = 0;
-  nsListIter oldestNonMatchingSessionCookie;
-  oldestNonMatchingSessionCookie.entry = nullptr;
-
-  int64_t oldestSessionCookieTime = 0;
-  nsListIter oldestSessionCookie;
-  oldestSessionCookie.entry = nullptr;
-
-  int64_t oldestNonMatchingNonSessionCookieTime = 0;
-  nsListIter oldestNonMatchingNonSessionCookie;
-  oldestNonMatchingNonSessionCookie.entry = nullptr;
+  int64_t oldestNonMatchingCookieTime = 0;
+  nsListIter oldestNonMatchingCookie;
+  oldestNonMatchingCookie.entry = nullptr;
 
   int64_t oldestCookieTime = 0;
   nsListIter oldestCookie;
@@ -4670,36 +4662,17 @@ nsCookieService::FindStaleCookie(nsCookieEntry *aEntry,
     
     
     
-    
-
-    
-    
-    
     bool isPrimaryEvictionCandidate = true;
     if (aSource) {
       isPrimaryEvictionCandidate = !PathMatches(cookie, sourcePath) || !DomainMatches(cookie, sourceHost);
     }
 
-    if (cookie->IsSession()) {
-      if (!oldestSessionCookie.entry || oldestSessionCookieTime > lastAccessed) {
-        oldestSessionCookieTime = lastAccessed;
-        oldestSessionCookie.entry = aEntry;
-        oldestSessionCookie.index = i;
-      }
-
-      if (isPrimaryEvictionCandidate &&
-          (!oldestNonMatchingSessionCookie.entry ||
-           oldestNonMatchingSessionCookieTime > lastAccessed)) {
-        oldestNonMatchingSessionCookieTime = lastAccessed;
-        oldestNonMatchingSessionCookie.entry = aEntry;
-        oldestNonMatchingSessionCookie.index = i;
-      }
-    } else if (isPrimaryEvictionCandidate &&
-               (!oldestNonMatchingNonSessionCookie.entry ||
-                oldestNonMatchingNonSessionCookieTime > lastAccessed)) {
-      oldestNonMatchingNonSessionCookieTime = lastAccessed;
-      oldestNonMatchingNonSessionCookie.entry = aEntry;
-      oldestNonMatchingNonSessionCookie.index = i;
+    if (isPrimaryEvictionCandidate &&
+        (!oldestNonMatchingCookie.entry ||
+         oldestNonMatchingCookieTime > lastAccessed)) {
+      oldestNonMatchingCookieTime = lastAccessed;
+      oldestNonMatchingCookie.entry = aEntry;
+      oldestNonMatchingCookie.index = i;
     }
 
     
@@ -4712,14 +4685,8 @@ nsCookieService::FindStaleCookie(nsCookieEntry *aEntry,
 
   
   
-  
-  
-  if (oldestNonMatchingSessionCookie.entry) {
-    aIter = oldestNonMatchingSessionCookie;
-  } else if (oldestSessionCookie.entry) {
-    aIter = oldestSessionCookie;
-  } else if (oldestNonMatchingNonSessionCookie.entry) {
-    aIter = oldestNonMatchingNonSessionCookie;
+  if (oldestNonMatchingCookie.entry) {
+    aIter = oldestNonMatchingCookie;
   } else {
     aIter = oldestCookie;
   }

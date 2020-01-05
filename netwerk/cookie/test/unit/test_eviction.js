@@ -185,37 +185,34 @@ function* test_basic_eviction(base_host, subdomain_host, other_subdomain_host) {
                    'session_non_path_non_domain_3'], BASE_URI);
 
     
-    
-    
     yield setCookie("non_session_bar_path_non_domain", null, null, 100000, BAR_PATH);
-    verifyCookies(['non_session_non_path_non_domain',
-                   'non_session_non_path_subdomain',
+    verifyCookies(['non_session_non_path_subdomain',
+                   'session_bar_path_2',
                    'non_session_non_path_non_domain_2',
                    'session_non_path_non_domain_3',
                    'non_session_bar_path_non_domain'], BASE_URI);
 
     
     yield setCookie("non_session_non_path_pub_domain", null, null, 100000, OTHER_SUBDOMAIN_URI);
-    verifyCookies(['non_session_non_path_non_domain',
-                   'non_session_non_path_subdomain',
+    verifyCookies(['non_session_non_path_subdomain',
                    'non_session_non_path_non_domain_2',
+                   'session_non_path_non_domain_3',
                    'non_session_bar_path_non_domain',
                    'non_session_non_path_pub_domain'], BASE_URI);
 
     
-    
     yield setCookie("non_session_bar_path_non_domain_2", null, '/bar', 100000, BAR_PATH);
-    verifyCookies(['non_session_non_path_non_domain',
-                   'non_session_non_path_subdomain',
+    verifyCookies(['non_session_non_path_subdomain',
                    'non_session_non_path_non_domain_2',
+                   'session_non_path_non_domain_3',
                    'non_session_bar_path_non_domain',
                    'non_session_bar_path_non_domain_2'], BASE_URI);
 
     
     yield setCookie("non_session_non_path_non_domain_4", null, null, 100000, BASE_URI);
-    verifyCookies(['non_session_non_path_non_domain',
-                   'non_session_non_path_subdomain',
+    verifyCookies(['non_session_non_path_subdomain',
                    'non_session_non_path_non_domain_2',
+                   'session_non_path_non_domain_3',
                    'non_session_bar_path_non_domain_2',
                    'non_session_non_path_non_domain_4'], BASE_URI);
 
