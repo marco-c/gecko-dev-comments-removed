@@ -1410,12 +1410,11 @@ nsBlockFrame::Reflow(nsPresContext*           aPresContext,
       
       
       
-      SetupLineCursor();
+      AutoLineCursorSetup autoLineCursor(this);
       absoluteContainer->Reflow(this, aPresContext, *reflowInput,
                                 state.mReflowStatus,
                                 containingBlock, flags,
                                 &aMetrics.mOverflowAreas);
-      ClearLineCursor();
     }
   }
 

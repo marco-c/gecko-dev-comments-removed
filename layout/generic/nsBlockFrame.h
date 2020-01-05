@@ -164,6 +164,10 @@ public:
   
   
   
+  
+  
+  
+  
 
   
   void ClearLineCursor();
@@ -178,6 +182,36 @@ public:
   
   
   void SetupLineCursor();
+
+  
+
+
+
+
+  class MOZ_STACK_CLASS AutoLineCursorSetup
+  {
+  public:
+    explicit AutoLineCursorSetup(nsBlockFrame* aFrame)
+      : mFrame(aFrame)
+      , mOrigCursor(aFrame->GetLineCursor())
+    {
+      if (!mOrigCursor) {
+        mFrame->SetupLineCursor();
+      }
+    }
+    ~AutoLineCursorSetup()
+    {
+      if (mOrigCursor) {
+        mFrame->Properties().Set(LineCursorProperty(), mOrigCursor);
+      } else {
+        mFrame->ClearLineCursor();
+      }
+    }
+
+  private:
+    nsBlockFrame* mFrame;
+    nsLineBox* mOrigCursor;
+  };
 
   virtual void ChildIsDirty(nsIFrame* aChild) override;
   virtual bool IsVisibleInSelection(nsISelection* aSelection) override;
@@ -368,9 +402,9 @@ protected:
 #endif
 
   NS_DECLARE_FRAME_PROPERTY_WITHOUT_DTOR(LineCursorProperty, nsLineBox)
+  bool HasLineCursor() { return GetStateBits() & NS_BLOCK_HAS_LINE_CURSOR; }
   nsLineBox* GetLineCursor() {
-    return (GetStateBits() & NS_BLOCK_HAS_LINE_CURSOR) ?
-      Properties().Get(LineCursorProperty()) : nullptr;
+    return HasLineCursor() ? Properties().Get(LineCursorProperty()) : nullptr;
   }
 
   nsLineBox* NewLineBox(nsIFrame* aFrame, bool aIsBlock) {
