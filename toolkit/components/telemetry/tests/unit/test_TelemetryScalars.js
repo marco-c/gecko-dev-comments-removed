@@ -88,26 +88,15 @@ add_task(function* test_nonexistingScalar() {
   Telemetry.clearScalars();
 
   
-  Assert.throws(() => Telemetry.scalarAdd(NON_EXISTING_SCALAR, 11715),
-                /NS_ERROR_ILLEGAL_VALUE/,
-                "Adding to a non existing scalar must throw.");
-  Assert.throws(() => Telemetry.scalarSet(NON_EXISTING_SCALAR, 11715),
-                /NS_ERROR_ILLEGAL_VALUE/,
-                "Setting a non existing scalar must throw.");
-  Assert.throws(() => Telemetry.scalarSetMaximum(NON_EXISTING_SCALAR, 11715),
-                /NS_ERROR_ILLEGAL_VALUE/,
-                "Setting the maximum of a non existing scalar must throw.");
+  
+  Telemetry.scalarAdd(NON_EXISTING_SCALAR, 11715);
+  Telemetry.scalarSet(NON_EXISTING_SCALAR, 11715);
+  Telemetry.scalarSetMaximum(NON_EXISTING_SCALAR, 11715);
 
   
-  Assert.throws(() => Telemetry.keyedScalarAdd(NON_EXISTING_SCALAR, "some_key", 11715),
-                /NS_ERROR_ILLEGAL_VALUE/,
-                "Adding to a non existing keyed scalar must throw.");
-  Assert.throws(() => Telemetry.keyedScalarSet(NON_EXISTING_SCALAR, "some_key", 11715),
-                /NS_ERROR_ILLEGAL_VALUE/,
-                "Setting a non existing keyed scalar must throw.");
-  Assert.throws(() => Telemetry.keyedScalarSetMaximum(NON_EXISTING_SCALAR, "some_key", 11715),
-                /NS_ERROR_ILLEGAL_VALUE/,
-                "Setting the maximum of a non keyed existing scalar must throw.");
+  Telemetry.keyedScalarAdd(NON_EXISTING_SCALAR, "some_key", 11715);
+  Telemetry.keyedScalarSet(NON_EXISTING_SCALAR, "some_key", 11715);
+  Telemetry.keyedScalarSetMaximum(NON_EXISTING_SCALAR, "some_key", 11715);
 
   
   const scalars = getParentProcessScalars(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN);
@@ -198,16 +187,11 @@ add_task(function* test_unsignedIntScalar() {
   checkScalar(3);
 
   
+  
   Telemetry.scalarSet(UINT_SCALAR, 1);
-  Assert.throws(() => Telemetry.scalarSet(UINT_SCALAR, "unexpected value"),
-                /NS_ERROR_ILLEGAL_VALUE/,
-                "Setting the scalar to an unexpected value type must throw.");
-  Assert.throws(() => Telemetry.scalarAdd(UINT_SCALAR, "unexpected value"),
-                /NS_ERROR_ILLEGAL_VALUE/,
-                "Adding an unexpected value type must throw.");
-  Assert.throws(() => Telemetry.scalarSetMaximum(UINT_SCALAR, "unexpected value"),
-                /NS_ERROR_ILLEGAL_VALUE/,
-                "Setting the scalar to an unexpected value type must throw.");
+  Telemetry.scalarSet(UINT_SCALAR, "unexpected value");
+  Telemetry.scalarAdd(UINT_SCALAR, "unexpected value");
+  Telemetry.scalarSetMaximum(UINT_SCALAR, "unexpected value");
   
   checkScalar(1);
 });
@@ -231,21 +215,11 @@ add_task(function* test_stringScalar() {
   checkExpectedString(expected);
 
   
-  Assert.throws(() => Telemetry.scalarAdd(STRING_SCALAR, 1),
-                /NS_ERROR_NOT_AVAILABLE/,
-                "Using an unsupported operation must throw.");
-  Assert.throws(() => Telemetry.scalarAdd(STRING_SCALAR, "string value"),
-                /NS_ERROR_NOT_AVAILABLE/,
-                "Using an unsupported operation must throw.");
-  Assert.throws(() => Telemetry.scalarSetMaximum(STRING_SCALAR, 1),
-                /NS_ERROR_NOT_AVAILABLE/,
-                "Using an unsupported operation must throw.");
-  Assert.throws(() => Telemetry.scalarSetMaximum(STRING_SCALAR, "string value"),
-                /NS_ERROR_NOT_AVAILABLE/,
-                "Using an unsupported operation must throw.");
-  Assert.throws(() => Telemetry.scalarSet(STRING_SCALAR, 1),
-                /NS_ERROR_ILLEGAL_VALUE/,
-                "The string scalar must throw if we're not setting a string.");
+  Telemetry.scalarAdd(STRING_SCALAR, 1);
+  Telemetry.scalarAdd(STRING_SCALAR, "string value");
+  Telemetry.scalarSetMaximum(STRING_SCALAR, 1);
+  Telemetry.scalarSetMaximum(STRING_SCALAR, "string value");
+  Telemetry.scalarSet(STRING_SCALAR, 1);
 
   
   const LONG_STRING = "browser.qaxfiuosnzmhlg.rpvxicawolhtvmbkpnludhedobxvkjwqyeyvmv";
@@ -282,21 +256,11 @@ add_task(function* test_booleanScalar() {
   checkExpectedBool(false);
 
   
-  Assert.throws(() => Telemetry.scalarAdd(BOOLEAN_SCALAR, 1),
-                /NS_ERROR_NOT_AVAILABLE/,
-                "Using an unsupported operation must throw.");
-  Assert.throws(() => Telemetry.scalarAdd(BOOLEAN_SCALAR, "string value"),
-                /NS_ERROR_NOT_AVAILABLE/,
-                "Using an unsupported operation must throw.");
-  Assert.throws(() => Telemetry.scalarSetMaximum(BOOLEAN_SCALAR, 1),
-                /NS_ERROR_NOT_AVAILABLE/,
-                "Using an unsupported operation must throw.");
-  Assert.throws(() => Telemetry.scalarSetMaximum(BOOLEAN_SCALAR, "string value"),
-                /NS_ERROR_NOT_AVAILABLE/,
-                "Using an unsupported operation must throw.");
-  Assert.throws(() => Telemetry.scalarSet(BOOLEAN_SCALAR, "true"),
-                /NS_ERROR_ILLEGAL_VALUE/,
-                "The boolean scalar must throw if we're not setting a boolean.");
+  Telemetry.scalarAdd(BOOLEAN_SCALAR, 1);
+  Telemetry.scalarAdd(BOOLEAN_SCALAR, "string value");
+  Telemetry.scalarSetMaximum(BOOLEAN_SCALAR, 1);
+  Telemetry.scalarSetMaximum(BOOLEAN_SCALAR, "string value");
+  Telemetry.scalarSet(BOOLEAN_SCALAR, "true");
 });
 
 add_task(function* test_scalarRecording() {
@@ -454,9 +418,7 @@ add_task(function* test_keyed_uint() {
   
   
   
-  Assert.throws(() => Telemetry.scalarSet(KEYED_UINT_SCALAR, "new_key", "unexpected value"),
-                /NS_ERROR_ILLEGAL_VALUE/,
-                "Setting the scalar to an unexpected value type must throw.");
+  Telemetry.keyedScalarSet(KEYED_UINT_SCALAR, "new_key", "unexpected value");
 });
 
 add_task(function* test_keyed_boolean() {
@@ -493,9 +455,7 @@ add_task(function* test_keyed_boolean() {
   
   
   
-  Assert.throws(() => Telemetry.keyedScalarAdd(KEYED_BOOLEAN_TYPE, "somehey", 1),
-                /NS_ERROR_NOT_AVAILABLE/,
-                "Using an unsupported operation must throw.");
+  Telemetry.keyedScalarAdd(KEYED_BOOLEAN_TYPE, "somehey", 1);
 });
 
 add_task(function* test_keyed_keys_length() {
@@ -509,15 +469,9 @@ add_task(function* test_keyed_keys_length() {
   Telemetry.keyedScalarSet(KEYED_UINT_SCALAR, NORMAL_KEY, 1);
 
   
-  Assert.throws(() => Telemetry.keyedScalarAdd(KEYED_UINT_SCALAR, LONG_KEY_STRING, 10),
-                /NS_ERROR_ILLEGAL_VALUE/,
-                "Using keys longer than 70 characters must throw.");
-  Assert.throws(() => Telemetry.keyedScalarSet(KEYED_UINT_SCALAR, LONG_KEY_STRING, 1),
-                /NS_ERROR_ILLEGAL_VALUE/,
-                "Using keys longer than 70 characters must throw.");
-  Assert.throws(() => Telemetry.keyedScalarSetMaximum(KEYED_UINT_SCALAR, LONG_KEY_STRING, 10),
-                /NS_ERROR_ILLEGAL_VALUE/,
-                "Using keys longer than 70 characters must throw.");
+  Telemetry.keyedScalarAdd(KEYED_UINT_SCALAR, LONG_KEY_STRING, 10);
+  Telemetry.keyedScalarSet(KEYED_UINT_SCALAR, LONG_KEY_STRING, 1);
+  Telemetry.keyedScalarSetMaximum(KEYED_UINT_SCALAR, LONG_KEY_STRING, 10);
 
   
   let keyedScalars =
@@ -550,15 +504,9 @@ add_task(function* test_keyed_max_keys() {
   
   
   const LAST_KEY_NAME = "overflowing_key";
-  Assert.throws(() => Telemetry.keyedScalarAdd(KEYED_UINT_SCALAR, LAST_KEY_NAME, 10),
-                /NS_ERROR_FAILURE/,
-                "Using more than 100 keys must throw.");
-  Assert.throws(() => Telemetry.keyedScalarSet(KEYED_UINT_SCALAR, LAST_KEY_NAME, 1),
-                /NS_ERROR_FAILURE/,
-                "Using more than 100 keys must throw.");
-  Assert.throws(() => Telemetry.keyedScalarSetMaximum(KEYED_UINT_SCALAR, LAST_KEY_NAME, 10),
-                /NS_ERROR_FAILURE/,
-                "Using more than 100 keys must throw.");
+  Telemetry.keyedScalarAdd(KEYED_UINT_SCALAR, LAST_KEY_NAME, 10);
+  Telemetry.keyedScalarSet(KEYED_UINT_SCALAR, LAST_KEY_NAME, 1);
+  Telemetry.keyedScalarSetMaximum(KEYED_UINT_SCALAR, LAST_KEY_NAME, 10);
 
   
   
