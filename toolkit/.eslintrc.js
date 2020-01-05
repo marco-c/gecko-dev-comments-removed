@@ -167,6 +167,9 @@ module.exports = {
     "no-with": "error",
 
     
+    "rest-spread-spacing": "error",
+
+    
     
 
     
