@@ -61,7 +61,6 @@ class JSFunction : public js::NativeObject
 
         SELF_HOSTED      = 0x0080,  
 
-        HAS_REST         = 0x0100,  
         INTERPRETED_LAZY = 0x0200,  
         RESOLVED_LENGTH  = 0x0400,  
         RESOLVED_NAME    = 0x0800,  
@@ -95,7 +94,7 @@ class JSFunction : public js::NativeObject
         NO_XDR_FLAGS = RESOLVED_LENGTH | RESOLVED_NAME,
 
         STABLE_ACROSS_CLONES = CONSTRUCTOR | EXPR_BODY | HAS_GUESSED_ATOM | LAMBDA |
-                               SELF_HOSTED |  HAS_REST | FUNCTION_KIND_MASK
+                               SELF_HOSTED | FUNCTION_KIND_MASK
     };
 
     static_assert((INTERPRETED | INTERPRETED_LAZY) == js::JS_FUNCTION_INTERPRETED_BITS,
@@ -183,7 +182,6 @@ class JSFunction : public js::NativeObject
     bool hasGuessedAtom()           const { return flags() & HAS_GUESSED_ATOM; }
     bool isLambda()                 const { return flags() & LAMBDA; }
     bool isBoundFunction()          const { return flags() & BOUND_FUN; }
-    bool hasRest()                  const { return flags() & HAS_REST; }
     bool isInterpretedLazy()        const { return flags() & INTERPRETED_LAZY; }
     bool hasScript()                const { return flags() & INTERPRETED; }
 
@@ -262,11 +260,6 @@ class JSFunction : public js::NativeObject
     
     void setArgCount(uint16_t nargs) {
         this->nargs_ = nargs;
-    }
-
-    
-    void setHasRest() {
-        flags_ |= HAS_REST;
     }
 
     void setIsBoundFunction() {

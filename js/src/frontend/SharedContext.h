@@ -471,6 +471,7 @@ class FunctionBox : public ObjectBox, public SharedContext
     bool            usesApply:1;            
     bool            usesThis:1;             
     bool            usesReturn:1;           
+    bool            hasRest_:1;             
 
     FunctionContextFlags funCxFlags;
 
@@ -539,6 +540,11 @@ class FunctionBox : public ObjectBox, public SharedContext
     bool isAsync() const { return asyncKind() == AsyncFunction; }
     bool isArrow() const { return function()->isArrow(); }
 
+    bool hasRest() const { return hasRest_; }
+    void setHasRest() {
+        hasRest_ = true;
+    }
+
     void setGeneratorKind(GeneratorKind kind) {
         
         
@@ -567,7 +573,7 @@ class FunctionBox : public ObjectBox, public SharedContext
     void setHasInnerFunctions()            { funCxFlags.hasInnerFunctions         = true; }
 
     bool hasSimpleParameterList() const {
-        return !function()->hasRest() && !hasParameterExprs && !hasDestructuringArgs;
+        return !hasRest() && !hasParameterExprs && !hasDestructuringArgs;
     }
 
     bool hasMappedArgsObj() const {
