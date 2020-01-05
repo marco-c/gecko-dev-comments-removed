@@ -26,6 +26,9 @@ const DURATION_RESOLUTION = 4;
 const MIN_PROGRESS_THRESHOLD = 0.1;
 
 
+const BOUND_EXCLUDING_TIME = 0.001;
+
+
 const MAX_INFINITE_ANIMATIONS_ITERATIONS = 10;
 
 const SVG_NS = "http://www.w3.org/2000/svg";
@@ -678,7 +681,8 @@ function createPathSegments(startTime, endTime, minSegmentDuration,
       
       
       pathSegments = pathSegments.concat(
-        createPathSegments(previousSegment.x + 1, currentSegment.x - 1,
+        createPathSegments(previousSegment.x + BOUND_EXCLUDING_TIME,
+                           currentSegment.x - BOUND_EXCLUDING_TIME,
                            minSegmentDuration, minProgressThreshold,
                            segmentHelper));
     }
