@@ -146,7 +146,7 @@ var WindowWatcher = {
     }
 
     
-    Services.obs.notifyObservers(null, "addon-blocklist-closed", null);
+    Services.obs.notifyObservers(null, "addon-blocklist-closed");
 
     
     do_timeout(0, gTestCheck);

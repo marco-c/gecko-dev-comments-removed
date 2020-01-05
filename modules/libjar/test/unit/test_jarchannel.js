@@ -169,7 +169,7 @@ add_test(function testSyncCloseUnlocks() {
     stream.close();
 
     
-    obs.notifyObservers(null, "chrome-flush-caches", null);
+    obs.notifyObservers(null, "chrome-flush-caches");
 
     try {
         copy.remove(false);
@@ -197,7 +197,7 @@ add_test(function testAsyncCloseUnlocks() {
         do_check_true(chan.contentLength > 0);
 
         
-        obs.notifyObservers(null, "chrome-flush-caches", null);
+        obs.notifyObservers(null, "chrome-flush-caches");
 
         try {
             copy.remove(false);

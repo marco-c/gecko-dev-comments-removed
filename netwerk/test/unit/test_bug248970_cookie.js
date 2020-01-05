@@ -123,7 +123,7 @@ function run_test() {
       
       var obsvc = Cc["@mozilla.org/observer-service;1"].
         getService(Ci.nsIObserverService);
-      obsvc.notifyObservers(null, "last-pb-context-exited", null);
+      obsvc.notifyObservers(null, "last-pb-context-exited");
       
       check_cookie_presence("C2=V2", true, false, runNextTest);
     });

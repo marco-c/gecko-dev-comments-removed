@@ -54,7 +54,7 @@ const PREF_IDLE_DELAY = "browser.sessionstore.idleDelay";
 
 
 function notify(subject, topic) {
-  Services.obs.notifyObservers(subject, topic, "");
+  Services.obs.notifyObservers(subject, topic);
 }
 
 

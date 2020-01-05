@@ -57,7 +57,7 @@ add_task(function* test_closedObjectsChangedNotifications() {
 
   
   
-  yield awaitNotification(() => Services.obs.notifyObservers(null, "browser:purge-session-history", 0));
+  yield awaitNotification(() => Services.obs.notifyObservers(null, "browser:purge-session-history"));
 
   
   Services.obs.addObserver(countingObserver, TOPIC);
@@ -90,7 +90,7 @@ add_task(function* test_closedObjectsChangedNotifications() {
   assertNotificationCount(5);
 
   info("Purging session history.");
-  yield awaitNotification(() => Services.obs.notifyObservers(null, "browser:purge-session-history", 0));
+  yield awaitNotification(() => Services.obs.notifyObservers(null, "browser:purge-session-history"));
   assertNotificationCount(6);
 
   info("Opening and closing another tab.");

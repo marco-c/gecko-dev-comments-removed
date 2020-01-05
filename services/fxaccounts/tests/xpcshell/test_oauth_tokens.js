@@ -92,7 +92,7 @@ function MockFxAccounts(mockGrantClient) {
     _destroyOAuthToken(tokenData) {
       
       return mockGrantClient.destroyToken(tokenData.token).then( () => {
-        Services.obs.notifyObservers(null, "testhelper-fxa-revoke-complete", null);
+        Services.obs.notifyObservers(null, "testhelper-fxa-revoke-complete");
       });
     },
     _getDeviceName() {

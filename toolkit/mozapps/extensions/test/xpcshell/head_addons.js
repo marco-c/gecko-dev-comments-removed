@@ -1071,7 +1071,7 @@ function promiseInstallWebExtension(aData) {
   let addonFile = createTempWebExtensionFile(aData);
 
   return promiseInstallAllFiles([addonFile]).then(installs => {
-    Services.obs.notifyObservers(addonFile, "flush-cache-entry", null);
+    Services.obs.notifyObservers(addonFile, "flush-cache-entry");
     
     if (aData.manifest.theme)
       return installs[0].addon;

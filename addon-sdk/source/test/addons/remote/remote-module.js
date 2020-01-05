@@ -105,7 +105,7 @@ function listener(event) {
   
   
   let { Services } = Cu.import("resource://gre/modules/Services.jsm", {});
-  Services.obs.notifyObservers(null, "Test:Reply", "");
+  Services.obs.notifyObservers(null, "Test:Reply");
 }
 
 frames.port.on('sdk/test/registerframesevent', (frame) => {

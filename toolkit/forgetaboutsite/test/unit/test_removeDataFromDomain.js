@@ -517,7 +517,7 @@ function* test_cache_cleared() {
     observe(aSubject, aTopic, aData) {
       os.removeObserver(observer, "cacheservice:empty-cache");
       
-      Services.obs.notifyObservers(null, "quit-application", null);
+      Services.obs.notifyObservers(null, "quit-application");
       do_test_finished();
     }
   };

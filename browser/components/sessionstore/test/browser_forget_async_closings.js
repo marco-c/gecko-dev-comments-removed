@@ -22,7 +22,7 @@ let forgetTabHelper = Task.async(function*(forgetFn) {
 
   
   
-  Services.obs.notifyObservers(null, "browser:purge-session-history", 0);
+  Services.obs.notifyObservers(null, "browser:purge-session-history");
 
   is(ss.getClosedTabCount(window), 0,
      "We should have 0 closed tabs being stored.");
@@ -69,7 +69,7 @@ let forgetWinHelper = Task.async(function*(forgetFn) {
 
   
   
-  Services.obs.notifyObservers(null, "browser:purge-session-history", 0);
+  Services.obs.notifyObservers(null, "browser:purge-session-history");
 
   is(ss.getClosedWindowCount(), 0, "We should have 0 closed windows being stored.");
 
@@ -128,7 +128,7 @@ add_task(function* test_forget_closed_window() {
 
 add_task(function* test_forget_purged_tab() {
   yield forgetTabHelper(() => {
-    Services.obs.notifyObservers(null, "browser:purge-session-history", 0);
+    Services.obs.notifyObservers(null, "browser:purge-session-history");
   });
 });
 
@@ -139,6 +139,6 @@ add_task(function* test_forget_purged_tab() {
 
 add_task(function* test_forget_purged_window() {
   yield forgetWinHelper(() => {
-    Services.obs.notifyObservers(null, "browser:purge-session-history", 0);
+    Services.obs.notifyObservers(null, "browser:purge-session-history");
   });
 });

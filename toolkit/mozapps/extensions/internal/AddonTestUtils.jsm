@@ -544,7 +544,7 @@ var AddonTestUtils = {
     if (!this.addonIntegrationService)
       return Promise.resolve(false);
 
-    Services.obs.notifyObservers(null, "quit-application-granted", null);
+    Services.obs.notifyObservers(null, "quit-application-granted");
     return MockAsyncShutdown.hook()
       .then(() => {
         this.emit("addon-manager-shutdown");
@@ -905,7 +905,7 @@ var AddonTestUtils = {
     
     
     if (file.isFile())
-      Services.obs.notifyObservers(file, "flush-cache-entry", null);
+      Services.obs.notifyObservers(file, "flush-cache-entry");
 
     file.remove(true);
   },

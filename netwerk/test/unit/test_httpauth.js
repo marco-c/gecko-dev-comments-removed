@@ -70,7 +70,7 @@ function run_test() {
     }
 
     
-    Services.obs.notifyObservers(null, "last-pb-context-exited", null);
+    Services.obs.notifyObservers(null, "last-pb-context-exited");
 
     
     domain = {value: kEmpty}, user = {value: kEmpty}, pass = {value: kEmpty};

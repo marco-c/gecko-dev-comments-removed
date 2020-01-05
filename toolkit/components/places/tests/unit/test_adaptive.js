@@ -126,7 +126,7 @@ function* task_setCountRank(aURI, aCount, aRank, aSearch, aBookmark) {
 
   
   for (let i = 0; i < aRank; i++) {
-    Services.obs.notifyObservers(thing, "autocomplete-will-enter-text", null);
+    Services.obs.notifyObservers(thing, "autocomplete-will-enter-text");
   }
 
   

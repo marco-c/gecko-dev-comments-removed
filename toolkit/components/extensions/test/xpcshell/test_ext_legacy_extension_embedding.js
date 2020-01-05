@@ -55,7 +55,7 @@ add_task(function* test_embedded_webextension_utils() {
   
   
   do_register_cleanup(() => {
-    Services.obs.notifyObservers(fakeHybridAddonFile, "flush-cache-entry", null);
+    Services.obs.notifyObservers(fakeHybridAddonFile, "flush-cache-entry");
     fakeHybridAddonFile.remove(false);
   });
 
@@ -117,7 +117,7 @@ function* createManifestErrorTestCase(id, xpi, expectedError) {
   
   
   do_register_cleanup(() => {
-    Services.obs.notifyObservers(xpi, "flush-cache-entry", null);
+    Services.obs.notifyObservers(xpi, "flush-cache-entry");
     xpi.remove(false);
   });
 

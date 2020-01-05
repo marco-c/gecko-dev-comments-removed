@@ -124,7 +124,7 @@ this.SafeMode = {
 
         
         
-        Services.obs.notifyObservers(null, "browser-ui-startup-complete", "");
+        Services.obs.notifyObservers(null, "browser-ui-startup-complete");
         content.addEventListener("mozContentEvent", handleEvent, true);
       }
 
