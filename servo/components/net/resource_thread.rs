@@ -326,8 +326,7 @@ impl CoreResourceManager {
             hsts_list: group.hsts_list.clone(),
             cookie_jar: group.cookie_jar.clone(),
             auth_cache: group.auth_cache.clone(),
-            
-            connector_pool: create_http_connector("certs"),
+            connector_pool: group.connector.clone(),
         };
         let ua = self.user_agent.clone();
         let dc = self.devtools_chan.clone();
