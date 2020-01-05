@@ -438,7 +438,7 @@ QuotaManagerService::PerformIdleMaintenance()
 #ifdef MOZ_WIDGET_ANDROID
   
   
-  if (!QuotaManager::kRunningXPCShellTests)
+  if (!QuotaManager::IsRunningXPCShellTests())
 #endif
   {
     
@@ -450,7 +450,7 @@ QuotaManagerService::PerformIdleMaintenance()
 
   
   
-  if (QuotaManager::kRunningXPCShellTests) {
+  if (QuotaManager::IsRunningXPCShellTests()) {
     batteryInfo.level() = 100;
     batteryInfo.charging() = true;
   }
@@ -459,7 +459,7 @@ QuotaManagerService::PerformIdleMaintenance()
     return;
   }
 
-  if (QuotaManager::kRunningXPCShellTests) {
+  if (QuotaManager::IsRunningXPCShellTests()) {
     
     Unused << Observe(nullptr, OBSERVER_TOPIC_IDLE, nullptr);
   } else if (!mIdleObserverRegistered) {

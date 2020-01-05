@@ -18965,7 +18965,7 @@ DatabaseMaintenance::DetermineMaintenanceAction(
 
   bool lowDiskSpace = IndexedDatabaseManager::InLowDiskSpaceMode();
 
-  if (QuotaManager::kRunningXPCShellTests) {
+  if (QuotaManager::IsRunningXPCShellTests()) {
     
     
     

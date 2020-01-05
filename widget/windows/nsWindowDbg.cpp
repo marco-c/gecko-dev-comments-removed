@@ -7,12 +7,13 @@
 
 
 
+#include "mozilla/Logging.h"
 #include "nsWindowDbg.h"
 #include "WinUtils.h"
 
 using namespace mozilla::widget;
 
-extern PRLogModuleInfo* gWindowsLog;
+extern mozilla::LazyLogModule gWindowsLog;
 
 #if defined(POPUP_ROLLUP_DEBUG_OUTPUT)
 MSGFEventMsgInfo gMSGFEvents[] = {
