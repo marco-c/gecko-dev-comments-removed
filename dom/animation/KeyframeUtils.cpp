@@ -19,6 +19,7 @@
 #include "mozilla/dom/KeyframeEffectReadOnly.h" 
 #include "jsapi.h" 
 #include "nsClassHashtable.h"
+#include "nsContentUtils.h" 
 #include "nsCSSParser.h"
 #include "nsCSSPropertyIDSet.h"
 #include "nsCSSProps.h"
@@ -588,6 +589,32 @@ KeyframeUtils::ApplyDistributeSpacing(nsTArray<Keyframe>& aKeyframes)
   nsTArray<ComputedKeyframeValues> emptyArray;
   ApplySpacing(aKeyframes, SpacingMode::distribute, eCSSProperty_UNKNOWN,
                emptyArray, nullptr);
+}
+
+ nsTArray<ComputedKeyframeValues>
+KeyframeUtils::GetComputedKeyframeValues(
+  const nsTArray<Keyframe>& aKeyframes,
+  dom::Element* aElement,
+  const ServoComputedValues* aCurrentStyle,
+  const ServoComputedValues* aParentStyle)
+{
+  MOZ_ASSERT(aElement);
+  MOZ_ASSERT(aElement->OwnerDoc()->IsStyledByServo());
+
+  nsPresContext* presContext = nsContentUtils::GetContextForContent(aElement);
+  MOZ_ASSERT(presContext);
+
+  nsTArray<ComputedKeyframeValues> result(aKeyframes.Length());
+
+  
+  result.AppendElements(aKeyframes.Length());
+
+  Servo_GetComputedKeyframeValues(&aKeyframes,
+                                  aCurrentStyle,
+                                  aParentStyle,
+                                  presContext,
+                                  &result);
+  return result;
 }
 
  nsTArray<ComputedKeyframeValues>
