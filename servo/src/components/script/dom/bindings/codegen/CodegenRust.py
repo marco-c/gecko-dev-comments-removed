@@ -702,13 +702,6 @@ def getJSToNativeConversionTemplate(type, descriptorProvider, failureCode=None,
 
             return handleDefault(conversionCode, default)
 
-        if isMember:
-            
-            
-            declType = CGGeneric("DOMString")
-            return ("%s\n" % getConversionCode(),
-                    declType, None, isOptional, None)
-
         declType = "DOMString"
         initialValue = None
         if type.nullable():
