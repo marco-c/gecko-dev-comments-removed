@@ -10,6 +10,8 @@ const { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
+XPCOMUtils.defineLazyModuleGetter(this, "AsyncShutdown",
+                                  "resource://gre/modules/AsyncShutdown.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "DownloadPaths",
                                   "resource://gre/modules/DownloadPaths.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "FileUtils",
@@ -300,4 +302,59 @@ add_task(function* test_beforeSave_rejects() {
   yield Assert.rejects(promiseSave, function(ex) {
     return ex.message == "oops";
   });
+});
+
+add_task(function* test_finalize() {
+  let path = getTempFile(TEST_STORE_FILE_NAME).path;
+
+  let barrier = new AsyncShutdown.Barrier("test-auto-finalize");
+  let storeForSave = new JSONFile({
+    path,
+    saveDelayMs: 2000,
+    finalizeAt: barrier.client,
+  });
+  yield storeForSave.load();
+  storeForSave.data = TEST_DATA;
+  storeForSave.saveSoon();
+
+  let promiseFinalize = storeForSave.finalize();
+  yield Assert.rejects(storeForSave.finalize(), /has already been finalized$/);
+  yield promiseFinalize;
+  do_check_false(storeForSave.dataReady);
+
+  
+  
+  yield barrier.wait();
+
+  let storeForLoad = new JSONFile({ path });
+  yield storeForLoad.load();
+  do_check_matches(storeForLoad.data, TEST_DATA);
+});
+
+add_task(function* test_finalize_on_shutdown() {
+  let path = getTempFile(TEST_STORE_FILE_NAME).path;
+
+  let barrier = new AsyncShutdown.Barrier("test-finalize-shutdown");
+  let storeForSave = new JSONFile({
+    path,
+    saveDelayMs: 2000,
+    finalizeAt: barrier.client,
+  });
+  yield storeForSave.load();
+  storeForSave.data = TEST_DATA;
+  
+  
+  storeForSave.saveSoon();
+
+  yield barrier.wait();
+  
+  
+  
+  
+  yield Assert.rejects(storeForSave.finalize(), /has already been finalized$/);
+  do_check_false(storeForSave.dataReady);
+
+  let storeForLoad = new JSONFile({ path });
+  yield storeForLoad.load();
+  do_check_matches(storeForLoad.data, TEST_DATA);
 });

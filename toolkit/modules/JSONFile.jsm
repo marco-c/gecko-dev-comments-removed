@@ -87,6 +87,10 @@ const kSaveDelayMs = 1500;
 
 
 
+
+
+
+
 function JSONFile(config) {
   this.path = config.path;
 
@@ -102,8 +106,10 @@ function JSONFile(config) {
   }
   this._saver = new DeferredTask(() => this._save(), config.saveDelayMs);
 
-  AsyncShutdown.profileBeforeChange.addBlocker("JSON store: writing data",
-                                               () => this._saver.finalize());
+  this._finalizeAt = config.finalizeAt || AsyncShutdown.profileBeforeChange;
+  this._finalizeInternalBound = this._finalizeInternal.bind(this);
+  this._finalizeAt.addBlocker("JSON store: writing data",
+                              this._finalizeInternalBound);
 }
 
 JSONFile.prototype = {
@@ -126,6 +132,13 @@ JSONFile.prototype = {
 
 
   _data: null,
+
+  
+
+
+  _finalizeAt: null,
+  _finalizePromise: null,
+  _finalizeInternalBound: null,
 
   
 
@@ -280,6 +293,45 @@ JSONFile.prototype = {
 
 
   _processLoadedData(data) {
+    if (this._finalizePromise) {
+      
+      
+      return;
+    }
     this.data = this._dataPostProcessor ? this._dataPostProcessor(data) : data;
   },
+
+  
+
+
+
+
+
+  _finalizeInternal() {
+    if (this._finalizePromise) {
+      
+      
+      return this._finalizePromise;
+    }
+    this._finalizePromise = Task.spawn(function* () {
+      yield this._saver.finalize();
+      this._data = null;
+      this.dataReady = false;
+    }.bind(this));
+    return this._finalizePromise;
+  },
+
+  
+
+
+
+
+  finalize: Task.async(function* () {
+    if (this._finalizePromise) {
+      throw new Error(`The file ${this.path} has already been finalized`);
+    }
+    
+    yield this._finalizeInternal();
+    this._finalizeAt.removeBlocker(this._finalizeInternalBound);
+  }),
 };
