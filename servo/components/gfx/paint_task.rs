@@ -123,7 +123,7 @@ pub struct PaintTask<C> {
 
     
     
-    used_buffer_count: uint,
+    used_buffer_count: usize,
 }
 
 
@@ -324,7 +324,7 @@ impl<C> PaintTask<C> where C: PaintListener + Send + 'static {
             rect: tile.page_rect,
             screen_pos: tile.screen_rect,
             resolution: scale,
-            stride: (width * 4) as uint,
+            stride: (width * 4) as usize,
             painted_with_cpu: true,
             content_age: tile.content_age,
         })
@@ -619,7 +619,7 @@ impl WorkerThread {
             rect: tile.page_rect,
             screen_pos: tile.screen_rect,
             resolution: scale,
-            stride: (tile.screen_rect.size.width * 4) as uint,
+            stride: (tile.screen_rect.size.width * 4),
             painted_with_cpu: false,
             content_age: tile.content_age,
         }

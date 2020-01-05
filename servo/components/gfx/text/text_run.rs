@@ -201,7 +201,7 @@ impl<'a> TextRun {
                            -> Vec<GlyphRun> {
         
         let mut glyphs = vec!();
-        let (mut byte_i, mut char_i) = (0u, CharIndex(0));
+        let (mut byte_i, mut char_i) = (0, CharIndex(0));
         let mut cur_slice_is_whitespace = false;
         let (mut byte_last_boundary, mut char_last_boundary) = (0, CharIndex(0));
         while byte_i < text.len() {
@@ -209,8 +209,8 @@ impl<'a> TextRun {
             let ch = range.ch;
             let next = range.next;
 
-            // Slices alternate between whitespace and non-whitespace,
-            // representing line break opportunities.
+            
+            
             let can_break_before = if cur_slice_is_whitespace {
                 match ch {
                     ' ' | '\t' | '\n' => false,
@@ -229,7 +229,7 @@ impl<'a> TextRun {
                 }
             };
 
-            // Create a glyph store for this slice if it's nonempty.
+            
             if can_break_before && byte_i > byte_last_boundary {
                 let slice = &text[byte_last_boundary .. byte_i];
                 debug!("creating glyph store for slice {} (ws? {}), {} - {} in run {}",
@@ -252,7 +252,7 @@ impl<'a> TextRun {
             char_i = char_i + CharIndex(1);
         }
 
-        // Create a glyph store for the final slice if it's nonempty.
+        
         if byte_i > byte_last_boundary {
             let slice = &text[byte_last_boundary..];
             debug!("creating glyph store for final slice {} (ws? {}), {} - {} in run {}",
@@ -296,8 +296,8 @@ impl<'a> TextRun {
     }
 
     pub fn advance_for_range(&self, range: &Range<CharIndex>) -> Au {
-        // TODO(Issue #199): alter advance direction for RTL
-        // TODO(Issue #98): using inter-char and inter-word spacing settings when measuring text
+        
+        
         self.natural_word_slices_in_range(range)
             .fold(Au(0), |advance, slice| {
                 advance + slice.glyphs.advance_for_char_range(&slice.range)
@@ -330,7 +330,7 @@ impl<'a> TextRun {
     }
 
     
-    fn index_of_first_glyph_run_containing(&self, index: CharIndex) -> Option<uint> {
+    fn index_of_first_glyph_run_containing(&self, index: CharIndex) -> Option<usize> {
         (&**self.glyphs).binary_search_index_by(&index, CharIndexComparator)
     }
 

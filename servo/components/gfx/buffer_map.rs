@@ -17,17 +17,17 @@ pub struct BufferMap {
     
     map: HashMap<BufferKey, BufferValue>,
     
-    mem: uint,
+    mem: usize,
     
     
-    max_mem: uint,
+    max_mem: usize,
     
-    counter: uint,
+    counter: usize,
 }
 
 
 #[derive(Eq, Copy)]
-struct BufferKey([uint; 2]);
+struct BufferKey([usize; 2]);
 
 impl Hash for BufferKey {
     fn hash<H: Hasher>(&self, state: &mut H) {
@@ -46,7 +46,7 @@ impl PartialEq for BufferKey {
 
 
 impl BufferKey {
-    fn get(input: Size2D<uint>) -> BufferKey {
+    fn get(input: Size2D<usize>) -> BufferKey {
         BufferKey([input.width, input.height])
     }
 }
@@ -56,26 +56,26 @@ struct BufferValue {
     
     buffers: Vec<Box<LayerBuffer>>,
     
-    last_action: uint,
+    last_action: usize,
 }
 
 impl BufferMap {
     
-    pub fn new(max_mem: uint) -> BufferMap {
+    pub fn new(max_mem: usize) -> BufferMap {
         BufferMap {
             map: HashMap::new(),
-            mem: 0u,
+            mem: 0,
             max_mem: max_mem,
-            counter: 0u,
+            counter: 0,
         }
     }
 
-    /// Insert a new buffer into the map.
+    
     pub fn insert(&mut self, graphics_context: &NativePaintingGraphicsContext, new_buffer: Box<LayerBuffer>) {
         let new_key = BufferKey::get(new_buffer.get_size_2d());
 
-        // If all our buffers are the same size and we're already at our
-        // memory limit, no need to store this new buffer; just let it drop.
+        
+        
         if self.mem + new_buffer.get_mem() > self.max_mem && self.map.len() == 1 &&
             self.map.contains_key(&new_key) {
             new_buffer.destroy(graphics_context);
@@ -83,7 +83,7 @@ impl BufferMap {
         }
 
         self.mem += new_buffer.get_mem();
-        // use lazy insertion function to prevent unnecessary allocation
+        
         let counter = &self.counter;
         match self.map.entry(new_key) {
             Occupied(entry) => {
@@ -125,7 +125,7 @@ impl BufferMap {
     }
 
     
-    pub fn find(&mut self, size: Size2D<uint>) -> Option<Box<LayerBuffer>> {
+    pub fn find(&mut self, size: Size2D<usize>) -> Option<Box<LayerBuffer>> {
         let mut flag = false; 
         let key = BufferKey::get(size);
         let ret = match self.map.get_mut(&key) {

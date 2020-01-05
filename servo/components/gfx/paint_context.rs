@@ -48,7 +48,7 @@ pub struct PaintContext<'a> {
     
     pub page_rect: Rect<f32>,
     
-    pub screen_rect: Rect<uint>,
+    pub screen_rect: Rect<usize>,
     
     pub clip_rect: Option<Rect<Au>>,
     
@@ -622,19 +622,19 @@ impl<'a> PaintContext<'a> {
                                   color: Color,
                                   dash_size: DashSize) {
         let rect = bounds.to_azure_rect();
-        let draw_opts = DrawOptions::new(1u as AzFloat, 0 as uint16_t);
+        let draw_opts = DrawOptions::new(1 as AzFloat, 0 as uint16_t);
         let border_width = match direction {
             Direction::Top => border.top,
             Direction::Left => border.left,
             Direction::Right => border.right,
             Direction::Bottom => border.bottom
         };
-        let dash_pattern = [border_width * (dash_size as int) as AzFloat,
-                            border_width * (dash_size as int) as AzFloat];
+        let dash_pattern = [border_width * (dash_size as i32) as AzFloat,
+                            border_width * (dash_size as i32) as AzFloat];
         let stroke_opts = StrokeOptions::new(border_width as AzFloat,
                                              JoinStyle::MiterOrBevel,
                                              CapStyle::Butt,
-                                             10u as AzFloat,
+                                             10 as AzFloat,
                                              &dash_pattern);
         let (start, end)  = match direction {
             Direction::Top => {
@@ -714,9 +714,9 @@ impl<'a> PaintContext<'a> {
                                                (1.0/3.0) * border.bottom,
                                                (1.0/3.0) * border.left);
         let inner_scaled_bounds = self.get_scaled_bounds(bounds, border, 2.0/3.0);
-        // draw the outer portion of the double border.
+        
         self.draw_solid_border_segment(direction, bounds, &scaled_border, radius, color);
-        // draw the inner portion of the double border.
+        
         self.draw_border_path(&inner_scaled_bounds, direction, &scaled_border, radius, color);
     }
 
@@ -727,9 +727,9 @@ impl<'a> PaintContext<'a> {
                                         radius: &BorderRadii<AzFloat>,
                                         color: Color,
                                         style: border_style::T) {
-        // original bounds as a Rect<f32>, with no scaling.
+        
         let original_bounds            = self.get_scaled_bounds(bounds, border, 0.0);
-        // shrink the bounds by 1/2 of the border, leaving the innermost 1/2 of the border
+        
         let inner_scaled_bounds        = self.get_scaled_bounds(bounds, border, 0.5);
         let scaled_border              = SideOffsets2D::new(0.5 * border.top,
                                                             0.5 * border.right,
@@ -747,7 +747,7 @@ impl<'a> PaintContext<'a> {
             darker_color = self.scale_color(color, if is_groove { 1.0/3.0 } else { 2.0/3.0 });
             lighter_color = color;
         } else {
-            // You can't scale black color (i.e. 'scaled = 0 * scale', equals black).
+            
             darker_color = color::new(0.3, 0.3, 0.3, color.a);
             lighter_color = color::new(0.7, 0.7, 0.7, color.a);
         }
@@ -760,9 +760,9 @@ impl<'a> PaintContext<'a> {
             (Direction::Top, false) | (Direction::Left, false) |
             (Direction::Right, true) | (Direction::Bottom, true) => (lighter_color, darker_color),
         };
-        // outer portion of the border
+        
         self.draw_border_path(&original_bounds, direction, &scaled_border, radius, outer_color);
-        // inner portion of the border
+        
         self.draw_border_path(&inner_scaled_bounds,
                               direction,
                               &scaled_border,
