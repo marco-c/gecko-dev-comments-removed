@@ -27,7 +27,7 @@
 
 use app_units::Au;
 use block::{BlockFlow, FormattingContextType};
-use context::{LayoutContext, SharedLayoutContext};
+use context::LayoutContext;
 use display_list_builder::DisplayListBuildState;
 use euclid::{Point2D, Size2D};
 use flex::FlexFlow;
@@ -193,12 +193,12 @@ pub trait Flow: fmt::Debug + Sync + Send + 'static {
     }
 
     
-    fn assign_inline_sizes(&mut self, _shared_context: &SharedStyleContext) {
+    fn assign_inline_sizes(&mut self, _ctx: &LayoutContext) {
         panic!("assign_inline_sizes not yet implemented")
     }
 
     
-    fn assign_block_size<'a>(&mut self, _ctx: &'a LayoutContext<'a>) {
+    fn assign_block_size(&mut self, _ctx: &LayoutContext) {
         panic!("assign_block_size not yet implemented")
     }
 
@@ -234,11 +234,11 @@ pub trait Flow: fmt::Debug + Sync + Send + 'static {
     
     
     
-    fn assign_block_size_for_inorder_child_if_necessary<'a>(&mut self,
-                                                            layout_context: &'a LayoutContext<'a>,
-                                                            parent_thread_id: u8,
-                                                            _content_box: LogicalRect<Au>)
-                                                            -> bool {
+    fn assign_block_size_for_inorder_child_if_necessary(&mut self,
+                                                        layout_context: &LayoutContext,
+                                                        parent_thread_id: u8,
+                                                        _content_box: LogicalRect<Au>)
+                                                        -> bool {
         let might_have_floats_in_or_out = base(self).might_have_floats_in() ||
             base(self).might_have_floats_out();
         if might_have_floats_in_or_out {
@@ -349,7 +349,7 @@ pub trait Flow: fmt::Debug + Sync + Send + 'static {
     }
 
     
-    fn compute_absolute_position(&mut self, _: &SharedLayoutContext) {
+    fn compute_absolute_position(&mut self, _: &LayoutContext) {
         
         mut_base(self).restyle_damage.remove(REPOSITION)
     }
