@@ -297,7 +297,7 @@ public:
 
 
 
-  void SetReadyState(MediaStreamTrackState aState);
+  void SetReadyState(MediaStreamTrackState aState) { mReadyState = aState; }
 
   
 
