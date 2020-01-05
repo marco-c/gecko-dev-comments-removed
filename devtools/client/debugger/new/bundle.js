@@ -98,12 +98,12 @@ var Debugger =
 	var startDebugging = _require5.startDebugging;
 	
 	var firefox = __webpack_require__(98);
-	var configureStore = __webpack_require__(180);
+	var configureStore = __webpack_require__(178);
 	var reducers = __webpack_require__(188);
 	var selectors = __webpack_require__(199);
 	
-	var Tabs = __webpack_require__(206);
-	var App = __webpack_require__(212);
+	var Tabs = __webpack_require__(200);
+	var App = __webpack_require__(206);
 	
 	var createStore = configureStore({
 	  log: getValue("logging.actions"),
@@ -113,7 +113,7 @@ var Debugger =
 	});
 	
 	var store = createStore(combineReducers(reducers));
-	var actions = bindActionCreators(__webpack_require__(214), store.dispatch);
+	var actions = bindActionCreators(__webpack_require__(209), store.dispatch);
 	
 	if (isDevelopment()) {
 	  AppConstants.DEBUG_JS_MODULES = true;
@@ -169,7 +169,7 @@ var Debugger =
 	  });
 	} else if (isFirefoxPanel()) {
 	  (function () {
-	    var sourceMap = __webpack_require__(216);
+	    var sourceMap = __webpack_require__(211);
 	
 	    module.exports = {
 	      bootstrap: _ref => {
@@ -193,9 +193,7 @@ var Debugger =
 	  })();
 	} else {
 	  renderRoot(Tabs);
-	  connectClients().then(tabs => {
-	    actions.newTabs(tabs);
-	  });
+	  connectClients(tabs => actions.newTabs(tabs));
 	}
 
  },
@@ -1145,7 +1143,7 @@ var Debugger =
 
  function(module, exports) {
 
-	module.exports = devtoolsRequire('devtools/client/shared/vendor/react');
+	module.exports = devtoolsRequire("devtools/client/shared/vendor/react");
 
  },
 
@@ -1765,7 +1763,7 @@ var Debugger =
 
  function(module, exports) {
 
-	module.exports = devtoolsRequire('devtools/client/shared/vendor/react-dom');
+	module.exports = devtoolsRequire("devtools/client/shared/vendor/react-dom");
 
  },
 
@@ -6789,7 +6787,6 @@ var Debugger =
  function(module, exports) {
 
 	
-	
 	var process = module.exports = {};
 	
 	
@@ -6800,22 +6797,84 @@ var Debugger =
 	var cachedSetTimeout;
 	var cachedClearTimeout;
 	
+	function defaultSetTimout() {
+	    throw new Error('setTimeout has not been defined');
+	}
+	function defaultClearTimeout () {
+	    throw new Error('clearTimeout has not been defined');
+	}
 	(function () {
-	  try {
-	    cachedSetTimeout = setTimeout;
-	  } catch (e) {
-	    cachedSetTimeout = function () {
-	      throw new Error('setTimeout is not defined');
+	    try {
+	        if (typeof setTimeout === 'function') {
+	            cachedSetTimeout = setTimeout;
+	        } else {
+	            cachedSetTimeout = defaultSetTimout;
+	        }
+	    } catch (e) {
+	        cachedSetTimeout = defaultSetTimout;
 	    }
-	  }
-	  try {
-	    cachedClearTimeout = clearTimeout;
-	  } catch (e) {
-	    cachedClearTimeout = function () {
-	      throw new Error('clearTimeout is not defined');
+	    try {
+	        if (typeof clearTimeout === 'function') {
+	            cachedClearTimeout = clearTimeout;
+	        } else {
+	            cachedClearTimeout = defaultClearTimeout;
+	        }
+	    } catch (e) {
+	        cachedClearTimeout = defaultClearTimeout;
 	    }
-	  }
 	} ())
+	function runTimeout(fun) {
+	    if (cachedSetTimeout === setTimeout) {
+	        
+	        return setTimeout(fun, 0);
+	    }
+	    
+	    if ((cachedSetTimeout === defaultSetTimout || !cachedSetTimeout) && setTimeout) {
+	        cachedSetTimeout = setTimeout;
+	        return setTimeout(fun, 0);
+	    }
+	    try {
+	        
+	        return cachedSetTimeout(fun, 0);
+	    } catch(e){
+	        try {
+	            
+	            return cachedSetTimeout.call(null, fun, 0);
+	        } catch(e){
+	            
+	            return cachedSetTimeout.call(this, fun, 0);
+	        }
+	    }
+	
+	
+	}
+	function runClearTimeout(marker) {
+	    if (cachedClearTimeout === clearTimeout) {
+	        
+	        return clearTimeout(marker);
+	    }
+	    
+	    if ((cachedClearTimeout === defaultClearTimeout || !cachedClearTimeout) && clearTimeout) {
+	        cachedClearTimeout = clearTimeout;
+	        return clearTimeout(marker);
+	    }
+	    try {
+	        
+	        return cachedClearTimeout(marker);
+	    } catch (e){
+	        try {
+	            
+	            return cachedClearTimeout.call(null, marker);
+	        } catch (e){
+	            
+	            
+	            return cachedClearTimeout.call(this, marker);
+	        }
+	    }
+	
+	
+	
+	}
 	var queue = [];
 	var draining = false;
 	var currentQueue;
@@ -6840,7 +6899,7 @@ var Debugger =
 	    if (draining) {
 	        return;
 	    }
-	    var timeout = cachedSetTimeout(cleanUpNextTick);
+	    var timeout = runTimeout(cleanUpNextTick);
 	    draining = true;
 	
 	    var len = queue.length;
@@ -6857,7 +6916,7 @@ var Debugger =
 	    }
 	    currentQueue = null;
 	    draining = false;
-	    cachedClearTimeout(timeout);
+	    runClearTimeout(timeout);
 	}
 	
 	process.nextTick = function (fun) {
@@ -6869,7 +6928,7 @@ var Debugger =
 	    }
 	    queue.push(new Item(fun, args));
 	    if (queue.length === 1 && !draining) {
-	        cachedSetTimeout(drainQueue, 0);
+	        runTimeout(drainQueue);
 	    }
 	};
 	
@@ -8678,7 +8737,7 @@ var Debugger =
 
  function(module, exports) {
 
-	module.exports = devtoolsRequire('devtools/shared/flags');
+	module.exports = devtoolsRequire("devtools/shared/flags");
 
  },
 
@@ -10167,8 +10226,6 @@ var Debugger =
 
  function(module, exports, __webpack_require__) {
 
-	var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
-	
 	var _require = __webpack_require__(97);
 	
 	var Task = _require.Task;
@@ -10220,15 +10277,9 @@ var Debugger =
 	  });
 	}
 	
-	function connectClients() {
-	  return Promise.all([firefox.connectClient(), chrome.connectClient()]).then(results => {
-	    var _results = _slicedToArray(results, 2);
-	
-	    var firefoxTabs = _results[0];
-	    var chromeTabs = _results[1];
-	
-	    return firefoxTabs.concat(chromeTabs).filter(i => i);
-	  });
+	function connectClients(onConnect) {
+	  firefox.connectClient().then(onConnect);
+	  chrome.connectClient().then(onConnect);
 	}
 	
 	module.exports = {
@@ -10384,7 +10435,7 @@ var Debugger =
 	    });
 	  }).catch(err => {
 	    console.log(err);
-	    deferred.reject();
+	    deferred.resolve([]);
 	  });
 	
 	  return deferred.promise;
@@ -13384,7 +13435,7 @@ var Debugger =
 
 
 
-	  setBreakpoint: function ({ line, column, condition }, aOnResponse = noop) {
+	  setBreakpoint: function ({ line, column, condition, noSliding }, aOnResponse = noop) {
 	    
 	    let doSetBreakpoint = aCallback => {
 	      let root = this._client.mainRoot;
@@ -13397,7 +13448,8 @@ var Debugger =
 	        to: this.actor,
 	        type: "setBreakpoint",
 	        location: location,
-	        condition: condition
+	        condition: condition,
+	        noSliding: noSliding
 	      };
 	
 	      
@@ -19745,13 +19797,14 @@ var Debugger =
 	  return sourceClient.source();
 	}
 	
-	function setBreakpoint(location, condition) {
+	function setBreakpoint(location, condition, noSliding) {
 	  var sourceClient = threadClient.source({ actor: location.sourceId });
 	
 	  return sourceClient.setBreakpoint({
 	    line: location.line,
 	    column: location.column,
-	    condition: condition
+	    condition,
+	    noSliding
 	  }).then(_ref => {
 	    var _ref2 = _slicedToArray(_ref, 2);
 	
@@ -19955,12 +20008,7 @@ var Debugger =
 	  });
 	}
 	
-	var evalIndex = 1;
 	function createSource(source) {
-	  if (!source.url) {
-	    source.url = `SOURCE${ evalIndex++ }`;
-	  }
-	
 	  return Source({
 	    id: source.actor,
 	    url: source.url,
@@ -19996,12 +20044,12 @@ var Debugger =
 	
 	var networkRequest = _require4.networkRequest;
 	
-	var _require5 = __webpack_require__(178);
+	var _require5 = __webpack_require__(176);
 	
 	var setupCommands = _require5.setupCommands;
 	var clientCommands = _require5.clientCommands;
 	
-	var _require6 = __webpack_require__(179);
+	var _require6 = __webpack_require__(177);
 	
 	var setupEvents = _require6.setupEvents;
 	var clientEvents = _require6.clientEvents;
@@ -20041,8 +20089,8 @@ var Debugger =
 	
 	  var webSocketPort = getValue("chrome.webSocketPort");
 	  var url = `http://localhost:${ webSocketPort }/json/list`;
-	  networkRequest(url).then(body => {
-	    deferred.resolve(createTabs(body));
+	  networkRequest(url).then(res => {
+	    deferred.resolve(createTabs(JSON.parse(res.content)));
 	  }).catch(err => {
 	    console.log(err);
 	    deferred.reject();
@@ -20098,28 +20146,519 @@ var Debugger =
 
  },
 
+ function(module, exports) {
+
+	module.exports = devtoolsRequire("devtools/shared/DevToolsUtils")["fetch"];
+
+ },
+
  function(module, exports, __webpack_require__) {
 
-	var _require = __webpack_require__(176);
+	var _require = __webpack_require__(114);
 	
-	var log = _require.log;
+	var BreakpointResult = _require.BreakpointResult;
+	var Location = _require.Location;
 	
 	
-	function networkRequest(url) {
-	  return Promise.race([fetch(`/get?url=${ url }`).then(res => {
-	    if (res.status >= 200 && res.status < 300) {
-	      return res.json();
-	    }
-	    log(`failed to request ${ url }`);
-	    return Promise.resolve([]);
-	  }), new Promise((resolve, reject) => {
-	    setTimeout(() => reject(new Error("Connect timeout error")), 6000);
-	  })]);
+	var debuggerAgent = void 0;
+	var runtimeAgent = void 0;
+	var pageAgent = void 0;
+	
+	function setupCommands(_ref) {
+	  var agents = _ref.agents;
+	
+	  debuggerAgent = agents.Debugger;
+	  runtimeAgent = agents.Runtime;
+	  pageAgent = agents.Page;
 	}
 	
-	module.exports = {
-	  networkRequest
+	function resume() {
+	  return debuggerAgent.resume();
+	}
+	
+	function stepIn() {
+	  return debuggerAgent.stepInto();
+	}
+	
+	function stepOver() {
+	  return debuggerAgent.stepOver();
+	}
+	
+	function stepOut() {
+	  return debuggerAgent.stepOut();
+	}
+	
+	function pauseOnExceptions(toggle) {
+	  var state = toggle ? "uncaught" : "none";
+	  return debuggerAgent.setPauseOnExceptions(state);
+	}
+	
+	function breakOnNext() {
+	  return debuggerAgent.pause();
+	}
+	
+	function sourceContents(sourceId) {
+	  return debuggerAgent.getScriptSource(sourceId, (err, contents) => ({
+	    source: contents,
+	    contentType: null
+	  }));
+	}
+	
+	function setBreakpoint(location, condition) {
+	  return new Promise((resolve, reject) => {
+	    return debuggerAgent.setBreakpoint({
+	      scriptId: location.sourceId,
+	      lineNumber: location.line - 1,
+	      columnNumber: location.column
+	    }, (err, breakpointId, actualLocation) => {
+	      if (err) {
+	        reject(err);
+	        return;
+	      }
+	
+	      actualLocation = actualLocation ? {
+	        sourceId: actualLocation.scriptId,
+	        line: actualLocation.lineNumber + 1,
+	        column: actualLocation.columnNumber
+	      } : location;
+	
+	      resolve(BreakpointResult({
+	        id: breakpointId,
+	        actualLocation: Location(actualLocation)
+	      }));
+	    });
+	  });
+	}
+	
+	function removeBreakpoint(breakpointId) {
+	  
+	  return new Promise((resolve, reject) => {
+	    resolve(debuggerAgent.removeBreakpoint(breakpointId));
+	  });
+	}
+	
+	function evaluate(script) {
+	  return runtimeAgent.evaluate(script, (_, result) => {
+	    return result;
+	  });
+	}
+	
+	function debuggeeCommand(script) {
+	  evaluate(script);
+	  return Promise.resolve();
+	}
+	
+	function navigate(url) {
+	  return pageAgent.navigate(url, (_, result) => {
+	    return result;
+	  });
+	}
+	
+	var clientCommands = {
+	  resume,
+	  stepIn,
+	  stepOut,
+	  stepOver,
+	  pauseOnExceptions,
+	  breakOnNext,
+	  sourceContents,
+	  setBreakpoint,
+	  removeBreakpoint,
+	  evaluate,
+	  debuggeeCommand,
+	  navigate
 	};
+	
+	module.exports = {
+	  setupCommands,
+	  clientCommands
+	};
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	var paused = (() => {
+	  var _ref = _asyncToGenerator(function* (callFrames, reason, data, hitBreakpoints, asyncStackTrace) {
+	    var frames = callFrames.map(function (frame) {
+	      return Frame({
+	        id: frame.callFrameId,
+	        displayName: frame.functionName,
+	        location: Location({
+	          sourceId: frame.location.scriptId,
+	          line: frame.location.lineNumber + 1,
+	          column: frame.location.columnNumber
+	        })
+	      });
+	    });
+	
+	    var frame = frames[0];
+	    var why = Object.assign({}, {
+	      type: reason
+	    }, data);
+	
+	    pageAgent.setOverlayMessage("Paused in debugger.html");
+	
+	    yield actions.paused({ frame, why, frames });
+	  });
+	
+	  return function paused(_x, _x2, _x3, _x4, _x5) {
+	    return _ref.apply(this, arguments);
+	  };
+	})();
+	
+	function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { return step("next", value); }, function (err) { return step("throw", err); }); } } return step("next"); }); }; }
+	
+	var _require = __webpack_require__(114);
+	
+	var Source = _require.Source;
+	var Location = _require.Location;
+	var Frame = _require.Frame;
+	
+	
+	var actions = void 0;
+	var pageAgent = void 0;
+	
+	function setupEvents(dependencies) {
+	  actions = dependencies.actions;
+	  pageAgent = dependencies.agents.Page;
+	}
+	
+	
+	function scriptParsed(scriptId, url, startLine, startColumn, endLine, endColumn, executionContextId, hash, isContentScript, isInternalScript, isLiveEdit, sourceMapURL, hasSourceURL, deprecatedCommentWasUsed) {
+	  if (isContentScript) {
+	    return;
+	  }
+	
+	  actions.newSource(Source({
+	    id: scriptId,
+	    url,
+	    sourceMapURL,
+	    isPrettyPrinted: false
+	  }));
+	}
+	
+	function scriptFailedToParse() {}
+	
+	function resumed() {
+	  pageAgent.setOverlayMessage(undefined);
+	  actions.resumed();
+	}
+	
+	function globalObjectCleared() {}
+	
+	
+	function frameNavigated(frame) {
+	  actions.navigate();
+	}
+	
+	function frameStartedLoading() {
+	  actions.willNavigate();
+	}
+	
+	function domContentEventFired() {}
+	
+	function loadEventFired() {}
+	
+	function frameStoppedLoading() {}
+	
+	var clientEvents = {
+	  scriptParsed,
+	  scriptFailedToParse,
+	  paused,
+	  resumed,
+	  globalObjectCleared
+	};
+	
+	var pageEvents = {
+	  frameNavigated,
+	  frameStartedLoading,
+	  domContentEventFired,
+	  loadEventFired,
+	  frameStoppedLoading
+	};
+	
+	module.exports = {
+	  setupEvents,
+	  pageEvents,
+	  clientEvents
+	};
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	
+	
+	
+
+
+	
+	
+	var _require = __webpack_require__(2);
+	
+	var createStore = _require.createStore;
+	var applyMiddleware = _require.applyMiddleware;
+	
+	var _require2 = __webpack_require__(179);
+	
+	var waitUntilService = _require2.waitUntilService;
+	
+	var _require3 = __webpack_require__(180);
+	
+	var log = _require3.log;
+	
+	var _require4 = __webpack_require__(181);
+	
+	var history = _require4.history;
+	
+	var _require5 = __webpack_require__(182);
+	
+	var promise = _require5.promise;
+	
+	var _require6 = __webpack_require__(187);
+	
+	var thunk = _require6.thunk;
+	
+	
+	
+
+
+
+
+
+
+
+
+
+
+	var configureStore = function () {
+	  var opts = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+	
+	  var middleware = [thunk(opts.makeThunkArgs), promise,
+	
+	  
+	  
+	  
+	  
+	  waitUntilService];
+	
+	  if (opts.history) {
+	    middleware.push(history(opts.history));
+	  }
+	
+	  if (opts.middleware) {
+	    opts.middleware.forEach(fn => middleware.push(fn));
+	  }
+	
+	  if (opts.log) {
+	    middleware.push(log);
+	  }
+	
+	  
+	  var devtoolsExt = typeof window === "object" && window.devToolsExtension ? window.devToolsExtension() : f => f;
+	
+	  return applyMiddleware.apply(undefined, middleware)(devtoolsExt(createStore));
+	};
+	
+	module.exports = configureStore;
+
+ },
+
+ function(module, exports) {
+
+	
+
+
+	"use strict";
+	
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	const NAME = exports.NAME = "@@service/waitUntil";
+	
+	function waitUntilService({ dispatch, getState }) {
+	  let pending = [];
+	
+	  function checkPending(action) {
+	    let readyRequests = [];
+	    let stillPending = [];
+	
+	    
+	    
+	    
+	    
+	    
+	    for (let request of pending) {
+	      if (request.predicate(action)) {
+	        readyRequests.push(request);
+	      } else {
+	        stillPending.push(request);
+	      }
+	    }
+	
+	    pending = stillPending;
+	    for (let request of readyRequests) {
+	      request.run(dispatch, getState, action);
+	    }
+	  }
+	
+	  return next => action => {
+	    if (action.type === NAME) {
+	      pending.push(action);
+	      return null;
+	    }
+	    let result = next(action);
+	    checkPending(action);
+	    return result;
+	  };
+	}
+	exports.waitUntilService = waitUntilService;
+
+
+ },
+
+ function(module, exports) {
+
+	
+
+
+
+	function log(_ref) {
+	  var dispatch = _ref.dispatch;
+	  var getState = _ref.getState;
+	
+	  return next => action => {
+	    var actionText = JSON.stringify(action, null, 2);
+	    var truncatedActionText = actionText.slice(0, 1000) + "...";
+	    console.log(`[DISPATCH ${ action.type }]`, action, truncatedActionText);
+	    next(action);
+	  };
+	}
+	
+	exports.log = log;
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	
+
+
+	
+	var _require = __webpack_require__(46);
+	
+	var isDevelopment = _require.isDevelopment;
+	
+	
+
+
+
+
+	
+	exports.history = function () {
+	  var log = arguments.length <= 0 || arguments[0] === undefined ? [] : arguments[0];
+	  return _ref => {
+	    var dispatch = _ref.dispatch;
+	    var getState = _ref.getState;
+	
+	    if (isDevelopment()) {
+	      console.warn("Using history middleware stores all actions in state for " + "testing and devtools is not currently running in test " + "mode. Be sure this is intentional.");
+	    }
+	    return next => action => {
+	      log.push(action);
+	      next(action);
+	    };
+	  };
+	};
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	
+
+
+	
+	var defer = __webpack_require__(112);
+	
+	var _require = __webpack_require__(183);
+	
+	var entries = _require.entries;
+	var toObject = _require.toObject;
+	
+	var _require2 = __webpack_require__(185);
+	
+	var executeSoon = _require2.executeSoon;
+	
+	
+	var PROMISE = exports.PROMISE = "@@dispatch/promise";
+	var seqIdVal = 1;
+	
+	function seqIdGen() {
+	  return seqIdVal++;
+	}
+	
+	function promiseMiddleware(_ref) {
+	  var dispatch = _ref.dispatch;
+	  var getState = _ref.getState;
+	
+	  return next => action => {
+	    if (!(PROMISE in action)) {
+	      return next(action);
+	    }
+	
+	    var promiseInst = action[PROMISE];
+	    var seqId = seqIdGen().toString();
+	
+	    
+	    
+	    action = Object.assign(toObject(entries(action).filter(pair => pair[0] !== PROMISE)), { seqId });
+	
+	    dispatch(Object.assign({}, action, { status: "start" }));
+	
+	    
+	    
+	    var deferred = defer();
+	    promiseInst.then(value => {
+	      executeSoon(() => {
+	        dispatch(Object.assign({}, action, {
+	          status: "done",
+	          value: value
+	        }));
+	        deferred.resolve(value);
+	      });
+	    }, error => {
+	      executeSoon(() => {
+	        dispatch(Object.assign({}, action, {
+	          status: "error",
+	          error: error.message || error
+	        }));
+	        deferred.reject(error);
+	      });
+	    });
+	    return deferred.promise;
+	  };
+	}
+	
+	exports.promise = promiseMiddleware;
 
  },
 
@@ -20165,7 +20704,7 @@ var Debugger =
 
 
 	
-	var co = __webpack_require__(177);
+	var co = __webpack_require__(184);
 	
 	var _require = __webpack_require__(46);
 	
@@ -20234,8 +20773,8 @@ var Debugger =
 	  var deferred = defer();
 	  worker.postMessage(message);
 	  worker.onmessage = function (result) {
-	    if (result.error) {
-	      deferred.reject(result.error);
+	    if (result.data && result.data.error) {
+	      deferred.reject(result.data.error);
 	    }
 	
 	    deferred.resolve(result.data);
@@ -20613,534 +21152,11 @@ var Debugger =
 
  function(module, exports, __webpack_require__) {
 
-	var _require = __webpack_require__(114);
+	var assert = __webpack_require__(186);
 	
-	var BreakpointResult = _require.BreakpointResult;
-	var Location = _require.Location;
-	
-	
-	var debuggerAgent = void 0;
-	var runtimeAgent = void 0;
-	var pageAgent = void 0;
-	
-	function setupCommands(_ref) {
-	  var agents = _ref.agents;
-	
-	  debuggerAgent = agents.Debugger;
-	  runtimeAgent = agents.Runtime;
-	  pageAgent = agents.Page;
-	}
-	
-	function resume() {
-	  return debuggerAgent.resume();
-	}
-	
-	function stepIn() {
-	  return debuggerAgent.stepInto();
-	}
-	
-	function stepOver() {
-	  return debuggerAgent.stepOver();
-	}
-	
-	function stepOut() {
-	  return debuggerAgent.stepOut();
-	}
-	
-	function pauseOnExceptions(toggle) {
-	  var state = toggle ? "uncaught" : "none";
-	  return debuggerAgent.setPauseOnExceptions(state);
-	}
-	
-	function breakOnNext() {
-	  return debuggerAgent.pause();
-	}
-	
-	function sourceContents(sourceId) {
-	  return debuggerAgent.getScriptSource(sourceId, (err, contents) => ({
-	    source: contents,
-	    contentType: null
-	  }));
-	}
-	
-	function setBreakpoint(location, condition) {
-	  return new Promise((resolve, reject) => {
-	    return debuggerAgent.setBreakpoint({
-	      scriptId: location.sourceId,
-	      lineNumber: location.line - 1,
-	      columnNumber: location.column
-	    }, (err, breakpointId, actualLocation) => {
-	      if (err) {
-	        reject(err);
-	        return;
-	      }
-	
-	      actualLocation = actualLocation ? {
-	        sourceId: actualLocation.scriptId,
-	        line: actualLocation.lineNumber + 1,
-	        column: actualLocation.columnNumber
-	      } : location;
-	
-	      resolve(BreakpointResult({
-	        id: breakpointId,
-	        actualLocation: Location(actualLocation)
-	      }));
-	    });
-	  });
-	}
-	
-	function removeBreakpoint(breakpointId) {
-	  
-	  return new Promise((resolve, reject) => {
-	    resolve(debuggerAgent.removeBreakpoint(breakpointId));
-	  });
-	}
-	
-	function evaluate(script) {
-	  return runtimeAgent.evaluate(script, (_, result) => {
-	    return result;
-	  });
-	}
-	
-	function debuggeeCommand(script) {
-	  evaluate(script);
-	  return Promise.resolve();
-	}
-	
-	function navigate(url) {
-	  return pageAgent.navigate(url, (_, result) => {
-	    return result;
-	  });
-	}
-	
-	var clientCommands = {
-	  resume,
-	  stepIn,
-	  stepOut,
-	  stepOver,
-	  pauseOnExceptions,
-	  breakOnNext,
-	  sourceContents,
-	  setBreakpoint,
-	  removeBreakpoint,
-	  evaluate,
-	  debuggeeCommand,
-	  navigate
-	};
-	
-	module.exports = {
-	  setupCommands,
-	  clientCommands
-	};
-
- },
-
- function(module, exports, __webpack_require__) {
-
-	var paused = (() => {
-	  var _ref = _asyncToGenerator(function* (callFrames, reason, data, hitBreakpoints, asyncStackTrace) {
-	    var frames = callFrames.map(function (frame) {
-	      return Frame({
-	        id: frame.callFrameId,
-	        displayName: frame.functionName,
-	        location: Location({
-	          sourceId: frame.location.scriptId,
-	          line: frame.location.lineNumber + 1,
-	          column: frame.location.columnNumber
-	        })
-	      });
-	    });
-	
-	    var frame = frames[0];
-	    var why = Object.assign({}, {
-	      type: reason
-	    }, data);
-	
-	    pageAgent.setOverlayMessage("Paused in debugger.html");
-	
-	    yield actions.paused({ frame, why, frames });
-	  });
-	
-	  return function paused(_x, _x2, _x3, _x4, _x5) {
-	    return _ref.apply(this, arguments);
-	  };
-	})();
-	
-	function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { return step("next", value); }, function (err) { return step("throw", err); }); } } return step("next"); }); }; }
-	
-	var _require = __webpack_require__(114);
-	
-	var Source = _require.Source;
-	var Location = _require.Location;
-	var Frame = _require.Frame;
-	
-	
-	var actions = void 0;
-	var pageAgent = void 0;
-	
-	function setupEvents(dependencies) {
-	  actions = dependencies.actions;
-	  pageAgent = dependencies.agents.Page;
-	}
-	
-	
-	function scriptParsed(scriptId, url, startLine, startColumn, endLine, endColumn, executionContextId, hash, isContentScript, isInternalScript, isLiveEdit, sourceMapURL, hasSourceURL, deprecatedCommentWasUsed) {
-	  if (isContentScript) {
-	    return;
-	  }
-	
-	  actions.newSource(Source({
-	    id: scriptId,
-	    url,
-	    sourceMapURL,
-	    isPrettyPrinted: false
-	  }));
-	}
-	
-	function scriptFailedToParse() {}
-	
-	function resumed() {
-	  pageAgent.setOverlayMessage(undefined);
-	  actions.resumed();
-	}
-	
-	function globalObjectCleared() {}
-	
-	
-	function frameNavigated(frame) {
-	  actions.navigate();
-	}
-	
-	function frameStartedLoading() {
-	  actions.willNavigate();
-	}
-	
-	function domContentEventFired() {}
-	
-	function loadEventFired() {}
-	
-	function frameStoppedLoading() {}
-	
-	var clientEvents = {
-	  scriptParsed,
-	  scriptFailedToParse,
-	  paused,
-	  resumed,
-	  globalObjectCleared
-	};
-	
-	var pageEvents = {
-	  frameNavigated,
-	  frameStartedLoading,
-	  domContentEventFired,
-	  loadEventFired,
-	  frameStoppedLoading
-	};
-	
-	module.exports = {
-	  setupEvents,
-	  pageEvents,
-	  clientEvents
-	};
-
- },
-
- function(module, exports, __webpack_require__) {
-
-	
-
-
-	
-	
-	var _require = __webpack_require__(2);
-	
-	var createStore = _require.createStore;
-	var applyMiddleware = _require.applyMiddleware;
-	
-	var _require2 = __webpack_require__(181);
-	
-	var waitUntilService = _require2.waitUntilService;
-	
-	var _require3 = __webpack_require__(182);
-	
-	var log = _require3.log;
-	
-	var _require4 = __webpack_require__(183);
-	
-	var history = _require4.history;
-	
-	var _require5 = __webpack_require__(184);
-	
-	var promise = _require5.promise;
-	
-	var _require6 = __webpack_require__(187);
-	
-	var thunk = _require6.thunk;
-	
-	
-
-
-
-
-
-
-
-
-
-
-	
-	var configureStore = function () {
-	  var opts = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
-	
-	  var middleware = [thunk(opts.makeThunkArgs), promise,
-	
-	  
-	  
-	  
-	  
-	  waitUntilService];
-	
-	  if (opts.history) {
-	    middleware.push(history(opts.history));
-	  }
-	
-	  if (opts.middleware) {
-	    opts.middleware.forEach(fn => middleware.push(fn));
-	  }
-	
-	  if (opts.log) {
-	    middleware.push(log);
-	  }
-	
-	  
-	  var devtoolsExt = typeof window === "object" && window.devToolsExtension ? window.devToolsExtension() : f => f;
-	
-	  return applyMiddleware.apply(undefined, middleware)(devtoolsExt(createStore));
-	};
-	
-	module.exports = configureStore;
-
- },
-
- function(module, exports) {
-
-	
-
-
-	"use strict";
-	
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	const NAME = exports.NAME = "@@service/waitUntil";
-	
-	function waitUntilService({ dispatch, getState }) {
-	  let pending = [];
-	
-	  function checkPending(action) {
-	    let readyRequests = [];
-	    let stillPending = [];
-	
-	    
-	    
-	    
-	    
-	    
-	    for (let request of pending) {
-	      if (request.predicate(action)) {
-	        readyRequests.push(request);
-	      } else {
-	        stillPending.push(request);
-	      }
-	    }
-	
-	    pending = stillPending;
-	    for (let request of readyRequests) {
-	      request.run(dispatch, getState, action);
-	    }
-	  }
-	
-	  return next => action => {
-	    if (action.type === NAME) {
-	      pending.push(action);
-	      return null;
-	    }
-	    let result = next(action);
-	    checkPending(action);
-	    return result;
-	  };
-	}
-	exports.waitUntilService = waitUntilService;
-
-
- },
-
- function(module, exports) {
-
-	
-
-
-
-	function log(_ref) {
-	  var dispatch = _ref.dispatch;
-	  var getState = _ref.getState;
-	
-	  return next => action => {
-	    var actionText = JSON.stringify(action, null, 2);
-	    var truncatedActionText = actionText.slice(0, 1000) + "...";
-	    console.log(`[DISPATCH ${ action.type }]`, action, truncatedActionText);
-	    next(action);
-	  };
-	}
-	
-	exports.log = log;
-
- },
-
- function(module, exports, __webpack_require__) {
-
-	
-
-
-	
-	var _require = __webpack_require__(46);
-	
-	var isDevelopment = _require.isDevelopment;
-	
-	
-
-
-
-
-	
-	exports.history = function () {
-	  var log = arguments.length <= 0 || arguments[0] === undefined ? [] : arguments[0];
-	  return _ref => {
-	    var dispatch = _ref.dispatch;
-	    var getState = _ref.getState;
-	
-	    if (isDevelopment()) {
-	      console.warn("Using history middleware stores all actions in state for " + "testing and devtools is not currently running in test " + "mode. Be sure this is intentional.");
-	    }
-	    return next => action => {
-	      log.push(action);
-	      next(action);
-	    };
-	  };
-	};
-
- },
-
- function(module, exports, __webpack_require__) {
-
-	
-
-
-	
-	var uuidgen = __webpack_require__(185).uuid;
-	var defer = __webpack_require__(112);
-	
-	var _require = __webpack_require__(176);
-	
-	var entries = _require.entries;
-	var toObject = _require.toObject;
-	
-	var _require2 = __webpack_require__(186);
-	
-	var executeSoon = _require2.executeSoon;
-	
-	
-	var PROMISE = exports.PROMISE = "@@dispatch/promise";
-	
-	function promiseMiddleware(_ref) {
-	  var dispatch = _ref.dispatch;
-	  var getState = _ref.getState;
-	
-	  return next => action => {
-	    if (!(PROMISE in action)) {
-	      return next(action);
-	    }
-	
-	    var promiseInst = action[PROMISE];
-	    var seqId = uuidgen().toString();
-	
-	    
-	    
-	    action = Object.assign(toObject(entries(action).filter(pair => pair[0] !== PROMISE)), { seqId });
-	
-	    dispatch(Object.assign({}, action, { status: "start" }));
-	
-	    
-	    
-	    var deferred = defer();
-	    promiseInst.then(value => {
-	      executeSoon(() => {
-	        dispatch(Object.assign({}, action, {
-	          status: "done",
-	          value: value
-	        }));
-	        deferred.resolve(value);
-	      });
-	    }, error => {
-	      executeSoon(() => {
-	        dispatch(Object.assign({}, action, {
-	          status: "error",
-	          error: error.message || error
-	        }));
-	        deferred.reject(error);
-	      });
-	    });
-	    return deferred.promise;
-	  };
-	}
-	
-	exports.promise = promiseMiddleware;
-
- },
-
- function(module, exports) {
-
-	
-	let i = 1;
-	function uuid() {
-	  return 'not-really-uuid' + (i++);
-	}
-	
-	module.exports = { uuid };
-
-
- },
-
- function(module, exports) {
-
 	function reportException(who, exception) {
 	  var msg = who + " threw an exception: ";
 	  console.error(msg, exception);
-	}
-	
-	function assert(condition, message) {
-	  if (!condition) {
-	    var err = new Error("Assertion failure: " + message);
-	    reportException("DevToolsUtils.assert", err);
-	    throw err;
-	  }
 	}
 	
 	function executeSoon(fn) {
@@ -21152,6 +21168,18 @@ var Debugger =
 	  executeSoon,
 	  assert
 	};
+
+ },
+
+ function(module, exports) {
+
+	function assert(condition, message) {
+	  if (!condition) {
+	    throw new Error("Assertion failure: " + message);
+	  }
+	}
+	
+	module.exports = assert;
 
  },
 
@@ -21271,12 +21299,11 @@ var Debugger =
 	exports.TOGGLE_BREAKPOINTS = "TOGGLE_BREAKPOINTS";
 	
 	exports.ADD_SOURCE = "ADD_SOURCE";
-	exports.LOAD_SOURCE_MAP = "LOAD_SOURCE_MAP";
-	exports.CLOSE_TAB = "CLOSE_TAB";
 	exports.ADD_SOURCES = "ADD_SOURCES";
 	exports.LOAD_SOURCE_TEXT = "LOAD_SOURCE_TEXT";
 	exports.SELECT_SOURCE = "SELECT_SOURCE";
 	exports.SELECT_SOURCE_URL = "SELECT_SOURCE_URL";
+	exports.CLOSE_TAB = "CLOSE_TAB";
 	exports.NAVIGATE = "NAVIGATE";
 	exports.RELOAD = "RELOAD";
 	
@@ -21299,7 +21326,6 @@ var Debugger =
 
  function(module, exports, __webpack_require__) {
 
-	function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
 	
 	
 
@@ -21314,7 +21340,6 @@ var Debugger =
 	  selectedLocation: undefined,
 	  pendingSelectedLocation: undefined,
 	  sourcesText: I.Map(),
-	  sourceMaps: I.Map(),
 	  tabs: I.List([])
 	});
 	
@@ -21328,12 +21353,6 @@ var Debugger =
 	        var _source = action.source;
 	        return state.mergeIn(["sources", action.source.id], _source);
 	      }
-	
-	    case "LOAD_SOURCE_MAP":
-	      if (action.status == "done") {
-	        return state.mergeIn(["sourceMaps", action.source.id], action.value.sourceMap);
-	      }
-	      break;
 	
 	    case "SELECT_SOURCE":
 	      return state.set("selectedLocation", {
@@ -21355,22 +21374,7 @@ var Debugger =
 	      });
 	
 	    case "LOAD_SOURCE_TEXT":
-	      {
-	        var values = void 0;
-	        if (action.status === "done") {
-	          var _action$value = action.value;
-	          var generatedSourceText = _action$value.generatedSourceText;
-	          var originalSourceTexts = _action$value.originalSourceTexts;
-	
-	          values = [generatedSourceText].concat(_toConsumableArray(originalSourceTexts));
-	        } else {
-	          var _source2 = action.source;
-	
-	          values = [_source2];
-	        }
-	
-	        return _updateText(state, action, values);
-	      }
+	      return _updateText(state, action);
 	
 	    case "BLACKBOX":
 	      if (action.status === "done") {
@@ -21380,10 +21384,10 @@ var Debugger =
 	
 	    case "TOGGLE_PRETTY_PRINT":
 	      if (action.status === "done") {
-	        return _updateText(state, action, [action.value.sourceText]).setIn(["sources", action.source.id, "isPrettyPrinted"], action.value.isPrettyPrinted);
+	        return _updateText(state, action).setIn(["sources", action.source.id, "isPrettyPrinted"], action.value.isPrettyPrinted);
 	      }
 	
-	      return _updateText(state, action, [action.originalSource]);
+	      return _updateText(state, action);
 	
 	    case "NAVIGATE":
 	      var source = getSelectedSource({ sources: state });
@@ -21394,32 +21398,33 @@ var Debugger =
 	  return state;
 	}
 	
-	function _updateText(state, action, values) {
+	
+	
+	
+	
+	function _updateText(state, action) {
+	  var source = action.source;
+	  var sourceText = action.value;
+	
 	  if (action.status === "start") {
 	    
 	    
 	    
-	    return values.reduce((_state, source) => {
-	      return _state.mergeIn(["sourcesText", source.id], {
-	        loading: true
-	      });
-	    }, state);
+	    return state.mergeIn(["sourcesText", source.id], {
+	      loading: true
+	    });
 	  }
 	
 	  if (action.status === "error") {
-	    return values.reduce((_state, source) => {
-	      return _state.setIn(["sourcesText", source.id], I.Map({
-	        error: action.error
-	      }));
-	    }, state);
+	    return state.setIn(["sourcesText", source.id], I.Map({
+	      error: action.error
+	    }));
 	  }
 	
-	  return values.reduce((_state, sourceText) => {
-	    return _state.setIn(["sourcesText", sourceText.id], I.Map({
-	      text: sourceText.text,
-	      contentType: sourceText.contentType
-	    }));
-	  }, state);
+	  return state.setIn(["sourcesText", source.id], I.Map({
+	    text: sourceText.text,
+	    contentType: sourceText.contentType
+	  }));
 	}
 	
 	function removeSourceFromTabList(state, id) {
@@ -21522,10 +21527,6 @@ var Debugger =
 	  return state.sources.pendingSelectedLocation;
 	}
 	
-	function getSourceMap(state, sourceId) {
-	  return state.sources.sourceMaps.get(sourceId);
-	}
-	
 	function getPrettySource(state, id) {
 	  var source = getSource(state, id);
 	  if (!source) {
@@ -21547,7 +21548,6 @@ var Debugger =
 	  getSelectedSource,
 	  getSelectedLocation,
 	  getPendingSelectedLocation,
-	  getSourceMap,
 	  getPrettySource
 	};
 
@@ -26617,7 +26617,7 @@ var Debugger =
 	
 	var fromJS = __webpack_require__(192);
 	
-	var _require = __webpack_require__(176);
+	var _require = __webpack_require__(183);
 	
 	var updateObj = _require.updateObj;
 	
@@ -27059,8 +27059,6 @@ var Debugger =
 
 	
 	
-	var URL = __webpack_require__(200);
-	var path = __webpack_require__(205);
 	var sources = __webpack_require__(191);
 	var pause = __webpack_require__(198);
 	var breakpoints = __webpack_require__(195);
@@ -27071,22 +27069,6 @@ var Debugger =
 	
 	function getSelectedTab(state) {
 	  return state.tabs.get("selectedTab");
-	}
-	
-	function getSourceMapURL(state, source) {
-	  if (path.isURL(source.sourceMapURL)) {
-	    
-	    return source.sourceMapURL;
-	  } else if (path.isAbsolute(source.sourceMapURL)) {
-	    
-	
-	    var urlObj = URL.parse(source.url);
-	    var base = urlObj.protocol + "//" + urlObj.host;
-	    return base + source.sourceMapURL;
-	  }
-	  
-	  
-	  return path.dirname(source.url) + "/" + source.sourceMapURL;
 	}
 	
 	
@@ -27103,10 +27085,7 @@ var Debugger =
 	  getSelectedSource: sources.getSelectedSource,
 	  getSelectedLocation: sources.getSelectedLocation,
 	  getPendingSelectedLocation: sources.getPendingSelectedLocation,
-	  getSourceMap: sources.getSourceMap,
 	  getPrettySource: sources.getPrettySource,
-	
-	  getSourceMapURL,
 	
 	  getBreakpoint: breakpoints.getBreakpoint,
 	  getBreakpoints: breakpoints.getBreakpoints,
@@ -27125,6 +27104,1449 @@ var Debugger =
 	  getShouldIgnoreCaughtExceptions: pause.getShouldIgnoreCaughtExceptions,
 	  getFrames: pause.getFrames,
 	  getSelectedFrame: pause.getSelectedFrame
+	};
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	var React = __webpack_require__(17);
+	
+	var _require = __webpack_require__(15);
+	
+	var connect = _require.connect;
+	
+	var classnames = __webpack_require__(201);
+	
+	var _require2 = __webpack_require__(199);
+	
+	var getTabs = _require2.getTabs;
+	
+	
+	__webpack_require__(202);
+	var dom = React.DOM;
+	
+	var githubUrl = "https://github.com/devtools-html/debugger.html/blob/master";
+	
+	function getTabsByBrowser(tabs, browser) {
+	  return tabs.valueSeq().filter(tab => tab.get("browser") == browser);
+	}
+	
+	function renderTabs(tabTitle, tabs, paramName) {
+	  if (tabs.count() == 0) {
+	    return null;
+	  }
+	
+	  return dom.div({ className: `tab-group ${ tabTitle }` }, dom.div({ className: "tab-group-title" }, tabTitle), dom.ul({ className: "tab-list" }, tabs.valueSeq().map(tab => dom.li({ "className": "tab",
+	    "key": tab.get("id"),
+	    "onClick": () => {
+	      window.location = "/?" + paramName + "=" + tab.get("id");
+	    } }, dom.div({ className: "tab-title" }, tab.get("title")), dom.div({ className: "tab-url" }, tab.get("url"))))));
+	}
+	
+	function renderMessage(noTabs) {
+	  return dom.div({ className: classnames("connect-message", { "not-connected": noTabs }) }, dom.p(null, noTabs && "No remote tabs found. ", "You may be looking to ", dom.a({
+	    href: `/?ws=${ document.location.hostname }:9229/node`
+	  }, "connect to Node"), "."), dom.p(null, "Make sure you run ", dom.a({ href: `${ githubUrl }/CONTRIBUTING.md#firefox` }, "Firefox"), ", ", dom.a({ href: `${ githubUrl }/CONTRIBUTING.md#chrome` }, "Chrome"), " or ", dom.a({ href: `${ githubUrl }/CONTRIBUTING.md#nodejs` }, "Node"), " with the right flags."));
+	}
+	function Tabs(_ref) {
+	  var tabs = _ref.tabs;
+	
+	  var firefoxTabs = getTabsByBrowser(tabs, "firefox");
+	  var chromeTabs = getTabsByBrowser(tabs, "chrome");
+	
+	  return dom.div({ className: "tabs theme-light" }, renderTabs("Firefox Tabs", firefoxTabs, "firefox-tab"), renderTabs("Chrome Tabs", chromeTabs, "chrome-tab"), renderMessage(tabs.isEmpty()));
+	}
+	
+	module.exports = connect(state => ({ tabs: getTabs(state) }))(Tabs);
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;
+
+
+
+
+	
+	
+	(function () {
+		'use strict';
+	
+		var hasOwn = {}.hasOwnProperty;
+	
+		function classNames () {
+			var classes = [];
+	
+			for (var i = 0; i < arguments.length; i++) {
+				var arg = arguments[i];
+				if (!arg) continue;
+	
+				var argType = typeof arg;
+	
+				if (argType === 'string' || argType === 'number') {
+					classes.push(arg);
+				} else if (Array.isArray(arg)) {
+					classes.push(classNames.apply(null, arg));
+				} else if (argType === 'object') {
+					for (var key in arg) {
+						if (hasOwn.call(arg, key) && arg[key]) {
+							classes.push(key);
+						}
+					}
+				}
+			}
+	
+			return classes.join(' ');
+		}
+	
+		if (typeof module !== 'undefined' && module.exports) {
+			module.exports = classNames;
+		} else if (true) {
+			
+			!(__WEBPACK_AMD_DEFINE_ARRAY__ = [], __WEBPACK_AMD_DEFINE_RESULT__ = function () {
+				return classNames;
+			}.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+		} else {
+			window.classNames = classNames;
+		}
+	}());
+
+
+ },
+
+ function(module, exports) {
+
+	
+
+ },
+,
+,
+,
+
+ function(module, exports, __webpack_require__) {
+
+	var React = __webpack_require__(17);
+	var dom = React.DOM;
+	var PropTypes = React.PropTypes;
+	var createFactory = React.createFactory;
+	
+	var _require = __webpack_require__(15);
+	
+	var connect = _require.connect;
+	
+	var _require2 = __webpack_require__(2);
+	
+	var bindActionCreators = _require2.bindActionCreators;
+	
+	var _require3 = __webpack_require__(207);
+	
+	var cmdString = _require3.cmdString;
+	
+	var classnames = __webpack_require__(201);
+	var actions = __webpack_require__(209);
+	
+	var _require4 = __webpack_require__(46);
+	
+	var isFirefoxPanel = _require4.isFirefoxPanel;
+	
+	var _require5 = __webpack_require__(199);
+	
+	var getSources = _require5.getSources;
+	var getSelectedSource = _require5.getSelectedSource;
+	
+	var _require6 = __webpack_require__(183);
+	
+	var endTruncateStr = _require6.endTruncateStr;
+	
+	var _require7 = __webpack_require__(212);
+	
+	var parseURL = _require7.parse;
+	
+	var _require8 = __webpack_require__(241);
+	
+	var KeyShortcuts = _require8.KeyShortcuts;
+	
+	
+	__webpack_require__(242);
+	__webpack_require__(244);
+	
+	
+	
+	if (false) {
+	  require("../lib/themes/light-theme.css");
+	}
+	
+	var Sources = createFactory(__webpack_require__(246));
+	var Editor = createFactory(__webpack_require__(354));
+	var SplitBox = createFactory(__webpack_require__(363));
+	var RightSidebar = createFactory(__webpack_require__(365));
+	var SourceTabs = createFactory(__webpack_require__(424));
+	var Svg = __webpack_require__(328);
+	var Autocomplete = createFactory(__webpack_require__(429));
+	
+	function searchResults(sources) {
+	  function getSourcePath(source) {
+	    var _parseURL = parseURL(source.get("url"));
+	
+	    var path = _parseURL.path;
+	
+	    return endTruncateStr(path, 50);
+	  }
+	
+	  return sources.valueSeq().filter(source => source.get("url")).map(source => ({
+	    value: getSourcePath(source),
+	    title: getSourcePath(source).split("/").pop(),
+	    subtitle: getSourcePath(source),
+	    id: source.get("id")
+	  })).toJS();
+	}
+	
+	var App = React.createClass({
+	  propTypes: {
+	    sources: PropTypes.object,
+	    selectSource: PropTypes.func,
+	    selectedSource: PropTypes.object
+	  },
+	
+	  displayName: "App",
+	
+	  getInitialState() {
+	    return {
+	      searchOn: false
+	    };
+	  },
+	
+	  getChildContext() {
+	    return {
+	      shortcuts: this.shortcuts
+	    };
+	  },
+	
+	  componentDidMount() {
+	    this.shortcuts = new KeyShortcuts({ window });
+	
+	    this.shortcuts.on("CmdOrCtrl+P", this.toggleSourcesSearch);
+	    window.addEventListener("keydown", this.onKeyDown);
+	  },
+	
+	  componentWillUnmount() {
+	    this.shortcuts.off("CmdOrCtrl+P", this.toggleSourcesSearch);
+	    window.removeEventListener("keydown", this.onKeyDown);
+	  },
+	
+	  toggleSourcesSearch(key, e) {
+	    e.preventDefault();
+	    this.setState({ searchOn: !this.state.searchOn });
+	  },
+	
+	  onKeyDown(e) {
+	    if (this.state.searchOn && e.key === "Escape") {
+	      this.setState({ searchOn: false });
+	      e.preventDefault();
+	    }
+	  },
+	
+	  closeSourcesSearch() {
+	    this.setState({ searchOn: false });
+	  },
+	
+	  renderSourcesSearch() {
+	    return dom.div({ className: "search-container" }, Autocomplete({
+	      selectItem: result => {
+	        this.props.selectSource(result.id);
+	        this.setState({ searchOn: false });
+	      },
+	      items: searchResults(this.props.sources)
+	    }), dom.div({ className: "close-button" }, Svg("close", { onClick: this.closeSourcesSearch })));
+	  },
+	
+	  renderWelcomeBox() {
+	    return dom.div({ className: "welcomebox" }, `${ cmdString() }+P to search for files`);
+	  },
+	
+	  renderCenterPane() {
+	    return dom.div({ className: "center-pane" }, dom.div({ className: "editor-container" }, SourceTabs(), Editor(), !this.props.selectedSource ? this.renderWelcomeBox() : null, this.state.searchOn ? this.renderSourcesSearch() : null));
+	  },
+	
+	  render: function () {
+	    return dom.div({ className: classnames("debugger theme-body", { "theme-light": !isFirefoxPanel() }) }, SplitBox({
+	      style: { width: "100vh" },
+	      initialSize: "300px",
+	      minSize: 10,
+	      maxSize: "50%",
+	      splitterSize: 1,
+	      startPanel: Sources({ sources: this.props.sources }),
+	      endPanel: SplitBox({
+	        initialSize: "300px",
+	        minSize: 10,
+	        maxSize: "80%",
+	        splitterSize: 1,
+	        endPanelControl: true,
+	        startPanel: this.renderCenterPane(this.props),
+	        endPanel: RightSidebar()
+	      })
+	    }));
+	  }
+	});
+	
+	App.childContextTypes = {
+	  shortcuts: PropTypes.object
+	};
+	
+	module.exports = connect(state => ({ sources: getSources(state),
+	  selectedSource: getSelectedSource(state) }), dispatch => bindActionCreators(actions, dispatch))(App);
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	var _require = __webpack_require__(208);
+	
+	var Services = _require.Services;
+	
+	
+	function cmdString() {
+	  return Services.appinfo.OS === "Darwin" ? "⌘" : "Ctrl";
+	}
+	
+	module.exports = {
+	  cmdString
+	};
+
+ },
+
+ function(module, exports) {
+
+	
+	
+	
+
+
+	
+	"use strict";
+	
+	
+	
+	
+	const PREF_INVALID = 0;
+	const PREF_STRING = 32;
+	const PREF_INT = 64;
+	const PREF_BOOL = 128;
+	const NS_PREFBRANCH_PREFCHANGE_TOPIC_ID = "nsPref:changed";
+	
+	
+
+
+
+
+
+
+	function Preference(branch, name, fullName) {
+	  this.branch = branch;
+	  this.name = name;
+	  this.fullName = fullName;
+	  this.defaultValue = null;
+	  this.hasUserValue = false;
+	  this.userValue = null;
+	  this.type = null;
+	}
+	
+	Preference.prototype = {
+	  
+
+
+
+
+
+
+	  get: function () {
+	    if (this.hasUserValue) {
+	      return this.userValue;
+	    }
+	    return this.defaultValue;
+	  },
+	
+	  
+
+
+
+
+
+
+	  set: function (value) {
+	    if (!this.hasUserValue || value !== this.userValue) {
+	      this.userValue = value;
+	      this.hasUserValue = true;
+	      this.saveAndNotify();
+	    }
+	  },
+	
+	  
+
+
+
+
+
+	  setDefault: function (value) {
+	    if (this.defaultValue !== value) {
+	      this.defaultValue = value;
+	      if (!this.hasUserValue) {
+	        this.saveAndNotify();
+	      }
+	    }
+	  },
+	
+	  
+
+
+
+	  clearUserValue: function () {
+	    if (this.hasUserValue) {
+	      this.userValue = null;
+	      this.hasUserValue = false;
+	      this.saveAndNotify();
+	    }
+	  },
+	
+	  
+
+
+
+	  saveAndNotify: function () {
+	    let store = {
+	      type: this.type,
+	      defaultValue: this.defaultValue,
+	      hasUserValue: this.hasUserValue,
+	      userValue: this.userValue,
+	    };
+	
+	    localStorage.setItem(this.fullName, JSON.stringify(store));
+	    this.branch._notify(this.name);
+	  },
+	
+	  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	  storageUpdated: function (type, userValue, hasUserValue, defaultValue) {
+	    this.type = type;
+	    this.defaultValue = defaultValue;
+	    this.hasUserValue = hasUserValue;
+	    this.userValue = userValue;
+	    
+	    
+	    this.branch._notify(this.name);
+	  },
+	};
+	
+	
+
+
+
+
+
+
+
+
+
+	function PrefBranch(parent, name, fullName) {
+	  this._parent = parent;
+	  this._name = name;
+	  this._fullName = fullName;
+	  this._observers = {};
+	  this._children = {};
+	
+	  if (!parent) {
+	    this._initializeRoot();
+	  }
+	}
+	
+	PrefBranch.prototype = {
+	  PREF_INVALID: PREF_INVALID,
+	  PREF_STRING: PREF_STRING,
+	  PREF_INT: PREF_INT,
+	  PREF_BOOL: PREF_BOOL,
+	
+	  
+	  get root() {
+	    return this._fullName;
+	  },
+	
+	  
+	  getPrefType: function (prefName) {
+	    return this._findPref(prefName).type;
+	  },
+	
+	  
+	  getBoolPref: function (prefName) {
+	    let thePref = this._findPref(prefName);
+	    if (thePref.type !== PREF_BOOL) {
+	      throw new Error(`${prefName} does not have bool type`);
+	    }
+	    return thePref.get();
+	  },
+	
+	  
+	  setBoolPref: function (prefName, value) {
+	    if (typeof value !== "boolean") {
+	      throw new Error("non-bool passed to setBoolPref");
+	    }
+	    let thePref = this._findOrCreatePref(prefName, value, true, value);
+	    if (thePref.type !== PREF_BOOL) {
+	      throw new Error(`${prefName} does not have bool type`);
+	    }
+	    thePref.set(value);
+	  },
+	
+	  
+	  getCharPref: function (prefName) {
+	    let thePref = this._findPref(prefName);
+	    if (thePref.type !== PREF_STRING) {
+	      throw new Error(`${prefName} does not have string type`);
+	    }
+	    return thePref.get();
+	  },
+	
+	  
+	  setCharPref: function (prefName, value) {
+	    if (typeof value !== "string") {
+	      throw new Error("non-string passed to setCharPref");
+	    }
+	    let thePref = this._findOrCreatePref(prefName, value, true, value);
+	    if (thePref.type !== PREF_STRING) {
+	      throw new Error(`${prefName} does not have string type`);
+	    }
+	    thePref.set(value);
+	  },
+	
+	  
+	  getIntPref: function (prefName) {
+	    let thePref = this._findPref(prefName);
+	    if (thePref.type !== PREF_INT) {
+	      throw new Error(`${prefName} does not have int type`);
+	    }
+	    return thePref.get();
+	  },
+	
+	  
+	  setIntPref: function (prefName, value) {
+	    if (typeof value !== "number") {
+	      throw new Error("non-number passed to setIntPref");
+	    }
+	    let thePref = this._findOrCreatePref(prefName, value, true, value);
+	    if (thePref.type !== PREF_INT) {
+	      throw new Error(`${prefName} does not have int type`);
+	    }
+	    thePref.set(value);
+	  },
+	
+	  
+	  clearUserPref: function (prefName) {
+	    let thePref = this._findPref(prefName);
+	    thePref.clearUserValue();
+	  },
+	
+	  
+	  prefHasUserValue: function (prefName) {
+	    let thePref = this._findPref(prefName);
+	    return thePref.hasUserValue;
+	  },
+	
+	  
+	  addObserver: function (domain, observer, holdWeak) {
+	    if (domain !== "" && !domain.endsWith(".")) {
+	      throw new Error("invalid domain to addObserver: " + domain);
+	    }
+	    if (holdWeak) {
+	      throw new Error("shim prefs only supports strong observers");
+	    }
+	
+	    if (!(domain in this._observers)) {
+	      this._observers[domain] = [];
+	    }
+	    this._observers[domain].push(observer);
+	  },
+	
+	  
+	  removeObserver: function (domain, observer) {
+	    if (!(domain in this._observers)) {
+	      return;
+	    }
+	    let index = this._observers[domain].indexOf(observer);
+	    if (index >= 0) {
+	      this._observers[domain].splice(index, 1);
+	    }
+	  },
+	
+	  
+	  savePrefFile: function (file) {
+	    if (file) {
+	      throw new Error("shim prefs only supports null file in savePrefFile");
+	    }
+	    
+	  },
+	
+	  
+	  getBranch: function (prefRoot) {
+	    if (!prefRoot) {
+	      return this;
+	    }
+	    if (prefRoot.endsWith(".")) {
+	      prefRoot = prefRoot.slice(0, -1);
+	    }
+	    
+	    
+	    return this._findPref(prefRoot);
+	  },
+	
+	  
+
+
+
+
+
+
+	  _findPref: function (prefName) {
+	    let branchNames = prefName.split(".");
+	    let branch = this;
+	
+	    for (let branchName of branchNames) {
+	      branch = branch._children[branchName];
+	      if (!branch) {
+	        throw new Error("could not find pref branch " + prefName);
+	      }
+	    }
+	
+	    return branch;
+	  },
+	
+	  
+
+
+
+
+
+
+
+	  _notify: function (relativeName) {
+	    for (let domain in this._observers) {
+	      if (relativeName.startsWith(domain)) {
+	        
+	        let localList = this._observers[domain].slice();
+	        for (let observer of localList) {
+	          try {
+	            observer.observe(this, NS_PREFBRANCH_PREFCHANGE_TOPIC_ID,
+	                             relativeName);
+	          } catch (e) {
+	            console.error(e);
+	          }
+	        }
+	      }
+	    }
+	
+	    if (this._parent) {
+	      this._parent._notify(this._name + "." + relativeName);
+	    }
+	  },
+	
+	  
+
+
+
+
+
+
+
+	  _createBranch: function (branchList) {
+	    let parent = this;
+	    for (let branch of branchList) {
+	      if (!parent._children[branch]) {
+	        parent._children[branch] = new PrefBranch(parent, branch,
+	                                                  parent.root + "." + branch);
+	      }
+	      parent = parent._children[branch];
+	    }
+	    return parent;
+	  },
+	
+	  
+
+
+
+
+
+
+
+
+
+
+
+	  _findOrCreatePref: function (keyName, userValue, hasUserValue, defaultValue) {
+	    let branchName = keyName.split(".");
+	    let prefName = branchName.pop();
+	
+	    let branch = this._createBranch(branchName);
+	    if (!(prefName in branch._children)) {
+	      if (hasUserValue && typeof (userValue) !== typeof (defaultValue)) {
+	        throw new Error("inconsistent values when creating " + keyName);
+	      }
+	
+	      let type;
+	      switch (typeof (defaultValue)) {
+	        case "boolean":
+	          type = PREF_BOOL;
+	          break;
+	        case "number":
+	          type = PREF_INT;
+	          break;
+	        case "string":
+	          type = PREF_STRING;
+	          break;
+	        default:
+	          throw new Error("unhandled argument type: " + typeof (defaultValue));
+	      }
+	
+	      let thePref = new Preference(branch, prefName, keyName);
+	      thePref.storageUpdated(type, userValue, hasUserValue, defaultValue);
+	      branch._children[prefName] = thePref;
+	    }
+	
+	    return branch._children[prefName];
+	  },
+	
+	  
+
+
+
+
+
+
+	  _onStorageChange: function (event) {
+	    if (event.storageArea !== localStorage) {
+	      return;
+	    }
+	
+	    
+	    if (event.key === null || event.newValue === null) {
+	      return;
+	    }
+	
+	    let {type, userValue, hasUserValue, defaultValue} =
+	        JSON.parse(event.newValue);
+	    if (event.oldValue === null) {
+	      this._findOrCreatePref(event.key, userValue, hasUserValue, defaultValue);
+	    } else {
+	      let thePref = this._findPref(event.key);
+	      thePref.storageUpdated(type, userValue, hasUserValue, defaultValue);
+	    }
+	  },
+	
+	  
+
+
+	  _initializeRoot: function () {
+	    try {
+	      if (localStorage.length === 0) {
+	        
+	        
+	      }
+	    } catch(e) {
+	      
+	      
+	      return;
+	    }
+	
+	    
+	    
+	    for (let i = 0; i < localStorage.length; ++i) {
+	      let keyName = localStorage.key(i);
+	      try {
+	        let {userValue, hasUserValue, defaultValue} =
+	            JSON.parse(localStorage.getItem(keyName));
+	
+	        this._findOrCreatePref(keyName, userValue, hasUserValue, defaultValue);
+	      } catch (e) {
+	      }
+	    }
+	
+	    this._onStorageChange = this._onStorageChange.bind(this);
+	    window.addEventListener("storage", this._onStorageChange);
+	  },
+	};
+	
+	const Services = {
+	  
+
+
+
+
+	  prefs: new PrefBranch(null, "", ""),
+	
+	  
+
+
+
+	  appinfo: {
+	    get OS() {
+	      const os = window.navigator.userAgent;
+	      if (os) {
+	        if (os.includes("Linux")) {
+	          return "Linux";
+	        } else if (os.includes("Windows")) {
+	          return "WINNT";
+	        } else if (os.includes("Mac")) {
+	          return "Darwin";
+	        }
+	      }
+	      return "Unknown";
+	    },
+	
+	    
+	    get name() {
+	      return window.navigator.userAgent;
+	    },
+	
+	    
+	    get version() {
+	      return window.navigator.appVersion;
+	    },
+	
+	    
+	    
+	    get is64Bit() {
+	      return true;
+	    },
+	  },
+	
+	  
+
+
+
+	  telemetry: {
+	    getHistogramById: function (name) {
+	      return {
+	        add: () => {}
+	      };
+	    },
+	
+	    getKeyedHistogramById: function (name) {
+	      return {
+	        add: () => {}
+	      };
+	    },
+	  },
+	
+	  
+
+
+
+
+	  focus: {
+	    
+	    
+	    MOVEFOCUS_FORWARD: 1,
+	    MOVEFOCUS_BACKWARD: 2,
+	
+	    get focusedElement() {
+	      if (!document.hasFocus()) {
+	        return null;
+	      }
+	      return document.activeElement;
+	    },
+	
+	    moveFocus: function (window, startElement, type, flags) {
+	      if (flags !== 0) {
+	        throw new Error("shim Services.focus.moveFocus only accepts flags===0");
+	      }
+	      if (type !== Services.focus.MOVEFOCUS_FORWARD
+	          && type !== Services.focus.MOVEFOCUS_BACKWARD) {
+	        throw new Error("shim Services.focus.moveFocus only supports " +
+	                        " MOVEFOCUS_FORWARD and MOVEFOCUS_BACKWARD");
+	      }
+	
+	      if (!startElement) {
+	        startElement = document.activeElement || document;
+	      }
+	
+	      let iter = document.createTreeWalker(document, NodeFilter.SHOW_ELEMENT, {
+	        acceptNode: function (node) {
+	          let tabIndex = node.getAttribute("tabindex");
+	          if (tabIndex === "-1") {
+	            return NodeFilter.FILTER_SKIP;
+	          }
+	          node.focus();
+	          if (document.activeElement == node) {
+	            return NodeFilter.FILTER_ACCEPT;
+	          }
+	          return NodeFilter.FILTER_SKIP;
+	        }
+	      });
+	
+	      iter.currentNode = startElement;
+	
+	      
+	      if (type === Services.focus.MOVEFOCUS_FORWARD) {
+	        iter.nextNode();
+	      } else {
+	        iter.previousNode();
+	      }
+	    },
+	  },
+	};
+	
+	
+
+
+
+
+
+
+
+	function pref(name, value) {
+	  let thePref = Services.prefs._findOrCreatePref(name, value, true, value);
+	  thePref.setDefault(value);
+	}
+	
+	exports.Services = Services;
+	
+	
+	
+	exports.pref = pref;
+
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	
+	
+	var breakpoints = __webpack_require__(210);
+	var eventListeners = __webpack_require__(234);
+	var sources = __webpack_require__(235);
+	var tabs = __webpack_require__(238);
+	var pause = __webpack_require__(239);
+	var navigation = __webpack_require__(240);
+	
+	module.exports = Object.assign(navigation, breakpoints, eventListeners, sources, tabs, pause);
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
+	
+	function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { return step("next", value); }, function (err) { return step("throw", err); }); } } return step("next"); }); }; }
+	
+	
+
+
+	
+	
+
+
+
+	
+	var constants = __webpack_require__(190);
+	
+	var _require = __webpack_require__(182);
+	
+	var PROMISE = _require.PROMISE;
+	
+	var _require2 = __webpack_require__(199);
+	
+	var getBreakpoint = _require2.getBreakpoint;
+	var getBreakpoints = _require2.getBreakpoints;
+	
+	var _require3 = __webpack_require__(211);
+	
+	var getOriginalLocation = _require3.getOriginalLocation;
+	var getGeneratedLocation = _require3.getGeneratedLocation;
+	var isOriginalId = _require3.isOriginalId;
+	
+	
+
+
+
+
+
+
+	
+	function _breakpointExists(state, location) {
+	  var currentBp = getBreakpoint(state, location);
+	  return currentBp && !currentBp.disabled;
+	}
+	
+	function _getOrCreateBreakpoint(state, location, condition) {
+	  return getBreakpoint(state, location) || { location, condition };
+	}
+	
+	
+
+
+
+
+
+
+	function enableBreakpoint(location) {
+	  return addBreakpoint(location);
+	}
+	
+	
+
+
+
+
+
+
+
+	function addBreakpoint(location) {
+	  var _ref = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
+	
+	  var condition = _ref.condition;
+	  var getTextForLine = _ref.getTextForLine;
+	
+	  return _ref2 => {
+	    var dispatch = _ref2.dispatch;
+	    var getState = _ref2.getState;
+	    var client = _ref2.client;
+	
+	    if (_breakpointExists(getState(), location)) {
+	      return Promise.resolve();
+	    }
+	
+	    var bp = _getOrCreateBreakpoint(getState(), location, condition);
+	
+	    return dispatch({
+	      type: constants.ADD_BREAKPOINT,
+	      breakpoint: bp,
+	      condition: condition,
+	      [PROMISE]: _asyncToGenerator(function* () {
+	        location = yield getGeneratedLocation(bp.location, getState());
+	
+	        var _ref4 = yield client.setBreakpoint(location, bp.condition, isOriginalId(bp.location.sourceId));
+	
+	        var id = _ref4.id;
+	        var actualLocation = _ref4.actualLocation;
+	
+	
+	        actualLocation = yield getOriginalLocation(actualLocation);
+	
+	        
+	        
+	        var text = bp.text;
+	        if (!text) {
+	          text = getTextForLine ? getTextForLine(actualLocation.line) : "";
+	        }
+	
+	        return { id, actualLocation, text };
+	      })()
+	    });
+	  };
+	}
+	
+	
+
+
+
+
+
+	function disableBreakpoint(location) {
+	  return _removeOrDisableBreakpoint(location, true);
+	}
+	
+	
+
+
+
+
+
+	function removeBreakpoint(location) {
+	  return _removeOrDisableBreakpoint(location);
+	}
+	
+	function _removeOrDisableBreakpoint(location, isDisabled) {
+	  return _ref5 => {
+	    var dispatch = _ref5.dispatch;
+	    var getState = _ref5.getState;
+	    var client = _ref5.client;
+	
+	    var bp = getBreakpoint(getState(), location);
+	    if (!bp) {
+	      throw new Error("attempt to remove breakpoint that does not exist");
+	    }
+	    if (bp.loading) {
+	      
+	      
+	      throw new Error("attempt to remove unsaved breakpoint");
+	    }
+	
+	    var action = {
+	      type: constants.REMOVE_BREAKPOINT,
+	      breakpoint: bp,
+	      disabled: isDisabled
+	    };
+	
+	    
+	    
+	    
+	    
+	    if (!bp.disabled) {
+	      return dispatch(Object.assign({}, action, {
+	        [PROMISE]: client.removeBreakpoint(bp.id)
+	      }));
+	    }
+	    return dispatch(Object.assign({}, action, { status: "done" }));
+	  };
+	}
+	
+	
+
+
+
+
+
+	function toggleAllBreakpoints(shouldDisableBreakpoints) {
+	  return _ref6 => {
+	    var dispatch = _ref6.dispatch;
+	    var getState = _ref6.getState;
+	
+	    var breakpoints = getBreakpoints(getState());
+	    return dispatch({
+	      type: constants.TOGGLE_BREAKPOINTS,
+	      shouldDisableBreakpoints,
+	      [PROMISE]: _asyncToGenerator(function* () {
+	        for (var _ref8 of breakpoints) {
+	          var _ref9 = _slicedToArray(_ref8, 2);
+	
+	          var breakpoint = _ref9[1];
+	
+	          if (shouldDisableBreakpoints) {
+	            yield dispatch(disableBreakpoint(breakpoint.location));
+	          } else {
+	            yield dispatch(enableBreakpoint(breakpoint.location));
+	          }
+	        }
+	      })()
+	    });
+	  };
+	}
+	
+	
+
+
+
+
+
+
+
+
+
+
+
+	function setBreakpointCondition(location, condition) {
+	  throw new Error("not implemented");
+	
+	  
+	  
+	  
+	  
+	  
+	  
+	  
+	  
+	  
+	  
+	
+	  
+	  
+	  
+	  
+	  
+	  
+	  
+	  
+	  
+	}
+	
+	module.exports = {
+	  enableBreakpoint,
+	  addBreakpoint,
+	  disableBreakpoint,
+	  removeBreakpoint,
+	  toggleAllBreakpoints,
+	  setBreakpointCondition
+	};
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	var _fetchSourceMap = (() => {
+	  var _ref = _asyncToGenerator(function* (generatedSource) {
+	    
+	    var sourceMapURL = _resolveSourceMapURL(generatedSource);
+	    var fetched = yield networkRequest(sourceMapURL, { loadFromCache: false });
+	
+	    
+	    var map = new SourceMapConsumer(fetched.content);
+	    _setSourceMapRoot(map, sourceMapURL, generatedSource);
+	    return map;
+	  });
+	
+	  return function _fetchSourceMap(_x) {
+	    return _ref.apply(this, arguments);
+	  };
+	})();
+	
+	var getGeneratedLocation = (() => {
+	  var _ref2 = _asyncToGenerator(function* (location, state) {
+	    if (!isOriginalId(location.sourceId)) {
+	      return location;
+	    }
+	
+	    var originalSource = getSource(state, location.sourceId).toJS();
+	    var generatedSourceId = originalToGeneratedId(location.sourceId);
+	    var map = yield getSourceMap(generatedSourceId);
+	    if (!map) {
+	      return location;
+	    }
+	
+	    var _map$generatedPositio = map.generatedPositionFor({
+	      source: originalSource.url,
+	      line: location.line,
+	      column: location.column == null ? 0 : location.column
+	    });
+	
+	    var line = _map$generatedPositio.line;
+	    var column = _map$generatedPositio.column;
+	
+	
+	    return {
+	      sourceId: generatedSourceId,
+	      line: line,
+	      
+	      column: column === 0 ? undefined : column
+	    };
+	  });
+	
+	  return function getGeneratedLocation(_x2, _x3) {
+	    return _ref2.apply(this, arguments);
+	  };
+	})();
+	
+	var getOriginalLocation = (() => {
+	  var _ref3 = _asyncToGenerator(function* (location) {
+	    if (!isGeneratedId(location.sourceId)) {
+	      return location;
+	    }
+	
+	    var map = yield getSourceMap(location.sourceId);
+	    if (!map) {
+	      return location;
+	    }
+	
+	    var _map$originalPosition = map.originalPositionFor({
+	      line: location.line,
+	      column: location.column == null ? Infinity : location.column
+	    });
+	
+	    var url = _map$originalPosition.source;
+	    var line = _map$originalPosition.line;
+	    var column = _map$originalPosition.column;
+	
+	
+	    if (url == null) {
+	      
+	      return location;
+	    }
+	
+	    return {
+	      sourceId: generatedToOriginalId(location.sourceId, url),
+	      line,
+	      column
+	    };
+	  });
+	
+	  return function getOriginalLocation(_x4) {
+	    return _ref3.apply(this, arguments);
+	  };
+	})();
+	
+	var getOriginalSourceText = (() => {
+	  var _ref4 = _asyncToGenerator(function* (originalSource) {
+	    assert(isOriginalId(originalSource.id), "Source is not an original source");
+	
+	    var generatedSourceId = originalToGeneratedId(originalSource.id);
+	    var map = yield getSourceMap(generatedSourceId);
+	    if (!map) {
+	      return null;
+	    }
+	
+	    var text = map.sourceContentFor(originalSource.url);
+	    if (!text) {
+	      text = (yield networkRequest(originalSource.url, { loadFromCache: false })).content;
+	    }
+	
+	    return {
+	      text,
+	      contentType: isJavaScript(originalSource.url) ? "text/javascript" : "text/plain"
+	    };
+	  });
+	
+	  return function getOriginalSourceText(_x5) {
+	    return _ref4.apply(this, arguments);
+	  };
+	})();
+	
+	function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { return step("next", value); }, function (err) { return step("throw", err); }); } } return step("next"); }); }; }
+	
+	var URL = __webpack_require__(212);
+	var md5 = __webpack_require__(217);
+	
+	var _require = __webpack_require__(221);
+	
+	var SourceMapConsumer = _require.SourceMapConsumer;
+	var SourceMapGenerator = _require.SourceMapGenerator;
+	
+	var path = __webpack_require__(232);
+	var networkRequest = __webpack_require__(175);
+	
+	var _require2 = __webpack_require__(199);
+	
+	var getSource = _require2.getSource;
+	
+	var _require3 = __webpack_require__(46);
+	
+	var isEnabled = _require3.isEnabled;
+	
+	var _require4 = __webpack_require__(233);
+	
+	var isJavaScript = _require4.isJavaScript;
+	
+	var assert = __webpack_require__(186);
+	
+	var sourceMapRequests = new Map();
+	
+	function clearSourceMaps() {
+	  sourceMapRequests = new Map();
+	}
+	
+	function _resolveSourceMapURL(source) {
+	  if (path.isURL(source.sourceMapURL) || !source.url) {
+	    
+	    
+	    return source.sourceMapURL;
+	  } else if (path.isAbsolute(source.sourceMapURL)) {
+	    
+	    
+	    var urlObj = URL.parse(source.url);
+	    var base = urlObj.protocol + "//" + urlObj.host;
+	    return base + source.sourceMapURL;
+	  }
+	  
+	  
+	  return path.dirname(source.url) + "/" + source.sourceMapURL;
+	}
+	
+	
+
+
+	function _setSourceMapRoot(sourceMap, absSourceMapURL, source) {
+	  
+	  
+	  if (sourceMap.hasContentsOfAllSources()) {
+	    return;
+	  }
+	
+	  var base = path.dirname(absSourceMapURL.indexOf("data:") === 0 && source.url ? source.url : absSourceMapURL);
+	
+	  if (sourceMap.sourceRoot) {
+	    sourceMap.sourceRoot = path.join(base, sourceMap.sourceRoot);
+	  } else {
+	    sourceMap.sourceRoot = base;
+	  }
+	
+	  return sourceMap;
+	}
+	
+	function originalToGeneratedId(originalId) {
+	  var match = originalId.match(/(.*)\/originalSource/);
+	  return match ? match[1] : null;
+	}
+	
+	function generatedToOriginalId(generatedId, url) {
+	  return generatedId + "/originalSource-" + md5(url);
+	}
+	
+	function isOriginalId(id) {
+	  return id.match(/\/originalSource/);
+	}
+	
+	function isGeneratedId(id) {
+	  return !isOriginalId(id);
+	}
+	
+	function fetchSourceMap(generatedSource) {
+	  var existingRequest = sourceMapRequests.get(generatedSource.id);
+	
+	  if (!generatedSource.sourceMapURL || !isEnabled("sourceMaps")) {
+	    return Promise.resolve(null);
+	  } else if (existingRequest) {
+	    
+	    
+	    
+	    
+	    return existingRequest;
+	  }
+	
+	  
+	  var req = _fetchSourceMap(generatedSource);
+	  sourceMapRequests.set(generatedSource.id, req);
+	  return req;
+	}
+	
+	function getSourceMap(generatedSourceId) {
+	  return sourceMapRequests.get(generatedSourceId);
+	}
+	
+	function applySourceMap(generatedId, url, code, mappings) {
+	  var generator = new SourceMapGenerator({ file: url });
+	  mappings.forEach(mapping => generator.addMapping(mapping));
+	  generator.setSourceContent(url, code);
+	
+	  var map = SourceMapConsumer(generator.toJSON());
+	  sourceMapRequests.set(generatedId, Promise.resolve(map));
+	  return map;
+	}
+	
+	module.exports = {
+	  originalToGeneratedId,
+	  generatedToOriginalId,
+	  isGeneratedId,
+	  isOriginalId,
+	
+	  fetchSourceMap,
+	  getGeneratedLocation,
+	  getOriginalLocation,
+	  getOriginalSourceText,
+	  applySourceMap,
+	  clearSourceMaps
 	};
 
  },
@@ -27152,7 +28574,7 @@ var Debugger =
 	
 	
 	
-	var punycode = __webpack_require__(201);
+	var punycode = __webpack_require__(213);
 	
 	exports.parse = urlParse;
 	exports.resolve = urlResolve;
@@ -27224,7 +28646,7 @@ var Debugger =
 	      'gopher:': true,
 	      'file:': true
 	    },
-	    querystring = __webpack_require__(202);
+	    querystring = __webpack_require__(214);
 	
 	function urlParse(url, parseQueryString, slashesDenoteHost) {
 	  if (url && isObject(url) && url instanceof Url) return url;
@@ -28381,8 +29803,8 @@ var Debugger =
 
 	'use strict';
 	
-	exports.decode = exports.parse = __webpack_require__(203);
-	exports.encode = exports.stringify = __webpack_require__(204);
+	exports.decode = exports.parse = __webpack_require__(215);
+	exports.encode = exports.stringify = __webpack_require__(216);
 
 
  },
@@ -28543,6 +29965,3335 @@ var Debugger =
 
  },
 
+ function(module, exports, __webpack_require__) {
+
+	(function(){
+	  var crypt = __webpack_require__(218),
+	      utf8 = __webpack_require__(219).utf8,
+	      isBuffer = __webpack_require__(220),
+	      bin = __webpack_require__(219).bin,
+	
+	  
+	  md5 = function (message, options) {
+	    
+	    if (message.constructor == String)
+	      if (options && options.encoding === 'binary')
+	        message = bin.stringToBytes(message);
+	      else
+	        message = utf8.stringToBytes(message);
+	    else if (isBuffer(message))
+	      message = Array.prototype.slice.call(message, 0);
+	    else if (!Array.isArray(message))
+	      message = message.toString();
+	    
+	
+	    var m = crypt.bytesToWords(message),
+	        l = message.length * 8,
+	        a =  1732584193,
+	        b = -271733879,
+	        c = -1732584194,
+	        d =  271733878;
+	
+	    
+	    for (var i = 0; i < m.length; i++) {
+	      m[i] = ((m[i] <<  8) | (m[i] >>> 24)) & 0x00FF00FF |
+	             ((m[i] << 24) | (m[i] >>>  8)) & 0xFF00FF00;
+	    }
+	
+	    
+	    m[l >>> 5] |= 0x80 << (l % 32);
+	    m[(((l + 64) >>> 9) << 4) + 14] = l;
+	
+	    
+	    var FF = md5._ff,
+	        GG = md5._gg,
+	        HH = md5._hh,
+	        II = md5._ii;
+	
+	    for (var i = 0; i < m.length; i += 16) {
+	
+	      var aa = a,
+	          bb = b,
+	          cc = c,
+	          dd = d;
+	
+	      a = FF(a, b, c, d, m[i+ 0],  7, -680876936);
+	      d = FF(d, a, b, c, m[i+ 1], 12, -389564586);
+	      c = FF(c, d, a, b, m[i+ 2], 17,  606105819);
+	      b = FF(b, c, d, a, m[i+ 3], 22, -1044525330);
+	      a = FF(a, b, c, d, m[i+ 4],  7, -176418897);
+	      d = FF(d, a, b, c, m[i+ 5], 12,  1200080426);
+	      c = FF(c, d, a, b, m[i+ 6], 17, -1473231341);
+	      b = FF(b, c, d, a, m[i+ 7], 22, -45705983);
+	      a = FF(a, b, c, d, m[i+ 8],  7,  1770035416);
+	      d = FF(d, a, b, c, m[i+ 9], 12, -1958414417);
+	      c = FF(c, d, a, b, m[i+10], 17, -42063);
+	      b = FF(b, c, d, a, m[i+11], 22, -1990404162);
+	      a = FF(a, b, c, d, m[i+12],  7,  1804603682);
+	      d = FF(d, a, b, c, m[i+13], 12, -40341101);
+	      c = FF(c, d, a, b, m[i+14], 17, -1502002290);
+	      b = FF(b, c, d, a, m[i+15], 22,  1236535329);
+	
+	      a = GG(a, b, c, d, m[i+ 1],  5, -165796510);
+	      d = GG(d, a, b, c, m[i+ 6],  9, -1069501632);
+	      c = GG(c, d, a, b, m[i+11], 14,  643717713);
+	      b = GG(b, c, d, a, m[i+ 0], 20, -373897302);
+	      a = GG(a, b, c, d, m[i+ 5],  5, -701558691);
+	      d = GG(d, a, b, c, m[i+10],  9,  38016083);
+	      c = GG(c, d, a, b, m[i+15], 14, -660478335);
+	      b = GG(b, c, d, a, m[i+ 4], 20, -405537848);
+	      a = GG(a, b, c, d, m[i+ 9],  5,  568446438);
+	      d = GG(d, a, b, c, m[i+14],  9, -1019803690);
+	      c = GG(c, d, a, b, m[i+ 3], 14, -187363961);
+	      b = GG(b, c, d, a, m[i+ 8], 20,  1163531501);
+	      a = GG(a, b, c, d, m[i+13],  5, -1444681467);
+	      d = GG(d, a, b, c, m[i+ 2],  9, -51403784);
+	      c = GG(c, d, a, b, m[i+ 7], 14,  1735328473);
+	      b = GG(b, c, d, a, m[i+12], 20, -1926607734);
+	
+	      a = HH(a, b, c, d, m[i+ 5],  4, -378558);
+	      d = HH(d, a, b, c, m[i+ 8], 11, -2022574463);
+	      c = HH(c, d, a, b, m[i+11], 16,  1839030562);
+	      b = HH(b, c, d, a, m[i+14], 23, -35309556);
+	      a = HH(a, b, c, d, m[i+ 1],  4, -1530992060);
+	      d = HH(d, a, b, c, m[i+ 4], 11,  1272893353);
+	      c = HH(c, d, a, b, m[i+ 7], 16, -155497632);
+	      b = HH(b, c, d, a, m[i+10], 23, -1094730640);
+	      a = HH(a, b, c, d, m[i+13],  4,  681279174);
+	      d = HH(d, a, b, c, m[i+ 0], 11, -358537222);
+	      c = HH(c, d, a, b, m[i+ 3], 16, -722521979);
+	      b = HH(b, c, d, a, m[i+ 6], 23,  76029189);
+	      a = HH(a, b, c, d, m[i+ 9],  4, -640364487);
+	      d = HH(d, a, b, c, m[i+12], 11, -421815835);
+	      c = HH(c, d, a, b, m[i+15], 16,  530742520);
+	      b = HH(b, c, d, a, m[i+ 2], 23, -995338651);
+	
+	      a = II(a, b, c, d, m[i+ 0],  6, -198630844);
+	      d = II(d, a, b, c, m[i+ 7], 10,  1126891415);
+	      c = II(c, d, a, b, m[i+14], 15, -1416354905);
+	      b = II(b, c, d, a, m[i+ 5], 21, -57434055);
+	      a = II(a, b, c, d, m[i+12],  6,  1700485571);
+	      d = II(d, a, b, c, m[i+ 3], 10, -1894986606);
+	      c = II(c, d, a, b, m[i+10], 15, -1051523);
+	      b = II(b, c, d, a, m[i+ 1], 21, -2054922799);
+	      a = II(a, b, c, d, m[i+ 8],  6,  1873313359);
+	      d = II(d, a, b, c, m[i+15], 10, -30611744);
+	      c = II(c, d, a, b, m[i+ 6], 15, -1560198380);
+	      b = II(b, c, d, a, m[i+13], 21,  1309151649);
+	      a = II(a, b, c, d, m[i+ 4],  6, -145523070);
+	      d = II(d, a, b, c, m[i+11], 10, -1120210379);
+	      c = II(c, d, a, b, m[i+ 2], 15,  718787259);
+	      b = II(b, c, d, a, m[i+ 9], 21, -343485551);
+	
+	      a = (a + aa) >>> 0;
+	      b = (b + bb) >>> 0;
+	      c = (c + cc) >>> 0;
+	      d = (d + dd) >>> 0;
+	    }
+	
+	    return crypt.endian([a, b, c, d]);
+	  };
+	
+	  
+	  md5._ff  = function (a, b, c, d, x, s, t) {
+	    var n = a + (b & c | ~b & d) + (x >>> 0) + t;
+	    return ((n << s) | (n >>> (32 - s))) + b;
+	  };
+	  md5._gg  = function (a, b, c, d, x, s, t) {
+	    var n = a + (b & d | c & ~d) + (x >>> 0) + t;
+	    return ((n << s) | (n >>> (32 - s))) + b;
+	  };
+	  md5._hh  = function (a, b, c, d, x, s, t) {
+	    var n = a + (b ^ c ^ d) + (x >>> 0) + t;
+	    return ((n << s) | (n >>> (32 - s))) + b;
+	  };
+	  md5._ii  = function (a, b, c, d, x, s, t) {
+	    var n = a + (c ^ (b | ~d)) + (x >>> 0) + t;
+	    return ((n << s) | (n >>> (32 - s))) + b;
+	  };
+	
+	  
+	  md5._blocksize = 16;
+	  md5._digestsize = 16;
+	
+	  module.exports = function (message, options) {
+	    if (message === undefined || message === null)
+	      throw new Error('Illegal argument ' + message);
+	
+	    var digestbytes = crypt.wordsToBytes(md5(message, options));
+	    return options && options.asBytes ? digestbytes :
+	        options && options.asString ? bin.bytesToString(digestbytes) :
+	        crypt.bytesToHex(digestbytes);
+	  };
+	
+	})();
+
+
+ },
+
+ function(module, exports) {
+
+	(function() {
+	  var base64map
+	      = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/',
+	
+	  crypt = {
+	    
+	    rotl: function(n, b) {
+	      return (n << b) | (n >>> (32 - b));
+	    },
+	
+	    
+	    rotr: function(n, b) {
+	      return (n << (32 - b)) | (n >>> b);
+	    },
+	
+	    
+	    endian: function(n) {
+	      
+	      if (n.constructor == Number) {
+	        return crypt.rotl(n, 8) & 0x00FF00FF | crypt.rotl(n, 24) & 0xFF00FF00;
+	      }
+	
+	      
+	      for (var i = 0; i < n.length; i++)
+	        n[i] = crypt.endian(n[i]);
+	      return n;
+	    },
+	
+	    
+	    randomBytes: function(n) {
+	      for (var bytes = []; n > 0; n--)
+	        bytes.push(Math.floor(Math.random() * 256));
+	      return bytes;
+	    },
+	
+	    
+	    bytesToWords: function(bytes) {
+	      for (var words = [], i = 0, b = 0; i < bytes.length; i++, b += 8)
+	        words[b >>> 5] |= bytes[i] << (24 - b % 32);
+	      return words;
+	    },
+	
+	    
+	    wordsToBytes: function(words) {
+	      for (var bytes = [], b = 0; b < words.length * 32; b += 8)
+	        bytes.push((words[b >>> 5] >>> (24 - b % 32)) & 0xFF);
+	      return bytes;
+	    },
+	
+	    
+	    bytesToHex: function(bytes) {
+	      for (var hex = [], i = 0; i < bytes.length; i++) {
+	        hex.push((bytes[i] >>> 4).toString(16));
+	        hex.push((bytes[i] & 0xF).toString(16));
+	      }
+	      return hex.join('');
+	    },
+	
+	    
+	    hexToBytes: function(hex) {
+	      for (var bytes = [], c = 0; c < hex.length; c += 2)
+	        bytes.push(parseInt(hex.substr(c, 2), 16));
+	      return bytes;
+	    },
+	
+	    
+	    bytesToBase64: function(bytes) {
+	      for (var base64 = [], i = 0; i < bytes.length; i += 3) {
+	        var triplet = (bytes[i] << 16) | (bytes[i + 1] << 8) | bytes[i + 2];
+	        for (var j = 0; j < 4; j++)
+	          if (i * 8 + j * 6 <= bytes.length * 8)
+	            base64.push(base64map.charAt((triplet >>> 6 * (3 - j)) & 0x3F));
+	          else
+	            base64.push('=');
+	      }
+	      return base64.join('');
+	    },
+	
+	    
+	    base64ToBytes: function(base64) {
+	      
+	      base64 = base64.replace(/[^A-Z0-9+\/]/ig, '');
+	
+	      for (var bytes = [], i = 0, imod4 = 0; i < base64.length;
+	          imod4 = ++i % 4) {
+	        if (imod4 == 0) continue;
+	        bytes.push(((base64map.indexOf(base64.charAt(i - 1))
+	            & (Math.pow(2, -2 * imod4 + 8) - 1)) << (imod4 * 2))
+	            | (base64map.indexOf(base64.charAt(i)) >>> (6 - imod4 * 2)));
+	      }
+	      return bytes;
+	    }
+	  };
+	
+	  module.exports = crypt;
+	})();
+
+
+ },
+
+ function(module, exports) {
+
+	var charenc = {
+	  
+	  utf8: {
+	    
+	    stringToBytes: function(str) {
+	      return charenc.bin.stringToBytes(unescape(encodeURIComponent(str)));
+	    },
+	
+	    
+	    bytesToString: function(bytes) {
+	      return decodeURIComponent(escape(charenc.bin.bytesToString(bytes)));
+	    }
+	  },
+	
+	  
+	  bin: {
+	    
+	    stringToBytes: function(str) {
+	      for (var bytes = [], i = 0; i < str.length; i++)
+	        bytes.push(str.charCodeAt(i) & 0xFF);
+	      return bytes;
+	    },
+	
+	    
+	    bytesToString: function(bytes) {
+	      for (var str = [], i = 0; i < bytes.length; i++)
+	        str.push(String.fromCharCode(bytes[i]));
+	      return str.join('');
+	    }
+	  }
+	};
+	
+	module.exports = charenc;
+
+
+ },
+
+ function(module, exports) {
+
+	
+
+
+
+
+
+
+
+	
+	module.exports = function (obj) {
+	  return !!(obj != null &&
+	    (obj._isBuffer || 
+	      (obj.constructor &&
+	      typeof obj.constructor.isBuffer === 'function' &&
+	      obj.constructor.isBuffer(obj))
+	    ))
+	}
+
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	
+
+
+
+
+	exports.SourceMapGenerator = __webpack_require__(222).SourceMapGenerator;
+	exports.SourceMapConsumer = __webpack_require__(228).SourceMapConsumer;
+	exports.SourceNode = __webpack_require__(231).SourceNode;
+
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	
+	
+
+
+
+
+	
+	var base64VLQ = __webpack_require__(223);
+	var util = __webpack_require__(225);
+	var ArraySet = __webpack_require__(226).ArraySet;
+	var MappingList = __webpack_require__(227).MappingList;
+	
+	
+
+
+
+
+
+
+
+	function SourceMapGenerator(aArgs) {
+	  if (!aArgs) {
+	    aArgs = {};
+	  }
+	  this._file = util.getArg(aArgs, 'file', null);
+	  this._sourceRoot = util.getArg(aArgs, 'sourceRoot', null);
+	  this._skipValidation = util.getArg(aArgs, 'skipValidation', false);
+	  this._sources = new ArraySet();
+	  this._names = new ArraySet();
+	  this._mappings = new MappingList();
+	  this._sourcesContents = null;
+	}
+	
+	SourceMapGenerator.prototype._version = 3;
+	
+	
+
+
+
+
+	SourceMapGenerator.fromSourceMap =
+	  function SourceMapGenerator_fromSourceMap(aSourceMapConsumer) {
+	    var sourceRoot = aSourceMapConsumer.sourceRoot;
+	    var generator = new SourceMapGenerator({
+	      file: aSourceMapConsumer.file,
+	      sourceRoot: sourceRoot
+	    });
+	    aSourceMapConsumer.eachMapping(function (mapping) {
+	      var newMapping = {
+	        generated: {
+	          line: mapping.generatedLine,
+	          column: mapping.generatedColumn
+	        }
+	      };
+	
+	      if (mapping.source != null) {
+	        newMapping.source = mapping.source;
+	        if (sourceRoot != null) {
+	          newMapping.source = util.relative(sourceRoot, newMapping.source);
+	        }
+	
+	        newMapping.original = {
+	          line: mapping.originalLine,
+	          column: mapping.originalColumn
+	        };
+	
+	        if (mapping.name != null) {
+	          newMapping.name = mapping.name;
+	        }
+	      }
+	
+	      generator.addMapping(newMapping);
+	    });
+	    aSourceMapConsumer.sources.forEach(function (sourceFile) {
+	      var content = aSourceMapConsumer.sourceContentFor(sourceFile);
+	      if (content != null) {
+	        generator.setSourceContent(sourceFile, content);
+	      }
+	    });
+	    return generator;
+	  };
+	
+	
+
+
+
+
+
+
+
+
+
+	SourceMapGenerator.prototype.addMapping =
+	  function SourceMapGenerator_addMapping(aArgs) {
+	    var generated = util.getArg(aArgs, 'generated');
+	    var original = util.getArg(aArgs, 'original', null);
+	    var source = util.getArg(aArgs, 'source', null);
+	    var name = util.getArg(aArgs, 'name', null);
+	
+	    if (!this._skipValidation) {
+	      this._validateMapping(generated, original, source, name);
+	    }
+	
+	    if (source != null) {
+	      source = String(source);
+	      if (!this._sources.has(source)) {
+	        this._sources.add(source);
+	      }
+	    }
+	
+	    if (name != null) {
+	      name = String(name);
+	      if (!this._names.has(name)) {
+	        this._names.add(name);
+	      }
+	    }
+	
+	    this._mappings.add({
+	      generatedLine: generated.line,
+	      generatedColumn: generated.column,
+	      originalLine: original != null && original.line,
+	      originalColumn: original != null && original.column,
+	      source: source,
+	      name: name
+	    });
+	  };
+	
+	
+
+
+	SourceMapGenerator.prototype.setSourceContent =
+	  function SourceMapGenerator_setSourceContent(aSourceFile, aSourceContent) {
+	    var source = aSourceFile;
+	    if (this._sourceRoot != null) {
+	      source = util.relative(this._sourceRoot, source);
+	    }
+	
+	    if (aSourceContent != null) {
+	      
+	      
+	      if (!this._sourcesContents) {
+	        this._sourcesContents = Object.create(null);
+	      }
+	      this._sourcesContents[util.toSetString(source)] = aSourceContent;
+	    } else if (this._sourcesContents) {
+	      
+	      
+	      delete this._sourcesContents[util.toSetString(source)];
+	      if (Object.keys(this._sourcesContents).length === 0) {
+	        this._sourcesContents = null;
+	      }
+	    }
+	  };
+	
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	SourceMapGenerator.prototype.applySourceMap =
+	  function SourceMapGenerator_applySourceMap(aSourceMapConsumer, aSourceFile, aSourceMapPath) {
+	    var sourceFile = aSourceFile;
+	    
+	    if (aSourceFile == null) {
+	      if (aSourceMapConsumer.file == null) {
+	        throw new Error(
+	          'SourceMapGenerator.prototype.applySourceMap requires either an explicit source file, ' +
+	          'or the source map\'s "file" property. Both were omitted.'
+	        );
+	      }
+	      sourceFile = aSourceMapConsumer.file;
+	    }
+	    var sourceRoot = this._sourceRoot;
+	    
+	    if (sourceRoot != null) {
+	      sourceFile = util.relative(sourceRoot, sourceFile);
+	    }
+	    
+	    
+	    var newSources = new ArraySet();
+	    var newNames = new ArraySet();
+	
+	    
+	    this._mappings.unsortedForEach(function (mapping) {
+	      if (mapping.source === sourceFile && mapping.originalLine != null) {
+	        
+	        var original = aSourceMapConsumer.originalPositionFor({
+	          line: mapping.originalLine,
+	          column: mapping.originalColumn
+	        });
+	        if (original.source != null) {
+	          
+	          mapping.source = original.source;
+	          if (aSourceMapPath != null) {
+	            mapping.source = util.join(aSourceMapPath, mapping.source)
+	          }
+	          if (sourceRoot != null) {
+	            mapping.source = util.relative(sourceRoot, mapping.source);
+	          }
+	          mapping.originalLine = original.line;
+	          mapping.originalColumn = original.column;
+	          if (original.name != null) {
+	            mapping.name = original.name;
+	          }
+	        }
+	      }
+	
+	      var source = mapping.source;
+	      if (source != null && !newSources.has(source)) {
+	        newSources.add(source);
+	      }
+	
+	      var name = mapping.name;
+	      if (name != null && !newNames.has(name)) {
+	        newNames.add(name);
+	      }
+	
+	    }, this);
+	    this._sources = newSources;
+	    this._names = newNames;
+	
+	    
+	    aSourceMapConsumer.sources.forEach(function (sourceFile) {
+	      var content = aSourceMapConsumer.sourceContentFor(sourceFile);
+	      if (content != null) {
+	        if (aSourceMapPath != null) {
+	          sourceFile = util.join(aSourceMapPath, sourceFile);
+	        }
+	        if (sourceRoot != null) {
+	          sourceFile = util.relative(sourceRoot, sourceFile);
+	        }
+	        this.setSourceContent(sourceFile, content);
+	      }
+	    }, this);
+	  };
+	
+	
+
+
+
+
+
+
+
+
+
+
+	SourceMapGenerator.prototype._validateMapping =
+	  function SourceMapGenerator_validateMapping(aGenerated, aOriginal, aSource,
+	                                              aName) {
+	    if (aGenerated && 'line' in aGenerated && 'column' in aGenerated
+	        && aGenerated.line > 0 && aGenerated.column >= 0
+	        && !aOriginal && !aSource && !aName) {
+	      
+	      return;
+	    }
+	    else if (aGenerated && 'line' in aGenerated && 'column' in aGenerated
+	             && aOriginal && 'line' in aOriginal && 'column' in aOriginal
+	             && aGenerated.line > 0 && aGenerated.column >= 0
+	             && aOriginal.line > 0 && aOriginal.column >= 0
+	             && aSource) {
+	      
+	      return;
+	    }
+	    else {
+	      throw new Error('Invalid mapping: ' + JSON.stringify({
+	        generated: aGenerated,
+	        source: aSource,
+	        original: aOriginal,
+	        name: aName
+	      }));
+	    }
+	  };
+	
+	
+
+
+
+	SourceMapGenerator.prototype._serializeMappings =
+	  function SourceMapGenerator_serializeMappings() {
+	    var previousGeneratedColumn = 0;
+	    var previousGeneratedLine = 1;
+	    var previousOriginalColumn = 0;
+	    var previousOriginalLine = 0;
+	    var previousName = 0;
+	    var previousSource = 0;
+	    var result = '';
+	    var next;
+	    var mapping;
+	    var nameIdx;
+	    var sourceIdx;
+	
+	    var mappings = this._mappings.toArray();
+	    for (var i = 0, len = mappings.length; i < len; i++) {
+	      mapping = mappings[i];
+	      next = ''
+	
+	      if (mapping.generatedLine !== previousGeneratedLine) {
+	        previousGeneratedColumn = 0;
+	        while (mapping.generatedLine !== previousGeneratedLine) {
+	          next += ';';
+	          previousGeneratedLine++;
+	        }
+	      }
+	      else {
+	        if (i > 0) {
+	          if (!util.compareByGeneratedPositionsInflated(mapping, mappings[i - 1])) {
+	            continue;
+	          }
+	          next += ',';
+	        }
+	      }
+	
+	      next += base64VLQ.encode(mapping.generatedColumn
+	                                 - previousGeneratedColumn);
+	      previousGeneratedColumn = mapping.generatedColumn;
+	
+	      if (mapping.source != null) {
+	        sourceIdx = this._sources.indexOf(mapping.source);
+	        next += base64VLQ.encode(sourceIdx - previousSource);
+	        previousSource = sourceIdx;
+	
+	        
+	        next += base64VLQ.encode(mapping.originalLine - 1
+	                                   - previousOriginalLine);
+	        previousOriginalLine = mapping.originalLine - 1;
+	
+	        next += base64VLQ.encode(mapping.originalColumn
+	                                   - previousOriginalColumn);
+	        previousOriginalColumn = mapping.originalColumn;
+	
+	        if (mapping.name != null) {
+	          nameIdx = this._names.indexOf(mapping.name);
+	          next += base64VLQ.encode(nameIdx - previousName);
+	          previousName = nameIdx;
+	        }
+	      }
+	
+	      result += next;
+	    }
+	
+	    return result;
+	  };
+	
+	SourceMapGenerator.prototype._generateSourcesContent =
+	  function SourceMapGenerator_generateSourcesContent(aSources, aSourceRoot) {
+	    return aSources.map(function (source) {
+	      if (!this._sourcesContents) {
+	        return null;
+	      }
+	      if (aSourceRoot != null) {
+	        source = util.relative(aSourceRoot, source);
+	      }
+	      var key = util.toSetString(source);
+	      return Object.prototype.hasOwnProperty.call(this._sourcesContents, key)
+	        ? this._sourcesContents[key]
+	        : null;
+	    }, this);
+	  };
+	
+	
+
+
+	SourceMapGenerator.prototype.toJSON =
+	  function SourceMapGenerator_toJSON() {
+	    var map = {
+	      version: this._version,
+	      sources: this._sources.toArray(),
+	      names: this._names.toArray(),
+	      mappings: this._serializeMappings()
+	    };
+	    if (this._file != null) {
+	      map.file = this._file;
+	    }
+	    if (this._sourceRoot != null) {
+	      map.sourceRoot = this._sourceRoot;
+	    }
+	    if (this._sourcesContents) {
+	      map.sourcesContent = this._generateSourcesContent(map.sources, map.sourceRoot);
+	    }
+	
+	    return map;
+	  };
+	
+	
+
+
+	SourceMapGenerator.prototype.toString =
+	  function SourceMapGenerator_toString() {
+	    return JSON.stringify(this.toJSON());
+	  };
+	
+	exports.SourceMapGenerator = SourceMapGenerator;
+
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+	var base64 = __webpack_require__(224);
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	var VLQ_BASE_SHIFT = 5;
+	
+	
+	var VLQ_BASE = 1 << VLQ_BASE_SHIFT;
+	
+	
+	var VLQ_BASE_MASK = VLQ_BASE - 1;
+	
+	
+	var VLQ_CONTINUATION_BIT = VLQ_BASE;
+	
+	
+
+
+
+
+
+	function toVLQSigned(aValue) {
+	  return aValue < 0
+	    ? ((-aValue) << 1) + 1
+	    : (aValue << 1) + 0;
+	}
+	
+	
+
+
+
+
+
+	function fromVLQSigned(aValue) {
+	  var isNegative = (aValue & 1) === 1;
+	  var shifted = aValue >> 1;
+	  return isNegative
+	    ? -shifted
+	    : shifted;
+	}
+	
+	
+
+
+	exports.encode = function base64VLQ_encode(aValue) {
+	  var encoded = "";
+	  var digit;
+	
+	  var vlq = toVLQSigned(aValue);
+	
+	  do {
+	    digit = vlq & VLQ_BASE_MASK;
+	    vlq >>>= VLQ_BASE_SHIFT;
+	    if (vlq > 0) {
+	      
+	      
+	      digit |= VLQ_CONTINUATION_BIT;
+	    }
+	    encoded += base64.encode(digit);
+	  } while (vlq > 0);
+	
+	  return encoded;
+	};
+	
+	
+
+
+
+	exports.decode = function base64VLQ_decode(aStr, aIndex, aOutParam) {
+	  var strLen = aStr.length;
+	  var result = 0;
+	  var shift = 0;
+	  var continuation, digit;
+	
+	  do {
+	    if (aIndex >= strLen) {
+	      throw new Error("Expected more digits in base 64 VLQ value.");
+	    }
+	
+	    digit = base64.decode(aStr.charCodeAt(aIndex++));
+	    if (digit === -1) {
+	      throw new Error("Invalid base64 digit: " + aStr.charAt(aIndex - 1));
+	    }
+	
+	    continuation = !!(digit & VLQ_CONTINUATION_BIT);
+	    digit &= VLQ_BASE_MASK;
+	    result = result + (digit << shift);
+	    shift += VLQ_BASE_SHIFT;
+	  } while (continuation);
+	
+	  aOutParam.value = fromVLQSigned(result);
+	  aOutParam.rest = aIndex;
+	};
+
+
+ },
+
+ function(module, exports) {
+
+	
+	
+
+
+
+
+	
+	var intToCharMap = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'.split('');
+	
+	
+
+
+	exports.encode = function (number) {
+	  if (0 <= number && number < intToCharMap.length) {
+	    return intToCharMap[number];
+	  }
+	  throw new TypeError("Must be between 0 and 63: " + number);
+	};
+	
+	
+
+
+
+	exports.decode = function (charCode) {
+	  var bigA = 65;     
+	  var bigZ = 90;     
+	
+	  var littleA = 97;  
+	  var littleZ = 122; 
+	
+	  var zero = 48;     
+	  var nine = 57;     
+	
+	  var plus = 43;     
+	  var slash = 47;    
+	
+	  var littleOffset = 26;
+	  var numberOffset = 52;
+	
+	  
+	  if (bigA <= charCode && charCode <= bigZ) {
+	    return (charCode - bigA);
+	  }
+	
+	  
+	  if (littleA <= charCode && charCode <= littleZ) {
+	    return (charCode - littleA + littleOffset);
+	  }
+	
+	  
+	  if (zero <= charCode && charCode <= nine) {
+	    return (charCode - zero + numberOffset);
+	  }
+	
+	  
+	  if (charCode == plus) {
+	    return 62;
+	  }
+	
+	  
+	  if (charCode == slash) {
+	    return 63;
+	  }
+	
+	  
+	  return -1;
+	};
+
+
+ },
+
+ function(module, exports) {
+
+	
+	
+
+
+
+
+	
+	
+
+
+
+
+
+
+
+
+
+	function getArg(aArgs, aName, aDefaultValue) {
+	  if (aName in aArgs) {
+	    return aArgs[aName];
+	  } else if (arguments.length === 3) {
+	    return aDefaultValue;
+	  } else {
+	    throw new Error('"' + aName + '" is a required argument.');
+	  }
+	}
+	exports.getArg = getArg;
+	
+	var urlRegexp = /^(?:([\w+\-.]+):)?\/\/(?:(\w+:\w+)@)?([\w.]*)(?::(\d+))?(\S*)$/;
+	var dataUrlRegexp = /^data:.+\,.+$/;
+	
+	function urlParse(aUrl) {
+	  var match = aUrl.match(urlRegexp);
+	  if (!match) {
+	    return null;
+	  }
+	  return {
+	    scheme: match[1],
+	    auth: match[2],
+	    host: match[3],
+	    port: match[4],
+	    path: match[5]
+	  };
+	}
+	exports.urlParse = urlParse;
+	
+	function urlGenerate(aParsedUrl) {
+	  var url = '';
+	  if (aParsedUrl.scheme) {
+	    url += aParsedUrl.scheme + ':';
+	  }
+	  url += '//';
+	  if (aParsedUrl.auth) {
+	    url += aParsedUrl.auth + '@';
+	  }
+	  if (aParsedUrl.host) {
+	    url += aParsedUrl.host;
+	  }
+	  if (aParsedUrl.port) {
+	    url += ":" + aParsedUrl.port
+	  }
+	  if (aParsedUrl.path) {
+	    url += aParsedUrl.path;
+	  }
+	  return url;
+	}
+	exports.urlGenerate = urlGenerate;
+	
+	
+
+
+
+
+
+
+
+
+
+
+	function normalize(aPath) {
+	  var path = aPath;
+	  var url = urlParse(aPath);
+	  if (url) {
+	    if (!url.path) {
+	      return aPath;
+	    }
+	    path = url.path;
+	  }
+	  var isAbsolute = exports.isAbsolute(path);
+	
+	  var parts = path.split(/\/+/);
+	  for (var part, up = 0, i = parts.length - 1; i >= 0; i--) {
+	    part = parts[i];
+	    if (part === '.') {
+	      parts.splice(i, 1);
+	    } else if (part === '..') {
+	      up++;
+	    } else if (up > 0) {
+	      if (part === '') {
+	        
+	        
+	        
+	        parts.splice(i + 1, up);
+	        up = 0;
+	      } else {
+	        parts.splice(i, 2);
+	        up--;
+	      }
+	    }
+	  }
+	  path = parts.join('/');
+	
+	  if (path === '') {
+	    path = isAbsolute ? '/' : '.';
+	  }
+	
+	  if (url) {
+	    url.path = path;
+	    return urlGenerate(url);
+	  }
+	  return path;
+	}
+	exports.normalize = normalize;
+	
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	function join(aRoot, aPath) {
+	  if (aRoot === "") {
+	    aRoot = ".";
+	  }
+	  if (aPath === "") {
+	    aPath = ".";
+	  }
+	  var aPathUrl = urlParse(aPath);
+	  var aRootUrl = urlParse(aRoot);
+	  if (aRootUrl) {
+	    aRoot = aRootUrl.path || '/';
+	  }
+	
+	  
+	  if (aPathUrl && !aPathUrl.scheme) {
+	    if (aRootUrl) {
+	      aPathUrl.scheme = aRootUrl.scheme;
+	    }
+	    return urlGenerate(aPathUrl);
+	  }
+	
+	  if (aPathUrl || aPath.match(dataUrlRegexp)) {
+	    return aPath;
+	  }
+	
+	  
+	  if (aRootUrl && !aRootUrl.host && !aRootUrl.path) {
+	    aRootUrl.host = aPath;
+	    return urlGenerate(aRootUrl);
+	  }
+	
+	  var joined = aPath.charAt(0) === '/'
+	    ? aPath
+	    : normalize(aRoot.replace(/\/+$/, '') + '/' + aPath);
+	
+	  if (aRootUrl) {
+	    aRootUrl.path = joined;
+	    return urlGenerate(aRootUrl);
+	  }
+	  return joined;
+	}
+	exports.join = join;
+	
+	exports.isAbsolute = function (aPath) {
+	  return aPath.charAt(0) === '/' || !!aPath.match(urlRegexp);
+	};
+	
+	
+
+
+
+
+
+	function relative(aRoot, aPath) {
+	  if (aRoot === "") {
+	    aRoot = ".";
+	  }
+	
+	  aRoot = aRoot.replace(/\/$/, '');
+	
+	  
+	  
+	  
+	  
+	  var level = 0;
+	  while (aPath.indexOf(aRoot + '/') !== 0) {
+	    var index = aRoot.lastIndexOf("/");
+	    if (index < 0) {
+	      return aPath;
+	    }
+	
+	    
+	    
+	    
+	    aRoot = aRoot.slice(0, index);
+	    if (aRoot.match(/^([^\/]+:\/)?\/*$/)) {
+	      return aPath;
+	    }
+	
+	    ++level;
+	  }
+	
+	  
+	  return Array(level + 1).join("../") + aPath.substr(aRoot.length + 1);
+	}
+	exports.relative = relative;
+	
+	var supportsNullProto = (function () {
+	  var obj = Object.create(null);
+	  return !('__proto__' in obj);
+	}());
+	
+	function identity (s) {
+	  return s;
+	}
+	
+	
+
+
+
+
+
+
+
+
+	function toSetString(aStr) {
+	  if (isProtoString(aStr)) {
+	    return '$' + aStr;
+	  }
+	
+	  return aStr;
+	}
+	exports.toSetString = supportsNullProto ? identity : toSetString;
+	
+	function fromSetString(aStr) {
+	  if (isProtoString(aStr)) {
+	    return aStr.slice(1);
+	  }
+	
+	  return aStr;
+	}
+	exports.fromSetString = supportsNullProto ? identity : fromSetString;
+	
+	function isProtoString(s) {
+	  if (!s) {
+	    return false;
+	  }
+	
+	  var length = s.length;
+	
+	  if (length < 9 ) {
+	    return false;
+	  }
+	
+	  if (s.charCodeAt(length - 1) !== 95   ||
+	      s.charCodeAt(length - 2) !== 95   ||
+	      s.charCodeAt(length - 3) !== 111  ||
+	      s.charCodeAt(length - 4) !== 116  ||
+	      s.charCodeAt(length - 5) !== 111  ||
+	      s.charCodeAt(length - 6) !== 114  ||
+	      s.charCodeAt(length - 7) !== 112  ||
+	      s.charCodeAt(length - 8) !== 95   ||
+	      s.charCodeAt(length - 9) !== 95  ) {
+	    return false;
+	  }
+	
+	  for (var i = length - 10; i >= 0; i--) {
+	    if (s.charCodeAt(i) !== 36 ) {
+	      return false;
+	    }
+	  }
+	
+	  return true;
+	}
+	
+	
+
+
+
+
+
+
+
+	function compareByOriginalPositions(mappingA, mappingB, onlyCompareOriginal) {
+	  var cmp = mappingA.source - mappingB.source;
+	  if (cmp !== 0) {
+	    return cmp;
+	  }
+	
+	  cmp = mappingA.originalLine - mappingB.originalLine;
+	  if (cmp !== 0) {
+	    return cmp;
+	  }
+	
+	  cmp = mappingA.originalColumn - mappingB.originalColumn;
+	  if (cmp !== 0 || onlyCompareOriginal) {
+	    return cmp;
+	  }
+	
+	  cmp = mappingA.generatedColumn - mappingB.generatedColumn;
+	  if (cmp !== 0) {
+	    return cmp;
+	  }
+	
+	  cmp = mappingA.generatedLine - mappingB.generatedLine;
+	  if (cmp !== 0) {
+	    return cmp;
+	  }
+	
+	  return mappingA.name - mappingB.name;
+	}
+	exports.compareByOriginalPositions = compareByOriginalPositions;
+	
+	
+
+
+
+
+
+
+
+
+	function compareByGeneratedPositionsDeflated(mappingA, mappingB, onlyCompareGenerated) {
+	  var cmp = mappingA.generatedLine - mappingB.generatedLine;
+	  if (cmp !== 0) {
+	    return cmp;
+	  }
+	
+	  cmp = mappingA.generatedColumn - mappingB.generatedColumn;
+	  if (cmp !== 0 || onlyCompareGenerated) {
+	    return cmp;
+	  }
+	
+	  cmp = mappingA.source - mappingB.source;
+	  if (cmp !== 0) {
+	    return cmp;
+	  }
+	
+	  cmp = mappingA.originalLine - mappingB.originalLine;
+	  if (cmp !== 0) {
+	    return cmp;
+	  }
+	
+	  cmp = mappingA.originalColumn - mappingB.originalColumn;
+	  if (cmp !== 0) {
+	    return cmp;
+	  }
+	
+	  return mappingA.name - mappingB.name;
+	}
+	exports.compareByGeneratedPositionsDeflated = compareByGeneratedPositionsDeflated;
+	
+	function strcmp(aStr1, aStr2) {
+	  if (aStr1 === aStr2) {
+	    return 0;
+	  }
+	
+	  if (aStr1 > aStr2) {
+	    return 1;
+	  }
+	
+	  return -1;
+	}
+	
+	
+
+
+
+	function compareByGeneratedPositionsInflated(mappingA, mappingB) {
+	  var cmp = mappingA.generatedLine - mappingB.generatedLine;
+	  if (cmp !== 0) {
+	    return cmp;
+	  }
+	
+	  cmp = mappingA.generatedColumn - mappingB.generatedColumn;
+	  if (cmp !== 0) {
+	    return cmp;
+	  }
+	
+	  cmp = strcmp(mappingA.source, mappingB.source);
+	  if (cmp !== 0) {
+	    return cmp;
+	  }
+	
+	  cmp = mappingA.originalLine - mappingB.originalLine;
+	  if (cmp !== 0) {
+	    return cmp;
+	  }
+	
+	  cmp = mappingA.originalColumn - mappingB.originalColumn;
+	  if (cmp !== 0) {
+	    return cmp;
+	  }
+	
+	  return strcmp(mappingA.name, mappingB.name);
+	}
+	exports.compareByGeneratedPositionsInflated = compareByGeneratedPositionsInflated;
+
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	
+	
+
+
+
+
+	
+	var util = __webpack_require__(225);
+	var has = Object.prototype.hasOwnProperty;
+	
+	
+
+
+
+
+
+	function ArraySet() {
+	  this._array = [];
+	  this._set = Object.create(null);
+	}
+	
+	
+
+
+	ArraySet.fromArray = function ArraySet_fromArray(aArray, aAllowDuplicates) {
+	  var set = new ArraySet();
+	  for (var i = 0, len = aArray.length; i < len; i++) {
+	    set.add(aArray[i], aAllowDuplicates);
+	  }
+	  return set;
+	};
+	
+	
+
+
+
+
+
+	ArraySet.prototype.size = function ArraySet_size() {
+	  return Object.getOwnPropertyNames(this._set).length;
+	};
+	
+	
+
+
+
+
+	ArraySet.prototype.add = function ArraySet_add(aStr, aAllowDuplicates) {
+	  var sStr = util.toSetString(aStr);
+	  var isDuplicate = has.call(this._set, sStr);
+	  var idx = this._array.length;
+	  if (!isDuplicate || aAllowDuplicates) {
+	    this._array.push(aStr);
+	  }
+	  if (!isDuplicate) {
+	    this._set[sStr] = idx;
+	  }
+	};
+	
+	
+
+
+
+
+	ArraySet.prototype.has = function ArraySet_has(aStr) {
+	  var sStr = util.toSetString(aStr);
+	  return has.call(this._set, sStr);
+	};
+	
+	
+
+
+
+
+	ArraySet.prototype.indexOf = function ArraySet_indexOf(aStr) {
+	  var sStr = util.toSetString(aStr);
+	  if (has.call(this._set, sStr)) {
+	    return this._set[sStr];
+	  }
+	  throw new Error('"' + aStr + '" is not in the set.');
+	};
+	
+	
+
+
+
+
+	ArraySet.prototype.at = function ArraySet_at(aIdx) {
+	  if (aIdx >= 0 && aIdx < this._array.length) {
+	    return this._array[aIdx];
+	  }
+	  throw new Error('No element indexed by ' + aIdx);
+	};
+	
+	
+
+
+
+
+	ArraySet.prototype.toArray = function ArraySet_toArray() {
+	  return this._array.slice();
+	};
+	
+	exports.ArraySet = ArraySet;
+
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	
+	
+
+
+
+
+	
+	var util = __webpack_require__(225);
+	
+	
+
+
+
+	function generatedPositionAfter(mappingA, mappingB) {
+	  
+	  var lineA = mappingA.generatedLine;
+	  var lineB = mappingB.generatedLine;
+	  var columnA = mappingA.generatedColumn;
+	  var columnB = mappingB.generatedColumn;
+	  return lineB > lineA || lineB == lineA && columnB >= columnA ||
+	         util.compareByGeneratedPositionsInflated(mappingA, mappingB) <= 0;
+	}
+	
+	
+
+
+
+
+	function MappingList() {
+	  this._array = [];
+	  this._sorted = true;
+	  
+	  this._last = {generatedLine: -1, generatedColumn: 0};
+	}
+	
+	
+
+
+
+
+
+	MappingList.prototype.unsortedForEach =
+	  function MappingList_forEach(aCallback, aThisArg) {
+	    this._array.forEach(aCallback, aThisArg);
+	  };
+	
+	
+
+
+
+
+	MappingList.prototype.add = function MappingList_add(aMapping) {
+	  if (generatedPositionAfter(this._last, aMapping)) {
+	    this._last = aMapping;
+	    this._array.push(aMapping);
+	  } else {
+	    this._sorted = false;
+	    this._array.push(aMapping);
+	  }
+	};
+	
+	
+
+
+
+
+
+
+
+
+	MappingList.prototype.toArray = function MappingList_toArray() {
+	  if (!this._sorted) {
+	    this._array.sort(util.compareByGeneratedPositionsInflated);
+	    this._sorted = true;
+	  }
+	  return this._array;
+	};
+	
+	exports.MappingList = MappingList;
+
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	
+	
+
+
+
+
+	
+	var util = __webpack_require__(225);
+	var binarySearch = __webpack_require__(229);
+	var ArraySet = __webpack_require__(226).ArraySet;
+	var base64VLQ = __webpack_require__(223);
+	var quickSort = __webpack_require__(230).quickSort;
+	
+	function SourceMapConsumer(aSourceMap) {
+	  var sourceMap = aSourceMap;
+	  if (typeof aSourceMap === 'string') {
+	    sourceMap = JSON.parse(aSourceMap.replace(/^\)\]\}'/, ''));
+	  }
+	
+	  return sourceMap.sections != null
+	    ? new IndexedSourceMapConsumer(sourceMap)
+	    : new BasicSourceMapConsumer(sourceMap);
+	}
+	
+	SourceMapConsumer.fromSourceMap = function(aSourceMap) {
+	  return BasicSourceMapConsumer.fromSourceMap(aSourceMap);
+	}
+	
+	
+
+
+	SourceMapConsumer.prototype._version = 3;
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	SourceMapConsumer.prototype.__generatedMappings = null;
+	Object.defineProperty(SourceMapConsumer.prototype, '_generatedMappings', {
+	  get: function () {
+	    if (!this.__generatedMappings) {
+	      this._parseMappings(this._mappings, this.sourceRoot);
+	    }
+	
+	    return this.__generatedMappings;
+	  }
+	});
+	
+	SourceMapConsumer.prototype.__originalMappings = null;
+	Object.defineProperty(SourceMapConsumer.prototype, '_originalMappings', {
+	  get: function () {
+	    if (!this.__originalMappings) {
+	      this._parseMappings(this._mappings, this.sourceRoot);
+	    }
+	
+	    return this.__originalMappings;
+	  }
+	});
+	
+	SourceMapConsumer.prototype._charIsMappingSeparator =
+	  function SourceMapConsumer_charIsMappingSeparator(aStr, index) {
+	    var c = aStr.charAt(index);
+	    return c === ";" || c === ",";
+	  };
+	
+	
+
+
+
+
+	SourceMapConsumer.prototype._parseMappings =
+	  function SourceMapConsumer_parseMappings(aStr, aSourceRoot) {
+	    throw new Error("Subclasses must implement _parseMappings");
+	  };
+	
+	SourceMapConsumer.GENERATED_ORDER = 1;
+	SourceMapConsumer.ORIGINAL_ORDER = 2;
+	
+	SourceMapConsumer.GREATEST_LOWER_BOUND = 1;
+	SourceMapConsumer.LEAST_UPPER_BOUND = 2;
+	
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	SourceMapConsumer.prototype.eachMapping =
+	  function SourceMapConsumer_eachMapping(aCallback, aContext, aOrder) {
+	    var context = aContext || null;
+	    var order = aOrder || SourceMapConsumer.GENERATED_ORDER;
+	
+	    var mappings;
+	    switch (order) {
+	    case SourceMapConsumer.GENERATED_ORDER:
+	      mappings = this._generatedMappings;
+	      break;
+	    case SourceMapConsumer.ORIGINAL_ORDER:
+	      mappings = this._originalMappings;
+	      break;
+	    default:
+	      throw new Error("Unknown order of iteration.");
+	    }
+	
+	    var sourceRoot = this.sourceRoot;
+	    mappings.map(function (mapping) {
+	      var source = mapping.source === null ? null : this._sources.at(mapping.source);
+	      if (source != null && sourceRoot != null) {
+	        source = util.join(sourceRoot, source);
+	      }
+	      return {
+	        source: source,
+	        generatedLine: mapping.generatedLine,
+	        generatedColumn: mapping.generatedColumn,
+	        originalLine: mapping.originalLine,
+	        originalColumn: mapping.originalColumn,
+	        name: mapping.name === null ? null : this._names.at(mapping.name)
+	      };
+	    }, this).forEach(aCallback, context);
+	  };
+	
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	SourceMapConsumer.prototype.allGeneratedPositionsFor =
+	  function SourceMapConsumer_allGeneratedPositionsFor(aArgs) {
+	    var line = util.getArg(aArgs, 'line');
+	
+	    
+	    
+	    
+	    
+	    var needle = {
+	      source: util.getArg(aArgs, 'source'),
+	      originalLine: line,
+	      originalColumn: util.getArg(aArgs, 'column', 0)
+	    };
+	
+	    if (this.sourceRoot != null) {
+	      needle.source = util.relative(this.sourceRoot, needle.source);
+	    }
+	    if (!this._sources.has(needle.source)) {
+	      return [];
+	    }
+	    needle.source = this._sources.indexOf(needle.source);
+	
+	    var mappings = [];
+	
+	    var index = this._findMapping(needle,
+	                                  this._originalMappings,
+	                                  "originalLine",
+	                                  "originalColumn",
+	                                  util.compareByOriginalPositions,
+	                                  binarySearch.LEAST_UPPER_BOUND);
+	    if (index >= 0) {
+	      var mapping = this._originalMappings[index];
+	
+	      if (aArgs.column === undefined) {
+	        var originalLine = mapping.originalLine;
+	
+	        
+	        
+	        
+	        
+	        while (mapping && mapping.originalLine === originalLine) {
+	          mappings.push({
+	            line: util.getArg(mapping, 'generatedLine', null),
+	            column: util.getArg(mapping, 'generatedColumn', null),
+	            lastColumn: util.getArg(mapping, 'lastGeneratedColumn', null)
+	          });
+	
+	          mapping = this._originalMappings[++index];
+	        }
+	      } else {
+	        var originalColumn = mapping.originalColumn;
+	
+	        
+	        
+	        
+	        
+	        while (mapping &&
+	               mapping.originalLine === line &&
+	               mapping.originalColumn == originalColumn) {
+	          mappings.push({
+	            line: util.getArg(mapping, 'generatedLine', null),
+	            column: util.getArg(mapping, 'generatedColumn', null),
+	            lastColumn: util.getArg(mapping, 'lastGeneratedColumn', null)
+	          });
+	
+	          mapping = this._originalMappings[++index];
+	        }
+	      }
+	    }
+	
+	    return mappings;
+	  };
+	
+	exports.SourceMapConsumer = SourceMapConsumer;
+	
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	function BasicSourceMapConsumer(aSourceMap) {
+	  var sourceMap = aSourceMap;
+	  if (typeof aSourceMap === 'string') {
+	    sourceMap = JSON.parse(aSourceMap.replace(/^\)\]\}'/, ''));
+	  }
+	
+	  var version = util.getArg(sourceMap, 'version');
+	  var sources = util.getArg(sourceMap, 'sources');
+	  
+	  
+	  var names = util.getArg(sourceMap, 'names', []);
+	  var sourceRoot = util.getArg(sourceMap, 'sourceRoot', null);
+	  var sourcesContent = util.getArg(sourceMap, 'sourcesContent', null);
+	  var mappings = util.getArg(sourceMap, 'mappings');
+	  var file = util.getArg(sourceMap, 'file', null);
+	
+	  
+	  
+	  if (version != this._version) {
+	    throw new Error('Unsupported version: ' + version);
+	  }
+	
+	  sources = sources
+	    .map(String)
+	    
+	    
+	    
+	    .map(util.normalize)
+	    
+	    
+	    
+	    
+	    .map(function (source) {
+	      return sourceRoot && util.isAbsolute(sourceRoot) && util.isAbsolute(source)
+	        ? util.relative(sourceRoot, source)
+	        : source;
+	    });
+	
+	  
+	  
+	  
+	  
+	  this._names = ArraySet.fromArray(names.map(String), true);
+	  this._sources = ArraySet.fromArray(sources, true);
+	
+	  this.sourceRoot = sourceRoot;
+	  this.sourcesContent = sourcesContent;
+	  this._mappings = mappings;
+	  this.file = file;
+	}
+	
+	BasicSourceMapConsumer.prototype = Object.create(SourceMapConsumer.prototype);
+	BasicSourceMapConsumer.prototype.consumer = SourceMapConsumer;
+	
+	
+
+
+
+
+
+
+	BasicSourceMapConsumer.fromSourceMap =
+	  function SourceMapConsumer_fromSourceMap(aSourceMap) {
+	    var smc = Object.create(BasicSourceMapConsumer.prototype);
+	
+	    var names = smc._names = ArraySet.fromArray(aSourceMap._names.toArray(), true);
+	    var sources = smc._sources = ArraySet.fromArray(aSourceMap._sources.toArray(), true);
+	    smc.sourceRoot = aSourceMap._sourceRoot;
+	    smc.sourcesContent = aSourceMap._generateSourcesContent(smc._sources.toArray(),
+	                                                            smc.sourceRoot);
+	    smc.file = aSourceMap._file;
+	
+	    
+	    
+	    
+	    
+	
+	    var generatedMappings = aSourceMap._mappings.toArray().slice();
+	    var destGeneratedMappings = smc.__generatedMappings = [];
+	    var destOriginalMappings = smc.__originalMappings = [];
+	
+	    for (var i = 0, length = generatedMappings.length; i < length; i++) {
+	      var srcMapping = generatedMappings[i];
+	      var destMapping = new Mapping;
+	      destMapping.generatedLine = srcMapping.generatedLine;
+	      destMapping.generatedColumn = srcMapping.generatedColumn;
+	
+	      if (srcMapping.source) {
+	        destMapping.source = sources.indexOf(srcMapping.source);
+	        destMapping.originalLine = srcMapping.originalLine;
+	        destMapping.originalColumn = srcMapping.originalColumn;
+	
+	        if (srcMapping.name) {
+	          destMapping.name = names.indexOf(srcMapping.name);
+	        }
+	
+	        destOriginalMappings.push(destMapping);
+	      }
+	
+	      destGeneratedMappings.push(destMapping);
+	    }
+	
+	    quickSort(smc.__originalMappings, util.compareByOriginalPositions);
+	
+	    return smc;
+	  };
+	
+	
+
+
+	BasicSourceMapConsumer.prototype._version = 3;
+	
+	
+
+
+	Object.defineProperty(BasicSourceMapConsumer.prototype, 'sources', {
+	  get: function () {
+	    return this._sources.toArray().map(function (s) {
+	      return this.sourceRoot != null ? util.join(this.sourceRoot, s) : s;
+	    }, this);
+	  }
+	});
+	
+	
+
+
+	function Mapping() {
+	  this.generatedLine = 0;
+	  this.generatedColumn = 0;
+	  this.source = null;
+	  this.originalLine = null;
+	  this.originalColumn = null;
+	  this.name = null;
+	}
+	
+	
+
+
+
+
+	BasicSourceMapConsumer.prototype._parseMappings =
+	  function SourceMapConsumer_parseMappings(aStr, aSourceRoot) {
+	    var generatedLine = 1;
+	    var previousGeneratedColumn = 0;
+	    var previousOriginalLine = 0;
+	    var previousOriginalColumn = 0;
+	    var previousSource = 0;
+	    var previousName = 0;
+	    var length = aStr.length;
+	    var index = 0;
+	    var cachedSegments = {};
+	    var temp = {};
+	    var originalMappings = [];
+	    var generatedMappings = [];
+	    var mapping, str, segment, end, value;
+	
+	    while (index < length) {
+	      if (aStr.charAt(index) === ';') {
+	        generatedLine++;
+	        index++;
+	        previousGeneratedColumn = 0;
+	      }
+	      else if (aStr.charAt(index) === ',') {
+	        index++;
+	      }
+	      else {
+	        mapping = new Mapping();
+	        mapping.generatedLine = generatedLine;
+	
+	        
+	        
+	        
+	        
+	        
+	        for (end = index; end < length; end++) {
+	          if (this._charIsMappingSeparator(aStr, end)) {
+	            break;
+	          }
+	        }
+	        str = aStr.slice(index, end);
+	
+	        segment = cachedSegments[str];
+	        if (segment) {
+	          index += str.length;
+	        } else {
+	          segment = [];
+	          while (index < end) {
+	            base64VLQ.decode(aStr, index, temp);
+	            value = temp.value;
+	            index = temp.rest;
+	            segment.push(value);
+	          }
+	
+	          if (segment.length === 2) {
+	            throw new Error('Found a source, but no line and column');
+	          }
+	
+	          if (segment.length === 3) {
+	            throw new Error('Found a source and line, but no column');
+	          }
+	
+	          cachedSegments[str] = segment;
+	        }
+	
+	        
+	        mapping.generatedColumn = previousGeneratedColumn + segment[0];
+	        previousGeneratedColumn = mapping.generatedColumn;
+	
+	        if (segment.length > 1) {
+	          
+	          mapping.source = previousSource + segment[1];
+	          previousSource += segment[1];
+	
+	          
+	          mapping.originalLine = previousOriginalLine + segment[2];
+	          previousOriginalLine = mapping.originalLine;
+	          
+	          mapping.originalLine += 1;
+	
+	          
+	          mapping.originalColumn = previousOriginalColumn + segment[3];
+	          previousOriginalColumn = mapping.originalColumn;
+	
+	          if (segment.length > 4) {
+	            
+	            mapping.name = previousName + segment[4];
+	            previousName += segment[4];
+	          }
+	        }
+	
+	        generatedMappings.push(mapping);
+	        if (typeof mapping.originalLine === 'number') {
+	          originalMappings.push(mapping);
+	        }
+	      }
+	    }
+	
+	    quickSort(generatedMappings, util.compareByGeneratedPositionsDeflated);
+	    this.__generatedMappings = generatedMappings;
+	
+	    quickSort(originalMappings, util.compareByOriginalPositions);
+	    this.__originalMappings = originalMappings;
+	  };
+	
+	
+
+
+
+	BasicSourceMapConsumer.prototype._findMapping =
+	  function SourceMapConsumer_findMapping(aNeedle, aMappings, aLineName,
+	                                         aColumnName, aComparator, aBias) {
+	    
+	    
+	    
+	    
+	
+	    if (aNeedle[aLineName] <= 0) {
+	      throw new TypeError('Line must be greater than or equal to 1, got '
+	                          + aNeedle[aLineName]);
+	    }
+	    if (aNeedle[aColumnName] < 0) {
+	      throw new TypeError('Column must be greater than or equal to 0, got '
+	                          + aNeedle[aColumnName]);
+	    }
+	
+	    return binarySearch.search(aNeedle, aMappings, aComparator, aBias);
+	  };
+	
+	
+
+
+
+	BasicSourceMapConsumer.prototype.computeColumnSpans =
+	  function SourceMapConsumer_computeColumnSpans() {
+	    for (var index = 0; index < this._generatedMappings.length; ++index) {
+	      var mapping = this._generatedMappings[index];
+	
+	      
+	      
+	      
+	      
+	      if (index + 1 < this._generatedMappings.length) {
+	        var nextMapping = this._generatedMappings[index + 1];
+	
+	        if (mapping.generatedLine === nextMapping.generatedLine) {
+	          mapping.lastGeneratedColumn = nextMapping.generatedColumn - 1;
+	          continue;
+	        }
+	      }
+	
+	      
+	      mapping.lastGeneratedColumn = Infinity;
+	    }
+	  };
+	
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	BasicSourceMapConsumer.prototype.originalPositionFor =
+	  function SourceMapConsumer_originalPositionFor(aArgs) {
+	    var needle = {
+	      generatedLine: util.getArg(aArgs, 'line'),
+	      generatedColumn: util.getArg(aArgs, 'column')
+	    };
+	
+	    var index = this._findMapping(
+	      needle,
+	      this._generatedMappings,
+	      "generatedLine",
+	      "generatedColumn",
+	      util.compareByGeneratedPositionsDeflated,
+	      util.getArg(aArgs, 'bias', SourceMapConsumer.GREATEST_LOWER_BOUND)
+	    );
+	
+	    if (index >= 0) {
+	      var mapping = this._generatedMappings[index];
+	
+	      if (mapping.generatedLine === needle.generatedLine) {
+	        var source = util.getArg(mapping, 'source', null);
+	        if (source !== null) {
+	          source = this._sources.at(source);
+	          if (this.sourceRoot != null) {
+	            source = util.join(this.sourceRoot, source);
+	          }
+	        }
+	        var name = util.getArg(mapping, 'name', null);
+	        if (name !== null) {
+	          name = this._names.at(name);
+	        }
+	        return {
+	          source: source,
+	          line: util.getArg(mapping, 'originalLine', null),
+	          column: util.getArg(mapping, 'originalColumn', null),
+	          name: name
+	        };
+	      }
+	    }
+	
+	    return {
+	      source: null,
+	      line: null,
+	      column: null,
+	      name: null
+	    };
+	  };
+	
+	
+
+
+
+	BasicSourceMapConsumer.prototype.hasContentsOfAllSources =
+	  function BasicSourceMapConsumer_hasContentsOfAllSources() {
+	    if (!this.sourcesContent) {
+	      return false;
+	    }
+	    return this.sourcesContent.length >= this._sources.size() &&
+	      !this.sourcesContent.some(function (sc) { return sc == null; });
+	  };
+	
+	
+
+
+
+
+	BasicSourceMapConsumer.prototype.sourceContentFor =
+	  function SourceMapConsumer_sourceContentFor(aSource, nullOnMissing) {
+	    if (!this.sourcesContent) {
+	      return null;
+	    }
+	
+	    if (this.sourceRoot != null) {
+	      aSource = util.relative(this.sourceRoot, aSource);
+	    }
+	
+	    if (this._sources.has(aSource)) {
+	      return this.sourcesContent[this._sources.indexOf(aSource)];
+	    }
+	
+	    var url;
+	    if (this.sourceRoot != null
+	        && (url = util.urlParse(this.sourceRoot))) {
+	      
+	      
+	      
+	      
+	      var fileUriAbsPath = aSource.replace(/^file:\/\//, "");
+	      if (url.scheme == "file"
+	          && this._sources.has(fileUriAbsPath)) {
+	        return this.sourcesContent[this._sources.indexOf(fileUriAbsPath)]
+	      }
+	
+	      if ((!url.path || url.path == "/")
+	          && this._sources.has("/" + aSource)) {
+	        return this.sourcesContent[this._sources.indexOf("/" + aSource)];
+	      }
+	    }
+	
+	    
+	    
+	    
+	    
+	    if (nullOnMissing) {
+	      return null;
+	    }
+	    else {
+	      throw new Error('"' + aSource + '" is not in the SourceMap.');
+	    }
+	  };
+	
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	BasicSourceMapConsumer.prototype.generatedPositionFor =
+	  function SourceMapConsumer_generatedPositionFor(aArgs) {
+	    var source = util.getArg(aArgs, 'source');
+	    if (this.sourceRoot != null) {
+	      source = util.relative(this.sourceRoot, source);
+	    }
+	    if (!this._sources.has(source)) {
+	      return {
+	        line: null,
+	        column: null,
+	        lastColumn: null
+	      };
+	    }
+	    source = this._sources.indexOf(source);
+	
+	    var needle = {
+	      source: source,
+	      originalLine: util.getArg(aArgs, 'line'),
+	      originalColumn: util.getArg(aArgs, 'column')
+	    };
+	
+	    var index = this._findMapping(
+	      needle,
+	      this._originalMappings,
+	      "originalLine",
+	      "originalColumn",
+	      util.compareByOriginalPositions,
+	      util.getArg(aArgs, 'bias', SourceMapConsumer.GREATEST_LOWER_BOUND)
+	    );
+	
+	    if (index >= 0) {
+	      var mapping = this._originalMappings[index];
+	
+	      if (mapping.source === needle.source) {
+	        return {
+	          line: util.getArg(mapping, 'generatedLine', null),
+	          column: util.getArg(mapping, 'generatedColumn', null),
+	          lastColumn: util.getArg(mapping, 'lastGeneratedColumn', null)
+	        };
+	      }
+	    }
+	
+	    return {
+	      line: null,
+	      column: null,
+	      lastColumn: null
+	    };
+	  };
+	
+	exports.BasicSourceMapConsumer = BasicSourceMapConsumer;
+	
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	function IndexedSourceMapConsumer(aSourceMap) {
+	  var sourceMap = aSourceMap;
+	  if (typeof aSourceMap === 'string') {
+	    sourceMap = JSON.parse(aSourceMap.replace(/^\)\]\}'/, ''));
+	  }
+	
+	  var version = util.getArg(sourceMap, 'version');
+	  var sections = util.getArg(sourceMap, 'sections');
+	
+	  if (version != this._version) {
+	    throw new Error('Unsupported version: ' + version);
+	  }
+	
+	  this._sources = new ArraySet();
+	  this._names = new ArraySet();
+	
+	  var lastOffset = {
+	    line: -1,
+	    column: 0
+	  };
+	  this._sections = sections.map(function (s) {
+	    if (s.url) {
+	      
+	      
+	      throw new Error('Support for url field in sections not implemented.');
+	    }
+	    var offset = util.getArg(s, 'offset');
+	    var offsetLine = util.getArg(offset, 'line');
+	    var offsetColumn = util.getArg(offset, 'column');
+	
+	    if (offsetLine < lastOffset.line ||
+	        (offsetLine === lastOffset.line && offsetColumn < lastOffset.column)) {
+	      throw new Error('Section offsets must be ordered and non-overlapping.');
+	    }
+	    lastOffset = offset;
+	
+	    return {
+	      generatedOffset: {
+	        
+	        
+	        generatedLine: offsetLine + 1,
+	        generatedColumn: offsetColumn + 1
+	      },
+	      consumer: new SourceMapConsumer(util.getArg(s, 'map'))
+	    }
+	  });
+	}
+	
+	IndexedSourceMapConsumer.prototype = Object.create(SourceMapConsumer.prototype);
+	IndexedSourceMapConsumer.prototype.constructor = SourceMapConsumer;
+	
+	
+
+
+	IndexedSourceMapConsumer.prototype._version = 3;
+	
+	
+
+
+	Object.defineProperty(IndexedSourceMapConsumer.prototype, 'sources', {
+	  get: function () {
+	    var sources = [];
+	    for (var i = 0; i < this._sections.length; i++) {
+	      for (var j = 0; j < this._sections[i].consumer.sources.length; j++) {
+	        sources.push(this._sections[i].consumer.sources[j]);
+	      }
+	    }
+	    return sources;
+	  }
+	});
+	
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	IndexedSourceMapConsumer.prototype.originalPositionFor =
+	  function IndexedSourceMapConsumer_originalPositionFor(aArgs) {
+	    var needle = {
+	      generatedLine: util.getArg(aArgs, 'line'),
+	      generatedColumn: util.getArg(aArgs, 'column')
+	    };
+	
+	    
+	    
+	    var sectionIndex = binarySearch.search(needle, this._sections,
+	      function(needle, section) {
+	        var cmp = needle.generatedLine - section.generatedOffset.generatedLine;
+	        if (cmp) {
+	          return cmp;
+	        }
+	
+	        return (needle.generatedColumn -
+	                section.generatedOffset.generatedColumn);
+	      });
+	    var section = this._sections[sectionIndex];
+	
+	    if (!section) {
+	      return {
+	        source: null,
+	        line: null,
+	        column: null,
+	        name: null
+	      };
+	    }
+	
+	    return section.consumer.originalPositionFor({
+	      line: needle.generatedLine -
+	        (section.generatedOffset.generatedLine - 1),
+	      column: needle.generatedColumn -
+	        (section.generatedOffset.generatedLine === needle.generatedLine
+	         ? section.generatedOffset.generatedColumn - 1
+	         : 0),
+	      bias: aArgs.bias
+	    });
+	  };
+	
+	
+
+
+
+	IndexedSourceMapConsumer.prototype.hasContentsOfAllSources =
+	  function IndexedSourceMapConsumer_hasContentsOfAllSources() {
+	    return this._sections.every(function (s) {
+	      return s.consumer.hasContentsOfAllSources();
+	    });
+	  };
+	
+	
+
+
+
+
+	IndexedSourceMapConsumer.prototype.sourceContentFor =
+	  function IndexedSourceMapConsumer_sourceContentFor(aSource, nullOnMissing) {
+	    for (var i = 0; i < this._sections.length; i++) {
+	      var section = this._sections[i];
+	
+	      var content = section.consumer.sourceContentFor(aSource, true);
+	      if (content) {
+	        return content;
+	      }
+	    }
+	    if (nullOnMissing) {
+	      return null;
+	    }
+	    else {
+	      throw new Error('"' + aSource + '" is not in the SourceMap.');
+	    }
+	  };
+	
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+	IndexedSourceMapConsumer.prototype.generatedPositionFor =
+	  function IndexedSourceMapConsumer_generatedPositionFor(aArgs) {
+	    for (var i = 0; i < this._sections.length; i++) {
+	      var section = this._sections[i];
+	
+	      
+	      
+	      if (section.consumer.sources.indexOf(util.getArg(aArgs, 'source')) === -1) {
+	        continue;
+	      }
+	      var generatedPosition = section.consumer.generatedPositionFor(aArgs);
+	      if (generatedPosition) {
+	        var ret = {
+	          line: generatedPosition.line +
+	            (section.generatedOffset.generatedLine - 1),
+	          column: generatedPosition.column +
+	            (section.generatedOffset.generatedLine === generatedPosition.line
+	             ? section.generatedOffset.generatedColumn - 1
+	             : 0)
+	        };
+	        return ret;
+	      }
+	    }
+	
+	    return {
+	      line: null,
+	      column: null
+	    };
+	  };
+	
+	
+
+
+
+
+	IndexedSourceMapConsumer.prototype._parseMappings =
+	  function IndexedSourceMapConsumer_parseMappings(aStr, aSourceRoot) {
+	    this.__generatedMappings = [];
+	    this.__originalMappings = [];
+	    for (var i = 0; i < this._sections.length; i++) {
+	      var section = this._sections[i];
+	      var sectionMappings = section.consumer._generatedMappings;
+	      for (var j = 0; j < sectionMappings.length; j++) {
+	        var mapping = sectionMappings[j];
+	
+	        var source = section.consumer._sources.at(mapping.source);
+	        if (section.consumer.sourceRoot !== null) {
+	          source = util.join(section.consumer.sourceRoot, source);
+	        }
+	        this._sources.add(source);
+	        source = this._sources.indexOf(source);
+	
+	        var name = section.consumer._names.at(mapping.name);
+	        this._names.add(name);
+	        name = this._names.indexOf(name);
+	
+	        
+	        
+	        
+	        
+	        var adjustedMapping = {
+	          source: source,
+	          generatedLine: mapping.generatedLine +
+	            (section.generatedOffset.generatedLine - 1),
+	          generatedColumn: mapping.generatedColumn +
+	            (section.generatedOffset.generatedLine === mapping.generatedLine
+	            ? section.generatedOffset.generatedColumn - 1
+	            : 0),
+	          originalLine: mapping.originalLine,
+	          originalColumn: mapping.originalColumn,
+	          name: name
+	        };
+	
+	        this.__generatedMappings.push(adjustedMapping);
+	        if (typeof adjustedMapping.originalLine === 'number') {
+	          this.__originalMappings.push(adjustedMapping);
+	        }
+	      }
+	    }
+	
+	    quickSort(this.__generatedMappings, util.compareByGeneratedPositionsDeflated);
+	    quickSort(this.__originalMappings, util.compareByOriginalPositions);
+	  };
+	
+	exports.IndexedSourceMapConsumer = IndexedSourceMapConsumer;
+
+
+ },
+
+ function(module, exports) {
+
+	
+	
+
+
+
+
+	
+	exports.GREATEST_LOWER_BOUND = 1;
+	exports.LEAST_UPPER_BOUND = 2;
+	
+	
+
+
+
+
+
+
+
+
+
+
+
+
+	function recursiveSearch(aLow, aHigh, aNeedle, aHaystack, aCompare, aBias) {
+	  
+	  
+	  
+	  
+	  
+	  
+	  
+	  
+	  
+	  var mid = Math.floor((aHigh - aLow) / 2) + aLow;
+	  var cmp = aCompare(aNeedle, aHaystack[mid], true);
+	  if (cmp === 0) {
+	    
+	    return mid;
+	  }
+	  else if (cmp > 0) {
+	    
+	    if (aHigh - mid > 1) {
+	      
+	      return recursiveSearch(mid, aHigh, aNeedle, aHaystack, aCompare, aBias);
+	    }
+	
+	    
+	    
+	    if (aBias == exports.LEAST_UPPER_BOUND) {
+	      return aHigh < aHaystack.length ? aHigh : -1;
+	    } else {
+	      return mid;
+	    }
+	  }
+	  else {
+	    
+	    if (mid - aLow > 1) {
+	      
+	      return recursiveSearch(aLow, mid, aNeedle, aHaystack, aCompare, aBias);
+	    }
+	
+	    
+	    if (aBias == exports.LEAST_UPPER_BOUND) {
+	      return mid;
+	    } else {
+	      return aLow < 0 ? -1 : aLow;
+	    }
+	  }
+	}
+	
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	exports.search = function search(aNeedle, aHaystack, aCompare, aBias) {
+	  if (aHaystack.length === 0) {
+	    return -1;
+	  }
+	
+	  var index = recursiveSearch(-1, aHaystack.length, aNeedle, aHaystack,
+	                              aCompare, aBias || exports.GREATEST_LOWER_BOUND);
+	  if (index < 0) {
+	    return -1;
+	  }
+	
+	  
+	  
+	  
+	  while (index - 1 >= 0) {
+	    if (aCompare(aHaystack[index], aHaystack[index - 1], true) !== 0) {
+	      break;
+	    }
+	    --index;
+	  }
+	
+	  return index;
+	};
+
+
+ },
+
+ function(module, exports) {
+
+	
+	
+
+
+
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+
+
+
+
+
+
+
+
+
+	function swap(ary, x, y) {
+	  var temp = ary[x];
+	  ary[x] = ary[y];
+	  ary[y] = temp;
+	}
+	
+	
+
+
+
+
+
+
+
+	function randomIntInRange(low, high) {
+	  return Math.round(low + (Math.random() * (high - low)));
+	}
+	
+	
+
+
+
+
+
+
+
+
+
+
+
+	function doQuickSort(ary, comparator, p, r) {
+	  
+	  
+	  
+	
+	  if (p < r) {
+	    
+	    
+	    
+	    
+	    
+	    
+	    
+	    
+	
+	    
+	    
+	    var pivotIndex = randomIntInRange(p, r);
+	    var i = p - 1;
+	
+	    swap(ary, pivotIndex, r);
+	    var pivot = ary[r];
+	
+	    
+	    
+	    
+	    
+	    
+	    
+	    for (var j = p; j < r; j++) {
+	      if (comparator(ary[j], pivot) <= 0) {
+	        i += 1;
+	        swap(ary, i, j);
+	      }
+	    }
+	
+	    swap(ary, i + 1, j);
+	    var q = i + 1;
+	
+	    
+	
+	    doQuickSort(ary, comparator, p, q - 1);
+	    doQuickSort(ary, comparator, q + 1, r);
+	  }
+	}
+	
+	
+
+
+
+
+
+
+
+	exports.quickSort = function (ary, comparator) {
+	  doQuickSort(ary, comparator, 0, ary.length - 1);
+	};
+
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	
+	
+
+
+
+
+	
+	var SourceMapGenerator = __webpack_require__(222).SourceMapGenerator;
+	var util = __webpack_require__(225);
+	
+	
+	
+	var REGEX_NEWLINE = /(\r?\n)/;
+	
+	
+	var NEWLINE_CODE = 10;
+	
+	
+	
+	
+	var isSourceNode = "$$$isSourceNode$$$";
+	
+	
+
+
+
+
+
+
+
+
+
+
+
+	function SourceNode(aLine, aColumn, aSource, aChunks, aName) {
+	  this.children = [];
+	  this.sourceContents = {};
+	  this.line = aLine == null ? null : aLine;
+	  this.column = aColumn == null ? null : aColumn;
+	  this.source = aSource == null ? null : aSource;
+	  this.name = aName == null ? null : aName;
+	  this[isSourceNode] = true;
+	  if (aChunks != null) this.add(aChunks);
+	}
+	
+	
+
+
+
+
+
+
+
+	SourceNode.fromStringWithSourceMap =
+	  function SourceNode_fromStringWithSourceMap(aGeneratedCode, aSourceMapConsumer, aRelativePath) {
+	    
+	    
+	    var node = new SourceNode();
+	
+	    
+	    
+	    
+	    
+	    var remainingLines = aGeneratedCode.split(REGEX_NEWLINE);
+	    var shiftNextLine = function() {
+	      var lineContents = remainingLines.shift();
+	      
+	      var newLine = remainingLines.shift() || "";
+	      return lineContents + newLine;
+	    };
+	
+	    
+	    var lastGeneratedLine = 1, lastGeneratedColumn = 0;
+	
+	    
+	    
+	    
+	    var lastMapping = null;
+	
+	    aSourceMapConsumer.eachMapping(function (mapping) {
+	      if (lastMapping !== null) {
+	        
+	        
+	        if (lastGeneratedLine < mapping.generatedLine) {
+	          
+	          addMappingWithCode(lastMapping, shiftNextLine());
+	          lastGeneratedLine++;
+	          lastGeneratedColumn = 0;
+	          
+	        } else {
+	          
+	          
+	          
+	          var nextLine = remainingLines[0];
+	          var code = nextLine.substr(0, mapping.generatedColumn -
+	                                        lastGeneratedColumn);
+	          remainingLines[0] = nextLine.substr(mapping.generatedColumn -
+	                                              lastGeneratedColumn);
+	          lastGeneratedColumn = mapping.generatedColumn;
+	          addMappingWithCode(lastMapping, code);
+	          
+	          lastMapping = mapping;
+	          return;
+	        }
+	      }
+	      
+	      
+	      
+	      while (lastGeneratedLine < mapping.generatedLine) {
+	        node.add(shiftNextLine());
+	        lastGeneratedLine++;
+	      }
+	      if (lastGeneratedColumn < mapping.generatedColumn) {
+	        var nextLine = remainingLines[0];
+	        node.add(nextLine.substr(0, mapping.generatedColumn));
+	        remainingLines[0] = nextLine.substr(mapping.generatedColumn);
+	        lastGeneratedColumn = mapping.generatedColumn;
+	      }
+	      lastMapping = mapping;
+	    }, this);
+	    
+	    if (remainingLines.length > 0) {
+	      if (lastMapping) {
+	        
+	        addMappingWithCode(lastMapping, shiftNextLine());
+	      }
+	      
+	      node.add(remainingLines.join(""));
+	    }
+	
+	    
+	    aSourceMapConsumer.sources.forEach(function (sourceFile) {
+	      var content = aSourceMapConsumer.sourceContentFor(sourceFile);
+	      if (content != null) {
+	        if (aRelativePath != null) {
+	          sourceFile = util.join(aRelativePath, sourceFile);
+	        }
+	        node.setSourceContent(sourceFile, content);
+	      }
+	    });
+	
+	    return node;
+	
+	    function addMappingWithCode(mapping, code) {
+	      if (mapping === null || mapping.source === undefined) {
+	        node.add(code);
+	      } else {
+	        var source = aRelativePath
+	          ? util.join(aRelativePath, mapping.source)
+	          : mapping.source;
+	        node.add(new SourceNode(mapping.originalLine,
+	                                mapping.originalColumn,
+	                                source,
+	                                code,
+	                                mapping.name));
+	      }
+	    }
+	  };
+	
+	
+
+
+
+
+
+	SourceNode.prototype.add = function SourceNode_add(aChunk) {
+	  if (Array.isArray(aChunk)) {
+	    aChunk.forEach(function (chunk) {
+	      this.add(chunk);
+	    }, this);
+	  }
+	  else if (aChunk[isSourceNode] || typeof aChunk === "string") {
+	    if (aChunk) {
+	      this.children.push(aChunk);
+	    }
+	  }
+	  else {
+	    throw new TypeError(
+	      "Expected a SourceNode, string, or an array of SourceNodes and strings. Got " + aChunk
+	    );
+	  }
+	  return this;
+	};
+	
+	
+
+
+
+
+
+	SourceNode.prototype.prepend = function SourceNode_prepend(aChunk) {
+	  if (Array.isArray(aChunk)) {
+	    for (var i = aChunk.length-1; i >= 0; i--) {
+	      this.prepend(aChunk[i]);
+	    }
+	  }
+	  else if (aChunk[isSourceNode] || typeof aChunk === "string") {
+	    this.children.unshift(aChunk);
+	  }
+	  else {
+	    throw new TypeError(
+	      "Expected a SourceNode, string, or an array of SourceNodes and strings. Got " + aChunk
+	    );
+	  }
+	  return this;
+	};
+	
+	
+
+
+
+
+
+
+	SourceNode.prototype.walk = function SourceNode_walk(aFn) {
+	  var chunk;
+	  for (var i = 0, len = this.children.length; i < len; i++) {
+	    chunk = this.children[i];
+	    if (chunk[isSourceNode]) {
+	      chunk.walk(aFn);
+	    }
+	    else {
+	      if (chunk !== '') {
+	        aFn(chunk, { source: this.source,
+	                     line: this.line,
+	                     column: this.column,
+	                     name: this.name });
+	      }
+	    }
+	  }
+	};
+	
+	
+
+
+
+
+
+	SourceNode.prototype.join = function SourceNode_join(aSep) {
+	  var newChildren;
+	  var i;
+	  var len = this.children.length;
+	  if (len > 0) {
+	    newChildren = [];
+	    for (i = 0; i < len-1; i++) {
+	      newChildren.push(this.children[i]);
+	      newChildren.push(aSep);
+	    }
+	    newChildren.push(this.children[i]);
+	    this.children = newChildren;
+	  }
+	  return this;
+	};
+	
+	
+
+
+
+
+
+
+	SourceNode.prototype.replaceRight = function SourceNode_replaceRight(aPattern, aReplacement) {
+	  var lastChild = this.children[this.children.length - 1];
+	  if (lastChild[isSourceNode]) {
+	    lastChild.replaceRight(aPattern, aReplacement);
+	  }
+	  else if (typeof lastChild === 'string') {
+	    this.children[this.children.length - 1] = lastChild.replace(aPattern, aReplacement);
+	  }
+	  else {
+	    this.children.push(''.replace(aPattern, aReplacement));
+	  }
+	  return this;
+	};
+	
+	
+
+
+
+
+
+
+	SourceNode.prototype.setSourceContent =
+	  function SourceNode_setSourceContent(aSourceFile, aSourceContent) {
+	    this.sourceContents[util.toSetString(aSourceFile)] = aSourceContent;
+	  };
+	
+	
+
+
+
+
+
+	SourceNode.prototype.walkSourceContents =
+	  function SourceNode_walkSourceContents(aFn) {
+	    for (var i = 0, len = this.children.length; i < len; i++) {
+	      if (this.children[i][isSourceNode]) {
+	        this.children[i].walkSourceContents(aFn);
+	      }
+	    }
+	
+	    var sources = Object.keys(this.sourceContents);
+	    for (var i = 0, len = sources.length; i < len; i++) {
+	      aFn(util.fromSetString(sources[i]), this.sourceContents[sources[i]]);
+	    }
+	  };
+	
+	
+
+
+
+	SourceNode.prototype.toString = function SourceNode_toString() {
+	  var str = "";
+	  this.walk(function (chunk) {
+	    str += chunk;
+	  });
+	  return str;
+	};
+	
+	
+
+
+
+	SourceNode.prototype.toStringWithSourceMap = function SourceNode_toStringWithSourceMap(aArgs) {
+	  var generated = {
+	    code: "",
+	    line: 1,
+	    column: 0
+	  };
+	  var map = new SourceMapGenerator(aArgs);
+	  var sourceMappingActive = false;
+	  var lastOriginalSource = null;
+	  var lastOriginalLine = null;
+	  var lastOriginalColumn = null;
+	  var lastOriginalName = null;
+	  this.walk(function (chunk, original) {
+	    generated.code += chunk;
+	    if (original.source !== null
+	        && original.line !== null
+	        && original.column !== null) {
+	      if(lastOriginalSource !== original.source
+	         || lastOriginalLine !== original.line
+	         || lastOriginalColumn !== original.column
+	         || lastOriginalName !== original.name) {
+	        map.addMapping({
+	          source: original.source,
+	          original: {
+	            line: original.line,
+	            column: original.column
+	          },
+	          generated: {
+	            line: generated.line,
+	            column: generated.column
+	          },
+	          name: original.name
+	        });
+	      }
+	      lastOriginalSource = original.source;
+	      lastOriginalLine = original.line;
+	      lastOriginalColumn = original.column;
+	      lastOriginalName = original.name;
+	      sourceMappingActive = true;
+	    } else if (sourceMappingActive) {
+	      map.addMapping({
+	        generated: {
+	          line: generated.line,
+	          column: generated.column
+	        }
+	      });
+	      lastOriginalSource = null;
+	      sourceMappingActive = false;
+	    }
+	    for (var idx = 0, length = chunk.length; idx < length; idx++) {
+	      if (chunk.charCodeAt(idx) === NEWLINE_CODE) {
+	        generated.line++;
+	        generated.column = 0;
+	        
+	        if (idx + 1 === length) {
+	          lastOriginalSource = null;
+	          sourceMappingActive = false;
+	        } else if (sourceMappingActive) {
+	          map.addMapping({
+	            source: original.source,
+	            original: {
+	              line: original.line,
+	              column: original.column
+	            },
+	            generated: {
+	              line: generated.line,
+	              column: generated.column
+	            },
+	            name: original.name
+	          });
+	        }
+	      } else {
+	        generated.column++;
+	      }
+	    }
+	  });
+	  this.walkSourceContents(function (sourceFile, sourceContent) {
+	    map.setSourceContent(sourceFile, sourceContent);
+	  });
+	
+	  return { code: generated.code, map: map };
+	};
+	
+	exports.SourceNode = SourceNode;
+
+
+ },
+
  function(module, exports) {
 
 	function basename(path) {
@@ -28568,283 +33319,6 @@ var Debugger =
 
  },
 
- function(module, exports, __webpack_require__) {
-
-	var React = __webpack_require__(17);
-	
-	var _require = __webpack_require__(15);
-	
-	var connect = _require.connect;
-	
-	var classnames = __webpack_require__(207);
-	
-	var _require2 = __webpack_require__(199);
-	
-	var getTabs = _require2.getTabs;
-	
-	
-	__webpack_require__(208);
-	var dom = React.DOM;
-	
-	var githubUrl = "https://github.com/devtools-html/debugger.html/blob/master";
-	
-	function getTabsByBrowser(tabs, browser) {
-	  return tabs.valueSeq().filter(tab => tab.get("browser") == browser);
-	}
-	
-	function renderTabs(tabTitle, tabs, paramName) {
-	  if (tabs.count() == 0) {
-	    return null;
-	  }
-	
-	  return dom.div({ className: `tab-group ${ tabTitle }` }, dom.div({ className: "tab-group-title" }, tabTitle), dom.ul({ className: "tab-list" }, tabs.valueSeq().map(tab => dom.li({ "className": "tab",
-	    "key": tab.get("id"),
-	    "onClick": () => {
-	      window.location = "/?" + paramName + "=" + tab.get("id");
-	    } }, dom.div({ className: "tab-title" }, tab.get("title")), dom.div({ className: "tab-url" }, tab.get("url"))))));
-	}
-	
-	function renderMessage(noTabs) {
-	  return dom.div({ className: classnames("connect-message", { "not-connected": noTabs }) }, dom.p(null, noTabs && "No remote tabs found. ", "You may be looking to ", dom.a({
-	    href: `/?ws=${ document.location.hostname }:9229/node`
-	  }, "connect to Node"), "."), dom.p(null, "Make sure you run ", dom.a({ href: `${ githubUrl }/CONTRIBUTING.md#firefox` }, "Firefox"), ", ", dom.a({ href: `${ githubUrl }/CONTRIBUTING.md#chrome` }, "Chrome"), " or ", dom.a({ href: `${ githubUrl }/CONTRIBUTING.md#nodejs` }, "Node"), " with the right flags."));
-	}
-	function Tabs(_ref) {
-	  var tabs = _ref.tabs;
-	
-	  var firefoxTabs = getTabsByBrowser(tabs, "firefox");
-	  var chromeTabs = getTabsByBrowser(tabs, "chrome");
-	
-	  return dom.div({ className: "tabs theme-light" }, renderTabs("Firefox Tabs", firefoxTabs, "firefox-tab"), renderTabs("Chrome Tabs", chromeTabs, "chrome-tab"), renderMessage(tabs.isEmpty()));
-	}
-	
-	module.exports = connect(state => ({ tabs: getTabs(state) }))(Tabs);
-
- },
-
- function(module, exports, __webpack_require__) {
-
-	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;
-
-
-
-
-	
-	
-	(function () {
-		'use strict';
-	
-		var hasOwn = {}.hasOwnProperty;
-	
-		function classNames () {
-			var classes = [];
-	
-			for (var i = 0; i < arguments.length; i++) {
-				var arg = arguments[i];
-				if (!arg) continue;
-	
-				var argType = typeof arg;
-	
-				if (argType === 'string' || argType === 'number') {
-					classes.push(arg);
-				} else if (Array.isArray(arg)) {
-					classes.push(classNames.apply(null, arg));
-				} else if (argType === 'object') {
-					for (var key in arg) {
-						if (hasOwn.call(arg, key) && arg[key]) {
-							classes.push(key);
-						}
-					}
-				}
-			}
-	
-			return classes.join(' ');
-		}
-	
-		if (typeof module !== 'undefined' && module.exports) {
-			module.exports = classNames;
-		} else if (true) {
-			
-			!(__WEBPACK_AMD_DEFINE_ARRAY__ = [], __WEBPACK_AMD_DEFINE_RESULT__ = function () {
-				return classNames;
-			}.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
-		} else {
-			window.classNames = classNames;
-		}
-	}());
-
-
- },
-
- function(module, exports) {
-
-	
-
- },
-,
-,
-,
-
- function(module, exports, __webpack_require__) {
-
-	var React = __webpack_require__(17);
-	var dom = React.DOM;
-	var PropTypes = React.PropTypes;
-	var createFactory = React.createFactory;
-	
-	var _require = __webpack_require__(15);
-	
-	var connect = _require.connect;
-	
-	var _require2 = __webpack_require__(2);
-	
-	var bindActionCreators = _require2.bindActionCreators;
-	
-	var _require3 = __webpack_require__(213);
-	
-	var Services = _require3.Services;
-	
-	var classnames = __webpack_require__(207);
-	var actions = __webpack_require__(214);
-	
-	var _require4 = __webpack_require__(46);
-	
-	var isFirefoxPanel = _require4.isFirefoxPanel;
-	
-	
-	__webpack_require__(225);
-	
-	
-	
-	if (false) {
-	  require("../lib/themes/light-theme.css");
-	}
-	
-	var Sources = createFactory(__webpack_require__(227));
-	var Editor = createFactory(__webpack_require__(262));
-	var SplitBox = createFactory(__webpack_require__(267));
-	var RightSidebar = createFactory(__webpack_require__(271));
-	var SourceTabs = createFactory(__webpack_require__(348));
-	var SourceFooter = createFactory(__webpack_require__(353));
-	var Svg = __webpack_require__(235);
-	var Autocomplete = createFactory(__webpack_require__(356));
-	
-	var _require5 = __webpack_require__(199);
-	
-	var getSources = _require5.getSources;
-	var getSelectedSource = _require5.getSelectedSource;
-	
-	var _require6 = __webpack_require__(176);
-	
-	var endTruncateStr = _require6.endTruncateStr;
-	
-	var _require7 = __webpack_require__(365);
-	
-	var KeyShortcuts = _require7.KeyShortcuts;
-	
-	var _require8 = __webpack_require__(230);
-	
-	var isHiddenSource = _require8.isHiddenSource;
-	var getURL = _require8.getURL;
-	
-	
-	function searchResults(sources) {
-	  function getSourcePath(source) {
-	    var _getURL = getURL(source);
-	
-	    var path = _getURL.path;
-	
-	    return endTruncateStr(path, 50);
-	  }
-	
-	  return sources.valueSeq().filter(source => !isHiddenSource(source)).map(source => ({
-	    value: getSourcePath(source),
-	    title: getSourcePath(source).split("/").pop(),
-	    subtitle: getSourcePath(source),
-	    id: source.get("id")
-	  })).toJS();
-	}
-	
-	var App = React.createClass({
-	  propTypes: {
-	    sources: PropTypes.object,
-	    selectSource: PropTypes.func,
-	    selectedSource: PropTypes.object
-	  },
-	
-	  displayName: "App",
-	
-	  getInitialState() {
-	    return {
-	      searchOn: false
-	    };
-	  },
-	
-	  componentDidMount() {
-	    this.shortcuts = new KeyShortcuts({ window });
-	    this.shortcuts.on("CmdOrCtrl+P", this.toggleSourcesSearch);
-	    window.addEventListener("keydown", this.onKeyDown);
-	  },
-	
-	  componentWillUnmount() {
-	    this.shortcuts.off("CmdOrCtrl+P", this.toggleSourcesSearch);
-	    window.removeEventListener("keydown", this.onKeyDown);
-	  },
-	
-	  toggleSourcesSearch(key, e) {
-	    e.preventDefault();
-	    this.setState({ searchOn: !this.state.searchOn });
-	  },
-	
-	  onKeyDown(e) {
-	    if (this.state.searchOn && e.key === "Escape") {
-	      this.setState({ searchOn: false });
-	      e.preventDefault();
-	    }
-	  },
-	
-	  closeSourcesSearch() {
-	    this.setState({ searchOn: false });
-	  },
-	
-	  renderSourcesSearch() {
-	    return dom.div({ className: "search-container" }, Autocomplete({
-	      selectItem: result => {
-	        this.props.selectSource(result.id);
-	        this.setState({ searchOn: false });
-	      },
-	      items: searchResults(this.props.sources)
-	    }), dom.div({ className: "close-button" }, Svg("close", { onClick: this.closeSourcesSearch })));
-	  },
-	
-	  renderWelcomeBox() {
-	    var modifierTxt = Services.appinfo.OS === "Darwin" ? "Cmd" : "Ctrl";
-	    return dom.div({ className: "welcomebox" }, `Want to find a file? (${ modifierTxt } + P)`);
-	  },
-	
-	  renderCenterPane() {
-	    return dom.div({ className: "center-pane" }, dom.div({ className: "editor-container" }, SourceTabs(), Editor(), !this.props.selectedSource ? this.renderWelcomeBox() : null, this.state.searchOn ? this.renderSourcesSearch() : null, SourceFooter()));
-	  },
-	
-	  render: function () {
-	    return dom.div({ className: classnames("debugger theme-body", { "theme-light": !isFirefoxPanel() }) }, SplitBox({
-	      initialWidth: 300,
-	      left: Sources({ sources: this.props.sources }),
-	      right: SplitBox({
-	        initialWidth: 300,
-	        rightFlex: true,
-	        left: this.renderCenterPane(this.props),
-	        right: RightSidebar({ keyShortcuts: this.shortcuts })
-	      })
-	    }));
-	  }
-	});
-	
-	module.exports = connect(state => ({ sources: getSources(state),
-	  selectedSource: getSelectedSource(state) }), dispatch => bindActionCreators(actions, dispatch))(App);
-
- },
-
  function(module, exports) {
 
 	
@@ -28852,675 +33326,14 @@ var Debugger =
 	
 
 
-	
-	"use strict";
-	
-	
-	
-	
-	const PREF_INVALID = 0;
-	const PREF_STRING = 32;
-	const PREF_INT = 64;
-	const PREF_BOOL = 128;
-	const NS_PREFBRANCH_PREFCHANGE_TOPIC_ID = "nsPref:changed";
-	
-	
-
-
-
-
-
-
-	function Preference(branch, name, fullName) {
-	  this.branch = branch;
-	  this.name = name;
-	  this.fullName = fullName;
-	  this.defaultValue = null;
-	  this.hasUserValue = false;
-	  this.userValue = null;
-	  this.type = null;
-	}
-	
-	Preference.prototype = {
-	  
-
-
-
-
-
-
-	  get: function () {
-	    if (this.hasUserValue) {
-	      return this.userValue;
-	    }
-	    return this.defaultValue;
-	  },
-	
-	  
-
-
-
-
-
-
-	  set: function (value) {
-	    if (!this.hasUserValue || value !== this.userValue) {
-	      this.userValue = value;
-	      this.hasUserValue = true;
-	      this.saveAndNotify();
-	    }
-	  },
-	
-	  
-
-
-
-
-
-	  setDefault: function (value) {
-	    if (this.defaultValue !== value) {
-	      this.defaultValue = value;
-	      if (!this.hasUserValue) {
-	        this.saveAndNotify();
-	      }
-	    }
-	  },
-	
-	  
-
-
-
-	  clearUserValue: function () {
-	    if (this.hasUserValue) {
-	      this.userValue = null;
-	      this.hasUserValue = false;
-	      this.saveAndNotify();
-	    }
-	  },
-	
-	  
-
-
-
-	  saveAndNotify: function () {
-	    let store = {
-	      type: this.type,
-	      defaultValue: this.defaultValue,
-	      hasUserValue: this.hasUserValue,
-	      userValue: this.userValue,
-	    };
-	
-	    localStorage.setItem(this.fullName, JSON.stringify(store));
-	    this.branch._notify(this.name);
-	  },
-	
-	  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	  storageUpdated: function (type, userValue, hasUserValue, defaultValue) {
-	    this.type = type;
-	    this.defaultValue = defaultValue;
-	    this.hasUserValue = hasUserValue;
-	    this.userValue = userValue;
-	    
-	    
-	    this.branch._notify(this.name);
-	  },
-	};
-	
-	
-
-
-
-
-
-
-
-
-
-	function PrefBranch(parent, name, fullName) {
-	  this._parent = parent;
-	  this._name = name;
-	  this._fullName = fullName;
-	  this._observers = {};
-	  this._children = {};
-	
-	  if (!parent) {
-	    this._initializeRoot();
-	  }
-	}
-	
-	PrefBranch.prototype = {
-	  PREF_INVALID: PREF_INVALID,
-	  PREF_STRING: PREF_STRING,
-	  PREF_INT: PREF_INT,
-	  PREF_BOOL: PREF_BOOL,
-	
-	  
-	  get root() {
-	    return this._fullName;
-	  },
-	
-	  
-	  getPrefType: function (prefName) {
-	    return this._findPref(prefName).type;
-	  },
-	
-	  
-	  getBoolPref: function (prefName) {
-	    let thePref = this._findPref(prefName);
-	    if (thePref.type !== PREF_BOOL) {
-	      throw new Error(`${prefName} does not have bool type`);
-	    }
-	    return thePref.get();
-	  },
-	
-	  
-	  setBoolPref: function (prefName, value) {
-	    if (typeof value !== "boolean") {
-	      throw new Error("non-bool passed to setBoolPref");
-	    }
-	    let thePref = this._findOrCreatePref(prefName, value, true, value);
-	    if (thePref.type !== PREF_BOOL) {
-	      throw new Error(`${prefName} does not have bool type`);
-	    }
-	    thePref.set(value);
-	  },
-	
-	  
-	  getCharPref: function (prefName) {
-	    let thePref = this._findPref(prefName);
-	    if (thePref.type !== PREF_STRING) {
-	      throw new Error(`${prefName} does not have string type`);
-	    }
-	    return thePref.get();
-	  },
-	
-	  
-	  setCharPref: function (prefName, value) {
-	    if (typeof value !== "string") {
-	      throw new Error("non-string passed to setCharPref");
-	    }
-	    let thePref = this._findOrCreatePref(prefName, value, true, value);
-	    if (thePref.type !== PREF_STRING) {
-	      throw new Error(`${prefName} does not have string type`);
-	    }
-	    thePref.set(value);
-	  },
-	
-	  
-	  getIntPref: function (prefName) {
-	    let thePref = this._findPref(prefName);
-	    if (thePref.type !== PREF_INT) {
-	      throw new Error(`${prefName} does not have int type`);
-	    }
-	    return thePref.get();
-	  },
-	
-	  
-	  setIntPref: function (prefName, value) {
-	    if (typeof value !== "number") {
-	      throw new Error("non-number passed to setIntPref");
-	    }
-	    let thePref = this._findOrCreatePref(prefName, value, true, value);
-	    if (thePref.type !== PREF_INT) {
-	      throw new Error(`${prefName} does not have int type`);
-	    }
-	    thePref.set(value);
-	  },
-	
-	  
-	  clearUserPref: function (prefName) {
-	    let thePref = this._findPref(prefName);
-	    thePref.clearUserValue();
-	  },
-	
-	  
-	  prefHasUserValue: function (prefName) {
-	    let thePref = this._findPref(prefName);
-	    return thePref.hasUserValue;
-	  },
-	
-	  
-	  addObserver: function (domain, observer, holdWeak) {
-	    if (domain !== "" && !domain.endsWith(".")) {
-	      throw new Error("invalid domain to addObserver: " + domain);
-	    }
-	    if (holdWeak) {
-	      throw new Error("shim prefs only supports strong observers");
-	    }
-	
-	    if (!(domain in this._observers)) {
-	      this._observers[domain] = [];
-	    }
-	    this._observers[domain].push(observer);
-	  },
-	
-	  
-	  removeObserver: function (domain, observer) {
-	    if (!(domain in this._observers)) {
-	      return;
-	    }
-	    let index = this._observers[domain].indexOf(observer);
-	    if (index >= 0) {
-	      this._observers[domain].splice(index, 1);
-	    }
-	  },
-	
-	  
-	  savePrefFile: function (file) {
-	    if (file) {
-	      throw new Error("shim prefs only supports null file in savePrefFile");
-	    }
-	    
-	  },
-	
-	  
-	  getBranch: function (prefRoot) {
-	    if (!prefRoot) {
-	      return this;
-	    }
-	    if (prefRoot.endsWith(".")) {
-	      prefRoot = prefRoot.slice(0, -1);
-	    }
-	    
-	    
-	    return this._findPref(prefRoot);
-	  },
-	
-	  
-
-
-
-
-
-
-	  _findPref: function (prefName) {
-	    let branchNames = prefName.split(".");
-	    let branch = this;
-	
-	    for (let branchName of branchNames) {
-	      branch = branch._children[branchName];
-	      if (!branch) {
-	        throw new Error("could not find pref branch " + prefName);
-	      }
-	    }
-	
-	    return branch;
-	  },
-	
-	  
-
-
-
-
-
-
-
-	  _notify: function (relativeName) {
-	    for (let domain in this._observers) {
-	      if (relativeName.startsWith(domain)) {
-	        
-	        let localList = this._observers[domain].slice();
-	        for (let observer of localList) {
-	          try {
-	            observer.observe(this, NS_PREFBRANCH_PREFCHANGE_TOPIC_ID,
-	                             relativeName);
-	          } catch (e) {
-	            console.error(e);
-	          }
-	        }
-	      }
-	    }
-	
-	    if (this._parent) {
-	      this._parent._notify(this._name + "." + relativeName);
-	    }
-	  },
-	
-	  
-
-
-
-
-
-
-
-	  _createBranch: function (branchList) {
-	    let parent = this;
-	    for (let branch of branchList) {
-	      if (!parent._children[branch]) {
-	        parent._children[branch] = new PrefBranch(parent, branch,
-	                                                  parent.root + "." + branch);
-	      }
-	      parent = parent._children[branch];
-	    }
-	    return parent;
-	  },
-	
-	  
-
-
-
-
-
-
-
-
-
-
-
-	  _findOrCreatePref: function (keyName, userValue, hasUserValue, defaultValue) {
-	    let branchName = keyName.split(".");
-	    let prefName = branchName.pop();
-	
-	    let branch = this._createBranch(branchName);
-	    if (!(prefName in branch._children)) {
-	      if (hasUserValue && typeof (userValue) !== typeof (defaultValue)) {
-	        throw new Error("inconsistent values when creating " + keyName);
-	      }
-	
-	      let type;
-	      switch (typeof (defaultValue)) {
-	        case "boolean":
-	          type = PREF_BOOL;
-	          break;
-	        case "number":
-	          type = PREF_INT;
-	          break;
-	        case "string":
-	          type = PREF_STRING;
-	          break;
-	        default:
-	          throw new Error("unhandled argument type: " + typeof (defaultValue));
-	      }
-	
-	      let thePref = new Preference(branch, prefName, keyName);
-	      thePref.storageUpdated(type, userValue, hasUserValue, defaultValue);
-	      branch._children[prefName] = thePref;
-	    }
-	
-	    return branch._children[prefName];
-	  },
-	
-	  
-
-
-
-
-
-
-	  _onStorageChange: function (event) {
-	    if (event.storageArea !== localStorage) {
-	      return;
-	    }
-	
-	    
-	    if (event.key === null || event.newValue === null) {
-	      return;
-	    }
-	
-	    let {type, userValue, hasUserValue, defaultValue} =
-	        JSON.parse(event.newValue);
-	    if (event.oldValue === null) {
-	      this._findOrCreatePref(event.key, userValue, hasUserValue, defaultValue);
-	    } else {
-	      let thePref = this._findPref(event.key);
-	      thePref.storageUpdated(type, userValue, hasUserValue, defaultValue);
-	    }
-	  },
-	
-	  
-
-
-	  _initializeRoot: function () {
-	    try {
-	      if (localStorage.length === 0) {
-	        
-	        
-	      }
-	    } catch(e) {
-	      
-	      
-	      return;
-	    }
-	
-	    
-	    
-	    for (let i = 0; i < localStorage.length; ++i) {
-	      let keyName = localStorage.key(i);
-	      try {
-	        let {userValue, hasUserValue, defaultValue} =
-	            JSON.parse(localStorage.getItem(keyName));
-	
-	        this._findOrCreatePref(keyName, userValue, hasUserValue, defaultValue);
-	      } catch (e) {
-	      }
-	    }
-	
-	    this._onStorageChange = this._onStorageChange.bind(this);
-	    window.addEventListener("storage", this._onStorageChange);
-	  },
-	};
-	
-	const Services = {
-	  
-
-
-
-
-	  prefs: new PrefBranch(null, "", ""),
-	
-	  
-
-
-
-	  appinfo: {
-	    get OS() {
-	      const os = window.navigator.userAgent;
-	      if (os) {
-	        if (os.includes("Linux")) {
-	          return "Linux";
-	        } else if (os.includes("Windows")) {
-	          return "WINNT";
-	        } else if (os.includes("Mac")) {
-	          return "Darwin";
-	        }
-	      }
-	      return "Unknown";
-	    },
-	
-	    
-	    get name() {
-	      return window.navigator.userAgent;
-	    },
-	
-	    
-	    get version() {
-	      return window.navigator.appVersion;
-	    },
-	
-	    
-	    
-	    get is64Bit() {
-	      return true;
-	    },
-	  },
-	
-	  
-
-
-
-	  telemetry: {
-	    getHistogramById: function (name) {
-	      return {
-	        add: () => {}
-	      };
-	    },
-	
-	    getKeyedHistogramById: function (name) {
-	      return {
-	        add: () => {}
-	      };
-	    },
-	  },
-	
-	  
-
-
-
-
-	  focus: {
-	    
-	    
-	    MOVEFOCUS_FORWARD: 1,
-	    MOVEFOCUS_BACKWARD: 2,
-	
-	    get focusedElement() {
-	      if (!document.hasFocus()) {
-	        return null;
-	      }
-	      return document.activeElement;
-	    },
-	
-	    moveFocus: function (window, startElement, type, flags) {
-	      if (flags !== 0) {
-	        throw new Error("shim Services.focus.moveFocus only accepts flags===0");
-	      }
-	      if (type !== Services.focus.MOVEFOCUS_FORWARD
-	          && type !== Services.focus.MOVEFOCUS_BACKWARD) {
-	        throw new Error("shim Services.focus.moveFocus only supports " +
-	                        " MOVEFOCUS_FORWARD and MOVEFOCUS_BACKWARD");
-	      }
-	
-	      if (!startElement) {
-	        startElement = document.activeElement || document;
-	      }
-	
-	      let iter = document.createTreeWalker(document, NodeFilter.SHOW_ELEMENT, {
-	        acceptNode: function (node) {
-	          let tabIndex = node.getAttribute("tabindex");
-	          if (tabIndex === "-1") {
-	            return NodeFilter.FILTER_SKIP;
-	          }
-	          node.focus();
-	          if (document.activeElement == node) {
-	            return NodeFilter.FILTER_ACCEPT;
-	          }
-	          return NodeFilter.FILTER_SKIP;
-	        }
-	      });
-	
-	      iter.currentNode = startElement;
-	
-	      
-	      if (type === Services.focus.MOVEFOCUS_FORWARD) {
-	        iter.nextNode();
-	      } else {
-	        iter.previousNode();
-	      }
-	    },
-	  },
-	};
-	
-	
-
-
-
-
-
-
-
-	function pref(name, value) {
-	  let thePref = Services.prefs._findOrCreatePref(name, value, true, value);
-	  thePref.setDefault(value);
-	}
-	
-	exports.Services = Services;
-	
-	
-	
-	exports.pref = pref;
-
-
- },
-
- function(module, exports, __webpack_require__) {
-
-	
-	
-	var breakpoints = __webpack_require__(215);
-	var eventListeners = __webpack_require__(218);
-	var sources = __webpack_require__(219);
-	var tabs = __webpack_require__(222);
-	var pause = __webpack_require__(223);
-	var navigation = __webpack_require__(224);
-	
-	module.exports = Object.assign(navigation, breakpoints, eventListeners, sources, tabs, pause);
-
- },
-
- function(module, exports, __webpack_require__) {
-
-	var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
-	
-	function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { return step("next", value); }, function (err) { return step("throw", err); }); } } return step("next"); }); }; }
-	
-	
-
-
-	
-	
-
-
-
-	
-	var constants = __webpack_require__(190);
-	
-	var _require = __webpack_require__(184);
-	
-	var PROMISE = _require.PROMISE;
-	
-	var _require2 = __webpack_require__(199);
-	
-	var getBreakpoint = _require2.getBreakpoint;
-	var getBreakpoints = _require2.getBreakpoints;
-	
-	var _require3 = __webpack_require__(216);
-	
-	var getOriginalLocation = _require3.getOriginalLocation;
-	var getGeneratedLocation = _require3.getGeneratedLocation;
-	
-	
-
-
-
-
-
-
-	
-	function _breakpointExists(state, location) {
-	  var currentBp = getBreakpoint(state, location);
-	  return currentBp && !currentBp.disabled;
-	}
-	
-	function _getOrCreateBreakpoint(state, location, condition) {
-	  return getBreakpoint(state, location) || { location, condition };
+	function trimUrlQuery(url) {
+	  var length = url.length;
+	  var q1 = url.indexOf("?");
+	  var q2 = url.indexOf("&");
+	  var q3 = url.indexOf("#");
+	  var q = Math.min(q1 != -1 ? q1 : length, q2 != -1 ? q2 : length, q3 != -1 ? q3 : length);
+	
+	  return url.slice(0, q);
 	}
 	
 	
@@ -29530,425 +33343,20 @@ var Debugger =
 
 
 
-	function enableBreakpoint(location) {
-	  return addBreakpoint(location);
+	function isJavaScript(url) {
+	  var contentType = arguments.length <= 1 || arguments[1] === undefined ? "" : arguments[1];
+	
+	  return url && /\.(jsm|js)?$/.test(trimUrlQuery(url)) || contentType.includes("javascript");
 	}
 	
 	
-
-
-
-
-
-
-
-	function addBreakpoint(location) {
-	  var _ref = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
-	
-	  var condition = _ref.condition;
-	  var getTextForLine = _ref.getTextForLine;
-	
-	  return _ref2 => {
-	    var dispatch = _ref2.dispatch;
-	    var getState = _ref2.getState;
-	    var client = _ref2.client;
-	
-	    if (_breakpointExists(getState(), location)) {
-	      return Promise.resolve();
-	    }
-	
-	    var bp = _getOrCreateBreakpoint(getState(), location, condition);
-	
-	    return dispatch({
-	      type: constants.ADD_BREAKPOINT,
-	      breakpoint: bp,
-	      condition: condition,
-	      [PROMISE]: _asyncToGenerator(function* () {
-	        location = yield getGeneratedLocation(getState(), bp.location);
-	
-	        var _ref4 = yield client.setBreakpoint(location, bp.condition);
-	
-	        var id = _ref4.id;
-	        var actualLocation = _ref4.actualLocation;
-	
-	
-	        actualLocation = yield getOriginalLocation(getState(), actualLocation);
-	
-	        
-	        
-	        var text = bp.text;
-	        if (!text) {
-	          text = getTextForLine ? getTextForLine(actualLocation.line) : "";
-	        }
-	
-	        return { id, actualLocation, text };
-	      })()
-	    });
-	  };
-	}
-	
-	
-
-
-
-
-
-	function disableBreakpoint(location) {
-	  return _removeOrDisableBreakpoint(location, true);
-	}
-	
-	
-
-
-
-
-
-	function removeBreakpoint(location) {
-	  return _removeOrDisableBreakpoint(location);
-	}
-	
-	function _removeOrDisableBreakpoint(location, isDisabled) {
-	  return _ref5 => {
-	    var dispatch = _ref5.dispatch;
-	    var getState = _ref5.getState;
-	    var client = _ref5.client;
-	
-	    var bp = getBreakpoint(getState(), location);
-	    if (!bp) {
-	      throw new Error("attempt to remove breakpoint that does not exist");
-	    }
-	    if (bp.loading) {
-	      
-	      
-	      throw new Error("attempt to remove unsaved breakpoint");
-	    }
-	
-	    var action = {
-	      type: constants.REMOVE_BREAKPOINT,
-	      breakpoint: bp,
-	      disabled: isDisabled
-	    };
-	
-	    
-	    
-	    
-	    
-	    if (!bp.disabled) {
-	      return dispatch(Object.assign({}, action, {
-	        [PROMISE]: client.removeBreakpoint(bp.id)
-	      }));
-	    }
-	    return dispatch(Object.assign({}, action, { status: "done" }));
-	  };
-	}
-	
-	
-
-
-
-
-
-	function toggleAllBreakpoints(shouldDisableBreakpoints) {
-	  return _ref6 => {
-	    var dispatch = _ref6.dispatch;
-	    var getState = _ref6.getState;
-	
-	    var breakpoints = getBreakpoints(getState());
-	    return dispatch({
-	      type: constants.TOGGLE_BREAKPOINTS,
-	      shouldDisableBreakpoints,
-	      [PROMISE]: _asyncToGenerator(function* () {
-	        for (var _ref8 of breakpoints) {
-	          var _ref9 = _slicedToArray(_ref8, 2);
-	
-	          var breakpoint = _ref9[1];
-	
-	          if (shouldDisableBreakpoints) {
-	            yield dispatch(disableBreakpoint(breakpoint.location));
-	          } else {
-	            yield dispatch(enableBreakpoint(breakpoint.location));
-	          }
-	        }
-	      })()
-	    });
-	  };
-	}
-	
-	
-
-
-
-
-
-
-
-
-
-
-
-	function setBreakpointCondition(location, condition) {
-	  throw new Error("not implemented");
-	
-	  
-	  
-	  
-	  
-	  
-	  
-	  
-	  
-	  
-	  
-	
-	  
-	  
-	  
-	  
-	  
-	  
-	  
-	  
-	  
+	function isPretty(source) {
+	  return source.url ? /formatted$/.test(source.url) : false;
 	}
 	
 	module.exports = {
-	  enableBreakpoint,
-	  addBreakpoint,
-	  disableBreakpoint,
-	  removeBreakpoint,
-	  toggleAllBreakpoints,
-	  setBreakpointCondition
-	};
-
- },
-
- function(module, exports, __webpack_require__) {
-
-	var getOriginalSources = (() => {
-	  var _ref = _asyncToGenerator(function* (state, source) {
-	    var originalSourceUrls = yield getOriginalSourceUrls(source);
-	    return originalSourceUrls.map(function (url) {
-	      return getSourceByURL(state, url);
-	    });
-	  });
-	
-	  return function getOriginalSources(_x, _x2) {
-	    return _ref.apply(this, arguments);
-	  };
-	})();
-	
-	var getGeneratedLocation = (() => {
-	  var _ref2 = _asyncToGenerator(function* (state, location) {
-	    var source = getSource(state, location.sourceId);
-	
-	    if (!source) {
-	      return location;
-	    }
-	
-	    if (yield isOriginal(source.toJS())) {
-	      return yield getGeneratedSourceLocation(source.toJS(), location);
-	    }
-	
-	    return location;
-	  });
-	
-	  return function getGeneratedLocation(_x3, _x4) {
-	    return _ref2.apply(this, arguments);
-	  };
-	})();
-	
-	var getOriginalLocation = (() => {
-	  var _ref3 = _asyncToGenerator(function* (state, location) {
-	    var source = getSource(state, location.sourceId);
-	
-	    if (!source) {
-	      return location;
-	    }
-	
-	    if (isGenerated(source.toJS())) {
-	      var originalPosition = yield getOriginalSourcePosition(source.toJS(), location);
-	
-	      var url = originalPosition.url;
-	      var line = originalPosition.line;
-	
-	      if (!url) {
-	        return {
-	          sourceId: source.get("id"),
-	          line: location.line
-	        };
-	      }
-	
-	      var originalSource = getSourceByURL(state, url);
-	
-	      return {
-	        sourceId: originalSource.get("id"),
-	        line
-	      };
-	    }
-	
-	    return location;
-	  });
-	
-	  return function getOriginalLocation(_x5, _x6) {
-	    return _ref3.apply(this, arguments);
-	  };
-	})();
-	
-	var getOriginalSourceTexts = (() => {
-	  var _ref4 = _asyncToGenerator(function* (state, generatedSource, generatedText) {
-	    if (!_shouldSourceMap(generatedSource)) {
-	      return [];
-	    }
-	
-	    var originalTexts = yield getOriginalTexts(generatedSource, generatedText);
-	
-	    return originalTexts.map(function (_ref5) {
-	      var text = _ref5.text;
-	      var url = _ref5.url;
-	
-	      var id = getSourceByURL(state, url).get("id");
-	      var contentType = "text/javascript";
-	      return { text, id, contentType };
-	    });
-	  });
-	
-	  return function getOriginalSourceTexts(_x7, _x8, _x9) {
-	    return _ref4.apply(this, arguments);
-	  };
-	})();
-	
-	function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { return step("next", value); }, function (err) { return step("throw", err); }); } } return step("next"); }); }; }
-	
-	var _require = __webpack_require__(176);
-	
-	var workerTask = _require.workerTask;
-	
-	var _require2 = __webpack_require__(217);
-	
-	var makeOriginalSource = _require2.makeOriginalSource;
-	var getGeneratedSourceId = _require2.getGeneratedSourceId;
-	
-	var _require3 = __webpack_require__(199);
-	
-	var getSource = _require3.getSource;
-	var getSourceByURL = _require3.getSourceByURL;
-	
-	var _require4 = __webpack_require__(46);
-	
-	var isEnabled = _require4.isEnabled;
-	var getValue = _require4.getValue;
-	
-	
-	var sourceMapWorker = void 0;
-	function restartWorker() {
-	  if (sourceMapWorker) {
-	    sourceMapWorker.terminate();
-	  }
-	  sourceMapWorker = new Worker(getValue("baseWorkerURL") + "source-map-worker.js");
-	}
-	restartWorker();
-	
-	function destroy() {
-	  if (sourceMapWorker) {
-	    sourceMapWorker.terminate();
-	    sourceMapWorker = null;
-	  }
-	}
-	
-	var sourceMapTask = function (method) {
-	  return function () {
-	    var args = Array.prototype.slice.call(arguments);
-	    return workerTask(sourceMapWorker, { method, args });
-	  };
-	};
-	
-	var getOriginalSourcePosition = sourceMapTask("getOriginalSourcePosition");
-	var getGeneratedSourceLocation = sourceMapTask("getGeneratedSourceLocation");
-	var createOriginalSources = sourceMapTask("createOriginalSources");
-	var getOriginalSourceUrls = sourceMapTask("getOriginalSourceUrls");
-	var getOriginalTexts = sourceMapTask("getOriginalTexts");
-	var createSourceMap = sourceMapTask("createSourceMap");
-	var clearData = sourceMapTask("clearData");
-	
-	function _shouldSourceMap(source) {
-	  return isEnabled("sourceMaps") && source.sourceMapURL;
-	}
-	
-	function isMapped(source) {
-	  return _shouldSourceMap(source);
-	}
-	
-	function isOriginal(originalSource) {
-	  return !!getGeneratedSourceId(originalSource);
-	}
-	
-	function isGenerated(source) {
-	  return !isOriginal(source);
-	}
-	
-	function getGeneratedSource(state, source) {
-	  if (isGenerated(source)) {
-	    return source;
-	  }
-	
-	  var generatedSourceId = getGeneratedSourceId(source);
-	  var originalSource = getSource(state, generatedSourceId);
-	
-	  if (originalSource) {
-	    return originalSource.toJS();
-	  }
-	
-	  return source;
-	}
-	
-	module.exports = {
-	  getGeneratedLocation,
-	  getOriginalLocation,
-	  makeOriginalSource,
-	  getOriginalSources,
-	  getGeneratedSource,
-	  getOriginalSourceTexts,
-	  getOriginalSourcePosition,
-	  getGeneratedSourceLocation,
-	  createOriginalSources,
-	  getOriginalSourceUrls,
-	  isOriginal,
-	  isGenerated,
-	  isMapped,
-	  getGeneratedSourceId,
-	  createSourceMap,
-	  clearData,
-	  restartWorker,
-	  destroy
-	};
-
- },
-
- function(module, exports) {
-
-	
-	function getGeneratedSourceId(originalSource) {
-	  var match = originalSource.id.match(/(.*)\/originalSource/);
-	  return match ? match[1] : null;
-	}
-	
-	function makeOriginalSource(_ref) {
-	  var url = _ref.url;
-	  var source = _ref.source;
-	  var _ref$id = _ref.id;
-	  var id = _ref$id === undefined ? 1 : _ref$id;
-	
-	  var generatedSourceId = source.id;
-	  return {
-	    url,
-	    id: `${ generatedSourceId }/originalSource${ id }`,
-	    isPrettyPrinted: false
-	  };
-	}
-	
-	module.exports = {
-	  makeOriginalSource,
-	  getGeneratedSourceId
+	  isJavaScript,
+	  isPretty
 	};
 
  },
@@ -29968,11 +33376,11 @@ var Debugger =
 	
 	var constants = __webpack_require__(190);
 	
-	var _require = __webpack_require__(176);
+	var _require = __webpack_require__(183);
 	
 	var asPaused = _require.asPaused;
 	
-	var _require2 = __webpack_require__(186);
+	var _require2 = __webpack_require__(185);
 	
 	var reportException = _require2.reportException;
 	
@@ -30122,9 +33530,7 @@ var Debugger =
 	    var mappings = _ref3.mappings;
 	
 	
-	    yield createSourceMap({ source, mappings, code });
-	
-	    return code;
+	    return { code, mappings };
 	  });
 	
 	  return function _prettyPrintSource(_x) {
@@ -30152,7 +33558,7 @@ var Debugger =
 	
 	var defer = __webpack_require__(112);
 	
-	var _require = __webpack_require__(184);
+	var _require = __webpack_require__(182);
 	
 	var PROMISE = _require.PROMISE;
 	
@@ -30160,21 +33566,25 @@ var Debugger =
 	
 	var Task = _require2.Task;
 	
-	var _require3 = __webpack_require__(220);
+	var _require3 = __webpack_require__(233);
 	
 	var isJavaScript = _require3.isJavaScript;
 	
-	var _require4 = __webpack_require__(175);
+	var _require4 = __webpack_require__(183);
 	
-	var networkRequest = _require4.networkRequest;
+	var workerTask = _require4.workerTask;
 	
-	var _require5 = __webpack_require__(176);
+	var _require5 = __webpack_require__(236);
 	
-	var workerTask = _require5.workerTask;
+	var updateFrameLocations = _require5.updateFrameLocations;
 	
-	var _require6 = __webpack_require__(221);
+	var _require6 = __webpack_require__(211);
 	
-	var updateFrameLocations = _require6.updateFrameLocations;
+	var fetchSourceMap = _require6.fetchSourceMap;
+	var getOriginalSourceText = _require6.getOriginalSourceText;
+	var generatedToOriginalId = _require6.generatedToOriginalId;
+	var isOriginalId = _require6.isOriginalId;
+	var applySourceMap = _require6.applySourceMap;
 	
 	
 	var constants = __webpack_require__(190);
@@ -30184,13 +33594,9 @@ var Debugger =
 	
 	var isEnabled = _require7.isEnabled;
 	
-	var _require8 = __webpack_require__(216);
+	var _require8 = __webpack_require__(237);
 	
-	var createOriginalSources = _require8.createOriginalSources;
-	var getOriginalSourceTexts = _require8.getOriginalSourceTexts;
-	var createSourceMap = _require8.createSourceMap;
-	var makeOriginalSource = _require8.makeOriginalSource;
-	var getGeneratedSource = _require8.getGeneratedSource;
+	var removeDocument = _require8.removeDocument;
 	
 	var _require9 = __webpack_require__(199);
 	
@@ -30198,21 +33604,13 @@ var Debugger =
 	var getSourceByURL = _require9.getSourceByURL;
 	var getSourceText = _require9.getSourceText;
 	var getPendingSelectedLocation = _require9.getPendingSelectedLocation;
-	var getSourceMap = _require9.getSourceMap;
-	var getSourceMapURL = _require9.getSourceMapURL;
 	var getFrames = _require9.getFrames;
-	
-	
-	function _shouldSourceMap(generatedSource) {
-	  return isEnabled("sourceMaps") && generatedSource.sourceMapURL;
-	}
-	
 	function newSource(source) {
 	  return _ref4 => {
 	    var dispatch = _ref4.dispatch;
 	    var getState = _ref4.getState;
 	
-	    if (_shouldSourceMap(source)) {
+	    if (isEnabled("sourceMaps")) {
 	      dispatch(loadSourceMap(source));
 	    }
 	
@@ -30244,32 +33642,35 @@ var Debugger =
 
 
 	function loadSourceMap(generatedSource) {
-	  return _ref6 => {
-	    var dispatch = _ref6.dispatch;
-	    var getState = _ref6.getState;
+	  return (() => {
+	    var _ref6 = _asyncToGenerator(function* (_ref7) {
+	      var dispatch = _ref7.dispatch;
+	      var getState = _ref7.getState;
 	
-	    var sourceMap = getSourceMap(getState(), generatedSource.id);
-	    if (sourceMap) {
-	      return;
-	    }
+	      var map = yield fetchSourceMap(generatedSource);
+	      if (!map) {
+	        
+	        return;
+	      }
 	
-	    dispatch({
-	      type: constants.LOAD_SOURCE_MAP,
-	      source: generatedSource,
-	      [PROMISE]: _asyncToGenerator(function* () {
-	        var sourceMapURL = getSourceMapURL(getState(), generatedSource);
-	        sourceMap = yield networkRequest(sourceMapURL);
+	      var originalSources = map.sources.map(function (originalUrl) {
+	        return {
+	          url: originalUrl,
+	          id: generatedToOriginalId(generatedSource.id, originalUrl),
+	          isPrettyPrinted: false
+	        };
+	      });
 	
-	        var originalSources = yield createOriginalSources(generatedSource, sourceMap);
-	
-	        originalSources.forEach(function (s) {
-	          return dispatch(newSource(s));
-	        });
-	
-	        return { sourceMap };
-	      })()
+	      originalSources.forEach(function (s) {
+	        return dispatch(newSource(s));
+	      });
+	      return map;
 	    });
-	  };
+	
+	    return function (_x2) {
+	      return _ref6.apply(this, arguments);
+	    };
+	  })();
 	}
 	
 	
@@ -30339,6 +33740,7 @@ var Debugger =
 
 
 	function closeTab(id) {
+	  removeDocument(id);
 	  return {
 	    type: constants.CLOSE_TAB,
 	    id: id
@@ -30388,25 +33790,22 @@ var Debugger =
 
 
 
-	function togglePrettyPrint(id) {
+	function togglePrettyPrint(sourceId) {
 	  return _ref11 => {
 	    var dispatch = _ref11.dispatch;
 	    var getState = _ref11.getState;
 	    var client = _ref11.client;
 	
-	    var source = getSource(getState(), id).toJS();
-	    var sourceText = getSourceText(getState(), id).toJS();
+	    var source = getSource(getState(), sourceId).toJS();
+	    var sourceText = getSourceText(getState(), sourceId).toJS();
 	
-	    if (sourceText.loading) {
-	      return;
-	    }
-	
-	    if (!isEnabled("prettyPrint") || source.isPrettyPrinted) {
+	    if (!isEnabled("prettyPrint") || sourceText.loading || source.isPrettyPrinted) {
 	      return {};
 	    }
 	
 	    var url = source.url + ":formatted";
-	    var originalSource = makeOriginalSource({ url, source });
+	    var id = generatedToOriginalId(source.id, url);
+	    var originalSource = { url, id, isPrettyPrinted: false };
 	    dispatch({
 	      type: constants.ADD_SOURCE,
 	      source: originalSource
@@ -30417,16 +33816,20 @@ var Debugger =
 	      source,
 	      originalSource,
 	      [PROMISE]: _asyncToGenerator(function* () {
-	        var state = getState();
-	        var text = yield _prettyPrintSource({ source, sourceText, url });
-	        var frames = yield updateFrameLocations(state, getFrames(state));
+	        var _ref13 = yield _prettyPrintSource({ source, sourceText, url });
 	
+	        var code = _ref13.code;
+	        var mappings = _ref13.mappings;
+	
+	        applySourceMap(source.id, url, code, mappings);
+	
+	        var frames = yield updateFrameLocations(getFrames(getState()));
 	        dispatch(selectSource(originalSource.id));
 	
 	        var originalSourceText = {
 	          id: originalSource.id,
 	          contentType: "text/javascript",
-	          text
+	          code
 	        };
 	
 	        return {
@@ -30444,10 +33847,10 @@ var Debugger =
 
 
 	function loadSourceText(source) {
-	  return _ref13 => {
-	    var dispatch = _ref13.dispatch;
-	    var getState = _ref13.getState;
-	    var client = _ref13.client;
+	  return _ref14 => {
+	    var dispatch = _ref14.dispatch;
+	    var getState = _ref14.getState;
+	    var client = _ref14.client;
 	
 	    
 	    var textInfo = getSourceText(getState(), source.id);
@@ -30460,30 +33863,23 @@ var Debugger =
 	      type: constants.LOAD_SOURCE_TEXT,
 	      source: source,
 	      [PROMISE]: _asyncToGenerator(function* () {
-	        var generatedSource = yield getGeneratedSource(getState(), source);
+	        if (isOriginalId(source.id)) {
+	          return yield getOriginalSourceText(source);
+	        }
 	
-	        var response = yield client.sourceContents(generatedSource.id);
-	
-	        var generatedSourceText = {
-	          text: response.source,
-	          contentType: response.contentType || "text/javascript",
-	          id: generatedSource.id
-	        };
-	
-	        var originalSourceTexts = yield getOriginalSourceTexts(getState(), generatedSource, generatedSourceText.text);
-	
-	        
-	        
-	        
-	        
-	        
-	        
-	        
-	
+	        var response = yield client.sourceContents(source.id);
 	        return {
-	          generatedSourceText,
-	          originalSourceTexts
+	          text: response.source,
+	          contentType: response.contentType || "text/javascript"
 	        };
+	
+	        
+	        
+	        
+	        
+	        
+	        
+	        
 	      })()
 	    });
 	  };
@@ -30504,9 +33900,9 @@ var Debugger =
 
 
 	function getTextForSources(actors) {
-	  return _ref15 => {
-	    var dispatch = _ref15.dispatch;
-	    var getState = _ref15.getState;
+	  return _ref16 => {
+	    var dispatch = _ref16.dispatch;
+	    var getState = _ref16.getState;
 	
 	    var deferred = defer();
 	    var pending = new Set(actors);
@@ -30521,9 +33917,9 @@ var Debugger =
 	
 	    var _loop = function (actor) {
 	      var source = getSource(getState(), actor);
-	      dispatch(loadSourceText(source)).then(_ref24 => {
-	        var text = _ref24.text;
-	        var contentType = _ref24.contentType;
+	      dispatch(loadSourceText(source)).then(_ref25 => {
+	        var text = _ref25.text;
+	        var contentType = _ref25.contentType;
 	
 	        onFetch([source, text, contentType]);
 	      }, err => {
@@ -30544,12 +33940,12 @@ var Debugger =
 	    }
 	
 	    
-	    function onFetch(_ref16) {
-	      var _ref17 = _slicedToArray(_ref16, 3);
+	    function onFetch(_ref17) {
+	      var _ref18 = _slicedToArray(_ref17, 3);
 	
-	      var aSource = _ref17[0];
-	      var aText = _ref17[1];
-	      var aContentType = _ref17[2];
+	      var aSource = _ref18[0];
+	      var aText = _ref18[1];
+	      var aContentType = _ref18[2];
 	
 	      
 	      if (!pending.has(aSource.actor)) {
@@ -30561,11 +33957,11 @@ var Debugger =
 	    }
 	
 	    
-	    function onError(_ref18) {
-	      var _ref19 = _slicedToArray(_ref18, 2);
+	    function onError(_ref19) {
+	      var _ref20 = _slicedToArray(_ref19, 2);
 	
-	      var aSource = _ref19[0];
-	      var aError = _ref19[1];
+	      var aSource = _ref20[0];
+	      var aError = _ref20[1];
 	
 	      pending.delete(aSource.actor);
 	      maybeFinish();
@@ -30577,14 +33973,14 @@ var Debugger =
 	    function maybeFinish() {
 	      if (pending.size == 0) {
 	        
-	        deferred.resolve(fetched.sort((_ref20, _ref21) => {
-	          var _ref23 = _slicedToArray(_ref20, 1);
+	        deferred.resolve(fetched.sort((_ref21, _ref22) => {
+	          var _ref24 = _slicedToArray(_ref21, 1);
 	
-	          var aFirst = _ref23[0];
+	          var aFirst = _ref24[0];
 	
-	          var _ref22 = _slicedToArray(_ref21, 1);
+	          var _ref23 = _slicedToArray(_ref22, 1);
 	
-	          var aSecond = _ref22[0];
+	          var aSecond = _ref23[0];
 	          return aFirst > aSecond;
 	        }));
 	      }
@@ -30608,95 +34004,68 @@ var Debugger =
 
  },
 
- function(module, exports) {
-
-	
-	
-
-
-
-
-
-	function trimUrlQuery(url) {
-	  var length = url.length;
-	  var q1 = url.indexOf("?");
-	  var q2 = url.indexOf("&");
-	  var q3 = url.indexOf("#");
-	  var q = Math.min(q1 != -1 ? q1 : length, q2 != -1 ? q2 : length, q3 != -1 ? q3 : length);
-	
-	  return url.slice(0, q);
-	}
-	
-	
-
-
-
-
-
-
-	function isJavaScript(url) {
-	  var contentType = arguments.length <= 1 || arguments[1] === undefined ? "" : arguments[1];
-	
-	  return url && /\.jsm?$/.test(trimUrlQuery(url)) || contentType.includes("javascript");
-	}
-	
-	function isPretty(source) {
-	  return source.url.match(/formatted$/);
-	}
-	
-	module.exports = {
-	  isJavaScript,
-	  isPretty
-	};
-
- },
-
  function(module, exports, __webpack_require__) {
 
-	var updateFrameLocation = (() => {
-	  var _ref = _asyncToGenerator(function* (state, frame) {
-	    var originalLocation = yield getOriginalLocation(state, frame.location);
-	
-	    return Frame.update(frame, {
-	      $merge: { location: Location(originalLocation) }
-	    });
-	  });
-	
-	  return function updateFrameLocation(_x, _x2) {
-	    return _ref.apply(this, arguments);
-	  };
-	})();
-	
-	var updateFrameLocations = (() => {
-	  var _ref2 = _asyncToGenerator(function* (state, frames) {
-	    return yield asyncMap(frames, function (item) {
-	      return updateFrameLocation(state, item);
-	    });
-	  });
-	
-	  return function updateFrameLocations(_x3, _x4) {
-	    return _ref2.apply(this, arguments);
-	  };
-	})();
-	
 	function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { return step("next", value); }, function (err) { return step("throw", err); }); } } return step("next"); }); }; }
 	
 	var _require = __webpack_require__(114);
 	
-	var Location = _require.Location;
 	var Frame = _require.Frame;
 	
-	var _require2 = __webpack_require__(216);
+	var _require2 = __webpack_require__(211);
 	
 	var getOriginalLocation = _require2.getOriginalLocation;
 	
-	var _require3 = __webpack_require__(176);
+	var _require3 = __webpack_require__(183);
 	
 	var asyncMap = _require3.asyncMap;
 	
 	
+	function updateFrameLocations(frames) {
+	  return asyncMap(frames, (() => {
+	    var _ref = _asyncToGenerator(function* (frame) {
+	      return Frame.update(frame, {
+	        $merge: { location: yield getOriginalLocation(frame.location) }
+	      });
+	    });
+	
+	    return function (_x) {
+	      return _ref.apply(this, arguments);
+	    };
+	  })());
+	}
+	
 	module.exports = {
 	  updateFrameLocations
+	};
+
+ },
+
+ function(module, exports) {
+
+	var sourceDocs = {};
+	
+	function getDocument(key) {
+	  return sourceDocs[key];
+	}
+	
+	function setDocument(key, doc) {
+	  sourceDocs[key] = doc;
+	}
+	
+	function removeDocument(key) {
+	  delete sourceDocs[key];
+	}
+	
+	function clearDocuments() {
+	  sourceDocs = {};
+	}
+	
+	module.exports = {
+	  getDocument,
+	  setDocument,
+	  removeDocument,
+	  clearDocuments
 	};
 
  },
@@ -30764,11 +34133,11 @@ var Debugger =
 	
 	var constants = __webpack_require__(190);
 	
-	var _require = __webpack_require__(219);
+	var _require = __webpack_require__(235);
 	
 	var selectSource = _require.selectSource;
 	
-	var _require2 = __webpack_require__(184);
+	var _require2 = __webpack_require__(182);
 	
 	var PROMISE = _require2.PROMISE;
 	
@@ -30776,7 +34145,7 @@ var Debugger =
 	
 	var getExpressions = _require3.getExpressions;
 	
-	var _require4 = __webpack_require__(221);
+	var _require4 = __webpack_require__(236);
 	
 	var updateFrameLocations = _require4.updateFrameLocations;
 	
@@ -30817,11 +34186,11 @@ var Debugger =
 	      var dispatch = _ref3.dispatch;
 	      var getState = _ref3.getState;
 	      var client = _ref3.client;
-	      var frame = pauseInfo.frame;
 	      var frames = pauseInfo.frames;
 	      var why = pauseInfo.why;
 	
-	      frames = yield updateFrameLocations(getState(), frames);
+	      frames = yield updateFrameLocations(frames);
+	      var frame = frames[0];
 	
 	      dispatch(evaluateExpressions());
 	      dispatch({
@@ -31090,9 +34459,13 @@ var Debugger =
 
 	var constants = __webpack_require__(190);
 	
-	var _require = __webpack_require__(216);
+	var _require = __webpack_require__(211);
 	
-	var clearData = _require.clearData;
+	var clearSourceMaps = _require.clearSourceMaps;
+	
+	var _require2 = __webpack_require__(237);
+	
+	var clearDocuments = _require2.clearDocuments;
 	
 	
 
@@ -31105,7 +34478,9 @@ var Debugger =
 
 	
 	function willNavigate() {
-	  clearData();
+	  clearSourceMaps();
+	  clearDocuments();
+	
 	  return { type: constants.NAVIGATE };
 	}
 	
@@ -31135,6 +34510,264 @@ var Debugger =
 
  },
 
+ function(module, exports, __webpack_require__) {
+
+	
+
+
+	
+	"use strict";
+	
+	const { Services } = __webpack_require__(208);
+	const EventEmitter = __webpack_require__(111);
+	const isOSX = Services.appinfo.OS === "Darwin";
+	
+	
+	const ElectronKeysMapping = {
+	  "F1": "DOM_VK_F1",
+	  "F2": "DOM_VK_F2",
+	  "F3": "DOM_VK_F3",
+	  "F4": "DOM_VK_F4",
+	  "F5": "DOM_VK_F5",
+	  "F6": "DOM_VK_F6",
+	  "F7": "DOM_VK_F7",
+	  "F8": "DOM_VK_F8",
+	  "F9": "DOM_VK_F9",
+	  "F10": "DOM_VK_F10",
+	  "F11": "DOM_VK_F11",
+	  "F12": "DOM_VK_F12",
+	  "F13": "DOM_VK_F13",
+	  "F14": "DOM_VK_F14",
+	  "F15": "DOM_VK_F15",
+	  "F16": "DOM_VK_F16",
+	  "F17": "DOM_VK_F17",
+	  "F18": "DOM_VK_F18",
+	  "F19": "DOM_VK_F19",
+	  "F20": "DOM_VK_F20",
+	  "F21": "DOM_VK_F21",
+	  "F22": "DOM_VK_F22",
+	  "F23": "DOM_VK_F23",
+	  "F24": "DOM_VK_F24",
+	  "Space": "DOM_VK_SPACE",
+	  "Backspace": "DOM_VK_BACK_SPACE",
+	  "Delete": "DOM_VK_DELETE",
+	  "Insert": "DOM_VK_INSERT",
+	  "Return": "DOM_VK_RETURN",
+	  "Enter": "DOM_VK_RETURN",
+	  "Up": "DOM_VK_UP",
+	  "Down": "DOM_VK_DOWN",
+	  "Left": "DOM_VK_LEFT",
+	  "Right": "DOM_VK_RIGHT",
+	  "Home": "DOM_VK_HOME",
+	  "End": "DOM_VK_END",
+	  "PageUp": "DOM_VK_PAGE_UP",
+	  "PageDown": "DOM_VK_PAGE_DOWN",
+	  "Escape": "DOM_VK_ESCAPE",
+	  "Esc": "DOM_VK_ESCAPE",
+	  "Tab": "DOM_VK_TAB",
+	  "VolumeUp": "DOM_VK_VOLUME_UP",
+	  "VolumeDown": "DOM_VK_VOLUME_DOWN",
+	  "VolumeMute": "DOM_VK_VOLUME_MUTE",
+	  "PrintScreen": "DOM_VK_PRINTSCREEN",
+	};
+	
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	function KeyShortcuts({ window, target }) {
+	  this.window = window;
+	  this.target = target || window;
+	  this.keys = new Map();
+	  this.eventEmitter = new EventEmitter();
+	  this.target.addEventListener("keydown", this);
+	}
+	
+	
+
+
+
+
+
+
+
+
+
+
+	KeyShortcuts.parseElectronKey = function (window, str) {
+	  let modifiers = str.split("+");
+	  let key = modifiers.pop();
+	
+	  let shortcut = {
+	    ctrl: false,
+	    meta: false,
+	    alt: false,
+	    shift: false,
+	    
+	    key: undefined,
+	    
+	    keyCode: undefined,
+	  };
+	  for (let mod of modifiers) {
+	    if (mod === "Alt") {
+	      shortcut.alt = true;
+	    } else if (["Command", "Cmd"].includes(mod)) {
+	      shortcut.meta = true;
+	    } else if (["CommandOrControl", "CmdOrCtrl"].includes(mod)) {
+	      if (isOSX) {
+	        shortcut.meta = true;
+	      } else {
+	        shortcut.ctrl = true;
+	      }
+	    } else if (["Control", "Ctrl"].includes(mod)) {
+	      shortcut.ctrl = true;
+	    } else if (mod === "Shift") {
+	      shortcut.shift = true;
+	    } else {
+	      console.error("Unsupported modifier:", mod, "from key:", str);
+	      return null;
+	    }
+	  }
+	
+	  
+	  
+	  if (key === "Plus") {
+	    key = "+";
+	  }
+	
+	  if (typeof key === "string" && key.length === 1) {
+	    
+	    shortcut.key = key.toLowerCase();
+	  } else if (key in ElectronKeysMapping) {
+	    
+	    key = ElectronKeysMapping[key];
+	    shortcut.keyCode = window.KeyboardEvent[key];
+	    
+	    shortcut.keyCodeString = key;
+	    shortcut.key = key;
+	  } else {
+	    console.error("Unsupported key:", key);
+	    return null;
+	  }
+	
+	  return shortcut;
+	};
+	
+	KeyShortcuts.stringify = function (shortcut) {
+	  let list = [];
+	  if (shortcut.alt) {
+	    list.push("Alt");
+	  }
+	  if (shortcut.ctrl) {
+	    list.push("Ctrl");
+	  }
+	  if (shortcut.meta) {
+	    list.push("Cmd");
+	  }
+	  if (shortcut.shift) {
+	    list.push("Shift");
+	  }
+	  let key;
+	  if (shortcut.key) {
+	    key = shortcut.key.toUpperCase();
+	  } else {
+	    key = shortcut.keyCodeString;
+	  }
+	  list.push(key);
+	  return list.join("+");
+	};
+	
+	KeyShortcuts.prototype = {
+	  destroy() {
+	    this.target.removeEventListener("keydown", this);
+	    this.keys.clear();
+	  },
+	
+	  doesEventMatchShortcut(event, shortcut) {
+	    if (shortcut.meta != event.metaKey) {
+	      return false;
+	    }
+	    if (shortcut.ctrl != event.ctrlKey) {
+	      return false;
+	    }
+	    if (shortcut.alt != event.altKey) {
+	      return false;
+	    }
+	    
+	    
+	    if (shortcut.shift != event.shiftKey && event.key &&
+	        event.key.match(/[a-zA-Z]/)) {
+	      return false;
+	    }
+	    if (shortcut.keyCode) {
+	      return event.keyCode == shortcut.keyCode;
+	    } else if (event.key in ElectronKeysMapping) {
+	      return ElectronKeysMapping[event.key] === shortcut.key;
+	    }
+	
+	    
+	    let key = event.key || String.fromCharCode(event.keyCode);
+	
+	    
+	    
+	    
+	    return key.toLowerCase() == shortcut.key ||
+	      (shortcut.key.match(/[0-9]/) &&
+	       event.keyCode == shortcut.key.charCodeAt(0));
+	  },
+	
+	  handleEvent(event) {
+	    for (let [key, shortcut] of this.keys) {
+	      if (this.doesEventMatchShortcut(event, shortcut)) {
+	        this.eventEmitter.emit(key, event);
+	      }
+	    }
+	  },
+	
+	  on(key, listener) {
+	    if (typeof listener !== "function") {
+	      throw new Error("KeyShortcuts.on() expects a function as " +
+	                      "second argument");
+	    }
+	    if (!this.keys.has(key)) {
+	      let shortcut = KeyShortcuts.parseElectronKey(this.window, key);
+	      
+	      if (!shortcut) {
+	        return;
+	      }
+	      this.keys.set(key, shortcut);
+	    }
+	    this.eventEmitter.on(key, listener);
+	  },
+	
+	  off(key, listener) {
+	    this.eventEmitter.off(key, listener);
+	  },
+	};
+	exports.KeyShortcuts = KeyShortcuts;
+
+
+ },
+
+ function(module, exports) {
+
+	
+
+ },
+,
+
  function(module, exports) {
 
 	
@@ -31148,7 +34781,7 @@ var Debugger =
 	var dom = React.DOM;
 	var PropTypes = React.PropTypes;
 	
-	var ImPropTypes = __webpack_require__(228);
+	var ImPropTypes = __webpack_require__(247);
 	
 	var _require = __webpack_require__(2);
 	
@@ -31158,16 +34791,20 @@ var Debugger =
 	
 	var connect = _require2.connect;
 	
-	var SourcesTree = React.createFactory(__webpack_require__(229));
-	var actions = __webpack_require__(214);
+	var _require3 = __webpack_require__(207);
 	
-	var _require3 = __webpack_require__(199);
+	var cmdString = _require3.cmdString;
 	
-	var getSelectedSource = _require3.getSelectedSource;
-	var getSources = _require3.getSources;
+	var SourcesTree = React.createFactory(__webpack_require__(248));
+	var actions = __webpack_require__(209);
+	
+	var _require4 = __webpack_require__(199);
+	
+	var getSelectedSource = _require4.getSelectedSource;
+	var getSources = _require4.getSources;
 	
 	
-	__webpack_require__(260);
+	__webpack_require__(352);
 	
 	var Sources = React.createClass({
 	  propTypes: {
@@ -31183,7 +34820,7 @@ var Debugger =
 	    var selectSource = _props.selectSource;
 	
 	
-	    return dom.div({ className: "sources-panel" }, dom.div({ className: "sources-header" }, "Sources"), SourcesTree({ sources, selectSource }));
+	    return dom.div({ className: "sources-panel" }, dom.div({ className: "sources-header" }, "Sources", dom.span({ className: "sources-header-info" }, `${ cmdString() }+P to search`)), SourcesTree({ sources, selectSource }));
 	  }
 	});
 	
@@ -31402,14 +35039,14 @@ var Debugger =
 	var dom = React.DOM;
 	var PropTypes = React.PropTypes;
 	
-	var classnames = __webpack_require__(207);
-	var ImPropTypes = __webpack_require__(228);
+	var classnames = __webpack_require__(201);
+	var ImPropTypes = __webpack_require__(247);
 	
 	var _require = __webpack_require__(193);
 	
 	var Set = _require.Set;
 	
-	var _require2 = __webpack_require__(230);
+	var _require2 = __webpack_require__(249);
 	
 	var nodeHasChildren = _require2.nodeHasChildren;
 	var createParentMap = _require2.createParentMap;
@@ -31417,10 +35054,10 @@ var Debugger =
 	var collapseTree = _require2.collapseTree;
 	var createTree = _require2.createTree;
 	
-	var ManagedTree = React.createFactory(__webpack_require__(231));
-	var Svg = __webpack_require__(235);
+	var ManagedTree = React.createFactory(__webpack_require__(324));
+	var Svg = __webpack_require__(328);
 	
-	var _require3 = __webpack_require__(176);
+	var _require3 = __webpack_require__(183);
 	
 	var throttle = _require3.throttle;
 	
@@ -31533,6 +35170,7 @@ var Debugger =
 	
 	
 	    var tree = ManagedTree({
+	      style: { overflow: "hidden" },
 	      getParent: item => {
 	        return parentMap.get(item);
 	      },
@@ -31567,23 +35205,30 @@ var Debugger =
 
  function(module, exports, __webpack_require__) {
 
-	var URL = __webpack_require__(200);
+	var _require = __webpack_require__(212);
 	
-	var _require = __webpack_require__(186);
+	var parse = _require.parse;
 	
-	var assert = _require.assert;
+	var _require2 = __webpack_require__(185);
 	
-	var _require2 = __webpack_require__(220);
+	var assert = _require2.assert;
 	
-	var isPretty = _require2.isPretty;
+	var _require3 = __webpack_require__(233);
 	
+	var isPretty = _require3.isPretty;
+	
+	var merge = __webpack_require__(250);
 	
 	var IGNORED_URLS = ["debugger eval code", "XStringBundle"];
 	
-	function isHiddenSource(source) {
-	  var url = source.get("url");
-	  return !url || url.match(/SOURCE/) || IGNORED_URLS.includes(url);
-	}
+	
+
+
+
+	
+	
+	
+	
 	
 	function nodeHasChildren(item) {
 	  return Array.isArray(item.contents);
@@ -31617,49 +35262,70 @@ var Debugger =
 	
 	function getURL(source) {
 	  var url = source.get("url");
+	  var def = { path: "", group: "" };
 	  if (!url) {
-	    return null;
+	    return def;
 	  }
 	
-	  var urlObj = URL.parse(url);
-	  if (!urlObj.protocol && urlObj.pathname[0] === "/") {
-	    
-	    
-	    urlObj.protocol = "file:";
-	  } else if (!urlObj.host && !urlObj.protocol) {
-	    
-	    
-	    return {
-	      path: url,
-	      group: "(no domain)"
-	    };
-	  } else if (urlObj.protocol === "javascript:") {
-	    
-	    return null;
-	  } else if (urlObj.protocol === "about:") {
-	    
-	    return {
-	      path: "/",
-	      group: url
-	    };
-	  } else if (urlObj.protocol === "http:" || urlObj.protocol === "https:") {
-	    return {
-	      path: urlObj.pathname,
-	      group: urlObj.host
-	    };
+	  var _parse = parse(url);
+	
+	  var pathname = _parse.pathname;
+	  var protocol = _parse.protocol;
+	  var host = _parse.host;
+	  var path = _parse.path;
+	
+	
+	  switch (protocol) {
+	    case "javascript:":
+	      
+	      return def;
+	
+	    case "about:":
+	      
+	      return merge(def, {
+	        path: "/",
+	        group: url
+	      });
+	
+	    case null:
+	      if (pathname && pathname.startsWith("/")) {
+	        
+	        
+	        return merge(def, {
+	          path: path,
+	          group: "file://"
+	        });
+	      } else if (host === null) {
+	        
+	        
+	        return merge(def, {
+	          path: url,
+	          group: "(no domain)"
+	        });
+	      }
+	      break;
+	
+	    case "http:":
+	    case "https:":
+	      return merge(def, {
+	        path: pathname,
+	        group: host
+	      });
 	  }
 	
-	  return {
-	    path: urlObj.path,
-	    group: urlObj.protocol + "//"
-	  };
+	  return merge(def, {
+	    path: path,
+	    group: protocol ? protocol + "//" : ""
+	  });
 	}
 	
 	function addToTree(tree, source) {
 	  var url = getURL(source);
-	  if (isHiddenSource(source) || isPretty(source.toJS())) {
+	
+	  if (IGNORED_URLS.includes(url) || !source.get("url") || isPretty(source.toJS())) {
 	    return;
 	  }
+	
 	  url.path = decodeURIComponent(url.path);
 	
 	  var parts = url.path.split("/").filter(p => p !== "");
@@ -31757,18 +35423,2592 @@ var Debugger =
 	  createParentMap,
 	  addToTree,
 	  collapseTree,
-	  createTree,
-	  getURL,
-	  isHiddenSource
+	  createTree
 	};
 
  },
 
  function(module, exports, __webpack_require__) {
 
+	var baseMerge = __webpack_require__(251),
+	    createAssigner = __webpack_require__(317);
+	
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	var merge = createAssigner(function(object, source, srcIndex) {
+	  baseMerge(object, source, srcIndex);
+	});
+	
+	module.exports = merge;
+
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	var Stack = __webpack_require__(252),
+	    arrayEach = __webpack_require__(258),
+	    assignMergeValue = __webpack_require__(259),
+	    baseMergeDeep = __webpack_require__(260),
+	    isArray = __webpack_require__(52),
+	    isObject = __webpack_require__(63),
+	    isTypedArray = __webpack_require__(311),
+	    keysIn = __webpack_require__(313);
+	
+	
+
+
+
+
+
+
+
+
+
+
+	function baseMerge(object, source, srcIndex, customizer, stack) {
+	  if (object === source) {
+	    return;
+	  }
+	  if (!(isArray(source) || isTypedArray(source))) {
+	    var props = keysIn(source);
+	  }
+	  arrayEach(props || source, function(srcValue, key) {
+	    if (props) {
+	      key = srcValue;
+	      srcValue = source[key];
+	    }
+	    if (isObject(srcValue)) {
+	      stack || (stack = new Stack);
+	      baseMergeDeep(object, source, key, srcIndex, baseMerge, customizer, stack);
+	    }
+	    else {
+	      var newValue = customizer
+	        ? customizer(object[key], srcValue, (key + ''), object, source, stack)
+	        : undefined;
+	
+	      if (newValue === undefined) {
+	        newValue = srcValue;
+	      }
+	      assignMergeValue(object, key, newValue);
+	    }
+	  });
+	}
+	
+	module.exports = baseMerge;
+
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	var ListCache = __webpack_require__(74),
+	    stackClear = __webpack_require__(253),
+	    stackDelete = __webpack_require__(254),
+	    stackGet = __webpack_require__(255),
+	    stackHas = __webpack_require__(256),
+	    stackSet = __webpack_require__(257);
+	
+	
+
+
+
+
+
+
+	function Stack(entries) {
+	  this.__data__ = new ListCache(entries);
+	}
+	
+	
+	Stack.prototype.clear = stackClear;
+	Stack.prototype['delete'] = stackDelete;
+	Stack.prototype.get = stackGet;
+	Stack.prototype.has = stackHas;
+	Stack.prototype.set = stackSet;
+	
+	module.exports = Stack;
+
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	var ListCache = __webpack_require__(74);
+	
+	
+
+
+
+
+
+
+	function stackClear() {
+	  this.__data__ = new ListCache;
+	}
+	
+	module.exports = stackClear;
+
+
+ },
+
+ function(module, exports) {
+
+	
+
+
+
+
+
+
+
+
+	function stackDelete(key) {
+	  return this.__data__['delete'](key);
+	}
+	
+	module.exports = stackDelete;
+
+
+ },
+
+ function(module, exports) {
+
+	
+
+
+
+
+
+
+
+
+	function stackGet(key) {
+	  return this.__data__.get(key);
+	}
+	
+	module.exports = stackGet;
+
+
+ },
+
+ function(module, exports) {
+
+	
+
+
+
+
+
+
+
+
+	function stackHas(key) {
+	  return this.__data__.has(key);
+	}
+	
+	module.exports = stackHas;
+
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	var ListCache = __webpack_require__(74),
+	    MapCache = __webpack_require__(55);
+	
+	
+	var LARGE_ARRAY_SIZE = 200;
+	
+	
+
+
+
+
+
+
+
+
+
+	function stackSet(key, value) {
+	  var cache = this.__data__;
+	  if (cache instanceof ListCache && cache.__data__.length == LARGE_ARRAY_SIZE) {
+	    cache = this.__data__ = new MapCache(cache.__data__);
+	  }
+	  cache.set(key, value);
+	  return this;
+	}
+	
+	module.exports = stackSet;
+
+
+ },
+
+ function(module, exports) {
+
+	
+
+
+
+
+
+
+
+
+	function arrayEach(array, iteratee) {
+	  var index = -1,
+	      length = array ? array.length : 0;
+	
+	  while (++index < length) {
+	    if (iteratee(array[index], index, array) === false) {
+	      break;
+	    }
+	  }
+	  return array;
+	}
+	
+	module.exports = arrayEach;
+
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	var eq = __webpack_require__(78);
+	
+	
+
+
+
+
+
+
+
+
+	function assignMergeValue(object, key, value) {
+	  if ((value !== undefined && !eq(object[key], value)) ||
+	      (typeof key == 'number' && value === undefined && !(key in object))) {
+	    object[key] = value;
+	  }
+	}
+	
+	module.exports = assignMergeValue;
+
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	var assignMergeValue = __webpack_require__(259),
+	    baseClone = __webpack_require__(261),
+	    copyArray = __webpack_require__(280),
+	    isArguments = __webpack_require__(270),
+	    isArray = __webpack_require__(52),
+	    isArrayLikeObject = __webpack_require__(271),
+	    isFunction = __webpack_require__(62),
+	    isObject = __webpack_require__(63),
+	    isPlainObject = __webpack_require__(4),
+	    isTypedArray = __webpack_require__(311),
+	    toPlainObject = __webpack_require__(312);
+	
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	function baseMergeDeep(object, source, key, srcIndex, mergeFunc, customizer, stack) {
+	  var objValue = object[key],
+	      srcValue = source[key],
+	      stacked = stack.get(srcValue);
+	
+	  if (stacked) {
+	    assignMergeValue(object, key, stacked);
+	    return;
+	  }
+	  var newValue = customizer
+	    ? customizer(objValue, srcValue, (key + ''), object, source, stack)
+	    : undefined;
+	
+	  var isCommon = newValue === undefined;
+	
+	  if (isCommon) {
+	    newValue = srcValue;
+	    if (isArray(srcValue) || isTypedArray(srcValue)) {
+	      if (isArray(objValue)) {
+	        newValue = objValue;
+	      }
+	      else if (isArrayLikeObject(objValue)) {
+	        newValue = copyArray(objValue);
+	      }
+	      else {
+	        isCommon = false;
+	        newValue = baseClone(srcValue, true);
+	      }
+	    }
+	    else if (isPlainObject(srcValue) || isArguments(srcValue)) {
+	      if (isArguments(objValue)) {
+	        newValue = toPlainObject(objValue);
+	      }
+	      else if (!isObject(objValue) || (srcIndex && isFunction(objValue))) {
+	        isCommon = false;
+	        newValue = baseClone(srcValue, true);
+	      }
+	      else {
+	        newValue = objValue;
+	      }
+	    }
+	    else {
+	      isCommon = false;
+	    }
+	  }
+	  stack.set(srcValue, newValue);
+	
+	  if (isCommon) {
+	    
+	    mergeFunc(newValue, srcValue, srcIndex, customizer, stack);
+	  }
+	  stack['delete'](srcValue);
+	  assignMergeValue(object, key, newValue);
+	}
+	
+	module.exports = baseMergeDeep;
+
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	var Stack = __webpack_require__(252),
+	    arrayEach = __webpack_require__(258),
+	    assignValue = __webpack_require__(262),
+	    baseAssign = __webpack_require__(263),
+	    cloneBuffer = __webpack_require__(279),
+	    copyArray = __webpack_require__(280),
+	    copySymbols = __webpack_require__(281),
+	    getAllKeys = __webpack_require__(284),
+	    getTag = __webpack_require__(287),
+	    initCloneArray = __webpack_require__(292),
+	    initCloneByTag = __webpack_require__(293),
+	    initCloneObject = __webpack_require__(307),
+	    isArray = __webpack_require__(52),
+	    isBuffer = __webpack_require__(309),
+	    isHostObject = __webpack_require__(6),
+	    isObject = __webpack_require__(63),
+	    keys = __webpack_require__(265);
+	
+	
+	var argsTag = '[object Arguments]',
+	    arrayTag = '[object Array]',
+	    boolTag = '[object Boolean]',
+	    dateTag = '[object Date]',
+	    errorTag = '[object Error]',
+	    funcTag = '[object Function]',
+	    genTag = '[object GeneratorFunction]',
+	    mapTag = '[object Map]',
+	    numberTag = '[object Number]',
+	    objectTag = '[object Object]',
+	    regexpTag = '[object RegExp]',
+	    setTag = '[object Set]',
+	    stringTag = '[object String]',
+	    symbolTag = '[object Symbol]',
+	    weakMapTag = '[object WeakMap]';
+	
+	var arrayBufferTag = '[object ArrayBuffer]',
+	    dataViewTag = '[object DataView]',
+	    float32Tag = '[object Float32Array]',
+	    float64Tag = '[object Float64Array]',
+	    int8Tag = '[object Int8Array]',
+	    int16Tag = '[object Int16Array]',
+	    int32Tag = '[object Int32Array]',
+	    uint8Tag = '[object Uint8Array]',
+	    uint8ClampedTag = '[object Uint8ClampedArray]',
+	    uint16Tag = '[object Uint16Array]',
+	    uint32Tag = '[object Uint32Array]';
+	
+	
+	var cloneableTags = {};
+	cloneableTags[argsTag] = cloneableTags[arrayTag] =
+	cloneableTags[arrayBufferTag] = cloneableTags[dataViewTag] =
+	cloneableTags[boolTag] = cloneableTags[dateTag] =
+	cloneableTags[float32Tag] = cloneableTags[float64Tag] =
+	cloneableTags[int8Tag] = cloneableTags[int16Tag] =
+	cloneableTags[int32Tag] = cloneableTags[mapTag] =
+	cloneableTags[numberTag] = cloneableTags[objectTag] =
+	cloneableTags[regexpTag] = cloneableTags[setTag] =
+	cloneableTags[stringTag] = cloneableTags[symbolTag] =
+	cloneableTags[uint8Tag] = cloneableTags[uint8ClampedTag] =
+	cloneableTags[uint16Tag] = cloneableTags[uint32Tag] = true;
+	cloneableTags[errorTag] = cloneableTags[funcTag] =
+	cloneableTags[weakMapTag] = false;
+	
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+	function baseClone(value, isDeep, isFull, customizer, key, object, stack) {
+	  var result;
+	  if (customizer) {
+	    result = object ? customizer(value, key, object, stack) : customizer(value);
+	  }
+	  if (result !== undefined) {
+	    return result;
+	  }
+	  if (!isObject(value)) {
+	    return value;
+	  }
+	  var isArr = isArray(value);
+	  if (isArr) {
+	    result = initCloneArray(value);
+	    if (!isDeep) {
+	      return copyArray(value, result);
+	    }
+	  } else {
+	    var tag = getTag(value),
+	        isFunc = tag == funcTag || tag == genTag;
+	
+	    if (isBuffer(value)) {
+	      return cloneBuffer(value, isDeep);
+	    }
+	    if (tag == objectTag || tag == argsTag || (isFunc && !object)) {
+	      if (isHostObject(value)) {
+	        return object ? value : {};
+	      }
+	      result = initCloneObject(isFunc ? {} : value);
+	      if (!isDeep) {
+	        return copySymbols(value, baseAssign(result, value));
+	      }
+	    } else {
+	      if (!cloneableTags[tag]) {
+	        return object ? value : {};
+	      }
+	      result = initCloneByTag(value, tag, baseClone, isDeep);
+	    }
+	  }
+	  
+	  stack || (stack = new Stack);
+	  var stacked = stack.get(value);
+	  if (stacked) {
+	    return stacked;
+	  }
+	  stack.set(value, result);
+	
+	  if (!isArr) {
+	    var props = isFull ? getAllKeys(value) : keys(value);
+	  }
+	  
+	  arrayEach(props || value, function(subValue, key) {
+	    if (props) {
+	      key = subValue;
+	      subValue = value[key];
+	    }
+	    assignValue(result, key, baseClone(subValue, isDeep, isFull, customizer, key, value, stack));
+	  });
+	  return result;
+	}
+	
+	module.exports = baseClone;
+
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	var eq = __webpack_require__(78);
+	
+	
+	var objectProto = Object.prototype;
+	
+	
+	var hasOwnProperty = objectProto.hasOwnProperty;
+	
+	
+
+
+
+
+
+
+
+
+
+	function assignValue(object, key, value) {
+	  var objValue = object[key];
+	  if (!(hasOwnProperty.call(object, key) && eq(objValue, value)) ||
+	      (value === undefined && !(key in object))) {
+	    object[key] = value;
+	  }
+	}
+	
+	module.exports = assignValue;
+
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	var copyObject = __webpack_require__(264),
+	    keys = __webpack_require__(265);
+	
+	
+
+
+
+
+
+
+
+
+	function baseAssign(object, source) {
+	  return object && copyObject(source, keys(source), object);
+	}
+	
+	module.exports = baseAssign;
+
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	var assignValue = __webpack_require__(262);
+	
+	
+
+
+
+
+
+
+
+
+
+	function copyObject(source, props, object, customizer) {
+	  object || (object = {});
+	
+	  var index = -1,
+	      length = props.length;
+	
+	  while (++index < length) {
+	    var key = props[index];
+	
+	    var newValue = customizer
+	      ? customizer(object[key], source[key], key, object, source)
+	      : source[key];
+	
+	    assignValue(object, key, newValue);
+	  }
+	  return object;
+	}
+	
+	module.exports = copyObject;
+
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	var baseHas = __webpack_require__(266),
+	    baseKeys = __webpack_require__(267),
+	    indexKeys = __webpack_require__(268),
+	    isArrayLike = __webpack_require__(272),
+	    isIndex = __webpack_require__(277),
+	    isPrototype = __webpack_require__(278);
+	
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	function keys(object) {
+	  var isProto = isPrototype(object);
+	  if (!(isProto || isArrayLike(object))) {
+	    return baseKeys(object);
+	  }
+	  var indexes = indexKeys(object),
+	      skipIndexes = !!indexes,
+	      result = indexes || [],
+	      length = result.length;
+	
+	  for (var key in object) {
+	    if (baseHas(object, key) &&
+	        !(skipIndexes && (key == 'length' || isIndex(key, length))) &&
+	        !(isProto && key == 'constructor')) {
+	      result.push(key);
+	    }
+	  }
+	  return result;
+	}
+	
+	module.exports = keys;
+
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	var getPrototype = __webpack_require__(5);
+	
+	
+	var objectProto = Object.prototype;
+	
+	
+	var hasOwnProperty = objectProto.hasOwnProperty;
+	
+	
+
+
+
+
+
+
+
+	function baseHas(object, key) {
+	  
+	  
+	  
+	  return object != null &&
+	    (hasOwnProperty.call(object, key) ||
+	      (typeof object == 'object' && key in object && getPrototype(object) === null));
+	}
+	
+	module.exports = baseHas;
+
+
+ },
+
+ function(module, exports) {
+
+	
+	var nativeKeys = Object.keys;
+	
+	
+
+
+
+
+
+
+
+	function baseKeys(object) {
+	  return nativeKeys(Object(object));
+	}
+	
+	module.exports = baseKeys;
+
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	var baseTimes = __webpack_require__(269),
+	    isArguments = __webpack_require__(270),
+	    isArray = __webpack_require__(52),
+	    isLength = __webpack_require__(275),
+	    isString = __webpack_require__(276);
+	
+	
+
+
+
+
+
+
+
+	function indexKeys(object) {
+	  var length = object ? object.length : undefined;
+	  if (isLength(length) &&
+	      (isArray(object) || isString(object) || isArguments(object))) {
+	    return baseTimes(length, String);
+	  }
+	  return null;
+	}
+	
+	module.exports = indexKeys;
+
+
+ },
+
+ function(module, exports) {
+
+	
+
+
+
+
+
+
+
+
+	function baseTimes(n, iteratee) {
+	  var index = -1,
+	      result = Array(n);
+	
+	  while (++index < n) {
+	    result[index] = iteratee(index);
+	  }
+	  return result;
+	}
+	
+	module.exports = baseTimes;
+
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	var isArrayLikeObject = __webpack_require__(271);
+	
+	
+	var argsTag = '[object Arguments]';
+	
+	
+	var objectProto = Object.prototype;
+	
+	
+	var hasOwnProperty = objectProto.hasOwnProperty;
+	
+	
+
+
+
+
+	var objectToString = objectProto.toString;
+	
+	
+	var propertyIsEnumerable = objectProto.propertyIsEnumerable;
+	
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	function isArguments(value) {
+	  
+	  return isArrayLikeObject(value) && hasOwnProperty.call(value, 'callee') &&
+	    (!propertyIsEnumerable.call(value, 'callee') || objectToString.call(value) == argsTag);
+	}
+	
+	module.exports = isArguments;
+
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	var isArrayLike = __webpack_require__(272),
+	    isObjectLike = __webpack_require__(7);
+	
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	function isArrayLikeObject(value) {
+	  return isObjectLike(value) && isArrayLike(value);
+	}
+	
+	module.exports = isArrayLikeObject;
+
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	var getLength = __webpack_require__(273),
+	    isFunction = __webpack_require__(62),
+	    isLength = __webpack_require__(275);
+	
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	function isArrayLike(value) {
+	  return value != null && isLength(getLength(value)) && !isFunction(value);
+	}
+	
+	module.exports = isArrayLike;
+
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	var baseProperty = __webpack_require__(274);
+	
+	
+
+
+
+
+
+
+
+
+
+
+	var getLength = baseProperty('length');
+	
+	module.exports = getLength;
+
+
+ },
+
+ function(module, exports) {
+
+	
+
+
+
+
+
+
+	function baseProperty(key) {
+	  return function(object) {
+	    return object == null ? undefined : object[key];
+	  };
+	}
+	
+	module.exports = baseProperty;
+
+
+ },
+
+ function(module, exports) {
+
+	
+	var MAX_SAFE_INTEGER = 9007199254740991;
+	
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	function isLength(value) {
+	  return typeof value == 'number' &&
+	    value > -1 && value % 1 == 0 && value <= MAX_SAFE_INTEGER;
+	}
+	
+	module.exports = isLength;
+
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	var isArray = __webpack_require__(52),
+	    isObjectLike = __webpack_require__(7);
+	
+	
+	var stringTag = '[object String]';
+	
+	
+	var objectProto = Object.prototype;
+	
+	
+
+
+
+
+	var objectToString = objectProto.toString;
+	
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	function isString(value) {
+	  return typeof value == 'string' ||
+	    (!isArray(value) && isObjectLike(value) && objectToString.call(value) == stringTag);
+	}
+	
+	module.exports = isString;
+
+
+ },
+
+ function(module, exports) {
+
+	
+	var MAX_SAFE_INTEGER = 9007199254740991;
+	
+	
+	var reIsUint = /^(?:0|[1-9]\d*)$/;
+	
+	
+
+
+
+
+
+
+
+	function isIndex(value, length) {
+	  length = length == null ? MAX_SAFE_INTEGER : length;
+	  return !!length &&
+	    (typeof value == 'number' || reIsUint.test(value)) &&
+	    (value > -1 && value % 1 == 0 && value < length);
+	}
+	
+	module.exports = isIndex;
+
+
+ },
+
+ function(module, exports) {
+
+	
+	var objectProto = Object.prototype;
+	
+	
+
+
+
+
+
+
+	function isPrototype(value) {
+	  var Ctor = value && value.constructor,
+	      proto = (typeof Ctor == 'function' && Ctor.prototype) || objectProto;
+	
+	  return value === proto;
+	}
+	
+	module.exports = isPrototype;
+
+
+ },
+
+ function(module, exports) {
+
+	
+
+
+
+
+
+
+
+	function cloneBuffer(buffer, isDeep) {
+	  if (isDeep) {
+	    return buffer.slice();
+	  }
+	  var result = new buffer.constructor(buffer.length);
+	  buffer.copy(result);
+	  return result;
+	}
+	
+	module.exports = cloneBuffer;
+
+
+ },
+
+ function(module, exports) {
+
+	
+
+
+
+
+
+
+
+	function copyArray(source, array) {
+	  var index = -1,
+	      length = source.length;
+	
+	  array || (array = Array(length));
+	  while (++index < length) {
+	    array[index] = source[index];
+	  }
+	  return array;
+	}
+	
+	module.exports = copyArray;
+
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	var copyObject = __webpack_require__(264),
+	    getSymbols = __webpack_require__(282);
+	
+	
+
+
+
+
+
+
+
+	function copySymbols(source, object) {
+	  return copyObject(source, getSymbols(source), object);
+	}
+	
+	module.exports = copySymbols;
+
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	var stubArray = __webpack_require__(283);
+	
+	
+	var getOwnPropertySymbols = Object.getOwnPropertySymbols;
+	
+	
+
+
+
+
+
+
+	function getSymbols(object) {
+	  
+	  
+	  return getOwnPropertySymbols(Object(object));
+	}
+	
+	
+	if (!getOwnPropertySymbols) {
+	  getSymbols = stubArray;
+	}
+	
+	module.exports = getSymbols;
+
+
+ },
+
+ function(module, exports) {
+
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	function stubArray() {
+	  return [];
+	}
+	
+	module.exports = stubArray;
+
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	var baseGetAllKeys = __webpack_require__(285),
+	    getSymbols = __webpack_require__(282),
+	    keys = __webpack_require__(265);
+	
+	
+
+
+
+
+
+
+	function getAllKeys(object) {
+	  return baseGetAllKeys(object, keys, getSymbols);
+	}
+	
+	module.exports = getAllKeys;
+
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	var arrayPush = __webpack_require__(286),
+	    isArray = __webpack_require__(52);
+	
+	
+
+
+
+
+
+
+
+
+
+
+	function baseGetAllKeys(object, keysFunc, symbolsFunc) {
+	  var result = keysFunc(object);
+	  return isArray(object) ? result : arrayPush(result, symbolsFunc(object));
+	}
+	
+	module.exports = baseGetAllKeys;
+
+
+ },
+
+ function(module, exports) {
+
+	
+
+
+
+
+
+
+
+	function arrayPush(array, values) {
+	  var index = -1,
+	      length = values.length,
+	      offset = array.length;
+	
+	  while (++index < length) {
+	    array[offset + index] = values[index];
+	  }
+	  return array;
+	}
+	
+	module.exports = arrayPush;
+
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	var DataView = __webpack_require__(288),
+	    Map = __webpack_require__(82),
+	    Promise = __webpack_require__(289),
+	    Set = __webpack_require__(290),
+	    WeakMap = __webpack_require__(291),
+	    toSource = __webpack_require__(68);
+	
+	
+	var mapTag = '[object Map]',
+	    objectTag = '[object Object]',
+	    promiseTag = '[object Promise]',
+	    setTag = '[object Set]',
+	    weakMapTag = '[object WeakMap]';
+	
+	var dataViewTag = '[object DataView]';
+	
+	
+	var objectProto = Object.prototype;
+	
+	
+
+
+
+
+	var objectToString = objectProto.toString;
+	
+	
+	var dataViewCtorString = toSource(DataView),
+	    mapCtorString = toSource(Map),
+	    promiseCtorString = toSource(Promise),
+	    setCtorString = toSource(Set),
+	    weakMapCtorString = toSource(WeakMap);
+	
+	
+
+
+
+
+
+
+	function getTag(value) {
+	  return objectToString.call(value);
+	}
+	
+	
+	
+	if ((DataView && getTag(new DataView(new ArrayBuffer(1))) != dataViewTag) ||
+	    (Map && getTag(new Map) != mapTag) ||
+	    (Promise && getTag(Promise.resolve()) != promiseTag) ||
+	    (Set && getTag(new Set) != setTag) ||
+	    (WeakMap && getTag(new WeakMap) != weakMapTag)) {
+	  getTag = function(value) {
+	    var result = objectToString.call(value),
+	        Ctor = result == objectTag ? value.constructor : undefined,
+	        ctorString = Ctor ? toSource(Ctor) : undefined;
+	
+	    if (ctorString) {
+	      switch (ctorString) {
+	        case dataViewCtorString: return dataViewTag;
+	        case mapCtorString: return mapTag;
+	        case promiseCtorString: return promiseTag;
+	        case setCtorString: return setTag;
+	        case weakMapCtorString: return weakMapTag;
+	      }
+	    }
+	    return result;
+	  };
+	}
+	
+	module.exports = getTag;
+
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	var getNative = __webpack_require__(60),
+	    root = __webpack_require__(66);
+	
+	
+	var DataView = getNative(root, 'DataView');
+	
+	module.exports = DataView;
+
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	var getNative = __webpack_require__(60),
+	    root = __webpack_require__(66);
+	
+	
+	var Promise = getNative(root, 'Promise');
+	
+	module.exports = Promise;
+
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	var getNative = __webpack_require__(60),
+	    root = __webpack_require__(66);
+	
+	
+	var Set = getNative(root, 'Set');
+	
+	module.exports = Set;
+
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	var getNative = __webpack_require__(60),
+	    root = __webpack_require__(66);
+	
+	
+	var WeakMap = getNative(root, 'WeakMap');
+	
+	module.exports = WeakMap;
+
+
+ },
+
+ function(module, exports) {
+
+	
+	var objectProto = Object.prototype;
+	
+	
+	var hasOwnProperty = objectProto.hasOwnProperty;
+	
+	
+
+
+
+
+
+
+	function initCloneArray(array) {
+	  var length = array.length,
+	      result = array.constructor(length);
+	
+	  
+	  if (length && typeof array[0] == 'string' && hasOwnProperty.call(array, 'index')) {
+	    result.index = array.index;
+	    result.input = array.input;
+	  }
+	  return result;
+	}
+	
+	module.exports = initCloneArray;
+
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	var cloneArrayBuffer = __webpack_require__(294),
+	    cloneDataView = __webpack_require__(296),
+	    cloneMap = __webpack_require__(297),
+	    cloneRegExp = __webpack_require__(301),
+	    cloneSet = __webpack_require__(302),
+	    cloneSymbol = __webpack_require__(305),
+	    cloneTypedArray = __webpack_require__(306);
+	
+	
+	var boolTag = '[object Boolean]',
+	    dateTag = '[object Date]',
+	    mapTag = '[object Map]',
+	    numberTag = '[object Number]',
+	    regexpTag = '[object RegExp]',
+	    setTag = '[object Set]',
+	    stringTag = '[object String]',
+	    symbolTag = '[object Symbol]';
+	
+	var arrayBufferTag = '[object ArrayBuffer]',
+	    dataViewTag = '[object DataView]',
+	    float32Tag = '[object Float32Array]',
+	    float64Tag = '[object Float64Array]',
+	    int8Tag = '[object Int8Array]',
+	    int16Tag = '[object Int16Array]',
+	    int32Tag = '[object Int32Array]',
+	    uint8Tag = '[object Uint8Array]',
+	    uint8ClampedTag = '[object Uint8ClampedArray]',
+	    uint16Tag = '[object Uint16Array]',
+	    uint32Tag = '[object Uint32Array]';
+	
+	
+
+
+
+
+
+
+
+
+
+
+
+
+	function initCloneByTag(object, tag, cloneFunc, isDeep) {
+	  var Ctor = object.constructor;
+	  switch (tag) {
+	    case arrayBufferTag:
+	      return cloneArrayBuffer(object);
+	
+	    case boolTag:
+	    case dateTag:
+	      return new Ctor(+object);
+	
+	    case dataViewTag:
+	      return cloneDataView(object, isDeep);
+	
+	    case float32Tag: case float64Tag:
+	    case int8Tag: case int16Tag: case int32Tag:
+	    case uint8Tag: case uint8ClampedTag: case uint16Tag: case uint32Tag:
+	      return cloneTypedArray(object, isDeep);
+	
+	    case mapTag:
+	      return cloneMap(object, isDeep, cloneFunc);
+	
+	    case numberTag:
+	    case stringTag:
+	      return new Ctor(object);
+	
+	    case regexpTag:
+	      return cloneRegExp(object);
+	
+	    case setTag:
+	      return cloneSet(object, isDeep, cloneFunc);
+	
+	    case symbolTag:
+	      return cloneSymbol(object);
+	  }
+	}
+	
+	module.exports = initCloneByTag;
+
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	var Uint8Array = __webpack_require__(295);
+	
+	
+
+
+
+
+
+
+	function cloneArrayBuffer(arrayBuffer) {
+	  var result = new arrayBuffer.constructor(arrayBuffer.byteLength);
+	  new Uint8Array(result).set(new Uint8Array(arrayBuffer));
+	  return result;
+	}
+	
+	module.exports = cloneArrayBuffer;
+
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	var root = __webpack_require__(66);
+	
+	
+	var Uint8Array = root.Uint8Array;
+	
+	module.exports = Uint8Array;
+
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	var cloneArrayBuffer = __webpack_require__(294);
+	
+	
+
+
+
+
+
+
+
+	function cloneDataView(dataView, isDeep) {
+	  var buffer = isDeep ? cloneArrayBuffer(dataView.buffer) : dataView.buffer;
+	  return new dataView.constructor(buffer, dataView.byteOffset, dataView.byteLength);
+	}
+	
+	module.exports = cloneDataView;
+
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	var addMapEntry = __webpack_require__(298),
+	    arrayReduce = __webpack_require__(299),
+	    mapToArray = __webpack_require__(300);
+	
+	
+
+
+
+
+
+
+
+
+	function cloneMap(map, isDeep, cloneFunc) {
+	  var array = isDeep ? cloneFunc(mapToArray(map), true) : mapToArray(map);
+	  return arrayReduce(array, addMapEntry, new map.constructor);
+	}
+	
+	module.exports = cloneMap;
+
+
+ },
+
+ function(module, exports) {
+
+	
+
+
+
+
+
+
+
+	function addMapEntry(map, pair) {
+	  
+	  map.set(pair[0], pair[1]);
+	  return map;
+	}
+	
+	module.exports = addMapEntry;
+
+
+ },
+
+ function(module, exports) {
+
+	
+
+
+
+
+
+
+
+
+
+
+
+	function arrayReduce(array, iteratee, accumulator, initAccum) {
+	  var index = -1,
+	      length = array ? array.length : 0;
+	
+	  if (initAccum && length) {
+	    accumulator = array[++index];
+	  }
+	  while (++index < length) {
+	    accumulator = iteratee(accumulator, array[index], index, array);
+	  }
+	  return accumulator;
+	}
+	
+	module.exports = arrayReduce;
+
+
+ },
+
+ function(module, exports) {
+
+	
+
+
+
+
+
+
+	function mapToArray(map) {
+	  var index = -1,
+	      result = Array(map.size);
+	
+	  map.forEach(function(value, key) {
+	    result[++index] = [key, value];
+	  });
+	  return result;
+	}
+	
+	module.exports = mapToArray;
+
+
+ },
+
+ function(module, exports) {
+
+	
+	var reFlags = /\w*$/;
+	
+	
+
+
+
+
+
+
+	function cloneRegExp(regexp) {
+	  var result = new regexp.constructor(regexp.source, reFlags.exec(regexp));
+	  result.lastIndex = regexp.lastIndex;
+	  return result;
+	}
+	
+	module.exports = cloneRegExp;
+
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	var addSetEntry = __webpack_require__(303),
+	    arrayReduce = __webpack_require__(299),
+	    setToArray = __webpack_require__(304);
+	
+	
+
+
+
+
+
+
+
+
+	function cloneSet(set, isDeep, cloneFunc) {
+	  var array = isDeep ? cloneFunc(setToArray(set), true) : setToArray(set);
+	  return arrayReduce(array, addSetEntry, new set.constructor);
+	}
+	
+	module.exports = cloneSet;
+
+
+ },
+
+ function(module, exports) {
+
+	
+
+
+
+
+
+
+
+	function addSetEntry(set, value) {
+	  set.add(value);
+	  return set;
+	}
+	
+	module.exports = addSetEntry;
+
+
+ },
+
+ function(module, exports) {
+
+	
+
+
+
+
+
+
+	function setToArray(set) {
+	  var index = -1,
+	      result = Array(set.size);
+	
+	  set.forEach(function(value) {
+	    result[++index] = value;
+	  });
+	  return result;
+	}
+	
+	module.exports = setToArray;
+
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	var Symbol = __webpack_require__(91);
+	
+	
+	var symbolProto = Symbol ? Symbol.prototype : undefined,
+	    symbolValueOf = symbolProto ? symbolProto.valueOf : undefined;
+	
+	
+
+
+
+
+
+
+	function cloneSymbol(symbol) {
+	  return symbolValueOf ? Object(symbolValueOf.call(symbol)) : {};
+	}
+	
+	module.exports = cloneSymbol;
+
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	var cloneArrayBuffer = __webpack_require__(294);
+	
+	
+
+
+
+
+
+
+
+	function cloneTypedArray(typedArray, isDeep) {
+	  var buffer = isDeep ? cloneArrayBuffer(typedArray.buffer) : typedArray.buffer;
+	  return new typedArray.constructor(buffer, typedArray.byteOffset, typedArray.length);
+	}
+	
+	module.exports = cloneTypedArray;
+
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	var baseCreate = __webpack_require__(308),
+	    getPrototype = __webpack_require__(5),
+	    isPrototype = __webpack_require__(278);
+	
+	
+
+
+
+
+
+
+	function initCloneObject(object) {
+	  return (typeof object.constructor == 'function' && !isPrototype(object))
+	    ? baseCreate(getPrototype(object))
+	    : {};
+	}
+	
+	module.exports = initCloneObject;
+
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	var isObject = __webpack_require__(63);
+	
+	
+	var objectCreate = Object.create;
+	
+	
+
+
+
+
+
+
+
+	function baseCreate(proto) {
+	  return isObject(proto) ? objectCreate(proto) : {};
+	}
+	
+	module.exports = baseCreate;
+
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	(function(module) {var root = __webpack_require__(66),
+	    stubFalse = __webpack_require__(310);
+	
+	
+	var freeExports = typeof exports == 'object' && exports;
+	
+	
+	var freeModule = freeExports && typeof module == 'object' && module;
+	
+	
+	var moduleExports = freeModule && freeModule.exports === freeExports;
+	
+	
+	var Buffer = moduleExports ? root.Buffer : undefined;
+	
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	var isBuffer = !Buffer ? stubFalse : function(value) {
+	  return value instanceof Buffer;
+	};
+	
+	module.exports = isBuffer;
+	
+	}.call(exports, __webpack_require__(101)(module)))
+
+ },
+
+ function(module, exports) {
+
+	
+
+
+
+
+
+
+
+
+
+
+
+
+	function stubFalse() {
+	  return false;
+	}
+	
+	module.exports = stubFalse;
+
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	var isLength = __webpack_require__(275),
+	    isObjectLike = __webpack_require__(7);
+	
+	
+	var argsTag = '[object Arguments]',
+	    arrayTag = '[object Array]',
+	    boolTag = '[object Boolean]',
+	    dateTag = '[object Date]',
+	    errorTag = '[object Error]',
+	    funcTag = '[object Function]',
+	    mapTag = '[object Map]',
+	    numberTag = '[object Number]',
+	    objectTag = '[object Object]',
+	    regexpTag = '[object RegExp]',
+	    setTag = '[object Set]',
+	    stringTag = '[object String]',
+	    weakMapTag = '[object WeakMap]';
+	
+	var arrayBufferTag = '[object ArrayBuffer]',
+	    dataViewTag = '[object DataView]',
+	    float32Tag = '[object Float32Array]',
+	    float64Tag = '[object Float64Array]',
+	    int8Tag = '[object Int8Array]',
+	    int16Tag = '[object Int16Array]',
+	    int32Tag = '[object Int32Array]',
+	    uint8Tag = '[object Uint8Array]',
+	    uint8ClampedTag = '[object Uint8ClampedArray]',
+	    uint16Tag = '[object Uint16Array]',
+	    uint32Tag = '[object Uint32Array]';
+	
+	
+	var typedArrayTags = {};
+	typedArrayTags[float32Tag] = typedArrayTags[float64Tag] =
+	typedArrayTags[int8Tag] = typedArrayTags[int16Tag] =
+	typedArrayTags[int32Tag] = typedArrayTags[uint8Tag] =
+	typedArrayTags[uint8ClampedTag] = typedArrayTags[uint16Tag] =
+	typedArrayTags[uint32Tag] = true;
+	typedArrayTags[argsTag] = typedArrayTags[arrayTag] =
+	typedArrayTags[arrayBufferTag] = typedArrayTags[boolTag] =
+	typedArrayTags[dataViewTag] = typedArrayTags[dateTag] =
+	typedArrayTags[errorTag] = typedArrayTags[funcTag] =
+	typedArrayTags[mapTag] = typedArrayTags[numberTag] =
+	typedArrayTags[objectTag] = typedArrayTags[regexpTag] =
+	typedArrayTags[setTag] = typedArrayTags[stringTag] =
+	typedArrayTags[weakMapTag] = false;
+	
+	
+	var objectProto = Object.prototype;
+	
+	
+
+
+
+
+	var objectToString = objectProto.toString;
+	
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	function isTypedArray(value) {
+	  return isObjectLike(value) &&
+	    isLength(value.length) && !!typedArrayTags[objectToString.call(value)];
+	}
+	
+	module.exports = isTypedArray;
+
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	var copyObject = __webpack_require__(264),
+	    keysIn = __webpack_require__(313);
+	
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	function toPlainObject(value) {
+	  return copyObject(value, keysIn(value));
+	}
+	
+	module.exports = toPlainObject;
+
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	var baseKeysIn = __webpack_require__(314),
+	    indexKeys = __webpack_require__(268),
+	    isIndex = __webpack_require__(277),
+	    isPrototype = __webpack_require__(278);
+	
+	
+	var objectProto = Object.prototype;
+	
+	
+	var hasOwnProperty = objectProto.hasOwnProperty;
+	
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	function keysIn(object) {
+	  var index = -1,
+	      isProto = isPrototype(object),
+	      props = baseKeysIn(object),
+	      propsLength = props.length,
+	      indexes = indexKeys(object),
+	      skipIndexes = !!indexes,
+	      result = indexes || [],
+	      length = result.length;
+	
+	  while (++index < propsLength) {
+	    var key = props[index];
+	    if (!(skipIndexes && (key == 'length' || isIndex(key, length))) &&
+	        !(key == 'constructor' && (isProto || !hasOwnProperty.call(object, key)))) {
+	      result.push(key);
+	    }
+	  }
+	  return result;
+	}
+	
+	module.exports = keysIn;
+
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	var Reflect = __webpack_require__(315),
+	    iteratorToArray = __webpack_require__(316);
+	
+	
+	var objectProto = Object.prototype;
+	
+	
+	var enumerate = Reflect ? Reflect.enumerate : undefined,
+	    propertyIsEnumerable = objectProto.propertyIsEnumerable;
+	
+	
+
+
+
+
+
+
+
+	function baseKeysIn(object) {
+	  object = object == null ? object : Object(object);
+	
+	  var result = [];
+	  for (var key in object) {
+	    result.push(key);
+	  }
+	  return result;
+	}
+	
+	
+	if (enumerate && !propertyIsEnumerable.call({ 'valueOf': 1 }, 'valueOf')) {
+	  baseKeysIn = function(object) {
+	    return iteratorToArray(enumerate(object));
+	  };
+	}
+	
+	module.exports = baseKeysIn;
+
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	var root = __webpack_require__(66);
+	
+	
+	var Reflect = root.Reflect;
+	
+	module.exports = Reflect;
+
+
+ },
+
+ function(module, exports) {
+
+	
+
+
+
+
+
+
+	function iteratorToArray(iterator) {
+	  var data,
+	      result = [];
+	
+	  while (!(data = iterator.next()).done) {
+	    result.push(data.value);
+	  }
+	  return result;
+	}
+	
+	module.exports = iteratorToArray;
+
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	var isIterateeCall = __webpack_require__(318),
+	    rest = __webpack_require__(319);
+	
+	
+
+
+
+
+
+
+	function createAssigner(assigner) {
+	  return rest(function(object, sources) {
+	    var index = -1,
+	        length = sources.length,
+	        customizer = length > 1 ? sources[length - 1] : undefined,
+	        guard = length > 2 ? sources[2] : undefined;
+	
+	    customizer = (assigner.length > 3 && typeof customizer == 'function')
+	      ? (length--, customizer)
+	      : undefined;
+	
+	    if (guard && isIterateeCall(sources[0], sources[1], guard)) {
+	      customizer = length < 3 ? undefined : customizer;
+	      length = 1;
+	    }
+	    object = Object(object);
+	    while (++index < length) {
+	      var source = sources[index];
+	      if (source) {
+	        assigner(object, source, index, customizer);
+	      }
+	    }
+	    return object;
+	  });
+	}
+	
+	module.exports = createAssigner;
+
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	var eq = __webpack_require__(78),
+	    isArrayLike = __webpack_require__(272),
+	    isIndex = __webpack_require__(277),
+	    isObject = __webpack_require__(63);
+	
+	
+
+
+
+
+
+
+
+
+
+	function isIterateeCall(value, index, object) {
+	  if (!isObject(object)) {
+	    return false;
+	  }
+	  var type = typeof index;
+	  if (type == 'number'
+	        ? (isArrayLike(object) && isIndex(index, object.length))
+	        : (type == 'string' && index in object)
+	      ) {
+	    return eq(object[index], value);
+	  }
+	  return false;
+	}
+	
+	module.exports = isIterateeCall;
+
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	var apply = __webpack_require__(320),
+	    toInteger = __webpack_require__(321);
+	
+	
+	var FUNC_ERROR_TEXT = 'Expected a function';
+	
+	
+	var nativeMax = Math.max;
+	
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	function rest(func, start) {
+	  if (typeof func != 'function') {
+	    throw new TypeError(FUNC_ERROR_TEXT);
+	  }
+	  start = nativeMax(start === undefined ? (func.length - 1) : toInteger(start), 0);
+	  return function() {
+	    var args = arguments,
+	        index = -1,
+	        length = nativeMax(args.length - start, 0),
+	        array = Array(length);
+	
+	    while (++index < length) {
+	      array[index] = args[start + index];
+	    }
+	    switch (start) {
+	      case 0: return func.call(this, array);
+	      case 1: return func.call(this, args[0], array);
+	      case 2: return func.call(this, args[0], args[1], array);
+	    }
+	    var otherArgs = Array(start + 1);
+	    index = -1;
+	    while (++index < start) {
+	      otherArgs[index] = args[index];
+	    }
+	    otherArgs[start] = array;
+	    return apply(func, this, otherArgs);
+	  };
+	}
+	
+	module.exports = rest;
+
+
+ },
+
+ function(module, exports) {
+
+	
+
+
+
+
+
+
+
+
+
+	function apply(func, thisArg, args) {
+	  var length = args.length;
+	  switch (length) {
+	    case 0: return func.call(thisArg);
+	    case 1: return func.call(thisArg, args[0]);
+	    case 2: return func.call(thisArg, args[0], args[1]);
+	    case 3: return func.call(thisArg, args[0], args[1], args[2]);
+	  }
+	  return func.apply(thisArg, args);
+	}
+	
+	module.exports = apply;
+
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	var toFinite = __webpack_require__(322);
+	
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	function toInteger(value) {
+	  var result = toFinite(value),
+	      remainder = result % 1;
+	
+	  return result === result ? (remainder ? result - remainder : result) : 0;
+	}
+	
+	module.exports = toInteger;
+
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	var toNumber = __webpack_require__(323);
+	
+	
+	var INFINITY = 1 / 0,
+	    MAX_INTEGER = 1.7976931348623157e+308;
+	
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	function toFinite(value) {
+	  if (!value) {
+	    return value === 0 ? value : 0;
+	  }
+	  value = toNumber(value);
+	  if (value === INFINITY || value === -INFINITY) {
+	    var sign = (value < 0 ? -1 : 1);
+	    return sign * MAX_INTEGER;
+	  }
+	  return value === value ? value : 0;
+	}
+	
+	module.exports = toFinite;
+
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	var isFunction = __webpack_require__(62),
+	    isObject = __webpack_require__(63),
+	    isSymbol = __webpack_require__(92);
+	
+	
+	var NAN = 0 / 0;
+	
+	
+	var reTrim = /^\s+|\s+$/g;
+	
+	
+	var reIsBadHex = /^[-+]0x[0-9a-f]+$/i;
+	
+	
+	var reIsBinary = /^0b[01]+$/i;
+	
+	
+	var reIsOctal = /^0o[0-7]+$/i;
+	
+	
+	var freeParseInt = parseInt;
+	
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	function toNumber(value) {
+	  if (typeof value == 'number') {
+	    return value;
+	  }
+	  if (isSymbol(value)) {
+	    return NAN;
+	  }
+	  if (isObject(value)) {
+	    var other = isFunction(value.valueOf) ? value.valueOf() : value;
+	    value = isObject(other) ? (other + '') : other;
+	  }
+	  if (typeof value != 'string') {
+	    return value === 0 ? value : +value;
+	  }
+	  value = value.replace(reTrim, '');
+	  var isBinary = reIsBinary.test(value);
+	  return (isBinary || reIsOctal.test(value))
+	    ? freeParseInt(value.slice(2), isBinary ? 2 : 8)
+	    : (reIsBadHex.test(value) ? NAN : +value);
+	}
+	
+	module.exports = toNumber;
+
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
 	var React = __webpack_require__(17);
-	var Tree = React.createFactory(__webpack_require__(232));
-	__webpack_require__(233);
+	var Tree = React.createFactory(__webpack_require__(325));
+	__webpack_require__(326);
 	
 	var ManagedTree = React.createClass({
 	  propTypes: Tree.propTypes,
@@ -31884,9 +38124,9 @@ var Debugger =
 	    }
 	
 	    if (!this.props.visible) {
-	      attrs.style = {
+	      attrs.style = Object.assign({}, this.props.style || {}, {
 	        visibility: "hidden"
-	      };
+	      });
 	    }
 	
 	    return dom.div(attrs, this.props.children);
@@ -32143,6 +38383,11 @@ var Debugger =
 	    
 	    
 	
+	    const style = Object.assign({}, this.props.style || {}, {
+	      padding: 0,
+	      margin: 0
+	    });
+	
 	    return dom.div(
 	      {
 	        className: "tree",
@@ -32151,10 +38396,7 @@ var Debugger =
 	        onKeyPress: this._preventArrowKeyScrolling,
 	        onKeyUp: this._preventArrowKeyScrolling,
 	        
-	        style: {
-	          padding: 0,
-	          margin: 0
-	        }
+	        style
 	      },
 	      
 	      
@@ -32456,7 +38698,7 @@ var Debugger =
 	
 
 
-	var Svg = __webpack_require__(236);
+	var Svg = __webpack_require__(329);
 	module.exports = Svg;
 
  },
@@ -32464,31 +38706,30 @@ var Debugger =
  function(module, exports, __webpack_require__) {
 
 	var React = __webpack_require__(17);
-	var InlineSVG = __webpack_require__(237);
+	var InlineSVG = __webpack_require__(330);
 	
 	var svg = {
-	  "angle-brackets": __webpack_require__(238),
-	  "arrow": __webpack_require__(239),
-	  "blackBox": __webpack_require__(240),
-	  "breakpoint": __webpack_require__(241),
-	  "close": __webpack_require__(242),
-	  "disableBreakpoints": __webpack_require__(243),
-	  "domain": __webpack_require__(244),
-	  "file": __webpack_require__(245),
-	  "folder": __webpack_require__(246),
-	  "globe": __webpack_require__(247),
-	  "magnifying-glass": __webpack_require__(248),
-	  "pause": __webpack_require__(249),
-	  "pause-circle": __webpack_require__(250),
-	  "pause-exceptions": __webpack_require__(251),
-	  "prettyPrint": __webpack_require__(252),
-	  "resume": __webpack_require__(253),
-	  "settings": __webpack_require__(254),
-	  "stepIn": __webpack_require__(255),
-	  "stepOut": __webpack_require__(256),
-	  "stepOver": __webpack_require__(257),
-	  "subSettings": __webpack_require__(258),
-	  "worker": __webpack_require__(259)
+	  "angle-brackets": __webpack_require__(331),
+	  "arrow": __webpack_require__(332),
+	  "blackBox": __webpack_require__(333),
+	  "breakpoint": __webpack_require__(334),
+	  "close": __webpack_require__(335),
+	  "disableBreakpoints": __webpack_require__(336),
+	  "domain": __webpack_require__(337),
+	  "file": __webpack_require__(338),
+	  "folder": __webpack_require__(339),
+	  "globe": __webpack_require__(340),
+	  "magnifying-glass": __webpack_require__(341),
+	  "pause": __webpack_require__(342),
+	  "pause-exceptions": __webpack_require__(343),
+	  "prettyPrint": __webpack_require__(344),
+	  "resume": __webpack_require__(345),
+	  "settings": __webpack_require__(346),
+	  "stepIn": __webpack_require__(347),
+	  "stepOut": __webpack_require__(348),
+	  "stepOver": __webpack_require__(349),
+	  "subSettings": __webpack_require__(350),
+	  "worker": __webpack_require__(351)
 	};
 	
 	module.exports = function (name, props) {
@@ -32685,7 +38926,7 @@ var Debugger =
 
  function(module, exports) {
 
-	module.exports = "<!-- This Source Code Form is subject to the terms of the Mozilla Public - License, v. 2.0. If a copy of the MPL was not distributed with this - file, You can obtain one at http://mozilla.org/MPL/2.0/. --><svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" viewBox=\"0 0 33 12\"><path id=\"base-path\" d=\"M27.1,0H1C0.4,0,0,0.4,0,1v10c0,0.6,0.4,1,1,1h26.1 c0.6,0,1.2-0.3,1.5-0.7L33,6l-4.4-5.3C28.2,0.3,27.7,0,27.1,0z\"></path></svg>"
+	module.exports = "<!-- This Source Code Form is subject to the terms of the Mozilla Public - License, v. 2.0. If a copy of the MPL was not distributed with this - file, You can obtain one at http://mozilla.org/MPL/2.0/. --><svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" viewBox=\"0 0 60 12\"><path id=\"base-path\" d=\"M53.9,0H1C0.4,0,0,0.4,0,1v10c0,0.6,0.4,1,1,1h52.9c0.6,0,1.2-0.3,1.5-0.7L60,6l-4.4-5.3C55,0.3,54.5,0,53.9,0z\"></path></svg>"
 
  },
 
@@ -32734,12 +38975,6 @@ var Debugger =
  function(module, exports) {
 
 	module.exports = "<!-- This Source Code Form is subject to the terms of the Mozilla Public - License, v. 2.0. If a copy of the MPL was not distributed with this - file, You can obtain one at http://mozilla.org/MPL/2.0/. --><svg viewBox=\"0 0 16 16\" xmlns=\"http://www.w3.org/2000/svg\" fill=\"#4A464C\"><g fill-rule=\"evenodd\"><path d=\"M6.5 12.003l.052-9a.5.5 0 1 0-1-.006l-.052 9a.5.5 0 1 0 1 .006zM13 11.997l-.05-9a.488.488 0 0 0-.477-.497.488.488 0 0 0-.473.503l.05 9a.488.488 0 0 0 .477.497.488.488 0 0 0 .473-.503z\"></path></g></svg>"
-
- },
-
- function(module, exports) {
-
-	module.exports = "<!-- This Source Code Form is subject to the terms of the Mozilla Public - License, v. 2.0. If a copy of the MPL was not distributed with this - file, You can obtain one at http://mozilla.org/MPL/2.0/. --><svg viewBox=\"975 569 11 11\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"><g id=\"Pause-circle\" stroke=\"none\" stroke-width=\"1\" fill=\"none\" fill-rule=\"evenodd\" transform=\"translate(976.000000, 570.000000)\"><path d=\"M4.5,0.538639227 C2.3152037,0.538639227 0.538639227,2.31614868 0.538639227,4.5 C0.538639227,6.6847963 2.3152037,8.46136077 4.5,8.46136077 C6.6847963,8.46136077 8.46136077,6.6847963 8.46136077,4.5 C8.46136077,2.31614868 6.6847963,0.538639227 4.5,0.538639227 M4.5,9 C2.01847963,9 0,6.98152037 0,4.5 C0,2.01847963 2.01847963,0 4.5,0 C6.98152037,0 9,2.01847963 9,4.5 C9,6.98152037 6.98152037,9 4.5,9\" id=\"Fill-1-Copy\" stroke=\"#4990E2\" stroke-width=\"0.5\" fill=\"#4990E2\"></path><path d=\"M3,3 L3,6.5\" id=\"Line\" stroke=\"#4990E2\" stroke-width=\"1.15\" stroke-linecap=\"round\"></path><path d=\"M6,3 L6,6.5\" id=\"Line\" stroke=\"#4990E2\" stroke-width=\"1.15\" stroke-linecap=\"round\"></path></g></svg>"
 
  },
 
@@ -32807,8 +39042,13 @@ var Debugger =
  function(module, exports, __webpack_require__) {
 
 	var React = __webpack_require__(17);
+	var dom = React.DOM;
+	var PropTypes = React.PropTypes;
+	var createFactory = React.createFactory;
+	
+	
 	var ReactDOM = __webpack_require__(25);
-	var ImPropTypes = __webpack_require__(228);
+	var ImPropTypes = __webpack_require__(247);
 	
 	var _require = __webpack_require__(2);
 	
@@ -32818,7 +39058,8 @@ var Debugger =
 	
 	var connect = _require2.connect;
 	
-	var SourceEditor = __webpack_require__(263);
+	var SourceEditor = __webpack_require__(355);
+	var SourceFooter = createFactory(__webpack_require__(356));
 	
 	var _require3 = __webpack_require__(45);
 	
@@ -32835,13 +39076,16 @@ var Debugger =
 	
 	var makeLocationId = _require5.makeLocationId;
 	
-	var actions = __webpack_require__(214);
-	var Breakpoint = React.createFactory(__webpack_require__(264));
-	var dom = React.DOM;
-	var PropTypes = React.PropTypes;
+	var actions = __webpack_require__(209);
+	var Breakpoint = React.createFactory(__webpack_require__(360));
+	
+	var _require6 = __webpack_require__(237);
+	
+	var getDocument = _require6.getDocument;
+	var setDocument = _require6.setDocument;
 	
 	
-	__webpack_require__(265);
+	__webpack_require__(361);
 	
 	function isTextForSource(sourceText) {
 	  return !sourceText.get("loading") && !sourceText.get("error");
@@ -32995,22 +39239,44 @@ var Debugger =
 	    
 	    
 	    var sourceText = nextProps.sourceText;
+	    var selectedLocation = nextProps.selectedLocation;
+	
 	
 	    if (!sourceText) {
-	      this.setText("");
-	      this.editor.setMode({ name: "text" });
+	      this.showMessage("");
 	    } else if (!isTextForSource(sourceText)) {
-	      
-	      
-	      this.setText(sourceText.get("error") || "Loading...");
-	      this.editor.setMode({ name: "text" });
+	      this.showMessage(sourceText.get("error") || "Loading...");
 	    } else if (this.props.sourceText !== sourceText) {
-	      
-	      
-	      this.setText(sourceText.get("text"));
-	      this.setMode(sourceText);
-	      resizeBreakpointGutter(this.editor.codeMirror);
+	      this.showSourceText(sourceText, selectedLocation);
 	    }
+	
+	    resizeBreakpointGutter(this.editor.codeMirror);
+	  },
+	
+	  showMessage(msg) {
+	    this.editor.replaceDocument(this.editor.createDocument());
+	    this.setText(msg);
+	    this.editor.setMode({ name: "text" });
+	  },
+	
+	  
+
+
+
+
+	  showSourceText(sourceText, selectedLocation) {
+	    var doc = getDocument(selectedLocation.sourceId);
+	    if (doc) {
+	      this.editor.replaceDocument(doc);
+	      return doc;
+	    }
+	
+	    doc = this.editor.createDocument();
+	    setDocument(selectedLocation.sourceId, doc);
+	    this.editor.replaceDocument(doc);
+	
+	    this.setText(sourceText.get("text"));
+	    this.setMode(sourceText);
 	  },
 	
 	  componentDidUpdate(prevProps) {
@@ -33041,20 +39307,28 @@ var Debugger =
 	    }
 	  },
 	
-	  render() {
+	  renderBreakpoints() {
 	    var _props = this.props;
 	    var breakpoints = _props.breakpoints;
 	    var sourceText = _props.sourceText;
 	
 	    var isLoading = sourceText && sourceText.get("loading");
 	
-	    return dom.div({ className: "editor-wrapper devtools-monospace" }, dom.div({ className: "editor-mount" }), !isLoading && breakpoints.valueSeq().map(bp => {
+	    if (isLoading) {
+	      return;
+	    }
+	
+	    return breakpoints.valueSeq().map(bp => {
 	      return Breakpoint({
 	        key: makeLocationId(bp.location),
 	        breakpoint: bp,
 	        editor: this.editor && this.editor.codeMirror
 	      });
-	    }));
+	    });
+	  },
+	
+	  render() {
+	    return dom.div({ className: "editor-wrapper devtools-monospace" }, dom.div({ className: "editor-mount" }), this.renderBreakpoints(), SourceFooter({ editor: this.editor }));
 	  }
 	});
 	
@@ -33074,32 +39348,328 @@ var Debugger =
 
  function(module, exports) {
 
-	module.exports = devtoolsRequire('devtools/client/sourceeditor/editor');
+	module.exports = devtoolsRequire("devtools/client/sourceeditor/editor");
 
  },
 
  function(module, exports, __webpack_require__) {
 
 	var React = __webpack_require__(17);
+	var dom = React.DOM;
 	var PropTypes = React.PropTypes;
 	
-	var classnames = __webpack_require__(207);
+	var _require = __webpack_require__(25);
+	
+	var findDOMNode = _require.findDOMNode;
+	
+	var _require2 = __webpack_require__(15);
+	
+	var connect = _require2.connect;
+	
+	var _require3 = __webpack_require__(2);
+	
+	var bindActionCreators = _require3.bindActionCreators;
+	
+	var actions = __webpack_require__(209);
+	
+	var _require4 = __webpack_require__(46);
+	
+	var isEnabled = _require4.isEnabled;
+	
+	var _require5 = __webpack_require__(199);
+	
+	var getSelectedSource = _require5.getSelectedSource;
+	var getSourceText = _require5.getSourceText;
+	var getPrettySource = _require5.getPrettySource;
+	
+	var Svg = __webpack_require__(328);
+	var ImPropTypes = __webpack_require__(247);
+	var classnames = __webpack_require__(201);
+	
+	var _require6 = __webpack_require__(211);
+	
+	var isOriginalId = _require6.isOriginalId;
+	var originalToGeneratedId = _require6.originalToGeneratedId;
+	
+	var _require7 = __webpack_require__(233);
+	
+	var isPretty = _require7.isPretty;
+	
+	var _require8 = __webpack_require__(357);
+	
+	var find = _require8.find;
+	var findNext = _require8.findNext;
+	var findPrev = _require8.findPrev;
+	
+	
+	__webpack_require__(358);
+	
+	function debugBtn(onClick, type) {
+	  var className = arguments.length <= 2 || arguments[2] === undefined ? "active" : arguments[2];
+	  var tooltip = arguments[3];
+	
+	  className = `${ type } ${ className }`;
+	  return dom.span({ onClick, className, key: type }, Svg(type, { title: tooltip }));
+	}
+	
+	var SourceFooter = React.createClass({
+	  propTypes: {
+	    selectedSource: ImPropTypes.map,
+	    togglePrettyPrint: PropTypes.func,
+	    sourceText: ImPropTypes.map,
+	    selectSource: PropTypes.func,
+	    prettySource: ImPropTypes.map,
+	    editor: PropTypes.object
+	  },
+	
+	  contextTypes: {
+	    shortcuts: PropTypes.object
+	  },
+	
+	  displayName: "SourceFooter",
+	
+	  blackboxButton() {
+	    if (!isEnabled("blackbox")) {
+	      return null;
+	    }
+	
+	    return debugBtn(() => {}, "blackBox", this.props.selectedSource, "Toggle Black Boxing");
+	  },
+	
+	  onClickPrettyPrint() {
+	    var _props = this.props;
+	    var selectedSource = _props.selectedSource;
+	    var togglePrettyPrint = _props.togglePrettyPrint;
+	    var selectSource = _props.selectSource;
+	    var prettySource = _props.prettySource;
+	
+	
+	    if (isPretty(selectedSource.toJS())) {
+	      return selectSource(originalToGeneratedId(selectedSource.get("id")));
+	    }
+	
+	    if (selectedSource.get("isPrettyPrinted")) {
+	      return selectSource(prettySource.get("id"));
+	    }
+	
+	    togglePrettyPrint(selectedSource.get("id"));
+	  },
+	
+	  prettyPrintButton() {
+	    var _props2 = this.props;
+	    var selectedSource = _props2.selectedSource;
+	    var sourceText = _props2.sourceText;
+	
+	    var sourceLoaded = selectedSource && !sourceText.get("loading");
+	
+	    if (isOriginalId(selectedSource.get("id")) || isOriginalId(selectedSource.get("id")) && !isPretty(selectedSource.toJS())) {
+	      return;
+	    }
+	
+	    return debugBtn(this.onClickPrettyPrint, "prettyPrint", classnames({
+	      active: sourceLoaded,
+	      pretty: isPretty(selectedSource.toJS())
+	    }), "Prettify Source");
+	  },
+	
+	  onKeyUp(e) {
+	    var query = e.target.value;
+	    var ed = this.props.editor;
+	    var ctx = { ed, cm: ed.codeMirror };
+	
+	    if (e.key != "Enter") {
+	      find(ctx, query);
+	    } else if (e.shiftKey) {
+	      findPrev(ctx, query);
+	    } else {
+	      findNext(ctx, query);
+	    }
+	  },
+	
+	  focusSearch(shortcut, e) {
+	    e.stopPropagation();
+	    e.preventDefault();
+	    var node = findDOMNode(this).querySelector(".source-search");
+	    node.focus();
+	  },
+	
+	  setupKeyboardShortcuts() {
+	    if (this.keyShortcutsEnabled) {
+	      return;
+	    }
+	
+	    this.keyShortcutsEnabled = true;
+	    var shortcuts = this.context.shortcuts;
+	    shortcuts.on("Cmd+f", this.focusSearch);
+	  },
+	
+	  componentWillUnmount() {
+	    var shortcuts = this.context.shortcuts;
+	    shortcuts.off("Cmd+f", this.focusSearch);
+	  },
+	
+	  componentDidUpdate() {
+	    this.setupKeyboardShortcuts();
+	  },
+	
+	  render() {
+	    if (!this.props.selectedSource || !isEnabled("prettyPrint") && !isEnabled("blackBox") && !isEnabled("search")) {
+	      return dom.div({ className: "source-footer" });
+	    }
+	
+	    return dom.div({ className: "source-footer" }, dom.input({
+	      className: "source-search",
+	      onKeyUp: e => this.onKeyUp(e)
+	    }), dom.div({ className: "command-bar" }, this.blackboxButton(), this.prettyPrintButton()));
+	  }
+	});
+	
+	module.exports = connect(state => {
+	  var selectedSource = getSelectedSource(state);
+	  var selectedId = selectedSource && selectedSource.get("id");
+	  return {
+	    selectedSource,
+	    sourceText: getSourceText(state, selectedId),
+	    prettySource: getPrettySource(state, selectedId)
+	  };
+	}, dispatch => bindActionCreators(actions, dispatch))(SourceFooter);
+
+ },
+
+ function(module, exports) {
+
+	
+	
+	
+	
+	function SearchState() {
+	  this.posFrom = this.posTo = this.query = null;
+	}
+	
+	function getSearchState(cm) {
+	  return cm.state.search || (cm.state.search = new SearchState());
+	}
+	
+	function getSearchCursor(cm, query, pos) {
+	  
+	  return cm.getSearchCursor(query, pos, typeof query == "string" && query == query.toLowerCase());
+	}
+	
+	
+
+
+
+
+	function doSearch(ctx, rev, query) {
+	  var cm = ctx.cm;
+	
+	  var state = getSearchState(cm);
+	
+	  if (state.query) {
+	    searchNext(ctx, rev);
+	    return;
+	  }
+	
+	  cm.operation(function () {
+	    if (state.query) {
+	      return;
+	    }
+	
+	    state.query = query;
+	    state.posFrom = state.posTo = { line: 0, ch: 0 };
+	    searchNext(ctx, rev);
+	  });
+	}
+	
+	
+
+
+	function searchNext(ctx, rev) {
+	  var cm = ctx.cm;
+	  var ed = ctx.ed;
+	
+	  cm.operation(function () {
+	    var state = getSearchState(cm);
+	    var cursor = getSearchCursor(cm, state.query, rev ? state.posFrom : state.posTo);
+	
+	    if (!cursor.find(rev)) {
+	      cursor = getSearchCursor(cm, state.query, rev ? { line: cm.lastLine(), ch: null } : { line: cm.firstLine(), ch: 0 });
+	      if (!cursor.find(rev)) {
+	        return;
+	      }
+	    }
+	
+	    ed.alignLine(cursor.from().line, "center");
+	    cm.setSelection(cursor.from(), cursor.to());
+	    state.posFrom = cursor.from();
+	    state.posTo = cursor.to();
+	  });
+	}
+	
+	
+
+
+	function clearSearch(cm) {
+	  var state = getSearchState(cm);
+	
+	  if (!state.query) {
+	    return;
+	  }
+	
+	  state.query = null;
+	}
+	
+	
+
+
+	function find(ctx, query) {
+	  clearSearch(ctx.cm);
+	  doSearch(ctx, false, query);
+	}
+	
+	
+
+
+	function findNext(ctx, query) {
+	  doSearch(ctx, false, query);
+	}
+	
+	
+
+
+	function findPrev(ctx, query) {
+	  doSearch(ctx, true, query);
+	}
+	
+	module.exports = { find, findNext, findPrev };
+
+ },
+
+ function(module, exports) {
+
+	
+
+ },
+,
+
+ function(module, exports, __webpack_require__) {
+
+	var React = __webpack_require__(17);
+	var ReactDOM = __webpack_require__(25);
+	
+	var PropTypes = React.PropTypes;
+	
+	var classnames = __webpack_require__(201);
+	var Svg = __webpack_require__(328);
+	
+	var breakpointSvg = document.createElement("div");
+	ReactDOM.render(Svg("breakpoint"), breakpointSvg);
 	
 	function makeMarker(isDisabled) {
-	  var marker = document.createElement("div");
-	  marker.className = classnames("editor new-breakpoint", { "breakpoint-disabled": isDisabled });
+	  var bp = breakpointSvg.cloneNode(true);
+	  bp.className = classnames("editor new-breakpoint", { "breakpoint-disabled": isDisabled });
 	
-	  var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-	  svg.setAttribute("viewBox", "0 0 60 12");
-	  svg.setAttribute("preserveAspectRatio", "none");
-	  var path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-	  
-	  
-	  path.setAttribute("d", "M53.9,0H1C0.4,0,0,0.4,0,1v10c0,0.6,0.4,1,1,1h52.9c0.6,0,1.2-0.3,1.5-0.7L60,6l-4.4-5.3C55,0.3,54.5,0,53.9,0z"); 
-	  svg.appendChild(path);
-	  marker.appendChild(svg);
-	
-	  return marker;
+	  return bp;
 	}
 	
 	var Breakpoint = React.createClass({
@@ -33163,71 +39733,244 @@ var Debugger =
 
  function(module, exports, __webpack_require__) {
 
+	const React = __webpack_require__(17);
+	const ReactDOM = __webpack_require__(25);
+	const Draggable = React.createFactory(
+	  __webpack_require__(364));
+	const { DOM: dom, PropTypes } = React;
+	
 	
 
 
+
+	const SplitBox = React.createClass({
 	
-	var React = __webpack_require__(17);
-	var ReactDOM = __webpack_require__(25);
-	var Draggable = React.createFactory(__webpack_require__(268));
-	__webpack_require__(269);
-	
-	var dom = React.DOM;
-	var PropTypes = React.PropTypes;
-	
-	
-	var SplitBox = React.createClass({
 	  propTypes: {
-	    left: PropTypes.any.isRequired,
-	    right: PropTypes.any.isRequired,
-	
-	    initialWidth: PropTypes.any,
-	    rightFlex: PropTypes.bool,
-	    style: PropTypes.string
+	    
+	    className: PropTypes.string,
+	    
+	    initialSize: PropTypes.any,
+	    
+	    initialWidth: PropTypes.number,
+	    
+	    initialHeight: PropTypes.number,
+	    
+	    startPanel: PropTypes.any,
+	    
+	    minSize: PropTypes.any,
+	    
+	    maxSize: PropTypes.any,
+	    
+	    endPanel: PropTypes.any,
+	    
+	    endPanelControl: PropTypes.bool,
+	    
+	    splitterSize: PropTypes.number,
+	    
+	    vert: PropTypes.bool,
+	    
+	    style: PropTypes.object
 	  },
 	
 	  displayName: "SplitBox",
 	
-	  getInitialState() {
-	    return { width: this.props.initialWidth };
+	  getDefaultProps() {
+	    return {
+	      splitterSize: 5,
+	      vert: true,
+	      endPanelControl: false
+	    };
 	  },
 	
-	  onMove(x) {
-	    var node = ReactDOM.findDOMNode(this);
+	  
+
+
+
+
+	  getInitialState() {
+	    return {
+	      vert: this.props.vert,
+	      width: this.props.initialWidth || this.props.initialSize,
+	      height: this.props.initialHeight || this.props.initialSize
+	    };
+	  },
+	
+	  
+	
+	  
+
+
+
+
+	  onStartMove() {
+	    const splitBox = ReactDOM.findDOMNode(this);
+	    const doc = splitBox.ownerDocument;
+	    let defaultCursor = doc.documentElement.style.cursor;
+	    doc.documentElement.style.cursor =
+	      (this.state.vert ? "ew-resize" : "ns-resize");
+	
+	    splitBox.classList.add("dragging");
+	
 	    this.setState({
-	      width: this.props.rightFlex ? node.offsetLeft + node.offsetWidth - x : x - node.offsetLeft
+	      defaultCursor: defaultCursor
 	    });
 	  },
 	
+	  onStopMove() {
+	    const splitBox = ReactDOM.findDOMNode(this);
+	    const doc = splitBox.ownerDocument;
+	    doc.documentElement.style.cursor = this.state.defaultCursor;
+	
+	    splitBox.classList.remove("dragging");
+	  },
+	
+	  screenX() {
+	    const borderWidth = (window.outerWidth - window.innerWidth) / 2;
+	    return window.screenX + borderWidth;
+	  },
+	
+	  screenY() {
+	    const borderHeignt = (window.outerHeight - window.innerHeight);
+	    return window.screenY + borderHeignt;
+	  },
+	
+	  
+
+
+
+
+	  onMove(x, y) {
+	    const node = ReactDOM.findDOMNode(this);
+	    const doc = node.ownerDocument;
+	    const win = doc.defaultView;
+	
+	    let size;
+	    let { endPanelControl } = this.props;
+	
+	    if (this.state.vert) {
+	      
+	      
+	      let dir = win.getComputedStyle(doc.documentElement).direction;
+	      if (dir == "rtl") {
+	        endPanelControl = !endPanelControl;
+	      }
+	
+	      let innerOffset = x - this.screenX();
+	      size = endPanelControl ?
+	        (node.offsetLeft + node.offsetWidth) - innerOffset :
+	        innerOffset - node.offsetLeft;
+	
+	      this.setState({
+	        width: size
+	      });
+	    } else {
+	      let innerOffset = y - this.screenY();
+	      size = endPanelControl ?
+	        (node.offsetTop + node.offsetHeight) - innerOffset :
+	        innerOffset - node.offsetTop;
+	
+	      this.setState({
+	        height: size
+	      });
+	    }
+	  },
+	
+	  
+	
 	  render() {
-	    var _props = this.props;
-	    var left = _props.left;
-	    var right = _props.right;
-	    var rightFlex = _props.rightFlex;
-	    var width = this.state.width;
+	    const vert = this.state.vert;
+	    const { startPanel, endPanel, endPanelControl, minSize,
+	      maxSize, splitterSize } = this.props;
 	
+	    let style = Object.assign({}, this.props.style);
 	
-	    return dom.div({ className: "split-box",
-	      style: this.props.style }, dom.div({ className: rightFlex ? "uncontrolled" : "controlled",
-	      style: { width: rightFlex ? null : width } }, left), dom.div({ className: "splitter" }, Draggable({ className: "splitter-handle",
-	      onMove: x => this.onMove(x) })), dom.div({ className: rightFlex ? "controlled" : "uncontrolled",
-	      style: { width: rightFlex ? width : null } }, right));
+	    
+	    let classNames = ["split-box"];
+	    classNames.push(vert ? "vert" : "horz");
+	    if (this.props.className) {
+	      classNames = classNames.concat(this.props.className.split(" "));
+	    }
+	
+	    let leftPanelStyle;
+	    let rightPanelStyle;
+	
+	    
+	    if (vert) {
+	      leftPanelStyle = {
+	        maxWidth: endPanelControl ? null : maxSize,
+	        minWidth: endPanelControl ? null : minSize,
+	        width: endPanelControl ? null : this.state.width
+	      };
+	      rightPanelStyle = {
+	        maxWidth: endPanelControl ? maxSize : null,
+	        minWidth: endPanelControl ? minSize : null,
+	        width: endPanelControl ? this.state.width : null
+	      };
+	    } else {
+	      leftPanelStyle = {
+	        maxHeight: endPanelControl ? null : maxSize,
+	        minHeight: endPanelControl ? null : minSize,
+	        height: endPanelControl ? null : this.state.height
+	      };
+	      rightPanelStyle = {
+	        maxHeight: endPanelControl ? maxSize : null,
+	        minHeight: endPanelControl ? minSize : null,
+	        height: endPanelControl ? this.state.height : null
+	      };
+	    }
+	
+	    
+	    let splitterStyle = {
+	      flex: "0 0 " + splitterSize + "px"
+	    };
+	
+	    return (
+	      dom.div({
+	        className: classNames.join(" "),
+	        style: style },
+	        startPanel ?
+	          dom.div({
+	            className: endPanelControl ? "uncontrolled" : "controlled",
+	            style: leftPanelStyle },
+	            startPanel
+	          ) : null,
+	        Draggable({
+	          className: "splitter",
+	          style: splitterStyle,
+	          onStart: this.onStartMove,
+	          onStop: this.onStopMove,
+	          onMove: this.onMove
+	        }),
+	        endPanel ?
+	          dom.div({
+	            className: endPanelControl ? "controlled" : "uncontrolled",
+	            style: rightPanelStyle },
+	            endPanel
+	          ) : null
+	      )
+	    );
 	  }
 	});
 	
 	module.exports = SplitBox;
 
+
  },
 
  function(module, exports, __webpack_require__) {
 
-	var React = __webpack_require__(17);
-	var ReactDOM = __webpack_require__(25);
-	var dom = React.DOM;
-	var PropTypes = React.PropTypes;
 	
+
+
 	
-	var Draggable = React.createClass({
+	"use strict";
+	
+	const React = __webpack_require__(17);
+	const ReactDOM = __webpack_require__(17);
+	const { DOM: dom, PropTypes } = React;
+	
+	const Draggable = React.createClass({
+	  displayName: "Draggable",
 	
 	  propTypes: {
 	    onMove: PropTypes.func.isRequired,
@@ -33237,11 +39980,9 @@ var Debugger =
 	    className: PropTypes.string
 	  },
 	
-	  displayName: "Draggable",
-	
 	  startDragging(ev) {
 	    ev.preventDefault();
-	    var doc = ReactDOM.findDOMNode(this).ownerDocument;
+	    const doc = ReactDOM.findDOMNode(this).ownerDocument;
 	    doc.addEventListener("mousemove", this.onMove);
 	    doc.addEventListener("mouseup", this.onUp);
 	    this.props.onStart && this.props.onStart();
@@ -33249,12 +39990,14 @@ var Debugger =
 	
 	  onMove(ev) {
 	    ev.preventDefault();
-	    this.props.onMove(ev.pageX, ev.pageY);
+	    
+	    
+	    this.props.onMove(ev.screenX, ev.screenY);
 	  },
 	
 	  onUp(ev) {
 	    ev.preventDefault();
-	    var doc = ReactDOM.findDOMNode(this).ownerDocument;
+	    const doc = ReactDOM.findDOMNode(this).ownerDocument;
 	    doc.removeEventListener("mousemove", this.onMove);
 	    doc.removeEventListener("mouseup", this.onUp);
 	    this.props.onStop && this.props.onStop();
@@ -33271,14 +40014,8 @@ var Debugger =
 	
 	module.exports = Draggable;
 
- },
-
- function(module, exports) {
-
-	
 
  },
-,
 
  function(module, exports, __webpack_require__) {
 
@@ -33308,23 +40045,23 @@ var Debugger =
 	
 	var isEnabled = _require4.isEnabled;
 	
-	var Svg = __webpack_require__(235);
-	var ImPropTypes = __webpack_require__(228);
+	var Svg = __webpack_require__(328);
+	var ImPropTypes = __webpack_require__(247);
 	
-	var _require5 = __webpack_require__(213);
+	var _require5 = __webpack_require__(208);
 	
 	var Services = _require5.Services;
 	
 	var shiftKey = Services.appinfo.OS === "Darwin" ? "\u21E7" : "Shift+";
 	var ctrlKey = Services.appinfo.OS === "Linux" ? "Ctrl+" : "";
 	
-	var actions = __webpack_require__(214);
-	var Breakpoints = React.createFactory(__webpack_require__(272));
-	var Expressions = React.createFactory(__webpack_require__(275));
-	var Scopes = React.createFactory(__webpack_require__(308));
-	var Frames = React.createFactory(__webpack_require__(340));
-	var Accordion = React.createFactory(__webpack_require__(343));
-	__webpack_require__(346);
+	var actions = __webpack_require__(209);
+	var Breakpoints = React.createFactory(__webpack_require__(366));
+	var Expressions = React.createFactory(__webpack_require__(372));
+	var Scopes = React.createFactory(__webpack_require__(405));
+	var Frames = React.createFactory(__webpack_require__(416));
+	var Accordion = React.createFactory(__webpack_require__(419));
+	__webpack_require__(422);
 	
 	function debugBtn(onClick, type, className, tooltip) {
 	  className = `${ type } ${ className }`;
@@ -33348,8 +40085,11 @@ var Debugger =
 	    breakpoints: ImPropTypes.map,
 	    isWaitingOnBreak: PropTypes.bool,
 	    breakpointsDisabled: PropTypes.bool,
-	    breakpointsLoading: PropTypes.bool,
-	    keyShortcuts: PropTypes.object
+	    breakpointsLoading: PropTypes.bool
+	  },
+	
+	  contextTypes: {
+	    shortcuts: PropTypes.object
 	  },
 	
 	  displayName: "RightSidebar",
@@ -33384,26 +40124,24 @@ var Debugger =
 	  },
 	
 	  setupKeyboardShortcuts() {
-	    var keyShortcuts = this.props.keyShortcuts;
-	
 	    if (this.keyShortcutsEnabled) {
 	      return;
 	    }
 	
 	    this.keyShortcutsEnabled = true;
-	    keyShortcuts.on("F8", this.resume);
-	    keyShortcuts.on("F10", this.stepOver);
-	    keyShortcuts.on(`${ ctrlKey }F11`, this.stepIn);
-	    keyShortcuts.on(`${ ctrlKey }Shift+F11`, this.stepOut);
+	    var shortcuts = this.context.shortcuts;
+	    shortcuts.on("F8", this.resume);
+	    shortcuts.on("F10", this.stepOver);
+	    shortcuts.on(`${ ctrlKey }F11`, this.stepIn);
+	    shortcuts.on(`${ ctrlKey }Shift+F11`, this.stepOut);
 	  },
 	
 	  componentWillUnmount() {
-	    var keyShortcuts = this.props.keyShortcuts;
-	
-	    keyShortcuts.off("F8", this.resume);
-	    keyShortcuts.off("F10", this.stepOver);
-	    keyShortcuts.off(`${ ctrlKey }F11`, this.stepIn);
-	    keyShortcuts.off(`${ ctrlKey }Shift+F11`, this.stepOut);
+	    var shortcuts = this.context.shortcuts;
+	    shortcuts.off("F8", this.resume);
+	    shortcuts.off("F10", this.stepOver);
+	    shortcuts.off(`${ ctrlKey }F11`, this.stepIn);
+	    shortcuts.off(`${ ctrlKey }Shift+F11`, this.stepOut);
 	  },
 	
 	  componentDidUpdate() {
@@ -33446,19 +40184,15 @@ var Debugger =
 	    var pauseOnExceptions = _props2.pauseOnExceptions;
 	
 	
-	    function pauseBtn(pause, ignore, tooltip) {
-	      return debugBtn(() => pauseOnExceptions(pause, ignore), "pause-exceptions", "enabled", tooltip);
-	    }
-	
 	    if (!shouldPauseOnExceptions && !shouldIgnoreCaughtExceptions) {
-	      return pauseBtn(true, true, "Ignore exceptions");
+	      return debugBtn(() => pauseOnExceptions(true, true), "pause-exceptions", "enabled", "Ignore exceptions. Click to pause on uncaught exceptions");
 	    }
 	
 	    if (shouldPauseOnExceptions && shouldIgnoreCaughtExceptions) {
-	      return pauseBtn(true, false, "Pause on uncaught exceptions");
+	      return debugBtn(() => pauseOnExceptions(true, false), "pause-exceptions", "uncaught enabled", "Pause on uncaught exceptions. Click to pause on all exceptions");
 	    }
 	
-	    return pauseBtn(false, false, "Pause on all exceptions");
+	    return debugBtn(() => pauseOnExceptions(false, false), "pause-exceptions", "all enabled", "Pause on all exceptions. Click to ignore exceptions");
 	  },
 	
 	  renderDisableBreakpoints() {
@@ -33525,9 +40259,9 @@ var Debugger =
 	
 	var bindActionCreators = _require2.bindActionCreators;
 	
-	var ImPropTypes = __webpack_require__(228);
-	var classnames = __webpack_require__(207);
-	var actions = __webpack_require__(214);
+	var ImPropTypes = __webpack_require__(247);
+	var classnames = __webpack_require__(201);
+	var actions = __webpack_require__(209);
 	
 	var _require3 = __webpack_require__(199);
 	
@@ -33539,22 +40273,23 @@ var Debugger =
 	
 	var makeLocationId = _require4.makeLocationId;
 	
-	var _require5 = __webpack_require__(176);
+	var _require5 = __webpack_require__(183);
 	
 	var truncateStr = _require5.truncateStr;
 	var dom = React.DOM;
 	var PropTypes = React.PropTypes;
 	
-	var _require6 = __webpack_require__(176);
+	var _require6 = __webpack_require__(183);
 	
 	var endTruncateStr = _require6.endTruncateStr;
 	
-	var _require7 = __webpack_require__(205);
+	var _require7 = __webpack_require__(232);
 	
 	var basename = _require7.basename;
 	
+	var CloseButton = __webpack_require__(367);
 	
-	__webpack_require__(273);
+	__webpack_require__(370);
 	
 	function isCurrentlyPausedAtBreakpoint(state, breakpoint) {
 	  var pause = getPause(state);
@@ -33569,9 +40304,9 @@ var Debugger =
 	}
 	
 	function renderSourceLocation(source, line) {
-	  var url = basename(source.get("url"));
+	  var url = source.get("url") ? basename(source.get("url")) : null;
 	  
-	  return url !== "" ? dom.div({ className: "location" }, `${ endTruncateStr(url, 30) }: ${ line }`) : null;
+	  return url ? dom.div({ className: "location" }, `${ endTruncateStr(url, 30) }: ${ line }`) : null;
 	}
 	
 	var Breakpoints = React.createClass({
@@ -33579,7 +40314,8 @@ var Debugger =
 	    breakpoints: ImPropTypes.map.isRequired,
 	    enableBreakpoint: PropTypes.func.isRequired,
 	    disableBreakpoint: PropTypes.func.isRequired,
-	    selectSource: PropTypes.func.isRequired
+	    selectSource: PropTypes.func.isRequired,
+	    removeBreakpoint: PropTypes.func.isRequired
 	  },
 	
 	  displayName: "Breakpoints",
@@ -33602,6 +40338,11 @@ var Debugger =
 	    this.props.selectSource(sourceId, { line });
 	  },
 	
+	  removeBreakpoint(event, breakpoint) {
+	    event.stopPropagation();
+	    this.props.removeBreakpoint(breakpoint.location);
+	  },
+	
 	  renderBreakpoint(breakpoint) {
 	    var snippet = truncateStr(breakpoint.text || "", 30);
 	    var locationId = breakpoint.locationId;
@@ -33621,7 +40362,9 @@ var Debugger =
 	      type: "checkbox",
 	      checked: !isDisabled,
 	      onChange: () => this.handleCheckbox(breakpoint)
-	    }), dom.div({ className: "breakpoint-label", title: breakpoint.text }, dom.div({}, renderSourceLocation(breakpoint.location.source, line))), dom.div({ className: "breakpoint-snippet" }, snippet));
+	    }), dom.div({ className: "breakpoint-label", title: breakpoint.text }, dom.div({}, renderSourceLocation(breakpoint.location.source, line))), dom.div({ className: "breakpoint-snippet" }, snippet), CloseButton({
+	      handleClick: ev => this.removeBreakpoint(ev, breakpoint)
+	    }));
 	  },
 	
 	  render() {
@@ -33653,6 +40396,37 @@ var Debugger =
 
  },
 
+ function(module, exports, __webpack_require__) {
+
+	var React = __webpack_require__(17);
+	var dom = React.DOM;
+	var PropTypes = React.PropTypes;
+	
+	var Svg = __webpack_require__(328);
+	
+	__webpack_require__(368);
+	
+	function CloseButton(_ref) {
+	  var handleClick = _ref.handleClick;
+	
+	  return dom.div({ className: "close-btn", onClick: handleClick }, Svg("close"));
+	}
+	
+	CloseButton.propTypes = {
+	  handleClick: PropTypes.func.isRequired
+	};
+	
+	module.exports = CloseButton;
+
+ },
+
+ function(module, exports) {
+
+	
+
+ },
+,
+
  function(module, exports) {
 
 	
@@ -33672,23 +40446,23 @@ var Debugger =
 	
 	var bindActionCreators = _require2.bindActionCreators;
 	
-	var ImPropTypes = __webpack_require__(228);
+	var ImPropTypes = __webpack_require__(247);
 	
-	var Svg = __webpack_require__(235);
-	var actions = __webpack_require__(214);
+	var Svg = __webpack_require__(328);
+	var actions = __webpack_require__(209);
 	
 	var _require3 = __webpack_require__(199);
 	
 	var getExpressions = _require3.getExpressions;
 	var getPause = _require3.getPause;
 	
-	var Rep = React.createFactory(__webpack_require__(276));
+	var Rep = React.createFactory(__webpack_require__(373));
 	
 	var dom = React.DOM;
 	var PropTypes = React.PropTypes;
 	
 	
-	__webpack_require__(306);
+	__webpack_require__(403);
 	
 	var Expressions = React.createClass({
 	  propTypes: {
@@ -33795,10 +40569,10 @@ var Debugger =
  function(module, exports, __webpack_require__) {
 
 	var React = __webpack_require__(17);
-	var Rep = React.createFactory(__webpack_require__(277).Rep);
-	var Grip = __webpack_require__(303).Grip;
+	var Rep = React.createFactory(__webpack_require__(374).Rep);
+	var Grip = __webpack_require__(400).Grip;
 	
-	__webpack_require__(304);
+	__webpack_require__(401);
 	
 	function renderRep(_ref) {
 	  var object = _ref.object;
@@ -33826,31 +40600,31 @@ var Debugger =
 	  
 	  const React = __webpack_require__(17);
 	
-	  const { isGrip } = __webpack_require__(278);
+	  const { isGrip } = __webpack_require__(375);
 	
 	  
-	  const { Undefined } = __webpack_require__(279);
-	  const { Null } = __webpack_require__(281);
-	  const { StringRep } = __webpack_require__(282);
-	  const { Number } = __webpack_require__(283);
-	  const { ArrayRep } = __webpack_require__(284);
-	  const { Obj } = __webpack_require__(286);
+	  const { Undefined } = __webpack_require__(376);
+	  const { Null } = __webpack_require__(378);
+	  const { StringRep } = __webpack_require__(379);
+	  const { Number } = __webpack_require__(380);
+	  const { ArrayRep } = __webpack_require__(381);
+	  const { Obj } = __webpack_require__(383);
 	
 	  
-	  const { Attribute } = __webpack_require__(288);
-	  const { DateTime } = __webpack_require__(290);
-	  const { Document } = __webpack_require__(291);
-	  const { Event } = __webpack_require__(293);
-	  const { Func } = __webpack_require__(294);
-	  const { NamedNodeMap } = __webpack_require__(295);
-	  const { RegExp } = __webpack_require__(296);
-	  const { StyleSheet } = __webpack_require__(297);
-	  const { TextNode } = __webpack_require__(298);
-	  const { Window } = __webpack_require__(299);
-	  const { ObjectWithText } = __webpack_require__(300);
-	  const { ObjectWithURL } = __webpack_require__(301);
-	  const { GripArray } = __webpack_require__(302);
-	  const { Grip } = __webpack_require__(303);
+	  const { Attribute } = __webpack_require__(385);
+	  const { DateTime } = __webpack_require__(387);
+	  const { Document } = __webpack_require__(388);
+	  const { Event } = __webpack_require__(390);
+	  const { Func } = __webpack_require__(391);
+	  const { NamedNodeMap } = __webpack_require__(392);
+	  const { RegExp } = __webpack_require__(393);
+	  const { StyleSheet } = __webpack_require__(394);
+	  const { TextNode } = __webpack_require__(395);
+	  const { Window } = __webpack_require__(396);
+	  const { ObjectWithText } = __webpack_require__(397);
+	  const { ObjectWithURL } = __webpack_require__(398);
+	  const { GripArray } = __webpack_require__(399);
+	  const { Grip } = __webpack_require__(400);
 	
 	  
 	  
@@ -34046,8 +40820,8 @@ var Debugger =
 	!(__WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, module) {
 	  
 	  const React = __webpack_require__(17);
-	  const { createFactories } = __webpack_require__(278);
-	  const { ObjectBox } = createFactories(__webpack_require__(280));
+	  const { createFactories } = __webpack_require__(375);
+	  const { ObjectBox } = createFactories(__webpack_require__(377));
 	
 	  
 
@@ -34138,8 +40912,8 @@ var Debugger =
 	!(__WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, module) {
 	  
 	  const React = __webpack_require__(17);
-	  const { createFactories } = __webpack_require__(278);
-	  const { ObjectBox } = createFactories(__webpack_require__(280));
+	  const { createFactories } = __webpack_require__(375);
+	  const { ObjectBox } = createFactories(__webpack_require__(377));
 	
 	  
 
@@ -34189,8 +40963,8 @@ var Debugger =
 	!(__WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, module) {
 	  
 	  const React = __webpack_require__(17);
-	  const { createFactories, cropMultipleLines } = __webpack_require__(278);
-	  const { ObjectBox } = createFactories(__webpack_require__(280));
+	  const { createFactories, cropMultipleLines } = __webpack_require__(375);
+	  const { ObjectBox } = createFactories(__webpack_require__(377));
 	
 	  
 
@@ -34246,8 +41020,8 @@ var Debugger =
 	!(__WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, module) {
 	  
 	  const React = __webpack_require__(17);
-	  const { createFactories } = __webpack_require__(278);
-	  const { ObjectBox } = createFactories(__webpack_require__(280));
+	  const { createFactories } = __webpack_require__(375);
+	  const { ObjectBox } = createFactories(__webpack_require__(377));
 	
 	  
 
@@ -34298,9 +41072,9 @@ var Debugger =
 	!(__WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, module) {
 	  
 	  const React = __webpack_require__(17);
-	  const { createFactories } = __webpack_require__(278);
-	  const { ObjectBox } = createFactories(__webpack_require__(280));
-	  const { Caption } = createFactories(__webpack_require__(285));
+	  const { createFactories } = __webpack_require__(375);
+	  const { ObjectBox } = createFactories(__webpack_require__(377));
+	  const { Caption } = createFactories(__webpack_require__(382));
 	
 	  
 	  const DOM = React.DOM;
@@ -34456,7 +41230,7 @@ var Debugger =
 	    displayName: "ItemRep",
 	
 	    render: function () {
-	      const { Rep } = createFactories(__webpack_require__(277));
+	      const { Rep } = createFactories(__webpack_require__(374));
 	
 	      let object = this.props.object;
 	      let delim = this.props.delim;
@@ -34549,10 +41323,10 @@ var Debugger =
 	!(__WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, module) {
 	  
 	  const React = __webpack_require__(17);
-	  const { createFactories } = __webpack_require__(278);
-	  const { ObjectBox } = createFactories(__webpack_require__(280));
-	  const { Caption } = createFactories(__webpack_require__(285));
-	  const { PropRep } = createFactories(__webpack_require__(287));
+	  const { createFactories } = __webpack_require__(375);
+	  const { ObjectBox } = createFactories(__webpack_require__(377));
+	  const { Caption } = createFactories(__webpack_require__(382));
+	  const { PropRep } = createFactories(__webpack_require__(384));
 	  
 	  const { span } = React.DOM;
 	  
@@ -34717,7 +41491,7 @@ var Debugger =
 	
 	!(__WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, module) {
 	  const React = __webpack_require__(17);
-	  const { createFactories } = __webpack_require__(278);
+	  const { createFactories } = __webpack_require__(375);
 	
 	  const { span } = React.DOM;
 	
@@ -34738,7 +41512,7 @@ var Debugger =
 	    },
 	
 	    render: function () {
-	      let { Rep } = createFactories(__webpack_require__(277));
+	      let { Rep } = createFactories(__webpack_require__(374));
 	
 	      return (
 	        span({},
@@ -34783,9 +41557,9 @@ var Debugger =
 	  const React = __webpack_require__(17);
 	
 	  
-	  const { createFactories, isGrip } = __webpack_require__(278);
-	  const { ObjectLink } = createFactories(__webpack_require__(289));
-	  const { StringRep } = __webpack_require__(282);
+	  const { createFactories, isGrip } = __webpack_require__(375);
+	  const { ObjectLink } = createFactories(__webpack_require__(386));
+	  const { StringRep } = __webpack_require__(379);
 	
 	  
 	  const { span } = React.DOM;
@@ -34901,8 +41675,8 @@ var Debugger =
 	  const React = __webpack_require__(17);
 	
 	  
-	  const { createFactories, isGrip } = __webpack_require__(278);
-	  const { ObjectLink } = createFactories(__webpack_require__(289));
+	  const { createFactories, isGrip } = __webpack_require__(375);
+	  const { ObjectLink } = createFactories(__webpack_require__(386));
 	
 	  
 	  const { span } = React.DOM;
@@ -34968,9 +41742,9 @@ var Debugger =
 	  const React = __webpack_require__(17);
 	
 	  
-	  const { createFactories, isGrip } = __webpack_require__(278);
-	  const { ObjectBox } = createFactories(__webpack_require__(280));
-	  const { getFileName } = __webpack_require__(292);
+	  const { createFactories, isGrip } = __webpack_require__(375);
+	  const { ObjectBox } = createFactories(__webpack_require__(377));
+	  const { getFileName } = __webpack_require__(389);
 	
 	  
 	  const { span } = React.DOM;
@@ -35133,8 +41907,8 @@ var Debugger =
 	  const React = __webpack_require__(17);
 	
 	  
-	  const { createFactories, isGrip } = __webpack_require__(278);
-	  const { ObjectLink } = createFactories(__webpack_require__(289));
+	  const { createFactories, isGrip } = __webpack_require__(375);
+	  const { ObjectLink } = createFactories(__webpack_require__(386));
 	
 	  
 
@@ -35208,8 +41982,8 @@ var Debugger =
 	  const React = __webpack_require__(17);
 	
 	  
-	  const { createFactories, isGrip, cropString } = __webpack_require__(278);
-	  const { ObjectLink } = createFactories(__webpack_require__(289));
+	  const { createFactories, isGrip, cropString } = __webpack_require__(375);
+	  const { ObjectLink } = createFactories(__webpack_require__(386));
 	
 	  
 
@@ -35273,9 +42047,9 @@ var Debugger =
 	  const React = __webpack_require__(17);
 	
 	  
-	  const { createFactories, isGrip } = __webpack_require__(278);
-	  const { ObjectLink } = createFactories(__webpack_require__(289));
-	  const { Caption } = createFactories(__webpack_require__(285));
+	  const { createFactories, isGrip } = __webpack_require__(375);
+	  const { ObjectLink } = createFactories(__webpack_require__(386));
+	  const { Caption } = createFactories(__webpack_require__(382));
 	
 	  
 	  const { span } = React.DOM;
@@ -35393,7 +42167,7 @@ var Debugger =
 	    },
 	
 	    render: function () {
-	      const { Rep } = createFactories(__webpack_require__(277));
+	      const { Rep } = createFactories(__webpack_require__(374));
 	
 	      return (
 	        span({},
@@ -35452,8 +42226,8 @@ var Debugger =
 	  const React = __webpack_require__(17);
 	
 	  
-	  const { createFactories, isGrip } = __webpack_require__(278);
-	  const { ObjectLink } = createFactories(__webpack_require__(289));
+	  const { createFactories, isGrip } = __webpack_require__(375);
+	  const { ObjectLink } = createFactories(__webpack_require__(386));
 	
 	  
 	  const { span } = React.DOM;
@@ -35527,9 +42301,9 @@ var Debugger =
 	  const React = __webpack_require__(17);
 	
 	  
-	  const { createFactories, isGrip } = __webpack_require__(278);
-	  const { ObjectBox } = createFactories(__webpack_require__(280));
-	  const { getFileName } = __webpack_require__(292);
+	  const { createFactories, isGrip } = __webpack_require__(375);
+	  const { ObjectBox } = createFactories(__webpack_require__(377));
+	  const { getFileName } = __webpack_require__(389);
 	
 	  
 	  const DOM = React.DOM;
@@ -35600,8 +42374,8 @@ var Debugger =
 	  const React = __webpack_require__(17);
 	
 	  
-	  const { createFactories, isGrip, cropMultipleLines } = __webpack_require__(278);
-	  const { ObjectLink } = createFactories(__webpack_require__(289));
+	  const { createFactories, isGrip, cropMultipleLines } = __webpack_require__(375);
+	  const { ObjectLink } = createFactories(__webpack_require__(386));
 	
 	  
 	  const DOM = React.DOM;
@@ -35687,8 +42461,8 @@ var Debugger =
 	  const React = __webpack_require__(17);
 	
 	  
-	  const { createFactories, isGrip, cropString } = __webpack_require__(278);
-	  const { ObjectBox } = createFactories(__webpack_require__(280));
+	  const { createFactories, isGrip, cropString } = __webpack_require__(375);
+	  const { ObjectBox } = createFactories(__webpack_require__(377));
 	
 	  
 	  const DOM = React.DOM;
@@ -35755,8 +42529,8 @@ var Debugger =
 	  const React = __webpack_require__(17);
 	
 	  
-	  const { createFactories, isGrip } = __webpack_require__(278);
-	  const { ObjectLink } = createFactories(__webpack_require__(289));
+	  const { createFactories, isGrip } = __webpack_require__(375);
+	  const { ObjectLink } = createFactories(__webpack_require__(386));
 	
 	  
 	  const { span } = React.DOM;
@@ -35826,8 +42600,8 @@ var Debugger =
 	  const React = __webpack_require__(17);
 	
 	  
-	  const { createFactories, isGrip } = __webpack_require__(278);
-	  const { ObjectLink } = createFactories(__webpack_require__(289));
+	  const { createFactories, isGrip } = __webpack_require__(375);
+	  const { ObjectLink } = createFactories(__webpack_require__(386));
 	
 	  
 	  const { span } = React.DOM;
@@ -35896,9 +42670,9 @@ var Debugger =
 	!(__WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, module) {
 	  
 	  const React = __webpack_require__(17);
-	  const { createFactories, isGrip } = __webpack_require__(278);
-	  const { ObjectBox } = createFactories(__webpack_require__(280));
-	  const { Caption } = createFactories(__webpack_require__(285));
+	  const { createFactories, isGrip } = __webpack_require__(375);
+	  const { ObjectBox } = createFactories(__webpack_require__(377));
+	  const { Caption } = createFactories(__webpack_require__(382));
 	
 	  
 	  const { a, span } = React.DOM;
@@ -36030,7 +42804,7 @@ var Debugger =
 	    },
 	
 	    render: function () {
-	      let { Rep } = createFactories(__webpack_require__(277));
+	      let { Rep } = createFactories(__webpack_require__(374));
 	
 	      return (
 	        span({},
@@ -36090,10 +42864,10 @@ var Debugger =
 	  
 	  const React = __webpack_require__(17);
 	  
-	  const { createFactories, isGrip } = __webpack_require__(278);
-	  const { ObjectBox } = createFactories(__webpack_require__(280));
-	  const { Caption } = createFactories(__webpack_require__(285));
-	  const { PropRep } = createFactories(__webpack_require__(287));
+	  const { createFactories, isGrip } = __webpack_require__(375);
+	  const { ObjectBox } = createFactories(__webpack_require__(377));
+	  const { Caption } = createFactories(__webpack_require__(382));
+	  const { PropRep } = createFactories(__webpack_require__(384));
 	  
 	  const { span } = React.DOM;
 	
@@ -36289,8 +43063,8 @@ var Debugger =
 	
 	var connect = _require2.connect;
 	
-	var ImPropTypes = __webpack_require__(228);
-	var actions = __webpack_require__(214);
+	var ImPropTypes = __webpack_require__(247);
+	var actions = __webpack_require__(209);
 	
 	var _require3 = __webpack_require__(199);
 	
@@ -36298,13 +43072,13 @@ var Debugger =
 	var getLoadedObjects = _require3.getLoadedObjects;
 	var getPause = _require3.getPause;
 	
-	var ObjectInspector = React.createFactory(__webpack_require__(309));
+	var ObjectInspector = React.createFactory(__webpack_require__(406));
 	var dom = React.DOM;
 	var PropTypes = React.PropTypes;
 	
-	var toPairs = __webpack_require__(313);
+	var toPairs = __webpack_require__(409);
 	
-	__webpack_require__(338);
+	__webpack_require__(414);
 	
 	function info(text) {
 	  return dom.div({ className: "pane-info" }, text);
@@ -36488,12 +43262,15 @@ var Debugger =
  function(module, exports, __webpack_require__) {
 
 	var React = __webpack_require__(17);
-	var classnames = __webpack_require__(207);
-	var ManagedTree = React.createFactory(__webpack_require__(231));
-	var Arrow = React.createFactory(__webpack_require__(310));
-	var Rep = __webpack_require__(276);
+	var classnames = __webpack_require__(201);
+	var ManagedTree = React.createFactory(__webpack_require__(324));
+	var Svg = __webpack_require__(328);
+	var Rep = __webpack_require__(373);
 	var dom = React.DOM;
 	var PropTypes = React.PropTypes;
+	
+	
+	__webpack_require__(407);
 	
 	
 	
@@ -36631,7 +43408,7 @@ var Debugger =
 	        e.stopPropagation();
 	        setExpanded(item, !expanded);
 	      }
-	    }, Arrow({
+	    }, Svg("arrow", {
 	      className: classnames({
 	        expanded: expanded,
 	        hidden: nodeIsPrimitive(item)
@@ -36674,27 +43451,6 @@ var Debugger =
 
  },
 
- function(module, exports, __webpack_require__) {
-
-	var React = __webpack_require__(17);
-	var InlineSVG = __webpack_require__(237);
-	var dom = React.DOM;
-	
-	__webpack_require__(311);
-	
-	
-	
-	var Arrow = props => {
-	  var className = "arrow " + (props.className || "");
-	  return dom.span(Object.assign({}, props, { className }), React.createElement(InlineSVG, {
-	    src: __webpack_require__(239)
-	  }));
-	};
-	
-	module.exports = Arrow;
-
- },
-
  function(module, exports) {
 
 	
@@ -36704,8 +43460,8 @@ var Debugger =
 
  function(module, exports, __webpack_require__) {
 
-	var createToPairs = __webpack_require__(314),
-	    keys = __webpack_require__(324);
+	var createToPairs = __webpack_require__(410),
+	    keys = __webpack_require__(265);
 	
 	
 
@@ -36740,10 +43496,10 @@ var Debugger =
 
  function(module, exports, __webpack_require__) {
 
-	var baseToPairs = __webpack_require__(315),
-	    getTag = __webpack_require__(317),
-	    mapToArray = __webpack_require__(322),
-	    setToPairs = __webpack_require__(323);
+	var baseToPairs = __webpack_require__(411),
+	    getTag = __webpack_require__(287),
+	    mapToArray = __webpack_require__(300),
+	    setToPairs = __webpack_require__(413);
 	
 	
 	var mapTag = '[object Map]',
@@ -36776,7 +43532,7 @@ var Debugger =
 
  function(module, exports, __webpack_require__) {
 
-	var arrayMap = __webpack_require__(316);
+	var arrayMap = __webpack_require__(412);
 	
 	
 
@@ -36825,158 +43581,6 @@ var Debugger =
 
  },
 
- function(module, exports, __webpack_require__) {
-
-	var DataView = __webpack_require__(318),
-	    Map = __webpack_require__(82),
-	    Promise = __webpack_require__(319),
-	    Set = __webpack_require__(320),
-	    WeakMap = __webpack_require__(321),
-	    toSource = __webpack_require__(68);
-	
-	
-	var mapTag = '[object Map]',
-	    objectTag = '[object Object]',
-	    promiseTag = '[object Promise]',
-	    setTag = '[object Set]',
-	    weakMapTag = '[object WeakMap]';
-	
-	var dataViewTag = '[object DataView]';
-	
-	
-	var objectProto = Object.prototype;
-	
-	
-
-
-
-
-	var objectToString = objectProto.toString;
-	
-	
-	var dataViewCtorString = toSource(DataView),
-	    mapCtorString = toSource(Map),
-	    promiseCtorString = toSource(Promise),
-	    setCtorString = toSource(Set),
-	    weakMapCtorString = toSource(WeakMap);
-	
-	
-
-
-
-
-
-
-	function getTag(value) {
-	  return objectToString.call(value);
-	}
-	
-	
-	
-	if ((DataView && getTag(new DataView(new ArrayBuffer(1))) != dataViewTag) ||
-	    (Map && getTag(new Map) != mapTag) ||
-	    (Promise && getTag(Promise.resolve()) != promiseTag) ||
-	    (Set && getTag(new Set) != setTag) ||
-	    (WeakMap && getTag(new WeakMap) != weakMapTag)) {
-	  getTag = function(value) {
-	    var result = objectToString.call(value),
-	        Ctor = result == objectTag ? value.constructor : undefined,
-	        ctorString = Ctor ? toSource(Ctor) : undefined;
-	
-	    if (ctorString) {
-	      switch (ctorString) {
-	        case dataViewCtorString: return dataViewTag;
-	        case mapCtorString: return mapTag;
-	        case promiseCtorString: return promiseTag;
-	        case setCtorString: return setTag;
-	        case weakMapCtorString: return weakMapTag;
-	      }
-	    }
-	    return result;
-	  };
-	}
-	
-	module.exports = getTag;
-
-
- },
-
- function(module, exports, __webpack_require__) {
-
-	var getNative = __webpack_require__(60),
-	    root = __webpack_require__(66);
-	
-	
-	var DataView = getNative(root, 'DataView');
-	
-	module.exports = DataView;
-
-
- },
-
- function(module, exports, __webpack_require__) {
-
-	var getNative = __webpack_require__(60),
-	    root = __webpack_require__(66);
-	
-	
-	var Promise = getNative(root, 'Promise');
-	
-	module.exports = Promise;
-
-
- },
-
- function(module, exports, __webpack_require__) {
-
-	var getNative = __webpack_require__(60),
-	    root = __webpack_require__(66);
-	
-	
-	var Set = getNative(root, 'Set');
-	
-	module.exports = Set;
-
-
- },
-
- function(module, exports, __webpack_require__) {
-
-	var getNative = __webpack_require__(60),
-	    root = __webpack_require__(66);
-	
-	
-	var WeakMap = getNative(root, 'WeakMap');
-	
-	module.exports = WeakMap;
-
-
- },
-
- function(module, exports) {
-
-	
-
-
-
-
-
-
-	function mapToArray(map) {
-	  var index = -1,
-	      result = Array(map.size);
-	
-	  map.forEach(function(value, key) {
-	    result[++index] = [key, value];
-	  });
-	  return result;
-	}
-	
-	module.exports = mapToArray;
-
-
- },
-
  function(module, exports) {
 
 	
@@ -36997,491 +43601,6 @@ var Debugger =
 	}
 	
 	module.exports = setToPairs;
-
-
- },
-
- function(module, exports, __webpack_require__) {
-
-	var baseHas = __webpack_require__(325),
-	    baseKeys = __webpack_require__(326),
-	    indexKeys = __webpack_require__(327),
-	    isArrayLike = __webpack_require__(331),
-	    isIndex = __webpack_require__(336),
-	    isPrototype = __webpack_require__(337);
-	
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	function keys(object) {
-	  var isProto = isPrototype(object);
-	  if (!(isProto || isArrayLike(object))) {
-	    return baseKeys(object);
-	  }
-	  var indexes = indexKeys(object),
-	      skipIndexes = !!indexes,
-	      result = indexes || [],
-	      length = result.length;
-	
-	  for (var key in object) {
-	    if (baseHas(object, key) &&
-	        !(skipIndexes && (key == 'length' || isIndex(key, length))) &&
-	        !(isProto && key == 'constructor')) {
-	      result.push(key);
-	    }
-	  }
-	  return result;
-	}
-	
-	module.exports = keys;
-
-
- },
-
- function(module, exports, __webpack_require__) {
-
-	var getPrototype = __webpack_require__(5);
-	
-	
-	var objectProto = Object.prototype;
-	
-	
-	var hasOwnProperty = objectProto.hasOwnProperty;
-	
-	
-
-
-
-
-
-
-
-	function baseHas(object, key) {
-	  
-	  
-	  
-	  return object != null &&
-	    (hasOwnProperty.call(object, key) ||
-	      (typeof object == 'object' && key in object && getPrototype(object) === null));
-	}
-	
-	module.exports = baseHas;
-
-
- },
-
- function(module, exports) {
-
-	
-	var nativeKeys = Object.keys;
-	
-	
-
-
-
-
-
-
-
-	function baseKeys(object) {
-	  return nativeKeys(Object(object));
-	}
-	
-	module.exports = baseKeys;
-
-
- },
-
- function(module, exports, __webpack_require__) {
-
-	var baseTimes = __webpack_require__(328),
-	    isArguments = __webpack_require__(329),
-	    isArray = __webpack_require__(52),
-	    isLength = __webpack_require__(334),
-	    isString = __webpack_require__(335);
-	
-	
-
-
-
-
-
-
-
-	function indexKeys(object) {
-	  var length = object ? object.length : undefined;
-	  if (isLength(length) &&
-	      (isArray(object) || isString(object) || isArguments(object))) {
-	    return baseTimes(length, String);
-	  }
-	  return null;
-	}
-	
-	module.exports = indexKeys;
-
-
- },
-
- function(module, exports) {
-
-	
-
-
-
-
-
-
-
-
-	function baseTimes(n, iteratee) {
-	  var index = -1,
-	      result = Array(n);
-	
-	  while (++index < n) {
-	    result[index] = iteratee(index);
-	  }
-	  return result;
-	}
-	
-	module.exports = baseTimes;
-
-
- },
-
- function(module, exports, __webpack_require__) {
-
-	var isArrayLikeObject = __webpack_require__(330);
-	
-	
-	var argsTag = '[object Arguments]';
-	
-	
-	var objectProto = Object.prototype;
-	
-	
-	var hasOwnProperty = objectProto.hasOwnProperty;
-	
-	
-
-
-
-
-	var objectToString = objectProto.toString;
-	
-	
-	var propertyIsEnumerable = objectProto.propertyIsEnumerable;
-	
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	function isArguments(value) {
-	  
-	  return isArrayLikeObject(value) && hasOwnProperty.call(value, 'callee') &&
-	    (!propertyIsEnumerable.call(value, 'callee') || objectToString.call(value) == argsTag);
-	}
-	
-	module.exports = isArguments;
-
-
- },
-
- function(module, exports, __webpack_require__) {
-
-	var isArrayLike = __webpack_require__(331),
-	    isObjectLike = __webpack_require__(7);
-	
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	function isArrayLikeObject(value) {
-	  return isObjectLike(value) && isArrayLike(value);
-	}
-	
-	module.exports = isArrayLikeObject;
-
-
- },
-
- function(module, exports, __webpack_require__) {
-
-	var getLength = __webpack_require__(332),
-	    isFunction = __webpack_require__(62),
-	    isLength = __webpack_require__(334);
-	
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	function isArrayLike(value) {
-	  return value != null && isLength(getLength(value)) && !isFunction(value);
-	}
-	
-	module.exports = isArrayLike;
-
-
- },
-
- function(module, exports, __webpack_require__) {
-
-	var baseProperty = __webpack_require__(333);
-	
-	
-
-
-
-
-
-
-
-
-
-
-	var getLength = baseProperty('length');
-	
-	module.exports = getLength;
-
-
- },
-
- function(module, exports) {
-
-	
-
-
-
-
-
-
-	function baseProperty(key) {
-	  return function(object) {
-	    return object == null ? undefined : object[key];
-	  };
-	}
-	
-	module.exports = baseProperty;
-
-
- },
-
- function(module, exports) {
-
-	
-	var MAX_SAFE_INTEGER = 9007199254740991;
-	
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	function isLength(value) {
-	  return typeof value == 'number' &&
-	    value > -1 && value % 1 == 0 && value <= MAX_SAFE_INTEGER;
-	}
-	
-	module.exports = isLength;
-
-
- },
-
- function(module, exports, __webpack_require__) {
-
-	var isArray = __webpack_require__(52),
-	    isObjectLike = __webpack_require__(7);
-	
-	
-	var stringTag = '[object String]';
-	
-	
-	var objectProto = Object.prototype;
-	
-	
-
-
-
-
-	var objectToString = objectProto.toString;
-	
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	function isString(value) {
-	  return typeof value == 'string' ||
-	    (!isArray(value) && isObjectLike(value) && objectToString.call(value) == stringTag);
-	}
-	
-	module.exports = isString;
-
-
- },
-
- function(module, exports) {
-
-	
-	var MAX_SAFE_INTEGER = 9007199254740991;
-	
-	
-	var reIsUint = /^(?:0|[1-9]\d*)$/;
-	
-	
-
-
-
-
-
-
-
-	function isIndex(value, length) {
-	  length = length == null ? MAX_SAFE_INTEGER : length;
-	  return !!length &&
-	    (typeof value == 'number' || reIsUint.test(value)) &&
-	    (value > -1 && value % 1 == 0 && value < length);
-	}
-	
-	module.exports = isIndex;
-
-
- },
-
- function(module, exports) {
-
-	
-	var objectProto = Object.prototype;
-	
-	
-
-
-
-
-
-
-	function isPrototype(value) {
-	  var Ctor = value && value.constructor,
-	      proto = (typeof Ctor == 'function' && Ctor.prototype) || objectProto;
-	
-	  return value === proto;
-	}
-	
-	module.exports = isPrototype;
 
 
  },
@@ -37507,13 +43626,13 @@ var Debugger =
 	
 	var connect = _require2.connect;
 	
-	var actions = __webpack_require__(214);
+	var actions = __webpack_require__(209);
 	
-	var _require3 = __webpack_require__(176);
+	var _require3 = __webpack_require__(183);
 	
 	var endTruncateStr = _require3.endTruncateStr;
 	
-	var _require4 = __webpack_require__(205);
+	var _require4 = __webpack_require__(232);
 	
 	var basename = _require4.basename;
 	
@@ -37525,7 +43644,7 @@ var Debugger =
 	
 	
 	if (typeof window == "object") {
-	  __webpack_require__(341);
+	  __webpack_require__(417);
 	}
 	
 	function renderFrameTitle(frame) {
@@ -37583,9 +43702,9 @@ var Debugger =
 	var PropTypes = React.PropTypes;
 	var div = dom.div;
 	
-	var Svg = __webpack_require__(235);
+	var Svg = __webpack_require__(328);
 	
-	__webpack_require__(344);
+	__webpack_require__(420);
 	
 	var Accordion = React.createClass({
 	  propTypes: {
@@ -37658,7 +43777,7 @@ var Debugger =
 	var dom = React.DOM;
 	var PropTypes = React.PropTypes;
 	
-	var ImPropTypes = __webpack_require__(228);
+	var ImPropTypes = __webpack_require__(247);
 	
 	var _require = __webpack_require__(15);
 	
@@ -37668,27 +43787,27 @@ var Debugger =
 	
 	var bindActionCreators = _require2.bindActionCreators;
 	
-	var Svg = __webpack_require__(235);
-	
 	var _require3 = __webpack_require__(199);
 	
 	var getSelectedSource = _require3.getSelectedSource;
 	var getSourceTabs = _require3.getSourceTabs;
 	
-	var _require4 = __webpack_require__(176);
+	var _require4 = __webpack_require__(183);
 	
 	var endTruncateStr = _require4.endTruncateStr;
 	
-	var classnames = __webpack_require__(207);
-	var actions = __webpack_require__(214);
+	var classnames = __webpack_require__(201);
+	var actions = __webpack_require__(209);
 	
 	var _require5 = __webpack_require__(46);
 	
 	var isEnabled = _require5.isEnabled;
 	
+	var CloseButton = __webpack_require__(367);
+	var Svg = __webpack_require__(328);
 	
-	__webpack_require__(349);
-	__webpack_require__(351);
+	__webpack_require__(425);
+	__webpack_require__(427);
 	
 	
 
@@ -37815,7 +43934,7 @@ var Debugger =
 	    }, filename);
 	  },
 	
-	  renderSourcesDropdownButon() {
+	  renderSourcesDropdownButton() {
 	    var hiddenSourceTabs = this.state.hiddenSourceTabs;
 	    if (!hiddenSourceTabs || hiddenSourceTabs.size == 0) {
 	      return dom.div({});
@@ -37824,7 +43943,7 @@ var Debugger =
 	    return dom.span({
 	      className: "subsettings",
 	      onClick: this.toggleSourcesDropdown
-	    }, dom.img({ src: "images/subSettings.svg" }));
+	    }, Svg("subsettings"));
 	  },
 	
 	  renderTabs() {
@@ -37852,7 +43971,7 @@ var Debugger =
 	      key: source.get("id"),
 	      onClick: () => selectSource(source.get("id")),
 	      title: url
-	    }, dom.div({ className: "filename" }, filename), dom.div({ onClick: onClickClose }, dom.span({ className: "close-btn" }, Svg("close"))));
+	    }, dom.div({ className: "filename" }, filename), CloseButton({ handleClick: onClickClose }));
 	  },
 	
 	  render() {
@@ -37860,7 +43979,7 @@ var Debugger =
 	      return dom.div({ className: "source-header" });
 	    }
 	
-	    return dom.div({ className: "source-header" }, this.renderSourcesDropdown(), this.renderTabs(), this.renderSourcesDropdownButon());
+	    return dom.div({ className: "source-header" }, this.renderSourcesDropdown(), this.renderTabs(), this.renderSourcesDropdownButton());
 	  }
 	});
 	
@@ -37891,147 +44010,13 @@ var Debugger =
 	var dom = React.DOM;
 	var PropTypes = React.PropTypes;
 	
-	var _require = __webpack_require__(15);
-	
-	var connect = _require.connect;
-	
-	var _require2 = __webpack_require__(2);
-	
-	var bindActionCreators = _require2.bindActionCreators;
-	
-	var actions = __webpack_require__(214);
-	
-	var _require3 = __webpack_require__(46);
-	
-	var isEnabled = _require3.isEnabled;
-	
-	var _require4 = __webpack_require__(199);
-	
-	var getSelectedSource = _require4.getSelectedSource;
-	var getSourceText = _require4.getSourceText;
-	var getPrettySource = _require4.getPrettySource;
-	
-	var Svg = __webpack_require__(235);
-	var ImPropTypes = __webpack_require__(228);
-	var classnames = __webpack_require__(207);
-	
-	var _require5 = __webpack_require__(216);
-	
-	var isMapped = _require5.isMapped;
-	var getGeneratedSourceId = _require5.getGeneratedSourceId;
-	var isOriginal = _require5.isOriginal;
-	
-	var _require6 = __webpack_require__(220);
-	
-	var isPretty = _require6.isPretty;
-	
-	
-	__webpack_require__(354);
-	
-	function debugBtn(onClick, type) {
-	  var className = arguments.length <= 2 || arguments[2] === undefined ? "active" : arguments[2];
-	  var tooltip = arguments[3];
-	
-	  className = `${ type } ${ className }`;
-	  return dom.span({ onClick, className, key: type }, Svg(type, { title: tooltip }));
-	}
-	
-	var SourceFooter = React.createClass({
-	  propTypes: {
-	    selectedSource: ImPropTypes.map,
-	    togglePrettyPrint: PropTypes.func,
-	    sourceText: ImPropTypes.map,
-	    selectSource: PropTypes.func,
-	    prettySource: ImPropTypes.map
-	  },
-	
-	  displayName: "SourceFooter",
-	
-	  blackboxButton() {
-	    if (!isEnabled("blackbox")) {
-	      return null;
-	    }
-	
-	    return debugBtn(() => {}, "blackBox", this.props.selectedSource, "Toggle Black Boxing");
-	  },
-	
-	  onClickPrettyPrint() {
-	    var _props = this.props;
-	    var selectedSource = _props.selectedSource;
-	    var togglePrettyPrint = _props.togglePrettyPrint;
-	    var selectSource = _props.selectSource;
-	    var prettySource = _props.prettySource;
-	
-	
-	    if (isPretty(selectedSource.toJS())) {
-	      return selectSource(getGeneratedSourceId(selectedSource.toJS()));
-	    }
-	
-	    if (selectedSource.get("isPrettyPrinted")) {
-	      return selectSource(prettySource.get("id"));
-	    }
-	
-	    togglePrettyPrint(selectedSource.get("id"));
-	  },
-	
-	  prettyPrintButton() {
-	    var _props2 = this.props;
-	    var selectedSource = _props2.selectedSource;
-	    var sourceText = _props2.sourceText;
-	
-	    var sourceLoaded = selectedSource && !sourceText.get("loading");
-	
-	    if (isMapped(selectedSource.toJS()) || isOriginal(selectedSource.toJS()) && !isPretty(selectedSource.toJS())) {
-	      return;
-	    }
-	
-	    return debugBtn(this.onClickPrettyPrint, "prettyPrint", classnames({
-	      active: sourceLoaded,
-	      pretty: isPretty(selectedSource.toJS())
-	    }), "Prettify Source");
-	  },
-	
-	  render() {
-	    if (!this.props.selectedSource || !isEnabled("prettyPrint") && !isEnabled("blackBox")) {
-	      return null;
-	    }
-	
-	    return dom.div({ className: "source-footer" }, dom.div({ className: "command-bar" }, this.blackboxButton(), this.prettyPrintButton()));
-	  }
-	});
-	
-	module.exports = connect(state => {
-	  var selectedSource = getSelectedSource(state);
-	  var selectedId = selectedSource && selectedSource.get("id");
-	  return {
-	    selectedSource,
-	    sourceText: getSourceText(state, selectedId),
-	    prettySource: getPrettySource(state, selectedId)
-	  };
-	}, dispatch => bindActionCreators(actions, dispatch))(SourceFooter);
-
- },
-
- function(module, exports) {
-
-	
-
- },
-,
-
- function(module, exports, __webpack_require__) {
-
-	var React = __webpack_require__(17);
-	var dom = React.DOM;
-	var PropTypes = React.PropTypes;
-	
-	var _require = __webpack_require__(357);
+	var _require = __webpack_require__(430);
 	
 	var filter = _require.filter;
 	
-	var classnames = __webpack_require__(207);
-	__webpack_require__(363);
-	var Svg = __webpack_require__(235);
+	var classnames = __webpack_require__(201);
+	__webpack_require__(436);
+	var Svg = __webpack_require__(328);
 	
 	var INITIAL_SELECTED_INDEX = 0;
 	
@@ -38148,15 +44133,15 @@ var Debugger =
 	(function() {
 	  var PathSeparator, filter, legacy_scorer, matcher, prepQueryCache, scorer;
 	
-	  scorer = __webpack_require__(358);
+	  scorer = __webpack_require__(431);
 	
-	  legacy_scorer = __webpack_require__(360);
+	  legacy_scorer = __webpack_require__(433);
 	
-	  filter = __webpack_require__(361);
+	  filter = __webpack_require__(434);
 	
-	  matcher = __webpack_require__(362);
+	  matcher = __webpack_require__(435);
 	
-	  PathSeparator = __webpack_require__(359).sep;
+	  PathSeparator = __webpack_require__(432).sep;
 	
 	  prepQueryCache = null;
 	
@@ -38237,7 +44222,7 @@ var Debugger =
 	(function() {
 	  var AcronymResult, PathSeparator, Query, basenameScore, coreChars, countDir, doScore, emptyAcronymResult, file_coeff, isMatch, isSeparator, isWordEnd, isWordStart, miss_coeff, opt_char_re, pos_bonus, scoreAcronyms, scoreCharacter, scoreConsecutives, scoreExact, scoreExactMatch, scorePattern, scorePosition, scoreSize, tau_depth, tau_size, truncatedUpperCase, wm;
 	
-	  PathSeparator = __webpack_require__(359).sep;
+	  PathSeparator = __webpack_require__(432).sep;
 	
 	  wm = 150;
 	
@@ -38861,7 +44846,7 @@ var Debugger =
 	(function() {
 	  var PathSeparator, queryIsLastPathSegment;
 	
-	  PathSeparator = __webpack_require__(359).sep;
+	  PathSeparator = __webpack_require__(432).sep;
 	
 	  exports.basenameScore = function(string, query, score) {
 	    var base, depth, index, lastCharacter, segmentCount, slashCount;
@@ -38995,9 +44980,9 @@ var Debugger =
 	(function() {
 	  var PathSeparator, legacy_scorer, pluckCandidates, scorer, sortCandidates;
 	
-	  scorer = __webpack_require__(358);
+	  scorer = __webpack_require__(431);
 	
-	  legacy_scorer = __webpack_require__(360);
+	  legacy_scorer = __webpack_require__(433);
 	
 	  pluckCandidates = function(a) {
 	    return a.candidate;
@@ -39007,7 +44992,7 @@ var Debugger =
 	    return b.score - a.score;
 	  };
 	
-	  PathSeparator = __webpack_require__(359).sep;
+	  PathSeparator = __webpack_require__(432).sep;
 	
 	  module.exports = function(candidates, query, _arg) {
 	    var allowErrors, bAllowErrors, bKey, candidate, coreQuery, key, legacy, maxInners, maxResults, prepQuery, queryHasSlashes, score, scoredCandidates, spotLeft, string, _i, _j, _len, _len1, _ref;
@@ -39074,9 +45059,9 @@ var Debugger =
 	(function() {
 	  var PathSeparator, scorer;
 	
-	  PathSeparator = __webpack_require__(359).sep;
+	  PathSeparator = __webpack_require__(432).sep;
 	
-	  scorer = __webpack_require__(358);
+	  scorer = __webpack_require__(431);
 	
 	  exports.basenameMatch = function(subject, subject_lw, prepQuery) {
 	    var basePos, depth, end;
@@ -39225,258 +45210,6 @@ var Debugger =
  function(module, exports) {
 
 	
-
- },
-,
-
- function(module, exports, __webpack_require__) {
-
-	
-
-
-	
-	"use strict";
-	
-	const { Services } = __webpack_require__(213);
-	const EventEmitter = __webpack_require__(111);
-	const isOSX = Services.appinfo.OS === "Darwin";
-	
-	
-	const ElectronKeysMapping = {
-	  "F1": "DOM_VK_F1",
-	  "F2": "DOM_VK_F2",
-	  "F3": "DOM_VK_F3",
-	  "F4": "DOM_VK_F4",
-	  "F5": "DOM_VK_F5",
-	  "F6": "DOM_VK_F6",
-	  "F7": "DOM_VK_F7",
-	  "F8": "DOM_VK_F8",
-	  "F9": "DOM_VK_F9",
-	  "F10": "DOM_VK_F10",
-	  "F11": "DOM_VK_F11",
-	  "F12": "DOM_VK_F12",
-	  "F13": "DOM_VK_F13",
-	  "F14": "DOM_VK_F14",
-	  "F15": "DOM_VK_F15",
-	  "F16": "DOM_VK_F16",
-	  "F17": "DOM_VK_F17",
-	  "F18": "DOM_VK_F18",
-	  "F19": "DOM_VK_F19",
-	  "F20": "DOM_VK_F20",
-	  "F21": "DOM_VK_F21",
-	  "F22": "DOM_VK_F22",
-	  "F23": "DOM_VK_F23",
-	  "F24": "DOM_VK_F24",
-	  "Space": "DOM_VK_SPACE",
-	  "Backspace": "DOM_VK_BACK_SPACE",
-	  "Delete": "DOM_VK_DELETE",
-	  "Insert": "DOM_VK_INSERT",
-	  "Return": "DOM_VK_RETURN",
-	  "Enter": "DOM_VK_RETURN",
-	  "Up": "DOM_VK_UP",
-	  "Down": "DOM_VK_DOWN",
-	  "Left": "DOM_VK_LEFT",
-	  "Right": "DOM_VK_RIGHT",
-	  "Home": "DOM_VK_HOME",
-	  "End": "DOM_VK_END",
-	  "PageUp": "DOM_VK_PAGE_UP",
-	  "PageDown": "DOM_VK_PAGE_DOWN",
-	  "Escape": "DOM_VK_ESCAPE",
-	  "Esc": "DOM_VK_ESCAPE",
-	  "Tab": "DOM_VK_TAB",
-	  "VolumeUp": "DOM_VK_VOLUME_UP",
-	  "VolumeDown": "DOM_VK_VOLUME_DOWN",
-	  "VolumeMute": "DOM_VK_VOLUME_MUTE",
-	  "PrintScreen": "DOM_VK_PRINTSCREEN",
-	};
-	
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	function KeyShortcuts({ window, target }) {
-	  this.window = window;
-	  this.target = target || window;
-	  this.keys = new Map();
-	  this.eventEmitter = new EventEmitter();
-	  this.target.addEventListener("keydown", this);
-	}
-	
-	
-
-
-
-
-
-
-
-
-
-
-	KeyShortcuts.parseElectronKey = function (window, str) {
-	  let modifiers = str.split("+");
-	  let key = modifiers.pop();
-	
-	  let shortcut = {
-	    ctrl: false,
-	    meta: false,
-	    alt: false,
-	    shift: false,
-	    
-	    key: undefined,
-	    
-	    keyCode: undefined,
-	  };
-	  for (let mod of modifiers) {
-	    if (mod === "Alt") {
-	      shortcut.alt = true;
-	    } else if (["Command", "Cmd"].includes(mod)) {
-	      shortcut.meta = true;
-	    } else if (["CommandOrControl", "CmdOrCtrl"].includes(mod)) {
-	      if (isOSX) {
-	        shortcut.meta = true;
-	      } else {
-	        shortcut.ctrl = true;
-	      }
-	    } else if (["Control", "Ctrl"].includes(mod)) {
-	      shortcut.ctrl = true;
-	    } else if (mod === "Shift") {
-	      shortcut.shift = true;
-	    } else {
-	      console.error("Unsupported modifier:", mod, "from key:", str);
-	      return null;
-	    }
-	  }
-	
-	  
-	  
-	  if (key === "Plus") {
-	    key = "+";
-	  }
-	
-	  if (typeof key === "string" && key.length === 1) {
-	    
-	    shortcut.key = key.toLowerCase();
-	  } else if (key in ElectronKeysMapping) {
-	    
-	    key = ElectronKeysMapping[key];
-	    shortcut.keyCode = window.KeyboardEvent[key];
-	    
-	    shortcut.keyCodeString = key;
-	    shortcut.key = key;
-	  } else {
-	    console.error("Unsupported key:", key);
-	    return null;
-	  }
-	
-	  return shortcut;
-	};
-	
-	KeyShortcuts.stringify = function (shortcut) {
-	  let list = [];
-	  if (shortcut.alt) {
-	    list.push("Alt");
-	  }
-	  if (shortcut.ctrl) {
-	    list.push("Ctrl");
-	  }
-	  if (shortcut.meta) {
-	    list.push("Cmd");
-	  }
-	  if (shortcut.shift) {
-	    list.push("Shift");
-	  }
-	  let key;
-	  if (shortcut.key) {
-	    key = shortcut.key.toUpperCase();
-	  } else {
-	    key = shortcut.keyCodeString;
-	  }
-	  list.push(key);
-	  return list.join("+");
-	};
-	
-	KeyShortcuts.prototype = {
-	  destroy() {
-	    this.target.removeEventListener("keydown", this);
-	    this.keys.clear();
-	  },
-	
-	  doesEventMatchShortcut(event, shortcut) {
-	    if (shortcut.meta != event.metaKey) {
-	      return false;
-	    }
-	    if (shortcut.ctrl != event.ctrlKey) {
-	      return false;
-	    }
-	    if (shortcut.alt != event.altKey) {
-	      return false;
-	    }
-	    
-	    
-	    if (shortcut.shift != event.shiftKey && event.key &&
-	        event.key.match(/[a-zA-Z]/)) {
-	      return false;
-	    }
-	    if (shortcut.keyCode) {
-	      return event.keyCode == shortcut.keyCode;
-	    } else if (event.key in ElectronKeysMapping) {
-	      return ElectronKeysMapping[event.key] === shortcut.key;
-	    }
-	
-	    
-	    let key = event.key || String.fromCharCode(event.keyCode);
-	
-	    
-	    
-	    
-	    return key.toLowerCase() == shortcut.key ||
-	      (shortcut.key.match(/[0-9]/) &&
-	       event.keyCode == shortcut.key.charCodeAt(0));
-	  },
-	
-	  handleEvent(event) {
-	    for (let [key, shortcut] of this.keys) {
-	      if (this.doesEventMatchShortcut(event, shortcut)) {
-	        this.eventEmitter.emit(key, event);
-	      }
-	    }
-	  },
-	
-	  on(key, listener) {
-	    if (typeof listener !== "function") {
-	      throw new Error("KeyShortcuts.on() expects a function as " +
-	                      "second argument");
-	    }
-	    if (!this.keys.has(key)) {
-	      let shortcut = KeyShortcuts.parseElectronKey(this.window, key);
-	      
-	      if (!shortcut) {
-	        return;
-	      }
-	      this.keys.set(key, shortcut);
-	    }
-	    this.eventEmitter.on(key, listener);
-	  },
-	
-	  off(key, listener) {
-	    this.eventEmitter.off(key, listener);
-	  },
-	};
-	exports.KeyShortcuts = KeyShortcuts;
-
 
  }
  ]);

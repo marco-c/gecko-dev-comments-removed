@@ -8,7 +8,7 @@
 add_task(function* () {
   const dbg = yield initDebugger("doc-scripts.html");
   const { selectors: { getSourceText }, getState } = dbg;
-  const sourceUrl = EXAMPLE_URL + "code-long.js";
+  const sourceUrl = EXAMPLE_URL + "long.js";
 
   
   

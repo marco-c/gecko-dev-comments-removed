@@ -12,6 +12,11 @@ function isElementVisible(dbg, elementName) {
 }
 
 add_task(function* () {
+  
+  
+  
+  requestLongerTimeout(2);
+
   const dbg = yield initDebugger(
     "doc-scripts.html",
     "simple1.js", "simple2.js", "long.js"

@@ -6,6 +6,35 @@
 "use strict";
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 Services.scriptloader.loadSubScript("chrome://mochitests/content/browser/devtools/client/framework/test/shared-head.js", this);
 var { Toolbox } = require("devtools/client/framework/toolbox");
 const EXAMPLE_URL = "http://example.com/browser/devtools/client/debugger/new/test/mochitest/examples/";
@@ -58,6 +87,17 @@ function _afterDispatchDone(store, type) {
   });
 }
 
+
+
+
+
+
+
+
+
+
+
+
 function waitForDispatch(dbg, type, eventRepeat = 1) {
   let count = 0;
 
@@ -70,6 +110,15 @@ function waitForDispatch(dbg, type, eventRepeat = 1) {
     }
   });
 }
+
+
+
+
+
+
+
+
+
 
 function waitForThreadEvents(dbg, eventName) {
   info("Waiting for thread event '" + eventName + "' to fire.");
@@ -84,6 +133,15 @@ function waitForThreadEvents(dbg, eventName) {
   });
 }
 
+
+
+
+
+
+
+
+
+
 function waitForState(dbg, predicate) {
   return new Promise(resolve => {
     const unsubscribe = dbg.store.subscribe(() => {
@@ -95,6 +153,15 @@ function waitForState(dbg, predicate) {
   });
 }
 
+
+
+
+
+
+
+
+
+
 function waitForSources(dbg, ...sources) {
   if(sources.length === 0) {
     return Promise.resolve();
@@ -104,7 +171,9 @@ function waitForSources(dbg, ...sources) {
   const {selectors: {getSources}, store} = dbg;
   return Promise.all(sources.map(url => {
     function sourceExists(state) {
-      return getSources(state).some(s => s.get("url").includes(url));
+      return getSources(state).some(s => {
+        return s.get("url").includes(url)
+      });
     }
 
     if(!sourceExists(store.getState())) {
@@ -112,6 +181,15 @@ function waitForSources(dbg, ...sources) {
     }
   }));
 }
+
+
+
+
+
+
+
+
+
 
 function assertPausedLocation(dbg, source, line) {
   const { selectors: { getSelectedSource, getPause }, getState } = dbg;
@@ -130,6 +208,15 @@ function assertPausedLocation(dbg, source, line) {
      "Line is highlighted as paused");
 }
 
+
+
+
+
+
+
+
+
+
 function assertHighlightLocation(dbg, source, line) {
   const { selectors: { getSelectedSource, getPause }, getState } = dbg;
   source = findSource(dbg, source);
@@ -146,10 +233,24 @@ function assertHighlightLocation(dbg, source, line) {
      "Line is highlighted");
 }
 
+
+
+
+
+
+
+
 function isPaused(dbg) {
   const { selectors: { getPause }, getState } = dbg;
   return !!getPause(getState());
 }
+
+
+
+
+
+
+
 
 function waitForPaused(dbg) {
   return Task.spawn(function* () {
@@ -187,6 +288,15 @@ function createDebuggerContext(toolbox) {
   };
 }
 
+
+
+
+
+
+
+
+
+
 function initDebugger(url, ...sources) {
   return Task.spawn(function* () {
     const toolbox = yield openNewTabAndToolbox(EXAMPLE_URL + url, "jsdebugger");
@@ -197,10 +307,25 @@ function initDebugger(url, ...sources) {
 };
 
 window.resumeTest = undefined;
+
+
+
+
+
+
+
 function pauseTest() {
   info("Test paused. Invoke resumeTest to continue.");
   return new Promise(resolve => resumeTest = resolve);
 }
+
+
+
+
+
+
+
+
 
 
 
@@ -222,6 +347,16 @@ function findSource(dbg, url) {
   return source.toJS();
 }
 
+
+
+
+
+
+
+
+
+
+
 function selectSource(dbg, url, line) {
   info("Selecting source: " + url);
   const source = findSource(dbg, url);
@@ -233,11 +368,27 @@ function selectSource(dbg, url, line) {
   }
 }
 
+
+
+
+
+
+
+
+
 function stepOver(dbg) {
   info("Stepping over");
   dbg.actions.stepOver();
   return waitForPaused(dbg);
 }
+
+
+
+
+
+
+
+
 
 function stepIn(dbg) {
   info("Stepping in");
@@ -245,11 +396,27 @@ function stepIn(dbg) {
   return waitForPaused(dbg);
 }
 
+
+
+
+
+
+
+
+
 function stepOut(dbg) {
   info("Stepping out");
   dbg.actions.stepOut();
   return waitForPaused(dbg);
 }
+
+
+
+
+
+
+
+
 
 function resume(dbg) {
   info("Resuming");
@@ -257,14 +424,44 @@ function resume(dbg) {
   return waitForThreadEvents(dbg, "resumed");
 }
 
+
+
+
+
+
+
+
+
+
 function reload(dbg, ...sources) {
   return dbg.client.reload().then(() => waitForSources(...sources));
 }
+
+
+
+
+
+
+
+
+
+
 
 function navigate(dbg, url, ...sources) {
   dbg.client.navigate(url);
   return waitForSources(dbg, ...sources)
 }
+
+
+
+
+
+
+
+
+
+
+
 
 function addBreakpoint(dbg, source, line, col) {
   source = findSource(dbg, source);
@@ -272,9 +469,30 @@ function addBreakpoint(dbg, source, line, col) {
   return dbg.actions.addBreakpoint({ sourceId, line, col });
 }
 
+
+
+
+
+
+
+
+
+
+
+
 function removeBreakpoint(dbg, sourceId, line, col) {
   return dbg.actions.removeBreakpoint({ sourceId, line, col });
 }
+
+
+
+
+
+
+
+
+
+
 
 function togglePauseOnExceptions(dbg,
   pauseOnExceptions, ignoreCaughtExceptions) {
@@ -293,6 +511,14 @@ function togglePauseOnExceptions(dbg,
 
 
 
+
+
+
+
+
+
+
+
 function invokeInTab(fnc) {
   info(`Invoking function ${fnc} in tab`);
   return ContentTask.spawn(gBrowser.selectedBrowser, fnc, function* (fnc) {
@@ -308,6 +534,15 @@ const keyMappings = {
   stepInKey: { code: "VK_F11", modifiers: { ctrlKey: isLinux } },
   stepOutKey: { code: "VK_F11", modifiers: { ctrlKey: isLinux, shiftKey: true } }
 };
+
+
+
+
+
+
+
+
+
 
 function pressKey(dbg, keyName) {
   let keyEvent = keyMappings[keyName];
@@ -364,6 +599,15 @@ function findAllElements(dbg, elementName, ...args) {
 }
 
 
+
+
+
+
+
+
+
+
+
 function clickElement(dbg, elementName, ...args) {
   const selector = getSelector(elementName, ...args);
   const doc = dbg.win.document;
@@ -373,6 +617,14 @@ function clickElement(dbg, elementName, ...args) {
     dbg.win
   );
 }
+
+
+
+
+
+
+
+
 
 function toggleCallStack(dbg) {
   return findElement(dbg, "callStackHeader").click()

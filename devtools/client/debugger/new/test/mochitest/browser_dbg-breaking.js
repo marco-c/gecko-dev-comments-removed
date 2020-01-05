@@ -23,8 +23,7 @@ add_task(function* () {
   yield paused;
   yield resume(dbg);
   const source = getSelectedSource(getState()).toJS();
-  
-  ok(source.url.indexOf("SOURCE") === 0, "It is an eval source");
+  ok(!source.url, "It is an eval source");
 
   yield addBreakpoint(dbg, source, 5);
   invokeInTab("evaledFunc");
