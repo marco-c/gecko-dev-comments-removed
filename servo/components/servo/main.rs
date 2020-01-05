@@ -70,7 +70,10 @@ fn install_crash_handler() {
         }
     }
 
-    signal!(Sig::SEGV, handler);
+    signal!(Sig::SEGV, handler); 
+    signal!(Sig::ILL, handler); 
+    signal!(Sig::IOT, handler); 
+    signal!(Sig::BUS, handler); 
 }
 
 #[cfg(target_os = "android")]
