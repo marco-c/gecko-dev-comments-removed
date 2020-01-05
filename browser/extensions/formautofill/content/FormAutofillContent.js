@@ -291,7 +291,7 @@ AutofillProfileAutoCompleteSearch.prototype = {
 
   getInputDetails() {
     
-    return FormAutofillContent.getInputDetails(formFillController.focusedInput);
+    return FormAutofillContent.getInputDetails(formFillController.getFocusedInput());
   },
 
   
@@ -302,7 +302,7 @@ AutofillProfileAutoCompleteSearch.prototype = {
 
   getFormDetails() {
     
-    return FormAutofillContent.getFormDetails(formFillController.focusedInput);
+    return FormAutofillContent.getFormDetails(formFillController.getFocusedInput());
   },
 };
 
