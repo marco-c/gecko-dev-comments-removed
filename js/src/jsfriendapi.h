@@ -528,6 +528,13 @@ GetWeakmapKeyDelegate(JSObject* key);
 extern JS_FRIEND_API(void)
 IterateGrayObjects(JS::Zone* zone, GCThingCallback cellCallback, void* data);
 
+
+
+
+
+extern JS_FRIEND_API(void)
+IterateGrayObjectsUnderCC(JS::Zone* zone, GCThingCallback cellCallback, void* data);
+
 #ifdef JS_HAS_CTYPES
 extern JS_FRIEND_API(size_t)
 SizeOfDataIfCDataObject(mozilla::MallocSizeOf mallocSizeOf, JSObject* obj);
