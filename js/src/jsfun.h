@@ -237,6 +237,7 @@ class JSFunction : public js::NativeObject
     }
 
     bool isBuiltinFunctionConstructor();
+    bool needsPrototypeProperty();
 
     
     bool strict() const {

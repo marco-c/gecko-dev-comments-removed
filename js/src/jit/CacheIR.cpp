@@ -3092,8 +3092,26 @@ SetPropIRGenerator::tryAttachAddSlotStub(HandleObjectGroup oldGroup, HandleShape
     }
 
     
-    if (ClassMayResolveId(cx_->names(), obj->getClass(), id, obj))
-        return false;
+    if (ClassMayResolveId(cx_->names(), obj->getClass(), id, obj)) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if (!obj->is<JSFunction>() ||
+            !JSID_IS_ATOM(id, cx_->names().prototype) ||
+            !oldGroup->maybeInterpretedFunction() ||
+            !obj->as<JSFunction>().needsPrototypeProperty())
+        {
+            return false;
+        }
+        MOZ_ASSERT(!propShape->configurable());
+        MOZ_ASSERT(!propShape->enumerable());
+    }
 
     
     
@@ -3116,8 +3134,13 @@ SetPropIRGenerator::tryAttachAddSlotStub(HandleObjectGroup oldGroup, HandleShape
         
         
         
-        if (ClassMayResolveId(cx_->names(), proto->getClass(), id, proto))
+        
+        
+        if (ClassMayResolveId(cx_->names(), proto->getClass(), id, proto) &&
+            !proto->is<JSFunction>())
+        {
             return false;
+        }
     }
 
     

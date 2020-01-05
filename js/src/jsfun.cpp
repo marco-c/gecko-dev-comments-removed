@@ -454,6 +454,33 @@ ResolveInterpretedFunctionPrototype(JSContext* cx, HandleFunction fun, HandleId 
                           JSPROP_PERMANENT | JSPROP_RESOLVING);
 }
 
+bool
+JSFunction::needsPrototypeProperty()
+{
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    if (isBuiltin())
+        return IsWrappedAsyncGenerator(this);
+
+    return isConstructor() || isStarGenerator() || isLegacyGenerator() || isAsync();
+}
+
 static bool
 fun_mayResolve(const JSAtomState& names, jsid id, JSObject*)
 {
@@ -473,32 +500,8 @@ fun_resolve(JSContext* cx, HandleObject obj, HandleId id, bool* resolvedp)
     RootedFunction fun(cx, &obj->as<JSFunction>());
 
     if (JSID_IS_ATOM(id, cx->names().prototype)) {
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        if (!IsWrappedAsyncGenerator(fun)) {
-            if (fun->isBuiltin())
-                return true;
-            if (!fun->isConstructor()) {
-                if (!fun->isStarGenerator() && !fun->isLegacyGenerator() && !fun->isAsync())
-                    return true;
-            }
-        }
+        if (!fun->needsPrototypeProperty())
+            return true;
 
         if (!ResolveInterpretedFunctionPrototype(cx, fun, id))
             return false;
