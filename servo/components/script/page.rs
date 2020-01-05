@@ -11,7 +11,6 @@ use dom::window::Window;
 use msg::constellation_msg::PipelineId;
 use std::cell::Cell;
 use std::rc::Rc;
-use url::Url;
 
 
 #[derive(JSTraceable)]
@@ -21,11 +20,6 @@ pub struct Page {
 
     
     frame: DOMRefCell<Option<Frame>>,
-
-    
-    
-    
-    url: Url,
 
     
     needs_reflow: Cell<bool>,
@@ -61,11 +55,10 @@ impl IterablePage for Rc<Page> {
 }
 
 impl Page {
-    pub fn new(id: PipelineId, url: Url) -> Page {
+    pub fn new(id: PipelineId) -> Page {
         Page {
             id: id,
             frame: DOMRefCell::new(None),
-            url: url,
             needs_reflow: Cell::new(true),
             children: DOMRefCell::new(vec!()),
         }
