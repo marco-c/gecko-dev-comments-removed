@@ -161,8 +161,10 @@ SERVO_BINDING_FUNC(Servo_DeclarationBlock_RemovePropertyById, void,
                    nsCSSPropertyID property)
 
 
-SERVO_BINDING_FUNC(Servo_CSSSupports, bool,
+SERVO_BINDING_FUNC(Servo_CSSSupports2, bool,
                    const nsACString* name, const nsACString* value)
+SERVO_BINDING_FUNC(Servo_CSSSupports, bool,
+                   const nsACString* cond)
 
 
 SERVO_BINDING_FUNC(Servo_ComputedValues_GetForAnonymousBox,
