@@ -97,15 +97,6 @@ public:
     return OtherPid();
   }
 
-  void SetPendingCompositorUpdate(uint64_t aNumber) {
-    mPendingCompositorUpdate = Some(aNumber);
-  }
-  void AcknowledgeCompositorUpdate(uint64_t aNumber) {
-    if (mPendingCompositorUpdate == Some(aNumber)) {
-      mPendingCompositorUpdate = Nothing();
-    }
-  }
-
 protected:
   virtual mozilla::ipc::IPCResult RecvShutdown() override;
   virtual mozilla::ipc::IPCResult RecvShutdownSync() override;
@@ -205,10 +196,6 @@ private:
   uint64_t mParentEpoch;
 
   uint64_t mPendingTransaction;
-
-  
-  
-  Maybe<uint64_t> mPendingCompositorUpdate;
 
   
   

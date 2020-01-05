@@ -123,12 +123,6 @@ public:
                               EndTransactionFlags aFlags = END_DEFAULT) = 0;
   virtual void UpdateRenderBounds(const gfx::IntRect& aRect) {}
 
-  
-  
-  
-  
-  virtual void ChangeCompositor(Compositor* aNewCompositor) = 0;
-
   virtual HostLayerManager* AsHostLayerManager() override {
     return this;
   }
@@ -378,12 +372,6 @@ public:
     return mCompositor;
   }
 
-  
-  
-  
-  
-  void ChangeCompositor(Compositor* aNewCompositor) override;
-
   void NotifyShadowTreeTransaction() override;
 
   TextRenderer* GetTextRenderer() { return mTextRenderer; }
@@ -463,8 +451,6 @@ private:
                                bool aGrayscaleEffect,
                                bool aInvertEffect,
                                float aContrastEffect);
-
-  void ChangeCompositorInternal(Compositor* aNewCompositor);
 
   bool mUnusedApzTransformWarning;
   bool mDisabledApzWarning;

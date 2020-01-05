@@ -377,40 +377,6 @@ CompositorBridgeChild::RecvInvalidateLayers(const uint64_t& aLayersId)
   return IPC_OK();
 }
 
-mozilla::ipc::IPCResult
-CompositorBridgeChild::RecvCompositorUpdated(const uint64_t& aLayersId,
-                                             const TextureFactoryIdentifier& aNewIdentifier,
-                                             const uint64_t& aSeqNo)
-{
-  if (mLayerManager) {
-    
-    MOZ_ASSERT(aLayersId == 0);
-  } else if (aLayersId != 0) {
-    
-    
-    if (mDeviceResetSequenceNumber != aSeqNo) {
-      gfxPlatform::GetPlatform()->CompositorUpdated();
-      mDeviceResetSequenceNumber = aSeqNo;
-
-      
-      
-      if (gfxPlatform::GetPlatform()->DidRenderingDeviceReset()) {
-        gfxCriticalError() << "Unexpected reset device processing when \
-                               updating compositor.";
-      }
-    }
-
-    if (dom::TabChild* child = dom::TabChild::GetFrom(aLayersId)) {
-      child->CompositorUpdated(aNewIdentifier, aSeqNo);
-    }
-    if (!mCanSend) {
-      return IPC_OK();
-    }
-    SendAcknowledgeCompositorUpdate(aLayersId, aSeqNo);
-  }
-  return IPC_OK();
-}
-
 #if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
 static void CalculatePluginClip(const LayoutDeviceIntRect& aBounds,
                                 const nsTArray<LayoutDeviceIntRect>& aPluginClipRects,

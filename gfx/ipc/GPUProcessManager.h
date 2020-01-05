@@ -172,14 +172,6 @@ public:
     return mNumProcessAttempts > 0;
   }
 
-  
-  
-  
-  
-  uint64_t GetNextDeviceResetSequenceNumber() {
-    return ++mNextResetSequenceNo;
-  }
-
 private:
   
   void OnXPCOMShutdown();
@@ -254,7 +246,6 @@ private:
   RefPtr<VsyncIOThreadHolder> mVsyncIOThread;
   uint64_t mNextLayerTreeId;
   uint32_t mNextNamespace;
-  uint64_t mNextResetSequenceNo;
   uint32_t mNumProcessAttempts;
 
   nsTArray<RefPtr<RemoteCompositorSession>> mRemoteSessions;
