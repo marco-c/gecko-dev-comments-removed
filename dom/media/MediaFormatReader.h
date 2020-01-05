@@ -327,9 +327,21 @@ private:
     Maybe<MediaResult> mError;
     bool HasFatalError() const
     {
-      return mError.isSome() &&
-             (mError.ref() != NS_ERROR_DOM_MEDIA_DECODE_ERR ||
-              mNumOfConsecutiveError > mMaxConsecutiveError);
+      if (!mError.isSome()) {
+        return false;
+      }
+      if (mError.ref() == NS_ERROR_DOM_MEDIA_DECODE_ERR) {
+        
+        
+        return mNumOfConsecutiveError > mMaxConsecutiveError;
+      } else if (mError.ref() == NS_ERROR_DOM_MEDIA_NEED_NEW_DECODER) {
+        
+        
+        return false;
+      } else {
+        
+        return true;
+      }
     }
 
     
