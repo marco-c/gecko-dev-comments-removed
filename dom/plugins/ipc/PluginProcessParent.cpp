@@ -98,6 +98,13 @@ AddSandboxAllowedFiles(int32_t aSandboxLevel,
     }
 
     
+    if (aSandboxLevel > 2) {
+        AddSandboxAllowedFile(aAllowedFilesRead, dirSvc, NS_WIN_HOME_DIR);
+        AddSandboxAllowedFile(aAllowedFilesRead, dirSvc, NS_WIN_HOME_DIR,
+                              NS_LITERAL_STRING("\\*"));
+    }
+
+    
     
     
     AddSandboxAllowedFile(aAllowedFilesReadWrite, dirSvc, NS_WIN_APPDATA_DIR,
