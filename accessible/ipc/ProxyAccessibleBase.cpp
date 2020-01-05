@@ -25,7 +25,6 @@ void
 ProxyAccessibleBase<Derived>::Shutdown()
 {
   MOZ_DIAGNOSTIC_ASSERT(!IsDoc());
-  NS_ASSERTION(!mOuterDoc, "Why do we still have a child doc?");
   xpcAccessibleDocument* xpcDoc =
     GetAccService()->GetCachedXPCDocument(Document());
   if (xpcDoc) {
@@ -34,15 +33,16 @@ ProxyAccessibleBase<Derived>::Shutdown()
 
   
   
+  uint32_t childCount = mChildren.Length();
   if (!mOuterDoc) {
-    uint32_t childCount = mChildren.Length();
     for (uint32_t idx = 0; idx < childCount; idx++)
       mChildren[idx]->Shutdown();
   } else {
-    if (mChildren.Length() != 1)
-      MOZ_CRASH("outer doc doesn't own adoc!");
-
-    mChildren[0]->AsDoc()->Unbind();
+    if (childCount > 1) {
+      MOZ_CRASH("outer doc has too many documents!");
+    } else if (childCount == 1) {
+      mChildren[0]->AsDoc()->Unbind();
+    }
   }
 
   mChildren.Clear();
@@ -76,9 +76,7 @@ ProxyAccessibleBase<Derived>::ClearChildDoc(DocAccessibleParent* aChildDoc)
   
   
   MOZ_ASSERT(mChildren.Length() <= 1);
-  if (mChildren.RemoveElement(aChildDoc)) {
-    mOuterDoc = false;
-  }
+  mChildren.RemoveElement(aChildDoc);
 }
 
 template <class Derived>
