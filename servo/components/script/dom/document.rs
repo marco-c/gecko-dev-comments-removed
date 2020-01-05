@@ -454,7 +454,20 @@ impl<'a> DocumentHelpers<'a> for JSRef<'a, Document> {
     
     fn commit_focus_transaction(self) {
         
+
+        if let Some(ref elem) = self.focused.get().root() {
+            let node: JSRef<Node> = NodeCast::from_ref(elem.r());
+            node.set_focus_state(false);
+        }
+
         self.focused.assign(self.possibly_focused.get());
+
+        if let Some(ref elem) = self.focused.get().root() {
+            let node: JSRef<Node> = NodeCast::from_ref(elem.r());
+            node.set_focus_state(true);
+        }
+        
+        
     }
 
     
