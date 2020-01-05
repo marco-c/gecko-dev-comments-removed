@@ -53,6 +53,9 @@ namespace net {
 #define HTTP_AUTH_NEGOTIATE_INSECURE 6
 #define HTTP_AUTH_NEGOTIATE_SECURE 7
 
+#define MAX_DISPLAYED_USER_LENGTH 64
+#define MAX_DISPLAYED_HOST_LENGTH 64
+
 static void
 GetOriginAttributesSuffix(nsIChannel* aChan, nsACString &aSuffix)
 {
@@ -1543,6 +1546,33 @@ nsHttpChannelAuthProvider::ConfirmAuth(const nsString &bundleKey,
         return true;
 
     NS_ConvertUTF8toUTF16 ucsHost(host), ucsUser(user);
+
+    size_t userLength = ucsUser.Length();
+    if (userLength > MAX_DISPLAYED_USER_LENGTH) {
+      size_t desiredLength = MAX_DISPLAYED_USER_LENGTH;
+      
+      if (NS_IS_LOW_SURROGATE(ucsUser[desiredLength])) {
+        desiredLength++;
+      }
+      ucsUser.Replace(desiredLength, userLength - desiredLength,
+                      nsContentUtils::GetLocalizedEllipsis());
+    }
+
+    size_t hostLen = ucsHost.Length();
+    if (hostLen > MAX_DISPLAYED_HOST_LENGTH) {
+      size_t cutPoint = hostLen - MAX_DISPLAYED_HOST_LENGTH;
+      
+      
+      if (NS_IS_LOW_SURROGATE(ucsHost[cutPoint])) {
+        cutPoint--;
+      }
+      
+      
+      if (cutPoint > 0) {
+        ucsHost.Replace(0, cutPoint, nsContentUtils::GetLocalizedEllipsis());
+      }
+    }
+
     const char16_t *strs[2] = { ucsHost.get(), ucsUser.get() };
 
     nsXPIDLString msg;
