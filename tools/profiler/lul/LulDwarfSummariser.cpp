@@ -246,19 +246,35 @@ Summariser::Rule(uintptr_t aAddress, int aNewReg,
   
   switch (aNewReg) {
 
-    case DW_REG_CFA:
+    case DW_REG_CFA: {
       
       
-      if (how != NODEREF) {
-        reason1 = "rule for DW_REG_CFA: invalid |how|";
-        goto cant_summarise;
-      }
-      if (oldReg != DW_REG_INTEL_XSP && oldReg != DW_REG_INTEL_XBP) {
-        reason1 = "rule for DW_REG_CFA: invalid |oldReg|";
-        goto cant_summarise;
+      switch (how) {
+        case NODEREF:
+          if (oldReg != DW_REG_INTEL_XSP && oldReg != DW_REG_INTEL_XBP) {
+            reason1 = "rule for DW_REG_CFA: invalid |oldReg|";
+            goto cant_summarise;
+          }
+          break;
+        case DEREF:
+          reason1 = "rule for DW_REG_CFA: invalid |how|";
+          goto cant_summarise;
+        case PFXEXPR: {
+          
+          const vector<PfxInstr>* pfxInstrs = mSecMap->GetPfxInstrs();
+          reason2 = checkPfxExpr(pfxInstrs, offset);
+          if (reason2) {
+            reason1 = "rule for CFA: ";
+            goto cant_summarise;
+          }
+          break;
+        }
+        default:
+          goto cant_summarise;
       }
       mCurrRules.mCfaExpr = LExpr(how, oldReg, offset);
       break;
+    }
 
     case DW_REG_INTEL_XSP: case DW_REG_INTEL_XBP: case DW_REG_INTEL_XIP: {
       
