@@ -212,6 +212,28 @@ assert.object = function (obj, msg = "") {
   return assert.that(o =>
       Object.prototype.toString.call(o) == "[object Object]", msg)(obj);
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.in = function (prop, obj, msg = "") {
+  assert.object(obj, msg);
+  msg = msg || error.pprint`Expected ${prop} in ${obj}`;
+  assert.that(p => obj.hasOwnProperty(p), msg)(prop);
+  return obj[prop];
 };
 
 
