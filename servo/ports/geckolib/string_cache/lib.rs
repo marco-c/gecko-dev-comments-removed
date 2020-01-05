@@ -134,6 +134,10 @@ impl Atom {
         self.0
     }
 
+    pub unsafe fn with<F>(ptr: *mut nsIAtom, callback: &mut F) where F: FnMut(&Atom) {
+        callback(transmute(&ptr))
+    }
+
     
     
     
@@ -224,5 +228,14 @@ impl From<String> for Atom {
     #[inline]
     fn from(string: String) -> Atom {
         Atom::from(&*string)
+    }
+}
+
+impl From<*mut nsIAtom> for Atom {
+    fn from(ptr: *mut nsIAtom) -> Atom {
+        unsafe {
+            Gecko_AddRefAtom(ptr);
+            Atom(ptr)
+        }
     }
 }
