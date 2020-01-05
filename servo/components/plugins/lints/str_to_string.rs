@@ -3,7 +3,7 @@
 
 
 use rustc::lint::{LateContext, LintPass, LintArray, LateLintPass, LintContext};
-use rustc::middle::ty;
+use rustc::ty;
 use rustc_front::hir;
 
 declare_lint!(STR_TO_STRING, Deny,
