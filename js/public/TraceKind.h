@@ -169,7 +169,7 @@ template <> struct MapTypeToRootKind<JSFunction*> : public MapTypeToRootKind<JSO
 
 
 
-#if defined(_MSC_VER) && !defined(__clang__)
+#if (defined(_MSC_VER) && _MSC_VER < 1910) && !defined(__clang__)
 # define JS_DEPENDENT_TEMPLATE_HINT
 #else
 # define JS_DEPENDENT_TEMPLATE_HINT template
