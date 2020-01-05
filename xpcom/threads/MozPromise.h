@@ -332,14 +332,25 @@ protected:
       RefPtr<MozPromise> mPromise;
     };
 
-    explicit ThenValueBase(AbstractThread* aResponseTarget, const char* aCallSite)
-      : mResponseTarget(aResponseTarget), mCallSite(aCallSite) {}
+    ThenValueBase(AbstractThread* aResponseTarget,
+                  const char* aCallSite,
+                  bool aInitCompletionPromise = false)
+      : mResponseTarget(aResponseTarget)
+      , mCallSite(aCallSite)
+      , mInitCompletionPromise(aInitCompletionPromise)
+    {
+      if (mInitCompletionPromise) {
+        mCompletionPromise = new MozPromise::Private(
+          "<completion promise>", true );
+      }
+    }
 
     MozPromise* CompletionPromise() override
     {
-      MOZ_DIAGNOSTIC_ASSERT(mResponseTarget->IsCurrentThreadIn());
+      MOZ_DIAGNOSTIC_ASSERT(mInitCompletionPromise ||
+                            mResponseTarget->IsCurrentThreadIn());
       MOZ_DIAGNOSTIC_ASSERT(!Request::mComplete);
-      if (!mCompletionPromise) {
+      if (!mInitCompletionPromise && !mCompletionPromise) {
         mCompletionPromise = new MozPromise::Private(
           "<completion promise>", true );
       }
@@ -433,6 +444,10 @@ protected:
     RefPtr<MozPromise> mCompletionPromise;
 
     const char* mCallSite;
+
+    
+    
+    const bool mInitCompletionPromise;
   };
 
   
@@ -484,8 +499,8 @@ protected:
   public:
     MethodThenValue(AbstractThread* aResponseTarget, ThisType* aThisVal,
                     ResolveMethodType aResolveMethod, RejectMethodType aRejectMethod,
-                    const char* aCallSite)
-      : ThenValueBase(aResponseTarget, aCallSite)
+                    const char* aCallSite, bool aInitCompletionPromise = false)
+      : ThenValueBase(aResponseTarget, aCallSite, aInitCompletionPromise)
       , mThisVal(aThisVal)
       , mResolveMethod(aResolveMethod)
       , mRejectMethod(aRejectMethod) {}
@@ -533,8 +548,9 @@ protected:
     FunctionThenValue(AbstractThread* aResponseTarget,
                       ResolveFunction&& aResolveFunction,
                       RejectFunction&& aRejectFunction,
-                      const char* aCallSite)
-      : ThenValueBase(aResponseTarget, aCallSite)
+                      const char* aCallSite,
+                      bool aInitCompletionPromise = false)
+      : ThenValueBase(aResponseTarget, aCallSite, aInitCompletionPromise)
     {
       mResolveFunction.emplace(Move(aResolveFunction));
       mRejectFunction.emplace(Move(aRejectFunction));
@@ -603,7 +619,7 @@ public:
 
   template<typename ThisType, typename ResolveMethodType, typename RejectMethodType>
   RefPtr<Request> Then(AbstractThread* aResponseThread, const char* aCallSite, ThisType* aThisVal,
-                         ResolveMethodType aResolveMethod, RejectMethodType aRejectMethod)
+                       ResolveMethodType aResolveMethod, RejectMethodType aRejectMethod)
   {
     RefPtr<ThenValueBase> thenValue = new MethodThenValue<ThisType, ResolveMethodType, RejectMethodType>(
                                               aResponseThread, aThisVal, aResolveMethod, aRejectMethod, aCallSite);
@@ -613,12 +629,47 @@ public:
 
   template<typename ResolveFunction, typename RejectFunction>
   RefPtr<Request> Then(AbstractThread* aResponseThread, const char* aCallSite,
-                         ResolveFunction&& aResolveFunction, RejectFunction&& aRejectFunction)
+                       ResolveFunction&& aResolveFunction, RejectFunction&& aRejectFunction)
   {
     RefPtr<ThenValueBase> thenValue = new FunctionThenValue<ResolveFunction, RejectFunction>(aResponseThread,
                                               Move(aResolveFunction), Move(aRejectFunction), aCallSite);
     ThenInternal(aResponseThread, thenValue, aCallSite);
     return thenValue.forget(); 
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  template<typename ThisType, typename ResolveMethodType, typename RejectMethodType>
+  MOZ_MUST_USE RefPtr<MozPromise>
+  ThenPromise(AbstractThread* aResponseThread, const char* aCallSite, ThisType* aThisVal,
+              ResolveMethodType aResolveMethod, RejectMethodType aRejectMethod)
+  {
+    using ThenType = MethodThenValue<ThisType, ResolveMethodType, RejectMethodType>;
+    RefPtr<ThenValueBase> thenValue = new ThenType(aResponseThread, aThisVal, aResolveMethod,
+      aRejectMethod, aCallSite, true );
+    ThenInternal(aResponseThread, thenValue, aCallSite);
+    return thenValue->CompletionPromise();
+  }
+
+  template<typename ResolveFunction, typename RejectFunction>
+  MOZ_MUST_USE RefPtr<MozPromise>
+  ThenPromise(AbstractThread* aResponseThread, const char* aCallSite,
+              ResolveFunction&& aResolveFunction, RejectFunction&& aRejectFunction)
+  {
+    using ThenType = FunctionThenValue<ResolveFunction, RejectFunction>;
+    RefPtr<ThenValueBase> thenValue = new ThenType(aResponseThread, Move(aResolveFunction),
+      Move(aRejectFunction), aCallSite, true );
+    ThenInternal(aResponseThread, thenValue, aCallSite);
+    return thenValue->CompletionPromise();
   }
 
   void ChainTo(already_AddRefed<Private> aChainedPromise, const char* aCallSite)
