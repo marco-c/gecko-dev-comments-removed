@@ -31,6 +31,15 @@ use std::sync::Arc;
 use stylist::ApplicableDeclarationBlock;
 
 
+enum InheritMode {
+    
+    FromParentElement,
+    
+    
+    FromPrimaryStyle,
+}
+
+
 #[inline]
 fn relations_are_shareable(relations: &StyleRelations) -> bool {
     use selectors::matching::*;
@@ -78,6 +87,8 @@ pub struct StyleSharingCandidateCache<E: TElement> {
 pub enum CacheMiss {
     
     Parent,
+    
+    NativeAnonymousContent,
     
     LocalName,
     
@@ -135,6 +146,12 @@ fn element_matches_candidate<E: TElement>(element: &E,
     let candidate_parent = candidate_element.parent_element();
     if parent != candidate_parent && !same_computed_values(parent, candidate_parent) {
         miss!(Parent)
+    }
+
+    if element.is_native_anonymous() {
+        debug_assert!(!candidate_element.is_native_anonymous(),
+                      "Why inserting NAC into the cache?");
+        miss!(NativeAnonymousContent)
     }
 
     if *element.get_local_name() != *candidate_element.get_local_name() {
@@ -298,6 +315,11 @@ impl<E: TElement> StyleSharingCandidateCache<E> {
             }
         };
 
+        if element.is_native_anonymous() {
+            debug!("Failing to insert into the cache: NAC");
+            return;
+        }
+
         
         
         if !relations_are_shareable(&relations) {
@@ -311,7 +333,6 @@ impl<E: TElement> StyleSharingCandidateCache<E> {
             element.synthesize_presentational_hints_for_legacy_attributes(&mut hints);
             debug_assert!(hints.is_empty(), "Style relations should not be shareable!");
         }
-
 
         let box_style = style.get_box();
         if box_style.specifies_transitions() {
@@ -387,7 +408,7 @@ trait PrivateMatchMethods: TElement {
                           font_metrics_provider: &FontMetricsProvider,
                           rule_node: &StrongRuleNode,
                           primary_style: &ComputedStyle,
-                          is_pseudo: bool)
+                          inherit_mode: InheritMode)
                           -> Arc<ComputedValues> {
         let mut cascade_info = CascadeInfo::new();
         let mut cascade_flags = CascadeFlags::empty();
@@ -398,24 +419,27 @@ trait PrivateMatchMethods: TElement {
         
         let parent_el;
         let parent_data;
-        let style_to_inherit_from = if !is_pseudo {
-            parent_el = self.parent_element();
-            parent_data = parent_el.as_ref().and_then(|e| e.borrow_data());
-            let parent_values = parent_data.as_ref().map(|d| {
-                
-                
-                
-                
-                
-                
-                debug_assert!(cfg!(feature = "gecko") || d.has_current_styles());
-                d.styles().primary.values()
-            });
+        let style_to_inherit_from = match inherit_mode {
+            InheritMode::FromParentElement => {
+                parent_el = self.parent_element();
+                parent_data = parent_el.as_ref().and_then(|e| e.borrow_data());
+                let parent_values = parent_data.as_ref().map(|d| {
+                    
+                    
+                    
+                    
+                    
+                    
+                    debug_assert!(cfg!(feature = "gecko") || d.has_current_styles());
+                    d.styles().primary.values()
+                });
 
-            parent_values
-        } else {
-            parent_el = Some(self.clone());
-            Some(primary_style.values())
+                parent_values
+            }
+            InheritMode::FromPrimaryStyle => {
+                parent_el = Some(self.clone());
+                Some(primary_style.values())
+            }
         };
 
         let mut layout_parent_el = parent_el.clone();
@@ -435,13 +459,14 @@ trait PrivateMatchMethods: TElement {
         
         
         
-        if !is_pseudo {
-            if let Some(ref p) = layout_parent_style {
-                let can_be_fragmented =
-                    p.is_multicol() ||
-                    layout_parent_el.as_ref().unwrap().as_node().can_be_fragmented();
-                unsafe { self.as_node().set_can_be_fragmented(can_be_fragmented); }
-            }
+        
+        
+        
+        if let Some(ref p) = layout_parent_style {
+            let can_be_fragmented =
+                p.is_multicol() ||
+                layout_parent_el.as_ref().unwrap().as_node().can_be_fragmented();
+            unsafe { self.as_node().set_can_be_fragmented(can_be_fragmented); }
         }
 
         
@@ -463,16 +488,21 @@ trait PrivateMatchMethods: TElement {
     fn cascade_internal(&self,
                         context: &StyleContext<Self>,
                         primary_style: &ComputedStyle,
-                        pseudo_style: Option<&ComputedStyle>)
+                        eager_pseudo_style: Option<&ComputedStyle>)
                         -> Arc<ComputedValues> {
         
-        let rule_node = &pseudo_style.unwrap_or(primary_style).rules;
+        let rule_node = &eager_pseudo_style.unwrap_or(primary_style).rules;
+        let inherit_mode = if eager_pseudo_style.is_some() {
+            InheritMode::FromPrimaryStyle
+        } else {
+            InheritMode::FromParentElement
+        };
 
         self.cascade_with_rules(context.shared,
                                 &context.thread_local.font_metrics_provider,
                                 rule_node,
                                 primary_style,
-                                pseudo_style.is_some())
+                                inherit_mode)
     }
 
     
@@ -480,8 +510,9 @@ trait PrivateMatchMethods: TElement {
     fn cascade_primary_or_pseudo(&self,
                                  context: &mut StyleContext<Self>,
                                  data: &mut ElementData,
-                                 pseudo: Option<&PseudoElement>,
-                                 animate: bool) {
+                                 pseudo: Option<&PseudoElement>) {
+        debug_assert!(pseudo.is_none() || self.implemented_pseudo_element().is_none(),
+                      "Pseudo-element-implementing elements can't have pseudos!");
         
         let (mut styles, restyle) = data.styles_and_restyle_mut();
         let mut primary_style = &mut styles.primary;
@@ -501,27 +532,65 @@ trait PrivateMatchMethods: TElement {
         };
 
         
-        let mut new_values = self.cascade_internal(context,
-                                                   primary_style,
-                                                   pseudo_style.as_ref().map(|s| &**s));
+        let mut new_values = match self.implemented_pseudo_element() {
+            Some(ref pseudo) => {
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                if pseudo.is_eager() &&
+                   self.get_animation_rules().is_empty() {
+                    let parent = self.parent_element().unwrap();
+
+                    let parent_data = parent.borrow_data().unwrap();
+                    let pseudo_style =
+                        parent_data.styles().pseudos.get(pseudo).unwrap();
+                    pseudo_style.values().clone()
+                } else {
+                    self.cascade_internal(context,
+                                          primary_style,
+                                          None)
+                }
+            }
+            None => {
+                
+                
+                self.cascade_internal(context,
+                                      primary_style,
+                                      pseudo_style.as_ref().map(|s| &**s))
+            }
+        };
 
         
-        if animate && !context.shared.traversal_flags.for_animation_only() {
+        
+        if pseudo.is_none() &&
+           !context.shared.traversal_flags.for_animation_only() {
             self.process_animations(context,
                                     &mut old_values,
                                     &mut new_values,
-                                    primary_style,
-                                    pseudo,
-                                    pseudo_style.as_ref().map(|s| &**s));
+                                    primary_style);
         }
 
         
         if let Some(old) = old_values {
-            self.accumulate_damage(&context.shared,
-                                   restyle.unwrap(),
-                                   &old,
-                                   &new_values,
-                                   pseudo);
+            
+            
+            
+            
+            
+            if cfg!(feature = "servo") ||
+               pseudo.map_or(true, |p| !p.is_before_or_after()) {
+                self.accumulate_damage(&context.shared,
+                                       restyle.unwrap(),
+                                       &old,
+                                       &new_values,
+                                       pseudo);
+            }
         }
 
         
@@ -534,11 +603,9 @@ trait PrivateMatchMethods: TElement {
     #[cfg(feature = "gecko")]
     fn get_after_change_style(&self,
                               context: &mut StyleContext<Self>,
-                              primary_style: &ComputedStyle,
-                              pseudo_style: Option<&ComputedStyle>)
+                              primary_style: &ComputedStyle)
                               -> Option<Arc<ComputedValues>> {
-        let relevant_style = pseudo_style.unwrap_or(primary_style);
-        let rule_node = &relevant_style.rules;
+        let rule_node = &primary_style.rules;
         let without_transition_rules =
             context.shared.stylist.rule_tree.remove_transition_rule_if_applicable(rule_node);
         if without_transition_rules == *rule_node {
@@ -551,21 +618,21 @@ trait PrivateMatchMethods: TElement {
                                      &context.thread_local.font_metrics_provider,
                                      &without_transition_rules,
                                      primary_style,
-                                     pseudo_style.is_some()))
+                                     InheritMode::FromParentElement))
     }
 
     #[cfg(feature = "gecko")]
     fn needs_animations_update(&self,
-                               old_values: &Option<Arc<ComputedValues>>,
-                               new_values: &Arc<ComputedValues>,
-                               pseudo: Option<&PseudoElement>) -> bool {
-        let ref new_box_style = new_values.get_box();
+                               old_values: Option<&Arc<ComputedValues>>,
+                               new_values: &ComputedValues)
+                               -> bool {
+        let new_box_style = new_values.get_box();
         let has_new_animation_style = new_box_style.animation_name_count() >= 1 &&
                                       new_box_style.animation_name_at(0).0.is_some();
-        let has_animations = self.has_css_animations(pseudo);
+        let has_animations = self.has_css_animations();
 
-        old_values.as_ref().map_or(has_new_animation_style, |ref old| {
-            let ref old_box_style = old.get_box();
+        old_values.map_or(has_new_animation_style, |old| {
+            let old_box_style = old.get_box();
             let old_display_style = old_box_style.clone_display();
             let new_display_style = new_box_style.clone_display();
             
@@ -584,40 +651,34 @@ trait PrivateMatchMethods: TElement {
                           context: &mut StyleContext<Self>,
                           old_values: &mut Option<Arc<ComputedValues>>,
                           new_values: &mut Arc<ComputedValues>,
-                          primary_style: &ComputedStyle,
-                          pseudo: Option<&PseudoElement>,
-                          pseudo_style: Option<&ComputedStyle>) {
+                          primary_style: &ComputedStyle) {
         use context::{CSS_ANIMATIONS, CSS_TRANSITIONS, EFFECT_PROPERTIES};
         use context::UpdateAnimationsTasks;
 
-        debug_assert_eq!(pseudo.is_some(), pseudo_style.is_some());
-
         let mut tasks = UpdateAnimationsTasks::empty();
-        if self.needs_animations_update(old_values, new_values, pseudo) {
+        if self.needs_animations_update(old_values.as_ref(), new_values) {
             tasks.insert(CSS_ANIMATIONS);
         }
 
-        let before_change_style = if self.might_need_transitions_update(&old_values.as_ref(),
-                                                                        new_values,
-                                                                        pseudo) {
-            let after_change_style = if self.has_css_transitions(pseudo) {
-                self.get_after_change_style(context, primary_style, pseudo_style)
+        let before_change_style = if self.might_need_transitions_update(old_values.as_ref().map(|s| &**s),
+                                                                        new_values) {
+            let after_change_style = if self.has_css_transitions() {
+                self.get_after_change_style(context, primary_style)
             } else {
                 None
             };
 
             
             
+            
             let needs_transitions_update = {
                 
                 
-                let after_change_style_ref = match after_change_style {
-                    Some(ref value) => value,
-                    None => &new_values
-                };
+                let after_change_style_ref =
+                    after_change_style.as_ref().unwrap_or(&new_values);
+
                 self.needs_transitions_update(old_values.as_ref().unwrap(),
-                                              after_change_style_ref,
-                                              pseudo)
+                                              after_change_style_ref)
             };
 
             if needs_transitions_update {
@@ -635,13 +696,12 @@ trait PrivateMatchMethods: TElement {
             None
         };
 
-        if self.has_animations(pseudo) {
+        if self.has_animations() {
             tasks.insert(EFFECT_PROPERTIES);
         }
 
         if !tasks.is_empty() {
             let task = ::context::SequentialTask::update_animations(*self,
-                                                                    pseudo.cloned(),
                                                                     before_change_style,
                                                                     tasks);
             context.thread_local.tasks.push(task);
@@ -653,11 +713,7 @@ trait PrivateMatchMethods: TElement {
                           context: &mut StyleContext<Self>,
                           old_values: &mut Option<Arc<ComputedValues>>,
                           new_values: &mut Arc<ComputedValues>,
-                          _primary_style: &ComputedStyle,
-                          pseudo: Option<&PseudoElement>,
-                          pseudo_style: Option<&ComputedStyle>) {
-        debug_assert_eq!(pseudo.is_some(), pseudo_style.is_some());
-
+                          _primary_style: &ComputedStyle) {
         let possibly_expired_animations =
             &mut context.thread_local.current_element_info.as_mut().unwrap()
                         .possibly_expired_animations;
@@ -690,6 +746,10 @@ trait PrivateMatchMethods: TElement {
     }
 
     
+    
+    
+    
+    
     #[cfg(feature = "gecko")]
     fn accumulate_damage(&self,
                          shared_context: &SharedStyleContext,
@@ -716,7 +776,9 @@ trait PrivateMatchMethods: TElement {
         
         
         if !restyle.damage.contains(RestyleDamage::reconstruct()) {
-            let new_damage = self.compute_restyle_damage(&old_values, &new_values, pseudo);
+            let new_damage = self.compute_restyle_damage(&old_values,
+                                                         &new_values,
+                                                         pseudo);
             if !restyle.damage_handled.contains(new_damage) {
                 restyle.damage |= new_damage;
             }
@@ -814,6 +876,7 @@ pub enum StyleSharingBehavior {
 
 pub trait MatchMethods : TElement {
     
+    
     fn match_and_cascade(&self,
                          context: &mut StyleContext<Self>,
                          data: &mut ElementData,
@@ -878,14 +941,54 @@ pub trait MatchMethods : TElement {
                      relations: &mut StyleRelations)
                      -> bool
     {
+        let implemented_pseudo = self.implemented_pseudo_element();
+        if let Some(ref pseudo) = implemented_pseudo {
+            if pseudo.is_eager() {
+                
+                
+                let parent = self.parent_element().unwrap();
+                let parent_data = parent.borrow_data().unwrap();
+                let pseudo_style =
+                    parent_data.styles().pseudos.get(&pseudo).unwrap();
+                let mut rules = pseudo_style.rules.clone();
+                let animation_rules = self.get_animation_rules();
+
+                
+                if let Some(animation_rule) = animation_rules.0 {
+                    let animation_rule_node =
+                        context.shared.stylist.rule_tree
+                            .update_rule_at_level(CascadeLevel::Animations,
+                                                  Some(&animation_rule),
+                                                  &mut rules,
+                                                  &context.shared.guards);
+                    if let Some(node) = animation_rule_node {
+                        rules = node;
+                    }
+                }
+
+                if let Some(animation_rule) = animation_rules.1 {
+                    let animation_rule_node =
+                        context.shared.stylist.rule_tree
+                            .update_rule_at_level(CascadeLevel::Transitions,
+                                                  Some(&animation_rule),
+                                                  &mut rules,
+                                                  &context.shared.guards);
+                    if let Some(node) = animation_rule_node {
+                        rules = node;
+                    }
+                }
+
+                return data.set_primary_rules(rules);
+            }
+        }
+
         let mut applicable_declarations =
             Vec::<ApplicableDeclarationBlock>::with_capacity(16);
 
         let stylist = &context.shared.stylist;
         let style_attribute = self.style_attribute();
         let smil_override = self.get_smil_override();
-        let animation_rules = self.get_animation_rules(None);
-        let mut rule_nodes_changed = false;
+        let animation_rules = self.get_animation_rules();
         let bloom = context.thread_local.bloom_filter.filter();
 
         let map = &mut context.thread_local.selector_flags;
@@ -899,22 +1002,15 @@ pub trait MatchMethods : TElement {
                                                           style_attribute,
                                                           smil_override,
                                                           animation_rules,
-                                                          None,
+                                                          implemented_pseudo.as_ref(),
                                                           &context.shared.guards,
                                                           &mut applicable_declarations,
                                                           &mut set_selector_flags);
 
         let primary_rule_node =
             compute_rule_node::<Self>(&stylist.rule_tree, &mut applicable_declarations);
-        if !data.has_styles() {
-            data.set_styles(ElementStyles::new(ComputedStyle::new_partial(primary_rule_node)));
-            rule_nodes_changed = true;
-        } else if data.styles().primary.rules != primary_rule_node {
-            data.styles_mut().primary.rules = primary_rule_node;
-            rule_nodes_changed = true;
-        }
 
-        rule_nodes_changed
+        return data.set_primary_rules(primary_rule_node);
     }
 
     
@@ -927,9 +1023,13 @@ pub trait MatchMethods : TElement {
                      data: &mut ElementData)
                      -> bool
     {
+        if self.implemented_pseudo_element().is_some() {
+            
+            return false;
+        }
+
         let mut applicable_declarations =
             Vec::<ApplicableDeclarationBlock>::with_capacity(16);
-        let mut rule_nodes_changed = false;
 
         let map = &mut context.thread_local.selector_flags;
         let mut set_selector_flags = |element: &Self, flags: ElementSelectorFlags| {
@@ -945,19 +1045,17 @@ pub trait MatchMethods : TElement {
 
         
         let mut matches_different_pseudos = false;
+        let mut rule_nodes_changed = false;
         SelectorImpl::each_eagerly_cascaded_pseudo_element(|pseudo| {
             let mut pseudos = &mut data.styles_mut().pseudos;
             debug_assert!(applicable_declarations.is_empty());
-            let pseudo_animation_rules = if pseudo.is_before_or_after() {
-                self.get_animation_rules(Some(&pseudo))
-            } else {
-                AnimationRules(None, None)
-            };
+            
+            
             stylist.push_applicable_declarations(self,
                                                  Some(bloom_filter),
                                                  None,
                                                  None,
-                                                 pseudo_animation_rules,
+                                                 AnimationRules(None, None),
                                                  Some(&pseudo),
                                                  &guards,
                                                  &mut applicable_declarations,
@@ -1076,6 +1174,8 @@ pub trait MatchMethods : TElement {
             
             
             
+            
+            
             if hint.intersects(RestyleHint::for_animations()) {
                 debug_assert!(context.shared.traversal_flags.for_animation_only());
 
@@ -1085,37 +1185,24 @@ pub trait MatchMethods : TElement {
                                       primary_rules);
                 }
 
-                use data::EagerPseudoStyles;
                 let mut replace_rule_node_for_animation = |level: CascadeLevel,
-                                                           primary_rules: &mut StrongRuleNode,
-                                                           pseudos: &mut EagerPseudoStyles| {
-                    let animation_rule = self.get_animation_rule_by_cascade(None, level);
+                                                           primary_rules: &mut StrongRuleNode| {
+                    let animation_rule = self.get_animation_rule_by_cascade(level);
                     replace_rule_node(level,
                                       animation_rule.as_ref(),
                                       primary_rules);
-
-                    for pseudo in pseudos.keys().iter().filter(|p| p.is_before_or_after()) {
-                        let animation_rule = self.get_animation_rule_by_cascade(Some(&pseudo), level);
-                        let pseudo_rules = &mut pseudos.get_mut(&pseudo).unwrap().rules;
-                        replace_rule_node(level,
-                                          animation_rule.as_ref(),
-                                          pseudo_rules);
-                    }
                 };
 
                 
                 
-                let pseudos = &mut element_styles.pseudos;
                 if hint.contains(RESTYLE_CSS_TRANSITIONS) {
                     replace_rule_node_for_animation(CascadeLevel::Transitions,
-                                                    primary_rules,
-                                                    pseudos);
+                                                    primary_rules);
                 }
 
                 if hint.contains(RESTYLE_CSS_ANIMATIONS) {
                     replace_rule_node_for_animation(CascadeLevel::Animations,
-                                                    primary_rules,
-                                                    pseudos);
+                                                    primary_rules);
                 }
             } else if hint.contains(RESTYLE_STYLE_ATTRIBUTE) {
                 let style_attribute = self.style_attribute();
@@ -1125,11 +1212,9 @@ pub trait MatchMethods : TElement {
                 replace_rule_node(CascadeLevel::StyleAttributeImportant,
                                   style_attribute,
                                   primary_rules);
-                
             }
         }
 
-        
         rule_node_changed
     }
 
@@ -1149,6 +1234,11 @@ pub trait MatchMethods : TElement {
         if self.parent_element().is_none() {
             debug!("{:?} Cannot share style: element has style attribute", self);
             return StyleSharingResult::CannotShare
+        }
+
+        if self.is_native_anonymous() {
+            debug!("{:?} Cannot share style: NAC", self);
+            return StyleSharingResult::CannotShare;
         }
 
         if self.style_attribute().is_some() {
@@ -1310,7 +1400,7 @@ pub trait MatchMethods : TElement {
                        context: &mut StyleContext<Self>,
                        mut data: &mut ElementData)
     {
-        self.cascade_primary_or_pseudo(context, &mut data, None,  true);
+        self.cascade_primary_or_pseudo(context, &mut data, None);
     }
 
     
@@ -1325,9 +1415,7 @@ pub trait MatchMethods : TElement {
         
         let matched_pseudos = data.styles().pseudos.keys();
         for pseudo in matched_pseudos {
-            
-            let animate = pseudo.is_before_or_after();
-            self.cascade_primary_or_pseudo(context, data, Some(&pseudo), animate);
+            self.cascade_primary_or_pseudo(context, data, Some(&pseudo));
         }
     }
 
@@ -1352,7 +1440,7 @@ pub trait MatchMethods : TElement {
                                 font_metrics_provider,
                                 &without_animation_rules,
                                 primary_style,
-                                pseudo_style.is_some())
+                                InheritMode::FromParentElement)
     }
 
 }

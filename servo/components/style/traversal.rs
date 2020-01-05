@@ -264,88 +264,118 @@ pub trait DomTraversal<E: TElement> : Sync {
             return true;
         }
 
-        match node.as_element() {
-            None => Self::text_node_needs_traversal(node),
-            Some(el) => {
-                
-                
-                
-                if el.is_native_anonymous() {
-                    if let Some(parent) = el.parent_element() {
-                        let parent_data = parent.borrow_data().unwrap();
-                        if let Some(r) = parent_data.get_restyle() {
-                            if (r.damage | r.damage_handled()).contains(RestyleDamage::reconstruct()) {
-                                debug!("Element {:?} is in doomed NAC subtree - culling traversal", el);
-                                return false;
-                            }
+        let el = match node.as_element() {
+            None => return Self::text_node_needs_traversal(node),
+            Some(el) => el,
+        };
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if el.is_native_anonymous() {
+            if let Some(parent) = el.parent_element() {
+                let parent_data = parent.borrow_data().unwrap();
+                let going_to_reframe = parent_data.get_restyle().map_or(false, |r| {
+                    (r.damage | r.damage_handled())
+                        .contains(RestyleDamage::reconstruct())
+                });
+
+                let mut is_before_or_after_pseudo = false;
+                if let Some(pseudo) = el.implemented_pseudo_element() {
+                    if pseudo.is_before_or_after() {
+                        is_before_or_after_pseudo = true;
+                        let still_match =
+                            parent_data.styles().pseudos.get(&pseudo).is_some();
+
+                        if !still_match {
+                            debug_assert!(going_to_reframe,
+                                          "We're removing a pseudo, so we \
+                                           should reframe!");
+                            return false;
                         }
                     }
                 }
 
-                
-                
-                
-                if traversal_flags.for_animation_only() {
-                    if el.has_animation_only_dirty_descendants() {
-                        return true;
-                    }
-
-                    let data = match el.borrow_data() {
-                        Some(d) => d,
-                        None => return false,
-                    };
-                    return data.get_restyle()
-                               .map_or(false, |r| r.hint.has_animation_hint() || r.recascade);
+                if going_to_reframe && !is_before_or_after_pseudo {
+                    debug!("Element {:?} is in doomed NAC subtree, \
+                            culling traversal", el);
+                    return false;
                 }
-
-                
-                
-                if el.has_dirty_descendants() {
-                    return true;
-                }
-
-                
-                
-                let data = match el.borrow_data() {
-                    Some(d) => d,
-                    None => return true,
-                };
-
-                
-                if !data.has_styles() {
-                    return true;
-                }
-
-                
-                if let Some(r) = data.get_restyle() {
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    if !r.hint.is_empty() || r.recascade {
-                        return true;
-                    }
-                }
-
-                
-                
-                
-                
-                
-                
-                if (cfg!(feature = "servo") ||
-                    traversal_flags.for_reconstruct()) &&
-                   data.get_restyle().map_or(false, |r| r.damage != RestyleDamage::empty())
-                {
-                    return true;
-                }
-
-                false
-            },
+            }
         }
+
+        
+        
+        
+        if traversal_flags.for_animation_only() {
+            if el.has_animation_only_dirty_descendants() {
+                return true;
+            }
+
+            let data = match el.borrow_data() {
+                Some(d) => d,
+                None => return false,
+            };
+            return data.get_restyle()
+                       .map_or(false, |r| r.hint.has_animation_hint() || r.recascade);
+        }
+
+        
+        
+        if el.has_dirty_descendants() {
+            return true;
+        }
+
+        
+        
+        let data = match el.borrow_data() {
+            Some(d) => d,
+            None => return true,
+        };
+
+        
+        if !data.has_styles() {
+            return true;
+        }
+
+        
+        if let Some(r) = data.get_restyle() {
+            
+            
+            
+            
+            
+            
+            
+            if !r.hint.is_empty() || r.recascade {
+                return true;
+            }
+        }
+
+        
+        
+        
+        
+        
+        
+        if (cfg!(feature = "servo") || traversal_flags.for_reconstruct()) &&
+           data.get_restyle().map_or(false, |r| !r.damage.is_empty()) {
+            return true;
+        }
+
+        false
     }
 
     
@@ -396,7 +426,6 @@ pub trait DomTraversal<E: TElement> : Sync {
         }
 
         return true;
-
     }
 
     
@@ -489,7 +518,9 @@ fn resolve_style_internal<E, F>(context: &mut StyleContext<E>,
 
         
         context.thread_local.begin_element(element, &data);
-        element.match_and_cascade(context, &mut data, StyleSharingBehavior::Disallow);
+        element.match_and_cascade(context,
+                                  &mut data,
+                                  StyleSharingBehavior::Disallow);
         context.thread_local.end_element(element);
 
         
@@ -607,9 +638,13 @@ pub fn recalc_style_at<E, D>(traversal: &D,
     };
     debug_assert!(data.has_current_styles() ||
                   context.shared.traversal_flags.for_animation_only(),
-                  "Should have computed style or haven't yet valid computed style in case of animation-only restyle");
-    trace!("propagated_hint={:?}, inherited_style_changed={:?}",
-           propagated_hint, inherited_style_changed);
+                  "Should have computed style or haven't yet valid computed \
+                   style in case of animation-only restyle");
+    trace!("propagated_hint={:?}, inherited_style_changed={:?}, \
+            is_display_none={:?}, implementing_pseudo={:?}",
+           propagated_hint, inherited_style_changed,
+           data.styles().is_display_none(),
+           element.implemented_pseudo_element());
 
     let has_dirty_descendants_for_this_restyle =
         if context.shared.traversal_flags.for_animation_only() {
@@ -664,7 +699,8 @@ pub fn recalc_style_at<E, D>(traversal: &D,
     
     
     
-    if data.styles().is_display_none() || context.shared.traversal_flags.for_reconstruct() {
+    if data.styles().is_display_none() ||
+       context.shared.traversal_flags.for_reconstruct() {
         unsafe { element.unset_dirty_descendants(); }
     }
 }

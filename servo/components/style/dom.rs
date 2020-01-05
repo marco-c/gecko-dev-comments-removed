@@ -276,8 +276,17 @@ pub trait PresentationalHintsSynthetizer {
 
 
 
+
+
 pub struct AnimationRules(pub Option<Arc<Locked<PropertyDeclarationBlock>>>,
                           pub Option<Arc<Locked<PropertyDeclarationBlock>>>);
+
+impl AnimationRules {
+    
+    pub fn is_empty(&self) -> bool {
+        self.0.is_none() && self.1.is_none()
+    }
+}
 
 
 pub trait TElement : Eq + PartialEq + Debug + Hash + Sized + Copy + Clone +
@@ -325,26 +334,25 @@ pub trait TElement : Eq + PartialEq + Debug + Hash + Sized + Copy + Clone +
     }
 
     
-    fn get_animation_rules(&self, _pseudo: Option<&PseudoElement>) -> AnimationRules {
+    fn get_animation_rules(&self) -> AnimationRules {
         AnimationRules(None, None)
     }
 
     
     fn get_animation_rule_by_cascade(&self,
-                                     _pseudo: Option<&PseudoElement>,
                                      _cascade_level: CascadeLevel)
                                      -> Option<Arc<Locked<PropertyDeclarationBlock>>> {
         None
     }
 
     
-    fn get_animation_rule(&self, _pseudo: Option<&PseudoElement>)
+    fn get_animation_rule(&self)
                           -> Option<Arc<Locked<PropertyDeclarationBlock>>> {
         None
     }
 
     
-    fn get_transition_rule(&self, _pseudo: Option<&PseudoElement>)
+    fn get_transition_rule(&self)
                            -> Option<Arc<Locked<PropertyDeclarationBlock>>> {
         None
     }
@@ -430,6 +438,18 @@ pub trait TElement : Eq + PartialEq + Debug + Hash + Sized + Copy + Clone +
 
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    fn implemented_pseudo_element(&self) -> Option<PseudoElement> { None }
+
+    
+    
     fn store_children_to_process(&self, n: isize);
 
     
@@ -469,21 +489,21 @@ pub trait TElement : Eq + PartialEq + Debug + Hash + Sized + Copy + Clone +
 
     
     #[cfg(feature = "gecko")]
-    fn update_animations(&self, _pseudo: Option<&PseudoElement>,
+    fn update_animations(&self,
                          before_change_style: Option<Arc<ComputedValues>>,
                          tasks: UpdateAnimationsTasks);
 
     
     
     
-    fn has_animations(&self, _pseudo: Option<&PseudoElement>) -> bool;
+    fn has_animations(&self) -> bool;
 
     
-    fn has_css_animations(&self, _pseudo: Option<&PseudoElement>) -> bool;
+    fn has_css_animations(&self) -> bool;
 
     
     
-    fn has_css_transitions(&self, _pseudo: Option<&PseudoElement>) -> bool;
+    fn has_css_transitions(&self) -> bool;
 
     
     fn has_animation_restyle_hints(&self) -> bool {
@@ -497,8 +517,7 @@ pub trait TElement : Eq + PartialEq + Debug + Hash + Sized + Copy + Clone +
 
     
     #[cfg(feature = "gecko")]
-    fn get_css_transitions_info(&self,
-                                pseudo: Option<&PseudoElement>)
+    fn get_css_transitions_info(&self)
                                 -> HashMap<TransitionProperty, Arc<AnimationValue>>;
 
     
@@ -508,9 +527,9 @@ pub trait TElement : Eq + PartialEq + Debug + Hash + Sized + Copy + Clone +
     
     #[cfg(feature = "gecko")]
     fn might_need_transitions_update(&self,
-                                     old_values: &Option<&Arc<ComputedValues>>,
-                                     new_values: &Arc<ComputedValues>,
-                                     pseudo: Option<&PseudoElement>) -> bool;
+                                     old_values: Option<&ComputedValues>,
+                                     new_values: &ComputedValues)
+                                     -> bool;
 
     
     
@@ -518,17 +537,17 @@ pub trait TElement : Eq + PartialEq + Debug + Hash + Sized + Copy + Clone +
     
     #[cfg(feature = "gecko")]
     fn needs_transitions_update(&self,
-                                before_change_style: &Arc<ComputedValues>,
-                                after_change_style: &Arc<ComputedValues>,
-                                pseudo: Option<&PseudoElement>) -> bool;
+                                before_change_style: &ComputedValues,
+                                after_change_style: &ComputedValues)
+                                -> bool;
 
     
     #[cfg(feature = "gecko")]
     fn needs_transitions_update_per_property(&self,
                                              property: &TransitionProperty,
                                              combined_duration: f32,
-                                             before_change_style: &Arc<ComputedValues>,
-                                             after_change_style: &Arc<ComputedValues>,
+                                             before_change_style: &ComputedValues,
+                                             after_change_style: &ComputedValues,
                                              existing_transitions: &HashMap<TransitionProperty,
                                                                             Arc<AnimationValue>>)
                                              -> bool;

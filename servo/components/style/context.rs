@@ -20,7 +20,6 @@ use font_metrics::FontMetricsProvider;
 use matching::StyleSharingCandidateCache;
 use parking_lot::RwLock;
 #[cfg(feature = "gecko")] use properties::ComputedValues;
-#[cfg(feature = "gecko")] use selector_parser::PseudoElement;
 use selectors::matching::ElementSelectorFlags;
 #[cfg(feature = "servo")] use servo_config::opts;
 use shared_lock::StylesheetGuards;
@@ -270,7 +269,8 @@ impl TraversalStatistics {
 
 #[cfg(feature = "gecko")]
 bitflags! {
-    /// Represents which tasks are performed in a SequentialTask of UpdateAnimations.
+    /// Represents which tasks are performed in a SequentialTask of
+    /// UpdateAnimations.
     pub flags UpdateAnimationsTasks: u8 {
         /// Update CSS Animations.
         const CSS_ANIMATIONS = structs::UpdateAnimationsTasks_CSSAnimations,
@@ -299,8 +299,6 @@ pub enum SequentialTask<E: TElement> {
         
         el: SendElement<E>,
         
-        pseudo: Option<PseudoElement>,
-        
         
         before_change_style: Option<Arc<ComputedValues>>,
         
@@ -316,8 +314,8 @@ impl<E: TElement> SequentialTask<E> {
         match self {
             Unused(_) => unreachable!(),
             #[cfg(feature = "gecko")]
-            UpdateAnimations { el, pseudo, before_change_style, tasks } => {
-                unsafe { el.update_animations(pseudo.as_ref(), before_change_style, tasks) };
+            UpdateAnimations { el, before_change_style, tasks } => {
+                unsafe { el.update_animations(before_change_style, tasks) };
             }
         }
     }
@@ -326,14 +324,14 @@ impl<E: TElement> SequentialTask<E> {
     
     #[cfg(feature = "gecko")]
     pub fn update_animations(el: E,
-                             pseudo: Option<PseudoElement>,
                              before_change_style: Option<Arc<ComputedValues>>,
                              tasks: UpdateAnimationsTasks) -> Self {
         use self::SequentialTask::*;
-        UpdateAnimations { el: unsafe { SendElement::new(el) },
-                           pseudo: pseudo,
-                           before_change_style: before_change_style,
-                           tasks: tasks }
+        UpdateAnimations {
+            el: unsafe { SendElement::new(el) },
+            before_change_style: before_change_style,
+            tasks: tasks,
+        }
     }
 }
 

@@ -55,6 +55,26 @@ pub const EAGER_PSEUDO_COUNT: usize = 2;
 
 impl PseudoElement {
     
+    
+    
+    
+    
+    
+    
+    pub fn cascade_type(&self) -> PseudoElementCascadeType {
+        if self.is_eager() {
+            debug_assert!(!self.is_anon_box());
+            return PseudoElementCascadeType::Eager
+        }
+
+        if self.is_anon_box() {
+            return PseudoElementCascadeType::Precomputed
+        }
+
+        PseudoElementCascadeType::Lazy
+    }
+
+    
     #[inline]
     pub fn eager_index(&self) -> usize {
         macro_rules! case {
@@ -438,23 +458,8 @@ impl<'a> ::selectors::Parser for SelectorParser<'a> {
 impl SelectorImpl {
     #[inline]
     
-    
-    
-    
-    
-    
-    
     pub fn pseudo_element_cascade_type(pseudo: &PseudoElement) -> PseudoElementCascadeType {
-        if pseudo.is_eager() {
-            debug_assert!(!pseudo.is_anon_box());
-            return PseudoElementCascadeType::Eager
-        }
-
-        if pseudo.is_anon_box() {
-            return PseudoElementCascadeType::Precomputed
-        }
-
-        PseudoElementCascadeType::Lazy
+        pseudo.cascade_type()
     }
 
     
