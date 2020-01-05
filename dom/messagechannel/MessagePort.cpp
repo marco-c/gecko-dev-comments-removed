@@ -393,19 +393,18 @@ MessagePort::WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto)
 
 void
 MessagePort::PostMessage(JSContext* aCx, JS::Handle<JS::Value> aMessage,
-                         const Optional<Sequence<JS::Value>>& aTransferable,
+                         const Sequence<JS::Value>& aTransferable,
                          ErrorResult& aRv)
 {
   
   
 
   JS::Rooted<JS::Value> transferable(aCx, JS::UndefinedValue());
-  if (aTransferable.WasPassed()) {
-    const Sequence<JS::Value>& realTransferable = aTransferable.Value();
 
+  if (!aTransferable.IsEmpty()) {
     
     
-    for (const JS::Value& value : realTransferable) {
+    for (const JS::Value& value : aTransferable) {
       if (!value.isObject()) {
         continue;
       }
@@ -425,8 +424,8 @@ MessagePort::PostMessage(JSContext* aCx, JS::Handle<JS::Value> aMessage,
     
     
     JS::HandleValueArray elements =
-      JS::HandleValueArray::fromMarkedLocation(realTransferable.Length(),
-                                               realTransferable.Elements());
+      JS::HandleValueArray::fromMarkedLocation(aTransferable.Length(),
+                                               aTransferable.Elements());
 
     JSObject* array =
       JS_NewArrayObject(aCx, elements);
