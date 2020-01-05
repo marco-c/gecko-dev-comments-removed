@@ -75,6 +75,7 @@ public:
                                const GMPMediaKeyInfo* aKeyInfos,
                                uint32_t aKeyInfosLength) override;
 
+  uint32_t DecryptorId() const { return mDecryptorId; }
 private:
   ~GMPDecryptorChild();
 
@@ -121,6 +122,8 @@ private:
   
   GMPDecryptor* mSession;
   GMPContentChild* mPlugin;
+
+  const uint32_t mDecryptorId;
 };
 
 } 

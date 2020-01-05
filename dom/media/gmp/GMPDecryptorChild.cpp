@@ -20,9 +20,12 @@
 namespace mozilla {
 namespace gmp {
 
+static uint32_t sDecryptorCount = 1;
+
 GMPDecryptorChild::GMPDecryptorChild(GMPContentChild* aPlugin)
   : mSession(nullptr)
   , mPlugin(aPlugin)
+  , mDecryptorId(sDecryptorCount++)
 {
   MOZ_ASSERT(mPlugin);
 }
@@ -73,7 +76,7 @@ GMPDecryptorChild::Init(GMPDecryptor* aSession)
   
   
   
-  SendSetDecryptorId(Id());
+  SendSetDecryptorId(DecryptorId());
 }
 
 void
