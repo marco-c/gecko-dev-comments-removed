@@ -8,6 +8,10 @@ import shared_telemetry_utils as utils
 
 
 
+
+BASE_DOC_URL = 'https://gecko.readthedocs.io/en/latest/toolkit/components/' + \
+               'telemetry/telemetry/collection/scalars.html'
+
 SCALAR_TYPES_MAP = {
     'uint': 'nsITelemetry::SCALAR_COUNT',
     'string': 'nsITelemetry::SCALAR_STRING',
@@ -48,20 +52,22 @@ class ScalarType:
         MAX_NAME_LENGTH = 40
         for n in [group_name, probe_name]:
             if len(n) > MAX_NAME_LENGTH:
-                raise ValueError("Name '{}' exceeds maximum name length of {} characters."
-                                 .format(n, MAX_NAME_LENGTH))
+                raise ValueError(("Name '{}' exceeds maximum name length of {} characters."
+                                  " See: {}#the-yaml-definition-file")
+                                 .format(n, MAX_NAME_LENGTH, BASE_DOC_URL))
 
         def check_name(name, error_msg_prefix, allowed_char_regexp):
             
             chars_regxp = r'^[a-zA-Z0-9' + allowed_char_regexp + r']+$'
             if not re.search(chars_regxp, name):
-                raise ValueError(error_msg_prefix + " name must be alpha-numeric. Got: '{}'".format(name))
+                raise ValueError((error_msg_prefix + " name must be alpha-numeric. Got: '{}'. "
+                                  "See: {}#the-yaml-definition-file").format(name, BASE_DOC_URL))
 
             
             if re.search(r'(^[\d\._])|([\d\._])$', name):
-                raise ValueError(error_msg_prefix +
-                                 " name must not have a leading/trailing digit, a dot or underscore. Got: '{}'"
-                                 .format(name))
+                raise ValueError((error_msg_prefix + " name must not have a leading/trailing "
+                                  "digit, a dot or underscore. Got: '{}'."
+                                  " See: {}#the-yaml-definition-file").format(name, BASE_DOC_URL))
 
         check_name(group_name, 'Group', r'\.')
         check_name(probe_name, 'Probe', r'_')
@@ -106,18 +112,21 @@ class ScalarType:
         
         missing_fields = [f for f in REQUIRED_FIELDS.keys() if f not in definition]
         if len(missing_fields) > 0:
-            raise KeyError(self._name + ' - missing required fields: ' + ', '.join(missing_fields))
+            raise KeyError(self._name + ' - missing required fields: ' + ', '.join(missing_fields) +
+                           '. See: {}#required-fields'.format(BASE_DOC_URL))
 
         
         unknown_fields = [f for f in definition.keys() if f not in ALL_FIELDS]
         if len(unknown_fields) > 0:
-            raise KeyError(self._name + ' - unknown fields: ' + ', '.join(unknown_fields))
+            raise KeyError(self._name + ' - unknown fields: ' + ', '.join(unknown_fields) +
+                           '. See: {}#required-fields'.format(BASE_DOC_URL))
 
         
         wrong_type_names = ['{} must be {}'.format(f, ALL_FIELDS[f].__name__)
                             for f in definition.keys() if not isinstance(definition[f], ALL_FIELDS[f])]
         if len(wrong_type_names) > 0:
-            raise TypeError(self._name + ' - ' + ', '.join(wrong_type_names))
+            raise TypeError(self._name + ' - ' + ', '.join(wrong_type_names) +
+                            '. See: {}#required-fields'.format(BASE_DOC_URL))
 
         
         
@@ -125,14 +134,17 @@ class ScalarType:
         for field in list_fields:
             
             if len(definition[field]) == 0:
-                raise TypeError("Field '{}' for probe '{}' must not be empty."
-                                .format(field, self._name))
+                raise TypeError(("Field '{}' for probe '{}' must not be empty" +
+                                 ". See: {}#required-fields)")
+                                .format(field, self._name, BASE_DOC_URL))
             
             broken_types =\
                 [not isinstance(v, LIST_FIELDS_CONTENT[field]) for v in definition[field]]
             if any(broken_types):
-                raise TypeError("Field '{}' for probe '{}' must only contain values of type {}"
-                                .format(field, self._name, LIST_FIELDS_CONTENT[field].__name__))
+                raise TypeError(("Field '{}' for probe '{}' must only contain values of type {}"
+                                 ". See: {}#the-yaml-definition-file)")
+                                .format(field, self._name, LIST_FIELDS_CONTENT[field].__name__,
+                                        BASE_DOC_URL))
 
     def validate_values(self, definition):
         """This function checks that the fields have the correct values.
@@ -144,23 +156,27 @@ class ScalarType:
         
         scalar_kind = definition.get('kind')
         if scalar_kind not in SCALAR_TYPES_MAP.keys():
-            raise ValueError(self._name + ' - unknown scalar kind: ' + scalar_kind)
+            raise ValueError(self._name + ' - unknown scalar kind: ' + scalar_kind +
+                             '. See: {}'.format(BASE_DOC_URL))
 
         
         collection_policy = definition.get('release_channel_collection', None)
         if collection_policy and collection_policy not in ['opt-in', 'opt-out']:
-            raise ValueError(self._name + ' - unknown collection policy: ' + collection_policy)
+            raise ValueError(self._name + ' - unknown collection policy: ' + collection_policy +
+                             '. See: {}#optional-fields'.format(BASE_DOC_URL))
 
         
         cpp_guard = definition.get('cpp_guard')
         if cpp_guard and re.match(r'\W', cpp_guard):
-            raise ValueError(self._name + ' - invalid cpp_guard: ' + cpp_guard)
+            raise ValueError(self._name + ' - invalid cpp_guard: ' + cpp_guard +
+                             '. See: {}#optional-fields'.format(BASE_DOC_URL))
 
         
         record_in_processes = definition.get('record_in_processes', [])
         for proc in record_in_processes:
             if not utils.is_valid_process_name(proc):
-                raise ValueError(self._name + ' - unknown value in record_in_processes: ' + proc)
+                raise ValueError(self._name + ' - unknown value in record_in_processes: ' + proc +
+                                 '. See: {}'.format(BASE_DOC_URL))
 
     @property
     def name(self):
@@ -260,7 +276,8 @@ def load_scalars(filename):
     except IOError, e:
         raise Exception('Error opening ' + filename + ': ' + e.message)
     except ValueError, e:
-        raise Exception('Error parsing scalars in ' + filename + ': ' + e.message)
+        raise Exception('Error parsing scalars in ' + filename + ': ' + e.message +
+                        '. See: {}'.format(BASE_DOC_URL))
 
     scalar_list = []
 
@@ -272,7 +289,8 @@ def load_scalars(filename):
 
         
         if not group or len(group) == 0:
-            raise ValueError(group_name + ' must have at least a probe in it')
+            raise ValueError(group_name + ' must have at least a probe in it' +
+                             '. See: {}'.format(BASE_DOC_URL))
 
         for probe_name in group:
             
