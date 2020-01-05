@@ -23,13 +23,9 @@
 
 
 #pragma warning(disable:4365)
-
-
-#pragma warning(disable:5031)
 #endif 
 #include "mozilla/BasePrincipal.h"
 #if defined(_MSC_VER)
-#pragma warning(pop) /* popping the pragma in Vector.h */
 #pragma warning(pop) /* popping the pragma in this file */
 #endif 
 

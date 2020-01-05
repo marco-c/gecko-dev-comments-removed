@@ -9,12 +9,6 @@
 
 #include "mozilla/Vector.h"
 
-
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable:4345)
-#endif
-
 namespace js {
 
 class TempAllocPolicy;
