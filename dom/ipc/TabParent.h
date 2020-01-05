@@ -680,10 +680,6 @@ private:
   
   bool mAppPackageFileDescriptorSent;
 
-  
-  
-  bool mSendOfflineStatus;
-
   uint32_t mChromeFlags;
 
   nsTArray<nsTArray<IPCDataTransferItem>> mInitialDataTransferItems;
