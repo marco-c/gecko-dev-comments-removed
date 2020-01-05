@@ -3,6 +3,8 @@
 
 
 
+
+
 {
 
 const ArrayPrototypeJoin = Array.prototype.join;
@@ -54,10 +56,13 @@ const ReflectLoader = new class {
             drive = ReflectApply(StringPrototypeSubstring, path, [0, 2]);
             path = ReflectApply(StringPrototypeSubstring, path, [2]);
         }
+#endif
 
-        const pathsep = "\\";
+        const pathsep =
+#ifdef XP_WIN
+        "\\";
 #else
-        const pathsep = "/";
+        "/";
 #endif
 
         let n = 0;
