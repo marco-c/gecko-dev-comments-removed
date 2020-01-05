@@ -61,18 +61,13 @@ protected:
 
 public:
   OmxDataDecoder(const TrackInfo& aTrackInfo,
-                 MediaDataDecoderCallback* aCallback,
                  layers::ImageContainer* aImageContainer);
 
   RefPtr<InitPromise> Init() override;
-
-  void Input(MediaRawData* aSample) override;
-
-  void Flush() override;
-
-  void Drain() override;
-
-  void Shutdown() override;
+  RefPtr<DecodePromise> Decode(MediaRawData* aSample) override;
+  RefPtr<DecodePromise> Drain() override;
+  RefPtr<FlushPromise> Flush() override;
+  RefPtr<ShutdownPromise> Shutdown() override;
 
   const char* GetDescriptionName() const override
   {
@@ -131,9 +126,9 @@ protected:
 
   OMX_DIRTYPE GetPortDirection(uint32_t aPortIndex);
 
-  void DoAsyncShutdown();
+  RefPtr<ShutdownPromise> DoAsyncShutdown();
 
-  void DoFlush();
+  RefPtr<FlushPromise> DoFlush();
 
   void FlushComplete(OMX_COMMANDTYPE aCommandType);
 
@@ -151,12 +146,8 @@ protected:
   RefPtr<OmxPromiseLayer::OmxBufferPromise::AllPromiseType>
   CollectBufferPromises(OMX_DIRTYPE aType);
 
-  Monitor mMonitor;
-
   
   RefPtr<TaskQueue> mOmxTaskQueue;
-
-  RefPtr<TaskQueue> mReaderTaskQueue;
 
   RefPtr<layers::ImageContainer> mImageContainer;
 
@@ -180,6 +171,14 @@ protected:
 
   
   MozPromiseHolder<InitPromise> mInitPromise;
+  MozPromiseHolder<DecodePromise> mDecodePromise;
+  MozPromiseHolder<DecodePromise> mDrainPromise;
+  MozPromiseHolder<FlushPromise> mFlushPromise;
+  MozPromiseHolder<ShutdownPromise> mShutdownPromise;
+  
+  DecodedData mDecodedData;
+
+  void CompleteDrain();
 
   
   
@@ -197,8 +196,6 @@ protected:
   BUFFERLIST mOutPortBuffers;
 
   RefPtr<MediaDataHelper> mMediaDataHelper;
-
-  MediaDataDecoderCallback* mCallback;
 };
 
 template<class T>

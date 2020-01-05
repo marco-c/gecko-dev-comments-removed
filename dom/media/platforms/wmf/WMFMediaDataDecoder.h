@@ -19,7 +19,8 @@ namespace mozilla {
 
 
 
-class MFTManager {
+class MFTManager
+{
 public:
   virtual ~MFTManager() {}
 
@@ -59,7 +60,8 @@ public:
 
   virtual const char* GetDescriptionName() const = 0;
 
-  virtual void SetSeekThreshold(const media::TimeUnit& aTime) {
+  virtual void SetSeekThreshold(const media::TimeUnit& aTime)
+  {
     mSeekTargetThreshold = Some(aTime);
   }
 
@@ -75,22 +77,22 @@ protected:
 
 
 
-class WMFMediaDataDecoder : public MediaDataDecoder {
+class WMFMediaDataDecoder : public MediaDataDecoder
+{
 public:
   WMFMediaDataDecoder(MFTManager* aOutputSource,
-                      TaskQueue* aTaskQueue,
-                      MediaDataDecoderCallback* aCallback);
+                      TaskQueue* aTaskQueue);
   ~WMFMediaDataDecoder();
 
   RefPtr<MediaDataDecoder::InitPromise> Init() override;
 
-  void Input(MediaRawData* aSample);
+  RefPtr<DecodePromise> Decode(MediaRawData* aSample) override;
 
-  void Flush() override;
+  RefPtr<DecodePromise> Drain() override;
 
-  void Drain() override;
+  RefPtr<FlushPromise> Flush() override;
 
-  void Shutdown() override;
+  RefPtr<ShutdownPromise> Shutdown() override;
 
   bool IsHardwareAccelerated(nsACString& aFailureReason) const override;
 
@@ -105,7 +107,7 @@ private:
 
   
   
-  void ProcessDecode(MediaRawData* aSample);
+  RefPtr<DecodePromise> ProcessDecode(MediaRawData* aSample);
 
   
   
@@ -113,16 +115,15 @@ private:
 
   
   
-  void ProcessFlush();
+  RefPtr<FlushPromise> ProcessFlush();
 
   
   
-  void ProcessDrain();
+  RefPtr<DecodePromise> ProcessDrain();
 
-  void ProcessShutdown();
+  RefPtr<ShutdownPromise> ProcessShutdown();
 
   const RefPtr<TaskQueue> mTaskQueue;
-  MediaDataDecoderCallback* mCallback;
 
   nsAutoPtr<MFTManager> mMFTManager;
 
@@ -130,12 +131,10 @@ private:
   
   int64_t mLastStreamOffset;
 
-  
-  
-  
-  Atomic<bool> mIsFlushing;
-
   bool mIsShutDown;
+
+  MozPromiseHolder<DecodePromise> mDecodePromise;
+  MozPromiseHolder<DecodePromise> mDrainPromise;
 
   
   bool mHasSuccessfulOutput = false;

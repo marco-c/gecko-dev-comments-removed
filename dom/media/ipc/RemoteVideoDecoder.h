@@ -28,28 +28,23 @@ public:
 
   
   RefPtr<InitPromise> Init() override;
-  void Input(MediaRawData* aSample) override;
-  void Flush() override;
-  void Drain() override;
-  void Shutdown() override;
+  RefPtr<DecodePromise> Decode(MediaRawData* aSample) override;
+  RefPtr<DecodePromise> Drain() override;
+  RefPtr<FlushPromise> Flush() override;
+  RefPtr<ShutdownPromise> Shutdown() override;
   bool IsHardwareAccelerated(nsACString& aFailureReason) const override;
   void SetSeekThreshold(const media::TimeUnit& aTime) override;
 
   const char* GetDescriptionName() const override { return "RemoteVideoDecoder"; }
 
 private:
-  explicit RemoteVideoDecoder(MediaDataDecoderCallback* aCallback);
+  RemoteVideoDecoder();
   ~RemoteVideoDecoder();
-
-  RefPtr<InitPromise> InitInternal();
 
   
   
   
   RefPtr<VideoDecoderChild> mActor;
-#ifdef DEBUG
-  MediaDataDecoderCallback* mCallback;
-#endif
 };
 
 

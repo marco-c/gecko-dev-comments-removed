@@ -7,50 +7,49 @@
 #ifndef SamplesWaitingForKey_h_
 #define SamplesWaitingForKey_h_
 
-#include "mozilla/TaskQueue.h"
-
-#include "PlatformDecoderModule.h"
+#include "mozilla/MozPromise.h"
+#include "mozilla/Mutex.h"
+#include "mozilla/RefPtr.h"
 
 namespace mozilla {
 
 typedef nsTArray<uint8_t> CencKeyId;
 
 class CDMProxy;
+class MediaRawData;
 
 
 
-class SamplesWaitingForKey {
+class SamplesWaitingForKey
+{
 public:
-
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(SamplesWaitingForKey)
 
-  explicit SamplesWaitingForKey(MediaDataDecoder* aDecoder,
-                                MediaDataDecoderCallback* aCallback,
-                                TaskQueue* aTaskQueue,
-                                CDMProxy* aProxy);
+  typedef MozPromise<RefPtr<MediaRawData>, bool,  true>
+    WaitForKeyPromise;
+
+  explicit SamplesWaitingForKey(CDMProxy* aProxy);
 
   
   
-  
-  
-  bool WaitIfKeyNotUsable(MediaRawData* aSample);
+  RefPtr<WaitForKeyPromise> WaitIfKeyNotUsable(MediaRawData* aSample);
 
   void NotifyUsable(const CencKeyId& aKeyId);
 
   void Flush();
-
-  void BreakCycles();
 
 protected:
   ~SamplesWaitingForKey();
 
 private:
   Mutex mMutex;
-  RefPtr<MediaDataDecoder> mDecoder;
-  MediaDataDecoderCallback* mDecoderCallback;
-  RefPtr<TaskQueue> mTaskQueue;
   RefPtr<CDMProxy> mProxy;
-  nsTArray<RefPtr<MediaRawData>> mSamples;
+  struct SampleEntry
+  {
+    RefPtr<MediaRawData> mSample;
+    MozPromiseHolder<WaitForKeyPromise> mPromise;
+  };
+  nsTArray<SampleEntry> mSamples;
 };
 
 } 

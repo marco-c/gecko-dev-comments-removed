@@ -10,7 +10,6 @@
 #include "MediaInfo.h"
 #include "ImageContainer.h"
 #include "GPUVideoImage.h"
-#include "mozilla/layers/SynchronousTask.h"
 
 namespace mozilla {
 namespace dom {
@@ -22,10 +21,10 @@ using namespace gfx;
 
 VideoDecoderChild::VideoDecoderChild()
   : mThread(VideoDecoderManagerChild::GetManagerThread())
-  , mFlushTask(nullptr)
   , mCanSend(false)
   , mInitialized(false)
   , mIsHardwareAccelerated(false)
+  , mNeedNewDecoder(false)
 {
 }
 
@@ -54,9 +53,7 @@ VideoDecoderChild::RecvOutput(const VideoDataIPDL& aData)
                                                        aData.base().keyframe(),
                                                        aData.base().timecode(),
                                                        IntRect());
-  if (mCallback) {
-    mCallback->Output(video);
-  }
+  mDecodedData.AppendElement(Move(video));
   return IPC_OK();
 }
 
@@ -64,9 +61,8 @@ mozilla::ipc::IPCResult
 VideoDecoderChild::RecvInputExhausted()
 {
   AssertOnManagerThread();
-  if (mCallback) {
-    mCallback->InputExhausted();
-  }
+  mDecodePromise.ResolveIfExists(mDecodedData, __func__);
+  mDecodedData.Clear();
   return IPC_OK();
 }
 
@@ -74,9 +70,8 @@ mozilla::ipc::IPCResult
 VideoDecoderChild::RecvDrainComplete()
 {
   AssertOnManagerThread();
-  if (mCallback) {
-    mCallback->DrainComplete();
-  }
+  mDrainPromise.ResolveIfExists(mDecodedData, __func__);
+  mDecodedData.Clear();
   return IPC_OK();
 }
 
@@ -84,14 +79,16 @@ mozilla::ipc::IPCResult
 VideoDecoderChild::RecvError(const nsresult& aError)
 {
   AssertOnManagerThread();
-  if (mCallback) {
-    mCallback->Error(aError);
-  }
+  mDecodedData.Clear();
+  mDecodePromise.RejectIfExists(aError, __func__);
+  mDrainPromise.RejectIfExists(aError, __func__);
+  mFlushPromise.RejectIfExists(aError, __func__);
   return IPC_OK();
 }
 
 mozilla::ipc::IPCResult
-VideoDecoderChild::RecvInitComplete(const bool& aHardware, const nsCString& aHardwareReason)
+VideoDecoderChild::RecvInitComplete(const bool& aHardware,
+                                    const nsCString& aHardwareReason)
 {
   AssertOnManagerThread();
   mInitPromise.ResolveIfExists(TrackInfo::kVideoTrack, __func__);
@@ -112,9 +109,8 @@ VideoDecoderChild::RecvInitFailed(const nsresult& aReason)
 mozilla::ipc::IPCResult
 VideoDecoderChild::RecvFlushComplete()
 {
-  MOZ_ASSERT(mFlushTask);
-  AutoCompleteTask complete(mFlushTask);
-  mFlushTask = nullptr;
+  AssertOnManagerThread();
+  mFlushPromise.ResolveIfExists(true, __func__);
   return IPC_OK();
 }
 
@@ -126,26 +122,32 @@ VideoDecoderChild::ActorDestroy(ActorDestroyReason aWhy)
     
     RefPtr<VideoDecoderChild> ref = this;
     GetManager()->RunWhenRecreated(NS_NewRunnableFunction([=]() {
-      if (ref->mInitialized && ref->mCallback) {
-        ref->mCallback->Error(NS_ERROR_DOM_MEDIA_NEED_NEW_DECODER);
+      if (ref->mInitialized) {
+        mDecodedData.Clear();
+        mDecodePromise.RejectIfExists(NS_ERROR_DOM_MEDIA_NEED_NEW_DECODER,
+                                      __func__);
+        mDrainPromise.RejectIfExists(NS_ERROR_DOM_MEDIA_NEED_NEW_DECODER,
+                                     __func__);
+        mFlushPromise.RejectIfExists(NS_ERROR_DOM_MEDIA_NEED_NEW_DECODER,
+                                     __func__);
+        
+        
+        mNeedNewDecoder = true;
       } else {
-        ref->mInitPromise.RejectIfExists(NS_ERROR_DOM_MEDIA_NEED_NEW_DECODER, __func__);
+        ref->mInitPromise.RejectIfExists(NS_ERROR_DOM_MEDIA_NEED_NEW_DECODER,
+                                         __func__);
       }
     }));
-  }
-  if (mFlushTask) {
-    AutoCompleteTask complete(mFlushTask);
-    mFlushTask = nullptr;
   }
   mCanSend = false;
 }
 
 bool
-VideoDecoderChild::InitIPDL(MediaDataDecoderCallback* aCallback,
-                            const VideoInfo& aVideoInfo,
+VideoDecoderChild::InitIPDL(const VideoInfo& aVideoInfo,
                             const layers::TextureFactoryIdentifier& aIdentifier)
 {
-  RefPtr<VideoDecoderManagerChild> manager = VideoDecoderManagerChild::GetSingleton();
+  RefPtr<VideoDecoderManagerChild> manager =
+    VideoDecoderManagerChild::GetSingleton();
   
   
   
@@ -156,9 +158,9 @@ VideoDecoderChild::InitIPDL(MediaDataDecoderCallback* aCallback,
   }
 
   mIPDLSelfRef = this;
-  mCallback = aCallback;
   bool success = false;
-  if (manager->SendPVideoDecoderConstructor(this, aVideoInfo, aIdentifier, &success)) {
+  if (manager->SendPVideoDecoderConstructor(this, aVideoInfo, aIdentifier,
+                                            &success)) {
     mCanSend = true;
   }
   return success;
@@ -197,12 +199,20 @@ VideoDecoderChild::Init()
   return mInitPromise.Ensure(__func__);
 }
 
-void
-VideoDecoderChild::Input(MediaRawData* aSample)
+RefPtr<MediaDataDecoder::DecodePromise>
+VideoDecoderChild::Decode(MediaRawData* aSample)
 {
   AssertOnManagerThread();
+
+  if (mNeedNewDecoder) {
+    return MediaDataDecoder::DecodePromise::CreateAndReject(
+      NS_ERROR_DOM_MEDIA_NEED_NEW_DECODER, __func__);
+  }
   if (!mCanSend) {
-    return;
+    
+    
+    
+    return mDecodePromise.Ensure(__func__);
   }
 
   
@@ -210,8 +220,8 @@ VideoDecoderChild::Input(MediaRawData* aSample)
   
   Shmem buffer;
   if (!AllocShmem(aSample->Size(), Shmem::SharedMemory::TYPE_BASIC, &buffer)) {
-    mCallback->Error(NS_ERROR_DOM_MEDIA_DECODE_ERR);
-    return;
+    return MediaDataDecoder::DecodePromise::CreateAndReject(
+      NS_ERROR_DOM_MEDIA_DECODE_ERR, __func__);
   }
 
   memcpy(buffer.get<uint8_t>(), aSample->Data(), aSample->Size());
@@ -224,27 +234,37 @@ VideoDecoderChild::Input(MediaRawData* aSample)
                                         aSample->mKeyframe),
                           buffer);
   SendInput(sample);
+  return mDecodePromise.Ensure(__func__);
 }
 
-void
-VideoDecoderChild::Flush(SynchronousTask* aTask)
+RefPtr<MediaDataDecoder::FlushPromise>
+VideoDecoderChild::Flush()
 {
   AssertOnManagerThread();
+  mDecodePromise.RejectIfExists(NS_ERROR_DOM_MEDIA_CANCELED, __func__);
+  mDrainPromise.RejectIfExists(NS_ERROR_DOM_MEDIA_CANCELED, __func__);
+  if (mNeedNewDecoder) {
+    return MediaDataDecoder::FlushPromise::CreateAndReject(
+      NS_ERROR_DOM_MEDIA_NEED_NEW_DECODER, __func__);
+  }
   if (mCanSend) {
     SendFlush();
-    mFlushTask = aTask;
-  } else {
-    AutoCompleteTask complete(aTask);
   }
+  return mFlushPromise.Ensure(__func__);
 }
 
-void
+RefPtr<MediaDataDecoder::DecodePromise>
 VideoDecoderChild::Drain()
 {
   AssertOnManagerThread();
+  if (mNeedNewDecoder) {
+    return MediaDataDecoder::DecodePromise::CreateAndReject(
+      NS_ERROR_DOM_MEDIA_NEED_NEW_DECODER, __func__);
+  }
   if (mCanSend) {
     SendDrain();
   }
+  return mDrainPromise.Ensure(__func__);
 }
 
 void
@@ -256,7 +276,6 @@ VideoDecoderChild::Shutdown()
     SendShutdown();
   }
   mInitialized = false;
-  mCallback = nullptr;
 }
 
 bool

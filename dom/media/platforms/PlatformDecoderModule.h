@@ -34,16 +34,17 @@ class RemoteDecoderModule;
 }
 
 class MediaDataDecoder;
-class MediaDataDecoderCallback;
 class TaskQueue;
 class CDMProxy;
 
 static LazyLogModule sPDMLog("PlatformDecoderModule");
 
-struct MOZ_STACK_CLASS CreateDecoderParams final {
+struct MOZ_STACK_CLASS CreateDecoderParams final
+{
   explicit CreateDecoderParams(const TrackInfo& aConfig)
     : mConfig(aConfig)
-  {}
+  {
+  }
 
   template <typename T1, typename... Ts>
   CreateDecoderParams(const TrackInfo& aConfig, T1&& a1, Ts&&... args)
@@ -74,7 +75,6 @@ struct MOZ_STACK_CLASS CreateDecoderParams final {
 
   const TrackInfo& mConfig;
   TaskQueue* mTaskQueue = nullptr;
-  MediaDataDecoderCallback* mCallback = nullptr;
   DecoderDoctorDiagnostics* mDiagnostics = nullptr;
   layers::ImageContainer* mImageContainer = nullptr;
   MediaResult* mError = nullptr;
@@ -84,13 +84,21 @@ struct MOZ_STACK_CLASS CreateDecoderParams final {
 
 private:
   void Set(TaskQueue* aTaskQueue) { mTaskQueue = aTaskQueue; }
-  void Set(MediaDataDecoderCallback* aCallback) { mCallback = aCallback; }
-  void Set(DecoderDoctorDiagnostics* aDiagnostics) { mDiagnostics = aDiagnostics; }
-  void Set(layers::ImageContainer* aImageContainer) { mImageContainer = aImageContainer; }
+  void Set(DecoderDoctorDiagnostics* aDiagnostics)
+  {
+    mDiagnostics = aDiagnostics;
+  }
+  void Set(layers::ImageContainer* aImageContainer)
+  {
+    mImageContainer = aImageContainer;
+  }
   void Set(MediaResult* aError) { mError = aError; }
   void Set(GMPCrashHelper* aCrashHelper) { mCrashHelper = aCrashHelper; }
   void Set(bool aUseBlankDecoder) { mUseBlankDecoder = aUseBlankDecoder; }
-  void Set(layers::KnowsCompositor* aKnowsCompositor) { mKnowsCompositor = aKnowsCompositor; }
+  void Set(layers::KnowsCompositor* aKnowsCompositor)
+  {
+    mKnowsCompositor = aKnowsCompositor;
+  }
   template <typename T1, typename T2, typename... Ts>
   void Set(T1&& a1, T2&& a2, Ts&&... args)
   {
@@ -113,7 +121,8 @@ private:
 
 
 
-class PlatformDecoderModule {
+class PlatformDecoderModule
+{
 public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(PlatformDecoderModule)
 
@@ -132,7 +141,8 @@ public:
     return SupportsMimeType(aTrackInfo.mMimeType, aDiagnostics);
   }
 
-  enum class ConversionRequired : uint8_t {
+  enum class ConversionRequired : uint8_t
+  {
     kNeedNone,
     kNeedAVCC,
     kNeedAnnexB,
@@ -162,11 +172,9 @@ protected:
   
   
   
-  
   virtual already_AddRefed<MediaDataDecoder>
   CreateVideoDecoder(const CreateDecoderParams& aParams) = 0;
 
-  
   
   
   
@@ -183,30 +191,6 @@ protected:
 
 
 
-class MediaDataDecoderCallback {
-public:
-  virtual ~MediaDataDecoderCallback() {}
-
-  
-  virtual void Output(MediaData* aData) = 0;
-
-  
-  
-  virtual void Error(const MediaResult& aError) = 0;
-
-  
-  
-  
-  
-  
-  virtual void InputExhausted() = 0;
-
-  virtual void DrainComplete() = 0;
-
-  virtual void ReleaseMediaResources() {}
-
-  virtual bool OnReaderTaskQueue() = 0;
-};
 
 
 
@@ -221,21 +205,19 @@ public:
 
 
 
-
-
-
-
-
-
-
-
-class MediaDataDecoder {
+class MediaDataDecoder
+{
 protected:
   virtual ~MediaDataDecoder() {};
 
 public:
   typedef TrackInfo::TrackType TrackType;
-  typedef MozPromise<TrackType, MediaResult,  true> InitPromise;
+  typedef nsTArray<RefPtr<MediaData>> DecodedData;
+  typedef MozPromise<TrackType, MediaResult,  true>
+    InitPromise;
+  typedef MozPromise<DecodedData, MediaResult,  true>
+    DecodePromise;
+  typedef MozPromise<bool, MediaResult,  true> FlushPromise;
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaDataDecoder)
 
@@ -249,7 +231,10 @@ public:
   virtual RefPtr<InitPromise> Init() = 0;
 
   
-  virtual void Input(MediaRawData* aSample) = 0;
+  
+  
+  
+  virtual RefPtr<DecodePromise> Decode(MediaRawData* aSample) = 0;
 
   
   
@@ -258,7 +243,14 @@ public:
   
   
   
-  virtual void Flush() = 0;
+  virtual RefPtr<DecodePromise> Drain() = 0;
+
+  
+  
+  
+  
+  
+  virtual RefPtr<FlushPromise> Flush() = 0;
 
   
   
@@ -266,19 +258,7 @@ public:
   
   
   
-  
-  
-  
-  virtual void Drain() = 0;
-
-  
-  
-  
-  
-  
-  
-  
-  virtual void Shutdown() = 0;
+  virtual RefPtr<ShutdownPromise> Shutdown() = 0;
 
   
   

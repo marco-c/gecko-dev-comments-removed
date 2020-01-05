@@ -15,9 +15,8 @@ namespace mozilla {
 
 class CDMProxy;
 
-class EMEDecoderModule : public PlatformDecoderModule {
-private:
-
+class EMEDecoderModule : public PlatformDecoderModule
+{
 public:
   EMEDecoderModule(CDMProxy* aProxy, PDMFactory* aPDM);
 
@@ -43,8 +42,6 @@ private:
   RefPtr<CDMProxy> mProxy;
   
   RefPtr<PDMFactory> mPDM;
-  
-  RefPtr<TaskQueue> mTaskQueue;
 };
 
 } 

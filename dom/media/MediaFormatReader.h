@@ -136,8 +136,8 @@ private:
 
   
   void DrainDecoder(TrackType aTrack);
-  void NotifyNewOutput(TrackType aTrack, MediaData* aSample);
-  void NotifyInputExhausted(TrackType aTrack);
+  void NotifyNewOutput(TrackType aTrack,
+                       const MediaDataDecoder::DecodedData& aResults);
   void NotifyDrainComplete(TrackType aTrack);
   void NotifyError(TrackType aTrack, const MediaResult& aError);
   void NotifyWaitingForData(TrackType aTrack);
@@ -148,13 +148,7 @@ private:
   
   void InitLayersBackendType();
 
-  
-  
-  void Output(TrackType aType, MediaData* aSample);
-  void InputExhausted(TrackType aTrack);
-  void Error(TrackType aTrack, const MediaResult& aError);
   void Reset(TrackType aTrack);
-  void DrainComplete(TrackType aTrack);
   void DropDecodedSamples(TrackType aTrack);
 
   bool ShouldSkip(bool aSkipToNextKeyframe, media::TimeUnit aTimeThreshold);
@@ -164,36 +158,6 @@ private:
   size_t SizeOfQueue(TrackType aTrack);
 
   RefPtr<PDMFactory> mPlatform;
-
-  class DecoderCallback : public MediaDataDecoderCallback {
-  public:
-    DecoderCallback(MediaFormatReader* aReader, TrackType aType)
-      : mReader(aReader)
-      , mType(aType)
-    {
-    }
-    void Output(MediaData* aSample) override {
-      mReader->Output(mType, aSample);
-    }
-    void InputExhausted() override {
-      mReader->InputExhausted(mType);
-    }
-    void Error(const MediaResult& aError) override {
-      mReader->Error(mType, aError);
-    }
-    void DrainComplete() override {
-      mReader->DrainComplete(mType);
-    }
-    void ReleaseMediaResources() override {
-      mReader->ReleaseResources();
-    }
-    bool OnReaderTaskQueue() override {
-      return mReader->OnTaskQueue();
-    }
-  private:
-    MediaFormatReader* mReader;
-    TrackType mType;
-  };
 
   struct DecoderData {
     DecoderData(MediaFormatReader* aOwner,
@@ -207,11 +171,10 @@ private:
       , mDemuxEOS(false)
       , mWaitingForData(false)
       , mReceivedNewData(false)
-      , mOutputRequested(false)
-      , mDecodePending(false)
       , mNeedDraining(false)
       , mDraining(false)
       , mDrainComplete(false)
+      , mFlushed(true)
       , mNumOfConsecutiveError(0)
       , mMaxConsecutiveError(aNumOfMaxError)
       , mNumSamplesInput(0)
@@ -231,8 +194,6 @@ private:
     
     
     RefPtr<TaskQueue> mTaskQueue;
-    
-    nsAutoPtr<DecoderCallback> mCallback;
 
     
     Mutex mMutex;
@@ -243,7 +204,19 @@ private:
     {
       MutexAutoLock lock(mMutex);
       if (mDecoder) {
-        mDecoder->Shutdown();
+        RefPtr<MediaFormatReader> owner = mOwner;
+        TrackType type = mType == MediaData::AUDIO_DATA
+                           ? TrackType::kAudioTrack
+                           : TrackType::kVideoTrack;
+        mDecoder->Shutdown()
+          ->Then(mOwner->OwnerThread(), __func__,
+                 [owner, this, type]() {
+                   mShutdownRequest.Complete();
+                   mShutdownPromise.ResolveIfExists(true, __func__);
+                   owner->ScheduleUpdate(type);
+                 },
+                 []() { MOZ_RELEASE_ASSERT(false, "Can't ever be here"); })
+          ->Track(mShutdownRequest);
       }
       mDescription = "shutdown";
       mDecoder = nullptr;
@@ -276,16 +249,16 @@ private:
     }
 
     
-    bool mOutputRequested;
-    
-    
-    
-    
-    
-    bool mDecodePending;
+    MozPromiseRequestHolder<MediaDataDecoder::DecodePromise> mDecodeRequest;
     bool mNeedDraining;
+    MozPromiseRequestHolder<MediaDataDecoder::DecodePromise> mDrainRequest;
     bool mDraining;
     bool mDrainComplete;
+    MozPromiseRequestHolder<MediaDataDecoder::FlushPromise> mFlushRequest;
+    
+    bool mFlushed;
+    MozPromiseHolder<ShutdownPromise> mShutdownPromise;
+    MozPromiseRequestHolder<ShutdownPromise> mShutdownRequest;
 
     bool HasPendingDrain() const
     {
@@ -350,23 +323,48 @@ private:
 
     
     
-    
     void Flush()
     {
-      if (mDecoder) {
-        mDecoder->Flush();
+      if (mFlushRequest.Exists() || mFlushed) {
+        
+        return;
       }
-      mOutputRequested = false;
-      mDecodePending = false;
+      mDecodeRequest.DisconnectIfExists();
+      mDrainRequest.DisconnectIfExists();
       mOutput.Clear();
       mNumSamplesInput = 0;
       mNumSamplesOutput = 0;
       mSizeOfQueue = 0;
       mDraining = false;
       mDrainComplete = false;
+      if (mDecoder && !mFlushed) {
+        RefPtr<MediaFormatReader> owner = mOwner;
+        TrackType type = mType == MediaData::AUDIO_DATA
+                           ? TrackType::kAudioTrack
+                           : TrackType::kVideoTrack;
+        mDecoder->Flush()
+          ->Then(mOwner->OwnerThread(), __func__,
+                 [owner, type, this]() {
+                   mFlushRequest.Complete();
+                   if (!mShutdownPromise.IsEmpty()) {
+                     ShutdownDecoder();
+                     return;
+                   }
+                   owner->ScheduleUpdate(type);
+                 },
+                 [owner, type, this](const MediaResult& aError) {
+                   mFlushRequest.Complete();
+                   if (!mShutdownPromise.IsEmpty()) {
+                     ShutdownDecoder();
+                     return;
+                   }
+                   owner->NotifyError(type, aError);
+                 })
+          ->Track(mFlushRequest);
+      }
+      mFlushed = true;
     }
 
-    
     
     
     
@@ -376,9 +374,9 @@ private:
       mDemuxEOS = false;
       mWaitingForData = false;
       mQueuedSamples.Clear();
-      mOutputRequested = false;
       mNeedDraining = false;
-      mDecodePending = false;
+      mDecodeRequest.DisconnectIfExists();
+      mDrainRequest.DisconnectIfExists();
       mDraining = false;
       mDrainComplete = false;
       mTimeThreshold.reset();
@@ -574,6 +572,11 @@ private:
 
   
   bool mHasStartTime = false;
+
+  void ShutdownDecoder(TrackType aTrack);
+  RefPtr<ShutdownPromise> ShutdownDecoderWithPromise(TrackType aTrack);
+  void TearDownDecoders();
+  MozPromiseHolder<ShutdownPromise> mShutdownPromise;
 };
 
 } 

@@ -21,7 +21,6 @@ class AppleVTDecoder : public MediaDataDecoder {
 public:
   AppleVTDecoder(const VideoInfo& aConfig,
                  TaskQueue* aTaskQueue,
-                 MediaDataDecoderCallback* aCallback,
                  layers::ImageContainer* aImageContainer);
 
   class AppleFrameRef {
@@ -43,10 +42,10 @@ public:
   };
 
   RefPtr<InitPromise> Init() override;
-  void Input(MediaRawData* aSample) override;
-  void Flush() override;
-  void Drain() override;
-  void Shutdown() override;
+  RefPtr<DecodePromise> Decode(MediaRawData* aSample) override;
+  RefPtr<DecodePromise> Drain() override;
+  RefPtr<FlushPromise> Flush() override;
+  RefPtr<ShutdownPromise> Shutdown() override;
   void SetSeekThreshold(const media::TimeUnit& aTime) override;
 
   bool IsHardwareAccelerated(nsACString& aFailureReason) const override
@@ -57,21 +56,20 @@ public:
   const char* GetDescriptionName() const override
   {
     return mIsHardwareAccelerated
-      ? "apple hardware VT decoder"
-      : "apple software VT decoder";
+           ? "apple hardware VT decoder"
+           : "apple software VT decoder";
   }
 
   
   
-  nsresult OutputFrame(CVPixelBufferRef aImage,
-                       AppleFrameRef aFrameRef);
+  void OutputFrame(CVPixelBufferRef aImage, AppleFrameRef aFrameRef);
 
 private:
   virtual ~AppleVTDecoder();
-  void ProcessFlush();
-  void ProcessDrain();
+  RefPtr<FlushPromise> ProcessFlush();
+  RefPtr<DecodePromise> ProcessDrain();
   void ProcessShutdown();
-  nsresult ProcessDecode(MediaRawData* aSample);
+  void ProcessDecode(MediaRawData* aSample);
 
   void AssertOnTaskQueueThread()
   {
@@ -79,12 +77,9 @@ private:
   }
 
   AppleFrameRef* CreateAppleFrameRef(const MediaRawData* aSample);
-  void DrainReorderedFrames();
-  void ClearReorderedFrames();
   CFDictionaryRef CreateOutputConfiguration();
 
   const RefPtr<MediaByteBuffer> mExtraData;
-  MediaDataDecoderCallback* mCallback;
   const uint32_t mPictureWidth;
   const uint32_t mPictureHeight;
   const uint32_t mDisplayWidth;
@@ -95,13 +90,10 @@ private:
   nsresult WaitForAsynchronousFrames();
   CFDictionaryRef CreateDecoderSpecification();
   CFDictionaryRef CreateDecoderExtensions();
-  
-  MediaResult DoDecode(MediaRawData* aSample);
 
   const RefPtr<TaskQueue> mTaskQueue;
   const uint32_t mMaxRefFrames;
   const RefPtr<layers::ImageContainer> mImageContainer;
-  Atomic<bool> mIsShutDown;
   const bool mUseSoftwareImages;
 
   
@@ -111,6 +103,8 @@ private:
   
   Monitor mMonitor;
   ReorderQueue mReorderQueue;
+  MozPromiseHolder<DecodePromise> mPromise;
+
   
   
   

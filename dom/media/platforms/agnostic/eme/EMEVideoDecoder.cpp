@@ -4,36 +4,23 @@
 
 
 
+#include "mozilla/CDMProxy.h"
 #include "EMEVideoDecoder.h"
 #include "GMPVideoEncodedFrameImpl.h"
-#include "mozilla/CDMProxy.h"
 #include "MediaData.h"
 #include "MP4Decoder.h"
+#include "PlatformDecoderModule.h"
 #include "VPXDecoder.h"
 
 namespace mozilla {
 
-void
-EMEVideoCallbackAdapter::Error(GMPErr aErr)
-{
-  if (aErr == GMPNoKeyErr) {
-    
-    
-    NS_WARNING("GMP failed to decrypt due to lack of key");
-    return;
-  }
-  VideoCallbackAdapter::Error(aErr);
-}
-
 EMEVideoDecoder::EMEVideoDecoder(CDMProxy* aProxy,
                                  const GMPVideoDecoderParams& aParams)
-  : GMPVideoDecoder(GMPVideoDecoderParams(aParams).WithAdapter(
-                    new EMEVideoCallbackAdapter(aParams.mCallback,
-                                                VideoInfo(aParams.mConfig.mDisplay),
-                                                aParams.mImageContainer)))
+  : GMPVideoDecoder(GMPVideoDecoderParams(aParams))
   , mProxy(aProxy)
   , mDecryptorId(aProxy->GetDecryptorId())
-{}
+{
+}
 
 void
 EMEVideoDecoder::InitTags(nsTArray<nsCString>& aTags)
