@@ -350,6 +350,7 @@ private:
 
 
 
+
 class MediaDecoderStateMachine::WaitForCDMState
   : public MediaDecoderStateMachine::StateObject
 {
@@ -471,7 +472,7 @@ class MediaDecoderStateMachine::DecodingFirstFrameState
 public:
   explicit DecodingFirstFrameState(Master* aPtr) : StateObject(aPtr) {}
 
-  void Enter(SeekJob aPendingSeek);
+  void Enter();
 
   State GetState() const override
   {
@@ -1271,7 +1272,7 @@ DecodeMetadataState::OnMetadataRead(MetadataHolder* aMetadata)
     
     SetState<WaitForCDMState>();
   } else {
-    SetState<DecodingFirstFrameState>(SeekJob{});
+    SetState<DecodingFirstFrameState>();
   }
 }
 
@@ -1291,19 +1292,17 @@ void
 MediaDecoderStateMachine::
 WaitForCDMState::HandleCDMProxyReady()
 {
-  SetState<DecodingFirstFrameState>(Move(mPendingSeek));
+  if (mPendingSeek.Exists()) {
+    SetState<SeekingState>(Move(mPendingSeek), EventVisibility::Observable);
+  } else {
+    SetState<DecodingFirstFrameState>();
+  }
 }
 
 void
 MediaDecoderStateMachine::
-DecodingFirstFrameState::Enter(SeekJob aPendingSeek)
+DecodingFirstFrameState::Enter()
 {
-  
-  if (aPendingSeek.Exists()) {
-    SetState<SeekingState>(Move(aPendingSeek), EventVisibility::Observable);
-    return;
-  }
-
   
   if (mMaster->mSentFirstFrameLoadedEvent) {
     SetState<DecodingState>();
