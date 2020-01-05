@@ -31,7 +31,7 @@ pub enum TerminationReason {
 
 
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum ResponseBody {
     Empty, 
     Receiving(Vec<u8>),
@@ -39,7 +39,7 @@ pub enum ResponseBody {
 }
 
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum CacheState {
     None,
     Local,
