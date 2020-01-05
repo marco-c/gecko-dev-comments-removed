@@ -812,9 +812,14 @@ class ExtensionStorageSync {
       
       
       
-      changes[conflict.remote.key] = {
-        oldValue: conflict.local.data,
-        newValue: conflict.remote.data,
+      
+      
+      
+      
+      
+      
+      changes[conflict.key] = {
+        newValue: conflict.data,
       };
     }
     if (Object.keys(changes).length > 0) {
