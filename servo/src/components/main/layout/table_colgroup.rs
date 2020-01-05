@@ -20,21 +20,21 @@ pub struct TableColGroupFlow {
     pub box_: Option<Box>,
 
     
-    pub cols: ~[Box],
+    pub cols: Vec<Box>,
 
-    /// The specified widths of table columns
-    pub widths: ~[Au],
+    
+    pub widths: Vec<Au>,
 }
 
 impl TableColGroupFlow {
     pub fn from_node_and_boxes(node: &ThreadSafeLayoutNode,
                                box_: Box,
-                               boxes: ~[Box]) -> TableColGroupFlow {
+                               boxes: Vec<Box>) -> TableColGroupFlow {
         TableColGroupFlow {
             base: BaseFlow::new((*node).clone()),
             box_: Some(box_),
             cols: boxes,
-            widths: ~[],
+            widths: vec!(),
         }
     }
 
@@ -43,8 +43,8 @@ impl TableColGroupFlow {
             box_.teardown();
         }
         self.box_ = None;
-        self.cols = ~[];
-        self.widths = ~[];
+        self.cols = vec!();
+        self.widths = vec!();
     }
 }
 
@@ -59,7 +59,7 @@ impl Flow for TableColGroupFlow {
 
     fn bubble_widths(&mut self, _: &mut LayoutContext) {
         for box_ in self.cols.iter() {
-            // get the specified value from width property
+            
             let width = MaybeAuto::from_style(box_.style().Box.get().width,
                                               Au::new(0)).specified_or_zero();
 
@@ -73,12 +73,12 @@ impl Flow for TableColGroupFlow {
         }
     }
 
-    /// Table column widths are assigned in table flow and propagated to table row or rowgroup flow.
-    /// Therefore, table colgroup flow does not need to assign its width.
+    
+    
     fn assign_widths(&mut self, _ctx: &mut LayoutContext) {
     }
 
-    /// Table column do not have height.
+    
     fn assign_height(&mut self, _ctx: &mut LayoutContext) {
     }
 

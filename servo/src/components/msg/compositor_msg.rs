@@ -35,7 +35,7 @@ pub struct LayerBuffer {
 
 
 pub struct LayerBufferSet {
-    pub buffers: ~[~LayerBuffer]
+    pub buffers: Vec<~LayerBuffer>
 }
 
 impl LayerBufferSet {

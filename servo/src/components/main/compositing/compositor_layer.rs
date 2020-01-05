@@ -65,39 +65,39 @@ pub struct CompositorLayer {
     
     
     
-    pub children: ~[CompositorLayerChild],
+    pub children: Vec<CompositorLayerChild>,
 
-    /// This layer's quadtree. This is where all buffers are stored for this layer.
+    
     pub quadtree: MaybeQuadtree,
 
-    /// The root layer of this CompositorLayer's layer tree. Buffers are collected
-    /// from the quadtree and inserted here when the layer is painted to the screen.
+    
+    
     pub root_layer: Rc<ContainerLayer>,
 
-    /// When set to true, this layer is ignored by its parents. This is useful for
-    /// soft deletion or when waiting on a page size.
+    
+    
     pub hidden: bool,
 
-    /// A monotonically increasing counter that keeps track of the current epoch.
-    /// add_buffer() calls that don't match the current epoch will be ignored.
+    
+    
     pub epoch: Epoch,
 
-    /// The behavior of this layer when a scroll message is received.
+    
     pub wants_scroll_events: WantsScrollEventsFlag,
 
-    /// Whether an ancestor layer that receives scroll events moves this layer.
+    
     pub scroll_policy: ScrollPolicy,
 
-    /// True if CPU rendering is enabled, false if we're using GPU rendering.
+    
     pub cpu_painting: bool,
 
-    /// The color to use for the unrendered-content void
+    
     pub unrendered_color: Color,
 }
 
-/// Helper struct for keeping CompositorLayer children organized.
+
 pub struct CompositorLayerChild {
-    /// The child itself.
+    
     pub child: ~CompositorLayer,
     /// A ContainerLayer managed by the parent node. This deals with clipping and
     /// positioning, and is added above the child's layer tree.
@@ -170,7 +170,7 @@ impl CompositorLayer {
             bounds: bounds,
             page_size: page_size,
             scroll_offset: Point2D(0f32, 0f32),
-            children: ~[],
+            children: vec!(),
             quadtree: match page_size {
                 None => NoTree(tile_size, Some(MAX_TILE_MEMORY_PER_LAYER)),
                 Some(page_size) => {
@@ -203,7 +203,7 @@ impl CompositorLayer {
             bounds: Rect(Point2D(0f32, 0f32), page_size),
             page_size: Some(page_size),
             scroll_offset: Point2D(0f32, 0f32),
-            children: ~[],
+            children: vec!(),
             quadtree: NoTree(tile_size, Some(MAX_TILE_MEMORY_PER_LAYER)),
             root_layer: Rc::new(ContainerLayer()),
             hidden: false,
@@ -494,7 +494,7 @@ impl CompositorLayer {
             }) {
             Some(i) => {
                 debug!("compositor_layer: node found for set_clipping_rect()");
-                let child_node = &mut self.children[i];
+                let child_node = self.children.get_mut(i);
                 child_node.container.common.borrow_mut().set_transform(
                     identity().translate(new_rect.origin.x, new_rect.origin.y, 0.0));
                 let old_rect = child_node.container.scissor.borrow().clone();
@@ -649,7 +649,7 @@ impl CompositorLayer {
             }) {
             Some(i) => {
                 debug!("compositor_layer: layer found for resize_helper()");
-                let child_node = &mut self.children[i];
+                let child_node = self.children.get_mut(i);
                 let child = &mut child_node.child;
                 child.epoch = epoch;
                 child.page_size = Some(new_size);
@@ -841,8 +841,8 @@ impl CompositorLayer {
                 Tree(ref mut quadtree) => quadtree,
             };
 
-            let mut unused_tiles = ~[];
-            for buffer in new_buffers.buffers.move_rev_iter() {
+            let mut unused_tiles = vec!();
+            for buffer in new_buffers.buffers.move_iter().rev() {
                 unused_tiles.push_all_move(quadtree.add_tile_pixel(buffer.screen_pos.origin.x,
                                                                    buffer.screen_pos.origin.y,
                                                                    buffer.resolution,

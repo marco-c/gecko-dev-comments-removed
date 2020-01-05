@@ -28,9 +28,9 @@ pub struct TableWrapperFlow {
     pub block_flow: BlockFlow,
 
     
-    pub col_widths: ~[Au],
+    pub col_widths: Vec<Au>,
 
-    /// Table-layout property
+    
     pub table_layout: TableLayout,
 }
 
@@ -47,7 +47,7 @@ impl TableWrapperFlow {
         };
         TableWrapperFlow {
             block_flow: block_flow,
-            col_widths: ~[],
+            col_widths: vec!(),
             table_layout: table_layout
         }
     }
@@ -64,7 +64,7 @@ impl TableWrapperFlow {
         };
         TableWrapperFlow {
             block_flow: block_flow,
-            col_widths: ~[],
+            col_widths: vec!(),
             table_layout: table_layout
         }
     }
@@ -82,7 +82,7 @@ impl TableWrapperFlow {
         };
         TableWrapperFlow {
             block_flow: block_flow,
-            col_widths: ~[],
+            col_widths: vec!(),
             table_layout: table_layout
         }
     }
@@ -93,14 +93,14 @@ impl TableWrapperFlow {
 
     pub fn teardown(&mut self) {
         self.block_flow.teardown();
-        self.col_widths = ~[];
+        self.col_widths = vec!();
     }
 
-    /// Assign height for table-wrapper flow.
-    /// `Assign height` of table-wrapper flow follows a similar process to that of block flow.
-    ///
-    /// inline(always) because this is only ever called by in-order or non-in-order top-level
-    /// methods
+    
+    
+    
+    
+    
     #[inline(always)]
     fn assign_height_table_wrapper_base(&mut self, layout_context: &mut LayoutContext) {
         self.block_flow.assign_height_block_base(layout_context, MarginsMayNotCollapse);
@@ -125,30 +125,30 @@ impl Flow for TableWrapperFlow {
         &mut self.block_flow
     }
 
-    /* Recursively (bottom-up) determine the context's preferred and
-    minimum widths.  When called on this context, all child contexts
-    have had their min/pref widths set. This function must decide
-    min/pref widths based on child context widths and dimensions of
-    any boxes it is responsible for flowing.  */
+    
+
+
+
+
 
     fn bubble_widths(&mut self, ctx: &mut LayoutContext) {
-        // get column widths info from table flow
+        
         for kid in self.block_flow.base.child_iter() {
             assert!(kid.is_table_caption() || kid.is_table());
 
             if kid.is_table() {
-                self.col_widths.push_all(kid.as_table().col_widths);
+                self.col_widths.push_all(kid.as_table().col_widths.as_slice());
             }
         }
 
         self.block_flow.bubble_widths(ctx);
     }
 
-    /// Recursively (top-down) determines the actual width of child contexts and boxes. When called
-    /// on this context, the context has had its width set by the parent context.
-    ///
-    /// Dual boxes consume some width first, and the remainder is assigned to all child (block)
-    /// contexts.
+    
+    
+    
+    
+    
     fn assign_widths(&mut self, ctx: &mut LayoutContext) {
         debug!("assign_widths({}): assigning width for flow",
                if self.is_float() {
@@ -157,7 +157,7 @@ impl Flow for TableWrapperFlow {
                    "table_wrapper"
                });
 
-        // The position was set to the containing block by the flow's parent.
+        
         let containing_block_width = self.block_flow.base.position.size.width;
 
         let width_computer = TableWrapper;
@@ -172,7 +172,7 @@ impl Flow for TableWrapperFlow {
             _ => {}
         }
 
-        // In case of fixed layout, column widths are calculated in table flow.
+        
         let assigned_col_widths = match self.table_layout {
             FixedLayout => None,
             AutoLayout => Some(self.col_widths.clone())
@@ -257,8 +257,8 @@ impl TableWrapper {
                 let mut cap_min = Au(0);
                 let mut cols_min = Au(0);
                 let mut cols_max = Au(0);
-                let mut col_min_widths = &~[];
-                let mut col_pref_widths = &~[];
+                let mut col_min_widths = &vec!();
+                let mut col_pref_widths = &vec!();
                 for kid in table_wrapper.block_flow.base.child_iter() {
                     if kid.is_table_caption() {
                         cap_min = kid.as_block().base.intrinsic_widths.minimum_width;

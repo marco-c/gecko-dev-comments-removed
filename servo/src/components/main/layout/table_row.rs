@@ -23,13 +23,13 @@ pub struct TableRowFlow {
     pub block_flow: BlockFlow,
 
     
-    pub col_widths: ~[Au],
+    pub col_widths: Vec<Au>,
 
-    /// Column min widths.
-    pub col_min_widths: ~[Au],
+    
+    pub col_min_widths: Vec<Au>,
 
-    /// Column pref widths.
-    pub col_pref_widths: ~[Au],
+    
+    pub col_pref_widths: Vec<Au>,
 }
 
 impl TableRowFlow {
@@ -38,9 +38,9 @@ impl TableRowFlow {
                              -> TableRowFlow {
         TableRowFlow {
             block_flow: BlockFlow::from_node_and_box(node, box_),
-            col_widths: ~[],
-            col_min_widths: ~[],
-            col_pref_widths: ~[],
+            col_widths: vec!(),
+            col_min_widths: vec!(),
+            col_pref_widths: vec!(),
         }
     }
 
@@ -49,17 +49,17 @@ impl TableRowFlow {
                      -> TableRowFlow {
         TableRowFlow {
             block_flow: BlockFlow::from_node(constructor, node),
-            col_widths: ~[],
-            col_min_widths: ~[],
-            col_pref_widths: ~[],
+            col_widths: vec!(),
+            col_min_widths: vec!(),
+            col_pref_widths: vec!(),
         }
     }
 
     pub fn teardown(&mut self) {
         self.block_flow.teardown();
-        self.col_widths = ~[];
-        self.col_min_widths = ~[];
-        self.col_pref_widths = ~[];
+        self.col_widths = vec!();
+        self.col_min_widths = vec!();
+        self.col_pref_widths = vec!();
     }
 
     pub fn box_<'a>(&'a mut self) -> &'a Box {
@@ -67,31 +67,31 @@ impl TableRowFlow {
     }
 
     fn initialize_offsets(&mut self) -> (Au, Au, Au) {
-        // TODO: If border-collapse: collapse, top_offset, bottom_offset, and left_offset
-        // should be updated. Currently, they are set as Au(0).
+        
+        
         (Au(0), Au(0), Au(0))
     }
 
-    /// Assign height for table-row flow.
-    ///
-    /// TODO(pcwalton): This doesn't handle floats and positioned elements right.
-    ///
-    /// inline(always) because this is only ever called by in-order or non-in-order top-level
-    /// methods
+    
+    
+    
+    
+    
+    
     #[inline(always)]
     fn assign_height_table_row_base(&mut self, layout_context: &mut LayoutContext) {
         let (top_offset, _, _) = self.initialize_offsets();
 
-        let /* mut */ cur_y = top_offset;
+        let  cur_y = top_offset;
 
-        // Per CSS 2.1 § 17.5.3, find max_y = max( computed `height`, minimum height of all cells )
+        
         let mut max_y = Au::new(0);
         for kid in self.block_flow.base.child_iter() {
             kid.assign_height_for_inorder_child_if_necessary(layout_context);
 
             {
                 let child_box = kid.as_table_cell().box_();
-                // TODO: Percentage height
+                
                 let child_specified_height = MaybeAuto::from_style(child_box.style().Box.get().height,
                                                                    Au::new(0)).specified_or_zero();
                 max_y =
@@ -104,22 +104,22 @@ impl TableRowFlow {
         }
 
         let mut height = max_y;
-        // TODO: Percentage height
+        
         height = match MaybeAuto::from_style(self.block_flow.box_.style().Box.get().height, Au(0)) {
             Auto => height,
             Specified(value) => geometry::max(value, height)
         };
-        // cur_y = cur_y + height;
+        
 
-        // Assign the height of own box
-        //
-        // FIXME(pcwalton): Take `cur_y` into account.
+        
+        
+        
         let mut position = self.block_flow.box_.border_box;
         position.size.height = height;
         self.block_flow.box_.border_box = position;
         self.block_flow.base.position.size.height = height;
 
-        // Assign the height of kid boxes, which is the same value as own height.
+        
         for kid in self.block_flow.base.child_iter() {
             {
                 let kid_box_ = kid.as_table_cell().mut_box();
@@ -151,32 +151,32 @@ impl Flow for TableRowFlow {
         &mut self.block_flow
     }
 
-    fn col_widths<'a>(&'a mut self) -> &'a mut ~[Au] {
+    fn col_widths<'a>(&'a mut self) -> &'a mut Vec<Au> {
         &mut self.col_widths
     }
 
-    fn col_min_widths<'a>(&'a self) -> &'a ~[Au] {
+    fn col_min_widths<'a>(&'a self) -> &'a Vec<Au> {
         &self.col_min_widths
     }
 
-    fn col_pref_widths<'a>(&'a self) -> &'a ~[Au] {
+    fn col_pref_widths<'a>(&'a self) -> &'a Vec<Au> {
         &self.col_pref_widths
     }
 
-    /// Recursively (bottom-up) determines the context's preferred and minimum widths. When called
-    /// on this context, all child contexts have had their min/pref widths set. This function must
-    /// decide min/pref widths based on child context widths and dimensions of any boxes it is
-    /// responsible for flowing.
-    /// Min/pref widths set by this function are used in automatic table layout calculation.
-    /// The specified column widths of children cells are used in fixed table layout calculation.
+    
+    
+    
+    
+    
+    
     fn bubble_widths(&mut self, _: &mut LayoutContext) {
         let mut min_width = Au(0);
         let mut pref_width = Au(0);
-        /* find the specified widths from child table-cell contexts */
+        
         for kid in self.block_flow.base.child_iter() {
             assert!(kid.is_table_cell());
 
-            // collect the specified column widths of cells. These are used in fixed table layout calculation.
+            
             {
                 let child_box = kid.as_table_cell().box_();
                 let child_specified_width = MaybeAuto::from_style(child_box.style().Box.get().width,
@@ -184,7 +184,7 @@ impl Flow for TableRowFlow {
                 self.col_widths.push(child_specified_width);
             }
 
-            // collect min_width & pref_width of children cells for automatic table layout calculation.
+            
             let child_base = flow::mut_base(kid);
             self.col_min_widths.push(child_base.intrinsic_widths.minimum_width);
             self.col_pref_widths.push(child_base.intrinsic_widths.preferred_width);
@@ -196,14 +196,14 @@ impl Flow for TableRowFlow {
                                                                               pref_width);
     }
 
-    /// Recursively (top-down) determines the actual width of child contexts and boxes. When called
-    /// on this context, the context has had its width set by the parent context.
+    
+    
     fn assign_widths(&mut self, ctx: &mut LayoutContext) {
         debug!("assign_widths({}): assigning width for flow", "table_row");
 
-        // The position was set to the containing block by the flow's parent.
+        
         let containing_block_width = self.block_flow.base.position.size.width;
-        // FIXME: In case of border-collapse: collapse, left_content_edge should be border-left
+        
         let left_content_edge = Au::new(0);
 
         let width_computer = InternalTable;

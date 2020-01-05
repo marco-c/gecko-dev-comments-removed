@@ -28,7 +28,6 @@
 use css::node_style::StyledNode;
 use layout::block::BlockFlow;
 use layout::box_::{Box, TableRowBox, TableCellBox};
-use layout::construct::OptVector;
 use layout::context::LayoutContext;
 use layout::floats::Floats;
 use layout::flow_list::{FlowList, Link, Rawlink, FlowListIterator, MutFlowListIterator};
@@ -129,47 +128,47 @@ pub trait Flow {
 
     
     
-    fn col_widths<'a>(&'a mut self) -> &'a mut ~[Au] {
+    fn col_widths<'a>(&'a mut self) -> &'a mut Vec<Au> {
         fail!("called col_widths() on an other flow than table-row/table-rowgroup/table")
     }
 
-    /// If this is a table row flow or table rowgroup flow or table flow, returns column min widths.
-    /// Fails otherwise.
-    fn col_min_widths<'a>(&'a self) -> &'a ~[Au] {
+    
+    
+    fn col_min_widths<'a>(&'a self) -> &'a Vec<Au> {
         fail!("called col_min_widths() on an other flow than table-row/table-rowgroup/table")
     }
 
-    /// If this is a table row flow or table rowgroup flow or table flow, returns column min widths.
-    /// Fails otherwise.
-    fn col_pref_widths<'a>(&'a self) -> &'a ~[Au] {
+    
+    
+    fn col_pref_widths<'a>(&'a self) -> &'a Vec<Au> {
         fail!("called col_pref_widths() on an other flow than table-row/table-rowgroup/table")
     }
 
-    // Main methods
+    
 
-    /// Pass 1 of reflow: computes minimum and preferred widths.
-    ///
-    /// Recursively (bottom-up) determine the flow's minimum and preferred widths. When called on
-    /// this flow, all child flows have had their minimum and preferred widths set. This function
-    /// must decide minimum/preferred widths based on its children's widths and the dimensions of
-    /// any boxes it is responsible for flowing.
+    
+    
+    
+    
+    
+    
     fn bubble_widths(&mut self, _ctx: &mut LayoutContext) {
         fail!("bubble_widths not yet implemented")
     }
 
-    /// Pass 2 of reflow: computes width.
+    
     fn assign_widths(&mut self, _ctx: &mut LayoutContext) {
         fail!("assign_widths not yet implemented")
     }
 
-    /// Pass 3a of reflow: computes height.
+    
     fn assign_height(&mut self, _ctx: &mut LayoutContext) {
         fail!("assign_height not yet implemented")
     }
 
-    /// Assigns heights in-order; or, if this is a float, places the float. The default
-    /// implementation simply assigns heights if this flow is impacted by floats. Returns true if
-    /// this child was impacted by floats or false otherwise.
+    
+    
+    
     fn assign_height_for_inorder_child_if_necessary(&mut self, layout_context: &mut LayoutContext)
                                                     -> bool {
         let impacted = base(self).flags.impacted_by_floats();
@@ -179,18 +178,18 @@ pub trait Flow {
         impacted
     }
 
-    /// Phase 4 of reflow: computes absolute positions.
+    
     fn compute_absolute_position(&mut self) {
-        // The default implementation is a no-op.
+        
     }
 
-    /// Returns the direction that this flow clears floats in, if any.
+    
     fn float_clearance(&self) -> clear::T {
         clear::none
     }
 
-    /// Returns true if this float is a block formatting context and false otherwise. The default
-    /// implementation returns false.
+    
+    
     fn is_block_formatting_context(&self, _only_impactable_by_floats: bool) -> bool {
         false
     }
@@ -198,20 +197,20 @@ pub trait Flow {
     fn compute_collapsible_top_margin(&mut self,
                                       _layout_context: &mut LayoutContext,
                                       _margin_collapse_info: &mut MarginCollapseInfo) {
-        // The default implementation is a no-op.
+        
     }
 
-    /// Marks this flow as the root flow. The default implementation is a no-op.
+    
     fn mark_as_root(&mut self) {}
 
-    // Note that the following functions are mostly called using static method
-    // dispatch, so it's ok to have them in this trait. Plus, they have
-    // different behaviour for different types of Flow, so they can't go into
-    // the Immutable / Mutable Flow Utils traits without additional casts.
+    
+    
+    
+    
 
-    /// Return true if store overflow is delayed for this flow.
-    ///
-    /// Currently happens only for absolutely positioned flows.
+    
+    
+    
     fn is_store_overflow_delayed(&mut self) -> bool {
         false
     }
@@ -224,12 +223,12 @@ pub trait Flow {
         false
     }
 
-    /// The 'position' property of this flow.
+    
     fn positioning(&self) -> position::T {
         position::static_
     }
 
-    /// Return true if this flow has position 'fixed'.
+    
     fn is_fixed(&self) -> bool {
         self.positioning() == position::fixed
     }
@@ -246,23 +245,23 @@ pub trait Flow {
         self.positioning() == position::absolute || self.is_fixed()
     }
 
-    /// Return true if this is the root of an Absolute flow tree.
+    
     fn is_root_of_absolute_flow_tree(&self) -> bool {
         false
     }
 
-    /// Returns true if this is an absolute containing block.
+    
     fn is_absolute_containing_block(&self) -> bool {
         false
     }
 
-    /// Return the dimensions of the containing block generated by this flow for absolutely-
-    /// positioned descendants. For block flows, this is the padding box.
+    
+    
     fn generated_containing_block_rect(&self) -> Rect<Au> {
         fail!("generated_containing_block_position not yet implemented for this flow")
     }
 
-    /// Returns a layer ID for the given fragment.
+    
     fn layer_id(&self, fragment_id: uint) -> LayerId {
         unsafe {
             let pointer: uint = cast::transmute(self);
@@ -270,7 +269,7 @@ pub trait Flow {
         }
     }
 
-    /// Returns a debugging string describing this flow.
+    
     fn debug_str(&self) -> ~str {
         "???".to_owned()
     }

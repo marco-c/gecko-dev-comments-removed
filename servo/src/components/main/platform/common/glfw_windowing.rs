@@ -88,7 +88,7 @@ pub struct Window {
     pub glfw_window: glfw::Window,
     pub events: Receiver<(f64, glfw::WindowEvent)>,
 
-    pub event_queue: RefCell<~[WindowEvent]>,
+    pub event_queue: RefCell<Vec<WindowEvent>>,
 
     pub drag_origin: Point2D<c_int>,
 
@@ -102,21 +102,21 @@ pub struct Window {
 }
 
 impl WindowMethods<Application> for Window {
-    /// Creates a new window.
+    
     fn new(app: &Application) -> Rc<Window> {
-        // Create the GLFW window.
+        
         let (glfw_window, events) = app.glfw.create_window(800, 600, "Servo", glfw::Windowed)
             .expect("Failed to create GLFW window");
         glfw_window.make_current();
 
-        // Create our window object.
+        
         let window = Window {
             glfw: app.glfw,
 
             glfw_window: glfw_window,
             events: events,
 
-            event_queue: RefCell::new(~[]),
+            event_queue: RefCell::new(vec!()),
 
             drag_origin: Point2D(0 as c_int, 0),
 
@@ -129,7 +129,7 @@ impl WindowMethods<Application> for Window {
             last_title_set_time: Cell::new(Timespec::new(0, 0)),
         };
 
-        // Register event handlers.
+        
         window.glfw_window.set_framebuffer_size_polling(true);
         window.glfw_window.set_refresh_polling(true);
         window.glfw_window.set_key_polling(true);
@@ -142,13 +142,13 @@ impl WindowMethods<Application> for Window {
         wrapped_window
     }
 
-    /// Returns the size of the window.
+    
     fn size(&self) -> Size2D<f32> {
         let (width, height) = self.glfw_window.get_framebuffer_size();
         Size2D(width as f32, height as f32)
     }
 
-    /// Presents the window to the screen (perhaps by page flipping).
+    
     fn present(&self) {
         self.glfw_window.swap_buffers();
     }
@@ -173,18 +173,18 @@ impl WindowMethods<Application> for Window {
         }
     }
 
-    /// Sets the ready state.
+    
     fn set_ready_state(&self, ready_state: ReadyState) {
         self.ready_state.set(ready_state);
         self.update_window_title()
     }
 
-    /// Sets the render state.
+    
     fn set_render_state(&self, render_state: RenderState) {
         if self.ready_state.get() == FinishedLoading &&
             self.render_state.get() == RenderingRenderState &&
             render_state == IdleRenderState {
-            // page loaded
+            
             self.event_queue.borrow_mut().push(FinishedWindowEvent);
         }
 
@@ -215,7 +215,7 @@ impl Window {
             },
             glfw::MouseButtonEvent(button, action, _mods) => {
                 let (x, y) = window.get_cursor_pos();
-                //handle hidpi displays, since GLFW returns non-hi-def coordinates.
+                
                 let (backing_size, _) = window.get_framebuffer_size();
                 let (window_size, _) = window.get_size();
                 let hidpi = (backing_size as f32) / (window_size as f32);
@@ -233,7 +233,7 @@ impl Window {
                 let dy = (ypos as f32) * 30.0;
 
                 let (x, y) = window.get_cursor_pos();
-                //handle hidpi displays, since GLFW returns non-hi-def coordinates.
+                
                 let (backing_size, _) = window.get_framebuffer_size();
                 let (window_size, _) = window.get_size();
                 let hidpi = (backing_size as f32) / (window_size as f32);
@@ -246,7 +246,7 @@ impl Window {
         }
     }
 
-    /// Helper function to set the window title in accordance with the ready state.
+    
     fn update_window_title(&self) {
         let now = time::get_time();
         if now.sec == self.last_title_set_time.get().sec {
@@ -277,30 +277,30 @@ impl Window {
         }
     }
 
-    /// Helper function to handle keyboard events.
+    
     fn handle_key(&self, key: glfw::Key, mods: glfw::Modifiers) {
         match key {
             glfw::KeyEscape => self.glfw_window.set_should_close(true),
-            glfw::KeyL if mods.contains(glfw::Control) => self.load_url(), // Ctrl+L
-            glfw::KeyEqual if mods.contains(glfw::Control) => { // Ctrl-+
+            glfw::KeyL if mods.contains(glfw::Control) => self.load_url(), 
+            glfw::KeyEqual if mods.contains(glfw::Control) => { 
                 self.event_queue.borrow_mut().push(ZoomWindowEvent(1.1));
             }
-            glfw::KeyMinus if mods.contains(glfw::Control) => { // Ctrl--
+            glfw::KeyMinus if mods.contains(glfw::Control) => { 
                 self.event_queue.borrow_mut().push(ZoomWindowEvent(0.90909090909));
             }
-            glfw::KeyBackspace if mods.contains(glfw::Shift) => { // Shift-Backspace
+            glfw::KeyBackspace if mods.contains(glfw::Shift) => { 
                 self.event_queue.borrow_mut().push(NavigationWindowEvent(Forward));
             }
-            glfw::KeyBackspace => { // Backspace
+            glfw::KeyBackspace => { 
                 self.event_queue.borrow_mut().push(NavigationWindowEvent(Back));
             }
             _ => {}
         }
     }
 
-    /// Helper function to handle a click
+    
     fn handle_mouse(&self, button: glfw::MouseButton, action: glfw::Action, x: c_int, y: c_int) {
-        // FIXME(tkuehn): max pixel dist should be based on pixel density
+        
         let max_pixel_dist = 10f64;
         let event = match action {
             glfw::Press => {
@@ -330,13 +330,13 @@ impl Window {
         self.event_queue.borrow_mut().push(MouseWindowEventClass(event));
     }
 
-    /// Helper function to pop up an alert box prompting the user to load a URL.
+    
     fn load_url(&self) {
         let mut alert: Alert = AlertMethods::new("Navigate to:");
         alert.add_prompt();
         alert.run();
         let value = alert.prompt_value();
-        if "" == value {    // To avoid crashing on Linux.
+        if "" == value {    
             self.event_queue.borrow_mut().push(LoadUrlWindowEvent("http://purple.com/".to_owned()))
         } else {
             self.event_queue.borrow_mut().push(LoadUrlWindowEvent(value.clone()))

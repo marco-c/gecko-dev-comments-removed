@@ -300,18 +300,18 @@ impl Ord for DetailedGlyphRecord {
 struct DetailedGlyphStore {
     
     
-    detail_buffer: ~[DetailedGlyph],
-    // TODO(pcwalton): Allocation of this buffer is expensive. Consider a small-vector
-    // optimization.
-    detail_lookup: ~[DetailedGlyphRecord],
+    detail_buffer: Vec<DetailedGlyph>,
+    
+    
+    detail_lookup: Vec<DetailedGlyphRecord>,
     lookup_is_sorted: bool,
 }
 
 impl<'a> DetailedGlyphStore {
     fn new() -> DetailedGlyphStore {
         DetailedGlyphStore {
-            detail_buffer: ~[], // TODO: default size?
-            detail_lookup: ~[],
+            detail_buffer: vec!(), 
+            detail_lookup: vec!(),
             lookup_is_sorted: false
         }
     }
@@ -324,16 +324,16 @@ impl<'a> DetailedGlyphStore {
 
         debug!("Adding entry[off={:u}] for detailed glyphs: {:?}", entry_offset, glyphs);
 
-        /* TODO: don't actually assert this until asserts are compiled
-        in/out based on severity, debug/release, etc. This assertion
-        would wreck the complexity of the lookup.
+        
 
-        See Rust Issue #3647, #2228, #3627 for related information.
 
-        do self.detail_lookup.borrow |arr| {
-            assert !arr.contains(entry)
-        }
-        */
+
+
+
+
+
+
+
 
         self.detail_lookup.push(entry);
         self.detail_buffer.push_all(glyphs);
@@ -344,8 +344,8 @@ impl<'a> DetailedGlyphStore {
                                   -> &'a [DetailedGlyph] {
         debug!("Requesting detailed glyphs[n={:u}] for entry[off={:u}]", count as uint, entry_offset);
 
-        // FIXME: Is this right? --pcwalton
-        // TODO: should fix this somewhere else
+        
+        
         if count == 0 {
             return self.detail_buffer.slice(0, 0);
         }
@@ -355,16 +355,16 @@ impl<'a> DetailedGlyphStore {
 
         let key = DetailedGlyphRecord {
             entry_offset: entry_offset,
-            detail_offset: 0 // unused
+            detail_offset: 0 
         };
 
-        // FIXME: This is a workaround for borrow of self.detail_lookup not getting inferred.
-        let records : &[DetailedGlyphRecord] = self.detail_lookup;
+        
+        let records : &[DetailedGlyphRecord] = self.detail_lookup.as_slice();
         match records.binary_search_index(&key) {
             None => fail!("Invalid index not found in detailed glyph lookup table!"),
             Some(i) => {
                 assert!(i + (count as uint) <= self.detail_buffer.len());
-                // return a slice into the buffer
+                
                 self.detail_buffer.slice(i, i + count as uint)
             }
         }
@@ -379,16 +379,16 @@ impl<'a> DetailedGlyphStore {
 
         let key = DetailedGlyphRecord {
             entry_offset: entry_offset,
-            detail_offset: 0 // unused
+            detail_offset: 0 
         };
 
-        // FIXME: This is a workaround for borrow of self.detail_lookup not getting inferred.
-        let records: &[DetailedGlyphRecord] = self.detail_lookup;
+        
+        let records: &[DetailedGlyphRecord] = self.detail_lookup.as_slice();
         match records.binary_search_index(&key) {
             None => fail!("Invalid index not found in detailed glyph lookup table!"),
             Some(i) => {
                 assert!(i + (detail_offset as uint)  < self.detail_buffer.len());
-                &self.detail_buffer[i+(detail_offset as uint)]
+                self.detail_buffer.get(i+(detail_offset as uint))
             }
         }
     }
@@ -398,14 +398,14 @@ impl<'a> DetailedGlyphStore {
             return;
         }
 
-        // Sorting a unique vector is surprisingly hard. The follwing
-        // code is a good argument for using DVecs, but they require
-        // immutable locations thus don't play well with freezing.
+        
+        
+        
 
-        // Thar be dragons here. You have been warned. (Tips accepted.)
-        let mut unsorted_records: ~[DetailedGlyphRecord] = ~[];
+        
+        let mut unsorted_records: Vec<DetailedGlyphRecord> = vec!();
         mem::swap(&mut self.detail_lookup, &mut unsorted_records);
-        let mut mut_records : ~[DetailedGlyphRecord] = unsorted_records;
+        let mut mut_records : Vec<DetailedGlyphRecord> = unsorted_records;
         mut_records.sort_by(|a, b| {
             if a < b {
                 Less
@@ -420,8 +420,8 @@ impl<'a> DetailedGlyphStore {
     }
 }
 
-// This struct is used by GlyphStore clients to provide new glyph data.
-// It should be allocated on the stack and passed by reference to GlyphStore.
+
+
 pub struct GlyphData {
     index: GlyphIndex,
     advance: Au,
@@ -455,10 +455,10 @@ impl GlyphData {
     }
 }
 
-// This enum is a proxy that's provided to GlyphStore clients when iterating
-// through glyphs (either for a particular TextRun offset, or all glyphs).
-// Rather than eagerly assembling and copying glyph data, it only retrieves
-// values as they are needed from the GlyphStore, using provided offsets.
+
+
+
+
 pub enum GlyphInfo<'a> {
     SimpleGlyphInfo(&'a GlyphStore, uint),
     DetailGlyphInfo(&'a GlyphStore, uint, u16)
@@ -475,7 +475,7 @@ impl<'a> GlyphInfo<'a> {
     }
 
     #[inline(always)]
-    // FIXME: Resolution conflicts with IteratorUtil trait so adding trailing _
+    
     pub fn advance(self) -> Au {
         match self {
             SimpleGlyphInfo(store, entry_i) => store.entry_buffer[entry_i].advance(),
@@ -495,10 +495,10 @@ impl<'a> GlyphInfo<'a> {
     }
 }
 
-// Public data structure and API for storing and retrieving glyph data
+
 pub struct GlyphStore {
-    // TODO(pcwalton): Allocation of this buffer is expensive. Consider a small-vector
-    // optimization.
+    
+    
     entry_buffer: ~[GlyphEntry],
 
     detail_store: DetailedGlyphStore,

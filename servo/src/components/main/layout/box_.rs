@@ -94,10 +94,10 @@ pub struct Box {
     
     
     
-    pub new_line_pos: ~[uint],
+    pub new_line_pos: Vec<uint>,
 }
 
-/// Info specific to the kind of box. Keep this enum small.
+
 #[deriving(Clone)]
 pub enum SpecificBoxInfo {
     GenericBox,
@@ -112,10 +112,10 @@ pub enum SpecificBoxInfo {
     UnscannedTextBox(UnscannedTextBoxInfo),
 }
 
-/// A box that represents a replaced content image and its accompanying borders, shadows, etc.
+
 #[deriving(Clone)]
 pub struct ImageBoxInfo {
-    /// The image held within this box.
+    
     pub image: ImageHolder,
     pub computed_width: Option<Au>,
     pub computed_height: Option<Au>,
@@ -124,10 +124,10 @@ pub struct ImageBoxInfo {
 }
 
 impl ImageBoxInfo {
-    /// Creates a new image box from the given URL and local image cache.
-    ///
-    /// FIXME(pcwalton): The fact that image boxes store the cache in the box makes little sense to
-    /// me.
+    
+    
+    
+    
     pub fn new(node: &ThreadSafeLayoutNode,
                image_url: Url,
                local_image_cache: LocalImageCacheHandle)
@@ -149,21 +149,21 @@ impl ImageBoxInfo {
         }
     }
 
-    /// Returns the calculated width of the image, accounting for the width attribute.
+    
     pub fn computed_width(&self) -> Au {
         self.computed_width.expect("image width is not computed yet!")
     }
 
-    /// Returns the original width of the image.
+    
     pub fn image_width(&mut self) -> Au {
         let image_ref = &mut self.image;
         Au::from_px(image_ref.get_size().unwrap_or(Size2D(0,0)).width)
     }
 
-    // Return used value for width or height.
-    //
-    // `dom_length`: width or height as specified in the `img` tag.
-    // `style_length`: width as given in the CSS
+    
+    
+    
+    
     pub fn style_length(style_length: LengthOrPercentageOrAuto,
                         dom_length: Option<Au>,
                         container_width: Au) -> MaybeAuto {
@@ -179,7 +179,7 @@ impl ImageBoxInfo {
             }
         }
     }
-    /// Returns the calculated height of the image, accounting for the height attribute.
+    
     pub fn computed_height(&self) -> Au {
         match self.computed_height {
             Some(height) => height,
@@ -187,25 +187,25 @@ impl ImageBoxInfo {
         }
     }
 
-    /// Returns the original height of the image.
+    
     pub fn image_height(&mut self) -> Au {
         let image_ref = &mut self.image;
         Au::from_px(image_ref.get_size().unwrap_or(Size2D(0,0)).height)
     }
 }
 
-/// A box that represents an inline frame (iframe). This stores the pipeline ID so that the size
-/// of this iframe can be communicated via the constellation to the iframe's own layout task.
+
+
 #[deriving(Clone)]
 pub struct IframeBoxInfo {
-    /// The pipeline ID of this iframe.
+    
     pub pipeline_id: PipelineId,
-    /// The subpage ID of this iframe.
+    
     pub subpage_id: SubpageId,
 }
 
 impl IframeBoxInfo {
-    /// Creates the information specific to an iframe box.
+    
     pub fn new(node: &ThreadSafeLayoutNode) -> IframeBoxInfo {
         let (pipeline_id, subpage_id) = node.iframe_pipeline_and_subpage_ids();
         IframeBoxInfo {
@@ -215,13 +215,13 @@ impl IframeBoxInfo {
     }
 }
 
-/// A scanned text box represents a single run of text with a distinct style. A `TextBox` may be
-/// split into two or more boxes across line breaks. Several `TextBox`es may correspond to a single
-/// DOM text node. Split text boxes are implemented by referring to subsets of a single `TextRun`
-/// object.
+
+
+
+
 #[deriving(Clone)]
 pub struct ScannedTextBoxInfo {
-    /// The text run that this represents.
+    
     pub run: Arc<~TextRun>,
 
     /// The range within the above text run that this represents.
@@ -313,7 +313,7 @@ impl Box {
             border_padding: Zero::zero(),
             margin: Zero::zero(),
             specific: constructor.build_specific_box_info_for_node(node),
-            new_line_pos: ~[],
+            new_line_pos: vec!(),
         }
     }
 
@@ -326,7 +326,7 @@ impl Box {
             border_padding: Zero::zero(),
             margin: Zero::zero(),
             specific: specific,
-            new_line_pos: ~[],
+            new_line_pos: vec!(),
         }
     }
 
@@ -350,7 +350,7 @@ impl Box {
             border_padding: Zero::zero(),
             margin: Zero::zero(),
             specific: specific,
-            new_line_pos: ~[],
+            new_line_pos: vec!(),
         }
     }
 
@@ -366,7 +366,7 @@ impl Box {
             border_padding: Zero::zero(),
             margin: Zero::zero(),
             specific: specific,
-            new_line_pos: ~[],
+            new_line_pos: vec!(),
         }
     }
 
@@ -1114,7 +1114,7 @@ impl Box {
                     let new_text_box_info = ScannedTextBoxInfo::new(text_box_info.run.clone(), left_range);
                     let new_metrics = new_text_box_info.run.metrics_for_range(&left_range);
                     let mut new_box = self.transform(new_metrics.bounding_box.size, ScannedTextBox(new_text_box_info));
-                    new_box.new_line_pos = ~[];
+                    new_box.new_line_pos = vec!();
                     Some(new_box)
                 };
 

@@ -47,7 +47,7 @@ impl Drop for Application {
 pub struct Window {
     pub glut_window: glut::Window,
 
-    pub event_queue: RefCell<~[WindowEvent]>,
+    pub event_queue: RefCell<Vec<WindowEvent>>,
 
     pub drag_origin: Point2D<c_int>,
 
@@ -60,17 +60,17 @@ pub struct Window {
 }
 
 impl WindowMethods<Application> for Window {
-    /// Creates a new window.
+    
     fn new(_: &Application) -> Rc<Window> {
-        // Create the GLUT window.
+        
         glut::init_window_size(800, 600);
         let glut_window = glut::create_window("Servo".to_owned());
 
-        // Create our window object.
+        
         let window = Window {
             glut_window: glut_window,
 
-            event_queue: RefCell::new(~[]),
+            event_queue: RefCell::new(vec!()),
 
             drag_origin: Point2D(0 as c_int, 0),
 
@@ -82,9 +82,9 @@ impl WindowMethods<Application> for Window {
             throbber_frame: Cell::new(0),
         };
 
-        // Register event handlers.
+        
 
-        //Added dummy display callback to freeglut. According to freeglut ref, we should register some kind of display callback after freeglut 3.0.
+        
 
         struct DisplayCallbackState;
         impl glut::DisplayCallback for DisplayCallbackState {
