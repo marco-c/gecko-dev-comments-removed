@@ -36,6 +36,7 @@ exceptions = [
     "src/platform", 
     "src/compiler", 
     "src/components/main/dom/bindings/codegen", 
+    "src/components/script/dom/bindings/codegen", 
 ]
 
 def should_check(name):

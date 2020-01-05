@@ -6,10 +6,9 @@
 
 
 
-use dom::node::{AbstractNode, LayoutView};
-use newcss::select::SelectHandler;
-
 use core::str::eq_slice;
+use newcss::select::SelectHandler;
+use script::dom::node::{AbstractNode, LayoutView};
 
 pub struct NodeSelectHandler {
     node: AbstractNode<LayoutView>,

@@ -2,11 +2,11 @@
 
 
 
-use dom::node::{AbstractNode, LayoutView};
 use layout::aux::LayoutAuxMethods;
 
 use core::cast::transmute;
 use newcss::complete::CompleteSelectResults;
+use script::dom::node::{AbstractNode, LayoutView};
 
 pub trait NodeUtil<'self> {
     fn get_css_select_results(self) -> &'self CompleteSelectResults;

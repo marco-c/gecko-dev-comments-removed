@@ -2,14 +2,15 @@
 
 
 
-use dom::bindings::codegen::EventBinding;
+use dom::bindings::codegen::EventTargetBinding;
 use dom::bindings::utils::{CacheableWrapper, WrapperCache, BindingObject, DerivedWrapper};
-use dom::event::Event_;
+use dom::eventtarget::EventTarget;
+use script_task::{task_from_context, global_script_context};
+
 use js::glue::bindgen::RUST_OBJECT_TO_JSVAL;
 use js::jsapi::{JSObject, JSContext, JSVal};
-use scripting::script_task::{task_from_context, global_script_context};
 
-pub impl Event_ {
+pub impl EventTarget {
     pub fn init_wrapper(@mut self) {
         let script_context = global_script_context();
         let cx = script_context.js_compartment.cx.ptr;
@@ -20,18 +21,18 @@ pub impl Event_ {
     }
 }
 
-impl CacheableWrapper for Event_ {
+impl CacheableWrapper for EventTarget {
     fn get_wrappercache(&mut self) -> &mut WrapperCache {
         unsafe { cast::transmute(&self.wrapper) }
     }
 
     fn wrap_object_shared(@mut self, cx: *JSContext, scope: *JSObject) -> *JSObject {
         let mut unused = false;
-        EventBinding::Wrap(cx, scope, self, &mut unused)
+        EventTargetBinding::Wrap(cx, scope, self, &mut unused)
     }
 }
 
-impl BindingObject for Event_ {
+impl BindingObject for EventTarget {
     fn GetParentObject(&self, cx: *JSContext) -> @mut CacheableWrapper {
         let script_context = task_from_context(cx);
         unsafe {
@@ -40,7 +41,7 @@ impl BindingObject for Event_ {
     }
 }
 
-impl DerivedWrapper for Event_ {
+impl DerivedWrapper for EventTarget {
     fn wrap(&mut self, _cx: *JSContext, _scope: *JSObject, _vp: *mut JSVal) -> i32 {
         fail!(~"nyi")
     }
@@ -50,7 +51,9 @@ impl DerivedWrapper for Event_ {
         if obj.is_null() {
             return 0;
         } else {
-            unsafe { *vp = RUST_OBJECT_TO_JSVAL(obj) };
+            unsafe {
+                *vp = RUST_OBJECT_TO_JSVAL(obj)
+            };
             return 1;
         }
     }

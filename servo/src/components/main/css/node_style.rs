@@ -5,9 +5,9 @@
 
 
 use css::node_util::NodeUtil;
-use dom::node::{AbstractNode, LayoutView};
 
 use newcss::complete::CompleteStyle;
+use script::dom::node::{AbstractNode, LayoutView};
 
 
 pub trait StyledNode {

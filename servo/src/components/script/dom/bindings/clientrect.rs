@@ -5,9 +5,10 @@
 use dom::bindings::utils::{CacheableWrapper, WrapperCache, BindingObject, DerivedWrapper};
 use dom::bindings::codegen::ClientRectBinding;
 use dom::clientrect::ClientRect;
+use script_task::{task_from_context, global_script_context};
+
 use js::jsapi::{JSObject, JSContext, JSVal};
 use js::glue::bindgen::RUST_OBJECT_TO_JSVAL;
-use scripting::script_task::{task_from_context, global_script_context};
 
 pub impl ClientRect {
     pub fn init_wrapper(@mut self) {

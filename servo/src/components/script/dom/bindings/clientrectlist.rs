@@ -5,8 +5,9 @@
 use dom::bindings::codegen::ClientRectListBinding;
 use dom::bindings::utils::{WrapperCache, CacheableWrapper, BindingObject};
 use dom::clientrectlist::ClientRectList;
+use script_task::{task_from_context, global_script_context};
+
 use js::jsapi::{JSObject, JSContext};
-use scripting::script_task::{task_from_context, global_script_context};
 
 pub impl ClientRectList {
     fn init_wrapper(@mut self) {
