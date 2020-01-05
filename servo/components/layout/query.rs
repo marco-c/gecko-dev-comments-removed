@@ -1,8 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
+//! Utilities for querying the layout, as needed by the layout thread.
 
 use app_units::Au;
 use construct::ConstructionResult;
@@ -19,7 +19,6 @@ use script::layout_interface::{ContentBoxResponse, ContentBoxesResponse, NodeGeo
 use script::layout_interface::{HitTestResponse, LayoutRPC, MouseOverResponse, OffsetParentResponse};
 use script::layout_interface::{ResolvedStyleResponse, ScriptLayoutChan};
 use script_traits::LayoutMsg as ConstellationMsg;
-use selectors::parser::PseudoElement;
 use sequential;
 use std::ops::Deref;
 use std::sync::{Arc, Mutex};
@@ -27,6 +26,7 @@ use string_cache::Atom;
 use style::computed_values;
 use style::properties::longhands::{display, position};
 use style::properties::style_structs;
+use style::selector_impl::PseudoElement;
 use style::values::AuExtensionMethods;
 use util::cursor::Cursor;
 use util::logical_geometry::WritingMode;
@@ -36,15 +36,15 @@ pub struct LayoutRPCImpl(pub Arc<Mutex<LayoutThreadData>>);
 
 impl LayoutRPC for LayoutRPCImpl {
 
-    
-    
+    // The neat thing here is that in order to answer the following two queries we only
+    // need to compare nodes for equality. Thus we can safely work only with `OpaqueNode`.
     fn content_box(&self) -> ContentBoxResponse {
         let &LayoutRPCImpl(ref rw_data) = self;
         let rw_data = rw_data.lock().unwrap();
         ContentBoxResponse(rw_data.content_box_response)
     }
 
-    
+    /// Requests the dimensions of all the content boxes, as in the `getClientRects()` call.
     fn content_boxes(&self) -> ContentBoxesResponse {
         let &LayoutRPCImpl(ref rw_data) = self;
         let rw_data = rw_data.lock().unwrap();
@@ -59,14 +59,14 @@ impl LayoutRPC for LayoutRPCImpl {
         }
     }
 
-    
+    /// Retrieves the resolved value for a CSS style property.
     fn resolved_style(&self) -> ResolvedStyleResponse {
         let &LayoutRPCImpl(ref rw_data) = self;
         let rw_data = rw_data.lock().unwrap();
         ResolvedStyleResponse(rw_data.resolved_style_response.clone())
     }
 
-    
+    /// Requests the node containing the point of interest.
     fn hit_test(&self, point: Point2D<f32>) -> Result<HitTestResponse, ()> {
         let point = Point2D::new(Au::from_f32_px(point.x), Au::from_f32_px(point.y));
         let resp = {
@@ -105,7 +105,7 @@ impl LayoutRPC for LayoutRPCImpl {
                 }
             }
 
-            
+            // Compute the new cursor.
             let cursor = if !mouse_over_list.is_empty() {
                 mouse_over_list[0].pointing.unwrap()
             } else {
@@ -238,9 +238,9 @@ impl FragmentBorderBoxIterator for PositionRetrievingFragmentBorderBoxIterator {
                      PositionProperty::Top => self.position.y,
                      PositionProperty::Width => border_box.size.width - border_padding.horizontal(),
                      PositionProperty::Height => border_box.size.height - border_padding.vertical(),
-                     
-                     
-                     
+                     // TODO: the following 2 calculations are completely wrong.
+                     // They should return the difference between the parent's and this
+                     // fragment's border boxes.
                      PositionProperty::Right => border_box.max_x() + self.position.x,
                      PositionProperty::Bottom => border_box.max_y() + self.position.y,
         });
@@ -293,8 +293,8 @@ impl FragmentBorderBoxIterator for MarginRetrievingFragmentBorderBoxIterator {
 
 pub fn process_content_box_request<'ln, N: LayoutNode<'ln>>(
         requested_node: N, layout_root: &mut FlowRef) -> Rect<Au> {
-    
-    
+    // FIXME(pcwalton): This has not been updated to handle the stacking context relative
+    // stuff. So the position is wrong in most cases.
     let mut iterator = UnioningFragmentBorderBoxIterator::new(requested_node.opaque());
     sequential::iterate_through_flow_tree_fragment_border_boxes(layout_root, &mut iterator);
     match iterator.rect {
@@ -305,8 +305,8 @@ pub fn process_content_box_request<'ln, N: LayoutNode<'ln>>(
 
 pub fn process_content_boxes_request<'ln, N: LayoutNode<'ln>>(requested_node: N, layout_root: &mut FlowRef)
         -> Vec<Rect<Au>> {
-    
-    
+    // FIXME(pcwalton): This has not been updated to handle the stacking context relative
+    // stuff. So the position is wrong in most cases.
     let mut iterator = CollectingFragmentBorderBoxIterator::new(requested_node.opaque());
     sequential::iterate_through_flow_tree_fragment_border_boxes(layout_root, &mut iterator);
     iterator.rects
@@ -371,32 +371,32 @@ impl FragmentBorderBoxIterator for FragmentLocatingFragmentIterator {
     }
 }
 
-
+// https://drafts.csswg.org/cssom-view/#extensions-to-the-htmlelement-interface
 impl FragmentBorderBoxIterator for ParentOffsetBorderBoxIterator {
     fn process(&mut self, fragment: &Fragment, level: i32, border_box: &Rect<Au>) {
         if fragment.node == self.node_address {
-            
-            
+            // Found the fragment in the flow tree that matches the
+            // DOM node being looked for.
             self.has_found_node = true;
             self.node_border_box = *border_box;
 
-            
+            // offsetParent returns null if the node is fixed.
             if fragment.style.get_box().position == computed_values::position::T::fixed {
                 self.parent_nodes.clear();
             }
         } else if level > self.last_level {
-            
-            
-            
+            // TODO(gw): Is there a less fragile way of checking whether this
+            // fragment is the body element, rather than just checking that
+            // the parent nodes stack contains the root node only?
             let is_body_element = self.parent_nodes.len() == 1;
 
             let is_valid_parent = match (is_body_element,
                                          fragment.style.get_box().position,
                                          &fragment.specific) {
-                
-                
-                
-                
+                // Spec says it's valid if any of these are true:
+                //  1) Is the body element
+                //  2) Is static position *and* is a table or table cell
+                //  3) Is not static position
                 (true, _, _) |
                 (false, computed_values::position::T::static_, &SpecificFragmentInfo::Table) |
                 (false, computed_values::position::T::static_, &SpecificFragmentInfo::TableCell) |
@@ -404,7 +404,7 @@ impl FragmentBorderBoxIterator for ParentOffsetBorderBoxIterator {
                 (false, computed_values::position::T::relative, _) |
                 (false, computed_values::position::T::fixed, _) => true,
 
-                
+                // Otherwise, it's not a valid parent
                 (false, computed_values::position::T::static_, _) => false,
             };
 
@@ -435,8 +435,8 @@ pub fn process_node_geometry_request<'ln, N: LayoutNode<'ln>>(requested_node: N,
     iterator.client_rect
 }
 
-
-
+/// Return the resolved value of property for a given (pseudo)element.
+/// https://drafts.csswg.org/cssom/#resolved-value
 pub fn process_resolved_style_request<'ln, N: LayoutNode<'ln>>(
             requested_node: N, pseudo: &Option<PseudoElement>,
             property: &Atom, layout_root: &mut FlowRef) -> Option<String> {
@@ -449,9 +449,9 @@ pub fn process_resolved_style_request<'ln, N: LayoutNode<'ln>>(
 
     let layout_node = match layout_node {
         None => {
-            
-            
-            
+            // The pseudo doesn't exist, return nothing.  Chrome seems to query
+            // the element itself in this case, Firefox uses the resolved value.
+            // https://www.w3.org/Bugs/Public/show_bug.cgi?id=29006
             return None;
         }
         Some(layout_node) => layout_node
@@ -461,17 +461,17 @@ pub fn process_resolved_style_request<'ln, N: LayoutNode<'ln>>(
 
     let positioned = match style.get_box().position {
         position::computed_value::T::relative |
-        
+        /*position::computed_value::T::sticky |*/
         position::computed_value::T::fixed |
         position::computed_value::T::absolute => true,
         _ => false
     };
 
-    
-    
-    
-    
-    
+    //TODO: determine whether requested property applies to the element.
+    //      eg. width does not apply to non-replaced inline elements.
+    // Existing browsers disagree about when left/top/right/bottom apply
+    // (Chrome seems to think they never apply and always returns resolved values).
+    // There are probably other quirks.
     let applies = true;
 
     fn used_value_for_position_property<'ln, N: LayoutNode<'ln>>(
@@ -484,8 +484,8 @@ pub fn process_resolved_style_request<'ln, N: LayoutNode<'ln>>(
             match (*data).flow_construction_result {
                 ConstructionResult::Flow(ref flow_ref, _) =>
                     flow::base(flow_ref.deref()).stacking_relative_position,
-                
-                
+                // TODO(dzbarsky) search parents until we find node with a flow ref.
+                // https://github.com/servo/servo/issues/8307
                 _ => Point2D::zero()
             }
         });
@@ -507,9 +507,9 @@ pub fn process_resolved_style_request<'ln, N: LayoutNode<'ln>>(
         iterator.result.map(|r| r.to_css_string())
     }
 
-    
-    
-    
+    // TODO: we will return neither the computed nor used value for margin and padding.
+    // Firefox returns blank strings for the computed value of shorthands,
+    // so this should be web-compatible.
     match *property {
         atom!("margin-bottom") | atom!("margin-top") |
         atom!("margin-left") | atom!("margin-right") |
@@ -548,7 +548,7 @@ pub fn process_resolved_style_request<'ln, N: LayoutNode<'ln>>(
                 display::computed_value::T::none => {
             used_value_for_position_property(layout_node, layout_root, requested_node, property)
         }
-        
+        // FIXME: implement used value computation for line-height
         ref property => {
             style.computed_value_to_string(&*property).ok()
         }
