@@ -7,11 +7,11 @@
 #ifndef jit_none_Architecture_none_h
 #define jit_none_Architecture_none_h
 
-#include "jit/shared/Architecture-shared.h"
-
 
 
 #include "jit/JitSpewer.h"
+
+#include "jit/shared/Architecture-shared.h"
 
 namespace js {
 namespace jit {
