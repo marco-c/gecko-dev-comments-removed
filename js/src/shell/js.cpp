@@ -939,7 +939,6 @@ AddIntlExtras(JSContext* cx, unsigned argc, Value* vp)
 
     static const JSFunctionSpec funcs[] = {
         JS_SELF_HOSTED_FN("getCalendarInfo", "Intl_getCalendarInfo", 1, 0),
-        JS_SELF_HOSTED_FN("getLocaleInfo", "Intl_getLocaleInfo", 1, 0),
         JS_SELF_HOSTED_FN("getDisplayNames", "Intl_getDisplayNames", 2, 0),
         JS_FS_END
     };
@@ -3544,10 +3543,13 @@ WorkerMain(void* arg)
         JS_ExecuteScript(cx, script, &result);
     } while (0);
 
-    JS::SetLargeAllocationFailureCallback(cx, nullptr, nullptr);
+    if (input->parentRuntime) {
+        JS::SetLargeAllocationFailureCallback(cx, nullptr, nullptr);
 
-    JS::SetGetIncumbentGlobalCallback(cx, nullptr);
-    JS::SetEnqueuePromiseJobCallback(cx, nullptr);
+        JS::SetGetIncumbentGlobalCallback(cx, nullptr);
+        JS::SetEnqueuePromiseJobCallback(cx, nullptr);
+    }
+
     sc->jobQueue.reset();
 
     KillWatchdog(cx);
