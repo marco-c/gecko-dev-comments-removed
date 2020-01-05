@@ -2,11 +2,13 @@
 
 
 
-use dom::bindings::codegen::Bindings::HTMLProgressElementBinding;
+use dom::bindings::codegen::Bindings::HTMLProgressElementBinding::{self, HTMLProgressElementMethods};
+use dom::bindings::conversions::Castable;
 use dom::bindings::js::Root;
 use dom::document::Document;
 use dom::htmlelement::HTMLElement;
 use dom::node::Node;
+use dom::nodelist::NodeList;
 use util::str::DOMString;
 
 #[dom_struct]
@@ -30,5 +32,12 @@ impl HTMLProgressElement {
                document: &Document) -> Root<HTMLProgressElement> {
         let element = HTMLProgressElement::new_inherited(localName, prefix, document);
         Node::reflect_node(box element, document, HTMLProgressElementBinding::Wrap)
+    }
+}
+
+impl HTMLProgressElementMethods for HTMLProgressElement {
+    
+    fn Labels(&self) -> Root<NodeList> {
+        self.upcast::<HTMLElement>().labels()
     }
 }

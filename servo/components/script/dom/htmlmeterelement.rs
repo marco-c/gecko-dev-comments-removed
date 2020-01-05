@@ -2,11 +2,13 @@
 
 
 
-use dom::bindings::codegen::Bindings::HTMLMeterElementBinding;
+use dom::bindings::codegen::Bindings::HTMLMeterElementBinding::{self, HTMLMeterElementMethods};
+use dom::bindings::conversions::Castable;
 use dom::bindings::js::Root;
 use dom::document::Document;
 use dom::htmlelement::HTMLElement;
 use dom::node::Node;
+use dom::nodelist::NodeList;
 use util::str::DOMString;
 
 #[dom_struct]
@@ -29,5 +31,12 @@ impl HTMLMeterElement {
                document: &Document) -> Root<HTMLMeterElement> {
         let element = HTMLMeterElement::new_inherited(localName, prefix, document);
         Node::reflect_node(box element, document, HTMLMeterElementBinding::Wrap)
+    }
+}
+
+impl HTMLMeterElementMethods for HTMLMeterElement {
+    
+    fn Labels(&self) -> Root<NodeList> {
+        self.upcast::<HTMLElement>().labels()
     }
 }
