@@ -16,7 +16,9 @@ DocGroup::GetKey(nsIPrincipal* aPrincipal, nsACString& aKey)
   aKey.Truncate();
   nsCOMPtr<nsIURI> uri;
   nsresult rv = aPrincipal->GetURI(getter_AddRefs(uri));
-  if (NS_SUCCEEDED(rv)) {
+  
+  
+  if (NS_SUCCEEDED(rv) && uri) {
     nsCOMPtr<nsIEffectiveTLDService> tldService =
       do_GetService(NS_EFFECTIVETLDSERVICE_CONTRACTID);
     if (tldService) {
