@@ -20,6 +20,7 @@
 #include "nsIAsyncOutputStream.h"
 #include "nsIDNSListener.h"
 #include "nsIClassInfo.h"
+#include "TCPFastOpen.h"
 #include "mozilla/net/DNS.h"
 #include "nsASocketHandler.h"
 #include "mozilla/Telemetry.h"
@@ -209,6 +210,7 @@ private:
     {
     public:
       explicit PRFileDescAutoLock(nsSocketTransport *aSocketTransport,
+                                  bool aAlsoDuringFastOpen,
                                   nsresult *aConditionWhileLocked = nullptr)
         : mSocketTransport(aSocketTransport)
         , mFd(nullptr)
@@ -221,7 +223,11 @@ private:
             return;
           }
         }
-        mFd = mSocketTransport->GetFD_Locked();
+        if (!aAlsoDuringFastOpen) {
+          mFd = mSocketTransport->GetFD_Locked();
+        } else {
+          mFd = mSocketTransport->GetFD_LockedAlsoDuringFastOpen();
+        }
       }
       ~PRFileDescAutoLock() {
         MutexAutoLock lock(mSocketTransport->mLock);
@@ -379,6 +385,9 @@ private:
     LockedPRFileDesc mFD;
     nsrefcnt         mFDref;       
     bool             mFDconnected; 
+    bool             mFDFastOpenInProgress; 
+                                            
+                                            
 
     
     
@@ -405,6 +414,7 @@ private:
     
     
     PRFileDesc *GetFD_Locked();
+    PRFileDesc *GetFD_LockedAlsoDuringFastOpen();
     void        ReleaseFD_Locked(PRFileDesc *fd);
 
     
@@ -462,6 +472,9 @@ private:
     int32_t mKeepaliveIdleTimeS;
     int32_t mKeepaliveRetryIntervalS;
     int32_t mKeepaliveProbeCount;
+
+    
+    TCPFastOpen *mFastOpenCallback;
 };
 
 } 

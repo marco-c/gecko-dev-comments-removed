@@ -4611,6 +4611,9 @@ pref("network.tcp.keepalive.retry_interval", 1);
 pref("network.tcp.keepalive.probe_count", 4);
 #endif
 
+pref("network.tcp.tcp_fastopen_enable", true);
+pref("network.tcp.tcp_fastopen_consecutive_failure_limit", 5);
+
 
 pref("layers.acceleration.disabled", false);
 

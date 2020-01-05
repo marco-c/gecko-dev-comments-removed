@@ -166,6 +166,12 @@ public:
     virtual void ReuseConnectionOnRestartOK(bool) { }
 
     
+    virtual MOZ_MUST_USE bool CanDo0RTT() {
+        return false;
+    }
+    
+    
+    
     virtual MOZ_MUST_USE bool Do0RTT() {
         return false;
     }
@@ -181,6 +187,10 @@ public:
     
     
     virtual MOZ_MUST_USE nsresult Finish0RTT(bool aRestart, bool aAlpnChanged) {
+        return NS_ERROR_NOT_IMPLEMENTED;
+    }
+
+    virtual MOZ_MUST_USE nsresult RestartOnFastOpenError() {
         return NS_ERROR_NOT_IMPLEMENTED;
     }
 

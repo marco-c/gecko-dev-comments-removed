@@ -19,6 +19,7 @@
 #include "AlternateServices.h"
 #include "ARefBase.h"
 #include "nsWeakReference.h"
+#include "TCPFastOpen.h"
 
 #include "nsIObserver.h"
 #include "nsITimer.h"
@@ -275,6 +276,9 @@ private:
         bool mUsedForConnection : 1;
 
         
+        bool mUseFastOpen : 1;
+
+        
         void RecordIPFamilyPreference(uint16_t family);
         
         void ResetIPFamilyPreference();
@@ -320,7 +324,8 @@ private:
                                    public nsITransportEventSink,
                                    public nsIInterfaceRequestor,
                                    public nsITimerCallback,
-                                   public nsSupportsWeakReference
+                                   public nsSupportsWeakReference,
+                                   public TCPFastOpen
     {
         ~nsHalfOpenSocket();
 
@@ -366,7 +371,15 @@ private:
 
         bool Claim();
         void Unclaim();
+
+        bool FastOpenEnabled() override;
+        nsresult StartFastOpen() override;
+        void FastOpenConnected(nsresult) override;
+        void FastOpenNotSupported() override;
     private:
+        nsresult SetupConn(nsIAsyncOutputStream *out,
+                           bool aFastOpen);
+
         
         
         
@@ -419,6 +432,9 @@ private:
         
         bool                           mFreeToUse;
         nsresult                       mPrimaryStreamStatus;
+
+        bool                           mUsingFastOpen;
+        RefPtr<nsHttpConnection>       mConnectionNegotiatingFastOpen;
     };
     friend class nsHalfOpenSocket;
 
