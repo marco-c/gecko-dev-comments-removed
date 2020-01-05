@@ -624,8 +624,9 @@ ImageBitmap::PrepareForDrawTarget(gfx::DrawTarget* aTarget)
   
   
   
-  MOZ_ASSERT(IsOpaque(mSurface->GetFormat()) == (mAlphaType == gfxAlphaType::Opaque));
-  if (mAlphaType == gfxAlphaType::NonPremult) {
+  if (mAlphaType == gfxAlphaType::NonPremult &&
+      !IsOpaque(mSurface->GetFormat()))
+  {
     MOZ_ASSERT(mSurface->GetFormat() == SurfaceFormat::R8G8B8A8 ||
                mSurface->GetFormat() == SurfaceFormat::B8G8R8A8 ||
                mSurface->GetFormat() == SurfaceFormat::A8R8G8B8);
