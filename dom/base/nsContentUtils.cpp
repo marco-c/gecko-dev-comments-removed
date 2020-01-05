@@ -8791,6 +8791,59 @@ nsContentUtils::StorageAllowedForPrincipal(nsIPrincipal* aPrincipal)
 }
 
 
+void
+nsContentUtils::GetCookieBehaviorForPrincipal(nsIPrincipal* aPrincipal,
+                                              uint32_t* aLifetimePolicy,
+                                              uint32_t* aBehavior)
+{
+  *aLifetimePolicy = sCookiesLifetimePolicy;
+  *aBehavior = sCookiesBehavior;
+
+  
+  
+  nsCOMPtr<nsIPermissionManager> permissionManager =
+    services::GetPermissionManager();
+  if (!permissionManager) {
+    return;
+  }
+
+  uint32_t perm;
+  permissionManager->TestPermissionFromPrincipal(aPrincipal, "cookie", &perm);
+  switch (perm) {
+    case nsICookiePermission::ACCESS_ALLOW:
+      *aBehavior = nsICookieService::BEHAVIOR_ACCEPT;
+      *aLifetimePolicy = nsICookieService::ACCEPT_NORMALLY;
+      break;
+    case nsICookiePermission::ACCESS_DENY:
+      *aBehavior = nsICookieService::BEHAVIOR_REJECT;
+      *aLifetimePolicy = nsICookieService::ACCEPT_NORMALLY;
+      break;
+    case nsICookiePermission::ACCESS_SESSION:
+      *aBehavior = nsICookieService::BEHAVIOR_ACCEPT;
+      *aLifetimePolicy = nsICookieService::ACCEPT_SESSION;
+      break;
+    case nsICookiePermission::ACCESS_ALLOW_FIRST_PARTY_ONLY:
+      *aBehavior = nsICookieService::BEHAVIOR_REJECT_FOREIGN;
+      
+      
+      
+      
+      
+      *aLifetimePolicy = nsICookieService::ACCEPT_NORMALLY;
+      break;
+    case nsICookiePermission::ACCESS_LIMIT_THIRD_PARTY:
+      *aBehavior = nsICookieService::BEHAVIOR_LIMIT_FOREIGN;
+      
+      
+      
+      
+      
+      *aLifetimePolicy = nsICookieService::ACCEPT_NORMALLY;
+      break;
+  }
+}
+
+
 nsContentUtils::StorageAccess
 nsContentUtils::InternalStorageAllowedForPrincipal(nsIPrincipal* aPrincipal,
                                                    nsPIDOMWindowInner* aWindow)
@@ -8819,28 +8872,12 @@ nsContentUtils::InternalStorageAllowedForPrincipal(nsIPrincipal* aPrincipal,
     }
   }
 
-  nsCOMPtr<nsIPermissionManager> permissionManager =
-    services::GetPermissionManager();
-  if (!permissionManager) {
-    return StorageAccess::eDeny;
-  }
+  uint32_t lifetimePolicy;
+  uint32_t behavior;
+  GetCookieBehaviorForPrincipal(aPrincipal, &lifetimePolicy, &behavior);
 
   
-  
-  uint32_t perm;
-  permissionManager->TestPermissionFromPrincipal(aPrincipal, "cookie", &perm);
-  if (perm == nsIPermissionManager::DENY_ACTION) {
-    return StorageAccess::eDeny;
-  }
-  if (perm == nsICookiePermission::ACCESS_SESSION) {
-    return std::min(access, StorageAccess::eSessionScoped);
-  }
-  if (perm == nsIPermissionManager::ALLOW_ACTION) {
-    return access;
-  }
-
-  
-  if (sCookiesLifetimePolicy == nsICookieService::ACCEPT_SESSION) {
+  if (lifetimePolicy == nsICookieService::ACCEPT_SESSION) {
     
     
     
@@ -8881,13 +8918,13 @@ nsContentUtils::InternalStorageAllowedForPrincipal(nsIPrincipal* aPrincipal,
   }
 
   
-  if (sCookiesBehavior == nsICookieService::BEHAVIOR_REJECT) {
+  if (behavior == nsICookieService::BEHAVIOR_REJECT) {
     return StorageAccess::eDeny;
   }
 
   
-  if (aWindow && (sCookiesBehavior == nsICookieService::BEHAVIOR_REJECT_FOREIGN ||
-                  sCookiesBehavior == nsICookieService::BEHAVIOR_LIMIT_FOREIGN)) {
+  if (aWindow && (behavior == nsICookieService::BEHAVIOR_REJECT_FOREIGN ||
+                  behavior == nsICookieService::BEHAVIOR_LIMIT_FOREIGN)) {
     nsCOMPtr<mozIThirdPartyUtil> thirdPartyUtil =
       do_GetService(THIRDPARTYUTIL_CONTRACTID);
     MOZ_ASSERT(thirdPartyUtil);
