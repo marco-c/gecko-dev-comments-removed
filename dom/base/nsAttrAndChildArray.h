@@ -143,6 +143,13 @@ public:
   
   void ClearMappedServoStyle();
 
+  
+  
+  
+  
+  nsresult EnsureCapacityToClone(const nsAttrAndChildArray& aOther,
+                                 bool aAllocateChildren);
+
 private:
   nsAttrAndChildArray(const nsAttrAndChildArray& aOther) = delete;
   nsAttrAndChildArray& operator=(const nsAttrAndChildArray& aOther) = delete;

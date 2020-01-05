@@ -41,7 +41,8 @@ public:
 
   virtual nsMapRuleToAttributesFunc GetAttributeMappingFunction() const override;
 
-  virtual nsresult Clone(NodeInfo *aNodeInfo, nsINode **aResult) const override;
+  virtual nsresult Clone(NodeInfo *aNodeInfo, nsINode **aResult,
+                         bool aPreallocateChildren) const override;
 
   
   

@@ -138,7 +138,8 @@ public:
     bool OnDocumentParserError() override;
 
     
-    virtual nsresult Clone(mozilla::dom::NodeInfo *aNodeInfo, nsINode **aResult) const override;
+    virtual nsresult Clone(mozilla::dom::NodeInfo *aNodeInfo, nsINode **aResult,
+                           bool aPreallocateChildren) const override;
 
     
     NS_FORWARD_NSIDOMNODE_TO_NSINODE

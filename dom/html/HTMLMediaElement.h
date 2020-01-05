@@ -385,7 +385,7 @@ public:
 
   bool GetPlayedOrSeeked() const { return mHasPlayedOrSeeked; }
 
-  nsresult CopyInnerTo(Element* aDest);
+  nsresult CopyInnerTo(Element* aDest, bool aPreallocateChildren);
 
   
 

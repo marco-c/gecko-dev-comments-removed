@@ -357,12 +357,17 @@ NS_INTERFACE_MAP_END_INHERITING(nsStyledElement)
 
 
 nsresult
-nsXULElement::Clone(mozilla::dom::NodeInfo *aNodeInfo, nsINode **aResult) const
+nsXULElement::Clone(mozilla::dom::NodeInfo *aNodeInfo, nsINode **aResult,
+                    bool aPreallocateChildren) const
 {
     *aResult = nullptr;
 
     RefPtr<mozilla::dom::NodeInfo> ni = aNodeInfo;
     RefPtr<nsXULElement> element = new nsXULElement(ni.forget());
+
+    nsresult rv = element->mAttrsAndChildren.EnsureCapacityToClone(mAttrsAndChildren,
+                                                                   aPreallocateChildren);
+    NS_ENSURE_SUCCESS(rv, rv);
 
     
     
@@ -372,7 +377,7 @@ nsXULElement::Clone(mozilla::dom::NodeInfo *aNodeInfo, nsINode **aResult) const
     
 
     uint32_t count = mAttrsAndChildren.AttrCount();
-    nsresult rv = NS_OK;
+    rv = NS_OK;
     for (uint32_t i = 0; i < count; ++i) {
         const nsAttrName* originalName = mAttrsAndChildren.AttrNameAt(i);
         const nsAttrValue* originalValue = mAttrsAndChildren.AttrAt(i);

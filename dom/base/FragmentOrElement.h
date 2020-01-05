@@ -236,7 +236,7 @@ protected:
 
 
 
-  nsresult CopyInnerTo(FragmentOrElement* aDest);
+  nsresult CopyInnerTo(FragmentOrElement* aDest, bool aPreallocateChildren);
 
 public:
   
