@@ -85,6 +85,13 @@ CaptivePortalService::RearmTimer()
     mTimer->Cancel();
   }
 
+  
+  
+  
+  if (mState == NOT_CAPTIVE) {
+    return NS_OK;
+  }
+
   if (!mTimer) {
     mTimer = do_CreateInstance(NS_TIMER_CONTRACTID);
   }
