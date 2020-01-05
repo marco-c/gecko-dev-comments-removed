@@ -457,6 +457,7 @@ class FunctionBox : public ObjectBox, public SharedContext
     bool            hasDestructuringArgs:1; 
     bool            hasParameterExprs:1;    
     bool            hasDirectEvalInParameterExpr:1; 
+    bool            hasDuplicateParameters:1; 
     bool            useAsm:1;               
     bool            insideUseAsm:1;         
     bool            isAnnexB:1;             
