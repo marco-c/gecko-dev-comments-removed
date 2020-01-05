@@ -84,7 +84,6 @@ using namespace mozilla::media;
 #define SLOG(x, ...) MOZ_LOG(gMediaDecoderLog, LogLevel::Debug, (SFMT(x, ##__VA_ARGS__)))
 #define SWARN(x, ...) NS_WARNING(nsPrintfCString(SFMT(x, ##__VA_ARGS__)).get())
 #define SDUMP(x, ...) NS_DebugBreak(NS_DEBUG_WARNING, nsPrintfCString(SFMT(x, ##__VA_ARGS__)).get(), nullptr, nullptr, -1)
-#define SSAMPLELOG(x, ...) MOZ_LOG(gMediaSampleLog, LogLevel::Debug, (SFMT(x, ##__VA_ARGS__)))
 
 
 
@@ -1337,11 +1336,6 @@ private:
     MOZ_ASSERT(!mSeekJob.mPromise.IsEmpty(), "Seek shouldn't be finished");
 
     
-    
-
-    SSAMPLELOG("OnAudioDecoded [%lld,%lld]", aAudio->mTime, aAudio->GetEndTime());
-
-    
     mSeekedAudioData = aAudio;
 
     MaybeFinishSeek();
@@ -1351,11 +1345,6 @@ private:
   {
     MOZ_ASSERT(aVideo);
     MOZ_ASSERT(!mSeekJob.mPromise.IsEmpty(), "Seek shouldn't be finished");
-
-    
-    
-
-    SSAMPLELOG("OnVideoDecoded [%lld,%lld]", aVideo->mTime, aVideo->GetEndTime());
 
     if (aVideo->mTime > mCurrentTime) {
       mSeekedVideoData = aVideo;
@@ -1376,8 +1365,6 @@ private:
     switch (aType) {
     case MediaData::AUDIO_DATA:
     {
-      SSAMPLELOG("OnAudioNotDecoded (aError=%u)", aError.Code());
-
       
       
       
@@ -1387,8 +1374,6 @@ private:
     }
     case MediaData::VIDEO_DATA:
     {
-      SSAMPLELOG("OnVideoNotDecoded (aError=%u)", aError.Code());
-
       if (aError == NS_ERROR_DOM_MEDIA_END_OF_STREAM) {
         mIsVideoQueueFinished = true;
       }
@@ -1479,14 +1464,10 @@ private:
   {
     if (mSeekedAudioData) {
       mMaster->Push(mSeekedAudioData);
-      mMaster->mDecodedAudioEndTime = std::max(
-        mSeekedAudioData->GetEndTime(), mMaster->mDecodedAudioEndTime);
     }
 
     if (mSeekedVideoData) {
       mMaster->Push(mSeekedVideoData);
-      mMaster->mDecodedVideoEndTime = std::max(
-        mSeekedVideoData->GetEndTime(), mMaster->mDecodedVideoEndTime);
     }
 
     if (mIsAudioQueueFinished) {
