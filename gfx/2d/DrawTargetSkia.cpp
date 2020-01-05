@@ -1567,6 +1567,10 @@ DrawTargetSkia::CreateSimilarDrawTarget(const IntSize &aSize, SurfaceFormat aFor
     
   }
 #endif
+  
+  
+  MOZ_ASSERT(mCanvas->imageInfo().colorType() != kUnknown_SkColorType,
+             "Not backed by pixels - we need to handle PDF backed SkCanvas");
   if (!target->Init(aSize, aFormat)) {
     return nullptr;
   }
@@ -1751,6 +1755,30 @@ DrawTargetSkia::Init(const IntSize &aSize, SurfaceFormat aFormat)
   if (info.isOpaque()) {
     mCanvas->clear(SK_ColorBLACK);
   }
+  return true;
+}
+
+bool
+DrawTargetSkia::Init(SkCanvas* aCanvas)
+{
+  mCanvas = sk_ref_sp(aCanvas);
+
+  SkImageInfo imageInfo = mCanvas->imageInfo();
+
+  
+  
+  bool isBackedByPixels = imageInfo.colorType() != kUnknown_SkColorType;
+  if (isBackedByPixels) {
+    
+    SkColor clearColor = imageInfo.isOpaque() ? SK_ColorBLACK : SK_ColorTRANSPARENT;
+    mCanvas->clear(clearColor);
+  }
+
+  SkISize size = mCanvas->getBaseLayerSize();
+  mSize.width = size.width();
+  mSize.height = size.height();
+  mFormat = SkiaColorTypeToGfxFormat(imageInfo.colorType(),
+                                     imageInfo.alphaType());
   return true;
 }
 
