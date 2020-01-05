@@ -116,12 +116,6 @@ nsViewSourceHandler::NewChannel2(nsIURI* uri,
         return rv;
     }
 
-    if (aLoadInfo) {
-        
-        
-        aLoadInfo->SetResultPrincipalURI(uri);
-    }
-
     *result = static_cast<nsIViewSourceChannel*>(channel);
     return NS_OK;
 }
@@ -145,12 +139,6 @@ nsViewSourceHandler::NewSrcdocChannel(nsIURI *aURI,
     nsresult rv = channel->InitSrcdoc(aURI, aBaseURI, aSrcdoc, aLoadInfo);
     if (NS_FAILED(rv)) {
         return rv;
-    }
-
-    if (aLoadInfo) {
-        
-        
-        aLoadInfo->SetResultPrincipalURI(aURI);
     }
 
     *outChannel = static_cast<nsIViewSourceChannel*>(channel.forget().take());
