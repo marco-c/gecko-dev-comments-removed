@@ -12,7 +12,7 @@ const StubAlertsService = {
   showAlertNotification(image, title, text, clickable, cookie, clickCallback) {
     
     
-    clickCallback.observe(null, "alertclickcallback", null);
+    clickCallback.observe.call(clickCallback, null, "alertclickcallback", null);
   }
 }
 

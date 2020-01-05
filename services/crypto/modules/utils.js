@@ -134,6 +134,7 @@ this.CryptoUtils = {
 
 
   hkdf: function hkdf(ikm, xts, info, len) {
+    const BLOCKSIZE = 256 / 8;
     if (typeof xts === undefined)
       xts = String.fromCharCode(0, 0, 0, 0, 0, 0, 0, 0,
                                 0, 0, 0, 0, 0, 0, 0, 0,
@@ -260,11 +261,12 @@ this.CryptoUtils = {
                                                             forceJS) {
     if (Svc.Crypto.deriveKeyFromPassphrase && !forceJS) {
       return Svc.Crypto.deriveKeyFromPassphrase(passphrase, salt, keyLength);
+    } else {
+      
+      
+      return CryptoUtils.pbkdf2Generate(passphrase, atob(salt), 4096,
+                                        keyLength);
     }
-    
-    
-    return CryptoUtils.pbkdf2Generate(passphrase, atob(salt), 4096,
-                                      keyLength);
   },
 
   

@@ -79,7 +79,7 @@ var bookmarkMods = {
 };
 
 
-bookmarksToDelete = {
+var bookmarksToDelete = {
   "menu": [
     { folder: "foldera" },
     { folder: "folderb" },
