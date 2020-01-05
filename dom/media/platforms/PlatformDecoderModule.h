@@ -297,6 +297,12 @@ public:
   
   
   virtual void SetSeekThreshold(const media::TimeUnit& aTime) {}
+
+  
+  
+  
+  
+  virtual bool SupportDecoderRecycling() const { return false; }
 };
 
 } 

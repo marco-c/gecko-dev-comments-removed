@@ -285,6 +285,13 @@ H264Converter::CheckForSPSChange(MediaRawData* aSample)
                                             mCurrentConfig.mExtraData)) {
         return NS_OK;
       }
+
+   if (mDecoder->SupportDecoderRecycling()) {
+    
+    UpdateConfigFromExtraData(extra_data);
+    mNeedKeyframe = true;
+    return NS_OK;
+  }
   
   
   mDecoder->Flush();
