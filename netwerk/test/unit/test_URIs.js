@@ -1,4 +1,10 @@
 
+
+
+
+
+"use strict";
+
 Components.utils.import("resource://gre/modules/NetUtil.jsm");
 
 var gIoService = Components.classes["@mozilla.org/network/io-service;1"]
@@ -300,7 +306,8 @@ function do_check_property(aTest, aURI, aPropertyName, aTestFunctor) {
 function do_test_uri_basic(aTest) {
   var URI;
 
-  do_info("Basic tests for " + aTest.spec + " relative URI: " + aTest.relativeURI);
+  do_info("Basic tests for " + aTest.spec +
+          " relative URI: " + (aTest.relativeURI === undefined ? "(none)" : aTest.relativeURI) );
 
   try {
     URI = NetUtil.newURI(aTest.spec);
