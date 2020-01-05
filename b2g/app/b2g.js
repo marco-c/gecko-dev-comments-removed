@@ -890,9 +890,6 @@ pref("layout.accessiblecaret.enabled", true);
 pref("layout.accessiblecaret.bar.enabled", true);
 
 
-pref("layout.accessiblecaret.timeout_ms", 3000);
-
-
 pref("layout.accessiblecaret.always_show_when_scrolling", false);
 
 
