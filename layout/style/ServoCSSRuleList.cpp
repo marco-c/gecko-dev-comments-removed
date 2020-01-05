@@ -81,7 +81,13 @@ ServoCSSRuleList::GetRule(uint32_t aIndex)
       CASE_RULE(MEDIA, Media)
       CASE_RULE(NAMESPACE, Namespace)
 #undef CASE_RULE
-      case nsIDOMCSSRule::FONT_FACE_RULE:
+      case nsIDOMCSSRule::FONT_FACE_RULE: {
+        
+        
+        
+        ruleObj = Servo_CssRules_GetFontFaceRuleAt(mRawRules, aIndex);
+        break;
+      }
       case nsIDOMCSSRule::KEYFRAMES_RULE:
         
       default:
