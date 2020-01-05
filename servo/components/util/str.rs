@@ -169,7 +169,7 @@ pub fn parse_length(mut value: &str) -> LengthOrPercentageOrAuto {
 }
 
 
-pub fn parse_legacy_color(mut input: &str) -> Result<RGBA,()> {
+pub fn parse_legacy_color(mut input: &str) -> Result<RGBA, ()> {
     
     if input.is_empty() {
         return Err(())
@@ -277,7 +277,7 @@ pub fn parse_legacy_color(mut input: &str) -> Result<RGBA,()> {
         alpha: 1.0,
     });
 
-    fn hex(ch: char) -> Result<u8,()> {
+    fn hex(ch: char) -> Result<u8, ()> {
         match ch {
             '0'...'9' => Ok((ch as u8) - b'0'),
             'a'...'f' => Ok((ch as u8) - b'a' + 10),
@@ -286,7 +286,7 @@ pub fn parse_legacy_color(mut input: &str) -> Result<RGBA,()> {
         }
     }
 
-    fn hex_string(string: &[u8]) -> Result<u8,()> {
+    fn hex_string(string: &[u8]) -> Result<u8, ()> {
         match string.len() {
             0 => Err(()),
             1 => hex(string[0] as char),

@@ -167,7 +167,7 @@ impl ApplicableDeclarationsCache {
 
 
 pub struct StyleSharingCandidateCache {
-    cache: LRUCache<StyleSharingCandidate,()>,
+    cache: LRUCache<StyleSharingCandidate, ()>,
 }
 
 fn create_common_style_affecting_attributes_from_element(element: &LayoutElement)
@@ -348,7 +348,7 @@ impl StyleSharingCandidateCache {
         }
     }
 
-    pub fn iter<'a>(&'a self) -> Iter<'a,(StyleSharingCandidate,())> {
+    pub fn iter<'a>(&'a self) -> Iter<'a, (StyleSharingCandidate, ())> {
         self.cache.iter()
     }
 
