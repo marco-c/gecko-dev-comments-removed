@@ -4796,7 +4796,7 @@ HTMLMediaElement::UpdateReadyStateInternal()
   
   
   
-  if (mDecoder->CanPlayThrough()) {
+  if (mWaitingForKey == NOT_WAITING_FOR_KEY && mDecoder->CanPlayThrough()) {
     LOG(LogLevel::Debug, ("MediaElement %p UpdateReadyStateInternal() "
                           "Decoder can play through", this));
     ChangeReadyState(nsIDOMHTMLMediaElement::HAVE_ENOUGH_DATA);
@@ -6205,10 +6205,6 @@ void
 HTMLMediaElement::DispatchEncrypted(const nsTArray<uint8_t>& aInitData,
                                     const nsAString& aInitDataType)
 {
-  LOG(LogLevel::Debug,
-      ("%p DispatchEncrypted initDataType='%s'",
-      this, NS_ConvertUTF16toUTF8(aInitDataType).get()));
-
   if (mReadyState == nsIDOMHTMLMediaElement::HAVE_NOTHING) {
     
     
