@@ -1656,7 +1656,7 @@ ShutdownState::Enter()
   
   master->mWatchManager.Shutdown();
 
-  return Reader()->Shutdown()->ThenPromise(
+  return Reader()->Shutdown()->Then(
     OwnerThread(), __func__, master,
     &MediaDecoderStateMachine::FinishShutdown,
     &MediaDecoderStateMachine::FinishShutdown);
