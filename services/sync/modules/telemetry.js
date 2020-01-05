@@ -327,13 +327,18 @@ class TelemetryRecord {
   }
 
   onEngineStop(engineName, error) {
-    if (error && !this.currentEngine) {
-      log.error(`Error triggered on ${engineName} when no current engine exists: ${error}`);
-      
-      
-      this.currentEngine = new EngineRecord(engineName);
-    } else if (!this.currentEngine || (engineName && this._shouldIgnoreEngine(engineName, true))) {
+    
+    if (this._shouldIgnoreEngine(engineName, !!this.currentEngine)) {
       return;
+    }
+    if (!this.currentEngine) {
+      
+      
+      if (!error) {
+        return;
+      }
+      log.error(`Error triggered on ${engineName} when no current engine exists: ${error}`);
+      this.currentEngine = new EngineRecord(engineName);
     }
     this.currentEngine.finished(error);
     this.engines.push(this.currentEngine);
