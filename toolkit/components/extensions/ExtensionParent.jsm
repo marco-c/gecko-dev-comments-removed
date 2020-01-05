@@ -16,7 +16,6 @@ const {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
 this.EXPORTED_SYMBOLS = ["ExtensionParent"];
 
 Cu.import("resource://gre/modules/Services.jsm");
-Cu.import("resource://gre/modules/Task.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "AddonManager",
@@ -29,8 +28,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "NativeApp",
                                   "resource://gre/modules/NativeMessaging.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "NetUtil",
                                   "resource://gre/modules/NetUtil.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "PrivateBrowsingUtils",
-                                  "resource://gre/modules/PrivateBrowsingUtils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Schemas",
                                   "resource://gre/modules/Schemas.jsm");
 
@@ -47,18 +44,11 @@ var {
   SpreadArgs,
   defineLazyGetter,
   findPathInObject,
-  promiseDocumentLoaded,
-  promiseEvent,
-  promiseObserved,
 } = ExtensionUtils;
 
 const BASE_SCHEMA = "chrome://extensions/content/schemas/manifest.json";
 const CATEGORY_EXTENSION_SCHEMAS = "webextension-schemas";
 const CATEGORY_EXTENSION_SCRIPTS = "webextension-scripts";
-
-const XUL_URL = "data:application/vnd.mozilla.xul+xml;charset=utf-8," + encodeURI(
-  `<?xml version="1.0"?>
-  <window id="documentElement"/>`);
 
 let schemaURLs = new Set();
 
@@ -561,209 +551,8 @@ ParentAPIManager = {
 ParentAPIManager.init();
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class HiddenExtensionPage {
-  constructor(extension, viewType) {
-    if (!extension || !viewType) {
-      throw new Error("extension and viewType parameters are mandatory");
-    }
-    this.extension = extension;
-    this.viewType = viewType;
-    this.parentWindow = null;
-    this.windowlessBrowser = null;
-    this.browser = null;
-  }
-
-  
-
-
-  shutdown() {
-    if (this.unloaded) {
-      throw new Error("Unable to shutdown an unloaded HiddenExtensionPage instance");
-    }
-
-    this.unloaded = true;
-
-    if (this.browser) {
-      this.browser.remove();
-      this.browser = null;
-    }
-
-    
-    
-    if (this.webNav) {
-      this.webNav.loadURI("about:blank", 0, null, null, null);
-      this.webNav = null;
-    }
-
-    if (this.parentWindow) {
-      this.parentWindow.close();
-      this.parentWindow = null;
-    }
-
-    if (this.windowlessBrowser) {
-      this.windowlessBrowser.loadURI("about:blank", 0, null, null, null);
-      this.windowlessBrowser.close();
-      this.windowlessBrowser = null;
-    }
-  }
-
-  
-
-
-
-
-
-  createBrowserElement() {
-    if (this.browser) {
-      throw new Error("createBrowserElement called twice");
-    }
-
-    let waitForParentDocument;
-    if (this.extension.remote) {
-      waitForParentDocument = this.createWindowedBrowser();
-    } else {
-      waitForParentDocument = this.createWindowlessBrowser();
-    }
-
-    return waitForParentDocument.then(chromeDoc => {
-      const browser = this.browser = chromeDoc.createElement("browser");
-      browser.setAttribute("type", "content");
-      browser.setAttribute("disableglobalhistory", "true");
-      browser.setAttribute("webextension-view-type", this.viewType);
-
-      let awaitFrameLoader = Promise.resolve();
-
-      if (this.extension.remote) {
-        browser.setAttribute("remote", "true");
-        awaitFrameLoader = promiseEvent(browser, "XULFrameLoaderCreated");
-      }
-
-      chromeDoc.documentElement.appendChild(browser);
-      return awaitFrameLoader.then(() => browser);
-    });
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  createWindowlessBrowser() {
-    return Task.spawn(function* () {
-      
-      
-      let windowlessBrowser = Services.appShell.createWindowlessBrowser(true);
-      this.windowlessBrowser = windowlessBrowser;
-
-      
-      
-      
-      
-      
-      
-      
-      
-      let chromeShell = windowlessBrowser.QueryInterface(Ci.nsIInterfaceRequestor)
-                                         .getInterface(Ci.nsIDocShell)
-                                         .QueryInterface(Ci.nsIWebNavigation);
-
-      yield this.initParentWindow(chromeShell);
-
-      return promiseDocumentLoaded(windowlessBrowser.document);
-    }.bind(this));
-  }
-
-  
-
-
-
-
-
-
-
-
-
-  createWindowedBrowser() {
-    return Task.spawn(function* () {
-      let window = Services.ww.openWindow(null, "about:blank", "_blank",
-                                          "chrome,alwaysLowered,dialog", null);
-
-      this.parentWindow = window;
-
-      let chromeShell = window.QueryInterface(Ci.nsIInterfaceRequestor)
-                              .getInterface(Ci.nsIDocShell)
-                              .QueryInterface(Ci.nsIWebNavigation);
-
-
-      yield this.initParentWindow(chromeShell);
-
-      window.minimize();
-
-      return promiseDocumentLoaded(window.document);
-    }.bind(this));
-  }
-
-  
-
-
-
-
-
-
-
-
-  initParentWindow(chromeShell) {
-    if (PrivateBrowsingUtils.permanentPrivateBrowsing) {
-      let attrs = chromeShell.getOriginAttributes();
-      attrs.privateBrowsingId = 1;
-      chromeShell.setOriginAttributes(attrs);
-    }
-
-    let system = Services.scriptSecurityManager.getSystemPrincipal();
-    chromeShell.createAboutBlankContentViewer(system);
-    chromeShell.useGlobalHistory = false;
-    chromeShell.loadURI(XUL_URL, 0, null, null, null);
-
-    return promiseObserved("chrome-document-global-created",
-                           win => win.document == chromeShell.document);
-  }
-}
-
-function promiseExtensionViewLoaded(browser) {
-  return new Promise(resolve => {
-    browser.messageManager.addMessageListener("Extension:ExtensionViewLoaded", function onLoad() {
-      browser.messageManager.removeMessageListener("Extension:ExtensionViewLoaded", onLoad);
-      resolve();
-    });
-  });
-}
-
 const ExtensionParent = {
   GlobalManager,
-  HiddenExtensionPage,
   ParentAPIManager,
   apiManager,
-  promiseExtensionViewLoaded,
 };
