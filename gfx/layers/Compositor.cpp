@@ -287,6 +287,11 @@ Compositor::DrawGeometry(const gfx::Rect& aRect,
 
   const gfx::Polygon clipped = aGeometry->ClipPolygon(aRect);
 
+  
+  if (clipped.IsEmpty()) {
+    return;
+  }
+
   DrawPolygon(clipped, aRect, aClipRect, aEffectChain,
               aOpacity, aTransform, aVisibleRect);
 }
