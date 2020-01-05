@@ -454,7 +454,6 @@ impl<T: Reflectable> OptionalRootedReference<T> for Option<Option<Root<T>>> {
 
 
 
-#[no_move]
 pub struct RootCollection {
     roots: UnsafeCell<Vec<*const Reflector>>,
 }
