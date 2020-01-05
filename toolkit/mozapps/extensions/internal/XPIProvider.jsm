@@ -58,6 +58,8 @@ XPCOMUtils.defineLazyModuleGetter(this, "AppConstants",
                                   "resource://gre/modules/AppConstants.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "isAddonPartOfE10SRollout",
                                   "resource://gre/modules/addons/E10SAddonsRollout.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "JSONFile",
+                                  "resource://gre/modules/JSONFile.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "LegacyExtensionsUtils",
                                   "resource://gre/modules/LegacyExtensionsUtils.jsm");
 
@@ -81,6 +83,9 @@ XPCOMUtils.defineLazyServiceGetter(this,
                                    "AddonPathService",
                                    "@mozilla.org/addon-path-service;1",
                                    "amIAddonPathService");
+XPCOMUtils.defineLazyServiceGetter(this, "aomStartup",
+                                   "@mozilla.org/addons/addon-manager-startup;1",
+                                   "amIAddonManagerStartup");
 
 XPCOMUtils.defineLazyGetter(this, "CertUtils", function() {
   let certUtils = {};
@@ -98,14 +103,90 @@ Cu.importGlobalProperties(["URL"]);
 const nsIFile = Components.Constructor("@mozilla.org/file/local;1", "nsIFile",
                                        "initWithPath");
 
-function getFile(descriptor) {
-  let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
-  file.persistentDescriptor = descriptor;
-  return file;
+
+
+
+
+
+
+
+
+
+
+function getFile(path, base = null) {
+  if (base) {
+    let file = base.clone();
+    try {
+      file.appendRelativePath(path);
+      return file;
+    } catch (e) {}
+  }
+  return new nsIFile(path);
+}
+
+
+
+
+
+
+
+
+
+
+function tryGetMtime(file) {
+  try {
+    return file.lastModifiedTime;
+  } catch (e) {
+    return 0;
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+function getRelativePath(file, dir) {
+  if (dir && dir.contains(file)) {
+    let path = file.getRelativePath(dir);
+    if (AppConstants.platform == "win") {
+      path = path.replace(/\//g, "\\");
+    }
+    return path;
+  }
+  return file.path;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function descriptorToPath(descriptor, dir) {
+  try {
+    let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
+    file.persistentDescriptor = descriptor;
+    return getRelativePath(file, dir);
+  } catch (e) {
+    return null;
+  }
 }
 
 const PREF_DB_SCHEMA                  = "extensions.databaseSchema";
-const PREF_INSTALL_CACHE              = "extensions.installCache";
 const PREF_XPI_STATE                  = "extensions.xpiState";
 const PREF_BOOTSTRAP_ADDONS           = "extensions.bootstrappedAddons";
 const PREF_PENDING_OPERATIONS         = "extensions.pendingOperations";
@@ -114,7 +195,6 @@ const PREF_SKIN_TO_SELECT             = "extensions.lastSelectedSkin";
 const PREF_GENERAL_SKINS_SELECTEDSKIN = "general.skins.selectedSkin";
 const PREF_EM_UPDATE_URL              = "extensions.update.url";
 const PREF_EM_UPDATE_BACKGROUND_URL   = "extensions.update.background.url";
-const PREF_EM_ENABLED_ADDONS          = "extensions.enabledAddons";
 const PREF_EM_EXTENSION_FORMAT        = "extensions.";
 const PREF_EM_ENABLED_SCOPES          = "extensions.enabledScopes";
 const PREF_EM_STARTUP_SCAN_SCOPES     = "extensions.startupScanScopes";
@@ -150,6 +230,13 @@ const PREF_EM_HOTFIX_ID               = "extensions.hotfix.id";
 const PREF_EM_CERT_CHECKATTRIBUTES    = "extensions.hotfix.cert.checkAttributes";
 const PREF_EM_HOTFIX_CERTS            = "extensions.hotfix.certs.";
 
+const OBSOLETE_PREFERENCES = [
+  "extensions.bootstrappedAddons",
+  "extensions.enabledAddons",
+  "extensions.xpiState",
+  "extensions.installCache",
+];
+
 const URI_EXTENSION_UPDATE_DIALOG     = "chrome://mozapps/content/extensions/update.xul";
 const URI_EXTENSION_STRINGS           = "chrome://mozapps/locale/extensions/extensions.properties";
 
@@ -160,6 +247,7 @@ const DIR_SYSTEM_ADDONS               = "features";
 const DIR_STAGE                       = "staged";
 const DIR_TRASH                       = "trash";
 
+const FILE_XPI_STATES                 = "addonStartup.json.lz4";
 const FILE_DATABASE                   = "extensions.json";
 const FILE_OLD_CACHE                  = "extensions.cache";
 const FILE_RDF_MANIFEST               = "install.rdf";
@@ -180,6 +268,11 @@ const KEY_APP_SYSTEM_LOCAL            = "app-system-local";
 const KEY_APP_SYSTEM_SHARE            = "app-system-share";
 const KEY_APP_SYSTEM_USER             = "app-system-user";
 const KEY_APP_TEMPORARY               = "app-temporary";
+
+const STARTUP_MTIME_SCOPES = [KEY_APP_GLOBAL,
+                              KEY_APP_SYSTEM_LOCAL,
+                              KEY_APP_SYSTEM_SHARE,
+                              KEY_APP_SYSTEM_USER];
 
 const NOTIFICATION_FLUSH_PERMISSIONS  = "flush-pending-permissions";
 const XPI_PERMISSION                  = "install";
@@ -222,6 +315,17 @@ const STATIC_BLOCKLIST_PATTERNS = [
     blockID: "i162" }
 ];
 
+function encoded(strings, ...values) {
+  let result = [];
+
+  for (let [i, string] of strings.entries()) {
+    result.push(string);
+    if (i < values.length)
+      result.push(encodeURIComponent(values[i]));
+  }
+
+  return result.join("");
+}
 
 const BOOTSTRAP_REASONS = {
   APP_STARTUP: 1,
@@ -340,7 +444,7 @@ function loadLazyObjects() {
     wantGlobalProperties: ["TextDecoder"],
   });
 
-  let shared = {
+  Object.assign(scope, {
     ADDON_SIGNING,
     SIGNED_TYPES,
     BOOTSTRAP_REASONS,
@@ -353,11 +457,8 @@ function loadLazyObjects() {
     recordAddonTelemetry,
     applyBlocklistChanges,
     flushChromeCaches,
-    canRunInSafeMode,
-  }
-
-  for (let key of Object.keys(shared))
-    scope[key] = shared[key];
+    descriptorToPath,
+  });
 
   Services.scriptloader.loadSubScript(uri, scope);
 
@@ -1676,7 +1777,7 @@ function syncLoadManifestFromFile(aFile, aInstallLocation) {
 
 
 function getURIForResourceInFile(aFile, aPath) {
-  if (aFile.isDirectory()) {
+  if (aFile.exists() && aFile.isDirectory()) {
     let resource = aFile.clone();
     if (aPath)
       aPath.split("/").forEach(part => resource.append(part));
@@ -2088,7 +2189,9 @@ function getDirectoryEntries(aDir, aSortEntries) {
 
     return entries
   } catch (e) {
-    logger.warn("Can't iterate directory " + aDir.path, e);
+    if (aDir.exists()) {
+      logger.warn("Can't iterate directory " + aDir.path, e);
+    }
     return [];
   } finally {
     if (dirEnum) {
@@ -2115,39 +2218,154 @@ function recordAddonTelemetry(aAddon) {
 
 
 
-function XPIState(saved) {
-  for (let [short, long] of XPIState.prototype.fields) {
-    if (short in saved) {
-      this[long] = saved[short];
+const JSON_FIELDS = Object.freeze([
+  "bootstrapped",
+  "changed",
+  "dependencies",
+  "enabled",
+  "enableShims",
+  "file",
+  "hasEmbeddedWebExtension",
+  "lastModifiedTime",
+  "path",
+  "runInSafeMode",
+  "type",
+  "version",
+]);
+
+const BOOTSTRAPPED_FIELDS = Object.freeze([
+  "dependencies",
+  "hasEmbeddedWebExtension",
+  "runInSafeMode",
+  "type",
+  "version",
+]);
+
+class XPIState {
+  constructor(location, id, saved = {}) {
+    this.location = location;
+    this.id = id;
+
+    
+    this.type = "extension";
+    this.bootstrapped = false;
+    this.enableShims = false;
+
+    for (let prop of JSON_FIELDS) {
+      if (prop in saved) {
+        this[prop] = saved[prop];
+      }
+    }
+
+    if (saved.currentModifiedTime && saved.currentModifiedTime != this.lastModifiedTime) {
+      this.lastModifiedTime = saved.currentModifiedTime;
+      this.changed = true;
     }
   }
-}
 
-XPIState.prototype = {
-  fields: [["d", "descriptor"],
-           ["e", "enabled"],
-           ["v", "version"],
-           ["st", "scanTime"],
-           ["mt", "manifestTime"]],
   
 
 
-  get mtime() {
-    if (!this.enabled && ("manifestTime" in this) && this.manifestTime > this.scanTime) {
-      return this.manifestTime;
-    }
-    return this.scanTime;
-  },
 
-  toJSON() {
-    let json = {};
-    for (let [short, long] of XPIState.prototype.fields) {
-      if (long in this) {
-        json[short] = this[long];
+
+
+
+
+
+
+
+
+
+
+  static migrate(location, id, saved, bootstrapped) {
+    let data = {
+      enabled: saved.e,
+      path: descriptorToPath(saved.d, location.dir),
+      lastModifiedTime: saved.mt || saved.st,
+      version: saved.v,
+      enableShims: false,
+    };
+
+    if (bootstrapped) {
+      data.bootstrapped = true;
+      data.enabled = true;
+      data.enableShims = !bootstrapped.multiprocessCompatible;
+      data.path = descriptorToPath(bootstrapped.descriptor, location.dir);
+
+      for (let field of BOOTSTRAPPED_FIELDS) {
+        if (field in bootstrapped) {
+          data[field] = bootstrapped[field];
+        }
       }
     }
+
+    return new XPIState(location, id, data);
+  }
+
+  
+  get mtime() {
+    return this.lastModifiedTime;
+  }
+  get active() {
+    return this.enabled;
+  }
+  get multiprocessCompatible() {
+    return !this.enableShims;
+  }
+
+
+  
+
+
+
+  get path() {
+    return this.file && this.file.path;
+  }
+  set path(path) {
+    this.file = getFile(path, this.location.dir)
+  }
+
+  
+
+
+
+
+  get relativePath() {
+    if (this.location.dir && this.location.dir.contains(this.file)) {
+      let path = this.file.getRelativePath(this.location.dir);
+      if (AppConstants.platform == "win") {
+        path = path.replace(/\//g, "\\");
+      }
+      return path;
+    }
+    return this.path;
+  }
+
+  
+
+
+
+  toJSON() {
+    let json = {
+      enabled: this.enabled,
+      lastModifiedTime: this.lastModifiedTime,
+      path: this.relativePath,
+      version: this.version,
+    };
+    if (this.type != "extension") {
+      json.type = this.type;
+    }
+    if (this.enableShims) {
+      json.enableShims = true;
+    }
+    if (this.bootstrapped) {
+      json.bootstrapped = true;
+      json.dependencies = this.dependencies;
+      json.runInSafeMode = this.runInSafeMode;
+      json.hasEmbeddedWebExtension = this.hasEmbeddedWebExtension;
+    }
     return json;
-  },
+  }
 
   
 
@@ -2156,40 +2374,19 @@ XPIState.prototype = {
 
 
   getModTime(aFile, aId) {
-    let changed = false;
-    let scanStarted = Cu.now();
     
     
     
-    try {
-      
-      let maniFile = getManifestFileForDir(aFile);
-      let maniTime = maniFile.lastModifiedTime;
-      if (maniTime != this.manifestTime) {
-        this.manifestTime = maniTime;
-        this.scanTime = maniTime;
-        changed = true;
-      }
-    } catch (e) {
-      
-      delete this.manifestTime;
-      try {
-        let dtime = aFile.lastModifiedTime;
-        if (dtime != this.scanTime) {
-          changed = true;
-          this.scanTime = dtime;
-        }
-      } catch (e) {
-        logger.warn("Can't get modified time of ${file}: ${e}", {file: aFile.path, e});
-        changed = true;
-        this.scanTime = 0;
-      }
+    let mtime = (tryGetMtime(getManifestFileForDir(aFile)) ||
+                 tryGetMtime(aFile));
+    if (!mtime) {
+      logger.warn("Can't get modified time of ${file}", {file: aFile.path});
     }
-    
-    XPIProvider.setTelemetry(aId, "scan_MS", Math.round(Cu.now() - scanStarted));
 
-    return changed;
-  },
+    this.changed = mtime != this.lastModifiedTime;
+    this.lastModifiedTime = mtime;
+    return this.changed;
+  }
 
   
 
@@ -2209,29 +2406,129 @@ XPIState.prototype = {
 
     this.enabled = aDBAddon.visible && !aDBAddon.disabled;
     this.version = aDBAddon.version;
-    
+    this.type = aDBAddon.type;
+    this.enableShims = this.type == "extension" && !aDBAddon.multiprocessCompatible;
+
+    this.bootstrapped = !!aDBAddon.bootstrap;
+    if (this.bootstrapped) {
+      this.hasEmbeddedWebExtension = aDBAddon.hasEmbeddedWebExtension;
+      this.dependencies = aDBAddon.dependencies;
+      this.runInSafeMode = canRunInSafeMode(aDBAddon);
+    }
+
     if (aUpdated || mustGetMod) {
-      this.getModTime(new nsIFile(this.descriptor), aDBAddon.id);
-      if (this.scanTime != aDBAddon.updateDate) {
-        aDBAddon.updateDate = this.scanTime;
-        XPIDatabase.saveChanges();
+      this.getModTime(this.file, aDBAddon.id);
+      if (this.lastModifiedTime != aDBAddon.updateDate) {
+        aDBAddon.updateDate = this.lastModifiedTime;
+        if (XPIDatabase.initialized) {
+          XPIDatabase.saveChanges();
+        }
       }
     }
-  },
-};
+  }
+}
 
 
 
-function SerializableMap(arg) {
-  let m = new Map(arg);
-  m.toJSON = function() {
-    let out = {}
-    for (let [key, val] of m) {
-      out[key] = val;
+
+
+
+
+
+
+
+
+
+class XPIStateLocation extends Map {
+  constructor(name, path, saved = {}) {
+    super();
+
+    this.name = name;
+    this.path = path || saved.path || null;
+    this.dir = this.path && new nsIFile(this.path);
+
+    for (let [id, data] of Object.entries(saved.addons || {})) {
+      let xpiState = this._addState(id, data);
+      
+      xpiState.wasRestored = true;
     }
-    return out;
-  };
-  return m;
+  }
+
+  
+
+
+
+  toJSON() {
+    let json = { addons: {} };
+
+    if (this.path) {
+      json.path = this.path;
+    }
+
+    if (STARTUP_MTIME_SCOPES.includes(this.name)) {
+      json.checkStartupModifications = true;
+    }
+
+    for (let [id, addon] of this.entries()) {
+      if (addon.type != "experiment") {
+        json.addons[id] = addon;
+      }
+    }
+    return json;
+  }
+
+  _addState(addonId, saved) {
+    let xpiState = new XPIState(this, addonId, saved);
+    this.set(addonId, xpiState);
+    return xpiState;
+  }
+
+  
+
+
+
+
+
+  addAddon(addon) {
+    logger.debug("XPIStates adding add-on ${id} in ${location}: ${path}", addon);
+
+    let xpiState = this._addState(addon.id, {file: addon._sourceBundle});
+    xpiState.syncWithDB(addon, true);
+
+    XPIProvider.setTelemetry(addon.id, "location", this.name);
+  }
+
+  
+
+
+
+
+
+
+
+
+  addFile(addonId, file) {
+    let xpiState = this._addState(addonId, {enabled: true, file: file.clone()});
+    xpiState.getModTime(xpiState.file, addonId);
+    return xpiState;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  migrateAddon(id, state, bootstrapped) {
+    this.set(id, XPIState.migrate(this, id, state, bootstrapped));
+  }
 }
 
 
@@ -2240,6 +2537,8 @@ function SerializableMap(arg) {
 this.XPIStates = {
   
   db: null,
+
+  _jsonFile: null,
 
   
 
@@ -2262,21 +2561,75 @@ this.XPIStates = {
   
 
 
-  loadExtensionState() {
-    let state = {};
+
+
+
+
+  migrateStateFromPrefs() {
+    logger.info("No addonStartup.json found. Attempting to migrate data from preferences");
+
+    let state;
+    
+    let bootstrappedAddons;
+    try {
+      state = JSON.parse(Preferences.get(PREF_XPI_STATE));
+      bootstrappedAddons = JSON.parse(Preferences.get(PREF_BOOTSTRAP_ADDONS, "{}"));
+    } catch (e) {
+      logger.warn("Error parsing extensions.xpiState and " +
+                  "extensions.bootstrappedAddons: ${error}",
+                  {error: e});
+
+    }
+
+    for (let [locName, addons] of Object.entries(state)) {
+      for (let [id, addon] of Object.entries(addons)) {
+        let loc = this.getLocation(locName);
+        if (loc) {
+          loc.migrateAddon(id, addon, bootstrappedAddons[id] || null);
+        }
+      }
+    }
 
     
-    Preferences.reset(PREF_INSTALL_CACHE);
-
-    let cache = Preferences.get(PREF_XPI_STATE, "{}");
-    try {
-      state = JSON.parse(cache);
-    } catch (e) {
-      logger.warn("Error parsing extensions.xpiState ${state}: ${error}",
-          {state: cache, error: e});
+    for (let pref of OBSOLETE_PREFERENCES) {
+      Preferences.reset(pref);
     }
-    logger.debug("Loaded add-on state from prefs: ${}", state);
-    return state;
+    OS.File.remove(OS.Path.join(OS.Constants.Path.profileDir,
+                                FILE_XPI_ADDONS_LIST));
+
+    
+    let data = JSON.parse(JSON.stringify(this));
+
+    logger.debug("Migrated data: ${}", data);
+
+    return data;
+  },
+
+  
+
+
+
+  loadExtensionState() {
+    let state;
+    try {
+      state = aomStartup.readStartupData();
+    } catch (e) {
+      logger.warn("Error parsing extensions state: ${error}",
+                  {error: e});
+    }
+
+    if (!state && Preferences.has(PREF_XPI_STATE)) {
+      try {
+        state = this.migrateStateFromPrefs();
+      } catch (e) {
+        logger.warn("Error migrating extensions.xpiState and " +
+                    "extensions.bootstrappedAddons: ${error}",
+                    {error: e});
+      }
+    }
+
+    logger.debug("Loaded add-on state: ${}", state);
+    return state || {};
   },
 
   
@@ -2290,81 +2643,71 @@ this.XPIStates = {
 
 
   getInstallState(ignoreSideloads = true) {
-    let oldState = this.loadExtensionState();
+    if (!this.db) {
+      this.db = new Map();
+    }
+
+    let oldState = this.initialStateData || this.loadExtensionState();
+    this.initialStateData = oldState;
+
     let changed = false;
-    this.db = new SerializableMap();
+    let oldLocations = new Set(Object.keys(oldState));
 
     for (let location of XPIProvider.installLocations) {
+      oldLocations.delete(location.name);
+
       
-      let foundAddons = new SerializableMap();
+      let loc = this.getLocation(location.name, location.path || null,
+                                 oldState[location.name]);
+      changed = changed || loc.changed;
 
       
       if (ignoreSideloads && !(location.scope & gStartupScanScopes)) {
-        if (location.name in oldState) {
-          for (let [id, state] of Object.entries(oldState[location.name])) {
-            foundAddons.set(id, new XPIState(state));
-          }
-
-          this.db.set(location.name, foundAddons);
-          delete oldState[location.name];
-        }
         continue;
       }
 
-      
-      let addons = location.getAddonLocations(!ignoreSideloads);
-
-      
-      let locState = {};
-      if (location.name in oldState) {
-        locState = oldState[location.name];
-        
-        delete oldState[location.name];
+      if (location.name == KEY_APP_TEMPORARY) {
+        continue;
       }
 
-      for (let [id, file] of addons) {
-        if (!(id in locState)) {
+      let knownIds = new Set(loc.keys());
+      for (let [id, file] of location.getAddonLocations(true)) {
+        knownIds.delete(id);
+
+        let xpiState = loc.get(id);
+        if (!xpiState) {
           logger.debug("New add-on ${id} in ${location}", {id, location: location.name});
-          let xpiState = new XPIState({d: file.persistentDescriptor});
-          changed = xpiState.getModTime(file, id) || changed;
-          foundAddons.set(id, xpiState);
-          this.sideLoadedAddons.set(id, xpiState);
-        } else {
-          let xpiState = new XPIState(locState[id]);
-          
-          delete locState[id];
 
-          changed = xpiState.getModTime(file, id) || changed;
-
-          if (file.persistentDescriptor != xpiState.descriptor) {
-            xpiState.descriptor = file.persistentDescriptor;
-            changed = true;
+          changed = true;
+          xpiState = loc.addFile(id, file);
+          if (!location.isSystem) {
+            this.sideLoadedAddons.set(id, xpiState);
           }
-          if (changed) {
+        } else {
+          let addonChanged = (xpiState.getModTime(file, id) ||
+                              file.path != xpiState.path);
+          xpiState.file = file.clone();
+
+          if (addonChanged) {
+            changed = true;
             logger.debug("Changed add-on ${id} in ${location}", {id, location: location.name});
           } else {
             logger.debug("Existing add-on ${id} in ${location}", {id, location: location.name});
           }
-          foundAddons.set(id, xpiState);
         }
         XPIProvider.setTelemetry(id, "location", location.name);
       }
 
       
-      if (Object.keys(locState).length) {
+      for (let id of knownIds) {
+        loc.delete(id);
         changed = true;
-      }
-      
-      if (foundAddons.size != 0) {
-        this.db.set(location.name, foundAddons);
       }
     }
 
     
     
-    if (Object.keys(oldState).length) {
-      changed = true;
-    }
+    changed = changed || oldLocations.size > 0;
 
     logger.debug("getInstallState changed: ${rv}, state: ${state}",
         {rv: changed, state: this.db});
@@ -2376,8 +2719,22 @@ this.XPIStates = {
 
 
 
-  getLocation(aLocation) {
-    return this.db.get(aLocation);
+  getLocation(name, path, saved) {
+    let location = this.db.get(name);
+
+    if (path && location && location.path != path) {
+      location = null;
+      saved = null;
+    }
+
+    if (!location || (path && location.path != path)) {
+      let loc = XPIProvider.installLocationsByName[name];
+      if (loc) {
+        location = new XPIStateLocation(name, path || loc.path || null, saved);
+        this.db.set(name, location);
+      }
+    }
+    return location;
   },
 
   
@@ -2398,16 +2755,51 @@ this.XPIStates = {
 
 
 
-
   findAddon(aId) {
     
     
-    for (let [name, location] of this.db) {
+    for (let location of this.db.values()) {
       if (location.has(aId)) {
-        return [name, location.get(aId)];
+        return location.get(aId);
       }
     }
-    return [undefined, undefined];
+    return undefined;
+  },
+
+  
+
+
+  * enabledAddons() {
+    for (let location of this.db.values()) {
+      for (let entry of location.values()) {
+        if (entry.enabled) {
+          yield entry;
+        }
+      }
+    }
+  },
+
+  
+
+
+
+  * initialEnabledAddons() {
+    for (let addon of this.enabledAddons()) {
+      if (addon.wasRestored) {
+        yield addon;
+      }
+    }
+  },
+
+  
+
+
+  * bootstrappedAddons() {
+    for (let addon of this.enabledAddons()) {
+      if (addon.bootstrapped) {
+        yield addon;
+      }
+    }
   },
 
   
@@ -2415,29 +2807,34 @@ this.XPIStates = {
 
 
   addAddon(aAddon) {
-    let location = this.db.get(aAddon.location);
-    if (!location) {
-      
-      location = new SerializableMap();
-      this.db.set(aAddon.location, location);
-    }
-    logger.debug("XPIStates adding add-on ${id} in ${location}: ${descriptor}", aAddon);
-    let xpiState = new XPIState({d: aAddon.descriptor});
-    location.set(aAddon.id, xpiState);
-    xpiState.syncWithDB(aAddon, true);
-    XPIProvider.setTelemetry(aAddon.id, "location", aAddon.location);
+    let location = this.getLocation(aAddon._installLocation.name);
+    location.addAddon(aAddon);
   },
 
   
 
 
-
   save() {
-    let db = new SerializableMap(this.db);
-    db.delete(TemporaryInstallLocation.name);
+    if (!this._jsonFile) {
+      this._jsonFile = new JSONFile({
+        path: OS.Path.join(OS.Constants.Path.profileDir, FILE_XPI_STATES),
+        finalizeAt: AddonManager.shutdown,
+        compression: "lz4",
+      })
+      this._jsonFile.data = this;
+    }
 
-    let cache = JSON.stringify(db);
-    Services.prefs.setCharPref(PREF_XPI_STATE, cache);
+    this._jsonFile.saveSoon();
+  },
+
+  toJSON() {
+    let data = {};
+    for (let [key, loc] of this.db.entries()) {
+      if (key != TemporaryInstallLocation.name && loc.size) {
+        data[key] = loc;
+      }
+    }
+    return data;
   },
 
   
@@ -2456,9 +2853,18 @@ this.XPIStates = {
       this.save();
     }
   },
-};
 
-const hasOwnProperty = Function.call.bind({}.hasOwnProperty);
+  
+
+
+  disableAddon(aId) {
+    logger.debug(`Disabling XPIState for ${aId}`);
+    let state = this.findAddon(aId);
+    if (state) {
+      state.enabled = false;
+    }
+  },
+};
 
 this.XPIProvider = {
   get name() {
@@ -2484,16 +2890,12 @@ this.XPIProvider = {
   
   minCompatiblePlatformVersion: null,
   
-  bootstrappedAddons: {},
-  
   activeAddons: new Map(),
   
   extensionsActive: false,
   
   
   allAppGlobal: true,
-  
-  enabledAddons: null,
   
   runPhase: XPI_STARTING,
   
@@ -2514,11 +2916,7 @@ this.XPIProvider = {
 
 
   addonIsActive(addonId) {
-    if (hasOwnProperty(this.bootstrappedAddons, addonId)) {
-      return true;
-    }
-
-    let [, state] = XPIStates.findAddon(addonId);
+    let state = XPIStates.findAddon(addonId);
     return state && state.enabled;
   },
 
@@ -2534,11 +2932,13 @@ this.XPIProvider = {
 
 
   sortBootstrappedAddons() {
-    let addons = {};
-
     
-    for (let id of Object.keys(this.bootstrappedAddons).sort()) {
-      addons[id] = Object.assign({id}, this.bootstrappedAddons[id]);
+    let list = Array.from(XPIStates.bootstrappedAddons());
+    list.sort((a, b) => String.localeCompare(a.id, b.id));
+
+    let addons = {};
+    for (let entry of list) {
+      addons[entry.id] = entry;
     }
 
     let res = new Set();
@@ -2822,7 +3222,6 @@ this.XPIProvider = {
                                                      null);
       this.minCompatiblePlatformVersion = Preferences.get(PREF_EM_MIN_COMPAT_PLATFORM_VERSION,
                                                           null);
-      this.enabledAddons = "";
 
       Services.prefs.addObserver(PREF_EM_MIN_COMPAT_APP_VERSION, this);
       Services.prefs.addObserver(PREF_EM_MIN_COMPAT_PLATFORM_VERSION, this);
@@ -2847,6 +3246,7 @@ this.XPIProvider = {
           Services.obs.addObserver(this, NOTIFICATION_TOOLBOXPROCESS_LOADED);
         }
       }
+
 
       let flushCaches = this.checkForChanges(aAppChanged, aOldAppVersion,
                                              aOldPlatformVersion);
@@ -2875,8 +3275,6 @@ this.XPIProvider = {
         Services.obs.notifyObservers(null, "chrome-flush-caches");
       }
 
-      this.enabledAddons = Preferences.get(PREF_EM_ENABLED_ADDONS, "");
-
       if ("nsICrashReporter" in Ci &&
           Services.appinfo instanceof Ci.nsICrashReporter) {
         
@@ -2895,7 +3293,6 @@ this.XPIProvider = {
 
         for (let addon of this.sortBootstrappedAddons()) {
           try {
-            let file = getFile(addon.descriptor);
             let reason = BOOTSTRAP_REASONS.APP_STARTUP;
             
             
@@ -2903,7 +3300,7 @@ this.XPIProvider = {
                             .indexOf(addon.id) !== -1)
               reason = BOOTSTRAP_REASONS.ADDON_INSTALL;
             this.callBootstrapMethod(createAddonDetails(addon.id, addon),
-                                     file, "startup", reason);
+                                     addon.file, "startup", reason);
           } catch (e) {
             logger.error("Failed to load bootstrap addon " + addon.id + " from " +
                          addon.descriptor, e);
@@ -2927,17 +3324,15 @@ this.XPIProvider = {
             if (!XPIProvider.activeAddons.has(addon.id))
               continue;
 
-            let file = getFile(addon.descriptor);
             let addonDetails = createAddonDetails(addon.id, addon);
 
             
             
             if (addon.disable) {
-              XPIProvider.callBootstrapMethod(addonDetails, file, "shutdown",
+              XPIProvider.callBootstrapMethod(addonDetails, addon.file, "shutdown",
                                               BOOTSTRAP_REASONS.ADDON_DISABLE);
-              delete XPIProvider.bootstrappedAddons[addon.id];
             } else {
-              XPIProvider.callBootstrapMethod(addonDetails, file, "shutdown",
+              XPIProvider.callBootstrapMethod(addonDetails, addon.file, "shutdown",
                                               BOOTSTRAP_REASONS.APP_SHUTDOWN);
             }
           }
@@ -2988,19 +3383,17 @@ this.XPIProvider = {
       for (let [id, addon] of tempLocation.entries()) {
         tempLocation.delete(id);
 
-        let file = getFile(addon.descriptor);
-
-        this.callBootstrapMethod(createAddonDetails(id, this.bootstrappedAddons[id]),
-                                 file, "uninstall",
+        this.callBootstrapMethod(createAddonDetails(id, addon),
+                                 addon.file, "uninstall",
                                  BOOTSTRAP_REASONS.ADDON_UNINSTALL);
         this.unloadBootstrapScope(id);
         TemporaryInstallLocation.uninstallAddon(id);
 
-        let [locationName, ] = XPIStates.findAddon(id);
-        if (locationName) {
-          let newAddon = XPIDatabase.makeAddonLocationVisible(id, locationName);
+        let state = XPIStates.findAddon(id);
+        if (state) {
+          let newAddon = XPIDatabase.makeAddonLocationVisible(id, state.location.name);
 
-          let file = getFile(newAddon.descriptor);
+          let file = new nsIFile(newAddon.path);
 
           this.callBootstrapMethod(createAddonDetails(id, newAddon),
                                    file, "install",
@@ -3009,9 +3402,7 @@ this.XPIProvider = {
       }
     }
 
-    this.bootstrappedAddons = {};
     this.activeAddons.clear();
-    this.enabledAddons = null;
     this.allAppGlobal = true;
 
     
@@ -3019,8 +3410,7 @@ this.XPIProvider = {
     if (Preferences.get(PREF_PENDING_OPERATIONS, false)) {
       AddonManagerPrivate.recordSimpleMeasure("XPIDB_pending_ops", 1);
       XPIDatabase.updateActiveAddons();
-      Services.prefs.setBoolPref(PREF_PENDING_OPERATIONS,
-                                 !XPIDatabase.writeAddonsList());
+      Services.prefs.setBoolPref(PREF_PENDING_OPERATIONS, false);
     }
 
     this.installs = null;
@@ -3136,9 +3526,7 @@ this.XPIProvider = {
              getService(Ci.nsIWindowWatcher);
     ww.openWindow(null, URI_EXTENSION_UPDATE_DIALOG, "", features, variant);
 
-    
-    Services.prefs.setBoolPref(PREF_PENDING_OPERATIONS,
-                               !XPIDatabase.writeAddonsList());
+    Services.prefs.setBoolPref(PREF_PENDING_OPERATIONS, false);
   },
 
   async updateSystemAddons() {
@@ -3316,25 +3704,6 @@ this.XPIProvider = {
   
 
 
-  persistBootstrappedAddons() {
-    
-    let filtered = {};
-    for (let id in this.bootstrappedAddons) {
-      let entry = this.bootstrappedAddons[id];
-      if (entry.type == "experiment") {
-        continue;
-      }
-
-      filtered[id] = entry;
-    }
-
-    Services.prefs.setCharPref(PREF_BOOTSTRAP_ADDONS,
-                               JSON.stringify(filtered));
-  },
-
-  
-
-
   addAddonsToCrashReporter() {
     if (!("nsICrashReporter" in Ci) ||
         !(Services.appinfo instanceof Ci.nsICrashReporter))
@@ -3345,11 +3714,8 @@ this.XPIProvider = {
     if (Services.appinfo.inSafeMode)
       return;
 
-    let data = this.enabledAddons;
-    for (let id in this.bootstrappedAddons) {
-      data += (data ? "," : "") + encodeURIComponent(id) + ":" +
-              encodeURIComponent(this.bootstrappedAddons[id].version);
-    }
+    let data = Array.from(XPIStates.enabledAddons(),
+                          a => encoded`${a.id}:${a.version}`).join(",");
 
     try {
       Services.appinfo.annotateCrashReport("Add-ons", data);
@@ -3453,6 +3819,7 @@ this.XPIProvider = {
 
             try {
               location.uninstallAddon(id);
+              XPIStates.removeAddon(location.name, id);
               seenFiles.push(stageDirEntry.leafName);
             } catch (e) {
               logger.error("Failed to uninstall add-on " + id + " in " + location.name, e);
@@ -3521,22 +3888,23 @@ this.XPIProvider = {
 
         var oldBootstrap = null;
         logger.debug("Processing install of " + id + " in " + location.name);
-        if (existingAddonID in this.bootstrappedAddons) {
+        let existingAddon = XPIStates.findAddon(existingAddonID);
+        if (existingAddon && existingAddon.bootstrapped) {
           try {
-            var existingAddon = getFile(this.bootstrappedAddons[existingAddonID].descriptor);
-            if (existingAddon.exists()) {
-              oldBootstrap = this.bootstrappedAddons[existingAddonID];
+            var file = existingAddon.file;
+            if (file.exists()) {
+              oldBootstrap = existingAddon;
 
               
               
               let newVersion = addon.version;
-              let oldVersion = oldBootstrap.version;
+              let oldVersion = existingAddon;
               let uninstallReason = Services.vc.compare(oldVersion, newVersion) < 0 ?
                                     BOOTSTRAP_REASONS.ADDON_UPGRADE :
                                     BOOTSTRAP_REASONS.ADDON_DOWNGRADE;
 
-              this.callBootstrapMethod(createAddonDetails(existingAddonID, oldBootstrap),
-                                       existingAddon, "uninstall", uninstallReason,
+              this.callBootstrapMethod(createAddonDetails(existingAddonID, existingAddon),
+                                       file, "uninstall", uninstallReason,
                                        { newVersion });
               this.unloadBootstrapScope(existingAddonID);
               flushChromeCaches();
@@ -3551,6 +3919,7 @@ this.XPIProvider = {
             source: stageDirEntry,
             existingAddonID
           });
+          XPIStates.addAddon(addon);
         } catch (e) {
           logger.error("Failed to install staged add-on " + id + " in " + location.name,
                 e);
@@ -3682,6 +4051,7 @@ this.XPIProvider = {
       
       try {
         addon._sourceBundle = profileLocation.installAddon({ id, source: entry, action: "copy" });
+        XPIStates.addAddon(addon);
         logger.debug("Installed distribution add-on " + id);
 
         Services.prefs.setBoolPref(PREF_BRANCH_INSTALLED_ADDON + id, true)
@@ -3745,14 +4115,9 @@ this.XPIProvider = {
       updateReasons.push("appChanged");
     }
 
-    
-    
-    
-    try {
-      this.bootstrappedAddons = JSON.parse(Preferences.get(PREF_BOOTSTRAP_ADDONS,
-                                           "{}"));
-    } catch (e) {
-      logger.warn("Error parsing enabled bootstrapped extensions cache", e);
+    let installChanged = XPIStates.getInstallState(aAppChanged === false);
+    if (installChanged) {
+      updateReasons.push("directoryState");
     }
 
     
@@ -3780,15 +4145,6 @@ this.XPIProvider = {
       }
     }
 
-    
-    let telemetryCaptureTime = Cu.now();
-    let installChanged = XPIStates.getInstallState(aAppChanged === false);
-    let telemetry = Services.telemetry;
-    telemetry.getHistogramById("CHECK_ADDONS_MODIFIED_MS").add(Math.round(Cu.now() - telemetryCaptureTime));
-    if (installChanged) {
-      updateReasons.push("directoryState");
-    }
-
     let haveAnyAddons = (XPIStates.size > 0);
 
     
@@ -3809,24 +4165,6 @@ this.XPIProvider = {
     let dbFile = FileUtils.getFile(KEY_PROFILEDIR, [FILE_DATABASE], true);
     if (!dbFile.exists() && haveAnyAddons) {
       updateReasons.push("needNewDatabase");
-    }
-
-    
-    if (updateReasons.length == 0) {
-      let bootstrapDescriptors = new Set(Object.keys(this.bootstrappedAddons)
-        .map(b => this.bootstrappedAddons[b].descriptor));
-
-      for (let location of XPIStates.db.values()) {
-        for (let state of location.values()) {
-          bootstrapDescriptors.delete(state.descriptor);
-        }
-      }
-
-      if (bootstrapDescriptors.size > 0) {
-        logger.warn("Bootstrap state is invalid (missing add-ons: "
-            + Array.from(bootstrapDescriptors).join(", ") + ")");
-        updateReasons.push("missingBootstrapAddon");
-      }
     }
 
     
@@ -3872,21 +4210,18 @@ this.XPIProvider = {
       
       if (extensionListChanged || hasPendingChanges) {
         this._updateActiveAddons();
+
+        
+        let state = JSON.parse(JSON.stringify(XPIStates));
+        aomStartup.initializeExtensions(state);
         return true;
       }
+
+      aomStartup.initializeExtensions(XPIStates.initialStateData);
 
       logger.debug("No changes found");
     } catch (e) {
       logger.error("Error during startup file checks", e);
-    }
-
-    
-    let addonsList = FileUtils.getFile(KEY_PROFILEDIR, [FILE_XPI_ADDONS_LIST],
-                                       true);
-    
-    if (addonsList.exists() != haveAnyAddons) {
-      logger.debug("Add-ons list is invalid, rebuilding");
-      XPIDatabase.writeAddonsList();
     }
 
     return false;
@@ -3895,10 +4230,7 @@ this.XPIProvider = {
   _updateActiveAddons() {
     logger.debug("Updating database with changes to installed add-ons");
     XPIDatabase.updateActiveAddons();
-    Services.prefs.setBoolPref(PREF_PENDING_OPERATIONS,
-                               !XPIDatabase.writeAddonsList());
-    Services.prefs.setCharPref(PREF_BOOTSTRAP_ADDONS,
-                               JSON.stringify(this.bootstrappedAddons));
+    Services.prefs.setBoolPref(PREF_PENDING_OPERATIONS, false);
   },
 
   
@@ -4824,19 +5156,6 @@ this.XPIProvider = {
   loadBootstrapScope(aId, aFile, aVersion, aType,
                                aMultiprocessCompatible, aRunInSafeMode,
                                aDependencies, hasEmbeddedWebExtension) {
-    
-    this.bootstrappedAddons[aId] = {
-      version: aVersion,
-      type: aType,
-      descriptor: aFile.persistentDescriptor,
-      multiprocessCompatible: aMultiprocessCompatible,
-      runInSafeMode: aRunInSafeMode,
-      dependencies: aDependencies,
-      hasEmbeddedWebExtension,
-    };
-    this.persistBootstrappedAddons();
-    this.addAddonsToCrashReporter();
-
     this.activeAddons.set(aId, {
       debugGlobal: null,
       safeWrapper: null,
@@ -4844,6 +5163,10 @@ this.XPIProvider = {
       
       instanceID: Symbol(aId),
     });
+
+    
+    this.addAddonsToCrashReporter();
+
     let activeAddon = this.activeAddons.get(aId);
 
     
@@ -4935,8 +5258,6 @@ this.XPIProvider = {
     Cu.allowCPOWsInAddon(aId, false);
 
     this.activeAddons.delete(aId);
-    delete this.bootstrappedAddons[aId];
-    this.persistBootstrappedAddons();
     this.addAddonsToCrashReporter();
 
     
@@ -5154,6 +5475,16 @@ this.XPIProvider = {
     Services.prefs.setBoolPref(PREF_PENDING_OPERATIONS, true);
 
     
+    let xpiState = XPIStates.getAddon(aAddon.location, aAddon.id);
+    if (xpiState) {
+      xpiState.syncWithDB(aAddon);
+      XPIStates.save();
+    } else {
+      
+      logger.warn("No XPIState for ${id} in ${location}", aAddon);
+    }
+
+    
     if (isDisabled != aAddon.active) {
       AddonManagerPrivate.callAddonListeners("onOperationCancelled", wrapper);
     } else {
@@ -5184,34 +5515,7 @@ this.XPIProvider = {
           }
           AddonManagerPrivate.callAddonListeners("onEnabled", wrapper);
         }
-      } else if (aAddon.bootstrap) {
-        
-        
-        if (isDisabled) {
-          this.bootstrappedAddons[aAddon.id].disable = true;
-        } else {
-          this.bootstrappedAddons[aAddon.id] = {
-            version: aAddon.version,
-            type: aAddon.type,
-            descriptor: aAddon._sourceBundle.persistentDescriptor,
-            multiprocessCompatible: aAddon.multiprocessCompatible,
-            runInSafeMode: canRunInSafeMode(aAddon),
-            dependencies: aAddon.dependencies,
-            hasEmbeddedWebExtension: aAddon.hasEmbeddedWebExtension,
-          };
-          this.persistBootstrappedAddons();
-        }
       }
-    }
-
-    
-    let xpiState = XPIStates.getAddon(aAddon.location, aAddon.id);
-    if (xpiState) {
-      xpiState.syncWithDB(aAddon);
-      XPIStates.save();
-    } else {
-      
-      logger.warn("No XPIState for ${id} in ${location}", aAddon);
     }
 
     
@@ -5331,9 +5635,9 @@ this.XPIProvider = {
     }
 
     function findAddonAndReveal(aId) {
-      let [locationName, ] = XPIStates.findAddon(aId);
-      if (locationName) {
-        XPIDatabase.getAddonInLocation(aId, locationName, revealAddon);
+      let state = XPIStates.findAddon(aId);
+      if (state) {
+        XPIDatabase.getAddonInLocation(aId, state.location.name, revealAddon);
       }
     }
 
@@ -5346,6 +5650,7 @@ this.XPIProvider = {
 
         this.callBootstrapMethod(aAddon, aAddon._sourceBundle, "uninstall",
                                  BOOTSTRAP_REASONS.ADDON_UNINSTALL);
+        XPIStates.disableAddon(aAddon.id);
         this.unloadBootstrapScope(aAddon.id);
         flushChromeCaches();
       }
@@ -5358,6 +5663,7 @@ this.XPIProvider = {
     } else if (aAddon.bootstrap && aAddon.active && !this.disableRequiresRestart(aAddon)) {
       this.callBootstrapMethod(aAddon, aAddon._sourceBundle, "shutdown",
                                BOOTSTRAP_REASONS.ADDON_UNINSTALL);
+      XPIStates.disableAddon(aAddon.id);
       this.unloadBootstrapScope(aAddon.id);
       XPIDatabase.updateAddonActive(aAddon, false);
     }
@@ -5388,6 +5694,9 @@ this.XPIProvider = {
 
     if (!aAddon.visible)
       return;
+
+    XPIStates.getAddon(aAddon.location, aAddon.id).syncWithDB(aAddon);
+    XPIStates.save();
 
     Services.prefs.setBoolPref(PREF_PENDING_OPERATIONS, true);
 
@@ -8068,6 +8377,10 @@ class DirectoryInstallLocation {
     this.initialized = false;
   }
 
+  get path() {
+    return this._directory && this._directory.path;
+  }
+
   
 
 
@@ -8525,6 +8838,8 @@ class MutableDirectoryInstallLocation extends DirectoryInstallLocation {
       }
     }
 
+    XPIStates.removeAddon(this.name, aId);
+
     delete this._IDToFileMap[aId];
   }
 }
@@ -8717,7 +9032,8 @@ class SystemAddonInstallLocation extends MutableDirectoryInstallLocation {
     
     
     
-    SystemAddonInstallLocation._saveAddonSet({ schema: 1, addons: {} });
+    this._addonSet = { schema: 1, addons: {} };
+    SystemAddonInstallLocation._saveAddonSet(this._addonSet);
 
     
     

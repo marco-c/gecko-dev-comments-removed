@@ -99,8 +99,8 @@ function end_test() {
 }
 
 
-function run_test_1() {
-  startupManager();
+async function run_test_1() {
+  await promiseStartupManager();
 
   AddonManager.getAddonsByIDs(["addon1@tests.mozilla.org",
                                "addon2@tests.mozilla.org",
@@ -126,7 +126,7 @@ function run_test_1() {
 }
 
 
-function run_test_2() {
+async function run_test_2() {
   
   var dest = writeInstallRDFForExtension({
     id: "addon4@tests.mozilla.org",
@@ -140,7 +140,8 @@ function run_test_2() {
   }, globalDir);
   setExtensionModifiedTime(dest, gInstallTime);
 
-  restartManager("2");
+  await promiseRestartManager("2");
+
   AddonManager.getAddonsByIDs(["addon1@tests.mozilla.org",
                                "addon2@tests.mozilla.org",
                                "addon3@tests.mozilla.org",
@@ -181,7 +182,7 @@ function run_test_3() {
 
   
   
-  gExtensionsINI.remove(true);
+  gAddonStartup.remove(true);
   restartManager();
 
   AddonManager.getAddonsByIDs(["addon1@tests.mozilla.org",

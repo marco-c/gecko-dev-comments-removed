@@ -148,7 +148,7 @@ add_task(function* init() {
   writeInstallRDFForExtension(theme2, profileDir);
 
   
-  startupManager();
+  yield promiseStartupManager();
 
   
   check_startup_changes(AddonManager.STARTUP_CHANGE_INSTALLED, []);
@@ -271,7 +271,7 @@ add_task(function* run_test_1() {
   if (!OS.Constants.Win) {
     gExtensionsJSON.permissions = 0;
   }
-  startupManager(false);
+  yield promiseStartupManager(false);
 
   
   check_startup_changes(AddonManager.STARTUP_CHANGE_INSTALLED, []);
@@ -365,7 +365,7 @@ add_task(function* run_test_1() {
   } catch (e) {
     
   }
-  startupManager(false);
+  yield promiseStartupManager(false);
 
   
   check_startup_changes(AddonManager.STARTUP_CHANGE_INSTALLED, []);
@@ -453,7 +453,7 @@ add_task(function* run_test_1() {
   do_print("Unlocking " + gExtensionsJSON.path);
   yield file.close();
   gExtensionsJSON.permissions = filePermissions;
-  startupManager(false);
+  yield promiseStartupManager(false);
 
   
   check_startup_changes(AddonManager.STARTUP_CHANGE_INSTALLED, []);
