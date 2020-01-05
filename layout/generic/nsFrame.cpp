@@ -4743,6 +4743,20 @@ nsFrame::ComputeSize(nsRenderingContext* aRenderingContext,
     minISize = std::min(maxISize, GetMinISize(aRenderingContext));
     if (inlineStyleCoord->IsCoordPercentCalcUnit()) {
       minISize = std::min(minISize, result.ISize(aWM));
+    } else if (aFlags & eIClampMarginBoxMinSize) {
+      auto cbSize = aCBSize.ISize(aWM);
+      if (cbSize != NS_UNCONSTRAINEDSIZE) {
+        
+        
+        
+        
+        
+        auto maxMinISize = std::max(nscoord(0), cbSize -
+                                                aPadding.ISize(aWM) -
+                                                aBorder.ISize(aWM) -
+                                                aMargin.ISize(aWM));
+        minISize = std::min(minISize, maxMinISize);
+      }
     }
   } else {
     
@@ -4914,7 +4928,8 @@ nsFrame::ShrinkWidthToFit(nsRenderingContext* aRenderingContext,
   nscoord result;
   nscoord minISize = GetMinISize(aRenderingContext);
   if (minISize > aISizeInCB) {
-    result = minISize;
+    const bool clamp = aFlags & ComputeSizeFlags::eIClampMarginBoxMinSize;
+    result = MOZ_UNLIKELY(clamp) ? aISizeInCB : minISize;
   } else {
     nscoord prefISize = GetPrefISize(aRenderingContext);
     if (prefISize > aISizeInCB) {
