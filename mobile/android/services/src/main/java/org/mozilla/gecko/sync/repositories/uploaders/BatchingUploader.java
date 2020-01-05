@@ -9,17 +9,12 @@ import android.support.annotation.VisibleForTesting;
 
 import org.mozilla.gecko.background.common.log.Logger;
 import org.mozilla.gecko.sync.InfoConfiguration;
-import org.mozilla.gecko.sync.Server11RecordPostFailedException;
-import org.mozilla.gecko.sync.net.SyncResponse;
-import org.mozilla.gecko.sync.net.SyncStorageResponse;
-import org.mozilla.gecko.sync.repositories.Server11RepositorySession;
+import org.mozilla.gecko.sync.net.AuthHeaderProvider;
+import org.mozilla.gecko.sync.repositories.RepositorySession;
 import org.mozilla.gecko.sync.repositories.delegates.RepositorySessionStoreDelegate;
 import org.mozilla.gecko.sync.repositories.domain.Record;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -82,7 +77,8 @@ public class BatchingUploader {
      final Uri collectionUri;
      final RepositorySessionStoreDelegate sessionStoreDelegate;
      @VisibleForTesting final PayloadDispatcher payloadDispatcher;
-    private final Server11RepositorySession repositorySession;
+     final AuthHeaderProvider authHeaderProvider;
+    private final RepositorySession repositorySession;
     
     private volatile UploaderMeta uploaderMeta;
 
@@ -91,18 +87,22 @@ public class BatchingUploader {
     
     private final Object payloadLock = new Object();
 
-
-    public BatchingUploader(final Server11RepositorySession repositorySession, final Executor workQueue, final RepositorySessionStoreDelegate sessionStoreDelegate) {
+    public BatchingUploader(
+            final RepositorySession repositorySession, final Executor workQueue,
+            final RepositorySessionStoreDelegate sessionStoreDelegate, final Uri baseCollectionUri,
+            final Long localCollectionLastModified, final InfoConfiguration infoConfiguration,
+            final AuthHeaderProvider authHeaderProvider) {
         this.repositorySession = repositorySession;
         this.sessionStoreDelegate = sessionStoreDelegate;
-        this.collectionUri = Uri.parse(repositorySession.getServerRepository().collectionURI().toString());
+        this.collectionUri = baseCollectionUri;
+        this.authHeaderProvider = authHeaderProvider;
 
-        InfoConfiguration config = repositorySession.getServerRepository().getInfoConfiguration();
-        this.uploaderMeta = new UploaderMeta(payloadLock, config.maxTotalBytes, config.maxTotalRecords);
-        this.payload = new Payload(payloadLock, config.maxPostBytes, config.maxPostRecords);
+        this.uploaderMeta = new UploaderMeta(
+                payloadLock, infoConfiguration.maxTotalBytes, infoConfiguration.maxTotalRecords);
+        this.payload = new Payload(
+                payloadLock, infoConfiguration.maxPostBytes, infoConfiguration.maxPostRecords);
 
-        this.payloadDispatcher = new PayloadDispatcher(
-                workQueue, this, repositorySession.getServerRepository().getCollectionLastModified());
+        this.payloadDispatcher = new PayloadDispatcher(workQueue, this, localCollectionLastModified);
     }
 
     
@@ -195,10 +195,6 @@ public class BatchingUploader {
         
         
         this.uploaderMeta.setIsUnlimited(isUnlimited);
-    }
-
-     Server11RepositorySession getRepositorySession() {
-        return repositorySession;
     }
 
     private void flush(final boolean isCommit, final boolean isLastPayload) {
