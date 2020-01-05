@@ -2,9 +2,10 @@
 
 
 
+use dom::bindings::codegen::DocumentTypeBinding;
 use dom::bindings::utils::DOMString;
 use dom::document::AbstractDocument;
-use dom::node::{ScriptView, Node, DoctypeNodeTypeId};
+use dom::node::{AbstractNode, ScriptView, Node, DoctypeNodeTypeId};
 
 
 pub struct DocumentType {
@@ -16,12 +17,11 @@ pub struct DocumentType {
 }
 
 impl DocumentType {
-    
-    pub fn new(name: ~str,
-               public_id: Option<~str>,
-               system_id: Option<~str>,
-               force_quirks: bool,
-               document: AbstractDocument)
+    pub fn new_inherited(name: ~str,
+                         public_id: Option<~str>,
+                         system_id: Option<~str>,
+                         force_quirks: bool,
+                         document: AbstractDocument)
             -> DocumentType {
         DocumentType {
             node: Node::new(DoctypeNodeTypeId, document),
@@ -32,6 +32,21 @@ impl DocumentType {
         }
     }
 
+    pub fn new(name: ~str,
+               public_id: Option<~str>,
+               system_id: Option<~str>,
+               force_quirks: bool,
+               document: AbstractDocument) -> AbstractNode<ScriptView> {
+        let documenttype = DocumentType::new_inherited(name,
+                                                       public_id,
+                                                       system_id,
+                                                       force_quirks,
+                                                       document);
+        Node::reflect_node(@mut documenttype, document, DocumentTypeBinding::Wrap)
+    }
+}
+
+impl DocumentType {
     pub fn Name(&self) -> DOMString {
         Some(self.name.clone())
     }
