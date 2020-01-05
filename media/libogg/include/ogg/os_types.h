@@ -45,7 +45,7 @@ extern ogg_free_function_type *ogg_free_func;
 #define _ogg_realloc ogg_realloc_func
 #define _ogg_free ogg_free_func
 
-#if defined(_WIN32) 
+#if defined(_WIN32)
 
 #  if defined(__CYGWIN__)
 #    include <stdint.h>
