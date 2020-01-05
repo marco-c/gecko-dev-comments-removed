@@ -1210,14 +1210,21 @@ GeckoDriver.prototype.switchToWindow = function* (cmd, resp) {
   while (winEn.hasMoreElements()) {
     let win = winEn.getNext();
     let outerId = getOuterWindowId(win);
-    let tabbrowser = browser.getTabBrowser(win);
+    let tabBrowser = browser.getTabBrowser(win);
 
-    if (tabbrowser) {
-      for (let i = 0; i < tabbrowser.tabs.length; ++i) {
-        let contentBrowser = browser.getBrowserForTab(tabbrowser.tabs[i]);
+    if (byNameOrId(win.name, outerId)) {
+      
+      found = {win: win, outerId: outerId};
+      break;
+
+    } else if (tabBrowser) {
+      
+      
+      for (let i = 0; i < tabBrowser.tabs.length; ++i) {
+        let contentBrowser = browser.getBrowserForTab(tabBrowser.tabs[i]);
         let contentWindowId = this.getIdForBrowser(contentBrowser);
 
-        if (byNameOrId(win.name, contentWindowId, outerId)) {
+        if (byNameOrId(win.name, null, contentWindowId)) {
           found = {
             win: win,
             outerId: outerId,
@@ -1225,11 +1232,6 @@ GeckoDriver.prototype.switchToWindow = function* (cmd, resp) {
           };
           break;
         }
-      }
-    } else {
-      if (byNameOrId(win.name, outerId)) {
-        found = {win: win, outerId: outerId};
-        break;
       }
     }
   }
