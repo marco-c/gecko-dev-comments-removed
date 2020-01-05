@@ -6,6 +6,7 @@
 package org.mozilla.gecko.db;
 
 import java.lang.ref.WeakReference;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -2227,6 +2228,46 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
         return deleted;
     }
 
+    
+
+
+
+    private int bulkDeleteByBookmarkGUIDs(SQLiteDatabase db, List<String> bookmarkGUIDs, String table, String bookmarkGUIDColumn) {
+        
+        
+        int deleted = 0;
+
+        final ContentValues values = new ContentValues();
+        values.put(Bookmarks.IS_DELETED, 1);
+        values.put(Bookmarks.POSITION, 0);
+        values.putNull(Bookmarks.PARENT);
+        values.putNull(Bookmarks.URL);
+        values.putNull(Bookmarks.TITLE);
+        values.putNull(Bookmarks.DESCRIPTION);
+        values.putNull(Bookmarks.KEYWORD);
+        values.putNull(Bookmarks.TAGS);
+        values.putNull(Bookmarks.FAVICON_ID);
+
+        
+        final int maxVariableNumber = DBUtils.SQLITE_MAX_VARIABLE_NUMBER - values.size();
+
+        for (int chunk = 0; chunk <= bookmarkGUIDs.size() / maxVariableNumber; chunk++) {
+            final int chunkStart = chunk * maxVariableNumber;
+            int chunkEnd = (chunk + 1) * maxVariableNumber;
+            if (chunkEnd > bookmarkGUIDs.size()) {
+                chunkEnd = bookmarkGUIDs.size();
+            }
+            final List<String> chunkGUIDs = bookmarkGUIDs.subList(chunkStart, chunkEnd);
+            deleted += db.update(table,
+                                 values,
+                                 DBUtils.computeSQLInClause(chunkGUIDs.size(), bookmarkGUIDColumn),
+                                 chunkGUIDs.toArray(new String[chunkGUIDs.size()])
+            );
+        }
+
+        return deleted;
+    }
+
     private int deleteVisits(Uri uri, String selection, String[] selectionArgs) {
         debug("Deleting visits for URI: " + uri);
 
@@ -2256,19 +2297,21 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
         final ContentValues values = new ContentValues();
         values.put(Bookmarks.IS_DELETED, 1);
         values.put(Bookmarks.POSITION, 0);
-        values.putNull(Bookmarks.PARENT);
-        values.putNull(Bookmarks.URL);
-        values.putNull(Bookmarks.TITLE);
-        values.putNull(Bookmarks.DESCRIPTION);
-        values.putNull(Bookmarks.KEYWORD);
-        values.putNull(Bookmarks.TAGS);
-        values.putNull(Bookmarks.FAVICON_ID);
+        
+        
+        
 
         
         
         
         
-        final int updated = updateBookmarks(uri, values, selection, selectionArgs);
+        updateBookmarks(uri, values, selection, selectionArgs);
+
+        
+        
+        final List<String> guids = getBookmarkDescendantGUIDs(db, selection, selectionArgs);
+        final int updated = bulkDeleteByBookmarkGUIDs(db, guids, TABLE_BOOKMARKS, Bookmarks.GUID);
+
         try {
             cleanUpSomeDeletedRecords(uri, TABLE_BOOKMARKS);
         } catch (Exception e) {
@@ -2276,6 +2319,74 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
             Log.e(LOGTAG, "Unable to clean up deleted bookmark records: ", e);
         }
         return updated;
+    }
+
+    
+
+
+
+    private List<String> getBookmarkDescendantGUIDs(SQLiteDatabase db, String selection, String[] selectionArgs) {
+        
+        final Cursor cursor = db.query(TABLE_BOOKMARKS,
+                                       new String[] { Bookmarks._ID, Bookmarks.TYPE, Bookmarks.GUID },
+                                       selection,
+                                       selectionArgs,
+                                       null, null, null);
+        if (cursor == null) {
+            return Collections.emptyList();
+        }
+
+        final List<String> guids = new ArrayList<>();
+        final ArrayDeque<Long> folderQueue = new ArrayDeque<>();
+        try {
+            while (cursor.moveToNext()) {
+                final String guid = cursor.getString(cursor.getColumnIndexOrThrow(Bookmarks.GUID));
+                guids.add(guid);
+
+                final int type = cursor.getInt(cursor.getColumnIndexOrThrow(Bookmarks.TYPE));
+                if (type == Bookmarks.TYPE_FOLDER) {
+                    final long id = cursor.getLong(cursor.getColumnIndexOrThrow(Bookmarks._ID));
+                    folderQueue.add(id);
+                }
+            }
+        } finally {
+            cursor.close();
+        }
+
+        
+        while (!folderQueue.isEmpty()) {
+            
+            final String[] inClauseArgs = new String[folderQueue.size()];
+            int count = 0;
+            while (folderQueue.peek() != null) {
+                final long id = folderQueue.poll();
+                inClauseArgs[count++] = String.valueOf(id);
+            }
+
+            final String inClause = DBUtils.computeSQLInClause(count, Bookmarks.PARENT);
+            
+            final Cursor c = db.query(true, TABLE_BOOKMARKS,
+                                      new String[] { Bookmarks._ID, Bookmarks.TYPE, Bookmarks.GUID },
+                                      inClause, inClauseArgs, null, null, null, null);
+            if (c == null) {
+                continue;
+            }
+            try {
+                while (c.moveToNext()) {
+                    final int type = c.getInt(c.getColumnIndexOrThrow(Bookmarks.TYPE));
+                    if (type == Bookmarks.TYPE_FOLDER) {
+                        final long id = c.getLong(c.getColumnIndexOrThrow(Bookmarks._ID));
+                        folderQueue.add(id);
+                    }
+
+                    final String guid = c.getString(c.getColumnIndexOrThrow(Bookmarks.GUID));
+                    guids.add(guid);
+                }
+            } finally {
+                c.close();
+            }
+        }
+        return guids;
     }
 
     private int deleteFavicons(Uri uri, String selection, String[] selectionArgs) {
