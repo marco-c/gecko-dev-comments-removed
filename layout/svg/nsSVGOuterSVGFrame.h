@@ -102,13 +102,8 @@ public:
     return PrincipalChildList().FirstChild()->GetContentInsertionFrame();
   }
 
-  virtual bool IsSVGTransformed(Matrix *aOwnTransform,
-                                Matrix *aFromParentTransform) const override {
-    
-    
-    
-    return PrincipalChildList().FirstChild()->IsSVGTransformed();
-  }
+  bool IsSVGTransformed(Matrix* aOwnTransform,
+                        Matrix* aFromParentTransform) const override;
 
   
   void DoUpdateStyleOfOwnedAnonBoxes(mozilla::ServoStyleSet& aStyleSet,
@@ -268,6 +263,11 @@ public:
 
 
   virtual nsIAtom* GetType() const override;
+
+  bool IsSVGTransformed(Matrix *aOwnTransform,
+                        Matrix *aFromParentTransform) const override {
+    return false;
+  }
 
   
   virtual gfxMatrix GetCanvasTM() override {
