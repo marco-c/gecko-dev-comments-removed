@@ -242,7 +242,7 @@ MacroAssemblerARM::alu_dbl(Register src1, Imm32 imm, Register dest, ALUOp op,
 
     ALUOp interop = getDestVariant(op);
     Imm8::TwoImm8mData both = Imm8::EncodeTwoImms(imm.value);
-    if (both.fst.invalid)
+    if (both.fst().invalid())
         return false;
 
     
@@ -250,8 +250,8 @@ MacroAssemblerARM::alu_dbl(Register src1, Imm32 imm, Register dest, ALUOp op,
     
     
     
-    as_alu(dest, src1, Operand2(both.fst), interop, LeaveCC, c);
-    as_alu(dest, dest, Operand2(both.snd), op, s, c);
+    as_alu(dest, src1, Operand2(both.fst()), interop, LeaveCC, c);
+    as_alu(dest, dest, Operand2(both.snd()), op, s, c);
     return true;
 }
 
@@ -266,13 +266,12 @@ MacroAssemblerARM::ma_alu(Register src1, Imm32 imm, Register dest, AutoRegisterS
 
     
     
-    if (dest == InvalidReg)
-        MOZ_ASSERT(s == SetCC);
+    MOZ_ASSERT_IF(dest == InvalidReg, s == SetCC);
 
     
     Imm8 imm8 = Imm8(imm.value);
     
-    if (!imm8.invalid) {
+    if (!imm8.invalid()) {
         as_alu(dest, src1, imm8, op, s, c);
         return;
     }
@@ -286,7 +285,7 @@ MacroAssemblerARM::ma_alu(Register src1, Imm32 imm, Register dest, AutoRegisterS
     
     
     
-    if (negOp != OpInvalid && !negImm8.invalid) {
+    if (negOp != OpInvalid && !negImm8.invalid()) {
         as_alu(negDest, src1, negImm8, negOp, s, c);
         return;
     }
@@ -311,9 +310,9 @@ MacroAssemblerARM::ma_alu(Register src1, Imm32 imm, Register dest, AutoRegisterS
 
 void
 MacroAssemblerARM::ma_alu(Register src1, Operand op2, Register dest, ALUOp op,
-            SBit s, Assembler::Condition c)
+                          SBit s, Assembler::Condition c)
 {
-    MOZ_ASSERT(op2.getTag() == Operand::OP2);
+    MOZ_ASSERT(op2.tag() == Operand::Tag::OP2);
     as_alu(dest, src1, op2.toOp2(), op, s, c);
 }
 
@@ -389,14 +388,14 @@ MacroAssemblerARM::ma_mov(Imm32 imm, Register dest, Assembler::Condition c)
 {
     
     Imm8 imm8 = Imm8(imm.value);
-    if (!imm8.invalid) {
+    if (!imm8.invalid()) {
         as_alu(dest, InvalidReg, imm8, OpMov, LeaveCC, c);
         return;
     }
 
     
     Imm8 negImm8 = Imm8(~imm.value);
-    if (!negImm8.invalid) {
+    if (!negImm8.invalid()) {
         as_alu(dest, InvalidReg, negImm8, OpMvn, LeaveCC, c);
         return;
     }
@@ -774,7 +773,7 @@ MacroAssemblerARM::ma_cmp(Register src1, ImmTag tag, Condition c)
 {
     
     Imm8 negtag = Imm8(-tag.value);
-    MOZ_ASSERT(!negtag.invalid);
+    MOZ_ASSERT(!negtag.invalid());
     as_cmn(src1, negtag, c);
 }
 
@@ -795,11 +794,11 @@ void
 MacroAssemblerARM::ma_cmp(Register src1, Operand op, AutoRegisterScope& scratch,
                           AutoRegisterScope& scratch2, Condition c)
 {
-    switch (op.getTag()) {
-      case Operand::OP2:
+    switch (op.tag()) {
+      case Operand::Tag::OP2:
         as_cmp(src1, op.toOp2(), c);
         break;
-      case Operand::MEM:
+      case Operand::Tag::MEM:
         ma_ldr(op.toAddress(), scratch, scratch2);
         as_cmp(src1, O2Reg(scratch), c);
         break;
@@ -1209,7 +1208,7 @@ MacroAssemblerARM::ma_dataTransferN(LoadStore ls, int size, bool IsSigned,
         
         if (off < 0) {
             Operand2 sub_off = Imm8(-(off - bottom)); 
-            if (!sub_off.invalid) {
+            if (!sub_off.invalid()) {
                 
                 as_sub(scratch, rn, sub_off, LeaveCC, cc);
                 return as_dtr(ls, size, Offset, rt, DTRAddr(scratch, DtrOffImm(bottom)), cc);
@@ -1217,7 +1216,7 @@ MacroAssemblerARM::ma_dataTransferN(LoadStore ls, int size, bool IsSigned,
 
             
             sub_off = Imm8(-(off + neg_bottom));
-            if (!sub_off.invalid && bottom != 0) {
+            if (!sub_off.invalid() && bottom != 0) {
                 
                 MOZ_ASSERT(neg_bottom < 0x1000);
                 
@@ -1227,7 +1226,7 @@ MacroAssemblerARM::ma_dataTransferN(LoadStore ls, int size, bool IsSigned,
         } else {
             
             Operand2 sub_off = Imm8(off - bottom);
-            if (!sub_off.invalid) {
+            if (!sub_off.invalid()) {
                 
                 as_add(scratch, rn, sub_off, LeaveCC, cc);
                 return as_dtr(ls, size, Offset, rt, DTRAddr(scratch, DtrOffImm(bottom)), cc);
@@ -1235,7 +1234,7 @@ MacroAssemblerARM::ma_dataTransferN(LoadStore ls, int size, bool IsSigned,
 
             
             sub_off = Imm8(off + neg_bottom);
-            if (!sub_off.invalid && bottom != 0) {
+            if (!sub_off.invalid() && bottom != 0) {
                 
                 MOZ_ASSERT(neg_bottom < 0x1000);
                 
@@ -1264,7 +1263,7 @@ MacroAssemblerARM::ma_dataTransferN(LoadStore ls, int size, bool IsSigned,
         if (off < 0) {
             
             Operand2 sub_off = Imm8(-(off - bottom));
-            if (!sub_off.invalid) {
+            if (!sub_off.invalid()) {
                 
                 as_sub(scratch, rn, sub_off, LeaveCC, cc);
                 return as_extdtr(ls, size, IsSigned, Offset, rt,
@@ -1273,7 +1272,7 @@ MacroAssemblerARM::ma_dataTransferN(LoadStore ls, int size, bool IsSigned,
             }
             
             sub_off = Imm8(-(off + neg_bottom));
-            if (!sub_off.invalid && bottom != 0) {
+            if (!sub_off.invalid() && bottom != 0) {
                 
                 MOZ_ASSERT(neg_bottom < 0x100);
                 
@@ -1285,7 +1284,7 @@ MacroAssemblerARM::ma_dataTransferN(LoadStore ls, int size, bool IsSigned,
         } else {
             
             Operand2 sub_off = Imm8(off - bottom);
-            if (!sub_off.invalid) {
+            if (!sub_off.invalid()) {
                 
                 as_add(scratch, rn, sub_off, LeaveCC, cc);
                 return as_extdtr(ls, size, IsSigned, Offset, rt,
@@ -1294,7 +1293,7 @@ MacroAssemblerARM::ma_dataTransferN(LoadStore ls, int size, bool IsSigned,
             }
             
             sub_off = Imm8(off + neg_bottom);
-            if (!sub_off.invalid && bottom != 0) {
+            if (!sub_off.invalid() && bottom != 0) {
                 
                 MOZ_ASSERT(neg_bottom < 0x100);
                 
@@ -1725,14 +1724,14 @@ MacroAssemblerARM::ma_vdtr(LoadStore ls, const Address& addr, VFPRegister rt,
     if (off < 0) {
         
         Operand2 sub_off = Imm8(-(off - bottom));
-        if (!sub_off.invalid) {
+        if (!sub_off.invalid()) {
             
             as_sub(scratch, base, sub_off, LeaveCC, cc);
             return as_vdtr(ls, rt, VFPAddr(scratch, VFPOffImm(bottom)), cc);
         }
         
         sub_off = Imm8(-(off + neg_bottom));
-        if (!sub_off.invalid && bottom != 0) {
+        if (!sub_off.invalid() && bottom != 0) {
             
             MOZ_ASSERT(neg_bottom < 0x400);
             
@@ -1742,14 +1741,14 @@ MacroAssemblerARM::ma_vdtr(LoadStore ls, const Address& addr, VFPRegister rt,
     } else {
         
         Operand2 sub_off = Imm8(off - bottom);
-        if (!sub_off.invalid) {
+        if (!sub_off.invalid()) {
             
             as_add(scratch, base, sub_off, LeaveCC, cc);
             return as_vdtr(ls, rt, VFPAddr(scratch, VFPOffImm(bottom)), cc);
         }
         
         sub_off = Imm8(off + neg_bottom);
-        if (!sub_off.invalid && bottom != 0) {
+        if (!sub_off.invalid() && bottom != 0) {
             
             MOZ_ASSERT(neg_bottom < 0x400);
             
