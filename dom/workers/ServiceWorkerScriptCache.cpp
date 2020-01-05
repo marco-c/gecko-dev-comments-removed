@@ -313,6 +313,12 @@ public:
   }
 
   void
+  SaveLoadFlags(nsLoadFlags aLoadFlags)
+  {
+    mCallback->SaveLoadFlags(aLoadFlags);
+  }
+
+  void
   NetworkFinished(nsresult aStatus)
   {
     AssertIsOnMainThread();
@@ -630,6 +636,9 @@ CompareNetwork::Initialize(nsIPrincipal* aPrincipal, const nsAString& aURL, nsIL
   if (registration->IsLastUpdateCheckTimeOverOneDay()) {
     flags |= nsIRequest::LOAD_BYPASS_CACHE;
   }
+
+  
+  mManager->SaveLoadFlags(flags);
 
   
   

@@ -41,6 +41,15 @@ public:
                    const nsAString& aNewCacheName,
                    const nsACString& aMaxScope) = 0;
 
+  
+
+
+
+
+
+  virtual void
+  SaveLoadFlags(nsLoadFlags aLoadFlags) = 0;
+
   NS_IMETHOD_(MozExternalRefCountType) AddRef() = 0;
   NS_IMETHOD_(MozExternalRefCountType) Release() = 0;
 };
