@@ -184,13 +184,7 @@ public:
   virtual nsresult Play();
 
   
-  
-  
-  
-  
   virtual void NotifyOwnerActivityChanged(bool aIsVisible);
-
-  void UpdateDormantState(bool aDormantTimeout, bool aActivity);
 
   
   virtual void Pause();
@@ -506,14 +500,6 @@ protected:
 
   void SetStateMachineParameters();
 
-  static void DormantTimerExpired(nsITimer *aTimer, void *aClosure);
-
-  
-  void StartDormantTimer();
-
-  
-  void CancelDormantTimer();
-
   bool IsShutdown() const;
 
   
@@ -541,9 +527,6 @@ protected:
   
 
 
-
-  
-  bool mDormantSupported;
 
   
   
@@ -628,9 +611,6 @@ protected:
   void DiscardOngoingSeekIfExists();
   virtual void CallSeek(const SeekTarget& aTarget, dom::Promise* aPromise);
 
-  
-  bool IsHeuristicDormantSupported() const;
-
   MozPromiseRequestHolder<SeekPromise> mSeekRequest;
   RefPtr<dom::Promise> mSeekDOMPromise;
 
@@ -698,21 +678,6 @@ protected:
 
   
   bool mForcedHidden;
-
-  
-  bool mIsDormant;
-
-  
-  const bool mIsHeuristicDormantSupported;
-
-  
-  const int mHeuristicDormantTimeout;
-
-  
-  bool mIsHeuristicDormant;
-
-  
-  nsCOMPtr<nsITimer> mDormantTimer;
 
   
   MediaEventListener mTimedMetadataListener;

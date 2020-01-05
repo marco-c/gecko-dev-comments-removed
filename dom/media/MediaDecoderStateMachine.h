@@ -180,9 +180,6 @@ public:
       this, &MediaDecoderStateMachine::SetPlaybackRate, aPlaybackRate));
   }
 
-  
-  void DispatchSetDormant(bool aDormant);
-
   RefPtr<ShutdownPromise> BeginShutdown();
 
   
