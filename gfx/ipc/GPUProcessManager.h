@@ -73,7 +73,7 @@ public:
   ~GPUProcessManager();
 
   
-  void LaunchGPUProcess();
+  void EnableGPUProcess();
 
   
   
@@ -194,7 +194,6 @@ private:
   ipc::TaskFactory<GPUProcessManager> mTaskFactory;
   RefPtr<VsyncIOThreadHolder> mVsyncIOThread;
   uint64_t mNextLayerTreeId;
-  uint32_t mNumProcessAttempts;
 
   nsTArray<RefPtr<RemoteCompositorSession>> mRemoteSessions;
   nsTArray<GPUProcessListener*> mListeners;

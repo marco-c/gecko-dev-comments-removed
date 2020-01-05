@@ -60,8 +60,7 @@ GPUProcessManager::GPUProcessManager()
  : mTaskFactory(this),
    mNextLayerTreeId(0),
    mProcess(nullptr),
-   mGPUChild(nullptr),
-   mNumProcessAttempts(0)
+   mGPUChild(nullptr)
 {
   mObserver = new Observer(this);
   nsContentUtils::RegisterShutdownObserver(mObserver);
@@ -108,7 +107,7 @@ GPUProcessManager::OnXPCOMShutdown()
 }
 
 void
-GPUProcessManager::LaunchGPUProcess()
+GPUProcessManager::EnableGPUProcess()
 {
   if (mProcess) {
     return;
@@ -116,8 +115,6 @@ GPUProcessManager::LaunchGPUProcess()
 
   
   EnsureVsyncIOThread();
-
-  mNumProcessAttempts++;
 
   
   
@@ -130,10 +127,6 @@ GPUProcessManager::LaunchGPUProcess()
 void
 GPUProcessManager::DisableGPUProcess(const char* aMessage)
 {
-  if (!gfxConfig::IsEnabled(Feature::GPU_PROCESS)) {
-    return;
-  }
-
   gfxConfig::SetFailed(Feature::GPU_PROCESS, FeatureStatus::Failed, aMessage);
   gfxCriticalNote << aMessage;
 
@@ -253,13 +246,6 @@ GPUProcessManager::OnProcessUnexpectedShutdown(GPUProcessHost* aHost)
   MOZ_ASSERT(mProcess && mProcess == aHost);
 
   DestroyProcess();
-
-  if (mNumProcessAttempts > gfxPrefs::GPUProcessDevMaxRestarts()) {
-    DisableGPUProcess("GPU processed crashed too many times");
-  }
-  if (gfxConfig::IsEnabled(Feature::GPU_PROCESS)) {
-    LaunchGPUProcess();
-  }
 
   
   
