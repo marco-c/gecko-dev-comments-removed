@@ -2018,17 +2018,18 @@ SetupDirtyRects(const nsRect& aBGClipArea, const nsRect& aCallerDirtyRect,
 static bool
 IsSVGStyleGeometryBox(StyleGeometryBox aBox)
 {
-  return (aBox == StyleGeometryBox::Fill || aBox == StyleGeometryBox::Stroke ||
-          aBox == StyleGeometryBox::View);
+  return (aBox == StyleGeometryBox::FillBox ||
+          aBox == StyleGeometryBox::StrokeBox ||
+          aBox == StyleGeometryBox::ViewBox);
 }
 
 static bool
 IsHTMLStyleGeometryBox(StyleGeometryBox aBox)
 {
-  return (aBox == StyleGeometryBox::Content ||
-          aBox == StyleGeometryBox::Padding ||
-          aBox == StyleGeometryBox::Border ||
-          aBox == StyleGeometryBox::Margin);
+  return (aBox == StyleGeometryBox::ContentBox ||
+          aBox == StyleGeometryBox::PaddingBox ||
+          aBox == StyleGeometryBox::BorderBox ||
+          aBox == StyleGeometryBox::MarginBox);
 }
 
 static StyleGeometryBox
@@ -2038,13 +2039,13 @@ ComputeBoxValue(nsIFrame* aForFrame, StyleGeometryBox aBox)
     
     
     if (IsSVGStyleGeometryBox(aBox)) {
-      return StyleGeometryBox::Border;
+      return StyleGeometryBox::BorderBox;
     }
   } else {
     
     
     if (IsHTMLStyleGeometryBox(aBox)) {
-      return StyleGeometryBox::Fill;
+      return StyleGeometryBox::FillBox;
     }
   }
 
@@ -2088,9 +2089,9 @@ nsCSSRendering::GetImageLayerClip(const nsStyleImageLayers::Layer& aLayer,
     nsRect clipArea =
       nsLayoutUtils::ComputeGeometryBox(aForFrame, layerClip);
 
-    nsRect strokeBox = (layerClip == StyleGeometryBox::Stroke)
+    nsRect strokeBox = (layerClip == StyleGeometryBox::StrokeBox)
       ? clipArea
-      : nsLayoutUtils::ComputeGeometryBox(aForFrame, StyleGeometryBox::Stroke);
+      : nsLayoutUtils::ComputeGeometryBox(aForFrame, StyleGeometryBox::StrokeBox);
     nsRect clipAreaRelativeToStrokeBox = clipArea - strokeBox.TopLeft();
 
     
@@ -2135,13 +2136,13 @@ nsCSSRendering::GetImageLayerClip(const nsStyleImageLayers::Layer& aLayer,
 
   bool isSolidBorder =
       aWillPaintBorder && IsOpaqueBorder(aBorder);
-  if (isSolidBorder && layerClip == StyleGeometryBox::Border) {
+  if (isSolidBorder && layerClip == StyleGeometryBox::BorderBox) {
     
     
     
     layerClip = haveRoundedCorners
                      ? StyleGeometryBox::MozAlmostPadding
-                     : StyleGeometryBox::Padding;
+                     : StyleGeometryBox::PaddingBox;
   }
 
   aClipState->mBGClipArea = clipBorderArea;
@@ -2155,7 +2156,7 @@ nsCSSRendering::GetImageLayerClip(const nsStyleImageLayers::Layer& aLayer,
     
     
     
-    if (layerClip == StyleGeometryBox::Content) {
+    if (layerClip == StyleGeometryBox::ContentBox) {
       nsIScrollableFrame* scrollableFrame = do_QueryFrame(aForFrame);
       
       aClipState->mHasAdditionalBGClipArea = true;
@@ -2175,7 +2176,7 @@ nsCSSRendering::GetImageLayerClip(const nsStyleImageLayers::Layer& aLayer,
 
     
     
-    layerClip = StyleGeometryBox::Padding;
+    layerClip = StyleGeometryBox::PaddingBox;
   }
 
   
@@ -2183,10 +2184,10 @@ nsCSSRendering::GetImageLayerClip(const nsStyleImageLayers::Layer& aLayer,
   
   
   
-  MOZ_ASSERT(layerClip != StyleGeometryBox::Margin,
-             "StyleGeometryBox::Margin rendering is not supported yet.\n");
+  MOZ_ASSERT(layerClip != StyleGeometryBox::MarginBox,
+             "StyleGeometryBox::MarginBox rendering is not supported yet.\n");
 
-  if (layerClip != StyleGeometryBox::Border &&
+  if (layerClip != StyleGeometryBox::BorderBox &&
       layerClip != StyleGeometryBox::Text) {
     nsMargin border = aForFrame->GetUsedBorder();
     if (layerClip == StyleGeometryBox::MozAlmostPadding) {
@@ -2197,8 +2198,8 @@ nsCSSRendering::GetImageLayerClip(const nsStyleImageLayers::Layer& aLayer,
       border.right = std::max(0, border.right - aAppUnitsPerPixel);
       border.bottom = std::max(0, border.bottom - aAppUnitsPerPixel);
       border.left = std::max(0, border.left - aAppUnitsPerPixel);
-    } else if (layerClip != StyleGeometryBox::Padding) {
-      NS_ASSERTION(layerClip == StyleGeometryBox::Content,
+    } else if (layerClip != StyleGeometryBox::PaddingBox) {
+      NS_ASSERTION(layerClip == StyleGeometryBox::ContentBox,
                    "unexpected background-clip");
       border += aForFrame->GetUsedPadding();
     }
@@ -3527,7 +3528,7 @@ nsCSSRendering::PaintStyleImageLayerWithSC(const PaintBGParams& aParams,
                                  skipSides, &aBorder);
 
   DrawResult result = DrawResult::SUCCESS;
-  StyleGeometryBox currentBackgroundClip = StyleGeometryBox::Border;
+  StyleGeometryBox currentBackgroundClip = StyleGeometryBox::BorderBox;
   uint32_t count = drawAllLayers
     ? layers.mImageCount                  
     : layers.mImageCount - aParams.layer; 
@@ -3629,10 +3630,10 @@ nsCSSRendering::ComputeImageLayerPositioningArea(nsPresContext* aPresContext,
       nsLayoutUtils::ComputeGeometryBox(aForFrame, layerOrigin);
 
     nsPoint toStrokeBoxOffset = nsPoint(0, 0);
-    if (layerOrigin != StyleGeometryBox::Stroke) {
+    if (layerOrigin != StyleGeometryBox::StrokeBox) {
       nsRect strokeBox =
         nsLayoutUtils::ComputeGeometryBox(aForFrame,
-                                          StyleGeometryBox::Stroke);
+                                          StyleGeometryBox::StrokeBox);
       toStrokeBoxOffset = positionArea.TopLeft() - strokeBox.TopLeft();
     }
 
@@ -3656,16 +3657,16 @@ nsCSSRendering::ComputeImageLayerPositioningArea(nsPresContext* aPresContext,
     
     
     
-    if (layerOrigin == StyleGeometryBox::Border) {
+    if (layerOrigin == StyleGeometryBox::BorderBox) {
       nsMargin border = geometryFrame->GetUsedBorder();
       border.ApplySkipSides(geometryFrame->GetSkipSides());
       positionArea.Inflate(border);
       positionArea.Inflate(scrollableFrame->GetActualScrollbarSizes());
-    } else if (layerOrigin != StyleGeometryBox::Padding) {
+    } else if (layerOrigin != StyleGeometryBox::PaddingBox) {
       nsMargin padding = geometryFrame->GetUsedPadding();
       padding.ApplySkipSides(geometryFrame->GetSkipSides());
       positionArea.Deflate(padding);
-      NS_ASSERTION(layerOrigin == StyleGeometryBox::Content,
+      NS_ASSERTION(layerOrigin == StyleGeometryBox::ContentBox,
                    "unknown background-origin value");
     }
     *aAttachedToFrame = aForFrame;
@@ -3690,17 +3691,17 @@ nsCSSRendering::ComputeImageLayerPositioningArea(nsPresContext* aPresContext,
   
   
   
-  MOZ_ASSERT(aLayer.mOrigin != StyleGeometryBox::Margin,
-             "StyleGeometryBox::Margin rendering is not supported yet.\n");
+  MOZ_ASSERT(aLayer.mOrigin != StyleGeometryBox::MarginBox,
+             "StyleGeometryBox::MarginBox rendering is not supported yet.\n");
 
   
   
   
-  if (layerOrigin != StyleGeometryBox::Border && geometryFrame) {
+  if (layerOrigin != StyleGeometryBox::BorderBox && geometryFrame) {
     nsMargin border = geometryFrame->GetUsedBorder();
-    if (layerOrigin != StyleGeometryBox::Padding) {
+    if (layerOrigin != StyleGeometryBox::PaddingBox) {
       border += geometryFrame->GetUsedPadding();
-      NS_ASSERTION(layerOrigin == StyleGeometryBox::Content,
+      NS_ASSERTION(layerOrigin == StyleGeometryBox::ContentBox,
                    "unknown background-origin value");
     }
     positionArea.Deflate(border);

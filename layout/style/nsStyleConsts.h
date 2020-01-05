@@ -87,16 +87,16 @@ enum class StyleClear : uint8_t {
 
 
 enum class StyleGeometryBox : uint8_t {
-  Content, 
-  Padding, 
-  Border,
-  Margin,  
-           
-           
-           
-  Fill,    
-  Stroke,  
-  View,    
+  ContentBox, 
+  PaddingBox, 
+  BorderBox,
+  MarginBox,  
+              
+              
+              
+  FillBox,    
+  StrokeBox,  
+  ViewBox,    
   NoClip,  
   Text,    
   NoBox,   
