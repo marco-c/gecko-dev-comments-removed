@@ -1,7 +1,3 @@
-
-
-
-
 extern crate libc;
 use libc::size_t;
 

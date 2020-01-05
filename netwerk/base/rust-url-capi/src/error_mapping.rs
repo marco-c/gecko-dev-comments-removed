@@ -1,7 +1,3 @@
-
-
-
-
 use url::ParseError;
 
 pub trait ErrorCode {
@@ -17,29 +13,40 @@ impl<T: ErrorCode> ErrorCode for Result<(), T> {
   }
 }
 
-impl ErrorCode for Result<(), ()> {
-  fn error_code(&self) -> i32 {
-    match *self {
-      Ok(_)  =>    0,
-      Err(_) => -255,
+impl ErrorCode for () {
+    fn error_code(&self) -> i32 {
+        return -1;
     }
-  }
 }
-
 impl ErrorCode for ParseError {
   fn error_code(&self) -> i32 {
-    match *self {
-      ParseError::EmptyHost                              =>  -1,
-      ParseError::InvalidPort                            =>  -2,
-      ParseError::InvalidIpv6Address                     =>  -3,
-      ParseError::InvalidDomainCharacter                 =>  -4,
-      ParseError::IdnaError                              =>  -5,
-      ParseError::InvalidIpv4Address                     =>  -6,
-      ParseError::RelativeUrlWithoutBase                 =>  -7,
-      ParseError::RelativeUrlWithCannotBeABaseBase       =>  -8,
-      ParseError::SetHostOnCannotBeABaseUrl              =>  -9,
-      ParseError::Overflow                               => -10,
-    }
+      return -1;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   }
 }
 
