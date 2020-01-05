@@ -3,7 +3,7 @@ use super::*;
 
 
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Item {
     pub ident: Ident,
     pub vis: Visibility,
@@ -11,7 +11,7 @@ pub struct Item {
     pub node: ItemKind,
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum ItemKind {
     
     
@@ -94,7 +94,7 @@ impl From<MacroInput> for Item {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum ViewPath {
     
     
@@ -110,20 +110,20 @@ pub enum ViewPath {
     List(Path, Vec<PathListItem>),
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct PathListItem {
     pub name: Ident,
     
     pub rename: Option<Ident>,
 }
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum Constness {
     Const,
     NotConst,
 }
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum Defaultness {
     Default,
     Final,
@@ -132,13 +132,13 @@ pub enum Defaultness {
 
 
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct ForeignMod {
     pub abi: Abi,
     pub items: Vec<ForeignItem>,
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct ForeignItem {
     pub ident: Ident,
     pub attrs: Vec<Attribute>,
@@ -147,7 +147,7 @@ pub struct ForeignItem {
 }
 
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum ForeignItemKind {
     
     Fn(Box<FnDecl>, Generics),
@@ -159,14 +159,14 @@ pub enum ForeignItemKind {
 
 
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct TraitItem {
     pub ident: Ident,
     pub attrs: Vec<Attribute>,
     pub node: TraitItemKind,
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum TraitItemKind {
     Const(Ty, Option<Expr>),
     Method(MethodSig, Option<Block>),
@@ -174,7 +174,7 @@ pub enum TraitItemKind {
     Macro(Mac),
 }
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum ImplPolarity {
     
     Positive,
@@ -182,7 +182,7 @@ pub enum ImplPolarity {
     Negative,
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct ImplItem {
     pub ident: Ident,
     pub vis: Visibility,
@@ -191,7 +191,7 @@ pub struct ImplItem {
     pub node: ImplItemKind,
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum ImplItemKind {
     Const(Ty, Expr),
     Method(MethodSig, Block),
@@ -201,7 +201,7 @@ pub enum ImplItemKind {
 
 
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct MethodSig {
     pub unsafety: Unsafety,
     pub constness: Constness,
@@ -213,7 +213,7 @@ pub struct MethodSig {
 
 
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct FnDecl {
     pub inputs: Vec<FnArg>,
     pub output: FunctionRetTy,
@@ -223,7 +223,7 @@ pub struct FnDecl {
 
 
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum FnArg {
     SelfRef(Option<Lifetime>, Mutability),
     SelfValue(Mutability),

@@ -2,7 +2,7 @@ use super::*;
 
 
 
-#[derive(Debug, Clone, Eq, PartialEq, Default)]
+#[derive(Debug, Clone, Eq, PartialEq, Default, Hash)]
 pub struct Generics {
     pub lifetimes: Vec<LifetimeDef>,
     pub ty_params: Vec<TyParam>,
@@ -45,7 +45,7 @@ impl Generics {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Lifetime {
     pub ident: Ident,
 }
@@ -63,7 +63,7 @@ impl Lifetime {
 }
 
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct LifetimeDef {
     pub attrs: Vec<Attribute>,
     pub lifetime: Lifetime,
@@ -80,7 +80,7 @@ impl LifetimeDef {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct TyParam {
     pub attrs: Vec<Attribute>,
     pub ident: Ident,
@@ -92,7 +92,7 @@ pub struct TyParam {
 
 
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum TyParamBound {
     Trait(PolyTraitRef, TraitBoundModifier),
     Region(Lifetime),
@@ -100,14 +100,14 @@ pub enum TyParamBound {
 
 
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum TraitBoundModifier {
     None,
     Maybe,
 }
 
 
-#[derive(Debug, Clone, Eq, PartialEq, Default)]
+#[derive(Debug, Clone, Eq, PartialEq, Default, Hash)]
 pub struct WhereClause {
     pub predicates: Vec<WherePredicate>,
 }
@@ -119,7 +119,7 @@ impl WhereClause {
 }
 
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum WherePredicate {
     
     BoundPredicate(WhereBoundPredicate),
@@ -130,7 +130,7 @@ pub enum WherePredicate {
 
 
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct WhereBoundPredicate {
     
     pub bound_lifetimes: Vec<LifetimeDef>,
@@ -143,7 +143,7 @@ pub struct WhereBoundPredicate {
 
 
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct WhereRegionPredicate {
     pub lifetime: Lifetime,
     pub bounds: Vec<Lifetime>,

@@ -1,7 +1,7 @@
 use super::*;
 
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum Ty {
     
     Slice(Box<Ty>),
@@ -35,13 +35,13 @@ pub enum Ty {
     Infer,
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct MutTy {
     pub ty: Ty,
     pub mutability: Mutability,
 }
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum Mutability {
     Mutable,
     Immutable,
@@ -53,7 +53,7 @@ pub enum Mutability {
 
 
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Path {
     pub global: bool,
     pub segments: Vec<PathSegment>,
@@ -73,7 +73,7 @@ impl<T> From<T> for Path
 
 
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct PathSegment {
     pub ident: Ident,
     pub parameters: PathParameters,
@@ -93,7 +93,7 @@ impl<T> From<T> for PathSegment
 
 
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum PathParameters {
     
     AngleBracketed(AngleBracketedParameterData),
@@ -118,7 +118,7 @@ impl PathParameters {
 }
 
 
-#[derive(Debug, Clone, Eq, PartialEq, Default)]
+#[derive(Debug, Clone, Eq, PartialEq, Default, Hash)]
 pub struct AngleBracketedParameterData {
     
     pub lifetimes: Vec<Lifetime>,
@@ -131,14 +131,14 @@ pub struct AngleBracketedParameterData {
 }
 
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct TypeBinding {
     pub ident: Ident,
     pub ty: Ty,
 }
 
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct ParenthesizedParameterData {
     
     pub inputs: Vec<Ty>,
@@ -146,7 +146,7 @@ pub struct ParenthesizedParameterData {
     pub output: Option<Ty>,
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct PolyTraitRef {
     
     pub bound_lifetimes: Vec<LifetimeDef>,
@@ -168,13 +168,13 @@ pub struct PolyTraitRef {
 
 
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct QSelf {
     pub ty: Box<Ty>,
     pub position: usize,
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct BareFnTy {
     pub unsafety: Unsafety,
     pub abi: Option<Abi>,
@@ -184,13 +184,13 @@ pub struct BareFnTy {
     pub variadic: bool,
 }
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum Unsafety {
     Unsafe,
     Normal,
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum Abi {
     Named(String),
     Rust,
@@ -199,13 +199,13 @@ pub enum Abi {
 
 
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct BareFnArg {
     pub name: Option<Ident>,
     pub ty: Ty,
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum FunctionRetTy {
     
     

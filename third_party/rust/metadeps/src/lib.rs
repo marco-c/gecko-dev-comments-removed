@@ -1,14 +1,14 @@
-//! metadeps lets you write `pkg-config` dependencies in `Cargo.toml` metadata,
-//! rather than programmatically in `build.rs`.  This makes those dependencies
-//! declarative, so other tools can read them as well.
-//!
-//! metadeps parses metadata like this in `Cargo.toml`:
-//!
-//! ```toml
-//! [package.metadata.pkg-config]
-//! testlib = "1.2"
-//! testdata = { version = "4.5", feature = "some-feature" }
-//! ```
+
+
+
+
+
+
+
+
+
+
+
 
 #![deny(missing_docs, warnings)]
 
@@ -30,8 +30,8 @@ error_chain! {
     }
 }
 
-/// Probe all libraries configured in the Cargo.toml
-/// `[package.metadata.pkg-config]` section.
+
+
 pub fn probe() -> Result<HashMap<String, Library>> {
     let dir = try!(env::var_os("CARGO_MANIFEST_DIR").ok_or("$CARGO_MANIFEST_DIR not set"));
     let mut path = PathBuf::from(dir);

@@ -7,7 +7,8 @@
 
 
 
-use parse::token::{Token, BinOpToken, keywords};
+use parse::token::{Token, BinOpToken};
+use symbol::keywords;
 use ast::BinOpKind;
 
 

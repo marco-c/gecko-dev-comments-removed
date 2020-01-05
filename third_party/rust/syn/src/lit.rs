@@ -1,7 +1,7 @@
 
 
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum Lit {
     
     Str(String, StrStyle),
@@ -19,7 +19,7 @@ pub enum Lit {
     Bool(bool),
 }
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum StrStyle {
     
     Cooked,
@@ -65,7 +65,7 @@ impl From<bool> for Lit {
     }
 }
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum IntTy {
     Isize,
     I8,
@@ -80,7 +80,7 @@ pub enum IntTy {
     Unsuffixed,
 }
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum FloatTy {
     F32,
     F64,

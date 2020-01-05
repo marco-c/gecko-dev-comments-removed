@@ -9,7 +9,7 @@
 
 use libc::c_void;
 
-use base::{CFIndex, CFAllocatorRef, CFTypeID};
+use base::{CFRange, CFIndex, CFAllocatorRef, CFTypeID};
 
 
 pub type CFArrayRetainCallBack = *const u8;
@@ -54,7 +54,7 @@ extern {
     
     
     
-    
+    pub fn CFArrayGetValues(theArray: CFArrayRef, range: CFRange, values: *mut *const c_void);
     pub fn CFArrayGetValueAtIndex(theArray: CFArrayRef, idx: CFIndex) -> *const c_void;
     
     pub fn CFArrayGetTypeID() -> CFTypeID;

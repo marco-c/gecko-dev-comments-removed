@@ -6,7 +6,7 @@ use super::*;
 
 
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Mac {
     pub path: Path,
     pub tts: Vec<TokenTree>,
@@ -24,7 +24,7 @@ pub struct Mac {
 
 
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum TokenTree {
     
     Token(Token),
@@ -32,7 +32,7 @@ pub enum TokenTree {
     Delimited(Delimited),
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Delimited {
     
     pub delim: DelimToken,
@@ -40,7 +40,7 @@ pub struct Delimited {
     pub tts: Vec<TokenTree>,
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum Token {
     
     Eq,
@@ -84,7 +84,7 @@ pub enum Token {
     DocComment(String),
 }
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum BinOpToken {
     Plus,
     Minus,
@@ -99,7 +99,7 @@ pub enum BinOpToken {
 }
 
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum DelimToken {
     
     Paren,

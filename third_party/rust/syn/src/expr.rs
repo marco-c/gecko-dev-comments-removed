@@ -1,6 +1,6 @@
 use super::*;
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Expr {
     pub node: ExprKind,
     pub attrs: Vec<Attribute>,
@@ -15,7 +15,7 @@ impl From<ExprKind> for Expr {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum ExprKind {
     
     Box(Box<Expr>),
@@ -145,7 +145,7 @@ pub enum ExprKind {
     Try(Box<Expr>),
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct FieldValue {
     pub ident: Ident,
     pub expr: Expr,
@@ -155,19 +155,19 @@ pub struct FieldValue {
 
 
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Block {
     
     pub stmts: Vec<Stmt>,
 }
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum BlockCheckMode {
     Default,
     Unsafe,
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum Stmt {
     
     Local(Box<Local>),
@@ -183,7 +183,7 @@ pub enum Stmt {
     Mac(Box<(Mac, MacStmtStyle, Vec<Attribute>)>),
 }
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum MacStmtStyle {
     
     
@@ -197,7 +197,7 @@ pub enum MacStmtStyle {
 }
 
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Local {
     pub pat: Box<Pat>,
     pub ty: Option<Box<Ty>>,
@@ -206,7 +206,7 @@ pub struct Local {
     pub attrs: Vec<Attribute>,
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 
 
 #[cfg_attr(feature = "clippy", allow(enum_variant_names))]
@@ -264,7 +264,7 @@ pub enum Pat {
 
 
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Arm {
     pub attrs: Vec<Attribute>,
     pub pats: Vec<Pat>,
@@ -273,14 +273,14 @@ pub struct Arm {
 }
 
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum CaptureBy {
     Value,
     Ref,
 }
 
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum RangeLimits {
     
     HalfOpen,
@@ -293,7 +293,7 @@ pub enum RangeLimits {
 
 
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct FieldPat {
     
     pub ident: Ident,
@@ -302,7 +302,7 @@ pub struct FieldPat {
     pub is_shorthand: bool,
 }
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum BindingMode {
     ByRef(Mutability),
     ByValue(Mutability),

@@ -204,7 +204,6 @@ impl CGEvent {
         }
     }
 
-    #[cfg(feature = "elcapitan")]
     pub fn post_to_pid(&self, pid: libc::pid_t) {
         unsafe {
             CGEventPostToPid(pid, self.as_concrete_TypeRef());
@@ -269,7 +268,6 @@ extern {
     
     fn CGEventPost(tapLocation: CGEventTapLocation, event: CGEventRef);
 
-    #[cfg(feature = "elcapitan")]
     
     fn CGEventPostToPid(pid: libc::pid_t, event: CGEventRef);
 

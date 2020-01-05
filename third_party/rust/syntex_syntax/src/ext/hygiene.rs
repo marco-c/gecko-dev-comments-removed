@@ -51,7 +51,11 @@ impl Mark {
         Mark(id.as_u32())
     }
 
-    pub fn as_u32(&self) -> u32 {
+    pub fn as_placeholder_id(self) -> NodeId {
+        NodeId::from_u32(self.0)
+    }
+
+    pub fn as_u32(self) -> u32 {
         self.0
     }
 }
@@ -115,12 +119,12 @@ impl SyntaxContext {
         })
     }
 
-   
-   
-   pub fn source(self) -> (Self , Mark ) {
-        let macro_def_ctxt = self.data().prev_ctxt.data();
-        (macro_def_ctxt.prev_ctxt, macro_def_ctxt.outer_mark)
-   }
+    
+    
+    pub fn source(self) -> (Self , Mark ) {
+         let macro_def_ctxt = self.data().prev_ctxt.data();
+         (macro_def_ctxt.prev_ctxt, macro_def_ctxt.outer_mark)
+    }
 }
 
 impl fmt::Debug for SyntaxContext {

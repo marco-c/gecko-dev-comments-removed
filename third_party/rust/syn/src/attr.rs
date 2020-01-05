@@ -3,7 +3,7 @@ use super::*;
 use std::iter;
 
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Attribute {
     pub style: AttrStyle,
     pub value: MetaItem,
@@ -19,7 +19,7 @@ impl Attribute {
 
 
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum AttrStyle {
     Outer,
     Inner,
@@ -28,7 +28,7 @@ pub enum AttrStyle {
 
 
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum MetaItem {
     
     
@@ -57,7 +57,7 @@ impl MetaItem {
 
 
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum NestedMetaItem {
     
     MetaItem(MetaItem),

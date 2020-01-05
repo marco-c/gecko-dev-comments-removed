@@ -38,7 +38,6 @@ extern crate unicode_xid;
 
 
 
-
 #[macro_export]
 macro_rules! panictry {
     ($e:expr) => ({
@@ -67,7 +66,6 @@ pub mod diagnostics {
 pub mod diagnostic_list;
 
 pub mod util {
-    pub mod interner;
     pub mod lev_distance;
     pub mod node_count;
     pub mod parser;
@@ -102,6 +100,7 @@ pub mod ptr;
 pub mod show_span;
 pub mod std_inject;
 pub mod str;
+pub mod symbol;
 pub mod test;
 pub mod tokenstream;
 pub mod visit;
@@ -129,5 +128,8 @@ pub mod ext {
         pub mod macro_rules;
     }
 }
+
+#[cfg(test)]
+mod test_snippet;
 
 

@@ -61,6 +61,7 @@ extern {
     
     
     
+    pub fn CFEqual(cf1: CFTypeRef, cf2: CFTypeRef) -> Boolean;
     pub fn CFGetRetainCount(cf: CFTypeRef) -> CFIndex;
     pub fn CFGetTypeID(cf: CFTypeRef) -> CFTypeID;
     pub fn CFHash(cf: CFTypeRef) -> CFHashCode;

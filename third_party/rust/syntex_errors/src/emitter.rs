@@ -14,7 +14,7 @@ use syntax_pos::{COMMAND_LINE_SP, DUMMY_SP, FileMap, Span, MultiSpan, CharPos};
 
 use {Level, CodeSuggestion, DiagnosticBuilder, SubDiagnostic, CodeMapper};
 use RenderSpan::*;
-use snippet::{StyledString, Style, Annotation, Line};
+use snippet::{Annotation, AnnotationType, Line, MultilineAnnotation, StyledString, Style};
 use styled_buffer::StyledBuffer;
 
 use std::io::prelude::*;
@@ -66,6 +66,7 @@ pub struct EmitterWriter {
 struct FileWithAnnotatedLines {
     file: Rc<FileMap>,
     lines: Vec<Line>,
+    multiline_depth: usize,
 }
 
 
@@ -138,10 +139,12 @@ impl EmitterWriter {
                                 line_index: line_index,
                                 annotations: vec![ann],
                             }],
+                multiline_depth: 0,
             });
         }
 
         let mut output = vec![];
+        let mut multiline_annotations = vec![];
 
         if let Some(ref cm) = self.cm {
             for span_label in msp.span_labels() {
@@ -153,7 +156,8 @@ impl EmitterWriter {
                 let mut is_minimized = false;
 
                 
-                if lo.line != hi.line {
+                let max_multiline_span_length = 8;
+                if lo.line != hi.line && (hi.line - lo.line) > max_multiline_span_length {
                     hi.line = lo.line;
                     hi.col = CharPos(lo.col.0 + 1);
                     is_minimized = true;
@@ -164,21 +168,75 @@ impl EmitterWriter {
                 
                 
                 
-                if lo.col == hi.col {
+                if lo.col == hi.col && lo.line == hi.line {
                     hi.col = CharPos(lo.col.0 + 1);
                 }
 
-                add_annotation_to_file(&mut output,
-                                       lo.file,
-                                       lo.line,
-                                       Annotation {
-                                           start_col: lo.col.0,
-                                           end_col: hi.col.0,
-                                           is_primary: span_label.is_primary,
-                                           is_minimized: is_minimized,
-                                           label: span_label.label.clone(),
-                                       });
+                let mut ann = Annotation {
+                    start_col: lo.col.0,
+                    end_col: hi.col.0,
+                    is_primary: span_label.is_primary,
+                    label: span_label.label.clone(),
+                    annotation_type: AnnotationType::Singleline,
+                };
+                if is_minimized {
+                    ann.annotation_type = AnnotationType::Minimized;
+                } else if lo.line != hi.line {
+                    let ml = MultilineAnnotation {
+                        depth: 1,
+                        line_start: lo.line,
+                        line_end: hi.line,
+                        start_col: lo.col.0,
+                        end_col: hi.col.0,
+                        is_primary: span_label.is_primary,
+                        label: span_label.label.clone(),
+                    };
+                    ann.annotation_type = AnnotationType::Multiline(ml.clone());
+                    multiline_annotations.push((lo.file.clone(), ml));
+                };
+
+                if !ann.is_multiline() {
+                    add_annotation_to_file(&mut output,
+                                           lo.file,
+                                           lo.line,
+                                           ann);
+                }
             }
+        }
+
+        
+        multiline_annotations.sort_by(|a, b| {
+            (a.1.line_start, a.1.line_end).cmp(&(b.1.line_start, b.1.line_end))
+        });
+        for item in multiline_annotations.clone() {
+            let ann = item.1;
+            for item in multiline_annotations.iter_mut() {
+                let ref mut a = item.1;
+                
+                
+                if &ann != a &&
+                    num_overlap(ann.line_start, ann.line_end, a.line_start, a.line_end, true)
+                {
+                    a.increase_depth();
+                } else {
+                    break;
+                }
+            }
+        }
+
+        let mut max_depth = 0;  
+        for (file, ann) in multiline_annotations {
+            if ann.depth > max_depth {
+                max_depth = ann.depth;
+            }
+            add_annotation_to_file(&mut output, file.clone(), ann.line_start, ann.as_start());
+            for line in ann.line_start + 1..ann.line_end {
+                add_annotation_to_file(&mut output, file.clone(), line, ann.as_line());
+            }
+            add_annotation_to_file(&mut output, file, ann.line_end, ann.as_end());
+        }
+        for file_vec in output.iter_mut() {
+            file_vec.multiline_depth = max_depth;
         }
         output
     }
@@ -187,24 +245,26 @@ impl EmitterWriter {
                           buffer: &mut StyledBuffer,
                           file: Rc<FileMap>,
                           line: &Line,
-                          width_offset: usize) {
+                          width_offset: usize,
+                          multiline_depth: usize) {
         let source_string = file.get_line(line.line_index - 1)
             .unwrap_or("");
 
         let line_offset = buffer.num_lines();
+        let code_offset = if multiline_depth == 0 {
+            width_offset
+        } else {
+            width_offset + multiline_depth + 1
+        };
 
         
-        buffer.puts(line_offset, width_offset, &source_string, Style::Quotation);
+        buffer.puts(line_offset, code_offset, &source_string, Style::Quotation);
         buffer.puts(line_offset,
                     0,
                     &(line.line_index.to_string()),
                     Style::LineNumber);
 
         draw_col_separator(buffer, line_offset, width_offset - 2);
-
-        if line.annotations.is_empty() {
-            return;
-        }
 
         
         
@@ -228,40 +288,10 @@ impl EmitterWriter {
         
         let mut annotations = line.annotations.clone();
         annotations.sort();
-
-        
-        for annotation in &annotations {
-            for p in annotation.start_col..annotation.end_col {
-                if annotation.is_primary {
-                    buffer.putc(line_offset + 1,
-                                width_offset + p,
-                                '^',
-                                Style::UnderlinePrimary);
-                    if !annotation.is_minimized {
-                        buffer.set_style(line_offset, width_offset + p, Style::UnderlinePrimary);
-                    }
-                } else {
-                    buffer.putc(line_offset + 1,
-                                width_offset + p,
-                                '-',
-                                Style::UnderlineSecondary);
-                    if !annotation.is_minimized {
-                        buffer.set_style(line_offset, width_offset + p, Style::UnderlineSecondary);
-                    }
-                }
-            }
-        }
-        draw_col_separator(buffer, line_offset + 1, width_offset - 2);
+        annotations.reverse();
 
         
         
-        let (labeled_annotations, unlabeled_annotations): (Vec<_>, _) = annotations.into_iter()
-            .partition(|a| a.label.is_some());
-
-        
-        if labeled_annotations.is_empty() {
-            return;
-        }
         
         
         
@@ -297,66 +327,261 @@ impl EmitterWriter {
         
         
         
-        let mut labeled_annotations = &labeled_annotations[..];
-        match labeled_annotations.split_last().unwrap() {
-            (last, previous) => {
-                if previous.iter()
-                    .chain(&unlabeled_annotations)
-                    .all(|a| !overlaps(a, last)) {
-                    
-                    
-                    let highlight_label: String = format!(" {}", last.label.as_ref().unwrap());
-                    if last.is_primary {
-                        buffer.append(line_offset + 1, &highlight_label, Style::LabelPrimary);
-                    } else {
-                        buffer.append(line_offset + 1, &highlight_label, Style::LabelSecondary);
-                    }
-                    labeled_annotations = previous;
-                }
-            }
-        }
-
         
-        if labeled_annotations.is_empty() {
-            return;
-        }
-
-        for (index, annotation) in labeled_annotations.iter().enumerate() {
-            
-            
-            
-            let comes_after = labeled_annotations.len() - index - 1;
-            let blank_lines = 3 + comes_after;
-
-            
-            
-            for index in 2..blank_lines {
-                if annotation.is_primary {
-                    buffer.putc(line_offset + index,
-                                width_offset + annotation.start_col,
-                                '|',
-                                Style::UnderlinePrimary);
-                } else {
-                    buffer.putc(line_offset + index,
-                                width_offset + annotation.start_col,
-                                '|',
-                                Style::UnderlineSecondary);
-                }
-                draw_col_separator(buffer, line_offset + index, width_offset - 2);
-            }
-
-            if annotation.is_primary {
-                buffer.puts(line_offset + blank_lines,
-                            width_offset + annotation.start_col,
-                            annotation.label.as_ref().unwrap(),
-                            Style::LabelPrimary);
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        let mut annotations_position = vec![];
+        let mut line_len = 0;
+        let mut p = 0;
+        let mut ann_iter = annotations.iter().peekable();
+        while let Some(annotation) = ann_iter.next() {
+            let is_line = if let AnnotationType::MultilineLine(_) = annotation.annotation_type {
+                true
             } else {
-                buffer.puts(line_offset + blank_lines,
-                            width_offset + annotation.start_col,
-                            annotation.label.as_ref().unwrap(),
-                            Style::LabelSecondary);
+                false
+            };
+            let peek = ann_iter.peek();
+            if let Some(next) = peek {
+                let next_is_line = if let AnnotationType::MultilineLine(_) = next.annotation_type {
+                    true
+                } else {
+                    false
+                };
+
+                if overlaps(next, annotation) && !is_line && !next_is_line {
+                    p += 1;
+                }
             }
-            draw_col_separator(buffer, line_offset + blank_lines, width_offset - 2);
+            annotations_position.push((p, annotation));
+            if let Some(next) = peek {
+                let next_is_line = if let AnnotationType::MultilineLine(_) = next.annotation_type {
+                    true
+                } else {
+                    false
+                };
+                let l = if let Some(ref label) = next.label {
+                    label.len() + 2
+                } else {
+                    0
+                };
+                if (overlaps(next, annotation) || next.end_col + l > annotation.start_col)
+                    && !is_line && !next_is_line
+                {
+                    p += 1;
+                }
+            }
+            if line_len < p {
+                line_len = p;
+            }
+        }
+        if line_len != 0 {
+            line_len += 1;
+        }
+
+        
+        
+        if line.annotations.is_empty() || line.annotations.iter()
+            .filter(|a| {
+                
+                
+                if let AnnotationType::MultilineLine(depth) = a.annotation_type {
+                    buffer.putc(line_offset,
+                                width_offset + depth - 1,
+                                '|',
+                                if a.is_primary {
+                                    Style::UnderlinePrimary
+                                } else {
+                                    Style::UnderlineSecondary
+                                });
+                    false
+                } else {
+                    true
+                }
+            }).collect::<Vec<_>>().len() == 0
+        {
+            return;
+        }
+
+        for pos in 0..line_len + 1 {
+            draw_col_separator(buffer, line_offset + pos + 1, width_offset - 2);
+            buffer.putc(line_offset + pos + 1,
+                        width_offset - 2,
+                        '|',
+                        Style::LineNumber);
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        for &(pos, annotation) in &annotations_position {
+            let style = if annotation.is_primary {
+                Style::UnderlinePrimary
+            } else {
+                Style::UnderlineSecondary
+            };
+            let pos = pos + 1;
+            match annotation.annotation_type {
+                AnnotationType::MultilineStart(depth) |
+                AnnotationType::MultilineEnd(depth) => {
+                    draw_range(buffer,
+                               '_',
+                               line_offset + pos,
+                               width_offset + depth,
+                               code_offset + annotation.start_col,
+                               style);
+                }
+                _ => (),
+            }
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        for &(pos, annotation) in &annotations_position {
+            let style = if annotation.is_primary {
+                Style::UnderlinePrimary
+            } else {
+                Style::UnderlineSecondary
+            };
+            let pos = pos + 1;
+            if pos > 1 {
+                for p in line_offset + 1..line_offset + pos + 1 {
+                    buffer.putc(p,
+                                code_offset + annotation.start_col,
+                                '|',
+                                style);
+                }
+            }
+            match annotation.annotation_type {
+                AnnotationType::MultilineStart(depth) => {
+                    for p in line_offset + pos + 1..line_offset + line_len + 2 {
+                        buffer.putc(p,
+                                    width_offset + depth - 1,
+                                    '|',
+                                    style);
+                    }
+                }
+                AnnotationType::MultilineEnd(depth) => {
+                    for p in line_offset..line_offset + pos + 1 {
+                        buffer.putc(p,
+                                    width_offset + depth - 1,
+                                    '|',
+                                    style);
+                    }
+                }
+                AnnotationType::MultilineLine(depth) => {
+                    
+                    
+                    for p in line_offset + 1..line_offset + line_len + 2 {
+                        buffer.putc(p,
+                                    width_offset + depth - 1,
+                                    '|',
+                                    style);
+                    }
+                }
+                _ => (),
+            }
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        for &(pos, annotation) in &annotations_position {
+            let style = if annotation.is_primary {
+                Style::LabelPrimary
+            } else {
+                Style::LabelSecondary
+            };
+            let (pos, col) = if pos == 0 {
+                (pos + 1, annotation.end_col + 1)
+            } else {
+                (pos + 2, annotation.start_col)
+            };
+            if let Some(ref label) = annotation.label {
+                buffer.puts(line_offset + pos,
+                            code_offset + col,
+                            &label,
+                            style);
+            }
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        
+        annotations_position.sort_by(|a, b| {
+            fn len(a: &Annotation) -> usize {
+                
+                if a.end_col > a.start_col {
+                    a.end_col - a.start_col
+                } else {
+                    a.start_col - a.end_col
+                }
+            }
+            
+            len(a.1).cmp(&len(b.1)).reverse()
+        });
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        for &(_, annotation) in &annotations_position {
+            let (underline, style) = if annotation.is_primary {
+                ('^', Style::UnderlinePrimary)
+            } else {
+                ('-', Style::UnderlineSecondary)
+            };
+            for p in annotation.start_col..annotation.end_col {
+                buffer.putc(line_offset + 1,
+                            code_offset + p,
+                            underline,
+                            style);
+            }
         }
     }
 
@@ -578,7 +803,8 @@ impl EmitterWriter {
                 self.render_source_line(&mut buffer,
                                         annotated_file.file.clone(),
                                         &annotated_file.lines[line_idx],
-                                        3 + max_line_num_len);
+                                        3 + max_line_num_len,
+                                        annotated_file.multiline_depth);
 
                 
                 
@@ -730,16 +956,25 @@ fn draw_col_separator(buffer: &mut StyledBuffer, line: usize, col: usize) {
 }
 
 fn draw_col_separator_no_space(buffer: &mut StyledBuffer, line: usize, col: usize) {
-    buffer.puts(line, col, "|", Style::LineNumber);
+    draw_col_separator_no_space_with_style(buffer, line, col, Style::LineNumber);
+}
+
+fn draw_col_separator_no_space_with_style(buffer: &mut StyledBuffer,
+                                          line: usize,
+                                          col: usize,
+                                          style: Style) {
+    buffer.putc(line, col, '|', style);
+}
+
+fn draw_range(buffer: &mut StyledBuffer, symbol: char, line: usize,
+              col_from: usize, col_to: usize, style: Style) {
+    for col in col_from..col_to {
+        buffer.putc(line, col, symbol, style);
+    }
 }
 
 fn draw_note_separator(buffer: &mut StyledBuffer, line: usize, col: usize) {
     buffer.puts(line, col, "= ", Style::LineNumber);
-}
-
-fn overlaps(a1: &Annotation, a2: &Annotation) -> bool {
-    (a2.start_col..a2.end_col).syntex_contains(a1.start_col) ||
-    (a1.start_col..a1.end_col).syntex_contains(a2.start_col)
 }
 
 trait SyntexContains<Idx> {
@@ -750,6 +985,19 @@ impl<Idx> SyntexContains<Idx> for ops::Range<Idx> where Idx: PartialOrd {
     fn syntex_contains(&self, item: Idx) -> bool {
         (self.start <= item) && (item < self.end)
     }
+}
+
+fn num_overlap(a_start: usize, a_end: usize, b_start: usize, b_end:usize, inclusive: bool) -> bool {
+    let extra = if inclusive {
+        1
+    } else {
+        0
+    };
+    (b_start..b_end + extra).syntex_contains(a_start) ||
+    (a_start..a_end + extra).syntex_contains(b_start)
+}
+fn overlaps(a1: &Annotation, a2: &Annotation) -> bool {
+    num_overlap(a1.start_col, a1.end_col, a2.start_col, a2.end_col, false)
 }
 
 fn emit_to_destination(rendered_buffer: &Vec<Vec<StyledString>>,
