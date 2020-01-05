@@ -510,30 +510,6 @@ public:
                                    int32_t aIncrement,
                                    bool aForCounting);
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  virtual uint16_t CSSAlignmentForAbsPosChild(
-                     const ReflowInput& aChildRI,
-                     mozilla::LogicalAxis aLogicalAxis) const;
-
 #define NS_DECLARE_FRAME_PROPERTY_FRAMELIST(prop) \
   NS_DECLARE_FRAME_PROPERTY_WITH_DTOR_NEVER_CALLED(prop, nsFrameList)
 

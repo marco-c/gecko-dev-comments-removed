@@ -237,23 +237,10 @@ PhysicalCoordFromFlexRelativeCoord(nscoord aFlexRelativeCoord,
     (axisTracker_).IsRowOriented() ? (bsize_) : (isize_)
 
 
-enum AxisTrackerFlags {
-  eNoFlags = 0x0,
-
-  
-  
-  
-  
-  eAllowBottomToTopChildOrdering = 0x1
-};
-MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(AxisTrackerFlags)
-
-
 class MOZ_STACK_CLASS nsFlexContainerFrame::FlexboxAxisTracker {
 public:
   FlexboxAxisTracker(const nsFlexContainerFrame* aFlexContainer,
-                     const WritingMode& aWM,
-                     AxisTrackerFlags aFlags = eNoFlags);
+                     const WritingMode& aWM);
 
   
   
@@ -1094,6 +1081,8 @@ IsOrderLEQWithDOMFallback(nsIFrame* aFrame1,
              "this method only intended for comparing flex items");
   MOZ_ASSERT(aFrame1->GetParent() == aFrame2->GetParent(),
              "this method only intended for comparing siblings");
+  bool isInLegacyBox = nsFlexContainerFrame::IsLegacyBox(aFrame1->GetParent());
+
   if (aFrame1 == aFrame2) {
     
     
@@ -1101,21 +1090,17 @@ IsOrderLEQWithDOMFallback(nsIFrame* aFrame1,
     return true;
   }
 
-  if (aFrame1->GetType() == nsGkAtoms::placeholderFrame ||
-      aFrame2->GetType() == nsGkAtoms::placeholderFrame) {
-    
-    
-    
-    return true;
-  }
+  
+  {
+    nsIFrame* aRealFrame1 = nsPlaceholderFrame::GetRealFrameFor(aFrame1);
+    nsIFrame* aRealFrame2 = nsPlaceholderFrame::GetRealFrameFor(aFrame2);
 
-  bool isInLegacyBox = nsFlexContainerFrame::IsLegacyBox(aFrame1->GetParent());
+    int32_t order1 = GetOrderOrBoxOrdinalGroup(aRealFrame1, isInLegacyBox);
+    int32_t order2 = GetOrderOrBoxOrdinalGroup(aRealFrame2, isInLegacyBox);
 
-  int32_t order1 = GetOrderOrBoxOrdinalGroup(aFrame1, isInLegacyBox);
-  int32_t order2 = GetOrderOrBoxOrdinalGroup(aFrame2, isInLegacyBox);
-
-  if (order1 != order2) {
-    return order1 < order2;
+    if (order1 != order2) {
+      return order1 < order2;
+    }
   }
 
   
@@ -1134,8 +1119,10 @@ IsOrderLEQWithDOMFallback(nsIFrame* aFrame1,
   
   
   
-  nsIAtom* pseudo1 = aFrame1->StyleContext()->GetPseudo();
-  nsIAtom* pseudo2 = aFrame2->StyleContext()->GetPseudo();
+  nsIAtom* pseudo1 =
+    nsPlaceholderFrame::GetRealFrameFor(aFrame1)->StyleContext()->GetPseudo();
+  nsIAtom* pseudo2 =
+    nsPlaceholderFrame::GetRealFrameFor(aFrame2)->StyleContext()->GetPseudo();
 
   if (pseudo1 == nsCSSPseudoElements::before ||
       pseudo2 == nsCSSPseudoElements::after) {
@@ -1178,148 +1165,16 @@ IsOrderLEQ(nsIFrame* aFrame1,
              "this method only intended for comparing flex items");
   MOZ_ASSERT(aFrame1->GetParent() == aFrame2->GetParent(),
              "this method only intended for comparing siblings");
-
-  if (aFrame1->GetType() == nsGkAtoms::placeholderFrame ||
-      aFrame2->GetType() == nsGkAtoms::placeholderFrame) {
-    
-    
-    
-    return true;
-  }
-
   bool isInLegacyBox = nsFlexContainerFrame::IsLegacyBox(aFrame1->GetParent());
 
-  int32_t order1 = GetOrderOrBoxOrdinalGroup(aFrame1, isInLegacyBox);
-  int32_t order2 = GetOrderOrBoxOrdinalGroup(aFrame2, isInLegacyBox);
+  
+  nsIFrame* aRealFrame1 = nsPlaceholderFrame::GetRealFrameFor(aFrame1);
+  nsIFrame* aRealFrame2 = nsPlaceholderFrame::GetRealFrameFor(aFrame2);
+
+  int32_t order1 = GetOrderOrBoxOrdinalGroup(aRealFrame1, isInLegacyBox);
+  int32_t order2 = GetOrderOrBoxOrdinalGroup(aRealFrame2, isInLegacyBox);
 
   return order1 <= order2;
-}
-
-uint8_t
-SimplifyAlignOrJustifyContentForOneItem(uint16_t aAlignmentVal,
-                                        bool aIsAlign)
-{
-  
-  
-  uint16_t specified = aAlignmentVal & NS_STYLE_ALIGN_ALL_BITS;
-
-  
-  specified &= ~NS_STYLE_ALIGN_FLAG_BITS;
-
-  
-  
-  if (specified == NS_STYLE_ALIGN_NORMAL) {
-    
-    
-    
-    specified = NS_STYLE_ALIGN_STRETCH;
-  }
-  if (!aIsAlign && specified == NS_STYLE_ALIGN_STRETCH) {
-    
-    
-    
-    
-    return NS_STYLE_ALIGN_FLEX_START;
-  }
-
-  
-  uint16_t explicitFallback = aAlignmentVal >> NS_STYLE_ALIGN_ALL_SHIFT;
-  if (explicitFallback) {
-    
-    
-    explicitFallback &= ~NS_STYLE_ALIGN_FLAG_BITS;
-    return explicitFallback;
-  }
-
-  
-  
-  
-  switch (specified) {
-    case NS_STYLE_ALIGN_SPACE_BETWEEN:
-      return NS_STYLE_ALIGN_START;
-    case NS_STYLE_ALIGN_SPACE_AROUND:
-    case NS_STYLE_ALIGN_SPACE_EVENLY:
-      return NS_STYLE_ALIGN_CENTER;
-    default:
-      return specified;
-  }
-}
-
-uint16_t
-nsFlexContainerFrame::CSSAlignmentForAbsPosChild(
-  const ReflowInput& aChildRI,
-  LogicalAxis aLogicalAxis) const
-{
-  WritingMode wm = GetWritingMode();
-  const FlexboxAxisTracker
-    axisTracker(this, wm, AxisTrackerFlags::eAllowBottomToTopChildOrdering);
-
-  
-  
-  
-  
-  const bool isMainAxis = (axisTracker.IsRowOriented() ==
-                           (aLogicalAxis == eLogicalAxisInline));
-  const nsStylePosition* containerStylePos = StylePosition();
-  const bool isAxisReversed = isMainAxis ? axisTracker.IsMainAxisReversed()
-                                         : axisTracker.IsCrossAxisReversed();
-
-  uint8_t alignment;
-  if (isMainAxis) {
-    alignment = SimplifyAlignOrJustifyContentForOneItem(
-                  containerStylePos->mJustifyContent,
-                  false);
-  } else {
-    const uint8_t alignContent = SimplifyAlignOrJustifyContentForOneItem(
-                                   containerStylePos->mAlignContent,
-                                   true);
-    if (NS_STYLE_FLEX_WRAP_NOWRAP != containerStylePos->mFlexWrap &&
-        alignContent != NS_STYLE_ALIGN_STRETCH) {
-      
-      
-      alignment = alignContent;
-    } else {
-      
-      
-      alignment = aChildRI.mStylePosition->UsedAlignSelf(nullptr);
-      
-      
-      alignment &= ~NS_STYLE_ALIGN_FLAG_BITS;
-
-      if (alignment == NS_STYLE_ALIGN_NORMAL) {
-        
-        
-        
-        
-        alignment = aChildRI.mFrame->IsFrameOfType(nsIFrame::eReplaced) ?
-          NS_STYLE_ALIGN_START : NS_STYLE_ALIGN_STRETCH;
-      }
-    }
-  }
-
-  
-  if (alignment == NS_STYLE_ALIGN_FLEX_START) {
-    alignment = isAxisReversed ? NS_STYLE_ALIGN_END : NS_STYLE_ALIGN_START;
-  } else if (alignment == NS_STYLE_ALIGN_FLEX_END) {
-    alignment = isAxisReversed ? NS_STYLE_ALIGN_START : NS_STYLE_ALIGN_END;
-  } else if (alignment == NS_STYLE_ALIGN_AUTO) {
-    alignment = NS_STYLE_ALIGN_START;
-  } else if (alignment == NS_STYLE_ALIGN_LEFT ||
-             alignment == NS_STYLE_ALIGN_RIGHT) {
-    if (aLogicalAxis == eLogicalAxisInline) {
-      const bool isLeft = (alignment == NS_STYLE_ALIGN_LEFT);
-      alignment = (isLeft == wm.IsBidiLTR()) ? NS_STYLE_ALIGN_START
-                                             : NS_STYLE_ALIGN_END;
-    } else {
-      alignment = NS_STYLE_ALIGN_START;
-    }
-  } else if (alignment == NS_STYLE_ALIGN_BASELINE) {
-    alignment = NS_STYLE_ALIGN_START;
-  } else if (alignment == NS_STYLE_ALIGN_LAST_BASELINE) {
-    alignment = NS_STYLE_ALIGN_END;
-  }
-
-  return alignment;
 }
 
 bool
@@ -3380,8 +3235,7 @@ BlockDirToAxisOrientation(WritingMode::BlockDir aBlockDir)
 
 FlexboxAxisTracker::FlexboxAxisTracker(
   const nsFlexContainerFrame* aFlexContainer,
-  const WritingMode& aWM,
-  AxisTrackerFlags aFlags)
+  const WritingMode& aWM)
   : mWM(aWM),
     mAreAxesInternallyReversed(false)
 {
@@ -3397,10 +3251,7 @@ FlexboxAxisTracker::FlexboxAxisTracker(
   
   static bool sPreventBottomToTopChildOrdering = true;
 
-  
-  
-  if (!(aFlags & AxisTrackerFlags::eAllowBottomToTopChildOrdering) &&
-      sPreventBottomToTopChildOrdering) {
+  if (sPreventBottomToTopChildOrdering) {
     
     
     if (eAxis_BT == mMainAxis || eAxis_BT == mCrossAxis) {
@@ -3545,8 +3396,7 @@ nsFlexContainerFrame::GenerateFlexLines(
   nscoord aAvailableBSizeForContent,
   const nsTArray<StrutInfo>& aStruts,
   const FlexboxAxisTracker& aAxisTracker,
-  nsTArray<nsIFrame*>& aPlaceholders, 
-  LinkedList<FlexLine>& aLines )
+  LinkedList<FlexLine>& aLines)
 {
   MOZ_ASSERT(aLines.isEmpty(), "Expecting outparam to start out empty");
 
@@ -3603,12 +3453,6 @@ nsFlexContainerFrame::GenerateFlexLines(
   uint32_t itemIdxInContainer = 0;
 
   for (nsIFrame* childFrame : mFrames) {
-    
-    if (childFrame->GetType() == nsGkAtoms::placeholderFrame) {
-      aPlaceholders.AppendElement(childFrame);
-      continue;
-    }
-
     
     if (!isSingleLine && !curLine->IsEmpty() &&
         childFrame->StyleDisplay()->mBreakBefore) {
@@ -4184,14 +4028,12 @@ nsFlexContainerFrame::DoFlexLayout(nsPresContext*           aPresContext,
   aStatus = NS_FRAME_COMPLETE;
 
   LinkedList<FlexLine> lines;
-  nsTArray<nsIFrame*> placeholderKids;
   AutoFlexLineListClearer cleanupLines(lines);
 
   GenerateFlexLines(aPresContext, aReflowInput,
                     aContentBoxMainSize,
                     aAvailableBSizeForContent,
-                    aStruts, aAxisTracker,
-                    placeholderKids, lines);
+                    aStruts, aAxisTracker, lines);
 
   aContentBoxMainSize =
     ResolveFlexContainerMainSize(aReflowInput, aAxisTracker,
@@ -4420,12 +4262,6 @@ nsFlexContainerFrame::DoFlexLayout(nsPresContext*           aPresContext,
     }
   }
 
-  if (!placeholderKids.IsEmpty()) {
-    ReflowPlaceholders(aPresContext, aReflowInput,
-                       placeholderKids, containerContentBoxOrigin,
-                       containerSize);
-  }
-
   
   
   LogicalSize desiredSizeInFlexWM =
@@ -4625,42 +4461,6 @@ nsFlexContainerFrame::ReflowFlexItem(nsPresContext* aPresContext,
                     outerWM, aFramePos, aContainerSize, 0);
 
   aItem.SetAscent(childDesiredSize.BlockStartAscent());
-}
-
-void
-nsFlexContainerFrame::ReflowPlaceholders(nsPresContext* aPresContext,
-                                         const ReflowInput& aReflowInput,
-                                         nsTArray<nsIFrame*>& aPlaceholders,
-                                         const LogicalPoint& aContentBoxOrigin,
-                                         const nsSize& aContainerSize)
-{
-  WritingMode outerWM = aReflowInput.GetWritingMode();
-
-  
-  
-  for (nsIFrame* placeholder : aPlaceholders) {
-    MOZ_ASSERT(placeholder->GetType() == nsGkAtoms::placeholderFrame,
-               "placeholders array should only contain placeholder frames");
-    WritingMode wm = placeholder->GetWritingMode();
-    LogicalSize availSize = aReflowInput.ComputedSize(wm);
-    ReflowInput childReflowInput(aPresContext, aReflowInput,
-                                 placeholder, availSize);
-    ReflowOutput childDesiredSize(childReflowInput);
-    nsReflowStatus childReflowStatus;
-    ReflowChild(placeholder, aPresContext,
-                childDesiredSize, childReflowInput,
-                outerWM, aContentBoxOrigin, aContainerSize, 0,
-                childReflowStatus);
-
-    FinishReflowChild(placeholder, aPresContext,
-                      childDesiredSize, &childReflowInput,
-                      outerWM, aContentBoxOrigin, aContainerSize, 0);
-
-    
-    
-    
-    placeholder->AddStateBits(PLACEHOLDER_STATICPOS_NEEDS_CSSALIGN);
-  }
 }
 
  nscoord

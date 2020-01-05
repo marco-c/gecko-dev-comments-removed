@@ -9868,12 +9868,14 @@ nsCSSFrameConstructor::CreateNeededAnonFlexOrGridItems(
     return;
   }
 
+  nsIAtom* containerType = aParentFrame->GetType();
   const bool isWebkitBox = nsFlexContainerFrame::IsLegacyBox(aParentFrame);
 
   FCItemIterator iter(aItems);
   do {
     
-    if (iter.SkipItemsThatDontNeedAnonFlexOrGridItem(aState, isWebkitBox)) {
+    if (iter.SkipItemsThatDontNeedAnonFlexOrGridItem(aState, containerType,
+                                                     isWebkitBox)) {
       
       
       return;
@@ -9896,7 +9898,9 @@ nsCSSFrameConstructor::CreateNeededAnonFlexOrGridItems(
       bool hitEnd = afterWhitespaceIter.SkipWhitespace(aState);
       bool nextChildNeedsAnonItem =
         !hitEnd &&
-        afterWhitespaceIter.item().NeedsAnonFlexOrGridItem(aState, isWebkitBox);
+        afterWhitespaceIter.item().NeedsAnonFlexOrGridItem(aState,
+                                                           containerType,
+                                                           isWebkitBox);
 
       if (!nextChildNeedsAnonItem) {
         
@@ -9910,7 +9914,8 @@ nsCSSFrameConstructor::CreateNeededAnonFlexOrGridItems(
         
         
         MOZ_ASSERT(!iter.IsDone() &&
-                   !iter.item().NeedsAnonFlexOrGridItem(aState, isWebkitBox),
+                   !iter.item().NeedsAnonFlexOrGridItem(aState, containerType,
+                                                        isWebkitBox),
                    "hitEnd and/or nextChildNeedsAnonItem lied");
         continue;
       }
@@ -9920,14 +9925,15 @@ nsCSSFrameConstructor::CreateNeededAnonFlexOrGridItems(
     
     
     FCItemIterator endIter(iter); 
-    endIter.SkipItemsThatNeedAnonFlexOrGridItem(aState, isWebkitBox);
+    endIter.SkipItemsThatNeedAnonFlexOrGridItem(aState, containerType,
+                                                isWebkitBox);
 
     NS_ASSERTION(iter != endIter,
                  "Should've had at least one wrappable child to seek past");
 
     
     
-    nsIAtom* pseudoType = (aParentFrame->GetType() == nsGkAtoms::flexContainerFrame) ?
+    nsIAtom* pseudoType = containerType == nsGkAtoms::flexContainerFrame ?
       nsCSSAnonBoxes::anonymousFlexItem : nsCSSAnonBoxes::anonymousGridItem;
     nsStyleContext* parentStyle = aParentFrame->StyleContext();
     nsIContent* parentContent = aParentFrame->GetContent();
@@ -10526,10 +10532,14 @@ void nsCSSFrameConstructor::CreateNeededPseudoSiblings(
 static bool
 FrameWantsToBeInAnonymousItem(const nsIAtom* aParentType, const nsIFrame* aFrame)
 {
-  MOZ_ASSERT(aParentType == nsGkAtoms::flexContainerFrame ||
-             aParentType == nsGkAtoms::gridContainerFrame);
-
-  return aFrame->IsFrameOfType(nsIFrame::eLineParticipant);
+  
+  
+  if (aParentType == nsGkAtoms::gridContainerFrame) {
+    return aFrame->IsFrameOfType(nsIFrame::eLineParticipant);
+  }
+  MOZ_ASSERT(aParentType == nsGkAtoms::flexContainerFrame);
+  return aFrame->IsFrameOfType(nsIFrame::eLineParticipant) ||
+         aFrame->GetType() == nsGkAtoms::placeholderFrame;
 }
 #endif
 
@@ -12165,9 +12175,11 @@ nsCSSFrameConstructor::WipeContainingBlock(nsFrameConstructorState& aState,
 
     
     
+    nsIAtom* containerType = aFrame->GetType();
     const bool isWebkitBox = nsFlexContainerFrame::IsLegacyBox(aFrame);
     if (aPrevSibling && IsAnonymousFlexOrGridItem(aPrevSibling) &&
-        iter.item().NeedsAnonFlexOrGridItem(aState, isWebkitBox)) {
+        iter.item().NeedsAnonFlexOrGridItem(aState, containerType,
+                                            isWebkitBox)) {
       RecreateFramesForContent(aFrame->GetContent(), true,
                                REMOVE_FOR_RECONSTRUCTION, nullptr);
       return true;
@@ -12179,7 +12191,8 @@ nsCSSFrameConstructor::WipeContainingBlock(nsFrameConstructorState& aState,
       
       iter.SetToEnd();
       iter.Prev();
-      if (iter.item().NeedsAnonFlexOrGridItem(aState, isWebkitBox)) {
+      if (iter.item().NeedsAnonFlexOrGridItem(aState, containerType,
+                                              isWebkitBox)) {
         RecreateFramesForContent(aFrame->GetContent(), true,
                                  REMOVE_FOR_RECONSTRUCTION, nullptr);
         return true;
@@ -12207,6 +12220,7 @@ nsCSSFrameConstructor::WipeContainingBlock(nsFrameConstructorState& aState,
     nsIFrame* containerFrame = aFrame->GetParent();
     const bool isWebkitBox = nsFlexContainerFrame::IsLegacyBox(containerFrame);
     if (!iter.SkipItemsThatNeedAnonFlexOrGridItem(aState,
+                                                  containerFrame->GetType(),
                                                   isWebkitBox)) {
       
       
@@ -12665,9 +12679,21 @@ Iterator::SkipItemsNotWantingParentType(ParentType aParentType)
 bool
 nsCSSFrameConstructor::FrameConstructionItem::
   NeedsAnonFlexOrGridItem(const nsFrameConstructorState& aState,
+                          nsIAtom* aContainerType,
                           bool aIsWebkitBox)
 {
   if (mFCData->mBits & FCDATA_IS_LINE_PARTICIPANT) {
+    
+    return true;
+  }
+
+  
+  if (aContainerType == nsGkAtoms::flexContainerFrame &&
+      !(mFCData->mBits & FCDATA_DISALLOW_OUT_OF_FLOW) &&
+      aState.GetGeometricParent(mStyleContext->StyleDisplay(), nullptr)) {
+    
+    
+    
     
     return true;
   }
@@ -12685,10 +12711,12 @@ inline bool
 nsCSSFrameConstructor::FrameConstructionItemList::
 Iterator::SkipItemsThatNeedAnonFlexOrGridItem(
   const nsFrameConstructorState& aState,
+  nsIAtom* aContainerType,
   bool aIsWebkitBox)
 {
   NS_PRECONDITION(!IsDone(), "Shouldn't be done yet");
-  while (item().NeedsAnonFlexOrGridItem(aState, aIsWebkitBox)) {
+  while (item().NeedsAnonFlexOrGridItem(aState, aContainerType,
+                                        aIsWebkitBox)) {
     Next();
     if (IsDone()) {
       return true;
@@ -12701,10 +12729,12 @@ inline bool
 nsCSSFrameConstructor::FrameConstructionItemList::
 Iterator::SkipItemsThatDontNeedAnonFlexOrGridItem(
   const nsFrameConstructorState& aState,
+  nsIAtom* aContainerType,
   bool aIsWebkitBox)
 {
   NS_PRECONDITION(!IsDone(), "Shouldn't be done yet");
-  while (!(item().NeedsAnonFlexOrGridItem(aState, aIsWebkitBox))) {
+  while (!(item().NeedsAnonFlexOrGridItem(aState, aContainerType,
+                                          aIsWebkitBox))) {
     Next();
     if (IsDone()) {
       return true;

@@ -1556,8 +1556,6 @@ ReflowInput::InitAbsoluteConstraints(nsPresContext* aPresContext,
   nsHypotheticalPosition hypotheticalPos;
   if ((iStartIsAuto && iEndIsAuto) || (bStartIsAuto && bEndIsAuto)) {
     if (mFlags.mStaticPosIsCBOrigin) {
-      
-      
       hypotheticalPos.mWritingMode = cbwm;
       hypotheticalPos.mIStart = nscoord(0);
       hypotheticalPos.mBStart = nscoord(0);
@@ -1567,20 +1565,6 @@ ReflowInput::InitAbsoluteConstraints(nsPresContext* aPresContext,
       NS_ASSERTION(placeholderFrame, "no placeholder frame");
       CalculateHypotheticalPosition(aPresContext, placeholderFrame, cbrs,
                                     hypotheticalPos, aFrameType);
-
-      if (placeholderFrame->HasAnyStateBits(
-            PLACEHOLDER_STATICPOS_NEEDS_CSSALIGN)) {
-        DebugOnly<nsIFrame*> placeholderParent = placeholderFrame->GetParent();
-        MOZ_ASSERT(placeholderParent, "shouldn't have unparented placeholders");
-        MOZ_ASSERT(placeholderParent->IsFlexOrGridContainer(),
-                   "This flag should only be set on grid/flex children");
-
-        
-        
-        
-        mFlags.mIOffsetsNeedCSSAlign = (iStartIsAuto && iEndIsAuto);
-        mFlags.mBOffsetsNeedCSSAlign = (bStartIsAuto && bEndIsAuto);
-      }
     }
   }
 
