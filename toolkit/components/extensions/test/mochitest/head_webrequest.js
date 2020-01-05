@@ -222,8 +222,10 @@ function background(events) {
       
       
       
-      let expectCached = !!expected.cached && details.method === "GET" && details.statusCode != 404;
-      browser.test.assertEq(expectCached, details.fromCache, "fromCache is correct");
+      if (typeof expected.cached === "boolean") {
+        let expectCached = expected.cached && details.method === "GET" && details.statusCode != 404;
+        browser.test.assertEq(expectCached, details.fromCache, "fromCache is correct");
+      }
       
       if (!details.fromCache && /^https?:/.test(details.url)) {
         browser.test.assertTrue(IP_PATTERN.test(details.ip), `IP for ${details.url} looks IP-ish: ${details.ip}`);
