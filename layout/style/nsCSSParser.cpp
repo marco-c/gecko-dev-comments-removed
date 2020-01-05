@@ -1173,10 +1173,8 @@ protected:
                      ComponentType& aG,
                      ComponentType& aB,
                      ComponentType& aA);
-  
-  
   bool ParseHSLColor(float& aHue, float& aSaturation, float& aLightness,
-                     char aStop);
+                     float& aOpacity);
 
   
   
@@ -6743,24 +6741,16 @@ CSSParserImpl::ParseColor(nsCSSValue& aValue)
         SkipUntil(')');
         return CSSParseResult::Error;
       }
-      else if (mToken.mIdent.LowerCaseEqualsLiteral("hsl")) {
-        
-        
-        float h, s, l;
-        if (ParseHSLColor(h, s, l, ')')) {
-          aValue.SetFloatColorValue(h, s, l, 1.0f, eCSSUnit_HSLColor);
-          return CSSParseResult::Ok;
-        }
-        SkipUntil(')');
-        return CSSParseResult::Error;
-      }
-      else if (mToken.mIdent.LowerCaseEqualsLiteral("hsla")) {
+      else if (mToken.mIdent.LowerCaseEqualsLiteral("hsl") ||
+               mToken.mIdent.LowerCaseEqualsLiteral("hsla")) {
         
         
         
+        
+
         float h, s, l, a;
-        if (ParseHSLColor(h, s, l, ',') &&
-            ParseColorOpacity(a)) {
+
+        if (ParseHSLColor(h, s, l, a)) {
           aValue.SetFloatColorValue(h, s, l, a, eCSSUnit_HSLAColor);
           return CSSParseResult::Ok;
         }
@@ -6887,10 +6877,19 @@ CSSParserImpl::ParseColorComponent(float& aComponent, Maybe<char> aSeparator)
 
 bool
 CSSParserImpl::ParseHSLColor(float& aHue, float& aSaturation, float& aLightness,
-                             char aStop)
+                             float& aOpacity)
 {
-  float h, s, l;
+  
+  
+  
+  
 
+  const char commaSeparator = ',';
+
+  
+  
+  
+  
   
   if (!GetToken(true)) {
     REPORT_UNEXPECTED_EOF(PEColorHueEOF);
@@ -6901,57 +6900,25 @@ CSSParserImpl::ParseHSLColor(float& aHue, float& aSaturation, float& aLightness,
     UngetToken();
     return false;
   }
-  h = mToken.mNumber;
-  h /= 360.0f;
+  aHue = mToken.mNumber;
+  aHue /= 360.0f;
   
-  h = h - floor(h);
-
-  if (!ExpectSymbol(',', true)) {
-    REPORT_UNEXPECTED_TOKEN(PEExpectedComma);
-    return false;
-  }
+  aHue = aHue - floor(aHue);
+  
+  
+  bool hasComma = ExpectSymbol(commaSeparator, true);
 
   
-  if (!GetToken(true)) {
-    REPORT_UNEXPECTED_EOF(PEColorSaturationEOF);
-    return false;
-  }
-  if (mToken.mType != eCSSToken_Percentage) {
-    REPORT_UNEXPECTED_TOKEN(PEExpectedPercent);
-    UngetToken();
-    return false;
-  }
-  s = mToken.mNumber;
-  if (s < 0.0f) s = 0.0f;
-  if (s > 1.0f) s = 1.0f;
-
-  if (!ExpectSymbol(',', true)) {
-    REPORT_UNEXPECTED_TOKEN(PEExpectedComma);
-    return false;
-  }
-
   
-  if (!GetToken(true)) {
-    REPORT_UNEXPECTED_EOF(PEColorLightnessEOF);
-    return false;
-  }
-  if (mToken.mType != eCSSToken_Percentage) {
-    REPORT_UNEXPECTED_TOKEN(PEExpectedPercent);
-    UngetToken();
-    return false;
-  }
-  l = mToken.mNumber;
-  if (l < 0.0f) l = 0.0f;
-  if (l > 1.0f) l = 1.0f;
-
-  if (ExpectSymbol(aStop, true)) {
-    aHue = h;
-    aSaturation = s;
-    aLightness = l;
+  
+  
+  const char separatorBeforeAlpha = hasComma ? commaSeparator : '/';
+  if (ParseColorComponent(aSaturation, hasComma ? Some(commaSeparator) : Nothing()) &&
+      ParseColorComponent(aLightness, Nothing()) &&
+      ParseColorOpacityAndCloseParen(aOpacity, separatorBeforeAlpha)) {
     return true;
   }
 
-  REPORT_UNEXPECTED_TOKEN_CHAR(PEColorComponentBadTerm, aStop);
   return false;
 }
 
