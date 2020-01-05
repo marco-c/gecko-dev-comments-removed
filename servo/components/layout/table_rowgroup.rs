@@ -13,6 +13,7 @@ use context::LayoutContext;
 use flow::{TableRowGroupFlowClass, FlowClass, Flow, ImmutableFlowUtils};
 use flow;
 use fragment::Fragment;
+use layout_debug;
 use table::{InternalTable, TableFlow};
 use wrapper::ThreadSafeLayoutNode;
 
@@ -21,6 +22,7 @@ use std::cmp::max;
 use std::fmt;
 
 
+#[deriving(Encodable)]
 pub struct TableRowGroupFlow {
     pub block_flow: BlockFlow,
 
@@ -110,6 +112,10 @@ impl Flow for TableRowGroupFlow {
         self
     }
 
+    fn as_immutable_table_rowgroup<'a>(&'a self) -> &'a TableRowGroupFlow {
+        self
+    }
+
     fn as_block<'a>(&'a mut self) -> &'a mut BlockFlow {
         &mut self.block_flow
     }
@@ -134,6 +140,9 @@ impl Flow for TableRowGroupFlow {
     
     
     fn bubble_inline_sizes(&mut self, _: &LayoutContext) {
+        let _scope = layout_debug_scope!("table_rowgroup::bubble_inline_sizes {:s}",
+                                            self.block_flow.base.debug_id());
+
         let mut min_inline_size = Au(0);
         let mut pref_inline_size = Au(0);
 
@@ -176,6 +185,8 @@ impl Flow for TableRowGroupFlow {
     
     
     fn assign_inline_sizes(&mut self, ctx: &LayoutContext) {
+        let _scope = layout_debug_scope!("table_rowgroup::assign_inline_sizes {:s}",
+                                            self.block_flow.base.debug_id());
         debug!("assign_inline_sizes({}): assigning inline_size for flow", "table_rowgroup");
 
         

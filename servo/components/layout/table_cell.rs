@@ -11,6 +11,7 @@ use context::LayoutContext;
 use flow::{TableCellFlowClass, FlowClass, Flow};
 use fragment::Fragment;
 use model::{MaybeAuto};
+use layout_debug;
 use table::InternalTable;
 use wrapper::ThreadSafeLayoutNode;
 
@@ -18,6 +19,7 @@ use servo_util::geometry::Au;
 use std::fmt;
 
 
+#[deriving(Encodable)]
 pub struct TableCellFlow {
     
     pub block_flow: BlockFlow,
@@ -64,12 +66,19 @@ impl Flow for TableCellFlow {
         self
     }
 
+    fn as_immutable_table_cell<'a>(&'a self) -> &'a TableCellFlow {
+        self
+    }
+
     fn as_block<'a>(&'a mut self) -> &'a mut BlockFlow {
         &mut self.block_flow
     }
 
     
     fn bubble_inline_sizes(&mut self, ctx: &LayoutContext) {
+        let _scope = layout_debug_scope!("table_cell::bubble_inline_sizes {:s}",
+                                            self.block_flow.base.debug_id());
+
         self.block_flow.bubble_inline_sizes(ctx);
         let specified_inline_size = MaybeAuto::from_style(self.block_flow.fragment.style().content_inline_size(),
                                                     Au::new(0)).specified_or_zero();
@@ -86,6 +95,8 @@ impl Flow for TableCellFlow {
     
     
     fn assign_inline_sizes(&mut self, ctx: &LayoutContext) {
+        let _scope = layout_debug_scope!("table_cell::assign_inline_sizes {:s}",
+                                            self.block_flow.base.debug_id());
         debug!("assign_inline_sizes({}): assigning inline_size for flow", "table_cell");
 
         

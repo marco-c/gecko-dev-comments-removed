@@ -13,6 +13,7 @@ use context::LayoutContext;
 use floats::FloatKind;
 use flow::{TableWrapperFlowClass, FlowClass, Flow, ImmutableFlowUtils};
 use fragment::Fragment;
+use layout_debug;
 use model::{Specified, Auto, specified};
 use wrapper::ThreadSafeLayoutNode;
 
@@ -21,12 +22,14 @@ use std::cmp::max;
 use std::fmt;
 use style::computed_values::table_layout;
 
+#[deriving(Encodable)]
 pub enum TableLayout {
     FixedLayout,
     AutoLayout
 }
 
 
+#[deriving(Encodable)]
 pub struct TableWrapperFlow {
     pub block_flow: BlockFlow,
 
@@ -119,6 +122,10 @@ impl Flow for TableWrapperFlow {
         self
     }
 
+    fn as_immutable_table_wrapper<'a>(&'a self) -> &'a TableWrapperFlow {
+        self
+    }
+
     fn as_block<'a>(&'a mut self) -> &'a mut BlockFlow {
         &mut self.block_flow
     }
@@ -130,6 +137,9 @@ impl Flow for TableWrapperFlow {
 
 
     fn bubble_inline_sizes(&mut self, ctx: &LayoutContext) {
+        let _scope = layout_debug_scope!("table_wrapper::bubble_inline_sizes {:s}",
+                                            self.block_flow.base.debug_id());
+
         
         for kid in self.block_flow.base.child_iter() {
             assert!(kid.is_table_caption() || kid.is_table());
@@ -148,6 +158,8 @@ impl Flow for TableWrapperFlow {
     
     
     fn assign_inline_sizes(&mut self, ctx: &LayoutContext) {
+        let _scope = layout_debug_scope!("table_wrapper::assign_inline_sizes {:s}",
+                                            self.block_flow.base.debug_id());
         debug!("assign_inline_sizes({}): assigning inline_size for flow",
                if self.is_float() {
                    "floated table_wrapper"
