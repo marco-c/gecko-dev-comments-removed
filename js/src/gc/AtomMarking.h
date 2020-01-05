@@ -11,6 +11,7 @@
 #include "ds/Bitmap.h"
 #include "gc/Heap.h"
 #include "threading/ProtectedData.h"
+#include "vm/Symbol.h"
 
 namespace js {
 namespace gc {
@@ -21,6 +22,13 @@ class AtomMarkingRuntime
 {
     
     js::ExclusiveAccessLockOrGCTaskData<Vector<size_t, 0, SystemAllocPolicy>> freeArenaIndexes;
+
+    void markChildren(JSContext* cx, JSAtom*) {}
+
+    void markChildren(JSContext* cx, JS::Symbol* symbol) {
+        if (JSAtom* description = symbol->description())
+            markAtom(cx, description);
+    }
 
   public:
     
@@ -51,7 +59,8 @@ class AtomMarkingRuntime
     void updateChunkMarkBits(JSRuntime* runtime);
 
     
-    void markAtom(JSContext* cx, TenuredCell* thing);
+    template <typename T> void markAtom(JSContext* cx, T* thing);
+
     void markId(JSContext* cx, jsid id);
     void markAtomValue(JSContext* cx, const Value& value);
 
@@ -60,7 +69,7 @@ class AtomMarkingRuntime
 
 #ifdef DEBUG
     
-    bool atomIsMarked(Zone* zone, Cell* thing);
+    template <typename T> bool atomIsMarked(Zone* zone, T* thing);
     bool idIsMarked(Zone* zone, jsid id);
     bool valueIsMarked(Zone* zone, const Value& value);
 #endif

@@ -170,7 +170,7 @@ class SharedIntlData
 
 
     bool validateTimeZoneName(JSContext* cx, JS::HandleString timeZone,
-                              JS::MutableHandleString result);
+                              MutableHandleAtom result);
 
     
 

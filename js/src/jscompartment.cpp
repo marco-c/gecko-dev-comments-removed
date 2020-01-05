@@ -338,7 +338,7 @@ JSCompartment::wrap(JSContext* cx, MutableHandleString strp)
 
 
     if (str->isAtom()) {
-        cx->markAtom(str);
+        cx->markAtom(&str->asAtom());
         return true;
     }
 
