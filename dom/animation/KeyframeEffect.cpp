@@ -130,6 +130,12 @@ void
 KeyframeEffect::SetIterationComposite(
   const IterationCompositeOperation& aIterationComposite)
 {
+  
+  
+  if (!AnimationUtils::IsCoreAPIEnabled()) {
+    return;
+  }
+
   if (mEffectOptions.mIterationComposite == aIterationComposite) {
     return;
   }

@@ -510,7 +510,11 @@ KeyframeEffectParamsFromUnion(const OptionsType& aOptions,
                                        result.mPacedProperty,
                                        aInvalidPacedProperty,
                                        aRv);
-    result.mIterationComposite = options.mIterationComposite;
+    
+    
+    if (AnimationUtils::IsCoreAPIEnabled()) {
+      result.mIterationComposite = options.mIterationComposite;
+    }
   }
   return result;
 }
