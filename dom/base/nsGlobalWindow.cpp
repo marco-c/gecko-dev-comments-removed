@@ -80,6 +80,7 @@
 #include "nsAboutProtocolUtils.h"
 #include "nsCharTraits.h" 
 #include "PostMessageEvent.h"
+#include "DocGroup.h"
 
 
 #include "nsIFrame.h"
@@ -1226,8 +1227,7 @@ nsGlobalWindow::nsGlobalWindow(nsGlobalWindow *aOuterWindow)
     mDialogAbuseCount(0),
     mAreDialogsEnabled(true),
     mCanSkipCCGeneration(0),
-    mStaticConstellation(0),
-    mConstellation(NullCString())
+    mTabGroup(new TabGroup())
 {
   AssertIsOnMainThread();
 
@@ -1262,11 +1262,6 @@ nsGlobalWindow::nsGlobalWindow(nsGlobalWindow *aOuterWindow)
     
     
     Freeze();
-
-    
-    
-    
-    mStaticConstellation = WindowID();
   }
 
   
@@ -1428,6 +1423,12 @@ nsGlobalWindow::~nsGlobalWindow()
     if (outer) {
       outer->MaybeClearInnerWindow(this);
     }
+  }
+
+  
+  if (mDocGroup) {
+    MOZ_ASSERT(IsInnerWindow());
+    mDocGroup->Remove(AsInner());
   }
 
   
@@ -3014,6 +3015,9 @@ nsGlobalWindow::InnerSetNewDocument(JSContext* aCx, nsIDocument* aDocument)
   mLocalStorage = nullptr;
   mSessionStorage = nullptr;
 
+  
+  SwitchDocGroup();
+
 #ifdef DEBUG
   mLastOpenedURI = aDocument->GetDocumentURI();
 #endif
@@ -3037,10 +3041,9 @@ nsGlobalWindow::SetDocShell(nsIDocShell* aDocShell)
 
   mDocShell = aDocShell; 
 
-  
   nsCOMPtr<nsPIDOMWindowOuter> parentWindow = GetParent();
   if (parentWindow) {
-    mStaticConstellation = Cast(parentWindow)->mStaticConstellation;
+    InheritTabGroupFrom(parentWindow);
   }
 
   NS_ASSERTION(!mNavigator, "Non-null mNavigator in outer window!");
@@ -3154,9 +3157,8 @@ nsGlobalWindow::SetOpenerWindow(nsPIDOMWindowOuter* aOpener,
   mOpener = do_GetWeakReference(aOpener);
   NS_ASSERTION(mOpener || !aOpener, "Opener must support weak references!");
 
-  
   if (aOpener) {
-    mStaticConstellation = Cast(aOpener)->mStaticConstellation;
+    InheritTabGroupFrom(aOpener);
   }
 
   if (aOriginalOpener) {
@@ -14411,44 +14413,74 @@ nsGlobalWindow::CheckForDPIChange()
   }
 }
 
-void
-nsGlobalWindow::GetConstellation(nsACString& aConstellation)
+TabGroup*
+nsGlobalWindow::GetTabGroup()
 {
-  FORWARD_TO_INNER_VOID(GetConstellation, (aConstellation));
+  FORWARD_TO_OUTER(GetTabGroup, (), nullptr);
 
 #ifdef DEBUG
-  RefPtr<nsGlobalWindow> outer = GetOuterWindowInternal();
-  MOZ_ASSERT(outer, "We should have an outer window");
-  RefPtr<nsGlobalWindow> top = outer->GetTopInternal();
-  RefPtr<nsPIDOMWindowOuter> opener = outer->GetOpener();
-  MOZ_ASSERT(!top || (top->mStaticConstellation ==
-                      outer->mStaticConstellation));
-  MOZ_ASSERT(!opener || (Cast(opener)->mStaticConstellation ==
-                         outer->mStaticConstellation));
+  
+  RefPtr<nsGlobalWindow> top = GetTopInternal();
+  RefPtr<nsPIDOMWindowOuter> opener = GetOpener();
+  MOZ_ASSERT_IF(top, top->mTabGroup == mTabGroup);
+  MOZ_ASSERT_IF(opener, Cast(opener)->mTabGroup == mTabGroup);
 #endif
 
-  if (mConstellation.IsVoid()) {
-    mConstellation.Truncate();
-    
-    nsCOMPtr<nsIPrincipal> principal = GetPrincipal();
-    nsCOMPtr<nsIURI> uri;
-    nsresult rv = principal->GetURI(getter_AddRefs(uri));
-    if (NS_SUCCEEDED(rv)) {
-      nsCOMPtr<nsIEffectiveTLDService> tldService =
-        do_GetService(NS_EFFECTIVETLDSERVICE_CONTRACTID);
-      if (tldService) {
-        rv = tldService->GetBaseDomain(uri, 0, mConstellation);
-        if (NS_FAILED(rv)) {
-          mConstellation.Truncate();
-        }
-      }
-    }
+  return mTabGroup;
+}
 
-    
-    mConstellation.AppendPrintf("^%llu", GetOuterWindowInternal()->mStaticConstellation);
+DocGroup*
+nsGlobalWindow::GetDocGroup()
+{
+  FORWARD_TO_INNER(GetDocGroup, (), nullptr);
+
+#ifdef DEBUG
+  
+  if (mDocGroup) {
+    nsAutoCString docGroupKey;
+    DocGroup::GetKey(GetPrincipal(), docGroupKey);
+    MOZ_ASSERT(mDocGroup->MatchesKey(docGroupKey));
+    MOZ_ASSERT(mDocGroup->GetTabGroup() == GetTabGroup());
   }
+#endif
 
-  aConstellation.Assign(mConstellation);
+  return mDocGroup;
+}
+
+void
+nsGlobalWindow::SwitchDocGroup()
+{
+  MOZ_RELEASE_ASSERT(IsInnerWindow() && mTabGroup);
+  nsAutoCString docGroupKey;
+  DocGroup::GetKey(GetPrincipal(), docGroupKey);
+
+  if (mDocGroup) {
+    if (mDocGroup->MatchesKey(docGroupKey)) {
+      return;
+    }
+    MOZ_CRASH("The docgroup of an inner window should not change");
+  }
+  mDocGroup = GetTabGroup()->JoinDocGroup(docGroupKey, AsInner());
+}
+
+void
+nsGlobalWindow::InheritTabGroupFrom(nsPIDOMWindowOuter* aWindow)
+{
+  MOZ_RELEASE_ASSERT(IsOuterWindow());
+  
+  
+  
+  
+  
+  RefPtr<nsGlobalWindow> inner = GetCurrentInnerWindowInternal();
+  if (inner) {
+    inner->mDocGroup->Remove(inner->AsInner());
+    inner->mDocGroup = nullptr;
+  }
+  mTabGroup = Cast(aWindow)->mTabGroup;
+  if (inner) {
+    inner->SwitchDocGroup();
+  }
 }
 
 nsGlobalWindow::TemporarilyDisableDialogs::TemporarilyDisableDialogs(
