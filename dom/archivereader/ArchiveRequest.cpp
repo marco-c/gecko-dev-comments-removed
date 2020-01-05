@@ -26,13 +26,11 @@ public:
   explicit ArchiveRequestEvent(ArchiveRequest* aRequest)
   : mRequest(aRequest)
   {
-    MOZ_COUNT_CTOR(ArchiveRequestEvent);
   }
 
 protected:
   ~ArchiveRequestEvent()
   {
-    MOZ_COUNT_DTOR(ArchiveRequestEvent);
   }
 
 private: 
@@ -56,8 +54,6 @@ ArchiveRequest::ArchiveRequest(nsPIDOMWindowInner* aWindow,
 {
   MOZ_ASSERT(aReader);
 
-  MOZ_COUNT_CTOR(ArchiveRequest);
-
   
   RefPtr<ArchiveRequestEvent> event = new ArchiveRequestEvent(this);
   NS_DispatchToCurrentThread(event);
@@ -65,7 +61,6 @@ ArchiveRequest::ArchiveRequest(nsPIDOMWindowInner* aWindow,
 
 ArchiveRequest::~ArchiveRequest()
 {
-  MOZ_COUNT_DTOR(ArchiveRequest);
 }
 
 nsresult

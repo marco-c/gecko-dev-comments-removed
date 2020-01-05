@@ -22,7 +22,6 @@ PrintProgressDialogChild::PrintProgressDialogChild(
   nsIObserver* aOpenObserver) :
   mOpenObserver(aOpenObserver)
 {
-  MOZ_COUNT_CTOR(PrintProgressDialogChild);
 }
 
 PrintProgressDialogChild::~PrintProgressDialogChild()
@@ -32,7 +31,6 @@ PrintProgressDialogChild::~PrintProgressDialogChild()
   
   
   Unused << Send__delete__(this);
-  MOZ_COUNT_DTOR(PrintProgressDialogChild);
 }
 
 mozilla::ipc::IPCResult

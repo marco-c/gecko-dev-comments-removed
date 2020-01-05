@@ -48,8 +48,6 @@ NS_IMPL_ISUPPORTS(CacheEntryHandle, nsICacheEntry)
 CacheEntryHandle::CacheEntryHandle(CacheEntry* aEntry)
 : mEntry(aEntry)
 {
-  MOZ_COUNT_CTOR(CacheEntryHandle);
-
 #ifdef DEBUG
   if (!mEntry->HandlesCount()) {
     
@@ -68,8 +66,6 @@ CacheEntryHandle::~CacheEntryHandle()
 {
   mEntry->ReleaseHandleRef();
   mEntry->OnHandleClosed(this);
-
-  MOZ_COUNT_DTOR(CacheEntryHandle);
 }
 
 
@@ -1864,12 +1860,10 @@ void CacheEntry::StoreFrecency(double aFrecency)
 CacheOutputCloseListener::CacheOutputCloseListener(CacheEntry* aEntry)
 : mEntry(aEntry)
 {
-  MOZ_COUNT_CTOR(CacheOutputCloseListener);
 }
 
 CacheOutputCloseListener::~CacheOutputCloseListener()
 {
-  MOZ_COUNT_DTOR(CacheOutputCloseListener);
 }
 
 void CacheOutputCloseListener::OnOutputClosed()

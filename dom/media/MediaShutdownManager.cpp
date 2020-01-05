@@ -23,13 +23,11 @@ MediaShutdownManager::MediaShutdownManager()
   , mIsDoingXPCOMShutDown(false)
 {
   MOZ_ASSERT(NS_IsMainThread());
-  MOZ_COUNT_CTOR(MediaShutdownManager);
 }
 
 MediaShutdownManager::~MediaShutdownManager()
 {
   MOZ_ASSERT(NS_IsMainThread());
-  MOZ_COUNT_DTOR(MediaShutdownManager);
 }
 
 
