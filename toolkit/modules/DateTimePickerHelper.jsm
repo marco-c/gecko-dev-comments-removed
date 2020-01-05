@@ -140,7 +140,7 @@ this.DateTimePickerHelper = {
     this.picker.loadPicker(type, detail);
     
     
-    this.picker.openPopup(this._anchor, "after_start", rect.left, rect.top);
+    this.picker.openPopup(this._anchor, "after_start", 0, 0);
 
     this.addPickerListeners();
   },
