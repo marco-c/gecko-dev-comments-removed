@@ -521,7 +521,7 @@ impl CompositorTask {
         };
 
         
-        let tm = Timer::new().unwrap();
+        let mut tm = Timer::new().unwrap();
         while !done {
             
             check_for_messages(&self.port);
