@@ -30,6 +30,8 @@ VideoDecoder::VideoDecoder(Host_8 *aHost)
   : mHost(aHost)
   , mHasShutdown(false)
 {
+  CK_LOGD("VideoDecoder created");
+
   
   AddRef();
 
@@ -41,12 +43,14 @@ VideoDecoder::VideoDecoder(Host_8 *aHost)
 
 VideoDecoder::~VideoDecoder()
 {
-
+  CK_LOGD("VideoDecoder destroyed");
 }
 
 Status
 VideoDecoder::InitDecode(const VideoDecoderConfig& aConfig)
 {
+  CK_LOGD("VideoDecoder::InitDecode");
+
   if (!mDecoder) {
     CK_LOGD("VideoDecoder::InitDecode failed to init WMFH264Decoder");
 
@@ -59,12 +63,13 @@ VideoDecoder::InitDecode(const VideoDecoderConfig& aConfig)
 Status
 VideoDecoder::Decode(const InputBuffer& aInputBuffer, VideoFrame* aVideoFrame)
 {
+  CK_LOGD("VideoDecoder::Decode");
   
   
   if (!aInputBuffer.data) {
     
     
-    CK_LOGD("Input buffer null: Draining");
+    CK_LOGD("VideoDecoder::Decode Input buffer null: Draining");
     return Drain(aVideoFrame);
   }
 
@@ -73,7 +78,6 @@ VideoDecoder::Decode(const InputBuffer& aInputBuffer, VideoFrame* aVideoFrame)
   data->mTimestamp = aInputBuffer.timestamp;
   data->mCrypto = CryptoMetaData(&aInputBuffer);
 
-  CK_LOGD("VideoDecoder::DecodeTask");
   AutoPtr<DecodeData> d(data);
   HRESULT hr;
 
@@ -100,13 +104,13 @@ VideoDecoder::Decode(const InputBuffer& aInputBuffer, VideoFrame* aVideoFrame)
                        buffer.size(),
                        data->mTimestamp);
 
-  CK_LOGD("VideoDecoder::DecodeTask() Input ret hr=0x%x\n", hr);
+  CK_LOGD("VideoDecoder::Decode() Input ret hr=0x%x", hr);
 
 
   if (FAILED(hr)) {
     assert(hr != MF_E_TRANSFORM_NEED_MORE_INPUT);
 
-    CK_LOGE("VideoDecoder::DecodeTask() decode failed ret=0x%x%s\n",
+    CK_LOGE("VideoDecoder::Decode() decode failed ret=0x%x%s",
       hr,
       ((hr == MF_E_NOTACCEPTING) ? " (MF_E_NOTACCEPTING)" : ""));
     CK_LOGD("Decode failed. The decoder is not accepting input");
@@ -117,6 +121,8 @@ VideoDecoder::Decode(const InputBuffer& aInputBuffer, VideoFrame* aVideoFrame)
 }
 
 Status VideoDecoder::OutputFrame(VideoFrame* aVideoFrame) {
+  CK_LOGD("VideoDecoder::OutputFrame");
+
   HRESULT hr = S_OK;
 
   
@@ -131,10 +137,10 @@ Status VideoDecoder::OutputFrame(VideoFrame* aVideoFrame) {
       break;
     }
 
-    CK_LOGD("VideoDecoder::DecodeTask() output ret=0x%x\n", hr);
+    CK_LOGD("VideoDecoder::OutputFrame Decoder output ret=0x%x", hr);
 
     mOutputQueue.push(output);
-    CK_LOGD("Queue size: %u", mOutputQueue.size());
+    CK_LOGD("VideoDecoder::OutputFrame: Queue size: %u", mOutputQueue.size());
   }
 
   
@@ -146,7 +152,7 @@ Status VideoDecoder::OutputFrame(VideoFrame* aVideoFrame) {
   
   
   if (hr != MF_E_TRANSFORM_NEED_MORE_INPUT && FAILED(hr)) {
-    CK_LOGD("Decode failed output ret=0x%x\n", hr);
+    CK_LOGD("Decode failed output ret=0x%x", hr);
     return Status::kDecodeError;
   }
 
@@ -156,6 +162,7 @@ Status VideoDecoder::OutputFrame(VideoFrame* aVideoFrame) {
   
   
   if (mDecoder->GetStride() <= 0) {
+    CK_LOGD("VideoDecoder::OutputFrame Failed! (negative stride)");
     return Status::kDecodeError;
   }
 
@@ -165,10 +172,11 @@ Status VideoDecoder::OutputFrame(VideoFrame* aVideoFrame) {
                           mDecoder->GetStride(),
                           aVideoFrame);
   if (FAILED(hr)) {
+    CK_LOGD("VideoDecoder::OutputFrame Failed!");
     return Status::kDecodeError;
   }
 
-  CK_LOGD("Decode succeeded.");
+  CK_LOGD("VideoDecoder::OutputFrame Succeeded.");
   return Status::kSuccess;
 }
 
@@ -179,8 +187,7 @@ VideoDecoder::SampleToVideoFrame(IMFSample* aSample,
                                  int32_t aStride,
                                  VideoFrame* aVideoFrame)
 {
-  CK_LOGD("[%p] VideoDecoder::SampleToVideoFrame()\n", this);
-  assert(aSample);
+  CK_LOGD("[%p] VideoDecoder::SampleToVideoFrame()", this);
 
   ENSURE(aSample != nullptr, E_POINTER);
   ENSURE(aVideoFrame != nullptr, E_POINTER);
@@ -234,7 +241,8 @@ VideoDecoder::SampleToVideoFrame(IMFSample* aSample,
   
   
   if (bufferSize > UINT32_MAX) {
-    return Status::kDecodeError;
+    CK_LOGD("VideoDecoder::SampleToFrame Buffersize bigger than UINT32_MAX");
+    return E_FAIL;
   }
 
   
@@ -244,6 +252,7 @@ VideoDecoder::SampleToVideoFrame(IMFSample* aSample,
   
   
   if (!buffer) {
+    CK_LOGD("VideoDecoder::SampleToFrame Out of memory");
     return E_OUTOFMEMORY;
   }
 
@@ -309,6 +318,8 @@ VideoDecoder::Drain(VideoFrame* aVideoFrame)
 void
 VideoDecoder::DecodingComplete()
 {
+  CK_LOGD("VideoDecoder::DecodingComplete()");
+
   mHasShutdown = true;
 
   
