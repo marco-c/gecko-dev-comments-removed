@@ -176,83 +176,6 @@ var Service = {
   },
 };
 
-
-
-
-
-
-
-function getAddonIdForWindow(window) {
-  return Cu.getObjectPrincipal(window).addonId;
-}
-
-const API_LEVELS = Object.freeze({
-  NO_PRIVILEGES: 0,
-  CONTENTSCRIPT_PRIVILEGES: 1,
-  FULL_PRIVILEGES: 2,
-});
-
-
-
-function getAPILevelForWindow(window, addonId) {
-  const {NO_PRIVILEGES, CONTENTSCRIPT_PRIVILEGES, FULL_PRIVILEGES} = API_LEVELS;
-
-  
-  
-  if (!addonId || getAddonIdForWindow(window) != addonId) {
-    return NO_PRIVILEGES;
-  }
-
-  if (!ExtensionManagement.isExtensionProcess) {
-    return CONTENTSCRIPT_PRIVILEGES;
-  }
-
-  let docShell = window.QueryInterface(Ci.nsIInterfaceRequestor)
-                       .getInterface(Ci.nsIDocShell);
-
-  
-  if (docShell.sameTypeParent) {
-    let parentWindow = docShell.sameTypeParent.QueryInterface(Ci.nsIInterfaceRequestor)
-                               .getInterface(Ci.nsIDOMWindow);
-
-    
-    
-    let parentDocument = parentWindow.document;
-    let parentIsSystemPrincipal = Services.scriptSecurityManager
-                                          .isSystemPrincipal(parentDocument.nodePrincipal);
-
-    if (parentDocument.location.href == "about:addons" && parentIsSystemPrincipal) {
-      return FULL_PRIVILEGES;
-    }
-
-    
-    
-    
-    let devtoolsBrowser = parentDocument.querySelector(
-      "browser[webextension-view-type='devtools_panel']");
-    if (devtoolsBrowser && devtoolsBrowser.contentWindow === window &&
-        parentIsSystemPrincipal) {
-      return FULL_PRIVILEGES;
-    }
-
-    
-    
-    
-    let parentSameAddonPrivileges = getAPILevelForWindow(parentWindow, addonId);
-    if (parentSameAddonPrivileges > NO_PRIVILEGES) {
-      return parentSameAddonPrivileges;
-    }
-
-    
-    
-    
-    return CONTENTSCRIPT_PRIVILEGES;
-  }
-
-  
-  return FULL_PRIVILEGES;
-}
-
 let cacheInvalidated = 0;
 function onCacheInvalidate() {
   cacheInvalidated++;
@@ -278,11 +201,6 @@ ExtensionManagement = {
   unregisterAPI: APIs.unregister.bind(APIs),
 
   getURLForExtension,
-
-  
-  getAddonIdForWindow,
-  getAPILevelForWindow,
-  API_LEVELS,
 
   APIs,
 };

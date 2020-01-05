@@ -168,10 +168,8 @@ class ScriptMatcher {
   }
 }
 
-function getMessageManager(contentWindow) {
-  let docShell = contentWindow.QueryInterface(Ci.nsIInterfaceRequestor)
-                              .getInterface(Ci.nsIDocShell)
-                              .QueryInterface(Ci.nsIInterfaceRequestor);
+function getMessageManager(window) {
+  let docShell = window.document.docShell.QueryInterface(Ci.nsIInterfaceRequestor);
   try {
     return docShell.getInterface(Ci.nsIContentFrameMessageManager);
   } catch (e) {
@@ -448,26 +446,67 @@ DocumentManager = {
     }
   },
 
+  
+
+
+
+
+
+
+
+
+
+
+  checkParentFrames(window, addonId) {
+    while (window.parent !== window) {
+      let {frameElement} = window;
+      window = window.parent;
+
+      let principal = window.document.nodePrincipal;
+
+      if (Services.scriptSecurityManager.isSystemPrincipal(principal)) {
+        
+        
+        if (window.location.href === "about:addons") {
+          return true;
+        }
+
+        
+        
+        
+        if (frameElement &&
+            frameElement.mozMatchesSelector("browser[webextension-view-type='devtools_panel']")) {
+          return true;
+        }
+      }
+
+      if (principal.addonId !== addonId) {
+        return false;
+      }
+    }
+
+    return true;
+  },
+
   loadInto(window) {
-    let extensionId = ExtensionManagement.getAddonIdForWindow(window);
-    if (!extensionId) {
+    let {addonId} = Cu.getObjectPrincipal(window);
+    if (!addonId) {
       return;
     }
 
-    let extension = ExtensionManager.get(extensionId);
+    let extension = ExtensionManager.get(addonId);
     if (!extension) {
-      throw new Error(`No registered extension for ID ${extensionId}`);
+      throw new Error(`No registered extension for ID ${addonId}`);
     }
 
-    let apiLevel = ExtensionManagement.getAPILevelForWindow(window, extensionId);
-    const levels = ExtensionManagement.API_LEVELS;
-
-    if (apiLevel === levels.CONTENTSCRIPT_PRIVILEGES) {
-      ExtensionContent.initExtensionContext(extension.realExtension, window);
-    } else if (apiLevel === levels.FULL_PRIVILEGES) {
+    if (this.checkParentFrames(window, addonId) && ExtensionManagement.isExtensionProcess) {
+      
+      
       ExtensionPageChild.initExtensionContext(extension.realExtension, window);
     } else {
-      throw new Error(`Unexpected window with extension ID ${extensionId}`);
+      
+      
+      ExtensionContent.initExtensionContext(extension.realExtension, window);
     }
   },
 
