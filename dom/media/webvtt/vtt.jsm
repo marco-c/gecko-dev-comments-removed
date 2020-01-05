@@ -938,7 +938,7 @@ const { XPCOMUtils } = require("resource://gre/modules/XPCOMUtils.jsm");
     
     
     function shouldCompute(cues) {
-      if (controlBarShown) {
+      if (overlay.lastControlBarShownStatus != controlBarShown) {
         return true;
       }
 
@@ -955,8 +955,10 @@ const { XPCOMUtils } = require("resource://gre/modules/XPCOMUtils.jsm");
       for (var i = 0; i < cues.length; i++) {
         rootOfCues.appendChild(cues[i].displayState);
       }
+      overlay.lastControlBarShownStatus = controlBarShown;
       return;
     }
+    overlay.lastControlBarShownStatus = controlBarShown;
 
     var boxPositions = [],
         containerBox = BoxPosition.getSimpleBoxPosition(rootOfCues),
