@@ -64,8 +64,8 @@ static void ComputeBorderCornerDimensions(const Float* aBorderWidths,
                                           RectCornerRadii *aDimsResult);
 
 
-#define NEXT_SIDE(_s) mozilla::Side(((_s) + 1) & 3)
-#define PREV_SIDE(_s) mozilla::Side(((_s) + 3) & 3)
+#define NEXT_SIDE(_s) mozilla::css::Side(((_s) + 1) & 3)
+#define PREV_SIDE(_s) mozilla::css::Side(((_s) + 3) & 3)
 
 
 #define NEXT_CORNER(_s) mozilla::css::Corner(((_s) + 1) & 3)
@@ -106,34 +106,34 @@ IsZeroSize(const Size& sz) {
   return sz.width == 0.0 || sz.height == 0.0;
 }
 
-static bool
-AllCornersZeroSize(const RectCornerRadii& corners) {
+ bool
+nsCSSBorderRenderer::AllCornersZeroSize(const RectCornerRadii& corners) {
   return IsZeroSize(corners[NS_CORNER_TOP_LEFT]) &&
     IsZeroSize(corners[NS_CORNER_TOP_RIGHT]) &&
     IsZeroSize(corners[NS_CORNER_BOTTOM_RIGHT]) &&
     IsZeroSize(corners[NS_CORNER_BOTTOM_LEFT]);
 }
 
-static mozilla::Side
+static mozilla::css::Side
 GetHorizontalSide(mozilla::css::Corner aCorner)
 {
-  return (aCorner == C_TL || aCorner == C_TR) ? eSideTop : eSideBottom;
+  return (aCorner == C_TL || aCorner == C_TR) ? NS_SIDE_TOP : NS_SIDE_BOTTOM;
 }
 
-static mozilla::Side
+static mozilla::css::Side
 GetVerticalSide(mozilla::css::Corner aCorner)
 {
-  return (aCorner == C_TL || aCorner == C_BL) ? eSideLeft : eSideRight;
+  return (aCorner == C_TL || aCorner == C_BL) ? NS_SIDE_LEFT : NS_SIDE_RIGHT;
 }
 
 static mozilla::css::Corner
-GetCWCorner(mozilla::Side aSide)
+GetCWCorner(mozilla::css::Side aSide)
 {
   return mozilla::css::Corner(NEXT_SIDE(aSide));
 }
 
 static mozilla::css::Corner
-GetCCWCorner(mozilla::Side aSide)
+GetCCWCorner(mozilla::css::Side aSide)
 {
   return mozilla::css::Corner(aSide);
 }
@@ -141,14 +141,14 @@ GetCCWCorner(mozilla::Side aSide)
 static bool
 IsSingleSide(int aSides)
 {
-  return aSides == eSideBitsTop || aSides == eSideBitsRight ||
-         aSides == eSideBitsBottom || aSides == eSideBitsLeft;
+  return aSides == SIDE_BIT_TOP || aSides == SIDE_BIT_RIGHT ||
+         aSides == SIDE_BIT_BOTTOM || aSides == SIDE_BIT_LEFT;
 }
 
 static bool
-IsHorizontalSide(mozilla::Side aSide)
+IsHorizontalSide(mozilla::css::Side aSide)
 {
-  return aSide == eSideTop || aSide == eSideBottom;
+  return aSide == NS_SIDE_TOP || aSide == NS_SIDE_BOTTOM;
 }
 
 typedef enum {
@@ -182,16 +182,17 @@ nsCSSBorderRenderer::nsCSSBorderRenderer(nsPresContext* aPresContext,
     mDrawTarget(aDrawTarget),
     mDirtyRect(aDirtyRect),
     mOuterRect(aOuterRect),
-    mBorderStyles(aBorderStyles),
-    mBorderWidths(aBorderWidths),
     mBorderRadii(aBorderRadii),
-    mBorderColors(aBorderColors),
-    mCompositeColors(aCompositeColors),
     mBackgroundColor(aBackgroundColor)
 {
-  if (!mCompositeColors) {
+  PodCopy(mBorderStyles, aBorderStyles, 4);
+  PodCopy(mBorderWidths, aBorderWidths, 4);
+  PodCopy(mBorderColors, aBorderColors, 4);
+  if (aCompositeColors) {
+    PodCopy(mCompositeColors, aCompositeColors, 4);
+  } else {
     static nsBorderColors * const noColors[4] = { nullptr };
-    mCompositeColors = &noColors[0];
+    PodCopy(mCompositeColors, noColors, 4);
   }
 
   mInnerRect = mOuterRect;
@@ -216,17 +217,17 @@ nsCSSBorderRenderer::ComputeInnerRadii(const RectCornerRadii& aRadii,
 {
   RectCornerRadii& iRadii = *aInnerRadiiRet;
 
-  iRadii[C_TL].width = std::max(0.f, aRadii[C_TL].width - aBorderSizes[eSideLeft]);
-  iRadii[C_TL].height = std::max(0.f, aRadii[C_TL].height - aBorderSizes[eSideTop]);
+  iRadii[C_TL].width = std::max(0.f, aRadii[C_TL].width - aBorderSizes[NS_SIDE_LEFT]);
+  iRadii[C_TL].height = std::max(0.f, aRadii[C_TL].height - aBorderSizes[NS_SIDE_TOP]);
 
-  iRadii[C_TR].width = std::max(0.f, aRadii[C_TR].width - aBorderSizes[eSideRight]);
-  iRadii[C_TR].height = std::max(0.f, aRadii[C_TR].height - aBorderSizes[eSideTop]);
+  iRadii[C_TR].width = std::max(0.f, aRadii[C_TR].width - aBorderSizes[NS_SIDE_RIGHT]);
+  iRadii[C_TR].height = std::max(0.f, aRadii[C_TR].height - aBorderSizes[NS_SIDE_TOP]);
 
-  iRadii[C_BR].width = std::max(0.f, aRadii[C_BR].width - aBorderSizes[eSideRight]);
-  iRadii[C_BR].height = std::max(0.f, aRadii[C_BR].height - aBorderSizes[eSideBottom]);
+  iRadii[C_BR].width = std::max(0.f, aRadii[C_BR].width - aBorderSizes[NS_SIDE_RIGHT]);
+  iRadii[C_BR].height = std::max(0.f, aRadii[C_BR].height - aBorderSizes[NS_SIDE_BOTTOM]);
 
-  iRadii[C_BL].width = std::max(0.f, aRadii[C_BL].width - aBorderSizes[eSideLeft]);
-  iRadii[C_BL].height = std::max(0.f, aRadii[C_BL].height - aBorderSizes[eSideBottom]);
+  iRadii[C_BL].width = std::max(0.f, aRadii[C_BL].width - aBorderSizes[NS_SIDE_LEFT]);
+  iRadii[C_BL].height = std::max(0.f, aRadii[C_BL].height - aBorderSizes[NS_SIDE_BOTTOM]);
 }
 
  void
@@ -241,23 +242,23 @@ nsCSSBorderRenderer::ComputeOuterRadii(const RectCornerRadii& aRadii,
 
   
   if (aRadii[C_TL].width > 0.f && aRadii[C_TL].height > 0.f) {
-    oRadii[C_TL].width = std::max(0.f, aRadii[C_TL].width + aBorderSizes[eSideLeft]);
-    oRadii[C_TL].height = std::max(0.f, aRadii[C_TL].height + aBorderSizes[eSideTop]);
+    oRadii[C_TL].width = std::max(0.f, aRadii[C_TL].width + aBorderSizes[NS_SIDE_LEFT]);
+    oRadii[C_TL].height = std::max(0.f, aRadii[C_TL].height + aBorderSizes[NS_SIDE_TOP]);
   }
 
   if (aRadii[C_TR].width > 0.f && aRadii[C_TR].height > 0.f) {
-    oRadii[C_TR].width = std::max(0.f, aRadii[C_TR].width + aBorderSizes[eSideRight]);
-    oRadii[C_TR].height = std::max(0.f, aRadii[C_TR].height + aBorderSizes[eSideTop]);
+    oRadii[C_TR].width = std::max(0.f, aRadii[C_TR].width + aBorderSizes[NS_SIDE_RIGHT]);
+    oRadii[C_TR].height = std::max(0.f, aRadii[C_TR].height + aBorderSizes[NS_SIDE_TOP]);
   }
 
   if (aRadii[C_BR].width > 0.f && aRadii[C_BR].height > 0.f) {
-    oRadii[C_BR].width = std::max(0.f, aRadii[C_BR].width + aBorderSizes[eSideRight]);
-    oRadii[C_BR].height = std::max(0.f, aRadii[C_BR].height + aBorderSizes[eSideBottom]);
+    oRadii[C_BR].width = std::max(0.f, aRadii[C_BR].width + aBorderSizes[NS_SIDE_RIGHT]);
+    oRadii[C_BR].height = std::max(0.f, aRadii[C_BR].height + aBorderSizes[NS_SIDE_BOTTOM]);
   }
 
   if (aRadii[C_BL].width > 0.f && aRadii[C_BL].height > 0.f) {
-    oRadii[C_BL].width = std::max(0.f, aRadii[C_BL].width + aBorderSizes[eSideLeft]);
-    oRadii[C_BL].height = std::max(0.f, aRadii[C_BL].height + aBorderSizes[eSideBottom]);
+    oRadii[C_BL].width = std::max(0.f, aRadii[C_BL].width + aBorderSizes[NS_SIDE_LEFT]);
+    oRadii[C_BL].height = std::max(0.f, aRadii[C_BL].height + aBorderSizes[NS_SIDE_BOTTOM]);
   }
 }
 
@@ -266,12 +267,12 @@ ComputeBorderCornerDimensions(const Float* aBorderWidths,
                               const RectCornerRadii& aRadii,
                               RectCornerRadii* aDimsRet)
 {
-  Float leftWidth = aBorderWidths[eSideLeft];
-  Float topWidth = aBorderWidths[eSideTop];
-  Float rightWidth = aBorderWidths[eSideRight];
-  Float bottomWidth = aBorderWidths[eSideBottom];
+  Float leftWidth = aBorderWidths[NS_SIDE_LEFT];
+  Float topWidth = aBorderWidths[NS_SIDE_TOP];
+  Float rightWidth = aBorderWidths[NS_SIDE_RIGHT];
+  Float bottomWidth = aBorderWidths[NS_SIDE_BOTTOM];
 
-  if (AllCornersZeroSize(aRadii)) {
+  if (nsCSSBorderRenderer::AllCornersZeroSize(aRadii)) {
     
     (*aDimsRet)[C_TL] = Size(leftWidth, topWidth);
     (*aDimsRet)[C_TR] = Size(rightWidth, topWidth);
@@ -295,7 +296,7 @@ ComputeBorderCornerDimensions(const Float* aBorderWidths,
 bool
 nsCSSBorderRenderer::AreBorderSideFinalStylesSame(uint8_t aSides)
 {
-  NS_ASSERTION(aSides != 0 && (aSides & ~eSideBitsAll) == 0,
+  NS_ASSERTION(aSides != 0 && (aSides & ~SIDE_BITS_ALL) == 0,
                "AreBorderSidesSame: invalid whichSides!");
 
   
@@ -325,8 +326,8 @@ nsCSSBorderRenderer::AreBorderSideFinalStylesSame(uint8_t aSides)
     case NS_STYLE_BORDER_STYLE_RIDGE:
     case NS_STYLE_BORDER_STYLE_INSET:
     case NS_STYLE_BORDER_STYLE_OUTSET:
-      return ((aSides & ~(eSideBitsTop | eSideBitsLeft)) == 0 ||
-              (aSides & ~(eSideBitsBottom | eSideBitsRight)) == 0);
+      return ((aSides & ~(SIDE_BIT_TOP | SIDE_BIT_LEFT)) == 0 ||
+              (aSides & ~(SIDE_BIT_BOTTOM | SIDE_BIT_RIGHT)) == 0);
   }
 
   return true;
@@ -386,8 +387,8 @@ nsCSSBorderRenderer::IsCornerMergeable(mozilla::css::Corner aCorner)
   
   
   
-  mozilla::Side sideH(GetHorizontalSide(aCorner));
-  mozilla::Side sideV(GetVerticalSide(aCorner));
+  mozilla::css::Side sideH(GetHorizontalSide(aCorner));
+  mozilla::css::Side sideV(GetVerticalSide(aCorner));
   uint8_t styleH = mBorderStyles[sideH];
   uint8_t styleV = mBorderStyles[sideV];
   if (styleH != styleV || styleH != NS_STYLE_BORDER_STYLE_DOTTED) {
@@ -450,7 +451,7 @@ nsCSSBorderRenderer::GetCornerRect(mozilla::css::Corner aCorner)
 }
 
 Rect
-nsCSSBorderRenderer::GetSideClipWithoutCornersRect(mozilla::Side aSide)
+nsCSSBorderRenderer::GetSideClipWithoutCornersRect(mozilla::css::Side aSide)
 {
   Point offset(0.f, 0.f);
 
@@ -459,15 +460,15 @@ nsCSSBorderRenderer::GetSideClipWithoutCornersRect(mozilla::Side aSide)
   
   
   
-  if (aSide == eSideTop) {
+  if (aSide == NS_SIDE_TOP) {
     offset.x = mBorderCornerDimensions[C_TL].width;
-  } else if (aSide == eSideRight) {
-    offset.x = mOuterRect.Width() - mBorderWidths[eSideRight];
+  } else if (aSide == NS_SIDE_RIGHT) {
+    offset.x = mOuterRect.Width() - mBorderWidths[NS_SIDE_RIGHT];
     offset.y = mBorderCornerDimensions[C_TR].height;
-  } else if (aSide == eSideBottom) {
+  } else if (aSide == NS_SIDE_BOTTOM) {
     offset.x = mBorderCornerDimensions[C_BL].width;
-    offset.y = mOuterRect.Height() - mBorderWidths[eSideBottom];
-  } else if (aSide == eSideLeft) {
+    offset.y = mOuterRect.Height() - mBorderWidths[NS_SIDE_BOTTOM];
+  } else if (aSide == NS_SIDE_LEFT) {
     offset.y = mBorderCornerDimensions[C_TL].height;
   }
 
@@ -584,7 +585,7 @@ MaybeMoveToMidPoint(Point& aP0, Point& aP1, const Point& aMidPoint)
 }
 
 already_AddRefed<Path>
-nsCSSBorderRenderer::GetSideClipSubPath(mozilla::Side aSide)
+nsCSSBorderRenderer::GetSideClipSubPath(mozilla::css::Side aSide)
 {
   
   
@@ -674,7 +675,7 @@ nsCSSBorderRenderer::GetSideClipSubPath(mozilla::Side aSide)
 }
 
 Point
-nsCSSBorderRenderer::GetStraightBorderPoint(mozilla::Side aSide,
+nsCSSBorderRenderer::GetStraightBorderPoint(mozilla::css::Side aSide,
                                             mozilla::css::Corner aCorner,
                                             bool* aIsUnfilled)
 {
@@ -725,7 +726,7 @@ nsCSSBorderRenderer::GetStraightBorderPoint(mozilla::Side aSide,
   
   
   
-  mozilla::Side otherSide = ((uint8_t)aSide == (uint8_t)aCorner)
+  mozilla::css::Side otherSide = ((uint8_t)aSide == (uint8_t)aCorner)
                                  ? PREV_SIDE(aSide)
                                  : NEXT_SIDE(aSide);
   uint8_t otherStyle = mBorderStyles[otherSide];
@@ -1081,8 +1082,8 @@ nsCSSBorderRenderer::GetOuterAndInnerBezier(Bezier* aOuterBezier,
   
   
 
-  mozilla::Side sideH(GetHorizontalSide(aCorner));
-  mozilla::Side sideV(GetVerticalSide(aCorner));
+  mozilla::css::Side sideH(GetHorizontalSide(aCorner));
+  mozilla::css::Side sideV(GetVerticalSide(aCorner));
 
   Size outerCornerSize(ceil(mBorderRadii[aCorner].width),
                        ceil(mBorderRadii[aCorner].height));
@@ -1134,7 +1135,7 @@ nsCSSBorderRenderer::FillSolidBorder(const Rect& aOuterRect,
   
   
   
-  if (aSides == eSideBitsAll &&
+  if (aSides == SIDE_BITS_ALL &&
       CheckFourFloatsEqual(aBorderSizes, aBorderSizes[0]) &&
       !mAvoidStroke)
   {
@@ -1152,28 +1153,28 @@ nsCSSBorderRenderer::FillSolidBorder(const Rect& aOuterRect,
   Rect r[4];
 
   
-  if (aSides & eSideBitsTop) {
-    r[eSideTop] =
+  if (aSides & SIDE_BIT_TOP) {
+    r[NS_SIDE_TOP] =
         Rect(aOuterRect.X(), aOuterRect.Y(),
-             aOuterRect.Width(), aBorderSizes[eSideTop]);
+             aOuterRect.Width(), aBorderSizes[NS_SIDE_TOP]);
   }
 
-  if (aSides & eSideBitsBottom) {
-    r[eSideBottom] =
-        Rect(aOuterRect.X(), aOuterRect.YMost() - aBorderSizes[eSideBottom],
-             aOuterRect.Width(), aBorderSizes[eSideBottom]);
+  if (aSides & SIDE_BIT_BOTTOM) {
+    r[NS_SIDE_BOTTOM] =
+        Rect(aOuterRect.X(), aOuterRect.YMost() - aBorderSizes[NS_SIDE_BOTTOM],
+             aOuterRect.Width(), aBorderSizes[NS_SIDE_BOTTOM]);
   }
 
-  if (aSides & eSideBitsLeft) {
-    r[eSideLeft] =
+  if (aSides & SIDE_BIT_LEFT) {
+    r[NS_SIDE_LEFT] =
         Rect(aOuterRect.X(), aOuterRect.Y(),
-             aBorderSizes[eSideLeft], aOuterRect.Height());
+             aBorderSizes[NS_SIDE_LEFT], aOuterRect.Height());
   }
 
-  if (aSides & eSideBitsRight) {
-    r[eSideRight] =
-        Rect(aOuterRect.XMost() - aBorderSizes[eSideRight], aOuterRect.Y(),
-             aBorderSizes[eSideRight], aOuterRect.Height());
+  if (aSides & SIDE_BIT_RIGHT) {
+    r[NS_SIDE_RIGHT] =
+        Rect(aOuterRect.XMost() - aBorderSizes[NS_SIDE_RIGHT], aOuterRect.Y(),
+             aBorderSizes[NS_SIDE_RIGHT], aOuterRect.Height());
   }
 
   
@@ -1181,26 +1182,26 @@ nsCSSBorderRenderer::FillSolidBorder(const Rect& aOuterRect,
   
   
 
-  if ((aSides & (eSideBitsTop | eSideBitsLeft)) == (eSideBitsTop | eSideBitsLeft)) {
+  if ((aSides & (SIDE_BIT_TOP | SIDE_BIT_LEFT)) == (SIDE_BIT_TOP | SIDE_BIT_LEFT)) {
     
-    r[eSideLeft].y += aBorderSizes[eSideTop];
-    r[eSideLeft].height -= aBorderSizes[eSideTop];
+    r[NS_SIDE_LEFT].y += aBorderSizes[NS_SIDE_TOP];
+    r[NS_SIDE_LEFT].height -= aBorderSizes[NS_SIDE_TOP];
   }
 
-  if ((aSides & (eSideBitsTop | eSideBitsRight)) == (eSideBitsTop | eSideBitsRight)) {
+  if ((aSides & (SIDE_BIT_TOP | SIDE_BIT_RIGHT)) == (SIDE_BIT_TOP | SIDE_BIT_RIGHT)) {
     
-    r[eSideTop].width -= aBorderSizes[eSideRight];
+    r[NS_SIDE_TOP].width -= aBorderSizes[NS_SIDE_RIGHT];
   }
 
-  if ((aSides & (eSideBitsBottom | eSideBitsRight)) == (eSideBitsBottom | eSideBitsRight)) {
+  if ((aSides & (SIDE_BIT_BOTTOM | SIDE_BIT_RIGHT)) == (SIDE_BIT_BOTTOM | SIDE_BIT_RIGHT)) {
     
-    r[eSideRight].height -= aBorderSizes[eSideBottom];
+    r[NS_SIDE_RIGHT].height -= aBorderSizes[NS_SIDE_BOTTOM];
   }
 
-  if ((aSides & (eSideBitsBottom | eSideBitsLeft)) == (eSideBitsBottom | eSideBitsLeft)) {
+  if ((aSides & (SIDE_BIT_BOTTOM | SIDE_BIT_LEFT)) == (SIDE_BIT_BOTTOM | SIDE_BIT_LEFT)) {
     
-    r[eSideBottom].x += aBorderSizes[eSideLeft];
-    r[eSideBottom].width -= aBorderSizes[eSideLeft];
+    r[NS_SIDE_BOTTOM].x += aBorderSizes[NS_SIDE_LEFT];
+    r[NS_SIDE_BOTTOM].width -= aBorderSizes[NS_SIDE_LEFT];
   }
 
   
@@ -1295,10 +1296,10 @@ nsCSSBorderRenderer::DrawBorderSidesCompositeColors(int aSides, const nsBorderCo
 
     siRect = Rect(tl.x, tl.y, br.x - tl.x , br.y - tl.y);
 
-    fakeBorderSizes[eSideTop] = siRect.TopLeft().y - soRect.TopLeft().y;
-    fakeBorderSizes[eSideRight] = soRect.TopRight().x - siRect.TopRight().x;
-    fakeBorderSizes[eSideBottom] = soRect.BottomRight().y - siRect.BottomRight().y;
-    fakeBorderSizes[eSideLeft] = siRect.BottomLeft().x - soRect.BottomLeft().x;
+    fakeBorderSizes[NS_SIDE_TOP] = siRect.TopLeft().y - soRect.TopLeft().y;
+    fakeBorderSizes[NS_SIDE_RIGHT] = soRect.TopRight().x - siRect.TopRight().x;
+    fakeBorderSizes[NS_SIDE_BOTTOM] = soRect.BottomRight().y - siRect.BottomRight().y;
+    fakeBorderSizes[NS_SIDE_LEFT] = siRect.BottomLeft().x - soRect.BottomLeft().x;
 
     FillSolidBorder(soRect, siRect, radii, fakeBorderSizes, aSides, color);
 
@@ -1311,7 +1312,7 @@ nsCSSBorderRenderer::DrawBorderSidesCompositeColors(int aSides, const nsBorderCo
 void
 nsCSSBorderRenderer::DrawBorderSides(int aSides)
 {
-  if (aSides == 0 || (aSides & ~eSideBitsAll) != 0) {
+  if (aSides == 0 || (aSides & ~SIDE_BITS_ALL) != 0) {
     NS_WARNING("DrawBorderSides: invalid sides!");
     return;
   }
@@ -1340,28 +1341,28 @@ nsCSSBorderRenderer::DrawBorderSides(int aSides)
   if (borderRenderStyle == NS_STYLE_BORDER_STYLE_DASHED ||
       borderRenderStyle == NS_STYLE_BORDER_STYLE_DOTTED) {
     
-    if (aSides & eSideBitsTop) {
-      DrawDashedOrDottedCorner(eSideTop, C_TL);
-    } else if (aSides & eSideBitsLeft) {
-      DrawDashedOrDottedCorner(eSideLeft, C_TL);
+    if (aSides & SIDE_BIT_TOP) {
+      DrawDashedOrDottedCorner(NS_SIDE_TOP, C_TL);
+    } else if (aSides & SIDE_BIT_LEFT) {
+      DrawDashedOrDottedCorner(NS_SIDE_LEFT, C_TL);
     }
 
-    if (aSides & eSideBitsTop) {
-      DrawDashedOrDottedCorner(eSideTop, C_TR);
-    } else if (aSides & eSideBitsRight) {
-      DrawDashedOrDottedCorner(eSideRight, C_TR);
+    if (aSides & SIDE_BIT_TOP) {
+      DrawDashedOrDottedCorner(NS_SIDE_TOP, C_TR);
+    } else if (aSides & SIDE_BIT_RIGHT) {
+      DrawDashedOrDottedCorner(NS_SIDE_RIGHT, C_TR);
     }
 
-    if (aSides & eSideBitsBottom) {
-      DrawDashedOrDottedCorner(eSideBottom, C_BL);
-    } else if (aSides & eSideBitsLeft) {
-      DrawDashedOrDottedCorner(eSideLeft, C_BL);
+    if (aSides & SIDE_BIT_BOTTOM) {
+      DrawDashedOrDottedCorner(NS_SIDE_BOTTOM, C_BL);
+    } else if (aSides & SIDE_BIT_LEFT) {
+      DrawDashedOrDottedCorner(NS_SIDE_LEFT, C_BL);
     }
 
-    if (aSides & eSideBitsBottom) {
-      DrawDashedOrDottedCorner(eSideBottom, C_BR);
-    } else if (aSides & eSideBitsRight) {
-      DrawDashedOrDottedCorner(eSideRight, C_BR);
+    if (aSides & SIDE_BIT_BOTTOM) {
+      DrawDashedOrDottedCorner(NS_SIDE_BOTTOM, C_BR);
+    } else if (aSides & SIDE_BIT_RIGHT) {
+      DrawDashedOrDottedCorner(NS_SIDE_RIGHT, C_BR);
     }
     return;
   }
@@ -1464,7 +1465,7 @@ nsCSSBorderRenderer::DrawBorderSides(int aSides)
   
   
   
-  if (aSides & (eSideBitsBottom | eSideBitsRight))
+  if (aSides & (SIDE_BIT_BOTTOM | SIDE_BIT_RIGHT))
     borderColorStyle = borderColorStyleBottomRight;
   else
     borderColorStyle = borderColorStyleTopLeft;
@@ -1534,39 +1535,39 @@ nsCSSBorderRenderer::DrawBorderSides(int aSides)
 
   
   if (IsSingleSide(aSides)) {
-    if (aSides == eSideBitsTop) {
-      if (mBorderStyles[eSideRight] == NS_STYLE_BORDER_STYLE_DOTTED &&
+    if (aSides == SIDE_BIT_TOP) {
+      if (mBorderStyles[NS_SIDE_RIGHT] == NS_STYLE_BORDER_STYLE_DOTTED &&
           IsZeroSize(mBorderRadii[C_TR])) {
         noMarginRight = true;
       }
-      if (mBorderStyles[eSideLeft] == NS_STYLE_BORDER_STYLE_DOTTED &&
+      if (mBorderStyles[NS_SIDE_LEFT] == NS_STYLE_BORDER_STYLE_DOTTED &&
           IsZeroSize(mBorderRadii[C_TL])) {
         noMarginLeft = true;
       }
-    } else if (aSides == eSideBitsRight) {
-      if (mBorderStyles[eSideTop] == NS_STYLE_BORDER_STYLE_DOTTED &&
+    } else if (aSides == SIDE_BIT_RIGHT) {
+      if (mBorderStyles[NS_SIDE_TOP] == NS_STYLE_BORDER_STYLE_DOTTED &&
           IsZeroSize(mBorderRadii[C_TR])) {
         noMarginTop = true;
       }
-      if (mBorderStyles[eSideBottom] == NS_STYLE_BORDER_STYLE_DOTTED &&
+      if (mBorderStyles[NS_SIDE_BOTTOM] == NS_STYLE_BORDER_STYLE_DOTTED &&
           IsZeroSize(mBorderRadii[C_BR])) {
         noMarginBottom = true;
       }
-    } else if (aSides == eSideBitsBottom) {
-      if (mBorderStyles[eSideRight] == NS_STYLE_BORDER_STYLE_DOTTED &&
+    } else if (aSides == SIDE_BIT_BOTTOM) {
+      if (mBorderStyles[NS_SIDE_RIGHT] == NS_STYLE_BORDER_STYLE_DOTTED &&
           IsZeroSize(mBorderRadii[C_BR])) {
         noMarginRight = true;
       }
-      if (mBorderStyles[eSideLeft] == NS_STYLE_BORDER_STYLE_DOTTED &&
+      if (mBorderStyles[NS_SIDE_LEFT] == NS_STYLE_BORDER_STYLE_DOTTED &&
           IsZeroSize(mBorderRadii[C_BL])) {
         noMarginLeft = true;
       }
     } else {
-      if (mBorderStyles[eSideTop] == NS_STYLE_BORDER_STYLE_DOTTED &&
+      if (mBorderStyles[NS_SIDE_TOP] == NS_STYLE_BORDER_STYLE_DOTTED &&
           IsZeroSize(mBorderRadii[C_TL])) {
         noMarginTop = true;
       }
-      if (mBorderStyles[eSideBottom] == NS_STYLE_BORDER_STYLE_DOTTED &&
+      if (mBorderStyles[NS_SIDE_BOTTOM] == NS_STYLE_BORDER_STYLE_DOTTED &&
           IsZeroSize(mBorderRadii[C_BL])) {
         noMarginBottom = true;
       }
@@ -1617,7 +1618,7 @@ nsCSSBorderRenderer::DrawBorderSides(int aSides)
 void
 nsCSSBorderRenderer::SetupDashedOptions(StrokeOptions* aStrokeOptions,
                                         Float aDash[2],
-                                        mozilla::Side aSide,
+                                        mozilla::css::Side aSide,
                                         Float aBorderLength, bool isCorner)
 {
   uint8_t style = mBorderStyles[aSide];
@@ -1792,23 +1793,23 @@ nsCSSBorderRenderer::SetupDashedOptions(StrokeOptions* aStrokeOptions,
 }
 
 static Float
-GetBorderLength(mozilla::Side aSide,
+GetBorderLength(mozilla::css::Side aSide,
                 const Point& aStart, const Point& aEnd)
 {
-  if (aSide == eSideTop) {
+  if (aSide == NS_SIDE_TOP) {
     return aEnd.x - aStart.x;
   }
-  if (aSide == eSideRight) {
+  if (aSide == NS_SIDE_RIGHT) {
     return aEnd.y - aStart.y;
   }
-  if (aSide == eSideBottom) {
+  if (aSide == NS_SIDE_BOTTOM) {
     return aStart.x - aEnd.x;
   }
   return aStart.y - aEnd.y;
 }
 
 void
-nsCSSBorderRenderer::DrawDashedOrDottedSide(mozilla::Side aSide)
+nsCSSBorderRenderer::DrawDashedOrDottedSide(mozilla::css::Side aSide)
 {
   
   
@@ -1878,7 +1879,7 @@ nsCSSBorderRenderer::DrawDashedOrDottedSide(mozilla::Side aSide)
 }
 
 void
-nsCSSBorderRenderer::DrawDottedSideSlow(mozilla::Side aSide)
+nsCSSBorderRenderer::DrawDottedSideSlow(mozilla::css::Side aSide)
 {
   
   
@@ -2032,16 +2033,16 @@ nsCSSBorderRenderer::DrawDottedSideSlow(mozilla::Side aSide)
     
 
     Point I(0.0f, 0.0f), J(0.0f, 0.0f);
-    if (aSide == eSideTop) {
+    if (aSide == NS_SIDE_TOP) {
       I.x = 1.0f;
       J.y = 1.0f;
-    } else if (aSide == eSideRight) {
+    } else if (aSide == NS_SIDE_RIGHT) {
       I.y = 1.0f;
       J.x = -1.0f;
-    } else if (aSide == eSideBottom) {
+    } else if (aSide == NS_SIDE_BOTTOM) {
       I.x = -1.0f;
       J.y = -1.0f;
-    } else if (aSide == eSideLeft) {
+    } else if (aSide == NS_SIDE_LEFT) {
       I.y = -1.0f;
       J.x = 1.0f;
     }
@@ -2118,7 +2119,7 @@ nsCSSBorderRenderer::DrawDottedSideSlow(mozilla::Side aSide)
   
   const Float AA_MARGIN = 2.0f;
 
-  if (aSide == eSideTop) {
+  if (aSide == NS_SIDE_TOP) {
     
     
     
@@ -2163,7 +2164,7 @@ nsCSSBorderRenderer::DrawDottedSideSlow(mozilla::Side aSide)
         }
       }
     }
-  } else if (aSide == eSideRight) {
+  } else if (aSide == NS_SIDE_RIGHT) {
     Float top = mDirtyRect.y - radius - AA_MARGIN;
     if (fromP.y < top) {
       size_t tmp = ceil(count * (top - start.y) / (end.y - start.y));
@@ -2186,7 +2187,7 @@ nsCSSBorderRenderer::DrawDottedSideSlow(mozilla::Side aSide)
         }
       }
     }
-  } else if (aSide == eSideBottom) {
+  } else if (aSide == NS_SIDE_BOTTOM) {
     Float right = mDirtyRect.x + mDirtyRect.width + radius + AA_MARGIN;
     if (fromP.x > right) {
       size_t tmp = ceil(count * (right - start.x) / (end.x - start.x));
@@ -2209,7 +2210,7 @@ nsCSSBorderRenderer::DrawDottedSideSlow(mozilla::Side aSide)
         }
       }
     }
-  } else if (aSide == eSideLeft) {
+  } else if (aSide == NS_SIDE_LEFT) {
     Float bottom = mDirtyRect.y + mDirtyRect.height + radius + AA_MARGIN;
     if (fromP.y > bottom) {
       size_t tmp = ceil(count * (bottom - start.y) / (end.y - start.y));
@@ -2258,7 +2259,7 @@ nsCSSBorderRenderer::DrawDottedSideSlow(mozilla::Side aSide)
 }
 
 void
-nsCSSBorderRenderer::DrawDashedOrDottedCorner(mozilla::Side aSide,
+nsCSSBorderRenderer::DrawDashedOrDottedCorner(mozilla::css::Side aSide,
                                               mozilla::css::Corner aCorner)
 {
   
@@ -2296,8 +2297,8 @@ nsCSSBorderRenderer::DrawDashedOrDottedCorner(mozilla::Side aSide,
      return;
    }
 
-  mozilla::Side sideH(GetHorizontalSide(aCorner));
-  mozilla::Side sideV(GetVerticalSide(aCorner));
+  mozilla::css::Side sideH(GetHorizontalSide(aCorner));
+  mozilla::css::Side sideV(GetVerticalSide(aCorner));
   Float borderWidthH = mBorderWidths[sideH];
   Float borderWidthV = mBorderWidths[sideV];
   if (borderWidthH == 0.0f && borderWidthV == 0.0f) {
@@ -2364,14 +2365,14 @@ nsCSSBorderRenderer::DrawDashedOrDottedCorner(mozilla::Side aSide,
 }
 
 void
-nsCSSBorderRenderer::DrawDottedCornerSlow(mozilla::Side aSide,
+nsCSSBorderRenderer::DrawDottedCornerSlow(mozilla::css::Side aSide,
                                           mozilla::css::Corner aCorner)
 {
   NS_ASSERTION(mBorderStyles[aSide] == NS_STYLE_BORDER_STYLE_DOTTED,
                "Style should be dotted.");
 
-  mozilla::Side sideH(GetHorizontalSide(aCorner));
-  mozilla::Side sideV(GetVerticalSide(aCorner));
+  mozilla::css::Side sideH(GetHorizontalSide(aCorner));
+  mozilla::css::Side sideV(GetVerticalSide(aCorner));
   Float R0 = mBorderWidths[sideH] / 2.0f;
   Float Rn = mBorderWidths[sideV] / 2.0f;
   if (R0 == 0.0f && Rn == 0.0f) {
@@ -2441,14 +2442,14 @@ DashedPathOverlapsRect(Rect& pathRect,
 }
 
 void
-nsCSSBorderRenderer::DrawDashedCornerSlow(mozilla::Side aSide,
+nsCSSBorderRenderer::DrawDashedCornerSlow(mozilla::css::Side aSide,
                                           mozilla::css::Corner aCorner)
 {
   NS_ASSERTION(mBorderStyles[aSide] == NS_STYLE_BORDER_STYLE_DASHED,
                "Style should be dashed.");
 
-  mozilla::Side sideH(GetHorizontalSide(aCorner));
-  mozilla::Side sideV(GetVerticalSide(aCorner));
+  mozilla::css::Side sideH(GetHorizontalSide(aCorner));
+  mozilla::css::Side sideV(GetVerticalSide(aCorner));
   Float borderWidthH = mBorderWidths[sideH];
   Float borderWidthV = mBorderWidths[sideV];
   if (borderWidthH == 0.0f && borderWidthV == 0.0f) {
@@ -2557,7 +2558,7 @@ nsCSSBorderRenderer::DrawDashedCornerSlow(mozilla::Side aSide,
 }
 
 void
-nsCSSBorderRenderer::DrawFallbackSolidCorner(mozilla::Side aSide,
+nsCSSBorderRenderer::DrawFallbackSolidCorner(mozilla::css::Side aSide,
                                              mozilla::css::Corner aCorner)
 {
   
@@ -3132,9 +3133,9 @@ nsCSSBorderRenderer::DrawBorders()
 
   
   
-  bool tlBordersSame = AreBorderSideFinalStylesSame(eSideBitsTop | eSideBitsLeft);
-  bool brBordersSame = AreBorderSideFinalStylesSame(eSideBitsBottom | eSideBitsRight);
-  bool allBordersSame = AreBorderSideFinalStylesSame(eSideBitsAll);
+  bool tlBordersSame = AreBorderSideFinalStylesSame(SIDE_BIT_TOP | SIDE_BIT_LEFT);
+  bool brBordersSame = AreBorderSideFinalStylesSame(SIDE_BIT_BOTTOM | SIDE_BIT_RIGHT);
+  bool allBordersSame = AreBorderSideFinalStylesSame(SIDE_BITS_ALL);
   if (allBordersSame &&
       ((mCompositeColors[0] == nullptr &&
        (mBorderStyles[0] == NS_STYLE_BORDER_STYLE_NONE ||
@@ -3188,8 +3189,8 @@ nsCSSBorderRenderer::DrawBorders()
   }
 
   
-  ColorPattern color(ToDeviceColor(mBorderColors[eSideTop]));
-  StrokeOptions strokeOptions(mBorderWidths[eSideTop]); 
+  ColorPattern color(ToDeviceColor(mBorderColors[NS_SIDE_TOP]));
+  StrokeOptions strokeOptions(mBorderWidths[NS_SIDE_TOP]); 
 
   bool allBordersSolid;
 
@@ -3242,10 +3243,10 @@ nsCSSBorderRenderer::DrawBorders()
     
     gfxRect outerRect = ThebesRect(mOuterRect);
     RoundedRect borderInnerRect(outerRect, mBorderRadii);
-    borderInnerRect.Deflate(mBorderWidths[eSideTop],
-                            mBorderWidths[eSideBottom],
-                            mBorderWidths[eSideLeft],
-                            mBorderWidths[eSideRight]);
+    borderInnerRect.Deflate(mBorderWidths[NS_SIDE_TOP],
+                            mBorderWidths[NS_SIDE_BOTTOM],
+                            mBorderWidths[NS_SIDE_LEFT],
+                            mBorderWidths[NS_SIDE_RIGHT]);
 
     
     
@@ -3339,7 +3340,7 @@ nsCSSBorderRenderer::DrawBorders()
 
   if (allBordersSame && !forceSeparateCorners) {
     
-    DrawBorderSides(eSideBitsAll);
+    DrawBorderSides(SIDE_BITS_ALL);
     PrintAsStringNewline("---------------- (1)");
   } else {
     PROFILER_LABEL("nsCSSBorderRenderer", "DrawBorders::multipass",
@@ -3357,7 +3358,7 @@ nsCSSBorderRenderer::DrawBorders()
 
 
     NS_FOR_CSS_CORNERS(corner) {
-      const mozilla::Side sides[2] = { mozilla::Side(corner), PREV_SIDE(corner) };
+      const mozilla::css::Side sides[2] = { mozilla::css::Side(corner), PREV_SIDE(corner) };
 
       if (!IsZeroSize(mBorderRadii[corner]))
         continue;
@@ -3418,7 +3419,7 @@ nsCSSBorderRenderer::DrawBorders()
         
 
         for (int cornerSide = 0; cornerSide < 2; cornerSide++) {
-          mozilla::Side side = mozilla::Side(sides[cornerSide]);
+          mozilla::css::Side side = mozilla::css::Side(sides[cornerSide]);
           uint8_t style = mBorderStyles[side];
 
           PrintAsFormatString("corner: %d cornerSide: %d side: %d style: %d\n", corner, cornerSide, side, style);
@@ -3447,16 +3448,16 @@ nsCSSBorderRenderer::DrawBorders()
     int alreadyDrawnSides = 0;
     if (mOneUnitBorder &&
         mNoBorderRadius &&
-        (dashedSides & (eSideBitsTop | eSideBitsLeft)) == 0)
+        (dashedSides & (SIDE_BIT_TOP | SIDE_BIT_LEFT)) == 0)
     {
       if (tlBordersSame) {
-        DrawBorderSides(eSideBitsTop | eSideBitsLeft);
-        alreadyDrawnSides |= (eSideBitsTop | eSideBitsLeft);
+        DrawBorderSides(SIDE_BIT_TOP | SIDE_BIT_LEFT);
+        alreadyDrawnSides |= (SIDE_BIT_TOP | SIDE_BIT_LEFT);
       }
 
-      if (brBordersSame && (dashedSides & (eSideBitsBottom | eSideBitsRight)) == 0) {
-        DrawBorderSides(eSideBitsBottom | eSideBitsRight);
-        alreadyDrawnSides |= (eSideBitsBottom | eSideBitsRight);
+      if (brBordersSame && (dashedSides & (SIDE_BIT_BOTTOM | SIDE_BIT_RIGHT)) == 0) {
+        DrawBorderSides(SIDE_BIT_BOTTOM | SIDE_BIT_RIGHT);
+        alreadyDrawnSides |= (SIDE_BIT_BOTTOM | SIDE_BIT_RIGHT);
       }
     }
 

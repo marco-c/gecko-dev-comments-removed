@@ -16,9 +16,11 @@
 #include "nsColor.h"
 #include "nsCOMPtr.h"
 #include "nsStyleConsts.h"
+#include "nsStyleStruct.h"
 #include "nsPresContext.h"
 
 struct nsBorderColors;
+class nsDisplayBorder;
 
 namespace mozilla {
 namespace gfx {
@@ -75,6 +77,8 @@ class nsCSSBorderRenderer final
   typedef mozilla::gfx::RectCornerRadii RectCornerRadii;
   typedef mozilla::gfx::StrokeOptions StrokeOptions;
 
+  friend class nsDisplayBorder;
+
 public:
 
   nsCSSBorderRenderer(nsPresContext* aPresContext,
@@ -105,6 +109,8 @@ public:
                                 const Float* aBorderSizes,
                                 RectCornerRadii* aOuterRadiiRet);
 
+  static bool AllCornersZeroSize(const RectCornerRadii& corners);
+
 private:
 
   RectCornerRadii mBorderCornerDimensions;
@@ -115,20 +121,20 @@ private:
 
   
   DrawTarget* mDrawTarget;
-  const Rect& mDirtyRect;
+  const Rect mDirtyRect;
 
   
   Rect mOuterRect;
   Rect mInnerRect;
 
   
-  const uint8_t* mBorderStyles;
-  const Float* mBorderWidths;
+  uint8_t mBorderStyles[4];
+  Float mBorderWidths[4];
   RectCornerRadii mBorderRadii;
 
   
-  const nscolor* mBorderColors;
-  nsBorderColors* const* mCompositeColors;
+  nscolor mBorderColors[4];
+  nsBorderColors* mCompositeColors[4];
 
   
   nscolor mBackgroundColor;
@@ -158,7 +164,7 @@ private:
   
   Rect GetCornerRect(mozilla::css::Corner aCorner);
   
-  Rect GetSideClipWithoutCornersRect(mozilla::Side aSide);
+  Rect GetSideClipWithoutCornersRect(mozilla::css::Side aSide);
 
   
   
@@ -168,10 +174,10 @@ private:
   
   
   
-  already_AddRefed<Path> GetSideClipSubPath(mozilla::Side aSide);
+  already_AddRefed<Path> GetSideClipSubPath(mozilla::css::Side aSide);
 
   
-  Point GetStraightBorderPoint(mozilla::Side aSide,
+  Point GetStraightBorderPoint(mozilla::css::Side aSide,
                                mozilla::css::Corner aCorner,
                                bool* aIsUnfilled);
 
@@ -213,29 +219,29 @@ private:
 
   
   void SetupDashedOptions(StrokeOptions* aStrokeOptions,
-                          Float aDash[2], mozilla::Side aSide,
+                          Float aDash[2], mozilla::css::Side aSide,
                           Float aBorderLength, bool isCorner);
 
   
-  void DrawDashedOrDottedSide(mozilla::Side aSide);
+  void DrawDashedOrDottedSide(mozilla::css::Side aSide);
 
   
-  void DrawDottedSideSlow(mozilla::Side aSide);
+  void DrawDottedSideSlow(mozilla::css::Side aSide);
 
   
-  void DrawDashedOrDottedCorner(mozilla::Side aSide,
+  void DrawDashedOrDottedCorner(mozilla::css::Side aSide,
                                 mozilla::css::Corner aCorner);
 
   
-  void DrawDottedCornerSlow(mozilla::Side aSide,
+  void DrawDottedCornerSlow(mozilla::css::Side aSide,
                             mozilla::css::Corner aCorner);
 
   
-  void DrawDashedCornerSlow(mozilla::Side aSide,
+  void DrawDashedCornerSlow(mozilla::css::Side aSide,
                             mozilla::css::Corner aCorner);
 
   
-  void DrawFallbackSolidCorner(mozilla::Side aSide,
+  void DrawFallbackSolidCorner(mozilla::css::Side aSide,
                                mozilla::css::Corner aCorner);
 
   
