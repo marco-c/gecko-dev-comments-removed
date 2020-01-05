@@ -36,6 +36,8 @@ use hyper::method::Method;
 use hyper::mime::{Attr, Mime};
 use ipc_channel::ipc::{self, IpcReceiver, IpcSender};
 use msg::constellation_msg::{PipelineId, ReferrerPolicy};
+use request::{Request, RequestInit};
+use response::{HttpsState, Response};
 use std::io::Error as IOError;
 use std::sync::mpsc::Sender;
 use std::thread;
@@ -112,6 +114,7 @@ pub struct LoadData {
     pub headers: Headers,
     #[ignore_heap_size_of = "Defined in hyper"]
     
+    
     pub preserved_headers: Headers,
     pub data: Option<Vec<u8>>,
     pub cors: Option<ResourceCORSData>,
@@ -154,9 +157,81 @@ pub trait LoadOrigin {
     fn pipeline_id(&self) -> Option<PipelineId>;
 }
 
+#[derive(Deserialize, Serialize)]
+pub enum FetchResponseMsg {
+    
+    ProcessRequestBody,
+    ProcessRequestEOF,
+    
+    ProcessResponse(Result<Metadata, NetworkError>),
+    ProcessResponseChunk(Vec<u8>),
+    ProcessResponseEOF(Result<(), NetworkError>),
+}
 
-pub trait AsyncFetchListener {
-    fn response_available(&self, response: response::Response);
+pub trait FetchTaskTarget {
+    
+    
+    
+    fn process_request_body(&mut self, request: &Request);
+
+    
+    
+    
+    fn process_request_eof(&mut self, request: &Request);
+
+    
+    
+    
+    fn process_response(&mut self, response: &Response);
+
+    
+    fn process_response_chunk(&mut self, chunk: Vec<u8>);
+
+    
+    
+    
+    fn process_response_eof(&mut self, response: &Response);
+}
+
+pub trait FetchResponseListener {
+    fn process_request_body(&mut self);
+    fn process_request_eof(&mut self);
+    fn process_response(&mut self, metadata: Result<Metadata, NetworkError>);
+    fn process_response_chunk(&mut self, chunk: Vec<u8>);
+    fn process_response_eof(&mut self, response: Result<(), NetworkError>);
+}
+
+impl FetchTaskTarget for IpcSender<FetchResponseMsg> {
+    fn process_request_body(&mut self, _: &Request) {
+        let _ = self.send(FetchResponseMsg::ProcessRequestBody);
+    }
+
+    fn process_request_eof(&mut self, _: &Request) {
+        let _ = self.send(FetchResponseMsg::ProcessRequestEOF);
+    }
+
+    fn process_response(&mut self, response: &Response) {
+        let _ = self.send(FetchResponseMsg::ProcessResponse(response.metadata()));
+    }
+
+    fn process_response_chunk(&mut self, chunk: Vec<u8>) {
+        let _ = self.send(FetchResponseMsg::ProcessResponseChunk(chunk));
+    }
+
+    fn process_response_eof(&mut self, response: &Response) {
+        if response.is_network_error() {
+            
+            let _ = self.send(FetchResponseMsg::ProcessResponseEOF(
+                              Err(NetworkError::Internal("Network error".into()))));
+        } else {
+            let _ = self.send(FetchResponseMsg::ProcessResponseEOF(Ok(())));
+        }
+    }
+}
+
+
+pub trait Action<Listener> {
+    fn process(self, listener: &mut Listener);
 }
 
 
@@ -183,13 +258,26 @@ pub enum ResponseAction {
     ResponseComplete(Result<(), NetworkError>)
 }
 
-impl ResponseAction {
+impl<T: AsyncResponseListener> Action<T> for ResponseAction {
     
-    pub fn process(self, listener: &mut AsyncResponseListener) {
+    fn process(self, listener: &mut T) {
         match self {
             ResponseAction::HeadersAvailable(m) => listener.headers_available(m),
             ResponseAction::DataAvailable(d) => listener.data_available(d),
             ResponseAction::ResponseComplete(r) => listener.response_complete(r),
+        }
+    }
+}
+
+impl<T: FetchResponseListener> Action<T> for FetchResponseMsg {
+    
+    fn process(self, listener: &mut T) {
+        match self {
+            FetchResponseMsg::ProcessRequestBody => listener.process_request_body(),
+            FetchResponseMsg::ProcessRequestEOF => listener.process_request_eof(),
+            FetchResponseMsg::ProcessResponse(meta) => listener.process_response(meta),
+            FetchResponseMsg::ProcessResponseChunk(data) => listener.process_response_chunk(data),
+            FetchResponseMsg::ProcessResponseEOF(data) => listener.process_response_eof(data),
         }
     }
 }
@@ -331,6 +419,7 @@ pub struct WebSocketConnectData {
 pub enum CoreResourceMsg {
     
     Load(LoadData, LoadConsumer, Option<IpcSender<ResourceId>>),
+    Fetch(RequestInit, IpcSender<FetchResponseMsg>),
     
     WebsocketConnect(WebSocketCommunicate, WebSocketConnectData),
     
@@ -469,7 +558,7 @@ pub struct Metadata {
     pub status: Option<RawStatus>,
 
     
-    pub https_state: response::HttpsState,
+    pub https_state: HttpsState,
 }
 
 impl Metadata {
@@ -482,7 +571,7 @@ impl Metadata {
             headers: None,
             
             status: Some(RawStatus(200, "OK".into())),
-            https_state: response::HttpsState::None,
+            https_state: HttpsState::None,
         }
     }
 
