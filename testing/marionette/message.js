@@ -9,6 +9,7 @@ var {utils: Cu} = Components;
 Cu.import("resource://gre/modules/Log.jsm");
 Cu.import("resource://gre/modules/Task.jsm");
 
+Cu.import("chrome://marionette/content/assert.js");
 Cu.import("chrome://marionette/content/error.js");
 
 this.EXPORTED_SYMBOLS = [
@@ -99,9 +100,9 @@ Message.fromMsg = function (data) {
 
 this.Command = class {
   constructor(msgID, name, params = {}) {
-    this.id = msgID;
-    this.name = name;
-    this.parameters = params;
+    this.id = assert.integer(msgID);
+    this.name = assert.string(name);
+    this.parameters = assert.object(params);
 
     this.onerror = null;
     this.onresult = null;
@@ -119,9 +120,9 @@ this.Command = class {
 
 
   onresponse(resp) {
-    if (resp.error && this.onerror) {
+    if (this.onerror && resp.error) {
       this.onerror(resp.error);
-    } else if (resp.body && this.onresult) {
+    } else if (this.onresult && resp.body) {
       this.onresult(resp.body);
     }
   }
@@ -137,7 +138,8 @@ this.Command = class {
   }
 
   static fromMsg(msg) {
-    let [msgID, name, params] = [msg[1], msg[2], msg[3]];
+    let [type, msgID, name, params] = msg;
+    assert.that(n => n === Command.TYPE)(type);
 
     
     if (params === null) {
@@ -208,16 +210,15 @@ this.ResponseBody = () => new Proxy({}, validator);
 
 
 this.Response = class {
-  constructor(msgId, respHandler) {
-    this.id = msgId;
+  constructor(msgID, respHandler = () => {}) {
+    this.id = assert.integer(msgID);
+    this.respHandler_ = assert.callable(respHandler);
 
     this.error = null;
     this.body = ResponseBody();
 
     this.origin = MessageOrigin.Server;
     this.sent = false;
-
-    this.respHandler_ = respHandler;
   }
 
   
@@ -282,9 +283,13 @@ this.Response = class {
   }
 
   static fromMsg(msg) {
-    let resp = new Response(msg[1], null);
-    resp.error = msg[2];
-    resp.body = msg[3];
+    let [type, msgID, err, body] = msg;
+    assert.that(n => n === Response.TYPE)(type);
+
+    let resp = new Response(msgID);
+    resp.error = assert.string(err);
+
+    resp.body = body;
     return resp;
   }
 };
