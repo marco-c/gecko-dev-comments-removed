@@ -2045,7 +2045,7 @@ static void ShutdownCMS()
 void
 gfxPlatform::SetupClusterBoundaries(gfxTextRun *aTextRun, const char16_t *aString)
 {
-    if (aTextRun->GetFlags() & gfxTextRunFactory::TEXT_IS_8BIT) {
+    if (aTextRun->GetFlags() & gfx::ShapedTextFlags::TEXT_IS_8BIT) {
         
         
         

@@ -22,7 +22,7 @@ struct nsStyleText;
 class nsTextFrameUtils {
 public:
   
-  enum {
+  enum class Flags : uint16_t {
     
 
     
@@ -127,7 +127,7 @@ public:
                               CompressionMode aCompression,
                               uint8_t* aIncomingFlags,
                               gfxSkipChars* aSkipChars,
-                              uint16_t* aAnalysisFlags);
+                              nsTextFrameUtils::Flags* aAnalysisFlags);
 
   
 
@@ -152,6 +152,8 @@ public:
                                                     const nsStyleText*
                                                       aStyleText);
 };
+
+MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(nsTextFrameUtils::Flags)
 
 class nsSkipCharsRunIterator {
 public:

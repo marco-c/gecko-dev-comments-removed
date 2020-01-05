@@ -42,7 +42,7 @@ public:
                                BoundingBoxType aBoundingBoxType,
                                DrawTarget *aDrawTargetForTightBoundingBox,
                                Spacing *aSpacing,
-                               uint16_t aOrientation) override;
+                               mozilla::gfx::ShapedTextFlags aOrientation) override;
 
     
     mozilla::UniquePtr<gfxFont>

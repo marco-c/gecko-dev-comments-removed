@@ -4266,17 +4266,18 @@ struct MOZ_STACK_CLASS CanvasBidiProcessor : public nsBidiPresUtils::BidiProcess
   {
     mFontgrp->UpdateUserFonts(); 
     
-    uint16_t flags = mTextRunFlags;
+    gfx::ShapedTextFlags flags = mTextRunFlags;
     if (aDirection == NSBIDI_RTL) {
-      flags |= gfxTextRunFactory::TEXT_IS_RTL;
+      flags |= gfx::ShapedTextFlags::TEXT_IS_RTL;
     } else {
-      flags &= ~gfxTextRunFactory::TEXT_IS_RTL;
+      flags &= ~gfx::ShapedTextFlags::TEXT_IS_RTL;
     }
     mTextRun = mFontgrp->MakeTextRun(aText,
                                      aLength,
                                      mDrawTarget,
                                      mAppUnitsPerDevPixel,
-                                     flags, 0,
+                                     flags,
+                                     nsTextFrameUtils::Flags(),
                                      mMissingFonts);
   }
 
@@ -4489,7 +4490,7 @@ struct MOZ_STACK_CLASS CanvasBidiProcessor : public nsBidiPresUtils::BidiProcess
   gfxRect mBoundingBox;
 
   
-  uint16_t mTextRunFlags;
+  gfx::ShapedTextFlags mTextRunFlags;
 
   
   bool mDoMeasureBoundingBox;
@@ -4577,11 +4578,12 @@ CanvasRenderingContext2D::DrawOrMeasureText(const nsAString& aRawText,
 
   
   
-  processor.mTextRunFlags = canvasStyle ?
-    nsLayoutUtils::GetTextRunFlagsForStyle(canvasStyle,
-                                           canvasStyle->StyleFont(),
-                                           canvasStyle->StyleText(),
-                                           0) : 0;
+  processor.mTextRunFlags = canvasStyle
+    ? nsLayoutUtils::GetTextRunFlagsForStyle(canvasStyle,
+                                             canvasStyle->StyleFont(),
+                                             canvasStyle->StyleText(),
+                                             0)
+    : gfx::ShapedTextFlags();
 
   GetAppUnitsValues(&processor.mAppUnitsPerDevPixel, nullptr);
   processor.mPt = gfxPoint(aX, aY);
@@ -4675,11 +4677,11 @@ CanvasRenderingContext2D::DrawOrMeasureText(const nsAString& aRawText,
 
   
   
-  uint16_t runOrientation =
-    (processor.mTextRunFlags & gfxTextRunFactory::TEXT_ORIENT_MASK);
-  if (runOrientation != gfxTextRunFactory::TEXT_ORIENT_HORIZONTAL) {
-    if (runOrientation == gfxTextRunFactory::TEXT_ORIENT_VERTICAL_MIXED ||
-        runOrientation == gfxTextRunFactory::TEXT_ORIENT_VERTICAL_UPRIGHT) {
+  gfx::ShapedTextFlags runOrientation =
+    (processor.mTextRunFlags & gfx::ShapedTextFlags::TEXT_ORIENT_MASK);
+  if (runOrientation != gfx::ShapedTextFlags::TEXT_ORIENT_HORIZONTAL) {
+    if (runOrientation == gfx::ShapedTextFlags::TEXT_ORIENT_VERTICAL_MIXED ||
+        runOrientation == gfx::ShapedTextFlags::TEXT_ORIENT_VERTICAL_UPRIGHT) {
       
       
       baselineAnchor -= (fontMetrics.emAscent - fontMetrics.emDescent) * .5f;

@@ -220,29 +220,6 @@ struct gfxFontStyle {
     }
 };
 
-struct gfxTextRange {
-    enum {
-        
-        kFontGroup      = 0x0001,
-        kPrefsFallback  = 0x0002,
-        kSystemFallback = 0x0004
-    };
-    gfxTextRange(uint32_t aStart, uint32_t aEnd,
-                 gfxFont* aFont, uint8_t aMatchType,
-                 uint16_t aOrientation)
-        : start(aStart),
-          end(aEnd),
-          font(aFont),
-          matchType(aMatchType),
-          orientation(aOrientation)
-    { }
-    uint32_t Length() const { return end - start; }
-    uint32_t start, end;
-    RefPtr<gfxFont> font;
-    uint8_t matchType;
-    uint16_t orientation;
-};
-
 
 
 
@@ -454,109 +431,115 @@ public:
     }
 };
 
+namespace mozilla {
+namespace gfx {
+
+
+
+enum class ShapedTextFlags : uint16_t {
+    
+
+
+
+    TEXT_IS_PERSISTENT           = 0x0001,
+    
+
+
+    TEXT_IS_RTL                  = 0x0002,
+    
+
+
+
+    TEXT_ENABLE_SPACING          = 0x0004,
+    
+
+
+
+    TEXT_IS_8BIT                 = 0x0008,
+    
+
+
+
+    TEXT_ENABLE_HYPHEN_BREAKS    = 0x0010,
+    
+
+
+
+
+
+
+    TEXT_NEED_BOUNDING_BOX       = 0x0020,
+    
+
+
+
+    TEXT_DISABLE_OPTIONAL_LIGATURES = 0x0040,
+    
+
+
+
+
+    TEXT_OPTIMIZE_SPEED          = 0x0080,
+    
+
+
+
+    TEXT_HIDE_CONTROL_CHARACTERS = 0x0100,
+
+    
+
+
+
+
+    TEXT_TRAILING_ARABICCHAR     = 0x0200,
+    
+
+
+
+
+    TEXT_INCOMING_ARABICCHAR     = 0x0400,
+
+    
+
+
+    TEXT_USE_MATH_SCRIPT         = 0x0800,
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    TEXT_ORIENT_MASK                    = 0x7000,
+    TEXT_ORIENT_HORIZONTAL              = 0x0000,
+    TEXT_ORIENT_VERTICAL_UPRIGHT        = 0x1000,
+    TEXT_ORIENT_VERTICAL_SIDEWAYS_RIGHT = 0x2000,
+    TEXT_ORIENT_VERTICAL_MIXED          = 0x3000,
+    TEXT_ORIENT_VERTICAL_SIDEWAYS_LEFT  = 0x4000,
+};
+
+MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(ShapedTextFlags)
+} 
+} 
+
 class gfxTextRunFactory {
     
     NS_INLINE_DECL_THREADSAFE_REFCOUNTING(gfxTextRunFactory)
 
 public:
     typedef mozilla::gfx::DrawTarget DrawTarget;
-
-    
-    
-    
-    enum {
-        
-
-
-
-        TEXT_IS_PERSISTENT           = 0x0001,
-        
-
-
-        TEXT_IS_RTL                  = 0x0002,
-        
-
-
-
-        TEXT_ENABLE_SPACING          = 0x0004,
-        
-
-
-
-        TEXT_IS_8BIT                 = 0x0008,
-        
-
-
-
-        TEXT_ENABLE_HYPHEN_BREAKS    = 0x0010,
-        
-
-
-
-
-
-
-        TEXT_NEED_BOUNDING_BOX       = 0x0020,
-        
-
-
-
-        TEXT_DISABLE_OPTIONAL_LIGATURES = 0x0040,
-        
-
-
-
-
-        TEXT_OPTIMIZE_SPEED          = 0x0080,
-        
-
-
-
-        TEXT_HIDE_CONTROL_CHARACTERS = 0x0100,
-
-        
-
-
-
-
-        TEXT_TRAILING_ARABICCHAR     = 0x0200,
-        
-
-
-
-
-        TEXT_INCOMING_ARABICCHAR     = 0x0400,
-
-        
-
-
-        TEXT_USE_MATH_SCRIPT         = 0x0800,
-
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        TEXT_ORIENT_MASK                    = 0x7000,
-        TEXT_ORIENT_HORIZONTAL              = 0x0000,
-        TEXT_ORIENT_VERTICAL_UPRIGHT        = 0x1000,
-        TEXT_ORIENT_VERTICAL_SIDEWAYS_RIGHT = 0x2000,
-        TEXT_ORIENT_VERTICAL_MIXED          = 0x3000,
-        TEXT_ORIENT_VERTICAL_SIDEWAYS_LEFT  = 0x4000,
-    };
 
     
 
@@ -581,6 +564,29 @@ public:
 protected:
     
     virtual ~gfxTextRunFactory();
+};
+
+struct gfxTextRange {
+    enum {
+        
+        kFontGroup      = 0x0001,
+        kPrefsFallback  = 0x0002,
+        kSystemFallback = 0x0004
+    };
+    gfxTextRange(uint32_t aStart, uint32_t aEnd,
+                 gfxFont* aFont, uint8_t aMatchType,
+                 mozilla::gfx::ShapedTextFlags aOrientation)
+        : start(aStart),
+          end(aEnd),
+          font(aFont),
+          matchType(aMatchType),
+          orientation(aOrientation)
+    { }
+    uint32_t Length() const { return end - start; }
+    uint32_t start, end;
+    RefPtr<gfxFont> font;
+    uint8_t matchType;
+    mozilla::gfx::ShapedTextFlags orientation;
 };
 
 
@@ -676,7 +682,7 @@ class gfxShapedText
 public:
     typedef mozilla::unicode::Script Script;
 
-    gfxShapedText(uint32_t aLength, uint16_t aFlags,
+    gfxShapedText(uint32_t aLength, mozilla::gfx::ShapedTextFlags aFlags,
                   int32_t aAppUnitsPerDevUnit)
         : mLength(aLength)
         , mFlags(aFlags)
@@ -953,28 +959,30 @@ public:
                                 const uint8_t *aString,
                                 uint32_t       aLength);
 
-    uint16_t GetFlags() const {
+    mozilla::gfx::ShapedTextFlags GetFlags() const {
         return mFlags;
     }
 
     bool IsVertical() const {
-        return (GetFlags() & gfxTextRunFactory::TEXT_ORIENT_MASK) !=
-                gfxTextRunFactory::TEXT_ORIENT_HORIZONTAL;
+        return (GetFlags() & mozilla::gfx::ShapedTextFlags::TEXT_ORIENT_MASK) !=
+                mozilla::gfx::ShapedTextFlags::TEXT_ORIENT_HORIZONTAL;
     }
 
     bool UseCenterBaseline() const {
-        uint32_t orient = GetFlags() & gfxTextRunFactory::TEXT_ORIENT_MASK;
-        return orient == gfxTextRunFactory::TEXT_ORIENT_VERTICAL_MIXED ||
-               orient == gfxTextRunFactory::TEXT_ORIENT_VERTICAL_UPRIGHT;
+        mozilla::gfx::ShapedTextFlags orient =
+            GetFlags() & mozilla::gfx::ShapedTextFlags::TEXT_ORIENT_MASK;
+        return orient == mozilla::gfx::ShapedTextFlags::TEXT_ORIENT_VERTICAL_MIXED ||
+               orient == mozilla::gfx::ShapedTextFlags::TEXT_ORIENT_VERTICAL_UPRIGHT;
     }
 
     bool IsRightToLeft() const {
-        return (GetFlags() & gfxTextRunFactory::TEXT_IS_RTL) != 0;
+        return (GetFlags() & mozilla::gfx::ShapedTextFlags::TEXT_IS_RTL) ==
+               mozilla::gfx::ShapedTextFlags::TEXT_IS_RTL;
     }
 
     bool IsSidewaysLeft() const {
-        return (GetFlags() & gfxTextRunFactory::TEXT_ORIENT_MASK) ==
-               gfxTextRunFactory::TEXT_ORIENT_VERTICAL_SIDEWAYS_LEFT;
+        return (GetFlags() & mozilla::gfx::ShapedTextFlags::TEXT_ORIENT_MASK) ==
+               mozilla::gfx::ShapedTextFlags::TEXT_ORIENT_VERTICAL_SIDEWAYS_LEFT;
     }
 
     
@@ -989,11 +997,13 @@ public:
 
     bool DisableLigatures() const {
         return (GetFlags() &
-                gfxTextRunFactory::TEXT_DISABLE_OPTIONAL_LIGATURES) != 0;
+                mozilla::gfx::ShapedTextFlags::TEXT_DISABLE_OPTIONAL_LIGATURES) ==
+               mozilla::gfx::ShapedTextFlags::TEXT_DISABLE_OPTIONAL_LIGATURES;
     }
 
     bool TextIs8Bit() const {
-        return (GetFlags() & gfxTextRunFactory::TEXT_IS_8BIT) != 0;
+        return (GetFlags() & mozilla::gfx::ShapedTextFlags::TEXT_IS_8BIT) ==
+               mozilla::gfx::ShapedTextFlags::TEXT_IS_8BIT;
     }
 
     int32_t GetAppUnitsPerDevUnit() const {
@@ -1146,7 +1156,7 @@ protected:
     uint32_t                        mLength;
 
     
-    uint16_t                        mFlags;
+    mozilla::gfx::ShapedTextFlags   mFlags;
 
     uint16_t                        mAppUnitsPerDevUnit;
 };
@@ -1175,7 +1185,7 @@ public:
     static gfxShapedWord* Create(const uint8_t *aText, uint32_t aLength,
                                  Script aRunScript,
                                  int32_t aAppUnitsPerDevUnit,
-                                 uint16_t aFlags,
+                                 mozilla::gfx::ShapedTextFlags aFlags,
                                  gfxFontShaper::RoundingFlags aRounding) {
         NS_ASSERTION(aLength <= gfxPlatform::GetPlatform()->WordCacheCharLimit(),
                      "excessive length for gfxShapedWord!");
@@ -1199,7 +1209,7 @@ public:
     static gfxShapedWord* Create(const char16_t *aText, uint32_t aLength,
                                  Script aRunScript,
                                  int32_t aAppUnitsPerDevUnit,
-                                 uint16_t aFlags,
+                                 mozilla::gfx::ShapedTextFlags aFlags,
                                  gfxFontShaper::RoundingFlags aRounding) {
         NS_ASSERTION(aLength <= gfxPlatform::GetPlatform()->WordCacheCharLimit(),
                      "excessive length for gfxShapedWord!");
@@ -1207,7 +1217,7 @@ public:
         
         
         
-        if (aFlags & gfxTextRunFactory::TEXT_IS_8BIT) {
+        if (aFlags & mozilla::gfx::ShapedTextFlags::TEXT_IS_8BIT) {
             nsAutoCString narrowText;
             LossyAppendUTF16toASCII(nsDependentSubstring(aText, aLength),
                                     narrowText);
@@ -1286,9 +1296,10 @@ private:
     
     gfxShapedWord(const uint8_t *aText, uint32_t aLength,
                   Script aRunScript,
-                  int32_t aAppUnitsPerDevUnit, uint16_t aFlags,
+                  int32_t aAppUnitsPerDevUnit,
+                  mozilla::gfx::ShapedTextFlags aFlags,
                   gfxFontShaper::RoundingFlags aRounding)
-        : gfxShapedText(aLength, aFlags | gfxTextRunFactory::TEXT_IS_8BIT,
+        : gfxShapedText(aLength, aFlags | mozilla::gfx::ShapedTextFlags::TEXT_IS_8BIT,
                         aAppUnitsPerDevUnit)
         , mScript(aRunScript)
         , mRounding(aRounding)
@@ -1301,7 +1312,8 @@ private:
 
     gfxShapedWord(const char16_t *aText, uint32_t aLength,
                   Script aRunScript,
-                  int32_t aAppUnitsPerDevUnit, uint16_t aFlags,
+                  int32_t aAppUnitsPerDevUnit,
+                  mozilla::gfx::ShapedTextFlags aFlags,
                   gfxFontShaper::RoundingFlags aRounding)
         : gfxShapedText(aLength, aFlags, aAppUnitsPerDevUnit)
         , mScript(aRunScript)
@@ -1637,7 +1649,7 @@ public:
 
     void Draw(const gfxTextRun *aTextRun, uint32_t aStart, uint32_t aEnd,
               gfxPoint *aPt, const TextRunDrawParams& aRunParams,
-              uint16_t aOrientation);
+              mozilla::gfx::ShapedTextFlags aOrientation);
 
     
 
@@ -1674,7 +1686,8 @@ public:
                                uint32_t aStart, uint32_t aEnd,
                                BoundingBoxType aBoundingBoxType,
                                DrawTarget* aDrawTargetForTightBoundingBox,
-                               Spacing *aSpacing, uint16_t aOrientation);
+                               Spacing *aSpacing,
+                               mozilla::gfx::ShapedTextFlags aOrientation);
     
 
 
@@ -1745,7 +1758,7 @@ public:
                               uint32_t    aOffset,
                               uint32_t    aLength,
                               uint8_t     aMatchType,
-                              uint16_t    aOrientation,
+                              mozilla::gfx::ShapedTextFlags aOrientation,
                               Script      aScript,
                               bool        aSyntheticLower,
                               bool        aSyntheticUpper);
@@ -1772,7 +1785,7 @@ public:
                                  Script aRunScript,
                                  bool aVertical,
                                  int32_t aAppUnitsPerDevUnit,
-                                 uint16_t aFlags,
+                                 mozilla::gfx::ShapedTextFlags aFlags,
                                  RoundingFlags aRounding,
                                  gfxTextPerfMetrics *aTextPerf);
 
@@ -2027,7 +2040,7 @@ protected:
             const char16_t *mDouble;
         }                mText;
         uint32_t         mLength;
-        uint16_t         mFlags;
+        mozilla::gfx::ShapedTextFlags mFlags;
         Script           mScript;
         int32_t          mAppUnitsPerDevUnit;
         PLDHashNumber    mHashKey;
@@ -2037,7 +2050,8 @@ protected:
         CacheHashKey(const uint8_t *aText, uint32_t aLength,
                      uint32_t aStringHash,
                      Script aScriptCode, int32_t aAppUnitsPerDevUnit,
-                     uint16_t aFlags, RoundingFlags aRounding)
+                     mozilla::gfx::ShapedTextFlags aFlags,
+                     RoundingFlags aRounding)
             : mLength(aLength),
               mFlags(aFlags),
               mScript(aScriptCode),
@@ -2045,12 +2059,12 @@ protected:
               mHashKey(aStringHash
                            + static_cast<int32_t>(aScriptCode)
                            + aAppUnitsPerDevUnit * 0x100
-                           + aFlags * 0x10000
+                           + uint16_t(aFlags) * 0x10000
                            + int(aRounding)),
               mTextIs8Bit(true),
               mRounding(aRounding)
         {
-            NS_ASSERTION(aFlags & gfxTextRunFactory::TEXT_IS_8BIT,
+            NS_ASSERTION(aFlags & mozilla::gfx::ShapedTextFlags::TEXT_IS_8BIT,
                          "8-bit flag should have been set");
             mText.mSingle = aText;
         }
@@ -2058,7 +2072,8 @@ protected:
         CacheHashKey(const char16_t *aText, uint32_t aLength,
                      uint32_t aStringHash,
                      Script aScriptCode, int32_t aAppUnitsPerDevUnit,
-                     uint16_t aFlags, RoundingFlags aRounding)
+                     mozilla::gfx::ShapedTextFlags aFlags,
+                     RoundingFlags aRounding)
             : mLength(aLength),
               mFlags(aFlags),
               mScript(aScriptCode),
@@ -2066,7 +2081,7 @@ protected:
               mHashKey(aStringHash
                            + static_cast<int32_t>(aScriptCode)
                            + aAppUnitsPerDevUnit * 0x100
-                           + aFlags * 0x10000
+                           + uint16_t(aFlags) * 0x10000
                            + int(aRounding)),
               mTextIs8Bit(false),
               mRounding(aRounding)
