@@ -892,11 +892,6 @@ BytecodeEmitter::EmitterScope::enterLexical(BytecodeEmitter* bce, ScopeKind kind
     updateFrameFixedSlots(bce, bi);
 
     
-    
-    if (!deadZoneFrameSlotRange(bce, firstFrameSlot, frameSlotEnd()))
-        return false;
-
-    
     auto createScope = [kind, bindings, firstFrameSlot](ExclusiveContext* cx,
                                                         HandleScope enclosing)
     {
@@ -913,6 +908,14 @@ BytecodeEmitter::EmitterScope::enterLexical(BytecodeEmitter* bce, ScopeKind kind
 
     
     if (!appendScopeNote(bce))
+        return false;
+
+    
+    
+    
+    
+    
+    if (!deadZoneFrameSlotRange(bce, firstFrameSlot, frameSlotEnd()))
         return false;
 
     return checkEnvironmentChainLength(bce);
