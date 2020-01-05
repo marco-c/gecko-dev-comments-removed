@@ -2,6 +2,9 @@
 
 
 
+
+
+
 this.EXPORTED_SYMBOLS = [ "InsecurePasswordUtils" ];
 
 const { classes: Cc, interfaces: Ci, results: Cr, utils: Cu } = Components;
@@ -16,6 +19,12 @@ XPCOMUtils.defineLazyServiceGetter(this, "gContentSecurityManager",
 XPCOMUtils.defineLazyServiceGetter(this, "gScriptSecurityManager",
                                    "@mozilla.org/scriptsecuritymanager;1",
                                    "nsIScriptSecurityManager");
+XPCOMUtils.defineLazyModuleGetter(this, "LoginHelper",
+                                  "resource://gre/modules/LoginHelper.jsm");
+
+XPCOMUtils.defineLazyGetter(this, "log", () => {
+  return LoginHelper.createLogger("InsecurePasswordUtils");
+});
 
 
 
@@ -89,6 +98,19 @@ this.InsecurePasswordUtils = {
     return { isFormSubmitHTTP, isFormSubmitSecure };
   },
 
+  _isPrincipalForLocalIPAddress(aPrincipal) {
+    try {
+      let uri = aPrincipal.URI;
+      if (Services.io.hostnameIsLocalIPAddress(uri)) {
+        log.debug("hasInsecureLoginForms: detected local IP address:", uri);
+        return true;
+      }
+    } catch (e) {
+      log.debug("hasInsecureLoginForms: unable to check for local IP address:", e);
+    }
+    return false;
+  },
+
   
 
 
@@ -99,9 +121,24 @@ this.InsecurePasswordUtils = {
 
   isFormSecure(aForm) {
     
-    
-    
     let isSafePage = aForm.ownerDocument.defaultView.isSecureContextIfOpenerIgnored;
+
+    
+    
+    
+    
+    if (!isSafePage && this._ignoreLocalIPAddress) {
+      let isLocalIP = this._isPrincipalForLocalIPAddress(aForm.rootElement.nodePrincipal);
+      let topWindow = aForm.ownerDocument.defaultView.top;
+      let topIsLocalIP = this._isPrincipalForLocalIPAddress(topWindow.document.nodePrincipal);
+
+      
+      
+      if (isLocalIP && topIsLocalIP) {
+        isSafePage = true;
+      }
+    }
+
     let { isFormSubmitSecure, isFormSubmitHTTP } = this._checkFormSecurity(aForm);
 
     return isSafePage && (isFormSubmitSecure || !isFormSubmitHTTP);
@@ -157,3 +194,6 @@ this.InsecurePasswordUtils = {
     Services.telemetry.getHistogramById("PWMGR_LOGIN_PAGE_SAFETY").add(passwordSafety);
   },
 };
+
+XPCOMUtils.defineLazyPreferenceGetter(this.InsecurePasswordUtils, "_ignoreLocalIPAddress",
+                                      "security.insecure_field_warning.ignore_local_ip_address", true);
