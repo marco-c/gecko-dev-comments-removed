@@ -3902,14 +3902,31 @@ CanvasRenderingContext2D::SetFontInternal(const nsAString& aFont,
     return false;
   }
 
+  RefPtr<nsStyleContext> sc;
+  RefPtr<ServoComputedValues> computedValues;
   nsString usedFont;
-  RefPtr<nsStyleContext> sc =
-    GetFontStyleContext(mCanvasElement, aFont, presShell, usedFont, aError);
-  if (!sc) {
-    return false;
+  const nsStyleFont* fontStyle;
+  if (presShell->StyleSet()->IsServo()) {
+    computedValues = GetFontStyleForServo(mCanvasElement,
+                                          aFont,
+                                          presShell,
+                                          usedFont,
+                                          aError);
+    if (!computedValues) {
+      return false;
+    }
+    fontStyle = Servo_GetStyleFont(computedValues);
+  } else {
+    sc = GetFontStyleContext(mCanvasElement,
+                             aFont,
+                             presShell,
+                             usedFont,
+                             aError);
+    if (!sc) {
+      return false;
+    }
+    fontStyle = sc->StyleFont();
   }
-
-  const nsStyleFont* fontStyle = sc->StyleFont();
 
   nsPresContext* c = presShell->GetPresContext();
 
@@ -3917,7 +3934,8 @@ CanvasRenderingContext2D::SetFontInternal(const nsAString& aFont,
   
   
   
-  MOZ_ASSERT(!fontStyle->mAllowZoom,
+  
+  MOZ_ASSERT(presShell->StyleSet()->IsServo() || !fontStyle->mAllowZoom,
              "expected text zoom to be disabled on this nsStyleFont");
   nsFont resizedFont(fontStyle->mFont);
   
