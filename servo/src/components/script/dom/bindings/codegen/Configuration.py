@@ -128,14 +128,19 @@ class Descriptor(DescriptorProvider):
 
         
         ifaceName = self.interface.identifier.name
-        if self.interface.isCallback():
-            nativeTypeDefault = "nsIDOM" + ifaceName
-        else:
-            nativeTypeDefault = 'JS<%s>' % ifaceName
 
-        self.nativeType = desc.get('nativeType', nativeTypeDefault)
+        
+        
+        if self.interface.isCallback():
+            self.needsRooting = False
+        else:
+            self.needsRooting = True
+
+        self.returnType = "Temporary<%s>" % ifaceName
+        self.argumentType = "JSRef<%s>" % ifaceName
+        self.memberType = "Root<'a, 'b, %s>" % ifaceName
+        self.nativeType = desc.get('nativeType', 'JS<%s>' % ifaceName)
         self.concreteType = desc.get('concreteType', ifaceName)
-        self.needsAbstract = desc.get('needsAbstract', [])
         self.createGlobal = desc.get('createGlobal', False)
         self.register = desc.get('register', True)
         self.outerObjectHook = desc.get('outerObjectHook', 'None')
