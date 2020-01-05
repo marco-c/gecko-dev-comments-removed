@@ -166,7 +166,7 @@ WebGLShader::ShaderSource(const nsAString& source)
         return;
     }
 
-    if (!ValidateGLSLString(sourceWithoutComments, mContext, funcName))
+    if (!ValidateGLSLPreprocString(mContext, funcName, sourceWithoutComments))
         return;
 
     

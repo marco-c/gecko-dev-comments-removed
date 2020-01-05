@@ -5,33 +5,9 @@
 
 #include "WebGLValidateStrings.h"
 
-#include "nsString.h"
 #include "WebGLContext.h"
 
 namespace mozilla {
-
-
-
-
-
-bool IsValidGLSLCharacter(char16_t c)
-{
-    
-    if (c >= 32 && c <= 126 &&
-        c != '"' && c != '$' && c != '`' && c != '@' && c != '\\' && c != '\'')
-    {
-         return true;
-    }
-
-    
-    
-    if (c >= 9 && c <= 13) {
-         return true;
-    }
-
-    return false;
-}
-
 
 bool
 TruncateComments(const nsAString& src, nsAString* const out)
@@ -125,13 +101,84 @@ TruncateComments(const nsAString& src, nsAString* const out)
     return true;
 }
 
+
+
+static bool
+IsValidGLSLChar(char16_t c)
+{
+    if (('a' <= c && c <= 'z') ||
+        ('A' <= c && c <= 'Z') ||
+        ('0' <= c && c <= '9'))
+    {
+        return true;
+    }
+
+    switch (c) {
+    case ' ':
+    case '\t':
+    case '\v':
+    case '\f':
+    case '\r':
+    case '\n':
+    case '_':
+    case '.':
+    case '+':
+    case '-':
+    case '/':
+    case '*':
+    case '%':
+    case '<':
+    case '>':
+    case '[':
+    case ']':
+    case '(':
+    case ')':
+    case '{':
+    case '}':
+    case '^':
+    case '|':
+    case '&':
+    case '~':
+    case '=':
+    case '!':
+    case ':':
+    case ';':
+    case ',':
+    case '?':
+        return true;
+
+    default:
+        return false;
+    }
+}
+
+static bool
+IsValidGLSLPreprocChar(char16_t c)
+{
+    if (IsValidGLSLChar(c))
+        return true;
+
+    switch (c) {
+    case '\\':
+    case '#':
+        return true;
+
+    default:
+        return false;
+    }
+}
+
+
+
 bool
-ValidateGLSLString(const nsAString& string, WebGLContext* webgl, const char* funcName)
+ValidateGLSLPreprocString(WebGLContext* webgl, const char* funcName,
+                          const nsAString& string)
 {
     for (size_t i = 0; i < string.Length(); ++i) {
-        if (!IsValidGLSLCharacter(string.CharAt(i))) {
-           webgl->ErrorInvalidValue("%s: String contains the illegal character '%d'",
-                                    funcName, string.CharAt(i));
+        const auto& cur = string[i];
+        if (!IsValidGLSLPreprocChar(cur)) {
+           webgl->ErrorInvalidValue("%s: String contains the illegal character 0x%x.",
+                                    funcName, cur);
            return false;
         }
     }
@@ -147,14 +194,20 @@ ValidateGLSLVariableName(const nsAString& name, WebGLContext* webgl, const char*
 
     const uint32_t maxSize = webgl->IsWebGL2() ? 1024 : 256;
     if (name.Length() > maxSize) {
-        webgl->ErrorInvalidValue("%s: Identifier is %d characters long, exceeds the"
-                                 " maximum allowed length of %d characters.",
+        webgl->ErrorInvalidValue("%s: Identifier is %u characters long, exceeds the"
+                                 " maximum allowed length of %u characters.",
                                  funcName, name.Length(), maxSize);
         return false;
     }
 
-    if (!ValidateGLSLString(name, webgl, funcName))
-        return false;
+    for (size_t i = 0; i < name.Length(); ++i) {
+        const auto& cur = name[i];
+        if (!IsValidGLSLChar(cur)) {
+           webgl->ErrorInvalidValue("%s: String contains the illegal character 0x%x'.",
+                                    funcName, cur);
+           return false;
+        }
+    }
 
     nsString prefix1 = NS_LITERAL_STRING("webgl_");
     nsString prefix2 = NS_LITERAL_STRING("_webgl_");
