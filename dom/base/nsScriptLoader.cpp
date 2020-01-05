@@ -1030,7 +1030,7 @@ nsScriptLoader::StartFetchingModuleAndDependencies(nsModuleLoadRequest* aRequest
 
   RefPtr<GenericPromise> ready = childRequest->mReady.Ensure(__func__);
 
-  nsresult rv = StartLoad(childRequest, false);
+  nsresult rv = StartLoad(childRequest);
   if (NS_FAILED(rv)) {
     childRequest->mReady.Reject(rv, __func__);
     return ready;
@@ -1178,7 +1178,7 @@ nsScriptLoader::InstantiateModuleTree(nsModuleLoadRequest* aRequest)
 }
 
 nsresult
-nsScriptLoader::StartLoad(nsScriptLoadRequest *aRequest, bool aScriptFromHead)
+nsScriptLoader::StartLoad(nsScriptLoadRequest *aRequest)
 {
   MOZ_ASSERT(aRequest->IsLoading());
   NS_ENSURE_TRUE(mDocument, NS_ERROR_NULL_POINTER);
@@ -1251,7 +1251,7 @@ nsScriptLoader::StartLoad(nsScriptLoadRequest *aRequest, bool aScriptFromHead)
   nsCOMPtr<nsIClassOfService> cos(do_QueryInterface(channel));
 
   if (cos) {
-    if (aScriptFromHead &&
+    if (aRequest->mScriptFromHead &&
         !(script && (script->GetScriptAsync() || script->GetScriptDeferred()))) {
       
       
@@ -1535,10 +1535,10 @@ nsScriptLoader::ProcessScriptElement(nsIScriptElement *aElement)
       request->mURI = scriptURI;
       request->mIsInline = false;
       request->mReferrerPolicy = ourRefPolicy;
+      
+      
 
-      
-      
-      rv = StartLoad(request, false);
+      rv = StartLoad(request);
       if (NS_FAILED(rv)) {
         
         NS_DispatchToCurrentThread(
@@ -2805,8 +2805,9 @@ nsScriptLoader::PreloadURI(nsIURI *aURI, const nsAString &aCharset,
   request->mURI = aURI;
   request->mIsInline = false;
   request->mReferrerPolicy = aReferrerPolicy;
+  request->mScriptFromHead = aScriptFromHead;
 
-  nsresult rv = StartLoad(request, aScriptFromHead);
+  nsresult rv = StartLoad(request);
   if (NS_FAILED(rv)) {
     return;
   }

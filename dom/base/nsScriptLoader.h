@@ -74,6 +74,7 @@ public:
                       const mozilla::dom::SRIMetadata &aIntegrity)
     : mKind(aKind),
       mElement(aElement),
+      mScriptFromHead(false),
       mProgress(Progress::Loading),
       mIsInline(true),
       mHasSourceMapURL(false),
@@ -167,6 +168,7 @@ public:
 
   const nsScriptKind mKind;
   nsCOMPtr<nsIScriptElement> mElement;
+  bool mScriptFromHead;   
   Progress mProgress;     
   bool mIsInline;         
   bool mHasSourceMapURL;  
@@ -519,7 +521,7 @@ private:
   
 
 
-  nsresult StartLoad(nsScriptLoadRequest *aRequest, bool aScriptFromHead);
+  nsresult StartLoad(nsScriptLoadRequest *aRequest);
 
   
 
