@@ -772,12 +772,11 @@ NewImageChannel(nsIChannel** aResult,
       
       
       
-      OriginAttributes attrs;
-      attrs.Inherit(aLoadingPrincipal->OriginAttributesRef());
 
       nsCOMPtr<nsILoadInfo> loadInfo = (*aResult)->GetLoadInfo();
       if (loadInfo) {
-        rv = loadInfo->SetOriginAttributes(attrs);
+        rv =
+          loadInfo->SetOriginAttributes(aLoadingPrincipal->OriginAttributesRef());
       }
     }
   } else {
@@ -805,7 +804,7 @@ NewImageChannel(nsIChannel** aResult,
     
     OriginAttributes attrs;
     if (aLoadingPrincipal) {
-      attrs.Inherit(aLoadingPrincipal->OriginAttributesRef());
+      attrs = aLoadingPrincipal->OriginAttributesRef();
     }
     attrs.mPrivateBrowsingId = aRespectPrivacy ? 1 : 0;
 
@@ -2349,7 +2348,7 @@ imgLoader::LoadImageWithChannel(nsIChannel* channel,
 
   OriginAttributes attrs;
   if (loadInfo) {
-    attrs.Inherit(loadInfo->GetOriginAttributes());
+    attrs = loadInfo->GetOriginAttributes();
   }
 
   nsresult rv;

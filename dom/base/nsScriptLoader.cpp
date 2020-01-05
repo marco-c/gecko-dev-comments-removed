@@ -1313,11 +1313,9 @@ nsScriptLoader::StartLoad(nsScriptLoadRequest *aRequest)
     }
   }
 
-  OriginAttributes attrs;
-  attrs.Inherit(mDocument->NodePrincipal()->OriginAttributesRef());
-
   mozilla::net::PredictorLearn(aRequest->mURI, mDocument->GetDocumentURI(),
-      nsINetworkPredictor::LEARN_LOAD_SUBRESOURCE, attrs);
+                               nsINetworkPredictor::LEARN_LOAD_SUBRESOURCE,
+                               mDocument->NodePrincipal()->OriginAttributesRef());
 
   
   nsCOMPtr<nsITimedChannel> timedChannel(do_QueryInterface(httpChannel));

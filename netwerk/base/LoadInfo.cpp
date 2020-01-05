@@ -28,13 +28,6 @@ using namespace mozilla::dom;
 namespace mozilla {
 namespace net {
 
-static void
-InheritOriginAttributes(nsIPrincipal* aLoadingPrincipal,
-                        OriginAttributes& aAttrs)
-{
-  aAttrs.Inherit(aLoadingPrincipal->OriginAttributesRef());
-}
-
 LoadInfo::LoadInfo(nsIPrincipal* aLoadingPrincipal,
                    nsIPrincipal* aTriggeringPrincipal,
                    nsINode* aLoadingContext,
@@ -177,7 +170,7 @@ LoadInfo::LoadInfo(nsIPrincipal* aLoadingPrincipal,
     }
   }
 
-  InheritOriginAttributes(mLoadingPrincipal, mOriginAttributes);
+  mOriginAttributes = mLoadingPrincipal->OriginAttributesRef();
 
   
   
@@ -261,15 +254,14 @@ LoadInfo::LoadInfo(nsPIDOMWindowOuter* aOuterWindow,
   
   nsCOMPtr<nsIDocShell> docShell = aOuterWindow->GetDocShell();
   MOZ_ASSERT(docShell);
-  const OriginAttributes attrs =
-    nsDocShell::Cast(docShell)->GetOriginAttributes();
+  mOriginAttributes = nsDocShell::Cast(docShell)->GetOriginAttributes();
 
+#ifdef DEBUG
   if (docShell->ItemType() == nsIDocShellTreeItem::typeChrome) {
-    MOZ_ASSERT(attrs.mPrivateBrowsingId == 0,
+    MOZ_ASSERT(mOriginAttributes.mPrivateBrowsingId == 0,
                "chrome docshell shouldn't have mPrivateBrowsingId set.");
   }
-
-  mOriginAttributes.Inherit(attrs);
+#endif
 }
 
 LoadInfo::LoadInfo(const LoadInfo& rhs)
@@ -724,9 +716,8 @@ LoadInfo::ResetPrincipalsToNullPrincipal()
 {
   
   
-  OriginAttributes attrs;
-  attrs.Inherit(mOriginAttributes);
-  nsCOMPtr<nsIPrincipal> newNullPrincipal = nsNullPrincipal::Create(attrs);
+  nsCOMPtr<nsIPrincipal> newNullPrincipal =
+    nsNullPrincipal::Create(mOriginAttributes);
 
   MOZ_ASSERT(mInternalContentPolicyType != nsIContentPolicy::TYPE_DOCUMENT ||
              !mLoadingPrincipal,

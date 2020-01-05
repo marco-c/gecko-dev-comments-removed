@@ -40,10 +40,6 @@ public:
     : OriginAttributesDictionary(aOther)
   {}
 
-  
-  
-  void Inherit(const OriginAttributes& aAttrs);
-
   void SetFirstPartyDomain(const bool aIsTopLevelDocument, nsIURI* aURI);
 
   enum {
