@@ -703,7 +703,7 @@ nsFloatManager::FloatInfo::FloatInfo(nsIFrame* aFrame,
       case StyleBasicShapeType::Polygon:
         
         
-        break;
+        return;
       case StyleBasicShapeType::Circle:
       case StyleBasicShapeType::Ellipse:
         mShapeInfo =
@@ -712,11 +712,14 @@ nsFloatManager::FloatInfo::FloatInfo(nsIFrame* aFrame,
       case StyleBasicShapeType::Inset:
         
         
-        break;
+        return;
     }
   } else {
     MOZ_ASSERT_UNREACHABLE("Unknown StyleShapeSourceType!");
   }
+
+  MOZ_ASSERT(mShapeInfo,
+             "All shape-outside values except none should have mShapeInfo!");
 
   
   mShapeInfo->Translate(aLineLeft, aBlockStart);
