@@ -50,6 +50,17 @@ function ChromeActor(connection) {
   if (!window) {
     window = Services.wm.getMostRecentWindow(null);
   }
+
+  
+  
+  if (!window) {
+    try {
+      window = Services.appShell.hiddenDOMWindow;
+    } catch (e) {
+      
+    }
+  }
+
   
   let docShell = window ? window.QueryInterface(Ci.nsIInterfaceRequestor)
                                 .getInterface(Ci.nsIDocShell)
