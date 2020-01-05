@@ -240,12 +240,17 @@ class CompileInfo
                 }
             }
         }
+
+        
+        
+        needsBodyEnvironmentObject_ = script->needsBodyEnvironment();
     }
 
     explicit CompileInfo(unsigned nlocals)
       : script_(nullptr), fun_(nullptr), osrPc_(nullptr),
         analysisMode_(Analysis_None), scriptNeedsArgsObj_(false),
-        mayReadFrameArgsDirectly_(false), inlineScriptTree_(nullptr)
+        mayReadFrameArgsDirectly_(false), inlineScriptTree_(nullptr),
+        needsBodyEnvironmentObject_(false)
     {
         nimplicit_ = 0;
         nargs_ = 0;
@@ -434,6 +439,10 @@ class CompileInfo
         return analysisMode_ != Analysis_None;
     }
 
+    bool needsBodyEnvironmentObject() const {
+        return needsBodyEnvironmentObject_;
+    }
+
     
     
     
@@ -449,6 +458,11 @@ class CompileInfo
     }
 
     bool isObservableFrameSlot(uint32_t slot) const {
+        
+        
+        if (needsBodyEnvironmentObject() && slot == environmentChainSlot())
+            return true;
+
         if (!funMaybeLazy())
             return false;
 
@@ -497,7 +511,9 @@ class CompileInfo
     bool isRecoverableOperand(uint32_t slot) const {
         
         
-        
+        if (needsBodyEnvironmentObject() && slot == environmentChainSlot())
+            return false;
+
         if (!funMaybeLazy())
             return true;
 
@@ -547,6 +563,10 @@ class CompileInfo
     bool mayReadFrameArgsDirectly_;
 
     InlineScriptTree* inlineScriptTree_;
+
+    
+    
+    bool needsBodyEnvironmentObject_;
 };
 
 } 

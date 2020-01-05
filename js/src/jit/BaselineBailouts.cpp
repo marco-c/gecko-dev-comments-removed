@@ -737,6 +737,21 @@ InitFromBailout(JSContext* cx, HandleScript caller, jsbytecode* callerPC,
         } else {
             MOZ_ASSERT(v.isUndefined() || v.isMagic(JS_OPTIMIZED_OUT));
 
+#ifdef DEBUG
+            
+            
+            
+            
+            
+            jsbytecode* pc = script->offsetToPC(iter.pcOffset());
+            Scope* scopeIter = script->innermostScope(pc);
+            while (scopeIter != script->bodyScope()) {
+                MOZ_ASSERT(scopeIter);
+                MOZ_ASSERT(!scopeIter->hasEnvironment());
+                scopeIter = scopeIter->enclosing();
+            }
+#endif
+
             
             if (fun) {
                 
