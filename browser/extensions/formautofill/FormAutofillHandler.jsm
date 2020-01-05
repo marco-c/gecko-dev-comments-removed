@@ -124,4 +124,41 @@ FormAutofillHandler.prototype = {
       }
     }
   },
+
+  
+
+
+
+
+
+  previewFormFields(profile) {
+    log.debug("preview profile in autofillFormFields:", profile);
+    
+
+
+
+
+
+
+
+
+
+
+
+  },
+
+  clearPreviewedFormFields() {
+    log.debug("clear previewed fields in:", this.form);
+    
+
+
+
+
+
+
+
+
+
+
+  },
 };
