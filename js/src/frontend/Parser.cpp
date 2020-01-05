@@ -3719,24 +3719,21 @@ Parser<ParseHandler>::matchLabel(YieldHandling yieldHandling, MutableHandle<Prop
 
 template <typename ParseHandler>
 Parser<ParseHandler>::PossibleError::PossibleError(Parser<ParseHandler>& parser)
-                                                   : parser_(parser)
-{
-    state_ = ErrorState::None;
-}
+  : parser_(parser),
+    state_(ErrorState::None)
+{}
 
 template <typename ParseHandler>
 bool
-Parser<ParseHandler>::PossibleError::setPending(ParseReportKind kind, unsigned errorNumber,
-                                                bool strict)
+Parser<ParseHandler>::PossibleError::setPending(Node pn, unsigned errorNumber)
 {
+    
     if (hasError())
         return false;
 
     
     
-    offset_      = parser_.pos().begin;
-    reportKind_  = kind;
-    strict_      = strict;
+    offset_      = (pn ? parser_.handler.getPosition(pn) : parser_.pos()).begin;
     errorNumber_ = errorNumber;
     state_       = ErrorState::Pending;
 
@@ -3761,27 +3758,25 @@ template <typename ParseHandler>
 bool
 Parser<ParseHandler>::PossibleError::checkForExprErrors()
 {
-    bool err = hasError();
-    if (err)
-        parser_.reportWithOffset(reportKind_, strict_, offset_, errorNumber_);
-    return !err;
+    if (hasError()) {
+        parser_.reportWithOffset(ParseError, false, offset_, errorNumber_);
+        return false;
+    }
+    return true;
 }
 
 template <typename ParseHandler>
 void
 Parser<ParseHandler>::PossibleError::transferErrorTo(PossibleError* other)
 {
-    if (other) {
-        MOZ_ASSERT(this != other);
-        MOZ_ASSERT(!other->hasError());
+    MOZ_ASSERT(other);
+    MOZ_ASSERT(this != other);
+    MOZ_ASSERT(&parser_ == &other->parser_,
+               "Can't transfer fields to an instance which belongs to a different parser");
 
-        
-        
-        MOZ_ASSERT(&parser_ == &other->parser_);
+    if (hasError() && !other->hasError()) {
         other->offset_        = offset_;
-        other->reportKind_    = reportKind_;
         other->errorNumber_   = errorNumber_;
-        other->strict_        = strict_;
         other->state_         = state_;
     }
 }
@@ -8867,7 +8862,7 @@ Parser<ParseHandler>::objectLiteral(YieldHandling yieldHandling, PossibleError* 
                 
                 
                 
-                if (!possibleError->setPending(ParseError, JSMSG_COLON_AFTER_ID, false)) {
+                if (!possibleError->setPending(null(), JSMSG_COLON_AFTER_ID)) {
                     
                     possibleError->checkForExprErrors();
                     return null();

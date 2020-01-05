@@ -722,6 +722,8 @@ template <typename ParseHandler>
 class Parser final : private JS::AutoGCRooter, public StrictModeGetter
 {
   private:
+    using Node = typename ParseHandler::Node;
+
     
 
 
@@ -756,22 +758,21 @@ class Parser final : private JS::AutoGCRooter, public StrictModeGetter
     class MOZ_STACK_CLASS PossibleError
     {
       protected:
+        Parser<ParseHandler>& parser_;
+
         enum ErrorState { None, Pending };
         ErrorState state_;
 
         
         uint32_t offset_;
         unsigned errorNumber_;
-        ParseReportKind reportKind_;
-        Parser<ParseHandler>& parser_;
-        bool strict_;
 
       public:
         explicit PossibleError(Parser<ParseHandler>& parser);
 
         
         
-        bool setPending(ParseReportKind kind, unsigned errorNumber, bool strict);
+        bool setPending(Node pn, unsigned errorNumber);
 
         
         void setResolved();
@@ -833,8 +834,6 @@ class Parser final : private JS::AutoGCRooter, public StrictModeGetter
 
     
     bool isUnexpectedEOF_:1;
-
-    typedef typename ParseHandler::Node Node;
 
   public:
     
