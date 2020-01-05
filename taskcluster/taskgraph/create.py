@@ -23,9 +23,7 @@ logger = logging.getLogger(__name__)
 CONCURRENCY = 50
 
 
-def create_tasks(taskgraph, label_to_taskid):
-    
-    task_group_id = slugid()
+def create_tasks(taskgraph, label_to_taskid, params):
     taskid_to_label = {t: l for l, t in label_to_taskid.iteritems()}
 
     session = requests.Session()
@@ -39,6 +37,13 @@ def create_tasks(taskgraph, label_to_taskid):
     session.mount('http://', http_adapter)
 
     decision_task_id = os.environ.get('TASK_ID')
+
+    
+    
+    
+    
+    task_group_id = decision_task_id or slugid()
+    scheduler_id = 'gecko-level-{}'.format(params['level'])
 
     with futures.ThreadPoolExecutor(CONCURRENCY) as e:
         fs = {}
@@ -62,7 +67,7 @@ def create_tasks(taskgraph, label_to_taskid):
                 task_def['dependencies'] = [decision_task_id]
 
             task_def['taskGroupId'] = task_group_id
-            task_def['schedulerId'] = '-'
+            task_def['schedulerId'] = scheduler_id
 
             
             deps_fs = [fs[dep] for dep in task_def.get('dependencies', [])
