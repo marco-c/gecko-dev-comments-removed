@@ -324,7 +324,7 @@ ServeResourceEvent::Shutdown()
   
   
   nsCOMPtr<nsIRunnable> event = new ShutdownThreadEvent(NS_GetCurrentThread());
-  NS_DispatchToMainThread(event);
+  SystemGroup::Dispatch("ServeResourceEvent::Shutdown", TaskCategory::Other, event.forget());
 }
 
 
