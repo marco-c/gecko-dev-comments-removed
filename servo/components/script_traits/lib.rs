@@ -195,6 +195,22 @@ pub enum DiscardBrowsingContext {
 }
 
 
+
+
+
+
+
+#[derive(Copy, Clone, PartialEq, Eq, Hash, HeapSizeOf, Debug, Deserialize, Serialize)]
+pub enum DocumentActivity {
+    
+    Inactive,
+    
+    Active,
+    
+    FullyActive,
+}
+
+
 #[derive(Deserialize, Serialize)]
 pub enum ConstellationControlMsg {
     
@@ -216,9 +232,7 @@ pub enum ConstellationControlMsg {
     
     GetTitle(PipelineId),
     
-    Freeze(PipelineId),
-    
-    Thaw(PipelineId),
+    SetDocumentActivity(PipelineId, DocumentActivity),
     
     ChangeFrameVisibilityStatus(PipelineId, bool),
     
@@ -281,8 +295,7 @@ impl fmt::Debug for ConstellationControlMsg {
             Viewport(..) => "Viewport",
             SetScrollState(..) => "SetScrollState",
             GetTitle(..) => "GetTitle",
-            Freeze(..) => "Freeze",
-            Thaw(..) => "Thaw",
+            SetDocumentActivity(..) => "SetDocumentActivity",
             ChangeFrameVisibilityStatus(..) => "ChangeFrameVisibilityStatus",
             NotifyVisibilityChange(..) => "NotifyVisibilityChange",
             Navigate(..) => "Navigate",
