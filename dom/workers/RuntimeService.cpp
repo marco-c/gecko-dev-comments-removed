@@ -2896,6 +2896,9 @@ WorkerThreadPrimaryRunnable::Run()
 
 #ifdef MOZ_GECKO_PROFILER
       if (stack) {
+        
+        
+        
         stack->sampleContext(nullptr);
       }
 #endif

@@ -605,9 +605,15 @@ void GeckoSampler::FlushOnJSShutdown(JSContext* aContext)
 void PseudoStack::flushSamplerOnJSShutdown()
 {
   MOZ_ASSERT(mContext);
-  GeckoSampler* t = tlsTicker.get();
-  if (t) {
-    t->FlushOnJSShutdown(mContext);
+
+  
+  
+  if (!NS_IsMainThread()) {
+    return;
+  }
+
+  if (gSampler) {
+    gSampler->FlushOnJSShutdown(mContext);
   }
 }
 
