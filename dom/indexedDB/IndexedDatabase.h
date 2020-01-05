@@ -43,8 +43,6 @@ struct StructuredCloneFile
   RefPtr<JS::WasmModule> mWasmModule;
   RefPtr<FileInfo> mFileInfo;
   FileType mType;
-  
-  bool mValid;
 
   
   inline
