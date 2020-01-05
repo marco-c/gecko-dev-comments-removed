@@ -155,6 +155,13 @@ this.DownloadsViewUI.DownloadElementShell.prototype = {
       this.element.setAttribute("progressmode", "undetermined");
     }
 
+    if (this.download.stopped && this.download.canceled &&
+        this.download.hasPartialData) {
+      this.element.setAttribute("progresspaused", "true");
+    } else {
+      this.element.removeAttribute("progresspaused");
+    }
+
     
     if (this._progressElement) {
       let event = this.element.ownerDocument.createEvent("Events");
