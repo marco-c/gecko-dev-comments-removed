@@ -62,6 +62,10 @@ namespace widget {
 struct AutoCacheNativeKeyCommands;
 } 
 
+namespace plugins {
+class PluginWidgetChild;
+} 
+
 namespace dom {
 
 class TabChild;
@@ -605,9 +609,7 @@ public:
 
   bool DeallocPPluginWidgetChild(PPluginWidgetChild* aActor) override;
 
-#ifdef XP_WIN
   nsresult CreatePluginWidget(nsIWidget* aParent, nsIWidget** aOut);
-#endif
 
   LayoutDeviceIntPoint GetClientOffset() const { return mClientOffset; }
   LayoutDeviceIntPoint GetChromeDisplacement() const { return mChromeDisp; };

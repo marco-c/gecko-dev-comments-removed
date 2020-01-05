@@ -302,6 +302,10 @@ public:
   void SetCurrentAsyncSurface(NPAsyncSurface *surface, NPRect *changed);
 
   
+  
+  void CarbonNPAPIFailure();
+
+  
   double GetContentsScaleFactor();
 
   

@@ -12,18 +12,24 @@
 #include "mozilla/DebugOnly.h"
 #include "nsDebug.h"
 
+#if defined(MOZ_WIDGET_GTK)
+#include "nsPluginNativeWindowGtk.h"
+#endif
+
 using namespace mozilla;
 using namespace mozilla::widget;
 
 #define PWLOG(...)
 
 
+#if defined(XP_WIN)
 namespace mozilla {
 namespace dom {
 
 const wchar_t* kPluginWidgetContentParentProperty =
   L"kPluginWidgetParentProperty";
 } }
+#endif
 
 namespace mozilla {
 namespace plugins {
@@ -89,6 +95,19 @@ PluginWidgetParent::RecvCreate(nsresult* aResult, uint64_t* aScrollCaptureId,
   mWidget = do_CreateInstance(kWidgetCID, aResult);
   NS_ASSERTION(NS_SUCCEEDED(*aResult), "widget create failure");
 
+#if defined(MOZ_WIDGET_GTK)
+  
+  
+  PLUG_NewPluginNativeWindow((nsPluginNativeWindow**)&mWrapper);
+  if (!mWrapper) {
+    KillWidget();
+    return IPC_FAIL_NO_REASON(this);
+  }
+  
+  
+  mWidget->SetNativeData(NS_NATIVE_PLUGIN_OBJECT_PTR, (uintptr_t)mWrapper.get());
+#endif
+
   
   nsCOMPtr<nsIWidget> parentWidget = GetTabParent()->GetWidget();
   
@@ -113,6 +132,25 @@ PluginWidgetParent::RecvCreate(nsresult* aResult, uint64_t* aScrollCaptureId,
 
   mWidget->EnableDragDrop(true);
 
+#if defined(MOZ_WIDGET_GTK)
+  
+  mWrapper->window = mWidget->GetNativeData(NS_NATIVE_PLUGIN_PORT);
+  DebugOnly<nsresult> drv = mWrapper->CreateXEmbedWindow(false);
+  NS_ASSERTION(NS_SUCCEEDED(drv), "widget call failure");
+  mWrapper->SetAllocation();
+  PWLOG("Plugin XID=%p\n", (void*)mWrapper->window);
+#elif defined(XP_WIN)
+  DebugOnly<DWORD> winres =
+    ::SetPropW((HWND)mWidget->GetNativeData(NS_NATIVE_WINDOW),
+               mozilla::dom::kPluginWidgetContentParentProperty,
+               GetTabParent()->Manager()->AsContentParent());
+  NS_ASSERTION(winres, "SetPropW call failure");
+
+  *aScrollCaptureId = mWidget->CreateScrollCaptureContainer();
+  *aPluginInstanceId =
+    reinterpret_cast<uintptr_t>(mWidget->GetNativeData(NS_NATIVE_PLUGIN_ID));
+#endif
+
   
   
   
@@ -129,8 +167,13 @@ PluginWidgetParent::KillWidget()
   if (mWidget) {
     mWidget->UnregisterPluginWindowForRemoteUpdates();
     mWidget->Destroy();
+#if defined(MOZ_WIDGET_GTK)
+    mWidget->SetNativeData(NS_NATIVE_PLUGIN_OBJECT_PTR, (uintptr_t)0);
+    mWrapper = nullptr;
+#elif defined(XP_WIN)
     ::RemovePropW((HWND)mWidget->GetNativeData(NS_NATIVE_WINDOW),
                   mozilla::dom::kPluginWidgetContentParentProperty);
+#endif
     mWidget = nullptr;
   }
 }
@@ -164,8 +207,13 @@ mozilla::ipc::IPCResult
 PluginWidgetParent::RecvGetNativePluginPort(uintptr_t* value)
 {
   ENSURE_CHANNEL;
+#if defined(MOZ_WIDGET_GTK)
+  *value = (uintptr_t)mWrapper->window;
+  NS_ASSERTION(*value, "no xid??");
+#else
   *value = (uintptr_t)mWidget->GetNativeData(NS_NATIVE_PLUGIN_PORT);
   NS_ASSERTION(*value, "no native port??");
+#endif
   PWLOG("PluginWidgetParent::RecvGetNativeData() %p\n", (void*)*value);
   return IPC_OK();
 }
@@ -173,11 +221,16 @@ PluginWidgetParent::RecvGetNativePluginPort(uintptr_t* value)
 mozilla::ipc::IPCResult
 PluginWidgetParent::RecvSetNativeChildWindow(const uintptr_t& aChildWindow)
 {
+#if defined(XP_WIN)
   ENSURE_CHANNEL;
   PWLOG("PluginWidgetParent::RecvSetNativeChildWindow(%p)\n",
         (void*)aChildWindow);
   mWidget->SetNativeData(NS_NATIVE_CHILD_WINDOW, aChildWindow);
   return IPC_OK();
+#else
+  NS_NOTREACHED("PluginWidgetParent::RecvSetNativeChildWindow not implemented!");
+  return IPC_FAIL_NO_REASON(this);
+#endif
 }
 
 } 
