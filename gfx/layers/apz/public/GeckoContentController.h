@@ -107,23 +107,6 @@ public:
 
   virtual void DispatchToRepaintThread(already_AddRefed<Runnable> aTask) = 0;
 
-  
-
-
-
-
-
-
-
-
-
-
-
-  virtual bool GetTouchSensitiveRegion(CSSRect* aOutRegion)
-  {
-    return false;
-  }
-
   enum class APZStateChange {
     
 
