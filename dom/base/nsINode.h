@@ -82,6 +82,7 @@ template<typename> class Sequence;
 class Text;
 class TextOrElementOrDocument;
 struct DOMPointInit;
+struct GetRootNodeOptions;
 } 
 } 
 
@@ -948,10 +949,11 @@ public:
 
   nsINode* SubtreeRoot() const;
 
-  nsINode* RootNode() const
-  {
-    return SubtreeRoot();
-  }
+  
+
+
+
+  nsINode* GetRootNode(const mozilla::dom::GetRootNodeOptions& aOptions);
 
   
 

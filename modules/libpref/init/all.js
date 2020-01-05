@@ -5499,13 +5499,6 @@ pref("layout.css.color-adjust.enabled", true);
 pref("dom.audiochannel.audioCompeting", false);
 
 
-#ifdef RELEASE_OR_BETA
-pref("dom.node.rootNode.enabled", false);
-#else
-pref("dom.node.rootNode.enabled", true);
-#endif
-
-
 pref("media.default_volume", "1.0");
 
 
