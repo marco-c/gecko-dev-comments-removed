@@ -70,6 +70,18 @@ GMPDecoderModule::CreateAudioDecoder(const CreateDecoderParams& aParams)
   return nullptr;
 }
 
+PlatformDecoderModule::ConversionRequired
+GMPDecoderModule::DecoderNeedsConversion(const TrackInfo& aConfig) const
+{
+  
+  
+  if (aConfig.IsVideo() && MP4Decoder::IsH264(aConfig.mMimeType)) {
+    return ConversionRequired::kNeedAVCC;
+  } else {
+    return ConversionRequired::kNeedNone;
+  }
+}
+
 
 bool
 GMPDecoderModule::SupportsMimeType(const nsACString& aMimeType,
