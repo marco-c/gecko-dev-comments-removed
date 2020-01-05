@@ -35,16 +35,14 @@ ContentBridgeChild::ActorDestroy(ActorDestroyReason aWhy)
   MessageLoop::current()->PostTask(NewRunnableMethod(this, &ContentBridgeChild::DeferredDestroy));
 }
 
- ContentBridgeChild*
-ContentBridgeChild::Create(Transport* aTransport, ProcessId aOtherPid)
+ void
+ContentBridgeChild::Create(Endpoint<PContentBridgeChild>&& aEndpoint)
 {
   RefPtr<ContentBridgeChild> bridge = new ContentBridgeChild();
   bridge->mSelfRef = bridge;
 
-  DebugOnly<bool> ok = bridge->Open(aTransport, aOtherPid, XRE_GetIOMessageLoop());
+  DebugOnly<bool> ok = aEndpoint.Bind(bridge);
   MOZ_ASSERT(ok);
-
-  return bridge;
 }
 
 void
