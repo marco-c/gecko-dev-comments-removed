@@ -30,8 +30,6 @@ class ActionBarTextSelection implements TextSelection, BundleEventListener {
 
     private final Context context;
 
-    private boolean mDraggingHandles;
-
     private int selectionID; 
 
     private GeckoBundle[] mCurrentItems;
