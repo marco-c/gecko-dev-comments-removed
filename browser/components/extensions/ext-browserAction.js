@@ -26,6 +26,15 @@ const POPUP_PRELOAD_TIMEOUT_MS = 200;
 
 const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 
+function isAncestorOrSelf(target, node) {
+  for (; node; node = node.parentNode) {
+    if (node === target) {
+      return true;
+    }
+  }
+  return false;
+}
+
 
 var browserActionMap = new WeakMap();
 
@@ -87,6 +96,8 @@ BrowserAction.prototype = {
       onDestroyed: document => {
         let view = document.getElementById(this.viewId);
         if (view) {
+          this.clearPopup();
+          CustomizableUI.hidePanelForNode(view);
           view.remove();
         }
       },
@@ -198,7 +209,8 @@ BrowserAction.prototype = {
           
           
           if (this.pendingPopup) {
-            if (event.target === this.widget.forWindow(window).node) {
+            let {node} = this.widget.forWindow(window);
+            if (isAncestorOrSelf(node, event.originalTarget)) {
               this.pendingPopupTimeout = setTimeout(() => this.clearPopup(),
                                                     POPUP_PRELOAD_TIMEOUT_MS);
             } else {
