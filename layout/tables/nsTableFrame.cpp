@@ -992,9 +992,24 @@ nsTableFrame::AddDeletedRowIndex(int32_t aDeletedRowStoredIndex)
   
   auto greaterIter = mDeletedRowIndexRanges.upper_bound(aDeletedRowStoredIndex);
   auto smallerIter = greaterIter;
+
   if (smallerIter != mDeletedRowIndexRanges.begin()) {
     smallerIter--;
+    
+    
   }
+
+  
+  
+  
+  
+  
+  
+  
+  MOZ_ASSERT(smallerIter == greaterIter ||
+               aDeletedRowStoredIndex > smallerIter->second,
+             "aDeletedRowIndexRanges already contains aDeletedRowStoredIndex! "
+             "Trying to delete an already deleted row?");
 
   if (smallerIter->second == aDeletedRowStoredIndex - 1) {
     if (greaterIter != mDeletedRowIndexRanges.end() &&
