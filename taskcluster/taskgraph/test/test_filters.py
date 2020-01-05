@@ -44,7 +44,7 @@ class TestServoFilter(unittest.TestCase):
         self.assertEqual(set(filter_tasks.filter_servo(graph, {})), {'a', 'c'})
 
         
-        os.mkdir(os.path.join(self._tmpdir, 'servo'))
+        os.makedirs(os.path.join(self._tmpdir, 'servo', 'components', 'style'))
         self.assertEqual(set(filter_tasks.filter_servo(graph, {})),
                          {'a', 'b', 'c'})
 
