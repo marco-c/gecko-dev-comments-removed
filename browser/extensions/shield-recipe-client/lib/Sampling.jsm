@@ -5,77 +5,129 @@
 "use strict";
 
 const {utils: Cu} = Components;
-Cu.import("resource://gre/modules/Log.jsm");
+Cu.import("resource://gre/modules/Task.jsm");
 Cu.importGlobalProperties(["crypto", "TextEncoder"]);
 
 this.EXPORTED_SYMBOLS = ["Sampling"];
 
-const log = Log.repository.getLogger("extensions.shield-recipe-client");
-
-
-
-
-
-
-function fractionToKey(frac) {
-  const hashBits = 48;
-  const hashLength = hashBits / 4;
-
-  if (frac < 0 || frac > 1) {
-    throw new Error(`frac must be between 0 and 1 inclusive (got ${frac})`);
-  }
-
-  const mult = Math.pow(2, hashBits) - 1;
-  const inDecimal = Math.floor(frac * mult);
-  let hexDigits = inDecimal.toString(16);
-  if (hexDigits.length < hashLength) {
-    
-    
-    
-    hexDigits = Array(hashLength - hexDigits.length + 1).join("0") + hexDigits;
-  }
-
-  
-  if (hexDigits.length > hashLength) {
-    hexDigits = Array(hashLength + 1).join("f");
-  }
-
-  return hexDigits;
-}
-
-function bufferToHex(buffer) {
-  const hexCodes = [];
-  const view = new DataView(buffer);
-  for (let i = 0; i < view.byteLength; i += 4) {
-    
-    const value = view.getUint32(i);
-    
-    hexCodes.push(value.toString(16).padStart(8, "0"));
-  }
-
-  
-  return hexCodes.join("");
-}
+const hashBits = 48;
+const hashLength = hashBits / 4;  
+const hashMultiplier = Math.pow(2, hashBits) - 1;
 
 this.Sampling = {
-  stableSample(input, rate) {
-    const hasher = crypto.subtle;
+  
 
-    return hasher.digest("SHA-256", new TextEncoder("utf-8").encode(JSON.stringify(input)))
-      .then(hash => {
-        
-        const inputHash = bufferToHex(hash).slice(0, 12);
-        const samplePoint = fractionToKey(rate);
 
-        if (samplePoint.length !== 12 || inputHash.length !== 12) {
-          throw new Error("Unexpected hash length");
-        }
 
-        return inputHash < samplePoint;
 
-      })
-      .catch(error => {
-        log.error(`Error: ${error}`);
-      });
+  fractionToKey(frac) {
+    if (frac < 0 || frac > 1) {
+      throw new Error(`frac must be between 0 and 1 inclusive (got ${frac})`);
+    }
+
+    return Math.floor(frac * hashMultiplier).toString(16).padStart(hashLength, "0");
   },
+
+  
+
+
+
+  bufferToHex(buffer) {
+    const hexCodes = [];
+    const view = new DataView(buffer);
+    for (let i = 0; i < view.byteLength; i += 4) {
+      
+      const value = view.getUint32(i);
+      
+      hexCodes.push(value.toString(16).padStart(8, "0"));
+    }
+
+    
+    return hexCodes.join("");
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  isHashInBucket(inputHash, minBucket, maxBucket, bucketCount) {
+    const minHash = Sampling.fractionToKey(minBucket / bucketCount);
+    const maxHash = Sampling.fractionToKey(maxBucket / bucketCount);
+    return (minHash <= inputHash) && (inputHash < maxHash);
+  },
+
+  
+
+
+  truncatedHash: Task.async(function* (data) {
+    const hasher = crypto.subtle;
+    const input = new TextEncoder("utf-8").encode(JSON.stringify(data));
+    const hash = yield hasher.digest("SHA-256", input);
+    
+    
+    return Sampling.bufferToHex(hash).slice(0, 12);
+  }),
+
+  
+
+
+
+
+
+
+
+
+
+  stableSample: Task.async(function* (input, rate) {
+    const inputHash = yield Sampling.truncatedHash(input);
+    const samplePoint = Sampling.fractionToKey(rate);
+
+    return inputHash < samplePoint;
+  }),
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  bucketSample: Task.async(function* (input, start, count, total) {
+    const inputHash = yield Sampling.truncatedHash(input);
+    const wrappedStart = start % total;
+    const end = wrappedStart + count;
+
+    
+    
+    if (end > total) {
+      return (
+        Sampling.isHashInBucket(inputHash, 0, end % total, total)
+        || Sampling.isHashInBucket(inputHash, wrappedStart, total, total)
+      );
+    }
+
+    return Sampling.isHashInBucket(inputHash, wrappedStart, end, total);
+  }),
 };
