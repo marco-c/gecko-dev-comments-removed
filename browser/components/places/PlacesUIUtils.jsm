@@ -1721,7 +1721,6 @@ XPCOMUtils.defineLazyGetter(PlacesUIUtils, "ptm", function() {
     },
 
     
-    
 
     beginBatch: () =>
       PlacesUtils.transactionManager.beginBatch(null),

@@ -301,8 +301,6 @@ var PrintUtils = {
   },
 
   
-  
-  
 
   _listener: null,
   _closeHandlerPP: null,
