@@ -835,7 +835,7 @@ Http2Session::SendHello()
   
   
   
-  static const uint32_t maxSettings = 4;
+  static const uint32_t maxSettings = 5;
   static const uint32_t prioritySize = 5 * (kFrameHeaderBytes + 5);
   static const uint32_t maxDataLen = 24 + kFrameHeaderBytes + maxSettings * 6 + 13 + prioritySize;
   char *packet = EnsureOutputBuffer(maxDataLen);
@@ -854,6 +854,14 @@ Http2Session::SendHello()
   
   
   
+  
+
+  
+  uint32_t maxHpackBufferSize = gHttpHandler->DefaultHpackBuffer();
+  mDecompressor.SetInitialMaxBufferSize(maxHpackBufferSize);
+  NetworkEndian::writeUint16(packet + kFrameHeaderBytes + (6 * numberOfEntries), SETTINGS_TYPE_HEADER_TABLE_SIZE);
+  NetworkEndian::writeUint32(packet + kFrameHeaderBytes + (6 * numberOfEntries) + 2, maxHpackBufferSize);
+  numberOfEntries++;
 
   if (!gHttpHandler->AllowPush()) {
     

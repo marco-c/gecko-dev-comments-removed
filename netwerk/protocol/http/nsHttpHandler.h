@@ -368,6 +368,11 @@ public:
         return mKeepEmptyResponseHeadersAsEmtpyString;
     }
 
+    uint32_t DefaultHpackBuffer() const
+    {
+        return mDefaultHpackBuffer;
+    }
+
 private:
     virtual ~nsHttpHandler();
 
@@ -586,6 +591,9 @@ private:
     
     
     bool mKeepEmptyResponseHeadersAsEmtpyString;
+
+    
+    uint32_t mDefaultHpackBuffer;
 
 private:
     
