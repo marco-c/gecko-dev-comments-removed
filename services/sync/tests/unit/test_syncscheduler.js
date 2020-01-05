@@ -844,7 +844,7 @@ add_identity_test(this, function* test_sync_X_Weave_Backoff() {
   do_check_true(Status.backoffInterval >= BACKOFF * 1000);
   
   
-  let minimumExpectedDelay = (BACKOFF - 1) * 1000;
+  let minimumExpectedDelay = (BACKOFF - 3) * 1000;
   do_check_true(Status.minimumNextSync >= Date.now() + minimumExpectedDelay);
 
   
@@ -903,7 +903,7 @@ add_identity_test(this, function* test_sync_503_Retry_After() {
   do_check_true(Status.backoffInterval >= BACKOFF * 1000);
   
   
-  let minimumExpectedDelay = (BACKOFF - 1) * 1000;
+  let minimumExpectedDelay = (BACKOFF - 3) * 1000;
   do_check_true(Status.minimumNextSync >= Date.now() + minimumExpectedDelay);
 
   
