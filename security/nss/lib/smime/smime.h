@@ -13,6 +13,7 @@
 #include "cms.h"
 
 
+
 SEC_BEGIN_PROTOS
 
 
@@ -96,28 +97,24 @@ extern SECStatus NSS_SMIMEUtil_CreateSMIMECapabilities(PLArenaPool *poolp, SECIt
 
 
 
-extern SECStatus NSS_SMIMEUtil_CreateSMIMEEncKeyPrefs(PLArenaPool *poolp,
-                                                      SECItem *dest, CERTCertificate *cert);
+extern SECStatus NSS_SMIMEUtil_CreateSMIMEEncKeyPrefs(PLArenaPool *poolp, SECItem *dest, CERTCertificate *cert);
 
 
 
 
-extern SECStatus NSS_SMIMEUtil_CreateMSSMIMEEncKeyPrefs(PLArenaPool *poolp,
-                                                        SECItem *dest, CERTCertificate *cert);
+extern SECStatus NSS_SMIMEUtil_CreateMSSMIMEEncKeyPrefs(PLArenaPool *poolp, SECItem *dest, CERTCertificate *cert);
 
 
 
 
 
-extern CERTCertificate *NSS_SMIMEUtil_GetCertFromEncryptionKeyPreference(CERTCertDBHandle *certdb,
-                                                                         SECItem *DERekp);
+extern CERTCertificate *NSS_SMIMEUtil_GetCertFromEncryptionKeyPreference(CERTCertDBHandle *certdb, SECItem *DERekp);
 
 
 
 
 extern SECStatus
-NSS_SMIMEUtil_FindBulkAlgForRecipients(CERTCertificate **rcerts,
-                                       SECOidTag *bulkalgtag, int *keysize);
+NSS_SMIMEUtil_FindBulkAlgForRecipients(CERTCertificate **rcerts, SECOidTag *bulkalgtag, int *keysize);
 
 
 

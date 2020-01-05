@@ -23,7 +23,7 @@ extern const SEC_ASN1Template NSSCMSContentInfoTemplate[];
 struct NSSCMSContentInfoPrivateStr {
     NSSCMSCipherContext *ciphcx;
     NSSCMSDigestContext *digcx;
-    PRBool dontStream;
+    PRBool  dontStream;
 };
 
 
@@ -37,6 +37,7 @@ SEC_BEGIN_PROTOS
 
 
 SECStatus NSS_CMSContentInfo_Private_Init(NSSCMSContentInfo *cinfo);
+
 
 
 
@@ -104,12 +105,12 @@ NSS_CMSCipherContext_EncryptLength(NSSCMSCipherContext *cc, unsigned int input_l
 
 
 
-
+ 
 extern SECStatus
 NSS_CMSCipherContext_Decrypt(NSSCMSCipherContext *cc, unsigned char *output,
-                             unsigned int *output_len_p, unsigned int max_output_len,
-                             const unsigned char *input, unsigned int input_len,
-                             PRBool final);
+		  unsigned int *output_len_p, unsigned int max_output_len,
+		  const unsigned char *input, unsigned int input_len,
+		  PRBool final);
 
 
 
@@ -127,12 +128,12 @@ NSS_CMSCipherContext_Decrypt(NSSCMSCipherContext *cc, unsigned char *output,
 
 
 
-
+ 
 extern SECStatus
 NSS_CMSCipherContext_Encrypt(NSSCMSCipherContext *cc, unsigned char *output,
-                             unsigned int *output_len_p, unsigned int max_output_len,
-                             const unsigned char *input, unsigned int input_len,
-                             PRBool final);
+		  unsigned int *output_len_p, unsigned int max_output_len,
+		  const unsigned char *input, unsigned int input_len,
+		  PRBool final);
 
 
 
@@ -166,12 +167,12 @@ NSS_CMSUtil_DecryptSymKey_RSA(SECKEYPrivateKey *privkey, SECItem *encKey, SECOid
 
 extern SECStatus
 NSS_CMSUtil_EncryptSymKey_ESDH(PLArenaPool *poolp, CERTCertificate *cert, PK11SymKey *key,
-                               SECItem *encKey, SECItem **ukm, SECAlgorithmID *keyEncAlg,
-                               SECItem *originatorPubKey);
+			SECItem *encKey, SECItem **ukm, SECAlgorithmID *keyEncAlg,
+			SECItem *originatorPubKey);
 
 extern PK11SymKey *
 NSS_CMSUtil_DecryptSymKey_ESDH(SECKEYPrivateKey *privkey, SECItem *encKey,
-                               SECAlgorithmID *keyEncAlg, SECOidTag bulkalgtag, void *pwfn_arg);
+			SECAlgorithmID *keyEncAlg, SECOidTag bulkalgtag, void *pwfn_arg);
 
 
 
@@ -218,7 +219,7 @@ NSS_CMSArray_Count(void **array);
 
 
 extern void
-NSS_CMSArray_Sort(void **primary, int (*compare)(void *, void *), void **secondary, void **tertiary);
+NSS_CMSArray_Sort(void **primary, int (*compare)(void *,void *), void **secondary, void **tertiary);
 
 
 
@@ -304,8 +305,7 @@ NSS_CMSAttributeArray_AddAttr(PLArenaPool *poolp, NSSCMSAttribute ***attrs, NSSC
 
 
 extern SECStatus
-NSS_CMSAttributeArray_SetAttr(PLArenaPool *poolp, NSSCMSAttribute ***attrs,
-                              SECOidTag type, SECItem *value, PRBool encoded);
+NSS_CMSAttributeArray_SetAttr(PLArenaPool *poolp, NSSCMSAttribute ***attrs, SECOidTag type, SECItem *value, PRBool encoded);
 
 
 
@@ -326,25 +326,27 @@ SECOidTag NSS_CMSUtil_MapSignAlgs(SECOidTag signAlg);
 
 
 
+
+
 PRBool NSS_CMSType_IsWrapper(SECOidTag type);
 PRBool NSS_CMSType_IsData(SECOidTag type);
 size_t NSS_CMSType_GetContentSize(SECOidTag type);
-const SEC_ASN1Template *NSS_CMSType_GetTemplate(SECOidTag type);
+const SEC_ASN1Template * NSS_CMSType_GetTemplate(SECOidTag type);
 
 void NSS_CMSGenericWrapperData_Destroy(SECOidTag type,
-                                       NSSCMSGenericWrapperData *gd);
-SECStatus NSS_CMSGenericWrapperData_Decode_BeforeData(SECOidTag type,
-                                                      NSSCMSGenericWrapperData *gd);
-SECStatus NSS_CMSGenericWrapperData_Decode_AfterData(SECOidTag type,
-                                                     NSSCMSGenericWrapperData *gd);
-SECStatus NSS_CMSGenericWrapperData_Decode_AfterEnd(SECOidTag type,
-                                                    NSSCMSGenericWrapperData *gd);
-SECStatus NSS_CMSGenericWrapperData_Encode_BeforeStart(SECOidTag type,
-                                                       NSSCMSGenericWrapperData *gd);
-SECStatus NSS_CMSGenericWrapperData_Encode_BeforeData(SECOidTag type,
-                                                      NSSCMSGenericWrapperData *gd);
-SECStatus NSS_CMSGenericWrapperData_Encode_AfterData(SECOidTag type,
-                                                     NSSCMSGenericWrapperData *gd);
+					NSSCMSGenericWrapperData *gd);
+SECStatus NSS_CMSGenericWrapperData_Decode_BeforeData(SECOidTag type, 
+					NSSCMSGenericWrapperData *gd);
+SECStatus NSS_CMSGenericWrapperData_Decode_AfterData(SECOidTag type, 
+					NSSCMSGenericWrapperData *gd);
+SECStatus NSS_CMSGenericWrapperData_Decode_AfterEnd(SECOidTag type, 
+					NSSCMSGenericWrapperData *gd);
+SECStatus NSS_CMSGenericWrapperData_Encode_BeforeStart(SECOidTag type, 
+					NSSCMSGenericWrapperData *gd);
+SECStatus NSS_CMSGenericWrapperData_Encode_BeforeData(SECOidTag type, 
+					NSSCMSGenericWrapperData *gd);
+SECStatus NSS_CMSGenericWrapperData_Encode_AfterData(SECOidTag type, 
+					NSSCMSGenericWrapperData *gd);
 
 SEC_END_PROTOS
 

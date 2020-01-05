@@ -1429,8 +1429,6 @@ extern SECStatus RNG_RandomUpdate(const void *data, size_t bytes);
 
 extern SECStatus RNG_GenerateGlobalRandomBytes(void *dest, size_t len);
 
-extern SECStatus RNG_ResetForFuzzing(void);
-
 
 
 

@@ -22,8 +22,7 @@ function parseOptions(opts) {
   }
 
   
-  let allPlatforms = ["linux", "linux64", "linux64-asan", "win64", "arm",
-                      "linux64-gyp", "linux64-fuzz"];
+  let allPlatforms = ["linux", "linux64", "linux64-asan", "win64", "arm", "linux64-gyp"];
   let platforms = intersect(opts.platform.split(/\s*,\s*/), allPlatforms);
 
   
@@ -102,7 +101,6 @@ function filter(opts) {
       let aliases = {
         "linux": "linux32",
         "linux64-asan": "linux64",
-        "linux64-fuzz": "linux64",
         "linux64-gyp": "linux64",
         "win64": "windows2012-64",
         "arm": "linux32"
@@ -113,13 +111,11 @@ function filter(opts) {
 
       
       if (platform == "linux64-asan") {
-        keep &= coll("asan");
+        keep &= coll("asan") || coll("ubsan");
       } else if (platform == "arm") {
         keep &= coll("arm-opt") || coll("arm-debug");
       } else if (platform == "linux64-gyp") {
         keep &= coll("gyp");
-      } else if (platform == "linux64-fuzz") {
-        keep &= coll("fuzz");
       } else {
         keep &= coll("opt") || coll("debug");
       }
@@ -132,8 +128,7 @@ function filter(opts) {
     }
 
     
-    let isDebug = coll("debug") || coll("asan") || coll("arm-debug") ||
-                  coll("gyp") || coll("fuzz");
+    let isDebug = coll("debug") || coll("asan") || coll("ubsan") || coll("arm-debug") || coll("gyp");
     return (isDebug && opts.builds.includes("d")) ||
            (!isDebug && opts.builds.includes("o"));
   }

@@ -17,12 +17,12 @@
 
 
 
-static SECMODModuleList *modules = NULL;
-static SECMODModuleList *modulesDB = NULL;
-static SECMODModuleList *modulesUnload = NULL;
-static SECMODModule *internalModule = NULL;
-static SECMODModule *defaultDBModule = NULL;
-static SECMODModule *pendingModule = NULL;
+static  SECMODModuleList *modules = NULL;
+static  SECMODModuleList *modulesDB = NULL;
+static  SECMODModuleList *modulesUnload = NULL;
+static  SECMODModule *internalModule = NULL;
+static  SECMODModule *defaultDBModule = NULL;
+static  SECMODModule *pendingModule = NULL;
 static SECMODListLock *moduleLock = NULL;
 
 int secmod_PrivateModuleCount = 0;
@@ -30,51 +30,52 @@ int secmod_PrivateModuleCount = 0;
 extern const PK11DefaultArrayEntry PK11_DefaultArray[];
 extern const int num_pk11_default_mechanisms;
 
+
 void
-SECMOD_Init()
+SECMOD_Init() 
 {
     
-    if (moduleLock)
-        return;
+    if (moduleLock) return;
 
     moduleLock = SECMOD_NewListLock();
     PK11_InitSlotLists();
 }
 
+
 SECStatus
-SECMOD_Shutdown()
+SECMOD_Shutdown() 
 {
     
     if (moduleLock) {
-        SECMOD_DestroyListLock(moduleLock);
-        moduleLock = NULL;
+	SECMOD_DestroyListLock(moduleLock);
+	moduleLock = NULL;
     }
     
     if (internalModule) {
-        SECMOD_DestroyModule(internalModule);
-        internalModule = NULL;
+	SECMOD_DestroyModule(internalModule);
+	internalModule = NULL;
     }
 
     
     if (defaultDBModule) {
-        SECMOD_DestroyModule(defaultDBModule);
-        defaultDBModule = NULL;
+	SECMOD_DestroyModule(defaultDBModule);
+	defaultDBModule = NULL;
     }
-
+	
     
     if (modules) {
-        SECMOD_DestroyModuleList(modules);
-        modules = NULL;
+	SECMOD_DestroyModuleList(modules);
+	modules = NULL;
     }
-
+   
     if (modulesDB) {
-        SECMOD_DestroyModuleList(modulesDB);
-        modulesDB = NULL;
+	SECMOD_DestroyModuleList(modulesDB);
+	modulesDB = NULL;
     }
 
     if (modulesUnload) {
-        SECMOD_DestroyModuleList(modulesUnload);
-        modulesUnload = NULL;
+	SECMOD_DestroyModuleList(modulesUnload);
+	modulesUnload = NULL;
     }
 
     
@@ -84,12 +85,12 @@ SECMOD_Shutdown()
 
 #ifdef DEBUG
     if (PR_GetEnvSecure("NSS_STRICT_SHUTDOWN")) {
-        PORT_Assert(secmod_PrivateModuleCount == 0);
+	PORT_Assert(secmod_PrivateModuleCount == 0);
     }
 #endif
     if (secmod_PrivateModuleCount) {
-        PORT_SetError(SEC_ERROR_BUSY);
-        return SECFailure;
+    	PORT_SetError(SEC_ERROR_BUSY);
+	return SECFailure;
     }
     return SECSuccess;
 }
@@ -97,20 +98,22 @@ SECMOD_Shutdown()
 
 
 
+
 SECMODModule *
 SECMOD_GetInternalModule(void)
 {
-    return internalModule;
+   return internalModule;
 }
 
+
 SECStatus
-secmod_AddModuleToList(SECMODModuleList **moduleList, SECMODModule *newModule)
+secmod_AddModuleToList(SECMODModuleList **moduleList,SECMODModule *newModule)
 {
     SECMODModuleList *mlp, *newListElement, *last = NULL;
 
     newListElement = SECMOD_NewModuleListElement();
     if (newListElement == NULL) {
-        return SECFailure;
+	return SECFailure;
     }
 
     newListElement->module = SECMOD_ReferenceModule(newModule);
@@ -119,14 +122,14 @@ secmod_AddModuleToList(SECMODModuleList **moduleList, SECMODModule *newModule)
     
 
 
-    for (mlp = *moduleList; mlp != NULL; mlp = mlp->next) {
-        last = mlp;
+    for(mlp = *moduleList; mlp != NULL; mlp = mlp->next) {
+	last = mlp;
     }
 
     if (last == NULL) {
-        *moduleList = newListElement;
+	*moduleList = newListElement;
     } else {
-        SECMOD_AddList(last, newListElement, NULL);
+	SECMOD_AddList(last,newListElement,NULL);
     }
     SECMOD_ReleaseWriteLock(moduleLock);
     return SECSuccess;
@@ -136,47 +139,35 @@ SECStatus
 SECMOD_AddModuleToList(SECMODModule *newModule)
 {
     if (newModule->internal && !internalModule) {
-        internalModule = SECMOD_ReferenceModule(newModule);
+	internalModule = SECMOD_ReferenceModule(newModule);
     }
-    return secmod_AddModuleToList(&modules, newModule);
+    return secmod_AddModuleToList(&modules,newModule);
 }
 
 SECStatus
 SECMOD_AddModuleToDBOnlyList(SECMODModule *newModule)
 {
     if (defaultDBModule && SECMOD_GetDefaultModDBFlag(newModule)) {
-        SECMOD_DestroyModule(defaultDBModule);
-        defaultDBModule = SECMOD_ReferenceModule(newModule);
+	SECMOD_DestroyModule(defaultDBModule);
+	defaultDBModule = SECMOD_ReferenceModule(newModule);
     } else if (defaultDBModule == NULL) {
-        defaultDBModule = SECMOD_ReferenceModule(newModule);
+	defaultDBModule = SECMOD_ReferenceModule(newModule);
     }
-    return secmod_AddModuleToList(&modulesDB, newModule);
+    return secmod_AddModuleToList(&modulesDB,newModule);
 }
 
 SECStatus
 SECMOD_AddModuleToUnloadList(SECMODModule *newModule)
 {
-    return secmod_AddModuleToList(&modulesUnload, newModule);
+    return secmod_AddModuleToList(&modulesUnload,newModule);
 }
 
 
 
 
-SECMODModuleList *
-SECMOD_GetDefaultModuleList()
-{
-    return modules;
-}
-SECMODModuleList *
-SECMOD_GetDeadModuleList()
-{
-    return modulesUnload;
-}
-SECMODModuleList *
-SECMOD_GetDBModuleList()
-{
-    return modulesDB;
-}
+SECMODModuleList * SECMOD_GetDefaultModuleList() { return modules; }
+SECMODModuleList *SECMOD_GetDeadModuleList() { return modulesUnload; }
+SECMODModuleList *SECMOD_GetDBModuleList() { return modulesDB; }
 
 
 
@@ -189,11 +180,9 @@ SECMOD_GetDBModuleList()
 
 
 
-SECMODListLock *
-SECMOD_GetDefaultModuleListLock()
-{
-    return moduleLock;
-}
+SECMODListLock *SECMOD_GetDefaultModuleListLock() { return moduleLock; }
+
+
 
 
 
@@ -206,26 +195,26 @@ SECMOD_FindModule(const char *name)
     SECMODModule *module = NULL;
 
     if (!moduleLock) {
-        PORT_SetError(SEC_ERROR_NOT_INITIALIZED);
-        return module;
+    	PORT_SetError(SEC_ERROR_NOT_INITIALIZED);
+	return module;
     }
     SECMOD_GetReadLock(moduleLock);
-    for (mlp = modules; mlp != NULL; mlp = mlp->next) {
-        if (PORT_Strcmp(name, mlp->module->commonName) == 0) {
-            module = mlp->module;
-            SECMOD_ReferenceModule(module);
-            break;
-        }
+    for(mlp = modules; mlp != NULL; mlp = mlp->next) {
+	if (PORT_Strcmp(name,mlp->module->commonName) == 0) {
+	    module = mlp->module;
+	    SECMOD_ReferenceModule(module);
+	    break;
+	}
     }
     if (module) {
-        goto found;
+	goto found;
     }
-    for (mlp = modulesUnload; mlp != NULL; mlp = mlp->next) {
-        if (PORT_Strcmp(name, mlp->module->commonName) == 0) {
-            module = mlp->module;
-            SECMOD_ReferenceModule(module);
-            break;
-        }
+    for(mlp = modulesUnload; mlp != NULL; mlp = mlp->next) {
+	if (PORT_Strcmp(name,mlp->module->commonName) == 0) {
+	    module = mlp->module;
+	    SECMOD_ReferenceModule(module);
+	    break;
+	}
     }
 
 found:
@@ -239,26 +228,26 @@ found:
 
 
 SECMODModule *
-SECMOD_FindModuleByID(SECMODModuleID id)
+SECMOD_FindModuleByID(SECMODModuleID id) 
 {
     SECMODModuleList *mlp;
     SECMODModule *module = NULL;
 
     if (!moduleLock) {
-        PORT_SetError(SEC_ERROR_NOT_INITIALIZED);
-        return module;
+    	PORT_SetError(SEC_ERROR_NOT_INITIALIZED);
+	return module;
     }
     SECMOD_GetReadLock(moduleLock);
-    for (mlp = modules; mlp != NULL; mlp = mlp->next) {
-        if (id == mlp->module->moduleID) {
-            module = mlp->module;
-            SECMOD_ReferenceModule(module);
-            break;
-        }
+    for(mlp = modules; mlp != NULL; mlp = mlp->next) {
+	if (id == mlp->module->moduleID) {
+	    module = mlp->module;
+	    SECMOD_ReferenceModule(module);
+	    break;
+	}
     }
     SECMOD_ReleaseReadLock(moduleLock);
     if (module == NULL) {
-        PORT_SetError(SEC_ERROR_NO_MODULE);
+	PORT_SetError(SEC_ERROR_NO_MODULE);
     }
     return module;
 }
@@ -267,26 +256,26 @@ SECMOD_FindModuleByID(SECMODModuleID id)
 
 
 SECMODModule *
-secmod_FindModuleByFuncPtr(void *funcPtr)
+secmod_FindModuleByFuncPtr(void *funcPtr) 
 {
     SECMODModuleList *mlp;
     SECMODModule *module = NULL;
 
     SECMOD_GetReadLock(moduleLock);
-    for (mlp = modules; mlp != NULL; mlp = mlp->next) {
-        
-        if (!mlp->module) {
-            continue;
-        }
-        if (funcPtr == mlp->module->functionList) {
-            module = mlp->module;
-            SECMOD_ReferenceModule(module);
-            break;
-        }
+    for(mlp = modules; mlp != NULL; mlp = mlp->next) {
+	
+	if (!mlp->module) {
+	    continue;
+	}
+	if (funcPtr == mlp->module->functionList) {
+	    module = mlp->module;
+	    SECMOD_ReferenceModule(module);
+	    break;
+	}
     }
     SECMOD_ReleaseReadLock(moduleLock);
     if (module == NULL) {
-        PORT_SetError(SEC_ERROR_NO_MODULE);
+	PORT_SetError(SEC_ERROR_NO_MODULE);
     }
     return module;
 }
@@ -301,22 +290,22 @@ SECMOD_FindSlotByID(SECMODModule *module, CK_SLOT_ID slotID)
     PK11SlotInfo *slot = NULL;
 
     if (!moduleLock) {
-        PORT_SetError(SEC_ERROR_NOT_INITIALIZED);
-        return slot;
+    	PORT_SetError(SEC_ERROR_NOT_INITIALIZED);
+	return slot;
     }
     SECMOD_GetReadLock(moduleLock);
-    for (i = 0; i < module->slotCount; i++) {
-        PK11SlotInfo *cSlot = module->slots[i];
+    for (i=0; i < module->slotCount; i++) {
+	PK11SlotInfo *cSlot = module->slots[i];
 
-        if (cSlot->slotID == slotID) {
-            slot = PK11_ReferenceSlot(cSlot);
-            break;
-        }
+	if (cSlot->slotID == slotID) {
+	    slot = PK11_ReferenceSlot(cSlot);
+	    break;
+	}
     }
     SECMOD_ReleaseReadLock(moduleLock);
 
     if (slot == NULL) {
-        PORT_SetError(SEC_ERROR_NO_SLOT_SELECTED);
+	PORT_SetError(SEC_ERROR_NO_SLOT_SELECTED);
     }
     return slot;
 }
@@ -325,14 +314,13 @@ SECMOD_FindSlotByID(SECMODModule *module, CK_SLOT_ID slotID)
 
 
 PK11SlotInfo *
-SECMOD_LookupSlot(SECMODModuleID moduleID, CK_SLOT_ID slotID)
+SECMOD_LookupSlot(SECMODModuleID moduleID,CK_SLOT_ID slotID) 
 {
     SECMODModule *module;
     PK11SlotInfo *slot;
 
     module = SECMOD_FindModuleByID(moduleID);
-    if (module == NULL)
-        return NULL;
+    if (module == NULL) return NULL;
 
     slot = SECMOD_FindSlotByID(module, slotID);
     SECMOD_DestroyModule(module);
@@ -343,67 +331,69 @@ SECMOD_LookupSlot(SECMODModuleID moduleID, CK_SLOT_ID slotID)
 
 
 
+
 SECStatus
-SECMOD_DeleteModuleEx(const char *name, SECMODModule *mod,
-                      int *type, PRBool permdb)
+SECMOD_DeleteModuleEx(const char *name, SECMODModule *mod, 
+						int *type, PRBool permdb) 
 {
     SECMODModuleList *mlp;
     SECMODModuleList **mlpp;
     SECStatus rv = SECFailure;
 
     if (!moduleLock) {
-        PORT_SetError(SEC_ERROR_NOT_INITIALIZED);
-        return rv;
+    	PORT_SetError(SEC_ERROR_NOT_INITIALIZED);
+	return rv;
     }
 
     *type = SECMOD_EXTERNAL;
 
     SECMOD_GetWriteLock(moduleLock);
-    for (mlpp = &modules, mlp = modules;
-         mlp != NULL; mlpp = &mlp->next, mlp = *mlpp) {
-        if ((name && (PORT_Strcmp(name, mlp->module->commonName) == 0)) ||
-            mod == mlp->module) {
-            
-            if (!mlp->module->internal) {
-                SECMOD_RemoveList(mlpp, mlp);
-                
-                rv = STAN_RemoveModuleFromDefaultTrustDomain(mlp->module);
-            } else if (mlp->module->isFIPS) {
-                *type = SECMOD_FIPS;
-            } else {
-                *type = SECMOD_INTERNAL;
-            }
-            break;
-        }
+    for (mlpp = &modules,mlp = modules; 
+				mlp != NULL; mlpp = &mlp->next, mlp = *mlpp) {
+	if ((name && (PORT_Strcmp(name,mlp->module->commonName) == 0)) ||
+							mod == mlp->module) {
+	    
+	    if (!mlp->module->internal) {
+		SECMOD_RemoveList(mlpp,mlp);
+		
+		rv = STAN_RemoveModuleFromDefaultTrustDomain(mlp->module);
+	    } else if (mlp->module->isFIPS) {
+		*type = SECMOD_FIPS;
+	    } else {
+		*type = SECMOD_INTERNAL;
+	    }
+	    break;
+	}
     }
     if (mlp) {
-        goto found;
+	goto found;
     }
     
-    for (mlpp = &modulesUnload, mlp = modulesUnload;
-         mlp != NULL; mlpp = &mlp->next, mlp = *mlpp) {
-        if ((name && (PORT_Strcmp(name, mlp->module->commonName) == 0)) ||
-            mod == mlp->module) {
-            
-            if (!mlp->module->internal) {
-                SECMOD_RemoveList(mlpp, mlp);
-                rv = SECSuccess;
-            } else if (mlp->module->isFIPS) {
-                *type = SECMOD_FIPS;
-            } else {
-                *type = SECMOD_INTERNAL;
-            }
-            break;
-        }
+    for (mlpp = &modulesUnload,mlp = modulesUnload; 
+				mlp != NULL; mlpp = &mlp->next, mlp = *mlpp) {
+	if ((name && (PORT_Strcmp(name,mlp->module->commonName) == 0)) ||
+							mod == mlp->module) {
+	    
+	    if (!mlp->module->internal) {
+		SECMOD_RemoveList(mlpp,mlp);
+		rv = SECSuccess;
+	    } else if (mlp->module->isFIPS) {
+		*type = SECMOD_FIPS;
+	    } else {
+		*type = SECMOD_INTERNAL;
+	    }
+	    break;
+	}
     }
 found:
     SECMOD_ReleaseWriteLock(moduleLock);
 
+
     if (rv == SECSuccess) {
-        if (permdb) {
-            SECMOD_DeletePermDB(mlp->module);
-        }
-        SECMOD_DestroyModuleListElement(mlp);
+	if (permdb) {
+ 	    SECMOD_DeletePermDB(mlp->module);
+	}
+	SECMOD_DestroyModuleListElement(mlp);
     }
     return rv;
 }
@@ -412,7 +402,7 @@ found:
 
 
 SECStatus
-SECMOD_DeleteModule(const char *name, int *type)
+SECMOD_DeleteModule(const char *name, int *type) 
 {
     return SECMOD_DeleteModuleEx(name, NULL, type, PR_TRUE);
 }
@@ -421,96 +411,96 @@ SECMOD_DeleteModule(const char *name, int *type)
 
 
 SECStatus
-SECMOD_DeleteInternalModule(const char *name)
+SECMOD_DeleteInternalModule(const char *name) 
 {
     SECMODModuleList *mlp;
     SECMODModuleList **mlpp;
     SECStatus rv = SECFailure;
 
     if (pendingModule) {
-        PORT_SetError(SEC_ERROR_MODULE_STUCK);
-        return rv;
+	PORT_SetError(SEC_ERROR_MODULE_STUCK);
+	return rv;
     }
     if (!moduleLock) {
-        PORT_SetError(SEC_ERROR_NOT_INITIALIZED);
-        return rv;
+    	PORT_SetError(SEC_ERROR_NOT_INITIALIZED);
+	return rv;
     }
 
     SECMOD_GetWriteLock(moduleLock);
-    for (mlpp = &modules, mlp = modules;
-         mlp != NULL; mlpp = &mlp->next, mlp = *mlpp) {
-        if (PORT_Strcmp(name, mlp->module->commonName) == 0) {
-            
-            if (mlp->module->internal) {
-                SECMOD_RemoveList(mlpp, mlp);
-                rv = STAN_RemoveModuleFromDefaultTrustDomain(mlp->module);
-            }
-            break;
-        }
+    for(mlpp = &modules,mlp = modules; 
+				mlp != NULL; mlpp = &mlp->next, mlp = *mlpp) {
+	if (PORT_Strcmp(name,mlp->module->commonName) == 0) {
+	    
+	    if (mlp->module->internal) {
+		SECMOD_RemoveList(mlpp,mlp);
+		rv = STAN_RemoveModuleFromDefaultTrustDomain(mlp->module);
+	    } 
+	    break;
+	}
     }
     SECMOD_ReleaseWriteLock(moduleLock);
 
     if (rv == SECSuccess) {
-        SECMODModule *newModule, *oldModule;
+	SECMODModule *newModule,*oldModule;
 
-        if (mlp->module->isFIPS) {
-            newModule = SECMOD_CreateModule(NULL, SECMOD_INT_NAME,
-                                            NULL, SECMOD_INT_FLAGS);
-        } else {
-            newModule = SECMOD_CreateModule(NULL, SECMOD_FIPS_NAME,
-                                            NULL, SECMOD_FIPS_FLAGS);
-        }
-        if (newModule) {
-            PK11SlotInfo *slot;
-            newModule->libraryParams =
-                PORT_ArenaStrdup(newModule->arena, mlp->module->libraryParams);
-            
-            slot = pk11_SwapInternalKeySlot(NULL);
-            if (slot) {
-                secmod_SetInternalKeySlotFlag(newModule, PR_TRUE);
-            }
-            rv = SECMOD_AddModule(newModule);
-            if (rv != SECSuccess) {
-                
-                pk11_SetInternalKeySlot(slot);
-                SECMOD_DestroyModule(newModule);
-                newModule = NULL;
-            }
-            
-            if (slot) {
-                PK11_FreeSlot(slot);
-            }
-        }
-        if (newModule == NULL) {
-            SECMODModuleList *last = NULL, *mlp2;
-            
+	if (mlp->module->isFIPS) {
+    	    newModule = SECMOD_CreateModule(NULL, SECMOD_INT_NAME,
+				NULL, SECMOD_INT_FLAGS);
+	} else {
+    	    newModule = SECMOD_CreateModule(NULL, SECMOD_FIPS_NAME,
+				NULL, SECMOD_FIPS_FLAGS);
+	}
+	if (newModule) {
+	    PK11SlotInfo *slot;
+	    newModule->libraryParams = 
+	     PORT_ArenaStrdup(newModule->arena,mlp->module->libraryParams);
+	    
+	    slot = pk11_SwapInternalKeySlot(NULL);
+	    if (slot) {
+		secmod_SetInternalKeySlotFlag(newModule, PR_TRUE);
+	    }
+	    rv = SECMOD_AddModule(newModule);
+	    if (rv != SECSuccess) {
+		
+		pk11_SetInternalKeySlot(slot);
+		SECMOD_DestroyModule(newModule);
+		newModule = NULL;
+	    }
+	    
+	    if (slot) {
+		PK11_FreeSlot(slot);
+	    }
+	}
+	if (newModule == NULL) {
+	    SECMODModuleList *last = NULL,*mlp2;
+	   
 
 
-            SECMOD_GetWriteLock(moduleLock);
-            for (mlp2 = modules; mlp2 != NULL; mlp2 = mlp->next) {
-                last = mlp2;
-            }
+	   SECMOD_GetWriteLock(moduleLock);
+	   for(mlp2 = modules; mlp2 != NULL; mlp2 = mlp->next) {
+		last = mlp2;
+	   }
 
-            if (last == NULL) {
-                modules = mlp;
-            } else {
-                SECMOD_AddList(last, mlp, NULL);
-            }
-            SECMOD_ReleaseWriteLock(moduleLock);
-            return SECFailure;
-        }
-        pendingModule = oldModule = internalModule;
-        internalModule = NULL;
-        SECMOD_DestroyModule(oldModule);
-        SECMOD_DeletePermDB(mlp->module);
-        SECMOD_DestroyModuleListElement(mlp);
-        internalModule = newModule; 
+	   if (last == NULL) {
+		modules = mlp;
+	   } else {
+		SECMOD_AddList(last,mlp,NULL);
+	   }
+	   SECMOD_ReleaseWriteLock(moduleLock);
+	   return SECFailure; 
+	}
+	pendingModule = oldModule = internalModule;
+	internalModule = NULL;
+	SECMOD_DestroyModule(oldModule);
+ 	SECMOD_DeletePermDB(mlp->module);
+	SECMOD_DestroyModuleListElement(mlp);
+	internalModule = newModule; 
     }
     return rv;
 }
 
 SECStatus
-SECMOD_AddModule(SECMODModule *newModule)
+SECMOD_AddModule(SECMODModule *newModule) 
 {
     SECStatus rv;
     SECMODModule *oldModule;
@@ -521,18 +511,18 @@ SECMOD_AddModule(SECMODModule *newModule)
     
     
     if ((oldModule = SECMOD_FindModule(newModule->commonName)) != NULL) {
-        SECMOD_DestroyModule(oldModule);
+	SECMOD_DestroyModule(oldModule);
         return SECWouldBlock;
         
     }
 
     rv = secmod_LoadPKCS11Module(newModule, NULL);
     if (rv != SECSuccess) {
-        return rv;
+	return rv;
     }
 
     if (newModule->parent == NULL) {
-        newModule->parent = SECMOD_ReferenceModule(defaultDBModule);
+	newModule->parent = SECMOD_ReferenceModule(defaultDBModule);
     }
 
     SECMOD_AddPermDB(newModule);
@@ -544,49 +534,48 @@ SECMOD_AddModule(SECMODModule *newModule)
 }
 
 PK11SlotInfo *
-SECMOD_FindSlot(SECMODModule *module, const char *name)
+SECMOD_FindSlot(SECMODModule *module,const char *name) 
 {
     int i;
     char *string;
     PK11SlotInfo *retSlot = NULL;
 
     if (!moduleLock) {
-        PORT_SetError(SEC_ERROR_NOT_INITIALIZED);
-        return retSlot;
+    	PORT_SetError(SEC_ERROR_NOT_INITIALIZED);
+	return retSlot;
     }
     SECMOD_GetReadLock(moduleLock);
-    for (i = 0; i < module->slotCount; i++) {
-        PK11SlotInfo *slot = module->slots[i];
+    for (i=0; i < module->slotCount; i++) {
+	PK11SlotInfo *slot = module->slots[i];
 
-        if (PK11_IsPresent(slot)) {
-            string = PK11_GetTokenName(slot);
-        } else {
-            string = PK11_GetSlotName(slot);
-        }
-        if (PORT_Strcmp(name, string) == 0) {
-            retSlot = PK11_ReferenceSlot(slot);
-            break;
-        }
+	if (PK11_IsPresent(slot)) {
+	    string = PK11_GetTokenName(slot);
+	} else {
+	    string = PK11_GetSlotName(slot);
+	}
+	if (PORT_Strcmp(name,string) == 0) {
+	    retSlot = PK11_ReferenceSlot(slot);
+	    break;
+	}
     }
     SECMOD_ReleaseReadLock(moduleLock);
 
     if (retSlot == NULL) {
-        PORT_SetError(SEC_ERROR_NO_SLOT_SELECTED);
+	PORT_SetError(SEC_ERROR_NO_SLOT_SELECTED);
     }
     return retSlot;
 }
 
 SECStatus
-PK11_GetModInfo(SECMODModule *mod, CK_INFO *info)
+PK11_GetModInfo(SECMODModule *mod,CK_INFO *info)
 {
     CK_RV crv;
 
-    if (mod->functionList == NULL)
-        return SECFailure;
+    if (mod->functionList == NULL) return SECFailure;
     crv = PK11_GETTAB(mod)->C_GetInfo(info);
     if (crv != CKR_OK) {
-        PORT_SetError(PK11_MapError(crv));
-    }
+	PORT_SetError(PK11_MapError(crv));
+    }	
     return (crv == CKR_OK) ? SECSuccess : SECFailure;
 }
 
@@ -600,7 +589,7 @@ PK11_IsFIPS(void)
     SECMODModule *mod = SECMOD_GetInternalModule();
 
     if (mod && mod->internal) {
-        return mod->isFIPS;
+	return mod->isFIPS;
     }
 
     return PR_FALSE;
@@ -609,27 +598,27 @@ PK11_IsFIPS(void)
 
 
 
-SECStatus
-SECMOD_AddNewModuleEx(const char *moduleName, const char *dllPath,
-                      unsigned long defaultMechanismFlags,
-                      unsigned long cipherEnableFlags,
-                      char *modparms, char *nssparms)
+SECStatus 
+SECMOD_AddNewModuleEx(const char* moduleName, const char* dllPath,
+                              unsigned long defaultMechanismFlags,
+                              unsigned long cipherEnableFlags,
+                              char* modparms, char* nssparms)
 {
     SECMODModule *module;
     SECStatus result = SECFailure;
-    int s, i;
-    PK11SlotInfo *slot;
+    int s,i;
+    PK11SlotInfo* slot;
 
     PR_SetErrorText(0, NULL);
     if (!moduleLock) {
-        PORT_SetError(SEC_ERROR_NOT_INITIALIZED);
-        return result;
+    	PORT_SetError(SEC_ERROR_NOT_INITIALIZED);
+	return result;
     }
 
     module = SECMOD_CreateModule(dllPath, moduleName, modparms, nssparms);
 
     if (module == NULL) {
-        return result;
+	return result;
     }
 
     if (module->dllName != NULL) {
@@ -639,17 +628,18 @@ SECMOD_AddNewModuleEx(const char *moduleName, const char *dllPath,
                 
                 module->ssl[0] = cipherEnableFlags;
 
-                SECMOD_GetReadLock(moduleLock);
+ 		SECMOD_GetReadLock(moduleLock);
                 
                 for (s = 0; s < module->slotCount; s++) {
                     slot = (module->slots)[s];
                     
-                    for (i = 0; i < num_pk11_default_mechanisms; i++) {
+                    for (i=0; i < num_pk11_default_mechanisms; i++) {
                         
-                        PRBool add =
-                            (PK11_DefaultArray[i].flag & defaultMechanismFlags) ? PR_TRUE : PR_FALSE;
-                        result = PK11_UpdateSlotAttribute(slot,
-                                                          &(PK11_DefaultArray[i]), add);
+			PRBool add = 
+			 (PK11_DefaultArray[i].flag & defaultMechanismFlags) ?
+						PR_TRUE: PR_FALSE;
+                        result = PK11_UpdateSlotAttribute(slot, 
+					&(PK11_DefaultArray[i]),  add);
                         if (result != SECSuccess) {
                             SECMOD_ReleaseReadLock(moduleLock);
                             SECMOD_DestroyModule(module);
@@ -661,11 +651,11 @@ SECMOD_AddNewModuleEx(const char *moduleName, const char *dllPath,
                         PK11_UserDisableSlot(slot);
                     }
                 } 
-                SECMOD_ReleaseReadLock(moduleLock);
+ 		SECMOD_ReleaseReadLock(moduleLock);
 
                 
 
-                result = SECMOD_UpdateModule(module);
+		result = SECMOD_UpdateModule(module);
             }
         }
     }
@@ -673,25 +663,25 @@ SECMOD_AddNewModuleEx(const char *moduleName, const char *dllPath,
     return result;
 }
 
-SECStatus
-SECMOD_AddNewModule(const char *moduleName, const char *dllPath,
-                    unsigned long defaultMechanismFlags,
-                    unsigned long cipherEnableFlags)
+SECStatus 
+SECMOD_AddNewModule(const char* moduleName, const char* dllPath,
+                              unsigned long defaultMechanismFlags,
+                              unsigned long cipherEnableFlags)
 {
     return SECMOD_AddNewModuleEx(moduleName, dllPath, defaultMechanismFlags,
-                                 cipherEnableFlags,
-                                 NULL, NULL); 
+                  cipherEnableFlags, 
+                  NULL, NULL); 
 }
 
-SECStatus
+SECStatus 
 SECMOD_UpdateModule(SECMODModule *module)
 {
     SECStatus result;
 
     result = SECMOD_DeletePermDB(module);
-
-    if (result == SECSuccess) {
-        result = SECMOD_AddPermDB(module);
+                
+    if (result == SECSuccess) {          
+	result = SECMOD_AddPermDB(module);
     }
     return result;
 }
@@ -703,7 +693,7 @@ SECMOD_UpdateModule(SECMODModule *module)
 
 
 
-unsigned long
+unsigned long 
 SECMOD_PubMechFlagstoInternal(unsigned long publicFlags)
 {
     unsigned long internalFlags = publicFlags;
@@ -715,8 +705,8 @@ SECMOD_PubMechFlagstoInternal(unsigned long publicFlags)
     return internalFlags;
 }
 
-unsigned long
-SECMOD_InternaltoPubMechFlags(unsigned long internalFlags)
+unsigned long 
+SECMOD_InternaltoPubMechFlags(unsigned long internalFlags) 
 {
     unsigned long publicFlags = internalFlags;
 
@@ -730,34 +720,35 @@ SECMOD_InternaltoPubMechFlags(unsigned long internalFlags)
 
 
 
-unsigned long
-SECMOD_PubCipherFlagstoInternal(unsigned long publicFlags)
+
+unsigned long 
+SECMOD_PubCipherFlagstoInternal(unsigned long publicFlags) 
 {
     return publicFlags;
 }
 
-unsigned long
-SECMOD_InternaltoPubCipherFlags(unsigned long internalFlags)
+unsigned long 
+SECMOD_InternaltoPubCipherFlags(unsigned long internalFlags) 
 {
     return internalFlags;
 }
 
 
-PRBool
-SECMOD_IsModulePresent(unsigned long int pubCipherEnableFlags)
+PRBool 
+SECMOD_IsModulePresent( unsigned long int pubCipherEnableFlags )
 {
     PRBool result = PR_FALSE;
     SECMODModuleList *mods;
 
     if (!moduleLock) {
-        PORT_SetError(SEC_ERROR_NOT_INITIALIZED);
-        return result;
+    	PORT_SetError(SEC_ERROR_NOT_INITIALIZED);
+	return result;
     }
     SECMOD_GetReadLock(moduleLock);
     mods = SECMOD_GetDefaultModuleList();
-    for (; mods != NULL; mods = mods->next) {
-        if (mods->module->ssl[0] &
-            SECMOD_PubCipherFlagstoInternal(pubCipherEnableFlags)) {
+    for ( ; mods != NULL; mods = mods->next) {
+        if (mods->module->ssl[0] & 
+		SECMOD_PubCipherFlagstoInternal(pubCipherEnableFlags)) {
             result = PR_TRUE;
         }
     }
@@ -767,15 +758,14 @@ SECMOD_IsModulePresent(unsigned long int pubCipherEnableFlags)
 }
 
 
-SECMODModuleList *
-SECMOD_NewModuleListElement(void)
+SECMODModuleList *SECMOD_NewModuleListElement(void) 
 {
     SECMODModuleList *newModList;
 
-    newModList = (SECMODModuleList *)PORT_Alloc(sizeof(SECMODModuleList));
+    newModList= (SECMODModuleList *) PORT_Alloc(sizeof(SECMODModuleList));
     if (newModList) {
-        newModList->next = NULL;
-        newModList->module = NULL;
+	newModList->next = NULL;
+	newModList->module = NULL;
     }
     return newModList;
 }
@@ -784,7 +774,7 @@ SECMOD_NewModuleListElement(void)
 
 
 SECMODModule *
-SECMOD_ReferenceModule(SECMODModule *module)
+SECMOD_ReferenceModule(SECMODModule *module) 
 {
     PZ_Lock(module->refLock);
     PORT_Assert(module->refCount > 0);
@@ -795,8 +785,9 @@ SECMOD_ReferenceModule(SECMODModule *module)
 }
 
 
+
 void
-SECMOD_DestroyModule(SECMODModule *module)
+SECMOD_DestroyModule(SECMODModule *module) 
 {
     PRBool willfree = PR_FALSE;
     int slotCount;
@@ -804,37 +795,37 @@ SECMOD_DestroyModule(SECMODModule *module)
 
     PZ_Lock(module->refLock);
     if (module->refCount-- == 1) {
-        willfree = PR_TRUE;
+	willfree = PR_TRUE;
     }
     PORT_Assert(willfree || (module->refCount > 0));
     PZ_Unlock(module->refLock);
 
     if (!willfree) {
-        return;
+	return;
     }
-
+   
     if (module->parent != NULL) {
-        SECMODModule *parent = module->parent;
-        
-        module->parent = NULL;
-        SECMOD_DestroyModule(parent);
+	SECMODModule *parent = module->parent;
+	
+	module->parent = NULL;
+	SECMOD_DestroyModule(parent);
     }
 
     
 
     slotCount = module->slotCount;
     if (slotCount == 0) {
-        SECMOD_SlotDestroyModule(module, PR_FALSE);
-        return;
+	SECMOD_SlotDestroyModule(module,PR_FALSE);
+	return;
     }
 
     
 
-    for (i = 0; i < slotCount; i++) {
-        if (!module->slots[i]->disabled) {
-            PK11_ClearSlotList(module->slots[i]);
-        }
-        PK11_FreeSlot(module->slots[i]);
+    for (i=0 ; i < slotCount; i++) {
+	if (!module->slots[i]->disabled) {
+		PK11_ClearSlotList(module->slots[i]);
+	}
+	PK11_FreeSlot(module->slots[i]);
     }
     
 
@@ -842,31 +833,31 @@ SECMOD_DestroyModule(SECMODModule *module)
 
 
 
+
 void
-SECMOD_SlotDestroyModule(SECMODModule *module, PRBool fromSlot)
+SECMOD_SlotDestroyModule(SECMODModule *module, PRBool fromSlot) 
 {
     PRBool willfree = PR_FALSE;
     if (fromSlot) {
         PORT_Assert(module->refCount == 0);
-        PZ_Lock(module->refLock);
-        if (module->slotCount-- == 1) {
-            willfree = PR_TRUE;
-        }
-        PORT_Assert(willfree || (module->slotCount > 0));
-        PZ_Unlock(module->refLock);
-        if (!willfree)
-            return;
+	PZ_Lock(module->refLock);
+	if (module->slotCount-- == 1) {
+	    willfree = PR_TRUE;
+	}
+	PORT_Assert(willfree || (module->slotCount > 0));
+	PZ_Unlock(module->refLock);
+        if (!willfree) return;
     }
 
     if (module == pendingModule) {
-        pendingModule = NULL;
+	pendingModule = NULL;
     }
 
     if (module->loaded) {
-        SECMOD_UnloadModule(module);
+	SECMOD_UnloadModule(module);
     }
     PZ_DestroyLock(module->refLock);
-    PORT_FreeArena(module->arena, PR_FALSE);
+    PORT_FreeArena(module->arena,PR_FALSE);
     secmod_PrivateModuleCount--;
 }
 
@@ -875,13 +866,13 @@ SECMOD_SlotDestroyModule(SECMODModule *module, PRBool fromSlot)
 
 
 SECMODModuleList *
-SECMOD_DestroyModuleListElement(SECMODModuleList *element)
+SECMOD_DestroyModuleListElement(SECMODModuleList *element) 
 {
     SECMODModuleList *next = element->next;
 
     if (element->module) {
-        SECMOD_DestroyModule(element->module);
-        element->module = NULL;
+	SECMOD_DestroyModule(element->module);
+	element->module = NULL;
     }
     PORT_Free(element);
     return next;
@@ -890,19 +881,19 @@ SECMOD_DestroyModuleListElement(SECMODModuleList *element)
 
 
 
+
 void
-SECMOD_DestroyModuleList(SECMODModuleList *list)
+SECMOD_DestroyModuleList(SECMODModuleList *list) 
 {
     SECMODModuleList *lp;
 
-    for (lp = list; lp != NULL; lp = SECMOD_DestroyModuleListElement(lp))
-        ;
+    for ( lp = list; lp != NULL; lp = SECMOD_DestroyModuleListElement(lp)) ;
 }
 
 PRBool
 SECMOD_CanDeleteInternalModule(void)
 {
-    return (PRBool)(pendingModule == NULL);
+    return (PRBool) (pendingModule == NULL);
 }
 
 
@@ -926,8 +917,8 @@ SECMOD_UpdateSlotList(SECMODModule *mod)
     PK11SlotInfo **oldSlots = NULL;
 
     if (!moduleLock) {
-        PORT_SetError(SEC_ERROR_NOT_INITIALIZED);
-        return SECFailure;
+    	PORT_SetError(SEC_ERROR_NOT_INITIALIZED);
+	return SECFailure;
     }
 
     
@@ -937,56 +928,56 @@ SECMOD_UpdateSlotList(SECMODModule *mod)
     
     crv = PK11_GETTAB(mod)->C_GetSlotList(PR_FALSE, NULL, &count);
     if (crv != CKR_OK) {
-        PORT_SetError(PK11_MapError(crv));
-        goto loser;
+	PORT_SetError(PK11_MapError(crv));
+	goto loser;
     }
     
 
     if (count == mod->slotCount) {
-        PZ_Unlock(mod->refLock);
-        return SECSuccess;
+ 	PZ_Unlock(mod->refLock);
+	return SECSuccess;
     }
     if (count < (CK_ULONG)mod->slotCount) {
-        
-        PORT_SetError(SEC_ERROR_INCOMPATIBLE_PKCS11);
-        goto loser;
+	
+	PORT_SetError( SEC_ERROR_INCOMPATIBLE_PKCS11 );
+	goto loser;
     }
 
     
     slotIDs = PORT_NewArray(CK_SLOT_ID, count);
     if (slotIDs == NULL) {
-        goto loser;
+	goto loser;
     }
 
     crv = PK11_GETTAB(mod)->C_GetSlotList(PR_FALSE, slotIDs, &count);
     if (crv != CKR_OK) {
-        PORT_SetError(PK11_MapError(crv));
-        goto loser;
+	PORT_SetError(PK11_MapError(crv));
+	goto loser;
     }
     freeRef = PR_FALSE;
     PZ_Unlock(mod->refLock);
     mark = PORT_ArenaMark(mod->arena);
     if (mark == NULL) {
-        goto loser;
+	goto loser;
     }
-    newSlots = PORT_ArenaZNewArray(mod->arena, PK11SlotInfo *, count);
+    newSlots = PORT_ArenaZNewArray(mod->arena,PK11SlotInfo *,count);
 
     
 
 
-    for (i = 0; i < count; i++) {
-        PK11SlotInfo *slot = SECMOD_FindSlotByID(mod, slotIDs[i]);
+    for (i=0; i < count; i++) {
+	PK11SlotInfo *slot = SECMOD_FindSlotByID(mod,slotIDs[i]);
 
-        if (!slot) {
-            
-            slot = PK11_NewSlotInfo(mod);
-            if (!slot) {
-                goto loser;
-            }
-            PK11_InitSlot(mod, slotIDs[i], slot);
-            STAN_InitTokenForSlotInfo(NULL, slot);
-        }
-        newSlots[i] = slot;
+	if (!slot) {
+	    
+	    slot = PK11_NewSlotInfo(mod);
+	    if (!slot) {
+		goto loser;
+	    }
+	    PK11_InitSlot(mod, slotIDs[i], slot);
+	    STAN_InitTokenForSlotInfo(NULL, slot);
+	}
+	newSlots[i] = slot;
     }
     STAN_ResetTokenInterator(NULL);
     PORT_Free(slotIDs);
@@ -999,7 +990,7 @@ SECMOD_UpdateSlotList(SECMODModule *mod)
 
 
     SECMOD_GetWriteLock(moduleLock);
-    oldCount = mod->slotCount;
+    oldCount =mod->slotCount;
     oldSlots = mod->slots;
     mod->slots = newSlots; 
 
@@ -1007,33 +998,33 @@ SECMOD_UpdateSlotList(SECMODModule *mod)
     mod->slotCount = count;
     SECMOD_ReleaseWriteLock(moduleLock);
     
-    for (i = 0; i < oldCount; i++) {
-        PK11_FreeSlot(oldSlots[i]);
+    for (i=0; i < oldCount; i++) {
+	PK11_FreeSlot(oldSlots[i]);
     }
     return SECSuccess;
 
 loser:
     if (freeRef) {
-        PZ_Unlock(mod->refLock);
+	PZ_Unlock(mod->refLock);
     }
     if (slotIDs) {
-        PORT_Free(slotIDs);
+	PORT_Free(slotIDs);
     }
     
 
 
 
     if (newSlots) {
-        for (i = 0; i < count; i++) {
-            if (newSlots[i] == NULL) {
-                break; 
-            }
-            PK11_FreeSlot(newSlots[i]);
-        }
+	for (i=0; i < count; i++) {
+	    if (newSlots[i] == NULL) {
+		break; 
+	    }
+	    PK11_FreeSlot(newSlots[i]);
+	}
     }
     
     if (mark) {
-        PORT_ArenaRelease(mod->arena, mark);
+ 	PORT_ArenaRelease(mod->arena, mark);
     }
     return SECFailure;
 }
@@ -1044,69 +1035,69 @@ loser:
 
 
 PK11SlotInfo *
-secmod_HandleWaitForSlotEvent(SECMODModule *mod, unsigned long flags,
-                              PRIntervalTime latency)
+secmod_HandleWaitForSlotEvent(SECMODModule *mod,  unsigned long flags,
+						PRIntervalTime latency)
 {
     PRBool removableSlotsFound = PR_FALSE;
     int i;
     int error = SEC_ERROR_NO_EVENT;
 
     if (!moduleLock) {
-        PORT_SetError(SEC_ERROR_NOT_INITIALIZED);
-        return NULL;
+    	PORT_SetError(SEC_ERROR_NOT_INITIALIZED);
+	return NULL;
     }
     PZ_Lock(mod->refLock);
     if (mod->evControlMask & SECMOD_END_WAIT) {
-        mod->evControlMask &= ~SECMOD_END_WAIT;
-        PZ_Unlock(mod->refLock);
-        PORT_SetError(SEC_ERROR_NO_EVENT);
-        return NULL;
+	mod->evControlMask &= ~SECMOD_END_WAIT;
+	PZ_Unlock(mod->refLock);
+	PORT_SetError(SEC_ERROR_NO_EVENT);
+	return NULL;
     }
     mod->evControlMask |= SECMOD_WAIT_SIMULATED_EVENT;
     while (mod->evControlMask & SECMOD_WAIT_SIMULATED_EVENT) {
-        PZ_Unlock(mod->refLock);
-        
-        SECMOD_UpdateSlotList(mod);
+	PZ_Unlock(mod->refLock);
+	
+	SECMOD_UpdateSlotList(mod);
 
-        
-        SECMOD_GetReadLock(moduleLock);
-        for (i = 0; i < mod->slotCount; i++) {
-            PK11SlotInfo *slot = mod->slots[i];
-            PRUint16 series;
-            PRBool present;
+	
+	SECMOD_GetReadLock(moduleLock);
+	for (i=0; i < mod->slotCount; i++) {
+	    PK11SlotInfo *slot = mod->slots[i];
+	    PRUint16 series;
+	    PRBool present;
 
-            
-            if (slot->isPerm) {
-                continue;
-            }
-            removableSlotsFound = PR_TRUE;
-            
+	    
+	    if (slot->isPerm) {
+		continue;
+	    }
+	    removableSlotsFound = PR_TRUE;
+	    
 
-            series = slot->series;
-            present = PK11_IsPresent(slot);
-            if ((slot->flagSeries != series) || (slot->flagState != present)) {
-                slot->flagState = present;
-                slot->flagSeries = series;
-                SECMOD_ReleaseReadLock(moduleLock);
-                PZ_Lock(mod->refLock);
-                mod->evControlMask &= ~SECMOD_END_WAIT;
-                PZ_Unlock(mod->refLock);
-                return PK11_ReferenceSlot(slot);
-            }
-        }
-        SECMOD_ReleaseReadLock(moduleLock);
-        
-        if ((mod->slotCount != 0) && !removableSlotsFound) {
-            error = SEC_ERROR_NO_SLOT_SELECTED;
-            PZ_Lock(mod->refLock);
-            break;
-        }
-        if (flags & CKF_DONT_BLOCK) {
-            PZ_Lock(mod->refLock);
-            break;
-        }
-        PR_Sleep(latency);
-        PZ_Lock(mod->refLock);
+	    series = slot->series;
+	    present = PK11_IsPresent(slot);
+	    if ((slot->flagSeries != series) || (slot->flagState != present)) {
+		slot->flagState = present;
+		slot->flagSeries = series;
+		SECMOD_ReleaseReadLock(moduleLock);
+		PZ_Lock(mod->refLock);
+		mod->evControlMask &= ~SECMOD_END_WAIT;
+		PZ_Unlock(mod->refLock);
+		return PK11_ReferenceSlot(slot);
+	    }
+	}
+	SECMOD_ReleaseReadLock(moduleLock);
+	
+	if ((mod->slotCount !=0) && !removableSlotsFound) {
+	    error =SEC_ERROR_NO_SLOT_SELECTED;
+	    PZ_Lock(mod->refLock);
+	    break;
+	}
+	if (flags & CKF_DONT_BLOCK) {
+	    PZ_Lock(mod->refLock);
+	    break;
+	}
+	PR_Sleep(latency);
+ 	PZ_Lock(mod->refLock);
     }
     mod->evControlMask &= ~SECMOD_END_WAIT;
     PZ_Unlock(mod->refLock);
@@ -1122,7 +1113,7 @@ secmod_HandleWaitForSlotEvent(SECMODModule *mod, unsigned long flags,
 
 PK11SlotInfo *
 SECMOD_WaitForAnyTokenEvent(SECMODModule *mod, unsigned long flags,
-                            PRIntervalTime latency)
+						 PRIntervalTime latency)
 {
     CK_SLOT_ID id;
     CK_RV crv;
@@ -1130,17 +1121,17 @@ SECMOD_WaitForAnyTokenEvent(SECMODModule *mod, unsigned long flags,
 
     if (!pk11_getFinalizeModulesOption() ||
         ((mod->cryptokiVersion.major == 2) &&
-         (mod->cryptokiVersion.minor < 1))) {
+         (mod->cryptokiVersion.minor < 1))) { 
         
 
 
 
-        return secmod_HandleWaitForSlotEvent(mod, flags, latency);
+	return secmod_HandleWaitForSlotEvent(mod, flags, latency);
     }
     
     PZ_Lock(mod->refLock);
     if (mod->evControlMask & SECMOD_END_WAIT) {
-        goto end_wait;
+	goto end_wait;
     }
     mod->evControlMask |= SECMOD_WAIT_PKCS11_EVENT;
     PZ_Unlock(mod->refLock);
@@ -1150,39 +1141,39 @@ SECMOD_WaitForAnyTokenEvent(SECMODModule *mod, unsigned long flags,
     
 
     if (mod->evControlMask & SECMOD_END_WAIT) {
-        goto end_wait;
+	goto end_wait;
     }
     PZ_Unlock(mod->refLock);
     if (crv == CKR_FUNCTION_NOT_SUPPORTED) {
-        
-        return secmod_HandleWaitForSlotEvent(mod, flags, latency);
+	
+	return secmod_HandleWaitForSlotEvent(mod, flags, latency);
     }
     if (crv != CKR_OK) {
-        
+	
 
 
 
-        if (crv == CKR_CRYPTOKI_NOT_INITIALIZED) {
-            PORT_SetError(SEC_ERROR_NO_EVENT);
-        } else {
-            PORT_SetError(PK11_MapError(crv));
-        }
-        return NULL;
+	if (crv == CKR_CRYPTOKI_NOT_INITIALIZED) {
+	    PORT_SetError(SEC_ERROR_NO_EVENT);
+	} else {
+	    PORT_SetError(PK11_MapError(crv));
+	}
+	return NULL;
     }
     slot = SECMOD_FindSlotByID(mod, id);
     if (slot == NULL) {
-        
-        SECMOD_UpdateSlotList(mod);
-        slot = SECMOD_FindSlotByID(mod, id);
+	
+	SECMOD_UpdateSlotList(mod);
+	slot = SECMOD_FindSlotByID(mod, id);
     }
     
 
     if (slot && slot->nssToken && slot->nssToken->slot) {
-        nssSlot_ResetDelay(slot->nssToken->slot);
+	nssSlot_ResetDelay(slot->nssToken->slot);
     }
     return slot;
 
-
+    
 end_wait:
     mod->evControlMask &= ~SECMOD_END_WAIT;
     PZ_Unlock(mod->refLock);
@@ -1214,26 +1205,26 @@ SECMOD_CancelWait(SECMODModule *mod)
             rv = SECFailure;
             goto loser;
         }
-        
+	
 
 
 
 
-        crv = PK11_GETTAB(mod)->C_Finalize(NULL);
-        
+	crv = PK11_GETTAB(mod)->C_Finalize(NULL);
+	
 
-        if (CKR_OK == crv) {
+	if (CKR_OK == crv) {
             PRBool alreadyLoaded;
-            secmod_ModuleInit(mod, NULL, &alreadyLoaded);
-        } else {
-            
+	    secmod_ModuleInit(mod, NULL, &alreadyLoaded);
+	} else {
+	    
 
-            PORT_SetError(PK11_MapError(crv));
-            rv = SECFailure;
-        }
+	    PORT_SetError(PK11_MapError(crv));
+	    rv = SECFailure;
+	}
     } else if (controlMask & SECMOD_WAIT_SIMULATED_EVENT) {
-        mod->evControlMask &= ~SECMOD_WAIT_SIMULATED_EVENT;
-        
+	mod->evControlMask &= ~SECMOD_WAIT_SIMULATED_EVENT; 
+				
 
     }
 loser:
@@ -1252,21 +1243,21 @@ SECMOD_HasRemovableSlots(SECMODModule *mod)
     PRBool ret = PR_FALSE;
 
     if (!moduleLock) {
-        PORT_SetError(SEC_ERROR_NOT_INITIALIZED);
-        return ret;
+    	PORT_SetError(SEC_ERROR_NOT_INITIALIZED);
+	return ret;
     }
     SECMOD_GetReadLock(moduleLock);
-    for (i = 0; i < mod->slotCount; i++) {
-        PK11SlotInfo *slot = mod->slots[i];
-        
-        if (slot->isPerm) {
-            continue;
-        }
-        ret = PR_TRUE;
-        break;
+    for (i=0; i < mod->slotCount; i++) {
+	PK11SlotInfo *slot = mod->slots[i];
+	
+	if (slot->isPerm) {
+	    continue;
+	}
+	ret = PR_TRUE;
+	break;
     }
-    if (mod->slotCount == 0) {
-        ret = PR_TRUE;
+    if (mod->slotCount == 0 ) {
+	ret = PR_TRUE;
     }
     SECMOD_ReleaseReadLock(moduleLock);
     return ret;
@@ -1276,30 +1267,29 @@ SECMOD_HasRemovableSlots(SECMODModule *mod)
 
 
 static SECStatus
-secmod_UserDBOp(PK11SlotInfo *slot, CK_OBJECT_CLASS objClass,
-                const char *sendSpec)
+secmod_UserDBOp(PK11SlotInfo *slot, CK_OBJECT_CLASS objClass, 
+		const char *sendSpec)
 {
     CK_OBJECT_HANDLE dummy;
-    CK_ATTRIBUTE template[2];
+    CK_ATTRIBUTE template[2] ;
     CK_ATTRIBUTE *attrs = template;
     CK_RV crv;
 
-    PK11_SETATTRS(attrs, CKA_CLASS, &objClass, sizeof(objClass));
-    attrs++;
-    PK11_SETATTRS(attrs, CKA_NETSCAPE_MODULE_SPEC, (unsigned char *)sendSpec,
-                  strlen(sendSpec) + 1);
-    attrs++;
+    PK11_SETATTRS(attrs, CKA_CLASS, &objClass, sizeof(objClass)); attrs++;
+    PK11_SETATTRS(attrs, CKA_NETSCAPE_MODULE_SPEC , (unsigned char *)sendSpec,
+					 strlen(sendSpec)+1); attrs++;
 
-    PORT_Assert(attrs - template <= 2);
+    PORT_Assert(attrs-template <= 2);
+
 
     PK11_EnterSlotMonitor(slot);
     crv = PK11_CreateNewObject(slot, slot->session,
-                               template, attrs - template, PR_FALSE, &dummy);
+	template, attrs-template, PR_FALSE, &dummy);
     PK11_ExitSlotMonitor(slot);
 
     if (crv != CKR_OK) {
-        PORT_SetError(PK11_MapError(crv));
-        return SECFailure;
+	PORT_SetError(PK11_MapError(crv));
+	return SECFailure;
     }
     return SECMOD_UpdateSlotList(slot->module);
 }
@@ -1308,15 +1298,15 @@ secmod_UserDBOp(PK11SlotInfo *slot, CK_OBJECT_CLASS objClass,
 
 
 static PRBool
-secmod_SlotIsEmpty(SECMODModule *mod, CK_SLOT_ID slotID)
+secmod_SlotIsEmpty(SECMODModule *mod,  CK_SLOT_ID slotID)
 {
     PK11SlotInfo *slot = SECMOD_LookupSlot(mod->moduleID, slotID);
     if (slot) {
-        PRBool present = PK11_IsPresent(slot);
-        PK11_FreeSlot(slot);
-        if (present) {
-            return PR_FALSE;
-        }
+	PRBool present = PK11_IsPresent(slot);
+	PK11_FreeSlot(slot);
+	if (present) {
+	    return PR_FALSE;
+	}
     }
     
     return PR_TRUE;
@@ -1332,19 +1322,19 @@ secmod_FindFreeSlot(SECMODModule *mod)
 
     
     if (mod->internal && mod->isFIPS) {
-        minSlotID = SFTK_MIN_FIPS_USER_SLOT_ID;
-        maxSlotID = SFTK_MAX_FIPS_USER_SLOT_ID;
+	minSlotID = SFTK_MIN_FIPS_USER_SLOT_ID;
+	maxSlotID = SFTK_MAX_FIPS_USER_SLOT_ID;
     } else {
-        minSlotID = SFTK_MIN_USER_SLOT_ID;
-        maxSlotID = SFTK_MAX_USER_SLOT_ID;
+	minSlotID = SFTK_MIN_USER_SLOT_ID;
+	maxSlotID = SFTK_MAX_USER_SLOT_ID;
     }
-    for (i = minSlotID; i < maxSlotID; i++) {
-        if (secmod_SlotIsEmpty(mod, i)) {
-            return i;
-        }
+    for (i=minSlotID; i < maxSlotID; i++) {
+	if (secmod_SlotIsEmpty(mod,i)) {
+	    return i;
+	}
     }
     PORT_SetError(SEC_ERROR_NO_SLOT_SELECTED);
-    return (CK_SLOT_ID)-1;
+    return (CK_SLOT_ID) -1;
 }
 
 
@@ -1371,67 +1361,53 @@ SECMOD_OpenNewSlot(SECMODModule *mod, const char *moduleSpec)
     SECStatus rv;
 
     slotID = secmod_FindFreeSlot(mod);
-    if (slotID == (CK_SLOT_ID)-1) {
-        return NULL;
+    if (slotID == (CK_SLOT_ID) -1) {
+	return NULL;
     }
 
     if (mod->slotCount == 0) {
-        return NULL;
+	return NULL;
     }
 
     
     slot = PK11_ReferenceSlot(mod->slots[0]);
     if (slot == NULL) {
-        return NULL;
+	return NULL;
     }
 
     
     escSpec = NSSUTIL_DoubleEscape(moduleSpec, '>', ']');
     if (escSpec == NULL) {
-        PK11_FreeSlot(slot);
-        return NULL;
+	PK11_FreeSlot(slot);
+	return NULL;
     }
     sendSpec = PR_smprintf("tokens=[0x%x=<%s>]", slotID, escSpec);
     PORT_Free(escSpec);
 
     if (sendSpec == NULL) {
-        
-        PK11_FreeSlot(slot);
-        PORT_SetError(SEC_ERROR_NO_MEMORY);
-        return NULL;
+	
+	PK11_FreeSlot(slot);
+	PORT_SetError(SEC_ERROR_NO_MEMORY);
+	return NULL;
     }
     rv = secmod_UserDBOp(slot, CKO_NETSCAPE_NEWSLOT, sendSpec);
     PR_smprintf_free(sendSpec);
     PK11_FreeSlot(slot);
     if (rv != SECSuccess) {
-        return NULL;
+	return NULL;
     }
 
     slot = SECMOD_FindSlotByID(mod, slotID);
     if (slot) {
-        
+	
 
-        if (slot->nssToken && slot->nssToken->slot) {
-            nssSlot_ResetDelay(slot->nssToken->slot);
-        }
-        
-        (void)PK11_IsPresent(slot);
+	if (slot->nssToken && slot->nssToken->slot) {
+	    nssSlot_ResetDelay(slot->nssToken->slot);
+	}
+	
+	(void)PK11_IsPresent(slot);
     }
     return slot;
-}
-
-
-
-
-PK11SlotInfo *
-secmod_FindSlotFromModuleSpec(const char *moduleSpec, SECMODModule *module)
-{
-    CK_SLOT_ID slot_id = secmod_GetSlotIDFromModuleSpec(moduleSpec, module);
-    if (slot_id == -1) {
-        return NULL;
-    }
-
-    return SECMOD_FindSlotByID(module, slot_id);
 }
 
 
@@ -1487,38 +1463,22 @@ PK11SlotInfo *
 SECMOD_OpenUserDB(const char *moduleSpec)
 {
     SECMODModule *mod;
-    SECMODConfigList *conflist = NULL;
-    int count = 0;
 
     if (moduleSpec == NULL) {
-        return NULL;
+	return NULL;
     }
 
     
 
     mod = SECMOD_GetInternalModule();
     if (!mod) {
-        
-        PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
-        return NULL;
-    }
-
-    
-
-
-    conflist = secmod_GetConfigList(mod->isFIPS, mod->libraryParams, &count);
-    if (conflist) {
-        PK11SlotInfo *slot = NULL;
-        if (secmod_MatchConfigList(moduleSpec, conflist, count)) {
-            slot = secmod_FindSlotFromModuleSpec(moduleSpec, mod);
-        }
-        secmod_FreeConfigList(conflist, count);
-        if (slot) {
-            return slot;
-        }
+	
+	PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
+	return NULL;
     }
     return SECMOD_OpenNewSlot(mod, moduleSpec);
 }
+
 
 
 
@@ -1531,21 +1491,21 @@ SECMOD_CloseUserDB(PK11SlotInfo *slot)
 {
     SECStatus rv;
     char *sendSpec;
-
+    
     sendSpec = PR_smprintf("tokens=[0x%x=<>]", slot->slotID);
     if (sendSpec == NULL) {
-        
-        PORT_SetError(SEC_ERROR_NO_MEMORY);
-        return SECFailure;
+	
+	PORT_SetError(SEC_ERROR_NO_MEMORY);
+	return SECFailure;
     }
     rv = secmod_UserDBOp(slot, CKO_NETSCAPE_DELSLOT, sendSpec);
     PR_smprintf_free(sendSpec);
     
 
     if (slot->nssToken && slot->nssToken->slot) {
-        nssSlot_ResetDelay(slot->nssToken->slot);
-        
-        (void)PK11_IsPresent(slot);
+	nssSlot_ResetDelay(slot->nssToken->slot);
+	
+	(void)PK11_IsPresent(slot);
     }
     return rv;
 }
@@ -1561,58 +1521,59 @@ SECMOD_RestartModules(PRBool force)
     int lastError = 0;
 
     if (!moduleLock) {
-        PORT_SetError(SEC_ERROR_NOT_INITIALIZED);
-        return SECFailure;
+    	PORT_SetError(SEC_ERROR_NOT_INITIALIZED);
+	return SECFailure;
     }
 
     
     SECMOD_GetReadLock(moduleLock);
     for (mlp = modules; mlp != NULL; mlp = mlp->next) {
-        SECMODModule *mod = mlp->module;
-        CK_ULONG count;
-        SECStatus rv;
-        int i;
+	SECMODModule *mod = mlp->module;
+	CK_ULONG count;
+	SECStatus rv;
+	int i;
 
-        
-        if (force || (PK11_GETTAB(mod)->C_GetSlotList(CK_FALSE, NULL, &count) != CKR_OK)) {
+	
+	if (force  || (PK11_GETTAB(mod)->
+			C_GetSlotList(CK_FALSE, NULL, &count) != CKR_OK)) {
             PRBool alreadyLoaded;
-            
+	    
 
 
-            (void)PK11_GETTAB(mod)->C_Finalize(NULL);
-            
+	    (void) PK11_GETTAB(mod)->C_Finalize(NULL);
+	    
 
 
-            rv = secmod_ModuleInit(mod, NULL, &alreadyLoaded);
-            if (rv != SECSuccess) {
-                
-                lastError = PORT_GetError();
-                rrv = rv;
-                
-                for (i = 0; i < mod->slotCount; i++) {
-                    mod->slots[i]->disabled = PR_TRUE;
-                    mod->slots[i]->reason = PK11_DIS_COULD_NOT_INIT_TOKEN;
-                }
-                continue;
-            }
-            for (i = 0; i < mod->slotCount; i++) {
-                
+	    rv = secmod_ModuleInit(mod, NULL, &alreadyLoaded);
+	    if (rv != SECSuccess) {
+		
+		lastError = PORT_GetError();
+		rrv = rv;
+		
+		for (i=0; i < mod->slotCount; i++) {
+		    mod->slots[i]->disabled = PR_TRUE;
+		    mod->slots[i]->reason = PK11_DIS_COULD_NOT_INIT_TOKEN;
+		}
+		continue;
+	    }
+	    for (i=0; i < mod->slotCount; i++) {
+		
 
 
-                rv = PK11_InitToken(mod->slots[i], PR_TRUE);
-                
+		rv = PK11_InitToken(mod->slots[i],PR_TRUE);
+		
 
 
-                if (rv != SECSuccess && PK11_IsPresent(mod->slots[i])) {
-                    
-                    lastError = PORT_GetError();
-                    rrv = rv;
-                    
-                    mod->slots[i]->disabled = PR_TRUE;
-                    mod->slots[i]->reason = PK11_DIS_COULD_NOT_INIT_TOKEN;
-                }
-            }
-        }
+		if (rv != SECSuccess && PK11_IsPresent(mod->slots[i])) {
+		    
+		    lastError = PORT_GetError();
+		    rrv = rv;
+		    
+		    mod->slots[i]->disabled = PR_TRUE;
+		    mod->slots[i]->reason = PK11_DIS_COULD_NOT_INIT_TOKEN;
+		}
+	    }
+	}
     }
     SECMOD_ReleaseReadLock(moduleLock);
 
@@ -1621,8 +1582,8 @@ SECMOD_RestartModules(PRBool force)
 
 
     if (rrv != SECSuccess) {
-        
-        PORT_SetError(lastError);
+	
+	PORT_SetError(lastError);
     }
 
     return rrv;

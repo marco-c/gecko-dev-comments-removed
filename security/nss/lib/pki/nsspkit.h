@@ -139,7 +139,7 @@ typedef struct NSSCryptoContextStr NSSCryptoContext;
 
 
 
-struct NSSOIDStr; 
+struct NSSOIDStr;  
 typedef struct NSSOIDStr NSSOID;
 
 
@@ -212,16 +212,16 @@ typedef struct NSSCallbackStr NSSCallback;
 
 struct NSSCallbackStr {
     
-    PRStatus (*getInitPW)(NSSUTF8 *slotName, void *arg,
-                          NSSUTF8 **ssoPW, NSSUTF8 **userPW);
+    PRStatus (* getInitPW)(NSSUTF8 *slotName, void *arg, 
+                           NSSUTF8 **ssoPW, NSSUTF8 **userPW); 
     
 
 
-    PRStatus (*getNewPW)(NSSUTF8 *slotName, PRUint32 *retries, void *arg,
-                         NSSUTF8 **oldPW, NSSUTF8 **newPW);
+    PRStatus (* getNewPW)(NSSUTF8 *slotName, PRUint32 *retries, void *arg,
+                          NSSUTF8 **oldPW, NSSUTF8 **newPW); 
     
-    PRStatus (*getPW)(NSSUTF8 *slotName, PRUint32 *retries, void *arg,
-                      NSSUTF8 **password);
+    PRStatus (* getPW)(NSSUTF8 *slotName, PRUint32 *retries, void *arg,
+                       NSSUTF8 **password); 
     void *arg;
 };
 
@@ -231,14 +231,14 @@ typedef PRUint32 NSSOperations;
 
 
 
-#define NSSOperations_ENCRYPT 0x0001
-#define NSSOperations_DECRYPT 0x0002
-#define NSSOperations_WRAP 0x0004
-#define NSSOperations_UNWRAP 0x0008
-#define NSSOperations_SIGN 0x0010
-#define NSSOperations_SIGN_RECOVER 0x0020
-#define NSSOperations_VERIFY 0x0040
-#define NSSOperations_VERIFY_RECOVER 0x0080
+#define NSSOperations_ENCRYPT           0x0001
+#define NSSOperations_DECRYPT           0x0002
+#define NSSOperations_WRAP              0x0004
+#define NSSOperations_UNWRAP            0x0008
+#define NSSOperations_SIGN              0x0010
+#define NSSOperations_SIGN_RECOVER      0x0020
+#define NSSOperations_VERIFY            0x0040
+#define NSSOperations_VERIFY_RECOVER    0x0080
 
 struct NSSPKIXCertificateStr;
 

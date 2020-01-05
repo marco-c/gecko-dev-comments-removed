@@ -99,7 +99,7 @@ nssCKFWMechanism_Destroy(
 {
     
 
-    if (fwMechanism->mdMechanism->Destroy) {
+    if (!fwMechanism->mdMechanism->Destroy) {
         
         fwMechanism->mdMechanism->Destroy(
             fwMechanism->mdMechanism,

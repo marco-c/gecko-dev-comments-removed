@@ -19,17 +19,15 @@
 #include "hasht.h"
 
 static void
-pk11_EnterKeyMonitor(PK11SymKey *symKey)
-{
-    if (!symKey->sessionOwner || !(symKey->slot->isThreadSafe))
-        PK11_EnterSlotMonitor(symKey->slot);
+pk11_EnterKeyMonitor(PK11SymKey *symKey) {
+    if (!symKey->sessionOwner || !(symKey->slot->isThreadSafe)) 
+	PK11_EnterSlotMonitor(symKey->slot);
 }
 
 static void
-pk11_ExitKeyMonitor(PK11SymKey *symKey)
-{
-    if (!symKey->sessionOwner || !(symKey->slot->isThreadSafe))
-        PK11_ExitSlotMonitor(symKey->slot);
+pk11_ExitKeyMonitor(PK11SymKey *symKey) {
+    if (!symKey->sessionOwner || !(symKey->slot->isThreadSafe)) 
+    	PK11_ExitSlotMonitor(symKey->slot);
 }
 
 
@@ -38,67 +36,66 @@ pk11_ExitKeyMonitor(PK11SymKey *symKey)
 
 
 static PK11SymKey *
-pk11_getKeyFromList(PK11SlotInfo *slot, PRBool needSession)
-{
+pk11_getKeyFromList(PK11SlotInfo *slot, PRBool needSession) {
     PK11SymKey *symKey = NULL;
 
     PZ_Lock(slot->freeListLock);
     
 
     if (needSession) {
-        if (slot->freeSymKeysWithSessionHead) {
-            symKey = slot->freeSymKeysWithSessionHead;
-            slot->freeSymKeysWithSessionHead = symKey->next;
-            slot->keyCount--;
-        }
+	if (slot->freeSymKeysWithSessionHead) {
+    	    symKey = slot->freeSymKeysWithSessionHead;
+	    slot->freeSymKeysWithSessionHead = symKey->next;
+	    slot->keyCount--;
+	}
     }
     
 
     if (!symKey) {
-        if (slot->freeSymKeysHead) {
-            symKey = slot->freeSymKeysHead;
-            slot->freeSymKeysHead = symKey->next;
-            slot->keyCount--;
-        }
+	if (slot->freeSymKeysHead) {
+    	    symKey = slot->freeSymKeysHead;
+	    slot->freeSymKeysHead = symKey->next;
+	    slot->keyCount--;
+	}
     }
     PZ_Unlock(slot->freeListLock);
     if (symKey) {
-        symKey->next = NULL;
-        if (!needSession) {
-            return symKey;
-        }
-        
+	symKey->next = NULL;
+	if (!needSession) {
+	    return symKey;
+	}
+	
 
 
-        if ((symKey->series != slot->series) ||
-            (symKey->session == CK_INVALID_SESSION)) {
-            symKey->session = pk11_GetNewSession(slot, &symKey->sessionOwner);
-        }
-        PORT_Assert(symKey->session != CK_INVALID_SESSION);
-        if (symKey->session != CK_INVALID_SESSION)
-            return symKey;
-        PK11_FreeSymKey(symKey);
-        
+	if ((symKey->series != slot->series) || 
+			 (symKey->session == CK_INVALID_SESSION)) {
+	    symKey->session = pk11_GetNewSession(slot, &symKey->sessionOwner);
+	}
+	PORT_Assert(symKey->session != CK_INVALID_SESSION);
+	if (symKey->session != CK_INVALID_SESSION)
+	    return symKey;
+	PK11_FreeSymKey(symKey);
+	
 
 
-        return NULL;
+	return NULL;
     }
 
     symKey = PORT_New(PK11SymKey);
     if (symKey == NULL) {
-        return NULL;
+	return NULL;
     }
 
     symKey->next = NULL;
     if (needSession) {
-        symKey->session = pk11_GetNewSession(slot, &symKey->sessionOwner);
-        PORT_Assert(symKey->session != CK_INVALID_SESSION);
+	symKey->session = pk11_GetNewSession(slot,&symKey->sessionOwner);
+	PORT_Assert(symKey->session != CK_INVALID_SESSION);
         if (symKey->session == CK_INVALID_SESSION) {
-            PK11_FreeSymKey(symKey);
-            symKey = NULL;
-        }
+	    PK11_FreeSymKey(symKey);
+	    symKey = NULL;
+	}
     } else {
-        symKey->session = CK_INVALID_SESSION;
+	symKey->session = CK_INVALID_SESSION;
     }
     return symKey;
 }
@@ -110,16 +107,16 @@ PK11_CleanKeyList(PK11SlotInfo *slot)
     PK11SymKey *symKey = NULL;
 
     while (slot->freeSymKeysWithSessionHead) {
-        symKey = slot->freeSymKeysWithSessionHead;
-        slot->freeSymKeysWithSessionHead = symKey->next;
-        pk11_CloseSession(slot, symKey->session, symKey->sessionOwner);
-        PORT_Free(symKey);
+    	symKey = slot->freeSymKeysWithSessionHead;
+	slot->freeSymKeysWithSessionHead = symKey->next;
+	pk11_CloseSession(slot, symKey->session, symKey->sessionOwner);
+	PORT_Free(symKey);
     }
     while (slot->freeSymKeysHead) {
-        symKey = slot->freeSymKeysHead;
-        slot->freeSymKeysHead = symKey->next;
-        pk11_CloseSession(slot, symKey->session, symKey->sessionOwner);
-        PORT_Free(symKey);
+    	symKey = slot->freeSymKeysHead;
+	slot->freeSymKeysHead = symKey->next;
+	pk11_CloseSession(slot, symKey->session, symKey->sessionOwner);
+	PORT_Free(symKey);
     }
     return;
 }
@@ -134,22 +131,22 @@ PK11_CleanKeyList(PK11SlotInfo *slot)
 
 
 static PK11SymKey *
-pk11_CreateSymKey(PK11SlotInfo *slot, CK_MECHANISM_TYPE type,
-                  PRBool owner, PRBool needSession, void *wincx)
+pk11_CreateSymKey(PK11SlotInfo *slot, CK_MECHANISM_TYPE type, 
+		  PRBool owner, PRBool needSession, void *wincx)
 {
 
     PK11SymKey *symKey = pk11_getKeyFromList(slot, needSession);
 
     if (symKey == NULL) {
-        return NULL;
+	return NULL;
     }
     
 
 
     if (needSession && symKey->session == CK_INVALID_SESSION) {
-        PK11_FreeSymKey(symKey);
-        PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
-        return NULL;
+    	PK11_FreeSymKey(symKey);
+	PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
+	return NULL;
     }
 
     symKey->type = type;
@@ -181,26 +178,27 @@ PK11_FreeSymKey(PK11SymKey *symKey)
     PRBool freeit = PR_TRUE;
 
     if (PR_ATOMIC_DECREMENT(&symKey->refCount) == 0) {
-        PK11SymKey *parent = symKey->parent;
+	PK11SymKey *parent = symKey->parent;
 
-        symKey->parent = NULL;
-        if ((symKey->owner) && symKey->objectID != CK_INVALID_HANDLE) {
-            pk11_EnterKeyMonitor(symKey);
-            (void)PK11_GETTAB(symKey->slot)->C_DestroyObject(symKey->session, symKey->objectID);
-            pk11_ExitKeyMonitor(symKey);
-        }
-        if (symKey->data.data) {
-            PORT_Memset(symKey->data.data, 0, symKey->data.len);
-            PORT_Free(symKey->data.data);
-        }
-        
-        if (symKey->userData && symKey->freeFunc) {
-            (*symKey->freeFunc)(symKey->userData);
-        }
+	symKey->parent = NULL;
+	if ((symKey->owner) && symKey->objectID != CK_INVALID_HANDLE) {
+	    pk11_EnterKeyMonitor(symKey);
+	    (void) PK11_GETTAB(symKey->slot)->
+		C_DestroyObject(symKey->session, symKey->objectID);
+	    pk11_ExitKeyMonitor(symKey);
+	}
+	if (symKey->data.data) {
+	    PORT_Memset(symKey->data.data, 0, symKey->data.len);
+	    PORT_Free(symKey->data.data);
+	}
+	
+	if (symKey->userData && symKey->freeFunc) {
+	    (*symKey->freeFunc)(symKey->userData);
+	}
         slot = symKey->slot;
         PZ_Lock(slot->freeListLock);
-        if (slot->keyCount < slot->maxKeyCount) {
-            
+	if (slot->keyCount < slot->maxKeyCount) {
+	    
 
 
 
@@ -211,30 +209,30 @@ PK11_FreeSymKey(PK11SymKey *symKey)
 
 
 
-            if (symKey->sessionOwner) {
-                PORT_Assert(symKey->session != CK_INVALID_SESSION);
-                symKey->next = slot->freeSymKeysWithSessionHead;
-                slot->freeSymKeysWithSessionHead = symKey;
-            } else {
-                symKey->session = CK_INVALID_SESSION;
-                symKey->next = slot->freeSymKeysHead;
-                slot->freeSymKeysHead = symKey;
-            }
-            slot->keyCount++;
-            symKey->slot = NULL;
-            freeit = PR_FALSE;
+	    if (symKey->sessionOwner) {
+		PORT_Assert (symKey->session != CK_INVALID_SESSION);
+		symKey->next = slot->freeSymKeysWithSessionHead;
+		slot->freeSymKeysWithSessionHead = symKey;
+	    } else {
+		symKey->session = CK_INVALID_SESSION;
+		symKey->next = slot->freeSymKeysHead;
+		slot->freeSymKeysHead = symKey;
+	    }
+	    slot->keyCount++;
+	    symKey->slot = NULL;
+	    freeit = PR_FALSE;
         }
-        PZ_Unlock(slot->freeListLock);
+	PZ_Unlock(slot->freeListLock);
         if (freeit) {
-            pk11_CloseSession(symKey->slot, symKey->session,
-                              symKey->sessionOwner);
-            PORT_Free(symKey);
-        }
-        PK11_FreeSlot(slot);
+	    pk11_CloseSession(symKey->slot, symKey->session,
+							symKey->sessionOwner);
+	    PORT_Free(symKey);
+	}
+	PK11_FreeSlot(slot);
 
-        if (parent) {
-            PK11_FreeSymKey(parent);
-        }
+	if (parent) {
+	    PK11_FreeSymKey(parent);
+	}
     }
 }
 
@@ -263,10 +261,9 @@ PK11_GetSlotFromKey(PK11SymKey *symKey)
     return PK11_ReferenceSlot(symKey->slot);
 }
 
-CK_KEY_TYPE
-PK11_GetSymKeyType(PK11SymKey *symKey)
+CK_KEY_TYPE PK11_GetSymKeyType(PK11SymKey *symKey)
 {
-    return PK11_GetKeyType(symKey->type, symKey->size);
+    return PK11_GetKeyType(symKey->type,symKey->size);
 }
 
 PK11SymKey *
@@ -278,13 +275,13 @@ PK11_GetNextSymKey(PK11SymKey *symKey)
 char *
 PK11_GetSymKeyNickname(PK11SymKey *symKey)
 {
-    return PK11_GetObjectNickname(symKey->slot, symKey->objectID);
+    return PK11_GetObjectNickname(symKey->slot,symKey->objectID);
 }
 
 SECStatus
 PK11_SetSymKeyNickname(PK11SymKey *symKey, const char *nickname)
 {
-    return PK11_SetObjectNickname(symKey->slot, symKey->objectID, nickname);
+    return PK11_SetObjectNickname(symKey->slot,symKey->objectID,nickname);
 }
 
 void *
@@ -294,12 +291,12 @@ PK11_GetSymKeyUserData(PK11SymKey *symKey)
 }
 
 void
-PK11_SetSymKeyUserData(PK11SymKey *symKey, void *userData,
-                       PK11FreeDataFunc freeFunc)
+PK11_SetSymKeyUserData(PK11SymKey *symKey, void *userData, 
+                                              PK11FreeDataFunc freeFunc)
 {
     
     if (symKey->userData && symKey->freeFunc) {
-        (*symKey->freeFunc)(symKey->userData);
+	(*symKey->freeFunc)(symKey->userData);
     }
     symKey->userData = userData;
     symKey->freeFunc = freeFunc;
@@ -311,18 +308,18 @@ PK11_SetSymKeyUserData(PK11SymKey *symKey, void *userData,
 
 PK11SymKey *
 PK11_SymKeyFromHandle(PK11SlotInfo *slot, PK11SymKey *parent, PK11Origin origin,
-                      CK_MECHANISM_TYPE type, CK_OBJECT_HANDLE keyID, PRBool owner, void *wincx)
+    CK_MECHANISM_TYPE type, CK_OBJECT_HANDLE keyID, PRBool owner, void *wincx)
 {
     PK11SymKey *symKey;
     PRBool needSession = !(owner && parent);
 
     if (keyID == CK_INVALID_HANDLE) {
-        return NULL;
+	return NULL;
     }
 
     symKey = pk11_CreateSymKey(slot, type, owner, needSession, wincx);
     if (symKey == NULL) {
-        return NULL;
+	return NULL;
     }
 
     symKey->objectID = keyID;
@@ -333,18 +330,18 @@ PK11_SymKeyFromHandle(PK11SlotInfo *slot, PK11SymKey *parent, PK11Origin origin,
 
 
     if (!needSession) {
-        symKey->sessionOwner = PR_FALSE;
-        symKey->session = parent->session;
-        symKey->parent = PK11_ReferenceSymKey(parent);
+	symKey->sessionOwner = PR_FALSE;
+	symKey->session = parent->session;
+	symKey->parent = PK11_ReferenceSymKey(parent);
         
 
 
-        PORT_Assert(parent->session != CK_INVALID_SESSION);
-        if (parent->session == CK_INVALID_SESSION) {
-            PK11_FreeSymKey(symKey);
-            PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
-            return NULL;
-        }
+	PORT_Assert(parent->session != CK_INVALID_SESSION);
+	if (parent->session == CK_INVALID_SESSION) {
+	    PK11_FreeSymKey(symKey);
+	    PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
+	    return NULL;
+	}
     }
 
     return symKey;
@@ -355,19 +352,16 @@ PK11_SymKeyFromHandle(PK11SlotInfo *slot, PK11SymKey *parent, PK11Origin origin,
 
 PK11SymKey *
 PK11_GetWrapKey(PK11SlotInfo *slot, int wrap, CK_MECHANISM_TYPE type,
-                int series, void *wincx)
+						    int series, void *wincx)
 {
     PK11SymKey *symKey = NULL;
 
-    if (slot->series != series)
-        return NULL;
-    if (slot->refKeys[wrap] == CK_INVALID_HANDLE)
-        return NULL;
-    if (type == CKM_INVALID_MECHANISM)
-        type = slot->wrapMechanism;
+    if (slot->series != series) return NULL;
+    if (slot->refKeys[wrap] == CK_INVALID_HANDLE) return NULL;
+    if (type == CKM_INVALID_MECHANISM) type = slot->wrapMechanism;
 
     symKey = PK11_SymKeyFromHandle(slot, NULL, PK11_OriginDerive,
-                                   slot->wrapMechanism, slot->refKeys[wrap], PR_FALSE, wincx);
+		 slot->wrapMechanism, slot->refKeys[wrap], PR_FALSE, wincx);
     return symKey;
 }
 
@@ -391,26 +385,26 @@ PK11_SetWrapKey(PK11SlotInfo *slot, int wrap, PK11SymKey *wrapKey)
 
 
 
+
 PRBool
-PK11_VerifyKeyOK(PK11SymKey *key)
-{
+PK11_VerifyKeyOK(PK11SymKey *key) {
     if (!PK11_IsPresent(key->slot)) {
-        return PR_FALSE;
+	return PR_FALSE;
     }
     return (PRBool)(key->series == key->slot->series);
 }
 
 static PK11SymKey *
 pk11_ImportSymKeyWithTempl(PK11SlotInfo *slot, CK_MECHANISM_TYPE type,
-                           PK11Origin origin, PRBool isToken, CK_ATTRIBUTE *keyTemplate,
-                           unsigned int templateCount, SECItem *key, void *wincx)
+                  PK11Origin origin, PRBool isToken, CK_ATTRIBUTE *keyTemplate,
+		  unsigned int templateCount, SECItem *key, void *wincx)
 {
-    PK11SymKey *symKey;
-    SECStatus rv;
+    PK11SymKey *    symKey;
+    SECStatus	    rv;
 
     symKey = pk11_CreateSymKey(slot, type, !isToken, PR_TRUE, wincx);
     if (symKey == NULL) {
-        return NULL;
+	return NULL;
     }
 
     symKey->size = key->len;
@@ -418,19 +412,19 @@ pk11_ImportSymKeyWithTempl(PK11SlotInfo *slot, CK_MECHANISM_TYPE type,
     PK11_SETATTRS(&keyTemplate[templateCount], CKA_VALUE, key->data, key->len);
     templateCount++;
 
-    if (SECITEM_CopyItem(NULL, &symKey->data, key) != SECSuccess) {
-        PK11_FreeSymKey(symKey);
-        return NULL;
+    if (SECITEM_CopyItem(NULL,&symKey->data,key) != SECSuccess) {
+	PK11_FreeSymKey(symKey);
+	return NULL;
     }
 
     symKey->origin = origin;
 
     
     rv = PK11_CreateNewObject(slot, symKey->session, keyTemplate,
-                              templateCount, isToken, &symKey->objectID);
-    if (rv != SECSuccess) {
-        PK11_FreeSymKey(symKey);
-        return NULL;
+		 	templateCount, isToken, &symKey->objectID);
+    if ( rv != SECSuccess) {
+	PK11_FreeSymKey(symKey);
+	return NULL;
     }
 
     return symKey;
@@ -441,80 +435,74 @@ pk11_ImportSymKeyWithTempl(PK11SlotInfo *slot, CK_MECHANISM_TYPE type,
 
 PK11SymKey *
 PK11_ImportSymKey(PK11SlotInfo *slot, CK_MECHANISM_TYPE type,
-                  PK11Origin origin, CK_ATTRIBUTE_TYPE operation, SECItem *key, void *wincx)
+     PK11Origin origin, CK_ATTRIBUTE_TYPE operation, SECItem *key,void *wincx)
 {
-    PK11SymKey *symKey;
-    unsigned int templateCount = 0;
-    CK_OBJECT_CLASS keyClass = CKO_SECRET_KEY;
-    CK_KEY_TYPE keyType = CKK_GENERIC_SECRET;
-    CK_BBOOL cktrue = CK_TRUE; 
-    CK_ATTRIBUTE keyTemplate[5];
-    CK_ATTRIBUTE *attrs = keyTemplate;
+    PK11SymKey *    symKey;
+    unsigned int    templateCount = 0;
+    CK_OBJECT_CLASS keyClass 	= CKO_SECRET_KEY;
+    CK_KEY_TYPE     keyType 	= CKK_GENERIC_SECRET;
+    CK_BBOOL        cktrue 	= CK_TRUE; 
+    CK_ATTRIBUTE    keyTemplate[5];
+    CK_ATTRIBUTE *  attrs 	= keyTemplate;
 
-    PK11_SETATTRS(attrs, CKA_CLASS, &keyClass, sizeof(keyClass));
-    attrs++;
-    PK11_SETATTRS(attrs, CKA_KEY_TYPE, &keyType, sizeof(keyType));
-    attrs++;
-    PK11_SETATTRS(attrs, operation, &cktrue, 1);
-    attrs++;
+    PK11_SETATTRS(attrs, CKA_CLASS, &keyClass, sizeof(keyClass) ); attrs++;
+    PK11_SETATTRS(attrs, CKA_KEY_TYPE, &keyType, sizeof(keyType) ); attrs++;
+    PK11_SETATTRS(attrs, operation, &cktrue, 1); attrs++;
     templateCount = attrs - keyTemplate;
-    PR_ASSERT(templateCount + 1 <= sizeof(keyTemplate) / sizeof(CK_ATTRIBUTE));
+    PR_ASSERT(templateCount+1 <= sizeof(keyTemplate)/sizeof(CK_ATTRIBUTE));
 
-    keyType = PK11_GetKeyType(type, key->len);
-    symKey = pk11_ImportSymKeyWithTempl(slot, type, origin, PR_FALSE,
-                                        keyTemplate, templateCount, key, wincx);
+    keyType = PK11_GetKeyType(type,key->len);
+    symKey = pk11_ImportSymKeyWithTempl(slot, type, origin, PR_FALSE, 
+				keyTemplate, templateCount, key, wincx);
     return symKey;
 }
+
 
 
 
 
 PK11SymKey *
 PK11_ImportSymKeyWithFlags(PK11SlotInfo *slot, CK_MECHANISM_TYPE type,
-                           PK11Origin origin, CK_ATTRIBUTE_TYPE operation, SECItem *key,
-                           CK_FLAGS flags, PRBool isPerm, void *wincx)
+     PK11Origin origin, CK_ATTRIBUTE_TYPE operation, SECItem *key,
+     CK_FLAGS flags, PRBool isPerm, void *wincx)
 {
-    PK11SymKey *symKey;
-    unsigned int templateCount = 0;
-    CK_OBJECT_CLASS keyClass = CKO_SECRET_KEY;
-    CK_KEY_TYPE keyType = CKK_GENERIC_SECRET;
-    CK_BBOOL cktrue = CK_TRUE; 
-    CK_ATTRIBUTE keyTemplate[MAX_TEMPL_ATTRS];
-    CK_ATTRIBUTE *attrs = keyTemplate;
+    PK11SymKey *    symKey;
+    unsigned int    templateCount = 0;
+    CK_OBJECT_CLASS keyClass 	= CKO_SECRET_KEY;
+    CK_KEY_TYPE     keyType 	= CKK_GENERIC_SECRET;
+    CK_BBOOL        cktrue 	= CK_TRUE; 
+    CK_ATTRIBUTE    keyTemplate[MAX_TEMPL_ATTRS];
+    CK_ATTRIBUTE *  attrs 	= keyTemplate;
 
-    PK11_SETATTRS(attrs, CKA_CLASS, &keyClass, sizeof(keyClass));
-    attrs++;
-    PK11_SETATTRS(attrs, CKA_KEY_TYPE, &keyType, sizeof(keyType));
-    attrs++;
+    PK11_SETATTRS(attrs, CKA_CLASS, &keyClass, sizeof(keyClass) ); attrs++;
+    PK11_SETATTRS(attrs, CKA_KEY_TYPE, &keyType, sizeof(keyType) ); attrs++;
     if (isPerm) {
-        PK11_SETATTRS(attrs, CKA_TOKEN, &cktrue, sizeof(cktrue));
-        attrs++;
-        
+	PK11_SETATTRS(attrs, CKA_TOKEN, &cktrue, sizeof(cktrue) ); attrs++;
+	
 
-        PK11_SETATTRS(attrs, CKA_PRIVATE, &cktrue, sizeof(cktrue));
-        attrs++;
+	PK11_SETATTRS(attrs, CKA_PRIVATE, &cktrue, sizeof(cktrue) ); attrs++;
     }
     attrs += pk11_OpFlagsToAttributes(flags, attrs, &cktrue);
     if ((operation != CKA_FLAGS_ONLY) &&
-        !pk11_FindAttrInTemplate(keyTemplate, attrs - keyTemplate, operation)) {
-        PK11_SETATTRS(attrs, operation, &cktrue, sizeof(cktrue));
-        attrs++;
+    	 !pk11_FindAttrInTemplate(keyTemplate, attrs-keyTemplate, operation)) {
+        PK11_SETATTRS(attrs, operation, &cktrue, sizeof(cktrue)); attrs++;
     }
     templateCount = attrs - keyTemplate;
-    PR_ASSERT(templateCount + 1 <= sizeof(keyTemplate) / sizeof(CK_ATTRIBUTE));
+    PR_ASSERT(templateCount+1 <= sizeof(keyTemplate)/sizeof(CK_ATTRIBUTE));
 
-    keyType = PK11_GetKeyType(type, key->len);
+    keyType = PK11_GetKeyType(type,key->len);
     symKey = pk11_ImportSymKeyWithTempl(slot, type, origin, isPerm,
-                                        keyTemplate, templateCount, key, wincx);
+				 keyTemplate, templateCount, key, wincx);
     if (symKey && isPerm) {
-        symKey->owner = PR_FALSE;
+	symKey->owner = PR_FALSE;
     }
     return symKey;
 }
 
+
 PK11SymKey *
 PK11_FindFixedKey(PK11SlotInfo *slot, CK_MECHANISM_TYPE type, SECItem *keyID,
-                  void *wincx)
+								void *wincx)
 {
     CK_ATTRIBUTE findTemp[4];
     CK_ATTRIBUTE *attrs;
@@ -524,23 +512,20 @@ PK11_FindFixedKey(PK11SlotInfo *slot, CK_MECHANISM_TYPE type, SECItem *keyID,
     CK_OBJECT_HANDLE key_id;
 
     attrs = findTemp;
-    PK11_SETATTRS(attrs, CKA_CLASS, &keyclass, sizeof(keyclass));
-    attrs++;
-    PK11_SETATTRS(attrs, CKA_TOKEN, &ckTrue, sizeof(ckTrue));
-    attrs++;
+    PK11_SETATTRS(attrs, CKA_CLASS, &keyclass, sizeof(keyclass)); attrs++;
+    PK11_SETATTRS(attrs, CKA_TOKEN, &ckTrue, sizeof(ckTrue)); attrs++;
     if (keyID) {
-        PK11_SETATTRS(attrs, CKA_ID, keyID->data, keyID->len);
-        attrs++;
+        PK11_SETATTRS(attrs, CKA_ID, keyID->data, keyID->len); attrs++;
     }
     tsize = attrs - findTemp;
-    PORT_Assert(tsize <= sizeof(findTemp) / sizeof(CK_ATTRIBUTE));
+    PORT_Assert(tsize <= sizeof(findTemp)/sizeof(CK_ATTRIBUTE));
 
-    key_id = pk11_FindObjectByTemplate(slot, findTemp, tsize);
+    key_id = pk11_FindObjectByTemplate(slot,findTemp,tsize);
     if (key_id == CK_INVALID_HANDLE) {
-        return NULL;
+	return NULL;
     }
     return PK11_SymKeyFromHandle(slot, NULL, PK11_OriginDerive, type, key_id,
-                                 PR_FALSE, wincx);
+		 				PR_FALSE, wincx);
 }
 
 PK11SymKey *
@@ -555,53 +540,51 @@ PK11_ListFixedKeysInSlot(PK11SlotInfo *slot, char *nickname, void *wincx)
     CK_OBJECT_HANDLE *key_ids;
     PK11SymKey *nextKey = NULL;
     PK11SymKey *topKey = NULL;
-    int i, len;
+    int i,len;
 
     attrs = findTemp;
-    PK11_SETATTRS(attrs, CKA_CLASS, &keyclass, sizeof(keyclass));
-    attrs++;
-    PK11_SETATTRS(attrs, CKA_TOKEN, &ckTrue, sizeof(ckTrue));
-    attrs++;
+    PK11_SETATTRS(attrs, CKA_CLASS, &keyclass, sizeof(keyclass)); attrs++;
+    PK11_SETATTRS(attrs, CKA_TOKEN, &ckTrue, sizeof(ckTrue)); attrs++;
     if (nickname) {
-        len = PORT_Strlen(nickname);
-        PK11_SETATTRS(attrs, CKA_LABEL, nickname, len);
-        attrs++;
+	len = PORT_Strlen(nickname);
+	PK11_SETATTRS(attrs, CKA_LABEL, nickname, len); attrs++;
     }
     tsize = attrs - findTemp;
-    PORT_Assert(tsize <= sizeof(findTemp) / sizeof(CK_ATTRIBUTE));
+    PORT_Assert(tsize <= sizeof(findTemp)/sizeof(CK_ATTRIBUTE));
 
-    key_ids = pk11_FindObjectsByTemplate(slot, findTemp, tsize, &objCount);
+    key_ids = pk11_FindObjectsByTemplate(slot,findTemp,tsize,&objCount);
     if (key_ids == NULL) {
-        return NULL;
+	return NULL;
     }
 
-    for (i = 0; i < objCount; i++) {
-        SECItem typeData;
-        CK_KEY_TYPE type = CKK_GENERIC_SECRET;
-        SECStatus rv = PK11_ReadAttribute(slot, key_ids[i],
-                                          CKA_KEY_TYPE, NULL, &typeData);
-        if (rv == SECSuccess) {
-            if (typeData.len == sizeof(CK_KEY_TYPE)) {
-                type = *(CK_KEY_TYPE *)typeData.data;
-            }
-            PORT_Free(typeData.data);
-        }
-        nextKey = PK11_SymKeyFromHandle(slot, NULL, PK11_OriginDerive,
-                                        PK11_GetKeyMechanism(type), key_ids[i], PR_FALSE, wincx);
-        if (nextKey) {
-            nextKey->next = topKey;
-            topKey = nextKey;
-        }
-    }
-    PORT_Free(key_ids);
-    return topKey;
+    for (i=0; i < objCount ; i++) {
+	SECItem typeData;
+	CK_KEY_TYPE type = CKK_GENERIC_SECRET;
+        SECStatus rv = PK11_ReadAttribute(slot, key_ids[i], 
+						CKA_KEY_TYPE, NULL, &typeData);
+	if (rv == SECSuccess) {
+	    if (typeData.len == sizeof(CK_KEY_TYPE)) {
+	    	type = *(CK_KEY_TYPE *)typeData.data;
+	    }
+	    PORT_Free(typeData.data);
+	}
+	nextKey = PK11_SymKeyFromHandle(slot, NULL, PK11_OriginDerive, 
+		PK11_GetKeyMechanism(type), key_ids[i], PR_FALSE, wincx);
+	if (nextKey) {
+	    nextKey->next = topKey;
+	    topKey = nextKey;
+	}
+   }
+   PORT_Free(key_ids);
+   return topKey;
 }
 
 void *
 PK11_GetWindow(PK11SymKey *key)
 {
-    return key->cx;
+   return key->cx;
 }
+    
 
 
 
@@ -613,21 +596,21 @@ PK11_ExtractKeyValue(PK11SymKey *symKey)
     SECStatus rv;
 
     if (symKey->data.data != NULL) {
-        if (symKey->size == 0) {
-            symKey->size = symKey->data.len;
-        }
-        return SECSuccess;
+	if (symKey->size == 0) {
+	   symKey->size = symKey->data.len;
+	}
+	return SECSuccess;
     }
 
     if (symKey->slot == NULL) {
-        PORT_SetError(SEC_ERROR_INVALID_KEY);
-        return SECFailure;
+	PORT_SetError( SEC_ERROR_INVALID_KEY );
+	return SECFailure;
     }
 
-    rv = PK11_ReadAttribute(symKey->slot, symKey->objectID, CKA_VALUE, NULL,
-                            &symKey->data);
+    rv = PK11_ReadAttribute(symKey->slot,symKey->objectID,CKA_VALUE,NULL,
+				&symKey->data);
     if (rv == SECSuccess) {
-        symKey->size = symKey->data.len;
+	symKey->size = symKey->data.len;
     }
     return rv;
 }
@@ -636,9 +619,9 @@ SECStatus
 PK11_DeleteTokenSymKey(PK11SymKey *symKey)
 {
     if (!PK11_IsPermObject(symKey->slot, symKey->objectID)) {
-        return SECFailure;
+	return SECFailure;
     }
-    PK11_DestroyTokenObject(symKey->slot, symKey->objectID);
+    PK11_DestroyTokenObject(symKey->slot,symKey->objectID);
     symKey->objectID = CK_INVALID_HANDLE;
     return SECSuccess;
 }
@@ -659,31 +642,19 @@ __PK11_GetKeyData(PK11SymKey *symKey)
 
 
 
+
 unsigned int
 pk11_GetPredefinedKeyLength(CK_KEY_TYPE keyType)
 {
     int length = 0;
     switch (keyType) {
-        case CKK_DES:
-            length = 8;
-            break;
-        case CKK_DES2:
-            length = 16;
-            break;
-        case CKK_DES3:
-            length = 24;
-            break;
-        case CKK_SKIPJACK:
-            length = 10;
-            break;
-        case CKK_BATON:
-            length = 20;
-            break;
-        case CKK_JUNIPER:
-            length = 20;
-            break;
-        default:
-            break;
+      case CKK_DES: length = 8; break;
+      case CKK_DES2: length = 16; break;
+      case CKK_DES3: length = 24; break;
+      case CKK_SKIPJACK: length = 10; break;
+      case CKK_BATON: length = 20; break;
+      case CKK_JUNIPER: length = 20; break;
+      default: break;
     }
     return length;
 }
@@ -694,35 +665,33 @@ PK11_GetKeyLength(PK11SymKey *key)
 {
     CK_KEY_TYPE keyType;
 
-    if (key->size != 0)
-        return key->size;
+    if (key->size != 0) return key->size;
 
     
-    keyType = PK11_ReadULongAttribute(key->slot, key->objectID, CKA_KEY_TYPE);
+    keyType = PK11_ReadULongAttribute(key->slot,key->objectID,CKA_KEY_TYPE);
     key->size = pk11_GetPredefinedKeyLength(keyType);
     if ((keyType == CKK_GENERIC_SECRET) &&
-        (key->type == CKM_SSL3_PRE_MASTER_KEY_GEN)) {
-        key->size = 48;
+	(key->type == CKM_SSL3_PRE_MASTER_KEY_GEN))  {
+	key->size=48;
     }
 
-    if (key->size != 0)
-        return key->size;
+   if( key->size != 0 ) return key->size;
 
-    if (key->data.data == NULL) {
-        PK11_ExtractKeyValue(key);
+   if (key->data.data == NULL) {
+	PK11_ExtractKeyValue(key);
+   }
+   
+   
+   if (key->size == 0) {
+	CK_ULONG keyLength;
+
+	keyLength = PK11_ReadULongAttribute(key->slot,key->objectID,CKA_VALUE_LEN);
+	if (keyLength != CK_UNAVAILABLE_INFORMATION) {
+	    key->size = (unsigned int)keyLength;
+	}
     }
-    
-    
-    if (key->size == 0) {
-        CK_ULONG keyLength;
 
-        keyLength = PK11_ReadULongAttribute(key->slot, key->objectID, CKA_VALUE_LEN);
-        if (keyLength != CK_UNAVAILABLE_INFORMATION) {
-            key->size = (unsigned int)keyLength;
-        }
-    }
-
-    return key->size;
+   return key->size;
 }
 
 
@@ -730,78 +699,77 @@ PK11_GetKeyLength(PK11SymKey *key)
 
 
 unsigned int
-PK11_GetKeyStrength(PK11SymKey *key, SECAlgorithmID *algid)
+PK11_GetKeyStrength(PK11SymKey *key, SECAlgorithmID *algid) 
 {
-    int size = 0;
-    CK_MECHANISM_TYPE mechanism = CKM_INVALID_MECHANISM; 
-    SECItem *param = NULL;                               
-    CK_RC2_CBC_PARAMS *rc2_params = NULL;                
-    unsigned int effectiveBits = 0;                      
+     int size=0;
+     CK_MECHANISM_TYPE mechanism= CKM_INVALID_MECHANISM; 
+     SECItem *param = NULL; 
+     CK_RC2_CBC_PARAMS *rc2_params = NULL; 
+     unsigned int effectiveBits = 0; 
 
-    switch (PK11_GetKeyType(key->type, 0)) {
-        case CKK_CDMF:
-            return 40;
-        case CKK_DES:
-            return 56;
-        case CKK_DES3:
-        case CKK_DES2:
-            size = PK11_GetKeyLength(key);
-            if (size == 16) {
-                
-                return 112; 
-            }
-            return 168;
-        
-
-
+     switch (PK11_GetKeyType(key->type,0)) {
+     case CKK_CDMF:
+	return 40;
+     case CKK_DES:
+	return 56;
+     case CKK_DES3:
+     case CKK_DES2:
+	size = PK11_GetKeyLength(key);
+	if (size == 16) {
+	   
+	   return 112; 
+	}
+	return 168;
+    
 
 
 
 
 
 
-        case CKK_RC2:
-            
-            if (!algid) {
-                break;
-            }
-            
-            mechanism = PK11_AlgtagToMechanism(SECOID_GetAlgorithmTag(algid));
-            if ((mechanism != CKM_RC2_CBC) && (mechanism != CKM_RC2_ECB)) {
-                break;
-            }
-
-            
-            param = PK11_ParamFromAlgid(algid);
-            
-            if (param == NULL) {
-                break;
-            }
-
-            rc2_params = (CK_RC2_CBC_PARAMS *)param->data;
-            
-            PORT_Assert(param->data != NULL);
-            if (param->data == NULL) {
-                SECITEM_FreeItem(param, PR_TRUE);
-                break;
-            }
-            effectiveBits = (unsigned int)rc2_params->ulEffectiveBits;
-            SECITEM_FreeItem(param, PR_TRUE);
-            param = NULL;
-            rc2_params = NULL; 
-
-            
-
-            size = PK11_GetKeyLength(key);
-            if ((unsigned int)size * 8 > effectiveBits) {
-                return effectiveBits;
-            }
-
-            return size * 8; 
 
 
-        default:
-            break;
+    case CKK_RC2:
+	
+        if (!algid) {
+	    break; 
+	}
+	
+	mechanism = PK11_AlgtagToMechanism(SECOID_GetAlgorithmTag(algid));
+	if ((mechanism != CKM_RC2_CBC) && (mechanism != CKM_RC2_ECB)) {
+	    break;
+	}
+
+	
+	param = PK11_ParamFromAlgid(algid);
+	
+	if (param == NULL) {
+	    break;
+	}
+
+	rc2_params = (CK_RC2_CBC_PARAMS *) param->data;
+	
+	PORT_Assert(param->data != NULL);
+	if (param->data == NULL) {
+	    SECITEM_FreeItem(param,PR_TRUE);
+	    break;
+	}
+	effectiveBits = (unsigned int)rc2_params->ulEffectiveBits;
+	SECITEM_FreeItem(param,PR_TRUE);
+	param = NULL; rc2_params=NULL; 
+
+	
+
+	size = PK11_GetKeyLength(key);
+	if ((unsigned int)size*8 > effectiveBits) {
+	    return effectiveBits;
+	}
+
+	return size*8; 
+
+	
+    default:
+	break;
     }
     return PK11_GetKeyLength(key) * 8;
 }
@@ -812,36 +780,36 @@ PK11_GetKeyStrength(PK11SymKey *key, SECAlgorithmID *algid)
 
 
 PK11SymKey *
-pk11_CopyToSlotPerm(PK11SlotInfo *slot, CK_MECHANISM_TYPE type,
-                    CK_ATTRIBUTE_TYPE operation, CK_FLAGS flags,
-                    PRBool isPerm, PK11SymKey *symKey)
+pk11_CopyToSlotPerm(PK11SlotInfo *slot,CK_MECHANISM_TYPE type, 
+	 	CK_ATTRIBUTE_TYPE operation, CK_FLAGS flags, 
+		PRBool isPerm, PK11SymKey *symKey)
 {
     SECStatus rv;
     PK11SymKey *newKey = NULL;
 
     
     if (symKey->data.data == NULL) {
-        rv = PK11_ExtractKeyValue(symKey);
-        
-        if (rv != SECSuccess) {
-            return pk11_KeyExchange(slot, type, operation,
-                                    flags, isPerm, symKey);
-        }
+	rv = PK11_ExtractKeyValue(symKey);
+	
+	if (rv != SECSuccess) {
+	    return pk11_KeyExchange(slot, type, operation, 
+						flags, isPerm, symKey);
+	}
     }
 
-    newKey = PK11_ImportSymKeyWithFlags(slot, type, symKey->origin,
-                                        operation, &symKey->data, flags, isPerm, symKey->cx);
+    newKey = PK11_ImportSymKeyWithFlags(slot,  type, symKey->origin,
+	operation, &symKey->data, flags, isPerm, symKey->cx);
     if (newKey == NULL) {
-        newKey = pk11_KeyExchange(slot, type, operation, flags, isPerm, symKey);
+	newKey = pk11_KeyExchange(slot, type, operation, flags, isPerm, symKey);
     }
     return newKey;
 }
 
 PK11SymKey *
-pk11_CopyToSlot(PK11SlotInfo *slot, CK_MECHANISM_TYPE type,
-                CK_ATTRIBUTE_TYPE operation, PK11SymKey *symKey)
+pk11_CopyToSlot(PK11SlotInfo *slot,CK_MECHANISM_TYPE type,
+	CK_ATTRIBUTE_TYPE operation, PK11SymKey *symKey)
 {
-    return pk11_CopyToSlotPerm(slot, type, operation, 0, PR_FALSE, symKey);
+   return pk11_CopyToSlotPerm(slot, type, operation, 0, PR_FALSE, symKey);
 }
 
 
@@ -850,7 +818,7 @@ pk11_CopyToSlot(PK11SlotInfo *slot, CK_MECHANISM_TYPE type,
 
 PK11SymKey *
 pk11_ForceSlotMultiple(PK11SymKey *symKey, CK_MECHANISM_TYPE *type,
-                       int mechCount, CK_ATTRIBUTE_TYPE operation)
+			int mechCount, CK_ATTRIBUTE_TYPE operation)
 {
     PK11SlotInfo *slot = symKey->slot;
     PK11SymKey *newKey = NULL;
@@ -858,25 +826,25 @@ pk11_ForceSlotMultiple(PK11SymKey *symKey, CK_MECHANISM_TYPE *type,
     int i;
 
     if (slot == NULL) {
-        needToCopy = PR_TRUE;
+	needToCopy = PR_TRUE;
     } else {
-        i = 0;
-        while ((i < mechCount) && (needToCopy == PR_FALSE)) {
-            if (!PK11_DoesMechanism(slot, type[i])) {
-                needToCopy = PR_TRUE;
-            }
-            i++;
-        }
+	i = 0;
+	while ((i < mechCount) && (needToCopy == PR_FALSE)) {
+	    if (!PK11_DoesMechanism(slot,type[i])) {
+		needToCopy = PR_TRUE;
+	    }
+	    i++;
+	}
     }
 
     if (needToCopy == PR_TRUE) {
-        slot = PK11_GetBestSlotMultiple(type, mechCount, symKey->cx);
-        if (slot == NULL) {
-            PORT_SetError(SEC_ERROR_NO_MODULE);
-            return NULL;
-        }
-        newKey = pk11_CopyToSlot(slot, type[0], operation, symKey);
-        PK11_FreeSlot(slot);
+	slot = PK11_GetBestSlotMultiple(type,mechCount,symKey->cx);
+	if (slot == NULL) {
+	    PORT_SetError( SEC_ERROR_NO_MODULE );
+	    return NULL;
+	}
+	newKey = pk11_CopyToSlot(slot, type[0], operation, symKey);
+	PK11_FreeSlot(slot);
     }
     return newKey;
 }
@@ -885,26 +853,26 @@ pk11_ForceSlotMultiple(PK11SymKey *symKey, CK_MECHANISM_TYPE *type,
 
 
 PK11SymKey *
-pk11_ForceSlot(PK11SymKey *symKey, CK_MECHANISM_TYPE type,
-               CK_ATTRIBUTE_TYPE operation)
+pk11_ForceSlot(PK11SymKey *symKey,CK_MECHANISM_TYPE type,
+						CK_ATTRIBUTE_TYPE operation)
 {
     return pk11_ForceSlotMultiple(symKey, &type, 1, operation);
 }
 
 PK11SymKey *
-PK11_MoveSymKey(PK11SlotInfo *slot, CK_ATTRIBUTE_TYPE operation,
-                CK_FLAGS flags, PRBool perm, PK11SymKey *symKey)
+PK11_MoveSymKey(PK11SlotInfo *slot, CK_ATTRIBUTE_TYPE operation, 
+			CK_FLAGS flags, PRBool  perm, PK11SymKey *symKey)
 {
     if (symKey->slot == slot) {
-        if (perm) {
-            return PK11_ConvertSessionSymKeyToTokenSymKey(symKey, symKey->cx);
-        } else {
-            return PK11_ReferenceSymKey(symKey);
-        }
+	if (perm) {
+	   return PK11_ConvertSessionSymKeyToTokenSymKey(symKey,symKey->cx);
+	} else {
+	   return PK11_ReferenceSymKey(symKey);
+	}
     }
-
-    return pk11_CopyToSlotPerm(slot, symKey->type,
-                               operation, flags, perm, symKey);
+    
+    return pk11_CopyToSlotPerm(slot, symKey->type, 
+					operation, flags, perm, symKey);
 }
 
 
@@ -930,51 +898,50 @@ PK11_MoveSymKey(PK11SlotInfo *slot, CK_ATTRIBUTE_TYPE operation,
 
 PK11SymKey *
 pk11_TokenKeyGenWithFlagsAndKeyType(PK11SlotInfo *slot, CK_MECHANISM_TYPE type,
-                                    SECItem *param, CK_KEY_TYPE keyType, int keySize, SECItem *keyid,
-                                    CK_FLAGS opFlags, PK11AttrFlags attrFlags, void *wincx)
+    SECItem *param, CK_KEY_TYPE keyType, int keySize, SECItem *keyid, 
+    CK_FLAGS opFlags, PK11AttrFlags attrFlags, void *wincx)
 {
     PK11SymKey *symKey;
     CK_ATTRIBUTE genTemplate[MAX_TEMPL_ATTRS];
     CK_ATTRIBUTE *attrs = genTemplate;
-    int count = sizeof(genTemplate) / sizeof(genTemplate[0]);
+    int count = sizeof(genTemplate)/sizeof(genTemplate[0]);
     CK_MECHANISM_TYPE keyGenType;
     CK_BBOOL cktrue = CK_TRUE;
     CK_BBOOL ckfalse = CK_FALSE;
-    CK_ULONG ck_key_size; 
+    CK_ULONG ck_key_size;       
 
     if (pk11_BadAttrFlags(attrFlags)) {
-        PORT_SetError(SEC_ERROR_INVALID_ARGS);
-        return NULL;
+	PORT_SetError( SEC_ERROR_INVALID_ARGS );
+	return NULL;
     }
 
-    if ((keySize != 0) && (type != CKM_DES3_CBC) &&
-        (type != CKM_DES3_CBC_PAD) && (type != CKM_DES3_ECB)) {
+    if ((keySize != 0) && (type != CKM_DES3_CBC) && 
+		(type !=CKM_DES3_CBC_PAD) && (type != CKM_DES3_ECB)) {
         ck_key_size = keySize; 
 
-        PK11_SETATTRS(attrs, CKA_VALUE_LEN, &ck_key_size, sizeof(ck_key_size));
-        attrs++;
+        PK11_SETATTRS(attrs, CKA_VALUE_LEN, &ck_key_size, sizeof(ck_key_size)); 
+							attrs++;
     }
 
     if (keyType != -1) {
-        PK11_SETATTRS(attrs, CKA_KEY_TYPE, &keyType, sizeof(CK_KEY_TYPE));
-        attrs++;
+        PK11_SETATTRS(attrs, CKA_KEY_TYPE, &keyType, sizeof(CK_KEY_TYPE)); 
+							attrs++;
     }
 
     
     if (keyid) {
-        PK11_SETATTRS(attrs, CKA_ID, keyid->data, keyid->len);
-        attrs++;
+        PK11_SETATTRS(attrs, CKA_ID, keyid->data, keyid->len); attrs++;
     }
 
     attrs += pk11_AttrFlagsToAttributes(attrFlags, attrs, &cktrue, &ckfalse);
     attrs += pk11_OpFlagsToAttributes(opFlags, attrs, &cktrue);
 
     count = attrs - genTemplate;
-    PR_ASSERT(count <= sizeof(genTemplate) / sizeof(CK_ATTRIBUTE));
+    PR_ASSERT(count <= sizeof(genTemplate)/sizeof(CK_ATTRIBUTE));
 
     keyGenType = PK11_GetKeyGenWithSize(type, keySize);
     if (keyGenType == CKM_FAKE_RANDOM) {
-        PORT_SetError(SEC_ERROR_NO_MODULE);
+        PORT_SetError( SEC_ERROR_NO_MODULE );
         return NULL;
     }
     symKey = PK11_KeyGenWithTemplate(slot, type, keyGenType,
@@ -1001,11 +968,11 @@ pk11_TokenKeyGenWithFlagsAndKeyType(PK11SlotInfo *slot, CK_MECHANISM_TYPE type,
 
 PK11SymKey *
 PK11_TokenKeyGenWithFlags(PK11SlotInfo *slot, CK_MECHANISM_TYPE type,
-                          SECItem *param, int keySize, SECItem *keyid, CK_FLAGS opFlags,
-                          PK11AttrFlags attrFlags, void *wincx)
+    SECItem *param, int keySize, SECItem *keyid, CK_FLAGS opFlags,
+    PK11AttrFlags attrFlags, void *wincx)
 {
-    return pk11_TokenKeyGenWithFlagsAndKeyType(slot, type, param, -1, keySize,
-                                               keyid, opFlags, attrFlags, wincx);
+    return pk11_TokenKeyGenWithFlagsAndKeyType(slot, type, param, -1, keySize, 
+	keyid, opFlags, attrFlags, wincx);
 }
 
 
@@ -1019,28 +986,28 @@ PK11_TokenKeyGenWithFlags(PK11SlotInfo *slot, CK_MECHANISM_TYPE type,
 
 PK11SymKey *
 PK11_TokenKeyGen(PK11SlotInfo *slot, CK_MECHANISM_TYPE type, SECItem *param,
-                 int keySize, SECItem *keyid, PRBool isToken, void *wincx)
+    int keySize, SECItem *keyid, PRBool isToken, void *wincx)
 {
     PK11SymKey *symKey;
-    PRBool weird = PR_FALSE; 
+    PRBool weird = PR_FALSE;   
     CK_FLAGS opFlags = CKF_SIGN;
     PK11AttrFlags attrFlags = 0;
 
     if ((keySize == -1) && (type == CKM_SKIPJACK_CBC64)) {
-        weird = PR_TRUE;
-        keySize = 0;
+	weird = PR_TRUE;
+	keySize = 0;
     }
 
     opFlags |= weird ? CKF_DECRYPT : CKF_ENCRYPT;
 
     if (isToken) {
-        attrFlags |= (PK11_ATTR_TOKEN | PK11_ATTR_PRIVATE);
+	attrFlags |= (PK11_ATTR_TOKEN | PK11_ATTR_PRIVATE);
     }
 
-    symKey = pk11_TokenKeyGenWithFlagsAndKeyType(slot, type, param,
-                                                 -1, keySize, keyid, opFlags, attrFlags, wincx);
+    symKey = pk11_TokenKeyGenWithFlagsAndKeyType(slot, type, param, 
+			-1, keySize, keyid, opFlags, attrFlags, wincx);
     if (symKey && weird) {
-        PK11_SetFortezzaHack(symKey);
+	PK11_SetFortezzaHack(symKey);
     }
 
     return symKey;
@@ -1048,7 +1015,7 @@ PK11_TokenKeyGen(PK11SlotInfo *slot, CK_MECHANISM_TYPE type, SECItem *param,
 
 PK11SymKey *
 PK11_KeyGen(PK11SlotInfo *slot, CK_MECHANISM_TYPE type, SECItem *param,
-            int keySize, void *wincx)
+						int keySize, void *wincx)
 {
     return PK11_TokenKeyGen(slot, type, param, keySize, 0, PR_FALSE, wincx);
 }
@@ -1056,7 +1023,7 @@ PK11_KeyGen(PK11SlotInfo *slot, CK_MECHANISM_TYPE type, SECItem *param,
 PK11SymKey *
 PK11_KeyGenWithTemplate(PK11SlotInfo *slot, CK_MECHANISM_TYPE type,
                         CK_MECHANISM_TYPE keyGenType,
-                        SECItem *param, CK_ATTRIBUTE *attrs,
+                        SECItem *param, CK_ATTRIBUTE * attrs,
                         unsigned int attrsCount, void *wincx)
 {
     PK11SymKey *symKey;
@@ -1077,25 +1044,25 @@ PK11_KeyGenWithTemplate(PK11SlotInfo *slot, CK_MECHANISM_TYPE type,
                     PORT_SetError(PK11_MapError(CKR_TEMPLATE_INCONSISTENT));
                     return NULL;
                 }
-                keySize = *(CK_ULONG *)attrs[i].pValue;
+                keySize = * (CK_ULONG *) attrs[i].pValue;
                 break;
             case CKA_TOKEN:
-                if (attrs[i].pValue == NULL ||
+                if (attrs[i].pValue == NULL || 
                     attrs[i].ulValueLen != sizeof(CK_BBOOL)) {
                     PORT_SetError(PK11_MapError(CKR_TEMPLATE_INCONSISTENT));
                     return NULL;
                 }
-                isToken = (*(CK_BBOOL *)attrs[i].pValue) ? PR_TRUE : PR_FALSE;
+                isToken = (*(CK_BBOOL*)attrs[i].pValue) ? PR_TRUE : PR_FALSE;
                 break;
         }
     }
 
     
     
-    if (!isToken && (slot == NULL || !PK11_DoesMechanism(slot, type))) {
-        PK11SlotInfo *bestSlot = PK11_GetBestSlot(type, wincx);
+    if (!isToken && (slot == NULL || !PK11_DoesMechanism(slot,type))) {
+        PK11SlotInfo *bestSlot = PK11_GetBestSlot(type,wincx);
         if (bestSlot == NULL) {
-            PORT_SetError(SEC_ERROR_NO_MODULE);
+            PORT_SetError( SEC_ERROR_NO_MODULE );
             return NULL;
         }
         symKey = pk11_CreateSymKey(bestSlot, type, !isToken, PR_TRUE, wincx);
@@ -1103,8 +1070,7 @@ PK11_KeyGenWithTemplate(PK11SlotInfo *slot, CK_MECHANISM_TYPE type,
     } else {
         symKey = pk11_CreateSymKey(slot, type, !isToken, PR_TRUE, wincx);
     }
-    if (symKey == NULL)
-        return NULL;
+    if (symKey == NULL) return NULL;
 
     symKey->size = keySize;
     symKey->origin = PK11_OriginGenerated;
@@ -1120,13 +1086,13 @@ PK11_KeyGenWithTemplate(PK11SlotInfo *slot, CK_MECHANISM_TYPE type,
 
     
     if (isToken) {
-        PK11_Authenticate(symKey->slot, PR_TRUE, wincx);
+        PK11_Authenticate(symKey->slot,PR_TRUE,wincx);
         
-        session = PK11_GetRWSession(symKey->slot);
+        session = PK11_GetRWSession(symKey->slot);  
         symKey->owner = PR_FALSE;
     } else {
         session = symKey->session;
-        if (session != CK_INVALID_SESSION)
+        if (session != CK_INVALID_SESSION) 
             pk11_EnterKeyMonitor(symKey);
     }
     if (session == CK_INVALID_SESSION) {
@@ -1135,7 +1101,8 @@ PK11_KeyGenWithTemplate(PK11SlotInfo *slot, CK_MECHANISM_TYPE type,
         return NULL;
     }
 
-    crv = PK11_GETTAB(symKey->slot)->C_GenerateKey(session, &mechanism, attrs, attrsCount, &symKey->objectID);
+    crv = PK11_GETTAB(symKey->slot)->C_GenerateKey(session,
+			 &mechanism, attrs, attrsCount, &symKey->objectID);
 
     
     if (isToken) {
@@ -1146,7 +1113,7 @@ PK11_KeyGenWithTemplate(PK11SlotInfo *slot, CK_MECHANISM_TYPE type,
 
     if (crv != CKR_OK) {
         PK11_FreeSymKey(symKey);
-        PORT_SetError(PK11_MapError(crv));
+        PORT_SetError( PK11_MapError(crv) );
         return NULL;
     }
 
@@ -1154,16 +1121,17 @@ PK11_KeyGenWithTemplate(PK11SlotInfo *slot, CK_MECHANISM_TYPE type,
 }
 
 
+
 PK11SymKey *
 PK11_GenDES3TokenKey(PK11SlotInfo *slot, SECItem *keyid, void *cx)
 {
-    return PK11_TokenKeyGen(slot, CKM_DES3_CBC, 0, 0, keyid, PR_TRUE, cx);
+  return PK11_TokenKeyGen(slot, CKM_DES3_CBC, 0, 0, keyid, PR_TRUE, cx);
 }
 
-PK11SymKey *
+PK11SymKey*
 PK11_ConvertSessionSymKeyToTokenSymKey(PK11SymKey *symk, void *wincx)
 {
-    PK11SlotInfo *slot = symk->slot;
+    PK11SlotInfo* slot = symk->slot;
     CK_ATTRIBUTE template[1];
     CK_ATTRIBUTE *attrs = template;
     CK_BBOOL cktrue = CK_TRUE;
@@ -1171,26 +1139,25 @@ PK11_ConvertSessionSymKeyToTokenSymKey(PK11SymKey *symk, void *wincx)
     CK_OBJECT_HANDLE newKeyID;
     CK_SESSION_HANDLE rwsession;
 
-    PK11_SETATTRS(attrs, CKA_TOKEN, &cktrue, sizeof(cktrue));
-    attrs++;
+    PK11_SETATTRS(attrs, CKA_TOKEN, &cktrue, sizeof(cktrue)); attrs++;
 
     PK11_Authenticate(slot, PR_TRUE, wincx);
     rwsession = PK11_GetRWSession(slot);
     if (rwsession == CK_INVALID_SESSION) {
-        PORT_SetError(SEC_ERROR_BAD_DATA);
-        return NULL;
+	PORT_SetError(SEC_ERROR_BAD_DATA);
+	return NULL;
     }
     crv = PK11_GETTAB(slot)->C_CopyObject(rwsession, symk->objectID,
-                                          template, 1, &newKeyID);
+        template, 1, &newKeyID);
     PK11_RestoreROSession(slot, rwsession);
 
     if (crv != CKR_OK) {
-        PORT_SetError(PK11_MapError(crv));
+        PORT_SetError( PK11_MapError(crv) );
         return NULL;
     }
 
     return PK11_SymKeyFromHandle(slot, NULL , symk->origin,
-                                 symk->type, newKeyID, PR_FALSE , NULL );
+        symk->type, newKeyID, PR_FALSE , NULL );
 }
 
 
@@ -1199,10 +1166,10 @@ PK11_ConvertSessionSymKeyToTokenSymKey(PK11SymKey *symk, void *wincx)
 
 SECStatus
 PK11_PubWrapSymKey(CK_MECHANISM_TYPE type, SECKEYPublicKey *pubKey,
-                   PK11SymKey *symKey, SECItem *wrappedKey)
+				PK11SymKey *symKey, SECItem *wrappedKey)
 {
     PK11SlotInfo *slot;
-    CK_ULONG len = wrappedKey->len;
+    CK_ULONG len =  wrappedKey->len;
     PK11SymKey *newKey = NULL;
     CK_OBJECT_HANDLE id;
     CK_MECHANISM mechanism;
@@ -1211,19 +1178,19 @@ PK11_PubWrapSymKey(CK_MECHANISM_TYPE type, SECKEYPublicKey *pubKey,
     CK_RV crv;
 
     if (symKey == NULL) {
-        PORT_SetError(SEC_ERROR_INVALID_ARGS);
-        return SECFailure;
+	PORT_SetError( SEC_ERROR_INVALID_ARGS );
+	return SECFailure;
     }
 
     
-    newKey = pk11_ForceSlot(symKey, type, CKA_ENCRYPT);
+    newKey = pk11_ForceSlot(symKey,type,CKA_ENCRYPT);
     if (newKey != NULL) {
-        symKey = newKey;
+	symKey = newKey;
     }
 
     if (symKey->slot == NULL) {
-        PORT_SetError(SEC_ERROR_NO_MODULE);
-        return SECFailure;
+	PORT_SetError( SEC_ERROR_NO_MODULE );
+	return SECFailure;
     }
 
     slot = symKey->slot;
@@ -1231,33 +1198,31 @@ PK11_PubWrapSymKey(CK_MECHANISM_TYPE type, SECKEYPublicKey *pubKey,
     mechanism.pParameter = NULL;
     mechanism.ulParameterLen = 0;
 
-    id = PK11_ImportPublicKey(slot, pubKey, PR_FALSE);
+    id = PK11_ImportPublicKey(slot,pubKey,PR_FALSE);
     if (id == CK_INVALID_HANDLE) {
-        if (newKey) {
-            PK11_FreeSymKey(newKey);
-        }
-        return SECFailure; 
+	if (newKey) {
+	    PK11_FreeSymKey(newKey);
+	}
+	return SECFailure;   
     }
 
-    session = pk11_GetNewSession(slot, &owner);
-    if (!owner || !(slot->isThreadSafe))
-        PK11_EnterSlotMonitor(slot);
-    crv = PK11_GETTAB(slot)->C_WrapKey(session, &mechanism,
-                                       id, symKey->objectID, wrappedKey->data, &len);
-    if (!owner || !(slot->isThreadSafe))
-        PK11_ExitSlotMonitor(slot);
-    pk11_CloseSession(slot, session, owner);
+    session = pk11_GetNewSession(slot,&owner);
+    if (!owner || !(slot->isThreadSafe)) PK11_EnterSlotMonitor(slot);
+    crv = PK11_GETTAB(slot)->C_WrapKey(session,&mechanism,
+		id,symKey->objectID,wrappedKey->data,&len);
+    if (!owner || !(slot->isThreadSafe)) PK11_ExitSlotMonitor(slot);
+    pk11_CloseSession(slot,session,owner);
     if (newKey) {
-        PK11_FreeSymKey(newKey);
+	PK11_FreeSymKey(newKey);
     }
 
     if (crv != CKR_OK) {
-        PORT_SetError(PK11_MapError(crv));
-        return SECFailure;
+	PORT_SetError( PK11_MapError(crv) );
+	return SECFailure;
     }
     wrappedKey->len = len;
     return SECSuccess;
-}
+} 
 
 
 
@@ -1265,7 +1230,7 @@ PK11_PubWrapSymKey(CK_MECHANISM_TYPE type, SECKEYPublicKey *pubKey,
 
 static SECStatus
 pk11_HandWrap(PK11SymKey *wrappingKey, SECItem *param, CK_MECHANISM_TYPE type,
-              SECItem *inKey, SECItem *outKey)
+			 SECItem *inKey, SECItem *outKey)
 {
     PK11SlotInfo *slot;
     CK_ULONG len;
@@ -1279,46 +1244,42 @@ pk11_HandWrap(PK11SymKey *wrappingKey, SECItem *param, CK_MECHANISM_TYPE type,
     
     mech.mechanism = type;
     if (param) {
-        mech.pParameter = param->data;
-        mech.ulParameterLen = param->len;
+	mech.pParameter = param->data;
+	mech.ulParameterLen = param->len;
     } else {
-        mech.pParameter = NULL;
-        mech.ulParameterLen = 0;
+	mech.pParameter = NULL;
+	mech.ulParameterLen = 0;
     }
-    session = pk11_GetNewSession(slot, &owner);
-    if (!owner || !(slot->isThreadSafe))
-        PK11_EnterSlotMonitor(slot);
-    crv = PK11_GETTAB(slot)->C_EncryptInit(session, &mech,
-                                           wrappingKey->objectID);
+    session = pk11_GetNewSession(slot,&owner);
+    if (!owner || !(slot->isThreadSafe)) PK11_EnterSlotMonitor(slot);
+    crv = PK11_GETTAB(slot)->C_EncryptInit(session,&mech,
+							wrappingKey->objectID);
     if (crv != CKR_OK) {
-        if (!owner || !(slot->isThreadSafe))
-            PK11_ExitSlotMonitor(slot);
-        pk11_CloseSession(slot, session, owner);
-        PORT_SetError(PK11_MapError(crv));
-        return SECFailure;
+        if (!owner || !(slot->isThreadSafe)) PK11_ExitSlotMonitor(slot);
+        pk11_CloseSession(slot,session,owner);
+	PORT_SetError( PK11_MapError(crv) );
+	return SECFailure;
     }
 
     
 
-    data = PK11_BlockData(inKey, PK11_GetBlockSize(type, param));
+    data = PK11_BlockData(inKey,PK11_GetBlockSize(type,param));
     if (data == NULL) {
-        if (!owner || !(slot->isThreadSafe))
-            PK11_ExitSlotMonitor(slot);
-        pk11_CloseSession(slot, session, owner);
-        PORT_SetError(SEC_ERROR_NO_MEMORY);
-        return SECFailure;
+        if (!owner || !(slot->isThreadSafe)) PK11_ExitSlotMonitor(slot);
+        pk11_CloseSession(slot,session,owner);
+	PORT_SetError(SEC_ERROR_NO_MEMORY);
+	return SECFailure;
     }
     len = outKey->len;
-    crv = PK11_GETTAB(slot)->C_Encrypt(session, data->data, data->len,
-                                       outKey->data, &len);
-    if (!owner || !(slot->isThreadSafe))
-        PK11_ExitSlotMonitor(slot);
-    pk11_CloseSession(slot, session, owner);
-    SECITEM_FreeItem(data, PR_TRUE);
+    crv = PK11_GETTAB(slot)->C_Encrypt(session,data->data,data->len,
+							   outKey->data, &len);
+    if (!owner || !(slot->isThreadSafe)) PK11_ExitSlotMonitor(slot);
+    pk11_CloseSession(slot,session,owner);
+    SECITEM_FreeItem(data,PR_TRUE);
     outKey->len = len;
     if (crv != CKR_OK) {
-        PORT_SetError(PK11_MapError(crv));
-        return SECFailure;
+	PORT_SetError( PK11_MapError(crv) );
+	return SECFailure;
     }
     return SECSuccess;
 }
@@ -1327,8 +1288,8 @@ pk11_HandWrap(PK11SymKey *wrappingKey, SECItem *param, CK_MECHANISM_TYPE type,
 
 
 SECStatus
-PK11_WrapSymKey(CK_MECHANISM_TYPE type, SECItem *param,
-                PK11SymKey *wrappingKey, PK11SymKey *symKey, SECItem *wrappedKey)
+PK11_WrapSymKey(CK_MECHANISM_TYPE type, SECItem *param, 
+	PK11SymKey *wrappingKey, PK11SymKey *symKey, SECItem *wrappedKey)
 {
     PK11SlotInfo *slot;
     CK_ULONG len = wrappedKey->len;
@@ -1343,41 +1304,40 @@ PK11_WrapSymKey(CK_MECHANISM_TYPE type, SECItem *param,
     
     
     if ((wrappingKey->slot == NULL) || (symKey->slot != wrappingKey->slot)) {
-        
-        if (symKey->slot && PK11_DoesMechanism(symKey->slot, type)) {
-            newKey = pk11_CopyToSlot(symKey->slot, type, CKA_WRAP, wrappingKey);
-        }
-        
-        if (newKey == NULL) {
-            if (wrappingKey->slot) {
-                newKey = pk11_CopyToSlot(wrappingKey->slot,
-                                         symKey->type, CKA_ENCRYPT, symKey);
-            }
-            
+	
+	if (symKey->slot && PK11_DoesMechanism(symKey->slot,type)) {
+	    newKey = pk11_CopyToSlot(symKey->slot,type,CKA_WRAP,wrappingKey);
+	}
+	
+	if (newKey == NULL) {
+	    if (wrappingKey->slot) {
+	        newKey = pk11_CopyToSlot(wrappingKey->slot,
+					symKey->type, CKA_ENCRYPT, symKey);
+	    }
+	    
 
 
 
-            if (newKey == NULL) {
-                
-                if (symKey->data.data == NULL) {
-                    PORT_SetError(SEC_ERROR_NO_MODULE);
-                    return SECFailure;
-                }
-                if (param == NULL) {
-                    param_save = param = PK11_ParamFromIV(type, NULL);
-                }
-                rv = pk11_HandWrap(wrappingKey, param, type,
-                                   &symKey->data, wrappedKey);
-                if (param_save)
-                    SECITEM_FreeItem(param_save, PR_TRUE);
-                return rv;
-            }
-            
-            symKey = newKey;
-        } else {
-            
-            wrappingKey = newKey;
-        }
+	    if (newKey == NULL) {
+		
+		if (symKey->data.data == NULL) {
+		    PORT_SetError( SEC_ERROR_NO_MODULE );
+		    return SECFailure;
+		}
+		if (param == NULL) {
+		    param_save = param = PK11_ParamFromIV(type,NULL);
+		}
+		rv = pk11_HandWrap(wrappingKey, param, type,
+						&symKey->data,wrappedKey);
+		if (param_save) SECITEM_FreeItem(param_save,PR_TRUE);
+		return rv;
+	    }
+	    
+	    symKey = newKey;
+	} else {
+	    
+	    wrappingKey = newKey;
+	}
     }
 
     
@@ -1385,231 +1345,224 @@ PK11_WrapSymKey(CK_MECHANISM_TYPE type, SECItem *param,
     mechanism.mechanism = type;
     
     if (param == NULL) {
-        param_save = param = PK11_ParamFromIV(type, NULL);
+    	param_save = param = PK11_ParamFromIV(type,NULL);
     }
     if (param) {
-        mechanism.pParameter = param->data;
-        mechanism.ulParameterLen = param->len;
+	mechanism.pParameter = param->data;
+	mechanism.ulParameterLen = param->len;
     } else {
-        mechanism.pParameter = NULL;
-        mechanism.ulParameterLen = 0;
+	mechanism.pParameter = NULL;
+	mechanism.ulParameterLen = 0;
     }
 
     len = wrappedKey->len;
 
-    session = pk11_GetNewSession(slot, &owner);
-    if (!owner || !(slot->isThreadSafe))
-        PK11_EnterSlotMonitor(slot);
+    session = pk11_GetNewSession(slot,&owner);
+    if (!owner || !(slot->isThreadSafe)) PK11_EnterSlotMonitor(slot);
     crv = PK11_GETTAB(slot)->C_WrapKey(session, &mechanism,
-                                       wrappingKey->objectID, symKey->objectID,
-                                       wrappedKey->data, &len);
-    if (!owner || !(slot->isThreadSafe))
-        PK11_ExitSlotMonitor(slot);
-    pk11_CloseSession(slot, session, owner);
+		 wrappingKey->objectID, symKey->objectID, 
+						wrappedKey->data, &len);
+    if (!owner || !(slot->isThreadSafe)) PK11_ExitSlotMonitor(slot);
+    pk11_CloseSession(slot,session,owner);
     rv = SECSuccess;
     if (crv != CKR_OK) {
-        
-        do {
-            if (symKey->data.data == NULL) {
-                rv = PK11_ExtractKeyValue(symKey);
-                if (rv != SECSuccess)
-                    break;
-            }
-            rv = pk11_HandWrap(wrappingKey, param, type, &symKey->data,
-                               wrappedKey);
-        } while (PR_FALSE);
+	
+	do {
+	    if (symKey->data.data == NULL) {
+		rv = PK11_ExtractKeyValue(symKey);
+		if (rv != SECSuccess) break;
+	    }
+	    rv = pk11_HandWrap(wrappingKey, param, type, &symKey->data,
+								 wrappedKey);
+	} while (PR_FALSE);
     } else {
         wrappedKey->len = len;
     }
-    if (newKey)
-        PK11_FreeSymKey(newKey);
-    if (param_save)
-        SECITEM_FreeItem(param_save, PR_TRUE);
+    if (newKey) PK11_FreeSymKey(newKey);
+    if (param_save) SECITEM_FreeItem(param_save,PR_TRUE);
     return rv;
-}
+} 
 
 
 
 
 PK11SymKey *
-PK11_Derive(PK11SymKey *baseKey, CK_MECHANISM_TYPE derive, SECItem *param,
-            CK_MECHANISM_TYPE target, CK_ATTRIBUTE_TYPE operation,
-            int keySize)
+PK11_Derive( PK11SymKey *baseKey, CK_MECHANISM_TYPE derive, SECItem *param, 
+             CK_MECHANISM_TYPE target, CK_ATTRIBUTE_TYPE operation,
+	     int keySize)
 {
-    return PK11_DeriveWithTemplate(baseKey, derive, param, target, operation,
-                                   keySize, NULL, 0, PR_FALSE);
+    return PK11_DeriveWithTemplate(baseKey, derive, param, target, operation, 
+				   keySize, NULL, 0, PR_FALSE);
 }
 
+
 PK11SymKey *
-PK11_DeriveWithFlags(PK11SymKey *baseKey, CK_MECHANISM_TYPE derive,
-                     SECItem *param, CK_MECHANISM_TYPE target, CK_ATTRIBUTE_TYPE operation,
-                     int keySize, CK_FLAGS flags)
+PK11_DeriveWithFlags( PK11SymKey *baseKey, CK_MECHANISM_TYPE derive, 
+	SECItem *param, CK_MECHANISM_TYPE target, CK_ATTRIBUTE_TYPE operation, 
+	int keySize, CK_FLAGS flags)
 {
-    CK_BBOOL ckTrue = CK_TRUE;
-    CK_ATTRIBUTE keyTemplate[MAX_TEMPL_ATTRS];
-    unsigned int templateCount;
+    CK_BBOOL        ckTrue	= CK_TRUE; 
+    CK_ATTRIBUTE    keyTemplate[MAX_TEMPL_ATTRS];
+    unsigned int    templateCount;
 
     templateCount = pk11_OpFlagsToAttributes(flags, keyTemplate, &ckTrue);
-    return PK11_DeriveWithTemplate(baseKey, derive, param, target, operation,
-                                   keySize, keyTemplate, templateCount, PR_FALSE);
+    return PK11_DeriveWithTemplate(baseKey, derive, param, target, operation, 
+		  keySize, keyTemplate, templateCount, PR_FALSE);
 }
 
 PK11SymKey *
-PK11_DeriveWithFlagsPerm(PK11SymKey *baseKey, CK_MECHANISM_TYPE derive,
-                         SECItem *param, CK_MECHANISM_TYPE target, CK_ATTRIBUTE_TYPE operation,
-                         int keySize, CK_FLAGS flags, PRBool isPerm)
+PK11_DeriveWithFlagsPerm( PK11SymKey *baseKey, CK_MECHANISM_TYPE derive, 
+	SECItem *param, CK_MECHANISM_TYPE target, CK_ATTRIBUTE_TYPE operation, 
+	int keySize, CK_FLAGS flags, PRBool isPerm)
 {
-    CK_BBOOL cktrue = CK_TRUE;
-    CK_ATTRIBUTE keyTemplate[MAX_TEMPL_ATTRS];
-    CK_ATTRIBUTE *attrs;
-    unsigned int templateCount = 0;
+    CK_BBOOL        cktrue	= CK_TRUE; 
+    CK_ATTRIBUTE    keyTemplate[MAX_TEMPL_ATTRS];
+    CK_ATTRIBUTE    *attrs;
+    unsigned int    templateCount = 0;
 
     attrs = keyTemplate;
     if (isPerm) {
-        PK11_SETATTRS(attrs, CKA_TOKEN, &cktrue, sizeof(CK_BBOOL));
-        attrs++;
+        PK11_SETATTRS(attrs, CKA_TOKEN,  &cktrue, sizeof(CK_BBOOL)); attrs++;
     }
     templateCount = attrs - keyTemplate;
     templateCount += pk11_OpFlagsToAttributes(flags, attrs, &cktrue);
-    return PK11_DeriveWithTemplate(baseKey, derive, param, target, operation,
-                                   keySize, keyTemplate, templateCount, isPerm);
+    return PK11_DeriveWithTemplate(baseKey, derive, param, target, operation, 
+				   keySize, keyTemplate, templateCount, isPerm);
 }
 
 PK11SymKey *
-PK11_DeriveWithTemplate(PK11SymKey *baseKey, CK_MECHANISM_TYPE derive,
-                        SECItem *param, CK_MECHANISM_TYPE target, CK_ATTRIBUTE_TYPE operation,
-                        int keySize, CK_ATTRIBUTE *userAttr, unsigned int numAttrs,
-                        PRBool isPerm)
+PK11_DeriveWithTemplate( PK11SymKey *baseKey, CK_MECHANISM_TYPE derive, 
+	SECItem *param, CK_MECHANISM_TYPE target, CK_ATTRIBUTE_TYPE operation, 
+	int keySize, CK_ATTRIBUTE *userAttr, unsigned int numAttrs,
+							 PRBool isPerm)
 {
-    PK11SlotInfo *slot = baseKey->slot;
-    PK11SymKey *symKey;
-    PK11SymKey *newBaseKey = NULL;
-    CK_BBOOL cktrue = CK_TRUE;
-    CK_OBJECT_CLASS keyClass = CKO_SECRET_KEY;
-    CK_KEY_TYPE keyType = CKK_GENERIC_SECRET;
-    CK_ULONG valueLen = 0;
-    CK_MECHANISM mechanism;
-    CK_RV crv;
+    PK11SlotInfo *  slot	= baseKey->slot;
+    PK11SymKey *    symKey;
+    PK11SymKey *    newBaseKey	= NULL;
+    CK_BBOOL        cktrue	= CK_TRUE; 
+    CK_OBJECT_CLASS keyClass	= CKO_SECRET_KEY;
+    CK_KEY_TYPE     keyType	= CKK_GENERIC_SECRET;
+    CK_ULONG        valueLen	= 0;
+    CK_MECHANISM    mechanism; 
+    CK_RV           crv;
 #define MAX_ADD_ATTRS 4
-    CK_ATTRIBUTE keyTemplate[MAX_TEMPL_ATTRS + MAX_ADD_ATTRS];
+    CK_ATTRIBUTE    keyTemplate[MAX_TEMPL_ATTRS + MAX_ADD_ATTRS];
 #undef MAX_ADD_ATTRS
-    CK_ATTRIBUTE *attrs = keyTemplate;
+    CK_ATTRIBUTE *  attrs	= keyTemplate;
     CK_SESSION_HANDLE session;
-    unsigned int templateCount;
+    unsigned int    templateCount;
 
     if (numAttrs > MAX_TEMPL_ATTRS) {
-        PORT_SetError(SEC_ERROR_INVALID_ARGS);
-        return NULL;
+    	PORT_SetError(SEC_ERROR_INVALID_ARGS);
+	return NULL;
     }
 
     
     for (templateCount = 0; templateCount < numAttrs; ++templateCount) {
-        *attrs++ = *userAttr++;
+    	*attrs++ = *userAttr++;
     }
 
     
 
 
     if (!pk11_FindAttrInTemplate(keyTemplate, numAttrs, CKA_CLASS)) {
-        PK11_SETATTRS(attrs, CKA_CLASS, &keyClass, sizeof keyClass);
-        attrs++;
+	PK11_SETATTRS(attrs, CKA_CLASS,     &keyClass, sizeof keyClass); 
+	attrs++;
     }
     if (!pk11_FindAttrInTemplate(keyTemplate, numAttrs, CKA_KEY_TYPE)) {
-        keyType = PK11_GetKeyType(target, keySize);
-        PK11_SETATTRS(attrs, CKA_KEY_TYPE, &keyType, sizeof keyType);
-        attrs++;
+	keyType = PK11_GetKeyType(target, keySize);
+	PK11_SETATTRS(attrs, CKA_KEY_TYPE,  &keyType,  sizeof keyType ); 
+	attrs++;
     }
     if (keySize > 0 &&
-        !pk11_FindAttrInTemplate(keyTemplate, numAttrs, CKA_VALUE_LEN)) {
-        valueLen = (CK_ULONG)keySize;
-        PK11_SETATTRS(attrs, CKA_VALUE_LEN, &valueLen, sizeof valueLen);
-        attrs++;
+    	  !pk11_FindAttrInTemplate(keyTemplate, numAttrs, CKA_VALUE_LEN)) {
+	valueLen = (CK_ULONG)keySize;
+	PK11_SETATTRS(attrs, CKA_VALUE_LEN, &valueLen, sizeof valueLen); 
+	attrs++;
     }
     if ((operation != CKA_FLAGS_ONLY) &&
-        !pk11_FindAttrInTemplate(keyTemplate, numAttrs, operation)) {
-        PK11_SETATTRS(attrs, operation, &cktrue, sizeof cktrue);
-        attrs++;
+	  !pk11_FindAttrInTemplate(keyTemplate, numAttrs, operation)) {
+	PK11_SETATTRS(attrs, operation, &cktrue, sizeof cktrue); attrs++;
     }
 
     templateCount = attrs - keyTemplate;
-    PR_ASSERT(templateCount <= sizeof(keyTemplate) / sizeof(CK_ATTRIBUTE));
+    PR_ASSERT(templateCount <= sizeof(keyTemplate)/sizeof(CK_ATTRIBUTE));
 
     
-    if (!PK11_DoesMechanism(slot, derive)) {
-        
-        PK11SlotInfo *newSlot = PK11_GetBestSlot(derive, baseKey->cx);
+    if (!PK11_DoesMechanism(slot,derive)) {
+	
+	PK11SlotInfo *newSlot = PK11_GetBestSlot(derive, baseKey->cx);
 
-        if (newSlot == NULL)
-            return NULL;
+	if (newSlot == NULL) return NULL;
 
-        newBaseKey = pk11_CopyToSlot(newSlot, derive, CKA_DERIVE,
-                                     baseKey);
-        PK11_FreeSlot(newSlot);
-        if (newBaseKey == NULL)
-            return NULL;
-        baseKey = newBaseKey;
-        slot = baseKey->slot;
+        newBaseKey = pk11_CopyToSlot (newSlot, derive, CKA_DERIVE, 
+				     baseKey);
+	PK11_FreeSlot(newSlot);
+	if (newBaseKey == NULL) 
+	    return NULL;	
+	baseKey = newBaseKey;
+	slot = baseKey->slot;
     }
+
 
     
     symKey = pk11_CreateSymKey(slot, target, !isPerm, PR_TRUE, baseKey->cx);
     if (symKey == NULL) {
-        return NULL;
+	return NULL;
     }
 
     symKey->size = keySize;
 
     mechanism.mechanism = derive;
     if (param) {
-        mechanism.pParameter = param->data;
-        mechanism.ulParameterLen = param->len;
+	mechanism.pParameter = param->data;
+	mechanism.ulParameterLen = param->len;
     } else {
-        mechanism.pParameter = NULL;
-        mechanism.ulParameterLen = 0;
+	mechanism.pParameter = NULL;
+	mechanism.ulParameterLen = 0;
     }
-    symKey->origin = PK11_OriginDerive;
+    symKey->origin=PK11_OriginDerive;
 
     if (isPerm) {
-        session = PK11_GetRWSession(slot);
+	session =  PK11_GetRWSession(slot);
     } else {
         pk11_EnterKeyMonitor(symKey);
-        session = symKey->session;
+	session = symKey->session;
     }
     if (session == CK_INVALID_SESSION) {
-        if (!isPerm)
-            pk11_ExitKeyMonitor(symKey);
-        crv = CKR_SESSION_HANDLE_INVALID;
+	if (!isPerm)
+	    pk11_ExitKeyMonitor(symKey);
+	crv = CKR_SESSION_HANDLE_INVALID;
     } else {
-        crv = PK11_GETTAB(slot)->C_DeriveKey(session, &mechanism,
-                                             baseKey->objectID, keyTemplate, templateCount, &symKey->objectID);
-        if (isPerm) {
-            PK11_RestoreROSession(slot, session);
-        } else {
-            pk11_ExitKeyMonitor(symKey);
-        }
+	crv = PK11_GETTAB(slot)->C_DeriveKey(session, &mechanism,
+	     baseKey->objectID, keyTemplate, templateCount, &symKey->objectID);
+	if (isPerm) {
+	    PK11_RestoreROSession(slot, session);
+	} else {
+	    pk11_ExitKeyMonitor(symKey);
+	}
     }
-    if (newBaseKey)
-        PK11_FreeSymKey(newBaseKey);
+    if (newBaseKey) 
+    	PK11_FreeSymKey(newBaseKey);
     if (crv != CKR_OK) {
-        PK11_FreeSymKey(symKey);
-        return NULL;
+	PK11_FreeSymKey(symKey);
+	return NULL;
     }
     return symKey;
 }
 
 
 
-static PK11SymKey *
-pk11_ConcatenateBaseAndData(PK11SymKey *base,
-                            CK_BYTE *data, CK_ULONG dataLen, CK_MECHANISM_TYPE target,
-                            CK_ATTRIBUTE_TYPE operation)
+static PK11SymKey *pk11_ConcatenateBaseAndData(PK11SymKey *base,
+	CK_BYTE *data, CK_ULONG dataLen, CK_MECHANISM_TYPE target,
+	CK_ATTRIBUTE_TYPE operation)
 {
     CK_KEY_DERIVATION_STRING_DATA mechParams;
     SECItem param;
 
     if (base == NULL) {
-        PORT_SetError(SEC_ERROR_INVALID_ARGS);
-        return NULL;
+	PORT_SetError( SEC_ERROR_INVALID_ARGS );
+	return NULL;
     }
 
     mechParams.pData = data;
@@ -1618,48 +1571,45 @@ pk11_ConcatenateBaseAndData(PK11SymKey *base,
     param.len = sizeof(CK_KEY_DERIVATION_STRING_DATA);
 
     return PK11_Derive(base, CKM_CONCATENATE_BASE_AND_DATA,
-                       &param, target, operation, 0);
+				&param, target, operation, 0);
 }
 
 
 
-static PK11SymKey *
-pk11_ConcatenateBaseAndKey(PK11SymKey *base,
-                           PK11SymKey *key, CK_MECHANISM_TYPE target,
-                           CK_ATTRIBUTE_TYPE operation, CK_ULONG keySize)
+static PK11SymKey *pk11_ConcatenateBaseAndKey(PK11SymKey *base,
+			PK11SymKey *key, CK_MECHANISM_TYPE target,
+			CK_ATTRIBUTE_TYPE operation, CK_ULONG keySize)
 {
     SECItem param;
 
     if ((base == NULL) || (key == NULL)) {
-        PORT_SetError(SEC_ERROR_INVALID_ARGS);
-        return NULL;
+	PORT_SetError( SEC_ERROR_INVALID_ARGS );
+	return NULL;
     }
 
     param.data = (unsigned char *)&(key->objectID);
     param.len = sizeof(CK_OBJECT_HANDLE);
 
     return PK11_Derive(base, CKM_CONCATENATE_BASE_AND_KEY,
-                       &param, target, operation, keySize);
+				&param, target, operation, keySize);
 }
 
 
 
 
-static PK11SymKey *
-pk11_HashKeyDerivation(PK11SymKey *toBeHashed,
-                       CK_MECHANISM_TYPE hashMechanism, CK_MECHANISM_TYPE target,
-                       CK_ATTRIBUTE_TYPE operation, CK_ULONG keySize)
+static PK11SymKey *pk11_HashKeyDerivation(PK11SymKey *toBeHashed,
+	CK_MECHANISM_TYPE hashMechanism, CK_MECHANISM_TYPE target,
+	CK_ATTRIBUTE_TYPE operation, CK_ULONG keySize)
 {
     return PK11_Derive(toBeHashed, hashMechanism, NULL, target, operation, keySize);
 }
 
 
 
-static PK11SymKey *
-pk11_ANSIX963Derive(PK11SymKey *sharedSecret,
-                    CK_EC_KDF_TYPE kdf, SECItem *sharedData,
-                    CK_MECHANISM_TYPE target, CK_ATTRIBUTE_TYPE operation,
-                    CK_ULONG keySize)
+static PK11SymKey *pk11_ANSIX963Derive(PK11SymKey *sharedSecret,
+		CK_EC_KDF_TYPE kdf, SECItem *sharedData,
+		CK_MECHANISM_TYPE target, CK_ATTRIBUTE_TYPE operation,
+		CK_ULONG keySize)
 {
     CK_KEY_TYPE keyType;
     CK_MECHANISM_TYPE hashMechanism, mechanismArray[4];
@@ -1671,70 +1621,70 @@ pk11_ANSIX963Derive(PK11SymKey *sharedSecret,
     PK11SymKey *oldIntermediateResult, *intermediateResult = NULL;
 
     if (sharedSecret == NULL) {
-        PORT_SetError(SEC_ERROR_INVALID_ARGS);
-        return NULL;
+	PORT_SetError( SEC_ERROR_INVALID_ARGS );
+	return NULL;
     }
 
     switch (kdf) {
-        case CKD_SHA1_KDF:
-            HashLen = SHA1_LENGTH;
-            hashMechanism = CKM_SHA1_KEY_DERIVATION;
-            break;
-        case CKD_SHA224_KDF:
-            HashLen = SHA224_LENGTH;
-            hashMechanism = CKM_SHA224_KEY_DERIVATION;
-            break;
-        case CKD_SHA256_KDF:
-            HashLen = SHA256_LENGTH;
-            hashMechanism = CKM_SHA256_KEY_DERIVATION;
-            break;
-        case CKD_SHA384_KDF:
-            HashLen = SHA384_LENGTH;
-            hashMechanism = CKM_SHA384_KEY_DERIVATION;
-            break;
-        case CKD_SHA512_KDF:
-            HashLen = SHA512_LENGTH;
-            hashMechanism = CKM_SHA512_KEY_DERIVATION;
-            break;
-        default:
-            PORT_SetError(SEC_ERROR_INVALID_ARGS);
-            return NULL;
+    case CKD_SHA1_KDF:
+	HashLen = SHA1_LENGTH;
+	hashMechanism = CKM_SHA1_KEY_DERIVATION;
+	break;
+    case CKD_SHA224_KDF:
+	HashLen = SHA224_LENGTH;
+	hashMechanism = CKM_SHA224_KEY_DERIVATION;
+	break;
+    case CKD_SHA256_KDF:
+	HashLen = SHA256_LENGTH;
+	hashMechanism = CKM_SHA256_KEY_DERIVATION;
+	break;
+    case CKD_SHA384_KDF:
+	HashLen = SHA384_LENGTH;
+	hashMechanism = CKM_SHA384_KEY_DERIVATION;
+	break;
+    case CKD_SHA512_KDF:
+	HashLen = SHA512_LENGTH;
+	hashMechanism = CKM_SHA512_KEY_DERIVATION;
+	break;
+    default:
+	PORT_SetError( SEC_ERROR_INVALID_ARGS );
+	return NULL;
     }
 
     derivedKeySize = keySize;
     if (derivedKeySize == 0) {
-        keyType = PK11_GetKeyType(target, keySize);
-        derivedKeySize = pk11_GetPredefinedKeyLength(keyType);
-        if (derivedKeySize == 0) {
-            derivedKeySize = HashLen;
-        }
+	keyType = PK11_GetKeyType(target,keySize);
+	derivedKeySize = pk11_GetPredefinedKeyLength(keyType);
+	if (derivedKeySize == 0) {
+	    derivedKeySize = HashLen;
+	}
     }
 
     
 
 
     if (derivedKeySize > 254 * HashLen) {
-        PORT_SetError(SEC_ERROR_INVALID_ARGS);
-        return NULL;
+	PORT_SetError( SEC_ERROR_INVALID_ARGS );
+	return NULL;
     }
 
     maxCounter = derivedKeySize / HashLen;
     if (derivedKeySize > maxCounter * HashLen)
-        maxCounter++;
+	maxCounter++;
 
     if ((sharedData == NULL) || (sharedData->data == NULL))
-        SharedInfoLen = 0;
+	SharedInfoLen = 0;
     else
-        SharedInfoLen = sharedData->len;
+	SharedInfoLen = sharedData->len;
 
     bufferLen = SharedInfoLen + 4;
-
+    
     
 
     buffer = (unsigned char *)PORT_Alloc(bufferLen);
     if (buffer == NULL) {
-        PORT_SetError(SEC_ERROR_NO_MEMORY);
-        return NULL;
+	PORT_SetError(SEC_ERROR_NO_MEMORY);
+	return NULL;
     }
 
     buffer[0] = 0;
@@ -1742,7 +1692,7 @@ pk11_ANSIX963Derive(PK11SymKey *sharedSecret,
     buffer[2] = 0;
     buffer[3] = 1;
     if (SharedInfoLen > 0) {
-        PORT_Memcpy(&buffer[4], sharedData->data, SharedInfoLen);
+	PORT_Memcpy(&buffer[4], sharedData->data, SharedInfoLen);
     }
 
     
@@ -1755,81 +1705,81 @@ pk11_ANSIX963Derive(PK11SymKey *sharedSecret,
     mechanismArray[3] = target;
 
     newSharedSecret = pk11_ForceSlotMultiple(sharedSecret,
-                                             mechanismArray, 4, operation);
+					 mechanismArray, 4, operation);
     if (newSharedSecret != NULL) {
-        sharedSecret = newSharedSecret;
+	sharedSecret = newSharedSecret;
     }
 
-    for (counter = 1; counter <= maxCounter; counter++) {
-        
-        toBeHashed = pk11_ConcatenateBaseAndData(sharedSecret, buffer,
-                                                 bufferLen, hashMechanism, operation);
-        if (toBeHashed == NULL) {
-            goto loser;
-        }
+    for(counter=1; counter <= maxCounter; counter++) {
+	
+	toBeHashed = pk11_ConcatenateBaseAndData(sharedSecret, buffer,
+					bufferLen, hashMechanism, operation);
+	if (toBeHashed == NULL) {
+	    goto loser;
+	}
 
-        
-        if (maxCounter == 1) {
-            
+	
+	if (maxCounter == 1) {
+	    
 
 
 
-            hashOutput = pk11_HashKeyDerivation(toBeHashed, hashMechanism,
-                                                target, operation, keySize);
-        } else {
-            
+	    hashOutput = pk11_HashKeyDerivation(toBeHashed, hashMechanism,
+						target, operation, keySize);
+	} else {
+	    
 
-            hashOutput = pk11_HashKeyDerivation(toBeHashed, hashMechanism,
-                                                CKM_CONCATENATE_BASE_AND_KEY, operation, 0);
-        }
-        PK11_FreeSymKey(toBeHashed);
-        if (hashOutput == NULL) {
-            goto loser;
-        }
+	    hashOutput = pk11_HashKeyDerivation(toBeHashed, hashMechanism,
+				CKM_CONCATENATE_BASE_AND_KEY, operation, 0);
+	}
+	PK11_FreeSymKey(toBeHashed);
+	if (hashOutput == NULL) {
+	    goto loser;
+	}
 
-        
-        oldIntermediateResult = intermediateResult;
+	
+	oldIntermediateResult = intermediateResult;
 
-        if (oldIntermediateResult == NULL) {
-            intermediateResult = hashOutput;
-        } else {
-            if (counter == maxCounter) {
-                
+	if (oldIntermediateResult == NULL) {
+	    intermediateResult = hashOutput;
+	} else {
+	    if (counter == maxCounter) {
+		
 
-                intermediateResult =
-                    pk11_ConcatenateBaseAndKey(oldIntermediateResult,
-                                               hashOutput, target, operation, keySize);
-            } else {
-                
+		intermediateResult =
+		    pk11_ConcatenateBaseAndKey(oldIntermediateResult,
+				hashOutput, target, operation, keySize);
+	    } else {
+		
 
-                intermediateResult =
-                    pk11_ConcatenateBaseAndKey(oldIntermediateResult,
-                                               hashOutput, CKM_CONCATENATE_BASE_AND_KEY,
-                                               operation, 0);
-            }
+		intermediateResult =
+		    pk11_ConcatenateBaseAndKey(oldIntermediateResult,
+				hashOutput, CKM_CONCATENATE_BASE_AND_KEY,
+				operation, 0);
+	    }
 
-            PK11_FreeSymKey(hashOutput);
-            PK11_FreeSymKey(oldIntermediateResult);
-            if (intermediateResult == NULL) {
-                goto loser;
-            }
-        }
+	    PK11_FreeSymKey(hashOutput);
+	    PK11_FreeSymKey(oldIntermediateResult);
+	    if (intermediateResult == NULL) {
+		goto loser;
+	    }
+	}
 
-        
-        buffer[3]++;
+	
+	buffer[3]++;
     }
 
     PORT_ZFree(buffer, bufferLen);
     if (newSharedSecret != NULL)
-        PK11_FreeSymKey(newSharedSecret);
+	PK11_FreeSymKey(newSharedSecret);
     return intermediateResult;
 
 loser:
     PORT_ZFree(buffer, bufferLen);
     if (newSharedSecret != NULL)
-        PK11_FreeSymKey(newSharedSecret);
+	PK11_FreeSymKey(newSharedSecret);
     if (intermediateResult != NULL)
-        PK11_FreeSymKey(intermediateResult);
+	PK11_FreeSymKey(intermediateResult);
     return NULL;
 }
 
@@ -1839,10 +1789,10 @@ loser:
 
 
 PK11SymKey *
-PK11_PubDerive(SECKEYPrivateKey *privKey, SECKEYPublicKey *pubKey,
-               PRBool isSender, SECItem *randomA, SECItem *randomB,
-               CK_MECHANISM_TYPE derive, CK_MECHANISM_TYPE target,
-               CK_ATTRIBUTE_TYPE operation, int keySize, void *wincx)
+PK11_PubDerive(SECKEYPrivateKey *privKey, SECKEYPublicKey *pubKey, 
+   PRBool isSender, SECItem *randomA, SECItem *randomB, 
+    CK_MECHANISM_TYPE derive, CK_MECHANISM_TYPE target,
+			CK_ATTRIBUTE_TYPE operation, int keySize,void *wincx)
 {
     PK11SlotInfo *slot = privKey->pkcs11Slot;
     CK_MECHANISM mechanism;
@@ -1852,189 +1802,186 @@ PK11_PubDerive(SECKEYPrivateKey *privKey, SECKEYPublicKey *pubKey,
     
     symKey = pk11_CreateSymKey(slot, target, PR_TRUE, PR_TRUE, wincx);
     if (symKey == NULL) {
-        return NULL;
+	return NULL;
     }
 
     symKey->origin = PK11_OriginDerive;
 
     switch (privKey->keyType) {
-        case rsaKey:
-        case rsaPssKey:
-        case rsaOaepKey:
-        case nullKey:
-            PORT_SetError(SEC_ERROR_BAD_KEY);
-            break;
-        case dsaKey:
-        case keaKey:
-        case fortezzaKey: {
-            static unsigned char rb_email[128] = { 0 };
-            CK_KEA_DERIVE_PARAMS param;
-            param.isSender = (CK_BBOOL)isSender;
-            param.ulRandomLen = randomA->len;
-            param.pRandomA = randomA->data;
-            param.pRandomB = rb_email;
-            param.pRandomB[127] = 1;
-            if (randomB)
-                param.pRandomB = randomB->data;
-            if (pubKey->keyType == fortezzaKey) {
-                param.ulPublicDataLen = pubKey->u.fortezza.KEAKey.len;
-                param.pPublicData = pubKey->u.fortezza.KEAKey.data;
-            } else {
-                
-                
-                param.ulPublicDataLen = pubKey->u.fortezza.KEAKey.len;
-                param.pPublicData = pubKey->u.fortezza.KEAKey.data;
-            }
+    case rsaKey:
+    case rsaPssKey:
+    case rsaOaepKey:
+    case nullKey:
+	PORT_SetError(SEC_ERROR_BAD_KEY);
+	break;
+    case dsaKey:
+    case keaKey:
+    case fortezzaKey:
+	{
+	    static unsigned char rb_email[128] = { 0 };
+	    CK_KEA_DERIVE_PARAMS param;
+	    param.isSender = (CK_BBOOL) isSender;
+	    param.ulRandomLen = randomA->len;
+	    param.pRandomA = randomA->data;
+	    param.pRandomB = rb_email;
+	    param.pRandomB[127] = 1;
+	    if (randomB)
+		 param.pRandomB = randomB->data;
+	    if (pubKey->keyType == fortezzaKey) {
+		param.ulPublicDataLen = pubKey->u.fortezza.KEAKey.len;
+		param.pPublicData = pubKey->u.fortezza.KEAKey.data;
+	    } else {
+		
+		
+		param.ulPublicDataLen = pubKey->u.fortezza.KEAKey.len;
+		param.pPublicData = pubKey->u.fortezza.KEAKey.data;
+	    }
 
-            mechanism.mechanism = derive;
-            mechanism.pParameter = &param;
-            mechanism.ulParameterLen = sizeof(param);
+	    mechanism.mechanism = derive;
+	    mechanism.pParameter = &param;
+	    mechanism.ulParameterLen = sizeof(param);
 
-            
-            pk11_EnterKeyMonitor(symKey);
-            crv = PK11_GETTAB(slot)->C_DeriveKey(symKey->session, &mechanism,
-                                                 privKey->pkcs11ID, NULL, 0,
-                                                 &symKey->objectID);
-            pk11_ExitKeyMonitor(symKey);
-            if (crv == CKR_OK)
-                return symKey;
-            PORT_SetError(PK11_MapError(crv));
-        } break;
-        case dhKey: {
-            CK_BBOOL cktrue = CK_TRUE;
-            CK_OBJECT_CLASS keyClass = CKO_SECRET_KEY;
-            CK_KEY_TYPE keyType = CKK_GENERIC_SECRET;
-            CK_ULONG key_size = 0;
-            CK_ATTRIBUTE keyTemplate[4];
-            int templateCount;
-            CK_ATTRIBUTE *attrs = keyTemplate;
+	    
+	    pk11_EnterKeyMonitor(symKey);
+	    crv=PK11_GETTAB(slot)->C_DeriveKey(symKey->session, &mechanism,
+			privKey->pkcs11ID, NULL, 0, &symKey->objectID);
+	    pk11_ExitKeyMonitor(symKey);
+	    if (crv == CKR_OK) return symKey;
+	    PORT_SetError( PK11_MapError(crv) );
+	}
+	break;
+    case dhKey:
+	{
+	    CK_BBOOL cktrue = CK_TRUE;
+	    CK_OBJECT_CLASS keyClass = CKO_SECRET_KEY;
+	    CK_KEY_TYPE keyType = CKK_GENERIC_SECRET;
+	    CK_ULONG key_size = 0;
+	    CK_ATTRIBUTE keyTemplate[4];
+	    int templateCount;
+	    CK_ATTRIBUTE *attrs = keyTemplate;
 
-            if (pubKey->keyType != dhKey) {
-                PORT_SetError(SEC_ERROR_BAD_KEY);
-                break;
-            }
+	    if (pubKey->keyType != dhKey) {
+		PORT_SetError(SEC_ERROR_BAD_KEY);
+		break;
+	    }
 
-            PK11_SETATTRS(attrs, CKA_CLASS, &keyClass, sizeof(keyClass));
-            attrs++;
-            PK11_SETATTRS(attrs, CKA_KEY_TYPE, &keyType, sizeof(keyType));
-            attrs++;
-            PK11_SETATTRS(attrs, operation, &cktrue, 1);
-            attrs++;
-            PK11_SETATTRS(attrs, CKA_VALUE_LEN, &key_size, sizeof(key_size));
-            attrs++;
-            templateCount = attrs - keyTemplate;
-            PR_ASSERT(templateCount <= sizeof(keyTemplate) / sizeof(CK_ATTRIBUTE));
+	    PK11_SETATTRS(attrs, CKA_CLASS, &keyClass, sizeof(keyClass));
+	    attrs++;
+	    PK11_SETATTRS(attrs, CKA_KEY_TYPE, &keyType, sizeof(keyType));
+	    attrs++;
+	    PK11_SETATTRS(attrs, operation, &cktrue, 1); attrs++;
+	    PK11_SETATTRS(attrs, CKA_VALUE_LEN, &key_size, sizeof(key_size)); 
+	    attrs++;
+	    templateCount =  attrs - keyTemplate;
+	    PR_ASSERT(templateCount <= sizeof(keyTemplate)/sizeof(CK_ATTRIBUTE));
 
-            keyType = PK11_GetKeyType(target, keySize);
-            key_size = keySize;
-            symKey->size = keySize;
-            if (key_size == 0)
-                templateCount--;
+	    keyType = PK11_GetKeyType(target,keySize);
+	    key_size = keySize;
+	    symKey->size = keySize;
+	    if (key_size == 0) templateCount--;
 
-            mechanism.mechanism = derive;
+	    mechanism.mechanism = derive;
 
-            
+	    
 
-            mechanism.pParameter = pubKey->u.dh.publicValue.data;
-            mechanism.ulParameterLen = pubKey->u.dh.publicValue.len;
+	    mechanism.pParameter = pubKey->u.dh.publicValue.data; 
+	    mechanism.ulParameterLen = pubKey->u.dh.publicValue.len;
+		
+	    pk11_EnterKeyMonitor(symKey);
+	    crv = PK11_GETTAB(slot)->C_DeriveKey(symKey->session, &mechanism,
+	     privKey->pkcs11ID, keyTemplate, templateCount, &symKey->objectID);
+	    pk11_ExitKeyMonitor(symKey);
+	    if (crv == CKR_OK) return symKey;
+	    PORT_SetError( PK11_MapError(crv) );
+	}
+	break;
+    case ecKey:
+        {
+	    CK_BBOOL cktrue = CK_TRUE;
+	    CK_OBJECT_CLASS keyClass = CKO_SECRET_KEY;
+	    CK_KEY_TYPE keyType = CKK_GENERIC_SECRET;
+	    CK_ULONG key_size = 0;
+	    CK_ATTRIBUTE keyTemplate[4];
+	    int templateCount;
+	    CK_ATTRIBUTE *attrs = keyTemplate;
+	    CK_ECDH1_DERIVE_PARAMS *mechParams = NULL;
 
-            pk11_EnterKeyMonitor(symKey);
-            crv = PK11_GETTAB(slot)->C_DeriveKey(symKey->session, &mechanism,
-                                                 privKey->pkcs11ID, keyTemplate,
-                                                 templateCount, &symKey->objectID);
-            pk11_ExitKeyMonitor(symKey);
-            if (crv == CKR_OK)
-                return symKey;
-            PORT_SetError(PK11_MapError(crv));
-        } break;
-        case ecKey: {
-            CK_BBOOL cktrue = CK_TRUE;
-            CK_OBJECT_CLASS keyClass = CKO_SECRET_KEY;
-            CK_KEY_TYPE keyType = CKK_GENERIC_SECRET;
-            CK_ULONG key_size = 0;
-            CK_ATTRIBUTE keyTemplate[4];
-            int templateCount;
-            CK_ATTRIBUTE *attrs = keyTemplate;
-            CK_ECDH1_DERIVE_PARAMS *mechParams = NULL;
+	    if (pubKey->keyType != ecKey) {
+		PORT_SetError(SEC_ERROR_BAD_KEY);
+		break;
+	    }
 
-            if (pubKey->keyType != ecKey) {
-                PORT_SetError(SEC_ERROR_BAD_KEY);
-                break;
-            }
+	    PK11_SETATTRS(attrs, CKA_CLASS, &keyClass, sizeof(keyClass));
+	    attrs++;
+	    PK11_SETATTRS(attrs, CKA_KEY_TYPE, &keyType, sizeof(keyType));
+	    attrs++;
+	    PK11_SETATTRS(attrs, operation, &cktrue, 1); attrs++;
+	    PK11_SETATTRS(attrs, CKA_VALUE_LEN, &key_size, sizeof(key_size)); 
+	    attrs++;
+	    templateCount =  attrs - keyTemplate;
+	    PR_ASSERT(templateCount <= sizeof(keyTemplate)/sizeof(CK_ATTRIBUTE));
 
-            PK11_SETATTRS(attrs, CKA_CLASS, &keyClass, sizeof(keyClass));
-            attrs++;
-            PK11_SETATTRS(attrs, CKA_KEY_TYPE, &keyType, sizeof(keyType));
-            attrs++;
-            PK11_SETATTRS(attrs, operation, &cktrue, 1);
-            attrs++;
-            PK11_SETATTRS(attrs, CKA_VALUE_LEN, &key_size, sizeof(key_size));
-            attrs++;
-            templateCount = attrs - keyTemplate;
-            PR_ASSERT(templateCount <= sizeof(keyTemplate) / sizeof(CK_ATTRIBUTE));
+	    keyType = PK11_GetKeyType(target,keySize);
+	    key_size = keySize;
+	    if (key_size == 0) {
+		if ((key_size = pk11_GetPredefinedKeyLength(keyType))) {
+		    templateCount --;
+		} else {
+		    
 
-            keyType = PK11_GetKeyType(target, keySize);
-            key_size = keySize;
-            if (key_size == 0) {
-                if ((key_size = pk11_GetPredefinedKeyLength(keyType))) {
-                    templateCount--;
-                } else {
-                    
+		    key_size = SHA1_LENGTH;
+		}
+	    }
+	    symKey->size = key_size;
 
-                    key_size = SHA1_LENGTH;
-                }
-            }
-            symKey->size = key_size;
+	    mechParams = PORT_ZNew(CK_ECDH1_DERIVE_PARAMS); 
+	    mechParams->kdf = CKD_SHA1_KDF;
+	    mechParams->ulSharedDataLen = 0;
+	    mechParams->pSharedData = NULL;
+	    mechParams->ulPublicDataLen =  pubKey->u.ec.publicValue.len;
+	    mechParams->pPublicData =  pubKey->u.ec.publicValue.data;
 
-            mechParams = PORT_ZNew(CK_ECDH1_DERIVE_PARAMS);
-            mechParams->kdf = CKD_SHA1_KDF;
-            mechParams->ulSharedDataLen = 0;
-            mechParams->pSharedData = NULL;
-            mechParams->ulPublicDataLen = pubKey->u.ec.publicValue.len;
-            mechParams->pPublicData = pubKey->u.ec.publicValue.data;
+	    mechanism.mechanism = derive;
+	    mechanism.pParameter = mechParams;
+	    mechanism.ulParameterLen = sizeof(CK_ECDH1_DERIVE_PARAMS);
 
-            mechanism.mechanism = derive;
-            mechanism.pParameter = mechParams;
-            mechanism.ulParameterLen = sizeof(CK_ECDH1_DERIVE_PARAMS);
+	    pk11_EnterKeyMonitor(symKey);
+	    crv = PK11_GETTAB(slot)->C_DeriveKey(symKey->session, 
+		&mechanism, privKey->pkcs11ID, keyTemplate, 
+		templateCount, &symKey->objectID);
+	    pk11_ExitKeyMonitor(symKey);
 
-            pk11_EnterKeyMonitor(symKey);
-            crv = PK11_GETTAB(slot)->C_DeriveKey(symKey->session,
-                                                 &mechanism, privKey->pkcs11ID, keyTemplate,
-                                                 templateCount, &symKey->objectID);
-            pk11_ExitKeyMonitor(symKey);
+	    
 
-            
+	    if (crv != CKR_OK) {
+		SECItem *pubValue = SEC_ASN1EncodeItem(NULL, NULL,
+			&pubKey->u.ec.publicValue,
+			SEC_ASN1_GET(SEC_OctetStringTemplate));
+		if (pubValue == NULL) {
+	    	    PORT_ZFree(mechParams, sizeof(CK_ECDH1_DERIVE_PARAMS));
+		    break;
+		}
+		mechParams->ulPublicDataLen =  pubValue->len;
+		mechParams->pPublicData =  pubValue->data;
 
-            if (crv != CKR_OK) {
-                SECItem *pubValue = SEC_ASN1EncodeItem(NULL, NULL,
-                                                       &pubKey->u.ec.publicValue,
-                                                       SEC_ASN1_GET(SEC_OctetStringTemplate));
-                if (pubValue == NULL) {
-                    PORT_ZFree(mechParams, sizeof(CK_ECDH1_DERIVE_PARAMS));
-                    break;
-                }
-                mechParams->ulPublicDataLen = pubValue->len;
-                mechParams->pPublicData = pubValue->data;
+		pk11_EnterKeyMonitor(symKey);
+		crv = PK11_GETTAB(slot)->C_DeriveKey(symKey->session, 
+		    &mechanism, privKey->pkcs11ID, keyTemplate, 
+		    templateCount, &symKey->objectID);
+		pk11_ExitKeyMonitor(symKey);
 
-                pk11_EnterKeyMonitor(symKey);
-                crv = PK11_GETTAB(slot)->C_DeriveKey(symKey->session,
-                                                     &mechanism, privKey->pkcs11ID, keyTemplate,
-                                                     templateCount, &symKey->objectID);
-                pk11_ExitKeyMonitor(symKey);
+		SECITEM_FreeItem(pubValue,PR_TRUE);
+	    }
 
-                SECITEM_FreeItem(pubValue, PR_TRUE);
-            }
+	    PORT_ZFree(mechParams, sizeof(CK_ECDH1_DERIVE_PARAMS));
 
-            PORT_ZFree(mechParams, sizeof(CK_ECDH1_DERIVE_PARAMS));
+	    if (crv == CKR_OK) return symKey;
+	    PORT_SetError( PK11_MapError(crv) );
+	}
+   }
 
-            if (crv == CKR_OK)
-                return symKey;
-            PORT_SetError(PK11_MapError(crv));
-        }
-    }
-
-    PK11_FreeSymKey(symKey);
-    return NULL;
+   PK11_FreeSymKey(symKey);
+   return NULL;
 }
 
 
@@ -2049,7 +1996,7 @@ pk11_ECPubKeySize(SECKEYPublicKey *pubKey)
     }
     if (publicValue->data[0] == 0x04) {
         
-        return ((publicValue->len - 1) / 2);
+        return((publicValue->len - 1)/2);
     }
     
     return 0;
@@ -2057,233 +2004,227 @@ pk11_ECPubKeySize(SECKEYPublicKey *pubKey)
 
 static PK11SymKey *
 pk11_PubDeriveECKeyWithKDF(
-    SECKEYPrivateKey *privKey, SECKEYPublicKey *pubKey,
-    PRBool isSender, SECItem *randomA, SECItem *randomB,
-    CK_MECHANISM_TYPE derive, CK_MECHANISM_TYPE target,
-    CK_ATTRIBUTE_TYPE operation, int keySize,
-    CK_ULONG kdf, SECItem *sharedData, void *wincx)
+		    SECKEYPrivateKey *privKey, SECKEYPublicKey *pubKey,
+		    PRBool isSender, SECItem *randomA, SECItem *randomB,
+		    CK_MECHANISM_TYPE derive, CK_MECHANISM_TYPE target,
+		    CK_ATTRIBUTE_TYPE operation, int keySize,
+		    CK_ULONG kdf, SECItem *sharedData, void *wincx)
 {
-    PK11SlotInfo *slot = privKey->pkcs11Slot;
-    PK11SymKey *symKey;
-    PK11SymKey *SharedSecret;
-    CK_MECHANISM mechanism;
-    CK_RV crv;
-    CK_BBOOL cktrue = CK_TRUE;
-    CK_OBJECT_CLASS keyClass = CKO_SECRET_KEY;
-    CK_KEY_TYPE keyType = CKK_GENERIC_SECRET;
-    CK_ULONG key_size = 0;
-    CK_ATTRIBUTE keyTemplate[4];
-    int templateCount;
-    CK_ATTRIBUTE *attrs = keyTemplate;
-    CK_ECDH1_DERIVE_PARAMS *mechParams = NULL;
+    PK11SlotInfo           *slot            = privKey->pkcs11Slot;
+    PK11SymKey             *symKey;
+    PK11SymKey             *SharedSecret;
+    CK_MECHANISM            mechanism;
+    CK_RV                   crv;
+    CK_BBOOL                cktrue          = CK_TRUE;
+    CK_OBJECT_CLASS         keyClass        = CKO_SECRET_KEY;
+    CK_KEY_TYPE             keyType         = CKK_GENERIC_SECRET;
+    CK_ULONG                key_size        = 0;
+    CK_ATTRIBUTE            keyTemplate[4];
+    int                     templateCount;
+    CK_ATTRIBUTE           *attrs           = keyTemplate;
+    CK_ECDH1_DERIVE_PARAMS *mechParams      = NULL;
 
     if (pubKey->keyType != ecKey) {
-        PORT_SetError(SEC_ERROR_BAD_KEY);
-        return NULL;
+	PORT_SetError(SEC_ERROR_BAD_KEY);
+	return NULL;
     }
     if ((kdf != CKD_NULL) && (kdf != CKD_SHA1_KDF) &&
-        (kdf != CKD_SHA224_KDF) && (kdf != CKD_SHA256_KDF) &&
-        (kdf != CKD_SHA384_KDF) && (kdf != CKD_SHA512_KDF)) {
-        PORT_SetError(SEC_ERROR_INVALID_ALGORITHM);
-        return NULL;
+	(kdf != CKD_SHA224_KDF) && (kdf != CKD_SHA256_KDF) &&
+	(kdf != CKD_SHA384_KDF) && (kdf != CKD_SHA512_KDF)) {
+	PORT_SetError(SEC_ERROR_INVALID_ALGORITHM);
+	return NULL;
     }
 
     
     symKey = pk11_CreateSymKey(slot, target, PR_TRUE, PR_TRUE, wincx);
     if (symKey == NULL) {
-        return NULL;
+	return NULL;
     }
 
     symKey->origin = PK11_OriginDerive;
 
-    PK11_SETATTRS(attrs, CKA_CLASS, &keyClass, sizeof(keyClass));
-    attrs++;
-    PK11_SETATTRS(attrs, CKA_KEY_TYPE, &keyType, sizeof(keyType));
-    attrs++;
-    PK11_SETATTRS(attrs, operation, &cktrue, 1);
-    attrs++;
-    PK11_SETATTRS(attrs, CKA_VALUE_LEN, &key_size, sizeof(key_size));
-    attrs++;
-    templateCount = attrs - keyTemplate;
-    PR_ASSERT(templateCount <= sizeof(keyTemplate) / sizeof(CK_ATTRIBUTE));
+    PK11_SETATTRS(attrs, CKA_CLASS, &keyClass, sizeof(keyClass));     attrs++;
+    PK11_SETATTRS(attrs, CKA_KEY_TYPE, &keyType, sizeof(keyType));    attrs++;
+    PK11_SETATTRS(attrs, operation, &cktrue, 1);                      attrs++;
+    PK11_SETATTRS(attrs, CKA_VALUE_LEN, &key_size, sizeof(key_size)); attrs++;
+    templateCount =  attrs - keyTemplate;
+    PR_ASSERT(templateCount <= sizeof(keyTemplate)/sizeof(CK_ATTRIBUTE));
 
-    keyType = PK11_GetKeyType(target, keySize);
+    keyType = PK11_GetKeyType(target,keySize);
     key_size = keySize;
     if (key_size == 0) {
-        if ((key_size = pk11_GetPredefinedKeyLength(keyType))) {
-            templateCount--;
-        } else {
-            
+	if ((key_size = pk11_GetPredefinedKeyLength(keyType))) {
+	    templateCount --;
+	} else {
+	    
 
-            switch (kdf) {
-                case CKD_NULL:
-                    key_size = pk11_ECPubKeySize(pubKey);
-                    if (key_size == 0) {
-                        PK11_FreeSymKey(symKey);
-                        return NULL;
-                    }
-                    break;
-                case CKD_SHA1_KDF:
-                    key_size = SHA1_LENGTH;
-                    break;
-                case CKD_SHA224_KDF:
-                    key_size = SHA224_LENGTH;
-                    break;
-                case CKD_SHA256_KDF:
-                    key_size = SHA256_LENGTH;
-                    break;
-                case CKD_SHA384_KDF:
-                    key_size = SHA384_LENGTH;
-                    break;
-                case CKD_SHA512_KDF:
-                    key_size = SHA512_LENGTH;
-                    break;
-                default:
-                    PORT_Assert(!"Invalid CKD");
-                    PORT_SetError(SEC_ERROR_INVALID_ALGORITHM);
-                    return NULL;
-            }
-        }
+	    switch (kdf) {
+	    case CKD_NULL:
+                key_size = pk11_ECPubKeySize(pubKey);
+		if (key_size == 0) {
+		    PK11_FreeSymKey(symKey);
+		    return NULL;
+		}
+		break;
+	    case CKD_SHA1_KDF:
+		key_size = SHA1_LENGTH;
+		break;
+	    case CKD_SHA224_KDF:
+		key_size = SHA224_LENGTH;
+		break;
+	    case CKD_SHA256_KDF:
+		key_size = SHA256_LENGTH;
+		break;
+	    case CKD_SHA384_KDF:
+		key_size = SHA384_LENGTH;
+		break;
+	    case CKD_SHA512_KDF:
+		key_size = SHA512_LENGTH;
+		break;
+	    default:
+		PORT_Assert(!"Invalid CKD");
+		PORT_SetError(SEC_ERROR_INVALID_ALGORITHM);
+		return NULL;
+	    }
+	}
     }
     symKey->size = key_size;
 
     mechParams = PORT_ZNew(CK_ECDH1_DERIVE_PARAMS);
     if (!mechParams) {
-        PK11_FreeSymKey(symKey);
-        return NULL;
+	PK11_FreeSymKey(symKey);
+	return NULL;
     }
     mechParams->kdf = kdf;
     if (sharedData == NULL) {
-        mechParams->ulSharedDataLen = 0;
-        mechParams->pSharedData = NULL;
+	mechParams->ulSharedDataLen = 0;
+	mechParams->pSharedData     = NULL;
     } else {
-        mechParams->ulSharedDataLen = sharedData->len;
-        mechParams->pSharedData = sharedData->data;
+	mechParams->ulSharedDataLen = sharedData->len;
+	mechParams->pSharedData     = sharedData->data;
     }
-    mechParams->ulPublicDataLen = pubKey->u.ec.publicValue.len;
-    mechParams->pPublicData = pubKey->u.ec.publicValue.data;
+    mechParams->ulPublicDataLen =  pubKey->u.ec.publicValue.len;
+    mechParams->pPublicData =  pubKey->u.ec.publicValue.data;
 
-    mechanism.mechanism = derive;
-    mechanism.pParameter = mechParams;
+    mechanism.mechanism      = derive;
+    mechanism.pParameter     = mechParams;
     mechanism.ulParameterLen = sizeof(CK_ECDH1_DERIVE_PARAMS);
 
     pk11_EnterKeyMonitor(symKey);
-    crv = PK11_GETTAB(slot)->C_DeriveKey(symKey->session, &mechanism,
-                                         privKey->pkcs11ID, keyTemplate,
-                                         templateCount, &symKey->objectID);
+    crv = PK11_GETTAB(slot)->C_DeriveKey(symKey->session, &mechanism, 
+    	privKey->pkcs11ID, keyTemplate, templateCount, &symKey->objectID);
     pk11_ExitKeyMonitor(symKey);
 
     
 
     if (crv != CKR_OK) {
-        SECItem *pubValue = SEC_ASN1EncodeItem(NULL, NULL,
-                                               &pubKey->u.ec.publicValue,
-                                               SEC_ASN1_GET(SEC_OctetStringTemplate));
-        if (pubValue == NULL) {
-            goto loser;
-        }
-        mechParams->ulPublicDataLen = pubValue->len;
-        mechParams->pPublicData = pubValue->data;
+	SECItem *pubValue = SEC_ASN1EncodeItem(NULL, NULL,
+		&pubKey->u.ec.publicValue,
+		SEC_ASN1_GET(SEC_OctetStringTemplate));
+	if (pubValue == NULL) {
+	    goto loser;
+	}
+	mechParams->ulPublicDataLen =  pubValue->len;
+	mechParams->pPublicData =  pubValue->data;
 
-        pk11_EnterKeyMonitor(symKey);
-        crv = PK11_GETTAB(slot)->C_DeriveKey(symKey->session,
-                                             &mechanism, privKey->pkcs11ID, keyTemplate,
-                                             templateCount, &symKey->objectID);
-        pk11_ExitKeyMonitor(symKey);
+	pk11_EnterKeyMonitor(symKey);
+	crv = PK11_GETTAB(slot)->C_DeriveKey(symKey->session, 
+	    &mechanism, privKey->pkcs11ID, keyTemplate, 
+	    templateCount, &symKey->objectID);
+	pk11_ExitKeyMonitor(symKey);
 
-        if ((crv != CKR_OK) && (kdf != CKD_NULL)) {
-            
+	if ((crv != CKR_OK) && (kdf != CKD_NULL)) {
+	    
 
 
 
-            CK_ULONG derivedKeySize = key_size;
+	    CK_ULONG derivedKeySize = key_size;
 
-            keyType = CKK_GENERIC_SECRET;
+	    keyType = CKK_GENERIC_SECRET;
             key_size = pk11_ECPubKeySize(pubKey);
-            if (key_size == 0) {
-                SECITEM_FreeItem(pubValue, PR_TRUE);
-                goto loser;
-            }
-            SharedSecret = symKey;
-            SharedSecret->size = key_size;
+	    if (key_size == 0) {
+		SECITEM_FreeItem(pubValue,PR_TRUE);
+		goto loser;
+	    }
+	    SharedSecret = symKey;
+	    SharedSecret->size = key_size;
 
-            mechParams->kdf = CKD_NULL;
-            mechParams->ulSharedDataLen = 0;
-            mechParams->pSharedData = NULL;
-            mechParams->ulPublicDataLen = pubKey->u.ec.publicValue.len;
-            mechParams->pPublicData = pubKey->u.ec.publicValue.data;
+	    mechParams->kdf             = CKD_NULL;
+	    mechParams->ulSharedDataLen = 0;
+	    mechParams->pSharedData     = NULL;
+	    mechParams->ulPublicDataLen = pubKey->u.ec.publicValue.len;
+	    mechParams->pPublicData     = pubKey->u.ec.publicValue.data;
 
-            pk11_EnterKeyMonitor(SharedSecret);
-            crv = PK11_GETTAB(slot)->C_DeriveKey(SharedSecret->session,
-                                                 &mechanism, privKey->pkcs11ID, keyTemplate,
-                                                 templateCount, &SharedSecret->objectID);
-            pk11_ExitKeyMonitor(SharedSecret);
+	    pk11_EnterKeyMonitor(SharedSecret);
+	    crv = PK11_GETTAB(slot)->C_DeriveKey(SharedSecret->session,
+			    &mechanism, privKey->pkcs11ID, keyTemplate,
+			    templateCount, &SharedSecret->objectID);
+	    pk11_ExitKeyMonitor(SharedSecret);
 
-            if (crv != CKR_OK) {
-                
+	    if (crv != CKR_OK) {
+		
 
-                mechParams->ulPublicDataLen = pubValue->len;
-                mechParams->pPublicData = pubValue->data;
+		mechParams->ulPublicDataLen =  pubValue->len;
+		mechParams->pPublicData     =  pubValue->data;
 
-                pk11_EnterKeyMonitor(SharedSecret);
-                crv = PK11_GETTAB(slot)->C_DeriveKey(SharedSecret->session,
-                                                     &mechanism, privKey->pkcs11ID, keyTemplate,
-                                                     templateCount, &SharedSecret->objectID);
-                pk11_ExitKeyMonitor(SharedSecret);
-            }
+		pk11_EnterKeyMonitor(SharedSecret);
+		crv = PK11_GETTAB(slot)->C_DeriveKey(SharedSecret->session,
+				&mechanism, privKey->pkcs11ID, keyTemplate,
+				templateCount, &SharedSecret->objectID);
+		pk11_ExitKeyMonitor(SharedSecret);
+	    }
 
-            
-            if (crv == CKR_OK) {
-                symKey = pk11_ANSIX963Derive(SharedSecret, kdf,
-                                             sharedData, target, operation,
-                                             derivedKeySize);
-                PK11_FreeSymKey(SharedSecret);
-                if (symKey == NULL) {
-                    SECITEM_FreeItem(pubValue, PR_TRUE);
-                    PORT_ZFree(mechParams, sizeof(CK_ECDH1_DERIVE_PARAMS));
-                    return NULL;
-                }
-            }
-        }
-        SECITEM_FreeItem(pubValue, PR_TRUE);
+	    
+	    if (crv == CKR_OK) {
+		    symKey = pk11_ANSIX963Derive(SharedSecret, kdf,
+					sharedData, target, operation,
+					derivedKeySize);
+		    PK11_FreeSymKey(SharedSecret);
+		    if (symKey == NULL) {
+			SECITEM_FreeItem(pubValue,PR_TRUE);
+			PORT_ZFree(mechParams, sizeof(CK_ECDH1_DERIVE_PARAMS));
+			return NULL;
+		    }
+	    }
+	}
+	SECITEM_FreeItem(pubValue,PR_TRUE);
     }
 
 loser:
     PORT_ZFree(mechParams, sizeof(CK_ECDH1_DERIVE_PARAMS));
 
     if (crv != CKR_OK) {
-        PK11_FreeSymKey(symKey);
-        symKey = NULL;
-        PORT_SetError(PK11_MapError(crv));
+	PK11_FreeSymKey(symKey);
+	symKey = NULL;
+	PORT_SetError( PK11_MapError(crv) );
     }
     return symKey;
 }
 
 PK11SymKey *
-PK11_PubDeriveWithKDF(SECKEYPrivateKey *privKey, SECKEYPublicKey *pubKey,
-                      PRBool isSender, SECItem *randomA, SECItem *randomB,
-                      CK_MECHANISM_TYPE derive, CK_MECHANISM_TYPE target,
-                      CK_ATTRIBUTE_TYPE operation, int keySize,
-                      CK_ULONG kdf, SECItem *sharedData, void *wincx)
+PK11_PubDeriveWithKDF(SECKEYPrivateKey *privKey, SECKEYPublicKey *pubKey, 
+		      PRBool isSender, SECItem *randomA, SECItem *randomB, 
+		      CK_MECHANISM_TYPE derive, CK_MECHANISM_TYPE target,
+		      CK_ATTRIBUTE_TYPE operation, int keySize,
+		      CK_ULONG kdf, SECItem *sharedData, void *wincx)
 {
 
     switch (privKey->keyType) {
-        case rsaKey:
-        case nullKey:
-        case dsaKey:
-        case keaKey:
-        case fortezzaKey:
-        case dhKey:
-            return PK11_PubDerive(privKey, pubKey, isSender, randomA, randomB,
-                                  derive, target, operation, keySize, wincx);
-        case ecKey:
-            return pk11_PubDeriveECKeyWithKDF(privKey, pubKey, isSender,
-                                              randomA, randomB, derive, target,
-                                              operation, keySize,
-                                              kdf, sharedData, wincx);
-        default:
-            PORT_SetError(SEC_ERROR_BAD_KEY);
-            break;
+    case rsaKey:
+    case nullKey:
+    case dsaKey:
+    case keaKey:
+    case fortezzaKey:
+    case dhKey:
+	return PK11_PubDerive(privKey, pubKey, isSender, randomA, randomB,
+		derive, target, operation, keySize, wincx);
+    case ecKey:
+	return pk11_PubDeriveECKeyWithKDF( privKey, pubKey, isSender, 
+		randomA, randomB, derive, target, operation, keySize, 
+		kdf, sharedData, wincx);
+    default:
+        PORT_SetError(SEC_ERROR_BAD_KEY);
+        break;
     }
 
     return NULL;
@@ -2296,9 +2237,9 @@ PK11_PubDeriveWithKDF(SECKEYPrivateKey *privKey, SECKEYPublicKey *pubKey,
 
 static PK11SymKey *
 pk11_HandUnwrap(PK11SlotInfo *slot, CK_OBJECT_HANDLE wrappingKey,
-                CK_MECHANISM *mech, SECItem *inKey, CK_MECHANISM_TYPE target,
-                CK_ATTRIBUTE *keyTemplate, unsigned int templateCount,
-                int key_size, void *wincx, CK_RV *crvp, PRBool isPerm)
+                CK_MECHANISM *mech, SECItem *inKey, CK_MECHANISM_TYPE target, 
+		CK_ATTRIBUTE *keyTemplate, unsigned int templateCount, 
+		int key_size, void * wincx, CK_RV *crvp, PRBool isPerm)
 {
     CK_ULONG len;
     SECItem outKey;
@@ -2308,74 +2249,66 @@ pk11_HandUnwrap(PK11SlotInfo *slot, CK_OBJECT_HANDLE wrappingKey,
     CK_SESSION_HANDLE session;
 
     
-    if (keyTemplate[templateCount - 1].type == CKA_VALUE_LEN) {
+    if (keyTemplate[templateCount-1].type == CKA_VALUE_LEN) {
         templateCount--;
     }
 
     
 
-    outKey.data = (unsigned char *)PORT_Alloc(inKey->len);
+    outKey.data = (unsigned char*)PORT_Alloc(inKey->len);
     if (outKey.data == NULL) {
-        PORT_SetError(SEC_ERROR_NO_MEMORY);
-        if (crvp)
-            *crvp = CKR_HOST_MEMORY;
-        return NULL;
+	PORT_SetError( SEC_ERROR_NO_MEMORY );
+	if (crvp) *crvp = CKR_HOST_MEMORY;
+	return NULL;
     }
     len = inKey->len;
 
     
-    session = pk11_GetNewSession(slot, &owner);
-    if (!owner || !(slot->isThreadSafe))
-        PK11_EnterSlotMonitor(slot);
-    crv = PK11_GETTAB(slot)->C_DecryptInit(session, mech, wrappingKey);
+    session = pk11_GetNewSession(slot,&owner);
+    if (!owner || !(slot->isThreadSafe)) PK11_EnterSlotMonitor(slot);
+    crv = PK11_GETTAB(slot)->C_DecryptInit(session,mech,wrappingKey);
     if (crv != CKR_OK) {
-        if (!owner || !(slot->isThreadSafe))
-            PK11_ExitSlotMonitor(slot);
-        pk11_CloseSession(slot, session, owner);
-        PORT_Free(outKey.data);
-        PORT_SetError(PK11_MapError(crv));
-        if (crvp)
-            *crvp = crv;
-        return NULL;
+	if (!owner || !(slot->isThreadSafe)) PK11_ExitSlotMonitor(slot);
+	pk11_CloseSession(slot,session,owner);
+	PORT_Free(outKey.data);
+	PORT_SetError( PK11_MapError(crv) );
+	if (crvp) *crvp =crv;
+	return NULL;
     }
-    crv = PK11_GETTAB(slot)->C_Decrypt(session, inKey->data, inKey->len,
-                                       outKey.data, &len);
-    if (!owner || !(slot->isThreadSafe))
-        PK11_ExitSlotMonitor(slot);
-    pk11_CloseSession(slot, session, owner);
+    crv = PK11_GETTAB(slot)->C_Decrypt(session,inKey->data,inKey->len,
+							   outKey.data, &len);
+    if (!owner || !(slot->isThreadSafe)) PK11_ExitSlotMonitor(slot);
+    pk11_CloseSession(slot,session,owner);
     if (crv != CKR_OK) {
-        PORT_Free(outKey.data);
-        PORT_SetError(PK11_MapError(crv));
-        if (crvp)
-            *crvp = crv;
-        return NULL;
+	PORT_Free(outKey.data);
+	PORT_SetError( PK11_MapError(crv) );
+	if (crvp) *crvp =crv;
+	return NULL;
     }
 
     outKey.len = (key_size == 0) ? len : key_size;
     outKey.type = siBuffer;
 
-    if (PK11_DoesMechanism(slot, target)) {
-        symKey = pk11_ImportSymKeyWithTempl(slot, target, PK11_OriginUnwrap,
-                                            isPerm, keyTemplate,
-                                            templateCount, &outKey, wincx);
+    if (PK11_DoesMechanism(slot,target)) {
+	symKey = pk11_ImportSymKeyWithTempl(slot, target, PK11_OriginUnwrap, 
+	                                    isPerm, keyTemplate, 
+					    templateCount, &outKey, wincx);
     } else {
-        slot = PK11_GetBestSlot(target, wincx);
-        if (slot == NULL) {
-            PORT_SetError(SEC_ERROR_NO_MODULE);
-            PORT_Free(outKey.data);
-            if (crvp)
-                *crvp = CKR_DEVICE_ERROR;
-            return NULL;
-        }
-        symKey = pk11_ImportSymKeyWithTempl(slot, target, PK11_OriginUnwrap,
-                                            isPerm, keyTemplate,
-                                            templateCount, &outKey, wincx);
-        PK11_FreeSlot(slot);
+	slot = PK11_GetBestSlot(target,wincx);
+	if (slot == NULL) {
+	    PORT_SetError( SEC_ERROR_NO_MODULE );
+	    PORT_Free(outKey.data);
+	    if (crvp) *crvp = CKR_DEVICE_ERROR; 
+	    return NULL;
+	}
+	symKey = pk11_ImportSymKeyWithTempl(slot, target, PK11_OriginUnwrap, 
+	                                    isPerm, keyTemplate,
+					    templateCount, &outKey, wincx);
+	PK11_FreeSlot(slot);
     }
     PORT_Free(outKey.data);
 
-    if (crvp)
-        *crvp = symKey ? CKR_OK : CKR_DEVICE_ERROR;
+    if (crvp) *crvp = symKey? CKR_OK : CKR_DEVICE_ERROR; 
     return symKey;
 }
 
@@ -2386,319 +2319,311 @@ pk11_HandUnwrap(PK11SlotInfo *slot, CK_OBJECT_HANDLE wrappingKey,
 
 static PK11SymKey *
 pk11_AnyUnwrapKey(PK11SlotInfo *slot, CK_OBJECT_HANDLE wrappingKey,
-                  CK_MECHANISM_TYPE wrapType, SECItem *param, SECItem *wrappedKey,
-                  CK_MECHANISM_TYPE target, CK_ATTRIBUTE_TYPE operation, int keySize,
-                  void *wincx, CK_ATTRIBUTE *userAttr, unsigned int numAttrs, PRBool isPerm)
+    CK_MECHANISM_TYPE wrapType, SECItem *param, SECItem *wrappedKey, 
+    CK_MECHANISM_TYPE target, CK_ATTRIBUTE_TYPE operation, int keySize, 
+    void *wincx, CK_ATTRIBUTE *userAttr, unsigned int numAttrs, PRBool isPerm)
 {
-    PK11SymKey *symKey;
-    SECItem *param_free = NULL;
-    CK_BBOOL cktrue = CK_TRUE;
-    CK_OBJECT_CLASS keyClass = CKO_SECRET_KEY;
-    CK_KEY_TYPE keyType = CKK_GENERIC_SECRET;
-    CK_ULONG valueLen = 0;
-    CK_MECHANISM mechanism;
+    PK11SymKey *    symKey;
+    SECItem *       param_free	= NULL;
+    CK_BBOOL        cktrue	= CK_TRUE; 
+    CK_OBJECT_CLASS keyClass	= CKO_SECRET_KEY;
+    CK_KEY_TYPE     keyType	= CKK_GENERIC_SECRET;
+    CK_ULONG        valueLen	= 0;
+    CK_MECHANISM    mechanism;
     CK_SESSION_HANDLE rwsession;
-    CK_RV crv;
+    CK_RV           crv;
     CK_MECHANISM_INFO mechanism_info;
 #define MAX_ADD_ATTRS 4
-    CK_ATTRIBUTE keyTemplate[MAX_TEMPL_ATTRS + MAX_ADD_ATTRS];
+    CK_ATTRIBUTE    keyTemplate[MAX_TEMPL_ATTRS + MAX_ADD_ATTRS];
 #undef MAX_ADD_ATTRS
-    CK_ATTRIBUTE *attrs = keyTemplate;
-    unsigned int templateCount;
+    CK_ATTRIBUTE *  attrs	= keyTemplate;
+    unsigned int    templateCount;
 
     if (numAttrs > MAX_TEMPL_ATTRS) {
-        PORT_SetError(SEC_ERROR_INVALID_ARGS);
-        return NULL;
+    	PORT_SetError(SEC_ERROR_INVALID_ARGS);
+	return NULL;
     }
 
     
     for (templateCount = 0; templateCount < numAttrs; ++templateCount) {
-        *attrs++ = *userAttr++;
+    	*attrs++ = *userAttr++;
     }
 
     
 
 
     if (!pk11_FindAttrInTemplate(keyTemplate, numAttrs, CKA_CLASS)) {
-        PK11_SETATTRS(attrs, CKA_CLASS, &keyClass, sizeof keyClass);
-        attrs++;
+	PK11_SETATTRS(attrs, CKA_CLASS,     &keyClass, sizeof keyClass); 
+	attrs++;
     }
     if (!pk11_FindAttrInTemplate(keyTemplate, numAttrs, CKA_KEY_TYPE)) {
-        keyType = PK11_GetKeyType(target, keySize);
-        PK11_SETATTRS(attrs, CKA_KEY_TYPE, &keyType, sizeof keyType);
-        attrs++;
+	keyType = PK11_GetKeyType(target, keySize);
+	PK11_SETATTRS(attrs, CKA_KEY_TYPE,  &keyType,  sizeof keyType ); 
+	attrs++;
     }
     if ((operation != CKA_FLAGS_ONLY) &&
-        !pk11_FindAttrInTemplate(keyTemplate, numAttrs, operation)) {
-        PK11_SETATTRS(attrs, operation, &cktrue, 1);
-        attrs++;
+	  !pk11_FindAttrInTemplate(keyTemplate, numAttrs, operation)) {
+	PK11_SETATTRS(attrs, operation, &cktrue, 1); attrs++;
     }
 
     
 
 
     if (keySize > 0 &&
-        !pk11_FindAttrInTemplate(keyTemplate, numAttrs, CKA_VALUE_LEN)) {
-        valueLen = (CK_ULONG)keySize;
-        PK11_SETATTRS(attrs, CKA_VALUE_LEN, &valueLen, sizeof valueLen);
-        attrs++;
+    	  !pk11_FindAttrInTemplate(keyTemplate, numAttrs, CKA_VALUE_LEN)) {
+	valueLen = (CK_ULONG)keySize;
+	PK11_SETATTRS(attrs, CKA_VALUE_LEN, &valueLen, sizeof valueLen); 
+	attrs++;
     }
 
     templateCount = attrs - keyTemplate;
-    PR_ASSERT(templateCount <= sizeof(keyTemplate) / sizeof(CK_ATTRIBUTE));
+    PR_ASSERT(templateCount <= sizeof(keyTemplate)/sizeof(CK_ATTRIBUTE));
+
 
     
 
     if ((wrapType == CKM_RSA_PKCS) && (slot->hasRSAInfo)) {
-        mechanism_info.flags = slot->RSAInfoFlags;
+	mechanism_info.flags = slot->RSAInfoFlags;
     } else {
-        if (!slot->isThreadSafe)
-            PK11_EnterSlotMonitor(slot);
-        crv = PK11_GETTAB(slot)->C_GetMechanismInfo(slot->slotID, wrapType,
-                                                    &mechanism_info);
-        if (!slot->isThreadSafe)
-            PK11_ExitSlotMonitor(slot);
-        if (crv != CKR_OK) {
-            mechanism_info.flags = 0;
-        }
+	if (!slot->isThreadSafe) PK11_EnterSlotMonitor(slot);
+	crv = PK11_GETTAB(slot)->C_GetMechanismInfo(slot->slotID,wrapType,
+				 &mechanism_info);
+    	if (!slot->isThreadSafe) PK11_ExitSlotMonitor(slot);
+    	if (crv != CKR_OK) {
+	     mechanism_info.flags = 0;
+    	}
         if (wrapType == CKM_RSA_PKCS) {
-            slot->RSAInfoFlags = mechanism_info.flags;
-            slot->hasRSAInfo = PR_TRUE;
-        }
+	    slot->RSAInfoFlags = mechanism_info.flags;
+	    slot->hasRSAInfo = PR_TRUE;
+	}
     }
 
     
     mechanism.mechanism = wrapType;
     
-    if (param == NULL)
-        param = param_free = PK11_ParamFromIV(wrapType, NULL);
+    if (param == NULL) 
+	param = param_free = PK11_ParamFromIV(wrapType,NULL);
     if (param) {
-        mechanism.pParameter = param->data;
-        mechanism.ulParameterLen = param->len;
+	mechanism.pParameter = param->data;
+	mechanism.ulParameterLen = param->len;
     } else {
-        mechanism.pParameter = NULL;
-        mechanism.ulParameterLen = 0;
+	mechanism.pParameter = NULL;
+	mechanism.ulParameterLen = 0;
     }
 
-    if ((mechanism_info.flags & CKF_DECRYPT) && !PK11_DoesMechanism(slot, target)) {
-        symKey = pk11_HandUnwrap(slot, wrappingKey, &mechanism, wrappedKey,
-                                 target, keyTemplate, templateCount, keySize,
-                                 wincx, &crv, isPerm);
-        if (symKey) {
-            if (param_free)
-                SECITEM_FreeItem(param_free, PR_TRUE);
-            return symKey;
-        }
-        
+    if ((mechanism_info.flags & CKF_DECRYPT)  
+				&& !PK11_DoesMechanism(slot,target)) {
+	symKey = pk11_HandUnwrap(slot, wrappingKey, &mechanism, wrappedKey, 
+	                         target, keyTemplate, templateCount, keySize, 
+				 wincx, &crv, isPerm);
+	if (symKey) {
+	    if (param_free) SECITEM_FreeItem(param_free,PR_TRUE);
+	    return symKey;
+	}
+	
 
 
 
-        if (crv == CKR_DEVICE_ERROR) {
-            if (param_free)
-                SECITEM_FreeItem(param_free, PR_TRUE);
-            return NULL;
-        }
-        
+	if (crv == CKR_DEVICE_ERROR){
+	    if (param_free) SECITEM_FreeItem(param_free,PR_TRUE);
+	    return NULL;
+	}
+	
     }
 
     
     symKey = pk11_CreateSymKey(slot, target, !isPerm, PR_TRUE, wincx);
     if (symKey == NULL) {
-        if (param_free)
-            SECITEM_FreeItem(param_free, PR_TRUE);
-        return NULL;
+	if (param_free) SECITEM_FreeItem(param_free,PR_TRUE);
+	return NULL;
     }
 
     symKey->size = keySize;
     symKey->origin = PK11_OriginUnwrap;
 
     if (isPerm) {
-        rwsession = PK11_GetRWSession(slot);
+	rwsession = PK11_GetRWSession(slot);
     } else {
         pk11_EnterKeyMonitor(symKey);
-        rwsession = symKey->session;
+	rwsession = symKey->session;
     }
     PORT_Assert(rwsession != CK_INVALID_SESSION);
-    if (rwsession == CK_INVALID_SESSION)
-        crv = CKR_SESSION_HANDLE_INVALID;
+    if (rwsession == CK_INVALID_SESSION) 
+    	crv = CKR_SESSION_HANDLE_INVALID;
     else
-        crv = PK11_GETTAB(slot)->C_UnwrapKey(rwsession, &mechanism, wrappingKey,
-                                             wrappedKey->data, wrappedKey->len,
-                                             keyTemplate, templateCount,
-                                             &symKey->objectID);
+	crv = PK11_GETTAB(slot)->C_UnwrapKey(rwsession,&mechanism,wrappingKey,
+		wrappedKey->data, wrappedKey->len, keyTemplate, templateCount, 
+							  &symKey->objectID);
     if (isPerm) {
-        if (rwsession != CK_INVALID_SESSION)
-            PK11_RestoreROSession(slot, rwsession);
+	if (rwsession != CK_INVALID_SESSION)
+	    PK11_RestoreROSession(slot, rwsession);
     } else {
         pk11_ExitKeyMonitor(symKey);
     }
-    if (param_free)
-        SECITEM_FreeItem(param_free, PR_TRUE);
+    if (param_free) SECITEM_FreeItem(param_free,PR_TRUE);
     if (crv != CKR_OK) {
-        PK11_FreeSymKey(symKey);
-        symKey = NULL;
-        if (crv != CKR_DEVICE_ERROR) {
-            
-            symKey = pk11_HandUnwrap(slot, wrappingKey, &mechanism, wrappedKey,
-                                     target, keyTemplate, templateCount,
-                                     keySize, wincx, NULL, isPerm);
-        }
-    }
+	PK11_FreeSymKey(symKey);
+	symKey = NULL;
+	if (crv != CKR_DEVICE_ERROR) {
+	    
+	    symKey = pk11_HandUnwrap(slot, wrappingKey, &mechanism, wrappedKey, 
+				     target, keyTemplate, templateCount,
+				     keySize, wincx, NULL, isPerm);
+	}
+   }
 
-    return symKey;
+   return symKey;
 }
 
 
 PK11SymKey *
-PK11_UnwrapSymKey(PK11SymKey *wrappingKey, CK_MECHANISM_TYPE wrapType,
-                  SECItem *param, SECItem *wrappedKey,
-                  CK_MECHANISM_TYPE target, CK_ATTRIBUTE_TYPE operation,
-                  int keySize)
+PK11_UnwrapSymKey( PK11SymKey *wrappingKey, CK_MECHANISM_TYPE wrapType,
+                   SECItem *param, SECItem *wrappedKey, 
+		   CK_MECHANISM_TYPE target, CK_ATTRIBUTE_TYPE operation, 
+		   int keySize)
 {
     return pk11_AnyUnwrapKey(wrappingKey->slot, wrappingKey->objectID,
-                             wrapType, param, wrappedKey, target, operation, keySize,
-                             wrappingKey->cx, NULL, 0, PR_FALSE);
+		    wrapType, param, wrappedKey, target, operation, keySize, 
+		    wrappingKey->cx, NULL, 0, PR_FALSE);
 }
 
 
 PK11SymKey *
 PK11_UnwrapSymKeyWithFlags(PK11SymKey *wrappingKey, CK_MECHANISM_TYPE wrapType,
-                           SECItem *param, SECItem *wrappedKey,
-                           CK_MECHANISM_TYPE target, CK_ATTRIBUTE_TYPE operation,
-                           int keySize, CK_FLAGS flags)
+                   SECItem *param, SECItem *wrappedKey, 
+		   CK_MECHANISM_TYPE target, CK_ATTRIBUTE_TYPE operation, 
+		   int keySize, CK_FLAGS flags)
 {
-    CK_BBOOL ckTrue = CK_TRUE;
-    CK_ATTRIBUTE keyTemplate[MAX_TEMPL_ATTRS];
-    unsigned int templateCount;
+    CK_BBOOL        ckTrue	= CK_TRUE; 
+    CK_ATTRIBUTE    keyTemplate[MAX_TEMPL_ATTRS];
+    unsigned int    templateCount;
 
     templateCount = pk11_OpFlagsToAttributes(flags, keyTemplate, &ckTrue);
     return pk11_AnyUnwrapKey(wrappingKey->slot, wrappingKey->objectID,
-                             wrapType, param, wrappedKey, target, operation, keySize,
-                             wrappingKey->cx, keyTemplate, templateCount, PR_FALSE);
+		    wrapType, param, wrappedKey, target, operation, keySize, 
+		    wrappingKey->cx, keyTemplate, templateCount, PR_FALSE);
 }
 
 PK11SymKey *
-PK11_UnwrapSymKeyWithFlagsPerm(PK11SymKey *wrappingKey,
-                               CK_MECHANISM_TYPE wrapType,
-                               SECItem *param, SECItem *wrappedKey,
-                               CK_MECHANISM_TYPE target, CK_ATTRIBUTE_TYPE operation,
-                               int keySize, CK_FLAGS flags, PRBool isPerm)
+PK11_UnwrapSymKeyWithFlagsPerm(PK11SymKey *wrappingKey, 
+		   CK_MECHANISM_TYPE wrapType,
+                   SECItem *param, SECItem *wrappedKey, 
+		   CK_MECHANISM_TYPE target, CK_ATTRIBUTE_TYPE operation, 
+		   int keySize, CK_FLAGS flags, PRBool isPerm)
 {
-    CK_BBOOL cktrue = CK_TRUE;
-    CK_ATTRIBUTE keyTemplate[MAX_TEMPL_ATTRS];
-    CK_ATTRIBUTE *attrs;
-    unsigned int templateCount;
+    CK_BBOOL        cktrue	= CK_TRUE; 
+    CK_ATTRIBUTE    keyTemplate[MAX_TEMPL_ATTRS];
+    CK_ATTRIBUTE    *attrs;
+    unsigned int    templateCount;
 
     attrs = keyTemplate;
     if (isPerm) {
-        PK11_SETATTRS(attrs, CKA_TOKEN, &cktrue, sizeof(CK_BBOOL));
-        attrs++;
+        PK11_SETATTRS(attrs, CKA_TOKEN,  &cktrue, sizeof(CK_BBOOL)); attrs++;
     }
-    templateCount = attrs - keyTemplate;
+    templateCount = attrs-keyTemplate;
     templateCount += pk11_OpFlagsToAttributes(flags, attrs, &cktrue);
 
     return pk11_AnyUnwrapKey(wrappingKey->slot, wrappingKey->objectID,
-                             wrapType, param, wrappedKey, target, operation, keySize,
-                             wrappingKey->cx, keyTemplate, templateCount, isPerm);
+		    wrapType, param, wrappedKey, target, operation, keySize, 
+		    wrappingKey->cx, keyTemplate, templateCount, isPerm);
 }
+
 
 
 PK11SymKey *
 PK11_PubUnwrapSymKey(SECKEYPrivateKey *wrappingKey, SECItem *wrappedKey,
-                     CK_MECHANISM_TYPE target, CK_ATTRIBUTE_TYPE operation, int keySize)
+	  CK_MECHANISM_TYPE target, CK_ATTRIBUTE_TYPE operation, int keySize)
 {
     CK_MECHANISM_TYPE wrapType = pk11_mapWrapKeyType(wrappingKey->keyType);
-    PK11SlotInfo *slot = wrappingKey->pkcs11Slot;
+    PK11SlotInfo    *slot = wrappingKey->pkcs11Slot;
 
-    if (SECKEY_HAS_ATTRIBUTE_SET(wrappingKey, CKA_PRIVATE)) {
-        PK11_HandlePasswordCheck(slot, wrappingKey->wincx);
+    if (SECKEY_HAS_ATTRIBUTE_SET(wrappingKey,CKA_PRIVATE)) {
+	PK11_HandlePasswordCheck(slot,wrappingKey->wincx);
     }
-
+    
     return pk11_AnyUnwrapKey(slot, wrappingKey->pkcs11ID,
-                             wrapType, NULL, wrappedKey, target, operation, keySize,
-                             wrappingKey->wincx, NULL, 0, PR_FALSE);
+	wrapType, NULL, wrappedKey, target, operation, keySize, 
+	wrappingKey->wincx, NULL, 0, PR_FALSE);
 }
 
 
 PK11SymKey *
-PK11_PubUnwrapSymKeyWithFlags(SECKEYPrivateKey *wrappingKey,
-                              SECItem *wrappedKey, CK_MECHANISM_TYPE target,
-                              CK_ATTRIBUTE_TYPE operation, int keySize, CK_FLAGS flags)
+PK11_PubUnwrapSymKeyWithFlags(SECKEYPrivateKey *wrappingKey, 
+	  SECItem *wrappedKey, CK_MECHANISM_TYPE target, 
+	  CK_ATTRIBUTE_TYPE operation, int keySize, CK_FLAGS flags)
 {
     CK_MECHANISM_TYPE wrapType = pk11_mapWrapKeyType(wrappingKey->keyType);
-    CK_BBOOL ckTrue = CK_TRUE;
-    CK_ATTRIBUTE keyTemplate[MAX_TEMPL_ATTRS];
-    unsigned int templateCount;
-    PK11SlotInfo *slot = wrappingKey->pkcs11Slot;
+    CK_BBOOL        ckTrue	= CK_TRUE; 
+    CK_ATTRIBUTE    keyTemplate[MAX_TEMPL_ATTRS];
+    unsigned int    templateCount;
+    PK11SlotInfo    *slot = wrappingKey->pkcs11Slot;
 
     templateCount = pk11_OpFlagsToAttributes(flags, keyTemplate, &ckTrue);
 
-    if (SECKEY_HAS_ATTRIBUTE_SET(wrappingKey, CKA_PRIVATE)) {
-        PK11_HandlePasswordCheck(slot, wrappingKey->wincx);
+    if (SECKEY_HAS_ATTRIBUTE_SET(wrappingKey,CKA_PRIVATE)) {
+	PK11_HandlePasswordCheck(slot,wrappingKey->wincx);
     }
-
+    
     return pk11_AnyUnwrapKey(slot, wrappingKey->pkcs11ID,
-                             wrapType, NULL, wrappedKey, target, operation, keySize,
-                             wrappingKey->wincx, keyTemplate, templateCount, PR_FALSE);
+	wrapType, NULL, wrappedKey, target, operation, keySize, 
+	wrappingKey->wincx, keyTemplate, templateCount, PR_FALSE);
 }
 
 PK11SymKey *
-PK11_PubUnwrapSymKeyWithFlagsPerm(SECKEYPrivateKey *wrappingKey,
-                                  SECItem *wrappedKey, CK_MECHANISM_TYPE target,
-                                  CK_ATTRIBUTE_TYPE operation, int keySize,
-                                  CK_FLAGS flags, PRBool isPerm)
+PK11_PubUnwrapSymKeyWithFlagsPerm(SECKEYPrivateKey *wrappingKey, 
+	  SECItem *wrappedKey, CK_MECHANISM_TYPE target, 
+	  CK_ATTRIBUTE_TYPE operation, int keySize,
+	  CK_FLAGS flags, PRBool isPerm)
 {
     CK_MECHANISM_TYPE wrapType = pk11_mapWrapKeyType(wrappingKey->keyType);
-    CK_BBOOL cktrue = CK_TRUE;
-    CK_ATTRIBUTE keyTemplate[MAX_TEMPL_ATTRS];
-    CK_ATTRIBUTE *attrs;
-    unsigned int templateCount;
-    PK11SlotInfo *slot = wrappingKey->pkcs11Slot;
+    CK_BBOOL        cktrue	= CK_TRUE; 
+    CK_ATTRIBUTE    keyTemplate[MAX_TEMPL_ATTRS];
+    CK_ATTRIBUTE    *attrs;
+    unsigned int    templateCount;
+    PK11SlotInfo    *slot = wrappingKey->pkcs11Slot;
 
     attrs = keyTemplate;
     if (isPerm) {
-        PK11_SETATTRS(attrs, CKA_TOKEN, &cktrue, sizeof(CK_BBOOL));
-        attrs++;
+        PK11_SETATTRS(attrs, CKA_TOKEN,  &cktrue, sizeof(CK_BBOOL)); attrs++;
     }
-    templateCount = attrs - keyTemplate;
+    templateCount = attrs-keyTemplate;
 
     templateCount += pk11_OpFlagsToAttributes(flags, attrs, &cktrue);
 
-    if (SECKEY_HAS_ATTRIBUTE_SET(wrappingKey, CKA_PRIVATE)) {
-        PK11_HandlePasswordCheck(slot, wrappingKey->wincx);
+    if (SECKEY_HAS_ATTRIBUTE_SET(wrappingKey,CKA_PRIVATE)) {
+	PK11_HandlePasswordCheck(slot,wrappingKey->wincx);
     }
-
+    
     return pk11_AnyUnwrapKey(slot, wrappingKey->pkcs11ID,
-                             wrapType, NULL, wrappedKey, target, operation, keySize,
-                             wrappingKey->wincx, keyTemplate, templateCount, isPerm);
+	wrapType, NULL, wrappedKey, target, operation, keySize, 
+	wrappingKey->wincx, keyTemplate, templateCount, isPerm);
 }
 
-PK11SymKey *
+PK11SymKey*
 PK11_CopySymKeyForSigning(PK11SymKey *originalKey, CK_MECHANISM_TYPE mech)
 {
     CK_RV crv;
     CK_ATTRIBUTE setTemplate;
-    CK_BBOOL ckTrue = CK_TRUE;
+    CK_BBOOL ckTrue = CK_TRUE; 
     PK11SlotInfo *slot = originalKey->slot;
 
     
     PK11_SETATTRS(&setTemplate, CKA_SIGN, &ckTrue, sizeof(ckTrue));
     pk11_EnterKeyMonitor(originalKey);
-    crv = PK11_GETTAB(slot)->C_SetAttributeValue(originalKey->session,
-                                                 originalKey->objectID, &setTemplate, 1);
+    crv = PK11_GETTAB(slot)-> C_SetAttributeValue(originalKey->session, 
+				originalKey->objectID, &setTemplate, 1);
     pk11_ExitKeyMonitor(originalKey);
     if (crv == CKR_OK) {
-        return PK11_ReferenceSymKey(originalKey);
+	return PK11_ReferenceSymKey(originalKey);
     }
 
     
     return pk11_CopyToSlot(slot, mech, CKA_SIGN, originalKey);
 }
-
-void
-PK11_SetFortezzaHack(PK11SymKey *symKey)
-{
-    symKey->origin = PK11_OriginFortezzaHack;
+    
+void   
+PK11_SetFortezzaHack(PK11SymKey *symKey) { 
+   symKey->origin = PK11_OriginFortezzaHack;
 }
 
 
@@ -2706,7 +2631,7 @@ PK11_SetFortezzaHack(PK11SymKey *symKey)
 
 
 SECStatus
-PK11_GenerateFortezzaIV(PK11SymKey *symKey, unsigned char *iv, int len)
+PK11_GenerateFortezzaIV(PK11SymKey *symKey,unsigned char *iv,int len)
 {
     CK_MECHANISM mech_info;
     CK_ULONG count = 0;
@@ -2719,10 +2644,12 @@ PK11_GenerateFortezzaIV(PK11SymKey *symKey, unsigned char *iv, int len)
 
     
     PK11_EnterSlotMonitor(symKey->slot);
-    crv = PK11_GETTAB(symKey->slot)->C_EncryptInit(symKey->slot->session, &mech_info, symKey->objectID);
+    crv=PK11_GETTAB(symKey->slot)->C_EncryptInit(symKey->slot->session,
+				&mech_info, symKey->objectID);
     if (crv == CKR_OK) {
-        PK11_GETTAB(symKey->slot)->C_EncryptFinal(symKey->slot->session, NULL, &count);
-        rv = SECSuccess;
+	PK11_GETTAB(symKey->slot)->C_EncryptFinal(symKey->slot->session, 
+								NULL, &count);
+	rv = SECSuccess;
     }
     PK11_ExitSlotMonitor(symKey->slot);
     return rv;
@@ -2733,3 +2660,4 @@ PK11_GetSymKeyHandle(PK11SymKey *symKey)
 {
     return symKey->objectID;
 }
+

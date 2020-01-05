@@ -32,9 +32,9 @@ NSS_CMSSignedData_Create(NSSCMSMessage *cmsg)
 
     mark = PORT_ArenaMark(poolp);
 
-    sigd = (NSSCMSSignedData *)PORT_ArenaZAlloc(poolp, sizeof(NSSCMSSignedData));
+    sigd = (NSSCMSSignedData *)PORT_ArenaZAlloc (poolp, sizeof(NSSCMSSignedData));
     if (sigd == NULL)
-        goto loser;
+	goto loser;
 
     sigd->cmsg = cmsg;
 
@@ -57,7 +57,7 @@ NSS_CMSSignedData_Destroy(NSSCMSSignedData *sigd)
     NSSCMSSignerInfo **signerinfos, *si;
 
     if (sigd == NULL)
-        return;
+	return;
 
     certs = sigd->certs;
     tempCerts = sigd->tempCerts;
@@ -65,27 +65,28 @@ NSS_CMSSignedData_Destroy(NSSCMSSignedData *sigd)
     signerinfos = sigd->signerInfos;
 
     if (certs != NULL) {
-        while ((cert = *certs++) != NULL)
-            CERT_DestroyCertificate(cert);
+	while ((cert = *certs++) != NULL)
+	    CERT_DestroyCertificate (cert);
     }
 
     if (tempCerts != NULL) {
-        while ((cert = *tempCerts++) != NULL)
-            CERT_DestroyCertificate(cert);
+	while ((cert = *tempCerts++) != NULL)
+	    CERT_DestroyCertificate (cert);
     }
 
     if (certlists != NULL) {
-        while ((certlist = *certlists++) != NULL)
-            CERT_DestroyCertificateList(certlist);
+	while ((certlist = *certlists++) != NULL)
+	    CERT_DestroyCertificateList (certlist);
     }
 
     if (signerinfos != NULL) {
-        while ((si = *signerinfos++) != NULL)
-            NSS_CMSSignerInfo_Destroy(si);
+	while ((si = *signerinfos++) != NULL)
+	    NSS_CMSSignerInfo_Destroy(si);
     }
 
     
-    NSS_CMSContentInfo_Destroy(&(sigd->contentInfo));
+   NSS_CMSContentInfo_Destroy(&(sigd->contentInfo));
+
 }
 
 
@@ -121,58 +122,58 @@ NSS_CMSSignedData_Encode_BeforeStart(NSSCMSSignedData *sigd)
     
     
     if (sigd->digestAlgorithms != NULL && sigd->digests != NULL) {
-        for (i = 0; sigd->digestAlgorithms[i] != NULL; i++) {
-            if (sigd->digests[i] == NULL)
-                break;
-        }
-        if (sigd->digestAlgorithms[i] == NULL) 
-            haveDigests = PR_TRUE;             
+	for (i=0; sigd->digestAlgorithms[i] != NULL; i++) {
+	    if (sigd->digests[i] == NULL)
+		break;
+	}
+	if (sigd->digestAlgorithms[i] == NULL)	
+	    haveDigests = PR_TRUE;		
     }
-
+	    
     version = NSS_CMS_SIGNED_DATA_VERSION_BASIC;
 
     
     if (NSS_CMSContentInfo_GetContentTypeTag(&(sigd->contentInfo)) != SEC_OID_PKCS7_DATA)
-        version = NSS_CMS_SIGNED_DATA_VERSION_EXT;
+	version = NSS_CMS_SIGNED_DATA_VERSION_EXT;
 
     
-    for (i = 0; i < NSS_CMSSignedData_SignerInfoCount(sigd); i++) {
-        signerinfo = NSS_CMSSignedData_GetSignerInfo(sigd, i);
+    for (i=0; i < NSS_CMSSignedData_SignerInfoCount(sigd); i++) {
+	signerinfo = NSS_CMSSignedData_GetSignerInfo(sigd, i);
 
-        
-        if (NSS_CMSSignerInfo_GetVersion(signerinfo) != NSS_CMS_SIGNER_INFO_VERSION_ISSUERSN)
-            version = NSS_CMS_SIGNED_DATA_VERSION_EXT;
-
-        
-        
-        
-        digestalgtag = NSS_CMSSignerInfo_GetDigestAlgTag(signerinfo);
-        n = NSS_CMSAlgArray_GetIndexByAlgTag(sigd->digestAlgorithms, digestalgtag);
-        if (n < 0 && haveDigests) {
-            
-            
-            goto loser;
-        } else if (n < 0) {
-            
-            rv = NSS_CMSSignedData_AddDigest(poolp, sigd, digestalgtag, NULL);
-            if (rv != SECSuccess)
-                goto loser;
-        } else {
-            
-        }
+	
+	if (NSS_CMSSignerInfo_GetVersion(signerinfo) != NSS_CMS_SIGNER_INFO_VERSION_ISSUERSN)
+	    version = NSS_CMS_SIGNED_DATA_VERSION_EXT;
+	
+	
+	
+	
+	digestalgtag = NSS_CMSSignerInfo_GetDigestAlgTag(signerinfo);
+	n = NSS_CMSAlgArray_GetIndexByAlgTag(sigd->digestAlgorithms, digestalgtag);
+	if (n < 0 && haveDigests) {
+	    
+	    
+	    goto loser;
+	} else if (n < 0) {
+	    
+	    rv = NSS_CMSSignedData_AddDigest(poolp, sigd, digestalgtag, NULL);
+	    if (rv != SECSuccess)
+		goto loser;
+	} else {
+	    
+	}
     }
 
     dummy = SEC_ASN1EncodeInteger(poolp, &(sigd->version), (long)version);
     if (dummy == NULL)
-        return SECFailure;
+	return SECFailure;
 
     
-    rv = NSS_CMSArray_SortByDER((void **)sigd->digestAlgorithms,
+    rv = NSS_CMSArray_SortByDER((void **)sigd->digestAlgorithms, 
                                 SEC_ASN1_GET(SECOID_AlgorithmIDTemplate),
-                                (void **)sigd->digests);
+				(void **)sigd->digests);
     if (rv != SECSuccess)
-        return SECFailure;
-
+	return SECFailure;
+    
     return SECSuccess;
 
 loser:
@@ -189,16 +190,16 @@ NSS_CMSSignedData_Encode_BeforeData(NSSCMSSignedData *sigd)
     }
     rv = NSS_CMSContentInfo_Private_Init(&sigd->contentInfo);
     if (rv != SECSuccess) {
-        return SECFailure;
+	return SECFailure;
     }
     
     if (sigd->digests && sigd->digests[0]) {
-        sigd->contentInfo.privateInfo->digcx = NULL; 
+	sigd->contentInfo.privateInfo->digcx = NULL; 
     } else if (sigd->digestAlgorithms != NULL) {
-        sigd->contentInfo.privateInfo->digcx =
-            NSS_CMSDigestContext_StartMultiple(sigd->digestAlgorithms);
-        if (sigd->contentInfo.privateInfo->digcx == NULL)
-            return SECFailure;
+	sigd->contentInfo.privateInfo->digcx =
+	        NSS_CMSDigestContext_StartMultiple(sigd->digestAlgorithms);
+	if (sigd->contentInfo.privateInfo->digcx == NULL)
+	    return SECFailure;
     }
     return SECSuccess;
 }
@@ -238,53 +239,53 @@ NSS_CMSSignedData_Encode_AfterData(NSSCMSSignedData *sigd)
 
     
     if (cinfo->privateInfo && cinfo->privateInfo->digcx) {
-        rv = NSS_CMSDigestContext_FinishMultiple(cinfo->privateInfo->digcx, poolp,
-                                                 &(sigd->digests));
-        
-        cinfo->privateInfo->digcx = NULL;
-        if (rv != SECSuccess)
-            goto loser;
+	rv = NSS_CMSDigestContext_FinishMultiple(cinfo->privateInfo->digcx, poolp,
+	                                         &(sigd->digests));
+	
+	cinfo->privateInfo->digcx = NULL;
+	if (rv != SECSuccess)
+	    goto loser;		
     }
 
     signerinfos = sigd->signerInfos;
     certcount = 0;
 
     
-    for (i = 0; i < NSS_CMSSignedData_SignerInfoCount(sigd); i++) {
-        signerinfo = NSS_CMSSignedData_GetSignerInfo(sigd, i);
+    for (i=0; i < NSS_CMSSignedData_SignerInfoCount(sigd); i++) {
+	signerinfo = NSS_CMSSignedData_GetSignerInfo(sigd, i);
 
-        
-        digestalgtag = NSS_CMSSignerInfo_GetDigestAlgTag(signerinfo);
-        n = NSS_CMSAlgArray_GetIndexByAlgTag(sigd->digestAlgorithms, digestalgtag);
-        if (n < 0 || sigd->digests == NULL || sigd->digests[n] == NULL) {
-            
-            PORT_SetError(SEC_ERROR_DIGEST_NOT_FOUND);
-            goto loser;
-        }
+	
+	digestalgtag = NSS_CMSSignerInfo_GetDigestAlgTag(signerinfo);
+	n = NSS_CMSAlgArray_GetIndexByAlgTag(sigd->digestAlgorithms, digestalgtag);
+	if (n < 0 || sigd->digests == NULL || sigd->digests[n] == NULL) {
+	    
+	    PORT_SetError(SEC_ERROR_DIGEST_NOT_FOUND);
+	    goto loser;
+	}
 
-        
+	
 
 
 
-        
-        if ((contentType = NSS_CMSContentInfo_GetContentTypeOID(cinfo)) == NULL)
-            goto loser;
+	
+	if ((contentType = NSS_CMSContentInfo_GetContentTypeOID(cinfo)) == NULL)
+	    goto loser;
 
-        
-        rv = NSS_CMSSignerInfo_Sign(signerinfo, sigd->digests[n], contentType);
-        if (rv != SECSuccess)
-            goto loser;
+	
+	rv = NSS_CMSSignerInfo_Sign(signerinfo, sigd->digests[n], contentType);
+	if (rv != SECSuccess)
+	    goto loser;
 
-        
-        certlist = NSS_CMSSignerInfo_GetCertList(signerinfo);
-        if (certlist)
-            certcount += certlist->len;
+	
+	certlist = NSS_CMSSignerInfo_GetCertList(signerinfo);
+	if (certlist)
+	    certcount += certlist->len;
     }
 
     
     rv = NSS_CMSArray_SortByDER((void **)signerinfos, NSSCMSSignerInfoTemplate, NULL);
     if (rv != SECSuccess)
-        goto loser;
+	goto loser;
 
     
 
@@ -292,19 +293,19 @@ NSS_CMSSignedData_Encode_AfterData(NSSCMSSignedData *sigd)
 
     
     if (sigd->certs != NULL) {
-        for (ci = 0; sigd->certs[ci] != NULL; ci++)
-            certcount++;
+	for (ci = 0; sigd->certs[ci] != NULL; ci++)
+	    certcount++;
     }
 
     if (sigd->certLists != NULL) {
-        for (cli = 0; sigd->certLists[cli] != NULL; cli++)
-            certcount += sigd->certLists[cli]->len;
+	for (cli = 0; sigd->certLists[cli] != NULL; cli++)
+	    certcount += sigd->certLists[cli]->len;
     }
 
     if (certcount == 0) {
-        sigd->rawCerts = NULL;
+	sigd->rawCerts = NULL;
     } else {
-        
+	
 
 
 
@@ -313,44 +314,44 @@ NSS_CMSSignedData_Encode_AfterData(NSSCMSSignedData *sigd)
 
 
 
-        sigd->rawCerts = (SECItem **)PORT_ArenaAlloc(poolp, (certcount + 1) * sizeof(SECItem *));
-        if (sigd->rawCerts == NULL)
-            return SECFailure;
+	sigd->rawCerts = (SECItem **)PORT_ArenaAlloc(poolp, (certcount + 1) * sizeof(SECItem *));
+	if (sigd->rawCerts == NULL)
+	    return SECFailure;
 
-        
-
-
+	
 
 
 
 
 
 
-        rci = 0;
-        if (signerinfos != NULL) {
-            for (si = 0; signerinfos[si] != NULL; si++) {
-                signerinfo = signerinfos[si];
-                for (ci = 0; ci < signerinfo->certList->len; ci++)
-                    sigd->rawCerts[rci++] = &(signerinfo->certList->certs[ci]);
-            }
-        }
 
-        if (sigd->certs != NULL) {
-            for (ci = 0; sigd->certs[ci] != NULL; ci++)
-                sigd->rawCerts[rci++] = &(sigd->certs[ci]->derCert);
-        }
 
-        if (sigd->certLists != NULL) {
-            for (cli = 0; sigd->certLists[cli] != NULL; cli++) {
-                for (ci = 0; ci < sigd->certLists[cli]->len; ci++)
-                    sigd->rawCerts[rci++] = &(sigd->certLists[cli]->certs[ci]);
-            }
-        }
+	rci = 0;
+	if (signerinfos != NULL) {
+	    for (si = 0; signerinfos[si] != NULL; si++) {
+		signerinfo = signerinfos[si];
+		for (ci = 0; ci < signerinfo->certList->len; ci++)
+		    sigd->rawCerts[rci++] = &(signerinfo->certList->certs[ci]);
+	    }
+	}
 
-        sigd->rawCerts[rci] = NULL;
+	if (sigd->certs != NULL) {
+	    for (ci = 0; sigd->certs[ci] != NULL; ci++)
+		sigd->rawCerts[rci++] = &(sigd->certs[ci]->derCert);
+	}
 
-        
-        NSS_CMSArray_Sort((void **)sigd->rawCerts, NSS_CMSUtil_DERCompare, NULL, NULL);
+	if (sigd->certLists != NULL) {
+	    for (cli = 0; sigd->certLists[cli] != NULL; cli++) {
+		for (ci = 0; ci < sigd->certLists[cli]->len; ci++)
+		    sigd->rawCerts[rci++] = &(sigd->certLists[cli]->certs[ci]);
+	    }
+	}
+
+	sigd->rawCerts[rci] = NULL;
+
+	
+	NSS_CMSArray_Sort((void **)sigd->rawCerts, NSS_CMSUtil_DERCompare, NULL, NULL);
     }
 
     ret = SECSuccess;
@@ -369,32 +370,33 @@ NSS_CMSSignedData_Decode_BeforeData(NSSCMSSignedData *sigd)
     }
     rv = NSS_CMSContentInfo_Private_Init(&sigd->contentInfo);
     if (rv != SECSuccess) {
-        return SECFailure;
+	return SECFailure;
     }
     
     if (sigd->digestAlgorithms != NULL) {
-        int i;
-        for (i = 0; sigd->digestAlgorithms[i] != NULL; i++) {
-            SECAlgorithmID *algid = sigd->digestAlgorithms[i];
-            SECOidTag senttag = SECOID_FindOIDTag(&algid->algorithm);
-            SECOidTag maptag = NSS_CMSUtil_MapSignAlgs(senttag);
+	int i;
+	for (i=0; sigd->digestAlgorithms[i] != NULL; i++) {
+	    SECAlgorithmID *algid = sigd->digestAlgorithms[i];
+	    SECOidTag senttag= SECOID_FindOIDTag(&algid->algorithm);
+	    SECOidTag maptag = NSS_CMSUtil_MapSignAlgs(senttag);
 
-            if (maptag != senttag) {
-                SECOidData *hashoid = SECOID_FindOIDByTag(maptag);
-                rv = SECITEM_CopyItem(sigd->cmsg->poolp, &algid->algorithm, &hashoid->oid);
-                if (rv != SECSuccess) {
-                    return rv;
-                }
-            }
-        }
+	    if (maptag != senttag) {
+		SECOidData *hashoid = SECOID_FindOIDByTag(maptag);
+		rv = SECITEM_CopyItem(sigd->cmsg->poolp, &algid->algorithm 
+							,&hashoid->oid);
+		if (rv != SECSuccess) {
+		    return rv;
+		}
+	    }
+	}
     }
 
     
     if (sigd->digestAlgorithms != NULL && sigd->digests == NULL) {
-        
-        sigd->contentInfo.privateInfo->digcx = NSS_CMSDigestContext_StartMultiple(sigd->digestAlgorithms);
-        if (sigd->contentInfo.privateInfo->digcx == NULL)
-            return SECFailure;
+	
+	sigd->contentInfo.privateInfo->digcx = NSS_CMSDigestContext_StartMultiple(sigd->digestAlgorithms);
+	if (sigd->contentInfo.privateInfo->digcx == NULL)
+	    return SECFailure;
     }
     return SECSuccess;
 }
@@ -415,10 +417,10 @@ NSS_CMSSignedData_Decode_AfterData(NSSCMSSignedData *sigd)
 
     
     if (sigd->contentInfo.privateInfo && sigd->contentInfo.privateInfo->digcx) {
-        rv = NSS_CMSDigestContext_FinishMultiple(sigd->contentInfo.privateInfo->digcx,
-                                                 sigd->cmsg->poolp, &(sigd->digests));
-        
-        sigd->contentInfo.privateInfo->digcx = NULL;
+	rv = NSS_CMSDigestContext_FinishMultiple(sigd->contentInfo.privateInfo->digcx,
+				       sigd->cmsg->poolp, &(sigd->digests));
+	
+	sigd->contentInfo.privateInfo->digcx = NULL;
     }
     return rv;
 }
@@ -443,8 +445,8 @@ NSS_CMSSignedData_Decode_AfterEnd(NSSCMSSignedData *sigd)
 
     
     if (signerinfos) {
-        for (i = 0; signerinfos[i] != NULL; i++)
-            signerinfos[i]->cmsg = sigd->cmsg;
+	for (i = 0; signerinfos[i] != NULL; i++)
+	    signerinfos[i]->cmsg = sigd->cmsg;
     }
 
     return SECSuccess;
@@ -524,7 +526,7 @@ NSS_CMSSignedData_GetCertificateList(NSSCMSSignedData *sigd)
 
 SECStatus
 NSS_CMSSignedData_ImportCerts(NSSCMSSignedData *sigd, CERTCertDBHandle *certdb,
-                              SECCertUsage certusage, PRBool keepcerts)
+				SECCertUsage certusage, PRBool keepcerts)
 {
     int certcount;
     CERTCertificate **certArray = NULL;
@@ -543,99 +545,99 @@ NSS_CMSSignedData_ImportCerts(NSSCMSSignedData *sigd, CERTCertDBHandle *certdb,
     certcount = NSS_CMSArray_Count((void **)sigd->rawCerts);
 
     
-    rv = CERT_ImportCerts(certdb, certusage, certcount, sigd->rawCerts,
-                          &certArray, PR_FALSE, PR_FALSE, NULL);
+    rv = CERT_ImportCerts(certdb, certusage, certcount, sigd->rawCerts, 
+			 &certArray, PR_FALSE, PR_FALSE, NULL);
     if (rv != SECSuccess) {
-        goto loser;
+	goto loser;
     }
 
     
-    for (i = 0; i < certcount; i++) {
-        CERTCertificate *cert = certArray[i];
-        if (cert)
+    for (i=0; i < certcount; i++) {
+	CERTCertificate *cert = certArray[i];
+	if (cert)
             NSS_CMSSignedData_AddTempCertificate(sigd, cert);
     }
 
     if (!keepcerts) {
-        goto done;
+	goto done;
     }
 
     
     certList = CERT_NewCertList();
     if (certList == NULL) {
-        rv = SECFailure;
-        goto loser;
+	rv = SECFailure;
+	goto loser;
     }
-    for (i = 0; i < certcount; i++) {
-        CERTCertificate *cert = certArray[i];
-        if (cert)
-            cert = CERT_DupCertificate(cert);
-        if (cert)
-            CERT_AddCertToListTail(certList, cert);
+    for (i=0; i < certcount; i++) {
+	CERTCertificate *cert = certArray[i];
+	if (cert)
+	    cert = CERT_DupCertificate(cert);
+	if (cert)
+	    CERT_AddCertToListTail(certList,cert);
     }
 
     
-    rv = CERT_FilterCertListByUsage(certList, certusage, PR_FALSE);
+    rv = CERT_FilterCertListByUsage(certList,certusage, PR_FALSE);
     if (rv != SECSuccess) {
-        goto loser;
+	goto loser;
     }
 
     
 
 
     now = PR_Now();
-    for (node = CERT_LIST_HEAD(certList); !CERT_LIST_END(node, certList);
-         node = CERT_LIST_NEXT(node)) {
-        CERTCertificateList *certChain;
+    for (node = CERT_LIST_HEAD(certList) ; !CERT_LIST_END(node,certList);
+						node= CERT_LIST_NEXT(node)) {
+	CERTCertificateList *certChain;
 
-        if (CERT_VerifyCert(certdb, node->cert,
-                            PR_TRUE, certusage, now, NULL, NULL) != SECSuccess) {
-            continue;
-        }
+	if (CERT_VerifyCert(certdb, node->cert, 
+		PR_TRUE, certusage, now, NULL, NULL) != SECSuccess) {
+	    continue;
+	}
 
-        certChain = CERT_CertChainFromCert(node->cert, certusage, PR_FALSE);
-        if (!certChain) {
-            continue;
-        }
+	certChain = CERT_CertChainFromCert(node->cert, certusage, PR_FALSE);
+	if (!certChain) {
+	    continue;
+	}
 
-        
-
-
+	
 
 
-        rawArray = (SECItem **)PORT_Alloc(certChain->len * sizeof(SECItem *));
-        if (!rawArray) {
-            CERT_DestroyCertificateList(certChain);
-            continue;
-        }
-        for (i = 0; i < certChain->len; i++) {
-            rawArray[i] = &certChain->certs[i];
-        }
-        (void)CERT_ImportCerts(certdb, certusage, certChain->len,
-                               rawArray, NULL, keepcerts, PR_FALSE, NULL);
-        PORT_Free(rawArray);
-        CERT_DestroyCertificateList(certChain);
+
+
+	rawArray = (SECItem **)PORT_Alloc(certChain->len*sizeof (SECItem *));
+	if (!rawArray) {
+	    CERT_DestroyCertificateList(certChain);
+	    continue;
+	}
+	for (i=0; i < certChain->len; i++) {
+	    rawArray[i] = &certChain->certs[i];
+	}
+	(void )CERT_ImportCerts(certdb, certusage, certChain->len, 
+			rawArray,  NULL, keepcerts, PR_FALSE, NULL);
+	PORT_Free(rawArray);
+	CERT_DestroyCertificateList(certChain);
     }
 
     rv = SECSuccess;
 
-
+    
 
 done:
     if (sigd->signerInfos != NULL) {
-        
-        for (i = 0; sigd->signerInfos[i] != NULL; i++)
-            (void)NSS_CMSSignerInfo_GetSigningCertificate(
-                sigd->signerInfos[i], certdb);
+	
+	for (i = 0; sigd->signerInfos[i] != NULL; i++)
+	    (void)NSS_CMSSignerInfo_GetSigningCertificate(
+						sigd->signerInfos[i], certdb);
     }
 
 loser:
     
     if (certArray) {
-        CERT_DestroyCertArray(certArray, certcount);
+	CERT_DestroyCertArray(certArray,certcount);
     }
     if (certList) {
-        CERT_DestroyCertList(certList);
+	CERT_DestroyCertList(certList);
     }
 
     return rv;
@@ -656,8 +658,8 @@ loser:
 
 
 SECStatus
-NSS_CMSSignedData_VerifySignerInfo(NSSCMSSignedData *sigd, int i,
-                                   CERTCertDBHandle *certdb, SECCertUsage certusage)
+NSS_CMSSignedData_VerifySignerInfo(NSSCMSSignedData *sigd, int i, 
+			    CERTCertDBHandle *certdb, SECCertUsage certusage)
 {
     NSSCMSSignerInfo *signerinfo;
     NSSCMSContentInfo *cinfo;
@@ -678,7 +680,7 @@ NSS_CMSSignedData_VerifySignerInfo(NSSCMSSignedData *sigd, int i,
     
     rv = NSS_CMSSignerInfo_VerifyCertificate(signerinfo, certdb, certusage);
     if (rv != SECSuccess)
-        return rv; 
+	return rv; 
 
     
     algiddata = NSS_CMSSignerInfo_GetDigestAlg(signerinfo);
@@ -697,8 +699,8 @@ NSS_CMSSignedData_VerifySignerInfo(NSSCMSSignedData *sigd, int i,
 
 
 SECStatus
-NSS_CMSSignedData_VerifyCertsOnly(NSSCMSSignedData *sigd,
-                                  CERTCertDBHandle *certdb,
+NSS_CMSSignedData_VerifyCertsOnly(NSSCMSSignedData *sigd, 
+                                  CERTCertDBHandle *certdb, 
                                   SECCertUsage usage)
 {
     CERTCertificate *cert;
@@ -708,25 +710,25 @@ NSS_CMSSignedData_VerifyCertsOnly(NSSCMSSignedData *sigd,
     PRTime now;
 
     if (!sigd || !certdb || !sigd->rawCerts) {
-        PORT_SetError(SEC_ERROR_INVALID_ARGS);
-        return SECFailure;
+	PORT_SetError(SEC_ERROR_INVALID_ARGS);
+	return SECFailure;
     }
 
-    count = NSS_CMSArray_Count((void **)sigd->rawCerts);
+    count = NSS_CMSArray_Count((void**)sigd->rawCerts);
     now = PR_Now();
-    for (i = 0; i < count; i++) {
-        if (sigd->certs && sigd->certs[i]) {
-            cert = CERT_DupCertificate(sigd->certs[i]);
-        } else {
-            cert = CERT_FindCertByDERCert(certdb, sigd->rawCerts[i]);
-            if (!cert) {
-                rv = SECFailure;
-                break;
-            }
-        }
-        rv |= CERT_VerifyCert(certdb, cert, PR_TRUE, usage, now,
+    for (i=0; i < count; i++) {
+	if (sigd->certs && sigd->certs[i]) {
+	    cert = CERT_DupCertificate(sigd->certs[i]);
+	} else {
+	    cert = CERT_FindCertByDERCert(certdb, sigd->rawCerts[i]);
+	    if (!cert) {
+		rv = SECFailure;
+		break;
+	    }
+	}
+	rv |= CERT_VerifyCert(certdb, cert, PR_TRUE, usage, now, 
                               NULL, NULL);
-        CERT_DestroyCertificate(cert);
+	CERT_DestroyCertificate(cert);
     }
 
     return rv;
@@ -781,7 +783,7 @@ NSS_CMSSignedData_AddCertChain(NSSCMSSignedData *sigd, CERTCertificate *cert)
     
     certlist = CERT_CertChainFromCert(cert, usage, PR_FALSE);
     if (certlist == NULL)
-        return SECFailure;
+	return SECFailure;
 
     rv = NSS_CMSSignedData_AddCertList(sigd, certlist);
 
@@ -828,16 +830,16 @@ NSS_CMSSignedData_ContainsCertsOrCrls(NSSCMSSignedData *sigd)
         return PR_FALSE;
     }
     if (sigd->rawCerts != NULL && sigd->rawCerts[0] != NULL)
-        return PR_TRUE;
+	return PR_TRUE;
     else if (sigd->crls != NULL && sigd->crls[0] != NULL)
-        return PR_TRUE;
+	return PR_TRUE;
     else
-        return PR_FALSE;
+	return PR_FALSE;
 }
 
 SECStatus
 NSS_CMSSignedData_AddSignerInfo(NSSCMSSignedData *sigd,
-                                NSSCMSSignerInfo *signerinfo)
+				NSSCMSSignerInfo *signerinfo)
 {
     void *mark;
     SECStatus rv;
@@ -856,7 +858,7 @@ NSS_CMSSignedData_AddSignerInfo(NSSCMSSignedData *sigd,
     
     rv = NSS_CMSArray_Add(poolp, (void ***)&(sigd->signerInfos), (void *)signerinfo);
     if (rv != SECSuccess)
-        goto loser;
+	goto loser;
 
     
 
@@ -867,7 +869,7 @@ NSS_CMSSignedData_AddSignerInfo(NSSCMSSignedData *sigd,
     digestalgtag = NSS_CMSSignerInfo_GetDigestAlgTag(signerinfo);
     rv = NSS_CMSSignedData_SetDigestValue(sigd, digestalgtag, NULL);
     if (rv != SECSuccess)
-        goto loser;
+	goto loser;
 
     
 
@@ -877,7 +879,7 @@ NSS_CMSSignedData_AddSignerInfo(NSSCMSSignedData *sigd,
     return SECSuccess;
 
 loser:
-    PORT_ArenaRelease(poolp, mark);
+    PORT_ArenaRelease (poolp, mark);
     return SECFailure;
 }
 
@@ -889,8 +891,8 @@ loser:
 
 SECStatus
 NSS_CMSSignedData_SetDigests(NSSCMSSignedData *sigd,
-                             SECAlgorithmID **digestalgs,
-                             SECItem **digests)
+				SECAlgorithmID **digestalgs,
+				SECItem **digests)
 {
     int cnt, i, idx;
 
@@ -900,54 +902,55 @@ NSS_CMSSignedData_SetDigests(NSSCMSSignedData *sigd,
     }
 
     if (sigd->digestAlgorithms == NULL) {
-        PORT_SetError(SEC_ERROR_INVALID_ARGS);
-        return SECFailure;
+	PORT_SetError(SEC_ERROR_INVALID_ARGS);
+	return SECFailure;
     }
 
     
     PORT_Assert(sigd->digests == NULL);
     if (sigd->digests != NULL) {
-        PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
-        return SECFailure;
+	PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
+	return SECFailure;
     }
 
     
     cnt = NSS_CMSArray_Count((void **)sigd->digestAlgorithms);
     sigd->digests = PORT_ArenaZAlloc(sigd->cmsg->poolp, (cnt + 1) * sizeof(SECItem *));
     if (sigd->digests == NULL) {
-        PORT_SetError(SEC_ERROR_NO_MEMORY);
-        return SECFailure;
+	PORT_SetError(SEC_ERROR_NO_MEMORY);
+	return SECFailure;
     }
 
     for (i = 0; sigd->digestAlgorithms[i] != NULL; i++) {
-        
-        idx = NSS_CMSAlgArray_GetIndexByAlgID(digestalgs, sigd->digestAlgorithms[i]);
-        if (idx < 0) {
-            PORT_SetError(SEC_ERROR_DIGEST_NOT_FOUND);
-            return SECFailure;
-        }
-        if (!digests[idx]) {
-            
+	
+	idx = NSS_CMSAlgArray_GetIndexByAlgID(digestalgs, sigd->digestAlgorithms[i]);
+	if (idx < 0) {
+	    PORT_SetError(SEC_ERROR_DIGEST_NOT_FOUND);
+	    return SECFailure;
+	}
+	if (!digests[idx]) {
+	    
 
 
 
-            continue;
-        }
+	    continue;
+	}
 
-        
-        if ((sigd->digests[i] = SECITEM_AllocItem(sigd->cmsg->poolp, NULL, 0)) == NULL ||
-            SECITEM_CopyItem(sigd->cmsg->poolp, sigd->digests[i], digests[idx]) != SECSuccess) {
-            PORT_SetError(SEC_ERROR_NO_MEMORY);
-            return SECFailure;
-        }
+	
+	if ((sigd->digests[i] = SECITEM_AllocItem(sigd->cmsg->poolp, NULL, 0)) == NULL ||
+	    SECITEM_CopyItem(sigd->cmsg->poolp, sigd->digests[i], digests[idx]) != SECSuccess)
+	{
+	    PORT_SetError(SEC_ERROR_NO_MEMORY);
+	    return SECFailure;
+	}
     }
     return SECSuccess;
 }
 
 SECStatus
 NSS_CMSSignedData_SetDigestValue(NSSCMSSignedData *sigd,
-                                 SECOidTag digestalgtag,
-                                 SECItem *digestdata)
+				SECOidTag digestalgtag,
+				SECItem *digestdata)
 {
     SECItem *digest = NULL;
     PLArenaPool *poolp;
@@ -963,12 +966,13 @@ NSS_CMSSignedData_SetDigestValue(NSSCMSSignedData *sigd,
 
     mark = PORT_ArenaMark(poolp);
 
+   
     if (digestdata) {
-        digest = (SECItem *)PORT_ArenaZAlloc(poolp, sizeof(SECItem));
+        digest = (SECItem *) PORT_ArenaZAlloc(poolp,sizeof(SECItem));
 
-        
-        if (SECITEM_CopyItem(poolp, digest, digestdata) != SECSuccess)
-            goto loser;
+	
+	if (SECITEM_CopyItem(poolp, digest, digestdata) != SECSuccess)
+	    goto loser;
     }
 
     
@@ -976,22 +980,22 @@ NSS_CMSSignedData_SetDigestValue(NSSCMSSignedData *sigd,
         cnt = NSS_CMSArray_Count((void **)sigd->digestAlgorithms);
         sigd->digests = PORT_ArenaZAlloc(sigd->cmsg->poolp, (cnt + 1) * sizeof(SECItem *));
         if (sigd->digests == NULL) {
-            PORT_SetError(SEC_ERROR_NO_MEMORY);
-            return SECFailure;
+	        PORT_SetError(SEC_ERROR_NO_MEMORY);
+	        return SECFailure;
         }
     }
 
     n = -1;
     if (sigd->digestAlgorithms != NULL)
-        n = NSS_CMSAlgArray_GetIndexByAlgTag(sigd->digestAlgorithms, digestalgtag);
+	n = NSS_CMSAlgArray_GetIndexByAlgTag(sigd->digestAlgorithms, digestalgtag);
 
     
     if (n < 0) {
-        if (NSS_CMSSignedData_AddDigest(poolp, sigd, digestalgtag, digest) != SECSuccess)
-            goto loser;
+	if (NSS_CMSSignedData_AddDigest(poolp, sigd, digestalgtag, digest) != SECSuccess)
+	    goto loser;
     } else {
-        
-        sigd->digests[n] = digest;
+	
+	sigd->digests[n] = digest;
     }
 
     PORT_ArenaUnmark(poolp, mark);
@@ -1004,9 +1008,9 @@ loser:
 
 SECStatus
 NSS_CMSSignedData_AddDigest(PLArenaPool *poolp,
-                            NSSCMSSignedData *sigd,
-                            SECOidTag digestalgtag,
-                            SECItem *digest)
+				NSSCMSSignedData *sigd,
+				SECOidTag digestalgtag,
+				SECItem *digest)
 {
     SECAlgorithmID *digestalg;
     void *mark;
@@ -1020,17 +1024,16 @@ NSS_CMSSignedData_AddDigest(PLArenaPool *poolp,
 
     digestalg = PORT_ArenaZAlloc(poolp, sizeof(SECAlgorithmID));
     if (digestalg == NULL)
-        goto loser;
+	goto loser;
 
-    if (SECOID_SetAlgorithmID(poolp, digestalg, digestalgtag, NULL) != SECSuccess) 
-        goto loser;
+    if (SECOID_SetAlgorithmID (poolp, digestalg, digestalgtag, NULL) != SECSuccess) 
+	goto loser;
 
-    if (NSS_CMSArray_Add(poolp, (void ***)&(sigd->digestAlgorithms),
-                         (void *)digestalg) != SECSuccess ||
-        
-        NSS_CMSArray_Add(poolp, (void ***)&(sigd->digests),
-                         (void *)digest) != SECSuccess) {
-        goto loser;
+    if (NSS_CMSArray_Add(poolp, (void ***)&(sigd->digestAlgorithms), (void *)digestalg) != SECSuccess ||
+	
+	NSS_CMSArray_Add(poolp, (void ***)&(sigd->digests), (void *)digest) != SECSuccess)
+    {
+	goto loser;
     }
 
     PORT_ArenaUnmark(poolp, mark);
@@ -1054,7 +1057,7 @@ NSS_CMSSignedData_GetDigestValue(NSSCMSSignedData *sigd, SECOidTag digestalgtag)
 
     if (sigd->digestAlgorithms == NULL || sigd->digests == NULL) {
         PORT_SetError(SEC_ERROR_DIGEST_NOT_FOUND);
-        return NULL;
+	return NULL;
     }
 
     n = NSS_CMSAlgArray_GetIndexByAlgTag(sigd->digestAlgorithms, digestalgtag);
@@ -1096,18 +1099,18 @@ NSS_CMSSignedData_CreateCertsOnly(NSSCMSMessage *cmsg, CERTCertificate *cert, PR
 
     sigd = NSS_CMSSignedData_Create(cmsg);
     if (sigd == NULL)
-        goto loser;
+	goto loser;
 
     
 
     
     if (include_chain) {
-        rv = NSS_CMSSignedData_AddCertChain(sigd, cert);
+	rv = NSS_CMSSignedData_AddCertChain(sigd, cert);
     } else {
-        rv = NSS_CMSSignedData_AddCertificate(sigd, cert);
+	rv = NSS_CMSSignedData_AddCertificate(sigd, cert);
     }
     if (rv != SECSuccess)
-        goto loser;
+	goto loser;
 
     
 
@@ -1118,17 +1121,18 @@ NSS_CMSSignedData_CreateCertsOnly(NSSCMSMessage *cmsg, CERTCertificate *cert, PR
 
     rv = NSS_CMSContentInfo_SetContent_Data(cmsg, &(sigd->contentInfo), NULL, PR_TRUE);
     if (rv != SECSuccess)
-        goto loser;
+	goto loser;
 
     PORT_ArenaUnmark(poolp, mark);
     return sigd;
 
 loser:
     if (sigd)
-        NSS_CMSSignedData_Destroy(sigd);
+	NSS_CMSSignedData_Destroy(sigd);
     PORT_ArenaRelease(poolp, mark);
     return NULL;
 }
+
 
 
 

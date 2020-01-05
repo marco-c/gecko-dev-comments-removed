@@ -6,8 +6,8 @@
 
 
 
-#ifndef _SECMODTI_H_
-#define _SECMODTI_H_ 1
+#ifndef  _SECMODTI_H_
+#define  _SECMODTI_H_ 1
 #include "prmon.h"
 #include "prtypes.h"
 #include "nssilckt.h"
@@ -20,11 +20,12 @@
 
 
 typedef struct pk11TraverseSlotStr {
-    SECStatus (*callback)(PK11SlotInfo *, CK_OBJECT_HANDLE, void *);
+    SECStatus (*callback)(PK11SlotInfo *,CK_OBJECT_HANDLE, void *);
     void *callbackArg;
     CK_ATTRIBUTE *findTemplate;
     int templateCount;
 } pk11TraverseSlot;
+
 
 
 struct PK11SlotInfoStr {
@@ -32,25 +33,25 @@ struct PK11SlotInfoStr {
     void *functionList;
     SECMODModule *module; 
     
-    PRBool needTest;           
-    PRBool isPerm;             
-    PRBool isHW;               
-    PRBool isInternal;         
-    PRBool disabled;           
-    PK11DisableReasons reason; 
-    PRBool readOnly;           
-    PRBool needLogin;          
+    PRBool needTest;	
+    PRBool isPerm;	
+    PRBool isHW;	
+    PRBool isInternal;  
+    PRBool disabled;	
+    PK11DisableReasons reason; 	
+    PRBool readOnly;	
+    PRBool needLogin;	
 
 
-    PRBool hasRandom;          
-    PRBool defRWSession;       
+    PRBool hasRandom;   
+    PRBool defRWSession; 
 
 
-    PRBool isThreadSafe;       
+    PRBool isThreadSafe; 
     
-    CK_FLAGS flags; 
+    CK_FLAGS flags;      
     
-    CK_SESSION_HANDLE session;
+    CK_SESSION_HANDLE session; 
     PZLock *sessionLock; 
     
     CK_SLOT_ID slotID;
@@ -58,7 +59,7 @@ struct PK11SlotInfoStr {
     unsigned long defaultFlags;
     
 
-    PRInt32 refCount; 
+    PRInt32 refCount;    
     PZLock *freeListLock;
     PK11SymKey *freeSymKeysWithSessionHead;
     PK11SymKey *freeSymKeysHead;
@@ -66,25 +67,25 @@ struct PK11SlotInfoStr {
     int maxKeyCount;
     
 
-    int askpw;           
-    int timeout;         
+    int askpw;		
+    int timeout;	
 
-    int authTransact;    
+    int authTransact;   
 
-    PRTime authTime;     
-    int minPassword;     
-    int maxPassword;     
-    PRUint16 series;     
+    PRTime authTime;	
+    int minPassword;	
+    int maxPassword;	
+    PRUint16 series;	
 
 
-    PRUint16 flagSeries; 
+    PRUint16 flagSeries;
 
-    PRBool flagState;    
+    PRBool flagState;	
 
-    PRUint16 wrapKey;    
+    PRUint16 wrapKey;	
     CK_MECHANISM_TYPE wrapMechanism;
-    
-    CK_OBJECT_HANDLE refKeys[1];      
+			
+    CK_OBJECT_HANDLE refKeys[1]; 
     CK_MECHANISM_TYPE *mechanismList; 
 
     int mechanismCount;
@@ -113,26 +114,26 @@ struct PK11SlotInfoStr {
 
 
 struct PK11SymKeyStr {
-    CK_MECHANISM_TYPE type;    
-    CK_OBJECT_HANDLE objectID; 
-    PK11SlotInfo *slot;        
-    void *cx;                  
-    PK11SymKey *next;
-    PRBool owner;
-    SECItem data; 
+    CK_MECHANISM_TYPE type;	
+    CK_OBJECT_HANDLE  objectID; 
+    PK11SlotInfo      *slot;    
+    void	      *cx;	
+    PK11SymKey	      *next;
+    PRBool	      owner;
+    SECItem	      data;	
     CK_SESSION_HANDLE session;
-    PRBool sessionOwner;
-    PRInt32 refCount;          
-    int size;                  
-    PK11Origin origin;         
+    PRBool	      sessionOwner;
+    PRInt32	      refCount;	
+    int		      size;	
+    PK11Origin	      origin;	
 
-    PK11SymKey *parent;        
-    PRUint16 series;           
+    PK11SymKey        *parent;  
+    PRUint16 series;		
 
 
-    void *userData;            
+    void *userData;		
 
-    PK11FreeDataFunc freeFunc; 
+    PK11FreeDataFunc freeFunc;	
 };
 
 
@@ -140,27 +141,28 @@ struct PK11SymKeyStr {
 
 
 
+
 struct PK11ContextStr {
-    CK_ATTRIBUTE_TYPE operation; 
+    CK_ATTRIBUTE_TYPE	operation; 
 
-    PK11SymKey *key;             
-    PK11SlotInfo *slot;          
-    CK_SESSION_HANDLE session;   
-    PZLock *sessionLock;         
+    PK11SymKey  	*key;	   
+    PK11SlotInfo	*slot;	   
+    CK_SESSION_HANDLE	session;   
+    PZLock		*sessionLock; 
 
-    PRBool ownSession;           
-    void *cx;                    
-    void *savedData;             
+    PRBool		ownSession;
+    void 		*cx;	   
+    void		*savedData;
 
-    unsigned long savedLength;   
-    SECItem *param;              
+    unsigned long	savedLength; 
+    SECItem		*param;	    
 
-    PRBool init;                 
-    CK_MECHANISM_TYPE type;      
+    PRBool		init;	    
+    CK_MECHANISM_TYPE	type;	    
 
 
 
-    PRBool fortezzaHack;         
+    PRBool		fortezzaHack; 
 
 };
 
@@ -172,13 +174,14 @@ struct PK11GenericObjectStr {
     PK11GenericObject *prev;
     PK11GenericObject *next;
     PK11SlotInfo *slot;
-    PRBool owner;
     CK_OBJECT_HANDLE objectID;
 };
+
 
 #define MAX_TEMPL_ATTRS 16 /* maximum attributes in template */
 
 
 #define CKF_KEY_OPERATION_FLAGS 0x000e7b00UL
+
 
 #endif 

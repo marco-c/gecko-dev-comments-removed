@@ -98,6 +98,7 @@ nss_makeFlags(PRBool readOnly, PRBool noCertDB,
         if (!first)
             PORT_Strcat(flags, ",");
         PORT_Strcat(flags, "optimizeSpace");
+        first = PR_FALSE;
     }
     return flags;
 }
@@ -662,21 +663,6 @@ nss_Init(const char *configdir, const char *certPrefix, const char *keyPrefix,
             configName = initParams->libraryDescription;
             passwordRequired = initParams->passwordRequired;
         }
-
-        
-
-
-
-
-
-
-
-
-
-        
-
-
-        SECMOD_RestartModules(PR_FALSE);
     } else {
         configStrings = pk11_config_strings;
         configName = pk11_config_name;

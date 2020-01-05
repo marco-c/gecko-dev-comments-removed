@@ -2,6 +2,7 @@
 
 
 
+
 #ifndef _PKCS12_H_
 #define _PKCS12_H_
 
@@ -10,7 +11,7 @@
 
 SEC_BEGIN_PROTOS
 
-typedef SECItem *(*SEC_PKCS12GetPassword)(void *arg);
+typedef SECItem * (* SEC_PKCS12GetPassword)(void *arg);
 
 
 
@@ -25,11 +26,11 @@ typedef SECItem *(*SEC_PKCS12GetPassword)(void *arg);
 
 
 
-
+ 
 SECStatus
 SEC_PKCS12PutPFX(SECItem *der_pfx, SECItem *pwitem,
-                 SEC_PKCS12NicknameCollisionCallback ncCall,
-                 PK11SlotInfo *slot, void *wincx);
+		 SEC_PKCS12NicknameCollisionCallback ncCall,
+		 PK11SlotInfo *slot, void *wincx);
 
 
 
