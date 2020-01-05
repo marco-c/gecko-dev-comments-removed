@@ -270,7 +270,7 @@ class ParseContext : public Nestable<ParseContext>
     SharedContext* sc_;
 
     
-    TokenStreamBase& tokenStream_;
+    TokenStreamAnyChars& tokenStream_;
 
     
     Statement* innermostStatement_;

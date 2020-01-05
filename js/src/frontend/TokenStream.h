@@ -96,7 +96,7 @@ enum class InvalidEscapeType {
     Octal
 };
 
-class TokenStreamBase;
+class TokenStreamAnyChars;
 
 struct Token
 {
@@ -164,7 +164,7 @@ struct Token
         
         OperandIsNone,
     };
-    friend class TokenStreamBase;
+    friend class TokenStreamAnyChars;
 
   public:
     TokenKind           type;           
@@ -264,10 +264,10 @@ class StrictModeGetter {
     virtual bool strictMode() = 0;
 };
 
-class TokenStreamBase
+class TokenStreamAnyChars
 {
   protected:
-    TokenStreamBase(JSContext* cx, const ReadOnlyCompileOptions& options, StrictModeGetter* smg);
+    TokenStreamAnyChars(JSContext* cx, const ReadOnlyCompileOptions& options, StrictModeGetter* smg);
 
     static const size_t ntokens = 4;                
                                                     
@@ -628,7 +628,7 @@ class TokenStreamBase
 
 
 
-class MOZ_STACK_CLASS TokenStream final : public TokenStreamBase
+class MOZ_STACK_CLASS TokenStream final : public TokenStreamAnyChars
 {
   public:
     using CharT = char16_t;

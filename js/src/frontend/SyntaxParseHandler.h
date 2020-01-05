@@ -402,7 +402,7 @@ class SyntaxParseHandlerBase
     void setEndPosition(Node pn, Node oth) {}
     void setEndPosition(Node pn, uint32_t end) {}
 
-    uint32_t getFunctionNameOffset(Node func, TokenStreamBase& ts) {
+    uint32_t getFunctionNameOffset(Node func, TokenStreamAnyChars& ts) {
         
         
         
