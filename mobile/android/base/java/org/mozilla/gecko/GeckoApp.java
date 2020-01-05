@@ -277,7 +277,7 @@ public abstract class GeckoApp
                 
                 
 
-                if (sessionTab.isSelected()) {
+                if (!loadingExternalURL && sessionTab.isSelected()) {
                     
                     
                     
