@@ -1327,9 +1327,11 @@ nsRefreshDriver::RemoveImageRequest(imgIRequest* aRequest)
 void
 nsRefreshDriver::EnsureTimerStarted(EnsureTimerStartedFlags aFlags)
 {
-  MOZ_ASSERT(!ServoStyleSet::IsInServoTraversal(),
+  
+  
+  MOZ_ASSERT(!ServoStyleSet::IsInServoTraversal() || NS_IsMainThread(),
              "EnsureTimerStarted should be called only when we are not "
-             "in servo traversal");
+             "in servo traversal or on the main-thread");
 
   if (mTestControllingRefreshes)
     return;
