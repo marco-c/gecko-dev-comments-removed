@@ -69,7 +69,6 @@ WebRenderPaintedLayer::PaintThebes()
     Mutated();
 
     ContentClientRemote* contentClientRemote = static_cast<ContentClientRemote*>(mContentClient.get());
-    MOZ_ASSERT(contentClientRemote->GetIPDLActor());
 
     
     
