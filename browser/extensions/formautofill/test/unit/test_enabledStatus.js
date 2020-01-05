@@ -31,12 +31,12 @@ add_task(function* test_enabledStatus_observe() {
   
   formAutofillParent._enabled = true;
   formAutofillParent._getStatus.returns(true);
-  formAutofillParent.observe(null, "nsPref:changed", "browser.formautofill.enabled");
+  formAutofillParent.observe(null, "nsPref:changed", "extensions.formautofill.addresses.enabled");
   do_check_eq(formAutofillParent._setStatus.called, false);
 
   
   formAutofillParent._getStatus.returns(false);
-  formAutofillParent.observe(null, "nsPref:changed", "browser.formautofill.enabled");
+  formAutofillParent.observe(null, "nsPref:changed", "extensions.formautofill.addresses.enabled");
   do_check_eq(formAutofillParent._setStatus.called, true);
 
   
@@ -61,27 +61,27 @@ add_task(function* test_enabledStatus_observe() {
 add_task(function* test_enabledStatus_getStatus() {
   let formAutofillParent = new FormAutofillParent();
   do_register_cleanup(function cleanup() {
-    Services.prefs.clearUserPref("browser.formautofill.enabled");
+    Services.prefs.clearUserPref("extensions.formautofill.addresses.enabled");
   });
 
   sinon.stub(profileStorage, "getAll");
   profileStorage.getAll.returns([]);
 
   
-  Services.prefs.setBoolPref("browser.formautofill.enabled", true);
+  Services.prefs.setBoolPref("extensions.formautofill.addresses.enabled", true);
   do_check_eq(formAutofillParent._getStatus(), false);
 
   
-  Services.prefs.setBoolPref("browser.formautofill.enabled", false);
+  Services.prefs.setBoolPref("extensions.formautofill.addresses.enabled", false);
   do_check_eq(formAutofillParent._getStatus(), false);
 
   profileStorage.getAll.returns(["test-profile"]);
   
-  Services.prefs.setBoolPref("browser.formautofill.enabled", true);
+  Services.prefs.setBoolPref("extensions.formautofill.addresses.enabled", true);
   do_check_eq(formAutofillParent._getStatus(), true);
 
   
-  Services.prefs.setBoolPref("browser.formautofill.enabled", false);
+  Services.prefs.setBoolPref("extensions.formautofill.addresses.enabled", false);
   do_check_eq(formAutofillParent._getStatus(), false);
 });
 
