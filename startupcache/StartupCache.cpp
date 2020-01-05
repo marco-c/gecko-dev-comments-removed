@@ -113,7 +113,6 @@ StartupCache::InitSingleton()
 StaticRefPtr<StartupCache> StartupCache::gStartupCache;
 bool StartupCache::gShutdownInitiated;
 bool StartupCache::gIgnoreDiskCache;
-enum StartupCache::TelemetrifyAge StartupCache::gPostFlushAgeAction = StartupCache::IGNORE_AGE;
 
 NS_IMPL_ISUPPORTS(StartupCache, nsIMemoryReporter)
 
@@ -211,7 +210,7 @@ StartupCache::Init()
                                      false);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  rv = LoadArchive(RECORD_AGE);
+  rv = LoadArchive();
 
   
   
@@ -229,7 +228,7 @@ StartupCache::Init()
 
 
 nsresult
-StartupCache::LoadArchive(enum TelemetrifyAge flag)
+StartupCache::LoadArchive()
 {
   if (gIgnoreDiskCache)
     return NS_ERROR_FAILURE;
@@ -242,32 +241,6 @@ StartupCache::LoadArchive(enum TelemetrifyAge flag)
   
   mArchive = new nsZipArchive();
   rv = mArchive->OpenArchive(mFile);
-  if (NS_FAILED(rv) || flag == IGNORE_AGE)
-    return rv;
-
-  nsCString comment;
-  if (!mArchive->GetComment(comment)) {
-    return rv;
-  }
-
-  const char *data;
-  size_t len = NS_CStringGetData(comment, &data);
-  PRTime creationStamp;
-  
-  
-  if (len == sizeof(creationStamp)) {
-    memcpy(&creationStamp, data, len);
-    PRTime current = PR_Now();
-    int64_t diff = current - creationStamp;
-
-    
-    
-    int64_t usec_per_hour = PR_USEC_PER_SEC * int64_t(3600);
-    int64_t hour_diff = (diff + usec_per_hour - 1) / usec_per_hour;
-    mozilla::Telemetry::Accumulate(Telemetry::STARTUP_CACHE_AGE_HOURS,
-                                   hour_diff);
-  }
-
   return rv;
 }
 
@@ -481,7 +454,7 @@ StartupCache::WriteToDisk()
   gIgnoreDiskCache = false;
 
   
-  LoadArchive(gPostFlushAgeAction);
+  LoadArchive();
   
   return;
 }
@@ -497,11 +470,10 @@ StartupCache::InvalidateCache()
   if (NS_FAILED(rv) && rv != NS_ERROR_FILE_TARGET_DOES_NOT_EXIST &&
       rv != NS_ERROR_FILE_NOT_FOUND) {
     gIgnoreDiskCache = true;
-    mozilla::Telemetry::Accumulate(Telemetry::STARTUP_CACHE_INVALID, true);
     return;
   }
   gIgnoreDiskCache = false;
-  LoadArchive(gPostFlushAgeAction);
+  LoadArchive();
 }
 
 void
@@ -620,13 +592,6 @@ StartupCache::ResetStartupWriteTimer()
   
   mTimer->InitWithFuncCallback(StartupCache::WriteTimeout, this, 60000,
                                nsITimer::TYPE_ONE_SHOT);
-  return NS_OK;
-}
-
-nsresult
-StartupCache::RecordAgesAlways()
-{
-  gPostFlushAgeAction = RECORD_AGE;
   return NS_OK;
 }
 
@@ -817,12 +782,6 @@ StartupCacheWrapper::GetObserver(nsIObserver** obv) {
   }
   NS_ADDREF(*obv = sc->mListener);
   return NS_OK;
-}
-
-nsresult
-StartupCacheWrapper::RecordAgesAlways() {
-  StartupCache *sc = StartupCache::GetSingleton();
-  return sc ? sc->RecordAgesAlways() : NS_ERROR_NOT_INITIALIZED;
 }
 
 } 
