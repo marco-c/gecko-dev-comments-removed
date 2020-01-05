@@ -93,7 +93,7 @@ fn next_power_of_two(mut v: u32) -> u32 {
     v
 }
 
-impl<QueueData: Send, WorkData: Send> WorkerThread<QueueData, WorkData> {
+impl<QueueData: Sync, WorkData: Send> WorkerThread<QueueData, WorkData> {
     
     
     fn start(&mut self) {
@@ -232,7 +232,7 @@ pub struct WorkQueue<QueueData: 'static, WorkData: 'static> {
     work_count: usize,
 }
 
-impl<QueueData: Send, WorkData: Send> WorkQueue<QueueData, WorkData> {
+impl<QueueData: Sync, WorkData: Send> WorkQueue<QueueData, WorkData> {
     
     
     pub fn new(task_name: &'static str,
