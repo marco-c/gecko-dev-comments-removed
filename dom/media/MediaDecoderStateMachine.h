@@ -739,6 +739,9 @@ private:
   Mirror<bool> mIsVisible;
 
   
+  Mirror<bool> mHasSuspendTaint;
+
+  
   
   Canonical<media::NullableTimeUnit> mDuration;
 
