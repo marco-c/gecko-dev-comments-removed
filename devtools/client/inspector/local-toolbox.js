@@ -116,6 +116,6 @@ window.addEventListener("DOMContentLoaded", function onInspectorDOMLoaded() {
 
   
   
-  const { bootstrap } = require("devtools-local-toolbox");
+  const { bootstrap } = require("devtools-launchpad");
   bootstrap(React, ReactDOM).then(onConnect);
 });

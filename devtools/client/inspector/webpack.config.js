@@ -6,7 +6,7 @@
 
 "use strict";
 
-const {toolboxConfig} = require("devtools-local-toolbox/index");
+const {toolboxConfig} = require("devtools-launchpad/index");
 
 const path = require("path");
 const webpack = require("webpack");
@@ -42,7 +42,7 @@ module.exports = envConfig => {
         }, {
           
           
-          test: /client\/inspector\/.*\.js$/,
+          test: /client(\/|\\)inspector(\/|\\).*\.js$/,
           loaders: [path.join(__dirname, "./webpack/rewrite-browser-require")],
         }
       ]
