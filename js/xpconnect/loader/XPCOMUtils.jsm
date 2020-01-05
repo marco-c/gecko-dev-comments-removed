@@ -297,8 +297,13 @@ this.XPCOMUtils = {
 
 
 
+
+
+
   defineLazyPreferenceGetter: function XPCU_defineLazyPreferenceGetter(
-                                   aObject, aName, aPreference, aDefaultValue = null)
+                                   aObject, aName, aPreference,
+                                   aDefaultValue = null,
+                                   aOnUpdate = null)
   {
     
     
@@ -312,7 +317,18 @@ this.XPCOMUtils = {
 
       observe(subject, topic, data) {
         if (data == aPreference) {
-          this.value = undefined;
+          if (aOnUpdate) {
+            let previous = this.value;
+
+            
+            this.value = undefined;
+            let latest = lazyGetter();
+            aOnUpdate(data, previous, latest);
+          } else {
+
+            
+            this.value = undefined;
+          }
         }
       },
     }
