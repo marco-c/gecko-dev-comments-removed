@@ -946,7 +946,9 @@ class XPCShellTests(object):
         usingTSan = "tsan" in self.mozInfo and self.mozInfo["tsan"]
         if usingASan or usingTSan:
             
-            llvmsym = os.path.join(self.xrePath, "llvm-symbolizer")
+            llvmsym = os.path.join(
+                self.xrePath,
+                "llvm-symbolizer" + self.mozInfo["bin_suffix"].encode('ascii'))
             if os.path.isfile(llvmsym):
                 if usingASan:
                     self.env["ASAN_SYMBOLIZER_PATH"] = llvmsym
