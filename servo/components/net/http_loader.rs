@@ -13,15 +13,16 @@ use flate2::read::{DeflateDecoder, GzDecoder};
 use hsts::{HstsEntry, HstsList, secure_url};
 use hyper::Error as HttpError;
 use hyper::client::{Pool, Request, Response};
-use hyper::header::{Accept, AcceptEncoding, ContentLength, ContentType, Host, Referer};
+use hyper::header::{Accept, AcceptEncoding, ContentLength, ContentEncoding, ContentType, Host, Referer};
 use hyper::header::{Authorization, Basic};
-use hyper::header::{ContentEncoding, Encoding, Header, Headers, Quality, QualityItem};
+use hyper::header::{Encoding, Header, Headers, Quality, QualityItem};
 use hyper::header::{Location, SetCookie, StrictTransportSecurity, UserAgent, qitem};
 use hyper::http::RawStatus;
 use hyper::method::Method;
 use hyper::mime::{Mime, SubLevel, TopLevel};
 use hyper::net::Fresh;
 use hyper::status::{StatusClass, StatusCode};
+use ipc_channel::ipc;
 use log;
 use mime_classifier::MIMEClassifier;
 use msg::constellation_msg::{PipelineId, ReferrerPolicy};
@@ -29,7 +30,7 @@ use net_traits::ProgressMsg::{Done, Payload};
 use net_traits::hosts::replace_hosts;
 use net_traits::response::HttpsState;
 use net_traits::{CookieSource, IncludeSubdomains, LoadConsumer, LoadContext, LoadData};
-use net_traits::{Metadata, NetworkError};
+use net_traits::{Metadata, NetworkError, RequestSource, CustomResponse};
 use openssl::ssl::error::{SslError, OpensslError};
 use profile_traits::time::{ProfilerCategory, profile, ProfilerChan, TimerMetadata};
 use profile_traits::time::{TimerMetadataReflowType, TimerMetadataFrameType};
@@ -39,7 +40,7 @@ use std::boxed::FnBox;
 use std::collections::HashSet;
 use std::error::Error;
 use std::fmt;
-use std::io::{self, Read, Write};
+use std::io::{self, Cursor, Read, Write};
 use std::sync::mpsc::Sender;
 use std::sync::{Arc, RwLock};
 use time;
@@ -149,6 +150,17 @@ fn load_for_consumer(load_data: LoadData,
     }
 }
 
+pub struct WrappedHttpResponse {
+    pub response: Response
+}
+
+impl Read for WrappedHttpResponse {
+    #[inline]
+    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+        self.response.read(buf)
+    }
+}
+
 pub trait HttpResponse: Read {
     fn headers(&self) -> &Headers;
     fn status(&self) -> StatusCode;
@@ -173,20 +185,6 @@ pub trait HttpResponse: Read {
     }
 }
 
-
-pub struct WrappedHttpResponse {
-    pub response: Response
-}
-
-impl Read for WrappedHttpResponse {
-    #[inline]
-    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-        self.response.read(buf)
-    }
-}
-
-
-
 impl HttpResponse for WrappedHttpResponse {
     fn headers(&self) -> &Headers {
         &self.response.headers
@@ -202,6 +200,34 @@ impl HttpResponse for WrappedHttpResponse {
 
     fn http_version(&self) -> String {
         self.response.version.to_string()
+    }
+}
+
+pub struct ReadableCustomResponse {
+    headers: Headers,
+    raw_status: RawStatus,
+    body: Cursor<Vec<u8>>
+}
+
+pub fn to_readable_response(custom_response: CustomResponse) -> ReadableCustomResponse {
+    ReadableCustomResponse {
+        headers: custom_response.headers,
+        raw_status: custom_response.raw_status,
+        body: Cursor::new(custom_response.body)
+    }
+}
+
+impl HttpResponse for ReadableCustomResponse {
+    fn headers(&self) -> &Headers { &self.headers }
+    fn status(&self) -> StatusCode {
+        StatusCode::Ok
+    }
+    fn status_raw(&self) -> &RawStatus { &self.raw_status }
+}
+
+impl Read for ReadableCustomResponse {
+    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+        self.body.read(buf)
     }
 }
 
@@ -466,13 +492,13 @@ fn update_sts_list_from_response(url: &Url, response: &HttpResponse, hsts_list: 
     }
 }
 
-pub struct StreamedResponse<R: HttpResponse> {
-    decoder: Decoder<R>,
+pub struct StreamedResponse {
+    decoder: Decoder,
     pub metadata: Metadata
 }
 
 
-impl<R: HttpResponse> Read for StreamedResponse<R> {
+impl Read for StreamedResponse {
     #[inline]
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         match self.decoder {
@@ -484,12 +510,12 @@ impl<R: HttpResponse> Read for StreamedResponse<R> {
     }
 }
 
-impl<R: HttpResponse> StreamedResponse<R> {
-    fn new(m: Metadata, d: Decoder<R>) -> StreamedResponse<R> {
+impl StreamedResponse {
+    fn new(m: Metadata, d: Decoder) -> StreamedResponse {
         StreamedResponse { metadata: m, decoder: d }
     }
 
-    fn from_http_response(response: R, m: Metadata) -> Result<StreamedResponse<R>, LoadError> {
+    fn from_http_response(response: Box<HttpResponse>, m: Metadata) -> Result<StreamedResponse, LoadError> {
         let decoder = match response.content_encoding() {
             Some(Encoding::Gzip) => {
                 let result = GzDecoder::new(response);
@@ -515,11 +541,11 @@ impl<R: HttpResponse> StreamedResponse<R> {
     }
 }
 
-enum Decoder<R: Read> {
-    Gzip(GzDecoder<R>),
-    Deflate(DeflateDecoder<R>),
-    Brotli(Decompressor<R>),
-    Plain(R)
+enum Decoder {
+    Gzip(GzDecoder<Box<HttpResponse>>),
+    Deflate(DeflateDecoder<Box<HttpResponse>>),
+    Brotli(Decompressor<Box<HttpResponse>>),
+    Plain(Box<HttpResponse>)
 }
 
 fn send_request_to_devtools(devtools_chan: Option<Sender<DevtoolsControlMsg>>,
@@ -771,7 +797,7 @@ pub fn load<A, B>(load_data: &LoadData,
                   request_factory: &HttpRequestFactory<R=A>,
                   user_agent: String,
                   cancel_listener: &CancellationListener)
-                  -> Result<StreamedResponse<A::R>, LoadError> where A: HttpRequest + 'static, B: UIProvider {
+                  -> Result<StreamedResponse, LoadError> where A: HttpRequest + 'static, B: UIProvider {
     let max_redirects = prefs::get_pref("network.http.redirection-limit").as_i64().unwrap() as u32;
     let mut iters = 0;
     
@@ -785,16 +811,30 @@ pub fn load<A, B>(load_data: &LoadData,
         return Err(LoadError::new(doc_url, LoadErrorType::Cancelled));
     }
 
-    
-    
-    
-    
+    let (msg_sender, msg_receiver) = ipc::channel().unwrap();
+    match load_data.source {
+        RequestSource::Window(ref sender) | RequestSource::Worker(ref sender) => {
+            sender.send(msg_sender.clone()).unwrap();
+            let received_msg = msg_receiver.recv().unwrap();
+            if let Some(custom_response) = received_msg {
+                let metadata = Metadata::default(doc_url.clone());
+                let readable_response = to_readable_response(custom_response);
+                return StreamedResponse::from_http_response(box readable_response, metadata);
+            }
+        }
+        RequestSource::None => {}
+    }
+
+    // If the URL is a view-source scheme then the scheme data contains the
+    // real URL that should be used for which the source is to be viewed.
+    // Change our existing URL to that and keep note that we are viewing
+    // the source rather than rendering the contents of the URL.
     let viewing_source = doc_url.scheme() == "view-source";
     if viewing_source {
         doc_url = Url::parse(&load_data.url[Position::BeforeUsername..]).unwrap();
     }
 
-    
+    // Loop to handle redirects.
     loop {
         iters = iters + 1;
 
@@ -818,10 +858,10 @@ pub fn load<A, B>(load_data: &LoadData,
 
         info!("requesting {}", doc_url);
 
-        
-        
-        
-        
+        // Avoid automatically preserving request headers when redirects occur.
+        // See https://bugzilla.mozilla.org/show_bug.cgi?id=401564 and
+        // https://bugzilla.mozilla.org/show_bug.cgi?id=216828 .
+        // Only preserve ones which have been explicitly marked as such.
         let mut request_headers = if iters == 1 {
             let mut combined_headers = load_data.headers.clone();
             combined_headers.extend(load_data.preserved_headers.iter());
@@ -836,7 +876,7 @@ pub fn load<A, B>(load_data: &LoadData,
                                &user_agent, &http_state.cookie_jar,
                                &http_state.auth_cache, &load_data);
 
-        
+        //if there is a new auth header then set the request headers with it
         if let Some(ref auth_header) = new_auth_header {
             request_headers.set(auth_header.clone());
         }
@@ -847,7 +887,7 @@ pub fn load<A, B>(load_data: &LoadData,
 
         process_response_headers(&response, &doc_url, &http_state.cookie_jar, &http_state.hsts_list, &load_data);
 
-        
+        //if response status is unauthorized then prompt user for username and password
         if response.status() == StatusCode::Unauthorized &&
            response.headers().get_raw("WWW-Authenticate").is_some() {
             let (username_option, password_option) =
@@ -875,16 +915,16 @@ pub fn load<A, B>(load_data: &LoadData,
             }
         }
 
-        
+        // --- Loop if there's a redirect
         if response.status().class() == StatusClass::Redirection {
             if let Some(&Location(ref new_url)) = response.headers().get::<Location>() {
-                
+                // CORS (https://fetch.spec.whatwg.org/#http-fetch, status section, point 9, 10)
                 if let Some(ref c) = load_data.cors {
                     if c.preflight {
                         return Err(LoadError::new(doc_url, LoadErrorType::CorsPreflightFetchInconsistent));
                     } else {
-                        
-                        
+                        // XXXManishearth There are some CORS-related steps here,
+                        // but they don't seem necessary until credentials are implemented
                     }
                 }
 
@@ -894,8 +934,8 @@ pub fn load<A, B>(load_data: &LoadData,
                         LoadError::new(doc_url, LoadErrorType::InvalidRedirect { reason: e.to_string() })),
                 };
 
-                
-                
+                // According to https://tools.ietf.org/html/rfc7231#section-6.4.2,
+                // historically UAs have rewritten POST->GET on 301 and 302 responses.
                 if method == Method::Post &&
                     (response.status() == StatusCode::MovedPermanently ||
                         response.status() == StatusCode::Found) {
@@ -933,16 +973,16 @@ pub fn load<A, B>(load_data: &LoadData,
             HttpsState::None
         };
 
-        
-        
-        
+        // --- Tell devtools that we got a response
+        // Send an HttpResponse message to devtools with the corresponding request_id
+        // TODO: Send this message even when the load fails?
         if let Some(pipeline_id) = load_data.pipeline_id {
                 send_response_to_devtools(
                     devtools_chan, request_id,
                     metadata.headers.clone(), metadata.status.clone(),
                     pipeline_id);
          }
-        return StreamedResponse::from_http_response(response, metadata)
+        return StreamedResponse::from_http_response(box response, metadata)
     }
 }
 
@@ -971,9 +1011,9 @@ fn send_data<R: Read>(context: LoadContext,
         }
 
         if progress_chan.send(Payload(chunk)).is_err() {
-            
-            
-            
+            // The send errors when the receiver is out of scope,
+            // which will happen if the fetch has timed out (or has been aborted)
+            // so we don't need to continue with the loading of the file here.
             return;
         }
 
@@ -986,7 +1026,7 @@ fn send_data<R: Read>(context: LoadContext,
     let _ = progress_chan.send(Done(Ok(())));
 }
 
-
+// FIXME: This incredibly hacky. Make it more robust, and at least test it.
 fn is_cert_verify_error(error: &OpensslError) -> bool {
     match error {
         &OpensslError::UnknownError { ref library, ref function, ref reason } => {
