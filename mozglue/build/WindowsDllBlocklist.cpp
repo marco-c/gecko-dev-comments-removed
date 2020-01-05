@@ -234,6 +234,9 @@ static const DllBlockInfo sWindowsDllBlocklist[] = {
   { "idmcchandler7.dll", ALL_VERSIONS },
   { "idmcchandler7_64.dll", ALL_VERSIONS },
 
+  
+  { "nahimic2devprops.dll", ALL_VERSIONS },
+
   { nullptr, 0 }
 };
 
