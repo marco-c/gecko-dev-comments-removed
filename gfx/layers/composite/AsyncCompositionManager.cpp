@@ -507,9 +507,10 @@ AsyncCompositionManager::AlignFixedAndStickyLayers(Layer* aTransformedSubtreeRoo
   
   
   
+  ParentLayerPoint offsetAnchorInSubtreeRootSpace =
+      aPreviousTransformForRoot.TransformPoint(offsetAnchor);
   LayerPoint transformedAnchor = aCurrentTransformForRoot.Inverse()
-      .TransformPoint(aPreviousTransformForRoot.TransformPoint(
-          offsetAnchor));
+      .TransformPoint(offsetAnchorInSubtreeRootSpace);
 
   
   
@@ -518,7 +519,9 @@ AsyncCompositionManager::AlignFixedAndStickyLayers(Layer* aTransformedSubtreeRoo
   
   
   
-  bool translationConsumed = true;
+  
+  
+  LayerPoint unconsumedTranslation;
 
   if (layer->GetIsStickyPosition()) {
     
@@ -534,9 +537,7 @@ AsyncCompositionManager::AlignFixedAndStickyLayers(Layer* aTransformedSubtreeRoo
                     IntervalOverlap(translation.y, stickyInner.y, stickyInner.YMost());
     translation.x = IntervalOverlap(translation.x, stickyOuter.x, stickyOuter.XMost()) -
                     IntervalOverlap(translation.x, stickyInner.x, stickyInner.XMost());
-    if (translation != originalTranslation) {
-      translationConsumed = false;
-    }
+    unconsumedTranslation = translation - originalTranslation;
   }
 
   
@@ -549,6 +550,27 @@ AsyncCompositionManager::AlignFixedAndStickyLayers(Layer* aTransformedSubtreeRoo
 
   
   
+  if (unconsumedTranslation != LayerPoint()) {
+    
+    
+    
+    
+    LayerPoint newTransformedAnchor = unconsumedTranslation + anchor;
+    ParentLayerPoint newTransformedAnchorInSubtreeRootSpace =
+        aPreviousTransformForRoot.TransformPoint(newTransformedAnchor);
+    LayerToParentLayerMatrix4x4 newTransform = aPreviousTransformForRoot;
+    newTransform.PostTranslate(newTransformedAnchorInSubtreeRootSpace -
+                               offsetAnchorInSubtreeRootSpace);
+
+    
+    
+    
+    for (Layer* child = layer->GetFirstChild(); child; child = child->GetNextSibling()) {
+      AlignFixedAndStickyLayers(aTransformedSubtreeRoot, child, aTransformScrollId,
+          aPreviousTransformForRoot, newTransform, aFixedLayerMargins, aClipPartsCache);
+    }
+  }
+
   return;
 }
 
