@@ -1273,6 +1273,7 @@ static void SetGradient(const nsCSSValue& aValue, nsPresContext* aPresContext,
   }
 
   aResult.mLegacySyntax = gradient->mIsLegacySyntax;
+  aResult.mMozLegacySyntax = gradient->mIsMozLegacySyntax;
 
   
   SetGradientCoord(gradient->mBgPos.mXValue, aPresContext, aContext,

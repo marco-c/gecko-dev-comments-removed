@@ -10223,6 +10223,7 @@ CSSParserImpl::ParseLinearGradient(nsCSSValue& aValue,
   if (haveGradientLine) {
     
     cssGradient->mIsLegacySyntax = true;
+    cssGradient->mIsMozLegacySyntax = (aFlags & eGradient_MozLegacy);
     
     
     int32_t angleFlags = (aFlags & eGradient_WebkitLegacy) ?
@@ -10419,6 +10420,7 @@ CSSParserImpl::ParseRadialGradient(nsCSSValue& aValue,
 
     if (cssGradient->mAngle.GetUnit() != eCSSUnit_None) {
       cssGradient->mIsLegacySyntax = true;
+      cssGradient->mIsMozLegacySyntax = (aFlags & eGradient_MozLegacy);
     }
   }
 

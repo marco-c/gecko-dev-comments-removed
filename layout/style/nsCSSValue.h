@@ -1631,7 +1631,11 @@ struct nsCSSValueGradient final {
   
   bool mIsRadial;
   bool mIsRepeating;
-  bool mIsLegacySyntax;
+  bool mIsLegacySyntax; 
+  
+  bool mIsMozLegacySyntax; 
+                           
+                           
   bool mIsExplicitSize;
   
   nsCSSValuePair mBgPos;
@@ -1689,6 +1693,7 @@ public:
     if (mIsRadial != aOther.mIsRadial ||
         mIsRepeating != aOther.mIsRepeating ||
         mIsLegacySyntax != aOther.mIsLegacySyntax ||
+        mIsMozLegacySyntax != aOther.mIsMozLegacySyntax ||
         mIsExplicitSize != aOther.mIsExplicitSize ||
         mBgPos != aOther.mBgPos ||
         mAngle != aOther.mAngle ||

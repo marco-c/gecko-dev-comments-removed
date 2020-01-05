@@ -242,7 +242,11 @@ public:
   uint8_t mSize;   
                    
   bool mRepeating;
-  bool mLegacySyntax;
+  bool mLegacySyntax; 
+  
+  bool mMozLegacySyntax; 
+                         
+                         
 
   nsStyleCoord mBgPosX; 
   nsStyleCoord mBgPosY; 
