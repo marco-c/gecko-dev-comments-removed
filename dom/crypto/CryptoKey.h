@@ -202,8 +202,8 @@ private:
 
   
   CryptoBuffer mSymKey;
-  ScopedSECKEYPrivateKey mPrivateKey;
-  ScopedSECKEYPublicKey mPublicKey;
+  UniqueSECKEYPrivateKey mPrivateKey;
+  UniqueSECKEYPublicKey mPublicKey;
 };
 
 } 
