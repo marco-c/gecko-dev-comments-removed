@@ -1579,7 +1579,7 @@ CompositorBridgeParent::AllocPWebRenderBridgeParent(const wr::PipelineId& aPipel
                                                     TextureFactoryIdentifier* aTextureFactoryIdentifier,
                                                     uint32_t* aIdNamespace)
 {
-#ifndef MOZ_ENABLE_WEBRENDER
+#ifndef MOZ_BUILD_WEBRENDER
   
   
   MOZ_RELEASE_ASSERT(false);
@@ -1614,7 +1614,7 @@ CompositorBridgeParent::AllocPWebRenderBridgeParent(const wr::PipelineId& aPipel
 bool
 CompositorBridgeParent::DeallocPWebRenderBridgeParent(PWebRenderBridgeParent* aActor)
 {
-#ifndef MOZ_ENABLE_WEBRENDER
+#ifndef MOZ_BUILD_WEBRENDER
   
   
   MOZ_RELEASE_ASSERT(false);
