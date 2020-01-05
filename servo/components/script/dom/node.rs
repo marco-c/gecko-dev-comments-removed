@@ -1859,6 +1859,11 @@ impl NodeMethods for Node {
     }
 
     
+    fn RootNode(&self) -> Root<Node> {
+        self.inclusive_ancestors().last().unwrap()
+    }
+
+    
     fn GetParentNode(&self) -> Option<Root<Node>> {
         self.parent_node.get()
     }
