@@ -187,6 +187,10 @@ private:
 class FileSystemTaskParentBase : public Runnable
 {
 public:
+  FileSystemTaskParentBase()
+    : Runnable("FileSystemTaskParentBase")
+  {}
+
   
 
 
