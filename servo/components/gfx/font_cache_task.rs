@@ -36,7 +36,7 @@ impl FontFamily {
 
         
         
-        for template in self.templates.mut_iter() {
+        for template in self.templates.iter_mut() {
             let maybe_template = template.get_if_matches(fctx, desc);
             if maybe_template.is_some() {
                 return maybe_template;
@@ -46,7 +46,7 @@ impl FontFamily {
         
         
         
-        for template in self.templates.mut_iter() {
+        for template in self.templates.iter_mut() {
             let maybe_template = template.get();
             if maybe_template.is_some() {
                 return maybe_template;

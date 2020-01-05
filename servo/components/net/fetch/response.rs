@@ -4,13 +4,13 @@
 
 use url::Url;
 use http::status::{Status, UnregisteredStatus};
-use StatusOk = http::status::Ok;
+use http::status::Ok as StatusOk;
 use http::headers::HeaderEnum;
 use http::headers::response::HeaderCollection;
 use std::ascii::OwnedStrAsciiExt;
 use std::comm::Receiver;
 
-/// [Response type](http://fetch.spec.whatwg.org/#concept-response-type)
+
 #[deriving(Clone, PartialEq)]
 pub enum ResponseType {
     Basic,
@@ -20,7 +20,7 @@ pub enum ResponseType {
     Opaque
 }
 
-/// [Response termination reason](http://fetch.spec.whatwg.org/#concept-response-termination-reason)
+
 #[deriving(Clone)]
 pub enum TerminationReason {
     EndUserAbort,
@@ -28,12 +28,12 @@ pub enum TerminationReason {
     Timeout
 }
 
-/// The response body can still be pushed to after fetch
-/// This provides a way to store unfinished response bodies
+
+
 #[unstable = "I haven't yet decided exactly how the interface for this will be"]
 #[deriving(Clone)]
 pub enum ResponseBody {
-    Empty, // XXXManishearth is this necessary, or is Done(vec![]) enough?
+    Empty, 
     Receiving(Vec<u8>),
     Done(Vec<u8>),
 }
@@ -51,7 +51,7 @@ pub struct ResponseLoader {
     chan: Receiver<ResponseMsg>
 }
 
-/// A [Response](http://fetch.spec.whatwg.org/#concept-response) as defined by the Fetch spec
+
 #[deriving(Clone)]
 pub struct Response {
     pub response_type: ResponseType,
@@ -60,7 +60,7 @@ pub struct Response {
     pub status: Status,
     pub headers: HeaderCollection,
     pub body: ResponseBody,
-    /// [Internal response](http://fetch.spec.whatwg.org/#concept-internal-response), only used if the Response is a filtered response
+    
     pub internal_response: Option<Box<Response>>,
 }
 
@@ -96,8 +96,8 @@ impl Response {
         }
     }
 
-    /// Convert to a filtered response, of type `filter_type`.
-    /// Do not use with type Error or Default
+    
+    
     pub fn to_filtered(self, filter_type: ResponseType) -> Response {
         assert!(filter_type != Error);
         assert!(filter_type != Default);

@@ -8,7 +8,7 @@
 #![comment = "The Servo Parallel Browser Project"]
 #![license = "MPL"]
 
-extern crate servo_msg = "msg";
+extern crate "msg" as servo_msg;
 
 
 

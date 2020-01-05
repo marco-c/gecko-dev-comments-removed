@@ -12,17 +12,17 @@ use http_loader;
 use std::comm::{channel, Receiver, Sender};
 use std::task::TaskBuilder;
 use http::headers::content_type::MediaType;
-use ResponseHeaderCollection = http::headers::response::HeaderCollection;
-use RequestHeaderCollection = http::headers::request::HeaderCollection;
+use http::headers::response::HeaderCollection as ResponseHeaderCollection;
+use http::headers::request::HeaderCollection as RequestHeaderCollection;
 use http::method::{Method, Get};
 use url::Url;
 
-use StatusOk = http::status::Ok;
+use http::status::Ok as StatusOk;
 use http::status::Status;
 
 
 pub enum ControlMsg {
-    /// Request the data associated with a particular URL
+    
     Load(LoadData, Sender<LoadResponse>),
     Exit
 }
@@ -50,43 +50,43 @@ impl LoadData {
 
 #[deriving(Clone)]
 pub struct ResourceCORSData {
-    /// CORS Preflight flag
+    
     pub preflight: bool,
-    /// Origin of CORS Request
+    
     pub origin: Url
 }
 
-/// Metadata about a loaded resource, such as is obtained from HTTP headers.
+
 pub struct Metadata {
-    /// Final URL after redirects.
+    
     pub final_url: Url,
 
-    /// MIME type / subtype.
+    
     pub content_type: Option<(String, String)>,
 
-    /// Character set.
+    
     pub charset: Option<String>,
 
-    /// Headers
+    
     pub headers: Option<ResponseHeaderCollection>,
 
-    /// HTTP Status
+    
     pub status: Status
 }
 
 impl Metadata {
-    /// Metadata with defaults for everything optional.
+    
     pub fn default(url: Url) -> Metadata {
         Metadata {
             final_url:    url,
             content_type: None,
             charset:      None,
             headers: None,
-            status: StatusOk // http://fetch.spec.whatwg.org/#concept-response-status-message
+            status: StatusOk 
         }
     }
 
-    /// Extract the parts of a MediaType that we care about.
+    
     pub fn set_content_type(&mut self, content_type: &Option<MediaType>) {
         match *content_type {
             None => (),
@@ -104,33 +104,33 @@ impl Metadata {
     }
 }
 
-/// Message sent in response to `Load`.  Contains metadata, and a port
-/// for receiving the data.
-///
-/// Even if loading fails immediately, we send one of these and the
-/// progress_port will provide the error.
+
+
+
+
+
 pub struct LoadResponse {
-    /// Metadata, such as from HTTP headers.
+    
     pub metadata: Metadata,
-    /// Port for reading data.
+    
     pub progress_port: Receiver<ProgressMsg>,
 }
 
-/// Messages sent in response to a `Load` message
+
 #[deriving(PartialEq,Show)]
 pub enum ProgressMsg {
-    /// Binary data - there may be multiple of these
+    
     Payload(Vec<u8>),
-    /// Indicates loading is complete, either successfully or not
+    
     Done(Result<(), String>)
 }
 
-/// For use by loaders in responding to a Load message.
+
 pub fn start_sending(start_chan: Sender<LoadResponse>, metadata: Metadata) -> Sender<ProgressMsg> {
     start_sending_opt(start_chan, metadata).ok().unwrap()
 }
 
-/// For use by loaders in responding to a Load message.
+
 pub fn start_sending_opt(start_chan: Sender<LoadResponse>, metadata: Metadata) -> Result<Sender<ProgressMsg>, ()> {
     let (progress_chan, progress_port) = channel();
     let result = start_chan.send_opt(LoadResponse {
@@ -143,7 +143,7 @@ pub fn start_sending_opt(start_chan: Sender<LoadResponse>, metadata: Metadata) -
     }
 }
 
-/// Convenience function for synchronously loading a whole resource.
+
 pub fn load_whole_resource(resource_task: &ResourceTask, url: Url)
         -> Result<(Metadata, Vec<u8>), String> {
     let (start_chan, start_port) = channel();
@@ -160,10 +160,10 @@ pub fn load_whole_resource(resource_task: &ResourceTask, url: Url)
     }
 }
 
-/// Handle to a resource task
+
 pub type ResourceTask = Sender<ControlMsg>;
 
-/// Create a ResourceTask
+
 pub fn new_resource_task() -> ResourceTask {
     let (setup_chan, setup_port) = channel();
     let builder = TaskBuilder::new().named("ResourceManager");

@@ -8,7 +8,7 @@
 
 use fragment::Fragment;
 
-use computed = style::computed_values;
+use style::computed_values as computed;
 use geom::SideOffsets2D;
 use style::computed_values::{LPA_Auto, LPA_Length, LPA_Percentage, LP_Length, LP_Percentage};
 use style::ComputedValues;
@@ -17,13 +17,13 @@ use servo_util::logical_geometry::LogicalMargin;
 use std::cmp::{max, min};
 use std::fmt;
 
-/// A collapsible margin. See CSS 2.1 § 8.3.1.
+
 pub struct AdjoiningMargins {
-    /// The value of the greatest positive margin.
+    
     pub most_positive: Au,
 
-    /// The actual value (not the absolute value) of the negative margin with the largest absolute
-    /// value. Since this is not the absolute value, this is always zero or negative.
+    
+    
     pub most_negative: Au,
 }
 
@@ -59,17 +59,17 @@ impl AdjoiningMargins {
     }
 }
 
-/// Represents the block-start and block-end margins of a flow with collapsible margins. See CSS 2.1 § 8.3.1.
+
 pub enum CollapsibleMargins {
-    /// Margins may not collapse with this flow.
+    
     NoCollapsibleMargins(Au, Au),
 
-    /// Both the block-start and block-end margins (specified here in that order) may collapse, but the
-    /// margins do not collapse through this flow.
+    
+    
     MarginsCollapse(AdjoiningMargins, AdjoiningMargins),
 
-    /// Margins collapse *through* this flow. This means, essentially, that the flow doesn’t
-    /// have any border, padding, or out-of-flow (floating or positioned) content
+    
+    
     MarginsCollapseThrough(AdjoiningMargins),
 }
 
@@ -91,7 +91,7 @@ pub struct MarginCollapseInfo {
 }
 
 impl MarginCollapseInfo {
-    /// TODO(#2012, pcwalton): Remove this method once `fragment` is not an `Option`.
+    
     pub fn new() -> MarginCollapseInfo {
         MarginCollapseInfo {
             state: AccumulatingCollapsibleTopMargin,
@@ -123,15 +123,15 @@ impl MarginCollapseInfo {
                                 MarginsCollapseThroughFinalMarginState
                             },
                             _ => {
-                                // If the fragment has non-zero min-block-size, margins may not
-                                // collapse through it.
+                                
+                                
                                 BottomMarginCollapsesFinalMarginState
                             }
                         }
                     },
                     _ => {
-                        // If the fragment has an explicitly specified block-size, margins may not
-                        // collapse through it.
+                        
+                        
                         BottomMarginCollapsesFinalMarginState
                     }
                 }
@@ -139,8 +139,8 @@ impl MarginCollapseInfo {
             AccumulatingMarginIn => BottomMarginCollapsesFinalMarginState,
         };
 
-        // Different logic is needed here depending on whether this flow can collapse its block-end
-        // margin with its children.
+        
+        
         let block_end_margin = fragment.margin.block_end;
         if !can_collapse_block_end_margin_with_kids {
             match state {
@@ -176,9 +176,9 @@ impl MarginCollapseInfo {
         }
     }
 
-    /// Adds the child's potentially collapsible block-start margin to the current margin state and
-    /// advances the Y offset by the appropriate amount to handle that margin. Returns the amount
-    /// that should be added to the Y offset during block layout.
+    
+    
+    
     pub fn advance_block_start_margin(&mut self, child_collapsible_margins: &CollapsibleMargins) -> Au {
         match (self.state, *child_collapsible_margins) {
             (AccumulatingCollapsibleTopMargin, NoCollapsibleMargins(block_start, _)) => {
@@ -202,21 +202,21 @@ impl MarginCollapseInfo {
                 margin_value
             }
             (_, MarginsCollapseThrough(_)) => {
-                // For now, we ignore this; this will be handled by `advance_block-end_margin` below.
+                
                 Au(0)
             }
         }
     }
 
-    /// Adds the child's potentially collapsible block-end margin to the current margin state and
-    /// advances the Y offset by the appropriate amount to handle that margin. Returns the amount
-    /// that should be added to the Y offset during block layout.
+    
+    
+    
     pub fn advance_block_end_margin(&mut self, child_collapsible_margins: &CollapsibleMargins) -> Au {
         match (self.state, *child_collapsible_margins) {
             (AccumulatingCollapsibleTopMargin, NoCollapsibleMargins(..)) |
             (AccumulatingCollapsibleTopMargin, MarginsCollapse(..)) => {
-                // Can't happen because the state will have been replaced with
-                // `AccumulatingMarginIn` above.
+                
+                
                 fail!("should not be accumulating collapsible block_start margins anymore!")
             }
             (AccumulatingCollapsibleTopMargin, MarginsCollapseThrough(margin)) => {
@@ -242,15 +242,15 @@ pub enum MarginCollapseState {
     AccumulatingMarginIn,
 }
 
-/// Intrinsic inline-sizes, which consist of minimum and preferred.
+
 #[deriving(Encodable)]
 pub struct IntrinsicISizes {
-    /// The *minimum inline-size* of the content.
+    
     pub minimum_inline_size: Au,
-    /// The *preferred inline-size* of the content.
+    
     pub preferred_inline_size: Au,
-    /// The estimated sum of borders, padding, and margins. Some calculations use this information
-    /// when computing intrinsic inline-sizes.
+    
+    
     pub surround_inline_size: Au,
 }
 

@@ -16,9 +16,9 @@ use std::str::StrSlice;
 use time;
 use time::{now, Timespec};
 
-use ResponseHeaderCollection = http::headers::response::HeaderCollection;
-use RequestHeaderCollection = http::headers::request::HeaderCollection;
-use RequestHeader = http::headers::request::Header;
+use http::headers::response::HeaderCollection as ResponseHeaderCollection;
+use http::headers::request::HeaderCollection as RequestHeaderCollection;
+use http::headers::request::Header as RequestHeader;
 
 use http::client::{RequestWriter, NetworkStream};
 use http::headers::{HeaderConvertible, HeaderEnum, HeaderValueByteIterator};
@@ -35,32 +35,32 @@ pub struct CORSRequest {
     pub mode: RequestMode,
     pub method: Method,
     pub headers: RequestHeaderCollection,
-    /// CORS preflight flag (http://fetch.spec.whatwg.org/#concept-http-fetch)
-    /// Indicates that a CORS preflight request and/or cache check is to be performed
+    
+    
     pub preflight_flag: bool
 }
 
-/// http://fetch.spec.whatwg.org/#concept-request-mode
-/// This only covers some of the request modes. The
-/// `same-origin` and `no CORS` modes are unnecessary for XHR.
+
+
+
 #[deriving(PartialEq, Clone)]
 pub enum RequestMode {
-    CORSMode, // CORS
-    ForcedPreflightMode // CORS-with-forced-preflight
+    CORSMode, 
+    ForcedPreflightMode 
 }
 
 impl CORSRequest {
-    /// Creates a CORS request if necessary. Will return an error when fetching is forbidden
+    
     pub fn maybe_new(referer: Url, destination: Url, mode: RequestMode,
                      method: Method, headers: RequestHeaderCollection) -> Result<Option<CORSRequest>, ()> {
         if referer.scheme == destination.scheme &&
            referer.host() == destination.host() &&
            referer.port() == destination.port() {
-            return Ok(None); // Not cross-origin, proceed with a normal fetch
+            return Ok(None); 
         }
         match destination.scheme.as_slice() {
-            // Todo: If the request's same origin data url flag is set (which isn't the case for XHR)
-            // we can fetch a data URL normally. about:blank can also be fetched by XHR
+            
+            
             "http" | "https" => {
                 let mut req = CORSRequest::new(referer, destination, mode, method, headers);
                 req.preflight_flag = !is_simple_method(&req.method) || mode == ForcedPreflightMode;
@@ -91,54 +91,54 @@ impl CORSRequest {
         }
     }
 
-    /// http://fetch.spec.whatwg.org/#concept-http-fetch
-    /// This method assumes that the CORS flag is set
-    /// This does not perform the full HTTP fetch, rather it handles part of the CORS filtering
-    /// if self.mode is ForcedPreflightMode, then the CORS-with-forced-preflight
-    /// fetch flag is set as well
+    
+    
+    
+    
+    
     pub fn http_fetch(&self) -> CORSResponse {
         let response = CORSResponse::new();
-        // Step 2: Handle service workers (unimplemented)
-        // Step 3
-        // Substep 1: Service workers (unimplemented )
-        // Substep 2
-        let cache = &mut CORSCache(vec!()); // XXXManishearth Should come from user agent
+        
+        
+        
+        
+        let cache = &mut CORSCache(vec!()); 
         if self.preflight_flag &&
            !cache.match_method(self, &self.method) &&
            !self.headers.iter().all(|h| is_simple_header(&h) && cache.match_header(self, h.header_name().as_slice())) {
             if !is_simple_method(&self.method) || self.mode == ForcedPreflightMode {
                 return self.preflight_fetch();
-                // Everything after this is part of XHR::fetch()
-                // Expect the organization of code to improve once we have a fetch crate
+                
+                
             }
         }
         response
     }
 
-    /// http://fetch.spec.whatwg.org/#cors-preflight-fetch
+    
     fn preflight_fetch(&self) -> CORSResponse {
         let error = CORSResponse::new_error();
         let mut cors_response = CORSResponse::new();
 
-        let mut preflight = self.clone(); // Step 1
-        preflight.method = Options; // Step 2
-        preflight.headers = RequestHeaderCollection::new(); // Step 3
-        // Step 4
+        let mut preflight = self.clone(); 
+        preflight.method = Options; 
+        preflight.headers = RequestHeaderCollection::new(); 
+        
         preflight.insert_string_header("Access-Control-Request-Method".to_string(), self.method.http_value());
 
-        // Step 5 - 7
+        
         let mut header_names = vec!();
         for header in self.headers.iter() {
             header_names.push(header.header_name().into_ascii_lower());
         }
         header_names.sort();
-        let header_list = header_names.connect(", "); // 0x2C 0x20
+        let header_list = header_names.connect(", "); 
         preflight.insert_string_header("Access-Control-Request-Headers".to_string(), header_list);
 
-        // Step 8 unnecessary, we don't use the request body
-        // Step 9, 10 unnecessary, we're writing our own fetch code
+        
+        
 
-        // Step 11
+        
         let preflight_request = RequestWriter::<NetworkStream>::new(preflight.method, preflight.destination);
         let mut writer = match preflight_request {
             Ok(w) => box w,
@@ -146,7 +146,7 @@ impl CORSRequest {
         };
 
         let host = writer.headers.host.clone();
-        writer.headers = box preflight.headers.clone();
+        writer.headers = preflight.headers.clone();
         writer.headers.host = host;
         let response = match writer.read_response() {
             Ok(r) => r,
@@ -158,19 +158,19 @@ impl CORSRequest {
          200 .. 299 => {}
          _ => return error
         }
-        cors_response.headers = *response.headers.clone();
+        cors_response.headers = response.headers.clone();
         // Substeps 1-3 (parsing rules: http://fetch.spec.whatwg.org/#http-new-header-syntax)
         fn find_header(headers: &ResponseHeaderCollection, name: &str) -> Option<String> {
             headers.iter().find(|h| h.header_name().as_slice()
                                                    .eq_ignore_ascii_case(name))
                                     .map(|h| h.header_value())
         }
-        let methods_string = match find_header(&*response.headers, "Access-Control-Allow-Methods") {
+        let methods_string = match find_header(&response.headers, "Access-Control-Allow-Methods") {
             Some(s) => s,
             _ => return error
         };
         let methods = methods_string.as_slice().split(',');
-        let headers_string = match find_header(&*response.headers, "Access-Control-Allow-Headers") {
+        let headers_string = match find_header(&response.headers, "Access-Control-Allow-Headers") {
             Some(s) => s,
             _ => return error
         };
@@ -197,7 +197,7 @@ impl CORSRequest {
             }
         }
         // Substep 7, 8
-        let max_age: uint = find_header(&*response.headers, "Access-Control-Max-Age")
+        let max_age: uint = find_header(&response.headers, "Access-Control-Max-Age")
                                 .and_then(|h| FromStr::from_str(h.as_slice())).unwrap_or(0);
         // Substep 9: Impose restrictions on max-age, if any (unimplemented)
         // Substeps 10-12: Add a cache (partially implemented, XXXManishearth)
@@ -315,7 +315,7 @@ impl CORSCache {
     #[allow(dead_code)]
     fn clear (&mut self, request: &CORSRequest) {
         let CORSCache(buf) = self.clone();
-        let new_buf: Vec<CORSCacheEntry> = buf.move_iter().filter(|e| e.origin == request.origin && request.destination == e.url).collect();
+        let new_buf: Vec<CORSCacheEntry> = buf.into_iter().filter(|e| e.origin == request.origin && request.destination == e.url).collect();
         *self = CORSCache(new_buf);
     }
 
@@ -323,7 +323,7 @@ impl CORSCache {
     fn cleanup(&mut self) {
         let CORSCache(buf) = self.clone();
         let now = time::now().to_timespec();
-        let new_buf: Vec<CORSCacheEntry> = buf.move_iter().filter(|e| now.sec > e.created.sec + e.max_age as i64).collect();
+        let new_buf: Vec<CORSCacheEntry> = buf.into_iter().filter(|e| now.sec > e.created.sec + e.max_age as i64).collect();
         *self = CORSCache(new_buf);
     }
 
@@ -332,7 +332,7 @@ impl CORSCache {
         self.cleanup();
         let CORSCache(ref mut buf) = *self;
         // Credentials are not yet implemented here
-        let entry = buf.mut_iter().find(|e| e.origin.scheme == request.origin.scheme &&
+        let entry = buf.iter_mut().find(|e| e.origin.scheme == request.origin.scheme &&
                             e.origin.host() == request.origin.host() &&
                             e.origin.port() == request.origin.port() &&
                             e.url == request.destination &&
@@ -353,7 +353,7 @@ impl CORSCache {
         self.cleanup();
         let CORSCache(ref mut buf) = *self;
         // Credentials are not yet implemented here
-        let entry = buf.mut_iter().find(|e| e.origin.scheme == request.origin.scheme &&
+        let entry = buf.iter_mut().find(|e| e.origin.scheme == request.origin.scheme &&
                             e.origin.host() == request.origin.host() &&
                             e.origin.port() == request.origin.port() &&
                             e.url == request.destination &&

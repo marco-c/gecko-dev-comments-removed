@@ -3,11 +3,11 @@
 
 
 use std::iter::range_step;
-use stb_image = stb_image::image;
+use stb_image::image as stb_image;
 use png;
 
-// FIXME: Images must not be copied every frame. Instead we should atomically
-// reference count them.
+
+
 pub type Image = png::Image;
 
 
@@ -17,7 +17,7 @@ pub fn test_image_bin() -> Vec<u8> {
     TEST_IMAGE.iter().map(|&x| x).collect()
 }
 
-// TODO(pcwalton): Speed up with SIMD, or better yet, find some way to not do this.
+
 fn byte_swap(data: &mut [u8]) {
     let length = data.len();
     for i in range_step(0, length, 4) {
@@ -27,7 +27,7 @@ fn byte_swap(data: &mut [u8]) {
     }
 }
 
-// TODO(pcwalton): Speed up with SIMD, or better yet, find some way to not do this.
+
 fn byte_swap_and_premultiply(data: &mut [u8]) {
     let length = data.len();
     for i in range_step(0, length, 4) {
@@ -61,8 +61,8 @@ pub fn load_from_memory(buffer: &[u8]) -> Option<Image> {
             Err(_err) => None,
         }
     } else {
-        // For non-png images, we use stb_image
-        // Can't remember why we do this. Maybe it's what cairo wants
+        
+        
         static FORCE_DEPTH: uint = 4;
 
         match stb_image::load_from_memory_with_depth(buffer, FORCE_DEPTH, true) {

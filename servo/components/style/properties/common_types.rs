@@ -17,20 +17,20 @@ pub mod specified {
     use cssparser::ast;
     use cssparser::ast::*;
     use super::{Au, CSSFloat};
-    pub use CSSColor = cssparser::Color;
+    pub use cssparser::Color as CSSColor;
 
     #[deriving(Clone)]
     pub enum Length {
-        Au_(Au),  // application units
+        Au_(Au),  
         Em(CSSFloat),
         Ex(CSSFloat),
-        // XXX uncomment when supported:
-//        Ch(CSSFloat),
-//        Rem(CSSFloat),
-//        Vw(CSSFloat),
-//        Vh(CSSFloat),
-//        Vmin(CSSFloat),
-//        Vmax(CSSFloat),
+        
+
+
+
+
+
+
     }
     static AU_PER_PX: CSSFloat = 60.;
     static AU_PER_IN: CSSFloat = AU_PER_PX * 96.;
@@ -50,10 +50,10 @@ pub mod specified {
         }
         #[allow(dead_code)]
         pub fn parse(input: &ComponentValue) -> Result<Length, ()> {
-            Length::parse_internal(input, /* negative_ok = */ true)
+            Length::parse_internal(input,  true)
         }
         pub fn parse_non_negative(input: &ComponentValue) -> Result<Length, ()> {
-            Length::parse_internal(input, /* negative_ok = */ false)
+            Length::parse_internal(input,  false)
         }
         pub fn parse_dimension(value: CSSFloat, unit: &str) -> Result<Length, ()> {
             match unit.to_ascii_lower().as_slice() {
@@ -77,7 +77,7 @@ pub mod specified {
     #[deriving(Clone)]
     pub enum LengthOrPercentage {
         LP_Length(Length),
-        LP_Percentage(CSSFloat),  // [0 .. 100%] maps to [0.0 .. 1.0]
+        LP_Percentage(CSSFloat),  
     }
     impl LengthOrPercentage {
         fn parse_internal(input: &ComponentValue, negative_ok: bool)
@@ -94,18 +94,18 @@ pub mod specified {
         #[allow(dead_code)]
         #[inline]
         pub fn parse(input: &ComponentValue) -> Result<LengthOrPercentage, ()> {
-            LengthOrPercentage::parse_internal(input, /* negative_ok = */ true)
+            LengthOrPercentage::parse_internal(input,  true)
         }
         #[inline]
         pub fn parse_non_negative(input: &ComponentValue) -> Result<LengthOrPercentage, ()> {
-            LengthOrPercentage::parse_internal(input, /* negative_ok = */ false)
+            LengthOrPercentage::parse_internal(input,  false)
         }
     }
 
     #[deriving(Clone)]
     pub enum LengthOrPercentageOrAuto {
         LPA_Length(Length),
-        LPA_Percentage(CSSFloat),  // [0 .. 100%] maps to [0.0 .. 1.0]
+        LPA_Percentage(CSSFloat),  
         LPA_Auto,
     }
     impl LengthOrPercentageOrAuto {
@@ -123,18 +123,18 @@ pub mod specified {
         }
         #[inline]
         pub fn parse(input: &ComponentValue) -> Result<LengthOrPercentageOrAuto, ()> {
-            LengthOrPercentageOrAuto::parse_internal(input, /* negative_ok = */ true)
+            LengthOrPercentageOrAuto::parse_internal(input,  true)
         }
         #[inline]
         pub fn parse_non_negative(input: &ComponentValue) -> Result<LengthOrPercentageOrAuto, ()> {
-            LengthOrPercentageOrAuto::parse_internal(input, /* negative_ok = */ false)
+            LengthOrPercentageOrAuto::parse_internal(input,  false)
         }
     }
 
     #[deriving(Clone)]
     pub enum LengthOrPercentageOrNone {
         LPN_Length(Length),
-        LPN_Percentage(CSSFloat),  // [0 .. 100%] maps to [0.0 .. 1.0]
+        LPN_Percentage(CSSFloat),  
         LPN_None,
     }
     impl LengthOrPercentageOrNone {
@@ -153,19 +153,19 @@ pub mod specified {
         #[allow(dead_code)]
         #[inline]
         pub fn parse(input: &ComponentValue) -> Result<LengthOrPercentageOrNone, ()> {
-            LengthOrPercentageOrNone::parse_internal(input, /* negative_ok = */ true)
+            LengthOrPercentageOrNone::parse_internal(input,  true)
         }
         #[inline]
         pub fn parse_non_negative(input: &ComponentValue) -> Result<LengthOrPercentageOrNone, ()> {
-            LengthOrPercentageOrNone::parse_internal(input, /* negative_ok = */ false)
+            LengthOrPercentageOrNone::parse_internal(input,  false)
         }
     }
 
-    // http://dev.w3.org/csswg/css2/colors.html#propdef-background-position
+    
     #[deriving(Clone)]
     pub enum PositionComponent {
         Pos_Length(Length),
-        Pos_Percentage(CSSFloat),  // [0 .. 100%] maps to [0.0 .. 1.0]
+        Pos_Percentage(CSSFloat),  
         Pos_Center,
         Pos_Left,
         Pos_Right,
@@ -204,11 +204,10 @@ pub mod specified {
 }
 
 pub mod computed {
-    pub use CSSColor = cssparser::Color;
-    pub use compute_CSSColor = super::super::longhands::computed_as_specified;
+    pub use cssparser::Color as CSSColor;
+    pub use super::super::longhands::computed_as_specified as compute_CSSColor;
     use super::*;
     use super::super::longhands;
-    pub use servo_util::geometry::Au;
 
     pub struct Context {
         pub inherited_font_weight: longhands::font_weight::computed_value::T,
@@ -227,24 +226,24 @@ pub mod computed {
         pub border_bottom_present: bool,
         pub border_left_present: bool,
         pub is_root_element: bool,
-        // TODO, as needed: root font size, viewport size, etc.
+        
     }
 
-    #[allow(non_snake_case_functions)]
+    #[allow(non_snake_case)]
     #[inline]
     pub fn compute_Au(value: specified::Length, context: &Context) -> Au {
         compute_Au_with_font_size(value, context.font_size)
     }
 
-    /// A special version of `compute_Au` used for `font-size`.
-    #[allow(non_snake_case_functions)]
+    
+    #[allow(non_snake_case)]
     #[inline]
     pub fn compute_Au_with_font_size(value: specified::Length, reference_font_size: Au) -> Au {
         match value {
             specified::Au_(value) => value,
             specified::Em(value) => reference_font_size.scale_by(value),
             specified::Ex(value) => {
-                let x_height = 0.5;  // TODO: find that from the font
+                let x_height = 0.5;  
                 reference_font_size.scale_by(value * x_height)
             },
         }
@@ -255,7 +254,7 @@ pub mod computed {
         LP_Length(Au),
         LP_Percentage(CSSFloat),
     }
-    #[allow(non_snake_case_functions)]
+    #[allow(non_snake_case)]
     pub fn compute_LengthOrPercentage(value: specified::LengthOrPercentage, context: &Context)
                                    -> LengthOrPercentage {
         match value {
@@ -270,7 +269,7 @@ pub mod computed {
         LPA_Percentage(CSSFloat),
         LPA_Auto,
     }
-    #[allow(non_snake_case_functions)]
+    #[allow(non_snake_case)]
     pub fn compute_LengthOrPercentageOrAuto(value: specified::LengthOrPercentageOrAuto,
                                             context: &Context) -> LengthOrPercentageOrAuto {
         match value {
@@ -286,7 +285,7 @@ pub mod computed {
         LPN_Percentage(CSSFloat),
         LPN_None,
     }
-    #[allow(non_snake_case_functions)]
+    #[allow(non_snake_case)]
     pub fn compute_LengthOrPercentageOrNone(value: specified::LengthOrPercentageOrNone,
                                             context: &Context) -> LengthOrPercentageOrNone {
         match value {

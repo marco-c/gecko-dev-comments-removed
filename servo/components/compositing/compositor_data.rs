@@ -126,7 +126,7 @@ impl CompositorData {
         }
 
         {
-            for buffer in new_buffers.buffers.move_iter().rev() {
+            for buffer in new_buffers.buffers.into_iter().rev() {
                 layer.add_buffer(buffer);
             }
 
@@ -149,7 +149,7 @@ impl CompositorData {
             
             
             
-            for buffer in buffers.mut_iter() {
+            for buffer in buffers.iter_mut() {
                 buffer.mark_wont_leak()
             }
 
@@ -173,7 +173,7 @@ impl CompositorData {
     
     pub fn forget_all_tiles(layer: Rc<Layer<CompositorData>>) {
         let tiles = layer.collect_buffers();
-        for tile in tiles.move_iter() {
+        for tile in tiles.into_iter() {
             let mut tile = tile;
             tile.mark_wont_leak()
         }
