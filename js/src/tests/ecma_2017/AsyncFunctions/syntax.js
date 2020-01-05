@@ -34,9 +34,6 @@ if (typeof Reflect !== "undefined" && Reflect.parse) {
     assertThrows(() => Reflect.parse("async function k() { function a() { await 4; } }"), SyntaxError);
 
     
-    assertThrows(() => Reflect.parse("async function a() { await\n4; }"), SyntaxError);
-
-    
     assertThrows(() => Reflect.parse("async function a(k = await 3) {}"), SyntaxError);
     assertThrows(() => Reflect.parse("async function a() { async function b(k = await 3) {} }"), SyntaxError);
     assertThrows(() => Reflect.parse("async function a() { async function b(k = [await 3]) {} }"), SyntaxError);
