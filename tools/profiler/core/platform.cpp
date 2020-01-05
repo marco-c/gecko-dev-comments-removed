@@ -124,7 +124,7 @@ MOZ_THREAD_LOCAL(PseudoStack *) tlsPseudoStack;
 
 
 
-class ProfilerState
+class PS
 {
 public:
   
@@ -137,7 +137,7 @@ public:
 
   typedef std::vector<ThreadInfo*> ThreadVector;
 
-  ProfilerState()
+  PS()
     : mEntries(0)
     , mInterval(0)
     , mFeatureDisplayListDump(false)
@@ -330,14 +330,14 @@ private:
   int mLatestRecordedFrameNumber;
 };
 
-
-typedef ProfilerState PS;
-
 uint32_t PS::sActivityGeneration = 0;
 uint32_t PS::sNextActivityGeneration = 1;
 
 
-PS* gPS = nullptr;
+
+
+
+static PS* gPS = nullptr;
 
 
 static PS::Mutex gPSMutex;
@@ -1798,8 +1798,8 @@ GeckoProfilerReporter::CollectReports(nsIHandleReportCallback* aHandleReport,
 
   MOZ_COLLECT_REPORT(
     "explicit/profiler/profiler-state", KIND_HEAP, UNITS_BYTES, profSize,
-    "Memory used by the Gecko Profiler's ProfilerState object (excluding "
-    "memory used by LUL).");
+    "Memory used by the Gecko Profiler's global state (excluding memory used "
+    "by LUL).");
 
 #if defined(USE_LUL_STACKWALK)
   MOZ_COLLECT_REPORT(
