@@ -393,6 +393,13 @@ var invalidGradientAndElementValues = [
   "-moz-linear-gradient(5px 5px 0, red, blue)",
   "linear-gradient(0, red, blue)",
   
+  "-moz-linear-gradient(30deg red, blue)",
+  "-moz-linear-gradient(5px 5px 30deg red, blue)",
+  "-moz-linear-gradient(5px 5px red, blue)",
+  "-moz-linear-gradient(top left 30deg red, blue)",
+  "linear-gradient(to top left red, blue)",
+  "linear-gradient(to right red, blue)",
+  
   "linear-gradient(red, rgb(0, rubbish, 0) 50%, red)",
   "linear-gradient(red, red calc(50% + rubbish), red)",
   "linear-gradient(to top calc(50% + rubbish), red, blue)",
@@ -707,12 +714,12 @@ if (IsCSSPropertyPrefEnabled("layout.css.prefixes.webkit")) {
 
     
     "-webkit-linear-gradient(135deg, red, blue)",
+    "-webkit-linear-gradient( 135deg  , red  , blue )",
     "-webkit-linear-gradient(280deg, red 60%, blue)",
 
     
     
     "-webkit-linear-gradient(0, red, blue)",
-    "-webkit-linear-gradient(0 red, blue)",
 
     
     "-webkit-radial-gradient(circle, white, black)",
@@ -857,6 +864,12 @@ if (IsCSSPropertyPrefEnabled("layout.css.prefixes.webkit")) {
     "-webkit-radial-gradient()",
     "-webkit-repeating-linear-gradient()",
     "-webkit-repeating-radial-gradient()",
+
+    
+    "-webkit-linear-gradient(0 red, blue)",
+    "-webkit-linear-gradient(30deg red, blue)",
+    "-webkit-linear-gradient(top right red, blue)",
+    "-webkit-linear-gradient(bottom red, blue)",
 
     
     

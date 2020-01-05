@@ -10238,8 +10238,17 @@ CSSParserImpl::ParseLinearGradient(nsCSSValue& aValue,
     
     
     
-    if (((aFlags & eGradient_WebkitLegacy) && !haveAngle) ||
-        ((aFlags & eGradient_MozLegacy) && !haveAngleComma)) {
+    if (aFlags & eGradient_WebkitLegacy && haveAngle && !haveAngleComma) {
+      SkipUntil(')');
+      return false;
+    }
+
+    
+    
+    
+    
+    
+    if (((aFlags & eGradient_AnyLegacy) && !haveAngleComma)) {
       
       
       if (!ParseBoxPositionValues(cssGradient->mBgPos, false,
