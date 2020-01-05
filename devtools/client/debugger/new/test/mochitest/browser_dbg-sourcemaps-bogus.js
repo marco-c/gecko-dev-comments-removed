@@ -4,10 +4,7 @@
 
 
 
-add_task(function*() {
-  
-  requestLongerTimeout(2);
-
+add_task(function* () {
   const dbg = yield initDebugger("doc-sourcemap-bogus.html");
   const { selectors: { getSources }, getState } = dbg;
 

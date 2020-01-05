@@ -6,10 +6,7 @@
 
 
 
-add_task(function*() {
-  
-  requestLongerTimeout(2);
-
+add_task(function* () {
   const dbg = yield initDebugger("doc-sourcemaps2.html");
   const { selectors: { getBreakpoint, getBreakpoints }, getState } = dbg;
 
@@ -23,10 +20,8 @@ add_task(function*() {
   
   yield addBreakpoint(dbg, mainSrc, 4);
   is(getBreakpoints(getState()).size, 1, "One breakpoint exists");
-  ok(
-    getBreakpoint(getState(), { sourceId: mainSrc.id, line: 4 }),
-    "Breakpoint has correct line"
-  );
+  ok(getBreakpoint(getState(), { sourceId: mainSrc.id, line: 4 }),
+     "Breakpoint has correct line");
 
   invokeInTab("logMessage");
 
