@@ -300,12 +300,6 @@ pref("browser.search.noCurrentEngine", true);
 
 
 pref("browser.casting.enabled", true);
-#ifdef RELEASE_OR_BETA
-
-pref("browser.mirroring.enabled", false);
-#else
-pref("browser.mirroring.enabled", true);
-#endif
 
 
 pref("chrome.override_package.global", "browser");
