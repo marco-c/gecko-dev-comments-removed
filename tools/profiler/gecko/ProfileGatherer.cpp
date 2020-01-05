@@ -235,12 +235,6 @@ ProfileGatherer::OOPExitProfile(const nsCString& aProfile)
     mExitProfiles.RemoveElementAt(0);
   }
   mExitProfiles.AppendElement(aProfile);
-
-  
-  
-  if (mGathering) {
-    GatheredOOPProfile();
-  }
 }
 
 NS_IMETHODIMP
