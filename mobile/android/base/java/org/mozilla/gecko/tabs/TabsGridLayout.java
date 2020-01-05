@@ -6,24 +6,36 @@
 package org.mozilla.gecko.tabs;
 
 import org.mozilla.gecko.R;
+import org.mozilla.gecko.widget.GridSpacingDecoration;
 
 import android.content.Context;
 import android.content.res.Resources;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.helper.ItemTouchHelper;
 import android.util.AttributeSet;
+import android.util.Log;
 
 public class TabsGridLayout extends TabsLayout {
-    private final int desiredColumnWidth;
+    private static final String LOGTAG = "Gecko" + TabsGridLayout.class.getSimpleName();
+
+    private GridSpacingDecoration spacingDecoration;
+    private final int desiredItemWidth;
+    private final int desiredHorizontalItemSpacing;
+    private final int minHorizontalItemSpacing;
+    private final int verticalItemPadding;
 
     public TabsGridLayout(Context context, AttributeSet attrs) {
         super(context, attrs, R.layout.tabs_layout_item_view);
 
         final Resources resources = context.getResources();
 
+        
         setLayoutManager(new GridLayoutManager(context, 1));
 
-        desiredColumnWidth = resources.getDimensionPixelSize(R.dimen.tab_panel_item_width);
+        desiredItemWidth = resources.getDimensionPixelSize(R.dimen.tab_panel_item_width);
+        desiredHorizontalItemSpacing = resources.getDimensionPixelSize(R.dimen.tab_panel_grid_ideal_item_hspacing);
+        minHorizontalItemSpacing = resources.getDimensionPixelOffset(R.dimen.tab_panel_grid_min_item_hspacing);
+        verticalItemPadding = resources.getDimensionPixelSize(R.dimen.tab_panel_grid_item_vpadding);
         final int viewPaddingHorizontal = resources.getDimensionPixelSize(R.dimen.tab_panel_grid_hpadding);
         final int viewPaddingVertical = resources.getDimensionPixelSize(R.dimen.tab_panel_grid_vpadding);
 
@@ -32,8 +44,6 @@ public class TabsGridLayout extends TabsLayout {
         setScrollBarStyle(SCROLLBARS_OUTSIDE_OVERLAY);
 
         setItemAnimator(new TabsGridLayoutAnimator());
-
-        
 
         
         final TabsTouchHelperCallback callback = new TabsTouchHelperCallback(this) {
@@ -66,6 +76,15 @@ public class TabsGridLayout extends TabsLayout {
                 (index == getAdapter().getItemCount() - 1 && index % spanCount == 0);
     }
 
+    private void updateSpacingDecoration(int horizontalItemSpacing) {
+        if (spacingDecoration != null) {
+            removeItemDecoration(spacingDecoration);
+        }
+        spacingDecoration = new GridSpacingDecoration(horizontalItemSpacing, verticalItemPadding);
+        addItemDecoration(spacingDecoration);
+        updateSelectedPosition();
+    }
+
     @Override
     public void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
@@ -74,15 +93,42 @@ public class TabsGridLayout extends TabsLayout {
             return;
         }
 
-        
-        
+        final GridLayoutManager layoutManager = (GridLayoutManager) getLayoutManager();
+
         final int nonPaddingWidth = w - getPaddingLeft() - getPaddingRight();
         
-        final int spanCount = Math.max(1, nonPaddingWidth / desiredColumnWidth);
-        final GridLayoutManager layoutManager = (GridLayoutManager) getLayoutManager();
-        if (spanCount == layoutManager.getSpanCount()) {
-            return;
+        
+        
+        
+        
+        final int idealSpacingSpanCount = Math.max(1,
+                (nonPaddingWidth + desiredHorizontalItemSpacing) / (desiredItemWidth + desiredHorizontalItemSpacing));
+        final int maxSpanCount = Math.max(1,
+                (nonPaddingWidth + minHorizontalItemSpacing) / (desiredItemWidth + minHorizontalItemSpacing));
+
+        
+        
+        
+        
+        if (idealSpacingSpanCount == maxSpanCount) {
+            layoutManager.setSpanCount(idealSpacingSpanCount);
+            updateSpacingDecoration(desiredHorizontalItemSpacing);
+        } else {
+            
+            
+            
+            layoutManager.setSpanCount(maxSpanCount);
+
+            
+            for (int spacing = minHorizontalItemSpacing + 1; spacing <= desiredHorizontalItemSpacing; spacing++) {
+                if (maxSpanCount * desiredItemWidth + (maxSpanCount - 1) * spacing > nonPaddingWidth) {
+                    updateSpacingDecoration(spacing - 1);
+                    return;
+                }
+            }
+            
+            Log.e(LOGTAG, "Span count calculation error");
+            updateSpacingDecoration(minHorizontalItemSpacing);
         }
-        layoutManager.setSpanCount(spanCount);
     }
 }
