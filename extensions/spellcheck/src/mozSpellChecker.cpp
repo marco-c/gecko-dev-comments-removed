@@ -3,7 +3,6 @@
 
 
 
-
 #include "mozSpellChecker.h"
 #include "nsIServiceManager.h"
 #include "mozISpellI18NManager.h"
@@ -552,7 +551,8 @@ mozSpellChecker::GetEngineList(nsCOMArray<mozISpellCheckingEngine>* aSpellChecki
   if (NS_FAILED(rv))
     return rv;
 
-  while (catEntries->HasMoreElements(&hasMoreEngines), hasMoreEngines){
+  while (NS_SUCCEEDED(catEntries->HasMoreElements(&hasMoreEngines)) &&
+         hasMoreEngines) {
     nsCOMPtr<nsISupports> elem;
     rv = catEntries->GetNext(getter_AddRefs(elem));
 
