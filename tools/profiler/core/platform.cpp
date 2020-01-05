@@ -196,7 +196,8 @@ public:
 
   GET_AND_SET(ProfileBuffer*, Buffer)
 
-  ThreadVector& Threads(LockRef) { return mThreads; }
+  ThreadVector& LiveThreads(LockRef) { return mLiveThreads; }
+  ThreadVector& DeadThreads(LockRef) { return mDeadThreads; }
 
   static bool IsActive(LockRef) { return sActivityGeneration > 0; }
   static uint32_t ActivityGeneration(LockRef) { return sActivityGeneration; }
@@ -268,7 +269,12 @@ private:
   ProfileBuffer* mBuffer;
 
   
-  ThreadVector mThreads;
+  
+  
+  
+  
+  ThreadVector mLiveThreads;
+  ThreadVector mDeadThreads;
 
   
   
@@ -1160,6 +1166,24 @@ AppendSharedLibraries(JSONWriter& aWriter)
   }
 }
 
+#ifdef MOZ_TASK_TRACER
+static void
+StreamNameAndThreadId(const char* aName, int aThreadId)
+{
+  aWriter.StartObjectElement();
+  {
+    if (XRE_GetProcessType() == GeckoProcessType_Plugin) {
+      
+      aWriter.StringProperty("name", "Plugin");
+    } else {
+      aWriter.StringProperty("name", aName);
+    }
+    aWriter.IntProperty("tid", aThreadId);
+  }
+  aWriter.EndObject();
+}
+#endif
+
 static void
 StreamTaskTracer(PS::LockRef aLock, SpliceableJSONWriter& aWriter)
 {
@@ -1176,21 +1200,16 @@ StreamTaskTracer(PS::LockRef aLock, SpliceableJSONWriter& aWriter)
 
   aWriter.StartArrayProperty("threads");
   {
-    const PS::ThreadVector& threads = gPS->Threads(aLock);
-    for (size_t i = 0; i < threads.size(); i++) {
-      
-      ThreadInfo* info = threads.at(i);
-      aWriter.StartObjectElement();
-      {
-        if (XRE_GetProcessType() == GeckoProcessType_Plugin) {
-          
-          aWriter.StringProperty("name", "Plugin");
-        } else {
-          aWriter.StringProperty("name", info->Name());
-        }
-        aWriter.IntProperty("tid", static_cast<int>(info->ThreadId()));
-      }
-      aWriter.EndObject();
+    const PS::ThreadVector& liveThreads = gPS->LiveThreads(aLock);
+    for (size_t i = 0; i < liveThreads.size(); i++) {
+      ThreadInfo* info = liveThreads.at(i);
+      StreamNameAndThreadId(info->Name(), info->ThreadId());
+    }
+
+    const PS::ThreadVector& deadThreads = gPS->DeadThreads(aLock);
+    for (size_t i = 0; i < deadThreads.size(); i++) {
+      ThreadInfo* info = deadThreads.at(i);
+      StreamNameAndThreadId(info->Name(), info->ThreadId());
     }
   }
   aWriter.EndArray();
@@ -1385,21 +1404,22 @@ StreamJSON(PS::LockRef aLock, SpliceableJSONWriter& aWriter, double aSinceTime)
     {
       gPS->SetIsPaused(aLock, true);
 
-      {
-        const PS::ThreadVector& threads = gPS->Threads(aLock);
-        for (size_t i = 0; i < threads.size(); i++) {
-          
-          ThreadInfo* info = threads.at(i);
-          if (!info->HasProfile()) {
-            continue;
-          }
-
-          
-          
-
-          info->StreamJSON(gPS->Buffer(aLock), aWriter, gPS->StartTime(aLock),
-                           aSinceTime);
+      const PS::ThreadVector& liveThreads = gPS->LiveThreads(aLock);
+      for (size_t i = 0; i < liveThreads.size(); i++) {
+        ThreadInfo* info = liveThreads.at(i);
+        if (!info->HasProfile()) {
+          continue;
         }
+        info->StreamJSON(gPS->Buffer(aLock), aWriter, gPS->StartTime(aLock),
+                         aSinceTime);
+      }
+
+      const PS::ThreadVector& deadThreads = gPS->DeadThreads(aLock);
+      for (size_t i = 0; i < deadThreads.size(); i++) {
+        ThreadInfo* info = deadThreads.at(i);
+        MOZ_ASSERT(info->HasProfile());
+        info->StreamJSON(gPS->Buffer(aLock), aWriter, gPS->StartTime(aLock),
+                         aSinceTime);
       }
 
       
@@ -1642,11 +1662,11 @@ SamplerThread::Run()
       gPS->Buffer(lock)->deleteExpiredStoredMarkers();
 
       if (!gPS->IsPaused(lock)) {
-        const PS::ThreadVector& threads = gPS->Threads(lock);
-        for (uint32_t i = 0; i < threads.size(); i++) {
-          ThreadInfo* info = threads[i];
+        const PS::ThreadVector& liveThreads = gPS->LiveThreads(lock);
+        for (uint32_t i = 0; i < liveThreads.size(); i++) {
+          ThreadInfo* info = liveThreads[i];
 
-          if (!info->HasProfile() || info->IsPendingDelete()) {
+          if (!info->HasProfile()) {
             
             continue;
           }
@@ -1764,9 +1784,15 @@ GeckoProfilerReporter::CollectReports(nsIHandleReportCallback* aHandleReport,
     if (gPS) {
       profSize = GeckoProfilerMallocSizeOf(gPS);
 
-      const PS::ThreadVector& threads = gPS->Threads(lock);
-      for (uint32_t i = 0; i < threads.size(); i++) {
-        ThreadInfo* info = threads.at(i);
+      const PS::ThreadVector& liveThreads = gPS->LiveThreads(lock);
+      for (uint32_t i = 0; i < liveThreads.size(); i++) {
+        ThreadInfo* info = liveThreads.at(i);
+        profSize += info->SizeOfIncludingThis(GeckoProfilerMallocSizeOf);
+      }
+
+      const PS::ThreadVector& deadThreads = gPS->DeadThreads(lock);
+      for (uint32_t i = 0; i < deadThreads.size(); i++) {
+        ThreadInfo* info = deadThreads.at(i);
         profSize += info->SizeOfIncludingThis(GeckoProfilerMallocSizeOf);
       }
 
@@ -1775,6 +1801,7 @@ GeckoProfilerReporter::CollectReports(nsIHandleReportCallback* aHandleReport,
           gPS->Buffer(lock)->SizeOfIncludingThis(GeckoProfilerMallocSizeOf);
       }
 
+      
       
       
       
@@ -1848,15 +1875,15 @@ ShouldProfileThread(PS::LockRef aLock, ThreadInfo* aInfo)
 
 
 static ThreadInfo*
-FindThreadInfo(PS::LockRef aLock, int* aIndexOut = nullptr)
+FindLiveThreadInfo(PS::LockRef aLock, int* aIndexOut = nullptr)
 {
   
 
   Thread::tid_t id = Thread::GetCurrentId();
-  const PS::ThreadVector& threads = gPS->Threads(aLock);
-  for (uint32_t i = 0; i < threads.size(); i++) {
-    ThreadInfo* info = threads.at(i);
-    if (info->ThreadId() == id && !info->IsPendingDelete()) {
+  const PS::ThreadVector& liveThreads = gPS->LiveThreads(aLock);
+  for (uint32_t i = 0; i < liveThreads.size(); i++) {
+    ThreadInfo* info = liveThreads.at(i);
+    if (info->ThreadId() == id) {
       if (aIndexOut) {
         *aIndexOut = i;
       }
@@ -1873,7 +1900,7 @@ locked_register_thread(PS::LockRef aLock, const char* aName, void* stackTop)
 
   MOZ_RELEASE_ASSERT(gPS);
 
-  MOZ_RELEASE_ASSERT(!FindThreadInfo(aLock));
+  MOZ_RELEASE_ASSERT(!FindLiveThreadInfo(aLock));
 
   if (!tlsPseudoStack.init()) {
     return;
@@ -1895,7 +1922,7 @@ locked_register_thread(PS::LockRef aLock, const char* aName, void* stackTop)
     }
   }
 
-  gPS->Threads(aLock).push_back(info);
+  gPS->LiveThreads(aLock).push_back(info);
 }
 
 static void
@@ -2077,10 +2104,16 @@ profiler_shutdown()
       samplerThread = locked_profiler_stop(lock);
     }
 
-    PS::ThreadVector& threads = gPS->Threads(lock);
-    while (threads.size() > 0) {
-      delete threads.back();
-      threads.pop_back();
+    PS::ThreadVector& liveThreads = gPS->LiveThreads(lock);
+    while (liveThreads.size() > 0) {
+      delete liveThreads.back();
+      liveThreads.pop_back();
+    }
+
+    PS::ThreadVector& deadThreads = gPS->DeadThreads(lock);
+    while (deadThreads.size() > 0) {
+      delete deadThreads.back();
+      deadThreads.pop_back();
     }
 
 #if defined(USE_LUL_STACKWALK)
@@ -2349,22 +2382,23 @@ locked_profiler_start(PS::LockRef aLock, int aEntries, double aInterval,
   gPS->SetBuffer(aLock, new ProfileBuffer(entries));
 
   
-  const PS::ThreadVector& threads = gPS->Threads(aLock);
-  for (uint32_t i = 0; i < threads.size(); i++) {
-    ThreadInfo* info = threads.at(i);
+  const PS::ThreadVector& liveThreads = gPS->LiveThreads(aLock);
+  for (uint32_t i = 0; i < liveThreads.size(); i++) {
+    ThreadInfo* info = liveThreads.at(i);
 
     if (ShouldProfileThread(aLock, info)) {
       info->SetHasProfile();
-
-      if (!info->IsPendingDelete()) {
-        info->Stack()->reinitializeOnResume();
-
-        if (featureJS) {
-          info->Stack()->startJSSampling();
-        }
+      info->Stack()->reinitializeOnResume();
+      if (featureJS) {
+        info->Stack()->startJSSampling();
       }
     }
   }
+
+  
+  
+  
+  MOZ_RELEASE_ASSERT(gPS->DeadThreads(aLock).empty());
 
   if (featureJS) {
     
@@ -2480,18 +2514,22 @@ locked_profiler_stop(PS::LockRef aLock)
   }
 #endif
 
-  PS::ThreadVector& threads = gPS->Threads(aLock);
-  for (uint32_t i = 0; i < threads.size(); i++) {
-    ThreadInfo* info = threads.at(i);
-    if (info->IsPendingDelete()) {
-      
-      delete info;
-      threads.erase(threads.begin() + i);
-      i--;
-    } else if (info->HasProfile() && gPS->FeatureJS(aLock)) {
-      
-      info->Stack()->stopJSSampling();
+  
+  if (gPS->FeatureJS(aLock)) {
+    PS::ThreadVector& liveThreads = gPS->LiveThreads(aLock);
+    for (uint32_t i = 0; i < liveThreads.size(); i++) {
+      ThreadInfo* info = liveThreads.at(i);
+      if (info->HasProfile()) {
+        info->Stack()->stopJSSampling();
+      }
     }
+  }
+
+  
+  PS::ThreadVector& deadThreads = gPS->DeadThreads(aLock);
+  while (deadThreads.size() > 0) {
+    delete deadThreads.back();
+    deadThreads.pop_back();
   }
 
   if (gPS->FeatureJS(aLock)) {
@@ -2705,19 +2743,16 @@ profiler_unregister_thread()
   
 
   int i;
-  ThreadInfo* info = FindThreadInfo(lock, &i);
+  ThreadInfo* info = FindLiveThreadInfo(lock, &i);
   if (info) {
     DEBUG_LOG("profiler_unregister_thread: %s", info->Name());
     if (gPS->IsActive(lock) && info->HasProfile()) {
-      
-      
-      
-      info->SetPendingDelete();
+      gPS->DeadThreads(lock).push_back(info);
     } else {
       delete info;
-      PS::ThreadVector& threads = gPS->Threads(lock);
-      threads.erase(threads.begin() + i);
     }
+    PS::ThreadVector& liveThreads = gPS->LiveThreads(lock);
+    liveThreads.erase(liveThreads.begin() + i);
 
     
     
@@ -3040,7 +3075,7 @@ profiler_clear_js_context()
     gPS->SetIsPaused(lock, true);
 
     
-    ThreadInfo* info = FindThreadInfo(lock);
+    ThreadInfo* info = FindLiveThreadInfo(lock);
     MOZ_RELEASE_ASSERT(info);
     if (info->HasProfile()) {
       info->FlushSamplesAndMarkers(gPS->Buffer(lock), gPS->StartTime(lock));
