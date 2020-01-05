@@ -500,10 +500,36 @@ protected:
   static const BYTE kMaskSibBase = 0x07;
   static const BYTE kSibBaseEbp = 0x05;
 
+  
+  static const BYTE kRegAx = 0x0;
+  static const BYTE kRegCx = 0x1;
+  static const BYTE kRegDx = 0x2;
+  static const BYTE kRegBx = 0x3;
+  static const BYTE kRegSp = 0x4;
+  static const BYTE kRegBp = 0x5;
+  static const BYTE kRegSi = 0x6;
+  static const BYTE kRegDi = 0x7;
+
+  
+  
+  
+  static const int kModOperand64 = -2;
+  
+  static const int kModUnknown = -1;
+
+  
+
+
+
+
+
+
+
   int CountModRmSib(const BYTE *aModRm, BYTE* aSubOpcode = nullptr)
   {
     if (!aModRm) {
-      return -1;
+      MOZ_ASSERT(aModRm, "Missing ModRM byte");
+      return kModUnknown;
     }
     int numBytes = 1; 
     switch (*aModRm & kMaskMod) {
@@ -518,8 +544,10 @@ protected:
       case kModNoRegDisp:
         if ((*aModRm & kMaskRm) == kRmNoRegDispDisp32) {
 #if defined(_M_X64)
-          
-          return -1;
+          if (aSubOpcode) {
+            *aSubOpcode = (*aModRm & kMaskReg) >> kRegFieldShift;
+          }
+          return kModOperand64;
 #else
           
           numBytes += 4;
@@ -532,7 +560,7 @@ protected:
       default:
         
         MOZ_ASSERT_UNREACHABLE("Impossible value for modr/m byte mod bits");
-        return -1;
+        return kModUnknown;
     }
     if ((*aModRm & kMaskRm) == kRmNeedSib) {
       
@@ -666,6 +694,16 @@ protected:
           return index - aBytesIndex;
       }
     }
+  }
+
+  
+  
+  BYTE BuildModRmByte(BYTE aModBits, BYTE aReg, BYTE aRm)
+  {
+    MOZ_ASSERT((aRm & kMaskRm) == aRm);
+    MOZ_ASSERT((aModBits & kMaskMod) == aModBits);
+    MOZ_ASSERT(((aReg << kRegFieldShift) & kMaskReg) == (aReg << kRegFieldShift));
+    return aModBits | (aReg << kRegFieldShift) | aRm;
   }
 
   void CreateTrampoline(void* aOrigFunction, intptr_t aDest, void** aOutTramp)
@@ -878,14 +916,50 @@ protected:
             return;
           }
         } else if ((origBytes[nOrigBytes] & 0xfd) == 0x89) {
-          COPY_CODES(1);
           
-          int len = CountModRmSib(origBytes + nOrigBytes);
+          BYTE reg;
+          int len = CountModRmSib(origBytes + nOrigBytes + 1, &reg);
           if (len < 0) {
-            MOZ_ASSERT_UNREACHABLE("Unrecognized opcode sequence");
-            return;
+            MOZ_ASSERT(len == kModOperand64);
+            if (len != kModOperand64) {
+              return;
+            }
+            nOrigBytes += 2;   
+
+            
+            
+            
+            int64_t* absAddr =
+              reinterpret_cast<int64_t*>(origBytes + nOrigBytes + 4 +
+                                         *reinterpret_cast<int32_t*>(origBytes + nOrigBytes));
+            nOrigBytes += 4;
+
+            if (reg == kRegAx) {
+              
+              
+              tramp[nTrampBytes] = 0xa1;
+              ++nTrampBytes;
+              int64_t** trampOperandPtr = reinterpret_cast<int64_t**>(tramp + nTrampBytes);
+              *trampOperandPtr = absAddr;
+              nTrampBytes += 8;
+            } else {
+              
+              
+              
+              
+              tramp[nTrampBytes] = 0xb8 + reg;
+              ++nTrampBytes;
+              int64_t** trampOperandPtr = reinterpret_cast<int64_t**>(tramp + nTrampBytes);
+              *trampOperandPtr = absAddr;
+              nTrampBytes += 8;
+              tramp[nTrampBytes] = 0x48;
+              tramp[nTrampBytes+1] = 0x8b;
+              tramp[nTrampBytes+2] = BuildModRmByte(kModNoRegDisp, reg, reg);
+              nTrampBytes += 3;
+            }
+          } else {
+            COPY_CODES(len+1);
           }
-          COPY_CODES(len);
         } else if (origBytes[nOrigBytes] == 0xc7) {
           
           if (origBytes[nOrigBytes + 1] == 0x44) {
