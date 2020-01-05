@@ -15,6 +15,7 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::sync::mpsc::Sender;
 use std::sync::{Arc, Mutex, RwLock};
+use timer::Timer;
 
 
 pub struct LocalStyleContextCreationInfo {
@@ -57,6 +58,10 @@ pub struct SharedStyleContext {
 
     
     pub local_context_creation_data: Mutex<LocalStyleContextCreationInfo>,
+
+    
+    
+    pub timer: Timer,
 }
 
 pub struct LocalStyleContext {

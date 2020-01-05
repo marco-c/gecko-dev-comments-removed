@@ -41,6 +41,11 @@ pub enum Msg {
     TickAnimations,
 
     
+    
+    
+    AdvanceClockMs(i32),
+
+    
     ReflowWithNewlyLoadedWebFont,
 
     
