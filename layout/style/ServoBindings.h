@@ -284,9 +284,6 @@ void Gecko_EnsureTArrayCapacity(void* array, size_t capacity, size_t elem_size);
 
 void Gecko_ClearPODTArray(void* array, size_t elem_size, size_t elem_align);
 
-void Gecko_CopyStyleGridTemplateValues(nsStyleGridTemplate* grid_template,
-                                       const nsStyleGridTemplate* other);
-
 
 
 void Gecko_ClearAndResizeStyleContents(nsStyleContent* content,
