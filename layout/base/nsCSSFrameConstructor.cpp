@@ -340,15 +340,6 @@ IsFlexOrGridContainer(const nsIFrame* aFrame)
          t == nsGkAtoms::gridContainerFrame;
 }
 
-
-static inline bool
-IsWebkitBox(const nsIFrame* aFrame)
-{
-  auto containerDisplay = aFrame->StyleDisplay()->mDisplay;
-  return containerDisplay == StyleDisplay::WebkitBox ||
-    containerDisplay == StyleDisplay::WebkitInlineBox;
-}
-
 #if DEBUG
 static void
 AssertAnonymousFlexOrGridItemParent(const nsIFrame* aChild,
@@ -9876,7 +9867,7 @@ nsCSSFrameConstructor::CreateNeededAnonFlexOrGridItems(
   }
 
   nsIAtom* containerType = aParentFrame->GetType();
-  const bool isWebkitBox = IsWebkitBox(aParentFrame);
+  const bool isWebkitBox = nsFlexContainerFrame::IsLegacyBox(aParentFrame);
 
   FCItemIterator iter(aItems);
   do {
@@ -12182,7 +12173,7 @@ nsCSSFrameConstructor::WipeContainingBlock(nsFrameConstructorState& aState,
     
     
     nsIAtom* containerType = aFrame->GetType();
-    bool isWebkitBox = IsWebkitBox(aFrame);
+    const bool isWebkitBox = nsFlexContainerFrame::IsLegacyBox(aFrame);
     if (aPrevSibling && IsAnonymousFlexOrGridItem(aPrevSibling) &&
         iter.item().NeedsAnonFlexOrGridItem(aState, containerType,
                                             isWebkitBox)) {
@@ -12224,9 +12215,10 @@ nsCSSFrameConstructor::WipeContainingBlock(nsFrameConstructorState& aState,
     
     
     nsIFrame* containerFrame = aFrame->GetParent();
+    const bool isWebkitBox = nsFlexContainerFrame::IsLegacyBox(containerFrame);
     if (!iter.SkipItemsThatNeedAnonFlexOrGridItem(aState,
                                                   containerFrame->GetType(),
-                                                  IsWebkitBox(containerFrame))) {
+                                                  isWebkitBox)) {
       
       
       RecreateFramesForContent(containerFrame->GetContent(), true,

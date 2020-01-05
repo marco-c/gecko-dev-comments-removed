@@ -4109,7 +4109,7 @@ jit::AnalyzeNewScriptDefiniteProperties(JSContext* cx, JSFunction* fun,
         return false;
 
     CompileInfo info(script, fun,
-                      nullptr,  false,
+                      nullptr,
                      Analysis_DefiniteProperties,
                      script->needsArgsObj(),
                      inlineScriptTree);
@@ -4344,7 +4344,7 @@ jit::AnalyzeArgumentsUsage(JSContext* cx, JSScript* scriptArg)
     }
 
     CompileInfo info(script, script->functionNonDelazifying(),
-                      nullptr,  false,
+                      nullptr,
                      Analysis_ArgumentsUsage,
                       true,
                      inlineScriptTree);
