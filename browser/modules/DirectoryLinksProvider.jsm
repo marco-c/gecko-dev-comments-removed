@@ -526,7 +526,6 @@ var DirectoryLinksProvider = {
 
 
   reportSitesAction: function DirectoryLinksProvider_reportSitesAction(sites, action, triggeringSiteIndex) {
-    let pastImpressions;
     
     if (action == "view") {
       sites.slice(0, triggeringSiteIndex + 1).filter(s => s).forEach(site => {
@@ -544,13 +543,6 @@ var DirectoryLinksProvider = {
       
       let {frecent_sites, targetedSite, url} = sites[triggeringSiteIndex].link;
       if (frecent_sites || targetedSite) {
-        
-        if (this._frequencyCaps[url] && action != "unpin") {
-          pastImpressions = {
-            total: this._frequencyCaps[url].totalViews,
-            daily: this._frequencyCaps[url].dailyViews
-          };
-        }
         this._setFrequencyCapClick(url);
       }
     }

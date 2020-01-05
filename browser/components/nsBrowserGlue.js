@@ -648,12 +648,6 @@ BrowserGlue.prototype = {
     this._sanitizer.onStartup();
     
     if (Services.appinfo.inSafeMode) {
-      
-      
-      let currentUIVersion = 0;
-      try {
-        currentUIVersion = Services.prefs.getIntPref("browser.migration.version");
-      } catch (ex) {}
       Services.ww.openWindow(null, "chrome://browser/content/safeMode.xul",
                              "_blank", "chrome,centerscreen,modal,resizable=no", null);
     }
