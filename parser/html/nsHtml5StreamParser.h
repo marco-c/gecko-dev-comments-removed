@@ -548,6 +548,12 @@ class nsHtml5StreamParser : public nsICharsetDetectionObserver {
 
 
 
+    mozilla::Mutex                mFlushTimerMutex;
+
+    
+
+
+
     bool                          mFlushTimerArmed;
 
     
