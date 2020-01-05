@@ -36,8 +36,6 @@
 
 
 
-
-
 class nsDequeFunctor
 {
 public:
@@ -58,12 +56,23 @@ public:
 
 
 
-
 class nsDeque
 {
   typedef mozilla::fallible_t fallible_t;
 public:
+  
+
+
+
+
+
+
+
   explicit nsDeque(nsDequeFunctor* aDeallocator = nullptr);
+
+  
+
+
   ~nsDeque();
 
   
@@ -86,6 +95,12 @@ public:
     }
   }
 
+  
+
+
+
+
+
   MOZ_MUST_USE bool Push(void* aItem, const fallible_t&);
 
   
@@ -99,6 +114,12 @@ public:
       NS_ABORT_OOM(mSize * sizeof(void*));
     }
   }
+
+  
+
+
+
+
 
   MOZ_MUST_USE bool PushFront(void* aItem, const fallible_t&);
 
@@ -121,8 +142,8 @@ public:
 
 
 
-
   void* Peek() const;
+
   
 
 
@@ -187,7 +208,7 @@ private:
 
 
 
-  nsDeque(const nsDeque& aOther);
+  nsDeque(const nsDeque& aOther) = delete;
 
   
 
@@ -195,7 +216,7 @@ private:
 
 
 
-  nsDeque& operator=(const nsDeque& aOther);
+  nsDeque& operator=(const nsDeque& aOther) = delete;
 
   bool GrowCapacity();
   void SetDeallocator(nsDequeFunctor* aDeallocator);
