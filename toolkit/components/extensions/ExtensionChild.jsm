@@ -1024,6 +1024,11 @@ class ContentGlobal {
         this.global.removeMessageListener("Extension:InitExtensionView", this);
         this.viewType = data.viewType;
 
+        
+        if (["popup", "sidebar"].includes(this.viewType)) {
+          this.global.docShell.isAppTab = true;
+        }
+
         if (data.devtoolsToolboxInfo) {
           this.devtoolsToolboxInfo = data.devtoolsToolboxInfo;
         }

@@ -48,6 +48,9 @@ const BrowserListener = {
              .allowScriptsToClose();
     }
 
+    
+    docShell.isAppTab = true;
+
     addEventListener("DOMWindowCreated", this, true);
     addEventListener("load", this, true);
     addEventListener("DOMContentLoaded", this, true);
