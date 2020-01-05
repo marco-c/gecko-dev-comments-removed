@@ -418,6 +418,19 @@ pub fn recalc_style_at<E, D>(traversal: &D,
        (element.has_dirty_descendants() || !propagated_hint.is_empty() || inherited_style_changed) {
         preprocess_children(traversal, element, propagated_hint, inherited_style_changed);
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if data.styles().is_display_none() {
+        unsafe { element.unset_dirty_descendants(); }
+    }
 }
 
 
