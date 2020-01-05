@@ -20,6 +20,7 @@
 #define REPEAT_DELAY        50
 #endif
 
+class nsIDocument;
 class nsITimer;
 
 class nsRepeatService final
@@ -35,8 +36,11 @@ public:
   
   
   
+  
+  
+  
   void Start(Callback aCallback, void* aCallbackData,
-             const nsACString& aCallbackName,
+             nsIDocument* aDocument, const nsACString& aCallbackName,
              uint32_t aInitialDelay = INITAL_REPEAT_DELAY);
   
   
