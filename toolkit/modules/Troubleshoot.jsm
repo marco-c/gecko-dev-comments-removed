@@ -494,7 +494,7 @@ var dataProviders = {
 
         
 
-        let ext = gl.getExtension("MOZ_debug_get");
+        let ext = gl.getExtension("MOZ_debug");
         
         let vendor = ext.getParameter(gl.VENDOR);
         let renderer = ext.getParameter(gl.RENDERER);
