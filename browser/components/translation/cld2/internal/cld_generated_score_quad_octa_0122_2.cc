@@ -637,4 +637,3 @@ extern const short kAvgDeltaOctaScore[kAvgDeltaOctaScoreSize] = {
 };
 
 }       
-

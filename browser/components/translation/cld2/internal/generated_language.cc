@@ -651,7 +651,7 @@ extern const char* const kLanguageToCode[kLanguageToCodeSize] = {
   "fi",    
   "fr",    
   "de",    
-  "iw",    
+  "he",    
   "it",    
   "ja",    
   "ko",    
