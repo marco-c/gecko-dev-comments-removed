@@ -44,7 +44,6 @@ public class ActivityStreamTelemetry {
         public final static String ITEM_COPY = "copy";
         public final static String ITEM_ADD_TO_HOMESCREEN = "homescreen";
         public final static String ITEM_NEW_TAB = "newtab";
-        public final static String ITEM_PRIVATE_TAB = "privatetab";
         public final static String ITEM_DISMISS = "dismiss";
         public final static String ITEM_DELETE_HISTORY = "delete";
     }
@@ -112,12 +111,12 @@ public class ActivityStreamTelemetry {
                         this.set(Contract.ITEM, Contract.ITEM_ADD_TO_HOMESCREEN);
                         break;
 
+                    
+                    
+                    
+                    case R.id.open_new_private_tab:
                     case R.id.open_new_tab:
                         this.set(Contract.ITEM, Contract.ITEM_NEW_TAB);
-                        break;
-
-                    case R.id.open_new_private_tab:
-                        this.set(Contract.ITEM, Contract.ITEM_PRIVATE_TAB);
                         break;
 
                     case R.id.dismiss:
