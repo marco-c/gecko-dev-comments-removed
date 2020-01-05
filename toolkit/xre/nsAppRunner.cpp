@@ -3820,11 +3820,27 @@ XREMain::XRE_mainStartup(bool* aExitFlag)
       return 1;
     }
 
+    if (!username) {
+      struct passwd *pw = getpwuid(geteuid());
+      if (pw && pw->pw_name) {
+        
+        
+        
+        username = pw->pw_name;
+      }
+    }
+
     nsCOMPtr<nsIFile> mutexDir;
     rv = GetSpecialSystemDirectory(OS_TemporaryDirectory, getter_AddRefs(mutexDir));
     if (NS_SUCCEEDED(rv)) {
-      nsAutoCString mutexPath =
-        program + NS_LITERAL_CSTRING("_") + nsDependentCString(username);
+      nsAutoCString mutexPath = program + NS_LITERAL_CSTRING("_");
+      
+      
+      
+      
+      if (username) {
+        mutexPath.Append(username);
+      }
       if (profile) {
         mutexPath.Append(NS_LITERAL_CSTRING("_") + nsDependentCString(profile));
       }
