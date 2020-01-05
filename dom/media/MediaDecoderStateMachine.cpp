@@ -1420,7 +1420,7 @@ private:
           aVideo->GetEndTime() >= target) {
         
         
-        aVideo->UpdateTimestamp(target.ToMicroseconds());
+        aVideo->UpdateTimestamp(target);
       }
       mFirstVideoFrameAfterSeek = nullptr;
 
