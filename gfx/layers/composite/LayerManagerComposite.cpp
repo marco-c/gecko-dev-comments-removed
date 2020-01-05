@@ -147,7 +147,6 @@ LayerManagerComposite::LayerManagerComposite(Compositor* aCompositor)
 , mCompositor(aCompositor)
 , mInTransaction(false)
 , mIsCompositorReady(false)
-, mGeometryChanged(true)
 #if defined(MOZ_WIDGET_ANDROID)
 , mScreenPixelsTarget(nullptr)
 #endif 
@@ -435,9 +434,6 @@ LayerManagerComposite::EndTransaction(const TimeStamp& aTimeStamp,
     MOZ_ASSERT(!aTimeStamp.IsNull());
     UpdateAndRender();
     mCompositor->FlushPendingNotifyNotUsed();
-  } else {
-    
-    mGeometryChanged = true;
   }
 
   mCompositor->ClearTargetContext();
@@ -468,7 +464,7 @@ LayerManagerComposite::UpdateAndRender()
     
     
     
-    nsIntRegion changed = mClonedLayerTreeProperties->ComputeDifferences(mRoot, nullptr, &mGeometryChanged);
+    nsIntRegion changed = mClonedLayerTreeProperties->ComputeDifferences(mRoot, nullptr);
 
     if (mTarget) {
       
@@ -516,7 +512,6 @@ LayerManagerComposite::UpdateAndRender()
 #if defined(MOZ_WIDGET_ANDROID)
   RenderToPresentationSurface();
 #endif
-  mGeometryChanged = false;
   mWindowOverlayChanged = false;
 
   
