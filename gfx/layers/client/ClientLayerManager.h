@@ -351,12 +351,6 @@ public:
 
   ~ClientLayer();
 
-  void SetShadow(PLayerChild* aShadow)
-  {
-    MOZ_ASSERT(!mShadow, "can't have two shadows (yet)");
-    mShadow = aShadow;
-  }
-
   virtual void Disconnect()
   {
     
@@ -364,7 +358,7 @@ public:
     
     
     
-    mShadow = nullptr;
+    SetShadow(nullptr);
   }
 
   virtual void ClearCachedResources() { }
