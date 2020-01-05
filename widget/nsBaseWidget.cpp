@@ -1363,9 +1363,15 @@ void nsBaseWidget::CreateCompositor(int aWidth, int aHeight)
 
   mLayerManager = lm.forget();
 
-  if (mWindowType == eWindowType_toplevel) {
-    
-    
+  
+  
+#if defined(XP_MACOSX)
+  bool getCompositorFromThisWindow = true;
+#else
+  bool getCompositorFromThisWindow = (mWindowType == eWindowType_toplevel);
+#endif
+
+  if (getCompositorFromThisWindow) {
     gfxPlatform::GetPlatform()->NotifyCompositorCreated(mLayerManager->GetCompositorBackendType());
   }
 }
