@@ -85,7 +85,7 @@ public:
     
     
 
-    static nsDragService* GetInstance();
+    static already_AddRefed<nsDragService> GetInstance();
 
     void TargetDataReceived          (GtkWidget         *aWidget,
                                       GdkDragContext    *aContext,

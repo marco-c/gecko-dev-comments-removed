@@ -12,6 +12,8 @@ server.start(-1);
 const ROOT = `http://localhost:${server.identity.primaryPort}`;
 const BASE = `${ROOT}/`;
 const HEADLESS_URL = `${BASE}/headless.html`;
+const HEADLESS_BUTTON_URL = `${BASE}/headless_button.html`;
+do_register_cleanup(() => { server.stop(() => {})});
 
 function loadContentWindow(webNavigation, uri) {
   return new Promise((resolve, reject) => {
@@ -88,7 +90,52 @@ add_task(function* test_snapshot() {
   ok(found, "Found blue text on page.");
 
   webNavigation.close();
-  yield new Promise((resolve) => {
-    server.stop(resolve);
-  });
+});
+
+
+add_task(function* test_keydown() {
+  let windowlessBrowser = Services.appShell.createWindowlessBrowser(false);
+  let webNavigation = windowlessBrowser.QueryInterface(Ci.nsIWebNavigation);
+  let contentWindow = yield loadContentWindow(webNavigation, HEADLESS_URL);
+
+  let utils = contentWindow.QueryInterface(Ci.nsIInterfaceRequestor)
+                           .getInterface(Ci.nsIDOMWindowUtils);
+  let keydown = new Promise((resolve) => {
+    contentWindow.addEventListener("keydown", () => {
+      resolve();
+    }, { once: true });
+  })
+  utils.sendKeyEvent("keydown", 65, 65, 0);
+
+  yield keydown;
+  ok(true, "Send keydown didn't crash");
+
+  webNavigation.close();
+});
+
+
+
+add_task(function* test_mouse_drag() {
+  let windowlessBrowser = Services.appShell.createWindowlessBrowser(false);
+  let webNavigation = windowlessBrowser.QueryInterface(Ci.nsIWebNavigation);
+  let contentWindow = yield loadContentWindow(webNavigation, HEADLESS_BUTTON_URL);
+  contentWindow.resizeTo(400, 400);
+
+  let target = contentWindow.document.getElementById('btn');
+  let rect = target.getBoundingClientRect();
+  let left = rect.left;
+  let top = rect.top;
+
+  let utils = contentWindow.QueryInterface(Ci.nsIInterfaceRequestor)
+                           .getInterface(Ci.nsIDOMWindowUtils);
+  utils.sendMouseEvent("mousedown", left, top, 0, 1, 0, false, 0, 0);
+  utils.sendMouseEvent("mousemove", left, top, 0, 1, 0, false, 0, 0);
+  
+  
+  yield new Promise((r) => {do_execute_soon(r)});
+  utils.sendMouseEvent("mouseup", left, top, 0, 1, 0, false, 0, 0);
+
+  ok(true, "Send mouse event didn't crash");
+
+  webNavigation.close();
 });
