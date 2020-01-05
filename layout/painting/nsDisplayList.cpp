@@ -2580,50 +2580,75 @@ GetViewportRectRelativeToReferenceFrame(nsDisplayListBuilder* aBuilder,
   return Nothing();
 }
 
-nsDisplayBackgroundImage::nsDisplayBackgroundImage(nsDisplayListBuilder* aBuilder,
-                                                   nsIFrame* aFrame,
-                                                   uint32_t aLayer,
-                                                   const nsRect& aBackgroundRect,
-                                                   const nsStyleBackground* aBackgroundStyle)
-  : nsDisplayImageContainer(aBuilder, aFrame)
-  , mBackgroundStyle(aBackgroundStyle)
-  , mBackgroundRect(aBackgroundRect)
-  , mLayer(aLayer)
-  , mIsRasterImage(false)
+ nsDisplayBackgroundImage::InitData
+nsDisplayBackgroundImage::GetInitData(nsDisplayListBuilder* aBuilder,
+                                      nsIFrame* aFrame,
+                                      uint32_t aLayer,
+                                      const nsRect& aBackgroundRect,
+                                      const nsStyleBackground* aBackgroundStyle,
+                                      LayerizeFixed aLayerizeFixed)
 {
-  MOZ_COUNT_CTOR(nsDisplayBackgroundImage);
-
-  nsPresContext* presContext = mFrame->PresContext();
+  nsPresContext* presContext = aFrame->PresContext();
   uint32_t flags = aBuilder->GetBackgroundPaintFlags();
-  const nsStyleImageLayers::Layer &layer = mBackgroundStyle->mImage.mLayers[mLayer];
+  const nsStyleImageLayers::Layer &layer = aBackgroundStyle->mImage.mLayers[aLayer];
 
   bool isTransformedFixed;
   nsBackgroundLayerState state =
-    nsCSSRendering::PrepareImageLayer(presContext, mFrame, flags,
-                                      mBackgroundRect, mBackgroundRect, layer,
+    nsCSSRendering::PrepareImageLayer(presContext, aFrame, flags,
+                                      aBackgroundRect, aBackgroundRect, layer,
                                       &isTransformedFixed);
-  mShouldTreatAsFixed = ComputeShouldTreatAsFixed(isTransformedFixed);
 
-  mBounds = GetBoundsInternal(aBuilder);
-  if (ShouldFixToViewport(aBuilder)) {
-    mAnimatedGeometryRoot = aBuilder->FindAnimatedGeometryRootFor(this);
+  
+  
+  
+  bool shouldTreatAsFixed =
+    layer.mAttachment == NS_STYLE_IMAGELAYER_ATTACHMENT_FIXED && !isTransformedFixed;
 
-    
-    
-    
-    if (Maybe<nsRect> viewportRect = GetViewportRectRelativeToReferenceFrame(aBuilder, mFrame)) {
-      mVisibleRect = mBounds.Intersect(*viewportRect);
+  bool shouldFixToViewport = shouldTreatAsFixed && !layer.mImage.IsEmpty();
+  if (shouldFixToViewport &&
+      aLayerizeFixed == LayerizeFixed::DO_NOT_LAYERIZE_FIXED_BACKGROUND_IF_AVOIDING_COMPONENT_ALPHA_LAYERS &&
+      !nsLayoutUtils::UsesAsyncScrolling(aFrame)) {
+    RefPtr<LayerManager> layerManager = aBuilder->GetWidgetLayerManager();
+    if (layerManager && layerManager->ShouldAvoidComponentAlphaLayers()) {
+      shouldFixToViewport = false;
     }
   }
 
-  mFillRect = state.mFillArea;
-  mDestRect = state.mDestArea;
+  bool isRasterImage = state.mImageRenderer.IsRasterImage();
+  nsCOMPtr<imgIContainer> image;
+  if (isRasterImage) {
+    image = state.mImageRenderer.GetImage();
+  }
+  return InitData{
+    aBuilder, aFrame, aBackgroundStyle, image, aBackgroundRect,
+    state.mFillArea, state.mDestArea, aLayer, isRasterImage,
+    shouldFixToViewport
+  };
+}
 
-  nsImageRenderer* imageRenderer = &state.mImageRenderer;
-  
-  if (imageRenderer->IsRasterImage()) {
-    mIsRasterImage = true;
-    mImage = imageRenderer->GetImage();
+nsDisplayBackgroundImage::nsDisplayBackgroundImage(const InitData& aInitData)
+  : nsDisplayImageContainer(aInitData.builder, aInitData.frame)
+  , mBackgroundStyle(aInitData.backgroundStyle)
+  , mImage(aInitData.image)
+  , mBackgroundRect(aInitData.backgroundRect)
+  , mFillRect(aInitData.fillArea)
+  , mDestRect(aInitData.destArea)
+  , mLayer(aInitData.layer)
+  , mIsRasterImage(aInitData.isRasterImage)
+  , mShouldFixToViewport(aInitData.shouldFixToViewport)
+{
+  MOZ_COUNT_CTOR(nsDisplayBackgroundImage);
+
+  mBounds = GetBoundsInternal(aInitData.builder);
+  if (mShouldFixToViewport) {
+    mAnimatedGeometryRoot = aInitData.builder->FindAnimatedGeometryRootFor(this);
+
+    
+    
+    
+    if (Maybe<nsRect> viewportRect = GetViewportRectRelativeToReferenceFrame(aInitData.builder, mFrame)) {
+      mVisibleRect = mBounds.Intersect(*viewportRect);
+    }
   }
 }
 
@@ -2830,15 +2855,17 @@ nsDisplayBackgroundImage::AppendBackgroundItemsToTop(nsDisplayListBuilder* aBuil
                               layer, bgRect, willPaintBorder);
     }
 
-    nsDisplayList thisItemList;
-    nsDisplayBackgroundImage* bgItem =
-      new (aBuilder) nsDisplayBackgroundImage(aBuilder, aFrame, i, bgRect, bg);
+    nsDisplayBackgroundImage::InitData bgData =
+      nsDisplayBackgroundImage::GetInitData(aBuilder, aFrame, i, bgRect, bg,
+                                            LayerizeFixed::DO_NOT_LAYERIZE_FIXED_BACKGROUND_IF_AVOIDING_COMPONENT_ALPHA_LAYERS);
 
-    if (bgItem->ShouldFixToViewport(aBuilder)) {
+    nsDisplayList thisItemList;
+    if (bgData.shouldFixToViewport) {
+      nsDisplayBackgroundImage* bgItem = new (aBuilder) nsDisplayBackgroundImage(bgData);
       thisItemList.AppendNewToTop(
         nsDisplayFixedPosition::CreateForFixedBackground(aBuilder, aFrame, bgItem, i));
     } else {
-      thisItemList.AppendNewToTop(bgItem);
+      thisItemList.AppendNewToTop(new (aBuilder) nsDisplayBackgroundImage(bgData));
     }
 
     if (bg->mImage.mLayers[i].mBlendMode != NS_STYLE_BLEND_NORMAL) {
@@ -2888,50 +2915,6 @@ static bool RoundedRectContainsRect(const nsRect& aRoundedRect,
                                     const nsRect& aContainedRect) {
   nsRegion rgn = nsLayoutUtils::RoundedRectIntersectRect(aRoundedRect, aRadii, aContainedRect);
   return rgn.Contains(aContainedRect);
-}
-
-bool
-nsDisplayBackgroundImage::ShouldTreatAsFixed() const
-{
-  return mShouldTreatAsFixed;
-}
-
-bool
-nsDisplayBackgroundImage::ComputeShouldTreatAsFixed(bool isTransformedFixed) const
-{
-  if (!mBackgroundStyle)
-    return false;
-
-  const nsStyleImageLayers::Layer &layer = mBackgroundStyle->mImage.mLayers[mLayer];
-  if (layer.mAttachment != NS_STYLE_IMAGELAYER_ATTACHMENT_FIXED)
-    return false;
-
-  
-  
-  
-  return !isTransformedFixed;
-}
-
-bool
-nsDisplayBackgroundImage::IsNonEmptyFixedImage() const
-{
-  return ShouldTreatAsFixed() &&
-         !mBackgroundStyle->mImage.mLayers[mLayer].mImage.IsEmpty();
-}
-
-bool
-nsDisplayBackgroundImage::ShouldFixToViewport(nsDisplayListBuilder* aBuilder)
-{
-  
-  RefPtr<LayerManager> layerManager = aBuilder->GetWidgetLayerManager();
-  if (!nsLayoutUtils::UsesAsyncScrolling(mFrame) &&
-      layerManager && layerManager->ShouldAvoidComponentAlphaLayers()) {
-    return false;
-  }
-
-  
-  
-  return IsNonEmptyFixedImage();
 }
 
 bool
@@ -3326,7 +3309,7 @@ nsDisplayBackgroundImage::GetBoundsInternal(nsDisplayListBuilder* aBuilder) {
   if (mFrame->GetType() == nsGkAtoms::canvasFrame) {
     nsCanvasFrame* frame = static_cast<nsCanvasFrame*>(mFrame);
     clipRect = frame->CanvasArea() + ToReferenceFrame();
-  } else if (nsLayoutUtils::UsesAsyncScrolling(mFrame) && IsNonEmptyFixedImage()) {
+  } else if (nsLayoutUtils::UsesAsyncScrolling(mFrame) && mShouldFixToViewport) {
     
     
     

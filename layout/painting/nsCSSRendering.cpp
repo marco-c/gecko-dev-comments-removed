@@ -3854,22 +3854,10 @@ nsCSSRendering::PrepareImageLayer(nsPresContext* aPresContext,
   
   nsRect bgClipRect = aBGClipRect;
 
-  
-  
-  
-  
-  nsPoint imageTopLeft;
-  if (NS_STYLE_IMAGELAYER_ATTACHMENT_FIXED == aLayer.mAttachment && !transformedFixed) {
-    if (aFlags & nsCSSRendering::PAINTBG_TO_WINDOW) {
-      
-      
-      
-      
-      
-      
-      
-      bgClipRect.IntersectRect(bgClipRect, positionArea + aBorderArea.TopLeft());
-    }
+  if (NS_STYLE_IMAGELAYER_ATTACHMENT_FIXED == aLayer.mAttachment &&
+      !transformedFixed &&
+      (aFlags & nsCSSRendering::PAINTBG_TO_WINDOW)) {
+    bgClipRect = positionArea + aBorderArea.TopLeft();
   }
 
   int repeatX = aLayer.mRepeat.mXRepeat;
@@ -3891,6 +3879,12 @@ nsCSSRendering::PrepareImageLayer(nsPresContext* aPresContext,
 
   state.mImageRenderer.SetPreferredSize(intrinsicSize,
                                         imageSize);
+
+  
+  
+  
+  
+  nsPoint imageTopLeft;
 
   
   
