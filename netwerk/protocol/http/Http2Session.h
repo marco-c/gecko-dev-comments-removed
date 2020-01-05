@@ -170,6 +170,9 @@ public:
     kBackgroundGroupID =  0x7,
     kSpeculativeGroupID = 0x9,
     kFollowerGroupID =    0xB
+    
+    
+    
   };
 
   static nsresult RecvHeaders(Http2Session *);

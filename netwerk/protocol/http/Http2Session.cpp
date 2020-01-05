@@ -958,6 +958,9 @@ Http2Session::SendHello()
     MOZ_ASSERT(mNextStreamID == kFollowerGroupID);
     CreatePriorityNode(kFollowerGroupID, kLeaderGroupID, 0, "follower");
     mNextStreamID += 2;
+    
+    
+    
   }
 
   FlushOutputQueue();
@@ -2307,7 +2310,7 @@ Http2Session::OnTransportStatus(nsITransport* aTransport,
   case NS_NET_STATUS_CONNECTING_TO:
   case NS_NET_STATUS_CONNECTED_TO:
   {
-    Http2Stream *target = mStreamIDHash.Get(1);
+    Http2Stream *target = mStreamIDHash.Get(mUseH2Deps ? 0xD : 0x3);
     nsAHttpTransaction *transaction = target ? target->Transaction() : nullptr;
     if (transaction)
       transaction->OnTransportStatus(aTransport, aStatus, aProgress);
