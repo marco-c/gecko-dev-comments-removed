@@ -14,7 +14,6 @@
 #include "nsIContentSecurityPolicy.h"
 #include "nsIObjectInputStream.h"
 #include "nsIObjectOutputStream.h"
-#include "nsIStandardURL.h"
 
 #include "ContentPrincipal.h"
 #include "nsNetUtil.h"
@@ -369,31 +368,8 @@ BasePrincipal::AddonHasPermission(const nsAString& aPerm)
 }
 
 already_AddRefed<BasePrincipal>
-BasePrincipal::CreateCodebasePrincipal(nsIURI* aURI,
-                                       const OriginAttributes& aAttrs)
+BasePrincipal::CreateCodebasePrincipal(nsIURI* aURI, const OriginAttributes& aAttrs)
 {
-  MOZ_ASSERT(aURI);
-
-  nsAutoCString originNoSuffix;
-  nsresult rv =
-    ContentPrincipal::GenerateOriginNoSuffixFromURI(aURI, originNoSuffix);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    
-    
-    return NullPrincipal::Create(aAttrs);
-  }
-
-  return CreateCodebasePrincipal(aURI, aAttrs, originNoSuffix);
-}
-
-already_AddRefed<BasePrincipal>
-BasePrincipal::CreateCodebasePrincipal(nsIURI* aURI,
-                                       const OriginAttributes& aAttrs,
-                                       const nsACString& aOriginNoSuffix)
-{
-  MOZ_ASSERT(aURI);
-  MOZ_ASSERT(!aOriginNoSuffix.IsEmpty());
-
   
   
   bool inheritsPrincipal;
@@ -417,7 +393,7 @@ BasePrincipal::CreateCodebasePrincipal(nsIURI* aURI,
 
   
   RefPtr<ContentPrincipal> codebase = new ContentPrincipal();
-  rv = codebase->Init(aURI, aAttrs, aOriginNoSuffix);
+  rv = codebase->Init(aURI, aAttrs);
   NS_ENSURE_SUCCESS(rv, nullptr);
   return codebase.forget();
 }

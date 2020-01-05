@@ -75,16 +75,9 @@ public:
   virtual bool IsCodebasePrincipal() const { return false; };
 
   static BasePrincipal* Cast(nsIPrincipal* aPrin) { return static_cast<BasePrincipal*>(aPrin); }
-
-  static already_AddRefed<BasePrincipal>
-  CreateCodebasePrincipal(const nsACString& aOrigin);
-
-  
-  
-  
-
   static already_AddRefed<BasePrincipal>
   CreateCodebasePrincipal(nsIURI* aURI, const OriginAttributes& aAttrs);
+  static already_AddRefed<BasePrincipal> CreateCodebasePrincipal(const nsACString& aOrigin);
 
   const OriginAttributes& OriginAttributesRef() final { return mOriginAttributes; }
   uint32_t AppId() const { return mOriginAttributes.mAppId; }
@@ -137,10 +130,6 @@ protected:
   nsCOMPtr<nsIContentSecurityPolicy> mPreloadCSP;
 
 private:
-  static already_AddRefed<BasePrincipal>
-  CreateCodebasePrincipal(nsIURI* aURI, const OriginAttributes& aAttrs,
-                          const nsACString& aOriginNoSuffix);
-
   nsCOMPtr<nsIAtom> mOriginNoSuffix;
   nsCOMPtr<nsIAtom> mOriginSuffix;
 
@@ -168,13 +157,20 @@ BasePrincipal::FastEquals(nsIPrincipal* aOther)
     return this == other;
   }
 
-  if (Kind() == eCodebasePrincipal) {
-    return mOriginNoSuffix == other->mOriginNoSuffix &&
-           mOriginSuffix == other->mOriginSuffix;
+  if (mOriginNoSuffix) {
+    if (Kind() == eCodebasePrincipal) {
+      return mOriginNoSuffix == other->mOriginNoSuffix &&
+             mOriginSuffix == other->mOriginSuffix;
+    }
+
+    MOZ_ASSERT(Kind() == eExpandedPrincipal);
+    return mOriginNoSuffix == other->mOriginNoSuffix;
   }
 
-  MOZ_ASSERT(Kind() == eExpandedPrincipal);
-  return mOriginNoSuffix == other->mOriginNoSuffix;
+  
+  
+  return Subsumes(aOther, DontConsiderDocumentDomain) &&
+         other->Subsumes(this, DontConsiderDocumentDomain);
 }
 
 inline bool
@@ -198,11 +194,14 @@ BasePrincipal::FastSubsumes(nsIPrincipal* aOther)
   
   
   
+  
+  
+  
   auto other = Cast(aOther);
   if (Kind() == eNullPrincipal && other->Kind() == eNullPrincipal) {
     return this == other;
   }
-  if (FastEquals(aOther)) {
+  if (mOriginNoSuffix && FastEquals(aOther)) {
     return true;
   }
 
