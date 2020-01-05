@@ -408,11 +408,12 @@ class MOZ_STACK_CLASS TokenStream
     
     
     
-    bool reportCompileErrorNumberVA(uint32_t offset, unsigned flags, unsigned errorNumber,
-                                    va_list args);
-    bool reportStrictModeErrorNumberVA(uint32_t offset, bool strictMode, unsigned errorNumber,
-                                       va_list args);
-    bool reportExtraWarningErrorNumberVA(uint32_t offset, unsigned errorNumber, va_list args);
+    bool reportCompileErrorNumberVA(UniquePtr<JSErrorNotes> notes, uint32_t offset, unsigned flags,
+                                    unsigned errorNumber, va_list args);
+    bool reportStrictModeErrorNumberVA(UniquePtr<JSErrorNotes> notes, uint32_t offset,
+                                       bool strictMode, unsigned errorNumber, va_list args);
+    bool reportExtraWarningErrorNumberVA(UniquePtr<JSErrorNotes> notes, uint32_t offset,
+                                         unsigned errorNumber, va_list args);
 
     
     void reportAsmJSError(uint32_t offset, unsigned errorNumber, ...);
