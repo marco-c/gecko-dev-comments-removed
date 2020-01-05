@@ -863,9 +863,10 @@ GfxInfo::GetGfxDriverInfo()
     APPEND_TO_DRIVER_BLOCKLIST(OperatingSystem::WindowsXP,
       (nsAString&) GfxDriverInfo::GetDeviceVendor(VendorNVIDIA), GfxDriverInfo::allDevices,
       GfxDriverInfo::allFeatures, nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION,
-      DRIVER_LESS_THAN, V(6,14,11,8265), "FEATURE_FAILURE_NV_XP", "182.65" );
+      DRIVER_LESS_THAN_OR_EQUAL, V(6,14,11,8745), "FEATURE_FAILURE_NV_XP", "nVidia driver > 187.45" );
 
     
+
 
 
 
@@ -877,35 +878,35 @@ GfxInfo::GetGfxDriverInfo()
     APPEND_TO_DRIVER_BLOCKLIST(OperatingSystem::WindowsVista,
       (nsAString&) GfxDriverInfo::GetDeviceVendor(VendorNVIDIA), GfxDriverInfo::allDevices,
       GfxDriverInfo::allFeatures, nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION,
-      DRIVER_LESS_THAN, V(8,15,11,8265),
-      "FEATURE_FAILURE_NV_VISTA_15", "182.65" );
+      DRIVER_LESS_THAN_OR_EQUAL, V(8,15,11,8745),
+      "FEATURE_FAILURE_NV_VISTA_15", "nVidia driver > 187.45" );
     APPEND_TO_DRIVER_BLOCKLIST(OperatingSystem::Windows7,
       (nsAString&) GfxDriverInfo::GetDeviceVendor(VendorNVIDIA), GfxDriverInfo::allDevices,
       GfxDriverInfo::allFeatures, nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION,
-      DRIVER_LESS_THAN, V(8,15,11,8265),
-      "FEATURE_FAILURE_NV_W7_15", "182.65" );
+      DRIVER_LESS_THAN_OR_EQUAL, V(8,15,11,8745),
+      "FEATURE_FAILURE_NV_W7_15", "nVidia driver > 187.45" );
     APPEND_TO_DRIVER_BLOCKLIST_RANGE(OperatingSystem::WindowsVista,
       (nsAString&) GfxDriverInfo::GetDeviceVendor(VendorNVIDIA), GfxDriverInfo::allDevices,
       GfxDriverInfo::allFeatures, nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION,
-      DRIVER_BETWEEN_INCLUSIVE_START, V(8,16,10,0000), V(8,16,11,8265),
-      "FEATURE_FAILURE_NV_VISTA_16", "182.65" );
+      DRIVER_BETWEEN_INCLUSIVE_START, V(8,16,10,0000), V(8,16,11,8745),
+      "FEATURE_FAILURE_NV_VISTA_16", "nVidia driver > 187.45" );
     APPEND_TO_DRIVER_BLOCKLIST_RANGE(OperatingSystem::Windows7,
       (nsAString&) GfxDriverInfo::GetDeviceVendor(VendorNVIDIA), GfxDriverInfo::allDevices,
       GfxDriverInfo::allFeatures, nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION,
-      DRIVER_BETWEEN_INCLUSIVE_START, V(8,16,10,0000), V(8,16,11,8265),
-      "FEATURE_FAILURE_NV_W7_16", "182.65" );
+      DRIVER_BETWEEN_INCLUSIVE_START, V(8,16,10,0000), V(8,16,11,8745),
+      "FEATURE_FAILURE_NV_W7_16", "nVidia driver > 187.45" );
     
     APPEND_TO_DRIVER_BLOCKLIST_RANGE(OperatingSystem::WindowsVista,
       (nsAString&) GfxDriverInfo::GetDeviceVendor(VendorNVIDIA), GfxDriverInfo::allDevices,
       GfxDriverInfo::allFeatures, nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION,
-      DRIVER_BETWEEN_INCLUSIVE_START, V(8,17,10,0000), V(8,17,11,8265),
-      "FEATURE_FAILURE_NV_VISTA_17", "182.65" );
+      DRIVER_BETWEEN_INCLUSIVE_START, V(8,17,10,0000), V(8,17,11,8745),
+      "FEATURE_FAILURE_NV_VISTA_17", "nVidia driver > 187.45" );
     
     APPEND_TO_DRIVER_BLOCKLIST_RANGE(OperatingSystem::Windows7,
       (nsAString&) GfxDriverInfo::GetDeviceVendor(VendorNVIDIA), GfxDriverInfo::allDevices,
       GfxDriverInfo::allFeatures, nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION,
-      DRIVER_BETWEEN_INCLUSIVE_START, V(8,17,10,0000), V(8,17,11,8265),
-      "FEATURE_FAILURE_NV_W7_17", "182.65" );
+      DRIVER_BETWEEN_INCLUSIVE_START, V(8,17,10,0000), V(8,17,11,8745),
+      "FEATURE_FAILURE_NV_W7_17", "nVidia driver > 187.45" );
 
     
 
