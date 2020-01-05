@@ -252,17 +252,6 @@ public:
 
   already_AddRefed<GMPCrashHelper> GetCrashHelper() override;
 
-protected:
-  
-  
-  
-  
-  
-  
-  
-  
-  void UpdateEstimatedMediaDuration(int64_t aDuration) override;
-
 public:
   
   

@@ -45,12 +45,6 @@ using namespace mozilla::media;
 namespace mozilla {
 
 
-
-
-
-static const uint64_t ESTIMATED_DURATION_FUZZ_FACTOR_USECS = USECS_PER_S / 2;
-
-
 #undef LOG
 #undef DUMP
 
@@ -1331,29 +1325,6 @@ MediaDecoder::HasSuspendTaint() const
 {
   MOZ_ASSERT(NS_IsMainThread());
   return mHasSuspendTaint;
-}
-
-void
-MediaDecoder::UpdateEstimatedMediaDuration(int64_t aDuration)
-{
-  MOZ_ASSERT(NS_IsMainThread());
-
-  if (mPlayState <= PLAY_STATE_LOADING) {
-    return;
-  }
-
-  
-  
-  
-  
-  if (mEstimatedDuration.Ref().isSome()
-      && mozilla::Abs(mEstimatedDuration.Ref().ref().ToMicroseconds()
-                      - aDuration)
-         < ESTIMATED_DURATION_FUZZ_FACTOR_USECS) {
-    return;
-  }
-
-  mEstimatedDuration = Some(TimeUnit::FromMicroseconds(aDuration));
 }
 
 bool
