@@ -6,14 +6,15 @@ XPCOMUtils.defineLazyModuleGetter(this, "CustomizableUI",
                                   "resource:///modules/CustomizableUI.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "E10SUtils",
                                   "resource:///modules/E10SUtils.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "NetUtil",
-                                  "resource://gre/modules/NetUtil.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "PrivateBrowsingUtils",
                                   "resource://gre/modules/PrivateBrowsingUtils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Task",
                                   "resource://gre/modules/Task.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "setTimeout",
                                   "resource://gre/modules/Timer.jsm");
+
+
+Cu.import("resource://gre/modules/ExtensionTabs.jsm");
 
 XPCOMUtils.defineLazyServiceGetter(this, "styleSheetService",
                                    "@mozilla.org/content/style-sheet-service;1",
@@ -28,9 +29,14 @@ const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 
 var {
   DefaultWeakMap,
-  promiseEvent,
+  ExtensionError,
   SingletonEventManager,
+  defineLazyGetter,
+  promiseEvent,
 } = ExtensionUtils;
+
+let tabTracker;
+let windowTracker;
 
 
 
@@ -556,8 +562,8 @@ global.TabContext = function TabContext(getDefaults, extension) {
   this.tabData = new WeakMap();
   this.lastLocation = new WeakMap();
 
-  AllWindowEvents.addListener("progress", this);
-  AllWindowEvents.addListener("TabSelect", this);
+  windowTracker.addListener("progress", this);
+  windowTracker.addListener("TabSelect", this);
 
   EventEmitter.decorate(this);
 };
@@ -604,133 +610,8 @@ TabContext.prototype = {
   },
 
   shutdown() {
-    AllWindowEvents.removeListener("progress", this);
-    AllWindowEvents.removeListener("TabSelect", this);
-  },
-};
-
-
-function ExtensionTabManager(extension) {
-  this.extension = extension;
-
-  
-  
-  
-  
-  
-  
-  
-  this.hasTabPermissionFor = new WeakMap();
-}
-
-ExtensionTabManager.prototype = {
-  addActiveTabPermission(tab = TabManager.activeTab) {
-    if (this.extension.hasPermission("activeTab")) {
-      
-      
-      
-      
-      this.hasTabPermissionFor.set(tab, tab.linkedBrowser.innerWindowID);
-    }
-  },
-
-  revokeActiveTabPermission(tab = TabManager.activeTab) {
-    this.hasTabPermissionFor.delete(tab);
-  },
-
-  
-  
-  
-  
-  hasActiveTabPermission(tab) {
-    
-    if (this.extension.hasPermission("activeTab")) {
-      return (this.hasTabPermissionFor.has(tab) &&
-              this.hasTabPermissionFor.get(tab) === tab.linkedBrowser.innerWindowID);
-    }
-    return false;
-  },
-
-  hasTabPermission(tab) {
-    return this.extension.hasPermission("tabs") || this.hasActiveTabPermission(tab);
-  },
-
-  convert(tab) {
-    let window = tab.ownerGlobal;
-    let browser = tab.linkedBrowser;
-
-    let mutedInfo = {muted: tab.muted};
-    if (tab.muteReason === null) {
-      mutedInfo.reason = "user";
-    } else if (tab.muteReason) {
-      mutedInfo.reason = "extension";
-      mutedInfo.extensionId = tab.muteReason;
-    }
-
-    let result = {
-      id: TabManager.getId(tab),
-      index: tab._tPos,
-      windowId: WindowManager.getId(window),
-      selected: tab.selected,
-      highlighted: tab.selected,
-      active: tab.selected,
-      pinned: tab.pinned,
-      status: TabManager.getStatus(tab),
-      incognito: WindowManager.isBrowserPrivate(browser),
-      width: browser.frameLoader.lazyWidth || browser.clientWidth,
-      height: browser.frameLoader.lazyHeight || browser.clientHeight,
-      audible: tab.soundPlaying,
-      mutedInfo,
-    };
-    if (this.extension.hasPermission("cookies")) {
-      result.cookieStoreId = getCookieStoreIdForTab(result, tab);
-    }
-
-    if (this.hasTabPermission(tab)) {
-      result.url = browser.currentURI.spec;
-      let title = browser.contentTitle || tab.label;
-      if (title) {
-        result.title = title;
-      }
-      let icon = window.gBrowser.getIcon(tab);
-      if (icon) {
-        result.favIconUrl = icon;
-      }
-    }
-
-    return result;
-  },
-
-  
-  
-  convertFromSessionStoreClosedData(tab, window) {
-    let result = {
-      sessionId: String(tab.closedId),
-      index: tab.pos ? tab.pos : 0,
-      windowId: WindowManager.getId(window),
-      selected: false,
-      highlighted: false,
-      active: false,
-      pinned: false,
-      incognito: Boolean(tab.state && tab.state.isPrivate),
-    };
-
-    if (this.hasTabPermission(tab)) {
-      let entries = tab.state ? tab.state.entries : tab.entries;
-      result.url = entries[0].url;
-      result.title = entries[0].title;
-      if (tab.image) {
-        result.favIconUrl = tab.image;
-      }
-    }
-
-    return result;
-  },
-
-  getTabs(window) {
-    return Array.from(window.gBrowser.tabs)
-                .filter(tab => !tab.closing)
-                .map(tab => this.convert(tab));
+    windowTracker.removeListener("progress", this);
+    windowTracker.removeListener("TabSelect", this);
   },
 };
 
@@ -753,10 +634,10 @@ function getBrowserInfo(browser) {
   if (window.gBrowser) {
     let tab = window.gBrowser.getTabForBrowser(browser);
     if (tab) {
-      result.tabId = TabManager.getId(tab);
+      result.tabId = tabTracker.getId(tab);
     }
 
-    result.windowId = WindowManager.getId(window);
+    result.windowId = windowTracker.getId(window);
   }
 
   return result;
@@ -782,80 +663,243 @@ Services.mm.addMessageListener("Extension:GetTabAndWindowId", onGetTabAndWindowI
 
 
 
+class WindowTracker extends WindowTrackerBase {
+  addProgressListener(window, listener) {
+    window.gBrowser.addTabsProgressListener(listener);
+  }
 
-global.TabManager = {
-  _tabs: new WeakMap(),
-  _nextId: 1,
-  _initialized: false,
+  removeProgressListener(window, listener) {
+    window.gBrowser.removeTabsProgressListener(listener);
+  }
+}
 
-  
-  
-  
-  initListener() {
-    if (this._initialized) {
+global.WindowEventManager = class extends SingletonEventManager {
+  constructor(context, name, event, listener) {
+    super(context, name, fire => {
+      let listener2 = listener.bind(null, fire);
+
+      windowTracker.addListener(event, listener2);
+      return () => {
+        windowTracker.removeListener(event, listener2);
+      };
+    });
+  }
+};
+
+class TabTracker extends TabTrackerBase {
+  constructor() {
+    super();
+
+    this._tabs = new WeakMap();
+    this._tabIds = new Map();
+    this._nextId = 1;
+
+    this._handleTabDestroyed = this._handleTabDestroyed.bind(this);
+  }
+
+  init() {
+    if (this.initialized) {
       return;
     }
+    this.initialized = true;
 
-    AllWindowEvents.addListener("TabOpen", this);
-    AllWindowEvents.addListener("TabClose", this);
-    WindowListManager.addOpenListener(this.handleWindowOpen.bind(this));
+    this.adoptedTabs = new WeakMap();
 
-    this._initialized = true;
-  },
+    this._handleWindowOpen = this._handleWindowOpen.bind(this);
+    this._handleWindowClose = this._handleWindowClose.bind(this);
 
-  handleEvent(event) {
-    if (event.type == "TabOpen") {
-      let {adoptedTab} = event.detail;
-      if (adoptedTab) {
-        
-        
-        let tab = event.target;
-        this._tabs.set(tab, this.getId(adoptedTab));
+    windowTracker.addListener("TabClose", this);
+    windowTracker.addListener("TabOpen", this);
+    windowTracker.addOpenListener(this._handleWindowOpen);
+    windowTracker.addCloseListener(this._handleWindowClose);
 
-        tab.linkedBrowser.messageManager.sendAsyncMessage("Extension:SetTabAndWindowId", {
-          windowId: WindowManager.getId(tab.ownerGlobal),
-        });
-      }
-    } else if (event.type == "TabClose") {
-      let {adoptedBy} = event.detail;
-      if (adoptedBy) {
-        
-        
-        
-        
-        this._tabs.set(adoptedBy, this.getId(event.target));
-
-        adoptedBy.linkedBrowser.messageManager.sendAsyncMessage("Extension:SetTabAndWindowId", {
-          windowId: WindowManager.getId(adoptedBy),
-        });
-      }
-    }
-  },
-
-  handleWindowOpen(window) {
-    if (window.arguments && window.arguments[0] instanceof window.XULElement) {
-      
-      
-      
-      let adoptedTab = window.arguments[0];
-
-      this._tabs.set(window.gBrowser.tabs[0], this.getId(adoptedTab));
-    }
-  },
+    
+    this.on("tab-detached", this._handleTabDestroyed);
+    this.on("tab-removed", this._handleTabDestroyed);
+    
+  }
 
   getId(tab) {
     if (this._tabs.has(tab)) {
       return this._tabs.get(tab);
     }
-    this.initListener();
+
+    this.init();
 
     let id = this._nextId++;
-    this._tabs.set(tab, id);
+    this.setId(tab, id);
     return id;
-  },
+  }
+
+  setId(tab, id) {
+    this._tabs.set(tab, id);
+    this._tabIds.set(id, tab);
+  }
+
+  _handleTabDestroyed(event, {tab}) {
+    let id = this._tabs.get(tab);
+    if (id) {
+      this._tabs.delete(tab);
+      if (this._tabIds.get(id) === tab) {
+        this._tabIds.delete(id);
+      }
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  getTab(tabId, default_ = undefined) {
+    let tab = this._tabIds.get(tabId);
+    if (tab) {
+      return tab;
+    }
+    if (default_ !== undefined) {
+      return default_;
+    }
+    throw new ExtensionError(`Invalid tab ID: ${tabId}`);
+  }
+
+  handleEvent(event) {
+    let tab = event.target;
+
+    switch (event.type) {
+      case "TabOpen":
+        let {adoptedTab} = event.detail;
+        if (adoptedTab) {
+          this.adoptedTabs.set(adoptedTab, event.target);
+
+          
+          
+          this.setId(tab, this.getId(adoptedTab));
+
+          adoptedTab.linkedBrowser.messageManager.sendAsyncMessage("Extension:SetTabAndWindowId", {
+            windowId: windowTracker.getId(tab.ownerGlobal),
+          });
+        }
+
+        
+        
+        Promise.resolve().then(() => {
+          if (event.detail.adoptedTab) {
+            this.emitAttached(event.originalTarget);
+          } else {
+            this.emitCreated(event.originalTarget);
+          }
+        });
+        break;
+
+      case "TabClose":
+        let {adoptedBy} = event.detail;
+        if (adoptedBy) {
+          
+          
+          
+          
+          this.setId(adoptedBy, this.getId(tab));
+
+          this.emitDetached(tab, adoptedBy);
+        } else {
+          this.emitRemoved(tab, false);
+        }
+        break;
+    }
+  }
+
+  _handleWindowOpen(window) {
+    if (window.arguments && window.arguments[0] instanceof window.XULElement) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      let tab = window.arguments[0];
+      let adoptedBy = window.gBrowser.tabs[0];
+
+      this.adoptedTabs.set(tab, adoptedBy);
+      this.setId(adoptedBy, this.getId(tab));
+
+      
+      
+      let listener = (event, details) => {
+        if (details.tab === tab) {
+          this.off("tab-detached", listener);
+
+          Promise.resolve().then(() => {
+            this.emitAttached(details.adoptedBy);
+          });
+        }
+      };
+
+      this.on("tab-detached", listener);
+    } else {
+      for (let tab of window.gBrowser.tabs) {
+        this.emitCreated(tab);
+      }
+    }
+  }
+
+  _handleWindowClose(window) {
+    for (let tab of window.gBrowser.tabs) {
+      if (this.adoptedTabs.has(tab)) {
+        this.emitDetached(tab, this.adoptedTabs.get(tab));
+      } else {
+        this.emitRemoved(tab, true);
+      }
+    }
+  }
+
+  emitAttached(tab) {
+    let newWindowId = windowTracker.getId(tab.ownerGlobal);
+    let tabId = this.getId(tab);
+
+    this.emit("tab-attached", {tab, tabId, newWindowId, newPosition: tab._tPos});
+  }
+
+  emitDetached(tab, adoptedBy) {
+    let oldWindowId = windowTracker.getId(tab.ownerGlobal);
+    let tabId = this.getId(tab);
+
+    this.emit("tab-detached", {tab, adoptedBy, tabId, oldWindowId, oldPosition: tab._tPos});
+  }
+
+  emitCreated(tab) {
+    this.emit("tab-created", {tab});
+  }
+
+  emitRemoved(tab, isWindowClosing) {
+    let windowId = windowTracker.getId(tab.ownerGlobal);
+    let tabId = this.getId(tab);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    Services.tm.mainThread.dispatch(() => {
+      this.emit("tab-removed", {tab, tabId, windowId, isWindowClosing});
+    }, Ci.nsIThread.DISPATCH_NORMAL);
+  }
 
   getBrowserId(browser) {
-    let gBrowser = browser.ownerGlobal.gBrowser;
+    let {gBrowser} = browser.ownerGlobal;
     
     
     if (gBrowser && gBrowser.getTabForBrowser) {
@@ -865,107 +909,125 @@ global.TabManager = {
       }
     }
     return -1;
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  getTab(tabId, context, default_ = undefined) {
-    
-    for (let window of WindowListManager.browserWindows()) {
-      if (!window.gBrowser) {
-        continue;
-      }
-      for (let tab of window.gBrowser.tabs) {
-        if (this.getId(tab) == tabId) {
-          return tab;
-        }
-      }
-    }
-    if (default_ !== undefined) {
-      return default_;
-    }
-    throw new context.cloneScope.Error(`Invalid tab ID: ${tabId}`);
-  },
+  }
 
   get activeTab() {
-    let window = WindowManager.topWindow;
+    let window = windowTracker.topWindow;
     if (window && window.gBrowser) {
       return window.gBrowser.selectedTab;
     }
     return null;
-  },
-
-  getStatus(tab) {
-    return tab.getAttribute("busy") == "true" ? "loading" : "complete";
-  },
-
-  convert(extension, tab) {
-    return TabManager.for(extension).convert(tab);
-  },
-};
-
-
-let tabManagers = new WeakMap();
-
-
-
-TabManager.for = function(extension) {
-  if (!tabManagers.has(extension)) {
-    tabManagers.set(extension, new ExtensionTabManager(extension));
   }
-  return tabManagers.get(extension);
-};
-
-
-extensions.on("shutdown", (type, extension) => {
-  tabManagers.delete(extension);
-});
-
-
-function memoize(fn) {
-  let weakMap = new DefaultWeakMap(fn);
-  return weakMap.get.bind(weakMap);
 }
 
+windowTracker = new WindowTracker();
+tabTracker = new TabTracker();
 
-global.WindowManager = {
-  
-  WINDOW_ID_NONE: -1,
-  WINDOW_ID_CURRENT: -2,
+Object.assign(global, {tabTracker, windowTracker});
 
-  get topWindow() {
-    return Services.wm.getMostRecentWindow("navigator:browser");
-  },
+class Tab extends TabBase {
+  get _favIconUrl() {
+    return this.window.gBrowser.getIcon(this.tab);
+  }
 
-  windowType(window) {
-    
+  get audible() {
+    return this.tab.soundPlaying;
+  }
 
-    let {chromeFlags} = window.QueryInterface(Ci.nsIInterfaceRequestor)
-                              .getInterface(Ci.nsIDocShell)
-                              .treeOwner.QueryInterface(Ci.nsIInterfaceRequestor)
-                              .getInterface(Ci.nsIXULWindow);
+  get browser() {
+    return this.tab.linkedBrowser;
+  }
 
-    if (chromeFlags & Ci.nsIWebBrowserChrome.CHROME_OPENAS_DIALOG) {
-      return "popup";
+  get cookieStoreId() {
+    return getCookieStoreIdForTab(this, this.tab);
+  }
+
+  get height() {
+    return this.browser.clientHeight;
+  }
+
+  get index() {
+    return this.tab._tPos;
+  }
+
+  get innerWindowID() {
+    return this.browser.innerWindowID;
+  }
+
+  get mutedInfo() {
+    let tab = this.tab;
+
+    let mutedInfo = {muted: tab.muted};
+    if (tab.muteReason === null) {
+      mutedInfo.reason = "user";
+    } else if (tab.muteReason) {
+      mutedInfo.reason = "extension";
+      mutedInfo.extensionId = tab.muteReason;
     }
 
-    return "normal";
-  },
+    return mutedInfo;
+  }
 
-  updateGeometry(window, options) {
+  get pinned() {
+    return this.tab.pinned;
+  }
+
+  get active() {
+    return this.tab.selected;
+  }
+
+  get selected() {
+    return this.tab.selected;
+  }
+
+  get status() {
+    if (this.tab.getAttribute("busy") === "true") {
+      return "loading";
+    }
+    return "complete";
+  }
+
+  get width() {
+    return this.browser.clientWidth;
+  }
+
+  get window() {
+    return this.tab.ownerGlobal;
+  }
+
+  get windowId() {
+    return windowTracker.getId(this.window);
+  }
+
+  static convertFromSessionStoreClosedData(extension, tab, window = null) {
+    let result = {
+      sessionId: String(tab.closedId),
+      index: tab.pos ? tab.pos : 0,
+      windowId: window && windowTracker.getId(window),
+      selected: false,
+      highlighted: false,
+      active: false,
+      pinned: false,
+      incognito: Boolean(tab.state && tab.state.isPrivate),
+    };
+
+    if (extension.tabManager.hasTabPermission(tab)) {
+      let entries = tab.state ? tab.state.entries : tab.entries;
+      result.url = entries[0].url;
+      result.title = entries[0].title;
+      if (tab.image) {
+        result.favIconUrl = tab.image;
+      }
+    }
+
+    return result;
+  }
+}
+
+class Window extends WindowBase {
+  updateGeometry(options) {
+    let {window} = this;
+
     if (options.left !== null || options.top !== null) {
       let left = options.left !== null ? options.left : window.screenX;
       let top = options.top !== null ? options.top : window.screenY;
@@ -977,33 +1039,41 @@ global.WindowManager = {
       let height = options.height !== null ? options.height : window.outerHeight;
       window.resizeTo(width, height);
     }
-  },
+  }
 
-  isBrowserPrivate: memoize(browser => {
-    return PrivateBrowsingUtils.isBrowserPrivate(browser);
-  }),
+  get focused() {
+    return this.window.document.hasFocus();
+  }
 
-  getId: memoize(window => {
-    if (window instanceof Ci.nsIInterfaceRequestor) {
-      return window.getInterface(Ci.nsIDOMWindowUtils).outerWindowID;
-    }
-    return null;
-  }),
+  get top() {
+    return this.window.screenY;
+  }
 
-  getWindow(id, context) {
-    if (id == this.WINDOW_ID_CURRENT) {
-      return currentWindow(context);
-    }
+  get left() {
+    return this.window.screenX;
+  }
 
-    for (let window of WindowListManager.browserWindows(true)) {
-      if (this.getId(window) == id) {
-        return window;
-      }
-    }
-    return null;
-  },
+  get width() {
+    return this.window.outerWidth;
+  }
 
-  getState(window) {
+  get height() {
+    return this.window.outerHeight;
+  }
+
+  get incognito() {
+    return PrivateBrowsingUtils.isWindowPrivate(this.window);
+  }
+
+  get alwaysOnTop() {
+    return this.xulWindow.zLevel >= Ci.nsIXULWindow.raisedZ;
+  }
+
+  get isLastFocused() {
+    return this.window === windowTracker.topWindow;
+  }
+
+  static getState(window) {
     const STATES = {
       [window.STATE_MAXIMIZED]: "maximized",
       [window.STATE_MINIMIZED]: "minimized",
@@ -1014,10 +1084,15 @@ global.WindowManager = {
       state = "fullscreen";
     }
     return state;
-  },
+  }
 
-  setState(window, state) {
-    if (state != "fullscreen" && window.fullScreen) {
+  get state() {
+    return Window.getState(this.window);
+  }
+
+  set state(state) {
+    let {window} = this;
+    if (state !== "fullscreen" && window.fullScreen) {
       window.fullScreen = false;
     }
 
@@ -1036,10 +1111,10 @@ global.WindowManager = {
         
         
         window.restore();
-        if (window.windowState != window.STATE_NORMAL) {
+        if (window.windowState !== window.STATE_NORMAL) {
           window.restore();
         }
-        if (window.windowState != window.STATE_NORMAL) {
+        if (window.windowState !== window.STATE_NORMAL) {
           
           
           window.sizeToContent();
@@ -1053,244 +1128,84 @@ global.WindowManager = {
       default:
         throw new Error(`Unexpected window state: ${state}`);
     }
-  },
+  }
 
-  convert(extension, window, getInfo) {
-    let xulWindow = window.QueryInterface(Ci.nsIInterfaceRequestor)
-                          .getInterface(Ci.nsIDocShell)
-                          .treeOwner.QueryInterface(Ci.nsIInterfaceRequestor)
-                          .getInterface(Ci.nsIXULWindow);
+  * getTabs() {
+    let {tabManager} = this.extension;
 
-    let result = {
-      id: this.getId(window),
-      focused: window.document.hasFocus(),
-      top: window.screenY,
-      left: window.screenX,
-      width: window.outerWidth,
-      height: window.outerHeight,
-      incognito: PrivateBrowsingUtils.isWindowPrivate(window),
-      type: this.windowType(window),
-      state: this.getState(window),
-      alwaysOnTop: xulWindow.zLevel >= Ci.nsIXULWindow.raisedZ,
-    };
-
-    if (getInfo && getInfo.populate) {
-      result.tabs = TabManager.for(extension).getTabs(window);
+    for (let tab of this.window.gBrowser.tabs) {
+      yield tabManager.getWrapper(tab);
     }
+  }
 
-    return result;
-  },
-
-  
-  
-  convertFromSessionStoreClosedData(window, extension) {
+  static convertFromSessionStoreClosedData(extension, window) {
     let result = {
       sessionId: String(window.closedId),
       focused: false,
       incognito: false,
       type: "normal", 
+      
       state: this.getState(window),
       alwaysOnTop: false,
     };
 
     if (window.tabs.length) {
-      result.tabs = [];
-      window.tabs.forEach((tab, index) => {
-        result.tabs.push(TabManager.for(extension).convertFromSessionStoreClosedData(tab, window, index));
+      result.tabs = window.tabs.map(tab => {
+        return Tab.convertFromSessionStoreClosedData(extension, tab);
       });
     }
 
     return result;
-  },
-};
-
-
-
-
-global.WindowListManager = {
-  _openListeners: new Set(),
-  _closeListeners: new Set(),
-
-  
-  
-  * browserWindows(includeIncomplete = false) {
-    
-    
-    
-    
-    
-    
-    
-    
-
-    let e = Services.wm.getEnumerator("");
-    while (e.hasMoreElements()) {
-      let window = e.getNext();
-
-      let ok = includeIncomplete;
-      if (window.document.readyState == "complete") {
-        ok = window.document.documentElement.getAttribute("windowtype") == "navigator:browser";
-      }
-
-      if (ok) {
-        yield window;
-      }
-    }
-  },
-
-  addOpenListener(listener) {
-    if (this._openListeners.size == 0 && this._closeListeners.size == 0) {
-      Services.ww.registerNotification(this);
-    }
-    this._openListeners.add(listener);
-
-    for (let window of this.browserWindows(true)) {
-      if (window.document.readyState != "complete") {
-        window.addEventListener("load", this);
-      }
-    }
-  },
-
-  removeOpenListener(listener) {
-    this._openListeners.delete(listener);
-    if (this._openListeners.size == 0 && this._closeListeners.size == 0) {
-      Services.ww.unregisterNotification(this);
-    }
-  },
-
-  addCloseListener(listener) {
-    if (this._openListeners.size == 0 && this._closeListeners.size == 0) {
-      Services.ww.registerNotification(this);
-    }
-    this._closeListeners.add(listener);
-  },
-
-  removeCloseListener(listener) {
-    this._closeListeners.delete(listener);
-    if (this._openListeners.size == 0 && this._closeListeners.size == 0) {
-      Services.ww.unregisterNotification(this);
-    }
-  },
-
-  handleEvent(event) {
-    event.currentTarget.removeEventListener(event.type, this);
-    let window = event.target.defaultView;
-    if (window.document.documentElement.getAttribute("windowtype") != "navigator:browser") {
-      return;
-    }
-
-    for (let listener of this._openListeners) {
-      listener(window);
-    }
-  },
-
-  observe(window, topic, data) {
-    if (topic == "domwindowclosed") {
-      if (window.document.documentElement.getAttribute("windowtype") != "navigator:browser") {
-        return;
-      }
-
-      window.removeEventListener("load", this);
-      for (let listener of this._closeListeners) {
-        listener(window);
-      }
-    } else {
-      window.addEventListener("load", this);
-    }
-  },
-};
-
-
-global.AllWindowEvents = {
-  _listeners: new Map(),
-
-  
-  
-  
-  addListener(type, listener) {
-    if (type == "domwindowopened") {
-      return WindowListManager.addOpenListener(listener);
-    } else if (type == "domwindowclosed") {
-      return WindowListManager.addCloseListener(listener);
-    }
-
-    if (this._listeners.size == 0) {
-      WindowListManager.addOpenListener(this.openListener);
-    }
-
-    if (!this._listeners.has(type)) {
-      this._listeners.set(type, new Set());
-    }
-    let list = this._listeners.get(type);
-    list.add(listener);
-
-    
-    for (let window of WindowListManager.browserWindows()) {
-      this.addWindowListener(window, type, listener);
-    }
-  },
-
-  removeListener(eventType, listener) {
-    if (eventType == "domwindowopened") {
-      return WindowListManager.removeOpenListener(listener);
-    } else if (eventType == "domwindowclosed") {
-      return WindowListManager.removeCloseListener(listener);
-    }
-
-    let listeners = this._listeners.get(eventType);
-    listeners.delete(listener);
-    if (listeners.size == 0) {
-      this._listeners.delete(eventType);
-      if (this._listeners.size == 0) {
-        WindowListManager.removeOpenListener(this.openListener);
-      }
-    }
-
-    
-    let useCapture = eventType === "focus" || eventType === "blur";
-    for (let window of WindowListManager.browserWindows()) {
-      if (eventType == "progress") {
-        window.gBrowser.removeTabsProgressListener(listener);
-      } else {
-        window.removeEventListener(eventType, listener, useCapture);
-      }
-    }
-  },
-
-  
-  addWindowListener(window, eventType, listener) {
-    let useCapture = eventType === "focus" || eventType === "blur";
-
-    if (eventType == "progress") {
-      window.gBrowser.addTabsProgressListener(listener);
-    } else {
-      window.addEventListener(eventType, listener, useCapture);
-    }
-  },
-  
-
-  
-  openListener(window) {
-    for (let [eventType, listeners] of AllWindowEvents._listeners) {
-      for (let listener of listeners) {
-        this.addWindowListener(window, eventType, listener);
-      }
-    }
-  },
-};
-
-AllWindowEvents.openListener = AllWindowEvents.openListener.bind(AllWindowEvents);
-
-
-
-global.WindowEventManager = class extends SingletonEventManager {
-  constructor(context, name, event, listener) {
-    super(context, name, fire => {
-      let listener2 = (...args) => listener(fire, ...args);
-      AllWindowEvents.addListener(event, listener2);
-      return () => {
-        AllWindowEvents.removeListener(event, listener2);
-      };
-    });
   }
-};
+}
+
+Object.assign(global, {Tab, Window});
+
+class TabManager extends TabManagerBase {
+  get(tabId, default_ = undefined) {
+    let tab = tabTracker.getTab(tabId, default_);
+
+    if (tab) {
+      return this.getWrapper(tab);
+    }
+    return default_;
+  }
+
+  addActiveTabPermission(tab = tabTracker.activeTab) {
+    return super.addActiveTabPermission(tab);
+  }
+
+  revokeActiveTabPermission(tab = tabTracker.activeTab) {
+    return super.revokeActiveTabPermission(tab);
+  }
+
+  wrapTab(tab) {
+    return new Tab(this.extension, tab, tabTracker.getId(tab));
+  }
+}
+
+class WindowManager extends WindowManagerBase {
+  get(windowId, context) {
+    let window = windowTracker.getWindow(windowId, context);
+
+    return this.getWrapper(window);
+  }
+
+  * getAll() {
+    for (let window of windowTracker.browserWindows()) {
+      yield this.getWrapper(window);
+    }
+  }
+
+  wrapWindow(window) {
+    return new Window(this.extension, window, windowTracker.getId(window));
+  }
+}
+
+
+extensions.on("startup", (type, extension) => { 
+  defineLazyGetter(extension, "tabManager",
+                   () => new TabManager(extension));
+  defineLazyGetter(extension, "windowManager",
+                   () => new WindowManager(extension));
+});

@@ -94,14 +94,14 @@ add_task(function* testDuplicateTabLazily() {
   });
 
   extension.onMessage("duplicate-tab", tabId => {
-    let {Management: {global: {TabManager}}} = Cu.import("resource://gre/modules/Extension.jsm", {});
+    let {Management: {global: {tabTracker}}} = Cu.import("resource://gre/modules/Extension.jsm", {});
 
-    let tab = TabManager.getTab(tabId);
+    let tab = tabTracker.getTab(tabId);
     
     let newTab = gBrowser.duplicateTab(tab, true);
 
     BrowserTestUtils.waitForEvent(newTab, "SSTabRestored", () => true).then(() => {
-      extension.sendMessage("duplicate-tab-done", TabManager.getId(newTab));
+      extension.sendMessage("duplicate-tab-done", tabTracker.getId(newTab));
     });
   });
 
