@@ -4,6 +4,7 @@
 
 
 
+use dom::bindings::codegen::InheritTypes::TopTypeId;
 use dom::bindings::codegen::PrototypeList;
 use dom::bindings::codegen::PrototypeList::MAX_PROTO_CHAIN_LENGTH;
 use dom::bindings::conversions::native_from_handleobject;
@@ -15,7 +16,6 @@ use dom::bindings::global::GlobalRef;
 use dom::bindings::js::Root;
 use dom::bindings::trace::trace_object;
 use dom::browsercontext;
-use dom::eventtarget::EventTargetTypeId;
 use dom::window;
 use js;
 use js::glue::{CallJitGetterOp, CallJitMethodOp, CallJitSetterOp, IsWrapper};
@@ -157,7 +157,7 @@ pub struct DOMClass {
     pub interface_chain: [PrototypeList::ID; MAX_PROTO_CHAIN_LENGTH],
 
     
-    pub type_id: Option<EventTargetTypeId>,
+    pub type_id: TopTypeId,
 
     
     pub native_hooks: &'static NativePropertyHooks,
