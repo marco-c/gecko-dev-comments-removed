@@ -48,6 +48,7 @@ class MediaResource;
 class MediaDecoder;
 class VideoFrameContainer;
 namespace dom {
+class AudioChannelAgent;
 class MediaKeys;
 class TextTrack;
 class TimeRanges;
@@ -58,6 +59,7 @@ class VideoStreamTrack;
 } 
 } 
 
+class AutoNotifyAudioChannelAgent;
 class nsIChannel;
 class nsIHttpChannel;
 class nsILoadGroup;
@@ -80,9 +82,12 @@ class VideoTrackList;
 class HTMLMediaElement : public nsGenericHTMLElement,
                          public nsIDOMHTMLMediaElement,
                          public MediaDecoderOwner,
+                         public nsIAudioChannelAgentCallback,
                          public PrincipalChangeObserver<DOMMediaStream>,
                          public SupportsWeakPtr<HTMLMediaElement>
 {
+  friend AutoNotifyAudioChannelAgent;
+
 public:
   typedef mozilla::TimeStamp TimeStamp;
   typedef mozilla::layers::ImageContainer ImageContainer;
@@ -112,6 +117,8 @@ public:
 
   
   NS_DECL_NSIDOMHTMLMEDIAELEMENT
+
+  NS_DECL_NSIAUDIOCHANNELAGENTCALLBACK
 
   
   NS_DECL_ISUPPORTS_INHERITED
@@ -750,7 +757,6 @@ public:
 protected:
   virtual ~HTMLMediaElement();
 
-  class AudioChannelAgentCallback;
   class ChannelLoader;
   class ErrorSink;
   class MediaLoadListener;
@@ -1201,6 +1207,9 @@ protected:
   already_AddRefed<Promise> Seek(double aTime, SeekTarget::Type aSeekType, ErrorResult& aRv);
 
   
+  bool IsPlayingThroughTheAudioChannel() const;
+
+  
   void UpdateAudioChannelPlayingState(bool aForcePlaying = false);
 
   
@@ -1216,19 +1225,66 @@ protected:
   void UpdateReadyStateInternal();
 
   
+  void NotifyAudioChannelAgent(bool aPlaying);
+
+  
+  
+  
+  
+  bool MaybeCreateAudioChannelAgent();
+
+  
   bool ShouldElementBePaused();
 
   
-  void AudioCaptureStreamChange(bool aCapture);
+  void AudioCaptureStreamChangeIfNeeded();
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  void PauseByAudioChannel(SuspendTypes aSuspend);
+  void BlockByAudioChannel();
+
+  void ResumeFromAudioChannel();
+  void ResumeFromAudioChannelPaused(SuspendTypes aSuspend);
+  void ResumeFromAudioChannelBlocked();
+
+  bool IsSuspendedByAudioChannel() const;
+  void SetAudioChannelSuspended(SuspendTypes aSuspend);
 
   
   bool IsAllowedToPlay();
+  bool IsAllowedToPlayByAudioChannel();
 
   
   void MaybeDoLoad();
 
   
-  void UpdateCustomPolicyAfterPlayed();
+  
+  bool IsTabActivated() const;
+
+  bool IsAudible() const;
+
+  
+  
+  void MaybeNotifyMediaResumed(SuspendTypes aSuspend);
 
   class nsAsyncEventRunner;
   using nsGenericHTMLElement::DispatchEvent;
@@ -1450,6 +1506,7 @@ protected:
   };
 
   uint32_t mMuted;
+  SuspendTypes mAudioChannelSuspended;
 
   
   
@@ -1467,10 +1524,17 @@ protected:
   bool mAudioCaptured;
 
   
+  bool mAudioCapturedByWindow;
+
+  
   
   
   
   bool mPlayingBeforeSeek;
+
+  
+  
+  bool mPlayingThroughTheAudioChannelBeforeSeek;
 
   
   
@@ -1568,9 +1632,19 @@ protected:
   AudioChannel mAudioChannel;
 
   
+  float mAudioChannelVolume;
+
+  
+  bool mPlayingThroughTheAudioChannel;
+
+  
   
   
   bool mDisableVideo;
+
+  
+  
+  RefPtr<AudioChannelAgent> mAudioChannelAgent;
 
   RefPtr<TextTrackManager> mTextTrackManager;
 
@@ -1663,14 +1737,12 @@ private:
   
   bool mIsAudioTrackAudible;
 
+  
+  bool mAudible;
+
   Visibility mVisibilityState;
 
   UniquePtr<ErrorSink> mErrorSink;
-
-  
-  
-  
-  RefPtr<AudioChannelAgentCallback> mAudioChannelWrapper;
 };
 
 } 
