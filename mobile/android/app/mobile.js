@@ -615,6 +615,11 @@ pref("media.cache_readahead_limit", 30);
 
 pref("media.video-queue.default-size", 3);
 
+#ifdef NIGHTLY_BUILD
+
+pref("media.decoder.recycle.enabled", true);
+#endif
+
 
 pref("media.android-media-codec.enabled", true);
 pref("media.android-media-codec.preferred", true);
