@@ -142,7 +142,24 @@ assert.window = function (win, msg = "") {
       return null;
     }
   }, msg, NoSuchWindowError)(win);
-}
+};
+
+
+
+
+
+
+
+
+
+
+
+
+assert.noUserPrompt = function (dialog, msg = "") {
+  assert.that(d => d === null || typeof d == "undefined",
+      msg,
+      UnexpectedAlertOpenError)(dialog);
+};
 
 
 
