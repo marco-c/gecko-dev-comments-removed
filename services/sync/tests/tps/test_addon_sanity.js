@@ -25,5 +25,6 @@ Phase("phase1", [
 
 Phase("phase2", [
   
-  [Addons.verify, [id], STATE_ENABLED]
+  [Addons.verify, [id], STATE_ENABLED],
+  [Sync] 
 ]);

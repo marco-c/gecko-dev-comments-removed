@@ -34,6 +34,9 @@ Phase("phase02", [
 Phase("phase03", [
   [Sync], 
   [Addons.setEnabled, [id], STATE_DISABLED],
+  
+  
+  [Addons.skipValidation]
 ]);
 Phase("phase04", [
   [EnsureTracking],
