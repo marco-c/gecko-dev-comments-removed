@@ -74,6 +74,8 @@ protected:
   virtual ~BasicLayerManager();
 
 public:
+  BasicLayerManager* AsBasicLayerManager() override { return this; }
+
   
 
 
