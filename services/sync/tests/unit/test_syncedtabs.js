@@ -54,8 +54,6 @@ let MockClientsEngine = {
 }
 
 
-Services.prefs.setCharPref("services.sync.username", "someone@somewhere.com");
-
 Weave.Service.engineManager.unregister("tabs");
 Weave.Service.engineManager.register(MockTabsEngine);
 Weave.Service.clientsEngine = MockClientsEngine;

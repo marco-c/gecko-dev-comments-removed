@@ -7,9 +7,6 @@
 this.EXPORTED_SYMBOLS = [
   "btoa", 
   "encryptPayload",
-  "isConfiguredWithLegacyIdentity",
-  "ensureLegacyIdentityManager",
-  "setBasicCredentials",
   "makeIdentityConfig",
   "makeFxAccountsInternalMock",
   "configureFxAccountIdentity",
@@ -105,40 +102,6 @@ this.promiseNamedTimer = function(wait, thisObj, name) {
   return new Promise(resolve => {
     Utils.namedTimer(resolve, wait, thisObj, name);
   });
-}
-
-
-
-
-this.isConfiguredWithLegacyIdentity = function() {
-  let ns = {};
-  Cu.import("resource://services-sync/service.js", ns);
-
-  
-  
-  return Object.getPrototypeOf(ns.Service.identity) === IdentityManager.prototype;
-}
-
-
-
-
-this.ensureLegacyIdentityManager = function() {
-  let ns = {};
-  Cu.import("resource://services-sync/service.js", ns);
-
-  Status.__authManager = ns.Service.identity = new IdentityManager();
-  ns.Service._clusterManager = ns.Service.identity.createClusterManager(ns.Service);
-}
-
-this.setBasicCredentials =
- function setBasicCredentials(username, password, syncKey) {
-  let ns = {};
-  Cu.import("resource://services-sync/service.js", ns);
-
-  let auth = ns.Service.identity;
-  auth.username = username;
-  auth.basicPassword = password;
-  auth.syncKey = syncKey;
 }
 
 
