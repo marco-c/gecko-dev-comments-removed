@@ -151,6 +151,8 @@ var interfaceNamesInGlobalScope =
 
     "MessagePort",
 
+    {name: "NetworkInformation", nightly: true},
+
     "Notification",
 
     { name: "OffscreenCanvas", disabled: true },
