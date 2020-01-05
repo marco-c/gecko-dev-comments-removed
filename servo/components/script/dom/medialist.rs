@@ -67,7 +67,7 @@ impl MediaListMethods for MediaList {
         
         if value.is_empty() {
             
-            *media_queries = StyleMediaList::default();
+            *media_queries = StyleMediaList::empty();
             return;
         }
         

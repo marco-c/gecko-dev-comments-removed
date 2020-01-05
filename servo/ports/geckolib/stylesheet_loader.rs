@@ -5,11 +5,10 @@
 use std::sync::Arc;
 use style::gecko_bindings::bindings::Gecko_LoadStyleSheet;
 use style::gecko_bindings::structs::{Loader, ServoStyleSheet};
-use style::gecko_bindings::sugar::ownership::HasArcFFI;
+use style::gecko_bindings::sugar::ownership::{HasArcFFI, FFIArcHelpers};
 use style::media_queries::MediaList;
 use style::shared_lock::Locked;
 use style::stylesheets::{ImportRule, Stylesheet, StylesheetLoader as StyleStylesheetLoader};
-use style_traits::ToCss;
 
 pub struct StylesheetLoader(*mut Loader, *mut ServoStyleSheet);
 
@@ -22,21 +21,11 @@ impl StylesheetLoader {
 impl StyleStylesheetLoader for StylesheetLoader {
     fn request_stylesheet(
         &self,
-        media: MediaList,
-        make_import: &mut FnMut(MediaList) -> ImportRule,
+        media: Arc<Locked<MediaList>>,
+        make_import: &mut FnMut(Arc<Locked<MediaList>>) -> ImportRule,
         make_arc: &mut FnMut(ImportRule) -> Arc<Locked<ImportRule>>,
     ) -> Arc<Locked<ImportRule>> {
-        
-        
-        
-        
-        
-        
-        
-        
-        let media_string = media.to_css_string();
-
-        let import = make_import(media);
+        let import = make_import(media.clone());
 
         
         
@@ -52,8 +41,7 @@ impl StyleStylesheetLoader for StylesheetLoader {
                                  base_url_data,
                                  spec_bytes,
                                  spec_len as u32,
-                                 media_string.as_bytes().as_ptr(),
-                                 media_string.len() as u32);
+                                 media.into_strong())
         }
         make_arc(import)
     }
