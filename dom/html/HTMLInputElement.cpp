@@ -3762,7 +3762,7 @@ HTMLInputElement::GetEventTargetParent(EventChainPreVisitor& aVisitor)
 
   
   if (!aVisitor.mPresContext) {
-    return nsGenericHTMLElement::GetEventTargetParent(aVisitor);
+    return nsGenericHTMLFormElementWithState::GetEventTargetParent(aVisitor);
   }
   
   
@@ -4033,7 +4033,7 @@ nsresult
 HTMLInputElement::PreHandleEvent(EventChainVisitor& aVisitor)
 {
   if (!aVisitor.mPresContext) {
-    return nsGenericHTMLElement::PreHandleEvent(aVisitor);
+    return nsGenericHTMLFormElementWithState::PreHandleEvent(aVisitor);
   }
   nsresult rv;
   if (aVisitor.mItemFlags & NS_PRE_HANDLE_BLUR_EVENT) {
