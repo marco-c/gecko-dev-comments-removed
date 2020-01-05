@@ -122,6 +122,11 @@ LazyLogModule gUrlClassifierDbServiceLog("UrlClassifierDbService");
 #define CONFIRM_AGE_PREF        "urlclassifier.max-complete-age"
 #define CONFIRM_AGE_DEFAULT_SEC (45 * 60)
 
+
+
+#define TAKE_V4_COMPLETION_RESULT_PREF    "browser.safebrowsing.temporary.take_v4_completion_result"
+#define TAKE_V4_COMPLETION_RESULT_DEFAULT false
+
 class nsUrlClassifierDBServiceWorker;
 
 
@@ -1055,6 +1060,15 @@ nsUrlClassifierLookupCallback::Completion(const nsACString& completeHash,
 {
   LOG(("nsUrlClassifierLookupCallback::Completion [%p, %s, %d]",
        this, PromiseFlatCString(tableName).get(), chunkId));
+
+  if (StringEndsWith(tableName, NS_LITERAL_CSTRING("-proto")) &&
+      !Preferences::GetBool(TAKE_V4_COMPLETION_RESULT_PREF,
+                            TAKE_V4_COMPLETION_RESULT_DEFAULT)) {
+    
+    
+    return NS_OK;
+  }
+
   mozilla::safebrowsing::Completion hash;
   hash.Assign(completeHash);
 
