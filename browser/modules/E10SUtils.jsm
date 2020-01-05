@@ -188,7 +188,7 @@ this.E10SUtils = {
     
     
     
-    if (aDocShell.inLargeAllocProcess &&
+    if (Services.appinfo.remoteType == LARGE_ALLOCATION_REMOTE_TYPE &&
         !aDocShell.awaitingLargeAlloc &&
         aDocShell.isOnlyToplevelInTabGroup) {
       return false;

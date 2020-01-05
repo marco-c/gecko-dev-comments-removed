@@ -664,16 +664,8 @@ public:
 
   
   
-  bool TakeAwaitingLargeAlloc();
+  bool StopAwaitingLargeAlloc();
   bool IsAwaitingLargeAlloc();
-
-  
-  
-  
-  static bool InLargeAllocProcess()
-  {
-    return sInLargeAllocProcess;
-  }
 
   already_AddRefed<nsISHistory> GetRelatedSHistory();
 
@@ -716,8 +708,7 @@ protected:
 
   virtual mozilla::ipc::IPCResult RecvNotifyPartialSHistoryDeactive() override;
 
-  virtual mozilla::ipc::IPCResult RecvSetIsLargeAllocation(const bool& aIsLA,
-                                                           const bool& aNewProcess) override;
+  virtual mozilla::ipc::IPCResult RecvAwaitLargeAlloc() override;
 
 private:
   void HandleDoubleTap(const CSSPoint& aPoint, const Modifiers& aModifiers,
@@ -828,8 +819,6 @@ private:
   
   uintptr_t mNativeWindowHandle;
 #endif 
-
-  static bool sInLargeAllocProcess;
 
   DISALLOW_EVIL_CONSTRUCTORS(TabChild);
 };
