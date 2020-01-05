@@ -44,7 +44,7 @@ WinCompositorWidget::OnDestroyWindow()
 }
 
 bool
-WinCompositorWidget::PreRender(layers::LayerManagerComposite* aManager)
+WinCompositorWidget::PreRender(WidgetRenderingContext* aContext)
 {
   
   
@@ -55,7 +55,7 @@ WinCompositorWidget::PreRender(layers::LayerManagerComposite* aManager)
 }
 
 void
-WinCompositorWidget::PostRender(layers::LayerManagerComposite* aManager)
+WinCompositorWidget::PostRender(WidgetRenderingContext* aContext)
 {
   mPresentLock.Leave();
 }

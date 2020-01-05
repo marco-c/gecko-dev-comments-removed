@@ -42,6 +42,7 @@
 #include "mozilla/layers/Effects.h"     
 #include "mozilla/layers/LayerMetricsWrapper.h" 
 #include "mozilla/layers/LayersTypes.h"  
+#include "mozilla/widget/CompositorWidget.h" 
 #include "ipc/CompositorBench.h"        
 #include "ipc/ShadowLayerUtils.h"
 #include "mozilla/mozalloc.h"           
@@ -911,11 +912,18 @@ LayerManagerComposite::Render(const nsIntRegion& aInvalidRegion, const nsIntRegi
     mLastFrameMissedHWC = !!composer2D;
   }
 
+  mozilla::widget::WidgetRenderingContext widgetContext;
+#if defined(XP_MACOSX)
+  widgetContext.mLayerManager = this;
+#elif defined(MOZ_WIDGET_ANDROID)
+  widgetContext.mCompositor = GetCompositor();
+#endif
+
   {
     PROFILER_LABEL("LayerManagerComposite", "PreRender",
       js::ProfileEntry::Category::GRAPHICS);
 
-    if (!mCompositor->GetWidget()->PreRender(this)) {
+    if (!mCompositor->GetWidget()->PreRender(&widgetContext)) {
       return;
     }
   }
@@ -946,13 +954,13 @@ LayerManagerComposite::Render(const nsIntRegion& aInvalidRegion, const nsIntRegi
   }
 
   if (actualBounds.IsEmpty()) {
-    mCompositor->GetWidget()->PostRender(this);
+    mCompositor->GetWidget()->PostRender(&widgetContext);
     return;
   }
 
   
   mCompositor->GetWidget()->DrawWindowUnderlay(
-    this, LayoutDeviceIntRect::FromUnknownRect(actualBounds));
+    &widgetContext, LayoutDeviceIntRect::FromUnknownRect(actualBounds));
 
   RefPtr<CompositingRenderTarget> previousTarget;
   if (haveLayerEffects) {
@@ -980,7 +988,7 @@ LayerManagerComposite::Render(const nsIntRegion& aInvalidRegion, const nsIntRegi
 
   
   mCompositor->GetWidget()->DrawWindowOverlay(
-    this, LayoutDeviceIntRect::FromUnknownRect(actualBounds));
+    &widgetContext, LayoutDeviceIntRect::FromUnknownRect(actualBounds));
 
   
   RenderDebugOverlay(actualBounds);
@@ -999,7 +1007,7 @@ LayerManagerComposite::Render(const nsIntRegion& aInvalidRegion, const nsIntRegi
     composer2D->Render(mCompositor->GetWidget()->RealWidget());
   }
 
-  mCompositor->GetWidget()->PostRender(this);
+  mCompositor->GetWidget()->PostRender(&widgetContext);
 
   RecordFrame();
 }
