@@ -354,7 +354,7 @@ public:
     APZCTreeManagerParent* mApzcTreeManagerParent;
     RefPtr<CompositorBridgeParent> mParent;
     HostLayerManager* mLayerManager;
-    RefPtr<WebRenderBridgeParent> mWRBridge;
+    RefPtr<WebRenderBridgeParent> mWrBridge;
     
     
     
@@ -553,7 +553,7 @@ protected:
   RefPtr<HostLayerManager> mLayerManager;
   RefPtr<Compositor> mCompositor;
   RefPtr<AsyncCompositionManager> mCompositionManager;
-  RefPtr<WebRenderBridgeParent> mWRBridge;
+  RefPtr<WebRenderBridgeParent> mWrBridge;
   widget::CompositorWidget* mWidget;
   TimeStamp mTestTime;
   CSSToLayoutDeviceScale mScale;
