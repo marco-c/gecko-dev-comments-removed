@@ -12,7 +12,6 @@
 #include "mozilla/RefPtr.h"
 #include "nsThreadUtils.h"
 #include "nscore.h"
-#include "GMPService.h"
 
 namespace mozilla {
 
@@ -20,9 +19,9 @@ class MediaDataDecoderProxy : public MediaDataDecoder
 {
 public:
   explicit MediaDataDecoderProxy(already_AddRefed<AbstractThread> aProxyThread)
-   : mProxyThread(aProxyThread)
+    : mProxyThread(aProxyThread)
 #if defined(DEBUG)
-   , mIsShutdown(false)
+    , mIsShutdown(false)
 #endif
   {
   }
@@ -33,9 +32,6 @@ public:
     mProxyDecoder = aProxyDecoder;
   }
 
-  
-  
-  
   RefPtr<InitPromise> Init() override;
   RefPtr<DecodePromise> Decode(MediaRawData* aSample) override;
   RefPtr<DecodePromise> Drain() override;

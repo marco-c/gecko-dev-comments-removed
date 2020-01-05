@@ -4,19 +4,20 @@
 
 
 
-#include "GMPDecoderModule.h"
 #include "DecoderDoctorDiagnostics.h"
-#include "GMPVideoDecoder.h"
+#include "GMPDecoderModule.h"
+#include "GMPService.h"
 #include "GMPUtils.h"
+#include "GMPVideoDecoder.h"
+#include "MP4Decoder.h"
 #include "MediaDataDecoderProxy.h"
 #include "MediaPrefs.h"
-#include "VideoUtils.h"
-#include "mozIGeckoMediaPluginService.h"
-#include "nsServiceManagerUtils.h"
-#include "mozilla/StaticMutex.h"
-#include "gmp-video-decode.h"
-#include "MP4Decoder.h"
 #include "VPXDecoder.h"
+#include "VideoUtils.h"
+#include "gmp-video-decode.h"
+#include "mozIGeckoMediaPluginService.h"
+#include "mozilla/StaticMutex.h"
+#include "nsServiceManagerUtils.h"
 #ifdef XP_WIN
 #include "WMFDecoderModule.h"
 #endif
@@ -34,7 +35,8 @@ GMPDecoderModule::~GMPDecoderModule()
 static already_AddRefed<MediaDataDecoderProxy>
 CreateDecoderWrapper()
 {
-  RefPtr<gmp::GeckoMediaPluginService> s(gmp::GeckoMediaPluginService::GetGeckoMediaPluginService());
+  RefPtr<gmp::GeckoMediaPluginService> s(
+    gmp::GeckoMediaPluginService::GetGeckoMediaPluginService());
   if (!s) {
     return nullptr;
   }
@@ -42,16 +44,17 @@ CreateDecoderWrapper()
   if (!thread) {
     return nullptr;
   }
-  RefPtr<MediaDataDecoderProxy> decoder(new MediaDataDecoderProxy(thread.forget()));
+  RefPtr<MediaDataDecoderProxy> decoder(
+    new MediaDataDecoderProxy(thread.forget()));
   return decoder.forget();
 }
 
 already_AddRefed<MediaDataDecoder>
 GMPDecoderModule::CreateVideoDecoder(const CreateDecoderParams& aParams)
 {
-  if (!MP4Decoder::IsH264(aParams.mConfig.mMimeType) &&
-      !VPXDecoder::IsVP8(aParams.mConfig.mMimeType) &&
-      !VPXDecoder::IsVP9(aParams.mConfig.mMimeType)) {
+  if (!MP4Decoder::IsH264(aParams.mConfig.mMimeType)
+      && !VPXDecoder::IsVP8(aParams.mConfig.mMimeType)
+      && !VPXDecoder::IsVP9(aParams.mConfig.mMimeType)) {
     return nullptr;
   }
 
@@ -70,6 +73,7 @@ GMPDecoderModule::CreateAudioDecoder(const CreateDecoderParams& aParams)
 PlatformDecoderModule::ConversionRequired
 GMPDecoderModule::DecoderNeedsConversion(const TrackInfo& aConfig) const
 {
+  
   
   if (aConfig.IsVideo() && MP4Decoder::IsH264(aConfig.mMimeType)) {
     return ConversionRequired::kNeedAVCC;

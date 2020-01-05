@@ -4,8 +4,8 @@
 
 
 
-#include "WAVDecoder.h"
 #include "AudioSampleFormat.h"
+#include "WAVDecoder.h"
 #include "mozilla/SyncRunnable.h"
 
 using mp4_demuxer::ByteReader;

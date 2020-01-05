@@ -4,12 +4,12 @@
 
 
 
-#include "mozilla/CDMProxy.h"
-#include "mozilla/CDMCaps.h"
-#include "mozilla/TaskQueue.h"
+#include "SamplesWaitingForKey.h"
 #include "MediaData.h"
 #include "MediaEventSource.h"
-#include "SamplesWaitingForKey.h"
+#include "mozilla/CDMCaps.h"
+#include "mozilla/CDMProxy.h"
+#include "mozilla/TaskQueue.h"
 
 namespace mozilla {
 

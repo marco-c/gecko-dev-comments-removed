@@ -7,10 +7,10 @@
 #ifndef SamplesWaitingForKey_h_
 #define SamplesWaitingForKey_h_
 
+#include "MediaInfo.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/RefPtr.h"
-#include "MediaInfo.h"
 
 namespace mozilla {
 
@@ -30,8 +30,10 @@ public:
   typedef MozPromise<RefPtr<MediaRawData>, bool,  true>
     WaitForKeyPromise;
 
-  SamplesWaitingForKey(CDMProxy* aProxy, TrackInfo::TrackType aType,
-                       MediaEventProducer<TrackInfo::TrackType>* aOnWaitingForKey);
+  SamplesWaitingForKey(
+    CDMProxy* aProxy,
+    TrackInfo::TrackType aType,
+    MediaEventProducer<TrackInfo::TrackType>* aOnWaitingForKey);
 
   
   

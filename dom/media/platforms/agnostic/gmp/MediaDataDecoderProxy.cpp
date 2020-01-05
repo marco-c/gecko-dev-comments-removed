@@ -5,8 +5,6 @@
 
 
 #include "MediaDataDecoderProxy.h"
-#include "MediaData.h"
-#include "mozilla/SyncRunnable.h"
 
 namespace mozilla {
 
