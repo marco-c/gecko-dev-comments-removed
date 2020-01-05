@@ -109,8 +109,21 @@ struct SimpleLinearSum
     {}
 };
 
+
+
+
+
+
+
+
+enum class MathSpace {
+    Modulo,
+    Infinite,
+    Unknown
+};
+
 SimpleLinearSum
-ExtractLinearSum(MDefinition* ins);
+ExtractLinearSum(MDefinition* ins, MathSpace space = MathSpace::Unknown);
 
 MOZ_MUST_USE bool
 ExtractLinearInequality(MTest* test, BranchDirection direction,
