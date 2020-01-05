@@ -31,7 +31,6 @@ class nsICSSLoaderObserver;
 class nsIConsoleReportCollector;
 class nsIContent;
 class nsIDocument;
-class nsMediaList;
 class nsIStyleSheetLinkingElement;
 
 namespace mozilla {
@@ -300,7 +299,7 @@ public:
 
   nsresult LoadChildSheet(StyleSheet* aParentSheet,
                           nsIURI* aURL,
-                          nsMediaList* aMedia,
+                          dom::MediaList* aMedia,
                           ImportRule* aGeckoParentRule,
                           const RawServoStyleSheet* aServoChildSheet,
                           LoaderReusableStyleSheets* aSavedSheets);
@@ -506,10 +505,11 @@ private:
   
   
   
+  
   void PrepareSheet(StyleSheet* aSheet,
                     const nsAString& aTitle,
                     const nsAString& aMediaString,
-                    nsMediaList* aMediaList,
+                    dom::MediaList* aMediaList,
                     dom::Element* aScopeElement,
                     bool aIsAlternate);
 
