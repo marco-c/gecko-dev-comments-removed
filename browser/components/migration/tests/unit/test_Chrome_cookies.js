@@ -45,7 +45,7 @@ add_task(function* () {
   }
 
   
-  ForgetAboutSite.removeDataFromDomain(COOKIE.host);
+  yield ForgetAboutSite.removeDataFromDomain(COOKIE.host);
   Assert.equal(Services.cookies.countCookiesFromHost(COOKIE.host), 0,
                "There are no cookies after cleanup");
 });

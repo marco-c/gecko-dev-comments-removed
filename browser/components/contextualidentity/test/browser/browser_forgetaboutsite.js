@@ -150,7 +150,7 @@ function* test_cookie_cleared() {
   }
 
   
-  ForgetAboutSite.removeDataFromDomain(TEST_HOST);
+  yield ForgetAboutSite.removeDataFromDomain(TEST_HOST);
 
   
   for (let userContextId of Object.keys(USER_CONTEXTS)) {
@@ -185,7 +185,7 @@ function* test_cache_cleared() {
   }
 
   
-  ForgetAboutSite.removeDataFromDomain(TEST_HOST);
+  yield ForgetAboutSite.removeDataFromDomain(TEST_HOST);
 
   
   for (let userContextId of Object.keys(USER_CONTEXTS)) {
@@ -217,7 +217,7 @@ function* test_image_cache_cleared() {
   gHits = 0;
 
   
-  ForgetAboutSite.removeDataFromDomain("localhost:" + gHttpServer.identity.primaryPort + "/");
+  yield ForgetAboutSite.removeDataFromDomain("localhost:" + gHttpServer.identity.primaryPort + "/");
 
   
   for (let userContextId of Object.keys(USER_CONTEXTS)) {
@@ -276,7 +276,7 @@ function* test_storage_cleared() {
   }
 
   
-  ForgetAboutSite.removeDataFromDomain(TEST_HOST);
+  yield ForgetAboutSite.removeDataFromDomain(TEST_HOST);
 
   
   

@@ -63,9 +63,10 @@ function test2()
 function test3()
 {
   
-  ForgetAboutSite.removeDataFromDomain(domains[1]);
-  setPermission(testPageURL4, "indexedDB");
-  executeSoon(test4);
+  ForgetAboutSite.removeDataFromDomain(domains[1]).then(() => {
+    setPermission(testPageURL4, "indexedDB");
+    executeSoon(test4);
+  });
 }
 
 function test4()
