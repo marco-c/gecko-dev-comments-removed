@@ -672,10 +672,6 @@ pref("browser.preferences.instantApply", true);
 #endif
 
 
-pref("browser.preferences.search", false);
-
-
-
 
 
 pref("browser.preferences.offlineGroup.enabled", true);
