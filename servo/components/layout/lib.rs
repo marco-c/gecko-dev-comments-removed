@@ -98,3 +98,4 @@ pub mod wrapper;
 
 
 pub use fragment::Fragment;
+pub use fragment::SpecificFragmentInfo;
