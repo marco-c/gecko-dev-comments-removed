@@ -582,6 +582,7 @@ WebConsoleFrame.prototype = {
       
       
       this.experimentalOutputNode = this.outputNode.cloneNode();
+      this.experimentalOutputNode.removeAttribute("tabindex");
       this.outputNode.hidden = true;
       this.outputNode.parentNode.appendChild(this.experimentalOutputNode);
       
