@@ -200,6 +200,8 @@ class BaseContext {
     options.recipient = options.recipient || {};
     options.sender = options.sender || {};
 
+    
+    
     options.recipient.extensionId = this.extension.id;
     options.sender.extensionId = this.extension.id;
     options.sender.contextId = this.contextId;
