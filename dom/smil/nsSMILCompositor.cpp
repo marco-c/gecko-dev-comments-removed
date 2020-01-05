@@ -154,12 +154,19 @@ nsSMILCompositor::GetCSSPropertyToAnimate() const
   
   
   
-  bool animateAsAttr = (mKey.mAttributeName == nsGkAtoms::width ||
-                        mKey.mAttributeName == nsGkAtoms::height) &&
-                       mKey.mElement->GetNameSpaceID() == kNameSpaceID_SVG &&
-                       !mKey.mElement->IsAttributeMapped(mKey.mAttributeName);
+  
+  
+  
+  
+  
+  if ((mKey.mAttributeName == nsGkAtoms::width ||
+       mKey.mAttributeName == nsGkAtoms::height) &&
+      mKey.mElement->GetNameSpaceID() == kNameSpaceID_SVG &&
+      !mKey.mElement->IsAttributeMapped(mKey.mAttributeName)) {
+    return eCSSProperty_UNKNOWN;
+  }
 
-  return animateAsAttr ? eCSSProperty_UNKNOWN : propID;
+  return propID;
 }
 
 uint32_t
