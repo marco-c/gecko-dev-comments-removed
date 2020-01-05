@@ -724,6 +724,13 @@ public:
 
 
 
+
+  bool IsInDeadKeySequence() const { return mActiveDeadKey >= 0; }
+
+  
+
+
+
   bool IsSysKey(uint8_t aVirtualKey,
                 const ModifierKeyState& aModKeyState) const;
 

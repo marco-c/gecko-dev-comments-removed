@@ -3670,7 +3670,7 @@ KeyboardLayout::InitNativeKey(NativeKey& aNativeKey,
 
   
   
-  if (mActiveDeadKey < 0) {
+  if (!IsInDeadKeySequence()) {
     aNativeKey.mCommittedCharsAndModifiers = baseChars;
     return;
   }
@@ -3706,7 +3706,7 @@ KeyboardLayout::MaybeInitNativeKeyAsDeadKey(
   
   
   
-  if ((aNativeKey.IsKeyDownMessage() && mActiveDeadKey < 0) ||
+  if ((aNativeKey.IsKeyDownMessage() && !IsInDeadKeySequence()) ||
       (!aNativeKey.IsKeyDownMessage() &&
        mActiveDeadKey == aNativeKey.mOriginalVirtualKeyCode)) {
     ActivateDeadKeyState(aNativeKey, aModKeyState);
@@ -3730,7 +3730,7 @@ KeyboardLayout::MaybeInitNativeKeyAsDeadKey(
   
   
   
-  if (mActiveDeadKey < 0) {
+  if (!IsInDeadKeySequence()) {
     aNativeKey.mCommittedCharsAndModifiers =
       GetUniCharsAndModifiers(aNativeKey.mOriginalVirtualKeyCode, aModKeyState);
     return true;
@@ -3777,7 +3777,7 @@ KeyboardLayout::MaybeInitNativeKeyWithCompositeChar(
                   NativeKey& aNativeKey,
                   const ModifierKeyState& aModKeyState)
 {
-  if (mActiveDeadKey < 0) {
+  if (!IsInDeadKeySequence()) {
     return false;
   }
 
