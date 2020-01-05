@@ -121,11 +121,6 @@ public:
   
 
 
-  void GetAppType(nsAString& aOut);
-
-  
-
-
 
 
 

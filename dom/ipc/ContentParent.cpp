@@ -871,11 +871,6 @@ ContentParent::GetInitialProcessPriority(Element* aFrameElement)
     return PROCESS_PRIORITY_FOREGROUND;
   }
 
-  if (!aFrameElement->AttrValueIs(kNameSpaceID_None, nsGkAtoms::mozapptype,
-                                  NS_LITERAL_STRING("critical"), eCaseMatters)) {
-    return PROCESS_PRIORITY_FOREGROUND;
-  }
-
   nsCOMPtr<nsIMozBrowserFrame> browserFrame = do_QueryInterface(aFrameElement);
   if (!browserFrame) {
     return PROCESS_PRIORITY_FOREGROUND;
@@ -5029,10 +5024,27 @@ ContentParent::TransmitPermissionsFor(nsIChannel* aChannel)
 {
   MOZ_ASSERT(aChannel);
 #ifdef MOZ_PERMISSIONS
+  
+  
+  
+  
+  nsLoadFlags loadFlags;
+  nsresult rv = aChannel->GetLoadFlags(&loadFlags);
+  NS_ENSURE_SUCCESS(rv, rv);
 
-  nsresult rv;
-  if (!aChannel->IsDocument()) {
-    return NS_OK;
+  if (!(loadFlags & nsIChannel::LOAD_DOCUMENT_URI)) {
+    if (loadFlags & nsIRequest::LOAD_HTML_OBJECT_DATA) {
+      nsAutoCString mimeType;
+      aChannel->GetContentType(mimeType);
+      if (nsContentUtils::HtmlObjectContentTypeForMIMEType(mimeType, nullptr) !=
+          nsIObjectLoadingContent::TYPE_DOCUMENT) {
+        
+        return NS_OK;
+      }
+    } else {
+      
+      return NS_OK;
+    }
   }
 
   
