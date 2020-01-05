@@ -145,7 +145,7 @@ pub enum SpecificFragmentInfo {
     
     GeneratedContent(Box<GeneratedContentInfo>),
 
-    Iframe(Box<IframeFragmentInfo>),
+    Iframe(IframeFragmentInfo),
     Image(Box<ImageFragmentInfo>),
     Canvas(Box<CanvasFragmentInfo>),
 
@@ -167,7 +167,7 @@ pub enum SpecificFragmentInfo {
     TableWrapper,
     Multicol,
     MulticolColumn,
-    UnscannedText(UnscannedTextFragmentInfo),
+    UnscannedText(Box<UnscannedTextFragmentInfo>),
 }
 
 impl SpecificFragmentInfo {
@@ -896,8 +896,8 @@ impl Fragment {
         let mut unscanned_ellipsis_fragments = LinkedList::new();
         unscanned_ellipsis_fragments.push_back(self.transform(
                 self.border_box.size,
-                SpecificFragmentInfo::UnscannedText(UnscannedTextFragmentInfo::new("…".to_owned(),
-                                                                                   None))));
+                SpecificFragmentInfo::UnscannedText(
+                    box UnscannedTextFragmentInfo::new("…".to_owned(), None))));
         let ellipsis_fragments = TextRunScanner::new().scan_for_runs(&mut layout_context.font_context(),
                                                                      unscanned_ellipsis_fragments);
         debug_assert!(ellipsis_fragments.len() == 1);
@@ -915,8 +915,8 @@ impl Fragment {
         })
     }
 
-    
-    
+    /// Adds a style to the inline context for this fragment. If the inline context doesn't exist
+    /// yet, it will be created.
     pub fn add_inline_context_style(&mut self, node_info: InlineFragmentNodeInfo) {
         if self.inline_context.is_none() {
             self.inline_context = Some(InlineFragmentContext::new());
@@ -924,8 +924,8 @@ impl Fragment {
         self.inline_context.as_mut().unwrap().nodes.push(node_info);
     }
 
-    
-    
+    /// Determines which quantities (border/padding/margin/specified) should be included in the
+    /// intrinsic inline size of this fragment.
     fn quantities_included_in_intrinsic_inline_size(&self)
                                                     -> QuantitiesIncludedInIntrinsicInlineSizes {
         match self.specific {
@@ -978,17 +978,17 @@ impl Fragment {
         }
     }
 
-    
-    
-    
-    
+    /// Returns the portion of the intrinsic inline-size that consists of borders, padding, and/or
+    /// margins.
+    ///
+    /// FIXME(#2261, pcwalton): This won't work well for inlines: is this OK?
     pub fn surrounding_intrinsic_inline_size(&self) -> Au {
         let flags = self.quantities_included_in_intrinsic_inline_size();
         let style = self.style();
 
-        
-        
-        
+        // FIXME(pcwalton): Percentages should be relative to any definite size per CSS-SIZING.
+        // This will likely need to be done by pushing down definite sizes during selector
+        // cascading.
         let margin = if flags.contains(INTRINSIC_INLINE_SIZE_INCLUDES_MARGINS) {
             let margin = style.logical_margin();
             (MaybeAuto::from_style(margin.inline_start, Au(0)).specified_or_zero() +
@@ -997,9 +997,9 @@ impl Fragment {
             Au(0)
         };
 
-        
-        
-        
+        // FIXME(pcwalton): Percentages should be relative to any definite size per CSS-SIZING.
+        // This will likely need to be done by pushing down definite sizes during selector
+        // cascading.
         let padding = if flags.contains(INTRINSIC_INLINE_SIZE_INCLUDES_PADDING) {
             let padding = style.logical_padding();
             (model::specified(padding.inline_start, Au(0)) +
@@ -1017,8 +1017,8 @@ impl Fragment {
         margin + padding + border
     }
 
-    
-    
+    /// Uses the style only to estimate the intrinsic inline-sizes. These may be modified for text
+    /// or replaced elements.
     fn style_specified_intrinsic_inline_size(&self) -> IntrinsicISizesContribution {
         let flags = self.quantities_included_in_intrinsic_inline_size();
         let style = self.style();
@@ -1029,7 +1029,7 @@ impl Fragment {
             Au(0)
         };
 
-        
+        // FIXME(#2261, pcwalton): This won't work well for inlines: is this OK?
         let surrounding_inline_size = self.surrounding_intrinsic_inline_size();
 
         IntrinsicISizesContribution {
@@ -1041,10 +1041,10 @@ impl Fragment {
         }
     }
 
-    
-    
-    
-    
+    /// Returns a guess as to the distances from the margin edge of this fragment to its content
+    /// in the inline direction. This will generally be correct unless percentages are involved.
+    ///
+    /// This is used for the float placement speculation logic.
     pub fn guess_inline_content_edge_offsets(&self) -> SpeculatedInlineContentEdgeOffsets {
         let logical_margin = self.style.logical_margin();
         let logical_padding = self.style.logical_padding();
@@ -1065,8 +1065,8 @@ impl Fragment {
         text::line_height_from_style(&*self.style, &font_metrics)
     }
 
-    
-    
+    /// Returns the sum of the inline-sizes of all the borders of this fragment. Note that this
+    /// can be expensive to compute, so if possible use the `border_padding` field instead.
     #[inline]
     fn border_width(&self) -> LogicalMargin<Au> {
         let style_border_width = match self.specific {
@@ -1092,11 +1092,11 @@ impl Fragment {
         }
     }
 
-    
-    
-    
-    
-    
+    /// Computes the margins in the inline direction from the containing block inline-size and the
+    /// style. After this call, the inline direction of the `margin` field will be correct.
+    ///
+    /// Do not use this method if the inline direction margins are to be computed some other way
+    /// (for example, via constraint solving for blocks).
     pub fn compute_inline_direction_margins(&mut self, containing_block_inline_size: Au) {
         match self.specific {
             SpecificFragmentInfo::Table |
@@ -1108,8 +1108,8 @@ impl Fragment {
                 return
             }
             SpecificFragmentInfo::InlineBlock(_) => {
-                
-                
+                // Inline-blocks do not take self margins into account but do account for margins
+                // from outer inline contexts.
                 self.margin.inline_start = Au(0);
                 self.margin.inline_end = Au(0);
             }
@@ -1146,11 +1146,11 @@ impl Fragment {
         }
     }
 
-    
-    
-    
-    
-    
+    /// Computes the margins in the block direction from the containing block inline-size and the
+    /// style. After this call, the block direction of the `margin` field will be correct.
+    ///
+    /// Do not use this method if the block direction margins are to be computed some other way
+    /// (for example, via constraint solving for absolutely-positioned flows).
     pub fn compute_block_direction_margins(&mut self, containing_block_inline_size: Au) {
         match self.specific {
             SpecificFragmentInfo::Table |
@@ -1161,8 +1161,8 @@ impl Fragment {
                 self.margin.block_end = Au(0)
             }
             _ => {
-                
-                
+                // NB: Percentages are relative to containing block inline-size (not block-size)
+                // per CSS 2.1.
                 let margin = self.style().logical_margin();
                 self.margin.block_start =
                     MaybeAuto::from_style(margin.block_start, containing_block_inline_size)
@@ -1174,25 +1174,25 @@ impl Fragment {
         }
     }
 
-    
-    
-    
-    
-    
-    
+    /// Computes the border and padding in both inline and block directions from the containing
+    /// block inline-size and the style. After this call, the `border_padding` field will be
+    /// correct.
+    ///
+    /// TODO(pcwalton): Remove `border_collapse`; we can figure it out from our style and specific
+    /// fragment info.
     pub fn compute_border_and_padding(&mut self,
                                       containing_block_inline_size: Au,
                                       border_collapse: border_collapse::T) {
-        
+        // Compute border.
         let border = match border_collapse {
             border_collapse::T::separate => self.border_width(),
             border_collapse::T::collapse => LogicalMargin::zero(self.style.writing_mode),
         };
 
-        
-        
-        
-        
+        // Compute padding from the fragment's style.
+        //
+        // This is zero in the case of `inline-block` because that padding is applied to the
+        // wrapped block, not the fragment.
         let padding_from_style = match self.specific {
             SpecificFragmentInfo::TableColumn(_) |
             SpecificFragmentInfo::TableRow |
@@ -1201,7 +1201,7 @@ impl Fragment {
             _ => model::padding_from_style(self.style(), containing_block_inline_size),
         };
 
-        
+        // Compute padding from the inline fragment context.
         let padding_from_inline_fragment_context = match (&self.specific, &self.inline_context) {
             (_, &None) |
             (&SpecificFragmentInfo::TableColumn(_), _) |
@@ -1227,7 +1227,7 @@ impl Fragment {
         self.border_padding = border + padding_from_style + padding_from_inline_fragment_context
     }
 
-    
+    // Return offset from original position because of `position: relative`.
     pub fn relative_position(&self, containing_block_size: &LogicalSize<Au>) -> LogicalSize<Au> {
         fn from_style(style: &ServoComputedValues, container_size: &LogicalSize<Au>)
                       -> LogicalSize<Au> {
@@ -1249,7 +1249,7 @@ impl Fragment {
             LogicalSize::new(style.writing_mode, offset_i, offset_b)
         }
 
-        
+        // Go over the ancestor fragments and add all relative offsets (if any).
         let mut rel_pos = if self.style().get_box().position == position::T::relative {
             from_style(self.style(), containing_block_size)
         } else {
@@ -1267,9 +1267,9 @@ impl Fragment {
         rel_pos
     }
 
-    
-    
-    
+    /// Always inline for SCCP.
+    ///
+    /// FIXME(pcwalton): Just replace with the clear type from the style module for speed?
     #[inline(always)]
     pub fn clear(&self) -> Option<ClearType> {
         let style = self.style();
@@ -1290,21 +1290,21 @@ impl Fragment {
         self.style().get_inheritedtext().white_space
     }
 
-    
-    
-    
-    
-    
-    
-    
+    /// Returns the text decoration of this fragment, according to the style of the nearest ancestor
+    /// element.
+    ///
+    /// NB: This may not be the actual text decoration, because of the override rules specified in
+    /// CSS 2.1 § 16.3.1. Unfortunately, computing this properly doesn't really fit into Servo's
+    /// model. Therefore, this is a best lower bound approximation, but the end result may actually
+    /// have the various decoration flags turned on afterward.
     pub fn text_decoration(&self) -> text_decoration::T {
         self.style().get_text().text_decoration
     }
 
-    
-    
-    
-    
+    /// Returns the inline-start offset from margin edge to content edge.
+    ///
+    /// FIXME(#2262, pcwalton): I think this method is pretty bogus, because it won't work for
+    /// inlines.
     pub fn inline_start_offset(&self) -> Au {
         match self.specific {
             SpecificFragmentInfo::TableWrapper => self.margin.inline_start,
@@ -1316,13 +1316,13 @@ impl Fragment {
         }
     }
 
-    
-    
+    /// Returns true if this element can be split. This is true for text fragments, unless
+    /// `white-space: pre` or `white-space: nowrap` is set.
     pub fn can_split(&self) -> bool {
         self.is_scanned_text_fragment() && self.white_space().allow_wrap()
     }
 
-    
+    /// Returns true if and only if this fragment is a generated content fragment.
     pub fn is_unscanned_generated_content(&self) -> bool {
         match self.specific {
             SpecificFragmentInfo::GeneratedContent(box GeneratedContentInfo::Empty) => false,

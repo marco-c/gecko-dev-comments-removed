@@ -476,26 +476,26 @@ fn split_first_fragment_at_newline_if_necessary(fragments: &mut LinkedList<Fragm
         }
         first_fragment.transform(first_fragment.border_box.size,
                                  SpecificFragmentInfo::UnscannedText(
-                                     UnscannedTextFragmentInfo::new(string_before,
-                                                                    selection_before)))
+                                     box UnscannedTextFragmentInfo::new(string_before,
+                                                                        selection_before)))
     };
 
     fragments.push_front(new_fragment);
 }
 
-
+/// Information about a text run that we're about to create. This is used in `scan_for_runs`.
 struct RunInfo {
-    
+    /// The text that will go in this text run.
     text: String,
-    
+    /// The insertion point in this text run, if applicable.
     insertion_point: Option<CharIndex>,
-    
+    /// The index of the applicable font in the font group.
     font_index: usize,
-    
+    /// A cached copy of the number of Unicode characters in the text run.
     character_length: usize,
-    
+    /// The bidirection embedding level of this text run.
     bidi_level: u8,
-    
+    /// The Unicode script property of this text run.
     script: Script,
 }
 
@@ -512,26 +512,26 @@ impl RunInfo {
     }
 }
 
-
-
+/// A mapping from a portion of an unscanned text fragment to the text run we're going to create
+/// for it.
 #[derive(Copy, Clone, Debug)]
 struct RunMapping {
-    
+    /// The range of characters within the text fragment.
     char_range: Range<CharIndex>,
-    
+    /// The range of byte indices within the text fragment.
     byte_range: Range<usize>,
-    
+    /// The index of the unscanned text fragment that this mapping corresponds to.
     old_fragment_index: usize,
-    
+    /// The index of the text run we're going to create.
     text_run_index: usize,
-    
+    /// Is the text in this fragment selected?
     selected: bool,
 }
 
 impl RunMapping {
-    
-    
-    
+    /// Given the current set of text runs, creates a run mapping for the next fragment.
+    /// `run_info_list` describes the set of runs we've seen already, and `current_run_info`
+    /// describes the run we just finished processing.
     fn new(run_info_list: &[RunInfo], current_run_info: &RunInfo, fragment_index: usize)
            -> RunMapping {
         RunMapping {
@@ -544,8 +544,8 @@ impl RunMapping {
         }
     }
 
-    
-    
+    /// Flushes this run mapping to the list. `run_info` describes the text run that we're
+    /// currently working on. `text` refers to the text of this fragment.
     fn flush(mut self,
              mappings: &mut Vec<RunMapping>,
              run_info: &mut RunInfo,
@@ -562,8 +562,8 @@ impl RunMapping {
                                                 *last_whitespace,
                                                 &mut run_info.text);
 
-        
-        
+        // Account for `text-transform`. (Confusingly, this is not handled in "text
+        // transformation" above, but we follow Gecko in the naming.)
         let is_first_run = *start_position == 0;
         let character_count = apply_style_transform_if_necessary(&mut run_info.text,
                                                                  old_byte_length,

@@ -100,3 +100,6 @@ mod text;
 mod traversal;
 mod webrender_helpers;
 mod wrapper;
+
+
+pub use fragment::Fragment;
