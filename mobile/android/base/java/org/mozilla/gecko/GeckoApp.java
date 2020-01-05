@@ -85,6 +85,7 @@ import android.util.AttributeSet;
 import android.util.Base64;
 import android.util.Log;
 import android.util.SparseBooleanArray;
+import android.util.SparseIntArray;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.Menu;
@@ -219,14 +220,22 @@ public abstract class GeckoApp
         private boolean tabsWereSkipped;
         private boolean tabsWereProcessed;
 
+        private SparseIntArray tabIdMap;
+
         public LastSessionParser(JSONArray tabs, JSONObject windowObject, boolean isExternalURL) {
             this.tabs = tabs;
             this.windowObject = windowObject;
             this.isExternalURL = isExternalURL;
+
+            tabIdMap = new SparseIntArray();
         }
 
         public boolean allTabsSkipped() {
             return tabsWereSkipped && !tabsWereProcessed;
+        }
+
+        public int getNewTabId(int oldTabId) {
+            return tabIdMap.get(oldTabId, -1);
         }
 
         @Override
@@ -278,7 +287,12 @@ public abstract class GeckoApp
             });
 
             try {
-                tabObject.put("tabId", tab.getId());
+                int oldTabId = tabObject.optInt("tabId", -1);
+                int newTabId = tab.getId();
+                tabObject.put("tabId", newTabId);
+                if  (oldTabId >= 0) {
+                    tabIdMap.put(oldTabId, newTabId);
+                }
             } catch (JSONException e) {
                 Log.e(LOGTAG, "JSON error", e);
             }
@@ -288,6 +302,32 @@ public abstract class GeckoApp
         @Override
         public void onClosedTabsRead(final JSONArray closedTabData) throws JSONException {
             windowObject.put("closedTabs", closedTabData);
+        }
+
+        
+
+
+
+
+
+        public void updateParentId(final JSONArray tabData) {
+            if (tabData == null) {
+                return;
+            }
+
+            for (int i = 0; i < tabData.length(); i++) {
+                try {
+                    JSONObject tabObject = tabData.getJSONObject(i);
+
+                    int parentId = tabObject.getInt("parentId");
+                    int newParentId = getNewTabId(parentId);
+
+                    tabObject.put("parentId", newParentId);
+                } catch (JSONException ex) {
+                    
+                    
+                }
+            }
         }
     };
 
@@ -1727,7 +1767,14 @@ public abstract class GeckoApp
             }
 
             if (tabs.length() > 0) {
+                
+                parser.updateParentId(tabs);
                 windowObject.put("tabs", tabs);
+                
+                JSONArray closedTabs = windowObject.optJSONArray("closedTabs");
+                parser.updateParentId(closedTabs);
+                windowObject.putOpt("closedTabs", closedTabs);
+
                 sessionString = new JSONObject().put("windows", new JSONArray().put(windowObject)).toString();
             } else {
                 if (parser.allTabsSkipped() || sessionDataValid) {
