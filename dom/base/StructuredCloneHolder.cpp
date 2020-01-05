@@ -302,6 +302,7 @@ StructuredCloneHolder::Read(nsISupports* aParent,
   if (!StructuredCloneHolderBase::Read(aCx, aValue)) {
     JS_ClearPendingException(aCx);
     aRv.Throw(NS_ERROR_DOM_DATA_CLONE_ERR);
+    return;
   }
 
   

@@ -2701,6 +2701,7 @@ HTMLMediaElement::Seek(double aTime,
   nsresult rv = mDecoder->Seek(aTime, aSeekType, promise);
   if (NS_FAILED(rv)) {
     aRv.Throw(rv);
+    return nullptr;
   }
 
   

@@ -473,8 +473,8 @@ KeyframeUtils::GetKeyframesFromObject(JSContext* aCx,
   if ((!AnimationUtils::IsCoreAPIEnabled() ||
        aDocument->IsStyledByServo()) &&
       RequiresAdditiveAnimation(keyframes, aDocument)) {
-    aRv.Throw(NS_ERROR_DOM_ANIM_MISSING_PROPS_ERR);
     keyframes.Clear();
+    aRv.Throw(NS_ERROR_DOM_ANIM_MISSING_PROPS_ERR);
   }
 
   return keyframes;
@@ -654,12 +654,6 @@ KeyframeUtils::GetComputedKeyframeValues(const nsTArray<Keyframe>& aKeyframes,
             IsComputeValuesFailureKey(pair)) {
           continue;
         }
-      } else if (pair.mValue.GetUnit() == eCSSUnit_Null) {
-        
-        
-        
-        PropertyStyleAnimationValuePair* neutralPair = values.AppendElement();
-        neutralPair->mProperty = pair.mProperty;
       } else {
         if (!StyleAnimationValue::ComputeValues(pair.mProperty,
               CSSEnabledState::eForAllContent, aElement, aStyleContext,
@@ -770,8 +764,8 @@ GetKeyframeListFromKeyframeSequence(JSContext* aCx,
   
   
   if (!ConvertKeyframeSequence(aCx, aDocument, aIterator, aResult)) {
-    aRv.Throw(NS_ERROR_FAILURE);
     aResult.Clear();
+    aRv.Throw(NS_ERROR_FAILURE);
     return;
   }
 
@@ -1169,6 +1163,7 @@ AppendInitialSegment(AnimationProperty* aAnimationProperty,
   AnimationPropertySegment* segment =
     aAnimationProperty->mSegments.AppendElement();
   segment->mFromKey        = 0.0f;
+  segment->mFromComposite  = dom::CompositeOperation::Add;
   segment->mToKey          = aFirstEntry.mOffset;
   segment->mToValue        = aFirstEntry.mValue;
   segment->mToComposite    = aFirstEntry.mComposite;
@@ -1184,6 +1179,7 @@ AppendFinalSegment(AnimationProperty* aAnimationProperty,
   segment->mFromValue      = aLastEntry.mValue;
   segment->mFromComposite  = aLastEntry.mComposite;
   segment->mToKey          = 1.0f;
+  segment->mToComposite    = dom::CompositeOperation::Add;
   segment->mTimingFunction = aLastEntry.mTimingFunction;
 }
 
