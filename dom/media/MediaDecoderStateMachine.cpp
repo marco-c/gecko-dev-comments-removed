@@ -1032,6 +1032,15 @@ public:
 
   void Exit() override
   {
+    if (mSeekJob.Exists() &&
+        mSeekJob.mTarget.isSome() &&
+        mSeekJob.mTarget->IsVideoOnly()) {
+      
+      
+      
+      mMaster->mOnPlaybackEvent.Notify(MediaEventType::VideoOnlySeekCompleted);
+    }
+
     
     mSeekJob.RejectIfExists(__func__);
 
