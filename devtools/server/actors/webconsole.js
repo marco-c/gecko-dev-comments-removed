@@ -1512,7 +1512,9 @@ WebConsoleActor.prototype =
   {
     let stack = null;
     
-    if (aPageError.stack) {
+    
+    
+    if (aPageError.stack && !Cu.isDeadWrapper(aPageError.stack)) {
       stack = [];
       let s = aPageError.stack;
       while (s !== null) {

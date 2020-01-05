@@ -51,6 +51,17 @@ function consoleOpened(hud) {
   Services.scriptloader.loadSubScript(TEST_FILE, hud.iframeWindow);
 
   
+  let sandbox = new Cu.Sandbox(null, {
+    wantComponents: false,
+    wantGlobalProperties: ["URL", "URLSearchParams"],
+  });
+  let error = Cu.evalInSandbox(`
+    new Error("1348885");
+  `, sandbox);
+  Cu.reportError(error);
+  Cu.nukeSandbox(sandbox);
+
+  
   content.console.log("bug587757b");
 
   
@@ -98,6 +109,12 @@ function consoleOpened(hud) {
         
         
         ]
+      },
+      {
+        name: "Error from nuked global works",
+        text: "1348885",
+        category: CATEGORY_JS,
+        severity: SEVERITY_ERROR,
       },
       {
         name: "content window console.log() is displayed",
