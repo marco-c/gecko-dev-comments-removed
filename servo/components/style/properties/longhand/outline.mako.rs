@@ -3,7 +3,6 @@
 
 
 <%namespace name="helpers" file="/helpers.mako.rs" />
-
 <% from data import Method %>
 
 <% data.new_style_struct("Outline",
