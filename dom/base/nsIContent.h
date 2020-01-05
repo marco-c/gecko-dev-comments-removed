@@ -1023,7 +1023,7 @@ public:
   }
 
   enum ETabFocusType {
-  
+    eTabFocus_textControlsMask = (1<<0),  
     eTabFocus_formElementsMask = (1<<1),  
     eTabFocus_linksMask = (1<<2),         
     eTabFocus_any = 1 + (1<<1) + (1<<2)   
