@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef mozilla_ipc_backgroundutils_h__
 #define mozilla_ipc_backgroundutils_h__
@@ -38,18 +38,18 @@ struct OriginAttributesParamTraits
            aResult->PopulateFromSuffix(suffix);
   }
 };
-} // namespace detail
+} 
 
 template<>
 struct ParamTraits<mozilla::OriginAttributes>
   : public detail::OriginAttributesParamTraits<mozilla::OriginAttributes> {};
 
-} // namespace IPC
+} 
 
 namespace mozilla {
 namespace net {
 class OptionalLoadInfoArgs;
-} // namespace net
+} 
 
 using namespace mozilla::net;
 
@@ -57,39 +57,46 @@ namespace ipc {
 
 class PrincipalInfo;
 
-/**
- * Convert a PrincipalInfo to an nsIPrincipal.
- *
- * MUST be called on the main thread only.
- */
+
+
+
+
+
 already_AddRefed<nsIPrincipal>
 PrincipalInfoToPrincipal(const PrincipalInfo& aPrincipalInfo,
                          nsresult* aOptionalResult = nullptr);
 
-/**
- * Convert an nsIPrincipal to a PrincipalInfo.
- *
- * MUST be called on the main thread only.
- */
+
+
+
+
+
 nsresult
 PrincipalToPrincipalInfo(nsIPrincipal* aPrincipal,
                          PrincipalInfo* aPrincipalInfo);
 
-/**
- * Convert a LoadInfo to LoadInfoArgs struct.
- */
+
+
+
+
+bool
+IsPincipalInfoPrivate(const PrincipalInfo& aPrincipalInfo);
+
+
+
+
 nsresult
 LoadInfoToLoadInfoArgs(nsILoadInfo *aLoadInfo,
                        OptionalLoadInfoArgs* outOptionalLoadInfoArgs);
 
-/**
- * Convert LoadInfoArgs to a LoadInfo.
- */
+
+
+
 nsresult
 LoadInfoArgsToLoadInfo(const OptionalLoadInfoArgs& aOptionalLoadInfoArgs,
                        nsILoadInfo** outLoadInfo);
 
-} // namespace ipc
-} // namespace mozilla
+} 
+} 
 
-#endif // mozilla_ipc_backgroundutils_h__
+#endif 

@@ -28,6 +28,11 @@
 #include "base/thread.h"
 
 namespace mozilla {
+
+namespace ipc {
+class PrincipalInfo;
+}
+
 namespace camera {
 
 class CamerasParent;
@@ -84,8 +89,10 @@ public:
   static already_AddRefed<CamerasParent> Create();
 
   
-  virtual mozilla::ipc::IPCResult RecvAllocateCaptureDevice(const CaptureEngine&, const nsCString&,
-                                                            const nsCString&) override;
+  virtual mozilla::ipc::IPCResult
+  RecvAllocateCaptureDevice(const CaptureEngine& aEngine,
+                            const nsCString& aUnique_idUTF8,
+                            const ipc::PrincipalInfo& aPrincipalInfo) override;
   virtual mozilla::ipc::IPCResult RecvReleaseCaptureDevice(const CaptureEngine&,
                                                            const int&) override;
   virtual mozilla::ipc::IPCResult RecvNumberOfCaptureDevices(const CaptureEngine&) override;

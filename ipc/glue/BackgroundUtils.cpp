@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "BackgroundUtils.h"
 
@@ -107,7 +107,7 @@ PrincipalInfoToPrincipal(const PrincipalInfo& aPrincipalInfo,
         if (NS_WARN_IF(NS_FAILED(rv))) {
           return nullptr;
         }
-        // append that principal to the whitelist
+        
         whitelist.AppendElement(wlPrincipal);
       }
 
@@ -176,7 +176,7 @@ PrincipalToPrincipalInfo(nsIPrincipal* aPrincipal,
     return NS_OK;
   }
 
-  // might be an expanded principal
+  
   nsCOMPtr<nsIExpandedPrincipal> expanded =
     do_QueryInterface(aPrincipal);
 
@@ -192,7 +192,7 @@ PrincipalToPrincipalInfo(nsIPrincipal* aPrincipal,
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
-      // append that spec to the whitelist
+      
       whitelistInfo.AppendElement(info);
     }
 
@@ -202,7 +202,7 @@ PrincipalToPrincipalInfo(nsIPrincipal* aPrincipal,
     return NS_OK;
   }
 
-  // must be a content principal
+  
 
   nsCOMPtr<nsIURI> uri;
   rv = aPrincipal->GetURI(getter_AddRefs(uri));
@@ -225,12 +225,23 @@ PrincipalToPrincipalInfo(nsIPrincipal* aPrincipal,
   return NS_OK;
 }
 
+bool
+IsPincipalInfoPrivate(const PrincipalInfo& aPrincipalInfo)
+{
+  if (aPrincipalInfo.type() != ipc::PrincipalInfo::TContentPrincipalInfo) {
+    return false;
+  }
+
+  const ContentPrincipalInfo& info = aPrincipalInfo.get_ContentPrincipalInfo();
+  return !!info.attrs().mPrivateBrowsingId;
+}
+
 nsresult
 LoadInfoToLoadInfoArgs(nsILoadInfo *aLoadInfo,
                        OptionalLoadInfoArgs* aOptionalLoadInfoArgs)
 {
   if (!aLoadInfo) {
-    // if there is no loadInfo, then there is nothing to serialize
+    
     *aOptionalLoadInfoArgs = void_t();
     return NS_OK;
   }
@@ -379,5 +390,5 @@ LoadInfoArgsToLoadInfo(const OptionalLoadInfoArgs& aOptionalLoadInfoArgs,
    return NS_OK;
 }
 
-} // namespace ipc
-} // namespace mozilla
+} 
+} 

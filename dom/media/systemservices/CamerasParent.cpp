@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set sw=2 ts=8 et ft=cpp : */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "CamerasParent.h"
 #include "MediaEngine.h"
@@ -39,14 +39,14 @@ mozilla::LazyLogModule gCamerasParentLog("CamerasParent");
 namespace mozilla {
 namespace camera {
 
-// 3 threads are involved in this code:
-// - the main thread for some setups, and occassionally for video capture setup
-//   calls that don't work correctly elsewhere.
-// - the IPC thread on which PBackground is running and which receives and
-//   sends messages
-// - a thread which will execute the actual (possibly slow) camera access
-//   called "VideoCapture". On Windows this is a thread with an event loop
-//   suitable for UI access.
+
+
+
+
+
+
+
+
 
 void InputObserver::OnDeviceChange() {
   LOG((__PRETTY_FUNCTION__));
@@ -74,12 +74,12 @@ public:
       : mParent(aParent), mCapEngine(aEngine), mStreamId(aStreamId),
       mProperties(aProperties)
   {
-    // No ShmemBuffer (of the right size) was available, so make an
-    // extra buffer here.  We have no idea when we are going to run and
-    // it will be potentially long after the webrtc frame callback has
-    // returned, so the copy needs to be no later than here.
-    // We will need to copy this back into a Shmem later on so we prefer
-    // using ShmemBuffers to avoid the extra copy.
+    
+    
+    
+    
+    
+    
     mAlternateBuffer.reset(new unsigned char[aProperties.bufferSize()]);
     VideoFrameUtils::CopyVideoFrameBuffers(mAlternateBuffer.get(),
                                            aProperties.bufferSize(), aFrame);
@@ -93,7 +93,7 @@ public:
 
   NS_IMETHOD Run() override {
     if (mParent->IsShuttingDown()) {
-      // Communication channel is being torn down
+      
       mResult = 0;
       return NS_OK;
     }
@@ -138,9 +138,9 @@ CamerasParent::Observe(nsISupports *aSubject,
 nsresult
 CamerasParent::DispatchToVideoCaptureThread(Runnable* event)
 {
-  // Don't try to dispatch if we're already on the right thread.
-  // There's a potential deadlock because the mThreadMonitor is likely
-  // to be taken already.
+  
+  
+  
   MOZ_ASSERT(!mVideoCaptureThread ||
              mVideoCaptureThread->thread_id() != PlatformThread::CurrentId());
 
@@ -162,9 +162,9 @@ void
 CamerasParent::StopVideoCapture()
 {
   LOG((__PRETTY_FUNCTION__));
-  // We are called from the main thread (xpcom-shutdown) or
-  // from PBackground (when the Actor shuts down).
-  // Shut down the WebRTC stack (on the capture thread)
+  
+  
+  
   RefPtr<CamerasParent> self(this);
   RefPtr<Runnable> webrtc_runnable =
     media::NewRunnableFrom([self]() -> nsresult {
@@ -175,19 +175,19 @@ CamerasParent::StopVideoCapture()
     });
   DebugOnly<nsresult> rv = DispatchToVideoCaptureThread(webrtc_runnable);
 #ifdef DEBUG
-  // It's ok for the dispatch to fail if the cleanup it has to do
-  // has been done already.
+  
+  
   MOZ_ASSERT(NS_SUCCEEDED(rv) || !mWebRTCAlive);
 #endif
-  // Hold here until the WebRTC thread is gone. We need to dispatch
-  // the thread deletion *now*, or there will be no more possibility
-  // to get to the main thread.
+  
+  
+  
   MonitorAutoLock lock(mThreadMonitor);
   while (mWebRTCAlive) {
     mThreadMonitor.Wait();
   }
-  // After closing the WebRTC stack, clean up the
-  // VideoCapture thread.
+  
+  
   if (self->mVideoCaptureThread) {
     base::Thread *thread = self->mVideoCaptureThread;
     self->mVideoCaptureThread = nullptr;
@@ -212,21 +212,21 @@ CamerasParent::DeliverFrameOverIPC(CaptureEngine capEng,
                           unsigned char* altbuffer,
                           VideoFrameProperties& aProps)
 {
-  // No ShmemBuffers were available, so construct one now of the right size
-  // and copy into it. That is an extra copy, but we expect this to be
-  // the exceptional case, because we just assured the next call *will* have a
-  // buffer of the right size.
+  
+  
+  
+  
   if (altbuffer != nullptr) {
-    // Get a shared memory buffer from the pool, at least size big
+    
     ShmemBuffer shMemBuff = mShmemPool.Get(this, aProps.bufferSize());
 
     if (!shMemBuff.Valid()) {
       LOG(("No usable Video shmem in DeliverFrame (out of buffers?)"));
-      // We can skip this frame if we run out of buffers, it's not a real error.
+      
       return 0;
     }
 
-    // get() and Size() check for proper alignment of the segment
+    
     memcpy(shMemBuff.GetBytes(), altbuffer, aProps.bufferSize());
 
     if (!SendDeliverFrame(capEng, aStreamId,
@@ -235,8 +235,8 @@ CamerasParent::DeliverFrameOverIPC(CaptureEngine capEng,
     }
   } else {
     MOZ_ASSERT(buffer.Valid());
-    // ShmemBuffer was available, we're all good. A single copy happened
-    // in the original webrtc callback.
+    
+    
     if (!SendDeliverFrame(capEng, aStreamId,
                           buffer.Get(), aProps)) {
       return -1;
@@ -257,18 +257,18 @@ CallbackHelper::RenderFrame(uint32_t aStreamId, const webrtc::VideoFrame& aVideo
 {
   LOG_VERBOSE((__PRETTY_FUNCTION__));
   RefPtr<DeliverFrameRunnable> runnable = nullptr;
-  // Get frame properties
+  
   camera::VideoFrameProperties properties;
   VideoFrameUtils::InitFrameBufferProperties(aVideoFrame, properties);
-  // Get a shared memory buffer to copy the frame data into
+  
   ShmemBuffer shMemBuffer = mParent->GetBuffer(properties.bufferSize());
   if (!shMemBuffer.Valid()) {
-    // Either we ran out of buffers or they're not the right size yet
+    
     LOG(("Correctly sized Video shmem not available in DeliverFrame"));
-    // We will do the copy into a(n extra) temporary buffer inside
-    // the DeliverFrameRunnable constructor.
+    
+    
   } else {
-    // Shared memory buffers of the right size are available, do the copy here.
+    
     VideoFrameUtils::CopyVideoFrameBuffers(shMemBuffer.GetBytes(),
                                            properties.bufferSize(), aVideoFrame);
     runnable = new DeliverFrameRunnable(mParent, mCapEngine, mStreamId,
@@ -311,7 +311,7 @@ CamerasParent::SetupEngine(CaptureEngine aCapEngine)
   MOZ_ASSERT(mVideoCaptureThread->thread_id() == PlatformThread::CurrentId());
   RefPtr<mozilla::camera::VideoEngine>* engine = &mEngines[aCapEngine];
 
-  // Already initialized
+  
   if (engine->get()) {
     return true;
   }
@@ -373,7 +373,7 @@ CamerasParent::CloseEngines()
   }
   MOZ_ASSERT(mVideoCaptureThread->thread_id() == PlatformThread::CurrentId());
 
-  // Stop the callers
+  
   while (mCallbacks.Length()) {
     auto capEngine = mCallbacks[0]->mCapEngine;
     auto streamNum = mCallbacks[0]->mStreamId;
@@ -410,7 +410,7 @@ VideoEngine *
 CamerasParent::EnsureInitialized(int aEngine)
 {
   LOG_VERBOSE((__PRETTY_FUNCTION__));
-  // We're shutting down, don't try to do new WebRTC ops.
+  
   if (!mWebRTCAlive) {
     return nullptr;
   }
@@ -423,11 +423,11 @@ CamerasParent::EnsureInitialized(int aEngine)
   return mEngines[aEngine];
 }
 
-// Dispatch the runnable to do the camera operation on the
-// specific Cameras thread, preventing us from blocking, and
-// chain a runnable to send back the result on the IPC thread.
-// It would be nice to get rid of the code duplication here,
-// perhaps via Promises.
+
+
+
+
+
 mozilla::ipc::IPCResult
 CamerasParent::RecvNumberOfCaptureDevices(const CaptureEngine& aCapEngine)
 {
@@ -636,76 +636,68 @@ CamerasParent::RecvGetCaptureDevice(const CaptureEngine& aCapEngine,
   return IPC_OK();
 }
 
-static nsresult
-GetPrincipalFromOrigin(const nsACString& aOrigin, nsIPrincipal** aPrincipal)
+
+
+
+static bool
+HasCameraPermission(const ipc::PrincipalInfo& aPrincipalInfo)
 {
-  nsAutoCString originNoSuffix;
-  mozilla::OriginAttributes attrs;
-  if (!attrs.PopulateFromOrigin(aOrigin, originNoSuffix)) {
-    return NS_ERROR_FAILURE;
+  if (aPrincipalInfo.type() == ipc::PrincipalInfo::TNullPrincipalInfo) {
+    return false;
   }
 
-  nsCOMPtr<nsIURI> uri;
-  nsresult rv = NS_NewURI(getter_AddRefs(uri), originNoSuffix);
-  NS_ENSURE_SUCCESS(rv, rv);
+  if (aPrincipalInfo.type() == ipc::PrincipalInfo::TSystemPrincipalInfo) {
+    return true;
+  }
 
-  nsCOMPtr<nsIPrincipal> principal = mozilla::BasePrincipal::CreateCodebasePrincipal(uri, attrs);
-  principal.forget(aPrincipal);
-  return NS_OK;
-}
+  MOZ_ASSERT(aPrincipalInfo.type() == ipc::PrincipalInfo::TContentPrincipalInfo);
 
-// Find out whether the given origin has permission to use the
-// camera. If the permission is not persistent, we'll make it
-// a one-shot by removing the (session) permission.
-static bool
-HasCameraPermission(const nsCString& aOrigin)
-{
-  // Name used with nsIPermissionManager
-  static const char* cameraPermission = "MediaManagerVideo";
-  bool allowed = false;
   nsresult rv;
+  nsCOMPtr<nsIPrincipal> principal =
+    PrincipalInfoToPrincipal(aPrincipalInfo, &rv);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return false;
+  }
+
+  
+  static const char* cameraPermission = "MediaManagerVideo";
   nsCOMPtr<nsIPermissionManager> mgr =
     do_GetService(NS_PERMISSIONMANAGER_CONTRACTID, &rv);
-  if (NS_SUCCEEDED(rv)) {
-    nsCOMPtr<nsIIOService> ioServ(do_GetIOService());
-    nsCOMPtr<nsIURI> uri;
-    rv = ioServ->NewURI(aOrigin, nullptr, nullptr, getter_AddRefs(uri));
-    if (NS_SUCCEEDED(rv)) {
-      // Permanent permissions are only retrievable via principal, not uri
-      nsCOMPtr<nsIPrincipal> principal;
-      rv = GetPrincipalFromOrigin(aOrigin, getter_AddRefs(principal));
-      if (NS_SUCCEEDED(rv)) {
-        uint32_t video = nsIPermissionManager::UNKNOWN_ACTION;
-        rv = mgr->TestExactPermissionFromPrincipal(principal,
-                                                   cameraPermission,
-                                                   &video);
-        if (NS_SUCCEEDED(rv)) {
-          allowed = (video == nsIPermissionManager::ALLOW_ACTION);
-        }
-        // Session permissions are removed after one use.
-        if (allowed) {
-          mgr->RemoveFromPrincipal(principal, cameraPermission);
-        }
-      }
-    }
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return false;
   }
+
+  uint32_t video = nsIPermissionManager::UNKNOWN_ACTION;
+  rv = mgr->TestExactPermissionFromPrincipal(principal, cameraPermission,
+                                             &video);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return false;
+  }
+
+  bool allowed = (video == nsIPermissionManager::ALLOW_ACTION);
+
+  
+  if (allowed) {
+    mgr->RemoveFromPrincipal(principal, cameraPermission);
+  }
+
   return allowed;
 }
 
 mozilla::ipc::IPCResult
 CamerasParent::RecvAllocateCaptureDevice(const CaptureEngine& aCapEngine,
                                          const nsCString& unique_id,
-                                         const nsCString& aOrigin)
+                                         const PrincipalInfo& aPrincipalInfo)
 {
-  LOG(("%s: Verifying permissions for %s", __PRETTY_FUNCTION__, aOrigin.get()));
+  LOG(("%s: Verifying permissions", __PRETTY_FUNCTION__));
   RefPtr<CamerasParent> self(this);
   RefPtr<Runnable> mainthread_runnable =
-    media::NewRunnableFrom([self, aCapEngine, unique_id, aOrigin]() -> nsresult {
-      // Verify whether the claimed origin has received permission
-      // to use the camera, either persistently or this session (one shot).
-      bool allowed = HasCameraPermission(aOrigin);
+    media::NewRunnableFrom([self, aCapEngine, unique_id, aPrincipalInfo]() -> nsresult {
+      
+      
+      bool allowed = HasCameraPermission(aPrincipalInfo);
       if (!allowed) {
-        // Developer preference for turning off permission check.
+        
         if (Preferences::GetBool("media.navigator.permission.disabled", false)
             || Preferences::GetBool("media.navigator.permission.fake")) {
           allowed = true;
@@ -714,9 +706,9 @@ CamerasParent::RecvAllocateCaptureDevice(const CaptureEngine& aCapEngine,
           LOG(("No camera permission for this origin"));
         }
       }
-      // After retrieving the permission (or not) on the main thread,
-      // bounce to the WebRTC thread to allocate the device (or not),
-      // then bounce back to the IPC thread for the reply to content.
+      
+      
+      
       RefPtr<Runnable> webrtc_runnable =
       media::NewRunnableFrom([self, allowed, aCapEngine, unique_id]() -> nsresult {
         int numdev = -1;
@@ -883,7 +875,7 @@ CamerasParent::StopCapture(const CaptureEngine& aCapEngine,
         cap.VideoRenderer()->StopRender(capnum);
       }
     });
-    // we're removing elements, iterate backwards
+    
     for (size_t i = mCallbacks.Length(); i > 0; i--) {
       if (mCallbacks[i-1]->mCapEngine == aCapEngine
           && mCallbacks[i-1]->mStreamId == (uint32_t) capnum) {
@@ -932,10 +924,10 @@ void
 CamerasParent::StopIPC()
 {
   MOZ_ASSERT(!mDestroyed);
-  // Release shared memory now, it's our last chance
+  
   mShmemPool.Cleanup(this);
-  // We don't want to receive callbacks or anything if we can't
-  // forward them anymore anyway.
+  
+  
   mChildIsAlive = false;
   mDestroyed = true;
 }
@@ -944,7 +936,7 @@ mozilla::ipc::IPCResult
 CamerasParent::RecvAllDone()
 {
   LOG((__PRETTY_FUNCTION__));
-  // Don't try to send anything to the child now
+  
   mChildIsAlive = false;
   IProtocol* mgr = Manager();
   if (!Send__delete__(this)) {
@@ -956,11 +948,11 @@ CamerasParent::RecvAllDone()
 void
 CamerasParent::ActorDestroy(ActorDestroyReason aWhy)
 {
-  // No more IPC from here
+  
   LOG((__PRETTY_FUNCTION__));
   StopIPC();
-  // Shut down WebRTC (if we're not in full shutdown, else this
-  // will already have happened)
+  
+  
   StopVideoCapture();
 }
 
@@ -982,7 +974,7 @@ CamerasParent::CamerasParent()
   RefPtr<CamerasParent> self(this);
   RefPtr<Runnable> threadStart =
     media::NewRunnableFrom([self]() -> nsresult {
-      // Register thread shutdown observer
+      
       nsCOMPtr<nsIObserverService> obs = services::GetObserverService();
       if (NS_WARN_IF(!obs)) {
         return NS_ERROR_FAILURE;
@@ -992,7 +984,7 @@ CamerasParent::CamerasParent()
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
-      // Start the thread
+      
       MonitorAutoLock lock(self->mThreadMonitor);
       self->mVideoCaptureThread = new base::Thread("VideoCapture");
       base::Thread::Options options;
@@ -1016,10 +1008,10 @@ CamerasParent::~CamerasParent()
   LOG(("~CamerasParent: %p", this));
 
 #ifdef DEBUG
-  // Verify we have shut down the webrtc engines, this is
-  // supposed to happen in ActorDestroy.
-  // That runnable takes a ref to us, so it must have finished
-  // by the time we get here.
+  
+  
+  
+  
   for (int i = 0; i < CaptureEngine::MaxEngine; i++) {
     MOZ_ASSERT(!mEngines[i]);
   }

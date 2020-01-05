@@ -13,6 +13,11 @@
 #include "MediaUtils.h"
 
 namespace mozilla {
+
+namespace ipc {
+class PrincipalInfo;
+}
+
 namespace media {
 
 
@@ -24,8 +29,12 @@ namespace media {
 
 
 
+
+
+
 already_AddRefed<Pledge<nsCString>>
-GetOriginKey(const nsCString& aOrigin, bool aPersist);
+GetPrincipalKey(const mozilla::ipc::PrincipalInfo& aPrincipalInfo,
+                bool aPersist);
 
 void
 SanitizeOriginKeys(const uint64_t& aSinceWhen, bool aOnlyPrivateBrowsing);
@@ -37,7 +46,9 @@ public:
 
   Child();
 
-  mozilla::ipc::IPCResult RecvGetOriginKeyResponse(const uint32_t& aRequestId, const nsCString& aKey) override;
+  mozilla::ipc::IPCResult
+  RecvGetPrincipalKeyResponse(const uint32_t& aRequestId,
+                              const nsCString& aKey) override;
 
   void ActorDestroy(ActorDestroyReason aWhy) override;
   virtual ~Child();
