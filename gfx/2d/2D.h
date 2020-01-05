@@ -679,8 +679,9 @@ public:
   MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(ScaledFont)
   virtual ~ScaledFont() {}
 
-  typedef void (*FontFileDataOutput)(const uint8_t *aData, uint32_t aLength, uint32_t aIndex, Float aGlyphSize, void *aBaton);
-  typedef void (*FontDescriptorOutput)(const uint8_t *aData, uint32_t aLength, Float aFontSize, void *aBaton);
+  typedef void (*FontFileDataOutput)(const uint8_t* aData, uint32_t aLength, uint32_t aIndex, Float aGlyphSize, void* aBaton);
+  typedef void (*FontInstanceDataOutput)(const uint8_t* aData, uint32_t aLength, void* aBaton);
+  typedef void (*FontDescriptorOutput)(const uint8_t* aData, uint32_t aLength, Float aFontSize, void* aBaton);
 
   virtual FontType GetType() const = 0;
   virtual AntialiasMode GetDefaultAAMode() {
@@ -710,6 +711,8 @@ public:
   virtual void GetGlyphDesignMetrics(const uint16_t* aGlyphIndices, uint32_t aNumGlyphs, GlyphMetrics* aGlyphMetrics) = 0;
 
   virtual bool GetFontFileData(FontFileDataOutput, void *) { return false; }
+
+  virtual bool GetFontInstanceData(FontInstanceDataOutput, void *) { return false; }
 
   virtual bool GetFontDescriptor(FontDescriptorOutput, void *) { return false; }
 
@@ -743,8 +746,11 @@ public:
 
 
 
+
+
   virtual already_AddRefed<ScaledFont>
-    CreateScaledFont(uint32_t aIndex, Float aGlyphSize) = 0;
+    CreateScaledFont(uint32_t aIndex, Float aGlyphSize,
+                     const uint8_t* aInstanceData, uint32_t aInstanceDataLength) = 0;
 
   virtual ~NativeFontResource() {};
 };
@@ -1397,6 +1403,13 @@ public:
 
   static already_AddRefed<NativeFontResource>
     CreateNativeFontResource(uint8_t *aData, uint32_t aSize, FontType aType);
+
+  
+
+
+
+  static already_AddRefed<ScaledFont>
+    CreateScaledFontFromFontDescriptor(FontType aType, const uint8_t* aData, uint32_t aDataLength, Float aSize);
 
   
 
