@@ -34,6 +34,10 @@ public class TestTabsProviderRemoteTabs {
     private static final long ONE_WEEK_IN_MILLISECONDS = 7 * ONE_DAY_IN_MILLISECONDS;
     private static final long THREE_WEEKS_IN_MILLISECONDS = 3 * ONE_WEEK_IN_MILLISECONDS;
 
+    private static final String CLIENT_LOCAL_NAME = "our local";
+    private static final String CLIENT_REMOTE1_NAME = "The remote1";
+    private static final String CLIENT_REMOTE2_NAME = "another remote2";
+
     protected TabsProvider provider;
 
     @Before
@@ -55,7 +59,7 @@ public class TestTabsProviderRemoteTabs {
     }
 
     @Test
-    public void testGetClientsWithoutTabsByRecencyFromCursor() throws Exception {
+    public void testGetClientsWithoutTabsNoStaleSortedFromCursor() throws Exception {
         final Uri uri = BrowserContractHelpers.CLIENTS_CONTENT_URI;
         final ContentProviderClient cpc = getClientsClient();
         final LocalTabsAccessor accessor = new LocalTabsAccessor("test"); 
@@ -74,29 +78,29 @@ public class TestTabsProviderRemoteTabs {
             final long now = System.currentTimeMillis();
             
             final ContentValues local = new ContentValues();
-            local.put(BrowserContract.Clients.NAME, "local");
+            local.put(BrowserContract.Clients.NAME, CLIENT_LOCAL_NAME);
             local.put(BrowserContract.Clients.LAST_MODIFIED, now + 1);
             
             final ContentValues remote1 = new ContentValues();
             remote1.put(BrowserContract.Clients.GUID, "guid1");
-            remote1.put(BrowserContract.Clients.NAME, "remote1");
+            remote1.put(BrowserContract.Clients.NAME, CLIENT_REMOTE1_NAME);
             remote1.put(BrowserContract.Clients.LAST_MODIFIED, now + 2);
 
             final ContentValues remote2 = new ContentValues();
             remote2.put(BrowserContract.Clients.GUID, "guid2");
-            remote2.put(BrowserContract.Clients.NAME, "remote2");
+            remote2.put(BrowserContract.Clients.NAME, CLIENT_REMOTE2_NAME);
             remote2.put(BrowserContract.Clients.LAST_MODIFIED, now + 3);
 
             ContentValues[] values = new ContentValues[]{local, remote1, remote2};
             int inserted = cpc.bulkInsert(uri, values);
             Assert.assertEquals(3, inserted);
 
-            allClients = cpc.query(BrowserContract.Clients.CONTENT_RECENCY_URI, null, null, null, null);
+            allClients = cpc.query(BrowserContract.Clients.CONTENT_NO_STALE_SORTED_URI, null, null, null, null);
             try {
                 CursorDumper.dumpCursor(allClients);
                 
                 Assert.assertEquals(3, allClients.getCount());
-                final List<RemoteClient> clients = accessor.getClientsWithoutTabsByRecencyFromCursor(allClients);
+                final List<RemoteClient> clients = accessor.getClientsWithoutTabsNoStaleSortedFromCursor(allClients);
                 Assert.assertEquals(3, clients.size());
                 for (RemoteClient client : clients) {
                     
@@ -104,9 +108,9 @@ public class TestTabsProviderRemoteTabs {
                     Assert.assertEquals(0, client.tabs.size());
                 }
                 
-                Assert.assertEquals("guid2", clients.get(0).guid);
-                Assert.assertEquals("guid1", clients.get(1).guid);
-                Assert.assertEquals(null, clients.get(2).guid);
+                Assert.assertEquals(CLIENT_REMOTE2_NAME, clients.get(0).name);
+                Assert.assertEquals(CLIENT_LOCAL_NAME, clients.get(1).name);
+                Assert.assertEquals(CLIENT_REMOTE1_NAME, clients.get(2).name);
             } finally {
                 allClients.close();
             }
@@ -133,12 +137,12 @@ public class TestTabsProviderRemoteTabs {
             inserted = cpc.bulkInsert(BrowserContract.Tabs.CONTENT_URI, values);
             Assert.assertEquals(2, inserted);
 
-            allClients = cpc.query(BrowserContract.Clients.CONTENT_RECENCY_URI, null, BrowserContract.Clients.GUID + " IS NOT NULL", null, null);
+            allClients = cpc.query(BrowserContract.Clients.CONTENT_NO_STALE_SORTED_URI, null, BrowserContract.Clients.GUID + " IS NOT NULL", null, null);
             try {
                 CursorDumper.dumpCursor(allClients);
                 
                 Assert.assertEquals(2, allClients.getCount());
-                final List<RemoteClient> clients = accessor.getClientsWithoutTabsByRecencyFromCursor(allClients);
+                final List<RemoteClient> clients = accessor.getClientsWithoutTabsNoStaleSortedFromCursor(allClients);
                 Assert.assertEquals(2, clients.size());
                 for (RemoteClient client : clients) {
                     
@@ -147,9 +151,8 @@ public class TestTabsProviderRemoteTabs {
                     Assert.assertEquals(0, client.tabs.size());
                 }
                 
-                
-                Assert.assertEquals("guid1", clients.get(0).guid);
-                Assert.assertEquals("guid2", clients.get(1).guid);
+                Assert.assertEquals(CLIENT_REMOTE2_NAME, clients.get(0).name);
+                Assert.assertEquals(CLIENT_REMOTE1_NAME, clients.get(1).name);
             } finally {
                 allClients.close();
             }
@@ -216,7 +219,7 @@ public class TestTabsProviderRemoteTabs {
             Assert.assertEquals(values.length, inserted);
 
             final Cursor remoteClients =
-                    accessor.getRemoteClientsByRecencyCursor(context);
+                    accessor.getRemoteClientsNoStaleSorted(context);
 
             try {
                 CursorDumper.dumpCursor(remoteClients);
@@ -226,7 +229,7 @@ public class TestTabsProviderRemoteTabs {
 
                 
                 List<RemoteClient> recentRemoteClientsList =
-                        accessor.getClientsWithoutTabsByRecencyFromCursor(remoteClients);
+                        accessor.getClientsWithoutTabsNoStaleSortedFromCursor(remoteClients);
                 Assert.assertEquals(3, recentRemoteClientsList.size());
                 Assert.assertEquals("remote1", recentRemoteClientsList.get(0).name);
                 Assert.assertEquals("guid1", recentRemoteClientsList.get(0).guid);

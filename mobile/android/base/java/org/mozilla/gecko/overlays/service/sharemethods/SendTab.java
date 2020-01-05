@@ -240,12 +240,12 @@ public class SendTab extends ShareMethod {
 
         final BrowserDB browserDB = BrowserDB.from(context);
         final TabsAccessor tabsAccessor = browserDB.getTabsAccessor();
-        final Cursor remoteTabsCursor = tabsAccessor.getRemoteClientsByRecencyCursor(context);
+        final Cursor remoteTabsCursor = tabsAccessor.getRemoteClientsNoStaleSorted(context);
         try {
             if (remoteTabsCursor.getCount() == 0) {
                 return Collections.emptyList();
             }
-            return tabsAccessor.getClientsWithoutTabsByRecencyFromCursor(remoteTabsCursor);
+            return tabsAccessor.getClientsWithoutTabsNoStaleSortedFromCursor(remoteTabsCursor);
         } finally {
             remoteTabsCursor.close();
         }
