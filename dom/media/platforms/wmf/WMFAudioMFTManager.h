@@ -7,10 +7,10 @@
 #if !defined(WMFAudioOutputSource_h_)
 #define WMFAudioOutputSource_h_
 
-#include "WMF.h"
 #include "MFTDecoder.h"
-#include "mozilla/RefPtr.h"
+#include "WMF.h"
 #include "WMFMediaDataDecoder.h"
+#include "mozilla/RefPtr.h"
 
 extern const GUID CLSID_WebmMfVpxDec;
 
@@ -55,7 +55,7 @@ private:
   media::TimeUnit mAudioTimeOffset;
   
   
-  int64_t mAudioFrameSum;
+  int64_t mAudioFrameSum = 0;
 
   enum StreamType
   {
@@ -71,7 +71,7 @@ private:
   
   
   
-  bool mMustRecaptureAudioPosition;
+  bool mMustRecaptureAudioPosition = true;
 };
 
 } 

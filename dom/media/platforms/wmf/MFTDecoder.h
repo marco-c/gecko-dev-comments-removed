@@ -8,13 +8,14 @@
 #define MFTDecoder_h_
 
 #include "WMF.h"
-#include "mozilla/RefPtr.h"
 #include "mozilla/ReentrantMonitor.h"
+#include "mozilla/RefPtr.h"
 #include "nsIThread.h"
 
 namespace mozilla {
 
-class MFTDecoder final {
+class MFTDecoder final
+{
   ~MFTDecoder();
 
 public:
@@ -36,7 +37,8 @@ public:
   
   
   
-  typedef HRESULT (*ConfigureOutputCallback)(IMFMediaType* aOutputType, void* aData);
+  typedef HRESULT (*ConfigureOutputCallback)(IMFMediaType* aOutputType,
+                                             void* aData);
   HRESULT SetMediaTypes(IMFMediaType* aInputType,
                         IMFMediaType* aOutputType,
                         ConfigureOutputCallback aCallback = nullptr,
@@ -100,10 +102,10 @@ private:
   RefPtr<IMFMediaType> mOutputType;
 
   
-  bool mMFTProvidesOutputSamples;
+  bool mMFTProvidesOutputSamples = false;
 
   
-  bool mDiscontinuity;
+  bool mDiscontinuity = true;
 };
 
 } 
