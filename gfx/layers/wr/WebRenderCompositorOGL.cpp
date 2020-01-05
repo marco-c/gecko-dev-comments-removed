@@ -5,8 +5,10 @@
 
 #include "WebRenderCompositorOGL.h"
 
+#include "CompositableHost.h"
 #include "GLContext.h"                  
 #include "GLUploadHelpers.h"
+#include "mozilla/layers/CompositorVsyncScheduler.h"
 #include "mozilla/layers/TextureHost.h"  
 #include "mozilla/layers/TextureHostOGL.h"  
 
@@ -34,6 +36,9 @@ void
 WebRenderCompositorOGL::Destroy()
 {
   Compositor::Destroy();
+
+  mCompositableHosts.Clear();
+  mCompositorScheduler = nullptr;
 
   if (!mDestroyed) {
     mDestroyed = true;
@@ -78,6 +83,54 @@ WebRenderCompositorOGL::MakeCurrent(MakeCurrentFlags aFlags) {
     return;
   }
   mGLContext->MakeCurrent(aFlags & ForceMakeCurrent);
+}
+
+void
+WebRenderCompositorOGL::CompositeUntil(TimeStamp aTimeStamp)
+{
+  Compositor::CompositeUntil(aTimeStamp);
+  
+  
+  
+  
+  
+  ScheduleComposition();
+}
+
+void
+WebRenderCompositorOGL::AddExternalImageId(uint64_t aExternalImageId, CompositableHost* aHost)
+{
+  MOZ_ASSERT(!mCompositableHosts.Get(aExternalImageId));
+  mCompositableHosts.Put(aExternalImageId, aHost);
+}
+
+void
+WebRenderCompositorOGL::RemoveExternalImageId(uint64_t aExternalImageId)
+{
+  MOZ_ASSERT(mCompositableHosts.Get(aExternalImageId));
+  mCompositableHosts.Remove(aExternalImageId);
+}
+
+void
+WebRenderCompositorOGL::UpdateExternalImages()
+{
+  for (auto iter = mCompositableHosts.Iter(); !iter.Done(); iter.Next()) {
+    RefPtr<CompositableHost>& host = iter.Data();
+    
+    host->BindTextureSource();
+  }
+}
+
+void
+WebRenderCompositorOGL::ScheduleComposition()
+{
+  mCompositorScheduler->ScheduleComposition();
+}
+
+void
+WebRenderCompositorOGL::SetVsyncScheduler(CompositorVsyncScheduler* aScheduler)
+{
+  mCompositorScheduler = aScheduler;
 }
 
 } 

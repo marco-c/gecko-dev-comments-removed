@@ -9,9 +9,13 @@
 #include "GLContextTypes.h"             
 #include "GLDefs.h"                     
 #include "mozilla/layers/Compositor.h"  
+#include "nsDataHashtable.h"
 
 namespace mozilla {
 namespace layers {
+
+class CompositableHost;
+class CompositorVsyncScheduler;
 
 class WebRenderCompositorOGL final : public Compositor
 {
@@ -24,6 +28,8 @@ protected:
   virtual ~WebRenderCompositorOGL();
 
 public:
+  virtual WebRenderCompositorOGL* AsWebRenderCompositorOGL() override { return this; }
+
   virtual already_AddRefed<DataTextureSource>
   CreateDataTextureSource(TextureFlags aFlags = TextureFlags::NO_FLAGS) override;
 
@@ -106,10 +112,21 @@ public:
 
   virtual bool IsValid() const override { return true; }
 
+  virtual void CompositeUntil(TimeStamp aTimeStamp) override;
+
   GLContext* gl() const { return mGLContext; }
 
+  void AddExternalImageId(uint64_t aExternalImageId, CompositableHost* aHost);
+  void RemoveExternalImageId(uint64_t aExternalImageId);
+  void UpdateExternalImages();
+
+  void ScheduleComposition();
+  void SetVsyncScheduler(CompositorVsyncScheduler* aScheduler);
 private:
   RefPtr<GLContext> mGLContext;
+  RefPtr<CompositorVsyncScheduler> mCompositorScheduler;
+  
+  nsDataHashtable<nsUint64HashKey, RefPtr<CompositableHost> > mCompositableHosts;
 
   bool mDestroyed;
 };

@@ -14,7 +14,6 @@
 #include "mozilla/RefPtr.h"             
 #include "mozilla/gfx/MatrixFwd.h"      
 #include "mozilla/gfx/Point.h"          
-#include "mozilla/gfx/Polygon.h"        
 #include "mozilla/gfx/Rect.h"           
 #include "mozilla/gfx/Types.h"          
 #include "mozilla/ipc/ProtocolUtils.h"
@@ -40,23 +39,12 @@ namespace layers {
 class Layer;
 class LayerComposite;
 class Compositor;
+class ImageContainerParent;
 class ThebesBufferData;
 class TiledContentHost;
 class CompositableParentManager;
+class PCompositableParent;
 struct EffectChain;
-
-struct AsyncCompositableRef
-{
-  AsyncCompositableRef()
-   : mProcessId(mozilla::ipc::kInvalidProcessId)
-  {}
-  AsyncCompositableRef(base::ProcessId aProcessId, const CompositableHandle& aHandle)
-   : mProcessId(aProcessId), mHandle(aHandle)
-  {}
-  explicit operator bool() const { return !!mHandle; }
-  base::ProcessId mProcessId;
-  CompositableHandle mHandle;
-};
 
 
 
@@ -78,7 +66,7 @@ protected:
   virtual ~CompositableHost();
 
 public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(CompositableHost)
+  NS_INLINE_DECL_REFCOUNTING(CompositableHost)
   explicit CompositableHost(const TextureInfo& aTextureInfo);
 
   static already_AddRefed<CompositableHost> Create(const TextureInfo& aTextureInfo);
@@ -95,8 +83,7 @@ public:
                          const gfx::Matrix4x4& aTransform,
                          const gfx::SamplingFilter aSamplingFilter,
                          const gfx::IntRect& aClipRect,
-                         const nsIntRegion* aVisibleRegion = nullptr,
-                         const Maybe<gfx::Polygon>& aGeometry = Nothing()) = 0;
+                         const nsIntRegion* aVisibleRegion = nullptr) = 0;
 
   
 
@@ -146,6 +133,8 @@ public:
   Layer* GetLayer() const { return mLayer; }
   void SetLayer(Layer* aLayer) { mLayer = aLayer; }
 
+  virtual void SetImageContainer(ImageContainerParent* aImageContainer) {}
+
   virtual TiledContentHost* AsTiledContentHost() { return nullptr; }
 
   typedef uint32_t AttachFlags;
@@ -186,6 +175,9 @@ public:
   }
   bool IsAttached() { return mAttached; }
 
+  static void
+  ReceivedDestroy(PCompositableParent* aActor);
+
   virtual void Dump(std::stringstream& aStream,
                     const char* aPrefix="",
                     bool aDumpHtml=false) { }
@@ -205,6 +197,9 @@ public:
   virtual void UseTextureHost(const nsTArray<TimedTexture>& aTextures);
   virtual void UseComponentAlphaTextures(TextureHost* aTextureOnBlack,
                                          TextureHost* aTextureOnWhite);
+  virtual void UseOverlaySource(OverlaySource aOverlay,
+                                const gfx::IntRect& aPictureRect) { }
+
   virtual void RemoveTextureHost(TextureHost* aTexture);
 
   
@@ -213,12 +208,23 @@ public:
                   ? DIAGNOSTIC_FLASH_COUNTER_MAX : mFlashCounter + 1;
   }
 
+  static PCompositableParent*
+  CreateIPDLActor(CompositableParentManager* mgr,
+                  const TextureInfo& textureInfo,
+                  uint64_t asyncID,
+                  PImageContainerParent* aImageContainer = nullptr);
+
+  static bool DestroyIPDLActor(PCompositableParent* actor);
+
+  static CompositableHost* FromIPDLActor(PCompositableParent* actor);
+
   uint64_t GetCompositorID() const { return mCompositorID; }
 
-  const AsyncCompositableRef& GetAsyncRef() const { return mAsyncRef; }
-  void SetAsyncRef(const AsyncCompositableRef& aRef) { mAsyncRef = aRef; }
+  uint64_t GetAsyncID() const { return mAsyncID; }
 
   void SetCompositorID(uint64_t aID) { mCompositorID = aID; }
+
+  void SetAsyncID(uint64_t aID) { mAsyncID = aID; }
 
   virtual bool Lock() { return false; }
 
@@ -233,9 +239,11 @@ public:
   
   virtual void CleanupResources() {}
 
+  virtual void BindTextureSource() {}
+
 protected:
   TextureInfo mTextureInfo;
-  AsyncCompositableRef mAsyncRef;
+  uint64_t mAsyncID;
   uint64_t mCompositorID;
   RefPtr<Compositor> mCompositor;
   Layer* mLayer;
@@ -266,6 +274,43 @@ private:
   RefPtr<CompositableHost> mHost;
   bool mSucceeded;
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+namespace CompositableMap {
+  void Create();
+  void Destroy();
+  PCompositableParent* Get(uint64_t aID);
+  void Set(uint64_t aID, PCompositableParent* aParent);
+  void Erase(uint64_t aID);
+  void Clear();
+} 
+
 
 } 
 } 

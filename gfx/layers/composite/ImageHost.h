@@ -12,7 +12,6 @@
 #include "mozilla/RefPtr.h"             
 #include "mozilla/gfx/MatrixFwd.h"      
 #include "mozilla/gfx/Point.h"          
-#include "mozilla/gfx/Polygon.h"        
 #include "mozilla/gfx/Rect.h"           
 #include "mozilla/gfx/Types.h"          
 #include "mozilla/layers/CompositorTypes.h"  
@@ -49,12 +48,14 @@ public:
                          const gfx::Matrix4x4& aTransform,
                          const gfx::SamplingFilter aSamplingFilter,
                          const gfx::IntRect& aClipRect,
-                         const nsIntRegion* aVisibleRegion = nullptr,
-                         const Maybe<gfx::Polygon>& aGeometry = Nothing()) override;
+                         const nsIntRegion* aVisibleRegion = nullptr) override;
 
   virtual void UseTextureHost(const nsTArray<TimedTexture>& aTextures) override;
 
   virtual void RemoveTextureHost(TextureHost* aTexture) override;
+
+  virtual void UseOverlaySource(OverlaySource aOverlay,
+                                const gfx::IntRect& aPictureRect) override;
 
   virtual TextureHost* GetAsTextureHost(gfx::IntRect* aPictureRect = nullptr) override;
 
@@ -63,6 +64,8 @@ public:
                       AttachFlags aFlags = NO_FLAGS) override;
 
   virtual void SetCompositor(Compositor* aCompositor) override;
+
+  virtual void SetImageContainer(ImageContainerParent* aImageContainer) override;
 
   gfx::IntSize GetImageSize() const override;
 
@@ -85,6 +88,8 @@ public:
   void SetCurrentTextureHost(TextureHost* aTexture);
 
   virtual void CleanupResources() override;
+
+  virtual void BindTextureSource() override;
 
   int32_t GetFrameID()
   {
@@ -142,6 +147,8 @@ protected:
   int ChooseImageIndex() const;
 
   nsTArray<TimedImage> mImages;
+  
+  ImageContainerParent* mImageContainer;
   int32_t mLastFrameID;
   int32_t mLastProducerID;
   

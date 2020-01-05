@@ -10,6 +10,7 @@
 #include "ipc/IPCMessageUtils.h"        
 #include "mozilla/layers/Compositor.h"  
 #include "mozilla/layers/Effects.h"     
+#include "mozilla/layers/ImageContainerParent.h"
 #include "mozilla/layers/LayerManagerComposite.h"     
 #include "nsAString.h"
 #include "nsDebug.h"                    
@@ -28,6 +29,7 @@ class ISurfaceAllocator;
 
 ImageHost::ImageHost(const TextureInfo& aTextureInfo)
   : CompositableHost(aTextureInfo)
+  , mImageContainer(nullptr)
   , mLastFrameID(-1)
   , mLastProducerID(-1)
   , mBias(BIAS_NONE)
@@ -36,6 +38,7 @@ ImageHost::ImageHost(const TextureInfo& aTextureInfo)
 
 ImageHost::~ImageHost()
 {
+  SetImageContainer(nullptr);
 }
 
 void
@@ -150,6 +153,12 @@ ImageHost::RemoveTextureHost(TextureHost* aTexture)
       mImages.RemoveElementAt(i);
     }
   }
+}
+
+void
+ImageHost::UseOverlaySource(OverlaySource aOverlay,
+                            const gfx::IntRect& aPictureRect)
+{
 }
 
 static TimeStamp
@@ -278,8 +287,7 @@ ImageHost::Composite(LayerComposite* aLayer,
                      const gfx::Matrix4x4& aTransform,
                      const gfx::SamplingFilter aSamplingFilter,
                      const gfx::IntRect& aClipRect,
-                     const nsIntRegion* aVisibleRegion,
-                     const Maybe<gfx::Polygon>& aGeometry)
+                     const nsIntRegion* aVisibleRegion)
 {
   if (!GetCompositor()) {
     
@@ -340,15 +348,12 @@ ImageHost::Composite(LayerComposite* aLayer,
     }
 
     if (mLastFrameID != img->mFrameID || mLastProducerID != img->mProducerID) {
-      if (mAsyncRef) {
-        ImageCompositeNotificationInfo info;
-        info.mImageBridgeProcessId = mAsyncRef.mProcessId;
-        info.mNotification = ImageCompositeNotification(
-          mAsyncRef.mHandle,
-          img->mTimeStamp, GetCompositor()->GetCompositionTime(),
-          img->mFrameID, img->mProducerID);
-        static_cast<LayerManagerComposite*>(aLayer->GetLayerManager())->
-            AppendImageCompositeNotification(info);
+      if (mImageContainer) {
+        aLayer->GetLayerManager()->
+            AppendImageCompositeNotification(ImageCompositeNotification(
+                mImageContainer, nullptr,
+                img->mTimeStamp, GetCompositor()->GetCompositionTime(),
+                img->mFrameID, img->mProducerID));
       }
       mLastFrameID = img->mFrameID;
       mLastProducerID = img->mProducerID;
@@ -387,8 +392,8 @@ ImageHost::Composite(LayerComposite* aLayer,
           effect->mTextureCoords.y = effect->mTextureCoords.YMost();
           effect->mTextureCoords.height = -effect->mTextureCoords.height;
         }
-        GetCompositor()->DrawGeometry(rect, aClipRect, aEffectChain,
-                                      aOpacity, aTransform, aGeometry);
+        GetCompositor()->DrawQuad(rect, aClipRect, aEffectChain,
+                                  aOpacity, aTransform);
         GetCompositor()->DrawDiagnostics(diagnosticFlags | DiagnosticFlags::BIGIMAGE,
                                          rect, aClipRect, aTransform, mFlashCounter);
       } while (it->NextTile());
@@ -408,8 +413,8 @@ ImageHost::Composite(LayerComposite* aLayer,
         effect->mTextureCoords.height = -effect->mTextureCoords.height;
       }
 
-      GetCompositor()->DrawGeometry(pictureRect, aClipRect, aEffectChain,
-                                    aOpacity, aTransform, aGeometry);
+      GetCompositor()->DrawQuad(pictureRect, aClipRect, aEffectChain,
+                                aOpacity, aTransform);
       GetCompositor()->DrawDiagnostics(diagnosticFlags,
                                        pictureRect, aClipRect,
                                        aTransform, mFlashCounter);
@@ -421,6 +426,31 @@ ImageHost::Composite(LayerComposite* aLayer,
   
   
   
+  mBias = UpdateBias(
+      GetCompositor()->GetCompositionTime(), mImages[imageIndex].mTimeStamp,
+      uint32_t(imageIndex + 1) < mImages.Length() ?
+          mImages[imageIndex + 1].mTimeStamp : TimeStamp(),
+      mBias);
+}
+
+void
+ImageHost::BindTextureSource()
+{
+  int imageIndex = ChooseImageIndex();
+  if (imageIndex < 0) {
+    return;
+  }
+
+  if (uint32_t(imageIndex) + 1 < mImages.Length()) {
+    GetCompositor()->CompositeUntil(mImages[imageIndex + 1].mTimeStamp + TimeDuration::FromMilliseconds(BIAS_TIME_MS));
+  }
+
+  TimedImage* img = &mImages[imageIndex];
+  img->mTextureHost->SetCompositor(GetCompositor());
+  SetCurrentTextureHost(img->mTextureHost);
+
+  
+
   mBias = UpdateBias(
       GetCompositor()->GetCompositionTime(), mImages[imageIndex].mTimeStamp,
       uint32_t(imageIndex + 1) < mImages.Length() ?
@@ -570,6 +600,18 @@ ImageHost::GenEffect(const gfx::SamplingFilter aSamplingFilter)
                               aSamplingFilter,
                               isAlphaPremultiplied,
                               GetRenderState());
+}
+
+void
+ImageHost::SetImageContainer(ImageContainerParent* aImageContainer)
+{
+  if (mImageContainer) {
+    mImageContainer->mImageHosts.RemoveElement(this);
+  }
+  mImageContainer = aImageContainer;
+  if (mImageContainer) {
+    mImageContainer->mImageHosts.AppendElement(this);
+  }
 }
 
 } 
