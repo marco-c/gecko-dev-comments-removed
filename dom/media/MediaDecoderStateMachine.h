@@ -755,9 +755,6 @@ private:
   Mirror<int64_t> mDecoderPosition;
 
   
-  Mirror<bool> mIsVisible;
-
-  
   Mirror<bool> mHasSuspendTaint;
 
   

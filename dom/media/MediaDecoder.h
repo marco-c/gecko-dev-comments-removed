@@ -812,9 +812,6 @@ protected:
   Canonical<int64_t> mDecoderPosition;
 
   
-  Canonical<bool> mIsVisible;
-
-  
   
   Canonical<bool> mHasSuspendTaint;
 
@@ -859,7 +856,6 @@ public:
   {
     return &mDecoderPosition;
   }
-  AbstractCanonical<bool>* CanonicalIsVisible() { return &mIsVisible; }
   AbstractCanonical<bool>* CanonicalHasSuspendTaint() { return &mHasSuspendTaint; }
 
 private:
