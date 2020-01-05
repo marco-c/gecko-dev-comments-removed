@@ -12,6 +12,7 @@ const kAutoMigrateEnabledPref = "browser.migrate.automigrate.enabled";
 const kUndoUIEnabledPref = "browser.migrate.automigrate.ui.enabled";
 
 const kAutoMigrateBrowserPref = "browser.migrate.automigrate.browser";
+const kAutoMigrateImportedItemIds = "browser.migrate.automigrate.imported-items";
 
 const kAutoMigrateLastUndoPromptDateMsPref = "browser.migrate.automigrate.lastUndoPromptDateMs";
 const kAutoMigrateDaysToOfferUndoPref = "browser.migrate.automigrate.daysToOfferUndo";
@@ -38,6 +39,11 @@ XPCOMUtils.defineLazyModuleGetter(this, "PlacesUtils",
                                   "resource://gre/modules/PlacesUtils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "TelemetryStopwatch",
                                   "resource://gre/modules/TelemetryStopwatch.jsm");
+
+XPCOMUtils.defineLazyGetter(this, "gBrandBundle", function() {
+  const kBrandBundle = "chrome://branding/locale/brand.properties";
+  return Services.strings.createBundle(kBrandBundle);
+});
 
 Cu.importGlobalProperties(["URL"]);
 
@@ -309,6 +315,12 @@ const AutoMigrate = {
     return null;
   },
 
+  
+
+
+
+
+
   maybeShowUndoNotification: Task.async(function* (target) {
     if (!(yield this.canUndo())) {
       return;
@@ -337,26 +349,27 @@ const AutoMigrate = {
     }
 
     let browserName = this.getBrowserUsedForMigration();
-    let message;
-    if (browserName) {
-      message = MigrationUtils.getLocalizedString("automigration.undo.message",
-                                                  [browserName]);
-    } else {
-      message = MigrationUtils.getLocalizedString("automigration.undo.unknownBrowserMessage");
+    if (!browserName) {
+      browserName = MigrationUtils.getLocalizedString("automigration.undo.unknownbrowser");
     }
+    const kMessageId = "automigration.undo.message." +
+                      Preferences.get(kAutoMigrateImportedItemIds, "all");
+    const kBrandShortName = gBrandBundle.GetStringFromName("brandShortName");
+    let message = MigrationUtils.getLocalizedString(kMessageId,
+                                                    [browserName, kBrandShortName]);
 
     let buttons = [
       {
-        label: MigrationUtils.getLocalizedString("automigration.undo.keep.label"),
-        accessKey: MigrationUtils.getLocalizedString("automigration.undo.keep.accesskey"),
+        label: MigrationUtils.getLocalizedString("automigration.undo.keep2.label"),
+        accessKey: MigrationUtils.getLocalizedString("automigration.undo.keep2.accesskey"),
         callback: () => {
           this._purgeUndoState(this.UNDO_REMOVED_REASON_OFFER_REJECTED);
           this._removeNotificationBars();
         },
       },
       {
-        label: MigrationUtils.getLocalizedString("automigration.undo.dontkeep.label"),
-        accessKey: MigrationUtils.getLocalizedString("automigration.undo.dontkeep.accesskey"),
+        label: MigrationUtils.getLocalizedString("automigration.undo.dontkeep2.label"),
+        accessKey: MigrationUtils.getLocalizedString("automigration.undo.dontkeep2.accesskey"),
         callback: () => {
           this._maybeOpenUndoSurveyTab(win);
           this.undo();
@@ -430,7 +443,40 @@ const AutoMigrate = {
     ]);
   },
 
+  
+
+
+
+
+
+
+  _setImportedItemPrefFromState(state) {
+    let itemsWithData = [];
+    if (state) {
+      for (let itemType of state.keys()) {
+        if (state.get(itemType).length) {
+          itemsWithData.push(itemType);
+        }
+      }
+    }
+    if (itemsWithData.length == 3) {
+      itemsWithData = "all";
+    } else {
+      itemsWithData = itemsWithData.sort().join(".");
+    }
+    if (itemsWithData) {
+      Preferences.set(kAutoMigrateImportedItemIds, itemsWithData);
+    }
+  },
+
+  
+
+
   _saveUndoStateTrackerForShutdown: "not running",
+  
+
+
+
   saveUndoState: Task.async(function* () {
     let resolveSavingPromise;
     this._saveUndoStateTrackerForShutdown = "processing undo history";
@@ -442,6 +488,9 @@ const AutoMigrate = {
       resolveSavingPromise();
       return Promise.resolve();
     }
+
+    this._saveUndoStateTrackerForShutdown = "saving imported item list";
+    this._setImportedItemPrefFromState(state);
 
     this._saveUndoStateTrackerForShutdown = "writing undo history";
     this._undoSavePromise = OS.File.writeAtomic(
