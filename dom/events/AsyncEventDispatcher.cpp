@@ -68,14 +68,14 @@ AsyncEventDispatcher::PostDOMEvent()
   RefPtr<AsyncEventDispatcher> ensureDeletionWhenFailing = this;
   if (NS_IsMainThread()) {
     if (nsCOMPtr<nsIGlobalObject> global = mTarget->GetOwnerGlobal()) {
-      return global->Dispatch("AsyncEventDispatcher", TaskCategory::Other, ensureDeletionWhenFailing.forget());
+      return global->Dispatch("AsyncEvent", TaskCategory::Other, ensureDeletionWhenFailing.forget());
     }
 
     
     
     if (nsCOMPtr<nsINode> node = do_QueryInterface(mTarget)) {
       nsCOMPtr<nsIDocument> doc = node->OwnerDoc();
-      return doc->Dispatch("AsyncEventDispatcher", TaskCategory::Other, ensureDeletionWhenFailing.forget());
+      return doc->Dispatch("AsyncEvent", TaskCategory::Other, ensureDeletionWhenFailing.forget());
     }
   }
   return NS_DispatchToCurrentThread(this);

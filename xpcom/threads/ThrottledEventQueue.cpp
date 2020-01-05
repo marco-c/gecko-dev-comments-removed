@@ -69,16 +69,10 @@ class ThrottledEventQueue::Inner final : public nsIObserver
     { }
 
     NS_IMETHODIMP
-    Run() override
+    Run()
     {
       mInner->ExecuteRunnable();
       return NS_OK;
-    }
-
-    NS_IMETHODIMP
-    GetName(nsACString& aName) override
-    {
-      return mInner->CurrentName(aName);
     }
   };
 
@@ -117,39 +111,6 @@ class ThrottledEventQueue::Inner final : public nsIObserver
   {
     MOZ_ASSERT(!mExecutor);
     MOZ_ASSERT(mShutdownStarted);
-  }
-
-  nsresult
-  CurrentName(nsACString& aName)
-  {
-    nsCOMPtr<nsIRunnable> event;
-
-#ifdef DEBUG
-    bool currentThread = false;
-    mBaseTarget->IsOnCurrentThread(&currentThread);
-    MOZ_ASSERT(currentThread);
-#endif
-
-    {
-      MutexAutoLock lock(mMutex);
-
-      
-      
-      MOZ_ALWAYS_TRUE(mEventQueue.PeekEvent(getter_AddRefs(event), lock));
-    }
-
-    if (nsCOMPtr<nsINamed> named = do_QueryInterface(event)) {
-      
-      
-      
-      mExecutionDepth++;
-      nsresult rv = named->GetName(aName);
-      mExecutionDepth--;
-      return rv;
-    }
-
-    aName.AssignLiteral("non-nsINamed ThrottledEventQueue runnable");
-    return NS_OK;
   }
 
   void

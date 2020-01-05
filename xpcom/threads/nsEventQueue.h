@@ -41,10 +41,6 @@ public:
 
   
   
-  bool PeekEvent(nsIRunnable** aEvent, MutexAutoLock& aProofOfLock);
-
-  
-  
   
   
   
