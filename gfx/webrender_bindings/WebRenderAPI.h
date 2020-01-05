@@ -153,10 +153,9 @@ public:
 
   void PushBuiltDisplayList(wr::BuiltDisplayList dl);
 
-  void PushScrollLayer(const WrRect& aBounds, 
-                       const WrRect& aOverflow,
+  void PushScrollLayer(const WrRect& aContentRect, 
+                       const WrRect& aClipRect,
                        const WrImageMask* aMask); 
-
   void PopScrollLayer();
 
 
