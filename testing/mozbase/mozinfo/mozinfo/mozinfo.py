@@ -92,16 +92,25 @@ elif system.startswith('MINGW'):
     info['os'] = 'win'
     os_version = version = unknown
 elif system == "Linux":
+    if hasattr(platform, "linux_distribution"):
+        (distro, os_version, codename) = platform.linux_distribution()
+    else:
+        (distro, os_version, codename) = platform.dist()
+    if not processor:
+        processor = machine
+    version = "%s %s" % (distro, os_version)
+
     
-    try:
-        os_info = dict(map(lambda x: x.strip('"'), l.split('=')) for l in open('/etc/os-release', 'rb').read().splitlines())
-    except IOError:
-        os_info = {}
+    
+    
+    
+    if not distro and not os_version and not codename:
+        distro = 'lfs'
+        version = release
+        os_version = release
 
     info['os'] = 'linux'
-    version = os_version = os_info.get('VERSION_ID', release)
-    info['linux_distro'] = os_info.get('NAME', 'lfs')
-
+    info['linux_distro'] = distro
 elif system in ['DragonFly', 'FreeBSD', 'NetBSD', 'OpenBSD']:
     info['os'] = 'bsd'
     version = os_version = sys.platform
