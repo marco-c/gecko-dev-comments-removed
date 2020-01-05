@@ -7,6 +7,8 @@
 
 
 
+"use strict";
+
 var CC = Components.Constructor;
 const BinaryInputStream = CC("@mozilla.org/binaryinputstream;1",
                              "nsIBinaryInputStream",
@@ -34,6 +36,7 @@ function run_test()
 
   let binaryStream = new BinaryInputStream(new_file_input_stream(binaryFile));
   test_file_data = "";
+  let avail = 0;
   while ((avail = binaryStream.available()) > 0) {
     test_file_data += binaryStream.readBytes(avail);
   }
