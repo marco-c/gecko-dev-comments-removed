@@ -32,6 +32,24 @@ using mozilla::Swap;
 
 
 
+static void*
+ReturnAddressFromFP(void* fp)
+{
+    return reinterpret_cast<Frame*>(fp)->returnAddress;
+}
+
+static uint8_t*
+CallerFPFromFP(void* fp)
+{
+    return reinterpret_cast<Frame*>(fp)->callerFP;
+}
+
+static DebugFrame*
+FrameToDebugFrame(void* fp)
+{
+    return reinterpret_cast<DebugFrame*>((uint8_t*)fp - DebugFrame::offsetOfFrame());
+}
+
 FrameIterator::FrameIterator()
   : activation_(nullptr),
     code_(nullptr),
@@ -116,8 +134,8 @@ FrameIterator::operator++()
 void
 FrameIterator::popFrame()
 {
-    Frame* prevFP = fp_;
-    fp_ = prevFP->callerFP;
+    void* prevFP = fp_;
+    fp_ = CallerFPFromFP(prevFP);
 
     if (!fp_) {
         code_ = nullptr;
@@ -126,14 +144,14 @@ FrameIterator::popFrame()
 
         if (unwind_ == Unwind::True) {
             activation_->unwindExitFP(nullptr);
-            unwoundAddressOfReturnAddress_ = &prevFP->returnAddress;
+            unwoundAddressOfReturnAddress_ = &reinterpret_cast<Frame*>(prevFP)->returnAddress;
         }
 
         MOZ_ASSERT(done());
         return;
     }
 
-    void* returnAddress = prevFP->returnAddress;
+    void* returnAddress = ReturnAddressFromFP(prevFP);
 
     code_ = activation_->compartment()->wasm.lookupCode(returnAddress);
     MOZ_ASSERT(code_);
@@ -195,7 +213,7 @@ Instance*
 FrameIterator::instance() const
 {
     MOZ_ASSERT(!done());
-    return fp_->tls->instance;
+    return FrameToDebugFrame(fp_)->instance();
 }
 
 void**
@@ -222,7 +240,7 @@ FrameIterator::debugFrame() const
 {
     MOZ_ASSERT(!done());
     MOZ_ASSERT(debugEnabled());
-    return reinterpret_cast<DebugFrame*>((uint8_t*)fp_ - DebugFrame::offsetOfFrame());
+    return FrameToDebugFrame(fp_);
 }
 
 const CallSite*
@@ -499,7 +517,7 @@ ProfilingFrameIterator::ProfilingFrameIterator(const WasmActivation& activation)
 }
 
 static inline void
-AssertMatchesCallSite(const WasmActivation& activation, void* callerPC, Frame* callerFP)
+AssertMatchesCallSite(const WasmActivation& activation, void* callerPC, void* callerFP)
 {
 #ifdef DEBUG
     const Code* code = activation.compartment()->wasm.lookupCode(callerPC);
@@ -521,8 +539,8 @@ AssertMatchesCallSite(const WasmActivation& activation, void* callerPC, Frame* c
 void
 ProfilingFrameIterator::initFromExitFP()
 {
-    Frame* fp = activation_->exitFP();
-    void* pc = fp->returnAddress;
+    uint8_t* fp = activation_->exitFP();
+    void* pc = ReturnAddressFromFP(fp);
 
     stackAddress_ = fp;
 
@@ -539,15 +557,16 @@ ProfilingFrameIterator::initFromExitFP()
     
     
     
+    
     switch (codeRange_->kind()) {
       case CodeRange::Entry:
         callerPC_ = nullptr;
         callerFP_ = nullptr;
         break;
       case CodeRange::Function:
-        fp = fp->callerFP;
-        callerPC_ = fp->returnAddress;
-        callerFP_ = fp->callerFP;
+        fp = CallerFPFromFP(fp);
+        callerPC_ = ReturnAddressFromFP(fp);
+        callerFP_ = CallerFPFromFP(fp);
         AssertMatchesCallSite(*activation_, callerPC_, callerFP_);
         break;
       case CodeRange::ImportJitExit:
@@ -588,7 +607,7 @@ ProfilingFrameIterator::ProfilingFrameIterator(const WasmActivation& activation,
         return;
     }
 
-    Frame* fp = (Frame*)state.fp;
+    uint8_t* fp = (uint8_t*)state.fp;
     uint8_t* pc = (uint8_t*)state.pc;
     void** sp = (void**)state.sp;
 
@@ -661,8 +680,8 @@ ProfilingFrameIterator::ProfilingFrameIterator(const WasmActivation& activation,
             AssertMatchesCallSite(*activation_, callerPC_, callerFP_);
         } else if (offsetFromEntry == PushedFP) {
             
-            MOZ_ASSERT(fp == reinterpret_cast<Frame*>(sp)->callerFP);
-            callerPC_ = reinterpret_cast<Frame*>(sp)->returnAddress;
+            MOZ_ASSERT(fp == CallerFPFromFP(sp));
+            callerPC_ = ReturnAddressFromFP(sp);
             callerFP_ = fp;
             AssertMatchesCallSite(*activation_, callerPC_, callerFP_);
         } else if (offsetInCode == codeRange->ret() - PoppedFP) {
@@ -677,8 +696,8 @@ ProfilingFrameIterator::ProfilingFrameIterator(const WasmActivation& activation,
             AssertMatchesCallSite(*activation_, callerPC_, callerFP_);
         } else {
             
-            callerPC_ = fp->returnAddress;
-            callerFP_ = fp->callerFP;
+            callerPC_ = ReturnAddressFromFP(fp);
+            callerFP_ = CallerFPFromFP(fp);
             AssertMatchesCallSite(*activation_, callerPC_, callerFP_);
         }
         break;
@@ -686,8 +705,8 @@ ProfilingFrameIterator::ProfilingFrameIterator(const WasmActivation& activation,
       case CodeRange::Inline:
         
         
-        callerPC_ = fp->returnAddress;
-        callerFP_ = fp->callerFP;
+        callerPC_ = ReturnAddressFromFP(fp);
+        callerFP_ = CallerFPFromFP(fp);
         AssertMatchesCallSite(*activation_, callerPC_, callerFP_);
         break;
       case CodeRange::Entry:
@@ -753,9 +772,9 @@ ProfilingFrameIterator::operator++()
       case CodeRange::Inline:
       case CodeRange::FarJumpIsland:
         stackAddress_ = callerFP_;
-        callerPC_ = callerFP_->returnAddress;
-        AssertMatchesCallSite(*activation_, callerPC_, callerFP_->callerFP);
-        callerFP_ = callerFP_->callerFP;
+        callerPC_ = ReturnAddressFromFP(callerFP_);
+        AssertMatchesCallSite(*activation_, callerPC_, CallerFPFromFP(callerFP_));
+        callerFP_ = CallerFPFromFP(callerFP_);
         break;
       case CodeRange::Interrupt:
       case CodeRange::Throw:

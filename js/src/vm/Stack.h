@@ -1733,7 +1733,7 @@ class InterpreterFrameIterator
 class WasmActivation : public Activation
 {
     WasmActivation* prevWasm_;
-    wasm::Frame* exitFP_;
+    uint8_t* exitFP_;
     wasm::ExitReason exitReason_;
 
   public:
@@ -1748,7 +1748,7 @@ class WasmActivation : public Activation
 
     
     
-    wasm::Frame* exitFP() const { return exitFP_; }
+    uint8_t* exitFP() const { return exitFP_; }
 
     
     wasm::ExitReason exitReason() const { return exitReason_; }
@@ -1766,7 +1766,7 @@ class WasmActivation : public Activation
     void* resumePC() const;
 
     
-    void unwindExitFP(wasm::Frame* exitFP);
+    void unwindExitFP(uint8_t* exitFP);
 };
 
 

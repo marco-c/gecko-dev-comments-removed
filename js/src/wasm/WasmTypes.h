@@ -1583,7 +1583,7 @@ struct Frame
 {
     
     
-    Frame* callerFP;
+    uint8_t* callerFP;
 
     
     
