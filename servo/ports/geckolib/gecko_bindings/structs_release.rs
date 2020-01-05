@@ -909,7 +909,7 @@ pub const NS_STYLE_BLEND_SATURATION: ::std::os::raw::c_uint = 13;
 pub const NS_STYLE_BLEND_COLOR: ::std::os::raw::c_uint = 14;
 pub const NS_STYLE_BLEND_LUMINOSITY: ::std::os::raw::c_uint = 15;
 pub const NS_STYLE_MASK_COMPOSITE_ADD: ::std::os::raw::c_uint = 0;
-pub const NS_STYLE_MASK_COMPOSITE_SUBSTRACT: ::std::os::raw::c_uint = 1;
+pub const NS_STYLE_MASK_COMPOSITE_SUBTRACT: ::std::os::raw::c_uint = 1;
 pub const NS_STYLE_MASK_COMPOSITE_INTERSECT: ::std::os::raw::c_uint = 2;
 pub const NS_STYLE_MASK_COMPOSITE_EXCLUDE: ::std::os::raw::c_uint = 3;
 pub const NS_STYLE_CONTROL_CHARACTER_VISIBILITY_HIDDEN: ::std::os::raw::c_uint
@@ -2669,34 +2669,6 @@ pub struct _vftable_nsIURI {
 impl ::std::clone::Clone for nsIURI {
     fn clone(&self) -> Self { *self }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#[repr(u32)]
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
-pub enum SheetParsingMode {
-    eAuthorSheetFeatures = 0,
-    eUserSheetFeatures = 1,
-    eAgentSheetFeatures = 2,
-}
 pub type nsLoadFlags = u32;
 #[repr(C)]
 #[derive(Debug, Copy)]
@@ -2726,6 +2698,34 @@ pub enum nsIRequest_nsIRequest_h_unnamed_7 {
 }
 impl ::std::clone::Clone for nsIRequest {
     fn clone(&self) -> Self { *self }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[repr(u32)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+pub enum SheetParsingMode {
+    eAuthorSheetFeatures = 0,
+    eUserSheetFeatures = 1,
+    eAgentSheetFeatures = 2,
 }
 
 
