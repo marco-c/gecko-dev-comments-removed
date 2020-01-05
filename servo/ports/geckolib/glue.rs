@@ -568,32 +568,19 @@ pub extern "C" fn Servo_DeclarationBlock_GetCssText(declarations: RawServoDeclar
 #[no_mangle]
 pub extern "C" fn Servo_DeclarationBlock_SerializeOneValue(
     declarations: RawServoDeclarationBlockBorrowed,
+    property: *mut nsIAtom, is_custom: bool,
     buffer: *mut nsString)
 {
-    let mut string = String::new();
-
     let declarations = RwLock::<PropertyDeclarationBlock>::as_arc(&declarations);
-    declarations.read().to_css(&mut string).unwrap();
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    debug_assert!(string.find(':').is_some());
-    let position = string.find(':').unwrap();
-    
-    let value = &string[(position + 1)..].trim_left();
-    debug_assert!(value.ends_with(';'));
-    let length = value.len() - 1; 
+    let property = get_property_name_from_atom(property, is_custom);
+    let mut string = String::new();
+    let rv = declarations.read().single_value_to_css(&property, &mut string);
+    debug_assert!(rv.is_ok());
 
     
     
     unsafe {
-        Gecko_Utf8SliceToString(buffer, value.as_ptr(), length);
+        Gecko_Utf8SliceToString(buffer, string.as_ptr(), string.len());
     }
 }
 
