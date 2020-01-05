@@ -48,8 +48,6 @@ class GenericPrinter
     bool vprintf(const char* fmt, va_list ap);
 
     
-    
-    
     virtual void reportOutOfMemory();
 
     
@@ -195,14 +193,6 @@ class LSprinter final : public GenericPrinter
     
     virtual bool put(const char* s, size_t len) override;
     using GenericPrinter::put; 
-
-    
-    
-    
-    virtual void reportOutOfMemory() override;
-
-    
-    virtual bool hadOutOfMemory() const override;
 };
 
 
