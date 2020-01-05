@@ -163,6 +163,8 @@ public:
 
   bool IsD3D9Ex() { return mDeviceEx; }
 
+  bool HasComponentAlpha() { return mHasComponentAlpha; }
+
   bool HasDynamicTextures() { return mHasDynamicTextures; }
 
   enum ShaderMode {
@@ -326,6 +328,9 @@ private:
 
 
   D3DTEXTUREADDRESS mTextureAddressingMode;
+
+  
+  bool mHasComponentAlpha;
 
   
   bool mHasDynamicTextures;
