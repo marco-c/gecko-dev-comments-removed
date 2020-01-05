@@ -402,7 +402,7 @@ D3D11TextureData::Create(IntSize aSize, SurfaceFormat aFormat, SourceSurface* aS
   newDesc.MiscFlags = D3D11_RESOURCE_MISC_SHARED;
   if (!NS_IsMainThread() || !!(aFlags & ALLOC_FOR_OUT_OF_BAND_CONTENT)) {
     
-    if (!(aFlags & ALLOC_MANUAL_SYNCHRONIZATION)) {
+    if (!(aFlags & ALLOC_MANUAL_SYNCHRONIZATION) && aDevice != DeviceManagerDx::Get()->GetCompositorDevice()) {
       newDesc.MiscFlags = D3D11_RESOURCE_MISC_SHARED_KEYEDMUTEX;
     }
   }
@@ -633,13 +633,12 @@ DXGIYCbCrTextureData::Deallocate(LayersIPCChannel*)
 already_AddRefed<TextureHost>
 CreateTextureHostD3D11(const SurfaceDescriptor& aDesc,
                        ISurfaceAllocator* aDeallocator,
-                       LayersBackend aBackend,
                        TextureFlags aFlags)
 {
   RefPtr<TextureHost> result;
   switch (aDesc.type()) {
     case SurfaceDescriptor::TSurfaceDescriptorBuffer: {
-      result = CreateBackendIndependentTextureHost(aDesc, aDeallocator, aBackend, aFlags);
+      result = CreateBackendIndependentTextureHost(aDesc, aDeallocator, aFlags);
       break;
     }
     case SurfaceDescriptor::TSurfaceDescriptorD3D10: {
