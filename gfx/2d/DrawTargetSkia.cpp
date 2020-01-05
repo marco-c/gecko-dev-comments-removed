@@ -268,7 +268,6 @@ DrawTargetSkia::DrawTargetSkia()
   , mColorSpace(nullptr)
   , mCanvasData(nullptr)
   , mCGSize(0, 0)
-  , mNeedLayer(false)
 #endif
 {
 }
@@ -1094,11 +1093,8 @@ SetupCGGlyphs(CGContextRef aCGContext,
 CGContextRef
 DrawTargetSkia::BorrowCGContext(const DrawOptions &aOptions)
 {
-  
-  
-  
-  mNeedLayer = !mCanvas->isClipEmpty() && !mCanvas->isClipRect();
-  if (mNeedLayer) {
+  bool needLayer = !mCanvas->isClipEmpty() && !mCanvas->isClipRect();
+  if (needLayer) {
     SkPaint paint;
     paint.setBlendMode(SkBlendMode::kSrc);
     SkCanvas::SaveLayerRec rec(nullptr, &paint, SkCanvas::kInitWithPrevious_SaveLayerFlag);
@@ -1115,7 +1111,7 @@ DrawTargetSkia::BorrowCGContext(const DrawOptions &aOptions)
     return nullptr;
   }
 
-  if (!mNeedLayer && (data == mCanvasData) && mCG && (mCGSize == size)) {
+  if (!needLayer && (data == mCanvasData) && mCG && (mCGSize == size)) {
     
     
     CGContextSaveGState(mCG);
@@ -1151,7 +1147,7 @@ DrawTargetSkia::BorrowCGContext(const DrawOptions &aOptions)
                                       NULL, 
                                       NULL);
   if (!mCG) {
-    if (mNeedLayer) {
+    if (needLayer) {
       mCanvas->restore();
     }
     ReleaseBits(mCanvasData);
@@ -1175,7 +1171,8 @@ DrawTargetSkia::ReturnCGContext(CGContextRef aCGContext)
   ReleaseBits(mCanvasData);
   CGContextRestoreGState(aCGContext);
 
-  if (mNeedLayer) {
+  bool needLayer = !mCanvas->isClipEmpty() && !mCanvas->isClipRect();
+  if (needLayer) {
     
     
     
