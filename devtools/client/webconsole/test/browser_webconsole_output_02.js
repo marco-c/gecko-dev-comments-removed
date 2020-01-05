@@ -39,7 +39,7 @@ var inputTests = [
   
   {
     input: "testobj1.testfn2",
-    output: "function testobj1.testfn2()",
+    output: "function testfn2()",
     printOutput: "function () { return 42; }",
     suppressClick: true
   },
