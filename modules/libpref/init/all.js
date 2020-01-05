@@ -599,10 +599,6 @@ pref("media.video_stats.enabled", true);
 pref("media.decoder.recycle.enabled", false);
 
 
-
-pref("media.cubeb.log_level", "");
-
-
 pref("layers.amd-switchable-gfx.enabled", true);
 
 
@@ -5458,13 +5454,8 @@ pref("webextensions.tests", false);
 
 pref("webextensions.webRequest.requestBodyMaxRawBytes", 16777216);
 
-
-pref("webextensions.storage.sync.enabled", false);
-#ifdef RELEASE_OR_BETA
+pref("webextensions.storage.sync.enabled", true);
 pref("webextensions.storage.sync.serverURL", "https://webextensions.settings.services.mozilla.com/v1");
-#else
-pref("webextensions.storage.sync.serverURL", "https://webextensions.dev.mozaws.net/v1");
-#endif
 
 
 pref("dom.input.fallbackUploadDir", "");
