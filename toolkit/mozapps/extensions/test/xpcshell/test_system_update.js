@@ -144,7 +144,7 @@ function* check_installed(conditions) {
 const TEST_CONDITIONS = {
   
   blank: {
-    setup: function*() {
+    *setup() {
       clearUpdatesDir();
       distroDir.leafName = "empty";
     },
@@ -158,7 +158,7 @@ const TEST_CONDITIONS = {
   },
   
   withAppSet: {
-    setup: function*() {
+    *setup() {
       clearUpdatesDir();
       distroDir.leafName = "prefilled";
     },
@@ -173,7 +173,7 @@ const TEST_CONDITIONS = {
 
   
   withProfileSet: {
-    setup: function*() {
+    *setup() {
       buildPrefilledUpdatesDir();
       distroDir.leafName = "empty";
     },
@@ -188,7 +188,7 @@ const TEST_CONDITIONS = {
 
   
   withBothSets: {
-    setup: function*() {
+    *setup() {
       buildPrefilledUpdatesDir();
       distroDir.leafName = "hidden";
     },

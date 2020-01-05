@@ -22,33 +22,33 @@ var gSeenWidgets = new Set();
 
 var PanelWideWidgetTracker = {
   
-  onWidgetAdded: function(aWidgetId, aArea, aPosition) {
+  onWidgetAdded(aWidgetId, aArea, aPosition) {
     if (aArea == gPanel) {
       gPanelPlacements = CustomizableUI.getWidgetIdsInArea(gPanel);
       let moveForward = this.shouldMoveForward(aWidgetId, aPosition);
       this.adjustWidgets(aWidgetId, moveForward);
     }
   },
-  onWidgetMoved: function(aWidgetId, aArea, aOldPosition, aNewPosition) {
+  onWidgetMoved(aWidgetId, aArea, aOldPosition, aNewPosition) {
     if (aArea == gPanel) {
       gPanelPlacements = CustomizableUI.getWidgetIdsInArea(gPanel);
       let moveForward = this.shouldMoveForward(aWidgetId, aNewPosition);
       this.adjustWidgets(aWidgetId, moveForward);
     }
   },
-  onWidgetRemoved: function(aWidgetId, aPrevArea) {
+  onWidgetRemoved(aWidgetId, aPrevArea) {
     if (aPrevArea == gPanel) {
       gPanelPlacements = CustomizableUI.getWidgetIdsInArea(gPanel);
       this.adjustWidgets(aWidgetId, false);
     }
   },
-  onWidgetReset: function(aWidgetId) {
+  onWidgetReset(aWidgetId) {
     gPanelPlacements = CustomizableUI.getWidgetIdsInArea(gPanel);
   },
   
   
   
-  onWidgetAfterDOMChange: function(aNode, aNextNode, aContainer) {
+  onWidgetAfterDOMChange(aNode, aNextNode, aContainer) {
     if (!gSeenWidgets.has(aNode.id)) {
       if (aNode.classList.contains(CustomizableUI.WIDE_PANEL_CLASS)) {
         gWideWidgets.add(aNode.id);
@@ -57,11 +57,11 @@ var PanelWideWidgetTracker = {
     }
   },
   
-  onWidgetDestroyed: function(aWidgetId) {
+  onWidgetDestroyed(aWidgetId) {
     gSeenWidgets.delete(aWidgetId);
     gWideWidgets.delete(aWidgetId);
   },
-  shouldMoveForward: function(aWidgetId, aPosition) {
+  shouldMoveForward(aWidgetId, aPosition) {
     let currentWidgetAtPosition = gPanelPlacements[aPosition + 1];
     let rv = gWideWidgets.has(currentWidgetAtPosition) && !gWideWidgets.has(aWidgetId);
     
@@ -83,7 +83,7 @@ var PanelWideWidgetTracker = {
     }
     return rv;
   },
-  adjustWidgets: function(aWidgetId, aMoveForwards) {
+  adjustWidgets(aWidgetId, aMoveForwards) {
     if (this.adjusting) {
       return;
     }
@@ -104,7 +104,7 @@ var PanelWideWidgetTracker = {
   
   
   
-  adjustPosition: function(aWidgetId, aMoveForwards) {
+  adjustPosition(aWidgetId, aMoveForwards) {
     
     let placementIndex = gPanelPlacements.indexOf(aWidgetId);
     let prevSiblingCount = 0;
@@ -144,7 +144,7 @@ var PanelWideWidgetTracker = {
 
 
 
-  checkWidgetStatus: function(aWidgetId) {
+  checkWidgetStatus(aWidgetId) {
     let widgetWrapper = CustomizableUI.getWidget(aWidgetId);
     
     if (!widgetWrapper) {
@@ -164,7 +164,7 @@ var PanelWideWidgetTracker = {
     return "real";
   },
 
-  init: function() {
+  init() {
     
     gPanelPlacements = CustomizableUI.getWidgetIdsInArea(gPanel);
     CustomizableUI.addListener(this);

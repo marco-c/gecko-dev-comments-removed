@@ -31,7 +31,7 @@ const FLASH_MIME_TYPE = "application/x-shockwave-flash";
 const REPLACEMENT_STYLE_SHEET = Services.io.newURI("chrome://pluginproblem/content/pluginReplaceBinding.css", null, null);
 
 PluginContent.prototype = {
-  init: function(global) {
+  init(global) {
     this.global = global;
     
     this.content = this.global.content;
@@ -62,7 +62,7 @@ PluginContent.prototype = {
     Services.obs.addObserver(this, "decoder-doctor-notification", false);
   },
 
-  uninit: function() {
+  uninit() {
     let global = this.global;
 
     global.removeEventListener("PluginBindingAttached", this, true);
@@ -89,7 +89,7 @@ PluginContent.prototype = {
     delete this.content;
   },
 
-  receiveMessage: function(msg) {
+  receiveMessage(msg) {
     switch (msg.name) {
       case "BrowserPlugins:ActivatePlugins":
         this.activatePlugins(msg.data.pluginInfo, msg.data.newState);
@@ -143,7 +143,7 @@ PluginContent.prototype = {
     }
   },
 
-  onPageShow: function(event) {
+  onPageShow(event) {
     
     if (!this.content || event.target != this.content.document) {
       return;
@@ -157,7 +157,7 @@ PluginContent.prototype = {
     }
   },
 
-  onPageHide: function(event) {
+  onPageHide(event) {
     
     if (!this.content || event.target != this.content.document) {
       return;
@@ -168,12 +168,12 @@ PluginContent.prototype = {
     this.haveShownNotification = false;
   },
 
-  getPluginUI: function(plugin, anonid) {
+  getPluginUI(plugin, anonid) {
     return plugin.ownerDocument.
            getAnonymousElementByAttribute(plugin, "anonid", anonid);
   },
 
-  _getPluginInfo: function(pluginElement) {
+  _getPluginInfo(pluginElement) {
     if (pluginElement instanceof Ci.nsIDOMHTMLAnchorElement) {
       
       let pluginHost = Cc["@mozilla.org/plugin/host;1"].getService(Ci.nsIPluginHost);
@@ -223,11 +223,11 @@ PluginContent.prototype = {
     }
 
     return { mimetype: tagMimetype,
-             pluginName: pluginName,
-             pluginTag: pluginTag,
-             permissionString: permissionString,
-             fallbackType: fallbackType,
-             blocklistState: blocklistState,
+             pluginName,
+             pluginTag,
+             permissionString,
+             fallbackType,
+             blocklistState,
            };
   },
 
@@ -237,7 +237,7 @@ PluginContent.prototype = {
 
 
 
-  _getPluginInfoForTag: function(pluginTag, tagMimetype) {
+  _getPluginInfoForTag(pluginTag, tagMimetype) {
     let pluginHost = Cc["@mozilla.org/plugin/host;1"].getService(Ci.nsIPluginHost);
 
     let pluginName = gNavigatorBundle.GetStringFromName("pluginInfo.unknownPlugin");
@@ -268,22 +268,22 @@ PluginContent.prototype = {
     }
 
     return { mimetype: tagMimetype,
-             pluginName: pluginName,
-             pluginTag: pluginTag,
-             permissionString: permissionString,
+             pluginName,
+             pluginTag,
+             permissionString,
              
              
              
              
              fallbackType: Ci.nsIObjectLoadingContent.PLUGIN_CLICK_TO_PLAY,
-             blocklistState: blocklistState,
+             blocklistState,
            };
   },
 
   
 
 
-  setVisibility : function(plugin, overlay, shouldShow) {
+  setVisibility(plugin, overlay, shouldShow) {
     overlay.classList.toggle("visible", shouldShow);
     if (shouldShow) {
       overlay.removeAttribute("dismissed");
@@ -298,7 +298,7 @@ PluginContent.prototype = {
 
 
 
-  shouldShowOverlay : function(plugin, overlay) {
+  shouldShowOverlay(plugin, overlay) {
     
     
     if (overlay.scrollWidth == 0) {
@@ -347,7 +347,7 @@ PluginContent.prototype = {
     return true;
   },
 
-  addLinkClickCallback: function(linkNode, callbackName ) {
+  addLinkClickCallback(linkNode, callbackName ) {
     
     let self = this;
     let callbackArgs = Array.prototype.slice.call(arguments).slice(2);
@@ -378,7 +378,7 @@ PluginContent.prototype = {
   },
 
   
-  _getBindingType : function(plugin) {
+  _getBindingType(plugin) {
     if (!(plugin instanceof Ci.nsIObjectLoadingContent))
       return null;
 
@@ -403,7 +403,7 @@ PluginContent.prototype = {
     }
   },
 
-  handleEvent: function(event) {
+  handleEvent(event) {
     let eventType = event.type;
 
     if (eventType == "unload") {
@@ -583,7 +583,7 @@ PluginContent.prototype = {
     }
   },
 
-  _recordFlashPluginTelemetry: function(eventType, plugin) {
+  _recordFlashPluginTelemetry(eventType, plugin) {
     if (!Services.telemetry.canRecordExtended) {
       return;
     }
@@ -618,7 +618,7 @@ PluginContent.prototype = {
     }
   },
 
-  _finishRecordingFlashPluginTelemetry: function() {
+  _finishRecordingFlashPluginTelemetry() {
     if (this.flashPluginStats) {
       Services.telemetry.getHistogramById('FLASH_PLUGIN_INSTANCES_ON_PAGE')
                         .add(this.flashPluginStats.instancesCount);
@@ -626,12 +626,12 @@ PluginContent.prototype = {
     }
   },
 
-  isKnownPlugin: function(objLoadingContent) {
+  isKnownPlugin(objLoadingContent) {
     return (objLoadingContent.getContentTypeForMIMEType(objLoadingContent.actualType) ==
             Ci.nsIObjectLoadingContent.TYPE_PLUGIN);
   },
 
-  canActivatePlugin: function(objLoadingContent) {
+  canActivatePlugin(objLoadingContent) {
     
     
     
@@ -652,7 +652,7 @@ PluginContent.prototype = {
            isFallbackTypeValid;
   },
 
-  hideClickToPlayOverlay: function(plugin) {
+  hideClickToPlayOverlay(plugin) {
     let overlay = this.getPluginUI(plugin, "main");
     if (overlay) {
       overlay.classList.remove("visible");
@@ -660,7 +660,7 @@ PluginContent.prototype = {
   },
 
   
-  forwardCallback: function(name, pluginTag) {
+  forwardCallback(name, pluginTag) {
     this.global.sendAsyncMessage("PluginContent:LinkClickCallback",
       { name, pluginTag });
   },
@@ -692,12 +692,12 @@ PluginContent.prototype = {
                                  { runID, keyVals, submitURLOptIn });
   },
 
-  reloadPage: function() {
+  reloadPage() {
     this.global.content.location.reload();
   },
 
   
-  _handleClickToPlayEvent: function(plugin) {
+  _handleClickToPlayEvent(plugin) {
     let doc = plugin.ownerDocument;
     let pluginHost = Cc["@mozilla.org/plugin/host;1"].getService(Ci.nsIPluginHost);
     let permissionString;
@@ -730,7 +730,7 @@ PluginContent.prototype = {
     }
   },
 
-  onOverlayClick: function(event) {
+  onOverlayClick(event) {
     let document = event.target.ownerDocument;
     let plugin = document.getBindingParent(event.target);
     let contentWindow = plugin.ownerGlobal.top;
@@ -747,7 +747,7 @@ PluginContent.prototype = {
     }
   },
 
-  reshowClickToPlayNotification: function() {
+  reshowClickToPlayNotification() {
     let contentWindow = this.global.content;
     let cwu = contentWindow.QueryInterface(Ci.nsIInterfaceRequestor)
                            .getInterface(Ci.nsIDOMWindowUtils);
@@ -766,7 +766,7 @@ PluginContent.prototype = {
   
 
 
-  activatePlugins: function(pluginInfo, newState) {
+  activatePlugins(pluginInfo, newState) {
     let contentWindow = this.global.content;
     let cwu = contentWindow.QueryInterface(Ci.nsIInterfaceRequestor)
                            .getInterface(Ci.nsIDOMWindowUtils);
@@ -812,7 +812,7 @@ PluginContent.prototype = {
     this.updateNotificationUI();
   },
 
-  _showClickToPlayNotification: function(plugin, showNow) {
+  _showClickToPlayNotification(plugin, showNow) {
     let plugins = [];
 
     
@@ -872,8 +872,8 @@ PluginContent.prototype = {
 
     this.global.sendAsyncMessage("PluginContent:ShowClickToPlayNotification", {
       plugins: [...this.pluginData.values()],
-      showNow: showNow,
-      location: location,
+      showNow,
+      location,
     }, null, principal);
   },
 
@@ -888,7 +888,7 @@ PluginContent.prototype = {
 
 
 
-  updateNotificationUI: function(document) {
+  updateNotificationUI(document) {
     document = document || this.content.document;
 
     
@@ -953,23 +953,23 @@ PluginContent.prototype = {
     
     
     this.global.sendAsyncMessage("PluginContent:UpdateHiddenPluginUI", {
-      haveInsecure: haveInsecure,
+      haveInsecure,
       actions: [...actions.values()],
-      location: location,
+      location,
     }, null, principal);
   },
 
-  removeNotification: function(name) {
-    this.global.sendAsyncMessage("PluginContent:RemoveNotification", { name: name });
+  removeNotification(name) {
+    this.global.sendAsyncMessage("PluginContent:RemoveNotification", { name });
   },
 
-  clearPluginCaches: function() {
+  clearPluginCaches() {
     this.pluginData.clear();
     this.pluginCrashData.clear();
   },
 
-  hideNotificationBar: function(name) {
-    this.global.sendAsyncMessage("PluginContent:HideNotificationBar", { name: name });
+  hideNotificationBar(name) {
+    this.global.sendAsyncMessage("PluginContent:HideNotificationBar", { name });
   },
 
   
@@ -983,7 +983,7 @@ PluginContent.prototype = {
 
 
 
-  isWithinFullScreenElement: function(fullScreenElement, domElement) {
+  isWithinFullScreenElement(fullScreenElement, domElement) {
 
     
 
@@ -1018,7 +1018,7 @@ PluginContent.prototype = {
 
 
 
-  onPluginCrashed: function(target, aEvent) {
+  onPluginCrashed(target, aEvent) {
     if (!(aEvent instanceof this.content.PluginCrashedEvent))
       return;
 
@@ -1057,7 +1057,7 @@ PluginContent.prototype = {
     });
   },
 
-  NPAPIPluginProcessCrashed: function({pluginName, runID, state}) {
+  NPAPIPluginProcessCrashed({pluginName, runID, state}) {
     let message =
       gNavigatorBundle.formatStringFromName("crashedpluginsMessage.title",
                                             [pluginName], 1);
@@ -1086,8 +1086,8 @@ PluginContent.prototype = {
           
           if (!this.pluginCrashData.has(runID)) {
             this.pluginCrashData.set(runID, {
-              state: state,
-              message: message,
+              state,
+              message,
               instances: new WeakSet(),
             });
           }
@@ -1098,7 +1098,7 @@ PluginContent.prototype = {
     }
   },
 
-  setCrashedNPAPIPluginState: function({plugin, state, message}) {
+  setCrashedNPAPIPluginState({plugin, state, message}) {
     
     plugin.clientTop;
     let overlay = this.getPluginUI(plugin, "main");
@@ -1165,7 +1165,7 @@ PluginContent.prototype = {
     }
   },
 
-  NPAPIPluginCrashReportSubmitted: function({ runID, state }) {
+  NPAPIPluginCrashReportSubmitted({ runID, state }) {
     this.pluginCrashData.delete(runID);
     let contentWindow = this.global.content;
     let cwu = contentWindow.QueryInterface(Ci.nsIInterfaceRequestor)
@@ -1181,7 +1181,7 @@ PluginContent.prototype = {
     }
   },
 
-  GMPCrashed: function(aEvent) {
+  GMPCrashed(aEvent) {
     let target          = aEvent.target;
     let pluginName      = aEvent.pluginName;
     let gmpPlugin       = aEvent.gmpPlugin;

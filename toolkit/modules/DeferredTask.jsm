@@ -161,7 +161,7 @@ this.DeferredTask.prototype = {
   
 
 
-  _startTimer: function()
+  _startTimer()
   {
     this._timer = new Timer(this._timerCallback.bind(this), this._delayMs,
                             Ci.nsITimer.TYPE_ONE_SHOT);
@@ -185,7 +185,7 @@ this.DeferredTask.prototype = {
 
 
 
-  arm: function()
+  arm()
   {
     if (this._finalized) {
       throw new Error("Unable to arm timer, the object has been finalized.");
@@ -208,7 +208,7 @@ this.DeferredTask.prototype = {
 
 
 
-  disarm: function() {
+  disarm() {
     this._armed = false;
     if (this._timer) {
       
@@ -238,7 +238,7 @@ this.DeferredTask.prototype = {
 
 
 
-  finalize: function() {
+  finalize() {
     if (this._finalized) {
       throw new Error("The object has been already finalized.");
     }
@@ -262,7 +262,7 @@ this.DeferredTask.prototype = {
   
 
 
-  _timerCallback: function()
+  _timerCallback()
   {
     let runningDeferred = Promise.defer();
 

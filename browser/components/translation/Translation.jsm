@@ -41,7 +41,7 @@ this.Translation = {
     return this._defaultTargetLanguage;
   },
 
-  documentStateReceived: function(aBrowser, aData) {
+  documentStateReceived(aBrowser, aData) {
     if (aData.state == this.STATE_OFFER) {
       if (aData.detectedLanguage == this.defaultTargetLanguage) {
         
@@ -78,7 +78,7 @@ this.Translation = {
       trUI.showTranslationInfoBar();
   },
 
-  openProviderAttribution: function() {
+  openProviderAttribution() {
     let attribution = this.supportedEngines[this.translationEngine];
     Cu.import("resource:///modules/RecentWindow.jsm");
     RecentWindow.getMostRecentBrowserWindow().openUILinkIn(attribution, "tab");
@@ -138,7 +138,7 @@ TranslationUI.prototype = {
     aBrowser.messageManager.addMessageListener("Translation:Finished", this);
     this._browser = aBrowser;
   },
-  translate: function(aFrom, aTo) {
+  translate(aFrom, aTo) {
     if (aFrom == aTo ||
         (this.state == Translation.STATE_TRANSLATED &&
          this.translatedFrom == aFrom && this.translatedTo == aTo)) {
@@ -166,7 +166,7 @@ TranslationUI.prototype = {
     );
   },
 
-  showURLBarIcon: function() {
+  showURLBarIcon() {
     let chromeWin = this.browser.ownerGlobal;
     let PopupNotifications = chromeWin.PopupNotifications;
     let removeId = this.originalShown ? "translated" : "translate";
@@ -214,14 +214,14 @@ TranslationUI.prototype = {
   },
 
   originalShown: true,
-  showOriginalContent: function() {
+  showOriginalContent() {
     this.originalShown = true;
     this.showURLBarIcon();
     this.browser.messageManager.sendAsyncMessage("Translation:ShowOriginal");
     TranslationTelemetry.recordShowOriginalContent();
   },
 
-  showTranslatedContent: function() {
+  showTranslatedContent() {
     this.originalShown = false;
     this.showURLBarIcon();
     this.browser.messageManager.sendAsyncMessage("Translation:ShowTranslation");
@@ -231,7 +231,7 @@ TranslationUI.prototype = {
     return this.browser.ownerGlobal.gBrowser.getNotificationBox(this.browser);
   },
 
-  showTranslationInfoBar: function() {
+  showTranslationInfoBar() {
     let notificationBox = this.notificationBox;
     let notif = notificationBox.appendNotification("", "translation", null,
                                                    notificationBox.PRIORITY_INFO_HIGH);
@@ -239,7 +239,7 @@ TranslationUI.prototype = {
     return notif;
   },
 
-  shouldShowInfoBar: function(aURI) {
+  shouldShowInfoBar(aURI) {
     
     
     if (Translation.serviceUnavailable)
@@ -263,7 +263,7 @@ TranslationUI.prototype = {
     return true;
   },
 
-  receiveMessage: function(msg) {
+  receiveMessage(msg) {
     switch (msg.name) {
       case "Translation:Finished":
         if (msg.data.success) {
@@ -284,7 +284,7 @@ TranslationUI.prototype = {
     }
   },
 
-  infobarClosed: function() {
+  infobarClosed() {
     if (this.state == Translation.STATE_OFFER)
       TranslationTelemetry.recordDeniedTranslationOffer();
   }
@@ -298,7 +298,7 @@ TranslationUI.prototype = {
 
 this.TranslationTelemetry = {
 
-  init: function() {
+  init() {
     
     const plain = (id) => Services.telemetry.getHistogramById(id);
     const keyed = (id) => Services.telemetry.getKeyedHistogramById(id);
@@ -326,7 +326,7 @@ this.TranslationTelemetry = {
 
 
 
-  recordTranslationOpportunity: function(language) {
+  recordTranslationOpportunity(language) {
     return this._recordOpportunity(language, true);
   },
 
@@ -337,7 +337,7 @@ this.TranslationTelemetry = {
 
 
 
-  recordMissedTranslationOpportunity: function(language) {
+  recordMissedTranslationOpportunity(language) {
     return this._recordOpportunity(language, false);
   },
 
@@ -351,7 +351,7 @@ this.TranslationTelemetry = {
 
 
 
-  recordAutoRejectedTranslationOffer: function() {
+  recordAutoRejectedTranslationOffer() {
     if (!this._canRecord) return;
     this.HISTOGRAMS.AUTO_REJECTED().add();
   },
@@ -365,7 +365,7 @@ this.TranslationTelemetry = {
 
 
 
-  recordTranslation: function(langFrom, langTo, numCharacters) {
+  recordTranslation(langFrom, langTo, numCharacters) {
     if (!this._canRecord) return;
     this.HISTOGRAMS.PAGES().add();
     this.HISTOGRAMS.PAGES_BY_LANG().add(langFrom + " -> " + langTo);
@@ -384,7 +384,7 @@ this.TranslationTelemetry = {
 
 
 
-  recordDetectedLanguageChange: function(beforeFirstTranslation) {
+  recordDetectedLanguageChange(beforeFirstTranslation) {
     if (!this._canRecord) return;
     this.HISTOGRAMS.DETECTION_CHANGES().add(beforeFirstTranslation);
   },
@@ -394,7 +394,7 @@ this.TranslationTelemetry = {
 
 
 
-  recordTargetLanguageChange: function() {
+  recordTargetLanguageChange() {
     if (!this._canRecord) return;
     this.HISTOGRAMS.TARGET_CHANGES().add();
   },
@@ -402,7 +402,7 @@ this.TranslationTelemetry = {
   
 
 
-  recordDeniedTranslationOffer: function() {
+  recordDeniedTranslationOffer() {
     if (!this._canRecord) return;
     this.HISTOGRAMS.DENIED().add();
   },
@@ -410,7 +410,7 @@ this.TranslationTelemetry = {
   
 
 
-  recordShowOriginalContent: function() {
+  recordShowOriginalContent() {
     if (!this._canRecord) return;
     this.HISTOGRAMS.SHOW_ORIGINAL().add();
   },
@@ -418,7 +418,7 @@ this.TranslationTelemetry = {
   
 
 
-  recordPreferences: function() {
+  recordPreferences() {
     if (!this._canRecord) return;
     if (Services.prefs.getBoolPref(TRANSLATION_PREF_SHOWUI)) {
       this.HISTOGRAMS.SHOW_UI().add(1);
@@ -428,7 +428,7 @@ this.TranslationTelemetry = {
     }
   },
 
-  _recordOpportunity: function(language, success) {
+  _recordOpportunity(language, success) {
     if (!this._canRecord) return;
     this.HISTOGRAMS.OPPORTUNITIES().add(success);
     this.HISTOGRAMS.OPPORTUNITIES_BY_LANG().add(language, success);
@@ -438,7 +438,7 @@ this.TranslationTelemetry = {
 
 
 
-  _canRecord: function() {
+  _canRecord() {
     return Services.prefs.getBoolPref("toolkit.telemetry.enabled");
   }
 };

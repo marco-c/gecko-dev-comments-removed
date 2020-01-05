@@ -46,12 +46,12 @@ this.ThirdPartyCookieProbe = function() {
 
 this.ThirdPartyCookieProbe.prototype = {
   QueryInterface: XPCOMUtils.generateQI([Ci.nsIObserver]),
-  init: function() {
+  init() {
     Services.obs.addObserver(this, "profile-before-change", false);
     Services.obs.addObserver(this, "third-party-cookie-accepted", false);
     Services.obs.addObserver(this, "third-party-cookie-rejected", false);
   },
-  dispose: function() {
+  dispose() {
     Services.obs.removeObserver(this, "profile-before-change");
     Services.obs.removeObserver(this, "third-party-cookie-accepted");
     Services.obs.removeObserver(this, "third-party-cookie-rejected");
@@ -63,7 +63,7 @@ this.ThirdPartyCookieProbe.prototype = {
 
 
 
-  observe: function(docURI, topic, referrer) {
+  observe(docURI, topic, referrer) {
     try {
       if (topic == "profile-before-change") {
         
@@ -108,7 +108,7 @@ this.ThirdPartyCookieProbe.prototype = {
 
 
 
-  flush: function(aNow = Date.now()) {
+  flush(aNow = Date.now()) {
     let updays = (aNow - this._latestFlush) / MILLISECONDS_PER_DAY;
     if (updays <= 0) {
       
@@ -151,11 +151,11 @@ var RejectStats = function() {
   this._rejectedRequests = 0;
 };
 RejectStats.prototype = {
-  addAccepted: function(firstParty) {
+  addAccepted(firstParty) {
     this._acceptedSites.add(firstParty);
     this._acceptedRequests++;
   },
-  addRejected: function(firstParty) {
+  addRejected(firstParty) {
     this._rejectedSites.add(firstParty);
     this._rejectedRequests++;
   },

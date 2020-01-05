@@ -106,7 +106,7 @@ this.SearchSuggestionController.prototype = {
 
 
 
-  fetch: function(searchTerm, privateMode, engine, userContextId) {
+  fetch(searchTerm, privateMode, engine, userContextId) {
     
     
     
@@ -164,7 +164,7 @@ this.SearchSuggestionController.prototype = {
 
 
 
-  stop: function() {
+  stop() {
     if (this._request) {
       this._request.abort();
     } else if (!this.maxRemoteResults) {
@@ -176,7 +176,7 @@ this.SearchSuggestionController.prototype = {
 
   
 
-  _fetchFormHistory: function(searchTerm) {
+  _fetchFormHistory(searchTerm) {
     let deferredFormHistory = Promise.defer();
 
     let acSearchObserver = {
@@ -226,7 +226,7 @@ this.SearchSuggestionController.prototype = {
   
 
 
-  _fetchRemote: function(searchTerm, engine, privateMode, userContextId) {
+  _fetchRemote(searchTerm, engine, privateMode, userContextId) {
     let deferredResponse = Promise.defer();
     this._request = Cc["@mozilla.org/xmlextras/xmlhttprequest;1"].
                     createInstance(Ci.nsIXMLHttpRequest);
@@ -256,7 +256,7 @@ this.SearchSuggestionController.prototype = {
 
 
 
-  _onRemoteLoaded: function(deferredResponse) {
+  _onRemoteLoaded(deferredResponse) {
     if (!this._request) {
       deferredResponse.resolve("Got HTTP response after the request was cancelled");
       return;
@@ -297,7 +297,7 @@ this.SearchSuggestionController.prototype = {
   
 
 
-  _onRemoteTimeout: function() {
+  _onRemoteTimeout() {
     this._request = null;
 
     
@@ -316,7 +316,7 @@ this.SearchSuggestionController.prototype = {
 
 
 
-  _dedupeAndReturnResults: function(suggestResults) {
+  _dedupeAndReturnResults(suggestResults) {
     if (this._searchString === null) {
       
       
@@ -371,7 +371,7 @@ this.SearchSuggestionController.prototype = {
     return results;
   },
 
-  _reset: function() {
+  _reset() {
     this._request = null;
     if (this._remoteResultTimer) {
       this._remoteResultTimer.cancel();

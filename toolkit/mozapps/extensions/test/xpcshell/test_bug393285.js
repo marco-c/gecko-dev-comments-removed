@@ -37,7 +37,7 @@ var addonIDs = ["test_bug393285_1@tests.mozilla.org",
 
 
 var WindowWatcher = {
-  openWindow: function(parent, url, name, features, args) {
+  openWindow(parent, url, name, features, args) {
     
     do_check_eq(url, URI_EXTENSION_BLOCKLIST_DIALOG);
 
@@ -53,7 +53,7 @@ var WindowWatcher = {
 
   },
 
-  QueryInterface: function(iid) {
+  QueryInterface(iid) {
     if (iid.equals(Ci.nsIWindowWatcher)
      || iid.equals(Ci.nsISupports))
       return this;

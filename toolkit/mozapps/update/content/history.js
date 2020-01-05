@@ -11,7 +11,7 @@ var gUpdateHistory = {
   
 
 
-  onLoad: function() {
+  onLoad() {
     this._view = document.getElementById("historyItems");
 
     var um =
@@ -57,7 +57,7 @@ var gUpdateHistory = {
 
 
 
-  _formatDate: function(seconds) {
+  _formatDate(seconds) {
     var date = new Date(seconds);
     const locale = Components.classes["@mozilla.org/chrome/chrome-registry;1"]
                    .getService(Components.interfaces.nsIXULChromeRegistry)

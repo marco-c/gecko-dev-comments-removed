@@ -23,7 +23,7 @@ add_task(function* test_removePages() {
     pages.push(NetUtil.newURI(TEST_URI.spec + i));
   }
 
-  yield PlacesTestUtils.addVisits(pages.map(uri => ({ uri: uri })));
+  yield PlacesTestUtils.addVisits(pages.map(uri => ({ uri })));
   
   const ANNO_INDEX = 1;
   const ANNO_NAME = "testAnno";
@@ -109,12 +109,12 @@ add_task(function* test_getObservers() {
   
   return new Promise((resolve, reject) => {
     DBConn().executeSimpleSQLAsync("DELETE FROM moz_historyvisits", {
-      handleError: function(error) {
+      handleError(error) {
         reject(error);
       },
-      handleResult: function(result) {
+      handleResult(result) {
       },
-      handleCompletion: function(result) {
+      handleCompletion(result) {
         
         PlacesUtils.history.getObservers();
         do_check_eq(0, PlacesUtils.history.hasHistoryEntries);

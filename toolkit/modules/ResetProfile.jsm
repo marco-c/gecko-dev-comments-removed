@@ -20,7 +20,7 @@ this.ResetProfile = {
 
 
 
-  resetSupported: function() {
+  resetSupported() {
     
     let migrator = "@mozilla.org/profile/migrator;1?app=" + MOZ_BUILD_APP +
                    "&type=" + MOZ_APP_NAME;
@@ -44,7 +44,7 @@ this.ResetProfile = {
   
 
 
-  openConfirmationDialog: function(window) {
+  openConfirmationDialog(window) {
     
     let params = {
       reset: false,

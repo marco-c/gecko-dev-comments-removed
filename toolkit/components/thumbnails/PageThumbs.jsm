@@ -215,7 +215,7 @@ this.PageThumbs = {
 
 
 
-  captureToCanvas: function(aBrowser, aCanvas, aCallback, aArgs) {
+  captureToCanvas(aBrowser, aCanvas, aCallback, aArgs) {
     let telemetryCaptureTime = new Date();
     let args = {
       fullScale: aArgs ? aArgs.fullScale : false
@@ -242,7 +242,7 @@ this.PageThumbs = {
 
 
 
-  shouldStoreThumbnail: function(aBrowser, aCallback) {
+  shouldStoreThumbnail(aBrowser, aCallback) {
     
     if (PrivateBrowsingUtils.isBrowserPrivate(aBrowser)) {
       aCallback(false);
@@ -271,7 +271,7 @@ this.PageThumbs = {
 
   
   
-  _captureToCanvas: function(aBrowser, aCanvas, aArgs, aCallback) {
+  _captureToCanvas(aBrowser, aCanvas, aArgs, aCallback) {
     if (aBrowser.isRemoteBrowser) {
       Task.spawn(function* () {
         let data =
@@ -309,7 +309,7 @@ this.PageThumbs = {
 
 
 
-  _captureRemoteThumbnail: function(aBrowser, aWidth, aHeight, aArgs) {
+  _captureRemoteThumbnail(aBrowser, aWidth, aHeight, aArgs) {
     let deferred = Promise.defer();
 
     
@@ -339,7 +339,7 @@ this.PageThumbs = {
           let ctx = thumbnail.getContext("2d");
           ctx.drawImage(image, 0, 0);
           deferred.resolve({
-            thumbnail: thumbnail
+            thumbnail
           });
         }
         image.src = reader.result;
@@ -890,12 +890,12 @@ var PageThumbsHistoryObserver = {
     PageThumbsStorage.wipe();
   },
 
-  onTitleChanged: function() {},
-  onBeginUpdateBatch: function() {},
-  onEndUpdateBatch: function() {},
-  onVisit: function() {},
-  onPageChanged: function() {},
-  onDeleteVisits: function() {},
+  onTitleChanged() {},
+  onBeginUpdateBatch() {},
+  onEndUpdateBatch() {},
+  onVisit() {},
+  onPageChanged() {},
+  onDeleteVisits() {},
 
   QueryInterface: XPCOMUtils.generateQI([Ci.nsINavHistoryObserver])
 };

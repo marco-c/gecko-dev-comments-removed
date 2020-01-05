@@ -70,7 +70,7 @@ this.ReaderMode = {
     return this.isOnLowMemoryPlatform = memory.isLowMemoryPlatform();
   },
 
-  _getStateForParseOnLoad: function() {
+  _getStateForParseOnLoad() {
     let isEnabled = Services.prefs.getBoolPref("reader.parse-on-load.enabled");
     let isForceEnabled = Services.prefs.getBoolPref("reader.parse-on-load.force-enabled");
     
@@ -78,7 +78,7 @@ this.ReaderMode = {
     return isForceEnabled || (isEnabled && !this.isOnLowMemoryPlatform);
   },
 
-  observe: function(aMessage, aTopic, aData) {
+  observe(aMessage, aTopic, aData) {
     switch (aTopic) {
       case "nsPref:changed":
         if (aData.startsWith("reader.parse-on-load.")) {
@@ -94,7 +94,7 @@ this.ReaderMode = {
 
 
 
-  enterReaderMode: function(docShell, win) {
+  enterReaderMode(docShell, win) {
     let url = win.document.location.href;
     let readerURL = "about:reader?url=" + encodeURIComponent(url);
     let webNav = docShell.QueryInterface(Ci.nsIWebNavigation);
@@ -115,7 +115,7 @@ this.ReaderMode = {
 
 
 
-  leaveReaderMode: function(docShell, win) {
+  leaveReaderMode(docShell, win) {
     let url = win.document.location.href;
     let originalURL = this.getOriginalUrl(url);
     let webNav = docShell.QueryInterface(Ci.nsIWebNavigation);
@@ -139,7 +139,7 @@ this.ReaderMode = {
 
 
 
-  getOriginalUrl: function(url) {
+  getOriginalUrl(url) {
     if (!url.startsWith("about:reader?")) {
       return null;
     }
@@ -172,7 +172,7 @@ this.ReaderMode = {
 
 
 
-  isProbablyReaderable: function(doc) {
+  isProbablyReaderable(doc) {
     
     if (doc.mozSyntheticDocument || !(doc instanceof doc.defaultView.HTMLDocument)) {
       return false;
@@ -190,12 +190,12 @@ this.ReaderMode = {
     return new Readability(uri, doc).isProbablyReaderable(this.isNodeVisible.bind(this, utils));
   },
 
-  isNodeVisible: function(utils, node) {
+  isNodeVisible(utils, node) {
     let bounds = utils.getBoundsWithoutFlushing(node);
     return bounds.height > 0 && bounds.width > 0;
   },
 
-  getUtilsForWin: function(win) {
+  getUtilsForWin(win) {
     return win.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIDOMWindowUtils);
   },
 
@@ -236,7 +236,7 @@ this.ReaderMode = {
     return yield this._readerParse(uri, doc);
   }),
 
-  _downloadDocument: function(url) {
+  _downloadDocument(url) {
     let histogram = Services.telemetry.getHistogramById("READER_MODE_DOWNLOAD_RESULT");
     return new Promise((resolve, reject) => {
       let xhr = new XMLHttpRequest();
@@ -352,7 +352,7 @@ this.ReaderMode = {
             type: "Reader:AddedToCache",
             url: article.url,
             size: info.size,
-            path: path,
+            path,
           });
         });
       });
@@ -371,7 +371,7 @@ this.ReaderMode = {
     yield OS.File.remove(path);
   }),
 
-  log: function(msg) {
+  log(msg) {
     if (this.DEBUG)
       dump("Reader: " + msg);
   },
@@ -385,7 +385,7 @@ this.ReaderMode = {
     "youtube.com",
   ],
 
-  _shouldCheckUri: function(uri, isBaseUri = false) {
+  _shouldCheckUri(uri, isBaseUri = false) {
     if (!(uri.schemeIs("http") || uri.schemeIs("https"))) {
       this.log("Not parsing URI scheme: " + uri.scheme);
       return false;
@@ -494,7 +494,7 @@ this.ReaderMode = {
 
 
 
-  _toHashedPath: function(url) {
+  _toHashedPath(url) {
     let value = this._unicodeConverter.convertToByteArray(url);
     this._cryptoHash.init(this._cryptoHash.MD5);
     this._cryptoHash.update(value, value.length);
@@ -511,7 +511,7 @@ this.ReaderMode = {
 
 
 
-  _ensureCacheDir: function() {
+  _ensureCacheDir() {
     let dir = OS.Path.join(OS.Constants.Path.profileDir, "readercache");
     return OS.File.exists(dir).then(exists => {
       if (!exists) {

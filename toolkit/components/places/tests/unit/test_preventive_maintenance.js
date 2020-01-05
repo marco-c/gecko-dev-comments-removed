@@ -81,7 +81,7 @@ tests.push({
   _obsoleteWeaveAttribute: "weave/test",
   _placeId: null,
 
-  setup: function() {
+  setup() {
     
     this._placeId = addPlace();
     
@@ -103,7 +103,7 @@ tests.push({
     stmt.finalize();
   },
 
-  check: function() {
+  check() {
     
     let stmt = mDBConn.createStatement(
       "SELECT id FROM moz_anno_attributes WHERE name = :anno"
@@ -124,7 +124,7 @@ tests.push({
   _placeId: null,
   _bookmarkId: null,
 
-  setup: function() {
+  setup() {
     
     this._placeId = addPlace();
     
@@ -153,7 +153,7 @@ tests.push({
     stmt.finalize();
   },
 
-  check: function() {
+  check() {
     
     let stmt = mDBConn.createStatement(
       `SELECT id FROM moz_anno_attributes
@@ -177,7 +177,7 @@ tests.push({
   _placeId: null,
   _bookmarkId: null,
 
-  setup: function() {
+  setup() {
     
     this._placeId = addPlace();
     
@@ -206,7 +206,7 @@ tests.push({
     stmt.finalize();
   },
 
-  check: function() {
+  check() {
     
     let stmt = mDBConn.createStatement("SELECT id FROM moz_anno_attributes WHERE name = :anno");
     stmt.params['anno'] = this._usedPageAttribute;
@@ -231,7 +231,7 @@ tests.push({
   _usedPageAttribute: "usedPage",
   _placeId: null,
 
-  setup: function() {
+  setup() {
     
     this._placeId = addPlace();
     
@@ -251,7 +251,7 @@ tests.push({
     stmt.finalize();
   },
 
-  check: function() {
+  check() {
     
     let stmt = mDBConn.createStatement("SELECT id FROM moz_anno_attributes WHERE name = :anno");
     stmt.params['anno'] = this._usedPageAttribute;
@@ -278,7 +278,7 @@ tests.push({
   _usedPageAttribute: "usedPage",
   _placeId: null,
 
-  setup: function() {
+  setup() {
     
     this._placeId = addPlace();
     
@@ -298,7 +298,7 @@ tests.push({
     stmt.finalize();
   },
 
-  check: function() {
+  check() {
     
     let stmt = mDBConn.createStatement("SELECT id FROM moz_anno_attributes WHERE name = :anno");
     stmt.params['anno'] = this._usedPageAttribute;
@@ -321,7 +321,7 @@ tests.push({
   name: "C.1",
   desc: "fix missing Places root",
 
-  setup: function() {
+  setup() {
     
     do_check_eq(bs.getFolderIdForItem(bs.placesRoot), 0);
     do_check_eq(bs.getFolderIdForItem(bs.bookmarksMenuFolder), bs.placesRoot);
@@ -336,7 +336,7 @@ tests.push({
     stmt.finalize();
   },
 
-  check: function() {
+  check() {
     
     do_check_eq(bs.getFolderIdForItem(bs.placesRoot), 0);
     do_check_eq(bs.getFolderIdForItem(bs.bookmarksMenuFolder), bs.placesRoot);
@@ -351,7 +351,7 @@ tests.push({
   name: "C.2",
   desc: "Fix roots titles",
 
-  setup: function() {
+  setup() {
     
     this.check();
     
@@ -361,7 +361,7 @@ tests.push({
     do_check_eq(bs.getItemTitle(bs.unfiledBookmarksFolder), "bad title");
   },
 
-  check: function() {
+  check() {
     
     do_check_eq(bs.getItemTitle(bs.placesRoot), "");
     do_check_eq(bs.getItemTitle(bs.bookmarksMenuFolder),
@@ -385,7 +385,7 @@ tests.push({
   _invalidItemId: null,
   _placeId: null,
 
-  setup: function() {
+  setup() {
     
     this.placeId = addPlace();
     
@@ -394,7 +394,7 @@ tests.push({
     this._invalidItemId = addBookmark(1337);
   },
 
-  check: function() {
+  check() {
     
     let stmt = mDBConn.createStatement("SELECT id FROM moz_bookmarks WHERE id = :item_id");
     stmt.params["item_id"] = this._validItemId;
@@ -419,7 +419,7 @@ tests.push({
   _folderId: null,
   _placeId: null,
 
-  setup: function() {
+  setup() {
     
     this._placeId = addPlace();
     
@@ -432,7 +432,7 @@ tests.push({
     this._folderId = addBookmark(null, bs.TYPE_FOLDER, this._tagId);
   },
 
-  check: function() {
+  check() {
     
     let stmt = mDBConn.createStatement("SELECT id FROM moz_bookmarks WHERE type = :type AND parent = :parent");
     stmt.params["type"] = bs.TYPE_BOOKMARK;
@@ -463,7 +463,7 @@ tests.push({
   _emptyTagId: null,
   _placeId: null,
 
-  setup: function() {
+  setup() {
     
     this._placeId = addPlace();
     
@@ -474,7 +474,7 @@ tests.push({
     this._emptyTagId = addBookmark(null, bs.TYPE_FOLDER, bs.tagsFolder);
   },
 
-  check: function() {
+  check() {
     
     let stmt = mDBConn.createStatement("SELECT id FROM moz_bookmarks WHERE id = :id AND type = :type AND parent = :parent");
     stmt.params["id"] = this._bookmarkId;
@@ -507,7 +507,7 @@ tests.push({
   _bookmarkId: null,
   _placeId: null,
 
-  setup: function() {
+  setup() {
     
     this._placeId = addPlace();
     
@@ -520,7 +520,7 @@ tests.push({
     this._bookmarkId = addBookmark(this._placeId, bs.TYPE_BOOKMARK, this._orphanFolderId);
   },
 
-  check: function() {
+  check() {
     
     let stmt = mDBConn.createStatement("SELECT id FROM moz_bookmarks WHERE id = :item_id AND parent = :parent");
     stmt.params["item_id"] = this._orphanBookmarkId;
@@ -552,7 +552,7 @@ tests.push({
   _folderId: null,
   _placeId: null,
 
-  setup: function() {
+  setup() {
     
     this._placeId = addPlace();
     
@@ -561,7 +561,7 @@ tests.push({
     this._folderId = addBookmark(this._placeId, bs.TYPE_FOLDER);
   },
 
-  check: function() {
+  check() {
     
     let stmt = mDBConn.createStatement("SELECT id FROM moz_bookmarks WHERE id = :item_id AND type = :type");
     stmt.params["item_id"] = this._separatorId;
@@ -585,7 +585,7 @@ tests.push({
   _invalidBookmarkId: null,
   _placeId: null,
 
-  setup: function() {
+  setup() {
     
     this._placeId = addPlace();
     
@@ -594,7 +594,7 @@ tests.push({
     this._invalidBookmarkId = addBookmark(null, bs.TYPE_BOOKMARK);
   },
 
-  check: function() {
+  check() {
     
     let stmt = mDBConn.createStatement("SELECT id FROM moz_bookmarks WHERE id = :item_id AND type = :type");
     stmt.params["item_id"] = this._validBookmarkId;
@@ -621,7 +621,7 @@ tests.push({
   _bookmarkId2: null,
   _placeId: null,
 
-  setup: function() {
+  setup() {
     
     this._placeId = addPlace();
     
@@ -633,7 +633,7 @@ tests.push({
     this._bookmarkId2 = addBookmark(this._placeId, bs.TYPE_BOOKMARK, this._separatorId);
   },
 
-  check: function() {
+  check() {
     
     let stmt = mDBConn.createStatement("SELECT id FROM moz_bookmarks WHERE id = :item_id AND parent = :parent");
     stmt.params["item_id"] = this._bookmarkId1;
@@ -656,10 +656,10 @@ tests.push({
   _unfiledBookmarks: [],
   _toolbarBookmarks: [],
 
-  setup: function() {
+  setup() {
     const NUM_BOOKMARKS = 20;
     bs.runInBatchMode({
-      runBatched: function(aUserData) {
+      runBatched(aUserData) {
         
         for (let i = 0; i < NUM_BOOKMARKS; i++) {
           bs.insertBookmark(PlacesUtils.unfiledBookmarksFolderId,
@@ -711,7 +711,7 @@ tests.push({
     randomize_positions(PlacesUtils.toolbarFolderId, this._toolbarBookmarks);
   },
 
-  check: function() {
+  check() {
     function check_order(aParent, aResultArray) {
       
       let stmt = mDBConn.createStatement(
@@ -744,7 +744,7 @@ tests.push({
   name: "D.12",
   desc: "Fix empty-named tags",
 
-  setup: function() {
+  setup() {
     
     let placeId = addPlace();
     
@@ -761,7 +761,7 @@ tests.push({
     this._titledFolderId = addBookmark(null, bs.TYPE_FOLDER, bs.toolbarFolder, null, null, "titledFolder");
   },
 
-  check: function() {
+  check() {
     
     let stmt = mDBConn.createStatement(
       "SELECT title FROM moz_bookmarks WHERE id = :id"
@@ -793,7 +793,7 @@ tests.push({
 
   _placeId: null,
 
-  setup: function() {
+  setup() {
     
     let stmt = mDBConn.createStatement("INSERT INTO moz_favicons (id, url) VALUES(:favicon_id, :url)");
     stmt.params["favicon_id"] = 1;
@@ -808,7 +808,7 @@ tests.push({
     this._placeId = addPlace("http://www.mozilla.org", 1);
   },
 
-  check: function() {
+  check() {
     
     let stmt = mDBConn.createStatement("SELECT id FROM moz_favicons WHERE id = :favicon_id");
     stmt.params["favicon_id"] = 1;
@@ -830,7 +830,7 @@ tests.push({
   _placeId: null,
   _invalidPlaceId: 1337,
 
-  setup: function() {
+  setup() {
     
     this._placeId = addPlace();
     
@@ -843,7 +843,7 @@ tests.push({
     stmt.finalize();
   },
 
-  check: function() {
+  check() {
     
     let stmt = mDBConn.createStatement("SELECT id FROM moz_historyvisits WHERE place_id = :place_id");
     stmt.params["place_id"] = this._placeId;
@@ -865,7 +865,7 @@ tests.push({
   _placeId: null,
   _invalidPlaceId: 1337,
 
-  setup: function() {
+  setup() {
     
     this._placeId = addPlace();
     
@@ -880,7 +880,7 @@ tests.push({
     stmt.finalize();
   },
 
-  check: function() {
+  check() {
     
     let stmt = mDBConn.createStatement("SELECT place_id FROM moz_inputhistory WHERE place_id = :place_id");
     stmt.params["place_id"] = this._placeId;
@@ -903,7 +903,7 @@ tests.push({
   _bookmarkId: null,
   _placeId: null,
 
-  setup: function() {
+  setup() {
     
     this._placeId = addPlace();
     
@@ -925,7 +925,7 @@ tests.push({
     stmt.finalize();
   },
 
-  check: function() {
+  check() {
     
     let stmt = mDBConn.createStatement("SELECT id FROM moz_anno_attributes WHERE name = :anno");
     stmt.params['anno'] = this._usedItemAttribute;
@@ -954,7 +954,7 @@ tests.push({
   _invalidBookmarkId: 8888,
   _placeId: null,
 
-  setup: function() {
+  setup() {
     
     this._placeId = addPlace();
     
@@ -976,7 +976,7 @@ tests.push({
     stmt.finalize();
   },
 
-  check: function() {
+  check() {
     
     let stmt = mDBConn.createStatement("SELECT id FROM moz_anno_attributes WHERE name = :anno");
     stmt.params['anno'] = this._usedItemAttribute;
@@ -1004,7 +1004,7 @@ tests.push({
   _bookmarkId: null,
   _placeId: null,
 
-  setup: function() {
+  setup() {
     
     let stmt = mDBConn.createStatement("INSERT INTO moz_keywords (id, keyword, place_id) VALUES(:id, :keyword, :place_id)");
     stmt.params["id"] = 1;
@@ -1014,7 +1014,7 @@ tests.push({
     stmt.finalize();
   },
 
-  check: function() {
+  check() {
     
     let stmt = mDBConn.createStatement("SELECT id FROM moz_keywords WHERE keyword = :keyword");
     
@@ -1034,7 +1034,7 @@ tests.push({
   _validIconPlaceId: null,
   _invalidIconPlaceId: null,
 
-  setup: function() {
+  setup() {
     
     let stmt = mDBConn.createStatement("INSERT INTO moz_favicons (id, url) VALUES(1, :url)");
     stmt.params["url"] = "http://www.mozilla.org/favicon.ico";
@@ -1047,7 +1047,7 @@ tests.push({
     this._invalidIconPlaceId = addPlace("http://www2.mozilla.org", 1337);
   },
 
-  check: function() {
+  check() {
     
     let stmt = mDBConn.createStatement("SELECT id FROM moz_places WHERE favicon_id = :favicon_id");
     stmt.params["favicon_id"] = 1337;
@@ -1074,7 +1074,7 @@ tests.push({
   name: "L.2",
   desc: "Recalculate visit_count and last_visit_date",
 
-  setup: function* () {
+  *setup() {
     function setVisitCount(aURL, aValue) {
       let stmt = mDBConn.createStatement(
         `UPDATE moz_places SET visit_count = :count WHERE url_hash = hash(:url)
@@ -1132,7 +1132,7 @@ tests.push({
     setLastVisitDate(url, now++);
   },
 
-  check: function() {
+  check() {
     let stmt = mDBConn.createStatement(
       `SELECT h.id FROM moz_places h
        JOIN moz_historyvisits v ON v.place_id = h.id AND visit_type NOT IN (0,4,7,8,9)
@@ -1168,23 +1168,23 @@ tests.push({
     ]);
   },
 
-  check: function() {
+  check() {
     return new Promise(resolve => {
       let stmt = mDBConn.createAsyncStatement(
         "SELECT h.url FROM moz_places h WHERE h.hidden = 1"
       );
       stmt.executeAsync({
         _count: 0,
-        handleResult: function(aResultSet) {
+        handleResult(aResultSet) {
           for (let row; (row = aResultSet.getNextRow());) {
             let url = row.getResultByIndex(0);
             do_check_true(/redirecting/.test(url));
             this._count++;
           }
         },
-        handleError: function(aError) {
+        handleError(aError) {
         },
-        handleCompletion: function(aReason) {
+        handleCompletion(aReason) {
           dump_table("moz_places");
           dump_table("moz_historyvisits");
           do_check_eq(aReason, Ci.mozIStorageStatementCallback.REASON_FINISHED);
@@ -1264,7 +1264,7 @@ tests.push({
   _bookmarkId: null,
   _separatorId: null,
 
-  setup: function* () {
+  *setup() {
     
     yield PlacesTestUtils.addVisits([
       { uri: this._uri1 },

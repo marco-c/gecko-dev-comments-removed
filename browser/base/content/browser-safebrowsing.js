@@ -4,7 +4,7 @@
 
 var gSafeBrowsing = {
 
-  setReportPhishingMenu: function() {
+  setReportPhishingMenu() {
     
     
     
@@ -42,7 +42,7 @@ var gSafeBrowsing = {
 
 
 
-  getReportURL: function(name) {
+  getReportURL(name) {
     return SafeBrowsing.getReportURL(name, gBrowser.currentURI);
   }
 }

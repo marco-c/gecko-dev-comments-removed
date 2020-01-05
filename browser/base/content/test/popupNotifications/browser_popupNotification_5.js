@@ -16,11 +16,11 @@ var gNotification;
 var tests = [
   
   { id: "Test#1",
-    run: function() {
+    run() {
       this.notifyObj = new BasicNotification(this.id);
       this.notification = showNotification(this.notifyObj);
     },
-    onShown: function(popup) {
+    onShown(popup) {
       checkPopup(popup, this.notifyObj);
 
       this.notifyObj.showingCallbackTriggered = false;
@@ -35,11 +35,11 @@ var tests = [
 
       this.notification.remove();
     },
-    onHidden: function() { }
+    onHidden() { }
   },
   
   { id: "Test#2",
-    run: function() {
+    run() {
       this.notifyObj1 = new BasicNotification(this.id);
       this.notifyObj1.id += "_1";
       this.notifyObj1.anchorID = "default-notification-icon";
@@ -55,16 +55,16 @@ var tests = [
       this.notification2.dismissed = false;
       PopupNotifications._update();
     },
-    onShown: function(popup) {
+    onShown(popup) {
       checkPopup(popup, this.notifyObj2);
       this.notification1.remove();
       this.notification2.remove();
     },
-    onHidden: function(popup) { }
+    onHidden(popup) { }
   },
   
   { id: "Test#3",
-    run: function* () {
+    *run() {
       let notifyObj = new BasicNotification(this.id);
       notifyObj.options.dismissed = true;
 
@@ -84,7 +84,7 @@ var tests = [
   
   
   { id: "Test#4",
-    run: function* () {
+    *run() {
       this.oldSelectedTab = gBrowser.selectedTab;
       yield BrowserTestUtils.openNewForegroundTab(gBrowser, "http://example.com/");
       this.notifyObj = new BasicNotification(this.id);
@@ -93,7 +93,7 @@ var tests = [
       });
       this.notification = showNotification(this.notifyObj);
     },
-    onShown: function* (popup) {
+    *onShown(popup) {
       this.complete = false;
 
       yield promiseTabLoadEvent(gBrowser.selectedTab, "http://example.org/");
@@ -105,7 +105,7 @@ var tests = [
       this.complete = true;
       triggerSecondaryCommand(popup, 0);
     },
-    onHidden: function(popup) {
+    onHidden(popup) {
       ok(!this.complete, "Should have hidden the notification after navigation");
       this.notification.remove();
       gBrowser.removeTab(gBrowser.selectedTab);
@@ -115,7 +115,7 @@ var tests = [
   
   
   { id: "Test#5",
-    run: function* () {
+    *run() {
       this.oldSelectedTab = gBrowser.selectedTab;
       yield BrowserTestUtils.openNewForegroundTab(gBrowser, "http://example.com/");
       this.notifyObj = new BasicNotification(this.id);
@@ -124,7 +124,7 @@ var tests = [
       });
       this.notification = showNotification(this.notifyObj);
     },
-    onShown: function* (popup) {
+    *onShown(popup) {
       this.complete = false;
 
       
@@ -136,7 +136,7 @@ var tests = [
       this.complete = true;
       triggerSecondaryCommand(popup, 0);
     },
-    onHidden: function(popup) {
+    onHidden(popup) {
       ok(this.complete, "Should have hidden the notification after clicking Not Now");
       this.notification.remove();
       gBrowser.removeTab(gBrowser.selectedTab);
@@ -146,16 +146,16 @@ var tests = [
   
   
   { id: "Test#6a",
-    run: function* () {
+    *run() {
       this.notifyObj = new BasicNotification(this.id);
       this.notifyObj.options.persistent = true;
       gNotification = showNotification(this.notifyObj);
     },
-    onShown: function* (popup) {
+    *onShown(popup) {
       this.oldSelectedTab = gBrowser.selectedTab;
       yield BrowserTestUtils.openNewForegroundTab(gBrowser, "http://example.com/");
     },
-    onHidden: function(popup) {
+    onHidden(popup) {
       ok(true, "Should have hidden the notification after tab switch");
       gBrowser.removeTab(gBrowser.selectedTab);
       gBrowser.selectedTab = this.oldSelectedTab;
@@ -164,7 +164,7 @@ var tests = [
   
   
   { id: "Test#6b",
-    run: function* () {
+    *run() {
       let id = PopupNotifications.panel.firstChild.getAttribute("popupid");
       ok(id.endsWith("Test#6a"), "Should have found the notification from Test6a");
       ok(PopupNotifications.isPanelOpen, "Should have shown the popup again after getting back to the tab");
@@ -176,7 +176,7 @@ var tests = [
   
   
   { id: "Test#7",
-    run: function* () {
+    *run() {
       this.oldSelectedTab = gBrowser.selectedTab;
       yield BrowserTestUtils.openNewForegroundTab(gBrowser, "http://example.com/");
 
@@ -213,7 +213,7 @@ var tests = [
   },
   
   { id: "Test#8",
-    run: function() {
+    run() {
       this.notifyObj1 = new BasicNotification(this.id);
       this.notifyObj1.id += "_1";
       this.notifyObj1.anchorID = "default-notification-icon";
@@ -228,16 +228,16 @@ var tests = [
 
       PopupNotifications._update();
     },
-    onShown: function(popup) {
+    onShown(popup) {
       checkPopup(popup, this.notifyObj1);
       this.notification1.remove();
       this.notification2.remove();
     },
-    onHidden: function(popup) { }
+    onHidden(popup) { }
   },
   
   { id: "Test#9",
-    run: function() {
+    run() {
       this.notifyObj1 = new BasicNotification(this.id);
       this.notifyObj1.id += "_1";
       this.notifyObj1.anchorID = "default-notification-icon";
@@ -258,7 +258,7 @@ var tests = [
 
       PopupNotifications._update();
     },
-    onShown: function(popup) {
+    onShown(popup) {
       let notifications = popup.childNodes;
       is(notifications.length, 2, "two notifications displayed");
       let [notification1, notification2] = notifications;
@@ -269,6 +269,6 @@ var tests = [
       this.notification2.remove();
       this.notification3.remove();
     },
-    onHidden: function(popup) { }
+    onHidden(popup) { }
   },
 ];

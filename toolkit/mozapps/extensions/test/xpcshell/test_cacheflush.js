@@ -8,7 +8,7 @@ var gExpectedFile = null;
 var gCacheFlushCount = 0;
 
 var CacheFlushObserver = {
-  observe: function(aSubject, aTopic, aData) {
+  observe(aSubject, aTopic, aData) {
     if (aTopic != "flush-cache-entry")
       return;
     
@@ -88,7 +88,7 @@ function run_test_2() {
 function run_test_3() {
   AddonManager.getInstallForFile(do_get_addon("test_cacheflush2"), function(aInstall) {
     aInstall.addListener({
-      onInstallStarted: function() {
+      onInstallStarted() {
         
         gExpectedFile = gProfD.clone();
         gExpectedFile.append("extensions");
@@ -96,7 +96,7 @@ function run_test_3() {
         gExpectedFile.append("addon2@tests.mozilla.org.xpi");
       },
 
-      onInstallEnded: function() {
+      onInstallEnded() {
         do_check_eq(gCacheFlushCount, 1);
         gExpectedFile = null;
         gCacheFlushCount = 0;

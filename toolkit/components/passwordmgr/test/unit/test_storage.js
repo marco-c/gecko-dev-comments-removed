@@ -31,7 +31,7 @@ add_task(function* test_storage_addLogin_nonascii()
 
   
   let loginInfo = TestData.formLogin({
-    hostname: hostname,
+    hostname,
     formSubmitURL: hostname,
     username: String.fromCharCode(533, 537, 7570, 345),
     password: String.fromCharCode(421, 259, 349, 537),

@@ -41,7 +41,7 @@ this.GMPUtils = {
 
 
 
-  isPluginHidden: function(aPlugin) {
+  isPluginHidden(aPlugin) {
     if (this._is32bitModeMacOS()) {
       
       
@@ -68,7 +68,7 @@ this.GMPUtils = {
 
 
 
-  _isPluginSupported: function(aPlugin) {
+  _isPluginSupported(aPlugin) {
     if (this._isPluginForceSupported(aPlugin)) {
       return true;
     }
@@ -86,7 +86,7 @@ this.GMPUtils = {
     return true;
   },
 
-  _is32bitModeMacOS: function() {
+  _is32bitModeMacOS() {
     if (AppConstants.platform != "macosx") {
       return false;
     }
@@ -100,7 +100,7 @@ this.GMPUtils = {
 
 
 
-  _isPluginVisible: function(aPlugin) {
+  _isPluginVisible(aPlugin) {
     return GMPPrefs.get(GMPPrefs.KEY_PLUGIN_VISIBLE, false, aPlugin.id);
   },
 
@@ -111,7 +111,7 @@ this.GMPUtils = {
 
 
 
-  _isPluginForceSupported: function(aPlugin) {
+  _isPluginForceSupported(aPlugin) {
     return GMPPrefs.get(GMPPrefs.KEY_PLUGIN_FORCE_SUPPORTED, false, aPlugin.id);
   },
 };
@@ -151,7 +151,7 @@ this.GMPPrefs = {
 
 
 
-  get: function(aKey, aDefaultValue, aPlugin) {
+  get(aKey, aDefaultValue, aPlugin) {
     if (aKey === this.KEY_APP_DISTRIBUTION ||
         aKey === this.KEY_APP_DISTRIBUTION_VERSION) {
       let prefValue = "default";
@@ -171,7 +171,7 @@ this.GMPPrefs = {
 
 
 
-  set: function(aKey, aVal, aPlugin) {
+  set(aKey, aVal, aPlugin) {
     Preferences.set(this.getPrefKey(aKey, aPlugin), aVal);
   },
 
@@ -182,7 +182,7 @@ this.GMPPrefs = {
 
 
 
-  isSet: function(aKey, aPlugin) {
+  isSet(aKey, aPlugin) {
     return Preferences.isSet(this.getPrefKey(aKey, aPlugin));
   },
 
@@ -192,7 +192,7 @@ this.GMPPrefs = {
 
 
 
-  reset: function(aKey, aPlugin) {
+  reset(aKey, aPlugin) {
     Preferences.reset(this.getPrefKey(aKey, aPlugin));
   },
 
@@ -202,7 +202,7 @@ this.GMPPrefs = {
 
 
 
-  getPrefKey: function(aKey, aPlugin) {
+  getPrefKey(aKey, aPlugin) {
     return aKey.replace("{0}", aPlugin || "");
   },
 };

@@ -500,7 +500,7 @@ Task.Debugging = {
 
 
 
-  generateReadableStack: function(topStack, prefix = "") {
+  generateReadableStack(topStack, prefix = "") {
     if (!gCurrentTask) {
       return topStack;
     }

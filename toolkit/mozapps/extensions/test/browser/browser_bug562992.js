@@ -49,7 +49,7 @@ add_test(function() {
 
 add_test(function() {
   gInstall.addTestListener({
-    onInstallEnded: function() {
+    onInstallEnded() {
       let list = gManagerWindow.document.getElementById("addon-list");
 
       

@@ -40,7 +40,7 @@ this.RequestAutocompleteUI.prototype = {
 
     
     let args = {
-      resolveFn: resolveFn,
+      resolveFn,
       autofillData: this._autofillData,
     };
     args.wrappedJSObject = args;

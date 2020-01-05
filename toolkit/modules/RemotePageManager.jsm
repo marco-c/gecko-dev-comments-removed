@@ -16,15 +16,15 @@ function MessageListener() {
 }
 
 MessageListener.prototype = {
-  keys: function() {
+  keys() {
     return this.listeners.keys();
   },
 
-  has: function(name) {
+  has(name) {
     return this.listeners.has(name);
   },
 
-  callListeners: function(message) {
+  callListeners(message) {
     let listeners = this.listeners.get(message.name);
     if (!listeners) {
       return;
@@ -40,14 +40,14 @@ MessageListener.prototype = {
     }
   },
 
-  addMessageListener: function(name, callback) {
+  addMessageListener(name, callback) {
     if (!this.listeners.has(name))
       this.listeners.set(name, new Set([callback]));
     else
       this.listeners.get(name).add(callback);
   },
 
-  removeMessageListener: function(name, callback) {
+  removeMessageListener(name, callback) {
     if (!this.listeners.has(name))
       return;
 
@@ -78,7 +78,7 @@ RemotePages.prototype = {
   listener: null,
   destroyed: null,
 
-  destroy: function() {
+  destroy() {
     RemotePageManager.removeRemotePageListener(this.url);
 
     for (let port of this.messagePorts.values()) {
@@ -91,7 +91,7 @@ RemotePages.prototype = {
   },
 
   
-  portCreated: function(port) {
+  portCreated(port) {
     this.messagePorts.add(port);
 
     port.addMessageListener("RemotePage:Unload", this.portMessageReceived);
@@ -104,7 +104,7 @@ RemotePages.prototype = {
   },
 
   
-  portMessageReceived: function(message) {
+  portMessageReceived(message) {
     if (message.name == "RemotePage:Unload")
       this.removeMessagePort(message.target);
 
@@ -112,7 +112,7 @@ RemotePages.prototype = {
   },
 
   
-  removeMessagePort: function(port) {
+  removeMessagePort(port) {
     for (let name of this.listener.keys()) {
       port.removeMessageListener(name, this.portMessageReceived);
     }
@@ -121,18 +121,18 @@ RemotePages.prototype = {
     this.messagePorts.delete(port);
   },
 
-  registerPortListener: function(port, name) {
+  registerPortListener(port, name) {
     port.addMessageListener(name, this.portMessageReceived);
   },
 
   
-  sendAsyncMessage: function(name, data = null) {
+  sendAsyncMessage(name, data = null) {
     for (let port of this.messagePorts.values()) {
       port.sendAsyncMessage(name, data);
     }
   },
 
-  addMessageListener: function(name, callback) {
+  addMessageListener(name, callback) {
     if (this.destroyed) {
       throw new Error("RemotePages has been destroyed");
     }
@@ -146,7 +146,7 @@ RemotePages.prototype = {
     this.listener.addMessageListener(name, callback);
   },
 
-  removeMessageListener: function(name, callback) {
+  removeMessageListener(name, callback) {
     if (this.destroyed) {
       throw new Error("RemotePages has been destroyed");
     }
@@ -154,7 +154,7 @@ RemotePages.prototype = {
     this.listener.removeMessageListener(name, callback);
   },
 
-  portsForBrowser: function(browser) {
+  portsForBrowser(browser) {
     return [...this.messagePorts].filter(port => port.browser == browser);
   },
 };
@@ -172,7 +172,7 @@ function publicMessagePort(port) {
 
   if (port instanceof ChromeMessagePort) {
     Object.defineProperty(clean, "browser", {
-      get: function() {
+      get() {
         return port.browser;
       }
     });
@@ -210,7 +210,7 @@ MessagePort.prototype = {
 
   
   
-  swapMessageManager: function(messageManager) {
+  swapMessageManager(messageManager) {
     this.messageManager.removeMessageListener("RemotePage:Message", this.message);
 
     this.messageManager = messageManager;
@@ -226,7 +226,7 @@ MessagePort.prototype = {
 
 
 
-  addMessageListener: function(name, callback) {
+  addMessageListener(name, callback) {
     if (this.destroyed) {
       throw new Error("Message port has been destroyed");
     }
@@ -237,7 +237,7 @@ MessagePort.prototype = {
   
 
 
-  removeMessageListener: function(name, callback) {
+  removeMessageListener(name, callback) {
     if (this.destroyed) {
       throw new Error("Message port has been destroyed");
     }
@@ -246,20 +246,20 @@ MessagePort.prototype = {
   },
 
   
-  sendAsyncMessage: function(name, data = null) {
+  sendAsyncMessage(name, data = null) {
     if (this.destroyed) {
       throw new Error("Message port has been destroyed");
     }
 
     this.messageManager.sendAsyncMessage("RemotePage:Message", {
       portID: this.portID,
-      name: name,
-      data: data,
+      name,
+      data,
     });
   },
 
   
-  destroy: function() {
+  destroy() {
     try {
       
       this.messageManager.removeMessageListener("RemotePage:Message", this.message);
@@ -290,7 +290,7 @@ function ChromeMessagePort(browser, portID) {
 ChromeMessagePort.prototype = Object.create(MessagePort.prototype);
 
 Object.defineProperty(ChromeMessagePort.prototype, "browser", {
-  get: function() {
+  get() {
     return this._browser;
   }
 });
@@ -400,7 +400,7 @@ function ChildMessagePort(contentFrame, window) {
 
   
   this.messageManager.sendAsyncMessage("RemotePage:InitPort", {
-    portID: portID,
+    portID,
     url: window.document.documentURI.replace(/[\#|\?].*$/, ""),
   });
 }
@@ -435,7 +435,7 @@ var RemotePageManagerInternal = {
   pages: new Map(),
 
   
-  init: function() {
+  init() {
     Services.ppmm.addMessageListener("RemotePage:InitListener", this.initListener.bind(this));
     Services.mm.addMessageListener("RemotePage:InitPort", this.initPort.bind(this));
   },
@@ -443,7 +443,7 @@ var RemotePageManagerInternal = {
   
   
   
-  addRemotePageListener: function(url, callback) {
+  addRemotePageListener(url, callback) {
     if (Services.appinfo.processType != Ci.nsIXULRuntime.PROCESS_TYPE_DEFAULT)
       throw new Error("RemotePageManager can only be used in the main process.");
 
@@ -458,7 +458,7 @@ var RemotePageManagerInternal = {
   },
 
   
-  removeRemotePageListener: function(url) {
+  removeRemotePageListener(url) {
     if (Services.appinfo.processType != Ci.nsIXULRuntime.PROCESS_TYPE_DEFAULT)
       throw new Error("RemotePageManager can only be used in the main process.");
 
@@ -472,12 +472,12 @@ var RemotePageManagerInternal = {
   },
 
   
-  initListener: function({ target: messageManager }) {
+  initListener({ target: messageManager }) {
     messageManager.sendAsyncMessage("RemotePage:Register", { urls: Array.from(this.pages.keys()) })
   },
 
   
-  initPort: function({ target: browser, data: { url, portID } }) {
+  initPort({ target: browser, data: { url, portID } }) {
     let callback = this.pages.get(url);
     if (!callback) {
       Cu.reportError("Unexpected remote page load: " + url);

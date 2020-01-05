@@ -46,7 +46,7 @@ LoginManagerPromptFactory.prototype = {
   _asyncPrompts : {},
   _asyncPromptInProgress : false,
 
-  observe : function(subject, topic, data) {
+  observe(subject, topic, data) {
     this.log("Observed: " + topic);
     if (topic == "quit-application-granted") {
       this._cancelPendingPrompts();
@@ -60,13 +60,13 @@ LoginManagerPromptFactory.prototype = {
     }
   },
 
-  getPrompt : function(aWindow, aIID) {
+  getPrompt(aWindow, aIID) {
     var prompt = new LoginManagerPrompter().QueryInterface(aIID);
     prompt.init(aWindow, this);
     return prompt;
   },
 
-  _doAsyncPrompt : function() {
+  _doAsyncPrompt() {
     if (this._asyncPromptInProgress) {
       this.log("_doAsyncPrompt bypassed, already in progress");
       return;
@@ -115,7 +115,7 @@ LoginManagerPromptFactory.prototype = {
 
     var runnable = {
       cancel: false,
-      run : function() {
+      run() {
         var ok = false;
         if (!this.cancel) {
           try {
@@ -185,7 +185,7 @@ LoginManagerPromptFactory.prototype = {
   },
 
 
-  _cancelPendingPrompts : function() {
+  _cancelPendingPrompts() {
     this.log("Canceling all pending prompts...");
     var asyncPrompts = this._asyncPrompts;
     this.__proto__._asyncPrompts = {};
@@ -321,7 +321,7 @@ LoginManagerPrompter.prototype = {
 
 
 
-  prompt : function(aDialogTitle, aText, aPasswordRealm,
+  prompt(aDialogTitle, aText, aPasswordRealm,
                     aSavePassword, aDefaultText, aResult) {
     if (aSavePassword != Ci.nsIAuthPrompt.SAVE_PASSWORD_NEVER)
       throw new Components.Exception("prompt only supports SAVE_PASSWORD_NEVER",
@@ -342,7 +342,7 @@ LoginManagerPrompter.prototype = {
 
 
 
-  promptUsernameAndPassword : function(aDialogTitle, aText, aPasswordRealm,
+  promptUsernameAndPassword(aDialogTitle, aText, aPasswordRealm,
                                        aSavePassword, aUsername, aPassword) {
     this.log("===== promptUsernameAndPassword() called =====");
 
@@ -443,7 +443,7 @@ LoginManagerPrompter.prototype = {
 
 
 
-  promptPassword : function(aDialogTitle, aText, aPasswordRealm,
+  promptPassword(aDialogTitle, aText, aPasswordRealm,
                             aSavePassword, aPassword) {
     this.log("===== promptPassword called() =====");
 
@@ -519,7 +519,7 @@ LoginManagerPrompter.prototype = {
 
 
 
-  _getRealmInfo : function(aRealmString) {
+  _getRealmInfo(aRealmString) {
     var httpRealm = /^.+ \(.+\)$/;
     if (httpRealm.test(aRealmString))
       return [null, null, null];
@@ -547,7 +547,7 @@ LoginManagerPrompter.prototype = {
 
 
 
-  promptAuth : function(aChannel, aLevel, aAuthInfo) {
+  promptAuth(aChannel, aLevel, aAuthInfo) {
     var selectedLogin = null;
     var checkbox = { value : false };
     var checkboxLabel = null;
@@ -678,7 +678,7 @@ LoginManagerPrompter.prototype = {
     return ok;
   },
 
-  asyncPromptAuth : function(aChannel, aCallback, aContext, aLevel, aAuthInfo) {
+  asyncPromptAuth(aChannel, aCallback, aContext, aLevel, aAuthInfo) {
     var cancelable = null;
 
     try {
@@ -731,7 +731,7 @@ LoginManagerPrompter.prototype = {
   
 
 
-  init : function(aWindow = null, aFactory = null) {
+  init(aWindow = null, aFactory = null) {
     if (!aWindow) {
       
       this._chromeWindow = null;
@@ -759,7 +759,7 @@ LoginManagerPrompter.prototype = {
     this._opener = aOpener;
   },
 
-  promptToSavePassword : function(aLogin) {
+  promptToSavePassword(aLogin) {
     this.log("promptToSavePassword");
     var notifyObj = this._getPopupNote() || this._getNotifyBox();
     if (notifyObj)
@@ -771,7 +771,7 @@ LoginManagerPrompter.prototype = {
   
 
 
-  _showLoginNotification : function(aNotifyBox, aName, aText, aButtons) {
+  _showLoginNotification(aNotifyBox, aName, aText, aButtons) {
     var oldBar = aNotifyBox.getNotificationWithValue(aName);
     const priority = aNotifyBox.PRIORITY_INFO_MEDIUM;
 
@@ -1014,7 +1014,7 @@ LoginManagerPrompter.prototype = {
         persistent: true,
         passwordNotificationType: type,
         hideClose: true,
-        eventCallback: function(topic) {
+        eventCallback(topic) {
           switch (topic) {
             case "showing":
               currentNotification = this;
@@ -1072,7 +1072,7 @@ LoginManagerPrompter.prototype = {
 
 
 
-  _showSaveLoginNotification : function(aNotifyObj, aLogin) {
+  _showSaveLoginNotification(aNotifyObj, aLogin) {
     
     
     
@@ -1110,7 +1110,7 @@ LoginManagerPrompter.prototype = {
           label:     rememberButtonText,
           accessKey: rememberButtonAccessKey,
           popup:     null,
-          callback: function(aNotifyObj, aButton) {
+          callback(aNotifyObj, aButton) {
             pwmgr.addLogin(aLogin);
           }
         },
@@ -1120,7 +1120,7 @@ LoginManagerPrompter.prototype = {
           label:     neverButtonText,
           accessKey: neverButtonAccessKey,
           popup:     null,
-          callback: function(aNotifyObj, aButton) {
+          callback(aNotifyObj, aButton) {
             pwmgr.setLoginSavingEnabled(aLogin.hostname, false);
           }
         },
@@ -1130,7 +1130,7 @@ LoginManagerPrompter.prototype = {
           label:     notNowButtonText,
           accessKey: notNowButtonAccessKey,
           popup:     null,
-          callback:  function() {  }
+          callback() {  }
         }
       ];
 
@@ -1141,7 +1141,7 @@ LoginManagerPrompter.prototype = {
     Services.obs.notifyObservers(aLogin, "passwordmgr-prompt-save", null);
   },
 
-  _removeLoginNotifications : function() {
+  _removeLoginNotifications() {
     var popupNote = this._getPopupNote();
     if (popupNote)
       popupNote = popupNote.getNotification("password");
@@ -1169,7 +1169,7 @@ LoginManagerPrompter.prototype = {
 
 
 
-  _showSaveLoginDialog : function(aLogin) {
+  _showSaveLoginDialog(aLogin) {
     const buttonFlags = Ci.nsIPrompt.BUTTON_POS_1_DEFAULT +
         (Ci.nsIPrompt.BUTTON_TITLE_IS_STRING * Ci.nsIPrompt.BUTTON_POS_0) +
         (Ci.nsIPrompt.BUTTON_TITLE_IS_STRING * Ci.nsIPrompt.BUTTON_POS_1) +
@@ -1292,7 +1292,7 @@ LoginManagerPrompter.prototype = {
           label:     changeButtonText,
           accessKey: changeButtonAccessKey,
           popup:     null,
-          callback:  function(aNotifyObj, aButton) {
+          callback(aNotifyObj, aButton) {
             self._updateLogin(aOldLogin, aNewLogin);
           }
         },
@@ -1302,7 +1302,7 @@ LoginManagerPrompter.prototype = {
           label:     dontChangeButtonText,
           accessKey: dontChangeButtonAccessKey,
           popup:     null,
-          callback:  function(aNotifyObj, aButton) {
+          callback(aNotifyObj, aButton) {
             
           }
         }
@@ -1361,7 +1361,7 @@ LoginManagerPrompter.prototype = {
 
 
 
-  promptToChangePasswordWithUsernames : function(logins, count, aNewLogin) {
+  promptToChangePasswordWithUsernames(logins, count, aNewLogin) {
     this.log("promptToChangePasswordWithUsernames with count:", count);
 
     var usernames = logins.map(l => l.username);
@@ -1419,7 +1419,7 @@ LoginManagerPrompter.prototype = {
   
 
 
-  _getChromeWindow: function(aWindow) {
+  _getChromeWindow(aWindow) {
     let windows = Services.wm.getEnumerator(null);
     while (windows.hasMoreElements()) {
       let win = windows.getNext();
@@ -1431,7 +1431,7 @@ LoginManagerPrompter.prototype = {
     return null;
   },
 
-  _getNotifyWindow: function() {
+  _getNotifyWindow() {
     
     
     
@@ -1455,7 +1455,7 @@ LoginManagerPrompter.prototype = {
 
 
 
-  _getPopupNote : function() {
+  _getPopupNote() {
     let popupNote = null;
 
     try {
@@ -1475,7 +1475,7 @@ LoginManagerPrompter.prototype = {
 
 
 
-  _getNotifyBox : function() {
+  _getNotifyBox() {
     let notifyBox = null;
 
     try {
@@ -1496,7 +1496,7 @@ LoginManagerPrompter.prototype = {
 
 
 
-  _repickSelectedLogin : function(foundLogins, username) {
+  _repickSelectedLogin(foundLogins, username) {
     for (var i = 0; i < foundLogins.length; i++)
       if (foundLogins[i].username == username)
         return foundLogins[i];
@@ -1515,7 +1515,7 @@ LoginManagerPrompter.prototype = {
 
 
 
-  _getLocalizedString : function(key, formatArgs) {
+  _getLocalizedString(key, formatArgs) {
     if (formatArgs)
       return this._strBundle.formatStringFromName(
                                   key, formatArgs, formatArgs.length);
@@ -1528,7 +1528,7 @@ LoginManagerPrompter.prototype = {
 
 
 
-  _sanitizeUsername : function(username) {
+  _sanitizeUsername(username) {
     if (username.length > 30) {
       username = username.substring(0, 30);
       username += this._ellipsis;
@@ -1543,7 +1543,7 @@ LoginManagerPrompter.prototype = {
 
 
 
-  _getFormattedHostname : function(aURI) {
+  _getFormattedHostname(aURI) {
     let uri;
     if (aURI instanceof Ci.nsIURI) {
       uri = aURI;
@@ -1560,7 +1560,7 @@ LoginManagerPrompter.prototype = {
 
 
 
-  _getShortDisplayHost: function(aURIString) {
+  _getShortDisplayHost(aURIString) {
     var displayHost;
 
     var eTLDService = Cc["@mozilla.org/network/effective-tld-service;1"].
@@ -1586,7 +1586,7 @@ LoginManagerPrompter.prototype = {
 
 
 
-  _getAuthTarget : function(aChannel, aAuthInfo) {
+  _getAuthTarget(aChannel, aAuthInfo) {
     var hostname, realm;
 
     
@@ -1634,7 +1634,7 @@ LoginManagerPrompter.prototype = {
 
 
 
-  _GetAuthInfo : function(aAuthInfo) {
+  _GetAuthInfo(aAuthInfo) {
     var username, password;
 
     var flags = aAuthInfo.flags;
@@ -1654,7 +1654,7 @@ LoginManagerPrompter.prototype = {
 
 
 
-  _SetAuthInfo : function(aAuthInfo, username, password) {
+  _SetAuthInfo(aAuthInfo, username, password) {
     var flags = aAuthInfo.flags;
     if (flags & Ci.nsIAuthInformation.NEED_DOMAIN) {
       
@@ -1671,12 +1671,12 @@ LoginManagerPrompter.prototype = {
     aAuthInfo.password = password;
   },
 
-  _newAsyncPromptConsumer : function(aCallback, aContext) {
+  _newAsyncPromptConsumer(aCallback, aContext) {
     return {
       QueryInterface: XPCOMUtils.generateQI([Ci.nsICancelable]),
       callback: aCallback,
       context: aContext,
-      cancel: function() {
+      cancel() {
         this.callback.onAuthCancelled(this.context, false);
         this.callback = null;
         this.context = null;

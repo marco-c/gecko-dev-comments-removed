@@ -64,25 +64,25 @@ function frameScript() {
 
 
 var SilentAssert = {
-  equal: function(a, b, msg) {
+  equal(a, b, msg) {
     if (a == b) {
       return;
     }
     Assert.equal(a, b, msg);
   },
-  notEqual: function(a, b, msg) {
+  notEqual(a, b, msg) {
     if (a != b) {
       return;
     }
     Assert.notEqual(a, b, msg);
   },
-  ok: function(a, msg) {
+  ok(a, msg) {
     if (a) {
       return;
     }
     Assert.ok(a, msg);
   },
-  leq: function(a, b, msg) {
+  leq(a, b, msg) {
     this.ok(a <= b, `${msg}: ${a} <= ${b}`);
   }
 };

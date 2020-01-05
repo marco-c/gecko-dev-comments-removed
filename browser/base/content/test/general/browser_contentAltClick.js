@@ -54,7 +54,7 @@ add_task(function* test_alt_click()
   
   let finishedAllDownloads = new Promise( (resolve) => {
     downloadView = {
-      onDownloadAdded: function(aDownload) {
+      onDownloadAdded(aDownload) {
         downloads.push(aDownload);
         resolve();
       },
@@ -83,7 +83,7 @@ add_task(function* test_alt_click_on_xlinks()
   
   let finishedAllDownloads = new Promise( (resolve) => {
     downloadView = {
-      onDownloadAdded: function(aDownload) {
+      onDownloadAdded(aDownload) {
         downloads.push(aDownload);
         if (downloads.length == 2) {
           resolve();
