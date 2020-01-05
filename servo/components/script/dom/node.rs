@@ -18,6 +18,7 @@ use dom::bindings::codegen::Bindings::NamedNodeMapBinding::NamedNodeMapMethods;
 use dom::bindings::codegen::Bindings::NodeBinding::{NodeConstants, NodeMethods};
 use dom::bindings::codegen::Bindings::NodeListBinding::NodeListMethods;
 use dom::bindings::codegen::Bindings::ProcessingInstructionBinding::ProcessingInstructionMethods;
+use dom::bindings::codegen::Bindings::WindowBinding::WindowMethods;
 use dom::bindings::codegen::UnionTypes::NodeOrString;
 use dom::bindings::conversions::{self, DerivedFrom};
 use dom::bindings::error::{Error, ErrorResult, Fallible};
@@ -37,6 +38,7 @@ use dom::documentfragment::DocumentFragment;
 use dom::documenttype::DocumentType;
 use dom::element::{Element, ElementCreator};
 use dom::eventtarget::EventTarget;
+use dom::htmlbodyelement::HTMLBodyElement;
 use dom::htmlcollection::HTMLCollection;
 use dom::htmlelement::HTMLElement;
 use dom::nodelist::NodeList;
@@ -45,8 +47,11 @@ use dom::range::WeakRangeVec;
 use dom::text::Text;
 use dom::virtualmethods::{VirtualMethods, vtable_for};
 use dom::window::Window;
+use euclid::point::Point2D;
 use euclid::rect::Rect;
+use euclid::size::Size2D;
 use heapsize::{HeapSizeOf, heap_size_of};
+use html5ever::tree_builder::QuirksMode;
 use js::jsapi::{JSContext, JSObject, JSRuntime};
 use layout_interface::{LayoutChan, Msg};
 use libc::{self, c_void, uintptr_t};
@@ -575,6 +580,42 @@ impl Node {
 
     pub fn get_client_rect(&self) -> Rect<i32> {
         window_from_node(self).client_rect_query(self.to_trusted_node_address())
+    }
+
+    
+    
+    
+    
+    pub fn get_scroll_area(&self) -> Rect<i32> {
+        
+        let document = self.owner_doc();
+        
+        let window = document.window();
+
+        let html_element = document.GetDocumentElement();
+
+        let is_body_element = html_element.r().and_then(|root| {
+            let node = root.upcast::<Node>();
+            node.children().find(|child| { child.is::<HTMLBodyElement>() }).map(|node| {
+                *node.r() == *self
+            })
+        }).unwrap_or(false);
+
+        let scroll_area = window.scroll_area_query(self.to_trusted_node_address());
+
+        match (document != window.Document(), is_body_element, document.quirks_mode(),
+               html_element.r() == self.downcast::<Element>()) {
+            
+            (true, _, _, _) | (_, false, QuirksMode::Quirks, true) => Rect::zero(),
+            
+            (false, false, _, true) | (false, true, QuirksMode::Quirks, _) => {
+                Rect::new(Point2D::new(window.ScrollX(), window.ScrollY()),
+                                       Size2D::new(max(window.InnerWidth(), scroll_area.size.width),
+                                                   max(window.InnerHeight(), scroll_area.size.height)))
+            },
+            
+            _ => scroll_area
+        }
     }
 
     

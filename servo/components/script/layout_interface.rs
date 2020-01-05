@@ -105,6 +105,8 @@ pub trait LayoutRPC {
     
     fn node_geometry(&self) -> NodeGeometryResponse;
     
+    fn node_scroll_area(&self) -> NodeGeometryResponse;
+    
     fn hit_test(&self) -> HitTestResponse;
     
     fn resolved_style(&self) -> ResolvedStyleResponse;
@@ -165,6 +167,7 @@ pub enum ReflowQueryType {
     ContentBoxesQuery(TrustedNodeAddress),
     HitTestQuery(Point2D<f32>, bool),
     NodeGeometryQuery(TrustedNodeAddress),
+    NodeScrollGeometryQuery(TrustedNodeAddress),
     ResolvedStyleQuery(TrustedNodeAddress, Option<PseudoElement>, Atom),
     OffsetParentQuery(TrustedNodeAddress),
     MarginStyleQuery(TrustedNodeAddress),
