@@ -6,7 +6,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "PlacesUtils",
 
 
 function prerenderedVisited() {
-  let uri = Services.io.newURI(PRERENDERED_URL, null, null);
+  let uri = Services.io.newURI(PRERENDERED_URL);
   return new Promise(resolve => {
     PlacesUtils.asyncHistory.isURIVisited(uri, (aUri, aIsVisited) => {
       resolve(aIsVisited);
