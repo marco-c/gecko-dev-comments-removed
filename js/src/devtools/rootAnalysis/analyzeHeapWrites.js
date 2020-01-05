@@ -21,7 +21,9 @@ function checkExternalFunction(entry)
         /^rusturl/,
         "memcmp",
         "strcmp",
-        "malloc",
+        "fmod",
+        "floor",
+        "ceil",
 
         
         /^__atomic_fetch_/,
@@ -31,7 +33,14 @@ function checkExternalFunction(entry)
         return;
 
     
-    if (entry.isSafeArgument(1) && (entry.name == "memcpy" || entry.name == "memset"))
+    const simpleWrites = [
+        "memcpy",
+        "memset",
+        "memmove",
+        "strlen",
+    ];
+
+    if (entry.isSafeArgument(1) && simpleWrites.includes(entry.name))
         return;
 
     dumpError(entry, null, "External function");
@@ -136,10 +145,12 @@ function treatAsSafeArgument(entry, varName, csuName)
         [/^Gecko_/, null, /FontFamilyList/],
 
         
-        
-        
         ["Gecko_SetNodeFlags", "aNode", null],
         ["Gecko_UnsetNodeFlags", "aNode", null],
+
+        
+        
+        
         ["Gecko_CopyFontFamilyFrom", "dst", null],
         ["Gecko_SetListStyleType", "style_struct", null],
         ["Gecko_CopyListStyleTypeFrom", "dst", null],
@@ -149,6 +160,10 @@ function treatAsSafeArgument(entry, varName, csuName)
         ["Gecko_CopyMozBindingFrom", "aDest", null],
         ["Gecko_SetNullImageValue", "aImage", null],
         ["Gecko_SetGradientImageValue", "aImage", null],
+        ["Gecko_SetImageOrientation", "aVisibility", null],
+        ["Gecko_SetImageOrientationAsFromImage", "aVisibility", null],
+        ["Gecko_CopyImageOrientationFrom", "aDst", null],
+        ["Gecko_SetImageElement", "aImage", null],
         ["Gecko_SetUrlImageValue", "aImage", null],
         ["Gecko_CopyImageValueFrom", "aImage", null],
         ["Gecko_SetCursorArrayLength", "aStyleUI", null],
@@ -159,6 +174,7 @@ function treatAsSafeArgument(entry, varName, csuName)
         ["Gecko_CopyListStyleImageFrom", "aList", null],
         ["Gecko_ClearStyleContents", "aContent", null],
         ["Gecko_CopyStyleContentsFrom", "aContent", null],
+        ["Gecko_CopyStyleGridTemplateValues", "aGridTemplate", null],
         ["Gecko_ResetStyleCoord", null, null],
         ["Gecko_CopyClipPathValueFrom", "aDst", null],
         ["Gecko_DestroyClipPath", "aClip", null],
@@ -166,6 +182,7 @@ function treatAsSafeArgument(entry, varName, csuName)
         ["Gecko_CopyFiltersFrom", "aDest", null],
         [/Gecko_CSSValue_Set/, "aCSSValue", null],
         ["Gecko_CSSValue_Drop", "aCSSValue", null],
+        ["Gecko_CSSFontFaceRule_GetCssText", "aResult", null],
         ["Gecko_EnsureTArrayCapacity", "aArray", null],
         ["Gecko_ClearPODTArray", "aArray", null],
         ["Gecko_ClearAndResizeStyleContents", "aContent", null],
@@ -184,6 +201,10 @@ function treatAsSafeArgument(entry, varName, csuName)
         ["Gecko_nsStyleSVG_CopyDashArray", "aDst", null],
         ["Gecko_nsStyleFont_SetLang", "aFont", null],
         ["Gecko_nsStyleFont_CopyLangFrom", "aFont", null],
+        ["Gecko_MatchStringArgPseudo", "aSetSlowSelectorFlag", null],
+        ["Gecko_ClearWillChange", "aDisplay", null],
+        ["Gecko_AppendWillChange", "aDisplay", null],
+        ["Gecko_CopyWillChangeFrom", "aDest", null],
     ];
     for (var [entryMatch, varMatch, csuMatch] of whitelist) {
         assert(entryMatch || varMatch || csuMatch);
@@ -287,6 +308,14 @@ function ignoreCallEdge(entry, callee)
         return true;
     }
 
+    
+    
+    if (/::SetName/.test(callee) &&
+        /::UnlabeledDispatch/.test(name))
+    {
+        return true;
+    }
+
     return false;
 }
 
@@ -299,6 +328,7 @@ function ignoreContents(entry)
         /MOZ_ReportCrash/,
         /AnnotateMozCrashReason/,
         /InvalidArrayIndex_CRASH/,
+        /NS_ABORT_OOM/,
 
         
         "NS_DebugBreak",
@@ -313,6 +343,11 @@ function ignoreContents(entry)
         /Assert_NoQueryNeeded/,
         /imgRequestProxy::GetProgressTracker/, 
         /Smprintf/,
+        "malloc",
+        "free",
+        "realloc",
+        /profiler_register_thread/,
+        /profiler_unregister_thread/,
 
         
         
@@ -337,6 +372,7 @@ function ignoreContents(entry)
         /EffectCompositor::GetServoAnimationRule/,
         /LookAndFeel::GetColor/,
         "Gecko_CopyStyleContentsFrom",
+        "Gecko_CSSValue_SetAbsoluteLength",
     ];
     if (entry.matches(whitelist))
         return true;
@@ -354,11 +390,20 @@ function ignoreContents(entry)
             /nsTArray_base.*?::ShiftData/,
             /AutoTArray.*?::Init/,
             /nsAC?String::SetCapacity/,
+            /nsAC?String::SetLength/,
             /nsAC?String::Assign/,
             /nsAC?String::Append/,
+            /nsAC?String::Replace/,
+            /nsAC?String::Truncate/,
+            /nsString::StripChars/,
             /nsAC?String::operator=/,
             /nsAutoString::nsAutoString/,
             /nsFixedCString::nsFixedCString/,
+
+            
+            /nsCOMArray_base::SetCapacity/,
+            /nsCOMArray_base::Clear/,
+            /nsCOMArray_base::AppendElement/,
 
             
             
