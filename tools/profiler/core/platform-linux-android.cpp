@@ -360,7 +360,7 @@ SamplerThread::SuspendAndSampleAndResumeThread(PS::LockRef aLock,
   
   MOZ_ASSERT(!sSigHandlerCoordinator);
 
-  int sampleeTid = aSample->mThreadInfo->ThreadId();
+  int sampleeTid = aSample->mThreadId;
   MOZ_RELEASE_ASSERT(sampleeTid != mSamplerTid);
 
   
