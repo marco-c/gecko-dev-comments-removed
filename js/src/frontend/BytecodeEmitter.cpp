@@ -5986,6 +5986,8 @@ BytecodeEmitter::emitIterator()
     if (!emitCall(JSOP_CALLITER, 0))                              
         return false;
     checkTypeSet(JSOP_CALLITER);
+    if (!emitCheckIsObj(CheckIsObjectKind::GetIterator))          
+        return false;
     return true;
 }
 
