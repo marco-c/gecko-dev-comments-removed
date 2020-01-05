@@ -413,8 +413,7 @@ pub fn reflect_dom_object<T: Reflectable>
 }
 
 
-
-#[allow(raw_pointer_derive, unrooted_must_root, unused_attributes)]
+#[allow(raw_pointer_derive, unrooted_must_root)]
 #[must_root]
 #[servo_lang = "reflector"]
 

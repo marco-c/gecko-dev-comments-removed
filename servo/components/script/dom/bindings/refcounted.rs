@@ -57,6 +57,7 @@ unsafe impl Send for TrustedReference {}
 
 
 
+#[allow_unrooted_interior]
 pub struct Trusted<T: Reflectable> {
     
     

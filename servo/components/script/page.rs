@@ -14,6 +14,7 @@ use std::rc::Rc;
 
 
 #[derive(JSTraceable)]
+#[allow(unrooted_must_root)] 
 pub struct Page {
     
     id: PipelineId,

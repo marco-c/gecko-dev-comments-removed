@@ -81,6 +81,7 @@ impl<T: Reflectable> JS<T> {
 
 
 
+#[allow_unrooted_interior]
 pub struct LayoutJS<T> {
     ptr: NonZero<*const T>
 }
@@ -270,6 +271,12 @@ impl<T: Reflectable> MutNullableHeap<JS<T>> {
     pub unsafe fn get_inner_as_layout(&self) -> Option<LayoutJS<T>> {
         self.ptr.get().map(|js| js.to_layout())
     }
+
+    
+    
+    pub fn get_rooted(&self) -> Option<Root<T>> {
+        self.get().map(|o| o.root())
+    }
 }
 
 impl<T: HeapGCValue+Copy> Default for MutNullableHeap<T> {
@@ -382,6 +389,7 @@ pub unsafe fn trace_roots(tracer: *mut JSTracer) {
 
 
 
+#[allow_unrooted_interior]
 pub struct Root<T: Reflectable> {
     
     ptr: NonZero<*const T>,

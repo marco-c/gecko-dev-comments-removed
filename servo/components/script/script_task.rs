@@ -287,6 +287,8 @@ impl Drop for StackRootTLS {
 
 
 #[derive(JSTraceable)]
+
+#[allow(unrooted_must_root)]
 pub struct ScriptTask {
     
     page: DOMRefCell<Option<Rc<Page>>>,
