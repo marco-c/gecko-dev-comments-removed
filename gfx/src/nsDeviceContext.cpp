@@ -240,7 +240,11 @@ nsDeviceContext::FontMetricsDeleted(const nsFontMetrics* aFontMetrics)
 bool
 nsDeviceContext::IsPrinterContext()
 {
-  return mPrintTarget != nullptr;
+  return mPrintTarget != nullptr
+#ifdef XP_MACOSX
+         || mCachedPrintTarget != nullptr
+#endif
+         ;
 }
 
 void
@@ -343,31 +347,39 @@ nsDeviceContext::CreateRenderingContextCommon(bool aWantReferenceContext)
     MOZ_ASSERT(IsPrinterContext());
     MOZ_ASSERT(mWidth > 0 && mHeight > 0);
 
-    
-    RefPtr<DrawEventRecorder> recorder;
-    mDeviceContextSpec->GetDrawEventRecorder(getter_AddRefs(recorder));
-
-    RefPtr<gfx::DrawTarget> dt;
-    if (aWantReferenceContext) {
-      dt = mPrintTarget->GetReferenceDrawTarget(recorder);
-    } else {
-      dt = mPrintTarget->MakeDrawTarget(gfx::IntSize(mWidth, mHeight), recorder);
-    }
-
-    if (!dt || !dt->IsValid()) {
-      gfxCriticalNote
-        << "Failed to create draw target in device context sized "
-        << mWidth << "x" << mHeight << " and pointer "
-        << hexa(mPrintTarget);
-      return nullptr;
-    }
-
+    RefPtr<PrintTarget> printingTarget = mPrintTarget;
 #ifdef XP_MACOSX
     
     
     
     
     
+    
+    if (!printingTarget) {
+      printingTarget = mCachedPrintTarget;
+    }
+#endif
+
+    
+    RefPtr<DrawEventRecorder> recorder;
+    mDeviceContextSpec->GetDrawEventRecorder(getter_AddRefs(recorder));
+
+    RefPtr<gfx::DrawTarget> dt;
+    if (aWantReferenceContext) {
+      dt = printingTarget->GetReferenceDrawTarget(recorder);
+    } else {
+      dt = printingTarget->MakeDrawTarget(gfx::IntSize(mWidth, mHeight), recorder);
+    }
+
+    if (!dt || !dt->IsValid()) {
+      gfxCriticalNote
+        << "Failed to create draw target in device context sized "
+        << mWidth << "x" << mHeight << " and pointers "
+        << hexa(mPrintTarget) << " and " << hexa(printingTarget);
+      return nullptr;
+    }
+
+#ifdef XP_MACOSX
     dt->AddUserData(&gfxContext::sDontUseAsSourceKey, dt, nullptr);
 #endif
     dt->AddUserData(&sDisablePixelSnapping, (void*)0x1, nullptr);
@@ -376,9 +388,9 @@ nsDeviceContext::CreateRenderingContextCommon(bool aWantReferenceContext)
     MOZ_ASSERT(pContext); 
 
     gfxMatrix transform;
-    if (mPrintTarget->RotateNeededForLandscape()) {
+    if (printingTarget->RotateNeededForLandscape()) {
       
-      IntSize size = mPrintTarget->GetSize();
+      IntSize size = printingTarget->GetSize();
       transform.Translate(gfxPoint(0, size.width));
       gfxMatrix rotate(0, -1,
                        1,  0,
@@ -481,8 +493,7 @@ nsDeviceContext::BeginDocument(const nsAString& aTitle,
                                int32_t          aStartPage,
                                int32_t          aEndPage)
 {
-    nsresult rv = mPrintTarget->BeginPrinting(aTitle, aPrintToFileName,
-                                              aStartPage, aEndPage);
+    nsresult rv = mPrintTarget->BeginPrinting(aTitle, aPrintToFileName);
 
     if (NS_SUCCEEDED(rv) && mDeviceContextSpec) {
       rv = mDeviceContextSpec->BeginDocument(aTitle, aPrintToFileName,
@@ -498,15 +509,14 @@ nsDeviceContext::EndDocument(void)
 {
     nsresult rv = NS_OK;
 
-    rv = mPrintTarget->EndPrinting();
-    if (NS_SUCCEEDED(rv)) {
-        mPrintTarget->Finish();
+    if (mPrintTarget) {
+        rv = mPrintTarget->EndPrinting();
+        if (NS_SUCCEEDED(rv))
+            mPrintTarget->Finish();
     }
 
     if (mDeviceContextSpec)
         mDeviceContextSpec->EndDocument();
-
-    mPrintTarget = nullptr;
 
     return rv;
 }
@@ -519,8 +529,6 @@ nsDeviceContext::AbortDocument(void)
 
     if (mDeviceContextSpec)
         mDeviceContextSpec->EndDocument();
-
-    mPrintTarget = nullptr;
 
     return rv;
 }
@@ -536,13 +544,33 @@ nsDeviceContext::BeginPage(void)
 
     if (NS_FAILED(rv)) return rv;
 
-    return mPrintTarget->BeginPage();
+#ifdef XP_MACOSX
+    
+    
+    mPrintTarget = mDeviceContextSpec->MakePrintTarget();
+#endif
+
+    rv = mPrintTarget->BeginPage();
+
+    return rv;
 }
 
 nsresult
 nsDeviceContext::EndPage(void)
 {
     nsresult rv = mPrintTarget->EndPage();
+
+#ifdef XP_MACOSX
+    
+    
+    
+    
+    
+    
+    
+    mCachedPrintTarget = mPrintTarget;
+    mPrintTarget = nullptr;
+#endif
 
     if (mDeviceContextSpec)
         mDeviceContextSpec->EndPage();
@@ -633,6 +661,10 @@ nsDeviceContext::FindScreen(nsIScreen** outScreen)
 bool
 nsDeviceContext::CalcPrintingSize()
 {
+    if (!mPrintTarget) {
+        return (mWidth > 0 && mHeight > 0);
+    }
+
     gfxSize size = mPrintTarget->GetSize();
     
     
