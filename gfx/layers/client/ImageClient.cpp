@@ -300,7 +300,13 @@ ImageClientBridge::UpdateImage(ImageContainer* aContainer, uint32_t aContentFlag
   if (mAsyncContainerHandle == aContainer->GetAsyncContainerHandle()) {
     return true;
   }
+
   mAsyncContainerHandle = aContainer->GetAsyncContainerHandle();
+  if (!mAsyncContainerHandle) {
+    
+    return true;
+  }
+
   static_cast<ShadowLayerForwarder*>(GetForwarder())->AttachAsyncCompositable(mAsyncContainerHandle, mLayer);
   return true;
 }

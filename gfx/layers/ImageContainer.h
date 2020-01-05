@@ -609,7 +609,7 @@ private:
   
   void EnsureActiveImage();
 
-  void EnsureImageClient(bool aCreate);
+  void EnsureImageClient();
 
   
   
@@ -649,6 +649,7 @@ private:
   
   RefPtr<ImageClient> mImageClient;
 
+  bool mIsAsync;
   CompositableHandle mAsyncContainerHandle;
 
   nsTArray<FrameID> mFrameIDsNotYetComposited;
