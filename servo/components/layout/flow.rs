@@ -766,9 +766,10 @@ pub struct BaseFlow {
     pub layers: DList<RenderLayer>,
 
     
-    pub flags: FlowFlags,
-
     pub writing_mode: WritingMode,
+
+    
+    pub flags: FlowFlags,
 }
 
 impl fmt::Show for BaseFlow {
@@ -824,9 +825,7 @@ impl BaseFlow {
             intrinsic_inline_sizes: IntrinsicISizes::new(),
             position: LogicalRect::zero(writing_mode),
             overflow: LogicalRect::zero(writing_mode),
-
             parallel: FlowParallelInfo::new(),
-
             floats: Floats::new(writing_mode),
             collapsible_margins: CollapsibleMargins::new(),
             abs_position: Zero::zero(),
