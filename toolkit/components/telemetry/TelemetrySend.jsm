@@ -392,7 +392,7 @@ var SendScheduler = {
     return this._sendTask;
   },
 
-  _doSendTask: Task.async(function*() {
+  async _doSendTask() {
     this._sendTaskState = "send task started";
     this._backoffDelay = SEND_TICK_DELAY;
     this._sendsFailed = false;
@@ -440,7 +440,7 @@ var SendScheduler = {
         this._sendTaskState = "wait for throttling to pass";
 
         const delay = nextPingSendTime - now.getTime();
-        const cancelled = yield CancellableTimeout.promiseWaitOnTimeout(delay);
+        const cancelled = await CancellableTimeout.promiseWaitOnTimeout(delay);
         if (cancelled) {
           this._log.trace("_doSendTask - throttling wait was cancelled, resetting backoff timer");
           resetBackoffTimer();
@@ -457,7 +457,7 @@ var SendScheduler = {
       this._sendsFailed = false;
       const sendStartTime = Policy.now();
       this._sendTaskState = "wait on ping sends";
-      yield TelemetrySendImpl.sendPings(current, sending.map(p => p.id));
+      await TelemetrySendImpl.sendPings(current, sending.map(p => p.id));
       if (this._shutdown || (TelemetrySend.pendingPingCount == 0)) {
         this._log.trace("_doSendTask - bailing out after sending, shutdown: " + this._shutdown +
                         ", pendingPingCount: " + TelemetrySend.pendingPingCount);
@@ -487,13 +487,13 @@ var SendScheduler = {
 
       this._log.trace("_doSendTask - waiting for next send opportunity, timeout is " + nextSendDelay)
       this._sendTaskState = "wait on next send opportunity";
-      const cancelled = yield CancellableTimeout.promiseWaitOnTimeout(nextSendDelay);
+      const cancelled = await CancellableTimeout.promiseWaitOnTimeout(nextSendDelay);
       if (cancelled) {
         this._log.trace("_doSendTask - batch send wait was cancelled, resetting backoff timer");
         resetBackoffTimer();
       }
     }
-  }),
+  },
 
   
 
@@ -581,7 +581,7 @@ var TelemetrySendImpl = {
     this._testMode = testing;
   },
 
-  setup: Task.async(function*(testing) {
+  async setup(testing) {
     this._log.trace("setup");
 
     this._testMode = testing;
@@ -594,7 +594,7 @@ var TelemetrySendImpl = {
 
     
     try {
-      yield this._checkPendingPings();
+      await this._checkPendingPings();
     } catch (ex) {
       this._log.error("setup - _checkPendingPings rejected", ex);
     }
@@ -605,15 +605,15 @@ var TelemetrySendImpl = {
 
     
     SendScheduler.triggerSendingPings(true);
-  }),
+  },
 
   
 
 
 
-  _checkPendingPings: Task.async(function*() {
+  async _checkPendingPings() {
     
-    let infos = yield TelemetryStorage.loadPendingPingList();
+    let infos = await TelemetryStorage.loadPendingPingList();
     this._log.info("_checkPendingPings - pending ping count: " + infos.length);
     if (infos.length == 0) {
       this._log.trace("_checkPendingPings - no pending pings");
@@ -633,9 +633,9 @@ var TelemetrySendImpl = {
         Utils.millisecondsToDays(Math.abs(now.getTime() - pingInfo.lastModificationDate));
       Telemetry.getHistogramById("TELEMETRY_PENDING_PINGS_AGE").add(ageInDays);
     }
-   }),
+   },
 
-  shutdown: Task.async(function*() {
+  async shutdown() {
     this._shutdown = true;
 
     for (let topic of this.OBSERVER_TOPICS) {
@@ -650,17 +650,17 @@ var TelemetrySendImpl = {
     this._sendingEnabled = false;
 
     
-    yield this._cancelOutgoingRequests();
+    await this._cancelOutgoingRequests();
 
     
-    yield SendScheduler.shutdown();
+    await SendScheduler.shutdown();
 
     
-    yield this.promisePendingPingActivity();
+    await this.promisePendingPingActivity();
 
     
-    yield this._persistCurrentPings();
-  }),
+    await this._persistCurrentPings();
+  },
 
   reset() {
     this._log.trace("reset");
@@ -811,7 +811,7 @@ var TelemetrySendImpl = {
 
 
 
-  _sendPersistedPings: Task.async(function*(pingIds) {
+  async _sendPersistedPings(pingIds) {
     this._log.trace("sendPersistedPings");
 
     if (TelemetryStorage.pendingPingCount < 1) {
@@ -838,8 +838,8 @@ var TelemetrySendImpl = {
 
     let promise = Promise.all(pingSendPromises);
     this._trackPendingPingTask(promise);
-    yield promise;
-  }),
+    await promise;
+  },
 
   _onPingRequestFinished(success, startTime, id, isPersisted) {
     this._log.trace("_onPingRequestFinished - success: " + success + ", persisted: " + isPersisted);
@@ -1088,10 +1088,10 @@ var TelemetrySendImpl = {
     return Promise.all(p);
   },
 
-  _persistCurrentPings: Task.async(function*() {
+  async _persistCurrentPings() {
     for (let [id, ping] of this._currentPings) {
       try {
-        yield savePing(ping);
+        await savePing(ping);
         this._log.trace("_persistCurrentPings - saved ping " + id);
       } catch (ex) {
         this._log.error("_persistCurrentPings - failed to save ping " + id, ex);
@@ -1099,7 +1099,7 @@ var TelemetrySendImpl = {
         this._currentPings.delete(id);
       }
     }
-  }),
+  },
 
   
 
