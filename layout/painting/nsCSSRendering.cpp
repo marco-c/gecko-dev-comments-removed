@@ -3323,8 +3323,6 @@ nsCSSRendering::PaintStyleImageLayerWithSC(const PaintBGParams& aParams,
   MOZ_ASSERT_IF(aParams.layer == -1,
                 aParams.compositionOp == CompositionOp::OP_OVER);
 
-  DrawResult result = DrawResult::SUCCESS;
-
   
   
   
@@ -3384,16 +3382,6 @@ nsCSSRendering::PaintStyleImageLayerWithSC(const PaintBGParams& aParams,
 
   
   
-  Sides skipSides = aParams.frame->GetSkipSides();
-  nsRect paintBorderArea =
-    ::BoxDecorationRectForBackground(aParams.frame, aParams.borderArea,
-                                     skipSides, &aBorder);
-  nsRect clipBorderArea =
-    ::BoxDecorationRectForBorder(aParams.frame, aParams.borderArea,
-                                 skipSides, &aBorder);
-
-  
-  
   
   
   
@@ -3418,12 +3406,9 @@ nsCSSRendering::PaintStyleImageLayerWithSC(const PaintBGParams& aParams,
   }
 
   
-  if (drawBackgroundColor && !isCanvasFrame)
+  if (drawBackgroundColor && !isCanvasFrame) {
     ctx->SetColor(Color::FromABGR(bgColor));
-
-  
-  
-  gfxContextAutoSaveRestore autoSR;
+  }
 
   
   
@@ -3441,19 +3426,19 @@ nsCSSRendering::PaintStyleImageLayerWithSC(const PaintBGParams& aParams,
     return DrawResult::SUCCESS;
   }
 
-  
-  int32_t startLayer = aParams.layer;
-  int32_t nLayers = 1;
-  if (startLayer < 0) {
-    startLayer = (int32_t)layers.mImageCount - 1;
-    nLayers = layers.mImageCount;
-  }
+  MOZ_ASSERT((aParams.layer < 0) ||
+             (layers.mImageCount > uint32_t(aParams.layer)));
+  bool drawAllLayers = (aParams.layer < 0);
 
   
   
   
   if (aBackgroundSC != aParams.frame->StyleContext()) {
-    NS_FOR_VISIBLE_IMAGE_LAYERS_BACK_TO_FRONT_WITH_RANGE(i, layers, startLayer, nLayers) {
+    uint32_t startLayer = drawAllLayers ? layers.mImageCount - 1
+                                        : aParams.layer;
+    uint32_t count = drawAllLayers ? layers.mImageCount : 1;
+    NS_FOR_VISIBLE_IMAGE_LAYERS_BACK_TO_FRONT_WITH_RANGE(i, layers, startLayer,
+                                                         count) {
       aParams.frame->AssociateImage(layers.mLayers[i].mImage,
                                     &aParams.presCtx);
     }
@@ -3465,69 +3450,93 @@ nsCSSRendering::PaintStyleImageLayerWithSC(const PaintBGParams& aParams,
     DrawBackgroundColor(clipState, ctx, appUnitsPerPixel);
   }
 
-  if (drawBackgroundImage) {
-    bool clipSet = false;
-    StyleGeometryBox currentBackgroundClip = StyleGeometryBox::Border;
-    NS_FOR_VISIBLE_IMAGE_LAYERS_BACK_TO_FRONT_WITH_RANGE(i, layers, layers.mImageCount - 1,
-                                                         nLayers + (layers.mImageCount -
-                                                         startLayer - 1)) {
-      const nsStyleImageLayers::Layer& layer = layers.mLayers[i];
-      if (!aParams.bgClipRect) {
-        if (currentBackgroundClip != layer.mClip || !clipSet) {
-          currentBackgroundClip = layer.mClip;
+  if (!drawBackgroundImage) {
+    return DrawResult::SUCCESS; 
+                                
+  }
+
+  
+  
+  Sides skipSides = aParams.frame->GetSkipSides();
+  nsRect paintBorderArea =
+    ::BoxDecorationRectForBackground(aParams.frame, aParams.borderArea,
+                                     skipSides, &aBorder);
+  nsRect clipBorderArea =
+    ::BoxDecorationRectForBorder(aParams.frame, aParams.borderArea,
+                                 skipSides, &aBorder);
+
+  DrawResult result = DrawResult::SUCCESS;
+  StyleGeometryBox currentBackgroundClip = StyleGeometryBox::Border;
+  uint32_t count = drawAllLayers
+    ? layers.mImageCount                  
+    : layers.mImageCount - aParams.layer; 
+                                          
+  NS_FOR_VISIBLE_IMAGE_LAYERS_BACK_TO_FRONT_WITH_RANGE(i, layers,
+                                                       layers.mImageCount - 1,
+                                                       count) {
+    
+    
+    gfxContextAutoSaveRestore autoSR;
+    const nsStyleImageLayers::Layer& layer = layers.mLayers[i];
+
+    if (!aParams.bgClipRect) {
+      bool isBottomLayer = (i == layers.mImageCount - 1);
+      if (currentBackgroundClip != layer.mClip || isBottomLayer) {
+        currentBackgroundClip = layer.mClip;
+        
+        
+        if (!isBottomLayer) {
+          GetImageLayerClip(layer, aParams.frame,
+                            aBorder, aParams.borderArea, aParams.dirtyRect,
+                            (aParams.paintFlags & PAINTBG_WILL_PAINT_BORDER),
+                            appUnitsPerPixel, &clipState);
+        }
+        SetupImageLayerClip(clipState, ctx, appUnitsPerPixel, &autoSR);
+        if (!clipBorderArea.IsEqualEdges(aParams.borderArea)) {
           
           
           
-          if (clipSet) {
-            autoSR.Restore(); 
-            GetImageLayerClip(layer, aParams.frame,
-                              aBorder, aParams.borderArea, aParams.dirtyRect,
-                              (aParams.paintFlags & PAINTBG_WILL_PAINT_BORDER),
-                              appUnitsPerPixel, &clipState);
-          }
-          SetupImageLayerClip(clipState, ctx, appUnitsPerPixel, &autoSR);
-          clipSet = true;
-          if (!clipBorderArea.IsEqualEdges(aParams.borderArea)) {
-            
-            
-            
-            gfxRect clip =
-              nsLayoutUtils::RectToGfxRect(aParams.borderArea, appUnitsPerPixel);
-            autoSR.EnsureSaved(ctx);
-            ctx->NewPath();
-            ctx->SnappedRectangle(clip);
-            ctx->Clip();
-          }
+          gfxRect clip =
+            nsLayoutUtils::RectToGfxRect(aParams.borderArea, appUnitsPerPixel);
+          autoSR.EnsureSaved(ctx);
+          ctx->NewPath();
+          ctx->SnappedRectangle(clip);
+          ctx->Clip();
         }
       }
-      if ((aParams.layer < 0 || i == (uint32_t)startLayer) &&
-          !clipState.mDirtyRectInDevPx.IsEmpty()) {
-        CompositionOp co = DetermineCompositionOp(aParams, layers, i);
-        nsBackgroundLayerState state =
-          PrepareImageLayer(&aParams.presCtx, aParams.frame,
-                            aParams.paintFlags, paintBorderArea, clipState.mBGClipArea,
-                            layer, nullptr);
-        result &= state.mImageRenderer.PrepareResult();
-        if (!state.mFillArea.IsEmpty()) {
-          if (co != CompositionOp::OP_OVER) {
-            NS_ASSERTION(ctx->CurrentOp() == CompositionOp::OP_OVER,
-                         "It is assumed the initial op is OP_OVER, when it is "
-                         "restored later");
-            ctx->SetOp(co);
-          }
+    }
 
-          result &=
-            state.mImageRenderer.DrawLayer(&aParams.presCtx,
-                                           aParams.renderingCtx,
-                                           state.mDestArea, state.mFillArea,
-                                           state.mAnchor + paintBorderArea.TopLeft(),
-                                           clipState.mDirtyRectInAppUnits,
-                                           state.mRepeatSize, aParams.opacity);
+    
+    
+    if (clipState.mDirtyRectInDevPx.IsEmpty() ||
+        (aParams.layer >= 0 && i != (uint32_t)aParams.layer)) {
+      continue;
+    }
 
-          if (co != CompositionOp::OP_OVER) {
-            ctx->SetOp(CompositionOp::OP_OVER);
-          }
-        }
+    nsBackgroundLayerState state =
+      PrepareImageLayer(&aParams.presCtx, aParams.frame,
+                        aParams.paintFlags, paintBorderArea,
+                        clipState.mBGClipArea, layer, nullptr);
+    result &= state.mImageRenderer.PrepareResult();
+    if (!state.mFillArea.IsEmpty()) {
+      CompositionOp co = DetermineCompositionOp(aParams, layers, i);
+      if (co != CompositionOp::OP_OVER) {
+        NS_ASSERTION(ctx->CurrentOp() == CompositionOp::OP_OVER,
+                     "It is assumed the initial op is OP_OVER, when it is "
+                     "restored later");
+        ctx->SetOp(co);
+      }
+
+      result &=
+        state.mImageRenderer.DrawLayer(&aParams.presCtx,
+                                       aParams.renderingCtx,
+                                       state.mDestArea, state.mFillArea,
+                                       state.mAnchor + paintBorderArea.TopLeft(),
+                                       clipState.mDirtyRectInAppUnits,
+                                       state.mRepeatSize, aParams.opacity);
+
+      if (co != CompositionOp::OP_OVER) {
+        ctx->SetOp(CompositionOp::OP_OVER);
       }
     }
   }
