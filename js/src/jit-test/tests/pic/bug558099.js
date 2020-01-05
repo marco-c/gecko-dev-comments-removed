@@ -1,6 +1,6 @@
 
 
-(function()[function() function() function() function() function() function() {}]);
+(function() { return [function() { return function() { return function() { return function() { return function() { return function() {}; }; }; }; }; }]; });
 foo = [{
   text: "(function(){if(d){(1)}})",
   s: function() {},
@@ -47,9 +47,9 @@ foo = [{
     if (a.test()) {}
   }
 } ());
-s = [function() function() function() function() function() function() {}]
-[function() function() function() function() {}];
-(function() { [function() function() {}] });
+s = [function() { return function() { return function() { return function() { return function() { return function() {}; }; }; }; }; }]
+[function() { return function() { return function() { return function() {}; }; }; }];
+(function() { [function() { return function() {}; }] });
 (function() {});
 (eval("\
   (function(){\

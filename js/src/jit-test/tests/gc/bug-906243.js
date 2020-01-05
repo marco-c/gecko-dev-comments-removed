@@ -1,7 +1,7 @@
 
 
 a2 = []
-g = function() r
+g = function() { return r; };
 Object.defineProperty(a2, 0, {
     set: function() {}
 })

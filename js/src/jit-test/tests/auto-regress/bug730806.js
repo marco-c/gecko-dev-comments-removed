@@ -1,10 +1,11 @@
 
 
 
-function toPrinted(value)
-  value = value.replace(/\\n/g, 'NL')
-               .replace(/\\r/g, 'CR')
-               .replace(/[^\x20-\x7E]+/g, escapeString);
+function toPrinted(value) {
+  return value = value.replace(/\\n/g, 'NL')
+                      .replace(/\\r/g, 'CR')
+                      .replace(/[^\x20-\x7E]+/g, escapeString);
+}
 function escapeString (str)
 {
   var a, b, c, d;

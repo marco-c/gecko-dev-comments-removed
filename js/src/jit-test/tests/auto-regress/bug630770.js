@@ -2,4 +2,4 @@
 
 
 options('strict')
-Function("function y(x,x)d")
+Function("function y(x,x) { return d; }")
