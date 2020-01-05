@@ -220,6 +220,26 @@ function parseQueryString(query) {
   });
 }
 
+
+
+
+
+
+
+function parseFormData(sections) {
+  if (!sections) {
+    return null;
+  }
+
+  return sections.replace(/^&/, "").split("&").map(e => {
+    let param = e.split("=");
+    return {
+      name: param[0] ? decodeUnicodeUrl(param[0]) : "",
+      value: param[1] ? decodeUnicodeUrl(param[1]) : "",
+    };
+  });
+}
+
 module.exports = {
   getFormDataSections,
   fetchHeaders,
@@ -234,4 +254,5 @@ module.exports = {
   getUrlHost,
   getUrlDetails,
   parseQueryString,
+  parseFormData,
 };
