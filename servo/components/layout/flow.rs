@@ -411,10 +411,10 @@ pub trait MutableFlowUtils {
     
 
     
-    fn traverse_preorder<T:PreorderFlowTraversal>(self, traversal: &mut T) -> bool;
+    fn traverse_preorder<T:PreorderFlowTraversal>(self, traversal: &T);
 
     
-    fn traverse_postorder<T:PostorderFlowTraversal>(self, traversal: &mut T) -> bool;
+    fn traverse_postorder<T:PostorderFlowTraversal>(self, traversal: &T);
 
     
 
@@ -464,40 +464,26 @@ pub enum FlowClass {
 
 pub trait PreorderFlowTraversal {
     
-    fn process(&mut self, flow: &mut Flow) -> bool;
+    fn process(&self, flow: &mut Flow);
 
     
     
     
-    fn should_process(&mut self, _flow: &mut Flow) -> bool {
+    fn should_process(&self, _flow: &mut Flow) -> bool {
         true
-    }
-
-    
-    
-    
-    fn should_prune(&mut self, _flow: &mut Flow) -> bool {
-        false
     }
 }
 
 
 pub trait PostorderFlowTraversal {
     
-    fn process(&mut self, flow: &mut Flow) -> bool;
+    fn process(&self, flow: &mut Flow);
 
     
     
     
-    fn should_process(&mut self, _flow: &mut Flow) -> bool {
+    fn should_process(&self, _flow: &mut Flow) -> bool {
         true
-    }
-
-    
-    
-    
-    fn should_prune(&mut self, _flow: &mut Flow) -> bool {
-        false
     }
 }
 
@@ -1043,45 +1029,25 @@ impl<'a> ImmutableFlowUtils for &'a Flow + 'a {
 
 impl<'a> MutableFlowUtils for &'a mut Flow + 'a {
     
-    fn traverse_preorder<T:PreorderFlowTraversal>(self, traversal: &mut T) -> bool {
-        if traversal.should_prune(self) {
-            return true
-        }
-
-        if !traversal.should_process(self) {
-            return true
-        }
-
-        if !traversal.process(self) {
-            return false
+    fn traverse_preorder<T:PreorderFlowTraversal>(self, traversal: &T) {
+        if traversal.should_process(self) {
+            traversal.process(self);
         }
 
         for kid in child_iter(self) {
-            if !kid.traverse_preorder(traversal) {
-                return false
-            }
+            kid.traverse_preorder(traversal);
         }
-
-        true
     }
 
     
-    fn traverse_postorder<T:PostorderFlowTraversal>(self, traversal: &mut T) -> bool {
-        if traversal.should_prune(self) {
-            return true
-        }
-
+    fn traverse_postorder<T:PostorderFlowTraversal>(self, traversal: &T) {
         for kid in child_iter(self) {
-            if !kid.traverse_postorder(traversal) {
-                return false
-            }
+            kid.traverse_postorder(traversal);
         }
 
-        if !traversal.should_process(self) {
-            return true
+        if traversal.should_process(self) {
+            traversal.process(self)
         }
-
-        traversal.process(self)
     }
 
     
