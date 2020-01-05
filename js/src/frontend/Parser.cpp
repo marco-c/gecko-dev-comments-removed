@@ -2293,7 +2293,7 @@ Parser<FullParseHandler>::standaloneFunctionBody(HandleFunction fun,
 {
     MOZ_ASSERT(checkOptionsCalled);
 
-    Node fn = handler.newFunctionDefinition();
+    Node fn = handler.newFunctionStatement();
     if (!fn)
         return null();
 
@@ -2971,60 +2971,54 @@ Parser<ParseHandler>::functionArguments(YieldHandling yieldHandling, FunctionSyn
 
 template <typename ParseHandler>
 bool
-Parser<ParseHandler>::checkFunctionDefinition(HandleAtom funAtom, Node pn, FunctionSyntaxKind kind,
+Parser<ParseHandler>::checkFunctionDefinition(HandlePropertyName funName, Node pn,
                                               GeneratorKind generatorKind, bool* tryAnnexB)
 {
-    if (kind == Statement) {
-        TokenPos pos = handler.getPosition(pn);
-        RootedPropertyName funName(context, funAtom->asPropertyName());
+    TokenPos pos = handler.getPosition(pn);
+
+    
+    
+    ParseContext::Statement* declaredInStmt = pc->innermostStatement();
+    if (declaredInStmt && declaredInStmt->kind() == StatementKind::Label) {
+        MOZ_ASSERT(!pc->sc()->strict(),
+                   "labeled functions shouldn't be parsed in strict mode");
 
         
         
-        ParseContext::Statement* declaredInStmt = pc->innermostStatement();
-        if (declaredInStmt && declaredInStmt->kind() == StatementKind::Label) {
-            MOZ_ASSERT(!pc->sc()->strict(),
-                       "labeled functions shouldn't be parsed in strict mode");
+        
+        while (declaredInStmt && declaredInStmt->kind() == StatementKind::Label)
+            declaredInStmt = declaredInStmt->enclosing();
 
-            
-            
-            
-            while (declaredInStmt && declaredInStmt->kind() == StatementKind::Label)
-                declaredInStmt = declaredInStmt->enclosing();
+        if (declaredInStmt && !StatementKindIsBraced(declaredInStmt->kind())) {
+            reportWithOffset(ParseError, false, pos.begin, JSMSG_SLOPPY_FUNCTION_LABEL);
+            return false;
+        }
+    }
 
-            if (declaredInStmt && !StatementKindIsBraced(declaredInStmt->kind())) {
-                reportWithOffset(ParseError, false, pos.begin, JSMSG_SLOPPY_FUNCTION_LABEL);
+    if (declaredInStmt) {
+        MOZ_ASSERT(declaredInStmt->kind() != StatementKind::Label);
+        MOZ_ASSERT(StatementKindIsBraced(declaredInStmt->kind()));
+
+        if (!pc->sc()->strict() && generatorKind == NotGenerator) {
+            
+            
+            
+            
+            
+
+            if (!tryDeclareVarForAnnexBLexicalFunction(funName, tryAnnexB))
                 return false;
-            }
         }
 
-        if (declaredInStmt) {
-            MOZ_ASSERT(declaredInStmt->kind() != StatementKind::Label);
-            MOZ_ASSERT(StatementKindIsBraced(declaredInStmt->kind()));
-
-            if (!pc->sc()->strict() && generatorKind == NotGenerator) {
-                
-                
-                
-                
-                
-
-                if (!tryDeclareVarForAnnexBLexicalFunction(funName, tryAnnexB))
-                    return false;
-            }
-
-            if (!noteDeclaredName(funName, DeclarationKind::LexicalFunction, pos))
-                return false;
-        } else {
-            if (!noteDeclaredName(funName, DeclarationKind::BodyLevelFunction, pos))
-                return false;
-
-            
-            if (pc->atModuleLevel())
-                pc->varScope().lookupDeclaredName(funName)->value()->setClosedOver();
-        }
+        if (!noteDeclaredName(funName, DeclarationKind::LexicalFunction, pos))
+            return false;
     } else {
+        if (!noteDeclaredName(funName, DeclarationKind::BodyLevelFunction, pos))
+            return false;
+
         
-        handler.setOp(pn, kind == Arrow ? JSOP_LAMBDA_ARROW : JSOP_LAMBDA);
+        if (pc->atModuleLevel())
+            pc->varScope().lookupDeclaredName(funName)->value()->setClosedOver();
     }
 
     return true;
@@ -3152,15 +3146,11 @@ typename ParseHandler::Node
 Parser<ParseHandler>::functionDefinition(Node pn, InHandling inHandling,
                                          YieldHandling yieldHandling, HandleAtom funName,
                                          FunctionSyntaxKind kind,
-                                         GeneratorKind generatorKind, FunctionAsyncKind asyncKind)
+                                         GeneratorKind generatorKind, FunctionAsyncKind asyncKind,
+                                         bool tryAnnexB )
 {
     MOZ_ASSERT_IF(kind == Statement, funName);
     MOZ_ASSERT_IF(asyncKind == AsyncFunction, generatorKind == StarGenerator);
-
-    
-    bool tryAnnexB = false;
-    if (!checkFunctionDefinition(funName, pn, kind, generatorKind, &tryAnnexB))
-        return null();
 
     
     
@@ -3388,7 +3378,7 @@ Parser<FullParseHandler>::standaloneLazyFunction(HandleFunction fun, bool strict
 {
     MOZ_ASSERT(checkOptionsCalled);
 
-    Node pn = handler.newFunctionDefinition();
+    Node pn = handler.newFunctionStatement();
     if (!pn)
         return null();
 
@@ -3590,13 +3580,18 @@ Parser<ParseHandler>::functionStmt(YieldHandling yieldHandling, DefaultHandling 
         return null();
     }
 
-    Node pn = handler.newFunctionDefinition();
+    Node pn = handler.newFunctionStatement();
     if (!pn)
+        return null();
+
+    
+    bool tryAnnexB = false;
+    if (!checkFunctionDefinition(name, pn, generatorKind, &tryAnnexB))
         return null();
 
     YieldHandling newYieldHandling = GetYieldHandling(generatorKind, asyncKind);
     return functionDefinition(pn, InAllowed, newYieldHandling, name, Statement, generatorKind,
-                              asyncKind);
+                              asyncKind, tryAnnexB);
 }
 
 template <typename ParseHandler>
@@ -3632,7 +3627,7 @@ Parser<ParseHandler>::functionExpr(InvokedPrediction invoked, FunctionAsyncKind 
         tokenStream.ungetToken();
     }
 
-    Node pn = handler.newFunctionDefinition();
+    Node pn = handler.newFunctionExpression();
     if (!pn)
         return null();
 
@@ -6523,31 +6518,6 @@ JSOpFromPropertyType(PropertyType propType)
     }
 }
 
-static FunctionSyntaxKind
-FunctionSyntaxKindFromPropertyType(PropertyType propType)
-{
-    switch (propType) {
-      case PropertyType::Getter:
-        return Getter;
-      case PropertyType::GetterNoExpressionClosure:
-        return GetterNoExpressionClosure;
-      case PropertyType::Setter:
-        return Setter;
-      case PropertyType::SetterNoExpressionClosure:
-        return SetterNoExpressionClosure;
-      case PropertyType::Method:
-      case PropertyType::GeneratorMethod:
-      case PropertyType::AsyncMethod:
-        return Method;
-      case PropertyType::Constructor:
-        return ClassConstructor;
-      case PropertyType::DerivedConstructor:
-        return DerivedClassConstructor;
-      default:
-        MOZ_CRASH("unexpected property type");
-    }
-}
-
 static GeneratorKind
 GeneratorKindFromPropertyType(PropertyType propType)
 {
@@ -7726,7 +7696,7 @@ Parser<ParseHandler>::assignExpr(InHandling inHandling, YieldHandling yieldHandl
             }
         }
 
-        Node pn = handler.newFunctionDefinition();
+        Node pn = handler.newArrowFunction();
         if (!pn)
             return null();
 
@@ -8069,10 +8039,9 @@ template <typename ParseHandler>
 typename ParseHandler::Node
 Parser<ParseHandler>::generatorComprehensionLambda(unsigned begin)
 {
-    Node genfn = handler.newFunctionDefinition();
+    Node genfn = handler.newFunctionExpression();
     if (!genfn)
         return null();
-    handler.setOp(genfn, JSOP_LAMBDA);
 
     ParseContext* outerpc = pc;
 
@@ -9356,12 +9325,47 @@ template <typename ParseHandler>
 typename ParseHandler::Node
 Parser<ParseHandler>::methodDefinition(PropertyType propType, HandleAtom funName)
 {
-    FunctionSyntaxKind kind = FunctionSyntaxKindFromPropertyType(propType);
+    FunctionSyntaxKind kind;
+    switch (propType) {
+      case PropertyType::Getter:
+        kind = Getter;
+        break;
+
+      case PropertyType::GetterNoExpressionClosure:
+        kind = GetterNoExpressionClosure;
+        break;
+
+      case PropertyType::Setter:
+        kind = Setter;
+        break;
+
+      case PropertyType::SetterNoExpressionClosure:
+        kind = SetterNoExpressionClosure;
+        break;
+
+      case PropertyType::Method:
+      case PropertyType::GeneratorMethod:
+      case PropertyType::AsyncMethod:
+        kind = Method;
+        break;
+
+      case PropertyType::Constructor:
+        kind = ClassConstructor;
+        break;
+
+      case PropertyType::DerivedConstructor:
+        kind = DerivedClassConstructor;
+        break;
+
+      default:
+        MOZ_CRASH("unexpected property type");
+    }
+
     GeneratorKind generatorKind = GeneratorKindFromPropertyType(propType);
     FunctionAsyncKind asyncKind = AsyncKindFromPropertyType(propType);
     YieldHandling yieldHandling = GetYieldHandling(generatorKind, asyncKind);
 
-    Node pn = handler.newFunctionDefinition();
+    Node pn = handler.newFunctionExpression();
     if (!pn)
         return null();
 
