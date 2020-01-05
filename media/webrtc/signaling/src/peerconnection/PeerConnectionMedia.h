@@ -270,7 +270,8 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
 
   
   
-  void ActivateOrRemoveTransports(const JsepSession& aSession);
+  void ActivateOrRemoveTransports(const JsepSession& aSession,
+                                  const bool forceIceTcp);
 
   
   void StartIceChecks(const JsepSession& session);
