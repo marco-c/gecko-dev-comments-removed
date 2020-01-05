@@ -3481,6 +3481,8 @@ this.AddonManager = {
   SIGNEDSTATE_SIGNED: 2,
   
   SIGNEDSTATE_SYSTEM: 3,
+  
+  SIGNEDSTATE_PRIVILEGED: 4,
 
   
   
