@@ -834,7 +834,7 @@ NS_IMETHODIMP nsURILoader::OpenURI(nsIChannel *channel,
     
 
     
-    rv = channel->AsyncOpen(loader, nullptr);
+    rv = channel->AsyncOpen2(loader);
 
     
     if (rv == NS_ERROR_NO_CONTENT) {

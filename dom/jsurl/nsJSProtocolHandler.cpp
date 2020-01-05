@@ -36,7 +36,6 @@
 #include "nsIContentViewer.h"
 #include "nsIXPConnect.h"
 #include "nsContentUtils.h"
-#include "nsNullPrincipal.h"
 #include "nsJSUtils.h"
 #include "nsThreadUtils.h"
 #include "nsIScriptChannel.h"
@@ -336,7 +335,7 @@ public:
     NS_FORWARD_SAFE_NSIPROPERTYBAG(mPropertyBag)
     NS_FORWARD_SAFE_NSIPROPERTYBAG2(mPropertyBag)
 
-    nsresult Init(nsIURI *aURI);
+    nsresult Init(nsIURI *aURI, nsILoadInfo* aLoadInfo);
 
     
     void EvaluateScript();
@@ -354,7 +353,6 @@ protected:
     nsCOMPtr<nsIChannel>    mStreamChannel;
     nsCOMPtr<nsIPropertyBag2> mPropertyBag;
     nsCOMPtr<nsIStreamListener> mListener;  
-    nsCOMPtr<nsISupports> mContext; 
     nsCOMPtr<nsPIDOMWindowInner> mOriginalInnerWindow;  
                                                         
     
@@ -404,7 +402,7 @@ nsresult nsJSChannel::StopAll()
     return rv;
 }
 
-nsresult nsJSChannel::Init(nsIURI *aURI)
+nsresult nsJSChannel::Init(nsIURI* aURI, nsILoadInfo* aLoadInfo)
 {
     RefPtr<nsJSURI> jsURI;
     nsresult rv = aURI->QueryInterface(kJSURICID,
@@ -418,21 +416,13 @@ nsresult nsJSChannel::Init(nsIURI *aURI)
     
     
     nsCOMPtr<nsIChannel> channel;
-
-    nsCOMPtr<nsIPrincipal> nullPrincipal = nsNullPrincipal::Create();
-
-    
-    
-    
-    
-    rv = NS_NewInputStreamChannel(getter_AddRefs(channel),
-                                  aURI,
-                                  mIOThunk,
-                                  nullPrincipal,
-                                  nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_IS_BLOCKED,
-                                  nsIContentPolicy::TYPE_OTHER,
-                                  NS_LITERAL_CSTRING("text/html"));
-    if (NS_FAILED(rv)) return rv;
+    rv = NS_NewInputStreamChannelInternal(getter_AddRefs(channel),
+                                          aURI,
+                                          mIOThunk,
+                                          NS_LITERAL_CSTRING("text/html"),
+                                          EmptyCString(),
+                                          aLoadInfo);
+    NS_ENSURE_SUCCESS(rv, rv);
 
     rv = mIOThunk->Init(aURI);
     if (NS_SUCCEEDED(rv)) {
@@ -563,6 +553,7 @@ nsJSChannel::AsyncOpen(nsIStreamListener *aListener, nsISupports *aContext)
                "security flags in loadInfo but asyncOpen2() not called");
     }
 #endif
+    MOZ_RELEASE_ASSERT(!aContext, "please call AsyncOpen2()");
 
     NS_ENSURE_ARG(aListener);
 
@@ -584,7 +575,6 @@ nsJSChannel::AsyncOpen(nsIStreamListener *aListener, nsISupports *aContext)
     }
     
     mListener = aListener;
-    mContext = aContext;
 
     mIsActive = true;
 
@@ -772,7 +762,7 @@ nsJSChannel::EvaluateScript()
         return;
     }
     
-    mStatus = mStreamChannel->AsyncOpen(this, mContext);
+    mStatus = mStreamChannel->AsyncOpen2(this);
     if (NS_SUCCEEDED(mStatus)) {
         
         
@@ -800,8 +790,8 @@ nsJSChannel::EvaluateScript()
 void
 nsJSChannel::NotifyListener()
 {
-    mListener->OnStartRequest(this, mContext);
-    mListener->OnStopRequest(this, mContext, mStatus);
+    mListener->OnStartRequest(this, nullptr);
+    mListener->OnStopRequest(this, nullptr, mStatus);
 
     CleanupStrongRefs();
 }
@@ -810,7 +800,6 @@ void
 nsJSChannel::CleanupStrongRefs()
 {
     mListener = nullptr;
-    mContext = nullptr;
     mOriginalInnerWindow = nullptr;
     if (mDocumentOnloadBlockedOn) {
         mDocumentOnloadBlockedOn->UnblockOnload(false);
@@ -1230,17 +1219,12 @@ nsJSProtocolHandler::NewChannel2(nsIURI* uri,
     nsresult rv;
 
     NS_ENSURE_ARG_POINTER(uri);
-
     RefPtr<nsJSChannel> channel = new nsJSChannel();
     if (!channel) {
         return NS_ERROR_OUT_OF_MEMORY;
     }
 
-    rv = channel->Init(uri);
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    
-    rv = channel->SetLoadInfo(aLoadInfo);
+    rv = channel->Init(uri, aLoadInfo);
     NS_ENSURE_SUCCESS(rv, rv);
 
     if (NS_SUCCEEDED(rv)) {
