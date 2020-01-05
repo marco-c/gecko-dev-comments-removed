@@ -178,6 +178,15 @@ extern bool NS_ProcessNextEvent(nsIThread* aThread = nullptr,
 
 
 
+
+
+
+
+extern bool NS_IsInCompositorThread();
+
+
+
+
 inline already_AddRefed<nsIThread>
 do_GetCurrentThread()
 {

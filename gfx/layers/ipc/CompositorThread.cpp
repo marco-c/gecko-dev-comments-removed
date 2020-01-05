@@ -148,3 +148,9 @@ CompositorThreadHolder::IsInCompositorThread()
 
 } 
 } 
+
+bool
+NS_IsInCompositorThread()
+{
+  return mozilla::layers::CompositorThreadHolder::IsInCompositorThread();
+}
