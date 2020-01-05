@@ -1,7 +1,7 @@
 
 
 use css::node_util::NodeUtil;
-use dom::node::Node;
+use dom::node::AbstractNode;
 use newcss::complete::CompleteStyle;
 
 
@@ -9,7 +9,7 @@ pub trait StyledNode {
     fn style(&self) -> CompleteStyle/&self;
 }
 
-impl StyledNode for Node {
+impl StyledNode for AbstractNode {
     fn style(&self) -> CompleteStyle/&self {
         assert self.is_element(); 
         let results = self.get_css_select_results();

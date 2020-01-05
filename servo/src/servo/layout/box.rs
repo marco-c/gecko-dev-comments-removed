@@ -1,8 +1,7 @@
 
 
 use css::node_style::StyledNode;
-use dom::element::{ElementKind, HTMLDivElement, HTMLImageElement};
-use dom::node::{Element, Node, NodeData, NodeKind, NodeTree};
+use dom::node::AbstractNode;
 use layout::context::LayoutContext;
 use layout::debug::BoxedDebugMethods;
 use layout::display_list_builder::DisplayListBuilder;
@@ -78,7 +77,7 @@ use std::net::url::Url;
 
 pub struct RenderBoxData {
     
-    node : Node,
+    node : AbstractNode,
     
 
     ctx  : @FlowContext,
@@ -110,7 +109,7 @@ pub enum SplitBoxResult {
     SplitDidNotFit(Option<@RenderBox>, Option<@RenderBox>)
 }
 
-pub fn RenderBoxData(node: Node, ctx: @FlowContext, id: int) -> RenderBoxData {
+pub fn RenderBoxData(node: AbstractNode, ctx: @FlowContext, id: int) -> RenderBoxData {
     RenderBoxData {
         node : node,
         mut ctx  : ctx,
@@ -361,7 +360,7 @@ impl RenderBox  {
     fn with_style_of_nearest_element<R>(@self, f: &fn(CompleteStyle) -> R) -> R {
         let mut node = self.d().node;
         while !node.is_element() {
-            node = NodeTree.get_parent(&node).get();
+            node = node.parent_node().get();
         }
         f(node.style())
     }
@@ -604,10 +603,10 @@ impl BoxedDebugMethods for RenderBox {
 // Other methods
 impl RenderBox {
     /// Returns the nearest ancestor-or-self element node. Infallible.
-    fn nearest_ancestor_element(@self) -> Node {
+    fn nearest_ancestor_element(@self) -> AbstractNode {
         let mut node = self.d().node;
         while !node.is_element() {
-            match NodeTree.get_parent(&node) {
+            match node.parent_node() {
                 None => fail!(~"no nearest element?!"),
                 Some(parent) => node = parent,
             }

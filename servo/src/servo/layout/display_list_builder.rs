@@ -1,22 +1,25 @@
-use newcss::values::Specified;
-use newcss::values::{CSSBackgroundColorColor, CSSBackgroundColorTransparent};
-use dom::node::{Text, NodeScope};
-use dom::cow::Scope;
-use dvec::DVec;
-use either::{Left, Right};
-use geom::point::Point2D;
-use geom::rect::Rect;
-use geom::size::Size2D;
+
+
+
+
 use layout::box::{RenderBox, TextBox};
 use layout::context::LayoutContext;
 use layout::flow::FlowContext;
 use layout::text::TextBoxData;
+use newcss::values::Specified;
+use newcss::values::{CSSBackgroundColorColor, CSSBackgroundColorTransparent};
 use util::tree;
-use vec::push;
-use gfx;
+
+use core::dvec::DVec;
+use core::either::{Left, Right};
+use core::mutable::Mut;
+use core::vec::push;
+use geom::point::Point2D;
+use geom::rect::Rect;
+use geom::size::Size2D;
 use gfx::display_list::DisplayList;
 use gfx::geometry::Au;
-use core::mutable::Mut;
+use gfx;
 
 
 

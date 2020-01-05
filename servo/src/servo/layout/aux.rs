@@ -2,42 +2,36 @@
 
 
 
-use dom::node::{Node, LayoutData};
+use dom::node::{AbstractNode, LayoutData};
 use core::dvec::DVec;
 
 pub trait LayoutAuxMethods {
-    fn initialize_layout_data() -> Option<@LayoutData>;
-    fn initialize_style_for_subtree(refs: &DVec<@LayoutData>);
+    fn initialize_layout_data(self) -> Option<@mut LayoutData>;
+    fn initialize_style_for_subtree(self, refs: &DVec<@mut LayoutData>);
 }
 
-impl LayoutAuxMethods for Node {
+impl LayoutAuxMethods for AbstractNode {
     
-
-
-    fn initialize_layout_data() -> Option<@LayoutData> {
-        match self.has_aux() {
-            false => {
-                let data = @LayoutData {
-                    mut style : None,
-                    mut flow  : None
-                };
-                self.set_aux(data); Some(data)
-            },
-            true => None
+    
+    fn initialize_layout_data(self) -> Option<@mut LayoutData> {
+        if self.has_layout_data() {
+            None
+        } else {
+            let data = @mut LayoutData::new();
+            self.set_layout_data(data);
+            Some(data)
         }
     }
 
     
-
-
-
-    fn initialize_style_for_subtree(refs: &DVec<@LayoutData>) {
-        do self.traverse_preorder |n| {
+    
+    fn initialize_style_for_subtree(self, refs: &DVec<@mut LayoutData>) {
+        let _ = for self.traverse_preorder |n| {
             match n.initialize_layout_data() {
                 Some(r) => refs.push(r),
                 None => {}
             }
-        }
+        };
     }
 
 }
