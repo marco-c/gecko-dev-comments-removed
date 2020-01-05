@@ -19,21 +19,17 @@
 #include "signaling/src/jsep/JsepTransport.h"
 #include "signaling/src/common/PtrVector.h"
 
-#if !defined(MOZILLA_EXTERNAL_LINKAGE)
 #include "MediaStreamTrack.h"
 #include "nsIPrincipal.h"
 #include "nsIDocument.h"
 #include "mozilla/Preferences.h"
 #include "MediaEngine.h"
-#endif
 
 #ifdef MOZILLA_INTERNAL_API
 #include "mozilla/Preferences.h"
 #endif
 
-#if !defined(MOZILLA_EXTERNAL_LINKAGE)
 #include "WebrtcGmpVideoCodec.h"
-#endif
 
 #include <stdlib.h>
 
@@ -382,13 +378,11 @@ MediaPipelineFactory::CreateOrUpdateMediaPipeline(
     const JsepTrackPair& aTrackPair,
     const JsepTrack& aTrack)
 {
-#if !defined(MOZILLA_EXTERNAL_LINKAGE)
   
   
   
   
   WebrtcGmpPCHandleSetter setter(mPC->GetHandle());
-#endif
 
   MOZ_ASSERT(aTrackPair.mRtpTransport);
 
@@ -638,7 +632,6 @@ MediaPipelineFactory::CreateMediaPipelineSending(
       aRtcpFlow,
       aFilter);
 
-#if !defined(MOZILLA_EXTERNAL_LINKAGE)
   
   nsIDocument* doc = mPC->GetWindow()->GetExtantDoc();
   if (doc) {
@@ -649,7 +642,6 @@ MediaPipelineFactory::CreateMediaPipelineSending(
     MOZ_MTLOG(ML_ERROR, "Cannot initialize pipeline without attached doc");
     return NS_ERROR_FAILURE; 
   }
-#endif
 
   rv = pipeline->Init();
   if (NS_FAILED(rv)) {
@@ -898,7 +890,6 @@ nsresult
 MediaPipelineFactory::ConfigureVideoCodecMode(const JsepTrack& aTrack,
                                               VideoSessionConduit& aConduit)
 {
-#if !defined(MOZILLA_EXTERNAL_LINKAGE)
   RefPtr<LocalSourceStreamInfo> stream =
     mPCMedia->GetLocalStreamByTrackId(aTrack.GetTrackId());
 
@@ -936,7 +927,6 @@ MediaPipelineFactory::ConfigureVideoCodecMode(const JsepTrack& aTrack,
     return NS_ERROR_FAILURE;
   }
 
-#endif
   return NS_OK;
 }
 

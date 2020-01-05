@@ -32,9 +32,7 @@ namespace mozilla {
 class MediaPipelineFilter;
 class PeerIdentity;
 class AudioProxyThread;
-#if !defined(MOZILLA_EXTERNAL_LINKAGE)
 class VideoFrameConverter;
-#endif
 
 namespace dom {
   class MediaStreamTrack;
@@ -319,14 +317,12 @@ public:
   
   bool IsVideo() const override;
 
-#if !defined(MOZILLA_EXTERNAL_LINKAGE)
   
   
   
   virtual void UpdateSinkIdentity_m(dom::MediaStreamTrack* track,
                                     nsIPrincipal* principal,
                                     const PeerIdentity* sinkIdentity);
-#endif
 
   
   void DetachMedia() override;
@@ -350,10 +346,8 @@ public:
  private:
   RefPtr<PipelineListener> listener_;
   RefPtr<AudioProxyThread> audio_processing_;
-#if !defined(MOZILLA_EXTERNAL_LINKAGE)
   RefPtr<VideoFrameFeeder> feeder_;
   RefPtr<VideoFrameConverter> converter_;
-#endif
   dom::MediaStreamTrack* domtrack_;
 };
 

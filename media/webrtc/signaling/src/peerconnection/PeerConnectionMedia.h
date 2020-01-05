@@ -20,13 +20,11 @@
 #include "signaling/src/jsep/JsepSession.h"
 #include "AudioSegment.h"
 
-#if !defined(MOZILLA_EXTERNAL_LINKAGE)
 #include "Layers.h"
 #include "VideoUtils.h"
 #include "ImageLayers.h"
 #include "VideoSegment.h"
 #include "MediaStreamTrack.h"
-#endif
 
 class nsIPrincipal;
 
@@ -143,11 +141,9 @@ public:
                             dom::MediaStreamTrack& aNewTrack,
                             const std::string& newTrackId);
 
-#if !defined(MOZILLA_EXTERNAL_LINKAGE)
   void UpdateSinkIdentity_m(dom::MediaStreamTrack* aTrack,
                             nsIPrincipal* aPrincipal,
                             const PeerIdentity* aSinkIdentity);
-#endif
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(LocalSourceStreamInfo)
 
@@ -156,7 +152,6 @@ private:
       const std::string& trackId);
 };
 
-#if !defined(MOZILLA_EXTERNAL_LINKAGE)
 class RemoteTrackSource : public dom::MediaStreamTrackSource
 {
 public:
@@ -188,7 +183,6 @@ public:
 protected:
   virtual ~RemoteTrackSource() {}
 };
-#endif
 
 class RemoteSourceStreamInfo : public SourceStreamInfo {
   ~RemoteSourceStreamInfo() {}
@@ -205,9 +199,7 @@ class RemoteSourceStreamInfo : public SourceStreamInfo {
   void RemoveTrack(const std::string& trackId) override;
   void SyncPipeline(RefPtr<MediaPipelineReceive> aPipeline);
 
-#if !defined(MOZILLA_EXTERNAL_LINKAGE)
   void UpdatePrincipal_m(nsIPrincipal* aPrincipal);
-#endif
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(RemoteSourceStreamInfo)
 
@@ -339,7 +331,6 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
                         const std::string& aNewStreamId,
                         const std::string& aNewTrackId);
 
-#if !defined(MOZILLA_EXTERNAL_LINKAGE)
   
   
   
@@ -352,7 +343,6 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
   
   
   void UpdateRemoteStreamPrincipals_m(nsIPrincipal* aPrincipal);
-#endif
 
   bool AnyCodecHasPluginID(uint64_t aPluginID);
 

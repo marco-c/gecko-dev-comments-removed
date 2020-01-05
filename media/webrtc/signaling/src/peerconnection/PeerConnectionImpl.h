@@ -34,7 +34,6 @@
 #include "PrincipalChangeObserver.h"
 #include "StreamTracks.h"
 
-#if !defined(MOZILLA_EXTERNAL_LINKAGE)
 #include "mozilla/TimeStamp.h"
 #include "mozilla/net/DataChannel.h"
 #include "VideoUtils.h"
@@ -42,7 +41,6 @@
 #include "mozilla/dom/RTCStatsReportBinding.h"
 #include "nsIPrincipal.h"
 #include "mozilla/PeerIdentity.h"
-#endif
 
 namespace test {
 #ifdef USE_FAKE_PCOBSERVER
@@ -116,9 +114,7 @@ using mozilla::DtlsIdentity;
 using mozilla::ErrorResult;
 using mozilla::NrIceStunServer;
 using mozilla::NrIceTurnServer;
-#if !defined(MOZILLA_EXTERNAL_LINKAGE)
 using mozilla::PeerIdentity;
-#endif
 
 class PeerConnectionWrapper;
 class PeerConnectionMedia;
@@ -176,10 +172,8 @@ public:
   void setIceTransportPolicy(NrIceCtx::Policy policy) { mIceTransportPolicy = policy;}
   NrIceCtx::Policy getIceTransportPolicy() const { return mIceTransportPolicy; }
 
-#ifndef MOZILLA_EXTERNAL_LINKAGE
   nsresult Init(const RTCConfiguration& aSrc);
   nsresult AddIceServer(const RTCIceServer& aServer);
-#endif
 
 private:
   std::vector<NrIceStunServer> mStunServers;
@@ -188,7 +182,6 @@ private:
   NrIceCtx::Policy mIceTransportPolicy;
 };
 
-#if !defined(MOZILLA_EXTERNAL_LINKAGE)
 
 class RTCStatsQuery {
   public:
@@ -211,7 +204,6 @@ class RTCStatsQuery {
     bool grabAllLevels;
     DOMHighResTimeStamp now;
 };
-#endif 
 
 
 
@@ -230,10 +222,8 @@ class RTCStatsQuery {
 #define PC_AUTO_ENTER_API_CALL_NO_CHECK() CheckThread()
 
 class PeerConnectionImpl final : public nsISupports,
-#if !defined(MOZILLA_EXTERNAL_LINKAGE)
                                  public mozilla::DataChannelConnection::DataConnectionListener,
                                  public dom::PrincipalChangeObserver<dom::MediaStreamTrack>,
-#endif
                                  public sigslot::has_slots<>
 {
   struct Internal; 
@@ -254,9 +244,7 @@ public:
 
   NS_DECL_THREADSAFE_ISUPPORTS
 
-#if !defined(MOZILLA_EXTERNAL_LINKAGE)
   bool WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto, JS::MutableHandle<JSObject*> aReflector);
-#endif
 
   static already_AddRefed<PeerConnectionImpl>
       Constructor(const mozilla::dom::GlobalObject& aGlobal, ErrorResult& rv);
@@ -268,11 +256,9 @@ public:
 
   
   void NotifyDataChannel(already_AddRefed<mozilla::DataChannel> aChannel)
-#if !defined(MOZILLA_EXTERNAL_LINKAGE)
     
     
     override
-#endif
     ;
 
   
@@ -336,19 +322,15 @@ public:
                       const PeerConnectionConfiguration& aConfiguration,
                       nsISupports* aThread);
 
-#ifndef MOZILLA_EXTERNAL_LINKAGE
   
   void Initialize(PeerConnectionObserver& aObserver,
                   nsGlobalWindow& aWindow,
                   const RTCConfiguration& aConfiguration,
                   nsISupports* aThread,
                   ErrorResult &rv);
-#endif
 
-#if !defined(MOZILLA_EXTERNAL_LINKAGE)
   void SetCertificate(mozilla::dom::RTCCertificate& aCertificate);
   const RefPtr<mozilla::dom::RTCCertificate>& Certificate() const;
-#endif
   
   RefPtr<DtlsIdentity> Identity() const;
 
@@ -446,7 +428,6 @@ public:
     rv = ReplaceTrack(aThisTrack, aWithTrack);
   }
 
-#if !defined(MOZILLA_EXTERNAL_LINKAGE)
   NS_IMETHODIMP_TO_ERRORRESULT(SetParameters, ErrorResult &rv,
                                dom::MediaStreamTrack& aTrack,
                                const dom::RTCRtpParameters& aParameters)
@@ -460,7 +441,6 @@ public:
   {
     rv = GetParameters(aTrack, aOutParameters);
   }
-#endif
 
   nsresult
   SetParameters(dom::MediaStreamTrack& aTrack,
@@ -479,18 +459,15 @@ public:
 
   nsresult GetPeerIdentity(nsAString& peerIdentity)
   {
-#if !defined(MOZILLA_EXTERNAL_LINKAGE)
     if (mPeerIdentity) {
       peerIdentity = mPeerIdentity->ToString();
       return NS_OK;
     }
-#endif
 
     peerIdentity.SetIsVoid(true);
     return NS_OK;
   }
 
-#if !defined(MOZILLA_EXTERNAL_LINKAGE)
   const PeerIdentity* GetPeerIdentity() const { return mPeerIdentity; }
   nsresult SetPeerIdentity(const nsAString& peerIdentity);
 
@@ -510,7 +487,6 @@ public:
     mName = NS_ConvertUTF16toUTF8(id).get();
     return NS_OK;
   }
-#endif
 
   
   bool PrivacyRequested() const { return mPrivacyRequested; }
@@ -635,7 +611,6 @@ public:
 
   bool HasMedia() const;
 
-#if !defined(MOZILLA_EXTERNAL_LINKAGE)
   
   void startCallTelem();
 
@@ -648,8 +623,6 @@ public:
   
   
   virtual void PrincipalChanged(dom::MediaStreamTrack* aTrack) override;
-
-#endif
 
   static std::string GetStreamId(const DOMMediaStream& aStream);
   static std::string GetTrackId(const dom::MediaStreamTrack& track);
@@ -672,22 +645,13 @@ private:
     MOZ_ASSERT(CheckThreadInt(), "Wrong thread");
   }
   bool CheckThreadInt() const {
-#if !defined(MOZILLA_EXTERNAL_LINKAGE)
-    
-    
-    
-    
-    
     bool on;
     NS_ENSURE_SUCCESS(mThread->IsOnCurrentThread(&on), false);
     NS_ENSURE_TRUE(on, false);
-#endif
     return true;
   }
 
-#if !defined(MOZILLA_EXTERNAL_LINKAGE)
   nsresult GetTimeSinceEpoch(DOMHighResTimeStamp *result);
-#endif
 
   
   void ShutdownMedia();
@@ -716,7 +680,6 @@ private:
   nsresult RollbackIceRestart();
   void FinalizeIceRestart();
 
-#if !defined(MOZILLA_EXTERNAL_LINKAGE)
   static void GetStatsForPCObserver_s(
       const std::string& pcHandle,
       nsAutoPtr<RTCStatsQuery> query);
@@ -726,7 +689,6 @@ private:
       const std::string& pcHandle,
       nsresult result,
       nsAutoPtr<RTCStatsQuery> query);
-#endif
 
   
   
@@ -769,15 +731,11 @@ private:
   std::string mRemoteFingerprint;
 
   
-#if !defined(MOZILLA_EXTERNAL_LINKAGE)
   
   
   RefPtr<PeerIdentity> mPeerIdentity;
   
   RefPtr<mozilla::dom::RTCCertificate> mCertificate;
-#else
-  RefPtr<DtlsIdentity> mIdentity;
-#endif
   
   
   
@@ -795,10 +753,8 @@ private:
   
   nsCOMPtr<nsIEventTarget> mSTSThread;
 
-#if !defined(MOZILLA_EXTERNAL_LINKAGE)
   
   RefPtr<mozilla::DataChannelConnection> mDataConnection;
-#endif
 
   bool mAllowIceLoopback;
   bool mAllowIceLinkLocal;
@@ -811,12 +767,10 @@ private:
   std::string mPreviousIceUfrag; 
   std::string mPreviousIcePwd; 
 
-#if !defined(MOZILLA_EXTERNAL_LINKAGE)
   
   mozilla::TimeStamp mIceStartTime;
   
   mozilla::TimeStamp mStartTime;
-#endif
 
   
   
