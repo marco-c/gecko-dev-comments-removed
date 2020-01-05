@@ -326,17 +326,14 @@ void
 nsTimerImpl::Neuter()
 {
   if (gThread) {
-    gThread->RemoveTimer(this);
+    gThread->RemoveTimer(this, true);
   }
 
   
   
   
+  
   ++mGeneration;
-
-  
-  
-  mEventTarget = nullptr;
 }
 
 NS_IMETHODIMP
