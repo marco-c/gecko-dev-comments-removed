@@ -86,6 +86,15 @@ protected:
   };
 };
 
+class VRControllerOculus : public VRControllerHost
+{
+public:
+  explicit VRControllerOculus();
+
+protected:
+  virtual ~VRControllerOculus();
+};
+
 } 
 
 class VRSystemManagerOculus : public VRSystemManager
@@ -103,7 +112,7 @@ public:
 
 protected:
   VRSystemManagerOculus()
-    : mOculusInitialized(false)
+    : mSession(nullptr), mOculusInitialized(false)
   { }
 
 private:
@@ -116,6 +125,7 @@ private:
                                   VRControllerHost* aController) override;
 
   RefPtr<impl::VRDisplayOculus> mHMDInfo;
+  nsTArray<RefPtr<impl::VRControllerOculus>> mOculusController;
   RefPtr<nsIThread> mOculusThread;
   ovrSession mSession;
   bool mOculusInitialized;
