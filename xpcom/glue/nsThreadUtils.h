@@ -1048,14 +1048,6 @@ public:
     return GetNextThreadName(nsDependentCString(aPoolName, LEN - 1));
   }
 
-  
-
-
-
-
-  void SetThreadPoolName(const nsACString& aPoolName,
-                         nsIThread* aThread = nullptr);
-
 private:
   mozilla::Atomic<uint32_t> mCounter;
 
