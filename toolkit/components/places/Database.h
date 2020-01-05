@@ -18,7 +18,7 @@
 
 
 
-#define DATABASE_SCHEMA_VERSION 36
+#define DATABASE_SCHEMA_VERSION 37
 
 
 #define TOPIC_PLACES_INIT_COMPLETE "places-init-complete"
@@ -222,6 +222,15 @@ protected:
 
 
 
+  nsresult InitFaviconsDatabaseFile(nsCOMPtr<mozIStorageService>& aStorage);
+
+  
+
+
+
+
+
+
   nsresult BackupAndReplaceDatabaseFile(nsCOMPtr<mozIStorageService>& aStorage);
 
   
@@ -272,6 +281,7 @@ protected:
   nsresult MigrateV34Up();
   nsresult MigrateV35Up();
   nsresult MigrateV36Up();
+  nsresult MigrateV37Up();
 
   nsresult UpdateBookmarkRootTitles();
 

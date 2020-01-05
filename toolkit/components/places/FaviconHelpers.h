@@ -13,6 +13,8 @@
 #include "mozIPlacesPendingOperation.h"
 #include "nsThreadUtils.h"
 #include "nsProxyRelease.h"
+#include "imgITools.h"
+#include "imgIContainer.h"
 
 class nsIPrincipal;
 
@@ -30,6 +32,9 @@ class nsIPrincipal;
 #define TO_INTBUFFER(_string) \
   reinterpret_cast<uint8_t*>(const_cast<char*>(_string.get()))
 
+#define PNG_MIME_TYPE "image/png"
+#define SVG_MIME_TYPE "image/svg+xml"
+
 
 
 
@@ -37,6 +42,9 @@ class nsIPrincipal;
 
 
 #define MAX_FAVICON_EXPIRATION ((PRTime)7 * 24 * 60 * 60 * PR_USEC_PER_SEC)
+
+
+#define PREF_CONVERT_PAYLOADS "places.favicons.convertPayloads"
 
 namespace mozilla {
 namespace places {
@@ -267,6 +275,31 @@ private:
   PageData mPage;
 
   void SendGlobalNotifications(nsIURI* aIconURI);
+};
+
+
+
+
+
+class FetchAndConvertUnsupportedPayloads final : public Runnable
+{
+public:
+  NS_DECL_NSIRUNNABLE
+
+  
+
+
+
+
+
+  explicit FetchAndConvertUnsupportedPayloads(mozIStorageConnection* aDBConn);
+
+private:
+  nsresult ConvertPayload(int64_t aId, const nsACString& aMimeType,
+                          nsCString& aPayload, int32_t* aWidth);
+  nsresult StorePayload(int64_t aId, int32_t aWidth, const nsCString& aPayload);
+
+  nsCOMPtr<mozIStorageConnection> mDB;
 };
 
 } 

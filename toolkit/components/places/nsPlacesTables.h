@@ -17,7 +17,6 @@
     ", visit_count INTEGER DEFAULT 0" \
     ", hidden INTEGER DEFAULT 0 NOT NULL" \
     ", typed INTEGER DEFAULT 0 NOT NULL" \
-    ", favicon_id INTEGER" \
     ", frecency INTEGER DEFAULT -1 NOT NULL" \
     ", last_visit_date INTEGER " \
     ", guid TEXT" \
@@ -52,7 +51,6 @@
     "  id INTEGER PRIMARY KEY" \
     ", place_id INTEGER NOT NULL" \
     ", anno_attribute_id INTEGER" \
-    ", mime_type VARCHAR(32) DEFAULT NULL" \
     ", content LONGVARCHAR" \
     ", flags INTEGER DEFAULT 0" \
     ", expiration INTEGER DEFAULT 0" \
@@ -74,23 +72,12 @@
     "  id INTEGER PRIMARY KEY" \
     ", item_id INTEGER NOT NULL" \
     ", anno_attribute_id INTEGER" \
-    ", mime_type VARCHAR(32) DEFAULT NULL" \
     ", content LONGVARCHAR" \
     ", flags INTEGER DEFAULT 0" \
     ", expiration INTEGER DEFAULT 0" \
     ", type INTEGER DEFAULT 0" \
     ", dateAdded INTEGER DEFAULT 0" \
     ", lastModified INTEGER DEFAULT 0" \
-  ")" \
-)
-
-#define CREATE_MOZ_FAVICONS NS_LITERAL_CSTRING( \
-  "CREATE TABLE moz_favicons (" \
-    "  id INTEGER PRIMARY KEY" \
-    ", url LONGVARCHAR UNIQUE" \
-    ", data BLOB" \
-    ", mime_type VARCHAR(32)" \
-    ", expiration LONG" \
   ")" \
 )
 
@@ -176,6 +163,50 @@
 #define CREATE_UPDATEHOSTS_TEMP NS_LITERAL_CSTRING( \
   "CREATE TEMP TABLE moz_updatehosts_temp (" \
     "  host TEXT PRIMARY KEY " \
+  ") WITHOUT ROWID " \
+)
+
+
+
+
+
+
+
+#define CREATE_MOZ_PAGES_W_ICONS NS_LITERAL_CSTRING( \
+  "CREATE TABLE moz_pages_w_icons ( " \
+    "id INTEGER PRIMARY KEY, " \
+    "page_url TEXT NOT NULL, " \
+    "page_url_hash INTEGER NOT NULL " \
+  ") " \
+)
+
+
+
+
+
+
+#define CREATE_MOZ_ICONS NS_LITERAL_CSTRING( \
+  "CREATE TABLE moz_icons ( " \
+    "id INTEGER PRIMARY KEY, " \
+    "icon_url TEXT NOT NULL, " \
+    "fixed_icon_url_hash INTEGER NOT NULL, " \
+    "width INTEGER NOT NULL DEFAULT 0, " \
+    "color INTEGER, " \
+    "expire_ms INTEGER NOT NULL DEFAULT 0, " \
+    "data BLOB " \
+  ") " \
+)
+
+
+
+
+#define CREATE_MOZ_ICONS_TO_PAGES NS_LITERAL_CSTRING( \
+  "CREATE TABLE moz_icons_to_pages ( " \
+    "page_id INTEGER NOT NULL, " \
+    "icon_id INTEGER NOT NULL, " \
+    "PRIMARY KEY (page_id, icon_id), " \
+    "FOREIGN KEY (page_id) REFERENCES moz_pages_w_icons ON DELETE CASCADE, " \
+    "FOREIGN KEY (icon_id) REFERENCES moz_icons ON DELETE CASCADE " \
   ") WITHOUT ROWID " \
 )
 

@@ -121,4 +121,18 @@
     "placepostdata_uniqueindex", "moz_keywords", "place_id, post_data", "UNIQUE" \
   )
 
+
+
+#define CREATE_IDX_MOZ_PAGES_W_ICONS_ICONURLHASH \
+  CREATE_PLACES_IDX( \
+    "urlhashindex", "moz_pages_w_icons", "page_url_hash", "" \
+  )
+
+
+
+#define CREATE_IDX_MOZ_ICONS_ICONURLHASH \
+  CREATE_PLACES_IDX( \
+    "iconurlhashindex", "moz_icons", "fixed_icon_url_hash", "" \
+  )
+
 #endif 
