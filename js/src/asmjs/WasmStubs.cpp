@@ -434,7 +434,8 @@ FillArgumentArray(MacroAssembler& masm, const ValTypeVector& args, unsigned argO
 
 
 ProfilingOffsets
-wasm::GenerateInterpExit(MacroAssembler& masm, const FuncImport& fi, uint32_t funcImportIndex)
+wasm::GenerateInterpExit(MacroAssembler& masm, const FuncImport& fi, uint32_t funcImportIndex,
+                         Label* throwLabel)
 {
     const Sig& sig = fi.sig();
 
@@ -508,27 +509,27 @@ wasm::GenerateInterpExit(MacroAssembler& masm, const FuncImport& fi, uint32_t fu
     switch (sig.ret()) {
       case ExprType::Void:
         masm.call(SymbolicAddress::CallImport_Void);
-        masm.branchTest32(Assembler::Zero, ReturnReg, ReturnReg, JumpTarget::Throw);
+        masm.branchTest32(Assembler::Zero, ReturnReg, ReturnReg, throwLabel);
         break;
       case ExprType::I32:
         masm.call(SymbolicAddress::CallImport_I32);
-        masm.branchTest32(Assembler::Zero, ReturnReg, ReturnReg, JumpTarget::Throw);
+        masm.branchTest32(Assembler::Zero, ReturnReg, ReturnReg, throwLabel);
         masm.load32(argv, ReturnReg);
         break;
       case ExprType::I64:
         masm.call(SymbolicAddress::CallImport_I64);
-        masm.branchTest32(Assembler::Zero, ReturnReg, ReturnReg, JumpTarget::Throw);
+        masm.branchTest32(Assembler::Zero, ReturnReg, ReturnReg, throwLabel);
         masm.load64(argv, ReturnReg64);
         break;
       case ExprType::F32:
         masm.call(SymbolicAddress::CallImport_F64);
-        masm.branchTest32(Assembler::Zero, ReturnReg, ReturnReg, JumpTarget::Throw);
+        masm.branchTest32(Assembler::Zero, ReturnReg, ReturnReg, throwLabel);
         masm.loadDouble(argv, ReturnDoubleReg);
         masm.convertDoubleToFloat32(ReturnDoubleReg, ReturnFloat32Reg);
         break;
       case ExprType::F64:
         masm.call(SymbolicAddress::CallImport_F64);
-        masm.branchTest32(Assembler::Zero, ReturnReg, ReturnReg, JumpTarget::Throw);
+        masm.branchTest32(Assembler::Zero, ReturnReg, ReturnReg, throwLabel);
         masm.loadDouble(argv, ReturnDoubleReg);
         break;
       case ExprType::I8x16:
@@ -568,7 +569,7 @@ static const unsigned SavedTlsReg = sizeof(void*);
 
 
 ProfilingOffsets
-wasm::GenerateJitExit(MacroAssembler& masm, const FuncImport& fi)
+wasm::GenerateJitExit(MacroAssembler& masm, const FuncImport& fi, Label* throwLabel)
 {
     const Sig& sig = fi.sig();
 
@@ -700,7 +701,7 @@ wasm::GenerateJitExit(MacroAssembler& masm, const FuncImport& fi)
     unsigned nativeFramePushed = masm.framePushed();
     AssertStackAlignment(masm, ABIStackAlignment);
 
-    masm.branchTestMagic(Assembler::Equal, JSReturnOperand, JumpTarget::Throw);
+    masm.branchTestMagic(Assembler::Equal, JSReturnOperand, throwLabel);
 
     Label oolConvert;
     switch (sig.ret()) {
@@ -776,17 +777,17 @@ wasm::GenerateJitExit(MacroAssembler& masm, const FuncImport& fi)
         switch (sig.ret()) {
           case ExprType::I32:
             masm.call(SymbolicAddress::CoerceInPlace_ToInt32);
-            masm.branchTest32(Assembler::Zero, ReturnReg, ReturnReg, JumpTarget::Throw);
+            masm.branchTest32(Assembler::Zero, ReturnReg, ReturnReg, throwLabel);
             masm.unboxInt32(Address(masm.getStackPointer(), offsetToCoerceArgv), ReturnReg);
             break;
           case ExprType::F64:
             masm.call(SymbolicAddress::CoerceInPlace_ToNumber);
-            masm.branchTest32(Assembler::Zero, ReturnReg, ReturnReg, JumpTarget::Throw);
+            masm.branchTest32(Assembler::Zero, ReturnReg, ReturnReg, throwLabel);
             masm.loadDouble(Address(masm.getStackPointer(), offsetToCoerceArgv), ReturnDoubleReg);
             break;
           case ExprType::F32:
             masm.call(SymbolicAddress::CoerceInPlace_ToNumber);
-            masm.branchTest32(Assembler::Zero, ReturnReg, ReturnReg, JumpTarget::Throw);
+            masm.branchTest32(Assembler::Zero, ReturnReg, ReturnReg, throwLabel);
             masm.loadDouble(Address(masm.getStackPointer(), offsetToCoerceArgv), ReturnDoubleReg);
             masm.convertDoubleToFloat32(ReturnDoubleReg, ReturnFloat32Reg);
             break;
@@ -808,7 +809,7 @@ wasm::GenerateJitExit(MacroAssembler& masm, const FuncImport& fi)
 
 
 static Offsets
-GenerateStackOverflow(MacroAssembler& masm)
+GenerateStackOverflow(MacroAssembler& masm, Label* throwLabel)
 {
     masm.haltingAlign(CodeAlignment);
 
@@ -832,7 +833,7 @@ GenerateStackOverflow(MacroAssembler& masm)
     
     masm.assertStackAlignment(ABIStackAlignment);
     masm.call(SymbolicAddress::ReportOverRecursed);
-    masm.jump(JumpTarget::Throw);
+    masm.jump(throwLabel);
 
     offsets.end = masm.currentOffset();
     return offsets;
@@ -840,7 +841,7 @@ GenerateStackOverflow(MacroAssembler& masm)
 
 
 static Offsets
-GenerateTrapStub(MacroAssembler& masm, Trap reason)
+GenerateTrapStub(MacroAssembler& masm, Trap reason, Label* throwLabel)
 {
     masm.haltingAlign(CodeAlignment);
 
@@ -869,53 +870,18 @@ GenerateTrapStub(MacroAssembler& masm, Trap reason)
     MOZ_ASSERT(i.done());
 
     masm.call(SymbolicAddress::HandleTrap);
-    masm.jump(JumpTarget::Throw);
-
-    offsets.end = masm.currentOffset();
-    return offsets;
-}
-
-
-
-
-
-
-static Offsets
-GenerateThrow(MacroAssembler& masm)
-{
-    masm.haltingAlign(CodeAlignment);
-
-    Offsets offsets;
-    offsets.begin = masm.currentOffset();
-
-    
-    
-    
-    Register scratch = ABINonArgReturnReg0;
-    masm.loadWasmActivationFromSymbolicAddress(scratch);
-    masm.storePtr(ImmWord(0), Address(scratch, WasmActivation::offsetOfFP()));
-
-    masm.setFramePushed(FramePushedForEntrySP);
-    masm.loadStackPtr(Address(scratch, WasmActivation::offsetOfEntrySP()));
-    masm.Pop(scratch);
-    masm.PopRegsInMask(NonVolatileRegs);
-    MOZ_ASSERT(masm.framePushed() == 0);
-
-    masm.mov(ImmWord(0), ReturnReg);
-    masm.ret();
+    masm.jump(throwLabel);
 
     offsets.end = masm.currentOffset();
     return offsets;
 }
 
 Offsets
-wasm::GenerateJumpTarget(MacroAssembler& masm, JumpTarget target)
+wasm::GenerateJumpTarget(MacroAssembler& masm, JumpTarget target, Label* throwLabel)
 {
     switch (target) {
       case JumpTarget::StackOverflow:
-        return GenerateStackOverflow(masm);
-      case JumpTarget::Throw:
-        return GenerateThrow(masm);
+        return GenerateStackOverflow(masm, throwLabel);
       case JumpTarget::IndirectCallToNull:
       case JumpTarget::IndirectCallBadSig:
       case JumpTarget::OutOfBounds:
@@ -925,7 +891,7 @@ wasm::GenerateJumpTarget(MacroAssembler& masm, JumpTarget target)
       case JumpTarget::InvalidConversionToInteger:
       case JumpTarget::IntegerDivideByZero:
       case JumpTarget::ImpreciseSimdConversion:
-        return GenerateTrapStub(masm, Trap(target));
+        return GenerateTrapStub(masm, Trap(target), throwLabel);
       case JumpTarget::Limit:
         break;
     }
@@ -945,7 +911,7 @@ static const LiveRegisterSet AllRegsExceptSP(
 
 
 Offsets
-wasm::GenerateInterruptStub(MacroAssembler& masm)
+wasm::GenerateInterruptStub(MacroAssembler& masm, Label* throwLabel)
 {
     masm.haltingAlign(CodeAlignment);
 
@@ -978,7 +944,7 @@ wasm::GenerateInterruptStub(MacroAssembler& masm)
     masm.assertStackAlignment(ABIStackAlignment);
     masm.call(SymbolicAddress::HandleExecutionInterrupt);
 
-    masm.branchIfFalseBool(ReturnReg, JumpTarget::Throw);
+    masm.branchIfFalseBool(ReturnReg, throwLabel);
 
     
     masm.moveToStackPtr(ABINonVolatileReg);
@@ -1020,7 +986,7 @@ wasm::GenerateInterruptStub(MacroAssembler& masm)
     masm.addToStackPtr(Imm32(4 * sizeof(intptr_t)));
 # endif
 
-    masm.branchIfFalseBool(ReturnReg, JumpTarget::Throw);
+    masm.branchIfFalseBool(ReturnReg, throwLabel);
 
     
     masm.moveToStackPtr(s0);
@@ -1062,7 +1028,7 @@ wasm::GenerateInterruptStub(MacroAssembler& masm)
     masm.assertStackAlignment(ABIStackAlignment);
     masm.call(SymbolicAddress::HandleExecutionInterrupt);
 
-    masm.branchIfFalseBool(ReturnReg, JumpTarget::Throw);
+    masm.branchIfFalseBool(ReturnReg, throwLabel);
 
     
 
@@ -1097,6 +1063,41 @@ wasm::GenerateInterruptStub(MacroAssembler& masm)
 #else
 # error "Unknown architecture!"
 #endif
+
+    offsets.end = masm.currentOffset();
+    return offsets;
+}
+
+
+
+
+
+
+Offsets
+wasm::GenerateThrowStub(MacroAssembler& masm, Label* throwLabel)
+{
+    masm.haltingAlign(CodeAlignment);
+
+    masm.bind(throwLabel);
+
+    Offsets offsets;
+    offsets.begin = masm.currentOffset();
+
+    
+    
+    
+    Register scratch = ABINonArgReturnReg0;
+    masm.loadWasmActivationFromSymbolicAddress(scratch);
+    masm.storePtr(ImmWord(0), Address(scratch, WasmActivation::offsetOfFP()));
+
+    masm.setFramePushed(FramePushedForEntrySP);
+    masm.loadStackPtr(Address(scratch, WasmActivation::offsetOfEntrySP()));
+    masm.Pop(scratch);
+    masm.PopRegsInMask(NonVolatileRegs);
+    MOZ_ASSERT(masm.framePushed() == 0);
+
+    masm.mov(ImmWord(0), ReturnReg);
+    masm.ret();
 
     offsets.end = masm.currentOffset();
     return offsets;

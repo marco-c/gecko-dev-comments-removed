@@ -24,9 +24,6 @@
 #include "gc/Barrier.h"
 
 namespace js {
-
-class WasmActivation;
-
 namespace wasm {
 
 
@@ -38,12 +35,12 @@ namespace wasm {
 
 class Instance
 {
-    JSCompartment* const                 compartment_;
-    ReadBarrieredWasmInstanceObject      object_;
-    const UniqueCode                     code_;
-    GCPtrWasmMemoryObject                memory_;
-    SharedTableVector                    tables_;
-    TlsData                              tlsData_;
+    JSCompartment* const            compartment_;
+    ReadBarrieredWasmInstanceObject object_;
+    const UniqueCode                code_;
+    GCPtrWasmMemoryObject           memory_;
+    SharedTableVector               tables_;
+    TlsData                         tlsData_;
 
     
     const void** addressOfSigId(const SigIdDesc& sigId) const;

@@ -895,7 +895,6 @@ enum class JumpTarget
     ImpreciseSimdConversion = unsigned(Trap::ImpreciseSimdConversion),
     
     StackOverflow,
-    Throw,
     Limit
 };
 
