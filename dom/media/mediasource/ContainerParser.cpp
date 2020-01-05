@@ -352,7 +352,7 @@ public:
     if (!parser.IsValid()) {
       return MediaResult(
         NS_ERROR_FAILURE,
-        RESULT_DETAIL("Invalid Box:%s", parser.LastInvalidBox()));
+        RESULT_DETAIL("Invalid Top-Level Box:%s", parser.LastInvalidBox()));
     }
     return parser.StartWithInitSegment() ? NS_OK : NS_ERROR_NOT_AVAILABLE;
   }
@@ -385,6 +385,8 @@ private:
         "styp", "moof", "mdat", 
         "mfra", "skip", "meta", "meco", "ssix", "prft" 
         "pssh", 
+        "emsg", 
+        "bloc", "uuid" 
       };
 
       while (reader.Remaining() >= 8) {
