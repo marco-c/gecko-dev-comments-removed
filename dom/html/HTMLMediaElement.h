@@ -776,6 +776,10 @@ public:
 
   nsIDocument* GetDocument() const override;
 
+  void ConstructMediaTracks(const MediaInfo* aInfo) override;
+
+  void RemoveMediaTracks() override;
+
 protected:
   virtual ~HTMLMediaElement();
 
@@ -1734,6 +1738,10 @@ private:
   
   
   bool mHasSuspendTaint;
+
+  
+  
+  bool mMediaTracksConstructed;
 
   Visibility mVisibilityState;
 

@@ -12,6 +12,7 @@ namespace mozilla {
 
 class AbstractThread;
 class VideoFrameContainer;
+class MediaInfo;
 class MediaResult;
 
 namespace dom {
@@ -160,6 +161,14 @@ public:
 
   
   virtual nsIDocument* GetDocument() const = 0;
+
+  
+  
+  virtual void ConstructMediaTracks(const MediaInfo* aInfo) = 0;
+
+  
+  
+  virtual void RemoveMediaTracks() = 0;
 };
 
 } 
