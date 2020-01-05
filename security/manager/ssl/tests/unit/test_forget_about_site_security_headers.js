@@ -88,13 +88,25 @@ add_task(function* () {
                              "a.pinning2.example.com", 0),
             "a.pinning2.example.com should be HPKP (subdomain case)");
 
+  
+  
+  let unrelatedURI = Services.io.newURI("https://example.org");
+  sss.processHeader(Ci.nsISiteSecurityService.HEADER_HSTS, unrelatedURI,
+                    GOOD_MAX_AGE, sslStatus, 0);
+  Assert.ok(sss.isSecureHost(Ci.nsISiteSecurityService.HEADER_HSTS,
+                             "example.org", 0),
+            "example.org should be HSTS");
+
   yield ForgetAboutSite.removeDataFromDomain("example.com");
 
-  
-  
-  
-  
-  
-  
-  
+  Assert.ok(!sss.isSecureHost(Ci.nsISiteSecurityService.HEADER_HSTS,
+                              "a.pinning2.example.com", 0),
+            "a.pinning2.example.com should not be HSTS now (subdomain case)");
+  Assert.ok(!sss.isSecureHost(Ci.nsISiteSecurityService.HEADER_HPKP,
+                              "a.pinning2.example.com", 0),
+            "a.pinning2.example.com should not be HPKP now (subdomain case)");
+
+  Assert.ok(sss.isSecureHost(Ci.nsISiteSecurityService.HEADER_HSTS,
+                             "example.org", 0),
+            "example.org should still be HSTS");
 });

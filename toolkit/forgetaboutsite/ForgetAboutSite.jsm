@@ -197,14 +197,27 @@ this.ForgetAboutSite = {
     }));
 
     
-    
-    
-    
     try {
       let sss = Cc["@mozilla.org/ssservice;1"].
                 getService(Ci.nsISiteSecurityService);
-      sss.removeState(Ci.nsISiteSecurityService.HEADER_HSTS, httpsURI, 0);
-      sss.removeState(Ci.nsISiteSecurityService.HEADER_HPKP, httpsURI, 0);
+      for (let type of [Ci.nsISiteSecurityService.HEADER_HSTS,
+                        Ci.nsISiteSecurityService.HEADER_HPKP]) {
+        sss.removeState(type, httpsURI, 0);
+
+        
+        
+        let enumerator = sss.enumerate(type);
+        while (enumerator.hasMoreElements()) {
+          let entry = enumerator.getNext();
+          let hostname = entry.QueryInterface(Ci.nsISiteSecurityState).hostname;
+          
+          if (hostname.endsWith("." + aDomain)) {
+            
+            let uri = caUtils.makeURI("https://" + hostname);
+            sss.removeState(type, uri, 0);
+          }
+        }
+      }
     } catch (e) {
       Cu.reportError("Exception thrown while clearing HSTS/HPKP: " +
                      e.toString());
