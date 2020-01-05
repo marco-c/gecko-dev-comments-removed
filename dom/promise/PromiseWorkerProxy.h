@@ -147,8 +147,6 @@ public:
   
   Promise* WorkerPromise() const;
 
-  void StoreISupports(nsISupports* aSupports);
-
   
   
   
@@ -216,10 +214,6 @@ private:
   bool mCleanedUp; 
 
   const PromiseWorkerProxyStructuredCloneCallbacks* mCallbacks;
-
-  
-  
-  nsTArray<nsMainThreadPtrHandle<nsISupports>> mSupportsArray;
 
   
   Mutex mCleanUpLock;
