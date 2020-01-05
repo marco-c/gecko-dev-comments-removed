@@ -307,8 +307,16 @@ WebRenderBridgeParent::HandleDPEnd(const gfx::IntSize& aSize,
                            dl, dlDesc, aux, auxDesc);
   HoldPendingTransactionId(mWrEpoch, aTransactionId);
 
+  mScrollData = aScrollData;
   
   
+}
+
+const WebRenderScrollData&
+WebRenderBridgeParent::GetScrollData() const
+{
+  MOZ_ASSERT(mozilla::layers::CompositorThreadHolder::IsInCompositorThread());
+  return mScrollData;
 }
 
 mozilla::ipc::IPCResult
