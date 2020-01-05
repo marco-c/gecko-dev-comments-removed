@@ -77,10 +77,8 @@ impl HTMLFormControlsCollectionMethods for HTMLFormControlsCollection {
     }
 
     
-    fn NamedGetter(&self, name: DOMString, found: &mut bool) -> Option<RadioNodeListOrElement> {
-        let maybe_elem = self.NamedItem(name);
-        *found = maybe_elem.is_some();
-        maybe_elem
+    fn NamedGetter(&self, name: DOMString) -> Option<RadioNodeListOrElement> {
+        self.NamedItem(name)
     }
 
     
@@ -93,7 +91,7 @@ impl HTMLFormControlsCollectionMethods for HTMLFormControlsCollection {
     
     
     
-    fn IndexedGetter(&self, index: u32, found: &mut bool) -> Option<Root<Element>> {
-        self.collection.IndexedGetter(index, found)
+    fn IndexedGetter(&self, index: u32) -> Option<Root<Element>> {
+        self.collection.IndexedGetter(index)
     }
 }

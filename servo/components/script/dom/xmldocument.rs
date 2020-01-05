@@ -2,6 +2,7 @@
 
 
 
+use core::nonzero::NonZero;
 use document_loader::DocumentLoader;
 use dom::bindings::codegen::Bindings::DocumentBinding::DocumentMethods;
 use dom::bindings::codegen::Bindings::XMLDocumentBinding::{self, XMLDocumentMethods};
@@ -87,7 +88,7 @@ impl XMLDocumentMethods for XMLDocument {
     }
 
     
-    fn NamedGetter(&self, _cx: *mut JSContext, name: DOMString, found: &mut bool) -> *mut JSObject {
-        self.upcast::<Document>().NamedGetter(_cx, name, found)
+    fn NamedGetter(&self, _cx: *mut JSContext, name: DOMString) -> Option<NonZero<*mut JSObject>> {
+        self.upcast::<Document>().NamedGetter(_cx, name)
     }
 }

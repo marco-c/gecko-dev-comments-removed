@@ -85,17 +85,13 @@ impl NamedNodeMapMethods for NamedNodeMap {
     }
 
     
-    fn IndexedGetter(&self, index: u32, found: &mut bool) -> Option<Root<Attr>> {
-        let item = self.Item(index);
-        *found = item.is_some();
-        item
+    fn IndexedGetter(&self, index: u32) -> Option<Root<Attr>> {
+        self.Item(index)
     }
 
     
-    fn NamedGetter(&self, name: DOMString, found: &mut bool) -> Option<Root<Attr>> {
-        let item = self.GetNamedItem(name);
-        *found = item.is_some();
-        item
+    fn NamedGetter(&self, name: DOMString) -> Option<Root<Attr>> {
+        self.GetNamedItem(name)
     }
 
     

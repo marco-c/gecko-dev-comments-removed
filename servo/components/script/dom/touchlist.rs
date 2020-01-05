@@ -42,9 +42,7 @@ impl TouchListMethods for TouchList {
     }
 
     
-    fn IndexedGetter(&self, index: u32, found: &mut bool) -> Option<Root<Touch>> {
-        let item = self.Item(index);
-        *found = item.is_some();
-        item
+    fn IndexedGetter(&self, index: u32) -> Option<Root<Touch>> {
+        self.Item(index)
     }
 }

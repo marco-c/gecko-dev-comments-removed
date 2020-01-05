@@ -50,12 +50,12 @@ impl PluginArrayMethods for PluginArray {
     }
 
     
-    fn IndexedGetter(&self, _index: u32, _found: &mut bool) -> Option<Root<Plugin>> {
+    fn IndexedGetter(&self, _index: u32) -> Option<Root<Plugin>> {
         None
     }
 
     
-    fn NamedGetter(&self, _name: DOMString, _found: &mut bool) -> Option<Root<Plugin>> {
+    fn NamedGetter(&self, _name: DOMString) -> Option<Root<Plugin>> {
         None
     }
 

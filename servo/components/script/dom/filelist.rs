@@ -55,9 +55,7 @@ impl FileListMethods for FileList {
     }
 
     
-    fn IndexedGetter(&self, index: u32, found: &mut bool) -> Option<Root<File>> {
-        let item = self.Item(index);
-        *found = item.is_some();
-        item
+    fn IndexedGetter(&self, index: u32) -> Option<Root<File>> {
+        self.Item(index)
     }
 }
