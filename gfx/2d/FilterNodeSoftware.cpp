@@ -30,19 +30,26 @@ namespace {
 
 
 
+
 class PowCache
 {
 public:
   PowCache()
+    : mNumPowTablePreSquares(-1)
   {
-    CacheForExponent(0.0f);
   }
 
   void CacheForExponent(Float aExponent)
   {
-    mExponent = aExponent;
+    
+    
+    
+    if (aExponent <= 0) {
+      mNumPowTablePreSquares = -1;
+      return;
+    }
     int numPreSquares = 0;
-    while (numPreSquares < 5 && mExponent > (1 << (numPreSquares + 2))) {
+    while (numPreSquares < 5 && aExponent > (1 << (numPreSquares + 2))) {
       numPreSquares++;
     }
     mNumPowTablePreSquares = numPreSquares;
@@ -55,15 +62,18 @@ public:
       for (int j = 0; j < mNumPowTablePreSquares; j++) {
         a = sqrt(a);
       }
-      uint32_t cachedInt = pow(a, mExponent) * (1 << sOutputIntPrecisionBits);
+      uint32_t cachedInt = pow(a, aExponent) * (1 << sOutputIntPrecisionBits);
       MOZ_ASSERT(cachedInt < (1 << (sizeof(mPowTable[i]) * 8)), "mPowCache integer type too small");
 
       mPowTable[i] = cachedInt;
     }
   }
 
+  
+  
   uint16_t Pow(uint16_t aBase)
   {
+    MOZ_ASSERT(HasPowerTable());
     
     
     
@@ -83,10 +93,14 @@ public:
   static const int sOutputIntPrecisionBits = 15;
   static const int sCacheIndexPrecisionBits = 7;
 
+  inline bool HasPowerTable() const
+  {
+    return mNumPowTablePreSquares >= 0;
+  }
+
 private:
   static const size_t sCacheSize = (1 << sCacheIndexPrecisionBits) + 1;
 
-  Float mExponent;
   int mNumPowTablePreSquares;
   uint16_t mPowTable[sCacheSize];
 };
@@ -3387,14 +3401,23 @@ SpotLightSoftware::GetColor(uint32_t aLightColor, const Point3D &aVectorToLight)
     uint32_t color;
     uint8_t colorC[4];
   };
-  color = aLightColor;
+
   Float dot = -aVectorToLight.DotProduct(mVectorFromFocusPointToLight);
-  uint16_t doti = dot * (dot >= 0) * (1 << PowCache::sInputIntPrecisionBits);
-  uint32_t tmp = mPowCache.Pow(doti) * (dot >= mLimitingConeCos);
-  MOZ_ASSERT(tmp <= (1 << PowCache::sOutputIntPrecisionBits), "pow() result must not exceed 1.0");
-  colorC[B8G8R8A8_COMPONENT_BYTEOFFSET_R] = uint8_t((colorC[B8G8R8A8_COMPONENT_BYTEOFFSET_R] * tmp) >> PowCache::sOutputIntPrecisionBits);
-  colorC[B8G8R8A8_COMPONENT_BYTEOFFSET_G] = uint8_t((colorC[B8G8R8A8_COMPONENT_BYTEOFFSET_G] * tmp) >> PowCache::sOutputIntPrecisionBits);
-  colorC[B8G8R8A8_COMPONENT_BYTEOFFSET_B] = uint8_t((colorC[B8G8R8A8_COMPONENT_BYTEOFFSET_B] * tmp) >> PowCache::sOutputIntPrecisionBits);
+  if (!mPowCache.HasPowerTable()) {
+    dot *= (dot >= mLimitingConeCos);
+    color = aLightColor;
+    colorC[B8G8R8A8_COMPONENT_BYTEOFFSET_R] *= dot;
+    colorC[B8G8R8A8_COMPONENT_BYTEOFFSET_G] *= dot;
+    colorC[B8G8R8A8_COMPONENT_BYTEOFFSET_B] *= dot;
+  } else {
+    color = aLightColor;
+    uint16_t doti = dot * (dot >= 0) * (1 << PowCache::sInputIntPrecisionBits);
+    uint32_t tmp = mPowCache.Pow(doti) * (dot >= mLimitingConeCos);
+    MOZ_ASSERT(tmp <= (1 << PowCache::sOutputIntPrecisionBits), "pow() result must not exceed 1.0");
+    colorC[B8G8R8A8_COMPONENT_BYTEOFFSET_R] = uint8_t((colorC[B8G8R8A8_COMPONENT_BYTEOFFSET_R] * tmp) >> PowCache::sOutputIntPrecisionBits);
+    colorC[B8G8R8A8_COMPONENT_BYTEOFFSET_G] = uint8_t((colorC[B8G8R8A8_COMPONENT_BYTEOFFSET_G] * tmp) >> PowCache::sOutputIntPrecisionBits);
+    colorC[B8G8R8A8_COMPONENT_BYTEOFFSET_B] = uint8_t((colorC[B8G8R8A8_COMPONENT_BYTEOFFSET_B] * tmp) >> PowCache::sOutputIntPrecisionBits);
+  }
   colorC[B8G8R8A8_COMPONENT_BYTEOFFSET_A] = 255;
   return color;
 }
@@ -3636,6 +3659,9 @@ SpecularLightingSoftware::LightPixel(const Point3D &aNormal,
   Point3D halfwayVector = Normalized(aVectorToLight + vectorToEye);
   Float dotNH = aNormal.DotProduct(halfwayVector);
   uint16_t dotNHi = uint16_t(dotNH * (dotNH >= 0) * (1 << PowCache::sInputIntPrecisionBits));
+  
+  
+  MOZ_ASSERT(mPowCache.HasPowerTable());
   uint32_t specularNHi = uint32_t(mSpecularConstantInt) * mPowCache.Pow(dotNHi) >> 8;
 
   union {
