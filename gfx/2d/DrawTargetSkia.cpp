@@ -1041,13 +1041,15 @@ GfxMatrixToCGAffineTransform(const Matrix &m)
 static bool
 SetupCGContext(DrawTargetSkia* aDT,
                CGContextRef aCGContext,
-               sk_sp<SkCanvas> aCanvas)
+               sk_sp<SkCanvas> aCanvas,
+               const IntPoint& aOrigin,
+               const IntSize& aSize)
 {
   
   
   
   
-  CGContextTranslateCTM(aCGContext, 0, aDT->GetSize().height);
+  CGContextTranslateCTM(aCGContext, -aOrigin.x, aOrigin.y + aSize.height);
 
   
   CGContextScaleCTM(aCGContext, 1, -1);
@@ -1102,9 +1104,10 @@ DrawTargetSkia::BorrowCGContext(const DrawOptions &aOptions)
   int32_t stride;
   SurfaceFormat format;
   IntSize size;
+  IntPoint origin;
 
   uint8_t* aSurfaceData = nullptr;
-  if (!LockBits(&aSurfaceData, &size, &stride, &format)) {
+  if (!LockBits(&aSurfaceData, &size, &stride, &format, &origin)) {
     NS_WARNING("Could not lock skia bits to wrap CG around");
     return nullptr;
   }
@@ -1114,7 +1117,7 @@ DrawTargetSkia::BorrowCGContext(const DrawOptions &aOptions)
     
     CGContextSaveGState(mCG);
     CGContextSetAlpha(mCG, aOptions.mAlpha);
-    SetupCGContext(this, mCG, mCanvas);
+    SetupCGContext(this, mCG, mCanvas, origin, size);
     return mCG;
   }
 
@@ -1155,7 +1158,7 @@ DrawTargetSkia::BorrowCGContext(const DrawOptions &aOptions)
   CGContextSetShouldSmoothFonts(mCG, true);
   CGContextSetTextDrawingMode(mCG, kCGTextFill);
   CGContextSaveGState(mCG);
-  SetupCGContext(this, mCG, mCanvas);
+  SetupCGContext(this, mCG, mCanvas, origin, size);
   return mCG;
 }
 
