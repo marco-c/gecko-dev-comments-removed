@@ -5,6 +5,9 @@ import android.support.v7.widget.RecyclerView;
 
 import com.robotium.solo.Condition;
 
+import org.mozilla.gecko.R;
+import org.mozilla.gecko.RobocopUtils;
+import org.mozilla.gecko.tabs.TabStripItemView;
 import org.mozilla.gecko.tests.UITestContext;
 import org.mozilla.gecko.tests.helpers.DeviceHelper;
 import org.mozilla.gecko.tests.helpers.WaitHelper;
@@ -27,6 +30,10 @@ public class TabStripComponent extends BaseComponent {
         return this;
     }
 
+    
+
+
+
     public void switchToTab(int index) {
         
         DeviceHelper.assertIsTablet();
@@ -37,26 +44,105 @@ public class TabStripComponent extends BaseComponent {
         mSolo.clickOnView(tabView);
     }
 
+    public void clickNewTabButton() {
+        final int preNewTabCount = getTabCount();
+
+        mSolo.clickOnView(mSolo.getView(R.id.tablet_add_tab));
+
+        waitForNewTab(preNewTabCount);
+    }
+
+    public void waitForNewTab(final int tabCountBeforeNewTab) {
+        WaitHelper.waitFor("new tab", new Condition() {
+            @Override
+            public boolean isSatisfied() {
+                return getTabCount() == tabCountBeforeNewTab + 1;
+            }
+        });
+    }
+
+    
+
+
+    public void fillStripWithTabs() {
+        if (getTabCount() > getTabStripView().getChildCount() + 1) {
+            
+            return;
+        }
+
+        waitForTabView(0);
+        final int firstId = getTabViewAtVisualIndex(0).getTabId();
+
+        while (true) {
+            clickNewTabButton();
+            if (getTabViewAtVisualIndex(0).getTabId() != firstId) {
+                break;
+            }
+        }
+
+        
+        clickNewTabButton();
+    }
+
     
 
 
 
-    private View waitForTabView(final int index) {
-        final RecyclerView tabStrip = getTabStripView();
-        final View[] tabView = new View[1];
+    public TabStripItemView getTabViewAtVisualIndex(int index) {
+        final RecyclerView tabStripView = getTabStripView();
+        fAssertTrue("The tab at index " + index + " is visible", index >= 0 && index < tabStripView.getChildCount());
+        return (TabStripItemView) tabStripView.getChildAt(index);
+    }
 
-        WaitHelper.waitFor(String.format("Tab at index %d to be visible", index), new Condition() {
+
+    public int getTabCount() {
+        return getTabStripView().getAdapter().getItemCount();
+    }
+
+    private View waitForTabView(final int index) {
+        final View[] childView = { null };
+
+        final RecyclerView tabStrip = getTabStripView();
+
+        RobocopUtils.runOnUiThreadSync(mTestContext.getActivity(), new Runnable() {
             @Override
-            public boolean isSatisfied() {
-                return (tabView[0] = tabStrip.getChildAt(index)) != null;
+            public void run() {
+                tabStrip.scrollToPosition(index);
+                
+                
+                tabStrip.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        final RecyclerView.ViewHolder itemViewHolder = tabStrip.findViewHolderForLayoutPosition(index);
+                        childView[0] = itemViewHolder == null ? null : itemViewHolder.itemView;
+                    }
+                });
             }
         });
 
-        return tabView[0];
+        WaitHelper.waitFor("tab at " + index + " to scroll into view",
+                new Condition() {
+                    @Override
+                    public boolean isSatisfied() {
+                        return childView[0] != null;
+                    }
+                });
+
+        fAssertNotNull("Item at index " + index + " exists", childView[0]);
+
+        return childView[0];
+    }
+
+    
+
+
+
+    private RecyclerView maybeGetTabStripView() {
+        return (RecyclerView) mSolo.getView("tab_strip");
     }
 
     private RecyclerView getTabStripView() {
-        RecyclerView tabStrip = (RecyclerView) mSolo.getView("tab_strip");
+        RecyclerView tabStrip = maybeGetTabStripView();
 
         fAssertNotNull("Tab strip is not null", tabStrip);
 

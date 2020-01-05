@@ -95,11 +95,6 @@ public class TabStripView extends RecyclerView {
         }
 
         adapter.addTab(tab, position);
-        position = position == -1 ? adapter.getItemCount() - 1 : position;
-        if (position == 0 || position == adapter.getItemCount() - 1) {
-            
-            scrollToPosition(position);
-        }
     }
 
      void removeTab(Tab tab) {
@@ -118,12 +113,14 @@ public class TabStripView extends RecyclerView {
         }
         
         
+        
+        
         final LinearLayoutManager layoutManager = (LinearLayoutManager) getLayoutManager();
         if (position < layoutManager.findFirstCompletelyVisibleItemPosition() ||
-                position > layoutManager.findLastCompletelyVisibleItemPosition()) {
+                position > layoutManager.findLastCompletelyVisibleItemPosition() ||
+                position == 0) {
             scrollToPosition(position);
         }
-
     }
 
      void updateTab(Tab tab) {

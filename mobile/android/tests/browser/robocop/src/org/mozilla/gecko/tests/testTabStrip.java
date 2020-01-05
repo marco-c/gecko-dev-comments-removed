@@ -1,24 +1,33 @@
 package org.mozilla.gecko.tests;
 
 import org.mozilla.gecko.Actions;
+import org.mozilla.gecko.R;
 import org.mozilla.gecko.tests.helpers.DeviceHelper;
 import org.mozilla.gecko.tests.helpers.GeckoClickHelper;
 import org.mozilla.gecko.tests.helpers.GeckoHelper;
 import org.mozilla.gecko.tests.helpers.NavigationHelper;
 import org.mozilla.gecko.tests.helpers.WaitHelper;
 
+import static org.mozilla.gecko.tests.helpers.AssertionHelper.fAssertEquals;
 
-
-
-
-public class testTabStripPrivacyMode extends UITest {
-    public void testTabStripPrivacyMode() {
+public class testTabStrip extends UITest {
+    public void testTabStrip() {
         if (!DeviceHelper.isTablet()) {
             return;
         }
 
         GeckoHelper.blockForReady();
 
+        testOpenPrivateTabInNormalMode();
+        
+        testNewNormalTabScroll();
+    }
+
+    
+
+
+
+    private void testOpenPrivateTabInNormalMode() {
         final String normalModeUrl = mStringHelper.ROBOCOP_BIG_LINK_URL;
         NavigationHelper.enterAndLoadUrl(normalModeUrl);
 
@@ -38,5 +47,24 @@ public class testTabStripPrivacyMode extends UITest {
 
         mTabStrip.assertTabCount(1);
         mToolbar.assertTitle(normalModeUrl);
+    }
+
+    
+
+
+
+    private void testNewNormalTabScroll() {
+        mTabStrip.fillStripWithTabs();
+        mTabStrip.switchToTab(0);
+
+        final int tabZeroId = mTabStrip.getTabViewAtVisualIndex(0).getTabId();
+
+        final int tabCountBeforeNewTab = mTabStrip.getTabCount();
+        GeckoClickHelper.openCentralizedLinkInNewTab();
+        mTabStrip.waitForNewTab(tabCountBeforeNewTab);
+
+        
+        
+        fAssertEquals("Current first tab is tabs list first tab", tabZeroId, mTabStrip.getTabViewAtVisualIndex(0).getTabId());
     }
  }
