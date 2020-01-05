@@ -182,6 +182,7 @@ namespace jit {
 #ifndef RELEASE_OR_BETA
         PageProtectingVector<unsigned char, 256, SystemAllocPolicy,
                               false,  false,
+                              true,
                               32 * 1024> m_buffer;
 #else
         mozilla::Vector<unsigned char, 256, SystemAllocPolicy> m_buffer;
