@@ -298,24 +298,23 @@ var StarUI = {
         parent.setAttribute("open", "true");
       }
     }
-    let panel = this.panel;
-    let target = panel;
-    if (target.parentNode) {
-      
-      
-      
-      target = target.parentNode;
-    }
-    target.addEventListener("popupshown", function shownListener(event) {
-      if (event.target == panel) {
-        target.removeEventListener("popupshown", shownListener, true);
-
-        gEditItemOverlay.initPanel({ node: aNode
-                                   , hiddenRows: ["description", "location",
-                                                  "loadInSidebar", "keyword"]
-                                   , focusedElement: "preferred"});
+    let onPanelReady = fn => {
+      let target = this.panel;
+      if (target.parentNode) {
+        
+        
+        
+        target = target.parentNode;
       }
-    }, true);
+      target.addEventListener("popupshown", function(event) {
+        fn();
+      }, {"capture": true, "once": true});
+    };
+    gEditItemOverlay.initPanel({ node: aNode
+                               , onPanelReady
+                               , hiddenRows: ["description", "location",
+                                              "loadInSidebar", "keyword"]
+                               , focusedElement: "preferred"});
 
     this.panel.openPopup(aAnchorElement, aPosition);
   }),

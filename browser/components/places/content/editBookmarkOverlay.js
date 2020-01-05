@@ -57,12 +57,14 @@ var gEditItemOverlay = {
       }
     }
     let focusedElement = aInitInfo.focusedElement;
+    let onPanelReady = aInitInfo.onPanelReady;
 
     return this._paneInfo = { itemId, itemGuid, isItem,
                               isURI, uri, title,
                               isBookmark, isFolderShortcut, isParentReadOnly,
                               bulkTagging, uris,
-                              visibleRows, postData, isTag, focusedElement };
+                              visibleRows, postData, isTag, focusedElement,
+                              onPanelReady };
   },
 
   get initialized() {
@@ -207,7 +209,8 @@ var gEditItemOverlay = {
 
     let { itemId, isItem, isURI,
           isBookmark, bulkTagging, uris,
-          visibleRows, focusedElement } = this._setPaneInfo(aInfo);
+          visibleRows, focusedElement,
+          onPanelReady } = this._setPaneInfo(aInfo);
 
     let showOrCollapse =
       (rowId, isAppropriateForInput, nameInHiddenRows = null) => {
@@ -279,26 +282,34 @@ var gEditItemOverlay = {
       this._observersAdded = true;
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    let elt;
-    if (focusedElement === "preferred") {
+    let focusElement = () => {
       
-      elt = this._element(gPrefService.getCharPref("browser.bookmarks.editDialog.firstEditField"));
       
-    } else if (focusedElement === "first") {
-      elt = document.querySelector("textbox:not([collapsed=true])");
-    }
-    if (elt) {
-      elt.focus();
-      elt.select();
+      
+      
+      
+      
+      
+      
+      
+      let elt;
+      if (focusedElement === "preferred") {
+        
+        elt = this._element(gPrefService.getCharPref("browser.bookmarks.editDialog.firstEditField"));
+        
+      } else if (focusedElement === "first") {
+        elt = document.querySelector("textbox:not([collapsed=true])");
+      }
+      if (elt) {
+        elt.focus();
+        elt.select();
+      }
+    };
+
+    if (onPanelReady) {
+      onPanelReady(focusElement);
+    } else {
+      focusElement();
     }
   },
 
@@ -333,9 +344,22 @@ var gEditItemOverlay = {
       aElement.value = aValue;
 
       
-      let editor = aElement.editor;
-      if (editor)
-        editor.transactionManager.clear();
+      let transactionManager;
+      try {
+        transactionManager = aElement.editor.transactionManager;
+      } catch (e) {
+        
+        
+        
+        
+        
+        if (!(e instanceof TypeError) && e.result != Cr.NS_ERROR_FAILURE) {
+          throw e;
+        }
+      }
+      if (transactionManager) {
+        transactionManager.clear();
+      }
     }
   },
 
