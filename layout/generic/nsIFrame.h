@@ -202,35 +202,29 @@ class nsReflowStatus final {
 public:
   nsReflowStatus()
     : mBreakType(StyleClear::None)
-    , mIncomplete(false)
-    , mOverflowIncomplete(false)
+    , mInlineBreak(InlineBreak::None)
+    , mCompletion(Completion::FullyComplete)
     , mNextInFlowNeedsReflow(false)
     , mTruncated(false)
-    , mInlineBreak(false)
-    , mInlineBreakAfter(false)
     , mFirstLetterComplete(false)
   {}
 
   
   void Reset() {
     mBreakType = StyleClear::None;
-    mIncomplete = false;
-    mOverflowIncomplete = false;
+    mInlineBreak = InlineBreak::None;
+    mCompletion = Completion::FullyComplete;
     mNextInFlowNeedsReflow = false;
     mTruncated = false;
-    mInlineBreak = false;
-    mInlineBreakAfter = false;
     mFirstLetterComplete = false;
   }
 
   
   bool IsEmpty() const {
-    return (!mIncomplete &&
-            !mOverflowIncomplete &&
+    return (IsFullyComplete() &&
+            !IsInlineBreak() &&
             !mNextInFlowNeedsReflow &&
             !mTruncated &&
-            !mInlineBreak &&
-            !mInlineBreakAfter &&
             !mFirstLetterComplete);
   }
 
@@ -248,20 +242,31 @@ public:
   
   
   
-  bool IsComplete() const { return !mIncomplete; }
-  bool IsIncomplete() const { return mIncomplete; }
-  bool IsOverflowIncomplete() const { return mOverflowIncomplete; }
-  bool IsFullyComplete() const {
-    return !IsIncomplete() && !IsOverflowIncomplete();
+  
+  
+  enum class Completion : uint8_t {
+    
+    
+    FullyComplete,
+    OverflowIncomplete,
+    Incomplete,
+  };
+
+  bool IsIncomplete() const { return mCompletion == Completion::Incomplete; }
+  bool IsOverflowIncomplete() const {
+    return mCompletion == Completion::OverflowIncomplete;
   }
+  bool IsFullyComplete() const {
+    return mCompletion == Completion::FullyComplete;
+  }
+  
+  bool IsComplete() const { return !IsIncomplete(); }
 
   void SetIncomplete() {
-    mIncomplete = true;
-    mOverflowIncomplete = false;
+    mCompletion = Completion::Incomplete;
   }
   void SetOverflowIncomplete() {
-    mIncomplete = false;
-    mOverflowIncomplete = true;
+    mCompletion = Completion::OverflowIncomplete;
   }
 
   
@@ -283,23 +288,42 @@ public:
   
   void MergeCompletionStatusFrom(const nsReflowStatus& aStatus)
   {
-    mIncomplete |= aStatus.mIncomplete;
-    mOverflowIncomplete |= aStatus.mOverflowIncomplete;
+    if (mCompletion < aStatus.mCompletion) {
+      mCompletion = aStatus.mCompletion;
+    }
+
+    
+    
+    static_assert(Completion::Incomplete > Completion::OverflowIncomplete &&
+                  Completion::OverflowIncomplete > Completion::FullyComplete,
+                  "mCompletion merging won't work without this!");
+
     mNextInFlowNeedsReflow |= aStatus.mNextInFlowNeedsReflow;
     mTruncated |= aStatus.mTruncated;
-    if (mIncomplete) {
-      mOverflowIncomplete = false;
-    }
   }
 
   
-  bool IsInlineBreak() const { return mInlineBreak; }
+  
+  
+  
+  
+  
+  
+  
+  
+  enum class InlineBreak : uint8_t {
+    None,
+    Before,
+    After,
+  };
 
-  
-  
-  
-  bool IsInlineBreakBefore() const { return mInlineBreak && !mInlineBreakAfter; }
-  bool IsInlineBreakAfter() const { return mInlineBreak && mInlineBreakAfter; }
+  bool IsInlineBreak() const { return mInlineBreak != InlineBreak::None; }
+  bool IsInlineBreakBefore() const {
+    return mInlineBreak == InlineBreak::Before;
+  }
+  bool IsInlineBreakAfter() const {
+    return mInlineBreak == InlineBreak::After;
+  }
   StyleClear BreakType() const { return mBreakType; }
 
   
@@ -308,16 +332,16 @@ public:
   void SetInlineLineBreakBeforeAndReset() {
     Reset();
     mBreakType = StyleClear::Line;
-    mInlineBreak = true;
-    mInlineBreakAfter = false;
+    mInlineBreak = InlineBreak::Before;
   }
 
   
   
   void SetInlineLineBreakAfter(StyleClear aBreakType = StyleClear::Line) {
+    MOZ_ASSERT(aBreakType != StyleClear::None,
+               "Break-after with StyleClear::None is meaningless!");
     mBreakType = aBreakType;
-    mInlineBreak = true;
-    mInlineBreakAfter = true;
+    mInlineBreak = InlineBreak::After;
   }
 
   
@@ -327,16 +351,10 @@ public:
 
 private:
   StyleClear mBreakType;
-
-  
-  bool mIncomplete : 1;
-  bool mOverflowIncomplete : 1;
+  InlineBreak mInlineBreak;
+  Completion mCompletion;
   bool mNextInFlowNeedsReflow : 1;
   bool mTruncated : 1;
-
-  
-  bool mInlineBreak : 1;
-  bool mInlineBreakAfter : 1;
   bool mFirstLetterComplete : 1;
 };
 
@@ -612,7 +630,7 @@ public:
 
 
   void Destroy() { DestroyFrom(this); }
- 
+
   
 
   enum FrameSearchResult {
@@ -692,7 +710,7 @@ public:
 
   nsStyleContext* StyleContext() const { return mStyleContext; }
   void SetStyleContext(nsStyleContext* aContext)
-  { 
+  {
     if (aContext != mStyleContext) {
       nsStyleContext* oldStyleContext = mStyleContext;
       mStyleContext = aContext;
@@ -1004,7 +1022,7 @@ public:
 
   virtual nsPoint GetPositionOfChildIgnoringScrolling(nsIFrame* aChild)
   { return aChild->GetPosition(); }
-  
+
   nsPoint GetPositionIgnoringScrolling();
 
   typedef AutoTArray<nsIContent*, 2> ContentArray;
@@ -1528,7 +1546,7 @@ public:
 
   virtual nscolor GetCaretColorAt(int32_t aOffset);
 
- 
+
   bool IsThemed(nsITheme::Transparency* aTransparencyState = nullptr) const {
     return IsThemed(StyleDisplay(), aTransparencyState);
   }
@@ -1548,7 +1566,7 @@ public:
     }
     return true;
   }
-  
+
   
 
 
@@ -1785,7 +1803,7 @@ public:
   virtual nsresult  GetCharacterRectsInRange(int32_t aInOffset,
                                              int32_t aLength,
                                              nsTArray<nsRect>& aRects) = 0;
-  
+
   
 
 
@@ -1818,7 +1836,7 @@ public:
   {
     return (mState & aBits) == aBits;
   }
-  
+
   
 
 
@@ -2668,7 +2686,7 @@ public:
 
 
   virtual void InvalidateFrameWithRect(const nsRect& aRect, uint32_t aDisplayItemKey = 0);
-  
+
   
 
 
@@ -2693,7 +2711,7 @@ public:
 
 
 
-  static void* LayerIsPrerenderedDataKey() { 
+  static void* LayerIsPrerenderedDataKey() {
     return &sLayerIsPrerenderedDataKey;
   }
   static uint8_t sLayerIsPrerenderedDataKey;
@@ -2718,7 +2736,7 @@ public:
 
 
   bool IsInvalid(nsRect& aRect);
- 
+
   
 
 
@@ -3074,7 +3092,7 @@ public:
   
 
 
-  
+
   virtual bool IsVisibleInSelection(nsISelection* aSelection);
 
   
@@ -3125,7 +3143,7 @@ public:
 
 
 
-   
+
   bool IsPseudoFrame(const nsIContent* aParentContent) {
     return mContent == aParentContent;
   }
@@ -3214,7 +3232,7 @@ public:
 
 
 
-    
+
   virtual nsSize GetXULMaxSize(nsBoxLayoutState& aBoxLayoutState) = 0;
 
   
@@ -3320,23 +3338,23 @@ public:
   
 
 
-  
-  void ClearPresShellsFromLastPaint() { 
-    PaintedPresShellList()->Clear(); 
+
+  void ClearPresShellsFromLastPaint() {
+    PaintedPresShellList()->Clear();
   }
-  
+
   
 
 
-  
-  void AddPaintedPresShell(nsIPresShell* shell) { 
+
+  void AddPaintedPresShell(nsIPresShell* shell) {
     PaintedPresShellList()->AppendElement(do_GetWeakReference(shell));
   }
-  
+
   
 
 
-  
+
   void UpdatePaintCountForPaintedPresShells() {
     for (nsWeakPtr& item : *PaintedPresShellList()) {
       nsCOMPtr<nsIPresShell> shell = do_QueryReferent(item);
@@ -3344,7 +3362,7 @@ public:
         shell->IncrementPaintCount();
       }
     }
-  }  
+  }
 
   
 
@@ -3581,15 +3599,15 @@ private:
   NS_DECLARE_FRAME_PROPERTY_WITH_DTOR(PaintedPresShellsProperty,
                                       nsTArray<nsWeakPtr>,
                                       DestroyPaintedPresShellList)
-  
+
   nsTArray<nsWeakPtr>* PaintedPresShellList() {
     nsTArray<nsWeakPtr>* list = Properties().Get(PaintedPresShellsProperty());
-    
+
     if (!list) {
       list = new nsTArray<nsWeakPtr>();
       Properties().Set(PaintedPresShellsProperty(), list);
     }
-    
+
     return list;
   }
 
@@ -3653,7 +3671,7 @@ protected:
 
 
   virtual FrameSearchResult PeekOffsetNoAmount(bool aForward, int32_t* aOffset) = 0;
-  
+
   
 
 
@@ -3669,7 +3687,7 @@ protected:
 
   virtual FrameSearchResult PeekOffsetCharacter(bool aForward, int32_t* aOffset,
                                      bool aRespectClusters = true) = 0;
-  
+
   
 
 

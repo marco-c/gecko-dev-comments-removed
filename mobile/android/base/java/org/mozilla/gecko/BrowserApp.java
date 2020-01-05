@@ -1216,6 +1216,8 @@ public class BrowserApp extends GeckoApp
         for (final BrowserAppDelegate delegate : delegates) {
             delegate.onStop(this);
         }
+
+        onAfterStop();
     }
 
     @Override
@@ -3082,54 +3084,17 @@ public class BrowserApp extends GeckoApp
     
 
 
-
     private class HideOnTouchListener implements TouchEventInterceptor {
-        private boolean mIsHidingTabs;
-        private final Rect mTempRect = new Rect();
-
         @Override
         public boolean onInterceptTouchEvent(View view, MotionEvent event) {
             if (event.getActionMasked() == MotionEvent.ACTION_DOWN) {
                 SnackbarBuilder.dismissCurrentSnackbar();
-            }
-
-
-
-            
-            
-            
-            if (view.getScrollX() != 0 || view.getScrollY() != 0) {
-                view.getHitRect(mTempRect);
-                mTempRect.offset(-view.getScrollX(), -view.getScrollY());
-
-                int[] viewCoords = new int[2];
-                view.getLocationOnScreen(viewCoords);
-
-                int x = (int) event.getRawX() - viewCoords[0];
-                int y = (int) event.getRawY() - viewCoords[1];
-
-                if (!mTempRect.contains(x, y))
-                    return false;
-            }
-
-            
-            if (event.getActionMasked() == MotionEvent.ACTION_DOWN && autoHideTabs()) {
-                mIsHidingTabs = true;
-                return true;
             }
             return false;
         }
 
         @Override
         public boolean onTouch(View view, MotionEvent event) {
-            if (mIsHidingTabs) {
-                
-                int action = event.getActionMasked();
-                if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
-                    mIsHidingTabs = false;
-                }
-                return true;
-            }
             return false;
         }
     }
