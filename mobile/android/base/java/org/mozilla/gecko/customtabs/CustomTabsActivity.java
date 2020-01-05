@@ -206,10 +206,14 @@ public class CustomTabsActivity extends GeckoApp implements Tabs.OnTabsChangedLi
         super.onResume();
     }
 
+    
+    
+    
+    
     @Override
-    public boolean onPrepareOptionsMenu(Menu menu) {
+    public boolean onCreatePanelMenu(final int id, final Menu menu) {
         insertActionButton(menu, getIntent());
-        return super.onPrepareOptionsMenu(menu);
+        return true;
     }
 
     public boolean onOptionsItemSelected(MenuItem item) {
