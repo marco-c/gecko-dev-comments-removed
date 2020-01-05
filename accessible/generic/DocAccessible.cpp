@@ -2242,18 +2242,21 @@ DocAccessible::MoveChild(Accessible* aChild, Accessible* aNewParent,
     return false;
   }
 
+  MOZ_ASSERT(aIdxInParent <= static_cast<int32_t>(aNewParent->ChildCount()),
+             "Wrong insertion point for a moving child");
+
+  
+  
+  bool hasInsertionPoint = (aIdxInParent != -1) ||
+    (aIdxInParent <= static_cast<int32_t>(aNewParent->ChildCount()));
+
   TreeMutation rmut(curParent);
-  rmut.BeforeRemoval(aChild, TreeMutation::kNoShutdown);
+  rmut.BeforeRemoval(aChild, hasInsertionPoint && TreeMutation::kNoShutdown);
   curParent->RemoveChild(aChild);
   rmut.Done();
 
   
-  if (aIdxInParent == -1) {
-    return true;
-  }
-
-  if (aIdxInParent > static_cast<int32_t>(aNewParent->ChildCount())) {
-    MOZ_ASSERT_UNREACHABLE("Wrong insertion point for a moving child");
+  if (!hasInsertionPoint) {
     return true;
   }
 
