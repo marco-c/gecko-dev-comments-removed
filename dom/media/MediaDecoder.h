@@ -190,7 +190,8 @@ public:
 
   
   virtual void NotifyOwnerActivityChanged(bool aIsDocumentVisible,
-                                          bool aIsElementVisible);
+                                          bool aIsElementVisible,
+                                          bool aIsElementInTree);
 
   
   virtual void Pause();
@@ -373,7 +374,8 @@ private:
 
   
   virtual void SetElementVisibility(bool aIsDocumentVisible,
-                                    bool aIsElementVisible);
+                                    bool aIsElementVisible,
+                                    bool aIsElementInTree);
 
   
   
@@ -723,6 +725,9 @@ protected:
 
   
   bool mIsElementVisible;
+
+  
+  bool mIsElementInTree;
 
   
   bool mForcedHidden;
