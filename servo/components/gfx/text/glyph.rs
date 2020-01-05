@@ -404,6 +404,9 @@ pub struct GlyphStore {
     detail_store: DetailedGlyphStore,
 
     
+    total_advance: Au,
+
+    
     has_detailed_glyphs: bool,
     is_whitespace: bool,
     is_rtl: bool,
@@ -427,6 +430,7 @@ impl<'a> GlyphStore {
         GlyphStore {
             entry_buffer: vec![GlyphEntry::initial(); length],
             detail_store: DetailedGlyphStore::new(),
+            total_advance: Au(0),
             has_detailed_glyphs: false,
             is_whitespace: is_whitespace,
             is_rtl: is_rtl,
@@ -443,6 +447,20 @@ impl<'a> GlyphStore {
 
     pub fn finalize_changes(&mut self) {
         self.detail_store.ensure_sorted();
+        self.cache_total_advance()
+    }
+
+    #[inline(never)]
+    fn cache_total_advance(&mut self) {
+        let mut total_advance = Au(0);
+        for glyph in self.iter_glyphs_for_char_range(&Range::new(CharIndex(0), self.char_len())) {
+            total_advance = total_advance + glyph.advance()
+        }
+        self.total_advance = total_advance
+    }
+
+    pub fn total_advance(&self) -> Au {
+        self.total_advance
     }
 
     
@@ -532,7 +550,9 @@ impl<'a> GlyphStore {
 
     #[inline]
     pub fn advance_for_char_range(&self, rang: &Range<CharIndex>) -> Au {
-        if !self.has_detailed_glyphs {
+        if rang.begin() == CharIndex(0) && rang.end() == self.char_len() {
+            self.total_advance
+        } else if !self.has_detailed_glyphs {
             self.advance_for_char_range_simple_glyphs(rang)
         } else {
             self.advance_for_char_range_slow_path(rang)

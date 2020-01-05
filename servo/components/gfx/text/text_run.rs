@@ -6,12 +6,18 @@ use app_units::Au;
 use font::{Font, FontHandleMethods, FontMetrics, IS_WHITESPACE_SHAPING_FLAG, RunMetrics};
 use font::{ShapingOptions};
 use platform::font_template::FontTemplateData;
+use std::cell::Cell;
 use std::cmp::{Ordering, max};
 use std::slice::Iter;
 use std::sync::Arc;
 use text::glyph::{CharIndex, GlyphStore};
 use util::range::Range;
 use util::vec::{Comparator, FullBinarySearchMethods};
+
+thread_local! {
+    static INDEX_OF_FIRST_GLYPH_RUN_CACHE: Cell<Option<(*const TextRun, CharIndex, usize)>> =
+        Cell::new(None)
+}
 
 
 #[derive(Clone, Deserialize, Serialize)]
@@ -24,6 +30,19 @@ pub struct TextRun {
     
     pub glyphs: Arc<Vec<GlyphRun>>,
     pub bidi_level: u8,
+}
+
+impl Drop for TextRun {
+    fn drop(&mut self) {
+        
+        INDEX_OF_FIRST_GLYPH_RUN_CACHE.with(|index_of_first_glyph_run_cache| {
+            if let Some((text_run_ptr, _, _)) = index_of_first_glyph_run_cache.get() {
+                if text_run_ptr == (self as *const TextRun) {
+                    index_of_first_glyph_run_cache.set(None);
+                }
+            }
+        })
+    }
 }
 
 
@@ -248,6 +267,10 @@ impl<'a> TextRun {
     }
 
     pub fn advance_for_range(&self, range: &Range<CharIndex>) -> Au {
+        if range.is_empty() {
+            return Au(0)
+        }
+
         
         
         self.natural_word_slices_in_range(range)
@@ -279,7 +302,21 @@ impl<'a> TextRun {
 
     
     fn index_of_first_glyph_run_containing(&self, index: CharIndex) -> Option<usize> {
-        (&**self.glyphs).binary_search_index_by(&index, CharIndexComparator)
+        let self_ptr = self as *const TextRun;
+        INDEX_OF_FIRST_GLYPH_RUN_CACHE.with(|index_of_first_glyph_run_cache| {
+            if let Some((last_text_run, last_index, last_result)) =
+                    index_of_first_glyph_run_cache.get() {
+                if last_text_run == self_ptr && last_index == index {
+                    return Some(last_result)
+                }
+            }
+
+            let result = (&**self.glyphs).binary_search_index_by(&index, CharIndexComparator);
+            if let Some(result) = result {
+                index_of_first_glyph_run_cache.set(Some((self_ptr, index, result)));
+            }
+            result
+        })
     }
 
     
