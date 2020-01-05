@@ -1228,7 +1228,7 @@ class PropertyDefiner:
 
 def methodLength(method):
     signatures = method.signatures()
-    return max([len(arguments) for (retType, arguments) in signatures])
+    return min(len([arg for arg in arguments if not arg.optional and not arg.variadic]) for (_, arguments) in signatures)
 
 class MethodDefiner(PropertyDefiner):
     """
