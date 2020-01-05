@@ -208,10 +208,6 @@ this.configureIdentity = async function(identityOverrides, server) {
   let ns = {};
   Cu.import("resource://services-sync/service.js", ns);
 
-  if (server) {
-    ns.Service.serverURL = server.baseURI;
-  }
-
   
   if (server && !config.fxaccount.token.endpoint) {
     let ep = server.baseURI;
