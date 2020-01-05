@@ -150,35 +150,70 @@ macro_rules! __define_css_keyword_enum__actual {
 
 pub mod specified {
     use app_units::Au;
+    use std::cmp;
 
     
     #[repr(u8)]
     #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
     #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-    pub enum AllowedNumericType {
+    pub enum AllowedLengthType {
         
         All,
         
         NonNegative
     }
 
-    impl AllowedNumericType {
+    impl AllowedLengthType {
         
         #[inline]
         pub fn is_ok(&self, value: f32) -> bool {
             match *self {
-                AllowedNumericType::All => true,
-                AllowedNumericType::NonNegative => value >= 0.,
+                AllowedLengthType::All => true,
+                AllowedLengthType::NonNegative => value >= 0.,
             }
         }
 
         
         #[inline]
         pub fn clamp(&self, val: Au) -> Au {
-            use std::cmp;
             match *self {
-                AllowedNumericType::All => val,
-                AllowedNumericType::NonNegative => cmp::max(Au(0), val),
+                AllowedLengthType::All => val,
+                AllowedLengthType::NonNegative => cmp::max(Au(0), val),
+            }
+        }
+    }
+
+    
+    #[repr(u8)]
+    #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+    #[derive(Clone, Copy, Debug, Eq, PartialEq, PartialOrd)]
+    pub enum AllowedNumericType {
+        
+        All,
+        
+        NonNegative,
+        
+        AtLeastOne,
+    }
+
+    impl AllowedNumericType {
+        
+        #[inline]
+        pub fn is_ok(&self, val: f32) -> bool {
+            match *self {
+                AllowedNumericType::All => true,
+                AllowedNumericType::NonNegative => val >= 0.0,
+                AllowedNumericType::AtLeastOne => val >= 1.0,
+            }
+        }
+
+        
+        #[inline]
+        pub fn clamp(&self, val: f32) -> f32 {
+            match *self {
+                AllowedNumericType::NonNegative if val < 0. => 0.,
+                AllowedNumericType::AtLeastOne if val < 1. => 1.,
+                _ => val,
             }
         }
     }
