@@ -10812,8 +10812,13 @@ nsDocShell::DoURILoad(nsIURI* aURI,
   
   
   
-  
   nsCOMPtr<nsIPrincipal> triggeringPrincipal = aTriggeringPrincipal;
+
+  
+  
+  MOZ_ASSERT(aContentPolicyType != nsIContentPolicy::TYPE_SUBDOCUMENT ||
+             triggeringPrincipal, "Need a valid triggeringPrincipal");
+
   if (!triggeringPrincipal) {
     if (aReferrerURI) {
       rv = CreatePrincipalFromReferrer(aReferrerURI,
