@@ -26,11 +26,11 @@ const propertiesMap = {};
 
 
 
-const reqShared = require.context("raw!devtools-shared/locale/",
+const reqShared = require.context("raw!devtools/shared/locales/",
                                   true, /^.*\.properties$/);
-const reqClient = require.context("raw!devtools/locale/",
+const reqClient = require.context("raw!devtools/client/locales/",
                                   true, /^.*\.properties$/);
-const reqGlobal = require.context("raw!global/locale/",
+const reqGlobal = require.context("raw!toolkit/locales/",
                                   true, /^.*\.properties$/);
 
 
@@ -52,9 +52,9 @@ function getProperties(url) {
     
     let baseName = "." + url.substr(index);
     let reqFn;
-    if (/^global/.test(url)) {
+    if (/^toolkit/.test(url)) {
       reqFn = reqGlobal;
-    } else if (/^devtools-shared/.test(url)) {
+    } else if (/^devtools\/shared/.test(url)) {
       reqFn = reqShared;
     } else {
       reqFn = reqClient;
@@ -212,7 +212,7 @@ function localizeMarkup(root) {
   }
 }
 
-const sharedL10N = new LocalizationHelper("devtools-shared/locale/shared.properties");
+const sharedL10N = new LocalizationHelper("devtools/shared/locales/shared.properties");
 
 
 

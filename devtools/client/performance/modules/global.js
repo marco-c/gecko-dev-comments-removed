@@ -10,8 +10,8 @@ const { PrefsHelper } = require("devtools/client/shared/prefs");
 
 
 exports.L10N = new MultiLocalizationHelper(
-  "devtools/locale/markers.properties",
-  "devtools/locale/performance.properties"
+  "devtools/client/locales/markers.properties",
+  "devtools/client/locales/performance.properties"
 );
 
 
