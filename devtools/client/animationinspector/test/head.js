@@ -373,17 +373,17 @@ function disableHighlighter(toolbox) {
 
 
 
-function* clickOnAnimation(panel, index, shouldClose) {
+function* clickOnAnimation(panel, index, shouldAlreadySelected) {
   let timeline = panel.animationsTimelineComponent;
 
   
-  let onSelectionChanged = timeline.once(shouldClose
-                                         ? "animation-unselected"
+  let onSelectionChanged = timeline.once(shouldAlreadySelected
+                                         ? "animation-already-selected"
                                          : "animation-selected");
 
   
   
-  let onReady = shouldClose
+  let onReady = shouldAlreadySelected
                 ? Promise.resolve()
                 : timeline.details.once("animation-detail-rendering-completed");
 

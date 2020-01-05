@@ -296,30 +296,37 @@ AnimationsTimeline.prototype = {
       return;
     }
 
-    let el = this.rootWrapperEl;
-    let animationEl = el.querySelectorAll(".animation")[index];
-
     
-    animationEl.classList.toggle("selected");
-
-    
-    if (animationEl.classList.contains("selected")) {
-      
-      if (!this.animatedPropertiesEl.classList.contains(animation.state.type)) {
-        this.animatedPropertiesEl.className =
-          `animated-properties ${ animation.state.type }`;
+    const animationEls = this.rootWrapperEl.querySelectorAll(".animation");
+    for (let i = 0; i < animationEls.length; i++) {
+      const animationEl = animationEls[i];
+      if (!animationEl.classList.contains("selected")) {
+        continue;
       }
-      this.animationDetailEl.style.display =
-        this.animationDetailEl.dataset.defaultDisplayStyle;
-      this.details.render(animation);
-      this.emit("animation-selected", animation);
-
-      this.animationAnimationNameEl.textContent =
-        getFormattedAnimationTitle(animation);
-    } else {
-      this.emit("animation-unselected", animation);
-      this.animationDetailEl.style.display = "none";
+      if (i === index) {
+        
+        this.emit("animation-already-selected", this.animations[i]);
+        return;
+      }
+      animationEl.classList.remove("selected");
+      this.emit("animation-unselected", this.animations[i]);
+      break;
     }
+
+    
+    if (!this.animatedPropertiesEl.classList.contains(animation.state.type)) {
+      this.animatedPropertiesEl.className =
+        `animated-properties ${ animation.state.type }`;
+    }
+
+    
+    const selectedAnimationEl = animationEls[index];
+    selectedAnimationEl.classList.add("selected");
+    this.animationDetailEl.style.display =
+      this.animationDetailEl.dataset.defaultDisplayStyle;
+    this.details.render(animation);
+    this.animationAnimationNameEl.textContent = getFormattedAnimationTitle(animation);
+    this.emit("animation-selected", animation);
   },
 
   
