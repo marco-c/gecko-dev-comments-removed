@@ -71,7 +71,12 @@ function _deepEqual(a, b) {
   
   
   }
-  if (instanceOf(a, "Date") && instanceOf(b, "Date")) {
+  let aIsDate = instanceOf(a, "Date");
+  let bIsDate = instanceOf(b, "Date");
+  if (aIsDate || bIsDate) {
+    if (!aIsDate || !bIsDate) {
+      return false;
+    }
     if (isNaN(a.getTime()) && isNaN(b.getTime()))
       return true;
     return a.getTime() === b.getTime();
@@ -79,8 +84,11 @@ function _deepEqual(a, b) {
   
   
   }
-  if (instanceOf(a, "RegExp") && instanceOf(b, "RegExp")) {
-    return a.source === b.source &&
+  let aIsRegExp = instanceOf(a, "RegExp");
+  let bIsRegExp = instanceOf(b, "RegExp");
+  if (aIsRegExp || bIsRegExp) {
+    return aIsRegExp && bIsRegExp &&
+           a.source === b.source &&
            a.global === b.global &&
            a.multiline === b.multiline &&
            a.lastIndex === b.lastIndex &&
@@ -88,7 +96,7 @@ function _deepEqual(a, b) {
   
   
   }
-  if (typeof a != "object" && typeof b != "object") {
+  if (typeof a != "object" || typeof b != "object") {
     return a == b;
   }
   
