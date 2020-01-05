@@ -568,9 +568,9 @@ protected:
   
   
   
-  virtual int64_t CurrentPosition()
+  virtual media::TimeUnit CurrentPosition()
   {
-    return mCurrentPosition.Ref().ToMicroseconds();
+    return mCurrentPosition.Ref();
   }
 
   

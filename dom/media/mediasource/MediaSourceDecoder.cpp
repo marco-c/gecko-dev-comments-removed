@@ -281,7 +281,7 @@ MediaSourceDecoder::NextFrameBufferedStatus()
 
   
   
-  TimeUnit currentPosition = TimeUnit::FromMicroseconds(CurrentPosition());
+  auto currentPosition = CurrentPosition();
   TimeIntervals buffered = GetBuffered();
   buffered.SetFuzz(MediaSourceDemuxer::EOS_FUZZ / 2);
   TimeInterval interval(
@@ -306,7 +306,7 @@ MediaSourceDecoder::CanPlayThrough()
     return false;
   }
   TimeUnit duration = TimeUnit::FromSeconds(mMediaSource->Duration());
-  TimeUnit currentPosition = TimeUnit::FromMicroseconds(CurrentPosition());
+  auto currentPosition = CurrentPosition();
   if (duration.IsInfinite()) {
     
     
