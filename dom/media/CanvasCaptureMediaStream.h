@@ -79,7 +79,7 @@ public:
 
 
 
-  void SetImage(const RefPtr<layers::Image>& aImage);
+  void SetImage(const RefPtr<layers::Image>& aImage, const TimeStamp& aTime);
 
   
 
