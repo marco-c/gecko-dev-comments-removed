@@ -35,10 +35,11 @@ public:
   void RenderLayer() override;
 
 protected:
+  CompositableType GetImageClientType();
+
   uint64_t mExternalImageId;
-  
-  RefPtr<ImageContainer> mImageContainerForWR;
   RefPtr<ImageClient> mImageClient;
+  CompositableType mImageClientTypeContainer;
 };
 
 } 
