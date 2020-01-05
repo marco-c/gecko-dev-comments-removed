@@ -19,7 +19,7 @@ use render_context::RenderContext;
 use text::glyph::CharIndex;
 use text::TextRun;
 
-use collections::deque::Deque;
+use std::collections::Deque;
 use collections::dlist::DList;
 use collections::dlist;
 use geom::{Point2D, Rect, SideOffsets2D, Size2D};
@@ -41,7 +41,7 @@ pub mod optimizer;
 
 
 
-#[deriving(Clone, Eq)]
+#[deriving(Clone, PartialEq)]
 pub struct OpaqueNode(pub uintptr_t);
 
 impl OpaqueNode {
@@ -53,7 +53,7 @@ impl OpaqueNode {
 }
 
 
-#[deriving(Clone, Eq)]
+#[deriving(Clone, PartialEq)]
 pub enum StackingLevel {
     
     BackgroundAndBordersStackingLevel,

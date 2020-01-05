@@ -2,7 +2,7 @@
 
 
 
-use collections::hashmap::HashMap;
+use std::collections::hashmap::HashMap;
 use font::SpecifiedFontStyle;
 use gfx_font::FontHandleMethods;
 use platform::font::FontHandle;

@@ -151,7 +151,7 @@ int_range_index! {
 
 
 
-#[deriving(Clone, Eq, Ord, TotalEq, TotalOrd, Zero)]
+#[deriving(Clone, PartialEq, PartialOrd, Eq, Ord, Zero)]
 pub struct LineIndices {
     
     
@@ -1109,9 +1109,10 @@ impl Flow for InlineFlow {
         debug!("InlineFlow::assign_widths: floats in: {:?}", self.base.floats);
 
         {
+            let width = self.base.position.size.width;
             let this = &mut *self;
             for (fragment, context) in this.fragments.mut_iter() {
-                fragment.assign_replaced_width_if_necessary(self.base.position.size.width,
+                fragment.assign_replaced_width_if_necessary(width,
                                                             Some(context))
             }
         }

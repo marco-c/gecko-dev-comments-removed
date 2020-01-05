@@ -2,7 +2,7 @@
 
 
 
-use collections::hashmap::HashMap;
+use std::collections::hashmap::HashMap;
 use geom::size::Size2D;
 use layers::platform::surface::NativePaintingGraphicsContext;
 use servo_msg::compositor_msg::Tile;
@@ -26,7 +26,7 @@ pub struct BufferMap<T> {
 }
 
 
-#[deriving(TotalEq)]
+#[deriving(Eq)]
 struct BufferKey([uint, ..2]);
 
 impl Hash for BufferKey {
@@ -36,7 +36,7 @@ impl Hash for BufferKey {
     }
 }
 
-impl Eq for BufferKey {
+impl PartialEq for BufferKey {
     fn eq(&self, other: &BufferKey) -> bool {
         let BufferKey(s) = *self;
         let BufferKey(o) = *other;

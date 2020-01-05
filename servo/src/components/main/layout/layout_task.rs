@@ -895,7 +895,7 @@ impl LayoutTask {
     
     
     
-    fn make_on_image_available_cb(&self) -> Box<ImageResponder:Send> {
+    fn make_on_image_available_cb(&self) -> Box<ImageResponder+Send> {
         
         
         
@@ -903,7 +903,7 @@ impl LayoutTask {
         box LayoutImageResponder {
             id: self.id.clone(),
             script_chan: self.script_chan.clone(),
-        } as Box<ImageResponder:Send>
+        } as Box<ImageResponder+Send>
     }
 
     

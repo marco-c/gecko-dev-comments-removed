@@ -48,13 +48,13 @@ impl LayerBufferSet {
 }
 
 
-#[deriving(Eq, Clone)]
+#[deriving(PartialEq, Clone)]
 pub enum RenderState {
     IdleRenderState,
     RenderingRenderState,
 }
 
-#[deriving(Eq, Clone)]
+#[deriving(PartialEq, Clone)]
 pub enum ReadyState {
     
     Blank,
@@ -67,7 +67,7 @@ pub enum ReadyState {
 }
 
 
-#[deriving(Eq)]
+#[deriving(PartialEq)]
 pub struct Epoch(pub uint);
 
 impl Epoch {
@@ -77,7 +77,7 @@ impl Epoch {
     }
 }
 
-#[deriving(Clone, Eq)]
+#[deriving(Clone, PartialEq)]
 pub struct LayerId(pub uint, pub uint);
 
 impl Show for LayerId {
@@ -95,7 +95,7 @@ impl LayerId {
 }
 
 
-#[deriving(Eq)]
+#[deriving(PartialEq)]
 pub enum ScrollPolicy {
     
     Scrollable,

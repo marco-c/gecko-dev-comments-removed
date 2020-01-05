@@ -64,7 +64,7 @@ pub enum PagePx {}
 
 
 
-#[deriving(Clone, Eq, Ord, Zero)]
+#[deriving(Clone, PartialEq, PartialOrd, Zero)]
 pub struct Au(pub i32);
 
 impl Default for Au {
@@ -288,7 +288,7 @@ pub fn to_pt(au: Au) -> f64 {
 
 
 
-pub fn rect_contains_point<T:Ord + Add<T,T>>(rect: Rect<T>, point: Point2D<T>) -> bool {
+pub fn rect_contains_point<T:PartialOrd + Add<T,T>>(rect: Rect<T>, point: Point2D<T>) -> bool {
     point.x >= rect.origin.x && point.x < rect.origin.x + rect.size.width &&
         point.y >= rect.origin.y && point.y < rect.origin.y + rect.size.height
 }

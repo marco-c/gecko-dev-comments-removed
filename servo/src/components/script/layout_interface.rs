@@ -87,7 +87,7 @@ pub struct HitTestResponse(pub UntrustedNodeAddress);
 pub struct MouseOverResponse(pub Vec<UntrustedNodeAddress>);
 
 
-#[deriving(Eq, Ord, TotalEq, TotalOrd, Encodable)]
+#[deriving(PartialEq, PartialOrd, Eq, Ord, Encodable)]
 pub enum DocumentDamageLevel {
     
     ReflowDocumentDamage,
@@ -116,7 +116,7 @@ pub struct DocumentDamage {
 }
 
 
-#[deriving(Eq)]
+#[deriving(PartialEq)]
 pub enum ReflowGoal {
     
     ReflowForDisplay,

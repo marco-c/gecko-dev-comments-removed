@@ -2,7 +2,7 @@
 
 
 
-use collections::HashMap;
+use std::collections::hashmap::HashMap;
 use std::os;
 use std_url;
 use std_url::Url;
