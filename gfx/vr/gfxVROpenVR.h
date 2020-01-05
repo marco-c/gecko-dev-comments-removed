@@ -66,12 +66,12 @@ class VRControllerOpenVR : public VRControllerHost
 {
 public:
   explicit VRControllerOpenVR(dom::GamepadHand aHand, uint32_t aNumButtons,
-                              uint32_t aNumAxes, vr::ETrackedDeviceClass aDeviceType);
+                              uint32_t aNumAxes, ::vr::ETrackedDeviceClass aDeviceType);
   void SetTrackedIndex(uint32_t aTrackedIndex);
   uint32_t GetTrackedIndex();
   void SetTrigger(float aValue);
   float GetTrigger();
-  void VibrateHaptic(vr::IVRSystem* aVRSystem,
+  void VibrateHaptic(::vr::IVRSystem* aVRSystem,
                      uint32_t aHapticIndex,
                      double aIntensity,
                      double aDuration,
@@ -82,7 +82,7 @@ protected:
   virtual ~VRControllerOpenVR();
 
 private:
-  void UpdateVibrateHaptic(vr::IVRSystem* aVRSystem,
+  void UpdateVibrateHaptic(::vr::IVRSystem* aVRSystem,
                            uint32_t aHapticIndex,
                            double aIntensity,
                            double aDuration,
@@ -140,11 +140,13 @@ private:
   void HandlePoseTracking(uint32_t aControllerIdx,
                           const dom::GamepadPoseState& aPose,
                           VRControllerHost* aController);
+  dom::GamepadHand GetGamepadHandFromControllerRole(
+                          ::vr::ETrackedControllerRole aRole);
 
   
   RefPtr<impl::VRDisplayOpenVR> mOpenVRHMD;
   nsTArray<RefPtr<impl::VRControllerOpenVR>> mOpenVRController;
-  vr::IVRSystem *mVRSystem;
+  ::vr::IVRSystem *mVRSystem;
 };
 
 } 
