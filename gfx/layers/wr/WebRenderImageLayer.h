@@ -33,7 +33,7 @@ public:
   void RenderLayer() override;
 
 protected:
-  uint64_t mImageId;
+  uint64_t mExternalImageId;
   
   RefPtr<ImageContainer> mImageContainerForWR;
   RefPtr<ImageClient> mImageClient;
