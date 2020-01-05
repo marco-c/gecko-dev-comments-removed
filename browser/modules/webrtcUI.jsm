@@ -554,6 +554,11 @@ function prompt(aBrowser, aRequest) {
       function listDevices(menupopup, devices) {
         while (menupopup.lastChild)
           menupopup.removeChild(menupopup.lastChild);
+        
+        
+        
+        
+        menupopup.parentNode.removeAttribute("value");
 
         for (let device of devices)
           addDeviceToList(menupopup, device.name, device.deviceIndex);
