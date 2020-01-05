@@ -593,6 +593,13 @@ nsICODecoder::FinishResource()
     return Transition::TerminateFailure();
   }
 
+  
+  
+  MOZ_ASSERT(!mContainedDecoder->GetFinalizeFrames());
+  if (mCurrentFrame) {
+    mCurrentFrame->FinalizeSurface();
+  }
+
   return Transition::TerminateSuccess();
 }
 
