@@ -1375,10 +1375,16 @@ def UnionTypes(unionTypes, config):
                     
                     if typeNeedsRooting(f):
                         headers.add("mozilla/dom/RootedDictionary.h")
+                elif f.isFloat() and not f.isUnrestricted():
+                    
+                    implheaders.add("mozilla/FloatingPoint.h")
+                    implheaders.add("mozilla/dom/PrimitiveConversions.h")
                 elif f.isEnum():
                     
                     
                     headers.add(CGHeaders.getDeclarationFilename(f.inner))
+                elif f.isPrimitive():
+                    implheaders.add("mozilla/dom/PrimitiveConversions.h")
                 elif f.isCallback():
                     
                     
@@ -1446,6 +1452,10 @@ def UnionConversions(unionTypes, config):
                         headers.add(CGHeaders.getDeclarationFilename(f.inner))
                 elif f.isDictionary():
                     headers.add(CGHeaders.getDeclarationFilename(f.inner))
+                elif f.isFloat() and not f.isUnrestricted():
+                    
+                    headers.add("mozilla/FloatingPoint.h")
+                    headers.add("mozilla/dom/PrimitiveConversions.h")
                 elif f.isPrimitive():
                     headers.add("mozilla/dom/PrimitiveConversions.h")
                 elif f.isMozMap():
@@ -16786,7 +16796,6 @@ class GlobalGenRoots():
         
         
         includes.add("mozilla/dom/BindingUtils.h")
-        implincludes.add("mozilla/dom/PrimitiveConversions.h")
 
         
         curr = CGNamespace.build(['mozilla', 'dom'], unions)
