@@ -136,6 +136,26 @@ EmailInputType::HasTypeMismatch() const
     !IsValidEmailAddressList(value) : !IsValidEmailAddress(value);
 }
 
+bool
+EmailInputType::HasBadInput() const
+{
+  
+  
+  
+  
+  nsAutoString value;
+  nsAutoCString unused;
+  uint32_t unused2;
+  GetNonFileValueInternal(value);
+  HTMLSplitOnSpacesTokenizer tokenizer(value, ',');
+  while (tokenizer.hasMoreTokens()) {
+    if (!PunycodeEncodeEmailAddress(tokenizer.nextToken(), unused, &unused2)) {
+      return true;
+    }
+  }
+  return false;
+}
+
  bool
 EmailInputType::IsValidEmailAddressList(const nsAString& aValue)
 {
