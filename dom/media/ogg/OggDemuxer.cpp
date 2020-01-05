@@ -128,9 +128,13 @@ OggDemuxer::~OggDemuxer()
     
     
     bool isChained = mIsChained;
-    RefPtr<OggDemuxer> self = this;
-    nsCOMPtr<nsIRunnable> task = NS_NewRunnableFunction([this, self, isChained]() -> void {
-      OGG_DEBUG("Reporting telemetry MEDIA_OGG_LOADED_IS_CHAINED=%d", isChained);
+    void* ptr = this;
+    nsCOMPtr<nsIRunnable> task = NS_NewRunnableFunction([ptr, isChained]() -> void {
+      
+      
+      MOZ_LOG(gMediaDemuxerLog, mozilla::LogLevel::Debug,
+              ("OggDemuxer(%p)::%s: Reporting telemetry MEDIA_OGG_LOADED_IS_CHAINED=%d",
+               ptr, __func__, isChained));
       Telemetry::Accumulate(Telemetry::HistogramID::MEDIA_OGG_LOADED_IS_CHAINED, isChained);
     });
     
