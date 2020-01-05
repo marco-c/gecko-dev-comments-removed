@@ -189,9 +189,6 @@ protected:
   bool mIsShutdown;
   MozPromiseHolder<ShutdownPromise> mShutdownPromise;
 
-  
-  bool mIsFlushing;
-
   class Runner : public Runnable {
   public:
     explicit Runner(TaskQueue* aQueue)
