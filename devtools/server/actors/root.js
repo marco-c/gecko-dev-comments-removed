@@ -250,7 +250,7 @@ RootActor.prototype = {
 
 
 
-  onListTabs: function () {
+  onListTabs: async function () {
     let tabList = this._parameters.tabList;
     if (!tabList) {
       return { from: this.actorID, error: "noTabs",
@@ -273,55 +273,55 @@ RootActor.prototype = {
     let newActorPool = new ActorPool(this.conn);
     let tabActorList = [];
     let selected;
-    return tabList.getList().then((tabActors) => {
-      for (let tabActor of tabActors) {
-        if (tabActor.exited) {
-          
-          continue;
-        }
-        if (tabActor.selected) {
-          selected = tabActorList.length;
-        }
-        tabActor.parentID = this.actorID;
-        newActorPool.addActor(tabActor);
-        tabActorList.push(tabActor);
+
+    let tabActors = await tabList.getList();
+    for (let tabActor of tabActors) {
+      if (tabActor.exited) {
+        
+        continue;
       }
-      
-      if (!this._globalActorPool) {
-        this._globalActorPool = new ActorPool(this.conn);
-        this.conn.addActorPool(this._globalActorPool);
+      if (tabActor.selected) {
+        selected = tabActorList.length;
       }
-      this._createExtraActors(this._parameters.globalActorFactories,
-        this._globalActorPool);
-      
+      tabActor.parentID = this.actorID;
+      newActorPool.addActor(tabActor);
+      tabActorList.push(tabActor);
+    }
+    
+    if (!this._globalActorPool) {
+      this._globalActorPool = new ActorPool(this.conn);
+      this.conn.addActorPool(this._globalActorPool);
+    }
+    this._createExtraActors(this._parameters.globalActorFactories,
+      this._globalActorPool);
+    
 
 
 
-      if (this._tabActorPool) {
-        this.conn.removeActorPool(this._tabActorPool);
-      }
-      this._tabActorPool = newActorPool;
-      this.conn.addActorPool(this._tabActorPool);
+    if (this._tabActorPool) {
+      this.conn.removeActorPool(this._tabActorPool);
+    }
+    this._tabActorPool = newActorPool;
+    this.conn.addActorPool(this._tabActorPool);
 
-      let reply = {
-        "from": this.actorID,
-        "selected": selected || 0,
-        "tabs": tabActorList.map(actor => actor.form())
-      };
+    let reply = {
+      "from": this.actorID,
+      "selected": selected || 0,
+      "tabs": tabActorList.map(actor => actor.form())
+    };
 
-      
-      if (this.url) {
-        reply.url = this.url;
-      }
+    
+    if (this.url) {
+      reply.url = this.url;
+    }
 
-      
-      this._appendExtraActors(reply);
+    
+    this._appendExtraActors(reply);
 
-      return reply;
-    });
+    return reply;
   },
 
-  onGetTab: function (options) {
+  onGetTab: async function (options) {
     let tabList = this._parameters.tabList;
     if (!tabList) {
       return { error: "noTabs",
@@ -331,22 +331,25 @@ RootActor.prototype = {
       this._tabActorPool = new ActorPool(this.conn);
       this.conn.addActorPool(this._tabActorPool);
     }
-    return tabList.getTab(options)
-                  .then(tabActor => {
-                    tabActor.parentID = this.actorID;
-                    this._tabActorPool.addActor(tabActor);
 
-                    return { tab: tabActor.form() };
-                  }, error => {
-                    if (error.error) {
+    let tabActor;
+    try {
+      tabActor = await tabList.getTab(options);
+    } catch (error) {
+      if (error.error) {
         
-                      return error;
-                    }
-                    return {
-                      error: "noTab",
-                      message: "Unexpected error while calling getTab(): " + error
-                    };
-                  });
+        return error;
+      }
+      return {
+        error: "noTab",
+        message: "Unexpected error while calling getTab(): " + error
+      };
+    }
+
+    tabActor.parentID = this.actorID;
+    this._tabActorPool.addActor(tabActor);
+
+    return { tab: tabActor.form() };
   },
 
   onGetWindow: function ({ outerWindowID }) {
