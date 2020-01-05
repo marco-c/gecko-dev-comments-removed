@@ -34,7 +34,7 @@ URLClassifierParent::StartClassify(nsIPrincipal* aPrincipal,
     
     
     
-    Unused << Send__delete__(this, void_t());
+    ClassificationFailed();
   }
   return IPC_OK();
 }
@@ -46,6 +46,14 @@ URLClassifierParent::OnClassifyComplete(nsresult aRv)
     Unused << Send__delete__(this, aRv);
   }
   return NS_OK;
+}
+
+void
+URLClassifierParent::ClassificationFailed()
+{
+  if (mIPCOpen) {
+    Unused << Send__delete__(this, void_t());
+  }
 }
 
 void
