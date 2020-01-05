@@ -7,9 +7,6 @@
 
 
 
-#![deny(unused_imports)]
-#![deny(unused_variables)]
-
 extern crate png;
 extern crate test;
 extern crate regex;

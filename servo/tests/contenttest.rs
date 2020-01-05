@@ -7,9 +7,6 @@
 
 
 
-#![deny(unused_imports)]
-#![deny(unused_variables)]
-
 extern crate getopts;
 extern crate regex;
 extern crate test;

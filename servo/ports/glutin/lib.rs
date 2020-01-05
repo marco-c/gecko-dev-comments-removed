@@ -5,7 +5,6 @@
 
 
 #![feature(box_syntax, int_uint)]
-#![deny(unused_imports, unused_variables)]
 #![allow(unstable)]
 
 #[cfg(target_os="macos")]

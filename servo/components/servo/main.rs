@@ -2,8 +2,6 @@
 
 
 
-#![deny(unused_imports)]
-#![deny(unused_variables)]
 #![allow(unstable)]
 
 #[cfg(target_os="android")]
