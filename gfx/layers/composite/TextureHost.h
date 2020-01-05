@@ -601,7 +601,7 @@ protected:
   
 
 
-  void NotifyNotUsed();
+  virtual void NotifyNotUsed();
 
   
   void CallNotifyNotUsed();
