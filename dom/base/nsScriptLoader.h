@@ -86,8 +86,7 @@ public:
       mWasCompiledOMT(false),
       mIsTracking(false),
       mOffThreadToken(nullptr),
-      mScriptTextBuf(nullptr),
-      mScriptTextLength(0),
+      mScriptText(),
       mJSVersion(aVersion),
       mLineNo(1),
       mCORSMode(aCORSMode),
@@ -181,8 +180,9 @@ public:
   bool mIsTracking;       
   void* mOffThreadToken;  
   nsString mSourceMapURL; 
-  char16_t* mScriptTextBuf; 
-  size_t mScriptTextLength; 
+  
+  
+  mozilla::Vector<char16_t> mScriptText;
   uint32_t mJSVersion;
   nsCOMPtr<nsIURI> mURI;
   nsCOMPtr<nsIPrincipal> mOriginPrincipal;
@@ -412,11 +412,11 @@ public:
 
 
 
+
   nsresult OnStreamComplete(nsIIncrementalStreamLoader* aLoader,
                             nsISupports* aContext,
                             nsresult aChannelStatus,
                             nsresult aSRIStatus,
-                            mozilla::Vector<char16_t> &aString,
                             mozilla::dom::SRICheckDataVerifier* aSRIDataVerifier);
 
   
@@ -575,8 +575,7 @@ private:
   uint32_t NumberOfProcessors();
   nsresult PrepareLoadedRequest(nsScriptLoadRequest* aRequest,
                                 nsIIncrementalStreamLoader* aLoader,
-                                nsresult aStatus,
-                                mozilla::Vector<char16_t> &aString);
+                                nsresult aStatus);
 
   void AddDeferRequest(nsScriptLoadRequest* aRequest);
   bool MaybeRemovedDeferRequests();
@@ -703,9 +702,6 @@ private:
 
   
   nsCOMPtr<nsIUnicodeDecoder>   mDecoder;
-
-  
-  mozilla::Vector<char16_t>     mBuffer;
 };
 
 class nsAutoScriptLoaderDisabler
