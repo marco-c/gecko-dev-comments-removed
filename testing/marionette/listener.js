@@ -93,6 +93,10 @@ var importedScripts = new evaluate.ScriptStorageServiceClient(syncChrome);
 
 Cu.import("resource://gre/modules/Log.jsm");
 var logger = Log.repository.getLogger("Marionette");
+
+if (logger.ownAppenders.length == 0) {
+  logger.addAppender(new Log.DumpAppender());
+}
 logger.debug("loaded listener.js");
 
 var modalHandler = function() {
@@ -740,13 +744,6 @@ function resetValues() {
 
 
 
-function dumpLog(logline) {
-  dump(Date.now() + " Marionette: " + logline);
-}
-
-
-
-
 function wasInterrupted() {
   if (previousContainer) {
     let element = content.document.elementFromPoint((content.innerWidth/2), (content.innerHeight/2));
@@ -847,8 +844,10 @@ function setTestName(msg) {
 
 function emitTouchEvent(type, touch) {
   if (!wasInterrupted()) {
-    let loggingInfo = "emitting Touch event of type " + type + " to element with id: " + touch.target.id + " and tag name: " + touch.target.tagName + " at coordinates (" + touch.clientX + ", " + touch.clientY + ") relative to the viewport";
-    dumpLog(loggingInfo);
+    logger.info(`Emitting Touch event of type ${type} to element with id: ${touch.target.id} ` +
+                `and tag name: ${touch.target.tagName} at coordinates (${touch.clientX}, ` +
+                `${touch.clientY}) relative to the viewport`);
+
     var docShell = curContainer.frame.document.defaultView.
                    QueryInterface(Components.interfaces.nsIInterfaceRequestor).
                    getInterface(Components.interfaces.nsIWebNavigation).
