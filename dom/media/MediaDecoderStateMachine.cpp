@@ -403,12 +403,22 @@ class MediaDecoderStateMachine::DormantState
 public:
   explicit DormantState(Master* aPtr) : StateObject(aPtr) {}
 
-  void Enter(SeekJob aPendingSeek)
+  void Enter()
   {
-    mPendingSeek = Move(aPendingSeek);
     if (mMaster->IsPlaying()) {
       mMaster->StopPlayback();
     }
+
+    
+    auto t = mMaster->mMediaSink->IsStarted()
+      ? mMaster->GetClock()
+      : mMaster->GetMediaTime();
+    mPendingSeek.mTarget = SeekTarget(
+      t, SeekTarget::Accurate, MediaDecoderEventVisibility::Suppressed);
+    
+    
+    RefPtr<MediaDecoder::SeekPromise> x = mPendingSeek.mPromise.Ensure(__func__);
+
     mMaster->Reset();
     mMaster->mReader->ReleaseResources();
   }
@@ -686,16 +696,7 @@ private:
 
   void EnterDormant()
   {
-    auto t = mMaster->mMediaSink->IsStarted()
-      ? mMaster->GetClock()
-      : mMaster->GetMediaTime();
-    SeekJob seekJob;
-    seekJob.mTarget = SeekTarget(t, SeekTarget::Accurate,
-                                 MediaDecoderEventVisibility::Suppressed);
-    
-    
-    RefPtr<MediaDecoder::SeekPromise> unused = seekJob.mPromise.Ensure(__func__);
-    SetState<DormantState>(Move(seekJob));
+    SetState<DormantState>();
   }
 
   void StartDormantTimer()
