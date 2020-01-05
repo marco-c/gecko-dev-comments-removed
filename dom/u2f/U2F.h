@@ -11,11 +11,16 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/Nullable.h"
+#include "mozilla/dom/U2FBinding.h"
 #include "mozilla/ErrorResult.h"
+#include "mozilla/MozPromise.h"
+#include "mozilla/ReentrantMonitor.h"
+#include "mozilla/SharedThreadPool.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsIU2FToken.h"
 #include "nsNSSShutDown.h"
 #include "nsPIDOMWindow.h"
+#include "nsProxyRelease.h"
 #include "nsWrapperCache.h"
 
 #include "USBToken.h"
@@ -23,10 +28,30 @@
 namespace mozilla {
 namespace dom {
 
-struct RegisterRequest;
-struct RegisteredKey;
 class U2FRegisterCallback;
 class U2FSignCallback;
+
+
+struct RegisterRequest;
+struct RegisteredKey;
+
+
+
+struct LocalRegisterRequest
+{
+  nsString mChallenge;
+  nsString mVersion;
+  CryptoBuffer mClientData;
+};
+
+struct LocalRegisteredKey
+{
+  nsString mKeyHandle;
+  nsString mVersion;
+  Nullable<nsString> mAppId;
+  
+  
+};
 
 
 
@@ -41,80 +66,213 @@ enum class ErrorCode {
 };
 
 typedef nsCOMPtr<nsIU2FToken> Authenticator;
+typedef MozPromise<nsString, ErrorCode, false> U2FPromise;
+typedef MozPromise<Authenticator, ErrorCode, false> U2FPrepPromise;
+
+
+
+
+class U2FPrepTask : public Runnable
+{
+public:
+  explicit U2FPrepTask(const Authenticator& aAuthenticator);
+
+  RefPtr<U2FPrepPromise> Execute();
+
+protected:
+  virtual ~U2FPrepTask();
+
+  Authenticator mAuthenticator;
+  MozPromiseHolder<U2FPrepPromise> mPromise;
+};
+
+
+
+class U2FIsRegisteredTask final : public U2FPrepTask
+{
+public:
+  U2FIsRegisteredTask(const Authenticator& aAuthenticator,
+                      const LocalRegisteredKey& aRegisteredKey);
+
+  NS_DECL_NSIRUNNABLE
+private:
+  ~U2FIsRegisteredTask();
+
+  LocalRegisteredKey mRegisteredKey;
+};
 
 class U2FTask : public Runnable
 {
 public:
   U2FTask(const nsAString& aOrigin,
-          const nsAString& aAppId);
+          const nsAString& aAppId,
+          const Authenticator& aAuthenticator);
+
+  RefPtr<U2FPromise> Execute();
 
   nsString mOrigin;
   nsString mAppId;
-
-  virtual
-  void ReturnError(ErrorCode code) = 0;
+  Authenticator mAuthenticator;
 
 protected:
   virtual ~U2FTask();
+
+  MozPromiseHolder<U2FPromise> mPromise;
 };
 
-class U2FRegisterTask final : public nsNSSShutDownObject,
-                              public U2FTask
+
+
+class U2FRegisterTask final : public U2FTask
 {
 public:
   U2FRegisterTask(const nsAString& aOrigin,
                   const nsAString& aAppId,
-                  const Sequence<RegisterRequest>& aRegisterRequests,
-                  const Sequence<RegisteredKey>& aRegisteredKeys,
-                  U2FRegisterCallback* aCallback,
-                  const Sequence<Authenticator>& aAuthenticators);
-
-  
-  virtual
-  void virtualDestroyNSSReference() override {};
-
-  void ReturnError(ErrorCode code) override;
+                  const Authenticator& aAuthenticator,
+                  const CryptoBuffer& aAppParam,
+                  const CryptoBuffer& aChallengeParam,
+                  const LocalRegisterRequest& aRegisterEntry);
 
   NS_DECL_NSIRUNNABLE
 private:
   ~U2FRegisterTask();
 
-  Sequence<RegisterRequest> mRegisterRequests;
-  Sequence<RegisteredKey> mRegisteredKeys;
-  RefPtr<U2FRegisterCallback> mCallback;
-  Sequence<Authenticator> mAuthenticators;
+  CryptoBuffer mAppParam;
+  CryptoBuffer mChallengeParam;
+  LocalRegisterRequest mRegisterEntry;
 };
 
-class U2FSignTask final : public nsNSSShutDownObject,
-                          public U2FTask
+
+
+class U2FSignTask final : public U2FTask
 {
 public:
   U2FSignTask(const nsAString& aOrigin,
               const nsAString& aAppId,
-              const nsAString& aChallenge,
-              const Sequence<RegisteredKey>& aRegisteredKeys,
-              U2FSignCallback* aCallback,
-              const Sequence<Authenticator>& aAuthenticators);
-
-  
-  virtual
-  void virtualDestroyNSSReference() override {};
-
-  void ReturnError(ErrorCode code) override;
+              const nsAString& aVersion,
+              const Authenticator& aAuthenticator,
+              const CryptoBuffer& aAppParam,
+              const CryptoBuffer& aChallengeParam,
+              const CryptoBuffer& aClientData,
+              const CryptoBuffer& aKeyHandle);
 
   NS_DECL_NSIRUNNABLE
 private:
   ~U2FSignTask();
 
-  nsString mChallenge;
-  Sequence<RegisteredKey> mRegisteredKeys;
-  RefPtr<U2FSignCallback> mCallback;
-  Sequence<Authenticator> mAuthenticators;
+  nsString mVersion;
+  CryptoBuffer mAppParam;
+  CryptoBuffer mChallengeParam;
+  CryptoBuffer mClientData;
+  CryptoBuffer mKeyHandle;
 };
 
-class U2F final : public nsISupports,
-                  public nsWrapperCache,
-                  public nsNSSShutDownObject
+
+
+class U2FStatus
+{
+public:
+  U2FStatus();
+
+  void WaitGroupAdd();
+  void WaitGroupDone();
+  void WaitGroupWait();
+
+  void Stop(const ErrorCode aErrorCode);
+  void Stop(const ErrorCode aErrorCode, const nsAString& aResponse);
+  bool IsStopped();
+  ErrorCode GetErrorCode();
+  nsString GetResponse();
+
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(U2FStatus)
+
+private:
+  ~U2FStatus();
+
+  uint16_t mCount;
+  bool mIsStopped;
+  nsString mResponse;
+  ErrorCode mErrorCode;
+  ReentrantMonitor mReentrantMonitor;
+};
+
+
+
+class U2FRunnable : public Runnable
+                  , public nsNSSShutDownObject
+{
+public:
+  U2FRunnable(const nsAString& aOrigin, const nsAString& aAppId);
+
+  
+  virtual
+  void virtualDestroyNSSReference() override {};
+
+protected:
+  virtual ~U2FRunnable();
+  ErrorCode EvaluateAppID();
+
+  nsString mOrigin;
+  nsString mAppId;
+};
+
+
+
+class U2FRegisterRunnable : public U2FRunnable
+{
+public:
+  U2FRegisterRunnable(const nsAString& aOrigin,
+                      const nsAString& aAppId,
+                      const Sequence<RegisterRequest>& aRegisterRequests,
+                      const Sequence<RegisteredKey>& aRegisteredKeys,
+                      const Sequence<Authenticator>& aAuthenticators,
+                      U2FRegisterCallback* aCallback);
+
+  void SendResponse(const RegisterResponse& aResponse);
+  void SetTimeout(const int32_t aTimeoutMillis);
+
+  NS_DECL_NSIRUNNABLE
+
+private:
+  ~U2FRegisterRunnable();
+
+  nsTArray<LocalRegisterRequest> mRegisterRequests;
+  nsTArray<LocalRegisteredKey> mRegisteredKeys;
+  nsTArray<Authenticator> mAuthenticators;
+  nsMainThreadPtrHandle<U2FRegisterCallback> mCallback;
+  Nullable<int32_t> opt_mTimeoutSeconds;
+};
+
+
+class U2FSignRunnable : public U2FRunnable
+{
+public:
+  U2FSignRunnable(const nsAString& aOrigin,
+                  const nsAString& aAppId,
+                  const nsAString& aChallenge,
+                  const Sequence<RegisteredKey>& aRegisteredKeys,
+                  const Sequence<Authenticator>& aAuthenticators,
+                  U2FSignCallback* aCallback);
+
+  void SendResponse(const SignResponse& aResponse);
+  void SetTimeout(const int32_t aTimeoutMillis);
+
+  NS_DECL_NSIRUNNABLE
+
+private:
+  ~U2FSignRunnable();
+
+  nsString mChallenge;
+  CryptoBuffer mClientData;
+  nsTArray<LocalRegisteredKey> mRegisteredKeys;
+  nsTArray<Authenticator> mAuthenticators;
+  nsMainThreadPtrHandle<U2FSignCallback> mCallback;
+  Nullable<int32_t> opt_mTimeoutSeconds;
+};
+
+
+class U2F final : public nsISupports
+                , public nsWrapperCache
+                , public nsNSSShutDownObject
 {
 public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS

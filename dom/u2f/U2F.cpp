@@ -5,17 +5,19 @@
 
 
 #include "hasht.h"
+#include "mozilla/dom/CallbackFunction.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/CryptoBuffer.h"
 #include "mozilla/dom/NSSU2FTokenRemote.h"
 #include "mozilla/dom/U2F.h"
-#include "mozilla/dom/U2FBinding.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/ReentrantMonitor.h"
 #include "nsContentUtils.h"
 #include "nsINSSU2FToken.h"
 #include "nsNetCID.h"
 #include "nsNSSComponent.h"
 #include "nsURLParsers.h"
+#include "nsXPCOMCIDInternal.h"
 #include "pk11pub.h"
 
 using mozilla::dom::ContentChild;
@@ -26,6 +28,7 @@ namespace dom {
 #define PREF_U2F_SOFTTOKEN_ENABLED "security.webauth.u2f_enable_softtoken"
 #define PREF_U2F_USBTOKEN_ENABLED  "security.webauth.u2f_enable_usbtoken"
 
+NS_NAMED_LITERAL_CSTRING(kPoolName, "WebAuth_U2F-IO");
 NS_NAMED_LITERAL_STRING(kFinishEnrollment, "navigator.id.finishEnrollment");
 NS_NAMED_LITERAL_STRING(kGetAssertion, "navigator.id.getAssertion");
 
@@ -41,24 +44,11 @@ NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(U2F, mParent)
 
 static mozilla::LazyLogModule gWebauthLog("webauth_u2f");
 
-template <class CB, class Rsp>
-void
-SendError(CB* aCallback, ErrorCode aErrorCode)
-{
-  Rsp response;
-  response.mErrorCode.Construct(static_cast<uint32_t>(aErrorCode));
-
-  ErrorResult rv;
-  aCallback->Call(response, rv);
-  NS_WARNING_ASSERTION(!rv.Failed(), "callback failed");
-  
-  rv.SuppressException();
-}
-
 static nsresult
 AssembleClientData(const nsAString& aOrigin, const nsAString& aTyp,
                    const nsAString& aChallenge, CryptoBuffer& aClientData)
 {
+  MOZ_ASSERT(NS_IsMainThread());
   ClientData clientDataObject;
   clientDataObject.mTyp.Construct(aTyp); 
   clientDataObject.mChallenge.Construct(aChallenge);
@@ -76,244 +66,437 @@ AssembleClientData(const nsAString& aOrigin, const nsAString& aTyp,
   return NS_OK;
 }
 
-U2FTask::U2FTask(const nsAString& aOrigin, const nsAString& aAppId)
+U2FStatus::U2FStatus()
+  : mCount(0)
+  , mIsStopped(false)
+  , mReentrantMonitor("U2FStatus")
+{}
+
+U2FStatus::~U2FStatus()
+{}
+
+void
+U2FStatus::WaitGroupAdd()
+{
+  ReentrantMonitorAutoEnter mon(mReentrantMonitor);
+
+  mCount += 1;
+  MOZ_LOG(gWebauthLog, LogLevel::Debug,
+          ("U2FStatus::WaitGroupAdd, now %d", mCount));
+}
+
+void
+U2FStatus::WaitGroupDone()
+{
+  ReentrantMonitorAutoEnter mon(mReentrantMonitor);
+
+  MOZ_ASSERT(mCount > 0);
+  mCount -= 1;
+  MOZ_LOG(gWebauthLog, LogLevel::Debug,
+          ("U2FStatus::WaitGroupDone, now %d", mCount));
+  if (mCount == 0) {
+    mReentrantMonitor.NotifyAll();
+  }
+}
+
+void
+U2FStatus::WaitGroupWait()
+{
+  ReentrantMonitorAutoEnter mon(mReentrantMonitor);
+  MOZ_LOG(gWebauthLog, LogLevel::Debug,
+          ("U2FStatus::WaitGroupWait, now %d", mCount));
+
+  while (mCount > 0) {
+    mReentrantMonitor.Wait();
+  }
+
+  MOZ_ASSERT(mCount == 0);
+  MOZ_LOG(gWebauthLog, LogLevel::Debug,
+          ("U2FStatus::Wait completed, now count=%d stopped=%d", mCount,
+           mIsStopped));
+}
+
+void
+U2FStatus::Stop(const ErrorCode aErrorCode)
+{
+  ReentrantMonitorAutoEnter mon(mReentrantMonitor);
+  MOZ_ASSERT(!mIsStopped);
+  mIsStopped = true;
+  mErrorCode = aErrorCode;
+
+  
+  
+  
+  
+}
+
+void
+U2FStatus::Stop(const ErrorCode aErrorCode, const nsAString& aResponse)
+{
+  ReentrantMonitorAutoEnter mon(mReentrantMonitor);
+  Stop(aErrorCode);
+  mResponse = aResponse;
+}
+
+bool
+U2FStatus::IsStopped()
+{
+  ReentrantMonitorAutoEnter mon(mReentrantMonitor);
+  return mIsStopped;
+}
+
+ErrorCode
+U2FStatus::GetErrorCode()
+{
+  ReentrantMonitorAutoEnter mon(mReentrantMonitor);
+  MOZ_ASSERT(mIsStopped);
+  return mErrorCode;
+}
+
+nsString
+U2FStatus::GetResponse()
+{
+  ReentrantMonitorAutoEnter mon(mReentrantMonitor);
+  MOZ_ASSERT(mIsStopped);
+  return mResponse;
+}
+
+U2FTask::U2FTask(const nsAString& aOrigin, const nsAString& aAppId,
+                 const Authenticator& aAuthenticator)
   : mOrigin(aOrigin)
   , mAppId(aAppId)
+  , mAuthenticator(aAuthenticator)
 {}
 
 U2FTask::~U2FTask()
 {}
 
+RefPtr<U2FPromise>
+U2FTask::Execute()
+{
+  RefPtr<U2FPromise> p = mPromise.Ensure(__func__);
+
+  nsCOMPtr<nsIRunnable> r(this);
+
+  
+  
+  AbstractThread::MainThread()->Dispatch(r.forget());
+  return p;
+}
+
+U2FPrepTask::U2FPrepTask(const Authenticator& aAuthenticator)
+  : mAuthenticator(aAuthenticator)
+{}
+
+U2FPrepTask::~U2FPrepTask()
+{}
+
+RefPtr<U2FPrepPromise>
+U2FPrepTask::Execute()
+{
+  RefPtr<U2FPrepPromise> p = mPromise.Ensure(__func__);
+
+  nsCOMPtr<nsIRunnable> r(this);
+
+  
+  
+  AbstractThread::MainThread()->Dispatch(r.forget());
+  return p;
+}
+
+U2FIsRegisteredTask::U2FIsRegisteredTask(const Authenticator& aAuthenticator,
+                                         const LocalRegisteredKey& aRegisteredKey)
+  : U2FPrepTask(aAuthenticator)
+  , mRegisteredKey(aRegisteredKey)
+{}
+
+U2FIsRegisteredTask::~U2FIsRegisteredTask()
+{}
+
+NS_IMETHODIMP
+U2FIsRegisteredTask::Run()
+{
+  bool isCompatible = false;
+  nsresult rv = mAuthenticator->IsCompatibleVersion(mRegisteredKey.mVersion,
+                                                    &isCompatible);
+  if (NS_FAILED(rv)) {
+    mPromise.Reject(ErrorCode::OTHER_ERROR, __func__);
+    return NS_ERROR_FAILURE;
+  }
+
+  if (!isCompatible) {
+    mPromise.Reject(ErrorCode::BAD_REQUEST, __func__);
+    return NS_ERROR_FAILURE;
+  }
+
+  
+  CryptoBuffer keyHandle;
+  rv = keyHandle.FromJwkBase64(mRegisteredKey.mKeyHandle);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    mPromise.Reject(ErrorCode::BAD_REQUEST, __func__);
+    return NS_ERROR_FAILURE;
+  }
+
+  
+  
+
+  bool isRegistered = false;
+  rv = mAuthenticator->IsRegistered(keyHandle.Elements(), keyHandle.Length(),
+                                    &isRegistered);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    mPromise.Reject(ErrorCode::OTHER_ERROR, __func__);
+    return NS_ERROR_FAILURE;
+  }
+
+  if (isRegistered) {
+    mPromise.Reject(ErrorCode::DEVICE_INELIGIBLE, __func__);
+    return NS_OK;
+  }
+
+  mPromise.Resolve(mAuthenticator, __func__);
+  return NS_OK;
+}
+
 U2FRegisterTask::U2FRegisterTask(const nsAString& aOrigin,
                                  const nsAString& aAppId,
-                                 const Sequence<RegisterRequest>& aRegisterRequests,
-                                 const Sequence<RegisteredKey>& aRegisteredKeys,
-                                 U2FRegisterCallback* aCallback,
-                                 const Sequence<Authenticator>& aAuthenticators)
-  : U2FTask(aOrigin, aAppId)
-  , mRegisterRequests(aRegisterRequests)
-  , mRegisteredKeys(aRegisteredKeys)
-  , mCallback(aCallback)
-  , mAuthenticators(aAuthenticators)
+                                 const Authenticator& aAuthenticator,
+                                 const CryptoBuffer& aAppParam,
+                                 const CryptoBuffer& aChallengeParam,
+                                 const LocalRegisterRequest& aRegisterEntry)
+  : U2FTask(aOrigin, aAppId, aAuthenticator)
+  , mAppParam(aAppParam)
+  , mChallengeParam(aChallengeParam)
+  , mRegisterEntry(aRegisterEntry)
 {}
 
 U2FRegisterTask::~U2FRegisterTask()
-{
-  nsNSSShutDownPreventionLock locker;
-
-  if (isAlreadyShutDown()) {
-    return;
-  }
-  shutdown(ShutdownCalledFrom::Object);
-}
-
-void
-U2FRegisterTask::ReturnError(ErrorCode aCode)
-{
-  SendError<U2FRegisterCallback, RegisterResponse>(mCallback.get(), aCode);
-}
+{}
 
 NS_IMETHODIMP
 U2FRegisterTask::Run()
 {
-  nsNSSShutDownPreventionLock locker;
-  if (isAlreadyShutDown()) {
-    ReturnError(ErrorCode::OTHER_ERROR);
+  bool isCompatible = false;
+  nsresult rv = mAuthenticator->IsCompatibleVersion(mRegisterEntry.mVersion,
+                                                    &isCompatible);
+  if (NS_FAILED(rv)) {
+    mPromise.Reject(ErrorCode::OTHER_ERROR, __func__);
     return NS_ERROR_FAILURE;
   }
 
-  for (size_t i = 0; i < mRegisteredKeys.Length(); ++i) {
-    RegisteredKey request(mRegisteredKeys[i]);
-
-    
-    if (!(request.mKeyHandle.WasPassed() &&
-          request.mVersion.WasPassed())) {
-      continue;
-    }
-
-    
-    if (request.mAppId.WasPassed() && mAppId != request.mAppId.Value()) {
-      continue;
-    }
-
-    
-    CryptoBuffer keyHandle;
-    nsresult rv = keyHandle.FromJwkBase64(request.mKeyHandle.Value());
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      ReturnError(ErrorCode::BAD_REQUEST);
-      return NS_ERROR_FAILURE;
-    }
-
-    
-    
-
-    bool isCompatible = false;
-    bool isRegistered = false;
-
-    
-    
-    for (auto token : mAuthenticators) {
-      rv = token->IsCompatibleVersion(request.mVersion.Value(), &isCompatible);
-      if (NS_FAILED(rv)) {
-        ReturnError(ErrorCode::OTHER_ERROR);
-        return NS_ERROR_FAILURE;
-      }
-      if (!isCompatible) {
-        continue;
-      }
-
-      rv = token->IsRegistered(keyHandle.Elements(), keyHandle.Length(),
-                               &isRegistered);
-      if (NS_FAILED(rv)) {
-        ReturnError(ErrorCode::OTHER_ERROR);
-        return NS_ERROR_FAILURE;
-      }
-
-      if (isCompatible && isRegistered) {
-        ReturnError(ErrorCode::DEVICE_INELIGIBLE);
-        return NS_OK;
-      }
-    }
-  }
-
-  
-  SECStatus srv;
-  nsCString cAppId = NS_ConvertUTF16toUTF8(mAppId);
-  CryptoBuffer appParam;
-  if (!appParam.SetLength(SHA256_LENGTH, fallible)) {
-    ReturnError(ErrorCode::OTHER_ERROR);
+  if (!isCompatible) {
+    mPromise.Reject(ErrorCode::BAD_REQUEST, __func__);
     return NS_ERROR_FAILURE;
   }
 
-  srv = PK11_HashBuf(SEC_OID_SHA256, appParam.Elements(),
-                     reinterpret_cast<const uint8_t*>(cAppId.BeginReading()),
-                     cAppId.Length());
-  if (srv != SECSuccess) {
-    ReturnError(ErrorCode::OTHER_ERROR);
+  uint8_t* buffer;
+  uint32_t bufferlen;
+  rv = mAuthenticator->Register(mAppParam.Elements(),
+                                mAppParam.Length(),
+                                mChallengeParam.Elements(),
+                                mChallengeParam.Length(),
+                                &buffer, &bufferlen);
+  if (NS_WARN_IF(NS_FAILED(rv)))  {
+    mPromise.Reject(ErrorCode::OTHER_ERROR, __func__);
     return NS_ERROR_FAILURE;
   }
 
+  MOZ_ASSERT(buffer);
+  CryptoBuffer regData;
+  if (NS_WARN_IF(!regData.Assign(buffer, bufferlen))) {
+    free(buffer);
+    mPromise.Reject(ErrorCode::OTHER_ERROR, __func__);
+    return NS_ERROR_OUT_OF_MEMORY;
+  }
+  free(buffer);
+
   
-  for (size_t i = 0; i < mRegisterRequests.Length(); ++i) {
-    RegisterRequest request(mRegisterRequests[i]);
+  nsString clientDataBase64;
+  nsString registrationDataBase64;
+  nsresult rvClientData = mRegisterEntry.mClientData.ToJwkBase64(clientDataBase64);
+  nsresult rvRegistrationData = regData.ToJwkBase64(registrationDataBase64);
 
-    
-    if (!(request.mVersion.WasPassed() &&
-        request.mChallenge.WasPassed())) {
-      continue;
-    }
-
-    CryptoBuffer clientData;
-    nsresult rv = AssembleClientData(mOrigin, kFinishEnrollment,
-                                     request.mChallenge.Value(),
-                                     clientData);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      ReturnError(ErrorCode::OTHER_ERROR);
-      return NS_ERROR_FAILURE;
-    }
-
-    
-    CryptoBuffer challengeParam;
-    if (!challengeParam.SetLength(SHA256_LENGTH, fallible)) {
-      ReturnError(ErrorCode::OTHER_ERROR);
-      return NS_ERROR_FAILURE;
-    }
-
-    srv = PK11_HashBuf(SEC_OID_SHA256, challengeParam.Elements(),
-                       clientData.Elements(), clientData.Length());
-    if (srv != SECSuccess) {
-      ReturnError(ErrorCode::OTHER_ERROR);
-      return NS_ERROR_FAILURE;
-    }
-
-    
-    CryptoBuffer regData;
-    bool registerSuccess = false;
-    bool isCompatible = false;
-
-    for (auto token : mAuthenticators) {
-      rv = token->IsCompatibleVersion(request.mVersion.Value(), &isCompatible);
-      if (NS_FAILED(rv)) {
-        ReturnError(ErrorCode::OTHER_ERROR);
-        return NS_ERROR_FAILURE;
-      }
-
-      if (isCompatible) {
-        uint8_t* buffer;
-        uint32_t bufferlen;
-        nsresult rv;
-        rv = token->Register(appParam.Elements(), appParam.Length(),
-                             challengeParam.Elements(), challengeParam.Length(),
-                             &buffer, &bufferlen);
-        if (NS_FAILED(rv)) {
-          ReturnError(ErrorCode::OTHER_ERROR);
-          return NS_ERROR_FAILURE;
-        }
-
-        MOZ_ASSERT(buffer);
-        if (NS_WARN_IF(!regData.Assign(buffer, bufferlen))) {
-          free(buffer);
-          ReturnError(ErrorCode::OTHER_ERROR);
-          return NS_ERROR_OUT_OF_MEMORY;
-        }
-
-        free(buffer);
-        registerSuccess = true;
-        break;
-      }
-    }
-
-    if (!registerSuccess) {
-      
-      continue;
-    }
-
-    
-    nsString clientDataBase64, registrationDataBase64;
-    nsresult rvClientData =
-      clientData.ToJwkBase64(clientDataBase64);
-    nsresult rvRegistrationData =
-      regData.ToJwkBase64(registrationDataBase64);
-    if (NS_WARN_IF(NS_FAILED(rvClientData)) ||
-        NS_WARN_IF(NS_FAILED(rvRegistrationData))) {
-      ReturnError(ErrorCode::OTHER_ERROR);
-      return NS_ERROR_FAILURE;
-    }
-
-    RegisterResponse response;
-    response.mClientData.Construct(clientDataBase64);
-    response.mRegistrationData.Construct(registrationDataBase64);
-    response.mErrorCode.Construct(static_cast<uint32_t>(ErrorCode::OK));
-
-    ErrorResult result;
-    mCallback->Call(response, result);
-    NS_WARNING_ASSERTION(!result.Failed(), "callback failed");
-    
-    result.SuppressException();
-    return NS_OK;
+  if (NS_WARN_IF(NS_FAILED(rvClientData)) ||
+      NS_WARN_IF(NS_FAILED(rvRegistrationData))) {
+    mPromise.Reject(ErrorCode::OTHER_ERROR, __func__);
+    return NS_ERROR_FAILURE;
   }
 
-  
-  ReturnError(ErrorCode::BAD_REQUEST);
-  return NS_ERROR_FAILURE;
+  RegisterResponse response;
+  response.mClientData.Construct(clientDataBase64);
+  response.mRegistrationData.Construct(registrationDataBase64);
+  response.mErrorCode.Construct(static_cast<uint32_t>(ErrorCode::OK));
+
+  nsString responseStr;
+  if (NS_WARN_IF(!response.ToJSON(responseStr))) {
+    return NS_ERROR_FAILURE;
+  }
+  mPromise.Resolve(responseStr, __func__);
+  return NS_OK;
 }
 
 U2FSignTask::U2FSignTask(const nsAString& aOrigin,
                          const nsAString& aAppId,
-                         const nsAString& aChallenge,
-                         const Sequence<RegisteredKey>& aRegisteredKeys,
-                         U2FSignCallback* aCallback,
-                         const Sequence<Authenticator>& aAuthenticators)
-  : U2FTask(aOrigin, aAppId)
-  , mChallenge(aChallenge)
-  , mRegisteredKeys(aRegisteredKeys)
-  , mCallback(aCallback)
-  , mAuthenticators(aAuthenticators)
+                         const nsAString& aVersion,
+                         const Authenticator& aAuthenticator,
+                         const CryptoBuffer& aAppParam,
+                         const CryptoBuffer& aChallengeParam,
+                         const CryptoBuffer& aClientData,
+                         const CryptoBuffer& aKeyHandle)
+  : U2FTask(aOrigin, aAppId, aAuthenticator)
+  , mVersion(aVersion)
+  , mAppParam(aAppParam)
+  , mChallengeParam(aChallengeParam)
+  , mClientData(aClientData)
+  , mKeyHandle(aKeyHandle)
 {}
 
 U2FSignTask::~U2FSignTask()
+{}
+
+NS_IMETHODIMP
+U2FSignTask::Run()
+{
+  bool isCompatible = false;
+  nsresult rv = mAuthenticator->IsCompatibleVersion(mVersion, &isCompatible);
+  if (NS_FAILED(rv)) {
+    mPromise.Reject(ErrorCode::OTHER_ERROR, __func__);
+    return NS_ERROR_FAILURE;
+  }
+
+  if (!isCompatible) {
+    mPromise.Reject(ErrorCode::BAD_REQUEST, __func__);
+    return NS_ERROR_FAILURE;
+  }
+
+  bool isRegistered = false;
+  rv = mAuthenticator->IsRegistered(mKeyHandle.Elements(), mKeyHandle.Length(),
+                                    &isRegistered);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    mPromise.Reject(ErrorCode::OTHER_ERROR, __func__);
+    return NS_ERROR_FAILURE;
+  }
+
+  if (!isRegistered) {
+    mPromise.Reject(ErrorCode::DEVICE_INELIGIBLE, __func__);
+    return NS_OK;
+  }
+
+  CryptoBuffer signatureData;
+  uint8_t* buffer;
+  uint32_t bufferlen;
+  rv = mAuthenticator->Sign(mAppParam.Elements(), mAppParam.Length(),
+                            mChallengeParam.Elements(), mChallengeParam.Length(),
+                            mKeyHandle.Elements(), mKeyHandle.Length(),
+                            &buffer, &bufferlen);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    mPromise.Reject(ErrorCode::OTHER_ERROR, __func__);
+    return NS_ERROR_FAILURE;
+  }
+
+  MOZ_ASSERT(buffer);
+  if (NS_WARN_IF(!signatureData.Assign(buffer, bufferlen))) {
+    free(buffer);
+    mPromise.Reject(ErrorCode::OTHER_ERROR, __func__);
+    return NS_ERROR_OUT_OF_MEMORY;
+  }
+  free(buffer);
+
+  
+  nsString clientDataBase64;
+  nsString signatureDataBase64;
+  nsString keyHandleBase64;
+  nsresult rvClientData = mClientData.ToJwkBase64(clientDataBase64);
+  nsresult rvSignatureData = signatureData.ToJwkBase64(signatureDataBase64);
+  nsresult rvKeyHandle = mKeyHandle.ToJwkBase64(keyHandleBase64);
+  if (NS_WARN_IF(NS_FAILED(rvClientData)) ||
+      NS_WARN_IF(NS_FAILED(rvSignatureData) ||
+      NS_WARN_IF(NS_FAILED(rvKeyHandle)))) {
+    mPromise.Reject(ErrorCode::OTHER_ERROR, __func__);
+    return NS_ERROR_FAILURE;
+  }
+
+  SignResponse response;
+  response.mKeyHandle.Construct(keyHandleBase64);
+  response.mClientData.Construct(clientDataBase64);
+  response.mSignatureData.Construct(signatureDataBase64);
+  response.mErrorCode.Construct(static_cast<uint32_t>(ErrorCode::OK));
+
+  nsString responseStr;
+  if (NS_WARN_IF(!response.ToJSON(responseStr))) {
+    return NS_ERROR_FAILURE;
+  }
+  mPromise.Resolve(responseStr, __func__);
+  return NS_OK;
+}
+
+U2FRunnable::U2FRunnable(const nsAString& aOrigin, const nsAString& aAppId)
+  : mOrigin(aOrigin)
+  , mAppId(aAppId)
+{}
+
+U2FRunnable::~U2FRunnable()
+{}
+
+U2FRegisterRunnable::U2FRegisterRunnable(const nsAString& aOrigin,
+                                         const nsAString& aAppId,
+                                         const Sequence<RegisterRequest>& aRegisterRequests,
+                                         const Sequence<RegisteredKey>& aRegisteredKeys,
+                                         const Sequence<Authenticator>& aAuthenticators,
+                                         U2FRegisterCallback* aCallback)
+  : U2FRunnable(aOrigin, aAppId)
+  , mAuthenticators(aAuthenticators)
+  
+  
+  , mCallback(new nsMainThreadPtrHolder<U2FRegisterCallback>(aCallback))
+{
+  MOZ_ASSERT(NS_IsMainThread());
+
+  
+  
+  for (size_t i = 0; i < aRegisterRequests.Length(); ++i) {
+    RegisterRequest req(aRegisterRequests[i]);
+
+    
+    if (!req.mChallenge.WasPassed() || !req.mVersion.WasPassed()) {
+      continue;
+    }
+
+    LocalRegisterRequest localReq;
+    localReq.mVersion = req.mVersion.Value();
+    localReq.mChallenge = req.mChallenge.Value();
+
+    nsresult rv = AssembleClientData(mOrigin, kFinishEnrollment,
+                                     localReq.mChallenge, localReq.mClientData);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      continue;
+    }
+
+    mRegisterRequests.AppendElement(localReq);
+  }
+
+  for (size_t i = 0; i < aRegisteredKeys.Length(); ++i) {
+    RegisteredKey key(aRegisteredKeys[i]);
+
+    
+    if (!key.mVersion.WasPassed() || !key.mKeyHandle.WasPassed()) {
+      continue;
+    }
+
+    LocalRegisteredKey localKey;
+    localKey.mVersion = key.mVersion.Value();
+    localKey.mKeyHandle = key.mKeyHandle.Value();
+    if (key.mAppId.WasPassed()) {
+      localKey.mAppId.SetValue(key.mAppId.Value());
+    }
+
+    mRegisteredKeys.AppendElement(localKey);
+  }
+}
+
+U2FRegisterRunnable::~U2FRegisterRunnable()
 {
   nsNSSShutDownPreventionLock locker;
+
   if (isAlreadyShutDown()) {
     return;
   }
@@ -321,179 +504,371 @@ U2FSignTask::~U2FSignTask()
 }
 
 void
-U2FSignTask::ReturnError(ErrorCode aCode)
+U2FRegisterRunnable::SetTimeout(const int32_t aTimeoutMillis)
 {
-  SendError<U2FSignCallback, SignResponse>(mCallback.get(), aCode);
+  opt_mTimeoutSeconds.SetValue(aTimeoutMillis);
+}
+
+void
+U2FRegisterRunnable::SendResponse(const RegisterResponse& aResponse)
+{
+  MOZ_ASSERT(NS_IsMainThread());
+
+  ErrorResult rv;
+  mCallback->Call(aResponse, rv);
+  NS_WARNING_ASSERTION(!rv.Failed(), "callback failed");
+  
+  rv.SuppressException();
 }
 
 NS_IMETHODIMP
-U2FSignTask::Run()
+U2FRegisterRunnable::Run()
 {
+  MOZ_ASSERT(!NS_IsMainThread());
+
   nsNSSShutDownPreventionLock locker;
   if (isAlreadyShutDown()) {
-    ReturnError(ErrorCode::OTHER_ERROR);
     return NS_ERROR_FAILURE;
   }
 
   
-  SECStatus srv;
-  nsCString cAppId = NS_ConvertUTF16toUTF8(mAppId);
-  CryptoBuffer appParam;
-  if (!appParam.SetLength(SHA256_LENGTH, fallible)) {
-    ReturnError(ErrorCode::OTHER_ERROR);
-    return NS_ERROR_FAILURE;
-  }
+  RefPtr<U2FStatus> status = new U2FStatus();
 
-  srv = PK11_HashBuf(SEC_OID_SHA256, appParam.Elements(),
-                     reinterpret_cast<const uint8_t*>(cAppId.BeginReading()),
-                     cAppId.Length());
-  if (srv != SECSuccess) {
-    ReturnError(ErrorCode::OTHER_ERROR);
-    return NS_ERROR_FAILURE;
+  
+  ErrorCode appIdResult = EvaluateAppID();
+  if (appIdResult != ErrorCode::OK) {
+    status->Stop(appIdResult);
   }
 
   
-  for (size_t i = 0; i < mRegisteredKeys.Length(); i += 1) {
-    RegisteredKey request(mRegisteredKeys[i]);
-
-    
-    if (!(request.mVersion.WasPassed() &&
-          request.mKeyHandle.WasPassed())) {
-      continue;
-    }
-
-    
-    if (request.mAppId.WasPassed() && mAppId != request.mAppId.Value()) {
-      continue;
-    }
-
-    
-    CryptoBuffer clientData;
-    nsresult rv = AssembleClientData(mOrigin, kGetAssertion, mChallenge,
-                                     clientData);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      ReturnError(ErrorCode::OTHER_ERROR);
-      return NS_ERROR_FAILURE;
-    }
-
-    
-    CryptoBuffer challengeParam;
-    if (!challengeParam.SetLength(SHA256_LENGTH, fallible)) {
-      ReturnError(ErrorCode::OTHER_ERROR);
-      return NS_ERROR_FAILURE;
-    }
-
-    srv = PK11_HashBuf(SEC_OID_SHA256, challengeParam.Elements(),
-                       clientData.Elements(), clientData.Length());
-    if (srv != SECSuccess) {
-      ReturnError(ErrorCode::OTHER_ERROR);
-      return NS_ERROR_FAILURE;
-    }
-
-    
-    CryptoBuffer keyHandle;
-    rv = keyHandle.FromJwkBase64(request.mKeyHandle.Value());
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      ReturnError(ErrorCode::OTHER_ERROR);
-      return NS_ERROR_FAILURE;
-    }
-
-    
-    CryptoBuffer signatureData;
-    bool signSuccess = false;
-
-    
-    
-
-    for (size_t a = 0; a < mAuthenticators.Length() && !signSuccess; ++a) {
+  
+  for (LocalRegisteredKey key: mRegisteredKeys) {
+    nsTArray<RefPtr<U2FPrepPromise>> prepPromiseList;
+    for (size_t a = 0; a < mAuthenticators.Length(); ++a) {
       Authenticator token(mAuthenticators[a]);
-      bool isCompatible = false;
-      bool isRegistered = false;
-
-      rv = token->IsCompatibleVersion(request.mVersion.Value(), &isCompatible);
-      if (NS_FAILED(rv)) {
-        ReturnError(ErrorCode::OTHER_ERROR);
-        return NS_ERROR_FAILURE;
-      }
-      if (!isCompatible) {
-        continue;
-      }
-
-      rv = token->IsRegistered(keyHandle.Elements(), keyHandle.Length(),
-                               &isRegistered);
-      if (NS_FAILED(rv)) {
-        ReturnError(ErrorCode::OTHER_ERROR);
-        return NS_ERROR_FAILURE;
-      }
-
-      if (isCompatible && isRegistered) {
-        uint8_t* buffer;
-        uint32_t bufferlen;
-        nsresult rv = token->Sign(appParam.Elements(), appParam.Length(),
-                                  challengeParam.Elements(), challengeParam.Length(),
-                                  keyHandle.Elements(), keyHandle.Length(),
-                                  &buffer, &bufferlen);
-        if (NS_FAILED(rv)) {
-          ReturnError(ErrorCode::OTHER_ERROR);
-          return NS_ERROR_FAILURE;
-        }
-
-        MOZ_ASSERT(buffer);
-        if (NS_WARN_IF(!signatureData.Assign(buffer, bufferlen))) {
-          free(buffer);
-          ReturnError(ErrorCode::OTHER_ERROR);
-          return NS_ERROR_OUT_OF_MEMORY;
-        }
-
-        free(buffer);
-        signSuccess = true;
-      }
-    }
-
-    if (!signSuccess) {
-      
-      continue;
+      RefPtr<U2FIsRegisteredTask> compTask = new U2FIsRegisteredTask(token, key);
+      prepPromiseList.AppendElement(compTask->Execute());
     }
 
     
-    nsString clientDataBase64, signatureDataBase64;
-    nsresult rvClientData =
-      clientData.ToJwkBase64(clientDataBase64);
-    nsresult rvSignatureData =
-      signatureData.ToJwkBase64(signatureDataBase64);
-    if (NS_WARN_IF(NS_FAILED(rvClientData)) ||
-        NS_WARN_IF(NS_FAILED(rvSignatureData))) {
-      ReturnError(ErrorCode::OTHER_ERROR);
-      return NS_ERROR_FAILURE;
-    }
-    SignResponse response;
-    response.mKeyHandle.Construct(request.mKeyHandle.Value());
-    response.mClientData.Construct(clientDataBase64);
-    response.mSignatureData.Construct(signatureDataBase64);
-    response.mErrorCode.Construct(static_cast<uint32_t>(ErrorCode::OK));
+    status->WaitGroupAdd();
 
-    ErrorResult result;
-    mCallback->Call(response, result);
-    NS_WARNING_ASSERTION(!result.Failed(), "callback failed");
+    U2FPrepPromise::All(AbstractThread::MainThread(), prepPromiseList)
+    ->Then(AbstractThread::MainThread(), __func__,
+      [status] (const nsTArray<Authenticator>& aTokens) {
+        MOZ_LOG(gWebauthLog, LogLevel::Debug,
+                ("ALL: None of the RegisteredKeys were recognized. n=%d",
+                 aTokens.Length()));
+
+        status->WaitGroupDone();
+      },
+      [status] (ErrorCode aErrorCode) {
+        status->Stop(aErrorCode);
+        status->WaitGroupDone();
+    });
+  }
+
+  
+  status->WaitGroupWait();
+
+  
+  
+  if (status->IsStopped()) {
+    status->WaitGroupAdd();
+    AbstractThread::MainThread()->Dispatch(NS_NewRunnableFunction(
+      [status, this] () {
+        RegisterResponse response;
+        response.mErrorCode.Construct(
+            static_cast<uint32_t>(status->GetErrorCode()));
+        SendResponse(response);
+        status->WaitGroupDone();
+      }
+    ));
+
     
-    result.SuppressException();
+    status->WaitGroupWait();
     return NS_OK;
   }
 
   
-  ReturnError(ErrorCode::DEVICE_INELIGIBLE);
-  return NS_ERROR_FAILURE;
+  nsCString cAppId = NS_ConvertUTF16toUTF8(mAppId);
+  CryptoBuffer appParam;
+  if (!appParam.SetLength(SHA256_LENGTH, fallible)) {
+    return NS_ERROR_OUT_OF_MEMORY;
+  }
+
+  
+  
+  SECStatus srv;
+  srv = PK11_HashBuf(SEC_OID_SHA256, appParam.Elements(),
+                     reinterpret_cast<const uint8_t*>(cAppId.BeginReading()),
+                     cAppId.Length());
+  if (srv != SECSuccess) {
+    return NS_ERROR_FAILURE;
+  }
+
+  
+  for (LocalRegisterRequest req : mRegisterRequests) {
+    
+    CryptoBuffer challengeParam;
+    if (!challengeParam.SetLength(SHA256_LENGTH, fallible)) {
+      continue;
+    }
+
+    srv = PK11_HashBuf(SEC_OID_SHA256, challengeParam.Elements(),
+                       req.mClientData.Elements(), req.mClientData.Length());
+    if (srv != SECSuccess) {
+      continue;
+    }
+
+    for (size_t a = 0; a < mAuthenticators.Length(); ++a) {
+      Authenticator token(mAuthenticators[a]);
+      RefPtr<U2FRegisterTask> registerTask = new U2FRegisterTask(mOrigin, mAppId,
+                                                                 token, appParam,
+                                                                 challengeParam,
+                                                                 req);
+      status->WaitGroupAdd();
+
+      registerTask->Execute()->Then(AbstractThread::MainThread(), __func__,
+        [status, this] (nsString aResponse) {
+          if (status->IsStopped()) {
+            return;
+          }
+          status->Stop(ErrorCode::OK, aResponse);
+          status->WaitGroupDone();
+        },
+        [status, this] (ErrorCode aErrorCode) {
+          if (status->IsStopped()) {
+            return;
+          }
+          status->Stop(aErrorCode);
+          status->WaitGroupDone();
+     });
+    }
+  }
+
+  
+  status->WaitGroupWait();
+
+  
+  if (!status->IsStopped()) {
+    status->Stop(ErrorCode::BAD_REQUEST);
+  }
+
+  
+  status->WaitGroupAdd();
+  AbstractThread::MainThread()->Dispatch(NS_NewRunnableFunction(
+    [status, this] () {
+      RegisterResponse response;
+      if (status->GetErrorCode() == ErrorCode::OK) {
+        response.Init(status->GetResponse());
+      } else {
+        response.mErrorCode.Construct(
+            static_cast<uint32_t>(status->GetErrorCode()));
+      }
+      SendResponse(response);
+      status->WaitGroupDone();
+    }
+  ));
+
+  
+  status->WaitGroupWait();
+  return NS_OK;
+}
+
+U2FSignRunnable::U2FSignRunnable(const nsAString& aOrigin,
+                                 const nsAString& aAppId,
+                                 const nsAString& aChallenge,
+                                 const Sequence<RegisteredKey>& aRegisteredKeys,
+                                 const Sequence<Authenticator>& aAuthenticators,
+                                 U2FSignCallback* aCallback)
+  : U2FRunnable(aOrigin, aAppId)
+  , mAuthenticators(aAuthenticators)
+  
+  
+  , mCallback(new nsMainThreadPtrHolder<U2FSignCallback>(aCallback))
+{
+  MOZ_ASSERT(NS_IsMainThread());
+
+  
+  for (size_t i = 0; i < aRegisteredKeys.Length(); ++i) {
+    RegisteredKey key(aRegisteredKeys[i]);
+
+    
+    if (!key.mVersion.WasPassed() || !key.mKeyHandle.WasPassed()) {
+      continue;
+    }
+
+    LocalRegisteredKey localKey;
+    localKey.mVersion = key.mVersion.Value();
+    localKey.mKeyHandle = key.mKeyHandle.Value();
+    if (key.mAppId.WasPassed()) {
+      localKey.mAppId.SetValue(key.mAppId.Value());
+    }
+
+    mRegisteredKeys.AppendElement(localKey);
+  }
+
+  
+  nsresult rv = AssembleClientData(aOrigin, kGetAssertion, aChallenge,
+                                   mClientData);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    MOZ_LOG(gWebauthLog, LogLevel::Warning,
+            ("Failed to AssembleClientData for the U2FSignRunnable."));
+    return;
+  }
+}
+
+U2FSignRunnable::~U2FSignRunnable()
+{
+  nsNSSShutDownPreventionLock locker;
+
+  if (isAlreadyShutDown()) {
+    return;
+  }
+  shutdown(ShutdownCalledFrom::Object);
+}
+
+void
+U2FSignRunnable::SetTimeout(const int32_t aTimeoutMillis)
+{
+  opt_mTimeoutSeconds.SetValue(aTimeoutMillis);
+}
+
+void
+U2FSignRunnable::SendResponse(const SignResponse& aResponse)
+{
+  MOZ_ASSERT(NS_IsMainThread());
+
+  ErrorResult rv;
+  mCallback->Call(aResponse, rv);
+  NS_WARNING_ASSERTION(!rv.Failed(), "callback failed");
+  
+  rv.SuppressException();
+}
+
+NS_IMETHODIMP
+U2FSignRunnable::Run()
+{
+  MOZ_ASSERT(!NS_IsMainThread());
+
+  nsNSSShutDownPreventionLock locker;
+  if (isAlreadyShutDown()) {
+    return NS_ERROR_FAILURE;
+  }
+
+  
+  RefPtr<U2FStatus> status = new U2FStatus();
+
+  
+  ErrorCode appIdResult = EvaluateAppID();
+  if (appIdResult != ErrorCode::OK) {
+    status->Stop(appIdResult);
+  }
+
+  
+  nsCString cAppId = NS_ConvertUTF16toUTF8(mAppId);
+  CryptoBuffer appParam;
+  CryptoBuffer challengeParam;
+  if (!appParam.SetLength(SHA256_LENGTH, fallible) ||
+      !challengeParam.SetLength(SHA256_LENGTH, fallible)) {
+    return NS_ERROR_OUT_OF_MEMORY;
+  }
+
+  SECStatus srv;
+  srv = PK11_HashBuf(SEC_OID_SHA256, appParam.Elements(),
+                     reinterpret_cast<const uint8_t*>(cAppId.BeginReading()),
+                     cAppId.Length());
+  if (srv != SECSuccess) {
+    return NS_ERROR_FAILURE;
+  }
+
+  srv = PK11_HashBuf(SEC_OID_SHA256, challengeParam.Elements(),
+                     mClientData.Elements(), mClientData.Length());
+  if (srv != SECSuccess) {
+    return NS_ERROR_FAILURE;
+  }
+
+  
+  for (LocalRegisteredKey key : mRegisteredKeys) {
+    
+    if (!key.mAppId.IsNull() && mAppId != key.mAppId.Value()) {
+      continue;
+    }
+
+    
+    CryptoBuffer keyHandle;
+    nsresult rv = keyHandle.FromJwkBase64(key.mKeyHandle);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      continue;
+    }
+
+    
+    
+
+    for (size_t a = 0; a < mAuthenticators.Length() ; ++a) {
+      Authenticator token(mAuthenticators[a]);
+
+      RefPtr<U2FSignTask> signTask = new U2FSignTask(mOrigin, mAppId,
+                                                     key.mVersion, token,
+                                                     appParam, challengeParam,
+                                                     mClientData, keyHandle);
+      status->WaitGroupAdd();
+
+      signTask->Execute()->Then(AbstractThread::MainThread(), __func__,
+        [status, this] (nsString aResponse) {
+          if (status->IsStopped()) {
+            return;
+          }
+          status->Stop(ErrorCode::OK, aResponse);
+          status->WaitGroupDone();
+        },
+        [status, this] (ErrorCode aErrorCode) {
+          if (status->IsStopped()) {
+            return;
+          }
+          status->Stop(aErrorCode);
+          status->WaitGroupDone();
+      });
+    }
+  }
+
+  
+  status->WaitGroupWait();
+
+  
+  if (!status->IsStopped()) {
+    status->Stop(ErrorCode::DEVICE_INELIGIBLE);
+  }
+
+  
+  status->WaitGroupAdd();
+  AbstractThread::MainThread()->Dispatch(NS_NewRunnableFunction(
+    [status, this] () {
+      SignResponse response;
+      if (status->GetErrorCode() == ErrorCode::OK) {
+        response.Init(status->GetResponse());
+      } else {
+        response.mErrorCode.Construct(
+          static_cast<uint32_t>(status->GetErrorCode()));
+      }
+      SendResponse(response);
+      status->WaitGroupDone();
+    }
+  ));
+
+  
+  status->WaitGroupWait();
+  return NS_OK;
 }
 
 
 
 
 
-static void
-EvaluateAppIDAndRunTask(U2FTask* aTask)
+ErrorCode
+U2FRunnable::EvaluateAppID()
 {
-  MOZ_ASSERT(aTask);
-
   nsCOMPtr<nsIURLParser> urlParser =
       do_GetService(NS_STDURLPARSER_CONTRACTID);
 
@@ -504,14 +879,13 @@ EvaluateAppIDAndRunTask(U2FTask* aTask)
   uint32_t facetAuthPos;
   int32_t facetAuthLen;
   
-  nsAutoCString facetUrl = NS_ConvertUTF16toUTF8(aTask->mOrigin);
-  nsresult rv = urlParser->ParseURL(facetUrl.get(), aTask->mOrigin.Length(),
+  nsAutoCString facetUrl = NS_ConvertUTF16toUTF8(mOrigin);
+  nsresult rv = urlParser->ParseURL(facetUrl.get(), mOrigin.Length(),
                                     &facetSchemePos, &facetSchemeLen,
                                     &facetAuthPos, &facetAuthLen,
                                     nullptr, nullptr);      
   if (NS_WARN_IF(NS_FAILED(rv))) {
-    aTask->ReturnError(ErrorCode::BAD_REQUEST);
-    return;
+    return ErrorCode::BAD_REQUEST;
   }
 
   nsAutoCString facetScheme(Substring(facetUrl, facetSchemePos, facetSchemeLen));
@@ -522,14 +896,13 @@ EvaluateAppIDAndRunTask(U2FTask* aTask)
   uint32_t appIdAuthPos;
   int32_t appIdAuthLen;
   
-  nsAutoCString appIdUrl = NS_ConvertUTF16toUTF8(aTask->mAppId);
-  rv = urlParser->ParseURL(appIdUrl.get(), aTask->mAppId.Length(),
+  nsAutoCString appIdUrl = NS_ConvertUTF16toUTF8(mAppId);
+  rv = urlParser->ParseURL(appIdUrl.get(), mAppId.Length(),
                            &appIdSchemePos, &appIdSchemeLen,
                            &appIdAuthPos, &appIdAuthLen,
                            nullptr, nullptr);      
   if (NS_FAILED(rv)) {
-    aTask->ReturnError(ErrorCode::BAD_REQUEST);
-    return;
+    return ErrorCode::BAD_REQUEST;
   }
 
   nsAutoCString appIdScheme(Substring(appIdUrl, appIdSchemePos, appIdSchemeLen));
@@ -537,36 +910,31 @@ EvaluateAppIDAndRunTask(U2FTask* aTask)
 
   
   if (!facetScheme.LowerCaseEqualsLiteral("https")) {
-    aTask->ReturnError(ErrorCode::BAD_REQUEST);
-    return;
+    return ErrorCode::BAD_REQUEST;
   }
 
   
-  if (aTask->mAppId.IsEmpty() || aTask->mAppId.EqualsLiteral("null")) {
-    aTask->mAppId.Assign(aTask->mOrigin);
-    aTask->Run();
-    return;
+  if (mAppId.IsEmpty() || mAppId.EqualsLiteral("null")) {
+    mAppId.Assign(mOrigin);
+    return ErrorCode::OK;
   }
 
   
   if (!appIdScheme.LowerCaseEqualsLiteral("https")) {
-    aTask->ReturnError(ErrorCode::BAD_REQUEST);
-    return;
+    return ErrorCode::BAD_REQUEST;
   }
 
   
   if (facetAuth == appIdAuth) {
-    aTask->Run();
-    return;
+    return ErrorCode::OK;
   }
 
   
-  aTask->ReturnError(ErrorCode::BAD_REQUEST);
-  return;
+  return ErrorCode::BAD_REQUEST;
 }
 
 U2F::U2F()
- : mInitialized(false)
+  : mInitialized(false)
 {}
 
 U2F::~U2F()
@@ -617,10 +985,10 @@ U2F::Init(nsPIDOMWindowInner* aParent, ErrorResult& aRv)
   
   if (XRE_IsParentProcess()) {
     MOZ_LOG(gWebauthLog, LogLevel::Debug,
-      ("Is non-e10s Process, U2F not available"));
-     aRv.Throw(NS_ERROR_FAILURE);
-     return;
-   }
+            ("Is non-e10s Process, U2F not available"));
+    aRv.Throw(NS_ERROR_FAILURE);
+    return;
+  }
 
   
   
@@ -651,13 +1019,13 @@ U2F::Register(const nsAString& aAppId,
     return;
   }
 
-  RefPtr<U2FRegisterTask> registerTask = new U2FRegisterTask(mOrigin, aAppId,
+  RefPtr<SharedThreadPool> pool = SharedThreadPool::Get(kPoolName);
+  RefPtr<U2FRegisterRunnable> task = new U2FRegisterRunnable(mOrigin, aAppId,
                                                              aRegisterRequests,
                                                              aRegisteredKeys,
-                                                             &aCallback,
-                                                             mAuthenticators);
-
-  EvaluateAppIDAndRunTask(registerTask);
+                                                             mAuthenticators,
+                                                             &aCallback);
+  pool->Dispatch(task.forget(), NS_DISPATCH_NORMAL);
 }
 
 void
@@ -675,11 +1043,11 @@ U2F::Sign(const nsAString& aAppId,
     return;
   }
 
-  RefPtr<U2FSignTask> signTask = new U2FSignTask(mOrigin, aAppId, aChallenge,
-                                                 aRegisteredKeys, &aCallback,
-                                                 mAuthenticators);
-
-  EvaluateAppIDAndRunTask(signTask);
+  RefPtr<SharedThreadPool> pool = SharedThreadPool::Get(kPoolName);
+  RefPtr<U2FSignRunnable> task = new U2FSignRunnable(mOrigin, aAppId, aChallenge,
+                                                     aRegisteredKeys,
+                                                     mAuthenticators, &aCallback);
+  pool->Dispatch(task.forget(), NS_DISPATCH_NORMAL);
 }
 
 } 
