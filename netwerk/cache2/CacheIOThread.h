@@ -118,6 +118,10 @@ private:
   Atomic<uint32_t, Relaxed> mLowestLevelWaiting;
   uint32_t mCurrentlyExecutingLevel;
 
+  
+  
+  Atomic<int32_t> mQueueLength[LAST_LEVEL];
+
   EventQueue mEventQueue[LAST_LEVEL];
   
   Atomic<bool, Relaxed> mHasXPCOMEvents;
