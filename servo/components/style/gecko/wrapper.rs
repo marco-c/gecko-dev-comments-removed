@@ -1180,7 +1180,9 @@ impl<'le> ::selectors::Element for GeckoElement<'le> {
             NonTSPseudoClass::MozUIInvalid |
             NonTSPseudoClass::MozMeterOptimum |
             NonTSPseudoClass::MozMeterSubOptimum |
-            NonTSPseudoClass::MozMeterSubSubOptimum => {
+            NonTSPseudoClass::MozMeterSubSubOptimum |
+            NonTSPseudoClass::MozAutofill |
+            NonTSPseudoClass::MozAutofillPreview => {
                 
                 
                 self.get_state().intersects(pseudo_class.state_flag())
