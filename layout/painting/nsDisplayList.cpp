@@ -2482,6 +2482,45 @@ void nsDisplayList::HitTest(nsDisplayListBuilder* aBuilder, const nsRect& aRect,
                "How did we forget to pop some elements?");
 }
 
+static void Sort(nsDisplayList* aList, int32_t aCount, nsDisplayList::SortLEQ aCmp,
+                 void* aClosure) {
+  if (aCount < 2)
+    return;
+
+  nsDisplayList list1;
+  nsDisplayList list2;
+  int i;
+  int32_t half = aCount/2;
+  bool sorted = true;
+  nsDisplayItem* prev = nullptr;
+  for (i = 0; i < aCount; ++i) {
+    nsDisplayItem* item = aList->RemoveBottom();
+    (i < half ? &list1 : &list2)->AppendToTop(item);
+    if (sorted && prev && !aCmp(prev, item, aClosure)) {
+      sorted = false;
+    }
+    prev = item;
+  }
+  if (sorted) {
+    aList->AppendToTop(&list1);
+    aList->AppendToTop(&list2);
+    return;
+  }
+
+  Sort(&list1, half, aCmp, aClosure);
+  Sort(&list2, aCount - half, aCmp, aClosure);
+
+  for (i = 0; i < aCount; ++i) {
+    if (list1.GetBottom() &&
+        (!list2.GetBottom() ||
+         aCmp(list1.GetBottom(), list2.GetBottom(), aClosure))) {
+      aList->AppendToTop(list1.RemoveBottom());
+    } else {
+      aList->AppendToTop(list2.RemoveBottom());
+    }
+  }
+}
+
 static nsIContent* FindContentInDocument(nsDisplayItem* aItem, nsIDocument* aDoc) {
   nsIFrame* f = aItem->Frame();
   while (f) {
@@ -2494,55 +2533,41 @@ static nsIContent* FindContentInDocument(nsDisplayItem* aItem, nsIDocument* aDoc
   return nullptr;
 }
 
-struct ZSortItem {
-  nsDisplayItem* item;
-  int32_t zIndex;
-
-  explicit ZSortItem(nsDisplayItem* aItem)
-    : item(aItem), zIndex(aItem->ZIndex()) {}
-
-  operator nsDisplayItem*() {
-    return item;
-  }
-};
-
-struct ZOrderComparator {
-  bool operator()(const ZSortItem& aLeft, const ZSortItem& aRight) const {
+static bool IsContentLEQ(nsDisplayItem* aItem1, nsDisplayItem* aItem2,
+                         void* aClosure) {
+  nsIContent* commonAncestor = static_cast<nsIContent*>(aClosure);
+  
+  
+  
+  
+  nsIDocument* commonAncestorDoc = commonAncestor->OwnerDoc();
+  nsIContent* content1 = FindContentInDocument(aItem1, commonAncestorDoc);
+  nsIContent* content2 = FindContentInDocument(aItem2, commonAncestorDoc);
+  if (!content1 || !content2) {
+    NS_ERROR("Document trees are mixed up!");
     
-    
-    return aLeft.zIndex < aRight.zIndex;
+    return true;
   }
-};
-
-void nsDisplayList::SortByZOrder() {
-  Sort<ZSortItem>(ZOrderComparator());
+  return nsLayoutUtils::CompareTreePosition(content1, content2, commonAncestor) <= 0;
 }
 
-struct ContentComparator {
-  nsIContent* mCommonAncestor;
+static bool IsZOrderLEQ(nsDisplayItem* aItem1, nsDisplayItem* aItem2,
+                        void* aClosure) {
+  
+  
+  return aItem1->ZIndex() <= aItem2->ZIndex();
+}
 
-  explicit ContentComparator(nsIContent* aCommonAncestor)
-    : mCommonAncestor(aCommonAncestor) {}
-
-  bool operator()(nsDisplayItem* aLeft, nsDisplayItem* aRight) const {
-    
-    
-    
-    
-    nsIDocument* commonAncestorDoc = mCommonAncestor->OwnerDoc();
-    nsIContent* content1 = FindContentInDocument(aLeft, commonAncestorDoc);
-    nsIContent* content2 = FindContentInDocument(aRight, commonAncestorDoc);
-    if (!content1 || !content2) {
-      NS_ERROR("Document trees are mixed up!");
-      
-      return true;
-    }
-    return nsLayoutUtils::CompareTreePosition(content1, content2, mCommonAncestor) < 0;
-  }
-};
+void nsDisplayList::SortByZOrder() {
+  Sort(IsZOrderLEQ, nullptr);
+}
 
 void nsDisplayList::SortByContentOrder(nsIContent* aCommonAncestor) {
-  Sort<nsDisplayItem*>(ContentComparator(aCommonAncestor));
+  Sort(IsContentLEQ, aCommonAncestor);
+}
+
+void nsDisplayList::Sort(SortLEQ aCmp, void* aClosure) {
+  ::Sort(this, Count(), aCmp, aClosure);
 }
 
 nsDisplayItem::nsDisplayItem(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame)
@@ -3393,10 +3418,10 @@ nsDisplayBackgroundImage::GetInsideClipRegion(nsDisplayItem* aItem,
   if (frame->GetType() == nsGkAtoms::canvasFrame) {
     nsCanvasFrame* canvasFrame = static_cast<nsCanvasFrame*>(frame);
     clipRect = canvasFrame->CanvasArea() + aItem->ToReferenceFrame();
-  } else if (aClip == StyleGeometryBox::PaddingBox ||
-             aClip == StyleGeometryBox::ContentBox) {
+  } else if (aClip == StyleGeometryBox::Padding ||
+             aClip == StyleGeometryBox::Content) {
     nsMargin border = frame->GetUsedBorder();
-    if (aClip == StyleGeometryBox::ContentBox) {
+    if (aClip == StyleGeometryBox::Content) {
       border += frame->GetUsedPadding();
     }
     border.ApplySkipSides(frame->GetSkipSides());
@@ -4634,32 +4659,35 @@ nsDisplayBorder::BuildLayer(nsDisplayListBuilder* aBuilder,
                             LayerManager* aManager,
                             const ContainerLayerParameters& aContainerParameters)
 {
-  if (mBorderImageRenderer) {
-    return BuildDisplayItemLayer(aBuilder, aManager, aContainerParameters);
-  }
-
-  RefPtr<Layer> oldLayer = aManager->GetLayerBuilder()->GetLeafLayerFor(aBuilder, this);
-  RefPtr<BorderLayer> layer = oldLayer ? oldLayer->AsBorderLayer() : nullptr;
-
-  if (!layer) {
-    layer = aManager->CreateBorderLayer();
-    if (!layer)
-      return nullptr;
-  }
-  layer->SetRect(mRect);
-  layer->SetCornerRadii(mCorners);
-  layer->SetColors(mColors);
-  layer->SetWidths(mWidths);
-  layer->SetStyles(mBorderStyles);
-  layer->SetBaseTransform(gfx::Matrix4x4::Translation(aContainerParameters.mOffset.x,
-                                                      aContainerParameters.mOffset.y, 0));
-  return layer.forget();
+  return BuildDisplayItemLayer(aBuilder, aManager, aContainerParameters);
 }
 
 void
-nsDisplayBorder::CreateWebRenderCommands(wr::DisplayListBuilder& aBuilder,
-                                         nsTArray<WebRenderParentCommand>& aParentCommands,
-                                         WebRenderDisplayItemLayer* aLayer)
+nsDisplayBorder::CreateBorderWebRenderCommands(mozilla::wr::DisplayListBuilder& aBuilder,
+                                               WebRenderDisplayItemLayer* aLayer)
+{
+  nsPoint offset = ToReferenceFrame();
+  Maybe<nsCSSBorderRenderer> br =
+    nsCSSRendering::CreateBorderRenderer(mFrame->PresContext(),
+                                         nullptr,
+                                         mFrame,
+                                         nsRect(),
+                                         nsRect(offset, mFrame->GetSize()),
+                                         mFrame->StyleContext(),
+                                         mFrame->GetSkipSides());
+
+  if (!br) {
+    NS_WARNING("Could not create border renderer during nsDisplayButtonBorder");
+    return;
+  }
+
+  br->CreateWebRenderCommands(aBuilder, aLayer);
+}
+
+void
+nsDisplayBorder::CreateBorderImageWebRenderCommands(mozilla::wr::DisplayListBuilder& aBuilder,
+                                                    nsTArray<WebRenderParentCommand>& aParentCommands,
+                                                    WebRenderDisplayItemLayer* aLayer)
 {
   
   MOZ_ASSERT(mBorderImageRenderer);
@@ -4718,6 +4746,18 @@ nsDisplayBorder::CreateWebRenderCommands(wr::DisplayListBuilder& aBuilder,
                            wr::ToWrSideOffsets2Df32(outset[0], outset[1], outset[2], outset[3]),
                            wr::ToWrRepeatMode(mBorderImageRenderer->mRepeatModeHorizontal),
                            wr::ToWrRepeatMode(mBorderImageRenderer->mRepeatModeVertical));
+}
+
+void
+nsDisplayBorder::CreateWebRenderCommands(wr::DisplayListBuilder& aBuilder,
+                                         nsTArray<WebRenderParentCommand>& aParentCommands,
+                                         WebRenderDisplayItemLayer* aLayer)
+{
+  if (mBorderImageRenderer) {
+    CreateBorderImageWebRenderCommands(aBuilder, aParentCommands, aLayer);
+  } else {
+    CreateBorderWebRenderCommands(aBuilder, aLayer);
+  }
 }
 
 void
@@ -7766,8 +7806,8 @@ bool nsDisplaySVGEffects::ValidateSVGFrame()
   const nsIContent* content = mFrame->GetContent();
   bool hasSVGLayout = (mFrame->GetStateBits() & NS_FRAME_SVG_LAYOUT);
   if (hasSVGLayout) {
-    nsSVGDisplayableFrame* svgFrame = do_QueryFrame(mFrame);
-    if (!svgFrame || !mFrame->GetContent()->IsSVGElement()) {
+    nsISVGChildFrame *svgChildFrame = do_QueryFrame(mFrame);
+    if (!svgChildFrame || !mFrame->GetContent()->IsSVGElement()) {
       NS_ASSERTION(false, "why?");
       return false;
     }
