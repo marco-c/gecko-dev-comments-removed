@@ -14,6 +14,7 @@ use layers::geometry::DevicePixel;
 use util::cursor::Cursor;
 use util::geometry::{PagePx, ViewportPx};
 use std::sync::mpsc::{channel, Sender, Receiver};
+use style::viewport::ViewportConstraints;
 use webdriver_traits::WebDriverScriptCommand;
 use url::Url;
 
@@ -233,7 +234,9 @@ pub enum Msg {
     
     GetClipboardContents(Sender<String>),
     
-    WebDriverCommand(PipelineId, WebDriverScriptCommand)
+    WebDriverCommand(PipelineId, WebDriverScriptCommand),
+    
+    ViewportConstrained(PipelineId, ViewportConstraints),
 }
 
 #[derive(Clone, Eq, PartialEq)]

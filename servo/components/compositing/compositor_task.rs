@@ -26,6 +26,7 @@ use profile_traits::time;
 use std::sync::mpsc::{channel, Sender, Receiver};
 use std::fmt::{Error, Formatter, Debug};
 use std::rc::Rc;
+use style::viewport::ViewportConstraints;
 use url::Url;
 use util::cursor::Cursor;
 
@@ -219,6 +220,8 @@ pub enum Msg {
     SetCursor(Cursor),
     
     PaintTaskExited(PipelineId),
+    
+    ViewportConstrained(PipelineId, ViewportConstraints),
 }
 
 impl Debug for Msg {
@@ -245,6 +248,7 @@ impl Debug for Msg {
             Msg::KeyEvent(..) => write!(f, "KeyEvent"),
             Msg::SetCursor(..) => write!(f, "SetCursor"),
             Msg::PaintTaskExited(..) => write!(f, "PaintTaskExited"),
+            Msg::ViewportConstrained(..) => write!(f, "ViewportConstrained"),
         }
     }
 }
@@ -303,4 +307,3 @@ pub trait CompositorEventListener {
     
     fn get_title_for_main_frame(&self);
 }
-
