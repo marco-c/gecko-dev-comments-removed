@@ -5885,6 +5885,20 @@ impl %(name)sCast {
                 hierarchy[descriptor.getParentName()].append(name)
                 
                 
+                baseName = descriptor.prototypeChain[0]
+                typeIdPat = descriptor.prototypeChain[-1]
+                if upcast:
+                    typeIdPat += "(_)"
+                for base in reversed(descriptor.prototypeChain[1:-1]):
+                    typeIdPat = "%s(%sTypeId::%s)" % (base, base, typeIdPat)
+                typeIdPat = "%sTypeId::%s" % (baseName, typeIdPat)
+                args = {
+                    'baseName': baseName,
+                    'derivedTrait': name + 'Derived',
+                    'methodName': 'is_' + name.lower(),
+                    'name': name,
+                    'typeIdPat': typeIdPat,
+                }
                 allprotos.append(CGGeneric("""\
 /// Types which `%(name)s` derives from
 pub trait %(derivedTrait)s: Sized {
@@ -5922,7 +5936,16 @@ impl %(name)sCast {
     }
 }
 
-""" % {'derivedTrait': name + 'Derived', 'name': name, 'methodName': 'is_' + name.lower()}))
+impl %(derivedTrait)s for %(baseName)s {
+    fn %(methodName)s(&self) -> bool {
+        match *self.type_id() {
+            %(typeIdPat)s => true,
+            _ => false,
+        }
+    }
+}
+
+""" % args))
 
             
             
