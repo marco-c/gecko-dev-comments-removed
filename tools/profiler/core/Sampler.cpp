@@ -462,7 +462,7 @@ Sampler::StreamJSON(SpliceableJSONWriter& aWriter, double aSinceTime)
         }
       }
 
-      if (Sampler::CanNotifyObservers()) {
+      if (CanNotifyObservers()) {
         
         
         SubprocessClosure closure(&aWriter);
