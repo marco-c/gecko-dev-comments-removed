@@ -367,8 +367,6 @@ pref("media.opus.enabled", true);
 pref("media.wave.enabled", true);
 pref("media.webm.enabled", true);
 
-pref("media.eme.chromium-api.enabled", false);
-
 #ifdef MOZ_APPLEMEDIA
 #ifdef MOZ_WIDGET_UIKIT
 pref("media.mp3.enabled", true);
@@ -2641,10 +2639,6 @@ pref("layout.css.contain.enabled", false);
 pref("layout.css.display-flow-root.enabled", true);
 
 
-pref("layout.css.appearance.enabled", true);
-pref("layout.css.moz-appearance.enabled", true);
-
-
 pref("layout.css.box-decoration-break.enabled", true);
 
 
@@ -2692,11 +2686,7 @@ pref("layout.css.control-characters.visible", true);
 pref("layout.css.column-span.enabled", false);
 
 
-#ifdef RELEASE_OR_BETA
 pref("layout.css.style-attr-with-xml-base.disabled", false);
-#else
-pref("layout.css.style-attr-with-xml-base.disabled", true);
-#endif
 
 
 
@@ -3220,17 +3210,6 @@ pref("font.size.inflation.mappingIntercept", 1);
 
 
 pref("font.size.inflation.maxRatio", 0);
-
-
-
-
-
-
-
-
-
-
-pref("font.size.systemFontScale", 100);
 
 
 
@@ -5663,11 +5642,11 @@ pref("fuzzing.enabled", false);
 #endif
 
 
-
-
-
-
-
-pref("layers.advanced.border-layers", 2);
-pref("layers.advanced.boxshadow-outer-layers", 2);
-pref("layers.advanced.caret-layers", 2);
+pref("layers.advanced.border-layers", false);
+#ifdef MOZ_ENABLE_WEBRENDER
+pref("layers.advanced.caret-layers", true);
+pref("layers.advanced.boxshadow-outer-layers", false);
+pref("layers.advanced.boxshadow-inset-layers", true);
+#else
+pref("layers.advanced.caret-layers", false);
+#endif
