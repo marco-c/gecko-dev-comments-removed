@@ -17,7 +17,7 @@ public:
     
     
     RefPtr<VideoData> v(new VideoData(aSample->mOffset,
-                                      aSample->mTime,
+                                      aSample->mTime.ToMicroseconds(),
                                       aSample->mDuration.ToMicroseconds(),
                                       aSample->mKeyframe,
                                       aSample->mTimecode.ToMicroseconds(),

@@ -167,10 +167,11 @@ OpusDataDecoder::ProcessDecode(MediaRawData* aSample)
       __func__);
   }
 
-  if (!mLastFrameTime || mLastFrameTime.ref() != aSample->mTime) {
+  if (!mLastFrameTime ||
+      mLastFrameTime.ref() != aSample->mTime.ToMicroseconds()) {
     
     mFrames = 0;
-    mLastFrameTime = Some(aSample->mTime);
+    mLastFrameTime = Some(aSample->mTime.ToMicroseconds());
   }
 
   
@@ -231,7 +232,7 @@ OpusDataDecoder::ProcessDecode(MediaRawData* aSample)
       __func__);
   }
   NS_ASSERTION(ret == frames, "Opus decoded too few audio samples");
-  CheckedInt64 startTime = aSample->mTime;
+  CheckedInt64 startTime = aSample->mTime.ToMicroseconds();
 
   
   if (mSkip > 0) {

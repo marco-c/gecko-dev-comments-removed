@@ -461,7 +461,7 @@ SendStreamAudio(DecodedStreamData* aStream, const media::TimeUnit& aStartTime,
   
   CheckedInt64 audioWrittenOffset = aStream->mAudioFramesWritten
     + TimeUnitToFrames(aStartTime, aRate);
-  CheckedInt64 frameOffset = UsecsToFrames(audio->mTime, aRate);
+  CheckedInt64 frameOffset = TimeUnitToFrames(audio->mTime, aRate);
 
   if (!audioWrittenOffset.isValid() ||
       !frameOffset.isValid() ||
@@ -595,7 +595,7 @@ DecodedStream::SendVideo(bool aIsSameOrigin, const PrincipalHandle& aPrincipalHa
   for (uint32_t i = 0; i < video.Length(); ++i) {
     VideoData* v = video[i];
 
-    if (mData->mNextVideoTime.ToMicroseconds() < v->mTime) {
+    if (mData->mNextVideoTime < v->mTime) {
       
       
 
@@ -605,12 +605,11 @@ DecodedStream::SendVideo(bool aIsSameOrigin, const PrincipalHandle& aPrincipalHa
       
       
       
-      WriteVideoToMediaStream(sourceStream, mData->mLastVideoImage,
-        FromMicroseconds(v->mTime),
+      WriteVideoToMediaStream(sourceStream, mData->mLastVideoImage, v->mTime,
         mData->mNextVideoTime, mData->mLastVideoImageDisplaySize,
-        tracksStartTimeStamp + TimeDuration::FromMicroseconds(v->mTime),
+        tracksStartTimeStamp + v->mTime.ToTimeDuration(),
         &output, aPrincipalHandle);
-      mData->mNextVideoTime = FromMicroseconds(v->mTime);
+      mData->mNextVideoTime = v->mTime;
     }
 
     if (mData->mNextVideoTime < v->GetEndTime()) {
@@ -746,7 +745,7 @@ DecodedStream::NotifyOutput(int64_t aTime)
 {
   AssertOwnerThread();
   mLastOutputTime = FromMicroseconds(aTime);
-  int64_t currentTime = GetPosition().ToMicroseconds();
+  auto currentTime = GetPosition();
 
   
   RefPtr<AudioData> a = mAudioQueue.PeekFront();
