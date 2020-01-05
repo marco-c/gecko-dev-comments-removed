@@ -1638,55 +1638,6 @@ profiler_stream_json_for_this_process(SpliceableJSONWriter& aWriter, double aSin
 
 
 
-ProfilerMarker::ProfilerMarker(const char* aMarkerName,
-                               ProfilerMarkerPayload* aPayload,
-                               double aTime)
-  : mMarkerName(strdup(aMarkerName))
-  , mPayload(aPayload)
-  , mTime(aTime)
-{
-}
-
-ProfilerMarker::~ProfilerMarker() {
-  free(mMarkerName);
-  delete mPayload;
-}
-
-void
-ProfilerMarker::SetGeneration(uint32_t aGenID) {
-  mGenID = aGenID;
-}
-
-double
-ProfilerMarker::GetTime() const {
-  return mTime;
-}
-
-void ProfilerMarker::StreamJSON(SpliceableJSONWriter& aWriter,
-                                const TimeStamp& aProcessStartTime,
-                                UniqueStacks& aUniqueStacks) const
-{
-  
-  
-
-  aWriter.StartArrayElement();
-  {
-    aUniqueStacks.mUniqueStrings.WriteElement(aWriter, GetMarkerName());
-    aWriter.DoubleElement(mTime);
-    
-    
-    
-    if (mPayload) {
-      aWriter.StartObjectElement();
-      {
-        mPayload->StreamPayload(aWriter, aProcessStartTime, aUniqueStacks);
-      }
-      aWriter.EndObject();
-    }
-  }
-  aWriter.EndArray();
-}
-
 static void
 PrintUsageThenExit(int aExitCode)
 {
