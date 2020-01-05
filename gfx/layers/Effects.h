@@ -38,6 +38,8 @@ namespace layers {
 
 
 
+struct TexturedEffect;
+
 struct Effect
 {
   NS_INLINE_DECL_REFCOUNTING(Effect)
@@ -46,6 +48,7 @@ struct Effect
 
   EffectTypes mType;
 
+  virtual TexturedEffect* AsTexturedEffect() { return nullptr; }
   virtual void PrintInfo(std::stringstream& aStream, const char* aPrefix) = 0;
 
 protected:
@@ -66,6 +69,7 @@ struct TexturedEffect : public Effect
      , mSamplingFilter(aSamplingFilter)
   {}
 
+  virtual TexturedEffect* AsTexturedEffect() { return this; }
   virtual const char* Name() = 0;
   virtual void PrintInfo(std::stringstream& aStream, const char* aPrefix);
 

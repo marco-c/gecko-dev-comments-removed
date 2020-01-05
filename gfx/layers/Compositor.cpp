@@ -339,13 +339,10 @@ Compositor::DrawPolygon(const gfx::Polygon& aPolygon,
 
     
     
-    const EffectTypes type = aEffectChain.mPrimaryEffect->mType;
+    TexturedEffect* texturedEffect =
+      aEffectChain.mPrimaryEffect->AsTexturedEffect();
 
-    if (type == EffectTypes::RGB || type == EffectTypes::YCBCR ||
-        type == EffectTypes::NV12 || type == EffectTypes::RENDER_TARGET) {
-      TexturedEffect* texturedEffect =
-        static_cast<TexturedEffect*>(aEffectChain.mPrimaryEffect.get());
-
+    if (texturedEffect) {
       UpdateTextureCoordinates(texturedTriangle, aRect, intersection,
                                texturedEffect->mTextureCoords);
     }
