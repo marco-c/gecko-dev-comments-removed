@@ -72,6 +72,29 @@ struct gfxQuaternion : public mozilla::gfx::BasePoint4D<gfxFloat, gfxQuaternion>
         return left + right;
     }
 
+    using Super::operator*=;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    gfxQuaternion operator*(const gfxQuaternion& aOther) const {
+        return gfxQuaternion(
+          w * aOther.x + x * aOther.w + y * aOther.z - z * aOther.y,
+          w * aOther.y - x * aOther.z + y * aOther.w + z * aOther.x,
+          w * aOther.z + x * aOther.y - y * aOther.x + z * aOther.w,
+          w * aOther.w - x * aOther.x - y * aOther.y - z * aOther.z
+        );
+    }
+    gfxQuaternion& operator*=(const gfxQuaternion& aOther) {
+        *this = *this * aOther;
+        return *this;
+    }
+
     mozilla::gfx::Matrix4x4 ToMatrix() const {
       mozilla::gfx::Matrix4x4 temp;
 
