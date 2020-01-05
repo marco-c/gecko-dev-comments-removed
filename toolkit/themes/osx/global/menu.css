@@ -141,10 +141,6 @@ menuitem[customoptionstyling="true"] {
   padding-bottom: 0;
 }
 
-menuitem[_moz-menuactive="true"][customoptionstyling="true"] {
-  filter: invert(100%);
-}
-
 
 
 menulist > menupopup > menuitem,
