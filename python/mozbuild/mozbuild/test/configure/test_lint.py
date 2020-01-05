@@ -114,6 +114,19 @@ class TestLint(unittest.TestCase):
         self.assertEquals(e.exception.message,
                           "Missing @depends for `foo`: '--help'")
 
+        
+        
+        with self.moz_configure('''
+            option('--foo', help='foo')
+            @depends('--foo')
+            def foo(value):
+                os
+                return value
+
+            include(foo)
+        '''):
+            self.lint_test()
+
 
 if __name__ == '__main__':
     main()
