@@ -20,6 +20,7 @@
 #include "mozilla/TimeStamp.h"
 #include "mozilla/Sprintf.h"
 #include "PseudoStack.h"
+#include "ThreadInfo.h"
 #include "nsIObserverService.h"
 #include "nsDirectoryServiceUtils.h"
 #include "nsDirectoryServiceDefs.h"
@@ -1251,4 +1252,17 @@ profiler_add_marker(const char *aMarker, ProfilerMarkerPayload *aPayload)
 }
 
 
+
+
+
+
+#if defined(SPS_OS_windows)
+# include "platform-win32.cc"
+#elif defined(SPS_OS_darwin)
+# include "platform-macos.cc"
+#elif defined(SPS_OS_linux) || defined(SPS_OS_android)
+# include "platform-linux.cc"
+#else
+# error "bad platform"
+#endif
 
