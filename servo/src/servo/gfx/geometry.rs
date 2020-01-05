@@ -70,6 +70,10 @@ pub pure fn to_px(au: Au) -> int {
     (*au / 60) as int
 }
 
+pub pure fn to_frac_px(au: Au) -> float {
+    (*au as float) / 60f
+}
+
 
 pub pure fn from_pt(f: float) -> Au {
     from_px((f / 72f * 96f) as int)
