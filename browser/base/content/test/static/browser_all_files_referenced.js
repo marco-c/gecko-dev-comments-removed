@@ -237,8 +237,6 @@ var whitelist = new Set([
   
   {file: "resource://gre/modules/PropertyListUtils.jsm", platforms: ["linux", "win"]},
   
-  {file: "resource://gre/modules/Sntp.jsm"},
-  
   {file: "resource://gre/modules/accessibility/AccessFu.jsm"},
   
   {file: "resource://gre/modules/sdk/bootstrap.js"},
