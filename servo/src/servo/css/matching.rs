@@ -1,14 +1,15 @@
 
 
+use css::node_util::NodeUtil;
+use css::select_handler::NodeSelectHandler;
+use dom::node::{Node, NodeTree};
+use layout::context::LayoutContext;
+use newcss::complete::CompleteSelectResults;
+use newcss::select::{SelectCtx, SelectResults};
 
 use std::arc::{ARC, get, clone};
-use dom::node::{Node, NodeTree};
-use newcss::select::{SelectCtx, SelectResults};
-use newcss::complete::CompleteSelectResults;
-use layout::context::LayoutContext;
-use css::select_handler::NodeSelectHandler;
 
-trait MatchMethods {
+pub trait MatchMethods {
     fn restyle_subtree(select_ctx: &SelectCtx);
 }
 

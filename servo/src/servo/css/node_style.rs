@@ -1,8 +1,11 @@
+
+
+use css::node_util::NodeUtil;
 use dom::node::Node;
 use newcss::complete::CompleteStyle;
 
 
-trait StyledNode {
+pub trait StyledNode {
     fn style(&self) -> CompleteStyle/&self;
 }
 

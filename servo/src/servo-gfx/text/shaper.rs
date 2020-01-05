@@ -12,7 +12,6 @@ pub type Shaper/& = harfbuzz::shaper::HarfbuzzShaper;
 
 pub trait ShaperMethods {
     fn shape_text(text: &str, glyphs: &mut GlyphStore);
-
 }
 
 
