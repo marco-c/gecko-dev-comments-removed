@@ -6,8 +6,6 @@
 
 const {Cu} = require("chrome");
 const Services = require("Services");
-const promise = require("promise");
-const defer = require("devtools/shared/defer");
 
 
 loader.lazyRequireGetter(this, "Toolbox", "devtools/client/framework/toolbox", true);
@@ -46,7 +44,7 @@ function DevTools() {
   
   
   this.registerDefaults();
-};
+}
 
 DevTools.prototype = {
   
@@ -100,7 +98,7 @@ DevTools.prototype = {
 
 
 
-  registerTool: function DT_registerTool(toolDefinition) {
+  registerTool(toolDefinition) {
     let toolId = toolDefinition.id;
 
     if (!toolId || FORBIDDEN_IDS.has(toolId)) {
@@ -130,17 +128,16 @@ DevTools.prototype = {
 
 
 
-  unregisterTool: function DT_unregisterTool(tool, isQuitApplication) {
+  unregisterTool(tool, isQuitApplication) {
     let toolId = null;
     if (typeof tool == "string") {
       toolId = tool;
       tool = this._tools.get(tool);
-    }
-    else {
+    } else {
       let {Deprecated} = Cu.import("resource://gre/modules/Deprecated.jsm", {});
-      Deprecated.warning("Deprecation WARNING: gDevTools.unregisterTool(tool) is deprecated. " +
-                         "You should unregister a tool using its toolId: " +
-                         "gDevTools.unregisterTool(toolId).");
+      Deprecated.warning("Deprecation WARNING: gDevTools.unregisterTool(tool) is " +
+        "deprecated. You should unregister a tool using its toolId: " +
+        "gDevTools.unregisterTool(toolId).");
       toolId = tool.id;
     }
     this._tools.delete(toolId);
@@ -153,19 +150,19 @@ DevTools.prototype = {
   
 
 
-  ordinalSort: function DT_ordinalSort(d1, d2) {
+  ordinalSort(d1, d2) {
     let o1 = (typeof d1.ordinal == "number") ? d1.ordinal : MAX_ORDINAL;
     let o2 = (typeof d2.ordinal == "number") ? d2.ordinal : MAX_ORDINAL;
     return o1 - o2;
   },
 
-  getDefaultTools: function DT_getDefaultTools() {
+  getDefaultTools() {
     return DefaultTools.sort(this.ordinalSort);
   },
 
-  getAdditionalTools: function DT_getAdditionalTools() {
+  getAdditionalTools() {
     let tools = [];
-    for (let [key, value] of this._tools) {
+    for (let [, value] of this._tools) {
       if (DefaultTools.indexOf(value) == -1) {
         tools.push(value);
       }
@@ -186,7 +183,7 @@ DevTools.prototype = {
 
 
 
-  getToolDefinition: function DT_getToolDefinition(toolId) {
+  getToolDefinition(toolId) {
     let tool = this._tools.get(toolId);
     if (!tool) {
       return null;
@@ -206,7 +203,7 @@ DevTools.prototype = {
 
 
 
-  getToolDefinitionMap: function DT_getToolDefinitionMap() {
+  getToolDefinitionMap() {
     let tools = new Map();
 
     for (let [id, definition] of this._tools) {
@@ -226,7 +223,7 @@ DevTools.prototype = {
 
 
 
-  getToolDefinitionArray: function DT_getToolDefinitionArray() {
+  getToolDefinitionArray() {
     let definitions = [];
 
     for (let [id, definition] of this._tools) {
@@ -260,7 +257,7 @@ DevTools.prototype = {
 
 
 
-  registerTheme: function DT_registerTheme(themeDefinition) {
+  registerTheme(themeDefinition) {
     let themeId = themeDefinition.id;
 
     if (!themeId) {
@@ -283,13 +280,12 @@ DevTools.prototype = {
 
 
 
-  unregisterTheme: function DT_unregisterTheme(theme) {
+  unregisterTheme(theme) {
     let themeId = null;
     if (typeof theme == "string") {
       themeId = theme;
       theme = this._themes.get(theme);
-    }
-    else {
+    } else {
       themeId = theme.id;
     }
 
@@ -323,7 +319,7 @@ DevTools.prototype = {
 
 
 
-  getThemeDefinition: function DT_getThemeDefinition(themeId) {
+  getThemeDefinition(themeId) {
     let theme = this._themes.get(themeId);
     if (!theme) {
       return null;
@@ -337,7 +333,7 @@ DevTools.prototype = {
 
 
 
-  getThemeDefinitionMap: function DT_getThemeDefinitionMap() {
+  getThemeDefinitionMap() {
     let themes = new Map();
 
     for (let [id, definition] of this._themes) {
@@ -355,7 +351,7 @@ DevTools.prototype = {
 
 
 
-  getThemeDefinitionArray: function DT_getThemeDefinitionArray() {
+  getThemeDefinitionArray() {
     let definitions = [];
 
     for (let [id, definition] of this._themes) {
@@ -390,7 +386,6 @@ DevTools.prototype = {
   showToolbox: Task.async(function* (target, toolId, hostType, hostOptions) {
     let toolbox = this._toolboxes.get(target);
     if (toolbox) {
-
       if (hostType != null && toolbox.hostType != hostType) {
         yield toolbox.switchHost(hostType);
       }
@@ -449,7 +444,7 @@ DevTools.prototype = {
 
 
 
-  getToolbox: function DT_getToolbox(target) {
+  getToolbox(target) {
     return this._toolboxes.get(target);
   },
 
@@ -482,17 +477,17 @@ DevTools.prototype = {
 
 
 
-  destroy: function ({ shuttingDown }) {
+  destroy({ shuttingDown }) {
     
     
     if (!shuttingDown) {
-      for (let [target, toolbox] of this._toolboxes) {
+      for (let [, toolbox] of this._toolboxes) {
         toolbox.destroy();
       }
       AboutDevTools.unregister();
     }
 
-    for (let [key, tool] of this.getToolDefinitionMap()) {
+    for (let [key, ] of this.getToolDefinitionMap()) {
       this.unregisterTool(key, true);
     }
 
@@ -508,7 +503,7 @@ DevTools.prototype = {
   
 
 
-  *[Symbol.iterator ]() {
+  * [Symbol.iterator ]() {
     for (let toolbox of this._toolboxes) {
       yield toolbox;
     }
