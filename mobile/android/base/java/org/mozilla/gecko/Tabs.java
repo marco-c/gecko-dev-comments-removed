@@ -221,7 +221,7 @@ public class Tabs implements BundleEventListener {
                 return tab.getId();
             }
         }
-        return -1;
+        return INVALID_TAB_ID;
     }
 
     
@@ -389,7 +389,7 @@ public class Tabs implements BundleEventListener {
 
     @RobocopTarget
     public synchronized Tab getTab(int id) {
-        if (id == -1)
+        if (id == INVALID_TAB_ID)
             return null;
 
         if (mTabs.size() == 0)
@@ -552,7 +552,7 @@ public class Tabs implements BundleEventListener {
         }
 
         
-        final int id = message.getInt("tabID", -1);
+        final int id = message.getInt("tabID", INVALID_TAB_ID);
         Tab tab = getTab(id);
 
         
@@ -691,7 +691,7 @@ public class Tabs implements BundleEventListener {
             }
 
         } else if ("Tab:SetParentId".equals(event)) {
-            tab.setParentId(message.getInt("parentID", -1));
+            tab.setParentId(message.getInt("parentID", INVALID_TAB_ID));
         }
     }
 
@@ -931,7 +931,7 @@ public class Tabs implements BundleEventListener {
 
     @RobocopTarget
     public Tab loadUrl(String url, int flags) {
-        return loadUrl(url, null, -1, null, flags);
+        return loadUrl(url, null, INVALID_TAB_ID, null, flags);
     }
 
     public Tab loadUrlWithIntentExtras(final String url, final SafeIntent intent, final int flags) {
@@ -944,7 +944,7 @@ public class Tabs implements BundleEventListener {
 
         
         
-        return loadUrl(url, null, -1, intent, flags);
+        return loadUrl(url, null, INVALID_TAB_ID, intent, flags);
     }
 
     public Tab loadUrl(final String url, final String searchEngine, final int parentId, final int flags) {
@@ -1098,7 +1098,7 @@ public class Tabs implements BundleEventListener {
         
         
         
-        int parentId = -1;
+        int parentId = INVALID_TAB_ID;
         int flags = LOADURL_NEW_TAB;
 
         final Tab selectedTab = getSelectedTab();
