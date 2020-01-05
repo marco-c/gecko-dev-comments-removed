@@ -105,6 +105,10 @@ public:
 
   
   
+  virtual void OnDocumentVisible();
+
+  
+  
   void SetLastInputSource(uint16_t aInputSource);
 
 protected:
