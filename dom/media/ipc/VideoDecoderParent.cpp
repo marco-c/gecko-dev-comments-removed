@@ -76,18 +76,18 @@ VideoDecoderParent::RecvInit(const VideoInfo& aInfo, const layers::TextureFactor
 {
   mKnowsCompositor->IdentifyTextureHost(aIdentifier);
 
-  CreateDecoderParams params(aInfo);
-  params.mTaskQueue = mDecodeTaskQueue;
-  params.mCallback = this;
-  params.mKnowsCompositor = mKnowsCompositor;
-  params.mImageContainer = new layers::ImageContainer();
-
 #ifdef XP_WIN
   
   
   WMFDecoderModule::Init();
   RefPtr<WMFDecoderModule> pdm(new WMFDecoderModule());
   pdm->Startup();
+
+  CreateDecoderParams params(aInfo);
+  params.mTaskQueue = mDecodeTaskQueue;
+  params.mCallback = this;
+  params.mKnowsCompositor = mKnowsCompositor;
+  params.mImageContainer = new layers::ImageContainer();
 
   mDecoder = pdm->CreateVideoDecoder(params);
   if (!mDecoder) {
