@@ -86,6 +86,10 @@ function init_all() {
   });
   document.dispatchEvent(initFinished);
 
+  let helpButton = document.querySelector(".help-button");
+  let helpUrl = Services.urlFormatter.formatURLPref("app.support.baseURL") + "preferences";
+  helpButton.setAttribute("href", helpUrl);
+
   
   
   Services.obs.notifyObservers(window, "advanced-pane-loaded");
@@ -168,9 +172,6 @@ function gotoPref(aCategory) {
     category = kDefaultCategoryInternalName;
     item = categories.querySelector(".category[value=" + category + "]");
   }
-
-  let helpButton = document.querySelector(".help-button");
-  helpButton.setAttribute("href", getHelpLinkURL(item.getAttribute("helpTopic")));
 
   try {
     init_category_if_required(category);
