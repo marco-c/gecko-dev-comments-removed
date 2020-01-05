@@ -2195,6 +2195,9 @@ class BaseCompiler
     
 
     void insertBreakablePoint(CallSiteDesc::Kind kind) {
+        
+        
+        
         masm.nopPatchableToCall(CallSiteDesc(iter_.errorOffset(), kind));
     }
 
