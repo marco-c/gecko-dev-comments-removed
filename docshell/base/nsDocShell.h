@@ -728,12 +728,6 @@ protected:
   already_AddRefed<nsDocShell> GetParentDocshell();
 
   
-  
-  bool DoAppRedirectIfNeeded(nsIURI* aURI,
-                             nsIDocShellLoadInfo* aLoadInfo,
-                             bool aFirstParty);
-
-  
   bool IsAboutNewtab(nsIURI* aURI);
 
 protected:
