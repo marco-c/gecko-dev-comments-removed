@@ -5,34 +5,7 @@
 
 
 
-
 "use strict";
-
-var { utils: Cu } = Components;
-
-
-const ACTIVITY_TYPE = {
-  
-  NONE: 0,
-
-  
-  RELOAD: {
-    WITH_CACHE_ENABLED: 1,
-    WITH_CACHE_DISABLED: 2,
-    WITH_CACHE_DEFAULT: 3
-  },
-
-  
-  ENABLE_CACHE: 3,
-  DISABLE_CACHE: 4
-};
-
-var BrowserLoaderModule = {};
-Cu.import("resource://devtools/client/shared/browser-loader.js", BrowserLoaderModule);
-var { loader, require } = BrowserLoaderModule.BrowserLoader({
-  baseURI: "resource://devtools/client/netmonitor/",
-  window
-});
 
 const promise = require("promise");
 const Services = require("Services");
@@ -41,16 +14,22 @@ const EventEmitter = require("devtools/shared/event-emitter");
 const Editor = require("devtools/client/sourceeditor/editor");
 const {TimelineFront} = require("devtools/shared/fronts/timeline");
 const {Task} = require("devtools/shared/task");
-const {EVENTS} = require("./events");
+const { ACTIVITY_TYPE } = require("./constants");
+const { EVENTS } = require("./events");
+const { configureStore } = require("./store");
 const Actions = require("./actions/index");
 const { getDisplayedRequestById } = require("./selectors/index");
+const { Prefs } = require("./prefs");
 
-XPCOMUtils.defineConstant(this, "EVENTS", EVENTS);
-XPCOMUtils.defineConstant(this, "ACTIVITY_TYPE", ACTIVITY_TYPE);
-XPCOMUtils.defineConstant(this, "Editor", Editor);
-
-XPCOMUtils.defineLazyModuleGetter(this, "Chart",
+XPCOMUtils.defineConstant(window, "EVENTS", EVENTS);
+XPCOMUtils.defineConstant(window, "ACTIVITY_TYPE", ACTIVITY_TYPE);
+XPCOMUtils.defineConstant(window, "Editor", Editor);
+XPCOMUtils.defineConstant(window, "Prefs", Prefs);
+XPCOMUtils.defineLazyModuleGetter(window, "Chart",
   "resource://devtools/client/shared/widgets/Chart.jsm");
+
+
+window.gStore = configureStore();
 
 
 
@@ -739,7 +718,7 @@ NetworkEventsHandler.prototype = {
 
 
 
-EventEmitter.decorate(this);
+EventEmitter.decorate(window);
 
 
 
@@ -759,14 +738,4 @@ Object.defineProperties(window, {
   }
 });
 
-
-
-
-
-function dumpn(str) {
-  if (wantLogging) {
-    dump("NET-FRONTEND: " + str + "\n");
-  }
-}
-
-var wantLogging = Services.prefs.getBoolPref("devtools.debugger.log");
+exports.NetMonitorController = NetMonitorController;
