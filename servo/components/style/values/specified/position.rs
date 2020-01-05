@@ -187,13 +187,11 @@ impl Parse for Position {
             } else {
                 
                 if let PositionCategory::LengthOrPercentage = category(&first) {
-                    
-                    Position::new(Some(first), Some(third), None, Some(second))
+                    Err(())
                 } else {
                     if let PositionCategory::LengthOrPercentage = category(&second) {
                         if let PositionCategory::LengthOrPercentage = category(&third) {
-                            
-                            Position::new(Some(second), Some(third), Some(first), None)
+                            Err(())
                         } else {
                             
                             Position::new(Some(second), None, Some(first), Some(third))
