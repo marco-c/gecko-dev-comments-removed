@@ -404,6 +404,22 @@ public class FxAccountSyncAdapter extends AbstractThreadedSyncAdapter {
     tokenServerclient.getTokenFromBrowserIDAssertion(assertion, true, clientState, delegate);
   }
 
+  public void maybeRegisterDevice(Context context, AndroidFxAccount fxAccount) {
+    
+    
+    
+    
+    if (fxAccount.getDeviceRegistrationVersion() != FxAccountDeviceRegistrator.DEVICE_REGISTRATION_VERSION
+            || TextUtils.isEmpty(fxAccount.getDeviceId())) {
+      FxAccountDeviceRegistrator.register(context);
+      
+      
+      
+    } else if (FxAccountDeviceRegistrator.needToRenewRegistration(fxAccount.getDeviceRegistrationTimestamp())) {
+      FxAccountDeviceRegistrator.renewRegistration(context);
+    }
+  }
+
   
 
 
@@ -530,6 +546,9 @@ public class FxAccountSyncAdapter extends AbstractThreadedSyncAdapter {
           Logger.info(LOG_TAG, "handleNotMarried: in " + notMarried.getStateLabel());
           schedulePolicy.onHandleFinal(notMarried.getNeededAction());
           syncDelegate.handleCannotSync(notMarried);
+          if (notMarried.getStateLabel() == StateLabel.Engaged) {
+            maybeRegisterDevice(context, fxAccount);
+          }
         }
 
         private boolean shouldRequestToken(final BackoffHandler tokenBackoffHandler, final Bundle extras) {
@@ -578,19 +597,7 @@ public class FxAccountSyncAdapter extends AbstractThreadedSyncAdapter {
                     assertion, tokenServerEndpointURI, tokenBackoffHandler, sharedPrefs,
                     syncKeyBundle, clientState, sessionCallback, extras, fxAccount, syncDeadline);
 
-            
-            
-            
-            
-            if (fxAccount.getDeviceRegistrationVersion() != FxAccountDeviceRegistrator.DEVICE_REGISTRATION_VERSION
-              || TextUtils.isEmpty(fxAccount.getDeviceId())) {
-              FxAccountDeviceRegistrator.register(context);
-            
-            
-            
-            } else if (FxAccountDeviceRegistrator.needToRenewRegistration(fxAccount.getDeviceRegistrationTimestamp())) {
-              FxAccountDeviceRegistrator.renewRegistration(context);
-            }
+            maybeRegisterDevice(context, fxAccount);
 
             
             Logger.info(LOG_TAG, "Fetching profile avatar information.");
