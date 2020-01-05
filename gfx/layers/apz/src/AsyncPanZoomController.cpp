@@ -3241,7 +3241,14 @@ AsyncPanZoomController::ReportCheckerboard(const TimeStamp& aSampleTime)
   if (magnitude) {
     mPotentialCheckerboardTracker.CheckerboardSeen();
   }
-  if (mCheckerboardEvent && mCheckerboardEvent->RecordFrameInfo(magnitude)) {
+  UpdateCheckerboardEvent(lock, magnitude);
+}
+
+void
+AsyncPanZoomController::UpdateCheckerboardEvent(const MutexAutoLock& aProofOfLock,
+                                                uint32_t aMagnitude)
+{
+  if (mCheckerboardEvent && mCheckerboardEvent->RecordFrameInfo(aMagnitude)) {
     
     mozilla::Telemetry::Accumulate(mozilla::Telemetry::CHECKERBOARD_SEVERITY,
       mCheckerboardEvent->GetSeverity());
@@ -3252,7 +3259,7 @@ AsyncPanZoomController::ReportCheckerboard(const TimeStamp& aSampleTime)
 
     mPotentialCheckerboardTracker.CheckerboardDone();
 
-    if (recordTrace) {
+    if (gfxPrefs::APZRecordCheckerboarding()) {
       
       
       
@@ -3262,6 +3269,15 @@ AsyncPanZoomController::ReportCheckerboard(const TimeStamp& aSampleTime)
     }
     mCheckerboardEvent = nullptr;
   }
+}
+
+void
+AsyncPanZoomController::FlushActiveCheckerboardReport()
+{
+  MutexAutoLock lock(mCheckerboardEventLock);
+  
+  
+  UpdateCheckerboardEvent(lock, 0);
 }
 
 bool AsyncPanZoomController::IsCurrentlyCheckerboarding() const {
