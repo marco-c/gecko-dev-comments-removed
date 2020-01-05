@@ -7,7 +7,7 @@
 
 
 
-use native;
+use task;
 use std::cast;
 use std::comm;
 use std::mem;
@@ -200,7 +200,7 @@ pub struct WorkQueue<QUD,WUD> {
 impl<QUD:Send,WUD:Send> WorkQueue<QUD,WUD> {
     /// Creates a new work queue and spawns all the threads associated with
     /// it.
-    pub fn new(thread_count: uint, user_data: QUD) -> WorkQueue<QUD,WUD> {
+    pub fn new(task_name: &str, thread_count: uint, user_data: QUD) -> WorkQueue<QUD,WUD> {
         // Set up data structures.
         let (supervisor_port, supervisor_chan) = Chan::new();
         let (mut infos, mut threads) = (~[], ~[]);
@@ -235,7 +235,7 @@ impl<QUD:Send,WUD:Send> WorkQueue<QUD,WUD> {
 
         // Spawn threads.
         for thread in threads.move_iter() {
-            native::task::spawn(proc() {
+            task::spawn_named(task_name.to_owned(), proc() {
                 let mut thread = thread;
                 thread.start()
             })
