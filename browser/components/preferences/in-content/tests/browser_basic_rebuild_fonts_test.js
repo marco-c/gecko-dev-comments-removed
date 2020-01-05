@@ -27,13 +27,14 @@ add_task(function*() {
   
   win.FontBuilder._enumerator = {
     _list: ["MockedFont1", "MockedFont2", "MockedFont3"],
+    _defaultFont: null,
     EnumerateFonts(lang, type, list) {
       return this._list;
     },
     EnumerateAllFonts() {
       return this._list;
     },
-    getDefaultFont() { return null; },
+    getDefaultFont() { return this._defaultFont; },
     getStandardFamilyName(name) { return name; },
   };
   win.FontBuilder._allFonts = null;
@@ -49,6 +50,8 @@ add_task(function*() {
   selectLangsField.value = armenian;
   is(serifField.value, "", "Font family should not be set.");
 
+  let armenianSerifElement = doc.getElementById("font.name.serif.x-armn");
+
   langGroupElement.value = western;
   selectLangsField.value = western;
 
@@ -60,7 +63,7 @@ add_task(function*() {
 
   langGroupElement.value = armenian;
   selectLangsField.value = armenian;
-  is(serifField.value, "MockedFont2", "Font family should be set.");
+  is(serifField.value, "", "Font family should still be empty for indicating using 'default' font.");
 
   langGroupElement.value = western;
   selectLangsField.value = western;
@@ -71,6 +74,36 @@ add_task(function*() {
   langGroupElement.value = armenian;
   selectLangsField.value = armenian;
   is(serifField.value, "", "Font family should not be set.");
+
+  
+  
+  
+  win.FontBuilder._enumerator._list = ["MockedFont1", "MockedFont2", "MockedFont3"];
+  win.FontBuilder._enumerator._defaultFont = "MockedFont3";
+  langGroupElement.value = armenian;
+  selectLangsField.value = armenian;
+  is(serifField.value, "", "Font family should be empty even if there is a default font.");
+
+  armenianSerifElement.value = "MockedFont2";
+  serifField.value = "MockedFont2";
+  is(serifField.value, "MockedFont2", "Font family should be \"MockedFont2\" for now.");
+
+  langGroupElement.value = western;
+  selectLangsField.value = western;
+  is(serifField.value, "", "Font family of other language should not be set.");
+
+  langGroupElement.value = armenian;
+  selectLangsField.value = armenian;
+  is(serifField.value, "MockedFont2", "Font family should not be changed even after switching the language.");
+
+  
+  
+  win.FontBuilder._enumerator._list = ["MockedFont1", "MockedFont3"];
+  win.FontBuilder._enumerator._allFonts = ["MockedFont1", "MockedFont3"];
+  serifField.removeAllItems(); 
+  langGroupElement.value = armenian;
+  selectLangsField.value = armenian;
+  is(serifField.value, "", "Font family should become empty due to the font uninstalled.");
 
   gBrowser.removeCurrentTab();
 });
