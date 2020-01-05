@@ -165,6 +165,7 @@ EXPORTS.mozilla.dom += [
     'DOMError.h',
     'DOMException.h',
     'DOMImplementation.h',
+    'DOMIntersectionObserver.h',
     'DOMMatrix.h',
     'DOMParser.h',
     'DOMPoint.h',
@@ -182,7 +183,6 @@ EXPORTS.mozilla.dom += [
     'FormData.h',
     'FragmentOrElement.h',
     'FromParser.h',
-    'GroupedSHistory.h',
     'ImageEncoder.h',
     'ImageTracker.h',
     'ImportManager.h',
@@ -195,7 +195,6 @@ EXPORTS.mozilla.dom += [
     'NodeInfo.h',
     'NodeInfoInlines.h',
     'NodeIterator.h',
-    'PartialSHistory.h',
     'ProcessGlobal.h',
     'ResponsiveImageSelector.h',
     'SameProcessMessageQueue.h',
@@ -247,7 +246,6 @@ UNIFIED_SOURCES += [
     'FileReader.cpp',
     'FormData.cpp',
     'FragmentOrElement.cpp',
-    'GroupedSHistory.cpp',
     'ImageEncoder.cpp',
     'ImageTracker.cpp',
     'ImportManager.cpp',
@@ -334,7 +332,6 @@ UNIFIED_SOURCES += [
     'nsXHTMLContentSerializer.cpp',
     'nsXMLContentSerializer.cpp',
     'nsXMLNameSpaceMap.cpp',
-    'PartialSHistory.cpp',
     'PostMessageEvent.cpp',
     'ProcessGlobal.cpp',
     'ResponsiveImageSelector.cpp',
@@ -362,6 +359,8 @@ if CONFIG['MOZ_WEBRTC']:
 
 # these files couldn't be in UNIFIED_SOURCES for now for reasons given below:
 SOURCES += [
+    # Several conflicts with other bindings.
+    'DOMIntersectionObserver.cpp',
     # Because of OS X headers.
     'nsContentUtils.cpp',
     # this file doesn't like windows.h
