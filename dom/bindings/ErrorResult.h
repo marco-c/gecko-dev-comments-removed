@@ -262,6 +262,7 @@ public:
   
   
   
+  MOZ_MUST_USE
   bool MaybeSetPendingException(JSContext* cx)
   {
     WouldReportJSException();
