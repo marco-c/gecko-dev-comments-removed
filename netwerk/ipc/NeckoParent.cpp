@@ -159,16 +159,20 @@ NeckoParent::GetValidatedOriginAttributes(const SerializedLoadContext& aSerializ
                                           nsIPrincipal* aRequestingPrincipal,
                                           DocShellOriginAttributes& aAttrs)
 {
-  if (!aSerialized.IsNotNull()) {
-    if (UsingNeckoIPCSecurity()) {
-      CrashWithReason("GetValidatedOriginAttributes | SerializedLoadContext from child is null");
-      return "SerializedLoadContext from child is null";
+  if (!UsingNeckoIPCSecurity()) {
+    if (!aSerialized.IsNotNull()) {
+      
+      
+      aAttrs = DocShellOriginAttributes(NECKO_NO_APP_ID, false);
+    } else {
+      aAttrs = aSerialized.mOriginAttributes;
     }
-
-    
-    
-    aAttrs = DocShellOriginAttributes(NECKO_NO_APP_ID, false);
     return nullptr;
+  }
+
+  if (!aSerialized.IsNotNull()) {
+    CrashWithReason("GetValidatedOriginAttributes | SerializedLoadContext from child is null");
+    return "SerializedLoadContext from child is null";
   }
 
   nsTArray<TabContext> contextArray =
@@ -211,12 +215,6 @@ NeckoParent::GetValidatedOriginAttributes(const SerializedLoadContext& aSerializ
       aAttrs = aSerialized.mOriginAttributes;
       return nullptr;
     }
-  }
-
-  if (!UsingNeckoIPCSecurity()) {
-    
-    aAttrs = aSerialized.mOriginAttributes;
-    return nullptr;
   }
 
   nsAutoCString errorString;
