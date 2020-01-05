@@ -9,7 +9,6 @@
 #include "jscompartment.h"
 
 #include "proxy/DeadObjectProxy.h"
-#include "proxy/ScriptedProxyHandler.h"
 
 #include "jsobjinlines.h"
 
@@ -117,18 +116,24 @@ ProxyObject::nuke()
 {
     
     
-    uint32_t callable = handler()->isCallable(this)
-                        ? ScriptedProxyHandler::IS_CALLABLE : 0;
-    uint32_t constructor = handler()->isConstructor(this)
-                           ? ScriptedProxyHandler::IS_CONSTRUCTOR : 0;
-    setExtra(ScriptedProxyHandler::IS_CALLCONSTRUCT_EXTRA,
-             PrivateUint32Value(callable | constructor));
+    uint32_t callable = handler()->isCallable(this);
+    uint32_t constructor = handler()->isConstructor(this);
 
     
     setSameCompartmentPrivate(NullValue());
 
     
-    setHandler(&DeadObjectProxy::singleton);
+    if (callable) {
+        if (constructor)
+            setHandler(DeadObjectProxy<DeadProxyIsCallableIsConstructor>::singleton());
+        else
+            setHandler(DeadObjectProxy<DeadProxyIsCallableNotConstructor>::singleton());
+    } else {
+        if (constructor)
+            setHandler(DeadObjectProxy<DeadProxyNotCallableIsConstructor>::singleton());
+        else
+            setHandler(DeadObjectProxy<DeadProxyNotCallableNotConstructor>::singleton());
+    }
 
     
     
