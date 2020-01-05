@@ -93,7 +93,7 @@ impl Image {
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct Gradient {
     
-    pub stops: Vec<ColorStop>,
+    pub items: Vec<GradientItem>,
     
     pub repeating: bool,
     
@@ -132,13 +132,13 @@ impl ToCss for Gradient {
                 }
             },
         }
-        for stop in &self.stops {
+        for item in &self.items {
             if !skipcomma {
                 try!(dest.write_str(", "));
             } else {
                 skipcomma = false;
             }
-            try!(stop.to_css(dest));
+            try!(item.to_css(dest));
         }
         dest.write_str(")")
     }
@@ -148,18 +148,18 @@ impl Gradient {
     
     pub fn parse_function(context: &ParserContext, input: &mut Parser) -> Result<Gradient, ()> {
         fn parse<F>(context: &ParserContext, input: &mut Parser, parse_kind: F)
-                    -> Result<(GradientKind, Vec<ColorStop>), ()>
+                    -> Result<(GradientKind, Vec<GradientItem>), ()>
             where F: FnOnce(&ParserContext, &mut Parser) -> Result<GradientKind, ()>
         {
             input.parse_nested_block(|input| {
                 let kind = try!(parse_kind(context, input));
-                let stops = try!(input.parse_comma_separated(|i| ColorStop::parse(context, i)));
-                Ok((kind, stops))
+                let items = try!(Gradient::parse_items(context, input));
+                Ok((kind, items))
             })
         };
         let mut repeating = false;
         let mut compat_mode = CompatMode::Modern;
-        let (gradient_kind, stops) = match_ignore_ascii_case! { &try!(input.expect_function()),
+        let (gradient_kind, items) = match_ignore_ascii_case! { &try!(input.expect_function()),
             "linear-gradient" => {
                 try!(parse(context, input, GradientKind::parse_modern_linear))
             },
@@ -195,17 +195,30 @@ impl Gradient {
             _ => { return Err(()); }
         };
 
-        
-        if stops.len() < 2 {
-            return Err(())
-        }
-
         Ok(Gradient {
-            stops: stops,
+            items: items,
             repeating: repeating,
             gradient_kind: gradient_kind,
             compat_mode: compat_mode,
         })
+    }
+
+    fn parse_items(context: &ParserContext, input: &mut Parser) -> Result<Vec<GradientItem>, ()> {
+        let mut seen_stop = false;
+        let items = try!(input.parse_comma_separated(|input| {
+            if seen_stop {
+                if let Ok(hint) = input.try(|i| LengthOrPercentage::parse(context, i)) {
+                    seen_stop = false;
+                    return Ok(GradientItem::InterpolationHint(hint));
+                }
+            }
+            seen_stop = true;
+            ColorStop::parse(context, input).map(GradientItem::ColorStop)
+        }));
+        if !seen_stop || items.len() < 2 {
+            return Err(());
+        }
+        Ok(items)
     }
 }
 
@@ -485,6 +498,26 @@ impl AngleOrCorner {
                 }
                 Ok(())
             }
+        }
+    }
+}
+
+
+
+#[derive(Clone, PartialEq, Debug)]
+#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+pub enum GradientItem {
+    
+    ColorStop(ColorStop),
+    
+    InterpolationHint(LengthOrPercentage),
+}
+
+impl ToCss for GradientItem {
+    fn to_css<W>(&self, dest: &mut W) -> fmt::Result where W: fmt::Write {
+        match *self {
+            GradientItem::ColorStop(ref stop) => stop.to_css(dest),
+            GradientItem::InterpolationHint(ref hint) => hint.to_css(dest),
         }
     }
 }
