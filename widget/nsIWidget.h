@@ -1738,7 +1738,7 @@ public:
 
 
 
-    NS_IMETHOD NotifyIME(const IMENotification& aIMENotification) = 0;
+    virtual nsresult NotifyIME(const IMENotification& aIMENotification) = 0;
 
     
 

@@ -85,6 +85,7 @@ public:
     bool HasModalDescendents() { return false; }
 
     
+    
     NS_IMETHOD_(void) SetInputContext(
                         const InputContext& aContext,
                         const InputContextAction& aAction);
