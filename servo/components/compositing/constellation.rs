@@ -653,9 +653,9 @@ impl<LTF: LayoutThreadFactory, STF: ScriptThreadFactory> Constellation<LTF, STF>
             
 
 
-            Request::Script(FromScriptMsg::Failure(Failure { pipeline_id, parent_info })) => {
-                debug!("handling script failure message from pipeline {:?}, {:?}", pipeline_id, parent_info);
-                self.handle_failure_msg(pipeline_id, parent_info);
+            Request::Script(FromScriptMsg::Failure(failure)) => {
+                debug!("handling script failure message from pipeline {:?}", failure);
+                self.handle_failure_msg(failure);
             }
             Request::Script(FromScriptMsg::ScriptLoadedURLInIFrame(load_info)) => {
                 debug!("constellation got iframe URL load message {:?} {:?} {:?}",
@@ -786,9 +786,9 @@ impl<LTF: LayoutThreadFactory, STF: ScriptThreadFactory> Constellation<LTF, STF>
             Request::Layout(FromLayoutMsg::ChangeRunningAnimationsState(pipeline_id, animation_state)) => {
                 self.handle_change_running_animations_state(pipeline_id, animation_state)
             }
-            Request::Layout(FromLayoutMsg::Failure(Failure { pipeline_id, parent_info })) => {
-                debug!("handling paint failure message from pipeline {:?}, {:?}", pipeline_id, parent_info);
-                self.handle_failure_msg(pipeline_id, parent_info);
+            Request::Layout(FromLayoutMsg::Failure(failure)) => {
+                debug!("handling paint failure message from pipeline {:?}", failure);
+                self.handle_failure_msg(failure);
             }
             Request::Layout(FromLayoutMsg::SetCursor(cursor)) => {
                 self.handle_set_cursor_msg(cursor)
@@ -803,9 +803,9 @@ impl<LTF: LayoutThreadFactory, STF: ScriptThreadFactory> Constellation<LTF, STF>
 
 
             
-            Request::Paint(FromPaintMsg::Failure(Failure { pipeline_id, parent_info })) => {
-                debug!("handling paint failure message from pipeline {:?}, {:?}", pipeline_id, parent_info);
-                self.handle_failure_msg(pipeline_id, parent_info);
+            Request::Paint(FromPaintMsg::Failure(failure)) => {
+                debug!("handling paint failure message from pipeline {:?}", failure);
+                self.handle_failure_msg(failure);
             }
 
         }
@@ -835,12 +835,11 @@ impl<LTF: LayoutThreadFactory, STF: ScriptThreadFactory> Constellation<LTF, STF>
             Some(pipeline) => pipeline.parent_info,
         };
         
-        self.handle_failure_msg(pipeline_id, parent_info);
+        let failure = Failure::new(pipeline_id, parent_info);
+        self.handle_failure_msg(failure);
     }
 
-    fn handle_failure_msg(&mut self,
-                          pipeline_id: PipelineId,
-                          parent_info: Option<(PipelineId, SubpageId)>) {
+    fn handle_failure_msg(&mut self, failure: Failure) {
         if opts::get().hard_fail {
             
             
@@ -850,12 +849,12 @@ impl<LTF: LayoutThreadFactory, STF: ScriptThreadFactory> Constellation<LTF, STF>
             process::exit(1);
         }
 
-        let window_size = self.pipelines.get(&pipeline_id).and_then(|pipeline| pipeline.size);
+        let window_size = self.pipelines.get(&failure.pipeline_id).and_then(|pipeline| pipeline.size);
 
-        self.close_pipeline(pipeline_id, ExitPipelineMode::Force);
+        self.close_pipeline(failure.pipeline_id, ExitPipelineMode::Force);
 
         while let Some(pending_pipeline_id) = self.pending_frames.iter().find(|pending| {
-            pending.old_pipeline_id == Some(pipeline_id)
+            pending.old_pipeline_id == Some(failure.pipeline_id)
         }).map(|frame| frame.new_pipeline_id) {
             warn!("removing pending frame change for failed pipeline");
             self.close_pipeline(pending_pipeline_id, ExitPipelineMode::Force);
@@ -865,12 +864,12 @@ impl<LTF: LayoutThreadFactory, STF: ScriptThreadFactory> Constellation<LTF, STF>
 
         let new_pipeline_id = PipelineId::new();
         self.new_pipeline(new_pipeline_id,
-                          parent_info,
+                          failure.parent_info,
                           window_size,
                           None,
                           LoadData::new(Url::parse("about:failure").unwrap()));
 
-        self.push_pending_frame(new_pipeline_id, Some(pipeline_id));
+        self.push_pending_frame(new_pipeline_id, Some(failure.pipeline_id));
 
     }
 
