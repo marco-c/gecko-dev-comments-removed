@@ -139,9 +139,7 @@ function writeRootHashes(fos) {
     writeString(fos, FP_POSTAMBLE);
 
     writeString(fos, "\n");
-
-  }
-  catch (e) {
+  } catch (e) {
     dump("ERROR: problem writing output: " + e + "\n");
   }
 }
@@ -193,7 +191,6 @@ function insertTrustAnchorsFromDatabase() {
 
        
       if (findTrustAnchorByFingerprint(encodedFingerprint) == ROOT_NOT_ASSIGNED) {
-
         
         let label = getLabelForCert(cert);
 

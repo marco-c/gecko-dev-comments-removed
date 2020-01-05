@@ -3,6 +3,9 @@
 module.exports = { 
   "rules": {
     
+    "array-callback-return": "error",
+
+    
     "arrow-body-style": ["error", "as-needed"],
 
     
@@ -24,7 +27,16 @@ module.exports = {
     "consistent-return": "error",
 
     
+    "constructor-super": "error",
+
+    
     "curly": ["error", "multi-line"],
+
+    
+    "default-case": "error",
+
+    
+    "dot-notation": "error",
 
     
     "eol-last": "error",
@@ -57,6 +69,10 @@ module.exports = {
     "no-caller": "error",
 
     
+    
+    "no-case-declarations": "error",
+
+    
     "no-class-assign": "error",
 
     
@@ -70,6 +86,12 @@ module.exports = {
     "no-const-assign": "error",
 
     
+    "no-constant-condition": ["error", { "checkLoops": false }],
+
+    
+    "no-control-regex": "error",
+
+    
     "no-debugger": "error",
 
     
@@ -79,6 +101,9 @@ module.exports = {
     "no-dupe-args": "error",
 
     
+    "no-dupe-class-members": "error",
+
+    
     "no-dupe-keys": "error",
 
     
@@ -86,6 +111,9 @@ module.exports = {
 
     
     "no-else-return": "error",
+
+    
+    "no-empty": ["error", { "allowEmptyCatch": true }],
 
     
     "no-empty-character-class": "error",
@@ -100,16 +128,29 @@ module.exports = {
     "no-ex-assign": "error",
 
     
+    "no-extend-native": "error",
+
+    
+    "no-extra-bind": "error",
+
+    
     "no-extra-boolean-cast": "error",
 
     
     "no-extra-semi": "error",
 
     
+    
+    "no-fallthrough": "error",
+
+    
     "no-func-assign": "error",
 
     
     "no-global-assign": "error",
+
+    
+    "no-implied-eval": "error",
 
     
     "no-invalid-regexp": "error",
@@ -124,9 +165,6 @@ module.exports = {
     "no-lonely-if": "error",
 
     
-    "no-mixed-spaces-and-tabs": ["error", "smart-tabs"],
-
-    
     "no-multi-spaces": ["error", { "exceptions": {
       "AssignmentExpression": true,
       "VariableDeclarator": true,
@@ -139,6 +177,10 @@ module.exports = {
 
     
     "no-new-object": "error",
+
+    
+    
+    "no-new-wrappers": "error",
 
     
     "no-obj-calls": "error",
@@ -159,6 +201,9 @@ module.exports = {
     "no-self-compare": "error",
 
     
+    "no-sequences": "error",
+
+    
     "no-shadow-restricted-names": "error",
 
     
@@ -169,6 +214,9 @@ module.exports = {
 
     
     "no-template-curly-in-string": "error",
+
+    
+    "no-this-before-super": "error",
 
     
     
@@ -184,13 +232,31 @@ module.exports = {
     "no-unexpected-multiline": "error",
 
     
+    "no-unmodified-loop-condition": "error",
+
+    
+    "no-unneeded-ternary": "error",
+
+    
     "no-unreachable": "error",
+
+    
+    "no-unsafe-finally": "error",
 
     
     "no-unused-expressions": "error",
 
     
+    "no-useless-escape": "error",
+
+    
+    "no-whitespace-before-property": "error",
+
+    
     "no-with": "error",
+
+    
+    "padded-blocks": ["error", "never"],
 
     
     
@@ -200,7 +266,18 @@ module.exports = {
     "semi": ["error", "always"],
 
     
+    "semi-spacing": ["error", { "before": false, "after": true }],
+
+    
     "space-before-blocks": "error",
+
+    
+    
+    "space-before-function-paren": ["error", {
+      "anonymous": "ignore",
+      "asyncArrow": "always",
+      "named": "never",
+    }],
 
     
     "space-in-parens": ["error", "never"],
@@ -218,7 +295,17 @@ module.exports = {
     "use-isnan": "error",
 
     
-    "valid-typeof": "error"
+    "valid-jsdoc": ["error", {
+      "requireParamDescription": false,
+      "requireReturn": false,
+      "requireReturnDescription": false,
+    }],
+
+    
+    "valid-typeof": "error",
+
+    
+    "yoda": ["error", "never"],
   },
   "env": {
     "browser": true

@@ -20,8 +20,6 @@ registerCleanupFunction(() => {
 });
 
 
-
-
 function pemToBase64(pem) {
   return pem.replace(/-----BEGIN CERTIFICATE-----/, "")
             .replace(/-----END CERTIFICATE-----/, "")
