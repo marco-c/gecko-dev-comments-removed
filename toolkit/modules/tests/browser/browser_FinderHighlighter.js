@@ -358,7 +358,7 @@ add_task(function* testHighlightAllToggle() {
 
     
     expectedResult = {
-      rectCount: 2,
+      rectCount: 1,
       insertCalls: [1, 3],
       removeCalls: [0, 1]
     };
