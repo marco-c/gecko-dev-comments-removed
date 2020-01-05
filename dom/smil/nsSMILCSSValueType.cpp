@@ -336,6 +336,31 @@ GetPresContextForElement(Element* aElem)
   return shell ? shell->GetPresContext() : nullptr;
 }
 
+static const nsDependentSubstring
+GetNonNegativePropValue(const nsAString& aString, nsCSSPropertyID aPropID,
+                        bool& aIsNegative)
+{
+  
+  
+  
+  
+  aIsNegative = false;
+  uint32_t subStringBegin = 0;
+
+  
+  
+  
+  if (aPropID != eCSSProperty_stroke_dasharray) {
+    int32_t absValuePos = nsSMILParserUtils::CheckForNegativeNumber(aString);
+    if (absValuePos > 0) {
+      aIsNegative = true;
+      subStringBegin = (uint32_t)absValuePos; 
+    }
+  }
+
+  return Substring(aString, subStringBegin);
+}
+
 
 static bool
 ValueFromStringHelper(nsCSSPropertyID aPropID,
@@ -345,30 +370,17 @@ ValueFromStringHelper(nsCSSPropertyID aPropID,
                       StyleAnimationValue& aStyleAnimValue,
                       bool* aIsContextSensitive)
 {
-  
-  
-  
-  
-  bool isNegative = false;
-  uint32_t subStringBegin = 0;
-
-  
-  
-  
-  if (aPropID != eCSSProperty_stroke_dasharray) {
-    int32_t absValuePos = nsSMILParserUtils::CheckForNegativeNumber(aString);
-    if (absValuePos > 0) {
-      isNegative = true;
-      subStringBegin = (uint32_t)absValuePos; 
-    }
-  }
   RefPtr<nsStyleContext> styleContext =
     nsComputedDOMStyle::GetStyleContext(aTargetElement, nullptr,
                                         aPresContext->PresShell());
   if (!styleContext) {
     return false;
   }
-  nsDependentSubstring subString(aString, subStringBegin);
+
+  bool isNegative = false;
+  const nsDependentSubstring subString =
+    GetNonNegativePropValue(aString, aPropID, isNegative);
+
   if (!StyleAnimationValue::ComputeValue(aPropID, aTargetElement, styleContext,
                                          subString, true, aStyleAnimValue,
                                          aIsContextSensitive)) {
