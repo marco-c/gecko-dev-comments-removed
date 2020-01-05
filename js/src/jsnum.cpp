@@ -1814,8 +1814,9 @@ js::ToLengthClamped<JSContext>(JSContext*, HandleValue, uint32_t*, bool*);
 template bool
 js::ToLengthClamped<ExclusiveContext>(ExclusiveContext*, HandleValue, uint32_t*, bool*);
 
+
 bool
-js::ToIntegerIndex(JSContext* cx, JS::HandleValue v, uint64_t* index)
+js::NonStandardToIndex(JSContext* cx, HandleValue v, uint64_t* index)
 {
     
     if (v.isInt32()) {
@@ -1860,6 +1861,35 @@ js::ToIntegerIndex(JSContext* cx, JS::HandleValue v, uint64_t* index)
     }
 
     *index = i;
+    return true;
+}
+
+
+bool
+js::ToIndex(JSContext* cx, JS::HandleValue v, uint64_t* index)
+{
+    
+    if (v.isUndefined()) {
+        *index = 0;
+        return true;
+    }
+
+    
+    double integerIndex;
+    if (!ToInteger(cx, v, &integerIndex))
+        return false;
+
+    
+    
+    
+    
+    if (integerIndex < 0 || integerIndex >= DOUBLE_INTEGRAL_PRECISION_LIMIT) {
+        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_BAD_INDEX);
+        return false;
+    }
+
+    
+    *index = uint64_t(integerIndex);
     return true;
 }
 

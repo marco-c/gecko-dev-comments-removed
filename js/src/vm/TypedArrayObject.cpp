@@ -1904,11 +1904,9 @@ DataViewObject::class_constructor(JSContext* cx, unsigned argc, Value* vp)
 
 template <typename NativeType>
  SharedMem<uint8_t*>
-DataViewObject::getDataPointer(JSContext* cx, Handle<DataViewObject*> obj, double offset,
+DataViewObject::getDataPointer(JSContext* cx, Handle<DataViewObject*> obj, uint64_t offset,
                                bool* isSharedMemory)
 {
-    MOZ_ASSERT(offset >= 0);
-
     const size_t TypeSize = sizeof(NativeType);
     if (offset > UINT32_MAX - TypeSize || offset + TypeSize > obj->byteLength()) {
         JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_ARG_INDEX_OUT_OF_RANGE,
@@ -2013,31 +2011,6 @@ struct DataViewIO
     }
 };
 
-static bool
-ToIndex(JSContext* cx, HandleValue v, double* index)
-{
-    if (v.isUndefined()) {
-        *index = 0.0;
-        return true;
-    }
-
-    double integerIndex;
-    if (!ToInteger(cx, v, &integerIndex))
-        return false;
-
-    
-    
-    
-    
-    if (integerIndex < 0 || integerIndex > 9007199254740991) {
-        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_BAD_INDEX);
-        return false;
-    }
-
-    *index = integerIndex;
-    return true;
-}
-
 template<typename NativeType>
  bool
 DataViewObject::read(JSContext* cx, Handle<DataViewObject*> obj,
@@ -2047,7 +2020,7 @@ DataViewObject::read(JSContext* cx, Handle<DataViewObject*> obj,
     
 
     
-    double getIndex;
+    uint64_t getIndex;
     if (!ToIndex(cx, args.get(0), &getIndex))
         return false;
 
@@ -2119,7 +2092,7 @@ DataViewObject::write(JSContext* cx, Handle<DataViewObject*> obj,
     
 
     
-    double getIndex;
+    uint64_t getIndex;
     if (!ToIndex(cx, args.get(0), &getIndex))
         return false;
 
