@@ -80,6 +80,7 @@ VP9EncoderImpl::VP9EncoderImpl()
       frames_since_kf_(0),
       num_temporal_layers_(0),
       num_spatial_layers_(0),
+      num_cores_(0),
       frames_encoded_(0),
       
       spatial_layer_(new ScreenshareLayersVP9(2)) {
@@ -252,7 +253,7 @@ int VP9EncoderImpl::InitEncode(const VideoCodec* inst,
   if (inst->width < 1 || inst->height < 1) {
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
-  if (number_of_cores < 1) {
+  if (number_of_cores < 1 || number_of_cores > UINT8_MAX) {
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
   if (inst->codecSpecific.VP9.numberOfTemporalLayers > 3) {
@@ -278,6 +279,7 @@ int VP9EncoderImpl::InitEncode(const VideoCodec* inst,
     codec_ = *inst;
   }
 
+  num_cores_ = number_of_cores;
   num_spatial_layers_ = inst->codecSpecific.VP9.numberOfSpatialLayers;
   num_temporal_layers_ = inst->codecSpecific.VP9.numberOfTemporalLayers;
   if (num_temporal_layers_ == 0)
@@ -335,7 +337,7 @@ int VP9EncoderImpl::InitEncode(const VideoCodec* inst,
   
   config_->g_threads = NumberOfThreads(config_->g_w,
                                        config_->g_h,
-                                       number_of_cores);
+                                       num_cores_);
 
   cpu_speed_ = GetCpuSpeed(config_->g_w, config_->g_h);
 
@@ -506,6 +508,13 @@ int VP9EncoderImpl::Encode(const I420VideoFrame& input_image,
   if (frame_types && frame_types->size() > 0) {
     frame_type = (*frame_types)[0];
   }
+  if (input_image.width() != codec_.width ||
+      input_image.height() != codec_.height) {
+    int ret = UpdateCodecFrameSize(input_image);
+    if (ret < 0) {
+      return ret;
+    }
+  }
   DCHECK_EQ(input_image.width(), static_cast<int>(raw_->d_w));
   DCHECK_EQ(input_image.height(), static_cast<int>(raw_->d_h));
 
@@ -564,6 +573,44 @@ int VP9EncoderImpl::Encode(const I420VideoFrame& input_image,
   timestamp_ += duration;
 
   return WEBRTC_VIDEO_CODEC_OK;
+}
+
+int VP9EncoderImpl::UpdateCodecFrameSize(
+    const I420VideoFrame& input_image) {
+  fprintf(stderr, "Reconfiging VP( from %dx%d to %dx%d\n",
+          codec_.width, codec_.height, input_image.width(), input_image.height());
+  
+  uint32_t old_bitrate_kbit = config_->rc_target_bitrate;
+  uint32_t old_framerate = codec_.maxFramerate;
+
+  codec_.width = input_image.width();
+  codec_.height = input_image.height();
+
+  vpx_img_free(raw_);
+  raw_ = vpx_img_wrap(NULL, VPX_IMG_FMT_I420, codec_.width, codec_.height,
+                      1, NULL);
+  
+  config_->g_w = codec_.width;
+  config_->g_h = codec_.height;
+
+  
+  config_->g_threads = NumberOfThreads(codec_.width, codec_.height,
+                                       num_cores_);
+  
+  cpu_speed_ = GetCpuSpeed(codec_.width, codec_.height);
+
+  
+  
+  
+  
+  
+  
+  vpx_codec_destroy(encoder_); 
+  int result = InitAndSetControlSettings(&codec_);
+  if (result == WEBRTC_VIDEO_CODEC_OK) {
+    return SetRates(old_bitrate_kbit, old_framerate);
+  }
+  return result;
 }
 
 void VP9EncoderImpl::PopulateCodecSpecific(CodecSpecificInfo* codec_specific,

@@ -68,6 +68,9 @@ class VP9EncoderImpl : public VP9Encoder {
   
   int InitAndSetControlSettings(const VideoCodec* inst);
 
+  
+  int UpdateCodecFrameSize(const I420VideoFrame& input_image);
+
   void PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
                              const vpx_codec_cx_pkt& pkt,
                              uint32_t timestamp);
@@ -121,6 +124,7 @@ class VP9EncoderImpl : public VP9Encoder {
   size_t frames_since_kf_;
   uint8_t num_temporal_layers_;
   uint8_t num_spatial_layers_;
+  uint8_t num_cores_;
 
   
   bool is_flexible_mode_;
