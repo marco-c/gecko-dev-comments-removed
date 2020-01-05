@@ -51,6 +51,7 @@ function GridInspector(inspector, window) {
   this.onShowBoxModelHighlighterForNode =
     this.onShowBoxModelHighlighterForNode.bind(this);
   this.onShowGridAreaHighlight = this.onShowGridAreaHighlight.bind(this);
+  this.onShowGridCellHighlight = this.onShowGridCellHighlight.bind(this);
   this.onSidebarSelect = this.onSidebarSelect.bind(this);
   this.onToggleGridHighlighter = this.onToggleGridHighlighter.bind(this);
   this.onToggleShowGridLineNumbers = this.onToggleShowGridLineNumbers.bind(this);
@@ -118,37 +119,11 @@ GridInspector.prototype = {
       onSetGridOverlayColor: this.onSetGridOverlayColor,
       onShowBoxModelHighlighterForNode: this.onShowBoxModelHighlighterForNode,
       onShowGridAreaHighlight: this.onShowGridAreaHighlight,
+      onShowGridCellHighlight: this.onShowGridCellHighlight,
       onToggleGridHighlighter: this.onToggleGridHighlighter,
       onToggleShowGridLineNumbers: this.onToggleShowGridLineNumbers,
       onToggleShowInfiniteLines: this.onToggleShowInfiniteLines,
     };
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-  getInitialGridColor(nodeFront, fallbackColor) {
-    let highlighted = nodeFront == this.highlighters.gridHighlighterShown;
-
-    let color;
-    if (highlighted && this.highlighters.state.grid.options) {
-      
-      
-      color = this.highlighters.state.grid.options.color;
-    } else {
-      
-      color = this.getGridColorForNodeFront(nodeFront);
-    }
-
-    return color || fallbackColor;
   },
 
   
@@ -251,7 +226,7 @@ GridInspector.prototype = {
       let nodeFront = yield this.walker.getNodeFromActor(grid.actorID, ["containerEl"]);
 
       let fallbackColor = GRID_COLORS[i % GRID_COLORS.length];
-      let color = this.getInitialGridColor(nodeFront, fallbackColor);
+      let color = this.getGridColorForNodeFront(nodeFront) || fallbackColor;
 
       grids.push({
         id: i,
@@ -287,13 +262,9 @@ GridInspector.prototype = {
 
 
 
-
-
-  onHighlighterChange(event, nodeFront, options) {
+  onHighlighterChange(event, nodeFront) {
     let highlighted = event === "grid-highlighter-shown";
-    let { color } = options;
     this.store.dispatch(updateGridHighlighted(nodeFront, highlighted));
-    this.store.dispatch(updateGridColor(nodeFront, color));
   },
 
   
@@ -351,6 +322,29 @@ GridInspector.prototype = {
 
     highlighterSettings.showGridArea = gridAreaName;
     highlighterSettings.color = color;
+
+    this.highlighters.showGridHighlighter(node, highlighterSettings);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  onShowGridCellHighlight(node, gridFragmentIndex, rowNumber, columnNumber) {
+    let { highlighterSettings } = this.store.getState();
+    highlighterSettings.showGridCell = { gridFragmentIndex, rowNumber, columnNumber };
 
     this.highlighters.showGridHighlighter(node, highlighterSettings);
   },

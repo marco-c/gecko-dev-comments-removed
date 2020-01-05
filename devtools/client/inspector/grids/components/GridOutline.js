@@ -24,6 +24,7 @@ module.exports = createClass({
   propTypes: {
     grids: PropTypes.arrayOf(PropTypes.shape(Types.grid)).isRequired,
     onShowGridAreaHighlight: PropTypes.func.isRequired,
+    onShowGridCellHighlight: PropTypes.func.isRequired,
   },
 
   mixins: [ addons.PureRenderMixin ],
@@ -75,7 +76,8 @@ module.exports = createClass({
     const { id, color, gridFragments } = grid;
     
     
-    const { rows, cols, areas } = gridFragments[0];
+    let gridFragmentIndex = 0;
+    const { rows, cols, areas } = gridFragments[gridFragmentIndex];
     const numberOfColumns = cols.lines.length - 1;
     const numberOfRows = rows.lines.length - 1;
     const rectangles = [];
@@ -93,8 +95,8 @@ module.exports = createClass({
     for (let rowNumber = 1; rowNumber <= numberOfRows; rowNumber++) {
       for (let columnNumber = 1; columnNumber <= numberOfColumns; columnNumber++) {
         const gridAreaName = this.getGridAreaName(columnNumber, rowNumber, areas);
-        const gridCell = this.renderGridCell(id, x, y, rowNumber, columnNumber, color,
-          gridAreaName);
+        const gridCell = this.renderGridCell(id, gridFragmentIndex, x, y, rowNumber,
+          columnNumber, color, gridAreaName);
 
         rectangles.push(gridCell);
         x += width;
@@ -123,12 +125,18 @@ module.exports = createClass({
 
 
 
-  renderGridCell(id, x, y, rowNumber, columnNumber, color, gridAreaName) {
+
+
+  renderGridCell(id, gridFragmentIndex, x, y, rowNumber, columnNumber, color,
+    gridAreaName) {
     return dom.rect(
       {
         className: "grid-outline-cell",
         "data-grid-area-name": gridAreaName,
+        "data-grid-fragment-index": gridFragmentIndex,
         "data-grid-id": id,
+        "data-grid-row": rowNumber,
+        "data-grid-column": columnNumber,
         x,
         y,
         width: 10,
@@ -167,6 +175,7 @@ module.exports = createClass({
     const {
       grids,
       onShowGridAreaHighlight,
+      onShowGridCellHighlight,
     } = this.props;
     const id = target.getAttribute("data-grid-id");
     const color = target.getAttribute("stroke");
@@ -174,20 +183,32 @@ module.exports = createClass({
     target.setAttribute("fill", "none");
 
     onShowGridAreaHighlight(grids[id].nodeFront, null, color);
+    onShowGridCellHighlight(grids[id].nodeFront);
   },
 
   onMouseOverCell({ target }) {
     const {
       grids,
       onShowGridAreaHighlight,
+      onShowGridCellHighlight,
     } = this.props;
     const name = target.getAttribute("data-grid-area-name");
     const id = target.getAttribute("data-grid-id");
+    const fragmentIndex = target.getAttribute("data-grid-fragment-index");
     const color = target.getAttribute("stroke");
+    const rowNumber = target.getAttribute("data-grid-row");
+    const columnNumber = target.getAttribute("data-grid-column");
 
     target.setAttribute("fill", color);
 
-    onShowGridAreaHighlight(grids[id].nodeFront, name, color);
+    if (name) {
+      onShowGridAreaHighlight(grids[id].nodeFront, name, color);
+    }
+
+    if (fragmentIndex && rowNumber && columnNumber) {
+      onShowGridCellHighlight(grids[id].nodeFront, fragmentIndex,
+        rowNumber, columnNumber);
+    }
   },
 
   render() {
