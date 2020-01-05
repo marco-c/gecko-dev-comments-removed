@@ -107,7 +107,7 @@ const uint8_t kSystemID[] = {
   0xac, 0xe3, 0x3c, 0x1e, 0x52, 0xe2, 0xfb, 0x4b
 };
 
-void
+bool
 ParseCENCInitData(const uint8_t* aInitData,
                   uint32_t aInitDataSize,
                   std::vector<std::vector<uint8_t>>& aOutKeyIds)
@@ -120,23 +120,26 @@ ParseCENCInitData(const uint8_t* aInitData,
     const size_t size = reader.ReadU32();
     if (size > std::numeric_limits<size_t>::max() - start) {
       
-      return;
+      return false;
     }
-    const size_t end = std::min<size_t>(start + size, reader.Length());
+    const size_t end = start + size;
+    if (end > reader.Length()) {
+      
+      return false;
+    }
 
     
     if (!reader.CanRead32()) {
-      return;
+      return false;
     }
     uint32_t box = reader.ReadU32();
     if (box != FOURCC('p','s','s','h')) {
-      reader.Seek(std::max<size_t>(reader.Offset(), end));
-      continue;
+      return false;
     }
 
     
     if (!reader.CanRead32()) {
-      return;
+      return false;
     }
     uint8_t version = reader.ReadU8();
     if (version != 1) {
@@ -150,7 +153,7 @@ ParseCENCInitData(const uint8_t* aInitData,
     const uint8_t* sid = reader.Read(sizeof(kSystemID));
     if (!sid) {
       
-      return;
+      return false;
     }
     if (memcmp(kSystemID, sid, sizeof(kSystemID))) {
       
@@ -159,14 +162,14 @@ ParseCENCInitData(const uint8_t* aInitData,
     }
 
     if (!reader.CanRead32()) {
-      return;
+      return false;
     }
     uint32_t kidCount = reader.ReadU32();
 
     for (uint32_t i = 0; i < kidCount; i++) {
       if (reader.Remaining() < CLEARKEY_KEY_LEN) {
         
-        return;
+        return false;
       }
       const uint8_t* kid = reader.Read(CLEARKEY_KEY_LEN);
       aOutKeyIds.push_back(std::vector<uint8_t>(kid, kid + CLEARKEY_KEY_LEN));
@@ -176,7 +179,7 @@ ParseCENCInitData(const uint8_t* aInitData,
     
     
     if (!reader.CanRead32()) {
-      return;
+      return false;
     }
     reader.ReadU32();
 
@@ -185,4 +188,5 @@ ParseCENCInitData(const uint8_t* aInitData,
       reader.Seek(end);
     }
   }
+  return true;
 }
