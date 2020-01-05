@@ -381,22 +381,8 @@ pub type ProtoOrIfaceArray = [*mut JSObject; PrototypeList::ID::Count as usize];
 
 
 
-pub fn initialize_global(global: *mut JSObject) {
-    let proto_array: Box<ProtoOrIfaceArray> =
-        box [0 as *mut JSObject; PrototypeList::ID::Count as usize];
-    unsafe {
-        assert!(((*JS_GetClass(global)).flags & JSCLASS_DOM_GLOBAL) != 0);
-        let box_ = Box::into_raw(proto_array);
-        JS_SetReservedSlot(global,
-                           DOM_PROTOTYPE_SLOT,
-                           PrivateValue(box_ as *const libc::c_void));
-    }
-}
 
-/// Gets the property `id` on  `proxy`'s prototype. If it exists, `*found` is
-/// set to true and `*vp` to the value, otherwise `*found` is set to false.
-///
-/// Returns false on JSAPI failure.
+
 pub fn get_property_on_prototype(cx: *mut JSContext,
                                  proxy: HandleObject,
                                  id: HandleId,
@@ -404,7 +390,7 @@ pub fn get_property_on_prototype(cx: *mut JSContext,
                                  vp: MutableHandleValue)
                                  -> bool {
     unsafe {
-        // let proto = GetObjectProto(proxy);
+        
         let mut proto = RootedObject::new(cx, ptr::null_mut());
         if !JS_GetPrototype(cx, proxy, proto.handle_mut()) || proto.ptr.is_null() {
             *found = false;
@@ -424,8 +410,8 @@ pub fn get_property_on_prototype(cx: *mut JSContext,
     }
 }
 
-/// Get an array index from the given `jsid`. Returns `None` if the given
-/// `jsid` is not an integer.
+
+
 pub fn get_array_index_from_id(_cx: *mut JSContext, id: HandleId) -> Option<u32> {
     unsafe {
         if RUST_JSID_IS_INT(id) {
@@ -433,25 +419,25 @@ pub fn get_array_index_from_id(_cx: *mut JSContext, id: HandleId) -> Option<u32>
         }
         None
     }
-    // if id is length atom, -1, otherwise
-    /*return if JSID_IS_ATOM(id) {
-        let atom = JSID_TO_ATOM(id);
-        //let s = *GetAtomChars(id);
-        if s > 'a' && s < 'z' {
-            return -1;
-        }
+    
+    
 
-        let i = 0;
-        let str = AtomToLinearString(JSID_TO_ATOM(id));
-        return if StringIsArray(str, &mut i) != 0 { i } else { -1 }
-    } else {
-        IdToInt32(cx, id);
-    }*/
+
+
+
+
+
+
+
+
+
+
+
 }
 
-/// Find the index of a string given by `v` in `values`.
-/// Returns `Err(())` on JSAPI failure (there is a pending exception), and
-/// `Ok(None)` if there was no matching string.
+
+
+
 pub unsafe fn find_enum_string_index(cx: *mut JSContext,
                                      v: HandleValue,
                                      values: &[&'static str])
@@ -465,31 +451,31 @@ pub unsafe fn find_enum_string_index(cx: *mut JSContext,
     Ok(values.iter().position(|value| search == *value))
 }
 
-/// Returns wether `obj` is a platform object
-/// https://heycam.github.io/webidl/#dfn-platform-object
+
+
 pub fn is_platform_object(obj: *mut JSObject) -> bool {
     unsafe {
-        // Fast-path the common case
+        
         let mut clasp = JS_GetClass(obj);
         if is_dom_class(&*clasp) {
             return true;
         }
-        // Now for simplicity check for security wrappers before anything else
+        
         if IsWrapper(obj) {
-            let unwrapped_obj = UnwrapObject(obj, /* stopAtOuter = */ 0);
+            let unwrapped_obj = UnwrapObject(obj,  0);
             if unwrapped_obj.is_null() {
                 return false;
             }
             clasp = js::jsapi::JS_GetClass(obj);
         }
-        // TODO also check if JS_IsArrayBufferObject
+        
         is_dom_class(&*clasp)
     }
 }
 
-/// Get the property with name `property` from `object`.
-/// Returns `Err(())` on JSAPI failure (there is a pending exception), and
-/// `Ok(false)` if there was no property with the given name.
+
+
+
 pub fn get_dictionary_property(cx: *mut JSContext,
                                object: HandleObject,
                                property: &str,
@@ -531,9 +517,9 @@ pub fn get_dictionary_property(cx: *mut JSContext,
     Ok(true)
 }
 
-/// Set the property with name `property` from `object`.
-/// Returns `Err(())` on JSAPI failure, or null object,
-/// and Ok(()) otherwise
+
+
+
 pub fn set_dictionary_property(cx: *mut JSContext,
                                object: HandleObject,
                                property: &str,
@@ -553,16 +539,16 @@ pub fn set_dictionary_property(cx: *mut JSContext,
     Ok(())
 }
 
-/// Returns whether `proxy` has a property `id` on its prototype.
+
 pub fn has_property_on_prototype(cx: *mut JSContext, proxy: HandleObject, id: HandleId) -> bool {
-    // MOZ_ASSERT(js::IsProxy(proxy) && js::GetProxyHandler(proxy) == handler);
+    
     let mut found = false;
     !get_property_on_prototype(cx, proxy, id, &mut found, unsafe {
         MutableHandleValue::from_marked_location(ptr::null_mut())
     }) || found
 }
 
-/// Create a DOM global object with the given class.
+
 pub fn create_dom_global(cx: *mut JSContext,
                          class: *const JSClass,
                          private: *const libc::c_void,
@@ -583,10 +569,18 @@ pub fn create_dom_global(cx: *mut JSContext,
         if obj.ptr.is_null() {
             return ptr::null_mut();
         }
-        let _ac = JSAutoCompartment::new(cx, obj.ptr);
+
+        
+        
         JS_SetReservedSlot(obj.ptr, DOM_OBJECT_SLOT, PrivateValue(private));
+        let proto_array: Box<ProtoOrIfaceArray> =
+            box [0 as *mut JSObject; PrototypeList::ID::Count as usize];
+        JS_SetReservedSlot(obj.ptr,
+                           DOM_PROTOTYPE_SLOT,
+                           PrivateValue(Box::into_raw(proto_array) as *const libc::c_void));
+
+        let _ac = JSAutoCompartment::new(cx, obj.ptr);
         JS_InitStandardClasses(cx, obj.handle());
-        initialize_global(obj.ptr);
         JS_FireOnNewGlobalObject(cx, obj.handle());
         obj.ptr
     }
