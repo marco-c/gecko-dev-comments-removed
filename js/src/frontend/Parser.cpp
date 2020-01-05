@@ -5223,33 +5223,74 @@ Parser<ParseHandler>::consequentOrAlternative(YieldHandling yieldHandling)
     if (!tokenStream.peekToken(&next, TokenStream::Operand))
         return null();
 
-    if (next == TOK_FUNCTION) {
+    
+    
+    
+    
+    
+    
+    if (next == TOK_NAME &&
+        !tokenStream.nextNameContainsEscape() &&
+        tokenStream.nextName() == context->names().async)
+    {
+        tokenStream.consumeKnownToken(next, TokenStream::Operand);
+
         
         
         
-        if (!pc->sc()->strict()) {
-            tokenStream.consumeKnownToken(next, TokenStream::Operand);
+        
+        
+        
+        
+        
+        
+        
+        TokenKind maybeFunction;
+        if (!tokenStream.peekTokenSameLine(&maybeFunction))
+            return null();
 
-            ParseContext::Statement stmt(pc, StatementKind::Block);
-            ParseContext::Scope scope(this);
-            if (!scope.init(pc))
-                return null();
-
-            TokenPos funcPos = pos();
-            Node fun = functionStmt(yieldHandling, NameRequired);
-            if (!fun)
-                return null();
-
-            Node block = handler.newStatementList(funcPos);
-            if (!block)
-                return null();
-
-            handler.addStatementToList(block, fun);
-            return finishLexicalScope(scope, block);
+        if (maybeFunction == TOK_FUNCTION) {
+            error(JSMSG_FORBIDDEN_AS_STATEMENT, "async function declarations");
+            return null();
         }
 
         
+        tokenStream.ungetToken();
+    } else if (next == TOK_FUNCTION) {
+        tokenStream.consumeKnownToken(next, TokenStream::Operand);
+
         
+        
+        if (pc->sc()->strict()) {
+            error(JSMSG_FORBIDDEN_AS_STATEMENT, "function declarations");
+            return null();
+        }
+
+        TokenKind maybeStar;
+        if (!tokenStream.peekToken(&maybeStar))
+            return null();
+
+        if (maybeStar == TOK_MUL) {
+            error(JSMSG_FORBIDDEN_AS_STATEMENT, "generator declarations");
+            return null();
+        }
+
+        ParseContext::Statement stmt(pc, StatementKind::Block);
+        ParseContext::Scope scope(this);
+        if (!scope.init(pc))
+            return null();
+
+        TokenPos funcPos = pos();
+        Node fun = functionStmt(yieldHandling, NameRequired);
+        if (!fun)
+            return null();
+
+        Node block = handler.newStatementList(funcPos);
+        if (!block)
+            return null();
+
+        handler.addStatementToList(block, fun);
+        return finishLexicalScope(scope, block);
     }
 
     return statement(yieldHandling);
