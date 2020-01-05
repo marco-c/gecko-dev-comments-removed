@@ -7,6 +7,8 @@
 
 
 
+#![deny(unused_imports, unused_variable)]
+
 extern crate png;
 extern crate std;
 extern crate test;

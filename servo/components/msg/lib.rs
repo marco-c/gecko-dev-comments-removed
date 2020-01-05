@@ -2,6 +2,8 @@
 
 
 
+#![deny(unused_imports, unused_variable)]
+
 extern crate azure;
 extern crate geom;
 extern crate layers;
