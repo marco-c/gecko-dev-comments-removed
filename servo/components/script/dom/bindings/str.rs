@@ -7,6 +7,7 @@
 use std::ascii::AsciiExt;
 use std::borrow::ToOwned;
 use std::hash::{Hash, Hasher};
+use std::mem;
 use std::ops;
 use std::str;
 use std::str::FromStr;
@@ -24,14 +25,18 @@ impl ByteString {
     
     
     pub fn as_str(&self) -> Option<&str> {
-        let ByteString(ref vec) = *self;
-        str::from_utf8(&vec).ok()
+        str::from_utf8(&self.0).ok()
+    }
+
+    
+    
+    pub fn bytes(&mut self) -> Vec<u8> {
+        mem::replace(&mut self.0, Vec::new())
     }
 
     
     pub fn len(&self) -> usize {
-        let ByteString(ref vector) = *self;
-        vector.len()
+        self.0.len()
     }
 
     
@@ -47,8 +52,7 @@ impl ByteString {
     
     
     pub fn is_token(&self) -> bool {
-        let ByteString(ref vec) = *self;
-        is_token(vec)
+        is_token(&self.0)
     }
 
     
@@ -62,9 +66,8 @@ impl ByteString {
             LF,
             SPHT, 
         }
-        let ByteString(ref vec) = *self;
         let mut prev = PreviousCharacter::Other; 
-        vec.iter().all(|&x| {
+        self.0.iter().all(|&x| {
             
             match x {
                 13  => { 
@@ -114,6 +117,12 @@ impl ByteString {
                 _ => false 
             }
         })
+    }
+}
+
+impl Into<Vec<u8>> for ByteString {
+    fn into(self) -> Vec<u8> {
+        self.0
     }
 }
 
