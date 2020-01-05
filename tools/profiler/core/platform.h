@@ -119,24 +119,6 @@ public:
 
 
 
-
-#undef HAVE_NATIVE_UNWIND
-#if defined(MOZ_PROFILING) && \
-    (defined(GP_OS_windows) || \
-     defined(GP_OS_darwin) || \
-     defined(GP_OS_linux) || \
-     defined(GP_PLAT_arm_android))
-# define HAVE_NATIVE_UNWIND
-#endif
-
-
-
-
-
-
-
-
-
 class ProfilerStateMutex : public mozilla::StaticMutex {};
 
 
