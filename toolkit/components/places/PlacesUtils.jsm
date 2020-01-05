@@ -293,6 +293,18 @@ const SYNC_BOOKMARK_VALIDATORS = Object.freeze({
   url: BOOKMARK_VALIDATORS.url,
 });
 
+
+
+
+const SYNC_CHANGE_RECORD_VALIDATORS = Object.freeze({
+  modified: simpleValidateFunc(v => typeof v == "number" && v >= 0),
+  counter: simpleValidateFunc(v => typeof v == "number" && v >= 0),
+  status: simpleValidateFunc(v => typeof v == "number" &&
+                                  Object.values(PlacesUtils.bookmarks.SYNC_STATUS).includes(v)),
+  tombstone: simpleValidateFunc(v => v === true || v === false),
+  synced: simpleValidateFunc(v => v === true || v === false),
+});
+
 this.PlacesUtils = {
   
   TYPE_X_MOZ_PLACE_CONTAINER: "text/x-moz-place-container",
@@ -565,6 +577,7 @@ this.PlacesUtils = {
 
   BOOKMARK_VALIDATORS,
   SYNC_BOOKMARK_VALIDATORS,
+  SYNC_CHANGE_RECORD_VALIDATORS,
 
   QueryInterface: XPCOMUtils.generateQI([
     Ci.nsIObserver

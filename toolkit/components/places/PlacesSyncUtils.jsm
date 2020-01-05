@@ -31,6 +31,8 @@ var PlacesSyncUtils = {};
 
 const { SOURCE_SYNC } = Ci.nsINavBookmarksService;
 
+const MICROSECONDS_PER_SECOND = 1000000;
+
 
 
 XPCOMUtils.defineLazyGetter(this, "ROOT_SYNC_ID_TO_GUID", () => ({
@@ -102,9 +104,9 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
     let parentGuid = BookmarkSyncUtils.syncIdToGuid(parentSyncId);
 
     let db = yield PlacesUtils.promiseDBConnection();
-    let children = yield fetchAllChildren(db, parentGuid);
-    return children.map(child =>
-      BookmarkSyncUtils.guidToSyncId(child.guid)
+    let childGuids = yield fetchChildGuids(db, parentGuid);
+    return childGuids.map(guid =>
+      BookmarkSyncUtils.guidToSyncId(guid)
     );
   }),
 
@@ -136,6 +138,91 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
 
 
 
+
+
+
+
+
+
+
+  pullChanges() {
+    return PlacesUtils.withConnectionWrapper("BookmarkSyncUtils: pullChanges",
+      db => pullSyncChanges(db));
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  pushChanges(changeRecords) {
+    return PlacesUtils.withConnectionWrapper(
+      "BookmarkSyncUtils.pushChanges", Task.async(function* (db) {
+        let skippedCount = 0;
+        let syncedTombstoneGuids = [];
+        let syncedChanges = [];
+
+        for (let syncId in changeRecords) {
+          
+          let changeRecord = validateChangeRecord(changeRecords[syncId], {
+            tombstone: { required: true },
+            counter: { required: true },
+            synced: { required: true },
+          });
+
+          
+          
+          
+          if (!changeRecord.synced) {
+            skippedCount++;
+            continue;
+          }
+
+          let guid = BookmarkSyncUtils.syncIdToGuid(syncId);
+          if (changeRecord.tombstone) {
+            syncedTombstoneGuids.push(guid);
+          } else {
+            syncedChanges.push([guid, changeRecord]);
+          }
+        }
+
+        if (syncedChanges.length || syncedTombstoneGuids.length) {
+          yield db.executeTransaction(function* () {
+            for (let [guid, changeRecord] of syncedChanges) {
+              
+              
+              
+              
+              yield db.executeCached(`
+                UPDATE moz_bookmarks
+                SET syncChangeCounter = MAX(syncChangeCounter - :syncChangeDelta, 0),
+                    syncStatus = :syncStatus
+                WHERE guid = :guid`,
+                { guid, syncChangeDelta: changeRecord.counter,
+                  syncStatus: PlacesUtils.bookmarks.SYNC_STATUS.NORMAL });
+            }
+
+            yield removeTombstones(db, syncedTombstoneGuids);
+          });
+        }
+
+        BookmarkSyncLog.debug(`pushChanges: Processed change records`,
+                              { skipped: skippedCount,
+                                updated: syncedChanges.length,
+                                tombstones: syncedTombstoneGuids.length });
+      })
+    );
+  },
+
+  
+
+
+
   remove: Task.async(function* (syncId, options = {}) {
     let guid = BookmarkSyncUtils.syncIdToGuid(syncId);
     if (guid in ROOT_GUID_TO_SYNC_ID) {
@@ -153,6 +240,54 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
   isRootSyncID(syncID) {
     return ROOT_SYNC_ID_TO_GUID.hasOwnProperty(syncID);
   },
+
+  
+
+
+
+
+
+
+  wipe: Task.async(function* () {
+    
+    yield PlacesUtils.bookmarks.eraseEverything({
+      source: SOURCE_SYNC,
+    });
+    
+    yield BookmarkSyncUtils.reset();
+  }),
+
+  
+
+
+
+
+
+
+  reset: Task.async(function* () {
+    return PlacesUtils.withConnectionWrapper(
+      "BookmarkSyncUtils: reset", function(db) {
+        return db.executeTransaction(function* () {
+          
+          yield db.executeCached(`
+            UPDATE moz_bookmarks
+            SET syncChangeCounter = 1,
+                syncStatus = :syncStatus`,
+            { syncStatus: PlacesUtils.bookmarks.SYNC_STATUS.NEW });
+
+          
+          yield db.execute(`
+            DELETE FROM moz_items_annos
+            WHERE anno_attribute_id = (SELECT id FROM moz_anno_attributes
+                                       WHERE name = :orphanAnno)`,
+            { orphanAnno: BookmarkSyncUtils.SYNC_PARENT_ANNO });
+
+          
+          yield db.executeCached("DELETE FROM moz_bookmarks_deleted");
+        });
+      }
+    );
+  }),
 
   
 
@@ -411,9 +546,16 @@ function validateSyncBookmarkObject(input, behavior) {
 
 
 
+function validateChangeRecord(changeRecord, behavior) {
+  return PlacesUtils.validateItemProperties(
+    PlacesUtils.SYNC_CHANGE_RECORD_VALIDATORS, changeRecord, behavior);
+}
+
+
+
 var fetchAllChildren = Task.async(function* (db, parentGuid) {
   let rows = yield db.executeCached(`
-    SELECT id, parent, position, type, guid
+    SELECT guid
     FROM moz_bookmarks
     WHERE parent = (
       SELECT id FROM moz_bookmarks WHERE guid = :parentGuid
@@ -421,13 +563,7 @@ var fetchAllChildren = Task.async(function* (db, parentGuid) {
     ORDER BY position`,
     { parentGuid }
   );
-  return rows.map(row => ({
-    id: row.getResultByName("id"),
-    parentId: row.getResultByName("parent"),
-    index: row.getResultByName("position"),
-    type: row.getResultByName("type"),
-    guid: row.getResultByName("guid"),
-  }));
+  return rows.map(row => row.getResultByName("guid"));
 });
 
 
@@ -962,13 +1098,20 @@ function shouldUpdateBookmark(bookmarkInfo) {
          bookmarkInfo.hasOwnProperty("url");
 }
 
+
 var getTagFolder = Task.async(function* (tag) {
   let db = yield PlacesUtils.promiseDBConnection();
-  let results = yield db.executeCached(`SELECT id FROM moz_bookmarks
-    WHERE parent = :tagsFolder AND title = :tag LIMIT 1`,
-    { tagsFolder: PlacesUtils.bookmarks.tagsFolder, tag });
+  let results = yield db.executeCached(`
+    SELECT id
+    FROM moz_bookmarks
+    WHERE type = :type AND
+          parent = :tagsFolderId AND
+          title = :tag`,
+    { type: PlacesUtils.bookmarks.TYPE_FOLDER,
+      tagsFolderId: PlacesUtils.tagsFolderId, tag });
   return results.length ? results[0].getResultByName("id") : null;
 });
+
 
 var getOrCreateTagFolder = Task.async(function* (tag) {
   let id = yield getTagFolder(tag);
@@ -1122,9 +1265,9 @@ var fetchFolderItem = Task.async(function* (bookmarkItem) {
   }
 
   let db = yield PlacesUtils.promiseDBConnection();
-  let children = yield fetchAllChildren(db, bookmarkItem.guid);
-  item.childSyncIds = children.map(child =>
-    BookmarkSyncUtils.guidToSyncId(child.guid)
+  let childGuids = yield fetchChildGuids(db, bookmarkItem.guid);
+  item.childSyncIds = childGuids.map(guid =>
+    BookmarkSyncUtils.guidToSyncId(guid)
   );
 
   return item;
@@ -1187,4 +1330,98 @@ var fetchQueryItem = Task.async(function* (bookmarkItem) {
   }
 
   return item;
+});
+
+function addRowToChangeRecords(row, changeRecords) {
+  let syncId = BookmarkSyncUtils.guidToSyncId(row.getResultByName("guid"));
+  let modified = row.getResultByName("modified") / MICROSECONDS_PER_SECOND;
+  changeRecords[syncId] = {
+    modified,
+    counter: row.getResultByName("syncChangeCounter"),
+    status: row.getResultByName("syncStatus"),
+    tombstone: !!row.getResultByName("tombstone"),
+    synced: false,
+  };
+}
+
+
+
+
+
+
+
+
+
+
+
+
+var pullSyncChanges = Task.async(function* (db) {
+  let changeRecords = {};
+
+  yield db.executeCached(`
+    WITH RECURSIVE
+    syncedItems(id, guid, modified, syncChangeCounter, syncStatus) AS (
+      SELECT b.id, b.guid, b.lastModified, b.syncChangeCounter, b.syncStatus
+       FROM moz_bookmarks b
+       WHERE b.guid IN ('menu________', 'toolbar_____', 'unfiled_____',
+                        'mobile______')
+      UNION ALL
+      SELECT b.id, b.guid, b.lastModified, b.syncChangeCounter, b.syncStatus
+      FROM moz_bookmarks b
+      JOIN syncedItems s ON b.parent = s.id
+    )
+    SELECT guid, modified, syncChangeCounter, syncStatus, 0 AS tombstone
+    FROM syncedItems
+    WHERE syncChangeCounter >= 1
+    UNION ALL
+    SELECT guid, dateRemoved AS modified, 1 AS syncChangeCounter,
+           :deletedSyncStatus, 1 AS tombstone
+    FROM moz_bookmarks_deleted`,
+    { deletedSyncStatus: PlacesUtils.bookmarks.SYNC_STATUS.NORMAL },
+    row => addRowToChangeRecords(row, changeRecords));
+
+  yield markChangesAsSyncing(db, changeRecords);
+
+  return changeRecords;
+});
+
+
+
+
+
+
+
+
+
+function markChangesAsSyncing(db, changeRecords) {
+  let unsyncedGuids = [];
+  for (let syncId in changeRecords) {
+    if (changeRecords[syncId].tombstone) {
+      continue;
+    }
+    if (changeRecords[syncId].status ==
+        PlacesUtils.bookmarks.SYNC_STATUS.NORMAL) {
+      continue;
+    }
+    let guid = BookmarkSyncUtils.syncIdToGuid(syncId);
+    unsyncedGuids.push(JSON.stringify(guid));
+  }
+  if (!unsyncedGuids.length) {
+    return Promise.resolve();
+  }
+  return db.execute(`
+    UPDATE moz_bookmarks
+    SET syncStatus = :syncStatus
+    WHERE guid IN (${unsyncedGuids.join(",")})`,
+    { syncStatus: PlacesUtils.bookmarks.SYNC_STATUS.NORMAL });
+}
+
+
+var removeTombstones = Task.async(function* (db, guids) {
+  if (!guids.length) {
+    return Promise.resolve();
+  }
+  return db.execute(`
+    DELETE FROM moz_bookmarks_deleted
+    WHERE guid IN (${guids.map(guid => JSON.stringify(guid)).join(",")})`);
 });
