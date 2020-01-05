@@ -438,7 +438,6 @@ private:
   bool mNeedToRecomputeVisibility;
   bool mTestControllingRefreshes;
   bool mViewManagerFlushIsPending;
-  bool mRequestedHighPrecision;
   bool mInRefresh;
 
   
@@ -487,10 +486,6 @@ private:
                              mozilla::TimeStamp aDesired);
 
   friend class mozilla::RefreshDriverTimer;
-
-  
-  void ConfigureHighPrecision();
-  void SetHighPrecisionTimersEnabled(bool aEnable);
 
   static void Shutdown();
 
