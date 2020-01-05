@@ -493,7 +493,8 @@ EventTargetChainItem::HandleEventTargetChain(
   }
   aVisitor.mEvent->mFlags.mInBubblingPhase = false;
 
-  if (!aVisitor.mEvent->mFlags.mInSystemGroup) {
+  if (!aVisitor.mEvent->mFlags.mInSystemGroup &&
+      aVisitor.mEvent->IsAllowedToDispatchInSystemGroup()) {
     
     
     aVisitor.mEvent->mFlags.mPropagationStopped = false;
