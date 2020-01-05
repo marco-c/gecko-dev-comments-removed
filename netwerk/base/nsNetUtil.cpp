@@ -1263,16 +1263,10 @@ NS_HasBeenCrossOrigin(nsIChannel* aChannel, bool aReport)
   nsCOMPtr<nsILoadInfo> loadInfo = aChannel->GetLoadInfo();
   MOZ_RELEASE_ASSERT(loadInfo, "Origin tracking only works for channels created with a loadinfo");
 
-#ifdef DEBUG
   
-  
-  bool skipContentTypeCheck = false;
-  skipContentTypeCheck = Preferences::GetBool("network.loadinfo.skip_type_assertion");
-#endif
-
-  MOZ_ASSERT(skipContentTypeCheck ||
-             loadInfo->GetExternalContentPolicyType() != nsIContentPolicy::TYPE_DOCUMENT,
-             "calling NS_HasBeenCrossOrigin on a top level load");
+  if (!loadInfo->LoadingPrincipal()) {
+    return false;
+  }
 
   
   if (loadInfo->GetTainting() != LoadTainting::Basic) {
