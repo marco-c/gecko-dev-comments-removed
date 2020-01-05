@@ -28,6 +28,8 @@
 #include "jsobjinlines.h"
 #include "jsscriptinlines.h"
 
+#include "vm/NativeObject-inl.h"
+
 using namespace js;
 
 using mozilla::ArrayLength;
@@ -352,6 +354,11 @@ ParseTask::trace(JSTracer* trc)
 {
     if (parseGlobal->runtimeFromAnyThread() != trc->runtime())
         return;
+    Zone* zone = MaybeForwarded(parseGlobal)->zoneFromAnyThread();
+    if (zone->usedByHelperThread()) {
+        MOZ_ASSERT(!zone->isCollecting());
+        return;
+    }
 
     TraceManuallyBarrieredEdge(trc, &parseGlobal, "ParseTask::parseGlobal");
     if (script)
