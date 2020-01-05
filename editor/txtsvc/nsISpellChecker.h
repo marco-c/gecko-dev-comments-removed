@@ -6,6 +6,7 @@
 #ifndef nsISpellChecker_h__
 #define nsISpellChecker_h__
 
+#include "mozilla/MozPromise.h"
 #include "nsISupports.h"
 #include "nsTArray.h"
 
@@ -114,6 +115,13 @@ public:
 
 
   NS_IMETHOD SetCurrentDictionary(const nsAString &aDictionary) = 0;
+
+  
+
+
+
+  NS_IMETHOD_(RefPtr<mozilla::GenericPromise>)
+    SetCurrentDictionaryFromList(const nsTArray<nsString>& aList) = 0;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsISpellChecker, NS_ISPELLCHECKER_IID)
