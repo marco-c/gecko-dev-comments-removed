@@ -116,9 +116,6 @@ public:
   int32_t StyleRuleCount() const;
   css::Rule* GetStyleRuleAt(int32_t aIndex) const;
 
-  nsresult DeleteRuleFromGroup(css::GroupRule* aGroup, uint32_t aIndex);
-  nsresult InsertRuleIntoGroup(const nsAString& aRule, css::GroupRule* aGroup, uint32_t aIndex);
-
   void SetOwnerRule(css::ImportRule* aOwnerRule) { mOwnerRule = aOwnerRule;  }
   css::ImportRule* GetOwnerRule() const { return mOwnerRule; }
   
@@ -222,6 +219,9 @@ protected:
   uint32_t InsertRuleInternal(const nsAString& aRule,
                               uint32_t aIndex, ErrorResult& aRv);
   void DeleteRuleInternal(uint32_t aIndex, ErrorResult& aRv);
+  nsresult InsertRuleIntoGroupInternal(const nsAString& aRule,
+                                       css::GroupRule* aGroup,
+                                       uint32_t aIndex);
 
   void EnabledStateChangedInternal();
 

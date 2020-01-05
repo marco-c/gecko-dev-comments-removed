@@ -36,6 +36,7 @@ class SRIMetadata;
 } 
 
 namespace css {
+class GroupRule;
 class ImportRule;
 class Rule;
 }
@@ -211,6 +212,10 @@ public:
   
   inline void WillDirty();
   inline void DidDirty();
+
+  nsresult DeleteRuleFromGroup(css::GroupRule* aGroup, uint32_t aIndex);
+  nsresult InsertRuleIntoGroup(const nsAString& aRule,
+                               css::GroupRule* aGroup, uint32_t aIndex);
 
 private:
   
