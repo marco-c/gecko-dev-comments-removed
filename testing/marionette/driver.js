@@ -2886,12 +2886,32 @@ GeckoDriver.prototype.setScreenOrientation = function (cmd, resp) {
 
 
 
-GeckoDriver.prototype.maximizeWindow = function (cmd, resp) {
+
+
+
+
+
+GeckoDriver.prototype.maximizeWindow = function* (cmd, resp) {
   assert.firefox();
   const win = assert.window(this.getCurrentWindow());
   assert.noUserPrompt(this.dialog);
 
-  win.maximize()
+  yield new Promise(resolve => {
+    win.addEventListener("resize", resolve, {once: true});
+
+    if (win.windowState == win.STATE_MAXIMIZED) {
+      win.restore();
+    } else {
+      win.maximize();
+    }
+  });
+
+  return {
+    x: win.screenX,
+    y: win.screenY,
+    width: win.outerWidth,
+    height: win.outerHeight,
+  };
 };
 
 
