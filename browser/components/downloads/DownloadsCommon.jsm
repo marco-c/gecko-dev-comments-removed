@@ -71,15 +71,13 @@ XPCOMUtils.defineLazyGetter(this, "DownloadsLogger", () => {
   return new ConsoleAPI(consoleOptions);
 });
 
+const nsIDM = Ci.nsIDownloadManager;
+
 const kDownloadsStringBundleUrl =
   "chrome://browser/locale/downloads/downloads.properties";
 
 const kDownloadsStringsRequiringFormatting = {
   sizeWithUnits: true,
-  shortTimeLeftSeconds: true,
-  shortTimeLeftMinutes: true,
-  shortTimeLeftHours: true,
-  shortTimeLeftDays: true,
   statusSeparator: true,
   statusSeparatorBeforeNumber: true,
   fileExecutableSecurityWarning: true
@@ -126,6 +124,7 @@ var PrefObserver = {
 PrefObserver.register({
   
   animateNotifications: true,
+  showPanelDropmarker: true,
 });
 
 
@@ -136,30 +135,10 @@ PrefObserver.register({
 
 
 this.DownloadsCommon = {
-  
-  
-  DOWNLOAD_NOTSTARTED: -1,
-  DOWNLOAD_DOWNLOADING: 0,
-  DOWNLOAD_FINISHED: 1,
-  DOWNLOAD_FAILED: 2,
-  DOWNLOAD_CANCELED: 3,
-  DOWNLOAD_PAUSED: 4,
-  DOWNLOAD_BLOCKED_PARENTAL: 6,
-  DOWNLOAD_DIRTY: 8,
-  DOWNLOAD_BLOCKED_POLICY: 9,
-
-  
   ATTENTION_NONE: "",
   ATTENTION_SUCCESS: "success",
   ATTENTION_WARNING: "warning",
   ATTENTION_SEVERE: "severe",
-
-  
-
-
-
-
-  arrowStyledIndicator: true,
 
   
 
@@ -200,38 +179,15 @@ this.DownloadsCommon = {
 
 
 
-
-
-
-
-
-
-  formatTimeLeft(aSeconds) {
-    
-    let seconds = Math.round(aSeconds);
-    if (!seconds) {
-      return "";
-    } else if (seconds <= 30) {
-      return DownloadsCommon.strings["shortTimeLeftSeconds"](seconds);
-    }
-    let minutes = Math.round(aSeconds / 60);
-    if (minutes < 60) {
-      return DownloadsCommon.strings["shortTimeLeftMinutes"](minutes);
-    }
-    let hours = Math.round(minutes / 60);
-    if (hours < 48) { 
-      return DownloadsCommon.strings["shortTimeLeftHours"](hours);
-    }
-    let days = Math.round(hours / 24);
-    return DownloadsCommon.strings["shortTimeLeftDays"](Math.min(days, 99));
+  get animateNotifications() {
+    return PrefObserver.animateNotifications;
   },
 
   
 
 
-
-  get animateNotifications() {
-    return PrefObserver.animateNotifications;
+  get showPanelDropmarker() {
+    return PrefObserver.showPanelDropmarker;
   },
 
   
@@ -300,27 +256,27 @@ this.DownloadsCommon = {
   stateOfDownload(download) {
     
     if (!download.stopped) {
-      return DownloadsCommon.DOWNLOAD_DOWNLOADING;
+      return nsIDM.DOWNLOAD_DOWNLOADING;
     }
     if (download.succeeded) {
-      return DownloadsCommon.DOWNLOAD_FINISHED;
+      return nsIDM.DOWNLOAD_FINISHED;
     }
     if (download.error) {
       if (download.error.becauseBlockedByParentalControls) {
-        return DownloadsCommon.DOWNLOAD_BLOCKED_PARENTAL;
+        return nsIDM.DOWNLOAD_BLOCKED_PARENTAL;
       }
       if (download.error.becauseBlockedByReputationCheck) {
-        return DownloadsCommon.DOWNLOAD_DIRTY;
+        return nsIDM.DOWNLOAD_DIRTY;
       }
-      return DownloadsCommon.DOWNLOAD_FAILED;
+      return nsIDM.DOWNLOAD_FAILED;
     }
     if (download.canceled) {
       if (download.hasPartialData) {
-        return DownloadsCommon.DOWNLOAD_PAUSED;
+        return nsIDM.DOWNLOAD_PAUSED;
       }
-      return DownloadsCommon.DOWNLOAD_CANCELED;
+      return nsIDM.DOWNLOAD_CANCELED;
     }
-    return DownloadsCommon.DOWNLOAD_NOTSTARTED;
+    return nsIDM.DOWNLOAD_NOTSTARTED;
   },
 
   
@@ -1202,10 +1158,6 @@ DownloadsIndicatorDataCtor.prototype = {
         this.attention = DownloadsCommon.ATTENTION_WARNING;
       }
     }
-
-    
-    this._lastRawTimeLeft = -1;
-    this._lastTimeLeft = -1;
   },
 
   onDownloadChanged(download) {
@@ -1222,9 +1174,7 @@ DownloadsIndicatorDataCtor.prototype = {
   
   
   _hasDownloads: false,
-  _counter: "",
   _percentComplete: -1,
-  _paused: false,
 
   
 
@@ -1269,9 +1219,7 @@ DownloadsIndicatorDataCtor.prototype = {
 
   _updateView(aView) {
     aView.hasDownloads = this._hasDownloads;
-    aView.counter = this._counter;
     aView.percentComplete = this._percentComplete;
-    aView.paused = this._paused;
     aView.attention = this._attentionSuppressed ? DownloadsCommon.ATTENTION_NONE
                                                 : this._attention;
   },
@@ -1282,22 +1230,6 @@ DownloadsIndicatorDataCtor.prototype = {
 
 
   _itemCount: 0,
-
-  
-
-
-
-
-
-  _lastRawTimeLeft: -1,
-
-  
-
-
-
-
-
-  _lastTimeLeft: -1,
 
   
 
@@ -1325,27 +1257,7 @@ DownloadsIndicatorDataCtor.prototype = {
     
     this._hasDownloads = (this._itemCount > 0);
 
-    
-    this._paused = summary.numActive > 0 &&
-                   summary.numActive == summary.numPaused;
-
     this._percentComplete = summary.percentComplete;
-
-    
-    if (summary.rawTimeLeft == -1) {
-      
-      this._lastRawTimeLeft = -1;
-      this._lastTimeLeft = -1;
-      this._counter = "";
-    } else {
-      
-      if (this._lastRawTimeLeft != summary.rawTimeLeft) {
-        this._lastRawTimeLeft = summary.rawTimeLeft;
-        this._lastTimeLeft = DownloadsCommon.smoothSeconds(summary.rawTimeLeft,
-                                                           this._lastTimeLeft);
-      }
-      this._counter = DownloadsCommon.formatTimeLeft(this._lastTimeLeft);
-    }
   }
 };
 

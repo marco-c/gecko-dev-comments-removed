@@ -999,17 +999,6 @@ toolbarpaletteitem[place="palette"] > #downloads-button[indicator] > #downloads-
   display: none;
 }
 
-#downloads-button.withProgressBar:-moz-any([progress], [counter], [paused]) #downloads-indicator-icon,
-#downloads-button:not(:-moz-any([progress], [counter], [paused])) #downloads-indicator-progress-area {
-  visibility: hidden;
-}
-
-
-#downloads-button.withProgressBar #downloads-indicator-progress-icon,
-#downloads-button:not(.withProgressBar) #downloads-indicator-progress-area {
-  visibility: hidden;
-}
-
 
 #ContentSelectDropdown > menupopup {
   

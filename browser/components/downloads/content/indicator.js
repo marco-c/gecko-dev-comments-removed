@@ -216,19 +216,8 @@ const DownloadsIndicatorView = {
     }
     this._initialized = true;
 
-    this._setIndicatorType();
     window.addEventListener("unload", this.onWindowUnload);
     DownloadsCommon.getIndicatorData(window).addView(this);
-  },
-
-  _setIndicatorType() {
-    
-    
-    let node = CustomizableUI.getWidget("downloads-button")
-                             .forWindow(window).node;
-
-    node.classList.toggle("withProgressBar",
-                          !DownloadsCommon.arrowStyledIndicator);
   },
 
   
@@ -245,9 +234,7 @@ const DownloadsIndicatorView = {
 
     
     
-    this.counter = "";
     this.percentComplete = 0;
-    this.paused = false;
     this.attention = DownloadsCommon.ATTENTION_NONE;
   },
 
@@ -402,33 +389,6 @@ const DownloadsIndicatorView = {
 
 
 
-  set counter(aValue) {
-    if (!this._operational) {
-      return this._counter;
-    }
-
-    if (this._counter !== aValue) {
-      this._counter = aValue;
-      if (this._counter)
-        this.indicator.setAttribute("counter", "true");
-      else
-        this.indicator.removeAttribute("counter");
-      
-      
-      this._indicatorCounter.setAttribute("value", aValue);
-    }
-    return aValue;
-  },
-  _counter: null,
-
-  
-
-
-
-
-
-
-
   set percentComplete(aValue) {
     if (!this._operational) {
       return this._percentComplete;
@@ -448,35 +408,10 @@ const DownloadsIndicatorView = {
         this.indicator.removeAttribute("progress");
         this._progressIcon.style.animationDelay = "1s";
       }
-      
-      
-      this._indicatorProgress.setAttribute("value", Math.max(aValue, 0));
     }
     return aValue;
   },
   _percentComplete: null,
-
-  
-
-
-
-
-  set paused(aValue) {
-    if (!this._operational) {
-      return this._paused;
-    }
-
-    if (this._paused != aValue) {
-      this._paused = aValue;
-      if (this._paused) {
-        this.indicator.setAttribute("paused", "true")
-      } else {
-        this.indicator.removeAttribute("paused");
-      }
-    }
-    return aValue;
-  },
-  _paused: false,
 
   
 
@@ -500,7 +435,7 @@ const DownloadsIndicatorView = {
 
     
     
-    let suppressAttention = DownloadsCommon.arrowStyledIndicator && !inMenu &&
+    let suppressAttention = !inMenu &&
       this._attention == DownloadsCommon.ATTENTION_SUCCESS &&
       this._percentComplete >= 0;
 
@@ -566,8 +501,6 @@ const DownloadsIndicatorView = {
   },
 
   _indicator: null,
-  __indicatorCounter: null,
-  __indicatorProgress: null,
   __progressIcon: null,
 
   
@@ -596,16 +529,6 @@ const DownloadsIndicatorView = {
     return document.getElementById("downloads-indicator-anchor");
   },
 
-  get _indicatorCounter() {
-    return this.__indicatorCounter ||
-      (this.__indicatorCounter = document.getElementById("downloads-indicator-counter"));
-  },
-
-  get _indicatorProgress() {
-    return this.__indicatorProgress ||
-      (this.__indicatorProgress = document.getElementById("downloads-indicator-progress"));
-  },
-
   get _progressIcon() {
     return this.__progressIcon ||
       (this.__progressIcon = document.getElementById("downloads-indicator-progress-icon"));
@@ -619,8 +542,6 @@ const DownloadsIndicatorView = {
   _onCustomizedAway() {
     this._indicator = null;
     this.__progressIcon = null;
-    this.__indicatorCounter = null;
-    this.__indicatorProgress = null;
   },
 
   afterCustomize() {
