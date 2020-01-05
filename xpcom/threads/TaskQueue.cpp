@@ -39,7 +39,6 @@ public:
     nsCOMPtr<nsIRunnable> runnable = aEvent;
     MonitorAutoLock mon(mTaskQueue->mQueueMonitor);
     return mTaskQueue->DispatchLocked(runnable,
-                                      AbortIfFlushing,
                                       DontAssertDispatchSuccess,
                                       NormalDispatch);
   }
@@ -93,7 +92,7 @@ TaskQueue::TailDispatcher()
 
 nsresult
 TaskQueue::DispatchLocked(nsCOMPtr<nsIRunnable>& aRunnable,
-                          DispatchMode aMode, DispatchFailureHandling aFailureHandling,
+                          DispatchFailureHandling aFailureHandling,
                           DispatchReason aReason)
 {
   AbstractThread* currentThread;

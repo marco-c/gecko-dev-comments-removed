@@ -64,7 +64,7 @@ public:
     nsCOMPtr<nsIRunnable> r = aRunnable;
     {
       MonitorAutoLock mon(mQueueMonitor);
-      nsresult rv = DispatchLocked(r, AbortIfFlushing, aFailureHandling, aReason);
+      nsresult rv = DispatchLocked(r, aFailureHandling, aReason);
       MOZ_DIAGNOSTIC_ASSERT(aFailureHandling == DontAssertDispatchSuccess || NS_SUCCEEDED(rv));
       Unused << rv;
     }
@@ -109,10 +109,7 @@ protected:
   
   void AwaitIdleLocked();
 
-  enum DispatchMode { AbortIfFlushing, IgnoreFlushing };
-
   nsresult DispatchLocked(nsCOMPtr<nsIRunnable>& aRunnable,
-                          DispatchMode aMode,
                           DispatchFailureHandling aFailureHandling,
                           DispatchReason aReason = NormalDispatch);
 
