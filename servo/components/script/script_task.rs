@@ -1747,9 +1747,8 @@ impl ScriptTask {
 
                 
                 for target in &*mouse_over_targets {
-                    let target = target.root();
                     if target.upcast::<Node>().is_anchor_element() {
-                        let status = target.r().get_attribute(&ns!(""), &atom!("href"))
+                        let status = target.get_attribute(&ns!(""), &atom!("href"))
                             .and_then(|href| {
                                 let value = href.value();
                                 let url = document.r().url();

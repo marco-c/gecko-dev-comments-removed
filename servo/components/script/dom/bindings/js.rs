@@ -74,10 +74,6 @@ impl<T> JS<T> {
 
 impl<T: Reflectable> JS<T> {
     
-    pub fn root(&self) -> Root<T> {
-        Root::new(self.ptr)
-    }
-    
     
     #[allow(unrooted_must_root)]
     pub fn from_rooted(root: &Root<T>) -> JS<T> {
@@ -291,7 +287,7 @@ impl<T: Reflectable> MutHeap<JS<T>> {
     pub fn get(&self) -> Root<T> {
         debug_assert!(task_state::get().is_script());
         unsafe {
-            ptr::read(self.val.get()).root()
+            Root::from_ref(&*ptr::read(self.val.get()))
         }
     }
 }
@@ -369,7 +365,7 @@ impl<T: Reflectable> MutNullableHeap<JS<T>> {
     pub fn get(&self) -> Option<Root<T>> {
         debug_assert!(task_state::get().is_script());
         unsafe {
-            ptr::read(self.ptr.get()).map(|o| o.root())
+            ptr::read(self.ptr.get()).map(|o| Root::from_ref(&*o))
         }
     }
 

@@ -40,7 +40,7 @@ impl FileListMethods for FileList {
 
     
     fn Item(&self, index: u32) -> Option<Root<File>> {
-        Some(self.list[index as usize].root())
+        Some(Root::from_ref(&*(self.list[index as usize])))
     }
 
     

@@ -42,7 +42,7 @@ impl NamedNodeMapMethods for NamedNodeMap {
 
     
     fn Item(&self, index: u32) -> Option<Root<Attr>> {
-        self.owner.attrs().get(index as usize).map(JS::root)
+        self.owner.attrs().get(index as usize).map(|js| Root::from_ref(&**js))
     }
 
     
@@ -87,7 +87,7 @@ impl NamedNodeMapMethods for NamedNodeMap {
 
     
     fn SupportedPropertyNames(&self) -> Vec<DOMString> {
-        self.owner.attrs().iter().map(JS::root).map(|attr| {
+        self.owner.attrs().iter().map(|attr| {
             (**attr.name()).to_owned()
         }).collect()
     }

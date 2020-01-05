@@ -46,7 +46,7 @@ impl Performance {
 impl PerformanceMethods for Performance {
     
     fn Timing(&self) -> Root<PerformanceTiming> {
-        self.timing.root()
+        Root::from_ref(&*self.timing)
     }
 
     
