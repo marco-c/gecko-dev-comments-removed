@@ -84,9 +84,16 @@ function matchRequest(channel, filters) {
 
   if (filters.outerWindowID) {
     let topFrame = NetworkHelper.getTopFrameForRequest(channel);
-    if (topFrame && topFrame.outerWindowID &&
-        topFrame.outerWindowID == filters.outerWindowID) {
-      return true;
+    
+    if (topFrame) {
+      try {
+        if (topFrame.outerWindowID == filters.outerWindowID) {
+          return true;
+        }
+      } catch (e) {
+        
+        
+      }
     }
   }
 
