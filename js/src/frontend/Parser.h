@@ -893,6 +893,47 @@ class ParserBase : public StrictModeGetter
     bool warnOnceAboutExprClosure();
     bool warnOnceAboutForEach();
 
+    bool allowsForEachIn() {
+#if !JS_HAS_FOR_EACH_IN
+        return false;
+#else
+        return options().forEachStatementOption && versionNumber() >= JSVERSION_1_6;
+#endif
+    }
+
+    bool hasValidSimpleStrictParameterNames();
+
+
+    
+
+
+
+    JSFunction* newFunction(HandleAtom atom, FunctionSyntaxKind kind,
+                            GeneratorKind generatorKind, FunctionAsyncKind asyncKind,
+                            HandleObject proto);
+
+    
+    
+    
+    class Mark
+    {
+        friend class ParserBase;
+        LifoAlloc::Mark mark;
+        ObjectBox* traceListHead;
+    };
+    Mark mark() const {
+        Mark m;
+        m.mark = alloc.mark();
+        m.traceListHead = traceListHead;
+        return m;
+    }
+    void release(Mark m) {
+        alloc.release(m.mark);
+        traceListHead = m.traceListHead;
+    }
+
+    ObjectBox* newObjectBox(JSObject* obj);
+
   protected:
     enum InvokedPrediction { PredictUninvoked = false, PredictInvoked = true };
     enum ForInitLocation { InForInit, NotInForInit };
@@ -1034,26 +1075,6 @@ class Parser final : public ParserBase, private JS::AutoGCRooter
 
     bool checkOptions();
 
-    
-    
-    
-    class Mark
-    {
-        friend class Parser;
-        LifoAlloc::Mark mark;
-        ObjectBox* traceListHead;
-    };
-    Mark mark() const {
-        Mark m;
-        m.mark = alloc.mark();
-        m.traceListHead = traceListHead;
-        return m;
-    }
-    void release(Mark m) {
-        alloc.release(m.mark);
-        traceListHead = m.traceListHead;
-    }
-
     friend void js::frontend::TraceParser(JSTracer* trc, JS::AutoGCRooter* parser);
 
     
@@ -1061,23 +1082,10 @@ class Parser final : public ParserBase, private JS::AutoGCRooter
 
     Node parse();
 
-    
-
-
-
-    ObjectBox* newObjectBox(JSObject* obj);
     FunctionBox* newFunctionBox(Node fn, JSFunction* fun, uint32_t preludeStart,
                                 Directives directives,
                                 GeneratorKind generatorKind, FunctionAsyncKind asyncKind,
                                 bool tryAnnexB);
-
-    
-
-
-
-    JSFunction* newFunction(HandleAtom atom, FunctionSyntaxKind kind,
-                            GeneratorKind generatorKind, FunctionAsyncKind asyncKind,
-                            HandleObject proto);
 
     void trace(JSTracer* trc);
 
@@ -1402,14 +1410,6 @@ class Parser final : public ParserBase, private JS::AutoGCRooter
 
     bool matchLabel(YieldHandling yieldHandling, MutableHandle<PropertyName*> label);
 
-    bool allowsForEachIn() {
-#if !JS_HAS_FOR_EACH_IN
-        return false;
-#else
-        return options().forEachStatementOption && versionNumber() >= JSVERSION_1_6;
-#endif
-    }
-
     bool matchInOrOf(bool* isForInp, bool* isForOfp);
 
     bool hasUsedFunctionSpecialName(HandlePropertyName name);
@@ -1453,8 +1453,6 @@ class Parser final : public ParserBase, private JS::AutoGCRooter
   private:
     bool checkIncDecOperand(Node operand, uint32_t operandOffset);
     bool checkStrictAssignment(Node lhs);
-
-    bool hasValidSimpleStrictParameterNames();
 
     void reportMissingClosing(unsigned errorNumber, unsigned noteNumber, uint32_t openedPos);
 
