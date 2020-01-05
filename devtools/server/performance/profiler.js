@@ -252,8 +252,10 @@ const ProfilerManager = (function () {
 
 
 
-    get sharedLibraries() {
-      return nsIProfilerModule.sharedLibraries;
+    getSharedLibraryInformation: function () {
+      return {
+        sharedLibraryInformation: nsIProfilerModule.getSharedLibraryInformation()
+      };
     },
 
     
@@ -471,8 +473,8 @@ var Profiler = exports.Profiler = Class({
   
 
 
-  sharedLibraries: function () {
-    return ProfilerManager.sharedLibraries
+  getSharedLibraryInformation: function () {
+    return ProfilerManager.getSharedLibraryInformation();
   },
 
   
