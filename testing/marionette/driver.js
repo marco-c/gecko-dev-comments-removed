@@ -1131,13 +1131,11 @@ GeckoDriver.prototype.goForward = function* (cmd, resp) {
 };
 
 
-
-
-GeckoDriver.prototype.refresh = function* (cmd, resp) {
+GeckoDriver.prototype.refresh = function*(cmd, resp) {
   assert.content(this.context);
   assert.window(this.getCurrentWindow());
 
-  yield this.listener.refresh({pageTimeout: this.timeouts.pageLoad});
+  yield this.listener.refresh();
 };
 
 
