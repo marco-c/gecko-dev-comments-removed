@@ -2651,6 +2651,7 @@ nsTextEditorState::SetValue(const nsAString& aValue, uint32_t aFlags)
         if (aFlags & eSetValue_MoveCursorToEndIfValueChanged) {
           props.SetStart(newValue.Length());
           props.SetEnd(newValue.Length());
+          props.SetDirection(nsITextControlFrame::eForward);
         } else {
           
           props.SetStart(std::min(props.GetStart(), newValue.Length()));
