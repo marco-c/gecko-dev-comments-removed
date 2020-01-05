@@ -770,7 +770,7 @@ protected:
     
     int32_t mWordCacheMaxEntries;
 
-    uint32_t mTotalSystemMemory;
+    uint64_t mTotalSystemMemory;
 
     
     RefPtr<mozilla::gfx::VsyncSource> mVsyncSource;
