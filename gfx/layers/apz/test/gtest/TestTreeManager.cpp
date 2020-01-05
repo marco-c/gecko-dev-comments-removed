@@ -15,7 +15,7 @@ TEST_F(APZCTreeManagerTester, ScrollablePaintedLayers) {
   
   SetScrollableFrameMetrics(layers[1], FrameMetrics::START_SCROLL_ID);
   SetScrollableFrameMetrics(layers[2], FrameMetrics::START_SCROLL_ID);
-  manager->UpdateHitTestingTree(nullptr, root, false, 0, 0);
+  manager->UpdateHitTestingTree(0, root, false, 0, 0);
 
   TestAsyncPanZoomController* nullAPZC = nullptr;
   
@@ -26,13 +26,13 @@ TEST_F(APZCTreeManagerTester, ScrollablePaintedLayers) {
 
   
   SetScrollableFrameMetrics(layers[1], FrameMetrics::START_SCROLL_ID + 1);
-  manager->UpdateHitTestingTree(nullptr, root, false, 0, 0);
+  manager->UpdateHitTestingTree(0, root, false, 0, 0);
   EXPECT_NE(ApzcOf(layers[1]), ApzcOf(layers[2]));
 
   
   
   SetScrollableFrameMetrics(layers[2], FrameMetrics::START_SCROLL_ID + 1);
-  manager->UpdateHitTestingTree(nullptr, root, false, 0, 0);
+  manager->UpdateHitTestingTree(0, root, false, 0, 0);
   EXPECT_EQ(ApzcOf(layers[1]), ApzcOf(layers[2]));
 }
 
@@ -40,7 +40,7 @@ TEST_F(APZCTreeManagerTester, Bug1068268) {
   CreatePotentiallyLeakingTree();
   ScopedLayerTreeRegistration registration(manager, 0, root, mcc);
 
-  manager->UpdateHitTestingTree(nullptr, root, false, 0, 0);
+  manager->UpdateHitTestingTree(0, root, false, 0, 0);
   RefPtr<HitTestingTreeNode> root = manager->GetRootNode();
   RefPtr<HitTestingTreeNode> node2 = root->GetFirstChild()->GetFirstChild();
   RefPtr<HitTestingTreeNode> node5 = root->GetLastChild()->GetLastChild();
@@ -61,7 +61,7 @@ TEST_F(APZCTreeManagerTester, Bug1068268) {
 TEST_F(APZCTreeManagerTester, Bug1194876) {
   CreateBug1194876Tree();
   ScopedLayerTreeRegistration registration(manager, 0, root, mcc);
-  manager->UpdateHitTestingTree(nullptr, root, false, 0, 0);
+  manager->UpdateHitTestingTree(0, root, false, 0, 0);
 
   uint64_t blockId;
   nsTArray<ScrollableLayerGuid> targets;
@@ -99,7 +99,7 @@ TEST_F(APZCTreeManagerTester, Bug1198900) {
   
   CreateSimpleDTCScrollingLayer();
   ScopedLayerTreeRegistration registration(manager, 0, root, mcc);
-  manager->UpdateHitTestingTree(nullptr, root, false, 0, 0);
+  manager->UpdateHitTestingTree(0, root, false, 0, 0);
 
   ScreenPoint origin(100, 50);
   ScrollWheelInput swi(MillisecondsSinceStartup(mcc->Time()), mcc->Time(), 0,

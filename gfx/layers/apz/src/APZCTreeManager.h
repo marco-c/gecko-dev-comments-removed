@@ -121,7 +121,7 @@ public:
 
 
 
-  void UpdateHitTestingTree(CompositorBridgeParent* aCompositor,
+  void UpdateHitTestingTree(uint64_t aRootLayerTreeId,
                             Layer* aRoot,
                             bool aIsFirstPaint,
                             uint64_t aOriginatingLayersId,

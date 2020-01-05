@@ -117,7 +117,7 @@ TEST_F(APZHitTestingTester, HitTesting1) {
 
   
   SetScrollableFrameMetrics(root, FrameMetrics::START_SCROLL_ID);
-  manager->UpdateHitTestingTree(nullptr, root, false, 0, paintSequenceNumber++);
+  manager->UpdateHitTestingTree(0, root, false, 0, paintSequenceNumber++);
   hit = GetTargetAPZC(ScreenPoint(15, 15));
   EXPECT_EQ(ApzcOf(root), hit.get());
   
@@ -126,7 +126,7 @@ TEST_F(APZHitTestingTester, HitTesting1) {
 
   
   SetScrollableFrameMetrics(layers[3], FrameMetrics::START_SCROLL_ID + 1);
-  manager->UpdateHitTestingTree(nullptr, root, false, 0, paintSequenceNumber++);
+  manager->UpdateHitTestingTree(0, root, false, 0, paintSequenceNumber++);
   EXPECT_NE(ApzcOf(root), ApzcOf(layers[3]));
   hit = GetTargetAPZC(ScreenPoint(25, 25));
   EXPECT_EQ(ApzcOf(layers[3]), hit.get());
@@ -141,7 +141,7 @@ TEST_F(APZHitTestingTester, HitTesting1) {
 
   
   SetScrollableFrameMetrics(layers[4], FrameMetrics::START_SCROLL_ID + 2);
-  manager->UpdateHitTestingTree(nullptr, root, false, 0, paintSequenceNumber++);
+  manager->UpdateHitTestingTree(0, root, false, 0, paintSequenceNumber++);
   hit = GetTargetAPZC(ScreenPoint(15, 15));
   EXPECT_EQ(ApzcOf(layers[4]), hit.get());
   
@@ -173,7 +173,7 @@ TEST_F(APZHitTestingTester, HitTesting2) {
   CreateHitTesting2LayerTree();
   ScopedLayerTreeRegistration registration(manager, 0, root, mcc);
 
-  manager->UpdateHitTestingTree(nullptr, root, false, 0, 0);
+  manager->UpdateHitTestingTree(0, root, false, 0, 0);
 
   
   
@@ -280,7 +280,7 @@ TEST_F(APZHitTestingTester, HitTesting2) {
 TEST_F(APZHitTestingTester, ComplexMultiLayerTree) {
   CreateComplexMultiLayerTree();
   ScopedLayerTreeRegistration registration(manager, 0, root, mcc);
-  manager->UpdateHitTestingTree(nullptr, root, false, 0, 0);
+  manager->UpdateHitTestingTree(0, root, false, 0, 0);
 
   
 
@@ -370,7 +370,7 @@ TEST_F(APZHitTestingTester, TestRepaintFlushOnNewInputBlock) {
 
   CreateSimpleScrollingLayer();
   ScopedLayerTreeRegistration registration(manager, 0, root, mcc);
-  manager->UpdateHitTestingTree(nullptr, root, false, 0, 0);
+  manager->UpdateHitTestingTree(0, root, false, 0, 0);
   TestAsyncPanZoomController* apzcroot = ApzcOf(root);
 
   
@@ -435,7 +435,7 @@ TEST_F(APZHitTestingTester, TestRepaintFlushOnWheelEvents) {
 
   CreateSimpleScrollingLayer();
   ScopedLayerTreeRegistration registration(manager, 0, root, mcc);
-  manager->UpdateHitTestingTree(nullptr, root, false, 0, 0);
+  manager->UpdateHitTestingTree(0, root, false, 0, 0);
   TestAsyncPanZoomController* apzcroot = ApzcOf(root);
 
   EXPECT_CALL(*mcc, RequestContentRepaint(_)).Times(AtLeast(3));
@@ -463,7 +463,7 @@ TEST_F(APZHitTestingTester, TestForceDisableApz) {
   CreateSimpleScrollingLayer();
   DisableApzOn(root);
   ScopedLayerTreeRegistration registration(manager, 0, root, mcc);
-  manager->UpdateHitTestingTree(nullptr, root, false, 0, 0);
+  manager->UpdateHitTestingTree(0, root, false, 0, 0);
   TestAsyncPanZoomController* apzcroot = ApzcOf(root);
 
   ScreenPoint origin(100, 50);
@@ -504,7 +504,7 @@ TEST_F(APZHitTestingTester, TestForceDisableApz) {
 TEST_F(APZHitTestingTester, Bug1148350) {
   CreateBug1148350LayerTree();
   ScopedLayerTreeRegistration registration(manager, 0, root, mcc);
-  manager->UpdateHitTestingTree(nullptr, root, false, 0, 0);
+  manager->UpdateHitTestingTree(0, root, false, 0, 0);
 
   MockFunction<void(std::string checkPointName)> check;
   {
@@ -528,7 +528,7 @@ TEST_F(APZHitTestingTester, Bug1148350) {
 
   layers[0]->SetVisibleRegion(LayerIntRegion(LayerIntRect(0,50,200,150)));
   layers[0]->SetBaseTransform(Matrix4x4::Translation(0, 50, 0));
-  manager->UpdateHitTestingTree(nullptr, root, false, 0, 0);
+  manager->UpdateHitTestingTree(0, root, false, 0, 0);
 
   TouchUp(manager, ScreenIntPoint(100, 100), mcc->Time());
   mcc->RunThroughDelayedTasks();
@@ -567,7 +567,7 @@ TEST_F(APZHitTestingTester, HitTestingRespectsScrollClip_Bug1257288) {
 
   
   ScopedLayerTreeRegistration registration(manager, 0, root, mcc);
-  manager->UpdateHitTestingTree(nullptr, root, false, 0, 0);
+  manager->UpdateHitTestingTree(0, root, false, 0, 0);
 
   
   
