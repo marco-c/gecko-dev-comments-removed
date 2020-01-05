@@ -14,7 +14,10 @@ function countHistoryEntries(browser, expected) {
 
 add_task(function* () {
   
-  let tab = gBrowser.addTab("about:blank");
+  let win = yield promiseNewWindowLoaded();
+
+  
+  let tab = win.gBrowser.addTab("about:blank");
   let browser = tab.linkedBrowser;
   yield promiseBrowserLoaded(browser);
   ok(browser.isRemoteBrowser, "browser is remote");
@@ -42,5 +45,5 @@ add_task(function* () {
   yield countHistoryEntries(browser, MAX_BACK + 3);
 
   
-  gBrowser.removeTab(tab);
+  yield BrowserTestUtils.closeWindow(win);
 });
