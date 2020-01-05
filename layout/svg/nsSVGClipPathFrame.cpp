@@ -104,6 +104,21 @@ nsSVGClipPathFrame::CreateClipMask(gfxContext& aReferenceContext,
   return maskDT.forget();
 }
 
+static void
+ComposeExtraMask(DrawTarget* aTarget, const gfxMatrix& aMaskTransfrom,
+                 SourceSurface* aExtraMask, const Matrix& aExtraMasksTransform)
+{
+  MOZ_ASSERT(aExtraMask);
+
+  Matrix origin = aTarget->GetTransform();
+  aTarget->SetTransform(aExtraMasksTransform * aTarget->GetTransform());
+  aTarget->MaskSurface(ColorPattern(Color(0.0, 0.0, 0.0, 1.0)),
+                       aExtraMask,
+                       Point(0, 0),
+                       DrawOptions(1.0, CompositionOp::OP_IN));
+  aTarget->SetTransform(origin);
+}
+
 DrawResult
 nsSVGClipPathFrame::PaintClipMask(gfxContext& aMaskContext,
                                   nsIFrame* aClippedFrame,
@@ -182,19 +197,7 @@ nsSVGClipPathFrame::PaintClipMask(gfxContext& aMaskContext,
   maskTransfrom.Invert();
 
   if (aExtraMask) {
-    
-    
-    RefPtr<SourceSurface> currentMask = maskDT->Snapshot();
-    IntSize targetSize = maskDT->GetSize();
-    Matrix transform = maskDT->GetTransform();
-    maskDT->SetTransform(Matrix());
-    maskDT->ClearRect(Rect(0, 0, targetSize.width, targetSize.height));
-    maskDT->SetTransform(aExtraMasksTransform * transform);
-    
-    
-    maskDT->MaskSurface(SurfacePattern(currentMask, ExtendMode::CLAMP, aExtraMasksTransform.Inverse() * ToMatrix(maskTransfrom)),
-                        aExtraMask,
-                        Point(0, 0));
+    ComposeExtraMask(maskDT, maskTransfrom, aExtraMask, aExtraMasksTransform);
   }
 
   *aMaskTransform = ToMatrix(maskTransfrom);
