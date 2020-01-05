@@ -108,10 +108,12 @@ function* runTests(options) {
   let testNewWindows = 1;
 
   let awaitFinish = new Promise(resolve => {
-    extension.onMessage("nextTest", (expecting, testsRemaining) => {
+    extension.onMessage("nextTest", async (expecting, testsRemaining) => {
       if (!pageActionId) {
         pageActionId = `${makeWidgetId(extension.id)}-page-action`;
       }
+
+      await promiseAnimationFrame();
 
       checkDetails(expecting);
 
