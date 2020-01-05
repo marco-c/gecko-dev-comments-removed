@@ -393,9 +393,9 @@ class ScriptMixin(PlatformMixin):
             expected_file_size = int(response.headers.get('Content-Length'))
 
         self.info('Http code: {}'.format(response.getcode()))
-        for k in ('Content-Encoding', 'Content-Type', 'via', 'x-amz-cf-id',
-                  'x-amz-version-id', 'x-cache'):
-            self.info('{}: {}'.format(k, response.headers.get(k)))
+        for k in sorted(response.headers.keys()):
+            if k.lower().startswith('x-amz-') or k in ('Content-Encoding', 'Content-Type', 'via'):
+                self.info('{}: {}'.format(k, response.headers.get(k)))
 
         file_contents = response.read()
         obtained_file_size = len(file_contents)
@@ -689,13 +689,7 @@ class ScriptMixin(PlatformMixin):
         except zipfile.BadZipfile:
             
             
-            filepath = os.path.join(self.query_abs_dirs()['abs_upload_dir'], url.split('/')[-1])
-            self.info('Storing corrupted file to {}'.format(filepath))
-            with open(filepath, 'w') as f:
-                f.write(compressed_file.read())
-
-            
-            self.exception(level=FATAL)
+            self.fatal('Check bug 1306189 for details on downloading a truncated zip file.')
 
 
     def load_json_url(self, url, error_level=None, *args, **kwargs):
