@@ -1204,6 +1204,25 @@ Parser<ParseHandler>::tryDeclareVarForAnnexBLexicalFunction(HandlePropertyName n
     if (!tryDeclareVar(name, DeclarationKind::VarForAnnexBLexicalFunction, &redeclaredKind))
         return false;
 
+    if (!redeclaredKind && pc->isFunctionBox()) {
+        ParseContext::Scope& funScope = pc->functionScope();
+        ParseContext::Scope& varScope = pc->varScope();
+        if (&funScope != &varScope) {
+            
+            
+            
+            
+            
+            if (AddDeclaredNamePtr p = funScope.lookupDeclaredNameForAdd(name)) {
+                DeclarationKind declaredKind = p->value()->kind();
+                if (DeclarationKindIsParameter(declaredKind))
+                    redeclaredKind = Some(declaredKind);
+                else
+                    MOZ_ASSERT(FunctionScope::isSpecialName(context, name));
+            }
+        }
+    }
+
     if (redeclaredKind) {
         
         
@@ -1739,10 +1758,7 @@ Parser<FullParseHandler>::newFunctionScopeData(ParseContext::Scope& scope, bool 
             
             
             
-            MOZ_ASSERT_IF(hasParameterExprs,
-                          bi.name() == context->names().arguments ||
-                          bi.name() == context->names().dotThis ||
-                          bi.name() == context->names().dotGenerator);
+            MOZ_ASSERT_IF(hasParameterExprs, FunctionScope::isSpecialName(context, bi.name()));
             if (!vars.append(binding))
                 return Nothing();
             break;

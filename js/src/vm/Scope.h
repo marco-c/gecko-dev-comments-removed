@@ -437,6 +437,7 @@ Scope::is<LexicalScope>() const
 
 
 
+
 class FunctionScope : public Scope
 {
     friend class GCMarker;
@@ -538,6 +539,8 @@ class FunctionScope : public Scope
     uint32_t numPositionalFormalParameters() const {
         return data().nonPositionalFormalStart;
     }
+
+    static bool isSpecialName(JSContext* cx, JSAtom* name);
 
     static Shape* getEmptyEnvironmentShape(JSContext* cx, bool hasParameterExprs);
 };
