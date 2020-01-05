@@ -26,6 +26,7 @@ const STORAGE_SYNC_SERVER_URL_PREF = "webextensions.storage.sync.serverURL";
 const STORAGE_SYNC_SCOPE = "sync:addon_storage";
 const STORAGE_SYNC_CRYPTO_COLLECTION_NAME = "storage-sync-crypto";
 const STORAGE_SYNC_CRYPTO_KEYRING_RECORD_ID = "keys";
+const STORAGE_SYNC_CRYPTO_SALT_LENGTH_BYTES = 32;
 const FXA_OAUTH_OPTIONS = {
   scope: STORAGE_SYNC_SCOPE,
 };
@@ -200,6 +201,26 @@ if (AppConstants.platform != "android") {
 
 
 
+    getNewSalt() {
+      return btoa(CryptoUtils.generateRandomBytes(STORAGE_SYNC_CRYPTO_SALT_LENGTH_BYTES));
+    },
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     getKeyRingRecord: Task.async(function* () {
@@ -216,6 +237,11 @@ if (AppConstants.platform != "android") {
         data = {uuid};
       }
       return data;
+    }),
+
+    getSalts: Task.async(function* () {
+      const cryptoKeyRecord = yield this.getKeyRingRecord();
+      return cryptoKeyRecord && cryptoKeyRecord.salts;
     }),
 
     
@@ -375,7 +401,7 @@ function extensionIdToCollectionId(user, extensionId) {
 
 function ensureCryptoCollection() {
   if (!cryptoCollection) {
-    throw new Error("Call to ensureKeysFor, but no sync code; are you on Android?");
+    throw new Error("Call to ensureCanSync, but no sync code; are you on Android?");
   }
 }
 
@@ -399,7 +425,7 @@ this.ExtensionStorageSync = {
       
       return;
     }
-    yield this.ensureKeysFor(extIds);
+    yield this.ensureCanSync(extIds);
     yield this.checkSyncKeyRing();
     const promises = Array.from(extensionContexts.keys(), extension => {
       return openCollection(extension).then(coll => {
@@ -524,6 +550,19 @@ this.ExtensionStorageSync = {
     });
   }),
 
+  ensureSaltsFor: Task.async(function* (keysRecord, extIds) {
+    const newSalts = Object.assign({}, keysRecord.salts);
+    for (let collectionId of extIds) {
+      if (newSalts[collectionId]) {
+        continue;
+      }
+
+      newSalts[collectionId] = cryptoCollection.getNewSalt();
+    }
+
+    return newSalts;
+  }),
+
   
 
 
@@ -533,19 +572,45 @@ this.ExtensionStorageSync = {
 
 
 
-  ensureKeysFor: Task.async(function* (extIds) {
+  hasSaltsFor(keysRecord, extIds) {
+    if (!keysRecord.salts) {
+      return false;
+    }
+
+    for (let collectionId of extIds) {
+      if (!keysRecord.salts[collectionId]) {
+        return false;
+      }
+    }
+
+    return true;
+  },
+
+  
+
+
+
+
+
+
+
+
+  ensureCanSync: Task.async(function* (extIds) {
     ensureCryptoCollection();
 
+    const keysRecord = yield cryptoCollection.getKeyRingRecord();
     const collectionKeys = yield cryptoCollection.getKeyRing();
-    if (collectionKeys.hasKeysFor(extIds)) {
+    if (collectionKeys.hasKeysFor(extIds) && this.hasSaltsFor(keysRecord, extIds)) {
       return collectionKeys;
     }
 
     const kbHash = yield this.getKBHash();
     const newKeys = yield collectionKeys.ensureKeysFor(extIds);
+    const newSalts = yield this.ensureSaltsFor(keysRecord, extIds);
     const newRecord = {
       id: STORAGE_SYNC_CRYPTO_KEYRING_RECORD_ID,
       keys: newKeys.asWBO().cleartext,
+      salts: newSalts,
       uuid: collectionKeys.uuid,
       
       kbHash: kbHash,
@@ -556,7 +621,7 @@ this.ExtensionStorageSync = {
       
       
       
-      return yield this.ensureKeysFor(extIds);
+      return yield this.ensureCanSync(extIds);
     }
 
     
