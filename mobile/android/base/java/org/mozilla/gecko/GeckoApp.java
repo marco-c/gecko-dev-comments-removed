@@ -1141,11 +1141,10 @@ public abstract class GeckoApp
         
         
         GeckoAppShell.setContextGetter(this);
-        GeckoAppShell.setApplicationContext(getApplicationContext());
         GeckoAppShell.setGeckoInterface(this);
         
         
-        GeckoAppShell.setNotificationClient(makeNotificationClient());
+        GeckoAppShell.setNotificationListener(makeNotificationClient());
 
         
         
@@ -2394,7 +2393,8 @@ public abstract class GeckoApp
         
         
         if (GeckoThread.isRunning()) {
-            GeckoAppShell.handleNotification(action, alertName, alertCookie);
+            ((NotificationClient) GeckoAppShell.getNotificationListener()).onNotificationClick(
+                    alertName);
         }
     }
 
