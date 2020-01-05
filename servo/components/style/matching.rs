@@ -2,6 +2,8 @@
 
 
 
+
+
 #![allow(unsafe_code)]
 
 use animation::{self, Animation};
@@ -26,8 +28,6 @@ use util::arc_ptr_eq;
 use util::cache::{LRUCache, SimpleHashCache};
 use util::opts;
 use util::vec::ForgetfulSink;
-
-
 
 fn create_common_style_affecting_attributes_from_element<E: TElement>(element: &E)
                                                          -> CommonStyleAffectingAttributes {

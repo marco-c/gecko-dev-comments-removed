@@ -2,6 +2,8 @@
 
 
 
+
+
 use app_units::Au;
 use bezier::Bezier;
 use cssparser::{Color, RGBA};
@@ -393,6 +395,9 @@ impl AnimatedProperty {
     }
 }
 
+
+
+
 trait Interpolate: Sized {
     fn interpolate(&self, other: &Self, time: f64) -> Option<Self>;
 }
@@ -418,6 +423,7 @@ impl <T> Interpolate for Option<T> where T: Interpolate {
     }
 }
 
+
 impl Interpolate for f32 {
     #[inline]
     fn interpolate(&self, other: &f32, time: f64) -> Option<f32> {
@@ -425,12 +431,14 @@ impl Interpolate for f32 {
     }
 }
 
+
 impl Interpolate for f64 {
     #[inline]
     fn interpolate(&self, other: &f64, time: f64) -> Option<f64> {
         Some(*self + (*other - *self) * time)
     }
 }
+
 
 impl Interpolate for i32 {
     #[inline]
@@ -447,6 +455,7 @@ impl Interpolate for Angle {
         self.radians().interpolate(&other.radians(), time).map(Angle)
     }
 }
+
 
 impl Interpolate for Visibility {
     #[inline]
@@ -467,6 +476,7 @@ impl Interpolate for Visibility {
     }
 }
 
+
 impl Interpolate for ZIndex {
     #[inline]
     fn interpolate(&self, other: &ZIndex, time: f64)
@@ -482,6 +492,7 @@ impl Interpolate for ZIndex {
         }
     }
 }
+
 
 impl Interpolate for VerticalAlign {
     #[inline]
@@ -499,6 +510,7 @@ impl Interpolate for VerticalAlign {
     }
 }
 
+
 impl Interpolate for BorderSpacing {
     #[inline]
     fn interpolate(&self, other: &BorderSpacing, time: f64)
@@ -510,6 +522,7 @@ impl Interpolate for BorderSpacing {
         })
     }
 }
+
 
 impl Interpolate for RGBA {
     #[inline]
@@ -526,6 +539,7 @@ impl Interpolate for RGBA {
     }
 }
 
+
 impl Interpolate for Color {
     #[inline]
     fn interpolate(&self, other: &Color, time: f64) -> Option<Color> {
@@ -540,6 +554,7 @@ impl Interpolate for Color {
     }
 }
 
+
 impl Interpolate for CalcLengthOrPercentage {
     #[inline]
     fn interpolate(&self, other: &CalcLengthOrPercentage, time: f64)
@@ -550,6 +565,7 @@ impl Interpolate for CalcLengthOrPercentage {
         })
     }
 }
+
 
 impl Interpolate for LengthOrPercentage {
     #[inline]
@@ -578,6 +594,7 @@ impl Interpolate for LengthOrPercentage {
         }
     }
 }
+
 
 impl Interpolate for LengthOrPercentageOrAuto {
     #[inline]
@@ -610,6 +627,7 @@ impl Interpolate for LengthOrPercentageOrAuto {
     }
 }
 
+
 impl Interpolate for LengthOrPercentageOrNone {
     #[inline]
     fn interpolate(&self, other: &LengthOrPercentageOrNone, time: f64)
@@ -634,6 +652,8 @@ impl Interpolate for LengthOrPercentageOrNone {
         }
     }
 }
+
+
 
 impl Interpolate for LineHeight {
     #[inline]
@@ -690,6 +710,7 @@ impl Interpolate for FontWeight {
     }
 }
 
+
 impl Interpolate for ClipRect {
     #[inline]
     fn interpolate(&self, other: &ClipRect, time: f64)
@@ -706,6 +727,7 @@ impl Interpolate for ClipRect {
     }
 }
 
+
 impl Interpolate for BackgroundPosition {
     #[inline]
     fn interpolate(&self, other: &BackgroundPosition, time: f64)
@@ -719,6 +741,7 @@ impl Interpolate for BackgroundPosition {
         }
     }
 }
+
 
 impl Interpolate for TextShadow {
     #[inline]
@@ -735,6 +758,7 @@ impl Interpolate for TextShadow {
         }
     }
 }
+
 
 impl Interpolate for TextShadowList {
     #[inline]
@@ -884,10 +908,10 @@ fn build_identity_transform_list(list: &[TransformOperation]) -> Vec<TransformOp
     result
 }
 
+
 impl Interpolate for TransformList {
     #[inline]
     fn interpolate(&self, other: &TransformList, time: f64) -> Option<TransformList> {
-        
         let result = match (&self.0, &other.0) {
             (&Some(ref from_list), &Some(ref to_list)) => {
                 
@@ -912,6 +936,8 @@ impl Interpolate for TransformList {
         Some(result)
     }
 }
+
+
 
 
 

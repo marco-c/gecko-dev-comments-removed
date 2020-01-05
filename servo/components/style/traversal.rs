@@ -2,6 +2,8 @@
 
 
 
+
+
 use context::{SharedStyleContext, StyleContext};
 use dom::{OpaqueNode, TNode, TRestyleDamage, UnsafeNode};
 use matching::{ApplicableDeclarations, ElementMatchMethods, MatchMethods, StyleSharingResult};
@@ -142,10 +144,11 @@ pub fn remove_from_bloom_filter<'a, N, C, Impl>(context: &C, root: OpaqueNode, n
 pub trait DomTraversalContext<N: TNode>  {
     type SharedContext: Sync + 'static;
     fn new<'a>(&'a Self::SharedContext, OpaqueNode) -> Self;
+    
     fn process_preorder(&self, node: N);
+    
     fn process_postorder(&self, node: N);
 }
-
 
 
 #[inline]

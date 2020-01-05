@@ -3,6 +3,27 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #![feature(core_intrinsics)]
 
 #![cfg_attr(feature = "servo", feature(custom_attribute))]
@@ -77,6 +98,7 @@ pub mod values;
 pub mod viewport;
 
 
+
 #[macro_use]
 #[allow(unsafe_code)]
 pub mod properties {
@@ -85,6 +107,9 @@ pub mod properties {
 
 macro_rules! reexport_computed_values {
     ( $( $name: ident )+ ) => {
+        /// Types for [computed values][computed].
+        ///
+        /// [computed]: https://drafts.csswg.org/css-cascade/#computed
         pub mod computed_values {
             $(
                 pub use properties::longhands::$name::computed_value as $name;

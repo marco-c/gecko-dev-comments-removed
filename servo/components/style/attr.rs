@@ -2,6 +2,10 @@
 
 
 
+
+
+
+
 use app_units::Au;
 use cssparser::{self, Color, RGBA};
 use euclid::num::Zero;
@@ -333,8 +337,6 @@ impl ::std::ops::Deref for AttrValue {
 }
 
 
-
-
 pub fn parse_nonzero_length(value: &str) -> LengthOrPercentageOrAuto {
     match parse_length(value) {
         LengthOrPercentageOrAuto::Length(x) if x == Au::zero() => LengthOrPercentageOrAuto::Auto,
@@ -342,6 +344,8 @@ pub fn parse_nonzero_length(value: &str) -> LengthOrPercentageOrAuto {
         x => x,
     }
 }
+
+
 
 
 pub fn parse_legacy_color(mut input: &str) -> Result<RGBA, ()> {
@@ -539,6 +543,7 @@ pub fn parse_length(mut value: &str) -> LengthOrPercentageOrAuto {
         Err(_) => LengthOrPercentageOrAuto::Auto,
     }
 }
+
 
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
