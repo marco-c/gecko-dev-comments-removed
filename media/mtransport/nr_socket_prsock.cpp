@@ -1967,7 +1967,8 @@ void NrTcpSocketIpc::connect_i(const nsACString &remote_addr,
   socket_child_->SendWindowlessOpenBind(this,
                                         remote_addr, remote_port,
                                         local_addr, local_port,
-                                         false);
+                                         false,
+                                         true);
 }
 
 void NrTcpSocketIpc::write_i(nsAutoPtr<InfallibleTArray<uint8_t>> arr,
