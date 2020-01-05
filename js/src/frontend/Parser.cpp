@@ -8328,11 +8328,12 @@ Parser<ParseHandler>::newName(PropertyName* name, TokenPos pos)
 
 template <typename ParseHandler>
 PropertyName*
-Parser<ParseHandler>::labelOrIdentifierReference(YieldHandling yieldHandling)
+Parser<ParseHandler>::labelOrIdentifierReference(YieldHandling yieldHandling,
+                                                 bool yieldTokenizedAsName)
 {
     PropertyName* ident;
     const Token& tok = tokenStream.currentToken();
-    if (tok.type == TOK_NAME) {
+    if (tok.type == TOK_NAME && !yieldTokenizedAsName) {
         ident = tok.name();
         MOZ_ASSERT(ident != context->names().yield,
                    "tokenizer should have treated 'yield' as TOK_YIELD");
@@ -8349,7 +8350,9 @@ Parser<ParseHandler>::labelOrIdentifierReference(YieldHandling yieldHandling)
             }
         }
     } else {
-        MOZ_ASSERT(tok.type == TOK_YIELD);
+        MOZ_ASSERT(tok.type == TOK_YIELD ||
+                   (tok.type == TOK_NAME && yieldTokenizedAsName &&
+                    tok.name() == context->names().yield));
 
         if (yieldHandling == YieldIsKeyword ||
             pc->sc()->strict() ||
@@ -8817,10 +8820,18 @@ Parser<ParseHandler>::objectLiteral(YieldHandling yieldHandling, PossibleError* 
 
 
 
-            if (!tokenStream.checkForKeyword(propAtom, nullptr))
+
+            TokenKind propToken = TOK_NAME;
+            if (!tokenStream.checkForKeyword(propAtom, &propToken))
                 return null();
 
-            Rooted<PropertyName*> name(context, identifierReference(yieldHandling));
+            if (propToken != TOK_NAME && propToken != TOK_YIELD) {
+                report(ParseError, false, null(), JSMSG_RESERVED_ID, TokenKindToDesc(propToken));
+                return null();
+            }
+
+            Rooted<PropertyName*> name(context,
+                                       identifierReference(yieldHandling, propToken == TOK_YIELD));
             if (!name)
                 return null();
 
@@ -8835,10 +8846,17 @@ Parser<ParseHandler>::objectLiteral(YieldHandling yieldHandling, PossibleError* 
 
 
 
-            if (!tokenStream.checkForKeyword(propAtom, nullptr))
+            TokenKind propToken = TOK_NAME;
+            if (!tokenStream.checkForKeyword(propAtom, &propToken))
                 return null();
 
-            Rooted<PropertyName*> name(context, identifierReference(yieldHandling));
+            if (propToken != TOK_NAME && propToken != TOK_YIELD) {
+                report(ParseError, false, null(), JSMSG_RESERVED_ID, TokenKindToDesc(propToken));
+                return null();
+            }
+
+            Rooted<PropertyName*> name(context,
+                                       identifierReference(yieldHandling, propToken == TOK_YIELD));
             if (!name)
                 return null();
 

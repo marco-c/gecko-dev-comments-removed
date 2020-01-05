@@ -743,8 +743,6 @@ class MOZ_STACK_CLASS TokenStream
     
     
     
-    
-    
     MOZ_MUST_USE bool checkForKeyword(JSAtom* atom, TokenKind* ttp);
 
     
