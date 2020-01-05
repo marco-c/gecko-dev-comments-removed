@@ -3847,7 +3847,8 @@ static PRInt32 _pr_poll_with_poll(
                     
                     PRFileDesc *bottom = PR_GetIdentitiesLayer(
                         pds[index].fd, PR_NSPR_IO_LAYER);
-                    PR_ASSERT(NULL != bottom);  
+                    
+
                     pds[index].out_flags = 0;  
                     if ((NULL != bottom)
                     && (_PR_FILEDESC_OPEN == bottom->secret->state))
@@ -4105,7 +4106,8 @@ static PRInt32 _pr_poll_with_select(
                     
                     PRFileDesc *bottom = PR_GetIdentitiesLayer(
                         pds[index].fd, PR_NSPR_IO_LAYER);
-                    PR_ASSERT(NULL != bottom);  
+                    
+
                     pds[index].out_flags = 0;  
                     if ((NULL != bottom)
                     && (_PR_FILEDESC_OPEN == bottom->secret->state))
