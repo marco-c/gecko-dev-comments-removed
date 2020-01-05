@@ -15,21 +15,23 @@
 
 struct CTLogInfo
 {
-  const char* const name;
   
-  const mozilla::ct::CTLogStatus status;
+  const char* name;
+  
+  mozilla::ct::CTLogStatus status;
   
   
-  const uint64_t disqualificationTime;
-  const size_t operatorIndex;
-  const char* const key;
-  const size_t keyLength;
+  uint64_t disqualificationTime;
+  size_t operatorIndex;
+  const char* key;
+  size_t keyLength;
 };
 
 struct CTLogOperatorInfo
 {
-  const char* const name;
-  const mozilla::ct::CTLogOperatorId id;
+  
+  const char* name;
+  mozilla::ct::CTLogOperatorId id;
 };
 
 const CTLogInfo kCTLogList[] = {
