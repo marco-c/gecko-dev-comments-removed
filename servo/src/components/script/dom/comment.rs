@@ -1,0 +1,33 @@
+
+
+
+
+use dom::bindings::utils::{DOMString, str, null_string, ErrorResult};
+use dom::characterdata::CharacterData;
+use dom::node::{AbstractNode, ScriptView, CommentNodeTypeId, Node};
+use dom::window::Window;
+
+
+pub struct Comment {
+    parent: CharacterData,
+}
+
+impl Comment {
+    
+    pub fn new(text: ~str) -> Comment {
+        Comment {
+            parent: CharacterData::new(CommentNodeTypeId, text)
+        }
+    }
+
+    pub fn Constructor(owner: @mut Window, data: &DOMString, _rv: &mut ErrorResult) -> AbstractNode<ScriptView> {
+        let s = match *data {
+            str(ref s) => s.clone(),
+            null_string => ~""
+        };
+        unsafe {
+            let compartment = (*owner.page).js_info.get_ref().js_compartment;
+            Node::as_abstract_node(compartment.cx.ptr, @Comment::new(s))
+        }
+    }
+}
