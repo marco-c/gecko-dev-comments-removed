@@ -5,7 +5,6 @@
 
 
 
-use compositor_msg::Epoch;
 use euclid::scale_factor::ScaleFactor;
 use euclid::size::{Size2D, TypedSize2D};
 use hyper::header::Headers;
@@ -14,7 +13,6 @@ use ipc_channel::ipc::{self, IpcReceiver, IpcSender, IpcSharedMemory};
 use layers::geometry::DevicePixel;
 use serde::{Deserialize, Serialize};
 use std::cell::Cell;
-use std::collections::HashMap;
 use std::fmt;
 use std::sync::mpsc::channel;
 use url::Url;
@@ -223,33 +221,6 @@ pub struct IframeLoadInfo {
     pub new_pipeline_id: PipelineId,
     
     pub sandbox: IFrameSandboxState,
-}
-
-
-#[derive(Deserialize, Serialize)]
-pub enum CompositorMsg {
-    Exit,
-    FrameSize(PipelineId, Size2D<f32>),
-    
-    
-    GetFrame(PipelineId, IpcSender<Option<FrameId>>),
-    
-    
-    GetPipeline(Option<FrameId>, IpcSender<Option<PipelineId>>),
-    
-    
-    GetPipelineTitle(PipelineId),
-    InitLoadUrl(Url),
-    
-    IsReadyToSaveImage(HashMap<PipelineId, Epoch>),
-    KeyEvent(Key, KeyState, KeyModifiers),
-    LoadUrl(PipelineId, LoadData),
-    Navigate(Option<(PipelineId, SubpageId)>, NavigationDirection),
-    ResizedWindow(WindowSizeData),
-    
-    TickAnimation(PipelineId),
-    
-    WebDriverCommand(WebDriverCommandMsg),
 }
 
 #[derive(Deserialize, HeapSizeOf, Serialize)]

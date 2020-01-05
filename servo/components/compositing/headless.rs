@@ -2,12 +2,12 @@
 
 
 
+use CompositorMsg as ConstellationMsg;
 use compositor_task::{CompositorEventListener, CompositorReceiver};
 use compositor_task::{InitialCompositorState, Msg};
 use euclid::scale_factor::ScaleFactor;
 use euclid::{Point2D, Size2D};
 use msg::constellation_msg::AnimationState;
-use msg::constellation_msg::CompositorMsg as ConstellationMsg;
 use msg::constellation_msg::WindowSizeData;
 use profile_traits::mem;
 use profile_traits::time;
