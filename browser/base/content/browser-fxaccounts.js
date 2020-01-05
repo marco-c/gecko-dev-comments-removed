@@ -6,6 +6,7 @@ var gFxAccounts = {
 
   _initialized: false,
   _inCustomizationMode: false,
+  _profileFetched: false,
 
   get weave() {
     delete this.weave;
@@ -140,9 +141,9 @@ var gFxAccounts = {
 
   observe(subject, topic, data) {
     switch (topic) {
-      case this.FxAccountsCommon.ONPROFILE_IMAGE_CHANGE_NOTIFICATION:
-        this.updateUI();
-        break;
+      case this.FxAccountsCommon.ON_PROFILE_CHANGE_NOTIFICATION:
+        this._profileFetched = false;
+        
       default:
         this.updateUI();
         break;
@@ -254,7 +255,7 @@ var gFxAccounts = {
       updateWithUserData(userData);
       
       
-      if (!userData || !userData.verified || !profileInfoEnabled) {
+      if (!userData || !userData.verified || !profileInfoEnabled || this._profileFetched) {
         return null; 
       }
       return fxAccounts.getSignedInUserProfile().catch(err => {
@@ -266,6 +267,7 @@ var gFxAccounts = {
         return;
       }
       updateWithProfile(profile);
+      this._profileFetched = true; 
     }).catch(error => {
       
       

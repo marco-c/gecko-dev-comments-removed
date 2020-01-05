@@ -116,6 +116,7 @@ add_task(function* test_verifiedUserEmptyProfile() {
   
   
   let promiseUpdateDone = promiseObserver("test:browser_fxaccounts:updateUI", 2);
+  gFxAccounts._profileFetched = false;
   configureProfileURL({}); 
   yield setSignedInUser(true); 
   yield promiseUpdateDone;
@@ -135,6 +136,7 @@ add_task(function* test_verifiedUserEmptyProfile() {
 
 add_task(function* test_verifiedUserDisplayName() {
   let promiseUpdateDone = promiseObserver("test:browser_fxaccounts:updateUI", 2);
+  gFxAccounts._profileFetched = false;
   configureProfileURL({ displayName: "Test User Display Name" });
   yield setSignedInUser(true); 
   yield promiseUpdateDone;
