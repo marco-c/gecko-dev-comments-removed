@@ -50,6 +50,8 @@ public:
 
 class nsTSubstringSplitter_CharT;
 
+namespace mozilla {
+namespace detail {
 
 
 
@@ -62,12 +64,54 @@ class nsTSubstringSplitter_CharT;
 
 
 
-class nsTSubstring_CharT
+
+
+
+
+
+
+class nsTStringRepr_CharT
+{
+public:
+  typedef CharT                               char_type;
+
+  typedef uint32_t                            size_type;
+
+protected:
+  nsTStringRepr_CharT() = delete; 
+
+  constexpr
+  nsTStringRepr_CharT(char_type* aData, size_type aLength, uint32_t aFlags)
+    : mData(aData)
+    , mLength(aLength)
+    , mFlags(aFlags)
+  {
+  }
+
+  char_type*  mData;
+  size_type   mLength;
+  uint32_t    mFlags;
+};
+
+} 
+} 
+
+
+
+
+
+
+
+
+
+
+
+
+
+class nsTSubstring_CharT : public mozilla::detail::nsTStringRepr_CharT
 {
 public:
   typedef mozilla::fallible_t                 fallible_t;
-
-  typedef CharT                               char_type;
 
   typedef nsCharTraits<char_type>             char_traits;
   typedef char_traits::incompatible_char_type incompatible_char_type;
@@ -87,7 +131,6 @@ public:
   typedef char_type*                          char_iterator;
   typedef const char_type*                    const_char_iterator;
 
-  typedef uint32_t                            size_type;
   typedef uint32_t                            index_type;
 
 public:
@@ -850,9 +893,7 @@ public:
 
 
   MOZ_IMPLICIT nsTSubstring_CharT(const substring_tuple_type& aTuple)
-    : mData(nullptr)
-    , mLength(0)
-    , mFlags(F_NONE)
+    : nsTStringRepr_CharT(nullptr, 0, F_NONE)
   {
     Assign(aTuple);
   }
@@ -891,24 +932,17 @@ protected:
 
   friend class nsTSubstringTuple_CharT;
 
-  char_type*  mData;
-  size_type   mLength;
-  uint32_t    mFlags;
-
   
   nsTSubstring_CharT()
-    : mData(char_traits::sEmptyBuffer)
-    ,  mLength(0)
-    ,  mFlags(F_TERMINATED)
+    : nsTStringRepr_CharT(char_traits::sEmptyBuffer, 0, F_TERMINATED)
   {
   }
 
   
   
   nsTSubstring_CharT(const self_type& aStr)
-    : mData(aStr.mData)
-    ,  mLength(aStr.mLength)
-    ,  mFlags(aStr.mFlags & (F_TERMINATED | F_VOIDED))
+    : nsTStringRepr_CharT(aStr.mData, aStr.mLength,
+                          aStr.mFlags & (F_TERMINATED | F_VOIDED))
   {
   }
 
@@ -922,9 +956,7 @@ protected:
 #else
 #undef XPCOM_STRING_CONSTRUCTOR_OUT_OF_LINE
   nsTSubstring_CharT(char_type* aData, size_type aLength, uint32_t aFlags)
-    : mData(aData)
-    , mLength(aLength)
-    , mFlags(aFlags)
+    : nsTStringRepr_CharT(aData, aLength, aFlags)
   {
   }
 #endif 
@@ -1093,6 +1125,11 @@ public:
   
   
 };
+
+static_assert(sizeof(nsTSubstring_CharT) ==
+              sizeof(mozilla::detail::nsTStringRepr_CharT),
+              "Don't add new data fields to nsTSubstring_CharT. "
+              "Add to nsTStringRepr_CharT instead.");
 
 int NS_FASTCALL
 Compare(const nsTSubstring_CharT::base_string_type& aLhs,
