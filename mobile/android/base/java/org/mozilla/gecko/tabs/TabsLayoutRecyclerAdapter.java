@@ -109,9 +109,8 @@ public class TabsLayoutRecyclerAdapter
         final TabsLayoutItemView itemView = (TabsLayoutItemView) viewHolder.itemView;
         itemView.assignValues(tab);
         
-        itemView.setAlpha(1);
-        itemView.setTranslationX(0);
-        itemView.setTranslationY(0);
+        
+        
     }
 
     @Override
