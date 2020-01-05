@@ -52,9 +52,15 @@ public:
   
   
   
+  
+  
+  
   WrRect ToRelativeWrRect(const LayerRect& aRect) const;
+  WrRect ToRelativeWrRect(const LayoutDeviceRect& aRect) const;
   
   WrPoint ToRelativeWrPoint(const LayerPoint& aPoint) const;
+  
+  WrRect ToRelativeWrRectRounded(const LayoutDeviceRect& aRect) const;
 
 private:
   wr::DisplayListBuilder* mBuilder;
