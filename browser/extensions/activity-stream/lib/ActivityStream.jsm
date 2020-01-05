@@ -1,0 +1,28 @@
+
+
+
+"use strict";
+
+class ActivityStream {
+
+  
+
+
+
+
+
+
+
+  constructor(options) {
+    this.initialized = false;
+    this.options = options;
+  }
+  init() {
+    this.initialized = true;
+  }
+  uninit() {
+    this.initialized = false;
+  }
+}
+
+this.EXPORTED_SYMBOLS = ["ActivityStream"];
