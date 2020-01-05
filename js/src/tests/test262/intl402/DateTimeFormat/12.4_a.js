@@ -9,7 +9,6 @@
 
 
 
-
 var obj = new Intl.DateTimeFormat();
 
 var toStringValue = Object.prototype.toString.call(obj);

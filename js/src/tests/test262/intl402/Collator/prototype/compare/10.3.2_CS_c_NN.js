@@ -12,7 +12,6 @@
 
 
 
-
 var locales = ["de-DE-u-co-phonebk", "de-u-co-phonebk"];
 var collator = new Intl.Collator(locales, {localeMatcher: "lookup"});
 if (locales.indexOf(collator.resolvedOptions().locale) !== -1) {

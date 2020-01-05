@@ -3,5 +3,3 @@
 
 
 export { x } from './instn-star-err-not-found-empty_FIXTURE.js';
-
-reportCompare(0, 0);

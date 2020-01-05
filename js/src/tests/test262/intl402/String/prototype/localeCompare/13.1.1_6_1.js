@@ -9,7 +9,6 @@
 
 
 
-
 var locales = [null, [NaN], ["i"], ["de_DE"]];
 var options = [
     {localeMatcher: null},

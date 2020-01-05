@@ -6,7 +6,6 @@
 
 
 
-
 assert.sameValue(Intl.DateTimeFormat.prototype.formatToParts.name, 'formatToParts',
   'The value of `Intl.DateTimeFormat.prototype.formatToParts.name` is `"formatToParts"`'
 );

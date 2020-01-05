@@ -10,7 +10,6 @@
 
 
 
-
 testForUnwantedRegExpChanges(function () {
     new Intl.NumberFormat("de-DE-u-nu-latn");
 });

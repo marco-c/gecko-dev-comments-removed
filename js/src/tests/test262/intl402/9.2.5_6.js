@@ -10,7 +10,6 @@
 
 
 
-
 taintProperties(["dataLocale", "nu", "ca", "co", "locale"]);
 
 testWithIntlConstructors(function (Constructor) {

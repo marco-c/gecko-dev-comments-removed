@@ -1,0 +1,91 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var counter = 0;
+
+-->
+counter += 1;
+
+
+-->the comment extends to these characters
+counter += 1;
+
+
+-->the comment extends to these characters
+counter += 1;
+
+
+
+-->the comment extends to these characters
+counter += 1;
+
+
+ -->the comment extends to these characters
+counter += 1;
+
+
+  -->the comment extends to these characters
+counter += 1;
+
+
+
+
+
+
+0
+-->
+counter += 1;
+
+0
+-->the comment extends to these characters
+counter += 1;
+
+0
+-->the comment extends to these characters
+counter += 1;
+
+0
+
+-->the comment extends to these characters
+counter += 1;
+
+0
+ -->the comment extends to these characters
+counter += 1;
+
+0
+  -->the comment extends to these characters
+counter += 1;
+
+
+
+
+
+
+
+
+if (counter === 12) {
+  throw new Test262Error();
+}

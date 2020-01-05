@@ -19,7 +19,6 @@
 
 
 
-
 assert.sameValue(Intl.DateTimeFormat.name, "DateTimeFormat");
 
 verifyNotEnumerable(Intl.DateTimeFormat, "name");

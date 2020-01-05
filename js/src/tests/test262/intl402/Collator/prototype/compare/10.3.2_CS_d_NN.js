@@ -12,7 +12,6 @@
 
 
 
-
 var locales = ["de", "en", "es", "it"];
 locales = Intl.Collator.supportedLocalesOf(locales, {localeMatcher: "lookup"});
 locales.forEach(function (locale) {

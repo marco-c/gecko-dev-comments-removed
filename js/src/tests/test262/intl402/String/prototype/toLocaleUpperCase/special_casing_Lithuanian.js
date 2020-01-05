@@ -14,7 +14,6 @@
 
 
 
-
 assert.sameValue(
   "I\u0307".toLocaleUpperCase("lt"),
   "I\u0307",

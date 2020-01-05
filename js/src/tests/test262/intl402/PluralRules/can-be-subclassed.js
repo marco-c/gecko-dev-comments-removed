@@ -9,7 +9,6 @@
 
 
 
-
 var locales = ["tlh", "id", "en"];
 var a = [1, 5, 12];
 

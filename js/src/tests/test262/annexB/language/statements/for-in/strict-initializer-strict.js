@@ -1,0 +1,16 @@
+
+'use strict';
+
+
+
+
+
+
+
+
+
+
+
+throw NotEarlyError;
+for (var a = 0 in {});
+

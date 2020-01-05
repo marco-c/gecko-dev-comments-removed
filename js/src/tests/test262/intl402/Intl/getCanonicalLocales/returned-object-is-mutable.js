@@ -11,7 +11,6 @@
 
 
 
-
 var locales = ['en-US', 'fr'];
 var result = Intl.getCanonicalLocales(locales);
 

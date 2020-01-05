@@ -3,5 +3,3 @@
 
 
 export * from './instn-star-star-cycle-indirect-x_FIXTURE.js';
-
-reportCompare(0, 0);

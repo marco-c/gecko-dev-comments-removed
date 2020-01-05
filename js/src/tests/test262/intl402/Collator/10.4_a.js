@@ -7,7 +7,6 @@
 
 
 
-
 var obj = new Intl.Collator();
 
 var toStringValue = Object.prototype.toString.call(obj);

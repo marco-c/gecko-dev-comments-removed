@@ -10,7 +10,6 @@
 
 
 
-
 var functions = {
     select: Intl.PluralRules.prototype.select,
     resolvedOptions: Intl.PluralRules.prototype.resolvedOptions

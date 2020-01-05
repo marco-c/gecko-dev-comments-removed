@@ -12,7 +12,6 @@
 
 
 
-
 assert.sameValue("\u0130".toLocaleLowerCase("und"), "\u0069\u0307", "LATIN CAPITAL LETTER I WITH DOT ABOVE");
 
 reportCompare(0, 0);

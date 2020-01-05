@@ -9,7 +9,6 @@
 
 
 
-
 var desc = Object.getOwnPropertyDescriptor(Intl.DateTimeFormat, "prototype");
 if (desc === undefined) {
     $ERROR("Intl.DateTimeFormat.prototype is not defined.");

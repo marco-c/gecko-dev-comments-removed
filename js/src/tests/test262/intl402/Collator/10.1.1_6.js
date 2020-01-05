@@ -8,7 +8,6 @@
 
 
 
-
 testOption(Intl.Collator, "usage", "string", ["sort", "search"], "sort");
 
 reportCompare(0, 0);

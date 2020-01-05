@@ -7,7 +7,6 @@
 
 
 
-
 assert.sameValue(Intl.PluralRules.supportedLocalesOf.name, "supportedLocalesOf");
 
 verifyNotEnumerable(Intl.PluralRules.supportedLocalesOf, "name");

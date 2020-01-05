@@ -11,7 +11,6 @@
 
 
 
-
 assert.sameValue(
   typeof Intl.getCanonicalLocales,
   'function',

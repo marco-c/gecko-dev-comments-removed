@@ -11,7 +11,6 @@
 
 
 
-
 Array.prototype.push = function() { throw 42; };
 
 

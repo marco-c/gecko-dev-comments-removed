@@ -5,5 +5,3 @@
 var x;
 export var namedOther = null;
 export { x as default };
-
-reportCompare(0, 0);

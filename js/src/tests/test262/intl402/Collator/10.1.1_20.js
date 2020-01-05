@@ -9,7 +9,6 @@
 
 
 
-
 testOption(Intl.Collator, "sensitivity", "string", ["base", "accent", "case", "variant"], "variant");
 
 reportCompare(0, 0);

@@ -10,7 +10,6 @@
 
 
 
-
 var functions = {
     toLocaleString: [Date.prototype.toLocaleString,
         {year: "numeric", month: "numeric", day: "numeric", hour: "numeric", minute: "numeric", second: "numeric"}],

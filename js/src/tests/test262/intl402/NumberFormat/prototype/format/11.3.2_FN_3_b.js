@@ -9,7 +9,6 @@
 
 
 
-
 var numberFormatter = new Intl.NumberFormat();
 var percentFormatter = new Intl.NumberFormat(undefined, {style: 'percent'});
 

@@ -15,5 +15,3 @@ const ninth = 9;
 class tenth {}
 function eleventh() {}
 function *twelfth() {}
-
-reportCompare(0, 0);

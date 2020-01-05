@@ -1,0 +1,16 @@
+
+'use strict';
+
+
+
+
+
+
+
+
+
+
+
+
+while (false) function g() {}
+

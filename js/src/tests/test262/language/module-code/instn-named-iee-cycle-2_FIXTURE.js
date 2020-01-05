@@ -15,5 +15,3 @@ export { t as s } from './instn-named-iee-cycle.js';
 export { v as u } from './instn-named-iee-cycle.js';
 export { x as w } from './instn-named-iee-cycle.js';
 export { z as y } from './instn-named-iee-cycle.js';
-
-reportCompare(0, 0);

@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+
+
+
+
+async function foo (x = await) {  }

@@ -6,7 +6,6 @@
 
 
 
-
 var formatToParts = Intl.NumberFormat.prototype.formatToParts;
 
 assert.throws(TypeError, function() {

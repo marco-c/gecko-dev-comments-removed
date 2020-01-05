@@ -17,7 +17,6 @@
 
 
 
-
 var formatFn = new Intl.NumberFormat().format;
 
 assert.sameValue(Object.prototype.hasOwnProperty.call(formatFn, "name"), false);

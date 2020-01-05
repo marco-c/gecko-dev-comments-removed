@@ -10,7 +10,6 @@
 
 
 
-
 var testArray = [
         "hello", "你好", "こんにちは",
         "pêche", "peché", "1", "9", "10",

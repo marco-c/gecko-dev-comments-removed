@@ -1,0 +1,25 @@
+
+'use strict';
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function *g() {
+  0, function(x = yield) {
+    paramValue = x;
+  };
+}

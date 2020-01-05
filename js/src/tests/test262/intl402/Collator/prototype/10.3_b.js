@@ -10,7 +10,6 @@
 
 
 
-
 var functions = {
     "compare getter": Object.getOwnPropertyDescriptor(Intl.Collator.prototype, "compare").get,
     resolvedOptions: Intl.Collator.prototype.resolvedOptions

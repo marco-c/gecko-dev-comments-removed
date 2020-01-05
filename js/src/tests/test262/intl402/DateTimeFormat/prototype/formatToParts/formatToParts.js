@@ -6,7 +6,6 @@
 
 
 
-
 assert.sameValue(
   typeof Intl.DateTimeFormat.prototype.formatToParts,
   'function',

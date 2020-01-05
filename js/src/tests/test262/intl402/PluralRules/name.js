@@ -8,7 +8,6 @@
 
 
 
-
 assert.sameValue(Intl.PluralRules.name, "PluralRules");
 
 verifyNotEnumerable(Intl.PluralRules, "name");

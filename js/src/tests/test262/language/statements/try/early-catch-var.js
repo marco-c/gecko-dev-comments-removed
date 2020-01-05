@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+$ERROR('This code should not be executed.');
+
+try { } catch (x) { for (var x of []) {} }

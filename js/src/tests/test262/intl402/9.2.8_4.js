@@ -10,7 +10,6 @@
 
 
 
-
 function testFrozenProperty(obj, property) {
     var desc = Object.getOwnPropertyDescriptor(obj, property);
     if (desc.writable) {

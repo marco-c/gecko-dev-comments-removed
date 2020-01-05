@@ -6,7 +6,6 @@
 
 
 
-
 assert.sameValue(Intl.NumberFormat.prototype.formatToParts.length, 0);
 
 verifyNotEnumerable(Intl.NumberFormat.prototype.formatToParts, "length");

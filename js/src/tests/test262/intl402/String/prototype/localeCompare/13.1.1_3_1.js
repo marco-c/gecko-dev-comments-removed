@@ -7,7 +7,6 @@
 
 
 
-
 var thisValues = ["true", "5", "hello", "good bye"];
 var thatValues = [true, 5, "hello", {toString: function () { return "good bye"; }}];
 

@@ -10,7 +10,6 @@
 
 
 
-
 var functions = {
     "format getter": Object.getOwnPropertyDescriptor(Intl.DateTimeFormat.prototype, "format").get,
     resolvedOptions: Intl.DateTimeFormat.prototype.resolvedOptions

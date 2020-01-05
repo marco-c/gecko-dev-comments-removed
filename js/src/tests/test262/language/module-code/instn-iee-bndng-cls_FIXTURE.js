@@ -17,5 +17,3 @@ assert.throws(ReferenceError, function() {
   B;
 });
 assert.sameValue(typeof B, 'undefined');
-
-reportCompare(0, 0);

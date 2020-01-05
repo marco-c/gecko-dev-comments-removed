@@ -8,7 +8,6 @@
 
 
 
-
 testOption(Intl.NumberFormat, "useGrouping", "boolean", undefined, true);
 
 reportCompare(0, 0);

@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class A {
+  static set method(_) {
+    super();
+  }
+}
+

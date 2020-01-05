@@ -9,7 +9,6 @@
 
 
 
-
 var read = 0;
 
 function readMinimumSignificantDigits() {

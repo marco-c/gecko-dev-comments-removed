@@ -19,7 +19,6 @@
 
 
 
-
 assert.sameValue(Intl.Collator.name, "Collator");
 
 verifyNotEnumerable(Intl.Collator, "name");

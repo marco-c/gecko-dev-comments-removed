@@ -10,7 +10,6 @@
 
 
 
-
 var extensions = ["-u-co-phonebk-kn", "-u-kn-co-phonebk"];
 extensions.forEach(function (extension) {
     var defaultLocale = new Intl.Collator().resolvedOptions().locale;

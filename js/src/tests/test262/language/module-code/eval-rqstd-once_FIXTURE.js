@@ -14,5 +14,3 @@ global.test262 = 262;
 if (global.test262 !== 262) {
   throw new Error('Module was unable to signal evaluation.');
 }
-
-reportCompare(0, 0);

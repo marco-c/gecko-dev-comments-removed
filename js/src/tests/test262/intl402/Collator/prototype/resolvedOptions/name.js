@@ -19,7 +19,6 @@
 
 
 
-
 assert.sameValue(Intl.Collator.prototype.resolvedOptions.name, "resolvedOptions");
 
 verifyNotEnumerable(Intl.Collator.prototype.resolvedOptions, "name");

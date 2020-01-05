@@ -11,7 +11,6 @@
 
 
 
-
 testBuiltInObject(Date.prototype.toLocaleTimeString, true, false, [], 0);
 
 reportCompare(0, 0);

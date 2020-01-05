@@ -11,7 +11,6 @@
 
 
 
-
 testBuiltInObject(Intl.PluralRules, true, true, ["supportedLocalesOf"], 0);
 
 reportCompare(0, 0);

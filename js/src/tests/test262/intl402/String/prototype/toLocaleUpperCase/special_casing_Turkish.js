@@ -14,7 +14,6 @@
 
 
 
-
 assert.sameValue(
   "\u0130".toLocaleUpperCase("tr"),
   "\u0130",

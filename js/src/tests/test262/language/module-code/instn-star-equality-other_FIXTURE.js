@@ -4,5 +4,3 @@
 
 import * as testNs from './instn-star-equality.js';
 export { testNs };
-
-reportCompare(0, 0);

@@ -19,7 +19,6 @@
 
 
 
-
 var desc = Object.getOwnPropertyDescriptor(Intl.Collator.prototype, "compare");
 
 assert.sameValue(desc.get.name, "get compare");

@@ -12,7 +12,6 @@
 
 
 
-
 testBuiltInObject(new Intl.DateTimeFormat().format, true, false, [], 0);
 
 reportCompare(0, 0);

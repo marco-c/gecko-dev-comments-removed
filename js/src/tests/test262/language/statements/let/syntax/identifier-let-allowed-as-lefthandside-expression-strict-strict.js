@@ -1,0 +1,17 @@
+
+'use strict';
+
+
+
+
+
+
+
+
+
+
+
+
+var o = { a: 1 };
+for (let in o) { }
+

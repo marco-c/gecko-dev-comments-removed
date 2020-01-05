@@ -8,7 +8,6 @@
 
 
 
-
 var validLanguageTags = [
     "de", 
     "de-DE", 

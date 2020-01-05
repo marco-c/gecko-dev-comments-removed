@@ -11,7 +11,6 @@
 
 
 
-
 testBuiltInObject(Intl.NumberFormat, true, true, ["supportedLocalesOf"], 0);
 
 reportCompare(0, 0);

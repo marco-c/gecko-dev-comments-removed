@@ -6,7 +6,6 @@
 
 
 
-
 assert.sameValue(Intl.DateTimeFormat.prototype.formatToParts.length, 0);
 
 verifyNotEnumerable(Intl.DateTimeFormat.prototype.formatToParts, "length");

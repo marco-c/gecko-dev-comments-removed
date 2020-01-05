@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var g = function*() {
+  yield ? yield : yield;
+};

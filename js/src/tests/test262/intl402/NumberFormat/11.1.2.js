@@ -10,7 +10,6 @@
 
 
 
-
 var locales = ["tlh", "id", "en"];
 var a = [0, 1, -1, -123456.789, -Infinity, NaN];
 var referenceNumberFormat = new Intl.NumberFormat(locales);

@@ -11,7 +11,6 @@
 
 
 
-
 testBuiltInObject(Intl.DateTimeFormat.prototype, false, false, ["constructor", "format", "resolvedOptions"]);
 
 reportCompare(0, 0);

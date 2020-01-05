@@ -11,7 +11,6 @@
 
 
 
-
 assert.sameValue(Intl.getCanonicalLocales.length, 1);
 
 verifyNotEnumerable(Intl.getCanonicalLocales, "length");

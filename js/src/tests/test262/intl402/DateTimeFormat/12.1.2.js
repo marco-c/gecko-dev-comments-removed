@@ -10,7 +10,6 @@
 
 
 
-
 var locales = ["tlh", "id", "en"];
 var a = [new Date(0), Date.now(), new Date(Date.parse("1989-11-09T17:57:00Z"))];
 var referenceDateTimeFormat = new Intl.DateTimeFormat(locales);

@@ -19,7 +19,6 @@
 
 
 
-
 var desc = Object.getOwnPropertyDescriptor(Intl.NumberFormat.prototype, "format");
 
 assert.sameValue(desc.get.name, "get format");

@@ -17,7 +17,6 @@
 
 
 
-
 var formatFn = new Intl.DateTimeFormat().format;
 
 assert.sameValue(Object.prototype.hasOwnProperty.call(formatFn, "name"), false);

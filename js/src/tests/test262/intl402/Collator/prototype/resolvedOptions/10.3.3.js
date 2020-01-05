@@ -10,7 +10,6 @@
 
 
 
-
 var actual = new Intl.Collator().resolvedOptions();
 
 var actual2 = new Intl.Collator().resolvedOptions();

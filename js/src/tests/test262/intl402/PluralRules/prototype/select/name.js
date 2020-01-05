@@ -8,7 +8,6 @@
 
 
 
-
 assert.sameValue(Intl.PluralRules.prototype.select.name, 'select',
   'The value of `Intl.PluralRules.prototype.select.name` is `"select"`'
 );

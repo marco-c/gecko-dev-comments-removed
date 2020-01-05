@@ -10,7 +10,6 @@
 
 
 
-
 taintDataProperty(Intl, "DateTimeFormat");
 new Date().toLocaleString();
 new Date().toLocaleDateString();

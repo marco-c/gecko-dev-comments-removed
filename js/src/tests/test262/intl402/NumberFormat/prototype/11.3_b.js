@@ -10,7 +10,6 @@
 
 
 
-
 var functions = {
     "format getter": Object.getOwnPropertyDescriptor(Intl.NumberFormat.prototype, "format").get,
     resolvedOptions: Intl.NumberFormat.prototype.resolvedOptions

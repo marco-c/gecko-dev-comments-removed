@@ -10,7 +10,6 @@
 
 
 
-
 testWithIntlConstructors(function (Constructor) {
     var info = getLocaleSupportInfo(Constructor);
     var fallback;

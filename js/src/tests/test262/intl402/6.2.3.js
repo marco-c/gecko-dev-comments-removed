@@ -9,7 +9,6 @@
 
 
 
-
 var canonicalizedTags = {
     "de": ["de"],
     "de-DE": ["de-DE", "de"],

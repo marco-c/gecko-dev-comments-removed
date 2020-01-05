@@ -11,7 +11,6 @@
 
 
 
-
 testBuiltInObject(Intl.NumberFormat.prototype.resolvedOptions, true, false, [], 0);
 
 reportCompare(0, 0);

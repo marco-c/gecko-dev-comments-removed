@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+"a";
+"use strict";
+"c";
+throw new Error("This code should not execute");
+eval = 42;

@@ -12,7 +12,6 @@
 
 
 
-
 var gCL = Intl.getCanonicalLocales;
 
 function assertArray(l, r) {

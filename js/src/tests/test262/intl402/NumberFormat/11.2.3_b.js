@@ -10,7 +10,6 @@
 
 
 
-
 var locales = ["ja-JP", "zh-Hans-CN", "zh-Hant-TW"];
 var input = 1234567.89;
 

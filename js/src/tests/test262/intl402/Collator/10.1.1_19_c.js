@@ -10,7 +10,6 @@
 
 
 
-
 var options = [
     {key: "kn", property: "numeric", type: "boolean", values: [true, false]},
     {key: "kf", property: "caseFirst", type: "string", values: ["upper", "lower", "false"]}

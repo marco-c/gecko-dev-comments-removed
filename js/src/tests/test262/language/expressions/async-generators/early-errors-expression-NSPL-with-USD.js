@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+(async function*(x = 1) {"use strict"});

@@ -9,7 +9,6 @@
 
 
 
-
 var formatter = new Intl.NumberFormat();
 var testData = [undefined, null, true, '0.6666666', {valueOf: function () { return '0.1234567';}}];
 var number;

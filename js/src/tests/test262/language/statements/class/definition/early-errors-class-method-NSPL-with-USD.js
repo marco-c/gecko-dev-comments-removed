@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+class Foo {
+  async bar(x = 1) {"use strict"}
+}

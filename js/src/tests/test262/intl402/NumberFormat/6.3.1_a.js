@@ -7,7 +7,6 @@
 
 
 
-
 var wellFormedCurrencyCodes = [
     "BOB",
     "EUR",

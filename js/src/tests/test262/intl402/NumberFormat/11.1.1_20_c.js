@@ -11,7 +11,6 @@
 
 
 
-
 var currencyDigits = {
     AED: 2,
     AFN: 2,

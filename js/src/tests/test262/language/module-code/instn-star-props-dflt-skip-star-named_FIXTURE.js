@@ -3,5 +3,3 @@
 
 
 export * from './instn-star-props-dflt-skip-named_FIXTURE.js';
-
-reportCompare(0, 0);

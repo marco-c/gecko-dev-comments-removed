@@ -19,7 +19,6 @@
 
 
 
-
 assert.sameValue(Intl.Collator.supportedLocalesOf.name, "supportedLocalesOf");
 
 verifyNotEnumerable(Intl.Collator.supportedLocalesOf, "name");

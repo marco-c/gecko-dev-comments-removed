@@ -12,7 +12,6 @@
 
 
 
-
 var collator = new Intl.Collator();
 var pairs = [
     

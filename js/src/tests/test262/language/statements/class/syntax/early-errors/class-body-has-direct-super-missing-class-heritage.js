@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class A {
+  constructor() {
+    super();
+  }
+}
+

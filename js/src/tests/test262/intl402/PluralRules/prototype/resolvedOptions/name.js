@@ -8,7 +8,6 @@
 
 
 
-
 assert.sameValue(Intl.PluralRules.prototype.resolvedOptions.name, "resolvedOptions");
 
 verifyNotEnumerable(Intl.PluralRules.prototype.resolvedOptions, "name");

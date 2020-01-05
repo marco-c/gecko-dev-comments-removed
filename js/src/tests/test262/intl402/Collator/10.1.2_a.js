@@ -10,7 +10,6 @@
 
 
 
-
 var locales = ["tlh", "id", "en"];
 var a = ["A", "C", "E", "B", "D", "F"];
 var referenceCollator = new Intl.Collator(locales);

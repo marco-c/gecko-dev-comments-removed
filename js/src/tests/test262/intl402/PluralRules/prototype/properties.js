@@ -7,7 +7,6 @@
 
 
 
-
 var desc = Object.getOwnPropertyDescriptor(Intl.PluralRules, "prototype");
 if (desc === undefined) {
     $ERROR("Intl.PluralRules.prototype is not defined.");

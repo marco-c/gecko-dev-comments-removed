@@ -10,7 +10,6 @@
 
 
 
-
 var locales = ["ja-JP", "zh-Hans-CN", "zh-Hant-TW"];
 var input = new Date(Date.parse("1989-11-09T17:57:00Z"));
 

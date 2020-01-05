@@ -7,7 +7,6 @@
 
 
 
-
 function checkCollation(extensionCoValue, usageValue, expectedCollations, expectedUsage) {
     var requestLocale = extensionCoValue !== undefined ? "de-DE-u-co-" + extensionCoValue : "de-DE";
     var options = usageValue !== undefined ? { usage: usageValue } : undefined;

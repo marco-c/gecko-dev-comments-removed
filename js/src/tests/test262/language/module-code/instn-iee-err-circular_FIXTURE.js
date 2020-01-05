@@ -3,5 +3,3 @@
 
 
 export { x } from './instn-iee-err-circular.js';
-
-reportCompare(0, 0);

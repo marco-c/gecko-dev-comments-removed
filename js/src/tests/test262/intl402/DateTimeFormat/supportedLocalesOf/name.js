@@ -19,7 +19,6 @@
 
 
 
-
 assert.sameValue(Intl.DateTimeFormat.supportedLocalesOf.name, "supportedLocalesOf");
 
 verifyNotEnumerable(Intl.DateTimeFormat.supportedLocalesOf, "name");

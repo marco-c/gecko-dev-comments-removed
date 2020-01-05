@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+$ERROR('This code should not be executed.');
+
+try { } catch (x) { let x; }

@@ -10,7 +10,6 @@
 
 
 
-
 taintProperties(["locale", "extension", "extensionIndex"]);
 
 testWithIntlConstructors(function (Constructor) {

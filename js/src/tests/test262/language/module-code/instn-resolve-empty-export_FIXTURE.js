@@ -3,5 +3,3 @@
 
 
 0++;
-
-reportCompare(0, 0);

@@ -7,7 +7,6 @@
 
 
 
-
 var validValues = ["CNY", "USD", "EUR", "IDR", "jpy", {toString: function () {return "INR";}}];
 var invalidValues = ["$", "SFr.", "US$", "ßP", {toString: function () {return;}}];
 

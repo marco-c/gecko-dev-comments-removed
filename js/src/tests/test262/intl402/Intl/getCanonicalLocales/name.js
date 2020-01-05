@@ -11,7 +11,6 @@
 
 
 
-
 assert.sameValue(Intl.getCanonicalLocales.name, 'getCanonicalLocales',
   'The value of `Intl.getCanonicalLocales.name` is `"getCanonicalLocales"`'
 );

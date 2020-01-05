@@ -9,7 +9,6 @@
 
 
 
-
 var formatter = new Intl.NumberFormat();
   
 if (formatter.format(1) === formatter.format(-1)) {

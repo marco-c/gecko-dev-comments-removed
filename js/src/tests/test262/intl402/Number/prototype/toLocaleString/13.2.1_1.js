@@ -7,7 +7,6 @@
 
 
 
-
 var invalidValues = [undefined, null, "5", false, {valueOf: function () { return 5; }}];
 var validValues = [5, NaN, -1234567.89, -Infinity];
 

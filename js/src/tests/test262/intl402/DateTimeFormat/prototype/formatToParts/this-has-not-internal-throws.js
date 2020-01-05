@@ -6,7 +6,6 @@
 
 
 
-
 var formatToParts = Intl.DateTimeFormat.prototype.formatToParts;
 
 assert.throws(TypeError, function() {

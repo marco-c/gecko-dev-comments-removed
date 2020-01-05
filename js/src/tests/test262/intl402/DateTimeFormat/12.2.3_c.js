@@ -10,7 +10,6 @@
 
 
 
-
 var locales = ["de-DE", "en-US", "hi-IN", "id-ID", "ja-JP", "th-TH", "zh-Hans-CN", "zh-Hant-TW", "zxx"];
 var subsets = [
     {weekday: "long", year: "numeric", month: "numeric", day: "numeric",

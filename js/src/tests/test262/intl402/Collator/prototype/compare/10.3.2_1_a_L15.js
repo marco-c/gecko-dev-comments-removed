@@ -12,7 +12,6 @@
 
 
 
-
 testBuiltInObject(new Intl.Collator().compare, true, false, [], 2);
 
 reportCompare(0, 0);

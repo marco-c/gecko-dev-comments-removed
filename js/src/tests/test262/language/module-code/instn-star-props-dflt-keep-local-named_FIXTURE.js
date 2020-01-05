@@ -4,5 +4,3 @@
 
 var x = null;
 export { x as default };
-
-reportCompare(0, 0);

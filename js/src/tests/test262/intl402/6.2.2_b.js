@@ -8,7 +8,6 @@
 
 
 
-
 var invalidLanguageTags = [
     "de_DE",
     "DE_de",

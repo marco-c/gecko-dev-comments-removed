@@ -6,7 +6,6 @@
 
 
 
-
 assert.sameValue(
   typeof Intl.NumberFormat.prototype.formatToParts,
   'function',

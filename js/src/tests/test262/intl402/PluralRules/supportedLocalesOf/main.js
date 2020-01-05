@@ -9,7 +9,6 @@
 
 
 
-
 var defaultLocale = new Intl.PluralRules().resolvedOptions().locale;
 var notSupported = 'zxx'; 
 var requestedLocales = [defaultLocale, notSupported];

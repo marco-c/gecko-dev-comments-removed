@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var obj = {
+  *g() {
+    yield ? yield : yield;
+  }
+};

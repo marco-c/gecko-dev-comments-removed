@@ -19,7 +19,6 @@
 
 
 
-
 assert.sameValue(Intl.NumberFormat.name, "NumberFormat");
 
 verifyNotEnumerable(Intl.NumberFormat, "name");

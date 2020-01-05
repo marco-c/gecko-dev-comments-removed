@@ -7,7 +7,6 @@
 
 
 
-
 var desc = Object.getOwnPropertyDescriptor(Intl.NumberFormat, "prototype");
 if (desc === undefined) {
     $ERROR("Intl.NumberFormat.prototype is not defined.");

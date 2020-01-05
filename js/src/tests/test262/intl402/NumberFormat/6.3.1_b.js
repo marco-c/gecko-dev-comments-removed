@@ -7,7 +7,6 @@
 
 
 
-
 var invalidCurrencyCodes = [
     "",
     "€",

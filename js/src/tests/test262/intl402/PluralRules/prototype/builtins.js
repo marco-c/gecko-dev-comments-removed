@@ -11,7 +11,6 @@
 
 
 
-
 testBuiltInObject(Intl.PluralRules.prototype, false, false, ["constructor", "select", "resolvedOptions"]);
 
 reportCompare(0, 0);

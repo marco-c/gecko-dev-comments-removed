@@ -9,7 +9,6 @@
 
 
 
-
 var numberingSystems = {
     arab: 0x0660,
     arabext: 0x06F0,

@@ -11,7 +11,6 @@
 
 
 
-
 var actual = new Intl.DateTimeFormat().resolvedOptions();
 
 var actual2 = new Intl.DateTimeFormat().resolvedOptions();

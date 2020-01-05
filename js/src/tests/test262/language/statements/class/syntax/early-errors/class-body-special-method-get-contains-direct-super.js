@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class A {
+  get method() {
+    super();
+  }
+}
+

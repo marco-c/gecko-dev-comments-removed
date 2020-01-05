@@ -9,7 +9,6 @@
 
 
 
-
 var functions = {
     toLocaleString: Date.prototype.toLocaleString,
     toLocaleDateString: Date.prototype.toLocaleDateString,

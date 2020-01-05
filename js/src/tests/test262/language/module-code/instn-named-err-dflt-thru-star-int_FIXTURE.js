@@ -3,5 +3,3 @@
 
 
 export * from './instn-named-err-dflt-thru-star-dflt_FIXTURE.js';
-
-reportCompare(0, 0);

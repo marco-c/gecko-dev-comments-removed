@@ -7,7 +7,6 @@
 
 
 
-
 var desc = Object.getOwnPropertyDescriptor(Intl.Collator, "prototype");
 if (desc === undefined) {
     $ERROR("Intl.Collator.prototype is not defined.");

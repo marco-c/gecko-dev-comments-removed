@@ -11,7 +11,6 @@
 
 
 
-
 var hasUnicodeDigits = new RegExp('.*([' +
     '0-9\u0660-\u0669\u06F0-\u06F9\u07C0-\u07C9\u0966-\u096F' +
     '\u09E6-\u09EF\u0A66-\u0A6F\u0AE6-\u0AEF\u0B66-\u0B6F\u0BE6-\u0BEF' +

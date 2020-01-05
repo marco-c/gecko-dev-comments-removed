@@ -3,5 +3,3 @@
 
 
 export { default } from './instn-star-props-dflt-keep-indirect-def_FIXTURE.js';
-
-reportCompare(0, 0);

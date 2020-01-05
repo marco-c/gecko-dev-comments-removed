@@ -5,5 +5,3 @@
 Function('return this;')().test262 += '6';
 
 export default null;
-
-reportCompare(0, 0);

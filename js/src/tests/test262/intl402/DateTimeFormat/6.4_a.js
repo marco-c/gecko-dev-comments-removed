@@ -7,7 +7,6 @@
 
 
 
-
 var validTimeZoneNames = [
     "UTC",
     "utc" 

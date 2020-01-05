@@ -3,5 +3,3 @@
 
 
 Function('return this;')().test262 += '5';
-
-reportCompare(0, 0);
