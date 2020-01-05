@@ -17,8 +17,11 @@ module.exports = {
     "TextDecoder": false,
     "TextEncoder": false,
     
+    "AppConstants": true,
     "Extension": true,
+    "ExtensionAPI": true,
     "ExtensionManagement": true,
+    "ExtensionUtils": true,
     "extensions": true,
     "getContainerForCookieStoreId": true,
     "getCookieStoreIdForContainer": true,
