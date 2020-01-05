@@ -1,10 +1,10 @@
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+// vim:cindent:ts=2:et:sw=2:
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
+/* rules in a CSS stylesheet other than style rules (e.g., @import rules) */
 
 #ifndef nsCSSRules_h_
 #define nsCSSRules_h_
@@ -56,11 +56,11 @@ public:
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(MediaRule, GroupRule)
   NS_DECL_ISUPPORTS_INHERITED
 
-  
+  // Rule methods
 #ifdef DEBUG
   virtual void List(FILE* out = stdout, int32_t aIndent = 0) const override;
 #endif
-  virtual void SetStyleSheet(mozilla::StyleSheet* aSheet) override; 
+  virtual void SetStyleSheet(mozilla::StyleSheet* aSheet) override; //override GroupRule
   mozilla::CSSStyleSheet* GetStyleSheet() const
   {
     mozilla::StyleSheet* sheet = GroupRule::GetStyleSheet();
@@ -73,27 +73,30 @@ public:
     return this;
   }
 
-  
+  // nsIDOMCSSRule interface
   NS_DECL_NSIDOMCSSRULE
 
-  
+  // nsIDOMCSSGroupingRule interface
   NS_DECL_NSIDOMCSSGROUPINGRULE
 
-  
+  // nsIDOMCSSConditionRule interface
   NS_DECL_NSIDOMCSSCONDITIONRULE
 
-  
+  // nsIDOMCSSMediaRule interface
   NS_DECL_NSIDOMCSSMEDIARULE
 
-  
+  // rest of GroupRule
   virtual bool UseForPresentation(nsPresContext* aPresContext,
                                     nsMediaQueryResultCacheKey& aKey) override;
 
-  
+  // @media rule methods
   nsresult SetMedia(nsMediaList* aMedia);
   
   virtual size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf)
     const override MOZ_MUST_OVERRIDE;
+
+  virtual JSObject* WrapObject(JSContext* aCx,
+                               JS::Handle<JSObject*> aGivenProto) override;
 
 protected:
   void AppendConditionText(nsAString& aOutput);
@@ -113,7 +116,7 @@ public:
 
   NS_DECL_ISUPPORTS_INHERITED
 
-  
+  // Rule methods
 #ifdef DEBUG
   virtual void List(FILE* out = stdout, int32_t aIndent = 0) const override;
 #endif
@@ -124,19 +127,19 @@ public:
     return this;
   }
 
-  
+  // nsIDOMCSSRule interface
   NS_DECL_NSIDOMCSSRULE
 
-  
+  // nsIDOMCSSGroupingRule interface
   NS_DECL_NSIDOMCSSGROUPINGRULE
 
-  
+  // nsIDOMCSSConditionRule interface
   NS_DECL_NSIDOMCSSCONDITIONRULE
 
-  
+  // nsIDOMCSSMozDocumentRule interface
   NS_DECL_NSIDOMCSSMOZDOCUMENTRULE
 
-  
+  // rest of GroupRule
   virtual bool UseForPresentation(nsPresContext* aPresContext,
                                     nsMediaQueryResultCacheKey& aKey) override;
 
@@ -169,13 +172,16 @@ public:
   virtual size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf)
     const override MOZ_MUST_OVERRIDE;
 
+  virtual JSObject* WrapObject(JSContext* aCx,
+                               JS::Handle<JSObject*> aGivenProto) override;
+
 protected:
   void AppendConditionText(nsAString& aOutput);
 
-  nsAutoPtr<URL> mURLs; 
+  nsAutoPtr<URL> mURLs; // linked list of |struct URL| above.
 };
 
-} 
+} // namespace css
 
 struct CSSFontFaceDescriptors
 {
@@ -190,9 +196,9 @@ private:
   static nsCSSValue CSSFontFaceDescriptors::* const Fields[];
 };
 
-} 
+} // namespace mozilla
 
-
+// A nsCSSFontFaceStyleDecl is always embedded in a nsCSSFontFaceRule.
 class nsCSSFontFaceRule;
 class nsCSSFontFaceStyleDecl final : public nsICSSDeclaration
 {
@@ -224,9 +230,9 @@ protected:
   mozilla::CSSFontFaceDescriptors mDescriptors;
 
 private:
-  
-  
-  
+  // NOT TO BE IMPLEMENTED
+  // This object cannot be allocated on its own, only as part of
+  // nsCSSFontFaceRule.
   void* operator new(size_t size) CPP_THROW_NEW;
 };
 
@@ -235,18 +241,24 @@ class nsCSSFontFaceRule final : public mozilla::css::Rule,
 {
 public:
   nsCSSFontFaceRule(uint32_t aLineNumber, uint32_t aColumnNumber)
-    : mozilla::css::Rule(aLineNumber, aColumnNumber) {}
+    : mozilla::css::Rule(aLineNumber, aColumnNumber)
+  {
+    SetIsNotDOMBinding();
+  }
 
   nsCSSFontFaceRule(const nsCSSFontFaceRule& aCopy)
-    
-    : mozilla::css::Rule(aCopy), mDecl(aCopy.mDecl) {}
+    // copy everything except our reference count
+    : mozilla::css::Rule(aCopy), mDecl(aCopy.mDecl)
+  {
+    SetIsNotDOMBinding();
+  }
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS_INHERITED(nsCSSFontFaceRule,
                                                          mozilla::css::Rule)
   virtual bool IsCCLeaf() const override;
 
-  
+  // Rule methods
   DECL_STYLE_RULE_INHERIT
 #ifdef DEBUG
   virtual void List(FILE* out = stdout, int32_t aIndent = 0) const override;
@@ -254,16 +266,19 @@ public:
   virtual int32_t GetType() const override;
   virtual already_AddRefed<mozilla::css::Rule> Clone() const override;
 
-  
+  // nsIDOMCSSRule interface
   NS_DECL_NSIDOMCSSRULE
 
-  
+  // nsIDOMCSSFontFaceRule interface
   NS_DECL_NSIDOMCSSFONTFACERULE
 
   void SetDesc(nsCSSFontDesc aDescID, nsCSSValue const & aValue);
   void GetDesc(nsCSSFontDesc aDescID, nsCSSValue & aValue);
 
   virtual size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const override;
+
+  virtual JSObject* WrapObject(JSContext* aCx,
+                               JS::Handle<JSObject*> aGivenProto) override;
 
   void GetDescriptors(mozilla::CSSFontFaceDescriptors& aDescriptors) const
     { aDescriptors = mDecl.mDescriptors; }
@@ -275,8 +290,8 @@ protected:
   nsCSSFontFaceStyleDecl mDecl;
 };
 
-
-
+// nsFontFaceRuleContainer - used for associating sheet type with
+// specific @font-face rules
 struct nsFontFaceRuleContainer {
   RefPtr<nsCSSFontFaceRule> mRule;
   mozilla::SheetType mSheetType;
@@ -301,18 +316,24 @@ class nsCSSFontFeatureValuesRule final : public mozilla::css::Rule,
 {
 public:
   nsCSSFontFeatureValuesRule(uint32_t aLineNumber, uint32_t aColumnNumber)
-    : mozilla::css::Rule(aLineNumber, aColumnNumber) {}
+    : mozilla::css::Rule(aLineNumber, aColumnNumber)
+  {
+    SetIsNotDOMBinding();
+  }
 
   nsCSSFontFeatureValuesRule(const nsCSSFontFeatureValuesRule& aCopy)
-    
+    // copy everything except our reference count
     : mozilla::css::Rule(aCopy),
       mFamilyList(aCopy.mFamilyList),
-      mFeatureValues(aCopy.mFeatureValues) {}
+      mFeatureValues(aCopy.mFeatureValues)
+  {
+    SetIsNotDOMBinding();
+  }
 
   NS_DECL_ISUPPORTS_INHERITED
   virtual bool IsCCLeaf() const override;
 
-  
+  // Rule methods
   DECL_STYLE_RULE_INHERIT
 #ifdef DEBUG
   virtual void List(FILE* out = stdout, int32_t aIndent = 0) const override;
@@ -320,10 +341,10 @@ public:
   virtual int32_t GetType() const override;
   virtual already_AddRefed<mozilla::css::Rule> Clone() const override;
 
-  
+  // nsIDOMCSSRule interface
   NS_DECL_NSIDOMCSSRULE
 
-  
+  // nsIDOMCSSFontFaceRule interface
   NS_DECL_NSIDOMCSSFONTFEATUREVALUESRULE
 
   const mozilla::FontFamilyList& GetFamilyList() { return mFamilyList; }
@@ -338,6 +359,9 @@ public:
   }
 
   virtual size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const override;
+
+  virtual JSObject* WrapObject(JSContext* aCx,
+                               JS::Handle<JSObject*> aGivenProto) override;
 
 protected:
   ~nsCSSFontFeatureValuesRule() {}
@@ -369,8 +393,8 @@ public:
 protected:
   virtual ~nsCSSKeyframeStyleDeclaration();
 
-  
-  
+  // This reference is not reference-counted. The rule object tells us
+  // when it's about to go away.
   nsCSSKeyframeRule* MOZ_NON_OWNING_REF mRule;
 };
 
@@ -378,7 +402,7 @@ class nsCSSKeyframeRule final : public mozilla::css::Rule,
                                 public nsIDOMCSSKeyframeRule
 {
 public:
-  
+  // Steals the contents of aKeys, and takes the reference in Declaration
   nsCSSKeyframeRule(InfallibleTArray<float>&& aKeys,
                     already_AddRefed<mozilla::css::Declaration>&& aDeclaration,
                     uint32_t aLineNumber, uint32_t aColumnNumber)
@@ -386,6 +410,7 @@ public:
     , mKeys(mozilla::Move(aKeys))
     , mDeclaration(mozilla::Move(aDeclaration))
   {
+    SetIsNotDOMBinding();
     mDeclaration->SetOwningRule(this);
   }
 private:
@@ -396,7 +421,7 @@ public:
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(nsCSSKeyframeRule, mozilla::css::Rule)
   virtual bool IsCCLeaf() const override;
 
-  
+  // Rule methods
   DECL_STYLE_RULE_INHERIT
 #ifdef DEBUG
   virtual void List(FILE* out = stdout, int32_t aIndent = 0) const override;
@@ -404,10 +429,10 @@ public:
   virtual int32_t GetType() const override;
   virtual already_AddRefed<mozilla::css::Rule> Clone() const override;
 
-  
+  // nsIDOMCSSRule interface
   NS_DECL_NSIDOMCSSRULE
 
-  
+  // nsIDOMCSSKeyframeRule interface
   NS_DECL_NSIDOMCSSKEYFRAMERULE
 
   const nsTArray<float>& GetKeys() const     { return mKeys; }
@@ -417,12 +442,15 @@ public:
 
   virtual size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const override;
 
+  virtual JSObject* WrapObject(JSContext* aCx,
+                               JS::Handle<JSObject*> aGivenProto) override;
+
   void DoGetKeyText(nsAString &aKeyText) const;
 
 private:
   nsTArray<float>                            mKeys;
   RefPtr<mozilla::css::Declaration>          mDeclaration;
-  
+  // lazily created when needed:
   RefPtr<nsCSSKeyframeStyleDeclaration>    mDOMDeclaration;
 };
 
@@ -435,6 +463,7 @@ public:
     : mozilla::css::GroupRule(aLineNumber, aColumnNumber)
     , mName(aName)
   {
+    SetIsNotDOMBinding();
   }
 private:
   nsCSSKeyframesRule(const nsCSSKeyframesRule& aCopy);
@@ -442,7 +471,7 @@ private:
 public:
   NS_DECL_ISUPPORTS_INHERITED
 
-  
+  // Rule methods
 #ifdef DEBUG
   virtual void List(FILE* out = stdout, int32_t aIndent = 0) const override;
 #endif
@@ -453,19 +482,22 @@ public:
     return this;
   }
 
-  
+  // nsIDOMCSSRule interface
   NS_DECL_NSIDOMCSSRULE
 
-  
+  // nsIDOMCSSKeyframesRule interface
   NS_DECL_NSIDOMCSSKEYFRAMESRULE
 
-  
+  // rest of GroupRule
   virtual bool UseForPresentation(nsPresContext* aPresContext,
                                     nsMediaQueryResultCacheKey& aKey) override;
 
   const nsString& GetName() { return mName; }
 
   virtual size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const override;
+
+  virtual JSObject* WrapObject(JSContext* aCx,
+                               JS::Handle<JSObject*> aGivenProto) override;
 
 private:
   uint32_t FindRuleIndexForKey(const nsAString& aKey);
@@ -496,8 +528,8 @@ public:
 protected:
   virtual ~nsCSSPageStyleDeclaration();
 
-  
-  
+  // This reference is not reference-counted. The rule object tells us
+  // when it's about to go away.
   nsCSSPageRule* MOZ_NON_OWNING_REF mRule;
 };
 
@@ -510,6 +542,7 @@ public:
     : mozilla::css::Rule(aLineNumber, aColumnNumber)
     , mDeclaration(aDeclaration)
   {
+    SetIsNotDOMBinding();
     mDeclaration->SetOwningRule(this);
   }
 private:
@@ -520,7 +553,7 @@ public:
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(nsCSSPageRule, mozilla::css::Rule)
   virtual bool IsCCLeaf() const override;
 
-  
+  // Rule methods
   DECL_STYLE_RULE_INHERIT
 #ifdef DEBUG
   virtual void List(FILE* out = stdout, int32_t aIndent = 0) const override;
@@ -528,10 +561,10 @@ public:
   virtual int32_t GetType() const override;
   virtual already_AddRefed<mozilla::css::Rule> Clone() const override;
 
-  
+  // nsIDOMCSSRule interface
   NS_DECL_NSIDOMCSSRULE
 
-  
+  // nsIDOMCSSPageRule interface
   NS_DECL_NSIDOMCSSPAGERULE
 
   mozilla::css::Declaration* Declaration()   { return mDeclaration; }
@@ -539,23 +572,27 @@ public:
   void ChangeDeclaration(mozilla::css::Declaration* aDeclaration);
 
   virtual size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const override;
+
+  virtual JSObject* WrapObject(JSContext* aCx,
+                               JS::Handle<JSObject*> aGivenProto) override;
+
 private:
   RefPtr<mozilla::css::Declaration>     mDeclaration;
-  
+  // lazily created when needed:
   RefPtr<nsCSSPageStyleDeclaration>     mDOMDeclaration;
 };
 
 namespace mozilla {
 
-class CSSSupportsRule : public css::GroupRule,
-                        public nsIDOMCSSSupportsRule
+class CSSSupportsRule final : public css::GroupRule,
+                              public nsIDOMCSSSupportsRule
 {
 public:
   CSSSupportsRule(bool aConditionMet, const nsString& aCondition,
                   uint32_t aLineNumber, uint32_t aColumnNumber);
   CSSSupportsRule(const CSSSupportsRule& aCopy);
 
-  
+  // Rule methods
 #ifdef DEBUG
   virtual void List(FILE* out = stdout, int32_t aIndent = 0) const override;
 #endif
@@ -570,19 +607,22 @@ public:
 
   NS_DECL_ISUPPORTS_INHERITED
 
-  
+  // nsIDOMCSSRule interface
   NS_DECL_NSIDOMCSSRULE
 
-  
+  // nsIDOMCSSGroupingRule interface
   NS_DECL_NSIDOMCSSGROUPINGRULE
 
-  
+  // nsIDOMCSSConditionRule interface
   NS_DECL_NSIDOMCSSCONDITIONRULE
 
-  
+  // nsIDOMCSSSupportsRule interface
   NS_DECL_NSIDOMCSSSUPPORTSRULE
 
   virtual size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const override;
+
+  virtual JSObject* WrapObject(JSContext* aCx,
+                               JS::Handle<JSObject*> aGivenProto) override;
 
 protected:
   virtual ~CSSSupportsRule();
@@ -591,7 +631,7 @@ protected:
   nsString mCondition;
 };
 
-} 
+} // namespace mozilla
 
 class nsCSSCounterStyleRule final : public mozilla::css::Rule,
                                     public nsIDOMCSSCounterStyleRule
@@ -603,6 +643,7 @@ public:
     , mName(aName)
     , mGeneration(0)
   {
+    SetIsNotDOMBinding();
   }
 
 private:
@@ -613,7 +654,7 @@ public:
   NS_DECL_ISUPPORTS_INHERITED
   virtual bool IsCCLeaf() const override;
 
-  
+  // Rule methods
   DECL_STYLE_RULE_INHERIT
 #ifdef DEBUG
   virtual void List(FILE* out = stdout, int32_t aIndent = 0) const override;
@@ -621,14 +662,14 @@ public:
   virtual int32_t GetType() const override;
   virtual already_AddRefed<mozilla::css::Rule> Clone() const override;
 
-  
+  // nsIDOMCSSRule interface
   NS_DECL_NSIDOMCSSRULE
 
-  
+  // nsIDOMCSSCounterStyleRule
   NS_DECL_NSIDOMCSSCOUNTERSTYLERULE
 
-  
-  
+  // This function is only used to check whether a non-empty value, which has
+  // been accepted by parser, is valid for the given system and descriptor.
   static bool CheckDescValue(int32_t aSystem,
                              nsCSSCounterDesc aDescID,
                              const nsCSSValue& aValue);
@@ -651,6 +692,9 @@ public:
 
   virtual size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const override;
 
+  virtual JSObject* WrapObject(JSContext* aCx,
+                               JS::Handle<JSObject*> aGivenProto) override;
+
 private:
   typedef NS_STDCALL_FUNCPROTO(nsresult, Getter, nsCSSCounterStyleRule,
                                GetSymbols, (nsAString&));
@@ -664,4 +708,4 @@ private:
   uint32_t   mGeneration;
 };
 
-#endif 
+#endif /* !defined(nsCSSRules_h_) */
