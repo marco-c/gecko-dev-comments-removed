@@ -1,3 +1,9 @@
+
+
+
+
+"use strict";
+
 const kTransitionalProcessing = false;
 
 
@@ -13,9 +19,9 @@ const labels = [
 
   
   
-  "m\200cn",
+  "m\u200cn",
   
-  "p\200dq",
+  "p\u200dq",
 ];
 
 const transitionalExpected = [
