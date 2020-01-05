@@ -64,7 +64,8 @@ fn load(mut load_data: LoadData, start_chan: Sender<TargetedLoadResponse>, cooki
     
     
     
-    let viewing_source = if &*url.scheme == "view-source" {
+    let viewing_source = url.scheme == "view-source";
+    if viewing_source {
         let inner_url = load_data.url.non_relative_scheme_data().unwrap();
         url = Url::parse(inner_url).unwrap();
         match &*url.scheme {
@@ -75,10 +76,7 @@ fn load(mut load_data: LoadData, start_chan: Sender<TargetedLoadResponse>, cooki
                 return;
             }
         };
-        true
-    } else {
-        false
-    };
+    }
 
     
     loop {
