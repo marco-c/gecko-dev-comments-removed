@@ -453,6 +453,12 @@ SessionStore.prototype = {
         this.onTabSelect(window, browser);
         break;
       }
+      case "TabMove": {
+        let browser = aEvent.target;
+        log("TabMove for tab " + window.BrowserApp.getTabForBrowser(browser).id);
+        this.onTabMove();
+        break;
+      }
       case "DOMTitleChanged": {
         
         
@@ -570,6 +576,7 @@ SessionStore.prototype = {
     browsers.addEventListener("TabOpen", this, true);
     browsers.addEventListener("TabClose", this, true);
     browsers.addEventListener("TabSelect", this, true);
+    browsers.addEventListener("TabMove", this, true);
     browsers.addEventListener("TabPreZombify", this, true);
     browsers.addEventListener("TabPostZombify", this, true);
   },
@@ -584,6 +591,7 @@ SessionStore.prototype = {
     browsers.removeEventListener("TabOpen", this, true);
     browsers.removeEventListener("TabClose", this, true);
     browsers.removeEventListener("TabSelect", this, true);
+    browsers.removeEventListener("TabMove", this, true);
     browsers.removeEventListener("TabPreZombify", this, true);
     browsers.removeEventListener("TabPostZombify", this, true);
 
@@ -823,6 +831,17 @@ SessionStore.prototype = {
     delete browser.__SS_restore;
     browser.removeAttribute("pending");
     log("restoring zombie tab " + aTab.id);
+  },
+
+  onTabMove: function ss_onTabMove() {
+    if (this._loadState != STATE_RUNNING) {
+      return;
+    }
+
+    
+    
+    this._lastClosedTabIndex = -1;
+    this.saveStateDelayed();
   },
 
   onTabInput: function ss_onTabInput(aWindow, aBrowser) {
