@@ -183,6 +183,10 @@ public abstract class GeckoApp
     
     private static final int CLEANUP_DEFERRAL_SECONDS = 15;
 
+    
+    
+    private static final int STARTUP_PHASE_DURATION_MS = 30 * 1000;
+
     private static boolean sAlreadyLoaded;
 
     protected boolean mIgnoreLastSelectedTab;
@@ -743,6 +747,14 @@ public abstract class GeckoApp
             }
 
             ((GeckoApplication) getApplicationContext()).onDelayedStartup();
+
+            
+            ThreadUtils.postDelayedToBackgroundThread(new Runnable() {
+                @Override
+                public void run() {
+                    getSharedPreferences().edit().putInt(PREFS_CRASHED_COUNT, 0).apply();
+                }
+            }, STARTUP_PHASE_DURATION_MS);
 
         } else if ("Gecko:Exited".equals(event)) {
             
