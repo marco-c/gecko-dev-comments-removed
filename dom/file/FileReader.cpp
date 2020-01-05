@@ -349,18 +349,21 @@ FileReader::ReadFileContent(Blob& aBlob,
                             eDataFormat aDataFormat,
                             ErrorResult& aRv)
 {
+  
+  ErrorResult error;
+  Abort(error);
+  error.SuppressException();
+
   if (mReadyState == LOADING) {
-    aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
+    
+    
+    
+    aRv.Throw(NS_ERROR_ABORT);
     return;
   }
 
   mError = nullptr;
-
   SetDOMStringToNull(mResult);
-  mResultArrayBuffer = nullptr;
-
-  mAsyncStream = nullptr;
-
   mTransferred = 0;
   mTotal = 0;
   mReadyState = EMPTY;
