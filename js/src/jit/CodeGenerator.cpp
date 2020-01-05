@@ -11489,7 +11489,7 @@ CodeGenerator::visitAsmJSParameterI64(LAsmJSParameterI64* lir)
 }
 
 void
-CodeGenerator::visitAsmJSReturn(LAsmJSReturn* lir)
+CodeGenerator::visitWasmReturn(LWasmReturn* lir)
 {
     
     if (current->mir() != *gen->graph().poBegin())
@@ -11497,7 +11497,7 @@ CodeGenerator::visitAsmJSReturn(LAsmJSReturn* lir)
 }
 
 void
-CodeGenerator::visitAsmJSReturnI64(LAsmJSReturnI64* lir)
+CodeGenerator::visitWasmReturnI64(LWasmReturnI64* lir)
 {
     
     if (current->mir() != *gen->graph().poBegin())
@@ -11505,7 +11505,7 @@ CodeGenerator::visitAsmJSReturnI64(LAsmJSReturnI64* lir)
 }
 
 void
-CodeGenerator::visitAsmJSVoidReturn(LAsmJSVoidReturn* lir)
+CodeGenerator::visitWasmReturnVoid(LWasmReturnVoid* lir)
 {
     
     if (current->mir() != *gen->graph().poBegin())
