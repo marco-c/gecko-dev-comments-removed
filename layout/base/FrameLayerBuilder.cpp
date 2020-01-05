@@ -1527,6 +1527,11 @@ struct MaskLayerUserData : public LayerUserData
   int32_t mAppUnitsPerDevPixel;
 };
 
+
+
+
+
+
 class MaskImageData
 {
 public:
@@ -1535,6 +1540,8 @@ public:
     , mSize(aSize)
     , mLayerManager(aLayerManager)
   {
+    MOZ_ASSERT(!mSize.IsEmpty());
+    MOZ_ASSERT(mLayerManager);
   }
 
   ~MaskImageData()
@@ -1549,7 +1556,6 @@ public:
 
   gfx::DrawTarget* CreateDrawTarget()
   {
-    MOZ_ASSERT(mLayerManager);
     if (mDrawTarget) {
       return mDrawTarget;
     }
@@ -1585,6 +1591,20 @@ public:
     return mDrawTarget;
   }
 
+  already_AddRefed<ImageContainer> CreateImageAndImageContainer()
+  {
+    RefPtr<ImageContainer> container = mLayerManager->CreateImageContainer();
+    RefPtr<Image> image = CreateImage();
+
+    if (!image) {
+      return nullptr;
+    }
+    container->SetCurrentImageInTransaction(image);
+
+    return container.forget();
+  }
+
+private:
   already_AddRefed<Image> CreateImage()
   {
     if (mLayerManager->GetBackendType() == LayersBackend::LAYERS_BASIC &&
@@ -1604,10 +1624,10 @@ public:
           new TextureWrapperImage(mTextureClient, gfx::IntRect(gfx::IntPoint(0, 0), mSize));
       return image.forget();
     }
+
     return nullptr;
   }
 
-private:
   bool mTextureClientLocked;
   gfx::IntSize mSize;
   LayerManager* mLayerManager;
@@ -6114,14 +6134,13 @@ ContainerState::CreateMaskLayer(Layer *aLayer,
                                              aRoundedRectClipCount);
 
     
-    container = aLayer->Manager()->CreateImageContainer();
+    MOZ_ASSERT(aLayer->Manager() == mManager);
+    container = imageData.CreateImageAndImageContainer();
     NS_ASSERTION(container, "Could not create image container for mask layer.");
 
-    RefPtr<Image> image = imageData.CreateImage();
-    if (!image) {
+    if (!container) {
       return nullptr;
     }
-    container->SetCurrentImageInTransaction(image);
 
     GetMaskLayerImageCache()->PutImage(newKey.forget(), container);
   }
