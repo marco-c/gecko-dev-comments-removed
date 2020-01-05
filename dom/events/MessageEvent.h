@@ -49,14 +49,6 @@ public:
 
   void GetPorts(nsTArray<RefPtr<MessagePort>>& aPorts);
 
-  
-  void SetSource(mozilla::dom::MessagePort* aPort);
-
-  void SetSource(nsPIDOMWindowInner* aWindow)
-  {
-    mWindowSource = aWindow;
-  }
-
   static already_AddRefed<MessageEvent>
   Constructor(const GlobalObject& aGlobal,
               const nsAString& aType,
