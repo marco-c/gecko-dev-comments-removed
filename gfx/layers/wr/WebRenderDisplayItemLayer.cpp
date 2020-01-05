@@ -21,12 +21,14 @@ WebRenderDisplayItemLayer::RenderLayer()
   if (mItem) {
     
     mCommands.Clear();
-    mItem->CreateWebRenderCommands(mCommands, this);
+    mParentCommands.Clear();
+    mItem->CreateWebRenderCommands(mCommands, mParentCommands, this);
   }
   
   
 
   WrBridge()->AddWebRenderCommands(mCommands);
+  WrBridge()->AddWebRenderParentCommands(mParentCommands);
 }
 
 uint64_t
