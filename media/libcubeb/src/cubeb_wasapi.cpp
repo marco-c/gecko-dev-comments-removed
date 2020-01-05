@@ -858,6 +858,11 @@ wasapi_stream_render_loop(LPVOID stream)
   }
 
   
+  if (!emergency_bailout) {
+    is_playing = false;
+  }
+
+  
 
 
 
@@ -1166,12 +1171,16 @@ bool stop_and_join_render_thread(cubeb_stream * stm)
     
 
     *(stm->emergency_bailout) = true;
+    
+    stm->emergency_bailout = nullptr;
     LOG("Destroy WaitForSingleObject on thread timed out,"
         " leaking the thread: %lx", GetLastError());
     rv = false;
   }
   if (r == WAIT_FAILED) {
     *(stm->emergency_bailout) = true;
+    
+    stm->emergency_bailout = nullptr;
     LOG("Destroy WaitForSingleObject on thread failed: %lx", GetLastError());
     rv = false;
   }
@@ -1599,8 +1608,15 @@ int setup_wasapi_stream(cubeb_stream * stm)
     
     
     
+    
+#if !defined(NDEBUG)
+    const int silent_buffer_count = 2;
+#else
+    const int silent_buffer_count = 4;
+#endif
     stm->linear_input_buffer.push_silence(stm->input_buffer_frame_count *
-                                          stm->input_stream_params.channels * 2);
+                                          stm->input_stream_params.channels *
+                                          silent_buffer_count);
 
     if (rv != CUBEB_OK) {
       LOG("Failure to open the input side.");
@@ -1821,9 +1837,6 @@ void wasapi_stream_destroy(cubeb_stream * stm)
   if (stop_and_join_render_thread(stm)) {
     delete stm->emergency_bailout.load();
     stm->emergency_bailout = nullptr;
-  } else {
-    
-    XASSERT(*(stm->emergency_bailout));
   }
 
   unregister_notification_client(stm);
@@ -1885,10 +1898,10 @@ int stream_start_one_side(cubeb_stream * stm, StreamDirection dir)
 
 int wasapi_stream_start(cubeb_stream * stm)
 {
+  auto_lock lock(stm->stream_reset_lock);
+
   XASSERT(stm && !stm->thread && !stm->shutdown_event);
   XASSERT(stm->output_client || stm->input_client);
-
-  auto_lock lock(stm->stream_reset_lock);
 
   stm->emergency_bailout = new std::atomic<bool>(false);
 
@@ -1951,6 +1964,7 @@ int wasapi_stream_stop(cubeb_stream * stm)
   }
 
   if (stop_and_join_render_thread(stm)) {
+    
     if (stm->emergency_bailout.load()) {
       delete stm->emergency_bailout.load();
       stm->emergency_bailout = nullptr;
