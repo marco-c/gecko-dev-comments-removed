@@ -701,6 +701,18 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
 
 
 
+
+
+  isValidFragment(fragment) {
+    return fragment.cols.tracks.length && fragment.rows.tracks.length;
+  },
+
+  
+
+
+
+
+
   _hasMoved() {
     let hasMoved = AutoRefreshHighlighter.prototype._hasMoved.call(this);
 
@@ -740,8 +752,7 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
 
     
     for (let i = 0; i < this.gridData.length; i++) {
-      let fragment = this.gridData[i];
-      this.renderFragment(fragment);
+      this.renderFragment(this.gridData[i]);
     }
 
     
@@ -1030,6 +1041,10 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
   },
 
   renderFragment(fragment) {
+    if (!this.isValidFragment(fragment)) {
+      return;
+    }
+
     this.renderLines(fragment.cols, COLUMNS, "left", "top", "height",
                      this.getFirstRowLinePos(fragment),
                      this.getLastRowLinePos(fragment));
