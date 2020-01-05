@@ -9,22 +9,27 @@ var {
 
 var XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 
-function CommandList(manifest, extension) {
-  this.extension = extension;
-  this.id = makeWidgetId(extension.id);
-  this.windowOpenListener = null;
+this.commands = class extends ExtensionAPI {
+  onManifestEntry(entryName) {
+    let {extension} = this;
 
-  
-  this.commands = this.loadCommandsFromManifest(manifest);
+    this.id = makeWidgetId(extension.id);
+    this.windowOpenListener = null;
 
-  
-  this.keysetsMap = new WeakMap();
+    
+    this.commands = this.loadCommandsFromManifest(this.extension.manifest);
 
-  this.register();
-  EventEmitter.decorate(this);
-}
+    
+    this.keysetsMap = new WeakMap();
 
-CommandList.prototype = {
+    this.register();
+    EventEmitter.decorate(this);
+  }
+
+  onShutdown(reason) {
+    this.unregister();
+  }
+
   
 
 
@@ -41,7 +46,7 @@ CommandList.prototype = {
     };
 
     windowTracker.addOpenListener(this.windowOpenListener);
-  },
+  }
 
   
 
@@ -55,7 +60,7 @@ CommandList.prototype = {
     }
 
     windowTracker.removeOpenListener(this.windowOpenListener);
-  },
+  }
 
   
 
@@ -78,7 +83,7 @@ CommandList.prototype = {
       });
     }
     return commands;
-  },
+  }
 
   
 
@@ -96,7 +101,7 @@ CommandList.prototype = {
     });
     doc.documentElement.appendChild(keyset);
     this.keysetsMap.set(window, keyset);
-  },
+  }
 
   
 
@@ -141,7 +146,7 @@ CommandList.prototype = {
     
 
     return keyElement;
-  },
+  }
 
   
 
@@ -171,7 +176,7 @@ CommandList.prototype = {
     }
 
     return keyElement;
-  },
+  }
 
   
 
@@ -188,7 +193,7 @@ CommandList.prototype = {
 
   getKeycodeAttribute(chromeKey) {
     return `VK${chromeKey.replace(/([A-Z])/g, "_$&").toUpperCase()}`;
-  },
+  }
 
   
 
@@ -214,26 +219,13 @@ CommandList.prototype = {
     return Array.from(chromeModifiers, modifier => {
       return modifiersMap[modifier];
     }).join(" ");
-  },
-};
-
-this.commands = class extends ExtensionAPI {
-  onManifestEntry(entryName) {
-    let {extension} = this;
-    let {manifest} = extension;
-
-    this.commandList = new CommandList(manifest, extension);
-  }
-
-  onShutdown(reason) {
-    this.commandList.unregister();
   }
 
   getAPI(context) {
     return {
       commands: {
         getAll: () => {
-          let commands = this.commandList.commands;
+          let commands = this.commands;
           return Promise.resolve(Array.from(commands, ([name, command]) => {
             return ({
               name,
@@ -246,9 +238,9 @@ this.commands = class extends ExtensionAPI {
           let listener = (eventName, commandName) => {
             fire.async(commandName);
           };
-          this.commandList.on("command", listener);
+          this.on("command", listener);
           return () => {
-            this.commandList.off("command", listener);
+            this.off("command", listener);
           };
         }).api(),
       },
