@@ -34,7 +34,7 @@ function test() {
         
         
         
-        return Date.parse("T" + String.trim(value.textContent));
+        return Date.parse("T" + String(value.textContent).trim());
       });
 
     let minTimestamp = Math.min.apply(null, aTimestampMilliseconds);
