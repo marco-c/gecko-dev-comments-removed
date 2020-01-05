@@ -577,6 +577,7 @@ impl<T: Assignable<U>, U: Reflectable> TemporaryPushable<T> for Vec<JS<U>> {
 
 
 
+#[no_move]
 pub struct RootCollection {
     roots: UnsafeCell<RootedVec<*mut JSObject>>,
 }
@@ -626,6 +627,7 @@ impl RootCollection {
 
 
 
+#[no_move]
 pub struct Root<T> {
     
     root_list: &'static RootCollection,

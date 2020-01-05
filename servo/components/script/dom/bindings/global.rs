@@ -34,6 +34,7 @@ pub enum GlobalRef<'a> {
 }
 
 
+#[no_move]
 pub enum GlobalRoot {
     
     Window(Root<window::Window>),

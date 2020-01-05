@@ -152,7 +152,9 @@ pub mod trace;
 
 #[allow(missing_docs, non_snake_case)]
 pub mod codegen {
-    #[allow(unrooted_must_root)]
+    
+    
+    #[allow(unrooted_must_root, moved_no_move)]
     pub mod Bindings;
     pub mod InterfaceTypes;
     pub mod InheritTypes;
