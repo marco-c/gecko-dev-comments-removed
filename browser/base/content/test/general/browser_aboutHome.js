@@ -166,7 +166,7 @@ add_task(function* () {
 
 add_task(function* () {
   info("Check if the 'Know Your Rights' default snippet is shown when " +
-    "'browser.rights.override' pref is set");
+    "'browser.rights.override' pref is set and that its link works");
 
   Services.prefs.setBoolPref("browser.rights.override", false);
 
@@ -176,9 +176,17 @@ add_task(function* () {
     let doc = content.document;
     let snippetsElt = doc.getElementById("snippets");
     ok(snippetsElt, "Found snippets element");
-    is(snippetsElt.getElementsByTagName("a")[0].href, "about:rights",
-      "Snippet link is present.");
+    let linkEl = snippetsElt.querySelector("a");
+    is(linkEl.href, "about:rights", "Snippet link is present.");
+  }, null, function* () {
+    let loadPromise = BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser, false, "about:rights");
+    yield BrowserTestUtils.synthesizeMouseAtCenter("a[href='about:rights']", {
+      button: 0
+    }, gBrowser.selectedBrowser);
+    yield loadPromise;
+    is(gBrowser.currentURI.spec, "about:rights", "about:rights should have opened.");
   });
+
 
   Services.prefs.clearUserPref("browser.rights.override");
 });
@@ -566,7 +574,13 @@ add_task(function* () {
 
 
 
-function* withSnippetsMap(setupFn, testFn, testArgs = null) {
+
+
+
+
+
+
+function* withSnippetsMap(setupFn, testFn, testArgs = null, parentFn = null) {
   let setupFnSource;
   if (setupFn) {
     setupFnSource = setupFn.toSource();
@@ -639,6 +653,9 @@ function* withSnippetsMap(setupFn, testFn, testArgs = null) {
     yield promise;
 
     yield ContentTask.spawn(browser, testArgs, testFn);
+    if (parentFn) {
+      yield parentFn();
+    }
   });
 }
 
