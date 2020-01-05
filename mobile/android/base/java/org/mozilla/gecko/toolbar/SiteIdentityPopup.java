@@ -331,7 +331,7 @@ public class SiteIdentityPopup extends AnchoredPopup implements GeckoEventListen
             mMixedContentActivity.setVisibility(View.GONE);
             mLink.setVisibility(View.GONE);
         } else if (!siteIdentity.isSecure()) {
-            if (siteIdentity.getMixedModeActive() == MixedMode.MIXED_CONTENT_LOADED) {
+            if (siteIdentity.getMixedModeActive() == MixedMode.LOADED) {
                 
                 mIcon.setImageResource(R.drawable.lock_disabled);
                 clearSecurityStateIcon();
@@ -339,12 +339,12 @@ public class SiteIdentityPopup extends AnchoredPopup implements GeckoEventListen
                 mMixedContentActivity.setText(R.string.mixed_content_protection_disabled);
 
                 mLink.setVisibility(View.VISIBLE);
-            } else if (siteIdentity.getMixedModeDisplay() == MixedMode.MIXED_CONTENT_LOADED) {
+            } else if (siteIdentity.getMixedModeDisplay() == MixedMode.LOADED) {
                 
                 mIcon.setImageResource(R.drawable.lock_inactive);
                 setSecurityStateIcon(R.drawable.warning_major, 1);
                 mMixedContentActivity.setVisibility(View.VISIBLE);
-                if (siteIdentity.getMixedModeActive() == MixedMode.MIXED_CONTENT_BLOCKED) {
+                if (siteIdentity.getMixedModeActive() == MixedMode.BLOCKED) {
                     mMixedContentActivity.setText(R.string.mixed_content_blocked_some);
                 } else {
                     mMixedContentActivity.setText(R.string.mixed_content_display_loaded);
@@ -379,8 +379,8 @@ public class SiteIdentityPopup extends AnchoredPopup implements GeckoEventListen
             mSecurityState.setText(R.string.identity_connection_secure);
 
             
-            if (siteIdentity.getMixedModeActive() == MixedMode.MIXED_CONTENT_BLOCKED ||
-                siteIdentity.getMixedModeDisplay() == MixedMode.MIXED_CONTENT_BLOCKED) {
+            if (siteIdentity.getMixedModeActive() == MixedMode.BLOCKED ||
+                siteIdentity.getMixedModeDisplay() == MixedMode.BLOCKED) {
                 mMixedContentActivity.setVisibility(View.VISIBLE);
                 mMixedContentActivity.setText(R.string.mixed_content_blocked_all);
                 mLink.setVisibility(View.VISIBLE);
