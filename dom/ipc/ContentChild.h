@@ -31,6 +31,7 @@ struct SubstitutionMapping;
 struct OverrideMapping;
 class nsIDomainPolicy;
 class nsIURIClassifierCallback;
+struct LookAndFeelInt;
 
 namespace mozilla {
 class RemoteSpellcheckEngineChild;
@@ -621,6 +622,11 @@ public:
   virtual bool
   DeallocPURLClassifierChild(PURLClassifierChild* aActor) override;
 
+  nsTArray<LookAndFeelInt>&
+  LookAndFeelCache() {
+    return mLookAndFeelCache;
+  }
+
   
 
 
@@ -650,6 +656,8 @@ private:
   
   
   InfallibleTArray<mozilla::dom::FontFamilyListEntry> mFontFamilies;
+  
+  nsTArray<LookAndFeelInt> mLookAndFeelCache;
 
   
 
