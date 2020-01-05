@@ -30,8 +30,9 @@ class TestDVCertificate(FirefoxTestCase):
             self.marionette.navigate(self.url)
 
         
-        self.assertIn('identity-secure',
-                      self.locationbar.connection_icon.value_of_css_property('list-style-image'))
+        icon = self.locationbar.connection_icon
+        self.assertEqual('url("chrome://browser/skin/connection-secure.svg")',
+                         icon.value_of_css_property('list-style-image'))
 
         self.assertEqual(self.locationbar.identity_box.get_attribute('className'),
                          'verifiedDomain')
