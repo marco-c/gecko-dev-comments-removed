@@ -2700,18 +2700,6 @@ PluginModuleParent::NPP_NewInternal(NPMIMEType pluginType, NPP instance,
         new PluginInstanceParent(this, instance, strPluginType, mNPNIface);
 
     if (mIsFlashPlugin) {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        std::reverse(names.begin(), names.end());
-        std::reverse(values.begin(), values.end());
-
         parentInstance->InitMetadata(strPluginType, srcAttribute);
 #ifdef XP_WIN
         bool supportsAsyncRender = false;
