@@ -143,7 +143,7 @@ var ActionBarHandler = {
     this._boundingClientRect = boundingClientRect;
 
     
-    Messaging.sendRequest({
+    WindowEventDispatcher.sendRequest({
       type: "TextSelection:ActionbarInit",
       selectionID: this._selectionID,
     });
@@ -156,7 +156,7 @@ var ActionBarHandler = {
 
 
   _updateVisibility: function() {
-    Messaging.sendRequest({
+    WindowEventDispatcher.sendRequest({
       type: "TextSelection:Visibility",
       selectionID: this._selectionID,
     });
@@ -207,7 +207,7 @@ var ActionBarHandler = {
     }
 
     
-    Messaging.sendRequest({
+    WindowEventDispatcher.sendRequest({
       type: "TextSelection:ActionbarUninit",
     });
 
@@ -266,7 +266,7 @@ var ActionBarHandler = {
       });
 
     if (sendAlways || !actionsMatch) {
-      Messaging.sendRequest({
+      WindowEventDispatcher.sendRequest({
         type: "TextSelection:ActionbarStatus",
         selectionID: this._selectionID,
         actions: actions,
