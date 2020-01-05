@@ -148,6 +148,13 @@ this.TelemetryReportingPolicy = {
   
 
 
+  isFirstRun() {
+    return TelemetryReportingPolicyImpl.isFirstRun();
+  },
+
+  
+
+
   reset() {
     return TelemetryReportingPolicyImpl.reset();
   },
@@ -165,6 +172,13 @@ this.TelemetryReportingPolicy = {
   testInfobarShown() {
     return TelemetryReportingPolicyImpl._userNotified();
   },
+
+  
+
+
+  testUpdateFirstRun() {
+    return TelemetryReportingPolicyImpl.observe(null, "sessionstore-windows-restored", null);
+  },
 };
 
 var TelemetryReportingPolicyImpl = {
@@ -173,6 +187,9 @@ var TelemetryReportingPolicyImpl = {
   _notificationInProgress: false,
   
   _startupNotificationTimerId: null,
+  
+  
+  _isFirstRun: true,
 
   get _log() {
     if (!this._logger) {
@@ -352,6 +369,10 @@ var TelemetryReportingPolicyImpl = {
     return this.isUserNotifiedOfCurrentPolicy || bypassNotification;
   },
 
+  isFirstRun() {
+    return this._isFirstRun;
+  },
+
   
 
 
@@ -471,8 +492,8 @@ var TelemetryReportingPolicyImpl = {
       return;
     }
 
-    const isFirstRun = Preferences.get(PREF_FIRST_RUN, true);
-    if (isFirstRun) {
+    this._isFirstRun = Preferences.get(PREF_FIRST_RUN, true);
+    if (this._isFirstRun) {
       
       Preferences.set(PREF_FIRST_RUN, false);
 
@@ -487,7 +508,7 @@ var TelemetryReportingPolicyImpl = {
 
     
     const delay =
-      isFirstRun ? NOTIFICATION_DELAY_FIRST_RUN_MSEC : NOTIFICATION_DELAY_NEXT_RUNS_MSEC;
+      this._isFirstRun ? NOTIFICATION_DELAY_FIRST_RUN_MSEC : NOTIFICATION_DELAY_NEXT_RUNS_MSEC;
 
     this._startupNotificationTimerId = Policy.setShowInfobarTimeout(
         

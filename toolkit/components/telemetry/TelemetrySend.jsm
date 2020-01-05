@@ -17,6 +17,7 @@ this.EXPORTED_SYMBOLS = [
 
 const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 
+Cu.import("resource://gre/modules/AppConstants.jsm", this);
 Cu.import("resource://gre/modules/XPCOMUtils.jsm", this);
 Cu.import("resource://gre/modules/Task.jsm", this);
 Cu.import("resource://gre/modules/ClientID.jsm");
@@ -799,7 +800,10 @@ var TelemetrySendImpl = {
 
     
     
-    if (options.usePingSender && TelemetryReportingPolicy.canUpload()) {
+    
+    if (options.usePingSender &&
+        TelemetryReportingPolicy.canUpload() &&
+        AppConstants.platform != "android") {
       const url = this._buildSubmissionURL(ping);
       
       let savePromise = savePing(ping);
