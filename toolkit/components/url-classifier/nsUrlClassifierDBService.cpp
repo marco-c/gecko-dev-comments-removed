@@ -1013,9 +1013,8 @@ nsUrlClassifierLookupCallback::LookupComplete(nsTArray<LookupResult>* results)
       } else {
         
         
-        
         if (result.Complete()) {
-          result.mFresh = true;
+          result.mConfirmed = true;
           LOG(("Skipping completion in a table without a valid completer (%s).",
                result.mTableName.get()));
         } else {

@@ -158,7 +158,7 @@ private:
   nsTArray<nsCString> mActiveTablesCache;
   uint32_t mHashKey;
   
-  nsDataHashtable<nsCStringHashKey, int64_t> mTableFreshness;
+  TableFreshnessMap mTableFreshness;
 
   
   

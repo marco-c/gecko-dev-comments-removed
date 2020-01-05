@@ -25,9 +25,8 @@ namespace safebrowsing {
 
 class LookupResult {
 public:
-  LookupResult() : mComplete(false), mNoise(false),
-                   mFresh(false), mProtocolConfirmed(false),
-                   mPartialHashLength(0) {}
+  LookupResult() : mNoise(false), mProtocolConfirmed(false),
+                   mPartialHashLength(0), mConfirmed(false) {}
 
   
   union {
@@ -53,11 +52,10 @@ public:
     return hex;
   }
 
-  bool Confirmed() const { return (mComplete && mFresh) || mProtocolConfirmed; }
-  bool Complete() const { return mComplete; }
+  bool Confirmed() const { return mConfirmed || mProtocolConfirmed; }
 
   
-  bool mComplete;
+  bool Complete() const { return mPartialHashLength == COMPLETE_SIZE; }
 
   
   
@@ -66,14 +64,14 @@ public:
   
   bool mNoise;
 
-  
-  bool mFresh;
-
   bool mProtocolConfirmed;
 
   nsCString mTableName;
 
   uint32_t mPartialHashLength;
+
+  
+  bool mConfirmed;
 };
 
 typedef nsTArray<LookupResult> LookupResultArray;
@@ -139,8 +137,13 @@ public:
   virtual nsresult Init() = 0;
   virtual nsresult ClearPrefixes() = 0;
   virtual nsresult Has(const Completion& aCompletion,
-                       bool* aHas, bool* aComplete,
-                       uint32_t* aMatchLength) = 0;
+                       bool* aHas, uint32_t* aMatchLength,
+                       bool* aFromCache) = 0;
+
+  virtual void IsHashEntryConfirmed(const Completion& aEntry,
+                                    const TableFreshnessMap& aTableFreshness,
+                                    uint32_t aFreshnessGuarantee,
+                                    bool* aConfirmed) = 0;
 
   virtual void ClearAll();
 
@@ -186,8 +189,13 @@ public:
   virtual nsresult Open() override;
   virtual void ClearAll() override;
   virtual nsresult Has(const Completion& aCompletion,
-                       bool* aHas, bool* aComplete,
-                       uint32_t* aMatchLength) override;
+                       bool* aHas, uint32_t* aMatchLength,
+                       bool* aFromCache) override;
+
+  virtual void IsHashEntryConfirmed(const Completion& aEntry,
+                                    const TableFreshnessMap& aTableFreshness,
+                                    uint32_t aFreshnessGuarantee,
+                                    bool* aConfirmed) override;
 
   nsresult Build(AddPrefixArray& aAddPrefixes,
                  AddCompleteArray& aAddCompletes);
