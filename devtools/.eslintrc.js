@@ -329,6 +329,8 @@ module.exports = {
     
     "no-unused-vars": ["error", {"vars": "all", "args": "none"}],
     
+    "no-unsafe-finally": "error",
+    
     "no-use-before-define": "off",
     
     
