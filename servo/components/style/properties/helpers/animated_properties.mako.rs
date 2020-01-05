@@ -9,18 +9,12 @@ use properties::PropertyDeclaration;
 use properties::longhands;
 use properties::longhands::background_position::computed_value::T as BackgroundPosition;
 use properties::longhands::background_size::computed_value::T as BackgroundSize;
-use properties::longhands::border_spacing::computed_value::T as BorderSpacing;
-use properties::longhands::clip::computed_value::ClipRect;
 use properties::longhands::font_weight::computed_value::T as FontWeight;
 use properties::longhands::line_height::computed_value::T as LineHeight;
 use properties::longhands::text_shadow::computed_value::T as TextShadowList;
 use properties::longhands::text_shadow::computed_value::TextShadow;
 use properties::longhands::box_shadow::computed_value::T as BoxShadowList;
 use properties::longhands::box_shadow::single_value::computed_value::T as BoxShadow;
-use properties::longhands::transform::computed_value::ComputedMatrix;
-use properties::longhands::transform::computed_value::ComputedOperation as TransformOperation;
-use properties::longhands::transform::computed_value::T as TransformList;
-use properties::longhands::transform_origin::computed_value::T as TransformOrigin;
 use properties::longhands::vertical_align::computed_value::T as VerticalAlign;
 use properties::longhands::visibility::computed_value::T as Visibility;
 use properties::longhands::z_index::computed_value::T as ZIndex;
@@ -31,6 +25,8 @@ use values::computed::{Angle, LengthOrPercentageOrAuto, LengthOrPercentageOrNone
 use values::computed::{BorderRadiusSize, LengthOrNone};
 use values::computed::{CalcLengthOrPercentage, LengthOrPercentage};
 use values::computed::position::Position;
+
+
 
 
 
@@ -148,14 +144,14 @@ impl AnimatedProperty {
     }
 }
 
-
-
-
+/// A trait used to implement [interpolation][interpolated-types].
+///
+/// [interpolated-types]: https://drafts.csswg.org/css-transitions/#interpolated-types
 pub trait Interpolate: Sized {
     fn interpolate(&self, other: &Self, time: f64) -> Result<Self, ()>;
 }
 
-
+/// https://drafts.csswg.org/css-transitions/#animtype-repeatable-list
 pub trait RepeatableListInterpolate: Interpolate {}
 
 impl<T: RepeatableListInterpolate> Interpolate for Vec<T> {
@@ -167,7 +163,7 @@ impl<T: RepeatableListInterpolate> Interpolate for Vec<T> {
         }).collect()
     }
 }
-
+/// https://drafts.csswg.org/css-transitions/#animtype-number
 impl Interpolate for Au {
     #[inline]
     fn interpolate(&self, other: &Self, time: f64) -> Result<Self, ()> {
@@ -187,7 +183,7 @@ impl <T> Interpolate for Option<T> where T: Interpolate {
     }
 }
 
-
+/// https://drafts.csswg.org/css-transitions/#animtype-number
 impl Interpolate for f32 {
     #[inline]
     fn interpolate(&self, other: &f32, time: f64) -> Result<Self, ()> {
@@ -195,7 +191,7 @@ impl Interpolate for f32 {
     }
 }
 
-
+/// https://drafts.csswg.org/css-transitions/#animtype-number
 impl Interpolate for f64 {
     #[inline]
     fn interpolate(&self, other: &f64, time: f64) -> Result<Self, ()> {
@@ -203,7 +199,7 @@ impl Interpolate for f64 {
     }
 }
 
-
+/// https://drafts.csswg.org/css-transitions/#animtype-number
 impl Interpolate for i32 {
     #[inline]
     fn interpolate(&self, other: &i32, time: f64) -> Result<Self, ()> {
@@ -213,7 +209,7 @@ impl Interpolate for i32 {
     }
 }
 
-
+/// https://drafts.csswg.org/css-transitions/#animtype-number
 impl Interpolate for Angle {
     #[inline]
     fn interpolate(&self, other: &Angle, time: f64) -> Result<Self, ()> {
@@ -221,7 +217,7 @@ impl Interpolate for Angle {
     }
 }
 
-
+/// https://drafts.csswg.org/css-transitions/#animtype-visibility
 impl Interpolate for Visibility {
     #[inline]
     fn interpolate(&self, other: &Self, time: f64) -> Result<Self, ()> {
@@ -240,7 +236,7 @@ impl Interpolate for Visibility {
     }
 }
 
-
+/// https://drafts.csswg.org/css-transitions/#animtype-integer
 impl Interpolate for ZIndex {
     #[inline]
     fn interpolate(&self, other: &Self, time: f64) -> Result<Self, ()> {
@@ -281,7 +277,7 @@ impl Interpolate for BorderRadiusSize {
     }
 }
 
-
+/// https://drafts.csswg.org/css-transitions/#animtype-length
 impl Interpolate for VerticalAlign {
     #[inline]
     fn interpolate(&self, other: &Self, time: f64) -> Result<Self, ()> {
@@ -296,18 +292,6 @@ impl Interpolate for VerticalAlign {
         }
     }
 }
-
-
-impl Interpolate for BorderSpacing {
-    #[inline]
-    fn interpolate(&self, other: &Self, time: f64) -> Result<Self, ()> {
-        Ok(BorderSpacing {
-            horizontal: try!(self.horizontal.interpolate(&other.horizontal, time)),
-            vertical: try!(self.vertical.interpolate(&other.vertical, time)),
-        })
-    }
-}
-
 impl Interpolate for BackgroundSize {
     #[inline]
     fn interpolate(&self, other: &Self, time: f64) -> Result<Self, ()> {
@@ -316,7 +300,7 @@ impl Interpolate for BackgroundSize {
 }
 
 
-
+/// https://drafts.csswg.org/css-transitions/#animtype-color
 impl Interpolate for RGBA {
     #[inline]
     fn interpolate(&self, other: &RGBA, time: f64) -> Result<Self, ()> {
@@ -329,7 +313,7 @@ impl Interpolate for RGBA {
     }
 }
 
-
+/// https://drafts.csswg.org/css-transitions/#animtype-color
 impl Interpolate for CSSParserColor {
     #[inline]
     fn interpolate(&self, other: &Self, time: f64) -> Result<Self, ()> {
@@ -342,7 +326,7 @@ impl Interpolate for CSSParserColor {
     }
 }
 
-
+/// https://drafts.csswg.org/css-transitions/#animtype-lpcalc
 impl Interpolate for CalcLengthOrPercentage {
     #[inline]
     fn interpolate(&self, other: &Self, time: f64) -> Result<Self, ()> {
@@ -369,7 +353,7 @@ impl Interpolate for CalcLengthOrPercentage {
     }
 }
 
-
+/// https://drafts.csswg.org/css-transitions/#animtype-lpcalc
 impl Interpolate for LengthOrPercentage {
     #[inline]
     fn interpolate(&self, other: &Self, time: f64) -> Result<Self, ()> {
@@ -392,7 +376,7 @@ impl Interpolate for LengthOrPercentage {
     }
 }
 
-
+/// https://drafts.csswg.org/css-transitions/#animtype-lpcalc
 impl Interpolate for LengthOrPercentageOrAuto {
     #[inline]
     fn interpolate(&self, other: &Self, time: f64) -> Result<Self, ()> {
@@ -420,7 +404,7 @@ impl Interpolate for LengthOrPercentageOrAuto {
     }
 }
 
-
+/// https://drafts.csswg.org/css-transitions/#animtype-lpcalc
 impl Interpolate for LengthOrPercentageOrNone {
     #[inline]
     fn interpolate(&self, other: &Self, time: f64) -> Result<Self, ()> {
@@ -441,8 +425,8 @@ impl Interpolate for LengthOrPercentageOrNone {
     }
 }
 
-
-
+/// https://drafts.csswg.org/css-transitions/#animtype-number
+/// https://drafts.csswg.org/css-transitions/#animtype-length
 impl Interpolate for LineHeight {
     #[inline]
     fn interpolate(&self, other: &Self, time: f64) -> Result<Self, ()> {
@@ -463,7 +447,7 @@ impl Interpolate for LineHeight {
     }
 }
 
-
+/// http://dev.w3.org/csswg/css-transitions/#animtype-font-weight
 impl Interpolate for FontWeight {
     #[inline]
     fn interpolate(&self, other: &Self, time: f64) -> Result<Self, ()> {
@@ -492,20 +476,7 @@ impl Interpolate for FontWeight {
     }
 }
 
-
-impl Interpolate for ClipRect {
-    #[inline]
-    fn interpolate(&self, other: &Self, time: f64) -> Result<Self, ()> {
-        Ok(ClipRect {
-            top: try!(self.top.interpolate(&other.top, time)),
-            right: try!(self.right.interpolate(&other.right, time)),
-            bottom: try!(self.bottom.interpolate(&other.bottom, time)),
-            left: try!(self.left.interpolate(&other.left, time)),
-        })
-    }
-}
-
-
+/// https://drafts.csswg.org/css-transitions/#animtype-simple-list
 impl Interpolate for Position {
     #[inline]
     fn interpolate(&self, other: &Self, time: f64) -> Result<Self, ()> {
@@ -525,7 +496,7 @@ impl Interpolate for BackgroundPosition {
     }
 }
 
-
+/// https://drafts.csswg.org/css-transitions/#animtype-shadow-list
 impl Interpolate for TextShadow {
     #[inline]
     fn interpolate(&self, other: &Self, time: f64) -> Result<Self, ()> {
@@ -538,7 +509,7 @@ impl Interpolate for TextShadow {
     }
 }
 
-
+/// https://drafts.csswg.org/css-transitions/#animtype-shadow-list
 impl Interpolate for TextShadowList {
     #[inline]
     fn interpolate(&self, other: &Self, time: f64) -> Result<Self, ()> {
@@ -574,142 +545,10 @@ impl Interpolate for TextShadowList {
 }
 
 
-
-
-fn can_interpolate_list(from_list: &[TransformOperation],
-                        to_list: &[TransformOperation]) -> bool {
-    
-    if from_list.len() != to_list.len() {
-        return false;
-    }
-
-    
-    for (from, to) in from_list.iter().zip(to_list) {
-        match (from, to) {
-            (&TransformOperation::Matrix(..), &TransformOperation::Matrix(..)) |
-            (&TransformOperation::Skew(..), &TransformOperation::Skew(..)) |
-            (&TransformOperation::Translate(..), &TransformOperation::Translate(..)) |
-            (&TransformOperation::Scale(..), &TransformOperation::Scale(..)) |
-            (&TransformOperation::Rotate(..), &TransformOperation::Rotate(..)) |
-            (&TransformOperation::Perspective(..), &TransformOperation::Perspective(..)) => {}
-            _ => {
-                return false;
-            }
-        }
-    }
-
-    true
-}
-
-
-
-fn interpolate_transform_list(from_list: &[TransformOperation],
-                              to_list: &[TransformOperation],
-                              time: f64) -> TransformList {
-    let mut result = vec![];
-
-    if can_interpolate_list(from_list, to_list) {
-        for (from, to) in from_list.iter().zip(to_list) {
-            match (from, to) {
-                (&TransformOperation::Matrix(from),
-                 &TransformOperation::Matrix(_to)) => {
-                    
-                    result.push(TransformOperation::Matrix(from));
-                }
-                (&TransformOperation::Skew(fx, fy),
-                 &TransformOperation::Skew(tx, ty)) => {
-                    let ix = fx.interpolate(&tx, time).unwrap();
-                    let iy = fy.interpolate(&ty, time).unwrap();
-                    result.push(TransformOperation::Skew(ix, iy));
-                }
-                (&TransformOperation::Translate(fx, fy, fz),
-                 &TransformOperation::Translate(tx, ty, tz)) => {
-                    let ix = fx.interpolate(&tx, time).unwrap();
-                    let iy = fy.interpolate(&ty, time).unwrap();
-                    let iz = fz.interpolate(&tz, time).unwrap();
-                    result.push(TransformOperation::Translate(ix, iy, iz));
-                }
-                (&TransformOperation::Scale(fx, fy, fz),
-                 &TransformOperation::Scale(tx, ty, tz)) => {
-                    let ix = fx.interpolate(&tx, time).unwrap();
-                    let iy = fy.interpolate(&ty, time).unwrap();
-                    let iz = fz.interpolate(&tz, time).unwrap();
-                    result.push(TransformOperation::Scale(ix, iy, iz));
-                }
-                (&TransformOperation::Rotate(fx, fy, fz, fa),
-                 &TransformOperation::Rotate(tx, ty, tz, ta)) => {
-                    let norm_f = ((fx * fx) + (fy * fy) + (fz * fz)).sqrt();
-                    let norm_t = ((tx * tx) + (ty * ty) + (tz * tz)).sqrt();
-                    let (fx, fy, fz) = (fx / norm_f, fy / norm_f, fz / norm_f);
-                    let (tx, ty, tz) = (tx / norm_t, ty / norm_t, tz / norm_t);
-                    if fx == tx && fy == ty && fz == tz {
-                        let ia = fa.interpolate(&ta, time).unwrap();
-                        result.push(TransformOperation::Rotate(fx, fy, fz, ia));
-                    } else {
-                        
-                        result.push(TransformOperation::Rotate(fx, fy, fz, fa));
-                    }
-                }
-                (&TransformOperation::Perspective(fd),
-                 &TransformOperation::Perspective(_td)) => {
-                    
-                    result.push(TransformOperation::Perspective(fd));
-                }
-                _ => {
-                    
-                    unreachable!();
-                }
-            }
-        }
-    } else {
-        
-        result.extend_from_slice(from_list);
-    }
-
-    TransformList(Some(result))
-}
-
-
-
-
-fn build_identity_transform_list(list: &[TransformOperation]) -> Vec<TransformOperation> {
-    let mut result = vec!();
-
-    for operation in list {
-        match *operation {
-            TransformOperation::Matrix(..) => {
-                let identity = ComputedMatrix::identity();
-                result.push(TransformOperation::Matrix(identity));
-            }
-            TransformOperation::Skew(..) => {
-                result.push(TransformOperation::Skew(Angle(0.0), Angle(0.0)));
-            }
-            TransformOperation::Translate(..) => {
-                result.push(TransformOperation::Translate(LengthOrPercentage::zero(),
-                                                          LengthOrPercentage::zero(),
-                                                          Au(0)));
-            }
-            TransformOperation::Scale(..) => {
-                result.push(TransformOperation::Scale(1.0, 1.0, 1.0));
-            }
-            TransformOperation::Rotate(..) => {
-                result.push(TransformOperation::Rotate(0.0, 0.0, 1.0, Angle(0.0)));
-            }
-            TransformOperation::Perspective(..) => {
-                
-                let identity = ComputedMatrix::identity();
-                result.push(TransformOperation::Matrix(identity));
-            }
-        }
-    }
-
-    result
-}
-
 impl Interpolate for BoxShadowList {
     #[inline]
     fn interpolate(&self, other: &Self, time: f64) -> Result<Self, ()> {
-        
+        // The inset value must change
         let mut zero = BoxShadow {
             offset_x: Au(0),
             offset_y: Au(0),
@@ -745,7 +584,7 @@ impl Interpolate for BoxShadowList {
     }
 }
 
-
+/// https://drafts.csswg.org/css-transitions/#animtype-shadow-list
 impl Interpolate for BoxShadow {
     #[inline]
     fn interpolate(&self, other: &Self, time: f64) -> Result<Self, ()> {
@@ -780,42 +619,173 @@ impl Interpolate for LengthOrNone {
     }
 }
 
-impl Interpolate for TransformOrigin {
-    fn interpolate(&self, other: &Self, time: f64) -> Result<Self, ()> {
-        Ok(TransformOrigin {
-            horizontal: try!(self.horizontal.interpolate(&other.horizontal, time)),
-            vertical: try!(self.vertical.interpolate(&other.vertical, time)),
-            depth: try!(self.depth.interpolate(&other.depth, time)),
-        })
-    }
-}
+% if product == "servo":
+    use properties::longhands::transform::computed_value::ComputedMatrix;
+    use properties::longhands::transform::computed_value::ComputedOperation as TransformOperation;
+    use properties::longhands::transform::computed_value::T as TransformList;
 
-
-impl Interpolate for TransformList {
-    #[inline]
-    fn interpolate(&self, other: &TransformList, time: f64) -> Result<Self, ()> {
+    
+    
+    
+    fn can_interpolate_list(from_list: &[TransformOperation],
+                            to_list: &[TransformOperation]) -> bool {
         
-        let result = match (&self.0, &other.0) {
-            (&Some(ref from_list), &Some(ref to_list)) => {
-                
-                interpolate_transform_list(from_list, &to_list, time)
-            }
-            (&Some(ref from_list), &None) => {
-                
-                let to_list = build_identity_transform_list(from_list);
-                interpolate_transform_list(from_list, &to_list, time)
-            }
-            (&None, &Some(ref to_list)) => {
-                
-                let from_list = build_identity_transform_list(to_list);
-                interpolate_transform_list(&from_list, to_list, time)
-            }
-            _ => {
-                
-                TransformList(None)
-            }
-        };
+        if from_list.len() != to_list.len() {
+            return false;
+        }
 
-        Ok(result)
+        
+        for (from, to) in from_list.iter().zip(to_list) {
+            match (from, to) {
+                (&TransformOperation::Matrix(..), &TransformOperation::Matrix(..)) |
+                (&TransformOperation::Skew(..), &TransformOperation::Skew(..)) |
+                (&TransformOperation::Translate(..), &TransformOperation::Translate(..)) |
+                (&TransformOperation::Scale(..), &TransformOperation::Scale(..)) |
+                (&TransformOperation::Rotate(..), &TransformOperation::Rotate(..)) |
+                (&TransformOperation::Perspective(..), &TransformOperation::Perspective(..)) => {}
+                _ => {
+                    return false;
+                }
+            }
+        }
+
+        true
     }
-}
+
+    
+    
+    
+    fn build_identity_transform_list(list: &[TransformOperation]) -> Vec<TransformOperation> {
+        let mut result = vec!();
+
+        for operation in list {
+            match *operation {
+                TransformOperation::Matrix(..) => {
+                    let identity = ComputedMatrix::identity();
+                    result.push(TransformOperation::Matrix(identity));
+                }
+                TransformOperation::Skew(..) => {
+                    result.push(TransformOperation::Skew(Angle(0.0), Angle(0.0)));
+                }
+                TransformOperation::Translate(..) => {
+                    result.push(TransformOperation::Translate(LengthOrPercentage::zero(),
+                                                              LengthOrPercentage::zero(),
+                                                              Au(0)));
+                }
+                TransformOperation::Scale(..) => {
+                    result.push(TransformOperation::Scale(1.0, 1.0, 1.0));
+                }
+                TransformOperation::Rotate(..) => {
+                    result.push(TransformOperation::Rotate(0.0, 0.0, 1.0, Angle(0.0)));
+                }
+                TransformOperation::Perspective(..) => {
+                    
+                    let identity = ComputedMatrix::identity();
+                    result.push(TransformOperation::Matrix(identity));
+                }
+            }
+        }
+
+        result
+    }
+
+    
+    
+    fn interpolate_transform_list(from_list: &[TransformOperation],
+                                  to_list: &[TransformOperation],
+                                  time: f64) -> TransformList {
+        let mut result = vec![];
+
+        if can_interpolate_list(from_list, to_list) {
+            for (from, to) in from_list.iter().zip(to_list) {
+                match (from, to) {
+                    (&TransformOperation::Matrix(from),
+                     &TransformOperation::Matrix(_to)) => {
+                        
+                        result.push(TransformOperation::Matrix(from));
+                    }
+                    (&TransformOperation::Skew(fx, fy),
+                     &TransformOperation::Skew(tx, ty)) => {
+                        let ix = fx.interpolate(&tx, time).unwrap();
+                        let iy = fy.interpolate(&ty, time).unwrap();
+                        result.push(TransformOperation::Skew(ix, iy));
+                    }
+                    (&TransformOperation::Translate(fx, fy, fz),
+                     &TransformOperation::Translate(tx, ty, tz)) => {
+                        let ix = fx.interpolate(&tx, time).unwrap();
+                        let iy = fy.interpolate(&ty, time).unwrap();
+                        let iz = fz.interpolate(&tz, time).unwrap();
+                        result.push(TransformOperation::Translate(ix, iy, iz));
+                    }
+                    (&TransformOperation::Scale(fx, fy, fz),
+                     &TransformOperation::Scale(tx, ty, tz)) => {
+                        let ix = fx.interpolate(&tx, time).unwrap();
+                        let iy = fy.interpolate(&ty, time).unwrap();
+                        let iz = fz.interpolate(&tz, time).unwrap();
+                        result.push(TransformOperation::Scale(ix, iy, iz));
+                    }
+                    (&TransformOperation::Rotate(fx, fy, fz, fa),
+                     &TransformOperation::Rotate(tx, ty, tz, ta)) => {
+                        let norm_f = ((fx * fx) + (fy * fy) + (fz * fz)).sqrt();
+                        let norm_t = ((tx * tx) + (ty * ty) + (tz * tz)).sqrt();
+                        let (fx, fy, fz) = (fx / norm_f, fy / norm_f, fz / norm_f);
+                        let (tx, ty, tz) = (tx / norm_t, ty / norm_t, tz / norm_t);
+                        if fx == tx && fy == ty && fz == tz {
+                            let ia = fa.interpolate(&ta, time).unwrap();
+                            result.push(TransformOperation::Rotate(fx, fy, fz, ia));
+                        } else {
+                            
+                            result.push(TransformOperation::Rotate(fx, fy, fz, fa));
+                        }
+                    }
+                    (&TransformOperation::Perspective(fd),
+                     &TransformOperation::Perspective(_td)) => {
+                        
+                        result.push(TransformOperation::Perspective(fd));
+                    }
+                    _ => {
+                        
+                        unreachable!();
+                    }
+                }
+            }
+        } else {
+            
+            result.extend_from_slice(from_list);
+        }
+
+        TransformList(Some(result))
+    }
+
+    
+    impl Interpolate for TransformList {
+        #[inline]
+        fn interpolate(&self, other: &TransformList, time: f64) -> Result<Self, ()> {
+            
+            let result = match (&self.0, &other.0) {
+                (&Some(ref from_list), &Some(ref to_list)) => {
+                    
+                    interpolate_transform_list(from_list, &to_list, time)
+                }
+                (&Some(ref from_list), &None) => {
+                    
+                    let to_list = build_identity_transform_list(from_list);
+                    interpolate_transform_list(from_list, &to_list, time)
+                }
+                (&None, &Some(ref to_list)) => {
+                    
+                    let from_list = build_identity_transform_list(to_list);
+                    interpolate_transform_list(&from_list, to_list, time)
+                }
+                _ => {
+                    
+                    TransformList(None)
+                }
+            };
+
+            Ok(result)
+        }
+    }
+% endif
+
+
