@@ -11,6 +11,7 @@
 #include "GMPMessageUtils.h"
 #include "mozilla/gmp/PChromiumCDMParent.h"
 #include "mozilla/RefPtr.h"
+#include "nsDataHashtable.h"
 
 namespace mozilla {
 
@@ -35,6 +36,12 @@ public:
             bool aAllowDistinctiveIdentifier,
             bool aAllowPersistentState);
 
+  void CreateSession(uint32_t aCreateSessionToken,
+                     uint32_t aSessionType,
+                     uint32_t aInitDataType,
+                     uint32_t aPromiseId,
+                     const nsTArray<uint8_t>& aInitData);
+
   void SetServerCertificate(uint32_t aPromiseId,
                             const nsTArray<uint8_t>& aCert);
 
@@ -46,6 +53,7 @@ public:
 
   void RemoveSession(const nsCString& aSessionId, uint32_t aPromiseId);
 
+  
   
 
 protected:
@@ -85,12 +93,15 @@ protected:
                      nsresult aError,
                      const nsCString& aErrorMessage);
 
+  void ResolvePromise(uint32_t aPromiseId);
+
   const uint32_t mPluginId;
   GMPContentParent* mContentParent;
   
   
   
   ChromiumCDMProxy* mProxy = nullptr;
+  nsDataHashtable<nsUint32HashKey, uint32_t> mPromiseToCreateSessionToken;
 };
 
 } 
