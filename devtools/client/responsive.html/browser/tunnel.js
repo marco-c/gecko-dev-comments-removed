@@ -421,6 +421,8 @@ MessageManagerTunnel.prototype = {
     
     "Social:",
     "PageMetadata:",
+    
+    "ViewSource:",
   ],
 
   INNER_TO_OUTER_MESSAGE_PREFIXES: [
@@ -437,6 +439,8 @@ MessageManagerTunnel.prototype = {
     
     "Social:",
     "PageMetadata:",
+    
+    "ViewSource:",
   ],
 
   OUTER_TO_INNER_FRAME_SCRIPTS: [
