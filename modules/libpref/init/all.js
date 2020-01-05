@@ -601,9 +601,6 @@ pref("media.decoder.recycle.enabled", false);
 pref("media.cubeb.log_level", "");
 
 
-pref("media.playback.warnings-as-errors", false);
-
-
 pref("layers.amd-switchable-gfx.enabled", true);
 
 
@@ -3085,14 +3082,10 @@ pref("dom.ipc.plugins.unloadTimeoutSecs", 30);
 
 pref("dom.ipc.plugins.asyncInit.enabled", false);
 
-#ifdef RELEASE_OR_BETA
-pref("dom.ipc.plugins.asyncdrawing.enabled", false);
-#else
 
 pref("dom.ipc.plugins.asyncdrawing.enabled", true);
 
 pref("dom.ipc.plugins.forcedirect.enabled", true);
-#endif
 
 #ifdef RELEASE_OR_BETA
 pref("dom.ipc.processCount", 1);
@@ -5066,12 +5059,7 @@ pref("dom.vr.oculus.enabled", true);
 
 pref("dom.vr.osvr.enabled", false);
 
-#ifdef XP_WIN
-pref("dom.vr.openvr.enabled", true);
-#else
-
 pref("dom.vr.openvr.enabled", false);
-#endif
 
 
 
@@ -5081,6 +5069,8 @@ pref("dom.vr.poseprediction.enabled", true);
 
 
 pref("dom.vr.require-gesture", true);
+
+pref("gfx.vr.openvr-runtime", "");
 
 pref("gfx.vr.osvr.utilLibPath", "");
 pref("gfx.vr.osvr.commonLibPath", "");
@@ -5654,20 +5644,15 @@ pref("dom.storageManager.enabled", false);
 
 
 
-#ifdef NIGHTLY_BUILD
-pref("browser.storageManager.enabled", true);
-#else
-pref("browser.storageManager.enabled", false);
-#endif
-pref("browser.storageManager.pressureNotification.minIntervalMS", 1200000);
-pref("browser.storageManager.pressureNotification.usageThresholdGB", 5);
-
-
-
 
 
 pref("prompts.authentication_dialog_abuse_limit", 3);
 
+
+
+pref("browser.storageManager.enabled", false);
+pref("browser.storageManager.pressureNotification.minIntervalMS", 1200000);
+pref("browser.storageManager.pressureNotification.usageThresholdGB", 5);
 pref("dom.IntersectionObserver.enabled", false);
 
 
