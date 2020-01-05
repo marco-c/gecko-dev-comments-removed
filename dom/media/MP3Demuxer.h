@@ -17,7 +17,8 @@ namespace mp3 {
 
 class MP3TrackDemuxer;
 
-class MP3Demuxer : public MediaDataDemuxer {
+class MP3Demuxer : public MediaDataDemuxer
+{
 public:
   
   explicit MP3Demuxer(MediaResource* aSource);
@@ -42,10 +43,12 @@ private:
 
 
 
-class ID3Parser {
+class ID3Parser
+{
 public:
   
-  class ID3Header {
+  class ID3Header
+  {
   public:
     
     static const int SIZE = 10;
@@ -130,10 +133,12 @@ private:
 
 
 
-class FrameParser {
+class FrameParser
+{
 public:
   
-  class FrameHeader {
+  class FrameHeader
+  {
   public:
     
     static const int SIZE = 4;
@@ -200,10 +205,12 @@ public:
 
   
   
-  class VBRHeader {
+  class VBRHeader
+  {
   public:
     
-    enum VBRHeaderType {
+    enum VBRHeaderType
+    {
       NONE = 0,
       XING,
       VBRI
@@ -231,6 +238,7 @@ public:
     
     bool IsValid() const;
 
+    
     
     bool IsComplete() const;
 
@@ -274,7 +282,8 @@ public:
   };
 
   
-  class Frame {
+  class Frame
+  {
   public:
     
     int32_t Length() const;
@@ -353,7 +362,8 @@ private:
 
 
 
-class MP3TrackDemuxer : public MediaTrackDemuxer {
+class MP3TrackDemuxer : public MediaTrackDemuxer
+{
 public:
   
   explicit MP3TrackDemuxer(MediaResource* aSource);

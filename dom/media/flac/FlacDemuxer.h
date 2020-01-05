@@ -19,7 +19,8 @@ class FrameParser;
 class FlacTrackDemuxer;
 
 
-class FlacDemuxer : public MediaDataDemuxer {
+class FlacDemuxer : public MediaDataDemuxer
+{
 public:
   
   explicit FlacDemuxer(MediaResource* aSource);
@@ -40,7 +41,8 @@ private:
   RefPtr<FlacTrackDemuxer> mTrackDemuxer;
 };
 
-class FlacTrackDemuxer : public MediaTrackDemuxer {
+class FlacTrackDemuxer : public MediaTrackDemuxer
+{
 public:
   explicit FlacTrackDemuxer(MediaResource* aSource);
 
@@ -71,6 +73,7 @@ private:
   
   media::TimeUnit FastSeek(const media::TimeUnit& aTime);
 
+  
   
   media::TimeUnit ScanUntil(const media::TimeUnit& aTime);
 

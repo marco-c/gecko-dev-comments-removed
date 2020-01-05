@@ -269,8 +269,8 @@ MediaSourceDecoder::NextFrameBufferedStatus()
 {
   MOZ_ASSERT(NS_IsMainThread());
 
-  if (!mMediaSource ||
-      mMediaSource->ReadyState() == dom::MediaSourceReadyState::Closed) {
+  if (!mMediaSource
+      || mMediaSource->ReadyState() == dom::MediaSourceReadyState::Closed) {
     return MediaDecoderOwner::NEXT_FRAME_UNAVAILABLE;
   }
 
@@ -304,6 +304,7 @@ MediaSourceDecoder::CanPlayThrough()
   TimeUnit duration = TimeUnit::FromSeconds(mMediaSource->Duration());
   TimeUnit currentPosition = TimeUnit::FromMicroseconds(CurrentPosition());
   if (duration.IsInfinite()) {
+    
     
     return true;
   } else if (duration <= currentPosition) {
