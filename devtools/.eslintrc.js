@@ -284,6 +284,8 @@ module.exports = {
     
     "no-script-url": "off",
     
+    "no-self-assign": "error",
+    
     "no-self-compare": "error",
     
     "no-sequences": "error",
@@ -332,6 +334,10 @@ module.exports = {
     "no-unsafe-finally": "error",
     
     "no-use-before-define": "off",
+    
+    "no-useless-call": "error",
+    
+    "no-useless-return": "error",
     
     
     "no-var": "off",

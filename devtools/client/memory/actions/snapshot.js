@@ -644,7 +644,6 @@ exports.fetchImmediatelyDominated = TaskCache.declareCacheableTask({
       nodes: response.nodes,
       moreChildrenAvailable: response.moreChildrenAvailable,
     });
-    return;
   }
 });
 
@@ -700,17 +699,15 @@ exports.refreshSelectedDominatorTree = function (heapWorker) {
       return;
     }
 
+    
+    
+    
     if (snapshot.state === states.READ) {
       if (snapshot.dominatorTree) {
         yield dispatch(fetchDominatorTree(heapWorker, snapshot.id));
       } else {
         yield dispatch(computeAndFetchDominatorTree(heapWorker, snapshot.id));
       }
-    } else {
-        
-        
-        
-      return;
     }
   };
 };
