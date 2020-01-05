@@ -228,21 +228,20 @@ private:
 
 
 
-  DrawResult BuildSourcePaint(SourceInfo *aPrimitive,
-                            DrawTarget* aTargetDT);
+  DrawResult BuildSourcePaint(SourceInfo *aPrimitive);
 
   
 
 
 
 
-  DrawResult BuildSourcePaints(DrawTarget* aTargetDT);
+  DrawResult BuildSourcePaints();
 
   
 
 
 
-  DrawResult BuildSourceImage(DrawTarget* aTargetDT);
+  DrawResult BuildSourceImage();
 
   
 
