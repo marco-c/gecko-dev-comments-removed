@@ -64,6 +64,7 @@
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/TabParent.h"
 #include "mozilla/gfx/GPUProcessManager.h"
+#include "mozilla/gfx/gfxVars.h"
 #include "mozilla/Move.h"
 #include "mozilla/Services.h"
 #include "mozilla/Sprintf.h"
@@ -1300,11 +1301,7 @@ void nsBaseWidget::CreateCompositor(int aWidth, int aHeight)
 
   CreateCompositorVsyncDispatcher();
 
-  
-  
-  
-  
-  bool enableWR = Preferences::GetBool("gfx.webrender.enabled", false);
+  bool enableWR = gfx::gfxVars::UseWebRender();
   bool enableAPZ = UseAPZ();
   if (enableWR && !gfxPrefs::APZAllowWithWebRender()) {
     

@@ -689,6 +689,18 @@ gfxPlatform::Init()
 #endif
     gPlatform->InitAcceleration();
 
+#ifdef MOZ_ENABLE_WEBRENDER
+    if (XRE_IsParentProcess()) {
+      
+      
+      
+      
+      
+      
+      gfxVars::SetUseWebRender(Preferences::GetBool("gfx.webrender.enabled", true));
+    }
+#endif
+
     if (gfxConfig::IsEnabled(Feature::GPU_PROCESS)) {
       GPUProcessManager* gpu = GPUProcessManager::Get();
       gpu->LaunchGPUProcess();
