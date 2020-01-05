@@ -8,17 +8,17 @@
 #define AccessibleCaretManager_h
 
 #include "AccessibleCaret.h"
+
+#include "mozilla/dom/CaretStateChangedEvent.h"
+#include "mozilla/EnumSet.h"
+#include "mozilla/EventForwards.h"
+#include "mozilla/RefPtr.h"
+#include "mozilla/UniquePtr.h"
 #include "nsCOMPtr.h"
 #include "nsCoord.h"
 #include "nsIDOMMouseEvent.h"
 #include "nsIFrame.h"
 #include "nsISelectionListener.h"
-#include "mozilla/RefPtr.h"
-#include "nsWeakReference.h"
-#include "mozilla/dom/CaretStateChangedEvent.h"
-#include "mozilla/EventForwards.h"
-#include "mozilla/UniquePtr.h"
-#include "mozilla/WeakPtr.h"
 
 class nsFrameSelection;
 class nsIContent;
@@ -133,19 +133,21 @@ protected:
     RespectOldAppearance
   };
 
+  using UpdateCaretsHintSet = mozilla::EnumSet<UpdateCaretsHint>;
+
   friend std::ostream& operator<<(std::ostream& aStream,
                                   const UpdateCaretsHint& aResult);
 
   
   
   
-  void UpdateCarets(UpdateCaretsHint aHint = UpdateCaretsHint::Default);
+  void UpdateCarets(UpdateCaretsHintSet aHints = UpdateCaretsHint::Default);
 
   
   void HideCarets();
 
-  void UpdateCaretsForCursorMode(UpdateCaretsHint aHint);
-  void UpdateCaretsForSelectionMode(UpdateCaretsHint aHint);
+  void UpdateCaretsForCursorMode(UpdateCaretsHintSet aHints);
+  void UpdateCaretsForSelectionMode(UpdateCaretsHintSet aHints);
 
   
   void ProvideHapticFeedback();

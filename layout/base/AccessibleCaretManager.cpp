@@ -223,7 +223,7 @@ AccessibleCaretManager::HideCarets()
 }
 
 void
-AccessibleCaretManager::UpdateCarets(UpdateCaretsHint aHint)
+AccessibleCaretManager::UpdateCarets(UpdateCaretsHintSet aHint)
 {
   FlushLayout();
   if (IsTerminated()) {
@@ -284,7 +284,7 @@ AccessibleCaretManager::HasNonEmptyTextContent(nsINode* aNode) const
 }
 
 void
-AccessibleCaretManager::UpdateCaretsForCursorMode(UpdateCaretsHint aHint)
+AccessibleCaretManager::UpdateCaretsForCursorMode(UpdateCaretsHintSet aHints)
 {
   AC_LOG("%s, selection: %p", __FUNCTION__, GetSelection());
 
@@ -304,35 +304,31 @@ AccessibleCaretManager::UpdateCaretsForCursorMode(UpdateCaretsHint aHint)
       break;
 
     case PositionChangedResult::Changed:
-      switch (aHint) {
-        case UpdateCaretsHint::Default:
-          if (HasNonEmptyTextContent(GetEditingHostForFrame(frame))) {
+      if (aHints == UpdateCaretsHint::Default) {
+        if (HasNonEmptyTextContent(GetEditingHostForFrame(frame))) {
+          mFirstCaret->SetAppearance(Appearance::Normal);
+        } else if (sCaretShownWhenLongTappingOnEmptyContent) {
+          if (mFirstCaret->IsLogicallyVisible()) {
+            
+            
+            
             mFirstCaret->SetAppearance(Appearance::Normal);
-          } else if (sCaretShownWhenLongTappingOnEmptyContent) {
-            if (mFirstCaret->IsLogicallyVisible()) {
-              
-              
-              
-              mFirstCaret->SetAppearance(Appearance::Normal);
-            } else {
-              
-              
-              
-              
-              
-              
-              
-              
-            }
           } else {
-            mFirstCaret->SetAppearance(Appearance::NormalNotShown);
+            
+            
+            
+            
+            
+            
+            
+            
           }
-          break;
-
-        case UpdateCaretsHint::RespectOldAppearance:
-          
-          
-          break;
+        } else {
+          mFirstCaret->SetAppearance(Appearance::NormalNotShown);
+        }
+      } else if (aHints.contains(UpdateCaretsHint::RespectOldAppearance)) {
+        
+        
       }
       break;
 
@@ -353,7 +349,7 @@ AccessibleCaretManager::UpdateCaretsForCursorMode(UpdateCaretsHint aHint)
 }
 
 void
-AccessibleCaretManager::UpdateCaretsForSelectionMode(UpdateCaretsHint aHint)
+AccessibleCaretManager::UpdateCaretsForSelectionMode(UpdateCaretsHintSet aHints)
 {
   AC_LOG("%s: selection: %p", __FUNCTION__, GetSelection());
 
@@ -371,8 +367,8 @@ AccessibleCaretManager::UpdateCaretsForSelectionMode(UpdateCaretsHint aHint)
     return;
   }
 
-  auto updateSingleCaret = [aHint](AccessibleCaret* aCaret, nsIFrame* aFrame,
-                                   int32_t aOffset) -> PositionChangedResult
+  auto updateSingleCaret = [aHints](AccessibleCaret* aCaret, nsIFrame* aFrame,
+                                    int32_t aOffset) -> PositionChangedResult
   {
     PositionChangedResult result = aCaret->SetPosition(aFrame, aOffset);
     aCaret->SetSelectionBarEnabled(sSelectionBarEnabled);
@@ -383,15 +379,11 @@ AccessibleCaretManager::UpdateCaretsForSelectionMode(UpdateCaretsHint aHint)
         break;
 
       case PositionChangedResult::Changed:
-        switch (aHint) {
-          case UpdateCaretsHint::Default:
-            aCaret->SetAppearance(Appearance::Normal);
-            break;
-
-          case UpdateCaretsHint::RespectOldAppearance:
-            
-            
-            break;
+        if (aHints == UpdateCaretsHint::Default) {
+          aCaret->SetAppearance(Appearance::Normal);
+        } else if (aHints.contains(UpdateCaretsHint::RespectOldAppearance)) {
+          
+          
         }
         break;
 
@@ -416,7 +408,7 @@ AccessibleCaretManager::UpdateCaretsForSelectionMode(UpdateCaretsHint aHint)
     }
   }
 
-  if (aHint == UpdateCaretsHint::Default) {
+  if (aHints == UpdateCaretsHint::Default) {
     
     
     if (sCaretsAlwaysTilt) {
