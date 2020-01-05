@@ -39,6 +39,7 @@
 #include "gfxPrefs.h"
 #if defined(MOZ_WIDGET_ANDROID)
 # include <android/log.h>
+# include "mozilla/layers/UiCompositorControllerParent.h"
 # include "mozilla/widget/AndroidCompositorWidget.h"
 #endif
 #include "GeckoProfiler.h"
@@ -72,7 +73,6 @@ ContentMightReflowOnOrientationChange(const IntRect& rect)
   : mLayerManager(aManager)
   , mIsFirstPaint(true)
   , mLayersUpdated(false)
-  , mPaintSyncId(0)
   , mReadyForCompose(true)
   , mCompositorBridge(aParent)
 {
@@ -854,6 +854,7 @@ AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer,
 
         AsyncTransformComponentMatrix combinedAsyncTransform;
         bool hasAsyncTransform = false;
+        
         ScreenMargin fixedLayerMargins;
 
         
@@ -943,30 +944,25 @@ AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer,
                    i + 1 >= layer->GetScrollMetadataCount());
             if (*aOutFoundRoot) {
               mRootScrollableId = metrics.GetScrollId();
-              CSSToLayerScale geckoZoom = metrics.LayersPixelsPerCSSPixel().ToScaleFactor();
+              Compositor* compositor = mLayerManager->GetCompositor();
               if (mIsFirstPaint) {
-                LayerIntPoint scrollOffsetLayerPixels = RoundedToInt(metrics.GetScrollOffset() * geckoZoom);
-                mContentRect = metrics.GetScrollableRect();
-                SetFirstPaintViewport(scrollOffsetLayerPixels,
-                                      geckoZoom,
-                                      mContentRect);
-              } else {
-                ParentLayerPoint scrollOffset = controller->GetCurrentAsyncScrollOffset(
-                    AsyncPanZoomController::RESPECT_FORCE_DISABLE);
-                
-                CSSRect displayPort(metrics.GetCriticalDisplayPort().IsEmpty() ?
-                    metrics.GetDisplayPort() :
-                    metrics.GetCriticalDisplayPort());
-                displayPort += metrics.GetScrollOffset();
-                SyncFrameMetrics(scrollOffset,
-                    geckoZoom * asyncTransformWithoutOverscroll.mScale,
-                    metrics.GetScrollableRect(), displayPort, geckoZoom, mLayersUpdated,
-                    mPaintSyncId, fixedLayerMargins);
-                mFixedLayerMargins = fixedLayerMargins;
+                if (CompositorBridgeParent* bridge = compositor->GetCompositorBridgeParent()) {
+                  AndroidDynamicToolbarAnimator* animator = bridge->GetAPZCTreeManager()->GetAndroidDynamicToolbarAnimator();
+                  MOZ_ASSERT(animator);
+                  animator->UpdateRootFrameMetrics(metrics);
+                  animator->FirstPaint();
+                }
+              }
+              if (mLayersUpdated) {
+                if (CompositorBridgeParent* bridge = compositor->GetCompositorBridgeParent()) {
+                  AndroidDynamicToolbarAnimator* animator = bridge->GetAPZCTreeManager()->GetAndroidDynamicToolbarAnimator();
+                  MOZ_ASSERT(animator);
+                  animator->NotifyLayersUpdated();
+                }
                 mLayersUpdated = false;
-                mPaintSyncId = 0;
               }
               mIsFirstPaint = false;
+              fixedLayerMargins = mFixedLayerMargins;
             }
           }
 #else
@@ -1377,6 +1373,24 @@ AsyncCompositionManager::TransformShadowTree(TimeStamp aCurrentFrame,
 
   
   
+  TimeStamp nextFrame = aCurrentFrame;
+
+  MOZ_ASSERT(aVsyncRate != TimeDuration::Forever());
+  if (aVsyncRate != TimeDuration::Forever()) {
+    nextFrame += aVsyncRate;
+  }
+
+#if defined(MOZ_WIDGET_ANDROID)
+  Compositor* compositor = mLayerManager->GetCompositor();
+  if (CompositorBridgeParent* bridge = compositor->GetCompositorBridgeParent()) {
+    AndroidDynamicToolbarAnimator* animator = bridge->GetAPZCTreeManager()->GetAndroidDynamicToolbarAnimator();
+    MOZ_ASSERT(animator);
+    wantNextFrame |= animator->UpdateAnimation(nextFrame);
+  }
+#endif 
+
+  
+  
   
   mPreviousFrameTimeStamp = wantNextFrame ? aCurrentFrame : TimeStamp();
 
@@ -1402,15 +1416,6 @@ AsyncCompositionManager::TransformShadowTree(TimeStamp aCurrentFrame,
 #endif
     }
 
-    
-    
-    TimeStamp nextFrame = aCurrentFrame;
-
-    MOZ_ASSERT(aVsyncRate != TimeDuration::Forever());
-    if (aVsyncRate != TimeDuration::Forever()) {
-      nextFrame += aVsyncRate;
-    }
-
     bool apzAnimating = SampleAPZAnimations(LayerMetricsWrapper(root), nextFrame);
     mAnimationMetricsTracker.UpdateApzAnimationInProgress(apzAnimating, aVsyncRate);
     wantNextFrame |= apzAnimating;
@@ -1429,42 +1434,13 @@ AsyncCompositionManager::TransformShadowTree(TimeStamp aCurrentFrame,
   return wantNextFrame;
 }
 
+#if defined(MOZ_WIDGET_ANDROID)
 void
-AsyncCompositionManager::SetFirstPaintViewport(const LayerIntPoint& aOffset,
-                                               const CSSToLayerScale& aZoom,
-                                               const CSSRect& aCssPageRect)
+AsyncCompositionManager::SetFixedLayerMarginsBottom(ScreenIntCoord aBottom)
 {
-#ifdef MOZ_WIDGET_ANDROID
-  widget::AndroidCompositorWidget* widget =
-      mLayerManager->GetCompositor()->GetWidget()->AsAndroid();
-  if (!widget) {
-    return;
-  }
-  widget->SetFirstPaintViewport(aOffset, aZoom, aCssPageRect);
-#endif
+  mFixedLayerMargins.bottom = aBottom;
 }
-
-void
-AsyncCompositionManager::SyncFrameMetrics(const ParentLayerPoint& aScrollOffset,
-                                          const CSSToParentLayerScale& aZoom,
-                                          const CSSRect& aCssPageRect,
-                                          const CSSRect& aDisplayPort,
-                                          const CSSToLayerScale& aPaintedResolution,
-                                          bool aLayersUpdated,
-                                          int32_t aPaintSyncId,
-                                          ScreenMargin& aFixedLayerMargins)
-{
-#ifdef MOZ_WIDGET_ANDROID
-  widget::AndroidCompositorWidget* widget =
-      mLayerManager->GetCompositor()->GetWidget()->AsAndroid();
-  if (!widget) {
-    return;
-  }
-  widget->SyncFrameMetrics(
-      aScrollOffset, aZoom, aCssPageRect, aDisplayPort, aPaintedResolution,
-      aLayersUpdated, aPaintSyncId, aFixedLayerMargins);
-#endif
-}
+#endif 
 
 } 
 } 
