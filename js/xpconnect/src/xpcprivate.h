@@ -3185,6 +3185,10 @@ public:
 
     
     
+    bool wasNuked;
+
+    
+    
     bool wrapperDenialWarnings[WrapperDenialTypeCount];
 
     
