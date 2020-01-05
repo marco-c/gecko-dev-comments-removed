@@ -100,12 +100,14 @@ protected:
                               uint32_t        aOffset,
                               uint32_t        aLength,
                               const char16_t *aText,
+                              hb_buffer_t    *aBuffer,
                               bool            aVertical,
                               RoundingFlags   aRounding);
 
     
     
     nscoord GetGlyphPositions(gfxContext *aContext,
+                              hb_buffer_t *aBuffer,
                               nsTArray<nsPoint>& aPositions,
                               uint32_t aAppUnitsPerDevUnit);
 
@@ -129,9 +131,6 @@ protected:
 
     
     hb_font_t         *mHBFont;
-
-    
-    hb_buffer_t       *mBuffer;
 
     FontCallbackData   mCallbackData;
 
