@@ -260,12 +260,12 @@ impl Document {
     }
 
     
-    pub fn url<'a>(&'a self) -> &'a Url {
+    pub fn url(&self) -> &Url {
         &self.url
     }
 
     
-    pub fn fallback_base_url<'a>(&'a self) -> Url {
+    pub fn fallback_base_url(&self) -> Url {
         
         
         
