@@ -13,6 +13,7 @@
 #include "mozilla/layers/CompositorBridgeChild.h"
 #include "mozilla/layers/CompositorBridgeParent.h"
 #include "mozilla/layers/ImageBridgeChild.h"
+#include "LiveResizeListener.h"
 #include "nsBaseWidget.h"
 #include "nsDeviceContext.h"
 #include "nsCOMPtr.h"
@@ -251,6 +252,7 @@ WidgetShutdownObserver::Unregister()
 void
 nsBaseWidget::Shutdown()
 {
+  NotifyLiveResizeStopped();
   RevokeTransactionIdAllocator();
   DestroyCompositor();
   FreeShutdownObserver();
@@ -2114,6 +2116,41 @@ nsBaseWidget::UpdateSynthesizedTouchState(MultiTouchInput* aState,
   }
 
   return inputToDispatch;
+}
+
+void
+nsBaseWidget::NotifyLiveResizeStarted()
+{
+  
+  
+  
+  NotifyLiveResizeStopped();
+  MOZ_ASSERT(mLiveResizeListeners.IsEmpty());
+
+  
+  
+  if (!mWidgetListener) {
+    return;
+  }
+  nsCOMPtr<nsIXULWindow> xulWindow = mWidgetListener->GetXULWindow();
+  if (!xulWindow) {
+    return;
+  }
+  mLiveResizeListeners = xulWindow->GetLiveResizeListeners();
+  for (uint32_t i = 0; i < mLiveResizeListeners.Length(); i++) {
+    mLiveResizeListeners[i]->LiveResizeStarted();
+  }
+}
+
+void
+nsBaseWidget::NotifyLiveResizeStopped()
+{
+  if (!mLiveResizeListeners.IsEmpty()) {
+    for (uint32_t i = 0; i < mLiveResizeListeners.Length(); i++) {
+      mLiveResizeListeners[i]->LiveResizeStopped();
+    }
+    mLiveResizeListeners.Clear();
+  }
 }
 
 void

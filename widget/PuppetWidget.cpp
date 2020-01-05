@@ -608,6 +608,10 @@ PuppetWidget::GetLayerManager(PLayerTransactionChild* aShadowManager,
 LayerManager*
 PuppetWidget::RecreateLayerManager(PLayerTransactionChild* aShadowManager)
 {
+  
+  
+  DestroyLayerManager();
+
   MOZ_ASSERT(mTabChild);
   if (mTabChild->GetCompositorOptions().UseWebRender()) {
     mLayerManager = new WebRenderLayerManager(this);
