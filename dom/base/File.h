@@ -71,6 +71,10 @@ public:
   Create(nsISupports* aParent, const nsAString& aContentType, uint64_t aStart,
          uint64_t aLength);
 
+  static already_AddRefed<Blob>
+  CreateStringBlob(nsISupports* aParent, const nsACString& aData,
+                   const nsAString& aContentType);
+
   
   
   
@@ -520,6 +524,28 @@ protected:
   const uint64_t mSerialNumber;
 };
 
+class BlobImplString final : public BlobImplBase
+{
+public:
+  NS_DECL_ISUPPORTS_INHERITED
+
+  BlobImplString(const nsACString& aData, const nsAString& aContentType)
+    : BlobImplBase(aContentType, aData.Length())
+    , mData(aData)
+  {}
+
+  virtual void GetInternalStream(nsIInputStream** aStream,
+                                 ErrorResult& aRv) override;
+
+  virtual already_AddRefed<BlobImpl>
+  CreateSlice(uint64_t aStart, uint64_t aLength,
+              const nsAString& aContentType, ErrorResult& aRv) override;
+
+private:
+  ~BlobImplString() {}
+
+  nsCString mData;
+};
 
 
 
