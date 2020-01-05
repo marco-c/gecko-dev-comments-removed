@@ -106,8 +106,10 @@ exports.close = close
 function resize(panel, width, height) {
   
   
-  panel.firstChild.style.width = width + "px";
-  panel.firstChild.style.height = height + "px";
+  if (panel.firstChild) {
+    panel.firstChild.style.width = width + "px";
+    panel.firstChild.style.height = height + "px";
+  }
 }
 exports.resize = resize
 
