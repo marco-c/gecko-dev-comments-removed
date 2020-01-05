@@ -2756,19 +2756,6 @@ PluginModuleParent::NPP_NewInternal(NPMIMEType pluginType, NPP instance,
     
     instance->pdata = static_cast<PluginDataResolver*>(parentInstance);
 
-    
-    
-    RefPtr<nsPluginInstanceOwner> owner = parentInstance->GetOwner();
-    nsCOMPtr<nsIDOMElement> elt;
-    owner->GetDOMElement(getter_AddRefs(elt));
-    if (nsCOMPtr<nsINode> node = do_QueryInterface(elt)) {
-        nsCOMPtr<nsIDocument> doc = node->OwnerDoc();
-        if (doc) {
-            nsCOMPtr<nsIEventTarget> eventTarget = doc->EventTargetFor(dom::TaskCategory::Other);
-            SetEventTargetForActor(parentInstance, eventTarget);
-        }
-    }
-
     if (!SendPPluginInstanceConstructor(parentInstance,
                                         nsDependentCString(pluginType), mode,
                                         names, values)) {
