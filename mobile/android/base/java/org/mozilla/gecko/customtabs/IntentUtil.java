@@ -51,6 +51,16 @@ class IntentUtil {
 
 
 
+    static boolean hasShareItem(@NonNull Intent intent) {
+        return intent.getBooleanExtra(CustomTabsIntent.EXTRA_DEFAULT_SHARE_MENU_ITEM, false);
+    }
+
+    
+
+
+
+
+
     static Bitmap getActionButtonIcon(@NonNull Intent intent) {
         final Bundle bundle = getActionButtonBundle(intent);
         return (bundle == null) ? null : (Bitmap) bundle.getParcelable(CustomTabsIntent.KEY_ICON);
