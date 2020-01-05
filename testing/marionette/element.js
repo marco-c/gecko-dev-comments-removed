@@ -277,7 +277,25 @@ element.find = function (container, strategy, selector, opts = {}) {
 
 function find_(container, strategy, selector, searchFn, opts) {
   let rootNode = container.shadowRoot || container.frame.document;
-  let startNode = opts.startNode || rootNode;
+  let startNode;
+
+  if (opts.startNode) {
+    startNode = opts.startNode;
+  } else {
+    switch (strategy) {
+      
+      
+      case element.Strategy.Anon:
+      case element.Strategy.AnonAttribute:
+        if (rootNode instanceof Ci.nsIDOMDocument) {
+          startNode = rootNode.documentElement;
+        }
+        break;
+
+      default:
+        startNode = rootNode;
+    }
+  }
 
   let res;
   try {
