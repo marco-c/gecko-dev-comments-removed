@@ -70,9 +70,6 @@ public:
   }
 
   
-  nsMediaList* Media() final;
-
-  
   
   
   
@@ -89,6 +86,8 @@ protected:
   uint32_t InsertRuleInternal(const nsAString& aRule,
                               uint32_t aIndex, ErrorResult& aRv);
   void DeleteRuleInternal(uint32_t aIndex, ErrorResult& aRv);
+
+  void EnabledStateChangedInternal() {}
 
 private:
   void DropSheet();
