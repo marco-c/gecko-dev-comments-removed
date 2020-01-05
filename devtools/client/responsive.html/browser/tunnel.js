@@ -112,6 +112,17 @@ function tunnelToInnerBrowser(outer, inner) {
       
       
       
+      Object.defineProperty(outer, "outerWindowID", {
+        get() {
+          return inner.outerWindowID;
+        },
+        configurable: true,
+        enumerable: true,
+      });
+
+      
+      
+      
       
       
       
@@ -274,6 +285,7 @@ function tunnelToInnerBrowser(outer, inner) {
       
       delete outer.frameLoader;
       delete outer[FRAME_LOADER];
+      delete outer.outerWindowID;
 
       
       
