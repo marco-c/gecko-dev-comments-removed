@@ -22,12 +22,6 @@ const PERMITTED_SCHEMES = ["http", "https", "file", "ftp", "data"];
 const PERMITTED_SCHEMES_REGEXP = PERMITTED_SCHEMES.join("|");
 
 
-const PATTERN_REGEXP = new RegExp(`^(${PERMITTED_SCHEMES_REGEXP}|\\*)://(\\*|\\*\\.[^*/]+|[^*/]+|)(/.*)$`);
-
-
-const WILDCARD_SCHEMES = ["http", "https"];
-
-
 
 function globToRegexp(pat, allowQuestion) {
   
@@ -53,7 +47,8 @@ function SingleMatchPattern(pat) {
   } else if (!pat) {
     this.schemes = [];
   } else {
-    let match = PATTERN_REGEXP.exec(pat);
+    let re = new RegExp(`^(${PERMITTED_SCHEMES_REGEXP}|\\*)://(\\*|\\*\\.[^*/]+|[^*/]+|)(/.*)$`);
+    let match = re.exec(pat);
     if (!match) {
       Cu.reportError(`Invalid match pattern: '${pat}'`);
       this.schemes = [];
@@ -61,7 +56,7 @@ function SingleMatchPattern(pat) {
     }
 
     if (match[1] == "*") {
-      this.schemes = WILDCARD_SCHEMES;
+      this.schemes = ["http", "https"];
     } else {
       this.schemes = [match[1]];
     }
@@ -179,40 +174,8 @@ MatchPattern.prototype = {
     return false;
   },
 
-  
-  
-  
-  
-  subsumes(pattern) {
-    let match = PATTERN_REGEXP.exec(pattern);
-    if (!match) {
-      throw new Error("Invalid match pattern");
-    }
-
-    if (match[1] == "*") {
-      return WILDCARD_SCHEMES.every(scheme => this.matchesIgnoringPath({scheme, host: match[2]}));
-    }
-
-    return this.matchesIgnoringPath({scheme: match[1], host: match[2]});
-  },
-
   serialize() {
     return this.pat;
-  },
-
-  removeOne(pattern) {
-    if (!Array.isArray(this.pat)) {
-      return;
-    }
-
-    let index = this.pat.indexOf(pattern);
-    if (index >= 0) {
-      if (this.matchers[index].pat != pattern) {
-        throw new Error("pat/matcher mismatch in removeOne()");
-      }
-      this.pat.splice(index, 1);
-      this.matchers.splice(index, 1);
-    }
   },
 };
 
