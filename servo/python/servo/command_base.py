@@ -296,6 +296,11 @@ class CommandBase(object):
         if not self.config["tools"]["system-rust"]:
             self.config["tools"]["rust-root"] = path.join(
                 self.context.sharedir, "rust", self.rust_path())
+        if use_stable_rust:
+            
+            
+            
+            self.config["build"]["incremental"] = False
 
     def use_stable_rust(self):
         return self._use_stable_rust
