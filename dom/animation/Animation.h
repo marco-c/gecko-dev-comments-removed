@@ -314,7 +314,7 @@ public:
 
 
   void ComposeStyle(RefPtr<AnimValuesStyleRule>& aStyleRule,
-                    nsCSSPropertyIDSet& aSetProperties);
+                    const nsCSSPropertyIDSet& aPropertiesToSkip);
 
   void NotifyEffectTimingUpdated();
 

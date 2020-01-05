@@ -190,6 +190,15 @@ public:
 
   static nsIAtom** GetEffectSetPropertyAtoms();
 
+  nsCSSPropertyIDSet& PropertiesWithImportantRules()
+  {
+    return mPropertiesWithImportantRules;
+  }
+  nsCSSPropertyIDSet& PropertiesForAnimationsLevel()
+  {
+    return mPropertiesForAnimationsLevel;
+  }
+
 private:
   static nsIAtom* GetEffectSetPropertyAtom(CSSPseudoElementType aPseudoType);
 
@@ -228,6 +237,14 @@ private:
   
   
   uint64_t mAnimationGeneration;
+
+  
+  
+  nsCSSPropertyIDSet mPropertiesWithImportantRules;
+  
+  
+  
+  nsCSSPropertyIDSet mPropertiesForAnimationsLevel;
 
 #ifdef DEBUG
   

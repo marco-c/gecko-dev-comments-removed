@@ -20,8 +20,6 @@
 #include "mozilla/EffectCompositor.h"
 #include "mozilla/KeyframeEffectParams.h"
 #include "mozilla/LayerAnimationInfo.h" 
-#include "mozilla/ServoBindingHelpers.h" 
-                                         
 #include "mozilla/StyleAnimationValue.h"
 #include "mozilla/dom/AnimationEffectReadOnly.h"
 #include "mozilla/dom/Element.h"
@@ -62,20 +60,11 @@ struct PropertyValuePair
   
   
   
-  nsCSSValue mValue;
-
-  
-  
-  
-  RefPtr<ServoDeclarationBlock> mServoDeclarationBlock;
+  nsCSSValue    mValue;
 
   bool operator==(const PropertyValuePair& aOther) const {
     return mProperty == aOther.mProperty &&
-           mValue == aOther.mValue &&
-           !mServoDeclarationBlock == !aOther.mServoDeclarationBlock &&
-           (!mServoDeclarationBlock ||
-            Servo_DeclarationBlock_Equals(mServoDeclarationBlock,
-                                          aOther.mServoDeclarationBlock));
+           mValue == aOther.mValue;
   }
 };
 
@@ -275,9 +264,8 @@ public:
   
   
   
-  
   void ComposeStyle(RefPtr<AnimValuesStyleRule>& aStyleRule,
-                    nsCSSPropertyIDSet& aSetProperties);
+                    const nsCSSPropertyIDSet& aPropertiesToSkip);
   
   bool IsRunningOnCompositor() const;
   void SetIsRunningOnCompositor(nsCSSPropertyID aProperty, bool aIsRunning);

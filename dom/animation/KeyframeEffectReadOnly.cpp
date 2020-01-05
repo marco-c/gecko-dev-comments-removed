@@ -194,11 +194,23 @@ KeyframeEffectReadOnly::SetKeyframes(nsTArray<Keyframe>&& aKeyframes,
 const AnimationProperty*
 KeyframeEffectReadOnly::GetAnimationOfProperty(nsCSSPropertyID aProperty) const
 {
+  if (!IsInEffect()) {
+    return nullptr;
+  }
+
+  EffectSet* effectSet =
+    EffectSet::GetEffectSet(mTarget->mElement, mTarget->mPseudoType);
   for (size_t propIdx = 0, propEnd = mProperties.Length();
        propIdx != propEnd; ++propIdx) {
     if (aProperty == mProperties[propIdx].mProperty) {
       const AnimationProperty* result = &mProperties[propIdx];
-      if (!result->mWinsInCascade) {
+      
+      
+      if (effectSet &&
+          effectSet->PropertiesWithImportantRules()
+            .HasProperty(result->mProperty) &&
+          effectSet->PropertiesForAnimationsLevel()
+            .HasProperty(result->mProperty)) {
         result = nullptr;
       }
       return result;
@@ -296,10 +308,7 @@ KeyframeEffectReadOnly::UpdateProperties(nsStyleContext* aStyleContext)
       runningOnCompositorProperties.HasProperty(property.mProperty);
   }
 
-  
-  if (aStyleContext->PresContext()->StyleSet()->IsGecko()) {
-    CalculateCumulativeChangeHint(aStyleContext);
-  }
+  CalculateCumulativeChangeHint(aStyleContext);
 
   MarkCascadeNeedsUpdate();
 
@@ -307,8 +316,9 @@ KeyframeEffectReadOnly::UpdateProperties(nsStyleContext* aStyleContext)
 }
 
 void
-KeyframeEffectReadOnly::ComposeStyle(RefPtr<AnimValuesStyleRule>& aStyleRule,
-                                     nsCSSPropertyIDSet& aSetProperties)
+KeyframeEffectReadOnly::ComposeStyle(
+  RefPtr<AnimValuesStyleRule>& aStyleRule,
+  const nsCSSPropertyIDSet& aPropertiesToSkip)
 {
   ComputedTiming computedTiming = GetComputedTiming();
   mProgressOnLastCompose = computedTiming.mProgress;
@@ -329,25 +339,9 @@ KeyframeEffectReadOnly::ComposeStyle(RefPtr<AnimValuesStyleRule>& aStyleRule,
     MOZ_ASSERT(prop.mSegments[prop.mSegments.Length() - 1].mToKey == 1.0,
                "incorrect last to key");
 
-    if (aSetProperties.HasProperty(prop.mProperty)) {
-      
-      
-      
-      
+    if (aPropertiesToSkip.HasProperty(prop.mProperty)) {
       continue;
     }
-
-    if (!prop.mWinsInCascade) {
-      
-      
-      
-      
-      
-      
-      continue;
-    }
-
-    aSetProperties.AddProperty(prop.mProperty);
 
     MOZ_ASSERT(prop.mSegments.Length() > 0,
                "property should not be in animations if it has no segments");
@@ -862,13 +856,8 @@ KeyframeEffectReadOnly::GetKeyframes(JSContext*& aCx,
         : propertyValue.mProperty;
 
       nsAutoString stringValue;
-      if (propertyValue.mServoDeclarationBlock) {
-        Servo_DeclarationBlock_SerializeOneValue(
-          propertyValue.mServoDeclarationBlock, &stringValue);
-      } else {
-        propertyValue.mValue.AppendToString(
-          propertyForSerializing, stringValue, nsCSSValue::eNormalized);
-      }
+      propertyValue.mValue.AppendToString(
+        propertyForSerializing, stringValue, nsCSSValue::eNormalized);
 
       JS::Rooted<JS::Value> value(aCx);
       if (!ToJSValue(aCx, stringValue, &value) ||
@@ -1140,10 +1129,26 @@ KeyframeEffectReadOnly::ShouldBlockAsyncTransformAnimations(
   
   MOZ_ASSERT(mAnimation && mAnimation->IsPlaying());
 
+  
+  if (!IsInEffect()) {
+    return false;
+  }
+
+  EffectSet* effectSet =
+    EffectSet::GetEffectSet(mTarget->mElement, mTarget->mPseudoType);
   for (const AnimationProperty& property : mProperties) {
     
     
-    if (!property.mWinsInCascade) {
+    
+    
+    
+    
+    
+    if (effectSet &&
+        effectSet->PropertiesWithImportantRules()
+          .HasProperty(property.mProperty) &&
+        effectSet->PropertiesForAnimationsLevel()
+          .HasProperty(property.mProperty)) {
       continue;
     }
     
@@ -1275,13 +1280,6 @@ bool
 KeyframeEffectReadOnly::CanIgnoreIfNotVisible() const
 {
   if (!AnimationUtils::IsOffscreenThrottlingEnabled()) {
-    return false;
-  }
-
-  
-  
-  nsPresContext* presContext = GetPresContext();
-  if (!presContext || presContext->StyleSet()->IsServo()) {
     return false;
   }
 

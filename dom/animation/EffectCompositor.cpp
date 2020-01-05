@@ -26,6 +26,7 @@
 #include "nsRuleNode.h" 
 #include "nsRuleProcessorData.h" 
 #include "nsTArray.h"
+#include <bitset>
 
 using mozilla::dom::Animation;
 using mozilla::dom::Element;
@@ -586,12 +587,9 @@ EffectCompositor::ComposeAnimationRule(dom::Element* aElement,
              "Animation cascade out of date when composing animation rule");
 
   
-  nsTArray<KeyframeEffectReadOnly*> sortedEffectList;
+  nsTArray<KeyframeEffectReadOnly*> sortedEffectList(effects->Count());
   for (KeyframeEffectReadOnly* effect : *effects) {
-    MOZ_ASSERT(effect->GetAnimation());
-    if (effect->GetAnimation()->CascadeLevel() == aCascadeLevel) {
-      sortedEffectList.AppendElement(effect);
-    }
+    sortedEffectList.AppendElement(effect);
   }
   sortedEffectList.Sort(EffectCompositeOrderComparator());
 
@@ -602,11 +600,12 @@ EffectCompositor::ComposeAnimationRule(dom::Element* aElement,
   
   
   
-  
-  nsCSSPropertyIDSet properties;
-
-  for (KeyframeEffectReadOnly* effect : Reversed(sortedEffectList)) {
-    effect->GetAnimation()->ComposeStyle(animationRule, properties);
+  const nsCSSPropertyIDSet& propertiesToSkip =
+    aCascadeLevel == CascadeLevel::Animations
+    ? nsCSSPropertyIDSet()
+    : effects->PropertiesForAnimationsLevel();
+  for (KeyframeEffectReadOnly* effect : sortedEffectList) {
+    effect->GetAnimation()->ComposeStyle(animationRule, propertiesToSkip);
   }
 
   MOZ_ASSERT(effects == EffectSet::GetEffectSet(aElement, aPseudoType),
@@ -664,7 +663,7 @@ EffectCompositor::UpdateCascadeResults(EffectSet& aEffectSet,
   }
 
   
-  nsTArray<KeyframeEffectReadOnly*> sortedEffectList;
+  nsTArray<KeyframeEffectReadOnly*> sortedEffectList(aEffectSet.Count());
   for (KeyframeEffectReadOnly* effect : aEffectSet) {
     sortedEffectList.AppendElement(effect);
   }
@@ -680,18 +679,64 @@ EffectCompositor::UpdateCascadeResults(EffectSet& aEffectSet,
     GetOverriddenProperties(aStyleContext, aEffectSet, overriddenProperties);
   }
 
-  bool changed = false;
-  nsCSSPropertyIDSet animatedProperties;
+  
+  
+  auto compositorPropertiesInSet =
+    [](nsCSSPropertyIDSet& aPropertySet) ->
+      std::bitset<LayerAnimationInfo::kRecords> {
+        std::bitset<LayerAnimationInfo::kRecords> result;
+        for (size_t i = 0; i < LayerAnimationInfo::kRecords; i++) {
+          if (aPropertySet.HasProperty(
+                LayerAnimationInfo::sRecords[i].mProperty)) {
+            result.set(i);
+          }
+        }
+      return result;
+    };
+
+  nsCSSPropertyIDSet& propertiesWithImportantRules =
+    aEffectSet.PropertiesWithImportantRules();
+  nsCSSPropertyIDSet& propertiesForAnimationsLevel =
+    aEffectSet.PropertiesForAnimationsLevel();
 
   
-  for (KeyframeEffectReadOnly* effect : Reversed(sortedEffectList)) {
+  
+  std::bitset<LayerAnimationInfo::kRecords>
+    prevCompositorPropertiesWithImportantRules =
+      compositorPropertiesInSet(propertiesWithImportantRules);
+  std::bitset<LayerAnimationInfo::kRecords>
+    prevCompositorPropertiesForAnimationsLevel =
+      compositorPropertiesInSet(propertiesForAnimationsLevel);
+
+  propertiesWithImportantRules.Empty();
+  propertiesForAnimationsLevel.Empty();
+
+  nsCSSPropertyIDSet animatedProperties;
+  bool hasCompositorPropertiesForTransition = false;
+
+  for (KeyframeEffectReadOnly* effect : sortedEffectList) {
     MOZ_ASSERT(effect->GetAnimation(),
                "Effects on a target element should have an Animation");
     bool inEffect = effect->IsInEffect();
+    CascadeLevel cascadeLevel = effect->GetAnimation()->CascadeLevel();
+
     for (AnimationProperty& prop : effect->Properties()) {
 
       bool winsInCascade = !animatedProperties.HasProperty(prop.mProperty) &&
                            inEffect;
+
+      if (overriddenProperties.HasProperty(prop.mProperty)) {
+        propertiesWithImportantRules.AddProperty(prop.mProperty);
+      }
+      if (cascadeLevel == EffectCompositor::CascadeLevel::Animations) {
+        propertiesForAnimationsLevel.AddProperty(prop.mProperty);
+      }
+
+      if (nsCSSProps::PropHasFlags(prop.mProperty,
+                                   CSS_PROPERTY_CAN_ANIMATE_ON_COMPOSITOR) &&
+          cascadeLevel == EffectCompositor::CascadeLevel::Transitions) {
+        hasCompositorPropertiesForTransition = true;
+      }
 
       
       
@@ -714,28 +759,38 @@ EffectCompositor::UpdateCascadeResults(EffectSet& aEffectSet,
         winsInCascade = false;
       }
 
-      if (winsInCascade != prop.mWinsInCascade) {
-        changed = true;
-      }
       prop.mWinsInCascade = winsInCascade;
     }
   }
 
   aEffectSet.MarkCascadeUpdated();
 
-  
-  
   nsPresContext* presContext = GetPresContext(aElement);
-  if (changed && presContext) {
-    
-    
-    for (auto level : { CascadeLevel::Animations,
-                        CascadeLevel::Transitions }) {
-      presContext->EffectCompositor()->RequestRestyle(aElement,
-                                                      aPseudoType,
-                                                      RestyleType::Layer,
-                                                      level);
-    }
+  if (!presContext) {
+    return;
+  }
+
+  
+  
+  
+  
+  if (prevCompositorPropertiesWithImportantRules !=
+        compositorPropertiesInSet(propertiesWithImportantRules)) {
+    presContext->EffectCompositor()->
+      RequestRestyle(aElement, aPseudoType,
+                     EffectCompositor::RestyleType::Layer,
+                     EffectCompositor::CascadeLevel::Animations);
+  }
+  
+  
+  
+  if (hasCompositorPropertiesForTransition &&
+      prevCompositorPropertiesForAnimationsLevel !=
+        compositorPropertiesInSet(propertiesForAnimationsLevel)) {
+    presContext->EffectCompositor()->
+      RequestRestyle(aElement, aPseudoType,
+                     EffectCompositor::RestyleType::Layer,
+                     EffectCompositor::CascadeLevel::Transitions);
   }
 }
 
