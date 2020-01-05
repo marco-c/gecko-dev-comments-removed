@@ -48,6 +48,8 @@
 # include "lul/platform-linux-lul.h"
 #endif
 
+using namespace mozilla;
+
 #if defined(SPS_OS_android) && !defined(MOZ_WIDGET_GONK)
 class GeckoJavaSampler : public mozilla::java::GeckoJavaSampler::Natives<GeckoJavaSampler>
 {
@@ -414,6 +416,39 @@ GeckoProfilerReporter::CollectReports(nsIHandleReportCallback* aHandleReport,
 
 NS_IMPL_ISUPPORTS(GeckoProfilerReporter, nsIMemoryReporter)
 
+static void
+RegisterCurrentThread(const char* aName, PseudoStack* aPseudoStack,
+                      bool aIsMainThread, void* stackTop)
+{
+  StaticMutexAutoLock lock(sRegisteredThreadsMutex);
+
+  if (!sRegisteredThreads) {
+    return;
+  }
+
+  Thread::tid_t id = Thread::GetCurrentId();
+
+  for (uint32_t i = 0; i < sRegisteredThreads->size(); i++) {
+    ThreadInfo* info = sRegisteredThreads->at(i);
+    if (info->ThreadId() == id && !info->IsPendingDelete()) {
+      
+      
+      MOZ_ASSERT(false);
+      return;
+    }
+  }
+
+  ThreadInfo* info =
+    new ThreadInfo(aName, id, aIsMainThread, aPseudoStack, stackTop);
+
+  
+  if (gSampler) {
+    gSampler->RegisterThread(info);
+  }
+
+  sRegisteredThreads->push_back(info);
+}
+
 void
 profiler_init(void* stackTop)
 {
@@ -438,14 +473,23 @@ profiler_init(void* stackTop)
 
   stack_key_initialized = true;
 
-  Sampler::Startup();
+  {
+    StaticMutexAutoLock lock(sRegisteredThreadsMutex);
+
+    sRegisteredThreads = new std::vector<ThreadInfo*>();
+  }
+
+  
+  
+  
+  
+  
 
   PseudoStack* stack = new PseudoStack();
   tlsPseudoStack.set(stack);
 
   bool isMainThread = true;
-  Sampler::RegisterCurrentThread(gGeckoThreadName, stack, isMainThread,
-                                 stackTop);
+  RegisterCurrentThread(gGeckoThreadName, stack, isMainThread, stackTop);
 
   
   
@@ -518,7 +562,27 @@ profiler_shutdown()
 
   set_stderr_callback(nullptr);
 
-  Sampler::Shutdown();
+  {
+    StaticMutexAutoLock lock(sRegisteredThreadsMutex);
+
+    while (sRegisteredThreads->size() > 0) {
+      delete sRegisteredThreads->back();
+      sRegisteredThreads->pop_back();
+    }
+
+    
+    
+    delete sRegisteredThreads;
+    sRegisteredThreads = nullptr;
+  }
+
+#if defined(USE_LUL_STACKWALK)
+  
+  if (sLUL) {
+    delete sLUL;
+    sLUL = nullptr;
+  }
+#endif
 
   
   
@@ -1013,7 +1077,7 @@ profiler_register_thread(const char* aName, void* aGuessStackTop)
   tlsPseudoStack.set(stack);
   bool isMainThread = is_main_thread_name(aName);
   void* stackTop = GetStackTop(aGuessStackTop);
-  Sampler::RegisterCurrentThread(aName, stack, isMainThread, stackTop);
+  RegisterCurrentThread(aName, stack, isMainThread, stackTop);
 }
 
 void
@@ -1027,9 +1091,30 @@ profiler_unregister_thread()
     return;
   }
 
-  Sampler::UnregisterCurrentThread();
+  {
+    StaticMutexAutoLock lock(sRegisteredThreadsMutex);
 
-  
+    if (sRegisteredThreads) {
+      Thread::tid_t id = Thread::GetCurrentId();
+
+      for (uint32_t i = 0; i < sRegisteredThreads->size(); i++) {
+        ThreadInfo* info = sRegisteredThreads->at(i);
+        if (info->ThreadId() == id && !info->IsPendingDelete()) {
+          if (profiler_is_active()) {
+            
+            
+            
+            info->SetPendingDelete();
+          } else {
+            delete info;
+            sRegisteredThreads->erase(sRegisteredThreads->begin() + i);
+          }
+          break;
+        }
+      }
+    }
+  }
+
   
   
   
