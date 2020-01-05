@@ -230,25 +230,21 @@ MP4AudioInfo::Update(const mp4parse_track_info* track,
   mRate = audio->sample_rate;
   mChannels = audio->channels;
   mBitDepth = audio->bit_depth;
+  mExtendedProfile = audio->profile;
   mDuration = track->duration;
   mMediaTime = track->media_time;
   mTrackId = track->track_id;
 
   
+  
+  if (audio->profile <= 4) {
+    mProfile = audio->profile;
+  }
 
   const uint8_t* cdata = audio->codec_specific_config.data;
   size_t size = audio->codec_specific_config.length;
   if (size > 0) {
     mCodecSpecificConfig->AppendElements(cdata, size);
-
-    if (size > 1) {
-      ABitReader br(cdata, size);
-      mExtendedProfile = br.getBits(5);
-
-      if (mExtendedProfile == 31) {  
-        mExtendedProfile = 32 + br.getBits(6);
-      }
-    }
   }
 }
 

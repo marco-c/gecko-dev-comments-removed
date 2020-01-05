@@ -302,8 +302,7 @@ MP4Metadata::GetTrackInfo(mozilla::TrackInfo::TrackType aType,
       MOZ_DIAGNOSTIC_ASSERT(audioRust->mRate == audio->mRate);
       MOZ_DIAGNOSTIC_ASSERT(audioRust->mChannels == audio->mChannels);
       MOZ_DIAGNOSTIC_ASSERT(audioRust->mBitDepth == audio->mBitDepth);
-      
-      
+      MOZ_DIAGNOSTIC_ASSERT(audioRust->mProfile == audio->mProfile);
       MOZ_DIAGNOSTIC_ASSERT(audioRust->mExtendedProfile == audio->mExtendedProfile);
       break;
     }
