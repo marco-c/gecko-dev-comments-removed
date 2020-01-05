@@ -64,11 +64,6 @@ class UpdateTestCase(PuppeteerMixin, MarionetteTestCase):
         self.set_preferences_defaults()
 
         
-        
-        
-        self.restart()
-
-        
         self.updates = [{
             'build_pre': self.software_update.build_info,
             'build_post': None,
