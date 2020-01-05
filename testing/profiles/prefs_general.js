@@ -357,7 +357,3 @@ user_pref("browser.usedOnWindows10.introURL", "");
 
 
 user_pref("plugin.load_flash_only", false);
-
-
-
-user_pref("media.libavcodec.allow-obsolete", true);
