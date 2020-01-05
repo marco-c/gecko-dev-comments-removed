@@ -21,14 +21,15 @@
 #include "mozilla/dom/VideoDecoderManagerParent.h"
 #include "mozilla/layers/CompositorThread.h"
 #include "mozilla/layers/ImageBridgeParent.h"
-#include "nsDebugImpl.h"
 #include "mozilla/layers/LayerTreeOwnerTracker.h"
-#include "ProcessUtils.h"
+#include "nsDebugImpl.h"
+#include "nsExceptionHandler.h"
+#include "nsThreadManager.h"
 #include "prenv.h"
+#include "ProcessUtils.h"
 #include "VRManager.h"
 #include "VRManagerParent.h"
 #include "VsyncBridgeParent.h"
-#include "nsExceptionHandler.h"
 #if defined(XP_WIN)
 # include "DeviceManagerD3D9.h"
 # include "mozilla/gfx/DeviceManagerDx.h"
@@ -66,6 +67,13 @@ GPUParent::Init(base::ProcessId aParentPid,
                 MessageLoop* aIOLoop,
                 IPC::Channel* aChannel)
 {
+  
+  
+  if (NS_WARN_IF(NS_FAILED(nsThreadManager::get().Init()))) {
+    return false;
+  }
+
+  
   if (NS_WARN_IF(!Open(aChannel, aParentPid, aIOLoop))) {
     return false;
   }
