@@ -1328,7 +1328,31 @@ class MessageManagerProxy {
   }
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+function classifyPermission(perm) {
+  let match = /^(\w+)(?:\.(\w+)(?:\.\w+)*)?$/.exec(perm);
+  if (!match) {
+    return {origin: perm};
+  } else if (match[1] == "experiments" && match[2]) {
+    return {api: match[2]};
+  }
+  return {permission: perm};
+}
+
 this.ExtensionUtils = {
+  classifyPermission,
   defineLazyGetter,
   detectLanguage,
   extend,
