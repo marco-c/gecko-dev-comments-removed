@@ -140,12 +140,18 @@ public:
   
 
   nscoord GetRowBaseline(mozilla::WritingMode aWritingMode);
- 
+
   
   virtual int32_t GetRowIndex() const;
 
   
   void SetRowIndex (int aRowIndex);
+
+  
+  int32_t GetAdjustmentForStoredIndex(int32_t aStoredIndex) const;
+
+  
+  void AddDeletedRowIndex();
 
   
   nscoord ReflowCellFrame(nsPresContext*           aPresContext,
@@ -319,13 +325,34 @@ private:
 
 };
 
+inline int32_t
+nsTableRowFrame::GetAdjustmentForStoredIndex(int32_t aStoredIndex) const
+{
+  nsTableRowGroupFrame* parentFrame = GetTableRowGroupFrame();
+  return parentFrame->GetAdjustmentForStoredIndex(aStoredIndex);
+}
+
+inline void nsTableRowFrame::AddDeletedRowIndex()
+{
+  nsTableRowGroupFrame* parentFrame = GetTableRowGroupFrame();
+  parentFrame->AddDeletedRowIndex(int32_t(mBits.mRowIndex));
+}
+
 inline int32_t nsTableRowFrame::GetRowIndex() const
 {
-  return int32_t(mBits.mRowIndex);
+  int32_t storedRowIndex = int32_t(mBits.mRowIndex);
+  int32_t rowIndexAdjustment = GetAdjustmentForStoredIndex(storedRowIndex);
+  return (storedRowIndex - rowIndexAdjustment);
 }
 
 inline void nsTableRowFrame::SetRowIndex (int aRowIndex)
 {
+  
+  
+  
+  MOZ_ASSERT(GetTableRowGroupFrame()->
+               GetTableFrame()->IsDeletedRowIndexRangesEmpty(),
+             "mDeletedRowIndexRanges should be empty here!");
   mBits.mRowIndex = aRowIndex;
 }
 

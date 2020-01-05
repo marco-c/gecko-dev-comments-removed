@@ -844,6 +844,43 @@ public:
 
 public:
 
+  
+
+  
+
+
+
+
+
+
+
+  void AddDeletedRowIndex(int32_t aDeletedRowStoredIndex);
+
+  
+
+
+
+
+
+
+
+
+  int32_t GetAdjustmentForStoredIndex(int32_t aStoredIndex);
+
+  
+
+
+
+  bool RecalculateRowIndices();
+
+  
+
+  bool IsDeletedRowIndexRangesEmpty() const {
+    return mDeletedRowIndexRanges.empty();
+  }
+
+public:
+
 #ifdef DEBUG
   void Dump(bool            aDumpRows,
             bool            aDumpCols,
@@ -874,6 +911,8 @@ protected:
     uint32_t mResizedColumns:1;        
   } mBits;
 
+  std::map<int32_t, int32_t> mDeletedRowIndexRanges; 
+                                                     
   nsTableCellMap*         mCellMap;            
   nsITableLayoutStrategy* mTableLayoutStrategy;
   nsFrameList             mColGroups;          

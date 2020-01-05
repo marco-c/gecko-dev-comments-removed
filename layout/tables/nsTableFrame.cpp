@@ -916,19 +916,26 @@ nsTableFrame::InsertRows(nsTableRowGroupFrame*       aRowGroupFrame,
   nsTableCellMap* cellMap = GetCellMap();
   if (cellMap) {
     TableArea damageArea(0, 0, 0, 0);
+    bool didRecalculate = RecalculateRowIndices();
     int32_t origNumRows = cellMap->GetRowCount();
     int32_t numNewRows = aRowFrames.Length();
     cellMap->InsertRows(aRowGroupFrame, aRowFrames, aRowIndex, aConsiderSpans, damageArea);
     MatchCellMapToColCache(cellMap);
-    if (aRowIndex < origNumRows) {
-      AdjustRowIndices(aRowIndex, numNewRows);
+
+    if (!didRecalculate) {
+      if (aRowIndex < origNumRows) {
+        AdjustRowIndices(aRowIndex, numNewRows);
+      }
+
+      
+      
+      
+      for (int32_t rowB = 0; rowB < numNewRows; rowB++) {
+        nsTableRowFrame* rowFrame = aRowFrames.ElementAt(rowB);
+        rowFrame->SetRowIndex(aRowIndex + rowB);
+      }
     }
-    
-    
-    for (int32_t rowB = 0; rowB < numNewRows; rowB++) {
-      nsTableRowFrame* rowFrame = aRowFrames.ElementAt(rowB);
-      rowFrame->SetRowIndex(aRowIndex + rowB);
-    }
+
     if (IsBorderCollapse()) {
       AddBCDamageArea(damageArea);
     }
@@ -941,11 +948,111 @@ nsTableFrame::InsertRows(nsTableRowGroupFrame*       aRowGroupFrame,
   return numColsToAdd;
 }
 
+bool
+nsTableFrame::RecalculateRowIndices()
+{
+  if (mDeletedRowIndexRanges.size() == 0) {
+    return false;
+  }
+  mDeletedRowIndexRanges.clear();
+
+  RowGroupArray rowGroups;
+  OrderRowGroups(rowGroups);
+
+  int32_t rowIndex = 0;
+  for (uint32_t rgIdx = 0; rgIdx < rowGroups.Length(); rgIdx++) {
+    nsTableRowGroupFrame* rgFrame = rowGroups[rgIdx];
+    const nsFrameList& rowFrames = rgFrame->PrincipalChildList();
+    for (nsFrameList::Enumerator rEnum(rowFrames); !rEnum.AtEnd(); rEnum.Next()) {
+      if (mozilla::StyleDisplay::TableRow == rEnum.get()->StyleDisplay()->mDisplay) {
+        nsTableRowFrame *row = static_cast<nsTableRowFrame*>(rEnum.get());
+        row->SetRowIndex(rowIndex);
+        rowIndex++;
+      }
+    }
+  }
+  return true;
+}
+
+void
+nsTableFrame::AddDeletedRowIndex(int32_t aDeletedRowStoredIndex)
+{
+  if (mDeletedRowIndexRanges.size() == 0) {
+    mDeletedRowIndexRanges.insert(std::pair<int32_t, int32_t>
+                                    (aDeletedRowStoredIndex,
+                                     aDeletedRowStoredIndex));
+    return;
+  }
+
+  
+  
+  
+  
+  
+  
+
+  
+  
+  
+  
+  
+  
+  
+  
+  auto greaterIter = mDeletedRowIndexRanges.upper_bound(aDeletedRowStoredIndex);
+  auto smallerIter = greaterIter;
+  if (smallerIter != mDeletedRowIndexRanges.begin()) {
+    smallerIter--;
+  }
+
+  if (smallerIter->second == aDeletedRowStoredIndex - 1) {
+    if (greaterIter != mDeletedRowIndexRanges.end() &&
+        greaterIter->first == aDeletedRowStoredIndex + 1) {
+      
+      smallerIter->second = greaterIter->second;
+      mDeletedRowIndexRanges.erase(greaterIter);
+    }
+    else {
+      
+      smallerIter->second = aDeletedRowStoredIndex;
+    }
+  } else if (greaterIter != mDeletedRowIndexRanges.end() &&
+             greaterIter->first == aDeletedRowStoredIndex + 1) {
+    
+    mDeletedRowIndexRanges.insert(std::pair<int32_t, int32_t>
+                                   (aDeletedRowStoredIndex,
+                                    greaterIter->second));
+    mDeletedRowIndexRanges.erase(greaterIter);
+  } else {
+    
+    mDeletedRowIndexRanges.insert(std::pair<int32_t, int32_t>
+                                   (aDeletedRowStoredIndex,
+                                    aDeletedRowStoredIndex));
+  }
+}
+
+int32_t
+nsTableFrame::GetAdjustmentForStoredIndex(int32_t aStoredIndex)
+{
+  if (mDeletedRowIndexRanges.size() == 0)
+    return 0;
+
+  int32_t adjustment = 0;
+
+  
+  auto endIter = mDeletedRowIndexRanges.upper_bound(aStoredIndex);
+  for (auto iter = mDeletedRowIndexRanges.begin(); iter != endIter; ++iter) {
+    adjustment += iter->second - iter->first + 1;
+  }
+
+  return adjustment;
+}
+
 
 void
 nsTableFrame::RemoveRows(nsTableRowFrame& aFirstRowFrame,
-                              int32_t          aNumRowsToRemove,
-                              bool             aConsiderSpans)
+                         int32_t          aNumRowsToRemove,
+                         bool             aConsiderSpans)
 {
 #ifdef TBD_OPTIMIZATION
   
@@ -971,13 +1078,19 @@ nsTableFrame::RemoveRows(nsTableRowFrame& aFirstRowFrame,
   nsTableCellMap* cellMap = GetCellMap();
   if (cellMap) {
     TableArea damageArea(0, 0, 0, 0);
+
+    
+    
+    nsTableRowGroupFrame* parentFrame = aFirstRowFrame.GetTableRowGroupFrame();
+    parentFrame->MarkRowsAsDeleted(aFirstRowFrame, aNumRowsToRemove);
+
     cellMap->RemoveRows(firstRowIndex, aNumRowsToRemove, aConsiderSpans, damageArea);
     MatchCellMapToColCache(cellMap);
     if (IsBorderCollapse()) {
       AddBCDamageArea(damageArea);
     }
   }
-  AdjustRowIndices(firstRowIndex, -aNumRowsToRemove);
+
 #ifdef DEBUG_TABLE_CELLMAP
   printf("=== removeRowsAfter\n");
   Dump(true, true, true);
