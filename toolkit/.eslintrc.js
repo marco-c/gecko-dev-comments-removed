@@ -197,6 +197,9 @@ module.exports = {
     
 
     
+    "no-useless-call": "error",
+
+    
     "no-with": "error",
 
     

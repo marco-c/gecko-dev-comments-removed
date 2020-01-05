@@ -163,7 +163,7 @@ this.Task = {
 
 
   spawn: function Task_spawn(aTask) {
-    return createAsyncFunction(aTask).call(undefined);
+    return createAsyncFunction(aTask)();
   },
 
   

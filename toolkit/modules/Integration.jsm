@@ -233,7 +233,7 @@ this.IntegrationPoint.prototype = {
       try {
         
         
-        let override = overrideFn.call(null, combined);
+        let override = overrideFn(combined);
 
         
         
