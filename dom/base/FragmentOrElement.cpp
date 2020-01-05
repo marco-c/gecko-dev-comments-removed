@@ -23,6 +23,7 @@
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/EventListenerManager.h"
 #include "mozilla/EventStates.h"
+#include "mozilla/ServoRestyleManager.h"
 #include "mozilla/dom/Attr.h"
 #include "nsDOMAttributeMap.h"
 #include "nsIAtom.h"
@@ -1111,6 +1112,12 @@ FragmentOrElement::SetXBLInsertionParent(nsIContent* aContent)
     if (slots) {
       slots->mXBLInsertionParent = nullptr;
     }
+  }
+
+  
+  
+  if (IsStyledByServo() && IsElement() && AsElement()->HasServoData()) {
+    ServoRestyleManager::ClearServoDataFromSubtree(AsElement());
   }
 }
 
