@@ -24,8 +24,8 @@
 }(this, function (exports) {
   
   'use strict';
-  var pdfjsVersion = '1.6.274';
-  var pdfjsBuild = '1c3fb17';
+  var pdfjsVersion = '1.6.304';
+  var pdfjsBuild = 'b4100ba';
   var pdfjsFilePath = typeof document !== 'undefined' && document.currentScript ? document.currentScript.src : null;
   var pdfjsLibs = {};
   (function pdfjsWrapper() {
@@ -5979,9 +5979,9 @@
               } else if (value >= 251 && value <= 254) {
                 return -((value - 251) * 256) - dict[pos++] - 108;
               } else {
-                error('255 is not a valid DICT command');
+                warn('CFFParser_parseDict: "' + value + '" is a reserved command.');
+                return NaN;
               }
-              return -1;
             }
             function parseFloatOperand() {
               var str = '';
@@ -6620,19 +6620,22 @@
             if (!(key in this.keyToNameMap)) {
               return false;
             }
+            var valueLength = value.length;
             
-            if (value.length === 0) {
+            if (valueLength === 0) {
               return true;
+            }
+            
+            for (var i = 0; i < valueLength; i++) {
+              if (isNaN(value[i])) {
+                warn('Invalid CFFDict value: "' + value + '" for key "' + key + '".');
+                return true;
+              }
             }
             var type = this.types[key];
             
             if (type === 'num' || type === 'sid' || type === 'offset') {
               value = value[0];
-              
-              if (isNaN(value)) {
-                warn('Invalid CFFDict value: ' + value + ', for key: ' + key + '.');
-                return true;
-              }
             }
             this.values[key] = value;
             return true;
@@ -44591,6 +44594,7 @@
               var outlineItem = {
                 dest: data.dest,
                 url: data.url,
+                unsafeUrl: data.unsafeUrl,
                 newWindow: data.newWindow,
                 title: stringToPDFString(title),
                 color: rgbColor,
@@ -44701,7 +44705,6 @@
             var pageLabels = new Array(this.numPages);
             var style = null;
             var prefix = '';
-            var start = 1;
             var numberTree = new NumberTree(obj, this.xref);
             var nums = numberTree.getAll();
             var currentLabel = '', currentIndex = 1;
@@ -44714,11 +44717,12 @@
                 var s = labelDict.get('S');
                 assert(!s || isName(s), 'Invalid style in PageLabel dictionary.');
                 style = s ? s.name : null;
-                prefix = labelDict.get('P') || '';
-                assert(isString(prefix), 'Invalid prefix in PageLabel dictionary.');
-                start = labelDict.get('St') || 1;
-                assert(isInt(start), 'Invalid start in PageLabel dictionary.');
-                currentIndex = start;
+                var p = labelDict.get('P');
+                assert(!p || isString(p), 'Invalid prefix in PageLabel dictionary.');
+                prefix = p ? stringToPDFString(p) : '';
+                var st = labelDict.get('St');
+                assert(!st || isInt(st) && st >= 1, 'Invalid start in PageLabel dictionary.');
+                currentIndex = st || 1;
               }
               switch (style) {
               case 'D':
@@ -45032,6 +45036,10 @@
             case 'GoTo':
               dest = action.get('D');
               break;
+            case 'Launch':
+            
+            
+            
             case 'GoToR':
               var urlDict = action.get('F');
               if (isDict(urlDict)) {
@@ -50744,6 +50752,7 @@
           var dict = params.dict;
           var data = this.data;
           data.annotationType = AnnotationType.WIDGET;
+          data.fieldName = this._constructFieldName(dict);
           data.fieldValue = Util.getInheritableProperty(dict, 'V', 
           true);
           data.alternativeText = stringToPDFString(dict.get('TU') || '');
@@ -50760,39 +50769,43 @@
           if (data.fieldType === 'Sig') {
             this.setFlags(AnnotationFlag.HIDDEN);
           }
-          
-          
-          var fieldName = [];
-          var namedItem = dict;
-          var ref = params.ref;
-          while (namedItem) {
-            var parent = namedItem.get('Parent');
-            var parentRef = namedItem.getRaw('Parent');
-            var name = namedItem.get('T');
-            if (name) {
-              fieldName.unshift(stringToPDFString(name));
-            } else if (parent && ref) {
-              
-              
-              
-              
-              
-              var kids = parent.get('Kids');
-              var j, jj;
-              for (j = 0, jj = kids.length; j < jj; j++) {
-                var kidRef = kids[j];
-                if (kidRef.num === ref.num && kidRef.gen === ref.gen) {
-                  break;
-                }
-              }
-              fieldName.unshift('`' + j);
-            }
-            namedItem = parent;
-            ref = parentRef;
-          }
-          data.fullName = fieldName.join('.');
         }
         Util.inherit(WidgetAnnotation, Annotation, {
+          
+
+
+
+
+
+
+
+
+          _constructFieldName: function WidgetAnnotation_constructFieldName(dict) {
+            
+            
+            if (!dict.has('T') && !dict.has('Parent')) {
+              warn('Unknown field name, falling back to empty field name.');
+              return '';
+            }
+            
+            if (!dict.has('Parent')) {
+              return stringToPDFString(dict.get('T'));
+            }
+            
+            
+            var fieldName = [];
+            if (dict.has('T')) {
+              fieldName.unshift(stringToPDFString(dict.get('T')));
+            }
+            var loopDict = dict;
+            while (loopDict.has('Parent')) {
+              loopDict = loopDict.get('Parent');
+              if (loopDict.has('T')) {
+                fieldName.unshift(stringToPDFString(loopDict.get('T')));
+              }
+            }
+            return fieldName.join('.');
+          },
           
 
 
