@@ -316,6 +316,13 @@ SERVO_BINDING_FUNC(Servo_TraverseSubtree, bool,
 SERVO_BINDING_FUNC(Servo_AssertTreeIsClean, void, RawGeckoElementBorrowed root)
 
 
+SERVO_BINDING_FUNC(Servo_StyleSet_GetBaseComputedValuesForElement,
+                   ServoComputedValuesStrong,
+                   RawServoStyleSetBorrowed set,
+                   RawGeckoElementBorrowed element,
+                   nsIAtom* pseudo_tag)
+
+
 #define STYLE_STRUCT(name, checkdata_cb)                            \
   struct nsStyle##name;                                             \
   SERVO_BINDING_FUNC(Servo_GetStyle##name, const nsStyle##name*,  \
