@@ -57,7 +57,6 @@ class nsCookie : public nsICookie2
      , mExpiry(aExpiry)
      , mLastAccessed(aLastAccessed)
      , mCreationTime(aCreationTime)
-       
      , mIsSession(aIsSession)
      , mIsSecure(aIsSecure)
      , mIsHttpOnly(aIsHttpOnly)
