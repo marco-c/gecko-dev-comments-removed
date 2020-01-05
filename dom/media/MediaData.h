@@ -66,7 +66,8 @@ public:
     , mLength(0)
     , mBuffer(nullptr)
     , mCapacity(0)
-  {}
+  {
+  }
 
   explicit AlignedBuffer(size_t aLength)
     : mData(nullptr)
@@ -90,7 +91,8 @@ public:
 
   AlignedBuffer(const AlignedBuffer& aOther)
     : AlignedBuffer(aOther.Data(), aOther.Length())
-  {}
+  {
+  }
 
   AlignedBuffer(AlignedBuffer&& aOther)
     : mData(aOther.mData)
@@ -354,7 +356,7 @@ protected:
   {
   }
 
-  virtual ~MediaData() {}
+  virtual ~MediaData() { }
 
 };
 
@@ -365,7 +367,8 @@ class NullData : public MediaData
 public:
   NullData(int64_t aOffset, int64_t aTime, int64_t aDuration)
     : MediaData(NULL_DATA, aOffset, aTime, aDuration, 0)
-  {}
+  {
+  }
 
   static const Type sType = NULL_DATA;
 };
@@ -385,7 +388,9 @@ public:
     : MediaData(sType, aOffset, aTime, aDuration, aFrames)
     , mChannels(aChannels)
     , mRate(aRate)
-    , mAudioData(Move(aData)) {}
+    , mAudioData(Move(aData))
+  {
+  }
 
   static const Type sType = AUDIO_DATA;
   static const char* sTypeName;
@@ -464,7 +469,7 @@ public:
   {
   public:
     virtual void OnSentToCompositor() = 0;
-    virtual ~Listener() {}
+    virtual ~Listener() { }
   };
 
   
@@ -485,7 +490,7 @@ public:
     int64_t aOffset,
     int64_t aTime,
     int64_t aDuration,
-    const YCbCrBuffer &aBuffer,
+    const YCbCrBuffer& aBuffer,
     bool aKeyframe,
     int64_t aTimecode,
     const IntRect& aPicture);
@@ -496,8 +501,8 @@ public:
     int64_t aOffset,
     int64_t aTime,
     int64_t aDuration,
-    const YCbCrBuffer &aBuffer,
-    const YCbCrBuffer::Plane &aAlphaPlane,
+    const YCbCrBuffer& aBuffer,
+    const YCbCrBuffer::Plane& aAlphaPlane,
     bool aKeyframe,
     int64_t aTimecode,
     const IntRect& aPicture);
@@ -526,7 +531,7 @@ public:
   
   static bool SetVideoDataToImage(PlanarYCbCrImage* aVideoImage,
                                   const VideoInfo& aInfo,
-                                  const YCbCrBuffer &aBuffer,
+                                  const YCbCrBuffer& aBuffer,
                                   const IntRect& aPicture,
                                   bool aCopyData);
 
@@ -688,7 +693,8 @@ private:
 };
 
   
-class MediaByteBuffer : public nsTArray<uint8_t> {
+class MediaByteBuffer : public nsTArray<uint8_t>
+{
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaByteBuffer);
   MediaByteBuffer() = default;
   explicit MediaByteBuffer(size_t aCapacity) : nsTArray<uint8_t>(aCapacity) { }

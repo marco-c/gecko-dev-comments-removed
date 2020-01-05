@@ -77,7 +77,8 @@ VideoDecoderParent::VideoDecoderParent(VideoDecoderManagerParent* aParent,
 
   mDecoder = pdm->CreateVideoDecoder(params);
 #else
-  MOZ_ASSERT(false, "Can't use RemoteVideoDecoder on non-Windows platforms yet");
+  MOZ_ASSERT(false,
+             "Can't use RemoteVideoDecoder on non-Windows platforms yet");
 #endif
 
   *aSuccess = !!mDecoder;
@@ -106,7 +107,8 @@ VideoDecoderParent::RecvInit()
     [self] (TrackInfo::TrackType aTrack) {
       if (self->mDecoder) {
         nsCString hardwareReason;
-        bool hardwareAccelerated = self->mDecoder->IsHardwareAccelerated(hardwareReason);
+        bool hardwareAccelerated =
+          self->mDecoder->IsHardwareAccelerated(hardwareReason);
         Unused << self->SendInitComplete(hardwareAccelerated, hardwareReason);
       }
     },

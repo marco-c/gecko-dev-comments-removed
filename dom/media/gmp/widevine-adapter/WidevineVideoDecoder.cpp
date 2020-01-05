@@ -127,18 +127,22 @@ WidevineVideoDecoder::Decode(GMPVideoEncodedFrame* aInputFrame,
 
   const GMPEncryptedBufferMetadata* crypto = aInputFrame->GetDecryptionData();
   nsTArray<SubsampleEntry> subsamples;
-  InitInputBuffer(crypto, aInputFrame->TimeStamp(), raw->Data(), raw->Size(), sample, subsamples);
+  InitInputBuffer(crypto, aInputFrame->TimeStamp(), raw->Data(), raw->Size(),
+                  sample, subsamples);
 
   
   
   
-  if (raw->mKeyframe && !subsamples.IsEmpty() && mCodecType == kGMPVideoCodecH264) {
+  if (raw->mKeyframe
+      && !subsamples.IsEmpty()
+      && mCodecType == kGMPVideoCodecH264) {
     subsamples[0].clear_bytes += mAnnexB->Length();
   }
 
   WidevineVideoFrame frame;
   Status rv = CDM()->DecryptAndDecodeFrame(sample, &frame);
-  Log("WidevineVideoDecoder::Decode(timestamp=%lld) rv=%d", sample.timestamp, rv);
+  Log("WidevineVideoDecoder::Decode(timestamp=%lld) rv=%d", sample.timestamp,
+      rv);
 
   
   
@@ -166,6 +170,7 @@ WidevineVideoDecoder::Decode(GMPVideoEncodedFrame* aInputFrame,
   } else {
     mCallback->Error(ToGMPErr(rv));
   }
+  
   
   if (mDrainPending && mReturnOutputCallDepth == 0) {
     Drain();
@@ -195,12 +200,10 @@ private:
 
 
 
-class FrameDestroyerHelper {
+class FrameDestroyerHelper
+{
 public:
-  explicit FrameDestroyerHelper(GMPVideoi420Frame*& frame)
-    : frame(frame)
-  {
-  }
+  explicit FrameDestroyerHelper(GMPVideoi420Frame*& frame) : frame(frame) { }
 
   
   ~FrameDestroyerHelper()
@@ -268,9 +271,11 @@ WidevineVideoDecoder::ReturnOutput(WidevineVideoFrame& aCDMFrame)
                                      uStride,
                                      vStride);
     
+    
     MOZ_ASSERT(mReturnOutputCallDepth == 1);
     ENSURE_GMP_SUCCESS(err, false);
 
+    
     
     if (mResetInProgress) {
       MOZ_ASSERT(mCDMWrapper);

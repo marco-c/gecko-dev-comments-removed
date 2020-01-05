@@ -20,7 +20,8 @@
 
 namespace mozilla {
 
-class WidevineVideoDecoder : public GMPVideoDecoder {
+class WidevineVideoDecoder : public GMPVideoDecoder
+{
 public:
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(WidevineVideoDecoder)
@@ -45,7 +46,8 @@ private:
 
   ~WidevineVideoDecoder();
 
-  cdm::ContentDecryptionModule_8* CDM() const {
+  cdm::ContentDecryptionModule_8* CDM() const
+  {
     
     MOZ_ASSERT(mCDMWrapper);
     
