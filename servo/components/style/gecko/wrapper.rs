@@ -406,6 +406,12 @@ impl<'le> GeckoElement<'le> {
             },
         }
     }
+
+    fn may_have_animations(&self) -> bool {
+        use gecko_bindings::structs::nsINode_BooleanFlag;
+        self.as_node().bool_flags() &
+            (1u32 << nsINode_BooleanFlag::ElementHasAnimations as u32) != 0
+    }
 }
 
 
@@ -764,15 +770,15 @@ impl<'le> TElement for GeckoElement<'le> {
     }
 
     fn has_animations(&self) -> bool {
-        unsafe { Gecko_ElementHasAnimations(self.0) }
+        self.may_have_animations() && unsafe { Gecko_ElementHasAnimations(self.0) }
     }
 
     fn has_css_animations(&self) -> bool {
-        unsafe { Gecko_ElementHasCSSAnimations(self.0) }
+        self.may_have_animations() && unsafe { Gecko_ElementHasCSSAnimations(self.0) }
     }
 
     fn has_css_transitions(&self) -> bool {
-        unsafe { Gecko_ElementHasCSSTransitions(self.0) }
+        self.may_have_animations() && unsafe { Gecko_ElementHasCSSTransitions(self.0) }
     }
 
     fn get_css_transitions_info(&self)
