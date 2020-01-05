@@ -666,6 +666,26 @@ exports.getWindowDimensions = getWindowDimensions;
 
 
 
+const DEFAULT_MAX_SURFACE_SIZE = 4096;
+function getMaxSurfaceSize(node) {
+  let canvas = getWindowFor(node).document.createElement("canvas");
+  let gl = canvas.getContext("webgl");
+
+  if (!gl) {
+    return DEFAULT_MAX_SURFACE_SIZE;
+  }
+
+  return gl.getParameter(gl.MAX_TEXTURE_SIZE);
+}
+exports.getMaxSurfaceSize = getMaxSurfaceSize;
+
+
+
+
+
+
+
+
 
 function getWindowFor(node) {
   if (node instanceof Ci.nsIDOMNode) {
