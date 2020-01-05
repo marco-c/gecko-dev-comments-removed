@@ -1256,15 +1256,10 @@ bool gfxPlatform::AllowOpenGLCanvas()
   
   
   
-
-  
-  
-  
-  bool correctBackend = !XRE_IsParentProcess() ||
-    ((mCompositorBackend == LayersBackend::LAYERS_OPENGL) &&
-     (GetContentBackendFor(mCompositorBackend) == BackendType::SKIA));
-
-  if (gfxPrefs::CanvasAzureAccelerated() && correctBackend) {
+  if (gfxPrefs::CanvasAzureAccelerated() &&
+      mCompositorBackend == LayersBackend::LAYERS_OPENGL &&
+      (GetContentBackendFor(mCompositorBackend) == BackendType::SKIA))
+  {
     nsCOMPtr<nsIGfxInfo> gfxInfo = do_GetService("@mozilla.org/gfx/info;1");
     int32_t status;
     nsCString discardFailureId;
