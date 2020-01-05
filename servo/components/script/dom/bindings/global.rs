@@ -13,7 +13,7 @@ use dom::bindings::js::{JS, Root};
 use dom::bindings::utils::{Reflectable, Reflector};
 use dom::document::DocumentHelpers;
 use dom::workerglobalscope::{WorkerGlobalScope, WorkerGlobalScopeHelpers};
-use dom::window::{self, WindowHelpers};
+use dom::window::{self, WindowHelpers, ScriptHelpers};
 use devtools_traits::ScriptToDevtoolsControlMsg;
 use script_task::{ScriptChan, ScriptPort, ScriptMsg, ScriptTask};
 
@@ -24,8 +24,7 @@ use profile_traits::mem;
 use ipc_channel::ipc::IpcSender;
 use js::{JSCLASS_IS_GLOBAL, JSCLASS_IS_DOMJSCLASS};
 use js::jsapi::{GetGlobalForObjectCrossCompartment};
-use js::jsapi::{JSContext, JSObject};
-use js::jsapi::{JS_GetClass};
+use js::jsapi::{JSContext, JSObject, JS_GetClass, MutableHandleValue};
 use url::Url;
 
 
@@ -163,6 +162,23 @@ impl<'a> GlobalRef<'a> {
         match *self {
             GlobalRef::Window(_) => ScriptTask::process_event(msg),
             GlobalRef::Worker(ref worker) => worker.process_event(msg),
+        }
+    }
+
+    
+    pub fn evaluate_js_on_global_with_result(&self, code: &str, rval: MutableHandleValue) {
+        match *self {
+            GlobalRef::Window(window) => window.evaluate_js_on_global_with_result(code, rval),
+            GlobalRef::Worker(worker) => worker.evaluate_js_on_global_with_result(code, rval),
+        }
+    }
+
+    
+    
+    pub fn set_devtools_wants_updates(&self, send_updates: bool) {
+        match *self {
+            GlobalRef::Window(window) => window.set_devtools_wants_updates(send_updates),
+            GlobalRef::Worker(worker) => worker.set_devtools_wants_updates(send_updates),
         }
     }
 }
