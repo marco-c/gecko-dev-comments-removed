@@ -12,7 +12,7 @@ use protocol::JsonPacketStream;
 
 use devtools_traits::EvaluateJSReply::{NullValue, VoidValue, NumberValue};
 use devtools_traits::EvaluateJSReply::{StringValue, BooleanValue, ActorValue};
-use devtools_traits::DevtoolScriptControlMsg;
+use devtools_traits::{CachedConsoleMessageTypes, DevtoolScriptControlMsg, PAGE_ERROR, CONSOLE_API};
 use msg::constellation_msg::PipelineId;
 
 use collections::BTreeMap;
@@ -32,46 +32,6 @@ struct StartedListenersReply {
     nativeConsoleAPI: bool,
     startedListeners: Vec<String>,
     traits: StartedListenersTraits,
-}
-
-#[derive(RustcEncodable)]
-#[allow(dead_code)]
-struct ConsoleAPIMessage {
-    _type: String, 
-}
-
-#[derive(RustcEncodable)]
-#[allow(dead_code)]
-struct PageErrorMessage {
-    _type: String, 
-    errorMessage: String,
-    sourceName: String,
-    lineText: String,
-    lineNumber: u32,
-    columnNumber: u32,
-    category: String,
-    timeStamp: u64,
-    warning: bool,
-    error: bool,
-    exception: bool,
-    strict: bool,
-    private: bool,
-}
-
-#[derive(RustcEncodable)]
-#[allow(dead_code)]
-struct LogMessage {
-    _type: String, 
-    timeStamp: u64,
-    message: String,
-}
-
-#[derive(RustcEncodable)]
-#[allow(dead_code)]
-enum ConsoleMessageType {
-    ConsoleAPIType(ConsoleAPIMessage),
-    PageErrorType(PageErrorMessage),
-    LogMessageType(LogMessage),
 }
 
 #[derive(RustcEncodable)]
@@ -123,54 +83,23 @@ impl Actor for ConsoleActor {
                       stream: &mut TcpStream) -> Result<bool, ()> {
         Ok(match msg_type {
             "getCachedMessages" => {
-                let types = msg.get(&"messageTypes".to_string()).unwrap().as_array().unwrap();
-                let  messages = vec!();
-                for msg_type in types.iter() {
-                    let msg_type = msg_type.as_string().unwrap();
-                    match &*msg_type {
-                        "ConsoleAPI" => {
-                            
-                        }
-
-                        "PageError" => {
-                            
-                            
-
-                            
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-                        }
-
-                        "LogMessage" => {
-                            
-                            
-
-
-
-
-
-
-
-                        }
-
+                let str_types = msg.get("messageTypes").unwrap().as_array().unwrap().into_iter().map(|json_type| {
+                    json_type.as_string().unwrap()
+                });
+                let mut message_types = CachedConsoleMessageTypes::empty();
+                for str_type in str_types {
+                    match str_type {
+                        "PageError" => message_types.insert(PAGE_ERROR),
+                        "ConsoleAPI" => message_types.insert(CONSOLE_API),
                         s => println!("unrecognized message type requested: \"{}\"", s),
-                    }
-                }
+                    };
+                };
+                let (chan, port) = channel();
+                self.script_chan.send(DevtoolScriptControlMsg::GetCachedMessages(
+                    self.pipeline, message_types, chan)).unwrap();
+                let messages = try!(port.recv().map_err(|_| ())).into_iter().map(|message| {
+                    json::encode(&message).unwrap().to_json().as_object().unwrap().to_owned()
+                }).collect();
 
                 let msg = GetCachedMessagesReply {
                     from: self.name(),
