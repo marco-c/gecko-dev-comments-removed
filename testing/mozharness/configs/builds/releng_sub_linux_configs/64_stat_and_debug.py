@@ -23,6 +23,7 @@ clang.manifest",
     'enable_signing': False,
     'enable_talos_sendchange': False,
     'enable_unittest_sendchange': False,
+    'perfherder_extra_options': ['static-analysis'],
     
     'env': {
         'MOZBUILD_STATE_PATH': os.path.join(os.getcwd(), '.mozbuild'),

@@ -49,6 +49,7 @@ config = {
     
     'enable_unittest_sendchange': True,
     'max_build_output_timeout': 60 * 80,
+    'perfherder_extra_options': ['artifact'],
     
 
 
