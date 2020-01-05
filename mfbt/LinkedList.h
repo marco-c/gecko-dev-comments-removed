@@ -255,9 +255,10 @@ public:
 
 
 
-  ClientType removeAndGetNext()
+
+  RawType removeAndGetNext()
   {
-    ClientType r = getNext();
+    RawType r = getNext();
     remove();
     return r;
   }
@@ -267,9 +268,10 @@ public:
 
 
 
-  ClientType removeAndGetPrevious()
+
+  RawType removeAndGetPrevious()
   {
-    ClientType r = getPrevious();
+    RawType r = getPrevious();
     remove();
     return r;
   }
