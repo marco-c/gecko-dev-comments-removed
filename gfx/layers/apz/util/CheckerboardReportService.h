@@ -40,13 +40,13 @@ public:
   
 
 
-
-  void ReportCheckerboard(uint32_t aSeverity, const std::string& aLog);
+  void GetReports(nsTArray<dom::CheckerboardReport>& aOutReports);
 
   
 
 
-  void GetReports(nsTArray<dom::CheckerboardReport>& aOutReports);
+
+  static void Report(uint32_t aSeverity, const std::string& aLog);
 
 private:
   
@@ -54,6 +54,8 @@ private:
   virtual ~CheckerboardEventStorage() {}
 
   static StaticRefPtr<CheckerboardEventStorage> sInstance;
+
+  void ReportCheckerboard(uint32_t aSeverity, const std::string& aLog);
 
 private:
   
