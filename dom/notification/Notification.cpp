@@ -322,9 +322,14 @@ public:
       return NS_OK;
     }
 
-    
-    
-    nsContentUtils::DispatchFocusChromeEvent(mWindow->GetOuterWindow());
+    nsIDocument* doc = mWindow->GetExtantDoc();
+    if (doc) {
+      
+      
+      nsContentUtils::DispatchChromeEvent(doc, mWindow->GetOuterWindow(),
+                                          NS_LITERAL_STRING("DOMWebNotificationClicked"),
+                                          true, true);
+    }
 
     return NS_OK;
   }
@@ -1484,9 +1489,14 @@ MainThreadNotificationObserver::Observe(nsISupports* aSubject, const char* aTopi
 
     bool doDefaultAction = notification->DispatchClickEvent();
     if (doDefaultAction) {
-      
-      
-      nsContentUtils::DispatchFocusChromeEvent(window->GetOuterWindow());
+      nsIDocument* doc = window ? window->GetExtantDoc() : nullptr;
+      if (doc) {
+        
+        
+        nsContentUtils::DispatchChromeEvent(doc, window->GetOuterWindow(),
+                                            NS_LITERAL_STRING("DOMWebNotificationClicked"),
+                                            true, true);
+      }
     }
   } else if (!strcmp("alertfinished", aTopic)) {
     notification->UnpersistNotification();
