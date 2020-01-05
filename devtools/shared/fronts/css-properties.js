@@ -234,15 +234,7 @@ const initCssProperties = Task.async(function* (toolbox) {
   
   if (toolbox.target.hasActor("cssProperties")) {
     front = CssPropertiesFront(client, toolbox.target.form);
-    const serverDB = yield front.getCSSDatabase();
-
-    
-    
-    if (!serverDB.properties && !serverDB.margin) {
-      db = CSS_PROPERTIES_DB;
-    } else {
-      db = serverDB;
-    }
+    db = yield front.getCSSDatabase();
   } else {
     
     
@@ -294,9 +286,6 @@ function normalizeCssData(db) {
       db = { properties: db };
     }
 
-    
-    db = Object.assign({}, CSS_PROPERTIES_DB, db);
-
     let missingSupports = !db.properties.color.supports;
     let missingValues = !db.properties.color.values;
     let missingSubproperties = !db.properties.background.subproperties;
@@ -319,6 +308,10 @@ function normalizeCssData(db) {
       if (missingSubproperties) {
         db.properties[name].subproperties =
           CSS_PROPERTIES_DB.properties[name].subproperties;
+      }
+      
+      if (db.properties.font.isInherited) {
+        db.properties[name].isInherited = CSS_PROPERTIES_DB.properties[name].isInherited;
       }
     }
   }
