@@ -7,14 +7,19 @@ use resource_task::ProgressMsg::{Payload, Done};
 
 use log;
 use std::collections::HashSet;
+use file_loader;
 use hyper::client::Request;
 use hyper::header::common::{ContentLength, ContentType, Host, Location};
+use hyper::HttpError;
 use hyper::method::Method;
+use hyper::net::HttpConnector;
 use hyper::status::StatusClass;
 use std::error::Error;
-use std::io::Reader;
+use openssl::ssl::{SslContext, SslVerifyMode};
+use std::io::{IoError, IoErrorKind, Reader};
 use std::sync::mpsc::Sender;
 use util::task::spawn_named;
+use util::resource_files::resources_dir_path;
 use url::{Url, UrlParser};
 
 use std::borrow::ToOwned;
@@ -74,23 +79,45 @@ fn load(load_data: LoadData, start_chan: Sender<TargetedLoadResponse>) {
 
         info!("requesting {}", url.serialize());
 
-        let mut req = match Request::new(load_data.method.clone(), url.clone()) {
+        fn verifier(ssl: &mut SslContext) {
+            ssl.set_verify(SslVerifyMode::SslVerifyPeer, None);
+            let mut certs = resources_dir_path();
+            certs.push("certs");
+            ssl.set_CA_file(&certs);
+        };
+
+        let ssl_err_string = "[UnknownError { library: \"SSL routines\", \
+function: \"SSL3_GET_SERVER_CERTIFICATE\", \
+reason: \"certificate verify failed\" }]";
+
+        let mut connector = HttpConnector(Some(box verifier as Box<FnMut(&mut SslContext)>));
+        let mut req = match Request::with_connector(load_data.method.clone(), url.clone(), &mut connector) {
             Ok(req) => req,
+            Err(HttpError::HttpIoError(IoError {kind: IoErrorKind::OtherIoError,
+                                                desc: "Error in OpenSSL",
+                                                detail: Some(ref det)})) if det.as_slice() == ssl_err_string => {
+                let mut image = resources_dir_path();
+                image.push("badcert.html");
+                let load_data = LoadData::new(Url::from_file_path(&image).unwrap(), senders.eventual_consumer);
+                file_loader::factory(load_data, senders.immediate_consumer);
+                return;
+            },
             Err(e) => {
+                println!("{:?}", e);
                 send_error(url, e.description().to_string(), senders);
                 return;
             }
         };
 
-        
+        // Preserve the `host` header set automatically by Request.
         let host = req.headers().get::<Host>().unwrap().clone();
         *req.headers_mut() = load_data.headers.clone();
         req.headers_mut().set(host);
-        
-        
-            
+        // FIXME(seanmonstar): use AcceptEncoding from Hyper once available
+        //if !req.headers.has::<AcceptEncoding>() {
+            // We currently don't support HTTP Compression (FIXME #2587)
             req.headers_mut().set_raw("Accept-Encoding".to_owned(), vec![b"identity".to_vec()]);
-        
+        //}
         let writer = match load_data.data {
             Some(ref data) => {
                 req.headers_mut().set(ContentLength(data.len() as u64));
@@ -132,7 +159,7 @@ fn load(load_data: LoadData, start_chan: Sender<TargetedLoadResponse>) {
             }
         };
 
-        
+        // Dump headers, but only do the iteration if info!() is enabled.
         info!("got HTTP response {}, headers:", response.status);
         if log_enabled!(log::INFO) {
             for header in response.headers.iter() {
@@ -143,16 +170,16 @@ fn load(load_data: LoadData, start_chan: Sender<TargetedLoadResponse>) {
         if response.status.class() == StatusClass::Redirection {
             match response.headers.get::<Location>() {
                 Some(&Location(ref new_url)) => {
-                    
+                    // CORS (http://fetch.spec.whatwg.org/#http-fetch, status section, point 9, 10)
                     match load_data.cors {
                         Some(ref c) => {
                             if c.preflight {
-                                
+                                // The preflight lied
                                 send_error(url, "Preflight fetch inconsistent with main fetch".to_string(), senders);
                                 return;
                             } else {
-                                
-                                
+                                // XXXManishearth There are some CORS-related steps here,
+                                // but they don't seem necessary until credentials are implemented
                             }
                         }
                         _ => {}
