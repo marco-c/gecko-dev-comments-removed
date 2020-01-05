@@ -37,57 +37,38 @@ impl NamedNodeMap {
 impl NamedNodeMapMethods for NamedNodeMap {
     
     fn Length(&self) -> u32 {
-        let owner = self.owner.root();
-        
-        let owner = owner.r();
-        let attrs = owner.attrs();
-        attrs.len() as u32
+        self.owner.attrs().len() as u32
     }
 
     
     fn Item(&self, index: u32) -> Option<Root<Attr>> {
-        let owner = self.owner.root();
-        
-        let owner = owner.r();
-        let attrs = owner.attrs();
-        attrs.get(index as usize).map(|t| t.root())
+        self.owner.attrs().get(index as usize).map(JS::root)
     }
 
     
     fn GetNamedItem(&self, name: DOMString) -> Option<Root<Attr>> {
-        let owner = self.owner.root();
-        
-        let owner = owner.r();
-        owner.get_attribute_by_name(name)
+        self.owner.get_attribute_by_name(name)
     }
 
     
     fn GetNamedItemNS(&self, namespace: Option<DOMString>, local_name: DOMString)
                      -> Option<Root<Attr>> {
-        let owner = self.owner.root();
-        
-        let owner = owner.r();
         let ns = namespace_from_domstring(namespace);
-        owner.get_attribute(&ns, &Atom::from_slice(&local_name))
+        self.owner.get_attribute(&ns, &Atom::from_slice(&local_name))
     }
 
     
     fn RemoveNamedItem(&self, name: DOMString) -> Fallible<Root<Attr>> {
-        let owner = self.owner.root();
-        
-        let owner = owner.r();
-        let name = owner.parsed_name(name);
-        owner.remove_attribute_by_name(&name).ok_or(Error::NotFound)
+        let name = self.owner.parsed_name(name);
+        self.owner.remove_attribute_by_name(&name).ok_or(Error::NotFound)
     }
 
     
     fn RemoveNamedItemNS(&self, namespace: Option<DOMString>, local_name: DOMString)
                       -> Fallible<Root<Attr>> {
-        let owner = self.owner.root();
-        
-        let owner = owner.r();
         let ns = namespace_from_domstring(namespace);
-        owner.remove_attribute(&ns, &Atom::from_slice(&local_name)).ok_or(Error::NotFound)
+        self.owner.remove_attribute(&ns, &Atom::from_slice(&local_name))
+            .ok_or(Error::NotFound)
     }
 
     

@@ -51,7 +51,7 @@ impl PerformanceMethods for Performance {
 
     
     fn Now(&self) -> DOMHighResTimeStamp {
-        let navStart = self.timing.root().r().NavigationStartPrecise();
+        let navStart = self.timing.NavigationStartPrecise();
         let now = (time::precise_time_ns() as f64 - navStart) / 1000000 as f64;
         Finite::wrap(now)
     }
