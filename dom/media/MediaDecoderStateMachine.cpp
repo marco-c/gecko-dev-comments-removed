@@ -630,6 +630,15 @@ public:
     mSeekJob = Move(aSeekJob);
 
     
+    
+    
+    if (mMaster->mVideoDecodeSuspended) {
+      mMaster->mVideoDecodeSuspended = false;
+      mMaster->mOnPlaybackEvent.Notify(MediaEventType::ExitVideoSuspend);
+      Reader()->SetVideoBlankDecode(false);
+    }
+
+    
     mMaster->CancelMediaDecoderReaderWrapperCallback();
 
     
@@ -717,6 +726,11 @@ public:
   }
 
   RefPtr<MediaDecoder::SeekPromise> HandleSeek(SeekTarget aTarget) override;
+
+  void HandleVideoSuspendTimeout() override
+  {
+    
+  }
 
 private:
   void OnSeekTaskResolved(const SeekTaskResolveValue& aValue)
@@ -2328,9 +2342,6 @@ void MediaDecoderStateMachine::VisibilityChanged()
   mVideoDecodeSuspendTimer.Reset();
 
   if (mVideoDecodeSuspended) {
-    mVideoDecodeSuspended = false;
-    mOnPlaybackEvent.Notify(MediaEventType::ExitVideoSuspend);
-    mReader->SetVideoBlankDecode(false);
 
     if (mIsReaderSuspended) {
       return;
