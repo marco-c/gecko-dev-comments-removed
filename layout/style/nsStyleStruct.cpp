@@ -2033,26 +2033,13 @@ nsStyleImageRequest::Resolve(nsPresContext* aPresContext)
   MOZ_ASSERT(aPresContext);
 
   mResolved = true;
-
-  nsIDocument* doc = aPresContext->Document();
-  nsIURI* docURI = doc->GetDocumentURI();
-  if (GetImageValue()->HasRef()) {
-    bool isEqualExceptRef = false;
-    RefPtr<nsIURI> imageURI = GetImageURI();
-    imageURI->EqualsExceptRef(docURI, &isEqualExceptRef);
-    if (isEqualExceptRef) {
-      
-      return true;
-    }
-  }
-
-  mDocGroup = doc->GetDocGroup();
+  mDocGroup = aPresContext->Document()->GetDocGroup();
 
   
   
   
   
-  mImageValue->Initialize(doc);
+  mImageValue->Initialize(aPresContext->Document());
 
   nsCSSValue value;
   value.SetImageValue(mImageValue);
@@ -2406,7 +2393,7 @@ nsStyleImage::IsOpaque() const
     return mGradient->IsOpaque();
   }
 
-  if (mType == eStyleImageType_Element || mType == eStyleImageType_URL) {
+  if (mType == eStyleImageType_Element) {
     return false;
   }
 
