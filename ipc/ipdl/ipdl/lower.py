@@ -1834,6 +1834,16 @@ def _generateCxxStruct(sd):
     struct.addstmts([ opeqeq, Whitespace.NL ])
 
     
+    opneq = MethodDefn(MethodDecl(
+        'operator!=',
+        params=[ Decl(constreftype, ovar.name) ],
+        ret=Type.BOOL,
+        const=1))
+    opneq.addstmt(StmtReturn(ExprNot(ExprCall(ExprVar('operator=='),
+                                              args=[ ovar ]))))
+    struct.addstmts([ opneq, Whitespace.NL ])
+
+    
     
     for f in sd.fields:
         get = MethodDefn(MethodDecl(f.getMethod().name,
