@@ -232,6 +232,10 @@ static const struct {
   { "goog-phish-proto", SOCIAL_ENGINEERING},           
 
   
+  { "goog-badbinurl-proto", MALICIOUS_BINARY},         
+  { "goog-downloadwhite-proto", CSD_DOWNLOAD_WHITELIST},  
+
+  
   { "test-phish-proto",    SOCIAL_ENGINEERING_PUBLIC}, 
   { "test-unwanted-proto", UNWANTED_SOFTWARE}, 
 };
