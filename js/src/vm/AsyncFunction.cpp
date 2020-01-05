@@ -47,7 +47,8 @@ GlobalObject::initAsyncFunction(JSContext* cx, Handle<GlobalObject*> global)
     return true;
 }
 
-static bool AsyncFunctionStart(JSContext* cx, HandleValue generatorVal, MutableHandleValue rval);
+static MOZ_MUST_USE bool AsyncFunctionStart(JSContext* cx, Handle<PromiseObject*> resultPromise,
+                                            HandleValue generatorVal);
 
 #define UNWRAPPED_ASYNC_WRAPPED_SLOT 1
 #define WRAPPED_ASYNC_UNWRAPPED_SLOT 0
@@ -73,7 +74,17 @@ WrappedAsyncFunction(JSContext* cx, unsigned argc, Value* vp)
         args2[i].set(args[i]);
     if (Call(cx, unwrappedVal, thisValue, args2, &generatorVal)) {
         
-        return AsyncFunctionStart(cx, generatorVal, args.rval());
+        Rooted<PromiseObject*> resultPromise(cx, CreatePromiseObjectForAsync(cx, generatorVal));
+        if (!resultPromise)
+            return false;
+
+        
+        if (!AsyncFunctionStart(cx, resultPromise, generatorVal))
+            return false;
+
+        
+        args.rval().setObject(*resultPromise);
+        return true;
     }
 
     
@@ -129,47 +140,19 @@ js::WrapAsyncFunction(JSContext* cx, HandleFunction unwrapped)
     return wrapped;
 }
 
-
-static bool
-AsyncFunctionThrown(JSContext* cx, MutableHandleValue rval)
-{
-    
-    RootedValue exc(cx);
-    if (!GetAndClearException(cx, &exc))
-        return false;
-
-    RootedObject rejectPromise(cx, PromiseObject::unforgeableReject(cx, exc));
-    if (!rejectPromise)
-        return false;
-
-    
-    rval.setObject(*rejectPromise);
-    return true;
-}
-
-
-static bool
-AsyncFunctionReturned(JSContext* cx, HandleValue value, MutableHandleValue rval)
-{
-    
-    RootedObject resolveObj(cx, PromiseObject::unforgeableResolve(cx, value));
-    if (!resolveObj)
-        return false;
-
-    
-    rval.setObject(*resolveObj);
-    return true;
-}
-
 enum class ResumeKind {
     Normal,
     Throw
 };
 
 
+
+
+
+
 static bool
-AsyncFunctionResume(JSContext* cx, HandleValue generatorVal, ResumeKind kind,
-                    HandleValue valueOrReason, MutableHandleValue rval)
+AsyncFunctionResume(JSContext* cx, Handle<PromiseObject*> resultPromise, HandleValue generatorVal,
+                    ResumeKind kind, HandleValue valueOrReason)
 {
     
     HandlePropertyName funName = kind == ResumeKind::Normal
@@ -179,7 +162,7 @@ AsyncFunctionResume(JSContext* cx, HandleValue generatorVal, ResumeKind kind,
     args[0].set(valueOrReason);
     RootedValue result(cx);
     if (!CallSelfHostedFunction(cx, funName, generatorVal, args, &result))
-        return AsyncFunctionThrown(cx, rval);
+        return AsyncFunctionThrown(cx, resultPromise);
 
     RootedObject resultObj(cx, &result.toObject());
     RootedValue doneVal(cx);
@@ -190,41 +173,41 @@ AsyncFunctionResume(JSContext* cx, HandleValue generatorVal, ResumeKind kind,
         return false;
 
     if (doneVal.toBoolean())
-        return AsyncFunctionReturned(cx, value, rval);
+        return AsyncFunctionReturned(cx, resultPromise, value);
 
-    return AsyncFunctionAwait(cx, generatorVal, value, rval);
+    return AsyncFunctionAwait(cx, resultPromise, value);
 }
 
 
-static bool
-AsyncFunctionStart(JSContext* cx, HandleValue generatorVal, MutableHandleValue rval)
+static MOZ_MUST_USE bool
+AsyncFunctionStart(JSContext* cx, Handle<PromiseObject*> resultPromise, HandleValue generatorVal)
 {
-    return AsyncFunctionResume(cx, generatorVal, ResumeKind::Normal, UndefinedHandleValue, rval);
+    return AsyncFunctionResume(cx, resultPromise, generatorVal, ResumeKind::Normal, UndefinedHandleValue);
 }
 
 
 
 
 
-bool
-js::AsyncFunctionAwaitedFulfilled(JSContext* cx, HandleValue value, HandleValue generatorVal,
-                                  MutableHandleValue rval)
-{
-    
-
-    
-    return AsyncFunctionResume(cx, generatorVal, ResumeKind::Normal, value, rval);
-}
-
-
-bool
-js::AsyncFunctionAwaitedRejected(JSContext* cx, HandleValue reason, HandleValue generatorVal,
-                                 MutableHandleValue rval)
+MOZ_MUST_USE bool
+js::AsyncFunctionAwaitedFulfilled(JSContext* cx, Handle<PromiseObject*> resultPromise,
+                                  HandleValue generatorVal, HandleValue value)
 {
     
 
     
-    return AsyncFunctionResume(cx, generatorVal, ResumeKind::Throw, reason, rval);
+    return AsyncFunctionResume(cx, resultPromise, generatorVal, ResumeKind::Normal, value);
+}
+
+
+MOZ_MUST_USE bool
+js::AsyncFunctionAwaitedRejected(JSContext* cx, Handle<PromiseObject*> resultPromise,
+                                 HandleValue generatorVal, HandleValue reason)
+{
+    
+
+    
+    return AsyncFunctionResume(cx, resultPromise, generatorVal, ResumeKind::Throw, reason);
 }
 
 JSFunction*
