@@ -25,7 +25,6 @@
 
 #include "mozilla/a11y/PDocAccessible.h"
 #include "AudioChannelService.h"
-#include "CrashReporterParent.h"
 #include "DeviceStorageStatics.h"
 #include "GMPServiceParent.h"
 #include "HandlerServiceParent.h"
@@ -248,6 +247,7 @@
 
 #ifdef MOZ_CRASHREPORTER
 #include "nsThread.h"
+#include "mozilla/ipc/CrashReporterHost.h"
 #endif
 
 #ifdef ACCESSIBILITY
@@ -1593,17 +1593,17 @@ ContentParent::ActorDestroy(ActorDestroyReason why)
       
       
       
-      if (PCrashReporterParent* p = LoneManagedOrNullAsserts(ManagedPCrashReporterParent())) {
-        CrashReporterParent* crashReporter =
-          static_cast<CrashReporterParent*>(p);
-
+      if (mCrashReporter) {
         
         
         if (!mCreatedPairedMinidumps) {
-          crashReporter->GenerateCrashReport(this, nullptr);
+          mCrashReporter->GenerateCrashReport(OtherPid());
         }
 
-        nsAutoString dumpID(crashReporter->ChildDumpID());
+        nsAutoString dumpID;
+        if (mCrashReporter->HasMinidump()) {
+          dumpID = mCrashReporter->MinidumpID();
+        }
         props->SetPropertyAsAString(NS_LITERAL_STRING("dumpID"), dumpID);
       }
 #endif
@@ -2817,25 +2817,28 @@ ContentParent::KillHard(const char* aReason)
   
   
   
-  if (PCrashReporterParent* p = LoneManagedOrNullAsserts(ManagedPCrashReporterParent())) {
-    CrashReporterParent* crashReporter =
-      static_cast<CrashReporterParent*>(p);
+  if (mCrashReporter) {
     
     
     
     
     
     nsAutoCString additionalDumps("browser");
-    crashReporter->AnnotateCrashReport(
+    mCrashReporter->AddNote(
       NS_LITERAL_CSTRING("additional_minidumps"),
       additionalDumps);
     nsDependentCString reason(aReason);
-    crashReporter->AnnotateCrashReport(
+    mCrashReporter->AddNote(
       NS_LITERAL_CSTRING("ipc_channel_error"),
       reason);
 
     
-    mCreatedPairedMinidumps = crashReporter->GenerateCompleteMinidump(this);
+    if (mCrashReporter->GenerateMinidumpAndPair(this,
+                                                nullptr,
+                                                NS_LITERAL_CSTRING("browser")))
+    {
+      mCreatedPairedMinidumps = mCrashReporter->FinalizeCrashReport();
+    }
 
     Telemetry::Accumulate(Telemetry::SUBPROCESS_KILL_HARD, reason, 1);
   }
@@ -2874,31 +2877,16 @@ ContentParent::FriendlyName(nsAString& aName, bool aAnonymize)
   }
 }
 
-PCrashReporterParent*
-ContentParent::AllocPCrashReporterParent(const NativeThreadId& tid,
-                                         const uint32_t& processType)
+mozilla::ipc::IPCResult
+ContentParent::RecvInitCrashReporter(Shmem&& aShmem, const NativeThreadId& aThreadId)
 {
 #ifdef MOZ_CRASHREPORTER
-  return new CrashReporterParent();
-#else
-  return nullptr;
+  mCrashReporter = MakeUnique<CrashReporterHost>(
+    GeckoProcessType_Content,
+    aShmem,
+    aThreadId);
 #endif
-}
-
-mozilla::ipc::IPCResult
-ContentParent::RecvPCrashReporterConstructor(PCrashReporterParent* actor,
-                                             const NativeThreadId& tid,
-                                             const uint32_t& processType)
-{
-  static_cast<CrashReporterParent*>(actor)->SetChildData(tid, processType);
   return IPC_OK();
-}
-
-bool
-ContentParent::DeallocPCrashReporterParent(PCrashReporterParent* crashreporter)
-{
-  delete crashreporter;
-  return true;
 }
 
 hal_sandbox::PHalParent*
