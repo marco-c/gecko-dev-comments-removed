@@ -172,6 +172,9 @@ module.exports = {
     "no-unreachable": "error",
 
     
+    "no-unsafe-finally": "error",
+
+    
     "no-unsafe-negation": "error",
 
     
