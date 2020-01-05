@@ -7,7 +7,7 @@ Support for running toolchain-building jobs via dedicated scripts
 
 from __future__ import absolute_import, print_function, unicode_literals
 
-from voluptuous import Schema, Required
+from voluptuous import Schema, Required, Any
 
 from taskgraph.transforms.job import run_job_using
 from taskgraph.transforms.job.common import (
@@ -20,6 +20,14 @@ toolchain_run_schema = Schema({
 
     
     Required('script'): basestring,
+
+    
+    
+    Required('tooltool-downloads', default=False): Any(
+        False,
+        'public',
+        'internal',
+    ),
 })
 
 
@@ -49,12 +57,24 @@ def docker_worker_toolchain(config, job, taskdesc):
 
     
     
+    
     worker['caches'].append({
         'type': 'persistent',
         'name': 'tooltool-cache',
         'mount-point': '/home/worker/tooltool-cache',
     })
     env['TOOLTOOL_CACHE'] = '/home/worker/tooltool-cache'
+
+    
+    worker['relengapi-proxy'] = False  
+    if run['tooltool-downloads']:
+        worker['relengapi-proxy'] = True
+        taskdesc['scopes'].extend([
+            'docker-worker:relengapi-proxy:tooltool.download.public',
+        ])
+        if run['tooltool-downloads'] == 'internal':
+            taskdesc['scopes'].append(
+                'docker-worker:relengapi-proxy:tooltool.download.internal')
 
     command = ' && '.join([
         "cd /home/worker/",
