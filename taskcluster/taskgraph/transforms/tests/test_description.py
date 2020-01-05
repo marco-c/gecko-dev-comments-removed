@@ -106,8 +106,8 @@ test_description_schema = Schema({
     
     Optional('worker-implementation'): Any(
         'docker-worker',
-        
         'generic-worker',
+        
         'docker-engine',
         'buildbot-bridge',
     ),
@@ -198,6 +198,14 @@ test_description_schema = Schema({
 
     
     Optional('this-chunk'): int,
+
+    
+    
+    Optional('os-groups', default=[]): Any(
+        [basestring],
+        
+        {'by-test-platform': {basestring: [basestring]}},
+    ),
 
     
 

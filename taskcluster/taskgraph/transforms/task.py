@@ -205,7 +205,7 @@ task_description_schema = Schema({
         Required('implementation'): 'generic-worker',
 
         
-        'command': [basestring],
+        'command': [taskref_or_string],
 
         
         
@@ -222,6 +222,9 @@ task_description_schema = Schema({
 
         
         'max-run-time': int,
+
+        
+        Optional('os-groups', default=[]): [basestring],
     }, {
         Required('implementation'): 'buildbot-bridge',
 
@@ -400,8 +403,9 @@ def build_generic_worker_payload(config, task, task_def):
     task_def['payload'] = {
         'command': worker['command'],
         'artifacts': artifacts,
-        'env': worker['env'],
+        'env': worker.get('env', {}),
         'maxRunTime': worker['max-run-time'],
+        'osGroups': worker.get('os-groups', []),
     }
 
     if 'retry-exit-status' in worker:

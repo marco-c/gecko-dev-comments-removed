@@ -24,8 +24,10 @@ transforms = TransformSequence()
 def set_worker_implementation(config, tests):
     """Set the worker implementation based on the test platform."""
     for test in tests:
-        
-        test['worker-implementation'] = 'docker-worker'
+        if test['test-platform'].startswith('win'):
+            test['worker-implementation'] = 'generic-worker'
+        else:
+            test['worker-implementation'] = 'docker-worker'
         yield test
 
 
