@@ -597,7 +597,9 @@ nsComputedDOMStyle::DoGetStyleContextNoFlush(Element* aElement,
   
   
   
-  if (!aPseudo && aStyleType == eAll && inDocWithShell &&
+  if (!aPseudo &&
+      aStyleType == eAll &&
+      inDocWithShell &&
       !aElement->IsHTMLElement(nsGkAtoms::area)) {
     nsIFrame* frame = nsLayoutUtils::GetStyleFrame(aElement);
     if (frame) {
