@@ -456,7 +456,7 @@ private:
   
   
   
-  bool mDidPushItemsBitMayLie;
+  bool mDidPushItemsBitMayLie { false };
 #endif
 };
 
