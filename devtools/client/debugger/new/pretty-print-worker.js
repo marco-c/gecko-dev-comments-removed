@@ -1,19 +1,34 @@
-(function webpackUniversalModuleDefinition(root, factory) {
-	if(typeof exports === 'object' && typeof module === 'object')
-		module.exports = factory();
-	else if(typeof define === 'function' && define.amd)
-		define([], factory);
-	else {
-		var a = factory();
-		for(var i in a) (typeof exports === 'object' ? exports : root)[i] = a[i];
-	}
-})(this, function() {
-return  (function(modules) { 
+var Debugger =
+ (function(modules) { 
  	
  	var installedModules = {};
 
  	
  	function __webpack_require__(moduleId) {
+ 		
+ 		const smpCache = this.smpCache = this.smpCache || {};
+ 		const smpMap = this.smpMap = this.smpMap || new Map();
+ 		function sanitizeString(text) {
+ 		   return text.replace(/__webpack_require__\(\d+\)/g,"");
+ 		}
+ 		function getModuleBody(id) {
+ 		  if (smpCache.hasOwnProperty(id)) {
+ 		    return smpCache[id];
+ 		  }
+
+ 		  const body = sanitizeString(String(modules[id]));
+ 		  smpCache[id] = body;
+ 		  return body;
+ 		}
+ 		if (!installedModules[moduleId]) {
+ 			const body = getModuleBody(moduleId);
+ 			if (smpMap.has(body)) {
+ 				installedModules[moduleId] = installedModules[smpMap.get(body)];
+ 			}
+ 			else {
+ 				smpMap.set(body, moduleId)
+ 			}
+ 		}
 
  		
  		if(installedModules[moduleId])
@@ -55,19 +70,17 @@ return  (function(modules) {
  0:
  function(module, exports, __webpack_require__) {
 
-	module.exports = __webpack_require__(788);
+	module.exports = __webpack_require__(679);
 
 
  },
 
- 223:
+ 252:
  function(module, exports) {
 
-	"use strict";
-	
 	function assert(condition, message) {
 	  if (!condition) {
-	    throw new Error(`Assertion failure: ${message}`);
+	    throw new Error(`Assertion failure: ${ message }`);
 	  }
 	}
 	
@@ -75,13 +88,11 @@ return  (function(modules) {
 
  },
 
- 788:
+ 679:
  function(module, exports, __webpack_require__) {
 
-	"use strict";
-	
-	var prettyFast = __webpack_require__(789);
-	var assert = __webpack_require__(223);
+	var prettyFast = __webpack_require__(680);
+	var assert = __webpack_require__(252);
 	
 	function prettyPrint(_ref) {
 	  var url = _ref.url,
@@ -99,7 +110,7 @@ return  (function(modules) {
 	      mappings: prettified.map._mappings
 	    };
 	  } catch (e) {
-	    throw new Error(`${e.message}\n${e.stack}`);
+	    return new Error(`${ e.message }\n${ e.stack }`);
 	  }
 	}
 	
@@ -145,7 +156,7 @@ return  (function(modules) {
 
  },
 
- 789:
+ 680:
  function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;
@@ -167,8 +178,8 @@ return  (function(modules) {
 	}(this, function () {
 	  "use strict";
 	
-	  var acorn = this.acorn || __webpack_require__(790);
-	  var sourceMap = this.sourceMap || __webpack_require__(791);
+	  var acorn = this.acorn || __webpack_require__(681);
+	  var sourceMap = this.sourceMap || __webpack_require__(682);
 	  var SourceNode = sourceMap.SourceNode;
 	
 	  
@@ -1027,7 +1038,7 @@ return  (function(modules) {
 
  },
 
- 790:
+ 681:
  function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;
@@ -3687,7 +3698,7 @@ return  (function(modules) {
 
  },
 
- 791:
+ 682:
  function(module, exports, __webpack_require__) {
 
 	
@@ -3695,14 +3706,14 @@ return  (function(modules) {
 
 
 
-	exports.SourceMapGenerator = __webpack_require__(792).SourceMapGenerator;
-	exports.SourceMapConsumer = __webpack_require__(798).SourceMapConsumer;
-	exports.SourceNode = __webpack_require__(800).SourceNode;
+	exports.SourceMapGenerator = __webpack_require__(683).SourceMapGenerator;
+	exports.SourceMapConsumer = __webpack_require__(689).SourceMapConsumer;
+	exports.SourceNode = __webpack_require__(691).SourceNode;
 
 
  },
 
- 792:
+ 683:
  function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_RESULT__;
@@ -3716,10 +3727,10 @@ return  (function(modules) {
 	}
 	!(__WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, module) {
 	
-	  var base64VLQ = __webpack_require__(793);
-	  var util = __webpack_require__(795);
-	  var ArraySet = __webpack_require__(796).ArraySet;
-	  var MappingList = __webpack_require__(797).MappingList;
+	  var base64VLQ = __webpack_require__(684);
+	  var util = __webpack_require__(686);
+	  var ArraySet = __webpack_require__(687).ArraySet;
+	  var MappingList = __webpack_require__(688).MappingList;
 	
 	  
 
@@ -4109,7 +4120,7 @@ return  (function(modules) {
 
  },
 
- 793:
+ 684:
  function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_RESULT__;
@@ -4153,7 +4164,7 @@ return  (function(modules) {
 	}
 	!(__WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, module) {
 	
-	  var base64 = __webpack_require__(794);
+	  var base64 = __webpack_require__(685);
 	
 	  
 	  
@@ -4258,7 +4269,7 @@ return  (function(modules) {
 
  },
 
- 794:
+ 685:
  function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_RESULT__;
@@ -4307,7 +4318,7 @@ return  (function(modules) {
 
  },
 
- 795:
+ 686:
  function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_RESULT__;
@@ -4633,7 +4644,7 @@ return  (function(modules) {
 
  },
 
- 796:
+ 687:
  function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_RESULT__;
@@ -4647,7 +4658,7 @@ return  (function(modules) {
 	}
 	!(__WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, module) {
 	
-	  var util = __webpack_require__(795);
+	  var util = __webpack_require__(686);
 	
 	  
 
@@ -4737,7 +4748,7 @@ return  (function(modules) {
 
  },
 
- 797:
+ 688:
  function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_RESULT__;
@@ -4751,7 +4762,7 @@ return  (function(modules) {
 	}
 	!(__WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, module) {
 	
-	  var util = __webpack_require__(795);
+	  var util = __webpack_require__(686);
 	
 	  
 
@@ -4830,7 +4841,7 @@ return  (function(modules) {
 
  },
 
- 798:
+ 689:
  function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_RESULT__;
@@ -4844,10 +4855,10 @@ return  (function(modules) {
 	}
 	!(__WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, module) {
 	
-	  var util = __webpack_require__(795);
-	  var binarySearch = __webpack_require__(799);
-	  var ArraySet = __webpack_require__(796).ArraySet;
-	  var base64VLQ = __webpack_require__(793);
+	  var util = __webpack_require__(686);
+	  var binarySearch = __webpack_require__(690);
+	  var ArraySet = __webpack_require__(687).ArraySet;
+	  var base64VLQ = __webpack_require__(684);
 	
 	  
 
@@ -5412,7 +5423,7 @@ return  (function(modules) {
 
  },
 
- 799:
+ 690:
  function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_RESULT__;
@@ -5499,7 +5510,7 @@ return  (function(modules) {
 
  },
 
- 800:
+ 691:
  function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_RESULT__;
@@ -5513,8 +5524,8 @@ return  (function(modules) {
 	}
 	!(__WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, module) {
 	
-	  var SourceMapGenerator = __webpack_require__(792).SourceMapGenerator;
-	  var util = __webpack_require__(795);
+	  var SourceMapGenerator = __webpack_require__(683).SourceMapGenerator;
+	  var util = __webpack_require__(686);
 	
 	  
 	  
@@ -5920,6 +5931,4 @@ return  (function(modules) {
 
  }
 
- })
-});
-;
+ });
