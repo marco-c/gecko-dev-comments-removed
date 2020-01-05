@@ -88,18 +88,7 @@ error.wrap = function (err) {
   if (error.isWebDriverError(err)) {
     return err;
   }
-  return new WebDriverError(`${err.name}: ${err.message}`, err.stack);
-};
-
-
-
-
-
-error.wrap = function (err) {
-  if (error.isWebDriverError(err)) {
-    return err;
-  }
-  return new WebDriverError(err.message, err.stacktrace);
+  return new WebDriverError(`${err.name}: ${err.message}`, err.stacktrace);
 };
 
 
