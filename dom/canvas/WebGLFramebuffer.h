@@ -173,6 +173,7 @@ protected:
     struct ResolvedData {
         
         bool hasSampleBuffers;
+        std::vector<const WebGLFBAttachPoint*> colorDrawBuffers;
         const WebGLFBAttachPoint* depthBuffer;
         const WebGLFBAttachPoint* stencilBuffer;
 
