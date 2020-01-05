@@ -13,6 +13,38 @@ use std::fmt;
 
 
 
+
+
+pub enum DevicePixel {}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub enum ScreenPx {}
+
+
+
+
+
+
+
+pub enum PagePx {}
+
+
+
+
+
+
 #[deriving(Clone, Eq, Ord, Zero)]
 pub struct Au(pub i32);
 

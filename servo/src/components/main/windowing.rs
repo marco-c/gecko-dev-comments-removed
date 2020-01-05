@@ -4,15 +4,17 @@
 
 
 
-use geom::point::Point2D;
-use geom::size::Size2D;
+use geom::point::TypedPoint2D;
+use geom::scale_factor::ScaleFactor;
+use geom::size::TypedSize2D;
 use servo_msg::compositor_msg::{ReadyState, RenderState};
+use servo_util::geometry::{ScreenPx, DevicePixel};
 use std::rc::Rc;
 
 pub enum MouseWindowEvent {
-    MouseWindowClickEvent(uint, Point2D<f32>),
-    MouseWindowMouseDownEvent(uint, Point2D<f32>),
-    MouseWindowMouseUpEvent(uint, Point2D<f32>),
+    MouseWindowClickEvent(uint, TypedPoint2D<DevicePixel, f32>),
+    MouseWindowMouseDownEvent(uint, TypedPoint2D<DevicePixel, f32>),
+    MouseWindowMouseUpEvent(uint, TypedPoint2D<DevicePixel, f32>),
 }
 
 pub enum WindowNavigateMsg {
@@ -36,9 +38,9 @@ pub enum WindowEvent {
     
     MouseWindowEventClass(MouseWindowEvent),
     
-    MouseWindowMoveEventClass(Point2D<f32>),
+    MouseWindowMoveEventClass(TypedPoint2D<DevicePixel, f32>),
     
-    ScrollWindowEvent(Point2D<f32>, Point2D<i32>),
+    ScrollWindowEvent(TypedPoint2D<DevicePixel, f32>, TypedPoint2D<DevicePixel, i32>),
     
     ZoomWindowEvent(f32),
     
@@ -58,7 +60,7 @@ pub trait WindowMethods<A> {
     
     fn new(app: &A, is_foreground: bool) -> Rc<Self>;
     
-    fn size(&self) -> Size2D<f32>;
+    fn size(&self) -> TypedSize2D<DevicePixel, f32>;
     
     fn present(&self);
 
@@ -71,6 +73,6 @@ pub trait WindowMethods<A> {
     fn set_render_state(&self, render_state: RenderState);
 
     
-    fn hidpi_factor(&self) -> f32;
+    fn hidpi_factor(&self) -> ScaleFactor<ScreenPx, DevicePixel, f32>;
 }
 
