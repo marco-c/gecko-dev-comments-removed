@@ -668,6 +668,17 @@ private:
                          uint8_t aVirtualKey,
                          VirtualKey::ShiftState aShiftState) const;
 
+  
+
+
+
+
+
+
+  char16_t GetCompositeChar(uint8_t aVirtualKeyOfDeadKey,
+                            VirtualKey::ShiftState aShiftStateOfDeadKey,
+                            char16_t aBaseChar) const;
+
 public:
   static KeyboardLayout* GetInstance();
   static void Shutdown();
