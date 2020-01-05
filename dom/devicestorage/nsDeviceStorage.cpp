@@ -2780,9 +2780,6 @@ void nsDOMDeviceStorage::InvalidateVolumeCaches()
 {
   MOZ_ASSERT(NS_IsMainThread());
 
-  
-  
-
   sVolumeNameCache = nullptr;
 }
 
