@@ -12,8 +12,10 @@
 #include "mozilla/gfx/2D.h"             
 #include "mozilla/gfx/MatrixFwd.h"      
 #include "mozilla/gfx/Point.h"          
+#include "mozilla/gfx/Polygon.h"        
 #include "mozilla/gfx/Rect.h"           
 #include "mozilla/gfx/Types.h"          
+#include "mozilla/gfx/Triangle.h"       
 #include "mozilla/layers/CompositorTypes.h"  
 #include "mozilla/layers/FenceUtils.h"  
 #include "mozilla/layers/LayersTypes.h"  
@@ -310,6 +312,25 @@ public:
 
   virtual void SetScreenRenderOffset(const ScreenPoint& aOffset) = 0;
 
+  void DrawGeometry(const gfx::Rect& aRect,
+                    const gfx::IntRect& aClipRect,
+                    const EffectChain &aEffectChain,
+                    gfx::Float aOpacity,
+                    const gfx::Matrix4x4& aTransform,
+                    const gfx::Rect& aVisibleRect,
+                    const Maybe<gfx::Polygon3D>& aGeometry);
+
+  void DrawGeometry(const gfx::Rect& aRect,
+                    const gfx::IntRect& aClipRect,
+                    const EffectChain &aEffectChain,
+                    gfx::Float aOpacity,
+                    const gfx::Matrix4x4& aTransform,
+                    const Maybe<gfx::Polygon3D>& aGeometry)
+  {
+    DrawGeometry(aRect, aClipRect, aEffectChain, aOpacity,
+                 aTransform, aRect, aGeometry);
+  }
+
   
 
 
@@ -332,6 +353,16 @@ public:
                         const EffectChain& aEffectChain,
                         gfx::Float aOpacity, const gfx::Matrix4x4& aTransform) {
       DrawQuad(aRect, aClipRect, aEffectChain, aOpacity, aTransform, aRect);
+  }
+
+  virtual void DrawTriangle(const gfx::TexturedTriangle& aTriangle,
+                            const gfx::IntRect& aClipRect,
+                            const EffectChain& aEffectChain,
+                            gfx::Float aOpacity,
+                            const gfx::Matrix4x4& aTransform,
+                            const gfx::Rect& aVisibleRect)
+  {
+    MOZ_CRASH("Compositor::DrawTriangle is not implemented for the current platform!");
   }
 
   
@@ -592,12 +623,18 @@ protected:
 
 
 
-  gfx::IntRect ComputeBackdropCopyRect(
-    const gfx::Rect& aRect,
-    const gfx::IntRect& aClipRect,
-    const gfx::Matrix4x4& aTransform,
-    gfx::Matrix4x4* aOutTransform,
-    gfx::Rect* aOutLayerQuad = nullptr);
+  gfx::IntRect ComputeBackdropCopyRect(const gfx::Rect& aRect,
+                                       const gfx::IntRect& aClipRect,
+                                       const gfx::Matrix4x4& aTransform,
+                                       gfx::Matrix4x4* aOutTransform,
+                                       gfx::Rect* aOutLayerQuad = nullptr);
+
+  gfx::IntRect ComputeBackdropCopyRect(const gfx::Triangle& aTriangle,
+                                       const gfx::IntRect& aClipRect,
+                                       const gfx::Matrix4x4& aTransform,
+                                       gfx::Matrix4x4* aOutTransform,
+                                       gfx::Rect* aOutLayerQuad = nullptr);
+
 
   
 

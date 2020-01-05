@@ -9,6 +9,7 @@
 #include "GLContext.h"                  
 #include "gfxTypes.h"
 #include "mozilla/Assertions.h"         
+#include "mozilla/Pair.h"               
 #include "mozilla/RefPtr.h"             
 #include "mozilla/gfx/Matrix.h"         
 #include "mozilla/gfx/Rect.h"           
@@ -39,7 +40,8 @@ enum ShaderFeatures {
   ENABLE_COLOR_MATRIX=0x400,
   ENABLE_MASK=0x800,
   ENABLE_NO_PREMUL_ALPHA=0x1000,
-  ENABLE_DEAA=0x2000
+  ENABLE_DEAA=0x2000,
+  ENABLE_DYNAMIC_GEOMETRY=0x4000
 };
 
 class KnownUniform {
@@ -226,6 +228,7 @@ public:
   void SetDEAA(bool aEnabled);
   void SetCompositionOp(gfx::CompositionOp aOp);
   void SetNoPremultipliedAlpha();
+  void SetDynamicGeometry(bool aEnabled);
 
   bool operator< (const ShaderConfigOGL& other) const {
     return mFeatures < other.mFeatures ||
@@ -276,6 +279,9 @@ struct ProgramProfileOGL
   
   std::string mVertexShaderString;
   std::string mFragmentShaderString;
+
+  
+  nsTArray<Pair<nsCString, GLuint>> mAttributes;
 
   KnownUniform mUniforms[KnownUniform::KnownUniformCount];
   nsTArray<const char *> mDefines;
