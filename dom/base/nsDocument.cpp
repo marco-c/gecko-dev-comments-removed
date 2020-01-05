@@ -7075,19 +7075,6 @@ nsIDocument::GetDocumentURIObject() const
   return mChromeXHRDocURI;
 }
 
-
-
-
-
-NS_IMETHODIMP
-nsDocument::GetCompatMode(nsAString& aCompatMode)
-{
-  nsString temp;
-  nsIDocument::GetCompatMode(temp);
-  aCompatMode = temp;
-  return NS_OK;
-}
-
 void
 nsIDocument::GetCompatMode(nsString& aCompatMode) const
 {
