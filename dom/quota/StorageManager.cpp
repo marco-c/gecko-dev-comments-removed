@@ -287,6 +287,13 @@ ExecuteOpOnMainOrWorkerThread(nsIGlobalObject* aGlobal,
     nsCOMPtr<nsIPrincipal> principal = doc->NodePrincipal();
     MOZ_ASSERT(principal);
 
+    
+    
+    if (principal->GetIsNullPrincipal()) {
+      promise->MaybeReject(NS_ERROR_DOM_TYPE_ERR);
+      return promise.forget();
+    }
+
     switch (aType) {
       case RequestResolver::Type::Persisted: {
         RefPtr<RequestResolver> resolver =
