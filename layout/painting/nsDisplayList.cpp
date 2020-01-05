@@ -627,7 +627,7 @@ AddAnimationsForProperty(nsIFrame* aFrame, nsCSSPropertyID aProperty,
     
     
     if (anim->PlayState() == AnimationPlayState::Pending &&
-        (!anim->GetTimeline() ||
+        (anim->GetTimeline() &&
          !anim->GetTimeline()->TracksWallclockTime())) {
       continue;
     }
