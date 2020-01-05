@@ -1574,12 +1574,6 @@ nsPermissionManager::AddInternal(nsIPrincipal* aPrincipal,
     ContentParent::GetAll(cplist);
     for (uint32_t i = 0; i < cplist.Length(); ++i) {
       ContentParent* cp = cplist[i];
-      
-      
-      
-      if (cp->IsPreallocated() &&
-          aExpireType == nsIPermissionManager::EXPIRE_SESSION)
-        continue;
       if (cp->NeedsPermissionsUpdate())
         Unused << cp->SendAddPermission(permission);
     }
