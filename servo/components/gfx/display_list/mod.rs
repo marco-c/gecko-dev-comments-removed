@@ -42,8 +42,9 @@ use util::smallvec::{SmallVec, SmallVec8};
 use std::fmt;
 use std::slice::Iter;
 use std::sync::Arc;
+use style::computed_values::{border_style, cursor, filter, image_rendering, mix_blend_mode};
+use style::computed_values::{pointer_events};
 use style::properties::ComputedValues;
-use style::computed_values::{border_style, cursor, filter, mix_blend_mode, pointer_events};
 
 
 
@@ -763,6 +764,10 @@ pub struct ImageDisplayItem {
     
     
     pub stretch_size: Size2D<Au>,
+
+    
+    
+    pub image_rendering: image_rendering::T,
 }
 
 
@@ -937,7 +942,9 @@ impl DisplayItem {
                         bounds.origin.y = bounds.origin.y + y_offset;
                         bounds.size = image_item.stretch_size;
 
-                        paint_context.draw_image(&bounds, image_item.image.clone());
+                        paint_context.draw_image(&bounds,
+                                                 image_item.image.clone(),
+                                                 image_item.image_rendering.clone());
 
                         x_offset = x_offset + image_item.stretch_size.width;
                     }
