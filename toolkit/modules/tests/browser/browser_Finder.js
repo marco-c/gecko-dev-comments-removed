@@ -30,8 +30,7 @@ add_task(function* () {
   let promiseFind = waitForFind("onHighlightFinished");
   finder.highlight(true, "content");
   let findResult = yield promiseFind;
-  
-  
+  Assert.ok(findResult.found, "should find string");
 
   promiseFind = waitForFind("onHighlightFinished");
   finder.highlight(true, "Bla");
