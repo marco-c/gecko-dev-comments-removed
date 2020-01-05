@@ -511,7 +511,7 @@ pub struct ScrollRoot {
     pub clip: Rect<Au>,
 
     
-    pub size: Size2D<Au>,
+    pub content_rect: Rect<Au>,
 }
 
 impl ScrollRoot {
