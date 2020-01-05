@@ -144,8 +144,6 @@ private:
   void FireDOMVRDisplayConnectEventInternal();
   void FireDOMVRDisplayDisconnectEventInternal();
   void FireDOMVRDisplayPresentChangeEventInternal();
-
-  void DeliverFence(uint64_t aTextureId, FenceHandle& aReleaseFenceHandle);
   
 
 

@@ -586,17 +586,6 @@ public:
 
   int NumCompositableRefs() const { return mCompositableCount; }
 
-  
-
-
-
-  bool SetReleaseFenceHandle(const FenceHandle& aReleaseFenceHandle);
-
-  
-
-
-  FenceHandle GetAndResetReleaseFenceHandle();
-
   void SetAcquireFenceHandle(const FenceHandle& aAcquireFenceHandle);
 
   
@@ -610,8 +599,6 @@ public:
 
   virtual bool NeedsFenceHandle() { return false; }
 
-  virtual FenceHandle GetCompositorReleaseFence() { return FenceHandle(); }
-
   void DeserializeReadLock(const ReadLockDescriptor& aDesc,
                            ISurfaceAllocator* aAllocator);
 
@@ -623,8 +610,6 @@ public:
 
 protected:
   void ReadUnlock();
-
-  FenceHandle mReleaseFenceHandle;
 
   FenceHandle mAcquireFenceHandle;
 
