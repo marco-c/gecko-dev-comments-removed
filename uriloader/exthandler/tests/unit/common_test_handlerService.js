@@ -308,9 +308,14 @@ add_task(function* testStoreForDBusHandler() {
 
 
 
+
 add_task(function* testIsInHandlerArray() {
   if (Services.appinfo.widgetToolkit == "android") {
     do_print("Skipping test because it does not apply to this platform.");
+    return;
+  }
+  if (!Services.prefs.getPrefType("gecko.handlerService.defaultHandlersVersion")) {
+    do_print("Skipping test: No pref gecko.handlerService.defaultHandlersVersion.");
     return;
   }
 
@@ -357,9 +362,14 @@ add_task(function* testIsInHandlerArray() {
 
 
 
+
 add_task(function* testFillHandlerInfoForProtocol() {
   if (Services.appinfo.widgetToolkit == "android") {
     do_print("Skipping test because it does not apply to this platform.");
+    return;
+  }
+  if (!Services.prefs.getPrefType("gecko.handlerService.defaultHandlersVersion")) {
+    do_print("Skipping test: No pref gecko.handlerService.defaultHandlersVersion.");
     return;
   }
 
