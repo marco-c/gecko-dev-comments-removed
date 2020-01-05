@@ -78,9 +78,15 @@ NS_IMPL_CYCLE_COLLECTION_CLASS(AudioContext)
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(AudioContext)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mDestination)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mListener)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mPromiseGripArray)
   if (!tmp->mIsStarted) {
     NS_IMPL_CYCLE_COLLECTION_UNLINK(mActiveNodes)
   }
+  
+  
+  
+  
+
   
   
   tmp->DisconnectFromWindow();
@@ -90,11 +96,16 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(AudioContext,
                                                   DOMEventTargetHelper)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDestination)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mListener)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mPromiseGripArray)
   if (!tmp->mIsStarted) {
     MOZ_ASSERT(tmp->mIsOffline,
                "Online AudioContexts should always be started");
     NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mActiveNodes)
   }
+  
+  
+  
+  
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_ADDREF_INHERITED(AudioContext, DOMEventTargetHelper)
