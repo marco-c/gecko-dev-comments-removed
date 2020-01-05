@@ -72,31 +72,22 @@ public:
 
 
 
-
-
-
     already_AddRefed<gfxContext>
-    Init(gfxContext* aDestinationCtx,
-         const gfxRect& aRect,
+    Init(const gfxRect& aRect,
          const mozilla::gfx::IntSize& aSpreadRadius,
          const mozilla::gfx::IntSize& aBlurRadius,
          const gfxRect* aDirtyRect,
          const gfxRect* aSkipRect);
 
     already_AddRefed<DrawTarget>
-    InitDrawTarget(const mozilla::gfx::DrawTarget* aReferenceDT,
-                   const mozilla::gfx::Rect& aRect,
+    InitDrawTarget(const mozilla::gfx::Rect& aRect,
                    const mozilla::gfx::IntSize& aSpreadRadius,
                    const mozilla::gfx::IntSize& aBlurRadius,
                    const mozilla::gfx::Rect* aDirtyRect = nullptr,
                    const mozilla::gfx::Rect* aSkipRect = nullptr);
 
-    
-
-
     already_AddRefed<mozilla::gfx::SourceSurface>
-    DoBlur(const mozilla::gfx::Color* aShadowColor = nullptr,
-           mozilla::gfx::IntPoint* aOutTopLeft = nullptr);
+    DoBlur(DrawTarget* aDT, mozilla::gfx::IntPoint* aTopLeft);
 
     
 
@@ -177,12 +168,6 @@ protected:
                  DrawTarget* aDestDrawTarget,
                  bool aMirrorCorners);
 
-
-    
-
-
-    RefPtr<DrawTarget> mDrawTarget;
-
     
 
 
@@ -192,11 +177,6 @@ protected:
 
 
     mozilla::gfx::AlphaBoxBlur mBlur;
-
-    
-
-
-    bool mAccelerated;
 };
 
 #endif 

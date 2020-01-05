@@ -103,16 +103,6 @@ public:
   
 
 
-  IntSize GetSpreadRadius() const { return mSpreadRadius; }
-
-  
-
-
-  IntSize GetBlurRadius() const { return mBlurRadius; }
-
-  
-
-
 
 
 
@@ -133,7 +123,6 @@ public:
 
 
   static IntSize CalculateBlurRadius(const Point& aStandardDeviation);
-  static Float CalculateBlurSigma(int32_t aBlurRadius);
 
 private:
 
