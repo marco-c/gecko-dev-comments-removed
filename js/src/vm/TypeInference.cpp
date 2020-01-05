@@ -2551,7 +2551,7 @@ TypeZone::addPendingRecompile(JSContext* cx, JSScript* script)
 {
     MOZ_ASSERT(script);
 
-    CancelOffThreadIonCompile(cx->compartment(), script);
+    CancelOffThreadIonCompile(script);
 
     
     if (jit::IsBaselineEnabled(cx))

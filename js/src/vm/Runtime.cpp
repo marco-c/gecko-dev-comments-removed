@@ -384,7 +384,7 @@ JSRuntime::destroyRuntime()
 
 
         for (CompartmentsIter comp(this, SkipAtoms); !comp.done(); comp.next())
-            CancelOffThreadIonCompile(comp, nullptr);
+            CancelOffThreadIonCompile(comp);
         CancelOffThreadParses(this);
 
         

@@ -409,13 +409,35 @@ StartPromiseTask(JSContext* cx, UniquePtr<PromiseTask> task);
 bool
 StartOffThreadIonCompile(JSContext* cx, jit::IonBuilder* builder);
 
+struct AllCompilations {};
+
+using CompilationSelector = mozilla::Variant<JSScript*,
+                                             JSCompartment*,
+                                             AllCompilations>;
 
 
 
 
 void
-CancelOffThreadIonCompile(JSCompartment* compartment, JSScript* script,
-                          bool discardLazyLinkList = true);
+CancelOffThreadIonCompile(CompilationSelector selector, bool discardLazyLinkList);
+
+inline void
+CancelOffThreadIonCompile(JSScript* script)
+{
+    CancelOffThreadIonCompile(CompilationSelector(script), true);
+}
+
+inline void
+CancelOffThreadIonCompile(JSCompartment* comp)
+{
+    CancelOffThreadIonCompile(CompilationSelector(comp), true);
+}
+
+inline void
+CancelOffThreadIonCompile()
+{
+    CancelOffThreadIonCompile(CompilationSelector(AllCompilations()), false);
+}
 
 
 void

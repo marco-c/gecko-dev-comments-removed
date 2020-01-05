@@ -810,7 +810,7 @@ InvalidateScriptsInZone(JSContext* cx, Zone* zone, const Vector<DebugModeOSREntr
         
         
         if (script->hasBaselineScript())
-            CancelOffThreadIonCompile(script->compartment(), script);
+            CancelOffThreadIonCompile(script);
     }
 
     
