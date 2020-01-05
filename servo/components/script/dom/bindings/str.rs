@@ -56,12 +56,26 @@ impl ByteString {
             
             match x {
                 0...31 | 127 => false, 
-                40 | 41 | 60 | 62 | 64 |
-                44 | 59 | 58 | 92 | 34 |
-                47 | 91 | 93 | 63 | 61 |
-                123 | 125 | 32  => false, 
+                40 |
+                41 |
+                60 |
+                62 |
+                64 |
+                44 |
+                59 |
+                58 |
+                92 |
+                34 |
+                47 |
+                91 |
+                93 |
+                63 |
+                61 |
+                123 |
+                125 |
+                32 => false, 
                 x if x > 127 => false, 
-                _ => true
+                _ => true,
             }
         })
     }
@@ -75,7 +89,7 @@ impl ByteString {
             Other,
             CR,
             LF,
-            SPHT 
+            SPHT, 
         }
         let ByteString(ref vec) = *self;
         let mut prev = PreviousCharacter::Other; 

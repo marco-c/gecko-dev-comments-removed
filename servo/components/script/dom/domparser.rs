@@ -34,7 +34,8 @@ impl DOMParser {
     }
 
     pub fn new(window: &Window) -> Root<DOMParser> {
-        reflect_dom_object(box DOMParser::new_inherited(window), GlobalRef::Window(window),
+        reflect_dom_object(box DOMParser::new_inherited(window),
+                           GlobalRef::Window(window),
                            DOMParserBinding::Wrap)
     }
 
@@ -50,13 +51,15 @@ impl DOMParserMethods for DOMParser {
                        ty: DOMParserBinding::SupportedType)
                        -> Fallible<Root<Document>> {
         let url = self.window.get_url();
-        let content_type = DOMString::from(DOMParserBinding::SupportedTypeValues::strings[ty as usize]);
+        let content_type =
+            DOMString::from(DOMParserBinding::SupportedTypeValues::strings[ty as usize]);
         let doc = self.window.Document();
         let doc = doc.r();
         let loader = DocumentLoader::new(&*doc.loader());
         match ty {
             Text_html => {
-                let document = Document::new(&self.window, Some(url.clone()),
+                let document = Document::new(&self.window,
+                                             Some(url.clone()),
                                              IsHTMLDocument::HTMLDocument,
                                              Some(content_type),
                                              None,
@@ -68,7 +71,8 @@ impl DOMParserMethods for DOMParser {
             }
             Text_xml => {
                 
-                let document = Document::new(&self.window, Some(url.clone()),
+                let document = Document::new(&self.window,
+                                             Some(url.clone()),
                                              IsHTMLDocument::NonHTMLDocument,
                                              Some(content_type),
                                              None,

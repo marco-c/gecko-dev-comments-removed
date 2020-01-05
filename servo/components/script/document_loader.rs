@@ -5,7 +5,7 @@
 
 
 
-use msg::constellation_msg::{PipelineId};
+use msg::constellation_msg::PipelineId;
 use net_traits::AsyncResponseTarget;
 use net_traits::{PendingAsyncLoad, ResourceTask};
 use std::sync::Arc;

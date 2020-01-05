@@ -15,20 +15,25 @@ use std::mem;
 
 pub trait Castable: IDLInterface + Reflectable + Sized {
     
-    fn is<T>(&self) -> bool where T: DerivedFrom<Self> {
-        let class = unsafe {
-            get_dom_class(self.reflector().get_jsobject().get()).unwrap()
-        };
+    fn is<T>(&self) -> bool
+        where T: DerivedFrom<Self>
+    {
+        let class = unsafe { get_dom_class(self.reflector().get_jsobject().get()).unwrap() };
         T::derives(class)
     }
 
     
-    fn upcast<T>(&self) -> &T where T: Castable, Self: DerivedFrom<T> {
+    fn upcast<T>(&self) -> &T
+        where T: Castable,
+              Self: DerivedFrom<T>
+    {
         unsafe { mem::transmute(self) }
     }
 
     
-    fn downcast<T>(&self) -> Option<&T> where T: DerivedFrom<Self> {
+    fn downcast<T>(&self) -> Option<&T>
+        where T: DerivedFrom<Self>
+    {
         if self.is::<T>() {
             Some(unsafe { mem::transmute(self) })
         } else {

@@ -31,7 +31,11 @@ pub trait Activatable {
     fn implicit_submission(&self, ctrlKey: bool, shiftKey: bool, altKey: bool, metaKey: bool);
 
     
-    fn synthetic_click_activation(&self, ctrlKey: bool, shiftKey: bool, altKey: bool, metaKey: bool) {
+    fn synthetic_click_activation(&self,
+                                  ctrlKey: bool,
+                                  shiftKey: bool,
+                                  altKey: bool,
+                                  metaKey: bool) {
         let element = self.as_element();
         
         if element.click_in_progress() {
@@ -46,10 +50,22 @@ pub trait Activatable {
         
         let win = window_from_node(element);
         let target = element.upcast();
-        let mouse = MouseEvent::new(win.r(), DOMString::from("click"),
-                                    EventBubbles::DoesNotBubble, EventCancelable::NotCancelable, Some(win.r()), 1,
-                                    0, 0, 0, 0, ctrlKey, shiftKey, altKey, metaKey,
-                                    0, None);
+        let mouse = MouseEvent::new(win.r(),
+                                    DOMString::from("click"),
+                                    EventBubbles::DoesNotBubble,
+                                    EventCancelable::NotCancelable,
+                                    Some(win.r()),
+                                    1,
+                                    0,
+                                    0,
+                                    0,
+                                    0,
+                                    ctrlKey,
+                                    shiftKey,
+                                    altKey,
+                                    metaKey,
+                                    0,
+                                    None);
         let event = mouse.upcast::<Event>();
         event.fire(target);
 

@@ -12,11 +12,11 @@ use js::glue::GetProxyExtra;
 use js::glue::InvokeGetOwnPropertyDescriptor;
 use js::glue::{GetProxyHandler, SetProxyExtra};
 use js::jsapi::GetObjectProto;
+use js::jsapi::JS_GetPropertyDescriptorById;
 use js::jsapi::{Handle, HandleId, HandleObject, MutableHandle, ObjectOpResult, RootedObject};
 use js::jsapi::{JSContext, JSObject, JSPropertyDescriptor};
 use js::jsapi::{JSErrNum, JS_StrictPropertyStub};
 use js::jsapi::{JS_DefinePropertyById6, JS_NewObjectWithGivenProto};
-use js::jsapi::{JS_GetPropertyDescriptorById};
 use js::jsval::ObjectValue;
 use js::{JSPROP_ENUMERATE, JSPROP_GETTER, JSPROP_READONLY};
 use libc;
@@ -28,11 +28,11 @@ static JSPROXYSLOT_EXPANDO: u32 = 0;
 
 
 
-pub unsafe extern fn get_property_descriptor(cx: *mut JSContext,
-                                             proxy: HandleObject,
-                                             id: HandleId,
-                                             desc: MutableHandle<JSPropertyDescriptor>)
-                                             -> bool {
+pub unsafe extern "C" fn get_property_descriptor(cx: *mut JSContext,
+                                                 proxy: HandleObject,
+                                                 id: HandleId,
+                                                 desc: MutableHandle<JSPropertyDescriptor>)
+                                                 -> bool {
     let handler = GetProxyHandler(proxy.get());
     if !InvokeGetOwnPropertyDescriptor(handler, cx, proxy, id, desc) {
         return false;
@@ -51,10 +51,12 @@ pub unsafe extern fn get_property_descriptor(cx: *mut JSContext,
 }
 
 
-pub unsafe extern fn define_property(cx: *mut JSContext, proxy: HandleObject,
-                                     id: HandleId, desc: Handle<JSPropertyDescriptor>,
-                                     result: *mut ObjectOpResult)
-                                     -> bool {
+pub unsafe extern "C" fn define_property(cx: *mut JSContext,
+                                         proxy: HandleObject,
+                                         id: HandleId,
+                                         desc: Handle<JSPropertyDescriptor>,
+                                         result: *mut ObjectOpResult)
+                                         -> bool {
     
     let setter: *const libc::c_void = mem::transmute(desc.get().setter);
     let setter_stub: *const libc::c_void = mem::transmute(JS_StrictPropertyStub);
@@ -68,8 +70,11 @@ pub unsafe extern fn define_property(cx: *mut JSContext, proxy: HandleObject,
 }
 
 
-pub unsafe extern fn delete(cx: *mut JSContext, proxy: HandleObject, id: HandleId,
-                            bp: *mut ObjectOpResult) -> bool {
+pub unsafe extern "C" fn delete(cx: *mut JSContext,
+                                proxy: HandleObject,
+                                id: HandleId,
+                                bp: *mut ObjectOpResult)
+                                -> bool {
     let expando = RootedObject::new(cx, get_expando_object(proxy));
     if expando.ptr.is_null() {
         (*bp).code_ = 0 ;
@@ -80,16 +85,19 @@ pub unsafe extern fn delete(cx: *mut JSContext, proxy: HandleObject, id: HandleI
 }
 
 
-pub unsafe extern fn prevent_extensions(_cx: *mut JSContext,
-                                        _proxy: HandleObject,
-                                        result: *mut ObjectOpResult) -> bool {
+pub unsafe extern "C" fn prevent_extensions(_cx: *mut JSContext,
+                                            _proxy: HandleObject,
+                                            result: *mut ObjectOpResult)
+                                            -> bool {
     (*result).code_ = JSErrNum::JSMSG_CANT_PREVENT_EXTENSIONS as ::libc::uintptr_t;
     true
 }
 
 
-pub unsafe extern fn is_extensible(_cx: *mut JSContext, _proxy: HandleObject,
-                                   succeeded: *mut bool) -> bool {
+pub unsafe extern "C" fn is_extensible(_cx: *mut JSContext,
+                                       _proxy: HandleObject,
+                                       succeeded: *mut bool)
+                                       -> bool {
     *succeeded = true;
     true
 }
@@ -109,8 +117,7 @@ pub fn get_expando_object(obj: HandleObject) -> *mut JSObject {
 
 
 
-pub fn ensure_expando_object(cx: *mut JSContext, obj: HandleObject)
-                             -> *mut JSObject {
+pub fn ensure_expando_object(cx: *mut JSContext, obj: HandleObject) -> *mut JSObject {
     unsafe {
         assert!(is_dom_proxy(obj.get()));
         let mut expando = get_expando_object(obj);
@@ -127,7 +134,8 @@ pub fn ensure_expando_object(cx: *mut JSContext, obj: HandleObject)
 
 
 pub fn fill_property_descriptor(desc: &mut JSPropertyDescriptor,
-                                obj: *mut JSObject, readonly: bool) {
+                                obj: *mut JSObject,
+                                readonly: bool) {
     desc.obj = obj;
     desc.attrs = if readonly { JSPROP_READONLY } else { 0 } | JSPROP_ENUMERATE;
     desc.getter = None;

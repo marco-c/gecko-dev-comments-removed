@@ -138,7 +138,7 @@ impl<T: Reflectable> Drop for Trusted<T> {
 
 pub struct LiveDOMReferences {
     
-    table: RefCell<HashMap<*const libc::c_void, Arc<Mutex<usize>>>>
+    table: RefCell<HashMap<*const libc::c_void, Arc<Mutex<usize>>>>,
 }
 
 impl LiveDOMReferences {
@@ -197,7 +197,8 @@ impl LiveDOMReferences {
 }
 
 
-pub unsafe extern fn trace_refcounted_objects(tracer: *mut JSTracer, _data: *mut libc::c_void) {
+pub unsafe extern "C" fn trace_refcounted_objects(tracer: *mut JSTracer,
+                                                  _data: *mut libc::c_void) {
     LIVE_REFERENCES.with(|ref r| {
         let r = r.borrow();
         let live_references = r.as_ref().unwrap();
