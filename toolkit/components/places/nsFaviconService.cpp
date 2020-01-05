@@ -797,33 +797,44 @@ nsFaviconService::OptimizeIconSizes(IconData& aIcon)
     newPayload.mimeType = NS_LITERAL_CSTRING(PNG_MIME_TYPE);
     newPayload.width = frameInfo.width;
     for (uint16_t size : sFaviconSizes) {
-      if (size <= frameInfo.width) {
+      
+      
+      if (frameInfo.width >= 16) {
+        if (size > frameInfo.width) {
+          continue;
+        }
         newPayload.width = size;
+      }
+
+      
+      
+      if (newPayload.mimeType.Equals(payload.mimeType) &&
+          newPayload.width == frameInfo.width &&
+          payload.data.Length() < nsIFaviconService::MAX_FAVICON_BUFFER_SIZE) {
+        newPayload.data = payload.data;
+      } else {
+        
+        
+        nsCOMPtr<nsIInputStream> iconStream;
+        rv = GetImgTools()->EncodeScaledImage(container,
+                                              newPayload.mimeType,
+                                              newPayload.width,
+                                              newPayload.width,
+                                              EmptyString(),
+                                              getter_AddRefs(iconStream));
+        NS_ENSURE_SUCCESS(rv, rv);
+        
+        rv = NS_ConsumeStream(iconStream, UINT32_MAX, newPayload.data);
+        NS_ENSURE_SUCCESS(rv, rv);
+      }
+
+      
+      if (newPayload.data.Length() < nsIFaviconService::MAX_FAVICON_BUFFER_SIZE) {
         break;
       }
     }
 
-    
-    
-    if (newPayload.mimeType.Equals(payload.mimeType) &&
-        newPayload.width == frameInfo.width) {
-      newPayload.data = payload.data;
-    } else {
-      
-      
-      nsCOMPtr<nsIInputStream> iconStream;
-      rv = GetImgTools()->EncodeScaledImage(container,
-                                            newPayload.mimeType,
-                                            newPayload.width,
-                                            newPayload.width,
-                                            EmptyString(),
-                                            getter_AddRefs(iconStream));
-      NS_ENSURE_SUCCESS(rv, rv);
-      
-      rv = NS_ConsumeStream(iconStream, UINT32_MAX, newPayload.data);
-      NS_ENSURE_SUCCESS(rv, rv);
-    }
-
+    MOZ_ASSERT(newPayload.data.Length() < nsIFaviconService::MAX_FAVICON_BUFFER_SIZE);
     if (newPayload.data.Length() < nsIFaviconService::MAX_FAVICON_BUFFER_SIZE) {
       aIcon.payloads.AppendElement(newPayload);
     }

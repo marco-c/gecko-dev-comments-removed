@@ -20,6 +20,7 @@ Cu.import("resource://gre/modules/Services.jsm");
 
 
 
+const systemPrincipal = Services.scriptSecurityManager.getSystemPrincipal();
 
 
 
