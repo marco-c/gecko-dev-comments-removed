@@ -3222,8 +3222,9 @@ var SessionStoreInternal = {
                           (tabbrowser.tabs[t].getAttribute("usercontextid") == (userContextId || ""));
       let tab = reuseExisting ? this._maybeUpdateBrowserRemoteness(tabbrowser.tabs[t])
                               : tabbrowser.addTab("about:blank",
-                                                  {skipAnimation: true,
-                                                   userContextId});
+                                                  { skipAnimation: true,
+                                                    userContextId,
+                                                    skipBackgroundNotify: true });
 
       
       
