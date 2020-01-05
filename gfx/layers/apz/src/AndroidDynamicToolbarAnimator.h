@@ -58,7 +58,7 @@ public:
   
   
   
-  nsEventStatus ReceiveInputEvent(InputData& aEvent);
+  nsEventStatus ReceiveInputEvent(InputData& aEvent, const ScreenPoint& aScrollOffset);
   void SetMaxToolbarHeight(ScreenIntCoord aHeight);
   
   
@@ -139,7 +139,7 @@ protected:
   void UpdateControllerCompositionHeight(ScreenIntCoord aHeight);
   void UpdateFixedLayerMargins();
   void NotifyControllerPendingAnimation(int32_t aDirection, AnimationStyle aStyle);
-  void StartCompositorAnimation(int32_t aDirection, AnimationStyle aStyle, ScreenIntCoord aHeight);
+  void StartCompositorAnimation(int32_t aDirection, AnimationStyle aStyle, ScreenIntCoord aHeight, bool aWaitForPageResize);
   void NotifyControllerAnimationStarted();
   void StopCompositorAnimation();
   void NotifyControllerAnimationStopped(ScreenIntCoord aHeight);
@@ -148,12 +148,18 @@ protected:
   void UpdateFrameMetrics(ScreenPoint aScrollOffset,
                           CSSToScreenScale aScale,
                           CSSRect aCssPageRect);
-  bool IsEnoughPageToHideToolbar(ScreenIntCoord delta);
+  
+  
+  bool PageTooSmallEnsureToolbarVisible();
   void ShowToolbarIfNotVisible(StaticToolbarState aCurrentToolbarState);
   void TranslateTouchEvent(MultiTouchInput& aTouchEvent);
   ScreenIntCoord GetFixedLayerMarginsBottom();
   void NotifyControllerSnapshotFailed();
   void CheckForResetOnNextMove(ScreenIntCoord aCurrentTouch);
+  
+  bool ScrollOffsetNearBottom() const;
+  
+  bool ToolbarInTransition();
   void QueueMessage(int32_t aMessage);
 
   
@@ -178,6 +184,7 @@ protected:
   ScreenIntCoord mControllerToolbarHeight;     
   ScreenIntCoord mControllerSurfaceHeight;     
   ScreenIntCoord mControllerCompositionHeight; 
+  ScreenCoord mControllerRootScrollY;          
   int32_t mControllerLastDragDirection;        
   int32_t mControllerTouchCount;               
   uint32_t mControllerLastEventTimeStamp;      
@@ -197,7 +204,7 @@ protected:
   };
 
   
-  FrameMetricsState mControllerFrameMetrics;
+  FrameMetricsState mControllerFrameMetrics; 
 
   class QueuedMessage : public LinkedListElement<QueuedMessage> {
   public:
@@ -211,11 +218,13 @@ protected:
   };
 
   
-  bool mCompositorShutdown;            
-  bool mCompositorAnimationDeferred;   
-  bool mCompositorLayersUpdateEnabled; 
-  bool mCompositorAnimationStarted;    
-  bool mCompositorReceivedFirstPaint;  
+  bool mCompositorShutdown;             
+  bool mCompositorAnimationDeferred;    
+  bool mCompositorLayersUpdateEnabled;  
+  bool mCompositorAnimationStarted;     
+  bool mCompositorReceivedFirstPaint;   
+  bool mCompositorWaitForPageResize;    
+  bool mCompositorToolbarShowRequested; 
   AnimationStyle mCompositorAnimationStyle;       
   ScreenIntCoord mCompositorMaxToolbarHeight;     
   ScreenIntCoord mCompositorToolbarHeight;        
