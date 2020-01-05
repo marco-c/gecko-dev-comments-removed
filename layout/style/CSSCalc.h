@@ -72,6 +72,11 @@ namespace css {
 
 
 
+
+
+
+
+
 template <class CalcOps>
 static typename CalcOps::result_type
 ComputeCalc(const typename CalcOps::input_type& aValue, CalcOps &aOps)
@@ -93,7 +98,7 @@ ComputeCalc(const typename CalcOps::input_type& aValue, CalcOps &aOps)
     case eCSSUnit_Calc_Times_L: {
       typename CalcOps::input_array_type *arr = aValue.GetArrayValue();
       MOZ_ASSERT(arr->Count() == 2, "unexpected length");
-      float lhs = aOps.ComputeNumber(arr->Item(0));
+      typename CalcOps::coeff_type lhs = aOps.ComputeCoefficient(arr->Item(0));
       typename CalcOps::result_type rhs = ComputeCalc(arr->Item(1), aOps);
       return aOps.MergeMultiplicativeL(CalcOps::GetUnit(aValue), lhs, rhs);
     }
@@ -102,7 +107,7 @@ ComputeCalc(const typename CalcOps::input_type& aValue, CalcOps &aOps)
       typename CalcOps::input_array_type *arr = aValue.GetArrayValue();
       MOZ_ASSERT(arr->Count() == 2, "unexpected length");
       typename CalcOps::result_type lhs = ComputeCalc(arr->Item(0), aOps);
-      float rhs = aOps.ComputeNumber(arr->Item(1));
+      typename CalcOps::coeff_type rhs = aOps.ComputeCoefficient(arr->Item(1));
       return aOps.MergeMultiplicativeR(CalcOps::GetUnit(aValue), lhs, rhs);
     }
     default: {
@@ -135,6 +140,7 @@ struct CSSValueInputCalcOps
 struct BasicCoordCalcOps
 {
   typedef nscoord result_type;
+  typedef float coeff_type;
 
   result_type
   MergeAdditive(nsCSSUnit aCalcFunction,
@@ -150,7 +156,7 @@ struct BasicCoordCalcOps
 
   result_type
   MergeMultiplicativeL(nsCSSUnit aCalcFunction,
-                       float aValue1, result_type aValue2)
+                       coeff_type aValue1, result_type aValue2)
   {
     MOZ_ASSERT(aCalcFunction == eCSSUnit_Calc_Times_L,
                "unexpected unit");
@@ -159,7 +165,7 @@ struct BasicCoordCalcOps
 
   result_type
   MergeMultiplicativeR(nsCSSUnit aCalcFunction,
-                       result_type aValue1, float aValue2)
+                       result_type aValue1, coeff_type aValue2)
   {
     MOZ_ASSERT(aCalcFunction == eCSSUnit_Calc_Times_R ||
                aCalcFunction == eCSSUnit_Calc_Divided,
@@ -174,6 +180,7 @@ struct BasicCoordCalcOps
 struct BasicFloatCalcOps
 {
   typedef float result_type;
+  typedef float coeff_type;
 
   result_type
   MergeAdditive(nsCSSUnit aCalcFunction,
@@ -189,7 +196,7 @@ struct BasicFloatCalcOps
 
   result_type
   MergeMultiplicativeL(nsCSSUnit aCalcFunction,
-                       float aValue1, result_type aValue2)
+                       coeff_type aValue1, result_type aValue2)
   {
     MOZ_ASSERT(aCalcFunction == eCSSUnit_Calc_Times_L,
                "unexpected unit");
@@ -198,7 +205,7 @@ struct BasicFloatCalcOps
 
   result_type
   MergeMultiplicativeR(nsCSSUnit aCalcFunction,
-                       result_type aValue1, float aValue2)
+                       result_type aValue1, coeff_type aValue2)
   {
     if (aCalcFunction == eCSSUnit_Calc_Times_R) {
       return aValue1 * aValue2;
@@ -213,14 +220,21 @@ struct BasicFloatCalcOps
 
 
 
-struct NumbersAlreadyNormalizedOps : public CSSValueInputCalcOps
+
+struct FloatCoeffsAlreadyNormalizedOps : public CSSValueInputCalcOps
 {
-  float ComputeNumber(const nsCSSValue& aValue)
+  typedef float coeff_type;
+
+  coeff_type ComputeCoefficient(const nsCSSValue& aValue)
   {
     MOZ_ASSERT(aValue.GetUnit() == eCSSUnit_Number, "unexpected unit");
     return aValue.GetFloatValue();
   }
 };
+
+
+
+
 
 
 
@@ -320,7 +334,7 @@ SerializeCalcInternal(const typename CalcOps::input_type& aValue, CalcOps &aOps)
       aOps.Append("(");
     }
     if (unit == eCSSUnit_Calc_Times_L) {
-      aOps.AppendNumber(array->Item(0));
+      aOps.AppendCoefficient(array->Item(0));
     } else {
       SerializeCalcInternal(array->Item(0), aOps);
     }
@@ -344,7 +358,7 @@ SerializeCalcInternal(const typename CalcOps::input_type& aValue, CalcOps &aOps)
     if (unit == eCSSUnit_Calc_Times_L) {
       SerializeCalcInternal(array->Item(1), aOps);
     } else {
-      aOps.AppendNumber(array->Item(1));
+      aOps.AppendCoefficient(array->Item(1));
     }
     if (needParens) {
       aOps.Append(")");
@@ -369,7 +383,7 @@ struct ReduceNumberCalcOps : public mozilla::css::BasicFloatCalcOps,
     return aValue.GetFloatValue();
   }
 
-  float ComputeNumber(const nsCSSValue& aValue)
+  coeff_type ComputeCoefficient(const nsCSSValue& aValue)
   {
     return mozilla::css::ComputeCalc(aValue, *this);
   }
