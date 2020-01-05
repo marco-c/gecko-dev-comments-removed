@@ -1049,6 +1049,10 @@ nsRefreshDriver::~nsRefreshDriver()
     mRootRefresh->RemoveRefreshObserver(this, Flush_Style);
     mRootRefresh = nullptr;
   }
+  for (nsIPresShell* shell : mPresShellsToInvalidateIfHidden) {
+    shell->InvalidatePresShellIfHidden();
+  }
+  mPresShellsToInvalidateIfHidden.Clear();
 
   profiler_free_backtrace(mStyleCause);
   profiler_free_backtrace(mReflowCause);
@@ -1737,7 +1741,7 @@ nsRefreshDriver::Tick(int64_t aNowEpoch, TimeStamp aNowTime)
             mStyleCause = nullptr;
           }
 
-          nsCOMPtr<nsIPresShell> shellKungFuDeathGrip(shell);
+          NS_ADDREF(shell);
           mStyleFlushObservers.RemoveElement(shell);
           RestyleManagerHandle restyleManager =
             shell->GetPresContext()->RestyleManager();
@@ -1750,6 +1754,8 @@ nsRefreshDriver::Tick(int64_t aNowEpoch, TimeStamp aNowTime)
           if (presContext) {
             presContext->NotifyFontFaceSetOnRefresh();
           }
+          NS_RELEASE(shell);
+
           mNeedToRecomputeVisibility = true;
         }
 
@@ -1777,7 +1783,7 @@ nsRefreshDriver::Tick(int64_t aNowEpoch, TimeStamp aNowTime)
           mReflowCause = nullptr;
         }
 
-        nsCOMPtr<nsIPresShell> shellKungFuDeathGrip(shell);
+        NS_ADDREF(shell);
         mLayoutFlushObservers.RemoveElement(shell);
         shell->mReflowScheduled = false;
         shell->mSuppressInterruptibleReflows = false;
@@ -1791,6 +1797,8 @@ nsRefreshDriver::Tick(int64_t aNowEpoch, TimeStamp aNowTime)
         if (presContext) {
           presContext->NotifyFontFaceSetOnRefresh();
         }
+        NS_RELEASE(shell);
+
         mNeedToRecomputeVisibility = true;
       }
 
@@ -1872,6 +1880,11 @@ nsRefreshDriver::Tick(int64_t aNowEpoch, TimeStamp aNowTime)
       imagesToRefresh[i]->RequestRefresh(aNowTime);
     }
   }
+
+  for (nsIPresShell* shell : mPresShellsToInvalidateIfHidden) {
+    shell->InvalidatePresShellIfHidden();
+  }
+  mPresShellsToInvalidateIfHidden.Clear();
 
   bool notifyGC = false;
   if (mViewManagerFlushIsPending) {

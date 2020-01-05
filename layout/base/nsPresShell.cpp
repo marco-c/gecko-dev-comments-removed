@@ -649,6 +649,33 @@ nsIPresShell::GetVerifyReflowEnable()
 }
 
 void
+PresShell::AddInvalidateHiddenPresShellObserver(nsRefreshDriver *aDriver)
+{
+  if (!mHiddenInvalidationObserverRefreshDriver && !mIsDestroying && !mHaveShutDown) {
+    aDriver->AddPresShellToInvalidateIfHidden(this);
+    mHiddenInvalidationObserverRefreshDriver = aDriver;
+  }
+}
+
+void
+nsIPresShell::InvalidatePresShellIfHidden()
+{
+  if (!IsVisible() && mPresContext) {
+    mPresContext->NotifyInvalidation(0);
+  }
+  mHiddenInvalidationObserverRefreshDriver = nullptr;
+}
+
+void
+nsIPresShell::CancelInvalidatePresShellIfHidden()
+{
+  if (mHiddenInvalidationObserverRefreshDriver) {
+    mHiddenInvalidationObserverRefreshDriver->RemovePresShellToInvalidateIfHidden(this);
+    mHiddenInvalidationObserverRefreshDriver = nullptr;
+  }
+}
+
+void
 nsIPresShell::SetVerifyReflowEnable(bool aEnabled)
 {
   gVerifyReflowEnabled = aEnabled;
@@ -1255,6 +1282,9 @@ PresShell::Destroy()
   
   
   rd->RemoveLayoutFlushObserver(this);
+  if (mHiddenInvalidationObserverRefreshDriver) {
+    mHiddenInvalidationObserverRefreshDriver->RemovePresShellToInvalidateIfHidden(this);
+  }
 
   if (rd->PresContext() == GetPresContext()) {
     rd->RevokeViewManagerFlush();
@@ -1512,14 +1542,13 @@ PresShell::GetSelection(RawSelectionType aRawSelectionType,
   if (!aSelection || !mSelection)
     return NS_ERROR_NULL_POINTER;
 
-  nsCOMPtr<nsISelection> selection =
-    mSelection->GetSelection(ToSelectionType(aRawSelectionType));
+  *aSelection = mSelection->GetSelection(ToSelectionType(aRawSelectionType));
 
-  if (!selection) {
+  if (!(*aSelection))
     return NS_ERROR_INVALID_ARG;
-  }
 
-  selection.forget(aSelection);
+  NS_ADDREF(*aSelection);
+
   return NS_OK;
 }
 
@@ -3609,6 +3638,7 @@ public:
   NS_IMETHOD Notify(nsITimer* aTimer) final
   {
     mShell->SetNextPaintCompressed();
+    mShell->AddInvalidateHiddenPresShellObserver(mShell->GetPresContext()->RefreshDriver());
     mShell->ScheduleViewManagerFlush();
     return NS_OK;
   }

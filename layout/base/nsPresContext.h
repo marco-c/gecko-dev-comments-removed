@@ -957,6 +957,7 @@ public:
   void ClearMozAfterPaintEvents() {
     mInvalidateRequestsSinceLastPaint.mRequests.Clear();
     mUndeliveredInvalidateRequestsBeforeLastPaint.mRequests.Clear();
+    mAllInvalidated = false;
   }
 
   
@@ -1350,6 +1351,9 @@ protected:
   unsigned              mPendingMediaFeatureValuesChanged : 1;
   unsigned              mPrefChangePendingNeedsReflow : 1;
   unsigned              mIsEmulatingMedia : 1;
+  
+  
+  unsigned              mAllInvalidated : 1;
 
   
   unsigned              mIsGlyph : 1;

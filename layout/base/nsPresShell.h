@@ -391,6 +391,8 @@ public:
                               size_t *aPresContextSize) override;
   size_t SizeOfTextRuns(mozilla::MallocSizeOf aMallocSizeOf) const;
 
+  virtual void AddInvalidateHiddenPresShellObserver(nsRefreshDriver *aDriver) override;
+
   
   
   struct ScrollIntoViewData {
