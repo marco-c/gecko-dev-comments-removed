@@ -88,7 +88,8 @@ impl Flow for ListItemFlow {
 
         for marker in self.marker_fragments.iter_mut().rev() {
             let containing_block_inline_size = self.block_flow.base.block_container_inline_size;
-            marker.assign_replaced_inline_size_if_necessary(containing_block_inline_size);
+            let container_block_size = self.block_flow.explicit_block_containing_size(layout_context);
+            marker.assign_replaced_inline_size_if_necessary(containing_block_inline_size, container_block_size);
 
             
             
