@@ -12,7 +12,9 @@ namespace _ipdltest {
 
 
 
-TestHangsParent::TestHangsParent() : mDetectedHang(false)
+TestHangsParent::TestHangsParent()
+  : mDetectedHang(false)
+  , mNumAnswerStackFrame(0)
 {
     MOZ_COUNT_CTOR(TestHangsParent);
 }
@@ -85,17 +87,24 @@ TestHangsParent::ShouldContinueFromReplyTimeout()
 mozilla::ipc::IPCResult
 TestHangsParent::AnswerStackFrame()
 {
-    if (PTestHangs::HANG != state()) {
-        if (CallStackFrame())
-            fail("should have timed out!");
-    }
-    else {
+    ++mNumAnswerStackFrame;
+
+    
+    MOZ_ASSERT((PTestHangs::HANG != state()) == (mNumAnswerStackFrame == 1));
+
+    if (mNumAnswerStackFrame == 1) {
+        if (CallStackFrame()) {
+          fail("should have timed out!");
+        }
+    } else if (mNumAnswerStackFrame == 2) {
         
         
         SetReplyTimeoutMs(2);
 
         if (CallHang())
             fail("should have timed out!");
+    } else {
+        fail("unexpected state");
     }
 
     return IPC_OK();
