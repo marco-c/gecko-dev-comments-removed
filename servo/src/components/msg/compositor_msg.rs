@@ -5,47 +5,13 @@
 use azure::azure_hl::Color;
 use geom::point::Point2D;
 use geom::rect::Rect;
-use geom::size::Size2D;
-use layers::platform::surface::{NativeGraphicsMetadata, NativePaintingGraphicsContext};
-use layers::platform::surface::{NativeSurface, NativeSurfaceMethods};
+use layers::platform::surface::NativeGraphicsMetadata;
+use layers::layers::LayerBufferSet;
 use serialize::{Encoder, Encodable};
 use std::fmt::{Formatter, Show};
 use std::fmt;
 
 use constellation_msg::PipelineId;
-
-pub struct LayerBuffer {
-    
-    
-    pub native_surface: NativeSurface,
-
-    
-    pub rect: Rect<f32>,
-
-    
-    pub screen_pos: Rect<uint>,
-
-    
-    pub resolution: f32,
-
-    
-    pub stride: uint,
-}
-
-
-
-pub struct LayerBufferSet {
-    pub buffers: Vec<Box<LayerBuffer>>
-}
-
-impl LayerBufferSet {
-    
-    pub fn mark_will_leak(&mut self) {
-        for buffer in self.buffers.mut_iter() {
-            buffer.native_surface.mark_will_leak()
-        }
-    }
-}
 
 
 #[deriving(PartialEq, Clone)]
@@ -160,41 +126,3 @@ impl<E, S: Encoder<E>> Encodable<S, E> for Box<ScriptListener> {
         Ok(())
     }
 }
-
-
-pub trait Tile {
-    
-    fn get_mem(&self) -> uint;
-    
-    fn is_valid(&self, f32) -> bool;
-    
-    fn get_size_2d(&self) -> Size2D<uint>;
-
-    
-    
-    fn mark_wont_leak(&mut self);
-
-    
-    fn destroy(self, graphics_context: &NativePaintingGraphicsContext);
-}
-
-impl Tile for Box<LayerBuffer> {
-    fn get_mem(&self) -> uint {
-        
-        self.screen_pos.size.width * self.screen_pos.size.height
-    }
-    fn is_valid(&self, scale: f32) -> bool {
-        (self.resolution - scale).abs() < 1.0e-6
-    }
-    fn get_size_2d(&self) -> Size2D<uint> {
-        self.screen_pos.size
-    }
-    fn mark_wont_leak(&mut self) {
-        self.native_surface.mark_wont_leak()
-    }
-    fn destroy(self, graphics_context: &NativePaintingGraphicsContext) {
-        let mut this = self;
-        this.native_surface.destroy(graphics_context)
-    }
-}
-
