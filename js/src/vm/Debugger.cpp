@@ -7285,15 +7285,9 @@ class DebuggerSourceGetURLMatcher
         return Nothing();
     }
     ReturnType match(Handle<WasmInstanceObject*> wasmInstance) {
-        
-        
-        
-        char* buf = JS_smprintf("%s > wasm", wasmInstance->instance().metadata().filename.get());
-        if (!buf)
-            return Nothing();
-        JSString* str = NewStringCopyZ<CanGC>(cx_, buf);
-        JS_smprintf_free(buf);
-        return Some(str);
+        if (JSString* str = wasmInstance->instance().code().debugDisplayURL(cx_))
+            return Some(str);
+        return Nothing();
     }
 };
 

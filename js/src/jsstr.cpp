@@ -4243,6 +4243,19 @@ str_encodeURI_Component(JSContext* cx, unsigned argc, Value* vp)
     return Encode(cx, str, js_isUriUnescaped, nullptr, args.rval());
 }
 
+bool
+js::EncodeURI(JSContext* cx, StringBuffer& sb, const char* chars, size_t length)
+{
+    EncodeResult result = Encode(sb, chars, length, js_isUriUnescaped, js_isUriReservedPlusPound);
+    if (result == EncodeResult::Encode_Failure)
+        return false;
+    if (result == EncodeResult::Encode_BadUri) {
+        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_BAD_URI);
+        return false;
+    }
+    return true;
+}
+
 
 
 
