@@ -121,7 +121,7 @@ impl<'a> HTMLIFrameElementHelpers for JSRef<'a, HTMLIFrameElement> {
         }));
 
         let doc = document_from_node(self).root();
-        if doc.ReadyState() != DocumentReadyStateValues::Complete {
+        if doc.ReadyState() == DocumentReadyStateValues::Loading {
             
             
             let ConstellationChan(ref chan) = page.constellation_chan;
