@@ -12,6 +12,7 @@
 #include "mozilla/layers/CompositorThread.h" 
 #include "mozilla/layers/LayerAnimationUtils.h" 
 #include "mozilla/StyleAnimationValue.h" 
+#include "nsDisplayList.h"              
 
 namespace mozilla {
 namespace layers {
@@ -28,7 +29,15 @@ CompositorAnimationStorage::Clear()
 
   mAnimatedValues.Clear();
   mAnimations.Clear();
+}
 
+void
+CompositorAnimationStorage::ClearById(const uint64_t& aId)
+{
+  MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
+
+  mAnimatedValues.Remove(aId);
+  mAnimations.Remove(aId);
 }
 
 AnimatedValue*
@@ -131,7 +140,7 @@ SampleValue(float aPortion, const layers::Animation& aAnimation,
 }
 
 bool
-AnimationHelper::SampleAnimationForEachNode(TimeStamp aPoint,
+AnimationHelper::SampleAnimationForEachNode(TimeStamp aTime,
                            AnimationArray& aAnimations,
                            InfallibleTArray<AnimData>& aAnimationData,
                            StyleAnimationValue& aAnimationValue,
@@ -157,7 +166,7 @@ AnimationHelper::SampleAnimationForEachNode(TimeStamp aPoint,
     
     TimeDuration elapsedDuration = animation.isNotPlaying()
       ? animation.holdTime()
-      : (aPoint - animation.startTime())
+      : (aTime - animation.startTime())
           .MultDouble(animation.playbackRate());
     TimingParams timing;
     timing.mDuration.emplace(animation.duration());
@@ -476,6 +485,86 @@ AnimationHelper::GetNextCompositorAnimationsId()
   uint64_t nextId = procId;
   nextId = nextId << 32 | sNextId;
   return nextId;
+}
+
+void
+AnimationHelper::SampleAnimations(CompositorAnimationStorage* aStorage,
+                                  TimeStamp aTime)
+{
+  MOZ_ASSERT(aStorage);
+
+  
+  if (!aStorage->AnimationsCount()) {
+    return;
+  }
+
+  
+  for (auto iter = aStorage->ConstAnimationsTableIter();
+       !iter.Done(); iter.Next()) {
+    bool hasInEffectAnimations = false;
+    AnimationArray* animations = iter.UserData();
+    StyleAnimationValue animationValue;
+    InfallibleTArray<AnimData> animationData;
+    AnimationHelper::SetAnimations(*animations,
+                                   animationData,
+                                   animationValue);
+    AnimationHelper::SampleAnimationForEachNode(aTime,
+                                                *animations,
+                                                animationData,
+                                                animationValue,
+                                                hasInEffectAnimations);
+
+    if (!hasInEffectAnimations) {
+      continue;
+    }
+
+    
+    Animation& animation = animations->LastElement();
+    switch (animation.property()) {
+      case eCSSProperty_opacity: {
+        aStorage->SetAnimatedValue(iter.Key(),
+                                   animationValue.GetFloatValue());
+        break;
+      }
+      case eCSSProperty_transform: {
+        nsCSSValueSharedList* list = animationValue.GetCSSValueSharedListValue();
+        const TransformData& transformData = animation.data().get_TransformData();
+        nsPoint origin = transformData.origin();
+        
+        gfx::Point3D transformOrigin = transformData.transformOrigin();
+        nsDisplayTransform::FrameTransformProperties props(list,
+                                                           transformOrigin);
+
+        gfx::Matrix4x4 transform =
+          nsDisplayTransform::GetResultingTransformMatrix(props, origin,
+                                                          transformData.appUnitsPerDevPixel(),
+                                                          0, &transformData.bounds());
+        gfx::Matrix4x4 frameTransform = transform;
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+
+        
+        
+        
+
+        aStorage->SetAnimatedValue(iter.Key(),
+                                   Move(transform), Move(frameTransform),
+                                   transformData);
+        break;
+      }
+      default:
+        MOZ_ASSERT_UNREACHABLE("Unhandled animated property");
+    }
+  }
 }
 
 } 

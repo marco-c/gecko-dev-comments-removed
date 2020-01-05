@@ -104,6 +104,19 @@ public:
   
 
 
+  AnimatedValueTable::Iterator ConstAnimatedValueTableIter() const
+  {
+    return mAnimatedValues.ConstIter();
+  }
+
+  uint32_t AnimatedValueCount() const
+  {
+    return mAnimatedValues.Count();
+  }
+
+  
+
+
   void SetAnimations(uint64_t aId, const AnimationArray& aAnimations);
 
   
@@ -114,8 +127,22 @@ public:
   
 
 
+  AnimationsTable::Iterator ConstAnimationsTableIter() const
+  {
+    return mAnimations.ConstIter();
+  }
+
+  uint32_t AnimationsCount() const
+  {
+    return mAnimations.Count();
+  }
+
+  
+
+
   void Clear();
 
+  void ClearById(const uint64_t& aId);
 private:
   ~CompositorAnimationStorage() { Clear(); };
 
@@ -127,18 +154,53 @@ private:
 class AnimationHelper
 {
 public:
+
+
+  
+
+
+
+
+
+
+
+
+
   static bool
-  SampleAnimationForEachNode(TimeStamp aPoint,
+  SampleAnimationForEachNode(TimeStamp aTime,
                              AnimationArray& aAnimations,
                              InfallibleTArray<AnimData>& aAnimationData,
                              StyleAnimationValue& aAnimationValue,
                              bool& aHasInEffectAnimations);
+  
+
+
+
+
+
 
   static void
   SetAnimations(AnimationArray& aAnimations,
                 InfallibleTArray<AnimData>& aAnimData,
                 StyleAnimationValue& aBaseAnimationStyle);
+
+  
+
+
+
+
+
+
   static uint64_t GetNextCompositorAnimationsId();
+
+  
+
+
+
+
+  static void
+  SampleAnimations(CompositorAnimationStorage* aStorage,
+                   TimeStamp aTime);
 };
 
 } 
