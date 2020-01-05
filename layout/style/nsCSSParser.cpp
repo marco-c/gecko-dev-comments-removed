@@ -6972,8 +6972,9 @@ CSSParserImpl::ParseColorOpacity(float& aOpacity)
     return false;
   }
 
-  if (mToken.mType != eCSSToken_Number) {
-    REPORT_UNEXPECTED_TOKEN(PEExpectedNumber);
+  
+  if (mToken.mType != eCSSToken_Number && mToken.mType != eCSSToken_Percentage) {
+    REPORT_UNEXPECTED_TOKEN(PEExpectedNumberOrPercent);
     UngetToken();
     return false;
   }
