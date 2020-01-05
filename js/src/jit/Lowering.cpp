@@ -3699,7 +3699,7 @@ LIRGenerator::visitGetNameCache(MGetNameCache* ins)
     
     gen->setPerformsCall();
 
-    LGetNameCache* lir = new(alloc()) LGetNameCache(useRegister(ins->envObj()));
+    LGetNameCache* lir = new(alloc()) LGetNameCache(useRegister(ins->envObj()), temp());
     defineBox(lir, ins);
     assignSafepoint(lir, ins);
 }
