@@ -72,11 +72,6 @@ const MINIMUM_LOCAL_MATCHES = 6;
 
 
 
-const MAXIMUM_ALLOWED_EXTENSION_MATCHES = 6;
-
-
-
-
 const REGEXP_SINGLEWORD_HOST = new RegExp("^[a-z0-9-]+$", "i");
 
 
@@ -269,8 +264,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "OS",
                                   "resource://gre/modules/osfile.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "PromiseUtils",
                                   "resource://gre/modules/PromiseUtils.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "ExtensionSearchHandler",
-                                  "resource://gre/modules/ExtensionSearchHandler.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Task",
                                   "resource://gre/modules/Task.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "PlacesSearchAutocompleteProvider",
@@ -722,15 +715,11 @@ function Search(searchString, searchParam, autocompleteListener,
 
   
   this._remoteMatchesStartIndex = 0;
-  
-  this._localMatchesStartIndex = 0;
 
   
   this._localMatchesCount = 0;
   
   this._remoteMatchesCount = 0;
-  
-  this._extensionMatchesCount = 0;
 }
 
 Search.prototype = {
@@ -954,17 +943,6 @@ Search.prototype = {
     }
 
     
-    
-    if (ExtensionSearchHandler.isKeywordRegistered(this._searchTokens[0]) &&
-        this._originalSearchString.length > this._searchTokens[0].length) {
-      
-      
-      this._matchExtensionSuggestions();
-    } else if (ExtensionSearchHandler.hasActiveInputSession()) {
-      ExtensionSearchHandler.handleInputCancelled();
-    }
-
-    
     yield Promise.all(this._remoteMatchesPromises);
   }),
 
@@ -972,15 +950,7 @@ Search.prototype = {
     
     
 
-    let hasSearchTerms = this._searchTokens.length > 0;
-
-    if (hasSearchTerms) {
-      
-      let matched = yield this._matchExtensionHeuristicResult();
-      if (matched) {
-        return true;
-      }
-    }
+    let hasSearchTerms = this._searchTokens.length > 0 ;
 
     if (this._enableActions && hasSearchTerms) {
       
@@ -1154,16 +1124,6 @@ Search.prototype = {
     return gotResult;
   },
 
-  _matchExtensionHeuristicResult: function* () {
-    if (ExtensionSearchHandler.isKeywordRegistered(this._searchTokens[0]) &&
-        this._originalSearchString.length > this._searchTokens[0].length) {
-      let description = ExtensionSearchHandler.getDescription(this._searchTokens[0]);
-      this._addExtensionMatch(this._originalSearchString, description);
-      return true;
-    }
-    return false;
-  },
-
   _matchPlacesKeyword: function* () {
     
     let keyword = this._searchTokens[0];
@@ -1276,24 +1236,6 @@ Search.prototype = {
     return true;
   },
 
-  _addExtensionMatch(content, comment) {
-    if (this._extensionMatchesCount >= MAXIMUM_ALLOWED_EXTENSION_MATCHES) {
-      return;
-    }
-
-    this._addMatch({
-      value: PlacesUtils.mozActionURI("extension", {
-        content,
-        keyword: this._searchTokens[0]
-      }),
-      comment,
-      icon: "chrome://browser/content/extension.svg",
-      style: "action extension",
-      frecency: FRECENCY_DEFAULT,
-      extension: true,
-    });
-  },
-
   _addSearchEngineMatch(match, query, suggestion) {
     let actionURLParams = {
       engineName: match.engineName,
@@ -1315,17 +1257,6 @@ Search.prototype = {
       frecency: FRECENCY_DEFAULT,
       remote: !!suggestion
     });
-  },
-
-  _matchExtensionSuggestions() {
-    ExtensionSearchHandler.handleSearch(this._searchTokens[0], this._originalSearchString,
-      suggestions => {
-        suggestions.forEach(suggestion => {
-          let content = `${this._searchTokens[0]} ${suggestion.content}`;
-          this._addExtensionMatch(content, suggestion.description);
-        });
-      }
-    );
   },
 
   *_matchRemoteTabs() {
@@ -1533,11 +1464,6 @@ Search.prototype = {
       
       index = this._remoteMatchesStartIndex + this._remoteMatchesCount;
       this._remoteMatchesCount++;
-    } else if (match.extension) {
-      index = this._localMatchesStartIndex;
-      this._localMatchesStartIndex++;
-      this._remoteMatchesStartIndex++;
-      this._extensionMatchesCount++;
     } else {
       
       if (match.frecency > FRECENCY_DEFAULT ||
