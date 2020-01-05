@@ -37,6 +37,9 @@
 
 
 
+
+
+
 function toASCIIUpperCase(s) {
     assert(typeof s === "string", "toASCIIUpperCase");
 
@@ -839,6 +842,7 @@ function BestAvailableLocaleIgnoringDefault(availableLocales, locale) {
     return BestAvailableLocaleHelper(availableLocales, locale, false);
 }
 
+var noRelevantExtensionKeys = [];
 
 
 
@@ -1252,7 +1256,9 @@ function initializeIntlObject(obj) {
 function setLazyData(internals, type, lazyData)
 {
     assert(internals.type === "partial", "can't set lazy data for anything but a newborn");
-    assert(type === "Collator" || type === "DateTimeFormat" || type == "NumberFormat", "bad type");
+    assert(type === "Collator" || type === "DateTimeFormat" ||
+           type == "NumberFormat" || type === "PluralRules",
+           "bad type");
     assert(IsObject(lazyData), "non-object lazy data");
 
     
@@ -1302,7 +1308,9 @@ function isInitializedIntlObject(obj) {
     if (IsObject(internals)) {
         assert(callFunction(std_Object_hasOwnProperty, internals, "type"), "missing type");
         var type = internals.type;
-        assert(type === "partial" || type === "Collator" || type === "DateTimeFormat" || type === "NumberFormat", "unexpected type");
+        assert(type === "partial" || type === "Collator" ||
+               type === "DateTimeFormat" || type === "NumberFormat" || type === "PluralRules",
+               "unexpected type");
         assert(callFunction(std_Object_hasOwnProperty, internals, "lazyData"), "missing lazyData");
         assert(callFunction(std_Object_hasOwnProperty, internals, "internalProps"), "missing internalProps");
     } else {
@@ -1359,6 +1367,8 @@ function getInternals(obj)
         internalProps = resolveCollatorInternals(lazyData)
     else if (type === "DateTimeFormat")
         internalProps = resolveDateTimeFormatInternals(lazyData)
+    else if (type === "PluralRules")
+        internalProps = resolvePluralRulesInternals(lazyData)
     else
         internalProps = resolveNumberFormatInternals(lazyData);
     setInternalProperties(internals, internalProps);
@@ -1758,8 +1768,6 @@ function resolveNumberFormatInternals(lazyNumberFormatData) {
     
     var opt = lazyNumberFormatData.opt;
 
-    
-    
     var NumberFormat = numberFormatInternalProperties;
 
     
@@ -1787,16 +1795,10 @@ function resolveNumberFormatInternals(lazyNumberFormatData) {
         internalProps.currencyDisplay = lazyNumberFormatData.currencyDisplay;
     }
 
-    
     internalProps.minimumIntegerDigits = lazyNumberFormatData.minimumIntegerDigits;
-
-    
     internalProps.minimumFractionDigits = lazyNumberFormatData.minimumFractionDigits;
-
-    
     internalProps.maximumFractionDigits = lazyNumberFormatData.maximumFractionDigits;
 
-    
     if ("minimumSignificantDigits" in lazyNumberFormatData) {
         
         
@@ -1834,6 +1836,42 @@ function getNumberFormatInternals(obj, methodName) {
     internalProps = resolveNumberFormatInternals(internals.lazyData);
     setInternalProperties(internals, internalProps);
     return internalProps;
+}
+
+
+
+
+
+
+function SetNumberFormatDigitOptions(lazyData, options, mnfdDefault) {
+    
+
+    
+    assert(IsObject(options), "SetNumberFormatDigitOptions");
+    assert(typeof mnfdDefault === "number", "SetNumberFormatDigitOptions");
+
+
+    
+    const mnid = GetNumberOption(options, "minimumIntegerDigits", 1, 21, 1);
+    const mnfd = GetNumberOption(options, "minimumFractionDigits", 0, 20, mnfdDefault);
+    const mxfd = GetNumberOption(options, "maximumFractionDigits", mnfd, 20);
+
+    
+    let mnsd = options.minimumSignificantDigits;
+    let mxsd = options.maximumSignificantDigits;
+
+    
+    lazyData.minimumIntegerDigits = mnid;
+    lazyData.minimumFractionDigits = mnfd;
+    lazyData.maximumFractionDigits = mxfd;
+
+    
+    if (mnsd !== undefined || mxsd !== undefined) {
+        mnsd = GetNumberOption(options, "minimumSignificantDigits", 1, 21, 1);
+        mxsd = GetNumberOption(options, "maximumSignificantDigits", mnsd, 21, 21);
+        lazyData.minimumSignificantDigits = mnsd;
+        lazyData.maximumSignificantDigits = mxsd;
+    }
 }
 
 
@@ -1940,35 +1978,17 @@ function InitializeNumberFormat(numberFormat, locales, options) {
         lazyNumberFormatData.currencyDisplay = cd;
 
     
-    var mnid = GetNumberOption(options, "minimumIntegerDigits", 1, 21, 1);
-    lazyNumberFormatData.minimumIntegerDigits = mnid;
+    SetNumberFormatDigitOptions(lazyNumberFormatData, options, s === "currency" ? cDigits: 0);
 
     
-    var mnfdDefault = (s === "currency") ? cDigits : 0;
-    var mnfd = GetNumberOption(options, "minimumFractionDigits", 0, 20, mnfdDefault);
-    lazyNumberFormatData.minimumFractionDigits = mnfd;
-
-    
-    var mxfdDefault;
-    if (s === "currency")
-        mxfdDefault = std_Math_max(mnfd, cDigits);
-    else if (s === "percent")
-        mxfdDefault = std_Math_max(mnfd, 0);
-    else
-        mxfdDefault = std_Math_max(mnfd, 3);
-    var mxfd = GetNumberOption(options, "maximumFractionDigits", mnfd, 20, mxfdDefault);
-    lazyNumberFormatData.maximumFractionDigits = mxfd;
-
-    
-    var mnsd = options.minimumSignificantDigits;
-    var mxsd = options.maximumSignificantDigits;
-
-    
-    if (mnsd !== undefined || mxsd !== undefined) {
-        mnsd = GetNumberOption(options, "minimumSignificantDigits", 1, 21, 1);
-        mxsd = GetNumberOption(options, "maximumSignificantDigits", mnsd, 21, 21);
-        lazyNumberFormatData.minimumSignificantDigits = mnsd;
-        lazyNumberFormatData.maximumSignificantDigits = mxsd;
+    if (lazyNumberFormatData.maximumFractionDigits === undefined) {
+        let mxfdDefault = s === "currency"
+                          ? cDigits
+                          : s === "percent"
+                          ? 0
+                          : 3;
+        lazyNumberFormatData.maximumFractionDigits =
+            std_Math_max(lazyNumberFormatData.minimumFractionDigits, mxfdDefault);
     }
 
     
@@ -2671,7 +2691,6 @@ function ToDateTimeOptions(options, required, defaults) {
 
 
 
-
 function BasicFormatMatcher(options, formats) {
     
     var removalPenalty = 120,
@@ -2984,6 +3003,234 @@ function resolveICUPattern(pattern, result) {
         }
     }
 }
+
+
+
+
+
+
+
+
+var pluralRulesInternalProperties = {
+    _availableLocales: null,
+    availableLocales: function()
+    {
+        var locales = this._availableLocales;
+        if (locales)
+            return locales;
+
+        locales = intl_PluralRules_availableLocales();
+        addSpecialMissingLanguageTags(locales);
+        return (this._availableLocales = locales);
+    }
+};
+
+
+
+
+function resolvePluralRulesInternals(lazyPluralRulesData) {
+    assert(IsObject(lazyPluralRulesData), "lazy data not an object?");
+
+    var internalProps = std_Object_create(null);
+
+    var requestedLocales = lazyPluralRulesData.requestedLocales;
+
+    var PluralRules = pluralRulesInternalProperties;
+
+    
+    const r = ResolveLocale(callFunction(PluralRules.availableLocales, PluralRules),
+                          lazyPluralRulesData.requestedLocales,
+                          lazyPluralRulesData.opt,
+                          noRelevantExtensionKeys, undefined);
+
+    
+    internalProps.locale = r.locale;
+    internalProps.type = lazyPluralRulesData.type;
+
+    internalProps.pluralCategories = intl_GetPluralCategories(
+        internalProps.locale,
+        internalProps.type);
+
+    internalProps.minimumIntegerDigits = lazyPluralRulesData.minimumIntegerDigits;
+    internalProps.minimumFractionDigits = lazyPluralRulesData.minimumFractionDigits;
+    internalProps.maximumFractionDigits = lazyPluralRulesData.maximumFractionDigits;
+
+    if ("minimumSignificantDigits" in lazyPluralRulesData) {
+        assert("maximumSignificantDigits" in lazyPluralRulesData, "min/max sig digits mismatch");
+        internalProps.minimumSignificantDigits = lazyPluralRulesData.minimumSignificantDigits;
+        internalProps.maximumSignificantDigits = lazyPluralRulesData.maximumSignificantDigits;
+    }
+
+    return internalProps;
+}
+
+
+
+
+
+function getPluralRulesInternals(obj, methodName) {
+    var internals = getIntlObjectInternals(obj, "PluralRules", methodName);
+    assert(internals.type === "PluralRules", "bad type escaped getIntlObjectInternals");
+
+    var internalProps = maybeInternalProperties(internals);
+    if (internalProps)
+        return internalProps;
+
+    internalProps = resolvePluralRulesInternals(internals.lazyData);
+    setInternalProperties(internals, internalProps);
+    return internalProps;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+function InitializePluralRules(pluralRules, locales, options) {
+    assert(IsObject(pluralRules), "InitializePluralRules");
+
+    
+    if (isInitializedIntlObject(pluralRules))
+        ThrowTypeError(JSMSG_INTL_OBJECT_REINITED);
+
+    let internals = initializeIntlObject(pluralRules);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    const lazyPluralRulesData = std_Object_create(null);
+
+    
+    let requestedLocales = CanonicalizeLocaleList(locales);
+    lazyPluralRulesData.requestedLocales = requestedLocales;
+
+    
+    if (options === undefined)
+        options = {};
+    else
+        options = ToObject(options);
+
+    
+    const type = GetOption(options, "type", "string", ["cardinal", "ordinal"], "cardinal");
+    lazyPluralRulesData.type = type;
+
+    
+    let opt = new Record();
+    lazyPluralRulesData.opt = opt;
+
+    
+    let matcher = GetOption(options, "localeMatcher", "string", ["lookup", "best fit"], "best fit");
+    opt.localeMatcher = matcher;
+
+
+    
+    SetNumberFormatDigitOptions(lazyPluralRulesData, options, 0);
+
+    
+    if (lazyPluralRulesData.maximumFractionDigits === undefined) {
+        lazyPluralRulesData.maximumFractionDigits =
+           std_Math_max(lazyPluralRulesData.minimumFractionDigits, 3);
+    }
+
+    setLazyData(internals, "PluralRules", lazyPluralRulesData)
+}
+
+
+
+
+
+
+
+
+function Intl_PluralRules_supportedLocalesOf(locales ) {
+    var options = arguments.length > 1 ? arguments[1] : undefined;
+
+    
+    var availableLocales = callFunction(pluralRulesInternalProperties.availableLocales,
+                                        pluralRulesInternalProperties);
+    
+    let requestedLocales = CanonicalizeLocaleList(locales);
+
+    
+    return SupportedLocales(availableLocales, requestedLocales, options);
+}
+
+
+
+
+
+
+
+
+function Intl_PluralRules_select(value) {
+    
+    let pluralRules = this;
+    
+    let internals = getPluralRulesInternals(pluralRules, "select");
+
+    
+    let n = ToNumber(value);
+
+    
+    return intl_SelectPluralRule(pluralRules, n);
+}
+
+
+
+
+
+
+function Intl_PluralRules_resolvedOptions() {
+    var internals = getPluralRulesInternals(this, "resolvedOptions");
+
+    var result = {
+        locale: internals.locale,
+        type: internals.type,
+        pluralCategories: callFunction(std_Array_slice, internals.pluralCategories, 0),
+        minimumIntegerDigits: internals.minimumIntegerDigits,
+        minimumFractionDigits: internals.minimumFractionDigits,
+        maximumFractionDigits: internals.maximumFractionDigits,
+    };
+
+    var optionalProperties = [
+        "minimumSignificantDigits",
+        "maximumSignificantDigits"
+    ];
+
+    for (var i = 0; i < optionalProperties.length; i++) {
+        var p = optionalProperties[i];
+        if (callFunction(std_Object_hasOwnProperty, internals, p))
+            _DefineDataProperty(result, p, internals[p]);
+    }
+    return result;
+}
+
 
 function Intl_getCanonicalLocales(locales) {
   let codes = CanonicalizeLocaleList(locales);

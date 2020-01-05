@@ -81,6 +81,7 @@ included_inclnames_to_ignore = set([
     'selfhosted.out.h',         
     'shellmoduleloader.out.h',  
     'unicode/timezone.h',       
+    'unicode/plurrule.h',       
     'unicode/ucal.h',           
     'unicode/uclean.h',         
     'unicode/ucol.h',           
@@ -90,6 +91,7 @@ included_inclnames_to_ignore = set([
     'unicode/unorm2.h',         
     'unicode/unum.h',           
     'unicode/unumsys.h',        
+    'unicode/upluralrules.h',   
     'unicode/ustring.h',        
     'unicode/utypes.h',         
     'vtune/VTuneWrapper.h'      
