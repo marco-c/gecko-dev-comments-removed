@@ -22,6 +22,10 @@ namespace webrtc
     #define NULL    0
 #endif
 
+#ifdef XP_WIN
+typedef int pid_t;
+#endif
+
 enum {kVideoCaptureUniqueNameLength =1024}; 
 enum {kVideoCaptureDeviceNameLength =256}; 
 enum {kVideoCaptureProductIdLength =128}; 
