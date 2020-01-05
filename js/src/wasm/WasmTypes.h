@@ -1132,9 +1132,6 @@ enum class SymbolicAddress
 bool
 IsRoundingFunction(SymbolicAddress callee, jit::RoundingMode* mode);
 
-void*
-AddressOf(SymbolicAddress imm);
-
 
 
 
