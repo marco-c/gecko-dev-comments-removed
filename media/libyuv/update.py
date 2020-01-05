@@ -39,6 +39,10 @@ def apply_patches():
     os.system("patch -p3 < add_H444ToARGB.patch")
     
     os.system("patch -p3 < cpu_id.patch")
+    
+    os.system("patch -p3 < cpu_id.patch")
+    
+    os.system("patch -p3 < row_any.patch")
 
 def update_readme(commit):
     with open('README_MOZILLA') as f:
