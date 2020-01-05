@@ -68,9 +68,6 @@
 
 
 
-
-
-
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -241,8 +238,8 @@ size_t HunspellImpl::cleanword2(std::string& dest,
   const char* q = src.c_str();
 
   
-  while ((*q != '\0') && (*q == ' '))
-    q++;
+  while (*q == ' ')
+    ++q;
 
   
   *pabbrev = 0;
@@ -278,8 +275,8 @@ void HunspellImpl::cleanword(std::string& dest,
   int firstcap = 0;
 
   
-  while ((*q != '\0') && (*q == ' '))
-    q++;
+  while (*q == ' ')
+    ++q;
 
   
   *pabbrev = 0;
@@ -1664,7 +1661,7 @@ std::string HunspellImpl::get_xml_par(const char* par) {
   if (end == '>')
     end = '<';
   else if (end != '\'' && end != '"')
-    return 0;  
+    return dest;  
   for (par++; *par != '\0' && *par != end; ++par) {
     dest.push_back(*par);
   }
@@ -1707,14 +1704,17 @@ bool HunspellImpl::input_conv(const std::string& word, std::string& dest) {
 
 const char* HunspellImpl::get_xml_pos(const char* s, const char* attr) {
   const char* end = strchr(s, '>');
-  const char* p = s;
   if (attr == NULL)
     return end;
-  do {
+  const char* p = s;
+  while (1) {
     p = strstr(p, attr);
     if (!p || p >= end)
       return 0;
-  } while (*(p - 1) != ' ' && *(p - 1) != '\n');
+    if (*(p - 1) == ' ' || *(p - 1) == '\n')
+      break;
+    p += strlen(attr);
+  }
   return p + strlen(attr);
 }
 

@@ -68,9 +68,6 @@
 
 
 
-
-
-
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -1290,8 +1287,8 @@ int AffixMgr::cpdrep_check(const char* word, int wl) {
     
     while ((r = strstr(r, reptable[i].pattern.c_str())) != NULL) {
       std::string candidate(word);
-      size_t type = r == word ? 1 : 0;
-      if (r - word + reptable[i].pattern.size() == lenp)
+      size_t type = r == word && langnum != LANG_hu ? 1 : 0;
+      if (r - word + reptable[i].pattern.size() == lenp && langnum != LANG_hu)
         type += 2;
       candidate.replace(r - word, lenp, reptable[i].outstrings[type]);
       if (candidate_check(candidate.c_str(), candidate.size()))
@@ -1494,9 +1491,8 @@ int AffixMgr::defcpd_check(hentry*** words,
 }
 
 inline int AffixMgr::candidate_check(const char* word, int len) {
-  struct hentry* rv = NULL;
 
-  rv = lookup(word);
+  struct hentry* rv = lookup(word);
   if (rv)
     return 1;
 
@@ -1817,7 +1813,7 @@ struct hentry* AffixMgr::compound_check(const std::string& word,
           
           if (langnum == LANG_hu) {
             
-            numsyllable += get_syllable(st.substr(i));
+            numsyllable += get_syllable(st.substr(0, i));
             
             
             if (pfx && (get_syllable(pfx->getKey()) > 1))
@@ -1902,7 +1898,7 @@ struct hentry* AffixMgr::compound_check(const std::string& word,
                  (compoundend && TESTAFF(rv->astr, compoundend, rv->alen))) &&
                 (((cpdwordmax == -1) || (wordnum + 1 < cpdwordmax)) ||
                  ((cpdmaxsyllable != 0) &&
-                  (numsyllable + get_syllable(std::string(HENTRY_WORD(rv), rv->clen)) <=
+                  (numsyllable + get_syllable(std::string(HENTRY_WORD(rv), rv->blen)) <=
                    cpdmaxsyllable))) &&
                 (
                     
@@ -2383,7 +2379,7 @@ int AffixMgr::compound_check_morph(const char* word,
         
         if (langnum == LANG_hu) {
           
-          numsyllable += get_syllable(st.substr(i));
+          numsyllable += get_syllable(st.substr(0, i));
 
           
           
@@ -3045,10 +3041,9 @@ struct hentry* AffixMgr::affix_check(const char* word,
                                      int len,
                                      const FLAG needflag,
                                      char in_compound) {
-  struct hentry* rv = NULL;
 
   
-  rv = prefix_check(word, len, in_compound, needflag);
+  struct hentry* rv = prefix_check(word, len, in_compound, needflag);
   if (rv)
     return rv;
 
@@ -3292,7 +3287,7 @@ int AffixMgr::expand_rootword(struct guessword* wlst,
     wlst[nh].word = mystrdup(ts);
     if (!wlst[nh].word)
       return 0;
-    wlst[nh].allow = (1 == 0);
+    wlst[nh].allow = false;
     wlst[nh].orig = NULL;
     nh++;
     
@@ -3300,7 +3295,7 @@ int AffixMgr::expand_rootword(struct guessword* wlst,
       wlst[nh].word = mystrdup(phon);
       if (!wlst[nh].word)
         return nh - 1;
-      wlst[nh].allow = (1 == 0);
+      wlst[nh].allow = false;
       wlst[nh].orig = mystrdup(ts);
       if (!wlst[nh].orig)
         return nh - 1;
@@ -3341,7 +3336,7 @@ int AffixMgr::expand_rootword(struct guessword* wlst,
               wlst[nh].word = mystrdup(prefix.c_str());
               if (!wlst[nh].word)
                 return nh - 1;
-              wlst[nh].allow = (1 == 0);
+              wlst[nh].allow = false;
               wlst[nh].orig = mystrdup(newword.c_str());
               if (!wlst[nh].orig)
                 return nh - 1;

@@ -35,9 +35,6 @@
 
 
 
-
-
-
 #ifndef BASEAFF_HXX_
 #define BASEAFF_HXX_
 

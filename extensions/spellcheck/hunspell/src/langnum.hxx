@@ -35,9 +35,6 @@
 
 
 
-
-
-
 #ifndef LANGNUM_HXX_
 #define LANGNUM_HXX_
 

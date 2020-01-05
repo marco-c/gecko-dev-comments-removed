@@ -68,9 +68,6 @@
 
 
 
-
-
-
 #ifndef SUGGESTMGR_HXX_
 #define SUGGESTMGR_HXX_
 

@@ -68,9 +68,6 @@
 
 
 
-
-
-
 #ifndef HASHMGR_HXX_
 #define HASHMGR_HXX_
 
@@ -125,6 +122,7 @@ class HashMgr {
 
  private:
   int get_clen_and_captype(const std::string& word, int* captype);
+  int get_clen_and_captype(const std::string& word, int* captype, std::vector<w_char> &workbuf);
   int load_tables(const char* tpath, const char* key);
   int add_word(const std::string& word,
                int wcl,

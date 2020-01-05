@@ -38,9 +38,6 @@
 
 
 
-
-
-
 #ifndef HUNZIP_HXX_
 #define HUNZIP_HXX_
 

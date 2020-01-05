@@ -35,9 +35,6 @@
 
 
 
-
-
-
 #ifndef ATYPES_HXX_
 #define ATYPES_HXX_
 

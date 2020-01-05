@@ -35,9 +35,6 @@
 
 
 
-
-
-
 #ifndef W_CHAR_HXX_
 #define W_CHAR_HXX_
 

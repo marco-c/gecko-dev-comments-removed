@@ -68,9 +68,6 @@
 
 
 
-
-
-
 #ifndef AFFIX_HXX_
 #define AFFIX_HXX_
 

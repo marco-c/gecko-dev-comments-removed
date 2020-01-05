@@ -254,8 +254,7 @@ std::string phonet(const std::string& inword, phonetable& parms) {
       } 
     }   
     if (z0 == 0) {
-      if (k && !p0 && target.size() < len && c != '\0' &&
-          (1 || target.empty() || target[target.size()-1] != c)) {
+      if (k && !p0 && target.size() < len && c != '\0') {
         
         target.push_back(c);
         

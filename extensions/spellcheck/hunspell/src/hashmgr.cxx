@@ -68,9 +68,6 @@
 
 
 
-
-
-
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -363,17 +360,21 @@ int HashMgr::add_hidden_capitalized_word(const std::string& word,
 }
 
 
-int HashMgr::get_clen_and_captype(const std::string& word, int* captype) {
+int HashMgr::get_clen_and_captype(const std::string& word, int* captype, std::vector<w_char> &workbuf) {
   int len;
   if (utf8) {
-    std::vector<w_char> dest_utf;
-    len = u8_u16(dest_utf, word);
-    *captype = get_captype_utf8(dest_utf, langnum);
+    len = u8_u16(workbuf, word);
+    *captype = get_captype_utf8(workbuf, langnum);
   } else {
     len = word.size();
     *captype = get_captype(word, csconv);
   }
   return len;
+}
+
+int HashMgr::get_clen_and_captype(const std::string& word, int* captype) {
+  std::vector<w_char> workbuf;
+  return get_clen_and_captype(word, captype, workbuf);
 }
 
 
@@ -527,6 +528,8 @@ int HashMgr::load_tables(const char* tpath, const char* key) {
   
   
 
+  std::vector<w_char> workbuf;
+
   while (dict->getline(ts)) {
     mychomp(ts);
     
@@ -599,7 +602,7 @@ int HashMgr::load_tables(const char* tpath, const char* key) {
     }
 
     int captype;
-    int wcl = get_clen_and_captype(ts, &captype);
+    int wcl = get_clen_and_captype(ts, &captype, workbuf);
     const std::string *dp_str = dp.empty() ? NULL : &dp;
     
     if (add_word(ts, wcl, flags, al, dp_str, false) ||

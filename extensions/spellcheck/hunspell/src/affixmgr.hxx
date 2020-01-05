@@ -68,9 +68,6 @@
 
 
 
-
-
-
 #ifndef AFFIXMGR_HXX_
 #define AFFIXMGR_HXX_
 

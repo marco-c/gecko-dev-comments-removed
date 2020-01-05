@@ -35,9 +35,6 @@
 
 
 
-
-
-
 #ifndef HTYPES_HXX_
 #define HTYPES_HXX_
 

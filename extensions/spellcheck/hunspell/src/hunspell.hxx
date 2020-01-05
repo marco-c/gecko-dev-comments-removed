@@ -67,9 +67,6 @@
 
 
 
-
-
-
 #ifndef MYSPELLMGR_HXX_
 #define MYSPELLMGR_HXX_
 
