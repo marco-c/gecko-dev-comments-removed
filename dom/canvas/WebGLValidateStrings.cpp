@@ -32,94 +32,98 @@ bool IsValidGLSLCharacter(char16_t c)
     return false;
 }
 
-void StripComments::process(char16_t c)
+
+bool
+TruncateComments(const nsAString& src, nsAString* const out)
 {
-    if (isNewline(c)) {
-        
-        
-        emit(c);
+    const size_t dstByteCount = src.Length() * sizeof(src[0]);
+    const UniqueBuffer dst(malloc(dstByteCount));
+    if (!dst)
+        return false;
 
-        if (m_parseState != InMultiLineComment)
-            m_parseState = BeginningOfLine;
+    auto srcItr = src.BeginReading();
+    const auto srcEnd = src.EndReading();
+    const auto dstBegin = (decltype(src[0])*)dst.get();
+    auto dstItr = dstBegin;
 
-        return;
-    }
-
-    char16_t temp = 0;
-    switch (m_parseState) {
-    case BeginningOfLine:
-        
-        if (c <= ' ' && (c == ' ' || (c <= 0xD && c >= 0x9))) {
-            emit(c);
-            break;
+    const auto fnEmitUntil = [&](const decltype(srcItr)& nextSrcItr) {
+        while (srcItr != nextSrcItr) {
+            *dstItr = *srcItr;
+            ++srcItr;
+            ++dstItr;
         }
+    };
 
-        if (c == '#') {
-            m_parseState = InPreprocessorDirective;
-            emit(c);
-            break;
+    const auto fnFindSoonestOf = [&](const nsString* needles, size_t needleCount,
+                                     size_t* const out_foundId)
+    {
+        auto foundItr = srcItr;
+        while (foundItr != srcEnd) {
+            const auto haystack = Substring(foundItr, srcEnd);
+            for (size_t i = 0; i < needleCount; i++) {
+                if (StringBeginsWith(haystack, needles[i])) {
+                    *out_foundId = i;
+                    return foundItr;
+                }
+            }
+            ++foundItr;
         }
+        *out_foundId = needleCount;
+        return foundItr;
+    };
 
-        
-        m_parseState = MiddleOfLine;
-        process(c);
-        break;
+    
 
-    case MiddleOfLine:
-        if (c == '/' && peek(temp)) {
-            if (temp == '/') {
-                m_parseState = InSingleLineComment;
-                emit(' ');
-                advance();
+    const nsString commentBeginnings[] = { NS_LITERAL_STRING("//"),
+                                           NS_LITERAL_STRING("/*"),
+                                           nsString() };
+    const nsString lineCommentEndings[] = { NS_LITERAL_STRING("\\\n"),
+                                            NS_LITERAL_STRING("\n"),
+                                            nsString() };
+    const nsString blockCommentEndings[] = { NS_LITERAL_STRING("\n"),
+                                             NS_LITERAL_STRING("*/"),
+                                             nsString() };
+
+    while (srcItr != srcEnd) {
+        size_t foundId;
+        fnEmitUntil( fnFindSoonestOf(commentBeginnings, 2, &foundId) );
+        fnEmitUntil(srcItr + commentBeginnings[foundId].Length());
+
+        switch (foundId) {
+        case 0: 
+            while (true) {
+                size_t endId;
+                srcItr = fnFindSoonestOf(lineCommentEndings, 2, &endId);
+                fnEmitUntil(srcItr + lineCommentEndings[endId].Length());
+                if (endId == 0)
+                    continue;
                 break;
             }
+            break;
 
-            if (temp == '*') {
-                m_parseState = InMultiLineComment;
-                
-                
-                
-                emit('/');
-                emit('*');
-                advance();
+        case 1: 
+            while (true) {
+                size_t endId;
+                srcItr = fnFindSoonestOf(blockCommentEndings, 2, &endId);
+                fnEmitUntil(srcItr + blockCommentEndings[endId].Length());
+                if (endId == 0)
+                    continue;
                 break;
             }
-        }
+            break;
 
-        emit(c);
-        break;
-
-    case InPreprocessorDirective:
-        
-        
-        
-        
-        emit(c);
-        break;
-
-    case InSingleLineComment:
-        
-        
-        
-        break;
-
-    case InMultiLineComment:
-        if (c == '*' && peek(temp) && temp == '/') {
-            emit('*');
-            emit('/');
-            m_parseState = MiddleOfLine;
-            advance();
+        default: 
             break;
         }
-
-        
-        
-        
-        break;
     }
+
+    MOZ_ASSERT((dstBegin+1) - dstBegin == 1);
+    const uint32_t dstCharLen = dstItr - dstBegin;
+    if (!out->Assign(dstBegin, dstCharLen, mozilla::fallible))
+        return false;
+
+    return true;
 }
-
-
 
 bool
 ValidateGLSLString(const nsAString& string, WebGLContext* webgl, const char* funcName)
