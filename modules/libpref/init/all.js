@@ -5441,7 +5441,9 @@ pref("narrate.enabled", false);
 
 pref("narrate.test", false);
 pref("narrate.rate", 0);
-pref("narrate.voice", "automatic");
+pref("narrate.voice", " { \"default\": \"automatic\" }");
+
+pref("narrate.filter-voices", true);
 
 #if defined(XP_LINUX) && defined(MOZ_GMP_SANDBOX)
 

@@ -10,6 +10,9 @@
 const TEST_ARTICLE =
   "http://example.com/browser/toolkit/components/narrate/test/moby_dick.html";
 
+const TEST_ITALIAN_ARTICLE =
+  "http://example.com/browser/toolkit/components/narrate/test/inferno.html";
+
 Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "Promise",
@@ -26,11 +29,13 @@ const TEST_PREFS = {
   "narrate.enabled": true,
   "narrate.test": true,
   "narrate.voice": null,
+  "narrate.filter-voices": false,
 };
 
-function setup(voiceUri = "automatic") {
+function setup(voiceUri = "automatic", filterVoices = false) {
   let prefs = Object.assign({}, TEST_PREFS, {
-    "narrate.voice": voiceUri
+    "narrate.filter-voices": filterVoices,
+    "narrate.voice": JSON.stringify({ en: voiceUri })
   });
 
   
