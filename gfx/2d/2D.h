@@ -630,6 +630,10 @@ struct Glyph
   Point mPosition;
 };
 
+static inline bool operator==(const Glyph& aOne, const Glyph& aOther) {
+  return aOne.mIndex == aOther.mIndex && aOne.mPosition == aOther.mPosition;
+}
+
 
 
 
@@ -664,7 +668,7 @@ struct GlyphMetrics
 
 
 
-class ScaledFont : public RefCounted<ScaledFont>
+class ScaledFont : public external::AtomicRefCounted<ScaledFont>
 {
 public:
   MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(ScaledFont)
