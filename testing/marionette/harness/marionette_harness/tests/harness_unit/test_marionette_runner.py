@@ -273,7 +273,7 @@ def test_add_test_module(runner):
         with patch('os.path.abspath', return_value=test) as abspath:
             runner.add_test(test)
         assert abspath.called
-        expected = {'filepath': test, 'expected': 'pass'}
+        expected = {'filepath': test, 'expected': 'pass', 'group': 'default'}
         assert expected in runner.tests
     
     assert len(runner.tests) == 3
