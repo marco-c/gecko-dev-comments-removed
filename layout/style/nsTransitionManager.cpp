@@ -541,7 +541,7 @@ nsTransitionManager::StyleContextChanged(dom::Element *aElement,
              "for transitions");
   if (collection &&
       collection->mCheckGeneration ==
-        mPresContext->RestyleManager()->AsGecko()->GetAnimationGeneration()) {
+        mPresContext->RestyleManager()->GetAnimationGeneration()) {
     
     
     
@@ -998,7 +998,7 @@ nsTransitionManager::ConsiderInitiatingTransition(
     OwningElementRef(*aElement, aNewStyleContext->GetPseudoType()));
   animation->SetTimelineNoUpdate(timeline);
   animation->SetCreationSequence(
-    mPresContext->RestyleManager()->AsGecko()->GetAnimationGeneration());
+    mPresContext->RestyleManager()->GetAnimationGeneration());
   animation->SetEffectFromStyle(pt);
   animation->PlayFromStyle();
 

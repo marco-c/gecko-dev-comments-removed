@@ -138,12 +138,7 @@ void
 AnimationCollection<AnimationType>::UpdateCheckGeneration(
   nsPresContext* aPresContext)
 {
-  if (aPresContext->RestyleManager()->IsServo()) {
-    
-    return;
-  }
-  mCheckGeneration =
-    aPresContext->RestyleManager()->AsGecko()->GetAnimationGeneration();
+  mCheckGeneration = aPresContext->RestyleManager()->GetAnimationGeneration();
 }
 
 template<class AnimationType>

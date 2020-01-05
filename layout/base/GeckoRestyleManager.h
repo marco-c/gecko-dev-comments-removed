@@ -72,27 +72,6 @@ public:
                         const nsAttrValue* aOldValue);
 
   
-  
-  uint64_t GetAnimationGeneration() const { return mAnimationGeneration; }
-
-  static uint64_t GetAnimationGenerationForFrame(nsIFrame* aFrame);
-
-  
-  
-  
-  
-  
-  
-  void IncrementAnimationGeneration() {
-    
-    
-    
-    if (!mIsProcessingRestyles) {
-      ++mAnimationGeneration;
-    }
-  }
-
-  
   bool SkipAnimationRules() const { return mSkipAnimationRules; }
 
   void SetSkipAnimationRules(bool aSkipAnimationRules) {
@@ -355,6 +334,8 @@ public:
   int32_t& LoggingDepth() { return mLoggingDepth; }
 #endif
 
+  bool IsProcessingRestyles() { return mIsProcessingRestyles; }
+
 private:
   inline nsStyleSet* StyleSet() const {
     MOZ_ASSERT(PresContext()->StyleSet()->IsGecko(),
@@ -403,10 +384,6 @@ private:
 
   nsChangeHint mRebuildAllExtraHint;
   nsRestyleHint mRebuildAllRestyleHint;
-
-  
-  
-  uint64_t mAnimationGeneration;
 
   ReframingStyleContexts* mReframingStyleContexts;
 

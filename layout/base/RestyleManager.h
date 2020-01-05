@@ -180,6 +180,20 @@ public:
                                const nsAttrValue* aOldValue);
   inline nsresult ReparentStyleContext(nsIFrame* aFrame);
 
+  
+  
+  uint64_t GetAnimationGeneration() const { return mAnimationGeneration; }
+
+  static uint64_t GetAnimationGenerationForFrame(nsIFrame* aFrame);
+
+  
+  
+  
+  
+  
+  
+  void IncrementAnimationGeneration();
+
 protected:
   RestyleManager(StyleBackendType aType, nsPresContext* aPresContext);
 
@@ -230,6 +244,10 @@ private:
 protected:
   
   bool mInStyleRefresh;
+
+  
+  
+  uint64_t mAnimationGeneration;
 
   OverflowChangedTracker mOverflowChangedTracker;
 

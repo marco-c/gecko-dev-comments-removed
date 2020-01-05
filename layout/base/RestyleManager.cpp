@@ -19,6 +19,7 @@ RestyleManager::RestyleManager(StyleBackendType aType,
   , mHoverGeneration(0)
   , mType(aType)
   , mInStyleRefresh(false)
+  , mAnimationGeneration(0)
 {
   MOZ_ASSERT(mPresContext);
 }
@@ -1693,6 +1694,25 @@ RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList)
   }
 
   aChangeList.Clear();
+}
+
+ uint64_t
+RestyleManager::GetAnimationGenerationForFrame(nsIFrame* aFrame)
+{
+  EffectSet* effectSet = EffectSet::GetEffectSet(aFrame);
+  return effectSet ? effectSet->GetAnimationGeneration() : 0;
+}
+
+void
+RestyleManager::IncrementAnimationGeneration()
+{
+  
+  
+  
+  if ((IsGecko() && !AsGecko()->IsProcessingRestyles()) ||
+      (IsServo() && !mInStyleRefresh)) {
+    ++mAnimationGeneration;
+  }
 }
 
 RestyleManager::AnimationsWithDestroyedFrame::AnimationsWithDestroyedFrame(

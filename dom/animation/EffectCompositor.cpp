@@ -283,13 +283,8 @@ EffectCompositor::RequestRestyle(dom::Element* aElement,
   if (aRestyleType == RestyleType::Layer) {
     
     
-    if (mPresContext->RestyleManager()->IsServo()) {
-      NS_WARNING("stylo: RequestRestyle to layer, but Servo-backed style "
-                 "system haven't supported compositor-driven animations yet");
-      return;
-    }
     
-    mPresContext->RestyleManager()->AsGecko()->IncrementAnimationGeneration();
+    mPresContext->RestyleManager()->IncrementAnimationGeneration();
     EffectSet* effectSet =
       EffectSet::GetEffectSet(aElement, aPseudoType);
     if (effectSet) {
