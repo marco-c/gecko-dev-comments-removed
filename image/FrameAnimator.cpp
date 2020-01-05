@@ -142,10 +142,12 @@ AnimationState::LoopLength() const
 
 
 Maybe<TimeStamp>
-FrameAnimator::GetCurrentImgFrameEndTime(AnimationState& aState) const
+FrameAnimator::GetCurrentImgFrameEndTime(AnimationState& aState,
+                                         DrawableSurface& aFrames) const
 {
   TimeStamp currentFrameTime = aState.mCurrentAnimationFrameTime;
-  Maybe<FrameTimeout> timeout = GetTimeoutForFrame(aState, aState.mCurrentAnimationFrameIndex);
+  Maybe<FrameTimeout> timeout =
+    GetTimeoutForFrame(aState, aFrames, aState.mCurrentAnimationFrameIndex);
 
   if (timeout.isNothing()) {
     MOZ_ASSERT(aState.GetHasBeenDecoded() && !aState.GetIsCurrentlyDecoded());
@@ -171,7 +173,9 @@ FrameAnimator::GetCurrentImgFrameEndTime(AnimationState& aState) const
 }
 
 RefreshResult
-FrameAnimator::AdvanceFrame(AnimationState& aState, TimeStamp aTime)
+FrameAnimator::AdvanceFrame(AnimationState& aState,
+                            DrawableSurface& aFrames,
+                            TimeStamp aTime)
 {
   NS_ASSERTION(aTime <= TimeStamp::Now(),
                "Given time appears to be in the future");
@@ -231,7 +235,7 @@ FrameAnimator::AdvanceFrame(AnimationState& aState, TimeStamp aTime)
   
   
   MOZ_ASSERT(nextFrameIndex < aState.KnownFrameCount());
-  RawAccessFrameRef nextFrame = GetRawFrame(nextFrameIndex);
+  RawAccessFrameRef nextFrame = GetRawFrame(aFrames, nextFrameIndex);
 
   
   
@@ -243,7 +247,7 @@ FrameAnimator::AdvanceFrame(AnimationState& aState, TimeStamp aTime)
     return ret;
   }
 
-  Maybe<FrameTimeout> nextFrameTimeout = GetTimeoutForFrame(aState, nextFrameIndex);
+  Maybe<FrameTimeout> nextFrameTimeout = GetTimeoutForFrame(aState, aFrames, nextFrameIndex);
   
   
   MOZ_ASSERT(nextFrameTimeout.isSome());
@@ -257,11 +261,11 @@ FrameAnimator::AdvanceFrame(AnimationState& aState, TimeStamp aTime)
     MOZ_ASSERT(nextFrameIndex == currentFrameIndex + 1);
 
     
-    if (!DoBlend(&ret.mDirtyRect, currentFrameIndex, nextFrameIndex)) {
+    if (!DoBlend(aFrames, &ret.mDirtyRect, currentFrameIndex, nextFrameIndex)) {
       
       NS_WARNING("FrameAnimator::AdvanceFrame(): Compositing of frame failed");
       nextFrame->SetCompositingFailed(true);
-      Maybe<TimeStamp> currentFrameEndTime = GetCurrentImgFrameEndTime(aState);
+      Maybe<TimeStamp> currentFrameEndTime = GetCurrentImgFrameEndTime(aState, aFrames);
       MOZ_ASSERT(currentFrameEndTime.isSome());
       aState.mCurrentAnimationFrameTime = *currentFrameEndTime;
       aState.mCurrentAnimationFrameIndex = nextFrameIndex;
@@ -272,7 +276,7 @@ FrameAnimator::AdvanceFrame(AnimationState& aState, TimeStamp aTime)
     nextFrame->SetCompositingFailed(false);
   }
 
-  Maybe<TimeStamp> currentFrameEndTime = GetCurrentImgFrameEndTime(aState);
+  Maybe<TimeStamp> currentFrameEndTime = GetCurrentImgFrameEndTime(aState, aFrames);
   MOZ_ASSERT(currentFrameEndTime.isSome());
   aState.mCurrentAnimationFrameTime = *currentFrameEndTime;
 
@@ -314,7 +318,27 @@ FrameAnimator::RequestRefresh(AnimationState& aState, const TimeStamp& aTime)
 
   
   
-  Maybe<TimeStamp> currentFrameEndTime = GetCurrentImgFrameEndTime(aState);
+  
+  
+  LookupResult result =
+    SurfaceCache::Lookup(ImageKey(mImage),
+                         RasterSurfaceKey(mSize,
+                                          DefaultSurfaceFlags(),
+                                          PlaybackType::eAnimated));
+
+  if (!result) {
+    if (result.Type() == MatchType::NOT_FOUND) {
+      
+      
+      aState.SetDiscarded(true);
+    }
+    return ret;
+  }
+
+  
+  
+  Maybe<TimeStamp> currentFrameEndTime =
+    GetCurrentImgFrameEndTime(aState, result.Surface());
   if (currentFrameEndTime.isNothing()) {
     MOZ_ASSERT(gfxPrefs::ImageMemAnimatedDiscardable());
     MOZ_ASSERT(aState.GetHasBeenDecoded() && !aState.GetIsCurrentlyDecoded());
@@ -327,12 +351,12 @@ FrameAnimator::RequestRefresh(AnimationState& aState, const TimeStamp& aTime)
   while (*currentFrameEndTime <= aTime) {
     TimeStamp oldFrameEndTime = *currentFrameEndTime;
 
-    RefreshResult frameRes = AdvanceFrame(aState, aTime);
+    RefreshResult frameRes = AdvanceFrame(aState, result.Surface(), aTime);
 
     
     ret.Accumulate(frameRes);
 
-    currentFrameEndTime = GetCurrentImgFrameEndTime(aState);
+    currentFrameEndTime = GetCurrentImgFrameEndTime(aState, result.Surface());
     
     MOZ_ASSERT(currentFrameEndTime.isSome());
 
@@ -396,9 +420,10 @@ FrameAnimator::GetCompositedFrame(AnimationState& aState)
 
 Maybe<FrameTimeout>
 FrameAnimator::GetTimeoutForFrame(AnimationState& aState,
+                                  DrawableSurface& aFrames,
                                   uint32_t aFrameNum) const
 {
-  RawAccessFrameRef frame = GetRawFrame(aFrameNum);
+  RawAccessFrameRef frame = GetRawFrame(aFrames, aFrameNum);
   if (frame) {
     AnimationData data = frame->GetAnimationData();
     return Some(data.mTimeout);
@@ -454,37 +479,29 @@ FrameAnimator::CollectSizeOfCompositingSurfaces(
 }
 
 RawAccessFrameRef
-FrameAnimator::GetRawFrame(uint32_t aFrameNum) const
+FrameAnimator::GetRawFrame(DrawableSurface& aFrames, uint32_t aFrameNum) const
 {
-  LookupResult result =
-    SurfaceCache::Lookup(ImageKey(mImage),
-                         RasterSurfaceKey(mSize,
-                                          DefaultSurfaceFlags(),
-                                          PlaybackType::eAnimated));
-  if (!result) {
-    return RawAccessFrameRef();
-  }
-
   
   
   
-  if (NS_FAILED(result.Surface().Seek(aFrameNum))) {
+  if (NS_FAILED(aFrames.Seek(aFrameNum))) {
     return RawAccessFrameRef();  
   }
 
-  return result.Surface()->RawAccessRef();
+  return aFrames->RawAccessRef();
 }
 
 
 
 
 bool
-FrameAnimator::DoBlend(IntRect* aDirtyRect,
+FrameAnimator::DoBlend(DrawableSurface& aFrames,
+                       IntRect* aDirtyRect,
                        uint32_t aPrevFrameIndex,
                        uint32_t aNextFrameIndex)
 {
-  RawAccessFrameRef prevFrame = GetRawFrame(aPrevFrameIndex);
-  RawAccessFrameRef nextFrame = GetRawFrame(aNextFrameIndex);
+  RawAccessFrameRef prevFrame = GetRawFrame(aFrames, aPrevFrameIndex);
+  RawAccessFrameRef nextFrame = GetRawFrame(aFrames, aNextFrameIndex);
 
   MOZ_ASSERT(prevFrame && nextFrame, "Should have frames here");
 

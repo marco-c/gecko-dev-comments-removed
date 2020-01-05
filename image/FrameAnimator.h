@@ -21,6 +21,7 @@ namespace mozilla {
 namespace image {
 
 class RasterImage;
+class DrawableSurface;
 
 class AnimationState
 {
@@ -305,15 +306,19 @@ private:
 
 
 
-  RefreshResult AdvanceFrame(AnimationState& aState, TimeStamp aTime);
+  RefreshResult AdvanceFrame(AnimationState& aState,
+                             DrawableSurface& aFrames,
+                             TimeStamp aTime);
 
   
 
 
-  RawAccessFrameRef GetRawFrame(uint32_t aFrameNum) const;
+  RawAccessFrameRef GetRawFrame(DrawableSurface& aFrames,
+                                uint32_t aFrameNum) const;
 
   
   Maybe<FrameTimeout> GetTimeoutForFrame(AnimationState& aState,
+                                         DrawableSurface& aFrames,
                                          uint32_t aFrameNum) const;
 
   
@@ -322,9 +327,11 @@ private:
 
 
 
-  Maybe<TimeStamp> GetCurrentImgFrameEndTime(AnimationState& aState) const;
+  Maybe<TimeStamp> GetCurrentImgFrameEndTime(AnimationState& aState,
+                                             DrawableSurface& aFrames) const;
 
-  bool DoBlend(gfx::IntRect* aDirtyRect,
+  bool DoBlend(DrawableSurface& aFrames,
+               gfx::IntRect* aDirtyRect,
                uint32_t aPrevFrameIndex,
                uint32_t aNextFrameIndex);
 
