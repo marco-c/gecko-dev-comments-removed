@@ -104,6 +104,15 @@ function* testOptionsShortcut() {
 function* testOptions() {
   let tool = toolbox.getPanel("options");
   panelWin = tool.panelWin;
+
+  
+  
+  
+  
+  if (tool.panelDoc.readyState != "complete") {
+    yield once(tool.panelWin, "load");
+  }
+
   let prefNodes = tool.panelDoc.querySelectorAll(
     "input[type=checkbox][data-pref]");
 
