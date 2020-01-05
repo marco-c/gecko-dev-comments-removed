@@ -459,10 +459,12 @@ impl LineBreaker {
             kind: FloatKind::Left,
         });
 
+        let fragment_margin_box_inline_size = first_fragment.margin_box_inline_size();
+
         
-        if line_bounds.size.inline > first_fragment.margin_box_inline_size() {
+        if line_bounds.size.inline > fragment_margin_box_inline_size {
             debug!("LineBreaker: fragment fits on line {}", self.lines.len());
-            return (line_bounds, first_fragment.margin_box_inline_size());
+            return (line_bounds, fragment_margin_box_inline_size);
         }
 
         
@@ -471,7 +473,7 @@ impl LineBreaker {
             debug!("LineBreaker: line doesn't fit, but is unsplittable");
         }
 
-        (line_bounds, first_fragment.margin_box_inline_size())
+        (line_bounds, fragment_margin_box_inline_size)
     }
 
     
