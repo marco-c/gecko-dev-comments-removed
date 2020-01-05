@@ -172,7 +172,7 @@ FinderHighlighter.prototype = {
         dynamicRangesSet: new Set(),
         frames: new Map(),
         modalHighlightRectsMap: new Map(),
-        previousRangeRectsCount: 0
+        previousRangeRectsAndTexts: { rectList: [], textList: [] }
       });
     }
     return gWindows.get(window);
@@ -375,12 +375,7 @@ FinderHighlighter.prototype = {
     }
     dict.lastWindowDimensions = null;
 
-    if (dict.modalHighlightOutline) {
-      dict.modalHighlightOutline.setAttributeForElement(kModalOutlineId, "style",
-        dict.modalHighlightOutline.getAttributeForElement(kModalOutlineId, "style") +
-        "; opacity: 0");
-    }
-
+    this._removeRangeOutline(window);
     this._removeHighlightAllMask(window);
     this._removeModalHighlightListeners(window);
 
@@ -420,6 +415,7 @@ FinderHighlighter.prototype = {
 
     if (!this._modal) {
       if (this._highlightAll) {
+        dict.previousFoundRange = dict.currentFoundRange;
         dict.currentFoundRange = foundRange;
         let params = this.iterator.params;
         if (dict.visible && this.iterator._areParamsEqual(params, dict.lastIteratorParams))
@@ -433,13 +429,8 @@ FinderHighlighter.prototype = {
     }
 
     if (foundRange !== dict.currentFoundRange || data.findAgain) {
+      dict.previousFoundRange = dict.currentFoundRange;
       dict.currentFoundRange = foundRange;
-
-      let textContent = this._getRangeContentArray(foundRange);
-      if (!textContent.length) {
-        this.hide(window);
-        return;
-      }
 
       if (data.findAgain)
         dict.updateAllRanges = true;
@@ -452,11 +443,18 @@ FinderHighlighter.prototype = {
 
     let outlineNode = dict.modalHighlightOutline;
     if (outlineNode) {
-      if (dict.animation)
-        dict.animation.finish();
-      dict.animation = outlineNode.setAnimationForElement(kModalOutlineId,
-        Cu.cloneInto(kModalOutlineAnim.keyframes, window), kModalOutlineAnim.duration);
-      dict.animation.onfinish = () => dict.animation = null;
+      let animation;
+      if (dict.animations) {
+        for (animation of dict.animations)
+          animation.finish();
+      }
+      dict.animations = [];
+      for (let i = dict.previousRangeRectsAndTexts.rectList.length - 1; i >= 0; --i) {
+        animation = outlineNode.setAnimationForElement(kModalOutlineId + i,
+          Cu.cloneInto(kModalOutlineAnim.keyframes, window), kModalOutlineAnim.duration);
+        animation.onfinish = function(idx) { dict.animations.splice(idx, 1); }.bind(null, i);
+        dict.animations.push(animation);
+      }
     }
 
     if (this._highlightAll)
@@ -478,8 +476,10 @@ FinderHighlighter.prototype = {
     }
 
     let dict = this.getForWindow(window.top);
-    if (dict.animation)
-      dict.animation.finish();
+    if (dict.animations) {
+      for (let animation of dict.animations)
+        animation.finish();
+    }
     dict.dynamicRangesSet.clear();
     dict.frames.clear();
     dict.modalHighlightRectsMap.clear();
@@ -497,20 +497,10 @@ FinderHighlighter.prototype = {
     this.hide(window);
     let dict = this.getForWindow(window);
     this.clear(window);
-    dict.currentFoundRange = dict.lastIteratorParams = null;
+    dict.currentFoundRange = dict.lastIteratorParams = dict.previousFoundRange =
+      dict.previousUpdatedRange = null;
 
-    if (!dict.modalHighlightOutline)
-      return;
-
-    if (kDebug) {
-      dict.modalHighlightOutline.remove();
-    } else {
-      try {
-        window.document.removeAnonymousContent(dict.modalHighlightOutline);
-      } catch (ex) {}
-    }
-
-    dict.modalHighlightOutline = null;
+    this._removeRangeOutline(window);
   },
 
   
@@ -662,21 +652,6 @@ FinderHighlighter.prototype = {
 
 
 
-  _getRangeContentArray(range) {
-    let content = range.cloneContents();
-    let textContent = [];
-    for (let node of content.childNodes) {
-      textContent.push(node.textContent || node.nodeValue);
-    }
-    return textContent;
-  },
-
-  
-
-
-
-
-
 
   _getRangeFontStyle(range) {
     let node = range.startContainer;
@@ -765,8 +740,8 @@ FinderHighlighter.prototype = {
     
     if (sampleSize % 2 == 0) {
       
-      if (dict.currentFoundRange) {
-        ranges.push(dict.currentFoundRange);
+      if (dict.previousFoundRange || dict.currentFoundRange) {
+        ranges.push(dict.previousFoundRange || dict.currentFoundRange);
         ++sampleSize;
         ++rangesCount;
       } else {
@@ -916,51 +891,41 @@ FinderHighlighter.prototype = {
 
 
 
-
-
-
-
-  _updateRangeOutline(dict, textContent = null, fontStyle = null) {
+  _updateRangeOutline(dict) {
     let range = dict.currentFoundRange;
     if (!range)
       return;
 
-    fontStyle = fontStyle || this._getRangeFontStyle(range);
+    let fontStyle = this._getRangeFontStyle(range);
     
     delete fontStyle.color;
 
     let rectsAndTexts = this._getRangeRectsAndTexts(range);
-    textContent = textContent || this._getRangeContentArray(range);
-
     let outlineAnonNode = dict.modalHighlightOutline;
     let rectCount = rectsAndTexts.rectList.length;
+    let previousRectCount = dict.previousRangeRectsAndTexts.rectList.length;
     
     
     
     
     
     
-    let rebuildOutline = (!outlineAnonNode || rectCount !== dict.previousRangeRectsCount ||
+    let rebuildOutline = (!outlineAnonNode || rectCount !== previousRectCount ||
       rectCount != 1);
-    dict.previousRangeRectsCount = rectCount;
+    dict.previousRangeRectsAndTexts = rectsAndTexts;
 
     let window = range.startContainer.ownerDocument.defaultView.top;
     let document = window.document;
     
-    if (rebuildOutline && outlineAnonNode) {
-      if (kDebug) {
-        outlineAnonNode.remove();
-      } else {
-        try {
-          document.removeAnonymousContent(outlineAnonNode);
-        } catch (ex) {}
-      }
-      dict.modalHighlightOutline = null;
-    }
+    if (rebuildOutline)
+      this._removeRangeOutline(window);
 
     
-    if (!rectsAndTexts.textList.length)
+    
+    if (!rectsAndTexts.textList.length ||
+        (!rebuildOutline && dict.previousUpdatedRange == range && !dict.dynamicRangesSet.has(range))) {
       return;
+    }
 
     let outlineBox;
     if (rebuildOutline) {
@@ -1003,7 +968,6 @@ FinderHighlighter.prototype = {
           (intersectingSides.has("left") ? 0 : kOutlineBoxBorderRadius) + "px" ]);
       }
 
-      ++i;
       let outlineStyle = this._getStyleString(kModalStyles.outlineNode, [
         ["top", rect.top + "px"],
         ["left", rect.left + "px"],
@@ -1015,23 +979,24 @@ FinderHighlighter.prototype = {
         this._getHTMLFontStyle(fontStyle);
 
       if (rebuildOutline) {
-        let textBoxParent = (rectCount == 1) ? outlineBox :
-          outlineBox.appendChild(document.createElementNS(kNSHTML, "div"));
+        let textBoxParent = outlineBox.appendChild(document.createElementNS(kNSHTML, "div"));
+        textBoxParent.setAttribute("id", kModalOutlineId + i);
         textBoxParent.setAttribute("style", outlineStyle);
 
         let textBox = document.createElementNS(kNSHTML, "span");
-        if (rectCount == 1)
-          textBox.setAttribute("id", kModalOutlineTextId);
+        textBox.setAttribute("id", kModalOutlineTextId + i);
         textBox.setAttribute("style", textStyle);
         textBox.textContent = text;
         textBoxParent.appendChild(textBox);
       } else {
         
         
-        outlineAnonNode.setAttributeForElement(kModalOutlineId, "style", outlineStyle);
-        outlineAnonNode.setAttributeForElement(kModalOutlineTextId, "style", textStyle);
-        outlineAnonNode.setTextContentForElement(kModalOutlineTextId, text);
+        outlineAnonNode.setAttributeForElement(kModalOutlineId + i, "style", outlineStyle);
+        outlineAnonNode.setAttributeForElement(kModalOutlineTextId + i, "style", textStyle);
+        outlineAnonNode.setTextContentForElement(kModalOutlineTextId + i, text);
       }
+
+      ++i;
     }
 
     if (rebuildOutline) {
@@ -1040,6 +1005,29 @@ FinderHighlighter.prototype = {
           document.documentElement).appendChild(outlineBox)) :
         document.insertAnonymousContent(outlineBox);
     }
+
+    dict.previousUpdatedRange = range;
+  },
+
+  
+
+
+
+
+  _removeRangeOutline(window) {
+    let dict = this.getForWindow(window);
+    if (!dict.modalHighlightOutline)
+      return;
+
+    if (kDebug) {
+      dict.modalHighlightOutline.remove();
+    } else {
+      try {
+        window.document.removeAnonymousContent(dict.modalHighlightOutline);
+      } catch (ex) {}
+    }
+
+    dict.modalHighlightOutline = null;
   },
 
   
@@ -1050,9 +1038,6 @@ FinderHighlighter.prototype = {
 
 
   _modalHighlight(range, controller, window) {
-    if (!this._getRangeContentArray(range).length)
-      return;
-
     this._updateRangeRects(range);
 
     this.show(window);
@@ -1133,7 +1118,10 @@ FinderHighlighter.prototype = {
 
     let allRects = [];
     if (paintContent || dict.modalHighlightAllMask) {
-      this._updateDynamicRangesRects(dict);
+      
+      
+      if (!dict.updateAllRanges)
+        this._updateDynamicRangesRects(dict);
 
       let DOMRect = window.DOMRect;
       for (let [range, rectsAndTexts] of dict.modalHighlightRectsMap) {
