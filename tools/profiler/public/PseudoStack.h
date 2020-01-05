@@ -305,17 +305,6 @@ public:
     }
   }
 
-  void clearJSContext()
-  {
-    if (mContext) {
-      
-      
-      flushSamplerOnJSShutdown();
-    }
-
-    mContext = nullptr;
-  }
-
   void enableJSSampling()
   {
     if (mContext) {

@@ -2976,41 +2976,34 @@ profiler_clear_js_context()
     return;
   }
 
-  stack->clearJSContext();
-}
-
-
-
-
-void PseudoStack::flushSamplerOnJSShutdown()
-{
-  MOZ_RELEASE_ASSERT(gPS);
-  MOZ_ASSERT(mContext);
-
-  PS::AutoLock lock(gPSMutex);
-
-  if (!gPS->IsActive(lock)) {
+  if (!stack->mContext) {
     return;
   }
 
-  gPS->SetIsPaused(lock, true);
+  
+  
 
-  const PS::ThreadVector& threads = gPS->Threads(lock);
-  for (size_t i = 0; i < threads.size(); i++) {
-    
-    ThreadInfo* info = threads.at(i);
-    if (!info->HasProfile() || info->IsPendingDelete()) {
-      continue;
-    }
+  PS::AutoLock lock(gPSMutex);
+
+  if (gPS->IsActive(lock)) {
+    gPS->SetIsPaused(lock, true);
 
     
-    if (info->Stack()->mContext != mContext) {
-      continue;
+    
+    const PS::ThreadVector& threads = gPS->Threads(lock);
+    for (size_t i = 0; i < threads.size(); i++) {
+      ThreadInfo* info = threads.at(i);
+      if (info->HasProfile() && !info->IsPendingDelete() &&
+          info->Stack() == stack) {
+        info->FlushSamplesAndMarkers(gPS->Buffer(lock), gPS->StartTime(lock));
+      }
     }
 
-    info->FlushSamplesAndMarkers(gPS->Buffer(lock), gPS->StartTime(lock));
+    gPS->SetIsPaused(lock, false);
   }
 
-  gPS->SetIsPaused(lock, false);
+  stack->mContext = nullptr;
 }
+
+
 
