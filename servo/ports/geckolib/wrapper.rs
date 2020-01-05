@@ -318,6 +318,12 @@ impl<'le> GeckoElement<'le> {
     }
 }
 
+lazy_static! {
+    pub static ref DUMMY_BASE_URL: Url = {
+        Url::parse("http://www.example.org").unwrap()
+    };
+}
+
 impl<'le> TElement for GeckoElement<'le> {
     type ConcreteNode = GeckoNode<'le>;
     type ConcreteDocument = GeckoDocument<'le>;
@@ -333,8 +339,8 @@ impl<'le> TElement for GeckoElement<'le> {
         // call into the Servo CSS parser and then cache the resulting block
         // in the nsAttrValue. That will allow us to borrow it from here.
         let attr = self.get_attr(&ns!(), &atom!("style"));
-        // FIXME(bholley): Real base URL and error reporter.
-        let base_url = Url::parse("http://www.example.org").unwrap();
+        
+        let base_url = &*DUMMY_BASE_URL;
         
         
         let extra_data = ParserContextExtraData::default();
