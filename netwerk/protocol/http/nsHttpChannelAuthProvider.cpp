@@ -800,6 +800,19 @@ nsHttpChannelAuthProvider::GetCredentialsForChallenge(const char *challenge,
         
         
         mAuthChannel->CloseStickyConnection();
+        if (!proxyAuth) {
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          mProxyIdent.Clear();
+        }
         mConnectionBased = false;
     }
 
