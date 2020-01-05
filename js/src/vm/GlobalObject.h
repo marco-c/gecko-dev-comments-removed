@@ -705,7 +705,7 @@ class GlobalObject : public NativeObject
                                 MutableHandleObject eval);
 
     
-    bool valueIsEval(Value val);
+    bool valueIsEval(const Value& val);
 
     
     static bool initIteratorProto(JSContext* cx, Handle<GlobalObject*> global);

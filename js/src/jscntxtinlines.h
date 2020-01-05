@@ -369,7 +369,7 @@ ExclusiveContext::typeLifoAlloc()
 }  
 
 inline void
-JSContext::setPendingException(js::Value v)
+JSContext::setPendingException(const js::Value& v)
 {
     
     this->overRecursed_ = false;

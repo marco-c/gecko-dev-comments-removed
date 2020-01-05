@@ -126,7 +126,7 @@ extern JS_FRIEND_API(JSObject*)
 
 
 extern JS_FRIEND_API(PerfMeasurement*)
-    ExtractPerfMeasurement(Value wrapper);
+    ExtractPerfMeasurement(const Value& wrapper);
 
 } 
 

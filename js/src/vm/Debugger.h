@@ -1019,7 +1019,7 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
 
 
 
-    MOZ_MUST_USE bool newCompletionValue(JSContext* cx, JSTrapStatus status, Value value,
+    MOZ_MUST_USE bool newCompletionValue(JSContext* cx, JSTrapStatus status, const Value& value,
                                          MutableHandleValue result);
 
     

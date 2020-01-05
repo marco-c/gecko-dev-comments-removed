@@ -929,8 +929,8 @@ class AnyConstructArgs : public JS::CallArgs
 {
     
     
-    void setCallee(Value v) = delete;
-    void setThis(Value v) = delete;
+    void setCallee(const Value& v) = delete;
+    void setThis(const Value& v) = delete;
     MutableHandleValue newTarget() const = delete;
     MutableHandleValue rval() const = delete;
 };

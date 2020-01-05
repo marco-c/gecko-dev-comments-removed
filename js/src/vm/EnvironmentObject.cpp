@@ -1716,7 +1716,7 @@ class DebugEnvironmentProxyHandler : public BaseProxyHandler
 
 
 
-    static bool isMaybeUninitializedThisValue(JSContext* cx, jsid id, Value v)
+    static bool isMaybeUninitializedThisValue(JSContext* cx, jsid id, const Value& v)
     {
         return isThis(cx, id) && v.isUndefined();
     }
