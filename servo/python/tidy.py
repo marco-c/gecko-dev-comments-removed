@@ -164,7 +164,7 @@ def check_lock(file_name, contents):
     packages = {}
 
     
-    exceptions = []
+    exceptions = ["libc"]
 
     while idx < len(contents):
         content = contents[idx].strip()
