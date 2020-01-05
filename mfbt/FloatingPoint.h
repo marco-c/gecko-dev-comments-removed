@@ -187,6 +187,18 @@ IsNegativeZero(T aValue)
 }
 
 
+template<typename T>
+static MOZ_ALWAYS_INLINE bool
+IsPositiveZero(T aValue)
+{
+  
+  typedef FloatingPoint<T> Traits;
+  typedef typename Traits::Bits Bits;
+  Bits bits = BitwiseCast<Bits>(aValue);
+  return bits == 0;
+}
+
+
 
 
 
