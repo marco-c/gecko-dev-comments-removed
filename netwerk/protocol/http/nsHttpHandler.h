@@ -86,7 +86,6 @@ public:
         return mReferrerXOriginTrimmingPolicy;
     }
     uint8_t        ReferrerXOriginPolicy()   { return mReferrerXOriginPolicy; }
-    bool           PackagedAppsEnabled()     { return mPackagedAppsEnabled; }
     uint8_t        RedirectionLimit()        { return mRedirectionLimit; }
     PRIntervalTime IdleTimeout()             { return mIdleTimeout; }
     PRIntervalTime SpdyTimeout()             { return mSpdyTimeout; }
@@ -451,9 +450,6 @@ private:
     PRIntervalTime mPipelineRescheduleTimeout;
     PRIntervalTime mPipelineReadTimeout;
     nsCOMPtr<nsITimer> mPipelineTestTimer;
-
-    
-    bool mPackagedAppsEnabled = false;
 
     uint8_t  mRedirectionLimit;
 

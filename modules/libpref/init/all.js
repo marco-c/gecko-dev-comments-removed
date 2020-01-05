@@ -1598,16 +1598,6 @@ pref("network.http.enforce-framing.soft", true);
 
 
 
-pref("network.http.enable-packaged-apps", false);
-
-
-
-pref("network.http.signed-packages.enabled", false);
-
-
-
-
-
 pref("network.http.keep_empty_response_headers_as_empty_string", true);
 
 

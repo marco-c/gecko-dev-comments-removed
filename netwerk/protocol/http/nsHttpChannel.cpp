@@ -91,7 +91,6 @@
 #include "nsIX509Cert.h"
 #include "ScopedNSSTypes.h"
 #include "nsNullPrincipal.h"
-#include "nsIPackagedAppService.h"
 #include "nsIDeprecationWarner.h"
 #include "nsIDocument.h"
 #include "nsIDOMDocument.h"
@@ -265,7 +264,6 @@ nsHttpChannel::nsHttpChannel()
     , mIsPartialRequest(0)
     , mHasAutoRedirectVetoNotifier(0)
     , mPinCacheContent(0)
-    , mIsPackagedAppResource(0)
     , mIsCorsPreflightDone(0)
     , mStronglyFramed(false)
     , mPushedStream(nullptr)
@@ -4166,12 +4164,6 @@ nsHttpChannel::OnCacheEntryAvailableInternal(nsICacheEntry *entry,
             return AsyncCall(&nsHttpChannel::HandleAsyncFallback);
         }
 
-        if (mIsPackagedAppResource) {
-            
-            
-            return NS_ERROR_FILE_NOT_FOUND;
-        }
-
         return NS_ERROR_DOCUMENT_NOT_CACHED;
     }
 
@@ -5667,15 +5659,6 @@ nsHttpChannel::AsyncOpen(nsIStreamListener *listener, nsISupports *context)
         return NS_ERROR_NOT_AVAILABLE;
     }
 
-    if (gHttpHandler->PackagedAppsEnabled()) {
-        nsAutoCString path;
-        nsCOMPtr<nsIURL> url(do_QueryInterface(mURI));
-        if (url) {
-            url->GetFilePath(path);
-        }
-        mIsPackagedAppResource = path.Find(PACKAGED_APP_TOKEN) != kNotFound;
-    }
-
     rv = NS_CheckPortSafety(mURI);
     if (NS_FAILED(rv)) {
         ReleaseListeners();
@@ -5925,32 +5908,6 @@ nsHttpChannel::BeginConnect()
     
     if (!mTimingEnabled)
         mAsyncOpenTime = TimeStamp();
-
-    if (mIsPackagedAppResource) {
-        
-        
-        
-
-        nsCOMPtr<nsIPackagedAppService> pas =
-            do_GetService("@mozilla.org/network/packaged-app-service;1", &rv);
-        if (NS_WARN_IF(NS_FAILED(rv))) {
-            return rv;
-        }
-
-        rv = pas->GetResource(this, this);
-        if (NS_FAILED(rv)) {
-            return rv;
-        }
-
-        
-        
-        
-        mLoadFlags |= LOAD_ONLY_FROM_CACHE;
-        mLoadFlags |= LOAD_FROM_CACHE;
-        mLoadFlags &= ~VALIDATE_ALWAYS;
-
-        return rv;
-    }
 
     
     if (!mConnectionInfo->UsingConnect() && mConnectionInfo->UsingHttpProxy()) {
