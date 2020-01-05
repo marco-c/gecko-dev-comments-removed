@@ -2127,15 +2127,7 @@ nsFocusManager::SendFocusOrBlurEvent(EventMessage aEventMessage,
   bool dontDispatchEvent =
     eventTargetDoc && nsContentUtils::IsUserFocusIgnored(eventTargetDoc);
 
-  
-  
-  
-  if (aFocusMethod && !dontDispatchEvent &&
-      aDocument && aDocument->EventHandlingSuppressed()) {
-    
-    
-    NS_ASSERTION(!aWindowRaised, "aWindowRaised should not be set");
-
+  if (!dontDispatchEvent && aDocument && aDocument->EventHandlingSuppressed()) {
     for (uint32_t i = mDelayedBlurFocusEvents.Length(); i > 0; --i) {
       
       if (mDelayedBlurFocusEvents[i - 1].mEventMessage == aEventMessage &&
