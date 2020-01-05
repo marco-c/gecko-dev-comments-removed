@@ -4,13 +4,14 @@
 
 use dom::bindings::codegen::Bindings::WorkerBinding;
 use dom::bindings::codegen::Bindings::WorkerBinding::WorkerMethods;
+use dom::bindings::codegen::Bindings::EventHandlerBinding::EventHandlerNonNull;
 use dom::bindings::codegen::InheritTypes::EventTargetCast;
 use dom::bindings::error::{Fallible, Syntax};
 use dom::bindings::global::{GlobalRef, GlobalField};
 use dom::bindings::js::{JS, JSRef, Temporary};
 use dom::bindings::utils::{Reflectable, Reflector, reflect_dom_object};
 use dom::dedicatedworkerglobalscope::DedicatedWorkerGlobalScope;
-use dom::eventtarget::{EventTarget, WorkerTypeId};
+use dom::eventtarget::{EventTarget, EventTargetHelpers, WorkerTypeId};
 use dom::messageevent::MessageEvent;
 use script_task::{ScriptChan, DOMMessage};
 
@@ -50,9 +51,9 @@ impl Worker {
                            WorkerBinding::Wrap)
     }
 
-    
+    // http://www.whatwg.org/html/#dom-worker
     pub fn Constructor(global: &GlobalRef, scriptURL: DOMString) -> Fallible<Temporary<Worker>> {
-        
+        // Step 2-4.
         let worker_url = match UrlParser::new().base_url(&global.get_url())
                 .parse(scriptURL.as_slice()) {
             Ok(url) => url,
@@ -82,7 +83,7 @@ impl Worker {
 }
 
 impl Worker {
-    
+    // Creates a trusted address to the object, and roots it. Always pair this with a release()
     pub fn addref(&self) -> TrustedWorkerAddress {
         let refcount = self.refcount.get();
         if refcount == 0 {
@@ -118,6 +119,16 @@ impl<'a> WorkerMethods for JSRef<'a, Worker> {
         self.addref();
         let ScriptChan(ref sender) = self.sender;
         sender.send(DOMMessage(message));
+    }
+
+    fn GetOnmessage(&self) -> Option<EventHandlerNonNull> {
+        let eventtarget: &JSRef<EventTarget> = EventTargetCast::from_ref(self);
+        eventtarget.get_event_handler_common("message")
+    }
+
+    fn SetOnmessage(&self, listener: Option<EventHandlerNonNull>) {
+        let eventtarget: &JSRef<EventTarget> = EventTargetCast::from_ref(self);
+        eventtarget.set_event_handler_common("message", listener)
     }
 }
 
