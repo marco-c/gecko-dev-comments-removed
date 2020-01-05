@@ -352,10 +352,6 @@ BoxModelHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     return shown;
   },
 
-  _scrollUpdate: function () {
-    this._moveInfobar();
-  },
-
   
 
 
@@ -512,7 +508,7 @@ BoxModelHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     }
 
     
-    let rootId = this.ID_CLASS_PREFIX + "elements";
+    let rootId = this.ID_CLASS_PREFIX + "root";
     this.markup.scaleRootElement(this.currentNode, rootId);
 
     return true;
