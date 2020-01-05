@@ -72,9 +72,7 @@ public final class CodecProxy {
         public void onOutput(Sample sample) throws RemoteException {
             if (mOutputSurface != null) {
                 
-                if (!sample.isEOS() || sample.info.size > 0) {
-                    mSurfaceOutputs.offer(sample);
-                }
+                mSurfaceOutputs.offer(sample);
                 mCallbacks.onOutput(sample);
             } else {
                 
