@@ -78,7 +78,7 @@ this.Context = {
   CONTENT: "content",
 };
 
-this.Context.fromString = function(s) {
+this.Context.fromString = function (s) {
   s = s.toUpperCase();
   if (s in this) {
     return this[s];
@@ -100,7 +100,7 @@ this.Context.fromString = function(s) {
 
 
 
-this.GeckoDriver = function(appName, server) {
+this.GeckoDriver = function (appName, server) {
   this.appName = appName;
   this._server = server;
 
@@ -217,7 +217,7 @@ GeckoDriver.prototype.switchToGlobalMessageManager = function() {
 
 
 
-GeckoDriver.prototype.sendAsync = function(name, msg, cmdId) {
+GeckoDriver.prototype.sendAsync = function (name, msg, cmdId) {
   let curRemoteFrame = this.curBrowser.frameManager.currentRemoteFrame;
   name = "Marionette:" + name;
 
@@ -274,7 +274,7 @@ GeckoDriver.prototype.getCurrentWindow = function() {
   }
 };
 
-GeckoDriver.prototype.addFrameCloseListener = function(action) {
+GeckoDriver.prototype.addFrameCloseListener = function (action) {
   let win = this.getCurrentWindow();
   this.mozBrowserClose = e => {
     if (e.target.id == this.oopFrameId) {
@@ -295,7 +295,7 @@ GeckoDriver.prototype.addFrameCloseListener = function(action) {
 
 
 
-GeckoDriver.prototype.addBrowser = function(win) {
+GeckoDriver.prototype.addBrowser = function (win) {
   let bc = new browser.Context(win, this);
   let winId = win.QueryInterface(Ci.nsIInterfaceRequestor)
       .getInterface(Ci.nsIDOMWindowUtils).outerWindowID;
@@ -321,7 +321,7 @@ GeckoDriver.prototype.addBrowser = function(win) {
 
 
 
-GeckoDriver.prototype.startBrowser = function(win, isNewSession = false) {
+GeckoDriver.prototype.startBrowser = function (win, isNewSession = false) {
   this.mainFrame = win;
   this.curFrame = null;
   this.addBrowser(win);
@@ -338,7 +338,7 @@ GeckoDriver.prototype.startBrowser = function(win, isNewSession = false) {
 
 
 
-GeckoDriver.prototype.whenBrowserStarted = function(win, isNewSession) {
+GeckoDriver.prototype.whenBrowserStarted = function (win, isNewSession) {
   let mm = win.window.messageManager;
   if (mm) {
     if (!isNewSession) {
@@ -380,7 +380,7 @@ GeckoDriver.prototype.whenBrowserStarted = function(win, isNewSession) {
 
 
 
-GeckoDriver.prototype.getVisibleText = function(el, lines) {
+GeckoDriver.prototype.getVisibleText = function (el, lines) {
   try {
     if (atom.isElementDisplayed(el, this.getCurrentWindow())) {
       if (el.value) {
@@ -401,7 +401,7 @@ GeckoDriver.prototype.getVisibleText = function(el, lines) {
 
 
 
-GeckoDriver.prototype.registerBrowser = function(id, be) {
+GeckoDriver.prototype.registerBrowser = function (id, be) {
   let nullPrevious = this.curBrowser.curFrameId === null;
   let listenerWindow = Services.wm.getOuterWindowWithId(id);
 
@@ -591,7 +591,7 @@ GeckoDriver.prototype.newSession = function*(cmd, resp) {
 
 
 
-GeckoDriver.prototype.getSessionCapabilities = function(cmd, resp) {
+GeckoDriver.prototype.getSessionCapabilities = function (cmd, resp) {
   resp.body.capabilities = this.sessionCapabilities;
 };
 
@@ -605,7 +605,7 @@ GeckoDriver.prototype.getSessionCapabilities = function(cmd, resp) {
 
 
 
-GeckoDriver.prototype.setSessionCapabilities = function(newCaps) {
+GeckoDriver.prototype.setSessionCapabilities = function (newCaps) {
   const copy = (from, to={}) => {
     let errors = [];
 
@@ -667,7 +667,7 @@ GeckoDriver.prototype.setSessionCapabilities = function(newCaps) {
   this.sessionCapabilities = caps;
 };
 
-GeckoDriver.prototype.setUpProxy = function(proxy) {
+GeckoDriver.prototype.setUpProxy = function (proxy) {
   logger.config("User-provided proxy settings: " + JSON.stringify(proxy));
 
   assert.object(proxy);
@@ -726,7 +726,7 @@ GeckoDriver.prototype.setUpProxy = function(proxy) {
 
 
 
-GeckoDriver.prototype.log = function(cmd, resp) {
+GeckoDriver.prototype.log = function (cmd, resp) {
   
   this.marionetteLog.log(
       cmd.parameters.value,
@@ -734,7 +734,7 @@ GeckoDriver.prototype.log = function(cmd, resp) {
 };
 
 
-GeckoDriver.prototype.getLogs = function(cmd, resp) {
+GeckoDriver.prototype.getLogs = function (cmd, resp) {
   resp.body = this.marionetteLog.get();
 };
 
@@ -746,7 +746,7 @@ GeckoDriver.prototype.getLogs = function(cmd, resp) {
 
 
 
-GeckoDriver.prototype.setContext = function(cmd, resp) {
+GeckoDriver.prototype.setContext = function (cmd, resp) {
   let val = cmd.parameters.value;
   let ctx = Context.fromString(val);
   if (ctx === null) {
@@ -756,7 +756,7 @@ GeckoDriver.prototype.setContext = function(cmd, resp) {
 };
 
 
-GeckoDriver.prototype.getContext = function(cmd, resp) {
+GeckoDriver.prototype.getContext = function (cmd, resp) {
   resp.body.value = this.context.toString();
 };
 
@@ -882,7 +882,7 @@ GeckoDriver.prototype.executeScript = function*(cmd, resp) {
 
 
 
-GeckoDriver.prototype.executeAsyncScript = function(cmd, resp) {
+GeckoDriver.prototype.executeAsyncScript = function (cmd, resp) {
   let {script, args, scriptTimeout} = cmd.parameters;
   scriptTimeout = scriptTimeout || this.scriptTimeout;
 
@@ -899,7 +899,7 @@ GeckoDriver.prototype.executeAsyncScript = function(cmd, resp) {
   resp.body.value = yield this.execute_(script, args, scriptTimeout, opts);
 };
 
-GeckoDriver.prototype.execute_ = function(script, args, timeout, opts = {}) {
+GeckoDriver.prototype.execute_ = function (script, args, timeout, opts = {}) {
   switch (this.context) {
     case Context.CONTENT:
       
@@ -932,7 +932,7 @@ GeckoDriver.prototype.execute_ = function(script, args, timeout, opts = {}) {
 
 
 
-GeckoDriver.prototype.executeJSScript = function(cmd, resp) {
+GeckoDriver.prototype.executeJSScript = function (cmd, resp) {
   let {script, args, scriptTimeout} = cmd.parameters;
   scriptTimeout = scriptTimeout || this.scriptTimeout;
 
@@ -1065,7 +1065,7 @@ GeckoDriver.prototype.pageLoadPromise = function() {
 
 
 
-GeckoDriver.prototype.getCurrentUrl = function(cmd) {
+GeckoDriver.prototype.getCurrentUrl = function (cmd) {
   switch (this.context) {
     case Context.CHROME:
       return this.getCurrentWindow().location.href;
@@ -1077,7 +1077,7 @@ GeckoDriver.prototype.getCurrentUrl = function(cmd) {
 };
 
 
-GeckoDriver.prototype.getTitle = function*(cmd, resp) {
+GeckoDriver.prototype.getTitle = function* (cmd, resp) {
   switch (this.context) {
     case Context.CHROME:
       let win = this.getCurrentWindow();
@@ -1091,13 +1091,13 @@ GeckoDriver.prototype.getTitle = function*(cmd, resp) {
 };
 
 
-GeckoDriver.prototype.getWindowType = function(cmd, resp) {
+GeckoDriver.prototype.getWindowType = function (cmd, resp) {
   let win = this.getCurrentWindow();
   resp.body.value = win.document.documentElement.getAttribute("windowtype");
 };
 
 
-GeckoDriver.prototype.getPageSource = function*(cmd, resp) {
+GeckoDriver.prototype.getPageSource = function* (cmd, resp) {
   switch (this.context) {
     case Context.CHROME:
       let win = this.getCurrentWindow();
@@ -1137,7 +1137,7 @@ GeckoDriver.prototype.refresh = function*(cmd, resp) {
 
 
 
-GeckoDriver.prototype.getWindowHandle = function(cmd, resp) {
+GeckoDriver.prototype.getWindowHandle = function (cmd, resp) {
   
   if (this.curBrowser.curFrameId && this.appName != "B2G") {
     resp.body.value = this.curBrowser.curFrameId;
@@ -1192,7 +1192,7 @@ GeckoDriver.prototype.getIdForBrowser = function getIdForBrowser(browser) {
 
 
 
-GeckoDriver.prototype.getWindowHandles = function(cmd, resp) {
+GeckoDriver.prototype.getWindowHandles = function (cmd, resp) {
   let hs = [];
   let winEn = Services.wm.getEnumerator(null);
   while (winEn.hasMoreElements()) {
@@ -1228,7 +1228,7 @@ GeckoDriver.prototype.getWindowHandles = function(cmd, resp) {
 
 
 
-GeckoDriver.prototype.getChromeWindowHandle = function(cmd, resp) {
+GeckoDriver.prototype.getChromeWindowHandle = function (cmd, resp) {
   for (let i in this.browsers) {
     if (this.curBrowser == this.browsers[i]) {
       resp.body.value = i;
@@ -1244,7 +1244,7 @@ GeckoDriver.prototype.getChromeWindowHandle = function(cmd, resp) {
 
 
 
-GeckoDriver.prototype.getChromeWindowHandles = function(cmd, resp) {
+GeckoDriver.prototype.getChromeWindowHandles = function (cmd, resp) {
   let hs = [];
   let winEn = Services.wm.getEnumerator(null);
   while (winEn.hasMoreElements()) {
@@ -1264,7 +1264,7 @@ GeckoDriver.prototype.getChromeWindowHandles = function(cmd, resp) {
 
 
 
-GeckoDriver.prototype.getWindowPosition = function(cmd, resp) {
+GeckoDriver.prototype.getWindowPosition = function (cmd, resp) {
   return this.curBrowser.position;
 };
 
@@ -1281,7 +1281,7 @@ GeckoDriver.prototype.getWindowPosition = function(cmd, resp) {
 
 
 
-GeckoDriver.prototype.setWindowPosition = function(cmd, resp) {
+GeckoDriver.prototype.setWindowPosition = function (cmd, resp) {
   if (this.appName != "Firefox") {
     throw new UnsupportedOperationError("Unable to set the window position on mobile");
   }
@@ -1303,19 +1303,19 @@ GeckoDriver.prototype.setWindowPosition = function(cmd, resp) {
 
 
 
-GeckoDriver.prototype.switchToWindow = function*(cmd, resp) {
+GeckoDriver.prototype.switchToWindow = function* (cmd, resp) {
   let switchTo = cmd.parameters.name;
   let isMobile = this.appName == "Fennec";
   let found;
 
-  let getOuterWindowId = function(win) {
+  let getOuterWindowId = function (win) {
     let rv = win.QueryInterface(Ci.nsIInterfaceRequestor)
         .getInterface(Ci.nsIDOMWindowUtils)
         .outerWindowID;
     return rv;
   };
 
-  let byNameOrId = function(name, outerId, contentWindowId) {
+  let byNameOrId = function (name, outerId, contentWindowId) {
     return switchTo == name ||
         switchTo == contentWindowId ||
         switchTo == outerId;
@@ -1377,7 +1377,7 @@ GeckoDriver.prototype.switchToWindow = function*(cmd, resp) {
   }
 };
 
-GeckoDriver.prototype.getActiveFrame = function(cmd, resp) {
+GeckoDriver.prototype.getActiveFrame = function (cmd, resp) {
   switch (this.context) {
     case Context.CHROME:
       
@@ -1413,7 +1413,7 @@ GeckoDriver.prototype.switchToParentFrame = function*(cmd, resp) {
 
 
 
-GeckoDriver.prototype.switchToFrame = function*(cmd, resp) {
+GeckoDriver.prototype.switchToFrame = function* (cmd, resp) {
   let {id, element, focus} = cmd.parameters;
 
   const otherErrorsExpr = /about:.+(error)|(blocked)\?/;
@@ -1570,7 +1570,7 @@ GeckoDriver.prototype.switchToFrame = function*(cmd, resp) {
   }
 };
 
-GeckoDriver.prototype.getTimeouts = function(cmd, resp) {
+GeckoDriver.prototype.getTimeouts = function (cmd, resp) {
   return {
     "implicit": this.searchTimeout,
     "script": this.scriptTimeout,
@@ -1589,7 +1589,7 @@ GeckoDriver.prototype.getTimeouts = function(cmd, resp) {
 
 
 
-GeckoDriver.prototype.setTimeouts = function(cmd, resp) {
+GeckoDriver.prototype.setTimeouts = function (cmd, resp) {
   
   
   let timeouts = {};
@@ -2174,7 +2174,7 @@ GeckoDriver.prototype.deleteCookie = function*(cmd, resp) {
 
 
 
-GeckoDriver.prototype.close = function(cmd, resp) {
+GeckoDriver.prototype.close = function (cmd, resp) {
   
   if (this.appName == "B2G") {
     return;
@@ -2220,7 +2220,7 @@ GeckoDriver.prototype.close = function(cmd, resp) {
 
 
 
-GeckoDriver.prototype.closeChromeWindow = function(cmd, resp) {
+GeckoDriver.prototype.closeChromeWindow = function (cmd, resp) {
   
   if (this.appName == "B2G") {
     return;
@@ -2258,7 +2258,7 @@ GeckoDriver.prototype.closeChromeWindow = function(cmd, resp) {
 
 
 
-GeckoDriver.prototype.sessionTearDown = function(cmd, resp) {
+GeckoDriver.prototype.sessionTearDown = function (cmd, resp) {
   if (this.curBrowser !== null) {
     if (this.appName == "B2G") {
       globalMessageManager.broadcastAsyncMessage(
@@ -2324,12 +2324,12 @@ GeckoDriver.prototype.sessionTearDown = function(cmd, resp) {
 
 
 
-GeckoDriver.prototype.deleteSession = function(cmd, resp) {
+GeckoDriver.prototype.deleteSession = function (cmd, resp) {
   this.sessionTearDown();
 };
 
 
-GeckoDriver.prototype.getAppCacheStatus = function*(cmd, resp) {
+GeckoDriver.prototype.getAppCacheStatus = function* (cmd, resp) {
   resp.body.value = yield this.listener.getAppCacheStatus();
 };
 
@@ -2386,7 +2386,7 @@ GeckoDriver.prototype.clearImportedScripts = function*(cmd, resp) {
 
 
 
-GeckoDriver.prototype.takeScreenshot = function(cmd, resp) {
+GeckoDriver.prototype.takeScreenshot = function (cmd, resp) {
   let {id, highlights, full, hash} = cmd.parameters;
   highlights = highlights || [];
 
@@ -2447,7 +2447,7 @@ GeckoDriver.prototype.takeScreenshot = function(cmd, resp) {
 
 
 
-GeckoDriver.prototype.getScreenOrientation = function(cmd, resp) {
+GeckoDriver.prototype.getScreenOrientation = function (cmd, resp) {
   if (this.appName == "Firefox") {
     throw new UnsupportedOperationError();
   }
@@ -2465,7 +2465,7 @@ GeckoDriver.prototype.getScreenOrientation = function(cmd, resp) {
 
 
 
-GeckoDriver.prototype.setScreenOrientation = function(cmd, resp) {
+GeckoDriver.prototype.setScreenOrientation = function (cmd, resp) {
   assert.fennec();
 
   const ors = [
@@ -2494,7 +2494,7 @@ GeckoDriver.prototype.setScreenOrientation = function(cmd, resp) {
 
 
 
-GeckoDriver.prototype.getWindowSize = function(cmd, resp) {
+GeckoDriver.prototype.getWindowSize = function (cmd, resp) {
   let win = this.getCurrentWindow();
   resp.body.width = win.outerWidth;
   resp.body.height = win.outerHeight;
@@ -2507,7 +2507,7 @@ GeckoDriver.prototype.getWindowSize = function(cmd, resp) {
 
 
 
-GeckoDriver.prototype.setWindowSize = function(cmd, resp) {
+GeckoDriver.prototype.setWindowSize = function (cmd, resp) {
   if (this.appName != "Firefox") {
     throw new UnsupportedOperationError();
   }
@@ -2524,7 +2524,7 @@ GeckoDriver.prototype.setWindowSize = function(cmd, resp) {
 
 
 
-GeckoDriver.prototype.maximizeWindow = function(cmd, resp) {
+GeckoDriver.prototype.maximizeWindow = function (cmd, resp) {
   if (this.appName != "Firefox") {
     throw new UnsupportedOperationError();
   }
@@ -2537,7 +2537,7 @@ GeckoDriver.prototype.maximizeWindow = function(cmd, resp) {
 
 
 
-GeckoDriver.prototype.dismissDialog = function(cmd, resp) {
+GeckoDriver.prototype.dismissDialog = function (cmd, resp) {
   this._checkIfAlertIsPresent();
 
   let {button0, button1} = this.dialog.ui;
@@ -2549,7 +2549,7 @@ GeckoDriver.prototype.dismissDialog = function(cmd, resp) {
 
 
 
-GeckoDriver.prototype.acceptDialog = function(cmd, resp) {
+GeckoDriver.prototype.acceptDialog = function (cmd, resp) {
   this._checkIfAlertIsPresent();
 
   let {button0} = this.dialog.ui;
@@ -2561,7 +2561,7 @@ GeckoDriver.prototype.acceptDialog = function(cmd, resp) {
 
 
 
-GeckoDriver.prototype.getTextFromDialog = function(cmd, resp) {
+GeckoDriver.prototype.getTextFromDialog = function (cmd, resp) {
   this._checkIfAlertIsPresent();
 
   let {infoBody} = this.dialog.ui;
@@ -2574,7 +2574,7 @@ GeckoDriver.prototype.getTextFromDialog = function(cmd, resp) {
 
 
 
-GeckoDriver.prototype.sendKeysToDialog = function(cmd, resp) {
+GeckoDriver.prototype.sendKeysToDialog = function (cmd, resp) {
   this._checkIfAlertIsPresent();
 
   
@@ -2614,7 +2614,7 @@ GeckoDriver.prototype._checkIfAlertIsPresent = function() {
 
 
 
-GeckoDriver.prototype.acceptConnections = function(cmd, resp) {
+GeckoDriver.prototype.acceptConnections = function (cmd, resp) {
   assert.boolean(cmd.parameters.value);
   this._server.acceptConnections = cmd.parameters.value;
 }
@@ -2623,7 +2623,7 @@ GeckoDriver.prototype.acceptConnections = function(cmd, resp) {
 
 
 
-GeckoDriver.prototype.quitApplication = function(cmd, resp) {
+GeckoDriver.prototype.quitApplication = function (cmd, resp) {
   if (this.appName != "Firefox") {
     throw new WebDriverError("In app initiated quit only supported in Firefox");
   }
@@ -2640,7 +2640,7 @@ GeckoDriver.prototype.quitApplication = function(cmd, resp) {
   Services.startup.quit(flags);
 };
 
-GeckoDriver.prototype.installAddon = function(cmd, resp) {
+GeckoDriver.prototype.installAddon = function (cmd, resp) {
   if (this.appName != "Firefox") {
     throw new UnsupportedOperationError();
   }
@@ -2655,7 +2655,7 @@ GeckoDriver.prototype.installAddon = function(cmd, resp) {
   return addon.install(path, temp);
 };
 
-GeckoDriver.prototype.uninstallAddon = function(cmd, resp) {
+GeckoDriver.prototype.uninstallAddon = function (cmd, resp) {
   if (this.appName != "Firefox") {
     throw new UnsupportedOperationError();
   }
@@ -2672,13 +2672,13 @@ GeckoDriver.prototype.uninstallAddon = function(cmd, resp) {
 
 
 
-GeckoDriver.prototype.generateFrameId = function(id) {
+GeckoDriver.prototype.generateFrameId = function (id) {
   let uid = id + (this.appName == "B2G" ? "-b2g" : "");
   return uid;
 };
 
 
-GeckoDriver.prototype.receiveMessage = function(message) {
+GeckoDriver.prototype.receiveMessage = function (message) {
   switch (message.name) {
     case "Marionette:ok":
     case "Marionette:done":
@@ -2796,7 +2796,7 @@ GeckoDriver.prototype.responseCompleted = function () {
 
 
 
-GeckoDriver.prototype.localizeEntity = function(cmd, resp) {
+GeckoDriver.prototype.localizeEntity = function (cmd, resp) {
   let {urls, id} = cmd.parameters;
 
   if (!Array.isArray(urls)) {
@@ -2823,7 +2823,7 @@ GeckoDriver.prototype.localizeEntity = function(cmd, resp) {
 
 
 
-GeckoDriver.prototype.localizeProperty = function(cmd, resp) {
+GeckoDriver.prototype.localizeProperty = function (cmd, resp) {
   let {urls, id} = cmd.parameters;
 
   if (!Array.isArray(urls)) {

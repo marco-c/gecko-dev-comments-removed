@@ -173,7 +173,7 @@ interaction.clickElement = function*(el, strict = false, specCompat = false) {
 
 
 
-interaction.calculateCentreCoords = function(el) {
+interaction.calculateCentreCoords = function (el) {
   let rects = el.getClientRects();
   return {
     x: rects[0].left + rects[0].width / 2.0,
@@ -198,7 +198,7 @@ interaction.calculateCentreCoords = function(el) {
 
 
 
-interaction.selectOption = function(el) {
+interaction.selectOption = function (el) {
   if (element.isXULElement(el)) {
     throw new Error("XUL dropdowns not supported");
   }
@@ -231,7 +231,7 @@ interaction.selectOption = function(el) {
 
 
 
-interaction.uploadFile = function(el, path) {
+interaction.uploadFile = function (el, path) {
   let file;
   try {
     file = File.createFromFileName(path);
@@ -269,7 +269,7 @@ interaction.uploadFile = function(el, path) {
 
 
 
-interaction.getSelectForOptionElement = function(optionEl) {
+interaction.getSelectForOptionElement = function (optionEl) {
   let parent = optionEl;
   while (parent.parentNode && parent.localName != "select") {
     parent = parent.parentNode;
@@ -294,7 +294,7 @@ interaction.getSelectForOptionElement = function(optionEl) {
 
 
 
-interaction.sendKeysToElement = function(el, value, ignoreVisibility, strict = false) {
+interaction.sendKeysToElement = function (el, value, ignoreVisibility, strict = false) {
   let win = getWindow(el);
   let a11y = accessibility.get(strict);
   return a11y.getAccessible(el, true).then(acc => {
@@ -314,7 +314,7 @@ interaction.sendKeysToElement = function(el, value, ignoreVisibility, strict = f
 
 
 
-interaction.isElementDisplayed = function(el, strict = false) {
+interaction.isElementDisplayed = function (el, strict = false) {
   let win = getWindow(el);
   let displayed = atom.isElementDisplayed(el, win);
 
@@ -334,7 +334,7 @@ interaction.isElementDisplayed = function(el, strict = false) {
 
 
 
-interaction.isElementEnabled = function(el, strict = false) {
+interaction.isElementEnabled = function (el, strict = false) {
   let enabled = true;
   let win = getWindow(el);
 
@@ -371,7 +371,7 @@ interaction.isElementEnabled = function(el, strict = false) {
 
 
 
-interaction.isElementSelected = function(el, strict = false) {
+interaction.isElementSelected = function (el, strict = false) {
   let selected = true;
   let win = getWindow(el);
 

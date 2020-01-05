@@ -53,7 +53,7 @@ this.cert = {
 
 
 
-cert.installOverride = function(service) {
+cert.installOverride = function (service) {
   if (this.currentOverride) {
     return;
   }
@@ -102,7 +102,7 @@ cert.InsecureSweepingOverride = function() {
   
   let service = function() {};
   service.prototype = {
-    hasMatchingOverride: function(
+    hasMatchingOverride: function (
         aHostName, aPort, aCert, aOverrideBits, aIsTemporary) {
       aIsTemporary.value = false;
       aOverrideBits.value =

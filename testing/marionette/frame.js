@@ -22,7 +22,7 @@ var remoteFrames = [];
 
 
 
-frame.RemoteFrame = function(windowId, frameId) {
+frame.RemoteFrame = function (windowId, frameId) {
   
   this.windowId = windowId;
   

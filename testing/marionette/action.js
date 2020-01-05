@@ -59,7 +59,7 @@ action.PointerType = {
 
 
 
-action.PointerType.get = function(str) {
+action.PointerType.get = function (str) {
   let name = capitalize(str);
   if (!(name in this)) {
     throw new InvalidArgumentError(`Unknown pointerType: ${str}`);

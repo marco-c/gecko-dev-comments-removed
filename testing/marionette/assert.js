@@ -29,7 +29,7 @@ this.assert = {};
 
 
 
-assert.firefox = function(msg = "") {
+assert.firefox = function (msg = "") {
   msg = msg || "Expected Firefox";
   assert.that(isFirefox, msg, UnsupportedOperationError)();
 };
@@ -43,7 +43,7 @@ assert.firefox = function(msg = "") {
 
 
 
-assert.fennec = function(msg = "") {
+assert.fennec = function (msg = "") {
   msg = msg || "Expected Fennec";
   assert.that(isFennec, msg, UnsupportedOperationError)();
 };
@@ -57,7 +57,7 @@ assert.fennec = function(msg = "") {
 
 
 
-assert.b2g = function(msg = "") {
+assert.b2g = function (msg = "") {
   msg = msg || "Expected B2G"
   assert.that(isB2G, msg, UnsupportedOperationError)();
 };
@@ -72,7 +72,7 @@ assert.b2g = function(msg = "") {
 
 
 
-assert.mobile = function(msg = "") {
+assert.mobile = function (msg = "") {
   msg = msg || "Expected Fennec or B2G";
   assert.that(() => isFennec() || isB2G(), msg, UnsupportedOperationError)();
 };
@@ -91,7 +91,7 @@ assert.mobile = function(msg = "") {
 
 
 
-assert.defined = function(obj, msg = "") {
+assert.defined = function (obj, msg = "") {
   msg = msg || error.pprint`Expected ${obj} to be defined`;
   return assert.that(o => typeof o != "undefined", msg)(obj);
 };
@@ -110,7 +110,7 @@ assert.defined = function(obj, msg = "") {
 
 
 
-assert.integer = function(obj, msg = "") {
+assert.integer = function (obj, msg = "") {
   msg = msg || error.pprint`Expected ${obj} to be an integer`;
   return assert.that(Number.isInteger, msg)(obj);
 };
@@ -129,7 +129,7 @@ assert.integer = function(obj, msg = "") {
 
 
 
-assert.positiveInteger = function(obj, msg = "") {
+assert.positiveInteger = function (obj, msg = "") {
   assert.integer(obj, msg);
   msg = msg || error.pprint`Expected ${obj} to be >= 0`;
   return assert.that(n => n >= 0, msg)(obj);
@@ -149,7 +149,7 @@ assert.positiveInteger = function(obj, msg = "") {
 
 
 
-assert.boolean = function(obj, msg = "") {
+assert.boolean = function (obj, msg = "") {
   msg = msg || error.pprint`Expected ${obj} to be boolean`;
   return assert.that(b => typeof b == "boolean", msg)(obj);
 };
@@ -168,7 +168,7 @@ assert.boolean = function(obj, msg = "") {
 
 
 
-assert.string = function(obj, msg = "") {
+assert.string = function (obj, msg = "") {
   msg = msg || error.pprint`Expected ${obj} to be a string`;
   return assert.that(s => typeof s == "string", msg)(obj);
 };
@@ -187,7 +187,7 @@ assert.string = function(obj, msg = "") {
 
 
 
-assert.object = function(obj, msg = "") {
+assert.object = function (obj, msg = "") {
   msg = msg || error.pprint`Expected ${obj} to be an object`;
   return assert.that(o => typeof o == "object", msg)(obj);
 };
@@ -209,7 +209,7 @@ assert.object = function(obj, msg = "") {
 
 
 
-assert.that = function(
+assert.that = function (
     predicate, message = "", error = InvalidArgumentError) {
   return obj => {
     if (!predicate(obj)) {

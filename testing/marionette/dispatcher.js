@@ -31,7 +31,7 @@ const logger = Log.repository.getLogger("Marionette");
 
 
 
-this.Dispatcher = function(connId, transport, driverFactory) {
+this.Dispatcher = function (connId, transport, driverFactory) {
   this.connId = connId;
   this.conn = transport;
 
@@ -55,7 +55,7 @@ this.Dispatcher = function(connId, transport, driverFactory) {
 
 
 
-Dispatcher.prototype.onClosed = function(reason) {
+Dispatcher.prototype.onClosed = function (reason) {
   this.driver.sessionTearDown();
   if (this.onclose) {
     this.onclose(this);
@@ -74,7 +74,7 @@ Dispatcher.prototype.onClosed = function(reason) {
 
 
 
-Dispatcher.prototype.onPacket = function(data) {
+Dispatcher.prototype.onPacket = function (data) {
   let msg = Message.fromMsg(data);
   msg.origin = MessageOrigin.Client;
   this.log_(msg);
@@ -109,7 +109,7 @@ Dispatcher.prototype.onPacket = function(data) {
 
 
 
-Dispatcher.prototype.execute = function(cmd) {
+Dispatcher.prototype.execute = function (cmd) {
   let resp = new Response(cmd.id, this.send.bind(this));
   let sendResponse = () => resp.sendConditionally(resp => !resp.sent);
   let sendError = resp.sendError.bind(resp);
@@ -134,7 +134,7 @@ Dispatcher.prototype.execute = function(cmd) {
   req.then(sendResponse, sendError).catch(error.report);
 };
 
-Dispatcher.prototype.sendError = function(err, cmdId) {
+Dispatcher.prototype.sendError = function (err, cmdId) {
   let resp = new Response(cmdId, this.send.bind(this));
   resp.sendError(err);
 };
@@ -170,7 +170,7 @@ Dispatcher.prototype.sayHello = function() {
 
 
 
-Dispatcher.prototype.send = function(msg) {
+Dispatcher.prototype.send = function (msg) {
   msg.origin = MessageOrigin.Server;
   if (msg instanceof Command) {
     this.commands_.set(msg.id, msg);
@@ -188,7 +188,7 @@ Dispatcher.prototype.send = function(msg) {
 
 
 
-Dispatcher.prototype.sendToClient = function(resp) {
+Dispatcher.prototype.sendToClient = function (resp) {
   this.driver.responseCompleted();
   this.sendMessage(resp);
 };
@@ -199,7 +199,7 @@ Dispatcher.prototype.sendToClient = function(resp) {
 
 
 
-Dispatcher.prototype.sendMessage = function(msg) {
+Dispatcher.prototype.sendMessage = function (msg) {
   this.log_(msg);
   let payload = msg.toMsg();
   this.sendRaw(payload);
@@ -212,11 +212,11 @@ Dispatcher.prototype.sendMessage = function(msg) {
 
 
 
-Dispatcher.prototype.sendRaw = function(payload) {
+Dispatcher.prototype.sendRaw = function (payload) {
   this.conn.send(payload);
 };
 
-Dispatcher.prototype.log_ = function(msg) {
+Dispatcher.prototype.log_ = function (msg) {
   let a = (msg.origin == MessageOrigin.Client ? " -> " : " <- ");
   let s = JSON.stringify(msg.toMsg());
   logger.trace(this.connId + a + s);

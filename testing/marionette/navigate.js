@@ -28,7 +28,7 @@ this.navigate = {};
 
 
 
-navigate.isLoadEventExpected = function(current, future = undefined) {
+navigate.isLoadEventExpected = function (current, future = undefined) {
   if (typeof current == "undefined") {
     throw TypeError("Expected at least one URL");
   }
@@ -94,7 +94,7 @@ navigate.isLoadEventExpected = function(current, future = undefined) {
 
 
 
-navigate.IdempotentURL = function(o) {
+navigate.IdempotentURL = function (o) {
   let url = new URL(o);
 
   let hash = url.hash;

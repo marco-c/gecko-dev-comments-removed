@@ -105,7 +105,7 @@ accessibility.ActionableRoles = new Set([
 
 
 
-accessibility.get = function(strict = false) {
+accessibility.get = function (strict = false) {
   return new accessibility.Checks(!!strict);
 };
 

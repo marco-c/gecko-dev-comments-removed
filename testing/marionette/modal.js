@@ -37,7 +37,7 @@ modal = {
 
 
 
-modal.addHandler = function(handler) {
+modal.addHandler = function (handler) {
   if (!isFirefox()) {
     return;
   }
@@ -57,7 +57,7 @@ modal.addHandler = function(handler) {
 
 
 
-modal.removeHandler = function(toRemove) {
+modal.removeHandler = function (toRemove) {
   if (!isFirefox()) {
     return;
   }

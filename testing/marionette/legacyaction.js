@@ -22,7 +22,7 @@ this.action = {};
 
 
 
-action.Chain = function(checkForInterrupted) {
+action.Chain = function (checkForInterrupted) {
   
   this.nextTouchId = 1000;
   
@@ -45,7 +45,7 @@ action.Chain = function(checkForInterrupted) {
   this.inputSource = null;
 };
 
-action.Chain.prototype.dispatchActions = function(
+action.Chain.prototype.dispatchActions = function (
     args,
     touchId,
     container,
@@ -98,7 +98,7 @@ action.Chain.prototype.dispatchActions = function(
 
 
 
-action.Chain.prototype.emitMouseEvent = function(
+action.Chain.prototype.emitMouseEvent = function (
     doc,
     type,
     elClientX,
@@ -167,7 +167,7 @@ action.Chain.prototype.resetValues = function() {
 
 
 
-action.Chain.prototype.actions = function(chain, touchId, i, keyModifiers, cb) {
+action.Chain.prototype.actions = function (chain, touchId, i, keyModifiers, cb) {
   if (i == chain.length) {
     cb(touchId || null);
     this.resetValues();
@@ -317,7 +317,7 @@ action.Chain.prototype.actions = function(chain, touchId, i, keyModifiers, cb) {
 
 
 
-action.Chain.prototype.getCoordinateInfo = function(el, corx, cory) {
+action.Chain.prototype.getCoordinateInfo = function (el, corx, cory) {
   let win = el.ownerDocument.defaultView;
   return [
     corx, 
@@ -337,7 +337,7 @@ action.Chain.prototype.getCoordinateInfo = function(el, corx, cory) {
 
 
 
-action.Chain.prototype.generateEvents = function(
+action.Chain.prototype.generateEvents = function (
     type, x, y, touchId, target, keyModifiers) {
   this.lastCoordinates = [x, y];
   let doc = this.container.frame.document;
@@ -470,7 +470,7 @@ action.Chain.prototype.generateEvents = function(
   this.checkForInterrupted();
 };
 
-action.Chain.prototype.mouseTap = function(doc, x, y, button, count, mod) {
+action.Chain.prototype.mouseTap = function (doc, x, y, button, count, mod) {
   this.emitMouseEvent(doc, "mousemove", x, y, button, count, mod);
   this.emitMouseEvent(doc, "mousedown", x, y, button, count, mod);
   this.emitMouseEvent(doc, "mouseup", x, y, button, count, mod);

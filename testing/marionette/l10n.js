@@ -42,7 +42,7 @@ this.l10n = {};
 
 
 
-l10n.localizeEntity = function(urls, id) {
+l10n.localizeEntity = function (urls, id) {
   
   urls.push("resource:///res/dtd/xhtml11.dtd");
 
@@ -79,7 +79,7 @@ l10n.localizeEntity = function(urls, id) {
 
 
 
-l10n.localizeProperty = function(urls, id) {
+l10n.localizeProperty = function (urls, id) {
   let property = null;
 
   for (let url of urls) {

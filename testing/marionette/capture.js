@@ -29,7 +29,7 @@ this.capture = {};
 
 
 
-capture.element = function(node, highlights=[]) {
+capture.element = function (node, highlights=[]) {
   let doc = node.ownerDocument;
   let win = doc.defaultView;
   let rect = node.getBoundingClientRect();
@@ -57,7 +57,7 @@ capture.element = function(node, highlights=[]) {
 
 
 
-capture.viewport = function(document, highlights=[]) {
+capture.viewport = function (document, highlights=[]) {
   let win = document.defaultView;
   let docEl = document.documentElement;
 
@@ -92,7 +92,7 @@ capture.viewport = function(document, highlights=[]) {
 
 
 
-capture.canvas = function(document, left, top, width, height, highlights=[]) {
+capture.canvas = function (document, left, top, width, height, highlights=[]) {
   let win = document.defaultView;
 
   let canvas = document.createElementNS(XHTML_NS, "canvas");
@@ -106,7 +106,7 @@ capture.canvas = function(document, left, top, width, height, highlights=[]) {
   return canvas;
 };
 
-capture.highlight_ = function(context, highlights, top=0, left=0) {
+capture.highlight_ = function (context, highlights, top=0, left=0) {
   if (!highlights) {
     return;
   }
@@ -139,7 +139,7 @@ capture.highlight_ = function(context, highlights, top=0, left=0) {
 
 
 
-capture.toBase64 = function(canvas) {
+capture.toBase64 = function (canvas) {
   let u = canvas.toDataURL(PNG_MIME);
   return u.substring(u.indexOf(",") + 1);
 };
@@ -153,7 +153,7 @@ capture.toBase64 = function(canvas) {
 
 
 
-capture.toHash = function(canvas) {
+capture.toHash = function (canvas) {
   let u = capture.toBase64(canvas);
   let buffer = new TextEncoder("utf-8").encode(u);
   return crypto.subtle.digest("SHA-256", buffer).then(hash => hex(hash));

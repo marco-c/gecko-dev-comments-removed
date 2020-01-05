@@ -44,7 +44,7 @@ this.proxy = {};
 
 
 
-proxy.toListener = function(mmFn, sendAsyncFn) {
+proxy.toListener = function (mmFn, sendAsyncFn) {
   let sender = new proxy.AsyncMessageChannel(mmFn, sendAsyncFn);
   return new Proxy(sender, ownPriorityGetterTrap);
 };
@@ -255,7 +255,7 @@ proxy.AsyncMessageChannel.ReplyType = {
 
 
 
-proxy.toChromeAsync = function(frameMessageManager) {
+proxy.toChromeAsync = function (frameMessageManager) {
   let sender = new AsyncChromeSender(frameMessageManager);
   return new Proxy(sender, ownPriorityGetterTrap);
 };
@@ -334,7 +334,7 @@ this.AsyncChromeSender = class {
 
 
 
-proxy.toChrome = function(sendSyncMessageFn) {
+proxy.toChrome = function (sendSyncMessageFn) {
   let sender = new proxy.SyncChromeSender(sendSyncMessageFn);
   return new Proxy(sender, ownPriorityGetterTrap);
 };
@@ -360,7 +360,7 @@ proxy.SyncChromeSender = class {
   }
 };
 
-var marshal = function(args) {
+var marshal = function (args) {
   if (args.length == 1 && typeof args[0] == "object") {
     return args[0];
   }
