@@ -171,6 +171,12 @@ GPUChild::ActorDestroy(ActorDestroyReason aWhy)
 #endif
     Telemetry::Accumulate(Telemetry::SUBPROCESS_ABNORMAL_ABORT,
         nsDependentCString(XRE_ChildProcessTypeToString(GeckoProcessType_GPU), 1));
+
+    
+    if (nsCOMPtr<nsIObserverService> obsvc = services::GetObserverService()) {
+      obsvc->NotifyObservers(nullptr, "compositor:process-aborted", nullptr);
+    }
+
   }
 
   gfxVars::RemoveReceiver(this);
