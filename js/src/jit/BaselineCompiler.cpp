@@ -2184,15 +2184,18 @@ bool
 BaselineCompiler::emit_JSOP_INITPROP()
 {
     
-    frame.popRegsAndSync(2);
-
-    
-    frame.push(R0);
     frame.syncStack(0);
+    masm.loadValue(frame.addressOfStackValue(frame.peek(-2)), R0);
+    masm.loadValue(frame.addressOfStackValue(frame.peek(-1)), R1);
 
     
     ICSetProp_Fallback::Compiler compiler(cx);
-    return emitOpIC(compiler.getStub(&stubSpace_));
+    if (!emitOpIC(compiler.getStub(&stubSpace_)))
+        return false;
+
+    
+    frame.pop();
+    return true;
 }
 
 bool
@@ -2419,12 +2422,14 @@ BaselineCompiler::emit_JSOP_SETPROP()
     frame.popRegsAndSync(2);
 
     
+    frame.push(R1);
+    frame.syncStack(0);
+
+    
     ICSetProp_Fallback::Compiler compiler(cx);
     if (!emitOpIC(compiler.getStub(&stubSpace_)))
         return false;
 
-    
-    frame.push(R0);
     return true;
 }
 
@@ -2587,8 +2592,8 @@ BaselineCompiler::emit_JSOP_SETALIASEDVAR()
         
 
         
-        frame.syncStack(1);
-        frame.popValue(R1);
+        frame.syncStack(0);
+        masm.loadValue(frame.addressOfStackValue(frame.peek(-1)), R1);
 
         
         getEnvironmentCoordinateObject(R2.scratchReg());
@@ -2599,8 +2604,6 @@ BaselineCompiler::emit_JSOP_SETALIASEDVAR()
         if (!emitOpIC(compiler.getStub(&stubSpace_)))
             return false;
 
-        
-        frame.push(R0);
         return true;
     }
 

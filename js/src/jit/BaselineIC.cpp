@@ -2875,8 +2875,8 @@ TryAttachTypedObjectSetPropStub(JSContext* cx, HandleScript script,
 }
 
 static bool
-DoSetPropFallback(JSContext* cx, BaselineFrame* frame, ICSetProp_Fallback* stub_,
-                  HandleValue lhs, HandleValue rhs, MutableHandleValue res)
+DoSetPropFallback(JSContext* cx, BaselineFrame* frame, ICSetProp_Fallback* stub_, Value* stack,
+                  HandleValue lhs, HandleValue rhs)
 {
     
     DebugModeOSRVolatileStub<ICSetProp_Fallback*> stub(frame, stub_);
@@ -2970,7 +2970,8 @@ DoSetPropFallback(JSContext* cx, BaselineFrame* frame, ICSetProp_Fallback* stub_
     }
 
     
-    res.set(rhs);
+    MOZ_ASSERT(stack[1] == lhs);
+    stack[1] = rhs;
 
     
     if (stub.invalid())
@@ -3016,11 +3017,11 @@ DoSetPropFallback(JSContext* cx, BaselineFrame* frame, ICSetProp_Fallback* stub_
     return true;
 }
 
-typedef bool (*DoSetPropFallbackFn)(JSContext*, BaselineFrame*, ICSetProp_Fallback*,
-                                    HandleValue, HandleValue, MutableHandleValue);
+typedef bool (*DoSetPropFallbackFn)(JSContext*, BaselineFrame*, ICSetProp_Fallback*, Value*,
+                                    HandleValue, HandleValue);
 static const VMFunction DoSetPropFallbackInfo =
     FunctionInfo<DoSetPropFallbackFn>(DoSetPropFallback, "DoSetPropFallback", TailCall,
-                                      PopValues(2));
+                                      PopValues(1));
 
 bool
 ICSetProp_Fallback::Compiler::generateStubCode(MacroAssembler& masm)
@@ -3031,12 +3032,21 @@ ICSetProp_Fallback::Compiler::generateStubCode(MacroAssembler& masm)
     EmitRestoreTailCallReg(masm);
 
     
-    masm.pushValue(R0);
+    
+    
+    masm.storeValue(R0, Address(masm.getStackPointer(), 0));
     masm.pushValue(R1);
 
     
     masm.pushValue(R1);
     masm.pushValue(R0);
+
+    
+    
+    masm.computeEffectiveAddress(Address(masm.getStackPointer(), 2 * sizeof(Value)),
+                                 R0.scratchReg());
+    masm.push(R0.scratchReg());
+
     masm.push(ICStubReg);
     pushStubPayload(masm, R0.scratchReg());
 
@@ -3058,9 +3068,6 @@ ICSetProp_Fallback::Compiler::generateStubCode(MacroAssembler& masm)
     returnOffset_ = masm.currentOffset();
 
     leaveStubFrame(masm, true);
-
-    
-    EmitUnstowICValues(masm, 1);
     EmitReturnFromIC(masm);
 
     return true;
@@ -3163,8 +3170,6 @@ ICSetProp_Native::Compiler::generateStubCode(MacroAssembler& masm)
         regs.add(scr);
     }
 
-    
-    masm.moveValue(R1, R0);
     EmitReturnFromIC(masm);
 
     
@@ -3321,8 +3326,6 @@ ICSetPropNativeAddCompiler::generateStubCode(MacroAssembler& masm)
         emitPostWriteBarrierSlot(masm, objReg, R1, scr, saveRegs);
     }
 
-    
-    masm.moveValue(R1, R0);
     EmitReturnFromIC(masm);
 
     
@@ -3387,9 +3390,6 @@ ICSetProp_Unboxed::Compiler::generateStubCode(MacroAssembler& masm)
     EmitUnboxedPreBarrierForBaseline(masm, address, fieldType_);
     masm.storeUnboxedProperty(address, fieldType_,
                               ConstantOrRegister(TypedOrValueRegister(R1)), &failure);
-
-    
-    masm.moveValue(R1, R0);
 
     EmitReturnFromIC(masm);
 
@@ -3510,8 +3510,6 @@ ICSetProp_TypedObject::Compiler::generateStubCode(MacroAssembler& masm)
         }
     }
 
-    
-    masm.moveValue(R1, R0);
     EmitReturnFromIC(masm);
 
     masm.bind(&failurePopRHS);
@@ -3614,7 +3612,6 @@ ICSetProp_CallScripted::Compiler::generateStubCode(MacroAssembler& masm)
     
     
     EmitUnstowICValues(masm, 2);
-    masm.moveValue(R1, R0);
     EmitReturnFromIC(masm);
 
     
@@ -3708,7 +3705,6 @@ ICSetProp_CallNative::Compiler::generateStubCode(MacroAssembler& masm)
     
     
     EmitUnstowICValues(masm, 2);
-    masm.moveValue(R1, R0);
     EmitReturnFromIC(masm);
 
     

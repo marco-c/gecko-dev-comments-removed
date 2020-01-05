@@ -908,8 +908,6 @@ InitFromBailout(JSContext* cx, HandleScript caller, jsbytecode* callerPC,
                 
                 
                 
-                
-                
                 Value initialArg = savedCallerArgs[inlined_args - 1];
                 JitSpew(JitSpew_BaselineBailouts, "     pushing setter's initial argument");
                 if (!builder.writeValue(initialArg, "StackValue"))
