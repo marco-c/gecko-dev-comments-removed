@@ -1278,7 +1278,9 @@ private:
       return aSampleTime <= currentTime;
     });
 
-    if (!IsVideoRequestPending() && NeedMoreVideo()) {
+    if (NeedMoreVideo() &&
+        !Reader()->IsRequestingVideoData() &&
+        !Reader()->IsWaitingVideoData()) {
       RequestVideoData();
     }
 
@@ -1449,11 +1451,6 @@ private:
     
     return VideoQueue().GetSize() == 0 &&
            !VideoQueue().IsFinished();
-  }
-
-  bool IsVideoRequestPending() const
-  {
-    return Reader()->IsRequestingVideoData() || Reader()->IsWaitingVideoData();
   }
 
   
