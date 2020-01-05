@@ -299,8 +299,6 @@ IonBuilder::inlineNativeCall(CallInfo& callInfo, JSFunction* target)
         return inlineHasClass(callInfo, &SetIteratorObject::class_);
       case InlinableNative::IntrinsicIsStringIterator:
         return inlineHasClass(callInfo, &StringIteratorObject::class_);
-      case InlinableNative::IntrinsicDefineDataProperty:
-        return inlineDefineDataProperty(callInfo);
       case InlinableNative::IntrinsicObjectHasPrototype:
         return inlineObjectHasPrototype(callInfo);
 
@@ -2118,38 +2116,6 @@ IonBuilder::inlineObjectCreate(CallInfo& callInfo)
     MOZ_TRY(newObjectTryTemplateObject(&emitted, templateObject));
 
     MOZ_ASSERT(emitted);
-    return InliningStatus_Inlined;
-}
-
-IonBuilder::InliningResult
-IonBuilder::inlineDefineDataProperty(CallInfo& callInfo)
-{
-    MOZ_ASSERT(!callInfo.constructing());
-
-    
-    if (callInfo.argc() != 3)
-        return InliningStatus_NotInlined;
-
-    MDefinition* obj = convertUnboxedObjects(callInfo.getArg(0));
-    MDefinition* id = callInfo.getArg(1);
-    MDefinition* value = callInfo.getArg(2);
-
-    bool hasExtraIndexedProperty;
-    MOZ_TRY_VAR(hasExtraIndexedProperty, ElementAccessHasExtraIndexedProperty(this, obj));
-    if (hasExtraIndexedProperty)
-        return InliningStatus_NotInlined;
-
-    
-    
-    
-    MOZ_ASSERT(*GetNextPc(pc) == JSOP_POP);
-
-    bool emitted = false;
-    MOZ_TRY(setElemTryDense(&emitted, obj, id, value,  true));
-    if (!emitted)
-        return InliningStatus_NotInlined;
-
-    callInfo.setImplicitlyUsedUnchecked();
     return InliningStatus_Inlined;
 }
 

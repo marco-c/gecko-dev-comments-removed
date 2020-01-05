@@ -8985,6 +8985,35 @@ BytecodeEmitter::emitSelfHostedAllowContentIter(ParseNode* pn)
 }
 
 bool
+BytecodeEmitter::emitSelfHostedDefineDataProperty(ParseNode* pn)
+{
+    
+    MOZ_ASSERT(pn->pn_count == 4);
+
+    ParseNode* funNode = pn->pn_head;  
+
+    ParseNode* objNode = funNode->pn_next;
+    if (!emitTree(objNode))
+        return false;
+
+    ParseNode* idNode = objNode->pn_next;
+    if (!emitTree(idNode))
+        return false;
+
+    ParseNode* valNode = idNode->pn_next;
+    if (!emitTree(valNode))
+        return false;
+
+    
+    
+    
+    if (!emit1(JSOP_INITELEM))
+        return false;
+
+    return true;
+}
+
+bool
 BytecodeEmitter::isRestParameter(ParseNode* pn, bool* result)
 {
     if (!sc->isFunctionBox()) {
@@ -9112,6 +9141,8 @@ BytecodeEmitter::emitCallOrNew(ParseNode* pn)
                 return emitSelfHostedForceInterpreter(pn);
             if (pn2->name() == cx->names().allowContentIter)
                 return emitSelfHostedAllowContentIter(pn);
+            if (pn2->name() == cx->names().defineDataPropertyIntrinsic && pn->pn_count == 4)
+                return emitSelfHostedDefineDataProperty(pn);
             
         }
         if (!emitGetName(pn2, callop))
