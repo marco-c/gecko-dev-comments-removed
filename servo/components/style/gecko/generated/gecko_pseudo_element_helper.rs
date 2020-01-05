@@ -109,11 +109,8 @@
     pseudo_element!(":-moz-first-letter-continuation",
                     atom!(":-moz-first-letter-continuation"),
                     true);
-    pseudo_element!(":-moz-anonymous-block",
-                    atom!(":-moz-anonymous-block"),
-                    true);
-    pseudo_element!(":-moz-anonymous-positioned-block",
-                    atom!(":-moz-anonymous-positioned-block"),
+    pseudo_element!(":-moz-block-inside-inline-wrapper",
+                    atom!(":-moz-block-inside-inline-wrapper"),
                     true);
     pseudo_element!(":-moz-mathml-anonymous-block",
                     atom!(":-moz-mathml-anonymous-block"),
