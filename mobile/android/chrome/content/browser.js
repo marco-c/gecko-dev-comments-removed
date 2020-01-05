@@ -3483,12 +3483,14 @@ Tab.prototype = {
       }
 
       this.desktopMode = ("desktopMode" in aParams) ? aParams.desktopMode : false;
+      this.parentId = ("parentId" in aParams && typeof aParams.parentId == "number")
+                      ? aParams.parentId : -1;
 
       let message = {
         type: "Tab:Added",
         tabID: this.id,
         uri: truncate(uri, MAX_URI_LENGTH),
-        parentId: ("parentId" in aParams) ? aParams.parentId : -1,
+        parentId: this.parentId,
         tabIndex: ("tabIndex" in aParams) ? aParams.tabIndex : -1,
         external: ("external" in aParams) ? aParams.external : false,
         selected: ("selected" in aParams || aParams.cancelEditMode === true)
@@ -3547,7 +3549,9 @@ Tab.prototype = {
       }],
       index: 1,
       desktopMode: this.desktopMode,
-      isPrivate: isPrivate
+      isPrivate: isPrivate,
+      tabId: this.id,
+      parentId: this.parentId
     };
 
     if (aParams.delayLoad) {
