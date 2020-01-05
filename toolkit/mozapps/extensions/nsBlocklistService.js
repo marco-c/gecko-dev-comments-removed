@@ -34,12 +34,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "ServiceRequest",
 XPCOMUtils.defineLazyModuleGetter(this, "Task",
                                   "resource://gre/modules/Task.jsm");
 
-
-
-const BlocklistUpdater = {};
-XPCOMUtils.defineLazyModuleGetter(BlocklistUpdater, "checkVersions",
-                                  "resource://services-common/blocklist-updater.js");
-
 const TOOLKIT_ID                      = "toolkit@mozilla.org";
 const KEY_PROFILEDIR                  = "ProfD";
 const KEY_APPDIR                      = "XCurProcD";
@@ -608,9 +602,12 @@ Blocklist.prototype = {
       this._loadBlocklist();
 
     
-    
     if (gPref.getBoolPref(PREF_BLOCKLIST_UPDATE_ENABLED)) {
-      BlocklistUpdater.checkVersions().catch(() => {
+      const updater =
+        Components.utils.import("resource://services-common/blocklist-updater.js",
+                                {});
+      updater.checkVersions().catch(() => {
+        
         
       });
     }
