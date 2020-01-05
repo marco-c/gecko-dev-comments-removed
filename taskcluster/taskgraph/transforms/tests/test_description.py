@@ -66,7 +66,10 @@ test_description_schema = Schema({
     ),
 
     
-    Optional('tier'): int,
+    Optional('tier'): Any(
+        int,
+        {'by-test-platform': {basestring: int}},
+    ),
 
     
     
