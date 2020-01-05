@@ -447,9 +447,10 @@ struct JSCompartment
     
     
     
-    JS::GCHashSet<JSAtom*,
-                  js::DefaultHasher<JSAtom*>,
-                  js::SystemAllocPolicy> varNames_;
+    using VarNameSet = JS::GCHashSet<JSAtom*,
+                                     js::DefaultHasher<JSAtom*>,
+                                     js::SystemAllocPolicy>;
+    JS::WeakCache<VarNameSet> varNames_;
 
   public:
     
@@ -683,7 +684,7 @@ struct JSCompartment
     MOZ_MUST_USE bool addToVarNames(JSContext* cx, JS::Handle<JSAtom*> name);
 
     void removeFromVarNames(JS::Handle<JSAtom*> name) {
-        varNames_.remove(name);
+        varNames_.get().remove(name);
     }
 
     
