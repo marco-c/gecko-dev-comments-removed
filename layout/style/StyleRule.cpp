@@ -1474,12 +1474,6 @@ StyleRule::GetDOMRule()
   return mDOMRule;
 }
 
- nsIDOMCSSRule*
-StyleRule::GetExistingDOMRule()
-{
-  return mDOMRule;
-}
-
 void
 StyleRule::SetDeclaration(Declaration* aDecl)
 {
