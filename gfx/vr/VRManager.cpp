@@ -94,6 +94,10 @@ VRManager::VRManager()
       mManagers.AppendElement(mgr);
   }
 #endif
+  
+  if (gfxPrefs::VREnabled()) {
+    Preferences::SetBool("dom.gamepad.extensions.enabled", true);
+  }
 }
 
 VRManager::~VRManager()
