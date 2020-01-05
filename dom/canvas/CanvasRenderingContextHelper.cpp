@@ -65,16 +65,6 @@ CanvasRenderingContextHelper::ToBlob(JSContext* aCx,
     RefPtr<BlobCallback> mBlobCallback;
   };
 
-   nsIntSize elemSize = GetWidthHeight();
-   if (elemSize.width == 0 || elemSize.height == 0) {
-     
-     
-     
-     BlobCallback* blobCallback = &aCallback;
-     blobCallback->Call(nullptr, aRv);
-     return;
-   }
-
   RefPtr<EncodeCompleteCallback> callback =
     new EncodeCallback(aGlobal, &aCallback);
 

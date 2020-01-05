@@ -837,6 +837,21 @@ HTMLCanvasElement::ToBlob(JSContext* aCx,
   nsCOMPtr<nsIGlobalObject> global = OwnerDoc()->GetScopeObject();
   MOZ_ASSERT(global);
 
+  nsIntSize elemSize = GetWidthHeight();
+  if (elemSize.width == 0 || elemSize.height == 0) {
+    
+    
+    
+    OwnerDoc()->Dispatch("FireNullBlobEvent",
+                  TaskCategory::Other,
+                  NewRunnableMethod<Blob*, const char*>(
+                          &aCallback,
+                          static_cast<void(BlobCallback::*)(
+                            Blob*, const char*)>(&BlobCallback::Call),
+                          nullptr, nullptr));
+    return;
+  }
+
   CanvasRenderingContextHelper::ToBlob(aCx, global, aCallback, aType,
                                        aParams, aRv);
 
