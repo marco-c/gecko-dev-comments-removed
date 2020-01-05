@@ -121,12 +121,16 @@ nsTimer::Release(void)
   NS_LOG_RELEASE(this, count, "nsTimer");
 
   if (count == 1) {
-    
-    
-    
-    
-    mImpl->Cancel();
-    mImpl = nullptr;
+    if (!mImpl->CancelCheckIfFiring()) {
+      
+      
+      
+      
+      
+      
+      
+      mImpl = nullptr;
+    }
   } else if (count == 0) {
     delete this;
   }
@@ -307,8 +311,8 @@ nsTimerImpl::Init(nsIObserver* aObserver, uint32_t aDelay, uint32_t aType)
   return InitCommon(aDelay, aType);
 }
 
-nsresult
-nsTimerImpl::Cancel()
+bool
+nsTimerImpl::CancelCheckIfFiring()
 {
   Callback cb;
 
@@ -321,6 +325,16 @@ nsTimerImpl::Cancel()
   cb.swap(mCallback);
   ++mGeneration;
 
+  if (mCallbackDuringFire.mType != Callback::Type::Unknown) {
+    return true;
+  }
+  return false;
+}
+
+nsresult
+nsTimerImpl::Cancel()
+{
+  (void)CancelCheckIfFiring();
   return NS_OK;
 }
 
