@@ -227,6 +227,14 @@ impl Atom {
     }
 
     
+    #[inline]
+    pub fn into_addrefed(self) -> *mut nsIAtom {
+        let ptr = self.as_ptr();
+        mem::forget(self);
+        ptr
+    }
+
+    
     pub fn eq_ignore_ascii_case(&self, other: &Self) -> bool {
         let a = self.as_slice();
         let b = other.as_slice();

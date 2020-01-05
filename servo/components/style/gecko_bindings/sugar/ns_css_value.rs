@@ -135,6 +135,11 @@ impl nsCSSValue {
     }
 
     
+    pub fn set_atom_ident(&mut self, s: Atom) {
+        unsafe { bindings::Gecko_CSSValue_SetAtomIdent(self, s.into_addrefed()) }
+    }
+
+    
     pub fn set_font_format(&mut self, s: &str) {
         self.set_string_internal(s, nsCSSUnit::eCSSUnit_Font_Format);
     }
