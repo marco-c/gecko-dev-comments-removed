@@ -618,6 +618,20 @@ IsInAutomation()
         AreNonLocalConnectionsDisabled();
 }
 
+void
+CreateCooperativeContext();
+
+void
+DestroyCooperativeContext();
+
+
+void
+YieldCooperativeContext();
+
+
+void
+ResumeCooperativeContext();
+
 } 
 
 namespace mozilla {
