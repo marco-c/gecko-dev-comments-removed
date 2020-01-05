@@ -91,9 +91,7 @@ impl ScriptListener for Box<CompositorProxy+'static+Send> {
     }
 
     fn send_key_event(&mut self, key: Key, state: KeyState, modifiers: KeyModifiers) {
-        if state == KeyState::Pressed {
-            self.send(Msg::KeyEvent(key, modifiers));
-        }
+        self.send(Msg::KeyEvent(key, state, modifiers));
     }
 }
 
@@ -218,7 +216,7 @@ pub enum Msg {
     
     ScrollTimeout(u64),
     
-    KeyEvent(Key, KeyModifiers),
+    KeyEvent(Key, KeyState, KeyModifiers),
     
     SetCursor(Cursor),
     
