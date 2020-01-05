@@ -5,7 +5,6 @@
 "use strict";
 
 const Services = require("Services");
-const EventEmitter = require("devtools/shared/event-emitter");
 const { TimelineFront } = require("devtools/shared/fronts/timeline");
 const { CurlUtils } = require("devtools/client/shared/curl");
 const { ACTIVITY_TYPE, EVENTS } = require("./constants");
@@ -891,14 +890,6 @@ NetworkEventsHandler.prototype = {
     return this.webConsoleClient.getString(stringGrip);
   }
 };
-
-
-
-
-EventEmitter.decorate(window);
-
-
-
 
 NetMonitorController.TargetEventsHandler = new TargetEventsHandler();
 NetMonitorController.NetworkEventsHandler = new NetworkEventsHandler();
