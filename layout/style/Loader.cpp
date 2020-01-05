@@ -252,7 +252,7 @@ public:
   
   
   
-  nsresult                              mStatus;
+  MOZ_INIT_OUTSIDE_CTOR nsresult        mStatus;
 
 private:
   void FireLoadEvent(nsIThreadInternal* aThread);
