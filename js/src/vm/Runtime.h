@@ -54,6 +54,7 @@
 #include "vm/Stack.h"
 #include "vm/Stopwatch.h"
 #include "vm/Symbol.h"
+#include "wasm/WasmRuntime.h"
 
 #ifdef _MSC_VER
 #pragma warning(push)
@@ -533,6 +534,13 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
 
     
     js::UnprotectedData<JS::AsmJSCacheOps> asmJSCacheOps;
+
+  private:
+    
+    js::ActiveThreadData<js::wasm::Runtime> wasmRuntime_;
+
+  public:
+    js::wasm::Runtime& wasm() { return wasmRuntime_.ref(); }
 
   private:
     js::UnprotectedData<const JSPrincipals*> trustedPrincipals_;

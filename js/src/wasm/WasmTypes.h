@@ -97,7 +97,6 @@ typedef int32_t I32x4[4];
 typedef float F32x4[4];
 
 class Code;
-class CodeRange;
 class GlobalSegment;
 class Memory;
 class Module;
@@ -819,6 +818,120 @@ struct FuncOffsets : CallableOffsets
         normalEntry += offset;
     }
 };
+
+
+
+
+
+class CodeRange
+{
+  public:
+    enum Kind {
+        Function,          
+        Entry,             
+        ImportJitExit,     
+        ImportInterpExit,  
+        ImportNativeExit,  
+        TrapExit,          
+        DebugTrap,         
+        FarJumpIsland,     
+        Inline,            
+        Throw,             
+        Interrupt          
+    };
+
+  private:
+    
+    uint32_t begin_;
+    uint32_t ret_;
+    uint32_t end_;
+    uint32_t funcIndex_;
+    uint32_t funcLineOrBytecode_;
+    uint8_t funcBeginToNormalEntry_;
+    Kind kind_ : 8;
+
+  public:
+    CodeRange() = default;
+    CodeRange(Kind kind, Offsets offsets);
+    CodeRange(Kind kind, CallableOffsets offsets);
+    CodeRange(uint32_t funcIndex, uint32_t lineOrBytecode, FuncOffsets offsets);
+
+    
+
+    uint32_t begin() const {
+        return begin_;
+    }
+    uint32_t end() const {
+        return end_;
+    }
+
+    
+
+    Kind kind() const {
+        return kind_;
+    }
+
+    bool isFunction() const {
+        return kind() == Function;
+    }
+    bool isImportExit() const {
+        return kind() == ImportJitExit || kind() == ImportInterpExit || kind() == ImportNativeExit;
+    }
+    bool isTrapExit() const {
+        return kind() == TrapExit;
+    }
+    bool isInline() const {
+        return kind() == Inline;
+    }
+    bool isThunk() const {
+        return kind() == FarJumpIsland;
+    }
+
+    
+    
+    
+
+    uint32_t ret() const {
+        MOZ_ASSERT(isFunction() || isImportExit() || isTrapExit());
+        return ret_;
+    }
+
+    
+    
+    
+
+    uint32_t funcTableEntry() const {
+        MOZ_ASSERT(isFunction());
+        return begin_;
+    }
+    uint32_t funcNormalEntry() const {
+        MOZ_ASSERT(isFunction());
+        return begin_ + funcBeginToNormalEntry_;
+    }
+    uint32_t funcIndex() const {
+        MOZ_ASSERT(isFunction());
+        return funcIndex_;
+    }
+    uint32_t funcLineOrBytecode() const {
+        MOZ_ASSERT(isFunction());
+        return funcLineOrBytecode_;
+    }
+
+    
+
+    struct PC {
+        size_t offset;
+        explicit PC(size_t offset) : offset(offset) {}
+        bool operator==(const CodeRange& rhs) const {
+            return offset >= rhs.begin() && offset < rhs.end();
+        }
+        bool operator<(const CodeRange& rhs) const {
+            return offset < rhs.begin();
+        }
+    };
+};
+
+WASM_DECLARE_POD_VECTOR(CodeRange, CodeRangeVector)
 
 
 

@@ -161,6 +161,14 @@ struct ImmPtr
 {
     void* value;
 
+    struct NoCheckToken {};
+
+    explicit ImmPtr(void* value, NoCheckToken) : value(value)
+    {
+        
+        
+    }
+
     explicit ImmPtr(const void* value) : value(const_cast<void*>(value))
     {
         
@@ -202,7 +210,6 @@ struct ImmPtr
     {
         MOZ_ASSERT(!IsCompilingWasm());
     }
-
 };
 
 
