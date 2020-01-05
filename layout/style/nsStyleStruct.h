@@ -312,6 +312,12 @@ private:
 
 
 
+
+
+
+
+
+
 class nsStyleImageRequest
 {
 public:
@@ -367,6 +373,13 @@ private:
   RefPtr<imgRequestProxy> mRequestProxy;
   RefPtr<mozilla::css::ImageValue> mImageValue;
   RefPtr<mozilla::dom::ImageTracker> mImageTracker;
+
+  
+  
+  
+  
+  mozilla::PtrHandle<nsIURI> mBaseURI;
+  RefPtr<nsStringBuffer> mURIString;
 
   Mode mModeFlags;
   bool mResolved;
