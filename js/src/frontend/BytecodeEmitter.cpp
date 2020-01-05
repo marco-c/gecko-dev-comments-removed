@@ -4514,6 +4514,76 @@ BytecodeEmitter::emitDestructuringOpsArrayHelper(ParseNode* pattern, Destructuri
     MOZ_ASSERT(this->stackDepth != 0);
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
 
 
 
@@ -4524,19 +4594,36 @@ BytecodeEmitter::emitDestructuringOpsArrayHelper(ParseNode* pattern, Destructuri
     bool needToPopIterator = true;
 
     for (ParseNode* member = pattern->pn_head; member; member = member->pn_next) {
-        
+        bool isHead = member == pattern->pn_head;
+        if (member->isKind(PNK_SPREAD)) {
+            JumpList beq;
+            JumpList end;
+            unsigned noteIndex = -1;
+            if (!isHead) {
+                
+                
+                if (!newSrcNote(SRC_IF_ELSE, &noteIndex))
+                    return false;
+                if (!emitJump(JSOP_IFEQ, &beq))                   
+                    return false;
 
+                int32_t depth = stackDepth;
+                if (!emit1(JSOP_POP))                             
+                    return false;
+                if (!emitUint32Operand(JSOP_NEWARRAY, 0))         
+                    return false;
 
+                if (!emitDestructuringLHS(member, flav))          
+                    return false;
 
+                if (!emitJump(JSOP_GOTO, &end))
+                    return false;
+                if (!emitJumpTargetAndPatch(beq))
+                    return false;
+                stackDepth = depth;
+            }
 
-        ParseNode* pndefault = nullptr;
-        ParseNode* elem = member;
-        if (elem->isKind(PNK_ASSIGN)) {
-            pndefault = elem->pn_right;
-            elem = elem->pn_left;
-        }
-
-        if (elem->isKind(PNK_SPREAD)) {
+            
             
             if (!emitUint32Operand(JSOP_NEWARRAY, 0))             
                 return false;
@@ -4546,68 +4633,136 @@ BytecodeEmitter::emitDestructuringOpsArrayHelper(ParseNode* pattern, Destructuri
                 return false;
             if (!emit1(JSOP_POP))                                 
                 return false;
+            if (!emitDestructuringLHS(member, flav))              
+                return false;
+
+            if (!isHead) {
+                if (!emitJumpTargetAndPatch(end))
+                    return false;
+                if (!setSrcNoteOffset(noteIndex, 0, end.offset - beq.offset))
+                    return false;
+            }
             needToPopIterator = false;
+            MOZ_ASSERT(!member->pn_next);
+            break;
+        }
+
+        ParseNode* pndefault = nullptr;
+        ParseNode* subpattern = member;
+        if (subpattern->isKind(PNK_ASSIGN)) {
+            pndefault = subpattern->pn_right;
+            subpattern = subpattern->pn_left;
+        }
+
+        bool isElision = subpattern->isKind(PNK_ELISION);
+        bool hasNextNonSpread = member->pn_next && !member->pn_next->isKind(PNK_SPREAD);
+        bool hasNextSpread = member->pn_next && member->pn_next->isKind(PNK_SPREAD);
+
+        MOZ_ASSERT(!subpattern->isKind(PNK_SPREAD));
+
+        auto emitNext = [pattern](ExclusiveContext* cx, BytecodeEmitter* bce) {
+            if (!bce->emit1(JSOP_DUP))                            
+                return false;
+            if (!bce->emitIteratorNext(pattern))                  
+                return false;
+            if (!bce->emit1(JSOP_DUP))                            
+                return false;
+            if (!bce->emitAtomOp(cx->names().done, JSOP_GETPROP)) 
+                return false;
+            return true;
+        };
+
+        if (isHead) {
+            if (!emitNext(cx, this))                              
+                return false;
+        }
+
+        unsigned noteIndex;
+        if (!newSrcNote(SRC_IF_ELSE, &noteIndex))
+            return false;
+        JumpList beq;
+        if (!emitJump(JSOP_IFEQ, &beq))                           
+            return false;
+
+        int32_t depth = stackDepth;
+        if (!emit1(JSOP_POP))                                     
+            return false;
+        if (pndefault) {
+            
+            
+            if (!emitConditionallyExecutedTree(pndefault))        
+                return false;
         } else {
-            if (!emit1(JSOP_DUP))                                 
+            if (!isElision) {
+                if (!emit1(JSOP_UNDEFINED))                       
+                    return false;
+                if (!emit1(JSOP_NOP_DESTRUCTURING))
+                    return false;
+            }
+        }
+        if (!isElision) {
+            if (!emitDestructuringLHS(subpattern, flav))          
                 return false;
-            if (!emitIteratorNext(pattern))                       
-                return false;
-            if (!emit1(JSOP_DUP))                                 
-                return false;
-            if (!emitAtomOp(cx->names().done, JSOP_GETPROP))      
-                return false;
-
-            
-            
-            
-            unsigned noteIndex;
-            if (!newSrcNote(SRC_COND, &noteIndex))
-                return false;
-            JumpList beq;
-            if (!emitJump(JSOP_IFEQ, &beq))
-                return false;
-
+        } else if (pndefault) {
             if (!emit1(JSOP_POP))                                 
                 return false;
+        }
+
+        
+        if (hasNextNonSpread) {
             if (!emit1(JSOP_UNDEFINED))                           
                 return false;
             if (!emit1(JSOP_NOP_DESTRUCTURING))
                 return false;
-
-            
-            JumpList jmp;
-            if (!emitJump(JSOP_GOTO, &jmp))
+            if (!emit1(JSOP_TRUE))                                
                 return false;
-            if (!emitJumpTargetAndPatch(beq))
-                return false;
-
-            if (!emitAtomOp(cx->names().value, JSOP_GETPROP))     
-                return false;
-
-            if (!emitJumpTargetAndPatch(jmp))
-                return false;
-            if (!setSrcNoteOffset(noteIndex, 0, jmp.offset - beq.offset))
+        } else if (hasNextSpread) {
+            if (!emit1(JSOP_TRUE))                                
                 return false;
         }
 
-        if (pndefault && !emitDefault(pndefault))
+        JumpList end;
+        if (!emitJump(JSOP_GOTO, &end))
+            return false;
+        if (!emitJumpTargetAndPatch(beq))
             return false;
 
-        
-        ParseNode* subpattern = elem;
-        if (subpattern->isKind(PNK_ELISION)) {
-            
-            if (!emit1(JSOP_POP))                                 
+        stackDepth = depth;
+        if (!emitAtomOp(cx->names().value, JSOP_GETPROP))         
+            return false;
+
+        if (pndefault) {
+            if (!emitDefault(pndefault))                          
                 return false;
-            continue;
         }
 
-        if (!emitDestructuringLHS(subpattern, flav))
+        if (!isElision) {
+            if (!emitDestructuringLHS(subpattern, flav))          
+                return false;
+        } else {
+            if (!emit1(JSOP_POP))                                 
+                return false;
+        }
+
+        
+        if (hasNextNonSpread) {
+            if (!emitNext(cx, this))                              
+                return false;
+        } else if (hasNextSpread) {
+            if (!emit1(JSOP_FALSE))                               
+                return false;
+        }
+
+        if (!emitJumpTargetAndPatch(end))
+            return false;
+        if (!setSrcNoteOffset(noteIndex, 0, end.offset - beq.offset))
             return false;
     }
 
-    if (needToPopIterator && !emit1(JSOP_POP))
-        return false;
+    if (needToPopIterator) {
+        if (!emit1(JSOP_POP))                                     
+            return false;
+    }
 
     return true;
 }
