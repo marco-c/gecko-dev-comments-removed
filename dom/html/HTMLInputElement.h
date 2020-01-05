@@ -1084,11 +1084,6 @@ protected:
   
 
 
-  bool DoesPatternApply() const;
-
-  
-
-
   bool DoesMinMaxApply() const;
 
   
