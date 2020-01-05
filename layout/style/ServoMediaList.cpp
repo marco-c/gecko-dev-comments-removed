@@ -16,10 +16,9 @@ namespace mozilla {
 already_AddRefed<dom::MediaList>
 ServoMediaList::Clone()
 {
-  
-  
-  MOZ_ASSERT_UNREACHABLE("stylo: ServoMediaList doesn't support clone");
-  return nullptr;
+  RefPtr<ServoMediaList> clone =
+    new ServoMediaList(Servo_MediaList_DeepClone(mRawList).Consume());
+  return clone.forget();
 }
 
 ServoMediaList::ServoMediaList()
