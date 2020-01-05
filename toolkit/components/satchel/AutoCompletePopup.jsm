@@ -274,6 +274,9 @@ this.AutoCompletePopup = {
 
 
 
+
+
+
   handleEnter(aIsPopupSelection) {
     if (this.openedPopup) {
       this.sendMessageToBrowser("FormAutoComplete:HandleEnter", {
