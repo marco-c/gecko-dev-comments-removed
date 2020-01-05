@@ -194,7 +194,14 @@ nsStringBuffer::AddRef()
   
   
   
-  uint32_t count = mRefCount.fetch_add(1, std::memory_order_relaxed) + 1;
+#ifdef NS_BUILD_REFCNT_LOGGING
+  uint32_t count =
+#endif
+    mRefCount.fetch_add(1, std::memory_order_relaxed)
+#ifdef NS_BUILD_REFCNT_LOGGING
+    + 1
+#endif
+    ;
   STRING_STAT_INCREMENT(Share);
   NS_LOG_ADDREF(this, count, "nsStringBuffer", sizeof(*this));
 }
