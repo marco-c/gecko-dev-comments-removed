@@ -35,7 +35,7 @@ this.SessionHistory = Object.freeze({
   },
 
   restore(docShell, tabData) {
-    SessionHistoryInternal.restore(docShell, tabData);
+    return SessionHistoryInternal.restore(docShell, tabData);
   }
 });
 
@@ -276,6 +276,7 @@ var SessionHistoryInternal = {
 
 
 
+
   restore(docShell, tabData) {
     let webNavigation = docShell.QueryInterface(Ci.nsIWebNavigation);
     let history = webNavigation.sessionHistory;
@@ -300,6 +301,7 @@ var SessionHistoryInternal = {
     if (index < history.count && history.index != index) {
       history.getEntryAtIndex(index, true);
     }
+    return history;
   },
 
   
