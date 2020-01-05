@@ -1553,9 +1553,9 @@ var gViewController = {
         
         
         if (Preferences.get("browser.preferences.useOldOrganization", false)) {
-          mainWindow.openAdvancedPreferences("dataChoicesTab", {origin: "experimentsOpenPref"});
+          mainWindow.openAdvancedPreferences("dataChoicesTab");
         } else {
-          mainWindow.openPreferences("paneAdvanced", {origin: "experimentsOpenPref"});
+          mainWindow.openPreferences("paneAdvanced");
         }
       },
     },
