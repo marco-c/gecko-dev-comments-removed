@@ -2,7 +2,7 @@
 
 "use strict";
 
-add_task(function* test_create_options() {
+add_task(function* () {
   let tab = yield BrowserTestUtils.openNewForegroundTab(gBrowser, "about:robots");
   gBrowser.selectedTab = tab;
 
@@ -164,35 +164,3 @@ add_task(function* test_create_options() {
   yield BrowserTestUtils.removeTab(tab);
 });
 
-add_task(function* test_urlbar_focus() {
-  const extension = ExtensionTestUtils.loadExtension({
-    background() {
-      browser.test.onMessage.addListener(async (cmd, ...args) => {
-        const result = await browser.tabs[cmd](...args);
-        browser.test.sendMessage("result", result);
-      });
-    },
-  });
-
-  yield extension.startup();
-
-  
-  extension.sendMessage("create", {url: "https://example.com"});
-  const tab1 = yield extension.awaitMessage("result");
-
-  is(document.activeElement.tagName, "browser", "Content focused after opening a web page");
-
-  extension.sendMessage("remove", tab1.id);
-  yield extension.awaitMessage("result");
-
-  
-  extension.sendMessage("create", {});
-  const tab2 = yield extension.awaitMessage("result");
-
-  ok(gURLBar.focused, "Urlbar focused after opening an empty tab");
-
-  extension.sendMessage("remove", tab2.id);
-  yield extension.awaitMessage("result");
-
-  yield extension.unload();
-});
