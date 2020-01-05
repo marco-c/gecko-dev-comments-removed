@@ -291,13 +291,45 @@ extern bool stack_key_initialized;
 
 
 
-inline void* mozilla_sampler_call_enter(const char *aInfo, js::ProfileEntry::Category aCategory,
-                                        void *aFrameAddress = nullptr, bool aCopy = false,
-                                        uint32_t line = 0);
+inline void*
+mozilla_sampler_call_enter(const char *aInfo,
+                           js::ProfileEntry::Category aCategory,
+                           void *aFrameAddress, bool aCopy, uint32_t line)
+{
+  
+  
+  if (!stack_key_initialized)
+    return nullptr;
 
-inline void mozilla_sampler_call_exit(void* handle);
+  PseudoStack *stack = tlsPseudoStack.get();
+  
+  
+  
+  
+  if (!stack) {
+    return stack;
+  }
+  stack->push(aInfo, aCategory, aFrameAddress, aCopy, line);
 
-void mozilla_sampler_add_marker(const char *aInfo,
+  
+  
+  
+  
+  
+  return stack;
+}
+
+inline void
+mozilla_sampler_call_exit(void *aHandle)
+{
+  if (!aHandle)
+    return;
+
+  PseudoStack *stack = (PseudoStack*)aHandle;
+  stack->popAndMaybeDelete();
+}
+
+void mozilla_sampler_add_marker(const char *aMarker,
                                 ProfilerMarkerPayload *aPayload = nullptr);
 
 void mozilla_sampler_start(int aEntries, double aInterval,
@@ -761,43 +793,6 @@ inline PseudoStack* mozilla_get_pseudo_stack(void)
     return nullptr;
   return tlsPseudoStack.get();
 }
-
-inline void* mozilla_sampler_call_enter(const char *aInfo,
-  js::ProfileEntry::Category aCategory, void *aFrameAddress, bool aCopy, uint32_t line)
-{
-  
-  
-  if (!stack_key_initialized)
-    return nullptr;
-
-  PseudoStack *stack = tlsPseudoStack.get();
-  
-  
-  
-  
-  if (!stack) {
-    return stack;
-  }
-  stack->push(aInfo, aCategory, aFrameAddress, aCopy, line);
-
-  
-  
-  
-  
-  
-  return stack;
-}
-
-inline void mozilla_sampler_call_exit(void *aHandle)
-{
-  if (!aHandle)
-    return;
-
-  PseudoStack *stack = (PseudoStack*)aHandle;
-  stack->popAndMaybeDelete();
-}
-
-void mozilla_sampler_add_marker(const char *aMarker, ProfilerMarkerPayload *aPayload);
 
 static inline
 void profiler_log(const char *str)
