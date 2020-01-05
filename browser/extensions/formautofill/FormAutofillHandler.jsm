@@ -55,6 +55,11 @@ FormAutofillHandler.prototype = {
   
 
 
+  filledProfileGUID: null,
+
+  
+
+
   collectFormFields() {
     this.fieldDetails = [];
 
@@ -100,6 +105,8 @@ FormAutofillHandler.prototype = {
 
   autofillFormFields(profile, focusedInput) {
     log.debug("profile in autofillFormFields:", profile);
+
+    this.filledProfileGUID = profile.guid;
     for (let fieldDetail of this.fieldDetails) {
       
       
