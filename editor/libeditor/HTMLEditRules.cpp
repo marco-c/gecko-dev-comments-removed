@@ -2172,11 +2172,28 @@ HTMLEditRules::WillDeleteSelection(Selection* aSelection,
                                   address_of(selPointNode), &selPointOffset);
         NS_ENSURE_STATE(leftNode && leftNode->IsContent() &&
                         rightNode && rightNode->IsContent());
-        *aHandled = true;
-        rv = JoinBlocks(*leftNode->AsContent(), *rightNode->AsContent(),
-                        aCancel);
-        NS_ENSURE_SUCCESS(rv, rv);
+        EditActionResult ret =
+          TryToJoinBlocks(*leftNode->AsContent(), *rightNode->AsContent());
+        *aHandled |= ret.Handled();
+        *aCancel |= ret.Canceled();
+        if (NS_WARN_IF(ret.Failed())) {
+          return ret.Rv();
+        }
       }
+
+      
+      
+      
+      if (!*aHandled && !*aCancel && leafNode != startNode) {
+        int32_t offset =
+          aAction == nsIEditor::ePrevious ?
+            static_cast<int32_t>(leafNode->Length()) : 0;
+        aSelection->Collapse(leafNode, offset);
+        return WillDeleteSelection(aSelection, aAction, aStripWrappers,
+                                   aCancel, aHandled);
+      }
+
+      
       aSelection->Collapse(selPointNode, selPointOffset);
       return NS_OK;
     }
@@ -2223,10 +2240,16 @@ HTMLEditRules::WillDeleteSelection(Selection* aSelection,
         AutoTrackDOMPoint tracker(mHTMLEditor->mRangeUpdater,
                                   address_of(selPointNode), &selPointOffset);
         NS_ENSURE_STATE(leftNode->IsContent() && rightNode->IsContent());
+        EditActionResult ret =
+          TryToJoinBlocks(*leftNode->AsContent(), *rightNode->AsContent());
+        
+        
+        
         *aHandled = true;
-        rv = JoinBlocks(*leftNode->AsContent(), *rightNode->AsContent(),
-                        aCancel);
-        NS_ENSURE_SUCCESS(rv, rv);
+        *aCancel |= ret.Canceled();
+        if (NS_WARN_IF(ret.Failed())) {
+          return ret.Rv();
+        }
       }
       aSelection->Collapse(selPointNode, selPointOffset);
       return NS_OK;
@@ -2397,8 +2420,12 @@ HTMLEditRules::WillDeleteSelection(Selection* aSelection,
         }
 
         if (join) {
-          rv = JoinBlocks(*leftParent, *rightParent, aCancel);
-          NS_ENSURE_SUCCESS(rv, rv);
+          EditActionResult ret = TryToJoinBlocks(*leftParent, *rightParent);
+          MOZ_ASSERT(*aHandled);
+          *aCancel |= ret.Canceled();
+          if (NS_WARN_IF(ret.Failed())) {
+            return ret.Rv();
+          }
         }
       }
     }
@@ -2547,60 +2574,58 @@ HTMLEditRules::GetGoodSelPointForNode(nsINode& aNode,
   return ret;
 }
 
-
-
-
-
-
-
-
-
-
-nsresult
-HTMLEditRules::JoinBlocks(nsIContent& aLeftNode,
-                          nsIContent& aRightNode,
-                          bool* aCanceled)
+EditActionResult
+HTMLEditRules::TryToJoinBlocks(nsIContent& aLeftNode,
+                               nsIContent& aRightNode)
 {
-  MOZ_ASSERT(aCanceled);
+  if (NS_WARN_IF(!mHTMLEditor)) {
+    return EditActionIgnored(NS_ERROR_UNEXPECTED);
+  }
 
-  NS_ENSURE_STATE(mHTMLEditor);
   RefPtr<HTMLEditor> htmlEditor(mHTMLEditor);
 
   nsCOMPtr<Element> leftBlock = htmlEditor->GetBlock(aLeftNode);
   nsCOMPtr<Element> rightBlock = htmlEditor->GetBlock(aRightNode);
 
   
-  NS_ENSURE_TRUE(leftBlock && rightBlock, NS_ERROR_NULL_POINTER);
-  NS_ENSURE_STATE(leftBlock != rightBlock);
+  if (NS_WARN_IF(!leftBlock) || NS_WARN_IF(!rightBlock)) {
+    return EditActionIgnored(NS_ERROR_NULL_POINTER);
+  }
+  if (NS_WARN_IF(leftBlock == rightBlock)) {
+    return EditActionIgnored(NS_ERROR_UNEXPECTED);
+  }
 
   if (HTMLEditUtils::IsTableElement(leftBlock) ||
       HTMLEditUtils::IsTableElement(rightBlock)) {
     
-    *aCanceled = true;
-    return NS_OK;
+    return EditActionCanceled();
   }
 
   
   
   if (leftBlock->IsHTMLElement(nsGkAtoms::hr)) {
     leftBlock = htmlEditor->GetBlockNodeParent(leftBlock);
+    if (NS_WARN_IF(!leftBlock)) {
+      return EditActionIgnored(NS_ERROR_UNEXPECTED);
+    }
   }
   if (rightBlock->IsHTMLElement(nsGkAtoms::hr)) {
     rightBlock = htmlEditor->GetBlockNodeParent(rightBlock);
+    if (NS_WARN_IF(!rightBlock)) {
+      return EditActionIgnored(NS_ERROR_UNEXPECTED);
+    }
   }
-  NS_ENSURE_STATE(leftBlock && rightBlock);
 
   
   if (leftBlock == rightBlock) {
-    *aCanceled = true;
-    return NS_OK;
+    return EditActionIgnored();
   }
 
   
   if (HTMLEditUtils::IsList(leftBlock) &&
       HTMLEditUtils::IsListItem(rightBlock) &&
       rightBlock->GetParentNode() == leftBlock) {
-    return NS_OK;
+    return EditActionHandled();
   }
 
   
@@ -2641,7 +2666,9 @@ HTMLEditRules::JoinBlocks(nsIContent& aLeftNode,
     nsresult rv = WSRunObject::ScrubBlockBoundary(htmlEditor,
                                                   WSRunObject::kBlockEnd,
                                                   leftBlock);
-    NS_ENSURE_SUCCESS(rv, rv);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return EditActionIgnored(rv);
+    }
 
     {
       
@@ -2651,40 +2678,61 @@ HTMLEditRules::JoinBlocks(nsIContent& aLeftNode,
       rv = WSRunObject::ScrubBlockBoundary(htmlEditor,
                                            WSRunObject::kAfterBlock,
                                            rightBlock, rightOffset);
-      NS_ENSURE_SUCCESS(rv, rv);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return EditActionIgnored(rv);
+      }
+
       if (trackingRightBlock->IsElement()) {
         rightBlock = trackingRightBlock->AsElement();
       } else {
-        NS_ENSURE_STATE(trackingRightBlock->GetParentElement());
+        if (NS_WARN_IF(!trackingRightBlock->GetParentElement())) {
+          return EditActionIgnored(NS_ERROR_UNEXPECTED);
+        }
         rightBlock = trackingRightBlock->GetParentElement();
       }
     }
     
     nsCOMPtr<Element> brNode =
       CheckForInvisibleBR(*leftBlock, BRLocation::blockEnd);
+    EditActionResult ret(NS_OK);
     if (mergeLists) {
       
       
       for (nsCOMPtr<nsIContent> child = rightList->GetChildAt(offset);
            child; child = rightList->GetChildAt(rightOffset)) {
         rv = htmlEditor->MoveNode(child, leftList, -1);
-        NS_ENSURE_SUCCESS(rv, rv);
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return EditActionIgnored(rv);
+        }
       }
+      
+      ret.MarkAsHandled();
     } else {
-      MoveBlock(*leftBlock, *rightBlock, leftOffset, rightOffset);
+      
+      EditActionResult retMoveBlock =
+        MoveBlock(*leftBlock, *rightBlock, leftOffset, rightOffset);
+      if (retMoveBlock.Handled()) {
+        ret.MarkAsHandled();
+      }
     }
-    if (brNode) {
-      htmlEditor->DeleteNode(brNode);
+    if (brNode && NS_SUCCEEDED(htmlEditor->DeleteNode(brNode))) {
+      ret.MarkAsHandled();
     }
+    return ret;
+  }
+
   
   
-  } else if (EditorUtils::IsDescendantOf(rightBlock, leftBlock, &leftOffset)) {
+  if (EditorUtils::IsDescendantOf(rightBlock, leftBlock, &leftOffset)) {
     
     
     nsresult rv = WSRunObject::ScrubBlockBoundary(htmlEditor,
                                                   WSRunObject::kBlockStart,
                                                   rightBlock);
-    NS_ENSURE_SUCCESS(rv, rv);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return EditActionIgnored(rv);
+    }
+
     {
       
       
@@ -2694,19 +2742,30 @@ HTMLEditRules::JoinBlocks(nsIContent& aLeftNode,
       rv = WSRunObject::ScrubBlockBoundary(htmlEditor,
                                            WSRunObject::kBeforeBlock,
                                            leftBlock, leftOffset);
-      NS_ENSURE_SUCCESS(rv, rv);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return EditActionIgnored(rv);
+      }
+
       if (trackingLeftBlock->IsElement()) {
         leftBlock = trackingLeftBlock->AsElement();
       } else {
-        NS_ENSURE_STATE(trackingLeftBlock->GetParentElement());
+        if (NS_WARN_IF(!trackingLeftBlock->GetParentElement())) {
+          return EditActionIgnored(NS_ERROR_UNEXPECTED);
+        }
         leftBlock = trackingLeftBlock->GetParentElement();
       }
     }
     
     nsCOMPtr<Element> brNode =
       CheckForInvisibleBR(*leftBlock, BRLocation::beforeBlock, leftOffset);
+    EditActionResult ret(NS_OK);
     if (mergeLists) {
-      MoveContents(*rightList, *leftList, &leftOffset);
+      
+      EditActionResult retMoveContents =
+        MoveContents(*rightList, *leftList, &leftOffset);
+      if (retMoveContents.Handled()) {
+        ret.MarkAsHandled();
+      }
     } else {
       
       
@@ -2751,7 +2810,9 @@ HTMLEditRules::JoinBlocks(nsIContent& aLeftNode,
                            &previousContentOffset,
                            nullptr, nullptr, nullptr,
                            getter_AddRefs(splittedPreviousContent));
-        NS_ENSURE_SUCCESS(rv, rv);
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return EditActionIgnored(rv);
+        }
 
         if (splittedPreviousContent) {
           previousContentParent = splittedPreviousContent->GetParentNode();
@@ -2760,58 +2821,67 @@ HTMLEditRules::JoinBlocks(nsIContent& aLeftNode,
         }
       }
 
-      NS_ENSURE_TRUE(previousContentParent, NS_ERROR_NULL_POINTER);
+      if (NS_WARN_IF(!previousContentParent)) {
+        return EditActionIgnored(NS_ERROR_NULL_POINTER);
+      }
 
-      rv = MoveBlock(*previousContentParent->AsElement(), *rightBlock,
-                     previousContentOffset, rightOffset);
-      NS_ENSURE_SUCCESS(rv, rv);
+      ret |= MoveBlock(*previousContentParent->AsElement(), *rightBlock,
+                       previousContentOffset, rightOffset);
+      if (NS_WARN_IF(ret.Failed())) {
+        return ret;
+      }
     }
-    if (brNode) {
-      htmlEditor->DeleteNode(brNode);
+    if (brNode && NS_SUCCEEDED(htmlEditor->DeleteNode(brNode))) {
+      ret.MarkAsHandled();
     }
+    return ret;
+  }
+
+  
+  
+  
+  
+
+  
+  nsresult rv =
+    WSRunObject::PrepareToJoinBlocks(htmlEditor, leftBlock, rightBlock);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return EditActionIgnored(rv);
+  }
+  
+  nsCOMPtr<Element> brNode =
+    CheckForInvisibleBR(*leftBlock, BRLocation::blockEnd);
+  EditActionResult ret(NS_OK);
+  if (mergeLists || leftBlock->NodeInfo()->NameAtom() ==
+                    rightBlock->NodeInfo()->NameAtom()) {
+    
+    EditorDOMPoint pt = JoinNodesSmart(*leftBlock, *rightBlock);
+    if (pt.node && mergeLists) {
+      nsCOMPtr<Element> newBlock;
+      ConvertListType(rightBlock, getter_AddRefs(newBlock),
+                      existingList, nsGkAtoms::li);
+    }
+    ret.MarkAsHandled();
   } else {
     
-    
-    
-    
-
-    
-    nsresult rv =
-      WSRunObject::PrepareToJoinBlocks(htmlEditor, leftBlock, rightBlock);
-    NS_ENSURE_SUCCESS(rv, rv);
-    
-    nsCOMPtr<Element> brNode =
-      CheckForInvisibleBR(*leftBlock, BRLocation::blockEnd);
-    if (mergeLists || leftBlock->NodeInfo()->NameAtom() ==
-                      rightBlock->NodeInfo()->NameAtom()) {
-      
-      EditorDOMPoint pt = JoinNodesSmart(*leftBlock, *rightBlock);
-      if (pt.node && mergeLists) {
-        nsCOMPtr<Element> newBlock;
-        ConvertListType(rightBlock, getter_AddRefs(newBlock),
-                        existingList, nsGkAtoms::li);
-      }
-    } else {
-      
-      rv = MoveBlock(*leftBlock, *rightBlock, leftOffset, rightOffset);
-      NS_ENSURE_SUCCESS(rv, rv);
-    }
-    if (brNode) {
-      rv = htmlEditor->DeleteNode(brNode);
-      NS_ENSURE_SUCCESS(rv, rv);
+    ret |= MoveBlock(*leftBlock, *rightBlock, leftOffset, rightOffset);
+    if (NS_WARN_IF(ret.Failed())) {
+      return ret;
     }
   }
-  return NS_OK;
+  if (brNode) {
+    rv = htmlEditor->DeleteNode(brNode);
+    
+    
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return ret.SetResult(rv);
+    }
+    ret.MarkAsHandled();
+  }
+  return ret;
 }
 
-
-
-
-
-
-
-
-nsresult
+EditActionResult
 HTMLEditRules::MoveBlock(Element& aLeftBlock,
                          Element& aRightBlock,
                          int32_t aLeftOffset,
@@ -2822,41 +2892,51 @@ HTMLEditRules::MoveBlock(Element& aLeftBlock,
   nsresult rv = GetNodesFromPoint(EditorDOMPoint(&aRightBlock, aRightOffset),
                                   EditAction::makeList, arrayOfNodes,
                                   TouchContent::yes);
-  NS_ENSURE_SUCCESS(rv, rv);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return EditActionIgnored(rv);
+  }
+
+  EditActionResult ret(NS_OK);
   for (uint32_t i = 0; i < arrayOfNodes.Length(); i++) {
     
     if (IsBlockNode(arrayOfNodes[i])) {
       
-      rv = MoveContents(*arrayOfNodes[i]->AsElement(), aLeftBlock,
-                        &aLeftOffset);
-      NS_ENSURE_SUCCESS(rv, rv);
-      NS_ENSURE_STATE(mHTMLEditor);
+      ret |=
+        MoveContents(*arrayOfNodes[i]->AsElement(), aLeftBlock, &aLeftOffset);
+      if (NS_WARN_IF(ret.Failed())) {
+        return ret;
+      }
+      if (NS_WARN_IF(!mHTMLEditor)) {
+        return ret.SetResult(NS_ERROR_UNEXPECTED);
+      }
       rv = mHTMLEditor->DeleteNode(arrayOfNodes[i]);
+      ret.MarkAsHandled();
     } else {
       
-      rv = MoveNodeSmart(*arrayOfNodes[i]->AsContent(), aLeftBlock,
-                         &aLeftOffset);
+      ret |=
+        MoveNodeSmart(*arrayOfNodes[i]->AsContent(), aLeftBlock, &aLeftOffset);
     }
   }
 
   
-  NS_ENSURE_SUCCESS(rv, rv);
-  return NS_OK;
+  if (NS_WARN_IF(ret.Failed())) {
+    return ret;
+  }
+
+  return ret;
 }
 
-
-
-
-
-
-nsresult
+EditActionResult
 HTMLEditRules::MoveNodeSmart(nsIContent& aNode,
                              Element& aDestElement,
                              int32_t* aInOutDestOffset)
 {
   MOZ_ASSERT(aInOutDestOffset);
 
-  NS_ENSURE_STATE(mHTMLEditor);
+  if (NS_WARN_IF(!mHTMLEditor)) {
+    return EditActionIgnored(NS_ERROR_UNEXPECTED);
+  }
+
   RefPtr<HTMLEditor> htmlEditor(mHTMLEditor);
 
   
@@ -2864,44 +2944,52 @@ HTMLEditRules::MoveNodeSmart(nsIContent& aNode,
     
     nsresult rv =
       htmlEditor->MoveNode(&aNode, &aDestElement, *aInOutDestOffset);
-    NS_ENSURE_SUCCESS(rv, rv);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return EditActionIgnored(rv);
+    }
     if (*aInOutDestOffset != -1) {
       (*aInOutDestOffset)++;
     }
-  } else {
     
-    if (aNode.IsElement()) {
-      nsresult rv =
-        MoveContents(*aNode.AsElement(), aDestElement, aInOutDestOffset);
-      NS_ENSURE_SUCCESS(rv, rv);
-    }
-
-    nsresult rv = htmlEditor->DeleteNode(&aNode);
-    NS_ENSURE_SUCCESS(rv, rv);
+    return EditActionHandled();
   }
-  return NS_OK;
+
+  
+  EditActionResult ret(NS_OK);
+  if (aNode.IsElement()) {
+    ret = MoveContents(*aNode.AsElement(), aDestElement, aInOutDestOffset);
+    if (NS_WARN_IF(ret.Failed())) {
+      return ret;
+    }
+  }
+
+  nsresult rv = htmlEditor->DeleteNode(&aNode);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return ret.SetResult(rv);
+  }
+  return ret.MarkAsHandled();
 }
 
-
-
-
-
-
-nsresult
+EditActionResult
 HTMLEditRules::MoveContents(Element& aElement,
                             Element& aDestElement,
                             int32_t* aInOutDestOffset)
 {
   MOZ_ASSERT(aInOutDestOffset);
 
-  NS_ENSURE_TRUE(&aElement != &aDestElement, NS_ERROR_ILLEGAL_VALUE);
-
-  while (aElement.GetFirstChild()) {
-    nsresult rv = MoveNodeSmart(*aElement.GetFirstChild(), aDestElement,
-                                aInOutDestOffset);
-    NS_ENSURE_SUCCESS(rv, rv);
+  if (NS_WARN_IF(&aElement == &aDestElement)) {
+    return EditActionIgnored(NS_ERROR_ILLEGAL_VALUE);
   }
-  return NS_OK;
+
+  EditActionResult ret(NS_OK);
+  while (aElement.GetFirstChild()) {
+    ret |=
+      MoveNodeSmart(*aElement.GetFirstChild(), aDestElement, aInOutDestOffset);
+    if (NS_WARN_IF(ret.Failed())) {
+      return ret;
+    }
+  }
+  return ret;
 }
 
 
