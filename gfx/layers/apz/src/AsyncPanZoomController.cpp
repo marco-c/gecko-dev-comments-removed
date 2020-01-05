@@ -1427,6 +1427,10 @@ nsEventStatus AsyncPanZoomController::OnScale(const PinchGestureInput& aEvent) {
       }
 
       UpdateSharedCompositorFrameMetrics();
+
+    } else {
+      
+      RequestContentRepaint();
     }
 
     
