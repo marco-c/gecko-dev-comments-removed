@@ -10,10 +10,8 @@
 #include <guiddef.h>
 #include <unknwn.h>
 
-#include "mozilla/Assertions.h"
-#include "mozilla/Atomics.h"
-#include "mozilla/RefPtr.h"
-#include "nsISupportsImpl.h"
+#include "mozilla/Mutex.h"
+#include "nsTArray.h"
 
 
 
@@ -23,44 +21,13 @@
 namespace mozilla {
 namespace mscom {
 
-class WeakReferenceSupport;
-
-namespace detail {
-
-class SharedRef final
-{
-public:
-  explicit SharedRef(WeakReferenceSupport* aSupport);
-  void Lock();
-  void Unlock();
-
-  HRESULT Resolve(REFIID aIid, void** aOutStrongReference);
-  void Clear();
-
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(SharedRef)
-
-  SharedRef(const SharedRef&) = delete;
-  SharedRef(SharedRef&&) = delete;
-  SharedRef& operator=(const SharedRef&) = delete;
-  SharedRef& operator=(SharedRef&&) = delete;
-
-private:
-  ~SharedRef();
-
-private:
-  CRITICAL_SECTION mCS;
-  WeakReferenceSupport* mSupport;
-};
-
-} 
-
 
 DEFINE_GUID(IID_IWeakReference,
 0xf841aefa, 0x64c, 0x49a4, 0xb7, 0x3d, 0xeb, 0xd1, 0x4a, 0x90, 0xf0, 0x12);
 
 struct IWeakReference : public IUnknown
 {
-  virtual STDMETHODIMP Resolve(REFIID aIid, void** aOutStrongReference) = 0;
+  virtual STDMETHODIMP Resolve(REFIID aIid, void** aOutStringReference) = 0;
 };
 
 
@@ -99,10 +66,14 @@ protected:
                                            IUnknown** aOutInterface) = 0;
 
 private:
-  RefPtr<detail::SharedRef> mSharedRef;
-  ULONG                     mRefCnt;
-  Flags                     mFlags;
-  CRITICAL_SECTION          mCSForQI;
+  void ClearWeakRefs();
+
+private:
+  
+  CRITICAL_SECTION           mCS;
+  ULONG                      mRefCnt;
+  nsTArray<RefPtr<WeakRef>>  mWeakRefs;
+  Flags                      mFlags;
 };
 
 class WeakRef : public IWeakReference
@@ -116,11 +87,14 @@ public:
   
   STDMETHODIMP Resolve(REFIID aIid, void** aOutStrongReference) override;
 
-  explicit WeakRef(RefPtr<detail::SharedRef>& aSharedRef);
+  explicit WeakRef(WeakReferenceSupport* aSupport);
+
+  void Clear();
 
 private:
-  Atomic<ULONG>             mRefCnt;
-  RefPtr<detail::SharedRef> mSharedRef;
+  ULONG                 mRefCnt;
+  mozilla::Mutex        mMutex; 
+  WeakReferenceSupport* mSupport;
 };
 
 } 
