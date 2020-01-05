@@ -3691,6 +3691,20 @@ SearchService.prototype = {
       engineNames = searchSettings[region]["visibleDefaultEngines"];
     }
 
+    
+    
+    let branch = Services.prefs.getDefaultBranch(BROWSER_SEARCH_PREF);
+    if (isPartnerBuild() &&
+        branch.getPrefType("ignoredJAREngines") == branch.PREF_STRING) {
+      let ignoredJAREngines = branch.getCharPref("ignoredJAREngines")
+                                    .split(",");
+      let filteredEngineNames = engineNames.filter(e => !ignoredJAREngines.includes(e));
+      
+      if (filteredEngineNames.length > 0) {
+        engineNames = filteredEngineNames;
+      }
+    }
+
     for (let name of engineNames) {
       uris.push(APP_SEARCH_PREFIX + name + ".xml");
     }
