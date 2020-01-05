@@ -11,12 +11,18 @@ this.EXPORTED_SYMBOLS = [
 
 const MAX_ROWS = 20;
 
+
+const AUTOSCROLL_INTERVAL = 25;
+
 var currentBrowser = null;
 var currentMenulist = null;
 var currentZoom = 1;
 var closedWithEnter = false;
 
 this.SelectParentHelper = {
+  draggedOverPopup: false,
+  scrollTimer: 0,
+
   populate: function(menulist, items, selectedIndex, zoom) {
     
     menulist.menupopup.textContent = "";
@@ -58,6 +64,11 @@ this.SelectParentHelper = {
                                      constraintRect.width, constraintRect.height);
     menupopup.setConstraintRect(constraintRect);
     menupopup.openPopupAtScreenRect("after_start", rect.left, rect.top, rect.width, rect.height, false, false);
+
+    
+    menupopup.setCaptureAlways();
+    this.draggedOverPopup = false;
+    menupopup.addEventListener("mousemove", this);
   },
 
   hide: function(menulist, browser) {
@@ -66,9 +77,19 @@ this.SelectParentHelper = {
     }
   },
 
+  clearScrollTimer: function() {
+    if (this.scrollTimer) {
+      let win = currentBrowser.ownerDocument.defaultView;
+      win.clearInterval(this.scrollTimer);
+      this.scrollTimer = 0;
+    }
+  },
+
   handleEvent: function(event) {
     switch (event.type) {
       case "mouseup":
+        this.clearScrollTimer();
+        currentMenulist.menupopup.removeEventListener("mousemove", this);
         currentBrowser.messageManager.sendAsyncMessage("Forms:MouseUp", {});
         break;
 
@@ -78,6 +99,38 @@ this.SelectParentHelper = {
 
       case "mouseout":
         currentBrowser.messageManager.sendAsyncMessage("Forms:MouseOut", {});
+        break;
+
+      case "mousemove":
+        let menupopup = currentMenulist.menupopup;
+        let popupRect = menupopup.getOuterScreenRect();
+
+        this.clearScrollTimer();
+
+        
+        
+        
+        
+        
+        if (event.screenX >= popupRect.left && event.screenX <= popupRect.right) {
+          if (!this.draggedOverPopup) {
+            if (event.screenY > popupRect.top && event.screenY < popupRect.bottom) {
+              this.draggedOverPopup = true;
+            }
+          }
+
+          if (this.draggedOverPopup &&
+              (event.screenY <= popupRect.top || event.screenY >= popupRect.bottom)) {
+            let scrollAmount = event.screenY <= popupRect.top ? -1 : 1;
+            menupopup.scrollBox.scrollByIndex(scrollAmount);
+
+            let win = currentBrowser.ownerDocument.defaultView;
+            this.scrollTimer = win.setInterval(function () {
+              menupopup.scrollBox.scrollByIndex(scrollAmount);
+            }, AUTOSCROLL_INTERVAL);
+          }
+        }
+
         break;
 
       case "keydown":
@@ -107,6 +160,8 @@ this.SelectParentHelper = {
         currentBrowser.messageManager.sendAsyncMessage("Forms:DismissedDropDown", {});
         let popup = event.target;
         this._unregisterListeners(currentBrowser, popup);
+        this.clearScrollTimer();
+        popup.releaseCapture();
         popup.parentNode.hidden = true;
         currentBrowser = null;
         currentMenulist = null;
