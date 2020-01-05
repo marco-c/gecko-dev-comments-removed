@@ -19,7 +19,7 @@ loader.lazyRequireGetter(this, "merge", "sdk/util/object", true);
 
 
 const PerformanceRecordingFront = FrontClassWithSpec(performanceRecordingSpec, merge({
-  form(form, detail) {
+  form: function (form, detail) {
     if (detail === "actorid") {
       this.actorID = form;
       return;
@@ -51,7 +51,7 @@ const PerformanceRecordingFront = FrontClassWithSpec(performanceRecordingSpec, m
     }
   },
 
-  initialize(client, form, config) {
+  initialize: function (client, form, config) {
     Front.prototype.initialize.call(this, client, form);
     this._markers = [];
     this._frames = [];
@@ -60,7 +60,7 @@ const PerformanceRecordingFront = FrontClassWithSpec(performanceRecordingSpec, m
     this._allocations = { sites: [], timestamps: [], frames: [], sizes: [] };
   },
 
-  destroy() {
+  destroy: function () {
     Front.prototype.destroy.call(this);
   },
 
@@ -70,7 +70,7 @@ const PerformanceRecordingFront = FrontClassWithSpec(performanceRecordingSpec, m
 
 
 
-  exportRecording(file) {
+  exportRecording: function (file) {
     let recordingData = this.getAllData();
     return PerformanceIO.saveRecordingToFile(recordingData, file);
   },
@@ -78,7 +78,7 @@ const PerformanceRecordingFront = FrontClassWithSpec(performanceRecordingSpec, m
   
 
 
-  _addTimelineData(eventName, data) {
+  _addTimelineData: function (eventName, data) {
     let config = this.getConfiguration();
 
     switch (eventName) {

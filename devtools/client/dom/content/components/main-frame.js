@@ -33,7 +33,7 @@ var MainFrame = React.createClass({
   
 
 
-  render() {
+  render: function () {
     return (
       div({className: "mainFrame"},
         MainToolbar({

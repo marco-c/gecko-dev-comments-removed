@@ -63,7 +63,7 @@ FastListWidget.prototype = {
 
 
 
-  insertItemAt(index, contents, attachment = {}) {
+  insertItemAt: function (index, contents, attachment = {}) {
     let element = this._templateElement.cloneNode();
     element.appendChild(contents);
 
@@ -83,14 +83,14 @@ FastListWidget.prototype = {
 
 
 
-  flush() {
+  flush: function () {
     this._list.appendChild(this._fragment);
   },
 
   
 
 
-  removeAllItems() {
+  removeAllItems: function () {
     let list = this._list;
 
     while (list.hasChildNodes()) {
@@ -106,7 +106,7 @@ FastListWidget.prototype = {
   
 
 
-  removeChild(child) {
+  removeChild: function (child) {
     throw new Error("Not yet implemented");
   },
 
@@ -148,7 +148,7 @@ FastListWidget.prototype = {
 
 
 
-  getItemAtIndex(index) {
+  getItemAtIndex: function (index) {
     return this._orderedMenuElementsArray[index];
   },
 
@@ -160,7 +160,7 @@ FastListWidget.prototype = {
 
 
 
-  setAttribute(name, value) {
+  setAttribute: function (name, value) {
     this._parent.setAttribute(name, value);
 
     if (name == "emptyText") {
@@ -174,7 +174,7 @@ FastListWidget.prototype = {
 
 
 
-  removeAttribute(name) {
+  removeAttribute: function (name) {
     this._parent.removeAttribute(name);
 
     if (name == "emptyText") {
@@ -188,7 +188,7 @@ FastListWidget.prototype = {
 
 
 
-  ensureElementIsVisible(element) {
+  ensureElementIsVisible: function (element) {
     if (!element) {
       return;
     }
@@ -214,7 +214,7 @@ FastListWidget.prototype = {
   
 
 
-  _showEmptyText() {
+  _showEmptyText: function () {
     if (this._emptyTextNode || !this._emptyTextValue) {
       return;
     }
@@ -229,7 +229,7 @@ FastListWidget.prototype = {
   
 
 
-  _removeEmptyText() {
+  _removeEmptyText: function () {
     if (!this._emptyTextNode) {
       return;
     }

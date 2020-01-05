@@ -1206,8 +1206,8 @@ TabActor.prototype = {
     }
 
     events.emit(this, "window-ready", {
-      window,
-      isTopLevel,
+      window: window,
+      isTopLevel: isTopLevel,
       id: getWindowID(window)
     });
 
@@ -1233,10 +1233,10 @@ TabActor.prototype = {
 
   _windowDestroyed(window, id = null, isFrozen = false) {
     events.emit(this, "window-destroyed", {
-      window,
+      window: window,
       isTopLevel: window == this.window,
       id: id || getWindowID(window),
-      isFrozen
+      isFrozen: isFrozen
     });
   },
 
@@ -1270,10 +1270,10 @@ TabActor.prototype = {
     
     
     events.emit(this, "will-navigate", {
-      window,
-      isTopLevel,
-      newURI,
-      request
+      window: window,
+      isTopLevel: isTopLevel,
+      newURI: newURI,
+      request: request
     });
 
     
@@ -1299,7 +1299,7 @@ TabActor.prototype = {
       url: newURI,
       nativeConsoleAPI: true,
       state: "start",
-      isFrameSwitching
+      isFrameSwitching: isFrameSwitching
     });
 
     if (reset) {
@@ -1319,8 +1319,8 @@ TabActor.prototype = {
     
     
     events.emit(this, "navigate", {
-      window,
-      isTopLevel
+      window: window,
+      isTopLevel: isTopLevel
     });
 
     
@@ -1342,7 +1342,7 @@ TabActor.prototype = {
       title: this.title,
       nativeConsoleAPI: this.hasNativeConsoleAPI(this.window),
       state: "stop",
-      isFrameSwitching
+      isFrameSwitching: isFrameSwitching
     });
   },
 

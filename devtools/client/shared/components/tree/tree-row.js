@@ -66,7 +66,7 @@ define(function (require, exports, module) {
 
 
 
-    shouldComponentUpdate(nextProps) {
+    shouldComponentUpdate: function (nextProps) {
       let props = ["name", "open", "value", "loading"];
       for (let p in props) {
         if (nextProps.member[props[p]] != this.props.member[props[p]]) {
@@ -77,7 +77,7 @@ define(function (require, exports, module) {
       return false;
     },
 
-    getRowClass(object) {
+    getRowClass: function (object) {
       let decorator = this.props.decorator;
       if (!decorator || !decorator.getRowClass) {
         return [];
@@ -96,7 +96,7 @@ define(function (require, exports, module) {
       return classNames;
     },
 
-    render() {
+    render: function () {
       let member = this.props.member;
       let decorator = this.props.decorator;
 

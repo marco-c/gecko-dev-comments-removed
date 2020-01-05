@@ -41,7 +41,7 @@ const LegacyPerformanceFront = Class({
     },
   },
 
-  initialize(target) {
+  initialize: function (target) {
     let { form, client } = target;
     this._target = target;
     this._form = form;
@@ -128,7 +128,7 @@ const LegacyPerformanceFront = Class({
 
 
 
-  _registerListeners() {
+  _registerListeners: function () {
     this._timeline.on("timeline-data", this._onTimelineData);
     this._profiler.on("console-profile-start", this._onConsoleProfileStart);
     this._profiler.on("console-profile-stop", this._onConsoleProfileStop);
@@ -139,7 +139,7 @@ const LegacyPerformanceFront = Class({
   
 
 
-  _unregisterListeners() {
+  _unregisterListeners: function () {
     this._timeline.off("timeline-data", this._onTimelineData);
     this._profiler.off("console-profile-start", this._onConsoleProfileStart);
     this._profiler.off("console-profile-stop", this._onConsoleProfileStop);
@@ -229,7 +229,7 @@ const LegacyPerformanceFront = Class({
  
 
 
-  _onProfilerUnexpectedlyStopped() {
+  _onProfilerUnexpectedlyStopped: function () {
     console.error("Profiler unexpectedly stopped.", arguments);
   },
 
@@ -241,7 +241,7 @@ const LegacyPerformanceFront = Class({
 
 
 
-  _onTimelineData(_, ...data) {
+  _onTimelineData: function (_, ...data) {
     this._recordings.forEach(e => e._addTimelineData.apply(e, data));
     events.emit(this, "timeline-data", ...data);
   },
@@ -249,7 +249,7 @@ const LegacyPerformanceFront = Class({
   
 
 
-  _onProfilerStatus(_, data) {
+  _onProfilerStatus: function (_, data) {
     
     
     if (!data || data.position === void 0) {
@@ -358,7 +358,7 @@ const LegacyPerformanceFront = Class({
 
       
       profilerEndTime: profilerData.currentTime,
-      timelineEndTime,
+      timelineEndTime: timelineEndTime,
       systemHost,
       systemClient,
     });
@@ -374,7 +374,7 @@ const LegacyPerformanceFront = Class({
 
 
 
-  importRecording(file) {
+  importRecording: function (file) {
     return importRecording(file);
   },
 
@@ -384,7 +384,7 @@ const LegacyPerformanceFront = Class({
 
 
 
-  isRecording() {
+  isRecording: function () {
     return this._recordings.some(recording => recording.isRecording());
   },
 
@@ -395,7 +395,7 @@ const LegacyPerformanceFront = Class({
 
 
 
-  getBufferUsageForRecording(recording) {
+  getBufferUsageForRecording: function (recording) {
     if (!recording.isRecording() || !this._currentBufferStatus) {
       return null;
     }
@@ -431,7 +431,7 @@ const LegacyPerformanceFront = Class({
 
 
 
-  _pipeToFront(eventName, ...args) {
+  _pipeToFront: function (eventName, ...args) {
     events.emit(this, eventName, ...args);
   },
 
@@ -439,7 +439,7 @@ const LegacyPerformanceFront = Class({
 
 
 
-  _request(actorName, method, ...args) {
+  _request: function (actorName, method, ...args) {
     if (!flags.testing) {
       throw new Error("LegacyPerformanceFront._request may only be used in tests.");
     }
@@ -451,7 +451,7 @@ const LegacyPerformanceFront = Class({
 
 
 
-  setProfilerStatusInterval(n) {
+  setProfilerStatusInterval: function (n) {
     if (this._profiler._poller) {
       this._profiler._poller._wait = n;
     }

@@ -56,7 +56,7 @@ ElementStyle.prototype = {
   
   element: null,
 
-  destroy() {
+  destroy: function () {
     if (this.destroyed) {
       return;
     }
@@ -73,7 +73,7 @@ ElementStyle.prototype = {
 
 
 
-  _changed() {
+  _changed: function () {
     if (this.onChanged) {
       this.onChanged();
     }
@@ -86,7 +86,7 @@ ElementStyle.prototype = {
 
 
 
-  populate() {
+  populate: function () {
     let populated = this.pageStyle.getApplied(this.element, {
       inherited: true,
       matchedSelectors: true,
@@ -139,7 +139,7 @@ ElementStyle.prototype = {
   
 
 
-  _sortRulesForPseudoElement() {
+  _sortRulesForPseudoElement: function () {
     this.rules = this.rules.sort((a, b) => {
       return (a.pseudoElement || "z") > (b.pseudoElement || "z");
     });
@@ -156,7 +156,7 @@ ElementStyle.prototype = {
 
 
 
-  _maybeAddRule(options, existingRules) {
+  _maybeAddRule: function (options, existingRules) {
     
     
     if (options.rule &&
@@ -198,7 +198,7 @@ ElementStyle.prototype = {
   
 
 
-  markOverriddenAll() {
+  markOverriddenAll: function () {
     this.markOverridden();
     for (let pseudo of this.cssProperties.pseudoElements) {
       this.markOverridden(pseudo);
@@ -213,7 +213,7 @@ ElementStyle.prototype = {
 
 
 
-  markOverridden(pseudo = "") {
+  markOverridden: function (pseudo = "") {
     
     
     
@@ -314,7 +314,7 @@ ElementStyle.prototype = {
 
 
 
-  _updatePropertyOverridden(prop) {
+  _updatePropertyOverridden: function (prop) {
     let overridden = true;
     let dirty = false;
     for (let computedProp of prop.computed) {
@@ -353,7 +353,7 @@ UserProperties.prototype = {
 
 
 
-  getProperty(style, name, value) {
+  getProperty: function (style, name, value) {
     let key = this.getKey(style);
     let entry = this.map.get(key, null);
 
@@ -373,7 +373,7 @@ UserProperties.prototype = {
 
 
 
-  setProperty(style, bame, userValue) {
+  setProperty: function (style, bame, userValue) {
     let key = this.getKey(style, bame);
     let entry = this.map.get(key, null);
 
@@ -394,17 +394,17 @@ UserProperties.prototype = {
 
 
 
-  contains(style, name) {
+  contains: function (style, name) {
     let key = this.getKey(style, name);
     let entry = this.map.get(key, null);
     return !!entry && name in entry;
   },
 
-  getKey(style, name) {
+  getKey: function (style, name) {
     return style.actorID + ":" + name;
   },
 
-  clear() {
+  clear: function () {
     this.map.clear();
   }
 };

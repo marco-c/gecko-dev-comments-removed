@@ -51,7 +51,7 @@ LegacyPerformanceRecording.prototype = merge({
 
 
 
-  _populate(info) {
+  _populate: function (info) {
     
     
     
@@ -84,7 +84,7 @@ LegacyPerformanceRecording.prototype = merge({
 
 
 
-  _onStoppingRecording(endTime) {
+  _onStoppingRecording: function (endTime) {
     this._duration = endTime - this._localStartTime;
     this._recording = false;
   },
@@ -119,14 +119,14 @@ LegacyPerformanceRecording.prototype = merge({
 
 
 
-  _getProfilerStartTime() {
+  _getProfilerStartTime: function () {
     return this._profilerStartTime;
   },
 
   
 
 
-  _addTimelineData(eventName, ...data) {
+  _addTimelineData: function (eventName, ...data) {
     
     
     if (!this.isRecording()) {

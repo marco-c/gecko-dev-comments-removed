@@ -22,13 +22,13 @@ const events = require("sdk/event/core");
 
 
 const OriginalSourceFront = FrontClassWithSpec(originalSourceSpec, {
-  initialize(client, form) {
+  initialize: function (client, form) {
     Front.prototype.initialize.call(this, client, form);
 
     this.isOriginalSource = true;
   },
 
-  form(form, detail) {
+  form: function (form, detail) {
     if (detail === "actorid") {
       this.actorID = form;
       return;
@@ -51,18 +51,18 @@ exports.OriginalSourceFront = OriginalSourceFront;
 
 
 const MediaRuleFront = FrontClassWithSpec(mediaRuleSpec, {
-  initialize(client, form) {
+  initialize: function (client, form) {
     Front.prototype.initialize.call(this, client, form);
 
     this._onMatchesChange = this._onMatchesChange.bind(this);
     events.on(this, "matches-change", this._onMatchesChange);
   },
 
-  _onMatchesChange(matches) {
+  _onMatchesChange: function (matches) {
     this._form.matches = matches;
   },
 
-  form(form, detail) {
+  form: function (form, detail) {
     if (detail === "actorid") {
       this.actorID = form;
       return;
@@ -97,23 +97,23 @@ exports.MediaRuleFront = MediaRuleFront;
 
 
 const StyleSheetFront = FrontClassWithSpec(styleSheetSpec, {
-  initialize(conn, form) {
+  initialize: function (conn, form) {
     Front.prototype.initialize.call(this, conn, form);
 
     this._onPropertyChange = this._onPropertyChange.bind(this);
     events.on(this, "property-change", this._onPropertyChange);
   },
 
-  destroy() {
+  destroy: function () {
     events.off(this, "property-change", this._onPropertyChange);
     Front.prototype.destroy.call(this);
   },
 
-  _onPropertyChange(property, value) {
+  _onPropertyChange: function (property, value) {
     this._form[property] = value;
   },
 
-  form(form, detail) {
+  form: function (form, detail) {
     if (detail === "actorid") {
       this.actorID = form;
       return;
@@ -150,7 +150,7 @@ const StyleSheetFront = FrontClassWithSpec(styleSheetSpec, {
 
 
 
-  guessIndentation() {
+  guessIndentation: function () {
     let prefIndent = getIndentationFromPrefs();
     if (prefIndent) {
       let {indentUnit, indentWithTabs} = prefIndent;
@@ -174,7 +174,7 @@ exports.StyleSheetFront = StyleSheetFront;
 
 
 const StyleSheetsFront = FrontClassWithSpec(styleSheetsSpec, {
-  initialize(client, tabForm) {
+  initialize: function (client, tabForm) {
     Front.prototype.initialize.call(this, client);
     this.actorID = tabForm.styleSheetsActor;
     this.manage(this);

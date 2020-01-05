@@ -11,7 +11,7 @@ const {
 
 const HighlighterFront = FrontClassWithSpec(highlighterSpec, {
   
-  form(json) {
+  form: function (json) {
     this.actorID = json.actor;
     
     this.traits = json.traits || {};

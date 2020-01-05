@@ -212,7 +212,7 @@ TableWidget.prototype = {
   
 
 
-  onChange(type, data) {
+  onChange: function (type, data) {
     let changedField = data.change.field;
     let colName = changedField.parentNode.id;
     let column = this.columns.get(colName);
@@ -230,7 +230,7 @@ TableWidget.prototype = {
       field: colName,
       oldValue: data.change.oldValue,
       newValue: data.change.newValue,
-      items
+      items: items
     };
 
     
@@ -241,7 +241,7 @@ TableWidget.prototype = {
     this.emit(EVENTS.CELL_EDIT, change);
   },
 
-  onEditorDestroyed() {
+  onEditorDestroyed: function () {
     this._editableFieldsEngine = null;
   },
 
@@ -256,7 +256,7 @@ TableWidget.prototype = {
 
 
 
-  onEditorTab(event) {
+  onEditorTab: function (event) {
     let textbox = event.target;
     let editor = this._editableFieldsEngine;
 
@@ -354,7 +354,7 @@ TableWidget.prototype = {
 
 
 
-  getEditedCellOnTab(event, column) {
+  getEditedCellOnTab: function (event, column) {
     let cell = null;
     let cols = this.editableColumns;
     let rowIndex = this.visibleSelectedIndex;
@@ -414,7 +414,7 @@ TableWidget.prototype = {
 
 
 
-  onRowRemoved(event, row) {
+  onRowRemoved: function (event, row) {
     if (!this._editableFieldsEngine || !this._editableFieldsEngine.isEditing) {
       return;
     }
@@ -434,7 +434,7 @@ TableWidget.prototype = {
   
 
 
-  onEditorTargetLost() {
+  onEditorTargetLost: function () {
     let editor = this._editableFieldsEngine;
 
     if (!editor || !editor.isEditing) {
@@ -448,7 +448,7 @@ TableWidget.prototype = {
 
 
 
-  onKeydown(event) {
+  onKeydown: function (event) {
     
     if (this._editableFieldsEngine && this._editableFieldsEngine.isEditing) {
       return;
@@ -511,7 +511,7 @@ TableWidget.prototype = {
 
 
 
-  onMousedown({target}) {
+  onMousedown: function ({target}) {
     let nodeName = target.nodeName;
 
     if (nodeName === "textbox" || !this._editableFieldsEngine) {
@@ -528,7 +528,7 @@ TableWidget.prototype = {
 
 
 
-  makeFieldsEditable(editableColumns) {
+  makeFieldsEditable: function (editableColumns) {
     let selectors = [];
 
     if (typeof editableColumns === "string") {
@@ -552,7 +552,7 @@ TableWidget.prototype = {
         root: this.tbody,
         onTab: this.onEditorTab,
         onTriggerEvent: "dblclick",
-        selectors
+        selectors: selectors
       });
 
       this._editableFieldsEngine.on("change", this.onChange);
@@ -565,7 +565,7 @@ TableWidget.prototype = {
     }
   },
 
-  destroy() {
+  destroy: function () {
     this.off(EVENTS.ROW_SELECTED, this.bindSelectedRow);
     this.off(EVENTS.ROW_REMOVED, this.onRowRemoved);
 
@@ -589,7 +589,7 @@ TableWidget.prototype = {
   
 
 
-  setPlaceholderText(text) {
+  setPlaceholderText: function (text) {
     this.placeholder.setAttribute("value", text);
   },
 
@@ -598,7 +598,7 @@ TableWidget.prototype = {
 
 
 
-  setupHeadersContextMenu() {
+  setupHeadersContextMenu: function () {
     let popupset = this.document.getElementsByTagName("popupset")[0];
     if (!popupset) {
       popupset = this.document.createElementNS(XUL_NS, "popupset");
@@ -621,7 +621,7 @@ TableWidget.prototype = {
 
 
 
-  populateMenuPopup(privateColumns = []) {
+  populateMenuPopup: function (privateColumns = []) {
     if (!this.menupopup) {
       return;
     }
@@ -654,7 +654,7 @@ TableWidget.prototype = {
   
 
 
-  onPopupCommand(event) {
+  onPopupCommand: function (event) {
     let item = event.originalTarget;
     let checked = !!item.getAttribute("checked");
     let id = item.getAttribute("data-id");
@@ -685,7 +685,7 @@ TableWidget.prototype = {
 
 
 
-  setColumns(columns, sortOn = this.sortedOn, hiddenColumns = [],
+  setColumns: function (columns, sortOn = this.sortedOn, hiddenColumns = [],
                         privateColumns = []) {
     for (let column of this.columns.values()) {
       column.destroy();
@@ -734,7 +734,7 @@ TableWidget.prototype = {
 
 
 
-  isSelected(item) {
+  isSelected: function (item) {
     if (typeof item == "object") {
       item = item[this.uniqueId];
     }
@@ -745,14 +745,14 @@ TableWidget.prototype = {
   
 
 
-  selectRow(id) {
+  selectRow: function (id) {
     this.selectedRow = id;
   },
 
   
 
 
-  selectNextRow() {
+  selectNextRow: function () {
     for (let column of this.columns.values()) {
       column.selectNextRow();
     }
@@ -762,7 +762,7 @@ TableWidget.prototype = {
 
 
 
-  selectPreviousRow() {
+  selectPreviousRow: function () {
     for (let column of this.columns.values()) {
       column.selectPreviousRow();
     }
@@ -771,7 +771,7 @@ TableWidget.prototype = {
   
 
 
-  clearSelection() {
+  clearSelection: function () {
     this.selectedIndex = -1;
   },
 
@@ -786,7 +786,7 @@ TableWidget.prototype = {
 
 
 
-  push(item, suppressFlash) {
+  push: function (item, suppressFlash) {
     if (!this.sortedOn || !this.columns) {
       console.error("Can't insert item without defining columns first");
       return;
@@ -822,7 +822,7 @@ TableWidget.prototype = {
   
 
 
-  remove(item) {
+  remove: function (item) {
     if (typeof item != "object") {
       item = this.items.get(item);
     }
@@ -850,7 +850,7 @@ TableWidget.prototype = {
 
 
 
-  update(item) {
+  update: function (item) {
     let oldItem = this.items.get(item[this.uniqueId]);
     if (!oldItem) {
       return;
@@ -873,7 +873,7 @@ TableWidget.prototype = {
   
 
 
-  clear() {
+  clear: function () {
     this.items.clear();
     for (let column of this.columns.values()) {
       column.clear();
@@ -890,7 +890,7 @@ TableWidget.prototype = {
 
 
 
-  sortBy(column) {
+  sortBy: function (column) {
     this.emit(EVENTS.COLUMN_SORTED, column);
     this.sortedOn = column;
 
@@ -948,7 +948,7 @@ TableWidget.prototype = {
   
 
 
-  onScroll() {
+  onScroll: function () {
     clearNamedTimeout("table-scroll");
     setNamedTimeout("table-scroll", AFTER_SCROLL_DELAY, this.afterScroll);
   },
@@ -956,7 +956,7 @@ TableWidget.prototype = {
   
 
 
-  afterScroll() {
+  afterScroll: function () {
     let scrollHeight = this.tbody.getBoundingClientRect().height -
         this.tbody.querySelector(".table-widget-column-header").clientHeight;
 
@@ -1132,7 +1132,7 @@ Column.prototype = {
 
 
 
-  onColumnSorted(event, column) {
+  onColumnSorted: function (event, column) {
     if (column != this.id) {
       this.sorted = 0;
       return;
@@ -1144,7 +1144,7 @@ Column.prototype = {
     this.updateZebra();
   },
 
-  onTableFiltered(event, itemsToHide) {
+  onTableFiltered: function (event, itemsToHide) {
     this._updateItems();
     if (!this.cells) {
       return;
@@ -1166,7 +1166,7 @@ Column.prototype = {
 
 
 
-  onRowUpdated(event, id) {
+  onRowUpdated: function (event, id) {
     this._updateItems();
     if (this.highlightUpdated && this.items[id] != null) {
       if (this.table.editBookmark) {
@@ -1183,7 +1183,7 @@ Column.prototype = {
     this.updateZebra();
   },
 
-  destroy() {
+  destroy: function () {
     this.table.off(EVENTS.COLUMN_SORTED, this.onColumnSorted);
     this.table.off(EVENTS.HEADER_CONTEXT_MENU, this.toggleColumn);
     this.table.off(EVENTS.ROW_UPDATED, this.onRowUpdated);
@@ -1202,7 +1202,7 @@ Column.prototype = {
   
 
 
-  selectRowAt(index) {
+  selectRowAt: function (index) {
     if (this.selectedRow != null) {
       this.cells[this.items[this.selectedRow]].toggleClass("theme-selected");
     }
@@ -1218,7 +1218,7 @@ Column.prototype = {
   
 
 
-  selectRow(id) {
+  selectRow: function (id) {
     this._updateItems();
     this.selectRowAt(this.items[id]);
   },
@@ -1226,7 +1226,7 @@ Column.prototype = {
   
 
 
-  selectNextRow() {
+  selectNextRow: function () {
     this._updateItems();
     let index = this.items[this.selectedRow] + 1;
     if (index == this.cells.length) {
@@ -1238,7 +1238,7 @@ Column.prototype = {
   
 
 
-  selectPreviousRow() {
+  selectPreviousRow: function () {
     this._updateItems();
     let index = this.items[this.selectedRow] - 1;
     if (index == -1) {
@@ -1255,7 +1255,7 @@ Column.prototype = {
 
 
 
-  push(item) {
+  push: function (item) {
     let value = item[this.id];
 
     if (this.sorted) {
@@ -1285,7 +1285,7 @@ Column.prototype = {
   
 
 
-  insertAt(item, index) {
+  insertAt: function (item, index) {
     if (index < this.cells.length) {
       this._itemsDirty = true;
     }
@@ -1307,7 +1307,7 @@ Column.prototype = {
 
 
 
-  toggleColumn(event, id, checked) {
+  toggleColumn: function (event, id, checked) {
     if (arguments.length == 0) {
       
       id = this.id;
@@ -1326,7 +1326,7 @@ Column.prototype = {
   
 
 
-  remove(item) {
+  remove: function (item) {
     this._updateItems();
     let index = this.items[item[this.uniqueId]];
     if (index == null) {
@@ -1344,7 +1344,7 @@ Column.prototype = {
   
 
 
-  update(item) {
+  update: function (item) {
     this._updateItems();
 
     let index = this.items[item[this.uniqueId]];
@@ -1359,7 +1359,7 @@ Column.prototype = {
 
 
 
-  _updateItems() {
+  _updateItems: function () {
     if (!this._itemsDirty) {
       return;
     }
@@ -1372,7 +1372,7 @@ Column.prototype = {
   
 
 
-  clear() {
+  clear: function () {
     this.cells = [];
     this.items = {};
     this._itemsDirty = false;
@@ -1386,7 +1386,7 @@ Column.prototype = {
 
 
 
-  sort(items) {
+  sort: function (items) {
     
     if (this.sorted == 1) {
       items.sort((a, b) => {
@@ -1439,7 +1439,7 @@ Column.prototype = {
 
 
 
-  onClick(event) {
+  onClick: function (event) {
     let target = event.originalTarget;
 
     if (target.nodeType !== target.ELEMENT_NODE || target == this.column) {
@@ -1454,7 +1454,7 @@ Column.prototype = {
   
 
 
-  onMousedown(event) {
+  onMousedown: function (event) {
     let target = event.originalTarget;
 
     if (target.nodeType !== target.ELEMENT_NODE ||
@@ -1567,7 +1567,7 @@ Cell.prototype = {
     return this._value;
   },
 
-  toggleClass(className, condition) {
+  toggleClass: function (className, condition) {
     this.label.classList.toggle(className, condition);
   },
 
@@ -1575,7 +1575,7 @@ Cell.prototype = {
 
 
 
-  flash() {
+  flash: function () {
     if (!this.label.parentNode) {
       return;
     }
@@ -1590,11 +1590,11 @@ Cell.prototype = {
     this.label.classList.add("flash-out");
   },
 
-  focus() {
+  focus: function () {
     this.label.focus();
   },
 
-  destroy() {
+  destroy: function () {
     this.label.remove();
     this.label = null;
   }
@@ -1680,7 +1680,7 @@ EditableFieldsEngine.prototype = {
 
 
 
-  onTrigger({target}) {
+  onTrigger: function ({target}) {
     this.edit(target);
   },
 
@@ -1694,7 +1694,7 @@ EditableFieldsEngine.prototype = {
 
 
 
-  onKeydown(event) {
+  onKeydown: function (event) {
     if (!this.textbox) {
       return;
     }
@@ -1721,7 +1721,7 @@ EditableFieldsEngine.prototype = {
 
 
 
-  edit(target) {
+  edit: function (target) {
     if (!target) {
       return;
     }
@@ -1750,7 +1750,7 @@ EditableFieldsEngine.prototype = {
     this.textbox.select();
   },
 
-  completeEdit() {
+  completeEdit: function () {
     if (!this.isEditing) {
       return;
     }
@@ -1772,8 +1772,8 @@ EditableFieldsEngine.prototype = {
       let data = {
         change: {
           field: this.currentTarget,
-          oldValue,
-          newValue
+          oldValue: oldValue,
+          newValue: newValue
         }
       };
 
@@ -1784,7 +1784,7 @@ EditableFieldsEngine.prototype = {
   
 
 
-  cancelEdit() {
+  cancelEdit: function () {
     if (!this.isEditing) {
       return;
     }
@@ -1798,7 +1798,7 @@ EditableFieldsEngine.prototype = {
   
 
 
-  blur() {
+  blur: function () {
     if (this.isEditing) {
       this.completeEdit();
     }
@@ -1812,7 +1812,7 @@ EditableFieldsEngine.prototype = {
 
 
 
-  copyStyles(source, destination) {
+  copyStyles: function (source, destination) {
     let style = source.ownerDocument.defaultView.getComputedStyle(source);
     let props = [
       "borderTopWidth",
@@ -1842,7 +1842,7 @@ EditableFieldsEngine.prototype = {
   
 
 
-  destroy() {
+  destroy: function () {
     if (this.textbox) {
       this.textbox.removeEventListener("keydown", this.onKeydown);
       this.textbox.remove();

@@ -23,7 +23,7 @@ SidebarView.prototype = {
 
 
 
-  toggle(visibleFlag) {
+  toggle: function (visibleFlag) {
     NetMonitorView.toggleDetailsPane({ visible: visibleFlag });
   },
 

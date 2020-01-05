@@ -45,7 +45,7 @@ exports.Timeline = Class({
   
 
 
-  initialize(tabActor) {
+  initialize: function (tabActor) {
     this.tabActor = tabActor;
 
     this._isRecording = false;
@@ -62,7 +62,7 @@ exports.Timeline = Class({
   
 
 
-  destroy() {
+  destroy: function () {
     this.stop();
 
     events.off(this.tabActor, "window-ready", this._onWindowReady);
@@ -109,7 +109,7 @@ exports.Timeline = Class({
 
 
 
-  _pullTimelineData() {
+  _pullTimelineData: function () {
     let docShells = this.docShells;
     if (!this._isRecording || !docShells.length) {
       return;
@@ -183,7 +183,7 @@ exports.Timeline = Class({
   
 
 
-  isRecording() {
+  isRecording: function () {
     return this._isRecording;
   },
 
@@ -318,7 +318,7 @@ exports.Timeline = Class({
 
 
 
-  _onWindowReady({ window }) {
+  _onWindowReady: function ({ window }) {
     if (this._isRecording) {
       let docShell = window.QueryInterface(Ci.nsIInterfaceRequestor)
                            .getInterface(Ci.nsIWebNavigation)
@@ -336,7 +336,7 @@ exports.Timeline = Class({
 
 
 
-  _onGarbageCollection({
+  _onGarbageCollection: function ({
     collections, gcCycleNumber, reason, nonincrementalReason
   }) {
     let docShells = this.docShells;
@@ -352,7 +352,7 @@ exports.Timeline = Class({
       return {
         name: "GarbageCollection",
         causeName: reason,
-        nonincrementalReason,
+        nonincrementalReason: nonincrementalReason,
         cycle: gcCycleNumber,
         start,
         end,

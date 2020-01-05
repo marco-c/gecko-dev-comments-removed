@@ -33,7 +33,7 @@ SelectorHighlighter.prototype = {
 
 
 
-  show(node, options = {}) {
+  show: function (node, options = {}) {
     this.hide();
 
     if (!isNodeValid(node) || !options.selector) {
@@ -68,14 +68,14 @@ SelectorHighlighter.prototype = {
     return true;
   },
 
-  hide() {
+  hide: function () {
     for (let highlighter of this._highlighters) {
       highlighter.destroy();
     }
     this._highlighters = [];
   },
 
-  destroy() {
+  destroy: function () {
     this.hide();
     this.highlighterEnv = null;
   }

@@ -70,7 +70,7 @@ DetailsView.prototype = {
   
 
 
-  initialize(store) {
+  initialize: function (store) {
     dumpn("Initializing the DetailsView");
 
     this._paramsPanelNode = $("#react-params-tabpanel-hook");
@@ -137,7 +137,7 @@ DetailsView.prototype = {
   
 
 
-  destroy() {
+  destroy: function () {
     dumpn("Destroying the DetailsView");
     ReactDOM.unmountComponentAtNode(this._paramsPanelNode);
     ReactDOM.unmountComponentAtNode(this._previewPanelNode);
@@ -157,7 +157,7 @@ DetailsView.prototype = {
 
 
 
-  populate(data) {
+  populate: function (data) {
     $("#raw-headers").hidden = true;
 
     let isHtml = Filters.html(data);
@@ -195,7 +195,7 @@ DetailsView.prototype = {
   
 
 
-  _onTabSelect() {
+  _onTabSelect: function () {
     let { src, populated } = this._dataSrc || {};
     let tab = this.widget.selectedIndex;
     let view = this;
@@ -259,7 +259,7 @@ DetailsView.prototype = {
 
 
 
-  _setSummary(data) {
+  _setSummary: function (data) {
     if (data.url) {
       let unicodeUrl = decodeUnicodeUrl(data.url);
       $("#headers-summary-url-value").setAttribute("value", unicodeUrl);

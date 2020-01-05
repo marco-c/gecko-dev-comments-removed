@@ -485,7 +485,7 @@ exports.app = {
   individuals: individualsModel,
 
   
-  view(app) {
+  view: function (app) {
     viewModel.isRequired(app, "view");
 
     catchAndIgnore(function (app) {

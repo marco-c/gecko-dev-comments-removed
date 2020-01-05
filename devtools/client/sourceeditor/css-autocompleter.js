@@ -110,7 +110,7 @@ CSSCompleter.prototype = {
 
 
 
-  complete(source, caret) {
+  complete: function (source, caret) {
     
     if (!this.resolveState(source, caret)) {
       
@@ -160,7 +160,7 @@ CSSCompleter.prototype = {
 
 
 
-  resolveState(source, {line, ch}) {
+  resolveState: function (source, {line, ch}) {
     
     let peek = arr => arr[arr.length - 1];
     
@@ -720,7 +720,7 @@ CSSCompleter.prototype = {
 
 
 
-  suggestSelectors() {
+  suggestSelectors: function () {
     let walker = this.walker;
     if (!walker) {
       return Promise.resolve([]);
@@ -770,7 +770,7 @@ CSSCompleter.prototype = {
  
 
 
-  prepareSelectorResults(result) {
+  prepareSelectorResults: function (result) {
     if (this._currentQuery != result.query) {
       return [];
     }
@@ -838,7 +838,7 @@ CSSCompleter.prototype = {
 
 
 
-  completeProperties(startProp) {
+  completeProperties: function (startProp) {
     let finalList = [];
     if (!startProp) {
       return Promise.resolve(finalList);
@@ -870,7 +870,7 @@ CSSCompleter.prototype = {
 
 
 
-  completeValues(propName, startValue) {
+  completeValues: function (propName, startValue) {
     let finalList = [];
     let list = ["!important;", ...this.cssProperties.getValues(propName)];
     
@@ -909,7 +909,7 @@ CSSCompleter.prototype = {
 
 
 
-  findNearestNullState(line) {
+  findNearestNullState: function (line) {
     let arr = this.nullStates;
     let high = arr.length - 1;
     let low = 0;
@@ -953,7 +953,7 @@ CSSCompleter.prototype = {
   
 
 
-  invalidateCache(line) {
+  invalidateCache: function (line) {
     this.nullStates.length = this.findNearestNullState(line) + 1;
   },
 
@@ -983,7 +983,7 @@ CSSCompleter.prototype = {
 
 
 
-  getInfoAt(source, caret) {
+  getInfoAt: function (source, caret) {
     
     function limit(sourceArg, {line, ch}) {
       line++;
@@ -1043,7 +1043,7 @@ CSSCompleter.prototype = {
           }
 
           let forwState = this.resolveState(limitedSource, {
-            line,
+            line: line,
             ch: token.endOffset + ech
           });
           if (check(forwState)) {
@@ -1051,7 +1051,7 @@ CSSCompleter.prototype = {
               token = prevToken;
             }
             location = {
-              line,
+              line: line,
               ch: token.startOffset + ech
             };
             found = true;
@@ -1104,7 +1104,7 @@ CSSCompleter.prototype = {
           }
 
           let backState = this.resolveState(limitedSource, {
-            line,
+            line: line,
             ch: token.startOffset
           });
           if (check(backState)) {
@@ -1112,7 +1112,7 @@ CSSCompleter.prototype = {
               token = tokens[i + 1];
             }
             location = {
-              line,
+              line: line,
               ch: isValue ? token.endOffset : token.startOffset
             };
             found = true;
@@ -1152,11 +1152,11 @@ CSSCompleter.prototype = {
       selector[0] = selector[0].substring(start.ch);
       selector = selector.join("\n");
       return {
-        state,
-        selector,
+        state: state,
+        selector: selector,
         loc: {
-          start,
-          end
+          start: start,
+          end: end
         }
       };
     } else if (state == CSS_STATES.property) {
@@ -1167,16 +1167,16 @@ CSSCompleter.prototype = {
         
         if (token.startOffset <= ch && token.endOffset >= ch) {
           return {
-            state,
+            state: state,
             propertyName: token.text,
             selectors: this.selectors,
             loc: {
               start: {
-                line,
+                line: line,
                 ch: token.startOffset
               },
               end: {
-                line,
+                line: line,
                 ch: token.endOffset
               }
             }
@@ -1197,13 +1197,13 @@ CSSCompleter.prototype = {
       value[0] = value[0].substring(start.ch);
       value = value.join("\n");
       return {
-        state,
-        propertyName,
+        state: state,
+        propertyName: propertyName,
         selectors: this.selectors,
-        value,
+        value: value,
         loc: {
-          start,
-          end
+          start: start,
+          end: end
         }
       };
     }

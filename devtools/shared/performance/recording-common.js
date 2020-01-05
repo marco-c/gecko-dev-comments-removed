@@ -35,19 +35,19 @@ exports.PerformanceRecordingCommon = {
 
 
 
-  isRecording() {
+  isRecording: function () {
     return this._recording;
   },
-  isCompleted() {
+  isCompleted: function () {
     return this._completed || this.isImported();
   },
-  isFinalizing() {
+  isFinalizing: function () {
     return !this.isRecording() && !this.isCompleted();
   },
-  isConsole() {
+  isConsole: function () {
     return this._console;
   },
-  isImported() {
+  isImported: function () {
     return this._imported;
   },
 
@@ -55,10 +55,10 @@ exports.PerformanceRecordingCommon = {
 
 
 
-  getConfiguration() {
+  getConfiguration: function () {
     return this._configuration;
   },
-  getLabel() {
+  getLabel: function () {
     return this._label;
   },
 
@@ -66,7 +66,7 @@ exports.PerformanceRecordingCommon = {
 
 
 
-  getDuration() {
+  getDuration: function () {
     
     
     
@@ -83,35 +83,35 @@ exports.PerformanceRecordingCommon = {
 
 
 
-  getMarkers() {
+  getMarkers: function () {
     return this._markers;
   },
-  getFrames() {
+  getFrames: function () {
     return this._frames;
   },
-  getMemory() {
+  getMemory: function () {
     return this._memory;
   },
-  getTicks() {
+  getTicks: function () {
     return this._ticks;
   },
-  getAllocations() {
+  getAllocations: function () {
     return this._allocations;
   },
-  getProfile() {
+  getProfile: function () {
     return this._profile;
   },
-  getHostSystemInfo() {
+  getHostSystemInfo: function () {
     return this._systemHost;
   },
-  getClientSystemInfo() {
+  getClientSystemInfo: function () {
     return this._systemClient;
   },
-  getStartingBufferStatus() {
+  getStartingBufferStatus: function () {
     return this._startingBufferStatus;
   },
 
-  getAllData() {
+  getAllData: function () {
     let label = this.getLabel();
     let duration = this.getDuration();
     let markers = this.getMarkers();

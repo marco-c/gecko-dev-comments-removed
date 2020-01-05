@@ -28,14 +28,14 @@ function ReadOnlyEditor(container, node) {
 }
 
 ReadOnlyEditor.prototype = {
-  destroy() {
+  destroy: function () {
     this.elt.remove();
   },
 
   
 
 
-  getInfoAtNode() {
+  getInfoAtNode: function () {
     return null;
   }
 };

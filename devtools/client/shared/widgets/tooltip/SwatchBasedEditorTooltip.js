@@ -72,7 +72,7 @@ SwatchBasedEditorTooltip.prototype = {
 
 
 
-  show() {
+  show: function () {
     if (this.activeSwatch) {
       let onShown = this.tooltip.once("shown");
       this.tooltip.show(this.activeSwatch, "topcenter bottomleft");
@@ -97,7 +97,7 @@ SwatchBasedEditorTooltip.prototype = {
     return Promise.resolve();
   },
 
-  hide() {
+  hide: function () {
     this.tooltip.hide();
   },
 
@@ -118,7 +118,7 @@ SwatchBasedEditorTooltip.prototype = {
 
 
 
-  addSwatch(swatchEl, callbacks = {}) {
+  addSwatch: function (swatchEl, callbacks = {}) {
     if (!callbacks.onShow) {
       callbacks.onShow = function () {};
     }
@@ -133,12 +133,12 @@ SwatchBasedEditorTooltip.prototype = {
     }
 
     this.swatches.set(swatchEl, {
-      callbacks
+      callbacks: callbacks
     });
     swatchEl.addEventListener("click", this._onSwatchClick, false);
   },
 
-  removeSwatch(swatchEl) {
+  removeSwatch: function (swatchEl) {
     if (this.swatches.has(swatchEl)) {
       if (this.activeSwatch === swatchEl) {
         this.hide();
@@ -149,7 +149,7 @@ SwatchBasedEditorTooltip.prototype = {
     }
   },
 
-  _onSwatchClick(event) {
+  _onSwatchClick: function (event) {
     let swatch = this.swatches.get(event.target);
 
     if (event.shiftKey) {
@@ -167,7 +167,7 @@ SwatchBasedEditorTooltip.prototype = {
   
 
 
-  preview(value) {
+  preview: function (value) {
     if (this.activeSwatch) {
       let swatch = this.swatches.get(this.activeSwatch);
       swatch.callbacks.onPreview(value);
@@ -177,7 +177,7 @@ SwatchBasedEditorTooltip.prototype = {
   
 
 
-  revert() {
+  revert: function () {
     if (this.activeSwatch) {
       this._reverted = true;
       let swatch = this.swatches.get(this.activeSwatch);
@@ -190,14 +190,14 @@ SwatchBasedEditorTooltip.prototype = {
   
 
 
-  commit() {
+  commit: function () {
     if (this.activeSwatch) {
       let swatch = this.swatches.get(this.activeSwatch);
       swatch.callbacks.onCommit();
     }
   },
 
-  destroy() {
+  destroy: function () {
     this.swatches.clear();
     this.activeSwatch = null;
     this.tooltip.off("keypress", this._onTooltipKeypress);

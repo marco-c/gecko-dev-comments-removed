@@ -183,7 +183,7 @@ Inspector.prototype = {
 
 
 
-  _handleRejectionIfNotDestroyed(e) {
+  _handleRejectionIfNotDestroyed: function (e) {
     if (!this._panelDestroyer) {
       console.error(e);
     }
@@ -192,7 +192,7 @@ Inspector.prototype = {
   
 
 
-  _detectActorFeatures() {
+  _detectActorFeatures: function () {
     this._supportsDuplicateNode = false;
     this._supportsScrollIntoView = false;
     this._supportsResolveRelativeURL = false;
@@ -214,7 +214,7 @@ Inspector.prototype = {
     });
   },
 
-  _deferredOpen(defaultSelection) {
+  _deferredOpen: function (defaultSelection) {
     let deferred = defer();
 
     this.breadcrumbs = new HTMLBreadcrumbs(this);
@@ -278,7 +278,7 @@ Inspector.prototype = {
     return deferred.promise;
   },
 
-  _onBeforeNavigate() {
+  _onBeforeNavigate: function () {
     this._defaultNode = null;
     this.selection.setNodeFront(null);
     this._destroyMarkup();
@@ -286,7 +286,7 @@ Inspector.prototype = {
     this._pendingSelection = null;
   },
 
-  _getPageStyle() {
+  _getPageStyle: function () {
     return this.inspector.getPageStyle().then(pageStyle => {
       this.pageStyle = pageStyle;
     }, this._handleRejectionIfNotDestroyed);
@@ -295,7 +295,7 @@ Inspector.prototype = {
   
 
 
-  _getDefaultNodeForSelection() {
+  _getDefaultNodeForSelection: function () {
     if (this._defaultNode) {
       return this._defaultNode;
     }
@@ -365,14 +365,14 @@ Inspector.prototype = {
 
 
 
-  markDirty() {
+  markDirty: function () {
     this.isDirty = true;
   },
 
   
 
 
-  setupSearchBox() {
+  setupSearchBox: function () {
     this.searchBox = this.panelDoc.getElementById("inspector-searchbox");
     this.searchClearButton = this.panelDoc.getElementById("inspector-searchinput-clear");
     this.searchResultsLabel = this.panelDoc.getElementById("inspector-searchlabel");
@@ -400,7 +400,7 @@ Inspector.prototype = {
     return this.search.autocompleter;
   },
 
-  _updateSearchResultsLabel(event, result) {
+  _updateSearchResultsLabel: function (event, result) {
     let str = "";
     if (event !== "search-cleared") {
       if (result) {
@@ -444,7 +444,7 @@ Inspector.prototype = {
 
 
 
-  useLandscapeMode() {
+  useLandscapeMode: function () {
     let { clientWidth } = this.panelDoc.getElementById("inspector-splitter-box");
     return clientWidth > PORTRAIT_MODE_WIDTH;
   },
@@ -453,7 +453,7 @@ Inspector.prototype = {
 
 
 
-  setupSplitter() {
+  setupSplitter: function () {
     let SplitBox = this.React.createFactory(this.browserRequire(
       "devtools/client/shared/components/splitter/split-box"));
 
@@ -486,7 +486,7 @@ Inspector.prototype = {
   
 
 
-  teardownSplitter() {
+  teardownSplitter: function () {
     this.panelWin.removeEventListener("resize", this.onPanelWindowResize, true);
 
     this.sidebar.off("show", this.onSidebarShown);
@@ -498,13 +498,13 @@ Inspector.prototype = {
 
 
 
-  onPanelWindowResize() {
+  onPanelWindowResize: function () {
     this._splitter.setState({
       vert: this.useLandscapeMode(),
     });
   },
 
-  onSidebarShown() {
+  onSidebarShown: function () {
     let width;
     let height;
 
@@ -524,7 +524,7 @@ Inspector.prototype = {
     this._splitter.setState({width, height});
   },
 
-  onSidebarHidden() {
+  onSidebarHidden: function () {
     
     let state = this._splitter.state;
     Services.prefs.setIntPref("devtools.toolsidebar-width.inspector", state.width);
@@ -534,7 +534,7 @@ Inspector.prototype = {
   
 
 
-  setupSidebar() {
+  setupSidebar: function () {
     let tabbox = this.panelDoc.querySelector("#inspector-sidebar");
     this.sidebar = new ToolSidebar(tabbox, this, "inspector", {
       showAllTabsMenu: true
@@ -608,7 +608,7 @@ Inspector.prototype = {
 
 
 
-  addSidebarTab(id, title, panel, selected) {
+  addSidebarTab: function (id, title, panel, selected) {
     this.sidebar.addTab(id, title, panel, selected);
   },
 
@@ -689,7 +689,7 @@ Inspector.prototype = {
     }
   }),
 
-  teardownToolbar() {
+  teardownToolbar: function () {
     this._sidebarToggle = null;
 
     if (this.addNodeButton) {
@@ -706,7 +706,7 @@ Inspector.prototype = {
   
 
 
-  onNewRoot() {
+  onNewRoot: function () {
     this._defaultNode = null;
     this.selection.setNodeFront(null);
     this._destroyMarkup();
@@ -772,7 +772,7 @@ Inspector.prototype = {
 
 
 
-  canAddHTMLChild() {
+  canAddHTMLChild: function () {
     let selection = this.selection;
 
     
@@ -790,7 +790,7 @@ Inspector.prototype = {
   
 
 
-  onNewSelection(event, value, reason) {
+  onNewSelection: function (event, value, reason) {
     if (reason === "selection-destroy") {
       return;
     }
@@ -833,7 +833,7 @@ Inspector.prototype = {
 
 
 
-  updating(name) {
+  updating: function (name) {
     if (this._updateProgress && this._updateProgress.node != this.selection.nodeFront) {
       this.cancelUpdate();
     }
@@ -844,7 +844,7 @@ Inspector.prototype = {
       this._updateProgress = {
         node: this.selection.nodeFront,
         outstanding: new Set(),
-        checkDone() {
+        checkDone: function () {
           if (this !== self._updateProgress) {
             return;
           }
@@ -876,7 +876,7 @@ Inspector.prototype = {
   
 
 
-  cancelUpdate() {
+  cancelUpdate: function () {
     this._updateProgress = null;
   },
 
@@ -885,7 +885,7 @@ Inspector.prototype = {
 
 
 
-  onDetached(event, parentNode) {
+  onDetached: function (event, parentNode) {
     this.breadcrumbs.cutAfter(this.breadcrumbs.indexOf(parentNode));
     this.selection.setNodeFront(parentNode ? parentNode : this._defaultNode, "detached");
   },
@@ -893,7 +893,7 @@ Inspector.prototype = {
   
 
 
-  destroy() {
+  destroy: function () {
     if (this._panelDestroyer) {
       return this._panelDestroyer;
     }
@@ -974,7 +974,7 @@ Inspector.prototype = {
 
 
 
-  _getClipboardContentForPaste() {
+  _getClipboardContentForPaste: function () {
     let flavors = clipboardHelper.getCurrentFlavors();
     if (flavors.indexOf("text") != -1 ||
         (flavors.indexOf("html") != -1 && flavors.indexOf("image") == -1)) {
@@ -986,7 +986,7 @@ Inspector.prototype = {
     return null;
   },
 
-  _onContextMenu(e) {
+  _onContextMenu: function (e) {
     e.preventDefault();
     this._openMenu({
       screenX: e.screenX,
@@ -1000,13 +1000,13 @@ Inspector.prototype = {
 
 
 
-  onTextBoxContextMenu(e) {
+  onTextBoxContextMenu: function (e) {
     e.stopPropagation();
     e.preventDefault();
     this.toolbox.openTextBoxContextMenu(e.screenX, e.screenY);
   },
 
-  _openMenu({ target, screenX = 0, screenY = 0 } = { }) {
+  _openMenu: function ({ target, screenX = 0, screenY = 0 } = { }) {
     let markupContainer = this.markup.getContainer(this.selection.nodeFront);
 
     this.contextMenuTarget = target;
@@ -1195,7 +1195,7 @@ Inspector.prototype = {
     return menu;
   },
 
-  _getPasteSubmenu(isEditableElement) {
+  _getPasteSubmenu: function (isEditableElement) {
     let isPasteable = isEditableElement && this._getClipboardContentForPaste();
     let disableAdjacentPaste = !isPasteable ||
           !this.canPasteInnerOrAdjacentHTML || this.selection.isRoot() ||
@@ -1255,7 +1255,7 @@ Inspector.prototype = {
     return pasteSubmenu;
   },
 
-  _getAttributesSubmenu(isEditableElement) {
+  _getAttributesSubmenu: function (isEditableElement) {
     let attributesSubmenu = new Menu();
     let nodeInfo = this.nodeMenuTriggerInfo;
     let isAttributeClicked = isEditableElement && nodeInfo &&
@@ -1296,7 +1296,7 @@ Inspector.prototype = {
 
 
 
-  _getNodeLinkMenuItems() {
+  _getNodeLinkMenuItems: function () {
     let linkFollow = new MenuItem({
       id: "node-menu-link-follow",
       visible: false,
@@ -1344,7 +1344,7 @@ Inspector.prototype = {
     return [linkFollow, linkCopy];
   },
 
-  _initMarkup() {
+  _initMarkup: function () {
     let doc = this.panelDoc;
 
     this._markupBox = doc.getElementById("markup-box");
@@ -1365,7 +1365,7 @@ Inspector.prototype = {
       INSPECTOR_L10N.getStr("inspector.panelLabel.markupView"));
   },
 
-  _onMarkupFrameLoad() {
+  _onMarkupFrameLoad: function () {
     this._markupFrame.removeEventListener("load", this._onMarkupFrameLoad, true);
 
     this._markupFrame.contentWindow.focus();
@@ -1377,7 +1377,7 @@ Inspector.prototype = {
     this.emit("markuploaded");
   },
 
-  _destroyMarkup() {
+  _destroyMarkup: function () {
     let destroyPromise;
 
     if (this._markupFrame) {
@@ -1406,7 +1406,7 @@ Inspector.prototype = {
 
 
 
-  onPaneToggleButtonClicked(e) {
+  onPaneToggleButtonClicked: function (e) {
     let sidePaneContainer = this.panelDoc.querySelector(
       "#inspector-splitter-box .controlled");
     let isVisible = !this._sidebarToggle.state.collapsed;
@@ -1439,25 +1439,25 @@ Inspector.prototype = {
     }, sidePaneContainer);
   },
 
-  onEyeDropperButtonClicked() {
+  onEyeDropperButtonClicked: function () {
     this.eyeDropperButton.hasAttribute("checked")
       ? this.hideEyeDropper()
       : this.showEyeDropper();
   },
 
-  startEyeDropperListeners() {
+  startEyeDropperListeners: function () {
     this.inspector.once("color-pick-canceled", this.onEyeDropperDone);
     this.inspector.once("color-picked", this.onEyeDropperDone);
     this.walker.once("new-root", this.onEyeDropperDone);
   },
 
-  stopEyeDropperListeners() {
+  stopEyeDropperListeners: function () {
     this.inspector.off("color-pick-canceled", this.onEyeDropperDone);
     this.inspector.off("color-picked", this.onEyeDropperDone);
     this.walker.off("new-root", this.onEyeDropperDone);
   },
 
-  onEyeDropperDone() {
+  onEyeDropperDone: function () {
     this.eyeDropperButton.removeAttribute("checked");
     this.stopEyeDropperListeners();
   },
@@ -1466,7 +1466,7 @@ Inspector.prototype = {
 
 
 
-  showEyeDropper() {
+  showEyeDropper: function () {
     
     
     if (!this.eyeDropperButton) {
@@ -1484,7 +1484,7 @@ Inspector.prototype = {
 
 
 
-  hideEyeDropper() {
+  hideEyeDropper: function () {
     
     
     if (!this.eyeDropperButton) {
@@ -1520,7 +1520,7 @@ Inspector.prototype = {
   
 
 
-  togglePseudoClass(pseudo) {
+  togglePseudoClass: function (pseudo) {
     if (this.selection.isElementNode()) {
       let node = this.selection.nodeFront;
       if (node.hasPseudoClassLock(pseudo)) {
@@ -1536,7 +1536,7 @@ Inspector.prototype = {
   
 
 
-  showDOMProperties() {
+  showDOMProperties: function () {
     this._toolbox.openSplitConsole().then(() => {
       let panel = this._toolbox.getPanel("webconsole");
       let jsterm = panel.hud.jsterm;
@@ -1553,7 +1553,7 @@ Inspector.prototype = {
 
 
 
-  useInConsole() {
+  useInConsole: function () {
     this._toolbox.openSplitConsole().then(() => {
       let panel = this._toolbox.getPanel("webconsole");
       let jsterm = panel.hud.jsterm;
@@ -1579,7 +1579,7 @@ Inspector.prototype = {
   
 
 
-  editHTML() {
+  editHTML: function () {
     if (!this.selection.isNode()) {
       return;
     }
@@ -1591,7 +1591,7 @@ Inspector.prototype = {
   
 
 
-  pasteOuterHTML() {
+  pasteOuterHTML: function () {
     let content = this._getClipboardContentForPaste();
     if (!content) {
       return promise.reject("No clipboard content for paste");
@@ -1606,7 +1606,7 @@ Inspector.prototype = {
   
 
 
-  pasteInnerHTML() {
+  pasteInnerHTML: function () {
     let content = this._getClipboardContentForPaste();
     if (!content) {
       return promise.reject("No clipboard content for paste");
@@ -1624,7 +1624,7 @@ Inspector.prototype = {
 
 
 
-  pasteAdjacentHTML(position) {
+  pasteAdjacentHTML: function (position) {
     let content = this._getClipboardContentForPaste();
     if (!content) {
       return promise.reject("No clipboard content for paste");
@@ -1637,7 +1637,7 @@ Inspector.prototype = {
   
 
 
-  copyInnerHTML() {
+  copyInnerHTML: function () {
     if (!this.selection.isNode()) {
       return;
     }
@@ -1647,7 +1647,7 @@ Inspector.prototype = {
   
 
 
-  copyOuterHTML() {
+  copyOuterHTML: function () {
     if (!this.selection.isNode()) {
       return;
     }
@@ -1671,7 +1671,7 @@ Inspector.prototype = {
   
 
 
-  copyImageDataUri() {
+  copyImageDataUri: function () {
     let container = this.markup.getContainer(this.selection.nodeFront);
     if (container && container.isPreviewable()) {
       container.copyImageDataUri();
@@ -1686,7 +1686,7 @@ Inspector.prototype = {
 
 
 
-  _copyLongString(longStringActorPromise) {
+  _copyLongString: function (longStringActorPromise) {
     return this._getLongString(longStringActorPromise).then(string => {
       clipboardHelper.copyString(string);
     }).catch(e => console.error(e));
@@ -1698,7 +1698,7 @@ Inspector.prototype = {
 
 
 
-  _getLongString(longStringActorPromise) {
+  _getLongString: function (longStringActorPromise) {
     return longStringActorPromise.then(longStringActor => {
       return longStringActor.string().then(string => {
         longStringActor.release().catch(e => console.error(e));
@@ -1710,7 +1710,7 @@ Inspector.prototype = {
   
 
 
-  copyUniqueSelector() {
+  copyUniqueSelector: function () {
     if (!this.selection.isNode()) {
       return;
     }
@@ -1723,7 +1723,7 @@ Inspector.prototype = {
   
 
 
-  screenshotNode() {
+  screenshotNode: function () {
     const command = Services.prefs.getBoolPref("devtools.screenshot.clipboard.enabled") ?
       "screenshot --file --clipboard --selector" :
       "screenshot --file --selector";
@@ -1740,7 +1740,7 @@ Inspector.prototype = {
   
 
 
-  scrollNodeIntoView() {
+  scrollNodeIntoView: function () {
     if (!this.selection.isNode()) {
       return;
     }
@@ -1751,7 +1751,7 @@ Inspector.prototype = {
   
 
 
-  duplicateNode() {
+  duplicateNode: function () {
     let selection = this.selection;
     if (!selection.isElementNode() ||
         selection.isRoot() ||
@@ -1765,7 +1765,7 @@ Inspector.prototype = {
   
 
 
-  deleteNode() {
+  deleteNode: function () {
     if (!this.selection.isNode() ||
          this.selection.isRoot()) {
       return;
@@ -1785,7 +1785,7 @@ Inspector.prototype = {
 
 
 
-  onAddAttribute() {
+  onAddAttribute: function () {
     let container = this.markup.getContainer(this.selection.nodeFront);
     container.addAttribute();
   },
@@ -1794,7 +1794,7 @@ Inspector.prototype = {
 
 
 
-  onEditAttribute() {
+  onEditAttribute: function () {
     let container = this.markup.getContainer(this.selection.nodeFront);
     container.editAttribute(this.nodeMenuTriggerInfo.name);
   },
@@ -1803,16 +1803,16 @@ Inspector.prototype = {
 
 
 
-  onRemoveAttribute() {
+  onRemoveAttribute: function () {
     let container = this.markup.getContainer(this.selection.nodeFront);
     container.removeAttribute(this.nodeMenuTriggerInfo.name);
   },
 
-  expandNode() {
+  expandNode: function () {
     this.markup.expandAll(this.selection.nodeFront);
   },
 
-  collapseNode() {
+  collapseNode: function () {
     this.markup.collapseNode(this.selection.nodeFront);
   },
 
@@ -1820,7 +1820,7 @@ Inspector.prototype = {
 
 
 
-  onFollowLink() {
+  onFollowLink: function () {
     let type = this.contextMenuTarget.dataset.type;
     let link = this.contextMenuTarget.dataset.link;
 
@@ -1832,7 +1832,7 @@ Inspector.prototype = {
 
 
 
-  followAttributeLink(type, link) {
+  followAttributeLink: function (type, link) {
     if (!type || !link) {
       return;
     }
@@ -1871,7 +1871,7 @@ Inspector.prototype = {
 
 
 
-  onCopyLink() {
+  onCopyLink: function () {
     let link = this.contextMenuTarget.dataset.link;
 
     this.copyAttributeLink(link);
@@ -1880,7 +1880,7 @@ Inspector.prototype = {
   
 
 
-  copyAttributeLink(link) {
+  copyAttributeLink: function (link) {
     
     
     this.inspector.resolveRelativeURL(link, this.selection.nodeFront).then(url => {

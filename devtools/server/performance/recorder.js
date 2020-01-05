@@ -55,7 +55,7 @@ const DRAIN_ALLOCATIONS_TIMEOUT = 2000;
 exports.PerformanceRecorder = Class({
   extends: EventTarget,
 
-  initialize(conn, tabActor) {
+  initialize: function (conn, tabActor) {
     this.conn = conn;
     this.tabActor = tabActor;
 
@@ -76,7 +76,7 @@ exports.PerformanceRecorder = Class({
 
 
 
-  connect(options) {
+  connect: function (options) {
     if (this._connected) {
       return;
     }
@@ -96,7 +96,7 @@ exports.PerformanceRecorder = Class({
   
 
 
-  destroy() {
+  destroy: function () {
     this._unregisterListeners();
     this._disconnectComponents();
 
@@ -112,7 +112,7 @@ exports.PerformanceRecorder = Class({
 
 
 
-  _connectComponents() {
+  _connectComponents: function () {
     this._profiler = new Profiler(this.tabActor);
     this._memory = new Memory(this.tabActor);
     this._timeline = new Timeline(this.tabActor);
@@ -123,7 +123,7 @@ exports.PerformanceRecorder = Class({
 
 
 
-  _registerListeners() {
+  _registerListeners: function () {
     this._timeline.on("*", this._onTimelineData);
     this._memory.on("*", this._onTimelineData);
     this._profiler.on("*", this._onProfilerEvent);
@@ -132,7 +132,7 @@ exports.PerformanceRecorder = Class({
   
 
 
-  _unregisterListeners() {
+  _unregisterListeners: function () {
     this._timeline.off("*", this._onTimelineData);
     this._memory.off("*", this._onTimelineData);
     this._profiler.off("*", this._onProfilerEvent);
@@ -141,14 +141,14 @@ exports.PerformanceRecorder = Class({
   
 
 
-  _disconnectComponents() {
+  _disconnectComponents: function () {
     this._profiler.unregisterEventNotifications({ events: PROFILER_EVENTS });
     this._profiler.destroy();
     this._timeline.destroy();
     this._memory.destroy();
   },
 
-  _onProfilerEvent(topic, data) {
+  _onProfilerEvent: function (topic, data) {
     if (topic === "console-api-profiler") {
       if (data.subject.action === "profile") {
         this._onConsoleProfileStart(data.details);
@@ -235,7 +235,7 @@ exports.PerformanceRecorder = Class({
  
 
 
-  _onProfilerUnexpectedlyStopped() {
+  _onProfilerUnexpectedlyStopped: function () {
     Cu.reportError("Profiler unexpectedly stopped.", arguments);
   },
 
@@ -247,7 +247,7 @@ exports.PerformanceRecorder = Class({
 
 
 
-  _onTimelineData(eventName, ...data) {
+  _onTimelineData: function (eventName, ...data) {
     let eventData = Object.create(null);
 
     switch (eventName) {
@@ -286,7 +286,7 @@ exports.PerformanceRecorder = Class({
 
 
 
-  canCurrentlyRecord() {
+  canCurrentlyRecord: function () {
     let success = true;
     let reasons = [];
 
@@ -447,14 +447,14 @@ exports.PerformanceRecorder = Class({
 
 
 
-  isRecording() {
+  isRecording: function () {
     return this._recordings.some(h => h.isRecording());
   },
 
   
 
 
-  getRecordings() {
+  getRecordings: function () {
     return this._recordings;
   },
 
@@ -462,7 +462,7 @@ exports.PerformanceRecorder = Class({
 
 
 
-  setProfilerStatusInterval(n) {
+  setProfilerStatusInterval: function (n) {
     this._profiler.setProfilerStatusInterval(n);
   },
 
@@ -473,7 +473,7 @@ exports.PerformanceRecorder = Class({
 
 
 
-  getConfiguration() {
+  getConfiguration: function () {
     let allocationSettings = Object.create(null);
 
     if (this._memory.getState() === "attached") {

@@ -24,7 +24,7 @@ var JsCallTreeView = Heritage.extend(DetailsSubview, {
   
 
 
-  initialize() {
+  initialize: function () {
     DetailsSubview.initialize.call(this);
 
     this._onLink = this._onLink.bind(this);
@@ -38,7 +38,7 @@ var JsCallTreeView = Heritage.extend(DetailsSubview, {
   
 
 
-  destroy() {
+  destroy: function () {
     ReactDOM.unmountComponentAtNode(this.optimizationsElement);
     this.optimizationsElement = null;
     this.container = null;
@@ -52,7 +52,7 @@ var JsCallTreeView = Heritage.extend(DetailsSubview, {
 
 
 
-  render(interval = {}) {
+  render: function (interval = {}) {
     let recording = PerformanceController.getCurrentRecording();
     let profile = recording.getProfile();
     let showOptimizations = PerformanceController.getOption("show-jit-optimizations");
@@ -73,15 +73,15 @@ var JsCallTreeView = Heritage.extend(DetailsSubview, {
     this.emit(EVENTS.UI_JS_CALL_TREE_RENDERED);
   },
 
-  showOptimizations() {
+  showOptimizations: function () {
     this.optimizationsElement.classList.remove("hidden");
   },
 
-  hideOptimizations() {
+  hideOptimizations: function () {
     this.optimizationsElement.classList.add("hidden");
   },
 
-  _onFocus(_, treeItem) {
+  _onFocus: function (_, treeItem) {
     let showOptimizations = PerformanceController.getOption("show-jit-optimizations");
     let frameNode = treeItem.frame;
     let optimizationSites = frameNode && frameNode.hasOptimizations()
@@ -119,7 +119,7 @@ var JsCallTreeView = Heritage.extend(DetailsSubview, {
   
 
 
-  _onLink(_, treeItem) {
+  _onLink: function (_, treeItem) {
     let { url, line } = treeItem.frame.getInfo();
     gToolbox.viewSourceInDebugger(url, line).then(success => {
       if (success) {
@@ -134,7 +134,7 @@ var JsCallTreeView = Heritage.extend(DetailsSubview, {
 
 
 
-  _prepareCallTree(profile, { startTime, endTime }, options) {
+  _prepareCallTree: function (profile, { startTime, endTime }, options) {
     let thread = profile.threads[0];
     let { contentOnly, invertTree, flattenRecursion } = options;
     let threadNode = new ThreadNode(thread, { startTime, endTime, contentOnly, invertTree,
@@ -154,7 +154,7 @@ var JsCallTreeView = Heritage.extend(DetailsSubview, {
   
 
 
-  _populateCallTree(frameNode, options = {}) {
+  _populateCallTree: function (frameNode, options = {}) {
     
     
     
@@ -162,7 +162,7 @@ var JsCallTreeView = Heritage.extend(DetailsSubview, {
 
     let root = new CallView({
       frame: frameNode,
-      inverted,
+      inverted: inverted,
       
       hidden: inverted,
       

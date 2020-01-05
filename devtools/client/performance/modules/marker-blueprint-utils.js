@@ -18,7 +18,7 @@ exports.MarkerBlueprintUtils = {
 
 
 
-  shouldDisplayMarker(marker, hiddenMarkerNames) {
+  shouldDisplayMarker: function (marker, hiddenMarkerNames) {
     if (!hiddenMarkerNames || hiddenMarkerNames.length == 0) {
       return true;
     }
@@ -40,7 +40,7 @@ exports.MarkerBlueprintUtils = {
 
 
 
-  getBlueprintFor(marker) {
+  getBlueprintFor: function (marker) {
     return TIMELINE_BLUEPRINT[marker.name] || TIMELINE_BLUEPRINT.UNKNOWN;
   },
 
@@ -50,7 +50,7 @@ exports.MarkerBlueprintUtils = {
 
 
 
-  getMarkerLabel(marker) {
+  getMarkerLabel: function (marker) {
     let blueprint = this.getBlueprintFor(marker);
     let dynamic = typeof blueprint.label === "function";
     let label = dynamic ? blueprint.label(marker) : blueprint.label;
@@ -64,7 +64,7 @@ exports.MarkerBlueprintUtils = {
 
 
 
-  getMarkerGenericName(markerName) {
+  getMarkerGenericName: function (markerName) {
     let blueprint = this.getBlueprintFor({ name: markerName });
     let dynamic = typeof blueprint.label === "function";
     let generic = dynamic ? blueprint.label() : blueprint.label;
@@ -92,7 +92,7 @@ exports.MarkerBlueprintUtils = {
 
 
 
-  getMarkerFields(marker) {
+  getMarkerFields: function (marker) {
     let blueprint = this.getBlueprintFor(marker);
     let dynamic = typeof blueprint.fields === "function";
     let fields = dynamic ? blueprint.fields(marker) : blueprint.fields;

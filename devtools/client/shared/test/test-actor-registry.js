@@ -48,7 +48,7 @@
   
   
   let getUpdatedForm = function (client, tab) {
-    return client.getTab({tab})
+    return client.getTab({tab: tab})
                  .then(response => response.tab);
   };
 

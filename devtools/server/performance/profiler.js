@@ -60,7 +60,7 @@ const ProfilerManager = (function () {
 
 
 
-    addInstance(instance) {
+    addInstance: function (instance) {
       consumers.add(instance);
 
       
@@ -73,7 +73,7 @@ const ProfilerManager = (function () {
 
 
 
-    removeInstance(instance) {
+    removeInstance: function (instance) {
       consumers.delete(instance);
 
       if (this.length < 0) {
@@ -98,7 +98,7 @@ const ProfilerManager = (function () {
 
 
 
-    start(options = {}) {
+    start: function (options = {}) {
       let config = this._profilerStartOptions = {
         entries: options.entries || DEFAULT_PROFILER_OPTIONS.entries,
         interval: options.interval || DEFAULT_PROFILER_OPTIONS.interval,
@@ -135,7 +135,7 @@ const ProfilerManager = (function () {
     
 
 
-    stop() {
+    stop: function () {
       
       
       
@@ -181,13 +181,13 @@ const ProfilerManager = (function () {
 
 
 
-    getProfile(options) {
+    getProfile: function (options) {
       let startTime = options.startTime || 0;
       let profile = options.stringify ?
         nsIProfilerModule.GetProfile(startTime) :
         nsIProfilerModule.getProfileData(startTime);
 
-      return { profile, currentTime: nsIProfilerModule.getElapsedTime() };
+      return { profile: profile, currentTime: nsIProfilerModule.getElapsedTime() };
     },
 
     
@@ -197,7 +197,7 @@ const ProfilerManager = (function () {
 
 
 
-    getFeatures() {
+    getFeatures: function () {
       return { features: nsIProfilerModule.GetFeatures([]) };
     },
 
@@ -208,7 +208,7 @@ const ProfilerManager = (function () {
 
 
 
-    getBufferInfo() {
+    getBufferInfo: function () {
       let position = {}, totalSize = {}, generation = {};
       nsIProfilerModule.GetBufferInfo(position, totalSize, generation);
       return {
@@ -224,7 +224,7 @@ const ProfilerManager = (function () {
 
 
 
-    getStartOptions() {
+    getStartOptions: function () {
       return this._profilerStartOptions || {};
     },
 
@@ -234,7 +234,7 @@ const ProfilerManager = (function () {
 
 
 
-    isActive() {
+    isActive: function () {
       let isActive = nsIProfilerModule.IsActive();
       let elapsedTime = isActive ? nsIProfilerModule.getElapsedTime() : undefined;
       let { position, totalSize, generation } = this.getBufferInfo();
@@ -252,7 +252,7 @@ const ProfilerManager = (function () {
 
 
 
-    getSharedLibraryInformation() {
+    getSharedLibraryInformation: function () {
       return {
         sharedLibraryInformation: nsIProfilerModule.getSharedLibraryInformation()
       };
@@ -321,7 +321,7 @@ const ProfilerManager = (function () {
 
 
 
-    registerEventListeners() {
+    registerEventListeners: function () {
       if (!this._eventsRegistered) {
         PROFILER_SYSTEM_EVENTS.forEach(eventName =>
           Services.obs.addObserver(this, eventName, false));
@@ -332,7 +332,7 @@ const ProfilerManager = (function () {
     
 
 
-    unregisterEventListeners() {
+    unregisterEventListeners: function () {
       if (this._eventsRegistered) {
         PROFILER_SYSTEM_EVENTS.forEach(eventName =>
           Services.obs.removeObserver(this, eventName));
@@ -347,7 +347,7 @@ const ProfilerManager = (function () {
 
 
 
-    emitEvent(eventName, data) {
+    emitEvent: function (eventName, data) {
       let subscribers = Array.from(consumers).filter(c => {
         return c.subscribedEvents.has(eventName);
       });
@@ -363,19 +363,19 @@ const ProfilerManager = (function () {
 
 
 
-    setProfilerStatusInterval(interval) {
+    setProfilerStatusInterval: function (interval) {
       this._profilerStatusInterval = interval;
       if (this._poller) {
         this._poller._delayMs = interval;
       }
     },
 
-    subscribeToProfilerStatusEvents() {
+    subscribeToProfilerStatusEvents: function () {
       this._profilerStatusSubscribers++;
       this._updateProfilerStatusPolling();
     },
 
-    unsubscribeToProfilerStatusEvents() {
+    unsubscribeToProfilerStatusEvents: function () {
       this._profilerStatusSubscribers--;
       this._updateProfilerStatusPolling();
     },
@@ -384,7 +384,7 @@ const ProfilerManager = (function () {
 
 
 
-    _updateProfilerStatusPolling() {
+    _updateProfilerStatusPolling: function () {
       if (this._profilerStatusSubscribers > 0 && nsIProfilerModule.IsActive()) {
         if (!this._poller) {
           this._poller = new DeferredTask(this._emitProfilerStatus.bind(this),
@@ -397,7 +397,7 @@ const ProfilerManager = (function () {
       }
     },
 
-    _emitProfilerStatus() {
+    _emitProfilerStatus: function () {
       this.emitEvent("profiler-status", this.isActive());
       this._poller.arm();
     }
@@ -410,12 +410,12 @@ const ProfilerManager = (function () {
 var Profiler = exports.Profiler = Class({
   extends: EventTarget,
 
-  initialize() {
+  initialize: function () {
     this.subscribedEvents = new Set();
     ProfilerManager.addInstance(this);
   },
 
-  destroy() {
+  destroy: function () {
     this.unregisterEventNotifications({ events: Array.from(this.subscribedEvents) });
     this.subscribedEvents = null;
     ProfilerManager.removeInstance(this);
@@ -424,63 +424,63 @@ var Profiler = exports.Profiler = Class({
   
 
 
-  start(options) {
+  start: function (options) {
     return ProfilerManager.start(options);
   },
 
   
 
 
-  stop() {
+  stop: function () {
     return ProfilerManager.stop();
   },
 
   
 
 
-  getProfile(request = {}) {
+  getProfile: function (request = {}) {
     return ProfilerManager.getProfile(request);
   },
 
   
 
 
-  getFeatures() {
+  getFeatures: function () {
     return ProfilerManager.getFeatures();
   },
 
   
 
 
-  getBufferInfo() {
+  getBufferInfo: function () {
     return ProfilerManager.getBufferInfo();
   },
 
   
 
 
-  getStartOptions() {
+  getStartOptions: function () {
     return ProfilerManager.getStartOptions();
   },
 
   
 
 
-  isActive() {
+  isActive: function () {
     return ProfilerManager.isActive();
   },
 
   
 
 
-  getSharedLibraryInformation() {
+  getSharedLibraryInformation: function () {
     return ProfilerManager.getSharedLibraryInformation();
   },
 
   
 
 
-  setProfilerStatusInterval(interval) {
+  setProfilerStatusInterval: function (interval) {
     return ProfilerManager.setProfilerStatusInterval(interval);
   },
 
@@ -495,7 +495,7 @@ var Profiler = exports.Profiler = Class({
 
 
 
-  registerEventNotifications(data = {}) {
+  registerEventNotifications: function (data = {}) {
     let response = [];
     (data.events || []).forEach(e => {
       if (!this.subscribedEvents.has(e)) {
@@ -516,7 +516,7 @@ var Profiler = exports.Profiler = Class({
 
 
 
-  unregisterEventNotifications(data = {}) {
+  unregisterEventNotifications: function (data = {}) {
     let response = [];
     (data.events || []).forEach(e => {
       if (this.subscribedEvents.has(e)) {

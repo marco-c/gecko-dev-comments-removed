@@ -37,8 +37,8 @@ function CssAngle(angleValue) {
 }
 
 module.exports.angleUtils = {
-  CssAngle,
-  classifyAngle
+  CssAngle: CssAngle,
+  classifyAngle: classifyAngle
 };
 
 CssAngle.ANGLEUNIT = CSS_ANGLEUNIT;
@@ -227,7 +227,7 @@ CssAngle.prototype = {
 
 
 
-  _getInvalidOrSpecialValue() {
+  _getInvalidOrSpecialValue: function () {
     if (this.specialValue) {
       return this.specialValue;
     }
@@ -243,7 +243,7 @@ CssAngle.prototype = {
 
 
 
-  newAngle(angle) {
+  newAngle: function (angle) {
     
     
     
@@ -260,7 +260,7 @@ CssAngle.prototype = {
     return this;
   },
 
-  nextAngleUnit() {
+  nextAngleUnit: function () {
     
     
     let formats = Object.keys(CssAngle.ANGLEUNIT);
@@ -280,7 +280,7 @@ CssAngle.prototype = {
   
 
 
-  toString() {
+  toString: function () {
     let angle;
 
     switch (this.angleUnit) {
@@ -310,7 +310,7 @@ CssAngle.prototype = {
   
 
 
-  valueOf() {
+  valueOf: function () {
     return this.deg;
   },
 };

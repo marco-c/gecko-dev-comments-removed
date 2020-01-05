@@ -301,7 +301,7 @@ MdnDocsWidget.prototype = {
 
 
 
-  loadCssDocs(propertyName) {
+  loadCssDocs: function (propertyName) {
     
 
 
@@ -369,7 +369,7 @@ MdnDocsWidget.prototype = {
     return deferred.promise;
   },
 
-  destroy() {
+  destroy: function () {
     this.elements = null;
   }
 };

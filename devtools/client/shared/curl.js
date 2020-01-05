@@ -57,7 +57,7 @@ const Curl = {
 
 
 
-  generateCommand(data) {
+  generateCommand: function (data) {
     let utils = CurlUtils;
 
     let command = ["curl"];
@@ -150,7 +150,7 @@ const CurlUtils = {
 
 
 
-  isUrlEncodedRequest(data) {
+  isUrlEncodedRequest: function (data) {
     let postDataText = data.postDataText;
     if (!postDataText) {
       return false;
@@ -175,7 +175,7 @@ const CurlUtils = {
 
 
 
-  isMultipartRequest(data) {
+  isMultipartRequest: function (data) {
     let postDataText = data.postDataText;
     if (!postDataText) {
       return false;
@@ -200,7 +200,7 @@ const CurlUtils = {
 
 
 
-  writePostDataTextParams(postDataText) {
+  writePostDataTextParams: function (postDataText) {
     let lines = postDataText.split("\r\n");
     return lines[lines.length - 1];
   },
@@ -215,7 +215,7 @@ const CurlUtils = {
 
 
 
-  findHeader(headers, name) {
+  findHeader: function (headers, name) {
     if (!headers) {
       return null;
     }
@@ -238,7 +238,7 @@ const CurlUtils = {
 
 
 
-  getMultipartBoundary(data) {
+  getMultipartBoundary: function (data) {
     let boundaryRe = /\bboundary=(-{3,}\w+)/i;
 
     
@@ -267,7 +267,7 @@ const CurlUtils = {
 
 
 
-  removeBinaryDataFromMultipartText(multipartText, boundary) {
+  removeBinaryDataFromMultipartText: function (multipartText, boundary) {
     let result = "";
     boundary = "--" + boundary;
     let parts = multipartText.split(boundary);
@@ -302,7 +302,7 @@ const CurlUtils = {
 
 
 
-  getHeadersFromMultipartText(multipartText) {
+  getHeadersFromMultipartText: function (multipartText) {
     let headers = [];
     if (!multipartText || multipartText.startsWith("---")) {
       return headers;
@@ -348,7 +348,7 @@ const CurlUtils = {
 
 
 
-  escapeStringPosix(str) {
+  escapeStringPosix: function (str) {
     function escapeCharacter(x) {
       let code = x.charCodeAt(0);
       if (code < 256) {
@@ -376,7 +376,7 @@ const CurlUtils = {
 
 
 
-  escapeStringWin(str) {
+  escapeStringWin: function (str) {
     
 
 

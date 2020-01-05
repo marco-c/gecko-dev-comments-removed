@@ -352,7 +352,7 @@ ThreadNode.prototype = {
 
 
 
-  getInfo(options) {
+  getInfo: function (options) {
     return FrameUtils.getFrameInfo(this, options);
   },
 
@@ -365,7 +365,7 @@ ThreadNode.prototype = {
 
 
 
-  hasOptimizations() {
+  hasOptimizations: function () {
     return null;
   }
 };
@@ -436,7 +436,7 @@ FrameNode.prototype = {
 
 
 
-  _addOptimizations(site, implementation, time, stringTable) {
+  _addOptimizations: function (site, implementation, time, stringTable) {
     
     
     if (site) {
@@ -455,13 +455,13 @@ FrameNode.prototype = {
     this._tierData.push({ implementation, time });
   },
 
-  _clone(samples, size) {
+  _clone: function (samples, size) {
     let newNode = new FrameNode(this.key, this, this.isMetaCategory);
     newNode._merge(this, samples, size);
     return newNode;
   },
 
-  _merge(otherNode, samples, size) {
+  _merge: function (otherNode, samples, size) {
     if (this === otherNode) {
       return;
     }
@@ -516,7 +516,7 @@ FrameNode.prototype = {
 
 
 
-  getInfo(options) {
+  getInfo: function (options) {
     return FrameUtils.getFrameInfo(this, options);
   },
 
@@ -525,7 +525,7 @@ FrameNode.prototype = {
 
 
 
-  hasOptimizations() {
+  hasOptimizations: function () {
     return !this.isMetaCategory && !!this._optimizations;
   },
 
@@ -535,7 +535,7 @@ FrameNode.prototype = {
 
 
 
-  getOptimizations() {
+  getOptimizations: function () {
     if (!this._optimizations) {
       return null;
     }
@@ -547,7 +547,7 @@ FrameNode.prototype = {
 
 
 
-  getTierData() {
+  getTierData: function () {
     return this._tierData;
   }
 };

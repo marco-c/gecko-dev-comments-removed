@@ -103,7 +103,7 @@ exports.items = [
         ]
       }
     ],
-    exec(args, context) {
+    exec: function (args, context) {
       
       if (!args.keep) {
         unhighlightAll();

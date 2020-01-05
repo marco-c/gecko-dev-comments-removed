@@ -37,7 +37,7 @@ const { URL } = Cu.Sandbox(CC("@mozilla.org/systemprincipal;1", "nsIPrincipal")(
 
 function defineLazyGetter(object, name, lambda) {
   Object.defineProperty(object, name, {
-    get() {
+    get: function () {
       
       
       
@@ -213,20 +213,20 @@ defineLazyGetter(exports.modules, "FileReader", () => {
 exports.globals = {
   isWorker: false,
   reportError: Cu.reportError,
-  atob,
-  btoa,
+  atob: atob,
+  btoa: btoa,
   URL,
   loader: {
     lazyGetter: defineLazyGetter,
     lazyImporter: defineLazyModuleGetter,
     lazyServiceGetter: defineLazyServiceGetter,
-    lazyRequireGetter,
+    lazyRequireGetter: lazyRequireGetter,
     
     id: null
   },
 
   
-  XMLHttpRequest() {
+  XMLHttpRequest: function () {
     return Cc["@mozilla.org/xmlextras/xmlhttprequest;1"]
            .createInstance(Ci.nsIXMLHttpRequest);
   },
@@ -261,7 +261,7 @@ let globals = {};
 function lazyGlobal(name, getter) {
   defineLazyGetter(globals, name, getter);
   Object.defineProperty(exports.globals, name, {
-    get() {
+    get: function () {
       return globals[name];
     },
     configurable: true,

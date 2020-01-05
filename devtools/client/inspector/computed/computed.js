@@ -78,7 +78,7 @@ UpdateProcess.prototype = {
   
 
 
-  schedule() {
+  schedule: function () {
     if (this.canceled) {
       return;
     }
@@ -89,7 +89,7 @@ UpdateProcess.prototype = {
 
 
 
-  cancel() {
+  cancel: function () {
     if (this._timeout) {
       clearTimeout(this._timeout);
       this._timeout = 0;
@@ -98,7 +98,7 @@ UpdateProcess.prototype = {
     this.onCancel();
   },
 
-  _timeoutHandler() {
+  _timeoutHandler: function () {
     this._timeout = null;
     try {
       this._runBatch();
@@ -114,7 +114,7 @@ UpdateProcess.prototype = {
     }
   },
 
-  _runBatch() {
+  _runBatch: function () {
     let time = Date.now();
     while (!this.canceled) {
       let next = this._next();
@@ -130,7 +130,7 @@ UpdateProcess.prototype = {
 
 
 
-  _next() {
+  _next: function () {
     if (this.index < this.array.length) {
       return this.array[this.index++];
     }
@@ -252,7 +252,7 @@ CssComputedView.prototype = {
   
   numVisibleProperties: 0,
 
-  setPageStyle(pageStyle) {
+  setPageStyle: function (pageStyle) {
     this.pageStyle = pageStyle;
   },
 
@@ -260,7 +260,7 @@ CssComputedView.prototype = {
     return this.includeBrowserStylesCheckbox.checked;
   },
 
-  _handlePrefChange(event, data) {
+  _handlePrefChange: function (event, data) {
     if (this._computed) {
       this.refreshPanel();
     }
@@ -274,7 +274,7 @@ CssComputedView.prototype = {
 
 
 
-  selectElement(element) {
+  selectElement: function (element) {
     if (!element) {
       this._viewedElement = null;
       this.noResults.hidden = false;
@@ -310,7 +310,7 @@ CssComputedView.prototype = {
 
 
 
-  getNodeInfo(node) {
+  getNodeInfo: function (node) {
     if (!node) {
       return null;
     }
@@ -390,7 +390,7 @@ CssComputedView.prototype = {
     return {type, value};
   },
 
-  _createPropertyViews() {
+  _createPropertyViews: function () {
     if (this._createViewsPromise) {
       return this._createViewsPromise;
     }
@@ -434,7 +434,7 @@ CssComputedView.prototype = {
   
 
 
-  refreshPanel() {
+  refreshPanel: function () {
     if (!this._viewedElement) {
       return promise.resolve();
     }
@@ -510,7 +510,7 @@ CssComputedView.prototype = {
   
 
 
-  _onShortcut(name, event) {
+  _onShortcut: function (name, event) {
     if (!event.target.closest("#sidebar-panel-computedview")) {
       return;
     }
@@ -531,7 +531,7 @@ CssComputedView.prototype = {
 
 
 
-  setFilterStyles(value = "") {
+  setFilterStyles: function (value = "") {
     this.searchField.value = value;
     this.searchField.focus();
     this._onFilterStyles();
@@ -540,7 +540,7 @@ CssComputedView.prototype = {
   
 
 
-  _onFilterStyles() {
+  _onFilterStyles: function () {
     if (this._filterChangedTimeout) {
       clearTimeout(this._filterChangedTimeout);
     }
@@ -567,7 +567,7 @@ CssComputedView.prototype = {
 
 
 
-  _onClearSearch() {
+  _onClearSearch: function () {
     if (this.searchField.value) {
       this.setFilterStyles("");
       return true;
@@ -579,7 +579,7 @@ CssComputedView.prototype = {
   
 
 
-  _onIncludeBrowserStyles() {
+  _onIncludeBrowserStyles: function () {
     this.refreshSourceFilter();
     this.refreshPanel();
   },
@@ -590,14 +590,14 @@ CssComputedView.prototype = {
 
 
 
-  refreshSourceFilter() {
+  refreshSourceFilter: function () {
     this._matchedProperties = null;
     this._sourceFilter = this.includeBrowserStyles ?
                                  CssLogic.FILTER.UA :
                                  CssLogic.FILTER.USER;
   },
 
-  _onSourcePrefChanged() {
+  _onSourcePrefChanged: function () {
     this._handlePrefChange();
     for (let propView of this.propertyViews) {
       propView.updateSourceLinks();
@@ -608,7 +608,7 @@ CssComputedView.prototype = {
   
 
 
-  createStyleViews() {
+  createStyleViews: function () {
     if (CssComputedView.propertyNames) {
       return;
     }
@@ -658,18 +658,18 @@ CssComputedView.prototype = {
   
 
 
-  focusWindow() {
+  focusWindow: function () {
     this.styleWindow.focus();
   },
 
   
 
 
-  _onContextMenu(event) {
+  _onContextMenu: function (event) {
     this._contextmenu.show(event);
   },
 
-  _onClick(event) {
+  _onClick: function (event) {
     let target = event.target;
 
     if (target.nodeName === "a") {
@@ -686,7 +686,7 @@ CssComputedView.prototype = {
 
 
 
-  _onCopy(event) {
+  _onCopy: function (event) {
     this.copySelection();
     event.preventDefault();
   },
@@ -694,7 +694,7 @@ CssComputedView.prototype = {
   
 
 
-  copySelection() {
+  copySelection: function () {
     try {
       let win = this.styleWindow;
       let text = win.getSelection().toString().trim();
@@ -729,7 +729,7 @@ CssComputedView.prototype = {
   
 
 
-  destroy() {
+  destroy: function () {
     this._viewedElement = null;
     this._outputParser = null;
 
@@ -928,7 +928,7 @@ PropertyView.prototype = {
 
 
 
-  buildMain() {
+  buildMain: function () {
     let doc = this.tree.styleDocument;
 
     
@@ -995,7 +995,7 @@ PropertyView.prototype = {
     return this.element;
   },
 
-  buildSelectorContainer() {
+  buildSelectorContainer: function () {
     let doc = this.tree.styleDocument;
     let element = doc.createElementNS(HTML_NS, "div");
     element.setAttribute("class", this.propertyContentClassName);
@@ -1009,7 +1009,7 @@ PropertyView.prototype = {
   
 
 
-  refresh() {
+  refresh: function () {
     this.element.className = this.propertyHeaderClassName;
     this.element.nextElementSibling.className = this.propertyContentClassName;
 
@@ -1046,7 +1046,7 @@ PropertyView.prototype = {
   
 
 
-  refreshMatchedSelectors() {
+  refreshMatchedSelectors: function () {
     let hasMatchedSelectors = this.hasMatchedSelectors;
     this.matchedSelectorsContainer.parentNode.hidden = !hasMatchedSelectors;
 
@@ -1083,7 +1083,7 @@ PropertyView.prototype = {
     return this._matchedSelectorResponse;
   },
 
-  _buildMatchedSelectors() {
+  _buildMatchedSelectors: function () {
     let promises = [];
     let frag = this.element.ownerDocument.createDocumentFragment();
 
@@ -1144,7 +1144,7 @@ PropertyView.prototype = {
 
 
 
-  updateSourceLinks() {
+  updateSourceLinks: function () {
     if (!this._matchedSelectorViews) {
       return;
     }
@@ -1160,7 +1160,7 @@ PropertyView.prototype = {
 
 
 
-  onMatchedToggle(event) {
+  onMatchedToggle: function (event) {
     if (event.shiftKey) {
       return;
     }
@@ -1172,7 +1172,7 @@ PropertyView.prototype = {
   
 
 
-  mdnLinkClick(event) {
+  mdnLinkClick: function (event) {
     let inspector = this.tree.inspector;
 
     if (inspector.target.tab) {
@@ -1184,7 +1184,7 @@ PropertyView.prototype = {
   
 
 
-  destroy() {
+  destroy: function () {
     this.element.removeEventListener("dblclick", this.onMatchedToggle, false);
     this.shortcuts.destroy();
     this.element = null;
@@ -1239,7 +1239,7 @@ SelectorView.prototype = {
 
 
 
-  _cacheStatusNames() {
+  _cacheStatusNames: function () {
     if (SelectorView.STATUS_NAMES.length) {
       return;
     }
@@ -1307,7 +1307,7 @@ SelectorView.prototype = {
 
 
 
-  updateSourceLink() {
+  updateSourceLink: function () {
     return this.updateSource().then((oldSource) => {
       if (oldSource !== this.source && this.tree.element) {
         let selector = '[sourcelocation="' + oldSource + '"]';
@@ -1323,7 +1323,7 @@ SelectorView.prototype = {
   
 
 
-  updateSource() {
+  updateSource: function () {
     let rule = this.selectorInfo.rule;
     this.sheet = rule.parentStyleSheet;
 
@@ -1343,7 +1343,7 @@ SelectorView.prototype = {
 
       rule.getOriginalLocation().then(({href, line}) => {
         let oldSource = this.source;
-        this.source = CssLogic.shortSource({href}) + ":" + line;
+        this.source = CssLogic.shortSource({href: href}) + ":" + line;
         deferred.resolve(oldSource);
       });
 
@@ -1363,7 +1363,7 @@ SelectorView.prototype = {
 
 
 
-  openStyleEditor() {
+  openStyleEditor: function () {
     let inspector = this.tree.inspector;
     let rule = this.selectorInfo.rule;
 
@@ -1424,14 +1424,14 @@ function ComputedViewTool(inspector, window) {
 }
 
 ComputedViewTool.prototype = {
-  isSidebarActive() {
+  isSidebarActive: function () {
     if (!this.computedView) {
       return false;
     }
     return this.inspector.sidebar.getCurrentTabID() == "computedview";
   },
 
-  onSelected(event) {
+  onSelected: function (event) {
     
     
     
@@ -1462,13 +1462,13 @@ ComputedViewTool.prototype = {
     }
   },
 
-  refresh() {
+  refresh: function () {
     if (this.isSidebarActive()) {
       this.computedView.refreshPanel();
     }
   },
 
-  onPanelSelected() {
+  onPanelSelected: function () {
     if (this.inspector.selection.nodeFront === this.computedView._viewedElement) {
       this.refresh();
     } else {
@@ -1480,7 +1480,7 @@ ComputedViewTool.prototype = {
 
 
 
-  onMutations(mutations) {
+  onMutations: function (mutations) {
     for (let {type, target} of mutations) {
       if (target === this.inspector.selection.nodeFront &&
           type === "attributes") {
@@ -1494,11 +1494,11 @@ ComputedViewTool.prototype = {
 
 
 
-  onResized() {
+  onResized: function () {
     this.refresh();
   },
 
-  destroy() {
+  destroy: function () {
     this.inspector.walker.off("mutations", this.onMutations);
     this.inspector.walker.off("resize", this.onResized);
     this.inspector.sidebar.off("computedview-selected", this.refresh);

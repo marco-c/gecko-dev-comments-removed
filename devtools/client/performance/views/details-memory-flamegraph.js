@@ -56,7 +56,7 @@ var MemoryFlameGraphView = Heritage.extend(DetailsSubview, {
 
 
 
-  render(interval = {}) {
+  render: function (interval = {}) {
     let recording = PerformanceController.getCurrentRecording();
     let duration = recording.getDuration();
     let allocations = recording.getAllocations();
@@ -87,7 +87,7 @@ var MemoryFlameGraphView = Heritage.extend(DetailsSubview, {
   
 
 
-  _onRangeChangeInGraph() {
+  _onRangeChangeInGraph: function () {
     let interval = this.graph.getViewRange();
 
     
@@ -101,7 +101,7 @@ var MemoryFlameGraphView = Heritage.extend(DetailsSubview, {
   
 
 
-  _onRerenderPrefChanged() {
+  _onRerenderPrefChanged: function () {
     let recording = PerformanceController.getCurrentRecording();
     let allocations = recording.getAllocations();
     let thread = RecordingUtils.getProfileThreadFromAllocations(allocations);
@@ -111,7 +111,7 @@ var MemoryFlameGraphView = Heritage.extend(DetailsSubview, {
   
 
 
-  _onThemeChanged(_, theme) {
+  _onThemeChanged: function (_, theme) {
     this.graph.setTheme(theme);
     this.graph.refresh({ force: true });
   },

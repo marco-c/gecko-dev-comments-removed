@@ -73,7 +73,7 @@ MarkerDetails.prototype = {
   
 
 
-  empty() {
+  empty: function () {
     this._parent.innerHTML = "";
   },
 
@@ -87,7 +87,7 @@ MarkerDetails.prototype = {
 
 
 
-  render(options) {
+  render: function (options) {
     let { marker, frames } = options;
     this.empty();
 
@@ -121,7 +121,7 @@ MarkerDetails.prototype = {
 
 
 
-  _onClick(e) {
+  _onClick: function (e) {
     let data = findActionFromEvent(e.target, this._parent);
     if (!data) {
       return;
@@ -133,7 +133,7 @@ MarkerDetails.prototype = {
   
 
 
-  _onSplitterMouseUp() {
+  _onSplitterMouseUp: function () {
     this.emit("resize");
   }
 };

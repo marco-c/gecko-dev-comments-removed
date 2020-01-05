@@ -61,6 +61,6 @@ define(function (require, exports, module) {
   
   exports.CommentNode = {
     rep: CommentNode,
-    supportsObject
+    supportsObject: supportsObject
   };
 });

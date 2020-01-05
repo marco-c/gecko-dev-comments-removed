@@ -26,10 +26,10 @@ add_task(function* () {
   
   let HighlighterFront = {
     isShown: false,
-    show() {
+    show: function () {
       this.isShown = true;
     },
-    hide() {
+    hide: function () {
       this.isShown = false;
     }
   };

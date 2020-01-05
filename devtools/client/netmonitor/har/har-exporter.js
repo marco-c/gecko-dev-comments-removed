@@ -22,7 +22,7 @@ var uid = 1;
 
 
 const trace = {
-  log(...args) {
+  log: function (...args) {
   }
 };
 
@@ -71,7 +71,7 @@ const HarExporter = {
 
 
 
-  save(options) {
+  save: function (options) {
     
     options.defaultFileName = Services.prefs.getCharPref(
       "devtools.netmonitor.har.defaultFileName");
@@ -104,7 +104,7 @@ const HarExporter = {
 
 
 
-  copy(options) {
+  copy: function (options) {
     return this.fetchHarData(options).then(jsonString => {
       clipboardHelper.copyString(jsonString);
       return jsonString;
@@ -113,7 +113,7 @@ const HarExporter = {
 
   
 
-  fetchHarData(options) {
+  fetchHarData: function (options) {
     
     options.id = options.id || uid++;
 
@@ -161,7 +161,7 @@ const HarExporter = {
 
 
 
-  buildHarData(options) {
+  buildHarData: function (options) {
     
     let builder = new HarBuilder(options);
     return builder.build();
@@ -170,7 +170,7 @@ const HarExporter = {
   
 
 
-  stringify(har) {
+  stringify: function (har) {
     if (!har) {
       return null;
     }

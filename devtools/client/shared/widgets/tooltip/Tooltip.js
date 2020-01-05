@@ -170,7 +170,7 @@ Tooltip.prototype = {
 
 
 
-  show(anchor,
+  show: function (anchor,
     position = this.defaultPosition,
     x = this.defaultOffsetX,
     y = this.defaultOffsetY) {
@@ -181,25 +181,25 @@ Tooltip.prototype = {
   
 
 
-  hide() {
+  hide: function () {
     this.panel.hidden = true;
     this.panel.hidePopup();
   },
 
-  isShown() {
+  isShown: function () {
     return this.panel &&
            this.panel.state !== "closed" &&
            this.panel.state !== "hiding";
   },
 
-  setSize(width, height) {
+  setSize: function (width, height) {
     this.panel.sizeTo(width, height);
   },
 
   
 
 
-  empty() {
+  empty: function () {
     while (this.panel.hasChildNodes()) {
       this.panel.removeChild(this.panel.firstChild);
     }
@@ -209,7 +209,7 @@ Tooltip.prototype = {
 
 
 
-  isHidden() {
+  isHidden: function () {
     return this.panel.state == "closed" || this.panel.state == "hiding";
   },
 
@@ -217,14 +217,14 @@ Tooltip.prototype = {
 
 
 
-  isEmpty() {
+  isEmpty: function () {
     return !this.panel.hasChildNodes();
   },
 
   
 
 
-  destroy() {
+  destroy: function () {
     this.hide();
 
     for (let eventName of POPUP_EVENTS) {
@@ -300,7 +300,7 @@ Tooltip.prototype = {
 
 
 
-  setTextContent(
+  setTextContent: function (
     {
       messages,
       messagesClass,
@@ -357,7 +357,7 @@ Tooltip.prototype = {
 
 
 
-  setIFrameContent({width, height}, url) {
+  setIFrameContent: function ({width, height}, url) {
     let def = defer();
 
     

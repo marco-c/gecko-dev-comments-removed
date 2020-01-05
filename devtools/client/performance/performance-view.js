@@ -166,7 +166,7 @@ var PerformanceView = {
   
 
 
-  _renderRecordingControls() {
+  _renderRecordingControls: function () {
     ReactDOM.render(RecordingControls(this._recordingControlsState),
                     this._recordingControlsMount);
     for (let button of this._recordingButtonsMounts) {
@@ -197,7 +197,7 @@ var PerformanceView = {
 
 
 
-  setState(state) {
+  setState: function (state) {
     
     
     const iframes = window.document.querySelectorAll("iframe");
@@ -239,14 +239,14 @@ var PerformanceView = {
   
 
 
-  getState() {
+  getState: function () {
     return this._state;
   },
 
   
 
 
-  updateBufferStatus() {
+  updateBufferStatus: function () {
     
     
     if (!this._bufferStatusSupported) {
@@ -284,7 +284,7 @@ var PerformanceView = {
 
 
 
-  _lockRecordButtons(lock) {
+  _lockRecordButtons: function (lock) {
     this._recordingControlsState.isLocked = lock;
     this._renderRecordingControls();
   },
@@ -295,7 +295,7 @@ var PerformanceView = {
 
 
 
-  _toggleRecordButtons(activate) {
+  _toggleRecordButtons: function (activate) {
     this._recordingControlsState.isRecording = activate;
     this._renderRecordingControls();
   },
@@ -303,7 +303,7 @@ var PerformanceView = {
   
 
 
-  _onRecordingStateChange() {
+  _onRecordingStateChange: function () {
     let currentRecording = PerformanceController.getCurrentRecording();
     let recordings = PerformanceController.getRecordings();
 
@@ -324,7 +324,7 @@ var PerformanceView = {
   
 
 
-  _onNewRecordingFailed(e) {
+  _onNewRecordingFailed: function (e) {
     this._lockRecordButtons(false);
     this._toggleRecordButtons(false);
   },
@@ -332,14 +332,14 @@ var PerformanceView = {
   
 
 
-  _onClearButtonClick(e) {
+  _onClearButtonClick: function (e) {
     this.emit(EVENTS.UI_CLEAR_RECORDINGS);
   },
 
   
 
 
-  _onRecordButtonClick(e) {
+  _onRecordButtonClick: function (e) {
     if (this._recordingControlsState.isRecording) {
       this.emit(EVENTS.UI_STOP_RECORDING);
     } else {
@@ -352,7 +352,7 @@ var PerformanceView = {
   
 
 
-  _onImportButtonClick(e) {
+  _onImportButtonClick: function (e) {
     let fp = Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker);
     fp.init(window, L10N.getStr("recordingsList.importDialogTitle"),
             Ci.nsIFilePicker.modeOpen);
@@ -367,7 +367,7 @@ var PerformanceView = {
   
 
 
-  _onRecordingSelected(_, recording) {
+  _onRecordingSelected: function (_, recording) {
     if (!recording) {
       this.setState("empty");
     } else if (recording.isRecording() && recording.isConsole()) {
@@ -383,7 +383,7 @@ var PerformanceView = {
 
 
 
-  _onProfilerStatusUpdated(_, profilerStatus) {
+  _onProfilerStatusUpdated: function (_, profilerStatus) {
     
     
     if (!profilerStatus || profilerStatus.position === void 0) {

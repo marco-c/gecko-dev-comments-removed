@@ -131,7 +131,7 @@ function Editor(config) {
     value: "",
     mode: Editor.modes.text,
     indentUnit: tabSize,
-    tabSize,
+    tabSize: tabSize,
     contextMenu: null,
     matchBrackets: true,
     extraKeys: {},
@@ -252,7 +252,7 @@ Editor.prototype = {
 
 
 
-  appendTo(el, env) {
+  appendTo: function (el, env) {
     let def = promise.defer();
     let cm = editors.get(this);
 
@@ -294,7 +294,7 @@ Editor.prototype = {
     return def.promise;
   },
 
-  appendToLocalElement(el) {
+  appendToLocalElement: function (el) {
     this._setup(el);
   },
 
@@ -303,7 +303,7 @@ Editor.prototype = {
 
 
 
-  _setup(el, doc) {
+  _setup: function (el, doc) {
     doc = doc || el.ownerDocument;
     let win = el.ownerDocument.defaultView;
 
@@ -395,8 +395,8 @@ Editor.prototype = {
     cm.on("cursorActivity", () => this.emit("cursorActivity"));
 
     cm.on("gutterClick", (cmArg, line, gutter, ev) => {
-      let head = { line, ch: 0 };
-      let tail = { line, ch: this.getText(line).length };
+      let head = { line: line, ch: 0 };
+      let tail = { line: line, ch: this.getText(line).length };
 
       
       if (ev.shiftKey) {
@@ -436,7 +436,7 @@ Editor.prototype = {
 
 
 
-  isAppended() {
+  isAppended: function () {
     return editors.has(this);
   },
 
@@ -444,14 +444,14 @@ Editor.prototype = {
 
 
 
-  getMode() {
+  getMode: function () {
     return this.getOption("mode");
   },
 
   
 
 
-  loadScript(url) {
+  loadScript: function (url) {
     if (!this.container) {
       throw new Error("Can't load a script until the editor is loaded.");
     }
@@ -463,14 +463,14 @@ Editor.prototype = {
 
 
 
-  createDocument() {
+  createDocument: function () {
     return new this.Doc("");
   },
 
   
 
 
-  replaceDocument(doc) {
+  replaceDocument: function (doc) {
     let cm = editors.get(this);
     cm.swapDoc(doc);
   },
@@ -479,7 +479,7 @@ Editor.prototype = {
 
 
 
-  setMode(value) {
+  setMode: function (value) {
     this.setOption("mode", value);
 
     
@@ -494,7 +494,7 @@ Editor.prototype = {
 
 
 
-  getText(line) {
+  getText: function (line) {
     let cm = editors.get(this);
 
     if (line == null) {
@@ -509,7 +509,7 @@ Editor.prototype = {
 
 
 
-  setText(value) {
+  setText: function (value) {
     let cm = editors.get(this);
     cm.setValue(value);
 
@@ -521,7 +521,7 @@ Editor.prototype = {
 
 
 
-  reloadPreferences() {
+  reloadPreferences: function () {
     
     let useAutoClose = Services.prefs.getBoolPref(AUTO_CLOSE);
     this.setOption("autoCloseBrackets",
@@ -544,7 +544,7 @@ Editor.prototype = {
 
 
 
-  resetIndentUnit() {
+  resetIndentUnit: function () {
     let cm = editors.get(this);
 
     let iterFn = function (start, end, callback) {
@@ -566,7 +566,7 @@ Editor.prototype = {
 
 
 
-  replaceText(value, from, to) {
+  replaceText: function (value, from, to) {
     let cm = editors.get(this);
 
     if (!from) {
@@ -587,7 +587,7 @@ Editor.prototype = {
 
 
 
-  insertText(value, at) {
+  insertText: function (value, at) {
     let cm = editors.get(this);
     cm.replaceRange(value, at, at);
   },
@@ -595,7 +595,7 @@ Editor.prototype = {
   
 
 
-  dropSelection() {
+  dropSelection: function () {
     if (!this.somethingSelected()) {
       return;
     }
@@ -606,7 +606,7 @@ Editor.prototype = {
   
 
 
-  hasMultipleSelections() {
+  hasMultipleSelections: function () {
     let cm = editors.get(this);
     return cm.listSelections().length > 1;
   },
@@ -614,7 +614,7 @@ Editor.prototype = {
   
 
 
-  getFirstVisibleLine() {
+  getFirstVisibleLine: function () {
     let cm = editors.get(this);
     return cm.lineAtHeight(0, "local");
   },
@@ -622,9 +622,9 @@ Editor.prototype = {
   
 
 
-  setFirstVisibleLine(line) {
+  setFirstVisibleLine: function (line) {
     let cm = editors.get(this);
-    let { top } = cm.charCoords({line, ch: 0}, "local");
+    let { top } = cm.charCoords({line: line, ch: 0}, "local");
     cm.scrollTo(0, top);
   },
 
@@ -633,10 +633,10 @@ Editor.prototype = {
 
 
 
-  setCursor({line, ch}, align) {
+  setCursor: function ({line, ch}, align) {
     let cm = editors.get(this);
     this.alignLine(line, align);
-    cm.setCursor({line, ch});
+    cm.setCursor({line: line, ch: ch});
     this.emit("cursorActivity");
   },
 
@@ -645,7 +645,7 @@ Editor.prototype = {
 
 
 
-  alignLine(line, align) {
+  alignLine: function (line, align) {
     let cm = editors.get(this);
     let from = cm.lineAtHeight(0, "page");
     let to = cm.lineAtHeight(cm.getWrapperElement().clientHeight, "page");
@@ -676,7 +676,7 @@ Editor.prototype = {
   
 
 
-  hasMarker(line, gutterName, markerClass) {
+  hasMarker: function (line, gutterName, markerClass) {
     let marker = this.getMarker(line, gutterName);
     if (!marker) {
       return false;
@@ -689,7 +689,7 @@ Editor.prototype = {
 
 
 
-  addMarker(line, gutterName, markerClass) {
+  addMarker: function (line, gutterName, markerClass) {
     let cm = editors.get(this);
     let info = cm.lineInfo(line);
     if (!info) {
@@ -715,7 +715,7 @@ Editor.prototype = {
 
 
 
-  removeMarker(line, gutterName, markerClass) {
+  removeMarker: function (line, gutterName, markerClass) {
     if (!this.hasMarker(line, gutterName, markerClass)) {
       return;
     }
@@ -729,7 +729,7 @@ Editor.prototype = {
 
 
 
-  addContentMarker(line, gutterName, markerClass, content) {
+  addContentMarker: function (line, gutterName, markerClass, content) {
     let cm = editors.get(this);
     let info = cm.lineInfo(line);
     if (!info) {
@@ -746,7 +746,7 @@ Editor.prototype = {
 
 
 
-  removeContentMarker(line, gutterName) {
+  removeContentMarker: function (line, gutterName) {
     let cm = editors.get(this);
     let info = cm.lineInfo(line);
     if (!info) {
@@ -756,7 +756,7 @@ Editor.prototype = {
     cm.setGutterMarker(info.line, gutterName, null);
   },
 
-  getMarker(line, gutterName) {
+  getMarker: function (line, gutterName) {
     let cm = editors.get(this);
     let info = cm.lineInfo(line);
     if (!info) {
@@ -774,7 +774,7 @@ Editor.prototype = {
   
 
 
-  removeAllMarkers(gutterName) {
+  removeAllMarkers: function (gutterName) {
     let cm = editors.get(this);
     cm.clearGutter(gutterName);
   },
@@ -788,7 +788,7 @@ Editor.prototype = {
 
 
 
-  setMarkerListeners(line, gutterName, markerClass, eventsArg, data) {
+  setMarkerListeners: function (line, gutterName, markerClass, eventsArg, data) {
     if (!this.hasMarker(line, gutterName, markerClass)) {
       return;
     }
@@ -805,7 +805,7 @@ Editor.prototype = {
   
 
 
-  hasLineClass(line, className) {
+  hasLineClass: function (line, className) {
     let cm = editors.get(this);
     let info = cm.lineInfo(line);
 
@@ -819,7 +819,7 @@ Editor.prototype = {
   
 
 
-  addLineClass(line, className) {
+  addLineClass: function (line, className) {
     let cm = editors.get(this);
     cm.addLineClass(line, "wrap", className);
   },
@@ -827,7 +827,7 @@ Editor.prototype = {
   
 
 
-  removeLineClass(line, className) {
+  removeLineClass: function (line, className) {
     let cm = editors.get(this);
     cm.removeLineClass(line, "wrap", className);
   },
@@ -837,7 +837,7 @@ Editor.prototype = {
 
 
 
-  markText(from, to, className = "marked-text") {
+  markText: function (from, to, className = "marked-text") {
     let cm = editors.get(this);
     let text = cm.getRange(from, to);
     let span = cm.getWrapperElement().ownerDocument.createElement("span");
@@ -859,7 +859,7 @@ Editor.prototype = {
 
 
 
-  getPosition(...args) {
+  getPosition: function (...args) {
     let cm = editors.get(this);
     let res = args.map((ind) => cm.posFromIndex(ind));
     return args.length === 1 ? res[0] : res;
@@ -870,7 +870,7 @@ Editor.prototype = {
 
 
 
-  getOffset(...args) {
+  getOffset: function (...args) {
     let cm = editors.get(this);
     let res = args.map((pos) => cm.indexFromPos(pos));
     return args.length > 1 ? res : res[0];
@@ -880,16 +880,16 @@ Editor.prototype = {
 
 
 
-  getPositionFromCoords({left, top}) {
+  getPositionFromCoords: function ({left, top}) {
     let cm = editors.get(this);
-    return cm.coordsChar({ left, top });
+    return cm.coordsChar({ left: left, top: top });
   },
 
   
 
 
 
-  getCoordsFromPosition({line, ch}) {
+  getCoordsFromPosition: function ({line, ch}) {
     let cm = editors.get(this);
     return cm.charCoords({ line: ~~line, ch: ~~ch });
   },
@@ -897,7 +897,7 @@ Editor.prototype = {
   
 
 
-  canUndo() {
+  canUndo: function () {
     let cm = editors.get(this);
     return cm.historySize().undo > 0;
   },
@@ -905,7 +905,7 @@ Editor.prototype = {
   
 
 
-  canRedo() {
+  canRedo: function () {
     let cm = editors.get(this);
     return cm.historySize().redo > 0;
   },
@@ -914,7 +914,7 @@ Editor.prototype = {
 
 
 
-  setClean() {
+  setClean: function () {
     let cm = editors.get(this);
     this.version = cm.changeGeneration();
     this._lastDirty = false;
@@ -926,7 +926,7 @@ Editor.prototype = {
 
 
 
-  isClean() {
+  isClean: function () {
     let cm = editors.get(this);
     return cm.isClean(this.version);
   },
@@ -935,7 +935,7 @@ Editor.prototype = {
 
 
 
-  jumpToLine() {
+  jumpToLine: function () {
     let doc = editors.get(this).getWrapperElement().ownerDocument;
     let div = doc.createElement("div");
     let inp = doc.createElement("input");
@@ -975,7 +975,7 @@ Editor.prototype = {
   
 
 
-  moveLineUp() {
+  moveLineUp: function () {
     let cm = editors.get(this);
     let start = cm.getCursor("start");
     let end = cm.getCursor("end");
@@ -1006,7 +1006,7 @@ Editor.prototype = {
   
 
 
-  moveLineDown() {
+  moveLineDown: function () {
     let cm = editors.get(this);
     let start = cm.getCursor("start");
     let end = cm.getCursor("end");
@@ -1036,7 +1036,7 @@ Editor.prototype = {
   
 
 
-  findOrReplace(node, isReplaceAll) {
+  findOrReplace: function (node, isReplaceAll) {
     let cm = editors.get(this);
     let isInput = node.tagName === "INPUT";
     let isSearchInput = isInput && node.type === "search";
@@ -1064,7 +1064,7 @@ Editor.prototype = {
 
 
 
-  findNextOrPrev(node, isFindPrev) {
+  findNextOrPrev: function (node, isFindPrev) {
     let cm = editors.get(this);
     let isInput = node.tagName === "INPUT";
     let isSearchInput = isInput && node.type === "search";
@@ -1095,7 +1095,7 @@ Editor.prototype = {
   
 
 
-  getFontSize() {
+  getFontSize: function () {
     let cm = editors.get(this);
     let el = cm.getWrapperElement();
     let win = el.ownerDocument.defaultView;
@@ -1106,7 +1106,7 @@ Editor.prototype = {
   
 
 
-  setFontSize(size) {
+  setFontSize: function (size) {
     let cm = editors.get(this);
     cm.getWrapperElement().style.fontSize = parseInt(size, 10) + "px";
     cm.refresh();
@@ -1117,7 +1117,7 @@ Editor.prototype = {
 
 
 
-  setOption(o, v) {
+  setOption: function (o, v) {
     let cm = editors.get(this);
 
     
@@ -1146,7 +1146,7 @@ Editor.prototype = {
 
 
 
-  getOption(o) {
+  getOption: function (o) {
     let cm = editors.get(this);
     if (o === "autocomplete") {
       return this.config.autocomplete;
@@ -1163,7 +1163,7 @@ Editor.prototype = {
 
 
 
-  setupAutoCompletion() {
+  setupAutoCompletion: function () {
     
     
     if (!this.initializeAutoCompletion) {
@@ -1194,10 +1194,10 @@ Editor.prototype = {
 
 
 
-  extend(funcs) {
+  extend: function (funcs) {
     Object.keys(funcs).forEach(name => {
       let cm = editors.get(this);
-      let ctx = { ed: this, cm, Editor};
+      let ctx = { ed: this, cm: cm, Editor: Editor};
 
       if (name === "initialize") {
         funcs[name](ctx);
@@ -1208,7 +1208,7 @@ Editor.prototype = {
     });
   },
 
-  destroy() {
+  destroy: function () {
     this.container = null;
     this.config = null;
     this.version = null;
@@ -1227,7 +1227,7 @@ Editor.prototype = {
     this.emit("destroy");
   },
 
-  updateCodeFoldingGutter() {
+  updateCodeFoldingGutter: function () {
     let shouldFoldGutter = this.config.enableCodeFolding;
     let foldGutterIndex = this.config.gutters.indexOf("CodeMirror-foldgutter");
     let cm = editors.get(this);
@@ -1265,7 +1265,7 @@ Editor.prototype = {
   
 
 
-  _initShortcuts(win) {
+  _initShortcuts: function (win) {
     let shortcuts = new KeyShortcuts({
       window: win
     });
@@ -1290,7 +1290,7 @@ Editor.prototype = {
     
 
 
-  _onShortcut(name, event) {
+  _onShortcut: function (name, event) {
     if (!this._isInputOrTextarea(event.target)) {
       return;
     }
@@ -1327,7 +1327,7 @@ Editor.prototype = {
   
 
 
-  _isInputOrTextarea(element) {
+  _isInputOrTextarea: function (element) {
     let name = element.tagName.toLowerCase();
     return name === "input" || name === "textarea";
   }
@@ -1404,8 +1404,8 @@ function getCSSKeywords(cssProperties) {
 
   return {
     propertyKeywords: keySet(propertyKeywords),
-    colorKeywords,
-    valueKeywords
+    colorKeywords: colorKeywords,
+    valueKeywords: valueKeywords
   };
 }
 

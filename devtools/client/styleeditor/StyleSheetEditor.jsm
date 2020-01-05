@@ -218,7 +218,7 @@ StyleSheetEditor.prototype = {
   
 
 
-  linkCSSFile() {
+  linkCSSFile: function () {
     if (!this.styleSheet.isOriginalSource) {
       return;
     }
@@ -267,7 +267,7 @@ StyleSheetEditor.prototype = {
 
 
 
-  _getSourceTextAndPrettify() {
+  _getSourceTextAndPrettify: function () {
     return this.styleSheet.getText().then((longStr) => {
       return longStr.string();
     }).then((source) => {
@@ -287,7 +287,7 @@ StyleSheetEditor.prototype = {
 
 
 
-  fetchSource() {
+  fetchSource: function () {
     return this._getSourceTextAndPrettify().then((source) => {
       this.sourceLoaded = true;
       return source;
@@ -312,7 +312,7 @@ StyleSheetEditor.prototype = {
 
 
 
-  addUnusedRegion(region) {
+  addUnusedRegion: function (region) {
     this.sourceEditor.addLineClass(region.start.line - 1, UNUSED_CLASS);
     if (region.end) {
       for (let i = region.start.line; i <= region.end.line; i++) {
@@ -324,7 +324,7 @@ StyleSheetEditor.prototype = {
   
 
 
-  addUnusedRegions(regions) {
+  addUnusedRegions: function (regions) {
     for (let region of regions) {
       this.addUnusedRegion(region);
     }
@@ -333,7 +333,7 @@ StyleSheetEditor.prototype = {
   
 
 
-  removeAllUnusedRegions() {
+  removeAllUnusedRegions: function () {
     for (let i = 0; i < this.sourceEditor.lineCount(); i++) {
       this.sourceEditor.removeLineClass(i, UNUSED_CLASS);
     }
@@ -347,14 +347,14 @@ StyleSheetEditor.prototype = {
 
 
 
-  _onPropertyChange(property, value) {
+  _onPropertyChange: function (property, value) {
     this.emit("property-change", property, value);
   },
 
   
 
 
-  _onStyleApplied() {
+  _onStyleApplied: function () {
     if (this._isUpdating) {
       
       
@@ -379,7 +379,7 @@ StyleSheetEditor.prototype = {
 
 
 
-  _onMediaRulesChanged(rules) {
+  _onMediaRulesChanged: function (rules) {
     if (!rules.length && !this.mediaRules.length) {
       return;
     }
@@ -398,7 +398,7 @@ StyleSheetEditor.prototype = {
   
 
 
-  _onMediaRuleMatchesChange() {
+  _onMediaRuleMatchesChange: function () {
     this.emit("media-rules-changed", this.mediaRules);
   },
 
@@ -409,7 +409,7 @@ StyleSheetEditor.prototype = {
 
 
 
-  _onError(event, data) {
+  _onError: function (event, data) {
     this.emit("error", data);
   },
 
@@ -423,7 +423,7 @@ StyleSheetEditor.prototype = {
 
 
 
-  load(inputElement, cssProperties) {
+  load: function (inputElement, cssProperties) {
     if (this._isDestroyed) {
       return promise.reject("Won't load source editor as the style sheet has " +
                             "already been removed from Style Editor.");
@@ -478,7 +478,7 @@ StyleSheetEditor.prototype = {
 
 
 
-  getSourceEditor() {
+  getSourceEditor: function () {
     let deferred = defer();
 
     if (this.sourceEditor) {
@@ -493,7 +493,7 @@ StyleSheetEditor.prototype = {
   
 
 
-  focus() {
+  focus: function () {
     if (this.sourceEditor) {
       this.sourceEditor.focus();
     } else {
@@ -504,7 +504,7 @@ StyleSheetEditor.prototype = {
   
 
 
-  onShow() {
+  onShow: function () {
     if (this.sourceEditor) {
       
       
@@ -516,14 +516,14 @@ StyleSheetEditor.prototype = {
   
 
 
-  toggleDisabled() {
+  toggleDisabled: function () {
     this.styleSheet.toggleDisabled().then(null, e => console.error(e));
   },
 
   
 
 
-  updateStyleSheet() {
+  updateStyleSheet: function () {
     if (this._updateTask) {
       
       this._window.clearTimeout(this._updateTask);
@@ -536,7 +536,7 @@ StyleSheetEditor.prototype = {
   
 
 
-  _updateStyleSheet() {
+  _updateStyleSheet: function () {
     if (this.styleSheet.disabled) {
       
       return;
@@ -566,7 +566,7 @@ StyleSheetEditor.prototype = {
 
 
 
-  _onMouseMove(e) {
+  _onMouseMove: function (e) {
     this.highlighter.hide();
 
     if (this.mouseMoveTimeout) {
@@ -621,7 +621,7 @@ StyleSheetEditor.prototype = {
 
 
 
-  saveToFile(file, callback) {
+  saveToFile: function (file, callback) {
     let onFile = (returnFile) => {
       if (!returnFile) {
         if (callback) {
@@ -669,7 +669,7 @@ StyleSheetEditor.prototype = {
   
 
 
-  onFileSaved(returnFile) {
+  onFileSaved: function (returnFile) {
     this._friendlyName = null;
     this.savedFile = returnFile;
 
@@ -693,7 +693,7 @@ StyleSheetEditor.prototype = {
 
 
 
-  checkLinkedFileForChanges() {
+  checkLinkedFileForChanges: function () {
     OS.File.stat(this.linkedCSSFile).then((info) => {
       let lastChange = info.lastModificationDate.getTime();
 
@@ -723,7 +723,7 @@ StyleSheetEditor.prototype = {
 
 
 
-  markLinkedFileBroken(error) {
+  markLinkedFileBroken: function (error) {
     this.linkedCSSFileError = error || true;
     this.emit("linked-css-file-error");
 
@@ -736,7 +736,7 @@ StyleSheetEditor.prototype = {
 
 
 
-  updateLinkedStyleSheet() {
+  updateLinkedStyleSheet: function () {
     OS.File.read(this.linkedCSSFile).then((array) => {
       let decoder = new TextDecoder();
       let text = decoder.decode(array);
@@ -752,7 +752,7 @@ StyleSheetEditor.prototype = {
 
 
 
-  _getKeyBindings() {
+  _getKeyBindings: function () {
     let bindings = {};
     let keybind = Editor.accel(getString("saveStyleSheet.commandkey"));
 
@@ -772,7 +772,7 @@ StyleSheetEditor.prototype = {
   
 
 
-  destroy() {
+  destroy: function () {
     if (this._sourceEditor) {
       this._sourceEditor.off("dirty-change", this._onPropertyChange);
       this._sourceEditor.off("saveRequested", this.saveToFile);

@@ -13,11 +13,11 @@ const { timelineSpec } = require("devtools/shared/specs/timeline");
 
 
 const TimelineFront = FrontClassWithSpec(timelineSpec, {
-  initialize(client, { timelineActor }) {
+  initialize: function (client, { timelineActor }) {
     Front.prototype.initialize.call(this, client, { actor: timelineActor });
     this.manage(this);
   },
-  destroy() {
+  destroy: function () {
     Front.prototype.destroy.call(this);
   },
 });

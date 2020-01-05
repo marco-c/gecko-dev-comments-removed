@@ -68,13 +68,13 @@ function CssColor(colorValue, supportsCssColor4ColorFunction = false) {
 }
 
 module.exports.colorUtils = {
-  CssColor,
-  rgbToHsl,
-  setAlpha,
-  classifyColor,
-  rgbToColorName,
-  colorToRGBA,
-  isValidCSSColor,
+  CssColor: CssColor,
+  rgbToHsl: rgbToHsl,
+  setAlpha: setAlpha,
+  classifyColor: classifyColor,
+  rgbToColorName: rgbToColorName,
+  colorToRGBA: colorToRGBA,
+  isValidCSSColor: isValidCSSColor,
 };
 
 
@@ -100,7 +100,7 @@ CssColor.prototype = {
   
   cssColor4: false,
 
-  _setColorUnitUppercase(color) {
+  _setColorUnitUppercase: function (color) {
     
     
     
@@ -128,7 +128,7 @@ CssColor.prototype = {
 
 
 
-  setAuthoredUnitFromColor(color) {
+  setAuthoredUnitFromColor: function (color) {
     if (Services.prefs.getCharPref(COLOR_UNIT_PREF) ===
         CssColor.COLORUNIT.authored) {
       this._colorUnit = classifyColor(color);
@@ -317,7 +317,7 @@ CssColor.prototype = {
 
 
 
-  _getInvalidOrSpecialValue() {
+  _getInvalidOrSpecialValue: function () {
     if (this.specialValue) {
       return this.specialValue;
     }
@@ -333,7 +333,7 @@ CssColor.prototype = {
 
 
 
-  newColor(color) {
+  newColor: function (color) {
     
     
     
@@ -343,7 +343,7 @@ CssColor.prototype = {
     return this;
   },
 
-  nextColorUnit() {
+  nextColorUnit: function () {
     
     
     let formats = ["hex", "hsl", "rgb", "name"];
@@ -365,7 +365,7 @@ CssColor.prototype = {
   
 
 
-  toString() {
+  toString: function () {
     let color;
 
     switch (this.colorUnit) {
@@ -400,7 +400,7 @@ CssColor.prototype = {
 
 
 
-  _getRGBATuple() {
+  _getRGBATuple: function () {
     let tuple = colorToRGBA(this.authored, this.cssColor4);
 
     tuple.a = parseFloat(tuple.a.toFixed(1));
@@ -408,7 +408,7 @@ CssColor.prototype = {
     return tuple;
   },
 
-  _hsl(maybeAlpha) {
+  _hsl: function (maybeAlpha) {
     if (this.lowerCased.startsWith("hsl(") && maybeAlpha === undefined) {
       
       return this.authored;
@@ -425,7 +425,7 @@ CssColor.prototype = {
   
 
 
-  valueOf() {
+  valueOf: function () {
     return this.rgba;
   },
 };

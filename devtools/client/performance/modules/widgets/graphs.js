@@ -76,7 +76,7 @@ PerformanceGraph.prototype = Heritage.extend(LineGraphWidget.prototype, {
   
 
 
-  clearView() {
+  clearView: function () {
     this.selectionEnabled = false;
     this.dropSelection();
     this.setData([]);
@@ -87,7 +87,7 @@ PerformanceGraph.prototype = Heritage.extend(LineGraphWidget.prototype, {
 
 
 
-  setTheme(theme) {
+  setTheme: function (theme) {
     theme = theme || "light";
     let mainColor = getColor(this.mainColor || "graphs-blue", theme);
     this.backgroundColor = getColor("body-background", theme);
@@ -115,7 +115,7 @@ function FramerateGraph(parent) {
 
 FramerateGraph.prototype = Heritage.extend(PerformanceGraph.prototype, {
   mainColor: FRAMERATE_GRAPH_COLOR_NAME,
-  setPerformanceData({ duration, ticks }, resolution) {
+  setPerformanceData: function ({ duration, ticks }, resolution) {
     this.dataDuration = duration;
     return this.setDataFromTimestamps(ticks, resolution, duration);
   }
@@ -133,7 +133,7 @@ function MemoryGraph(parent) {
 
 MemoryGraph.prototype = Heritage.extend(PerformanceGraph.prototype, {
   mainColor: MEMORY_GRAPH_COLOR_NAME,
-  setPerformanceData({ duration, memory }) {
+  setPerformanceData: function ({ duration, memory }) {
     this.dataDuration = duration;
     return this.setData(memory);
   }
@@ -200,7 +200,7 @@ GraphsController.prototype = {
   
 
 
-  get(graphName) {
+  get: function (graphName) {
     return this._graphs[graphName];
   },
 
@@ -259,7 +259,7 @@ GraphsController.prototype = {
 
 
 
-  setTheme(options = {}) {
+  setTheme: function (options = {}) {
     let theme = options.theme || this._getTheme();
     for (let graph of this.getWidgets()) {
       graph.setTheme(theme);
@@ -291,7 +291,7 @@ GraphsController.prototype = {
 
 
 
-  enable(graphName, isEnabled) {
+  enable: function (graphName, isEnabled) {
     let el = this.$(this._definition[graphName].selector);
     el.classList[isEnabled ? "remove" : "add"]("hidden");
 
@@ -314,7 +314,7 @@ GraphsController.prototype = {
 
 
 
-  disableAll() {
+  disableAll: function () {
     this._root.classList.add("hidden");
     
     Object.keys(this._definition).forEach(graphName => this.enable(graphName, false));
@@ -324,7 +324,7 @@ GraphsController.prototype = {
 
 
 
-  setMappedSelection(selection, { mapStart, mapEnd }) {
+  setMappedSelection: function (selection, { mapStart, mapEnd }) {
     return this._getPrimaryLink().setMappedSelection(selection, { mapStart, mapEnd });
   },
 
@@ -332,7 +332,7 @@ GraphsController.prototype = {
 
 
 
-  getMappedSelection({ mapStart, mapEnd }) {
+  getMappedSelection: function ({ mapStart, mapEnd }) {
     let primary = this._getPrimaryLink();
     if (primary && primary.hasData()) {
       return primary.getMappedSelection({ mapStart, mapEnd });
@@ -344,14 +344,14 @@ GraphsController.prototype = {
 
 
 
-  getWidgets() {
+  getWidgets: function () {
     return Object.keys(this._graphs).map(name => this._graphs[name]);
   },
 
   
 
 
-  dropSelection() {
+  dropSelection: function () {
     if (this._getPrimaryLink()) {
       return this._getPrimaryLink().dropSelection();
     }
@@ -398,14 +398,14 @@ GraphsController.prototype = {
 
 
 
-  _getPrimaryLink() {
+  _getPrimaryLink: function () {
     return this.get(this._primaryLink);
   },
 
   
 
 
-  _onSelecting() {
+  _onSelecting: function () {
     this.emit("selecting");
   },
 
@@ -490,7 +490,7 @@ OptimizationsGraph.prototype = Heritage.extend(MountainGraphWidget.prototype, {
 
 
 
-  setTheme(theme) {
+  setTheme: function (theme) {
     theme = theme || "light";
 
     let interpreterColor = getColor("graphs-red", theme);

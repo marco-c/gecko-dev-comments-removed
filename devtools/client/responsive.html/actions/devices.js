@@ -69,7 +69,7 @@ module.exports = {
   
   _loadPreferredDevices: loadPreferredDevices,
 
-  updatePreferredDevices,
+  updatePreferredDevices: updatePreferredDevices,
 
   addDevice(device, deviceType) {
     return {

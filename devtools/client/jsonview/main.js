@@ -22,7 +22,7 @@ XPCOMUtils.defineLazyGetter(this, "JsonViewUtils", function () {
 
 
 var JsonView = {
-  initialize() {
+  initialize: function () {
     
     
     
@@ -38,7 +38,7 @@ var JsonView = {
       "devtools:jsonview:save", this.onSaveListener);
   },
 
-  destroy() {
+  destroy: function () {
     Services.ppmm.removeMessageListener(
       "devtools:jsonview:save", this.onSaveListener);
   },
@@ -49,7 +49,7 @@ var JsonView = {
 
 
 
-  onSave(message) {
+  onSave: function (message) {
     let value = message.data;
     let file = JsonViewUtils.getTargetFile();
     if (file) {

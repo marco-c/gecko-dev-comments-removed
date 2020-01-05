@@ -77,7 +77,7 @@ function findCompletionBeginning(str) {
         } else if (OPEN_BODY.indexOf(c) != -1) {
           bodyStack.push({
             token: c,
-            start
+            start: start
           });
           start = i + 1;
         } else if (CLOSE_BODY.indexOf(c) != -1) {
@@ -124,7 +124,7 @@ function findCompletionBeginning(str) {
   }
 
   return {
-    state,
+    state: state,
     startPos: start
   };
 }
@@ -455,50 +455,50 @@ function getExactMatchImpl(obj, name, {chainIterator, getProperty}) {
 }
 
 var JSObjectSupport = {
-  * chainIterator(obj) {
+  chainIterator: function* (obj) {
     while (obj) {
       yield obj;
       obj = Object.getPrototypeOf(obj);
     }
   },
 
-  getProperties(obj) {
+  getProperties: function (obj) {
     return Object.getOwnPropertyNames(obj);
   },
 
-  getProperty() {
+  getProperty: function () {
     
     throw new Error("Unimplemented!");
   },
 };
 
 var DebuggerObjectSupport = {
-  * chainIterator(obj) {
+  chainIterator: function* (obj) {
     while (obj) {
       yield obj;
       obj = obj.proto;
     }
   },
 
-  getProperties(obj) {
+  getProperties: function (obj) {
     return obj.getOwnPropertyNames();
   },
 
-  getProperty(obj, name, rootObj) {
+  getProperty: function (obj, name, rootObj) {
     
     throw new Error("Unimplemented!");
   },
 };
 
 var DebuggerEnvironmentSupport = {
-  * chainIterator(obj) {
+  chainIterator: function* (obj) {
     while (obj) {
       yield obj;
       obj = obj.parent;
     }
   },
 
-  getProperties(obj) {
+  getProperties: function (obj) {
     let names = obj.names();
 
     
@@ -512,7 +512,7 @@ var DebuggerEnvironmentSupport = {
     return names;
   },
 
-  getProperty(obj, name) {
+  getProperty: function (obj, name) {
     let result;
     
     

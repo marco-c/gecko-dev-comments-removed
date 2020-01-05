@@ -10,7 +10,7 @@
 
 
 const DefaultL10N = {
-  getStr(key) {
+  getStr: function (key) {
     let index = key.lastIndexOf(".");
     return key.substr(index + 1);
   }

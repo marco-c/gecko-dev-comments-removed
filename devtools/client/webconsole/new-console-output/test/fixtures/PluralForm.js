@@ -5,7 +5,7 @@
 
 module.exports = {
   PluralForm: {
-    get(occurence, str) {
+    get: function (occurence, str) {
       
       
       if (str === "messageRepeats.tooltip2") {

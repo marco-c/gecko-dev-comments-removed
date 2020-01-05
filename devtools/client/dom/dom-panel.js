@@ -61,7 +61,7 @@ DomPanel.prototype = {
 
   
 
-  initialize() {
+  initialize: function () {
     this.panelWin.addEventListener("devtools/content/message",
       this.onContentMessage, true);
 
@@ -96,7 +96,7 @@ DomPanel.prototype = {
 
   
 
-  refresh() {
+  refresh: function () {
     
     if (!this.isPanelVisible()) {
       return;
@@ -120,7 +120,7 @@ DomPanel.prototype = {
 
 
 
-  onTabNavigated() {
+  onTabNavigated: function () {
     this.shouldRefresh = true;
     this.refresh();
   },
@@ -128,7 +128,7 @@ DomPanel.prototype = {
   
 
 
-  onPanelVisibilityChange() {
+  onPanelVisibilityChange: function () {
     this.refresh();
   },
 
@@ -137,11 +137,11 @@ DomPanel.prototype = {
   
 
 
-  isPanelVisible() {
+  isPanelVisible: function () {
     return this._toolbox.currentToolId === "dom";
   },
 
-  getPrototypeAndProperties(grip) {
+  getPrototypeAndProperties: function (grip) {
     let deferred = defer();
 
     if (!grip.actor) {
@@ -178,7 +178,7 @@ DomPanel.prototype = {
     return deferred.promise;
   },
 
-  getRootGrip() {
+  getRootGrip: function () {
     let deferred = defer();
 
     
@@ -190,22 +190,22 @@ DomPanel.prototype = {
     return deferred.promise;
   },
 
-  postContentMessage(type, args) {
+  postContentMessage: function (type, args) {
     let data = {
-      type,
-      args,
+      type: type,
+      args: args,
     };
 
     let event = new this.panelWin.MessageEvent("devtools/chrome/message", {
       bubbles: true,
       cancelable: true,
-      data,
+      data: data,
     });
 
     this.panelWin.dispatchEvent(event);
   },
 
-  onContentMessage(event) {
+  onContentMessage: function (event) {
     let data = event.data;
     let method = data.type;
     if (typeof this[method] == "function") {
@@ -222,7 +222,7 @@ DomPanel.prototype = {
 
 function exportIntoContentScope(win, obj, defineAs) {
   let clone = Cu.createObjectIn(win, {
-    defineAs
+    defineAs: defineAs
   });
 
   let props = Object.getOwnPropertyNames(obj);

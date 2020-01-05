@@ -10,7 +10,7 @@ const { framerateSpec } = require("devtools/shared/specs/framerate");
 
 
 var FramerateFront = exports.FramerateFront = FrontClassWithSpec(framerateSpec, {
-  initialize(client, { framerateActor }) {
+  initialize: function (client, { framerateActor }) {
     Front.prototype.initialize.call(this, client, { actor: framerateActor });
     this.manage(this);
   }

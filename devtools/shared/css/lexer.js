@@ -391,7 +391,7 @@ Scanner.prototype = {
   
 
 
-  performEOFFixup(aInputString, aPreserveBackslash) {
+  performEOFFixup: function (aInputString, aPreserveBackslash) {
     let result = aInputString;
 
     let eofChars = this.mEOFCharacters;
@@ -419,7 +419,7 @@ Scanner.prototype = {
   
 
 
-  nextToken() {
+  nextToken: function () {
     let token = {};
     if (!this.Next(token)) {
       return null;
@@ -492,7 +492,7 @@ Scanner.prototype = {
 
 
 
-  Peek(n = 0) {
+  Peek: function (n = 0) {
     if (this.mOffset + n >= this.mCount) {
       return -1;
     }
@@ -505,7 +505,7 @@ Scanner.prototype = {
 
 
 
-  Advance(n = 1) {
+  Advance: function (n = 1) {
     if (this.mOffset + n >= this.mCount || this.mOffset + n < this.mOffset) {
       this.mOffset = this.mCount;
     } else {
@@ -516,7 +516,7 @@ Scanner.prototype = {
   
 
 
-  AdvanceLine() {
+  AdvanceLine: function () {
     
     if (this.mBuffer.charCodeAt(this.mOffset) == CARRIAGE_RETURN &&
         this.mOffset + 1 < this.mCount &&
@@ -536,7 +536,7 @@ Scanner.prototype = {
 
 
 
-  SkipWhitespace() {
+  SkipWhitespace: function () {
     for (;;) {
       let ch = this.Peek();
       if (!IsWhitespace(ch)) { 
@@ -553,7 +553,7 @@ Scanner.prototype = {
   
 
 
-  SkipComment() {
+  SkipComment: function () {
     this.Advance(2);
     for (;;) {
       let ch = this.Peek();
@@ -587,7 +587,7 @@ Scanner.prototype = {
 
 
 
-  GatherEscape(aOutput, aInString) {
+  GatherEscape: function (aOutput, aInString) {
     let ch = this.Peek(1);
     if (ch < 0) {
       
@@ -676,7 +676,7 @@ Scanner.prototype = {
 
 
 
-  GatherText(aClass, aText) {
+  GatherText: function (aClass, aText) {
     let start = this.mOffset;
     let inString = aClass == IS_STRING;
 
@@ -720,7 +720,7 @@ Scanner.prototype = {
 
 
 
-  ScanIdent(aToken) {
+  ScanIdent: function (aToken) {
     if (!this.GatherText(IS_IDCHAR, aToken.mIdent)) {
       aToken.mSymbol = this.Peek();
       this.Advance();
@@ -746,7 +746,7 @@ Scanner.prototype = {
 
 
 
-  ScanAtKeyword(aToken) {
+  ScanAtKeyword: function (aToken) {
     
     aToken.mSymbol = COMMERCIAL_AT;
     this.Advance();
@@ -765,7 +765,7 @@ Scanner.prototype = {
 
 
 
-  ScanHash(aToken) {
+  ScanHash: function (aToken) {
     
     aToken.mSymbol = NUMBER_SIGN;
     this.Advance();
@@ -790,7 +790,7 @@ Scanner.prototype = {
 
 
 
-  ScanNumber(aToken) {
+  ScanNumber: function (aToken) {
     let c = this.Peek();
 
     
@@ -921,7 +921,7 @@ Scanner.prototype = {
 
 
 
-  ScanString(aToken) {
+  ScanString: function (aToken) {
     let aStop = this.Peek();
     aToken.mType = eCSSToken_String;
     aToken.mSymbol = aStop; 
@@ -970,7 +970,7 @@ Scanner.prototype = {
 
 
 
-  ScanURange(aResult) {
+  ScanURange: function (aResult) {
     let intro1 = this.Peek();
     let intro2 = this.Peek(1);
     let ch = this.Peek(2);
@@ -1031,15 +1031,15 @@ Scanner.prototype = {
     return true;
   },
 
-  SetEOFCharacters(aEOFCharacters) {
+  SetEOFCharacters: function (aEOFCharacters) {
     this.mEOFCharacters = aEOFCharacters;
   },
 
-  AddEOFCharacters(aEOFCharacters) {
+  AddEOFCharacters: function (aEOFCharacters) {
     this.mEOFCharacters = this.mEOFCharacters | aEOFCharacters;
   },
 
-  AppendImpliedEOFCharacters(aEOFCharacters, aResult) {
+  AppendImpliedEOFCharacters: function (aEOFCharacters, aResult) {
     
     let c = aEOFCharacters >> 1;
 
@@ -1061,7 +1061,7 @@ Scanner.prototype = {
 
 
 
-  NextURL(aToken) {
+  NextURL: function (aToken) {
     this.SkipWhitespace();
 
     
@@ -1106,7 +1106,7 @@ Scanner.prototype = {
 
 
 
-  Next(aToken, aSkip) {
+  Next: function (aToken, aSkip) {
     let ch;
 
     

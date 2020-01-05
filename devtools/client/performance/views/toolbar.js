@@ -44,7 +44,7 @@ var ToolbarView = {
   
 
 
-  destroy() {
+  destroy: function () {
     $("#performance-filter-menupopup").removeEventListener("popupshowing",
                                                            this._onFilterPopupShowing);
     $("#performance-filter-menupopup").removeEventListener("popuphiding",
@@ -58,7 +58,7 @@ var ToolbarView = {
   
 
 
-  _buildMarkersFilterPopup() {
+  _buildMarkersFilterPopup: function () {
     for (let [markerName, markerDetails] of Object.entries(TIMELINE_BLUEPRINT)) {
       let menuitem = document.createElement("menuitem");
       menuitem.setAttribute("closemenu", "none");
@@ -79,7 +79,7 @@ var ToolbarView = {
   
 
 
-  _updateHiddenMarkersPopup() {
+  _updateHiddenMarkersPopup: function () {
     let menuItems = $$("#performance-filter-menupopup menuitem[marker-type]");
     let hiddenMarkers = PerformanceController.getPref("hidden-markers");
 
@@ -106,7 +106,7 @@ var ToolbarView = {
 
 
 
-  _toggleExperimentalUI(isEnabled) {
+  _toggleExperimentalUI: function (isEnabled) {
     if (isEnabled) {
       $(".theme-body").classList.add("experimental-enabled");
       this._popup.classList.add("experimental-enabled");
@@ -119,21 +119,21 @@ var ToolbarView = {
   
 
 
-  _onFilterPopupShowing() {
+  _onFilterPopupShowing: function () {
     $("#filter-button").setAttribute("open", "true");
   },
 
   
 
 
-  _onFilterPopupHiding() {
+  _onFilterPopupHiding: function () {
     $("#filter-button").removeAttribute("open");
   },
 
   
 
 
-  _onHiddenMarkersChanged() {
+  _onHiddenMarkersChanged: function () {
     let checkedMenuItems =
       $$("#performance-filter-menupopup menuitem[marker-type]:not([checked])");
     let hiddenMarkers = Array.map(checkedMenuItems, e => e.getAttribute("marker-type"));
@@ -144,7 +144,7 @@ var ToolbarView = {
 
 
 
-  _onPrefChanged(_, prefName) {
+  _onPrefChanged: function (_, prefName) {
     let value = PerformanceController.getOption(prefName);
 
     if (prefName === "experimental") {

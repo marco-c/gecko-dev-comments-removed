@@ -26,7 +26,7 @@ ContentObserver.prototype = {
   
 
 
-  startListening() {
+  startListening: function () {
     Services.obs.addObserver(
       this._onContentGlobalCreated, "content-document-global-created", false);
     Services.obs.addObserver(
@@ -36,7 +36,7 @@ ContentObserver.prototype = {
   
 
 
-  stopListening() {
+  stopListening: function () {
     Services.obs.removeObserver(
       this._onContentGlobalCreated, "content-document-global-created", false);
     Services.obs.removeObserver(
@@ -46,7 +46,7 @@ ContentObserver.prototype = {
   
 
 
-  _onContentGlobalCreated(subject, topic, data) {
+  _onContentGlobalCreated: function (subject, topic, data) {
     if (subject == this._contentWindow) {
       events.emit(this, "global-created", subject);
     }
@@ -55,7 +55,7 @@ ContentObserver.prototype = {
   
 
 
-  _onInnerWindowDestroyed(subject, topic, data) {
+  _onInnerWindowDestroyed: function (subject, topic, data) {
     let id = subject.QueryInterface(Ci.nsISupportsPRUint64).data;
     events.emit(this, "global-destroyed", id);
   }

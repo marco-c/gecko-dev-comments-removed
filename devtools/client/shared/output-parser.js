@@ -71,7 +71,7 @@ OutputParser.prototype = {
 
 
 
-  parseCssProperty(name, value, options = {}) {
+  parseCssProperty: function (name, value, options = {}) {
     options = this._mergeOptions(options);
 
     options.expectCubicBezier = this.supportsType(name, CSS_TYPES.TIMING_FUNCTION);
@@ -106,7 +106,7 @@ OutputParser.prototype = {
 
 
 
-  _collectFunctionText(initialToken, text, tokenStream) {
+  _collectFunctionText: function (initialToken, text, tokenStream) {
     let result = text.substring(initialToken.startOffset,
                                 initialToken.endOffset);
     let depth = 1;
@@ -143,7 +143,7 @@ OutputParser.prototype = {
 
 
 
-  _parse(text, options = {}) {
+  _parse: function (text, options = {}) {
     text = text.trim();
     this.parsed.length = 0;
 
@@ -279,7 +279,7 @@ OutputParser.prototype = {
 
 
 
-  _appendCubicBezier(bezier, options) {
+  _appendCubicBezier: function (bezier, options) {
     let container = this._createNode("span", {
       "data-bezier": bezier
     });
@@ -309,7 +309,7 @@ OutputParser.prototype = {
 
 
 
-  _appendGrid(grid, options) {
+  _appendGrid: function (grid, options) {
     let container = this._createNode("span", {});
 
     let toggle = this._createNode("span", {
@@ -333,7 +333,7 @@ OutputParser.prototype = {
 
 
 
-  _appendAngle(angle, options) {
+  _appendAngle: function (angle, options) {
     let angleObj = new angleUtils.CssAngle(angle);
     let container = this._createNode("span", {
       "data-angle": angle
@@ -375,7 +375,7 @@ OutputParser.prototype = {
 
 
 
-  _cssPropertySupportsValue(name, value) {
+  _cssPropertySupportsValue: function (name, value) {
     return this.isValidOnClient(name, value, this.doc);
   },
 
@@ -384,7 +384,7 @@ OutputParser.prototype = {
 
 
 
-  _isValidColor(colorObj) {
+  _isValidColor: function (colorObj) {
     return colorObj.valid &&
       (!colorObj.specialValue || colorObj.specialValue === "transparent");
   },
@@ -398,7 +398,7 @@ OutputParser.prototype = {
 
 
 
-  _appendColor(color, options = {}) {
+  _appendColor: function (color, options = {}) {
     let colorObj = new colorUtils.CssColor(color, this.cssColor4);
 
     if (this._isValidColor(colorObj)) {
@@ -447,7 +447,7 @@ OutputParser.prototype = {
 
 
 
-  _wrapFilter(filters, options, nodes) {
+  _wrapFilter: function (filters, options, nodes) {
     let container = this._createNode("span", {
       "data-filters": filters
     });
@@ -468,7 +468,7 @@ OutputParser.prototype = {
     return container;
   },
 
-  _onColorSwatchMouseDown(event) {
+  _onColorSwatchMouseDown: function (event) {
     if (!event.shiftKey) {
       return;
     }
@@ -484,7 +484,7 @@ OutputParser.prototype = {
     swatch.emit("unit-change", val);
   },
 
-  _onAngleSwatchMouseDown(event) {
+  _onAngleSwatchMouseDown: function (event) {
     if (!event.shiftKey) {
       return;
     }
@@ -502,7 +502,7 @@ OutputParser.prototype = {
   
 
 
-  _sanitizeURL(url) {
+  _sanitizeURL: function (url) {
     
     let urlTokenizer = getCSSLexer(url);
     
@@ -524,7 +524,7 @@ OutputParser.prototype = {
 
 
 
-  _appendURL(match, url, options) {
+  _appendURL: function (match, url, options) {
     if (options.urlClass) {
       
       
@@ -553,7 +553,7 @@ OutputParser.prototype = {
       this._appendNode("a", {
         target: "_blank",
         class: options.urlClass,
-        href
+        href: href
       }, body);
 
       this._appendTextNode(trailer);
@@ -574,7 +574,7 @@ OutputParser.prototype = {
 
 
 
-  _createNode(tagName, attributes, value = "") {
+  _createNode: function (tagName, attributes, value = "") {
     let node = this.doc.createElementNS(HTML_NS, tagName);
     let attrs = Object.getOwnPropertyNames(attributes);
 
@@ -603,7 +603,7 @@ OutputParser.prototype = {
 
 
 
-  _appendNode(tagName, attributes, value = "") {
+  _appendNode: function (tagName, attributes, value = "") {
     let node = this._createNode(tagName, attributes, value);
     this.parsed.push(node);
   },
@@ -615,7 +615,7 @@ OutputParser.prototype = {
 
 
 
-  _appendTextNode(text) {
+  _appendTextNode: function (text) {
     let lastItem = this.parsed[this.parsed.length - 1];
     if (typeof lastItem === "string") {
       this.parsed[this.parsed.length - 1] = lastItem + text;
@@ -630,7 +630,7 @@ OutputParser.prototype = {
 
 
 
-  _toDOM() {
+  _toDOM: function () {
     let frag = this.doc.createDocumentFragment();
 
     for (let item of this.parsed) {
@@ -676,7 +676,7 @@ OutputParser.prototype = {
 
 
 
-  _mergeOptions(overrides) {
+  _mergeOptions: function (overrides) {
     let defaults = {
       defaultColorType: true,
       angleClass: "",

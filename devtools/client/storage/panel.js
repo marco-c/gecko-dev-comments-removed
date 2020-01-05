@@ -38,7 +38,7 @@ StoragePanel.prototype = {
   
 
 
-  open() {
+  open: function () {
     let targetPromise;
     
     if (!this.target.isRemote) {
@@ -66,7 +66,7 @@ StoragePanel.prototype = {
   
 
 
-  destroy() {
+  destroy: function () {
     if (!this._destroyed) {
       this.UI.destroy();
       this.UI = null;

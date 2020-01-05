@@ -157,7 +157,7 @@ var Task = {
 
 
 
-  spawn(task) {
+  spawn: function (task) {
     return createAsyncFunction(task)();
   },
 
@@ -199,7 +199,7 @@ var Task = {
 
 
 
-  async(task) {
+  async: function (task) {
     if (typeof (task) != "function") {
       throw new TypeError("task argument must be a function");
     }
@@ -214,7 +214,7 @@ var Task = {
 
 
 
-  Result(value) {
+  Result: function (value) {
     this.value = value;
   }
 };
@@ -302,7 +302,7 @@ TaskImpl.prototype = {
 
 
 
-  _run(sendResolved, sendValue) {
+  _run: function (sendResolved, sendValue) {
     try {
       gCurrentTask = this;
 
@@ -372,7 +372,7 @@ TaskImpl.prototype = {
 
 
 
-  _handleResultValue(value) {
+  _handleResultValue: function (value) {
     
     
     
@@ -399,7 +399,7 @@ TaskImpl.prototype = {
 
 
 
-  _handleException(exception) {
+  _handleException: function (exception) {
     gCurrentTask = this;
 
     if (exception && typeof exception == "object" && "stack" in exception) {
@@ -487,7 +487,7 @@ Task.Debugging = {
 
 
 
-  generateReadableStack(topStack, prefix = "") {
+  generateReadableStack: function (topStack, prefix = "") {
     if (!gCurrentTask) {
       return topStack;
     }

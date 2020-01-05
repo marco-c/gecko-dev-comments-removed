@@ -28,7 +28,7 @@ var sharedGlobalBlocklist = ["sdk/indexed-db"];
 
 function BuiltinProvider() {}
 BuiltinProvider.prototype = {
-  load() {
+  load: function () {
     const paths = {
       
       "": "resource://gre/modules/commonjs/",
@@ -83,7 +83,7 @@ BuiltinProvider.prototype = {
     });
   },
 
-  unload(reason) {
+  unload: function (reason) {
     Loader.unload(this.loader, reason);
     delete this.loader;
   },
@@ -103,7 +103,7 @@ this.DevToolsLoader = function DevToolsLoader() {
 };
 
 DevToolsLoader.prototype = {
-  destroy(reason = "shutdown") {
+  destroy: function (reason = "shutdown") {
     Services.obs.removeObserver(this, "devtools-unload");
 
     if (this._provider) {
@@ -134,7 +134,7 @@ DevToolsLoader.prototype = {
 
 
 
-  require() {
+  require: function () {
     if (!this._provider) {
       this._loadProvider();
     }
@@ -145,14 +145,14 @@ DevToolsLoader.prototype = {
 
 
 
-  isLoaderPluginId(id) {
+  isLoaderPluginId: function (id) {
     return id.startsWith("raw!");
   },
 
   
 
 
-  setProvider(provider) {
+  setProvider: function (provider) {
     if (provider === this._provider) {
       return;
     }
@@ -204,7 +204,7 @@ DevToolsLoader.prototype = {
   
 
 
-  _loadProvider() {
+  _loadProvider: function () {
     this.setProvider(new BuiltinProvider());
   },
 
@@ -214,7 +214,7 @@ DevToolsLoader.prototype = {
 
 
 
-  observe(subject, topic, data) {
+  observe: function (subject, topic, data) {
     if (topic != "devtools-unload") {
       return;
     }

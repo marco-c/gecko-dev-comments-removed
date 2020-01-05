@@ -34,7 +34,7 @@ CssTransformHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
 
   ID_CLASS_PREFIX: "css-transform-",
 
-  _buildMarkup() {
+  _buildMarkup: function () {
     let container = createNode(this.win, {
       attributes: {
         "class": "highlighter-container"
@@ -135,19 +135,19 @@ CssTransformHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
   
 
 
-  destroy() {
+  destroy: function () {
     AutoRefreshHighlighter.prototype.destroy.call(this);
     this.markup.destroy();
   },
 
-  getElement(id) {
+  getElement: function (id) {
     return this.markup.getElement(this.ID_CLASS_PREFIX + id);
   },
 
   
 
 
-  _show() {
+  _show: function () {
     if (!this._isTransformed(this.currentNode)) {
       this.hide();
       return false;
@@ -159,12 +159,12 @@ CssTransformHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
   
 
 
-  _isTransformed(node) {
+  _isTransformed: function (node) {
     let style = getComputedStyle(node);
     return style && (style.transform !== "none" && style.display !== "inline");
   },
 
-  _setPolygonPoints(quad, id) {
+  _setPolygonPoints: function (quad, id) {
     let points = [];
     for (let point of ["p1", "p2", "p3", "p4"]) {
       points.push(quad[point].x + "," + quad[point].y);
@@ -172,7 +172,7 @@ CssTransformHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     this.getElement(id).setAttribute("points", points.join(" "));
   },
 
-  _setLinePoints(p1, p2, id) {
+  _setLinePoints: function (p1, p2, id) {
     let line = this.getElement(id);
     line.setAttribute("x1", p1.x);
     line.setAttribute("y1", p1.y);
@@ -192,7 +192,7 @@ CssTransformHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
 
 
 
-  _update() {
+  _update: function () {
     setIgnoreLayoutChanges(true);
 
     
@@ -226,17 +226,17 @@ CssTransformHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
   
 
 
-  _hide() {
+  _hide: function () {
     setIgnoreLayoutChanges(true);
     this._hideShapes();
     setIgnoreLayoutChanges(false, this.highlighterEnv.window.document.documentElement);
   },
 
-  _hideShapes() {
+  _hideShapes: function () {
     this.getElement("elements").setAttribute("hidden", "true");
   },
 
-  _showShapes() {
+  _showShapes: function () {
     this.getElement("elements").removeAttribute("hidden");
   }
 });

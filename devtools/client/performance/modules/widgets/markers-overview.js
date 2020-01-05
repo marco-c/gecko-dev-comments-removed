@@ -74,7 +74,7 @@ MarkersOverview.prototype = Heritage.extend(AbstractCanvasGraph.prototype, {
   
 
 
-  setFilter(filter) {
+  setFilter: function (filter) {
     this._paintBatches = new Map();
     this._filter = filter;
     this._groupMap = Object.create(null);
@@ -103,7 +103,7 @@ MarkersOverview.prototype = Heritage.extend(AbstractCanvasGraph.prototype, {
   
 
 
-  clearView() {
+  clearView: function () {
     this.selectionEnabled = false;
     this.dropSelection();
     this.setData({ duration: 0, markers: [] });
@@ -113,7 +113,7 @@ MarkersOverview.prototype = Heritage.extend(AbstractCanvasGraph.prototype, {
 
 
 
-  buildGraphImage() {
+  buildGraphImage: function () {
     let { markers, duration } = this._data;
 
     let { canvas, ctx } = this._getNamedCanvas("markers-overview-data");
@@ -171,7 +171,7 @@ MarkersOverview.prototype = Heritage.extend(AbstractCanvasGraph.prototype, {
     let tickInterval = TickUtils.findOptimalTickInterval({
       ticksMultiple: OVERVIEW_HEADER_TICKS_MULTIPLE,
       ticksSpacingMin: OVERVIEW_HEADER_TICKS_SPACING_MIN,
-      dataScale
+      dataScale: dataScale
     });
 
     ctx.textBaseline = "middle";
@@ -225,7 +225,7 @@ MarkersOverview.prototype = Heritage.extend(AbstractCanvasGraph.prototype, {
 
 
 
-  setTheme(theme) {
+  setTheme: function (theme) {
     this.theme = theme = theme || "light";
     this.backgroundColor = getColor("body-background", theme);
     this.selectionBackgroundColor = colorUtils.setAlpha(

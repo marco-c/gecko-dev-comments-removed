@@ -135,7 +135,7 @@ Rule.prototype = {
 
 
 
-  getOriginalSourceStrings() {
+  getOriginalSourceStrings: function () {
     return this.domRule.getOriginalLocation().then(({href,
                                                      line, mediaText}) => {
       let mediaString = mediaText ? " @" + mediaText : "";
@@ -144,7 +144,7 @@ Rule.prototype = {
       let sourceStrings = {
         full: (href || CssLogic.l10n("rule.sourceInline")) + linePart +
           mediaString,
-        short: CssLogic.shortSource({href}) + linePart + mediaString
+        short: CssLogic.shortSource({href: href}) + linePart + mediaString
       };
 
       return sourceStrings;
@@ -158,7 +158,7 @@ Rule.prototype = {
 
 
 
-  matches(options) {
+  matches: function (options) {
     return this.style === options.rule;
   },
 
@@ -176,7 +176,7 @@ Rule.prototype = {
 
 
 
-  createProperty(name, value, priority, enabled, siblingProp) {
+  createProperty: function (name, value, priority, enabled, siblingProp) {
     let prop = new TextProperty(this, name, value, priority, enabled);
 
     let ind;
@@ -203,7 +203,7 @@ Rule.prototype = {
 
 
 
-  _applyPropertiesNoAuthored(modifications) {
+  _applyPropertiesNoAuthored: function (modifications) {
     this.elementStyle.markOverriddenAll();
 
     let disabledProps = [];
@@ -271,7 +271,7 @@ Rule.prototype = {
 
 
 
-  _applyPropertiesAuthored(modifications) {
+  _applyPropertiesAuthored: function (modifications) {
     return modifications.apply().then(() => {
       
       
@@ -302,7 +302,7 @@ Rule.prototype = {
 
 
 
-  applyProperties(modifier) {
+  applyProperties: function (modifier) {
     
     
     let resultPromise =
@@ -335,7 +335,7 @@ Rule.prototype = {
 
 
 
-  setPropertyName(property, name) {
+  setPropertyName: function (property, name) {
     if (name === property.name) {
       return;
     }
@@ -358,7 +358,7 @@ Rule.prototype = {
 
 
 
-  setPropertyValue(property, value, priority) {
+  setPropertyValue: function (property, value, priority) {
     if (value === property.value && priority === property.priority) {
       return;
     }
@@ -383,7 +383,7 @@ Rule.prototype = {
 
 
 
-  previewPropertyValue(property, value, priority) {
+  previewPropertyValue: function (property, value, priority) {
     let modifications = this.style.startModifyingProperties(this.cssProperties);
     modifications.setProperty(this.textProps.indexOf(property),
                               property.name, value, priority);
@@ -401,7 +401,7 @@ Rule.prototype = {
 
 
 
-  setPropertyEnabled(property, value) {
+  setPropertyEnabled: function (property, value) {
     if (property.enabled === !!value) {
       return;
     }
@@ -419,7 +419,7 @@ Rule.prototype = {
 
 
 
-  removeProperty(property) {
+  removeProperty: function (property) {
     let index = this.textProps.indexOf(property);
     this.textProps.splice(index, 1);
     
@@ -433,7 +433,7 @@ Rule.prototype = {
 
 
 
-  _getTextProperties() {
+  _getTextProperties: function () {
     let textProps = [];
     let store = this.elementStyle.store;
 
@@ -468,7 +468,7 @@ Rule.prototype = {
   
 
 
-  _getDisabledProperties() {
+  _getDisabledProperties: function () {
     let store = this.elementStyle.store;
 
     
@@ -494,7 +494,7 @@ Rule.prototype = {
 
 
 
-  refresh(options) {
+  refresh: function (options) {
     this.matchedSelectors = options.matchedSelectors || [];
     let newTextProps = this._getTextProperties();
 
@@ -555,7 +555,7 @@ Rule.prototype = {
 
 
 
-  _updateTextProperty(newProp) {
+  _updateTextProperty: function (newProp) {
     let match = { rank: 0, prop: null };
 
     for (let prop of this.textProps) {
@@ -620,7 +620,7 @@ Rule.prototype = {
 
 
 
-  editClosestTextProperty(textProperty, direction) {
+  editClosestTextProperty: function (textProperty, direction) {
     let index = this.textProps.indexOf(textProperty);
 
     if (direction === Services.focus.MOVEFOCUS_FORWARD) {
@@ -651,7 +651,7 @@ Rule.prototype = {
   
 
 
-  stringifyRule() {
+  stringifyRule: function () {
     let selectorText = this.selectorText;
     let cssText = "";
     let terminator = Services.appinfo.OS === "WINNT" ? "\r\n" : "\n";
@@ -670,7 +670,7 @@ Rule.prototype = {
 
 
 
-  hasAnyVisibleProperties() {
+  hasAnyVisibleProperties: function () {
     for (let prop of this.textProps) {
       if (!prop.invisible) {
         return true;

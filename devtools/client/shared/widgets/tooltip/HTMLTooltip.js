@@ -299,7 +299,7 @@ HTMLTooltip.prototype = {
 
 
 
-  setContent(content, {width = "auto", height = Infinity} = {}) {
+  setContent: function (content, {width = "auto", height = Infinity} = {}) {
     this.preferredWidth = width;
     this.preferredHeight = height;
 
@@ -400,7 +400,7 @@ HTMLTooltip.prototype = {
 
 
 
-  _getViewportRect() {
+  _getViewportRect: function () {
     if (this.useXulWrapper) {
       
       
@@ -420,7 +420,7 @@ HTMLTooltip.prototype = {
     return this.doc.documentElement.getBoundingClientRect();
   },
 
-  _measureContainerWidth() {
+  _measureContainerWidth: function () {
     let xulParent = this.container.parentNode;
     if (this.useXulWrapper && !this.isVisible()) {
       
@@ -469,7 +469,7 @@ HTMLTooltip.prototype = {
 
 
 
-  isVisible() {
+  isVisible: function () {
     return this.container.classList.contains("tooltip-visible");
   },
 
@@ -477,7 +477,7 @@ HTMLTooltip.prototype = {
 
 
 
-  destroy() {
+  destroy: function () {
     this.hide();
     this.container.remove();
     if (this.xulPanelWrapper) {
@@ -485,7 +485,7 @@ HTMLTooltip.prototype = {
     }
   },
 
-  _createContainer() {
+  _createContainer: function () {
     let container = this.doc.createElementNS(XHTML_NS, "div");
     container.setAttribute("type", this.type);
     container.classList.add("tooltip-container");
@@ -500,7 +500,7 @@ HTMLTooltip.prototype = {
     return container;
   },
 
-  _onClick(e) {
+  _onClick: function (e) {
     if (this._isInTooltipContainer(e.target)) {
       return;
     }
@@ -513,7 +513,7 @@ HTMLTooltip.prototype = {
     }
   },
 
-  _isInTooltipContainer(node) {
+  _isInTooltipContainer: function (node) {
     
     if (this.arrow && this.arrow === node) {
       return true;
@@ -540,7 +540,7 @@ HTMLTooltip.prototype = {
     return false;
   },
 
-  _onXulPanelHidden() {
+  _onXulPanelHidden: function () {
     if (this.isVisible()) {
       this.hide();
     }
@@ -550,7 +550,7 @@ HTMLTooltip.prototype = {
 
 
 
-  _maybeFocusTooltip() {
+  _maybeFocusTooltip: function () {
     
     
     let focusableSelector = "a, button, iframe, input, select, textarea";
@@ -560,18 +560,18 @@ HTMLTooltip.prototype = {
     }
   },
 
-  _getTopWindow() {
+  _getTopWindow: function () {
     return this.doc.defaultView.top;
   },
 
   
 
 
-  _isXUL() {
+  _isXUL: function () {
     return this.doc.documentElement.namespaceURI === XUL_NS;
   },
 
-  _createXulPanelWrapper() {
+  _createXulPanelWrapper: function () {
     let panel = this.doc.createElementNS(XUL_NS, "panel");
 
     
@@ -591,14 +591,14 @@ HTMLTooltip.prototype = {
     return panel;
   },
 
-  _showXulWrapperAt(left, top) {
+  _showXulWrapperAt: function (left, top) {
     this.xulPanelWrapper.addEventListener("popuphidden", this._onXulPanelHidden);
     let onPanelShown = listenOnce(this.xulPanelWrapper, "popupshown");
     this.xulPanelWrapper.openPopupAtScreen(left, top, false);
     return onPanelShown;
   },
 
-  _hideXulWrapper() {
+  _hideXulWrapper: function () {
     this.xulPanelWrapper.removeEventListener("popuphidden", this._onXulPanelHidden);
 
     if (this.xulPanelWrapper.state === "closed") {
@@ -616,7 +616,7 @@ HTMLTooltip.prototype = {
 
 
 
-  _convertToScreenRect({left, top, width, height}) {
+  _convertToScreenRect: function ({left, top, width, height}) {
     
     
     left += this.doc.defaultView.mozInnerScreenX;
@@ -628,7 +628,7 @@ HTMLTooltip.prototype = {
 
 
 
-  _applyStylesheet(url) {
+  _applyStylesheet: function (url) {
     let style = this.doc.createElementNS(XHTML_NS, "style");
     style.setAttribute("scoped", "true");
     url = url.replace(/"/g, "\\\"");
