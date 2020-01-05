@@ -13,7 +13,7 @@ const {
 
 const {PluralForm} = require("devtools/shared/plural-form");
 const {LocalizationHelper} = require("devtools/shared/l10n");
-const L10N = new LocalizationHelper("devtools/shared/locales/gclicommands.properties");
+const L10N = new LocalizationHelper("devtools-shared/locale/gclicommands.properties");
 
 
 const MAX_HIGHLIGHTED_ELEMENTS = 100;
