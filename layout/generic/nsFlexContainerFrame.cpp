@@ -2366,8 +2366,9 @@ nsFlexContainerFrame::Init(nsIContent*       aContent,
   
   
   
+  
   if (!isLegacyBox && styleDisp->mDisplay == mozilla::StyleDisplay::Block) {
-    nsStyleContext* parentStyleContext = mStyleContext->GetParent();
+    nsStyleContext* parentStyleContext = GetParent()->StyleContext();
     NS_ASSERTION(parentStyleContext &&
                  (mStyleContext->GetPseudo() == nsCSSAnonBoxes::buttonContent ||
                   mStyleContext->GetPseudo() == nsCSSAnonBoxes::scrolledContent),
