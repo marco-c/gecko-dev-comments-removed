@@ -473,7 +473,7 @@ XMLHttpRequestMainThread::GetResponseXML(ErrorResult& aRv)
 {
   if (mResponseType != XMLHttpRequestResponseType::_empty &&
       mResponseType != XMLHttpRequestResponseType::Document) {
-    aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
+    aRv.Throw(NS_ERROR_DOM_INVALID_STATE_XHR_HAS_WRONG_RESPONSETYPE_FOR_RESPONSEXML);
     return nullptr;
   }
   if (mWarnAboutSyncHtml) {
@@ -595,7 +595,7 @@ XMLHttpRequestMainThread::GetResponseText(XMLHttpRequestStringSnapshot& aSnapsho
   if (mResponseType != XMLHttpRequestResponseType::_empty &&
       mResponseType != XMLHttpRequestResponseType::Text &&
       mResponseType != XMLHttpRequestResponseType::Moz_chunked_text) {
-    aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
+    aRv.Throw(NS_ERROR_DOM_INVALID_STATE_XHR_HAS_WRONG_RESPONSETYPE_FOR_RESPONSETEXT);
     return;
   }
 
@@ -718,24 +718,22 @@ void
 XMLHttpRequestMainThread::SetResponseType(XMLHttpRequestResponseType aResponseType,
                                           ErrorResult& aRv)
 {
-  
-  
   if (mState == State::loading || mState == State::done) {
-    aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
+    aRv.Throw(NS_ERROR_DOM_INVALID_STATE_XHR_MUST_NOT_BE_LOADING_OR_DONE);
     return;
   }
 
   
   if (HasOrHasHadOwner() && mState != State::unsent && mFlagSynchronous) {
     LogMessage("ResponseTypeSyncXHRWarning", GetOwner());
-    aRv.Throw(NS_ERROR_DOM_INVALID_ACCESS_ERR);
+    aRv.Throw(NS_ERROR_DOM_INVALID_ACCESS_XHR_TIMEOUT_AND_RESPONSETYPE_UNSUPPORTED_FOR_SYNC);
     return;
   }
 
   if (mFlagSynchronous &&
       (aResponseType == XMLHttpRequestResponseType::Moz_chunked_text ||
        aResponseType == XMLHttpRequestResponseType::Moz_chunked_arraybuffer)) {
-    aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
+    aRv.Throw(NS_ERROR_DOM_INVALID_STATE_XHR_CHUNKED_RESPONSETYPES_UNSUPPORTED_FOR_SYNC);
     return;
   }
 
@@ -1441,7 +1439,7 @@ XMLHttpRequestMainThread::Open(const nsACString& aMethod,
     
     nsresult rv = CheckInnerWindowCorrectness();
     if (NS_WARN_IF(NS_FAILED(rv))) {
-      return NS_ERROR_DOM_INVALID_STATE_ERR;
+      return NS_ERROR_DOM_INVALID_STATE_XHR_HAS_INVALID_CONTEXT;
     }
   }
   NS_ENSURE_TRUE(mPrincipal, NS_ERROR_NOT_INITIALIZED);
@@ -1464,12 +1462,12 @@ XMLHttpRequestMainThread::Open(const nsACString& aMethod,
   rv = NS_NewURI(getter_AddRefs(parsedURL), aUrl, nullptr, baseURI);
   if (NS_FAILED(rv)) {
     if (rv ==  NS_ERROR_MALFORMED_URI) {
-      return NS_ERROR_DOM_SYNTAX_ERR;
+      return NS_ERROR_DOM_MALFORMED_URI;
     }
     return rv;
   }
   if (NS_WARN_IF(NS_FAILED(CheckInnerWindowCorrectness()))) {
-    return NS_ERROR_DOM_INVALID_STATE_ERR;
+    return NS_ERROR_DOM_INVALID_STATE_XHR_HAS_INVALID_CONTEXT;
   }
 
   
@@ -1500,7 +1498,7 @@ XMLHttpRequestMainThread::Open(const nsACString& aMethod,
     if (mResponseType != XMLHttpRequestResponseType::_empty) {
       LogMessage("ResponseTypeSyncXHRWarning", GetOwner());
     }
-    return NS_ERROR_DOM_INVALID_ACCESS_ERR;
+    return NS_ERROR_DOM_INVALID_ACCESS_XHR_TIMEOUT_AND_RESPONSETYPE_UNSUPPORTED_FOR_SYNC;
   }
 
   
@@ -1908,7 +1906,7 @@ XMLHttpRequestMainThread::OnStartRequest(nsIRequest *request, nsISupports *ctxt)
       
       
       if (NS_WARN_IF(NS_FAILED(CheckInnerWindowCorrectness()))) {
-        return NS_ERROR_DOM_INVALID_STATE_ERR;
+        return NS_ERROR_DOM_INVALID_STATE_XHR_HAS_INVALID_CONTEXT;
       }
     }
 
@@ -2758,13 +2756,18 @@ XMLHttpRequestMainThread::SendInternal(const RequestBodyBase* aBody)
   NS_ENSURE_TRUE(mPrincipal, NS_ERROR_NOT_INITIALIZED);
 
   
-  if (mState != State::opened || mFlagSend) {
-    return NS_ERROR_DOM_INVALID_STATE_ERR;
+  if (mState != State::opened) {
+    return NS_ERROR_DOM_INVALID_STATE_XHR_MUST_BE_OPENED;
+  }
+
+  
+  if (mFlagSend) {
+    return NS_ERROR_DOM_INVALID_STATE_XHR_MUST_NOT_BE_SENDING;
   }
 
   nsresult rv = CheckInnerWindowCorrectness();
   if (NS_FAILED(rv)) {
-    return NS_ERROR_DOM_INVALID_STATE_ERR;
+    return NS_ERROR_DOM_INVALID_STATE_XHR_HAS_INVALID_CONTEXT;
   }
 
   
@@ -2953,8 +2956,13 @@ XMLHttpRequestMainThread::SetRequestHeader(const nsACString& aName,
                                            const nsACString& aValue)
 {
   
-  if (mState != State::opened || mFlagSend) {
-    return NS_ERROR_DOM_INVALID_STATE_ERR;
+  if (mState != State::opened) {
+    return NS_ERROR_DOM_INVALID_STATE_XHR_MUST_BE_OPENED;
+  }
+
+  
+  if (mFlagSend) {
+    return NS_ERROR_DOM_INVALID_STATE_XHR_MUST_NOT_BE_SENDING;
   }
 
   
@@ -2964,7 +2972,7 @@ XMLHttpRequestMainThread::SetRequestHeader(const nsACString& aName,
 
   
   if (!NS_IsValidHTTPToken(aName) || !NS_IsReasonableHTTPHeaderValue(value)) {
-    return NS_ERROR_DOM_SYNTAX_ERR;
+    return NS_ERROR_DOM_INVALID_HEADER_NAME;
   }
 
   
@@ -3014,7 +3022,7 @@ XMLHttpRequestMainThread::SetTimeout(uint32_t aTimeout, ErrorResult& aRv)
     
 
     LogMessage("TimeoutSyncXHRWarning", GetOwner());
-    aRv.Throw(NS_ERROR_DOM_INVALID_ACCESS_ERR);
+    aRv.Throw(NS_ERROR_DOM_INVALID_ACCESS_XHR_TIMEOUT_AND_RESPONSETYPE_UNSUPPORTED_FOR_SYNC);
     return;
   }
 
@@ -3086,7 +3094,7 @@ void XMLHttpRequestMainThread::OverrideMimeType(const nsAString& aMimeType, Erro
 {
   if (mState == State::loading || mState == State::done) {
     ResetResponse();
-    aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
+    aRv.Throw(NS_ERROR_DOM_INVALID_STATE_XHR_MUST_NOT_BE_LOADING_OR_DONE);
     return;
   }
 
@@ -3123,7 +3131,7 @@ XMLHttpRequestMainThread::SetMozBackgroundRequest(bool aMozBackgroundRequest)
 
   if (mState != State::unsent) {
     
-     return NS_ERROR_IN_PROGRESS;
+    return NS_ERROR_DOM_INVALID_STATE_XHR_MUST_NOT_BE_SENDING;
   }
 
   mFlagBackgroundRequest = aMozBackgroundRequest;
@@ -3166,9 +3174,10 @@ XMLHttpRequestMainThread::SetWithCredentials(bool aWithCredentials, ErrorResult&
   
   
   
+
   if ((mState != State::unsent && mState != State::opened) ||
       mFlagSend || mIsAnon) {
-    aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
+    aRv.Throw(NS_ERROR_DOM_INVALID_STATE_XHR_MUST_NOT_BE_SENDING);
     return;
   }
 
