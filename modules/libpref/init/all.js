@@ -5406,10 +5406,6 @@ pref("intl.allow-insecure-text-input", false);
 pref("dom.meta-viewport.enabled", false);
 
 
-pref("browser.addon-watch.interval", -1);
-pref("browser.addon-watch.ignore", "[\"mochikit@mozilla.org\",\"special-powers@mozilla.org\",\"fxdevtools-adapters@mozilla.org\",\"fx-devtools\",\"webcompat-reporter@mozilla.org\"]");
-
-
 pref("browser.search.log", false);
 pref("browser.search.update", true);
 pref("browser.search.update.log", false);

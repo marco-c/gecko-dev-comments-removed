@@ -40,16 +40,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 this.EXPORTED_SYMBOLS = ["PerformanceWatcher"];
 
 const { classes: Cc, interfaces: Ci, utils: Cu } = Components;
@@ -75,7 +65,6 @@ if (!isContent) {
 
 
 performanceStatsService.jankAlertThreshold = 64000 ;
-
 
 
 
@@ -118,16 +107,7 @@ ChildManager.prototype = {
 
 
 
-ChildManager.notifyObservers = function({data: {addons, windows}}) {
-  if (addons && addons.length > 0) {
-    
-    this._notify(ChildManager.getAddon("*").listeners(), addons);
-
-    
-    for (let {source, details} of addons) {
-      this._notify(ChildManager.getAddon(source.addonId).listeners(), source, details);
-    }
-  }
+ChildManager.notifyObservers = function({data: {windows}}) {
   if (windows && windows.length > 0) {
     
     this._notify(ChildManager.getWindow(0).listeners(), windows);
@@ -144,11 +124,6 @@ ChildManager._notify = function(targets, ...args) {
     target(...args);
   }
 };
-
-ChildManager.getAddon = function(key) {
-  return this._get(this._addons, key);
-};
-ChildManager._addons = new Map();
 
 ChildManager.getWindow = function(key) {
   return this._get(this._windows, key);
@@ -183,20 +158,10 @@ let gListeners = new WeakMap();
 
 
 
-
-
-
-
-
 function Observable(target) {
   
   this._observers = new Map();
-  if ("addonId" in target) {
-    this._key = `addonId: ${target.addonId}`;
-    this._process = performanceStatsService.getObservableAddon(target.addonId);
-    this._children = isContent ? null : ChildManager.getAddon(target.addonId);
-    this._isBuffered = target.addonId == "*";
-  } else if ("tab" in target || "windowId" in target) {
+  if ("tab" in target || "windowId" in target) {
     let windowId;
     if ("tab" in target) {
       windowId = target.tab.linkedBrowser.outerWindowID;
@@ -251,9 +216,7 @@ Observable.prototype = {
 
 Observable.get = function(target) {
   let key;
-  if ("addonId" in target) {
-    key = target.addonId;
-  } else if ("tab" in target) {
+  if ("tab" in target) {
     
     
     key = target.tab.linkedBrowser.outerWindowID;
@@ -327,8 +290,6 @@ BufferedObserver.prototype.observe = function(source, details) {
 
 this.PerformanceWatcher = {
   
-
-
 
 
 

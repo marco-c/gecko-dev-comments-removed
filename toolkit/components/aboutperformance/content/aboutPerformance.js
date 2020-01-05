@@ -8,8 +8,6 @@
 
 var { classes: Cc, interfaces: Ci, utils: Cu } = Components;
 
-const { AddonManager } = Cu.import("resource://gre/modules/AddonManager.jsm", {});
-const { AddonWatcher } = Cu.import("resource://gre/modules/AddonWatcher.jsm", {});
 const { PerformanceStats } = Cu.import("resource://gre/modules/PerformanceStats.jsm", {});
 const { Services } = Cu.import("resource://gre/modules/Services.jsm", {});
 const { Task } = Cu.import("resource://gre/modules/Task.jsm", {});
@@ -155,7 +153,7 @@ function wait(ms = 0) {
 
 
 function Delta(diff, kind, snapshotDate, ageMap, alertMap) {
-  if (kind != "addons" && kind != "webpages") {
+  if (kind != "webpages") {
     throw new TypeError(`Unknown kind: ${kind}`);
   }
 
@@ -261,8 +259,6 @@ Delta.prototype = {
   promiseInit() {
     if (this.kind == "webpages") {
       return this._initWebpage();
-    } else if (this.kind == "addons") {
-      return this._promiseInitAddon();
     }
     throw new TypeError();
   },
@@ -278,24 +274,6 @@ Delta.prototype = {
     this.fullName = this.diff.names.join(", ");
     this._show = true;
   },
-  _promiseInitAddon: Task.async(function*() {
-    let found = yield (new Promise(resolve =>
-      AddonManager.getAddonByID(this.diff.addonId, a => {
-        if (a) {
-          this.readableName = a.name;
-          resolve(true);
-        } else {
-          resolve(false);
-        }
-      })));
-
-    this._initialized = true;
-
-    
-    
-    this._show = found;
-    this.fullName = this.diff.addonId;
-  }),
   toString() {
     return `[Delta] ${this.diff.key} => ${this.readableName}, ${this.fullName}`;
   }
@@ -463,7 +441,6 @@ var State = {
 
 
 
-
   _promiseDeltaSince: Task.async(function*(oldest) {
     let current = this._latest;
     if (!oldest) {
@@ -484,13 +461,12 @@ var State = {
     let cleanedUpAlerts = new Map();
 
     let result = {
-      addons: [],
       webpages: [],
       deltas: new Set(),
       duration: current.date - oldest.date
     };
 
-    for (let kind of ["webpages", "addons"]) {
+    for (let kind of ["webpages"]) {
       for (let [key, value] of current[kind]) {
         let item = ObjectUtils.strict(new Delta(value.subtract(oldest[kind].get(key)), kind, current.date, oldFirstSeen, oldAlerts));
         yield item.promiseInit();
@@ -563,10 +539,6 @@ var View = {
   updateCategory(subset, id, nature, currentMode) {
     subset = subset.slice().sort(Delta.revCompare);
 
-    let watcherAlerts = null;
-    if (nature == "addons") {
-      watcherAlerts = AddonWatcher.alerts;
-    }
 
     
     this._setupStructure(id);
@@ -585,15 +557,6 @@ var View = {
 
       let processes = delta.diff.processes.map(proc => `${proc.processId} (${proc.isChildProcess ? "child" : "parent"})`);
       cachedElements.eltProcess.textContent = `Processes: ${processes.join(", ")}`;
-      let jankSuffix = "";
-      if (watcherAlerts) {
-        let deltaAlerts = watcherAlerts.get(delta.diff.addonId);
-        if (deltaAlerts) {
-          if (deltaAlerts.occurrences) {
-            jankSuffix = ` (${deltaAlerts.occurrences} alerts)`;
-          }
-        }
-      }
 
       let eltImpact = cachedElements.eltImpact;
       if (currentMode == MODE_RECENT) {
@@ -606,7 +569,7 @@ var View = {
           eltImpact.textContent = ` is currently considerably slowing down ${BRAND_NAME}.`;
         }
 
-        cachedElements.eltFPS.textContent = `Impact on framerate: ${delta.diff.jank.longestDuration + 1}/${delta.diff.jank.durations.length}${jankSuffix}.`;
+        cachedElements.eltFPS.textContent = `Impact on framerate: ${delta.diff.jank.longestDuration + 1}/${delta.diff.jank.durations.length}`;
         cachedElements.eltCPU.textContent = `CPU usage: ${Math.ceil(delta.diff.jank.totalCPUTime / delta.diff.deltaT / 10)}%.`;
         cachedElements.eltSystem.textContent = `System usage: ${Math.ceil(delta.diff.jank.totalSystemTime / delta.diff.deltaT / 10)}%.`;
         cachedElements.eltCPOW.textContent = `Blocking process calls: ${Math.ceil(delta.diff.cpow.totalCPOWTime / delta.diff.deltaT / 10)}%.`;
@@ -644,7 +607,7 @@ var View = {
             }
 
             eltImpact.textContent = ` ${describeFrequency} ${describeImpact}`;
-            cachedElements.eltFPS.textContent = `Impact on framerate: ${delta.alerts[1] || 0} high-impacts, ${delta.alerts[0] || 0} medium-impact${jankSuffix}.`;
+            cachedElements.eltFPS.textContent = `Impact on framerate: ${delta.alerts[1] || 0} high-impacts, ${delta.alerts[0] || 0} medium-impact.`;
           }
           cachedElements.eltRoot.setAttribute("impact", Math.round(impact));
         }
@@ -758,48 +721,7 @@ var View = {
       });
 
       
-      if (nature == "addons") {
-        eltSpan.appendChild(document.createElement("br"));
-        let eltDisable = document.createElement("button");
-        eltDisable.textContent = "Disable";
-        eltSpan.appendChild(eltDisable);
-
-        let eltUninstall = document.createElement("button");
-        eltUninstall.textContent = "Uninstall";
-        eltSpan.appendChild(eltUninstall);
-
-        let eltRestart = document.createElement("button");
-        eltRestart.textContent = `Restart ${BRAND_NAME} to apply your changes.`
-        eltRestart.classList.add("hidden");
-        eltSpan.appendChild(eltRestart);
-
-        eltRestart.addEventListener("click", () => {
-          Services.startup.quit(Services.startup.eForceQuit | Services.startup.eRestart);
-        });
-        AddonManager.getAddonByID(delta.diff.addonId, addon => {
-          eltDisable.addEventListener("click", () => {
-            addon.userDisabled = true;
-            if (addon.pendingOperations == addon.PENDING_NONE) {
-              
-              return;
-            }
-            eltDisable.classList.add("hidden");
-            eltUninstall.classList.add("hidden");
-            eltRestart.classList.remove("hidden");
-          });
-
-          eltUninstall.addEventListener("click", () => {
-            addon.uninstall();
-            if (addon.pendingOperations == addon.PENDING_NONE) {
-              
-              return;
-            }
-            eltDisable.classList.add("hidden");
-            eltUninstall.classList.add("hidden");
-            eltRestart.classList.remove("hidden");
-          });
-        });
-      } else if (nature == "webpages") {
+      if (nature == "webpages") {
         eltSpan.appendChild(document.createElement("br"));
 
         let eltCloseTab = document.createElement("button");
@@ -872,7 +794,7 @@ var Control = {
       State.promiseDeltaSinceStartOfTime() :
       State.promiseDeltaSinceStartOfBuffer());
 
-    for (let category of ["webpages", "addons"]) {
+    for (let category of ["webpages"]) {
       yield wait(0);
       yield View.updateCategory(state[category], category, category, mode);
     }

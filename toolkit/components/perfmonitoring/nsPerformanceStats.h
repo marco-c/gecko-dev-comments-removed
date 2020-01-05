@@ -73,8 +73,6 @@ private:
 
 
 
-
-
 class nsGroupHolder {
 public:
   nsGroupHolder()
@@ -189,8 +187,6 @@ protected:
 
 
 
-
-
   bool GetPerformanceGroups(JSContext* cx, js::PerformanceGroupVector&);
   static bool GetPerformanceGroupsCallback(JSContext* cx, js::PerformanceGroupVector&, void* closure);
 
@@ -210,19 +206,6 @@ protected:
 
 
 
-
-  
-
-
-
-
-  struct AddonIdToGroup: public nsStringHashKey,
-                         public nsGroupHolder {
-    explicit AddonIdToGroup(const nsAString* key)
-      : nsStringHashKey(key)
-    { }
-  };
-  nsTHashtable<AddonIdToGroup> mAddonIdToGroup;
 
   
 
@@ -455,11 +438,6 @@ private:
     
 
 
-    RefPtr<nsPerformanceObservationTarget> mAddons;
-
-    
-
-
     RefPtr<nsPerformanceObservationTarget> mWindows;
   };
   UniversalTargets mUniversalTargets;
@@ -555,13 +533,11 @@ public:
 
   nsPerformanceGroupDetails(const nsAString& aName,
                             const nsAString& aGroupId,
-                            const nsAString& aAddonId,
                             const uint64_t aWindowId,
                             const uint64_t aProcessId,
                             const bool aIsSystem)
     : mName(aName)
     , mGroupId(aGroupId)
-    , mAddonId(aAddonId)
     , mWindowId(aWindowId)
     , mProcessId(aProcessId)
     , mIsSystem(aIsSystem)
@@ -569,10 +545,8 @@ public:
 public:
   const nsAString& Name() const;
   const nsAString& GroupId() const;
-  const nsAString& AddonId() const;
   uint64_t WindowId() const;
   uint64_t ProcessId() const;
-  bool IsAddon() const;
   bool IsWindow() const;
   bool IsSystem() const;
   bool IsContentProcess() const;
@@ -581,7 +555,6 @@ private:
 
   const nsString mName;
   const nsString mGroupId;
-  const nsString mAddonId;
   const uint64_t mWindowId;
   const uint64_t mProcessId;
   const bool mIsSystem;
@@ -600,11 +573,6 @@ enum class PerformanceGroupScope {
 
 
   WINDOW,
-
-  
-
-
-  ADDON,
 
   
 
@@ -642,13 +610,10 @@ public:
 
 
 
-
-
   static nsPerformanceGroup*
     Make(JSContext* cx,
          nsPerformanceStatsService* service,
          const nsAString& name,
-         const nsAString& addonId,
          uint64_t windowId,
          uint64_t processId,
          bool isSystem,
@@ -706,7 +671,6 @@ protected:
   nsPerformanceGroup(nsPerformanceStatsService* service,
                      const nsAString& name,
                      const nsAString& groupId,
-                     const nsAString& addonId,
                      uint64_t windowId,
                      uint64_t processId,
                      bool isSystem,

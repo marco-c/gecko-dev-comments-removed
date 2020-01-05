@@ -8,7 +8,6 @@
 
 
 
-
 const { utils: Cu, classes: Cc, interfaces: Ci } = Components;
 const { Services } = Cu.import("resource://gre/modules/Services.jsm", {});
 
@@ -26,7 +25,7 @@ let toMsg = function(alerts) {
   for (let {source, details} of alerts) {
     
     let serializableSource = {};
-    for (let k of ["groupId", "name", "addonId", "windowId", "isSystem", "processId", "isContentProcess"]) {
+    for (let k of ["groupId", "name", "windowId", "isSystem", "processId", "isContentProcess"]) {
       serializableSource[k] = source[k];
     }
 
@@ -38,12 +37,6 @@ let toMsg = function(alerts) {
   }
   return result;
 }
-
-PerformanceWatcher.addPerformanceListener({addonId: "*"}, alerts => {
-  Services.cpmm.sendAsyncMessage("performancewatcher-propagate-notifications",
-    {addons: toMsg(alerts)}
-  );
-});
 
 PerformanceWatcher.addPerformanceListener({windowId: 0}, alerts => {
   Services.cpmm.sendAsyncMessage("performancewatcher-propagate-notifications",

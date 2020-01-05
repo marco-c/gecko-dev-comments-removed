@@ -52,7 +52,7 @@ XPCOMUtils.defineLazyServiceGetter(this, "finalizer",
 
 const FINALIZATION_TOPIC = "performancemonitor-finalize";
 
-const PROPERTIES_META_IMMUTABLE = ["addonId", "isSystem", "isChildProcess", "groupId", "processId"];
+const PROPERTIES_META_IMMUTABLE = ["isSystem", "isChildProcess", "groupId", "processId"];
 const PROPERTIES_META = [...PROPERTIES_META_IMMUTABLE, "windowId", "title", "name"];
 
 
@@ -610,9 +610,6 @@ this.PerformanceStats = {
 
 
 
-
-
-
 function PerformanceDataLeaf({xpcom, json, probes}) {
   if (xpcom && json) {
     throw new TypeError("Cannot import both xpcom and json data");
@@ -722,16 +719,12 @@ PerformanceData.prototype = {
   subtract(to = null) {
     return (new PerformanceDiff(this, to));
   },
-  get addonId() {
-    return this._all[0].addonId;
-  },
   get title() {
     return this._all[0].title;
   }
 };
 
 function PerformanceDiff(current, old = null) {
-  this.addonId = current.addonId;
   this.title = current.title;
   this.windowId = current.windowId;
   this.deltaT = old ? current._timestamp - old._timestamp : Infinity;
@@ -777,9 +770,6 @@ PerformanceDiff.prototype = {
     return this._all.map(item => item.groupId);
   },
   get key() {
-    if (this.addonId) {
-      return this.addonId;
-    }
     if (this._parent) {
       return this._parent.windowId;
     }
@@ -857,7 +847,6 @@ function ProcessSnapshot({xpcom, probes}) {
 function ApplicationSnapshot({xpcom, childProcesses, probes, date}) {
   ProcessSnapshot.call(this, {xpcom, probes});
 
-  this.addons = new Map();
   this.webpages = new Map();
   this.date = date;
 
@@ -872,10 +861,7 @@ function ApplicationSnapshot({xpcom, childProcesses, probes, date}) {
 
   for (let leaf of this.componentsData) {
     let key, map;
-    if (leaf.addonId) {
-      key = leaf.addonId;
-      map = this.addons;
-    } else if (leaf.windowId) {
+    if (leaf.windowId) {
       key = leaf.windowId;
       map = this.webpages;
     } else {
