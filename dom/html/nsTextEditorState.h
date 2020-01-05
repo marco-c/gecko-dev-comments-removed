@@ -281,6 +281,22 @@ public:
   nsITextControlFrame::SelectionDirection
     GetSelectionDirection(mozilla::ErrorResult& aRv);
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  void SetSelectionRange(int32_t aStart, int32_t aEnd,
+                         nsITextControlFrame::SelectionDirection aDirection,
+                         mozilla::ErrorResult& aRv);
+
   void UpdateEditableState(bool aNotify) {
     if (mRootNode) {
       mRootNode->UpdateEditableState(aNotify);
