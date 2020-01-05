@@ -4,6 +4,11 @@
 
 
 
+
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif 
+
 #include <algorithm>
 #include <cmath>
 #include <cassert>
