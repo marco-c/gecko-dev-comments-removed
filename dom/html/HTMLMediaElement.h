@@ -604,10 +604,6 @@ public:
   
   void GetMozDebugReaderData(nsAString& aString);
 
-  
-  
-  already_AddRefed<Promise> MozRequestDebugInfo(ErrorResult& aRv);
-
   void MozDumpDebugInfo();
 
   void SetVisible(bool aVisible);
