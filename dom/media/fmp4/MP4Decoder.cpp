@@ -16,9 +16,6 @@
 #include "nsMimeTypes.h"
 #include "VideoUtils.h"
 
-#ifdef XP_WIN
-#include "mozilla/WindowsVersion.h"
-#endif
 #ifdef MOZ_WIDGET_ANDROID
 #include "nsIGfxInfo.h"
 #endif
@@ -51,14 +48,6 @@ IsWhitelistedH264Codec(const nsAString& aCodec)
   if (!ExtractH264CodecDetails(aCodec, profile, level)) {
     return false;
   }
-
-#ifdef XP_WIN
-  
-  if (!IsWin7OrLater() &&
-      level >= H264_LEVEL_5) {
-    return false;
-  }
-#endif
 
   
   
