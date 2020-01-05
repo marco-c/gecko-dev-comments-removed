@@ -59,7 +59,6 @@
 
 
 
-
 var gPrintSettingsAreGlobal = false;
 var gSavePrintSettings = false;
 var gFocusedElement = null;
