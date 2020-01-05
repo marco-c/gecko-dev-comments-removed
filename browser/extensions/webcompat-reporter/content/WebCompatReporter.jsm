@@ -31,6 +31,7 @@ let WebCompatReporter = {
   },
 
   init() {
+    
     Cu.import(TABLISTENER_JSM);
 
     let styleSheetService = Cc["@mozilla.org/content/style-sheet-service;1"]

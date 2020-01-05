@@ -2,6 +2,8 @@
 
 
 
+
+
 let { utils: Cu } = Components;
 
 const SCREENSHOT_MESSAGE = "WebCompat:SendScreenshot";
