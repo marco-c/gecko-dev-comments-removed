@@ -641,8 +641,8 @@ HttpBaseChannel::GetUploadStream(nsIInputStream **stream)
 
 NS_IMETHODIMP
 HttpBaseChannel::SetUploadStream(nsIInputStream *stream,
-                               const nsACString &contentType,
-                               int64_t contentLength)
+                                 const nsACString &contentTypeArg,
+                                 int64_t contentLength)
 {
   
   
@@ -655,12 +655,20 @@ HttpBaseChannel::SetUploadStream(nsIInputStream *stream,
     nsAutoCString method;
     bool hasHeaders;
 
-    if (contentType.IsEmpty()) {
+    
+    
+    
+    
+    
+    nsAutoCString contentType;
+    if (contentTypeArg.IsEmpty()) {
       method = NS_LITERAL_CSTRING("POST");
       hasHeaders = true;
+      contentType.SetIsVoid(true);
     } else {
       method = NS_LITERAL_CSTRING("PUT");
       hasHeaders = false;
+      contentType = contentTypeArg;
     }
     return ExplicitSetUploadStream(stream, contentType, contentLength,
                                    method, hasHeaders);
@@ -3072,7 +3080,12 @@ HttpBaseChannel::SetupReplacementChannel(nsIURI       *newURI,
         nsAutoCString ctype;
         
         
-        mRequestHead.GetHeader(nsHttp::Content_Type, ctype);
+        
+        
+        nsresult ctypeOK = mRequestHead.GetHeader(nsHttp::Content_Type, ctype);
+        if (NS_FAILED(ctypeOK)) {
+          ctype.SetIsVoid(true);
+        }
         nsAutoCString clen;
         mRequestHead.GetHeader(nsHttp::Content_Length, clen);
         nsAutoCString method;
