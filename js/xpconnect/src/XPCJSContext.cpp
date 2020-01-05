@@ -972,9 +972,12 @@ class Watchdog
         {
             AutoLockWatchdog lock(this);
 
+            
+            
+            
             mThread = PR_CreateThread(PR_USER_THREAD, WatchdogMain, this,
                                       PR_PRIORITY_NORMAL, PR_GLOBAL_THREAD,
-                                      PR_UNJOINABLE_THREAD, 0);
+                                      PR_JOINABLE_THREAD, 0);
             if (!mThread)
                 NS_RUNTIMEABORT("PR_CreateThread failed!");
 
@@ -1000,6 +1003,8 @@ class Watchdog
             PR_WaitCondVar(mWakeup, PR_INTERVAL_NO_TIMEOUT);
             MOZ_ASSERT(!mShuttingDown);
         }
+
+        PR_JoinThread(mThread);
 
         
         mThread = nullptr;
