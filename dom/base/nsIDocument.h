@@ -2875,6 +2875,12 @@ public:
   virtual already_AddRefed<nsIEventTarget>
   EventTargetFor(mozilla::dom::TaskCategory aCategory) const override;
 
+  
+  
+  
+  void NoteScriptTrackingStatus(const nsACString& aURL, bool isTracking);
+  bool IsScriptTracking(const nsACString& aURL) const;
+
 protected:
   bool GetUseCounter(mozilla::UseCounter aUseCounter)
   {
@@ -3333,6 +3339,11 @@ protected:
   mozilla::TimeStamp mPageUnloadingEventTimeStamp;
 
   RefPtr<mozilla::dom::DocGroup> mDocGroup;
+
+  
+  
+  
+  nsTHashtable<nsCStringHashKey> mTrackingScripts;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsIDocument, NS_IDOCUMENT_IID)
