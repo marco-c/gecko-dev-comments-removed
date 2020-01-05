@@ -495,6 +495,20 @@ PR_NormalizeTime(PRExplodedTime *time, PRTimeParamFn params)
 
 #define MT_safe_localtime localtime_r
 
+#elif defined(_MSC_VER)
+
+
+
+static struct tm *MT_safe_localtime(const time_t *clock, struct tm *result)
+{
+    errno_t err = localtime_s(result, clock);
+    if (err != 0) {
+        errno = err;
+        return NULL;
+    }
+    return result;
+}
+
 #else
 
 #define HAVE_LOCALTIME_MONITOR 1  /* We use 'monitor' to serialize our calls
@@ -580,6 +594,7 @@ PR_LocalTimeParameters(const PRExplodedTime *gmt)
 
     PRTimeParameters retVal;
     struct tm localTime;
+    struct tm *localTimeResult;
     time_t secs;
     PRTime secs64;
     PRInt64 usecPerSec;
@@ -606,7 +621,12 @@ PR_LocalTimeParameters(const PRExplodedTime *gmt)
 
 
     secs = 86400L;
-    (void) MT_safe_localtime(&secs, &localTime);
+    localTimeResult = MT_safe_localtime(&secs, &localTime);
+    PR_ASSERT(localTimeResult != NULL);
+    if (localTimeResult == NULL) {
+        
+        return PR_GMTParameters(gmt);
+    }
 
     
 
@@ -957,6 +977,7 @@ PR_ParseTimeStringToExplodedTime(
   int hour = -1;
   int min = -1;
   int sec = -1;
+  struct tm *localTimeResult;
 
   const char *rest = string;
 
@@ -1618,7 +1639,11 @@ PR_ParseTimeStringToExplodedTime(
 
 
                 secs = 86400;
-                (void) MT_safe_localtime(&secs, &localTime);
+                localTimeResult = MT_safe_localtime(&secs, &localTime);
+                PR_ASSERT(localTimeResult != NULL);
+                if (localTimeResult == NULL) {
+                    return PR_FAILURE;
+                }
                 zone_offset = localTime.tm_min
                               + 60 * localTime.tm_hour
                               + 1440 * (localTime.tm_mday - 2);
