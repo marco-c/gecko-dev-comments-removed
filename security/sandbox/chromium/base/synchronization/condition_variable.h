@@ -75,9 +75,12 @@
 #include <pthread.h>
 #endif
 
+#if defined(OS_WIN)
+#include <windows.h>
+#endif
+
 namespace base {
 
-class ConditionVarImpl;
 class TimeDelta;
 
 class BASE_EXPORT ConditionVariable {
@@ -89,9 +92,11 @@ class BASE_EXPORT ConditionVariable {
 
   
   
+  
   void Wait();
   void TimedWait(const TimeDelta& max_time);
 
+  
   
   void Broadcast();
   
@@ -100,14 +105,15 @@ class BASE_EXPORT ConditionVariable {
  private:
 
 #if defined(OS_WIN)
-  ConditionVarImpl* impl_;
+  CONDITION_VARIABLE cv_;
+  SRWLOCK* const srwlock_;
 #elif defined(OS_POSIX)
   pthread_cond_t condition_;
   pthread_mutex_t* user_mutex_;
-#if DCHECK_IS_ON()
-  base::Lock* user_lock_;     
 #endif
 
+#if DCHECK_IS_ON() && (defined(OS_WIN) || defined(OS_POSIX))
+  base::Lock* const user_lock_;  
 #endif
 
   DISALLOW_COPY_AND_ASSIGN(ConditionVariable);

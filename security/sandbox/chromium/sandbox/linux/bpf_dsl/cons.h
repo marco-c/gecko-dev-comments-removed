@@ -5,8 +5,9 @@
 #ifndef SANDBOX_LINUX_BPF_DSL_CONS_H_
 #define SANDBOX_LINUX_BPF_DSL_CONS_H_
 
+#include <memory>
+
 #include "base/macros.h"
-#include "base/memory/ref_counted.h"
 #include "sandbox/sandbox_export.h"
 
 namespace sandbox {
@@ -60,19 +61,19 @@ class ListIterator;
 
 
 template <typename T>
-using List = scoped_refptr<const Cell<T>>;
+using List = std::shared_ptr<const Cell<T>>;
 
 
 template <typename T>
-List<T> Cons(const T& head, const List<T>& tail) {
-  return List<T>(new const Cell<T>(head, tail));
+List<T> Cons(const T& head, List<T> tail) {
+  return std::make_shared<Cell<T>>(head, std::move(tail));
 }
 
 
 template <typename T>
-class Cell : public base::RefCounted<Cell<T>> {
+class Cell {
  public:
-  Cell(const T& head, const List<T>& tail) : head_(head), tail_(tail) {}
+  Cell(const T& head, List<T> tail) : head_(head), tail_(std::move(tail)) {}
 
   
   const T& head() const { return head_; }
@@ -81,12 +82,9 @@ class Cell : public base::RefCounted<Cell<T>> {
   const List<T>& tail() const { return tail_; }
 
  private:
-  virtual ~Cell() {}
-
   T head_;
   List<T> tail_;
 
-  friend class base::RefCounted<Cell<T>>;
   DISALLOW_COPY_AND_ASSIGN(Cell);
 };
 

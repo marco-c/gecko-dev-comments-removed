@@ -7,27 +7,45 @@
 #include <errno.h>
 #include <string.h>
 
+#include "base/debug/activity_tracker.h"
 #include "base/logging.h"
+#include "base/synchronization/lock.h"
 
 namespace base {
 namespace internal {
 
+
+
+
+
+
+
+
+#if defined(OS_NACL) || defined(OS_ANDROID)
+#define PRIORITY_INHERITANCE_LOCKS_POSSIBLE() 0
+#else
+#define PRIORITY_INHERITANCE_LOCKS_POSSIBLE() 1
+#endif
+
 LockImpl::LockImpl() {
-#ifndef NDEBUG
-  
   pthread_mutexattr_t mta;
   int rv = pthread_mutexattr_init(&mta);
   DCHECK_EQ(rv, 0) << ". " << strerror(rv);
+#if PRIORITY_INHERITANCE_LOCKS_POSSIBLE()
+  if (PriorityInheritanceAvailable()) {
+    rv = pthread_mutexattr_setprotocol(&mta, PTHREAD_PRIO_INHERIT);
+    DCHECK_EQ(rv, 0) << ". " << strerror(rv);
+  }
+#endif
+#ifndef NDEBUG
+  
   rv = pthread_mutexattr_settype(&mta, PTHREAD_MUTEX_ERRORCHECK);
   DCHECK_EQ(rv, 0) << ". " << strerror(rv);
+#endif
   rv = pthread_mutex_init(&native_handle_, &mta);
   DCHECK_EQ(rv, 0) << ". " << strerror(rv);
   rv = pthread_mutexattr_destroy(&mta);
   DCHECK_EQ(rv, 0) << ". " << strerror(rv);
-#else
-  
-  pthread_mutex_init(&native_handle_, NULL);
-#endif
 }
 
 LockImpl::~LockImpl() {
@@ -42,6 +60,7 @@ bool LockImpl::Try() {
 }
 
 void LockImpl::Lock() {
+  base::debug::ScopedLockAcquireActivity lock_activity(this);
   int rv = pthread_mutex_lock(&native_handle_);
   DCHECK_EQ(rv, 0) << ". " << strerror(rv);
 }
@@ -49,6 +68,30 @@ void LockImpl::Lock() {
 void LockImpl::Unlock() {
   int rv = pthread_mutex_unlock(&native_handle_);
   DCHECK_EQ(rv, 0) << ". " << strerror(rv);
+}
+
+
+bool LockImpl::PriorityInheritanceAvailable() {
+#if PRIORITY_INHERITANCE_LOCKS_POSSIBLE() && defined(OS_MACOSX)
+  return true;
+#else
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  return false;
+#endif
 }
 
 }  

@@ -5,8 +5,9 @@
 #ifndef SANDBOX_LINUX_BPF_DSL_BPF_DSL_IMPL_H_
 #define SANDBOX_LINUX_BPF_DSL_BPF_DSL_IMPL_H_
 
+#include <memory>
+
 #include "base/macros.h"
-#include "base/memory/ref_counted.h"
 #include "sandbox/linux/bpf_dsl/codegen.h"
 #include "sandbox/sandbox_export.h"
 
@@ -18,7 +19,7 @@ class PolicyCompiler;
 namespace internal {
 
 
-class BoolExprImpl : public base::RefCounted<BoolExprImpl> {
+class BoolExprImpl {
  public:
   
   
@@ -32,12 +33,11 @@ class BoolExprImpl : public base::RefCounted<BoolExprImpl> {
   virtual ~BoolExprImpl() {}
 
  private:
-  friend class base::RefCounted<BoolExprImpl>;
   DISALLOW_COPY_AND_ASSIGN(BoolExprImpl);
 };
 
 
-class ResultExprImpl : public base::RefCounted<ResultExprImpl> {
+class ResultExprImpl {
  public:
   
   
@@ -58,7 +58,6 @@ class ResultExprImpl : public base::RefCounted<ResultExprImpl> {
   virtual ~ResultExprImpl() {}
 
  private:
-  friend class base::RefCounted<ResultExprImpl>;
   DISALLOW_COPY_AND_ASSIGN(ResultExprImpl);
 };
 

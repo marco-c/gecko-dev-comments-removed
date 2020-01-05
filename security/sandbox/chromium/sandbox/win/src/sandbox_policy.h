@@ -8,8 +8,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include <string>
-
 #include "base/strings/string16.h"
 #include "sandbox/win/src/sandbox_types.h"
 #include "sandbox/win/src/security_level.h"
@@ -53,12 +51,15 @@ class TargetPolicy {
                            
                            
     EVENTS_ALLOW_ANY,      
-    EVENTS_ALLOW_READONLY, 
-    REG_ALLOW_READONLY,    
-    REG_ALLOW_ANY,         
-    FAKE_USER_GDI_INIT     
-                           
-                           
+    EVENTS_ALLOW_READONLY,  
+    REG_ALLOW_READONLY,     
+    REG_ALLOW_ANY,          
+    FAKE_USER_GDI_INIT,     
+                            
+                            
+    IMPLEMENT_OPM_APIS      
+                            
+                            
   };
 
   
@@ -136,6 +137,9 @@ class TargetPolicy {
                                  uint32_t ui_exceptions) = 0;
 
   
+  virtual JobLevel GetJobLevel() const = 0;
+
+  
   
   
   virtual ResultCode SetJobMemoryLimit(size_t memory_limit) = 0;
@@ -173,17 +177,6 @@ class TargetPolicy {
   virtual ResultCode SetDelayedIntegrityLevel(IntegrityLevel level) = 0;
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  virtual ResultCode SetAppContainer(const wchar_t* sid) = 0;
-
-  
   virtual ResultCode SetCapability(const wchar_t* sid) = 0;
 
   
@@ -205,6 +198,10 @@ class TargetPolicy {
 
   
   virtual MitigationFlags GetDelayedProcessMitigations() const = 0;
+
+  
+  
+  virtual void SetDisconnectCsrss() = 0;
 
   
   
@@ -248,9 +245,17 @@ class TargetPolicy {
 
   
   
+  virtual void AddHandleToShare(HANDLE handle) = 0;
+
   
   
-  virtual void* AddHandleToShare(HANDLE handle) = 0;
+  
+  virtual void SetLockdownDefaultDacl() = 0;
+
+  
+  virtual void SetEnableOPMRedirection() = 0;
+  
+  virtual bool GetEnableOPMRedirection() = 0;
 };
 
 }  

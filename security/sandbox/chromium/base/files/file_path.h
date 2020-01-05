@@ -138,6 +138,7 @@ namespace base {
 
 class Pickle;
 class PickleIterator;
+class PickleSizer;
 
 
 
@@ -372,11 +373,12 @@ class BASE_EXPORT FilePath {
   
   
   
-  static FilePath FromUTF8Unsafe(const std::string& utf8);
+  static FilePath FromUTF8Unsafe(StringPiece utf8);
 
   
-  static FilePath FromUTF16Unsafe(const string16& utf16);
+  static FilePath FromUTF16Unsafe(StringPiece16 utf16);
 
+  void GetSizeForPickle(PickleSizer* sizer) const;
   void WriteToPickle(Pickle* pickle) const;
   bool ReadFromPickle(PickleIterator* iter);
 

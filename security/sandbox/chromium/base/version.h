@@ -6,6 +6,8 @@
 #define BASE_VERSION_H_
 
 #include <stdint.h>
+
+#include <iosfwd>
 #include <string>
 #include <vector>
 
@@ -21,12 +23,18 @@ class BASE_EXPORT Version {
   
   Version();
 
-  ~Version();
+  Version(const Version& other);
 
   
   
   
   explicit Version(const std::string& version_str);
+
+  
+  
+  explicit Version(std::vector<uint32_t> components);
+
+  ~Version();
 
   
   bool IsValid() const;
@@ -36,14 +44,6 @@ class BASE_EXPORT Version {
   
   
   static bool IsValidWildcardString(const std::string& wildcard_string);
-
-  
-  
-  
-  
-  bool IsOlderThan(const std::string& version_str) const;
-
-  bool Equals(const Version& other) const;
 
   
   int CompareTo(const Version& other) const;
@@ -63,10 +63,14 @@ class BASE_EXPORT Version {
   std::vector<uint32_t> components_;
 };
 
+BASE_EXPORT bool operator==(const Version& v1, const Version& v2);
+BASE_EXPORT bool operator!=(const Version& v1, const Version& v2);
+BASE_EXPORT bool operator<(const Version& v1, const Version& v2);
+BASE_EXPORT bool operator<=(const Version& v1, const Version& v2);
+BASE_EXPORT bool operator>(const Version& v1, const Version& v2);
+BASE_EXPORT bool operator>=(const Version& v1, const Version& v2);
+BASE_EXPORT std::ostream& operator<<(std::ostream& stream, const Version& v);
+
 }  
-
-
-
-using base::Version;
 
 #endif  

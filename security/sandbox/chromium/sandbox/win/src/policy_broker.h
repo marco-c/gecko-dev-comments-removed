@@ -15,7 +15,8 @@ class TargetProcess;
 bool InitGlobalNt();
 
 
-bool SetupBasicInterceptions(InterceptionManager* manager);
+bool SetupBasicInterceptions(InterceptionManager* manager,
+                             bool is_csrss_connected);
 
 
 

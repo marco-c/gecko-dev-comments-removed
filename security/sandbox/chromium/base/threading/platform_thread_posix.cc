@@ -11,10 +11,14 @@
 #include <stdint.h>
 #include <sys/resource.h>
 #include <sys/time.h>
+#include <sys/types.h>
+#include <unistd.h>
 
+#include <memory>
+
+#include "base/debug/activity_tracker.h"
 #include "base/lazy_instance.h"
 #include "base/logging.h"
-#include "base/memory/scoped_ptr.h"
 #include "base/threading/platform_thread_internal_posix.h"
 #include "base/threading/thread_id_name_manager.h"
 #include "base/threading/thread_restrictions.h"
@@ -22,14 +26,11 @@
 
 #if defined(OS_LINUX)
 #include <sys/syscall.h>
-#elif defined(OS_ANDROID)
-#include <sys/types.h>
 #endif
 
 namespace base {
 
 void InitThreading();
-void InitOnThread();
 void TerminateOnThread();
 size_t GetDefaultThreadStackSize(const pthread_attr_t& attributes);
 
@@ -45,19 +46,22 @@ struct ThreadParams {
 };
 
 void* ThreadFunc(void* params) {
-  base::InitOnThread();
-
   PlatformThread::Delegate* delegate = nullptr;
 
   {
-    scoped_ptr<ThreadParams> thread_params(static_cast<ThreadParams*>(params));
+    std::unique_ptr<ThreadParams> thread_params(
+        static_cast<ThreadParams*>(params));
 
     delegate = thread_params->delegate;
     if (!thread_params->joinable)
       base::ThreadRestrictions::SetSingletonAllowed(false);
 
-    if (thread_params->priority != ThreadPriority::NORMAL)
-      PlatformThread::SetCurrentThreadPriority(thread_params->priority);
+#if !defined(OS_NACL)
+    
+    
+    
+    PlatformThread::SetCurrentThreadPriority(thread_params->priority);
+#endif
   }
 
   ThreadIdNameManager::GetInstance()->RegisterThread(
@@ -97,7 +101,7 @@ bool CreateThread(size_t stack_size,
   if (stack_size > 0)
     pthread_attr_setstacksize(&attributes, stack_size);
 
-  scoped_ptr<ThreadParams> params(new ThreadParams);
+  std::unique_ptr<ThreadParams> params(new ThreadParams);
   params->delegate = delegate;
   params->joinable = joinable;
   params->priority = priority;
@@ -184,21 +188,32 @@ const char* PlatformThread::GetName() {
 bool PlatformThread::CreateWithPriority(size_t stack_size, Delegate* delegate,
                                         PlatformThreadHandle* thread_handle,
                                         ThreadPriority priority) {
-  return CreateThread(stack_size, true,  
-                      delegate, thread_handle, priority);
+  return CreateThread(stack_size, true , delegate,
+                      thread_handle, priority);
 }
 
 
 bool PlatformThread::CreateNonJoinable(size_t stack_size, Delegate* delegate) {
+  return CreateNonJoinableWithPriority(stack_size, delegate,
+                                       ThreadPriority::NORMAL);
+}
+
+
+bool PlatformThread::CreateNonJoinableWithPriority(size_t stack_size,
+                                                   Delegate* delegate,
+                                                   ThreadPriority priority) {
   PlatformThreadHandle unused;
 
   bool result = CreateThread(stack_size, false ,
-                             delegate, &unused, ThreadPriority::NORMAL);
+                             delegate, &unused, priority);
   return result;
 }
 
 
 void PlatformThread::Join(PlatformThreadHandle thread_handle) {
+  
+  base::debug::ScopedThreadJoinActivity thread_activity(&thread_handle);
+
   
   
   
@@ -207,7 +222,24 @@ void PlatformThread::Join(PlatformThreadHandle thread_handle) {
 }
 
 
+void PlatformThread::Detach(PlatformThreadHandle thread_handle) {
+  CHECK_EQ(0, pthread_detach(thread_handle.platform_handle()));
+}
+
+
 #if !defined(OS_MACOSX)
+
+
+bool PlatformThread::CanIncreaseCurrentThreadPriority() {
+#if defined(OS_NACL)
+  return false;
+#else
+  
+  
+  
+  return geteuid() == 0;
+#endif  
+}
 
 
 void PlatformThread::SetCurrentThreadPriority(ThreadPriority priority) {

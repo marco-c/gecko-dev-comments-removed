@@ -70,12 +70,14 @@
 #ifndef BASE_MEMORY_WEAK_PTR_H_
 #define BASE_MEMORY_WEAK_PTR_H_
 
+#include <cstddef>
+#include <type_traits>
+
 #include "base/base_export.h"
 #include "base/logging.h"
 #include "base/macros.h"
 #include "base/memory/ref_counted.h"
 #include "base/sequence_checker.h"
-#include "base/template_util.h"
 
 namespace base {
 
@@ -110,6 +112,11 @@ class BASE_EXPORT WeakReference {
   explicit WeakReference(const Flag* flag);
   ~WeakReference();
 
+  WeakReference(WeakReference&& other);
+  WeakReference(const WeakReference& other);
+  WeakReference& operator=(WeakReference&& other) = default;
+  WeakReference& operator=(const WeakReference& other) = default;
+
   bool is_valid() const;
 
  private:
@@ -142,6 +149,11 @@ class BASE_EXPORT WeakPtrBase {
   WeakPtrBase();
   ~WeakPtrBase();
 
+  WeakPtrBase(const WeakPtrBase& other) = default;
+  WeakPtrBase(WeakPtrBase&& other) = default;
+  WeakPtrBase& operator=(const WeakPtrBase& other) = default;
+  WeakPtrBase& operator=(WeakPtrBase&& other) = default;
+
  protected:
   explicit WeakPtrBase(const WeakReference& ref);
 
@@ -159,10 +171,9 @@ class SupportsWeakPtrBase {
   
   template<typename Derived>
   static WeakPtr<Derived> StaticAsWeakPtr(Derived* t) {
-    typedef
-        is_convertible<Derived, internal::SupportsWeakPtrBase&> convertible;
-    static_assert(convertible::value,
-                  "AsWeakPtr argument must inherit from SupportsWeakPtr");
+    static_assert(
+        std::is_base_of<internal::SupportsWeakPtrBase, Derived>::value,
+        "AsWeakPtr argument must inherit from SupportsWeakPtr");
     return AsWeakPtrImpl<Derived>(t, *t);
   }
 
@@ -198,50 +209,39 @@ template <typename T> class WeakPtrFactory;
 template <typename T>
 class WeakPtr : public internal::WeakPtrBase {
  public:
-  WeakPtr() : ptr_(NULL) {
-  }
+  WeakPtr() : ptr_(nullptr) {}
+
+  WeakPtr(std::nullptr_t) : ptr_(nullptr) {}
 
   
   
   template <typename U>
   WeakPtr(const WeakPtr<U>& other) : WeakPtrBase(other), ptr_(other.ptr_) {
   }
+  template <typename U>
+  WeakPtr(WeakPtr<U>&& other)
+      : WeakPtrBase(std::move(other)), ptr_(other.ptr_) {}
 
-  T* get() const { return ref_.is_valid() ? ptr_ : NULL; }
+  T* get() const { return ref_.is_valid() ? ptr_ : nullptr; }
 
   T& operator*() const {
-    DCHECK(get() != NULL);
+    DCHECK(get() != nullptr);
     return *get();
   }
   T* operator->() const {
-    DCHECK(get() != NULL);
+    DCHECK(get() != nullptr);
     return get();
   }
 
-  
-  
-  
-  
-  
-  
-  
- private:
-  typedef T* WeakPtr::*Testable;
-
- public:
-  operator Testable() const { return get() ? &WeakPtr::ptr_ : NULL; }
-
   void reset() {
     ref_ = internal::WeakReference();
-    ptr_ = NULL;
+    ptr_ = nullptr;
   }
 
- private:
   
-  
-  template <class U> bool operator==(WeakPtr<U> const&) const;
-  template <class U> bool operator!=(WeakPtr<U> const&) const;
+  explicit operator bool() const { return get() != nullptr; }
 
+ private:
   friend class internal::SupportsWeakPtrBase;
   template <typename U> friend class WeakPtr;
   friend class SupportsWeakPtr<T>;
@@ -258,6 +258,24 @@ class WeakPtr : public internal::WeakPtrBase {
 };
 
 
+template <class T>
+bool operator!=(const WeakPtr<T>& weak_ptr, std::nullptr_t) {
+  return !(weak_ptr == nullptr);
+}
+template <class T>
+bool operator!=(std::nullptr_t, const WeakPtr<T>& weak_ptr) {
+  return weak_ptr != nullptr;
+}
+template <class T>
+bool operator==(const WeakPtr<T>& weak_ptr, std::nullptr_t) {
+  return weak_ptr.get() == nullptr;
+}
+template <class T>
+bool operator==(std::nullptr_t, const WeakPtr<T>& weak_ptr) {
+  return weak_ptr == nullptr;
+}
+
+
 
 
 
@@ -268,9 +286,7 @@ class WeakPtrFactory {
   explicit WeakPtrFactory(T* ptr) : ptr_(ptr) {
   }
 
-  ~WeakPtrFactory() {
-    ptr_ = NULL;
-  }
+  ~WeakPtrFactory() { ptr_ = nullptr; }
 
   WeakPtr<T> GetWeakPtr() {
     DCHECK(ptr_);

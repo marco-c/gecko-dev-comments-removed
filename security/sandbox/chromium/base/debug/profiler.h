@@ -39,6 +39,9 @@ BASE_EXPORT void RestartProfilingAfterFork();
 BASE_EXPORT bool IsBinaryInstrumented();
 
 
+BASE_EXPORT bool IsProfilingSupported();
+
+
 
 
 

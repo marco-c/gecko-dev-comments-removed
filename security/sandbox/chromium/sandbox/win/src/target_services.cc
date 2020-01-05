@@ -76,26 +76,23 @@ bool WarmupWindowsLocales() {
   
   ::GetUserDefaultLangID();
   ::GetUserDefaultLCID();
-  if (base::win::GetVersion() >= base::win::VERSION_VISTA) {
-    static GetUserDefaultLocaleNameFunction GetUserDefaultLocaleName_func =
-        NULL;
-    if (!GetUserDefaultLocaleName_func) {
-      HMODULE kernel32_dll = ::GetModuleHandle(kKernel32DllName);
-      if (!kernel32_dll) {
-        return false;
-      }
-      GetUserDefaultLocaleName_func =
-          reinterpret_cast<GetUserDefaultLocaleNameFunction>(
-              GetProcAddress(kernel32_dll, "GetUserDefaultLocaleName"));
-      if (!GetUserDefaultLocaleName_func) {
-        return false;
-      }
+  static GetUserDefaultLocaleNameFunction GetUserDefaultLocaleName_func =
+      NULL;
+  if (!GetUserDefaultLocaleName_func) {
+    HMODULE kernel32_dll = ::GetModuleHandle(kKernel32DllName);
+    if (!kernel32_dll) {
+      return false;
     }
-    wchar_t localeName[LOCALE_NAME_MAX_LENGTH] = {0};
-    return (0 != GetUserDefaultLocaleName_func(
-                     localeName, LOCALE_NAME_MAX_LENGTH * sizeof(wchar_t)));
+    GetUserDefaultLocaleName_func =
+        reinterpret_cast<GetUserDefaultLocaleNameFunction>(
+            GetProcAddress(kernel32_dll, "GetUserDefaultLocaleName"));
+    if (!GetUserDefaultLocaleName_func) {
+      return false;
+    }
   }
-  return true;
+  wchar_t localeName[LOCALE_NAME_MAX_LENGTH] = {0};
+  return (0 != GetUserDefaultLocaleName_func(
+                    localeName, LOCALE_NAME_MAX_LENGTH * sizeof(wchar_t)));
 }
 
 

@@ -99,7 +99,7 @@ const PlatformThreadId kInvalidThreadId(0);
 
 
 
-enum class ThreadPriority {
+enum class ThreadPriority : int {
   
   BACKGROUND,
   
@@ -177,9 +177,24 @@ class BASE_EXPORT PlatformThread {
 
   
   
+  static bool CreateNonJoinableWithPriority(size_t stack_size,
+                                            Delegate* delegate,
+                                            ThreadPriority priority);
+
+  
+  
   
   static void Join(PlatformThreadHandle thread_handle);
 
+  
+  
+  static void Detach(PlatformThreadHandle thread_handle);
+
+  
+  
+  static bool CanIncreaseCurrentThreadPriority();
+
+  
   
   
   
@@ -189,6 +204,20 @@ class BASE_EXPORT PlatformThread {
   static void SetCurrentThreadPriority(ThreadPriority priority);
 
   static ThreadPriority GetCurrentThreadPriority();
+
+#if defined(OS_LINUX)
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static void SetThreadPriority(PlatformThreadId thread_id,
+                                ThreadPriority priority);
+#endif
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(PlatformThread);

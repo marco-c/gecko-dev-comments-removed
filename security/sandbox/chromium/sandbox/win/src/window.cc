@@ -6,8 +6,9 @@
 
 #include <aclapi.h>
 
+#include <memory>
+
 #include "base/logging.h"
-#include "base/memory/scoped_ptr.h"
 #include "sandbox/win/src/acl.h"
 #include "sandbox/win/src/sid.h"
 
@@ -37,15 +38,22 @@ namespace sandbox {
 ResultCode CreateAltWindowStation(HWINSTA* winsta) {
   
   
+  HWINSTA current_winsta = ::GetProcessWindowStation();
+  if (!current_winsta)
+    return SBOX_ERROR_CANNOT_GET_WINSTATION;
+
   SECURITY_ATTRIBUTES attributes = {0};
-  if (!GetSecurityAttributes(::GetProcessWindowStation(), &attributes)) {
-    return SBOX_ERROR_CANNOT_CREATE_WINSTATION;
-  }
+  if (!GetSecurityAttributes(current_winsta, &attributes))
+    return SBOX_ERROR_CANNOT_QUERY_WINSTATION_SECURITY;
 
   
   
   *winsta = ::CreateWindowStationW(
-      NULL, 0, GENERIC_READ | WINSTA_CREATEDESKTOP, &attributes);
+      nullptr, 0, GENERIC_READ | WINSTA_CREATEDESKTOP, &attributes);
+  if (*winsta == nullptr && ::GetLastError() == ERROR_ACCESS_DENIED) {
+    *winsta = ::CreateWindowStationW(
+        nullptr, 0, WINSTA_READATTRIBUTES | WINSTA_CREATEDESKTOP, &attributes);
+  }
   LocalFree(attributes.lpSecurityDescriptor);
 
   if (*winsta)
@@ -63,13 +71,16 @@ ResultCode CreateAltDesktop(HWINSTA winsta, HDESK* desktop) {
                ::GetCurrentProcessId());
   desktop_name += buffer;
 
+  HDESK current_desktop = GetThreadDesktop(GetCurrentThreadId());
+
+  if (!current_desktop)
+    return SBOX_ERROR_CANNOT_GET_DESKTOP;
+
   
   
   SECURITY_ATTRIBUTES attributes = {0};
-  if (!GetSecurityAttributes(GetThreadDesktop(GetCurrentThreadId()),
-                             &attributes)) {
-    return SBOX_ERROR_CANNOT_CREATE_DESKTOP;
-  }
+  if (!GetSecurityAttributes(current_desktop, &attributes))
+    return SBOX_ERROR_CANNOT_QUERY_DESKTOP_SECURITY;
 
   
   HWINSTA current_winsta = ::GetProcessWindowStation();
@@ -130,7 +141,7 @@ base::string16 GetWindowObjectName(HANDLE handle) {
   }
 
   
-  scoped_ptr<wchar_t[]> name_buffer(new wchar_t[size]);
+  std::unique_ptr<wchar_t[]> name_buffer(new wchar_t[size]);
 
   
   if (!::GetUserObjectInformation(handle, UOI_NAME, name_buffer.get(), size,

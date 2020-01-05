@@ -100,6 +100,14 @@
 #define NOINLINE
 #endif
 
+#if COMPILER_GCC && defined(NDEBUG)
+#define ALWAYS_INLINE inline __attribute__((__always_inline__))
+#elif COMPILER_MSVC && defined(NDEBUG)
+#define ALWAYS_INLINE __forceinline
+#else
+#define ALWAYS_INLINE inline
+#endif
+
 
 
 
@@ -170,6 +178,15 @@
 #endif  
 
 
+#if !defined(DISABLE_CFI_PERF)
+#if defined(__clang__) && defined(OFFICIAL_BUILD)
+#define DISABLE_CFI_PERF __attribute__((no_sanitize("cfi")))
+#else
+#define DISABLE_CFI_PERF
+#endif
+#endif
+
+
 #if !defined(CDECL)
 #if defined(OS_WIN)
 #define CDECL __cdecl
@@ -186,5 +203,21 @@
 #define UNLIKELY(x) (x)
 #endif  
 #endif  
+
+#if !defined(LIKELY)
+#if defined(COMPILER_GCC)
+#define LIKELY(x) __builtin_expect((x), 1)
+#else
+#define LIKELY(x) (x)
+#endif  
+#endif  
+
+
+
+#if defined(__has_feature)
+#define HAS_FEATURE(FEATURE) __has_feature(FEATURE)
+#else
+#define HAS_FEATURE(FEATURE) 0
+#endif
 
 #endif  

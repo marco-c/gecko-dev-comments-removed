@@ -6,12 +6,15 @@
 #define BASE_SEQUENCE_CHECKER_IMPL_H_
 
 #include "base/base_export.h"
+#include "base/compiler_specific.h"
 #include "base/macros.h"
+#include "base/sequence_token.h"
 #include "base/synchronization/lock.h"
 #include "base/threading/sequenced_worker_pool.h"
 #include "base/threading/thread_checker_impl.h"
 
 namespace base {
+
 
 
 
@@ -25,8 +28,7 @@ class BASE_EXPORT SequenceCheckerImpl {
 
   
   
-  
-  bool CalledOnValidSequencedThread() const;
+  bool CalledOnValidSequence() const WARN_UNUSED_RESULT;
 
   
   
@@ -39,10 +41,16 @@ class BASE_EXPORT SequenceCheckerImpl {
   mutable Lock lock_;
 
   
-  ThreadCheckerImpl thread_checker_;
-  mutable bool sequence_token_assigned_;
+  mutable bool is_assigned_ = false;
 
-  mutable SequencedWorkerPool::SequenceToken sequence_token_;
+  mutable SequenceToken sequence_token_;
+
+  
+  
+  mutable SequencedWorkerPool::SequenceToken sequenced_worker_pool_token_;
+
+  
+  ThreadCheckerImpl thread_checker_;
 
   DISALLOW_COPY_AND_ASSIGN(SequenceCheckerImpl);
 };

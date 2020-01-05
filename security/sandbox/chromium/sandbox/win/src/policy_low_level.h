@@ -43,7 +43,7 @@
 namespace sandbox {
 
 
-const size_t kMaxServiceCount = 32;
+const size_t kMaxServiceCount = 64;
 static_assert(IPC_LAST_TAG <= kMaxServiceCount,
               "kMaxServiceCount is too low");
 

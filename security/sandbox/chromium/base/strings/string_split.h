@@ -90,16 +90,16 @@ BASE_EXPORT bool SplitStringIntoKeyValuePairs(StringPiece input,
 
 
 
-
-
-
-
-BASE_EXPORT void SplitStringUsingSubstr(StringPiece16 input,
-                                        StringPiece16 delimiter,
-                                        std::vector<string16>* result);
-BASE_EXPORT void SplitStringUsingSubstr(StringPiece input,
-                                        StringPiece delimiter,
-                                        std::vector<std::string>* result);
+BASE_EXPORT std::vector<string16> SplitStringUsingSubstr(
+    StringPiece16 input,
+    StringPiece16 delimiter,
+    WhitespaceHandling whitespace,
+    SplitResult result_type);
+BASE_EXPORT std::vector<std::string> SplitStringUsingSubstr(
+    StringPiece input,
+    StringPiece delimiter,
+    WhitespaceHandling whitespace,
+    SplitResult result_type);
 
 
 
