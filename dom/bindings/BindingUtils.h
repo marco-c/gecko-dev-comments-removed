@@ -2318,6 +2318,22 @@ AddStringToIDVector(JSContext* cx, JS::AutoIdVector& vector, const char* name)
 
 
 
+enum {
+  CONSTRUCTOR_NATIVE_HOLDER_RESERVED_SLOT = 0
+};
+
+bool
+Constructor(JSContext* cx, unsigned argc, JS::Value* vp);
+
+
+
+
+
+
+
+
+
+
 bool
 XrayResolveOwnProperty(JSContext* cx, JS::Handle<JSObject*> wrapper,
                        JS::Handle<JSObject*> obj,
@@ -2382,6 +2398,9 @@ XrayGetNativeProto(JSContext* cx, JS::Handle<JSObject*> obj,
       } else {
         protop.set(JS::GetRealmObjectPrototype(cx));
       }
+    } else if (JS_ObjectIsFunction(cx, obj)) {
+      MOZ_ASSERT(JS_IsNativeFunction(obj, Constructor));
+      protop.set(JS::GetRealmFunctionPrototype(cx));
     } else {
       const js::Class* clasp = js::GetObjectClass(obj);
       MOZ_ASSERT(IsDOMIfaceAndProtoClass(clasp));
@@ -2448,22 +2467,6 @@ extern const js::ClassOps sBoringInterfaceObjectClassClassOps;
 
 extern const js::ObjectOps sInterfaceObjectClassObjectOps;
 
-
-
-
-
-
-
-
-
-
-enum {
-  CONSTRUCTOR_NATIVE_HOLDER_RESERVED_SLOT = 0
-};
-
-bool
-Constructor(JSContext* cx, unsigned argc, JS::Value* vp);
-
 inline bool
 UseDOMXray(JSObject* obj)
 {
@@ -2480,7 +2483,7 @@ HasConstructor(JSObject* obj)
   return JS_IsNativeFunction(obj, Constructor) ||
          js::GetObjectClass(obj)->getConstruct();
 }
- #endif
+#endif
 
 
 template<typename T>
