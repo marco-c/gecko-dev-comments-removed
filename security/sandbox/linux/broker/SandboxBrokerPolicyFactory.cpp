@@ -140,8 +140,13 @@ SandboxBrokerPolicyFactory::SandboxBrokerPolicyFactory()
   
   policy->AddPrefix(rdwr, "/dev", "nvidia");
 
-  
+    
   policy->AddDir(rdwr, "/dev/dri");
+
+#ifdef MOZ_ALSA
+  
+  policy->AddDir(rdwr, "/dev/snd");
+#endif
 
   mCommonContentPolicy.reset(policy);
 #endif
