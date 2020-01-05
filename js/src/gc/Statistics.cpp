@@ -1015,12 +1015,6 @@ Statistics::endGC()
         printStats();
 
     
-    
-    PodZero(&phaseStartTimes[PHASE_GC_BEGIN], PHASE_LIMIT - PHASE_GC_BEGIN);
-    for (size_t d = PHASE_DAG_NONE; d < NumTimingArrays; d++)
-        PodZero(&phaseTimes[d][PHASE_GC_BEGIN], PHASE_LIMIT - PHASE_GC_BEGIN);
-
-    
     if (gcDepth == 1)
         aborted = false;
 }
@@ -1125,8 +1119,15 @@ Statistics::endSlice()
     }
 
     
-    if (last)
+    if (last) {
         PodArrayZero(counts);
+
+        
+        
+        PodZero(&phaseStartTimes[PHASE_GC_BEGIN], PHASE_LIMIT - PHASE_GC_BEGIN);
+        for (size_t d = PHASE_DAG_NONE; d < NumTimingArrays; d++)
+            PodZero(&phaseTimes[d][PHASE_GC_BEGIN], PHASE_LIMIT - PHASE_GC_BEGIN);
+    }
 
     gcDepth--;
     MOZ_ASSERT(gcDepth >= 0);
