@@ -52,7 +52,8 @@ pub enum DOMManipulationTask {
     
     PlannedNavigation(Box<Runnable + Send>),
     
-    SendStorageNotification(Box<MainThreadRunnable + Send>)
+    SendStorageNotification(Box<MainThreadRunnable + Send>),
+    Miscellaneous(Box<Runnable + Send>),
 }
 
 impl DOMManipulationTask {
@@ -72,7 +73,8 @@ impl DOMManipulationTask {
             FireToggleEvent(runnable) => runnable.handler(),
             MediaTask(runnable) => runnable.handler(),
             PlannedNavigation(runnable) => runnable.handler(),
-            SendStorageNotification(runnable) => runnable.handler(script_thread)
+            SendStorageNotification(runnable) => runnable.handler(script_thread),
+            Miscellaneous(runnable) => runnable.handler(),
         }
     }
 }
