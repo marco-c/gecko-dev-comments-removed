@@ -73,6 +73,9 @@ var SelfSupportBackendInternal = {
   _progressListener: null,
 
   
+  _testing: false,
+
+  
 
 
   init() {
@@ -136,6 +139,9 @@ var SelfSupportBackendInternal = {
       this._frame.destroy();
       this._frame = null;
     }
+    if (this._testing) {
+      Services.obs.notifyObservers(this._browser, "self-support-browser-destroyed", "");
+    }
   },
 
   
@@ -195,6 +201,9 @@ var SelfSupportBackendInternal = {
       this._browser.setAttribute("disableglobalhistory", "true");
       this._browser.setAttribute("src", aURL);
 
+      if (this._testing) {
+        Services.obs.notifyObservers(this._browser, "self-support-browser-created", "");
+      }
       doc.documentElement.appendChild(this._browser);
     });
   },

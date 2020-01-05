@@ -26,28 +26,12 @@ function sendSessionRestoredNotification() {
   selfSupportBackendImpl.observe(null, "sessionstore-windows-restored", null);
 }
 
-
-
-
-
-
-
-
-function findSelfSupportBrowser(aURL) {
-  let frames = Services.appShell.hiddenDOMWindow.document.querySelectorAll("iframe");
-  for (let frame of frames) {
-    try {
-      let browser = frame.contentDocument.getElementById("win").querySelectorAll("browser")[0];
-      let url = browser.getAttribute("src");
-      if (url == aURL) {
-        return browser;
-      }
-    } catch (e) {
-      continue;
-    }
-  }
-  return null;
+function toggleSelfSupportTestMode(testing) {
+  let selfSupportBackendImpl =
+    Cu.import("resource:///modules/SelfSupportBackend.jsm", {}).SelfSupportBackendInternal;
+  selfSupportBackendImpl._testing = testing;
 }
+
 
 
 
@@ -60,13 +44,19 @@ function findSelfSupportBrowser(aURL) {
 function promiseSelfSupportLoad(aURL) {
   return new Promise((resolve, reject) => {
     
-    let browserPromise = waitForConditionPromise(() => !!findSelfSupportBrowser(aURL),
-                                                 "SelfSupport browser not found.",
-                                                 TEST_WAIT_RETRIES);
+    let browser = null;
+    let browserPromise = TestUtils.topicObserved("self-support-browser-created",
+        (subject, topic) => {
+          let url = subject.getAttribute("src");
+          Cu.reportError("Got browser with src: " + url);
+          if (url == aURL) {
+            browser = subject;
+          }
+          return url == aURL;
+        });
 
     
     browserPromise.then(() => {
-      let browser = findSelfSupportBrowser(aURL);
       if (browser.contentDocument.readyState === "complete") {
         resolve(browser);
       } else {
@@ -78,19 +68,6 @@ function promiseSelfSupportLoad(aURL) {
       }
     }, reject);
   });
-}
-
-
-
-
-
-
-
-
-
-function promiseSelfSupportClose(aURL) {
-  return waitForConditionPromise(() => !findSelfSupportBrowser(aURL),
-                                 "SelfSupport browser is still open.", TEST_WAIT_RETRIES);
 }
 
 
@@ -129,8 +106,13 @@ add_task(function* setupEnvironment() {
 
 
 add_task(function* test_selfSupport() {
+  toggleSelfSupportTestMode(true);
+  registerCleanupFunction(toggleSelfSupportTestMode.bind(null, false));
   
   SelfSupportBackend.init();
+
+  
+  let selfSupportBrowserPromise = promiseSelfSupportLoad(TEST_PAGE_URL_HTTPS);
 
   
   info("Sending sessionstore-windows-restored");
@@ -138,7 +120,7 @@ add_task(function* test_selfSupport() {
 
   
   info("Waiting for the SelfSupport local page to load.");
-  let selfSupportBrowser = yield promiseSelfSupportLoad(TEST_PAGE_URL_HTTPS);
+  let selfSupportBrowser = yield selfSupportBrowserPromise;
   Assert.ok(!!selfSupportBrowser, "SelfSupport browser must exist.");
 
   
@@ -176,39 +158,15 @@ add_task(function* test_selfSupport() {
   yield observePromise;
   info("Observed in the hidden frame");
 
+  let selfSupportClosed = TestUtils.topicObserved("self-support-browser-destroyed");
   
   contentWindow.close();
 
-  
-  info("Waiting for the SelfSupport to close.");
-  yield promiseSelfSupportClose(TEST_PAGE_URL_HTTPS);
-
-  
-  selfSupportBrowser = findSelfSupportBrowser(TEST_PAGE_URL_HTTPS);
-  Assert.ok(!selfSupportBrowser, "SelfSupport browser must not exist.");
+  yield selfSupportClosed;
+  Assert.ok(!selfSupportBrowser.parentNode, "SelfSupport browser must have been removed.");
 
   
   
   SelfSupportBackend.uninit();
 });
 
-
-
-
-add_task(function* test_selfSupport_noHTTPS() {
-  Preferences.set(PREF_SELFSUPPORT_URL, TEST_PAGE_URL);
-
-  SelfSupportBackend.init();
-
-  
-  info("Sending sessionstore-windows-restored");
-  sendSessionRestoredNotification();
-
-  
-  let selfSupportBrowser = findSelfSupportBrowser(TEST_PAGE_URL);
-  Assert.ok(!selfSupportBrowser, "SelfSupport browser must not exist.");
-
-  
-  
-  SelfSupportBackend.uninit();
-})
