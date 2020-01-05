@@ -10,6 +10,10 @@ module.metadata = {
 const { flatten } = require('./array');
 
 
+const unbind = Function.call.bind(Function.bind, Function.call);
+const slice = unbind(Array.prototype.slice);
+
+
 
 
 
@@ -34,7 +38,7 @@ function merge(source) {
   
   
   
-  Array.slice(arguments, 1).filter(Boolean).forEach(function onEach(properties) {
+  slice(arguments, 1).filter(Boolean).forEach(function onEach(properties) {
     getOwnPropertyIdentifiers(properties).forEach(function(name) {
       descriptor[name] = Object.getOwnPropertyDescriptor(properties, name);
     });
@@ -50,7 +54,7 @@ exports.merge = merge;
 
 
 function extend(source) {
-  let rest = Array.slice(arguments, 1);
+  let rest = slice(arguments, 1);
   rest.unshift(Object.create(source));
   return merge.apply(null, rest);
 }
@@ -72,7 +76,7 @@ exports.each = each;
 
 
 function safeMerge(source) {
-  Array.slice(arguments, 1).forEach(function onEach (obj) {
+  slice(arguments, 1).forEach(function onEach (obj) {
     for (let prop in obj) source[prop] = obj[prop];
   });
   return source;
