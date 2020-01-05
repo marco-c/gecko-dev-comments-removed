@@ -42,15 +42,12 @@ function GridInspector(inspector, window) {
   this.walker = this.inspector.walker;
 
   this.getSwatchColorPickerTooltip = this.getSwatchColorPickerTooltip.bind(this);
-  this.setSelectedNode = this.setSelectedNode.bind(this);
   this.updateGridPanel = this.updateGridPanel.bind(this);
 
   this.onGridLayoutChange = this.onGridLayoutChange.bind(this);
   this.onHighlighterChange = this.onHighlighterChange.bind(this);
   this.onMarkupMutation = this.onMarkupMutation.bind(this);
   this.onSetGridOverlayColor = this.onSetGridOverlayColor.bind(this);
-  this.onShowBoxModelHighlighterForNode =
-    this.onShowBoxModelHighlighterForNode.bind(this);
   this.onShowGridAreaHighlight = this.onShowGridAreaHighlight.bind(this);
   this.onShowGridCellHighlight = this.onShowGridCellHighlight.bind(this);
   this.onSidebarSelect = this.onSidebarSelect.bind(this);
@@ -118,9 +115,7 @@ GridInspector.prototype = {
   getComponentProps() {
     return {
       getSwatchColorPickerTooltip: this.getSwatchColorPickerTooltip,
-      setSelectedNode: this.setSelectedNode,
       onSetGridOverlayColor: this.onSetGridOverlayColor,
-      onShowBoxModelHighlighterForNode: this.onShowBoxModelHighlighterForNode,
       onShowGridAreaHighlight: this.onShowGridAreaHighlight,
       onShowGridCellHighlight: this.onShowGridCellHighlight,
       onToggleGridHighlighter: this.onToggleGridHighlighter,
@@ -228,16 +223,6 @@ GridInspector.prototype = {
 
 
 
-  setSelectedNode(nodeFront) {
-    this.inspector.selection.setNodeFront(nodeFront, "layout-panel");
-  },
-
-  
-
-
-
-
-
 
   updateGridPanel: Task.async(function* (gridFronts) {
     
@@ -330,20 +315,6 @@ GridInspector.prototype = {
         this.highlighters.showGridHighlighter(node, highlighterSettings);
       }
     }
-  },
-
-  
-
-
-
-
-
-
-
-
-  onShowBoxModelHighlighterForNode(nodeFront, options) {
-    let toolbox = this.inspector.toolbox;
-    toolbox.highlighterUtils.highlightNodeFront(nodeFront, options);
   },
 
   
