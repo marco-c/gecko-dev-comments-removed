@@ -74,7 +74,7 @@ const uint32_t WebrtcVideoConduit::kDefaultMaxBitrate_bps = KBPS(2000);
 
 
 const unsigned int WebrtcVideoConduit::CODEC_PLNAME_SIZE = 32;
-static const int kViEMinCodecBitrate = 30;
+static const int kViEMinCodecBitrate_bps = KBPS(30);
 
 template<typename T>
 T MinIgnoreZero(const T& a, const T& b)
@@ -499,7 +499,7 @@ WebrtcVideoConduit::ConfigureSendMediaCodec(const VideoCodecConfig* codecConfig)
                                           mSendingHeight);
 
   
-  mNegotiatedMaxBitrate = codecConfig->mTias / 1000;
+  mNegotiatedMaxBitrate = codecConfig->mTias;
 
   
   
@@ -562,7 +562,7 @@ WebrtcVideoConduit::ConfigureSendMediaCodec(const VideoCodecConfig* codecConfig)
     
     video_stream.max_bitrate_bps = MinIgnoreZero(simulcastEncoding.constraints.maxBr,
                                                  kDefaultMaxBitrate_bps);
-    video_stream.max_bitrate_bps = MinIgnoreZero((int) mPrefMaxBitrate*1000,
+    video_stream.max_bitrate_bps = MinIgnoreZero((int) mPrefMaxBitrate,
                                                  video_stream.max_bitrate_bps);
     video_stream.min_bitrate_bps = (mMinBitrate ? mMinBitrate : kDefaultMinBitrate_bps);
     if (video_stream.min_bitrate_bps > video_stream.max_bitrate_bps) {
@@ -862,25 +862,25 @@ WebrtcVideoConduit::InitMain()
             "media.peerconnection.video.min_bitrate", &temp))))
       {
          if (temp >= 0) {
-            mMinBitrate = temp;
+           mMinBitrate = KBPS(temp);
          }
       }
       if (!NS_WARN_IF(NS_FAILED(branch->GetIntPref(
             "media.peerconnection.video.start_bitrate", &temp))))
       {
          if (temp >= 0) {
-         mStartBitrate = temp;
+           mStartBitrate = KBPS(temp);
          }
       }
       if (!NS_WARN_IF(NS_FAILED(branch->GetIntPref(
             "media.peerconnection.video.max_bitrate", &temp))))
       {
         if (temp >= 0) {
-          mPrefMaxBitrate = temp;
+          mPrefMaxBitrate = KBPS(temp);
         }
       }
-      if (mMinBitrate != 0 && mMinBitrate < kViEMinCodecBitrate) {
-        mMinBitrate = kViEMinCodecBitrate;
+      if (mMinBitrate != 0 && mMinBitrate < kViEMinCodecBitrate_bps) {
+        mMinBitrate = kViEMinCodecBitrate_bps;
       }
       if (mStartBitrate < mMinBitrate) {
         mStartBitrate = mMinBitrate;
@@ -888,11 +888,13 @@ WebrtcVideoConduit::InitMain()
       if (mPrefMaxBitrate && mStartBitrate > mPrefMaxBitrate) {
         mStartBitrate = mPrefMaxBitrate;
       }
+      
+      
       if (!NS_WARN_IF(NS_FAILED(branch->GetIntPref(
             "media.peerconnection.video.min_bitrate_estimate", &temp))))
       {
         if (temp >= 0) {
-          mMinBitrateEstimate = temp;
+          mMinBitrateEstimate = temp; 
         }
       }
       bool use_loadmanager = false;
@@ -1345,7 +1347,7 @@ WebrtcVideoConduit::SelectBitrates(
     out_min = mMinBitrate;
   }
   
-  out_min = std::max(kViEMinCodecBitrate, out_min);
+  out_min = std::max(kViEMinCodecBitrate_bps, out_min);
   if (mStartBitrate && mStartBitrate > out_start) {
     out_start = mStartBitrate;
   }
