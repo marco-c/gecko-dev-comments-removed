@@ -195,7 +195,7 @@ public:
 
   
   
-  explicit MediaCacheStream(ChannelMediaResource* aClient);
+  MediaCacheStream(ChannelMediaResource* aClient, bool aIsPrivateBrowsing);
   ~MediaCacheStream();
 
   
@@ -512,6 +512,9 @@ private:
   
   
   UniquePtr<int64_t[]> mPartialBlockBuffer;
+
+  
+  const bool mIsPrivateBrowsing;
 };
 
 } 

@@ -316,7 +316,9 @@ public:
 
 
 
-  static already_AddRefed<MediaResource> Create(MediaResourceCallback* aCallback, nsIChannel* aChannel);
+  static already_AddRefed<MediaResource>
+  Create(MediaResourceCallback* aCallback,
+         nsIChannel* aChannel, bool aIsPrivateBrowsing);
 
   
 
@@ -511,7 +513,8 @@ public:
   ChannelMediaResource(MediaResourceCallback* aDecoder,
                        nsIChannel* aChannel,
                        nsIURI* aURI,
-                       const MediaContainerType& aContainerType);
+                       const MediaContainerType& aContainerType,
+                       bool aIsPrivateBrowsing = false);
   ~ChannelMediaResource();
 
   
