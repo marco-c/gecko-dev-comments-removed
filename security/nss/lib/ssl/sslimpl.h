@@ -705,7 +705,6 @@ typedef enum {
     wait_hello_done,
     wait_new_session_ticket,
     wait_encrypted_extensions,
-    wait_0rtt_finished,
     wait_invalid 
 } SSL3WaitState;
 
@@ -715,9 +714,6 @@ typedef enum {
     client_hello_retransmit,   
     client_hello_renegotiation 
 } sslClientHelloType;
-
-
-
 
 typedef struct SessionTicketDataStr SessionTicketData;
 
@@ -744,11 +740,6 @@ typedef struct TLS13EarlyDataStr {
     PRCList link; 
     SECItem data; 
 } TLS13EarlyData;
-
-typedef struct {
-    PRUint8 hash[HASH_LENGTH_MAX * 2];
-    unsigned int len;
-} TLS13CombinedHash;
 
 typedef enum {
     handshake_hash_unknown = 0,
@@ -854,18 +845,18 @@ typedef struct SSL3HandshakeStateStr {
 
 
     
-    PK11Context *clientHelloHash;         
-
     PK11SymKey *currentSecret;            
 
-    PK11SymKey *resumptionPsk;            
-    SECItem resumptionContext;            
+    PK11SymKey *resumptionMasterSecret;   
     PK11SymKey *dheSecret;                
+    PK11SymKey *pskBinderKey;             
     PK11SymKey *clientEarlyTrafficSecret; 
     PK11SymKey *clientHsTrafficSecret;    
     PK11SymKey *serverHsTrafficSecret;    
     PK11SymKey *clientTrafficSecret;      
     PK11SymKey *serverTrafficSecret;      
+    PK11SymKey *earlyExporterSecret;      
+    PK11SymKey *exporterSecret;           
     
     TLS13CertificateRequest *certificateRequest;
     PRCList cipherSpecs;            
@@ -873,6 +864,7 @@ typedef struct SSL3HandshakeStateStr {
     ssl3CipherSpec *nullSpec;       
     sslZeroRttState zeroRttState;   
     sslZeroRttIgnore zeroRttIgnore; 
+    ssl3CipherSuite zeroRttSuite;   
     PRCList bufferedEarlyData;      
 
     PRBool helloRetry;              
@@ -1356,16 +1348,6 @@ extern SECStatus ssl3_UpdateHandshakeHashes(sslSocket *ss,
 
 extern PRBool ssl3_WaitingForServerSecondRound(sslSocket *ss);
 
-extern SECStatus
-ssl3_CompressMACEncryptRecord(ssl3CipherSpec *cwSpec,
-                              PRBool isServer,
-                              PRBool isDTLS,
-                              PRBool capRecordVersion,
-                              SSL3ContentType type,
-                              const SSL3Opaque *pIn,
-                              PRUint32 contentLen,
-                              sslBuffer *wrBuf);
-
 extern PRInt32 ssl3_SendRecord(sslSocket *ss, ssl3CipherSpec *cwSpec,
                                SSL3ContentType type,
                                const SSL3Opaque *pIn, PRInt32 nIn,
@@ -1757,12 +1739,6 @@ extern SECStatus dtls_StageHandshakeMessage(sslSocket *ss);
 extern SECStatus dtls_QueueMessage(sslSocket *ss, SSL3ContentType type,
                                    const SSL3Opaque *pIn, PRInt32 nIn);
 extern SECStatus dtls_FlushHandshakeMessages(sslSocket *ss, PRInt32 flags);
-extern SECStatus dtls_CompressMACEncryptRecord(sslSocket *ss,
-                                               ssl3CipherSpec *cwSpec,
-                                               SSL3ContentType type,
-                                               const SSL3Opaque *pIn,
-                                               PRUint32 contentLen,
-                                               sslBuffer *wrBuf);
 SECStatus ssl3_DisableNonDTLSSuites(sslSocket *ss);
 extern SECStatus dtls_StartHolddownTimer(sslSocket *ss);
 extern void dtls_CheckTimer(sslSocket *ss);
@@ -1787,14 +1763,18 @@ extern SECStatus dtls_MaybeRetransmitHandshake(sslSocket *ss,
 CK_MECHANISM_TYPE ssl3_Alg2Mech(SSLCipherAlgorithm calg);
 SECStatus ssl3_NegotiateCipherSuite(sslSocket *ss, const SECItem *suites,
                                     PRBool initHashes);
+SECStatus ssl3_InitHandshakeHashes(sslSocket *ss);
 SECStatus ssl3_ServerCallSNICallback(sslSocket *ss);
 SECStatus ssl3_SetupPendingCipherSpec(sslSocket *ss);
 SECStatus ssl3_FlushHandshake(sslSocket *ss, PRInt32 flags);
-SECStatus ssl3_SendCertificate(sslSocket *ss);
 SECStatus ssl3_CompleteHandleCertificate(sslSocket *ss,
                                          SSL3Opaque *b, PRUint32 length);
+void ssl3_SendAlertForCertError(sslSocket *ss, PRErrorCode errCode);
+SECStatus ssl3_HandleNoCertificate(sslSocket *ss);
 SECStatus ssl3_SendEmptyCertificate(sslSocket *ss);
+void ssl3_CleanupPeerCerts(sslSocket *ss);
 SECStatus ssl3_SendCertificateStatus(sslSocket *ss);
+SECStatus ssl3_AuthCertificate(sslSocket *ss);
 SECStatus ssl_ReadCertificateStatus(sslSocket *ss, SSL3Opaque *b,
                                     PRUint32 length);
 SECStatus ssl3_EncodeSigAlgs(const sslSocket *ss, PRUint8 *buf,

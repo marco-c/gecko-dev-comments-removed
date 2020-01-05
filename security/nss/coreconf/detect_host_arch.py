@@ -2,32 +2,24 @@
 
 
 
-"""Outputs host CPU architecture in format recognized by gyp."""
-import platform
-import re
 
-def HostArch():
-  """Returns the host architecture with a predictable string."""
-  host_arch = platform.machine().lower()
-  
-  if re.match(r'i.86', host_arch) or host_arch == 'i86pc':
-    host_arch = 'ia32'
-  elif host_arch in ['x86_64', 'amd64']:
-    host_arch = 'x64'
-  elif host_arch.startswith('arm'):
-    host_arch = 'arm'
-  elif host_arch.startswith('mips'):
-    host_arch = 'mips'
-  
-  
-  
-  
-  if host_arch == 'x64' and platform.architecture()[0] == '32bit':
-    host_arch = 'ia32'
-  return host_arch
-def DoMain(_):
-  """Hook to be called from gyp without starting a separate python
-  interpreter."""
-  return HostArch()
+
+from __future__ import print_function
+
+import fnmatch
+import platform
+
+def main():
+    host_arch = platform.machine().lower()
+    if host_arch in ('amd64', 'x86_64'):
+        host_arch = 'x64'
+    elif fnmatch.fnmatch(host_arch, 'i?86') or host_arch == 'i86pc':
+        host_arch = 'x64'
+    elif host_arch.startswith('arm'):
+        host_arch = 'arm'
+    elif host_arch.startswith('mips'):
+        host_arch = 'mips'
+    print(host_arch)
+
 if __name__ == '__main__':
-  print DoMain([])
+    main()

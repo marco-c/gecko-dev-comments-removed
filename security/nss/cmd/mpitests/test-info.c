@@ -8,7 +8,7 @@
 
 
 
-const int g_count = 42;
+const int g_count = 41;
 const char *g_names[] = {
     "list",              
     "copy",              
@@ -31,7 +31,6 @@ const char *g_names[] = {
     "expt-digit",        
     "expt",              
     "expt-2",            
-    "square-root",       
     "modulo-digit",      
     "modulo",            
     "mod-add",           
@@ -76,7 +75,6 @@ int test_div(void);
 int test_expt_d(void);
 int test_expt(void);
 int test_2expt(void);
-int test_sqrt(void);
 int test_mod_d(void);
 int test_mod(void);
 int test_addmod(void);
@@ -105,7 +103,7 @@ int (*g_tests[])(void) = {
     test_add, test_sub_d, test_sub, test_mul_d,
     test_mul, test_sqr, test_div_d, test_div_2,
     test_div_2d, test_div, test_expt_d, test_expt,
-    test_2expt, test_sqrt, test_mod_d, test_mod,
+    test_2expt, test_mod_d, test_mod,
     test_addmod, test_submod, test_mulmod, test_sqrmod,
     test_exptmod, test_exptmod_d, test_invmod, test_cmp_d,
     test_cmp_z, test_cmp, test_cmp_mag, test_parity,
@@ -136,7 +134,6 @@ const char *g_descs[] = {
     "test digit exponentiation",
     "test full exponentiation",
     "test power-of-two exponentiation",
-    "test integer square root function",
     "test digit modular reduction",
     "test full modular reduction",
     "test modular addition",

@@ -46,6 +46,7 @@ struct TLSExtensionDataStr {
     
     ssl3HelloExtensionSender serverHelloSenders[SSL_MAX_EXTENSIONS];
     ssl3HelloExtensionSender encryptedExtensionsSenders[SSL_MAX_EXTENSIONS];
+    ssl3HelloExtensionSender certificateSenders[SSL_MAX_EXTENSIONS];
 
     
     PRUint16 numAdvertised;
@@ -58,9 +59,7 @@ struct TLSExtensionDataStr {
     PRBool emptySessionTicket;
     PRBool sentSessionTicketInClientHello;
     SECItem psk_ke_modes;
-    SECItem psk_auth_modes;
-    PRUint32 ticket_age_add;
-    PRBool ticket_age_add_found;
+    PRUint32 max_early_data_size;
 
     
 
@@ -97,7 +96,9 @@ struct TLSExtensionDataStr {
 
     PRUint16 dtlsSRTPCipherSuite; 
 
-    PRCList remoteKeyShares; 
+    SECItem pskBinder;                
+    unsigned long pskBinderPrefixLen; 
+    PRCList remoteKeyShares;          
 };
 
 typedef struct TLSExtensionStr {

@@ -802,54 +802,6 @@ dtls_SendSavedWriteData(sslSocket *ss)
     return SECSuccess;
 }
 
-
-
-
-
-
-
-
-SECStatus
-dtls_CompressMACEncryptRecord(sslSocket *ss,
-                              ssl3CipherSpec *cwSpec,
-                              SSL3ContentType type,
-                              const SSL3Opaque *pIn,
-                              PRUint32 contentLen,
-                              sslBuffer *wrBuf)
-{
-    SECStatus rv = SECFailure;
-
-    ssl_GetSpecReadLock(ss); 
-
-    
-
-
-
-
-
-
-
-
-
-    if (!cwSpec) {
-        cwSpec = ss->ssl3.cwSpec;
-    } else {
-        PORT_Assert(type == content_handshake ||
-                    type == content_change_cipher_spec);
-    }
-
-    if (cwSpec->version < SSL_LIBRARY_VERSION_TLS_1_3) {
-        rv = ssl3_CompressMACEncryptRecord(cwSpec, ss->sec.isServer, PR_TRUE,
-                                           PR_FALSE, type, pIn, contentLen,
-                                           wrBuf);
-    } else {
-        rv = tls13_ProtectRecord(ss, cwSpec, type, pIn, contentLen, wrBuf);
-    }
-    ssl_ReleaseSpecReadLock(ss); 
-
-    return rv;
-}
-
 static SECStatus
 dtls_StartTimer(sslSocket *ss, PRUint32 time, DTLSTimerCb cb)
 {

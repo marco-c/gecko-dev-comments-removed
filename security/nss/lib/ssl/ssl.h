@@ -1218,6 +1218,16 @@ SSL_IMPORT SECStatus SSL_ExportKeyingMaterial(PRFileDesc *fd,
 
 
 
+SSL_IMPORT SECStatus SSL_ExportEarlyKeyingMaterial(PRFileDesc *fd,
+                                                   const char *label,
+                                                   unsigned int labelLen,
+                                                   const unsigned char *context,
+                                                   unsigned int contextLen,
+                                                   unsigned char *out,
+                                                   unsigned int outLen);
+
+
+
 
 
 SSL_IMPORT CERTCertificate *SSL_LocalCertificate(PRFileDesc *fd);

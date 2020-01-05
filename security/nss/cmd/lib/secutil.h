@@ -405,6 +405,11 @@ SECU_ParseSSLVersionRangeString(const char *input,
 
 
 
+extern SECItem *SECU_HexString2SECItem(PLArenaPool *arena, SECItem *item,
+                                       const char *str);
+
+
+
 
 
 

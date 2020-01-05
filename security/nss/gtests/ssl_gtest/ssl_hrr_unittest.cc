@@ -39,7 +39,7 @@ TEST_P(TlsConnectTls13, HelloRetryRequestAbortsZeroRtt) {
   client_->Handshake();
   EXPECT_EQ(k0RttDataLen, PR_Write(client_->ssl_fd(), k0RttData,
                                    k0RttDataLen));  
-  EXPECT_LT(0U, capture_early_data->extension().len());
+  EXPECT_TRUE(capture_early_data->captured());
 
   
   auto hrr_capture =
@@ -62,7 +62,7 @@ TEST_P(TlsConnectTls13, HelloRetryRequestAbortsZeroRtt) {
   ExpectEarlyDataAccepted(false);  
   CheckConnected();
   SendReceive();
-  EXPECT_EQ(0U, capture_early_data->extension().len());
+  EXPECT_FALSE(capture_early_data->captured());
 }
 
 class KeyShareReplayer : public TlsExtensionFilter {
@@ -129,7 +129,7 @@ TEST_P(TlsKeyExchange13, ConnectEcdhePreferenceMismatchHrr) {
   CheckKeys();
   static const std::vector<SSLNamedGroup> expectedShares = {
       ssl_grp_ec_secp384r1};
-  CheckKEXDetails(client_groups, expectedShares, true );
+  CheckKEXDetails(client_groups, expectedShares, ssl_grp_ec_curve25519);
 }
 
 
@@ -146,7 +146,7 @@ TEST_P(TlsKeyExchange13, ConnectEcdhePreferenceMismatchHrrExtraShares) {
 
   Connect();
   CheckKeys();
-  CheckKEXDetails(client_groups, client_groups, false );
+  CheckKEXDetails(client_groups, client_groups);
 }
 
 TEST_F(TlsConnectTest, Select12AfterHelloRetryRequest) {
@@ -240,7 +240,7 @@ TEST_P(HelloRetryRequestAgentTest, SendSecondHelloRetryRequest) {
 
 TEST_P(HelloRetryRequestAgentTest, HandleBogusHelloRetryRequest) {
   DataBuffer hrr;
-  MakeGroupHrr(ssl_grp_ec_secp256r1, &hrr);
+  MakeGroupHrr(ssl_grp_ec_curve25519, &hrr);
   ProcessMessage(hrr, TlsAgent::STATE_ERROR,
                  SSL_ERROR_RX_MALFORMED_HELLO_RETRY_REQUEST);
 }
