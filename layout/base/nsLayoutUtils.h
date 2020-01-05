@@ -1454,9 +1454,10 @@ public:
 
 
 
+
   static nscoord AddPercents(nscoord aCurrent, float aPercent)
   {
-    if (aPercent > 0.0f) {
+    if (aPercent > 0.0f && aCurrent > 0) {
       return MOZ_UNLIKELY(aPercent >= 1.0f) ? nscoord_MAX
         : NSToCoordRound(float(aCurrent) / (1.0f - aPercent));
     }
@@ -2336,6 +2337,14 @@ public:
 
   static bool IsTextAlignUnsafeValueEnabled();
 
+  
+
+
+  static bool CSSVariablesEnabled()
+  {
+    return sCSSVariablesEnabled;
+  }
+
   static bool InterruptibleReflowEnabled()
   {
     return sInterruptibleReflowEnabled;
@@ -2935,6 +2944,7 @@ private:
   static uint32_t sZoomMaxPercent;
   static uint32_t sZoomMinPercent;
   static bool sInvalidationDebuggingIsEnabled;
+  static bool sCSSVariablesEnabled;
   static bool sInterruptibleReflowEnabled;
   static bool sSVGTransformBoxEnabled;
   static bool sTextCombineUprightDigitsEnabled;
