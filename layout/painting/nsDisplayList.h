@@ -1091,6 +1091,11 @@ public:
   void EnterSVGEffectsContents(nsDisplayList* aHoistedItemsStorage);
   void ExitSVGEffectsContents();
 
+  
+
+
+
+
   bool ShouldBuildScrollInfoItemsForHoisting() const
   { return mSVGEffectsBuildingDepth > 0; }
 
