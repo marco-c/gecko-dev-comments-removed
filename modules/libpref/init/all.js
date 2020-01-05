@@ -2469,9 +2469,6 @@ pref("layout.css.devPixelsPerPx", "-1.0");
 pref("layout.css.initial-letter.enabled", false);
 
 
-pref("layout.css.masking.enabled", true);
-
-
 pref("layout.css.mix-blend-mode.enabled", true);
 
 
