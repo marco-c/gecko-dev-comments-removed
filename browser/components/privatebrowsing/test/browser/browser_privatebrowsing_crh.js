@@ -14,7 +14,7 @@ add_task(function* test() {
       "PrivateBrowsingUtils should report the correct per-window private browsing status");
     is(crhCommand.hasAttribute("disabled"), aPrivateMode,
       "Clear Recent History command should be disabled according to the private browsing mode");
-  };
+  }
 
   let testURI = "http://mochi.test:8888/";
 
