@@ -324,12 +324,11 @@ impl Stylist {
                             self.element_map.borrow_for_origin(&stylesheet.origin)
                         };
 
-                        map.insert(Rule {
-                            selector: selector.inner.clone(),
-                            style_rule: locked.clone(),
-                            specificity: selector.specificity,
-                            source_order: self.rules_source_order,
-                        });
+                        map.insert(Rule::new(guard,
+                                             selector.inner.clone(),
+                                             locked.clone(),
+                                             self.rules_source_order,
+                                             selector.specificity));
                     }
                     self.rules_source_order += 1;
 
@@ -661,7 +660,6 @@ impl Stylist {
         
         map.user_agent.get_all_matching_rules(element,
                                               parent_bf,
-                                              guards.ua_or_user,
                                               applicable_declarations,
                                               &mut relations,
                                               flags_setter,
@@ -688,7 +686,6 @@ impl Stylist {
             
             map.user.get_all_matching_rules(element,
                                             parent_bf,
-                                            guards.ua_or_user,
                                             applicable_declarations,
                                             &mut relations,
                                             flags_setter,
@@ -696,7 +693,6 @@ impl Stylist {
             debug!("user normal: {:?}", relations);
             map.author.get_all_matching_rules(element,
                                               parent_bf,
-                                              guards.author,
                                               applicable_declarations,
                                               &mut relations,
                                               flags_setter,
@@ -731,7 +727,6 @@ impl Stylist {
             
             map.author.get_all_matching_rules(element,
                                               parent_bf,
-                                              guards.author,
                                               applicable_declarations,
                                               &mut relations,
                                               flags_setter,
@@ -755,7 +750,6 @@ impl Stylist {
             
             map.user.get_all_matching_rules(element,
                                             parent_bf,
-                                            guards.ua_or_user,
                                             applicable_declarations,
                                             &mut relations,
                                             flags_setter,
@@ -769,7 +763,6 @@ impl Stylist {
         
         map.user_agent.get_all_matching_rules(element,
                                               parent_bf,
-                                              guards.ua_or_user,
                                               applicable_declarations,
                                               &mut relations,
                                               flags_setter,
@@ -990,7 +983,6 @@ impl SelectorMap {
     pub fn get_all_matching_rules<E, V, F>(&self,
                                            element: &E,
                                            parent_bf: Option<&BloomFilter>,
-                                           guard: &SharedRwLockReadGuard,
                                            matching_rules_list: &mut V,
                                            relations: &mut StyleRelations,
                                            flags_setter: &mut F,
@@ -1010,7 +1002,6 @@ impl SelectorMap {
                                                       parent_bf,
                                                       &self.id_hash,
                                                       &id,
-                                                      guard,
                                                       matching_rules_list,
                                                       relations,
                                                       flags_setter,
@@ -1022,7 +1013,6 @@ impl SelectorMap {
                                                       parent_bf,
                                                       &self.class_hash,
                                                       class,
-                                                      guard,
                                                       matching_rules_list,
                                                       relations,
                                                       flags_setter,
@@ -1038,7 +1028,6 @@ impl SelectorMap {
                                                   parent_bf,
                                                   local_name_hash,
                                                   element.get_local_name(),
-                                                  guard,
                                                   matching_rules_list,
                                                   relations,
                                                   flags_setter,
@@ -1047,7 +1036,6 @@ impl SelectorMap {
         SelectorMap::get_matching_rules(element,
                                         parent_bf,
                                         &self.other_rules,
-                                        guard,
                                         matching_rules_list,
                                         relations,
                                         flags_setter,
@@ -1107,7 +1095,6 @@ impl SelectorMap {
         parent_bf: Option<&BloomFilter>,
         hash: &FnvHashMap<Str, Vec<Rule>>,
         key: &BorrowedStr,
-        guard: &SharedRwLockReadGuard,
         matching_rules: &mut Vector,
         relations: &mut StyleRelations,
         flags_setter: &mut F,
@@ -1122,7 +1109,6 @@ impl SelectorMap {
             SelectorMap::get_matching_rules(element,
                                             parent_bf,
                                             rules,
-                                            guard,
                                             matching_rules,
                                             relations,
                                             flags_setter,
@@ -1134,7 +1120,6 @@ impl SelectorMap {
     fn get_matching_rules<E, V, F>(element: &E,
                                    parent_bf: Option<&BloomFilter>,
                                    rules: &[Rule],
-                                   guard: &SharedRwLockReadGuard,
                                    matching_rules: &mut V,
                                    relations: &mut StyleRelations,
                                    flags_setter: &mut F,
@@ -1144,12 +1129,10 @@ impl SelectorMap {
               F: FnMut(&E, ElementSelectorFlags),
     {
         for rule in rules.iter() {
-            let style_rule = rule.style_rule.read_with(guard);
-            let block = style_rule.block.read_with(guard);
             let any_declaration_for_importance = if cascade_level.is_important() {
-                block.any_important()
+                rule.any_important_declarations()
             } else {
-                block.any_normal()
+                rule.any_normal_declarations()
             };
             if any_declaration_for_importance &&
                matches_selector(&rule.selector, element, parent_bf,
@@ -1234,11 +1217,6 @@ pub struct Rule {
     
     
     
-    
-    
-    
-    
-    
     #[cfg_attr(feature = "servo", ignore_heap_size_of = "Arc")]
     pub selector: SelectorInner<SelectorImpl>,
     
@@ -1247,16 +1225,65 @@ pub struct Rule {
     
     pub source_order: usize,
     
-    pub specificity: u32,
+    
+    
+    specificity_and_bits: u32,
 }
 
+
+const SPECIFICITY_MASK: u32 = 0x3fffffff;
+const ANY_IMPORTANT_DECLARATIONS_BIT: u32 = 1 << 30;
+const ANY_NORMAL_DECLARATIONS_BIT: u32 = 1 << 31;
+
 impl Rule {
+    
+    pub fn specificity(&self) -> u32 {
+        self.specificity_and_bits & SPECIFICITY_MASK
+    }
+
+    fn any_important_declarations(&self) -> bool {
+        (self.specificity_and_bits & ANY_IMPORTANT_DECLARATIONS_BIT) != 0
+    }
+
+    fn any_normal_declarations(&self) -> bool {
+        (self.specificity_and_bits & ANY_NORMAL_DECLARATIONS_BIT) != 0
+    }
+
     fn to_applicable_declaration_block(&self, level: CascadeLevel) -> ApplicableDeclarationBlock {
         ApplicableDeclarationBlock {
             source: StyleSource::Style(self.style_rule.clone()),
             level: level,
             source_order: self.source_order,
-            specificity: self.specificity,
+            specificity: self.specificity(),
+        }
+    }
+
+    
+    pub fn new(guard: &SharedRwLockReadGuard,
+               selector: SelectorInner<SelectorImpl>,
+               style_rule: Arc<Locked<StyleRule>>,
+               source_order: usize,
+               specificity: u32)
+               -> Self
+    {
+        let (any_important, any_normal) = {
+            let block = style_rule.read_with(guard).block.read_with(guard);
+            (block.any_important(), block.any_normal())
+        };
+        debug_assert!(specificity & (ANY_IMPORTANT_DECLARATIONS_BIT | ANY_NORMAL_DECLARATIONS_BIT) == 0);
+        let mut specificity_and_bits = specificity;
+        if any_important {
+            specificity_and_bits |= ANY_IMPORTANT_DECLARATIONS_BIT;
+        }
+        if any_normal {
+            specificity_and_bits |= ANY_NORMAL_DECLARATIONS_BIT;
+        }
+
+        Rule {
+            selector: selector,
+            style_rule: style_rule,
+            source_order: source_order,
+            specificity_and_bits: specificity_and_bits,
         }
     }
 }
