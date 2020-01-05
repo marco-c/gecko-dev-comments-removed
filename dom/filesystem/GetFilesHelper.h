@@ -65,7 +65,7 @@ protected:
 
   
   FallibleTArray<RefPtr<BlobImpl>> mTargetBlobImplArray;
-  nsTHashtable<nsCStringHashKey> mExploredDirectories;
+  nsTHashtable<nsStringHashKey> mExploredDirectories;
 };
 
 
