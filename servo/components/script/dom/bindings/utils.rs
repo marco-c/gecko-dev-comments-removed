@@ -100,7 +100,7 @@ unsafe impl Sync for DOMClass {}
 #[derive(Copy)]
 pub struct DOMJSClass {
     
-    pub base: js::jsapi::Class,
+    pub base: js::jsapi::JSClass,
     
     pub dom_class: DOMClass,
 }
