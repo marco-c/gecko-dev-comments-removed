@@ -4780,7 +4780,7 @@ nsDocShell::LoadURIWithOptions(const char16_t* aURI,
   
   uriString.Trim(" ");
   
-  uriString.StripCRLF();
+  uriString.StripChars("\r\n");
   NS_ENSURE_TRUE(!uriString.IsEmpty(), NS_ERROR_FAILURE);
 
   rv = NS_NewURI(getter_AddRefs(uri), uriString);
@@ -5696,6 +5696,11 @@ nsDocShell::LoadPage(nsISupports* aPageDescriptor, uint32_t aDisplayType)
     }
     shEntry->SetURI(newUri);
     shEntry->SetOriginalURI(nullptr);
+    
+    
+    
+    
+    shEntry->SetTriggeringPrincipal(nsContentUtils::GetSystemPrincipal());
   }
 
   rv = LoadHistoryEntry(shEntry, LOAD_HISTORY);
