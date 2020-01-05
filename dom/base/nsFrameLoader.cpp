@@ -1507,9 +1507,6 @@ nsFrameLoader::SwapWithOtherRemoteLoader(nsFrameLoader* aOther,
   ourShell->BackingScaleFactorChanged();
   otherShell->BackingScaleFactorChanged();
 
-  ourDoc->FlushPendingNotifications(FlushType::Layout);
-  otherDoc->FlushPendingNotifications(FlushType::Layout);
-
   
   InitializeBrowserAPI();
   aOther->InitializeBrowserAPI();
@@ -1949,9 +1946,6 @@ nsFrameLoader::SwapWithOtherLoader(nsFrameLoader* aOther,
   
   ourShell->BackingScaleFactorChanged();
   otherShell->BackingScaleFactorChanged();
-
-  ourParentDocument->FlushPendingNotifications(FlushType::Layout);
-  otherParentDocument->FlushPendingNotifications(FlushType::Layout);
 
   
   InitializeBrowserAPI();
