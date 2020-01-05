@@ -62,8 +62,9 @@ enum {
     JOF_NAME            = 1 << 5,   
     JOF_PROP            = 2 << 5,   
     JOF_ELEM            = 3 << 5,   
-    JOF_MODEMASK        = 7 << 5,   
-    JOF_SET             = 1 << 8,   
+    JOF_MODEMASK        = 3 << 5,   
+    JOF_PROPSET         = 1 << 7,   
+    JOF_PROPINIT        = 1 << 8,   
     
     
     
@@ -691,6 +692,18 @@ inline bool
 IsGlobalOp(JSOp op)
 {
     return CodeSpec[op].format & JOF_GNAME;
+}
+
+inline bool
+IsPropertySetOp(JSOp op)
+{
+    return CodeSpec[op].format & JOF_PROPSET;
+}
+
+inline bool
+IsPropertyInitOp(JSOp op)
+{
+    return CodeSpec[op].format & JOF_PROPINIT;
 }
 
 inline bool
