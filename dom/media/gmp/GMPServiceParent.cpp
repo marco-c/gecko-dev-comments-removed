@@ -1100,6 +1100,14 @@ GeckoMediaPluginServiceParent::ClonePlugin(const GMPParent* aOriginal)
 RefPtr<GenericPromise>
 GeckoMediaPluginServiceParent::AddOnGMPThread(nsString aDirectory)
 {
+#ifdef XP_WIN
+  
+  
+  
+  
+  std::replace(aDirectory.BeginWriting(), aDirectory.EndWriting(), '/', '\\');
+#endif
+
   MOZ_ASSERT(NS_GetCurrentThread() == mGMPThread);
   nsCString dir = NS_ConvertUTF16toUTF8(aDirectory);
   RefPtr<AbstractThread> thread(GetAbstractGMPThread());
@@ -1112,6 +1120,7 @@ GeckoMediaPluginServiceParent::AddOnGMPThread(nsString aDirectory)
   nsCOMPtr<nsIFile> directory;
   nsresult rv = NS_NewLocalFile(aDirectory, false, getter_AddRefs(directory));
   if (NS_WARN_IF(NS_FAILED(rv))) {
+    LOGD(("%s::%s: failed to create nsIFile for dir=%s rv=%x", __CLASS__, __FUNCTION__, dir.get(), rv));
     return GenericPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
   }
 
