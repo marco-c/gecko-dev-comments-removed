@@ -50,7 +50,7 @@ public:
           uint8_t aStyle,
           const nsTArray<gfxFontFeature>& aFeatureSettings,
           uint32_t aLanguageOverride,
-          gfxSparseBitSet* aUnicodeRanges,
+          gfxCharacterMap* aUnicodeRanges,
           uint8_t aFontDisplay)
       : gfxUserFontEntry(aFontSet, aFontFaceSrcList, aWeight, aStretch,
                          aStyle, aFeatureSettings, aLanguageOverride,
@@ -129,6 +129,11 @@ public:
 
 
   bool GetData(uint8_t*& aBuffer, uint32_t& aLength);
+
+  
+
+
+  gfxCharacterMap* GetUnicodeRangeAsCharacterMap();
 
   
   static already_AddRefed<FontFace>
@@ -258,11 +263,19 @@ private:
 
   
   
+  RefPtr<gfxCharacterMap> mUnicodeRange;
+
+  
+  
   RefPtr<FontFaceSet> mFontFaceSet;
 
   
   
   nsTArray<RefPtr<FontFaceSet>> mOtherFontFaceSets;
+
+  
+  
+  bool mUnicodeRangeDirty;
 
   
   bool mInFontFaceSet;

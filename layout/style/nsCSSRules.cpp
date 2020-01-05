@@ -1081,6 +1081,9 @@ nsCSSFontFaceStyleDecl::SetProperty(const nsAString & propertyName,
                                     const nsAString & value,
                                     const nsAString & priority)
 {
+  
+  
+
   return NS_ERROR_NOT_IMPLEMENTED; 
 }
 
@@ -1294,6 +1297,9 @@ nsCSSFontFaceRule::SetDesc(nsCSSFontDesc aDescID, nsCSSValue const & aValue)
                   aDescID < eCSSFontDesc_COUNT,
                   "aDescID out of range in nsCSSFontFaceRule::SetDesc");
 
+  
+
+  
   
 
   mDecl.mDescriptors.Get(aDescID) = aValue;
