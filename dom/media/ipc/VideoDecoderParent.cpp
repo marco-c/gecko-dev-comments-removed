@@ -124,7 +124,13 @@ VideoDecoderParent::RecvInput(const MediaRawDataIPDL& aData)
   MOZ_ASSERT(OnManagerThread());
   
   
-  RefPtr<MediaRawData> data = new MediaRawData(aData.buffer().get<uint8_t>(), aData.buffer().Size<uint8_t>());
+  RefPtr<MediaRawData> data = new MediaRawData(aData.buffer().get<uint8_t>(),
+                                               aData.buffer().Size<uint8_t>());
+  if (!data->Data()) {
+    
+    Error(NS_ERROR_OUT_OF_MEMORY);
+    return IPC_OK();
+  }
   data->mOffset = aData.base().offset();
   data->mTime = aData.base().time();
   data->mTimecode = aData.base().timecode();
