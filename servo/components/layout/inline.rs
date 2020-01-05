@@ -36,6 +36,10 @@ use style::ComputedValues;
 use sync::Arc;
 
 
+static FONT_SUBSCRIPT_OFFSET_RATIO: f64 = 0.20;
+static FONT_SUPERSCRIPT_OFFSET_RATIO: f64 = 0.34;
+
+
 
 
 
@@ -825,15 +829,13 @@ impl InlineFlow {
                 (-ascent, false)
             },
             vertical_align::sub => {
-                
-                
-                let sub_offset = Au(0);
+                let sub_offset = (parent_text_block_start + parent_text_block_end)
+                                    .scale_by(FONT_SUBSCRIPT_OFFSET_RATIO);
                 (sub_offset - ascent, false)
             },
             vertical_align::super_ => {
-                
-                
-                let super_offset = Au(0);
+                let super_offset = (parent_text_block_start + parent_text_block_end)
+                                    .scale_by(FONT_SUPERSCRIPT_OFFSET_RATIO);
                 (-super_offset - ascent, false)
             },
             vertical_align::text_top => {
@@ -1076,11 +1078,6 @@ impl Flow for InlineFlow {
                 
                 
                 
-                let parent_text_top = fragment.style().get_font().font_size;
-
-                
-                
-                let parent_text_bottom = Au(0);
 
                 
                 
@@ -1091,8 +1088,8 @@ impl Flow for InlineFlow {
                     InlineFlow::distance_from_baseline(
                         fragment,
                         ascent,
-                        parent_text_top,
-                        parent_text_bottom,
+                        self.minimum_block_size_above_baseline,
+                        self.minimum_depth_below_baseline,
                         &mut block_size_above_baseline,
                         &mut depth_below_baseline,
                         &mut largest_block_size_for_top_fragments,
