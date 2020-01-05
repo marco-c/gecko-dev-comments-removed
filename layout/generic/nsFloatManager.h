@@ -403,9 +403,9 @@ private:
 
     
     
-    static nsPoint ConvertPhysicalToLogical(mozilla::WritingMode aWM,
-                                            const nsPoint& aPoint,
-                                            const nsSize& aContainerSize);
+    static nsPoint ConvertToFloatLogical(const nsPoint& aPoint,
+                                         mozilla::WritingMode aWM,
+                                         const nsSize& aContainerSize);
   };
 
   
