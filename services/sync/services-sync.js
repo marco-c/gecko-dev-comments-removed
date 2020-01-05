@@ -87,3 +87,7 @@ pref("services.sync.engine.bookmarks.validation.percentageChance", 10);
 
 
 pref("services.sync.engine.bookmarks.validation.maxRecords", 1000);
+
+
+
+pref("services.sync.maxResyncs", 5);

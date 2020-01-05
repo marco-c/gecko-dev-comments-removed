@@ -67,6 +67,8 @@ SyncScheduler.prototype = {
     
     this.numClientsLastSync = 0;
 
+    this._resyncs = 0;
+
     this.clearSyncTriggers();
   },
 
@@ -135,6 +137,7 @@ SyncScheduler.prototype = {
     }
   },
 
+  
   observe: function observe(subject, topic, data) {
     this._log.trace("Handling " + topic);
     switch (topic) {
@@ -170,8 +173,26 @@ SyncScheduler.prototype = {
         }
 
         let sync_interval;
+        this.updateGlobalScore();
+        if (this.globalScore > 0) {
+          
+          
+          
+          this._resyncs++;
+          if (this._resyncs <= this.maxResyncs) {
+            sync_interval = 0;
+          } else {
+            this._log.warn(`Resync attempt ${this._resyncs} exceeded ` +
+                           `maximum ${this.maxResyncs}`);
+          }
+        } else {
+          this._resyncs = 0;
+        }
+
         this._syncErrors = 0;
         if (Status.sync == NO_SYNC_NODE_FOUND) {
+          
+          
           this._log.trace("Scheduling a sync at interval NO_SYNC_NODE_FOUND.");
           sync_interval = NO_SYNC_NODE_INTERVAL;
         }
@@ -334,7 +355,7 @@ SyncScheduler.prototype = {
     }
   },
 
-  calculateScore: function calculateScore() {
+  updateGlobalScore() {
     let engines = [this.service.clientsEngine].concat(this.service.engineManager.getEnabled());
     for (let i = 0;i < engines.length;i++) {
       this._log.trace(engines[i].name + ": score: " + engines[i].score);
@@ -343,6 +364,10 @@ SyncScheduler.prototype = {
     }
 
     this._log.trace("Global score updated: " + this.globalScore);
+  },
+
+  calculateScore() {
+    this.updateGlobalScore();
     this.checkSyncStatus();
   },
 
@@ -542,6 +567,9 @@ SyncScheduler.prototype = {
       this.syncTimer.clear();
   },
 
+  get maxResyncs() {
+    return Svc.Prefs.get("maxResyncs", 0);
+  },
 };
 
 this.ErrorHandler = function ErrorHandler(service) {
