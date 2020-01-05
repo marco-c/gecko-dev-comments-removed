@@ -143,8 +143,10 @@ ServoStyleSet::SetAuthorStyleDisabled(bool aStyleDisabled)
   
   if (mAuthorStyleDisabled) {
     NoteStyleSheetsChanged();
-    Servo_StyleSet_FlushStyleSheets(mRawSet.get());
   }
+  
+  
+  
   
   
 
@@ -838,6 +840,9 @@ void
 ServoStyleSet::NoteStyleSheetsChanged()
 {
   Servo_StyleSet_NoteStyleSheetsChanged(mRawSet.get(), mAuthorStyleDisabled);
+  if (!mBatching) {
+    Servo_StyleSet_FlushStyleSheets(mRawSet.get());
+  }
 }
 
 #ifdef DEBUG

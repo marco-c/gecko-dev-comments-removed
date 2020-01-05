@@ -4559,19 +4559,6 @@ nsIPresShell::RestyleForCSSRuleChanges()
     mPresContext->RebuildCounterStyles();
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (mStyleSet->IsServo() && !mStyleSet->AsServo()->GetAuthorStyleDisabled()) {
-    mStyleSet->AsServo()->NoteStyleSheetsChanged();
-  }
-
   Element* root = mDocument->GetRootElement();
   if (!mDidInitialize) {
     
@@ -4607,6 +4594,11 @@ PresShell::RecordStyleSheetChange(StyleSheet* aStyleSheet)
 
   if (mStylesHaveChanged)
     return;
+
+  
+  if (ServoStyleSet* set = mStyleSet->GetAsServo()) {
+    set->NoteStyleSheetsChanged();
+  }
 
   if (aStyleSheet->IsGecko()) {
     
