@@ -1476,6 +1476,8 @@ nsDocument::~nsDocument()
     mAnimationController->Disconnect();
   }
 
+  MOZ_ASSERT(mTimelines.isEmpty());
+
   mParentDocument = nullptr;
 
   
@@ -1998,15 +2000,7 @@ nsDocument::Reset(nsIChannel* aChannel, nsILoadGroup* aLoadGroup)
   
   
   
-  if (mDocumentTimeline) {
-    nsRefreshDriver* rd = mPresShell && mPresShell->GetPresContext() ?
-                          mPresShell->GetPresContext()->RefreshDriver() :
-                          nullptr;
-    if (rd) {
-      mDocumentTimeline->NotifyRefreshDriverDestroying(rd);
-    }
-    mDocumentTimeline = nullptr;
-  }
+  mDocumentTimeline = nullptr;
 
   nsCOMPtr<nsIPropertyBag2> bag = do_QueryInterface(aChannel);
   if (bag) {
