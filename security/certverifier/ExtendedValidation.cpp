@@ -11,7 +11,6 @@
 #include "certdb.h"
 #include "hasht.h"
 #include "mozilla/ArrayUtils.h"
-#include "mozilla/Assertions.h"
 #include "mozilla/Casting.h"
 #include "mozilla/PodOperations.h"
 #include "pk11pub.h"
@@ -1250,8 +1249,8 @@ CertIsAuthoritativeForEVPolicy(const UniqueCERTCertificate& cert,
   return false;
 }
 
-nsresult
-LoadExtendedValidationInfo()
+static PRStatus
+IdentityInfoInit()
 {
   static const char* sCABForumOIDString = "2.23.140.1.1";
   static const char* sCABForumOIDDescription = "CA/Browser Forum EV OID";
@@ -1259,35 +1258,28 @@ LoadExtendedValidationInfo()
   mozilla::ScopedAutoSECItem cabforumOIDItem;
   if (SEC_StringToOID(nullptr, &cabforumOIDItem, sCABForumOIDString, 0)
         != SECSuccess) {
-    return NS_ERROR_FAILURE;
+    return PR_FAILURE;
   }
   sCABForumEVOIDTag = RegisterOID(cabforumOIDItem, sCABForumOIDDescription);
   if (sCABForumEVOIDTag == SEC_OID_UNKNOWN) {
-    return NS_ERROR_FAILURE;
+    return PR_FAILURE;
   }
 
   for (size_t iEV = 0; iEV < mozilla::ArrayLength(myTrustedEVInfos); ++iEV) {
     nsMyTrustedEVInfo& entry = myTrustedEVInfos[iEV];
 
-    SECStatus srv;
-#ifdef DEBUG
-    
-    
-    
-    
-    
     mozilla::ScopedAutoSECItem derIssuer;
-    srv = ATOB_ConvertAsciiToItem(&derIssuer, entry.issuer_base64);
-    MOZ_ASSERT(srv == SECSuccess, "Could not base64-decode built-in EV issuer");
-    if (srv != SECSuccess) {
-      return NS_ERROR_FAILURE;
+    SECStatus rv = ATOB_ConvertAsciiToItem(&derIssuer, entry.issuer_base64);
+    PR_ASSERT(rv == SECSuccess);
+    if (rv != SECSuccess) {
+      return PR_FAILURE;
     }
 
     mozilla::ScopedAutoSECItem serialNumber;
-    srv = ATOB_ConvertAsciiToItem(&serialNumber, entry.serial_base64);
-    MOZ_ASSERT(srv == SECSuccess, "Could not base64-decode built-in EV serial");
-    if (srv != SECSuccess) {
-      return NS_ERROR_FAILURE;
+    rv = ATOB_ConvertAsciiToItem(&serialNumber, entry.serial_base64);
+    PR_ASSERT(rv == SECSuccess);
+    if (rv != SECSuccess) {
+      return PR_FAILURE;
     }
 
     CERTIssuerAndSN ias;
@@ -1302,40 +1294,65 @@ LoadExtendedValidationInfo()
     
     
     
-    if (!cert) {
-      
-      
-      
-      MOZ_ASSERT(iEV < NUM_TEST_EV_ROOTS, "Could not find built-in EV root");
-    } else {
-      unsigned char certFingerprint[SHA256_LENGTH];
-      srv = PK11_HashBuf(SEC_OID_SHA256, certFingerprint, cert->derCert.data,
-                         AssertedCast<int32_t>(cert->derCert.len));
-      MOZ_ASSERT(srv == SECSuccess, "Could not hash EV root");
-      if (srv != SECSuccess) {
-        return NS_ERROR_FAILURE;
-      }
-      bool same = PodEqual(certFingerprint, entry.ev_root_sha256_fingerprint);
-      MOZ_ASSERT(same, "EV root fingerprint mismatch");
-      if (!same) {
-        return NS_ERROR_FAILURE;
-      }
-    }
-#endif
     
-    mozilla::ScopedAutoSECItem evOIDItem;
-    srv = SEC_StringToOID(nullptr, &evOIDItem, entry.dotted_oid, 0);
-    MOZ_ASSERT(srv == SECSuccess, "SEC_StringToOID failed");
-    if (srv != SECSuccess) {
-      return NS_ERROR_FAILURE;
+    
+    if (!cert) {
+#ifdef DEBUG
+      
+      
+      if (iEV < NUM_TEST_EV_ROOTS) {
+        continue;
+      }
+#endif
+      PR_NOT_REACHED("Could not find EV root in NSS storage");
+      continue;
     }
-    entry.oid_tag = RegisterOID(evOIDItem, entry.oid_name);
-    if (entry.oid_tag == SEC_OID_UNKNOWN) {
-      return NS_ERROR_FAILURE;
+
+    unsigned char certFingerprint[SHA256_LENGTH];
+    rv = PK11_HashBuf(SEC_OID_SHA256, certFingerprint, cert->derCert.data,
+                      AssertedCast<int32_t>(cert->derCert.len));
+    PR_ASSERT(rv == SECSuccess);
+    if (rv == SECSuccess) {
+      bool same = !memcmp(certFingerprint, entry.ev_root_sha256_fingerprint,
+                          sizeof(certFingerprint));
+      PR_ASSERT(same);
+      if (same) {
+        mozilla::ScopedAutoSECItem evOIDItem;
+        rv = SEC_StringToOID(nullptr, &evOIDItem, entry.dotted_oid, 0);
+        PR_ASSERT(rv == SECSuccess);
+        if (rv == SECSuccess) {
+          entry.oid_tag = RegisterOID(evOIDItem, entry.oid_name);
+          if (entry.oid_tag == SEC_OID_UNKNOWN) {
+            rv = SECFailure;
+          }
+        }
+      } else {
+        PR_SetError(SEC_ERROR_BAD_DATA, 0);
+        rv = SECFailure;
+      }
+    }
+
+    if (rv != SECSuccess) {
+      entry.oid_tag = SEC_OID_UNKNOWN;
+      return PR_FAILURE;
     }
   }
 
-  return NS_OK;
+  return PR_SUCCESS;
+}
+
+static PRCallOnceType sIdentityInfoCallOnce;
+
+void
+EnsureIdentityInfoLoaded()
+{
+  (void) PR_CallOnce(&sIdentityInfoCallOnce, IdentityInfoInit);
+}
+
+void
+CleanupIdentityInfo()
+{
+  memset(&sIdentityInfoCallOnce, 0, sizeof(PRCallOnceType));
 }
 
 
