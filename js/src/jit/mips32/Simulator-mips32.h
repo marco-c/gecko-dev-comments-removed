@@ -104,10 +104,9 @@ const uint32_t kMaxStopCode = 127;
 typedef uint32_t Instr;
 class SimInstruction;
 
+
 class Simulator {
-    friend class Redirection;
     friend class MipsDebugger;
-    friend class AutoLockSimulatorCache;
   public:
 
     
@@ -214,8 +213,6 @@ class Simulator {
     
     void setLastDebuggerInput(char* input);
     char* lastDebuggerInput() { return lastDebuggerInput_; }
-    
-    static void FlushICache(void* start, size_t size);
 
     
     
@@ -365,6 +362,13 @@ class Simulator {
         char* desc_;
     };
     StopCountAndDesc watchedStops_[kNumOfWatchedStops];
+};
+
+
+class SimulatorProcess
+{
+    friend class Redirection;
+    friend class AutoLockSimulatorCache;
 
   private:
     
@@ -378,44 +382,59 @@ class Simulator {
   public:
     typedef HashMap<void*, CachePage*, ICacheHasher, SystemAllocPolicy> ICacheMap;
 
+    static mozilla::Atomic<size_t, mozilla::ReleaseAcquire> ICacheCheckingDisableCount;
+    static void FlushICache(void* start, size_t size);
+
+    
+    
+    
+    
+    static mozilla::Atomic<bool, mozilla::ReleaseAcquire> cacheInvalidatedBySignalHandler_;
+
+    static void checkICacheLocked(SimInstruction* instr);
+
+    static bool initialize() {
+        singleton_ = js_new<SimulatorProcess>();
+        return singleton_ && singleton_->init();
+    }
+    static void destroy() {
+        js_delete(singleton_);
+        singleton_ = nullptr;
+    }
+
+    SimulatorProcess();
+    ~SimulatorProcess();
+
   private:
+    bool init();
+
+    static SimulatorProcess* singleton_;
+
     
     
     
     Mutex cacheLock_;
-#ifdef DEBUG
-    mozilla::Maybe<Thread::Id> cacheLockHolder_;
-#endif
 
     Redirection* redirection_;
     ICacheMap icache_;
 
-  private:
-    
-    
-    
-    
-    mozilla::Atomic<bool, mozilla::ReleaseAcquire> cacheInvalidatedBySignalHandler_;
-
-    void checkICacheLocked(ICacheMap& i_cache, SimInstruction* instr);
-
   public:
-    ICacheMap& icache() {
+    static ICacheMap& icache() {
         
         
         
-        MOZ_ASSERT(cacheLockHolder_.isSome());
-        return icache_;
+        MOZ_ASSERT(singleton_->cacheLock_.ownedByCurrentThread());
+        return singleton_->icache_;
     }
 
-    Redirection* redirection() const {
-        MOZ_ASSERT(cacheLockHolder_.isSome());
-        return redirection_;
+    static Redirection* redirection() {
+        MOZ_ASSERT(singleton_->cacheLock_.ownedByCurrentThread());
+        return singleton_->redirection_;
     }
 
-    void setRedirection(js::jit::Redirection* redirection) {
-        MOZ_ASSERT(cacheLockHolder_.isSome());
-        redirection_ = redirection;
+    static void setRedirection(js::jit::Redirection* redirection) {
+        MOZ_ASSERT(singleton_->cacheLock_.ownedByCurrentThread());
+        singleton_->redirection_ = redirection;
     }
 };
 
