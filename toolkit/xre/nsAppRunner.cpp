@@ -4935,10 +4935,12 @@ MultiprocessBlockPolicy() {
 
 
 #if defined(XP_WIN)
-  if (Preferences::GetDefaultCString("app.update.channel").EqualsLiteral("release") &&
-      !IsVistaOrLater()) {
-    gMultiprocessBlockPolicy = kE10sDisabledForOperatingSystem;
-    return gMultiprocessBlockPolicy;
+  if (!IsVistaOrLater()) {
+    nsAdoptingString channelName = Preferences::GetDefaultCString("app.update.channel");
+    if (channelName.EqualsLiteral("release") || channelName.EqualsLiteral("esr")) {
+      gMultiprocessBlockPolicy = kE10sDisabledForOperatingSystem;
+      return gMultiprocessBlockPolicy;
+    }
   }
 #endif 
 
