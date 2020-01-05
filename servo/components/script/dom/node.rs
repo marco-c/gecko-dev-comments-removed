@@ -185,7 +185,6 @@ unsafe impl Send for OpaqueStyleAndLayoutData {}
 
 no_jsmanaged_fields!(OpaqueStyleAndLayoutData);
 
-
 impl OpaqueStyleAndLayoutData {
     
     pub fn dispose(self, node: &Node) {
