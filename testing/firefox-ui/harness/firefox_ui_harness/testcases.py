@@ -37,39 +37,31 @@ class UpdateTestCase(PuppeteerMixin, MarionetteTestCase):
         super(UpdateTestCase, self).__init__(*args, **kwargs)
 
         self.update_channel = kwargs.pop('update_channel')
+        self.update_mar_channels = set(kwargs.pop('update_mar_channels'))
         self.update_url = kwargs.pop('update_url')
 
         self.target_buildid = kwargs.pop('update_target_buildid')
         self.target_version = kwargs.pop('update_target_version')
 
-        self.update_mar_channels = set(kwargs.pop('update_mar_channels'))
-        self.default_mar_channels = None
+        
+        self.current_update_index = 0
 
+        self.download_duration = None
         self.updates = []
 
     def setUp(self, is_fallback=False):
         super(UpdateTestCase, self).setUp()
 
         self.software_update = SoftwareUpdate(self.marionette)
-        self.download_duration = None
 
         
-        self.current_update_index = 0
+        if self.update_mar_channels:
+            self.software_update.mar_channels.add_channels(self.update_mar_channels)
 
         
         self.remove_downloaded_update()
 
         self.set_preferences_defaults()
-
-        
-        
-        if self.update_mar_channels:
-            
-            self.default_mar_channels = {
-                'content': self.software_update.mar_channels.config_file_contents,
-                'path': self.software_update.mar_channels.config_file_path,
-            }
-            self.software_update.mar_channels.add_channels(self.update_mar_channels)
 
         
         
@@ -110,8 +102,6 @@ class UpdateTestCase(PuppeteerMixin, MarionetteTestCase):
 
             
             self.remove_downloaded_update()
-
-            self.restore_config_files()
 
     @property
     def patch_info(self):
@@ -364,18 +354,6 @@ class UpdateTestCase(PuppeteerMixin, MarionetteTestCase):
         
         
         self.set_preferences_defaults()
-
-    def restore_config_files(self):
-        
-        try:
-            if self.default_mar_channels:
-                path = self.default_mar_channels['path']
-                self.logger.info('Restoring mar channel defaults for: {}'.format(path))
-                with open(path, 'w') as f:
-                    f.write(self.default_mar_channels['content'])
-        except IOError:
-            self.logger.error('Failed to reset the default mar channels.',
-                              exc_info=True)
 
     def set_preferences_defaults(self):
         """Set the default value for specific preferences to force its usage."""
