@@ -1207,7 +1207,16 @@ TextContainsLineBreakerWhiteSpace(const void* aText, uint32_t aLength,
   }
 }
 
-struct FrameTextTraversal {
+struct FrameTextTraversal
+{
+  FrameTextTraversal()
+    : mFrameToScan(nullptr)
+    , mOverflowFrameToScan(nullptr)
+    , mScanSiblings(false)
+    , mLineBreakerCanCrossFrameBoundary(false)
+    , mTextRunCanCrossFrameBoundary(false)
+  {}
+
   
   
   nsIFrame*    mFrameToScan;
@@ -1246,7 +1255,6 @@ CanTextCrossFrameBoundary(nsIFrame* aFrame)
     
     
     result.mLineBreakerCanCrossFrameBoundary = true;
-    result.mOverflowFrameToScan = nullptr;
     if (continuesTextRun) {
       
       
@@ -1255,10 +1263,7 @@ CanTextCrossFrameBoundary(nsIFrame* aFrame)
       
       result.mFrameToScan =
         (static_cast<nsPlaceholderFrame*>(aFrame))->GetOutOfFlowFrame();
-      result.mScanSiblings = false;
-      result.mTextRunCanCrossFrameBoundary = false;
     } else {
-      result.mFrameToScan = nullptr;
       result.mTextRunCanCrossFrameBoundary = true;
     }
   } else {
@@ -1275,10 +1280,6 @@ CanTextCrossFrameBoundary(nsIFrame* aFrame)
     } else {
       MOZ_ASSERT(!aFrame->IsRubyTextContainerFrame(),
                  "Shouldn't call this method for ruby text container");
-      result.mFrameToScan = nullptr;
-      result.mOverflowFrameToScan = nullptr;
-      result.mTextRunCanCrossFrameBoundary = false;
-      result.mLineBreakerCanCrossFrameBoundary = false;
     }
   }
   return result;
