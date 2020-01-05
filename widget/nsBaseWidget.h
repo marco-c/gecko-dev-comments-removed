@@ -339,6 +339,9 @@ public:
   }
 
   
+  already_AddRefed<nsIScreen> GetWidgetScreen();
+
+  
   bool IsPopupWithTitleBar() const
   {
     return (mWindowType == eWindowType_popup &&

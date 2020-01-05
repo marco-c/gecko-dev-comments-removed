@@ -802,31 +802,7 @@ nsMenuPopupFrame::InitializePopupAtScreen(nsIContent* aTriggerContent,
   mPopupState = ePopupShowing;
   mAnchorContent = nullptr;
   mTriggerContent = aTriggerContent;
-
-  nsCOMPtr<nsIScreenManager> screenMgr =
-    do_GetService("@mozilla.org/gfx/screenmanager;1");
-  nsCOMPtr<nsIScreen> screen;
-  if (screenMgr) {
-    
-    
-    
-    
-    
-    screenMgr->ScreenForRect(aXPos, aYPos, 1, 1,
-                             getter_AddRefs(screen));
-    double cssToDevScale, deskToDevScale;
-    screen->GetDefaultCSSScaleFactor(&cssToDevScale);
-    screen->GetContentsScaleFactor(&deskToDevScale);
-    double scale = deskToDevScale / cssToDevScale;
-    int32_t w, h;
-    DesktopIntPoint origin;
-    screen->GetRectDisplayPix(&origin.x, &origin.y, &w, &h);
-    mScreenRect.x = aXPos + (origin.x * scale) - origin.x;
-    mScreenRect.y = aYPos + (origin.y * scale) - origin.y;
-    mScreenRect.width = mScreenRect.height = 0;
-  } else {
-    mScreenRect = nsIntRect(aXPos, aYPos, 0, 0);
-  }
+  mScreenRect = nsIntRect(aXPos, aYPos, 0, 0);
   mXPos = 0;
   mYPos = 0;
   mFlip = FlipType_Default;

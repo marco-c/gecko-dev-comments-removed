@@ -28,7 +28,6 @@
 #include "nsIContent.h"
 #include "nsIDocument.h"
 #include "nsIPresShell.h"
-#include "nsIScreen.h"
 #include "nsIScrollableFrame.h"
 #include "nsJSEnvironment.h"
 #include "nsLayoutUtils.h"
@@ -928,46 +927,17 @@ Event::GetScreenCoords(nsPresContext* aPresContext,
     return CSSIntPoint(aPoint.x, aPoint.y);
   }
 
+  nsPoint pt =
+    LayoutDevicePixel::ToAppUnits(aPoint, aPresContext->DeviceContext()->AppUnitsPerDevPixelAtUnitFullZoom());
 
-  int32_t appPerDevFullZoom =
-    aPresContext->DeviceContext()->AppUnitsPerDevPixelAtUnitFullZoom();
-
-  LayoutDevicePoint devPt = aPoint;
   if (nsIPresShell* ps = aPresContext->GetPresShell()) {
-    
-    
-    nsPoint pt =
-      LayoutDevicePixel::ToAppUnits(aPoint, appPerDevFullZoom);
     pt = pt.RemoveResolution(nsLayoutUtils::GetCurrentAPZResolutionScale(ps));
-    devPt = LayoutDevicePixel::FromAppUnits(pt, appPerDevFullZoom);
   }
 
-  devPt += guiEvent->mWidget->WidgetToScreenOffset();
+  pt += LayoutDevicePixel::ToAppUnits(guiEvent->mWidget->WidgetToScreenOffset(),
+                                      aPresContext->DeviceContext()->AppUnitsPerDevPixelAtUnitFullZoom());
 
-  nsCOMPtr<nsIScreen> screen = guiEvent->mWidget->GetWidgetScreen();
-  if (screen) {
-    
-    int32_t x, y, w, h;
-    screen->GetRect(&x, &y, &w, &h);
-    devPt.x -= x;
-    devPt.y -= y;
-    
-    double cssToDevScale;
-    screen->GetDefaultCSSScaleFactor(&cssToDevScale);
-    CSSIntPoint cssPt(NSToIntRound(devPt.x / cssToDevScale),
-                      NSToIntRound(devPt.y / cssToDevScale));
-    
-    
-    screen->GetRectDisplayPix(&x, &y, &w, &h);
-    cssPt.x += x;
-    cssPt.y += y;
-    return cssPt;
-  }
-
-  
-  NS_WARNING("failed to find screen, using default CSS px conversion");
-  return CSSPixel::FromAppUnitsRounded(
-      LayoutDevicePixel::ToAppUnits(aPoint, appPerDevFullZoom));
+  return CSSPixel::FromAppUnitsRounded(pt);
 }
 
 
