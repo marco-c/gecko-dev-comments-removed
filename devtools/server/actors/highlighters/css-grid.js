@@ -16,7 +16,8 @@ const {
 const {
   getCurrentZoom,
   setIgnoreLayoutChanges,
-  getWindowDimensions
+  getWindowDimensions,
+  getMaxSurfaceSize,
 } = require("devtools/shared/layout/utils");
 const { stringifyGridFragments } = require("devtools/server/actors/utils/css-grid-utils");
 
@@ -56,6 +57,19 @@ const gCachedGridPattern = new WeakMap();
 const ROW_KEY = {};
 
 const COLUMN_KEY = {};
+
+
+
+
+
+const MAX_ALLOC_SIZE = 500000000;
+
+
+const BYTES_PER_PIXEL = 4;
+
+const MAX_ALLOC_PIXELS = MAX_ALLOC_SIZE / BYTES_PER_PIXEL;
+
+const MAX_ALLOC_PIXELS_PER_SIDE = Math.sqrt(MAX_ALLOC_PIXELS)|0;
 
 
 
@@ -118,6 +132,17 @@ const COLUMN_KEY = {};
 
 function CssGridHighlighter(highlighterEnv) {
   AutoRefreshHighlighter.call(this, highlighterEnv);
+
+  this.maxCanvasSizePerSide = getMaxSurfaceSize(this.highlighterEnv.window);
+
+  
+  
+  
+  
+  this._contentSize = {
+    width: 0,
+    height: 0
+  };
 
   this.markup = new CanvasFrameAnonymousContentHelper(this.highlighterEnv,
     this._buildMarkup.bind(this));
@@ -607,10 +632,69 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
   clearCanvas(width, height) {
     let ratio = parseFloat((this.win.devicePixelRatio || 1).toFixed(2));
 
+    height *= ratio;
+    width *= ratio;
+
+    let hasResolutionChanged = false;
+    if (height !== this._contentSize.height || width !== this._contentSize.width) {
+      hasResolutionChanged = true;
+      this._contentSize.width = width;
+      this._contentSize.height = height;
+    }
+
+    let isCanvasClipped = false;
+
+    if (height > this.maxCanvasSizePerSide) {
+      height = this.maxCanvasSizePerSide;
+      isCanvasClipped = true;
+    }
+
+    if (width > this.maxCanvasSizePerSide) {
+      width = this.maxCanvasSizePerSide;
+      isCanvasClipped = true;
+    }
+
     
-    this.canvas.setAttribute("width", width * ratio);
-    this.canvas.setAttribute("height", height * ratio);
-    this.canvas.setAttribute("style", `width:${width}px;height:${height}px;`);
+    
+    
+    if (width * height > MAX_ALLOC_PIXELS) {
+      isCanvasClipped = true;
+      
+      
+      
+      
+      if (height > width && width < MAX_ALLOC_PIXELS_PER_SIDE) {
+        height = (MAX_ALLOC_PIXELS / width) |0;
+      } else if (width > height && height < MAX_ALLOC_PIXELS_PER_SIDE) {
+        width = (MAX_ALLOC_PIXELS / height) |0;
+      } else {
+        
+        height = width = MAX_ALLOC_PIXELS_PER_SIDE;
+      }
+    }
+
+    
+    
+    
+    
+    
+    if (hasResolutionChanged && isCanvasClipped) {
+      
+      
+      
+      
+      
+      this.win.console.warn("The CSS Grid Highlighter could have been clipped, due " +
+                            "the size of the document inspected\n" +
+                            "See https://bugzilla.mozilla.org/show_bug.cgi?id=1343217 " +
+                            "for further information.");
+    }
+
+    
+    this.canvas.setAttribute("width", width);
+    this.canvas.setAttribute("height", height);
+    this.canvas.setAttribute("style",
+      `width:${width / ratio}px;height:${height / ratio}px;`);
     this.ctx.scale(ratio, ratio);
 
     this.ctx.clearRect(0, 0, width, height);

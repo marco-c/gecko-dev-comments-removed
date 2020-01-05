@@ -133,6 +133,33 @@ GridInspector.prototype = {
 
 
 
+
+
+
+
+  getInitialGridColor(nodeFront, fallbackColor) {
+    let highlighted = nodeFront == this.highlighters.gridHighlighterShown;
+
+    let color;
+    if (highlighted && this.highlighters.state.grid.options) {
+      
+      
+      color = this.highlighters.state.grid.options.color;
+    } else {
+      
+      color = this.getGridColorForNodeFront(nodeFront);
+    }
+
+    return color || fallbackColor;
+  },
+
+  
+
+
+
+
+
+
   getGridColorForNodeFront(nodeFront) {
     let { grids } = this.store.getState();
 
@@ -226,7 +253,7 @@ GridInspector.prototype = {
       let nodeFront = yield this.walker.getNodeFromActor(grid.actorID, ["containerEl"]);
 
       let fallbackColor = GRID_COLORS[i % GRID_COLORS.length];
-      let color = this.getGridColorForNodeFront(nodeFront) || fallbackColor;
+      let color = this.getInitialGridColor(nodeFront, fallbackColor);
 
       grids.push({
         id: i,
@@ -262,9 +289,13 @@ GridInspector.prototype = {
 
 
 
-  onHighlighterChange(event, nodeFront) {
+
+
+  onHighlighterChange(event, nodeFront, options) {
     let highlighted = event === "grid-highlighter-shown";
+    let { color } = options;
     this.store.dispatch(updateGridHighlighted(nodeFront, highlighted));
+    this.store.dispatch(updateGridColor(nodeFront, color));
   },
 
   
