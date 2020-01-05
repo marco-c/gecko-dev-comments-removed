@@ -131,7 +131,7 @@ public:
   
   
   nsresult
-  FindItemWithName(const char16_t* aName,
+  FindItemWithName(const nsAString& aName,
                    nsIDocShellTreeItem* aRequestor,
                    nsIDocShellTreeItem* aOriginalRequestor,
                    nsIDocShellTreeItem** aFoundItem);

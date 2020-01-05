@@ -1037,7 +1037,7 @@ private:
 
   
   
-  nsresult DoFindItemWithName(const char16_t* aName,
+  nsresult DoFindItemWithName(const nsAString& aName,
                               nsISupports* aRequestor,
                               nsIDocShellTreeItem* aOriginalRequestor,
                               nsIDocShellTreeItem** aResult);
