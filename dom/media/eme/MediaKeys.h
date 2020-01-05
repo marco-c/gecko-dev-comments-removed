@@ -133,8 +133,6 @@ public:
 
 private:
 
-  bool IsInPrivateBrowsing();
-
   
   already_AddRefed<DetailedPromise> RetrievePromise(PromiseId aId);
 
