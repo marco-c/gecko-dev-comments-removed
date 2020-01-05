@@ -286,7 +286,8 @@ class JSObject : public js::gc::Cell
 
 
 
-    bool constructorDisplayAtom(JSContext* cx, js::MutableHandleAtom name);
+    static bool constructorDisplayAtom(JSContext* cx, js::HandleObject obj,
+                                       js::MutableHandleAtom name);
 
     
 
