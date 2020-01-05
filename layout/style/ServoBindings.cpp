@@ -483,6 +483,17 @@ Gecko_UpdateAnimations(RawGeckoElementBorrowed aElement,
         UpdateAnimations(const_cast<dom::Element*>(aElement), pseudoType,
                          servoValues);
     }
+
+    
+    
+    
+    
+    
+    
+    if (!aComputedValues) {
+      return;
+    }
+
     if (tasks & UpdateAnimationsTasks::CSSTransitions) {
       MOZ_ASSERT(aOldComputedValues);
       const ServoComputedValuesWithParent oldServoValues =
