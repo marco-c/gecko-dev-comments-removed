@@ -15,6 +15,9 @@ const {isWindowIncluded} = require("devtools/shared/layout/utils");
 const specs = require("devtools/shared/specs/storage");
 const { Task } = require("devtools/shared/task");
 
+loader.lazyRequireGetter(this, "naturalSortCaseInsensitive",
+  "devtools/client/shared/natural-sort", true);
+
 
 
 
@@ -357,15 +360,20 @@ StorageActors.defaults = function (typeName, observationTopics) {
             toReturn.data.push(...values);
           }
         }
+
         toReturn.total = this.getObjectsSize(host, names, options);
+
         if (offset > toReturn.total) {
           
           toReturn.offset = toReturn.total;
           toReturn.data = [];
         } else {
-          toReturn.data = toReturn.data.sort((a, b) => {
-            return a[sortOn] - b[sortOn];
-          }).slice(offset, offset + size).map(a => this.toStoreObject(a));
+          
+          let sorted = toReturn.data.sort((a, b) => {
+            return naturalSortCaseInsensitive(a[sortOn], b[sortOn]);
+          });
+          let sliced = sorted.slice(offset, offset + size);
+          toReturn.data = sliced.map(a => this.toStoreObject(a));
         }
       } else {
         let obj = yield this.getValuesForHost(host, undefined, undefined,
@@ -375,15 +383,18 @@ StorageActors.defaults = function (typeName, observationTopics) {
         }
 
         toReturn.total = obj.length;
+
         if (offset > toReturn.total) {
           
           toReturn.offset = offset = toReturn.total;
           toReturn.data = [];
         } else {
-          toReturn.data = obj.sort((a, b) => {
-            return a[sortOn] - b[sortOn];
-          }).slice(offset, offset + size)
-            .map(object => this.toStoreObject(object));
+          
+          let sorted = obj.sort((a, b) => {
+            return naturalSortCaseInsensitive(a[sortOn], b[sortOn]);
+          });
+          let sliced = sorted.slice(offset, offset + size);
+          toReturn.data = sliced.map(object => this.toStoreObject(object));
         }
       }
 

@@ -762,6 +762,20 @@ function showColumn(id, state) {
 
 
 
+function clickColumnHeader(id) {
+  let columns = gUI.table.columns;
+  let column = columns.get(id);
+  let header = column.header;
+
+  header.click();
+}
+
+
+
+
+
+
+
 function showAllColumns(state) {
   let columns = gUI.table.columns;
 
