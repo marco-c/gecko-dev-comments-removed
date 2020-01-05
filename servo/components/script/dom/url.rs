@@ -88,42 +88,42 @@ impl URL {
 }
 
 impl URLMethods for URL {
-    // https://url.spec.whatwg.org/#dom-urlutils-hash
+    // https://url.spec.whatwg.org/#dom-url-hash
     fn Hash(&self) -> USVString {
         UrlHelper::Hash(&self.url.borrow())
     }
 
-    // https://url.spec.whatwg.org/#dom-urlutils-hash
+    // https://url.spec.whatwg.org/#dom-url-hash
     fn SetHash(&self, value: USVString) {
         UrlHelper::SetHash(&mut self.url.borrow_mut(), value);
     }
 
-    // https://url.spec.whatwg.org/#dom-urlutils-host
+    // https://url.spec.whatwg.org/#dom-url-host
     fn Host(&self) -> USVString {
         UrlHelper::Host(&self.url.borrow())
     }
 
-    // https://url.spec.whatwg.org/#dom-urlutils-host
+    // https://url.spec.whatwg.org/#dom-url-host
     fn SetHost(&self, value: USVString) {
         UrlHelper::SetHost(&mut self.url.borrow_mut(), value);
     }
 
-    // https://url.spec.whatwg.org/#dom-urlutils-hostname
+    // https://url.spec.whatwg.org/#dom-url-hostname
     fn Hostname(&self) -> USVString {
         UrlHelper::Hostname(&self.url.borrow())
     }
 
-    // https://url.spec.whatwg.org/#dom-urlutils-hostname
+    // https://url.spec.whatwg.org/#dom-url-hostname
     fn SetHostname(&self, value: USVString) {
         UrlHelper::SetHostname(&mut self.url.borrow_mut(), value);
     }
 
-    // https://url.spec.whatwg.org/#dom-urlutils-href
+    // https://url.spec.whatwg.org/#dom-url-href
     fn Href(&self) -> USVString {
         UrlHelper::Href(&self.url.borrow())
     }
 
-    // https://url.spec.whatwg.org/#dom-urlutils-href
+    // https://url.spec.whatwg.org/#dom-url-href
     fn SetHref(&self, value: USVString) -> ErrorResult {
         match parse_with_base(value, self.base.as_ref()) {
             Ok(url) => {

@@ -4,7 +4,6 @@
 
 use dom::bindings::codegen::Bindings::LocationBinding;
 use dom::bindings::codegen::Bindings::LocationBinding::LocationMethods;
-use dom::bindings::error::ErrorResult;
 use dom::bindings::global::GlobalRef;
 use dom::bindings::js::{JS, Root};
 use dom::bindings::str::USVString;
@@ -48,11 +47,11 @@ impl Location {
 
 impl LocationMethods for Location {
     
-    fn Assign(&self, url: DOMString) {
+    fn Assign(&self, url: USVString) {
         
         
         let base_url = self.window.get_url();
-        if let Ok(url) = UrlParser::new().base_url(&base_url).parse(&url) {
+        if let Ok(url) = UrlParser::new().base_url(&base_url).parse(&url.0) {
             self.window.load_url(url);
         }
     }
@@ -98,21 +97,10 @@ impl LocationMethods for Location {
     }
 
     
-    fn SetHref(&self, value: USVString) -> ErrorResult {
+    fn SetHref(&self, value: USVString) {
         if let Ok(url) = UrlParser::new().base_url(&self.window.get_url()).parse(&value.0) {
             self.window.load_url(url);
-        };
-        Ok(())
-    }
-
-    
-    fn Password(&self) -> USVString {
-        UrlHelper::Password(&self.get_url())
-    }
-
-    
-    fn SetPassword(&self, value: USVString) {
-        self.set_url_component(value, UrlHelper::SetPassword);
+        }
     }
 
     
@@ -158,15 +146,5 @@ impl LocationMethods for Location {
     
     fn SetSearch(&self, value: USVString) {
         self.set_url_component(value, UrlHelper::SetSearch);
-    }
-
-    
-    fn Username(&self) -> USVString {
-        UrlHelper::Username(&self.get_url())
-    }
-
-    
-    fn SetUsername(&self, value: USVString) {
-        self.set_url_component(value, UrlHelper::SetUsername);
     }
 }
