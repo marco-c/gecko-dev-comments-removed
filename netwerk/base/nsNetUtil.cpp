@@ -476,6 +476,18 @@ NS_GetDefaultPort(const char *scheme,
 {
   nsresult rv;
 
+  
+  
+  
+  if (strncmp(scheme, "http", 4) == 0) {
+    if (scheme[4] == 's' && scheme[5] == '\0') {
+      return 443;
+    }
+    if (scheme[4] == '\0') {
+      return 80;
+    }
+  }
+
   nsCOMPtr<nsIIOService> grip;
   net_EnsureIOService(&ioService, grip);
   if (!ioService)
