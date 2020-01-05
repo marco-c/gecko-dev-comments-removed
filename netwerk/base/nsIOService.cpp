@@ -542,7 +542,7 @@ nsIOService::GetProtocolHandler(const char* scheme, nsIProtocolHandler* *result)
             return rv;
         }
 
-#ifdef MOZ_WIDGET_GTK
+#ifdef MOZ_ENABLE_GIO
         
         
         
