@@ -48,7 +48,6 @@ class MediaResource;
 class MediaDecoder;
 class VideoFrameContainer;
 namespace dom {
-class AudioChannelAgent;
 class MediaKeys;
 class TextTrack;
 class TimeRanges;
@@ -1205,9 +1204,6 @@ protected:
   already_AddRefed<Promise> Seek(double aTime, SeekTarget::Type aSeekType, ErrorResult& aRv);
 
   
-  bool IsPlayingThroughTheAudioChannel() const;
-
-  
   void UpdateAudioChannelPlayingState(bool aForcePlaying = false);
 
   
@@ -1223,66 +1219,16 @@ protected:
   void UpdateReadyStateInternal();
 
   
-  void NotifyAudioChannelAgent(bool aPlaying);
-
-  
-  
-  
-  
-  bool MaybeCreateAudioChannelAgent();
-
-  
   bool ShouldElementBePaused();
 
   
   void AudioCaptureStreamChange(bool aCapture);
 
   
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  void PauseByAudioChannel(SuspendTypes aSuspend);
-  void BlockByAudioChannel();
-
-  void ResumeFromAudioChannel();
-  void ResumeFromAudioChannelPaused(SuspendTypes aSuspend);
-  void ResumeFromAudioChannelBlocked();
-
-  bool IsSuspendedByAudioChannel() const;
-  void SetAudioChannelSuspended(SuspendTypes aSuspend);
-
-  
   bool IsAllowedToPlay();
-  bool IsAllowedToPlayByAudioChannel();
 
   
   void MaybeDoLoad();
-
-  
-  
-  bool IsTabActivated() const;
-
-  bool IsAudible() const;
-
-  
-  
-  void MaybeNotifyMediaResumed(SuspendTypes aSuspend);
 
   class nsAsyncEventRunner;
   using nsGenericHTMLElement::DispatchEvent;
@@ -1504,7 +1450,6 @@ protected:
   };
 
   uint32_t mMuted;
-  SuspendTypes mAudioChannelSuspended;
 
   
   
@@ -1522,17 +1467,10 @@ protected:
   bool mAudioCaptured;
 
   
-  bool mAudioCapturedByWindow;
-
-  
   
   
   
   bool mPlayingBeforeSeek;
-
-  
-  
-  bool mPlayingThroughTheAudioChannelBeforeSeek;
 
   
   
@@ -1630,19 +1568,9 @@ protected:
   AudioChannel mAudioChannel;
 
   
-  float mAudioChannelVolume;
-
-  
-  bool mPlayingThroughTheAudioChannel;
-
-  
   
   
   bool mDisableVideo;
-
-  
-  
-  RefPtr<AudioChannelAgent> mAudioChannelAgent;
 
   RefPtr<TextTrackManager> mTextTrackManager;
 
@@ -1734,9 +1662,6 @@ private:
 
   
   bool mIsAudioTrackAudible;
-
-  
-  bool mAudible;
 
   Visibility mVisibilityState;
 
