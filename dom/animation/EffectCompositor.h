@@ -233,25 +233,6 @@ public:
     nsCSSPropertyID aProperty,
     const AnimationPerformanceWarning& aWarning);
 
-  
-  
-  
-  
-  static StyleAnimationValue GetBaseStyle(nsCSSPropertyID aProperty,
-                                          nsStyleContext* aStyleContext,
-                                          dom::Element& aElement,
-                                          CSSPseudoElementType aPseudoType);
-
-  
-  
-  
-  static StyleAnimationValue GetBaseStyle(nsCSSPropertyID aProperty,
-                                          const nsIFrame* aFrame);
-
-  
-  static void ClearBaseStyles(dom::Element& aElement,
-                              CSSPseudoElementType aPseudoType);
-
 private:
   ~EffectCompositor() = default;
 
