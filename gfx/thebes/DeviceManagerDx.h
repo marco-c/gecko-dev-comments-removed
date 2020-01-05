@@ -61,13 +61,6 @@ public:
   bool AlphaTextureSharingWorks();
   bool IsWARP();
 
-  
-  
-  
-  
-  
-  bool CanInitializeKeyedMutexTextures();
-
   bool CreateCompositorDevices();
   void CreateContentDevices();
 
