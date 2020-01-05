@@ -123,7 +123,6 @@ impl TextRunScanner {
 
                 let font_style = old_fragment.font_style();
 
-                
                 let compression = match old_fragment.white_space() {
                     white_space::normal => CompressWhitespaceNewline,
                     white_space::pre => CompressNone,
@@ -168,7 +167,6 @@ impl TextRunScanner {
                 let font_style = in_fragment.font_style();
                 let fontgroup = font_context.get_layout_font_group_for_style(&font_style);
 
-                
                 let compression = match in_fragment.white_space() {
                     white_space::normal => CompressWhitespaceNewline,
                     white_space::pre => CompressNone,
@@ -179,9 +177,6 @@ impl TextRunScanner {
                 
                 let mut last_whitespace_in_clump = new_whitespace;
                 let transformed_strs: Vec<String> = Vec::from_fn(self.clump.length().to_uint(), |i| {
-                    
-                    
-                    
                     let idx = CharIndex(i as int) + self.clump.begin();
                     let in_fragment = match in_fragments[idx.to_uint()].specific {
                         UnscannedTextFragment(ref text_fragment_info) => &text_fragment_info.text,
