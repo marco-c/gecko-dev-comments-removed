@@ -10,6 +10,12 @@
 
 
 namespace mozilla {
+namespace dom {
+class FontFace;
+} 
+} 
+
+namespace mozilla {
 
 
 
@@ -22,22 +28,48 @@ namespace mozilla {
 class PostTraversalTask
 {
 public:
+  static PostTraversalTask ResolveFontFaceLoadedPromise(dom::FontFace* aFontFace)
+  {
+    auto task = PostTraversalTask(Type::ResolveFontFaceLoadedPromise);
+    task.mTarget = aFontFace;
+    return task;
+  }
+
+  static PostTraversalTask RejectFontFaceLoadedPromise(dom::FontFace* aFontFace,
+                                                       nsresult aResult)
+  {
+    auto task = PostTraversalTask(Type::ResolveFontFaceLoadedPromise);
+    task.mTarget = aFontFace;
+    task.mResult = aResult;
+    return task;
+  }
+
   void Run();
 
 private:
+  
+  
+  
   enum class Type
   {
-    Dummy,
+    
+    ResolveFontFaceLoadedPromise,
+
+    
+    
+    RejectFontFaceLoadedPromise,
   };
 
   explicit PostTraversalTask(Type aType)
     : mType(aType)
     , mTarget(nullptr)
+    , mResult(NS_OK)
   {
   }
 
   Type mType;
   void* mTarget;
+  nsresult mResult;
 };
 
 } 
