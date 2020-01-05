@@ -505,7 +505,7 @@ impl ToGfxMatrix for ComputedMatrix {
 }
 
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Direction {
     Inline,
     Block

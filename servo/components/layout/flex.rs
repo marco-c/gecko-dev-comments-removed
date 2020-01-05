@@ -395,6 +395,10 @@ impl FlexFlow {
         }
     }
 
+    pub fn main_mode(&self) -> Direction {
+        self.main_mode
+    }
+
     
     
     
@@ -613,8 +617,6 @@ impl FlexFlow {
                 
                 
                 block.base.flags.set_text_align(containing_block_text_align);
-                
-                block.mark_as_flex();
 
                 let margin = block.fragment.style().logical_margin();
                 let auto_len =
@@ -808,6 +810,14 @@ impl FlexFlow {
 impl Flow for FlexFlow {
     fn class(&self) -> FlowClass {
         FlowClass::Flex
+    }
+
+    fn as_mut_flex(&mut self) -> &mut FlexFlow {
+        self
+    }
+
+    fn as_flex(&self) -> &FlexFlow {
+        self
     }
 
     fn as_block(&self) -> &BlockFlow {
