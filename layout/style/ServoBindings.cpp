@@ -1821,6 +1821,19 @@ ShutdownServo()
   Servo_Shutdown();
 }
 
+namespace mozilla {
+
+void
+AssertIsMainThreadOrServoFontMetricsLocked()
+{
+  if (!NS_IsMainThread()) {
+    MOZ_ASSERT(sServoFontMetricsLock);
+    sServoFontMetricsLock->AssertCurrentThreadOwns();
+  }
+}
+
+} 
+
 GeckoFontMetrics
 Gecko_GetFontMetrics(RawGeckoPresContextBorrowed aPresContext,
                      bool aIsVertical,
