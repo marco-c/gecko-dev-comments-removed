@@ -82,7 +82,6 @@ class VideoTrackList;
 class HTMLMediaElement : public nsGenericHTMLElement,
                          public nsIDOMHTMLMediaElement,
                          public MediaDecoderOwner,
-                         public nsIAudioChannelAgentCallback,
                          public PrincipalChangeObserver<DOMMediaStream>,
                          public SupportsWeakPtr<HTMLMediaElement>
 {
@@ -117,8 +116,6 @@ public:
 
   
   NS_DECL_NSIDOMHTMLMEDIAELEMENT
-
-  NS_DECL_NSIAUDIOCHANNELAGENTCALLBACK
 
   
   NS_DECL_ISUPPORTS_INHERITED
@@ -757,6 +754,7 @@ public:
 protected:
   virtual ~HTMLMediaElement();
 
+  class AudioChannelAgentCallback;
   class ChannelLoader;
   class ErrorSink;
   class MediaLoadListener;
@@ -1237,7 +1235,7 @@ protected:
   bool ShouldElementBePaused();
 
   
-  void AudioCaptureStreamChangeIfNeeded();
+  void AudioCaptureStreamChange(bool aCapture);
 
   
 
@@ -1743,6 +1741,11 @@ private:
   Visibility mVisibilityState;
 
   UniquePtr<ErrorSink> mErrorSink;
+
+  
+  
+  
+  RefPtr<AudioChannelAgentCallback> mAudioChannelWrapper;
 };
 
 } 
