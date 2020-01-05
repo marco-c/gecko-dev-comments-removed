@@ -94,6 +94,8 @@ WebGLContext::WebGLObjectAsJSObject(JSContext* cx,
 
 const char* InfoFrom(WebGLTexImageFunc func, WebGLTexDimensions dims);
 
+JS::Value StringValue(JSContext* cx, const nsAString& str, ErrorResult& er);
+
 } 
 
 #endif 

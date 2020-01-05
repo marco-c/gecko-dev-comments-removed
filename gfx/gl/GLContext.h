@@ -223,6 +223,8 @@ public:
         return false;
     }
 
+    virtual void GetWSIInfo(nsCString* const out) const = 0;
+
     
 
 
