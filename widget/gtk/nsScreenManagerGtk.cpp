@@ -304,26 +304,6 @@ nsScreenManagerGtk :: GetPrimaryScreen(nsIScreen * *aPrimaryScreen)
 
 } 
 
-
-
-
-
-
-
-NS_IMETHODIMP
-nsScreenManagerGtk :: GetNumberOfScreens(uint32_t *aNumberOfScreens)
-{
-  nsresult rv;
-  rv = EnsureInit();
-  if (NS_FAILED(rv)) {
-    NS_ERROR("nsScreenManagerGtk::EnsureInit() failed from GetNumberOfScreens");
-    return rv;
-  }
-  *aNumberOfScreens = mCachedScreenArray.Count();
-  return NS_OK;
-
-} 
-
 NS_IMETHODIMP
 nsScreenManagerGtk::GetSystemDefaultScale(float *aDefaultScale)
 {
