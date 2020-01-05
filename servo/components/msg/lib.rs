@@ -2,8 +2,8 @@
 
 
 
-#![feature(custom_attribute, custom_derive, plugin)]
-#![plugin(heapsize_plugin, serde_macros, plugins)]
+#![feature(custom_attribute, custom_derive, plugin, proc_macro, rustc_attrs, structural_match)]
+#![plugin(heapsize_plugin, plugins)]
 
 #![deny(unsafe_code)]
 
@@ -15,6 +15,8 @@ extern crate hyper;
 extern crate hyper_serde;
 extern crate ipc_channel;
 extern crate serde;
+#[macro_use]
+extern crate serde_derive;
 extern crate url;
 extern crate webrender_traits;
 

@@ -6,8 +6,8 @@
 
 
 
-#![feature(custom_derive, plugin)]
-#![plugin(heapsize_plugin, plugins, serde_macros)]
+#![feature(custom_derive, plugin, proc_macro, rustc_attrs, structural_match)]
+#![plugin(heapsize_plugin, plugins)]
 #![deny(missing_docs)]
 #![deny(unsafe_code)]
 
@@ -28,6 +28,8 @@ extern crate offscreen_gl_context;
 extern crate profile_traits;
 extern crate rustc_serialize;
 extern crate serde;
+#[macro_use]
+extern crate serde_derive;
 extern crate style_traits;
 extern crate time;
 extern crate url;
