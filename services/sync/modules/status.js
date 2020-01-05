@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+* License, v. 2.0. If a copy of the MPL was not distributed with this
+* file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 this.EXPORTED_SYMBOLS = ["Status"];
 
@@ -52,7 +52,6 @@ this.Status = {
     this._login = code;
 
     if (code == LOGIN_FAILED_NO_USERNAME ||
-        code == LOGIN_FAILED_NO_PASSWORD ||
         code == LOGIN_FAILED_NO_PASSPHRASE) {
       this.service = CLIENT_NOT_CONFIGURED;
     } else if (code != LOGIN_SUCCEEDED) {
@@ -94,8 +93,8 @@ this.Status = {
     }
   },
 
-  
-  
+  // Implement toString because adding a logger introduces a cyclic object
+  // value, so we can't trivially debug-print Status as JSON.
   toString: function toString() {
     return "<Status" +
            ": login: " + Status.login +
@@ -121,13 +120,13 @@ this.Status = {
   },
 
   resetSync: function resetSync() {
-    
+    // Logger setup.
     let logPref = PREFS_BRANCH + "log.logger.status";
     let logLevel = "Trace";
     try {
       logLevel = Services.prefs.getCharPref(logPref);
     } catch (ex) {
-      
+      // Use default.
     }
     this._log.level = Log.Level[logLevel];
 
@@ -140,6 +139,6 @@ this.Status = {
   }
 };
 
-
+// Initialize various status values.
 Status.resetBackoff();
 Status.resetSync();

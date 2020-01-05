@@ -1,5 +1,5 @@
-
-
+/* Any copyright is dedicated to the Public Domain.
+   http://creativecommons.org/publicdomain/zero/1.0/ */
 
 const modules = [
   "addonutils.js",
@@ -17,7 +17,6 @@ const modules = [
   "engines/tabs.js",
   "engines.js",
   "identity.js",
-  "jpakeclient.js",
   "keys.js",
   "main.js",
   "policies.js",
