@@ -64,7 +64,7 @@ do {                             \
   return NS_ERROR_ILLEGAL_VALUE; \
   } while (0)
 
-Http2Session::Http2Session(nsISocketTransport *aSocketTransport, uint32_t version)
+Http2Session::Http2Session(nsISocketTransport *aSocketTransport, uint32_t version, bool attemptingEarlyData)
   : mSocketTransport(aSocketTransport)
   , mSegmentReader(nullptr)
   , mSegmentWriter(nullptr)
@@ -112,6 +112,7 @@ Http2Session::Http2Session(nsISocketTransport *aSocketTransport, uint32_t versio
   , mWaitingForSettingsAck(false)
   , mGoAwayOnPush(false)
   , mUseH2Deps(false)
+  , mAttemptingEarlyData(attemptingEarlyData)
 {
   MOZ_ASSERT(PR_GetCurrentThread() == gSocketThread);
 
@@ -501,6 +502,12 @@ Http2Session::SetWriteCallbacks()
 void
 Http2Session::RealignOutputQueue()
 {
+  if (mAttemptingEarlyData) {
+    
+    
+    return;
+  }
+
   mOutputQueueUsed -= mOutputQueueSent;
   memmove(mOutputQueueBuffer.get(),
           mOutputQueueBuffer.get() + mOutputQueueSent,
@@ -518,6 +525,14 @@ Http2Session::FlushOutputQueue()
   uint32_t countRead;
   uint32_t avail = mOutputQueueUsed - mOutputQueueSent;
 
+  if (!avail && mAttemptingEarlyData) {
+    
+    
+    
+    
+    return;
+  }
+
   rv = mSegmentReader->
     OnReadSegment(mOutputQueueBuffer.get() + mOutputQueueSent, avail,
                   &countRead);
@@ -528,13 +543,17 @@ Http2Session::FlushOutputQueue()
   if (NS_FAILED(rv))
     return;
 
+  mOutputQueueSent += countRead;
+
+  if (mAttemptingEarlyData) {
+    return;
+  }
+
   if (countRead == avail) {
     mOutputQueueUsed = 0;
     mOutputQueueSent = 0;
     return;
   }
-
-  mOutputQueueSent += countRead;
 
   
   
@@ -552,6 +571,12 @@ Http2Session::DontReuse()
   mShouldGoAway = true;
   if (!mStreamTransactionHash.Count())
     Close(NS_OK);
+}
+
+uint32_t
+Http2Session::SpdyVersion()
+{
+  return HTTP_VERSION_2;
 }
 
 uint32_t
@@ -2344,7 +2369,36 @@ Http2Session::ReadSegmentsAgain(nsAHttpSegmentReader *reader,
           this));
     FlushOutputQueue();
     SetWriteCallbacks();
-    return NS_BASE_STREAM_WOULD_BLOCK;
+    if (mAttemptingEarlyData) {
+      
+      *countRead = mOutputQueueUsed - mOutputQueueSent;
+    }
+    return *countRead ? NS_OK : NS_BASE_STREAM_WOULD_BLOCK;
+  }
+
+  uint32_t earlyDataUsed = 0;
+  if (mAttemptingEarlyData) {
+    if (!stream->Do0RTT()) {
+      LOG3(("Http2Session %p will not get early data from Http2Stream %p 0x%X",
+            this, stream, stream->StreamID()));
+      FlushOutputQueue();
+      SetWriteCallbacks();
+      
+      *countRead = mOutputQueueUsed - mOutputQueueSent;
+      return *countRead ? NS_OK : NS_BASE_STREAM_WOULD_BLOCK;
+    }
+
+    if (!m0RTTStreams.Contains(stream->StreamID())) {
+      m0RTTStreams.AppendElement(stream->StreamID());
+    }
+
+    
+    
+    count -= (mOutputQueueUsed - mOutputQueueSent);
+
+    
+    
+    earlyDataUsed = mOutputQueueUsed - mOutputQueueSent;
   }
 
   LOG3(("Http2Session %p will write from Http2Stream %p 0x%X "
@@ -2352,6 +2406,13 @@ Http2Session::ReadSegmentsAgain(nsAHttpSegmentReader *reader,
         stream->RequestBlockedOnRead(), stream->BlockedOnRwin()));
 
   rv = stream->ReadSegments(this, count, countRead);
+
+  if (earlyDataUsed) {
+    
+    
+    
+    *countRead += earlyDataUsed;
+  }
 
   
   
@@ -2904,6 +2965,58 @@ Http2Session::WriteSegments(nsAHttpSegmentWriter *writer,
 }
 
 nsresult
+Http2Session::Finish0RTT(bool aRestart, bool aAlpnChanged)
+{
+  MOZ_ASSERT(mAttemptingEarlyData);
+  LOG3(("Http2Session::Finish0RTT %p aRestart=%d aAlpnChanged=%d", this,
+        aRestart, aAlpnChanged));
+
+  for (size_t i = 0; i < m0RTTStreams.Length(); ++i) {
+    
+    
+    
+    
+    
+    
+    Http2Stream *stream = mStreamIDHash.Get(m0RTTStreams[i]);
+    if (stream) {
+      stream->Finish0RTT(aAlpnChanged, aAlpnChanged);
+    }
+  }
+
+  if (aRestart) {
+    
+    if (aAlpnChanged) {
+      
+      
+
+      
+      mGoAwayID = 0;
+      mCleanShutdown = true;
+
+      
+      
+      
+      Close(NS_ERROR_NET_RESET);
+    } else {
+      
+      
+      mOutputQueueSent = 0;
+    }
+  } else {
+    
+    
+    ResumeRecv();
+  }
+
+  mAttemptingEarlyData = false;
+  m0RTTStreams.Clear();
+  RealignOutputQueue();
+
+  return NS_OK;
+}
+
+nsresult
 Http2Session::ProcessConnectedPush(Http2Stream *pushConnectedStream,
                                    nsAHttpSegmentWriter * writer,
                                    uint32_t count, uint32_t *countWritten)
@@ -3111,7 +3224,9 @@ Http2Session::Close(nsresult aReason)
   } else {
     goAwayReason = INTERNAL_ERROR;
   }
-  GenerateGoAway(goAwayReason);
+  if (!mAttemptingEarlyData) {
+    GenerateGoAway(goAwayReason);
+  }
   mConnection = nullptr;
   mSegmentReader = nullptr;
   mSegmentWriter = nullptr;
@@ -3213,7 +3328,7 @@ Http2Session::OnReadSegment(const char *buf,
 nsresult
 Http2Session::CommitToSegmentSize(uint32_t count, bool forceCommitment)
 {
-  if (mOutputQueueUsed)
+  if (mOutputQueueUsed && !mAttemptingEarlyData)
     FlushOutputQueue();
 
   
@@ -3533,11 +3648,17 @@ Http2Session::ALPNCallback(nsISupports *securityInfo)
 nsresult
 Http2Session::ConfirmTLSProfile()
 {
-  if (mTLSProfileConfirmed)
+  if (mTLSProfileConfirmed) {
     return NS_OK;
+  }
 
   LOG3(("Http2Session::ConfirmTLSProfile %p mConnection=%p\n",
         this, mConnection.get()));
+
+  if (mAttemptingEarlyData) {
+    LOG3(("Http2Session::ConfirmTLSProfile %p temporarily passing due to early data\n", this));
+    return NS_OK;
+  }
 
   if (!gHttpHandler->EnforceHttp2TlsProfile()) {
     LOG3(("Http2Session::ConfirmTLSProfile %p passed due to configuration bypass\n", this));
