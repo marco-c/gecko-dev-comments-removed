@@ -112,6 +112,7 @@ class CreateElementTransaction;
 class DeleteNodeTransaction;
 class DeleteTextTransaction;
 class EditAggregateTransaction;
+class EditTransactionBase;
 class ErrorResult;
 class HTMLEditor;
 class InsertNodeTransaction;
@@ -323,14 +324,24 @@ protected:
              int32_t* aOffset,
              int32_t* aLength);
 
-  nsresult CreateTxnForDeleteInsertionPoint(
-             nsRange* aRange,
-             EDirection aAction,
-             EditAggregateTransaction* aTransaction,
-             nsINode** aNode,
-             int32_t* aOffset,
-             int32_t* aLength);
+  
 
+
+
+
+
+
+
+
+
+
+
+  already_AddRefed<EditTransactionBase>
+    CreateTxnForDeleteRange(nsRange* aRangeToDelete,
+                            EDirection aAction,
+                            nsINode** aRemovingNode,
+                            int32_t* aOffset,
+                            int32_t* aLength);
 
   
 
