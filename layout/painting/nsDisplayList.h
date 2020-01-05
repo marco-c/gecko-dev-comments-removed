@@ -4284,10 +4284,8 @@ public:
 
 
 
-
   static PrerenderDecision ShouldPrerenderTransformedContent(nsDisplayListBuilder* aBuilder,
-                                                             nsIFrame* aFrame,
-                                                             nsRect* aDirtyRect);
+                                                             nsIFrame* aFrame);
   bool CanUseAsyncAnimations(nsDisplayListBuilder* aBuilder) override;
 
   bool MayBeAnimated(nsDisplayListBuilder* aBuilder);
