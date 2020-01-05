@@ -560,6 +560,18 @@ TextureHost::DeserializeReadLock(const ReadLockDescriptor& aDesc,
 }
 
 void
+TextureHost::SetReadLock(TextureReadLock* aReadLock)
+{
+  if (!aReadLock) {
+    return;
+  }
+  
+  
+  MOZ_ASSERT(!mReadLock);
+  mReadLock = aReadLock;
+}
+
+void
 TextureHost::ReadUnlock()
 {
   if (mReadLock) {

@@ -12,6 +12,7 @@
 #include "mozilla/Attributes.h"         
 #include "mozilla/layers/ISurfaceAllocator.h"  
 #include "mozilla/layers/LayersMessages.h"  
+#include "mozilla/layers/TextureClient.h"
 #include "CompositableHost.h"
 
 namespace mozilla {
@@ -24,6 +25,8 @@ namespace layers {
 class CompositableParentManager : public HostIPCAllocator
 {
 public:
+  typedef InfallibleTArray<ReadLockInit> ReadLockArray;
+
   CompositableParentManager() {}
 
   void DestroyActor(const OpDestroy& aOp);
@@ -41,6 +44,9 @@ public:
     const TextureInfo& aInfo);
   RefPtr<CompositableHost> FindCompositable(const CompositableHandle& aHandle);
 
+  bool AddReadLocks(ReadLockArray&& aReadLocks);
+  TextureReadLock* FindReadLock(const ReadLockHandle& aLockHandle);
+
 protected:
   
 
@@ -55,6 +61,22 @@ protected:
 
 
   std::map<uint64_t, RefPtr<CompositableHost>> mCompositables;
+  std::map<uint64_t, RefPtr<TextureReadLock>> mReadLocks;
+
+};
+
+struct AutoClearReadLocks {
+  explicit AutoClearReadLocks(std::map<uint64_t, RefPtr<TextureReadLock>>& aReadLocks)
+    : mReadLocks(aReadLocks)
+
+  {}
+
+  ~AutoClearReadLocks()
+  {
+    mReadLocks.clear();
+  }
+
+  std::map<uint64_t, RefPtr<TextureReadLock>>& mReadLocks;
 };
 
 } 
