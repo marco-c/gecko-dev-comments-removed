@@ -2647,22 +2647,6 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
 
     return this.layoutActor;
   },
-
-  
-
-
-
-
-
-  getOffsetParent: function (domnode) {
-    let offsetParent = domnode.rawNode.offsetParent;
-
-    if (!offsetParent || CssLogic.getComputedStyle(offsetParent).position === "static") {
-      return null;
-    }
-
-    return this._ref(offsetParent);
-  },
 });
 
 
