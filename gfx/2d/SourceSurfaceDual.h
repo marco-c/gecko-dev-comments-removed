@@ -33,6 +33,16 @@ public:
   virtual already_AddRefed<DataSourceSurface> GetDataSurface() {
     return mA->GetDataSurface();
   }
+
+  SourceSurface* GetFirstSurface() {
+    MOZ_ASSERT(mA->GetType() == mB->GetType());
+    return mA;
+  }
+
+  bool SameSurfaceTypes() {
+    return mA->GetType() == mB->GetType();
+  }
+
 private:
   friend class DualSurface;
   friend class DualPattern;
