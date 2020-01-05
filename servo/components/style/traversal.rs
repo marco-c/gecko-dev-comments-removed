@@ -395,7 +395,9 @@ fn resolve_style_internal<E, F>(context: &mut StyleContext<E>,
         }
 
         
+        context.thread_local.begin_element(element, &data);
         element.match_and_cascade(context, &mut data, StyleSharingBehavior::Disallow);
+        context.thread_local.end_element(element);
 
         
         

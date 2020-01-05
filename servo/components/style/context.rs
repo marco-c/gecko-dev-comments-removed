@@ -5,7 +5,7 @@
 
 #![deny(missing_docs)]
 
-use animation::Animation;
+use animation::{Animation, PropertyAnimation};
 use app_units::Au;
 use bloom::StyleBloom;
 use data::ElementData;
@@ -103,13 +103,16 @@ impl<'a> SharedStyleContext<'a> {
 
 
 
-struct CurrentElementInfo {
+pub struct CurrentElementInfo {
     
     
     
     element: OpaqueNode,
     
     is_initial_style: bool,
+    
+    #[allow(dead_code)]
+    pub possibly_expired_animations: Vec<PropertyAnimation>,
 }
 
 
@@ -276,7 +279,7 @@ pub struct ThreadLocalStyleContext<E: TElement> {
     
     pub statistics: TraversalStatistics,
     
-    current_element_info: Option<CurrentElementInfo>,
+    pub current_element_info: Option<CurrentElementInfo>,
 }
 
 impl<E: TElement> ThreadLocalStyleContext<E> {
@@ -298,6 +301,7 @@ impl<E: TElement> ThreadLocalStyleContext<E> {
         self.current_element_info = Some(CurrentElementInfo {
             element: element.as_node().opaque(),
             is_initial_style: !data.has_styles(),
+            possibly_expired_animations: Vec::new(),
         });
     }
 
