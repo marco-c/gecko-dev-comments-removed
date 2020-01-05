@@ -4777,36 +4777,36 @@ nsGridContainerFrame::Tracks::StretchFlexibleTracks(
           base = flexLength;
         }
       }
-      if (applyMinMax) {
-        applyMinMax = false;
+    }
+    if (applyMinMax) {
+      applyMinMax = false;
+      
+      
+      
+      
+      
+      nscoord newSize = 0;
+      for (auto& sz : mSizes) {
+        newSize += sz.mBase;
+      }
+      const auto sumOfGridGaps = SumOfGridGaps();
+      newSize += sumOfGridGaps;
+      if (newSize > maxSize) {
+        aAvailableSize = maxSize;
+      } else if (newSize < minSize) {
+        aAvailableSize = minSize;
+      }
+      if (aAvailableSize != NS_UNCONSTRAINEDSIZE) {
+        aAvailableSize = std::max(0, aAvailableSize - sumOfGridGaps);
         
-        
-        
-        
-        
-        nscoord newSize = 0;
-        for (auto& sz : mSizes) {
-          newSize += sz.mBase;
+        if (origSizes.isSome()) {
+          mSizes = Move(*origSizes);
+          origSizes.reset();
+        } 
+        if (aAvailableSize == 0) {
+          break; 
         }
-        const auto sumOfGridGaps = SumOfGridGaps();
-        newSize += sumOfGridGaps;
-        if (newSize > maxSize) {
-          aAvailableSize = maxSize;
-        } else if (newSize < minSize) {
-          aAvailableSize = minSize;
-        }
-        if (aAvailableSize != NS_UNCONSTRAINEDSIZE) {
-          aAvailableSize = std::max(0, aAvailableSize - sumOfGridGaps);
-          
-          if (origSizes.isSome()) {
-            mSizes = Move(*origSizes);
-            origSizes.reset();
-          } 
-          if (aAvailableSize == 0) {
-            break; 
-          }
-          continue;
-        }
+        continue;
       }
     }
     break;
