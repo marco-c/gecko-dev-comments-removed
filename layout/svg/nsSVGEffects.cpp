@@ -942,6 +942,60 @@ ResolveFragmentOrURL(nsIFrame* aFrame, const FragmentOrURL* aFragmentOrURL)
   return aFragmentOrURL->Resolve(baseURI);
 }
 
+static already_AddRefed<nsIURI>
+ResolveURLUsingLocalRef(nsIFrame* aFrame, const css::URLValue* aURL)
+{
+  MOZ_ASSERT(aFrame);
+
+  if (!aURL) {
+    return nullptr;
+  }
+
+  
+  if (!aURL->IsLocalRef()) {
+    nsCOMPtr<nsIURI> result = aURL->GetURI();
+    return result.forget();
+  }
+
+  
+  
+  nsIContent* content = aFrame->GetContent();
+  nsCOMPtr<nsIURI> baseURI = content->OwnerDoc()->GetDocumentURI();
+
+  if (content->IsInAnonymousSubtree()) {
+    nsIContent* bindingParent = content->GetBindingParent();
+    nsCOMPtr<nsIURI> originalURI;
+
+    
+    
+    
+    
+    
+    
+    if (bindingParent) {
+      if (content->IsAnonymousContentInSVGUseSubtree()) {
+        SVGUseElement* useElement = static_cast<SVGUseElement*>(bindingParent);
+        originalURI = useElement->GetSourceDocURI();
+      } else {
+        nsXBLBinding* binding = bindingParent->GetXBLBinding();
+        if (binding) {
+          originalURI = binding->GetSourceDocURI();
+        } else {
+          MOZ_ASSERT(content->IsInNativeAnonymousSubtree(),
+                     "an non-native anonymous tree which is not from "
+                     "an XBL binding?");
+        }
+      }
+
+      if (originalURI && aURL->EqualsExceptRef(originalURI)) {
+        baseURI = originalURI;
+      }
+    }
+  }
+
+  return aURL->ResolveLocalRef(baseURI);
+}
+
 already_AddRefed<nsIURI>
 nsSVGEffects::GetMarkerURI(nsIFrame* aFrame,
                            FragmentOrURL nsStyleSVG::* aMarker)
@@ -955,8 +1009,8 @@ nsSVGEffects::GetClipPathURI(nsIFrame* aFrame)
   const nsStyleSVGReset* svgResetStyle = aFrame->StyleSVGReset();
   MOZ_ASSERT(svgResetStyle->mClipPath.GetType() == StyleShapeSourceType::URL);
 
-  FragmentOrURL* url = svgResetStyle->mClipPath.GetURL();
-  return ResolveFragmentOrURL(aFrame, url);
+  css::URLValue* url = svgResetStyle->mClipPath.GetURL();
+  return ResolveURLUsingLocalRef(aFrame, url);
 }
 
 already_AddRefed<nsIURI>
