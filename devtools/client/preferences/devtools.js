@@ -359,12 +359,7 @@ pref("devtools.editor.autocomplete", true);
 pref("devtools.telemetry.tools.opened.version", "{}");
 
 
-
-#ifdef RELEASE_OR_BETA
-pref("devtools.jsonview.enabled", false);
-#else
 pref("devtools.jsonview.enabled", true);
-#endif
 
 
 pref("devtools.responsive.html.enabled", true);
