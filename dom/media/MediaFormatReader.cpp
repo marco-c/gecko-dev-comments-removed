@@ -1078,6 +1078,7 @@ MediaFormatReader::MediaFormatReader(AbstractMediaDecoder* aDecoder,
            Preferences::GetUint("media.video-max-decode-error", 2))
   , mDemuxer(new DemuxerProxy(aDemuxer))
   , mDemuxerInitDone(false)
+  , mPendingNotifyDataArrived(false)
   , mLastReportedNumDecodedFrames(0)
   , mPreviousDecodedKeyframeTime_us(sNoPreviousDecodedKeyframe)
   , mInitDone(false)
@@ -2878,9 +2879,7 @@ MediaFormatReader::NotifyDataArrived()
 
   if (mNotifyDataArrivedPromise.Exists()) {
     
-    RefPtr<nsIRunnable> task(
-        NewRunnableMethod(this, &MediaFormatReader::NotifyDataArrived));
-    OwnerThread()->Dispatch(task.forget());
+    mPendingNotifyDataArrived = true;
     return;
   }
 
@@ -2891,6 +2890,10 @@ MediaFormatReader::NotifyDataArrived()
              self->mNotifyDataArrivedPromise.Complete();
              self->UpdateBuffered();
              self->NotifyTrackDemuxers();
+             if (self->mPendingNotifyDataArrived) {
+               self->mPendingNotifyDataArrived = false;
+               self->NotifyDataArrived();
+             }
            },
            [self]() { self->mNotifyDataArrivedPromise.Complete(); })
     ->Track(mNotifyDataArrivedPromise);
