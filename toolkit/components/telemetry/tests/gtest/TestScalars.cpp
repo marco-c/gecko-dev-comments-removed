@@ -9,6 +9,7 @@
 #include "mozilla/Unused.h"
 #include "nsJSUtils.h" 
 #include "nsITelemetry.h"
+#include "nsThreadUtils.h"
 #include "Telemetry.h"
 #include "TelemetryFixture.h"
 
@@ -292,4 +293,29 @@ TEST_F(TelemetryTestFixture, KeyedScalarBoolean) {
   CheckKeyedBoolScalar(kScalarName, "key1", cx.GetJSContext(), scalarsSnapshot, false);
   CheckKeyedBoolScalar(kScalarName, "key2", cx.GetJSContext(), scalarsSnapshot, true);
   CheckNumberOfProperties(kScalarName, cx.GetJSContext(), scalarsSnapshot, 2);
+}
+
+TEST_F(TelemetryTestFixture, NonMainThreadAdd) {
+  AutoJSContextWithGlobal cx(mCleanGlobal);
+
+  Unused << mTelemetry->ClearScalars();
+
+  
+  nsCOMPtr<nsIRunnable> runnable = NS_NewRunnableFunction([]() -> void {
+    Telemetry::ScalarAdd(Telemetry::ScalarID::TELEMETRY_TEST_UNSIGNED_INT_KIND, 37);
+  });
+
+  
+  nsCOMPtr<nsIThread> testingThread;
+  nsresult rv =
+    NS_NewNamedThread("Test thread", getter_AddRefs(testingThread), runnable);
+  ASSERT_EQ(rv, NS_OK);
+
+  
+  testingThread->Shutdown();
+
+  
+  JS::RootedValue scalarsSnapshot(cx.GetJSContext());
+  GetScalarsSnapshot(false, cx.GetJSContext(), &scalarsSnapshot);
+  CheckUintScalar("telemetry.test.unsigned_int_kind", cx.GetJSContext(), scalarsSnapshot, 37);
 }

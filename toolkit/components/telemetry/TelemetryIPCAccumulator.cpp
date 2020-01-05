@@ -26,6 +26,7 @@ using mozilla::Telemetry::KeyedAccumulation;
 using mozilla::Telemetry::ScalarActionType;
 using mozilla::Telemetry::ScalarAction;
 using mozilla::Telemetry::KeyedScalarAction;
+using mozilla::Telemetry::ScalarVariant;
 
 
 
@@ -134,8 +135,8 @@ TelemetryIPCAccumulator::AccumulateChildKeyedHistogram(mozilla::Telemetry::ID aI
 }
 
 void
-TelemetryIPCAccumulator::RecordChildScalarAction(mozilla::Telemetry::ScalarID aId, uint32_t aKind,
-                                                 ScalarActionType aAction, nsIVariant* aValue)
+TelemetryIPCAccumulator::RecordChildScalarAction(mozilla::Telemetry::ScalarID aId,
+                                                 ScalarActionType aAction, const ScalarVariant& aValue)
 {
   StaticMutexAutoLock locker(gTelemetryIPCAccumulatorMutex);
   
@@ -143,14 +144,15 @@ TelemetryIPCAccumulator::RecordChildScalarAction(mozilla::Telemetry::ScalarID aI
     gChildScalarsActions = new nsTArray<ScalarAction>();
   }
   
-  gChildScalarsActions->AppendElement(ScalarAction{aId, aKind, aAction, aValue});
+  gChildScalarsActions->AppendElement(ScalarAction{aId, aAction, Some(aValue)});
   ArmIPCTimer(locker);
 }
 
 void
 TelemetryIPCAccumulator::RecordChildKeyedScalarAction(mozilla::Telemetry::ScalarID aId,
-                                                      const nsAString& aKey, uint32_t aKind,
-                                                      ScalarActionType aAction, nsIVariant* aValue)
+                                                      const nsAString& aKey,
+                                                      ScalarActionType aAction,
+                                                      const ScalarVariant& aValue)
 {
   StaticMutexAutoLock locker(gTelemetryIPCAccumulatorMutex);
   
@@ -159,7 +161,7 @@ TelemetryIPCAccumulator::RecordChildKeyedScalarAction(mozilla::Telemetry::Scalar
   }
   
   gChildKeyedScalarsActions->AppendElement(
-    KeyedScalarAction{aId, aKind, aAction, NS_ConvertUTF16toUTF8(aKey), aValue});
+    KeyedScalarAction{aId, aAction, NS_ConvertUTF16toUTF8(aKey), Some(aValue)});
   ArmIPCTimer(locker);
 }
 
