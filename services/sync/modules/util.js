@@ -14,8 +14,8 @@ Cu.import("resource://services-sync/constants.js");
 Cu.import("resource://gre/modules/Preferences.jsm");
 Cu.import("resource://gre/modules/Services.jsm", this);
 Cu.import("resource://gre/modules/XPCOMUtils.jsm", this);
-Cu.import("resource://gre/modules/osfile.jsm", this);
-Cu.import("resource://gre/modules/Task.jsm", this);
+XPCOMUtils.defineLazyModuleGetter(this, "OS",
+                                  "resource://gre/modules/osfile.jsm");
 
 
 XPCOMUtils.defineLazyGetter(this, "FxAccountsCommon", function() {
@@ -344,7 +344,7 @@ this.Utils = {
 
 
 
-  jsonLoad: Task.async(function*(filePath, that, callback) {
+  async jsonLoad(filePath, that, callback) {
     let path = Utils.jsonFilePath(filePath);
 
     if (that._log) {
@@ -354,7 +354,7 @@ this.Utils = {
     let json;
 
     try {
-      json = yield CommonUtils.readJSON(path);
+      json = await CommonUtils.readJSON(path);
     } catch (e) {
       if (e instanceof OS.File.Error && e.becauseNoSuchFile) {
         
@@ -368,7 +368,7 @@ this.Utils = {
       callback.call(that, json);
     }
     return json;
-  }),
+  },
 
   
 
@@ -386,14 +386,14 @@ this.Utils = {
 
 
 
-  jsonSave: Task.async(function*(filePath, that, obj, callback) {
+  async jsonSave(filePath, that, obj, callback) {
     let path = OS.Path.join(OS.Constants.Path.profileDir, "weave",
                             ...(filePath + ".json").split("/"));
     let dir = OS.Path.dirname(path);
     let error = null;
 
     try {
-      yield OS.File.makeDir(dir, { from: OS.Constants.Path.profileDir });
+      await OS.File.makeDir(dir, { from: OS.Constants.Path.profileDir });
 
       if (that._log) {
         that._log.trace("Saving json to disk: " + path);
@@ -401,7 +401,7 @@ this.Utils = {
 
       let json = typeof obj == "function" ? obj.call(that) : obj;
 
-      yield CommonUtils.writeJSON(json, path);
+      await CommonUtils.writeJSON(json, path);
     } catch (e) {
       error = e
     }
@@ -409,7 +409,7 @@ this.Utils = {
     if (typeof callback == "function") {
       callback.call(that, error);
     }
-  }),
+  },
 
   
 
