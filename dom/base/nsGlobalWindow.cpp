@@ -7776,7 +7776,19 @@ nsGlobalWindow::PrintOuter(ErrorResult& aError)
 
         nsXPIDLString printerName;
         printSettings->GetPrinterName(getter_Copies(printerName));
-        if (printerName.IsEmpty()) {
+
+        bool shouldGetDefaultPrinterName = printerName.IsEmpty();
+#ifdef MOZ_X11
+        
+        
+        
+        
+        
+        if (!XRE_IsParentProcess()) {
+          shouldGetDefaultPrinterName = false;
+        }
+#endif
+        if (shouldGetDefaultPrinterName) {
           printSettingsService->GetDefaultPrinterName(getter_Copies(printerName));
           printSettings->SetPrinterName(printerName);
         }

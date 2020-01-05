@@ -129,14 +129,24 @@ PrintingParent::ShowPrintDialog(PBrowserParent* aParent,
   rv = settings->SetPrintSilent(printSilently);
   NS_ENSURE_SUCCESS(rv, rv);
 
+  nsXPIDLString printerName;
+  settings->GetPrinterName(getter_Copies(printerName));
+#ifdef MOZ_X11
+  
+  
+  
+  
+  if (printerName.IsEmpty()) {
+    mPrintSettingsSvc->GetDefaultPrinterName(getter_Copies(printerName));
+    settings->SetPrinterName(printerName);
+  }
+  mPrintSettingsSvc->InitPrintSettingsFromPrinter(printerName, settings);
+#endif
+
   
   
   if (isPrintPreview || printSilently ||
       Preferences::GetBool("print.always_print_silent", printSilently)) {
-    nsXPIDLString printerName;
-    rv = settings->GetPrinterName(getter_Copies(printerName));
-    NS_ENSURE_SUCCESS(rv, rv);
-
     settings->SetIsInitializedFromPrinter(false);
     mPrintSettingsSvc->InitPrintSettingsFromPrinter(printerName, settings);
   } else {
