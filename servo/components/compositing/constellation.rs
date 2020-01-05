@@ -54,8 +54,8 @@ use style::viewport::ViewportConstraints;
 use url::Url;
 use util::cursor::Cursor;
 use util::geometry::PagePx;
-use util::opts;
 use util::task::spawn_named;
+use util::{opts, prefs};
 
 
 
@@ -891,7 +891,7 @@ impl<LTF: LayoutTaskFactory, STF: ScriptTaskFactory> Constellation<LTF, STF> {
                                    containing_pipeline_id: PipelineId,
                                    subpage_id: SubpageId,
                                    event: MozBrowserEvent) {
-        assert!(opts::experimental_enabled());
+        assert!(prefs::get_pref("dom.mozbrowser.enabled", false));
 
         
         
@@ -1373,7 +1373,7 @@ impl<LTF: LayoutTaskFactory, STF: ScriptTaskFactory> Constellation<LTF, STF> {
 
     
     fn trigger_mozbrowserlocationchange(&self, pipeline_id: PipelineId) {
-        if opts::experimental_enabled() {
+        if prefs::get_pref("dom.mozbrowser.enabled", false) {
             
             let event_info = {
                 let pipeline = self.pipeline(pipeline_id);

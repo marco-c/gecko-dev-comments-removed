@@ -16,7 +16,7 @@ use dom::uievent::{UIEvent, UIEventTypeId};
 use dom::window::Window;
 use std::cell::Cell;
 use std::default::Default;
-use util::opts;
+use util::prefs;
 use util::str::DOMString;
 
 #[dom_struct]
@@ -115,63 +115,63 @@ impl MouseEvent {
 }
 
 impl MouseEventMethods for MouseEvent {
-    
+    // https://w3c.github.io/uievents/#widl-MouseEvent-screenX
     fn ScreenX(&self) -> i32 {
         self.screen_x.get()
     }
 
-    
+    // https://w3c.github.io/uievents/#widl-MouseEvent-screenY
     fn ScreenY(&self) -> i32 {
         self.screen_y.get()
     }
 
-    
+    // https://w3c.github.io/uievents/#widl-MouseEvent-clientX
     fn ClientX(&self) -> i32 {
         self.client_x.get()
     }
 
-    
+    // https://w3c.github.io/uievents/#widl-MouseEvent-clientY
     fn ClientY(&self) -> i32 {
         self.client_y.get()
     }
 
-    
+    // https://w3c.github.io/uievents/#widl-MouseEvent-ctrlKey
     fn CtrlKey(&self) -> bool {
         self.ctrl_key.get()
     }
 
-    
+    // https://w3c.github.io/uievents/#widl-MouseEvent-shiftKey
     fn ShiftKey(&self) -> bool {
         self.shift_key.get()
     }
 
-    
+    // https://w3c.github.io/uievents/#widl-MouseEvent-altKey
     fn AltKey(&self) -> bool {
         self.alt_key.get()
     }
 
-    
+    // https://w3c.github.io/uievents/#widl-MouseEvent-metaKey
     fn MetaKey(&self) -> bool {
         self.meta_key.get()
     }
 
-    
+    // https://w3c.github.io/uievents/#widl-MouseEvent-button
     fn Button(&self) -> i16 {
         self.button.get()
     }
 
-    
+    // https://w3c.github.io/uievents/#widl-MouseEvent-relatedTarget
     fn GetRelatedTarget(&self) -> Option<Root<EventTarget>> {
         self.related_target.get().map(Root::from_rooted)
     }
 
-    
-    
-    
-    
-    
+    // See discussion at:
+    //  - https://github.com/servo/servo/issues/6643
+    //  - https://bugzilla.mozilla.org/show_bug.cgi?id=1186125
+    // This returns the same result as current gecko.
+    // https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent/which
     fn Which(&self) -> i32 {
-        if opts::experimental_enabled() {
+        if prefs::get_pref("dom.mouseevent.which.enabled", false) {
             (self.button.get() + 1) as i32
         } else {
             0

@@ -31,7 +31,7 @@ use url::Url;
 use util;
 use util::geometry::{PagePx, ViewportPx};
 use util::ipc::OptionalIpcSender;
-use util::opts;
+use util::prefs;
 
 
 pub struct Pipeline {
@@ -217,11 +217,11 @@ impl Pipeline {
     pub fn exit(&self, exit_type: PipelineExitType) {
         debug!("pipeline {:?} exiting", self.id);
 
-        
-        
+        // Script task handles shutting down layout, and layout handles shutting down the painter.
+        // For now, if the script task has failed, we give up on clean shutdown.
         if self.script_chan.send(ConstellationControlMsg::ExitPipeline(self.id, exit_type)).is_ok() {
-            
-            
+            // Wait until all slave tasks have terminated and run destructors
+            // NOTE: We don't wait for script task as we don't always own it
             let _ = self.paint_shutdown_port.recv();
             let _ = self.layout_shutdown_port.recv();
         }
@@ -269,7 +269,7 @@ impl Pipeline {
     pub fn trigger_mozbrowser_event(&self,
                                      subpage_id: SubpageId,
                                      event: MozBrowserEvent) {
-        assert!(opts::experimental_enabled());
+        assert!(prefs::get_pref("dom.mozbrowser.enabled", false));
 
         let event = ConstellationControlMsg::MozBrowserEvent(self.id,
                                                              subpage_id,
