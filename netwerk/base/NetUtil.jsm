@@ -246,52 +246,6 @@ this.NetUtil = {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     newChannel: function NetUtil_newChannel(aWhatToLoad, aOriginCharset, aBaseURI)
     {
         

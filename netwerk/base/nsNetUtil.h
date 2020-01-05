@@ -132,47 +132,6 @@ nsresult NS_NewFileURI(nsIURI **result,
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 nsresult NS_NewChannelInternal(nsIChannel           **outChannel,
                                nsIURI                *aUri,
                                nsINode               *aLoadingNode,
