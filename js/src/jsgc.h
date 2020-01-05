@@ -119,6 +119,8 @@ IsNurseryAllocable(AllocKind kind)
         false,     
         false,     
         false,     
+        false,     
+        false,     
     };
     JS_STATIC_ASSERT(JS_ARRAY_LENGTH(map) == size_t(AllocKind::LIMIT));
     return map[size_t(kind)];
@@ -152,6 +154,8 @@ IsBackgroundFinalized(AllocKind kind)
         true,      
         true,      
         false,     
+        true,      
+        true,      
         true,      
         false,     
         true,      

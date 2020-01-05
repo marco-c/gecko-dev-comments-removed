@@ -350,7 +350,8 @@ AtomizeAndCopyChars(ExclusiveContext* cx, const CharT* tbchars, size_t length, P
         return nullptr;
     }
 
-    JSAtom* atom = flat->morphAtomizedStringIntoAtom();
+    JSAtom* atom = flat->morphAtomizedStringIntoAtom(lookup.hash);
+    MOZ_ASSERT(atom->hash() == lookup.hash);
 
     
     

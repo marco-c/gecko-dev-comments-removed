@@ -147,6 +147,9 @@ static const size_t UINT32_CHAR_BUFFER_LENGTH = sizeof("4294967295") - 1;
 
 
 
+
+
+
 class JSString : public js::gc::TenuredCell
 {
   protected:
@@ -769,14 +772,8 @@ class JSFlatString : public JSLinearString
 
 
 
-    MOZ_ALWAYS_INLINE JSAtom* morphAtomizedStringIntoAtom() {
-        d.u1.flags |= ATOM_BIT;
-        return &asAtom();
-    }
-    MOZ_ALWAYS_INLINE JSAtom* morphAtomizedStringIntoPermanentAtom() {
-        d.u1.flags |= PERMANENT_ATOM_MASK;
-        return &asAtom();
-    }
+    MOZ_ALWAYS_INLINE JSAtom* morphAtomizedStringIntoAtom(js::HashNumber hash);
+    MOZ_ALWAYS_INLINE JSAtom* morphAtomizedStringIntoPermanentAtom(js::HashNumber hash);
 
     inline void finalize(js::FreeOp* fop);
 
@@ -988,6 +985,9 @@ class JSAtom : public JSFlatString
         d.u1.flags |= PERMANENT_ATOM_MASK;
     }
 
+    inline js::HashNumber hash() const;
+    inline void initHash(js::HashNumber hash);
+
 #ifdef DEBUG
     void dump(FILE* fp);
     void dump();
@@ -996,6 +996,83 @@ class JSAtom : public JSFlatString
 
 static_assert(sizeof(JSAtom) == sizeof(JSString),
               "string subclasses must be binary-compatible with JSString");
+
+namespace js {
+
+class NormalAtom : public JSAtom
+{
+  protected: 
+    HashNumber hash_;
+    uint32_t padding_; 
+
+  public:
+    HashNumber hash() const {
+        return hash_;
+    }
+    void initHash(HashNumber hash) {
+        hash_ = hash;
+    }
+};
+
+static_assert(sizeof(NormalAtom) == sizeof(JSString) + sizeof(uint64_t),
+              "NormalAtom must have size of a string + HashNumber, "
+              "aligned to gc::CellSize");
+
+class FatInlineAtom : public JSAtom
+{
+  protected: 
+    char inlineStorage_[sizeof(JSFatInlineString) - sizeof(JSString)];
+    HashNumber hash_;
+    uint32_t padding_; 
+
+  public:
+    HashNumber hash() const {
+        return hash_;
+    }
+    void initHash(HashNumber hash) {
+        hash_ = hash;
+    }
+};
+
+static_assert(sizeof(FatInlineAtom) == sizeof(JSFatInlineString) + sizeof(uint64_t),
+              "FatInlineAtom must have size of a fat inline string + HashNumber, "
+              "aligned to gc::CellSize");
+
+} 
+
+inline js::HashNumber
+JSAtom::hash() const
+{
+    if (isFatInline())
+        return static_cast<const js::FatInlineAtom*>(this)->hash();
+    return static_cast<const js::NormalAtom*>(this)->hash();
+}
+
+inline void
+JSAtom::initHash(js::HashNumber hash)
+{
+    if (isFatInline())
+        return static_cast<js::FatInlineAtom*>(this)->initHash(hash);
+    return static_cast<js::NormalAtom*>(this)->initHash(hash);
+}
+
+MOZ_ALWAYS_INLINE JSAtom*
+JSFlatString::morphAtomizedStringIntoAtom(js::HashNumber hash)
+{
+    d.u1.flags |= ATOM_BIT;
+    JSAtom* atom = &asAtom();
+    atom->initHash(hash);
+    return atom;
+}
+
+MOZ_ALWAYS_INLINE JSAtom*
+JSFlatString::morphAtomizedStringIntoPermanentAtom(js::HashNumber hash)
+{
+    d.u1.flags |= PERMANENT_ATOM_MASK;
+    JSAtom* atom = &asAtom();
+    atom->initHash(hash);
+    return atom;
+}
 
 namespace js {
 

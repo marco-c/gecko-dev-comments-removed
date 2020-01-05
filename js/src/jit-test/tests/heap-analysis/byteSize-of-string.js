@@ -45,35 +45,37 @@ function tByteSize(obj) {
 
 
 
-assertEq(tByteSize(""),                                                 s(16, 24)); 
-assertEq(tByteSize("1"),                                                s(16, 24)); 
-assertEq(tByteSize("1234567"),                                          s(16, 24)); 
-assertEq(tByteSize("12345678"),                                         s(32, 24)); 
-assertEq(tByteSize("123456789.12345"),                                  s(32, 24)); 
-assertEq(tByteSize("123456789.123456"),                                 s(32, 32)); 
-assertEq(tByteSize("123456789.123456789.123"),                          s(32, 32)); 
-assertEq(tByteSize("123456789.123456789.1234"),                         s(48, 56)); 
-assertEq(tByteSize("123456789.123456789.123456789.1"),                  s(48, 56)); 
-assertEq(tByteSize("123456789.123456789.123456789.12"),                 s(64, 72)); 
+
+
+assertEq(tByteSize(""),                                                 s(24, 32)); 
+assertEq(tByteSize("1"),                                                s(24, 32)); 
+assertEq(tByteSize("1234567"),                                          s(24, 32)); 
+assertEq(tByteSize("12345678"),                                         s(40, 32)); 
+assertEq(tByteSize("123456789.12345"),                                  s(40, 32)); 
+assertEq(tByteSize("123456789.123456"),                                 s(40, 40)); 
+assertEq(tByteSize("123456789.123456789.123"),                          s(40, 40)); 
+assertEq(tByteSize("123456789.123456789.1234"),                         s(56, 64)); 
+assertEq(tByteSize("123456789.123456789.123456789.1"),                  s(56, 64)); 
+assertEq(tByteSize("123456789.123456789.123456789.12"),                 s(72, 80)); 
 
 
 
 
-assertEq(tByteSize("千"),						s(16, 24)); 
-assertEq(tByteSize("千早"),    						s(16, 24)); 
-assertEq(tByteSize("千早ぶ"),    					s(16, 24)); 
-assertEq(tByteSize("千早ぶる"),    					s(32, 24)); 
-assertEq(tByteSize("千早ぶる神"),    					s(32, 24)); 
-assertEq(tByteSize("千早ぶる神代"),					s(32, 24)); 
-assertEq(tByteSize("千早ぶる神代も"),					s(32, 24)); 
-assertEq(tByteSize("千早ぶる神代もき"),					s(32, 32)); 
-assertEq(tByteSize("千早ぶる神代もきかず龍"),				s(32, 32)); 
-assertEq(tByteSize("千早ぶる神代もきかず龍田"),    			s(48, 56)); 
-assertEq(tByteSize("千早ぶる神代もきかず龍田川 か"),    			s(48, 56)); 
-assertEq(tByteSize("千早ぶる神代もきかず龍田川 から"),    			s(64, 72)); 
-assertEq(tByteSize("千早ぶる神代もきかず龍田川 からくれなゐに水く"),    	s(64, 72)); 
-assertEq(tByteSize("千早ぶる神代もきかず龍田川 からくれなゐに水くく"),    	s(80, 88)); 
-assertEq(tByteSize("千早ぶる神代もきかず龍田川 からくれなゐに水くくるとは"),	s(80, 88)); 
+assertEq(tByteSize("千"),						s(24, 32)); 
+assertEq(tByteSize("千早"),    						s(24, 32)); 
+assertEq(tByteSize("千早ぶ"),    					s(24, 32)); 
+assertEq(tByteSize("千早ぶる"),    					s(40, 32)); 
+assertEq(tByteSize("千早ぶる神"),    					s(40, 32)); 
+assertEq(tByteSize("千早ぶる神代"),					s(40, 32)); 
+assertEq(tByteSize("千早ぶる神代も"),					s(40, 32)); 
+assertEq(tByteSize("千早ぶる神代もき"),					s(40, 40)); 
+assertEq(tByteSize("千早ぶる神代もきかず龍"),				s(40, 40)); 
+assertEq(tByteSize("千早ぶる神代もきかず龍田"),    			s(56, 64)); 
+assertEq(tByteSize("千早ぶる神代もきかず龍田川 か"),    			s(56, 64)); 
+assertEq(tByteSize("千早ぶる神代もきかず龍田川 から"),    			s(72, 80)); 
+assertEq(tByteSize("千早ぶる神代もきかず龍田川 からくれなゐに水く"),    	s(72, 80)); 
+assertEq(tByteSize("千早ぶる神代もきかず龍田川 からくれなゐに水くく"),    	s(88, 96)); 
+assertEq(tByteSize("千早ぶる神代もきかず龍田川 からくれなゐに水くくるとは"),	s(88, 96)); 
 
 
 
