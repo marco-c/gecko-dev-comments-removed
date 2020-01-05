@@ -4506,8 +4506,12 @@ nsHttpChannel::OpenCacheInputStream(nsICacheEntry* cacheEntry, bool startBufferi
             
             mAvailableCachedAltDataType = mPreferredCachedAltDataType;
             
-            
             mCachedResponseHead->SetContentLength(-1);
+            
+            int64_t altDataSize;
+            if (NS_SUCCEEDED(cacheEntry->GetAltDataSize(&altDataSize))) {
+                mCachedResponseHead->SetContentLength(altDataSize);
+            }
         }
     }
 

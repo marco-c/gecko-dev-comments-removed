@@ -91,6 +91,8 @@ public:
   void Kill() { mKill = true; }
   nsresult   ThrowMemoryCachedData();
 
+  nsresult GetAltDataSize(int64_t *aSize);
+
   
   nsresult GetElement(const char *aKey, char **_retval);
   nsresult SetElement(const char *aKey, const char *aValue);
