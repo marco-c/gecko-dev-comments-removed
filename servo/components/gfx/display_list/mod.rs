@@ -20,7 +20,7 @@ use azure::azure_hl::Color;
 use euclid::approxeq::ApproxEq;
 use euclid::num::Zero;
 use euclid::rect::TypedRect;
-use euclid::{Matrix2D, Matrix4, Point2D, Rect, SideOffsets2D, Size2D};
+use euclid::{Matrix2D, Matrix4D, Point2D, Rect, SideOffsets2D, Size2D};
 use fnv::FnvHasher;
 use gfx_traits::{LayerId, ScrollPolicy};
 use heapsize::HeapSizeOf;
@@ -346,7 +346,7 @@ impl DisplayList {
     
     pub fn draw_item_at_index_into_context(&self,
                                            paint_context: &mut PaintContext,
-                                           transform: &Matrix4,
+                                           transform: &Matrix4D<f32>,
                                            index: usize) {
         let old_transform = paint_context.draw_target.get_transform();
         paint_context.draw_target.set_transform(
@@ -386,7 +386,7 @@ impl DisplayList {
     
     pub fn draw_into_context<'a>(&self,
                                  paint_context: &mut PaintContext,
-                                 transform: &Matrix4,
+                                 transform: &Matrix4D<f32>,
                                  stacking_context_id: StackingContextId,
                                  start: usize,
                                  end: usize) {
@@ -403,7 +403,7 @@ impl DisplayList {
                                           stacking_context: &StackingContext,
                                           traversal: &mut DisplayListTraversal<'a>,
                                           paint_context: &mut PaintContext,
-                                          transform: &Matrix4,
+                                          transform: &Matrix4D<f32>,
                                           tile_rect: Option<Rect<Au>>) {
         for child in stacking_context.children.iter() {
             while let Some(item) = traversal.advance(stacking_context) {
@@ -431,7 +431,7 @@ impl DisplayList {
                                  stacking_context: &StackingContext,
                                  traversal: &mut DisplayListTraversal<'a>,
                                  paint_context: &mut PaintContext,
-                                 transform: &Matrix4) {
+                                 transform: &Matrix4D<f32>) {
 
         if stacking_context.context_type != StackingContextType::Real {
             self.draw_stacking_context_contents(stacking_context,
@@ -511,7 +511,7 @@ impl DisplayList {
     }
 }
 
-fn transformed_tile_rect(tile_rect: TypedRect<ScreenPx, usize>, transform: &Matrix4) -> Rect<Au> {
+fn transformed_tile_rect(tile_rect: TypedRect<ScreenPx, usize>, transform: &Matrix4D<f32>) -> Rect<Au> {
     
     
     
@@ -568,10 +568,10 @@ pub struct StackingContext {
     pub blend_mode: mix_blend_mode::T,
 
     
-    pub transform: Matrix4,
+    pub transform: Matrix4D<f32>,
 
     
-    pub perspective: Matrix4,
+    pub perspective: Matrix4D<f32>,
 
     
     pub establishes_3d_context: bool,
@@ -596,8 +596,8 @@ impl StackingContext {
                z_index: i32,
                filters: filter::T,
                blend_mode: mix_blend_mode::T,
-               transform: Matrix4,
-               perspective: Matrix4,
+               transform: Matrix4D<f32>,
+               perspective: Matrix4D<f32>,
                establishes_3d_context: bool,
                scrolls_overflow_area: bool,
                layer_info: Option<LayerInfo>)
@@ -671,9 +671,9 @@ impl StackingContext {
         let origin_x = self.bounds.origin.x.to_f32_px();
         let origin_y = self.bounds.origin.y.to_f32_px();
 
-        let transform = Matrix4::identity().translate(origin_x,
-                                                      origin_y,
-                                                      0.0)
+        let transform = Matrix4D::identity().translate(origin_x,
+                                                       origin_y,
+                                                       0.0)
                                            .mul(&self.transform);
         let transform_2d = Matrix2D::new(transform.m11, transform.m12,
                                          transform.m21, transform.m22,

@@ -23,7 +23,7 @@ mod paint_listener;
 
 pub use paint_listener::PaintListener;
 use azure::azure_hl::Color;
-use euclid::matrix::Matrix4;
+use euclid::Matrix4D;
 use euclid::rect::Rect;
 use msg::constellation_msg::{Failure, PipelineId};
 use std::fmt::{self, Debug, Formatter};
@@ -132,9 +132,9 @@ pub struct LayerProperties {
     
     pub scroll_policy: ScrollPolicy,
     
-    pub transform: Matrix4,
+    pub transform: Matrix4D<f32>,
     
-    pub perspective: Matrix4,
+    pub perspective: Matrix4D<f32>,
     
     
     pub subpage_pipeline_id: Option<PipelineId>,
