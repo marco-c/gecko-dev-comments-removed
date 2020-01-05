@@ -1022,9 +1022,7 @@ ShutdownXPCOM(nsIServiceManager* aServMgr)
   
   
   
-  if (PseudoStack* stack = profiler_get_pseudo_stack()) {
-    stack->sampleContext(nullptr);
-  }
+  profiler_clear_js_context();
 #endif
 
   if (sInitializedJS) {
