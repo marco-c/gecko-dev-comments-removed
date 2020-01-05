@@ -35,13 +35,13 @@ using mozilla::Swap;
 static void*
 ReturnAddressFromFP(void* fp)
 {
-    return reinterpret_cast<AsmJSFrame*>(fp)->returnAddress;
+    return reinterpret_cast<Frame*>(fp)->returnAddress;
 }
 
 static uint8_t*
 CallerFPFromFP(void* fp)
 {
-    return reinterpret_cast<AsmJSFrame*>(fp)->callerFP;
+    return reinterpret_cast<Frame*>(fp)->callerFP;
 }
 
 FrameIterator::FrameIterator()
@@ -401,7 +401,7 @@ wasm::GenerateFunctionPrologue(MacroAssembler& masm, unsigned framePushed, const
     masm.nopAlign(CodeAlignment);
     offsets->nonProfilingEntry = masm.currentOffset();
     PushRetAddr(masm);
-    masm.subFromStackPtr(Imm32(framePushed + AsmJSFrameBytesAfterReturnAddress));
+    masm.subFromStackPtr(Imm32(framePushed + FrameBytesAfterReturnAddress));
 
     
     masm.bind(&body);
@@ -430,7 +430,7 @@ wasm::GenerateFunctionEpilogue(MacroAssembler& masm, unsigned framePushed, FuncO
     offsets->profilingJump = masm.nopPatchableToNearJump().offset();
 
     
-    masm.addToStackPtr(Imm32(framePushed + AsmJSFrameBytesAfterReturnAddress));
+    masm.addToStackPtr(Imm32(framePushed + FrameBytesAfterReturnAddress));
     masm.ret();
     masm.setFramePushed(0);
 

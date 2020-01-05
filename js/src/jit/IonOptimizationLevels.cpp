@@ -55,7 +55,7 @@ OptimizationInfo::initNormalOptimizationInfo()
 }
 
 void
-OptimizationInfo::initAsmjsOptimizationInfo()
+OptimizationInfo::initWasmOptimizationInfo()
 {
     
     
@@ -63,7 +63,7 @@ OptimizationInfo::initAsmjsOptimizationInfo()
     
     initNormalOptimizationInfo();
 
-    level_ = OptimizationLevel::AsmJS;
+    level_ = OptimizationLevel::Wasm;
 
     ama_ = true;
     autoTruncate_ = false;
@@ -119,7 +119,7 @@ OptimizationInfo::compilerWarmUpThreshold(JSScript* script, jsbytecode* pc) cons
 OptimizationLevelInfo::OptimizationLevelInfo()
 {
     infos_[OptimizationLevel::Normal].initNormalOptimizationInfo();
-    infos_[OptimizationLevel::AsmJS].initAsmjsOptimizationInfo();
+    infos_[OptimizationLevel::Wasm].initWasmOptimizationInfo();
 
 #ifdef DEBUG
     OptimizationLevel level = firstLevel();
@@ -139,7 +139,7 @@ OptimizationLevelInfo::nextLevel(OptimizationLevel level) const
       case OptimizationLevel::DontCompile:
         return OptimizationLevel::Normal;
       case OptimizationLevel::Normal:
-      case OptimizationLevel::AsmJS:
+      case OptimizationLevel::Wasm:
       case OptimizationLevel::Count:;
     }
     MOZ_CRASH("Unknown optimization level.");

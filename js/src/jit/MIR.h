@@ -382,8 +382,8 @@ class AliasSet {
         FixedSlot         = 1 << 4, 
         DOMProperty       = 1 << 5, 
         FrameArgument     = 1 << 6, 
-        AsmJSGlobalVar    = 1 << 7, 
-        AsmJSHeap         = 1 << 8, 
+        WasmGlobalVar     = 1 << 7, 
+        WasmHeap          = 1 << 8, 
         TypedArrayLength  = 1 << 9,
         Last              = TypedArrayLength,
         Any               = Last | (Last - 1),
@@ -13585,8 +13585,8 @@ class MWasmLoad
         
         
         if (access_.isAtomic())
-            return AliasSet::Store(AliasSet::AsmJSHeap);
-        return AliasSet::Load(AliasSet::AsmJSHeap);
+            return AliasSet::Store(AliasSet::WasmHeap);
+        return AliasSet::Load(AliasSet::WasmHeap);
     }
 };
 
@@ -13613,7 +13613,7 @@ class MWasmStore
     }
 
     AliasSet getAliasSet() const override {
-        return AliasSet::Store(AliasSet::AsmJSHeap);
+        return AliasSet::Store(AliasSet::WasmHeap);
     }
 };
 
@@ -13669,7 +13669,7 @@ class MAsmJSLoadHeap
 
     bool congruentTo(const MDefinition* ins) const override;
     AliasSet getAliasSet() const override {
-        return AliasSet::Load(AliasSet::AsmJSHeap);
+        return AliasSet::Load(AliasSet::WasmHeap);
     }
     AliasType mightAlias(const MDefinition* def) const override;
 };
@@ -13693,7 +13693,7 @@ class MAsmJSStoreHeap
     MDefinition* value() const { return getOperand(1); }
 
     AliasSet getAliasSet() const override {
-        return AliasSet::Store(AliasSet::AsmJSHeap);
+        return AliasSet::Store(AliasSet::WasmHeap);
     }
 };
 
@@ -13724,7 +13724,7 @@ class MAsmJSCompareExchangeHeap
     MDefinition* tls() const { return getOperand(3); }
 
     AliasSet getAliasSet() const override {
-        return AliasSet::Store(AliasSet::AsmJSHeap);
+        return AliasSet::Store(AliasSet::WasmHeap);
     }
 };
 
@@ -13754,7 +13754,7 @@ class MAsmJSAtomicExchangeHeap
     MDefinition* tls() const { return getOperand(2); }
 
     AliasSet getAliasSet() const override {
-        return AliasSet::Store(AliasSet::AsmJSHeap);
+        return AliasSet::Store(AliasSet::WasmHeap);
     }
 };
 
@@ -13787,7 +13787,7 @@ class MAsmJSAtomicBinopHeap
     MDefinition* tls() const { return getOperand(2); }
 
     AliasSet getAliasSet() const override {
-        return AliasSet::Store(AliasSet::AsmJSHeap);
+        return AliasSet::Store(AliasSet::WasmHeap);
     }
 };
 
@@ -13815,7 +13815,7 @@ class MWasmLoadGlobalVar : public MNullaryInstruction
     MDefinition* foldsTo(TempAllocator& alloc) override;
 
     AliasSet getAliasSet() const override {
-        return isConstant_ ? AliasSet::None() : AliasSet::Load(AliasSet::AsmJSGlobalVar);
+        return isConstant_ ? AliasSet::None() : AliasSet::Load(AliasSet::WasmGlobalVar);
     }
 
     AliasType mightAlias(const MDefinition* def) const override;
@@ -13839,7 +13839,7 @@ class MWasmStoreGlobalVar
     MDefinition* value() const { return getOperand(0); }
 
     AliasSet getAliasSet() const override {
-        return AliasSet::Store(AliasSet::AsmJSGlobalVar);
+        return AliasSet::Store(AliasSet::WasmGlobalVar);
     }
 };
 

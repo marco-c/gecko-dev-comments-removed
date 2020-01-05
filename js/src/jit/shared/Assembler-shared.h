@@ -149,7 +149,7 @@ struct Imm64
 
 #ifdef DEBUG
 static inline bool
-IsCompilingAsmJS()
+IsCompilingWasm()
 {
     
     return GetJitContext()->compartment == nullptr;
@@ -165,42 +165,42 @@ struct ImmPtr
     {
         
         
-        MOZ_ASSERT(!IsCompilingAsmJS());
+        MOZ_ASSERT(!IsCompilingWasm());
     }
 
     template <class R>
     explicit ImmPtr(R (*pf)())
       : value(JS_FUNC_TO_DATA_PTR(void*, pf))
     {
-        MOZ_ASSERT(!IsCompilingAsmJS());
+        MOZ_ASSERT(!IsCompilingWasm());
     }
 
     template <class R, class A1>
     explicit ImmPtr(R (*pf)(A1))
       : value(JS_FUNC_TO_DATA_PTR(void*, pf))
     {
-        MOZ_ASSERT(!IsCompilingAsmJS());
+        MOZ_ASSERT(!IsCompilingWasm());
     }
 
     template <class R, class A1, class A2>
     explicit ImmPtr(R (*pf)(A1, A2))
       : value(JS_FUNC_TO_DATA_PTR(void*, pf))
     {
-        MOZ_ASSERT(!IsCompilingAsmJS());
+        MOZ_ASSERT(!IsCompilingWasm());
     }
 
     template <class R, class A1, class A2, class A3>
     explicit ImmPtr(R (*pf)(A1, A2, A3))
       : value(JS_FUNC_TO_DATA_PTR(void*, pf))
     {
-        MOZ_ASSERT(!IsCompilingAsmJS());
+        MOZ_ASSERT(!IsCompilingWasm());
     }
 
     template <class R, class A1, class A2, class A3, class A4>
     explicit ImmPtr(R (*pf)(A1, A2, A3, A4))
       : value(JS_FUNC_TO_DATA_PTR(void*, pf))
     {
-        MOZ_ASSERT(!IsCompilingAsmJS());
+        MOZ_ASSERT(!IsCompilingWasm());
     }
 
 };
@@ -236,7 +236,7 @@ class ImmGCPtr
                       !CurrentThreadIsIonCompilingSafeForMinorGC());
 
         
-        MOZ_ASSERT(!IsCompilingAsmJS());
+        MOZ_ASSERT(!IsCompilingWasm());
     }
 
   private:
@@ -252,7 +252,7 @@ struct AbsoluteAddress
     explicit AbsoluteAddress(const void* addr)
       : addr(const_cast<void*>(addr))
     {
-        MOZ_ASSERT(!IsCompilingAsmJS());
+        MOZ_ASSERT(!IsCompilingWasm());
     }
 
     AbsoluteAddress offset(ptrdiff_t delta) {
@@ -661,12 +661,16 @@ class CodeLocationLabel
     }
 };
 
+} 
+
+namespace wasm {
 
 
 
 
 
-struct AsmJSFrame
+
+struct Frame
 {
     
     
@@ -678,24 +682,21 @@ struct AsmJSFrame
     
     void* returnAddress;
 };
-static_assert(sizeof(AsmJSFrame) == 2 * sizeof(void*), "?!");
-static const uint32_t AsmJSFrameBytesAfterReturnAddress = sizeof(void*);
+
+static_assert(sizeof(Frame) == 2 * sizeof(void*), "?!");
+static const uint32_t FrameBytesAfterReturnAddress = sizeof(void*);
 
 
 
 
-struct AsmJSAbsoluteAddress
+struct SymbolicAccess
 {
-    AsmJSAbsoluteAddress(CodeOffset patchAt, wasm::SymbolicAddress target)
+    SymbolicAccess(jit::CodeOffset patchAt, SymbolicAddress target)
       : patchAt(patchAt), target(target) {}
 
-    CodeOffset patchAt;
-    wasm::SymbolicAddress target;
+    jit::CodeOffset patchAt;
+    SymbolicAddress target;
 };
-
-} 
-
-namespace wasm {
 
 class MemoryAccessDesc
 {
@@ -829,7 +830,7 @@ class AssemblerShared
     wasm::MemoryPatchVector memoryPatches_;
     wasm::BoundsCheckVector boundsChecks_;
     wasm::GlobalAccessVector globalAccesses_;
-    Vector<AsmJSAbsoluteAddress, 0, SystemAllocPolicy> asmJSAbsoluteAddresses_;
+    Vector<wasm::SymbolicAccess, 0, SystemAllocPolicy> wasmSymbolicAccesses_;
 
   protected:
     Vector<CodeLabel, 0, SystemAllocPolicy> codeLabels_;
@@ -865,7 +866,7 @@ class AssemblerShared
     {
         
         
-        wasm::CallSite cs(desc, retAddr.offset(), framePushed + sizeof(AsmJSFrame));
+        wasm::CallSite cs(desc, retAddr.offset(), framePushed + sizeof(wasm::Frame));
         enoughMemory_ &= callSites_.emplaceBack(cs, mozilla::Forward<Args>(args)...);
     }
     wasm::CallSiteAndTargetVector& callSites() { return callSites_; }
@@ -912,9 +913,9 @@ class AssemblerShared
     void append(wasm::GlobalAccess access) { enoughMemory_ &= globalAccesses_.append(access); }
     const wasm::GlobalAccessVector& globalAccesses() const { return globalAccesses_; }
 
-    void append(AsmJSAbsoluteAddress link) { enoughMemory_ &= asmJSAbsoluteAddresses_.append(link); }
-    size_t numAsmJSAbsoluteAddresses() const { return asmJSAbsoluteAddresses_.length(); }
-    AsmJSAbsoluteAddress asmJSAbsoluteAddress(size_t i) const { return asmJSAbsoluteAddresses_[i]; }
+    void append(wasm::SymbolicAccess link) { enoughMemory_ &= wasmSymbolicAccesses_.append(link); }
+    size_t numWasmSymbolicAccesses() const { return wasmSymbolicAccesses_.length(); }
+    wasm::SymbolicAccess wasmSymbolicAccess(size_t i) const { return wasmSymbolicAccesses_[i]; }
 
     static bool canUseInSingleByteInstruction(Register reg) { return true; }
 
@@ -963,10 +964,10 @@ class AssemblerShared
         for (; i < globalAccesses_.length(); i++)
             globalAccesses_[i].patchAt.offsetBy(delta);
 
-        i = asmJSAbsoluteAddresses_.length();
-        enoughMemory_ &= asmJSAbsoluteAddresses_.appendAll(other.asmJSAbsoluteAddresses_);
-        for (; i < asmJSAbsoluteAddresses_.length(); i++)
-            asmJSAbsoluteAddresses_[i].patchAt.offsetBy(delta);
+        i = wasmSymbolicAccesses_.length();
+        enoughMemory_ &= wasmSymbolicAccesses_.appendAll(other.wasmSymbolicAccesses_);
+        for (; i < wasmSymbolicAccesses_.length(); i++)
+            wasmSymbolicAccesses_[i].patchAt.offsetBy(delta);
 
         i = codeLabels_.length();
         enoughMemory_ &= codeLabels_.appendAll(other.codeLabels_);

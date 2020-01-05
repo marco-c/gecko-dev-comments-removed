@@ -168,7 +168,7 @@ CodeGenerator::CodeGenerator(MIRGenerator* gen, LIRGraph* graph, MacroAssembler*
 
 CodeGenerator::~CodeGenerator()
 {
-    MOZ_ASSERT_IF(!gen->compilingWasm(), masm.numAsmJSAbsoluteAddresses() == 0);
+    MOZ_ASSERT_IF(!gen->compilingWasm(), masm.numWasmSymbolicAccesses() == 0);
     js_delete(scriptCounts_);
 }
 
@@ -9241,7 +9241,7 @@ bool
 CodeGenerator::generateWasm(wasm::SigIdDesc sigId, wasm::TrapOffset trapOffset,
                             wasm::FuncOffsets* offsets)
 {
-    JitSpew(JitSpew_Codegen, "# Emitting asm.js code");
+    JitSpew(JitSpew_Codegen, "# Emitting wasm code");
 
     wasm::GenerateFunctionPrologue(masm, frameSize(), sigId, trapOffset, offsets);
 

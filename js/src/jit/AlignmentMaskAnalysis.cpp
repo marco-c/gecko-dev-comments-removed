@@ -40,7 +40,7 @@ AnalyzeAsmHeapAddress(MDefinition* ptr, MIRGraph& graph)
     
     
 
-    MOZ_ASSERT(IsCompilingAsmJS());
+    MOZ_ASSERT(IsCompilingWasm());
 
     if (!ptr->isBitAnd())
         return;

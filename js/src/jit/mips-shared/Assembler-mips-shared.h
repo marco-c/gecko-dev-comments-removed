@@ -110,18 +110,18 @@ static constexpr FloatRegister ScratchSimd128Reg = InvalidFloatReg;
 
 
 
-static const int32_t AsmJSGlobalRegBias = 32768;
+static const int32_t WasmGlobalRegBias = 32768;
 
 
-static constexpr Register AsmJSIonExitRegCallee = t0;
-static constexpr Register AsmJSIonExitRegE0 = a0;
-static constexpr Register AsmJSIonExitRegE1 = a1;
+static constexpr Register WasmIonExitRegCallee = t0;
+static constexpr Register WasmIonExitRegE0 = a0;
+static constexpr Register WasmIonExitRegE1 = a1;
 
 
 
-static constexpr Register AsmJSIonExitRegD0 = a0;
-static constexpr Register AsmJSIonExitRegD1 = a1;
-static constexpr Register AsmJSIonExitRegD2 = t0;
+static constexpr Register WasmIonExitRegD0 = a0;
+static constexpr Register WasmIonExitRegD1 = a1;
+static constexpr Register WasmIonExitRegD2 = t0;
 
 
 static constexpr Register RegExpMatcherRegExpReg = CallTempReg0;

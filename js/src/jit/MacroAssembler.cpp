@@ -1595,7 +1595,7 @@ void
 MacroAssembler::assumeUnreachable(const char* output)
 {
 #ifdef DEBUG
-    if (!IsCompilingAsmJS()) {
+    if (!IsCompilingWasm()) {
         AllocatableRegisterSet regs(RegisterSet::Volatile());
         LiveRegisterSet save(regs.asLiveSet());
         PushRegsInMask(save);
@@ -2883,7 +2883,7 @@ MacroAssembler::wasmEmitTrapOutOfLineCode()
             setFramePushed(site.framePushed);
 
             
-            size_t alreadyPushed = sizeof(AsmJSFrame) + framePushed();
+            size_t alreadyPushed = sizeof(wasm::Frame) + framePushed();
             size_t toPush = ABIArgGenerator().stackBytesConsumedSoFar();
             if (size_t dec = StackDecrementForCall(ABIStackAlignment, alreadyPushed, toPush))
                 reserveStack(dec);

@@ -4249,7 +4249,7 @@ LIRGenerator::visitWasmReturn(MWasmReturn* ins)
     else if (rval->type() == MIRType::Int32)
         lir->setOperand(0, useFixed(rval, ReturnReg));
     else
-        MOZ_CRASH("Unexpected asm.js return type");
+        MOZ_CRASH("Unexpected wasm return type");
 
     
     MDefinition* tlsPtr = ins->getOperand(1);

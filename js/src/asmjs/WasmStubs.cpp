@@ -34,14 +34,14 @@ using mozilla::ArrayLength;
 static void
 AssertStackAlignment(MacroAssembler& masm, uint32_t alignment, uint32_t addBeforeAssert = 0)
 {
-    MOZ_ASSERT((sizeof(AsmJSFrame) + masm.framePushed() + addBeforeAssert) % alignment == 0);
+    MOZ_ASSERT((sizeof(Frame) + masm.framePushed() + addBeforeAssert) % alignment == 0);
     masm.assertStackAlignment(alignment, addBeforeAssert);
 }
 
 static unsigned
 StackDecrementForCall(MacroAssembler& masm, uint32_t alignment, unsigned bytesToPush)
 {
-    return StackDecrementForCall(alignment, sizeof(AsmJSFrame) + masm.framePushed(), bytesToPush);
+    return StackDecrementForCall(alignment, sizeof(Frame) + masm.framePushed(), bytesToPush);
 }
 
 template <class VectorT>
@@ -157,10 +157,10 @@ wasm::GenerateEntry(MacroAssembler& masm, const FuncDefExport& func)
     
     
     
-    masm.andToStackPtr(Imm32(~(AsmJSStackAlignment - 1)));
+    masm.andToStackPtr(Imm32(~(WasmStackAlignment - 1)));
 
     
-    masm.reserveStack(AlignBytes(StackArgBytes(func.sig().args()), AsmJSStackAlignment));
+    masm.reserveStack(AlignBytes(StackArgBytes(func.sig().args()), WasmStackAlignment));
 
     
     
@@ -263,7 +263,7 @@ wasm::GenerateEntry(MacroAssembler& masm, const FuncDefExport& func)
     }
 
     
-    masm.assertStackAlignment(AsmJSStackAlignment);
+    masm.assertStackAlignment(WasmStackAlignment);
     masm.call(CallSiteDesc(CallSiteDesc::FuncDef), func.funcDefIndex());
 
     
@@ -461,7 +461,7 @@ wasm::GenerateInterpExit(MacroAssembler& masm, const FuncImport& fi, uint32_t fu
     GenerateExitPrologue(masm, framePushed, ExitReason::ImportInterp, &offsets);
 
     
-    unsigned offsetToCallerStackArgs = sizeof(AsmJSFrame) + masm.framePushed();
+    unsigned offsetToCallerStackArgs = sizeof(Frame) + masm.framePushed();
     Register scratch = ABINonArgReturnReg0;
     FillArgumentArray(masm, sig.args(), argOffset, offsetToCallerStackArgs, scratch, ToValue(false));
 
@@ -581,7 +581,7 @@ wasm::GenerateJitExit(MacroAssembler& masm, const FuncImport& fi, Label* throwLa
     
     
     
-    static_assert(AsmJSStackAlignment >= JitStackAlignment, "subsumes");
+    static_assert(WasmStackAlignment >= JitStackAlignment, "subsumes");
     unsigned sizeOfRetAddr = sizeof(void*);
     unsigned jitFrameBytes = 3 * sizeof(void*) + (1 + sig.args().length()) * sizeof(Value);
     unsigned totalJitFrameBytes = sizeOfRetAddr + jitFrameBytes + SavedTlsReg;
@@ -623,7 +623,7 @@ wasm::GenerateJitExit(MacroAssembler& masm, const FuncImport& fi, Label* throwLa
     argOffset += sizeof(Value);
 
     
-    unsigned offsetToCallerStackArgs = jitFramePushed + sizeof(AsmJSFrame);
+    unsigned offsetToCallerStackArgs = jitFramePushed + sizeof(Frame);
     FillArgumentArray(masm, sig.args(), argOffset, offsetToCallerStackArgs, scratch, ToValue(true));
     argOffset += sig.args().length() * sizeof(Value);
     MOZ_ASSERT(argOffset == jitFrameBytes);
@@ -639,9 +639,9 @@ wasm::GenerateJitExit(MacroAssembler& masm, const FuncImport& fi, Label* throwLa
         
         
         
-        MOZ_ASSERT(callee == AsmJSIonExitRegCallee);
-        Register cx = AsmJSIonExitRegE0;
-        Register act = AsmJSIonExitRegE1;
+        MOZ_ASSERT(callee == WasmIonExitRegCallee);
+        Register cx = WasmIonExitRegE0;
+        Register act = WasmIonExitRegE1;
 
         
         masm.movePtr(SymbolicAddress::Context, cx);
@@ -666,11 +666,11 @@ wasm::GenerateJitExit(MacroAssembler& masm, const FuncImport& fi, Label* throwLa
         
         
         
-        MOZ_ASSERT(JSReturnReg_Data == AsmJSIonExitRegReturnData);
-        MOZ_ASSERT(JSReturnReg_Type == AsmJSIonExitRegReturnType);
-        Register cx = AsmJSIonExitRegD0;
-        Register act = AsmJSIonExitRegD1;
-        Register tmp = AsmJSIonExitRegD2;
+        MOZ_ASSERT(JSReturnReg_Data == WasmIonExitRegReturnData);
+        MOZ_ASSERT(JSReturnReg_Type == WasmIonExitRegReturnType);
+        Register cx = WasmIonExitRegD0;
+        Register act = WasmIonExitRegD1;
+        Register tmp = WasmIonExitRegD2;
 
         
         masm.movePtr(SymbolicAddress::Context, cx);

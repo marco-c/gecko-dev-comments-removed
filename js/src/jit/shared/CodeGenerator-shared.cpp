@@ -89,19 +89,19 @@ CodeGeneratorShared::CodeGeneratorShared(MIRGenerator* gen, LIRGraph* graph, Mac
         if (gen->usesSimd()) {
             
             
-            frameInitialAdjustment_ = ComputeByteAlignment(sizeof(AsmJSFrame),
-                                                           AsmJSStackAlignment);
+            frameInitialAdjustment_ = ComputeByteAlignment(sizeof(wasm::Frame),
+                                                           WasmStackAlignment);
             frameDepth_ += frameInitialAdjustment_;
             
             
-            frameDepth_ += ComputeByteAlignment(sizeof(AsmJSFrame) + frameDepth_,
-                                                AsmJSStackAlignment);
+            frameDepth_ += ComputeByteAlignment(sizeof(wasm::Frame) + frameDepth_,
+                                                WasmStackAlignment);
         } else if (gen->performsCall()) {
             
             
             
-            frameDepth_ += ComputeByteAlignment(sizeof(AsmJSFrame) + frameDepth_,
-                                                AsmJSStackAlignment);
+            frameDepth_ += ComputeByteAlignment(sizeof(wasm::Frame) + frameDepth_,
+                                                WasmStackAlignment);
         }
 
         
@@ -1487,14 +1487,14 @@ CodeGeneratorShared::emitWasmCallBase(LWasmCallBase* ins)
     if (mir->spIncrement())
         masm.freeStack(mir->spIncrement());
 
-    MOZ_ASSERT((sizeof(AsmJSFrame) + masm.framePushed()) % AsmJSStackAlignment == 0);
-    static_assert(AsmJSStackAlignment >= ABIStackAlignment &&
-                  AsmJSStackAlignment % ABIStackAlignment == 0,
-                  "The asm.js stack alignment should subsume the ABI-required alignment");
+    MOZ_ASSERT((sizeof(wasm::Frame) + masm.framePushed()) % WasmStackAlignment == 0);
+    static_assert(WasmStackAlignment >= ABIStackAlignment &&
+                  WasmStackAlignment % ABIStackAlignment == 0,
+                  "The wasm stack alignment should subsume the ABI-required alignment");
 
 #ifdef DEBUG
     Label ok;
-    masm.branchTestStackPtr(Assembler::Zero, Imm32(AsmJSStackAlignment - 1), &ok);
+    masm.branchTestStackPtr(Assembler::Zero, Imm32(WasmStackAlignment - 1), &ok);
     masm.breakpoint();
     masm.bind(&ok);
 #endif

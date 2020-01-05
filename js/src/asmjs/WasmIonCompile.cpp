@@ -958,7 +958,7 @@ class FunctionCompiler
         }
 
         if (call->childClobbers_) {
-            call->spIncrement_ = AlignBytes(call->maxChildStackBytes_, AsmJSStackAlignment);
+            call->spIncrement_ = AlignBytes(call->maxChildStackBytes_, WasmStackAlignment);
             for (MWasmStackArg* stackArg : call->stackArgs_)
                 stackArg->incrementOffset(call->spIncrement_);
 
@@ -3764,8 +3764,8 @@ wasm::IonCompileFunction(IonCompileTask* task)
     MIRGraph graph(&results.alloc());
     CompileInfo compileInfo(locals.length());
     MIRGenerator mir(nullptr, options, &results.alloc(), &graph, &compileInfo,
-                     IonOptimizations.get(OptimizationLevel::AsmJS));
-    mir.initMinAsmJSHeapLength(task->mg().minMemoryLength);
+                     IonOptimizations.get(OptimizationLevel::Wasm));
+    mir.initMinWasmHeapLength(task->mg().minMemoryLength);
 
     
 

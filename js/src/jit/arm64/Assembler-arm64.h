@@ -23,7 +23,6 @@ using vixl::Instruction;
 static const uint32_t AlignmentAtPrologue = 0;
 static const uint32_t AlignmentMidPrologue = 8;
 static const Scale ScalePointer = TimesEight;
-static const uint32_t AlignmentAtAsmJSPrologue = sizeof(void*);
 
 
 
@@ -120,17 +119,17 @@ REGISTER_CODE_LIST(IMPORT_VIXL_VREGISTERS)
 static constexpr ValueOperand JSReturnOperand = ValueOperand(JSReturnReg);
 
 
-static constexpr Register AsmJSIonExitRegCallee = r8;
-static constexpr Register AsmJSIonExitRegE0 = r0;
-static constexpr Register AsmJSIonExitRegE1 = r1;
+static constexpr Register WasmIonExitRegCallee = r8;
+static constexpr Register WasmIonExitRegE0 = r0;
+static constexpr Register WasmIonExitRegE1 = r1;
 
 
 
-static constexpr Register AsmJSIonExitRegReturnData = r2;
-static constexpr Register AsmJSIonExitRegReturnType = r3;
-static constexpr Register AsmJSIonExitRegD0 = r0;
-static constexpr Register AsmJSIonExitRegD1 = r1;
-static constexpr Register AsmJSIonExitRegD2 = r4;
+static constexpr Register WasmIonExitRegReturnData = r2;
+static constexpr Register WasmIonExitRegReturnType = r3;
+static constexpr Register WasmIonExitRegD0 = r0;
+static constexpr Register WasmIonExitRegD1 = r1;
+static constexpr Register WasmIonExitRegD2 = r4;
 
 
 static constexpr Register RegExpMatcherRegExpReg = CallTempReg0;
@@ -170,8 +169,8 @@ static_assert(CodeAlignment % SimdMemoryAlignment == 0,
   "the constant sections of the code buffer.  Thus it should be larger than the "
   "alignment for SIMD constants.");
 
-static const uint32_t AsmJSStackAlignment = SimdMemoryAlignment;
-static const int32_t AsmJSGlobalRegBias = 1024;
+static const uint32_t WasmStackAlignment = SimdMemoryAlignment;
+static const int32_t WasmGlobalRegBias = 1024;
 
 
 static constexpr bool SupportsUint32x4FloatConversions = false;

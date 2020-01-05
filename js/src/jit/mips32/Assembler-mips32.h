@@ -75,8 +75,8 @@ static constexpr FloatRegister SecondScratchDoubleReg = { FloatRegisters::f16, F
 
 
 
-static constexpr Register AsmJSIonExitRegReturnData = JSReturnReg_Data;
-static constexpr Register AsmJSIonExitRegReturnType = JSReturnReg_Type;
+static constexpr Register WasmIonExitRegReturnData = JSReturnReg_Data;
+static constexpr Register WasmIonExitRegReturnType = JSReturnReg_Type;
 
 static constexpr FloatRegister f0  = { FloatRegisters::f0, FloatRegister::Double };
 static constexpr FloatRegister f2  = { FloatRegisters::f2, FloatRegister::Double };
@@ -108,7 +108,7 @@ static_assert(JitStackAlignment % sizeof(Value) == 0 && JitStackValueAlignment >
 
 
 static constexpr uint32_t SimdMemoryAlignment = 8;
-static constexpr uint32_t AsmJSStackAlignment = SimdMemoryAlignment;
+static constexpr uint32_t WasmStackAlignment = SimdMemoryAlignment;
 
 
 static constexpr bool SupportsUint32x4FloatConversions = false;

@@ -417,8 +417,8 @@ AliasSet::Name(size_t flag)
       case 4: return "FixedSlot";
       case 5: return "DOMProperty";
       case 6: return "FrameArgument";
-      case 7: return "AsmJSGlobalVar";
-      case 8: return "AsmJSHeap";
+      case 7: return "WasmGlobalVar";
+      case 8: return "WasmHeap";
       case 9: return "TypedArrayLength";
       default:
         MOZ_CRASH("Unknown flag");
@@ -1146,7 +1146,7 @@ MConstant::toJSValue() const
 {
     
     
-    MOZ_ASSERT(!IsCompilingAsmJS());
+    MOZ_ASSERT(!IsCompilingWasm());
 
     switch (type()) {
       case MIRType::Undefined:
