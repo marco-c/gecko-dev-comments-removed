@@ -303,7 +303,6 @@ WebrtcVideoConduit::InitMain()
       {
         if (temp >= 0) {
           mPrefMaxBitrate = temp;
-          mNegotiatedMaxBitrate = temp; 
         }
       }
       if (mMinBitrate != 0 && mMinBitrate < webrtc::kViEMinCodecBitrate) {
@@ -727,7 +726,7 @@ WebrtcVideoConduit::ConfigureSendMediaCodec(const VideoCodecConfig* codecConfig)
     }
   }
 
-  if(codecFound == false)
+  if(!codecFound)
   {
     CSFLogError(logTag, "%s Codec Mismatch ", __FUNCTION__);
     return kMediaConduitInvalidSendCodec;
@@ -738,25 +737,62 @@ WebrtcVideoConduit::ConfigureSendMediaCodec(const VideoCodecConfig* codecConfig)
 
   
   CodecConfigToWebRTCCodec(codecConfig, video_codec);
-  if (mSendingWidth != 0) {
-    
-    
-
-    
-    
-    
-    
-    
-    video_codec.width = mSendingWidth;
-    video_codec.height = mSendingHeight;
-    video_codec.maxFramerate = mSendingFramerate;
-  } else {
-    mSendingWidth = 0;
-    mSendingHeight = 0;
-    mSendingFramerate = video_codec.maxFramerate;
-  }
 
   video_codec.mode = mCodecMode;
+
+  if (mSendingWidth != 0) {
+    bool resolutionChanged;
+    {
+      MutexAutoLock lock(mCodecMutex);
+      resolutionChanged = !mCurSendCodecConfig->ResolutionEquals(*codecConfig);
+    }
+
+    if (resolutionChanged) {
+      
+      
+      
+      mLastWidth = 0;
+      mLastHeight = 0;
+      mSendingWidth = 0;
+      mSendingHeight = 0;
+    } else {
+      
+      
+      
+      webrtc::VideoCodec oldSendCodec;
+      if ((error = mPtrViECodec->GetSendCodec(mChannel, oldSendCodec)) != 0) {
+        CSFLogError(logTag, "%s: GetSendCodec failed, err %d", __FUNCTION__, error);
+        return kMediaConduitInvalidSendCodec;
+      }
+
+      if (video_codec.numberOfSimulcastStreams !=
+          oldSendCodec.numberOfSimulcastStreams) {
+        MOZ_ASSERT(false);
+        return kMediaConduitInvalidSendCodec;
+      }
+
+      video_codec.width = oldSendCodec.width;
+      video_codec.height = oldSendCodec.height;
+      SelectBitrates(video_codec.width, video_codec.height,
+                     video_codec.maxBitrate,
+                     mLastFramerateTenths,
+                     video_codec.minBitrate,
+                     video_codec.targetBitrate,
+                     video_codec.maxBitrate);
+      for (size_t i = 0; i < video_codec.numberOfSimulcastStreams; ++i) {
+        webrtc::SimulcastStream& stream(video_codec.simulcastStream[i]);
+        stream.width = oldSendCodec.simulcastStream[i].width;
+        stream.height = oldSendCodec.simulcastStream[i].height;
+        SelectBitrates(stream.width,
+                       stream.height,
+                       MinIgnoreZero(stream.jsMaxBitrate, video_codec.maxBitrate),
+                       mLastFramerateTenths,
+                       stream.minBitrate,
+                       stream.targetBitrate,
+                       stream.maxBitrate);
+      }
+    }
+  }
 
   if(mPtrViECodec->SetSendCodec(mChannel, video_codec) == -1)
   {
