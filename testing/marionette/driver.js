@@ -94,9 +94,9 @@ this.Context.fromString = function(s) {
 
 
 
-this.GeckoDriver = function(appName, stopSignal) {
+this.GeckoDriver = function(appName, server) {
   this.appName = appName;
-  this.stopSignal_ = stopSignal;
+  this._server = server;
 
   this.sessionId = null;
   this.wins = new browser.Windows();
@@ -2563,6 +2563,30 @@ GeckoDriver.prototype._checkIfAlertIsPresent = function() {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+GeckoDriver.prototype.acceptConnections = function(cmd, resp) {
+  if (typeof cmd.parameters.value != "boolean") {
+    throw InvalidArgumentError("Value has to be of type 'boolean'");
+  }
+
+  this._server.acceptConnections = cmd.parameters.value;
+}
+
+
+
+
+
 GeckoDriver.prototype.quitApplication = function(cmd, resp) {
   if (this.appName != "Firefox") {
     throw new WebDriverError("In app initiated quit only supported in Firefox");
@@ -2573,7 +2597,7 @@ GeckoDriver.prototype.quitApplication = function(cmd, resp) {
     flags |= Ci.nsIAppStartup[k];
   }
 
-  this.stopSignal_();
+  this._server.acceptConnections = false;
   resp.send();
 
   this.sessionTearDown();
@@ -2776,5 +2800,6 @@ GeckoDriver.prototype.commands = {
   "acceptDialog": GeckoDriver.prototype.acceptDialog,
   "getTextFromDialog": GeckoDriver.prototype.getTextFromDialog,
   "sendKeysToDialog": GeckoDriver.prototype.sendKeysToDialog,
+  "acceptConnections": GeckoDriver.prototype.acceptConnections,
   "quitApplication": GeckoDriver.prototype.quitApplication,
 };
