@@ -118,7 +118,7 @@ public:
   
   virtual uint16_t Type() const = 0;
   virtual void GetCssTextImpl(nsAString& aCssText) const = 0;
-  
+  void GetCssText(nsAString& aCssText) const { GetCssTextImpl(aCssText); }
   
   Rule* GetParentRule() const;
   StyleSheet* GetParentStyleSheet() const { return GetStyleSheet(); }
