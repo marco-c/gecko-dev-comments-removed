@@ -670,7 +670,7 @@ nsCSSRendering::PaintBorder(nsPresContext* aPresContext,
   
   
   
-  newStyleBorder.TrackImage(aPresContext);
+  newStyleBorder.TrackImage(aPresContext->Document()->ImageTracker());
 
   NS_FOR_CSS_SIDES(side) {
     nscolor color = aStyleContext->GetVisitedDependentColor(
@@ -685,7 +685,7 @@ nsCSSRendering::PaintBorder(nsPresContext* aPresContext,
   
   
   
-  newStyleBorder.UntrackImage(aPresContext);
+  newStyleBorder.UntrackImage(aPresContext->Document()->ImageTracker());
 
   return result;
 }
