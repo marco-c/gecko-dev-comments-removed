@@ -66,4 +66,9 @@ impl WorkerNavigatorMethods for WorkerNavigator {
     fn AppVersion(&self) -> DOMString {
         navigatorinfo::AppVersion()
     }
+
+    
+    fn Language(&self) -> DOMString {
+        navigatorinfo::Language()
+    }
 }
