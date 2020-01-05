@@ -369,7 +369,17 @@ class RefTest(object):
 
         
         self.leakLogFile = os.path.join(profileDir, "runreftest_leaks.log")
-        browserEnv["XPCOM_MEM_BLOAT_LOG"] = self.leakLogFile
+
+        
+        
+        
+        
+        
+        if options.suite == 'crashtest' and mozinfo.info['os'] == 'linux':
+            self.log.warning('WARNING | leakcheck disabled due to bug 1325215')
+        else:
+            browserEnv["XPCOM_MEM_BLOAT_LOG"] = self.leakLogFile
+
         return browserEnv
 
     def killNamedOrphans(self, pname):
