@@ -8,11 +8,12 @@
 #define mozilla_layers_AnimationHelper_h
 
 #include "mozilla/ComputedTimingFunction.h" 
+#include "mozilla/layers/LayersMessages.h" 
 #include "mozilla/TimeStamp.h"          
 
 
 namespace mozilla {
-  class StyleAnimationValue;
+class StyleAnimationValue;
 namespace layers {
 class Animation;
 
@@ -24,10 +25,108 @@ struct AnimData {
   InfallibleTArray<Maybe<mozilla::ComputedTimingFunction>> mFunctions;
 };
 
+struct AnimationTransform {
+  
+
+
+
+  gfx::Matrix4x4 mTransformInDevSpace;
+  
+
+
+
+  gfx::Matrix4x4 mFrameTransform;
+  TransformData mData;
+};
+
+struct AnimatedValue {
+  enum {
+    TRANSFORM,
+    OPACITY,
+    NONE
+  } mType {NONE};
+
+  union {
+    AnimationTransform mTransform;
+    float mOpacity;
+  };
+
+  AnimatedValue(gfx::Matrix4x4&& aTransformInDevSpace,
+                gfx::Matrix4x4&& aFrameTransform,
+                const TransformData& aData)
+    : mType(AnimatedValue::TRANSFORM)
+  {
+    mTransform.mTransformInDevSpace = Move(aTransformInDevSpace);
+    mTransform.mFrameTransform = Move(aFrameTransform);
+    mTransform.mData = aData;
+  }
+
+  explicit AnimatedValue(const float& aValue)
+    : mType(AnimatedValue::OPACITY)
+    , mOpacity(aValue)
+  {
+  }
+
+  ~AnimatedValue() {}
+
+private:
+  AnimatedValue() = delete;
+};
+
+
+
+class CompositorAnimationStorage final
+{
+  typedef nsClassHashtable<nsUint64HashKey, AnimatedValue> AnimatedValueTable;
+  typedef nsClassHashtable<nsUint64HashKey, AnimationArray> AnimationsTable;
+
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(CompositorAnimationStorage)
+public:
+
+  
+
+
+  void SetAnimatedValue(uint64_t aId,
+                        gfx::Matrix4x4&& aTransformInDevSpace,
+                        gfx::Matrix4x4&& aFrameTransform,
+                        const TransformData& aData);
+
+  
+
+
+  void SetAnimatedValue(uint64_t aId, const float& aOpacity);
+
+  
+
+
+  AnimatedValue* GetAnimatedValue(const uint64_t& aId) const;
+
+  
+
+
+  void SetAnimations(uint64_t aId, const AnimationArray& aAnimations);
+
+  
+
+
+  AnimationArray* GetAnimations(const uint64_t& aId) const;
+
+  
+
+
+  void Clear();
+
+private:
+  ~CompositorAnimationStorage() { Clear(); };
+
+private:
+  AnimatedValueTable mAnimatedValues;
+  AnimationsTable mAnimations;
+};
+
 class AnimationHelper
 {
 public:
-
   static bool
   SampleAnimationForEachNode(TimeStamp aPoint,
                              AnimationArray& aAnimations,

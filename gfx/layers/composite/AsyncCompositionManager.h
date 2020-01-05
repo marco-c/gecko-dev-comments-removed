@@ -71,7 +71,7 @@ class AsyncCompositionManager final
 public:
   NS_INLINE_DECL_REFCOUNTING(AsyncCompositionManager)
 
-  explicit AsyncCompositionManager(HostLayerManager* aManager);
+  explicit AsyncCompositionManager(CompositorBridgeParent* aParent, HostLayerManager* aManager);
 
   
 
@@ -240,6 +240,8 @@ private:
 
   TimeStamp mPreviousFrameTimeStamp;
   AnimationMetricsTracker mAnimationMetricsTracker;
+
+  CompositorBridgeParent* mCompositorBridge;
 
 #ifdef MOZ_WIDGET_ANDROID
   

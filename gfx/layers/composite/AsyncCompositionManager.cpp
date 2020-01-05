@@ -67,12 +67,14 @@ ContentMightReflowOnOrientationChange(const IntRect& rect)
   return rect.width != rect.height;
 }
 
-AsyncCompositionManager::AsyncCompositionManager(HostLayerManager* aManager)
+  AsyncCompositionManager::AsyncCompositionManager(CompositorBridgeParent* aParent,
+                                                   HostLayerManager* aManager)
   : mLayerManager(aManager)
   , mIsFirstPaint(true)
   , mLayersUpdated(false)
   , mPaintSyncId(0)
   , mReadyForCompose(true)
+  , mCompositorBridge(aParent)
 {
 }
 
@@ -576,6 +578,7 @@ AsyncCompositionManager::AlignFixedAndStickyLayers(Layer* aTransformedSubtreeRoo
 
 static void
 ApplyAnimatedValue(Layer* aLayer,
+                   CompositorAnimationStorage* aStorage,
                    nsCSSPropertyID aProperty,
                    const AnimationData& aAnimationData,
                    const StyleAnimationValue& aValue)
@@ -592,6 +595,9 @@ ApplyAnimatedValue(Layer* aLayer,
                  "Interpolated value for opacity should be float");
       layerCompositor->SetShadowOpacity(aValue.GetFloatValue());
       layerCompositor->SetShadowOpacitySetByAnimation(true);
+      aStorage->SetAnimatedValue(aLayer->GetCompositorAnimationsId(),
+                                 aValue.GetFloatValue());
+
       break;
     }
     case eCSSProperty_transform: {
@@ -607,25 +613,31 @@ ApplyAnimatedValue(Layer* aLayer,
       nsDisplayTransform::FrameTransformProperties props(list,
                                                          transformOrigin);
 
-      
-      
-      
-      uint32_t flags = 0;
-      if (!aLayer->GetParent() ||
-          !aLayer->GetParent()->GetTransformIsPerspective()) {
-        flags = nsDisplayTransform::OFFSET_BY_ORIGIN;
-      }
-
       Matrix4x4 transform =
         nsDisplayTransform::GetResultingTransformMatrix(props, origin,
                                                         transformData.appUnitsPerDevPixel(),
-                                                        flags, &transformData.bounds());
+                                                        0, &transformData.bounds());
+      Matrix4x4 frameTransform = transform;
+
+      
+      
+      
+      if (!aLayer->GetParent() ||
+          !aLayer->GetParent()->GetTransformIsPerspective()) {
+        nsLayoutUtils::PostTranslate(transform, origin,
+                                     transformData.appUnitsPerDevPixel(),
+                                     true);
+      }
 
       if (ContainerLayer* c = aLayer->AsContainerLayer()) {
         transform.PostScale(c->GetInheritedXScale(), c->GetInheritedYScale(), 1);
       }
+
       layerCompositor->SetShadowBaseTransform(transform);
       layerCompositor->SetShadowTransformSetByAnimation(true);
+      aStorage->SetAnimatedValue(aLayer->GetCompositorAnimationsId(),
+                                 Move(transform), Move(frameTransform),
+                                 transformData);
       break;
     }
     default:
@@ -634,13 +646,16 @@ ApplyAnimatedValue(Layer* aLayer,
 }
 
 static bool
-SampleAnimations(Layer* aLayer, TimeStamp aPoint, uint64_t* aLayerAreaAnimated)
+SampleAnimations(Layer* aLayer,
+                 CompositorAnimationStorage* aStorage,
+                 TimeStamp aPoint,
+                 uint64_t* aLayerAreaAnimated)
 {
   bool activeAnimations = false;
 
   ForEachNode<ForwardIterator>(
       aLayer,
-      [&activeAnimations, &aPoint, &aLayerAreaAnimated] (Layer* layer)
+      [aStorage, &activeAnimations, &aPoint, &aLayerAreaAnimated] (Layer* layer)
       {
         bool hasInEffectAnimations = false;
         StyleAnimationValue animationValue = layer->GetBaseAnimationStyle();
@@ -653,6 +668,7 @@ SampleAnimations(Layer* aLayer, TimeStamp aPoint, uint64_t* aLayerAreaAnimated)
         if (hasInEffectAnimations) {
           Animation& animation = layer->GetAnimations().LastElement();
           ApplyAnimatedValue(layer,
+                             aStorage,
                              animation.property(),
                              animation.data(),
                              animationValue);
@@ -661,6 +677,7 @@ SampleAnimations(Layer* aLayer, TimeStamp aPoint, uint64_t* aLayerAreaAnimated)
           }
         }
       });
+
   return activeAnimations;
 }
 
@@ -1309,6 +1326,9 @@ AsyncCompositionManager::TransformShadowTree(TimeStamp aCurrentFrame,
   }
 
   
+  CompositorAnimationStorage* storage =
+    mCompositorBridge->GetAnimationStorage(0);
+  
   
   
   
@@ -1316,12 +1336,21 @@ AsyncCompositionManager::TransformShadowTree(TimeStamp aCurrentFrame,
   
   
   uint64_t layerAreaAnimated = 0;
-  bool wantNextFrame = SampleAnimations(root,
-    !mPreviousFrameTimeStamp.IsNull() ?
-      mPreviousFrameTimeStamp : aCurrentFrame,
-    &layerAreaAnimated);
+  bool wantNextFrame =
+    SampleAnimations(root,
+                     storage,
+                     !mPreviousFrameTimeStamp.IsNull() ?
+                       mPreviousFrameTimeStamp : aCurrentFrame,
+                     &layerAreaAnimated);
+
   mAnimationMetricsTracker.UpdateAnimationInProgress(
     wantNextFrame, layerAreaAnimated);
+
+  if (!wantNextFrame) {
+    
+    
+    storage->Clear();
+  }
 
   
   
