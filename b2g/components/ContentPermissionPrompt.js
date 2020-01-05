@@ -24,7 +24,6 @@ const ALLOW_MULTIPLE_REQUESTS = ["audio-capture", "video-capture"];
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
-Cu.import("resource://gre/modules/PermissionsTable.jsm");
 
 var permissionManager = Cc["@mozilla.org/permissionmanager;1"].getService(Ci.nsIPermissionManager);
 var secMan = Cc["@mozilla.org/scriptsecuritymanager;1"].getService(Ci.nsIScriptSecurityManager);
@@ -65,56 +64,6 @@ function buildDefaultChoices(aTypesInfo) {
     }
   }
   return choices;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function rememberPermission(aTypesInfo, aPrincipal, aSession)
-{
-  function convertPermToAllow(aPerm, aPrincipal)
-  {
-    let type =
-      permissionManager.testExactPermissionFromPrincipal(aPrincipal, aPerm);
-    if (shouldPrompt(aPerm, type)) {
-      debug("add " + aPerm + " to permission manager with ALLOW_ACTION");
-      if (!aSession) {
-        permissionManager.addFromPrincipal(aPrincipal,
-                                           aPerm,
-                                           Ci.nsIPermissionManager.ALLOW_ACTION);
-      } else if (PERMISSION_NO_SESSION.indexOf(aPerm) < 0) {
-        permissionManager.addFromPrincipal(aPrincipal,
-                                           aPerm,
-                                           Ci.nsIPermissionManager.ALLOW_ACTION,
-                                           Ci.nsIPermissionManager.EXPIRE_SESSION, 0);
-      }
-    }
-  }
-
-  for (let i in aTypesInfo) {
-    
-    
-    let perm = aTypesInfo[i].permission;
-    let access = PermissionsTable[perm].access;
-    if (access) {
-      for (let idx in access) {
-        convertPermToAllow(perm + "-" + access[idx], aPrincipal);
-      }
-    } else {
-      convertPermToAllow(perm, aPrincipal);
-    }
-  }
 }
 
 function ContentPermissionPrompt() {}
@@ -296,7 +245,6 @@ ContentPermissionPrompt.prototype = {
     this.sendToBrowserWindow("permission-prompt", request, typesInfo,
                              function(type, remember, choices) {
       if (type == "permission-allow") {
-        rememberPermission(typesInfo, request.principal, !remember);
         if (callback) {
           callback();
         }
