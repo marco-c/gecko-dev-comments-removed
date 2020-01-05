@@ -15,7 +15,6 @@
 
 
 use app_units::Au;
-use azure::azure_hl::Color;
 use euclid::{Matrix4D, Point2D, Rect, Size2D};
 use euclid::num::{One, Zero};
 use euclid::rect::TypedRect;
@@ -35,13 +34,9 @@ use style_traits::cursor::Cursor;
 use text::TextRun;
 use text::glyph::ByteIndex;
 use util::geometry::{self, max_rect};
-use webrender_traits::{self, WebGLContextId};
+use webrender_traits::{self, ColorF, GradientStop, WebGLContextId};
 
 pub use style::dom::OpaqueNode;
-
-
-
-pub use azure::azure_hl::GradientStop;
 
 
 
@@ -750,7 +745,7 @@ pub struct SolidColorDisplayItem {
     pub base: BaseDisplayItem,
 
     
-    pub color: Color,
+    pub color: ColorF,
 }
 
 
@@ -767,7 +762,7 @@ pub struct TextDisplayItem {
     pub range: Range<ByteIndex>,
 
     
-    pub text_color: Color,
+    pub text_color: ColorF,
 
     
     pub baseline_origin: Point2D<Au>,
@@ -851,7 +846,7 @@ pub struct BorderDisplayItem {
     pub border_widths: SideOffsets2D<Au>,
 
     
-    pub color: SideOffsets2D<Color>,
+    pub color: SideOffsets2D<ColorF>,
 
     
     pub style: SideOffsets2D<border_style::T>,
@@ -932,7 +927,7 @@ pub struct LineDisplayItem {
     pub base: BaseDisplayItem,
 
     
-    pub color: Color,
+    pub color: ColorF,
 
     
     pub style: border_style::T
@@ -951,7 +946,7 @@ pub struct BoxShadowDisplayItem {
     pub offset: Point2D<Au>,
 
     
-    pub color: Color,
+    pub color: ColorF,
 
     
     pub blur_radius: Au,
