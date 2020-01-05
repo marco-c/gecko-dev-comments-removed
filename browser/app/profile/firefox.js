@@ -1377,12 +1377,6 @@ pref("media.eme.enabled", false);
 pref("media.eme.enabled", true);
 #endif
 
-#ifdef NIGHTLY_BUILD
-pref("media.eme.vp9-in-mp4.enabled", true);
-#else
-pref("media.eme.vp9-in-mp4.enabled", false);
-#endif
-
 
 
 pref("media.gmp.trial-create.enabled", true);
@@ -1586,6 +1580,7 @@ pref("services.sync.validation.enabled", true);
 
 pref("browser.formautofill.experimental", false);
 pref("browser.formautofill.enabled", false);
+pref("browser.formautofill.loglevel", "Warn");
 
 
 #ifdef NIGHTLY_BUILD

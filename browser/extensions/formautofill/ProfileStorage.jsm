@@ -39,11 +39,15 @@
 
 "use strict";
 
+this.EXPORTED_SYMBOLS = ["ProfileStorage"];
+
 const {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/Task.jsm");
+
+Cu.import("resource://formautofill/FormAutofillUtils.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "JSONFile",
                                   "resource://gre/modules/JSONFile.jsm");
@@ -51,6 +55,9 @@ XPCOMUtils.defineLazyModuleGetter(this, "JSONFile",
 XPCOMUtils.defineLazyServiceGetter(this, "gUUIDGenerator",
                                    "@mozilla.org/uuid-generator;1",
                                    "nsIUUIDGenerator");
+
+this.log = null;
+FormAutofillUtils.defineLazyLogGetter(this, this.EXPORTED_SYMBOLS[0]);
 
 const SCHEMA_VERSION = 1;
 
@@ -107,6 +114,7 @@ ProfileStorage.prototype = {
 
 
   add(profile) {
+    log.debug("add:", profile);
     this._store.ensureDataReady();
 
     let profileToSave = this._normalizeProfile(profile);
@@ -135,6 +143,7 @@ ProfileStorage.prototype = {
 
 
   update(guid, profile) {
+    log.debug("update:", guid, profile);
     this._store.ensureDataReady();
 
     let profileFound = this._findByGUID(guid);
@@ -184,6 +193,7 @@ ProfileStorage.prototype = {
 
 
   remove(guid) {
+    log.debug("remove:", guid);
     this._store.ensureDataReady();
 
     this._store.data.profiles =
@@ -200,6 +210,7 @@ ProfileStorage.prototype = {
 
 
   get(guid) {
+    log.debug("get:", guid);
     this._store.ensureDataReady();
 
     let profileFound = this._findByGUID(guid);
@@ -218,6 +229,7 @@ ProfileStorage.prototype = {
 
 
   getAll() {
+    log.debug("getAll");
     this._store.ensureDataReady();
 
     
@@ -231,10 +243,13 @@ ProfileStorage.prototype = {
 
 
   getByFilter({info, searchString}) {
+    log.debug("getByFilter:", info, searchString);
     this._store.ensureDataReady();
 
     
-    return this._findByFilter({info, searchString}).map(this._clone);
+    let result = this._findByFilter({info, searchString}).map(this._clone);
+    log.debug("getByFilter: Returning", result.length, "result(s)");
+    return result;
   },
 
   _clone(profile) {
@@ -291,5 +306,3 @@ ProfileStorage.prototype = {
     return this._store._save();
   },
 };
-
-this.EXPORTED_SYMBOLS = ["ProfileStorage"];
