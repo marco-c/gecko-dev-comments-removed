@@ -495,8 +495,6 @@ this.Utils = {
 
 
 
-
-
   isPassphrase(s) {
     if (s) {
       return /^[abcdefghijkmnpqrstuvwxyz23456789]{26}$/.test(Utils.normalizePassphrase(s));
@@ -562,10 +560,6 @@ this.Utils = {
 
     
     return pp;
-  },
-
-  normalizeAccount: function normalizeAccount(acc) {
-    return acc.trim();
   },
 
   

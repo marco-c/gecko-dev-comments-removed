@@ -267,7 +267,7 @@ var gSyncUI = {
   handleToolbarButton() {
     this._needsSetup().then(needsSetup => {
       if (needsSetup || this.loginFailed()) {
-        this.openSetup();
+        this.openPrefs();
       } else {
         this.doSync();
       }
@@ -282,41 +282,7 @@ var gSyncUI = {
 
 
 
-
-
-
-
-
-
-  openSetup: function SUI_openSetup(wizardType, entryPoint = "syncbutton") {
-    if (this.weaveService.fxAccountsEnabled) {
-      this.openPrefs(entryPoint);
-    } else {
-      let win = Services.wm.getMostRecentWindow("Weave:AccountSetup");
-      if (win)
-        win.focus();
-      else {
-        window.openDialog("chrome://browser/content/sync/setup.xul",
-                          "weaveSetup", "centerscreen,chrome,resizable=no",
-                          wizardType);
-      }
-    }
-  },
-
-  
-  openAddDevice() {
-    if (!Weave.Utils.ensureMPUnlocked())
-      return;
-
-    let win = Services.wm.getMostRecentWindow("Sync:AddDevice");
-    if (win)
-      win.focus();
-    else
-      window.openDialog("chrome://browser/content/sync/addDevice.xul",
-                        "syncAddDevice", "centerscreen,chrome,resizable=no");
-  },
-
-  openPrefs(entryPoint) {
+  openPrefs(entryPoint = "syncbutton") {
     openPreferences("paneSync", { urlParams: { entrypoint: entryPoint } });
   },
 
