@@ -24,6 +24,7 @@ ignored_files = [
     
     "components/script/dom/bindings/codegen/*",
     "components/style/properties/mod.rs",
+    "components/servo/target/*",
 ]
 
 
