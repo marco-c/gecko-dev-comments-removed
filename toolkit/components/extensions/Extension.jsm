@@ -375,20 +375,20 @@ this.ExtensionData = class {
   
   
   
-  userPermissions() {
+  get userPermissions() {
     let result = {
-      hosts: this.whiteListedHosts.pat,
+      origins: this.whiteListedHosts.pat,
       apis: [...this.apiNames],
     };
 
     if (Array.isArray(this.manifest.content_scripts)) {
       for (let entry of this.manifest.content_scripts) {
-        result.hosts.push(...entry.matches);
+        result.origins.push(...entry.matches);
       }
     }
     const EXP_PATTERN = /^experiments\.\w+/;
     result.permissions = [...this.permissions]
-      .filter(p => !result.hosts.includes(p) && !EXP_PATTERN.test(p));
+      .filter(p => !result.origins.includes(p) && !EXP_PATTERN.test(p));
     return result;
   }
 
@@ -401,7 +401,7 @@ this.ExtensionData = class {
     
     
     return {
-      hosts: newPermissions.hosts.filter(perm => !oldPermissions.hosts.includes(perm)),
+      origins: newPermissions.origins.filter(perm => !oldPermissions.origins.includes(perm)),
       permissions: newPermissions.permissions.filter(perm => !oldPermissions.permissions.includes(perm)),
     };
   }
