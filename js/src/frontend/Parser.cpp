@@ -169,26 +169,60 @@ ParseContext::Scope::dump(ParseContext* pc)
     fprintf(stdout, "\n");
 }
 
- void
-ParseContext::Scope::removeVarForAnnexBLexicalFunction(ParseContext* pc, JSAtom* name)
+bool
+ParseContext::Scope::addPossibleAnnexBFunctionBox(ParseContext* pc, FunctionBox* funbox)
+{
+    if (!possibleAnnexBFunctionBoxes_) {
+        if (!possibleAnnexBFunctionBoxes_.acquire(pc->sc()->context))
+            return false;
+    }
+
+    return possibleAnnexBFunctionBoxes_->append(funbox);
+}
+
+bool
+ParseContext::Scope::propagateAndMarkAnnexBFunctionBoxes(ParseContext* pc)
 {
     
-    
-    MOZ_ASSERT(!pc->sc()->strictScript);
-
-    for (ParseContext::Scope* scope = pc->innermostScope();
-         scope != pc->varScope().enclosing();
-         scope = scope->enclosing())
+    if (pc->sc()->strict() ||
+        !possibleAnnexBFunctionBoxes_ ||
+        possibleAnnexBFunctionBoxes_->empty())
     {
-        if (DeclaredNamePtr p = scope->declared_->lookup(name)) {
-            if (p->value()->kind() == DeclarationKind::VarForAnnexBLexicalFunction)
-                scope->declared_->remove(p);
+        return true;
+    }
+
+    if (this == &pc->varScope()) {
+        
+        
+        RootedPropertyName name(pc->sc()->context);
+        Maybe<DeclarationKind> redeclaredKind;
+        uint32_t unused;
+        for (FunctionBox* funbox : *possibleAnnexBFunctionBoxes_) {
+            if (pc->annexBAppliesToLexicalFunctionInInnermostScope(funbox)) {
+                name = funbox->function()->explicitName()->asPropertyName();
+                if (!pc->tryDeclareVar(name,
+                                       DeclarationKind::VarForAnnexBLexicalFunction,
+                                       DeclaredNameInfo::npos, &redeclaredKind, &unused))
+                {
+                    return false;
+                }
+
+                MOZ_ASSERT(!redeclaredKind);
+                funbox->isAnnexB = true;
+            }
+        }
+    } else {
+        
+        
+        for (FunctionBox* funbox : *possibleAnnexBFunctionBoxes_) {
+            if (pc->annexBAppliesToLexicalFunctionInInnermostScope(funbox)) {
+                if (!enclosing()->addPossibleAnnexBFunctionBox(pc, funbox))
+                    return false;
+            }
         }
     }
 
-    
-    
-    pc->removeInnerFunctionBoxesForAnnexB(name);
+    return true;
 }
 
 static bool
@@ -367,57 +401,7 @@ ParseContext::init()
     if (!closedOverBindingsForLazy_.acquire(cx))
         return false;
 
-    if (!sc()->strict()) {
-        if (!innerFunctionBoxesForAnnexB_.acquire(cx))
-            return false;
-    }
-
     return true;
-}
-
-bool
-ParseContext::addInnerFunctionBoxForAnnexB(FunctionBox* funbox)
-{
-    for (uint32_t i = 0; i < innerFunctionBoxesForAnnexB_->length(); i++) {
-        if (!innerFunctionBoxesForAnnexB_[i]) {
-            innerFunctionBoxesForAnnexB_[i] = funbox;
-            return true;
-        }
-    }
-    return innerFunctionBoxesForAnnexB_->append(funbox);
-}
-
-void
-ParseContext::removeInnerFunctionBoxesForAnnexB(JSAtom* name)
-{
-    for (uint32_t i = 0; i < innerFunctionBoxesForAnnexB_->length(); i++) {
-        if (FunctionBox* funbox = innerFunctionBoxesForAnnexB_[i]) {
-            if (funbox->function()->explicitName() == name)
-                innerFunctionBoxesForAnnexB_[i] = nullptr;
-        }
-    }
-}
-
-void
-ParseContext::finishInnerFunctionBoxesForAnnexB()
-{
-    
-    
-    if (sc()->strict() || !innerFunctionBoxesForAnnexB_)
-        return;
-
-    for (uint32_t i = 0; i < innerFunctionBoxesForAnnexB_->length(); i++) {
-        if (FunctionBox* funbox = innerFunctionBoxesForAnnexB_[i])
-            funbox->isAnnexB = true;
-    }
-}
-
-ParseContext::~ParseContext()
-{
-    
-    
-    
-    finishInnerFunctionBoxesForAnnexB();
 }
 
 bool
@@ -916,11 +900,9 @@ template <template <typename CharT> class ParseHandler, typename CharT>
 FunctionBox*
 Parser<ParseHandler, CharT>::newFunctionBox(Node fn, JSFunction* fun, uint32_t toStringStart,
                                             Directives inheritedDirectives,
-                                            GeneratorKind generatorKind, FunctionAsyncKind asyncKind,
-                                            bool tryAnnexB)
+                                            GeneratorKind generatorKind, FunctionAsyncKind asyncKind)
 {
     MOZ_ASSERT(fun);
-    MOZ_ASSERT_IF(tryAnnexB, !pc->sc()->strict());
 
     
 
@@ -941,9 +923,6 @@ Parser<ParseHandler, CharT>::newFunctionBox(Node fn, JSFunction* fun, uint32_t t
     traceListHead = funbox;
     if (fn)
         handler.setFunctionBox(fn, funbox);
-
-    if (tryAnnexB && !pc->addInnerFunctionBoxForAnnexB(funbox))
-        return nullptr;
 
     return funbox;
 }
@@ -1200,12 +1179,11 @@ DeclarationKindIsVar(DeclarationKind kind)
            kind == DeclarationKind::ForOfVar;
 }
 
-template <template <typename CharT> class ParseHandler, typename CharT>
 Maybe<DeclarationKind>
-Parser<ParseHandler, CharT>::isVarRedeclaredInEval(HandlePropertyName name, DeclarationKind kind)
+ParseContext::isVarRedeclaredInEval(HandlePropertyName name, DeclarationKind kind)
 {
     MOZ_ASSERT(DeclarationKindIsVar(kind));
-    MOZ_ASSERT(pc->sc()->isEvalContext());
+    MOZ_ASSERT(sc()->isEvalContext());
 
     
     
@@ -1213,8 +1191,8 @@ Parser<ParseHandler, CharT>::isVarRedeclaredInEval(HandlePropertyName name, Decl
     
     
     
-    Scope* enclosingScope = pc->sc()->compilationEnclosingScope();
-    Scope* varScope = EvalScope::nearestVarScopeForDirectEval(enclosingScope);
+    js::Scope* enclosingScope = sc()->compilationEnclosingScope();
+    js::Scope* varScope = EvalScope::nearestVarScopeForDirectEval(enclosingScope);
     MOZ_ASSERT(varScope);
     for (ScopeIter si(enclosingScope); si; si++) {
         for (js::BindingIter bi(si.scope()); bi; bi++) {
@@ -1254,6 +1232,25 @@ Parser<ParseHandler, CharT>::isVarRedeclaredInEval(HandlePropertyName name, Decl
     return Nothing();
 }
 
+Maybe<DeclarationKind>
+ParseContext::isVarRedeclaredInInnermostScope(HandlePropertyName name, DeclarationKind kind)
+{
+    Maybe<DeclarationKind> redeclaredKind;
+    uint32_t unused;
+    MOZ_ALWAYS_TRUE(tryDeclareVarHelper<DryRunInnermostScopeOnly>(name, kind,
+                                                                  DeclaredNameInfo::npos,
+                                                                  &redeclaredKind, &unused));
+    return redeclaredKind;
+}
+
+bool
+ParseContext::tryDeclareVar(HandlePropertyName name, DeclarationKind kind,
+                            uint32_t beginPos, Maybe<DeclarationKind>* redeclaredKind,
+                            uint32_t* prevPos)
+{
+    return tryDeclareVarHelper<NotDryRun>(name, kind, beginPos, redeclaredKind, prevPos);
+}
+
 static bool
 DeclarationKindIsParameter(DeclarationKind kind)
 {
@@ -1261,12 +1258,11 @@ DeclarationKindIsParameter(DeclarationKind kind)
            kind == DeclarationKind::FormalParameter;
 }
 
-template <template <typename CharT> class ParseHandler, typename CharT>
+template <ParseContext::DryRunOption dryRunOption>
 bool
-Parser<ParseHandler, CharT>::tryDeclareVar(HandlePropertyName name, DeclarationKind kind,
-                                           uint32_t beginPos,
-                                           Maybe<DeclarationKind>* redeclaredKind,
-                                           uint32_t* prevPos)
+ParseContext::tryDeclareVarHelper(HandlePropertyName name, DeclarationKind kind,
+                                  uint32_t beginPos, Maybe<DeclarationKind>* redeclaredKind,
+                                  uint32_t* prevPos)
 {
     MOZ_ASSERT(DeclarationKindIsVar(kind));
 
@@ -1282,8 +1278,8 @@ Parser<ParseHandler, CharT>::tryDeclareVar(HandlePropertyName name, DeclarationK
     
     
 
-    for (ParseContext::Scope* scope = pc->innermostScope();
-         scope != pc->varScope().enclosing();
+    for (ParseContext::Scope* scope = innermostScope();
+         scope != varScope().enclosing();
          scope = scope->enclosing())
     {
         if (AddDeclaredNamePtr p = scope->lookupDeclaredNameForAdd(name)) {
@@ -1318,13 +1314,10 @@ Parser<ParseHandler, CharT>::tryDeclareVar(HandlePropertyName name, DeclarationK
                 
                 
                 
-                
-                
-                
-                
-                
-                if (kind == DeclarationKind::BodyLevelFunction)
+                if (dryRunOption == NotDryRun && kind == DeclarationKind::BodyLevelFunction) {
+                    MOZ_ASSERT(declaredKind != DeclarationKind::VarForAnnexBLexicalFunction);
                     p->value()->alterKind(kind);
+                }
             } else if (!DeclarationKindIsParameter(declaredKind)) {
                 
                 
@@ -1335,7 +1328,7 @@ Parser<ParseHandler, CharT>::tryDeclareVar(HandlePropertyName name, DeclarationK
                 
                 bool annexB33Allowance = declaredKind == DeclarationKind::LexicalFunction &&
                                          kind == DeclarationKind::VarForAnnexBLexicalFunction &&
-                                         scope == pc->innermostScope();
+                                         scope == innermostScope();
 
                 if (!annexB35Allowance && !annexB33Allowance) {
                     *redeclaredKind = Some(declaredKind);
@@ -1351,13 +1344,23 @@ Parser<ParseHandler, CharT>::tryDeclareVar(HandlePropertyName name, DeclarationK
                 *redeclaredKind = Some(declaredKind);
                 return true;
             }
-        } else {
-            if (!scope->addDeclaredName(pc, p, name, kind, beginPos))
+        } else if (dryRunOption == NotDryRun) {
+            if (!scope->addDeclaredName(this, p, name, kind, beginPos))
                 return false;
         }
+
+        
+        
+        
+        
+        
+        if (dryRunOption == DryRunInnermostScopeOnly)
+            break;
     }
 
-    if (!pc->sc()->strict() && pc->sc()->isEvalContext()) {
+    if (!sc()->strict() && sc()->isEvalContext() &&
+        (dryRunOption == NotDryRun || innermostScope() == &varScope()))
+    {
         *redeclaredKind = isVarRedeclaredInEval(name, kind);
         
         *prevPos = DeclaredNameInfo::npos;
@@ -1366,24 +1369,18 @@ Parser<ParseHandler, CharT>::tryDeclareVar(HandlePropertyName name, DeclarationK
     return true;
 }
 
-template <template <typename CharT> class ParseHandler, typename CharT>
 bool
-Parser<ParseHandler, CharT>::tryDeclareVarForAnnexBLexicalFunction(HandlePropertyName name,
-                                                                   uint32_t beginPos,
-                                                                   bool* tryAnnexB)
+ParseContext::annexBAppliesToLexicalFunctionInInnermostScope(FunctionBox* funbox)
 {
-    Maybe<DeclarationKind> redeclaredKind;
-    uint32_t unused;
-    if (!tryDeclareVar(name, DeclarationKind::VarForAnnexBLexicalFunction, beginPos,
-                       &redeclaredKind, &unused))
-    {
-        return false;
-    }
+    MOZ_ASSERT(!sc()->strict());
 
-    if (!redeclaredKind && pc->isFunctionBox()) {
-        ParseContext::Scope& funScope = pc->functionScope();
-        ParseContext::Scope& varScope = pc->varScope();
-        if (&funScope != &varScope) {
+    RootedPropertyName name(sc()->context, funbox->function()->explicitName()->asPropertyName());
+    Maybe<DeclarationKind> redeclaredKind =
+        isVarRedeclaredInInnermostScope(name, DeclarationKind::VarForAnnexBLexicalFunction);
+
+    if (!redeclaredKind && isFunctionBox()) {
+        Scope& funScope = functionScope();
+        if (&funScope != &varScope()) {
             
             
             
@@ -1394,21 +1391,14 @@ Parser<ParseHandler, CharT>::tryDeclareVarForAnnexBLexicalFunction(HandlePropert
                 if (DeclarationKindIsParameter(declaredKind))
                     redeclaredKind = Some(declaredKind);
                 else
-                    MOZ_ASSERT(FunctionScope::isSpecialName(context, name));
+                    MOZ_ASSERT(FunctionScope::isSpecialName(sc()->context, name));
             }
         }
     }
 
-    if (redeclaredKind) {
-        
-        
-        *tryAnnexB = false;
-        ParseContext::Scope::removeVarForAnnexBLexicalFunction(pc, name);
-    } else {
-        *tryAnnexB = true;
-    }
-
-    return true;
+    
+    
+    return !redeclaredKind;
 }
 
 template <template <typename CharT> class ParseHandler, typename CharT>
@@ -1451,7 +1441,7 @@ Parser<ParseHandler, CharT>::noteDeclaredName(HandlePropertyName name, Declarati
       case DeclarationKind::ForOfVar: {
         Maybe<DeclarationKind> redeclaredKind;
         uint32_t prevPos;
-        if (!tryDeclareVar(name, kind, pos.begin, &redeclaredKind, &prevPos))
+        if (!pc->tryDeclareVar(name, kind, pos.begin, &redeclaredKind, &prevPos))
             return false;
 
         if (redeclaredKind) {
@@ -1509,17 +1499,10 @@ Parser<ParseHandler, CharT>::noteDeclaredName(HandlePropertyName name, Declarati
             
             
             
-            if (pc->sc()->strict() ||
-                (p->value()->kind() != DeclarationKind::LexicalFunction &&
-                 p->value()->kind() != DeclarationKind::VarForAnnexBLexicalFunction))
-            {
+            if (pc->sc()->strict() || p->value()->kind() != DeclarationKind::LexicalFunction) {
                 reportRedeclaration(name, p->value()->kind(), pos, p->value()->pos());
                 return false;
             }
-
-            
-            
-            p->value()->alterKind(kind);
         } else {
             if (!scope->addDeclaredName(pc, p, name, kind, pos.begin))
                 return false;
@@ -1570,20 +1553,11 @@ Parser<ParseHandler, CharT>::noteDeclaredName(HandlePropertyName name, Declarati
         
         AddDeclaredNamePtr p = scope->lookupDeclaredNameForAdd(name);
         if (p) {
-            
-            
-            
-            if (p->value()->kind() == DeclarationKind::VarForAnnexBLexicalFunction) {
-                ParseContext::Scope::removeVarForAnnexBLexicalFunction(pc, name);
-                p = scope->lookupDeclaredNameForAdd(name);
-                MOZ_ASSERT(!p);
-            } else {
-                reportRedeclaration(name, p->value()->kind(), pos, p->value()->pos());
-                return false;
-            }
+            reportRedeclaration(name, p->value()->kind(), pos, p->value()->pos());
+            return false;
         }
 
-        if (!p && !scope->addDeclaredName(pc, p, name, kind, pos.begin))
+        if (!scope->addDeclaredName(pc, p, name, kind, pos.begin))
             return false;
 
         break;
@@ -1645,6 +1619,11 @@ template <template <typename CharT> class ParseHandler, typename CharT>
 bool
 Parser<ParseHandler, CharT>::propagateFreeNamesAndMarkClosedOverBindings(ParseContext::Scope& scope)
 {
+    
+    
+    if (!scope.propagateAndMarkAnnexBFunctionBoxes(pc))
+        return false;
+
     if (handler.canSkipLazyClosedOverBindings()) {
         
         
@@ -2173,6 +2152,12 @@ Parser<FullParseHandler, char16_t>::evalBody(EvalSharedContext* evalsc)
     if (!FoldConstants(context, &body, this))
         return nullptr;
 
+    
+    
+    
+    if (!varScope.propagateAndMarkAnnexBFunctionBoxes(pc))
+        return nullptr;
+
     Maybe<EvalScope::Data*> bindings = newEvalScopeData(pc->varScope());
     if (!bindings)
         return nullptr;
@@ -2201,6 +2186,12 @@ Parser<FullParseHandler, char16_t>::globalBody(GlobalSharedContext* globalsc)
         return nullptr;
 
     if (!FoldConstants(context, &body, this))
+        return nullptr;
+
+    
+    
+    
+    if (!varScope.propagateAndMarkAnnexBFunctionBoxes(pc))
         return nullptr;
 
     Maybe<GlobalScope::Data*> bindings = newGlobalScopeData(pc->varScope());
@@ -2546,7 +2537,7 @@ Parser<FullParseHandler, char16_t>::standaloneFunction(HandleFunction fun,
     fn->pn_body = argsbody;
 
     FunctionBox* funbox = newFunctionBox(fn, fun,  0, inheritedDirectives,
-                                         generatorKind, asyncKind,  false);
+                                         generatorKind, asyncKind);
     if (!funbox)
         return null();
     funbox->initStandaloneFunction(enclosingScope);
@@ -3219,7 +3210,7 @@ Parser<FullParseHandler, char16_t>::skipLazyInnerFunction(ParseNode* pn, uint32_
     RootedFunction fun(context, handler.nextLazyInnerFunction());
     MOZ_ASSERT(!fun->isLegacyGenerator());
     FunctionBox* funbox = newFunctionBox(pn, fun, toStringStart, Directives( false),
-                                         fun->generatorKind(), fun->asyncKind(), tryAnnexB);
+                                         fun->generatorKind(), fun->asyncKind());
     if (!funbox)
         return false;
 
@@ -3249,6 +3240,10 @@ Parser<FullParseHandler, char16_t>::skipLazyInnerFunction(ParseNode* pn, uint32_
             return false;
     }
 #endif
+
+    
+    if (tryAnnexB && !pc->innermostScope()->addPossibleAnnexBFunctionBox(pc, funbox))
+        return false;
 
     return true;
 }
@@ -3446,7 +3441,7 @@ Parser<FullParseHandler, char16_t>::trySyntaxParseInnerFunction(ParseNode* pn, H
         
         
         FunctionBox* funbox = newFunctionBox(pn, fun, toStringStart, inheritedDirectives,
-                                             generatorKind, asyncKind, tryAnnexB);
+                                             generatorKind, asyncKind);
         if (!funbox)
             return false;
         funbox->initWithEnclosingParseContext(pc, kind);
@@ -3475,6 +3470,11 @@ Parser<FullParseHandler, char16_t>::trySyntaxParseInnerFunction(ParseNode* pn, H
 
         
         pn->pn_pos.end = tokenStream.currentToken().pos.end;
+
+        
+        if (tryAnnexB && !pc->innermostScope()->addPossibleAnnexBFunctionBox(pc, funbox))
+            return false;
+
         return true;
     } while (false);
 
@@ -3543,13 +3543,22 @@ Parser<ParseHandler, CharT>::innerFunction(Node pn, ParseContext* outerpc, Handl
     
 
     FunctionBox* funbox = newFunctionBox(pn, fun, toStringStart, inheritedDirectives,
-                                         generatorKind, asyncKind, tryAnnexB);
+                                         generatorKind, asyncKind);
     if (!funbox)
         return false;
     funbox->initWithEnclosingParseContext(outerpc, kind);
 
-    return innerFunction(pn, outerpc, funbox, toStringStart, inHandling, yieldHandling, kind,
-                         inheritedDirectives, newDirectives);
+    if (!innerFunction(pn, outerpc, funbox, toStringStart, inHandling, yieldHandling, kind,
+                       inheritedDirectives, newDirectives))
+    {
+        return false;
+    }
+
+    
+    if (tryAnnexB && !pc->innermostScope()->addPossibleAnnexBFunctionBox(pc, funbox))
+        return false;
+
+    return true;
 }
 
 template <template <typename CharT> class ParseHandler, typename CharT>
@@ -3587,7 +3596,7 @@ Parser<FullParseHandler, char16_t>::standaloneLazyFunction(HandleFunction fun,
 
     Directives directives(strict);
     FunctionBox* funbox = newFunctionBox(pn, fun, toStringStart, directives, generatorKind,
-                                         asyncKind,  false);
+                                         asyncKind);
     if (!funbox)
         return null();
     funbox->initFromLazyFunction();
@@ -3856,8 +3865,10 @@ Parser<ParseHandler, CharT>::functionStmt(uint32_t toStringStart, YieldHandling 
             
             
             
-            if (!tryDeclareVarForAnnexBLexicalFunction(name, pos().begin, &tryAnnexB))
-                return null();
+            
+            
+            
+            tryAnnexB = true;
         }
 
         if (!noteDeclaredName(name, DeclarationKind::LexicalFunction, pos()))
@@ -8596,7 +8607,7 @@ Parser<ParseHandler, CharT>::generatorComprehensionLambda(unsigned begin)
     
     Directives directives( outerpc->sc()->strict());
     FunctionBox* genFunbox = newFunctionBox(genfn, fun,  0, directives,
-                                            StarGenerator, SyncFunction,  false);
+                                            StarGenerator, SyncFunction);
     if (!genFunbox)
         return null();
     genFunbox->isGenexpLambda = true;
