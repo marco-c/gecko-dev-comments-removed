@@ -46,8 +46,9 @@ private:
 
   
   VisibilityState mVisibilityState;
-  bool mFocused;
   FrameType mFrameType;
+  TimeStamp mLastFocusTime;
+  bool mFocused;
 };
 
 class ServiceWorkerClient : public nsISupports,
