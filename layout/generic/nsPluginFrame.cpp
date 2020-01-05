@@ -341,8 +341,8 @@ nsPluginFrame::PrepForDrawing(nsIWidget *aWidget)
     
     
     for (nsIFrame* frame = this; frame; frame = frame->GetParent()) {
-      nscolor bgcolor =
-        frame->GetVisitedDependentColor(eCSSProperty_background_color);
+      nscolor bgcolor = frame->
+        GetVisitedDependentColor(&nsStyleBackground::mBackgroundColor);
       if (NS_GET_A(bgcolor) > 0) {  
         mWidget->SetBackgroundColor(bgcolor);
         break;

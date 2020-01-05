@@ -1547,7 +1547,17 @@ public:
                                     nsRenderingContext* aRenderingContext);
 
   
-  static nscolor GetColor(nsIFrame* aFrame, nsCSSPropertyID aProperty);
+  static nscolor DarkenColorIfNeeded(nsIFrame* aFrame, nscolor aColor);
+
+  
+  
+  
+  
+  template<typename Frame, typename T, typename S>
+  static nscolor GetColor(Frame* aFrame, T S::* aField) {
+    nscolor color = aFrame->GetVisitedDependentColor(aField);
+    return DarkenColorIfNeeded(aFrame, color);
+  }
 
   
   static gfxFloat GetSnappedBaselineY(nsIFrame* aFrame, gfxContext* aContext,

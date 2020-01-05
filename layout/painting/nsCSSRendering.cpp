@@ -537,29 +537,28 @@ GetRadii(nsIFrame* aForFrame, const nsStyleBorder& aBorder,
 }
 
 static nsRect
-JoinBoxesForBlockAxisSlice(nsIFrame* aFrame, const nsRect& aBorderArea)
+JoinBoxesForVerticalSlice(nsIFrame* aFrame, const nsRect& aBorderArea)
 {
   
   
   nsRect borderArea = aBorderArea;
-  nscoord bSize = 0;
-  auto wm = aFrame->GetWritingMode();
+  nscoord h = 0;
   nsIFrame* f = aFrame->GetNextContinuation();
   for (; f; f = f->GetNextContinuation()) {
     MOZ_ASSERT(!(f->GetStateBits() & NS_FRAME_PART_OF_IBSPLIT),
                "anonymous ib-split block shouldn't have border/background");
-    bSize += f->BSize(wm);
+    h += f->GetRect().height;
   }
-  (wm.IsVertical() ? borderArea.width : borderArea.height) += bSize;
-  bSize = 0;
+  borderArea.height += h;
+  h = 0;
   f = aFrame->GetPrevContinuation();
   for (; f; f = f->GetPrevContinuation()) {
     MOZ_ASSERT(!(f->GetStateBits() & NS_FRAME_PART_OF_IBSPLIT),
                "anonymous ib-split block shouldn't have border/background");
-    bSize += f->BSize(wm);
+    h += f->GetRect().height;
   }
-  (wm.IsVertical() ? borderArea.x : borderArea.y) -= bSize;
-  (wm.IsVertical() ? borderArea.width : borderArea.height) += bSize;
+  borderArea.y -= h;
+  borderArea.height += h;
   return borderArea;
 }
 
@@ -580,7 +579,7 @@ JoinBoxesForSlice(nsIFrame* aFrame, const nsRect& aBorderArea,
             : gInlineBGData->GetContinuousRect(aFrame)) +
       aBorderArea.TopLeft();
   }
-  return JoinBoxesForBlockAxisSlice(aFrame, aBorderArea);
+  return JoinBoxesForVerticalSlice(aFrame, aBorderArea);
 }
 
 static bool
@@ -671,8 +670,8 @@ nsCSSRendering::PaintBorder(nsPresContext* aPresContext,
   nsStyleBorder newStyleBorder(*styleBorder);
 
   NS_FOR_CSS_SIDES(side) {
-    nscolor color = aStyleContext->GetVisitedDependentColor(
-      nsCSSProps::SubpropertyEntryFor(eCSSProperty_border_color)[side]);
+    nscolor color = aStyleContext->
+      GetVisitedDependentColor(nsStyleBorder::BorderColorFieldFor(side));
     newStyleBorder.mBorderColor[side] = StyleComplexColor::FromColor(color);
   }
   return PaintBorderWithStyleBorder(aPresContext, aRenderingContext, aForFrame,
@@ -703,8 +702,8 @@ nsCSSRendering::CreateBorderRenderer(nsPresContext* aPresContext,
   nsStyleBorder newStyleBorder(*styleBorder);
 
   NS_FOR_CSS_SIDES(side) {
-    nscolor color = aStyleContext->GetVisitedDependentColor(
-      nsCSSProps::SubpropertyEntryFor(eCSSProperty_border_color)[side]);
+    nscolor color = aStyleContext->
+      GetVisitedDependentColor(nsStyleBorder::BorderColorFieldFor(side));
     newStyleBorder.mBorderColor[side] = StyleComplexColor::FromColor(color);
   }
   return CreateBorderRendererWithStyleBorder(aPresContext, aDrawTarget,
@@ -734,8 +733,8 @@ ConstructBorderRenderer(nsPresContext* aPresContext,
   bool quirks = aPresContext->CompatibilityMode() == eCompatibility_NavQuirks;
   nsIFrame* bgFrame = nsCSSRendering::FindNonTransparentBackgroundFrame(aForFrame, quirks);
   nsStyleContext* bgContext = bgFrame->StyleContext();
-  nscolor bgColor =
-    bgContext->GetVisitedDependentColor(eCSSProperty_background_color);
+  nscolor bgColor = bgContext->
+    GetVisitedDependentColor(&nsStyleBackground::mBackgroundColor);
 
   
   
@@ -871,6 +870,7 @@ nsCSSRendering::PaintBorderWithStyleBorder(nsPresContext* aPresContext,
                                                    aStyleBorder,
                                                    aSkipSides,
                                                    &needsClip);
+
   if (needsClip) {
     aDrawTarget.PushClipRect(
         NSRectToSnappedRect(aBorderArea,
@@ -973,8 +973,8 @@ nsCSSRendering::PaintOutline(nsPresContext* aPresContext,
   nsIFrame* bgFrame = nsCSSRendering::FindNonTransparentBackgroundFrame
     (aForFrame, false);
   nsStyleContext* bgContext = bgFrame->StyleContext();
-  nscolor bgColor =
-    bgContext->GetVisitedDependentColor(eCSSProperty_background_color);
+  nscolor bgColor = bgContext->
+    GetVisitedDependentColor(&nsStyleBackground::mBackgroundColor);
 
   nsRect innerRect;
   if (
@@ -1041,7 +1041,7 @@ nsCSSRendering::PaintOutline(nsPresContext* aPresContext,
   
   
   nscolor outlineColor =
-    aStyleContext->GetVisitedDependentColor(eCSSProperty_outline_color);
+    aStyleContext->GetVisitedDependentColor(&nsStyleOutline::mOutlineColor);
   nscolor outlineColors[4] = { outlineColor,
                                outlineColor,
                                outlineColor,
@@ -2240,8 +2240,8 @@ nsCSSRendering::DetermineBackgroundColor(nsPresContext* aPresContext,
   const nsStyleBackground *bg = aStyleContext->StyleBackground();
   nscolor bgColor;
   if (aDrawBackgroundColor) {
-    bgColor =
-      aStyleContext->GetVisitedDependentColor(eCSSProperty_background_color);
+    bgColor = aStyleContext->
+      GetVisitedDependentColor(&nsStyleBackground::mBackgroundColor);
     if (NS_GET_A(bgColor) == 0) {
       aDrawBackgroundColor = false;
     }

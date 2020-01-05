@@ -629,7 +629,7 @@ void nsDisplayMathMLSlash::Paint(nsDisplayListBuilder* aBuilder,
                            presContext->AppUnitsPerDevPixel());
 
   ColorPattern color(ToDeviceColor(
-    mFrame->GetVisitedDependentColor(eCSSProperty__webkit_text_fill_color)));
+    mFrame->GetVisitedDependentColor(&nsStyleText::mWebkitTextFillColor)));
 
   
   Point delta = Point(presContext->AppUnitsToGfxUnits(mThickness), 0);

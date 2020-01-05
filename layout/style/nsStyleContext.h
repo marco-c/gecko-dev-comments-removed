@@ -11,6 +11,7 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/RestyleLogging.h"
 #include "mozilla/StyleContextSource.h"
+#include "mozilla/StyleComplexColor.h"
 #include "nsCSSAnonBoxes.h"
 #include "nsStyleSet.h"
 
@@ -413,7 +414,8 @@ public:
 
 
 
-  nscolor GetVisitedDependentColor(nsCSSPropertyID aProperty);
+  template<typename T, typename S>
+  nscolor GetVisitedDependentColor(T S::* aField);
 
   
 
