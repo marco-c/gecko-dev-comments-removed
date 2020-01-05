@@ -2720,6 +2720,48 @@ class MOZ_STACK_CLASS AutoSelfHostingErrorReporter
     }
 };
 
+static bool
+VerifyGlobalNames(JSContext* cx, Handle<GlobalObject*> shg)
+{
+#ifdef DEBUG
+    RootedId id(cx);
+    bool nameMissing = false;
+
+    for (auto iter = cx->zone()->cellIter<JSScript>();
+         !iter.done() && !nameMissing;
+         iter.next())
+    {
+        JSScript* script = iter;
+        jsbytecode* end = script->codeEnd();
+        jsbytecode* nextpc;
+        for (jsbytecode* pc = script->code(); pc < end; pc = nextpc) {
+            JSOp op = JSOp(*pc);
+            nextpc = pc + GetBytecodeLength(pc);
+
+            if (op == JSOP_GETINTRINSIC) {
+                PropertyName* name = script->getName(pc);
+                id = NameToId(name);
+
+                if (!shg->lookupPure(id)) {
+                    
+                    
+                    nameMissing = true;
+                    break;
+                }
+            }
+        }
+    }
+
+    if (nameMissing) {
+        RootedValue value(cx, IdToValue(id));
+        return ReportValueErrorFlags(cx, JSREPORT_ERROR, JSMSG_NO_SUCH_SELF_HOSTED_PROP,
+                                     JSDVG_IGNORE_STACK, value, nullptr, nullptr, nullptr);
+    }
+#endif 
+
+    return true;
+}
+
 bool
 JSRuntime::initSelfHosting(JSContext* cx)
 {
@@ -2769,6 +2811,9 @@ JSRuntime::initSelfHosting(JSContext* cx)
     }
 
     if (!Evaluate(cx, options, src, srcLen, &rv))
+        return false;
+
+    if (!VerifyGlobalNames(cx, shg))
         return false;
 
     return true;
@@ -2822,20 +2867,11 @@ GetUnclonedValue(JSContext* cx, HandleNativeObject selfHostedObject,
     
     
     
-    if (JSID_IS_STRING(id) && !JSID_TO_STRING(id)->isPermanentAtom()) {
-        MOZ_ASSERT(selfHostedObject->is<GlobalObject>());
-        RootedValue value(cx, IdToValue(id));
-        return ReportValueErrorFlags(cx, JSREPORT_ERROR, JSMSG_NO_SUCH_SELF_HOSTED_PROP,
-                                     JSDVG_IGNORE_STACK, value, nullptr, nullptr, nullptr);
-    }
+    
+    MOZ_ASSERT_IF(JSID_IS_STRING(id), JSID_TO_STRING(id)->isPermanentAtom());
 
     RootedShape shape(cx, selfHostedObject->lookupPure(id));
-    if (!shape) {
-        RootedValue value(cx, IdToValue(id));
-        return ReportValueErrorFlags(cx, JSREPORT_ERROR, JSMSG_NO_SUCH_SELF_HOSTED_PROP,
-                                     JSDVG_IGNORE_STACK, value, nullptr, nullptr, nullptr);
-    }
-
+    MOZ_ASSERT(shape);
     MOZ_ASSERT(shape->hasSlot() && shape->hasDefaultGetter());
     vp.set(selfHostedObject->getSlot(shape->slot()));
     return true;
