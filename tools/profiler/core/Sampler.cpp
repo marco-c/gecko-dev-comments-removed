@@ -767,9 +767,9 @@ void PseudoStack::flushSamplerOnJSShutdown()
 
 
 static
-void addDynamicTag(ThreadInfo& aInfo, char aTagName, const char* aStr)
+void addDynamicCodeLocationTag(ThreadInfo& aInfo, const char* aStr)
 {
-  aInfo.addTag(ProfileEntry(aTagName, ""));
+  aInfo.addTag(ProfileEntry::CodeLocation(""));
   
   size_t strLen = strlen(aStr) + 1;
   for (size_t j = 0; j < strLen;) {
@@ -782,7 +782,7 @@ void addDynamicTag(ThreadInfo& aInfo, char aTagName, const char* aStr)
     memcpy(text, &aStr[j], len);
     j += sizeof(void*)/sizeof(char);
     
-    aInfo.addTag(ProfileEntry('d', *((void**)(&text[0]))));
+    aInfo.addTag(ProfileEntry::EmbeddedString(*((void**)(&text[0]))));
   }
 }
 
@@ -804,7 +804,7 @@ void addPseudoEntry(volatile StackEntry& entry, ThreadInfo& aInfo,
     
     
 
-    addDynamicTag(aInfo, 'c', sampleLabel);
+    addDynamicCodeLocationTag(aInfo, sampleLabel);
     if (entry.isJs()) {
       JSScript* script = entry.script();
       if (script) {
@@ -827,7 +827,7 @@ void addPseudoEntry(volatile StackEntry& entry, ThreadInfo& aInfo,
       lineno = entry.line();
     }
   } else {
-    aInfo.addTag(ProfileEntry('c', sampleLabel));
+    aInfo.addTag(ProfileEntry::CodeLocation(sampleLabel));
 
     
     
@@ -837,7 +837,7 @@ void addPseudoEntry(volatile StackEntry& entry, ThreadInfo& aInfo,
   }
 
   if (lineno != -1) {
-    aInfo.addTag(ProfileEntry('n', lineno));
+    aInfo.addTag(ProfileEntry::LineNumber(lineno));
   }
 
   uint32_t category = entry.category();
@@ -845,7 +845,7 @@ void addPseudoEntry(volatile StackEntry& entry, ThreadInfo& aInfo,
   MOZ_ASSERT(!(category & StackEntry::FRAME_LABEL_COPY));
 
   if (category) {
-    aInfo.addTag(ProfileEntry('y', (int)category));
+    aInfo.addTag(ProfileEntry::Category((int)category));
   }
 }
 
@@ -928,7 +928,7 @@ mergeStacksIntoProfile(ThreadInfo& aInfo, TickSample* aSample,
   }
 
   
-  aInfo.addTag(ProfileEntry('s', "(root)"));
+  aInfo.addTag(ProfileEntry::Sample("(root)"));
 
   
   
@@ -1025,11 +1025,11 @@ mergeStacksIntoProfile(ThreadInfo& aInfo, TickSample* aSample,
       
       if (aSample->isSamplingCurrentThread ||
           jsFrame.kind == JS::ProfilingFrameIterator::Frame_Wasm) {
-        addDynamicTag(aInfo, 'c', jsFrame.label);
+        addDynamicCodeLocationTag(aInfo, jsFrame.label);
       } else {
         MOZ_ASSERT(jsFrame.kind == JS::ProfilingFrameIterator::Frame_Ion ||
                    jsFrame.kind == JS::ProfilingFrameIterator::Frame_Baseline);
-        aInfo.addTag(ProfileEntry('J', jsFrames[jsIndex].returnAddress));
+        aInfo.addTag(ProfileEntry::JitReturnAddr(jsFrames[jsIndex].returnAddress));
       }
 
       jsIndex--;
@@ -1041,7 +1041,7 @@ mergeStacksIntoProfile(ThreadInfo& aInfo, TickSample* aSample,
     if (nativeStackAddr) {
       MOZ_ASSERT(nativeIndex >= 0);
       aInfo
-        .addTag(ProfileEntry('l', (void*)aNativeStack.pc_array[nativeIndex]));
+        .addTag(ProfileEntry::NativeLeafAddr((void*)aNativeStack.pc_array[nativeIndex]));
     }
     if (nativeIndex >= 0) {
       nativeIndex--;
@@ -1299,7 +1299,7 @@ doSampleStackTrace(ThreadInfo& aInfo, TickSample* aSample,
 
 #ifdef ENABLE_LEAF_DATA
   if (aSample && aAddLeafAddresses) {
-    aInfo.addTag(ProfileEntry('l', (void*)aSample->pc));
+    aInfo.addTag(ProfileEntry::NativeLeafAddr((void*)aSample->pc));
   }
 #endif
 }
@@ -1316,10 +1316,10 @@ Sampler::InplaceTick(TickSample* sample)
 {
   ThreadInfo& currThreadInfo = *sample->threadInfo;
 
-  currThreadInfo.addTag(ProfileEntry('T', currThreadInfo.ThreadId()));
+  currThreadInfo.addTag(ProfileEntry::ThreadId(currThreadInfo.ThreadId()));
 
   mozilla::TimeDuration delta = sample->timestamp - sStartTime;
-  currThreadInfo.addTag(ProfileEntry('t', delta.ToMilliseconds()));
+  currThreadInfo.addTag(ProfileEntry::Time(delta.ToMilliseconds()));
 
   PseudoStack* stack = currThreadInfo.Stack();
 
@@ -1341,27 +1341,27 @@ Sampler::InplaceTick(TickSample* sample)
     while (pendingMarkersList && pendingMarkersList->peek()) {
       ProfilerMarker* marker = pendingMarkersList->popHead();
       currThreadInfo.addStoredMarker(marker);
-      currThreadInfo.addTag(ProfileEntry('m', marker));
+      currThreadInfo.addTag(ProfileEntry::Marker(marker));
     }
   }
 
   if (currThreadInfo.GetThreadResponsiveness()->HasData()) {
     mozilla::TimeDuration delta = currThreadInfo.GetThreadResponsiveness()->GetUnresponsiveDuration(sample->timestamp);
-    currThreadInfo.addTag(ProfileEntry('r', delta.ToMilliseconds()));
+    currThreadInfo.addTag(ProfileEntry::Responsiveness(delta.ToMilliseconds()));
   }
 
   
   if (sample->rssMemory != 0) {
-    currThreadInfo.addTag(ProfileEntry('R', static_cast<double>(sample->rssMemory)));
+    currThreadInfo.addTag(ProfileEntry::ResidentMemory(static_cast<double>(sample->rssMemory)));
   }
 
   
   if (sample->ussMemory != 0) {
-    currThreadInfo.addTag(ProfileEntry('U', static_cast<double>(sample->ussMemory)));
+    currThreadInfo.addTag(ProfileEntry::UnsharedMemory(static_cast<double>(sample->ussMemory)));
   }
 
   if (sLastFrameNumber != sFrameNumber) {
-    currThreadInfo.addTag(ProfileEntry('f', sFrameNumber));
+    currThreadInfo.addTag(ProfileEntry::FrameNumber(sFrameNumber));
     sLastFrameNumber = sFrameNumber;
   }
 }
