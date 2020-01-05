@@ -221,14 +221,6 @@ protected:
 
 
 
-void ForceWALCheckpoint();
-
-
-
-
-
-
-
 
 
 

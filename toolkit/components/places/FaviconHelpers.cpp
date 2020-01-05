@@ -1223,10 +1223,6 @@ FetchAndConvertUnsupportedPayloads::Run()
     "DELETE FROM moz_icons WHERE typeof(width) = 'text'"
   ));
   NS_ENSURE_SUCCESS(rv, rv);
-  rv = mDB->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
-    "PRAGMA wal_checkpoint"
-  ));
-  NS_ENSURE_SUCCESS(rv, rv);
   
   
   rv = mDB->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
