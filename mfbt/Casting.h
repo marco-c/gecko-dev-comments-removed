@@ -238,6 +238,19 @@ AssertedCast(const From aFrom)
   return static_cast<To>(aFrom);
 }
 
+
+
+
+
+
+template<typename To, typename From>
+inline To
+ReleaseAssertedCast(const From aFrom)
+{
+  MOZ_RELEASE_ASSERT((detail::IsInBounds<From, To>(aFrom)));
+  return static_cast<To>(aFrom);
+}
+
 } 
 
 #endif 
