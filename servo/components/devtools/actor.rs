@@ -4,9 +4,10 @@
 
 
 
-use std::any::{Any, AnyRefExt, AnyMutRefExt};
+use std::any::{AnyPrivate, AnyRefExt, AnyMutRefExt};
 use std::collections::hashmap::HashMap;
 use std::cell::{Cell, RefCell};
+use std::intrinsics::TypeId;
 use std::io::TcpStream;
 use std::mem::{transmute, transmute_copy, replace};
 use std::raw::TraitObject;
@@ -15,7 +16,7 @@ use serialize::json;
 
 
 
-pub trait Actor: Any {
+pub trait Actor: AnyPrivate {
     fn handle_message(&self,
                       registry: &ActorRegistry,
                       msg_type: &String,
@@ -44,12 +45,9 @@ impl<'a> AnyRefExt<'a> for &'a Actor + 'a {
     fn is<T: 'static>(self) -> bool {
         
         
-        
-        
-        
-
-
-        true
+        let t = TypeId::of::<T>();
+        let boxed = self.get_type_id();
+        t == boxed
     }
 
     fn downcast_ref<T: 'static>(self) -> Option<&'a T> {
