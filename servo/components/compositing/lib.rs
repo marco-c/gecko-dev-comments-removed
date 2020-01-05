@@ -89,7 +89,8 @@ pub enum CompositorMsg {
     GetFrame(PipelineId, IpcSender<Option<FrameId>>),
     
     
-    GetPipeline(Option<FrameId>, IpcSender<Option<PipelineId>>),
+    
+    GetPipeline(Option<FrameId>, IpcSender<Option<(PipelineId, bool)>>),
     
     
     GetPipelineTitle(PipelineId),
