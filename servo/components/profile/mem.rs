@@ -375,10 +375,9 @@ mod system_reporter {
 
     #[cfg(target_os="linux")]
     fn get_system_heap_allocated() -> Option<usize> {
-        let mut info: struct_mallinfo;
-        unsafe {
-            info = mallinfo();
-        }
+        let info: struct_mallinfo = unsafe {
+            mallinfo()
+        };
         
         
         
