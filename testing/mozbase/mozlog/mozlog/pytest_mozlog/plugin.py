@@ -82,6 +82,10 @@ class MozLog(object):
             if isinstance(report.longrepr, basestring):
                 
                 message = stack = report.longrepr
+                if report.longrepr.startswith('[XPASS(strict)]'):
+                    
+                    
+                    expected, status = ('FAIL', 'PASS')
             else:
                 try:
                     
