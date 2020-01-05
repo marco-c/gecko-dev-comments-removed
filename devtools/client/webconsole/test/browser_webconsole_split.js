@@ -8,6 +8,11 @@
 const TEST_URI = "data:text/html;charset=utf-8,Web Console test for splitting";
 
 function test() {
+  waitForExplicitFinish();
+  SpecialPowers.pushPrefEnv({"set": [["dom.ipc.processCount", 1]]}, runTest);
+}
+
+function runTest() {
   
   requestLongerTimeout(2);
 
