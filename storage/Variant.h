@@ -357,7 +357,6 @@ public:
   NS_IMETHOD GetAsAUTF8String(nsACString &_str)
   {
     
-    _str.Truncate(0);
     _str.SetIsVoid(true);
     return NS_OK;
   }
@@ -365,7 +364,6 @@ public:
   NS_IMETHOD GetAsAString(nsAString &_str)
   {
     
-    _str.Truncate(0);
     _str.SetIsVoid(true);
     return NS_OK;
   }
