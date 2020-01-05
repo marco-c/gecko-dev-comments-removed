@@ -277,14 +277,34 @@ macro_rules! try_parse_one {
     }
 
     impl<'a> ToCss for LonghandsToSerialize<'a>  {
-        
-        
+        // Serializes into the single keyword value if both scroll-snap-type and scroll-snap-type-y are same.
+        // Otherwise into an empty string. This is done to match Gecko's behaviour.
         fn to_css<W>(&self, dest: &mut W) -> fmt::Result where W: fmt::Write {
             if self.scroll_snap_type_x == self.scroll_snap_type_y {
                 self.scroll_snap_type_x.to_css(dest)
             } else {
                 Ok(())
             }
+        }
+    }
+</%helpers:shorthand>
+
+
+<%helpers:shorthand name="-moz-transform" products="gecko"
+                    sub_properties="transform"
+                    flags="ALIAS_PROPERTY"
+                    spec="Non-standard: https://developer.mozilla.org/en-US/docs/Web/CSS/transform">
+    use properties::longhands::transform;
+
+    pub fn parse_value(context: &ParserContext, input: &mut Parser) -> Result<Longhands, ()> {
+        Ok(Longhands {
+            transform: transform::parse_prefixed(context, input)?,
+        })
+    }
+
+    impl<'a> ToCss for LonghandsToSerialize<'a>  {
+        fn to_css<W>(&self, dest: &mut W) -> fmt::Result where W: fmt::Write {
+            self.transform.to_css(dest)
         }
     }
 </%helpers:shorthand>
