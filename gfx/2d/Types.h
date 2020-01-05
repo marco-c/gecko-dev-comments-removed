@@ -424,11 +424,6 @@ enum Corner {
   eCornerBottomLeft = 3
 };
 
-#define NS_CORNER_TOP_LEFT mozilla::eCornerTopLeft
-#define NS_CORNER_TOP_RIGHT mozilla::eCornerTopRight
-#define NS_CORNER_BOTTOM_RIGHT mozilla::eCornerBottomRight
-#define NS_CORNER_BOTTOM_LEFT mozilla::eCornerBottomLeft
-
 
 
 #define NS_FOR_CSS_FULL_CORNERS(var_)                                   \

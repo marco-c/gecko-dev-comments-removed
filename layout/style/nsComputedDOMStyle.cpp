@@ -442,7 +442,7 @@ nsComputedDOMStyle::GetStyleContextForElement(Element* aElement,
       return nullptr;
   }
 
-  presShell->FlushPendingNotifications(FlushType::Style);
+  presShell->FlushPendingNotifications(Flush_Style);
 
   return GetStyleContextForElementNoFlush(aElement, aPseudo, presShell,
                                           aStyleType);
@@ -665,7 +665,7 @@ nsComputedDOMStyle::UpdateCurrentStyleSources(bool aNeedsLayoutFlush)
   
   
   document->FlushPendingNotifications(
-    aNeedsLayoutFlush ? FlushType::Layout : FlushType::Style);
+    aNeedsLayoutFlush ? Flush_Layout : Flush_Style);
 #ifdef DEBUG
   mFlushedPendingReflows = aNeedsLayoutFlush;
 #endif
@@ -3128,28 +3128,28 @@ already_AddRefed<CSSValue>
 nsComputedDOMStyle::DoGetBorderBottomLeftRadius()
 {
   return GetEllipseRadii(StyleBorder()->mBorderRadius,
-                         NS_CORNER_BOTTOM_LEFT);
+                         eCornerBottomLeft);
 }
 
 already_AddRefed<CSSValue>
 nsComputedDOMStyle::DoGetBorderBottomRightRadius()
 {
   return GetEllipseRadii(StyleBorder()->mBorderRadius,
-                         NS_CORNER_BOTTOM_RIGHT);
+                         eCornerBottomRight);
 }
 
 already_AddRefed<CSSValue>
 nsComputedDOMStyle::DoGetBorderTopLeftRadius()
 {
   return GetEllipseRadii(StyleBorder()->mBorderRadius,
-                         NS_CORNER_TOP_LEFT);
+                         eCornerTopLeft);
 }
 
 already_AddRefed<CSSValue>
 nsComputedDOMStyle::DoGetBorderTopRightRadius()
 {
   return GetEllipseRadii(StyleBorder()->mBorderRadius,
-                         NS_CORNER_TOP_RIGHT);
+                         eCornerTopRight);
 }
 
 already_AddRefed<CSSValue>
@@ -3379,28 +3379,28 @@ already_AddRefed<CSSValue>
 nsComputedDOMStyle::DoGetOutlineRadiusBottomLeft()
 {
   return GetEllipseRadii(StyleOutline()->mOutlineRadius,
-                         NS_CORNER_BOTTOM_LEFT);
+                         eCornerBottomLeft);
 }
 
 already_AddRefed<CSSValue>
 nsComputedDOMStyle::DoGetOutlineRadiusBottomRight()
 {
   return GetEllipseRadii(StyleOutline()->mOutlineRadius,
-                         NS_CORNER_BOTTOM_RIGHT);
+                         eCornerBottomRight);
 }
 
 already_AddRefed<CSSValue>
 nsComputedDOMStyle::DoGetOutlineRadiusTopLeft()
 {
   return GetEllipseRadii(StyleOutline()->mOutlineRadius,
-                         NS_CORNER_TOP_LEFT);
+                         eCornerTopLeft);
 }
 
 already_AddRefed<CSSValue>
 nsComputedDOMStyle::DoGetOutlineRadiusTopRight()
 {
   return GetEllipseRadii(StyleOutline()->mOutlineRadius,
-                         NS_CORNER_TOP_RIGHT);
+                         eCornerTopRight);
 }
 
 already_AddRefed<CSSValue>
