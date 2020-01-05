@@ -383,7 +383,7 @@ private:
   bool IsPaintingAllowed() { return RootViewManager()->mRefreshDisableCount == 0; }
 
   void WillPaintWindow(nsIWidget* aWidget);
-  bool PaintWindow(nsIWidget* aWidget, LayoutDeviceIntRegion aRegion);
+  bool PaintWindow(nsIWidget* aWidget, const LayoutDeviceIntRegion& aRegion);
   void DidPaintWindow();
 
   
