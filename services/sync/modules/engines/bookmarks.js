@@ -277,34 +277,6 @@ BookmarksEngine.prototype = {
   syncPriority: 4,
   allowSkippedRecord: false,
 
-  
-  
-  
-  
-  
-  _getStringUrlForId(id) {
-    let url;
-    try {
-      let stmt = this._store._getStmt(`
-            SELECT h.url
-            FROM moz_places h
-            JOIN moz_bookmarks b ON h.id = b.fk
-            WHERE b.id = :id`);
-      stmt.params.id = id;
-      let rows = Async.querySpinningly(stmt, ["url"]);
-      url = rows.length == 0 ? "<not found>" : rows[0].url;
-    } catch (ex) {
-      if (Async.isShutdownException(ex)) {
-        throw ex;
-      }
-      if (ex instanceof Ci.mozIStorageError) {
-        url = `<failed: Storage error: ${ex.message} (${ex.result})>`;
-      } else {
-        url = `<failed: ${ex.toString()}>`;
-      }
-    }
-    return url;
-  },
 
   _guidMapFailed: false,
   _buildGUIDMap: function _buildGUIDMap() {
@@ -623,14 +595,6 @@ BookmarksEngine.prototype = {
 function BookmarksStore(name, engine) {
   Store.call(this, name, engine);
   this._itemsToDelete = new Set();
-  
-  Svc.Obs.add("places-shutdown", function() {
-    for (let query in this._stmts) {
-      let stmt = this._stmts[query];
-      stmt.finalize();
-    }
-    this._stmts = {};
-  }, this);
 }
 BookmarksStore.prototype = {
   __proto__: Store.prototype,
@@ -784,26 +748,6 @@ BookmarksStore.prototype = {
     return record;
   },
 
-  _stmts: {},
-  _getStmt(query) {
-    if (query in this._stmts) {
-      return this._stmts[query];
-    }
-
-    this._log.trace("Creating SQL statement: " + query);
-    let db = PlacesUtils.history.QueryInterface(Ci.nsPIPlacesDatabase)
-                        .DBConnection;
-    return this._stmts[query] = db.createAsyncStatement(query);
-  },
-
-  get _frecencyStm() {
-    return this._getStmt(
-        "SELECT frecency " +
-        "FROM moz_places " +
-        "WHERE url_hash = hash(:url) AND url = :url " +
-        "LIMIT 1");
-  },
-  _frecencyCols: ["frecency"],
 
   GUIDForId: function GUIDForId(id) {
     let guid = Async.promiseSpinningly(PlacesUtils.promiseItemGuid(id));
@@ -831,10 +775,9 @@ BookmarksStore.prototype = {
 
     
     if (record.bmkUri != null) {
-      this._frecencyStm.params.url = record.bmkUri;
-      let result = Async.querySpinningly(this._frecencyStm, this._frecencyCols);
-      if (result.length)
-        index += result[0].frecency;
+      let frecency = Async.promiseSpinningly(PlacesSyncUtils.history.fetchURLFrecency(record.bmkUri));
+      if (frecency != -1)
+        index += frecency;
     }
 
     return index;
@@ -860,8 +803,6 @@ function BookmarksTracker(name, engine) {
   this._batchSawScoreIncrement = false;
   this._migratedOldEntries = false;
   Tracker.call(this, name, engine);
-
-  Svc.Obs.add("places-shutdown", this);
 }
 BookmarksTracker.prototype = {
   __proto__: Tracker.prototype,
