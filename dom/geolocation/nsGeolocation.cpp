@@ -1172,7 +1172,9 @@ Geolocation::IsAlreadyCleared(nsGeolocationRequest* aRequest)
 bool
 Geolocation::ShouldBlockInsecureRequests() const
 {
-  if (Preferences::GetBool(PREF_GEO_SECURITY_ALLOWINSECURE, false)) {
+  
+  
+  if (Preferences::GetBool(PREF_GEO_SECURITY_ALLOWINSECURE, true)) {
     return false;
   }
 
@@ -1186,7 +1188,7 @@ Geolocation::ShouldBlockInsecureRequests() const
     return false;
   }
 
-  if (!nsGlobalWindow::Cast(win)->IsSecureContextIfOpenerIgnored()) {
+  if (!nsGlobalWindow::Cast(win)->IsSecureContext()) {
     nsContentUtils::ReportToConsole(nsIScriptError::errorFlag,
                                     NS_LITERAL_CSTRING("DOM"), doc,
                                     nsContentUtils::eDOM_PROPERTIES,
