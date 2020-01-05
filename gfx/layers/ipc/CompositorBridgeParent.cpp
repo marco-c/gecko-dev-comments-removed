@@ -1005,14 +1005,18 @@ CompositorBridgeParent::CompositeToTarget(DrawTarget* aTarget, const gfx::IntRec
     DidComposite(start, end);
   }
 
-  
-  
-  
-  
-  
-  if (!mCompositor->GetCompositeUntilTime().IsNull() ||
-      mLayerManager->DebugOverlayWantsNextFrame()) {
-    ScheduleComposition();
+  if (mCompositor) {
+    
+    
+    
+    
+    
+    if (!mCompositor->GetCompositeUntilTime().IsNull() ||
+        mLayerManager->DebugOverlayWantsNextFrame()) {
+      ScheduleComposition();
+    }
+  } else {
+    
   }
 
 #ifdef COMPOSITOR_PERFORMANCE_WARNING
@@ -1034,7 +1038,12 @@ CompositorBridgeParent::CompositeToTarget(DrawTarget* aTarget, const gfx::IntRec
     
     ScheduleComposition();
   }
-  mCompositor->SetCompositionTime(TimeStamp());
+
+  if (mCompositor) {
+    mCompositor->SetCompositionTime(TimeStamp());
+  } else {
+    
+  }
 
   mozilla::Telemetry::AccumulateTimeDelta(mozilla::Telemetry::COMPOSITE_TIME, start);
 }
@@ -1294,7 +1303,10 @@ CompositorBridgeParent::RecvGetFrameUniformity(FrameUniformityData* aOutData)
 mozilla::ipc::IPCResult
 CompositorBridgeParent::RecvRequestOverfill()
 {
-  uint32_t overfillRatio = mCompositor->GetFillRatio();
+  uint32_t overfillRatio = 0;
+  if (mCompositor) {
+    overfillRatio = mCompositor->GetFillRatio();
+  }
   Unused << SendOverfill(overfillRatio);
   return IPC_OK();
 }
