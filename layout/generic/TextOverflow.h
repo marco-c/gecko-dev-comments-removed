@@ -127,9 +127,11 @@ class TextOverflow {
 
 
 
-  void ExamineLineFrames(nsLineBox*      aLine,
-                         FrameHashtable* aFramesToHide,
-                         AlignmentEdges* aAlignmentEdges);
+
+
+  LogicalRect ExamineLineFrames(nsLineBox*      aLine,
+                                FrameHashtable* aFramesToHide,
+                                AlignmentEdges* aAlignmentEdges);
 
   
 
@@ -199,9 +201,12 @@ class TextOverflow {
 
 
 
+
+
   void CreateMarkers(const nsLineBox* aLine,
                      bool aCreateIStart, bool aCreateIEnd,
-                     const LogicalRect& aInsideMarkersArea);
+                     const LogicalRect& aInsideMarkersArea,
+                     const LogicalRect& aContentArea);
 
   LogicalRect            mContentArea;
   nsDisplayListBuilder*  mBuilder;
