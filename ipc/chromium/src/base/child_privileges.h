@@ -1,0 +1,23 @@
+
+
+
+
+
+
+#ifndef BASE_CHILD_PRIVILEGS_H_
+#define BASE_CHILD_PRIVILEGS_H_
+
+namespace base {
+
+enum ChildPrivileges {
+  PRIVILEGES_DEFAULT,
+  PRIVILEGES_UNPRIVILEGED,
+  PRIVILEGES_INHERIT,
+  
+  PRIVILEGES_FILEREAD,
+  PRIVILEGES_LAST
+};
+
+} 
+
+#endif  
