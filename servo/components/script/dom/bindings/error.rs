@@ -19,7 +19,7 @@ use libc;
 use std::ptr;
 
 
-#[deriving(Show)]
+#[deriving(Show, Clone)]
 pub enum Error {
     IndexSize,
     FailureUnknown,

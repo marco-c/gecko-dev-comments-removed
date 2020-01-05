@@ -27,7 +27,6 @@ use dom::mouseevent::MouseEvent;
 use dom::node::{mod, Node, NodeHelpers, NodeDamage, NodeTypeId};
 use dom::window::{Window, WindowHelpers};
 use dom::worker::{Worker, TrustedWorkerAddress};
-use dom::xmlhttprequest::{TrustedXHRAddress, XMLHttpRequest, XHRProgress};
 use parse::html::{HTMLInput, parse_html};
 use layout_interface::{ScriptLayoutChan, LayoutChan, ReflowGoal, ReflowQueryType};
 use layout_interface;
@@ -87,6 +86,10 @@ pub enum TimerSource {
     FromWorker
 }
 
+pub trait Runnable {
+    fn handler(&self);
+}
+
 
 
 pub enum ScriptMsg {
@@ -107,16 +110,14 @@ pub enum ScriptMsg {
     
     ExitWindow(PipelineId),
     
-    XHRProgress(TrustedXHRAddress, XHRProgress),
-    
-    XHRRelease(TrustedXHRAddress),
-    
     
     DOMMessage(*mut u64, size_t),
     
     WorkerPostMessage(TrustedWorkerAddress, *mut u64, size_t),
     
     WorkerRelease(TrustedWorkerAddress),
+    
+    RunnableMsg(Box<Runnable+Send>),
 }
 
 
@@ -572,16 +573,14 @@ impl ScriptTask {
                 self.handle_navigate_msg(direction),
             ScriptMsg::ExitWindow(id) =>
                 self.handle_exit_window_msg(id),
-            ScriptMsg::XHRProgress(addr, progress) =>
-                XMLHttpRequest::handle_progress(addr, progress),
-            ScriptMsg::XHRRelease(addr) =>
-                XMLHttpRequest::handle_release(addr),
             ScriptMsg::DOMMessage(..) =>
                 panic!("unexpected message"),
             ScriptMsg::WorkerPostMessage(addr, data, nbytes) =>
                 Worker::handle_message(addr, data, nbytes),
             ScriptMsg::WorkerRelease(addr) =>
                 Worker::handle_release(addr),
+            ScriptMsg::RunnableMsg(runnable) =>
+                runnable.handler(),
         }
     }
 
