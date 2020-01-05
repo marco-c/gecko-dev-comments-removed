@@ -750,8 +750,11 @@ class PseudoChildAPIManager extends ChildAPIManager {
   }
 }
 
-class ExtensionContext extends BaseContext {
+class ExtensionPageContextChild extends BaseContext {
   
+
+
+
 
 
 
@@ -770,7 +773,7 @@ class ExtensionContext extends BaseContext {
     if (Services.appinfo.processType != Services.appinfo.PROCESS_TYPE_DEFAULT) {
       
       
-      throw new Error("ExtensionContext cannot be created in child processes");
+      throw new Error("ExtensionPageContextChild cannot be created in child processes");
     }
 
     let {viewType, uri, contentWindow, tabId} = params;
@@ -848,7 +851,7 @@ class ExtensionContext extends BaseContext {
   }
 }
 
-defineLazyGetter(ExtensionContext.prototype, "messenger", function() {
+defineLazyGetter(ExtensionPageContextChild.prototype, "messenger", function() {
   let filter = {extensionId: this.extension.id};
   let optionalFilter = {};
   
@@ -859,7 +862,7 @@ defineLazyGetter(ExtensionContext.prototype, "messenger", function() {
                        filter, optionalFilter);
 });
 
-defineLazyGetter(ExtensionContext.prototype, "childManager", function() {
+defineLazyGetter(ExtensionPageContextChild.prototype, "childManager", function() {
   let localApis = {};
   apiManager.generateAPIs(this, localApis);
 
@@ -1031,7 +1034,7 @@ ExtensionChild = {
 
     let uri = contentWindow.document.documentURIObject;
 
-    context = new ExtensionContext(extension, {viewType, contentWindow, uri, tabId});
+    context = new ExtensionPageContextChild(extension, {viewType, contentWindow, uri, tabId});
     this.extensionContexts.set(windowId, context);
   },
 

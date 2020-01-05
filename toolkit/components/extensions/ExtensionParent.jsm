@@ -267,7 +267,11 @@ class BrowserDocshellFollower {
   }
 }
 
-class ProxyContext extends BaseContext {
+
+
+
+
+class ProxyContextParent extends BaseContext {
   constructor(envType, extension, params, xulBrowser, principal) {
     super(envType, extension);
 
@@ -321,18 +325,29 @@ class ProxyContext extends BaseContext {
   }
 }
 
-defineLazyGetter(ProxyContext.prototype, "apiObj", function() {
+defineLazyGetter(ProxyContextParent.prototype, "apiObj", function() {
   let obj = {};
   GlobalManager.injectInObject(this, false, obj);
   return obj;
 });
 
-defineLazyGetter(ProxyContext.prototype, "sandbox", function() {
+defineLazyGetter(ProxyContextParent.prototype, "sandbox", function() {
   return Cu.Sandbox(this.principal);
 });
 
 
-class ExtensionChildProxyContext extends ProxyContext {
+
+
+
+class ContentScriptContextParent extends ProxyContextParent {
+}
+
+
+
+
+
+
+class ExtensionPageContextParent extends ProxyContextParent {
   constructor(envType, extension, params, xulBrowser) {
     super(envType, extension, params, xulBrowser, extension.principal);
 
@@ -451,9 +466,9 @@ ParentAPIManager = {
           !target.contentPrincipal.subsumes(principal)) {
         throw new Error(`Refused to create privileged WebExtension context for ${principal.URI.spec}`);
       }
-      context = new ExtensionChildProxyContext(envType, extension, data, target);
+      context = new ExtensionPageContextParent(envType, extension, data, target);
     } else if (envType == "content_parent") {
-      context = new ProxyContext(envType, extension, data, target, principal);
+      context = new ContentScriptContextParent(envType, extension, data, target, principal);
     } else {
       throw new Error(`Invalid WebExtension context envType: ${envType}`);
     }
