@@ -85,6 +85,10 @@ PendingAnimationTracker::TriggerPendingAnimationsOnNextTick(const TimeStamp&
 
   triggerAnimationsAtReadyTime(mPlayPendingSet);
   triggerAnimationsAtReadyTime(mPausePendingSet);
+
+  mHasPlayPendingGeometricAnimations = mPlayPendingSet.Count()
+                                       ? CheckState::Indeterminate
+                                       : CheckState::Absent;
 }
 
 void
@@ -99,6 +103,57 @@ PendingAnimationTracker::TriggerPendingAnimationsNow()
 
   triggerAndClearAnimations(mPlayPendingSet);
   triggerAndClearAnimations(mPausePendingSet);
+
+  mHasPlayPendingGeometricAnimations = CheckState::Absent;
+}
+
+void
+PendingAnimationTracker::MarkAnimationsThatMightNeedSynchronization()
+{
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (mHasPlayPendingGeometricAnimations == CheckState::Present) {
+    return;
+  }
+
+  if (!HasPlayPendingGeometricAnimations()) {
+    return;
+  }
+
+  for (auto iter = mPlayPendingSet.Iter(); !iter.Done(); iter.Next()) {
+    iter.Get()->GetKey()->NotifyGeometricAnimationsStartingThisFrame();
+  }
+}
+
+bool
+PendingAnimationTracker::HasPlayPendingGeometricAnimations()
+{
+  if (mHasPlayPendingGeometricAnimations != CheckState::Indeterminate) {
+    return mHasPlayPendingGeometricAnimations == CheckState::Present;
+  }
+
+  mHasPlayPendingGeometricAnimations = CheckState::Absent;
+  for (auto iter = mPlayPendingSet.ConstIter(); !iter.Done(); iter.Next()) {
+    auto animation = iter.Get()->GetKey();
+    if (animation->GetEffect() && animation->GetEffect()->AffectsGeometry()) {
+      mHasPlayPendingGeometricAnimations = CheckState::Present;
+      break;
+    }
+  }
+
+  return mHasPlayPendingGeometricAnimations == CheckState::Present;
 }
 
 void
