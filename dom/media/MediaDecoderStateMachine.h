@@ -281,8 +281,6 @@ private:
   
   void InitializationTask(MediaDecoder* aDecoder);
 
-  void SetDormant(bool aDormant);
-
   void SetAudioCaptured(bool aCaptured);
 
   RefPtr<MediaDecoder::SeekPromise> Seek(SeekTarget aTarget);
