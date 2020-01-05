@@ -922,9 +922,6 @@ class DesktopSingleLocale(LocalesMixin, ReleaseMixin, MockMixin, BuildbotMixin,
 
     def submit_to_balrog(self):
         """submit to balrog"""
-        if not self.config.get("balrog_servers"):
-            self.info("balrog_servers not set; skipping balrog submission.")
-            return
         self.info("Reading buildbot build properties...")
         self.read_buildbot_config()
         
@@ -945,8 +942,22 @@ class DesktopSingleLocale(LocalesMixin, ReleaseMixin, MockMixin, BuildbotMixin,
         self.set_buildbot_property("appVersion", self.query_version())
 
         
-        
-        self._map(self.submit_repack_to_balrog, self.query_locales())
+        def balrog_props_wrapper(locale):
+            env = self._query_upload_env()
+            props_path = os.path.join(env["UPLOAD_PATH"], locale,
+                                      'balrog_props.json')
+            self.generate_balrog_props(props_path)
+            return SUCCESS
+
+        if self.config.get('taskcluster_nightly'):
+            self._map(balrog_props_wrapper, self.query_locales())
+        else:
+            if not self.config.get("balrog_servers"):
+                self.info("balrog_servers not set; skipping balrog submission.")
+                return
+            
+            
+            self._map(self.submit_repack_to_balrog, self.query_locales())
 
     def submit_repack_to_balrog(self, locale):
         """submit a single locale to balrog"""
