@@ -4,7 +4,13 @@
 
 
 var testData = [];
-var now = Date.now() * 1000;
+var timeInMicroseconds = PlacesUtils.toPRTime(Date.now() - 10000);
+
+function newTimeInMicroseconds() {
+  timeInMicroseconds = timeInMicroseconds + 1000;
+  return timeInMicroseconds;
+}
+
 function createTestData() {
   function generateVisits(aPage) {
     for (var i = 0; i < aPage.visitCount; i++) {
@@ -12,7 +18,7 @@ function createTestData() {
                       isVisit: true,
                       title: aPage.title,
                       uri: aPage.uri,
-                      lastVisit: now++,
+                      lastVisit: newTimeInMicroseconds(),
                       isTag: aPage.tags && aPage.tags.length > 0,
                       tagArray: aPage.tags });
     }
@@ -87,11 +93,11 @@ add_task(function* test_results_as_visit()
    
    do_print("Updating More Items");
    var change3 = [{ isVisit: true,
-                    lastVisit: now++,
+                    lastVisit: newTimeInMicroseconds(),
                     uri: "http://foo.mail.com/changeme1.html",
                     title: "foo"},
                   { isVisit: true,
-                    lastVisit: now++,
+                    lastVisit: newTimeInMicroseconds(),
                     uri: "http://foo.mail.com/changeme3.html",
                     title: "moz",
                     isTag: true,
@@ -103,7 +109,7 @@ add_task(function* test_results_as_visit()
    
    do_print("Delete item outside of batch");
    var change4 = [{ isVisit: true,
-                    lastVisit: now++,
+                    lastVisit: newTimeInMicroseconds(),
                     uri: "http://moilla.com/",
                     title: "mo,z" }];
    yield task_populateDB(change4);

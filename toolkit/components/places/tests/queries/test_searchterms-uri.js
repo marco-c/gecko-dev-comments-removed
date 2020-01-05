@@ -36,7 +36,7 @@
 
     
     {isInQuery: false, isVisit:true, isDetails: true, title: "m,oz",
-     uri: "http://foo.com/changeme2.htm", lastVisit: tomorrow}];
+     uri: "http://foo.com/changeme2.htm", lastVisit: yesterday}];
 
 
 

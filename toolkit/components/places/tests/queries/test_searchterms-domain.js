@@ -42,7 +42,7 @@
 
    
    {isInQuery: false, isVisit:true, isDetails: true, title: "moz",
-    uri: "http://sffoo.com/justwrong.htm", lastVisit: tomorrow},
+    uri: "http://sffoo.com/justwrong.htm", lastVisit: yesterday},
 
    
    {isInQuery: false, isVisit:true, isDetails: true, title: "m%0o%0z",
@@ -50,7 +50,7 @@
 
    
    {isInQuery: false, isVisit:true, isDetails: true, title: "m,oz",
-    uri: "http://foo.com/changeme2.htm", lastVisit: tomorrow}];
+    uri: "http://foo.com/changeme2.htm", lastVisit: yesterday}];
 
 
 
