@@ -63,7 +63,8 @@ public:
 
 
 
-  void SyncRunIfPreferred(IDecodingTask* aTask);
+
+  bool SyncRunIfPreferred(IDecodingTask* aTask);
 
   
 
