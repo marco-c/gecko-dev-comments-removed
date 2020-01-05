@@ -108,123 +108,15 @@ const Cr = Components.results;
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 
+XPCOMUtils.defineLazyModuleGetter(this, "ExtensionUtils",
+                                  "resource://gre/modules/ExtensionUtils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "PromiseUtils",
                                   "resource://gre/modules/PromiseUtils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Task",
                                   "resource://gre/modules/Task.jsm");
 
-
-
-
-
-
-
-
-
-
-
-
-class MessageManagerProxy {
-  constructor(target) {
-    if (target instanceof Ci.nsIMessageSender) {
-      Object.defineProperty(this, "messageManager", {
-        value: target,
-        configurable: true,
-        writable: true,
-      });
-    } else {
-      this.addListeners(target);
-    }
-  }
-
-  
-
-
-
-
-
-
-
-  dispose() {
-    if (this.eventTarget) {
-      this.removeListeners(this.eventTarget);
-      this.eventTarget = null;
-    } else {
-      this.messageManager = null;
-    }
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  static matches(target, messageManager) {
-    return target === messageManager || target.messageManager === messageManager;
-  }
-
-  
-
-
-
-
-
-  get messageManager() {
-    return this.eventTarget && this.eventTarget.messageManager;
-  }
-
-  
-
-
-
-
-
-
-
-  sendAsyncMessage(...args) {
-    return this.messageManager.sendAsyncMessage(...args);
-  }
-
-  
-
-
-
-
-
-
-  addListeners(target) {
-    target.addEventListener("SwapDocShells", this);
-    this.eventTarget = target;
-  }
-
-  
-
-
-
-
-
-
-  removeListeners(target) {
-    target.removeEventListener("SwapDocShells", this);
-  }
-
-  handleEvent(event) {
-    if (event.type == "SwapDocShells") {
-      this.removeListeners(this.eventTarget);
-      this.addListeners(event.detail);
-    }
-  }
-}
+XPCOMUtils.defineLazyGetter(this, "MessageManagerProxy",
+                            () => ExtensionUtils.MessageManagerProxy);
 
 
 
