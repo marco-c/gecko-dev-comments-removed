@@ -103,7 +103,7 @@ protected:
 
   nsresult DrawDrag(nsIDOMNode* aDOMNode,
                     nsIScriptableRegion* aRegion,
-                    int32_t aScreenX, int32_t aScreenY,
+                    mozilla::CSSIntPoint aScreenPosition,
                     nsIntRect* aScreenDragRect,
                     RefPtr<SourceSurface>* aSurface,
                     nsPresContext **aPresContext);
@@ -114,16 +114,15 @@ protected:
 
   nsresult DrawDragForImage(nsIImageLoadingContent* aImageLoader,
                             mozilla::dom::HTMLCanvasElement* aCanvas,
-                            int32_t aScreenX, int32_t aScreenY,
                             nsIntRect* aScreenDragRect,
                             RefPtr<SourceSurface>* aSurface);
 
   
 
 
-  void
+  mozilla::LayoutDeviceIntPoint
   ConvertToUnscaledDevPixels(nsPresContext* aPresContext,
-                             int32_t* aScreenX, int32_t* aScreenY);
+                             mozilla::CSSIntPoint aScreenPosition);
 
   
 
@@ -174,9 +173,7 @@ protected:
 
   
   
-  
-  int32_t mScreenX;
-  int32_t mScreenY;
+  mozilla::CSSIntPoint mScreenPosition;
 
   
   mozilla::LayoutDeviceIntPoint mEndDragPoint;
