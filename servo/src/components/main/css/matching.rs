@@ -28,18 +28,24 @@ impl MatchMethods for AbstractNode<LayoutView> {
     fn restyle_subtree(&self, select_ctx: &SelectCtx) {
         
         if self.is_element() {
-            let select_handler = NodeSelectHandler { node: *self };
-            let incomplete_results = select_ctx.select_style(self, &select_handler);
-            
-            let complete_results = compose_results(*self, incomplete_results);
+            do self.with_imm_element |elem| {
+                let inline_style = match elem.style_attribute {
+                    None => None,
+                    Some(ref sheet) => Some(sheet),
+                };
+                let select_handler = NodeSelectHandler { node: *self };
+                let incomplete_results = select_ctx.select_style(self, inline_style, &select_handler);
+                
+                let complete_results = compose_results(*self, incomplete_results);
 
-            
-            
-            if self.have_css_select_results() {
-                let damage = incremental::compute_damage(self, self.get_css_select_results(), &complete_results);
-                self.set_restyle_damage(damage);
-            }
-            self.set_css_select_results(complete_results);
+                
+                
+                if self.have_css_select_results() {
+                    let damage = incremental::compute_damage(self, self.get_css_select_results(), &complete_results);
+                    self.set_restyle_damage(damage);
+                }
+                self.set_css_select_results(complete_results);
+            };
         }
 
         for self.each_child |kid| {
