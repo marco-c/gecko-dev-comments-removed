@@ -33,6 +33,10 @@
 # include <unistd.h>
 #endif
 
+#ifdef MOZ_VALGRIND
+# include <valgrind/valgrind.h>
+#endif
+
 using namespace js;
 using namespace js::jit;
 
@@ -305,6 +309,22 @@ DeallocateProcessExecutableMemory(void* addr, size_t bytes)
 static unsigned
 ProtectionSettingToFlags(ProtectionSetting protection)
 {
+#ifdef MOZ_VALGRIND
+    
+    
+    
+    
+    if (RUNNING_ON_VALGRIND) {
+      switch (protection) {
+        case ProtectionSetting::Protected:  return PROT_NONE;
+        case ProtectionSetting::Writable:   return PROT_READ | PROT_WRITE | PROT_EXEC;
+        case ProtectionSetting::Executable: return PROT_READ | PROT_EXEC;
+      }
+      MOZ_CRASH();
+    }
+    
+    
+#endif
     switch (protection) {
       case ProtectionSetting::Protected:  return PROT_NONE;
       case ProtectionSetting::Writable:   return PROT_READ | PROT_WRITE;
