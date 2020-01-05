@@ -57,7 +57,6 @@ var whitelist = new Set([
   {file: "chrome://global/locale/printjoboptions.dtd",
    platforms: ["macosx", "win"]},
 
-  
   {file: "chrome://weave/locale/errors.properties"},
 
   
