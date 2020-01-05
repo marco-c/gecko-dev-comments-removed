@@ -41,6 +41,7 @@ class BackendTupfile(object):
         self.shell_exported = False
         self.defines = []
         self.host_defines = []
+        self.delayed_generated_files = []
 
         self.fh = FileAvoidWrite(self.name, capture_diff=True)
         self.fh.write('# THIS FILE WAS AUTOMATICALLY GENERATED. DO NOT EDIT.\n')
@@ -150,7 +151,14 @@ class TupOnly(CommonBackend, PartialBackend):
                 
                 return False
 
-            self._process_generated_file(backend_file, obj)
+            if 'application.ini.h' in obj.outputs:
+                
+                
+                
+                
+                backend_file.delayed_generated_files.append(obj)
+            else:
+                self._process_generated_file(backend_file, obj)
         elif isinstance(obj, Defines):
             self._process_defines(backend_file, obj)
         elif isinstance(obj, HostDefines):
@@ -166,6 +174,8 @@ class TupOnly(CommonBackend, PartialBackend):
         CommonBackend.consume_finished(self)
 
         for objdir, backend_file in sorted(self._backend_files.items()):
+            for obj in backend_file.delayed_generated_files:
+                self._process_generated_file(backend_file, obj)
             with self._write_file(fh=backend_file):
                 pass
 
@@ -199,7 +209,6 @@ class TupOnly(CommonBackend, PartialBackend):
         
         
         skip_directories = (
-            'build', 
             'layout/style/test', 
             'toolkit/library', 
         )
