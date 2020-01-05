@@ -429,10 +429,6 @@ mod bindings {
             "mozilla::dom::Sequence",
             "mozilla::dom::Optional",
             "mozilla::dom::Nullable",
-            "nsAString_internal_char_traits",
-            "nsAString_internal_incompatible_char_type",
-            "nsACString_internal_char_traits",
-            "nsACString_internal_incompatible_char_type",
             "RefPtr_Proxy",
             "RefPtr_Proxy_member_function",
             "nsAutoPtr_Proxy",
@@ -460,6 +456,10 @@ mod bindings {
             "mozilla::ErrorResult",  
             "mozilla::StyleAnimationValue",
             "StyleAnimationValue", 
+        ];
+        let blacklist = [
+            ".*_char_traits",
+            ".*_incompatible_char_type",
         ];
 
         struct MappedGenericType {
@@ -498,6 +498,9 @@ mod bindings {
         }
         for &ty in opaque_types.iter() {
             builder = builder.opaque_type(ty);
+        }
+        for &ty in blacklist.iter() {
+            builder = builder.hide_type(ty);
         }
         for ty in servo_mapped_generic_types.iter() {
             let gecko_name = ty.gecko.rsplit("::").next().unwrap();
@@ -722,6 +725,7 @@ pub fn generate() {
     use self::common::*;
     use std::fs;
     use std::thread;
+    println!("cargo:rerun-if-changed=build_gecko.rs");
     fs::create_dir_all(&*OUTDIR_PATH).unwrap();
     let threads = vec![
         thread::spawn(|| bindings::generate_structs(BuildType::Debug)),
