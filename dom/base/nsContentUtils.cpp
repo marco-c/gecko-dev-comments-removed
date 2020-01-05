@@ -3094,12 +3094,7 @@ nsContentUtils::CheckQName(const nsAString& aQualifiedName,
     return NS_OK;
   }
 
-  
-  if (result == (1 << 0) || result == (1 << 1)) {
-    return NS_ERROR_DOM_INVALID_CHARACTER_ERR;
-  }
-
-  return NS_ERROR_DOM_NAMESPACE_ERR;
+  return NS_ERROR_DOM_INVALID_CHARACTER_ERR;
 }
 
 
