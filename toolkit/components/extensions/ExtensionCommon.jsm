@@ -466,6 +466,16 @@ class SchemaAPIInterface {
   removeListener(listener) {
     throw new Error("Not implemented");
   }
+
+  
+
+
+
+
+
+  revoke() {
+    throw new Error("Not implemented");
+  }
 }
 
 
@@ -484,6 +494,16 @@ class LocalAPIImplementation extends SchemaAPIInterface {
     this.pathObj = pathObj;
     this.name = name;
     this.context = context;
+  }
+
+  revoke() {
+    if (this.pathObj[this.name][Schemas.REVOKE]) {
+      this.pathObj[this.name][Schemas.REVOKE]();
+    }
+
+    this.pathObj = null;
+    this.name = null;
+    this.context = null;
   }
 
   callFunction(args) {
