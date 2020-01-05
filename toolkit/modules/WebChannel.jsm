@@ -176,6 +176,7 @@ this.WebChannel = function(id, originOrPermission) {
       
       
       
+      
       let uri = Services.io.newURI(requestPrincipal.originNoSuffix, null, null);
       if (uri.scheme != "https") {
         return false;
@@ -186,6 +187,9 @@ this.WebChannel = function(id, originOrPermission) {
       return perm == Ci.nsIPermissionManager.ALLOW_ACTION;
     }
   } else {
+    
+    
+    
     
     this._originCheckCallback = requestPrincipal => {
       return originOrPermission.prePath === requestPrincipal.originNoSuffix;

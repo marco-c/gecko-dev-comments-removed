@@ -900,6 +900,8 @@ let WebChannelMessageToChromeListener = {
       if (typeof e.detail != 'string') {
         
         
+        
+        
         let objectsAllowed = this._getWhitelistedPrincipals().some(whitelisted =>
           principal.originNoSuffix == whitelisted.originNoSuffix);
         if (!objectsAllowed) {
