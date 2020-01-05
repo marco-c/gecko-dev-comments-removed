@@ -116,6 +116,13 @@ using google_breakpad::PageAllocator;
 using namespace mozilla;
 using mozilla::ipc::CrashReporterClient;
 
+
+extern "C" {
+  void install_rust_panic_hook();
+  bool get_rust_panic_reason(char** reason, size_t* length);
+}
+
+
 namespace CrashReporter {
 
 #ifdef XP_WIN32
@@ -1131,7 +1138,17 @@ bool MinidumpCallback(
     WriteGlobalMemoryStatus(&apiData, &eventFile);
 #endif 
 
-    if (gMozCrashReason) {
+    char* rust_panic_reason;
+    size_t rust_panic_len;
+    if (get_rust_panic_reason(&rust_panic_reason, &rust_panic_len)) {
+      
+      WriteLiteral(apiData, "MozCrashReason=");
+      apiData.WriteBuffer(rust_panic_reason, rust_panic_len);
+      WriteLiteral(apiData, "\n");
+      WriteLiteral(eventFile, "MozCrashReason=");
+      eventFile.WriteBuffer(rust_panic_reason, rust_panic_len);
+      WriteLiteral(eventFile, "\n");
+    } else if (gMozCrashReason) {
       WriteAnnotation(apiData, "MozCrashReason", gMozCrashReason);
       WriteAnnotation(eventFile, "MozCrashReason", gMozCrashReason);
     }
@@ -1577,6 +1594,8 @@ nsresult SetExceptionHandler(nsIFile* aXREDirectory,
   if (gExceptionHandler)
     return NS_ERROR_ALREADY_INITIALIZED;
 
+  install_rust_panic_hook();
+
 #if !defined(DEBUG) || defined(MOZ_WIDGET_GONK)
   
   
@@ -1961,78 +1980,44 @@ EnsureDirectoryExists(nsIFile* dir)
 
 
 
-static nsresult
-SetupCrashReporterDirectory(nsIFile* aAppDataDirectory,
-                            const char* aDirName,
-                            const XP_CHAR* aEnvVarName,
-                            nsIFile** aDirectory = nullptr)
-{
-  nsCOMPtr<nsIFile> directory;
-  nsresult rv = aAppDataDirectory->Clone(getter_AddRefs(directory));
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  rv = directory->AppendNative(nsDependentCString(aDirName));
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  EnsureDirectoryExists(directory);
-
-  xpstring dirEnv(aEnvVarName);
-  dirEnv.append(XP_TEXT("="));
-
-  xpstring* directoryPath = CreatePathFromFile(directory);
-
-  if (!directoryPath) {
-    return NS_ERROR_FAILURE;
-  }
-
-  dirEnv.append(*directoryPath);
-  delete directoryPath;
-
-#if defined(XP_WIN32)
-  _wputenv(dirEnv.c_str());
-#else
-  XP_CHAR* str = new XP_CHAR[dirEnv.size() + 1];
-  strncpy(str, dirEnv.c_str(), dirEnv.size() + 1);
-  
-  PR_SetEnv(str);
-#endif
-
-  if (aDirectory) {
-    directory.forget(aDirectory);
-  }
-
-  return NS_OK;
-}
-
-
-
-
-
 
 nsresult SetupExtraData(nsIFile* aAppDataDirectory,
                         const nsACString& aBuildID)
 {
   nsCOMPtr<nsIFile> dataDirectory;
-  nsresult rv = SetupCrashReporterDirectory(
-    aAppDataDirectory,
-    "Crash Reports",
-    XP_TEXT("MOZ_CRASHREPORTER_DATA_DIRECTORY"),
-    getter_AddRefs(dataDirectory)
-  );
+  nsresult rv = aAppDataDirectory->Clone(getter_AddRefs(dataDirectory));
+  NS_ENSURE_SUCCESS(rv, rv);
 
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
+  rv = dataDirectory->AppendNative(NS_LITERAL_CSTRING("Crash Reports"));
+  NS_ENSURE_SUCCESS(rv, rv);
 
-  rv = SetupCrashReporterDirectory(
-    aAppDataDirectory,
-    "Pending Pings",
-    XP_TEXT("MOZ_CRASHREPORTER_PING_DIRECTORY")
-  );
+  EnsureDirectoryExists(dataDirectory);
 
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
+#if defined(XP_WIN32)
+  nsAutoString dataDirEnv(NS_LITERAL_STRING("MOZ_CRASHREPORTER_DATA_DIRECTORY="));
+
+  nsAutoString dataDirectoryPath;
+  rv = dataDirectory->GetPath(dataDirectoryPath);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  dataDirEnv.Append(dataDirectoryPath);
+
+  _wputenv(dataDirEnv.get());
+#else
+  
+  nsAutoCString dataDirEnv("MOZ_CRASHREPORTER_DATA_DIRECTORY=");
+
+  nsAutoCString dataDirectoryPath;
+  rv = dataDirectory->GetNativePath(dataDirectoryPath);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  dataDirEnv.Append(dataDirectoryPath);
+
+  char* env = ToNewCString(dataDirEnv);
+  NS_ENSURE_TRUE(env, NS_ERROR_OUT_OF_MEMORY);
+
+  PR_SetEnv(env);
+#endif
 
   nsAutoCString data;
   if(NS_SUCCEEDED(GetOrInit(dataDirectory,
