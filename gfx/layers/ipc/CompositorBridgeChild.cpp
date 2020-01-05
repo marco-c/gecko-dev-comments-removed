@@ -12,6 +12,7 @@
 #include "base/message_loop.h"          
 #include "base/task.h"                  
 #include "gfxPrefs.h"
+#include "mozilla/dom/TabGroup.h"
 #include "mozilla/layers/ImageBridgeChild.h"
 #include "mozilla/layers/APZChild.h"
 #include "mozilla/layers/IAPZCTreeManager.h"
@@ -1083,6 +1084,15 @@ CompositorBridgeChild::AllocPAPZCTreeManagerChild(const uint64_t& aLayersId)
 {
   APZCTreeManagerChild* child = new APZCTreeManagerChild();
   child->AddRef();
+  if (aLayersId != 0) {
+    TabChild* tabChild = TabChild::GetFrom(aLayersId);
+    if (tabChild) {
+      SetEventTargetForActor(
+        child, tabChild->TabGroup()->EventTargetFor(TaskCategory::Other));
+      MOZ_ASSERT(child->GetActorEventTarget());
+    }
+  }
+
   return child;
 }
 
