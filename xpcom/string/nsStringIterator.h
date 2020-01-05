@@ -56,15 +56,6 @@ public:
     return *get();
   }
 
-#if 0
-  
-  
-  pointer operator->() const
-  {
-    return get();
-  }
-#endif
-
   self_type& operator++()
   {
     ++mPosition;
@@ -167,16 +158,6 @@ public:
   {
     return *get();
   }
-
-#if 0
-  
-  
-  pointer
-  operator->() const
-  {
-    return get();
-  }
-#endif
 
   self_type& operator++()
   {
