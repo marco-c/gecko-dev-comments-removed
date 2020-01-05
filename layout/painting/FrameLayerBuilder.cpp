@@ -2779,8 +2779,17 @@ PaintedLayerDataNode::FindPaintedLayerFor(const nsIntRect& aVisibleRect,
            data.mScaledMaybeHitRegionBounds.Intersects(aVisibleRect))) {
         break;
       }
+      
+      
+      
+      
+      
+      
+      
       if (visibleRegion.Intersects(aVisibleRect)) {
         break;
+      } else if (gfxPrefs::LayoutSmallerPaintedLayers()) {
+        lowestUsableLayer = nullptr;
       }
     }
     if (lowestUsableLayer) {
