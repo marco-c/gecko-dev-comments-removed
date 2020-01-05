@@ -94,6 +94,9 @@ public:
   }
 
   
+  void ClearRemainingRows();
+
+  
   void ClearRow() { ClearRestOfRow(0); }
 
   
@@ -139,6 +142,7 @@ private:
   int32_t mPrevInvalidatedLine;
   int32_t mCurrentOutLine;
   int32_t mCurrentInLine;
+  uint8_t mClearValue;
 
   bool mHasAlpha : 1;
   bool mFlipVertically : 1;
