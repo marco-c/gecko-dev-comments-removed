@@ -4,9 +4,15 @@
 
 
 
-use arc_ptr_eq;
 use std::sync::Arc;
 use stylesheets::Stylesheet;
+
+
+
+pub struct StylesheetSetEntry {
+    unique_id: u32,
+    sheet: Arc<Stylesheet>,
+}
 
 
 pub struct StylesheetSet {
@@ -14,7 +20,8 @@ pub struct StylesheetSet {
     
     
     
-    stylesheets: Vec<Arc<Stylesheet>>,
+    
+    entries: Vec<StylesheetSetEntry>,
 
     
     dirty: bool,
@@ -27,7 +34,7 @@ impl StylesheetSet {
     
     pub fn new() -> Self {
         StylesheetSet {
-            stylesheets: vec![],
+            entries: vec![],
             dirty: false,
             author_style_disabled: false,
         }
@@ -39,39 +46,51 @@ impl StylesheetSet {
         self.author_style_disabled
     }
 
-    fn remove_stylesheet_if_present(&mut self, sheet: &Arc<Stylesheet>) {
-        self.stylesheets.retain(|x| !arc_ptr_eq(x, sheet));
+    fn remove_stylesheet_if_present(&mut self, unique_id: u32) {
+        self.entries.retain(|x| x.unique_id != unique_id);
     }
 
     
-    pub fn append_stylesheet(&mut self, sheet: &Arc<Stylesheet>) {
-        self.remove_stylesheet_if_present(sheet);
-        self.stylesheets.push(sheet.clone());
+    pub fn append_stylesheet(&mut self, sheet: &Arc<Stylesheet>,
+                             unique_id: u32) {
+        self.remove_stylesheet_if_present(unique_id);
+        self.entries.push(StylesheetSetEntry {
+            unique_id: unique_id,
+            sheet: sheet.clone(),
+        });
         self.dirty = true;
     }
 
     
-    pub fn prepend_stylesheet(&mut self, sheet: &Arc<Stylesheet>) {
-        self.remove_stylesheet_if_present(sheet);
-        self.stylesheets.insert(0, sheet.clone());
+    pub fn prepend_stylesheet(&mut self, sheet: &Arc<Stylesheet>,
+                              unique_id: u32) {
+        self.remove_stylesheet_if_present(unique_id);
+        self.entries.insert(0, StylesheetSetEntry {
+            unique_id: unique_id,
+            sheet: sheet.clone(),
+        });
         self.dirty = true;
     }
 
     
     pub fn insert_stylesheet_before(&mut self,
                                     sheet: &Arc<Stylesheet>,
-                                    before: &Arc<Stylesheet>) {
-        self.remove_stylesheet_if_present(sheet);
-        let index = self.stylesheets.iter().position(|x| {
-            arc_ptr_eq(x, before)
-        }).expect("`before` stylesheet not found");
-        self.stylesheets.insert(index, sheet.clone());
+                                    unique_id: u32,
+                                    before_unique_id: u32) {
+        self.remove_stylesheet_if_present(unique_id);
+        let index = self.entries.iter().position(|x| {
+            x.unique_id == before_unique_id
+        }).expect("`before_unique_id` stylesheet not found");
+        self.entries.insert(index, StylesheetSetEntry {
+            unique_id: unique_id,
+            sheet: sheet.clone(),
+        });
         self.dirty = true;
     }
 
     
-    pub fn remove_stylesheet(&mut self, sheet: &Arc<Stylesheet>) {
-        self.remove_stylesheet_if_present(sheet);
+    pub fn remove_stylesheet(&mut self, unique_id: u32) {
+        self.remove_stylesheet_if_present(unique_id);
         self.dirty = true;
     }
 
@@ -90,9 +109,11 @@ impl StylesheetSet {
     }
 
     
-    pub fn flush(&mut self) -> &[Arc<Stylesheet>] {
+    pub fn flush(&mut self, sheets: &mut Vec<Arc<Stylesheet>>) {
         self.dirty = false;
-        &self.stylesheets
+        for entry in &self.entries {
+            sheets.push(entry.sheet.clone())
+        }
     }
 
     
