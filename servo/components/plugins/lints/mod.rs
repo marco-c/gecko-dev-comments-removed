@@ -2,6 +2,7 @@
 
 
 
+pub mod ban;
 pub mod inheritance_integrity;
 pub mod privatize;
 pub mod str_to_string;
