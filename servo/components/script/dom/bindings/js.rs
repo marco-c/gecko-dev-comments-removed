@@ -44,6 +44,11 @@
 
 
 
+
+
+
+
+
 use dom::bindings::trace::JSTraceable;
 use dom::bindings::utils::{Reflector, Reflectable};
 use dom::node::Node;
@@ -60,6 +65,8 @@ use std::default::Default;
 use std::marker::ContravariantLifetime;
 use std::mem;
 use std::ops::Deref;
+
+
 
 
 #[must_root]
@@ -100,6 +107,7 @@ impl<T: Reflectable> Unrooted<T> {
 }
 
 impl<T> Copy for Unrooted<T> {}
+
 
 
 
@@ -173,6 +181,7 @@ impl<T: Reflectable> Temporary<T> {
 }
 
 
+
 #[must_root]
 pub struct JS<T> {
     ptr: NonZero<*const T>
@@ -238,7 +247,9 @@ impl <T> Clone for LayoutJS<T> {
 
 impl LayoutJS<Node> {
     
-    pub unsafe fn from_trusted_node_address(inner: TrustedNodeAddress) -> LayoutJS<Node> {
+    
+    pub unsafe fn from_trusted_node_address(inner: TrustedNodeAddress)
+                                            -> LayoutJS<Node> {
         let TrustedNodeAddress(addr) = inner;
         LayoutJS {
             ptr: NonZero::new(addr as *const Node)
@@ -289,6 +300,8 @@ impl HeapGCValue for JSVal {
 
 impl<T: Reflectable> HeapGCValue for JS<T> {
 }
+
+
 
 
 
@@ -404,6 +417,7 @@ impl<T: Reflectable> JS<T> {
         *self.ptr
     }
 
+    
     
     
     
@@ -570,6 +584,7 @@ impl<T: Reflectable, U> ResultRootable<T, U> for Result<JS<T>, U> {
 
 
 
+
 pub trait TemporaryPushable<T> {
     
     fn push_unrooted(&mut self, val: &T);
@@ -586,6 +601,10 @@ impl<T: Assignable<U>, U: Reflectable> TemporaryPushable<T> for Vec<JS<U>> {
         self.insert(index, unsafe { val.get_js() });
     }
 }
+
+
+
+
 
 
 pub struct RootCollection {
@@ -615,6 +634,7 @@ impl RootCollection {
     }
 
     
+    
     fn unroot<'b, T: Reflectable>(&self, rooted: &Root<T>) {
         unsafe {
             let roots = self.roots.get();
@@ -626,6 +646,8 @@ impl RootCollection {
         }
     }
 }
+
+
 
 
 
@@ -692,6 +714,7 @@ impl<'a, T: Reflectable> Deref for JSRef<'a, T> {
         }
     }
 }
+
 
 
 pub struct JSRef<'a, T> {
