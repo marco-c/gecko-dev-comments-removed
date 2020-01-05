@@ -105,7 +105,14 @@ public class StringHelper {
     public final String DISTRIBUTION2_LABEL = "Distribution 2";
 
     
+    public final String GENERAL_SECTION_LABEL;
+    public final String SEARCH_SECTION_LABEL;
     public final String PRIVACY_SECTION_LABEL;
+    public final String ACCESSIBILITY_SECTION_LABEL;
+    public final String NOTIFICATIONS_SECTION_LABEL;
+    public final String ADVANCED_SECTION_LABEL;
+    public final String CLEAR_PRIVATE_DATA_SECTION_LABEL;
+    public final String DEFAULT_BROWSER_SECTION_LABEL;
     public final String MOZILLA_SECTION_LABEL;
 
     
@@ -188,9 +195,22 @@ public class StringHelper {
     public final String PANELS;
 
     
+    public final String LANGUAGE_LABEL;
+
+    
     public final String SEARCH_TITLE;
     public final String SEARCH_SUGGESTIONS;
     public final String SEARCH_INSTALLED;
+    public final String SHOW_SEARCH_HISTORY_LABEL;
+
+    
+    public final String DO_NOT_TRACK_LABEL;
+
+    
+    public final String ALWAYS_ZOOM_LABEL;
+
+    
+    public final String NEW_IN_FIREFOX_LABEL;
 
     
     public final String ADVANCED;
@@ -199,6 +219,14 @@ public class StringHelper {
     public final String DISABLED;
     public final String TAP_TO_PLAY;
     public final String HIDE_TITLE_BAR;
+    public final String RESTORE_TABS_LABEL;
+
+    
+    public final String SITE_SETTINGS_LABEL;
+
+    
+    public final String FAQS_LABEL;
+
 
     
     public final String AUTOMATIC_UPDATES;
@@ -282,7 +310,14 @@ public class StringHelper {
         TITLE_PLACE_HOLDER = res.getString(R.string.url_bar_default_text);
 
         
+        GENERAL_SECTION_LABEL = res.getString(R.string.pref_category_general);
+        SEARCH_SECTION_LABEL = res.getString(R.string.pref_category_search);
         PRIVACY_SECTION_LABEL = res.getString(R.string.pref_category_privacy_short);
+        ACCESSIBILITY_SECTION_LABEL = res.getString(R.string.pref_category_accessibility);
+        NOTIFICATIONS_SECTION_LABEL = res.getString(R.string.pref_category_notifications);
+        ADVANCED_SECTION_LABEL = res.getString(R.string.pref_category_advanced);
+        CLEAR_PRIVATE_DATA_SECTION_LABEL = res.getString(R.string.pref_clear_private_data_now);
+        DEFAULT_BROWSER_SECTION_LABEL = res.getString(R.string.pref_default_browser);
         MOZILLA_SECTION_LABEL = res.getString(R.string.pref_category_vendor);
 
         
@@ -343,9 +378,22 @@ public class StringHelper {
         HISTORY = res.getString(R.string.home_history_title);
 
         
+        LANGUAGE_LABEL = res.getString(R.string.pref_category_language);
+
+        
         SEARCH_TITLE = res.getString(R.string.search);
         SEARCH_SUGGESTIONS = res.getString(R.string.pref_search_suggestions);
         SEARCH_INSTALLED = res.getString(R.string.pref_category_installed_search_engines);
+        SHOW_SEARCH_HISTORY_LABEL = res.getString(R.string.pref_history_search_suggestions);
+
+        
+        DO_NOT_TRACK_LABEL = res.getString(R.string.pref_donottrack_title);
+
+        
+        ALWAYS_ZOOM_LABEL = res.getString(R.string.pref_zoom_force_enabled);
+
+        
+        NEW_IN_FIREFOX_LABEL = res.getString(R.string.pref_whats_new_notification);
 
         
         ADVANCED = res.getString(R.string.pref_category_advanced);
@@ -354,6 +402,13 @@ public class StringHelper {
         DISABLED = res.getString(R.string.pref_plugins_disabled );
         TAP_TO_PLAY = res.getString(R.string.pref_plugins_tap_to_play);
         HIDE_TITLE_BAR = res.getString(R.string.pref_scroll_title_bar_summary );
+        RESTORE_TABS_LABEL = res.getString(R.string.pref_restore);
+
+        
+        SITE_SETTINGS_LABEL = res.getString(R.string.pref_private_data_siteSettings);
+
+        
+        FAQS_LABEL = res.getString(R.string.pref_vendor_faqs);
 
         
         AUTOMATIC_UPDATES = res.getString(R.string.pref_home_updates);
