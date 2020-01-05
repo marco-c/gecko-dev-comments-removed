@@ -505,7 +505,7 @@ Entry.prototype = {
       this.enclosures.QueryInterface(Ci.nsIMutableArray);
     }
 
-    this.enclosures.appendElement(new_enc);
+    this.enclosures.appendElement(new_enc, false);
     this.__enclosure_map[new_enc.getPropertyAsAString("url")] = new_enc;
   },
 
@@ -1533,7 +1533,7 @@ FeedProcessor.prototype = {
       
       
       newProp.QueryInterface(Ci.nsIMutableArray);
-      newProp.appendElement(obj);
+      newProp.appendElement(obj, false);
 
       
       

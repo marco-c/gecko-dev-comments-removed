@@ -301,8 +301,10 @@ function run_test() {
 
   
   
-  possibleHandlersInfo.possibleApplicationHandlers.appendElement(localHandler);
-  possibleHandlersInfo.possibleApplicationHandlers.appendElement(webHandler);
+  possibleHandlersInfo.possibleApplicationHandlers.appendElement(localHandler,
+                                                                 false);
+  possibleHandlersInfo.possibleApplicationHandlers.appendElement(webHandler,
+                                                                 false);
   handlerSvc.store(possibleHandlersInfo);
   possibleHandlersInfo =
     mimeSvc.getFromTypeAndExtension("nonexistent/possible-handlers", null);
