@@ -2073,6 +2073,7 @@ toolbar#nav-bar {
             
             if os.path.exists(processLog):
                 os.remove(processLog)
+            self.urlOpts = []
 
         return status
 
