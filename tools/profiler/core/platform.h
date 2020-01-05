@@ -80,7 +80,6 @@ bool profiler_verbose();
 #ifdef ANDROID
 # if defined(__arm__) || defined(__thumb__)
 #  define ENABLE_LEAF_DATA
-#  define ENABLE_ARM_LR_SAVING
 # endif
 # define LOG(text) \
     do { if (profiler_verbose()) \
@@ -201,9 +200,7 @@ class TickSample {
       : pc(NULL)
       , sp(NULL)
       , fp(NULL)
-#ifdef ENABLE_ARM_LR_SAVING
       , lr(NULL)
-#endif
       , context(NULL)
       , isSamplingCurrentThread(false)
       , threadInfo(nullptr)
@@ -216,9 +213,7 @@ class TickSample {
   Address pc;  
   Address sp;  
   Address fp;  
-#ifdef ENABLE_ARM_LR_SAVING
   Address lr;  
-#endif
   void*   context;   
                      
   bool    isSamplingCurrentThread;
