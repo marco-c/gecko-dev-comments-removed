@@ -2763,12 +2763,19 @@ nsWindow::GeckoViewSupport::FlushIMEChanges(FlushChangesFlag aFlags)
     nsCOMPtr<nsIContent> imeRoot;
 
     
-    MOZ_ALWAYS_SUCCEEDS(IMEStateManager::GetFocusSelectionAndRoot(
-            getter_AddRefs(imeSelection), getter_AddRefs(imeRoot)));
+    nsresult rv = IMEStateManager::GetFocusSelectionAndRoot(
+            getter_AddRefs(imeSelection), getter_AddRefs(imeRoot));
 
     
     
-    NS_ENSURE_TRUE_VOID(imeRoot->IsInComposedDoc());
+    const bool e10sEnabled = rv == NS_ERROR_NOT_AVAILABLE;
+    if (!e10sEnabled) {
+        MOZ_ALWAYS_SUCCEEDS(rv);
+    }
+
+    
+    
+    NS_ENSURE_TRUE_VOID(e10sEnabled || imeRoot->IsInComposedDoc());
 
     RefPtr<nsWindow> kungFuDeathGrip(&window);
     window.UserActivity();
@@ -2817,7 +2824,7 @@ nsWindow::GeckoViewSupport::FlushIMEChanges(FlushChangesFlag aFlags)
                                           change.mNewEnd - change.mStart);
             window.DispatchEvent(&event);
             NS_ENSURE_TRUE_VOID(event.mSucceeded);
-            NS_ENSURE_TRUE_VOID(event.mReply.mContentsRoot == imeRoot.get());
+            NS_ENSURE_TRUE_VOID(e10sEnabled || event.mReply.mContentsRoot == imeRoot.get());
         }
 
         if (shouldAbort()) {
@@ -2838,7 +2845,7 @@ nsWindow::GeckoViewSupport::FlushIMEChanges(FlushChangesFlag aFlags)
         window.DispatchEvent(&event);
 
         NS_ENSURE_TRUE_VOID(event.mSucceeded);
-        NS_ENSURE_TRUE_VOID(event.mReply.mContentsRoot == imeRoot.get());
+        NS_ENSURE_TRUE_VOID(e10sEnabled || event.mReply.mContentsRoot == imeRoot.get());
 
         if (shouldAbort()) {
             return;
