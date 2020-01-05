@@ -891,21 +891,15 @@ int32_t ViEChannel::GetRemoteRTCPReceiverInfo(uint32_t& NTPHigh,
   return 0;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+int32_t ViEChannel::GetRemoteRTCPSenderInfo(RTCPSenderInfo* sender_info) const {
+  
+  if (rtp_rtcp_modules_[0] &&
+    rtp_rtcp_modules_[0]->RemoteRTCPStat(sender_info) != 0) {
+    LOG_F(LS_ERROR) << "failed to read RTCP SR sender info";
+    return -1;
+  }
+  return 0;
+}
 
 void ViEChannel::RegisterSendChannelRtcpStatisticsCallback(
     RtcpStatisticsCallback* callback) {

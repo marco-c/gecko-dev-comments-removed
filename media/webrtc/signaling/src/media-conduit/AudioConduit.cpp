@@ -205,10 +205,13 @@ bool WebrtcAudioConduit::GetRTCPReceiverReport(DOMHighResTimeStamp* timestamp,
                                                     fractionLost,
                                                     *cumulativeLost,
                                                     *rttMs);
-  if (result) {
-    *timestamp = NTPtoDOMHighResTimeStamp(ntpHigh, ntpLow);
+  if (!result) {
+    return false;
   }
-  return result;
+  
+  
+  *timestamp = webrtc::Clock::GetRealTimeClock()->TimeInMilliseconds();
+  return true;
 }
 
 bool WebrtcAudioConduit::GetRTCPSenderReport(DOMHighResTimeStamp* timestamp,
