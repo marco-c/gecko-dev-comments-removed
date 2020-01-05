@@ -4,6 +4,7 @@
 
 
 
+
 var BUGNUMBER = 244470;
 var summary = 'Don\'t Crash';
 var actual = 'Crash';
