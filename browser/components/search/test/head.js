@@ -51,6 +51,20 @@ function promiseEvent(aTarget, aEventName, aPreventDefault) {
   return BrowserTestUtils.waitForEvent(aTarget, aEventName, false, cancelEvent);
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 function promiseNewEngine(basename, options = {}) {
   return new Promise((resolve, reject) => {
     
@@ -59,7 +73,7 @@ function promiseNewEngine(basename, options = {}) {
     info("Waiting for engine to be added: " + basename);
     Services.search.init({
       onInitComplete() {
-        let url = getRootDirectory(gTestPath) + basename;
+        let url = getRootDirectory(options.testPath || gTestPath) + basename;
         let current = Services.search.currentEngine;
         Services.search.addEngine(url, null, options.iconURL || "", false, {
           onSuccess(engine) {

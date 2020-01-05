@@ -8,6 +8,24 @@ const TEST_CONTENT_SCRIPT_BASENAME = "contentSearch.js";
 
 var gMsgMan;
 
+
+Services.scriptloader.loadSubScript(
+  "chrome://mochitests/content/browser/browser/components/search/test/head.js",
+  this);
+
+let originalEngine = Services.search.currentEngine;
+
+add_task(function* setup() {
+  yield promiseNewEngine("testEngine.xml", {
+    setAsCurrent: true,
+    testPath: "chrome://mochitests/content/browser/browser/components/search/test/",
+  });
+
+  registerCleanupFunction(() => {
+    Services.search.currentEngine = originalEngine;
+  });
+});
+
 add_task(function* GetState() {
   yield addTab();
   gMsgMan.sendAsyncMessage(TEST_MSG, {

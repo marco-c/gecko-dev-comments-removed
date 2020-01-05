@@ -18,12 +18,6 @@ content.addEventListener(SERVICE_EVENT_TYPE, event => {
 
 
 addMessageListener(TEST_MSG, msg => {
-  content.dispatchEvent(
-    new content.CustomEvent(CLIENT_EVENT_TYPE, {
-      detail: msg.data,
-    })
-  );
-
   
   
   if (msg.data.type == "Search") {
@@ -34,6 +28,12 @@ addMessageListener(TEST_MSG, msg => {
       });
     });
   }
+
+  content.dispatchEvent(
+    new content.CustomEvent(CLIENT_EVENT_TYPE, {
+      detail: msg.data,
+    })
+  );
 });
 
 function waitForLoadAndStopIt(expectedURL, callback) {
