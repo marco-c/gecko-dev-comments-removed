@@ -34,7 +34,7 @@ impl ByteString {
     }
 
     
-    pub fn len(&self) -> uint {
+    pub fn len(&self) -> usize {
         let ByteString(ref vector) = *self;
         vector.len()
     }
