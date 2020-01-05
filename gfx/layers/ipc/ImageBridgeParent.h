@@ -127,6 +127,8 @@ public:
 
   virtual bool IPCOpen() const override { return !mClosed; }
 
+  CompositableHost* FindCompositable(uint64_t aId);
+
 protected:
   void OnChannelConnected(int32_t pid) override;
 
@@ -150,6 +152,33 @@ private:
   static MessageLoop* sMainLoop;
 
   RefPtr<CompositorThreadHolder> mCompositorThreadHolder;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  std::map<uint64_t, CompositableHost*> mCompositables;
 };
 
 } 

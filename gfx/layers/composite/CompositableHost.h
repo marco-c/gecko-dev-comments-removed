@@ -213,7 +213,6 @@ public:
   static PCompositableParent*
   CreateIPDLActor(CompositableParentManager* mgr,
                   const TextureInfo& textureInfo,
-                  uint64_t asyncID,
                   PImageContainerParent* aImageContainer = nullptr);
 
   static bool DestroyIPDLActor(PCompositableParent* actor);
@@ -274,43 +273,6 @@ private:
   RefPtr<CompositableHost> mHost;
   bool mSucceeded;
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-namespace CompositableMap {
-  void Create();
-  void Destroy();
-  PCompositableParent* Get(uint64_t aID);
-  void Set(uint64_t aID, PCompositableParent* aParent);
-  void Erase(uint64_t aID);
-  void Clear();
-} 
-
 
 } 
 } 
