@@ -18,26 +18,26 @@
 #include "nsCSSPseudoElements.h"
 #include "nsFloatManager.h"
 
-enum LineReflowStatus {
+enum class LineReflowStatus {
   
   
-  LINE_REFLOW_OK,
+  OK,
   
   
-  LINE_REFLOW_STOP,
+  Stop,
   
   
-  LINE_REFLOW_REDO_NO_PULL,
+  RedoNoPull,
   
   
   
-  LINE_REFLOW_REDO_MORE_FLOATS,
+  RedoMoreFloats,
   
   
-  LINE_REFLOW_REDO_NEXT_BAND,
+  RedoNextBand,
   
   
-  LINE_REFLOW_TRUNCATED
+  Truncated
 };
 
 class nsBlockInFlowLineIterator;
@@ -146,7 +146,7 @@ public:
 
 #ifdef DEBUG
   virtual nsFrameState GetDebugStateBits() const override;
-  const char* LineReflowStatusToString(uint8_t aLineReflowStatus) const;
+  const char* LineReflowStatusToString(LineReflowStatus aLineReflowStatus) const;
 #endif
 
 #ifdef ACCESSIBILITY

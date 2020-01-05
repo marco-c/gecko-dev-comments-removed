@@ -230,19 +230,16 @@ const char* nsBlockFrame::kReflowCommandType[] = {
 };
 
 const char*
-nsBlockFrame::LineReflowStatusToString(uint8_t aLineReflowStatus) const
+nsBlockFrame::LineReflowStatusToString(LineReflowStatus aLineReflowStatus) const
 {
   switch (aLineReflowStatus) {
-    case LINE_REFLOW_OK: return "LINE_REFLOW_OK";
-    case LINE_REFLOW_STOP: return "LINE_REFLOW_STOP";
-    case LINE_REFLOW_REDO_NO_PULL: return "LINE_REFLOW_REDO_NO_PULL";
-    case LINE_REFLOW_REDO_MORE_FLOATS: return "LINE_REFLOW_REDO_MORE_FLOATS";
-    case LINE_REFLOW_REDO_NEXT_BAND: return "LINE_REFLOW_REDO_NEXT_BAND";
-    case LINE_REFLOW_TRUNCATED: return "LINE_REFLOW_TRUNCATED";
-    default:
-      break;
+    case LineReflowStatus::OK: return "LINE_REFLOW_OK";
+    case LineReflowStatus::Stop: return "LINE_REFLOW_STOP";
+    case LineReflowStatus::RedoNoPull: return "LINE_REFLOW_REDO_NO_PULL";
+    case LineReflowStatus::RedoMoreFloats: return "LINE_REFLOW_REDO_MORE_FLOATS";
+    case LineReflowStatus::RedoNextBand: return "LINE_REFLOW_REDO_NEXT_BAND";
+    case LineReflowStatus::Truncated: return "LINE_REFLOW_TRUNCATED";
   }
-  MOZ_ASSERT_UNREACHABLE("Unknown LineReflowStatus!!");
   return "unknown";
 }
 
@@ -3781,9 +3778,9 @@ nsBlockFrame::ReflowInlineFrames(BlockReflowInput& aState,
                              &lineReflowStatus, allowPullUp);
         lineLayout.EndLineReflow();
 
-        if (LINE_REFLOW_REDO_NO_PULL == lineReflowStatus ||
-            LINE_REFLOW_REDO_MORE_FLOATS == lineReflowStatus ||
-            LINE_REFLOW_REDO_NEXT_BAND == lineReflowStatus) {
+        if (LineReflowStatus::RedoNoPull == lineReflowStatus ||
+            LineReflowStatus::RedoMoreFloats == lineReflowStatus ||
+            LineReflowStatus::RedoNextBand == lineReflowStatus) {
           if (lineLayout.NeedsBackup()) {
             NS_ASSERTION(!forceBreakInFrame, "Backing up twice; this should never be necessary");
             
@@ -3803,9 +3800,9 @@ nsBlockFrame::ReflowInlineFrames(BlockReflowInput& aState,
 
         
         allowPullUp = false;
-      } while (LINE_REFLOW_REDO_NO_PULL == lineReflowStatus);
-    } while (LINE_REFLOW_REDO_MORE_FLOATS == lineReflowStatus);
-  } while (LINE_REFLOW_REDO_NEXT_BAND == lineReflowStatus);
+      } while (LineReflowStatus::RedoNoPull == lineReflowStatus);
+    } while (LineReflowStatus::RedoMoreFloats == lineReflowStatus);
+  } while (LineReflowStatus::RedoNextBand == lineReflowStatus);
 }
 
 void
@@ -3884,7 +3881,7 @@ nsBlockFrame::DoReflowInlineFrames(BlockReflowInput& aState,
                "first letter child bit should only be on first continuation");
 
   
-  LineReflowStatus lineReflowStatus = LINE_REFLOW_OK;
+  LineReflowStatus lineReflowStatus = LineReflowStatus::OK;
   int32_t i;
   nsIFrame* frame = aLine->mFirstChild;
 
@@ -3893,16 +3890,16 @@ nsBlockFrame::DoReflowInlineFrames(BlockReflowInput& aState,
     
     if (aLineLayout.NotifyOptionalBreakPosition(
             frame, 0, true, gfxBreakPriority::eNormalBreak)) {
-      lineReflowStatus = LINE_REFLOW_REDO_NEXT_BAND;
+      lineReflowStatus = LineReflowStatus::RedoNextBand;
     }
   }
 
   
   
-  for (i = 0; LINE_REFLOW_OK == lineReflowStatus && i < aLine->GetChildCount();
+  for (i = 0; LineReflowStatus::OK == lineReflowStatus && i < aLine->GetChildCount();
        i++, frame = frame->GetNextSibling()) {
     ReflowInlineFrame(aState, aLineLayout, aLine, frame, &lineReflowStatus);
-    if (LINE_REFLOW_OK != lineReflowStatus) {
+    if (LineReflowStatus::OK != lineReflowStatus) {
       
       
       
@@ -3917,7 +3914,7 @@ nsBlockFrame::DoReflowInlineFrames(BlockReflowInput& aState,
       }
       --aLine;
 
-      NS_ASSERTION(lineReflowStatus != LINE_REFLOW_TRUNCATED,
+      NS_ASSERTION(lineReflowStatus != LineReflowStatus::Truncated,
                    "ReflowInlineFrame should never determine that a line "
                    "needs to go to the next page/column");
     }
@@ -3926,13 +3923,13 @@ nsBlockFrame::DoReflowInlineFrames(BlockReflowInput& aState,
   
   if (aAllowPullUp) {
     
-    while (LINE_REFLOW_OK == lineReflowStatus) {
+    while (LineReflowStatus::OK == lineReflowStatus) {
       frame = PullFrame(aState, aLine);
       if (!frame) {
         break;
       }
 
-      while (LINE_REFLOW_OK == lineReflowStatus) {
+      while (LineReflowStatus::OK == lineReflowStatus) {
         int32_t oldCount = aLine->GetChildCount();
         ReflowInlineFrame(aState, aLineLayout, aLine, frame, &lineReflowStatus);
         if (aLine->GetChildCount() != oldCount) {
@@ -3953,7 +3950,8 @@ nsBlockFrame::DoReflowInlineFrames(BlockReflowInput& aState,
 
   
   bool needsBackup = aLineLayout.NeedsBackup() &&
-    (lineReflowStatus == LINE_REFLOW_STOP || lineReflowStatus == LINE_REFLOW_OK);
+    (lineReflowStatus == LineReflowStatus::Stop ||
+     lineReflowStatus == LineReflowStatus::OK);
   if (needsBackup && aLineLayout.HaveForcedBreakPosition()) {
     NS_WARNING("We shouldn't be backing up more than once! "
                "Someone must have set a break opportunity beyond the available width, "
@@ -3967,7 +3965,7 @@ nsBlockFrame::DoReflowInlineFrames(BlockReflowInput& aState,
     
     if (aLineLayout.HasOptionalBreakPosition()) {
       
-      lineReflowStatus = LINE_REFLOW_REDO_NO_PULL;
+      lineReflowStatus = LineReflowStatus::RedoNoPull;
     }
   } else {
     
@@ -3975,7 +3973,7 @@ nsBlockFrame::DoReflowInlineFrames(BlockReflowInput& aState,
     aLineLayout.ClearOptionalBreakPosition();
   }
 
-  if (LINE_REFLOW_REDO_NEXT_BAND == lineReflowStatus) {
+  if (LineReflowStatus::RedoNextBand == lineReflowStatus) {
     
     
     
@@ -4013,7 +4011,7 @@ nsBlockFrame::DoReflowInlineFrames(BlockReflowInput& aState,
         
         
         
-        lineReflowStatus = LINE_REFLOW_TRUNCATED;
+        lineReflowStatus = LineReflowStatus::Truncated;
         PushTruncatedLine(aState, aLine, aKeepReflowGoing);
       }
     }
@@ -4023,15 +4021,15 @@ nsBlockFrame::DoReflowInlineFrames(BlockReflowInput& aState,
     
     
   }
-  else if (LINE_REFLOW_TRUNCATED != lineReflowStatus &&
-           LINE_REFLOW_REDO_NO_PULL != lineReflowStatus) {
+  else if (LineReflowStatus::Truncated != lineReflowStatus &&
+           LineReflowStatus::RedoNoPull != lineReflowStatus) {
     
     
     if (!NS_INLINE_IS_BREAK_BEFORE(aState.mReflowStatus)) {
       if (!PlaceLine(aState, aLineLayout, aLine, aFloatStateBeforeLine,
                      aFloatAvailableSpace.mRect, aAvailableSpaceHeight,
                      aKeepReflowGoing)) {
-        lineReflowStatus = LINE_REFLOW_REDO_MORE_FLOATS;
+        lineReflowStatus = LineReflowStatus::RedoMoreFloats;
         
       }
     }
@@ -4085,8 +4083,8 @@ nsBlockFrame::ReflowInlineFrame(BlockReflowInput& aState,
     NS_ERROR("why call me?");
     return;
   }
-  
-  *aLineReflowStatus = LINE_REFLOW_OK;
+
+  *aLineReflowStatus = LineReflowStatus::OK;
 
 #ifdef NOISY_FIRST_LETTER
   ListTag(stdout);
@@ -4134,7 +4132,7 @@ nsBlockFrame::ReflowInlineFrame(BlockReflowInput& aState,
       StyleClear::None != aState.mFloatBreakType) {
     
     
-    *aLineReflowStatus = LINE_REFLOW_STOP;
+    *aLineReflowStatus = LineReflowStatus::Stop;
 
     
     StyleClear breakType = NS_INLINE_GET_BREAK_TYPE(frameReflowStatus);
@@ -4148,7 +4146,7 @@ nsBlockFrame::ReflowInlineFrame(BlockReflowInput& aState,
         
         
         
-        *aLineReflowStatus = LINE_REFLOW_REDO_NEXT_BAND;
+        *aLineReflowStatus = LineReflowStatus::RedoNextBand;
       }
       else {
         
@@ -4200,15 +4198,15 @@ nsBlockFrame::ReflowInlineFrame(BlockReflowInput& aState,
     if (!aLineLayout.GetLineEndsInBR()) {
       aLine->SetLineWrapped(true);
     }
+
     
     
     
-    
-    if ((!(frameReflowStatus & NS_INLINE_BREAK_FIRST_LETTER_COMPLETE) && 
+    if ((!(frameReflowStatus & NS_INLINE_BREAK_FIRST_LETTER_COMPLETE) &&
          nsGkAtoms::placeholderFrame != aFrame->GetType()) ||
-        *aLineReflowStatus == LINE_REFLOW_STOP) {
+        *aLineReflowStatus == LineReflowStatus::Stop) {
       
-      *aLineReflowStatus = LINE_REFLOW_STOP;
+      *aLineReflowStatus = LineReflowStatus::Stop;
       SplitLine(aState, aLineLayout, aLine, aFrame->GetNextSibling(), aLineReflowStatus);
     }
   }
@@ -4373,7 +4371,7 @@ nsBlockFrame::SplitLine(BlockReflowInput& aState,
     
     if (!CheckPlaceholderInLine(this, aLine, GetLastFloat(aLine)) ||
         !CheckPlaceholderInLine(this, aLine, aState.mBelowCurrentLineFloats.Tail())) {
-      *aLineReflowStatus = LINE_REFLOW_REDO_NO_PULL;
+      *aLineReflowStatus = LineReflowStatus::RedoNoPull;
     }
 
 #ifdef DEBUG
