@@ -2,23 +2,6 @@
 
 "use strict";
 
-var gCertDB = Cc["@mozilla.org/security/x509certdb;1"]
-                .getService(Ci.nsIX509CertDB);
-
-
-
-
-
-
-
-var gImportedCerts = [];
-
-registerCleanupFunction(() => {
-  for (let cert of gImportedCerts) {
-    gCertDB.deleteCertificate(cert);
-  }
-});
-
 
 
 
@@ -44,7 +27,7 @@ function pemToBase64(pem) {
 
 
 
-function readCertificate(filename, trustString) {
+function readCertificate(filename, trustString, certificates) {
   return OS.File.read(getTestFilePath(filename)).then(data => {
     let decoder = new TextDecoder();
     let pem = decoder.decode(data);
@@ -53,7 +36,7 @@ function readCertificate(filename, trustString) {
     let base64 = pemToBase64(pem);
     certdb.addCertFromBase64(base64, trustString, "unused");
     let cert = certdb.constructX509FromBase64(base64);
-    gImportedCerts.push(cert);
+    certificates.push(cert);
     return cert;
   }, error => { throw error; });
 }
