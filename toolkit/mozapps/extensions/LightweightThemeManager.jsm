@@ -402,6 +402,9 @@ this.LightweightThemeManager = {
 
     if (id) {
       let theme = this.getUsedTheme(id);
+      
+      if (!theme)
+        return;
       _themeIDBeingEnabled = id;
       let wrapper = new AddonWrapper(theme);
       if (aPendingRestart) {
