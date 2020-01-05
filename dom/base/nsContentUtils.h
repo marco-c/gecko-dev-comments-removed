@@ -2000,7 +2000,7 @@ public:
 
 
 
-  static bool IsRequestFullScreenAllowed();
+  static bool IsRequestFullScreenAllowed(mozilla::dom::CallerType aCallerType);
 
   
 

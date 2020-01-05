@@ -2023,12 +2023,6 @@ Element::GetInlineStyleDeclaration() const
   return nullptr;
 }
 
-const nsMappedAttributes*
-Element::GetMappedAttributes() const
-{
-  return mAttrsAndChildren.GetMapped();
-}
-
 nsresult
 Element::SetInlineStyleDeclaration(DeclarationBlock* aDeclaration,
                                    const nsAString* aSerialized,
@@ -3321,9 +3315,9 @@ Element::AttrValueToCORSMode(const nsAttrValue* aValue)
 }
 
 static const char*
-GetFullScreenError(nsIDocument* aDoc)
+GetFullScreenError(CallerType aCallerType)
 {
-  if (!nsContentUtils::IsRequestFullScreenAllowed()) {
+  if (!nsContentUtils::IsRequestFullScreenAllowed(aCallerType)) {
     return "FullscreenDeniedNotInputDriven";
   }
 
@@ -3340,7 +3334,7 @@ Element::RequestFullscreen(CallerType aCallerType, ErrorResult& aError)
   
   
   
-  if (const char* error = GetFullScreenError(OwnerDoc())) {
+  if (const char* error = GetFullScreenError(aCallerType)) {
     OwnerDoc()->DispatchFullscreenError(error);
     return;
   }
