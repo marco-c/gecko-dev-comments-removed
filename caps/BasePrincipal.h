@@ -61,13 +61,13 @@ public:
 
   void SetFromGenericAttributes(const GenericOriginAttributes& aAttrs);
 
+  
+  static bool IsFirstPartyEnabled();
+
 protected:
   OriginAttributes() {}
   explicit OriginAttributes(const OriginAttributesDictionary& aOther)
     : OriginAttributesDictionary(aOther) {}
-
-  
-  bool IsFirstPartyEnabled();
 };
 
 class PrincipalOriginAttributes;

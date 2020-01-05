@@ -3573,8 +3573,54 @@ nsDocShell::CanAccessItem(nsIDocShellTreeItem* aTargetItem,
     return false;
   }
 
-  if (static_cast<nsDocShell*>(targetDS.get())->GetOriginAttributes() !=
-      static_cast<nsDocShell*>(accessingDS.get())->GetOriginAttributes()) {
+  nsCOMPtr<nsIDocShellTreeItem> accessingRoot;
+  aAccessingItem->GetSameTypeRootTreeItem(getter_AddRefs(accessingRoot));
+  nsCOMPtr<nsIDocShell> accessingRootDS = do_QueryInterface(accessingRoot);
+
+  nsCOMPtr<nsIDocShellTreeItem> targetRoot;
+  aTargetItem->GetSameTypeRootTreeItem(getter_AddRefs(targetRoot));
+  nsCOMPtr<nsIDocShell> targetRootDS = do_QueryInterface(targetRoot);
+
+  DocShellOriginAttributes targetOA =
+    static_cast<nsDocShell*>(targetDS.get())->GetOriginAttributes();
+  DocShellOriginAttributes accessingOA =
+    static_cast<nsDocShell*>(accessingDS.get())->GetOriginAttributes();
+
+  
+  
+  
+  
+  if (OriginAttributes::IsFirstPartyEnabled()) {
+    if (accessingDS == accessingRootDS &&
+        aAccessingItem->ItemType() == nsIDocShellTreeItem::typeContent &&
+        !accessingDS->GetIsMozBrowserOrApp()) {
+
+      nsCOMPtr<nsIDocument> accessingDoc = aAccessingItem->GetDocument();
+
+      if (accessingDoc) {
+        nsCOMPtr<nsIPrincipal> accessingPrincipal = accessingDoc->NodePrincipal();
+
+        accessingOA.mFirstPartyDomain =
+          BasePrincipal::Cast(accessingPrincipal)->OriginAttributesRef().mFirstPartyDomain;
+      }
+    }
+
+    if (targetDS == targetRootDS &&
+        aTargetItem->ItemType() == nsIDocShellTreeItem::typeContent &&
+        !targetDS->GetIsMozBrowserOrApp()) {
+
+      nsCOMPtr<nsIDocument> targetDoc = aAccessingItem->GetDocument();
+
+      if (targetDoc) {
+        nsCOMPtr<nsIPrincipal> targetPrincipal = targetDoc->NodePrincipal();
+
+        targetOA.mFirstPartyDomain =
+          BasePrincipal::Cast(targetPrincipal)->OriginAttributesRef().mFirstPartyDomain;
+      }
+    }
+  }
+
+  if (targetOA != accessingOA) {
     return false;
   }
 
@@ -3583,10 +3629,6 @@ nsDocShell::CanAccessItem(nsIDocShellTreeItem* aTargetItem,
       static_cast<nsDocShell*>(accessingDS.get())->UsePrivateBrowsing()) {
     return false;
   }
-
-
-  nsCOMPtr<nsIDocShellTreeItem> accessingRoot;
-  aAccessingItem->GetSameTypeRootTreeItem(getter_AddRefs(accessingRoot));
 
   if (aTargetItem == accessingRoot) {
     
@@ -3604,9 +3646,6 @@ nsDocShell::CanAccessItem(nsIDocShellTreeItem* aTargetItem,
     target->GetSameTypeParent(getter_AddRefs(parent));
     parent.swap(target);
   } while (target);
-
-  nsCOMPtr<nsIDocShellTreeItem> targetRoot;
-  aTargetItem->GetSameTypeRootTreeItem(getter_AddRefs(targetRoot));
 
   if (aTargetItem != targetRoot) {
     
@@ -14244,20 +14283,6 @@ nsDocShell::GetIsInIsolatedMozBrowserElement(bool* aIsInIsolatedMozBrowserElemen
 nsDocShell::GetIsInMozBrowserOrApp(bool* aIsInMozBrowserOrApp)
 {
   *aIsInMozBrowserOrApp = (GetInheritedFrameType() != FRAME_TYPE_REGULAR);
-  return NS_OK;
-}
-
- NS_IMETHODIMP
-nsDocShell::GetIsTopLevelContentDocShell(bool* aIsTopLevelContentDocShell)
-{
-  *aIsTopLevelContentDocShell = false;
-
-  if (mItemType == typeContent) {
-    nsCOMPtr<nsIDocShellTreeItem> root;
-    GetSameTypeRootTreeItem(getter_AddRefs(root));
-    *aIsTopLevelContentDocShell = root.get() == static_cast<nsIDocShellTreeItem*>(this);
-  }
-
   return NS_OK;
 }
 
