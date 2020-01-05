@@ -579,8 +579,6 @@ nsXMLContentSink::CloseElement(nsIContent* aContent)
     
     
     if (mParser && !mParser->IsParserEnabled()) {
-      
-      GetParser()->BlockParser();
       block = true;
     }
 
@@ -1015,6 +1013,10 @@ nsXMLContentSink::HandleStartElement(const char16_t *aName,
 
   if (content == mDocElement) {
     NotifyDocElementCreated(mDocument);
+
+    if (aInterruptable && NS_SUCCEEDED(result) && mParser && !mParser->IsParserEnabled()) {
+      return NS_ERROR_HTMLPARSER_BLOCK;
+    }
   }
 
   return aInterruptable && NS_SUCCEEDED(result) ? DidProcessATokenImpl() :
