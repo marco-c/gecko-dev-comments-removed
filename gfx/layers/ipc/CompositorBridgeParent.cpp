@@ -1660,7 +1660,9 @@ CompositorBridgeParent::FlushApzRepaints(const LayerTransactionParent* aLayerTre
     
     layersId = mRootLayerTreeID;
   }
-  mApzcTreeManager->FlushApzRepaints(layersId);
+  APZThreadUtils::RunOnControllerThread(NS_NewRunnableFunction([=] () {
+    mApzcTreeManager->FlushApzRepaints(layersId);
+  }));
 }
 
 void
