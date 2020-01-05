@@ -2692,7 +2692,11 @@ pref("layout.css.control-characters.visible", true);
 pref("layout.css.column-span.enabled", false);
 
 
+#ifdef RELEASE_OR_BETA
 pref("layout.css.style-attr-with-xml-base.disabled", false);
+#else
+pref("layout.css.style-attr-with-xml-base.disabled", true);
+#endif
 
 
 
