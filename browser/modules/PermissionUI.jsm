@@ -251,11 +251,6 @@ this.PermissionPromptPrototype = {
 
 
   prompt() {
-    let chromeWin = this.browser.ownerGlobal;
-    if (!chromeWin.PopupNotifications) {
-      return;
-    }
-
     
     let requestingURI = this.principal.URI;
     if (!(requestingURI instanceof Ci.nsIStandardURL)) {
@@ -284,6 +279,12 @@ this.PermissionPromptPrototype = {
       
       this.browser.dispatchEvent(new this.browser.ownerGlobal
                                          .CustomEvent("PermissionStateChange"));
+    }
+
+    let chromeWin = this.browser.ownerGlobal;
+    if (!chromeWin.PopupNotifications) {
+      this.cancel();
+      return;
     }
 
     
