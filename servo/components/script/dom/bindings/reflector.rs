@@ -73,11 +73,15 @@ impl Reflector {
 pub trait Reflectable {
     
     fn reflector(&self) -> &Reflector;
-    
-    fn init_reflector(&mut self, obj: *mut JSObject);
 
     
     fn global(&self) -> GlobalRoot where Self: Sized {
         global_root_from_reflector(self)
     }
+}
+
+
+pub trait MutReflectable: Reflectable {
+    
+    fn init_reflector(&mut self, obj: *mut JSObject);
 }

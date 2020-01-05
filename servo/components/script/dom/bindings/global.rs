@@ -272,14 +272,6 @@ impl<'a> GlobalRef<'a> {
     }
 
     
-    pub fn reflector(&self) -> &Reflector {
-        match *self {
-            GlobalRef::Window(ref window) => window.reflector(),
-            GlobalRef::Worker(ref worker) => worker.reflector(),
-        }
-    }
-
-    
     
     pub fn get_runnable_wrapper(&self) -> RunnableWrapper {
         match *self {
@@ -293,6 +285,15 @@ impl<'a> GlobalRef<'a> {
         match *self {
             GlobalRef::Window(ref window) => window.report_an_error(error_info, value),
             GlobalRef::Worker(_) => (),
+        }
+    }
+}
+
+impl<'a> Reflectable for GlobalRef<'a> {
+    fn reflector(&self) -> &Reflector {
+        match *self {
+            GlobalRef::Window(ref window) => window.reflector(),
+            GlobalRef::Worker(ref worker) => worker.reflector(),
         }
     }
 }
