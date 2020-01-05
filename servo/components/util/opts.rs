@@ -31,7 +31,7 @@ pub struct Opts {
 
     
     
-    pub cpu_painting: bool,
+    pub gpu_painting: bool,
 
     
     pub tile_size: uint,
@@ -127,7 +127,8 @@ pub fn from_cmdline_args(args: &[String]) -> bool {
     let args = args.tail();
 
     let opts = vec!(
-        getopts::optflag("c", "cpu", "CPU rendering"),
+        getopts::optflag("c", "cpu", "CPU painting (default)"),
+        getopts::optflag("g", "gpu", "GPU painting"),
         getopts::optopt("o", "output", "Output file", "output.png"),
         getopts::optopt("r", "rendering", "Rendering backend", "direct2d|core-graphics|core-graphics-accelerated|cairo|skia."),
         getopts::optopt("s", "size", "Size of tiles", "512"),
@@ -197,7 +198,7 @@ pub fn from_cmdline_args(args: &[String]) -> bool {
         from_str(period.as_slice()).unwrap()
     });
 
-    let cpu_painting = FORCE_CPU_PAINTING || opt_match.opt_present("c");
+    let gpu_painting = !FORCE_CPU_PAINTING && opt_match.opt_present("g");
 
     let mut layout_threads: uint = match opt_match.opt_str("y") {
         Some(layout_threads_str) => from_str(layout_threads_str.as_slice()).unwrap(),
@@ -232,7 +233,7 @@ pub fn from_cmdline_args(args: &[String]) -> bool {
     let opts = Opts {
         urls: urls,
         n_render_threads: n_render_threads,
-        cpu_painting: cpu_painting,
+        gpu_painting: gpu_painting,
         tile_size: tile_size,
         device_pixels_per_px: device_pixels_per_px,
         time_profiler_period: time_profiler_period,
