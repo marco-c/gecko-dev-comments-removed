@@ -57,10 +57,6 @@ public:
   mozilla::tasktracer::TracedTaskCommon GetTracedTask();
 #endif
 
-  
-  static already_AddRefed<nsTimerImpl> PostTimerEvent(
-    already_AddRefed<nsTimerImpl> aTimerRef);
-
   int32_t GetGeneration()
   {
     return mGeneration;
@@ -150,24 +146,11 @@ public:
   Name mName;
 
   
-  
-  nsCOMPtr<nsITimerCallback> mTimerCallbackWhileFiring;
-
-  
   CallbackType          mCallbackType;
 
   
   
   uint8_t               mType;
-  bool                  mFiring;
-
-
-  
-  
-  
-  
-  bool                  mArmed;
-  bool                  mCanceled;
 
   
   

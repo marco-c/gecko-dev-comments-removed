@@ -621,7 +621,6 @@ TimerThread::AddTimerInternal(nsTimerImpl* aTimer)
     return -1;
   }
 
-  aTimer->mArmed = true;
   NS_ADDREF(aTimer);
 
 #ifdef MOZ_TASK_TRACER
@@ -652,8 +651,6 @@ TimerThread::ReleaseTimerInternal(nsTimerImpl* aTimer)
     
     mMonitor.AssertCurrentThreadOwns();
   }
-  
-  aTimer->mArmed = false;
   NS_RELEASE(aTimer);
 }
 
