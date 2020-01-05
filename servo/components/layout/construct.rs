@@ -92,81 +92,81 @@ impl ConstructionResult {
 
     pub fn debug_id(&self) -> usize {
         match self {
-            &ConstructionResult::None => 0u,
-            &ConstructionResult::ConstructionItem(_) => 0u,
+            &ConstructionResult::None => 0,
+            &ConstructionResult::ConstructionItem(_) => 0,
             &ConstructionResult::Flow(ref flow_ref, _) => flow::base(&**flow_ref).debug_id(),
         }
     }
 }
 
-/// Represents the output of flow construction for a DOM node that has not yet resulted in a
-/// complete flow. Construction items bubble up the tree until they find a `Flow` to be attached
-/// to.
+
+
+
 #[derive(Clone)]
 pub enum ConstructionItem {
-    /// Inline fragments and associated {ib} splits that have not yet found flows.
+    
     InlineFragments(InlineFragmentsConstructionResult),
-    /// Potentially ignorable whitespace.
+    
     Whitespace(OpaqueNode, Arc<ComputedValues>, RestyleDamage),
-    /// TableColumn Fragment
+    
     TableColumnFragment(Fragment),
 }
 
-/// Represents inline fragments and {ib} splits that are bubbling up from an inline.
+
 #[derive(Clone)]
 pub struct InlineFragmentsConstructionResult {
-    /// Any {ib} splits that we're bubbling up.
+    
     pub splits: LinkedList<InlineBlockSplit>,
 
-    /// Any fragments that succeed the {ib} splits.
+    
     pub fragments: LinkedList<Fragment>,
 
-    /// Any absolute descendants that we're bubbling up.
+    
     pub abs_descendants: AbsDescendants,
 }
 
-/// Represents an {ib} split that has not yet found the containing block that it belongs to. This
-/// is somewhat tricky. An example may be helpful. For this DOM fragment:
-///
-/// ```html
-///     <span>
-///     A
-///     <div>B</div>
-///     C
-///     </span>
-/// ```
-///
-/// The resulting `ConstructionItem` for the outer `span` will be:
-///
-/// ```ignore
-///     ConstructionItem::InlineFragments(Some(~[
-///         InlineBlockSplit {
-///             predecessor_fragments: ~[
-///                 A
-///             ],
-///             block: ~BlockFlow {
-///                 B
-///             },
-///         }),~[
-///             C
-///         ])
-/// ```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[derive(Clone)]
 pub struct InlineBlockSplit {
-    /// The inline fragments that precede the flow.
+    
     pub predecessors: LinkedList<Fragment>,
 
-    /// The flow that caused this {ib} split.
+    
     pub flow: FlowRef,
 }
 
-/// Holds inline fragments that we're gathering for children of an inline node.
+
 struct InlineFragmentsAccumulator {
-    /// The list of fragments.
+    
     fragments: LinkedList<Fragment>,
 
-    /// Whether we've created a range to enclose all the fragments. This will be Some() if the
-    /// outer node is an inline and None otherwise.
+    
+    
     enclosing_style: Option<Arc<ComputedValues>>,
 }
 
@@ -203,9 +203,9 @@ impl InlineFragmentsAccumulator {
             let frag_len = fragments.len();
             for (idx, frag) in fragments.iter_mut().enumerate() {
 
-                // frag is first inline fragment in the inline node
+                
                 let is_first = idx == 0;
-                // frag is the last inline fragment in the inline node
+                
                 let is_last = idx == frag_len - 1;
 
                 frag.add_inline_context_style(enclosing_style.clone(), is_first, is_last);
@@ -221,14 +221,14 @@ enum WhitespaceStrippingMode {
     FromEnd,
 }
 
-/// An object that knows how to create flows.
+
 pub struct FlowConstructor<'a> {
-    /// The layout context.
+    
     pub layout_context: &'a LayoutContext<'a>,
 }
 
 impl<'a> FlowConstructor<'a> {
-    /// Creates a new flow constructor.
+    
     pub fn new<'b>(layout_context: &'b LayoutContext<'b>)
                    -> FlowConstructor<'b> {
         FlowConstructor {
@@ -250,14 +250,14 @@ impl<'a> FlowConstructor<'a> {
         node.set_flow_construction_result(result);
     }
 
-    /// Builds the `ImageFragmentInfo` for the given image. This is out of line to guide inlining.
+    
     fn build_fragment_info_for_image(&mut self, node: &ThreadSafeLayoutNode, url: Option<Url>)
                                 -> SpecificFragmentInfo {
         match url {
             None => SpecificFragmentInfo::Generic,
             Some(url) => {
-                // FIXME(pcwalton): The fact that image fragments store the cache within them makes
-                // little sense to me.
+                
+                
                 SpecificFragmentInfo::Image(box ImageFragmentInfo::new(node,
                                                          url,
                                                          self.layout_context

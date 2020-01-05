@@ -394,7 +394,7 @@ pub trait ImmutableFlowUtils {
     fn is_leaf(self) -> bool;
 
     
-    fn child_count(self) -> uint;
+    fn child_count(self) -> usize;
 
     
     fn is_block_container(self) -> bool;
@@ -409,7 +409,7 @@ pub trait ImmutableFlowUtils {
     fn dump(self);
 
     
-    fn dump_with_level(self, level: uint);
+    fn dump_with_level(self, level: u32);
 }
 
 pub trait MutableFlowUtils {
@@ -561,7 +561,7 @@ static HAS_FLOATED_DESCENDANTS_BITMASK: FlowFlags = FlowFlags { bits: 0b0000_001
 
 
 
-static TEXT_ALIGN_SHIFT: uint = 11;
+static TEXT_ALIGN_SHIFT: usize = 11;
 
 impl FlowFlags {
     
@@ -650,7 +650,7 @@ impl Descendants {
         }
     }
 
-    pub fn len(&self) -> uint {
+    pub fn len(&self) -> usize {
         self.descendant_links.len()
     }
 
@@ -1152,7 +1152,7 @@ impl<'a> ImmutableFlowUtils for &'a (Flow + 'a) {
     }
 
     
-    fn child_count(self) -> uint {
+    fn child_count(self) -> usize {
         base(self).children.len()
     }
 
@@ -1195,7 +1195,7 @@ impl<'a> ImmutableFlowUtils for &'a (Flow + 'a) {
     }
 
     
-    fn dump_with_level(self, level: uint) {
+    fn dump_with_level(self, level: u32) {
         let mut indent = String::new();
         for _ in range(0, level) {
             indent.push_str("| ")
