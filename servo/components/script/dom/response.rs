@@ -290,15 +290,17 @@ impl ResponseMethods for Response {
         }
     }
 
-    
+    // https://fetch.spec.whatwg.org/#dom-response-headers
     fn Headers(&self) -> Root<Headers> {
         self.headers_reflector.or_init(|| Headers::for_response(&self.global()))
     }
 
-    
+    // https://fetch.spec.whatwg.org/#dom-response-clone
     fn Clone(&self) -> Fallible<Root<Response>> {
-        
-        
+        // Step 1
+        if self.is_locked() || self.body_used.get() {
+            return Err(Error::Type("cannot clone a disturbed response".to_string()));
+        }
 
         
         let new_response = Response::new(&self.global());
