@@ -187,6 +187,9 @@ pub enum Msg {
     PipelineVisibilityChanged(PipelineId, bool),
     
     
+    NewScrollFrameReady(bool),
+    
+    
     
     
     
@@ -228,6 +231,7 @@ impl Debug for Msg {
             Msg::PipelineVisibilityChanged(..) => write!(f, "PipelineVisibilityChanged"),
             Msg::PipelineExited(..) => write!(f, "PipelineExited"),
             Msg::GetScrollOffset(..) => write!(f, "GetScrollOffset"),
+            Msg::NewScrollFrameReady(..) => write!(f, "NewScrollFrameReady"),
         }
     }
 }
