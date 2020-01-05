@@ -565,6 +565,12 @@ public:
   bool GetShadowTransformSetByAnimation() { return mShadowTransformSetByAnimation; }
   bool GetShadowOpacitySetByAnimation() { return mShadowOpacitySetByAnimation; }
 
+  
+
+
+
+  virtual bool NeedToDrawCheckerboarding(gfx::Color* aOutCheckerboardingColor = nullptr) { return false; }
+
 protected:
   HostLayerManager* mCompositorManager;
 
@@ -663,6 +669,8 @@ public:
 
 
   virtual nsIntRegion GetFullyRenderedRegion();
+
+  virtual bool NeedToDrawCheckerboarding(gfx::Color* aOutCheckerboardingColor = nullptr);
 
 protected:
   LayerManagerComposite* mCompositeManager;
