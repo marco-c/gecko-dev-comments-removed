@@ -37,6 +37,9 @@
 
 
 
+
+
+
 "use strict";
 
 this.EXPORTED_SYMBOLS = ["ProfileStorage"];
@@ -63,6 +66,9 @@ const SCHEMA_VERSION = 1;
 
 
 const VALID_FIELDS = [
+  "given-name",
+  "additional-name",
+  "family-name",
   "organization",
   "street-address",
   "address-level2",

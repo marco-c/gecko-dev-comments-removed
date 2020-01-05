@@ -90,13 +90,23 @@ ProfileAutoCompleteResult.prototype = {
     
 
 
-    const possibleNameFields = ["given-name", "additional-name", "family-name"];
+    const possibleNameFields = [
+      "name",
+      "given-name",
+      "additional-name",
+      "family-name",
+    ];
+
     focusedFieldName = possibleNameFields.includes(focusedFieldName) ?
                        "name" : focusedFieldName;
-    if (!profile.name) {
-      profile.name = FormAutofillUtils.generateFullName(profile["given-name"],
-                                                        profile["family-name"],
-                                                        profile["additional-name"]);
+
+    
+    let clonedProfile = Object.assign({}, profile);
+    if (!clonedProfile.name) {
+      clonedProfile.name =
+        FormAutofillUtils.generateFullName(clonedProfile["given-name"],
+                                           clonedProfile["family-name"],
+                                           clonedProfile["additional-name"]);
     }
 
     const secondaryLabelOrder = [
@@ -112,10 +122,20 @@ ProfileAutoCompleteResult.prototype = {
     ];
 
     for (const currentFieldName of secondaryLabelOrder) {
-      if (focusedFieldName != currentFieldName &&
-          allFieldNames.includes(currentFieldName) &&
-          profile[currentFieldName]) {
-        return profile[currentFieldName];
+      if (focusedFieldName == currentFieldName ||
+          !clonedProfile[currentFieldName]) {
+        continue;
+      }
+
+      let matching;
+      if (currentFieldName == "name") {
+        matching = allFieldNames.some(fieldName => possibleNameFields.includes(fieldName));
+      } else {
+        matching = allFieldNames.includes(currentFieldName);
+      }
+
+      if (matching) {
+        return clonedProfile[currentFieldName];
       }
     }
 
