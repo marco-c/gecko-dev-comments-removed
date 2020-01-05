@@ -100,8 +100,31 @@ NS_INTERFACE_TABLE_TAIL_INHERITING(nsGenericHTMLFormElementWithState)
 
 
 
+nsresult
+HTMLTextAreaElement::Clone(mozilla::dom::NodeInfo *aNodeInfo, nsINode **aResult) const
+{
+  *aResult = nullptr;
+  already_AddRefed<mozilla::dom::NodeInfo> ni =
+    RefPtr<mozilla::dom::NodeInfo>(aNodeInfo).forget();
+  RefPtr<HTMLTextAreaElement> it = new HTMLTextAreaElement(ni);
 
-NS_IMPL_ELEMENT_CLONE(HTMLTextAreaElement)
+  nsresult rv = const_cast<HTMLTextAreaElement*>(this)->CopyInnerTo(it);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  if (mValueChanged) {
+    
+    nsAutoString value;
+    GetValueInternal(value, true);
+
+    
+    rv = it->SetValueInternal(value, nsTextEditorState::eSetValue_Notify);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+
+  it->mLastValueChangeWasInteractive = mLastValueChangeWasInteractive;
+  it.forget(aResult);
+  return NS_OK;
+}
 
 
 NS_IMPL_NSICONSTRAINTVALIDATION_EXCEPT_SETCUSTOMVALIDITY(HTMLTextAreaElement)
