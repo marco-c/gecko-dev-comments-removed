@@ -4,6 +4,7 @@
 
 
 
+use dom::bindings::codegen::InterfaceObjectMap::Globals;
 use dom::bindings::codegen::PrototypeList;
 use dom::bindings::conversions::get_dom_class;
 use dom::bindings::guard::Guard;
@@ -483,4 +484,12 @@ unsafe extern "C" fn non_new_constructor(
         -> bool {
     throw_type_error(cx, "This constructor needs to be called with `new`.");
     false
+}
+
+
+
+pub unsafe fn is_exposed_in(object: HandleObject, globals: Globals) -> bool {
+    let unwrapped = UncheckedUnwrapObject(object.get(),  0);
+    let dom_class = get_dom_class(unwrapped).unwrap();
+    globals.contains(dom_class.global)
 }

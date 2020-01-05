@@ -93,6 +93,9 @@ pub struct DOMClass {
 
     
     pub heap_size_of: unsafe fn(*const c_void) -> usize,
+
+    
+    pub global: InterfaceObjectMap::Globals,
 }
 unsafe impl Sync for DOMClass {}
 
