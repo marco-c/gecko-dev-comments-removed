@@ -2,15 +2,14 @@
 
 
 
+use attr::{AttrIdentifier, AttrValue};
 use selectors::Element;
 use selectors::matching::matches_compound_selector;
-use selectors::parser::{AttrSelector, Combinator, CompoundSelector, SimpleSelector};
+use selectors::parser::{AttrSelector, Combinator, CompoundSelector, NamespaceConstraint, SimpleSelector};
 use selectors::states::*;
 use std::clone::Clone;
 use std::sync::Arc;
 use string_cache::{Atom, Namespace};
-
-
 
 
 
@@ -49,34 +48,68 @@ bitflags! {
 
 
 
-struct ElementWrapper<E> where E: Element {
+
+#[derive(HeapSizeOf, Clone)]
+pub struct ElementSnapshot {
+    pub state: Option<ElementState>,
+    pub attrs: Option<Vec<(AttrIdentifier, AttrValue)>>,
+}
+
+impl ElementSnapshot {
+    pub fn new() -> ElementSnapshot {
+        EMPTY_SNAPSHOT.clone()
+    }
+
+    
+    pub fn get_attr(&self, namespace: &Namespace, name: &Atom) -> Option<&AttrValue> {
+        self.attrs.as_ref().unwrap().iter()
+                  .find(|&&(ref ident, _)| ident.local_name == *name && ident.namespace == *namespace)
+                  .map(|&(_, ref v)| v)
+    }
+
+    
+    pub fn get_attr_ignore_ns(&self, name: &Atom) -> Option<&AttrValue> {
+        self.attrs.as_ref().unwrap().iter()
+                  .find(|&&(ref ident, _)| ident.local_name == *name)
+                  .map(|&(_, ref v)| v)
+    }
+}
+
+static EMPTY_SNAPSHOT: ElementSnapshot = ElementSnapshot { state: None, attrs: None };
+
+struct ElementWrapper<'a, E> where E: Element {
     element: E,
-    state_override: ElementState,
+    snapshot: &'a ElementSnapshot,
 }
 
-impl<'a, E> ElementWrapper<E> where E: Element {
-    pub fn new(el: E) -> ElementWrapper<E> {
-        ElementWrapper { element: el, state_override: ElementState::empty() }
+impl<'a, E> ElementWrapper<'a, E> where E: Element {
+    pub fn new(el: E) -> ElementWrapper<'a, E> {
+        ElementWrapper { element: el, snapshot: &EMPTY_SNAPSHOT }
     }
 
-    pub fn new_with_override(el: E, state: ElementState) -> ElementWrapper<E> {
-        ElementWrapper { element: el, state_override: state }
+    pub fn new_with_snapshot(el: E, snapshot: &'a ElementSnapshot) -> ElementWrapper<'a, E> {
+        ElementWrapper { element: el, snapshot: snapshot }
     }
 }
 
-macro_rules! overridden_state_accessors {
+macro_rules! snapshot_state_accessors {
     ($(
         $(#[$Flag_attr: meta])*
         state $css: expr => $variant: ident / $method: ident /
         $flag: ident = $value: expr,
-    )+) => { $( fn $method(&self) -> bool { self.state_override.contains($flag) } )+
+    )+) => { $( fn $method(&self) -> bool {
+        match self.snapshot.state {
+            Some(s) => s.contains($flag),
+            None => self.element.$method()
+        }
+    } )+
     }
 }
 
-impl<E> Element for ElementWrapper<E> where E: Element {
+impl<'a, E> Element for ElementWrapper<'a, E> where E: Element {
 
     
-    state_pseudo_classes!(overridden_state_accessors);
+    state_pseudo_classes!(snapshot_state_accessors);
 
     fn parent_element(&self) -> Option<Self> {
         self.element.parent_element().map(|el| ElementWrapper::new(el))
@@ -103,14 +136,31 @@ impl<E> Element for ElementWrapper<E> where E: Element {
         self.element.get_namespace()
     }
     fn get_id(&self) -> Option<Atom> {
-        self.element.get_id()
+        match self.snapshot.attrs {
+            Some(_) => self.snapshot.get_attr(&ns!(""), &atom!("id")).map(|value| value.as_atom().clone()),
+            None => self.element.get_id(),
+        }
     }
     fn has_class(&self, name: &Atom) -> bool {
-        self.element.has_class(name)
+        match self.snapshot.attrs {
+            Some(_) => self.snapshot.get_attr(&ns!(""), &atom!("class"))
+                                    .map_or(false, |v| { v.as_tokens().iter().any(|atom| atom == name) }),
+            None => self.element.has_class(name),
+        }
     }
     fn match_attr<F>(&self, attr: &AttrSelector, test: F) -> bool
                     where F: Fn(&str) -> bool {
-        self.element.match_attr(attr, test)
+        match self.snapshot.attrs {
+            Some(_) => {
+                let html = self.is_html_element_in_html_document();
+                let local_name = if html { &attr.lower_name } else { &attr.name };
+                match attr.namespace {
+                    NamespaceConstraint::Specific(ref ns) => self.snapshot.get_attr(ns, local_name),
+                    NamespaceConstraint::Any => self.snapshot.get_attr_ignore_ns(local_name),
+                }.map_or(false, |v| test(v))
+            },
+            None => self.element.match_attr(attr, test)
+        }
     }
     fn is_empty(&self) -> bool {
         self.element.is_empty()
@@ -127,8 +177,15 @@ impl<E> Element for ElementWrapper<E> where E: Element {
     fn is_unvisited_link(&self) -> bool {
         self.element.is_unvisited_link()
     }
-    fn each_class<F>(&self, callback: F) where F: FnMut(&Atom) {
-        self.element.each_class(callback)
+    fn each_class<F>(&self, mut callback: F) where F: FnMut(&Atom) {
+        match self.snapshot.attrs {
+            Some(_) => {
+                if let Some(v) = self.snapshot.get_attr(&ns!(""), &atom!("class")) {
+                    for c in v.as_tokens() { callback(c) }
+                }
+            }
+            None => self.element.each_class(callback),
+        }
     }
 }
 
@@ -147,6 +204,23 @@ macro_rules! gen_selector_to_state {
     }
 }
 
+state_pseudo_classes!(gen_selector_to_state);
+
+fn is_attr_selector(sel: &SimpleSelector) -> bool {
+    match *sel {
+        SimpleSelector::ID(_) |
+        SimpleSelector::Class(_) |
+        SimpleSelector::AttrExists(_) |
+        SimpleSelector::AttrEqual(_, _, _) |
+        SimpleSelector::AttrIncludes(_, _) |
+        SimpleSelector::AttrDashMatch(_, _, _) |
+        SimpleSelector::AttrPrefixMatch(_, _) |
+        SimpleSelector::AttrSubstringMatch(_, _) |
+        SimpleSelector::AttrSuffixMatch(_, _) => true,
+        _ => false,
+    }
+}
+
 fn combinator_to_restyle_hint(combinator: Option<Combinator>) -> RestyleHint {
     match combinator {
         None => RESTYLE_SELF,
@@ -159,49 +233,68 @@ fn combinator_to_restyle_hint(combinator: Option<Combinator>) -> RestyleHint {
     }
 }
 
-state_pseudo_classes!(gen_selector_to_state);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #[derive(Debug)]
-struct StateDependency {
-    selector: Arc<CompoundSelector>,
-    combinator: Option<Combinator>,
-    state: ElementState,
+struct Sensitivities {
+    pub states: ElementState,
+    pub attrs: bool,
 }
 
-#[derive(Debug)]
-pub struct StateDependencySet {
-    deps: Vec<StateDependency>,
-}
-
-impl StateDependencySet {
-    pub fn new() -> StateDependencySet {
-        StateDependencySet { deps: Vec::new() }
+impl Sensitivities {
+    fn is_empty(&self) -> bool {
+        self.states.is_empty() && !self.attrs
     }
 
-    pub fn compute_hint<E>(&self, el: &E, current_state: ElementState, old_state: ElementState)
+    fn new() -> Sensitivities {
+        Sensitivities {
+            states: ElementState::empty(),
+            attrs: false,
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Debug)]
+struct Dependency {
+    selector: Arc<CompoundSelector>,
+    combinator: Option<Combinator>,
+    sensitivities: Sensitivities,
+}
+
+#[derive(Debug)]
+pub struct DependencySet {
+    deps: Vec<Dependency>,
+}
+
+impl DependencySet {
+    pub fn new() -> DependencySet {
+        DependencySet { deps: Vec::new() }
+    }
+
+    pub fn compute_hint<E>(&self, el: &E, snapshot: &ElementSnapshot, current_state: ElementState)
                           -> RestyleHint where E: Element, E: Clone {
+        let state_changes = snapshot.state.map_or(ElementState::empty(), |old_state| current_state ^ old_state);
+        let attrs_changed = snapshot.attrs.is_some();
         let mut hint = RestyleHint::empty();
-        let state_changes = current_state ^ old_state;
         for dep in &self.deps {
-            if state_changes.intersects(dep.state) {
-                let old_el: ElementWrapper<E> = ElementWrapper::new_with_override(el.clone(), old_state);
+            if state_changes.intersects(dep.sensitivities.states) || (attrs_changed && dep.sensitivities.attrs) {
+                let old_el: ElementWrapper<E> = ElementWrapper::new_with_snapshot(el.clone(), snapshot);
                 let matched_then = matches_compound_selector(&*dep.selector, &old_el, None, &mut false);
                 let matches_now = matches_compound_selector(&*dep.selector, el, None, &mut false);
                 if matched_then != matches_now {
@@ -219,15 +312,18 @@ impl StateDependencySet {
         let mut cur = selector;
         let mut combinator: Option<Combinator> = None;
         loop {
-            let mut deps = ElementState::empty();
+            let mut sensitivities = Sensitivities::new();
             for s in &cur.simple_selectors {
-                deps.insert(selector_to_state(s));
+                sensitivities.states.insert(selector_to_state(s));
+                if !sensitivities.attrs {
+                    sensitivities.attrs = is_attr_selector(s);
+                }
             }
-            if !deps.is_empty() {
-                self.deps.push(StateDependency {
+            if !sensitivities.is_empty() {
+                self.deps.push(Dependency {
                     selector: cur.clone(),
                     combinator: combinator,
-                    state: deps,
+                    sensitivities: sensitivities,
                 });
             }
 

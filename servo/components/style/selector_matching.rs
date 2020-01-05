@@ -6,7 +6,7 @@ use legacy::PresentationalHintSynthesis;
 use media_queries::{Device, MediaType};
 use node::TElementAttributes;
 use properties::{PropertyDeclaration, PropertyDeclarationBlock};
-use restyle_hints::{RestyleHint, StateDependencySet};
+use restyle_hints::{ElementSnapshot, RestyleHint, DependencySet};
 use selectors::Element;
 use selectors::bloom::BloomFilter;
 use selectors::matching::DeclarationBlock as GenericDeclarationBlock;
@@ -96,7 +96,7 @@ pub struct Stylist {
     rules_source_order: usize,
 
     
-    state_deps: StateDependencySet,
+    state_deps: DependencySet,
 }
 
 impl Stylist {
@@ -112,7 +112,7 @@ impl Stylist {
             before_map: PerPseudoElementSelectorMap::new(),
             after_map: PerPseudoElementSelectorMap::new(),
             rules_source_order: 0,
-            state_deps: StateDependencySet::new(),
+            state_deps: DependencySet::new(),
         };
         
         stylist
@@ -204,12 +204,16 @@ impl Stylist {
         self.rules_source_order = rules_source_order;
     }
 
-    pub fn restyle_hint_for_state_change<E>(&self, element: &E,
-                                            current_state: ElementState,
-                                            old_state: ElementState)
-                                            -> RestyleHint
-                                            where E: Element + Clone {
-        self.state_deps.compute_hint(element, current_state, old_state)
+    pub fn compute_restyle_hint<E>(&self, element: &E,
+                                   snapshot: &ElementSnapshot,
+                                   
+                                   
+                                   
+                                   
+                                   current_state: ElementState)
+                                   -> RestyleHint
+                                   where E: Element + Clone {
+        self.state_deps.compute_hint(element, snapshot, current_state)
     }
 
     pub fn set_device(&mut self, mut device: Device, stylesheets: &[&Stylesheet]) {

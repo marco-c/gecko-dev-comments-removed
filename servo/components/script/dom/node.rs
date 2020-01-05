@@ -488,13 +488,7 @@ impl Node {
         self.dirty_impl(damage, true)
     }
 
-    pub fn dirty(&self, damage: NodeDamage) {
-        self.dirty_impl(damage, false)
-    }
-
-    pub fn dirty_impl(&self, damage: NodeDamage, force_ancestors: bool) {
-
-        
+    pub fn rev_version(&self) {
         
         
         
@@ -505,6 +499,15 @@ impl Node {
             ancestor.inclusive_descendants_version.set(version);
         }
         doc.inclusive_descendants_version.set(version);
+    }
+
+    pub fn dirty(&self, damage: NodeDamage) {
+        self.dirty_impl(damage, false)
+    }
+
+    pub fn dirty_impl(&self, damage: NodeDamage, force_ancestors: bool) {
+        
+        self.rev_version();
 
         
         match damage {
