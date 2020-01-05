@@ -402,33 +402,21 @@ protected:
       }
 
       
-      RefPtr<MozPromise> p = DoResolveOrRejectInternal(aValue);
+      RefPtr<MozPromise> result = DoResolveOrRejectInternal(aValue);
 
       
       
-      
-      
-      
-      
-      RefPtr<MozPromise::Private> completionPromise =
-        dont_AddRef(static_cast<MozPromise::Private*>(mCompletionPromise.forget().take()));
-      if (completionPromise) {
-        if (p) {
-          p->ChainTo(completionPromise.forget(), "<chained completion promise>");
+      if (RefPtr<Private> p = mCompletionPromise.forget()) {
+        if (result) {
+          result->ChainTo(p.forget(), "<chained completion promise>");
         } else {
-          completionPromise->ResolveOrReject(aValue, "<completion of non-promise-returning method>");
+          p->ResolveOrReject(aValue, "<completion of non-promise-returning method>");
         }
       }
     }
 
     RefPtr<AbstractThread> mResponseTarget; 
-
-    
-    
-    
-    
-    RefPtr<MozPromise> mCompletionPromise;
-
+    RefPtr<Private> mCompletionPromise;
     const char* mCallSite;
   };
 
@@ -732,7 +720,7 @@ private:
     {
       RefPtr<ThenValueBase> thenValue = mThenValue.forget();
       
-      RefPtr<MozPromise> p = new MozPromise::Private(
+      RefPtr<MozPromise::Private> p = new MozPromise::Private(
         "<completion promise>", true );
       thenValue->mCompletionPromise = p;
       
