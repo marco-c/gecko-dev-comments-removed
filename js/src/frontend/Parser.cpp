@@ -5474,7 +5474,7 @@ Parser<ParseHandler>::forHeadStart(YieldHandling yieldHandling,
     
     
     if (isForOf && letIsIdentifier) {
-        reportWithNode(ParseError, false, *forInitialPart, JSMSG_LET_STARTING_FOROF_LHS);
+        errorAt(exprOffset, JSMSG_LET_STARTING_FOROF_LHS);
         return false;
     }
 
