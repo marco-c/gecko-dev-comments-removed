@@ -65,9 +65,6 @@ public:
     virtual void     SetDNSWasRefreshed() = 0;
 
     
-    virtual uint64_t Available() = 0;
-
-    
     virtual MOZ_MUST_USE nsresult ReadSegments(nsAHttpSegmentReader *reader,
                                                uint32_t count,
                                                uint32_t *countRead) = 0;
@@ -214,7 +211,6 @@ NS_DEFINE_STATIC_IID_ACCESSOR(nsAHttpTransaction, NS_AHTTPTRANSACTION_IID)
     nsresult Status() override; \
     uint32_t Caps() override;   \
     void     SetDNSWasRefreshed() override; \
-    uint64_t Available() override; \
     virtual MOZ_MUST_USE nsresult ReadSegments(nsAHttpSegmentReader *, uint32_t, uint32_t *) override; \
     virtual MOZ_MUST_USE nsresult WriteSegments(nsAHttpSegmentWriter *, uint32_t, uint32_t *) override; \
     virtual void Close(nsresult reason) override;                                \
