@@ -83,7 +83,7 @@ const PropertiesView = createClass({
     
     if (level === 1 && name === EDITOR_CONFIG_ID) {
       return (
-        tr({},
+        tr({ className: "editor-row-container" },
           td({ colSpan: 2 },
             Editor(value)
           )
