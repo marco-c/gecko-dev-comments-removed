@@ -79,7 +79,7 @@ struct nsCounterUseNode : public nsCounterNode {
     
     
     
-    RefPtr<nsCSSValue::ThreadSafeArray> mCounterFunction;
+    RefPtr<nsCSSValue::Array> mCounterFunction;
 
     nsPresContext* mPresContext;
     RefPtr<mozilla::CounterStyle> mCounterStyle;
@@ -89,7 +89,7 @@ struct nsCounterUseNode : public nsCounterNode {
 
     
     nsCounterUseNode(nsPresContext* aPresContext,
-                     nsCSSValue::ThreadSafeArray* aCounterFunction,
+                     nsCSSValue::Array* aCounterFunction,
                      uint32_t aContentIndex, bool aAllCounters)
         : nsCounterNode(aContentIndex, USE)
         , mCounterFunction(aCounterFunction)

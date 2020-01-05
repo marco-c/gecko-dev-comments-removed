@@ -443,9 +443,9 @@ enum nsCSSUnit {
   eCSSUnit_Font_Format  = 16,     
   eCSSUnit_Element      = 17,     
 
-  eCSSUnit_Counter      = 20,     
-  eCSSUnit_Counters     = 21,     
-  eCSSUnit_Array        = 22,     
+  eCSSUnit_Array        = 20,     
+  eCSSUnit_Counter      = 21,     
+  eCSSUnit_Counters     = 22,     
   eCSSUnit_Cubic_Bezier = 23,     
   eCSSUnit_Steps        = 24,     
   eCSSUnit_Symbols      = 25,     
@@ -582,8 +582,6 @@ class nsCSSValue {
 public:
   struct Array;
   friend struct Array;
-  struct ThreadSafeArray;
-  friend struct ThreadSafeArray;
 
   friend struct mozilla::css::URLValueData;
 
@@ -681,8 +679,6 @@ public:
 
   bool      UnitHasStringValue() const
     { return eCSSUnit_String <= mUnit && mUnit <= eCSSUnit_Element; }
-  bool      UnitHasThreadSafeArrayValue() const
-    { return eCSSUnit_Counter <= mUnit && mUnit <= eCSSUnit_Counters; }
   bool      UnitHasArrayValue() const
     { return eCSSUnit_Array <= mUnit && mUnit <= eCSSUnit_Calc_Divided; }
 
@@ -785,12 +781,6 @@ public:
   {
     MOZ_ASSERT(UnitHasArrayValue(), "not an array value");
     return mValue.mArray;
-  }
-
-  ThreadSafeArray* GetThreadSafeArrayValue() const
-  {
-    MOZ_ASSERT(UnitHasThreadSafeArrayValue(), "not a threadsafe array value");
-    return mValue.mThreadSafeArray;
   }
 
   nsIURI* GetURLValue() const
@@ -932,7 +922,6 @@ public:
   void SetComplexColorValue(
     already_AddRefed<mozilla::css::ComplexColorValue> aValue);
   void SetArrayValue(nsCSSValue::Array* aArray, nsCSSUnit aUnit);
-  void SetThreadSafeArrayValue(nsCSSValue::ThreadSafeArray* aArray, nsCSSUnit aUnit);
   void SetURLValue(mozilla::css::URLValue* aURI);
   void SetImageValue(mozilla::css::ImageValue* aImage);
   void SetGradientValue(nsCSSValueGradient* aGradient);
@@ -1033,7 +1022,6 @@ protected:
     nscolor    mColor;
     nsIAtom* MOZ_OWNING_REF mAtom;
     Array* MOZ_OWNING_REF mArray;
-    ThreadSafeArray* MOZ_OWNING_REF mThreadSafeArray;
     mozilla::css::URLValue* MOZ_OWNING_REF mURL;
     mozilla::css::ImageValue* MOZ_OWNING_REF mImage;
     mozilla::css::GridTemplateAreasValue* MOZ_OWNING_REF mGridTemplateAreas;
@@ -1052,9 +1040,6 @@ protected:
     mozilla::css::ComplexColorValue* MOZ_OWNING_REF mComplexColor;
   } mValue;
 };
-
-
-
 
 #define DECLARE_CSS_ARRAY(className, refcntMacro)                             \
 struct nsCSSValue::className final {                                          \
@@ -1148,7 +1133,6 @@ private:                                                                      \
 };
 
 DECLARE_CSS_ARRAY(Array, NS_INLINE_DECL_REFCOUNTING)
-DECLARE_CSS_ARRAY(ThreadSafeArray, NS_INLINE_DECL_THREADSAFE_REFCOUNTING)
 #undef DECLARE_CSS_ARRAY
 
 

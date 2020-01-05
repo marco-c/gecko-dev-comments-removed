@@ -1315,7 +1315,7 @@ nsComputedDOMStyle::DoGetContent()
           str.AppendLiteral("counters(");
         }
         
-        nsCSSValue::ThreadSafeArray* a = data.GetCounters();
+        nsCSSValue::Array* a = data.GetCounters();
 
         nsStyleUtil::AppendEscapedCSSIdent(
           nsDependentString(a->Item(0).GetStringBufferValue()), str);
