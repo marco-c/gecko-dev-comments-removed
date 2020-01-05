@@ -52,6 +52,8 @@ add_task(function* setup() {
   });
 });
 
+hookExtensionsTelemetry();
+
 
 function* backgroundUpdateTest(url, id, checkIconFn) {
   yield SpecialPowers.pushPrefEnv({set: [
@@ -162,6 +164,9 @@ function* backgroundUpdateTest(url, id, checkIconFn) {
   yield BrowserTestUtils.removeTab(tab);
 
   is(getBadgeStatus(), "", "Addon alert badge should be gone");
+
+  
+  expectTelemetry(["updateRejected", "updateAccepted"]);
 
   addon.uninstall();
   yield SpecialPowers.popPrefEnv();

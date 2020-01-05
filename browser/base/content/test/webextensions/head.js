@@ -2,6 +2,8 @@
 const BASE = getRootDirectory(gTestPath)
   .replace("chrome://mochitests/content/", "https://example.com/");
 
+Cu.import("resource:///modules/ExtensionsUI.jsm");
+
 
 
 
@@ -204,7 +206,10 @@ function checkNotification(panel, checkIcon, permissions) {
 
 
 
-async function testInstallMethod(installFn) {
+
+
+
+async function testInstallMethod(installFn, telemetryBase) {
   const PERMS_XPI = "browser_webext_permissions.xpi";
   const NO_PERMS_XPI = "browser_webext_nopermissions.xpi";
   const ID = "permissions@test.mozilla.org";
@@ -216,6 +221,10 @@ async function testInstallMethod(installFn) {
     
     ["extensions.webextPermissionPrompts", true],
   ]});
+
+  if (telemetryBase !== undefined) {
+    hookExtensionsTelemetry();
+  }
 
   let testURI = makeURI("https://example.com/");
   Services.perms.add(testURI, "install", Services.perms.ALLOW_ACTION);
@@ -316,6 +325,12 @@ async function testInstallMethod(installFn) {
   
   await runOnce(PERMS_XPI, false);
 
+  if (telemetryBase !== undefined) {
+    
+    
+    expectTelemetry([`${telemetryBase}Rejected`, `${telemetryBase}Rejected`, `${telemetryBase}Accepted`]);
+  }
+
   await SpecialPowers.popPrefEnv();
 }
 
@@ -347,3 +362,21 @@ add_task(async function() {
     }
   });
 });
+
+let collectedTelemetry = [];
+function hookExtensionsTelemetry() {
+  let originalHistogram = ExtensionsUI.histogram;
+  ExtensionsUI.histogram = {
+    add(value) { collectedTelemetry.push(value); },
+  };
+  registerCleanupFunction(() => {
+    is(collectedTelemetry.length, 0, "No unexamined telemetry after test is finished");
+    ExtensionsUI.histogram = originalHistogram;
+  });
+}
+
+function expectTelemetry(values) {
+  Assert.deepEqual(values, collectedTelemetry);
+  collectedTelemetry = [];
+}
+
