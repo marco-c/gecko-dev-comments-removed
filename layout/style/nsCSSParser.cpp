@@ -6,8 +6,6 @@
 
 
 
-#include "nsCSSParser.h"
-
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/Maybe.h"
@@ -18,6 +16,7 @@
 #include <algorithm> 
 #include <limits> 
 
+#include "nsCSSParser.h"
 #include "nsAlgorithm.h"
 #include "nsCSSProps.h"
 #include "nsCSSKeywords.h"
@@ -596,6 +595,11 @@ protected:
       nsAutoCSSParserInputStateRestorer mParserStateRestorer;
       nsAutoSuppressErrors mErrorSuppresser;
   };
+
+
+  bool IsSVGMode() const {
+    return mScanner->IsSVGMode();
+  }
 
   
 
@@ -1181,10 +1185,10 @@ protected:
   
   
   
-  bool ParseColorComponent(uint8_t& aComponent, Maybe<char> aSeparator);
+  bool ParseColorComponent(uint8_t& aComponent, const Maybe<char>& aSeparator);
   
   
-  bool ParseColorComponent(float& aComponent, Maybe<char> aSeparator);
+  bool ParseColorComponent(float& aComponent, const Maybe<char>& aSeparator);
 
   
   
@@ -1461,10 +1465,6 @@ protected:
   bool mIsChrome : 1;
 
   
-  
-  bool mIsSVGMode : 1;
-
-  
   bool mViewportUnitsEnabled : 1;
 
   
@@ -1586,7 +1586,6 @@ CSSParserImpl::CSSParserImpl()
     mUnitlessLengthQuirk(false),
     mParsingMode(css::eAuthorSheetFeatures),
     mIsChrome(false),
-    mIsSVGMode(false),
     mViewportUnitsEnabled(true),
     mParsingCompoundProperty(false),
     mInSupportsCondition(false),
@@ -1992,6 +1991,7 @@ CSSParserImpl::ParseProperty(const nsCSSPropertyID aPropID,
   css::ErrorReporter reporter(scanner, mSheet, mChildLoader, aSheetURI);
   InitScanner(scanner, reporter, aSheetURI, aBaseURI, aSheetPrincipal);
   mSection = eCSSSection_General;
+  scanner.SetSVGMode(aIsSVGMode);
 
   *aChanged = false;
 
@@ -2006,7 +2006,6 @@ CSSParserImpl::ParseProperty(const nsCSSPropertyID aPropID,
     return;
   }
 
-  mIsSVGMode = aIsSVGMode;
   bool parsedOK = ParseProperty(aPropID);
   
   if (parsedOK && GetToken(true)) {
@@ -2042,7 +2041,6 @@ CSSParserImpl::ParseProperty(const nsCSSPropertyID aPropID,
   }
 
   mTempData.AssertInitialState();
-  mIsSVGMode = false;
 
   ReleaseScanner();
 }
@@ -6861,7 +6859,7 @@ CSSParserImpl::ParseColor(nsCSSValue& aValue)
 }
 
 bool
-CSSParserImpl::ParseColorComponent(uint8_t& aComponent, Maybe<char> aSeparator)
+CSSParserImpl::ParseColorComponent(uint8_t& aComponent, const Maybe<char>& aSeparator)
 {
   if (!GetToken(true)) {
     REPORT_UNEXPECTED_EOF(PEColorComponentEOF);
@@ -6889,7 +6887,7 @@ CSSParserImpl::ParseColorComponent(uint8_t& aComponent, Maybe<char> aSeparator)
 }
 
 bool
-CSSParserImpl::ParseColorComponent(float& aComponent, Maybe<char> aSeparator)
+CSSParserImpl::ParseColorComponent(float& aComponent, const Maybe<char>& aSeparator)
 {
   if (!GetToken(true)) {
     REPORT_UNEXPECTED_EOF(PEColorComponentEOF);
@@ -7793,7 +7791,7 @@ CSSParserImpl::ParseVariant(nsCSSValue& aValue,
     }
   }
 
-  if (mIsSVGMode && !IsParsingCompoundProperty()) {
+  if (IsSVGMode() && !IsParsingCompoundProperty()) {
     
     
     if (((aVariantMask & VARIANT_LENGTH) != 0) &&
@@ -17775,6 +17773,7 @@ CSSParserImpl::IsValueValidForProperty(const nsCSSPropertyID aPropID,
   nsAutoSuppressErrors suppressErrors(this);
 
   mSection = eCSSSection_General;
+  scanner.SetSVGMode(false);
 
   
   if (eCSSProperty_UNKNOWN == aPropID) {

@@ -1383,7 +1383,7 @@ protected:
 
 
   virtual void OnVisibilityChange(Visibility aNewVisibility,
-                                  Maybe<OnNonvisible> aNonvisibleAction = Nothing());
+                                  const Maybe<OnNonvisible>& aNonvisibleAction = Nothing());
 
 public:
 
@@ -1405,7 +1405,7 @@ public:
 
 
 
-  void DecApproximateVisibleCount(Maybe<OnNonvisible> aNonvisibleAction = Nothing());
+  void DecApproximateVisibleCount(const Maybe<OnNonvisible>& aNonvisibleAction = Nothing());
   void IncApproximateVisibleCount();
 
 

@@ -30,7 +30,7 @@ public:
   
   
   explicit SVGImageContext(const CSSIntSize& aViewportSize,
-                           Maybe<SVGPreserveAspectRatio> aPreserveAspectRatio = Nothing(),
+                           const Maybe<SVGPreserveAspectRatio>& aPreserveAspectRatio = Nothing(),
                            gfxFloat aOpacity = 1.0,
                            bool aIsPaintingSVGImageElement = false)
     : mViewportSize(aViewportSize)

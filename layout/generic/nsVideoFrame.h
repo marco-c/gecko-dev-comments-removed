@@ -53,7 +53,7 @@ public:
                             int32_t aModType) override;
 
   void OnVisibilityChange(Visibility aNewVisibility,
-                          Maybe<OnNonvisible> aNonvisibleAction = Nothing()) override;
+                          const Maybe<OnNonvisible>& aNonvisibleAction = Nothing()) override;
 
   
   nsSize GetVideoIntrinsicSize(nsRenderingContext *aRenderingContext);
