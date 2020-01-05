@@ -284,7 +284,7 @@ pub trait DocumentHelpers<'a> {
     
     fn cancel_animation_frame(self, ident: i32);
     
-    fn invoke_animation_callbacks(self);
+    fn run_the_animation_frame_callbacks(self);
     fn prepare_async_load(self, load: LoadType) -> PendingAsyncLoad;
     fn load_async(self, load: LoadType, listener: AsyncResponseTarget);
     fn load_sync(self, load: LoadType) -> Result<(Metadata, Vec<u8>), String>;
@@ -939,7 +939,7 @@ impl<'a> DocumentHelpers<'a> for &'a Document {
     }
 
     
-    fn invoke_animation_callbacks(self) {
+    fn run_the_animation_frame_callbacks(self) {
         let animation_frame_list;
         {
             let mut list = self.animation_frame_list.borrow_mut();
