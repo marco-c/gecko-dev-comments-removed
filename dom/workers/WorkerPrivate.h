@@ -199,7 +199,7 @@ private:
   uint64_t mBusyCount;
   Status mParentStatus;
   bool mParentFrozen;
-  bool mParentSuspended;
+  bool mParentWindowPaused;
   bool mIsChromeWorker;
   bool mMainThreadObjectsForgotten;
   WorkerType mWorkerType;
@@ -323,11 +323,14 @@ public:
   bool
   Thaw(nsPIDOMWindowInner* aWindow);
 
+  
+  
+  
   void
-  Suspend();
+  ParentWindowPaused();
 
   void
-  Resume();
+  ParentWindowResumed();
 
   bool
   Terminate()
@@ -425,10 +428,10 @@ public:
   }
 
   bool
-  IsSuspended() const
+  IsParentWindowPaused() const
   {
     AssertIsOnParentThread();
-    return mParentSuspended;
+    return mParentWindowPaused;
   }
 
   bool
