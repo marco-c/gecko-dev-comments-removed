@@ -447,9 +447,14 @@ function* performLargePopupTests(win) {
       let cs = win.getComputedStyle(selectPopup);
       let bpBottom = parseFloat(cs.paddingBottom) + parseFloat(cs.borderBottomWidth);
 
-      is(selectPopup.childNodes[60].getBoundingClientRect().bottom,
-         selectPopup.getBoundingClientRect().bottom - bpBottom,
-         "Popup scroll at correct position " + bpBottom);
+      
+      
+      
+      
+      
+      SimpleTest.isfuzzy(selectPopup.childNodes[60].getBoundingClientRect().bottom,
+                         selectPopup.getBoundingClientRect().bottom - bpBottom,
+                         1, "Popup scroll at correct position " + bpBottom);
     }
 
     yield hideSelectPopup(selectPopup, "enter", win);
