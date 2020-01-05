@@ -34,7 +34,7 @@ struct ClassInfo;
 
 namespace js {
 
-using PropertyDescriptorVector = JS::GCVector<PropertyDescriptor>;
+using PropertyDescriptorVector = JS::GCVector<JS::PropertyDescriptor>;
 class GCMarker;
 class Nursery;
 
@@ -772,12 +772,12 @@ PreventExtensions(JSContext* cx, HandleObject obj, IntegrityLevel level = Integr
 
 extern bool
 GetOwnPropertyDescriptor(JSContext* cx, HandleObject obj, HandleId id,
-                         MutableHandle<PropertyDescriptor> desc);
+                         MutableHandle<JS::PropertyDescriptor> desc);
 
 
 extern bool
 DefineProperty(JSContext* cx, HandleObject obj, HandleId id,
-               Handle<PropertyDescriptor> desc, ObjectOpResult& result);
+               Handle<JS::PropertyDescriptor> desc, ObjectOpResult& result);
 
 extern bool
 DefineProperty(ExclusiveContext* cx, HandleObject obj, HandleId id, HandleValue value,
@@ -796,7 +796,7 @@ DefineElement(ExclusiveContext* cx, HandleObject obj, uint32_t index, HandleValu
 
 
 extern bool
-DefineProperty(JSContext* cx, HandleObject obj, HandleId id, Handle<PropertyDescriptor> desc);
+DefineProperty(JSContext* cx, HandleObject obj, HandleId id, Handle<JS::PropertyDescriptor> desc);
 
 extern bool
 DefineProperty(ExclusiveContext* cx, HandleObject obj, HandleId id, HandleValue value,
@@ -993,7 +993,7 @@ SetImmutablePrototype(js::ExclusiveContext* cx, JS::HandleObject obj, bool* succ
 
 extern bool
 GetPropertyDescriptor(JSContext* cx, HandleObject obj, HandleId id,
-                      MutableHandle<PropertyDescriptor> desc);
+                      MutableHandle<JS::PropertyDescriptor> desc);
 
 
 
@@ -1189,7 +1189,7 @@ CastAsSetterOp(JSObject* object)
 
 bool
 ToPropertyDescriptor(JSContext* cx, HandleValue descval, bool checkAccessors,
-                     MutableHandle<PropertyDescriptor> desc);
+                     MutableHandle<JS::PropertyDescriptor> desc);
 
 
 
@@ -1197,10 +1197,10 @@ ToPropertyDescriptor(JSContext* cx, HandleValue descval, bool checkAccessors,
 
 
 bool
-CheckPropertyDescriptorAccessors(JSContext* cx, Handle<PropertyDescriptor> desc);
+CheckPropertyDescriptorAccessors(JSContext* cx, Handle<JS::PropertyDescriptor> desc);
 
 void
-CompletePropertyDescriptor(MutableHandle<PropertyDescriptor> desc);
+CompletePropertyDescriptor(MutableHandle<JS::PropertyDescriptor> desc);
 
 
 
@@ -1271,7 +1271,7 @@ HasOwnDataPropertyPure(JSContext* cx, JSObject* obj, jsid id, bool* result);
 
 bool
 GetOwnPropertyDescriptor(JSContext* cx, HandleObject obj, HandleId id,
-                         MutableHandle<PropertyDescriptor> desc);
+                         MutableHandle<JS::PropertyDescriptor> desc);
 
 bool
 GetOwnPropertyDescriptor(JSContext* cx, HandleObject obj, HandleId id, MutableHandleValue vp);
@@ -1285,7 +1285,7 @@ GetOwnPropertyDescriptor(JSContext* cx, HandleObject obj, HandleId id, MutableHa
 
 
 extern bool
-FromPropertyDescriptorToObject(JSContext* cx, Handle<PropertyDescriptor> desc,
+FromPropertyDescriptorToObject(JSContext* cx, Handle<JS::PropertyDescriptor> desc,
                                MutableHandleValue vp);
 
 extern bool
