@@ -19,6 +19,8 @@
 #include "nsRect.h"                     
 #include "nsXULAppAPI.h"                
 #include "gfxPrefs.h"                   
+#include "gfxUtils.h"
+#include "mozilla/layers/TextureClientSharedSurface.h"
 
 using namespace mozilla::gfx;
 using namespace mozilla::gl;
@@ -29,6 +31,9 @@ namespace layers {
 ClientCanvasLayer::~ClientCanvasLayer()
 {
   MOZ_COUNT_DTOR(ClientCanvasLayer);
+  if (mBufferProvider) {
+    mBufferProvider->ClearCachedResources();
+  }
   if (mCanvasClient) {
     mCanvasClient->OnDetach();
     mCanvasClient = nullptr;

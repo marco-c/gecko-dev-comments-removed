@@ -6,6 +6,7 @@
 #include "PersistentBufferProvider.h"
 
 #include "Layers.h"
+#include "mozilla/layers/ShadowLayers.h"
 #include "mozilla/gfx/Logging.h"
 #include "pratom.h"
 #include "gfxPlatform.h"
@@ -242,8 +243,6 @@ PersistentBufferProviderShared::BorrowDrawTarget(const gfx::IntRect& aPersistedR
     return dt.forget();
   }
 
-  mFront = Nothing();
-
   auto previousBackBuffer = mBack;
 
   TextureClient* tex = GetTexture(mBack);
@@ -271,7 +270,6 @@ PersistentBufferProviderShared::BorrowDrawTarget(const gfx::IntRect& aPersistedR
     
     if (mTextures.length() >= 4) {
       
-      MOZ_ASSERT(false);
       
       
       
@@ -279,9 +277,25 @@ PersistentBufferProviderShared::BorrowDrawTarget(const gfx::IntRect& aPersistedR
       
       
       
-      NotifyInactive();
+      mFwd->SyncWithCompositor();
       
-      return nullptr;
+      for (uint32_t i = 0; i < mTextures.length(); ++i) {
+        if (!mTextures[i]->IsReadLocked()) {
+          gfxCriticalNote << "Managed to allocate after flush.";
+          mBack = Some(i);
+          tex = mTextures[i];
+          break;
+        }
+      }
+
+      if (!tex) {
+        gfxCriticalError() << "Unexpected BufferProvider over-production.";
+        
+        
+        NotifyInactive();
+        
+        return nullptr;
+      }
     }
 
     RefPtr<TextureClient> newTexture = TextureClient::CreateForDrawing(
@@ -401,6 +415,12 @@ PersistentBufferProviderShared::ReturnSnapshot(already_AddRefed<gfx::SourceSurfa
 
 void
 PersistentBufferProviderShared::NotifyInactive()
+{
+  ClearCachedResources();
+}
+
+void
+PersistentBufferProviderShared::ClearCachedResources()
 {
   RefPtr<TextureClient> front = GetTexture(mFront);
   RefPtr<TextureClient> back = GetTexture(mBack);

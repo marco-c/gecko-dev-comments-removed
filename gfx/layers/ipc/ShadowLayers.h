@@ -210,6 +210,7 @@ public:
   void CreatedCanvasLayer(ShadowableLayer* aCanvas);
   void CreatedRefLayer(ShadowableLayer* aRef);
   void CreatedTextLayer(ShadowableLayer* aRef);
+  void CreatedBorderLayer(ShadowableLayer* aRef);
 
   
 
@@ -390,6 +391,16 @@ public:
 
   
   static bool IsShmem(SurfaceDescriptor* aSurface);
+
+  
+
+
+
+
+
+
+
+  void SyncWithCompositor();
 
   TextureForwarder* GetTextureForwarder() override { return GetCompositorBridgeChild(); }
   LayersIPCActor* GetLayersIPCActor() override { return this; }
