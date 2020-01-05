@@ -24,6 +24,8 @@ class nsIFrame;
 class nsIStyleRule;
 class nsPresContext;
 class nsStyleContext;
+struct RawServoAnimationValueMap;
+typedef RawServoAnimationValueMap const* RawServoAnimationValueMapBorrowed;
 
 namespace mozilla {
 
@@ -155,9 +157,13 @@ public:
   
   
   
-  ServoAnimationRule* GetServoAnimationRule(const dom::Element* aElement,
-                                            CSSPseudoElementType aPseudoType,
-                                            CascadeLevel aCascadeLevel);
+  
+  
+  bool GetServoAnimationRule(
+    const dom::Element* aElement,
+    CSSPseudoElementType aPseudoType,
+    CascadeLevel aCascadeLevel,
+    RawServoAnimationValueMapBorrowed aAnimationValues);
 
   bool HasPendingStyleUpdates() const;
   bool HasThrottledStyleUpdates() const;
