@@ -48,11 +48,10 @@ fn main() {
     let harness_args = parts.next().unwrap();  
     let servo_args = parts.next().unwrap_or(&[]);
 
-    let (render_mode_string, base_path, testname) = match harness_args {
-        [] | [_] => panic!("USAGE: cpu|gpu base_path [testname regex]"),
-        [ref render_mode_string, ref base_path] => (render_mode_string, base_path, None),
-        [ref render_mode_string, ref base_path, ref testname, ..] =>
-            (render_mode_string, base_path, Some(testname.clone())),
+    let (render_mode_string, base_path, testnames) = match harness_args {
+        [ref render_mode_string, ref base_path, testnames..] =>
+            (render_mode_string, base_path, testnames),
+        _ => panic!("USAGE: cpu|gpu base_path [testname ...]"),
     };
 
     let mut render_mode = match &**render_mode_string {
@@ -79,7 +78,8 @@ fn main() {
         match maybe_extension {
             Some(extension) => {
                 if extension == OsStr::new("list") && file.is_file() {
-                    let mut tests = parse_lists(&file, servo_args, render_mode, all_tests.len());
+                    let len = all_tests.len();
+                    let mut tests = parse_lists(&file, testnames, servo_args, render_mode, len);
                     println!("\t{} [{} tests]", file.display(), tests.len());
                     all_tests.append(&mut tests);
                 }
@@ -89,7 +89,7 @@ fn main() {
     }
 
     let test_opts = TestOpts {
-        filter: testname,
+        filter: None,
         run_ignored: false,
         logfile: None,
         run_tests: true,
@@ -101,17 +101,17 @@ fn main() {
     match run(test_opts,
               all_tests,
               servo_args.iter().map(|x| x.clone()).collect()) {
-        Ok(false) => process::exit(1), 
-        Err(_) => process::exit(2),    
+        Ok(false) => process::exit(1), // tests failed
+        Err(_) => process::exit(2),    // I/O-related failure
         _ => (),
     }
 }
 
 fn run(test_opts: TestOpts, all_tests: Vec<TestDescAndFn>,
        servo_args: Vec<String>) -> io::Result<bool> {
-    
-    
-    
+    // Verify that we're passing in valid servo arguments. Otherwise, servo
+    // will exit before we've run any tests, and it will appear to us as if
+    // all the tests are failing.
     let mut command = Command::new(&servo_path());
     command
         .args(&servo_args)
@@ -123,7 +123,7 @@ fn run(test_opts: TestOpts, all_tests: Vec<TestDescAndFn>,
         Err(e) => panic!("failed to execute process: {}", e),
     };
 
-    
+    // Wait for the shell to launch or to fail
     sleep_ms(1000);
     child.kill().unwrap();
     let output = try!(child.wait_with_output());
@@ -165,7 +165,12 @@ struct TestLine<'a> {
     file_right: &'a str,
 }
 
-fn parse_lists(file: &Path, servo_args: &[String], render_mode: RenderMode, id_offset: usize) -> Vec<TestDescAndFn> {
+fn parse_lists(file: &Path,
+               filters: &[String],
+               servo_args: &[String],
+               render_mode: RenderMode,
+               id_offset: usize)
+               -> Vec<TestDescAndFn> {
     let mut tests = Vec::new();
     let contents = {
         let mut f = File::open(file).unwrap();
@@ -175,7 +180,7 @@ fn parse_lists(file: &Path, servo_args: &[String], render_mode: RenderMode, id_o
     };
 
     for line in contents.lines() {
-        
+        // ignore comments or empty lines
         if line.starts_with("#") || line.is_empty() {
             continue;
         }
@@ -254,7 +259,9 @@ fn parse_lists(file: &Path, servo_args: &[String], render_mode: RenderMode, id_o
             pixel_ratio: pixel_ratio,
         };
 
-        tests.push(make_test(reftest));
+        if filters.is_empty() || filters.iter().any(|pattern| reftest.name.contains(pattern)) {
+            tests.push(make_test(reftest));
+        }
     }
     tests
 }
@@ -281,7 +288,7 @@ fn capture(reftest: &Reftest, side: usize) -> (u32, u32, Vec<u8>) {
         .stderr(Stdio::null())
         .args(&reftest.servo_args[..])
         .arg("--user-stylesheet").arg(util::resource_files::resources_dir_path().join("ahem.css"))
-        
+        // Allows pixel perfect rendering of Ahem font and the HTML canvas for reftests.
         .arg("-Z")
         .arg("disable-text-aa,disable-canvas-aa")
         .args(&["-f", "-o"])
@@ -291,7 +298,7 @@ fn capture(reftest: &Reftest, side: usize) -> (u32, u32, Vec<u8>) {
             url.fragment = reftest.fragment_identifier.clone();
             url.to_string()
         });
-    
+    // CPU rendering is the default
     if reftest.render_mode.contains(CPU_RENDERING) {
         command.arg("-c");
     }
@@ -345,13 +352,13 @@ fn check_reftest(reftest: Reftest) {
 
     let pixels = left_bytes.iter().zip(right_bytes.iter()).map(|(&a, &b)| {
         if a == b {
-            
+            // White for correct
             0xFF
         } else {
-            
-            
-            
-            
+            // "1100" in the RGBA channel with an error for an incorrect value
+            // This results in some number of C0 and FFs, which is much more
+            // readable (and distinguishable) than the previous difference-wise
+            // scaling but does not require reconstructing the actual RGBA pixel.
             0xC0
         }
     }).collect::<Vec<u8>>();
