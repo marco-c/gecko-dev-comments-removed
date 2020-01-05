@@ -17,20 +17,20 @@ use std_url::Url;
 
 
 
-pub fn parse_url(str_url: &str, base_url: Option<std_url::Url>) -> std_url::Url {
+pub fn try_parse_url(str_url: &str, base_url: Option<std_url::Url>) -> Result<std_url::Url, ~str> {
     let str_url = str_url.trim_chars(& &[' ', '\t', '\n', '\r', '\x0C']).to_owned();
     let schm = std_url::get_scheme(str_url);
     let str_url = match schm {
         Err(_) => {
             if base_url.is_none() {
-                
-                
+                // Assume we've been given a file path. If it's absolute just return
+                // it, otherwise make it absolute with the cwd.
                 if str_url.starts_with("/") {
                     "file://".to_owned() + str_url
                 } else {
                     let mut path = os::getcwd();
                     path.push(str_url);
-                    
+                    // FIXME (#1094): not the right way to transform a path
                     "file://".to_owned() + path.display().to_str()
                 }
             } else {
@@ -48,7 +48,7 @@ pub fn parse_url(str_url: &str, base_url: Option<std_url::Url>) -> std_url::Url 
                     new_url.to_str() + str_url.trim_left_chars(&'/')
                 } else if str_url.starts_with("#") {
                     new_url.to_str() + str_url
-                } else { 
+                } else { // relative path
                     let base_path = base_url.path.trim_right_chars(&|c: char| c != '/');
                     new_url.path = base_path.to_owned();
                     new_url.to_str() + str_url
@@ -65,17 +65,17 @@ pub fn parse_url(str_url: &str, base_url: Option<std_url::Url>) -> std_url::Url 
                         "failure" => {
                             let mut path = os::self_exe_path().expect("can't get exe path");
                             path.push("../src/test/html/failure.html");
-                            
+                            // FIXME (#1094): not the right way to transform a path
                             "file://".to_owned() + path.display().to_str()
                         }
-                        
+                        // TODO: handle the rest of the about: pages
                         _ => str_url
                     }
                 },
                 "data" => {
-                    
-                    
-                    
+                    // Drop whitespace within data: URLs, e.g. newlines within a base64
+                    // src="..." block.  Whitespace intended as content should be
+                    // %-encoded or base64'd.
                     str_url.chars().filter(|&c| !c.is_whitespace()).collect()
                 },
                 _ => str_url
@@ -83,9 +83,14 @@ pub fn parse_url(str_url: &str, base_url: Option<std_url::Url>) -> std_url::Url 
         }
     };
 
-    
-    std_url::from_str(str_url).ok().expect("URL parsing failed")
+    std_url::from_str(str_url)
 }
+
+pub fn parse_url(str_url: &str, base_url: Option<std_url::Url>) -> std_url::Url {
+    // FIXME: Need to handle errors
+    try_parse_url(str_url, base_url).ok().expect("URL parsing failed")
+}
+
 
 #[cfg(test)]
 mod parse_url_tests {
@@ -99,7 +104,7 @@ mod parse_url_tests {
         debug!("url: {:?}", url);
         assert!("file" == url.scheme);
         let path = os::getcwd();
-        
+        // FIXME (#1094): not the right way to transform a path
         assert!(url.path.contains(path.display().to_str()));
     }
 
