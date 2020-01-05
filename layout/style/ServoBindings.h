@@ -268,6 +268,15 @@ nsStyleGradient* Gecko_CreateGradient(uint8_t shape,
                                       uint32_t stops);
 
 
+void Gecko_SetListStyleImageNone(nsStyleList* style_struct);
+void Gecko_SetListStyleImage(nsStyleList* style_struct,
+                             const uint8_t* string_bytes, uint32_t string_length,
+                             ThreadSafeURIHolder* base_uri,
+                             ThreadSafeURIHolder* referrer,
+                             ThreadSafePrincipalHolder* principal);
+void Gecko_CopyListStyleImageFrom(nsStyleList* dest, const nsStyleList* src);
+
+
 void Gecko_SetMozBinding(nsStyleDisplay* style_struct,
                          const uint8_t* string_bytes, uint32_t string_length,
                          ThreadSafeURIHolder* base_uri,
