@@ -975,13 +975,19 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
 
 
 
+
   updateCurrentMatrix() {
     let origin = getNodeTransformOrigin(this.currentNode);
     let bounds = getNodeBounds(this.win, this.currentNode);
     let nodeMatrix = getNodeTransformationMatrix(this.currentNode);
+    let computedStyle = this.currentNode.ownerGlobal.getComputedStyle(this.currentNode);
 
-    let ox = origin[0];
-    let oy = origin[1];
+    let paddingTop = parseFloat(computedStyle.paddingTop);
+    let paddingLeft = parseFloat(computedStyle.paddingLeft);
+
+    
+    let ox = origin[0] - paddingLeft;
+    let oy = origin[1] - paddingTop;
 
     let m = identity();
 
@@ -991,6 +997,8 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     m = multiply(m, translate(bounds.p1.x, bounds.p1.y));
     
     m = multiply(m, scale(getCurrentZoom(this.win)));
+    
+    m = multiply(m, translate(paddingLeft, paddingTop));
     
     
     if (nodeMatrix) {
