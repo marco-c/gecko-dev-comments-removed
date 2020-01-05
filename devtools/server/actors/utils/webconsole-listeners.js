@@ -301,8 +301,7 @@ ConsoleAPIListener.prototype =
 
       
       
-      if (message.originAttributes &&
-          message.originAttributes.addonId == this.addonId) {
+      if (message.addonId == this.addonId) {
         return true;
       }
 
