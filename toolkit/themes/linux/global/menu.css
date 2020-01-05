@@ -36,6 +36,13 @@ menuitem[customoptionstyling="true"] {
   -moz-appearance: none;
 }
 
+menuitem[customoptionstyling="true"][_moz-menuactive="true"] {
+  
+
+  color: highlighttext;
+  background-color: highlight;
+}
+
 menu[disabled="true"],
 menuitem[disabled="true"],
 menucaption[disabled="true"] {
