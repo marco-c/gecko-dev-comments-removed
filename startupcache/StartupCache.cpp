@@ -456,8 +456,6 @@ StartupCache::WriteToDisk()
 
   
   LoadArchive();
-  
-  return;
 }
 
 void
