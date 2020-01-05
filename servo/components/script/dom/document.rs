@@ -329,9 +329,16 @@ impl Document {
     }
 
     pub fn needs_reflow(&self) -> bool {
-        self.GetDocumentElement().is_some() &&
-        (self.upcast::<Node>().get_has_dirty_descendants() ||
-         !self.modified_elements.borrow().is_empty())
+        
+        
+        
+        match self.GetDocumentElement() {
+            Some(root) => {
+                root.upcast::<Node>().get_has_dirty_descendants() ||
+                !self.modified_elements.borrow().is_empty()
+            }
+            None => false,
+        }
     }
 
     
