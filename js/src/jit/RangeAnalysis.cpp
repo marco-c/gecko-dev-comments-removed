@@ -1580,10 +1580,18 @@ MMod::computeRange(TempAllocator& alloc)
 
     
     
-    if (specialization() == MIRType::Int32 && lhs.lower() >= 0 && rhs.lower() > 0 &&
-        !lhs.canHaveFractionalPart() && !rhs.canHaveFractionalPart())
-    {
-        unsigned_ = true;
+    if (specialization() == MIRType::Int32 && rhs.lower() > 0) {
+        bool hasDoubles = lhs.lower() < 0 || lhs.canHaveFractionalPart() ||
+            rhs.canHaveFractionalPart();
+        
+        
+        
+        
+        bool hasUint32s = IsUint32Type(getOperand(0)) &&
+            getOperand(1)->type() == MIRType::Int32 &&
+            (IsUint32Type(getOperand(1)) || getOperand(1)->isConstant());
+        if (!hasDoubles || hasUint32s)
+            unsigned_ = true;
     }
 
     
