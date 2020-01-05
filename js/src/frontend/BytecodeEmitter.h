@@ -609,7 +609,7 @@ struct MOZ_STACK_CLASS BytecodeEmitter
     
     
     
-    enum class EmitElemOption { Get, Set, Call, IncDec, CompoundAssign };
+    enum class EmitElemOption { Get, Set, Call, IncDec, CompoundAssign, Ref };
     MOZ_MUST_USE bool emitElemOperands(ParseNode* pn, EmitElemOption opts);
 
     MOZ_MUST_USE bool emitElemOpBase(JSOp op);
@@ -645,7 +645,15 @@ struct MOZ_STACK_CLASS BytecodeEmitter
     
     
     
-    MOZ_MUST_USE bool emitDestructuringLHS(ParseNode* target, DestructuringFlavor flav);
+    
+    
+    MOZ_MUST_USE bool emitDestructuringLHSRef(ParseNode* target, size_t* emitted);
+
+    
+    
+    
+    
+    MOZ_MUST_USE bool emitSetOrInitializeDestructuring(ParseNode* target, DestructuringFlavor flav);
 
     
     

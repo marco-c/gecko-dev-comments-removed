@@ -845,6 +845,19 @@ MBasicBlock::pick(int32_t depth)
 }
 
 void
+MBasicBlock::unpick(int32_t depth)
+{
+    
+    
+    
+    
+    
+    
+    for (int32_t n = -1; n >= depth; n--)
+        swapAt(n);
+}
+
+void
 MBasicBlock::swapAt(int32_t depth)
 {
     uint32_t lhsDepth = stackPosition_ + depth - 1;

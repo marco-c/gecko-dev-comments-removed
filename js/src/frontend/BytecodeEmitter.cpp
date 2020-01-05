@@ -4327,7 +4327,69 @@ BytecodeEmitter::emitDestructuringDeclsWithEmitter(ParseNode* pattern, NameEmitt
 }
 
 bool
-BytecodeEmitter::emitDestructuringLHS(ParseNode* target, DestructuringFlavor flav)
+BytecodeEmitter::emitDestructuringLHSRef(ParseNode* target, size_t* emitted)
+{
+    *emitted = 0;
+
+    if (target->isKind(PNK_SPREAD))
+        target = target->pn_kid;
+    else if (target->isKind(PNK_ASSIGN))
+        target = target->pn_left;
+
+    
+    
+    
+    if (target->isKind(PNK_NAME) || target->isKind(PNK_ARRAY) || target->isKind(PNK_OBJECT))
+        return true;
+
+#ifdef DEBUG
+    int depth = stackDepth;
+#endif
+
+    switch (target->getKind()) {
+      case PNK_DOT: {
+        if (target->as<PropertyAccess>().isSuper()) {
+            if (!emitSuperPropLHS(&target->as<PropertyAccess>().expression()))
+                return false;
+            *emitted = 2;
+        } else {
+            if (!emitTree(target->pn_expr))
+                return false;
+            *emitted = 1;
+        }
+        break;
+      }
+
+      case PNK_ELEM: {
+        if (target->as<PropertyByValue>().isSuper()) {
+            if (!emitSuperElemOperands(target, EmitElemOption::Ref))
+                return false;
+            *emitted = 3;
+        } else {
+            if (!emitElemOperands(target, EmitElemOption::Ref))
+                return false;
+            *emitted = 2;
+        }
+        break;
+      }
+
+      case PNK_CALL:
+        MOZ_ASSERT_UNREACHABLE("Parser::reportIfNotValidSimpleAssignmentTarget "
+                               "rejects function calls as assignment "
+                               "targets in destructuring assignments");
+        break;
+
+      default:
+        MOZ_CRASH("emitDestructuringLHSRef: bad lhs kind");
+    }
+
+    MOZ_ASSERT(stackDepth == depth + int(*emitted));
+
+    return true;
+}
+
+bool
+BytecodeEmitter::emitSetOrInitializeDestructuring(ParseNode* target, DestructuringFlavor flav)
 {
     
     
@@ -4404,27 +4466,11 @@ BytecodeEmitter::emitDestructuringLHS(ParseNode* target, DestructuringFlavor fla
 
           case PNK_DOT: {
             
-            
-            
-            
-            
-            
-            
-            
             JSOp setOp;
-            if (target->as<PropertyAccess>().isSuper()) {
-                if (!emitSuperPropLHS(&target->as<PropertyAccess>().expression()))
-                    return false;
-                if (!emit2(JSOP_PICK, 2))
-                    return false;
+            if (target->as<PropertyAccess>().isSuper())
                 setOp = sc->strict() ? JSOP_STRICTSETPROP_SUPER : JSOP_SETPROP_SUPER;
-            } else {
-                if (!emitTree(target->pn_expr))
-                    return false;
-                if (!emit1(JSOP_SWAP))
-                    return false;
+            else
                 setOp = sc->strict() ? JSOP_STRICTSETPROP : JSOP_SETPROP;
-            }
             if (!emitAtomOp(target, setOp))
                 return false;
             break;
@@ -4432,15 +4478,15 @@ BytecodeEmitter::emitDestructuringLHS(ParseNode* target, DestructuringFlavor fla
 
           case PNK_ELEM: {
             
-            
-            
             if (target->as<PropertyByValue>().isSuper()) {
                 JSOp setOp = sc->strict() ? JSOP_STRICTSETELEM_SUPER : JSOP_SETELEM_SUPER;
-                if (!emitSuperElemOp(target, setOp))
+                
+                
+                if (!emitElemOpBase(setOp))
                     return false;
             } else {
                 JSOp setOp = sc->strict() ? JSOP_STRICTSETELEM : JSOP_SETELEM;
-                if (!emitElemOp(target, setOp))
+                if (!emitElemOpBase(setOp))
                     return false;
             }
             break;
@@ -4453,7 +4499,7 @@ BytecodeEmitter::emitDestructuringLHS(ParseNode* target, DestructuringFlavor fla
             break;
 
           default:
-            MOZ_CRASH("emitDestructuringLHS: bad lhs kind");
+            MOZ_CRASH("emitSetOrInitializeDestructuring: bad lhs kind");
         }
 
         
@@ -4799,6 +4845,14 @@ BytecodeEmitter::emitDestructuringOpsArray(ParseNode* pattern, DestructuringFlav
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
 
     
     
@@ -4812,11 +4866,20 @@ BytecodeEmitter::emitDestructuringOpsArray(ParseNode* pattern, DestructuringFlav
         bool hasNext = !!member->pn_next;
 
         if (member->isKind(PNK_SPREAD)) {
+            size_t emitted = 0;
+            if (!emitDestructuringLHSRef(member, &emitted))       
+                return false;
+
             IfThenElseEmitter ifThenElse(this);
             if (!isHead) {
                 
                 
                 
+                if (emitted) {
+                    if (!emit2(JSOP_PICK, emitted))               
+                        return false;
+                }
+
                 if (!ifThenElse.emitIfElse())                     
                     return false;
 
@@ -4828,7 +4891,7 @@ BytecodeEmitter::emitDestructuringOpsArray(ParseNode* pattern, DestructuringFlav
 
             
             
-            if (!emit1(JSOP_DUP))                                 
+            if (!emitDupAt(emitted))                              
                 return false;
             if (!emitUint32Operand(JSOP_NEWARRAY, 0))             
                 return false;
@@ -4845,7 +4908,7 @@ BytecodeEmitter::emitDestructuringOpsArray(ParseNode* pattern, DestructuringFlav
                 MOZ_ASSERT(ifThenElse.pushed() == 1);
             }
 
-            if (!emitDestructuringLHS(member, flav))              
+            if (!emitSetOrInitializeDestructuring(member, flav))  
                 return false;
 
             MOZ_ASSERT(!hasNext);
@@ -4863,14 +4926,33 @@ BytecodeEmitter::emitDestructuringOpsArray(ParseNode* pattern, DestructuringFlav
 
         MOZ_ASSERT(!subpattern->isKind(PNK_SPREAD));
 
+        size_t emitted = 0;
+        if (!isElision) {
+            if (!emitDestructuringLHSRef(subpattern, &emitted))   
+                return false;
+        }
+
         IfThenElseEmitter ifAlreadyDone(this);
         if (!isHead) {
             
             
             
-            if (hasNext) {
-                if (!emit1(JSOP_DUP))                             
-                    return false;
+            if (emitted) {
+                if (hasNext) {
+                    if (!emitDupAt(emitted))                      
+                        return false;
+                } else {
+                    if (!emit2(JSOP_PICK, emitted))               
+                        return false;
+                }
+            } else {
+                if (hasNext) {
+                    
+                    
+                    
+                    if (!emit1(JSOP_DUP))                         
+                        return false;
+                }
             }
             if (!ifAlreadyDone.emitIfElse())                      
                 return false;
@@ -4884,13 +4966,22 @@ BytecodeEmitter::emitDestructuringOpsArray(ParseNode* pattern, DestructuringFlav
                 return false;
 
             if (hasNext) {
+                if (emitted) {
+                    if (!emit2(JSOP_PICK, emitted))               
+                        return false;
+                }
                 if (!emit1(JSOP_POP))                             
                     return false;
             }
         }
 
-        if (!emit1(JSOP_DUP))                                     
-            return false;
+        if (emitted) {
+            if (!emitDupAt(emitted))                              
+                return false;
+        } else {
+            if (!emit1(JSOP_DUP))                                 
+                return false;
+        }
         if (!emitIteratorNext(pattern))                           
             return false;
         if (!emit1(JSOP_DUP))                                     
@@ -4901,16 +4992,14 @@ BytecodeEmitter::emitDestructuringOpsArray(ParseNode* pattern, DestructuringFlav
         if (hasNext) {
             if (!emit1(JSOP_DUP))                                 
                 return false;
+            if (!emit2(JSOP_UNPICK, emitted + 2))                 
+                return false;
         }
 
         IfThenElseEmitter ifDone(this);
         if (!ifDone.emitIfElse())                                 
             return false;
 
-        if (hasNext) {
-            if (!emit1(JSOP_SWAP))                                
-                return false;
-        }
         if (!emit1(JSOP_POP))                                     
             return false;
         if (!emit1(JSOP_UNDEFINED))                               
@@ -4921,10 +5010,6 @@ BytecodeEmitter::emitDestructuringOpsArray(ParseNode* pattern, DestructuringFlav
         if (!ifDone.emitElse())                                   
             return false;
 
-        if (hasNext) {
-            if (!emit1(JSOP_SWAP))                                
-                return false;
-        }
         if (!emitAtomOp(cx->names().value, JSOP_GETPROP))         
             return false;
 
@@ -4944,8 +5029,11 @@ BytecodeEmitter::emitDestructuringOpsArray(ParseNode* pattern, DestructuringFlav
         }
 
         if (!isElision) {
-            if (!emitDestructuringLHS(subpattern, flav))          
+            if (!emitSetOrInitializeDestructuring(subpattern,
+                                                  flav))          
+            {
                 return false;
+            }
         } else {
             if (!emit1(JSOP_POP))                                 
                 return false;
@@ -4977,21 +5065,37 @@ BytecodeEmitter::emitDestructuringOpsObject(ParseNode* pattern, DestructuringFla
         return false;
 
     for (ParseNode* member = pattern->pn_head; member; member = member->pn_next) {
-        
-        if (!emit1(JSOP_DUP))                                     
+        ParseNode* subpattern;
+        if (member->isKind(PNK_MUTATEPROTO))
+            subpattern = member->pn_kid;
+        else
+            subpattern = member->pn_right;
+        ParseNode* lhs = subpattern;
+        if (lhs->isKind(PNK_ASSIGN))
+            lhs = lhs->pn_left;
+
+        size_t emitted;
+        if (!emitDestructuringLHSRef(lhs, &emitted))              
             return false;
+
+        
+        if (emitted) {
+            if (!emitDupAt(emitted))                              
+                return false;
+        } else {
+            if (!emit1(JSOP_DUP))                                 
+                return false;
+        }
 
         
         
         
         bool needsGetElem = true;
 
-        ParseNode* subpattern;
         if (member->isKind(PNK_MUTATEPROTO)) {
             if (!emitAtomOp(cx->names().proto, JSOP_GETPROP))     
                 return false;
             needsGetElem = false;
-            subpattern = member->pn_kid;
         } else {
             MOZ_ASSERT(member->isKind(PNK_COLON) || member->isKind(PNK_SHORTHAND));
 
@@ -5018,8 +5122,6 @@ BytecodeEmitter::emitDestructuringOpsObject(ParseNode* pattern, DestructuringFla
                 if (!emitComputedPropertyName(key))               
                     return false;
             }
-
-            subpattern = member->pn_right;
         }
 
         
@@ -5027,13 +5129,12 @@ BytecodeEmitter::emitDestructuringOpsObject(ParseNode* pattern, DestructuringFla
             return false;
 
         if (subpattern->isKind(PNK_ASSIGN)) {
-            if (!emitDefault(subpattern->pn_right, subpattern->pn_left))
+            if (!emitDefault(subpattern->pn_right, lhs))          
                 return false;
-            subpattern = subpattern->pn_left;
         }
 
         
-        if (!emitDestructuringLHS(subpattern, flav))
+        if (!emitSetOrInitializeDestructuring(subpattern, flav))  
             return false;
     }
 

@@ -146,6 +146,9 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock>
     void pick(int32_t depth);
 
     
+    void unpick(int32_t depth);
+
+    
     void swapAt(int32_t depth);
 
     
