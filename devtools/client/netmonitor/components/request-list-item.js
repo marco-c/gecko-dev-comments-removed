@@ -2,6 +2,8 @@
 
 
 
+
+
 "use strict";
 
 const { createClass, createFactory, PropTypes, DOM } = require("devtools/client/shared/vendor/react");
@@ -60,6 +62,8 @@ const RequestListItem = createClass({
     isSelected: PropTypes.bool.isRequired,
     firstRequestStartedMillis: PropTypes.number.isRequired,
     onContextMenu: PropTypes.func.isRequired,
+    onFocusedNodeChange: PropTypes.func,
+    onFocusedNodeUnmount: PropTypes.func,
     onMouseDown: PropTypes.func.isRequired,
     onSecurityIconClick: PropTypes.func.isRequired,
   },
@@ -443,3 +447,5 @@ function timingBoxes(item) {
 }
 
 module.exports = RequestListItem;
+
+

@@ -2,6 +2,8 @@
 
 
 
+
+
 "use strict";
 
 const { createClass, DOM, PropTypes } = require("devtools/client/shared/vendor/react");
@@ -96,3 +98,5 @@ const Editor = createClass({
 });
 
 module.exports = Editor;
+
+
