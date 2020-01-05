@@ -35,6 +35,8 @@ pub enum Error {
     
     NotSupported,
     
+    InUseAttribute,
+    
     InvalidState,
     
     Syntax,
@@ -79,6 +81,7 @@ pub fn throw_dom_exception(cx: *mut JSContext, global: GlobalRef,
         Error::HierarchyRequest => DOMErrorName::HierarchyRequestError,
         Error::InvalidCharacter => DOMErrorName::InvalidCharacterError,
         Error::NotSupported => DOMErrorName::NotSupportedError,
+        Error::InUseAttribute => DOMErrorName::InUseAttributeError,
         Error::InvalidState => DOMErrorName::InvalidStateError,
         Error::Syntax => DOMErrorName::SyntaxError,
         Error::Namespace => DOMErrorName::NamespaceError,

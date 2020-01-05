@@ -8,8 +8,12 @@ use dom::bindings::codegen::Bindings::NamedNodeMapBinding::NamedNodeMapMethods;
 use dom::bindings::global::GlobalRef;
 use dom::bindings::js::{JS, JSRef, Temporary};
 use dom::bindings::utils::{Reflector, reflect_dom_object};
-use dom::element::{Element, ElementHelpers};
+use dom::element::{AttributeHandlers, Element, ElementHelpers};
 use dom::window::Window;
+use util::namespace;
+use util::str::DOMString;
+
+use string_cache::Atom;
 
 #[dom_struct]
 pub struct NamedNodeMap {
@@ -32,6 +36,7 @@ impl NamedNodeMap {
 }
 
 impl<'a> NamedNodeMapMethods for JSRef<'a, NamedNodeMap> {
+    
     fn Length(self) -> u32 {
         let owner = self.owner.root();
         
@@ -40,6 +45,7 @@ impl<'a> NamedNodeMapMethods for JSRef<'a, NamedNodeMap> {
         attrs.len() as u32
     }
 
+    
     fn Item(self, index: u32) -> Option<Temporary<Attr>> {
         let owner = self.owner.root();
         
@@ -48,8 +54,32 @@ impl<'a> NamedNodeMapMethods for JSRef<'a, NamedNodeMap> {
         attrs.as_slice().get(index as usize).map(|x| Temporary::new(x.clone()))
     }
 
+    
+    fn GetNamedItem(self, name: DOMString) -> Option<Temporary<Attr>> {
+        let owner = self.owner.root();
+        
+        let owner = owner.r();
+        let name = owner.parsed_name(name);
+        owner.get_attribute_by_name(&Atom::from_slice(&name))
+    }
+
+    
+    fn GetNamedItemNS(self, namespace: Option<DOMString>, name: DOMString) -> Option<Temporary<Attr>> {
+        let owner = self.owner.root();
+        
+        let owner = owner.r();
+        let ns = namespace::from_domstring(namespace);
+        owner.get_attribute(&ns, &Atom::from_slice(&name))
+    }
+
     fn IndexedGetter(self, index: u32, found: &mut bool) -> Option<Temporary<Attr>> {
         let item = self.Item(index);
+        *found = item.is_some();
+        item
+    }
+
+    fn NamedGetter(self, name: DOMString, found: &mut bool) -> Option<Temporary<Attr>> {
+        let item = self.GetNamedItem(name);
         *found = item.is_some();
         item
     }
