@@ -99,15 +99,28 @@ public:
 
 
 
-  ExpirationTrackerImpl(uint32_t aTimerPeriod, const char* aName)
+
+
+
+
+  ExpirationTrackerImpl(uint32_t aTimerPeriod,
+                        const char* aName,
+                        nsIEventTarget* aEventTarget = nullptr)
     : mTimerPeriod(aTimerPeriod)
     , mNewestGeneration(0)
     , mInAgeOneGeneration(false)
     , mName(aName)
+    , mEventTarget(aEventTarget)
   {
     static_assert(K >= 2 && K <= nsExpirationState::NOT_TRACKED,
                   "Unsupported number of generations (must be 2 <= K <= 15)");
     MOZ_ASSERT(NS_IsMainThread());
+    if (mEventTarget) {
+      bool current = false;
+      MOZ_RELEASE_ASSERT(
+        NS_SUCCEEDED(mEventTarget->IsOnCurrentThread(&current)) && current,
+        "Provided event target must be on the main thread");
+    }
     mObserver = new ExpirationTrackerObserver();
     mObserver->Init(this);
   }
@@ -334,6 +347,7 @@ private:
   uint32_t           mNewestGeneration;
   bool               mInAgeOneGeneration;
   const char* const  mName;   
+  const nsCOMPtr<nsIEventTarget> mEventTarget;
 
   
 
@@ -394,7 +408,9 @@ private:
     if (!mTimer) {
       return NS_ERROR_OUT_OF_MEMORY;
     }
-    if (!NS_IsMainThread()) {
+    if (mEventTarget) {
+      mTimer->SetTarget(mEventTarget);
+    } else if (!NS_IsMainThread()) {
       
       
       nsCOMPtr<nsIEventTarget> target = do_GetMainThread();
@@ -454,8 +470,12 @@ protected:
   virtual void NotifyExpired(T* aObj) = 0;
 
 public:
-  nsExpirationTracker(uint32_t aTimerPeriod, const char* aName)
-    : ::detail::SingleThreadedExpirationTracker<T, K>(aTimerPeriod, aName)
+  nsExpirationTracker(uint32_t aTimerPeriod,
+                      const char* aName,
+                      nsIEventTarget* aEventTarget = nullptr)
+    : ::detail::SingleThreadedExpirationTracker<T, K>(aTimerPeriod,
+                                                      aName,
+                                                      aEventTarget)
   { }
 
   virtual ~nsExpirationTracker()
