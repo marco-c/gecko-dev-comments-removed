@@ -418,12 +418,6 @@ CSSStyleSheet::CSSStyleSheet(const CSSStyleSheet& aCopy,
     
     EnsureUniqueInner();
   }
-
-  if (aCopy.mMedia) {
-    
-    
-    mMedia = aCopy.mMedia->Clone();
-  }
 }
 
 CSSStyleSheet::~CSSStyleSheet()
@@ -439,7 +433,6 @@ CSSStyleSheet::~CSSStyleSheet()
     }
   }
   DropRuleCollection();
-  DropMedia();
   mInner->RemoveSheet(this);
   
   
@@ -459,15 +452,6 @@ CSSStyleSheet::DropRuleCollection()
   if (mRuleCollection) {
     mRuleCollection->DropReference();
     mRuleCollection = nullptr;
-  }
-}
-
-void
-CSSStyleSheet::DropMedia()
-{
-  if (mMedia) {
-    mMedia->SetStyleSheet(nullptr);
-    mMedia = nullptr;
   }
 }
 
@@ -543,7 +527,6 @@ NS_IMPL_RELEASE_INHERITED(CSSStyleSheet, StyleSheet)
 NS_IMPL_CYCLE_COLLECTION_CLASS(CSSStyleSheet)
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(CSSStyleSheet)
-  tmp->DropMedia();
   
   
   
@@ -553,7 +536,6 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(CSSStyleSheet)
   tmp->mScopeElement = nullptr;
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END_INHERITED(StyleSheet)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(CSSStyleSheet, StyleSheet)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mMedia)
   
   
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mRuleCollection)
@@ -610,12 +592,6 @@ CSSStyleSheet::UseForPresentation(nsPresContext* aPresContext,
   return true;
 }
 
-
-void
-CSSStyleSheet::SetMedia(nsMediaList* aMedia)
-{
-  mMedia = aMedia;
-}
 
 bool
 CSSStyleSheet::HasRules() const
@@ -907,17 +883,6 @@ CSSStyleSheet::RegisterNamespaceRule(css::Rule* aRule)
 
   AddNamespaceRuleToMap(aRule, mInner->mNameSpaceMap);
   return NS_OK;
-}
-
-nsMediaList*
-CSSStyleSheet::Media()
-{
-  if (!mMedia) {
-    mMedia = new nsMediaList();
-    mMedia->SetStyleSheet(this);
-  }
-
-  return mMedia;
 }
 
 nsIDOMCSSRule*

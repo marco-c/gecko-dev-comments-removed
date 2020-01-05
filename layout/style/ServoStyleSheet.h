@@ -67,9 +67,6 @@ public:
   }
 
   
-  nsMediaList* Media() final;
-
-  
   
   
   

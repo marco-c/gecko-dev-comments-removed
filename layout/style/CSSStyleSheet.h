@@ -31,7 +31,6 @@
 class CSSRuleListImpl;
 class nsCSSRuleProcessor;
 class nsIURI;
-class nsMediaList;
 class nsMediaQueryResultCacheKey;
 class nsStyleSet;
 class nsPresContext;
@@ -148,8 +147,6 @@ public:
   nsresult DeleteRuleFromGroup(css::GroupRule* aGroup, uint32_t aIndex);
   nsresult InsertRuleIntoGroup(const nsAString& aRule, css::GroupRule* aGroup, uint32_t aIndex, uint32_t* _retval);
 
-  void SetMedia(nsMediaList* aMedia);
-
   void SetOwnerRule(css::ImportRule* aOwnerRule) { mOwnerRule = aOwnerRule;  }
   css::ImportRule* GetOwnerRule() const { return mOwnerRule; }
   
@@ -205,9 +202,6 @@ public:
   }
 
   
-  nsMediaList* Media() final;
-
-  
   
   
   
@@ -238,9 +232,6 @@ protected:
   void DropRuleCollection();
 
   
-  void DropMedia();
-
-  
   void UnlinkInner();
   
   void TraverseInner(nsCycleCollectionTraversalCallback &);
@@ -252,7 +243,6 @@ protected:
                               uint32_t aIndex, ErrorResult& aRv);
   void DeleteRuleInternal(uint32_t aIndex, ErrorResult& aRv);
 
-  RefPtr<nsMediaList> mMedia;
   RefPtr<CSSStyleSheet> mNext;
   CSSStyleSheet*        mParent;    
   css::ImportRule*      mOwnerRule; 

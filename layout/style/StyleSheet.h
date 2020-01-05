@@ -44,7 +44,7 @@ protected:
   StyleSheet(const StyleSheet& aCopy,
              nsIDocument* aDocumentToUse,
              nsINode* aOwningNodeToUse);
-  virtual ~StyleSheet() {}
+  virtual ~StyleSheet();
 
 public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
@@ -112,6 +112,7 @@ public:
   inline void SetPrincipal(nsIPrincipal* aPrincipal);
 
   void SetTitle(const nsAString& aTitle) { mTitle = aTitle; }
+  void SetMedia(nsMediaList* aMedia);
 
   
   inline CORSMode GetCORSMode() const;
@@ -131,7 +132,7 @@ public:
   
   inline StyleSheet* GetParentStyleSheet() const;
   
-  virtual nsMediaList* Media() = 0;
+  nsMediaList* Media();
   bool Disabled() const { return mDisabled; }
   
 
@@ -194,9 +195,14 @@ protected:
   void SubjectSubsumesInnerPrincipal(nsIPrincipal& aSubjectPrincipal,
                                      ErrorResult& aRv);
 
+  
+  void DropMedia();
+
   nsString              mTitle;
   nsIDocument*          mDocument; 
   nsINode*              mOwningNode; 
+
+  RefPtr<nsMediaList> mMedia;
 
   
   
