@@ -2730,6 +2730,16 @@ public:
 
   static bool AttemptLargeAllocationLoad(nsIHttpChannel* aChannel);
 
+  
+
+
+
+
+
+  static void AppendDocumentLevelNativeAnonymousContentTo(
+      nsIDocument* aDocument,
+      nsTArray<nsIContent*>& aElements);
+
 private:
   static bool InitializeEventTable();
 

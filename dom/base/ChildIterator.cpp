@@ -383,15 +383,10 @@ AllChildrenIterator::AppendNativeAnonymousChildren()
 
   
   
-  
-  
   if (!(mFlags & nsIContent::eSkipDocumentLevelNativeAnonymousContent) &&
       mOriginalContent == mOriginalContent->OwnerDoc()->GetRootElement()) {
-    nsIPresShell* presShell = mOriginalContent->OwnerDoc()->GetShell();
-    nsIFrame* scrollFrame = presShell ? presShell->GetRootScrollFrame() : nullptr;
-    if (scrollFrame) {
-      AppendNativeAnonymousChildrenFromFrame(scrollFrame);
-    }
+    nsContentUtils::AppendDocumentLevelNativeAnonymousContentTo(
+        mOriginalContent->OwnerDoc(), mAnonKids);
   }
 }
 
