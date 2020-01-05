@@ -297,6 +297,14 @@ public class Distribution {
 
                 
                 distribution.processDelayedReferrer(ref);
+
+                
+                
+                
+                
+                
+                
+                distribution.doInit();
             }
         });
     }
