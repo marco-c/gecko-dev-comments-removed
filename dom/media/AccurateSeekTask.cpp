@@ -95,7 +95,12 @@ AccurateSeekTask::CalculateNewCurrentTime() const
   
   
   if (mTarget.IsFast()) {
-    MOZ_ASSERT(mSeekedAudioData || mSeekedVideoData);
+
+    
+    if (!mSeekedAudioData && !mSeekedVideoData) {
+      return seekTime;
+    }
+
     const int64_t audioStart = mSeekedAudioData ? mSeekedAudioData->mTime : INT64_MAX;
     const int64_t videoStart = mSeekedVideoData ? mSeekedVideoData->mTime : INT64_MAX;
     const int64_t audioGap = std::abs(audioStart - seekTime);
