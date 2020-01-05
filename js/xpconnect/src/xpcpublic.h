@@ -187,15 +187,6 @@ xpc_FastGetCachedWrapper(JSContext* cx, nsWrapperCache* cache, JS::MutableHandle
     return nullptr;
 }
 
-inline JSScript*
-xpc_UnmarkGrayScript(JSScript* script)
-{
-    if (script)
-        JS::ExposeScriptToActiveJS(script);
-
-    return script;
-}
-
 
 
 extern void

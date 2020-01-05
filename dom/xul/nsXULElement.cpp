@@ -2254,7 +2254,7 @@ nsXULPrototypeElement::Serialize(nsIObjectOutputStream* aStream,
                   rv = tmp;
                 }
 
-                if (script->GetScriptObject()) {
+                if (script->HasScriptObject()) {
                     
                     
                     
@@ -2531,15 +2531,10 @@ nsXULPrototypeScript::Serialize(nsIObjectOutputStream* aStream,
     rv = aStream->Write32(mLangVersion);
     if (NS_FAILED(rv)) return rv;
 
-    
-    
-    
-    JS::Handle<JSScript*> script =
-        JS::Handle<JSScript*>::fromMarkedLocation(mScriptObject.address());
     JSContext* cx = jsapi.cx();
+    JS::Rooted<JSScript*> script(cx, mScriptObject);
     MOZ_ASSERT(xpc::CompilationScope() == JS::CurrentGlobalOrNull(cx));
-    return nsContentUtils::XPConnect()->WriteScript(aStream, cx,
-                                                    xpc_UnmarkGrayScript(script));
+    return nsContentUtils::XPConnect()->WriteScript(aStream, cx, script);
 }
 
 nsresult
@@ -2673,8 +2668,10 @@ nsXULPrototypeScript::DeserializeOutOfLine(nsIObjectInputStream* aInput,
                 if (useXULCache && mSrcURI) {
                     bool isChrome = false;
                     mSrcURI->SchemeIs("chrome", &isChrome);
-                    if (isChrome)
-                        cache->PutScript(mSrcURI, GetScriptObject());
+                    if (isChrome) {
+                        JS::Rooted<JSScript*> script(RootingCx(), GetScriptObject());
+                        cache->PutScript(mSrcURI, script);
+                    }
                 }
                 cache->FinishInputStream(mSrcURI);
             } else {
