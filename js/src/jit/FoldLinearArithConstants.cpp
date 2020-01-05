@@ -54,11 +54,14 @@ AnalyzeAdd(TempAllocator& alloc, MAdd* add)
 
     
     int idx = add->getOperand(0)->isConstant() ? 0 : 1 ;
-    MOZ_ASSERT(add->getOperand(idx)->toConstant()->type() == MIRType::Int32);
-    if (sum.term == add->getOperand(1 - idx) ||
-        sum.constant == add->getOperand(idx)->toConstant()->toInt32())
-    {
-        return;
+    if (add->getOperand(idx)->isConstant()) {
+        
+        MOZ_ASSERT(add->getOperand(idx)->toConstant()->type() == MIRType::Int32);
+        if (sum.term == add->getOperand(1 - idx) ||
+            sum.constant == add->getOperand(idx)->toConstant()->toInt32())
+        {
+            return;
+        }
     }
 
     MInstruction* rhs = MConstant::New(alloc, Int32Value(sum.constant));
