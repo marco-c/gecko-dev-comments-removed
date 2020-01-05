@@ -949,7 +949,9 @@ this.ExtensionData = class {
 
       NetUtil.asyncFetch({uri, loadUsingSystemPrincipal: true}, (inputStream, status) => {
         if (!Components.isSuccessCode(status)) {
-          reject(new Error(status));
+          
+          let e = Components.Exception("", status);
+          reject(new Error(`Error while loading '${uri}' (${e.name})`));
           return;
         }
         try {
