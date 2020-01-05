@@ -110,43 +110,6 @@ using UniqueProfilerBacktrace =
 
 #else   
 
-#if defined(__GNUC__) || defined(_MSC_VER)
-# define PROFILER_FUNCTION_NAME __FUNCTION__
-#else
-  
-# define PROFILER_FUNCTION_NAME __func__
-#endif
-
-#define PROFILER_FUNC(decl, rv)  decl;
-#define PROFILER_FUNC_VOID(decl) void decl;
-
-
-
-
-#define PROFILER_LABEL(name_space, info, category) \
-  PROFILER_PLATFORM_TRACING(name_space "::" info) \
-  mozilla::SamplerStackFrameRAII \
-  PROFILER_APPEND_LINE_NUMBER(sampler_raii)(name_space "::" info, category, \
-                                            __LINE__)
-
-#define PROFILER_LABEL_FUNC(category) \
-  PROFILER_PLATFORM_TRACING(PROFILER_FUNCTION_NAME) \
-  mozilla::SamplerStackFrameRAII \
-  PROFILER_APPEND_LINE_NUMBER(sampler_raii)(PROFILER_FUNCTION_NAME, category, \
-                                            __LINE__)
-
-#define PROFILER_LABEL_DYNAMIC(name_space, info, category, str) \
-  PROFILER_PLATFORM_TRACING(name_space "::" info) \
-  mozilla::SamplerStackFrameDynamicRAII \
-  PROFILER_APPEND_LINE_NUMBER(sampler_raii)(name_space "::" info, category, \
-                                            __LINE__, str)
-
-#define PROFILER_MARKER(info) profiler_add_marker(info)
-#define PROFILER_MARKER_PAYLOAD(info, payload) \
-  profiler_add_marker(info, payload)
-
-#endif  
-
 
 
 
@@ -204,6 +167,43 @@ struct ProfilerFeature
 
   #undef DECLARE
 };
+
+#if defined(__GNUC__) || defined(_MSC_VER)
+# define PROFILER_FUNCTION_NAME __FUNCTION__
+#else
+  
+# define PROFILER_FUNCTION_NAME __func__
+#endif
+
+#define PROFILER_FUNC(decl, rv)  decl;
+#define PROFILER_FUNC_VOID(decl) void decl;
+
+
+
+
+#define PROFILER_LABEL(name_space, info, category) \
+  PROFILER_PLATFORM_TRACING(name_space "::" info) \
+  mozilla::SamplerStackFrameRAII \
+  PROFILER_APPEND_LINE_NUMBER(sampler_raii)(name_space "::" info, category, \
+                                            __LINE__)
+
+#define PROFILER_LABEL_FUNC(category) \
+  PROFILER_PLATFORM_TRACING(PROFILER_FUNCTION_NAME) \
+  mozilla::SamplerStackFrameRAII \
+  PROFILER_APPEND_LINE_NUMBER(sampler_raii)(PROFILER_FUNCTION_NAME, category, \
+                                            __LINE__)
+
+#define PROFILER_LABEL_DYNAMIC(name_space, info, category, str) \
+  PROFILER_PLATFORM_TRACING(name_space "::" info) \
+  mozilla::SamplerStackFrameDynamicRAII \
+  PROFILER_APPEND_LINE_NUMBER(sampler_raii)(name_space "::" info, category, \
+                                            __LINE__, str)
+
+#define PROFILER_MARKER(info) profiler_add_marker(info)
+#define PROFILER_MARKER_PAYLOAD(info, payload) \
+  profiler_add_marker(info, payload)
+
+#endif  
 
 
 
@@ -452,14 +452,7 @@ void profiler_add_marker(const char *aMarker,
 # define PROFILER_PLATFORM_TRACING(name)
 #endif
 
-
-
-
-#ifdef MOZ_WIDGET_GONK
-# define PROFILER_LIKELY_MEMORY_CONSTRAINED
-#endif
-
-#if !defined(PROFILER_LIKELY_MEMORY_CONSTRAINED) && !defined(ARCH_ARMV6)
+#if !defined(ARCH_ARMV6)
 # define PROFILER_DEFAULT_ENTRIES 1000000
 #else
 # define PROFILER_DEFAULT_ENTRIES 100000
@@ -469,15 +462,7 @@ void profiler_add_marker(const char *aMarker,
 
 #define PROFILER_GET_BACKTRACE_ENTRIES 1000
 
-
-
-
-
-#if defined(PROFILER_LIKELY_MEMORY_CONSTRAINED)
-# define PROFILER_DEFAULT_INTERVAL 10
-#else
-# define PROFILER_DEFAULT_INTERVAL 1
-#endif
+#define PROFILER_DEFAULT_INTERVAL 1
 
 namespace mozilla {
 

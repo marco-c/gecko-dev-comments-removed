@@ -23,52 +23,21 @@
 
 #include "common/linux/file_id.h"
 #include <algorithm>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#undef CONFIG_CASE_1
-#undef CONFIG_CASE_2
-#undef CONFIG_CASE_3
+#include <dlfcn.h>
+#include <features.h>
+#include <sys/types.h>
 
 #if defined(GP_OS_linux)
-# define CONFIG_CASE_1 1
-# include <link.h> 
-# include <features.h>
-# include <dlfcn.h>
-# include <sys/types.h>
-
-#elif defined(GP_OS_android) && !defined(MOZ_WIDGET_GONK)
-# define CONFIG_CASE_2 1
+# include <link.h>      
+#elif defined(GP_OS_android)
 # include "ElfLoader.h" 
-# include <features.h>
-# include <dlfcn.h>
-# include <sys/types.h>
 extern "C" MOZ_EXPORT __attribute__((weak))
 int dl_iterate_phdr(
           int (*callback)(struct dl_phdr_info *info, size_t size, void *data),
           void *data);
-
-#elif defined(GP_OS_android) && defined(MOZ_WIDGET_GONK)
-# define CONFIG_CASE_3 1
-  
-
 #else
 # error "Unexpected configuration"
 #endif
-
 
 
 static std::string getId(const char *bin_name)
@@ -107,8 +76,6 @@ SharedLibraryAtPath(const char* path, unsigned long libStart,
                        "", "");
 }
 
-
-#if defined(CONFIG_CASE_1) || defined(CONFIG_CASE_2)
 static int
 dl_iterate_callback(struct dl_phdr_info *dl_info, size_t size, void *data)
 {
@@ -137,14 +104,12 @@ dl_iterate_callback(struct dl_phdr_info *dl_info, size_t size, void *data)
 
   return 0;
 }
-#endif 
-
 
 SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf()
 {
   SharedLibraryInfo info;
 
-#if defined(CONFIG_CASE_1)
+#if defined(GP_OS_linux)
   
   
   char exeName[PATH_MAX];
@@ -165,7 +130,7 @@ SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf()
   unsigned long exeExeAddr = 0;
 #endif
 
-#if defined(CONFIG_CASE_2)
+#if defined(GP_OS_android)
   
   if (!dl_iterate_phdr) {
     
@@ -176,8 +141,6 @@ SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf()
   }
 #endif
 
-  
-  
   
   pid_t pid = getpid();
   char path[PATH_MAX];
@@ -204,49 +167,30 @@ SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf()
       continue;
     }
 
-#if defined(CONFIG_CASE_1)
+#if defined(GP_OS_linux)
     
     if (exeNameLen > 0 && strcmp(modulePath, exeName) == 0) {
       exeExeAddr = start;
     }
-    continue;
-    
-#elif defined(CONFIG_CASE_2)
+#elif defined(GP_OS_android)
     
     
-    if (0 != strcmp(modulePath, "/dev/ashmem/dalvik-jit-code-cache")) {
-      continue;
-    }
-    
-#elif defined(CONFIG_CASE_3)
-    if (strcmp(perm, "r-xp") != 0) {
-      
-      
-      
-      continue;
-    }
-    
-#endif
-
-#if !defined(CONFIG_CASE_1)
-    
-    
-    info.AddSharedLibrary(SharedLibraryAtPath(modulePath, start, end, offset));
-    if (info.GetSize() > 10000) {
-      LOG("SharedLibraryInfo::GetInfoForSelf(): "
-          "implausibly large number of mappings acquired");
-      break;
+    if (0 == strcmp(modulePath, "/dev/ashmem/dalvik-jit-code-cache")) {
+      info.AddSharedLibrary(SharedLibraryAtPath(modulePath, start, end,
+                                                offset));
+      if (info.GetSize() > 10000) {
+        LOG("SharedLibraryInfo::GetInfoForSelf(): "
+            "implausibly large number of mappings acquired");
+        break;
+      }
     }
 #endif
   }
 
-#if defined(CONFIG_CASE_1) || defined(CONFIG_CASE_2)
-  
   
   dl_iterate_phdr(dl_iterate_callback, &info);
-#endif
 
-#if defined(CONFIG_CASE_1)
+#if defined(GP_OS_linux)
   
   
   
