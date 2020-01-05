@@ -325,9 +325,6 @@ pref("devtools.webconsole.new-frontend-enabled", false);
 #endif
 
 
-pref("devtools.webconsole.use-reps-bundle", false);
-
-
 pref("devtools.sourcemap.locations.enabled", false);
 
 
