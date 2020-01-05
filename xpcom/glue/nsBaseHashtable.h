@@ -104,11 +104,12 @@ public:
 
 
 
+
   UserDataType Get(KeyType aKey) const
   {
     EntryType* ent = this->GetEntry(aKey);
     if (!ent) {
-      return 0;
+      return UserDataType{};
     }
 
     return ent->mData;
