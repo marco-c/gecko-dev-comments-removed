@@ -12,7 +12,7 @@ use std::sync::mpsc::{channel, Sender};
 
 
 pub trait ImageResponder : Send {
-    fn respond(&self, Option<Arc<Image>>);
+    fn respond(&self, ImageResponse);
 }
 
 
@@ -25,13 +25,24 @@ pub enum ImageState {
 
 
 #[derive(Clone)]
+pub enum ImageResponse {
+    
+    Loaded(Arc<Image>),
+    
+    PlaceholderLoaded(Arc<Image>),
+    
+    None
+}
+
+
+#[derive(Clone)]
 pub struct ImageCacheChan(pub Sender<ImageCacheResult>);
 
 
 
 pub struct ImageCacheResult {
     pub responder: Option<Box<ImageResponder>>,
-    pub image: Option<Arc<Image>>,
+    pub image_response: ImageResponse,
 }
 
 
@@ -45,10 +56,16 @@ pub enum ImageCacheCommand {
     
     
     
-    GetImageIfAvailable(Url, Sender<Result<Arc<Image>, ImageState>>),
+    GetImageIfAvailable(Url, UsePlaceholder, Sender<Result<Arc<Image>, ImageState>>),
 
     
     Exit(Sender<()>),
+}
+
+#[derive(Copy, Clone, PartialEq)]
+pub enum UsePlaceholder {
+    No,
+    Yes,
 }
 
 
@@ -78,9 +95,10 @@ impl ImageCacheTask {
     }
 
     
-    pub fn get_image_if_available(&self, url: Url) -> Result<Arc<Image>, ImageState> {
+    pub fn get_image_if_available(&self, url: Url, use_placeholder: UsePlaceholder)
+                                  -> Result<Arc<Image>, ImageState> {
         let (sender, receiver) = channel();
-        let msg = ImageCacheCommand::GetImageIfAvailable(url, sender);
+        let msg = ImageCacheCommand::GetImageIfAvailable(url, use_placeholder, sender);
         self.chan.send(msg).unwrap();
         receiver.recv().unwrap()
     }
@@ -92,3 +110,4 @@ impl ImageCacheTask {
         response_port.recv().unwrap();
     }
 }
+
