@@ -60,7 +60,13 @@ const EVENTS = {
     "NetMonitor:ResponseImageThumbnailAvailable",
 
   
+  TAB_UPDATED: "NetMonitor:TabUpdated",
+
+  
   SIDEBAR_POPULATED: "NetMonitor:SidebarPopulated",
+
+  
+  NETWORKDETAILSVIEW_POPULATED: "NetMonitor:NetworkDetailsViewPopulated",
 
   
   CUSTOMREQUESTVIEW_POPULATED: "NetMonitor:CustomRequestViewPopulated",
