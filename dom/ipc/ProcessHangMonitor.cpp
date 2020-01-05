@@ -195,7 +195,7 @@ public:
   }
 
 private:
-  ~HangMonitoredProcess() {}
+  ~HangMonitoredProcess() = default;
 
   
   HangMonitorParent* mActor;
