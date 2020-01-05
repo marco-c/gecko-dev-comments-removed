@@ -8,6 +8,7 @@
 
 #include "nsTHashtable.h"
 #include "jsapi.h"
+#include "nsIScriptError.h"
 
 namespace mozilla {
 namespace Telemetry {
@@ -49,6 +50,23 @@ AutoHashtable<EntryType>::ReflectIntoJS(ReflectEntryFunc entryFunc,
 bool IsExpiredVersion(const char* aExpiration);
 bool IsInDataset(uint32_t aDataset, uint32_t aContainingDataset);
 bool CanRecordDataset(uint32_t aDataset, bool aCanRecordBase, bool aCanRecordExtended);
+
+
+
+
+
+
+
+nsresult MsSinceProcessStart(double* aResult);
+
+
+
+
+
+
+
+
+void LogToBrowserConsole(uint32_t aLogLevel, const nsAString& aMsg);
 
 } 
 } 
