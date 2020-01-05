@@ -6,6 +6,7 @@
 
 "use strict";
 
+const Cc = Components.classes;
 const Ci = Components.interfaces;
 const Cm = Components.manager;
 const Cr = Components.results;
@@ -26,11 +27,6 @@ XPCOMUtils.defineLazyGetter(this, "JsonViewService", function () {
   return JsonViewService;
 });
 
-XPCOMUtils.defineLazyGetter(this, "JsonViewSniffer", function () {
-  const {JsonViewSniffer} = devtools.require("devtools/client/jsonview/converter-sniffer");
-  return JsonViewSniffer;
-});
-
 
 const JSON_VIEW_PREF = "devtools.jsonview.enabled";
 const JSON_VIEW_MIME_TYPE = "application/vnd.mozilla.json.view";
@@ -38,6 +34,80 @@ const JSON_VIEW_CONTRACT_ID = "@mozilla.org/streamconv;1?from=" +
   JSON_VIEW_MIME_TYPE + "&to=*/*";
 const JSON_VIEW_CLASS_ID = Components.ID("{d8c9acee-dec5-11e4-8c75-1681e6b88ec1}");
 const JSON_VIEW_CLASS_DESCRIPTION = "JSONView converter";
+
+const JSON_SNIFFER_CONTRACT_ID = "@mozilla.org/devtools/jsonview-sniffer;1";
+const JSON_SNIFFER_CLASS_ID = Components.ID("{4148c488-dca1-49fc-a621-2a0097a62422}");
+const JSON_SNIFFER_CLASS_DESCRIPTION = "JSONView content sniffer";
+const JSON_VIEW_TYPE = "JSON View";
+const CONTENT_SNIFFER_CATEGORY = "net-content-sniffers";
+
+
+
+
+
+
+
+
+
+
+
+
+function JsonViewSniffer() {}
+
+JsonViewSniffer.prototype = {
+  QueryInterface: XPCOMUtils.generateQI([Ci.nsIContentSniffer]),
+
+  get wrappedJSObject() {
+    return this;
+  },
+
+  isTopLevelLoad: function (request) {
+    let loadInfo = request.loadInfo;
+    if (loadInfo && loadInfo.isTopLevelLoad) {
+      return (request.loadFlags & Ci.nsIChannel.LOAD_DOCUMENT_URI);
+    }
+    return false;
+  },
+
+  getMIMETypeFromContent: function (request, data, length) {
+    if (request instanceof Ci.nsIChannel) {
+      
+      if (!this.isTopLevelLoad(request)) {
+        return "";
+      }
+      try {
+        if (request.contentDisposition ==
+          Ci.nsIChannel.DISPOSITION_ATTACHMENT) {
+          return "";
+        }
+      } catch (e) {
+        
+      }
+
+      
+      
+      
+      const JSON_TYPES = ["application/json", "application/manifest+json"];
+      if (JSON_TYPES.includes(request.contentType)) {
+        return JSON_VIEW_MIME_TYPE;
+      }
+    }
+
+    return "";
+  }
+};
+
+
+
+
+const JsonSnifferFactory = {
+  createInstance: function (outer, iid) {
+    if (outer) {
+      throw Cr.NS_ERROR_NO_AGGREGATION;
+    }
+    return new JsonViewSniffer();
+  }
+};
 
 
 
@@ -98,9 +168,19 @@ ConverterObserver.prototype = {
   },
 
   register: function () {
-    JsonViewSniffer.register();
-
     const registrar = Cm.QueryInterface(Ci.nsIComponentRegistrar);
+
+    if (!registrar.isCIDRegistered(JSON_SNIFFER_CLASS_ID)) {
+      registrar.registerFactory(JSON_SNIFFER_CLASS_ID,
+        JSON_SNIFFER_CLASS_DESCRIPTION,
+        JSON_SNIFFER_CONTRACT_ID,
+        JsonSnifferFactory);
+      const categoryManager = Cc["@mozilla.org/categorymanager;1"]
+        .getService(Ci.nsICategoryManager);
+      categoryManager.addCategoryEntry(CONTENT_SNIFFER_CATEGORY, JSON_VIEW_TYPE,
+        JSON_SNIFFER_CONTRACT_ID, false, false);
+    }
+
     if (!registrar.isCIDRegistered(JSON_VIEW_CLASS_ID)) {
       registrar.registerFactory(JSON_VIEW_CLASS_ID,
         JSON_VIEW_CLASS_DESCRIPTION,
@@ -110,9 +190,16 @@ ConverterObserver.prototype = {
   },
 
   unregister: function () {
-    JsonViewSniffer.unregister();
-
     const registrar = Cm.QueryInterface(Ci.nsIComponentRegistrar);
+
+    if (registrar.isCIDRegistered(JSON_SNIFFER_CLASS_ID)) {
+      registrar.unregisterFactory(JSON_SNIFFER_CLASS_ID, JsonSnifferFactory);
+      const categoryManager = Cc["@mozilla.org/categorymanager;1"]
+        .getService(Ci.nsICategoryManager);
+      categoryManager.deleteCategoryEntry(CONTENT_SNIFFER_CATEGORY,
+        JSON_VIEW_TYPE, false);
+    }
+
     if (registrar.isCIDRegistered(JSON_VIEW_CLASS_ID)) {
       registrar.unregisterFactory(JSON_VIEW_CLASS_ID, JsonViewFactory);
     }
