@@ -7,7 +7,6 @@
 use layout::util::{LayoutData, LayoutDataAccess};
 
 use script::dom::node::{AbstractNode, LayoutView};
-use servo_util::tree::TreeNodeRef;
 
 
 pub trait LayoutAuxMethods {
