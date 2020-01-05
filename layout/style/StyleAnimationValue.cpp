@@ -1978,8 +1978,6 @@ AddCSSValuePercentNumber(const uint32_t aValueRestrictions,
 static nscolor
 DiluteColor(const RGBAColorData& aValue, double aDilutionRatio)
 {
-  MOZ_ASSERT(aDilutionRatio >= 0.0 && aDilutionRatio <= 1.0,
-             "Dilution ratio should be in [0, 1]");
   float resultA = aValue.mA * aDilutionRatio;
   return resultA <= 0.0 ? NS_RGBA(0, 0, 0, 0)
                         : aValue.WithAlpha(resultA).ToColor();
