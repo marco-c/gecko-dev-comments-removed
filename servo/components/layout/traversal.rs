@@ -4,8 +4,6 @@
 
 
 
-#![allow(unsafe_code)]
-
 use css::node_style::StyledNode;
 use css::matching::{ApplicableDeclarations, MatchMethods, StyleSharingResult};
 use construct::FlowConstructor;
@@ -15,8 +13,7 @@ use flow::{PreorderFlowTraversal, PostorderFlowTraversal};
 use incremental::{self, BUBBLE_ISIZES, REFLOW, REFLOW_OUT_OF_FLOW, RestyleDamage};
 use script::layout_interface::ReflowGoal;
 use wrapper::{layout_node_to_unsafe_layout_node, LayoutNode};
-use wrapper::{PostorderNodeMutTraversal, ThreadSafeLayoutNode, UnsafeLayoutNode};
-use wrapper::{PreorderDomTraversal, PostorderDomTraversal};
+use wrapper::{ThreadSafeLayoutNode, UnsafeLayoutNode};
 
 use selectors::bloom::BloomFilter;
 use selectors::Node;
@@ -120,6 +117,32 @@ fn insert_ancestors_into_bloom_filter(bf: &mut Box<BloomFilter>,
 
 
 
+pub trait PreorderDomTraversal {
+    
+    fn process(&self, node: LayoutNode);
+}
+
+
+pub trait PostorderDomTraversal {
+    
+    fn process(&self, node: LayoutNode);
+}
+
+
+pub trait PostorderNodeMutTraversal {
+    
+    fn process<'a>(&'a mut self, node: &ThreadSafeLayoutNode<'a>) -> bool;
+
+    
+    
+    
+    fn should_prune<'a>(&'a self, _node: &ThreadSafeLayoutNode<'a>) -> bool {
+        false
+    }
+}
+
+
+
 #[derive(Copy, Clone)]
 pub struct RecalcStyleForNode<'a> {
     pub layout_context: &'a LayoutContext<'a>,
@@ -127,6 +150,7 @@ pub struct RecalcStyleForNode<'a> {
 
 impl<'a> PreorderDomTraversal for RecalcStyleForNode<'a> {
     #[inline]
+    #[allow(unsafe_code)]
     fn process(&self, node: LayoutNode) {
         
         
@@ -219,6 +243,7 @@ pub struct ConstructFlows<'a> {
 
 impl<'a> PostorderDomTraversal for ConstructFlows<'a> {
     #[inline]
+    #[allow(unsafe_code)]
     fn process(&self, node: LayoutNode) {
         
         {

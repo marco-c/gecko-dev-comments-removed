@@ -7,16 +7,17 @@
 use data::LayoutDataWrapper;
 use wrapper::{PseudoElementType, ThreadSafeLayoutNode};
 
-use std::mem;
 use style::properties::ComputedValues;
+
+use std::cell::Ref;
 use std::sync::Arc;
 
 
 pub trait StyledNode {
-    fn get_style<'a>(&'a self, layout_data_ref: &'a LayoutDataWrapper) -> &'a Arc<ComputedValues>;
+    fn get_style<'a>(&self, layout_data_ref: &'a LayoutDataWrapper) -> &'a Arc<ComputedValues>;
     
     
-    fn style<'a>(&'a self) -> &'a Arc<ComputedValues>;
+    fn style<'a>(&'a self) -> Ref<'a, Arc<ComputedValues>>;
     
     fn has_style(&self) -> bool;
     
@@ -34,14 +35,11 @@ impl<'ln> StyledNode for ThreadSafeLayoutNode<'ln> {
     }
 
     #[inline]
-    #[allow(unsafe_code)]
-    fn style<'a>(&'a self) -> &'a Arc<ComputedValues> {
-        unsafe {
-            let layout_data_ref = self.borrow_layout_data();
+    fn style<'a>(&'a self) -> Ref<'a, Arc<ComputedValues>> {
+        Ref::map(self.borrow_layout_data(), |layout_data_ref| {
             let layout_data = layout_data_ref.as_ref().expect("no layout data");
-            mem::transmute::<&Arc<ComputedValues>,
-                             &'a Arc<ComputedValues>>(self.get_style(&layout_data))
-        }
+            self.get_style(layout_data)
+        })
     }
 
     fn has_style(&self) -> bool {
