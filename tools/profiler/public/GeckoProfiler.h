@@ -54,6 +54,7 @@
 #include <stdint.h>
 #include <stdarg.h>
 
+#include "MainThreadUtils.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
 #include "js/TypeDecls.h"
@@ -349,6 +350,8 @@ profiler_call_enter(const char* aInfo,
                     void *aFrameAddress, bool aCopy, uint32_t line)
 {
   
+
+  
   
   if (!stack_key_initialized)
     return nullptr;
@@ -374,6 +377,8 @@ profiler_call_enter(const char* aInfo,
 static inline void
 profiler_call_exit(void* aHandle)
 {
+  
+
   if (!aHandle)
     return;
 
@@ -521,6 +526,8 @@ private:
 inline PseudoStack*
 profiler_get_pseudo_stack(void)
 {
+  
+
   if (!stack_key_initialized)
     return nullptr;
   return tlsPseudoStack.get();
