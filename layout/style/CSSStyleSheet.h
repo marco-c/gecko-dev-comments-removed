@@ -191,8 +191,8 @@ public:
   
 
 
-  nsresult InsertRuleInternal(const nsAString& aRule,
-                              uint32_t aIndex, uint32_t* aReturn);
+  uint32_t InsertRuleInternal(const nsAString& aRule,
+                              uint32_t aIndex, ErrorResult& aRv);
 
   
   NS_IMETHOD StyleSheetLoaded(StyleSheet* aSheet, bool aWasAlternate,
@@ -251,16 +251,15 @@ public:
   
   
   nsIDOMCSSRule* GetDOMOwnerRule() const;
-  dom::CSSRuleList* GetCssRules(ErrorResult& aRv);
+  dom::CSSRuleList* GetCssRules(const Maybe<nsIPrincipal*>& aSubjectPrincipal,
+                                ErrorResult& aRv);
   uint32_t InsertRule(const nsAString& aRule, uint32_t aIndex,
-                      ErrorResult& aRv) {
-    uint32_t retval;
-    aRv = InsertRule(aRule, aIndex, &retval);
-    return retval;
-  }
-  void DeleteRule(uint32_t aIndex, ErrorResult& aRv) {
-    aRv = DeleteRule(aIndex);
-  }
+                      const Maybe<nsIPrincipal*>& aSubjectPrincipal,
+                      ErrorResult& aRv);
+
+  void DeleteRule(uint32_t aIndex,
+                  const Maybe<nsIPrincipal*>& aSubjectPrincipal,
+                  ErrorResult& aRv);
 
   
   dom::ParentObject GetParentObject() const {
@@ -297,7 +296,8 @@ protected:
   
   
   
-  nsresult SubjectSubsumesInnerPrincipal();
+  void SubjectSubsumesInnerPrincipal(const Maybe<nsIPrincipal*>& aSubjectPrincipal,
+                                     ErrorResult& aRv);
 
   
   nsresult RegisterNamespaceRule(css::Rule* aRule);
