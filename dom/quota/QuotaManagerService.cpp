@@ -441,7 +441,11 @@ QuotaManagerService::PerformIdleMaintenance()
   if (!QuotaManager::kRunningXPCShellTests)
 #endif
   {
+    
+    
+    RegisterBatteryObserver(this);
     GetCurrentBatteryInformation(&batteryInfo);
+    UnregisterBatteryObserver(this);
   }
 
   
@@ -705,6 +709,13 @@ QuotaManagerService::Observe(nsISupports* aSubject,
 
   MOZ_ASSERT_UNREACHABLE("Should never get here!");
   return NS_OK;
+}
+
+void
+QuotaManagerService::Notify(const hal::BatteryInformation& aBatteryInfo)
+{
+  
+  
 }
 
 NS_IMETHODIMP
