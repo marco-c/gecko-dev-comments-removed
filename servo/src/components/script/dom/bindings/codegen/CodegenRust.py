@@ -1247,10 +1247,10 @@ for (uint32_t i = 0; i < length; ++i) {
         dataLoc = "${declName}"
         
         template = (
-            "match JSValConvertible::from_jsval::<%s>(${val}) {\n"
+            "match JSValConvertible::from_jsval(${val}) {\n"
             "  None => return 0,\n"
             "  Some(v) => %s = v\n"
-            "}" % (typeName, dataLoc))
+            "}" % (dataLoc,))
         declType = CGGeneric(typeName)
     if (defaultValue is not None and
         
