@@ -27,6 +27,10 @@ enum StructuredCloneTags {
   SCTAG_DOM_MUTABLEFILE,
   SCTAG_DOM_FILE,
 
+  SCTAG_DOM_WASM,
+
+  
+
   
   SCTAG_DOM_IMAGEDATA,
   SCTAG_DOM_MAP_MESSAGEPORT,
@@ -55,6 +59,12 @@ enum StructuredCloneTags {
 
   
   SCTAG_DOM_URLSEARCHPARAMS,
+
+  
+  
+  
+  
+  
 
   SCTAG_DOM_MAX
 };
