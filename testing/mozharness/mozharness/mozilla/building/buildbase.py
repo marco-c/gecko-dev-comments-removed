@@ -805,7 +805,13 @@ or run without that action (ie: --no-{action})"
                 
                 
                 
-                buildid = os.environ.get('MOZ_BUILD_DATE')
+                try:
+                    buildid = os.environ['MOZ_BUILD_DATE']
+                except KeyError:
+                    self.fatal(
+                        "MOZ_BUILD_DATE must be provided as an environment var on Taskcluster"
+                    )
+
 
         if not buildid:
             self.info("Creating buildid through current time")
