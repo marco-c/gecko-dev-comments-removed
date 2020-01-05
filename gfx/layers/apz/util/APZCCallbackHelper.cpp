@@ -585,7 +585,7 @@ UpdateRootFrameForTouchTargetDocument(nsIFrame* aRootFrame)
   
   
   
-  if (nsIDocument* doc = aRootFrame->PresContext()->PresShell()->GetTouchEventTargetDocument()) {
+  if (nsIDocument* doc = aRootFrame->PresContext()->PresShell()->GetPrimaryContentDocument()) {
     if (nsIPresShell* shell = doc->GetShell()) {
       if (nsIFrame* frame = shell->GetRootFrame()) {
         return frame;
