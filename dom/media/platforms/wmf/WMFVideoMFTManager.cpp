@@ -18,6 +18,7 @@
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/layers/LayersTypes.h"
 #include "MediaInfo.h"
+#include "MediaPrefs.h"
 #include "mozilla/Logging.h"
 #include "nsWindowsHelpers.h"
 #include "gfx2DGlue.h"
@@ -30,6 +31,7 @@
 #include "GMPUtils.h" 
 #include "MP4Decoder.h"
 #include "VPXDecoder.h"
+#include "mozilla/SyncRunnable.h"
 
 #define LOG(...) MOZ_LOG(sPDMLog, mozilla::LogLevel::Debug, (__VA_ARGS__))
 
@@ -180,7 +182,7 @@ FindDXVABlacklistedDLL(StaticAutoPtr<D3DDLLBlacklistingCache>& aDLLBlacklistingC
     ClearOnShutdown(&aDLLBlacklistingCache);
   }
 
-  if (aBlacklist.IsEmpty()) {
+  if (aBlacklist.IsEmpty() || MediaPrefs::PDMWMFSkipBlacklist()) {
     
     aDLLBlacklistingCache->mBlacklistPref.SetLength(0);
     aDLLBlacklistingCache->mBlacklistedDLL.SetLength(0);
@@ -371,7 +373,9 @@ WMFVideoMFTManager::InitializeDXVA(bool aForceD3D9)
   if (NS_IsMainThread()) {
     event->Run();
   } else {
-    NS_DispatchToMainThread(event, NS_DISPATCH_SYNC);
+    
+    nsCOMPtr<nsIThread> mainThread = do_GetMainThread();
+    mozilla::SyncRunnable::DispatchToThread(mainThread, event);
   }
   mDXVA2Manager = event->mDXVA2Manager;
 
@@ -607,7 +611,9 @@ WMFVideoMFTManager::CanUseDXVA(IMFMediaType* aType)
   if (NS_IsMainThread()) {
     event->Run();
   } else {
-    NS_DispatchToMainThread(event, NS_DISPATCH_SYNC);
+    
+    nsCOMPtr<nsIThread> mainThread = do_GetMainThread();
+    mozilla::SyncRunnable::DispatchToThread(mainThread, event);
   }
 
   return event->mSupportsConfig;
