@@ -225,10 +225,20 @@ ImageClientSingle::UpdateImage(ImageContainer* aContainer, uint32_t aContentFlag
       
       texture = CreateTextureClientForImage(image, GetForwarder());
     }
-    if (!texture || !AddTextureClient(texture)) {
+
+    if (!texture) {
       return false;
     }
 
+    
+    
+    
+    if (!texture->GetAllocator()->IPCOpen()) {
+      continue;
+    }
+    if (!AddTextureClient(texture)) {
+      return false;
+    }
 
     CompositableForwarder::TimedTextureClient* t = textures.AppendElement();
     t->mTextureClient = texture;
