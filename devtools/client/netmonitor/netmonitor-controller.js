@@ -126,7 +126,7 @@ var NetMonitorController = {
     }
     this._disconnection = new Promise(async (resolve) => {
       
-      if (!this.isConnected()) {
+      if (!this._connected) {
         await this._connection;
       }
 
@@ -146,22 +146,6 @@ var NetMonitorController = {
       this._connected = false;
     });
     return this._disconnection;
-  },
-
-  
-
-
-
-  isConnected: function () {
-    return !!this._connected;
-  },
-
-  
-
-
-
-  getCurrentActivity: function () {
-    return this._currentActivity || ACTIVITY_TYPE.NONE;
   },
 
   
@@ -287,19 +271,7 @@ var NetMonitorController = {
 
 
   get supportsCustomRequest() {
-    return this.webConsoleClient &&
-           (this.webConsoleClient.traits.customNetworkRequest ||
-            !this._target.isApp);
-  },
-
-  
-
-
-
-
-  get supportsTransferredResponseSize() {
-    return this.webConsoleClient &&
-           this.webConsoleClient.traits.transferredResponseSize;
+    return this.webConsoleClient && this.webConsoleClient.traits.customNetworkRequest;
   },
 
   
@@ -307,8 +279,7 @@ var NetMonitorController = {
 
 
   get supportsPerfStats() {
-    return this.tabClient &&
-           (this.tabClient.traits.reconfigure || !this._target.isApp);
+    return this.tabClient && this.tabClient.traits.reconfigure;
   },
 
   
@@ -316,54 +287,6 @@ var NetMonitorController = {
 
   viewSourceInDebugger(sourceURL, sourceLine) {
     return this.toolbox.viewSourceInDebugger(sourceURL, sourceLine);
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  waitForAllRequestsFinished() {
-    return new Promise(resolve => {
-      
-      let requests = new Map();
-
-      function onRequest(_, id) {
-        requests.set(id, false);
-      }
-
-      function onTimings(_, id) {
-        requests.set(id, true);
-        maybeResolve();
-      }
-
-      function maybeResolve() {
-        
-        if (![...requests.values()].every(finished => finished)) {
-          return;
-        }
-
-        
-        window.off(EVENTS.NETWORK_EVENT, onRequest);
-        window.off(EVENTS.RECEIVED_EVENT_TIMINGS, onTimings);
-        resolve();
-      }
-
-      window.on(EVENTS.NETWORK_EVENT, onRequest);
-      window.on(EVENTS.RECEIVED_EVENT_TIMINGS, onTimings);
-    });
   },
 };
 
