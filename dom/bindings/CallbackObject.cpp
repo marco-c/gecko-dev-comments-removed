@@ -68,6 +68,10 @@ CallbackObject::FinishSlowJSInitIfMoreThanOneOwner(JSContext* aCx)
       }
       mCreationStack = stack;
     }
+    mIncumbentGlobal = GetIncumbentGlobal();
+    if (mIncumbentGlobal) {
+      mIncumbentJSGlobal = mIncumbentGlobal->GetGlobalJSObject();
+    }
   } else {
     
     ClearJSReferences();

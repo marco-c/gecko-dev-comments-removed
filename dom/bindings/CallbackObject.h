@@ -233,10 +233,9 @@ protected:
   
   
   CallbackObject(JS::Handle<JSObject*> aCallback,
-                 nsIGlobalObject* aIncumbentGlobal,
                  const FastCallbackConstructor&)
   {
-    InitNoHold(aCallback, nullptr, aIncumbentGlobal);
+    InitNoHold(aCallback, nullptr, nullptr);
   }
 
   
