@@ -95,9 +95,6 @@ const REMOVE_PAGES_CHUNKLEN = 300;
 
 
 
-const TIMERS_RESOLUTION_SKEW_MS = 16;
-
-
 
 
 
@@ -182,7 +179,7 @@ this.History = Object.freeze({
       throw new TypeError("pageInfo must be an object");
     }
 
-    let info = validatePageInfo(pageInfo);
+    let info = PlacesUtils.validatePageInfo(pageInfo);
 
     return PlacesUtils.withConnectionWrapper("History.jsm: insert",
       db => insert(db, info));
@@ -249,7 +246,7 @@ this.History = Object.freeze({
     }
 
     for (let pageInfo of pageInfos) {
-      let info = validatePageInfo(pageInfo);
+      let info = PlacesUtils.validatePageInfo(pageInfo);
       infos.push(info);
     }
 
@@ -296,7 +293,7 @@ this.History = Object.freeze({
     for (let page of pages) {
       
       
-      let normalized = normalizeToURLOrGUID(page);
+      let normalized = PlacesUtils.normalizeToURLOrGUID(page);
       if (typeof normalized === "string") {
         guids.push(normalized);
       } else {
@@ -381,10 +378,10 @@ this.History = Object.freeze({
     let hasURL = "url" in filter;
     let hasLimit = "limit" in filter;
     if (hasBeginDate) {
-      ensureDate(filter.beginDate);
+      this.ensureDate(filter.beginDate);
     }
     if (hasEndDate) {
-      ensureDate(filter.endDate);
+      this.ensureDate(filter.endDate);
     }
     if (hasBeginDate && hasEndDate && filter.beginDate > filter.endDate) {
       throw new TypeError("`beginDate` should be at least as old as `endDate`");
@@ -430,6 +427,88 @@ this.History = Object.freeze({
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  removeByFilter(filter, onResult) {
+    if (!filter || typeof filter !== "object") {
+      throw new TypeError("Expected a filter object");
+    }
+
+    let hasHost = "host" in filter;
+    if (hasHost) {
+      if (typeof filter.host !== "string") {
+        throw new TypeError("`host` should be a string");
+      }
+      filter.host = filter.host.toLowerCase();
+    }
+
+    let hasBeginDate = "beginDate" in filter;
+    if (hasBeginDate) {
+      this.ensureDate(filter.beginDate);
+    }
+
+    let hasEndDate = "endDate" in filter;
+    if (hasEndDate) {
+      this.ensureDate(filter.endDate);
+    }
+
+    if (hasBeginDate && hasEndDate && filter.beginDate > filter.endDate) {
+      throw new TypeError("`beginDate` should be at least as old as `endDate`");
+    }
+
+    if (!hasBeginDate && !hasEndDate && !hasHost) {
+      throw new TypeError("Expected a non-empty filter");
+    }
+
+    
+    
+    
+    
+    if (hasHost &&
+        !((/^[a-z0-9-]+$/).test(filter.host)) &&
+        !((/^(\*\.)?([a-z0-9-]+)(\.[a-z0-9-]+)+$/).test(filter.host)) &&
+        (filter.host !== "")) {
+      throw new TypeError("Expected well formed hostname string for `host` with atmost 1 wildcard.");
+    }
+
+    if (onResult && typeof onResult != "function") {
+      throw new TypeError("Invalid function: " + onResult);
+    }
+
+    return PlacesUtils.withConnectionWrapper(
+      "History.jsm: removeByFilter",
+      db => removeByFilter(db, filter, onResult)
+    );
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   hasVisits(page, onResult) {
     throw new Error("Method not implemented");
   },
@@ -444,6 +523,25 @@ this.History = Object.freeze({
     return PlacesUtils.withConnectionWrapper("History.jsm: clear",
       clear
     );
+  },
+
+  
+
+
+
+
+
+  isValidTransition(transitionType) {
+    return Object.values(History.TRANSITIONS).includes(transitionType);
+  },
+
+  
+
+
+  ensureDate(arg) {
+    if (!arg || typeof arg != "object" || arg.constructor.name != "Date") {
+      throw new TypeError("Expected a Date, got " + arg);
+    }
   },
 
   
@@ -511,58 +609,6 @@ this.History = Object.freeze({
 
 
 
-function validatePageInfo(pageInfo) {
-  let info = {
-    visits: [],
-  };
-
-  if (!pageInfo.url) {
-    throw new TypeError("PageInfo object must have a url property");
-  }
-
-  info.url = normalizeToURLOrGUID(pageInfo.url);
-
-  if (typeof pageInfo.title === "string") {
-    info.title = pageInfo.title;
-  } else if (pageInfo.title != null && pageInfo.title != undefined) {
-    throw new TypeError(`title property of PageInfo object: ${pageInfo.title} must be a string if provided`);
-  }
-
-  if (!pageInfo.visits || !Array.isArray(pageInfo.visits) || !pageInfo.visits.length) {
-    throw new TypeError("PageInfo object must have an array of visits");
-  }
-  for (let inVisit of pageInfo.visits) {
-    let visit = {
-      date: new Date(),
-      transition: inVisit.transition || History.TRANSITIONS.LINK,
-    };
-
-    if (!isValidTransitionType(visit.transition)) {
-      throw new TypeError(`transition: ${visit.transition} is not a valid transition type`);
-    }
-
-    if (inVisit.date) {
-      ensureDate(inVisit.date);
-      if (inVisit.date > (Date.now() + TIMERS_RESOLUTION_SKEW_MS)) {
-        throw new TypeError(`date: ${inVisit.date} cannot be a future date`);
-      }
-      visit.date = inVisit.date;
-    }
-
-    if (inVisit.referrer) {
-      visit.referrer = normalizeToURLOrGUID(inVisit.referrer);
-    }
-    info.visits.push(visit);
-  }
-  return info;
-}
-
-
-
-
-
-
-
 
 
 
@@ -582,50 +628,6 @@ function convertForUpdatePlaces(pageInfo) {
     info.visits.push(visit);
   }
   return info;
-}
-
-
-
-
-
-
-
-function isValidTransitionType(transitionType) {
-  return Object.values(History.TRANSITIONS).includes(transitionType);
-}
-
-
-
-
-
-
-
-
-
-function normalizeToURLOrGUID(key) {
-  if (typeof key === "string") {
-    
-    if (PlacesUtils.isValidGuid(key)) {
-      return key;
-    }
-    return new URL(key);
-  }
-  if (key instanceof URL) {
-    return key;
-  }
-  if (key instanceof Ci.nsIURI) {
-    return new URL(key.spec);
-  }
-  throw new TypeError("Invalid url or guid: " + key);
-}
-
-
-
-
-function ensureDate(arg) {
-  if (!arg || typeof arg != "object" || arg.constructor.name != "Date") {
-    throw new TypeError("Expected a Date, got " + arg);
-  }
 }
 
 
@@ -921,6 +923,112 @@ var removeVisitsByFilter = Task.async(function*(db, filter, onResult = null) {
   return visitsToRemove.length != 0;
 });
 
+
+var removeByFilter = Task.async(function*(db, filter, onResult = null) {
+  
+  let dateFilterSQLFragment = "";
+  let conditions = [];
+  let params = {};
+  if ("beginDate" in filter) {
+    conditions.push("v.visit_date >= :begin");
+    params.begin = PlacesUtils.toPRTime(filter.beginDate);
+  }
+  if ("endDate" in filter) {
+    conditions.push("v.visit_date <= :end");
+    params.end = PlacesUtils.toPRTime(filter.endDate);
+  }
+
+  if (conditions.length !== 0) {
+    dateFilterSQLFragment =
+      `EXISTS
+         (SELECT id FROM moz_historyvisits v WHERE v.place_id = h.id AND
+         ${ conditions.join(" AND ") }
+         LIMIT 1)`;
+  }
+
+  
+  let hostFilterSQLFragment = "";
+  if (filter.host || filter.host === "") {
+    
+    
+
+    if (filter.host.indexOf("*") === 0) {
+      
+      let revHost = filter.host.slice(2).split("").reverse().join("");
+      hostFilterSQLFragment =
+        `h.rev_host between :revHostStart and :revHostEnd`;
+      params.revHostStart = revHost + ".";
+      params.revHostEnd = revHost + "/";
+    } else {
+      
+      let revHost = filter.host.split("").reverse().join("") + ".";
+      hostFilterSQLFragment =
+        `h.rev_host = :hostName`;
+      params.hostName = revHost;
+    }
+  }
+
+  
+  let fragmentArray = [hostFilterSQLFragment, dateFilterSQLFragment];
+  let query =
+      `SELECT h.id, url, rev_host, guid, title, frecency, foreign_count
+       FROM moz_places h WHERE
+       (${ fragmentArray.filter(f => f !== "").join(") AND (") })`;
+  let onResultData = onResult ? [] : null;
+  let pages = [];
+  let hasPagesToRemove = false;
+
+  yield db.executeCached(
+    query,
+    params,
+    row => {
+      let hasForeign = row.getResultByName("foreign_count") != 0;
+      if (!hasForeign) {
+        hasPagesToRemove = true;
+      }
+      let id = row.getResultByName("id");
+      let guid = row.getResultByName("guid");
+      let url = row.getResultByName("url");
+      let page = {
+        id,
+        guid,
+        hasForeign,
+        hasVisits: false,
+        url: new URL(url)
+      };
+      pages.push(page);
+      if (onResult) {
+        onResultData.push({
+          guid,
+          title: row.getResultByName("title"),
+          frecency: row.getResultByName("frecency"),
+          url: new URL(url)
+        });
+      }
+    });
+
+  if (pages.length === 0) {
+    
+    return false;
+  }
+
+  try {
+    yield db.executeTransaction(Task.async(function*() {
+      
+      yield db.execute(`DELETE FROM moz_historyvisits
+                        WHERE place_id IN(${ sqlList(pages.map(p => p.id)) })`);
+      
+      yield cleanupPages(db, pages);
+    }));
+
+    notifyCleanup(db, pages);
+    notifyOnResult(onResultData, onResult);
+  } finally {
+    PlacesUtils.history.clearEmbedVisits();
+  }
+
+  return hasPagesToRemove;
+});
 
 
 var remove = Task.async(function*(db, {guids, urls}, onResult = null) {
