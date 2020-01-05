@@ -94,6 +94,14 @@ public:
     
     nsresult pushEvalContext(txIEvalContext* aContext);
     txIEvalContext* popEvalContext();
+
+    
+
+
+
+
+    void popAndDeleteEvalContextUntil(txIEvalContext* aContext);
+
     nsresult pushBool(bool aBool);
     bool popBool();
     nsresult pushResultHandler(txAXMLEventHandler* aHandler);
