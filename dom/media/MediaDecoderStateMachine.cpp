@@ -2877,9 +2877,13 @@ void MediaDecoderStateMachine::OnMediaSinkAudioComplete()
   mAudioCompleted = true;
   
   ScheduleStateMachine();
+
+  
+  mOnDecoderDoctorEvent.Notify(
+    DecoderDoctorEvent{DecoderDoctorEvent::eAudioSinkStartup, NS_OK});
 }
 
-void MediaDecoderStateMachine::OnMediaSinkAudioError()
+void MediaDecoderStateMachine::OnMediaSinkAudioError(nsresult aResult)
 {
   MOZ_ASSERT(OnTaskQueue());
   MOZ_ASSERT(mInfo.HasAudio());
@@ -2887,6 +2891,11 @@ void MediaDecoderStateMachine::OnMediaSinkAudioError()
 
   mMediaSinkAudioPromise.Complete();
   mAudioCompleted = true;
+
+  
+  MOZ_ASSERT(NS_FAILED(aResult));
+  mOnDecoderDoctorEvent.Notify(
+    DecoderDoctorEvent{DecoderDoctorEvent::eAudioSinkStartup, aResult});
 
   
   if (HasVideo()) {
