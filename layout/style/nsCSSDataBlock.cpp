@@ -252,8 +252,8 @@ EnsurePhysicalProperty(nsCSSPropertyID& aProperty, nsRuleData* aRuleData)
 
     
     
-    static_assert(NS_SIDE_TOP == 0 && NS_SIDE_RIGHT == 1 &&
-                  NS_SIDE_BOTTOM == 2 && NS_SIDE_LEFT == 3,
+    static_assert(eSideTop == 0 && eSideRight == 1 &&
+                  eSideBottom == 2 && eSideLeft == 3,
                   "unexpected side constant values");
     index = side;
   }

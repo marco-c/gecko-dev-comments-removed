@@ -325,10 +325,10 @@ public:
     
     
     static const mozilla::Side kLogicalBlockSides[][2] = {
-      { NS_SIDE_TOP,    NS_SIDE_BOTTOM },  
-      { NS_SIDE_RIGHT,  NS_SIDE_LEFT   },  
-      { NS_SIDE_BOTTOM, NS_SIDE_TOP    },  
-      { NS_SIDE_LEFT,   NS_SIDE_RIGHT  },  
+      { eSideTop,    eSideBottom },  
+      { eSideRight,  eSideLeft   },  
+      { eSideBottom, eSideTop    },  
+      { eSideLeft,   eSideRight  },  
     };
 
     
@@ -353,22 +353,22 @@ public:
     
     
     static const mozilla::Side kLogicalInlineSides[][2] = {
-      { NS_SIDE_LEFT,   NS_SIDE_RIGHT  },  
-      { NS_SIDE_TOP,    NS_SIDE_BOTTOM },  
-      { NS_SIDE_RIGHT,  NS_SIDE_LEFT   },  
-      { NS_SIDE_BOTTOM, NS_SIDE_TOP    },  
-      { NS_SIDE_RIGHT,  NS_SIDE_LEFT   },  
-      { NS_SIDE_TOP,    NS_SIDE_BOTTOM },  
-      { NS_SIDE_LEFT,   NS_SIDE_RIGHT  },  
-      { NS_SIDE_BOTTOM, NS_SIDE_TOP    },  
-      { NS_SIDE_LEFT,   NS_SIDE_RIGHT  },  
-      { NS_SIDE_TOP,    NS_SIDE_BOTTOM },  
-      { NS_SIDE_RIGHT,  NS_SIDE_LEFT   },  
-      { NS_SIDE_BOTTOM, NS_SIDE_TOP    },  
-      { NS_SIDE_LEFT,   NS_SIDE_RIGHT  },  
-      { NS_SIDE_TOP,    NS_SIDE_BOTTOM },  
-      { NS_SIDE_RIGHT,  NS_SIDE_LEFT   },  
-      { NS_SIDE_BOTTOM, NS_SIDE_TOP    },  
+      { eSideLeft,   eSideRight  },  
+      { eSideTop,    eSideBottom },  
+      { eSideRight,  eSideLeft   },  
+      { eSideBottom, eSideTop    },  
+      { eSideRight,  eSideLeft   },  
+      { eSideTop,    eSideBottom },  
+      { eSideLeft,   eSideRight  },  
+      { eSideBottom, eSideTop    },  
+      { eSideLeft,   eSideRight  },  
+      { eSideTop,    eSideBottom },  
+      { eSideRight,  eSideLeft   },  
+      { eSideBottom, eSideTop    },  
+      { eSideLeft,   eSideRight  },  
+      { eSideTop,    eSideBottom },  
+      { eSideRight,  eSideLeft   },  
+      { eSideBottom, eSideTop    },  
     };
 
     
