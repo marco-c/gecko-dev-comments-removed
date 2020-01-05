@@ -103,6 +103,9 @@ MemoryProtectionExceptionHandler::isDisabled()
     
     
     return true;
+#elif defined(RELEASE_OR_BETA)
+    
+    return true;
 #else
     return false;
 #endif
