@@ -460,11 +460,21 @@ var gPopupBlockerObserver = {
   onReportButtonMousedown(aEvent) {
     
     
+    
+    
+    
+    
+    
+    
+    
+    
     if (aEvent.button != 0 || aEvent.target != this._reportButton || this.isPopupHidingTick)
       return;
 
-    document.getElementById("blockedPopupOptions")
-            .openPopup(this._reportButton, "after_end", 0, 2, false, false, aEvent);
+    this._reportButton.addEventListener("click", event => {
+      document.getElementById("blockedPopupOptions")
+              .openPopup(event.target, "after_end", 0, 2, false, false, event);
+    }, { once: true });
   },
 
   handleEvent(aEvent) {
@@ -649,11 +659,12 @@ var gPopupBlockerObserver = {
   },
 
   onPopupHiding(aEvent) {
-    if (aEvent.target.anchorNode.id == "page-report-button")
+    if (aEvent.target.anchorNode.id == "page-report-button") {
       aEvent.target.anchorNode.removeAttribute("open");
 
-    this.isPopupHidingTick = true;
-    setTimeout(() => this.isPopupHidingTick = false, 0);
+      this.isPopupHidingTick = true;
+      setTimeout(() => this.isPopupHidingTick = false, 0);
+    }
 
     let item = aEvent.target.lastChild;
     while (item && item.getAttribute("observes") != "blockedPopupsSeparator") {
