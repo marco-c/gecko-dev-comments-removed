@@ -253,6 +253,7 @@ let tabListener = {
 
 
 
+
   awaitTabReady(tab) {
     let deferred = this.tabReadyPromises.get(tab);
     if (!deferred) {
@@ -260,6 +261,7 @@ let tabListener = {
       if (!this.initializingTabs.has(tab) && tab.linkedBrowser.innerWindowID) {
         deferred.resolve(tab);
       } else {
+        this.initTabReady();
         this.tabReadyPromises.set(tab, deferred);
       }
     }
