@@ -27,8 +27,10 @@
 #include "jit/MOpcodes.h"
 #include "jit/TypedObjectPrediction.h"
 #include "jit/TypePolicy.h"
+#include "js/HeapAPI.h"
 #include "vm/ArrayObject.h"
 #include "vm/EnvironmentObject.h"
+#include "vm/RegExpObject.h"
 #include "vm/SharedMem.h"
 #include "vm/TypedArrayObject.h"
 #include "vm/UnboxedObject.h"
@@ -12490,20 +12492,23 @@ class MIteratorEnd
 };
 
 
-class MInCache
+class MIn
   : public MBinaryInstruction,
-    public MixPolicy<CacheIdPolicy<0>, ObjectPolicy<1> >::Data
+    public MixPolicy<BoxPolicy<0>, ObjectPolicy<1> >::Data
 {
-    MInCache(MDefinition* key, MDefinition* obj)
+    MIn(MDefinition* key, MDefinition* obj)
       : MBinaryInstruction(key, obj)
     {
         setResultType(MIRType::Boolean);
     }
 
   public:
-    INSTRUCTION_HEADER(InCache)
+    INSTRUCTION_HEADER(In)
     TRIVIAL_NEW_WRAPPERS
-    NAMED_OPERANDS((0, key), (1, object))
+
+    bool possiblyCalls() const override {
+        return true;
+    }
 };
 
 

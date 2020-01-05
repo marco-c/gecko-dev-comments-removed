@@ -23,6 +23,7 @@
 #include "jsstr.h"
 
 #include "builtin/Eval.h"
+#include "builtin/RegExp.h"
 #include "builtin/TypedObject.h"
 #include "gc/Nursery.h"
 #include "irregexp/NativeRegExpMacroAssembler.h"
@@ -158,10 +159,6 @@ typedef JSObject* (*IonBindNameICFn)(JSContext*, HandleScript, IonBindNameIC*, H
 static const VMFunction IonBindNameICInfo =
     FunctionInfo<IonBindNameICFn>(IonBindNameIC::update, "IonBindNameIC::update");
 
-typedef bool (*IonInICFn)(JSContext*, HandleScript, IonInIC*, HandleValue, HandleObject, bool*);
-static const VMFunction IonInICInfo =
-    FunctionInfo<IonInICFn>(IonInIC::update, "IonInIC::update");
-
 void
 CodeGenerator::visitOutOfLineICFallback(OutOfLineICFallback* ool)
 {
@@ -247,24 +244,7 @@ CodeGenerator::visitOutOfLineICFallback(OutOfLineICFallback* ool)
         masm.jump(ool->rejoin());
         return;
       }
-      case CacheKind::In: {
-        IonInIC* inIC = ic->asInIC();
-
-        saveLive(lir);
-
-        pushArg(inIC->object());
-        pushArg(inIC->key());
-        icInfo_[cacheInfoIndex].icOffsetForPush = pushArgWithPatch(ImmWord(-1));
-        pushArg(ImmGCPtr(gen->info().script()));
-
-        callVM(IonInICInfo, lir);
-
-        StoreRegisterTo(inIC->output()).generate(this);
-        restoreLiveIgnore(lir, StoreRegisterTo(inIC->output()).clobbered());
-
-        masm.jump(ool->rejoin());
-        return;
-      }
+      case CacheKind::In:
       case CacheKind::TypeOf:
         MOZ_CRASH("Baseline-specific for now");
       case CacheKind::HasOwn: {
@@ -11206,18 +11186,16 @@ CodeGenerator::visitClampVToUint8(LClampVToUint8* lir)
     bailoutFrom(&fails, lir->snapshot());
 }
 
+typedef bool (*OperatorInFn)(JSContext*, HandleValue, HandleObject, bool*);
+static const VMFunction OperatorInInfo = FunctionInfo<OperatorInFn>(OperatorIn, "OperatorIn");
+
 void
-CodeGenerator::visitInCache(LInCache* ins)
+CodeGenerator::visitIn(LIn* ins)
 {
-    LiveRegisterSet liveRegs = ins->safepoint()->liveRegs();
+    pushArg(ToRegister(ins->rhs()));
+    pushArg(ToValue(ins, LIn::LHS));
 
-    ConstantOrRegister key = toConstantOrRegister(ins, LInCache::LHS, ins->mir()->key()->type());
-    Register object = ToRegister(ins->rhs());
-    Register output = ToRegister(ins->output());
-    Register temp = ToRegister(ins->temp());
-
-    IonInIC cache(liveRegs, key, object, output, temp);
-    addIC(ins, allocateIC(cache));
+    callVM(OperatorInInfo, ins);
 }
 
 typedef bool (*OperatorInIFn)(JSContext*, uint32_t, HandleObject, bool*);
