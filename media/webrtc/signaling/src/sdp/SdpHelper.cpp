@@ -424,19 +424,14 @@ SdpHelper::SetDefaultAddresses(const std::string& defaultCandidateAddr,
                                SdpMediaSection* msection)
 {
   msection->GetConnection().SetAddress(defaultCandidateAddr);
-  SdpAttributeList& attrList = msection->GetAttributeList();
-
-  
-  if (!attrList.HasAttribute(SdpAttribute::kBundleOnlyAttribute)) {
-    msection->SetPort(defaultCandidatePort);
-  }
+  msection->SetPort(defaultCandidatePort);
 
   if (!defaultRtcpCandidateAddr.empty()) {
     sdp::AddrType ipVersion = sdp::kIPv4;
     if (defaultRtcpCandidateAddr.find(':') != std::string::npos) {
       ipVersion = sdp::kIPv6;
     }
-    attrList.SetAttribute(new SdpRtcpAttribute(
+    msection->GetAttributeList().SetAttribute(new SdpRtcpAttribute(
           defaultRtcpCandidatePort,
           sdp::kInternet,
           ipVersion,
