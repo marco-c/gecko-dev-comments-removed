@@ -888,7 +888,7 @@ WebConsoleActor.prototype =
     let evalResult = evalInfo.result;
     let helperResult = evalInfo.helperResult;
 
-    let result, errorDocURL, errorMessage, errorGrip = null, frame = null;
+    let result, errorDocURL, errorMessage, errorGrip = null;
     if (evalResult) {
       if ("return" in evalResult) {
         result = evalResult.return;
@@ -929,20 +929,6 @@ WebConsoleActor.prototype =
         try {
           errorDocURL = ErrorDocs.GetURL(error);
         } catch (ex) {}
-
-        try {
-          let line = error.errorLineNumber;
-          let column = error.errorColumnNumber;
-
-          if (typeof line === "number" && typeof column === "number") {
-            
-            frame = {
-              source: "debugger eval code",
-              line,
-              column
-            };
-          }
-        } catch (ex) {}
       }
     }
 
@@ -965,7 +951,6 @@ WebConsoleActor.prototype =
       exception: errorGrip,
       exceptionMessage: this._createStringGrip(errorMessage),
       exceptionDocURL: errorDocURL,
-      frame,
       helperResult: helperResult,
     };
   },
