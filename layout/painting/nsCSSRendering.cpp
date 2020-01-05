@@ -2906,11 +2906,8 @@ nsCSSRendering::ComputeImageLayerPositioningArea(nsPresContext* aPresContext,
   return positionArea;
 }
 
-
-
-
-static nscoord
-ComputeRoundedSize(nscoord aCurrentSize, nscoord aPositioningSize)
+ nscoord
+nsCSSRendering::ComputeRoundedSize(nscoord aCurrentSize, nscoord aPositioningSize)
 {
   float repeatCount = NS_roundf(float(aPositioningSize) / float(aCurrentSize));
   if (repeatCount < 1.0f) {
@@ -2971,7 +2968,9 @@ ComputeDrawnSizeForBackground(const CSSSizeOrRatio& aIntrinsicSize,
   
   
   if (imageSize.width && aXRepeat == NS_STYLE_IMAGELAYER_REPEAT_ROUND) {
-    imageSize.width = ComputeRoundedSize(imageSize.width, aBgPositioningArea.width);
+    imageSize.width =
+      nsCSSRendering::ComputeRoundedSize(imageSize.width,
+                                         aBgPositioningArea.width);
     if (!isRepeatRoundInBothDimensions &&
         aLayerSize.mHeightType == nsStyleImageLayers::Size::DimensionType::eAuto) {
       
@@ -2985,7 +2984,9 @@ ComputeDrawnSizeForBackground(const CSSSizeOrRatio& aIntrinsicSize,
   
   
   if (imageSize.height && aYRepeat == NS_STYLE_IMAGELAYER_REPEAT_ROUND) {
-    imageSize.height = ComputeRoundedSize(imageSize.height, aBgPositioningArea.height);
+    imageSize.height =
+      nsCSSRendering::ComputeRoundedSize(imageSize.height,
+                                         aBgPositioningArea.height);
     if (!isRepeatRoundInBothDimensions &&
         aLayerSize.mWidthType == nsStyleImageLayers::Size::DimensionType::eAuto) {
       
@@ -3020,16 +3021,10 @@ ComputeSpacedRepeatSize(nscoord aImageDimension,
   }
 }
 
-
-
-
-
-
-
-static nscoord
-ComputeBorderSpacedRepeatSize(nscoord aImageDimension,
-                              nscoord aAvailableSpace,
-                              nscoord& aSpace)
+ nscoord
+nsCSSRendering::ComputeBorderSpacedRepeatSize(nscoord aImageDimension,
+                                              nscoord aAvailableSpace,
+                                              nscoord& aSpace)
 {
   int32_t count = aAvailableSpace / aImageDimension;
   aSpace = (aAvailableSpace - aImageDimension * count) / (count + 1);

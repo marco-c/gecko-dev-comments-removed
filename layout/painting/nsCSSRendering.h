@@ -337,6 +337,23 @@ struct nsCSSRendering {
                                    nsIFrame** aAttachedToFrame,
                                    bool* aOutTransformedFixed);
 
+  
+  
+  
+  static nscoord
+  ComputeRoundedSize(nscoord aCurrentSize, nscoord aPositioningSize);
+
+  
+
+
+
+
+
+  static nscoord
+  ComputeBorderSpacedRepeatSize(nscoord aImageDimension,
+                                nscoord aAvailableSpace,
+                                nscoord& aSpace);
+
   static nsBackgroundLayerState
   PrepareImageLayer(nsPresContext* aPresContext,
                     nsIFrame* aForFrame,
