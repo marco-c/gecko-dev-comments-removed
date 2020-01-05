@@ -115,7 +115,7 @@ def call(*args, **kwargs):
     verbose = kwargs.pop('verbose', False)
     if verbose:
         print(' '.join(args[0]))
-    subprocess.call(*args, **kwargs)
+    return subprocess.call(*args, **kwargs)
 
 
 @CommandProvider
@@ -195,7 +195,9 @@ class MachCommands(CommandBase):
             
             apk_builder_dir = "support/android-rs-glue"
             with cd(path.join(apk_builder_dir, "apk-builder")):
-                call(["cargo", "build"], env=self.build_env(), verbose=verbose)
+                status = call(["cargo", "build"], env=self.build_env(), verbose=verbose)
+                if status:
+                    return status
 
             opts += ["--target", "arm-linux-androideabi"]
 
@@ -240,6 +242,9 @@ class MachCommands(CommandBase):
         notify_build_done(elapsed)
 
         print("Build completed in %0.2fs" % elapsed)
+        
+        if android:
+            return 0
         return status
 
     @Command('build-cef',
