@@ -123,7 +123,6 @@ const HEADERS = [
   },
   {
     name: "file",
-    boxName: "icon-and-file",
     canFilter: false,
   },
   {
@@ -132,7 +131,6 @@ const HEADERS = [
   },
   {
     name: "domain",
-    boxName: "security-and-domain",
     canFilter: true,
   },
   {
@@ -164,13 +162,30 @@ const HEADERS = [
   }
 ];
 
+const REQUESTS_WATERFALL = {
+  BACKGROUND_TICKS_MULTIPLE: 5, 
+  BACKGROUND_TICKS_SCALES: 3,
+  BACKGROUND_TICKS_SPACING_MIN: 10, 
+  BACKGROUND_TICKS_COLOR_RGB: [128, 136, 144],
+  
+  BACKGROUND_TICKS_OPACITY_MIN: 32,
+  BACKGROUND_TICKS_OPACITY_ADD: 32,
+  
+  DOMCONTENTLOADED_TICKS_COLOR_RGBA: [0, 0, 255, 128],
+  HEADER_TICKS_MULTIPLE: 5, 
+  HEADER_TICKS_SPACING_MIN: 60, 
+  LOAD_TICKS_COLOR_RGBA: [255, 0, 0, 128],
+  
+  LABEL_WIDTH: 50, 
+};
+
 const general = {
   ACTIVITY_TYPE,
   EVENTS,
   FILTER_SEARCH_DELAY: 200,
   HEADERS,
-  
-  SOURCE_SYNTAX_HIGHLIGHT_MAX_FILE_SIZE: 102400,
+  SOURCE_EDITOR_SYNTAX_HIGHLIGHT_MAX_SIZE: 51200, 
+  REQUESTS_WATERFALL,
 };
 
 
