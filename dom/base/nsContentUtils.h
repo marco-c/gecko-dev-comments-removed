@@ -2910,6 +2910,16 @@ private:
 
 
 
+  static void GetCookieBehaviorForPrincipal(nsIPrincipal* aPrincipal,
+                                            uint32_t* aLifetimePolicy,
+                                            uint32_t* aBehavior);
+
+  
+
+
+
+
+
 
 
 
