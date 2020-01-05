@@ -126,6 +126,13 @@ FindAnimationsForCompositor(const nsIFrame* aFrame,
   }
 
   
+  if (aFrame->StyleContext()->StyleSource().IsServoComputedValues()) {
+    NS_WARNING("stylo: return false in FindAnimationsForCompositor because "
+               "haven't supported compositor-driven animations yet");
+    return false;
+  }
+
+  
   
   
   
@@ -146,11 +153,6 @@ FindAnimationsForCompositor(const nsIFrame* aFrame,
   }
 
   if (aFrame->RefusedAsyncAnimation()) {
-    return false;
-  }
-
-  if (aFrame->StyleContext()->StyleSource().IsServoComputedValues()) {
-    NS_ERROR("stylo: cannot handle compositor-driven animations yet");
     return false;
   }
 
@@ -275,12 +277,12 @@ EffectCompositor::RequestRestyle(dom::Element* aElement,
   if (aRestyleType == RestyleType::Layer) {
     
     
-    
     if (mPresContext->RestyleManager()->IsServo()) {
-      NS_ERROR("stylo: Servo-backed style system should not be using "
-               "EffectCompositor");
+      NS_WARNING("stylo: RequestRestyle to layer, but Servo-backed style "
+                 "system haven't supported compositor-driven animations yet");
       return;
     }
+    
     mPresContext->RestyleManager()->AsGecko()->IncrementAnimationGeneration();
     EffectSet* effectSet =
       EffectSet::GetEffectSet(aElement, aPseudoType);
