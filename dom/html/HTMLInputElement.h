@@ -663,11 +663,7 @@ public:
 
   void SetValue(const nsAString& aValue, CallerType aCallerType,
                 ErrorResult& aRv);
-  void GetValue(nsAString& aValue, CallerType aCallerType)
-  {
-    
-    GetValue(aValue);
-  }
+  void GetValue(nsAString& aValue, CallerType aCallerType);
 
   Nullable<Date> GetValueAsDate(ErrorResult& aRv);
 
@@ -776,7 +772,7 @@ public:
 
   nsIControllers* GetControllers(ErrorResult& aRv);
 
-  int32_t GetTextLength(ErrorResult& aRv);
+  int32_t InputTextLength(CallerType aCallerType);
 
   void MozGetFileNameArray(nsTArray<nsString>& aFileNames, ErrorResult& aRv);
 
@@ -931,9 +927,16 @@ protected:
 
   nsresult SetValueInternal(const nsAString& aValue, uint32_t aFlags);
 
-  void GetValueInternal(nsAString& aValue) const;
+  
+  
+  void GetValueInternal(nsAString& aValue, CallerType aCallerType) const;
 
   
+  
+  void GetNonFileValueInternal(nsAString& aValue) const;
+
+  
+
 
 
 

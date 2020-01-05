@@ -404,7 +404,7 @@ nsNumberControlFrame::CreateAnonymousContent(nsTArray<ContentInfo>& aElements)
 
   
   nsAutoString value;
-  content->GetValue(value);
+  content->GetValue(value, CallerType::System);
   SetValueOfAnonTextControl(value);
 
   
@@ -709,7 +709,7 @@ nsNumberControlFrame::GetValueOfAnonTextControl(nsAString& aValue)
     return;
   }
 
-  HTMLInputElement::FromContent(mTextField)->GetValue(aValue);
+  HTMLInputElement::FromContent(mTextField)->GetValue(aValue, CallerType::System);
 
 #ifdef ENABLE_INTL_API
   
@@ -762,7 +762,7 @@ nsNumberControlFrame::AnonTextControlIsEmpty()
     return true;
   }
   nsAutoString value;
-  HTMLInputElement::FromContent(mTextField)->GetValue(value);
+  HTMLInputElement::FromContent(mTextField)->GetValue(value, CallerType::System);
   return value.IsEmpty();
 }
 

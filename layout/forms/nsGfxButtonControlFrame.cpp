@@ -8,6 +8,7 @@
 #include "nsGkAtoms.h"
 #include "mozilla/StyleSetHandle.h"
 #include "mozilla/StyleSetHandleInlines.h"
+#include "mozilla/dom/HTMLInputElement.h"
 #include "nsContentUtils.h"
 
 #include "nsContentList.h"
@@ -139,19 +140,18 @@ nsGfxButtonControlFrame::GetLabel(nsXPIDLString& aLabel)
 {
   
   
-  nsresult rv;
-  nsCOMPtr<nsIDOMHTMLInputElement> elt = do_QueryInterface(mContent);
+  dom::HTMLInputElement* elt = dom::HTMLInputElement::FromContent(mContent);
   if (mContent->HasAttr(kNameSpaceID_None, nsGkAtoms::value) && elt) {
-    rv = elt->GetValue(aLabel);
+    elt->GetValue(aLabel, dom::CallerType::System);
   } else {
     
     
     
     
+    nsresult rv;
     rv = GetDefaultLabel(aLabel);
+    NS_ENSURE_SUCCESS(rv, rv);
   }
-
-  NS_ENSURE_SUCCESS(rv, rv);
 
   
   if (!StyleText()->WhiteSpaceIsSignificant()) {

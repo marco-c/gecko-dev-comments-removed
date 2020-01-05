@@ -351,8 +351,11 @@ HTMLTextFieldAccessible::Value(nsString& aValue)
   }
 
   HTMLInputElement* input = HTMLInputElement::FromContent(mContent);
-  if (input)
-    input->GetValue(aValue);
+  if (input) {
+    
+    
+    input->GetValue(aValue, CallerType::NonSystem);
+  }
 }
 
 void
@@ -552,7 +555,10 @@ HTMLSpinnerAccessible::Value(nsString& aValue)
   if (!aValue.IsEmpty())
     return;
 
-  HTMLInputElement::FromContent(mContent)->GetValue(aValue);
+  
+  
+  HTMLInputElement::FromContent(mContent)->GetValue(aValue,
+                                                    CallerType::NonSystem);
 }
 
 double
@@ -628,7 +634,10 @@ HTMLRangeAccessible::Value(nsString& aValue)
   if (!aValue.IsEmpty())
     return;
 
-  HTMLInputElement::FromContent(mContent)->GetValue(aValue);
+  
+  
+  HTMLInputElement::FromContent(mContent)->GetValue(aValue,
+                                                    CallerType::NonSystem);
 }
 
 double
