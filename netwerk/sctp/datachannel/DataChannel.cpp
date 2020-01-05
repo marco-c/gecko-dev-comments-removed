@@ -678,7 +678,7 @@ DataChannelConnection::SctpDtlsOutput(void *addr, void *buffer, size_t length,
   
   
   
-  if ((0 )) {
+  if ((false )) {
     res = peer->SendPacket(static_cast<unsigned char *>(buffer), length, false);
   } else {
     auto *data = new unsigned char[length];
