@@ -179,7 +179,7 @@ XMLHttpRequestMainThread::XMLHttpRequestMainThread()
     mProgressTimerIsActive(false),
     mIsHtml(false),
     mWarnAboutSyncHtml(false),
-    mLoadTotal(0),
+    mLoadTotal(-1),
     mIsSystem(false),
     mIsAnon(false),
     mFirstStartRequestSeen(false),
@@ -1048,9 +1048,9 @@ XMLHttpRequestMainThread::CloseRequestWithError(const ProgressEventType aType)
     if (!mFlagSyncLooping) {
       if (mUpload && !mUploadComplete) {
         mUploadComplete = true;
-        DispatchProgressEvent(mUpload, aType, 0, 0);
+        DispatchProgressEvent(mUpload, aType, 0, -1);
       }
-      DispatchProgressEvent(this, aType, 0, 0);
+      DispatchProgressEvent(this, aType, 0, -1);
     }
   }
 
@@ -1324,7 +1324,7 @@ XMLHttpRequestMainThread::DispatchProgressEvent(DOMEventTargetHelper* aTarget,
       return;
     }
     aLoaded = 0;
-    aTotal = 0;
+    aTotal = -1;
   }
 
   if (aType == ProgressEventType::progress) {
@@ -1334,7 +1334,7 @@ XMLHttpRequestMainThread::DispatchProgressEvent(DOMEventTargetHelper* aTarget,
   ProgressEventInit init;
   init.mBubbles = false;
   init.mCancelable = false;
-  init.mLengthComputable = aTotal != 0; 
+  init.mLengthComputable = aTotal != -1; 
   init.mLoaded = aLoaded;
   init.mTotal = (aTotal == -1) ? 0 : aTotal;
 
@@ -2207,7 +2207,11 @@ XMLHttpRequestMainThread::ChangeStateToDone()
     mTimeoutTimer->Cancel();
   }
 
-  mLoadTotal = mLoadTransferred;
+  if (mLoadTransferred) {
+    mLoadTotal = mLoadTransferred;
+  } else {
+    mLoadTotal = -1;
+  }
 
   
   
@@ -2225,7 +2229,7 @@ XMLHttpRequestMainThread::ChangeStateToDone()
   
   
   if (!mFlagSynchronous && mUpload && !mUploadComplete) {
-    DispatchProgressEvent(mUpload, ProgressEventType::error, 0, 0);
+    DispatchProgressEvent(mUpload, ProgressEventType::error, 0, -1);
   }
 
   
@@ -2234,7 +2238,7 @@ XMLHttpRequestMainThread::ChangeStateToDone()
                         mErrorLoad ? ProgressEventType::error :
                                      ProgressEventType::load,
                         mErrorLoad ? 0 : mLoadTransferred,
-                        mErrorLoad ? 0 : mLoadTotal);
+                        mErrorLoad ? -1 : mLoadTotal);
 
   if (mErrorLoad) {
     
@@ -2827,7 +2831,7 @@ XMLHttpRequestMainThread::SendInternal(const RequestBodyBase* aBody)
   
   mUploadComplete = true;
   mErrorLoad = false;
-  mLoadTotal = 0;
+  mLoadTotal = -1;
   nsCOMPtr<nsIInputStream> uploadStream;
   nsAutoCString uploadContentType;
   nsCOMPtr<nsIHttpChannel> httpChannel(do_QueryInterface(mChannel));
@@ -2964,7 +2968,7 @@ XMLHttpRequestMainThread::SendInternal(const RequestBodyBase* aBody)
       StartProgressEventTimer();
     }
     
-    DispatchProgressEvent(this, ProgressEventType::loadstart, 0, 0);
+    DispatchProgressEvent(this, ProgressEventType::loadstart, 0, -1);
     if (mUpload && !mUploadComplete) {
       DispatchProgressEvent(mUpload, ProgressEventType::loadstart,
                             0, mUploadTotal);
@@ -3324,8 +3328,9 @@ XMLHttpRequestMainThread::OnProgress(nsIRequest *aRequest, nsISupports *aContext
       StartProgressEventTimer();
     }
   } else {
-    mLoadTotal = lengthComputable ? aProgressMax : 0;
+    mLoadTotal = lengthComputable ? aProgressMax : -1;
     mLoadTransferred = aProgress;
+  
     
     
   }
