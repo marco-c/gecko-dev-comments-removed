@@ -189,6 +189,9 @@ user_pref("layout.css.prefixes.device-pixel-ratio-webkit", true);
 user_pref("layout.css.shape-outside.enabled", true);
 
 
+user_pref("layout.css.text-justify.enabled", true);
+
+
 user_pref("layout.spammy_warnings.enabled", false);
 
 

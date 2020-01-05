@@ -159,6 +159,14 @@ enum class StyleShapeSourceType : uint8_t {
 };
 
 
+enum class StyleTextJustify : uint8_t {
+  None,
+  Auto,
+  InterWord,
+  InterCharacter,
+};
+
+
 enum class StyleUserFocus : uint8_t {
   None,
   Ignore,
