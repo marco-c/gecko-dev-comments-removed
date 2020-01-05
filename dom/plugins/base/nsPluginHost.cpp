@@ -30,7 +30,6 @@
 #include "nsIURL.h"
 #include "nsTArray.h"
 #include "nsReadableUtils.h"
-#include "nsProtocolProxyService.h"
 #include "nsIStreamConverterService.h"
 #include "nsIFile.h"
 #if defined(XP_MACOSX)
@@ -276,12 +275,6 @@ nsPluginHost::nsPluginHost()
   
   if (XRE_IsParentProcess()) {
     IncrementChromeEpoch();
-  } else {
-    
-    
-    
-    nsCOMPtr<nsIProtocolProxyService> proxyService =
-      do_GetService(NS_PROTOCOLPROXYSERVICE_CONTRACTID);
   }
 
   
@@ -595,88 +588,6 @@ nsresult nsPluginHost::PostURL(nsISupports* pluginInst,
                             postStream, postHeaders, postHeadersLength);
   }
   return rv;
-}
-
-
-
-
-
-
-
-
-
-
-
-nsresult nsPluginHost::FindProxyForURL(const char* url, char* *result)
-{
-  if (!url || !result) {
-    return NS_ERROR_INVALID_ARG;
-  }
-  nsresult res;
-
-  nsCOMPtr<nsIProtocolProxyService> proxyService =
-    do_GetService(NS_PROTOCOLPROXYSERVICE_CONTRACTID, &res);
-  if (NS_FAILED(res) || !proxyService)
-    return res;
-
-  RefPtr<nsProtocolProxyService> rawProxyService = do_QueryObject(proxyService);
-  if (!rawProxyService) {
-    return NS_ERROR_FAILURE;
-  }
-
-  
-  nsCOMPtr<nsIURI> uri;
-  res = NS_NewURI(getter_AddRefs(uri), nsDependentCString(url));
-  NS_ENSURE_SUCCESS(res, res);
-
-  nsCOMPtr<nsIPrincipal> nullPrincipal = nsNullPrincipal::Create();
-  
-  
-  nsCOMPtr<nsIChannel> tempChannel;
-  res = NS_NewChannel(getter_AddRefs(tempChannel), uri, nullPrincipal,
-                      nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_IS_BLOCKED,
-                      nsIContentPolicy::TYPE_OTHER);
-  NS_ENSURE_SUCCESS(res, res);
-
-  nsCOMPtr<nsIProxyInfo> pi;
-
-  
-  res = rawProxyService->DeprecatedBlockingResolve(tempChannel, 0, getter_AddRefs(pi));
-  if (NS_FAILED(res))
-    return res;
-
-  nsAutoCString host, type;
-  int32_t port = -1;
-
-  
-  if (pi) {
-    pi->GetType(type);
-    pi->GetHost(host);
-    pi->GetPort(&port);
-  }
-
-  if (!pi || host.IsEmpty() || port <= 0 || host.EqualsLiteral("direct")) {
-    *result = PL_strdup("DIRECT");
-  } else if (type.EqualsLiteral("http")) {
-    *result = PR_smprintf("PROXY %s:%d", host.get(), port);
-  } else if (type.EqualsLiteral("socks4")) {
-    *result = PR_smprintf("SOCKS %s:%d", host.get(), port);
-  } else if (type.EqualsLiteral("socks")) {
-    
-    
-    
-    
-    
-    *result = PR_smprintf("SOCKS %s:%d", host.get(), port);
-  } else {
-    NS_ASSERTION(false, "Unknown proxy type!");
-    *result = PL_strdup("DIRECT");
-  }
-
-  if (nullptr == *result)
-    res = NS_ERROR_OUT_OF_MEMORY;
-
-  return res;
 }
 
 nsresult nsPluginHost::UnloadPlugins()
