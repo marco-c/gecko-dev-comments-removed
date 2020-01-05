@@ -1,0 +1,11 @@
+
+
+
+
+use dom::bindings::utils::Reflector;
+
+#[dom_struct]
+pub struct CanvasGradient {
+    reflector_: Reflector,
+}
+
