@@ -44,7 +44,7 @@ describe("PageError component:", () => {
     const locationLink = wrapper.find(`.message-location`);
     expect(locationLink.length).toBe(1);
     
-    expect(locationLink.text()).toBe("test-tempfile.js:3:5");
+    expect(locationLink.text()).toBe("test-console-api.html:3:5");
   });
 
   it("displays a [Learn more] link", () => {
@@ -78,7 +78,7 @@ describe("PageError component:", () => {
 
     
     const frameLinks = wrapper.find(`.stack-trace span.frame-link`);
-    expect(frameLinks.length).toBe(3);
+    expect(frameLinks.length).toBe(5);
   });
 
   it("toggle the stacktrace when the collapse button is clicked", () => {
