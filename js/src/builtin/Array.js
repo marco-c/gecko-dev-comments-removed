@@ -810,15 +810,11 @@ function ArrayFrom(items, mapfn=undefined, thisArg=undefined) {
         var A = IsConstructor(C) ? new C() : [];
 
         
-        var iterator = GetIterator(items, usingIterator);
-
-        
         var k = 0;
 
         
-        
-        
-        while (true) {
+        var iteratorWrapper = { [std_iterator]() { return GetIterator(items, usingIterator); } };
+        for (var nextValue of allowContentIter(iteratorWrapper)) {
             
             
             
@@ -829,34 +825,16 @@ function ArrayFrom(items, mapfn=undefined, thisArg=undefined) {
 
 
 
-
+            
+            var mappedValue = mapping ? callContentFunction(mapfn, thisArg, nextValue, k) : nextValue;
 
             
-            var next = callContentFunction(iterator.next, iterator);
-            if (!IsObject(next))
-                ThrowTypeError(JSMSG_NEXT_RETURNED_PRIMITIVE);
-
-            
-            if (next.done) {
-                A.length = k;
-                return A;
-            }
-
-            
-            var nextValue = next.value;
-
-            
-            try {
-                var mappedValue = mapping ? callContentFunction(mapfn, thisArg, nextValue, k) : nextValue;
-
-                
-                _DefineDataProperty(A, k++, mappedValue);
-            } catch (e) {
-                
-                IteratorCloseThrow(iterator);
-                throw e;
-            }
+            _DefineDataProperty(A, k++, mappedValue);
         }
+
+        
+        A.length = k;
+        return A;
     }
 
     

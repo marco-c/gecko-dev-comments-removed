@@ -154,29 +154,6 @@ function GetIterator(obj, method) {
     return iterator;
 }
 
-
-
-function IteratorCloseThrow(iter) {
-    
-
-    
-    var returnMethod = GetMethod(iter, "return");
-
-    
-    if (returnMethod === undefined)
-        return;
-
-    try {
-        
-        callContentFunction(returnMethod, iter);
-    } catch (e) {
-    }
-
-    
-
-    
-}
-
 var _builtinCtorsCache = {__proto__: null};
 
 function GetBuiltinConstructor(builtinName) {
