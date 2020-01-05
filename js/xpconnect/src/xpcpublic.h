@@ -267,13 +267,22 @@ public:
             return true;
         }
 
-        JSString* str = JS_NewExternalString(cx,
-                                             static_cast<char16_t*>(buf->Data()),
-                                             length, &sDOMStringFinalizer);
+        bool isExternal;
+        JSString* str = JS_NewMaybeExternalString(cx,
+                                                  static_cast<char16_t*>(buf->Data()),
+                                                  length, &sDOMStringFinalizer, &isExternal);
         if (!str) {
             return false;
         }
         rval.setString(str);
+
+        
+        
+        if (!isExternal) {
+            *sharedBuffer = false;
+            return true;
+        }
+
         if (!cache) {
             cache = new ZoneStringCache();
             JS_SetZoneUserData(zone, cache);
