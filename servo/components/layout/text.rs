@@ -505,6 +505,7 @@ impl RunMapping {
 
 
 
+
 fn apply_style_transform_if_necessary(string: &mut String,
                                       first_character_position: usize,
                                       text_transform: text_transform::T)
@@ -515,8 +516,8 @@ fn apply_style_transform_if_necessary(string: &mut String,
             let original = string[first_character_position..].to_owned();
             string.truncate(first_character_position);
             let mut count = 0;
-            for character in original.chars() {
-                string.push(character.to_uppercase().next().unwrap());
+            for ch in original.chars().flat_map(|ch| ch.to_uppercase()) {
+                string.push(ch);
                 count += 1;
             }
             count
@@ -525,8 +526,8 @@ fn apply_style_transform_if_necessary(string: &mut String,
             let original = string[first_character_position..].to_owned();
             string.truncate(first_character_position);
             let mut count = 0;
-            for character in original.chars() {
-                string.push(character.to_lowercase().next().unwrap());
+            for ch in original.chars().flat_map(|ch| ch.to_lowercase()) {
+                string.push(ch);
                 count += 1;
             }
             count
