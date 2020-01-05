@@ -111,6 +111,8 @@ private:
             cache.mScripts.Remove(mCachePath);
         }
 
+        void Cancel();
+
         
         
         bool XDREncode(JSContext* cx);
@@ -209,6 +211,9 @@ private:
 
     void ForceWriteCacheFile();
     void Cleanup();
+
+    void FlushCache();
+    void FlushScripts(LinkedList<CachedScript>& scripts);
 
     
     Result<Ok, nsresult> OpenCache();
