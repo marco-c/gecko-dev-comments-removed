@@ -68,7 +68,11 @@ function waitForEvent(eventType, expectedIdOrAcc) {
         }
 
         let event = subject.QueryInterface(nsIAccessibleEvent);
-        Logger.log(eventToString(event));
+        if (Logger.enabled) {
+          
+          
+          Logger.log(eventToString(event));
+        }
 
         
         if (event.eventType !== eventType) {
