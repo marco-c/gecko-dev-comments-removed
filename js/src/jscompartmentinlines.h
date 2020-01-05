@@ -45,13 +45,26 @@ js::AutoCompartment::AutoCompartment(JSContext* cx, const T& target)
 }
 
 
+
 js::AutoCompartment::AutoCompartment(JSContext* cx, JSCompartment* target,
-                                     js::AutoLockForExclusiveAccess* maybeLock )
+                                     js::AutoLockForExclusiveAccess& lock)
   : cx_(cx),
     origin_(cx->compartment()),
-    maybeLock_(maybeLock)
+    maybeLock_(&lock)
 {
-    cx_->enterCompartment(target, maybeLock);
+    MOZ_ASSERT(target->isAtomsCompartment());
+    cx_->enterAtomsCompartment(target, lock);
+}
+
+
+
+js::AutoCompartment::AutoCompartment(JSContext* cx, JSCompartment* target)
+  : cx_(cx),
+    origin_(cx->compartment()),
+    maybeLock_(nullptr)
+{
+    MOZ_ASSERT(!target->isAtomsCompartment());
+    cx_->enterNonAtomsCompartment(target);
 }
 
 js::AutoCompartment::~AutoCompartment()
@@ -61,7 +74,7 @@ js::AutoCompartment::~AutoCompartment()
 
 js::AutoAtomsCompartment::AutoAtomsCompartment(JSContext* cx,
                                                js::AutoLockForExclusiveAccess& lock)
-  : AutoCompartment(cx, cx->atomsCompartment(lock), &lock)
+  : AutoCompartment(cx, cx->atomsCompartment(lock), lock)
 {}
 
 js::AutoCompartmentUnchecked::AutoCompartmentUnchecked(JSContext* cx, JSCompartment* target)

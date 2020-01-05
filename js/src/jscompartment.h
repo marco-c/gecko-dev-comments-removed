@@ -1053,8 +1053,11 @@ class AutoCompartment
     JSCompartment* origin() const { return origin_; }
 
   protected:
+    inline AutoCompartment(JSContext* cx, JSCompartment* target);
+
+    
     inline AutoCompartment(JSContext* cx, JSCompartment* target,
-                           AutoLockForExclusiveAccess* maybeLock = nullptr);
+                           AutoLockForExclusiveAccess& lock);
 
   private:
     AutoCompartment(const AutoCompartment&) = delete;

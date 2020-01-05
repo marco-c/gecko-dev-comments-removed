@@ -203,8 +203,12 @@ struct JSContext : public JS::RootingContext,
   private:
     
     
-    inline void enterCompartment(JSCompartment* c,
-                                 const js::AutoLockForExclusiveAccess* maybeLock = nullptr);
+    
+    
+    inline void enterNonAtomsCompartment(JSCompartment* c);
+    inline void enterAtomsCompartment(JSCompartment* c,
+                                      const js::AutoLockForExclusiveAccess& lock);
+
     friend class js::AutoCompartment;
 
   public:
