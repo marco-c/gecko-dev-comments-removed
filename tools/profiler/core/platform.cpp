@@ -1834,17 +1834,15 @@ ThreadSelected(PS::LockRef aLock, const char* aThreadName)
   return false;
 }
 
-static void
-MaybeSetProfile(PS::LockRef aLock, ThreadInfo* aInfo)
+static bool
+ShouldProfileThread(PS::LockRef aLock, ThreadInfo* aInfo)
 {
   
 
   MOZ_RELEASE_ASSERT(gPS);
 
-  if ((aInfo->IsMainThread() || gPS->FeatureThreads(aLock)) &&
-      ThreadSelected(aLock, aInfo->Name())) {
-    aInfo->SetHasProfile();
-  }
+  return ((aInfo->IsMainThread() || gPS->FeatureThreads(aLock)) &&
+          ThreadSelected(aLock, aInfo->Name()));
 }
 
 
@@ -1886,14 +1884,15 @@ locked_register_thread(PS::LockRef aLock, const char* aName, void* stackTop)
   ThreadInfo* info = new ThreadInfo(aName, Thread::GetCurrentId(),
                                     NS_IsMainThread(), stack, stackTop);
 
-  MaybeSetProfile(aLock, info);
+  if (ShouldProfileThread(aLock, info)) {
+    info->SetHasProfile();
 
-  
-  if (gPS->IsActive(aLock) && info->HasProfile() && gPS->FeatureJS(aLock)) {
-    
-    
-    stack->startJSSampling();
-    stack->pollJSSampling();
+    if (gPS->IsActive(aLock) && gPS->FeatureJS(aLock)) {
+      
+      
+      stack->startJSSampling();
+      stack->pollJSSampling();
+    }
   }
 
   gPS->Threads(aLock).push_back(info);
@@ -2354,13 +2353,15 @@ locked_profiler_start(PS::LockRef aLock, int aEntries, double aInterval,
   for (uint32_t i = 0; i < threads.size(); i++) {
     ThreadInfo* info = threads.at(i);
 
-    MaybeSetProfile(aLock, info);
+    if (ShouldProfileThread(aLock, info)) {
+      info->SetHasProfile();
 
-    if (info->HasProfile() && !info->IsPendingDelete()) {
-      info->Stack()->reinitializeOnResume();
+      if (!info->IsPendingDelete()) {
+        info->Stack()->reinitializeOnResume();
 
-      if (featureJS) {
-        info->Stack()->startJSSampling();
+        if (featureJS) {
+          info->Stack()->startJSSampling();
+        }
       }
     }
   }
