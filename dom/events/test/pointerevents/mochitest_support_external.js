@@ -81,56 +81,60 @@ var MouseEventHelper = (function() {
   };
 }) ();
 
+function createMouseEvent(aEventType, aParams) {
+  var eventObj = {type: aEventType};
+
+  
+  eventObj.inputSource =
+    (aParams && "inputSource" in aParams) ? aParams.inputSource :
+                                          MouseEvent.MOZ_SOURCE_MOUSE;
+  
+  eventObj.id =
+    (eventObj.inputSource === MouseEvent.MOZ_SOURCE_MOUSE) ? MouseEventHelper.MOUSE_ID :
+                                                             MouseEventHelper.PEN_ID;
+  
+  var isButtonEvent = aEventType === "mouseup" || aEventType === "mousedown";
+
+  
+  eventObj.button = isButtonEvent ? MouseEventHelper.BUTTON_LEFT
+                                  : MouseEventHelper.BUTTON_NONE;
+
+  
+  if (aParams && "button" in aParams) {
+    var hasButtonValue = (aParams.button !== MouseEventHelper.BUTTON_NONE);
+    ok(!isButtonEvent || hasButtonValue,
+       "Inappropriate |button| value caught.");
+    eventObj.button = aParams.button;
+  }
+
+  
+  var buttonsMask = MouseEventHelper.computeButtonsMaskFromButton(eventObj.button);
+  switch(aEventType) {
+    case "mousedown":
+      MouseEventHelper.BUTTONS_STATE |= buttonsMask; 
+      break;
+    case "mouseup":
+      MouseEventHelper.BUTTONS_STATE &= ~buttonsMask; 
+      break;
+  }
+  eventObj.buttons = MouseEventHelper.BUTTONS_STATE;
+
+  
+  
+  
+  
+  if (aEventType === "mousemove") {
+    eventObj.button = MouseEventHelper.BUTTON_LEFT;
+  }
+  return eventObj;
+}
+
 
 function sendMouseEvent(int_win, elemId, mouseEventType, params) {
   var elem = int_win.document.getElementById(elemId);
-  if(!!elem) {
+  if (elem) {
     var rect = elem.getBoundingClientRect();
-    var eventObj = {type: mouseEventType};
-
-    
-    eventObj.inputSource =
-      (params && "inputSource" in params) ? params.inputSource :
-                                            MouseEvent.MOZ_SOURCE_MOUSE;
-    
-    eventObj.id =
-      (eventObj.inputSource === MouseEvent.MOZ_SOURCE_MOUSE) ? MouseEventHelper.MOUSE_ID :
-                                                               MouseEventHelper.PEN_ID;
-    
-    var isButtonEvent = mouseEventType === "mouseup" ||
-                        mouseEventType === "mousedown";
-
-    
-    eventObj.button = isButtonEvent ? MouseEventHelper.BUTTON_LEFT
-                                    : MouseEventHelper.BUTTON_NONE;
-
-    
-    if (params && "button" in params) {
-      var hasButtonValue = (params.button !== MouseEventHelper.BUTTON_NONE);
-      ok(!isButtonEvent || hasButtonValue,
-         "Inappropriate |button| value caught.");
-      eventObj.button = params.button;
-    }
-
-    
-    var buttonsMask = MouseEventHelper.computeButtonsMaskFromButton(eventObj.button);
-    switch(mouseEventType) {
-      case "mousedown":
-        MouseEventHelper.BUTTONS_STATE |= buttonsMask; 
-        break;
-      case "mouseup":
-        MouseEventHelper.BUTTONS_STATE &= ~buttonsMask; 
-        break;
-    }
-    eventObj.buttons = MouseEventHelper.BUTTONS_STATE;
-
-    
-    
-    
-    
-    if (mouseEventType === "mousemove") {
-      eventObj.button = MouseEventHelper.BUTTON_LEFT;
-    }
+    var eventObj = createMouseEvent(mouseEventType, params);
 
     
     
@@ -143,6 +147,13 @@ function sendMouseEvent(int_win, elemId, mouseEventType, params) {
   } else {
     is(!!elem, true, "Document should have element with id: " + elemId);
   }
+}
+
+
+function sendMouseEventAtPoint(aWindow, aLeft, aTop, aMouseEventType, aParams) {
+  var eventObj = createMouseEvent(aMouseEventType, aParams);
+  console.log(eventObj);
+  synthesizeMouseAtPoint(aLeft, aTop, eventObj, aWindow);
 }
 
 
