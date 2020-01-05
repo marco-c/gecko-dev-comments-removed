@@ -1177,6 +1177,12 @@ Parser<ParseHandler>::tryDeclareVar(HandlePropertyName name, DeclarationKind kin
                     *redeclaredKind = Some(declaredKind);
                     return true;
                 }
+            } else if (kind == DeclarationKind::VarForAnnexBLexicalFunction) {
+                MOZ_ASSERT(DeclarationKindIsParameter(declaredKind));
+
+                
+                *redeclaredKind = Some(declaredKind);
+                return true;
             }
         } else {
             if (!scope->addDeclaredName(pc, p, name, kind))
