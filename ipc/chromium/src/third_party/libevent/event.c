@@ -1257,6 +1257,14 @@ static inline void
 event_persist_closure(struct event_base *base, struct event *ev)
 {
 	
+	void (*evcb_callback)(evutil_socket_t, short, void *);
+
+        
+        evutil_socket_t evcb_fd;
+        short evcb_res;
+        void *evcb_arg;
+
+	
 	if (ev->ev_io_timeout.tv_sec || ev->ev_io_timeout.tv_usec) {
 		
 
@@ -1297,8 +1305,18 @@ event_persist_closure(struct event_base *base, struct event *ev)
 		run_at.tv_usec |= usec_mask;
 		event_add_internal(ev, &run_at, 1);
 	}
-	EVBASE_RELEASE_LOCK(base, th_base_lock);
-	(*ev->ev_callback)(ev->ev_fd, ev->ev_res, ev->ev_arg);
+
+	
+	evcb_callback = ev->ev_callback;
+        evcb_fd = ev->ev_fd;
+        evcb_res = ev->ev_res;
+        evcb_arg = ev->ev_arg;
+
+	
+ 	EVBASE_RELEASE_LOCK(base, th_base_lock);
+
+	
+        (evcb_callback)(evcb_fd, evcb_res, evcb_arg);
 }
 
 

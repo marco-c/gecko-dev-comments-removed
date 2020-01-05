@@ -153,6 +153,18 @@ struct evbuffer {
 	struct bufferevent *parent;
 };
 
+#if _EVENT_SIZEOF_OFF_T < _EVENT_SIZEOF_SIZE_T
+typedef ev_ssize_t ev_misalign_t;
+#define EVBUFFER_CHAIN_MAX ((size_t)EV_SSIZE_MAX)
+#else
+typedef ev_off_t ev_misalign_t;
+#if _EVENT_SIZEOF_OFF_T > _EVENT_SIZEOF_SIZE_T
+#define EVBUFFER_CHAIN_MAX EV_SIZE_MAX
+#else
+#define EVBUFFER_CHAIN_MAX ((size_t)EV_SSIZE_MAX)
+#endif
+#endif
+
 
 struct evbuffer_chain {
 	
@@ -163,7 +175,7 @@ struct evbuffer_chain {
 
 	
 
-	ev_off_t misalign;
+	ev_misalign_t misalign;
 
 	
 

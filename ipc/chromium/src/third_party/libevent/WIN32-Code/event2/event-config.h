@@ -277,7 +277,7 @@
 
 
 
-#define _EVENT_NUMERIC_VERSION 0x02001500
+#define _EVENT_NUMERIC_VERSION 0x02001600
 
 
 #define _EVENT_PACKAGE "libevent"
@@ -334,7 +334,7 @@
 #define _EVENT_TIME_WITH_SYS_TIME 1
 
 
-#define _EVENT_VERSION "2.0.21-stable"
+#define _EVENT_VERSION "2.0.22-stable"
 
 
 #define _EVENT___func__ __FUNCTION__

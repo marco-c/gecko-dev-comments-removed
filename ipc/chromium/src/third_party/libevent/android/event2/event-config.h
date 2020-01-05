@@ -27,7 +27,7 @@
 #define _EVENT_HAVE_ARC4RANDOM 1
 
 
-#define _EVENT_HAVE_ARC4RANDOM_BUF 1
+
 
 
 #define _EVENT_HAVE_ARPA_INET_H 1
@@ -64,7 +64,7 @@
 #define _EVENT_HAVE_EPOLL_CTL 1
 
 
-
+#define _EVENT_HAVE_EVENTFD 1
 
 
 
@@ -271,7 +271,7 @@
 #define _EVENT_HAVE_SYS_EPOLL_H 1
 
 
-
+#define _EVENT_HAVE_SYS_EVENTFD_H 1
 
 
 
@@ -371,7 +371,7 @@
 
 
 
-#define _EVENT_NUMERIC_VERSION 0x02001500
+#define _EVENT_NUMERIC_VERSION 0x02001600
 
 
 #define _EVENT_PACKAGE "libevent"
@@ -418,6 +418,13 @@
 
 
 #ifdef __LP64__
+#define _EVENT_SIZEOF_OFF_T 8
+#else
+#define _EVENT_SIZEOF_OFF_T 4
+#endif
+
+
+#ifdef __LP64__
 #define _EVENT_SIZEOF_PTHREAD_T 8
 #else
 #define _EVENT_SIZEOF_PTHREAD_T 4
@@ -447,7 +454,7 @@
 #define _EVENT_TIME_WITH_SYS_TIME 1
 
 
-#define _EVENT_VERSION "2.0.21-stable"
+#define _EVENT_VERSION "2.0.22-stable"
 
 
 

@@ -370,7 +370,7 @@
 
 
 
-#define _EVENT_NUMERIC_VERSION 0x02001500
+#define _EVENT_NUMERIC_VERSION 0x02001600
 
 
 #define _EVENT_PACKAGE "libevent"
@@ -398,50 +398,28 @@
 
 
 
-
-
-
-
-
 #define _EVENT_SIZEOF_INT 4
 
 
-#ifdef __LP64__
 #define _EVENT_SIZEOF_LONG 8
-#else
-#define _EVENT_SIZEOF_LONG 4
-#endif
 
 
 #define _EVENT_SIZEOF_LONG_LONG 8
 
 
-#ifdef __LP64__
+#define _EVENT_SIZEOF_OFF_T 8
+
+
 #define _EVENT_SIZEOF_PTHREAD_T 8
-#else
-#define _EVENT_SIZEOF_PTHREAD_T 4
-#endif
 
 
 #define _EVENT_SIZEOF_SHORT 2
 
 
-#ifdef __LP64__
 #define _EVENT_SIZEOF_SIZE_T 8
-#else
-#define _EVENT_SIZEOF_SIZE_T 4
-#endif
 
 
-#ifdef __LP64__
 #define _EVENT_SIZEOF_VOID_P 8
-#else
-#define _EVENT_SIZEOF_VOID_P 4
-#endif
-
-
-
-
 
 
 #define _EVENT_STDC_HEADERS 1
@@ -450,7 +428,7 @@
 #define _EVENT_TIME_WITH_SYS_TIME 1
 
 
-#define _EVENT_VERSION "2.0.21-stable"
+#define _EVENT_VERSION "2.0.22-stable"
 
 
 

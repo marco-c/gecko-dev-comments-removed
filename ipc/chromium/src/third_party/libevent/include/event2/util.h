@@ -652,6 +652,9 @@ const char *evutil_gai_strerror(int err);
 
 
 
+
+
+
 void evutil_secure_rng_get_bytes(void *buf, size_t n);
 
 
@@ -671,6 +674,21 @@ void evutil_secure_rng_get_bytes(void *buf, size_t n);
 
 
 int evutil_secure_rng_init(void);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+int evutil_secure_rng_set_urandom_device_file(char *fname);
 
 #if !defined(__OpenBSD__) && !defined(ANDROID)
 
