@@ -7,6 +7,14 @@
 
 #include "SSE.h"
 
+#ifdef HAVE_CPUID_H
+
+#include <cpuid.h>
+#elif defined(_MSC_VER) && (defined(_M_IX86) || defined(_M_AMD64))
+
+#include <intrin.h>
+#endif
+
 namespace {
 
 
@@ -15,9 +23,6 @@ namespace {
 
 
 #ifdef HAVE_CPUID_H
-
-
-#include <cpuid.h>
 
 enum CPUIDRegister { eax = 0, ebx = 1, ecx = 2, edx = 3 };
 
@@ -44,9 +49,6 @@ static uint64_t xgetbv(uint32_t xcr) {
 }
 
 #elif defined(_MSC_VER) && (defined(_M_IX86) || defined(_M_AMD64))
-
-
-#include <intrin.h>
 
 enum CPUIDRegister { eax = 0, ebx = 1, ecx = 2, edx = 3 };
 
