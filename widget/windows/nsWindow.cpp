@@ -3532,7 +3532,8 @@ NS_IMETHODIMP nsWindow::SetTitle(const nsAString& aTitle)
 
 
 
-NS_IMETHODIMP nsWindow::SetIcon(const nsAString& aIconSpec) 
+void
+nsWindow::SetIcon(const nsAString& aIconSpec)
 {
   
 
@@ -3540,7 +3541,7 @@ NS_IMETHODIMP nsWindow::SetIcon(const nsAString& aIconSpec)
   ResolveIconName(aIconSpec, NS_LITERAL_STRING(".ico"),
                   getter_AddRefs(iconFile));
   if (!iconFile)
-    return NS_OK; 
+    return;
 
   nsAutoString iconPath;
   iconFile->GetPath(iconPath);
@@ -3590,7 +3591,6 @@ NS_IMETHODIMP nsWindow::SetIcon(const nsAString& aIconSpec)
             cPath.get(), ::GetLastError()));
   }
 #endif
-  return NS_OK;
 }
 
 

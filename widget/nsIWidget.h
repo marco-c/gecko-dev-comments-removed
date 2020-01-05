@@ -1318,7 +1318,6 @@ class nsIWidget : public nsISupports
 
 
 
-
     NS_IMETHOD SetTitle(const nsAString& aTitle) = 0;
 
     
@@ -1329,8 +1328,7 @@ class nsIWidget : public nsISupports
 
 
 
-
-    NS_IMETHOD SetIcon(const nsAString& anIconSpec) = 0;
+    virtual void SetIcon(const nsAString& aIconSpec) = 0;
 
     
 
