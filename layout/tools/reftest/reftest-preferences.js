@@ -30,6 +30,8 @@ user_pref("urlclassifier.updateinterval", 172800);
 user_pref("image.downscale-during-decode.enabled", false);
 
 
+
+
 user_pref("security.fileuri.strict_origin_policy", false);
 
 user_pref("browser.pagethumbnails.capturing_disabled", true);
