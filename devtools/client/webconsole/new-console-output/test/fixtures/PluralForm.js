@@ -1,0 +1,18 @@
+
+
+
+"use strict";
+
+module.exports = {
+  PluralForm: {
+    get: function (occurence, str) {
+      
+      
+      if (str === "messageRepeats.tooltip2") {
+        return `${occurence} repeats`;
+      }
+
+      return str;
+    }
+  }
+};
