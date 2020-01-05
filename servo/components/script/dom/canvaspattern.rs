@@ -4,6 +4,7 @@
 
 use dom::bindings::utils::Reflector;
 
+
 #[dom_struct]
 pub struct CanvasPattern {
     reflector_: Reflector,

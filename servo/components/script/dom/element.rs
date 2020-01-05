@@ -497,7 +497,7 @@ impl<'a> ElementHelpers<'a> for JSRef<'a, Element> {
         }
         match self.local_name.as_slice() {
             /* List of void elements from
-            https://www.whatwg.org/specs/web-apps/current-work/multipage/the-end.html#html-fragment-serialization-algorithm */
+            https://html.spec.whatwg.org/multipage/#html-fragment-serialisation-algorithm */
             "area" | "base" | "basefont" | "bgsound" | "br" | "col" | "embed" |
             "frame" | "hr" | "img" | "input" | "keygen" | "link" | "menuitem" |
             "meta" | "param" | "source" | "track" | "wbr" => true,
@@ -602,10 +602,10 @@ impl<'a> ElementHelpers<'a> for JSRef<'a, Element> {
 }
 
 pub trait FocusElementHelpers {
-    /// https://html.spec.whatwg.org/multipage/interaction.html#focusable-area
+    /// https://html.spec.whatwg.org/multipage/#focusable-area
     fn is_focusable_area(self) -> bool;
 
-    /// https://html.spec.whatwg.org/multipage/scripting.html#concept-element-disabled
+    /// https://html.spec.whatwg.org/multipage/#concept-element-disabled
     fn is_actually_disabled(self) -> bool;
 }
 
@@ -616,7 +616,7 @@ impl<'a> FocusElementHelpers for JSRef<'a, Element> {
         }
         // TODO: Check whether the element is being rendered (i.e. not hidden).
         // TODO: Check the tabindex focus flag.
-        // https://html.spec.whatwg.org/multipage/interaction.html#specially-focusable
+        // https://html.spec.whatwg.org/multipage/#specially-focusable
         let node: JSRef<Node> = NodeCast::from_ref(self);
         match node.type_id() {
             NodeTypeId::Element(ElementTypeId::HTMLElement(HTMLElementTypeId::HTMLAnchorElement)) |
@@ -1481,8 +1481,7 @@ impl<'a> style::node::TElement<'a> for JSRef<'a, Element> {
         // FIXME: This is HTML only.
         let node: JSRef<Node> = NodeCast::from_ref(self);
         match node.type_id() {
-            // https://www.whatwg.org/specs/web-apps/current-work/multipage/selectors.html#
-            // selector-link
+            // https://html.spec.whatwg.org/multipage/#selector-link
             NodeTypeId::Element(ElementTypeId::HTMLElement(HTMLElementTypeId::HTMLAnchorElement)) |
             NodeTypeId::Element(ElementTypeId::HTMLElement(HTMLElementTypeId::HTMLAreaElement)) |
             NodeTypeId::Element(ElementTypeId::HTMLElement(HTMLElementTypeId::HTMLLinkElement)) => self.get_attr(&ns!(""), &atom!("href")),
@@ -1514,7 +1513,7 @@ impl<'a> style::node::TElement<'a> for JSRef<'a, Element> {
     fn get_focus_state(self) -> bool {
         // TODO: Also check whether the top-level browsing context has the system focus,
         // and whether this element is a browsing context container.
-        // https://html.spec.whatwg.org/multipage/scripting.html#selector-focus
+        // https://html.spec.whatwg.org/multipage/#selector-focus
         let node: JSRef<Node> = NodeCast::from_ref(self);
         node.get_focus_state()
     }

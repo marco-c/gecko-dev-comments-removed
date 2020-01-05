@@ -42,22 +42,27 @@ impl<'a> LocationMethods for JSRef<'a, Location> {
         self.window.root().r().load_url(url);
     }
 
+    
     fn Href(self) -> USVString {
         UrlHelper::Href(&self.get_url())
     }
 
+    
     fn Pathname(self) -> USVString {
         UrlHelper::Pathname(&self.get_url())
     }
 
+    
     fn Stringify(self) -> DOMString {
         self.Href().0
     }
 
+    
     fn Search(self) -> USVString {
         UrlHelper::Search(&self.get_url())
     }
 
+    
     fn Hash(self) -> USVString {
         UrlHelper::Hash(&self.get_url())
     }

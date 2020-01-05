@@ -15,6 +15,7 @@ use js::jsapi::JSContext;
 use js::jsval::{JSVal, NullValue};
 use util::str::DOMString;
 
+
 #[dom_struct]
 pub struct CustomEvent {
     event: Event,
@@ -53,10 +54,12 @@ impl CustomEvent {
 }
 
 impl<'a> CustomEventMethods for JSRef<'a, CustomEvent> {
+    
     fn Detail(self, _cx: *mut JSContext) -> JSVal {
         self.detail.get()
     }
 
+    
     fn InitCustomEvent(self,
                        _cx: *mut JSContext,
                        type_: DOMString,

@@ -11,10 +11,12 @@ use std::borrow::ToOwned;
 pub struct UrlHelper;
 
 impl UrlHelper {
+    
     pub fn Href(url: &Url) -> USVString {
         USVString(url.serialize())
     }
 
+    
     pub fn Search(url: &Url) -> USVString {
         USVString(match url.query {
             None => "".to_owned(),
@@ -23,6 +25,7 @@ impl UrlHelper {
         })
     }
 
+    
     pub fn Hash(url: &Url) -> USVString {
         USVString(match url.fragment {
             None => "".to_owned(),
@@ -31,8 +34,8 @@ impl UrlHelper {
         })
     }
 
+    
     pub fn Pathname(url: &Url) -> USVString {
-        
         
         USVString(match url.scheme_data {
             SchemeData::NonRelative(ref scheme_data) => scheme_data.clone(),

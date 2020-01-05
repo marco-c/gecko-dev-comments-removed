@@ -25,6 +25,7 @@ use util::str::DOMString;
 
 use std::borrow::ToOwned;
 
+
 #[dom_struct]
 pub struct DOMImplementation {
     reflector_: Reflector,

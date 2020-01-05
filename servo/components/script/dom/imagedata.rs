@@ -73,14 +73,17 @@ impl<'a> ImageDataHelpers for JSRef<'a, ImageData> {
 }
 
 impl<'a> ImageDataMethods for JSRef<'a, ImageData> {
+    
     fn Width(self) -> u32 {
         self.width
     }
 
+    
     fn Height(self) -> u32 {
         self.height
     }
 
+    
     fn Data(self, _: *mut JSContext) -> *mut JSObject {
         self.data
     }

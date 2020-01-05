@@ -13,6 +13,7 @@ use dom::bindings::num::Finite;
 use dom::bindings::utils::{Reflector, reflect_dom_object};
 use dom::canvasrenderingcontext2d::parse_color;
 
+
 #[dom_struct]
 pub struct CanvasGradient {
     reflector_: Reflector,
@@ -42,6 +43,7 @@ impl CanvasGradient {
 }
 
 impl<'a> CanvasGradientMethods for JSRef<'a, CanvasGradient> {
+    
     fn AddColorStop(self, offset: Finite<f32>, color: String) {
         let default_black = RGBA {
             red: 0.0,

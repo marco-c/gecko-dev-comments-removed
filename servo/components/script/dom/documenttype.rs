@@ -14,6 +14,7 @@ use util::str::DOMString;
 use std::borrow::ToOwned;
 
 
+
 #[dom_struct]
 pub struct DocumentType {
     node: Node,
@@ -71,14 +72,17 @@ impl DocumentType {
 }
 
 impl<'a> DocumentTypeMethods for JSRef<'a, DocumentType> {
+    
     fn Name(self) -> DOMString {
         self.name.clone()
     }
 
+    
     fn PublicId(self) -> DOMString {
         self.public_id.clone()
     }
 
+    
     fn SystemId(self) -> DOMString {
         self.system_id.clone()
     }
