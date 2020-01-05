@@ -19,6 +19,8 @@ pub struct SelectedFile {
     pub type_string: String,
 }
 
+
+
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct FilterPattern(pub String);
 
