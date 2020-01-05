@@ -394,11 +394,6 @@ class ScriptMixin(PlatformMixin):
         if parsed_url.scheme in ('http', 'https'):
             expected_file_size = int(response.headers.get('Content-Length'))
 
-        self.info('Http code: {}'.format(response.getcode()))
-        for k in sorted(response.headers.keys()):
-            if k.lower().startswith('x-amz-') or k in ('Content-Encoding', 'Content-Type', 'via'):
-                self.info('{}: {}'.format(k, response.headers.get(k)))
-
         file_contents = response.read()
         obtained_file_size = len(file_contents)
         self.info('Expected file size: {}'.format(expected_file_size))
@@ -689,8 +684,7 @@ class ScriptMixin(PlatformMixin):
             function(**kwargs)
         except zipfile.BadZipfile:
             
-            
-            self.fatal('Check bug 1306189 for details on downloading a truncated zip file.')
+            self.exception(level=FATAL)
 
 
     def load_json_url(self, url, error_level=None, *args, **kwargs):
