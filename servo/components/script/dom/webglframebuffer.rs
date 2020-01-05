@@ -5,6 +5,7 @@
 
 use canvas_traits::CanvasMsg;
 use dom::bindings::codegen::Bindings::WebGLFramebufferBinding;
+use dom::bindings::codegen::Bindings::WebGLRenderingContextBinding::WebGLRenderingContextConstants as constants;
 use dom::bindings::global::GlobalRef;
 use dom::bindings::js::Root;
 use dom::bindings::reflector::reflect_dom_object;
@@ -77,6 +78,12 @@ impl WebGLFramebuffer {
 
     pub fn is_deleted(&self) -> bool {
         self.is_deleted.get()
+    }
+
+    pub fn check_status(&self) -> u32 {
+        
+        
+        return constants::FRAMEBUFFER_UNSUPPORTED;
     }
 
     pub fn target(&self) -> Option<u32> {
