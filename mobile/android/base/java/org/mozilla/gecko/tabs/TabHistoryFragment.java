@@ -124,7 +124,10 @@ public class TabHistoryFragment extends Fragment implements OnItemClickListener,
         dismissed = false;
         transaction.add(containerViewId, this, tag);
         transaction.addToBackStack(tag);
-        backStackId = transaction.commit();
+        
+        
+        
+        backStackId = transaction.commitAllowingStateLoss();
     }
 
     

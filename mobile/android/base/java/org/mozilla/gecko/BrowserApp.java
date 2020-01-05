@@ -648,9 +648,20 @@ public class BrowserApp extends GeckoApp
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
+                        if (BrowserApp.this.isFinishing()) {
+                            
+                            
+                            
+                            
+                            
+                            
+                            return;
+                        }
+
                         final TabHistoryFragment fragment = TabHistoryFragment.newInstance(historyPageList, toIndex);
                         final FragmentManager fragmentManager = getSupportFragmentManager();
                         GeckoAppShell.vibrateOnHapticFeedbackEnabled(getResources().getIntArray(R.array.long_press_vibrate_msec));
+                        if (BrowserApp.this.isForegrounded())
                         fragment.show(R.id.tab_history_panel, fragmentManager.beginTransaction(), TAB_HISTORY_FRAGMENT_TAG);
                     }
                 });
@@ -1061,6 +1072,7 @@ public class BrowserApp extends GeckoApp
     @Override
     public void onResume() {
         super.onResume();
+
         if (mIsAbortingAppLaunch) {
             return;
         }
