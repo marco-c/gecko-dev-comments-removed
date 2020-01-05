@@ -88,7 +88,7 @@ pref("security.pki.netscape_step_up_policy", 2);
 
 
 
-pref("security.pki.certificate_transparency.mode", 1);
+pref("security.pki.certificate_transparency.mode", 0);
 
 pref("security.webauth.u2f", false);
 pref("security.webauth.u2f_enable_softtoken", false);
