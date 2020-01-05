@@ -2,6 +2,12 @@
 
 
 
+
+
+
+
+#[deny(missing_docs)]
+
 extern crate devtools_traits;
 extern crate geom;
 extern crate libc;
@@ -10,11 +16,6 @@ extern crate net_traits;
 extern crate util;
 extern crate url;
 extern crate webdriver_traits;
-
-
-
-
-
 
 use devtools_traits::DevtoolsControlChan;
 use libc::c_void;
@@ -39,11 +40,18 @@ use geom::rect::Rect;
 pub struct UntrustedNodeAddress(pub *const c_void);
 unsafe impl Send for UntrustedNodeAddress {}
 
+
 pub struct NewLayoutInfo {
+    
     pub containing_pipeline_id: PipelineId,
+    
     pub new_pipeline_id: PipelineId,
+    
     pub subpage_id: SubpageId,
-    pub layout_chan: Box<Any+Send>, 
+    
+    
+    pub layout_chan: Box<Any+Send>,
+    
     pub load_data: LoadData,
 }
 
@@ -84,18 +92,27 @@ pub enum ConstellationControlMsg {
 
 #[derive(Clone, Debug)]
 pub enum MouseButton {
+    
     Left,
+    
     Middle,
+    
     Right,
 }
 
 
 pub enum CompositorEvent {
+    
     ResizeEvent(WindowSizeData),
+    
     ClickEvent(MouseButton, Point2D<f32>),
+    
     MouseDownEvent(MouseButton, Point2D<f32>),
+    
     MouseUpEvent(MouseButton, Point2D<f32>),
+    
     MouseMoveEvent(Point2D<f32>),
+    
     KeyEvent(Key, KeyState, KeyModifiers),
 }
 
