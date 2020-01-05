@@ -404,8 +404,12 @@ mozJSComponentLoader::LoadModule(FileLocation& aFile)
     }
 
     if (JS_TypeOfValue(cx, NSGetFactory_val) != JSTYPE_FUNCTION) {
-        JS_ReportError(cx, "%s has NSGetFactory property that is not a function",
-                       spec.get());
+        
+
+
+
+        JS_ReportErrorLatin1(cx, "%s has NSGetFactory property that is not a function",
+                             spec.get());
         return nullptr;
     }
 
