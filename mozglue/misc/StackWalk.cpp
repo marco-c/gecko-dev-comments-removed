@@ -357,6 +357,10 @@ WalkStackMain64(struct WalkStackData* aData)
   });
 #endif
 
+#ifdef _M_AMD64
+  bool firstFrame = true;
+#endif
+
   
   int skip = (aData->walkCallingThread ? 3 : 0) + aData->skipFrames;
 
@@ -416,26 +420,29 @@ WalkStackMain64(struct WalkStackData* aData)
     PRUNTIME_FUNCTION runtimeFunction =
       RtlLookupFunctionEntry(context.Rip, &imageBase, NULL);
 
-    if (!runtimeFunction) {
+    if (runtimeFunction) {
+      PVOID dummyHandlerData;
+      ULONG64 dummyEstablisherFrame;
+      RtlVirtualUnwind(UNW_FLAG_NHANDLER,
+                       imageBase,
+                       context.Rip,
+                       runtimeFunction,
+                       &context,
+                       &dummyHandlerData,
+                       &dummyEstablisherFrame,
+                       nullptr);
+    } else if (firstFrame) {
       
+      context.Rip = *reinterpret_cast<DWORD64*>(context.Rsp);
+      context.Rsp += sizeof(void*);
+    } else {
       
       break;
     }
 
-    PVOID dummyHandlerData;
-    ULONG64 dummyEstablisherFrame;
-    RtlVirtualUnwind(UNW_FLAG_NHANDLER,
-                     imageBase,
-                     context.Rip,
-                     runtimeFunction,
-                     &context,
-                     &dummyHandlerData,
-                     &dummyEstablisherFrame,
-                     nullptr);
-
     addr = context.Rip;
     spaddr = context.Rsp;
-
+    firstFrame = false;
 #else
 #error "unknown platform"
 #endif
