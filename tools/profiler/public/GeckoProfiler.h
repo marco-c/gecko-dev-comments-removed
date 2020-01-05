@@ -275,14 +275,6 @@ static inline void profiler_get_buffer_info(uint32_t* aCurrentPosition,
 }
 
 
-
-
-PROFILER_FUNC_VOID(profiler_lock())
-
-
-PROFILER_FUNC_VOID(profiler_unlock())
-
-
 PROFILER_FUNC_VOID(profiler_register_thread(const char* name,
                                             void* guessStackTop))
 PROFILER_FUNC_VOID(profiler_unregister_thread())
