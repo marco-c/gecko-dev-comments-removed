@@ -2,6 +2,7 @@
 
 
 
+use std::env;
 use std::fs::File;
 use std::io::{self, Read};
 use std::path::PathBuf;
@@ -25,35 +26,35 @@ pub fn resources_dir_path() -> PathBuf {
 
 #[cfg(not(target_os = "android"))]
 pub fn resources_dir_path() -> PathBuf {
-    use std::env;
+    let mut dir = CMD_RESOURCE_DIR.lock().unwrap();
 
-    match *CMD_RESOURCE_DIR.lock().unwrap() {
-        Some(ref path) => PathBuf::from(path),
-        None => {
+    if let Some(ref path) = *dir {
+        return PathBuf::from(path);
+    }
+
+    
+    
+    
+    let mut path = env::current_exe().expect("can't get exe path");
+    
+    path = path.canonicalize().expect("path does not exist");
+    path.pop();
+    path.push("resources");
+    if !path.is_dir() {   
+        
+        path.pop();
+        path.pop();
+        path.pop();
+        path.push("resources");
+        if !path.is_dir() {
             
-            
-            
-            let mut path = env::current_exe().expect("can't get exe path");
-            
-            path = path.canonicalize().expect("path does not exist");
+            path.pop();
             path.pop();
             path.push("resources");
-            if !path.is_dir() {   
-                
-                path.pop();
-                path.pop();
-                path.pop();
-                path.push("resources");
-                if !path.is_dir() {
-                    
-                    path.pop();
-                    path.pop();
-                    path.push("resources");
-                }
-            }
-            path
         }
     }
+    *dir = Some(path.to_str().unwrap().to_owned());
+    path
 }
 
 pub fn read_resource_file(relative_path_components: &[&str]) -> io::Result<Vec<u8>> {
