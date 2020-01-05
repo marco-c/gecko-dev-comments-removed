@@ -142,8 +142,7 @@ MediaKeySystemAccessManager::Request(DetailedPromise* aPromise,
 
   if ((status == MediaKeySystemStatus::Cdm_not_installed ||
        status == MediaKeySystemStatus::Cdm_insufficient_version) &&
-      (!CompareUTF8toUTF16(kEMEKeySystemPrimetime, keySystem) ||
-       !CompareUTF8toUTF16(kEMEKeySystemWidevine, keySystem))) {
+      (IsPrimetimeKeySystem(keySystem) || IsWidevineKeySystem(keySystem))) {
     
     
     
