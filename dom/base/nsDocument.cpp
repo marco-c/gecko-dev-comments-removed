@@ -7932,12 +7932,9 @@ nsDocument::GetEventTargetParent(EventChainPreVisitor& aVisitor)
 
   
   if (aVisitor.mEvent->mMessage != eLoad) {
-    nsPIDOMWindowInner* innerWindow = GetInnerWindow();
-    if (innerWindow && innerWindow->IsCurrentInnerWindow()) {
-      nsGlobalWindow* window = nsGlobalWindow::Cast(GetWindow());
-      aVisitor.mParentTarget =
-        window ? window->GetTargetForEventTargetChain() : nullptr;
-    }
+    nsGlobalWindow* window = nsGlobalWindow::Cast(GetWindow());
+    aVisitor.mParentTarget =
+      window ? window->GetTargetForEventTargetChain() : nullptr;
   }
   return NS_OK;
 }
