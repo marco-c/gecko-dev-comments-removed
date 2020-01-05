@@ -5,43 +5,25 @@
 
 
 
-
-var {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
+var {interfaces: Ci, utils: Cu} = Components;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 
 
-
-
-var gContent = content;
-
-
 docShell.isAppTab = true;
-var gHookedWindowCloseForPanelClose = false;
 
-var gDOMContentLoaded = false;
 addEventListener("DOMContentLoaded", function(event) {
-  if (event.target == content.document) {
-    gDOMContentLoaded = true;
-    sendAsyncMessage("DOMContentLoaded");
+  if (event.target != content.document)
+    return;
+  
+  
+  
+  if (content && !content.opener) {
+    content.opener = content;
   }
-});
-addEventListener("unload", function(event) {
-  if (event.target == content.document) {
-    gDOMContentLoaded = false;
-    gHookedWindowCloseForPanelClose = false;
-  }
-}, true);
-
-var gDOMTitleChangedByUs = false;
-addEventListener("DOMTitleChanged", function(e) {
-  if (!gDOMTitleChangedByUs) {
-    sendAsyncMessage("Social:DOMTitleChanged", {
-      title: e.target.title
-    });
-  }
-  gDOMTitleChangedByUs = false;
+  hookWindowClose();
+  disableDialogs();
 });
 
 addMessageListener("Social:OpenGraphData", (message) => {
@@ -49,9 +31,38 @@ addMessageListener("Social:OpenGraphData", (message) => {
   content.dispatchEvent(ev);
 });
 
-addMessageListener("Social:ClearFrame", (message) => {
+addMessageListener("Social:ClearFrame", () => {
   docShell.createAboutBlankContentViewer(null);
 });
+
+addEventListener("DOMWindowClose", (evt) => {
+  
+  
+  
+  
+  
+  
+  
+  evt.preventDefault();
+
+  
+  sendAsyncMessage("Social:DOMWindowClose");
+});
+
+function hookWindowClose() {
+  
+  
+  
+  let dwu = content.QueryInterface(Ci.nsIInterfaceRequestor)
+     .getInterface(Ci.nsIDOMWindowUtils);
+  dwu.allowScriptsToClose();
+}
+
+function disableDialogs() {
+  let windowUtils = content.QueryInterface(Ci.nsIInterfaceRequestor).
+                    getInterface(Ci.nsIDOMWindowUtils);
+  windowUtils.disableDialogs();
+}
 
 
 
@@ -65,18 +76,7 @@ const SocialErrorListener = {
   urlTemplate: null,
 
   init() {
-    addMessageListener("Loop:MonitorPeerConnectionLifecycle", this);
-    addMessageListener("Loop:GetAllWebrtcStats", this);
-    addMessageListener("Social:CustomEvent", this);
-    addMessageListener("Social:EnsureFocus", this);
-    addMessageListener("Social:EnsureFocusElement", this);
-    addMessageListener("Social:HookWindowCloseForPanelClose", this);
-    addMessageListener("Social:ListenForEvents", this);
-    addMessageListener("Social:SetDocumentTitle", this);
     addMessageListener("Social:SetErrorURL", this);
-    addMessageListener("Social:DisableDialogs", this);
-    addMessageListener("Social:WaitForDocumentVisible", this);
-    addMessageListener("WaitForDOMContentLoaded", this);
     let webProgress = docShell.QueryInterface(Components.interfaces.nsIInterfaceRequestor)
                               .getInterface(Components.interfaces.nsIWebProgress);
     webProgress.addProgressListener(this, Ci.nsIWebProgress.NOTIFY_STATE_REQUEST |
@@ -84,124 +84,12 @@ const SocialErrorListener = {
   },
 
   receiveMessage(message) {
-    let document = content.document;
-
     switch (message.name) {
-      case "Loop:GetAllWebrtcStats":
-        content.WebrtcGlobalInformation.getAllStats(allStats => {
-          content.WebrtcGlobalInformation.getLogging("", logs => {
-            sendAsyncMessage("Loop:GetAllWebrtcStats", {
-              allStats: allStats,
-              logs: logs
-            });
-          });
-        }, message.data.peerConnectionID);
-        break;
-      case "Loop:MonitorPeerConnectionLifecycle":
-        let ourID = content.QueryInterface(Ci.nsIInterfaceRequestor)
-          .getInterface(Ci.nsIDOMWindowUtils).currentInnerWindowID;
-
-        let onPCLifecycleChange = (pc, winID, type) => {
-          if (winID != ourID) {
-            return;
-          }
-
-          sendAsyncMessage("Loop:PeerConnectionLifecycleChange", {
-            iceConnectionState: pc.iceConnectionState,
-            locationHash: content.location.hash,
-            peerConnectionID: pc.id,
-            type: type
-          });
-        };
-
-        let pc_static = new content.RTCPeerConnectionStatic();
-        pc_static.registerPeerConnectionLifecycleCallback(onPCLifecycleChange);
-        break;
-      case "Social:CustomEvent":
-        let ev = new content.CustomEvent(message.data.name, message.data.detail ?
-          { detail: message.data.detail } : null);
-        content.dispatchEvent(ev);
-        break;
-      case "Social:EnsureFocus":
-        Services.focus.focusedWindow = content;
-        sendAsyncMessage("Social:FocusEnsured");
-        break;
-      case "Social:EnsureFocusElement":
-        let fm = Services.focus;
-        fm.moveFocus(document.defaultView, null, fm.MOVEFOCUS_FIRST, fm.FLAG_NOSCROLL);
-        sendAsyncMessage("Social:FocusEnsured");
-        break;
-      case "Social:HookWindowCloseForPanelClose":
-        if (gHookedWindowCloseForPanelClose) {
-          break;
-        }
-        gHookedWindowCloseForPanelClose = true;
-        
-        
-        
-        
-        
-        let dwu = content.QueryInterface(Ci.nsIInterfaceRequestor)
-           .getInterface(Ci.nsIDOMWindowUtils);
-        dwu.allowScriptsToClose();
-
-        content.addEventListener("DOMWindowClose", function _mozSocialDOMWindowClose(evt) {
-          
-          
-          
-          
-          
-          
-          
-          evt.preventDefault();
-
-          sendAsyncMessage("Social:DOMWindowClose");
-        }, true);
-        break;
-      case "Social:ListenForEvents":
-        for (let eventName of message.data.eventNames) {
-          content.addEventListener(eventName, this);
-        }
-        break;
-      case "Social:SetDocumentTitle":
-        let title = message.data.title;
-        if (title && (title = title.trim())) {
-          gDOMTitleChangedByUs = true;
-          document.title = title;
-        }
-        break;
       case "Social:SetErrorURL":
         
         this.urlTemplate = message.data.template;
         break;
-      case "Social:WaitForDocumentVisible":
-        if (!document.hidden) {
-          sendAsyncMessage("Social:DocumentVisible");
-          break;
-        }
-
-        document.addEventListener("visibilitychange", function onVisibilityChanged() {
-          document.removeEventListener("visibilitychange", onVisibilityChanged);
-          sendAsyncMessage("Social:DocumentVisible");
-        });
-        break;
-      case "Social:DisableDialogs":
-        let windowUtils = content.QueryInterface(Ci.nsIInterfaceRequestor).
-                          getInterface(Ci.nsIDOMWindowUtils);
-        windowUtils.disableDialogs();
-        break;
-      case "WaitForDOMContentLoaded":
-        if (gDOMContentLoaded) {
-          sendAsyncMessage("DOMContentLoaded");
-        }
-        break;
     }
-  },
-
-  handleEvent: function(event) {
-    sendAsyncMessage("Social:CustomEvent", {
-      name: event.type
-    });
   },
 
   setErrorPage() {
