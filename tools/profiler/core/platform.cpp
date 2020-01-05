@@ -73,7 +73,12 @@ Sampler* gSampler;
 bool stack_key_initialized;
 
 static mozilla::TimeStamp   sLastTracerEvent; 
-mozilla::TimeStamp   sStartTime;
+
+
+
+
+mozilla::TimeStamp sStartTime;
+
 int         sFrameNumber = 0;
 int         sLastFrameNumber = 0;
 int         sInitCount = 0; 
