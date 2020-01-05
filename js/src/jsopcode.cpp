@@ -489,6 +489,64 @@ BytecodeParser::simulateOp(JSOp op, uint32_t offset, uint32_t* offsetStack, uint
         }
         break;
       }
+
+      case JSOP_AND:
+      case JSOP_CHECKISOBJ:
+      case JSOP_CHECKISCALLABLE:
+      case JSOP_CHECKOBJCOERCIBLE:
+      case JSOP_CHECKTHIS:
+      case JSOP_CHECKTHISREINIT:
+      case JSOP_DEBUGCHECKSELFHOSTED:
+      case JSOP_INITGLEXICAL:
+      case JSOP_INITLEXICAL:
+      case JSOP_OR:
+      case JSOP_SETALIASEDVAR:
+      case JSOP_SETARG:
+      case JSOP_SETINTRINSIC:
+      case JSOP_SETLOCAL:
+      case JSOP_THROWSETALIASEDCONST:
+      case JSOP_THROWSETCALLEE:
+      case JSOP_THROWSETCONST:
+      case JSOP_INITALIASEDLEXICAL:
+      case JSOP_INITIALYIELD:
+        
+        MOZ_ASSERT(nuses == 1);
+        MOZ_ASSERT(ndefs == 1);
+        break;
+
+      case JSOP_INITHOMEOBJECT:
+        
+        MOZ_ASSERT(nuses == 2);
+        MOZ_ASSERT(ndefs == 2);
+        break;
+
+      case JSOP_SETGNAME:
+      case JSOP_SETNAME:
+      case JSOP_SETPROP:
+      case JSOP_STRICTSETGNAME:
+      case JSOP_STRICTSETNAME:
+      case JSOP_STRICTSETPROP:
+        
+        MOZ_ASSERT(nuses == 2);
+        MOZ_ASSERT(ndefs == 1);
+        offsetStack[stackDepth] = offsetStack[stackDepth + 1];
+        break;
+
+      case JSOP_SETPROP_SUPER:
+      case JSOP_STRICTSETPROP_SUPER:
+        
+        MOZ_ASSERT(nuses == 3);
+        MOZ_ASSERT(ndefs == 1);
+        offsetStack[stackDepth] = offsetStack[stackDepth + 2];
+        break;
+
+      case JSOP_SETELEM_SUPER:
+      case JSOP_STRICTSETELEM_SUPER:
+        
+        MOZ_ASSERT(nuses == 4);
+        MOZ_ASSERT(ndefs == 1);
+        offsetStack[stackDepth] = offsetStack[stackDepth + 3];
+        break;
     }
     stackDepth += ndefs;
     return stackDepth;
@@ -1398,8 +1456,6 @@ ExpressionDecompiler::decompilePC(jsbytecode* pc)
             return false;
         return write(str);
       }
-      case JSOP_CHECKISOBJ:
-        return decompilePCForStackOperand(pc, -1);
       case JSOP_VOID:
         return write("(void ") &&
                decompilePCForStackOperand(pc, -1) &&
