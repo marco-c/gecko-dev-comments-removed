@@ -243,9 +243,6 @@ def parse_message(message):
     
     parser.add_argument('-w', '--taskcluster-worker',
                         dest='taskcluster_worker', action='store_true', default=False)
-    
-    parser.add_argument('-g', '--generic-worker',
-                        dest='generic_worker', action='store_true', default=False)
 
     
     parser.add_argument('--rebuild', dest='trigger_tests', type=int, default=1)
