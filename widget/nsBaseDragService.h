@@ -112,7 +112,8 @@ protected:
 
 
 
-  nsresult DrawDragForImage(nsIImageLoadingContent* aImageLoader,
+  nsresult DrawDragForImage(nsPresContext *aPresContext,
+                            nsIImageLoadingContent* aImageLoader,
                             mozilla::dom::HTMLCanvasElement* aCanvas,
                             mozilla::LayoutDeviceIntRect* aScreenDragRect,
                             RefPtr<SourceSurface>* aSurface);
