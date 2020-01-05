@@ -55,7 +55,7 @@ public:
 
 
 
-  RenderFrameParent(nsFrameLoader* aFrameLoader, bool* aSuccess);
+  explicit RenderFrameParent(nsFrameLoader* aFrameLoader);
   virtual ~RenderFrameParent();
 
   bool Init(nsFrameLoader* aFrameLoader);
