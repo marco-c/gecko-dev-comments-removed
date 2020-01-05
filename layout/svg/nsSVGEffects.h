@@ -666,11 +666,23 @@ public:
   static already_AddRefed<nsIURI>
   GetPaintURI(nsIFrame* aFrame, nsStyleSVGPaint nsStyleSVG::* aPaint);
 
-    
+  
 
 
   static already_AddRefed<nsIURI>
   GetMaskURI(nsIFrame* aFrame, uint32_t aIndex);
+
+  
+
+
+
+
+
+
+
+
+  static already_AddRefed<nsIURI>
+  GetBaseURLForLocalRef(nsIContent* aContent, nsIURI* aDocURI);
 };
 
 #endif 
