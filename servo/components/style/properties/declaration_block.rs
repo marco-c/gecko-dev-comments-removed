@@ -81,6 +81,7 @@ impl PropertyDeclarationBlock {
         if let Some(shorthand) = Shorthand::from_name(&property) {
             
             let mut list = Vec::new();
+            let mut important_count = 0;
 
             
             for longhand in shorthand.longhands() {
@@ -89,11 +90,24 @@ impl PropertyDeclarationBlock {
 
                 
                 match declaration {
-                    Some(&(ref declaration, _importance)) => list.push(declaration),
+                    Some(&(ref declaration, importance)) => {
+                        list.push(declaration);
+                        if importance.important() {
+                            important_count += 1;
+                        }
+                    },
                     None => return Ok(()),
                 }
             }
 
+            
+            
+            
+            if important_count > 0 && important_count != list.len() {
+                return Ok(());
+            }
+
+            
             
             
             let importance = Importance::Normal;
@@ -286,15 +300,20 @@ impl ToCss for PropertyDeclarationBlock {
                     if is_important && important_count != current_longhands.len() {
                         continue;
                     }
+                    let importance = if is_important {
+                        Importance::Important
+                    } else {
+                        Importance::Normal
+                    };
 
-                    
                     
                     let was_serialized =
                         try!(
                             shorthand.serialize_shorthand_to_buffer(
                                 dest,
                                 current_longhands.iter().cloned(),
-                                &mut is_first_serialization
+                                &mut is_first_serialization,
+                                importance
                             )
                         );
                     
