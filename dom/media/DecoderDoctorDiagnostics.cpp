@@ -17,6 +17,7 @@
 #include "nsITimer.h"
 #include "nsIWeakReference.h"
 #include "nsPluginHost.h"
+#include "nsPrintfCString.h"
 #include "VideoUtils.h"
 
 #if defined(XP_WIN)
@@ -472,6 +473,10 @@ DecoderDoctorDocumentWatcher::SynthesizeAnalysis()
           }
         }
         break;
+      case DecoderDoctorDiagnostics::eEvent:
+        
+        MOZ_ASSERT(false);
+        break;
       default:
         MOZ_ASSERT(diag.mDecoderDoctorDiagnostics.Type()
                      == DecoderDoctorDiagnostics::eFormatSupportCheck
@@ -604,6 +609,7 @@ DecoderDoctorDocumentWatcher::AddDiagnostics(DecoderDoctorDiagnostics&& aDiagnos
                                              const char* aCallSite)
 {
   MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(aDiagnostics.Type() != DecoderDoctorDiagnostics::eEvent);
 
   if (!mDocument) {
     return;
@@ -611,8 +617,7 @@ DecoderDoctorDocumentWatcher::AddDiagnostics(DecoderDoctorDiagnostics&& aDiagnos
 
   DD_DEBUG("DecoderDoctorDocumentWatcher[%p, doc=%p]::AddDiagnostics(DecoderDoctorDiagnostics{%s}, call site '%s')",
            this, mDocument, aDiagnostics.GetDescription().Data(), aCallSite);
-  mDiagnosticsSequence.AppendElement(
-    Diagnostics(Move(aDiagnostics), aCallSite));
+  mDiagnosticsSequence.AppendElement(Diagnostics(Move(aDiagnostics), aCallSite));
   EnsureTimerIsStarted();
 }
 
@@ -735,11 +740,38 @@ DecoderDoctorDiagnostics::StoreMediaKeySystemAccess(nsIDocument* aDocument,
   MOZ_ASSERT(mDiagnosticsType == eMediaKeySystemAccessRequest);
 }
 
+void
+DecoderDoctorDiagnostics::StoreEvent(nsIDocument* aDocument,
+                                     const DecoderDoctorEvent& aEvent,
+                                     const char* aCallSite)
+{
+  MOZ_ASSERT(NS_IsMainThread());
+  
+  MOZ_ASSERT(mDiagnosticsType == eUnsaved);
+  mDiagnosticsType = eEvent;
+  mEvent = aEvent;
+
+  if (NS_WARN_IF(!aDocument)) {
+    DD_WARN("DecoderDoctorDiagnostics[%p]::StoreEvent(nsIDocument* aDocument=nullptr, aEvent=%s, call site '%s')",
+            this, GetDescription().get(), aCallSite);
+    return;
+  }
+
+  
+}
+
+static const char*
+EventDomainString(DecoderDoctorEvent::Domain aDomain)
+{
+  switch (aDomain) {
+    
+  }
+  return "?";
+}
+
 nsCString
 DecoderDoctorDiagnostics::GetDescription() const
 {
-  MOZ_ASSERT(mDiagnosticsType == eFormatSupportCheck
-             || mDiagnosticsType == eMediaKeySystemAccessRequest);
   nsCString s;
   switch (mDiagnosticsType) {
     case eUnsaved:
@@ -781,7 +813,12 @@ DecoderDoctorDiagnostics::GetDescription() const
           break;
       }
       break;
+    case eEvent:
+      s = nsPrintfCString("event domain %s result=%u",
+                          EventDomainString(mEvent.mDomain), mEvent.mResult);
+      break;
     default:
+      MOZ_ASSERT_UNREACHABLE("Unexpected DiagnosticsType");
       s = "?";
       break;
   }
