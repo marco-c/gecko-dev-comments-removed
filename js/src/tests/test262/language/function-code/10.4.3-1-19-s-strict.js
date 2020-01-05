@@ -1,0 +1,21 @@
+'use strict';
+
+
+
+
+
+
+
+
+
+
+
+var global = this;
+
+function testcase() {
+var my_eval = eval;
+assert.sameValue(my_eval("this"), global, 'my_eval("this")');
+}
+testcase();
+
+reportCompare(0, 0);

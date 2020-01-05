@@ -1,0 +1,12 @@
+
+
+
+
+
+
+
+
+
+
+
+label: function* g() {}

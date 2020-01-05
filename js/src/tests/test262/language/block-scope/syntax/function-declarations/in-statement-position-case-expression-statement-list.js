@@ -1,0 +1,12 @@
+
+
+
+
+
+
+
+
+switch (true) { case true: function g() {} }
+
+
+reportCompare(0, 0);

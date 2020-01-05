@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+var obj = { *method() {} };
+
+verifyEnumerable(obj, 'method');
+verifyWritable(obj, 'method');
+verifyConfigurable(obj, 'method');
+
+reportCompare(0, 0);

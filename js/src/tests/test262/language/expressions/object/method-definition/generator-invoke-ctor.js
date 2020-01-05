@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+var method = { *method() {} }.method;
+
+assert.throws(TypeError, function() {
+  var instance = new method();
+});
+
+reportCompare(0, 0);

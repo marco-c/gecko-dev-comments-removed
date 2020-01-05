@@ -1,0 +1,18 @@
+'use strict';
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(SyntaxError, function() {
+            eval("var inte\u0072face = 123;");
+});
+
+reportCompare(0, 0);

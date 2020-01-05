@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+
+do {  
+} while (false)
+
+reportCompare(0, 0);

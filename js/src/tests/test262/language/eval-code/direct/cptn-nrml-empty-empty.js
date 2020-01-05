@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+
+if (eval(";") !== undefined) {
+  $ERROR('#1: eval(";") === undefined. Actual: ' + (eval(";")));
+}
+
+reportCompare(0, 0);

@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+  var d = delete 42;
+
+assert.sameValue(d, true, 'd');
+
+reportCompare(0, 0);

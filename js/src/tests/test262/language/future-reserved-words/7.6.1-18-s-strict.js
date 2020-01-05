@@ -1,0 +1,18 @@
+'use strict';
+
+
+
+
+
+
+
+
+
+
+
+        
+assert.throws(SyntaxError, function() {
+            eval("var l\u0065t = 123;");
+});
+
+reportCompare(0, 0);

@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+var x;
+
+assert.throws(TypeError, function() {
+  for (x of {}) {}
+});
+
+reportCompare(0, 0);

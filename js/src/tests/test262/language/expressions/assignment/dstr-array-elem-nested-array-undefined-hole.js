@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var _;
+
+assert.throws(TypeError, function() {
+  0, [[ _ ]] = [ , ];
+});
+
+reportCompare(0, 0);

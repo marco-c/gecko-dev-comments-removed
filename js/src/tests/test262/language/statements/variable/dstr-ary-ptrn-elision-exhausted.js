@@ -1,0 +1,43 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var iter = function*() {}();
+iter.next();
+
+var [,] = iter;
+
+
+
+reportCompare(0, 0);

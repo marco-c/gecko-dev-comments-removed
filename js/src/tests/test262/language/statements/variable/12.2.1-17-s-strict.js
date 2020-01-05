@@ -1,0 +1,17 @@
+'use strict';
+
+
+
+
+
+
+
+
+
+
+
+
+    var f = Function('arguments = 42;');
+    f();
+
+reportCompare(0, 0);

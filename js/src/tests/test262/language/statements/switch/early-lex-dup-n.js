@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+switch (0) {
+  case 1:
+    let test262id;
+    break;
+  default:
+    const test262id = null;
+}

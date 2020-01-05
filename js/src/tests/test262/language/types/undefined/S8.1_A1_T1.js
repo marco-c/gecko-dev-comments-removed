@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+
+
+var x = undefined;
+
+reportCompare(0, 0);

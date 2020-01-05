@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+var sup = {
+  method() {
+    return 'sup';
+  }
+}
+
+var child = {
+  __proto__: sup,
+  async method() {
+    var x = await super.method();
+    assert.sameValue(x, 'sup');
+  }
+}
+
+child.method().then($DONE, $DONE);

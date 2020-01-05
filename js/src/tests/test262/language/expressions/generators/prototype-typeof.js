@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(typeof function*() {}.prototype, 'object');
+
+reportCompare(0, 0);

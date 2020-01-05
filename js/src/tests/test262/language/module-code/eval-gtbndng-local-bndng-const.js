@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const constBinding = 89;
+assert.sameValue(constBinding, 89);
+
+reportCompare(0, 0);

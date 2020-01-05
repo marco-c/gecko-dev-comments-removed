@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function f_arg() {
+}
+
+
+f_arg(x=1,x);
+
+reportCompare(0, 0);

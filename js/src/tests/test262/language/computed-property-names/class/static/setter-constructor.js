@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+class C {
+  static set ['constructor'](x) {}
+}
+
+reportCompare(0, 0);

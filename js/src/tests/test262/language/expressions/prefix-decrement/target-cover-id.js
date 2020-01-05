@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var y = 1;
+
+--(y);
+
+assert.sameValue(y, 0);
+
+reportCompare(0, 0);

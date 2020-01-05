@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+var context;
+var obj = {
+  fn: function() {
+    context = this;
+  }
+};
+
+obj.fn`NoSubstitutionTemplate`;
+
+assert.sameValue(context, obj);
+
+reportCompare(0, 0);

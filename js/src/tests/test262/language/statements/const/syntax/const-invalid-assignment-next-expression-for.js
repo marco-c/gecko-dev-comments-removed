@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  for (const i = 0; i < 1; i++) {}
+});
+
+reportCompare(0, 0);

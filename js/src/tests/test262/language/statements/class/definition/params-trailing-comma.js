@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+class C {
+  one(a,) {}
+  two(a,b,) {}
+}
+
+reportCompare(0, 0);

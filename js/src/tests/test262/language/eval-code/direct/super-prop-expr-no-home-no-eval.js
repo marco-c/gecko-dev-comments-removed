@@ -1,0 +1,48 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var evaluated = false;
+function f() {
+  
+  
+  try {
+    eval('super[evaluated = true];');
+  
+  
+  } catch (_) {}
+}
+
+f();
+
+assert.sameValue(evaluated, false);
+
+reportCompare(0, 0);

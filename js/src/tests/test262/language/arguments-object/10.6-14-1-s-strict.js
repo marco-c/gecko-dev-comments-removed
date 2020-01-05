@@ -1,0 +1,17 @@
+'use strict';
+
+
+
+
+
+
+
+
+
+        var argObj = function () {
+            return arguments;
+        } ();
+
+assert(argObj.hasOwnProperty("callee"), 'argObj.hasOwnProperty("callee") !== true');
+
+reportCompare(0, 0);

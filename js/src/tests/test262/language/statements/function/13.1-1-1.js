@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+
+
+    eval('function foo(a,a){}');
+
+reportCompare(0, 0);

@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+taintDataProperty(Intl, "Collator");
+"a".localeCompare("b");
+
+reportCompare(0, 0);

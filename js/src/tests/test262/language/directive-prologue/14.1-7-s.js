@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+  function foo()
+  {
+    'Use Strict';
+     return (this !== undefined);
+  }
+
+assert(foo.call(undefined));
+
+reportCompare(0, 0);

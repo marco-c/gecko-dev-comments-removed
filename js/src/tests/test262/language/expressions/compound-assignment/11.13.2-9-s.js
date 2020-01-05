@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(ReferenceError, function() {
+            eval("_11_13_2_9 &= 1;");
+});
+
+reportCompare(0, 0);

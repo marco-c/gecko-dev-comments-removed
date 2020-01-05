@@ -1,0 +1,28 @@
+'use strict';
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(ReferenceError, function() {
+  f;
+});
+
+{
+  function f() {  }
+}
+
+assert.throws(ReferenceError, function() {
+  f;
+});
+
+reportCompare(0, 0);

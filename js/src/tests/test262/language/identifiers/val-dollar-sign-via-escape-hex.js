@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+var \u{24} = 1;
+
+assert.sameValue($, 1);
+
+reportCompare(0, 0);

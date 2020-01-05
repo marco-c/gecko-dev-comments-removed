@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+
+this.f = function() { "use strict"; return this===undefined;};
+assert(Function("return f();")());
+
+reportCompare(0, 0);

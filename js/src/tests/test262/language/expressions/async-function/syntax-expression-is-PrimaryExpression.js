@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+
+
+(async function foo() { }.prototype)
+
+reportCompare(0, 0);

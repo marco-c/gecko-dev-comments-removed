@@ -1,0 +1,32 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const { x: [y], } = { x: [45] };
+
+assert.sameValue(y,45);
+
+reportCompare(0, 0);

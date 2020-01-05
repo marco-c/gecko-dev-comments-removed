@@ -1,0 +1,20 @@
+'use strict';
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+            var foo = function () {
+            }
+            foo.caller = 20;
+});
+
+reportCompare(0, 0);

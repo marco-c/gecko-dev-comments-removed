@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+class Foo {
+  async method() {};
+}
+var p = new Foo().method();
+assert(p instanceof Promise, "async functions return promise instances");
+
+reportCompare(0, 0);

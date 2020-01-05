@@ -1,0 +1,18 @@
+'use strict';
+
+
+
+
+
+
+
+
+
+
+
+        var dateObj = new Date();
+assert.throws(SyntaxError, function() {
+            eval("delete dateObj;");
+});
+
+reportCompare(0, 0);

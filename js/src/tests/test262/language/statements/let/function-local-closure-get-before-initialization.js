@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+(function() {
+  function f() { return x + 1; }
+
+  assert.throws(ReferenceError, function() {
+    f();
+  });
+
+  let x;
+}());
+
+reportCompare(0, 0);

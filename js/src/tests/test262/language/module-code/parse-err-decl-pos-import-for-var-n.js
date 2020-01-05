@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+
+
+
+for (var x = 0; false;)
+  import v from './decl-pos-import-for-var.js';

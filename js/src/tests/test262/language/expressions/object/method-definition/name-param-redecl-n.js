@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var obj = {
+  method(param) {
+    let param;
+  }
+};

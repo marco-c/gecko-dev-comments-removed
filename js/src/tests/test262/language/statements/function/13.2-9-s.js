@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+        var foo = Function("'use strict';");
+assert.throws(TypeError, function() {
+            var temp = foo.caller;
+});
+
+reportCompare(0, 0);

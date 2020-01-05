@@ -1,0 +1,12 @@
+
+
+
+
+
+
+
+
+
+
+
+for (var x in {}) function* g() {}

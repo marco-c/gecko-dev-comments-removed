@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+assert.throws(ReferenceError, function() {
+  {
+    x; const x = 1;
+  }
+});
+
+reportCompare(0, 0);

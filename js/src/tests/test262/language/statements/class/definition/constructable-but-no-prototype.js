@@ -1,0 +1,12 @@
+
+
+
+
+
+
+
+var Base = function() {}.bind();
+assert.throws(TypeError, function() {
+  class C extends Base {}
+});
+reportCompare(0, 0);

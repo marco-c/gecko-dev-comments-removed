@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(eval('test262id: { 5; break test262id; 9; }'), 5);
+
+reportCompare(0, 0);

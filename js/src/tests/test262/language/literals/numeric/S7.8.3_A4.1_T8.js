@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+assert.throws(ReferenceError, function() {
+  E0
+});
+
+reportCompare(0, 0);

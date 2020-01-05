@@ -1,0 +1,11 @@
+
+
+
+
+
+
+
+
+  eval("({set foo(arg){}, set foo(arg1){}});");
+
+reportCompare(0, 0);

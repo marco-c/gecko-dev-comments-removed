@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class CustomError extends TypeError {
+  constructor() {}
+}
+
+assert.throws(ReferenceError, function() {
+  new CustomError();
+});
+
+reportCompare(0, 0);

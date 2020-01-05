@@ -1,0 +1,15 @@
+'use strict';
+
+
+
+
+
+
+
+
+
+
+
+Object.getOwnPropertyDescriptor(function(){}, 'arguments');
+
+reportCompare(0, 0);

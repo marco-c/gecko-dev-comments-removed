@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+for(false;false;false
+) {
+  break;
+}
+
+reportCompare(0, 0);

@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+testBuiltInObject(Date.prototype.toLocaleDateString, true, false, [], 0);
+
+reportCompare(0, 0);

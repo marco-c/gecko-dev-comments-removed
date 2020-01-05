@@ -1,0 +1,37 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+let [, , ...x] = [1, 2];
+
+assert(Array.isArray(x));
+assert.sameValue(x.length, 0);
+
+reportCompare(0, 0);

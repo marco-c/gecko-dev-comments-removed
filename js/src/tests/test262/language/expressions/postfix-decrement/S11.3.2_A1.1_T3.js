@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+assert.throws(SyntaxError, function() {
+  eval("var x = 1; x\u2028--");
+});
+
+reportCompare(0, 0);

@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+class A {
+  constructor() {}
+  constructor() {}
+}
+

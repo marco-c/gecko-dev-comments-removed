@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+var result;
+class A {
+  *g() {
+    ({  yield: 1 });
+  }
+}
+
+result = A.prototype.g().next();
+assert.sameValue(result.value, undefined);
+assert.sameValue(result.done, true);
+
+reportCompare(0, 0);

@@ -1,0 +1,15 @@
+'use strict';
+
+
+
+
+
+
+
+
+
+
+
+
+do function g() {} while (false)
+

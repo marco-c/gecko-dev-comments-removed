@@ -1,0 +1,11 @@
+
+
+
+
+
+
+
+
+switch (true) { default: const x = 1; }
+
+reportCompare(0, 0);

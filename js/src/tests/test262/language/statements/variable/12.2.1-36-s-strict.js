@@ -1,0 +1,16 @@
+'use strict';
+
+
+
+
+
+
+
+
+
+
+assert.throws(SyntaxError, function() {
+    eval('for (var arguments in null) {};');
+});
+
+reportCompare(0, 0);

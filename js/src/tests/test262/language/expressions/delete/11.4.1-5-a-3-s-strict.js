@@ -1,0 +1,16 @@
+'use strict';
+
+
+
+
+
+
+
+
+
+        function funObj () { }
+assert.throws(SyntaxError, function() {
+            eval("delete funObj");
+});
+
+reportCompare(0, 0);

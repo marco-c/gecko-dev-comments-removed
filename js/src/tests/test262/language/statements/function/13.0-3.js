@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+        var obj = {};
+assert.throws(SyntaxError, function() {
+            eval("function obj.tt() {};");
+});
+
+reportCompare(0, 0);

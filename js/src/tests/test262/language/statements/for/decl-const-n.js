@@ -1,0 +1,12 @@
+
+
+
+
+
+
+
+
+
+
+
+for ( ; false; ) const x = null;

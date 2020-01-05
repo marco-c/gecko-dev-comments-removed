@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+
+
+
+
+(function() { import v from './decl-pos-import-function-expr.js'; });

@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+
+var global = this;
+function f() { return this===global;};
+assert((function () {"use strict"; return f.bind(undefined)();})());
+
+reportCompare(0, 0);

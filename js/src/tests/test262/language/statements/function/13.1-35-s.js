@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(SyntaxError, function() {
+            eval("'use strict'; function eval() { };")
+});
+
+reportCompare(0, 0);

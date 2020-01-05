@@ -1,0 +1,13 @@
+'use strict';
+
+
+
+
+
+
+
+
+
+Object.getOwnPropertyDescriptor(function(){}, 'caller');
+
+reportCompare(0, 0);

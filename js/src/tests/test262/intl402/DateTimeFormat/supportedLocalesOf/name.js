@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Intl.DateTimeFormat.supportedLocalesOf.name, "supportedLocalesOf");
+
+verifyNotEnumerable(Intl.DateTimeFormat.supportedLocalesOf, "name");
+verifyNotWritable(Intl.DateTimeFormat.supportedLocalesOf, "name");
+verifyConfigurable(Intl.DateTimeFormat.supportedLocalesOf, "name");
+
+reportCompare(0, 0);

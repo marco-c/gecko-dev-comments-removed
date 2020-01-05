@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+
+
+
+
+(class { *method() { export default null; } });

@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  class C { static *['prototype']() {} }
+});
+
+reportCompare(0, 0);

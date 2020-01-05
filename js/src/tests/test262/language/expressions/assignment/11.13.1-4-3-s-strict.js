@@ -1,0 +1,18 @@
+'use strict';
+
+
+
+
+
+
+
+
+
+
+
+var global = this;
+assert.throws(TypeError, function() {
+      global.Infinity = 42;
+});
+
+reportCompare(0, 0);

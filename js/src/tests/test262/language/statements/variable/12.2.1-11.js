@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+function testcase() {
+    eval("var arguments;");
+ }
+testcase();
+
+reportCompare(0, 0);

@@ -1,0 +1,33 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Object.defineProperty(this, 'test262Configurable', { configurable: true });
+Object.defineProperty(this, 'test262NonConfigurable', { configurable: false });
+
+$.evalScript('let test262Configurable;');
+
+assert.throws(SyntaxError, function() {
+  $.evalScript('var x; let test262NonConfigurable;');
+});
+
+assert.throws(ReferenceError, function() {
+  x;
+});
+
+reportCompare(0, 0);

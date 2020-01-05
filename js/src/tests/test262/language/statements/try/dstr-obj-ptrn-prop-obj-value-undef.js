@@ -1,0 +1,33 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  try {
+    throw { };
+  } catch ({ w: { x, y, z } = undefined }) {}
+});
+
+reportCompare(0, 0);

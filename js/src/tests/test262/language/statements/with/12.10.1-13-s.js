@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+
+        with ({}) {
+            "use strict";
+        }
+
+reportCompare(0, 0);

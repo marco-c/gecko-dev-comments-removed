@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function fn1([,]) {}
+function fn2([,,]) {}
+
+reportCompare(0, 0);

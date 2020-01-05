@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+do {
+  test262: {
+    continue test262;
+  }
+} while (false)

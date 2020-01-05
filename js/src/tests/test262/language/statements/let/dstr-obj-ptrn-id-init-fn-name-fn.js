@@ -1,0 +1,39 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+let { fn = function () {}, xFn = function x() {} } = {};
+
+assert.sameValue(fn.name, 'fn');
+assert.notSameValue(xFn.name, 'xFn');
+
+reportCompare(0, 0);

@@ -1,0 +1,40 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var [x] = [];
+
+assert.sameValue(x, undefined);
+
+reportCompare(0, 0);

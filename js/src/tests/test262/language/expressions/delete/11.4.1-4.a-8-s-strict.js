@@ -1,0 +1,22 @@
+'use strict';
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var global = this;
+  
+assert.throws(TypeError, function() {
+    delete global.NaN;
+});
+
+reportCompare(0, 0);

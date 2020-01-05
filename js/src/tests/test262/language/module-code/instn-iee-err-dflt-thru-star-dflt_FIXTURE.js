@@ -1,0 +1,8 @@
+
+
+
+
+var x;
+export { x as default };
+
+reportCompare(0, 0);

@@ -1,0 +1,15 @@
+'use strict';
+
+
+
+
+
+
+
+
+
+"use strict";
+
+assert.notSameValue(this, undefined);
+
+reportCompare(0, 0);

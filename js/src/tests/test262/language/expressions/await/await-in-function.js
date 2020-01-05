@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+
+function foo(await) { return await; }
+assert.sameValue(foo(1), 1);
+
+reportCompare(0, 0);

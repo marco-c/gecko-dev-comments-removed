@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+
+function* g() {}
+assert.sameValue(typeof g.prototype, 'object');
+
+reportCompare(0, 0);

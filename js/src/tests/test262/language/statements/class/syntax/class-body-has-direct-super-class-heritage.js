@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class A {}
+class B extends A {
+  constructor() {
+    super();
+  }
+}
+
+
+assert.sameValue(typeof B, "function");
+
+reportCompare(0, 0);

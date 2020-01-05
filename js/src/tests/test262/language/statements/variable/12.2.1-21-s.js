@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+
+  var s = eval;
+  s('arguments = 42;');
+
+reportCompare(0, 0);

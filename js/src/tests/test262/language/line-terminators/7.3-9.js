@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(SyntaxError, function() {
+            eval("var prop = \\u2028;");
+});
+
+reportCompare(0, 0);

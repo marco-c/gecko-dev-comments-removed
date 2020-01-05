@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+        (function () {
+            eval("var public = 1;");
+            assert.sameValue(public, 1);
+            "use strict";
+        }) ();
+
+reportCompare(0, 0);

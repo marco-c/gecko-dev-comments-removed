@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+var result;
+function* g() {
+  (function yield() {})
+}
+
+result = g().next();
+
+assert.sameValue(result.value, undefined);
+assert.sameValue(result.done, true);
+
+reportCompare(0, 0);

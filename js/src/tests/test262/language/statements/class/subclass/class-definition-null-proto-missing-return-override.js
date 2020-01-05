@@ -1,0 +1,43 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class Foo extends null {
+  constructor() {}
+}
+
+var foo = new Foo();
+
+assert.sameValue(Object.getPrototypeOf(foo), Foo.prototype);
+
+reportCompare(0, 0);

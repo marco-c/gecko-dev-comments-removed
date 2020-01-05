@@ -1,0 +1,17 @@
+'use strict';
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  Math.PI = 20;
+});
+
+reportCompare(0, 0);

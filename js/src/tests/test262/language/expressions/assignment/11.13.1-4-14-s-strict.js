@@ -1,0 +1,18 @@
+'use strict';
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+    Number.MAX_VALUE = 42;
+});
+
+reportCompare(0, 0);

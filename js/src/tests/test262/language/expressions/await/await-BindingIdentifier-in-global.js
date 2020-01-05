@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+async function await() { return 1 }
+assert(await instanceof Function);
+
+
+reportCompare(0, 0);

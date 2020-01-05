@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(SyntaxError, function() {
+            eval("function x,y,z(){}");
+});
+
+reportCompare(0, 0);

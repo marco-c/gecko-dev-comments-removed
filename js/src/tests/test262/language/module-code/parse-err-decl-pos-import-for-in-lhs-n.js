@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+
+
+
+for (y in [])
+  import v from './decl-pos-import-for-in-lhs.js';

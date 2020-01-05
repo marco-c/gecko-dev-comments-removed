@@ -1,0 +1,15 @@
+'use strict';
+
+
+
+
+
+
+
+
+
+
+
+
+for (;false;) function g() {}
+

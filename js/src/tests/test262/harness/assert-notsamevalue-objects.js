@@ -1,0 +1,11 @@
+
+
+
+
+
+
+
+
+assert.notSameValue({}, {});
+
+reportCompare(0, 0);

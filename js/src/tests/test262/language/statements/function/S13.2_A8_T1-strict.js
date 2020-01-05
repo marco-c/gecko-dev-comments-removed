@@ -1,0 +1,13 @@
+'use strict';
+
+
+
+
+
+
+
+
+
+'caller' in function() {};
+
+reportCompare(0, 0);

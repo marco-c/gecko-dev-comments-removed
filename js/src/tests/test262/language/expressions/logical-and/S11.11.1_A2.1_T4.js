@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+if ((false && x) !== false) {
+  $ERROR('#1: (false && x) === false');
+}
+
+reportCompare(0, 0);

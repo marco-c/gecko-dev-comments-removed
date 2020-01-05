@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+var o = { get foo() { return this; } }
+
+assert.sameValue(o.foo, o, 'o.foo');
+
+reportCompare(0, 0);

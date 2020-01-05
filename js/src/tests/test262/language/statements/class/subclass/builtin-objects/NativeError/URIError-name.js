@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class Err extends URIError {}
+
+var err1 = new Err();
+assert.sameValue(err1.name, 'URIError');
+
+reportCompare(0, 0);

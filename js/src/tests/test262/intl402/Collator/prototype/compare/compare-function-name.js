@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var compareFn = new Intl.Collator().compare;
+
+assert.sameValue(Object.prototype.hasOwnProperty.call(compareFn, "name"), false);
+
+reportCompare(0, 0);

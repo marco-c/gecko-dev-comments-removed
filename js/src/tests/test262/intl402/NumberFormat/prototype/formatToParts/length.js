@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+assert.sameValue(Intl.NumberFormat.prototype.formatToParts.length, 0);
+
+verifyNotEnumerable(Intl.NumberFormat.prototype.formatToParts, "length");
+verifyNotWritable(Intl.NumberFormat.prototype.formatToParts, "length");
+verifyConfigurable(Intl.NumberFormat.prototype.formatToParts, "length");
+
+reportCompare(0, 0);

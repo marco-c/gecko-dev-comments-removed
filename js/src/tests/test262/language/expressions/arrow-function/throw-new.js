@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() { new (() => {}); });
+
+reportCompare(0, 0);

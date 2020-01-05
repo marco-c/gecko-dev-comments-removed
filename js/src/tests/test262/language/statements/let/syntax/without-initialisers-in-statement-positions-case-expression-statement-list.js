@@ -1,0 +1,11 @@
+
+
+
+
+
+
+
+
+switch (true) { case true: let x; }
+
+reportCompare(0, 0);

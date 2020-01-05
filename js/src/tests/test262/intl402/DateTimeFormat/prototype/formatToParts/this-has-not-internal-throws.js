@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+var formatToParts = Intl.DateTimeFormat.prototype.formatToParts;
+
+assert.throws(TypeError, function() {
+  formatToParts.call({});
+}, "{}");
+
+assert.throws(TypeError, function() {
+  formatToParts.call(new Date());
+}, "new Date()");
+
+reportCompare(0, 0);

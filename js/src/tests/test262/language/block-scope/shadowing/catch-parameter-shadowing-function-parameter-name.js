@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+function fn(a) {
+  try {
+    throw 'stuff1';
+  } catch (a) {
+    assert.sameValue(a, 'stuff1');
+    
+    a = 2;
+    assert.sameValue(a, 2);
+  }
+}
+fn(1);
+
+
+reportCompare(0, 0);

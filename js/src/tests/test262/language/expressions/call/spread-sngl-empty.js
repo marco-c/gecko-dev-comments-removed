@@ -1,0 +1,47 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var callCount = 0;
+
+(function() {
+  assert.sameValue(arguments.length, 0);
+  callCount += 1;
+}(...[]));
+
+assert.sameValue(callCount, 1);
+
+reportCompare(0, 0);

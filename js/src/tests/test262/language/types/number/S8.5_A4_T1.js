@@ -1,0 +1,12 @@
+
+
+
+
+
+
+
+
+
+var NaN;
+
+reportCompare(0, 0);

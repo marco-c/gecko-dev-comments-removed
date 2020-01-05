@@ -1,0 +1,11 @@
+
+
+
+
+
+
+
+function one(a,) {}
+function two(a,b,) {}
+
+reportCompare(0, 0);

@@ -1,0 +1,18 @@
+'use strict';
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(SyntaxError, function() {
+            eval("var obj = {}; obj.get = function (a) { with(a){} }; ");
+});
+
+reportCompare(0, 0);

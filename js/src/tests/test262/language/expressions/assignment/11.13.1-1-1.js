@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(ReferenceError, function() {
+    eval("42 = 42");
+});
+
+reportCompare(0, 0);

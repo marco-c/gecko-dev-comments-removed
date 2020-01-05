@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+try {
+  yield = 0;
+} catch (_) {}
+
+reportCompare(0, 0);

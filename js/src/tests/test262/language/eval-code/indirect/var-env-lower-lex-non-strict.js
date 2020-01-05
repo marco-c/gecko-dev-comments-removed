@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+{
+  let x;
+  {
+    (0,eval)('var x;');
+  }
+}
+
+reportCompare(0, 0);

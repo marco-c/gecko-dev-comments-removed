@@ -1,0 +1,54 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function* f({}) {}
+
+assert.throws(TypeError, function() {
+  f(null);
+});
+
+reportCompare(0, 0);

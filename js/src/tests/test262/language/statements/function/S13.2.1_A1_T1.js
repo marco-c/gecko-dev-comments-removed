@@ -1,0 +1,74 @@
+
+
+
+
+
+
+
+
+
+(function(){
+    (function(){
+        (function(){
+            (function(){
+                (function(){
+                    (function(){
+                        (function(){
+                            (function(){
+                                (function(){
+                                    (function(){
+                                        (function(){
+                                            (function(){
+                                                (function(){
+                                                    (function(){
+                                                        (function(){
+                                                            (function(){
+                                                                (function(){
+                                                                    (function(){
+                                                                        (function(){
+                                                                            (function(){
+                                                                                (function(){
+                                                                                    (function(){
+                                                                                        (function(){
+                                                                                            (function(){
+                                                                                                (function(){
+                                                                                                    (function(){
+                                                                                                        (function(){
+                                                                                                            (function(){
+                                                                                                                (function(){
+                                                                                                                    (function(){
+                                                                                                                        (function(){
+                                                                                                                            (function(){})()
+                                                                                                                        })()
+                                                                                                                    })()
+                                                                                                                })()
+                                                                                                            })()
+                                                                                                        })()
+                                                                                                    })()
+                                                                                                })()
+                                                                                            })()
+                                                                                        })()
+                                                                                    })()
+                                                                                })()
+                                                                            })()
+                                                                        })()
+                                                                    })()
+                                                                })()
+                                                            })()
+                                                        })()
+                                                    })()
+                                                })()
+                                            })()
+                                        })()
+                                    })()
+                                })()
+                            })()
+                        })()
+                    })()
+                })()
+            })()
+        })()
+    })()
+})()
+
+reportCompare(0, 0);

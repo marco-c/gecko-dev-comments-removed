@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(ReferenceError, function() {
+            eval("_11_13_2_10 ^= 1;");
+});
+
+reportCompare(0, 0);

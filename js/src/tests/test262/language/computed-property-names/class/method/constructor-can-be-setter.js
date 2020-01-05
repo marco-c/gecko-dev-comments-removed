@@ -1,0 +1,12 @@
+
+
+
+
+
+
+
+class C4 {
+  set ['constructor'](_) {}
+}
+
+reportCompare(0, 0);

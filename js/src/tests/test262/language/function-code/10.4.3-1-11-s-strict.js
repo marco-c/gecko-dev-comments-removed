@@ -1,0 +1,17 @@
+'use strict';
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue((function () {
+    return typeof this;
+})(), "undefined");
+
+reportCompare(0, 0);

@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(ReferenceError, function() {
+    eval("null = 42");
+});
+
+reportCompare(0, 0);

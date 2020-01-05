@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  var objMath=new Math;
+});
+
+reportCompare(0, 0);

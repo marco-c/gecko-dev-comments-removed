@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+testForUnwantedRegExpChanges(function () {
+    new Intl.Collator("de-DE-u-co-phonebk");
+});
+
+reportCompare(0, 0);

@@ -1,0 +1,18 @@
+'use strict';
+
+
+
+
+
+
+
+
+
+
+
+        var obj = new Object();
+assert.throws(SyntaxError, function() {
+            eval("delete obj;");
+});
+
+reportCompare(0, 0);

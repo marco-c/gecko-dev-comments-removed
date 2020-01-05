@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function fn({}) {}
+
+assert.throws(TypeError, function() {
+  fn();
+});
+
+reportCompare(0, 0);

@@ -1,0 +1,36 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var [x = 23] = [undefined];
+
+assert.sameValue(x, 23);
+
+reportCompare(0, 0);

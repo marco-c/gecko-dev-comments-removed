@@ -1,0 +1,18 @@
+'use strict';
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(SyntaxError, function() {
+            eval("var \u0069mplements = 123;");
+});
+
+reportCompare(0, 0);

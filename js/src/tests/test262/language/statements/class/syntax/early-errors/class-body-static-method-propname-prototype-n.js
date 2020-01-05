@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+class A {
+  static prototype() {}
+}
+

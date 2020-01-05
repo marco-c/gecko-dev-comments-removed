@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+
+
+
+for (var y in [])
+  import v from './decl-pos-import-for-in-var.js';

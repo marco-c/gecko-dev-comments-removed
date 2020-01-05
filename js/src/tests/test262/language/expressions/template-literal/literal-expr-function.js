@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+function fn() { return 'result'; }
+
+assert.sameValue(`foo ${fn()} bar`, 'foo result bar');
+
+reportCompare(0, 0);

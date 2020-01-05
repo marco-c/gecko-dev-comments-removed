@@ -1,0 +1,51 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var evaluatedArg = false;
+var obj = {
+  method() {
+    
+    
+    eval('super(evaluatedArg = true);');
+  }
+}
+
+assert.throws(SyntaxError, function() {
+  obj.method();
+});
+
+assert.sameValue(
+  evaluatedArg, false, 'did not perform ArgumentsListEvaluation'
+);
+
+reportCompare(0, 0);

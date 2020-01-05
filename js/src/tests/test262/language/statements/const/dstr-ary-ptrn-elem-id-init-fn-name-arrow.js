@@ -1,0 +1,39 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const [arrow = () => {}] = [];
+
+assert.sameValue(arrow.name, 'arrow');
+
+reportCompare(0, 0);

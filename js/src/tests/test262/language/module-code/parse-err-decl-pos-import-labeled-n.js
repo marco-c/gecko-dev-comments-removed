@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+
+
+
+
+test262: import v from './decl-pos-import-labeled.js';

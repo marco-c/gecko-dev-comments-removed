@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+
+
+
+for (let x = 0; false;)
+  import v from './decl-pos-import-for-let.js';

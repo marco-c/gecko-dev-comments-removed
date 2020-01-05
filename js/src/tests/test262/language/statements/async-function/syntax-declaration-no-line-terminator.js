@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+assert.throws(ReferenceError, function() {
+  async
+  function foo() {}
+});
+
+reportCompare(0, 0);

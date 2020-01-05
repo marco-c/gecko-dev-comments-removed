@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+
+
+testOption(Intl.Collator, "ignorePunctuation", "boolean", undefined, false);
+
+reportCompare(0, 0);

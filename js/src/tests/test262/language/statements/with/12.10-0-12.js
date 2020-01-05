@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+  function f(o) {
+
+    function innerf(o) {
+      with (o) {
+        return x;
+      }
+    }
+
+    return innerf(o);
+  }
+
+assert.sameValue(f({x:42}), 42);
+
+reportCompare(0, 0);

@@ -1,0 +1,12 @@
+
+
+
+
+
+
+
+
+switch (true) { default: function g() {} }
+
+
+reportCompare(0, 0);

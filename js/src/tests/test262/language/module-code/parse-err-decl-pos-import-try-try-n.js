@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+
+
+try {
+  import v from './decl-pos-import-try-try.js';
+} catch (err) { }

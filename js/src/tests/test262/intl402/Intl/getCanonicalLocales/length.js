@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Intl.getCanonicalLocales.length, 1);
+
+verifyNotEnumerable(Intl.getCanonicalLocales, "length");
+verifyNotWritable(Intl.getCanonicalLocales, "length");
+verifyConfigurable(Intl.getCanonicalLocales, "length");
+
+reportCompare(0, 0);

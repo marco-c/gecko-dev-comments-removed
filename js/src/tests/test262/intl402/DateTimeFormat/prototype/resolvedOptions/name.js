@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Intl.DateTimeFormat.prototype.resolvedOptions.name, "resolvedOptions");
+
+verifyNotEnumerable(Intl.DateTimeFormat.prototype.resolvedOptions, "name");
+verifyNotWritable(Intl.DateTimeFormat.prototype.resolvedOptions, "name");
+verifyConfigurable(Intl.DateTimeFormat.prototype.resolvedOptions, "name");
+
+reportCompare(0, 0);

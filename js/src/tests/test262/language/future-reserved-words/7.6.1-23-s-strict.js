@@ -1,0 +1,18 @@
+'use strict';
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(SyntaxError, function() {
+            eval("var packag\u0065 = 123;");
+});
+
+reportCompare(0, 0);

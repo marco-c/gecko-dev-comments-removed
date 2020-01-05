@@ -1,0 +1,10 @@
+
+
+
+
+export default function fn() {
+  fn = 2;
+  return 1;
+}
+
+reportCompare(0, 0);

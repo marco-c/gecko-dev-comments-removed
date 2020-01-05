@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(ReferenceError, function() {
+  (0,eval)('typeof C; class C {}');
+});
+
+reportCompare(0, 0);

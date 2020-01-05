@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+
+
+  eval("({foo : 1, get foo(){}});");
+
+reportCompare(0, 0);

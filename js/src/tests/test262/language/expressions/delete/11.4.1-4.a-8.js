@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+
+var d = delete JSON;
+
+assert.sameValue(d, true, 'd');
+
+reportCompare(0, 0);

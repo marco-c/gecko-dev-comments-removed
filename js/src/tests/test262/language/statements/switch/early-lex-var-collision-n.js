@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+switch (0) {
+  case 1:
+    var test262id;
+    break;
+  default:
+    let test262id;
+}

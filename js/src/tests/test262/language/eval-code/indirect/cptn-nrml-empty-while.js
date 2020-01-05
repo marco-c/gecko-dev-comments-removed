@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue((0,eval)("while(false);"), undefined);
+
+reportCompare(0, 0);

@@ -1,0 +1,11 @@
+
+
+
+
+
+
+
+
+assert.sameValue(NaN, NaN);
+
+reportCompare(0, 0);

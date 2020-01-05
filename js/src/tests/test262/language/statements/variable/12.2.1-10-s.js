@@ -1,0 +1,12 @@
+
+
+
+
+
+
+
+
+  var s = eval;
+  s('eval = 42;');
+
+reportCompare(0, 0);

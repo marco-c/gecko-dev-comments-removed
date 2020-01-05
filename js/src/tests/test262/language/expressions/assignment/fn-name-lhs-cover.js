@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var fn;
+
+(fn) = function() {};
+
+assert.sameValue(Object.hasOwnProperty.call(fn, 'name'), false);
+
+reportCompare(0, 0);

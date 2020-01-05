@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+assert.throws(ReferenceError, function() {
+  ({ unresolvable });
+});
+
+reportCompare(0, 0);

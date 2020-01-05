@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+
+if (!("") !== true) {
+  $ERROR('#1: !("") === true. Actual: ' + (!("")));
+}
+
+reportCompare(0, 0);

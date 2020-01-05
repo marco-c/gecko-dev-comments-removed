@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(SyntaxError, function() {
+            eval("var regExp =  /[\u2029]/");
+});
+
+reportCompare(0, 0);

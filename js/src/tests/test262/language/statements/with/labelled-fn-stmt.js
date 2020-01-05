@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+with ({}) label1: label2: function test262() {}
+
+reportCompare(0, 0);

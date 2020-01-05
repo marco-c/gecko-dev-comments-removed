@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+assert.throws(SyntaxError, function() {
+            eval("try{};catch(){}");
+});
+
+reportCompare(0, 0);

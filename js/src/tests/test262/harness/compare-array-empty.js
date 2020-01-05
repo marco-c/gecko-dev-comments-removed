@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+if (compareArray([], []) !== true) {
+  $ERROR('Empty arrays are equivalent.');
+}
+
+reportCompare(0, 0);

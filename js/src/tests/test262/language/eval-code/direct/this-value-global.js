@@ -1,0 +1,12 @@
+
+
+
+
+
+
+
+
+
+assert.sameValue(eval('this;'), this);
+
+reportCompare(0, 0);

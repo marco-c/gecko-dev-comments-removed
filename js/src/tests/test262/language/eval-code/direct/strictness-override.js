@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(ReferenceError, function() {
+  eval('"use strict"; unresolvable = null;');
+});
+
+reportCompare(0, 0);

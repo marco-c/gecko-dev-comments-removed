@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+var result;
+class A {
+  *foo(a) {}
+}
+
+result = A.prototype.foo(3).next();
+
+assert.sameValue(result.value, undefined);
+assert.sameValue(result.done, true);
+
+reportCompare(0, 0);

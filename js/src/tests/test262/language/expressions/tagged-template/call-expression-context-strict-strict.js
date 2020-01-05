@@ -1,0 +1,34 @@
+'use strict';
+
+
+
+
+
+
+
+
+
+
+
+
+var context = null;
+var fn = function() {
+  return function() {
+    context = this;
+  };
+};
+
+fn()`NoSubstitutionTemplate`;
+
+assert.sameValue(context, undefined);
+
+fn = function() {
+  return () => { context = this; };
+};
+
+context = null;
+fn()`NoSubstitutionTemplate`;
+
+assert.sameValue(context, undefined);
+
+reportCompare(0, 0);

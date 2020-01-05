@@ -1,0 +1,18 @@
+'use strict';
+
+
+
+
+
+
+
+
+
+
+
+        var regObj = new RegExp();
+assert.throws(SyntaxError, function() {
+            eval("delete regObj;");
+});
+
+reportCompare(0, 0);

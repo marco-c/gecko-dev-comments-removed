@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+
+  var s = eval;
+  s('var eval;');
+
+reportCompare(0, 0);

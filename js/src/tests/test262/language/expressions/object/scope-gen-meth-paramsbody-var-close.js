@@ -1,0 +1,38 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var probe;
+
+({
+  
+  
+  *m(_ = null) {
+    var x = 'inside';
+    probe = function() { return x; };
+  }
+}.m().next());
+
+var x = 'outside';
+
+assert.sameValue(probe(), 'inside');
+assert.sameValue(x, 'outside');
+
+reportCompare(0, 0);

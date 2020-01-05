@@ -1,0 +1,11 @@
+
+
+
+
+
+
+
+
+switch (true) { default: let x; }
+
+reportCompare(0, 0);

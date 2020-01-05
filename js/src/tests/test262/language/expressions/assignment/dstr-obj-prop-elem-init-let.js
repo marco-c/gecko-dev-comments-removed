@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var x;
+
+assert.throws(ReferenceError, function() {
+  0, { x: x = y } = {};
+});
+
+let y;
+
+reportCompare(0, 0);

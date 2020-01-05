@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+taintDataProperty(Intl, "NumberFormat");
+(0.0).toLocaleString();
+
+reportCompare(0, 0);

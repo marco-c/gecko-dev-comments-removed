@@ -1,20 +1,20 @@
+/* -*- indent-tabs-mode: nil; js-indent-level: 2 -*-
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
-
-
-
+// NOTE: If you're adding new test harness functionality -- first, should you
+//       at all?  Most stuff is better in specific tests, or in nested shell.js
+//       or browser.js.  Second, supposing you should, please add it to this
+//       IIFE for better modularity/resilience against tests that must do
+//       particularly bizarre things that might break the harness.
 
 (function(global) {
-  
+  /**********************************************************************
+   * CACHED PRIMORDIAL FUNCTIONALITY (before a test might overwrite it) *
+   **********************************************************************/
 
-
-
-  var undefined; 
+  var undefined; // sigh
 
   var Error = global.Error;
   var Number = global.Number;
@@ -29,8 +29,8 @@
 
   var runningInBrowser = typeof global.window !== "undefined";
   if (runningInBrowser) {
-    
-    
+    // Certain cached functionality only exists (and is only needed) when
+    // running in the browser.  Segregate that caching here.
 
     var SpecialPowersSetGCZeal =
       global.SpecialPowers ? global.SpecialPowers.setGCZeal : undefined;
@@ -38,12 +38,14 @@
 
   var runningInShell = typeof window === "undefined";
 
-  
+  var evaluate = global.evaluate;
 
+  /****************************
+   * GENERAL HELPER FUNCTIONS *
+   ****************************/
 
-
-  
-  
+  // We could use Array.prototype.pop, but we don't so it's clear exactly what
+  // dependencies this function has on test-modifiable behavior (i.e. none).
   function ArrayPop(arr) {
     assertEq(ArrayIsArray(arr), true,
              "ArrayPop must only be used on actual arrays");
@@ -57,9 +59,9 @@
     return v;
   }
 
-  
-  
-  
+  // We *cannot* use Array.prototype.push for this, because that function sets
+  // the new trailing element, which could invoke a setter (left by a test) on
+  // Array.prototype or Object.prototype.
   function ArrayPush(arr, val) {
     assertEq(ArrayIsArray(arr), true,
              "ArrayPush must only be used on actual arrays");
@@ -76,12 +78,12 @@
     return ReflectApply(StringPrototypeEndsWith, str, [needle]);
   }
 
-  
-
-
+  /****************************
+   * TESTING FUNCTION EXPORTS *
+   ****************************/
 
   function SameValue(v1, v2) {
-    
+    // We could |return Object.is(v1, v2);|, but that's less portable.
     if (v1 === 0 && v2 === 0)
       return 1 / v1 === 1 / v2;
     if (v1 !== v1 && v2 !== v2)
@@ -150,24 +152,24 @@
   }
   global.assertThrowsInstanceOf = assertThrowsInstanceOf;
 
-  
-
-
+  /****************************
+   * UTILITY FUNCTION EXPORTS *
+   ****************************/
 
   var dump = global.dump;
   if (typeof global.dump === "function") {
-    
+    // A presumptively-functional |dump| exists, so no need to do anything.
   } else {
-    
+    // We don't have |dump|.  Try to simulate the desired effect another way.
     if (runningInBrowser) {
-      
-      
-      
-      
-      
+      // We can't actually print to the console: |global.print| invokes browser
+      // printing functionality here (it's overwritten just below), and
+      // |global.dump| isn't a function that'll dump to the console (presumably
+      // because the preference to enable |dump| wasn't set).  Just make it a
+      // no-op.
       dump = function() {};
     } else {
-      
+      // |print| prints to stdout: make |dump| do likewise.
       dump = global.print;
     }
     global.dump = dump;
@@ -175,32 +177,32 @@
 
   var print;
   if (runningInBrowser) {
-    
-    
-    
+    // We're executing in a browser.  Using |global.print| would invoke browser
+    // printing functionality: not what tests want!  Instead, use a print
+    // function that syncs up with the test harness and console.
     print = function print() {
       var s = "TEST-INFO | ";
       for (var i = 0; i < arguments.length; i++)
         s += String(arguments[i]) + " ";
 
-      
+      // Dump the string to the console for developers and the harness.
       dump(s + "\n");
 
-      
+      // AddPrintOutput doesn't require HTML special characters be escaped.
       global.AddPrintOutput(s);
     };
 
     global.print = print;
   } else {
-    
+    // We're executing in a shell, and |global.print| is the desired function.
     print = global.print;
   }
 
   var quit = global.quit;
   if (typeof quit !== "function") {
-    
-    
-    
+    // XXX There's something very strange about quit() in browser runs being a
+    //     function that doesn't quit at all (!).  We should get rid of quit()
+    //     as an integral part of tests in favor of something else.
     quit = function quit() {};
     global.quit = quit;
   }
@@ -212,23 +214,34 @@
         SpecialPowersSetGCZeal(z);
       };
     } else {
-      gczeal = function() {}; 
+      gczeal = function() {}; // no-op if not available
     }
 
     global.gczeal = gczeal;
   }
 
-  
+  // Evaluates the given source code as global script code. browser.js provides
+  // a different implementation for this function.
+  var evaluateScript = global.evaluateScript;
+  if (typeof evaluate === "function" && typeof evaluateScript !== "function") {
+    evaluateScript = function evaluateScript(code) {
+      evaluate(String(code));
+    };
 
+    global.evaluateScript = evaluateScript;
+  }
 
+  /******************************************************
+   * TEST METADATA EXPORTS (these are of dubious value) *
+   ******************************************************/
 
   global.SECTION = "";
   global.VERSION = "";
   global.BUGNUMBER = "";
 
-  
-
-
+  /*************************************************************************
+   * HARNESS-CENTRIC EXPORTS (we should generally work to eliminate these) *
+   *************************************************************************/
 
   var PASSED = " PASSED! ";
   global.PASSED = PASSED;
@@ -236,7 +249,7 @@
   var FAILED = " FAILED! ";
   global.FAILED = FAILED;
 
-  
+  /** Set up test environment. */
   function startTest() {
     if (global.BUGNUMBER)
       global.print("BUGNUMBER: " + global.BUGNUMBER);
@@ -245,10 +258,10 @@
 
   var callStack = [];
 
-  
-
-
-
+  /**
+   * Puts funcName at the top of the call stack.  This stack is used to show
+   * a function-reported-from field when reporting failures.
+   */
   function enterFunc(funcName) {
     assertEq(typeof funcName, "string",
              "enterFunc must be given a string funcName");
@@ -260,10 +273,10 @@
   }
   global.enterFunc = enterFunc;
 
-  
-
-
-
+  /**
+   * Pops the top funcName off the call stack.  funcName, if provided, is used
+   * to check push-pop balance.
+   */
   function exitFunc(funcName) {
     assertEq(typeof funcName === "string" || typeof funcName === "undefined",
              true,
@@ -277,7 +290,7 @@
         funcName += "()";
 
       if (lastFunc !== funcName) {
-        
+        // XXX Eliminate this dependency on global.reportCompare's identity.
         global.reportCompare(funcName, lastFunc,
                              "Test driver failure wrong exit function ");
       }
@@ -285,7 +298,7 @@
   }
   global.exitFunc = exitFunc;
 
-  
+  /** Peeks at the top of the call stack. */
   function currentFunc() {
     if (callStack.length == 0)
       return "top level script";
@@ -294,17 +307,17 @@
   }
   global.currentFunc = currentFunc;
 
-  
-  
+  // XXX This function is *only* used in harness functions and really shouldn't
+  //     be exported.
   var writeFormattedResult =
     function writeFormattedResult(expect, actual, string, passed) {
       print((passed ? PASSED : FAILED) + string + ' expected: ' + expect);
     };
   global.writeFormattedResult = writeFormattedResult;
 
-  
-
-
+  /*****************************************************
+   * RHINO-SPECIFIC EXPORTS (are these used any more?) *
+   *****************************************************/
 
   function inRhino() {
     return typeof global.defineClass === "function";
@@ -363,29 +376,29 @@ var expected = '';
 var actual = '';
 var msg = '';
 
-
-
-
+/*
+ * constant strings
+ */
 var GLOBAL = this + '';
 
 var DESCRIPTION;
 var EXPECTED;
 
-
-
-
-
-
-
-
+/*
+ * Signals to results.py that the current test case should be considered to
+ * have passed if it doesn't throw an exception.
+ *
+ * When the test suite is run in the browser, this function gets overridden by
+ * the same-named function in browser.js.
+ */
 function testPassesUnlessItThrows() {
   print(PASSED);
 }
 
-
-
-
-
+/*
+ * wrapper for test case constructor that doesn't require the SECTION
+ * argument.
+ */
 
 function AddTestCase( description, expect, actual ) {
   new TestCase( SECTION, description, expect, actual );
@@ -416,8 +429,8 @@ function TestCase(n, d, e, a)
 gFailureExpected = false;
 
 TestCase.prototype.dump = function () {
-  
-  
+  // let reftest handle error reporting, otherwise
+  // output a summary line.
   if (typeof document != "object" ||
       !document.location.href.match(/jsreftest.html/))
   {
@@ -426,8 +439,8 @@ TestCase.prototype.dump = function () {
          'result: '      + (this.passed ? 'PASSED':'FAILED') + ' ' +
          'type: '        + this.type + ' ' +
          'description: ' + toPrinted(this.description) + ' ' +
-
-
+//       'expected: '    + toPrinted(this.expect) + ' ' +
+//       'actual: '      + toPrinted(this.actual) + ' ' +
          'reason: '      + toPrinted(this.reason) + '\n');
   }
 };
@@ -441,26 +454,26 @@ function getTestCases()
   return gTestcases;
 }
 
-
-
-
-
+/*
+ * The test driver searches for such a phrase in the test output.
+ * If such phrase exists, it will set n as the expected exit code.
+ */
 function expectExitCode(n)
 {
   print('--- NOTE: IN THIS TESTCASE, WE EXPECT EXIT CODE ' + n + ' ---');
 }
 
-
-
-
+/*
+ * Statuses current section of a test
+ */
 function inSection(x)
 {
   return "Section " + x + " of test - ";
 }
 
-
-
-
+/*
+ * Report a failure in the 'accepted' manner
+ */
 function reportFailure (msg)
 {
   var lines = msg.split ("\n");
@@ -472,15 +485,15 @@ function reportFailure (msg)
     print (FAILED + prefix + lines[i]);
 }
 
-
-
-
+/*
+ * Print a non-failure message.
+ */
 function printStatus (msg)
 {
-
-
-
-
+/* js1_6 had...
+   msg = String(msg);
+   msg = msg.toString();
+*/
   msg = msg.toString();
   var lines = msg.split ("\n");
   var l;
@@ -489,9 +502,9 @@ function printStatus (msg)
     print (STATUS + lines[i]);
 }
 
-
-
-
+/*
+ * Print a bugnumber message.
+ */
 function printBugNumber (num)
 {
   BUGNUMBER = num;
@@ -542,11 +555,11 @@ function escapeString (str)
   return result;
 }
 
-
-
-
-
-
+/*
+ * Compare expected result to actual result, if they differ (in value and/or
+ * type) report a failure.  If description is provided, include it in the
+ * failure report.
+ */
 function reportCompare (expected, actual, description) {
   var expected_t = typeof expected;
   var actual_t = typeof actual;
@@ -568,7 +581,7 @@ function reportCompare (expected, actual, description) {
   var testcase = new TestCase("unknown-test-name", description, expected, actual);
   testcase.reason = output;
 
-  
+  // if running under reftest, let it handle result reporting.
   if (typeof document != "object" ||
       !document.location.href.match(/jsreftest.html/)) {
     if (testcase.passed)
@@ -583,12 +596,12 @@ function reportCompare (expected, actual, description) {
   return testcase.passed;
 }
 
-
-
-
-
-
-
+/*
+ * Attempt to match a regular expression describing the result to
+ * the actual result, if they differ (in value and/or
+ * type) report a failure.  If description is provided, include it in the
+ * failure report.
+ */
 function reportMatch (expectedRegExp, actual, description) {
   var expected_t = "string";
   var actual_t = typeof actual;
@@ -611,7 +624,7 @@ function reportMatch (expectedRegExp, actual, description) {
   var testcase = new TestCase("unknown-test-name", description, true, matches);
   testcase.reason = output;
 
-  
+  // if running under reftest, let it handle result reporting.
   if (typeof document != "object" ||
       !document.location.href.match(/jsreftest.html/)) {
     if (testcase.passed)
@@ -626,12 +639,12 @@ function reportMatch (expectedRegExp, actual, description) {
   return testcase.passed;
 }
 
-
-
-
-
-
-
+/*
+ * An xorshift pseudo-random number generator see:
+ * https://en.wikipedia.org/wiki/Xorshift#xorshift.2A
+ * This generator will always produce a value, n, where
+ * 0 <= n <= 255
+ */
 function *XorShiftGenerator(seed, size) {
     let x = seed;
     for (let i = 0; i < size; i++) {
@@ -644,7 +657,7 @@ function *XorShiftGenerator(seed, size) {
 
 function compareSource(expect, actual, summary)
 {
-  
+  // compare source
   var expectP = expect.
     replace(/([(){},.:\[\]])/mg, ' $1 ').
     replace(/(\w+)/mg, ' $1 ').
@@ -664,7 +677,7 @@ function compareSource(expect, actual, summary)
 
   reportCompare(expectP, actualP, summary);
 
-  
+  // actual must be compilable if expect is?
   try
   {
     var expectCompile = 'No Error';
@@ -690,12 +703,12 @@ function compareSource(expect, actual, summary)
 
 function optionsInit() {
 
-  
-  
+  // record initial values to support resetting
+  // options to their initial values
   options.initvalues  = {};
 
-  
-  
+  // record values in a stack to support pushing
+  // and popping options
   options.stackvalues = [];
 
   var optionNames = options().split(',');
@@ -712,8 +725,8 @@ function optionsInit() {
 
 function optionsClear() {
 
-  
-  
+  // turn off current settings
+  // except jit.
   var optionNames = options().split(',');
   for (var i = 0; i < optionNames.length; i++)
   {
@@ -767,7 +780,7 @@ function optionsReset() {
   {
     optionsClear();
 
-    
+    // turn on initial settings
     for (var optionName in options.initvalues)
     {
       if (!options.hasOwnProperty(optionName))
@@ -793,32 +806,32 @@ function getTestCaseResult(expected, actual)
   if (typeof expected != typeof actual)
     return false;
   if (typeof expected != 'number')
-    
+    // Note that many tests depend on the use of '==' here, not '==='.
     return actual == expected;
 
-  
-  
+  // Distinguish NaN from other values.  Using x != x comparisons here
+  // works even if tests redefine isNaN.
   if (actual != actual)
     return expected != expected;
   if (expected != expected)
     return false;
 
-  
+  // Tolerate a certain degree of error.
   if (actual != expected)
     return Math.abs(actual - expected) <= 1E-10;
 
-  
-  
-  
-  
-  
-  
+  // Here would be a good place to distinguish 0 and -0, if we wanted
+  // to.  However, doing so would introduce a number of failures in
+  // areas where they don't seem important.  For example, the WeekDay
+  // function in ECMA-262 returns -0 for Sundays before the epoch, but
+  // the Date functions in SpiderMonkey specified in terms of WeekDay
+  // often don't.  This seems unimportant.
   return true;
 }
 
 function test() {
   for ( gTc=0; gTc < gTestcases.length; gTc++ ) {
-    
+    // temporary hack to work around some unknown issue in 1.7
     try
     {
       gTestcases[gTc].passed = writeTestCaseResult(
@@ -835,15 +848,15 @@ function test() {
   return ( gTestcases );
 }
 
-
-
-
-
-
+/*
+ * Begin printing functions.  These functions use the shell's
+ * print function.  When running tests in the browser, browser.js
+ * overrides these functions to write to the page.
+ */
 
 function writeTestCaseResult( expect, actual, string ) {
   var passed = getTestCaseResult( expect, actual );
-  
+  // if running under reftest, let it handle result reporting.
   if (typeof document != "object" ||
       !document.location.href.match(/jsreftest.html/)) {
     writeFormattedResult( expect, actual, string, passed );
@@ -854,18 +867,18 @@ function writeTestCaseResult( expect, actual, string ) {
 function writeHeaderToLog( string ) {
   print( string );
 }
-
+/* end of print functions */
 
 
 function jsTestDriverEnd()
 {
-  
-  
-  
-  
-  
-  
-  
+  // gDelayTestDriverEnd is used to
+  // delay collection of the test result and
+  // signal to Spider so that tests can continue
+  // to run after page load has fired. They are
+  // responsible for setting gDelayTestDriverEnd = true
+  // then when completed, setting gDelayTestDriverEnd = false
+  // then calling jsTestDriverEnd()
 
   if (gDelayTestDriverEnd)
   {

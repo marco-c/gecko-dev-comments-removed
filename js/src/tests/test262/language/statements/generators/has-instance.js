@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+function* g() {}
+
+assert(g() instanceof g, 'Instance created via function invocation');
+
+reportCompare(0, 0);

@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  var d = delete NaN;
+
+assert.sameValue(d, false, 'd');
+
+reportCompare(0, 0);

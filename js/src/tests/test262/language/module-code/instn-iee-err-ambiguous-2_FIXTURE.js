@@ -1,0 +1,7 @@
+
+
+
+
+export var x;
+
+reportCompare(0, 0);

@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+testBuiltInObject(String.prototype.localeCompare, true, false, [], 1);
+
+reportCompare(0, 0);

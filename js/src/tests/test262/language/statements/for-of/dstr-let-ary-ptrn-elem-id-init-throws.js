@@ -1,0 +1,56 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(Test262Error, function() {
+  for (let [x = (function() { throw new Test262Error(); })()] of [[undefined]]) {
+    return;
+  }
+});
+
+reportCompare(0, 0);

@@ -12,6 +12,188 @@
 
 
 
+(function initializeUtilityExports(global, parent) {
+  
+
+
+
+  var Error = global.Error;
+  var String = global.String;
+  var GlobalEval = global.eval;
+  var ReflectApply = global.Reflect.apply;
+  var FunctionToString = global.Function.prototype.toString;
+  var ObjectDefineProperty = global.Object.defineProperty;
+
+  
+  
+  
+  
+  
+  var ObjectGetOwnPropertyDescriptor = global.Object.getOwnPropertyDescriptor;
+
+  var Worker = global.Worker;
+  var Blob = global.Blob;
+  var URL = global.URL;
+
+  var document = global.document;
+  var documentDocumentElement = global.document.documentElement;
+  var DocumentCreateElement = global.document.createElement;
+
+  var EventTargetPrototypeAddEventListener = global.EventTarget.prototype.addEventListener;
+  var HTMLElementPrototypeStyleSetter =
+    ObjectGetOwnPropertyDescriptor(global.HTMLElement.prototype, "style").set;
+  var HTMLIFramePrototypeContentWindowGetter =
+    ObjectGetOwnPropertyDescriptor(global.HTMLIFrameElement.prototype, "contentWindow").get;
+  var HTMLScriptElementTextSetter =
+    ObjectGetOwnPropertyDescriptor(global.HTMLScriptElement.prototype, "text").set;
+  var NodePrototypeAppendChild = global.Node.prototype.appendChild;
+  var NodePrototypeRemoveChild = global.Node.prototype.removeChild;
+  var {get: WindowOnErrorGetter, set: WindowOnErrorSetter} =
+    ObjectGetOwnPropertyDescriptor(global, "onerror");
+  var WorkerPrototypePostMessage = Worker.prototype.postMessage;
+  var URLCreateObjectURL = URL.createObjectURL;
+
+  
+  var savedGlobalOnError = [];
+
+  
+  function setGlobalOnError(newOnError) {
+    var currentOnError = ReflectApply(WindowOnErrorGetter, global, []);
+    ArrayPush(savedGlobalOnError, currentOnError);
+    ReflectApply(WindowOnErrorSetter, global, [newOnError]);
+  }
+
+  
+  function restoreGlobalOnError() {
+    var previousOnError = ArrayPop(savedGlobalOnError);
+    ReflectApply(WindowOnErrorSetter, global, [previousOnError]);
+  }
+
+  
+
+
+
+  function ArrayPush(array, value) {
+    ReflectApply(ObjectDefineProperty, null, [
+      array, array.length,
+      {__proto__: null, value, writable: true, enumerable: true, configurable: true}
+    ]);
+  }
+
+  function ArrayPop(array) {
+    if (array.length) {
+      var item = array[array.length - 1];
+      array.length -= 1;
+      return item;
+    }
+  }
+
+  function AppendChild(elt, kid) {
+    ReflectApply(NodePrototypeAppendChild, elt, [kid]);
+  }
+
+  function CreateElement(name) {
+    return ReflectApply(DocumentCreateElement, document, [name]);
+  }
+
+  function RemoveChild(elt, kid) {
+    ReflectApply(NodePrototypeRemoveChild, elt, [kid]);
+  }
+
+  function CreateWorker(script) {
+    var blob = new Blob([script], {__proto__: null, type: "text/javascript"});
+    return new Worker(URLCreateObjectURL(blob));
+  }
+
+  
+
+
+
+  var evaluate = global.evaluate;
+  if (typeof evaluate !== "function") {
+    
+    evaluate = function evaluate(code) {
+      if (typeof code !== "string")
+        throw Error("Expected string argument for evaluate()");
+
+      return GlobalEval(code);
+    };
+
+    global.evaluate = evaluate;
+  }
+
+  var evaluateScript = global.evaluateScript;
+  if (typeof evaluateScript !== "function") {
+    evaluateScript = function evaluateScript(code) {
+      code = String(code);
+      var script = CreateElement("script");
+
+      
+      var hasUncaughtError = false;
+      var uncaughtError;
+      var eventOptions = {__proto__: null, once: true};
+      ReflectApply(EventTargetPrototypeAddEventListener, script, [
+        "beforescriptexecute", function() {
+          setGlobalOnError(function(messageOrEvent, source, lineno, colno, error) {
+            hasUncaughtError = true;
+            uncaughtError = error;
+            return true;
+          });
+        }, eventOptions
+      ]);
+      ReflectApply(EventTargetPrototypeAddEventListener, script, [
+        "afterscriptexecute", function() {
+          restoreGlobalOnError();
+        }, eventOptions
+      ]);
+
+      ReflectApply(HTMLScriptElementTextSetter, script, [code]);
+      AppendChild(documentDocumentElement, script);
+      RemoveChild(documentDocumentElement, script);
+
+      if (hasUncaughtError)
+        throw uncaughtError;
+    };
+
+    global.evaluateScript = evaluateScript;
+  }
+
+  var newGlobal = global.newGlobal;
+  if (typeof newGlobal !== "function") {
+    
+    newGlobal = parent ? parent.newGlobal : function newGlobal() {
+      var iframe = CreateElement("iframe");
+      AppendChild(documentDocumentElement, iframe);
+      var win =
+        ReflectApply(HTMLIFramePrototypeContentWindowGetter, iframe, []);
+
+      
+      ReflectApply(HTMLElementPrototypeStyleSetter, iframe, ["display:none"]);
+
+      
+      var initFunction = ReflectApply(FunctionToString, initializeUtilityExports, []);
+      win.Function("parent", initFunction + "; initializeUtilityExports(this, parent);")(global);
+
+      return win;
+    };
+
+    global.newGlobal = newGlobal;
+  }
+
+  var detachArrayBuffer = global.detachArrayBuffer;
+  if (typeof detachArrayBuffer !== "function") {
+    var worker = null;
+    detachArrayBuffer = function detachArrayBuffer(arrayBuffer) {
+      if (worker === null) {
+        worker = CreateWorker("/* black hole */");
+      }
+      ReflectApply(WorkerPrototypePostMessage, worker, ["detach", [arrayBuffer]]);
+    };
+
+    global.detachArrayBuffer = detachArrayBuffer;
+  }
+})(this);
+
 (function(global) {
   
 
@@ -26,18 +208,14 @@
   
   var ObjectGetOwnPropertyDescriptor = global.Object.getOwnPropertyDescriptor;
 
+  var String = global.String;
+
   var document = global.document;
-  var documentBody = global.document.body;
-  var documentDocumentElement = global.document.documentElement;
   var DocumentCreateElement = global.document.createElement;
-  var ElementInnerHTMLSetter =
-    ObjectGetOwnPropertyDescriptor(global.Element.prototype, "innerHTML").set;
-  var HTMLIFramePrototypeContentWindowGetter =
-    ObjectGetOwnPropertyDescriptor(global.HTMLIFrameElement.prototype, "contentWindow").get;
-  var HTMLIFramePrototypeRemove = global.HTMLIFrameElement.prototype.remove;
   var NodePrototypeAppendChild = global.Node.prototype.appendChild;
   var NodePrototypeTextContentSetter =
     ObjectGetOwnPropertyDescriptor(global.Node.prototype, "textContent").set;
+  var HTMLElementPrototypeSetAttribute = global.Element.prototype.setAttribute;
 
   
   
@@ -65,26 +243,6 @@
 
   function SetTextContent(element, text) {
     ReflectApply(NodePrototypeTextContentSetter, element, [text]);
-  }
-
-  
-
-
-
-  var newGlobal = global.newGlobal;
-  if (typeof newGlobal !== "function") {
-    newGlobal = function newGlobal() {
-      var iframe = CreateElement("iframe");
-      AppendChild(documentDocumentElement, iframe);
-      var win =
-        ReflectApply(HTMLIFramePrototypeContentWindowGetter, iframe, []);
-      ReflectApply(HTMLIFramePrototypeRemove, iframe, []);
-
-      
-      win.evaluate = win.eval;
-      return win;
-    };
-    global.newGlobal = newGlobal;
   }
 
   

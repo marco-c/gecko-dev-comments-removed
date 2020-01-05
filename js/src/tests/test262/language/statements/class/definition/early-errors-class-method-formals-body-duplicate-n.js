@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+class Foo {
+  async function foo(bar) { let bar; }
+}

@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+var obj = {};
+var s = Symbol('1');
+Object.defineProperty(obj, s, {
+  enumerable: true
+});
+
+verifyEnumerable(obj, s);
+
+reportCompare(0, 0);

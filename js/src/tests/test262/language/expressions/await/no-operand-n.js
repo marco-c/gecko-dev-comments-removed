@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function foo() {
+  await;
+}

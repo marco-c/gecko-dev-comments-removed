@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+function testcase() {
+  assert.sameValue(Object.getPrototypeOf(arguments), Object.getPrototypeOf({}));
+ }
+testcase();
+
+reportCompare(0, 0);

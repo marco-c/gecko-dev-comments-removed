@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+function testcase() {
+  var foo = function(){};
+
+  
+  var d = delete foo;
+
+  assert.sameValue(d, false, 'd');
+  assert.sameValue(typeof foo, 'function', 'typeof foo');
+ }
+testcase();
+
+reportCompare(0, 0);

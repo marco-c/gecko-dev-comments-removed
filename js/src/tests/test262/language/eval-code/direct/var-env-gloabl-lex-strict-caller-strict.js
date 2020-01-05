@@ -1,0 +1,19 @@
+'use strict';
+
+
+
+
+
+
+
+
+
+
+
+
+
+let x;
+
+eval('var x;');
+
+reportCompare(0, 0);

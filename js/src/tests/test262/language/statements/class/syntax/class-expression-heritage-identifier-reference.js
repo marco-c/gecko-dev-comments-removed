@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+class A {}
+var B = class extends A {}
+
+assert.sameValue(typeof B, "function");
+
+reportCompare(0, 0);

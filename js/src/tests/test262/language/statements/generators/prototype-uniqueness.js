@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+function* g1() {}
+function* g2() {}
+
+assert(g1.prototype !== g2.prototype);
+
+reportCompare(0, 0);

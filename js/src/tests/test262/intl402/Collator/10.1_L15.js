@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+testBuiltInObject(Intl.Collator, true, true, ["supportedLocalesOf"], 0);
+
+reportCompare(0, 0);

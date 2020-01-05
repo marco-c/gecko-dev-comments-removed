@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue((0,eval)("switch(1){}"), undefined);
+
+reportCompare(0, 0);

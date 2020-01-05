@@ -1,0 +1,19 @@
+'use strict';
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(SyntaxError, function() {
+            eval("var obj = {set _11_1_5_2_fun(arguments) {} };");
+});
+
+reportCompare(0, 0);

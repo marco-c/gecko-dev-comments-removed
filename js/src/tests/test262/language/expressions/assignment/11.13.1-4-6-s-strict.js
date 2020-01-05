@@ -1,0 +1,18 @@
+'use strict';
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+    Function.length = 42;
+});
+
+reportCompare(0, 0);

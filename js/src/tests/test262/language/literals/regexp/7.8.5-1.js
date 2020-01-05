@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(SyntaxError, function() {
+            eval("var regExp = /\\\rn/;");
+});
+
+reportCompare(0, 0);

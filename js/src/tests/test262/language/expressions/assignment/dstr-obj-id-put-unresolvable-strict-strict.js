@@ -1,0 +1,25 @@
+'use strict';
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(ReferenceError, function() {
+  0, { unresolvable } = {};
+});
+
+reportCompare(0, 0);

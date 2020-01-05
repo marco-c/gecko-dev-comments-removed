@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+var result;
+var obj = {
+  *g() {
+    (function yield() {});
+  }
+};
+
+result = obj.g().next();
+
+assert.sameValue(result.value, undefined);
+assert.sameValue(result.done, true);
+
+reportCompare(0, 0);

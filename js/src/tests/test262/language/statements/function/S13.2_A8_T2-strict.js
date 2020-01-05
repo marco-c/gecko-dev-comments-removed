@@ -1,0 +1,13 @@
+'use strict';
+
+
+
+
+
+
+
+
+
+'arguments' in function() {};
+
+reportCompare(0, 0);

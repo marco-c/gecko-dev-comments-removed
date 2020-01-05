@@ -1,0 +1,18 @@
+'use strict';
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(Test262Error, function() {
+  throw new Test262Error();
+  b = 11;
+});
+
+reportCompare(0, 0);

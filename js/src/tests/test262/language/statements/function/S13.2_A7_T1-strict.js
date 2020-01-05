@@ -1,0 +1,13 @@
+'use strict';
+
+
+
+
+
+
+
+
+
+(function(){}).hasOwnProperty('caller');
+
+reportCompare(0, 0);

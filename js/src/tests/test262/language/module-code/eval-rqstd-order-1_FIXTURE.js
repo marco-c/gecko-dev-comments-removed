@@ -1,0 +1,7 @@
+
+
+
+
+Function('return this;')().test262 = '1';
+
+reportCompare(0, 0);

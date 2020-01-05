@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+
+var one = (0, function(a,) {});
+var two = (0, function(a,b,) {});
+
+reportCompare(0, 0);

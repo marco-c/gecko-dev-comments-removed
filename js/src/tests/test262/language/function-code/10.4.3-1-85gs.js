@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+function f() { return this!==undefined;};
+if (! ((function () {"use strict"; return f.apply();})())){
+    throw "'this' had incorrect value!";
+}
+
+reportCompare(0, 0);

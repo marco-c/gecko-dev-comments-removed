@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+testBuiltInObject(Intl.DateTimeFormat.prototype.resolvedOptions, true, false, [], 0);
+
+reportCompare(0, 0);

@@ -1,0 +1,9 @@
+
+
+
+
+Function('return this;')().test262 += '4';
+
+export default null;
+
+reportCompare(0, 0);

@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+assert.throws(SyntaxError, function() {
+  eval("'\u2028str\u2028ing\u2028'");
+});
+
+reportCompare(0, 0);

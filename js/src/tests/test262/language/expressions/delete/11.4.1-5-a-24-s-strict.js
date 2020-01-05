@@ -1,0 +1,16 @@
+'use strict';
+
+
+
+
+
+
+
+
+
+
+assert.throws(SyntaxError, function() {
+            eval("delete Date;");
+});
+
+reportCompare(0, 0);

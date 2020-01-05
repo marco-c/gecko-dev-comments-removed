@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+
+var ownProperties = Object.getOwnPropertyNames(function*() {}.prototype);
+assert.sameValue(ownProperties.length, 0);
+
+reportCompare(0, 0);

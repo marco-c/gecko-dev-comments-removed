@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+function f() {}
+
+(function(x) {
+  label: {
+    let x = 'inner';
+    break label;
+  }
+  f();  
+  assert.sameValue(x, 'outer');
+})('outer');
+
+
+reportCompare(0, 0);

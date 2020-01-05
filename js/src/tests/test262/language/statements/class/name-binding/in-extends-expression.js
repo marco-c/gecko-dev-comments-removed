@@ -1,0 +1,12 @@
+
+
+
+
+
+
+
+assert.throws(ReferenceError, function() {
+  class x extends x {}
+});
+
+reportCompare(0, 0);

@@ -1,0 +1,43 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var executed = false;
+
+Object.preventExtensions(this);
+
+assert.throws(TypeError, function() {
+  $.evalScript('executed = true; function test262() {}');
+});
+
+assert.sameValue(executed, false);
+
+reportCompare(0, 0);

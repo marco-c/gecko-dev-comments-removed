@@ -1,0 +1,48 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var iter = {};
+iter[Symbol.iterator] = function() {
+  return null;
+};
+
+assert.throws(TypeError, function() {
+  (function() {}(...iter));
+});
+
+reportCompare(0, 0);

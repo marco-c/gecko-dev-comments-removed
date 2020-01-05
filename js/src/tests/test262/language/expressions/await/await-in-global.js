@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+
+var await = 1;
+assert.sameValue(await, 1);
+
+reportCompare(0, 0);

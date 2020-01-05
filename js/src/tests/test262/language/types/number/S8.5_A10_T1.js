@@ -1,0 +1,12 @@
+
+
+
+
+
+
+
+
+
+var Infinity;
+
+reportCompare(0, 0);

@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+class A {
+  constructor() {}
+}
+
+assert.sameValue(typeof A, "function");
+
+
+reportCompare(0, 0);

@@ -1,0 +1,12 @@
+
+
+
+
+
+
+
+
+
+var throws = 1;
+
+reportCompare(0, 0);

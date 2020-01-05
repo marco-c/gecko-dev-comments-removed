@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+testBuiltInObject(Object.getOwnPropertyDescriptor(Intl.Collator.prototype, "compare").get , true, false, [], 0);
+
+reportCompare(0, 0);

@@ -1,0 +1,18 @@
+'use strict';
+
+
+
+
+
+
+
+
+
+
+
+var global = this;
+assert.throws(TypeError, function() {
+      global.undefined = 42;
+});
+
+reportCompare(0, 0);

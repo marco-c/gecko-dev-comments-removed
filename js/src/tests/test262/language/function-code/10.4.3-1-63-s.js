@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+
+function f() { "use strict"; return this===undefined;};
+assert(eval("f();"));
+
+reportCompare(0, 0);

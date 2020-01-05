@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+var _ = 1;
+
+assert.sameValue(_, 1);
+
+reportCompare(0, 0);

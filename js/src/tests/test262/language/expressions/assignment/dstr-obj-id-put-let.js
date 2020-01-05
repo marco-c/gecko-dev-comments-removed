@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(ReferenceError, function() {
+  0, { x } = {};
+});
+
+let x;
+
+reportCompare(0, 0);

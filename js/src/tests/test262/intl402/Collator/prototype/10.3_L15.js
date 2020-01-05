@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+testBuiltInObject(Intl.Collator.prototype, false, false, ["constructor", "compare", "resolvedOptions"]);
+
+reportCompare(0, 0);

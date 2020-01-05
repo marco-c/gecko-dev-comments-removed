@@ -1,0 +1,12 @@
+
+
+
+
+
+
+
+
+
+
+
+if (true) class C {} else class D {}

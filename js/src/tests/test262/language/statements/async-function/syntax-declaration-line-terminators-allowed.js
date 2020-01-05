@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+async function
+foo()
+{
+  
+}
+
+assert(foo instanceof Function);
+
+reportCompare(0, 0);

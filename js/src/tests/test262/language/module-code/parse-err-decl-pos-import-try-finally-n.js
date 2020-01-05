@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+
+
+try { } finally {
+  import v from './decl-pos-import-try-finally.js';
+}

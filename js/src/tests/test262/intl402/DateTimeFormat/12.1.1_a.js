@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+testForUnwantedRegExpChanges(function () {
+    new Intl.DateTimeFormat("de-DE-u-ca-gregory");
+});
+
+testForUnwantedRegExpChanges(function () {
+    new Intl.DateTimeFormat("de-DE-u-ca-gregory", {timeZone: "UTC"});
+});
+
+reportCompare(0, 0);

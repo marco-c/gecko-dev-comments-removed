@@ -1,0 +1,17 @@
+'use strict';
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(SyntaxError, function() {
+            eval("delete Error;");
+});
+
+reportCompare(0, 0);

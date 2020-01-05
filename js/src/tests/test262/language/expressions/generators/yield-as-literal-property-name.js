@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+var result;
+var g = function*() {
+  ({ get yield() { return 1 } });
+};
+
+result = g().next();
+assert.sameValue(result.value, undefined);
+assert.sameValue(result.done, true);
+
+reportCompare(0, 0);

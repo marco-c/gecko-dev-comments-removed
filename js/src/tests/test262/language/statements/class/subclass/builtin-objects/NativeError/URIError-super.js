@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class CustomError extends URIError {
+  constructor() {}
+}
+
+assert.throws(ReferenceError, function() {
+  new CustomError();
+});
+
+reportCompare(0, 0);

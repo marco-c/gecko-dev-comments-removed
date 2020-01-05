@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+
+
+
+
+({ m() { import v from './decl-pos-import-object-method.js'; } });

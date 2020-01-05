@@ -1,0 +1,13 @@
+'use strict';
+
+
+
+
+
+
+
+
+
+(function(){}).hasOwnProperty('arguments');
+
+reportCompare(0, 0);

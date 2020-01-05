@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+
+
+
+
+() => { import v from './decl-pos-import-arrow-function.js'; };

@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+
+
+
+
+class C { static method() { import v from './decl-pos-import-class-decl-meth-static.js'; } }

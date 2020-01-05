@@ -1,0 +1,12 @@
+
+
+
+
+
+
+
+
+
+
+
+if (true) function* g() {  } else function* _g() {}

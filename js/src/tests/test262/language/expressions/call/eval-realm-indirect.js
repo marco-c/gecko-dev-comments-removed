@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var x = 'outside';
+var result;
+
+(function() {
+  var eval = $.createRealm().global.eval;
+
+  eval('var x = "inside";');
+
+  result = x;
+}());
+
+assert.sameValue(result, 'outside');
+
+reportCompare(0, 0);

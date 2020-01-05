@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+Object.prototype.__proto__ = null;
+
+assert.throws(TypeError, function() {
+  Object.prototype.__proto__ = {};
+});
+
+assert.sameValue(Object.getPrototypeOf(Object.prototype), null);
+
+reportCompare(0, 0);

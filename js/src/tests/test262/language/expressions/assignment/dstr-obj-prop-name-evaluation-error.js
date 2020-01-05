@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var a, x;
+
+assert.throws(TypeError, function() {
+  0, { [a.b]: x } = {};
+});
+
+reportCompare(0, 0);

@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+assert.throws(ReferenceError, function() {
+  let x = 1;
+  for (const x in { x }) {}
+});
+
+reportCompare(0, 0);

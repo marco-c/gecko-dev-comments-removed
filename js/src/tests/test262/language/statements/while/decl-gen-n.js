@@ -1,0 +1,12 @@
+
+
+
+
+
+
+
+
+
+
+
+while (false) function* g() {}

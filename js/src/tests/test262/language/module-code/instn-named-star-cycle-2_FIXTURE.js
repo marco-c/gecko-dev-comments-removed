@@ -1,0 +1,7 @@
+
+
+
+
+export * from './instn-named-star-cycle-indirect-x_FIXTURE.js';
+
+reportCompare(0, 0);

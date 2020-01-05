@@ -1,0 +1,12 @@
+
+
+
+
+
+
+
+class C4 {
+  get ['constructor']() {}
+}
+
+reportCompare(0, 0);

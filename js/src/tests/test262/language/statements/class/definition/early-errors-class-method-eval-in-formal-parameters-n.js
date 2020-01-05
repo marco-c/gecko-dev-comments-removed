@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+
+
+class Foo {
+  async foo(eval) { }
+}

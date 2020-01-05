@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+class A {
+  constructor() {}
+}
+
+
+reportCompare(0, 0);

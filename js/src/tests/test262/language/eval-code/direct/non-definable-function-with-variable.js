@@ -1,0 +1,38 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+try {
+  eval("var shouldNotBeDefined; function NaN(){}");
+} catch (e) {
+  
+}
+
+assert.sameValue(Object.getOwnPropertyDescriptor(this, "shouldNotBeDefined"), undefined);
+
+reportCompare(0, 0);

@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+assert.throws(ReferenceError, function() {
+  var o = {notDefined};
+});
+
+reportCompare(0, 0);

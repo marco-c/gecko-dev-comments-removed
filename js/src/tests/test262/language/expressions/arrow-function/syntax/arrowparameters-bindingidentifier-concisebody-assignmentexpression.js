@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+var af = x => x;
+
+assert.sameValue(typeof af, "function");
+assert.sameValue(af(1), 1);
+
+reportCompare(0, 0);

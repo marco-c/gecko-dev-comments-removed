@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+function f() { "use strict"; return this;};
+
+assert.sameValue(f.call(this), this, 'f.call(this)');
+
+reportCompare(0, 0);

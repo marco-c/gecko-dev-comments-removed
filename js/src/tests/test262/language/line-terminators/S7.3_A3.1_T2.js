@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+assert.throws(SyntaxError, function() {
+  eval("//\u000A single line comment");
+});
+
+reportCompare(0, 0);

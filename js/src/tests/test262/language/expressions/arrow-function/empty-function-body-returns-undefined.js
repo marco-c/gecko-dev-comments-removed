@@ -1,0 +1,12 @@
+
+
+
+
+
+
+
+
+var empty = () => {};
+assert.sameValue(empty(), undefined);
+
+reportCompare(0, 0);
