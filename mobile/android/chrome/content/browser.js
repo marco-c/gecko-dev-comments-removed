@@ -3635,6 +3635,7 @@ Tab.prototype = {
       
       
       this.browser.__SS_restore = true;
+      this.browser.setAttribute("pending", "true");
     } else {
       let flags = "flags" in aParams ? aParams.flags : Ci.nsIWebNavigation.LOAD_FLAGS_NONE;
       let postData = ("postData" in aParams && aParams.postData) ? aParams.postData.value : null;
