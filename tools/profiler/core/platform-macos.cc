@@ -43,21 +43,6 @@ using mozilla::TimeDuration;
 
 
 
-
-
-struct SamplerRegistry {
-  static void AddActiveSampler(Sampler *sampler) {
-    MOZ_ASSERT(!SamplerRegistry::sampler);
-    SamplerRegistry::sampler = sampler;
-  }
-  static void RemoveActiveSampler(Sampler *sampler) {
-    SamplerRegistry::sampler = NULL;
-  }
-  static Sampler *sampler;
-};
-
-Sampler *SamplerRegistry::sampler = NULL;
-
 #ifdef DEBUG
 
 static const pthread_t kNoThread = (pthread_t) 0;
@@ -153,19 +138,17 @@ public:
     pthread_join(mThread, NULL);
   }
 
-  static void AddActiveSampler(Sampler* sampler) {
-    SamplerRegistry::AddActiveSampler(sampler);
+  static void AddActiveSampler() {
+    MOZ_RELEASE_ASSERT(NS_IsMainThread());
+
     if (mInstance == NULL) {
-      mInstance = new SamplerThread(sampler->interval());
+      mInstance = new SamplerThread(gSampler->interval());
       mInstance->Start();
     }
   }
 
-  static void RemoveActiveSampler(Sampler* sampler) {
+  static void RemoveActiveSampler() {
     mInstance->Join();
-    
-    
-    SamplerRegistry::RemoveActiveSampler(sampler);
     delete mInstance;
     mInstance = NULL;
   }
@@ -173,10 +156,12 @@ public:
   void Run() {
     TimeDuration lastSleepOverhead = 0;
     TimeStamp sampleStart = TimeStamp::Now();
-    while (SamplerRegistry::sampler->IsActive()) {
-      SamplerRegistry::sampler->DeleteExpiredMarkers();
 
-      if (!SamplerRegistry::sampler->IsPaused()) {
+    
+    while (gSampler->IsActive()) {
+      gSampler->DeleteExpiredMarkers();
+
+      if (!gSampler->IsPaused()) {
         StaticMutexAutoLock lock(Sampler::sRegisteredThreadsMutex);
 
         bool isFirstProfiledThread = true;
@@ -196,7 +181,7 @@ public:
 
           info->UpdateThreadResponsiveness();
 
-          SampleContext(SamplerRegistry::sampler, info, isFirstProfiledThread);
+          SampleContext(info, isFirstProfiledThread);
           isFirstProfiledThread = false;
         }
       }
@@ -211,8 +196,7 @@ public:
     }
   }
 
-  void SampleContext(Sampler* sampler, ThreadInfo* aThreadInfo,
-                     bool isFirstProfiledThread)
+  void SampleContext(ThreadInfo* aThreadInfo, bool isFirstProfiledThread)
   {
     thread_act_t profiled_thread =
       aThreadInfo->GetPlatformData()->profiled_thread();
@@ -267,7 +251,8 @@ public:
       sample->timestamp = mozilla::TimeStamp::Now();
       sample->threadInfo = aThreadInfo;
 
-      sampler->Tick(sample);
+      
+      gSampler->Tick(sample);
     }
     thread_resume(profiled_thread);
   }
@@ -289,13 +274,13 @@ SamplerThread* SamplerThread::mInstance = NULL;
 void Sampler::Start() {
   MOZ_ASSERT(!IsActive());
   SetActive(true);
-  SamplerThread::AddActiveSampler(this);
+  SamplerThread::AddActiveSampler();
 }
 
 void Sampler::Stop() {
   MOZ_ASSERT(IsActive());
   SetActive(false);
-  SamplerThread::RemoveActiveSampler(this);
+  SamplerThread::RemoveActiveSampler();
 }
 
  Thread::tid_t
