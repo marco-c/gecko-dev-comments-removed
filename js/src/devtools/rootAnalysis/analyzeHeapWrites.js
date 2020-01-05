@@ -21,6 +21,7 @@ function checkExternalFunction(entry)
         /^rusturl/,
         "memcmp",
         "strcmp",
+        "malloc",
 
         
         /^__atomic_fetch_/,
