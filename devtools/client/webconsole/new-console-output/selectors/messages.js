@@ -128,20 +128,20 @@ function matchSearchFilters(message, filters) {
         }))
     )
     
-    || (message.messageText !== null
-          && message.messageText.toLocaleLowerCase().includes(text.toLocaleLowerCase()))
+    || (message.messageText &&
+          message.messageText.toLocaleLowerCase().includes(text.toLocaleLowerCase()))
     
-    || (message.parameters !== null
-        && message.parameters.join("").toLocaleLowerCase()
-            .includes(text.toLocaleLowerCase()))
+    || (message.parameters &&
+        message.parameters.join("").toLocaleLowerCase()
+          .includes(text.toLocaleLowerCase()))
     
     || (Array.isArray(message.notes) && message.notes.some(note =>
           
           isTextInFrame(text, note.frame)
           
-          || (note.messageBody !== null
-                && note.messageBody.toLocaleLowerCase()
-                     .includes(text.toLocaleLowerCase()))
+          || (note.messageBody &&
+                note.messageBody.toLocaleLowerCase()
+                  .includes(text.toLocaleLowerCase()))
         ))
   );
 }
