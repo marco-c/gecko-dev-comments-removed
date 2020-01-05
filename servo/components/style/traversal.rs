@@ -117,6 +117,16 @@ impl PreTraverseToken {
     }
 }
 
+
+pub enum LogBehavior {
+    MayLog,
+    DontLog,
+}
+use self::LogBehavior::*;
+impl LogBehavior {
+    fn allow(&self) -> bool { match *self { MayLog => true, DontLog => false, } }
+}
+
 pub trait DomTraversalContext<N: TNode> {
     type SharedContext: Sync + 'static + Borrow<SharedStyleContext>;
 
@@ -229,9 +239,58 @@ pub trait DomTraversalContext<N: TNode> {
 
     
     
+    
+    
+    
+    fn should_traverse_children(parent: N::ConcreteElement, parent_data: &ElementData,
+                                log: LogBehavior) -> bool
+    {
+        
+        debug_assert!(cfg!(feature = "gecko") || parent_data.has_current_styles());
+
+        
+        if parent_data.styles().is_display_none() {
+            if log.allow() { debug!("Parent {:?} is display:none, culling traversal", parent); }
+            return false;
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if cfg!(feature = "gecko") && parent_data.is_styled_initial() &&
+           parent_data.styles().primary.values.has_moz_binding() {
+            if log.allow() { debug!("Parent {:?} has XBL binding, deferring traversal", parent); }
+            return false;
+        }
+
+        return true;
+
+    }
+
+    
+    
     fn traverse_children<F: FnMut(N)>(parent: N::ConcreteElement, mut f: F)
     {
-        if parent.is_display_none() {
+        
+        if !Self::should_traverse_children(parent, &parent.borrow_data().unwrap(), MayLog) {
             return;
         }
 
@@ -287,7 +346,9 @@ pub fn style_element_in_display_none_subtree<'a, E, C, F>(element: E,
 {
     
     if element.get_data().is_some() {
-        debug_assert!(element.is_display_none());
+        
+        debug_assert!(cfg!(feature = "gecko") || element.borrow_data().unwrap().has_current_styles());
+        debug_assert!(element.borrow_data().unwrap().styles().is_display_none());
         return element;
     }
 
@@ -351,7 +412,7 @@ pub fn recalc_style_at<'a, E, C, D>(context: &'a C,
     trace!("propagated_hint={:?}, inherited_style_changed={:?}", propagated_hint, inherited_style_changed);
 
     
-    if !data.styles().is_display_none() &&
+    if D::should_traverse_children(element, &data, DontLog) &&
        (element.has_dirty_descendants() || !propagated_hint.is_empty() || inherited_style_changed) {
         preprocess_children::<_, _, D>(context, element, propagated_hint, inherited_style_changed);
     }

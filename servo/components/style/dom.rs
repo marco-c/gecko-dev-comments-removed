@@ -245,16 +245,6 @@ pub trait TElement : PartialEq + Debug + Sized + Copy + Clone + ElementExt + Pre
     fn did_process_child(&self) -> isize;
 
     
-    
-    fn is_display_none(&self) -> bool {
-        let data = self.borrow_data().unwrap();
-        
-        
-        debug_assert!(cfg!(feature = "gecko") || data.has_current_styles());
-        data.styles().is_display_none()
-    }
-
-    
     fn get_data(&self) -> Option<&AtomicRefCell<ElementData>>;
 
     
