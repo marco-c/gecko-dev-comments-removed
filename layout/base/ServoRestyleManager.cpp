@@ -146,7 +146,7 @@ ServoRestyleManager::RecreateStyleContexts(Element* aElement,
 
   
   
-  nsChangeHint changeHint = Servo_CheckChangeHint(aElement);
+  nsChangeHint changeHint = Servo_TakeChangeHint(aElement);
   if (changeHint) {
       aChangeListToProcess.AppendChange(primaryFrame, aElement, changeHint);
   }
@@ -165,8 +165,7 @@ ServoRestyleManager::RecreateStyleContexts(Element* aElement,
   
   bool recreateContext = primaryFrame && changeHint;
   if (recreateContext) {
-    RefPtr<ServoComputedValues> computedValues
-      = aStyleSet->ResolveServoStyle(aElement, ConsumeStyleBehavior::Consume);
+    RefPtr<ServoComputedValues> computedValues = aStyleSet->ResolveServoStyle(aElement);
 
     
     

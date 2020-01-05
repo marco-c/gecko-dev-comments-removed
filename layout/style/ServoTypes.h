@@ -38,14 +38,6 @@ struct ServoCell {
 
 
 
-enum class ConsumeStyleBehavior {
-  Consume,
-  DontConsume,
-};
-
-
-
-
 enum class LazyComputeBehavior {
   Allow,
   Assert,
