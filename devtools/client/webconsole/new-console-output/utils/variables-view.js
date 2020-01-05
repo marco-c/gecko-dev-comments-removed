@@ -12,6 +12,9 @@
 
 
 
-exports.openVariablesView = (object) => {
-  window.jsterm.openVariablesView({objectActor: object});
+exports.openVariablesView = (objectActor) => {
+  window.jsterm.openVariablesView({
+    objectActor,
+    autofocus: true,
+  });
 };
