@@ -35,6 +35,7 @@
 #include "nsIFile.h"
 #include "nsISimpleEnumerator.h"
 #include "nsThreadUtils.h"
+#include "GMPCrashHelper.h"
 
 #include "mozilla/dom/PluginCrashedEvent.h"
 #include "mozilla/EventDispatcher.h"
@@ -552,17 +553,3 @@ void GeckoMediaPluginService::DisconnectCrashHelper(GMPCrashHelper* aHelper)
 
 } 
 } 
-
-NS_IMPL_ADDREF(GMPCrashHelper)
-NS_IMPL_RELEASE_WITH_DESTROY(GMPCrashHelper, Destroy())
-
-void
-GMPCrashHelper::Destroy()
-{
-  if (NS_IsMainThread()) {
-    delete this;
-  } else {
-    
-    NS_DispatchToMainThread(mozilla::NewNonOwningRunnableMethod(this, &GMPCrashHelper::Destroy));
-  }
-}

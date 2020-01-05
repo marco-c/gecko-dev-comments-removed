@@ -11,9 +11,9 @@
 #include "nsPIDOMWindow.h"
 #include "mozilla/ipc/ProtocolUtils.h"
 
-class GMPCrashHelper;
-
 namespace mozilla {
+
+class GMPCrashHelper;
 
 
 
