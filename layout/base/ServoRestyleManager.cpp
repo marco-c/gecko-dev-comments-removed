@@ -30,6 +30,8 @@ ServoRestyleManager::PostRestyleEvent(Element* aElement,
                                       nsRestyleHint aRestyleHint,
                                       nsChangeHint aMinChangeHint)
 {
+  MOZ_ASSERT(!(aMinChangeHint & nsChangeHint_NeutralChange),
+             "Didn't expect explicit change hints to be neutral!");
   if (MOZ_UNLIKELY(IsDisconnected()) ||
       MOZ_UNLIKELY(PresContext()->PresShell()->IsDestroying())) {
     return;
@@ -147,8 +149,9 @@ ServoRestyleManager::RecreateStyleContexts(Element* aElement,
   
   
   nsChangeHint changeHint = Servo_TakeChangeHint(aElement);
-  if (changeHint) {
-      aChangeListToProcess.AppendChange(primaryFrame, aElement, changeHint);
+  if (changeHint & ~nsChangeHint_NeutralChange) {
+    aChangeListToProcess.AppendChange(
+      primaryFrame, aElement, changeHint & ~nsChangeHint_NeutralChange);
   }
 
   
