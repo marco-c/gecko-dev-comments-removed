@@ -1539,6 +1539,13 @@ GeckoDriver.prototype.switchToFrame = function*(cmd, resp) {
   }
 };
 
+GeckoDriver.prototype.getTimeouts = function(cmd, resp) {
+  return {
+    "implicit": this.searchTimeout,
+    "script": this.scriptTimeout,
+    "page load": this.pageTimeout,
+  };
+};
 
 
 
@@ -1550,7 +1557,8 @@ GeckoDriver.prototype.switchToFrame = function*(cmd, resp) {
 
 
 
-GeckoDriver.prototype.timeouts = function(cmd, resp) {
+
+GeckoDriver.prototype.setTimeouts = function(cmd, resp) {
   
   
   let timeouts = {};
@@ -2805,7 +2813,9 @@ GeckoDriver.prototype.commands = {
   "setContext": GeckoDriver.prototype.setContext,
   "getContext": GeckoDriver.prototype.getContext,
   "executeScript": GeckoDriver.prototype.executeScript,
-  "timeouts": GeckoDriver.prototype.timeouts,
+  "getTimeouts": GeckoDriver.prototype.getTimeouts,
+  "timeouts": GeckoDriver.prototype.setTimeouts,  
+  "setTimeouts": GeckoDriver.prototype.setTimeouts,
   "singleTap": GeckoDriver.prototype.singleTap,
   "actionChain": GeckoDriver.prototype.actionChain,
   "multiAction": GeckoDriver.prototype.multiAction,
