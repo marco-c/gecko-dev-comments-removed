@@ -40,6 +40,10 @@ class ScreenCaptureTestCase(MarionetteTestCase):
 
         self._device_pixel_ratio = None
 
+        
+        
+        self.marionette.navigate("about:blank")
+
     @property
     def device_pixel_ratio(self):
         if self._device_pixel_ratio is None:
