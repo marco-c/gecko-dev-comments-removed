@@ -1348,6 +1348,8 @@ class Assembler : public AssemblerShared
     static Condition UnsignedCondition(Condition cond);
     static Condition ConditionWithoutEqual(Condition cond);
 
+    static DoubleCondition InvertCondition(DoubleCondition cond);
+
     
     void trace(JSTracer* trc);
     void writeRelocation(BufferOffset src) {
