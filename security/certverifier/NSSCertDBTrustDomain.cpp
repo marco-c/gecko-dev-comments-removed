@@ -1195,6 +1195,7 @@ SaveIntermediateCerts(const UniqueCERTCertList& certList)
 
     if (node->cert->slot) {
       
+      
       continue;
     }
 
@@ -1213,15 +1214,12 @@ SaveIntermediateCerts(const UniqueCERTCertList& certList)
       continue;
     }
 
-    
     nsAutoCString nickname;
     nsresult rv = DefaultServerNicknameForCert(node->cert, nickname);
     if (NS_FAILED(rv)) {
       continue;
     }
 
-    
-    
     
     
     

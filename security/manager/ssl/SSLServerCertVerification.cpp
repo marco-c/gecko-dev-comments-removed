@@ -1367,10 +1367,6 @@ AuthCertificate(CertVerifier& certVerifier,
                           pinningTelemetryInfo.certPinningResultBucket);
   }
 
-  
-  
-  
-
   RefPtr<nsSSLStatus> status(infoObject->SSLStatus());
   RefPtr<nsNSSCertificate> nsc;
 
