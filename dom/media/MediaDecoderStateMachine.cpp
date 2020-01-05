@@ -1326,10 +1326,7 @@ private:
 
   void HandleAudioDecoded(MediaData* aAudio) override
   {
-    MOZ_ASSERT(aAudio);
-    MOZ_ASSERT(!mSeekJob.mPromise.IsEmpty(), "Seek shouldn't be finished");
     mMaster->Push(aAudio);
-    MaybeFinishSeek();
   }
 
   void HandleVideoDecoded(MediaData* aVideo, TimeStamp aDecodeStart) override
@@ -1358,9 +1355,6 @@ private:
     {
       
       
-      
-
-      MaybeFinishSeek();
       break;
     }
     case MediaData::VIDEO_DATA:
@@ -1399,11 +1393,7 @@ private:
 
   void HandleAudioWaited(MediaData::Type aType) override
   {
-    MOZ_ASSERT(!mSeekJob.mPromise.IsEmpty(), "Seek shouldn't be finished");
-
     
-    
-    MaybeFinishSeek();
   }
 
   void HandleVideoWaited(MediaData::Type aType) override
@@ -1425,8 +1415,6 @@ private:
     case MediaData::AUDIO_DATA:
     {
       
-      
-      MaybeFinishSeek();
       break;
     }
     case MediaData::VIDEO_DATA:
@@ -1468,13 +1456,6 @@ private:
     return Reader()->IsRequestingVideoData() || Reader()->IsWaitingVideoData();
   }
 
-  bool IsAudioSeekComplete() const
-  {
-    
-    
-    return !Reader()->IsRequestingAudioData() && !Reader()->IsWaitingAudioData();
-  }
-
   bool IsVideoSeekComplete() const
   {
     
@@ -1498,7 +1479,7 @@ private:
 
   void MaybeFinishSeek()
   {
-    if (IsAudioSeekComplete() && IsVideoSeekComplete()) {
+    if (IsVideoSeekComplete()) {
       UpdateSeekTargetTime();
 
       auto time = mSeekJob.mTarget->GetTime().ToMicroseconds();
