@@ -79,6 +79,11 @@ function SetForEach(callbackfn, thisArg = undefined) {
     }
 }
 
+function SetValues() {
+    return callFunction(std_Set_iterator, this);
+}
+_SetCanonicalName(SetValues, "values");
+
 
 function SetSpecies() {
     
