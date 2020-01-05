@@ -594,6 +594,7 @@ final class GeckoEditable extends JNIObject
         
         
         
+        final Handler icHandler = mIcPostHandler;
         ThreadUtils.postToUiThread(new Runnable() {
             @Override
             public void run() {
@@ -611,7 +612,7 @@ final class GeckoEditable extends JNIObject
                 }
 
                 mView = v;
-                mIcPostHandler.post(setListenerRunnable);
+                icHandler.post(setListenerRunnable);
             }
         });
     }
@@ -625,6 +626,9 @@ final class GeckoEditable extends JNIObject
     }
 
     private void geckoPostToIc(Runnable runnable) {
+        if (DEBUG) {
+            ThreadUtils.assertOnGeckoThread();
+        }
         mIcPostHandler.post(runnable);
     }
 
@@ -890,14 +894,15 @@ final class GeckoEditable extends JNIObject
         mSuppressKeyUp = suppress;
     }
 
-    @Override
-    public Handler setInputConnectionHandler(Handler handler) {
-        if (handler == mIcPostHandler || !mFocused) {
-            return mIcPostHandler;
+    @Override 
+    public Handler setInputConnectionHandler(final Handler handler) {
+        if (handler == mIcRunHandler) {
+            return mIcRunHandler;
         }
         if (DEBUG) {
             assertOnIcThread();
         }
+
         
         
         
@@ -910,6 +915,21 @@ final class GeckoEditable extends JNIObject
         
         
         
+
+        handler.post(new Runnable() { 
+            @Override
+            public void run() {
+                synchronized (handler) {
+                    while (mIcRunHandler != handler) {
+                        try {
+                            handler.wait();
+                        } catch (final InterruptedException e) {
+                        }
+                    }
+                }
+            }
+        });
+
         icOfferAction(Action.newSetHandler(handler));
         return handler;
     }
@@ -939,20 +959,6 @@ final class GeckoEditable extends JNIObject
         
         
         mIcPostHandler = newHandler;
-
-        geckoPostToIc(new Runnable() { 
-            @Override
-            public void run() {
-                synchronized (newHandler) {
-                    while (mIcRunHandler != newHandler) {
-                        try {
-                            newHandler.wait();
-                        } catch (InterruptedException e) {
-                        }
-                    }
-                }
-            }
-        });
     }
 
     private void geckoActionReply(final Action action) {
