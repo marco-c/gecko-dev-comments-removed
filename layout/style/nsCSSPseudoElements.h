@@ -92,6 +92,9 @@ public:
   
   static nsIAtom* GetPseudoAtom(Type aType);
 
+  
+  static nsIAtom* GetPseudoAtom(const nsAString& aPseudoElement);
+
   static bool PseudoElementContainsElements(const Type aType) {
     return PseudoElementHasFlags(aType, CSS_PSEUDO_ELEMENT_CONTAINS_ELEMENTS);
   }
