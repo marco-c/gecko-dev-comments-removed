@@ -1903,6 +1903,10 @@ void
 nsINode::doRemoveChildAt(uint32_t aIndex, bool aNotify,
                          nsIContent* aKid, nsAttrAndChildArray& aChildArray)
 {
+  
+  
+  
+  
   NS_PRECONDITION(aKid && aKid->GetParentNode() == this &&
                   aKid == GetChildAt(aIndex) &&
                   IndexOf(aKid) == (int32_t)aIndex, "Bogus aKid");
