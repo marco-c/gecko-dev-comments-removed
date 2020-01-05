@@ -1518,11 +1518,6 @@ pref("extensions.interposition.enabled", true);
 pref("extensions.interposition.prefetching", true);
 
 
-#if defined(NIGHTLY_BUILD)
-pref("extensions.allow-non-mpc-extensions", false);
-#endif
-
-
 #ifdef RELEASE_OR_BETA
 pref("extensions.e10sBlocksEnabling", true);
 pref("extensions.e10sMultiBlocksEnabling", true);
