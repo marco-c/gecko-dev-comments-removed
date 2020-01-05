@@ -6,16 +6,16 @@
 
 #include <iomanip>
 #include <iostream>
-#include <memory>
-
-#include "keyhi.h"
-#include "pk11pub.h"
 
 #include "FuzzerInternal.h"
+#include "FuzzerMutate.h"
+#include "FuzzerRandom.h"
 #include "registry.h"
 #include "shared.h"
 
 using namespace std;
+
+static vector<Mutator> gMutators;
 
 class Args {
  public:
@@ -128,6 +128,10 @@ int main(int argc, char **argv) {
   string targetName(args[1]);
 
   
+  auto mutators = Registry::Mutators(targetName);
+  gMutators.insert(gMutators.end(), mutators.begin(), mutators.end());
+
+  
   
   if (!args.Has("-workers=") || !args.Has("-jobs=")) {
     args.Remove(1);
@@ -145,4 +149,15 @@ int main(int argc, char **argv) {
   argv = args_new.data();
 
   return fuzzer::FuzzerDriver(&argc, &argv, Registry::Func(targetName));
+}
+
+extern "C" size_t LLVMFuzzerCustomMutator(uint8_t *Data, size_t Size,
+                                          size_t MaxSize, unsigned int Seed) {
+  if (gMutators.empty()) {
+    return 0;
+  }
+
+  
+  fuzzer::Random R(Seed);
+  return gMutators.at(R(gMutators.size()))(Data, Size, MaxSize, Seed);
 }

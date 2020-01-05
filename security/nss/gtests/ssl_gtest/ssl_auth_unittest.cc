@@ -289,7 +289,7 @@ class BeforeFinished : public TlsRecordFilter {
         state_(BEFORE_CCS) {}
 
  protected:
-  virtual PacketFilter::Action FilterRecord(const RecordHeader& header,
+  virtual PacketFilter::Action FilterRecord(const TlsRecordHeader& header,
                                             const DataBuffer& body,
                                             DataBuffer* out) {
     switch (state_) {
@@ -507,7 +507,7 @@ TEST_P(TlsConnectGenericPre13, AuthCompleteDelayed) {
   EXPECT_EQ(TlsAgent::STATE_CONNECTED, server_->state());
 
   
-  client_->SetPacketFilter(nullptr);
+  client_->DeletePacketFilter();
 }
 
 
@@ -528,7 +528,7 @@ TEST_P(TlsConnectTls13, AuthCompleteDelayed) {
   EXPECT_EQ(TlsAgent::STATE_CONNECTING, client_->state());
 
   
-  client_->SetPacketFilter(nullptr);
+  client_->DeletePacketFilter();
   EXPECT_EQ(SECSuccess, SSL_AuthCertificateComplete(client_->ssl_fd(), 0));
   client_->Handshake();  
   server_->Handshake();  

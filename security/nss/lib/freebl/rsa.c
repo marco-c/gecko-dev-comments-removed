@@ -1236,7 +1236,10 @@ get_blinding_params(RSAPrivateKey *key, mp_int *n, unsigned int modLen,
 
 
         while (0 != (bp = rsabp->bp)) {
-            if (--(bp->counter) > 0) {
+#ifndef UNSAFE_FUZZER_MODE
+            if (--(bp->counter) > 0)
+#endif
+            {
                 
                 
                 CHECK_MPI_OK(mp_copy(&bp->f, f));

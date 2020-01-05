@@ -68,6 +68,7 @@ class TlsConnectTestBase : public ::testing::Test {
   void CheckConnected();
   
   void ConnectExpectFail();
+  void ConnectExpectFailOneSide(TlsAgent::Role failingSide);
   void ConnectWithCipherSuite(uint16_t cipher_suite);
   
   void CheckKeys(SSLKEAType kea_type, SSLNamedGroup kea_group,

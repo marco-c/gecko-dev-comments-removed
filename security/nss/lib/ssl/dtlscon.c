@@ -235,6 +235,26 @@ dtls_RetransmitDetected(sslSocket *ss)
     return rv;
 }
 
+static SECStatus
+dtls_HandleHandshakeMessage(sslSocket *ss, SSL3Opaque *data, PRBool last)
+{
+
+    
+
+    dtls_FreeHandshakeMessages(&ss->ssl3.hs.lastMessageFlight);
+    ss->ssl3.hs.recvdHighWater = -1;
+
+    
+
+    dtls_CancelTimer(ss);
+    if (ss->ssl3.hs.rtRetries == 0) {
+        ss->ssl3.hs.rtTimeoutMs = DTLS_RETRANSMIT_INITIAL_MS;
+    }
+
+    return ssl3_HandleHandshakeMessage(ss, data, ss->ssl3.hs.msg_len,
+                                       last);
+}
+
 
 
 
@@ -329,23 +349,10 @@ dtls_HandleHandshake(sslSocket *ss, sslBuffer *origBuf)
             ss->ssl3.hs.msg_type = (SSL3HandshakeType)type;
             ss->ssl3.hs.msg_len = message_length;
 
-            
-
-            dtls_FreeHandshakeMessages(&ss->ssl3.hs.lastMessageFlight);
-            ss->ssl3.hs.recvdHighWater = -1;
-            dtls_CancelTimer(ss);
-
-            
-
-            if (ss->ssl3.hs.rtRetries == 0) {
-                ss->ssl3.hs.rtTimeoutMs = DTLS_RETRANSMIT_INITIAL_MS;
-            }
-
-            rv = ssl3_HandleHandshakeMessage(ss, buf.buf, ss->ssl3.hs.msg_len,
+            rv = dtls_HandleHandshakeMessage(ss, buf.buf,
                                              buf.len == fragment_length);
             if (rv == SECFailure) {
-                
-                break;
+                break; 
             }
         } else {
             if (message_seq < ss->ssl3.hs.recvMessageSeq) {
@@ -446,24 +453,11 @@ dtls_HandleHandshake(sslSocket *ss, sslBuffer *origBuf)
 
                 
                 if (ss->ssl3.hs.recvdHighWater == ss->ssl3.hs.msg_len) {
-                    ss->ssl3.hs.recvdHighWater = -1;
+                    rv = dtls_HandleHandshakeMessage(ss, ss->ssl3.hs.msg_body.buf,
+                                                     buf.len == fragment_length);
 
-                    rv = ssl3_HandleHandshakeMessage(
-                        ss,
-                        ss->ssl3.hs.msg_body.buf, ss->ssl3.hs.msg_len,
-                        buf.len == fragment_length);
-                    if (rv == SECFailure)
+                    if (rv == SECFailure) {
                         break; 
-
-                    
-
-                    dtls_FreeHandshakeMessages(&ss->ssl3.hs.lastMessageFlight);
-                    dtls_CancelTimer(ss);
-
-                    
-
-                    if (ss->ssl3.hs.rtRetries == 0) {
-                        ss->ssl3.hs.rtTimeoutMs = DTLS_RETRANSMIT_INITIAL_MS;
                     }
                 }
             }

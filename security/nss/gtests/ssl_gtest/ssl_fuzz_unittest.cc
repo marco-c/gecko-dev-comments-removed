@@ -12,6 +12,15 @@
 namespace nss_test {
 
 #ifdef UNSAFE_FUZZER_MODE
+#define FUZZ_F(c, f) TEST_F(c, Fuzz_##f)
+#define FUZZ_P(c, f) TEST_P(c, Fuzz_##f)
+#else
+#define FUZZ_F(c, f) TEST_F(c, DISABLED_Fuzz_##f)
+#define FUZZ_P(c, f) TEST_P(c, DISABLED_Fuzz_##f)
+
+
+#define RNG_ResetForFuzzing() SECFailure
+#endif
 
 const uint8_t kShortEmptyFinished[8] = {0};
 const uint8_t kLongEmptyFinished[128] = {0};
@@ -23,7 +32,7 @@ class TlsApplicationDataRecorder : public TlsRecordFilter {
  public:
   TlsApplicationDataRecorder() : buffer_() {}
 
-  virtual PacketFilter::Action FilterRecord(const RecordHeader& header,
+  virtual PacketFilter::Action FilterRecord(const TlsRecordHeader& header,
                                             const DataBuffer& input,
                                             DataBuffer* output) {
     if (header.content_type() == kTlsApplicationDataType) {
@@ -61,34 +70,28 @@ class TlsSignatureDamager : public TlsHandshakeFilter {
   uint8_t type_;
 };
 
-void ResetState() {
-  
-  BL_Cleanup();
 
-  
-  EXPECT_EQ(SECSuccess, BL_Init());
-
-  
-  EXPECT_EQ(SECSuccess, RNG_ResetForFuzzing());
-}
-
-
-TEST_F(TlsFuzzTest, Fuzz_SSL_Time_Constant) {
-  PRInt32 now = ssl_Time();
+FUZZ_F(TlsFuzzTest, SSL_Time_Constant) {
+  PRUint32 now = ssl_Time();
   PR_Sleep(PR_SecondsToInterval(2));
   EXPECT_EQ(ssl_Time(), now);
 }
 
 
 
-TEST_P(TlsConnectGeneric, Fuzz_DeterministicExporter) {
+FUZZ_P(TlsConnectGeneric, DeterministicExporter) {
   const char kLabel[] = "label";
   std::vector<unsigned char> out1(32), out2(32);
 
+  
+  Connect();
+
+  Reset();
   ConfigureSessionCache(RESUME_NONE, RESUME_NONE);
   DisableECDHEServerKeyReuse();
 
-  ResetState();
+  
+  EXPECT_EQ(SECSuccess, RNG_ResetForFuzzing());
   Connect();
 
   
@@ -101,7 +104,8 @@ TEST_P(TlsConnectGeneric, Fuzz_DeterministicExporter) {
   ConfigureSessionCache(RESUME_NONE, RESUME_NONE);
   DisableECDHEServerKeyReuse();
 
-  ResetState();
+  
+  EXPECT_EQ(SECSuccess, RNG_ResetForFuzzing());
   Connect();
 
   
@@ -115,7 +119,10 @@ TEST_P(TlsConnectGeneric, Fuzz_DeterministicExporter) {
 
 
 
-TEST_P(TlsConnectGeneric, Fuzz_DeterministicTranscript) {
+FUZZ_P(TlsConnectGeneric, DeterministicTranscript) {
+  
+  Connect();
+
   
   DataBuffer last;
   for (size_t i = 0; i < 5; i++) {
@@ -127,12 +134,13 @@ TEST_P(TlsConnectGeneric, Fuzz_DeterministicTranscript) {
     client_->SetPacketFilter(new TlsConversationRecorder(buffer));
     server_->SetPacketFilter(new TlsConversationRecorder(buffer));
 
-    ResetState();
+    
+    EXPECT_EQ(SECSuccess, RNG_ResetForFuzzing());
     Connect();
 
     
-    client_->SetPacketFilter(nullptr);
-    server_->SetPacketFilter(nullptr);
+    client_->DeletePacketFilter();
+    server_->DeletePacketFilter();
 
     if (last.len() > 0) {
       EXPECT_EQ(last, buffer);
@@ -146,7 +154,7 @@ TEST_P(TlsConnectGeneric, Fuzz_DeterministicTranscript) {
 
 
 
-TEST_P(TlsConnectGeneric, Fuzz_ConnectSendReceive_NullCipher) {
+FUZZ_P(TlsConnectGeneric, ConnectSendReceive_NullCipher) {
   EnsureTlsSetup();
 
   
@@ -175,7 +183,7 @@ TEST_P(TlsConnectGeneric, Fuzz_ConnectSendReceive_NullCipher) {
 }
 
 
-TEST_P(TlsConnectGeneric, Fuzz_BogusClientFinished) {
+FUZZ_P(TlsConnectGeneric, BogusClientFinished) {
   EnsureTlsSetup();
 
   auto i1 = new TlsInspectorReplaceHandshakeMessage(
@@ -187,7 +195,7 @@ TEST_P(TlsConnectGeneric, Fuzz_BogusClientFinished) {
 }
 
 
-TEST_P(TlsConnectGeneric, Fuzz_BogusServerFinished) {
+FUZZ_P(TlsConnectGeneric, BogusServerFinished) {
   EnsureTlsSetup();
 
   auto i1 = new TlsInspectorReplaceHandshakeMessage(
@@ -199,7 +207,7 @@ TEST_P(TlsConnectGeneric, Fuzz_BogusServerFinished) {
 }
 
 
-TEST_P(TlsConnectGeneric, Fuzz_BogusServerAuthSignature) {
+FUZZ_P(TlsConnectGeneric, BogusServerAuthSignature) {
   EnsureTlsSetup();
   uint8_t msg_type = version_ == SSL_LIBRARY_VERSION_TLS_1_3
                          ? kTlsHandshakeCertificateVerify
@@ -210,7 +218,7 @@ TEST_P(TlsConnectGeneric, Fuzz_BogusServerAuthSignature) {
 }
 
 
-TEST_P(TlsConnectGeneric, Fuzz_BogusClientAuthSignature) {
+FUZZ_P(TlsConnectGeneric, BogusClientAuthSignature) {
   EnsureTlsSetup();
   client_->SetupClientAuth();
   server_->RequestClientAuth(true);
@@ -218,6 +226,4 @@ TEST_P(TlsConnectGeneric, Fuzz_BogusClientAuthSignature) {
       new TlsSignatureDamager(kTlsHandshakeCertificateVerify));
   Connect();
 }
-
-#endif
 }
