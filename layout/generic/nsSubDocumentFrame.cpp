@@ -113,6 +113,8 @@ nsSubDocumentFrame::Init(nsIContent*       aContent,
 
   static bool addedShowPreviousPage = false;
   if (!addedShowPreviousPage) {
+    
+    
     Preferences::AddBoolVarCache(&sShowPreviousPage, "layout.show_previous_page", true);
     addedShowPreviousPage = true;
   }
