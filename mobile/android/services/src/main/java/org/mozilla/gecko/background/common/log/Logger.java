@@ -27,7 +27,7 @@ public class Logger {
   public static final String DEFAULT_LOG_TAG = "GeckoLogger";
 
   
-  public static boolean LOG_PERSONAL_INFORMATION = false;
+  public static final boolean LOG_PERSONAL_INFORMATION = false;
 
   
 

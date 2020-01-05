@@ -31,9 +31,9 @@ public class AppGlobals {
     public static final int PASSIVE_MODE_MAX_SCANS_PER_GPS = 3;
 
     
-    public static String appVersionName = "0.0.0";
-    public static int appVersionCode = 0;
-    public static String appName = "StumblerService";
+    public static final String appVersionName = "0.0.0";
+    public static final int appVersionCode = 0;
+    public static final String appName = "StumblerService";
     public static boolean isDebug;
 
     

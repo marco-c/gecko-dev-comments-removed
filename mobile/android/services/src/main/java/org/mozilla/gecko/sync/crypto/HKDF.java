@@ -19,7 +19,7 @@ import org.mozilla.gecko.sync.Utils;
 
 
 public class HKDF {
-  public static String HMAC_ALGORITHM = "hmacSHA256";
+  public static final String HMAC_ALGORITHM = "hmacSHA256";
 
   
 
