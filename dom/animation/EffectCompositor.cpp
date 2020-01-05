@@ -264,7 +264,7 @@ EffectCompositor::RequestRestyle(dom::Element* aElement,
     if (!elementsToRestyle.Contains(key)) {
       elementsToRestyle.Put(key, false);
     }
-    mPresContext->PresShell()->SetNeedStyleFlush();
+    mPresContext->PresShell()->SetNeedThrottledAnimationFlush();
   } else {
     
     

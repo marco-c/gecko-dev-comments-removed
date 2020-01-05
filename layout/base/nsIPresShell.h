@@ -592,6 +592,7 @@ public:
 
 
 
+
   bool NeedFlush(mozilla::FlushType aType) const
   {
     
@@ -603,11 +604,13 @@ public:
            (mNeedLayoutFlush &&
             aType >= mozilla::FlushType::InterruptibleLayout) ||
            aType >= mozilla::FlushType::Display ||
+           mNeedThrottledAnimationFlush ||
            mInFlush;
   }
 
   inline void SetNeedStyleFlush();
   inline void SetNeedLayoutFlush();
+  inline void SetNeedThrottledAnimationFlush();
 
   bool NeedStyleFlush() { return mNeedStyleFlush; }
 
@@ -1836,6 +1839,10 @@ protected:
 
   
   bool mNeedStyleFlush : 1;
+
+  
+  
+  bool mNeedThrottledAnimationFlush : 1;
 
   uint32_t                  mPresShellId;
 
