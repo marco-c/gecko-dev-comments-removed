@@ -35,20 +35,6 @@ public:
   const MediaMIMEType& Type() const { return mExtendedMIMEType.Type(); }
   const MediaExtendedMIMEType& ExtendedType() const { return mExtendedMIMEType; }
 
-  
-  const nsACString& GetMIMEType() const { return mExtendedMIMEType.Type().AsString(); }
-
-  
-  bool HaveCodecs() const { return mExtendedMIMEType.HaveCodecs(); }
-  
-  const nsAString& GetCodecs() const { return mExtendedMIMEType.Codecs().AsString(); }
-
-  
-  Maybe<int32_t> GetWidth() const { return mExtendedMIMEType.GetWidth(); }
-  Maybe<int32_t> GetHeight() const { return mExtendedMIMEType.GetHeight(); }
-  Maybe<int32_t> GetFramerate() const { return mExtendedMIMEType.GetFramerate(); }
-  Maybe<int32_t> GetBitrate() const { return mExtendedMIMEType.GetBitrate(); }
-
 private:
   MediaExtendedMIMEType mExtendedMIMEType;
 };
