@@ -519,8 +519,7 @@ private:
   
 
 
-  nsresult StartLoad(nsScriptLoadRequest *aRequest, const nsAString &aType,
-                     bool aScriptFromHead);
+  nsresult StartLoad(nsScriptLoadRequest *aRequest, bool aScriptFromHead);
 
   
 
