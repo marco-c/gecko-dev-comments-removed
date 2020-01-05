@@ -34,6 +34,9 @@ public:
   GetTrackDemuxer(TrackInfo::TrackType aType, uint32_t aTrackNumber) override;
   bool IsSeekable() const override;
 
+  
+  static bool ADTSSniffer(const uint8_t* aData, const uint32_t aLength);
+
 private:
   bool InitInternal();
 
