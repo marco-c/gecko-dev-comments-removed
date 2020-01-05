@@ -78,7 +78,7 @@ function isWS({ requestHeaders, responseHeaders }) {
 
   
   let upgradeHeader = requestHeaders.headers.find(header => {
-    return (header.name == "Upgrade");
+    return (header.name.toLowerCase() == "upgrade");
   });
 
   
@@ -87,7 +87,7 @@ function isWS({ requestHeaders, responseHeaders }) {
   if (!upgradeHeader && responseHeaders &&
       Array.isArray(responseHeaders.headers)) {
     upgradeHeader = responseHeaders.headers.find(header => {
-      return (header.name == "Upgrade");
+      return (header.name.toLowerCase() == "upgrade");
     });
   }
 
