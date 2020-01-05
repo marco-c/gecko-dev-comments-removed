@@ -171,9 +171,6 @@ public:
   
   bool HighAccuracyRequested();
 
-  
-  void ServiceReady();
-
 private:
 
   ~Geolocation();
@@ -186,10 +183,6 @@ private:
                          nsAutoPtr<PositionOptions>&& aOptions, int32_t* aRv);
 
   bool RegisterRequestWithPrompt(nsGeolocationRequest* request);
-
-  
-  nsresult GetCurrentPositionReady(nsGeolocationRequest* aRequest);
-  nsresult WatchPositionReady(nsGeolocationRequest* aRequest);
 
   
   bool IsAlreadyCleared(nsGeolocationRequest* aRequest);
