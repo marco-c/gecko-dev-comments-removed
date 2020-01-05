@@ -65,7 +65,7 @@ public:
   
   
   
-  void CalculateMappedServoDeclarations();
+  void CalculateMappedServoDeclarations(nsPresContext* aPresContext);
 
   nsIStyleRule* LangRuleFor(const nsString& aLanguage);
 
