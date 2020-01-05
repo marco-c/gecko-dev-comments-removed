@@ -1036,7 +1036,7 @@ function completeAllInstalls(aInstalls, aCallback) {
   promiseCompleteAllInstalls(aInstalls).then(aCallback);
 }
 
-var {promiseInstallAllFiles} = AddonTestUtils;
+var {promiseInstallFile, promiseInstallAllFiles} = AddonTestUtils;
 
 
 
