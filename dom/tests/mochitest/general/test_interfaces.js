@@ -286,8 +286,6 @@ var interfaceNamesInGlobalScope =
 
     { name: "DeviceStorage", desktop: false},
 
-    { name: "DeviceStorageChangeEvent", desktop: false},
-
     "Directory",
 
     "Document",
