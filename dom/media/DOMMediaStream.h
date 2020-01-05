@@ -459,7 +459,16 @@ public:
   virtual DOMLocalMediaStream* AsDOMLocalMediaStream() { return nullptr; }
   virtual DOMHwMediaStream* AsDOMHwMediaStream() { return nullptr; }
 
-  bool IsFinished();
+  
+
+
+  bool IsFinished() const;
+
+  
+
+
+  void SetInactiveOnFinish();
+
   
 
 
@@ -614,6 +623,9 @@ protected:
   void NotifyTracksCreated();
 
   
+  void NotifyFinished();
+
+  
   void NotifyActive();
 
   
@@ -727,6 +739,11 @@ protected:
 
   
   bool mActive;
+
+  
+  
+  
+  bool mSetInactiveOnFinish;
 
 private:
   void NotifyPrincipalChanged();
