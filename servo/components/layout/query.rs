@@ -388,7 +388,7 @@ impl ParentOffsetBorderBoxIterator {
 
 impl FragmentBorderBoxIterator for FragmentLocatingFragmentIterator {
     fn process(&mut self, fragment: &Fragment, _: i32, border_box: &Rect<Au>) {
-        let style_structs::Border {
+        let style_structs::ServoBorder {
             border_top_width: top_width,
             border_right_width: right_width,
             border_bottom_width: bottom_width,
@@ -414,7 +414,7 @@ impl FragmentBorderBoxIterator for UnioningFragmentScrollAreaIterator {
         
         
         
-        let style_structs::Border {
+        let style_structs::ServoBorder {
             border_top_width: top_border,
             border_right_width: right_border,
             border_bottom_width: bottom_border,
