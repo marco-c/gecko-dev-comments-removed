@@ -263,11 +263,16 @@ public:
   static bool IsNodeSelected(nsINode* aNode, uint32_t aStartOffset,
                              uint32_t aEndOffset);
 
-  static void CollectClientRects(nsLayoutUtils::RectCallback* aCollector,
-                                 nsRange* aRange,
-                                 nsINode* aStartParent, int32_t aStartOffset,
-                                 nsINode* aEndParent, int32_t aEndOffset,
-                                 bool aClampToEdge, bool aFlushLayout);
+  
+
+
+
+  static void CollectClientRectsAndText(nsLayoutUtils::RectCallback* aCollector,
+                                        mozilla::dom::DOMStringList* aTextList,
+                                        nsRange* aRange,
+                                        nsINode* aStartParent, int32_t aStartOffset,
+                                        nsINode* aEndParent, int32_t aEndOffset,
+                                        bool aClampToEdge, bool aFlushLayout);
 
   
 
