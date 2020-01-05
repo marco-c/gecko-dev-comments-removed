@@ -2,11 +2,13 @@
 
 
 
+use cookie::Cookie;
 use cookie_storage::CookieStorage;
+use fetch::methods::should_be_blocked_due_to_bad_port;
 use http_loader;
-use hyper::header::Host;
-use net_traits::{WebSocketCommunicate, WebSocketConnectData, WebSocketDomAction, WebSocketNetworkEvent};
-use net_traits::MessageData;
+use hyper::header::{Host, SetCookie};
+use net_traits::{CookieSource, MessageData, WebSocketCommunicate};
+use net_traits::{WebSocketConnectData, WebSocketDomAction, WebSocketNetworkEvent};
 use net_traits::hosts::replace_hosts;
 use net_traits::unwrap_websocket_protocol;
 use servo_url::ServoUrl;
@@ -23,72 +25,90 @@ use websocket::sender::Sender;
 use websocket::stream::WebSocketStream;
 use websocket::ws::receiver::Receiver as WSReceiver;
 use websocket::ws::sender::Sender as Sender_Object;
-use websocket::ws::util::url::parse_url;
 
 
-fn establish_a_websocket_connection(resource_url: &ServoUrl, net_url: (Host, String, bool),
-                                    origin: String, protocols: Vec<String>,
+fn establish_a_websocket_connection(resource_url: &ServoUrl,
+                                    origin: String,
+                                    protocols: Vec<String>,
                                     cookie_jar: Arc<RwLock<CookieStorage>>)
-    -> WebSocketResult<(Headers, Sender<WebSocketStream>, Receiver<WebSocketStream>)> {
-    let host = Host {
-        hostname: resource_url.host_str().unwrap().to_owned(),
-        port: resource_url.port_or_known_default(),
-    };
+                                    -> WebSocketResult<(Headers, Sender<WebSocketStream>, Receiver<WebSocketStream>)> {
+    
+    
 
-    let mut request = try!(Client::connect(net_url));
-    request.headers.set(Origin(origin));
-    request.headers.set(host);
+    if should_be_blocked_due_to_bad_port(resource_url) {
+        
+        
+        
+        return Err(WebSocketError::RequestError("Request should be blocked due to bad port."));
+    }
+
+    
+    let net_url = replace_hosts(resource_url);
+    let mut request = try!(Client::connect(net_url.as_url()));
+
+    
+    
+    request.headers.set(Host {
+        hostname: resource_url.host_str().unwrap().to_owned(),
+        port: resource_url.port(),
+    });
+
+    
     if !protocols.is_empty() {
         request.headers.set(WebSocketProtocol(protocols.clone()));
-    };
+    }
 
+    
+    
+
+    
+    
+    request.headers.set(Origin(origin));
+
+    
+    
     http_loader::set_request_cookies(&resource_url, &mut request.headers, &cookie_jar);
 
+    
     let response = try!(request.send());
+
+    
     try!(response.validate());
 
-    {
-       let protocol_in_use = unwrap_websocket_protocol(response.protocol());
-        if let Some(protocol_name) = protocol_in_use {
-                if !protocols.is_empty() && !protocols.iter().any(|p| (&**p).eq_ignore_ascii_case(protocol_name)) {
-                    return Err(WebSocketError::ProtocolError("Protocol in Use not in client-supplied protocol list"));
-            };
+    
+    
+    if let Some(protocol_name) = unwrap_websocket_protocol(response.protocol()) {
+            if !protocols.is_empty() && !protocols.iter().any(|p| (&**p).eq_ignore_ascii_case(protocol_name)) {
+                return Err(WebSocketError::ProtocolError("Protocol in Use not in client-supplied protocol list"));
         };
+    };
+
+    
+    
+    if let Some(cookies) = response.headers.get::<SetCookie>() {
+        let mut jar = cookie_jar.write().unwrap();
+        for cookie in &**cookies {
+            if let Some(cookie) = Cookie::new_wrapped(cookie.clone(), resource_url, CookieSource::HTTP) {
+                jar.push(cookie, resource_url, CookieSource::HTTP);
+            }
+        }
     }
 
     let headers = response.headers.clone();
     let (sender, receiver) = response.begin().split();
     Ok((headers, sender, receiver))
-
 }
 
 pub fn init(connect: WebSocketCommunicate, connect_data: WebSocketConnectData, cookie_jar: Arc<RwLock<CookieStorage>>) {
     thread::Builder::new().name(format!("WebSocket connection to {}", connect_data.resource_url)).spawn(move || {
-        
-
-        
-
-        
-        
-        let net_url_result = parse_url(replace_hosts(&connect_data.resource_url).as_url().unwrap());
-        let net_url = match net_url_result {
-            Ok(net_url) => net_url,
-            Err(e) => {
-                debug!("Failed to establish a WebSocket connection: {:?}", e);
-                let _ = connect.event_sender.send(WebSocketNetworkEvent::Fail);
-                return;
-            }
-        };
         let channel = establish_a_websocket_connection(&connect_data.resource_url,
-                                                       net_url,
                                                        connect_data.origin,
-                                                       connect_data.protocols.clone(),
+                                                       connect_data.protocols,
                                                        cookie_jar);
-        let (_, ws_sender, mut receiver) = match channel {
-            Ok(channel) => {
-                let _ = connect.event_sender.send(WebSocketNetworkEvent::ConnectionEstablished(channel.0.clone(),
-                                                                                               connect_data.protocols));
-                channel
+        let (ws_sender, mut receiver) = match channel {
+            Ok((headers, sender, receiver)) => {
+                let _ = connect.event_sender.send(WebSocketNetworkEvent::ConnectionEstablished(headers));
+                (sender, receiver)
             },
             Err(e) => {
                 debug!("Failed to establish a WebSocket connection: {:?}", e);
