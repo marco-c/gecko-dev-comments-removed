@@ -1,18 +1,18 @@
 extern mod harfbuzz;
 
+use geom::Point2D;
+
 use gfx::au;
 use gfx::{
     Au,
     Font,
 };
-
-use geom::point::Point2D;
 use glyph::{GlyphStore, GlyphIndex, GlyphData};
+
 use libc::types::common::c99::int32_t;
 use libc::{c_uint, c_int, c_void, c_char};
 use ptr::{null, to_unsafe_ptr, offset};
 use std::arc;
-use util = util::text;
 
 use harfbuzz::{HB_MEMORY_MODE_READONLY,
                   HB_DIRECTION_LTR};
@@ -146,7 +146,7 @@ pub impl HarfbuzzShaper {
 
             let data = GlyphData(codepoint, advance, offset, false, false, false);
             glyphs.add_glyph_for_index(i, &data);
-        } /* unsafe */ }
+        }  }
 
         hb_buffer_destroy(hb_buffer);
     }
