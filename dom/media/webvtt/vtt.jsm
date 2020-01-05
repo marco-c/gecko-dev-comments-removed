@@ -522,6 +522,7 @@ const { XPCOMUtils } = require("resource://gre/modules/XPCOMUtils.jsm");
     styles = {
       position: "absolute",
       textAlign: cue.align,
+      font: styleOptions.font,
     };
 
     this.div = window.document.createElement("div");
@@ -532,17 +533,24 @@ const { XPCOMUtils } = require("resource://gre/modules/XPCOMUtils.jsm");
     
     
     
+    function convertCuePostionToPercentage(cuePosition) {
+      if (cuePosition === "auto") {
+        return 50;
+      }
+      return cuePosition;
+    }
     var textPos = 0;
+    let postionPercentage = convertCuePostionToPercentage(cue.position);
     switch (cue.computedPositionAlign) {
       
       case "line-left":
-        textPos = cue.position;
+        textPos = postionPercentage;
         break;
       case "center":
-        textPos = cue.position - (cue.size / 2);
+        textPos = postionPercentage - (cue.size / 2);
         break;
       case "line-right":
-        textPos = cue.position - cue.size;
+        textPos = postionPercentage - cue.size;
         break;
     }
 
@@ -893,7 +901,6 @@ const { XPCOMUtils } = require("resource://gre/modules/XPCOMUtils.jsm");
 
   var FONT_SIZE_PERCENT = 0.05;
   var FONT_STYLE = "sans-serif";
-  var CUE_BACKGROUND_PADDING = "1.5%";
 
   
   
@@ -919,14 +926,13 @@ const { XPCOMUtils } = require("resource://gre/modules/XPCOMUtils.jsm");
       controlBarShown = controlBar ? !!controlBar.clientHeight : false;
     }
 
-    var paddedOverlay = window.document.createElement("div");
-    paddedOverlay.style.position = "absolute";
-    paddedOverlay.style.left = "0";
-    paddedOverlay.style.right = "0";
-    paddedOverlay.style.top = "0";
-    paddedOverlay.style.bottom = "0";
-    paddedOverlay.style.margin = CUE_BACKGROUND_PADDING;
-    overlay.appendChild(paddedOverlay);
+    var rootOfCues = window.document.createElement("div");
+    rootOfCues.style.position = "absolute";
+    rootOfCues.style.left = "0";
+    rootOfCues.style.right = "0";
+    rootOfCues.style.top = "0";
+    rootOfCues.style.bottom = "0";
+    overlay.appendChild(rootOfCues);
 
     
     
@@ -947,13 +953,13 @@ const { XPCOMUtils } = require("resource://gre/modules/XPCOMUtils.jsm");
     
     if (!shouldCompute(cues)) {
       for (var i = 0; i < cues.length; i++) {
-        paddedOverlay.appendChild(cues[i].displayState);
+        rootOfCues.appendChild(cues[i].displayState);
       }
       return;
     }
 
     var boxPositions = [],
-        containerBox = BoxPosition.getSimpleBoxPosition(paddedOverlay),
+        containerBox = BoxPosition.getSimpleBoxPosition(rootOfCues),
         fontSize = Math.round(containerBox.height * FONT_SIZE_PERCENT * 100) / 100;
     var styleOptions = {
       font: fontSize + "px " + FONT_STYLE
@@ -973,7 +979,7 @@ const { XPCOMUtils } = require("resource://gre/modules/XPCOMUtils.jsm");
         
         styleBox = new CueStyleBox(window, cue, styleOptions);
         styleBox.cueDiv.style.setProperty("--cue-font-size", fontSize + "px");
-        paddedOverlay.appendChild(styleBox.div);
+        rootOfCues.appendChild(styleBox.div);
 
         
         moveBoxToLinePosition(window, styleBox, containerBox, boxPositions);
