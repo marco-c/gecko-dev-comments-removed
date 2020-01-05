@@ -50,13 +50,9 @@ class MOZ_STACK_CLASS ModuleGenerator
     Assumptions                     assumptions_;
     LinkData                        linkData_;
     MutableMetadata                 metadata_;
-    ExportVector                    exports_;
-    ImportVector                    imports_;
-    DataSegmentVector               dataSegments_;
-    ElemSegmentVector               elemSegments_;
 
     
-    UniqueModuleEnvironment         shared_;
+    UniqueModuleEnvironment         env_;
     uint32_t                        numSigs_;
     uint32_t                        numTables_;
     LifoAlloc                       lifo_;
@@ -93,32 +89,37 @@ class MOZ_STACK_CLASS ModuleGenerator
     MOZ_MUST_USE bool allocateGlobalBytes(uint32_t bytes, uint32_t align, uint32_t* globalDataOff);
     MOZ_MUST_USE bool allocateGlobal(GlobalDesc* global);
 
+    MOZ_MUST_USE bool initAsmJS(Metadata* asmJSMetadata);
+    MOZ_MUST_USE bool initWasm();
+
   public:
-    explicit ModuleGenerator(ImportVector&& imports);
+    explicit ModuleGenerator();
     ~ModuleGenerator();
 
-    MOZ_MUST_USE bool init(UniqueModuleEnvironment shared, const CompileArgs& args,
+    MOZ_MUST_USE bool init(UniqueModuleEnvironment env, const CompileArgs& args,
                            Metadata* maybeAsmJSMetadata = nullptr);
+
+    const ModuleEnvironment& env() const { return *env_; }
 
     bool isAsmJS() const { return metadata_->kind == ModuleKind::AsmJS; }
     jit::MacroAssembler& masm() { return masm_; }
 
     
-    bool usesMemory() const { return UsesMemory(shared_->memoryUsage); }
-    uint32_t minMemoryLength() const { return shared_->minMemoryLength; }
+    bool usesMemory() const { return env_->usesMemory(); }
+    uint32_t minMemoryLength() const { return env_->minMemoryLength; }
 
     
     uint32_t numTables() const { return numTables_; }
-    const TableDescVector& tables() const { return shared_->tables; }
+    const TableDescVector& tables() const { return env_->tables; }
 
     
     uint32_t numSigs() const { return numSigs_; }
     const SigWithId& sig(uint32_t sigIndex) const;
     const SigWithId& funcSig(uint32_t funcIndex) const;
-    const SigWithIdPtrVector& funcSigs() const { return shared_->funcSigs; }
+    const SigWithIdPtrVector& funcSigs() const { return env_->funcSigs; }
 
     
-    const GlobalDescVector& globals() const { return shared_->globals; }
+    const GlobalDescVector& globals() const { return env_->globals; }
 
     
     uint32_t numFuncImports() const;
@@ -126,23 +127,10 @@ class MOZ_STACK_CLASS ModuleGenerator
     uint32_t numFuncs() const;
 
     
-    MOZ_MUST_USE bool setExports(ExportVector&& exports);
-
-    
     MOZ_MUST_USE bool startFuncDefs();
     MOZ_MUST_USE bool startFuncDef(uint32_t lineOrBytecode, FunctionGenerator* fg);
     MOZ_MUST_USE bool finishFuncDef(uint32_t funcIndex, FunctionGenerator* fg);
     MOZ_MUST_USE bool finishFuncDefs();
-
-    
-    bool setStartFunction(uint32_t funcIndex);
-
-    
-    void setDataSegments(DataSegmentVector&& segments);
-    void setElemSegments(ElemSegmentVector&& segments);
-
-    
-    void setFuncNames(NameInBytecodeVector&& funcNames);
 
     
     void initSig(uint32_t sigIndex, Sig&& sig);
@@ -153,11 +141,13 @@ class MOZ_STACK_CLASS ModuleGenerator
     void initMemoryUsage(MemoryUsage memoryUsage);
     void bumpMinMemoryLength(uint32_t newMinMemoryLength);
     MOZ_MUST_USE bool addGlobal(ValType type, bool isConst, uint32_t* index);
+    MOZ_MUST_USE bool addExport(CacheableChars&& fieldChars, uint32_t funcIndex);
 
     
     
     
-    SharedModule finish(const ShareableBytes& bytecode);
+    SharedModule finish(const ShareableBytes& bytecode, DataSegmentVector&& dataSegments,
+                        NameInBytecodeVector&& funcNames);
 };
 
 
