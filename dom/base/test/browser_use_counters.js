@@ -71,12 +71,6 @@ add_task(function* () {
   
   
   
-
-  
-  
-  
-  yield check_use_counter_iframe("file_use_counter_svg_list_style_image.html",
-                                 "PROPERTY_FILL");
 });
 
 add_task(function* () {
