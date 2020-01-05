@@ -7,6 +7,7 @@
 #include "EditorEventListener.h"
 
 #include "mozilla/Assertions.h"         
+#include "mozilla/ContentEvents.h"      
 #include "mozilla/EditorBase.h"         
 #include "mozilla/EventListenerManager.h" 
 #include "mozilla/IMEStateManager.h"    
@@ -188,8 +189,11 @@ EditorEventListener::InstallToEditor()
   elmP->AddEventListenerByType(this,
                                NS_LITERAL_STRING("click"),
                                TrustedEventsAtCapture());
-
-
+  
+  
+  
+  
+  
   elmP->AddEventListenerByType(this,
                                NS_LITERAL_STRING("blur"),
                                TrustedEventsAtCapture());
@@ -466,10 +470,10 @@ EditorEventListener::HandleEvent(nsIDOMEvent* aEvent)
     }
     
     case eFocus:
-      return Focus(internalEvent);
+      return Focus(internalEvent->AsFocusEvent());
     
     case eBlur:
-      return Blur(internalEvent);
+      return Blur(internalEvent->AsFocusEvent());
     
     case eCompositionChange:
       return HandleChangeComposition(internalEvent->AsCompositionEvent());
@@ -484,17 +488,9 @@ EditorEventListener::HandleEvent(nsIDOMEvent* aEvent)
       break;
   }
 
+#ifdef DEBUG
   nsAutoString eventType;
   aEvent->GetType(eventType);
-  
-  
-  if (eventType.EqualsLiteral("focus")) {
-    return Focus(internalEvent);
-  }
-  if (eventType.EqualsLiteral("blur")) {
-    return Blur(internalEvent);
-  }
-#ifdef DEBUG
   nsPrintfCString assertMessage("Editor doesn't handle \"%s\" event "
     "because its internal event doesn't have proper message",
     NS_ConvertUTF16toUTF8(eventType).get());
@@ -1078,17 +1074,11 @@ EditorEventListener::HandleEndComposition(
 }
 
 nsresult
-EditorEventListener::Focus(WidgetEvent* aFocusEvent)
+EditorEventListener::Focus(InternalFocusEvent* aFocusEvent)
 {
   if (NS_WARN_IF(!aFocusEvent) || DetachedFromEditor()) {
     return NS_OK;
   }
-
-  
-  
-  
-  NS_WARNING_ASSERTION(!aFocusEvent->DefaultPrevented(),
-                       "eFocus event shouldn't be cancelable");
 
   
   RefPtr<EditorBase> editorBase(mEditorBase);
@@ -1167,17 +1157,11 @@ EditorEventListener::Focus(WidgetEvent* aFocusEvent)
 }
 
 nsresult
-EditorEventListener::Blur(WidgetEvent* aBlurEvent)
+EditorEventListener::Blur(InternalFocusEvent* aBlurEvent)
 {
   if (NS_WARN_IF(!aBlurEvent) || DetachedFromEditor()) {
     return NS_OK;
   }
-
-  
-  
-  
-  NS_WARNING_ASSERTION(!aBlurEvent->DefaultPrevented(),
-                       "eBlur event shouldn't be cancelable");
 
   
   
