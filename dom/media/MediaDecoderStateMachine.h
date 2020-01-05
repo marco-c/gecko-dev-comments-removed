@@ -346,7 +346,7 @@ private:
   
   
   void OnAudioDecoded(MediaData* aAudio);
-  void OnVideoDecoded(MediaData* aVideoSample, TimeStamp aDecodeStartTime);
+  void OnVideoDecoded(MediaData* aVideo, TimeStamp aDecodeStartTime);
   void OnNotDecoded(MediaData::Type aType, const MediaResult& aError);
 
   

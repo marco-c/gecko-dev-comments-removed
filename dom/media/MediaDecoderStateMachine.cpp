@@ -1196,37 +1196,35 @@ MediaDecoderStateMachine::MaybeFinishDecodeFirstFrame()
 }
 
 void
-MediaDecoderStateMachine::OnVideoDecoded(MediaData* aVideoSample,
+MediaDecoderStateMachine::OnVideoDecoded(MediaData* aVideo,
                                          TimeStamp aDecodeStartTime)
 {
   MOZ_ASSERT(OnTaskQueue());
   MOZ_ASSERT(mState != DECODER_STATE_SEEKING);
-
-  RefPtr<MediaData> video(aVideoSample);
-  MOZ_ASSERT(video);
+  MOZ_ASSERT(aVideo);
 
   
-  mDecodedVideoEndTime = std::max(mDecodedVideoEndTime, video->GetEndTime());
+  mDecodedVideoEndTime = std::max(mDecodedVideoEndTime, aVideo->GetEndTime());
 
-  SAMPLE_LOG("OnVideoDecoded [%lld,%lld]", video->mTime, video->GetEndTime());
+  SAMPLE_LOG("OnVideoDecoded [%lld,%lld]", aVideo->mTime, aVideo->GetEndTime());
 
   switch (mState) {
     case DECODER_STATE_BUFFERING: {
       
       
-      Push(video, MediaData::VIDEO_DATA);
+      Push(aVideo, MediaData::VIDEO_DATA);
       ScheduleStateMachine();
       return;
     }
 
     case DECODER_STATE_DECODING_FIRSTFRAME: {
-      Push(video, MediaData::VIDEO_DATA);
+      Push(aVideo, MediaData::VIDEO_DATA);
       MaybeFinishDecodeFirstFrame();
       return;
     }
 
     case DECODER_STATE_DECODING: {
-      Push(video, MediaData::VIDEO_DATA);
+      Push(aVideo, MediaData::VIDEO_DATA);
       MaybeStopPrerolling();
 
       
