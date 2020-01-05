@@ -12,12 +12,10 @@ use style_traits::ToCss;
 #[test]
 fn test_linear_gradient() {
     
-    assert_roundtrip_with_context!(Image::parse, "linear-gradient(to left, red, green)",
-                                                 "linear-gradient(4.712389rad, red, green)");
+    assert_roundtrip_with_context!(Image::parse, "linear-gradient(to left, red, green)");
 
     
-    assert_roundtrip_with_context!(Image::parse, "linear-gradient(to right, red, green)",
-                                                 "linear-gradient(1.5707964rad, red, green)");
+    assert_roundtrip_with_context!(Image::parse, "linear-gradient(to right, red, green)");
 
     
     assert_roundtrip_with_context!(Image::parse, "linear-gradient(to right top, red, green)");
@@ -26,17 +24,14 @@ fn test_linear_gradient() {
     assert_roundtrip_with_context!(Image::parse, "linear-gradient(45deg, red, green)",
                                                  "linear-gradient(0.7853982rad, red, green)");
 
-   
-   assert_roundtrip_with_context!(Image::parse, "linear-gradient(red, yellow, green)",
-                                                "linear-gradient(3.1415927rad, red, yellow, green)");
-
-   
-   assert_roundtrip_with_context!(Image::parse, "linear-gradient(red, green, yellow 50%)",
-                                                "linear-gradient(3.1415927rad, red, green, yellow 50%)");
+    
+    assert_roundtrip_with_context!(Image::parse, "linear-gradient(red, yellow, green)");
 
     
-    assert_roundtrip_with_context!(Image::parse, "linear-gradient(red, green)",
-                                                 "linear-gradient(3.1415927rad, red, green)");
+    assert_roundtrip_with_context!(Image::parse, "linear-gradient(red, green, yellow 50%)");
+
+    
+    assert_roundtrip_with_context!(Image::parse, "linear-gradient(red, green)");
 }
 
 #[test]
