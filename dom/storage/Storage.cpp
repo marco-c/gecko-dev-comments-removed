@@ -294,18 +294,18 @@ Storage::ApplyEvent(StorageEvent* aStorageEvent)
   
   if (key.IsVoid()) {
     MOZ_ASSERT(value.IsVoid());
-    mCache->Clear(this);
+    mCache->Clear(this, StorageCache::E10sPropagated);
     return;
   }
 
   
   if (value.IsVoid()) {
-    mCache->RemoveItem(this, key, old);
+    mCache->RemoveItem(this, key, old, StorageCache::E10sPropagated);
     return;
   }
 
   
-  mCache->SetItem(this, key, value, old);
+  mCache->SetItem(this, key, value, old, StorageCache::E10sPropagated);
 }
 
 static const char kPermissionType[] = "cookie";
