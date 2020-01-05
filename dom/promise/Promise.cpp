@@ -570,6 +570,9 @@ Promise::PerformWorkerMicroTaskCheckpoint()
   MOZ_ASSERT(!NS_IsMainThread(), "Wrong thread!");
 
   CycleCollectedJSContext* context = CycleCollectedJSContext::Get();
+  if (!context) {
+    return;
+  }
 
   for (;;) {
     
@@ -604,6 +607,9 @@ Promise::PerformWorkerDebuggerMicroTaskCheckpoint()
   MOZ_ASSERT(!NS_IsMainThread(), "Wrong thread!");
 
   CycleCollectedJSContext* context = CycleCollectedJSContext::Get();
+  if (!context) {
+    return;
+  }
 
   for (;;) {
     
