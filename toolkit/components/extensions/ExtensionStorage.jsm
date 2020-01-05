@@ -18,7 +18,20 @@ XPCOMUtils.defineLazyModuleGetter(this, "OS",
 XPCOMUtils.defineLazyModuleGetter(this, "AsyncShutdown",
                                   "resource://gre/modules/AsyncShutdown.jsm");
 
-function jsonReplacer(key, value) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+function jsonReplacer(context, key, value) {
   switch (typeof(value)) {
     
     case "string":
@@ -49,7 +62,7 @@ function jsonReplacer(key, value) {
   if (!key) {
     
     
-    return {};
+    return new context.cloneScope.Object();
   }
 
   
@@ -72,7 +85,7 @@ this.ExtensionStorage = {
 
 
   sanitize(value, context) {
-    let json = context.jsonStringify(value, jsonReplacer);
+    let json = context.jsonStringify(value, jsonReplacer.bind(null, context));
     return JSON.parse(json);
   },
 
