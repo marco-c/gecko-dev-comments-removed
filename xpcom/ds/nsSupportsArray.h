@@ -8,8 +8,9 @@
 #define nsSupportsArray_h__
 
 #include "nsISupportsArray.h"
-#include "nsTArray.h"
 #include "mozilla/Attributes.h"
+
+static const uint32_t kAutoArraySize = 8;
 
 class nsSupportsArray final : public nsISupportsArray
 {
@@ -28,16 +29,18 @@ public:
   
   NS_IMETHOD Count(uint32_t* aResult) override
   {
-    *aResult = mArray.Length();
+    *aResult = mCount;
     return NS_OK;
   }
   NS_IMETHOD GetElementAt(uint32_t aIndex, nsISupports** aResult) override;
   MOZ_MUST_USE NS_IMETHOD
   QueryElementAt(uint32_t aIndex, const nsIID& aIID, void** aResult) override
   {
-    nsISupports* element = mArray.SafeElementAt(aIndex, nullptr);
-    if (element) {
-      return element->QueryInterface(aIID, aResult);
+    if (aIndex < mCount) {
+      nsISupports* element = mArray[aIndex];
+      if (element) {
+        return element->QueryInterface(aIID, aResult);
+      }
     }
     return NS_ERROR_FAILURE;
   }
@@ -49,7 +52,7 @@ public:
   MOZ_MUST_USE NS_IMETHOD AppendElement(nsISupports* aElement) override
   {
     
-    return (nsresult)InsertElementAt(aElement, mArray.Length());
+    return (nsresult)InsertElementAt(aElement, mCount);
   }
   
   MOZ_MUST_USE NS_IMETHOD RemoveElement(nsISupports* aElement) override;
@@ -90,12 +93,19 @@ public:
 
   MOZ_MUST_USE NS_IMETHOD Clone(nsISupportsArray** aResult) override;
 
+protected:
+  void DeleteArray(void);
+
+  bool GrowArrayBy(uint32_t aGrowBy);
+
+  nsISupports** mArray;
+  uint32_t mArraySize;
+  uint32_t mCount;
+  nsISupports*  mAutoArray[kAutoArraySize];
+
 private:
   
   explicit nsSupportsArray(const nsISupportsArray& aOther);
-
-  typedef AutoTArray<nsISupports*, 8> ISupportsArray;
-  ISupportsArray mArray;
 };
 
 #endif 
