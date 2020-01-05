@@ -331,22 +331,13 @@ impl<'a> FlowConstructor<'a> {
                 } else {
                     
                     
-                    let whitespace_stripping = if flow.get().is_table_kind() || *first_fragment {
-                        *first_fragment = false;
-                        StripWhitespaceFromStart
-                    } else {
-                        NoWhitespaceStripping
-                    };
-
-                    
-                    
                     debug!("flushing {} inline box(es) to flow A",
                            inline_fragment_accumulator.fragments.len());
                     self.flush_inline_fragments_to_flow_or_list(
                         mem::replace(inline_fragment_accumulator, InlineFragmentsAccumulator::new()),
                         flow,
                         consecutive_siblings,
-                        whitespace_stripping,
+                        StripWhitespaceFromStart,
                         node);
                     if !consecutive_siblings.is_empty() {
                         let consecutive_siblings = mem::replace(consecutive_siblings, vec!());
@@ -407,8 +398,14 @@ impl<'a> FlowConstructor<'a> {
                 inline_fragment_accumulator.fragments.push_all(successor_fragments);
                 abs_descendants.push_descendants(kid_abs_descendants);
             }
-            ConstructionItemConstructionResult(WhitespaceConstructionItem(..)) => {
+            ConstructionItemConstructionResult(WhitespaceConstructionItem(whitespace_node, whitespace_style)) => {
                 
+                
+                let fragment_info = UnscannedTextFragment(UnscannedTextFragmentInfo::from_text(" ".to_string()));
+                let fragment = Fragment::from_opaque_node_and_style(whitespace_node,
+                                                                    whitespace_style.clone(),
+                                                                    fragment_info);
+                inline_fragment_accumulator.fragments.push(fragment, whitespace_style);
             }
             ConstructionItemConstructionResult(TableColumnFragmentConstructionItem(_)) => {
                 
