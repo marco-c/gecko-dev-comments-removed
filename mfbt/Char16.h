@@ -20,6 +20,7 @@
 #ifdef WIN32
 # define MOZ_USE_CHAR16_WRAPPER
 # include <cstdint>
+# include "mozilla/Attributes.h"
   
 
 
@@ -39,13 +40,13 @@ private:
                 "char16_t and wchar_t sizes differ");
 
 public:
-  char16ptr_t(const char16_t* aPtr) : mPtr(aPtr) {}
-  char16ptr_t(const wchar_t* aPtr) :
+  MOZ_IMPLICIT char16ptr_t(const char16_t* aPtr) : mPtr(aPtr) {}
+  MOZ_IMPLICIT char16ptr_t(const wchar_t* aPtr) :
     mPtr(reinterpret_cast<const char16_t*>(aPtr))
   {}
 
   
-  constexpr char16ptr_t(decltype(nullptr)) : mPtr(nullptr) {}
+  constexpr MOZ_IMPLICIT char16ptr_t(decltype(nullptr)) : mPtr(nullptr) {}
 
   operator const char16_t*() const
   {
@@ -59,7 +60,7 @@ public:
   {
     return mPtr;
   }
-  operator bool() const
+  MOZ_IMPLICIT operator bool() const
   {
     return mPtr != nullptr;
   }
