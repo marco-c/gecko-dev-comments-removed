@@ -41,7 +41,8 @@ const MockSecurityInfo = {
   errorCode: 0,
   SSLStatus: {
     cipherSuite: "TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256",
-    protocolVersion: 3, 
+    
+    protocolVersion: 3,
     serverCert: MockCertificate,
   }
 };
