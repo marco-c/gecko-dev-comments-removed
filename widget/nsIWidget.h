@@ -1754,9 +1754,10 @@ public:
 
 
 
-    NS_IMETHOD StartPluginIME(const mozilla::WidgetKeyboardEvent& aKeyboardEvent,
-                              int32_t aPanelX, int32_t aPanelY,
-                              nsString& aCommitted) = 0;
+    virtual MOZ_MUST_USE nsresult
+    StartPluginIME(const mozilla::WidgetKeyboardEvent& aKeyboardEvent,
+                   int32_t aPanelX, int32_t aPanelY,
+                   nsString& aCommitted) = 0;
 
     
 
