@@ -243,3 +243,31 @@ function waitForActive(swr) {
     });
   });
 }
+
+function base64UrlDecode(s) {
+  s = s.replace(/-/g, '+').replace(/_/g, '/');
+
+  
+  
+  switch (s.length % 4) {
+    case 0:
+      break; 
+    case 2:
+      s += '==';
+      break; 
+    case 3:
+      s += '=';
+      break; 
+    default:
+      throw new Error('Illegal base64url string!');
+  }
+
+  
+  var decoded = atob(s);
+
+  var array = new Uint8Array(new ArrayBuffer(decoded.length));
+  for (var i = 0; i < decoded.length; i++) {
+    array[i] = decoded.charCodeAt(i);
+  }
+  return array;
+}
