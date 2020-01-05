@@ -2415,13 +2415,6 @@ pref("bidi.numeral", 0);
 
 
 
-
-
-
-pref("bidi.support", 1);
-
-
-
 pref("bidi.edit.delete_immediately", true);
 
 
@@ -5054,16 +5047,6 @@ pref("dom.mobileconnection.enabled", true);
 #else
 pref("dom.mobileconnection.enabled", false);
 #endif
-
-
-#ifdef MOZ_B2G_RIL
-pref("dom.voicemail.enabled", true);
-#else
-pref("dom.voicemail.enabled", false);
-#endif
-
-
-pref("dom.voicemail.defaultServiceId", 0);
 
 
 pref("dom.mapped_arraybuffer.enabled", true);
