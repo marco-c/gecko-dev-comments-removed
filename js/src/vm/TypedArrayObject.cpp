@@ -2686,30 +2686,6 @@ const Class TypedArrayObject::classes[Scalar::MaxTypedArrayViewType] = {
     IMPL_TYPED_ARRAY_CLASS(Uint8Clamped)
 };
 
-#define IMPL_TYPED_ARRAY_PROTO_CLASS_SPEC(_type) \
-{ \
-    DELEGATED_CLASSSPEC(TypedArrayObject::classes[Scalar::Type::_type].spec), \
-    nullptr, \
-    nullptr, \
-    nullptr, \
-    nullptr, \
-    nullptr, \
-    nullptr, \
-    JSProto_TypedArray | ClassSpec::IsDelegated \
-}
-
-static const ClassSpec TypedArrayObjectProtoClassSpecs[Scalar::MaxTypedArrayViewType] = {
-    IMPL_TYPED_ARRAY_PROTO_CLASS_SPEC(Int8),
-    IMPL_TYPED_ARRAY_PROTO_CLASS_SPEC(Uint8),
-    IMPL_TYPED_ARRAY_PROTO_CLASS_SPEC(Int16),
-    IMPL_TYPED_ARRAY_PROTO_CLASS_SPEC(Uint16),
-    IMPL_TYPED_ARRAY_PROTO_CLASS_SPEC(Int32),
-    IMPL_TYPED_ARRAY_PROTO_CLASS_SPEC(Uint32),
-    IMPL_TYPED_ARRAY_PROTO_CLASS_SPEC(Float32),
-    IMPL_TYPED_ARRAY_PROTO_CLASS_SPEC(Float64),
-    IMPL_TYPED_ARRAY_PROTO_CLASS_SPEC(Uint8Clamped)
-};
-
 
 
 
@@ -2729,7 +2705,7 @@ static const ClassSpec TypedArrayObjectProtoClassSpecs[Scalar::MaxTypedArrayView
     #_type "ArrayPrototype", \
     JSCLASS_HAS_CACHED_PROTO(JSProto_##_type##Array), \
     JS_NULL_CLASS_OPS, \
-    &TypedArrayObjectProtoClassSpecs[Scalar::Type::_type] \
+    &TypedArrayObjectClassSpecs[Scalar::Type::_type] \
 }
 
 const Class TypedArrayObject::protoClasses[Scalar::MaxTypedArrayViewType] = {
