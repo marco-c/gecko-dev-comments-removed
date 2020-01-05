@@ -971,7 +971,6 @@ public:
   
   void EnsureSafeToHandOutCSSRules();
 
-  void NotifyInvalidation(uint32_t aFlags);
   void NotifyInvalidation(const nsRect& aRect, uint32_t aFlags);
   
   void NotifyInvalidation(const nsIntRect& aRect, uint32_t aFlags);
@@ -991,7 +990,6 @@ public:
   void ClearMozAfterPaintEvents() {
     mInvalidateRequestsSinceLastPaint.mRequests.Clear();
     mUndeliveredInvalidateRequestsBeforeLastPaint.mRequests.Clear();
-    mAllInvalidated = false;
   }
 
   
@@ -1399,9 +1397,6 @@ protected:
   unsigned              mPendingMediaFeatureValuesChanged : 1;
   unsigned              mPrefChangePendingNeedsReflow : 1;
   unsigned              mIsEmulatingMedia : 1;
-  
-  
-  unsigned              mAllInvalidated : 1;
 
   
   unsigned              mIsGlyph : 1;

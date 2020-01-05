@@ -70,10 +70,6 @@
 #include "nsIDOMEvent.h"
 #include "nsDisplayList.h"
 
-#ifdef MOZ_XUL
-#include "nsXULPopupManager.h"
-#endif
-
 using namespace mozilla;
 using namespace mozilla::widget;
 using namespace mozilla::ipc;
@@ -256,6 +252,16 @@ public:
                             nsLayoutUtils::IdlePeriodDeadlineLimit()));
   }
 
+  void SetLastGCCCDuration(TimeDuration aDuration)
+  {
+    mLastGCCCDuration = aDuration;
+  }
+
+  TimeDuration LastGCCCDuration()
+  {
+    return mLastGCCCDuration;
+  }
+
 protected:
   virtual void StartTimer() = 0;
   virtual void StopTimer() = 0;
@@ -333,6 +339,8 @@ protected:
   bool mLastFireSkipped;
   TimeStamp mLastFireTime;
   TimeStamp mTargetTime;
+
+  TimeDuration mLastGCCCDuration;
 
   nsTArray<RefPtr<nsRefreshDriver> > mContentRefreshDrivers;
   nsTArray<RefPtr<nsRefreshDriver> > mRootRefreshDrivers;
@@ -533,21 +541,6 @@ private:
           new ParentProcessVsyncNotifier(this, aVsyncTimestamp);
         NS_DispatchToMainThread(vsyncEvent);
       } else {
-        mRecentVsync = aVsyncTimestamp;
-        if (!mBlockUntil.IsNull() && mBlockUntil > aVsyncTimestamp) {
-          if (mProcessedVsync) {
-            
-            
-            mProcessedVsync = false;
-            nsCOMPtr<nsIRunnable> vsyncEvent =
-              NewRunnableMethod<>(
-                this, &RefreshDriverVsyncObserver::NormalPriorityNotify);
-            NS_DispatchToMainThread(vsyncEvent);
-          }
-
-          return true;
-        }
-
         TickRefreshDriver(aVsyncTimestamp);
       }
 
@@ -566,19 +559,6 @@ private:
         mLastChildTick = TimeStamp::Now();
       }
     }
-
-    void NormalPriorityNotify()
-    {
-      if (mLastProcessedTickInChildProcess.IsNull() ||
-          mRecentVsync > mLastProcessedTickInChildProcess) {
-        
-        mBlockUntil = TimeStamp();
-        TickRefreshDriver(mRecentVsync);
-      }
-
-      mProcessedVsync = true;
-    }
-
   private:
     ~RefreshDriverVsyncObserver() = default;
 
@@ -635,9 +615,10 @@ private:
         aVsyncTimestamp = mRecentVsync;
         mProcessedVsync = true;
       } else {
-
         mLastChildTick = TimeStamp::Now();
-        mLastProcessedTickInChildProcess = aVsyncTimestamp;
+        if (!mBlockUntil.IsNull() && mBlockUntil > aVsyncTimestamp) {
+          return;
+        }
       }
       MOZ_ASSERT(aVsyncTimestamp <= TimeStamp::Now());
 
@@ -645,12 +626,19 @@ private:
       
       
       if (mVsyncRefreshDriverTimer) {
+        
+        mVsyncRefreshDriverTimer->SetLastGCCCDuration(TimeDuration());
         mVsyncRefreshDriverTimer->RunRefreshDrivers(aVsyncTimestamp);
       }
 
       if (!XRE_IsParentProcess()) {
         TimeDuration tickDuration = TimeStamp::Now() - mLastChildTick;
         mBlockUntil = aVsyncTimestamp + tickDuration;
+        if (mVsyncRefreshDriverTimer) {
+          
+          
+          mBlockUntil -= mVsyncRefreshDriverTimer->LastGCCCDuration();
+        }
       }
     }
 
@@ -661,7 +649,6 @@ private:
     Monitor mRefreshTickLock;
     TimeStamp mRecentVsync;
     TimeStamp mLastChildTick;
-    TimeStamp mLastProcessedTickInChildProcess;
     TimeStamp mBlockUntil;
     TimeDuration mVsyncRate;
     bool mProcessedVsync;
@@ -1197,10 +1184,6 @@ nsRefreshDriver::~nsRefreshDriver()
     mRootRefresh->RemoveRefreshObserver(this, FlushType::Style);
     mRootRefresh = nullptr;
   }
-  for (nsIPresShell* shell : mPresShellsToInvalidateIfHidden) {
-    shell->InvalidatePresShellIfHidden();
-  }
-  mPresShellsToInvalidateIfHidden.Clear();
 }
 
 
@@ -1954,15 +1937,6 @@ nsRefreshDriver::Tick(int64_t aNowEpoch, TimeStamp aNowTime)
     presShell->ScheduleApproximateFrameVisibilityUpdateNow();
   }
 
-#ifdef MOZ_XUL
-  
-  
-  nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
-  if (pm) {
-    pm->UpdatePopupPositions(this);
-  }
-#endif
-
   nsCOMArray<nsIDocument> documents;
   CollectDocuments(mPresContext->Document(), &documents);
   for (int32_t i = 0; i < documents.Count(); ++i) {
@@ -2027,11 +2001,6 @@ nsRefreshDriver::Tick(int64_t aNowEpoch, TimeStamp aNowTime)
     }
   }
 
-  for (nsIPresShell* shell : mPresShellsToInvalidateIfHidden) {
-    shell->InvalidatePresShellIfHidden();
-  }
-  mPresShellsToInvalidateIfHidden.Clear();
-
   bool notifyGC = false;
   if (mViewManagerFlushIsPending) {
     RefPtr<TimelineConsumers> timelines = TimelineConsumers::Get();
@@ -2093,8 +2062,12 @@ nsRefreshDriver::Tick(int64_t aNowEpoch, TimeStamp aNowTime)
   }
 
   if (notifyGC && nsContentUtils::XPConnect()) {
+    TimeStamp startGCCC = TimeStamp::Now();
     nsContentUtils::XPConnect()->NotifyDidPaint();
     nsJSContext::NotifyDidPaint();
+    if (mActiveTimer) {
+      mActiveTimer->SetLastGCCCDuration(TimeStamp::Now() - startGCCC);
+    }
   }
 }
 
