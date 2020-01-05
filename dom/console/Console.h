@@ -322,10 +322,8 @@ private:
   
   
   
-  
   uint32_t
-  IncreaseCounter(JSContext* aCx, const ConsoleStackEntry& aFrame,
-                  const Sequence<JS::Value>& aData,
+  IncreaseCounter(JSContext* aCx, const Sequence<JS::Value>& aData,
                   nsAString& aCountLabel);
 
   
