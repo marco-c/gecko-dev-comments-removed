@@ -1034,7 +1034,7 @@ void SkGpuDevice::drawBitmapTile(const SkBitmap& bitmap,
 
     SkMatrix texMatrix;
     
-    texMatrix.setRectToRect(dstRect, srcRect, SkMatrix::kStart_ScaleToFit);
+    texMatrix.setRectToRect(dstRect, srcRect, SkMatrix::kFill_ScaleToFit);
     texMatrix.postScale(iw, ih);
 
     
