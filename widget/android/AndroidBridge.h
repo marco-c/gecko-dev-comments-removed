@@ -42,16 +42,12 @@
 
 class nsPIDOMWindowOuter;
 
-namespace base {
-class Thread;
-} 
-
 typedef void* EGLSurface;
+class nsIRunnable;
 
 namespace mozilla {
 
 class AutoLocalJNIFrame;
-class Runnable;
 
 namespace hal {
 class BatteryInformation;
@@ -239,7 +235,7 @@ private:
     mozilla::Mutex mUiTaskQueueLock;
 
 public:
-    void PostTaskToUiThread(already_AddRefed<Runnable> aTask, int aDelayMs);
+    void PostTaskToUiThread(already_AddRefed<nsIRunnable> aTask, int aDelayMs);
     int64_t RunDelayedUiThreadTasks();
 };
 
