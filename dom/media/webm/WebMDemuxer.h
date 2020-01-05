@@ -124,7 +124,8 @@ public:
   bool GetOffsetForTime(uint64_t aTime, int64_t* aOffset);
 
   
-  bool GetNextPacket(TrackInfo::TrackType aType, MediaRawDataQueue *aSamples);
+  nsresult GetNextPacket(TrackInfo::TrackType aType,
+                         MediaRawDataQueue *aSamples);
 
   nsresult Reset(TrackInfo::TrackType aType);
 
@@ -192,11 +193,13 @@ private:
   
   
   
-  RefPtr<NesteggPacketHolder> NextPacket(TrackInfo::TrackType aType);
+  nsresult NextPacket(TrackInfo::TrackType aType,
+                      RefPtr<NesteggPacketHolder>& aPacket);
 
   
   
-  RefPtr<NesteggPacketHolder> DemuxPacket(TrackInfo::TrackType aType);
+  nsresult DemuxPacket(TrackInfo::TrackType aType,
+                       RefPtr<NesteggPacketHolder>& aPacket);
 
   
   
@@ -294,7 +297,7 @@ private:
   ~WebMTrackDemuxer();
   void UpdateSamples(nsTArray<RefPtr<MediaRawData>>& aSamples);
   void SetNextKeyFrameTime();
-  RefPtr<MediaRawData> NextSample ();
+  nsresult NextSample(RefPtr<MediaRawData>& aData);
   RefPtr<WebMDemuxer> mParent;
   TrackInfo::TrackType mType;
   UniquePtr<TrackInfo> mInfo;
