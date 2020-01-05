@@ -522,11 +522,14 @@ public:
     void ResetGlyphRuns()
     {
         if (mHasGlyphRunArray) {
-            mGlyphRunArray.~nsTArray<GlyphRun>();
-            mHasGlyphRunArray = false;
-        } else {
-            mSingleGlyphRun.mFont = nullptr;
+            MOZ_ASSERT(mGlyphRunArray.Length() > 1);
+            
+            mGlyphRunArray.TruncateLength(1);
+            
+            ConvertFromGlyphRunArray();
         }
+        
+        mSingleGlyphRun.mFont = nullptr;
     }
     void SortGlyphRuns();
     void SanitizeGlyphRuns();
