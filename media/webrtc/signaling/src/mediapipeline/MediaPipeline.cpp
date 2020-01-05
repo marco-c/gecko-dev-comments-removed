@@ -48,6 +48,7 @@
 #include "mozilla/SharedThreadPool.h"
 #if !defined(MOZILLA_EXTERNAL_LINKAGE)
 #include "mozilla/PeerIdentity.h"
+#include "mozilla/Preferences.h"
 #include "mozilla/TaskQueue.h"
 #endif
 #include "mozilla/gfx/Point.h"
@@ -1458,11 +1459,22 @@ void MediaPipelineTransmit::AttachToTrack(const std::string& track_id) {
             << static_cast<void *>(domtrack_) << " conduit type=" <<
             (conduit_->type() == MediaSessionConduit::AUDIO ?"audio":"video"));
 
+#if !defined(MOZILLA_EXTERNAL_LINKAGE)
   
   
-  
-  
-  domtrack_->AddDirectListener(listener_);
+  const bool enableDirectListener =
+    !Preferences::GetBool("media.navigator.audio.full_duplex", false);
+#else
+  const bool enableDirectListener = true;
+#endif
+
+  if (enableDirectListener) {
+    
+    
+    
+    
+    domtrack_->AddDirectListener(listener_);
+  }
   domtrack_->AddListener(listener_);
 
 #ifndef MOZILLA_INTERNAL_API
