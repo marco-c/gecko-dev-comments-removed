@@ -578,7 +578,7 @@ protected:
 
 
 
-  static uint32_t sNumLivingContexts;
+  static uintptr_t sNumLivingContexts;
 
   static mozilla::gfx::DrawTarget* sErrorTarget;
 
