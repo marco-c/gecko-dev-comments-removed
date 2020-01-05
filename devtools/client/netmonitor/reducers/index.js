@@ -1,0 +1,10 @@
+
+
+
+"use strict";
+
+const { combineReducers } = require("devtools/client/shared/vendor/redux");
+
+module.exports = combineReducers({
+  
+});
