@@ -262,6 +262,24 @@ js::NativeObject::lookupPure(jsid id)
 }
 
 uint32_t
+js::NativeObject::numFixedSlotsForCompilation() const
+{
+    
+    
+    
+    
+
+    
+    MOZ_ASSERT(!IsInsideNursery(this));
+
+    if (this->is<ArrayObject>())
+        return 0;
+
+    gc::AllocKind kind = asTenured().getAllocKind();
+    return gc::GetGCKindSlots(kind, getClass());
+}
+
+uint32_t
 js::NativeObject::dynamicSlotsCount(uint32_t nfixed, uint32_t span, const Class* clasp)
 {
     if (span <= nfixed)
