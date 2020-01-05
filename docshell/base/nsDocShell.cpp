@@ -9833,23 +9833,23 @@ nsDocShell::InternalLoad(nsIURI* aURI,
     contentType = nsIContentPolicy::TYPE_DOCUMENT;
   }
 
-  nsISupports* context = requestingElement;
-  if (!context) {
-    context = ToSupports(scriptGlobal);
+  nsISupports* requestingContext = requestingElement;
+  if (!requestingContext) {
+    requestingContext = ToSupports(scriptGlobal);
   }
 
   
-  nsCOMPtr<nsIPrincipal> loadingPrincipal = aTriggeringPrincipal;
-  if (!loadingPrincipal && aReferrer) {
+  nsCOMPtr<nsIPrincipal> requestingPrincipal = aTriggeringPrincipal;
+  if (!requestingPrincipal && aReferrer) {
     rv =
-      CreatePrincipalFromReferrer(aReferrer, getter_AddRefs(loadingPrincipal));
+      CreatePrincipalFromReferrer(aReferrer, getter_AddRefs(requestingPrincipal));
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
   rv = NS_CheckContentLoadPolicy(contentType,
                                  aURI,
-                                 loadingPrincipal,
-                                 context,
+                                 requestingPrincipal,
+                                 requestingContext,
                                  EmptyCString(),  
                                  nullptr,  
                                  &shouldLoad);
@@ -9865,7 +9865,7 @@ nsDocShell::InternalLoad(nsIURI* aURI,
   
   
   
-  nsCOMPtr<nsIDocShell> docShell = NS_CP_GetDocShellFromContext(context);
+  nsCOMPtr<nsIDocShell> docShell = NS_CP_GetDocShellFromContext(requestingContext);
   NS_ENSURE_TRUE(docShell, NS_OK);
   if (docShell) {
     nsIDocument* document = docShell->GetDocument();
