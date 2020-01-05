@@ -184,7 +184,7 @@ public:
   
   
   static already_AddRefed<File>
-  CreateFromFile(nsISupports* aParent, nsIFile* aFile, bool aTemporary = false);
+  CreateFromFile(nsISupports* aParent, nsIFile* aFile);
 
   static already_AddRefed<File>
   CreateFromFile(nsISupports* aParent, nsIFile* aFile, const nsAString& aName,
@@ -676,11 +676,10 @@ public:
   NS_DECL_ISUPPORTS_INHERITED
 
   
-  explicit BlobImplFile(nsIFile* aFile, bool aTemporary = false)
+  explicit BlobImplFile(nsIFile* aFile)
     : BlobImplBase(EmptyString(), EmptyString(), UINT64_MAX, INT64_MAX)
     , mFile(aFile)
     , mWholeFile(true)
-    , mIsTemporary(aTemporary)
   {
     MOZ_ASSERT(mFile, "must have file");
     
@@ -694,7 +693,6 @@ public:
     : BlobImplBase(aName, aContentType, aLength, UINT64_MAX)
     , mFile(aFile)
     , mWholeFile(true)
-    , mIsTemporary(false)
   {
     MOZ_ASSERT(mFile, "must have file");
   }
@@ -705,7 +703,6 @@ public:
     : BlobImplBase(aName, aContentType, aLength, aLastModificationDate)
     , mFile(aFile)
     , mWholeFile(true)
-    , mIsTemporary(false)
   {
     MOZ_ASSERT(mFile, "must have file");
   }
@@ -716,7 +713,6 @@ public:
     : BlobImplBase(aName, aContentType, UINT64_MAX, INT64_MAX)
     , mFile(aFile)
     , mWholeFile(true)
-    , mIsTemporary(false)
   {
     MOZ_ASSERT(mFile, "must have file");
     if (aContentType.IsEmpty()) {
@@ -742,19 +738,7 @@ public:
   virtual bool IsDateUnknown() const override { return false; }
 
 protected:
-  virtual ~BlobImplFile() {
-    if (mFile && mIsTemporary) {
-      NS_WARNING("In temporary ~BlobImplFile");
-      
-      
-#ifdef DEBUG
-      nsresult rv =
-#endif
-      mFile->Remove(false);
-      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                           "Failed to remove temporary DOMFile.");
-    }
-  }
+  virtual ~BlobImplFile() = default;
 
 private:
   
@@ -763,7 +747,6 @@ private:
     : BlobImplBase(aContentType, aOther->mStart + aStart, aLength)
     , mFile(aOther->mFile)
     , mWholeFile(false)
-    , mIsTemporary(false)
   {
     MOZ_ASSERT(mFile, "must have file");
     mImmutable = aOther->mImmutable;
@@ -775,7 +758,6 @@ private:
 
   nsCOMPtr<nsIFile> mFile;
   bool mWholeFile;
-  bool mIsTemporary;
 };
 
 class EmptyBlobImpl final : public BlobImplBase

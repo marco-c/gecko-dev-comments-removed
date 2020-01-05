@@ -7826,7 +7826,7 @@ nsContentUtils::TransferableToIPCTransferable(nsITransferable* aTransferable,
               continue;
             }
 
-            blobImpl = new BlobImplFile(file, false);
+            blobImpl = new BlobImplFile(file);
             ErrorResult rv;
             
             
