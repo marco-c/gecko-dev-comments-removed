@@ -262,6 +262,9 @@ class CommandBase(object):
                 or self.config["tools"]["rust-root"]:
             env["RUST_ROOT"] = self.config["tools"]["rust-root"]
             
+            if sys.platform == "msys":
+                extra_path += [path.join(os.sep, "mingw64", "bin")]
+            
             extra_path += [path.join(self.config["tools"]["rust-root"], "rustc", "bin")]
             extra_lib += [path.join(self.config["tools"]["rust-root"], "rustc", "lib")]
             
