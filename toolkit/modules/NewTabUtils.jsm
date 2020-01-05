@@ -734,6 +734,14 @@ var PlacesProvider = {
     }
   },
 
+  onVisit(aURI, aVisitId, aTime, aSessionId, aReferrerVisitId, aTransitionType,
+          aGuid, aHidden, aVisitCount, aTyped, aLastKnownTitle) {
+    
+    if (!this._batchProcessingDepth && aVisitCount == 1 && aLastKnownTitle) {
+      this.onTitleChanged(aURI, aLastKnownTitle, aGuid);
+    }
+  },
+
   onDeleteURI: function PlacesProvider_onDeleteURI(aURI, aGUID, aReason) {
     
     this._callObservers("onDeleteURI", {

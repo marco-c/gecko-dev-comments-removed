@@ -149,11 +149,10 @@ add_task(function* test_Links_onLinkChanged() {
 
 
 
-
       if (link.url === url) {
         equal(link.url, url, `expected url on linkChanged event`);
         linkChangedMsgCount += 1;
-        if (linkChangedMsgCount === 3) {
+        if (linkChangedMsgCount === 2) {
           ok(true, `all linkChanged events captured`);
           provider.off("linkChanged", this);
           resolve();

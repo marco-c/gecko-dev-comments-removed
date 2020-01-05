@@ -52,6 +52,24 @@ Links.prototype = {
 
 
   historyObserver: {
+    _batchProcessingDepth: 0,
+    _batchCalledFrecencyChanged: false,
+
+    
+
+
+    onBeginUpdateBatch() {
+      this._batchProcessingDepth += 1;
+    },
+
+    onEndUpdateBatch() {
+      this._batchProcessingDepth -= 1;
+      if (this._batchProcessingDepth == 0 && this._batchCalledFrecencyChanged) {
+        this.onManyFrecenciesChanged();
+        this._batchCalledFrecencyChanged = false;
+      }
+    },
+
     onDeleteURI: function historyObserver_onDeleteURI(aURI) {
       
       gLinks.emit("deleteURI", {
@@ -65,6 +83,15 @@ Links.prototype = {
 
     onFrecencyChanged: function historyObserver_onFrecencyChanged(aURI,
                            aNewFrecency, aGUID, aHidden, aLastVisitDate) { 
+
+      
+      
+      
+      if (this._batchProcessingDepth > 0) {
+        this._batchCalledFrecencyChanged = true;
+        return;
+      }
+
       
       
       if (!aHidden && aLastVisitDate &&
@@ -82,6 +109,14 @@ Links.prototype = {
       
       
       gLinks.emit("manyLinksChanged");
+    },
+
+    onVisit(aURI, aVisitId, aTime, aSessionId, aReferrerVisitId, aTransitionType,
+            aGuid, aHidden, aVisitCount, aTyped, aLastKnownTitle) {
+      
+      if (!this._batchProcessingDepth && aVisitCount == 1 && aLastKnownTitle) {
+        this.onTitleChanged(aURI, aTitle, aGuid);
+      }
     },
 
     onTitleChanged: function historyObserver_onTitleChanged(aURI, aNewTitle) {

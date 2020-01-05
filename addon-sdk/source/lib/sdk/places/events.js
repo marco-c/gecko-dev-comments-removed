@@ -115,6 +115,20 @@ function formatValue (type, data) {
 }
 
 var historyObserver = createObserverInstance(HISTORY_EVENTS, HISTORY_ARGS);
+
+
+
+historyObserver.realOnVisit = historyObserver.onVisit;
+historyObserver.onVisit = function(url, visitId, time, sessionId,
+                                   referringId, transitionType, guid, hidden,
+                                   visitCount, typed, lastKnownTitle) {
+  
+  
+  if (visitCount == 1) {
+    historyObserver.onTitleChanged(url, lastKnownTitle);
+  }
+  this.realOnVisit(url, visitId, time, sessionId, referringId, transitionType);
+};
 historyService.addObserver(historyObserver, false);
 
 var bookmarkObserver = createObserverInstance(BOOKMARK_EVENTS, BOOKMARK_ARGS);
