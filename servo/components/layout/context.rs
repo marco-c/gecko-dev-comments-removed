@@ -25,7 +25,7 @@ use std::collections::HashMap;
 use std::collections::hash_state::DefaultState;
 use std::rc::Rc;
 use std::sync::mpsc::{Sender, channel};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, RwLock};
 use style::selector_matching::Stylist;
 use url::Url;
 use util::mem::HeapSizeOf;
@@ -120,7 +120,10 @@ pub struct SharedLayoutContext {
     pub visible_rects: Arc<HashMap<LayerId, Rect<Au>, DefaultState<FnvHasher>>>,
 
     
-    pub running_animations: Arc<HashMap<OpaqueNode, Vec<Animation>>>,
+    pub running_animations: Arc<RwLock<HashMap<OpaqueNode, Vec<Animation>>>>,
+
+    
+    pub expired_animations: Arc<RwLock<HashMap<OpaqueNode, Vec<Animation>>>>,
 
     
     pub goal: ReflowGoal,
