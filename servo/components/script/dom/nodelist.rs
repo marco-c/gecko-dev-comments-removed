@@ -73,6 +73,7 @@ impl<'a> NodeListMethods for &'a NodeList {
         }
     }
 
+    
     fn IndexedGetter(self, index: u32, found: &mut bool) -> Option<Root<Node>> {
         let item = self.Item(index);
         *found = item.is_some();

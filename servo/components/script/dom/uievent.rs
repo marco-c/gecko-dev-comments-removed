@@ -87,6 +87,7 @@ impl<'a> UIEventMethods for &'a UIEvent {
         self.detail.get()
     }
 
+    
     fn InitUIEvent(self,
                    type_: DOMString,
                    can_bubble: bool,

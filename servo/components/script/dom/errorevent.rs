@@ -114,22 +114,27 @@ impl ErrorEvent {
 }
 
 impl<'a> ErrorEventMethods for &'a ErrorEvent {
+    
     fn Lineno(self) -> u32 {
         self.lineno.get()
     }
 
+    
     fn Colno(self) -> u32 {
         self.colno.get()
     }
 
+    
     fn Message(self) -> DOMString {
         self.message.borrow().clone()
     }
 
+    
     fn Filename(self) -> DOMString {
         self.filename.borrow().clone()
     }
 
+    
     fn Error(self, _cx: *mut JSContext) -> JSVal {
         self.error.get()
     }

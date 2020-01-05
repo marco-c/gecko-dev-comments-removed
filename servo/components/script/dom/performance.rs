@@ -44,6 +44,7 @@ impl Performance {
 }
 
 impl<'a> PerformanceMethods for &'a Performance {
+    
     fn Timing(self) -> Root<PerformanceTiming> {
         self.timing.root()
     }

@@ -69,14 +69,17 @@ impl CloseEvent {
 }
 
 impl<'a> CloseEventMethods for &'a CloseEvent {
+    
     fn WasClean(self) -> bool {
         self.wasClean
     }
 
+    
     fn Code(self) -> u16 {
         self.code
     }
 
+    
     fn Reason(self) -> DOMString {
         self.reason.clone()
     }

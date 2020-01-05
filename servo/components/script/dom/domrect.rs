@@ -41,27 +41,33 @@ impl DOMRect {
 }
 
 impl<'a> DOMRectMethods for &'a DOMRect {
+    
     fn Top(self) -> Finite<f32> {
         Finite::wrap(self.top)
     }
 
+    
     fn Bottom(self) -> Finite<f32> {
         Finite::wrap(self.bottom)
     }
 
+    
     fn Left(self) -> Finite<f32> {
         Finite::wrap(self.left)
     }
 
+    
     fn Right(self) -> Finite<f32> {
         Finite::wrap(self.right)
     }
 
+    
     fn Width(self) -> Finite<f32> {
         let result = (self.right - self.left).abs();
         Finite::wrap(result)
     }
 
+    
     fn Height(self) -> Finite<f32> {
         let result = (self.bottom - self.top).abs();
         Finite::wrap(result)

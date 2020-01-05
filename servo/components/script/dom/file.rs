@@ -40,6 +40,7 @@ impl File {
 }
 
 impl<'a> FileMethods for &'a File {
+    
     fn Name(self) -> DOMString {
         self.name.clone()
     }

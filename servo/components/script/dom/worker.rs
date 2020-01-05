@@ -138,6 +138,7 @@ impl Worker {
 }
 
 impl<'a> WorkerMethods for &'a Worker {
+    
     fn PostMessage(self, cx: *mut JSContext, message: HandleValue) -> ErrorResult {
         let data = try!(StructuredCloneData::write(cx, message));
         let address = Trusted::new(cx, self, self.global.root().r().script_chan().clone());

@@ -35,14 +35,17 @@ impl WebGLActiveInfo {
 }
 
 impl<'a> WebGLActiveInfoMethods for &'a WebGLActiveInfo {
+    
     fn Size(self) -> i32 {
         self.size
     }
 
+    
     fn Type(self) -> u32 {
         self.ty
     }
 
+    
     fn Name(self) -> DOMString {
         self.name.clone()
     }

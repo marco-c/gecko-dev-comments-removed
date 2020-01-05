@@ -62,12 +62,17 @@ impl ProgressEvent {
 }
 
 impl<'a> ProgressEventMethods for &'a ProgressEvent {
+    
     fn LengthComputable(self) -> bool {
         self.length_computable
     }
+
+    
     fn Loaded(self) -> u64{
         self.loaded
     }
+
+    
     fn Total(self) -> u64 {
         self.total
     }

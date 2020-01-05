@@ -35,20 +35,24 @@ impl DOMStringMap {
 
 
 impl<'a> DOMStringMapMethods for &'a DOMStringMap {
+    
     fn NamedCreator(self, name: DOMString, value: DOMString) -> ErrorResult {
         self.NamedSetter(name, value)
     }
 
+    
     fn NamedDeleter(self, name: DOMString) {
         let element = self.element.root();
         element.r().delete_custom_attr(name)
     }
 
+    
     fn NamedSetter(self, name: DOMString, value: DOMString) -> ErrorResult {
         let element = self.element.root();
         element.r().set_custom_attr(name, value)
     }
 
+    
     fn NamedGetter(self, name: DOMString, found: &mut bool) -> DOMString {
         let element = self.element.root();
         match element.r().get_custom_attr(name) {

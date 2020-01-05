@@ -88,24 +88,28 @@ impl StorageEvent {
 }
 
 impl<'a> StorageEventMethods for &'a StorageEvent {
+    
     fn GetKey(self) -> Option<DOMString> {
         self.key.borrow().clone()
     }
 
+    
     fn GetOldValue(self) -> Option<DOMString> {
         self.oldValue.borrow().clone()
     }
 
+    
     fn GetNewValue(self) -> Option<DOMString> {
         self.newValue.borrow().clone()
     }
 
+    
     fn Url(self) -> DOMString {
         self.url.borrow().clone()
     }
 
+    
     fn GetStorageArea(self) -> Option<Root<Storage>> {
         self.storageArea.get().map(Root::from_rooted)
     }
-
 }

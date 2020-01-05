@@ -116,46 +116,57 @@ impl MouseEvent {
 }
 
 impl<'a> MouseEventMethods for &'a MouseEvent {
+    
     fn ScreenX(self) -> i32 {
         self.screen_x.get()
     }
 
+    
     fn ScreenY(self) -> i32 {
         self.screen_y.get()
     }
 
+    
     fn ClientX(self) -> i32 {
         self.client_x.get()
     }
 
+    
     fn ClientY(self) -> i32 {
         self.client_y.get()
     }
 
+    
     fn CtrlKey(self) -> bool {
         self.ctrl_key.get()
     }
 
+    
     fn ShiftKey(self) -> bool {
         self.shift_key.get()
     }
 
+    
     fn AltKey(self) -> bool {
         self.alt_key.get()
     }
 
+    
     fn MetaKey(self) -> bool {
         self.meta_key.get()
     }
 
+    
     fn Button(self) -> i16 {
         self.button.get()
     }
 
+    
     fn GetRelatedTarget(self) -> Option<Root<EventTarget>> {
         self.related_target.get().map(Root::from_rooted)
     }
 
+    
     
     
     
@@ -168,6 +179,7 @@ impl<'a> MouseEventMethods for &'a MouseEvent {
         }
     }
 
+    
     fn InitMouseEvent(self,
                       typeArg: DOMString,
                       canBubbleArg: bool,
