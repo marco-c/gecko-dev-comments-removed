@@ -202,72 +202,57 @@ ReadFuncBinaryString(nsIInputStream* in,
   return NS_OK;
 }
 
-nsresult
-FileReader::DoOnLoadEnd(nsresult aStatus)
+void
+FileReader::OnLoadEndArrayBuffer()
 {
-  
-  nsCOMPtr<nsIAsyncInputStream> stream;
-  mAsyncStream.swap(stream);
+  AutoJSAPI jsapi;
+  if (!jsapi.Init(GetParentObject())) {
+    FreeDataAndDispatchError(NS_ERROR_FAILURE);
+    return;
+  }
 
-  RefPtr<Blob> blob;
-  mBlob.swap(blob);
+  RootResultArrayBuffer();
 
-  
-  if (NS_FAILED(aStatus)) {
-    FreeFileData();
-    return NS_OK;
+  JSContext* cx = jsapi.cx();
+
+  mResultArrayBuffer = JS_NewArrayBufferWithContents(cx, mDataLen, mFileData);
+  if (mResultArrayBuffer) {
+    mFileData = nullptr; 
+    FreeDataAndDispatchSuccess();
+    return;
   }
 
   
-  
-  if (mDataLen != mTotal) {
-    FreeFileData();
-    return NS_ERROR_FAILURE;
+
+  JS::Rooted<JS::Value> exceptionValue(cx);
+  if (!JS_GetPendingException(cx, &exceptionValue) ||
+      
+      !exceptionValue.isObject()) {
+    JS_ClearPendingException(jsapi.cx());
+    FreeDataAndDispatchError(NS_ERROR_OUT_OF_MEMORY);
+    return;
   }
 
-  nsresult rv = NS_OK;
-  switch (mDataFormat) {
-    case FILE_AS_ARRAYBUFFER: {
-      AutoJSAPI jsapi;
-      if (!jsapi.Init(GetParentObject())) {
-        FreeFileData();
-        return NS_ERROR_FAILURE;
-      }
+  JS_ClearPendingException(jsapi.cx());
 
-      RootResultArrayBuffer();
-      mResultArrayBuffer =
-        JS_NewArrayBufferWithContents(jsapi.cx(), mDataLen, mFileData);
-      if (!mResultArrayBuffer) {
-        JS_ClearPendingException(jsapi.cx());
-        rv = NS_ERROR_OUT_OF_MEMORY;
-      } else {
-        mFileData = nullptr; 
-      }
-      break;
-    }
-    case FILE_AS_BINARY:
-      break; 
-    case FILE_AS_TEXT:
-      if (!mFileData) {
-        if (mDataLen) {
-          rv = NS_ERROR_OUT_OF_MEMORY;
-          break;
-        }
-        rv = GetAsText(blob, mCharset, "", mDataLen, mResult);
-        break;
-      }
-      rv = GetAsText(blob, mCharset, mFileData, mDataLen, mResult);
-      break;
-    case FILE_AS_DATAURL:
-      rv = GetAsDataURL(blob, mFileData, mDataLen, mResult);
-      break;
+  JS::Rooted<JSObject*> exceptionObject(cx, &exceptionValue.toObject());
+  JSErrorReport* er = JS_ErrorFromException(cx, exceptionObject);
+  if (!er || er->message()) {
+    FreeDataAndDispatchError(NS_ERROR_OUT_OF_MEMORY);
+    return;
   }
 
-  mResult.SetIsVoid(false);
+  nsAutoString errorName;
+  JSFlatString* name = js::GetErrorTypeName(cx, er->exnType);
+  if (name) {
+    AssignJSFlatString(errorName, name);
+  }
 
-  FreeFileData();
+  mError =
+    new DOMError(GetOwner(), errorName,
+                 NS_ConvertUTF8toUTF16(er->message().c_str()));
 
-  return rv;
+  FreeDataAndDispatchError();
 }
 
 nsresult
@@ -530,7 +515,35 @@ FileReader::ClearProgressEventTimer()
 }
 
 void
-FileReader::DispatchError(nsresult aRv)
+FileReader::FreeDataAndDispatchSuccess()
+{
+  FreeFileData();
+  mResult.SetIsVoid(false);
+  mAsyncStream = nullptr;
+  mBlob = nullptr;
+
+  
+  DispatchProgressEvent(NS_LITERAL_STRING(LOAD_STR));
+  DispatchProgressEvent(NS_LITERAL_STRING(LOADEND_STR));
+}
+
+void
+FileReader::FreeDataAndDispatchError()
+{
+  MOZ_ASSERT(mError);
+
+  FreeFileData();
+  mResult.SetIsVoid(true);
+  mAsyncStream = nullptr;
+  mBlob = nullptr;
+
+  
+  DispatchProgressEvent(NS_LITERAL_STRING(ERROR_STR));
+  DispatchProgressEvent(NS_LITERAL_STRING(LOADEND_STR));
+}
+
+void
+FileReader::FreeDataAndDispatchError(nsresult aRv)
 {
   
   switch (aRv) {
@@ -545,9 +558,7 @@ FileReader::DispatchError(nsresult aRv)
     break;
   }
 
-  
-  DispatchProgressEvent(NS_LITERAL_STRING(ERROR_STR));
-  DispatchProgressEvent(NS_LITERAL_STRING(LOADEND_STR));
+  FreeDataAndDispatchError();
 }
 
 nsresult
@@ -644,22 +655,47 @@ FileReader::OnLoadEnd(nsresult aStatus)
   
   mReadyState = DONE;
 
-  nsresult rv = DoOnLoadEnd(aStatus);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    DispatchError(rv);
-    return NS_OK;
-  }
-
   
   if (NS_FAILED(aStatus)) {
-    DispatchError(aStatus);
+    FreeDataAndDispatchError(aStatus);
     return NS_OK;
   }
 
   
-  DispatchProgressEvent(NS_LITERAL_STRING(LOAD_STR));
-  DispatchProgressEvent(NS_LITERAL_STRING(LOADEND_STR));
+  
+  if (mDataLen != mTotal) {
+    FreeDataAndDispatchError(NS_ERROR_FAILURE);
+    return NS_OK;
+  }
 
+  
+  if (mDataFormat == FILE_AS_ARRAYBUFFER) {
+    OnLoadEndArrayBuffer();
+    return NS_OK;
+  }
+
+  nsresult rv = NS_OK;
+
+  
+
+  if (mDataFormat == FILE_AS_DATAURL) {
+    rv = GetAsDataURL(mBlob, mFileData, mDataLen, mResult);
+  } else if (mDataFormat == FILE_AS_TEXT) {
+    if (!mFileData && mDataLen) {
+      rv = NS_ERROR_OUT_OF_MEMORY;
+    } else if (!mFileData) {
+      rv = GetAsText(mBlob, mCharset, "", mDataLen, mResult);
+    } else {
+      rv = GetAsText(mBlob, mCharset, mFileData, mDataLen, mResult);
+    }
+  }
+
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    FreeDataAndDispatchError(rv);
+    return NS_OK;
+  }
+
+  FreeDataAndDispatchSuccess();
   return NS_OK;
 }
 
