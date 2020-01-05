@@ -33,6 +33,21 @@ public:
   {
   }
 
+  
+
+
+
+#if defined(CharT_is_PRUnichar) && defined(MOZ_USE_CHAR16_WRAPPER)
+  char16ptr_t get() const && = delete;
+  char16ptr_t get() const &
+#else
+  const char_type* get() const && = delete;
+  const char_type* get() const &
+#endif
+  {
+    return mData;
+  }
+
 private:
 
   
