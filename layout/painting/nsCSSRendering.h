@@ -33,6 +33,11 @@ class DrawTarget;
 
 namespace layers {
 class ImageContainer;
+class WebRenderDisplayItemLayer;
+} 
+
+namespace wr {
+class DisplayListBuilder;
 } 
 
 enum class PaintBorderFlags : uint8_t
@@ -450,7 +455,6 @@ struct nsCSSRendering {
   static DrawResult PaintStyleImageLayer(const PaintBGParams& aParams,
                                          nsRenderingContext& aRenderingCtx);
 
-
   
 
 
@@ -468,6 +472,20 @@ struct nsCSSRendering {
                                                nsRenderingContext& aRenderingCtx,
                                                nsStyleContext *mBackgroundSC,
                                                const nsStyleBorder& aBorder);
+
+  static bool CanBuildWebRenderDisplayItemsForStyleImageLayer(nsPresContext& aPresCtx,
+                                                              nsIFrame *aFrame,
+                                                              const nsStyleBackground* aBackgroundStyle,
+                                                              int32_t aLayer);
+  static void BuildWebRenderDisplayItemsForStyleImageLayer(const PaintBGParams& aParams,
+                                                           mozilla::wr::DisplayListBuilder& aBuilder,
+                                                           mozilla::layers::WebRenderDisplayItemLayer* aLayer);
+
+  static void BuildWebRenderDisplayItemsForStyleImageLayerWithSC(const PaintBGParams& aParams,
+                                                                 mozilla::wr::DisplayListBuilder& aBuilder,
+                                                                 mozilla::layers::WebRenderDisplayItemLayer* aLayer,
+                                                                 nsStyleContext *mBackgroundSC,
+                                                                 const nsStyleBorder& aBorder);
 
   
 

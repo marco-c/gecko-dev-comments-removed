@@ -13,6 +13,14 @@
 class gfxDrawable;
 namespace mozilla {
 
+namespace layers {
+class WebRenderDisplayItemLayer;
+} 
+
+namespace wr {
+class DisplayListBuilder;
+} 
+
 
 
 
@@ -197,6 +205,21 @@ public:
 
 
 
+  void BuildWebRenderDisplayItemsForLayer(nsPresContext*       aPresContext,
+                                          mozilla::wr::DisplayListBuilder& aBuilder,
+                                          mozilla::layers::WebRenderDisplayItemLayer* aLayer,
+                                          const nsRect&        aDest,
+                                          const nsRect&        aFill,
+                                          const nsPoint&       aAnchor,
+                                          const nsRect&        aDirty,
+                                          const nsSize&        aRepeatSize,
+                                          float                aOpacity);
+
+  
+
+
+
+
 
 
 
@@ -255,6 +278,24 @@ private:
                   const nsSize&        aRepeatSize,
                   const mozilla::CSSIntRect& aSrc,
                   float                aOpacity = 1.0);
+
+  
+
+
+
+
+
+
+  void BuildWebRenderDisplayItems(nsPresContext*       aPresContext,
+                                  mozilla::wr::DisplayListBuilder& aBuilder,
+                                  mozilla::layers::WebRenderDisplayItemLayer* aLayer,
+                                  const nsRect&        aDirtyRect,
+                                  const nsRect&        aDest,
+                                  const nsRect&        aFill,
+                                  const nsPoint&       aAnchor,
+                                  const nsSize&        aRepeatSize,
+                                  const mozilla::CSSIntRect& aSrc,
+                                  float                aOpacity = 1.0);
 
   
 
