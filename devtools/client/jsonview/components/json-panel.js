@@ -93,7 +93,9 @@ define(function (require, exports, module) {
       }
 
       
-      return Rep(props);
+      return Rep(Object.assign({}, props, {
+        cropLimit: 50,
+      }));
     },
 
     renderTree: function () {

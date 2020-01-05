@@ -49,12 +49,7 @@ define(function (require, exports, module) {
     text = text + "";
 
     
-    if (!limit) {
-      limit = 50;
-    }
-
-    
-    if (limit <= 0) {
+    if (!limit || limit <= 0) {
       return text;
     }
 
