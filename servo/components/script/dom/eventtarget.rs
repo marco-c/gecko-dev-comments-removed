@@ -390,7 +390,7 @@ impl EventTarget {
         
 
         
-        let body: Vec<u16> = handler.source.utf16_units().collect();
+        let body: Vec<u16> = handler.source.encode_utf16().collect();
 
         
 
