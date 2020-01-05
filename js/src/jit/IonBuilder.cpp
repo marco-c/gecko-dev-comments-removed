@@ -7596,28 +7596,7 @@ IonBuilder::jsop_getelem()
     }
 
     trackOptimizationAttempt(TrackedStrategy::GetElem_InlineCache);
-    MOZ_TRY(getElemTryCache(&emitted, obj, index));
-    if (emitted)
-        return Ok();
-
-    
-    MInstruction* ins = MCallGetElement::New(alloc(), obj, index);
-
-    current->add(ins);
-    current->push(ins);
-
-    MOZ_TRY(resumeAfter(ins));
-
-    if (*pc == JSOP_CALLELEM && IsNullOrUndefined(obj->type())) {
-        
-        
-        
-        
-        return Ok();
-    }
-
-    TemporaryTypeSet* types = bytecodeTypes(pc);
-    return pushTypeBarrier(ins, types, BarrierKind::TypeSet);
+    return getElemAddCache(obj, index);
 }
 
 AbortReasonOr<Ok>
@@ -8266,49 +8245,28 @@ IonBuilder::getElemTryArgumentsInlined(bool* emitted, MDefinition* obj, MDefinit
 }
 
 AbortReasonOr<Ok>
-IonBuilder::getElemTryCache(bool* emitted, MDefinition* obj, MDefinition* index)
+IonBuilder::getElemAddCache(MDefinition* obj, MDefinition* index)
 {
-    MOZ_ASSERT(*emitted == false);
-
-    
-    if (!obj->mightBeType(MIRType::Object)) {
-        trackOptimizationOutcome(TrackedOutcome::NotObject);
-        return Ok();
-    }
-
-    
-    if (obj->mightBeType(MIRType::String)) {
-        trackOptimizationOutcome(TrackedOutcome::GetElemStringNotCached);
-        return Ok();
-    }
-
-    
-    if (!index->mightBeType(MIRType::Int32) &&
-        !index->mightBeType(MIRType::String) &&
-        !index->mightBeType(MIRType::Symbol))
-    {
-        trackOptimizationOutcome(TrackedOutcome::IndexType);
-        return Ok();
-    }
-
-    
-    
-    bool nonNativeGetElement = inspector->hasSeenNonNativeGetElement(pc);
-    if (index->mightBeType(MIRType::Int32) && nonNativeGetElement) {
-        trackOptimizationOutcome(TrackedOutcome::NonNativeReceiver);
-        return Ok();
-    }
-
     
 
     TemporaryTypeSet* types = bytecodeTypes(pc);
-    BarrierKind barrier = PropertyReadNeedsTypeBarrier(analysisContext, constraints(), obj,
-                                                       nullptr, types);
 
-    
-    
-    if (index->mightBeType(MIRType::String) || index->mightBeType(MIRType::Symbol))
+    BarrierKind barrier;
+    if (obj->type() == MIRType::Object) {
+        
+        
+        if (index->type() == MIRType::Int32) {
+            barrier = PropertyReadNeedsTypeBarrier(analysisContext, constraints(), obj,
+                                                   nullptr, types);
+        } else {
+            barrier = BarrierKind::TypeSet;
+        }
+    } else {
+        
+        
+        
         barrier = BarrierKind::TypeSet;
+    }
 
     
     
@@ -8344,7 +8302,6 @@ IonBuilder::getElemTryCache(bool* emitted, MDefinition* obj, MDefinition* index)
     MOZ_TRY(pushTypeBarrier(ins, types, barrier));
 
     trackOptimizationSuccess();
-    *emitted = true;
     return Ok();
 }
 
@@ -9044,14 +9001,6 @@ IonBuilder::initOrSetElemTryCache(bool* emitted, MDefinition* object,
         return Ok();
     }
 
-    if (!index->mightBeType(MIRType::Int32) &&
-        !index->mightBeType(MIRType::String) &&
-        !index->mightBeType(MIRType::Symbol))
-    {
-        trackOptimizationOutcome(TrackedOutcome::IndexType);
-        return Ok();
-    }
-
     if (value->type() == MIRType::MagicHole)
     {
         trackOptimizationOutcome(TrackedOutcome::InitHole);
@@ -9059,9 +9008,7 @@ IonBuilder::initOrSetElemTryCache(bool* emitted, MDefinition* object,
     }
 
     bool barrier = true;
-    bool indexIsInt32 = index->type() == MIRType::Int32;
-
-    if (indexIsInt32 &&
+    if (index->type() == MIRType::Int32 &&
         !PropertyWriteNeedsTypeBarrier(alloc(), constraints(), current,
                                        &object, nullptr, &value,  true))
     {

@@ -850,12 +850,6 @@ DoGetElemFallback(JSContext* cx, BaselineFrame* frame, ICGetElem_Fallback* stub_
     
     
     
-    if (lhs.isObject() && !lhs.toObject().isNative())
-        stub->noteNonNativeAccess();
-
-    
-    
-    
     if (rhs.isNumber() && rhs.toNumber() < 0)
         stub->noteNegativeIndex();
 
