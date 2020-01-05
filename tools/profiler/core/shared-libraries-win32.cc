@@ -182,17 +182,17 @@ SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf()
       }
     }
 
-    nsAutoString moduleName(modulePath);
-    int32_t pos = moduleName.RFindChar('\\');
+    nsAutoString moduleNameStr(modulePath);
+    int32_t pos = moduleNameStr.RFindChar('\\');
     if (pos != kNotFound) {
-      moduleName.Cut(0, pos + 1);
+      moduleNameStr.Cut(0, pos + 1);
     }
 
     SharedLibrary shlib((uintptr_t)module.lpBaseOfDll,
       (uintptr_t)module.lpBaseOfDll + module.SizeOfImage,
       0, 
       breakpadId,
-      moduleName,
+      moduleNameStr,
       pdbNameStr,
       GetVersion(modulePath));
     sharedLibraryInfo.AddSharedLibrary(shlib);
