@@ -8,7 +8,7 @@ use std::marker::PhantomData;
 use std::mem::{forget, transmute};
 use std::ops::{Deref, DerefMut};
 use std::ptr;
-use std::sync::Arc;
+use stylearc::Arc;
 
 
 pub unsafe trait HasFFI : Sized {

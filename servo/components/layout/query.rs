@@ -55,7 +55,7 @@ pub struct LayoutThreadData {
     pub display_list: Option<Arc<DisplayList>>,
 
     
-    pub stylist: Arc<Stylist>,
+    pub stylist: ::StyleArc<Stylist>,
 
     
     pub content_box_response: Option<Rect<Au>>,

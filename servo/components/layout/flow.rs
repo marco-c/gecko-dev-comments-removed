@@ -424,7 +424,7 @@ pub trait Flow: fmt::Debug + Sync + Send + 'static {
 
     
     
-    fn repair_style(&mut self, new_style: &Arc<ServoComputedValues>);
+    fn repair_style(&mut self, new_style: &::StyleArc<ServoComputedValues>);
 
     
     
@@ -561,7 +561,7 @@ pub trait MutableFlowUtils {
 
     
     
-    fn repair_style_and_bubble_inline_sizes(self, style: &Arc<ServoComputedValues>);
+    fn repair_style_and_bubble_inline_sizes(self, style: &::StyleArc<ServoComputedValues>);
 }
 
 pub trait MutableOwnedFlowUtils {
@@ -1361,7 +1361,7 @@ impl<'a> MutableFlowUtils for &'a mut Flow {
 
     
     
-    fn repair_style_and_bubble_inline_sizes(self, style: &Arc<ServoComputedValues>) {
+    fn repair_style_and_bubble_inline_sizes(self, style: &::StyleArc<ServoComputedValues>) {
         self.repair_style(style);
         self.bubble_inline_sizes();
     }

@@ -10,7 +10,7 @@ use gecko_bindings::structs::{nsChangeHint, nsStyleContext};
 use gecko_bindings::sugar::ownership::FFIArcHelpers;
 use properties::ComputedValues;
 use std::ops::{BitAnd, BitOr, BitOrAssign, Not};
-use std::sync::Arc;
+use stylearc::Arc;
 
 
 

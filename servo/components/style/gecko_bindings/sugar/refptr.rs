@@ -9,7 +9,7 @@ use gecko_bindings::sugar::ownership::HasArcFFI;
 use std::{mem, ptr};
 use std::marker::PhantomData;
 use std::ops::{Deref, DerefMut};
-use std::sync::Arc;
+use stylearc::Arc;
 
 
 

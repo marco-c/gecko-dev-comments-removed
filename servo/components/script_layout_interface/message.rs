@@ -25,7 +25,7 @@ use style::stylesheets::Stylesheet;
 
 pub enum Msg {
     
-    AddStylesheet(Arc<Stylesheet>),
+    AddStylesheet(::style::stylearc::Arc<Stylesheet>),
 
     
     SetQuirksMode(QuirksMode),
@@ -116,7 +116,7 @@ pub struct ScriptReflow {
     
     pub document: TrustedNodeAddress,
     
-    pub document_stylesheets: Vec<Arc<Stylesheet>>,
+    pub document_stylesheets: Vec<::style::stylearc::Arc<Stylesheet>>,
     
     pub stylesheets_changed: bool,
     

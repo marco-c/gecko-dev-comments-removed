@@ -435,7 +435,7 @@ fn bounding_box_for_run_metrics(metrics: &RunMetrics, writing_mode: WritingMode)
 
 
 #[inline]
-pub fn font_metrics_for_style(font_context: &mut FontContext, font_style: Arc<style_structs::Font>)
+pub fn font_metrics_for_style(font_context: &mut FontContext, font_style: ::StyleArc<style_structs::Font>)
                               -> FontMetrics {
     let fontgroup = font_context.layout_font_group_for_style(font_style);
     

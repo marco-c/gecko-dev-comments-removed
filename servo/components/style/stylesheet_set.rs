@@ -4,7 +4,7 @@
 
 
 
-use std::sync::Arc;
+use stylearc::Arc;
 use stylesheets::Stylesheet;
 
 
