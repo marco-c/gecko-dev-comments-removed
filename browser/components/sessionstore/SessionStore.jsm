@@ -3553,7 +3553,9 @@ var SessionStoreInternal = {
 
     
     TabStateCache.update(browser, {
-      history: {entries: tabData.entries, index: tabData.index},
+      
+      
+      history: {entries: [...tabData.entries], index: tabData.index},
       scroll: tabData.scroll || null,
       storage: tabData.storage || null,
       formdata: tabData.formdata || null,
