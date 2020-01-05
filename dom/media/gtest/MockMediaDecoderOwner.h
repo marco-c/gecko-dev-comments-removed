@@ -54,6 +54,7 @@ public:
     
     return AbstractThread::MainThread();
   }
+  nsIDocument* GetDocument() const { return nullptr; }
 };
 }
 
