@@ -6,13 +6,12 @@
 #ifndef MOZILLA_LAYERS_BSPTREE_H
 #define MOZILLA_LAYERS_BSPTREE_H
 
-#include "mozilla/ArenaAllocator.h"
 #include "mozilla/gfx/Polygon.h"
 #include "mozilla/Move.h"
 #include "mozilla/UniquePtr.h"
 #include "nsTArray.h"
 
-#include <list>
+#include <deque>
 
 namespace mozilla {
 namespace layers {
@@ -26,59 +25,37 @@ struct LayerPolygon {
 
   LayerPolygon(Layer *aLayer,
                gfx::Polygon&& aGeometry)
-    : layer(aLayer), geometry(Some(Move(aGeometry))) {}
+    : layer(aLayer), geometry(Some(aGeometry)) {}
 
   LayerPolygon(Layer *aLayer,
                nsTArray<gfx::Point4D>&& aPoints,
                const gfx::Point4D& aNormal)
-    : layer(aLayer)
-  {
-    geometry.emplace(Move(aPoints), aNormal);
-  }
+    : layer(aLayer), geometry(Some(gfx::Polygon(Move(aPoints), aNormal))) {}
 
   Layer *layer;
   Maybe<gfx::Polygon> geometry;
 };
 
-
-
-
-
-
-
-typedef mozilla::ArenaAllocator<4096, 8> BSPTreeArena;
-
-
-
-
-typedef std::list<LayerPolygon> LayerList;
+LayerPolygon PopFront(std::deque<LayerPolygon>& aLayers);
 
 
 
 
 struct BSPTreeNode {
-  BSPTreeNode(nsTArray<LayerList*>& aListPointers)
-    : front(nullptr), back(nullptr)
+  explicit BSPTreeNode(LayerPolygon&& layer)
   {
-    
-    aListPointers.AppendElement(&layers);
+    layers.push_back(Move(layer));
   }
 
   const gfx::Polygon& First() const
   {
-    MOZ_ASSERT(!layers.empty());
-    MOZ_ASSERT(layers.front().geometry);
-    return *layers.front().geometry;
+    MOZ_ASSERT(layers[0].geometry);
+    return *layers[0].geometry;
   }
 
-  static void* operator new(size_t aSize, BSPTreeArena& mPool)
-  {
-    return mPool.Allocate(aSize);
-  }
-
-  BSPTreeNode* front;
-  BSPTreeNode* back;
-  LayerList layers;
+  UniquePtr<BSPTreeNode> front;
+  UniquePtr<BSPTreeNode> back;
+  std::deque<LayerPolygon> layers;
 };
 
 
@@ -91,22 +68,18 @@ struct BSPTreeNode {
 class BSPTree {
 public:
   
-
-
-  explicit BSPTree(std::list<LayerPolygon>& aLayers)
+  explicit BSPTree(std::deque<LayerPolygon>& aLayers)
   {
     MOZ_ASSERT(!aLayers.empty());
+    mRoot.reset(new BSPTreeNode(PopFront(aLayers)));
 
-    mRoot = new (mPool) BSPTreeNode(mListPointers);
     BuildTree(mRoot, aLayers);
   }
 
-
-  ~BSPTree()
+  
+  const UniquePtr<BSPTreeNode>& GetRoot() const
   {
-    for (LayerList* listPtr : mListPointers) {
-      listPtr->~LayerList();
-    }
+    return mRoot;
   }
 
   
@@ -118,17 +91,14 @@ public:
   }
 
 private:
-  BSPTreeArena mPool;
-  BSPTreeNode* mRoot;
-  nsTArray<LayerList*> mListPointers;
+  UniquePtr<BSPTreeNode> mRoot;
 
   
   
-  void BuildDrawOrder(BSPTreeNode* aNode,
+  void BuildDrawOrder(const UniquePtr<BSPTreeNode>& aNode,
                       nsTArray<LayerPolygon>& aLayers) const;
-
-  void BuildTree(BSPTreeNode* aRoot,
-                 std::list<LayerPolygon>& aLayers);
+  void BuildTree(UniquePtr<BSPTreeNode>& aRoot,
+                 std::deque<LayerPolygon>& aLayers);
 };
 
 } 
