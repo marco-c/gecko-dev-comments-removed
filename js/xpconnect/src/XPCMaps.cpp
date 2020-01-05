@@ -55,18 +55,6 @@ JSObject2WrappedJSMap::UpdateWeakPointersAfterGC(XPCJSContext* context)
 
         
         while (wrapper) {
-#ifdef DEBUG
-            if (!wrapper->IsSubjectToFinalization()) {
-                
-                
-                
-                
-                JSObject* obj = wrapper->GetJSObjectPreserveColor();
-                JSObject* prior = obj;
-                JS_UpdateWeakPointerAfterGCUnbarriered(&obj);
-                MOZ_ASSERT(obj == prior);
-            }
-#endif
             if (wrapper->IsSubjectToFinalization()) {
                 wrapper->UpdateObjectPointerAfterGC();
                 if (!wrapper->GetJSObjectPreserveColor())

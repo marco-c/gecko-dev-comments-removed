@@ -872,7 +872,9 @@ JSCompartment::fixupCrossCompartmentWrappersAfterMovingGC(JSTracer* trc)
 
     for (CompartmentsIter comp(trc->runtime(), SkipAtoms); !comp.done(); comp.next()) {
         
+        
         comp->sweepCrossCompartmentWrappers();
+        
         
         comp->traceOutgoingCrossCompartmentWrappers(trc);
     }
@@ -881,10 +883,16 @@ JSCompartment::fixupCrossCompartmentWrappersAfterMovingGC(JSTracer* trc)
 void
 JSCompartment::fixupAfterMovingGC()
 {
+    MOZ_ASSERT(zone()->isGCCompacting());
+
     purge();
     fixupGlobal();
     objectGroups.fixupTablesAfterMovingGC();
     fixupScriptMapsAfterMovingGC();
+
+    
+    
+    sweepCrossCompartmentWrappers();
 }
 
 void

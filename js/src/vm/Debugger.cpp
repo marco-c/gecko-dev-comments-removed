@@ -2247,7 +2247,7 @@ Debugger::slowPathOnNewGlobalObject(JSContext* cx, Handle<GlobalObject*> global)
 
  bool
 Debugger::slowPathOnLogAllocationSite(JSContext* cx, HandleObject obj, HandleSavedFrame frame,
-                                      mozilla::TimeStamp when, GlobalObject::DebuggerVector& dbgs)
+                                      double when, GlobalObject::DebuggerVector& dbgs)
 {
     MOZ_ASSERT(!dbgs.empty());
     mozilla::DebugOnly<ReadBarriered<Debugger*>*> begin = dbgs.begin();
@@ -2290,7 +2290,7 @@ Debugger::isDebuggeeUnbarriered(const JSCompartment* compartment) const
 
 bool
 Debugger::appendAllocationSite(JSContext* cx, HandleObject obj, HandleSavedFrame frame,
-                               mozilla::TimeStamp when)
+                               double when)
 {
     MOZ_ASSERT(trackingAllocationSites && enabled);
 
@@ -3040,11 +3040,8 @@ Debugger::traceIncomingCrossCompartmentEdges(JSTracer* trc)
 
     for (Debugger* dbg : rt->debuggerList) {
         Zone* zone = MaybeForwarded(dbg->object.get())->zone();
-        if ((state == gc::State::MarkRoots && !zone->isCollecting()) ||
-            (state == gc::State::Compact && !zone->isGCCompacting()))
-        {
+        if (!zone->isCollecting() || state == gc::State::Compact)
             dbg->traceCrossCompartmentEdges(trc);
-        }
     }
 }
 

@@ -2519,8 +2519,9 @@ GCRuntime::updateAllCellPointers(MovingTracer* trc, Zone* zone)
 
 
 
+
 void
-GCRuntime::updatePointersToRelocatedCells(Zone* zone, AutoLockForExclusiveAccess& lock)
+GCRuntime::updateZonePointersToRelocatedCells(Zone* zone, AutoLockForExclusiveAccess& lock)
 {
     MOZ_ASSERT(!rt->isBeingDestroyed());
     MOZ_ASSERT(zone->isGCCompacting());
@@ -2533,8 +2534,6 @@ GCRuntime::updatePointersToRelocatedCells(Zone* zone, AutoLockForExclusiveAccess
     
     for (CompartmentsInZoneIter comp(zone); !comp.done(); comp.next())
         comp->fixupAfterMovingGC();
-    JSCompartment::fixupCrossCompartmentWrappersAfterMovingGC(&trc);
-    rt->geckoProfiler.fixupStringsMapAfterMovingGC();
 
     
     
@@ -2543,11 +2542,7 @@ GCRuntime::updatePointersToRelocatedCells(Zone* zone, AutoLockForExclusiveAccess
 
     
     {
-        traceRuntimeForMajorGC(&trc, lock);
-
         gcstats::AutoPhase ap(stats, gcstats::PHASE_MARK_ROOTS);
-        Debugger::traceAll(&trc);
-        Debugger::traceIncomingCrossCompartmentEdges(&trc);
 
         WeakMapBase::traceZone(zone, &trc);
         for (CompartmentsInZoneIter c(zone); !c.done(); c.next()) {
@@ -2555,6 +2550,40 @@ GCRuntime::updatePointersToRelocatedCells(Zone* zone, AutoLockForExclusiveAccess
             if (c->watchpointMap)
                 c->watchpointMap->trace(&trc);
         }
+    }
+
+    
+    rt->gc.sweepZoneAfterCompacting(zone);
+
+    
+    for (CompartmentsInZoneIter comp(zone); !comp.done(); comp.next())
+        callWeakPointerCompartmentCallbacks(comp);
+    if (rt->sweepZoneCallback)
+        rt->sweepZoneCallback(zone);
+}
+
+
+
+
+void
+GCRuntime::updateRuntimePointersToRelocatedCells(AutoLockForExclusiveAccess& lock)
+{
+    MOZ_ASSERT(!rt->isBeingDestroyed());
+
+    gcstats::AutoPhase ap1(stats, gcstats::PHASE_COMPACT_UPDATE);
+    MovingTracer trc(rt);
+
+    JSCompartment::fixupCrossCompartmentWrappersAfterMovingGC(&trc);
+
+    rt->geckoProfiler.fixupStringsMapAfterMovingGC();
+
+    traceRuntimeForMajorGC(&trc, lock);
+
+    
+    {
+        gcstats::AutoPhase ap2(stats, gcstats::PHASE_MARK_ROOTS);
+        Debugger::traceAll(&trc);
+        Debugger::traceIncomingCrossCompartmentEdges(&trc);
 
         
         
@@ -2566,17 +2595,12 @@ GCRuntime::updatePointersToRelocatedCells(Zone* zone, AutoLockForExclusiveAccess
     WatchpointMap::sweepAll(rt);
     Debugger::sweepAll(rt->defaultFreeOp());
     jit::JitRuntime::SweepJitcodeGlobalTable(rt);
-    rt->gc.sweepZoneAfterCompacting(zone);
 
     
     blocksToFreeAfterSweeping.freeAll();
 
     
     callWeakPointerZoneGroupCallbacks();
-    for (CompartmentsInZoneIter comp(zone); !comp.done(); comp.next())
-        callWeakPointerCompartmentCallbacks(comp);
-    if (rt->sweepZoneCallback)
-        rt->sweepZoneCallback(zone);
 }
 
 void
@@ -5481,23 +5505,42 @@ GCRuntime::compactPhase(JS::gcreason::Reason reason, SliceBudget& sliceBudget,
 
     gcstats::AutoPhase ap(stats, gcstats::PHASE_COMPACT);
 
+    
+    
+    
+    
+    AutoSuppressProfilerSampling suppressSampling(rt);
+
+    ZoneList relocatedZones;
     Arena* relocatedArenas = nullptr;
     while (!zonesToMaybeCompact.isEmpty()) {
-        
-        
-        
-        
-        AutoSuppressProfilerSampling suppressSampling(rt);
 
         Zone* zone = zonesToMaybeCompact.front();
+        zonesToMaybeCompact.removeFront();
+
         MOZ_ASSERT(zone->isGCFinished());
         zone->setGCState(Zone::Compact);
-        if (relocateArenas(zone, reason, relocatedArenas, sliceBudget))
-            updatePointersToRelocatedCells(zone, lock);
-        zone->setGCState(Zone::Finished);
-        zonesToMaybeCompact.removeFront();
+
+        if (relocateArenas(zone, reason, relocatedArenas, sliceBudget)) {
+            updateZonePointersToRelocatedCells(zone, lock);
+            relocatedZones.append(zone);
+        } else {
+            zone->setGCState(Zone::Finished);
+        }
+
         if (sliceBudget.isOverBudget())
             break;
+    }
+
+    if (!relocatedZones.isEmpty()) {
+        updateRuntimePointersToRelocatedCells(lock);
+
+        do {
+            Zone* zone = relocatedZones.front();
+            relocatedZones.removeFront();
+            zone->setGCState(Zone::Finished);
+        }
+        while (!relocatedZones.isEmpty());
     }
 
     if (ShouldProtectRelocatedArenas(reason))
