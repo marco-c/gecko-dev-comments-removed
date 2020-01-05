@@ -976,7 +976,7 @@ WasmInstanceObject::trace(JSTracer* trc, JSObject* obj)
 
  WasmInstanceObject*
 WasmInstanceObject::create(JSContext* cx,
-                           MutableCode code,
+                           SharedCode code,
                            UniqueDebugState debug,
                            UniqueGlobalSegment globals,
                            HandleWasmMemoryObject memory,

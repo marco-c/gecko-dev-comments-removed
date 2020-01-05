@@ -882,6 +882,16 @@ Module::instantiate(JSContext* cx,
         return false;
 
     
+
+    auto codeSegment = CodeSegment::create(cx, code_, bytecode_, linkData_, *metadata_);
+    if (!codeSegment)
+        return false;
+
+    auto globalSegment = GlobalSegment::create(linkData_.globalDataLength);
+    if (!globalSegment)
+        return false;
+
+    
     
     
     
@@ -896,21 +906,14 @@ Module::instantiate(JSContext* cx,
         maybeBytecode = bytecode_.get();
     }
 
-    auto codeSegment = CodeSegment::create(cx, code_, linkData_, *metadata_, memory);
-    if (!codeSegment)
-        return false;
-
-    auto globalSegment = GlobalSegment::create(linkData_.globalDataLength);
-    if (!globalSegment)
-        return false;
-
-    MutableCode code(js_new<Code>(Move(codeSegment), *metadata_, maybeBytecode));
+    SharedCode code(js_new<Code>(Move(codeSegment), *metadata_, maybeBytecode));
     if (!code)
         return false;
 
     
     
     
+
     auto debug = cx->make_unique<DebugState>(code, *metadata_, maybeBytecode);
     if (!debug)
         return false;

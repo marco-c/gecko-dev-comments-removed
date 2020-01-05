@@ -77,7 +77,7 @@ class Compartment
     
     
 
-    Code* lookupCode(const void* pc) const;
+    const Code* lookupCode(const void* pc) const;
 
     
 
