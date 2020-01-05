@@ -129,6 +129,11 @@ IsFunctionInStrictMode(JSFunction* fun)
     return IsAsmJSStrictModeModuleOrFunction(fun);
 }
 
+static bool
+IsNewerTypeFunction(JSFunction* fun) {
+    return fun->isArrow() || fun->isGenerator() || fun->isAsync() || fun->isMethod();
+}
+
 
 
 
@@ -142,7 +147,9 @@ ArgumentsRestrictions(JSContext* cx, HandleFunction fun)
     
     
     
-    if (fun->isBuiltin() || IsFunctionInStrictMode(fun) || fun->isBoundFunction()) {
+    if (fun->isBuiltin() || IsFunctionInStrictMode(fun) ||
+        fun->isBoundFunction() || IsNewerTypeFunction(fun))
+    {
         ThrowTypeErrorBehavior(cx);
         return false;
     }
@@ -229,7 +236,9 @@ CallerRestrictions(JSContext* cx, HandleFunction fun)
     
     
     
-    if (fun->isBuiltin() || IsFunctionInStrictMode(fun) || fun->isBoundFunction()) {
+    if (fun->isBuiltin() || IsFunctionInStrictMode(fun) ||
+        fun->isBoundFunction() || IsNewerTypeFunction(fun))
+    {
         ThrowTypeErrorBehavior(cx);
         return false;
     }
