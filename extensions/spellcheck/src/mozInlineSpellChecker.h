@@ -218,13 +218,14 @@ public:
 
   
   
-  nsresult ScheduleSpellCheck(mozilla::UniquePtr<mozInlineSpellStatus>&& aStatus);
+  nsresult ScheduleSpellCheck(const mozInlineSpellStatus& aStatus);
 
   nsresult DoSpellCheckSelection(mozInlineSpellWordUtil& aWordUtil,
-                                 mozilla::dom::Selection* aSpellCheckSelection);
+                                 mozilla::dom::Selection* aSpellCheckSelection,
+                                 mozInlineSpellStatus* aStatus);
   nsresult DoSpellCheck(mozInlineSpellWordUtil& aWordUtil,
                         mozilla::dom::Selection *aSpellCheckSelection,
-                        const mozilla::UniquePtr<mozInlineSpellStatus>& aStatus,
+                        mozInlineSpellStatus* aStatus,
                         bool* aDoneChecking);
 
   
@@ -252,7 +253,7 @@ public:
   nsresult GetSpellCheckSelection(nsISelection ** aSpellCheckSelection);
   nsresult SaveCurrentSelectionPosition();
 
-  nsresult ResumeCheck(mozilla::UniquePtr<mozInlineSpellStatus>&& aStatus);
+  nsresult ResumeCheck(mozInlineSpellStatus* aStatus);
 
 protected:
   virtual ~mozInlineSpellChecker();
