@@ -227,6 +227,12 @@ public:
                                           CSSPseudoElementType aPseudoType);
 
   
+  
+  
+  static StyleAnimationValue GetBaseStyle(nsCSSPropertyID aProperty,
+                                          const nsIFrame* aFrame);
+
+  
   static void ClearBaseStyles(dom::Element& aElement,
                               CSSPseudoElementType aPseudoType);
 

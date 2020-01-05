@@ -199,6 +199,8 @@ public:
     return mPropertiesForAnimationsLevel;
   }
 
+  
+  
   StyleAnimationValue GetBaseStyle(nsCSSPropertyID aProperty) const
   {
     StyleAnimationValue result;
