@@ -9,7 +9,7 @@
 
 
 
-use http::method::Method;
+use hyper::method::Method;
 use std::ascii::AsciiExt;
 use std::comm::{Sender, Receiver, channel};
 use time;
