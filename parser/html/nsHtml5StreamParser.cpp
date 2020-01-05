@@ -220,6 +220,9 @@ nsHtml5StreamParser::nsHtml5StreamParser(nsHtml5TreeOpExecutor* aExecutor,
 nsHtml5StreamParser::~nsHtml5StreamParser()
 {
   NS_ASSERTION(NS_IsMainThread(), "Wrong thread!");
+  
+  
+  mSpeculations.Clear();
   mTokenizer->end();
 #ifdef DEBUG
   {
