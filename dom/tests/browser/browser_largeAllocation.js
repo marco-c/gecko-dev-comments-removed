@@ -46,12 +46,10 @@ function getPID(aBrowser) {
   });
 }
 
-function getIsFreshProcess(aBrowser) {
+function getInLAProc(aBrowser) {
   return ContentTask.spawn(aBrowser, null, () => {
     try {
-      return docShell.QueryInterface(Ci.nsIInterfaceRequestor)
-                     .getInterface(Ci.nsITabChild)
-                     .isInFreshProcess;
+      return docShell.inLargeAllocProcess;
     } catch (e) {
       
       return false;
@@ -76,7 +74,7 @@ add_task(function*() {
   yield BrowserTestUtils.withNewTab("about:blank", function*(aBrowser) {
     info("Starting test 0");
     let pid1 = yield getPID(aBrowser);
-    is(false, yield getIsFreshProcess(aBrowser));
+    is(false, yield getInLAProc(aBrowser));
 
     let epc = expectProcessCreated();
     yield ContentTask.spawn(aBrowser, TEST_URI, TEST_URI => {
@@ -89,7 +87,7 @@ add_task(function*() {
     let pid2 = yield getPID(aBrowser);
 
     isnot(pid1, pid2, "The pids should be different between the initial load and the new load");
-    is(true, yield getIsFreshProcess(aBrowser));
+    is(true, yield getInLAProc(aBrowser));
   });
 
   
@@ -97,7 +95,7 @@ add_task(function*() {
   yield BrowserTestUtils.withNewTab("about:blank", function*(aBrowser) {
     info("Starting test 1");
     let pid1 = yield getPID(aBrowser);
-    is(false, yield getIsFreshProcess(aBrowser));
+    is(false, yield getInLAProc(aBrowser));
 
     
     let stopExpectNoProcess = expectNoProcess();
@@ -116,7 +114,7 @@ add_task(function*() {
     let pid2 = yield getPID(aBrowser);
 
     is(pid1, pid2, "The PID should not have changed");
-    is(false, yield getIsFreshProcess(aBrowser));
+    is(false, yield getInLAProc(aBrowser));
 
     stopExpectNoProcess();
   });
@@ -125,7 +123,7 @@ add_task(function*() {
   yield BrowserTestUtils.withNewTab("http://example.com", function*(aBrowser) {
     info("Starting test 2");
     let pid1 = yield getPID(aBrowser);
-    is(false, yield getIsFreshProcess(aBrowser));
+    is(false, yield getInLAProc(aBrowser));
 
     
     let stopExpectNoProcess = expectNoProcess();
@@ -152,7 +150,7 @@ add_task(function*() {
     let pid2 = yield getPID(aBrowser);
 
     is(pid1, pid2, "The PID should not have changed");
-    is(false, yield getIsFreshProcess(aBrowser));
+    is(false, yield getInLAProc(aBrowser));
 
     stopExpectNoProcess();
   });
@@ -161,7 +159,7 @@ add_task(function*() {
   yield BrowserTestUtils.withNewTab("about:blank", function*(aBrowser) {
     info("Starting test 3");
     let pid1 = yield getPID(aBrowser);
-    is(false, yield getIsFreshProcess(aBrowser));
+    is(false, yield getInLAProc(aBrowser));
 
     let epc = expectProcessCreated();
 
@@ -174,7 +172,7 @@ add_task(function*() {
     let pid2 = yield getPID(aBrowser);
 
     isnot(pid1, pid2);
-    is(true, yield getIsFreshProcess(aBrowser));
+    is(true, yield getInLAProc(aBrowser));
 
     yield BrowserTestUtils.browserLoaded(aBrowser);
 
@@ -186,7 +184,7 @@ add_task(function*() {
 
     
     
-    is(false, yield getIsFreshProcess(aBrowser));
+    is(false, yield getInLAProc(aBrowser));
 
     epc = expectProcessCreated();
 
@@ -200,14 +198,14 @@ add_task(function*() {
 
     isnot(pid1, pid4);
     isnot(pid2, pid4);
-    is(true, yield getIsFreshProcess(aBrowser));
+    is(true, yield getInLAProc(aBrowser));
   });
 
   
   yield BrowserTestUtils.withNewTab("about:blank", function*(aBrowser) {
     info("Starting test 4");
     let pid1 = yield getPID(aBrowser);
-    is(false, yield getIsFreshProcess(aBrowser));
+    is(false, yield getInLAProc(aBrowser));
 
     let epc = expectProcessCreated();
 
@@ -220,7 +218,7 @@ add_task(function*() {
     let pid2 = yield getPID(aBrowser);
 
     isnot(pid1, pid2, "PIDs 1 and 2 should not match");
-    is(true, yield getIsFreshProcess(aBrowser));
+    is(true, yield getInLAProc(aBrowser));
 
     yield BrowserTestUtils.browserLoaded(aBrowser);
 
@@ -235,7 +233,7 @@ add_task(function*() {
 
     
     
-    is(false, yield getIsFreshProcess(aBrowser));
+    is(false, yield getInLAProc(aBrowser));
 
     epc = expectProcessCreated();
 
@@ -252,14 +250,14 @@ add_task(function*() {
     isnot(pid1, pid4, "PID 4 shouldn't match PID 1");
     isnot(pid2, pid4, "PID 4 shouldn't match PID 2");
     isnot(pid3, pid4, "PID 4 shouldn't match PID 3");
-    is(true, yield getIsFreshProcess(aBrowser));
+    is(true, yield getInLAProc(aBrowser));
   });
 
   
   yield BrowserTestUtils.withNewTab("about:blank", function*(aBrowser) {
     info("Starting test 5");
     let pid1 = yield getPID(aBrowser);
-    is(false, yield getIsFreshProcess(aBrowser));
+    is(false, yield getInLAProc(aBrowser));
 
     let ready = Promise.all([expectProcessCreated(),
                              BrowserTestUtils.browserLoaded(aBrowser)]);
@@ -273,7 +271,7 @@ add_task(function*() {
     let pid2 = yield getPID(aBrowser);
 
     isnot(pid1, pid2, "PIDs 1 and 2 should not match");
-    is(true, yield getIsFreshProcess(aBrowser));
+    is(true, yield getInLAProc(aBrowser));
 
     let epc = expectProcessCreated();
 
@@ -290,7 +288,7 @@ add_task(function*() {
     
     
     epc = expectProcessCreated();
-    if (!(yield getIsFreshProcess(aBrowser))) {
+    if (!(yield getInLAProc(aBrowser))) {
       yield epc;
     } else {
       epc.kill();
@@ -300,14 +298,14 @@ add_task(function*() {
 
     isnot(pid1, pid3, "PIDs 1 and 3 should not match");
     isnot(pid2, pid3, "PIDs 2 and 3 should not match");
-    is(true, yield getIsFreshProcess(aBrowser));
+    is(true, yield getInLAProc(aBrowser));
   });
 
   
   yield BrowserTestUtils.withNewTab("about:blank", function*(aBrowser) {
     info("Starting test 6");
     let pid1 = yield getPID(aBrowser);
-    is(false, yield getIsFreshProcess(aBrowser));
+    is(false, yield getInLAProc(aBrowser));
 
     let ready = Promise.all([expectProcessCreated(),
                              BrowserTestUtils.browserLoaded(aBrowser)]);
@@ -321,7 +319,7 @@ add_task(function*() {
     let pid2 = yield getPID(aBrowser);
 
     isnot(pid1, pid2, "PIDs 1 and 2 should not match");
-    is(true, yield getIsFreshProcess(aBrowser));
+    is(true, yield getInLAProc(aBrowser));
 
     let stopExpectNoProcess = expectNoProcess();
 
@@ -335,13 +333,54 @@ add_task(function*() {
     let pid3 = yield getPID(aBrowser);
 
     is(pid3, pid2, "PIDs 2 and 3 should match");
-    is(true, yield getIsFreshProcess(aBrowser));
+    is(true, yield getInLAProc(aBrowser));
 
     stopExpectNoProcess();
 
     yield ContentTask.spawn(aBrowser, null, () => {
       ok(this.__newWindow, "The window should have been stored");
       this.__newWindow.close();
+    });
+  });
+
+  yield BrowserTestUtils.withNewTab("about:blank", function*(aBrowser) {
+    info("Starting test 7");
+    yield SpecialPowers.pushPrefEnv({
+      set: [
+        ["dom.ipc.processCount.webLargeAllocation", 1]
+      ],
+    });
+
+    
+    let pid1 = yield getPID(aBrowser);
+    is(false, yield getInLAProc(aBrowser));
+
+    let ready = Promise.all([expectProcessCreated(),
+                             BrowserTestUtils.browserLoaded(aBrowser)]);
+
+    yield ContentTask.spawn(aBrowser, TEST_URI, TEST_URI => {
+      content.document.location = TEST_URI;
+    });
+
+    yield ready;
+
+    let pid2 = yield getPID(aBrowser);
+
+    isnot(pid1, pid2, "PIDs 1 and 2 should not match");
+    is(true, yield getInLAProc(aBrowser));
+
+    yield BrowserTestUtils.withNewTab("about:blank", function*(aBrowser) {
+      
+      
+      is(false, yield getInLAProc(aBrowser));
+
+      let ready = Promise.all([BrowserTestUtils.browserLoaded(aBrowser)]);
+      yield ContentTask.spawn(aBrowser, TEST_URI, TEST_URI => {
+        content.document.location = TEST_URI;
+      });
+      yield ready;
+
+      is(false, yield getInLAProc(aBrowser));
     });
   });
 });

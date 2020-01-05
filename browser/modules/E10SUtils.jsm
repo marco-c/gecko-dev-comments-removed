@@ -73,9 +73,7 @@ this.E10SUtils = {
 
     
     
-    
-    
-    if (aURL.startsWith("data:") || aURL.startsWith("blob:")) {
+    if (aURL.startsWith("data:")) {
       return aPreferredRemoteType == NOT_REMOTE ? DEFAULT_REMOTE_TYPE
                                                 : aPreferredRemoteType;
     }
@@ -162,7 +160,9 @@ this.E10SUtils = {
     
     
     
-    if (aDocShell.inFreshProcess && aDocShell.isOnlyToplevelInTabGroup) {
+    if (aDocShell.inLargeAllocProcess &&
+        !aDocShell.awaitingLargeAlloc &&
+        aDocShell.isOnlyToplevelInTabGroup) {
       return false;
     }
 

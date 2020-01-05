@@ -33,6 +33,7 @@
 #include "imgIContainer.h"
 #if defined(XP_WIN) && defined(ACCESSIBILITY)
 #include "mozilla/a11y/AccessibleWrap.h"
+#include "mozilla/WindowsVersion.h"
 #endif
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/StyleSheetInlines.h"
@@ -579,8 +580,13 @@ ContentParent::JoinAllSubprocesses()
 ContentParent::GetNewOrUsedBrowserProcess(const nsAString& aRemoteType,
                                           ProcessPriority aPriority,
                                           ContentParent* aOpener,
-                                          bool aLargeAllocationProcess)
+                                          bool aLargeAllocationProcess,
+                                          bool* aNew)
 {
+  if (aNew) {
+    *aNew = false;
+  }
+
   if (!sBrowserContentParents) {
     sBrowserContentParents =
       new nsClassHashtable<nsStringHashKey, nsTArray<ContentParent*>>;
@@ -621,6 +627,9 @@ ContentParent::GetNewOrUsedBrowserProcess(const nsAString& aRemoteType,
   }
 
   RefPtr<ContentParent> p = new ContentParent(aOpener, contentProcessType);
+  if (aNew) {
+    *aNew = true;
+  }
 
   if (!p->LaunchSubprocess(aPriority)) {
     return nullptr;
@@ -795,14 +804,10 @@ ContentParent::RecvCreateGMPService()
 }
 
 mozilla::ipc::IPCResult
-ContentParent::RecvLoadPlugin(const uint32_t& aPluginId,
-                              nsresult* aRv,
-                              uint32_t* aRunID,
-                              Endpoint<PPluginModuleParent>* aEndpoint)
+ContentParent::RecvLoadPlugin(const uint32_t& aPluginId, nsresult* aRv, uint32_t* aRunID)
 {
   *aRv = NS_OK;
-  if (!mozilla::plugins::SetupBridge(aPluginId, this, false, aRv, aRunID,
-                                     aEndpoint)) {
+  if (!mozilla::plugins::SetupBridge(aPluginId, this, false, aRv, aRunID)) {
     return IPC_FAIL_NO_REASON(this);
   }
   return IPC_OK();
@@ -829,17 +834,15 @@ ContentParent::RecvRemovePermission(const IPC::Principal& aPrincipal,
 }
 
 mozilla::ipc::IPCResult
-ContentParent::RecvConnectPluginBridge(const uint32_t& aPluginId,
-                                       nsresult* aRv,
-                                       Endpoint<PPluginModuleParent>* aEndpoint)
+ContentParent::RecvConnectPluginBridge(const uint32_t& aPluginId, nsresult* aRv)
 {
   *aRv = NS_OK;
   
   
   
   uint32_t dummy = 0;
-  if (!mozilla::plugins::SetupBridge(aPluginId, this, true, aRv, &dummy, aEndpoint)) {
-    return IPC_FAIL(this, "SetupBridge failed");
+  if (!mozilla::plugins::SetupBridge(aPluginId, this, true, aRv, &dummy)) {
+    return IPC_FAIL_NO_REASON(this);
   }
   return IPC_OK();
 }
@@ -906,6 +909,7 @@ ContentParent::CreateBrowser(const TabContext& aContext,
     openerTabId = TabParent::GetTabIdFrom(docShell);
   }
 
+  bool newProcess = false;
   RefPtr<nsIContentParent> constructorSender;
   if (isInContentProcess) {
     MOZ_ASSERT(aContext.IsMozBrowserElement());
@@ -923,7 +927,7 @@ ContentParent::CreateBrowser(const TabContext& aContext,
 
       constructorSender =
         GetNewOrUsedBrowserProcess(remoteType, initialPriority, nullptr,
-                                   aFreshProcess);
+                                   aFreshProcess, &newProcess);
       if (!constructorSender) {
         return nullptr;
       }
@@ -971,7 +975,10 @@ ContentParent::CreateBrowser(const TabContext& aContext,
       constructorSender->IsForBrowser());
 
     if (aFreshProcess) {
-      Unused << browser->SendSetFreshProcess();
+      
+      
+      
+      Unused << browser->SendSetIsLargeAllocation(true, newProcess);
     }
 
     if (browser) {
@@ -1062,8 +1069,10 @@ ContentParent::Init()
   
   if (nsIPresShell::IsAccessibilityActive()) {
 #if defined(XP_WIN)
-    Unused <<
-      SendActivateA11y(a11y::AccessibleWrap::GetContentProcessIdFor(ChildID()));
+    if (IsVistaOrLater()) {
+      Unused <<
+        SendActivateA11y(a11y::AccessibleWrap::GetContentProcessIdFor(ChildID()));
+    }
 #else
     Unused << SendActivateA11y(0);
 #endif
@@ -2394,8 +2403,10 @@ ContentParent::Observe(nsISupports* aSubject,
       
       
 #if defined(XP_WIN)
-      Unused <<
-        SendActivateA11y(a11y::AccessibleWrap::GetContentProcessIdFor(ChildID()));
+      if (IsVistaOrLater()) {
+        Unused <<
+          SendActivateA11y(a11y::AccessibleWrap::GetContentProcessIdFor(ChildID()));
+      }
 #else
       Unused << SendActivateA11y(0);
 #endif
