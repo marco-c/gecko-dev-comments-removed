@@ -546,8 +546,6 @@ def build_balrog_payload(config, task, task_def):
     worker = task['worker']
 
     task_def['payload'] = {
-        
-        'signing_cert': "dep",
         'upstreamArtifacts':  worker['upstream-artifacts']
     }
 
