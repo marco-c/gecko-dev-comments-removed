@@ -6,7 +6,21 @@
 
 
 
-use dom::{OpaqueNode, TElement, TNode, UnsafeNode};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+use dom::{OpaqueNode, SendNode, TElement, TNode};
 use rayon;
 use scoped_tls::ScopedTLS;
 use servo_config::opts;
@@ -16,6 +30,7 @@ use traversal::{STYLE_SHARING_CACHE_HITS, STYLE_SHARING_CACHE_MISSES};
 
 pub const CHUNK_SIZE: usize = 64;
 
+#[allow(unsafe_code)]
 pub fn traverse_dom<N, D>(traversal: &D,
                           root: N::ConcreteElement,
                           known_root_dom_depth: Option<usize>,
@@ -37,12 +52,12 @@ pub fn traverse_dom<N, D>(traversal: &D,
         let mut children = vec![];
         for kid in root.as_node().children() {
             if kid.as_element().map_or(false, |el| el.get_data().is_none()) {
-                children.push(kid.to_unsafe());
+                children.push(unsafe { SendNode::new(kid) });
             }
         }
         (children, known_root_dom_depth.map(|x| x + 1))
     } else {
-        (vec![root.as_node().to_unsafe()], known_root_dom_depth)
+        (vec![unsafe { SendNode::new(root.as_node()) }], known_root_dom_depth)
     };
 
     let traversal_data = PerLevelTraversalData {
@@ -70,13 +85,13 @@ pub fn traverse_dom<N, D>(traversal: &D,
 
 #[inline(always)]
 #[allow(unsafe_code)]
-fn top_down_dom<'a, 'scope, N, D>(unsafe_nodes: &'a [UnsafeNode],
+fn top_down_dom<'a, 'scope, N, D>(nodes: &'a [SendNode<N>],
                                   root: OpaqueNode,
                                   mut traversal_data: PerLevelTraversalData,
                                   scope: &'a rayon::Scope<'scope>,
                                   traversal: &'scope D,
                                   tls: &'scope ScopedTLS<'scope, D::ThreadLocalContext>)
-    where N: TNode,
+    where N: TNode + 'scope,
           D: DomTraversal<N>,
 {
     let mut discovered_child_nodes = vec![];
@@ -85,17 +100,15 @@ fn top_down_dom<'a, 'scope, N, D>(unsafe_nodes: &'a [UnsafeNode],
         
         let mut tlc = tls.ensure(|| traversal.create_thread_local_context());
 
-        for unsafe_node in unsafe_nodes {
+        for n in nodes {
             
-            let node = unsafe { N::from_unsafe(&unsafe_node) };
-
-            
+            let node = **n;
             let mut children_to_process = 0isize;
             traversal.process_preorder(&mut traversal_data, &mut *tlc, node);
             if let Some(el) = node.as_element() {
                 D::traverse_children(el, |kid| {
                     children_to_process += 1;
-                    discovered_child_nodes.push(kid.to_unsafe())
+                    discovered_child_nodes.push(unsafe { SendNode::new(kid) })
                 });
             }
 
@@ -104,7 +117,7 @@ fn top_down_dom<'a, 'scope, N, D>(unsafe_nodes: &'a [UnsafeNode],
             if D::needs_postorder_traversal() {
                 if children_to_process == 0 {
                     
-                    bottom_up_dom(traversal, &mut *tlc, root, *unsafe_node)
+                    bottom_up_dom(traversal, &mut *tlc, root, node)
                 } else {
                     
                     
@@ -121,12 +134,12 @@ fn top_down_dom<'a, 'scope, N, D>(unsafe_nodes: &'a [UnsafeNode],
     traverse_nodes(discovered_child_nodes, root, traversal_data, scope, traversal, tls);
 }
 
-fn traverse_nodes<'a, 'scope, N, D>(nodes: Vec<UnsafeNode>, root: OpaqueNode,
+fn traverse_nodes<'a, 'scope, N, D>(nodes: Vec<SendNode<N>>, root: OpaqueNode,
                                     traversal_data: PerLevelTraversalData,
                                     scope: &'a rayon::Scope<'scope>,
                                     traversal: &'scope D,
                                     tls: &'scope ScopedTLS<'scope, D::ThreadLocalContext>)
-    where N: TNode,
+    where N: TNode + 'scope,
           D: DomTraversal<N>,
 {
     if nodes.is_empty() {
@@ -163,16 +176,13 @@ fn traverse_nodes<'a, 'scope, N, D>(nodes: Vec<UnsafeNode>, root: OpaqueNode,
 
 
 
-#[allow(unsafe_code)]
 fn bottom_up_dom<N, D>(traversal: &D,
                        thread_local: &mut D::ThreadLocalContext,
                        root: OpaqueNode,
-                       unsafe_node: UnsafeNode)
+                       mut node: N)
     where N: TNode,
           D: DomTraversal<N>
 {
-    
-    let mut node = unsafe { N::from_unsafe(&unsafe_node) };
     loop {
         
         traversal.process_postorder(thread_local, node);

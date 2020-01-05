@@ -26,9 +26,6 @@ pub struct PerDocumentStyleDataImpl {
     pub stylist: Arc<Stylist>,
 
     
-    pub last_restyle_generation: u32,
-
-    
     pub stylesheets: Vec<Arc<Stylesheet>>,
 
     
@@ -67,7 +64,6 @@ impl PerDocumentStyleData {
 
         PerDocumentStyleData(AtomicRefCell::new(PerDocumentStyleDataImpl {
             stylist: Arc::new(Stylist::new(device)),
-            last_restyle_generation: 0,
             stylesheets: vec![],
             stylesheets_changed: true,
             new_animations_sender: new_anims_sender,
@@ -104,12 +100,6 @@ impl PerDocumentStyleDataImpl {
                                                    .update(&self.stylesheets, None, true);
             self.stylesheets_changed = false;
         }
-    }
-
-    pub fn next_generation(&mut self) -> u32 {
-        self.last_restyle_generation =
-            self.last_restyle_generation.wrapping_add(1);
-        self.last_restyle_generation
     }
 }
 
