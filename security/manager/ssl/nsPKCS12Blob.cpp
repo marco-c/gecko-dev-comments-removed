@@ -7,20 +7,13 @@
 #include "ScopedNSSTypes.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Casting.h"
-#include "nsCRT.h"
-#include "nsCRTGlue.h"
-#include "nsDirectoryServiceDefs.h"
 #include "nsICertificateDialogs.h"
-#include "nsIDirectoryService.h"
 #include "nsIFile.h"
 #include "nsIInputStream.h"
-#include "nsKeygenHandler.h" 
 #include "nsNSSCertificate.h"
 #include "nsNSSComponent.h"
 #include "nsNSSHelper.h"
-#include "nsNSSShutDown.h"
 #include "nsNetUtil.h"
-#include "nsPK11TokenDB.h"
 #include "nsReadableUtils.h"
 #include "nsString.h"
 #include "nsThreadUtils.h"
@@ -43,9 +36,9 @@ extern LazyLogModule gPIPNSSLog;
 #define PIP_PKCS12_NSS_ERROR           7
 
 
-nsPKCS12Blob::nsPKCS12Blob():mCertArray(nullptr),
-                             mTmpFile(nullptr),
-                             mTokenSet(false)
+nsPKCS12Blob::nsPKCS12Blob()
+  : mCertArray(nullptr)
+  , mTmpFile(nullptr)
 {
   mUIContext = new PipUIContext();
 }
@@ -64,33 +57,6 @@ nsPKCS12Blob::~nsPKCS12Blob()
 
 
 
-nsresult
-nsPKCS12Blob::SetToken(nsIPK11Token *token)
-{
- nsNSSShutDownPreventionLock locker;
- if (isAlreadyShutDown()) {
-  return NS_ERROR_NOT_AVAILABLE;
- }
- nsresult rv = NS_OK;
- if (token) {
-   mToken = token;
- } else {
-   PK11SlotInfo *slot;
-   rv = GetSlotWithMechanism(CKM_RSA_PKCS, mUIContext, &slot, locker);
-   if (NS_FAILED(rv)) {
-      mToken = nullptr;
-   } else {
-     mToken = new nsPK11Token(slot);
-     PK11_FreeSlot(slot);
-   }
- }
- mTokenSet = true;
- return rv;
-}
-
-
-
-
 
 nsresult
 nsPKCS12Blob::ImportFromFile(nsIFile *file)
@@ -98,32 +64,12 @@ nsPKCS12Blob::ImportFromFile(nsIFile *file)
   nsNSSShutDownPreventionLock locker;
   nsresult rv = NS_OK;
 
-  if (!mToken) {
-    if (!mTokenSet) {
-      rv = SetToken(nullptr); 
-      if (NS_FAILED(rv)) {
-        handleError(PIP_PKCS12_USER_CANCELED);
-        return rv;
-      }
-    }
-  }
-
-  if (!mToken) {
-    handleError(PIP_PKCS12_RESTORE_FAILED);
-    return NS_ERROR_NOT_AVAILABLE;
-  }
-
-  
-  rv = mToken->Login(true);
-  if (NS_FAILED(rv)) return rv;
-  
   RetryReason wantRetry;
   
   do {
     rv = ImportFromFileHelper(file, im_standard_prompt, wantRetry);
     
-    if (NS_SUCCEEDED(rv) && wantRetry == rr_auto_retry_empty_password_flavors)
-    {
+    if (NS_SUCCEEDED(rv) && wantRetry == rr_auto_retry_empty_password_flavors) {
       rv = ImportFromFileHelper(file, im_try_zero_length_secitem, wantRetry);
     }
   }
@@ -141,20 +87,19 @@ nsPKCS12Blob::ImportFromFileHelper(nsIFile *file,
   nsresult rv = NS_OK;
   SECStatus srv = SECSuccess;
   SEC_PKCS12DecoderContext *dcx = nullptr;
-  SECItem unicodePw;
-
-  UniquePK11SlotInfo slot;
-  nsAutoCString tokenName;
-  unicodePw.data = nullptr;
+  SECItem unicodePw = { siBuffer, nullptr, 0  };
 
   aWantRetry = rr_do_not_retry;
 
-  if (aImportMode == im_try_zero_length_secitem)
-  {
-    unicodePw.len = 0;
+  UniquePK11SlotInfo slot(PK11_GetInternalKeySlot());
+  if (!slot) {
+    srv = SECFailure;
+    goto finish;
   }
-  else
-  {
+
+  if (aImportMode == im_try_zero_length_secitem) {
+    unicodePw.len = 0;
+  } else {
     
     rv = getPKCS12FilePassword(&unicodePw);
     if (NS_FAILED(rv)) goto finish;
@@ -162,16 +107,6 @@ nsPKCS12Blob::ImportFromFileHelper(nsIFile *file,
       handleError(PIP_PKCS12_USER_CANCELED);
       return NS_OK;
     }
-  }
-
-  rv = mToken->GetTokenName(tokenName);
-  if (NS_FAILED(rv)) {
-    goto finish;
-  }
-  slot = UniquePK11SlotInfo(PK11_FindSlotByName(tokenName.get()));
-  if (!slot) {
-    srv = SECFailure;
-    goto finish;
   }
 
   
@@ -254,12 +189,6 @@ isExtractable(SECKEYPrivateKey *privKey)
 
 
 
-
-
-
-
-
-
 nsresult
 nsPKCS12Blob::ExportToFile(nsIFile *file, 
                            nsIX509Cert **certs, int numCerts)
@@ -273,14 +202,11 @@ nsPKCS12Blob::ExportToFile(nsIFile *file,
   nsAutoString filePath;
   int i;
   nsCOMPtr<nsIFile> localFileRef;
-  MOZ_ASSERT(mToken, "Need to set the token before exporting");
   
 
   bool InformedUserNoSmartcardBackup = false;
   int numCertsExported = 0;
 
-  rv = mToken->Login(true);
-  if (NS_FAILED(rv)) goto finish;
   
   unicodePw.data = nullptr;
   rv = newPKCS12FilePassword(&unicodePw);

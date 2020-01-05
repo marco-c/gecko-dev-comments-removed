@@ -3,23 +3,17 @@
 
 
 
-#ifndef _NS_PKCS12BLOB_H_
-#define _NS_PKCS12BLOB_H_
+#ifndef nsPKCS12Blob_h
+#define nsPKCS12Blob_h
 
 #include "nsCOMPtr.h"
-#include "nsString.h"
-#include "nsIFile.h"
-#include "nsIPK11TokenDB.h"
-#include "nsNSSHelper.h"
-#include "nsIPK11Token.h"
 #include "nsIMutableArray.h"
-
-#include "nss.h"
-
-#include "pkcs12.h"
-#include "p12plcy.h"
+#include "nsNSSShutDown.h"
+#include "p12.h"
+#include "seccomon.h"
 
 class nsIX509Cert;
+class nsIFile;
 
 
 
@@ -36,9 +30,6 @@ public:
   virtual void virtualDestroyNSSReference() override {}
 
   
-  nsresult SetToken(nsIPK11Token *token);
-
-  
   nsresult ImportFromFile(nsIFile *file);
 
   
@@ -46,7 +37,6 @@ public:
 
 private:
 
-  nsCOMPtr<nsIPK11Token>          mToken;
   nsCOMPtr<nsIMutableArray>       mCertArray;
   nsCOMPtr<nsIInterfaceRequestor> mUIContext;
 
@@ -77,11 +67,8 @@ private:
   
   PRFileDesc *mTmpFile;
 
-  bool        mTokenSet;
-
   static SECItem * nickname_collision(SECItem *, PRBool *, void *);
   static void write_export_file(void *arg, const char *buf, unsigned long len);
-
 };
 
 #endif 
