@@ -106,26 +106,17 @@ impl nsStyleImage {
                 self.set_gradient(gradient)
             },
             Image::Url(ref url) if with_url => {
-                let (ptr, len) = match url.as_slice_components() {
-                    Ok(value) | Err(value) => value
-                };
-                let extra_data = url.extra_data();
                 unsafe {
-                    Gecko_SetUrlImageValue(self,
-                                           ptr,
-                                           len as u32,
-                                           extra_data.base.get(),
-                                           extra_data.referrer.get(),
-                                           extra_data.principal.get());
+                    Gecko_SetUrlImageValue(self, url.for_ffi());
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    *cacheable = false;
                 }
-                
-                
-                
-                
-                
-                
-                
-                *cacheable = false;
             },
             _ => (),
         }

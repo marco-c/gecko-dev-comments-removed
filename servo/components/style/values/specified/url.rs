@@ -151,6 +151,11 @@ impl SpecifiedUrl {
     }
 
     
+    pub fn has_resolved(&self) -> bool {
+        self.resolved.is_some()
+    }
+
+    
     
     pub fn for_cascade(url: ServoUrl, extra_data: UrlExtraData) -> Self {
         SpecifiedUrl {
@@ -173,19 +178,20 @@ impl SpecifiedUrl {
     
     
     #[cfg(feature = "gecko")]
-    pub fn for_ffi(&self) -> Option<ServoBundledURI> {
+    pub fn for_ffi(&self) -> ServoBundledURI {
         let extra_data = self.extra_data();
         let (ptr, len) = match self.as_slice_components() {
             Ok(value) => value,
-            Err(_) => return None,
+            
+            Err(value) => value,
         };
-        Some(ServoBundledURI {
+        ServoBundledURI {
             mURLString: ptr,
             mURLStringLength: len as u32,
             mBaseURI: extra_data.base.get(),
             mReferrer: extra_data.referrer.get(),
             mPrincipal: extra_data.principal.get(),
-        })
+        }
     }
 }
 
