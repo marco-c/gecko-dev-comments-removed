@@ -11,7 +11,7 @@ const Cu = Components.utils;
 Cu.import("resource://gre/modules/XPCOMUtils.jsm", this);
 
 XPCOMUtils.defineLazyModuleGetter(this, "PrivacyLevel",
-  "resource:///modules/sessionstore/PrivacyLevel.jsm");
+  "resource://gre/modules/sessionstore/PrivacyLevel.jsm");
 
 
 
