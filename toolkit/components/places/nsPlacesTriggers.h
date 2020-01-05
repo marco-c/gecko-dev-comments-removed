@@ -69,22 +69,24 @@
 
 
 
+
+
 #define HOSTS_PREFIX_PRIORITY_FRAGMENT \
   "SELECT CASE " \
-    "WHEN 1 = ( " \
-      "SELECT min(substr(url,1,12) = 'https://www.') FROM moz_places h " \
+    "WHEN ( " \
+      "SELECT round(avg(substr(url,1,12) = 'https://www.')) FROM moz_places h " \
       "WHERE (" HOST_TO_REVHOST_PREDICATE ") AND +h.typed = 1 " \
     ") THEN 'https://www.' " \
-    "WHEN 1 = ( " \
-      "SELECT min(substr(url,1,8) = 'https://') FROM moz_places h " \
+    "WHEN ( " \
+      "SELECT round(avg(substr(url,1,8) = 'https://')) FROM moz_places h " \
       "WHERE (" HOST_TO_REVHOST_PREDICATE ") AND +h.typed = 1 " \
     ") THEN 'https://' " \
     "WHEN 1 = ( " \
       "SELECT min(substr(url,1,4) = 'ftp:') FROM moz_places h " \
       "WHERE (" HOST_TO_REVHOST_PREDICATE ") AND +h.typed = 1 " \
     ") THEN 'ftp://' " \
-    "WHEN 1 = ( " \
-      "SELECT min(substr(url,1,11) = 'http://www.') FROM moz_places h " \
+    "WHEN ( " \
+      "SELECT round(avg(substr(url,1,11) = 'http://www.')) FROM moz_places h " \
       "WHERE (" HOST_TO_REVHOST_PREDICATE ") AND +h.typed = 1 " \
     ") THEN 'www.' " \
   "END "
