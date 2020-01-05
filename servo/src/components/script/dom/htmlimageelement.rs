@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 use dom::bindings::utils::{DOMString, ErrorResult, null_str_as_empty};
 use dom::htmlelement::HTMLElement;
@@ -18,8 +18,8 @@ pub struct HTMLImageElement {
 }
 
 impl HTMLImageElement {
-    
-    
+    /// Makes the local `image` member match the status of the `src` attribute and starts
+    /// prefetching the image. This method must be called after `src` is changed.
     pub fn update_image(&mut self, image_cache: ImageCacheTask, url: Option<Url>) {
         let elem = &mut self.htmlelement.element;
         let src_opt = elem.get_attr("src").map(|x| x.to_str());
@@ -29,11 +29,11 @@ impl HTMLImageElement {
                 let img_url = make_url(src, url);
                 self.image = Some(img_url.clone());
 
-                
-                
-                
-                
-                
+                // inform the image cache to load this, but don't store a
+                // handle.
+                //
+                // TODO (Issue #84): don't prefetch if we are within a
+                // <noscript> tag.
                 image_cache.send(image_cache_task::Prefetch(img_url));
             }
         }
@@ -43,12 +43,10 @@ impl HTMLImageElement {
         let name = null_str_as_empty(name);
         if "src" == name {
             let doc = self.htmlelement.element.node.owner_doc;
-            for doc in doc.iter() {
-                do doc.with_base |doc| {
-                    for window in doc.window.iter() {
-                        let url = window.page.url.map(|&(ref url, _)| url.clone());
-                        self.update_image(window.image_cache_task.clone(), url);
-                    }
+            do doc.with_base |doc| {
+                for window in doc.window.iter() {
+                    let url = window.page.url.map(|&(ref url, _)| url.clone());
+                    self.update_image(window.image_cache_task.clone(), url);
                 }
             }
         }
@@ -102,26 +100,18 @@ impl HTMLImageElement {
 
     pub fn Width(&self, abstract_self: AbstractNode<ScriptView>) -> u32 {
         let node = &self.htmlelement.element.node;
-        match node.owner_doc {
-            Some(doc) => {
-                match doc.with_base(|doc| doc.window) {
-                    Some(win) => {
-                        let page = win.page;
-                        let (port, chan) = stream();
-                        match page.query_layout(ContentBoxQuery(abstract_self, chan), port) {
-                            ContentBoxResponse(rect) => {
-                                to_px(rect.size.width) as u32
-                            }
-                        }
-                    }
-                    None => {
-                        debug!("no window");
-                        0
+        match node.owner_doc.with_base(|doc| doc.window) {
+            Some(win) => {
+                let page = win.page;
+                let (port, chan) = stream();
+                match page.query_layout(ContentBoxQuery(abstract_self, chan), port) {
+                    ContentBoxResponse(rect) => {
+                        to_px(rect.size.width) as u32
                     }
                 }
             }
             None => {
-                debug!("no document");
+                debug!("no window");
                 0
             }
         }
@@ -139,26 +129,18 @@ impl HTMLImageElement {
 
     pub fn Height(&self, abstract_self: AbstractNode<ScriptView>) -> u32 {
         let node = &self.htmlelement.element.node;
-        match node.owner_doc {
-            Some(doc) => {
-                match doc.with_base(|doc| doc.window) {
-                    Some(win) => {
-                        let page = win.page;
-                        let (port, chan) = stream();
-                        match page.query_layout(ContentBoxQuery(abstract_self, chan), port) {
-                            ContentBoxResponse(rect) => {
-                                to_px(rect.size.height) as u32
-                            }
-                        }
-                    }
-                    None => {
-                        debug!("no window");
-                        0
+        match node.owner_doc.with_base(|doc| doc.window) {
+            Some(win) => {
+                let page = win.page;
+                let (port, chan) = stream();
+                match page.query_layout(ContentBoxQuery(abstract_self, chan), port) {
+                    ContentBoxResponse(rect) => {
+                        to_px(rect.size.height) as u32
                     }
                 }
             }
             None => {
-                debug!("no document");
+                debug!("no window");
                 0
             }
         }

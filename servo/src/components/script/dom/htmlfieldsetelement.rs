@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 use dom::bindings::utils::{DOMString, ErrorResult, Reflectable};
 use dom::htmlcollection::HTMLCollection;
@@ -40,7 +40,7 @@ impl HTMLFieldSetElement {
     }
 
     fn get_scope_and_cx(&self) -> (*JSObject, *JSContext) {
-        let doc = self.htmlelement.element.node.owner_doc.unwrap();
+        let doc = self.htmlelement.element.node.owner_doc;
         let win = doc.with_base(|doc| doc.window.unwrap());
         let cx = win.page.js_info.get_ref().js_compartment.cx.ptr;
         let scope = win.reflector().get_jsobject();
