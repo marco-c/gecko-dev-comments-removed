@@ -71,7 +71,7 @@ class TransportLayerLoopback : public TransportLayer {
   void CombinePackets(bool combine) { combinePackets_ = combine; }
 
   
-  virtual TransportResult SendPacket(const unsigned char *data, size_t len);
+  TransportResult SendPacket(const unsigned char *data, size_t len) override;
 
   
   void DeliverPackets();

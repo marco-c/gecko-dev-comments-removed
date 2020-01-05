@@ -42,7 +42,7 @@ class TransportLayerIce : public TransportLayer {
   void RestoreOldStream(); 
 
   
-  virtual TransportResult SendPacket(const unsigned char *data, size_t len);
+  TransportResult SendPacket(const unsigned char *data, size_t len) override;
 
   
   void IceCandidate(NrIceMediaStream *stream, const std::string&);

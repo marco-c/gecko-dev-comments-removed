@@ -93,9 +93,9 @@ class TransportLayerDtls final : public TransportLayer {
                                 unsigned int outlen);
 
   
-  virtual nsresult InitInternal();
-  virtual void WasInserted();
-  virtual TransportResult SendPacket(const unsigned char *data, size_t len);
+  nsresult InitInternal() override;
+  void WasInserted() override;
+  TransportResult SendPacket(const unsigned char *data, size_t len) override;
 
   
   void StateChange(TransportLayer *layer, State state);
