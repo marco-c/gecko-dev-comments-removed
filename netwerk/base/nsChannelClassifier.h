@@ -33,6 +33,13 @@ public:
     
     nsresult ShouldEnableTrackingProtection(bool *result);
 
+    
+    
+    nsresult OnClassifyCompleteInternal(nsresult aErrorCode,
+                                        const nsACString& aList,
+                                        const nsACString& aProvider,
+                                        const nsACString& aPrefix);
+
 private:
     
     bool mIsAllowListed;
@@ -50,7 +57,9 @@ private:
     
     nsresult StartInternal();
     
-    nsresult IsTrackerWhitelisted();
+    nsresult IsTrackerWhitelisted(const nsACString& aList,
+                                  const nsACString& aProvider,
+                                  const nsACString& aPrefix);
     
     bool IsHostnameWhitelisted(nsIURI *aUri, const nsACString &aWhitelisted);
     

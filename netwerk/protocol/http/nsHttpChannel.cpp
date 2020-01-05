@@ -3043,7 +3043,7 @@ nsHttpChannel::IsResumable(int64_t partialLen, int64_t contentLength,
     bool hasContentEncoding =
         mCachedResponseHead->HasHeader(nsHttp::Content_Encoding);
 
-    nsAutoCString etag; 
+    nsAutoCString etag;
     mCachedResponseHead->GetHeader(nsHttp::ETag, etag);
     bool hasWeakEtag = !etag.IsEmpty() &&
                        StringBeginsWith(etag, NS_LITERAL_CSTRING("W/"));
@@ -6113,6 +6113,11 @@ nsHttpChannel::BeginConnect()
         channelClassifier->ShouldEnableTrackingProtection(&tpEnabled);
         if (classifier && tpEnabled) {
             
+            
+            
+            
+            
+
             
             
             
