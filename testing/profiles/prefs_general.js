@@ -199,9 +199,6 @@ user_pref("media.mediasource.mp4.enabled", true);
 user_pref("media.mediasource.webm.enabled", true);
 
 
-user_pref("network.http.bypass-cachelock-threshold", 200000);
-
-
 user_pref("dom.gamepad.enabled", true);
 user_pref("dom.gamepad.non_standard_events.enabled", true);
 

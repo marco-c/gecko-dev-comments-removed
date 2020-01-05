@@ -223,9 +223,6 @@ const RECOMMENDED_PREFS = new Map([
   ["javascript.options.showInConsole", true],
 
   
-  ["network.http.bypass-cachelock-threshold", 200000],
-
-  
   ["network.http.prompt-temp-redirect", false],
 
   

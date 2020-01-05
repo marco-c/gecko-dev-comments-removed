@@ -217,8 +217,6 @@ DEFAULT_TEST_PREFS = {
     'layout.css.grid.enabled': True,
     'layout.spammy_warnings.enabled': False,
     
-    'network.http.bypass-cachelock-threshold': 200000,
-    
     
     'geo.provider.testing': True,
     

@@ -353,12 +353,6 @@ public:
     
     bool Active() { return mHandlerActive; }
 
-    
-    
-    TimeStamp GetCacheSkippedUntil() { return mCacheSkippedUntil; }
-    void SetCacheSkippedUntil(TimeStamp arg) { mCacheSkippedUntil = arg; }
-    void ClearCacheSkippedUntil() { mCacheSkippedUntil = TimeStamp(); }
-
     nsIRequestContextService *GetRequestContextService()
     {
         return mRequestContextService.get();
@@ -559,10 +553,6 @@ private:
     
     
     bool           mCriticalRequestPrioritization;
-
-    
-    
-    TimeStamp      mCacheSkippedUntil;
 
     
 

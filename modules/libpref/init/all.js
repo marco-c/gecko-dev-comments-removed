@@ -1601,14 +1601,6 @@ pref("network.http.rendering-critical-requests-prioritization", true);
 pref("network.http.fast-fallback-to-IPv4", true);
 
 
-
-#ifdef RELEASE_OR_BETA
-pref("network.http.bypass-cachelock-threshold", 200000);
-#else
-pref("network.http.bypass-cachelock-threshold", 250);
-#endif
-
-
 pref("network.http.spdy.enabled", true);
 pref("network.http.spdy.enabled.http2", true);
 pref("network.http.spdy.enabled.deps", true);

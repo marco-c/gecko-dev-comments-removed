@@ -83,8 +83,6 @@ class GeckoInstance(object):
         "media.volume_scale": "0.01",
 
         
-        "network.http.bypass-cachelock-threshold": 200000,
-        
         "network.http.prompt-temp-redirect": False,
         
         
