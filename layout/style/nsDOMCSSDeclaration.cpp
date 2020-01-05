@@ -116,7 +116,7 @@ nsDOMCSSDeclaration::SetPropertyValue(const nsCSSPropertyID aPropID,
 NS_IMETHODIMP
 nsDOMCSSDeclaration::GetCssText(nsAString& aCssText)
 {
-  css::Declaration* decl = GetCSSDeclaration(eOperation_Read)->AsGecko();
+  DeclarationBlock* decl = GetCSSDeclaration(eOperation_Read);
   aCssText.Truncate();
 
   if (decl) {
@@ -131,7 +131,7 @@ nsDOMCSSDeclaration::SetCssText(const nsAString& aCssText)
 {
   
   
-  css::Declaration* olddecl = GetCSSDeclaration(eOperation_Modify)->AsGecko();
+  DeclarationBlock* olddecl = GetCSSDeclaration(eOperation_Modify);
   if (!olddecl) {
     return NS_ERROR_NOT_AVAILABLE;
   }
@@ -149,18 +149,24 @@ nsDOMCSSDeclaration::SetCssText(const nsAString& aCssText)
   
   mozAutoDocConditionalContentUpdateBatch autoUpdate(DocToUpdate(), true);
 
-  RefPtr<css::Declaration> decl(new css::Declaration());
-  decl->InitializeEmpty();
-  nsCSSParser cssParser(env.mCSSLoader);
-  bool changed;
-  nsresult result = cssParser.ParseDeclarations(aCssText, env.mSheetURI,
-                                                env.mBaseURI,
-                                                env.mPrincipal, decl, &changed);
-  if (NS_FAILED(result) || !changed) {
-    return result;
+  RefPtr<DeclarationBlock> newdecl;
+  if (olddecl->IsServo()) {
+    newdecl = ServoDeclarationBlock::FromCssText(aCssText);
+  } else {
+    RefPtr<css::Declaration> decl(new css::Declaration());
+    decl->InitializeEmpty();
+    nsCSSParser cssParser(env.mCSSLoader);
+    bool changed;
+    nsresult result = cssParser.ParseDeclarations(aCssText, env.mSheetURI,
+                                                  env.mBaseURI, env.mPrincipal,
+                                                  decl, &changed);
+    if (NS_FAILED(result) || !changed) {
+      return result;
+    }
+    newdecl = decl.forget();
   }
 
-  return SetCSSDeclaration(decl);
+  return SetCSSDeclaration(newdecl);
 }
 
 NS_IMETHODIMP
