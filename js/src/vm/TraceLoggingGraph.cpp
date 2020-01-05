@@ -50,6 +50,7 @@ TraceLoggerGraphState* traceLoggerGraphState = nullptr;
 
 
 static js::UniqueChars
+MOZ_FORMAT_PRINTF(1, 2)
 AllocTraceLogFilename(const char* pattern, ...) {
     js::UniqueChars filename;
 

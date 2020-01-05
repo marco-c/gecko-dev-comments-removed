@@ -83,13 +83,13 @@
 #include "shell/OSObject.h"
 #include "threading/ConditionVariable.h"
 #include "threading/LockGuard.h"
+#include "threading/Mutex.h"
 #include "threading/Thread.h"
 #include "vm/ArgumentsObject.h"
 #include "vm/Compression.h"
 #include "vm/Debugger.h"
 #include "vm/HelperThreads.h"
 #include "vm/Monitor.h"
-#include "vm/MutexIDs.h"
 #include "vm/Shape.h"
 #include "vm/SharedArrayObject.h"
 #include "vm/StringBuffer.h"
@@ -179,12 +179,7 @@ class OffThreadState {
     };
 
   public:
-    OffThreadState()
-      : monitor(mutexid::ShellOffThreadState),
-        state(IDLE),
-        token(),
-        source(nullptr)
-    { }
+    OffThreadState() : monitor(), state(IDLE), token(), source(nullptr) { }
 
     bool startIfIdle(JSContext* cx, ScriptKind kind,
                      ScopedJSFreePtr<char16_t>& newSource)
@@ -436,10 +431,9 @@ ShellContext::ShellContext(JSContext* cx)
     lastWarning(cx, NullValue()),
 #ifdef SPIDERMONKEY_PROMISE
     promiseRejectionTrackerCallback(cx, NullValue()),
-    asyncTasks(mutexid::ShellAsyncTasks, cx),
+    asyncTasks(cx),
     drainingJobQueue(false),
 #endif 
-    watchdogLock(mutexid::ShellContextWatchdog),
     exitCode(0),
     quitting(false),
     readLineBufPos(0),
@@ -1517,36 +1511,36 @@ CacheEntry_setBytecode(JSContext* cx, HandleObject cache, uint8_t* buffer, uint3
 }
 
 static bool
-ConvertTranscodeResultToJSException(JSContext* cx, JS::TranscodeResult rv)
+ConvertTranscodeResultToJSException(JSContext* cx, TranscodeResult rv)
 {
     switch (rv) {
-      case JS::TranscodeResult_Ok:
+      case TranscodeResult_Ok:
         return true;
 
       default:
         MOZ_FALLTHROUGH;
-      case JS::TranscodeResult_Failure:
+      case TranscodeResult_Failure:
         MOZ_ASSERT(!cx->isExceptionPending());
         JS_ReportErrorASCII(cx, "generic warning");
         return false;
-      case JS::TranscodeResult_Failure_BadBuildId:
+      case TranscodeResult_Failure_BadBuildId:
         MOZ_ASSERT(!cx->isExceptionPending());
         JS_ReportErrorASCII(cx, "the build-id does not match");
         return false;
-      case JS::TranscodeResult_Failure_RunOnceNotSupported:
+      case TranscodeResult_Failure_RunOnceNotSupported:
         MOZ_ASSERT(!cx->isExceptionPending());
         JS_ReportErrorASCII(cx, "run-once script are not supported by XDR");
         return false;
-      case JS::TranscodeResult_Failure_AsmJSNotSupported:
+      case TranscodeResult_Failure_AsmJSNotSupported:
         MOZ_ASSERT(!cx->isExceptionPending());
         JS_ReportErrorASCII(cx, "Asm.js is not supported by XDR");
         return false;
-      case JS::TranscodeResult_Failure_UnknownClassKind:
+      case TranscodeResult_Failure_UnknownClassKind:
         MOZ_ASSERT(!cx->isExceptionPending());
         JS_ReportErrorASCII(cx, "Unknown class kind, go fix it.");
         return false;
 
-      case JS::TranscodeResult_Throw:
+      case TranscodeResult_Throw:
         MOZ_ASSERT(cx->isExceptionPending());
         return false;
     }
@@ -1669,19 +1663,15 @@ Evaluate(JSContext* cx, unsigned argc, Value* vp)
     if (!codeChars.initTwoByte(cx, code))
         return false;
 
-    JS::TranscodeBuffer loadBuffer;
-    JS::TranscodeBuffer saveBuffer;
+    uint32_t loadLength = 0;
+    uint8_t* loadBuffer = nullptr;
+    uint32_t saveLength = 0;
+    ScopedJSFreePtr<uint8_t> saveBuffer;
 
     if (loadBytecode) {
-        uint32_t loadLength = 0;
-        uint8_t* loadData = nullptr;
-        loadData = CacheEntry_getBytecode(cacheEntry, &loadLength);
-        if (!loadData)
+        loadBuffer = CacheEntry_getBytecode(cacheEntry, &loadLength);
+        if (!loadBuffer)
             return false;
-        if (!loadBuffer.append(loadData, loadLength)) {
-            JS_ReportOutOfMemory(cx);
-            return false;
-        }
     }
 
     {
@@ -1701,7 +1691,7 @@ Evaluate(JSContext* cx, unsigned argc, Value* vp)
             }
 
             if (loadBytecode) {
-                JS::TranscodeResult rv = JS::DecodeScript(cx, loadBuffer, &script);
+                TranscodeResult rv = JS_DecodeScript(cx, loadBuffer, loadLength, &script);
                 if (!ConvertTranscodeResultToJSException(cx, rv))
                     return false;
             } else {
@@ -1752,7 +1742,8 @@ Evaluate(JSContext* cx, unsigned argc, Value* vp)
         }
 
         if (saveBytecode) {
-            JS::TranscodeResult rv = JS::EncodeScript(cx, saveBuffer, script);
+            TranscodeResult rv = JS_EncodeScript(cx, script, &saveLength,
+                                                 reinterpret_cast<void**>(&saveBuffer.rwget()));
             if (!ConvertTranscodeResultToJSException(cx, rv))
                 return false;
         }
@@ -1762,34 +1753,28 @@ Evaluate(JSContext* cx, unsigned argc, Value* vp)
         
         
         if (loadBytecode && assertEqBytecode) {
-            if (saveBuffer.length() != loadBuffer.length()) {
+            if (saveLength != loadLength) {
                 char loadLengthStr[16];
-                SprintfLiteral(loadLengthStr, "%" PRIuSIZE, loadBuffer.length());
+                SprintfLiteral(loadLengthStr, "%" PRIu32, loadLength);
                 char saveLengthStr[16];
-                SprintfLiteral(saveLengthStr,"%" PRIuSIZE, saveBuffer.length());
+                SprintfLiteral(saveLengthStr,"%" PRIu32, saveLength);
 
                 JS_ReportErrorNumberASCII(cx, my_GetErrorMessage, nullptr, JSSMSG_CACHE_EQ_SIZE_FAILED,
                                           loadLengthStr, saveLengthStr);
                 return false;
             }
 
-            if (!PodEqual(loadBuffer.begin(), saveBuffer.begin(), loadBuffer.length())) {
+            if (!PodEqual(loadBuffer, saveBuffer.get(), loadLength)) {
                 JS_ReportErrorNumberASCII(cx, my_GetErrorMessage, nullptr,
                                           JSSMSG_CACHE_EQ_CONTENT_FAILED);
                 return false;
             }
         }
 
-        size_t saveLength = saveBuffer.length();
-        if (saveLength >= INT32_MAX) {
-            JS_ReportErrorASCII(cx, "Cannot save large cache entry content");
+        if (!CacheEntry_setBytecode(cx, cacheEntry, saveBuffer, saveLength))
             return false;
-        }
-        uint8_t* saveData = saveBuffer.extractOrCopyRawBuffer();
-        if (!CacheEntry_setBytecode(cx, cacheEntry, saveData, saveLength)) {
-            js_free(saveData);
-            return false;
-        }
+
+        saveBuffer.forget();
     }
 
     return JS_WrapValue(cx, args.rval());
@@ -3402,7 +3387,7 @@ EvalInWorker(JSContext* cx, unsigned argc, Value* vp)
         return false;
 
     if (!workerThreadsLock) {
-        workerThreadsLock = js_new<Mutex>(mutexid::ShellWorkerThreads);
+        workerThreadsLock = js_new<Mutex>();
         if (!workerThreadsLock) {
             ReportOutOfMemory(cx);
             return false;
@@ -4998,7 +4983,7 @@ static SharedArrayRawBuffer* sharedArrayBufferMailbox;
 static bool
 InitSharedArrayBufferMailbox()
 {
-    sharedArrayBufferMailboxLock = js_new<Mutex>(mutexid::ShellArrayBufferMailbox);
+    sharedArrayBufferMailboxLock = js_new<Mutex>();
     return sharedArrayBufferMailboxLock != nullptr;
 }
 
@@ -5247,7 +5232,7 @@ ReflectTrackedOptimizations(JSContext* cx, unsigned argc, Value* vp)
             uint8_t* addr = ion->method()->raw() + endOffset;
             entry.youngestFrameLocationAtAddr(rt, addr, &script, &pc);
 
-            if (!sp.jsprintf("{\"location\":\"%s:%u\",\"offset\":%u,\"index\":%u}%s",
+            if (!sp.jsprintf("{\"location\":\"%s:%" PRIuSIZE "\",\"offset\":%" PRIuSIZE ",\"index\":%u}%s",
                              script->filename(), script->lineno(), script->pcToOffset(pc), index,
                              iter.more() ? "," : ""))
             {

@@ -5199,13 +5199,16 @@ const uint16_t MaxNumErrorArguments = 10;
 
 
 extern JS_PUBLIC_API(void)
-JS_ReportErrorASCII(JSContext* cx, const char* format, ...);
+JS_ReportErrorASCII(JSContext* cx, const char* format, ...)
+    MOZ_FORMAT_PRINTF(2, 3);
 
 extern JS_PUBLIC_API(void)
-JS_ReportErrorLatin1(JSContext* cx, const char* format, ...);
+JS_ReportErrorLatin1(JSContext* cx, const char* format, ...)
+    MOZ_FORMAT_PRINTF(2, 3);
 
 extern JS_PUBLIC_API(void)
-JS_ReportErrorUTF8(JSContext* cx, const char* format, ...);
+JS_ReportErrorUTF8(JSContext* cx, const char* format, ...)
+    MOZ_FORMAT_PRINTF(2, 3);
 
 
 
@@ -5257,13 +5260,16 @@ JS_ReportErrorNumberUCArray(JSContext* cx, JSErrorCallback errorCallback,
 
 
 extern JS_PUBLIC_API(bool)
-JS_ReportWarningASCII(JSContext* cx, const char* format, ...);
+JS_ReportWarningASCII(JSContext* cx, const char* format, ...)
+    MOZ_FORMAT_PRINTF(2, 3);
 
 extern JS_PUBLIC_API(bool)
-JS_ReportWarningLatin1(JSContext* cx, const char* format, ...);
+JS_ReportWarningLatin1(JSContext* cx, const char* format, ...)
+    MOZ_FORMAT_PRINTF(2, 3);
 
 extern JS_PUBLIC_API(bool)
-JS_ReportWarningUTF8(JSContext* cx, const char* format, ...);
+JS_ReportWarningUTF8(JSContext* cx, const char* format, ...)
+    MOZ_FORMAT_PRINTF(2, 3);
 
 extern JS_PUBLIC_API(bool)
 JS_ReportErrorFlagsAndNumberASCII(JSContext* cx, unsigned flags,
@@ -5830,11 +5836,11 @@ class MOZ_RAII AutoHideScriptedCaller
     MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
 };
 
+} 
 
 
 
 
-typedef mozilla::Vector<uint8_t> TranscodeBuffer;
 
 enum TranscodeResult
 {
@@ -5853,20 +5859,21 @@ enum TranscodeResult
 };
 
 extern JS_PUBLIC_API(TranscodeResult)
-EncodeScript(JSContext* cx, TranscodeBuffer& buffer, JS::HandleScript script);
+JS_EncodeScript(JSContext* cx, JS::HandleScript script,
+                uint32_t* lengthp, void** buffer);
 
 extern JS_PUBLIC_API(TranscodeResult)
-EncodeInterpretedFunction(JSContext* cx, TranscodeBuffer& buffer, JS::HandleObject funobj);
+JS_EncodeInterpretedFunction(JSContext* cx, JS::HandleObject funobj,
+                             uint32_t* lengthp, void** buffer);
 
 extern JS_PUBLIC_API(TranscodeResult)
-DecodeScript(JSContext* cx, TranscodeBuffer& buffer, JS::MutableHandleScript scriptp,
-             size_t cursorIndex = 0);
+JS_DecodeScript(JSContext* cx, const void* data, uint32_t length,
+                JS::MutableHandleScript scriptp);
 
 extern JS_PUBLIC_API(TranscodeResult)
-DecodeInterpretedFunction(JSContext* cx, TranscodeBuffer& buffer, JS::MutableHandleFunction funp,
-                          size_t cursorIndex = 0);
+JS_DecodeInterpretedFunction(JSContext* cx, const void* data, uint32_t length,
+                             JS::MutableHandleFunction funp);
 
-} 
 
 namespace js {
 
