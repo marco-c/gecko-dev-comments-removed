@@ -6,6 +6,7 @@ use dom::bindings::codegen::Bindings::EventHandlerBinding::{OnErrorEventHandlerN
 use dom::bindings::codegen::Bindings::WindowBinding;
 use dom::bindings::codegen::Bindings::WindowBinding::WindowMethods;
 use dom::bindings::codegen::InheritTypes::EventTargetCast;
+use dom::bindings::error::{Fallible, InvalidCharacter};
 use dom::bindings::global;
 use dom::bindings::js::{JS, JSRef, Temporary, OptionalSettable};
 use dom::bindings::trace::{Traceable, Untraceable};
@@ -25,7 +26,7 @@ use script_traits::ScriptControlChan;
 
 use servo_msg::compositor_msg::ScriptListener;
 use servo_net::image_cache_task::ImageCacheTask;
-use servo_util::str::DOMString;
+use servo_util::str::{DOMString,HTML_SPACE_CHARACTERS};
 use servo_util::task::{spawn_named};
 
 use js::jsapi::JS_CallFunctionValue;
@@ -36,6 +37,7 @@ use js::jsval::NullValue;
 use js::rust::with_compartment;
 use url::{Url, UrlParser};
 
+use serialize::base64::{FromBase64, ToBase64, STANDARD};
 use std::collections::hashmap::HashMap;
 use std::cell::{Cell, RefCell};
 use std::cmp;
@@ -261,6 +263,80 @@ impl<'a> WindowMethods for JSRef<'a, Window> {
     fn Gc(&self) {
         unsafe {
             JS_GC(JS_GetRuntime(self.get_cx()));
+        }
+    }
+
+    
+    fn Btoa(&self, btoa: DOMString) -> Fallible<DOMString> {
+        let input = btoa.as_slice();
+        
+        
+        
+        if input.chars().any(|c: char| c > '\u00FF') {
+            Err(InvalidCharacter)
+        } else {
+            
+            
+            
+            
+            let octets = input.chars().map(|c: char| c as u8).collect::<Vec<u8>>();
+
+            
+            
+            Ok(octets.as_slice().to_base64(STANDARD))
+        }
+    }
+
+    
+    fn Atob(&self, atob: DOMString) -> Fallible<DOMString> {
+        
+        let mut input = atob.as_slice();
+
+        
+        
+        
+        
+        fn is_html_space(c: char) -> bool {
+            HTML_SPACE_CHARACTERS.iter().any(|&m| m == c)
+        }
+        let without_spaces = input.chars()
+                                  .filter(|&c| ! is_html_space(c))
+                                  .collect::<String>();
+        input = without_spaces.as_slice();
+
+        
+        
+        
+        if input.len() % 4 == 0 {
+            if input.ends_with("==") {
+                input = input.slice_to(input.len() - 2)
+            } else if input.ends_with("=") {
+                input = input.slice_to(input.len() - 1)
+            }
+        }
+
+        
+        
+        if input.len() % 4 == 1 {
+            return Err(InvalidCharacter)
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        if input.chars()
+                .find(|&c| !(c == '+' || c == '/' || c.is_alphanumeric()))
+                .is_some() {
+            return Err(InvalidCharacter)
+        }
+
+        match input.from_base64() {
+            Ok(data) => Ok(data.iter().map(|&b| b as char).collect::<String>()),
+            Err(..) => Err(InvalidCharacter)
         }
     }
 }
