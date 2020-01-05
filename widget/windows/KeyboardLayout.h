@@ -673,6 +673,8 @@ class KeyboardLayout
 public:
   static KeyboardLayout* GetInstance();
   static void Shutdown();
+  static HKL GetActiveLayout();
+  static nsCString GetActiveLayoutName();
   static void NotifyIdleServiceOfUserActivity();
 
   static bool IsPrintableCharKey(uint8_t aVirtualKey);
@@ -846,6 +848,12 @@ private:
 
 
   void LoadLayout(HKL aLayout);
+
+  
+
+
+
+  nsCString GetLayoutName(HKL aLayout) const;
 
   
 
