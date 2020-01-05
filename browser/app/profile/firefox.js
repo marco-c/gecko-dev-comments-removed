@@ -1238,6 +1238,9 @@ pref("browser.newtabpage.columns", 5);
 pref("browser.newtabpage.directory.source", "https://tiles.services.mozilla.com/v3/links/fetch/%LOCALE%/%CHANNEL%");
 
 
+pref("browser.newtabpage.directory.ping", "https://tiles.services.mozilla.com/v3/links/");
+
+
 pref("browser.newtabpage.activity-stream.enabled", false);
 
 
@@ -1633,7 +1636,11 @@ pref("browser.crashReports.unsubmittedCheck.chancesUntilSuppress", 4);
 pref("browser.crashReports.unsubmittedCheck.autoSubmit", false);
 
 
+#ifdef NIGHTLY_BUILD
+pref("browser.formautofill.experimental", true);
+#else
 pref("browser.formautofill.experimental", false);
+#endif
 pref("browser.formautofill.enabled", true);
 pref("browser.formautofill.loglevel", "Warn");
 

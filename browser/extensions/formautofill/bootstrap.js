@@ -41,8 +41,6 @@ let windowListener = {
 };
 
 function startup() {
-  
-  
   if (!Services.prefs.getBoolPref("browser.formautofill.experimental")) {
     return;
   }
@@ -59,7 +57,7 @@ function startup() {
 
   Services.wm.addListener(windowListener);
 
-  parent.init().catch(Cu.reportError);
+  parent.init();
   Services.ppmm.loadProcessScript("data:,new " + function() {
     Components.utils.import("resource://formautofill/FormAutofillContent.jsm");
   }, true);
