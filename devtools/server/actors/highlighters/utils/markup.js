@@ -249,8 +249,8 @@ function CanvasFrameAnonymousContentHelper(highlighterEnv, nodeBuilder) {
     this._insert();
   }
 
-  this._onNavigate = this._onNavigate.bind(this);
-  this.highlighterEnv.on("navigate", this._onNavigate);
+  this._onWindowReady= this._onWindowReady.bind(this);
+  this.highlighterEnv.on("window-ready", this._onWindowReady);
 
   this.listeners = new Map();
 }
@@ -264,7 +264,7 @@ CanvasFrameAnonymousContentHelper.prototype = {
       
       
     }
-    this.highlighterEnv.off("navigate", this._onNavigate);
+    this.highlighterEnv.off("window-ready", this._onWindowReady);
     this.highlighterEnv = this.nodeBuilder = this._content = null;
     this.anonymousContentDocument = null;
     this.anonymousContentGlobal = null;
@@ -275,12 +275,14 @@ CanvasFrameAnonymousContentHelper.prototype = {
   _insert: function () {
     let doc = this.highlighterEnv.document;
     
+    if (doc.readyState != "interactive" && doc.readyState != "complete") {
+      doc.addEventListener("DOMContentLoaded", this._insert.bind(this),
+                           { once: true });
+      return;
+    }
     
     
-    
-    if (doc.readyState == "uninitialized" ||
-        !doc.documentElement ||
-        isXUL(this.highlighterEnv.window)) {
+    if (isXUL(this.highlighterEnv.window)) {
       return;
     }
 
@@ -300,7 +302,7 @@ CanvasFrameAnonymousContentHelper.prototype = {
     this._content = doc.insertAnonymousContent(node);
   },
 
-  _onNavigate: function (e, {isTopLevel}) {
+  _onWindowReady: function (e, {isTopLevel}) {
     if (isTopLevel) {
       this._removeAllListeners();
       this._insert();
