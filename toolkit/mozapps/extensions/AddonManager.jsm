@@ -366,25 +366,22 @@ function webAPIForAddon(addon) {
 
 
 
-function BrowserListener(aBrowser, aInstallingPrincipal, aInstalls) {
+function BrowserListener(aBrowser, aInstallingPrincipal, aInstall) {
   this.browser = aBrowser;
   this.principal = aInstallingPrincipal;
-  this.installs = aInstalls;
-  this.installCount = aInstalls.length;
+  this.install = aInstall;
 
   aBrowser.addProgressListener(this, Ci.nsIWebProgress.NOTIFY_LOCATION);
   Services.obs.addObserver(this, "message-manager-close", true);
 
-  for (let install of this.installs)
-    install.addListener(this);
+  aInstall.addListener(this);
 
   this.registered = true;
 }
 
 BrowserListener.prototype = {
   browser: null,
-  installs: null,
-  installCount: null,
+  install: null,
   registered: false,
 
   unregister() {
@@ -397,18 +394,15 @@ BrowserListener.prototype = {
     if (this.browser.removeProgressListener)
       this.browser.removeProgressListener(this);
 
-    for (let install of this.installs)
-      install.removeListener(this);
-    this.installs = null;
+    this.install.removeListener(this);
+    this.install = null;
   },
 
-  cancelInstalls() {
-    for (let install of this.installs) {
-      try {
-        install.cancel();
-      } catch (e) {
-        
-      }
+  cancelInstall() {
+    try {
+      this.install.cancel();
+    } catch (e) {
+      
     }
   },
 
@@ -418,7 +412,7 @@ BrowserListener.prototype = {
 
     
     
-    this.cancelInstalls();
+    this.cancelInstall();
   },
 
   onLocationChange(webProgress, request, location) {
@@ -426,28 +420,23 @@ BrowserListener.prototype = {
       return;
 
     
-    this.cancelInstalls();
+    this.cancelInstall();
   },
 
   onDownloadCancelled(install) {
-    
-    install.removeListener(this);
-
-    
-    if (--this.installCount == 0)
-      this.unregister();
+    this.unregister();
   },
 
   onDownloadFailed(install) {
-    this.onDownloadCancelled(install);
+    this.unregister();
   },
 
   onInstallFailed(install) {
-    this.onDownloadCancelled(install);
+    this.unregister();
   },
 
   onInstallEnded(install) {
-    this.onDownloadCancelled(install);
+    this.unregister();
   },
 
   QueryInterface: XPCOMUtils.generateQI([Ci.nsISupportsWeakReference,
@@ -2038,8 +2027,8 @@ var AddonManagerInternal = {
 
 
 
-  installAddonsFromWebpage(aMimetype, aBrowser,
-                                     aInstallingPrincipal, aInstalls) {
+  installAddonFromWebpage(aMimetype, aBrowser,
+                                    aInstallingPrincipal, aInstall) {
     if (!gStarted)
       throw Components.Exception("AddonManager is not initialized",
                                  Cr.NS_ERROR_NOT_INITIALIZED);
@@ -2056,14 +2045,9 @@ var AddonManagerInternal = {
       throw Components.Exception("aInstallingPrincipal must be a nsIPrincipal",
                                  Cr.NS_ERROR_INVALID_ARG);
 
-    if (!Array.isArray(aInstalls))
-      throw Components.Exception("aInstalls must be an array",
-                                 Cr.NS_ERROR_INVALID_ARG);
-
     if (!("@mozilla.org/addons/web-install-listener;1" in Cc)) {
-      logger.warn("No web installer available, cancelling all installs");
-      for (let install of aInstalls)
-        install.cancel();
+      logger.warn("No web installer available, cancelling install");
+      aInstall.cancel();
       return;
     }
 
@@ -2085,19 +2069,17 @@ var AddonManagerInternal = {
                         getService(Ci.amIWebInstallListener);
 
       if (!this.isInstallEnabled(aMimetype)) {
-        for (let install of aInstalls)
-          install.cancel();
+        aInstall.cancel();
 
         weblistener.onWebInstallDisabled(topBrowser, aInstallingPrincipal.URI,
-                                         aInstalls, aInstalls.length);
+                                         [aInstall], 1);
         return;
       } else if (!aBrowser.contentPrincipal || !aInstallingPrincipal.subsumes(aBrowser.contentPrincipal)) {
-        for (let install of aInstalls)
-          install.cancel();
+        aInstall.cancel();
 
         if (weblistener instanceof Ci.amIWebInstallListener2) {
           weblistener.onWebInstallOriginBlocked(topBrowser, aInstallingPrincipal.URI,
-                                                aInstalls, aInstalls.length);
+                                                [aInstall], 1);
         }
         return;
       }
@@ -2105,26 +2087,23 @@ var AddonManagerInternal = {
       
       
       
-      new BrowserListener(aBrowser, aInstallingPrincipal, aInstalls);
+      new BrowserListener(aBrowser, aInstallingPrincipal, aInstall);
 
       if (!this.isInstallAllowed(aMimetype, aInstallingPrincipal)) {
         if (weblistener.onWebInstallBlocked(topBrowser, aInstallingPrincipal.URI,
-                                            aInstalls, aInstalls.length)) {
-          for (let install of aInstalls)
-            install.install();
+                                            [aInstall], 1)) {
+          aInstall.install();
         }
       } else if (weblistener.onWebInstallRequested(topBrowser, aInstallingPrincipal.URI,
-                                                 aInstalls, aInstalls.length)) {
-        for (let install of aInstalls)
-          install.install();
+                                                 [aInstall], 1)) {
+        aInstall.install();
       }
     } catch (e) {
       
       
       
       logger.warn("Failure calling web installer", e);
-      for (let install of aInstalls)
-        install.cancel();
+      aInstall.cancel();
     }
   },
 
@@ -3424,11 +3403,10 @@ this.AddonManager = {
     return AddonManagerInternal.isInstallAllowed(aType, aInstallingPrincipal);
   },
 
-  installAddonsFromWebpage(aType, aBrowser, aInstallingPrincipal,
-                                     aInstalls) {
-    AddonManagerInternal.installAddonsFromWebpage(aType, aBrowser,
-                                                  aInstallingPrincipal,
-                                                  aInstalls);
+  installAddonFromWebpage(aType, aBrowser, aInstallingPrincipal, aInstall) {
+    AddonManagerInternal.installAddonFromWebpage(aType, aBrowser,
+                                                 aInstallingPrincipal,
+                                                 aInstall);
   },
 
   installTemporaryAddon(aDirectory) {
