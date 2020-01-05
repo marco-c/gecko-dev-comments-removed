@@ -69,6 +69,9 @@ pub struct Pipeline {
     
     
     pub visible: bool,
+    
+    
+    pub frame: Option<FrameId>,
 }
 
 
@@ -292,6 +295,7 @@ impl Pipeline {
             running_animations: false,
             visible: visible,
             is_private: is_private,
+            frame: None,
         }
     }
 
