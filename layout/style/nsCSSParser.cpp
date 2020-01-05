@@ -8192,7 +8192,6 @@ CSSParserImpl::SetValueToURL(nsCSSValue& aValue, const nsString& aURL)
     return false;
   }
 
-  
   mozilla::css::URLValue *urlVal =
     new mozilla::css::URLValue(aURL, mBaseURI, mSheetURI, mSheetPrincipal);
   aValue.SetURLValue(urlVal);
