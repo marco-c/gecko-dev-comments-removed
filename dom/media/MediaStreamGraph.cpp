@@ -1447,35 +1447,56 @@ MediaStreamGraphImpl::ForceShutDown(ShutdownTicket* aShutdownTicket)
 {
   NS_ASSERTION(NS_IsMainThread(), "Must be called on main thread");
   STREAM_LOG(LogLevel::Debug, ("MediaStreamGraph %p ForceShutdown", this));
-  {
-    MonitorAutoLock lock(mMonitor);
-    mForceShutDown = true;
-    mForceShutdownTicket = aShutdownTicket;
-    if (mLifecycleState == LIFECYCLE_THREAD_NOT_STARTED) {
-      
-      
-      
-      RefPtr<GraphDriver> driver = CurrentDriver();
-      MonitorAutoUnlock unlock(mMonitor);
-      driver->Start();
+
+  MonitorAutoLock lock(mMonitor);
+  if (aShutdownTicket) {
+    MOZ_ASSERT(!mForceShutdownTicket);
+    
+    
+    
+    mShutdownTimer = do_CreateInstance(NS_TIMER_CONTRACTID);
+    if (!mShutdownTimer) {
+      return;
     }
-    EnsureNextIterationLocked();
+    mShutdownTimer->InitWithCallback(this,
+                                     MediaStreamGraph::AUDIO_CALLBACK_DRIVER_SHUTDOWN_TIMEOUT,
+                                     nsITimer::TYPE_ONE_SHOT);
   }
+  mForceShutDown = true;
+  mForceShutdownTicket = aShutdownTicket;
+  if (mLifecycleState == LIFECYCLE_THREAD_NOT_STARTED) {
+    
+    
+    
+    RefPtr<GraphDriver> driver = CurrentDriver();
+    MonitorAutoUnlock unlock(mMonitor);
+    driver->Start();
+  }
+  EnsureNextIterationLocked();
 }
+
+NS_IMETHODIMP
+MediaStreamGraphImpl::Notify(nsITimer* aTimer)
+{
+  MonitorAutoLock lock(mMonitor);
+  NS_ASSERTION(!mForceShutdownTicket, "MediaStreamGraph took too long to shut down!");
+  
+  
+  mForceShutdownTicket = nullptr;
+  return NS_OK;
+}
+
 
  StaticRefPtr<nsIAsyncShutdownBlocker> gMediaStreamGraphShutdownBlocker;
 
 namespace {
 
-class MediaStreamGraphShutDownRunnable : public Runnable
-                                       , public nsITimerCallback {
+class MediaStreamGraphShutDownRunnable : public Runnable {
 public:
   explicit MediaStreamGraphShutDownRunnable(MediaStreamGraphImpl* aGraph)
     : mGraph(aGraph)
   {}
-  NS_DECL_ISUPPORTS_INHERITED
-
-  NS_IMETHOD Run() override
+  NS_IMETHOD Run()
   {
     NS_ASSERTION(mGraph->mDetectedNotRunning,
                  "We should know the graph thread control loop isn't running!");
@@ -1493,24 +1514,12 @@ public:
     }
 #endif
 
-    if (mGraph->mForceShutdownTicket) {
-      
-      
-      
-      mTimer = do_CreateInstance(NS_TIMER_CONTRACTID);
-      if (!mTimer) {
-        return NS_ERROR_FAILURE;
-      }
-      mTimer->InitWithCallback(this,
-                               MediaStreamGraph::AUDIO_CALLBACK_DRIVER_SHUTDOWN_TIMEOUT,
-                               nsITimer::TYPE_ONE_SHOT);
-    }
-
     mGraph->mDriver->Shutdown(); 
                                  
 
     
-    if (mTimer && !mGraph->mForceShutdownTicket) {
+    
+    if (mGraph->mShutdownTimer && !mGraph->mForceShutdownTicket) {
       MOZ_ASSERT(false,
         "AudioCallbackDriver took too long to shut down and we let shutdown"
         " continue - freezing and leaking");
@@ -1519,7 +1528,6 @@ public:
       
       return NS_OK;
     }
-    mTimer = nullptr;
     mGraph->mForceShutdownTicket = nullptr;
 
     
@@ -1552,29 +1560,9 @@ public:
     }
     return NS_OK;
   }
-
-  NS_IMETHOD Notify(nsITimer* aTimer) override
-  {
-    
-    
-    
-    NS_ASSERTION(!(mGraph->mForceShutdownTicket),
-                 "AudioCallbackDriver took too long to shut down - probably hung");
-
-    mGraph->mForceShutdownTicket = nullptr;
-    return NS_OK;
-  }
-
 private:
-  ~MediaStreamGraphShutDownRunnable() {}
-
-  nsCOMPtr<nsITimer> mTimer;
   RefPtr<MediaStreamGraphImpl> mGraph;
 };
-
-NS_IMPL_ISUPPORTS_INHERITED(MediaStreamGraphShutDownRunnable, Runnable, nsITimerCallback)
-
-
 
 class MediaStreamGraphStableStateRunnable : public Runnable {
 public:
@@ -3444,8 +3432,6 @@ MediaStreamGraph::DestroyNonRealtimeInstance(MediaStreamGraph* aGraph)
   MOZ_ASSERT(aGraph->IsNonRealtime(), "Should not destroy the global graph here");
 
   MediaStreamGraphImpl* graph = static_cast<MediaStreamGraphImpl*>(aGraph);
-  if (graph->mForceShutDown)
-    return; 
 
   if (!graph->mNonRealtimeProcessing) {
     
@@ -3454,7 +3440,7 @@ MediaStreamGraph::DestroyNonRealtimeInstance(MediaStreamGraph* aGraph)
   graph->ForceShutDown(nullptr);
 }
 
-NS_IMPL_ISUPPORTS(MediaStreamGraphImpl, nsIMemoryReporter)
+NS_IMPL_ISUPPORTS(MediaStreamGraphImpl, nsIMemoryReporter, nsITimerCallback)
 
 NS_IMETHODIMP
 MediaStreamGraphImpl::CollectReports(nsIHandleReportCallback* aHandleReport,
