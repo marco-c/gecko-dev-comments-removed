@@ -26,6 +26,20 @@ class Rule;
 
 
 
+
+struct ServoStyleSheetInner : public StyleSheetInfo
+{
+  ServoStyleSheetInner(CORSMode aCORSMode,
+                       ReferrerPolicy aReferrerPolicy,
+                       const dom::SRIMetadata& aIntegrity);
+
+  RefPtr<RawServoStyleSheet> mSheet;
+};
+
+
+
+
+
 class ServoStyleSheet : public StyleSheet
 {
 public:
@@ -53,10 +67,12 @@ public:
 
   void LoadFailed();
 
-  RawServoStyleSheet* RawSheet() const { return mSheet; }
+  RawServoStyleSheet* RawSheet() const {
+    return Inner()->mSheet;
+  }
   void SetSheetForImport(RawServoStyleSheet* aSheet) {
-    MOZ_ASSERT(!mSheet);
-    mSheet = aSheet;
+    MOZ_ASSERT(!Inner()->mSheet);
+    Inner()->mSheet = aSheet;
   }
 
   
@@ -73,6 +89,11 @@ public:
 protected:
   virtual ~ServoStyleSheet();
 
+  ServoStyleSheetInner* Inner() const
+  {
+    return static_cast<ServoStyleSheetInner*>(mInner);
+  }
+
   
   dom::CSSRuleList* GetCssRulesInternal(ErrorResult& aRv);
   uint32_t InsertRuleInternal(const nsAString& aRule,
@@ -84,7 +105,6 @@ protected:
 private:
   void DropRuleList();
 
-  RefPtr<RawServoStyleSheet> mSheet;
   RefPtr<ServoCSSRuleList> mRuleList;
 
   friend class StyleSheet;
