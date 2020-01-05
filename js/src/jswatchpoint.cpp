@@ -193,6 +193,9 @@ WatchpointMap::trace(JSTracer* trc)
  void
 WatchpointMap::sweepAll(JSRuntime* rt)
 {
+    
+    
+    
     for (GCCompartmentsIter c(rt); !c.done(); c.next()) {
         if (WatchpointMap* wpmap = c->watchpointMap)
             wpmap->sweep();

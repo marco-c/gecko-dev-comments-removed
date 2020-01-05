@@ -5019,10 +5019,14 @@ SweepRegExpsTask::run()
 SweepMiscTask::run()
 {
     for (GCCompartmentGroupIter c(runtime()); !c.done(); c.next()) {
+        c->sweepGlobalObject();
+        c->sweepDebugEnvironments();
+        c->sweepTemplateObjects();
         c->sweepSavedStacks();
         c->sweepTemplateLiteralMap();
         c->sweepSelfHostingScriptSource();
         c->sweepNativeIterators();
+        c->sweepWatchpoints();
     }
 }
 
@@ -5202,12 +5206,8 @@ GCRuntime::beginSweepingSweepGroup(AutoLockForExclusiveAccess& lock)
             
             js::CancelOffThreadIonCompile(rt, JS::Zone::Sweep);
 
-            for (GCCompartmentGroupIter c(rt); !c.done(); c.next()) {
-                c->sweepGlobalObject();
-                c->sweepDebugEnvironments();
+            for (GCCompartmentGroupIter c(rt); !c.done(); c.next())
                 c->sweepJitCompartment(&fop);
-                c->sweepTemplateObjects();
-            }
 
             for (GCSweepGroupIter zone(rt); !zone.done(); zone.next()) {
                 if (jit::JitZone* jitZone = zone->jitZone())
@@ -5216,9 +5216,6 @@ GCRuntime::beginSweepingSweepGroup(AutoLockForExclusiveAccess& lock)
 
             
             
-
-            
-            WatchpointMap::sweepAll(rt);
 
             
             
