@@ -356,11 +356,12 @@ private:
     
     
     
-    static nscoord ComputeEllipseXInterceptDiff(
-      const nscoord aShapeBoxY, const nscoord aShapeBoxYMost,
-      const nscoord aTopCornerRadiusX, const nscoord aTopCornerRadiusY,
-      const nscoord aBottomCornerRadiusX, const nscoord aBottomCornerRadiusY,
-      const nscoord aBandY, const nscoord aBandYMost);
+    
+    static nscoord ComputeEllipseLineInterceptDiff(
+      const nscoord aShapeBoxBStart, const nscoord aShapeBoxBEnd,
+      const nscoord aBStartCornerRadiusL, const nscoord aBStartCornerRadiusB,
+      const nscoord aBEndCornerRadiusL, const nscoord aBEndCornerRadiusB,
+      const nscoord aBandBStart, const nscoord aBandBEnd);
 
     static nscoord XInterceptAtY(const nscoord aY, const nscoord aRadiusX,
                                  const nscoord aRadiusY);

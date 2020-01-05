@@ -637,7 +637,7 @@ nsFloatManager::FloatInfo::LineLeft(WritingMode aWM,
     }
 
     nscoord lineLeftDiff =
-      ComputeEllipseXInterceptDiff(
+      ComputeEllipseLineInterceptDiff(
         ShapeBoxRect().y, ShapeBoxRect().YMost(),
         blockStartCornerRadiusL, blockStartCornerRadiusB,
         blockEndCornerRadiusL, blockEndCornerRadiusB,
@@ -695,7 +695,7 @@ nsFloatManager::FloatInfo::LineRight(WritingMode aWM,
     }
 
     nscoord lineRightDiff =
-      ComputeEllipseXInterceptDiff(
+      ComputeEllipseLineInterceptDiff(
         ShapeBoxRect().y, ShapeBoxRect().YMost(),
         blockStartCornerRadiusL, blockStartCornerRadiusB,
         blockEndCornerRadiusL, blockEndCornerRadiusB,
@@ -709,11 +709,11 @@ nsFloatManager::FloatInfo::LineRight(WritingMode aWM,
 }
 
  nscoord
-nsFloatManager::FloatInfo::ComputeEllipseXInterceptDiff(
-  const nscoord aShapeBoxY, const nscoord aShapeBoxYMost,
-  const nscoord aTopCornerRadiusX, const nscoord aTopCornerRadiusY,
-  const nscoord aBottomCornerRadiusX, const nscoord aBottomCornerRadiusY,
-  const nscoord aBandY, const nscoord aBandYMost)
+nsFloatManager::FloatInfo::ComputeEllipseLineInterceptDiff(
+  const nscoord aShapeBoxBStart, const nscoord aShapeBoxBEnd,
+  const nscoord aBStartCornerRadiusL, const nscoord aBStartCornerRadiusB,
+  const nscoord aBEndCornerRadiusL, const nscoord aBEndCornerRadiusB,
+  const nscoord aBandBStart, const nscoord aBandBEnd)
 {
   
   
@@ -748,33 +748,34 @@ nsFloatManager::FloatInfo::ComputeEllipseXInterceptDiff(
   
   
   
+  
 
-  NS_ASSERTION(aShapeBoxY <= aShapeBoxYMost, "Bad shape box coordinates!");
-  NS_ASSERTION(aBandY <= aBandYMost, "Bad band coordinates!");
+  NS_ASSERTION(aShapeBoxBStart <= aShapeBoxBEnd, "Bad shape box coordinates!");
+  NS_ASSERTION(aBandBStart <= aBandBEnd, "Bad band coordinates!");
 
-  nscoord xDiff = 0;
+  nscoord lineDiff = 0;
 
   
   
-  if (aTopCornerRadiusY > 0 &&
-      aBandYMost >= aShapeBoxY &&
-      aBandYMost <= aShapeBoxY + aTopCornerRadiusY) {
+  if (aBStartCornerRadiusB > 0 &&
+      aBandBEnd >= aShapeBoxBStart &&
+      aBandBEnd <= aShapeBoxBStart + aBStartCornerRadiusB) {
     
-    nscoord y = aTopCornerRadiusY - (aBandYMost - aShapeBoxY);
-    nscoord xIntercept =
-      XInterceptAtY(y, aTopCornerRadiusX, aTopCornerRadiusY);
-    xDiff = aTopCornerRadiusX - xIntercept;
-  } else if (aBottomCornerRadiusY > 0 &&
-             aBandY >= aShapeBoxYMost - aBottomCornerRadiusY &&
-             aBandY <= aShapeBoxYMost) {
+    nscoord b = aBStartCornerRadiusB - (aBandBEnd - aShapeBoxBStart);
+    nscoord lineIntercept =
+      XInterceptAtY(b, aBStartCornerRadiusL, aBStartCornerRadiusB);
+    lineDiff = aBStartCornerRadiusL - lineIntercept;
+  } else if (aBEndCornerRadiusB > 0 &&
+             aBandBStart >= aShapeBoxBEnd - aBEndCornerRadiusB &&
+             aBandBStart <= aShapeBoxBEnd) {
     
-    nscoord y = aBottomCornerRadiusY - (aShapeBoxYMost - aBandY);
-    nscoord xIntercept =
-      XInterceptAtY(y, aBottomCornerRadiusX, aBottomCornerRadiusY);
-    xDiff = aBottomCornerRadiusX - xIntercept;
+    nscoord b = aBEndCornerRadiusB - (aShapeBoxBEnd - aBandBStart);
+    nscoord lineIntercept =
+      XInterceptAtY(b, aBEndCornerRadiusL, aBEndCornerRadiusB);
+    lineDiff = aBEndCornerRadiusL - lineIntercept;
   }
 
-  return xDiff;
+  return lineDiff;
 }
 
  nscoord
