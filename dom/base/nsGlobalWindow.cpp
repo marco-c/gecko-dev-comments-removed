@@ -21,6 +21,7 @@
 #include "mozilla/dom/Performance.h"
 #include "mozilla/dom/StorageEvent.h"
 #include "mozilla/dom/StorageEventBinding.h"
+#include "mozilla/dom/Timeout.h"
 #include "mozilla/IntegerPrintfMacros.h"
 #if defined(MOZ_WIDGET_ANDROID) || defined(MOZ_WIDGET_GONK)
 #include "mozilla/dom/WindowOrientationObserver.h"
@@ -501,71 +502,6 @@ private:
 };
 
 NS_IMPL_ISUPPORTS(nsGlobalWindowObserver, nsIObserver, nsIInterfaceRequestor)
-
-nsTimeout::nsTimeout()
-  : mCleared(false),
-    mRunning(false),
-    mIsInterval(false),
-    mPublicId(0),
-    mInterval(0),
-    mFiringDepth(0),
-    mNestingLevel(0),
-    mPopupState(openAllowed)
-{
-#ifdef DEBUG_jst
-  {
-    extern int gTimeoutCnt;
-
-    ++gTimeoutCnt;
-  }
-#endif
-
-  MOZ_COUNT_CTOR(nsTimeout);
-}
-
-nsTimeout::~nsTimeout()
-{
-#ifdef DEBUG_jst
-  {
-    extern int gTimeoutCnt;
-
-    --gTimeoutCnt;
-  }
-#endif
-
-  if (mTimer) {
-    mTimer->Cancel();
-    mTimer = nullptr;
-  }
-
-  MOZ_COUNT_DTOR(nsTimeout);
-}
-
-NS_IMPL_CYCLE_COLLECTION_CLASS(nsTimeout)
-
-NS_IMPL_CYCLE_COLLECTION_UNLINK_0(nsTimeout)
-NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(nsTimeout)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mWindow)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mScriptHandler)
-NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
-NS_IMPL_CYCLE_COLLECTION_ROOT_NATIVE(nsTimeout, AddRef)
-NS_IMPL_CYCLE_COLLECTION_UNROOT_NATIVE(nsTimeout, Release)
-
-nsresult
-nsTimeout::InitTimer(uint32_t aDelay)
-{
-  return mTimer->InitWithNameableFuncCallback(
-    nsGlobalWindow::TimerCallback, this, aDelay,
-    nsITimer::TYPE_ONE_SHOT, nsGlobalWindow::TimerNameCallback);
-}
-
-
-
-bool
-nsTimeout::HasRefCntOne()
-{
-  return mRefCnt.get() == 1;
-}
 
 static already_AddRefed<nsIVariant>
 CreateVoidVariant()
@@ -1895,10 +1831,10 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INTERNAL(nsGlobalWindow)
 
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mListenerManager)
 
-  for (nsTimeout* timeout = tmp->mTimeouts.getFirst();
+  for (Timeout* timeout = tmp->mTimeouts.getFirst();
        timeout;
        timeout = timeout->getNext()) {
-    cb.NoteNativeChild(timeout, NS_CYCLE_COLLECTION_PARTICIPANT(nsTimeout));
+    cb.NoteNativeChild(timeout, NS_CYCLE_COLLECTION_PARTICIPANT(Timeout));
   }
 
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mLocation)
@@ -2058,7 +1994,7 @@ nsGlobalWindow::IsBlackForCC(bool aTracingNeeded)
 void
 nsGlobalWindow::UnmarkGrayTimers()
 {
-  for (nsTimeout* timeout = mTimeouts.getFirst();
+  for (Timeout* timeout = mTimeouts.getFirst();
        timeout;
        timeout = timeout->getNext()) {
     if (timeout->mScriptHandler) {
@@ -12123,9 +12059,9 @@ nsGlobalWindow::SetInterval(JSContext* aCx, const nsAString& aHandler,
 }
 
 nsresult
-nsGlobalWindow::SetTimeoutOrInterval(nsIScriptTimeoutHandler *aHandler,
-                                     int32_t interval,
-                                     bool aIsInterval, int32_t *aReturn)
+nsGlobalWindow::SetTimeoutOrInterval(nsIScriptTimeoutHandler* aHandler,
+                                     int32_t interval, bool aIsInterval,
+                                     int32_t* aReturn)
 {
   MOZ_ASSERT(IsInnerWindow());
 
@@ -12147,7 +12083,7 @@ nsGlobalWindow::SetTimeoutOrInterval(nsIScriptTimeoutHandler *aHandler,
     interval = maxTimeoutMs;
   }
 
-  RefPtr<nsTimeout> timeout = new nsTimeout();
+  RefPtr<Timeout> timeout = new Timeout();
   timeout->mIsInterval = aIsInterval;
   timeout->mInterval = interval;
   timeout->mScriptHandler = aHandler;
@@ -12176,7 +12112,7 @@ nsGlobalWindow::SetTimeoutOrInterval(nsIScriptTimeoutHandler *aHandler,
       return rv;
     }
 
-    RefPtr<nsTimeout> copy = timeout;
+    RefPtr<Timeout> copy = timeout;
 
     rv = timeout->InitTimer(realInterval);
     if (NS_FAILED(rv)) {
@@ -12227,7 +12163,6 @@ nsGlobalWindow::SetTimeoutOrInterval(nsIScriptTimeoutHandler *aHandler,
   *aReturn = timeout->mPublicId;
 
   return NS_OK;
-
 }
 
 int32_t
@@ -12284,13 +12219,13 @@ nsGlobalWindow::SetTimeoutOrInterval(JSContext* aCx, const nsAString& aHandler,
 }
 
 bool
-nsGlobalWindow::RunTimeoutHandler(nsTimeout* aTimeout,
+nsGlobalWindow::RunTimeoutHandler(Timeout* aTimeout,
                                   nsIScriptContext* aScx)
 {
   
   
-  RefPtr<nsTimeout> timeout = aTimeout;
-  nsTimeout* last_running_timeout = mRunningTimeout;
+  RefPtr<Timeout> timeout = aTimeout;
+  Timeout* last_running_timeout = mRunningTimeout;
   mRunningTimeout = timeout;
   timeout->mRunning = true;
 
@@ -12324,6 +12259,7 @@ nsGlobalWindow::RunTimeoutHandler(nsTimeout* aTimeout,
   bool abortIntervalHandler = false;
   nsCOMPtr<nsIScriptTimeoutHandler> handler(timeout->mScriptHandler);
   RefPtr<Function> callback = handler->GetCallback();
+
   if (!callback) {
     
     const nsAString& script = handler->GetHandlerText();
@@ -12396,7 +12332,7 @@ nsGlobalWindow::RunTimeoutHandler(nsTimeout* aTimeout,
 }
 
 bool
-nsGlobalWindow::RescheduleTimeout(nsTimeout* aTimeout, const TimeStamp& now,
+nsGlobalWindow::RescheduleTimeout(Timeout* aTimeout, const TimeStamp& now,
                                   bool aRunningPendingTimeouts)
 {
   if (!aTimeout->mIsInterval) {
@@ -12475,7 +12411,7 @@ nsGlobalWindow::RescheduleTimeout(nsTimeout* aTimeout, const TimeStamp& now,
 }
 
 void
-nsGlobalWindow::RunTimeout(nsTimeout *aTimeout)
+nsGlobalWindow::RunTimeout(Timeout* aTimeout)
 {
   
   
@@ -12486,8 +12422,9 @@ nsGlobalWindow::RunTimeout(nsTimeout *aTimeout)
   NS_ASSERTION(IsInnerWindow(), "Timeout running on outer window!");
   NS_ASSERTION(!IsFrozen(), "Timeout running on a window in the bfcache!");
 
-  nsTimeout *nextTimeout;
-  nsTimeout *last_expired_timeout, *last_insertion_point;
+  Timeout* nextTimeout;
+  Timeout* last_expired_timeout;
+  Timeout* last_insertion_point;
   uint32_t firingDepth = mTimeoutFiringDepth + 1;
 
   
@@ -12518,7 +12455,7 @@ nsGlobalWindow::RunTimeout(nsTimeout *aTimeout)
   
   
   last_expired_timeout = nullptr;
-  for (nsTimeout *timeout = mTimeouts.getFirst();
+  for (Timeout* timeout = mTimeouts.getFirst();
        timeout && timeout->mWhen <= deadline;
        timeout = timeout->getNext()) {
     if (timeout->mFiringDepth == 0) {
@@ -12548,18 +12485,18 @@ nsGlobalWindow::RunTimeout(nsTimeout *aTimeout)
   
   
   
-  RefPtr<nsTimeout> dummy_timeout = new nsTimeout();
+  RefPtr<Timeout> dummy_timeout = new Timeout();
   dummy_timeout->mFiringDepth = firingDepth;
   dummy_timeout->mWhen = now;
   last_expired_timeout->setNext(dummy_timeout);
-  RefPtr<nsTimeout> timeoutExtraRef(dummy_timeout);
+  RefPtr<Timeout> timeoutExtraRef(dummy_timeout);
 
   last_insertion_point = mTimeoutInsertionPoint;
   
   
   mTimeoutInsertionPoint = dummy_timeout;
 
-  for (nsTimeout *timeout = mTimeouts.getFirst();
+  for (Timeout* timeout = mTimeouts.getFirst();
        timeout != dummy_timeout && !IsFrozen();
        timeout = nextTimeout) {
     nextTimeout = timeout->getNext();
@@ -12636,15 +12573,15 @@ nsGlobalWindow::RunTimeout(nsTimeout *aTimeout)
 }
 
 void
-nsGlobalWindow::ClearTimeoutOrInterval(int32_t aTimerID)
+nsGlobalWindow::ClearTimeoutOrInterval(int32_t aTimerId)
 {
   MOZ_RELEASE_ASSERT(IsInnerWindow());
 
-  uint32_t public_id = (uint32_t)aTimerID;
-  nsTimeout *timeout;
+  uint32_t timerId = (uint32_t)aTimerId;
+  Timeout* timeout;
 
   for (timeout = mTimeouts.getFirst(); timeout; timeout = timeout->getNext()) {
-    if (timeout->mPublicId == public_id) {
+    if (timeout->mPublicId == timerId) {
       if (timeout->mRunning) {
         
 
@@ -12685,7 +12622,7 @@ nsresult nsGlobalWindow::ResetTimersForNonBackgroundWindow()
   
   
   
-  for (nsTimeout *timeout = mTimeoutInsertionPoint ?
+  for (Timeout* timeout = mTimeoutInsertionPoint ?
          mTimeoutInsertionPoint->getNext() : mTimeouts.getFirst();
        timeout; ) {
     
@@ -12729,7 +12666,7 @@ nsresult nsGlobalWindow::ResetTimersForNonBackgroundWindow()
 
       
       
-      nsTimeout* nextTimeout = timeout->getNext();
+      Timeout* nextTimeout = timeout->getNext();
 
       
       
@@ -12763,7 +12700,8 @@ nsresult nsGlobalWindow::ResetTimersForNonBackgroundWindow()
 void
 nsGlobalWindow::ClearAllTimeouts()
 {
-  nsTimeout *timeout, *nextTimeout;
+  Timeout* timeout;
+  Timeout* nextTimeout;
 
   for (timeout = mTimeouts.getFirst(); timeout; timeout = nextTimeout) {
     
@@ -12798,7 +12736,7 @@ nsGlobalWindow::ClearAllTimeouts()
 }
 
 void
-nsGlobalWindow::InsertTimeoutIntoList(nsTimeout *aTimeout)
+nsGlobalWindow::InsertTimeoutIntoList(Timeout* aTimeout)
 {
   NS_ASSERTION(IsInnerWindow(),
                "InsertTimeoutIntoList() called on outer window!");
@@ -12806,7 +12744,7 @@ nsGlobalWindow::InsertTimeoutIntoList(nsTimeout *aTimeout)
   
   
   
-  nsTimeout* prevSibling;
+  Timeout* prevSibling;
   for (prevSibling = mTimeouts.getLast();
        prevSibling && prevSibling != mTimeoutInsertionPoint &&
          
@@ -12836,22 +12774,9 @@ nsGlobalWindow::InsertTimeoutIntoList(nsTimeout *aTimeout)
 void
 nsGlobalWindow::TimerCallback(nsITimer *aTimer, void *aClosure)
 {
-  RefPtr<nsTimeout> timeout = (nsTimeout *)aClosure;
+  RefPtr<Timeout> timeout = (Timeout*)aClosure;
 
   timeout->mWindow->RunTimeout(timeout);
-}
-
-
-void
-nsGlobalWindow::TimerNameCallback(nsITimer* aTimer, void* aClosure, char* aBuf,
-                                  size_t aLen)
-{
-  RefPtr<nsTimeout> timeout = (nsTimeout*)aClosure;
-
-  const char* filename;
-  uint32_t lineNum, column;
-  timeout->mScriptHandler->GetLocation(&filename, &lineNum, &column);
-  snprintf(aBuf, aLen, "[content] %s:%u:%u", filename, lineNum, column);
 }
 
 
@@ -13080,7 +13005,7 @@ nsGlobalWindow::SuspendTimeouts(uint32_t aIncrease,
     }
 
     TimeStamp now = TimeStamp::Now();
-    for (nsTimeout *t = mTimeouts.getFirst(); t; t = t->getNext()) {
+    for (Timeout* t = mTimeouts.getFirst(); t; t = t->getNext()) {
       
       if (t->mWhen > now)
         t->mTimeRemaining = t->mWhen - now;
@@ -13174,7 +13099,7 @@ nsGlobalWindow::ResumeTimeouts(bool aThawChildren, bool aThawWorkers)
     bool _seenDummyTimeout = false;
 #endif
 
-    for (nsTimeout *t = mTimeouts.getFirst(); t; t = t->getNext()) {
+    for (Timeout* t = mTimeouts.getFirst(); t; t = t->getNext()) {
       
       
       

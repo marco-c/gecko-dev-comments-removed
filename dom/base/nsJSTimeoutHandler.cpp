@@ -4,21 +4,24 @@
 
 
 
+#include <algorithm>
+
+#include "mozilla/Attributes.h"
+#include "mozilla/Function.h"
+#include "mozilla/Likely.h"
+#include "mozilla/Maybe.h"
+#include "mozilla/dom/FunctionBinding.h"
+#include "nsAXPCNativeCallContext.h"
 #include "nsCOMPtr.h"
-#include "nsIDocument.h"
-#include "nsIScriptTimeoutHandler.h"
-#include "nsIXPConnect.h"
-#include "nsJSUtils.h"
 #include "nsContentUtils.h"
 #include "nsError.h"
 #include "nsGlobalWindow.h"
 #include "nsIContentSecurityPolicy.h"
-#include "mozilla/Attributes.h"
-#include "mozilla/Likely.h"
-#include <algorithm>
-#include "mozilla/dom/FunctionBinding.h"
+#include "nsIDocument.h"
+#include "nsIScriptTimeoutHandler.h"
+#include "nsIXPConnect.h"
+#include "nsJSUtils.h"
 #include "WorkerPrivate.h"
-#include "nsAXPCNativeCallContext.h"
 
 static const char kSetIntervalStr[] = "setInterval";
 static const char kSetTimeoutStr[] = "setTimeout";
@@ -37,11 +40,11 @@ public:
 
   nsJSScriptTimeoutHandler();
   
-  nsJSScriptTimeoutHandler(JSContext* aCx, nsGlobalWindow *aWindow,
+  nsJSScriptTimeoutHandler(JSContext* aCx, nsGlobalWindow* aWindow,
                            Function& aFunction,
                            nsTArray<JS::Heap<JS::Value>>&& aArguments,
                            ErrorResult& aError);
-  nsJSScriptTimeoutHandler(JSContext* aCx, nsGlobalWindow *aWindow,
+  nsJSScriptTimeoutHandler(JSContext* aCx, nsGlobalWindow* aWindow,
                            const nsAString& aExpression, bool* aAllowEval,
                            ErrorResult& aError);
   nsJSScriptTimeoutHandler(JSContext* aCx, WorkerPrivate* aWorkerPrivate,
@@ -51,10 +54,12 @@ public:
                            const nsAString& aExpression);
 
   virtual const nsAString& GetHandlerText() override;
+
   virtual Function* GetCallback() override
   {
     return mFunction;
   }
+
   virtual void GetLocation(const char** aFileName, uint32_t* aLineNo,
                            uint32_t* aColumn) override
   {
