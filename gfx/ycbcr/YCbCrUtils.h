@@ -3,8 +3,8 @@
 
 
 
-#ifndef MOZILLA_GFX_UTILS_H_
-#define MOZILLA_GFX_UTILS_H_
+#ifndef Y_CB_CR_UTILS_H_
+#define Y_CB_CR_UTILS_H_
 
 #include "mozilla/gfx/Types.h"
 #include "ImageContainer.h"
@@ -23,6 +23,16 @@ ConvertYCbCrToRGB(const layers::PlanarYCbCrData& aData,
                   const IntSize& aDestSize,
                   unsigned char* aDestBuffer,
                   int32_t aStride);
+
+
+void
+ConvertYCbCrAToARGB(const uint8_t* aSrcY,
+                    const uint8_t* aSrcU,
+                    const uint8_t* aSrcV,
+                    const uint8_t* aSrcA,
+                    int aSrcStrideYA, int aSrcStrideUV,
+                    uint8_t* aDstARGB, int aDstStrideARGB,
+                    int aWidth, int aHeight);
 
 } 
 } 
