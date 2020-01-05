@@ -1,14 +1,16 @@
 
+"use strict";
+
 module.exports = {
   "rules": {
     "mozilla/import-headjs-globals": "warn",
-    "mozilla/mark-test-function-used": "warn",
+    "mozilla/mark-test-function-used": "warn"
   },
 
   "env": {
     "browser": true,
     "mozilla/browser-window": true,
-    "mozilla/simpletest": true,
+    "mozilla/simpletest": true
     
   },
 
@@ -54,6 +56,6 @@ module.exports = {
     "todo_isnot": false,
     "waitForClipboard": false,
     "waitForExplicitFinish": false,
-    "waitForFocus": false,
+    "waitForFocus": false
   }
 };

@@ -1,14 +1,16 @@
 
+"use strict";
+
 module.exports = {
-  rules: {
+  "rules": {
     "mozilla/import-headjs-globals": "warn",
     "mozilla/mark-test-function-used": "warn",
+    "no-shadow": "error"
   },
 
   "env": {
     "browser": true,
-    "mozilla/browser-window": true,
-    "mozilla/simpletest": true,
+    "mozilla/simpletest": true
   },
 
   "plugins": [
@@ -22,22 +24,19 @@ module.exports = {
     "add_task": false,
     "addLoadEvent": false,
     "Assert": false,
-    "BrowserTestUtils": false,
-    "ContentTask": false,
     "EventUtils": false,
     "executeSoon": false,
     "export_assertions": false,
-    "extractJarToTmp": false,
     "finish": false,
-    "getJar": false,
     "getRootDirectory": false,
     "getTestFilePath": false,
     "gTestPath": false,
     "info": false,
     "is": false,
+    "isDeeply": false,
     "isnot": false,
+    "netscape": false,
     "ok": false,
-    "privateNoteIntentionalCrash": false,
     "promise": false,
     "registerCleanupFunction": false,
     "requestLongerTimeout": false,
@@ -47,6 +46,6 @@ module.exports = {
     "todo_isnot": false,
     "waitForClipboard": false,
     "waitForExplicitFinish": false,
-    "waitForFocus": false,
+    "waitForFocus": false
   }
 };

@@ -1,9 +1,11 @@
 
+"use strict";
+
 module.exports = {
   rules: {
     "mozilla/import-headjs-globals": "warn",
     "mozilla/mark-test-function-used": "warn",
-    "no-shadow": "error",
+    "no-shadow": "error"
   },
 
   
@@ -66,6 +68,7 @@ module.exports = {
     "todo_check_true": false,
     
     
-    "uneval": false,
+    
+    "uneval": false
   }
 };
