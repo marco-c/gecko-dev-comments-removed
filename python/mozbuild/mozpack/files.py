@@ -323,25 +323,23 @@ class AbsoluteSymlinkFile(File):
             if ose.errno != errno.ENOENT:
                 raise
 
-        src = os.path.relpath(self.path, os.path.dirname(dest))
-
         
         
         
         if st and stat.S_ISLNK(st.st_mode):
             link = os.readlink(dest)
-            if link == src:
+            if link == self.path:
                 return False
 
             os.remove(dest)
-            os.symlink(src, dest)
+            os.symlink(self.path, dest)
             return True
 
         
         
         if not st:
             try:
-                os.symlink(src, dest)
+                os.symlink(self.path, dest)
                 return True
             except OSError:
                 return File.copy(self, dest, skip_if_older=skip_if_older)
@@ -364,7 +362,7 @@ class AbsoluteSymlinkFile(File):
 
         temp_dest = os.path.join(os.path.dirname(dest), str(uuid.uuid4()))
         try:
-            os.symlink(src, temp_dest)
+            os.symlink(self.path, temp_dest)
         
         
         except EnvironmentError:

@@ -263,13 +263,13 @@ main(int argc, char **argv)
 {
     int onlydir, dodir, dolink, dorelsymlink, dotimes, opt, len, lplen, tdlen, bnlen, exists;
     mode_t mode = 0755;
-    char *linkprefix, *owner, *group, *cp, *cwd, *todir, *toname, *name, *base, *linkname, *absolute, buf[BUFSIZ];
+    char *linkprefix, *owner, *group, *cp, *cwd, *todir, *toname, *name, *base, *linkname, buf[BUFSIZ];
     uid_t uid;
     gid_t gid;
     struct stat sb, tosb, fromsb;
 
     program = argv[0];
-    cwd = linkname = absolute = linkprefix = owner = group = 0;
+    cwd = linkname = linkprefix = owner = group = 0;
     onlydir = dodir = dolink = dorelsymlink = dotimes = lplen = 0;
 
     while ((opt = getopt(argc, argv, "C:DdlL:Rm:o:g:t")) != EOF) {
@@ -379,33 +379,33 @@ main(int argc, char **argv)
             if (access(name, R_OK) != 0) {
                 fail("cannot access %s", name);
             }
-	    if (linkprefix) {
+	    if (*name == '/') {
 		
-		len += lplen + 1;
-		linkname = xmalloc((unsigned int)(len + 1));
-		sprintf(linkname, "%s/%s", linkprefix, name);
-	    } else if (dorelsymlink) {
-		if (*name != '/') {
-		    absolute = xmalloc((unsigned int)(strlen(cwd) + 1 + len + 1));
-		    sprintf(absolute, "%s/%s", cwd, name);
-		    name = absolute;
-		}
+		linkname = 0;
+	    } else {
+		if (linkprefix) {
+		    
+		    len += lplen + 1;
+		    linkname = xmalloc((unsigned int)(len + 1));
+		    sprintf(linkname, "%s/%s", linkprefix, name);
+		} else if (dorelsymlink) {
+		    
+		    linkname = xmalloc(PATH_MAX);
 
-		
-		linkname = xmalloc(PATH_MAX);
+		    if (*todir == '/') {
+			
+			lplen = relatepaths(todir, cwd, linkname);
+			strcpy(linkname + lplen, name);
+		    } else {
+			
+			reversepath(todir, name, len, linkname);
+			xchdir(cwd);
+		    }
 
-		
-		len = relatepaths(todir, name, linkname);
-		if (len > 0) {
-		    linkname[--len] = '\0';
+		    len = strlen(linkname);
 		}
-
-		if (absolute) {
-		    free(absolute);
-		    absolute = 0;
-		}
+		name = linkname;
 	    }
-	    name = linkname;
 
 	    
 	    if (exists && (!S_ISLNK(tosb.st_mode) ||
