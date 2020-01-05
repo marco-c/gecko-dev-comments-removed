@@ -653,47 +653,9 @@ nsDefaultURIFixup::ConvertFileToStringURI(const nsACString& aIn,
     
     
 
-    
-    
-    
-
     nsCOMPtr<nsIFile> filePath;
-    nsresult rv;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    NS_ConvertUTF8toUTF16 in(aIn);
-    if (PossiblyByteExpandedFileName(in)) {
-      
-      rv = NS_NewNativeLocalFile(NS_LossyConvertUTF16toASCII(in), false,
-                                 getter_AddRefs(filePath));
-    } else {
-      
-      rv = NS_NewLocalFile(in, false, getter_AddRefs(filePath));
-    }
+    nsresult rv = NS_NewLocalFile(NS_ConvertUTF8toUTF16(aIn), false,
+                                  getter_AddRefs(filePath));
 
     if (NS_SUCCEEDED(rv)) {
       NS_GetURLSpecFromFile(filePath, aResult);
@@ -830,28 +792,6 @@ nsDefaultURIFixup::PossiblyHostPortUrl(const nsACString& aUrl)
 
   
   return true;
-}
-
-bool
-nsDefaultURIFixup::PossiblyByteExpandedFileName(const nsAString& aIn)
-{
-  
-  
-  
-  
-  
-
-  nsReadingIterator<char16_t> iter;
-  nsReadingIterator<char16_t> iterEnd;
-  aIn.BeginReading(iter);
-  aIn.EndReading(iterEnd);
-  while (iter != iterEnd) {
-    if (*iter >= 0x0080 && *iter <= 0x00FF) {
-      return true;
-    }
-    ++iter;
-  }
-  return false;
 }
 
 nsresult
