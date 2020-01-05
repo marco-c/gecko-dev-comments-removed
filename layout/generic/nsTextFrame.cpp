@@ -4480,16 +4480,6 @@ nsContinuingTextFrame::AddInlinePrefISize(nsRenderingContext *aRenderingContext,
   return;
 }
 
-static void
-DestroySelectionDetails(SelectionDetails* aDetails)
-{
-  while (aDetails) {
-    SelectionDetails* next = aDetails->mNext;
-    delete aDetails;
-    aDetails = next;
-  }
-}
-
 
 
 #if defined(DEBUG_rbs) || defined(DEBUG_bzbarsky)
@@ -5165,7 +5155,7 @@ GetGeneratedContentOwner(nsIFrame* aFrame, bool* aIsBefore)
   return aFrame;
 }
 
-SelectionDetails*
+UniquePtr<SelectionDetails>
 nsTextFrame::GetSelectionDetails()
 {
   const nsFrameSelection* frameSelection = GetConstFrameSelection();
@@ -5173,11 +5163,10 @@ nsTextFrame::GetSelectionDetails()
     return nullptr;
   }
   if (!(GetStateBits() & NS_FRAME_GENERATED_CONTENT)) {
-    SelectionDetails* details =
+    UniquePtr<SelectionDetails> details =
       frameSelection->LookUpSelection(mContent, GetContentOffset(),
                                       GetContentLength(), false);
-    SelectionDetails* sd;
-    for (sd = details; sd; sd = sd->mNext) {
+    for (SelectionDetails* sd = details.get(); sd; sd = sd->mNext.get()) {
       sd->mStart += mContentOffset;
       sd->mEnd += mContentOffset;
     }
@@ -5191,11 +5180,10 @@ nsTextFrame::GetSelectionDetails()
   if (!owner || !owner->GetContent())
     return nullptr;
 
-  SelectionDetails* details =
+  UniquePtr<SelectionDetails> details =
     frameSelection->LookUpSelection(owner->GetContent(),
         isBefore ? 0 : owner->GetContent()->GetChildCount(), 0, false);
-  SelectionDetails* sd;
-  for (sd = details; sd; sd = sd->mNext) {
+  for (SelectionDetails* sd = details.get(); sd; sd = sd->mNext.get()) {
     
     sd->mStart = GetContentOffset();
     sd->mEnd = GetContentEnd();
@@ -6257,11 +6245,15 @@ nsTextFrame::PaintOneShadow(const PaintShadowParams& aParams,
 bool
 nsTextFrame::PaintTextWithSelectionColors(
     const PaintTextSelectionParams& aParams,
-    SelectionDetails* aDetails, RawSelectionType* aAllRawSelectionTypes,
+    const UniquePtr<SelectionDetails>& aDetails,
+    RawSelectionType* aAllRawSelectionTypes,
     const nsCharClipDisplayItem::ClipEdges& aClipEdges)
 {
   const gfxTextRun::Range& contentRange = aParams.contentRange;
 
+  
+  
+  
   
   AutoTArray<SelectionDetails*,BIG_TEXT_NODE_SIZE> prevailingSelectionsBuffer;
   SelectionDetails** prevailingSelections =
@@ -6275,9 +6267,8 @@ nsTextFrame::PaintTextWithSelectionColors(
     prevailingSelections[i] = nullptr;
   }
 
-  SelectionDetails *sdptr = aDetails;
   bool anyBackgrounds = false;
-  while (sdptr) {
+  for (SelectionDetails* sdptr = aDetails.get(); sdptr; sdptr = sdptr->mNext.get()) {
     int32_t start = std::max(0, sdptr->mStart - int32_t(contentRange.start));
     int32_t end = std::min(int32_t(contentRange.Length()),
                            sdptr->mEnd - int32_t(contentRange.start));
@@ -6301,7 +6292,6 @@ nsTextFrame::PaintTextWithSelectionColors(
         }
       }
     }
-    sdptr = sdptr->mNext;
   }
   *aAllRawSelectionTypes = allRawSelectionTypes;
 
@@ -6421,12 +6411,16 @@ nsTextFrame::PaintTextWithSelectionColors(
 void
 nsTextFrame::PaintTextSelectionDecorations(
     const PaintTextSelectionParams& aParams,
-    SelectionDetails* aDetails, SelectionType aSelectionType)
+    const UniquePtr<SelectionDetails>& aDetails,
+    SelectionType aSelectionType)
 {
   
   if (aParams.provider->GetFontGroup()->ShouldSkipDrawing())
     return;
 
+  
+  
+  
   
   const gfxTextRun::Range& contentRange = aParams.contentRange;
   AutoTArray<SelectionDetails*, BIG_TEXT_NODE_SIZE> selectedCharsBuffer;
@@ -6439,8 +6433,7 @@ nsTextFrame::PaintTextSelectionDecorations(
     selectedChars[i] = nullptr;
   }
 
-  SelectionDetails *sdptr = aDetails;
-  while (sdptr) {
+  for (SelectionDetails* sdptr = aDetails.get(); sdptr; sdptr = sdptr->mNext.get()) {
     if (sdptr->mSelectionType == aSelectionType) {
       int32_t start = std::max(0, sdptr->mStart - int32_t(contentRange.start));
       int32_t end = std::min(int32_t(contentRange.Length()),
@@ -6449,7 +6442,6 @@ nsTextFrame::PaintTextSelectionDecorations(
         selectedChars[i] = sdptr;
       }
     }
-    sdptr = sdptr->mNext;
   }
 
   gfxFont* firstFont = aParams.provider->GetFontGroup()->GetFirstValidFont();
@@ -6518,7 +6510,7 @@ nsTextFrame::PaintTextWithSelection(
 {
   NS_ASSERTION(GetContent()->IsSelectionDescendant(), "wrong paint path");
 
-  SelectionDetails* details = GetSelectionDetails();
+  UniquePtr<SelectionDetails> details = GetSelectionDetails();
   if (!details) {
     return false;
   }
@@ -6526,7 +6518,6 @@ nsTextFrame::PaintTextWithSelection(
   RawSelectionType allRawSelectionTypes;
   if (!PaintTextWithSelectionColors(aParams, details, &allRawSelectionTypes,
                                     aClipEdges)) {
-    DestroySelectionDetails(details);
     return false;
   }
   
@@ -6544,7 +6535,6 @@ nsTextFrame::PaintTextWithSelection(
     }
   }
 
-  DestroySelectionDetails(details);
   return true;
 }
 
@@ -6624,10 +6614,9 @@ nsTextFrame::GetCaretColorAt(int32_t aOffset)
 
   nsTextPaintStyle textPaintStyle(this);
   textPaintStyle.SetResolveColors(isSolidTextColor);
-  SelectionDetails* details = GetSelectionDetails();
-  SelectionDetails* sdptr = details;
+  UniquePtr<SelectionDetails> details = GetSelectionDetails();
   SelectionType selectionType = SelectionType::eNone;
-  while (sdptr) {
+  for (SelectionDetails* sdptr = details.get(); sdptr; sdptr = sdptr->mNext.get()) {
     int32_t start = std::max(0, sdptr->mStart - contentOffset);
     int32_t end = std::min(contentLength, sdptr->mEnd - contentOffset);
     if (start <= offsetInFrame && offsetInFrame < end &&
@@ -6646,10 +6635,8 @@ nsTextFrame::GetCaretColorAt(int32_t aOffset)
         selectionType = sdptr->mSelectionType;
       }
     }
-    sdptr = sdptr->mNext;
   }
 
-  DestroySelectionDetails(details);
   return result;
 }
 
@@ -7233,21 +7220,18 @@ nsTextFrame::IsVisibleInSelection(nsISelection* aSelection)
   if (!GetContent()->IsSelectionDescendant())
     return false;
 
-  SelectionDetails* details = GetSelectionDetails();
+  UniquePtr<SelectionDetails> details = GetSelectionDetails();
   bool found = false;
 
   
-  SelectionDetails *sdptr = details;
-  while (sdptr) {
+  for (SelectionDetails* sdptr = details.get(); sdptr; sdptr = sdptr->mNext.get()) {
     if (sdptr->mEnd > GetContentOffset() &&
         sdptr->mStart < GetContentEnd() &&
         sdptr->mSelectionType == SelectionType::eNormal) {
       found = true;
       break;
     }
-    sdptr = sdptr->mNext;
   }
-  DestroySelectionDetails(details);
 
   return found;
 }
@@ -7409,8 +7393,8 @@ nsTextFrame::CombineSelectionUnderlineRect(nsPresContext* aPresContext,
     ComputeDescentLimitForSelectionUnderline(aPresContext, metrics);
   params.vertical = verticalRun;
 
-  SelectionDetails *details = GetSelectionDetails();
-  for (SelectionDetails *sd = details; sd; sd = sd->mNext) {
+  UniquePtr<SelectionDetails> details = GetSelectionDetails();
+  for (SelectionDetails* sd = details.get(); sd; sd = sd->mNext.get()) {
     if (sd->mStart == sd->mEnd ||
         !(sd->mSelectionType & kRawSelectionTypesWithDecorations) ||
         
@@ -7456,7 +7440,6 @@ nsTextFrame::CombineSelectionUnderlineRect(nsPresContext* aPresContext,
       nsCSSRendering::GetTextDecorationRect(aPresContext, params);
     aRect.UnionRect(aRect, decorationArea);
   }
-  DestroySelectionDetails(details);
 
   return !aRect.IsEmpty() && !givenRect.Contains(aRect);
 }

@@ -351,7 +351,7 @@ nsBaseWidget::OnRenderingDeviceReset(uint64_t aSeqNo)
   
   RefPtr<ClientLayerManager> clm = mLayerManager->AsClientLayerManager();
   if (!ComputeShouldAccelerate() &&
-      clm->GetTextureFactoryIdentifier().mParentBackend != LayersBackend::LAYERS_BASIC)
+      clm->GetCompositorBackendType() == LayersBackend::LAYERS_BASIC)
   {
     return;
   }
@@ -367,7 +367,7 @@ nsBaseWidget::OnRenderingDeviceReset(uint64_t aSeqNo)
   FrameLayerBuilder::InvalidateAllLayers(mLayerManager);
 
   
-  clm->UpdateTextureFactoryIdentifier(identifier);
+  clm->UpdateTextureFactoryIdentifier(identifier, aSeqNo);
   ImageBridgeChild::IdentifyCompositorTextureHost(identifier);
   gfx::VRManagerChild::IdentifyTextureHost(identifier);
 }
@@ -1375,7 +1375,7 @@ void nsBaseWidget::CreateCompositor(int aWidth, int aHeight)
     }
 
     lf->SetShadowManager(shadowManager);
-    lm->UpdateTextureFactoryIdentifier(textureFactoryIdentifier);
+    lm->UpdateTextureFactoryIdentifier(textureFactoryIdentifier, 0);
     
     
     if (WidgetTypeSupportsAcceleration()) {

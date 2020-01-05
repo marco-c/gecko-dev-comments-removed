@@ -79,6 +79,7 @@ CompositorBridgeChild::CompositorBridgeChild(LayerManager *aLayerManager)
   : mLayerManager(aLayerManager)
   , mCanSend(false)
   , mFwdTransactionId(0)
+  , mDeviceResetSequenceNumber(0)
   , mMessageLoop(MessageLoop::current())
   , mSectionAllocator(nullptr)
 {
@@ -374,10 +375,9 @@ CompositorBridgeChild::RecvCompositorUpdated(const uint64_t& aLayersId,
   } else if (aLayersId != 0) {
     
     
-    static uint64_t sLastSeqNo = 0;
-    if (sLastSeqNo != aSeqNo) {
+    if (mDeviceResetSequenceNumber != aSeqNo) {
       gfxPlatform::GetPlatform()->CompositorUpdated();
-      sLastSeqNo = aSeqNo;
+      mDeviceResetSequenceNumber = aSeqNo;
 
       
       
@@ -388,12 +388,12 @@ CompositorBridgeChild::RecvCompositorUpdated(const uint64_t& aLayersId,
     }
 
     if (dom::TabChild* child = dom::TabChild::GetFrom(aLayersId)) {
-      child->CompositorUpdated(aNewIdentifier);
+      child->CompositorUpdated(aNewIdentifier, aSeqNo);
     }
     if (!mCanSend) {
       return IPC_OK();
     }
-    SendAcknowledgeCompositorUpdate(aLayersId);
+    SendAcknowledgeCompositorUpdate(aLayersId, aSeqNo);
   }
   return IPC_OK();
 }

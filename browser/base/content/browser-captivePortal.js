@@ -106,7 +106,6 @@ var CaptivePortalWatcher = {
     if (win != Services.ww.activeWindow) {
       this._delayedCaptivePortalDetectedInProgress = true;
       Services.obs.addObserver(this, "xul-window-visible", false);
-      return;
     }
 
     this._showNotification();
@@ -150,7 +149,6 @@ var CaptivePortalWatcher = {
         return;
       }
 
-      self._showNotification();
       if (time <= self.PORTAL_RECHECK_DELAY_MS) {
         
         

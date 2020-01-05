@@ -234,6 +234,10 @@ public:
   PWebRenderBridgeChild* AllocPWebRenderBridgeChild(const wr::PipelineId& aPipelineId, TextureFactoryIdentifier*) override;
   bool DeallocPWebRenderBridgeChild(PWebRenderBridgeChild* aActor) override;
 
+  uint64_t DeviceResetSequenceNumber() const {
+    return mDeviceResetSequenceNumber;
+  }
+
 private:
   
   virtual ~CompositorBridgeChild();
@@ -318,6 +322,11 @@ private:
 
 
   uint64_t mFwdTransactionId;
+
+  
+
+
+  uint64_t mDeviceResetSequenceNumber;
 
   
 
