@@ -19,11 +19,8 @@ public class AndroidBrowserHistoryServerSyncStage extends ServerSyncStage {
 
   
   
-  private static final String HISTORY_SORT          = "index";
-  
-  
-  private static final long HISTORY_BATCH_LIMIT = 250;
-  private static final long HISTORY_TOTAL_LIMIT = 250;
+  private static final String HISTORY_SORT = "oldest";
+  private static final long HISTORY_BATCH_LIMIT = 500;
 
   @Override
   protected String getCollection() {
@@ -47,16 +44,15 @@ public class AndroidBrowserHistoryServerSyncStage extends ServerSyncStage {
 
   @Override
   protected Repository getRemoteRepository() throws URISyntaxException {
-    String collection = getCollection();
     return new ConstrainedServer11Repository(
-                                             collection,
-                                             session.config.storageURL(),
-                                             session.getAuthHeaderProvider(),
-                                             session.config.infoCollections,
-                                             session.config.infoConfiguration,
-                                             HISTORY_BATCH_LIMIT,
-                                             HISTORY_TOTAL_LIMIT,
-                                             HISTORY_SORT);
+            getCollection(),
+            session.config.storageURL(),
+            session.getAuthHeaderProvider(),
+            session.config.infoCollections,
+            session.config.infoConfiguration,
+            HISTORY_BATCH_LIMIT,
+            HISTORY_SORT,
+            true );
   }
 
   @Override

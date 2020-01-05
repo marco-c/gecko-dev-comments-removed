@@ -15,20 +15,23 @@ import org.mozilla.gecko.sync.net.WBOCollectionRequestDelegate;
 import org.mozilla.gecko.sync.repositories.delegates.RepositorySessionFetchRecordsDelegate;
 
 
+import java.util.ConcurrentModificationException;
+
+
 
 
 public class BatchingDownloaderDelegate extends WBOCollectionRequestDelegate {
     public static final String LOG_TAG = "BatchingDownloaderDelegate";
 
-    private BatchingDownloader downloader;
-    private RepositorySessionFetchRecordsDelegate fetchRecordsDelegate;
-    public SyncStorageCollectionRequest request;
+    private final BatchingDownloader downloader;
+    private final RepositorySessionFetchRecordsDelegate fetchRecordsDelegate;
+    public final SyncStorageCollectionRequest request;
     
-    private long newer;
-    private long batchLimit;
-    private boolean full;
-    private String sort;
-    private String ids;
+    private final long newer;
+    private final long batchLimit;
+    private final boolean full;
+    private final String sort;
+    private final String ids;
 
     public BatchingDownloaderDelegate(final BatchingDownloader downloader,
                                       final RepositorySessionFetchRecordsDelegate fetchRecordsDelegate,
@@ -46,7 +49,7 @@ public class BatchingDownloaderDelegate extends WBOCollectionRequestDelegate {
 
     @Override
     public AuthHeaderProvider getAuthHeaderProvider() {
-        return this.downloader.getServerRepository().getAuthHeaderProvider();
+        return this.downloader.authHeaderProvider;
     }
 
     @Override
@@ -70,7 +73,18 @@ public class BatchingDownloaderDelegate extends WBOCollectionRequestDelegate {
 
     @Override
     public void handleRequestFailure(SyncStorageResponse response) {
-        this.handleRequestError(new HTTPFailureException(response));
+        Logger.warn(LOG_TAG, "Got a non-success response.");
+        
+        
+        if (response.getStatusCode() == 412) {
+            this.downloader.onFetchFailed(
+                    new ConcurrentModificationException(),
+                    this.fetchRecordsDelegate,
+                    this.request
+            );
+        } else {
+            this.handleRequestError(new HTTPFailureException(response));
+        }
     }
 
     @Override

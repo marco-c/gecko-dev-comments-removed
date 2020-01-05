@@ -4,28 +4,30 @@
 
 package org.mozilla.gecko.sync.repositories.downloaders;
 
+import android.net.Uri;
+import android.os.SystemClock;
 import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 
 import org.mozilla.gecko.background.common.log.Logger;
 import org.mozilla.gecko.sync.CryptoRecord;
 import org.mozilla.gecko.sync.DelayedWorkTracker;
+import org.mozilla.gecko.sync.Utils;
+import org.mozilla.gecko.sync.net.AuthHeaderProvider;
 import org.mozilla.gecko.sync.net.SyncResponse;
 import org.mozilla.gecko.sync.net.SyncStorageCollectionRequest;
 import org.mozilla.gecko.sync.net.SyncStorageResponse;
-import org.mozilla.gecko.sync.repositories.Server11Repository;
-import org.mozilla.gecko.sync.repositories.Server11RepositorySession;
+import org.mozilla.gecko.sync.repositories.RepositorySession;
 import org.mozilla.gecko.sync.repositories.delegates.RepositorySessionFetchRecordsDelegate;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URLEncoder;
 import java.util.Collections;
+import java.util.ConcurrentModificationException;
 import java.util.HashSet;
 import java.util.Set;
-
-
+import java.util.concurrent.TimeUnit;
 
 
 
@@ -51,19 +53,29 @@ import java.util.Set;
 
 public class BatchingDownloader {
     public static final String LOG_TAG = "BatchingDownloader";
+    private static final String DEFAULT_SORT_ORDER = "index";
 
-    protected final Server11Repository repository;
-    private final Server11RepositorySession repositorySession;
+    private final RepositorySession repositorySession;
     private final DelayedWorkTracker workTracker = new DelayedWorkTracker();
+    private final Uri baseCollectionUri;
+    private final boolean allowMultipleBatches;
+
+     final AuthHeaderProvider authHeaderProvider;
+
     
     @VisibleForTesting
     protected final Set<SyncStorageCollectionRequest> pending = Collections.synchronizedSet(new HashSet<SyncStorageCollectionRequest>());
      private String lastModified;
-     private long numRecords = 0;
 
-    public BatchingDownloader(final Server11Repository repository, final Server11RepositorySession repositorySession) {
-        this.repository = repository;
+    public BatchingDownloader(
+            AuthHeaderProvider authHeaderProvider,
+            Uri baseCollectionUri,
+            boolean allowMultipleBatches,
+            RepositorySession repositorySession) {
         this.repositorySession = repositorySession;
+        this.authHeaderProvider = authHeaderProvider;
+        this.baseCollectionUri = baseCollectionUri;
+        this.allowMultipleBatches = allowMultipleBatches;
     }
 
     @VisibleForTesting
@@ -94,23 +106,10 @@ public class BatchingDownloader {
                                     SyncStorageCollectionRequest request,
                                     RepositorySessionFetchRecordsDelegate fetchRecordsDelegate)
             throws URISyntaxException, UnsupportedEncodingException {
-        if (batchLimit > repository.getDefaultTotalLimit()) {
-            throw new IllegalArgumentException("Batch limit should not be greater than total limit");
-        }
-
         request.delegate = new BatchingDownloaderDelegate(this, fetchRecordsDelegate, request,
                 newer, batchLimit, full, sort, ids);
         this.pending.add(request);
         request.get();
-    }
-
-    @VisibleForTesting
-    @Nullable
-    protected String encodeParam(String param) throws UnsupportedEncodingException {
-        if (param != null) {
-            return URLEncoder.encode(param, "UTF-8");
-        }
-        return null;
     }
 
     @VisibleForTesting
@@ -121,25 +120,22 @@ public class BatchingDownloader {
                                                   String ids,
                                                   String offset)
             throws URISyntaxException, UnsupportedEncodingException {
-        URI collectionURI = repository.collectionURI(full, newer, batchLimit, sort, ids, encodeParam(offset));
+        final URI collectionURI = buildCollectionURI(baseCollectionUri, full, newer, batchLimit, sort, ids, offset);
         Logger.debug(LOG_TAG, collectionURI.toString());
 
         return new SyncStorageCollectionRequest(collectionURI);
     }
 
-    public void fetchSince(long timestamp, RepositorySessionFetchRecordsDelegate fetchRecordsDelegate) {
-        this.fetchSince(timestamp, null, fetchRecordsDelegate);
+    public void fetchSince(RepositorySessionFetchRecordsDelegate fetchRecordsDelegate, long timestamp, long batchLimit, String sortOrder) {
+        this.fetchSince(fetchRecordsDelegate, timestamp, batchLimit, sortOrder, null);
     }
 
-    private void fetchSince(long timestamp, String offset,
-                           RepositorySessionFetchRecordsDelegate fetchRecordsDelegate) {
-        long batchLimit = repository.getDefaultBatchLimit();
-        String sort = repository.getDefaultSort();
-
+    @VisibleForTesting
+    public void fetchSince(RepositorySessionFetchRecordsDelegate fetchRecordsDelegate, long timestamp, long batchLimit, String sortOrder, String offset) {
         try {
             SyncStorageCollectionRequest request = makeSyncStorageCollectionRequest(timestamp,
-                    batchLimit, true, sort, null, offset);
-            this.fetchWithParameters(timestamp, batchLimit, true, sort, null, request, fetchRecordsDelegate);
+                    batchLimit, true, sortOrder, null, offset);
+            this.fetchWithParameters(timestamp, batchLimit, true, sortOrder, null, request, fetchRecordsDelegate);
         } catch (URISyntaxException | UnsupportedEncodingException e) {
             fetchRecordsDelegate.onFetchFailed(e);
         }
@@ -147,19 +143,14 @@ public class BatchingDownloader {
 
     public void fetch(String[] guids, RepositorySessionFetchRecordsDelegate fetchRecordsDelegate) {
         String ids = flattenIDs(guids);
-        String index = "index";
 
         try {
             SyncStorageCollectionRequest request = makeSyncStorageCollectionRequest(
-                    -1, -1, true, index, ids, null);
-            this.fetchWithParameters(-1, -1, true, index, ids, request, fetchRecordsDelegate);
+                    -1, -1, true, DEFAULT_SORT_ORDER, ids, null);
+            this.fetchWithParameters(-1, -1, true, DEFAULT_SORT_ORDER, ids, request, fetchRecordsDelegate);
         } catch (URISyntaxException | UnsupportedEncodingException e) {
             fetchRecordsDelegate.onFetchFailed(e);
         }
-    }
-
-    public Server11Repository getServerRepository() {
-        return this.repository;
     }
 
     public void onFetchCompleted(SyncStorageResponse response,
@@ -173,14 +164,11 @@ public class BatchingDownloader {
         
         
         
-        final String currentLastModifiedTimestamp = response.lastModified();
-        Logger.debug(LOG_TAG, "Last modified timestamp " + currentLastModifiedTimestamp);
+        
 
         
-        if (currentLastModifiedTimestamp == null) {
-            this.abort(fetchRecordsDelegate, "Last modified timestamp is missing");
-            return;
-        }
+        final String currentLastModifiedTimestamp = response.lastModified();
+        Logger.debug(LOG_TAG, "Last modified timestamp " + currentLastModifiedTimestamp);
 
         final boolean lastModifiedChanged;
         synchronized (this) {
@@ -191,22 +179,49 @@ public class BatchingDownloader {
             lastModifiedChanged = !this.lastModified.equals(currentLastModifiedTimestamp);
         }
 
+        
+        
         if (lastModifiedChanged) {
-            this.abort(fetchRecordsDelegate, "Last modified timestamp has changed unexpectedly");
+            this.abort(
+                    fetchRecordsDelegate,
+                    new ConcurrentModificationException("Last-modified timestamp has changed unexpectedly")
+            );
             return;
         }
 
-        final boolean hasNotReachedLimit;
-        synchronized (this) {
-            this.numRecords += response.weaveRecords();
-            hasNotReachedLimit = this.numRecords < repository.getDefaultTotalLimit();
+        
+        final String offset = response.weaveOffset();
+        if (offset == null || !allowMultipleBatches) {
+            final long normalizedTimestamp = response.normalizedTimestampForHeader(SyncResponse.X_LAST_MODIFIED);
+            Logger.debug(LOG_TAG, "Fetch completed. Timestamp is " + normalizedTimestamp);
+
+            this.workTracker.delayWorkItem(new Runnable() {
+                @Override
+                public void run() {
+                    Logger.debug(LOG_TAG, "Delayed onFetchCompleted running.");
+                    fetchRecordsDelegate.onFetchCompleted(normalizedTimestamp);
+                }
+            });
+            return;
         }
 
-        final String offset = response.weaveOffset();
-        final SyncStorageCollectionRequest newRequest;
+        
+        
+        
+        
+        this.workTracker.delayWorkItem(new Runnable() {
+            @Override
+            public void run() {
+                Logger.debug(LOG_TAG, "Running onBatchCompleted.");
+                fetchRecordsDelegate.onBatchCompleted();
+            }
+        });
+
+        
         try {
-            newRequest = makeSyncStorageCollectionRequest(newer,
+            final SyncStorageCollectionRequest newRequest = makeSyncStorageCollectionRequest(newer,
                     limit, full, sort, ids, offset);
+            this.fetchWithParameters(newer, limit, full, sort, ids, newRequest, fetchRecordsDelegate);
         } catch (final URISyntaxException | UnsupportedEncodingException e) {
             this.workTracker.delayWorkItem(new Runnable() {
                 @Override
@@ -215,34 +230,7 @@ public class BatchingDownloader {
                     fetchRecordsDelegate.onFetchFailed(e);
                 }
             });
-            return;
         }
-
-        if (offset != null && hasNotReachedLimit) {
-            try {
-                this.fetchWithParameters(newer, limit, full, sort, ids, newRequest, fetchRecordsDelegate);
-            } catch (final URISyntaxException | UnsupportedEncodingException e) {
-                this.workTracker.delayWorkItem(new Runnable() {
-                    @Override
-                    public void run() {
-                        Logger.debug(LOG_TAG, "Delayed onFetchCompleted running.");
-                        fetchRecordsDelegate.onFetchFailed(e, null);
-                    }
-                });
-            }
-            return;
-        }
-
-        final long normalizedTimestamp = response.normalizedTimestampForHeader(SyncResponse.X_LAST_MODIFIED);
-        Logger.debug(LOG_TAG, "Fetch completed. Timestamp is " + normalizedTimestamp);
-
-        this.workTracker.delayWorkItem(new Runnable() {
-            @Override
-            public void run() {
-                Logger.debug(LOG_TAG, "Delayed onFetchCompleted running.");
-                fetchRecordsDelegate.onFetchCompleted(normalizedTimestamp);
-            }
-        });
     }
 
     public void onFetchFailed(final Exception ex,
@@ -294,17 +282,44 @@ public class BatchingDownloader {
         return this.lastModified;
     }
 
-    private void abort(final RepositorySessionFetchRecordsDelegate delegate, final String msg) {
-        Logger.error(LOG_TAG, msg);
+    private void abort(final RepositorySessionFetchRecordsDelegate delegate, final Exception exception) {
+        Logger.error(LOG_TAG, exception.getMessage());
         this.abortRequests();
         this.workTracker.delayWorkItem(new Runnable() {
             @Override
             public void run() {
                 Logger.debug(LOG_TAG, "Delayed onFetchCompleted running.");
-                delegate.onFetchFailed(
-                        new IllegalStateException(msg),
-                        null);
+                delegate.onFetchFailed(exception);
             }
         });
+    }
+    @VisibleForTesting
+    public static URI buildCollectionURI(Uri baseCollectionUri, boolean full, long newer, long limit, String sort, String ids, String offset) throws URISyntaxException {
+        Uri.Builder uriBuilder = baseCollectionUri.buildUpon();
+
+        if (full) {
+            uriBuilder.appendQueryParameter("full", "1");
+        }
+
+        if (newer >= 0) {
+            
+            String newerString = Utils.millisecondsToDecimalSecondsString(newer);
+            uriBuilder.appendQueryParameter("newer", newerString);
+        }
+        if (limit > 0) {
+            uriBuilder.appendQueryParameter("limit", Long.toString(limit));
+        }
+        if (sort != null) {
+            uriBuilder.appendQueryParameter("sort", sort); 
+        }
+        if (ids != null) {
+            uriBuilder.appendQueryParameter("ids", ids); 
+        }
+        if (offset != null) {
+            
+            uriBuilder.appendQueryParameter("offset", offset);
+        }
+
+        return new URI(uriBuilder.build().toString());
     }
 }

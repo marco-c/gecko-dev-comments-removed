@@ -16,36 +16,45 @@ import org.mozilla.gecko.sync.net.AuthHeaderProvider;
 
 
 
+
 public class ConstrainedServer11Repository extends Server11Repository {
-
-  private final String sort;
+  private final String sortOrder;
   private final long batchLimit;
-  private final long totalLimit;
+  private final boolean allowMultipleBatches;
 
-  public ConstrainedServer11Repository(String collection, String storageURL,
-                                       AuthHeaderProvider authHeaderProvider,
-                                       InfoCollections infoCollections,
-                                       InfoConfiguration infoConfiguration,
-                                       long batchLimit, long totalLimit, String sort)
-          throws URISyntaxException {
-    super(collection, storageURL, authHeaderProvider, infoCollections, infoConfiguration);
+  public ConstrainedServer11Repository(
+          String collection,
+          String storageURL,
+          AuthHeaderProvider authHeaderProvider,
+          InfoCollections infoCollections,
+          InfoConfiguration infoConfiguration,
+          long batchLimit,
+          String sort,
+          boolean allowMultipleBatches) throws URISyntaxException {
+    super(
+            collection,
+            storageURL,
+            authHeaderProvider,
+            infoCollections,
+            infoConfiguration
+    );
     this.batchLimit = batchLimit;
-    this.totalLimit = totalLimit;
-    this.sort  = sort;
+    this.sortOrder  = sort;
+    this.allowMultipleBatches = allowMultipleBatches;
   }
 
   @Override
-  public String getDefaultSort() {
-    return sort;
+  public String getSortOrder() {
+    return sortOrder;
   }
 
   @Override
-  public long getDefaultBatchLimit() {
+  public Long getBatchLimit() {
     return batchLimit;
   }
 
   @Override
-  public long getDefaultTotalLimit() {
-    return totalLimit;
+  public boolean getAllowMultipleBatches() {
+    return allowMultipleBatches;
   }
 }
