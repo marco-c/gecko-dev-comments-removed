@@ -283,77 +283,61 @@ def check_rust(file_name, lines):
         
         line = re.sub('^#[A-Za-z0-9\(\)\[\]_]*?$', '', line)
 
-        match = re.search(r",[^\s]", line)
-        if match and '$' not in line:
-            yield (idx + 1, "missing space after ,")
-
-        if line_is_attribute(line):
-            pre_space_re = r"[A-Za-z0-9]="
-            post_space_re = r"=[A-Za-z0-9\"]"
-        else:
-            
-            pre_space_re = r"[A-Za-z0-9][\+/\*%=]"
-            
-            
-            post_space_re = r"[\+/\%=][A-Za-z0-9\"]"
-
-        match = re.search(pre_space_re, line)
-        if match and not is_associated_type(match, line, 1):
-            yield (idx + 1, "missing space before %s" % match.group(0)[1])
-
-        match = re.search(post_space_re, line)
-        if match and not is_associated_type(match, line, 0):
-            yield (idx + 1, "missing space after %s" % match.group(0)[0])
-
-        match = re.search(r"\)->", line)
-        if match:
-            yield (idx + 1, "missing space before ->")
-
-        match = re.search(r"->[A-Za-z]", line)
-        if match:
-            yield (idx + 1, "missing space after ->")
-
-        line_len = len(line)
-        arrow_pos = line.find("=>")
-        if arrow_pos != -1:
-            if arrow_pos and line[arrow_pos - 1] != ' ':
-                yield (idx + 1, "missing space before =>")
-            if arrow_pos + 2 < line_len and line[arrow_pos + 2] != ' ':
-                yield (idx + 1, "missing space after =>")
-            elif arrow_pos + 3 < line_len and line[arrow_pos + 3] == ' ':
-                yield (idx + 1, "extra space after =>")
-
         
-        match = line.find(" :")
-        if match != -1:
-            if line[0:match].find('trait ') == -1 and line[match + 2] != ':':
-                yield (idx + 1, "extra space before :")
-
         
-        match = re.search(r"[^:]:[A-Za-z]", line)
-        if match:
+        no_filter = lambda match, line: True
+        regex_rules = [
+            (r",[^\s]", "missing space after ,", lambda match, line: '$' not in line),
+            (r"[A-Za-z0-9\"]=", "missing space before =",
+                lambda match, line: line_is_attribute(line)),
+            (r"=[A-Za-z0-9\"]", "missing space after =",
+                lambda match, line: line_is_attribute(line)),
             
-            if line[0:match.end()].rfind('$') == -1:
-                yield (idx + 1, "missing space after :")
+            (r"[A-DF-Za-df-z0-9]-", "missing space before -",
+                lambda match, line: not line_is_attribute(line)),
+            (r"[A-Za-z0-9]([\+/\*%=])", "missing space before {0}",
+                lambda match, line: (not line_is_attribute(line) and
+                                     not is_associated_type(match, line))),
+            
+            
+            (r'([\+/\%=])[A-Za-z0-9"]', "missing space after {0}",
+                lambda match, line: (not line_is_attribute(line) and
+                                     not is_associated_type(match, line))),
+            (r"\)->", "missing space before ->", no_filter),
+            (r"->[A-Za-z]", "missing space after ->", no_filter),
+            (r"[^ ]=>", "missing space before =>", lambda match, line: match.start() != 0),
+            (r"=>[^ ]", "missing space after =>", lambda match, line: match.end() != len(line)),
+            (r"=>  ", "extra space after =>", no_filter),
+            
+            (r" :[^:]", "extra space before :",
+                lambda match, line: 'trait ' not in line[:match.start()]),
+            
+            (r"[^:]:[A-Za-z]", "missing space after :",
+                lambda match, line: '$' not in line[:match.end()]),
+            (r"[A-Za-z0-9\)]{", "missing space before {", no_filter),
+            
+            (r"[^\s{}]}[^`]", "missing space before }",
+                lambda match, line: not re.match(r'^(pub )?use', line)),
+            
+            (r"[^`]{[^\s{}]", "missing space after {",
+                lambda match, line: not re.match(r'^(pub )?use', line)),
+            
+            (r": &Vec<", "use &[T] instead of &Vec<T>", no_filter),
+            
+            (r": &String", "use &str instead of &String", no_filter),
+        ]
 
-        match = re.search(r"[A-Za-z0-9\)]{", line)
-        if match:
-            yield (idx + 1, "missing space before {")
-
-        
-        match = re.search(r"[^\s{}]}[^`]", line)
-        if match and not (line.startswith("use") or line.startswith("pub use")):
-            yield (idx + 1, "missing space before }")
-
-        
-        match = re.search(r"[^`]{[^\s{}]", line)
-        if match and not (line.startswith("use") or line.startswith("pub use")):
-            yield (idx + 1, "missing space after {")
+        for pattern, message, filter_func in regex_rules:
+            for match in re.finditer(pattern, line):
+                if not filter_func(match, line):
+                    continue
+                yield (idx + 1, message.format(*match.groups(), **match.groupdict()))
 
         
         if line.startswith("extern crate "):
-            crate_name = line[len("extern crate "):-1]
-            indent = len(original_line) - line_len
+            
+            crate_name = line[13:-1]
+            indent = len(original_line) - len(line)
             if indent not in prev_crate:
                 prev_crate[indent] = ""
             if prev_crate[indent] > crate_name:
@@ -364,13 +348,13 @@ def check_rust(file_name, lines):
 
         
         
-        elif line.startswith("use "):
+        if line.startswith("use "):
             import_block = True
-            use = line[4:]
-            indent = len(original_line) - line_len
-            if not use.endswith(";"):
+            indent = len(original_line) - len(line)
+            if not line.endswith(";"):
                 yield (idx + 1, "use statement spans multiple lines")
-            current_use = use[:len(use) - 1]
+            
+            current_use = line[4:-1]
             if indent == current_indent and prev_use and current_use < prev_use:
                 yield(idx + 1, decl_message.format("use statement")
                       + decl_expected.format(prev_use)
@@ -381,22 +365,23 @@ def check_rust(file_name, lines):
         if whitespace or not import_block:
             current_indent = 0
 
+        
         if import_block and whitespace and line.startswith("use "):
             whitespace = False
             yield(idx, "encountered whitespace following a use statement")
 
         
         if line.startswith("mod ") or line.startswith("pub mod "):
-            indent = len(original_line) - line_len
-            mod = line[4:] if line.startswith("mod ") else line[8:]
+            indent = len(original_line) - len(line)
+            
+            mod = line[4:-1] if line.startswith("mod ") else line[8:-1]
 
-            if idx < 0 or "#[macro_use]" not in lines[idx - 1]:
+            if (idx - 1) < 0 or "#[macro_use]" not in lines[idx - 1]:
                 match = line.find(" {")
                 if indent not in prev_mod:
                     prev_mod[indent] = ""
-                if match == -1 and not mod.endswith(";"):
+                if match == -1 and not line.endswith(";"):
                     yield (idx + 1, "mod declaration spans multiple lines")
-                mod = mod[:len(mod) - 1]
                 if len(prev_mod[indent]) > 0 and mod < prev_mod[indent]:
                     yield(idx + 1, decl_message.format("mod declaration")
                           + decl_expected.format(prev_mod[indent])
@@ -406,23 +391,16 @@ def check_rust(file_name, lines):
             
             prev_mod = {}
 
-        
-        if ": &Vec<" in line:
-            yield (idx + 1, "use &[T] instead of &Vec<T>")
-
-        
-        if ": &String" in line:
-            yield (idx + 1, "use &str instead of &String")
 
 
-
-def is_associated_type(match, line, index):
+def is_associated_type(match, line):
+    if match.group(1) != '=':
+        return False
     open_angle = line[0:match.end()].rfind('<')
     close_angle = line[open_angle:].find('>') if open_angle != -1 else -1
-    is_equals = match.group(0)[index] == '='
     generic_open = open_angle != -1 and open_angle < match.start()
     generic_close = close_angle != -1 and close_angle + open_angle >= match.end()
-    return is_equals and generic_open and generic_close
+    return generic_open and generic_close
 
 
 def line_is_attribute(line):
