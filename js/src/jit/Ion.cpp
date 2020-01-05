@@ -2560,6 +2560,11 @@ jit::CanEnter(JSContext* cx, RunState& state)
     }
 
     
+    
+    if (script->isIonCompilingOffThread())
+        return Method_Skipped;
+
+    
     bool constructing = state.isInvoke() && state.asInvoke()->constructing();
     MethodStatus status = Compile(cx, rscript, nullptr, nullptr, constructing);
     if (status != Method_Compiled) {
