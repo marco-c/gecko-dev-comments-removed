@@ -842,6 +842,7 @@ private:
   
   
   mozilla::TimeStamp mLastWheelProcessedTimeFromParent;
+  mozilla::TimeDuration mLastWheelProcessingDuration;
   CoalescedWheelData mCoalescedWheelData;
 
   AutoTArray<bool, NUMBER_OF_AUDIO_CHANNELS> mAudioChannelsActive;

@@ -1689,9 +1689,13 @@ TabChild::MaybeCoalesceWheelEvent(const WidgetWheelEvent& aEvent,
     
     
     
+    
+    
+    
     if (!mLastWheelProcessedTimeFromParent.IsNull() &&
         *aIsNextWheelEvent &&
-        aEvent.mTimeStamp < mLastWheelProcessedTimeFromParent &&
+        aEvent.mTimeStamp < (mLastWheelProcessedTimeFromParent +
+                             mLastWheelProcessingDuration) &&
         (mCoalescedWheelData.IsEmpty() ||
          mCoalescedWheelData.CanCoalesce(aEvent, aGuid, aInputBlockId))) {
       mCoalescedWheelData.Coalesce(aEvent, aGuid, aInputBlockId);
@@ -1759,8 +1763,8 @@ TabChild::RecvMouseWheelEvent(const WidgetWheelEvent& aEvent,
     mozilla::TimeStamp beforeDispatchingTime = TimeStamp::Now();
     MaybeDispatchCoalescedWheelEvent();
     DispatchWheelEvent(aEvent, aGuid, aInputBlockId);
-    mLastWheelProcessedTimeFromParent +=
-      (TimeStamp::Now() - beforeDispatchingTime);
+    mLastWheelProcessingDuration = (TimeStamp::Now() - beforeDispatchingTime);
+    mLastWheelProcessedTimeFromParent += mLastWheelProcessingDuration;
   } else {
     
     
