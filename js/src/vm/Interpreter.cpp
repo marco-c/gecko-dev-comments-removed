@@ -1174,47 +1174,26 @@ ProcessTryNotes(JSContext* cx, EnvironmentIter& ei, InterpreterRegs& regs)
             SettleOnTryNote(cx, tn, ei, regs);
             return FinallyContinuation;
 
-          case JSTRY_FOR_IN: {
-            
-            DebugOnly<jsbytecode*> pc = regs.fp()->script()->main() + tn->start + tn->length;
-            MOZ_ASSERT(JSOp(*pc) == JSOP_ENDITER);
-            Value* sp = regs.spForStackDepth(tn->stackDepth);
-            RootedObject obj(cx, &sp[-1].toObject());
-            if (!UnwindIteratorForException(cx, obj)) {
-                
-                
-                
-                
-                
-                SettleOnTryNote(cx, tn, ei, regs);
-                return ErrorReturnContinuation;
-            }
-            break;
-          }
-
+          case JSTRY_FOR_IN:
           case JSTRY_ITERCLOSE: {
             
+            DebugOnly<jsbytecode*> pc = regs.fp()->script()->main() + tn->start + tn->length;
+            MOZ_ASSERT_IF(tn->kind == JSTRY_FOR_IN, JSOp(*pc) == JSOP_ENDITER);
             Value* sp = regs.spForStackDepth(tn->stackDepth);
-            RootedObject iterObject(cx, &sp[-1].toObject());
-            if (!IteratorCloseForException(cx, iterObject)) {
+            RootedObject obj(cx, &sp[-1].toObject());
+            bool ok;
+            if (tn->kind == JSTRY_FOR_IN)
+                ok = UnwindIteratorForException(cx, obj);
+            else
+                ok = IteratorCloseForException(cx, obj);
+            if (!ok) {
+                
+                
+                
+                
+                
                 SettleOnTryNote(cx, tn, ei, regs);
                 return ErrorReturnContinuation;
-            }
-            break;
-          }
-
-          case JSTRY_DESTRUCTURING_ITERCLOSE: {
-            
-            
-            MOZ_ASSERT(tn->stackDepth > 1);
-            Value* sp = regs.spForStackDepth(tn->stackDepth);
-            MOZ_ASSERT(sp[-1].isBoolean());
-            if (sp[-1].isFalse()) {
-                RootedObject iterObject(cx, &sp[-2].toObject());
-                if (!IteratorCloseForException(cx, iterObject)) {
-                    SettleOnTryNote(cx, tn, ei, regs);
-                    return ErrorReturnContinuation;
-                }
             }
             break;
           }
