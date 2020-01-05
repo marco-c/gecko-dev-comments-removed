@@ -145,6 +145,25 @@ public:
   void ContentInserted(nsINode* aContainer, nsIContent* aChild);
   void ContentAppended(nsIContent* aContainer, nsIContent* aFirstNewContent);
 
+  
+  
+  
+  
+  
+  void ContentRemoved(nsINode* aContainer,
+                      nsIContent* aOldChild,
+                      nsIContent* aFollowingSibling);
+
+  
+  
+  
+  void RestyleForInsertOrChange(nsINode* aContainer, nsIContent* aChild);
+
+  
+  
+  
+  void RestyleForAppend(nsIContent* aContainer, nsIContent* aFirstNewContent);
+
   MOZ_DECL_STYLO_METHODS(GeckoRestyleManager, ServoRestyleManager)
 
   inline void PostRestyleEvent(dom::Element* aElement,
@@ -155,13 +174,6 @@ public:
   inline void PostRebuildAllStyleDataEvent(nsChangeHint aExtraHint,
                                            nsRestyleHint aRestyleHint);
   inline void ProcessPendingRestyles();
-  inline void ContentRemoved(nsINode* aContainer,
-                             nsIContent* aOldChild,
-                             nsIContent* aFollowingSibling);
-  inline void RestyleForInsertOrChange(nsINode* aContainer,
-                                       nsIContent* aChild);
-  inline void RestyleForAppend(nsIContent* aContainer,
-                               nsIContent* aFirstNewContent);
   inline nsresult ContentStateChanged(nsIContent* aContent,
                                       EventStates aStateMask);
   inline void AttributeWillChange(dom::Element* aElement,
@@ -184,6 +196,8 @@ protected:
     MOZ_ASSERT(!mAnimationsWithDestroyedFrame,
                "leaving dangling pointers from AnimationsWithDestroyedFrame");
   }
+
+  void RestyleForEmptyChange(Element* aContainer);
 
   void ContentStateChangedInternal(Element* aElement,
                                    EventStates aStateMask,

@@ -216,30 +216,7 @@ public:
                           nsStyleContext* aOldStyleContext,
                           RefPtr<nsStyleContext>* aNewStyleContext );
 
-private:
-  void RestyleForEmptyChange(Element* aContainer);
-
 public:
-  
-  
-  
-  
-  
-  
-  
-  void ContentRemoved(nsINode* aContainer, nsIContent* aOldChild,
-                      nsIContent* aFollowingSibling);
-
-  
-  
-  
-  void RestyleForInsertOrChange(nsINode* aContainer, nsIContent* aChild);
-
-  
-  
-  
-  void RestyleForAppend(nsIContent* aContainer, nsIContent* aFirstNewContent);
-
   
   
   
