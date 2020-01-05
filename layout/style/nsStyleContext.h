@@ -21,6 +21,15 @@ namespace mozilla {
 enum class CSSPseudoElementType : uint8_t;
 } 
 
+extern "C" {
+#define STYLE_STRUCT(name_, checkdata_cb_)     \
+  struct nsStyle##name_;                       \
+  const nsStyle##name_* Servo_GetStyle##name_( \
+    ServoComputedValuesBorrowedOrNull computed_values);
+#include "nsStyleStructList.h"
+#undef STYLE_STRUCT
+}
+
 
 
 

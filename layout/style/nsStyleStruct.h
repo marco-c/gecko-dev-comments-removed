@@ -47,11 +47,6 @@ class nsTextFrame;
 class imgIContainer;
 struct nsStyleVisibility;
 
-typedef nsINode RawGeckoNode;
-typedef mozilla::dom::Element RawGeckoElement;
-typedef nsIDocument RawGeckoDocument;
-struct ServoNodeData;
-
 
 #include "nsStyleStructFwd.h"
 
@@ -574,10 +569,6 @@ struct nsStyleImageLayers {
 
   static bool IsInitialPositionForLayerType(mozilla::Position aPosition, LayerType aType);
 
-  static float GetInitialPositionForLayerType(LayerType aType) {
-    return (aType == LayerType::Background) ? 0.0f : 0.5f;
-  }
-
   struct Size;
   friend struct Size;
   struct Size {
@@ -649,7 +640,10 @@ struct nsStyleImageLayers {
     
     Repeat() {}
 
-    bool IsInitialValue(LayerType aType) const;
+    bool IsInitialValue() const {
+      return mXRepeat == NS_STYLE_IMAGELAYER_REPEAT_REPEAT &&
+             mYRepeat == NS_STYLE_IMAGELAYER_REPEAT_REPEAT;
+    }
 
     bool DependsOnPositioningAreaSize() const {
       return mXRepeat == NS_STYLE_IMAGELAYER_REPEAT_SPACE ||
@@ -657,7 +651,10 @@ struct nsStyleImageLayers {
     }
 
     
-    void SetInitialValues(LayerType aType);
+    void SetInitialValues() {
+      mXRepeat = NS_STYLE_IMAGELAYER_REPEAT_REPEAT;
+      mYRepeat = NS_STYLE_IMAGELAYER_REPEAT_REPEAT;
+    }
 
     bool operator==(const Repeat& aOther) const {
       return mXRepeat == aOther.mXRepeat &&
@@ -1507,8 +1504,10 @@ struct nsStyleGridLine
   nsString mLineName;  
 
   
-  static const int32_t kMinLine;
-  static const int32_t kMaxLine;
+  
+  
+  static const int32_t kMinLine = -10000;
+  static const int32_t kMaxLine = 10000;
 
   nsStyleGridLine()
     : mHasSpan(false)
@@ -2711,7 +2710,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay
   uint8_t mOverflowY;           
   uint8_t mOverflowClipBox;     
   uint8_t mResize;              
-  uint8_t mOrient;              
+  mozilla::StyleOrient mOrient; 
   uint8_t mIsolation;           
   uint8_t mTopLayer;            
   uint8_t mWillChangeBitField;  
@@ -3173,8 +3172,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleContent
     mResets[aIndex].mValue = aValue;
   }
 
-  nsStyleCoord  mMarkerOffset;  
-
 protected:
   nsTArray<nsStyleContentData> mContents;
   nsTArray<nsStyleCounterData> mIncrements;
@@ -3211,11 +3208,11 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleUIReset
            nsChangeHint_ClearAncestorIntrinsics;
   }
 
-  mozilla::StyleUserSelect mUserSelect;   
-  uint8_t   mForceBrokenImageIcon; 
-  uint8_t   mIMEMode;         
-  uint8_t   mWindowDragging;  
-  uint8_t   mWindowShadow;    
+  mozilla::StyleUserSelect     mUserSelect;     
+  uint8_t mForceBrokenImageIcon; 
+  uint8_t                      mIMEMode;        
+  mozilla::StyleWindowDragging mWindowDragging; 
+  uint8_t                      mWindowShadow;   
 };
 
 struct nsCursorImage
@@ -3285,8 +3282,8 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleUserInterface
     return nsChangeHint_NeedReflow;
   }
 
-  uint8_t                   mUserInput;       
-  uint8_t                   mUserModify;      
+  mozilla::StyleUserInput   mUserInput;       
+  mozilla::StyleUserModify  mUserModify;      
   mozilla::StyleUserFocus   mUserFocus;       
   uint8_t                   mPointerEvents;   
 
@@ -3370,7 +3367,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleColumn
 
 
 
-  static const uint32_t kMaxColumnCount;
+  static const uint32_t kMaxColumnCount = 1000;
 
   uint32_t     mColumnCount; 
   nsStyleCoord mColumnWidth; 

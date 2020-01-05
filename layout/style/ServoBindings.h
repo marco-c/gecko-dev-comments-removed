@@ -7,18 +7,14 @@
 #ifndef mozilla_ServoBindings_h
 #define mozilla_ServoBindings_h
 
+#include <stdint.h>
+
 #include "mozilla/ServoTypes.h"
+#include "mozilla/ServoBindingTypes.h"
 #include "mozilla/ServoElementSnapshot.h"
 #include "mozilla/css/SheetParsingMode.h"
-#include "mozilla/dom/Element.h"
-#include "nsIDocument.h"
-#include "nsINode.h"
 #include "nsChangeHint.h"
-#include "nsColor.h"
-#include "nsProxyRelease.h"
-#include "nsStyleCoord.h"
 #include "nsStyleStruct.h"
-#include "stdint.h"
 
 
 
@@ -38,99 +34,13 @@ namespace mozilla {
 }
 using mozilla::FontFamilyList;
 using mozilla::FontFamilyType;
-using mozilla::dom::Element;
 using mozilla::ServoElementSnapshot;
-struct ServoComputedValues;
-struct RawServoStyleSheet;
-struct RawServoStyleSet;
-class nsHTMLCSSStyleSheet;
 struct nsStyleList;
 struct nsStyleImage;
 struct nsStyleGradientStop;
 class nsStyleGradient;
 class nsStyleCoord;
 struct nsStyleDisplay;
-struct RawServoDeclarationBlock;
-
-namespace mozilla {
-namespace dom {
-class StyleChildrenIterator;
-}
-}
-
-using mozilla::dom::StyleChildrenIterator;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#define DECL_BORROWED_REF_TYPE_FOR(type_) typedef type_ const* type_##Borrowed;
-#define DECL_NULLABLE_BORROWED_REF_TYPE_FOR(type_) typedef type_ const* type_##BorrowedOrNull;
-#define DECL_BORROWED_MUT_REF_TYPE_FOR(type_) typedef type_* type_##BorrowedMut;
-#define DECL_NULLABLE_BORROWED_MUT_REF_TYPE_FOR(type_) typedef type_* type_##BorrowedMutOrNull;
-
-#define DECL_ARC_REF_TYPE_FOR(type_)         \
-  DECL_NULLABLE_BORROWED_REF_TYPE_FOR(type_) \
-  DECL_BORROWED_REF_TYPE_FOR(type_)          \
-  struct MOZ_MUST_USE_TYPE type_##Strong     \
-  {                                          \
-    type_* mPtr;                             \
-    already_AddRefed<type_> Consume();       \
-  };
-
-#define DECL_OWNED_REF_TYPE_FOR(type_)    \
-  typedef type_* type_##Owned;            \
-  DECL_BORROWED_REF_TYPE_FOR(type_)       \
-  DECL_BORROWED_MUT_REF_TYPE_FOR(type_)
-
-#define DECL_NULLABLE_OWNED_REF_TYPE_FOR(type_)    \
-  typedef type_* type_##OwnedOrNull;               \
-  DECL_NULLABLE_BORROWED_REF_TYPE_FOR(type_)       \
-  DECL_NULLABLE_BORROWED_MUT_REF_TYPE_FOR(type_)
-
-DECL_ARC_REF_TYPE_FOR(ServoComputedValues)
-DECL_ARC_REF_TYPE_FOR(RawServoStyleSheet)
-DECL_ARC_REF_TYPE_FOR(RawServoDeclarationBlock)
-
-
-DECL_NULLABLE_BORROWED_REF_TYPE_FOR(RawServoDeclarationBlockStrong)
-
-DECL_OWNED_REF_TYPE_FOR(RawServoStyleSet)
-DECL_NULLABLE_OWNED_REF_TYPE_FOR(StyleChildrenIterator)
-DECL_OWNED_REF_TYPE_FOR(StyleChildrenIterator)
-
-
-
-
-
-
-DECL_BORROWED_REF_TYPE_FOR(RawGeckoNode)
-DECL_NULLABLE_BORROWED_REF_TYPE_FOR(RawGeckoNode)
-DECL_BORROWED_REF_TYPE_FOR(RawGeckoElement)
-DECL_NULLABLE_BORROWED_REF_TYPE_FOR(RawGeckoElement)
-DECL_BORROWED_REF_TYPE_FOR(RawGeckoDocument)
-DECL_NULLABLE_BORROWED_REF_TYPE_FOR(RawGeckoDocument)
-DECL_BORROWED_MUT_REF_TYPE_FOR(StyleChildrenIterator)
-
-#undef DECL_ARC_REF_TYPE_FOR
-#undef DECL_OWNED_REF_TYPE_FOR
-#undef DECL_NULLABLE_OWNED_REF_TYPE_FOR
-#undef DECL_BORROWED_REF_TYPE_FOR
-#undef DECL_NULLABLE_BORROWED_REF_TYPE_FOR
-#undef DECL_BORROWED_MUT_REF_TYPE_FOR
-#undef DECL_NULLABLE_BORROWED_MUT_REF_TYPE_FOR
-
 
 #define NS_DECL_THREADSAFE_FFI_REFCOUNTING(class_, name_)                     \
   void Gecko_AddRef##name_##ArbitraryThread(class_* aPtr);                    \
@@ -333,7 +243,6 @@ NS_DECL_THREADSAFE_FFI_REFCOUNTING(nsStyleQuoteValues, QuoteValues);
 
 
 #define STYLE_STRUCT(name, checkdata_cb)                                       \
-  struct nsStyle##name;                                                        \
   void Gecko_Construct_nsStyle##name(nsStyle##name* ptr);                      \
   void Gecko_CopyConstruct_nsStyle##name(nsStyle##name* ptr,                   \
                                          const nsStyle##name* other);          \

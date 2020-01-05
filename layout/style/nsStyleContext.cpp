@@ -36,6 +36,10 @@
 #include "nsLayoutUtils.h"
 #include "nsCoord.h"
 
+
+
+#include "mozilla/ServoBindings.h"
+
 using namespace mozilla;
 
 
