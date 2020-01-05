@@ -299,6 +299,7 @@ ul.children + .tag-line::before {
 
 .theme-firebug .theme-fg-color3 {
   color: var(--theme-graphs-full-blue);
+  font-weight: normal;
 }
 
 .theme-firebug .open,
@@ -336,9 +337,18 @@ ul.children + .tag-line::before {
 }
 
 
+.doctype {
+  font-style: italic;
+}
+
+.theme-firebug .doctype {
+  color: #787878;
+}
+
+
 .not-displayed .open,
 .not-displayed .close {
-  opacity: .7;
+  opacity: .5;
 }
 
 
