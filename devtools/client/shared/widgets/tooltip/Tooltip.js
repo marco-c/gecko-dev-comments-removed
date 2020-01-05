@@ -357,14 +357,11 @@ Tooltip.prototype = {
 
 
 
-
-
   setTextContent: function (
     {
       messages,
       messagesClass,
-      containerClass,
-      isAlertTooltip
+      containerClass
     },
     extraButtons = []) {
     messagesClass = messagesClass || "default-tooltip-simple-text-colors";
@@ -390,18 +387,7 @@ Tooltip.prototype = {
       vbox.appendChild(button);
     }
 
-    if (isAlertTooltip) {
-      let hbox = this.doc.createElement("hbox");
-      hbox.setAttribute("align", "start");
-
-      let alertImg = this.doc.createElement("image");
-      alertImg.className = "devtools-tooltip-alert-icon";
-      hbox.appendChild(alertImg);
-      hbox.appendChild(vbox);
-      this.content = hbox;
-    } else {
-      this.content = vbox;
-    }
+    this.content = vbox;
   },
 
   
