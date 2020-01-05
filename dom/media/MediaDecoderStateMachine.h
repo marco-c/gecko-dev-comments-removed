@@ -385,6 +385,10 @@ protected:
   
   bool HasLowDecodedData();
 
+  bool HasLowDecodedAudio();
+
+  bool HasLowDecodedVideo();
+
   bool OutOfDecodedAudio();
 
   bool OutOfDecodedVideo()
