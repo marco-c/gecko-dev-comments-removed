@@ -2168,6 +2168,10 @@ void DiagnosticsMatcher::NonParamInsideFunctionDeclChecker::run(
     return;
   }
 
+  if (func->isDeleted()) {
+    return;
+  }
+
   
   if (CheckedFunctionDecls.count(func)) {
     return;
