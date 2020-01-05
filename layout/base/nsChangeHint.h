@@ -34,6 +34,7 @@ enum nsChangeHint {
 
   
   
+  
   nsChangeHint_ClearDescendantIntrinsics = 1 << 3,
 
   
@@ -187,9 +188,11 @@ enum nsChangeHint {
 
 
 
+
   nsChangeHint_ReflowChangesSizeOrPosition = 1 << 23,
 
   
+
 
 
   nsChangeHint_UpdateComputedBSize = 1 << 24,
