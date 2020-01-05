@@ -122,7 +122,6 @@ VRDisplayPuppet::SetDisplayInfo(const VRDisplayInfo& aDisplayInfo)
 {
   
   mDisplayInfo.mEyeResolution = aDisplayInfo.mEyeResolution;
-  mDisplayInfo.mIsMounted = aDisplayInfo.mIsMounted;
   memcpy(&mDisplayInfo.mEyeFOV, &aDisplayInfo.mEyeFOV,
          sizeof(mDisplayInfo.mEyeFOV[0]) * VRDisplayInfo::NumEyes);
   memcpy(&mDisplayInfo.mEyeTranslation, &aDisplayInfo.mEyeTranslation,
