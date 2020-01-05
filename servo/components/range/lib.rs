@@ -2,17 +2,14 @@
 
 
 
-#![feature(custom_derive)]
-#![feature(plugin)]
 #![feature(proc_macro)]
 #![feature(rustc_attrs)]
 #![feature(step_trait)]
 
-#![plugin(heapsize_plugin)]
-
 #![deny(unsafe_code)]
 
 extern crate heapsize;
+#[macro_use] extern crate heapsize_derive;
 extern crate num_traits;
 extern crate rustc_serialize;
 extern crate serde;

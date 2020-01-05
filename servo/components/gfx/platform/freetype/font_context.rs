@@ -99,12 +99,18 @@ impl HeapSizeOf for FreeTypeLibraryHandle {
     }
 }
 
-#[derive(Clone, HeapSizeOf, Debug)]
+#[derive(Clone, Debug)]
 pub struct FontContextHandle {
     
     
     
     pub ctx: Rc<FreeTypeLibraryHandle>,
+}
+
+impl HeapSizeOf for FontContextHandle {
+    fn heap_size_of_children(&self) -> usize {
+        self.ctx.heap_size_of_children()
+    }
 }
 
 impl FontContextHandle {
