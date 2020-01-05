@@ -4,17 +4,17 @@
 
 
 
-#include "nsMediaSniffer.h"
-#include "nsIHttpChannel.h"
-#include "nsString.h"
-#include "nsMimeTypes.h"
+#include "FlacDemuxer.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/ModuleUtils.h"
 #include "mp3sniff.h"
 #include "nestegg/nestegg.h"
-#include "FlacDemuxer.h"
-
 #include "nsIClassInfoImpl.h"
+#include "nsIHttpChannel.h"
+#include "nsMediaSniffer.h"
+#include "nsMimeTypes.h"
+#include "nsString.h"
+
 #include <algorithm>
 
 
@@ -56,7 +56,8 @@ static bool MatchesBrands(const uint8_t aData[4], nsACString& aSniffedType)
   for (size_t i = 0; i < mozilla::ArrayLength(sFtypEntries); ++i) {
     const auto& currentEntry = sFtypEntries[i];
     bool matched = true;
-    MOZ_ASSERT(currentEntry.mLength <= 4, "Pattern is too large to match brand strings.");
+    MOZ_ASSERT(currentEntry.mLength <= 4,
+               "Pattern is too large to match brand strings.");
     for (uint32_t j = 0; j < currentEntry.mLength; ++j) {
       if ((currentEntry.mMask[j] & aData[j]) != currentEntry.mPattern[j]) {
         matched = false;
@@ -75,13 +76,16 @@ static bool MatchesBrands(const uint8_t aData[4], nsACString& aSniffedType)
 
 
 
-static bool MatchesMP4(const uint8_t* aData, const uint32_t aLength, nsACString& aSniffedType)
+static bool
+MatchesMP4(const uint8_t* aData, const uint32_t aLength,
+           nsACString& aSniffedType)
 {
   if (aLength <= MP4_MIN_BYTES_COUNT) {
     return false;
   }
   
-  uint32_t boxSize = (uint32_t)(aData[3] | aData[2] << 8 | aData[1] << 16 | aData[0] << 24);
+  uint32_t boxSize =
+    (uint32_t)(aData[3] | aData[2] << 8 | aData[1] << 16 | aData[0] << 24);
 
   
   if (boxSize % 4 || aLength < boxSize) {
