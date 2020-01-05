@@ -44,11 +44,11 @@ add_task(function* () {
   
   
   let btn = toolbox.doc.getElementById("command-button-frames");
-  ok(!btn.getAttribute("open"), "The open attribute must not be present");
+  ok(!btn.classList.contains("checked"), "The checked class must not be present");
   let menu = toolbox.showFramesMenu({target: btn});
   yield once(menu, "open");
 
-  is(btn.getAttribute("open"), "true", "The open attribute must be set");
+  ok(btn.classList.contains("checked"), "The checked class must be set");
 
   
   let frames = menu.items;

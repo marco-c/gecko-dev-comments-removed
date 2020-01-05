@@ -8,74 +8,78 @@ var {Toolbox} = require("devtools/client/framework/toolbox");
 var toolbox = null;
 
 function test() {
-  const URL = "data:text/plain;charset=UTF-8,Nothing to see here, move along";
+  Task.spawn(function* () {
+    const URL = "data:text/plain;charset=UTF-8,Nothing to see here, move along";
 
-  const TOOL_ID_1 = "jsdebugger";
-  const TOOL_ID_2 = "webconsole";
+    const TOOL_ID_1 = "jsdebugger";
+    const TOOL_ID_2 = "webconsole";
+    yield addTab(URL);
 
-  addTab(URL).then(() => {
-    let target = TargetFactory.forTab(gBrowser.selectedTab);
-    gDevTools.showToolbox(target, TOOL_ID_1, Toolbox.HostType.BOTTOM)
-             .then(aToolbox => {
-               toolbox = aToolbox;
-                
-               toolbox.selectTool(TOOL_ID_2)
-                       
-                       .then(highlightTab.bind(null, TOOL_ID_1))
-                       
-                       .then(checkHighlighted.bind(null, TOOL_ID_1))
-                       
-                       .then(() => toolbox.selectTool(TOOL_ID_1))
-                       
-                       
-                       .then(checkNoHighlightWhenSelected.bind(null, TOOL_ID_1))
-                       
-                       .then(() => toolbox.selectTool(TOOL_ID_2))
-                       
-                       .then(checkHighlighted.bind(null, TOOL_ID_1))
-                       
-                       .then(unhighlightTab.bind(null, TOOL_ID_1))
-                       
-                       .then(checkNoHighlight.bind(null, TOOL_ID_1))
-                       
-                       .then(() => executeSoon(() => {
-                         toolbox.destroy()
-                                 .then(() => {
-                                   toolbox = null;
-                                   gBrowser.removeCurrentTab();
-                                   finish();
-                                 });
-                       }));
-             });
+    const target = TargetFactory.forTab(gBrowser.selectedTab);
+    toolbox = yield gDevTools.showToolbox(target, TOOL_ID_1, Toolbox.HostType.BOTTOM)
+
+    
+    yield toolbox.selectTool(TOOL_ID_2)
+    
+    yield highlightTab(TOOL_ID_1);
+    
+    yield checkHighlighted(TOOL_ID_1);
+    
+    yield toolbox.selectTool(TOOL_ID_1);
+    
+    
+    yield checkNoHighlightWhenSelected(TOOL_ID_1);
+    
+    yield toolbox.selectTool(TOOL_ID_2);
+    
+    yield checkHighlighted(TOOL_ID_1);
+    
+    yield unhighlightTab(TOOL_ID_1);
+    
+    yield checkNoHighlight(TOOL_ID_1);
+
+    
+    executeSoon(() => {
+      toolbox.destroy().then(() => {
+        toolbox = null;
+        gBrowser.removeCurrentTab();
+        finish();
+      });
+    });
+  })
+  .catch(error => {
+    ok(false, "There was an error running the test.");
   });
 }
 
 function highlightTab(toolId) {
-  info("Highlighting tool " + toolId + "'s tab.");
-  toolbox.highlightTool(toolId);
+  info(`Highlighting tool ${toolId}'s tab.`);
+  return toolbox.highlightTool(toolId);
 }
 
 function unhighlightTab(toolId) {
-  info("Unhighlighting tool " + toolId + "'s tab.");
-  toolbox.unhighlightTool(toolId);
+  info(`Unhighlighting tool ${toolId}'s tab.`);
+  return toolbox.unhighlightTool(toolId);
 }
 
 function checkHighlighted(toolId) {
   let tab = toolbox.doc.getElementById("toolbox-tab-" + toolId);
-  ok(tab.hasAttribute("highlighted"), "The highlighted attribute is present");
-  ok(!tab.hasAttribute("selected") || tab.getAttribute("selected") != "true",
-     "The tab is not selected");
+  ok(tab.classList.contains("highlighted"),
+     `The highlighted class is present in ${toolId}.`);
+  ok(!tab.classList.contains("selected"),
+     `The tab is not selected in ${toolId}`);
 }
 
 function checkNoHighlightWhenSelected(toolId) {
   let tab = toolbox.doc.getElementById("toolbox-tab-" + toolId);
-  ok(tab.hasAttribute("highlighted"), "The highlighted attribute is present");
-  ok(tab.hasAttribute("selected") && tab.getAttribute("selected") == "true",
-     "and the tab is selected, so the orange glow will not be present.");
+  ok(tab.classList.contains("highlighted"),
+     `The highlighted class is present in ${toolId}`);
+  ok(tab.classList.contains("selected"),
+     `And the tab is selected, so the orange glow will not be present. in ${toolId}`);
 }
 
 function checkNoHighlight(toolId) {
   let tab = toolbox.doc.getElementById("toolbox-tab-" + toolId);
-  ok(!tab.hasAttribute("highlighted"),
-     "The highlighted attribute is not present");
+  ok(!tab.classList.contains("highlighted"),
+     `The highlighted class is not present in ${toolId}`);
 }

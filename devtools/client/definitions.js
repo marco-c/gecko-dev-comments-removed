@@ -470,6 +470,11 @@ exports.defaultThemes = [
 
 
 exports.ToolboxButtons = [
+  { id: "command-button-pick",
+    isTargetSupported: target => {
+      return target.activeTab && target.activeTab.traits.frames;
+    }
+  },
   { id: "command-button-frames",
     isTargetSupported: target => {
       return target.activeTab && target.activeTab.traits.frames;

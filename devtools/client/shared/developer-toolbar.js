@@ -10,7 +10,6 @@ const defer = require("devtools/shared/defer");
 const Services = require("Services");
 const { TargetFactory } = require("devtools/client/framework/target");
 const Telemetry = require("devtools/client/shared/telemetry");
-const {ViewHelpers} = require("devtools/client/shared/widgets/view-helpers");
 const {LocalizationHelper} = require("devtools/shared/l10n");
 const L10N = new LocalizationHelper("devtools/client/locales/toolbox.properties");
 const {Task} = require("devtools/shared/task");
@@ -73,65 +72,50 @@ var CommandUtils = {
 
 
 
-  createButtons: function (toolbarSpec, target, document, requisition) {
+
+
+
+
+
+
+
+
+
+  createCommandButtons: function (toolbarSpec, target, document, requisition,
+                                  createButtonState) {
     return util.promiseEach(toolbarSpec, typed => {
       
       return requisition.update(typed).then(() => {
-        let button = document.createElementNS(NS_XHTML, "button");
-
         
         let command = requisition.commandAssignment.value;
         if (command == null) {
           throw new Error("No command '" + typed + "'");
         }
-
-        if (command.buttonId != null) {
-          button.id = command.buttonId;
-          if (command.buttonClass != null) {
-            button.className = command.buttonClass;
-          }
-        } else {
-          button.setAttribute("text-as-image", "true");
-          button.setAttribute("label", command.name);
+        if (!command.buttonId) {
+          throw new Error("Attempting to add a button to the toolbar, and the command " +
+                          "did not have an id.");
         }
-
-        button.classList.add("devtools-button");
-
-        if (command.tooltipText != null) {
-          button.setAttribute("title", command.tooltipText);
-        } else if (command.description != null) {
-          button.setAttribute("title", command.description);
-        }
-
-        button.addEventListener("click",
-          requisition.updateExec.bind(requisition, typed));
-
-        button.addEventListener("keypress", (event) => {
-          if (ViewHelpers.isSpaceOrReturn(event)) {
-            event.preventDefault();
-            requisition.updateExec(typed);
-          }
-        }, false);
+        
+        let button = createButtonState({
+          id: command.buttonId,
+          className: command.buttonClass,
+          description: command.tooltipText || command.description,
+          onClick: requisition.updateExec.bind(requisition, typed)
+        });
 
         
-        let onChange = null;
         if (command.state) {
-          button.setAttribute("autocheck", false);
-
           
 
 
 
 
 
-          onChange = (eventName, ev) => {
+          const onChange = (eventName, ev) => {
             if (ev.target == target || ev.tab == target.tab) {
               let updateChecked = (checked) => {
-                if (checked) {
-                  button.setAttribute("checked", true);
-                } else if (button.hasAttribute("checked")) {
-                  button.removeAttribute("checked");
-                }
+                
+                button.isChecked = checked;
               };
 
               
@@ -150,14 +134,13 @@ var CommandUtils = {
 
           command.state.onChange(target, onChange);
           onChange("", { target: target });
+
+          document.defaultView.addEventListener("unload", function (event) {
+            if (command.state.offChange) {
+              command.state.offChange(target, onChange);
+            }
+          }, { once: true });
         }
-        document.defaultView.addEventListener("unload", function (event) {
-          if (onChange && command.state.offChange) {
-            command.state.offChange(target, onChange);
-          }
-          button.remove();
-          button = null;
-        }, { once: true });
 
         requisition.clear();
 
