@@ -844,6 +844,62 @@ element.inViewport = function (el, x = undefined, y = undefined) {
 
 
 
+element.getContainer = function (el) {
+  if (el.localName != "option") {
+    return el;
+  }
+
+  function validContext(ctx) {
+    return ctx.localName == "datalist" || ctx.localName == "select";
+  }
+
+  
+  
+  let parent = el;
+  while (parent.parentNode && !validContext(parent)) {
+    parent = parent.parentNode;
+  }
+
+  if (!validContext(parent)) {
+    return el;
+  }
+  return parent;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+element.isInView = function (el) {
+  let tree = element.getPointerInteractablePaintTree(el);
+  return tree.includes(el);
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 element.isVisible = function (el, x = undefined, y = undefined) {
   let win = el.ownerGlobal;
@@ -884,7 +940,7 @@ element.isInteractable = function (el) {
 
 
 element.isPointerInteractable = function (el) {
-  let tree = element.getInteractableElementTree(el, el.ownerDocument);
+  let tree = element.getPointerInteractablePaintTree(el);
   return tree[0] === el;
 };
 
@@ -932,10 +988,9 @@ element.getInViewCentrePoint = function (rect, win) {
 
 
 
-
-
-element.getInteractableElementTree = function (el, doc) {
-  let win = doc.defaultView;
+element.getPointerInteractablePaintTree = function (el) {
+  const doc = el.ownerDocument;
+  const win = doc.defaultView;
 
   
   if (element.isDisconnected(el, win)) {
@@ -952,10 +1007,7 @@ element.getInteractableElementTree = function (el, doc) {
   let centre = element.getInViewCentrePoint(rects[0], win);
 
   
-  let tree = doc.elementsFromPoint(centre.x, centre.y);
-
-  
-  return tree.filter(el => win.getComputedStyle(el).opacity === "1");
+  return doc.elementsFromPoint(centre.x, centre.y);
 };
 
 

@@ -111,25 +111,96 @@ this.interaction = {};
 
 
 
-interaction.clickElement = function*(el, strict = false, specCompat = false) {
+
+
+
+interaction.clickElement = function* (el, strict = false, specCompat = false) {
+  const a11y = accessibility.get(strict);
+  if (specCompat) {
+    yield webdriverClickElement(el, a11y);
+  } else {
+    yield seleniumClickElement(el, a11y);
+  }
+};
+
+function* webdriverClickElement (el, a11y) {
+  const win = getWindow(el);
+  const doc = win.document;
+
+  
+  if (el.localName == "input" && el.type == "file") {
+    throw new InvalidArgumentError(
+        "Cannot click <input type=file> elements");
+  }
+
+  let containerEl = element.getContainer(el);
+
+  
+  if (!element.isInView(containerEl)) {
+    element.scrollIntoView(containerEl);
+  }
+
+  
+  
+
+  
+  
+  
+  if (!element.isInView(containerEl)) {
+    throw new ElementNotInteractableError(
+        error.pprint`Element ${el} could not be scrolled into view`);
+  }
+
+  
+  let rects = containerEl.getClientRects();
+  let clickPoint = element.getInViewCentrePoint(rects[0], win);
+
+  if (!element.isPointerInteractable(containerEl)) {
+    throw new ElementClickInterceptedError(containerEl, clickPoint);
+  }
+
+  yield a11y.getAccessible(el, true).then(acc => {
+    a11y.assertVisible(acc, el, true);
+    a11y.assertEnabled(acc, el, true);
+    a11y.assertActionable(acc, el);
+  });
+
+  
+
+  
+  if (element.isXULElement(el)) {
+    if (el.localName == "option") {
+      interaction.selectOption(el);
+    } else {
+      el.click();
+    }
+
+  
+  } else {
+    if (el.localName == "option") {
+      interaction.selectOption(el);
+    } else {
+      event.synthesizeMouseAtPoint(clickPoint.x, clickPoint.y, {}, win);
+    }
+  }
+
+  
+  yield interaction.flushEventLoop(win);
+
+  
+  
+  
+}
+
+function* seleniumClickElement (el, a11y) {
   let win = getWindow(el);
-  let a11y = accessibility.get(strict);
 
   let visibilityCheckEl  = el;
   if (el.localName == "option") {
-    visibilityCheckEl = interaction.getSelectForOptionElement(el);
+    visibilityCheckEl = element.getContainer(el);
   }
 
-  let interactable = false;
-  if (specCompat) {
-    if (!element.isPointerInteractable(visibilityCheckEl)) {
-      element.scrollIntoView(el);
-    }
-    interactable = element.isPointerInteractable(visibilityCheckEl);
-  } else {
-    interactable = element.isVisible(visibilityCheckEl);
-  }
-  if (!interactable) {
+  if (!element.isVisible(visibilityCheckEl)) {
     throw new ElementNotInteractableError();
   }
 
@@ -138,7 +209,7 @@ interaction.clickElement = function*(el, strict = false, specCompat = false) {
   }
 
   yield a11y.getAccessible(el, true).then(acc => {
-    a11y.assertVisible(acc, el, interactable);
+    a11y.assertVisible(acc, el, true);
     a11y.assertEnabled(acc, el, true);
     a11y.assertActionable(acc, el);
   });
@@ -156,29 +227,12 @@ interaction.clickElement = function*(el, strict = false, specCompat = false) {
     if (el.localName == "option") {
       interaction.selectOption(el);
     } else {
-      let centre = interaction.calculateCentreCoords(el);
+      let rects = el.getClientRects();
+      let centre = element.getInViewCentrePoint(rects[0], win);
       let opts = {};
       event.synthesizeMouseAtPoint(centre.x, centre.y, opts, win);
     }
   }
-};
-
-
-
-
-
-
-
-
-
-
-
-interaction.calculateCentreCoords = function (el) {
-  let rects = el.getClientRects();
-  return {
-    x: rects[0].left + rects[0].width / 2.0,
-    y: rects[0].top + rects[0].height / 2.0,
-  };
 };
 
 
@@ -207,20 +261,47 @@ interaction.selectOption = function (el) {
   }
 
   let win = getWindow(el);
-  let parent = interaction.getSelectForOptionElement(el);
+  let containerEl = element.getContainer(el);
 
-  event.mouseover(parent);
-  event.mousemove(parent);
-  event.mousedown(parent);
-  event.focus(parent);
-  event.input(parent);
+  event.mouseover(containerEl);
+  event.mousemove(containerEl);
+  event.mousedown(containerEl);
+  event.focus(containerEl);
+  event.input(containerEl);
 
   
   el.selected = !el.selected;
 
-  event.change(parent);
-  event.mouseup(parent);
-  event.click(parent);
+  event.change(containerEl);
+  event.mouseup(containerEl);
+  event.click(containerEl);
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+interaction.flushEventLoop = function* (win) {
+  let unloadEv;
+  return new Promise((resolve, reject) => {
+    unloadEv = reject;
+    win.addEventListener("unload", unloadEv, {once: true});
+    win.requestAnimationFrame(resolve);
+  }).then(() => {
+    win.removeEventListener("unload", unloadEv);
+  });
 };
 
 
@@ -258,31 +339,6 @@ interaction.uploadFile = function* (el, path) {
   el.mozSetFileArray(fs);
 
   event.change(el);
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-interaction.getSelectForOptionElement = function (optionEl) {
-  let parent = optionEl;
-  while (parent.parentNode && parent.localName != "select") {
-    parent = parent.parentNode;
-  }
-
-  if (parent.localName != "select") {
-    throw new Error("Unable to find parent of <option> element");
-  }
-
-  return parent;
 };
 
 
