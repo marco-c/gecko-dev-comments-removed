@@ -275,25 +275,43 @@ var SessionSaverInternal = {
     }
 
     
-    if (RunState.isClosing) {
-      let expireCookies = Services.prefs.getIntPref("network.cookie.lifetimePolicy") ==
-                          Services.cookies.QueryInterface(Ci.nsICookieService).ACCEPT_SESSION;
-      let sanitizeCookies = Services.prefs.getBoolPref("privacy.sanitize.sanitizeOnShutdown") &&
-                            Services.prefs.getBoolPref("privacy.clearOnShutdown.cookies");
-      let restart = Services.prefs.getBoolPref("browser.sessionstore.resume_session_once");
-      
-      if ((expireCookies || sanitizeCookies) && !restart) {
-        for (let window of state.windows) {
-          delete window.cookies;
-          for (let tab of window.tabs) {
-            delete tab.storage;
-          }
-        }
-      }
-    }
+    this._maybeClearCookiesAndStorage(state);
 
     stopWatchFinish("COLLECT_DATA_MS", "COLLECT_DATA_LONGEST_OP_MS");
     return this._writeState(state);
+  },
+
+  
+
+
+
+  _maybeClearCookiesAndStorage(state) {
+    
+    if (!RunState.isClosing) {
+      return;
+    }
+
+    
+    if (Services.prefs.getBoolPref("browser.sessionstore.resume_session_once")) {
+      return;
+    }
+
+    let expireCookies = Services.prefs.getIntPref("network.cookie.lifetimePolicy") ==
+                        Services.cookies.QueryInterface(Ci.nsICookieService).ACCEPT_SESSION;
+    let sanitizeCookies = Services.prefs.getBoolPref("privacy.sanitize.sanitizeOnShutdown") &&
+                          Services.prefs.getBoolPref("privacy.clearOnShutdown.cookies");
+
+    if (expireCookies || sanitizeCookies) {
+      
+      delete state.cookies;
+
+      
+      for (let window of state.windows) {
+        for (let tab of window.tabs) {
+          delete tab.storage;
+        }
+      }
+    }
   },
 
   
