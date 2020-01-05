@@ -7938,16 +7938,24 @@ js::gc::detail::CellIsNotGray(const Cell* cell)
     if (!detail::CellIsMarkedGray(tc))
         return true;
 
+    
+    
+
     auto rt = tc->runtimeFromAnyThread();
-    Zone* sourceZone = nullptr;
-    if (rt->gc.isIncrementalGCInProgress() &&
-        !tc->zone()->wasGCStarted() &&
-        (sourceZone = rt->gc.marker.stackContainsCrossZonePointerTo(tc)) &&
-        sourceZone->wasGCStarted())
-    {
+    if (!rt->gc.isIncrementalGCInProgress() || tc->zone()->wasGCStarted())
+        return false;
+
+    
+    
+    
+# ifdef ANDROID
+    return true;
+# else
+    Zone* sourceZone = rt->gc.marker.stackContainsCrossZonePointerTo(tc);
+    if (sourceZone && sourceZone->wasGCStarted())
         return true;
-    }
 
     return false;
+# endif
 }
 #endif
