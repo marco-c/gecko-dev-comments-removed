@@ -43,7 +43,7 @@ public:
   
   nsIWidget* RealWidget() override;
 
-private:
+protected:
   nsBaseWidget* mWidget;
 };
 
