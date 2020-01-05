@@ -25,24 +25,21 @@ WebRenderTextLayer::RenderLayer(wr::DisplayListBuilder& aBuilder,
         return;
     }
 
-    gfx::Rect rect = GetTransform().TransformBounds(IntRectToRect(mBounds))
-        - ParentBounds().ToUnknownRect().TopLeft();
-    gfx::Rect clip;
-    if (GetClipRect().isSome()) {
-      clip = IntRectToRect(GetClipRect().ref().ToUnknownRect())
-          - ParentBounds().ToUnknownRect().TopLeft();
-    } else {
-      clip = rect;
-    }
+    LayerRect rect = LayerRect::FromUnknownRect(
+        
+        
+        
+        
+        
+        
+        
+        GetTransform().TransformBounds(IntRectToRect(mBounds))
+    );
+    DumpLayerInfo("TextLayer", rect);
 
-    if (gfxPrefs::LayersDump()) {
-        printf_stderr("TextLayer %p using rect=%s, clip=%s\n",
-                      this->GetLayer(),
-                      Stringify(rect).c_str(),
-                      Stringify(clip).c_str());
-    }
+    LayerRect clipRect = ClipRect().valueOr(rect);
 
-    WrBridge()->PushGlyphs(aBuilder, mGlyphs, mFont, GetOffsetToParent(), rect, clip);
+    WrBridge()->PushGlyphs(aBuilder, mGlyphs, mFont, aSc, rect, clipRect);
 }
 
 } 

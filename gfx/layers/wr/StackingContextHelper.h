@@ -53,6 +53,8 @@ public:
   
   
   WrRect ToRelativeWrRect(const LayerRect& aRect) const;
+  
+  WrPoint ToRelativeWrPoint(const LayerPoint& aPoint) const;
 
 private:
   wr::DisplayListBuilder* mBuilder;
