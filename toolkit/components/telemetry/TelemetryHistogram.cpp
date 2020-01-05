@@ -585,6 +585,24 @@ internal_CloneHistogram(const nsACString& newName,
   return clone;
 }
 
+
+
+
+
+
+Histogram*
+internal_CloneHistogram(const nsACString& newName,
+                        mozilla::Telemetry::ID existingId)
+{
+  Histogram *existing = nullptr;
+  nsresult rv = internal_GetHistogramByEnumId(existingId, &existing);
+  if (NS_FAILED(rv)) {
+    return nullptr;
+  }
+
+  return internal_CloneHistogram(newName, existingId, *existing);
+}
+
 #if !defined(MOZ_WIDGET_GONK) && !defined(MOZ_WIDGET_ANDROID)
 
 Histogram*
@@ -2268,6 +2286,33 @@ TelemetryHistogram::GetHistogramName(mozilla::Telemetry::ID id)
   StaticMutexAutoLock locker(gTelemetryHistogramMutex);
   const HistogramInfo& h = gHistograms[id];
   return h.id();
+}
+
+nsresult
+TelemetryHistogram::HistogramFrom(const nsACString &name,
+                                  const nsACString &existing_name,
+                                  JSContext *cx,
+                                  JS::MutableHandle<JS::Value> ret)
+{
+  Histogram* clone = nullptr;
+  {
+    StaticMutexAutoLock locker(gTelemetryHistogramMutex);
+    mozilla::Telemetry::ID id;
+    nsresult rv
+      = internal_GetHistogramEnumId(PromiseFlatCString(existing_name).get(),
+                                    &id);
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
+
+    clone = internal_CloneHistogram(name, id);
+    if (!clone) {
+      return NS_ERROR_FAILURE;
+    }
+  }
+
+  
+  return internal_WrapAndReturnHistogram(clone, cx, ret);
 }
 
 nsresult
