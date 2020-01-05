@@ -73,6 +73,21 @@ ServoRestyleManager::PostRebuildAllStyleDataEvent(nsChangeHint aExtraHint,
   NS_WARNING("stylo: ServoRestyleManager::PostRebuildAllStyleDataEvent not implemented");
 }
 
+static void
+MarkSelfAndDescendantsAsNotDirtyForServo(nsIContent* aContent)
+{
+  aContent->UnsetIsDirtyForServo();
+
+  if (aContent->HasDirtyDescendantsForServo()) {
+    aContent->UnsetHasDirtyDescendantsForServo();
+
+    StyleChildrenIterator it(aContent);
+    for (nsIContent* n = it.GetNextChild(); n; n = it.GetNextChild()) {
+      MarkSelfAndDescendantsAsNotDirtyForServo(n);
+    }
+  }
+}
+
 void
 ServoRestyleManager::RecreateStyleContexts(nsIContent* aContent,
                                            nsStyleContext* aParentContext,
@@ -85,6 +100,7 @@ ServoRestyleManager::RecreateStyleContexts(nsIContent* aContent,
   if (!primaryFrame && !aContent->IsDirtyForServo()) {
     
     
+    MarkSelfAndDescendantsAsNotDirtyForServo(aContent);
     return;
   }
 
@@ -145,7 +161,19 @@ ServoRestyleManager::RecreateStyleContexts(nsIContent* aContent,
     
     
     
-    if (!primaryFrame || (changeHint & nsChangeHint_ReconstructFrame)) {
+    if (changeHint & nsChangeHint_ReconstructFrame) {
+      
+      
+      
+      
+      
+      MarkSelfAndDescendantsAsNotDirtyForServo(element);
+      return;
+    }
+
+    
+    
+    if (!primaryFrame) {
       aContent->UnsetIsDirtyForServo();
       return;
     }
