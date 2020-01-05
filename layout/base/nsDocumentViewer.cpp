@@ -3809,6 +3809,8 @@ nsDocumentViewer::Print(nsIPrintSettings*       aPrintSettings,
   }
 
   
+  MOZ_ASSERT(!mAutoBeforeAndAfterPrint,
+             "We don't want to dispatch nested beforeprint/afterprint");
   nsAutoPtr<AutoPrintEventDispatcher> autoBeforeAndAfterPrint(
     new AutoPrintEventDispatcher(mDocument));
   NS_ENSURE_STATE(!GetIsPrinting());
@@ -3891,8 +3893,17 @@ nsDocumentViewer::PrintPreview(nsIPrintSettings* aPrintSettings,
   NS_ENSURE_STATE(doc);
 
   
-  nsAutoPtr<AutoPrintEventDispatcher> autoBeforeAndAfterPrint(
-    new AutoPrintEventDispatcher(doc));
+  
+  
+  
+  
+  
+  
+  
+  nsAutoPtr<AutoPrintEventDispatcher> autoBeforeAndAfterPrint;
+  if (!mAutoBeforeAndAfterPrint) {
+    autoBeforeAndAfterPrint = new AutoPrintEventDispatcher(doc);
+  }
   NS_ENSURE_STATE(!GetIsPrinting());
   
   NS_ENSURE_STATE(mContainer);
@@ -3916,7 +3927,8 @@ nsDocumentViewer::PrintPreview(nsIPrintSettings* aPrintSettings,
       return rv;
     }
   }
-  if (mPrintEngine->HasPrintCallbackCanvas()) {
+  if (autoBeforeAndAfterPrint &&
+      mPrintEngine->HasPrintCallbackCanvas()) {
     
     
     mAutoBeforeAndAfterPrint = autoBeforeAndAfterPrint;
