@@ -2,7 +2,6 @@
 
 
 
-use dom::bindings::codegen::Bindings::EventBinding::EventMethods;
 use dom::bindings::codegen::Bindings::WebGLContextEventBinding;
 use dom::bindings::codegen::Bindings::WebGLContextEventBinding::WebGLContextEventInit;
 use dom::bindings::codegen::Bindings::WebGLContextEventBinding::WebGLContextEventMethods;
