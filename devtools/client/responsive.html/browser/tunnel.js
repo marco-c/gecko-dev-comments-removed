@@ -148,6 +148,12 @@ function tunnelToInnerBrowser(outer, inner) {
 
       
       
+      
+      
+      gBrowser._tabForBrowser.set(inner, tab);
+
+      
+      
       for (let property of SWAPPED_BROWSER_STATE) {
         outer[property] = inner[property];
       }
@@ -195,8 +201,6 @@ function tunnelToInnerBrowser(outer, inner) {
     stop() {
       let tab = gBrowser.getTabForBrowser(outer);
       let filteredProgressListener = gBrowser._tabFilters.get(tab);
-      browserWindow = null;
-      gBrowser = null;
 
       
       
@@ -204,6 +208,9 @@ function tunnelToInnerBrowser(outer, inner) {
       for (let property of SWAPPED_BROWSER_STATE) {
         inner[property] = outer[property];
       }
+
+      
+      gBrowser._tabForBrowser.delete(inner);
 
       
       outer.webProgress.removeProgressListener(filteredProgressListener);
@@ -230,6 +237,9 @@ function tunnelToInnerBrowser(outer, inner) {
       
       
       outer.permanentKey = { id: "zombie" };
+
+      browserWindow = null;
+      gBrowser = null;
     },
 
   };
