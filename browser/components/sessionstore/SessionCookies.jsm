@@ -132,6 +132,8 @@ var SessionCookiesInternal = {
   observe(subject, topic, data) {
     switch (data) {
       case "added":
+        this._addCookie(subject);
+        break;
       case "changed":
         this._updateCookie(subject);
         break;
@@ -193,6 +195,17 @@ var SessionCookiesInternal = {
   
 
 
+  _addCookie(cookie) {
+    cookie.QueryInterface(Ci.nsICookie2);
+
+    if (cookie.isSession) {
+      CookieStore.set(cookie);
+    }
+  },
+
+  
+
+
   _updateCookie(cookie) {
     cookie.QueryInterface(Ci.nsICookie2);
 
@@ -230,7 +243,7 @@ var SessionCookiesInternal = {
   _reloadCookies() {
     let iter = Services.cookies.enumerator;
     while (iter.hasMoreElements()) {
-      this._updateCookie(iter.getNext());
+      this._addCookie(iter.getNext());
     }
   }
 };
@@ -383,7 +396,24 @@ var CookieStore = {
 
 
   delete(cookie) {
-    this._ensureMap(cookie).delete(cookie.name);
+    
+    
+    let map = this._hosts.get(cookie.host);
+    if (!map) {
+      return;
+    }
+
+    map = map.get(ChromeUtils.originAttributesToSuffix(cookie.originAttributes));
+    if (!map) {
+      return;
+    }
+
+    map = map.get(cookie.path);
+    if (!map) {
+      return;
+    }
+
+    map.delete(cookie.name);
   },
 
   
