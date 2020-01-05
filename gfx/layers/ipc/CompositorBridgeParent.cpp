@@ -1555,20 +1555,6 @@ CompositorBridgeParent::NotifyChildCreated(uint64_t aChild)
 }
 
 mozilla::ipc::IPCResult
-CompositorBridgeParent::RecvMapAndNotifyChildCreated(const uint64_t& aChild, const base::ProcessId& aOwnerPid)
-{
-  
-  
-  MOZ_ASSERT(XRE_IsGPUProcess());
-
-  LayerTreeOwnerTracker::Get()->Map(aChild, aOwnerPid);
-
-  MonitorAutoLock lock(*sIndirectLayerTreesLock);
-  NotifyChildCreated(aChild);
-  return IPC_OK();
-}
-
-mozilla::ipc::IPCResult
 CompositorBridgeParent::RecvAdoptChild(const uint64_t& child)
 {
   APZCTreeManagerParent* parent;
