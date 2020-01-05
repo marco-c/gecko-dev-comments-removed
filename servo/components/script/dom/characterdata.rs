@@ -17,7 +17,7 @@ use dom::element::Element;
 use dom::eventtarget::{EventTarget, EventTargetTypeId};
 use dom::node::{Node, NodeTypeId};
 
-use util::str::{DOMString, slice_chars};
+use util::str::DOMString;
 
 use std::borrow::ToOwned;
 use std::cell::Ref;
@@ -60,21 +60,25 @@ impl CharacterDataMethods for CharacterData {
 
     
     fn Length(&self) -> u32 {
-        self.data.borrow().chars().count() as u32
+        self.data.borrow().chars().map(|c| c.len_utf16()).sum::<usize>() as u32
     }
 
     
     fn SubstringData(&self, offset: u32, count: u32) -> Fallible<DOMString> {
         let data = self.data.borrow();
         
-        let length = data.chars().count() as u32;
-        if offset > length {
+        let data_from_offset = match find_utf16_code_unit_offset(&data, offset) {
+            Some(offset_bytes) => &data[offset_bytes..],
             
-            return Err(IndexSize);
-        }
-        
-        let end = if length - offset < count { length } else { offset + count };
-        Ok(slice_chars(&*data, offset as usize, end as usize).to_owned())
+            None => return Err(IndexSize)
+        };
+        let substring = match find_utf16_code_unit_offset(data_from_offset, count) {
+            
+            None => data_from_offset,
+            
+            Some(count_bytes) => &data_from_offset[..count_bytes],
+        };
+        Ok(substring.to_owned())
     }
 
     
@@ -94,23 +98,27 @@ impl CharacterDataMethods for CharacterData {
 
     
     fn ReplaceData(&self, offset: u32, count: u32, arg: DOMString) -> ErrorResult {
-        
-        let length = self.data.borrow().chars().count() as u32;
-        if offset > length {
+        let new_data = {
+            let data = self.data.borrow();
+            let (prefix, data_from_offset) = match find_utf16_code_unit_offset(&data, offset) {
+                Some(offset_bytes) => data.split_at(offset_bytes),
+                
+                None => return Err(IndexSize)
+            };
+            let suffix = match find_utf16_code_unit_offset(data_from_offset, count) {
+                
+                None => "",
+                Some(count_bytes) => &data_from_offset[count_bytes..],
+            };
             
-            return Err(IndexSize);
-        }
-        
-        let count = match length - offset {
-            diff if diff < count => diff,
-            _ => count,
+            
+            let mut new_data = String::with_capacity(prefix.len() + arg.len() + suffix.len());
+            new_data.push_str(prefix);
+            new_data.push_str(&arg);
+            new_data.push_str(suffix);
+            new_data
         };
-        
-        
-        let mut data = slice_chars(&*self.data.borrow(), 0, offset as usize).to_owned();
-        data.push_str(&arg);
-        data.push_str(slice_chars(&*self.data.borrow(), (offset + count) as usize, length as usize));
-        *self.data.borrow_mut() = data;
+        *self.data.borrow_mut() = new_data;
         
         Ok(())
     }
@@ -179,5 +187,34 @@ impl LayoutCharacterDataHelpers for LayoutJS<CharacterData> {
     #[inline]
     unsafe fn data_for_layout<'a>(&'a self) -> &'a str {
         &(*self.unsafe_get()).data.borrow_for_layout()
+    }
+}
+
+
+
+
+
+fn find_utf16_code_unit_offset(s: &str, offset: u32) -> Option<usize> {
+    let mut code_units = 0;
+    for (i, c) in s.char_indices() {
+        if code_units == offset {
+            return Some(i)
+        }
+        code_units += 1;
+        if c > '\u{FFFF}' {
+            if code_units == offset {
+                panic!("\n\n\
+                    Would split a surrogate pair in CharacterData API.\n\
+                    If you see this in real content, please comment with the URL\n\
+                    on https://github.com/servo/servo/issues/6873\n\
+                \n");
+            }
+            code_units += 1;
+        }
+    }
+    if code_units == offset {
+        Some(s.len())
+    } else {
+        None
     }
 }
