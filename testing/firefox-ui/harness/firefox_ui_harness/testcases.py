@@ -262,7 +262,7 @@ class UpdateTestCase(FirefoxTestCase):
                                     dialog.wizard.selected_panel))
 
             finally:
-                prefs.restore_pref(self.PREF_APP_UPDATE_ALTWINDOWTYPE)
+                self.marionette.clear_pref(self.PREF_APP_UPDATE_ALTWINDOWTYPE)
 
         
         
