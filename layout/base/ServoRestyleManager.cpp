@@ -37,6 +37,12 @@ ServoRestyleManager::PostRestyleEvent(Element* aElement,
 
   
   
+  if (aRestyleHint & eRestyle_StyleAttribute) {
+    aRestyleHint |= eRestyle_Subtree;
+  }
+
+  
+  
   if (aRestyleHint || aMinChangeHint) {
     ServoElementSnapshot* snapshot = SnapshotForElement(aElement);
     snapshot->AddExplicitRestyleHint(aRestyleHint);
@@ -505,6 +511,17 @@ ServoRestyleManager::AttributeWillChange(Element* aElement,
 {
   ServoElementSnapshot* snapshot = SnapshotForElement(aElement);
   snapshot->AddAttrs(aElement);
+}
+
+void
+ServoRestyleManager::AttributeChanged(Element* aElement, int32_t aNameSpaceID,
+                                      nsIAtom* aAttribute, int32_t aModType,
+                                      const nsAttrValue* aOldValue)
+{
+  MOZ_ASSERT(SnapshotForElement(aElement)->HasAttrs());
+  if (aAttribute == nsGkAtoms::style) {
+    PostRestyleEvent(aElement, eRestyle_StyleAttribute, nsChangeHint(0));
+  }
 }
 
 nsresult
