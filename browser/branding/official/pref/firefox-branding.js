@@ -27,7 +27,7 @@ pref("app.update.checkInstallTime.days", 63);
 
 
 
-pref("app.update.badgeWaitTime", 345600);
+pref("app.update.badgeWaitTime", 0);
 
 
 

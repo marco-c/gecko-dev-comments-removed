@@ -273,7 +273,7 @@ function getUpdateString(aType, aName, aDisplayVersion, aAppVersion, aBuildID,
 
   let detailsURL = "detailsURL=\"" +
                    (aDetailsURL ? aDetailsURL
-                                : URL_HTTP_UPDATE_SJS + "?uiURL=DETAILS") + "\" ";
+                                : "http://test_details/") + "\" ";
   let showPrompt = aShowPrompt ? "showPrompt=\"" + aShowPrompt + "\" " : "";
   let showNeverForVersion = aShowNeverForVersion ? "showNeverForVersion=\"" +
                                                    aShowNeverForVersion + "\" "
