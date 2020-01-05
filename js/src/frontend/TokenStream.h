@@ -369,6 +369,9 @@ class MOZ_STACK_CLASS TokenStream
     void error(unsigned errorNumber, ...);
 
     
+    void errorAt(uint32_t offset, unsigned errorNumber, ...);
+
+    
     MOZ_MUST_USE bool warning(unsigned errorNumber, ...);
 
     static const uint32_t NoOffset = UINT32_MAX;
@@ -952,7 +955,7 @@ class MOZ_STACK_CLASS TokenStream
 
     MOZ_MUST_USE bool getTokenInternal(TokenKind* ttp, Modifier modifier);
 
-    MOZ_MUST_USE bool getBracedUnicode(uint32_t* code);
+    MOZ_MUST_USE bool matchBracedUnicode(bool* matched, uint32_t* code);
     MOZ_MUST_USE bool getStringOrTemplateToken(int untilChar, Token** tp);
 
     int32_t getChar();
