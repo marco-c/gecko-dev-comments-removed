@@ -197,7 +197,7 @@ impl ReportsTree {
 
     
     
-    fn compute_interior_node_sizes(&mut self) -> usize {
+    fn compute_interior_node_sizes_and_sort(&mut self) -> usize {
         if !self.children.is_empty() {
             
             if self.size != 0 {
@@ -205,8 +205,10 @@ impl ReportsTree {
                 panic!("one report's path is a sub-path of another report's path");
             }
             for child in self.children.iter_mut() {
-                self.size += child.compute_interior_node_sizes();
+                self.size += child.compute_interior_node_sizes_and_sort();
             }
+            
+            self.children.sort_by(|t1, t2| t2.size.cmp(&t1.size));
         }
         self.size
     }
@@ -260,7 +262,7 @@ impl ReportsForest {
     fn print(&mut self) {
         
         for (_, tree) in self.trees.iter_mut() {
-            tree.compute_interior_node_sizes();
+            tree.compute_interior_node_sizes_and_sort();
         }
 
         
@@ -350,7 +352,6 @@ mod system_reporter {
             true
         }
     }
-
 
     #[cfg(target_os="linux")]
     extern {
@@ -572,13 +573,10 @@ mod system_reporter {
             }
         }
 
-        let mut segs: Vec<(String, usize)> = seg_map.into_iter().collect();
-
         
         
         
-        segs.sort_by(|&(_, rss1), &(_, rss2)| rss2.cmp(&rss1));
-
+        let segs: Vec<(String, usize)> = seg_map.into_iter().collect();
         segs
     }
 
