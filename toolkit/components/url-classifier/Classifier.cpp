@@ -496,24 +496,17 @@ Classifier::Check(const nsACString& aSpec,
 
     for (uint32_t i = 0; i < cacheArray.Length(); i++) {
       LookupCache *cache = cacheArray[i];
-      bool has, fromCache;
+      bool has, fromCache, confirmed;
       uint32_t matchLength;
 
-      rv = cache->Has(lookupHash, &has, &matchLength, &fromCache);
+      rv = cache->Has(lookupHash, mTableFreshness, aFreshnessGuarantee,
+                      &has, &matchLength, &confirmed, &fromCache);
       NS_ENSURE_SUCCESS(rv, rv);
+
       if (has) {
         LookupResult *result = aResults.AppendElement();
         if (!result)
           return NS_ERROR_OUT_OF_MEMORY;
-
-        
-        
-        
-        bool confirmed = false;
-        if (fromCache) {
-          cache->IsHashEntryConfirmed(lookupHash, mTableFreshness,
-                                      aFreshnessGuarantee, &confirmed);
-        }
 
         LOG(("Found a result in %s: %s",
              cache->TableName().get(),
@@ -1333,6 +1326,11 @@ Classifier::UpdateTableV4(nsTArray<TableUpdate*>* aUpdates,
     return NS_ERROR_UC_UPDATE_TABLE_NOT_FOUND;
   }
 
+  
+  
+  
+  lookupCache->InvalidateExpiredCacheEntry();
+
   nsresult rv = NS_OK;
 
   
@@ -1423,8 +1421,19 @@ Classifier::UpdateCache(TableUpdate* aUpdate)
     return NS_ERROR_FAILURE;
   }
 
-  auto updateV2 = TableUpdate::Cast<TableUpdateV2>(aUpdate);
-  lookupCache->AddCompletionsToCache(updateV2->AddCompletes());
+  auto lookupV2 = LookupCache::Cast<LookupCacheV2>(lookupCache);
+  if (lookupV2) {
+    auto updateV2 = TableUpdate::Cast<TableUpdateV2>(aUpdate);
+    lookupV2->AddCompletionsToCache(updateV2->AddCompletes());
+  } else {
+    auto lookupV4 = LookupCache::Cast<LookupCacheV4>(lookupCache);
+    if (!lookupV4) {
+      return NS_ERROR_FAILURE;
+    }
+
+    auto updateV4 = TableUpdate::Cast<TableUpdateV4>(aUpdate);
+    lookupV4->AddFullHashResponseToCache(updateV4->FullHashResponse());
+  }
 
 #if defined(DEBUG)
   lookupCache->DumpCache();
