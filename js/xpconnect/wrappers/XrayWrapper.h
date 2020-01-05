@@ -604,6 +604,14 @@ extern const JSClassOps XrayExpandoObjectClassOps;
 void
 ClearXrayExpandoSlots(JSObject* target, size_t slotIndex);
 
+
+
+
+
+
+JSObject*
+EnsureXrayExpandoObject(JSContext* cx, JS::HandleObject wrapper);
+
 } 
 
 #endif

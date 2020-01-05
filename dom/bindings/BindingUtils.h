@@ -2406,6 +2406,35 @@ XrayGetNativeProto(JSContext* cx, JS::Handle<JSObject*> obj,
 const JSClass*
 XrayGetExpandoClass(JSContext* cx, JS::Handle<JSObject*> obj);
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+JSObject*
+GetCachedSlotStorageObjectSlow(JSContext* cx, JS::Handle<JSObject*> obj,
+                               bool* isXray);
+
+inline JSObject*
+GetCachedSlotStorageObject(JSContext* cx, JS::Handle<JSObject*> obj,
+                           bool* isXray) {
+  if (IsDOMObject(obj)) {
+    *isXray = false;
+    return obj;
+  }
+
+  return GetCachedSlotStorageObjectSlow(cx, obj, isXray);
+}
+
 extern NativePropertyHooks sEmptyNativePropertyHooks;
 
 extern const js::ClassOps sBoringInterfaceObjectClassClassOps;
