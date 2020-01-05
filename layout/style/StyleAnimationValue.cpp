@@ -701,6 +701,10 @@ StyleAnimationValue::ComputeColorDistance(const RGBAColorData& aStartColor,
   return sqrt(diffA * diffA + diffR * diffR + diffG * diffG + diffB * diffB);
 }
 
+static nsCSSValueList*
+AddTransformLists(double aCoeff1, const nsCSSValueList* aList1,
+                  double aCoeff2, const nsCSSValueList* aList2);
+
 static double
 ComputeTransformDistance(nsCSSValue::Array* aArray1,
                          nsCSSValue::Array* aArray2)
@@ -1239,13 +1243,11 @@ StyleAnimationValue::ComputeDistance(nsCSSPropertyID aProperty,
         
         aDistance = 0.0;
       } else if (list1->mValue.GetUnit() == eCSSUnit_None) {
-        
-        aDistance = 0.0;
-        return false;
+        nsAutoPtr<nsCSSValueList> none(AddTransformLists(0, list2, 0, list2));
+        aDistance = ComputeTransformListDistance(none, list2);
       } else if (list2->mValue.GetUnit() == eCSSUnit_None) {
-        
-        aDistance = 0.0;
-        return false;
+        nsAutoPtr<nsCSSValueList> none(AddTransformLists(0, list1, 0, list1));
+        aDistance = ComputeTransformListDistance(list1, none);
       } else {
         const nsCSSValueList *item1 = list1, *item2 = list2;
         do {
@@ -2497,8 +2499,29 @@ AddTransformLists(double aCoeff1, const nsCSSValueList* aList1,
       }
       case eCSSKeyword_matrix:
       case eCSSKeyword_matrix3d:
-      case eCSSKeyword_interpolatematrix:
-      case eCSSKeyword_perspective: {
+      case eCSSKeyword_perspective:
+        if (aCoeff1 == 0.0 && aCoeff2 == 0.0) {
+          
+          
+          arr = StyleAnimationValue::AppendTransformFunction(tfunc, resultTail);
+
+          if (tfunc == eCSSKeyword_rotate3d) {
+            arr->Item(1).SetFloatValue(0.0, eCSSUnit_Number);
+            arr->Item(2).SetFloatValue(0.0, eCSSUnit_Number);
+            arr->Item(3).SetFloatValue(1.0, eCSSUnit_Number);
+            arr->Item(4).SetFloatValue(0.0, eCSSUnit_Radian);
+          } else if (tfunc == eCSSKeyword_perspective) {
+            
+            
+            arr->Item(1).SetFloatValue(std::numeric_limits<float>::infinity(),
+                                       eCSSUnit_Pixel);
+          } else {
+            nsStyleTransformMatrix::SetIdentityMatrix(arr);
+          }
+          break;
+        }
+        MOZ_FALLTHROUGH;
+      case eCSSKeyword_interpolatematrix: {
         
         
 
