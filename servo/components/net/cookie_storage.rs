@@ -5,18 +5,10 @@
 
 
 
+use net_traits::CookieSource;
 use url::Url;
 use cookie::Cookie;
 use std::cmp::Ordering;
-
-
-#[derive(PartialEq, Copy)]
-pub enum CookieSource {
-    
-    HTTP,
-    
-    NonHTTP,
-}
 
 pub struct CookieStorage {
     cookies: Vec<Cookie>

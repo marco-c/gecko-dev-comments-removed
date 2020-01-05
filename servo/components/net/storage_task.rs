@@ -3,47 +3,14 @@
 
 
 use std::borrow::ToOwned;
-use std::collections::HashMap;
 use std::collections::BTreeMap;
+use std::collections::HashMap;
 use std::sync::mpsc::{channel, Receiver, Sender};
 use url::Url;
 
+use net_traits::storage_task::{StorageTask, StorageTaskMsg, StorageType};
 use util::str::DOMString;
 use util::task::spawn_named;
-
-#[derive(Copy)]
-pub enum StorageType {
-    Session,
-    Local
-}
-
-
-pub enum StorageTaskMsg {
-    
-    Length(Sender<u32>, Url, StorageType),
-
-    
-    Key(Sender<Option<DOMString>>, Url, StorageType, u32),
-
-    
-    GetItem(Sender<Option<DOMString>>, Url, StorageType, DOMString),
-
-    
-    
-    SetItem(Sender<(bool, Option<DOMString>)>, Url, StorageType, DOMString, DOMString),
-
-    
-    RemoveItem(Sender<Option<DOMString>>, Url, StorageType, DOMString),
-
-    
-    Clear(Sender<bool>, Url, StorageType),
-
-    
-    Exit
-}
-
-
-pub type StorageTask = Sender<StorageTaskMsg>;
 
 pub trait StorageTaskFactory {
     fn new() -> Self;

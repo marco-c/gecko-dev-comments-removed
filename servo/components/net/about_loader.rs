@@ -2,8 +2,9 @@
 
 
 
-use resource_task::{TargetedLoadResponse, Metadata, LoadData, start_sending, ResponseSenders};
-use resource_task::ProgressMsg::Done;
+use net_traits::{LoadData, Metadata};
+use net_traits::ProgressMsg::Done;
+use resource_task::{TargetedLoadResponse, start_sending, ResponseSenders};
 use file_loader;
 
 use url::Url;

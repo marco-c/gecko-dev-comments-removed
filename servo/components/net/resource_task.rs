@@ -10,19 +10,20 @@ use file_loader;
 use http_loader;
 use sniffer_task;
 use sniffer_task::SnifferTask;
-use cookie_storage::{CookieStorage, CookieSource};
+use cookie_storage::CookieStorage;
 use cookie;
 
+use net_traits::{ControlMsg, LoadData, LoadResponse};
+use net_traits::{Metadata, ProgressMsg, ResourceTask};
+use net_traits::ProgressMsg::Done;
 use util::task::spawn_named;
 
 use hyper::header::UserAgent;
-use hyper::header::{Headers, Header, SetCookie};
-use hyper::http::RawStatus;
-use hyper::method::Method;
-use hyper::mime::{Mime, Attr};
+use hyper::header::{Header, SetCookie};
+#[cfg(test)]
 use url::Url;
 
-use std::borrow::{ToOwned, IntoCow};
+use std::borrow::ToOwned;
 use std::boxed;
 use std::collections::HashMap;
 use std::env;
@@ -57,110 +58,6 @@ pub fn global_init() {
     }
 }
 
-pub enum ControlMsg {
-    
-    Load(LoadData),
-    
-    SetCookiesForUrl(Url, String, CookieSource),
-    
-    GetCookiesForUrl(Url, Sender<Option<String>>, CookieSource),
-    Exit
-}
-
-#[derive(Clone)]
-pub struct LoadData {
-    pub url: Url,
-    pub method: Method,
-    
-    pub headers: Headers,
-    
-    pub preserved_headers: Headers,
-    pub data: Option<Vec<u8>>,
-    pub cors: Option<ResourceCORSData>,
-    pub consumer: Sender<LoadResponse>,
-}
-
-impl LoadData {
-    pub fn new(url: Url, consumer: Sender<LoadResponse>) -> LoadData {
-        LoadData {
-            url: url,
-            method: Method::Get,
-            headers: Headers::new(),
-            preserved_headers: Headers::new(),
-            data: None,
-            cors: None,
-            consumer: consumer,
-        }
-    }
-}
-
-#[derive(Clone)]
-pub struct ResourceCORSData {
-    
-    pub preflight: bool,
-    
-    pub origin: Url
-}
-
-
-#[derive(Clone)]
-pub struct Metadata {
-    
-    pub final_url: Url,
-
-    
-    pub content_type: Option<(String, String)>,
-
-    
-    pub charset: Option<String>,
-
-    
-    pub headers: Option<Headers>,
-
-    
-    pub status: Option<RawStatus>,
-}
-
-impl Metadata {
-    
-    pub fn default(url: Url) -> Metadata {
-        Metadata {
-            final_url:    url,
-            content_type: None,
-            charset:      None,
-            headers: None,
-            
-            status: Some(RawStatus(200, "OK".into_cow())),
-        }
-    }
-
-    
-    pub fn set_content_type(&mut self, content_type: Option<&Mime>) {
-        match content_type {
-            None => (),
-            Some(&Mime(ref type_, ref subtype, ref parameters)) => {
-                self.content_type = Some((type_.to_string(), subtype.to_string()));
-                for &(ref k, ref v) in parameters.iter() {
-                    if &Attr::Charset == k {
-                        self.charset = Some(v.to_string());
-                    }
-                }
-            }
-        }
-    }
-}
-
-
-
-
-
-
-pub struct LoadResponse {
-    
-    pub metadata: Metadata,
-    
-    pub progress_port: Receiver<ProgressMsg>,
-}
 
 pub struct TargetedLoadResponse {
     pub load_response: LoadResponse,
@@ -171,15 +68,6 @@ pub struct TargetedLoadResponse {
 pub struct ResponseSenders {
     pub immediate_consumer: Sender<TargetedLoadResponse>,
     pub eventual_consumer: Sender<LoadResponse>,
-}
-
-
-#[derive(PartialEq,Debug)]
-pub enum ProgressMsg {
-    
-    Payload(Vec<u8>),
-    
-    Done(Result<(), String>)
 }
 
 
@@ -202,26 +90,6 @@ pub fn start_sending_opt(senders: ResponseSenders, metadata: Metadata) -> Result
         Err(_) => Err(())
     }
 }
-
-
-pub fn load_whole_resource(resource_task: &ResourceTask, url: Url)
-        -> Result<(Metadata, Vec<u8>), String> {
-    let (start_chan, start_port) = channel();
-    resource_task.send(ControlMsg::Load(LoadData::new(url, start_chan))).unwrap();
-    let response = start_port.recv().unwrap();
-
-    let mut buf = vec!();
-    loop {
-        match response.progress_port.recv().unwrap() {
-            ProgressMsg::Payload(data) => buf.push_all(&data),
-            ProgressMsg::Done(Ok(()))  => return Ok((response.metadata, buf)),
-            ProgressMsg::Done(Err(e))  => return Err(e)
-        }
-    }
-}
-
-
-pub type ResourceTask = Sender<ControlMsg>;
 
 
 pub fn new_resource_task(user_agent: Option<String>) -> ResourceTask {
@@ -352,36 +220,6 @@ impl ResourceManager {
         debug!("resource_task: loading url: {}", load_data.url.serialize());
 
         loader.invoke((load_data, self.sniffer_task.clone()));
-    }
-}
-
-
-pub fn load_bytes_iter(resource_task: &ResourceTask, url: Url) -> (Metadata, ProgressMsgPortIterator) {
-    let (input_chan, input_port) = channel();
-    resource_task.send(ControlMsg::Load(LoadData::new(url, input_chan))).unwrap();
-
-    let response = input_port.recv().unwrap();
-    let iter = ProgressMsgPortIterator { progress_port: response.progress_port };
-    (response.metadata, iter)
-}
-
-
-pub struct ProgressMsgPortIterator {
-    progress_port: Receiver<ProgressMsg>
-}
-
-impl Iterator for ProgressMsgPortIterator {
-    type Item = Vec<u8>;
-
-    fn next(&mut self) -> Option<Vec<u8>> {
-        match self.progress_port.recv().unwrap() {
-            ProgressMsg::Payload(data) => Some(data),
-            ProgressMsg::Done(Ok(()))  => None,
-            ProgressMsg::Done(Err(e))  => {
-                error!("error receiving bytes: {}", e);
-                None
-            }
-        }
     }
 }
 

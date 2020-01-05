@@ -2,8 +2,9 @@
 
 
 
-use resource_task::{Metadata, LoadData, TargetedLoadResponse, start_sending, ResponseSenders};
-use resource_task::ProgressMsg::{Payload, Done};
+use net_traits::{LoadData, Metadata};
+use net_traits::ProgressMsg::{Payload, Done};
+use resource_task::{TargetedLoadResponse, start_sending, ResponseSenders};
 
 use rustc_serialize::base64::FromBase64;
 

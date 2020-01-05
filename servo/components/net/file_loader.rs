@@ -2,8 +2,9 @@
 
 
 
-use resource_task::{ProgressMsg, Metadata, LoadData, start_sending, TargetedLoadResponse, ResponseSenders};
-use resource_task::ProgressMsg::{Payload, Done};
+use net_traits::{LoadData, Metadata, ProgressMsg};
+use net_traits::ProgressMsg::{Payload, Done};
+use resource_task::{start_sending, TargetedLoadResponse, ResponseSenders};
 
 use std::borrow::ToOwned;
 use std::io;
