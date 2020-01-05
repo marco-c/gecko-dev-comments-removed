@@ -213,7 +213,7 @@ defineLazyGetter(exports.modules, "FileReader", () => {
 
 
 
-const globals = exports.globals = {
+exports.globals = {
   isWorker: false,
   reportError: Cu.reportError,
   atob: atob,
@@ -257,32 +257,50 @@ const globals = exports.globals = {
 
 
 
-defineLazyGetter(globals, "console", () => {
+
+
+let globals = {};
+function lazyGlobal(name, getter) {
+  defineLazyGetter(globals, name, getter);
+  Object.defineProperty(exports.globals, name, {
+    get: function () {
+      return globals[name];
+    },
+    configurable: true,
+    enumerable: true
+  });
+}
+
+
+
+lazyGlobal("console", () => {
   return Cu.import("resource://gre/modules/Console.jsm", {}).console;
 });
-defineLazyGetter(globals, "clearTimeout", () => {
+lazyGlobal("clearTimeout", () => {
   return Cu.import("resource://gre/modules/Timer.jsm", {}).clearTimeout;
 });
-defineLazyGetter(globals, "setTimeout", () => {
+lazyGlobal("setTimeout", () => {
   return Cu.import("resource://gre/modules/Timer.jsm", {}).setTimeout;
 });
-defineLazyGetter(globals, "clearInterval", () => {
+lazyGlobal("clearInterval", () => {
   return Cu.import("resource://gre/modules/Timer.jsm", {}).clearInterval;
 });
-defineLazyGetter(globals, "setInterval", () => {
+lazyGlobal("setInterval", () => {
   return Cu.import("resource://gre/modules/Timer.jsm", {}).setInterval;
 });
-defineLazyGetter(globals, "CSSRule", () => Ci.nsIDOMCSSRule);
-defineLazyGetter(globals, "DOMParser", () => {
+lazyGlobal("CSSRule", () => Ci.nsIDOMCSSRule);
+lazyGlobal("DOMParser", () => {
   return CC("@mozilla.org/xmlextras/domparser;1", "nsIDOMParser");
 });
-defineLazyGetter(globals, "CSS", () => {
+lazyGlobal("CSS", () => {
   let sandbox
     = Cu.Sandbox(CC("@mozilla.org/systemprincipal;1", "nsIPrincipal")(),
                  {wantGlobalProperties: ["CSS"]});
   return sandbox.CSS;
 });
-defineLazyGetter(globals, "WebSocket", () => {
+lazyGlobal("WebSocket", () => {
   return Services.appShell.hiddenDOMWindow.WebSocket;
 });
-lazyRequireGetter(globals, "indexedDB", "sdk/indexed-db", true);
+lazyGlobal("indexedDB", () => {
+  return require("sdk/indexed-db").indexedDB;
+});
