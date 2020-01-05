@@ -2,9 +2,9 @@
 
 
 
-use dom::bindings::codegen::InheritTypes::XMLHttpRequestEventTargetDerived;
-use dom::bindings::codegen::EventHandlerBinding::EventHandlerNonNull;
+use dom::bindings::codegen::BindingDeclarations::EventHandlerBinding::EventHandlerNonNull;
 use dom::bindings::codegen::InheritTypes::EventTargetCast;
+use dom::bindings::codegen::InheritTypes::XMLHttpRequestEventTargetDerived;
 use dom::bindings::js::JSRef;
 use dom::bindings::utils::{Reflectable, Reflector};
 use dom::eventtarget::{EventTarget, EventTargetHelpers, XMLHttpRequestTargetTypeId};
