@@ -92,7 +92,10 @@ def is_iter_empty(iterator):
 
 
 def normilize_paths(paths):
-    return [os.path.join(*path.split('/')) for path in paths]
+    if isinstance(paths, basestring):
+        return os.path.join(*paths.split('/'))
+    else:
+        return [os.path.join(*path.split('/')) for path in paths]
 
 
 
@@ -827,6 +830,17 @@ def check_config_file(config_file, print_text=True):
     if print_text:
         print '\rChecking the config file...'
 
+    config_content = toml.loads(conf_file)
+    exclude = config_content.get("ignore", {})
+
+    
+    exclude_dirs = exclude.get("directories", [])
+    skip_dirs = ["./target", "./tests"]
+    invalid_dirs = [d for d in exclude_dirs if not os.path.isdir(d) and not any(s in d for s in skip_dirs)]
+
+    
+    invalid_files = [f for f in exclude.get("files", []) if not os.path.exists(f)]
+
     current_table = ""
     for idx, line in enumerate(lines):
         
@@ -842,6 +856,22 @@ def check_config_file(config_file, print_text=True):
             continue
 
         
+        if current_table == "ignore" and invalid_dirs:
+            for d in invalid_dirs:
+                if line.strip().strip('\'",') == d:
+                    yield config_file, idx + 1, "ignored directory '%s' doesn't exist" % d
+                    invalid_dirs.remove(d)
+                    break
+
+        
+        if current_table == "ignore" and invalid_files:
+            for f in invalid_files:
+                if line.strip().strip('\'",') == f:
+                    yield config_file, idx + 1, "ignored file '%s' doesn't exist" % f
+                    invalid_files.remove(f)
+                    break
+
+        
         if "=" not in line:
             continue
 
@@ -855,11 +885,10 @@ def check_config_file(config_file, print_text=True):
             yield config_file, idx + 1, "invalid config key '%s'" % key
 
     
-    parse_config(conf_file)
+    parse_config(config_content)
 
 
-def parse_config(content):
-    config_file = toml.loads(content)
+def parse_config(config_file):
     exclude = config_file.get("ignore", {})
     
     config["ignore"]["directories"] += normilize_paths(exclude.get("directories", []))
@@ -872,7 +901,7 @@ def parse_config(content):
     dirs_to_check = config_file.get("check_ext", {})
     
     for path, exts in dirs_to_check.items():
-        config['check_ext'][normilize_paths([path])[0]] = exts
+        config['check_ext'][normilize_paths(path)] = exts
 
     
     config["blocked-packages"] = config_file.get("blocked-packages", {})
