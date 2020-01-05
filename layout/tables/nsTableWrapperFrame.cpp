@@ -952,8 +952,11 @@ nsTableWrapperFrame::Reflow(nsPresContext*           aPresContext,
     
     
     
-    if (NS_UNCONSTRAINEDSIZE != aOuterRI.AvailableBSize()) {
+    
+    LogicalSize* cbSize = Properties().Get(GridItemCBSizeProperty());
+    if (NS_UNCONSTRAINEDSIZE != aOuterRI.AvailableBSize() || cbSize) {
       nscoord captionBSize = 0;
+      nscoord captionISize = 0;
       switch (captionSide) {
         case NS_STYLE_CAPTION_SIDE_TOP:
         case NS_STYLE_CAPTION_SIDE_BOTTOM:
@@ -961,9 +964,27 @@ nsTableWrapperFrame::Reflow(nsPresContext*           aPresContext,
         case NS_STYLE_CAPTION_SIDE_BOTTOM_OUTSIDE:
           captionBSize = captionSize.BSize(wm) + captionMargin.BStartEnd(wm);
           break;
+        case NS_STYLE_CAPTION_SIDE_LEFT:
+        case NS_STYLE_CAPTION_SIDE_RIGHT:
+          captionISize = captionSize.ISize(wm) + captionMargin.IStartEnd(wm);
+          break;
       }
-      innerRI->AvailableBSize() =
-        std::max(0, innerRI->AvailableBSize() - captionBSize);
+      if (NS_UNCONSTRAINEDSIZE != aOuterRI.AvailableBSize()) {
+        innerRI->AvailableBSize() =
+          std::max(0, innerRI->AvailableBSize() - captionBSize);
+      }
+      if (cbSize) {
+        
+        LogicalSize oldCBSize = *cbSize;
+        cbSize->ISize(wm) = std::max(0, cbSize->ISize(wm) - captionISize);
+        cbSize->BSize(wm) = std::max(0, cbSize->BSize(wm) - captionBSize);
+        if (oldCBSize != *cbSize) {
+          
+          innerRI.reset();
+          OuterBeginReflowChild(aPresContext, InnerTableFrame(), aOuterRI,
+                                innerRI, aOuterRI.ComputedSize(wm).ISize(wm));
+        }
+      }
     }
   }
 
