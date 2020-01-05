@@ -1,0 +1,19 @@
+
+
+
+
+
+
+#include "Module.h"
+
+#include <memory.h>
+#include <rpc.h>
+
+namespace mozilla {
+namespace mscom {
+
+ULONG Module::sRefCount = 0;
+
+} 
+} 
+
