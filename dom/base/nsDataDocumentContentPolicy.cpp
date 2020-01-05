@@ -75,7 +75,12 @@ nsDataDocumentContentPolicy::ShouldLoad(uint32_t aContentType,
     }
   }
 
-  if (doc->IsBeingUsedAsImage()) {
+  nsIDocument* docToCheckForImage = doc->GetDisplayDocument();
+  if (!docToCheckForImage) {
+    docToCheckForImage = doc;
+  }
+
+  if (docToCheckForImage->IsBeingUsedAsImage()) {
     
     
     
