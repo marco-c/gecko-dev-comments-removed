@@ -122,3 +122,5 @@ user_pref("places.history.enabled", false);
 
 
 user_pref("plugin.load_flash_only", false);
+
+user_pref("media.openUnsupportedTypeWithExternalApp", false);
