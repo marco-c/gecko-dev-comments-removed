@@ -193,6 +193,11 @@ const ignorableWhitelist = new Set([
   
   
   "chrome://communicator/skin/communicator.css",
+
+  
+  
+  "chrome://global/locale/crashes.dtd",
+  "chrome://global/locale/crashes.properties",
 ]);
 for (let entry of ignorableWhitelist)
   whitelist.add(entry);
