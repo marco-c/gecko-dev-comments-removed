@@ -84,7 +84,7 @@ impl<T: Reflectable> Temporary<T> {
     }
 
     
-    pub fn from_rooted<'a>(root: &JSRef<'a, T>) -> Temporary<T> {
+    pub fn from_rooted<'a>(root: JSRef<'a, T>) -> Temporary<T> {
         Temporary::new(JS::from_rooted(root))
     }
 
@@ -175,7 +175,7 @@ impl<T: Reflectable> JS<T> {
 }
 
 impl<T: Assignable<U>, U: Reflectable> JS<U> {
-    pub fn from_rooted(root: &T) -> JS<U> {
+    pub fn from_rooted(root: T) -> JS<U> {
         unsafe {
             root.get_js()
         }
@@ -298,7 +298,7 @@ pub trait OptionalUnrootable<T> {
 
 impl<'a, T: Reflectable> OptionalUnrootable<T> for Option<JSRef<'a, T>> {
     fn unrooted(&self) -> Option<JS<T>> {
-        self.as_ref().map(|inner| JS::from_rooted(inner))
+        self.as_ref().map(|inner| JS::from_rooted(*inner))
     }
 }
 
@@ -477,12 +477,12 @@ impl<'a, T> PartialEq for JSRef<'a, T> {
 
 impl<'a,T> JSRef<'a,T> {
     
-    pub unsafe fn transmute<'b, To>(&'b self) -> &'b JSRef<'a, To> {
+    pub unsafe fn transmute<To>(self) -> JSRef<'a, To> {
         mem::transmute(self)
     }
 
     
-    pub unsafe fn transmute_mut<'b, To>(&'b mut self) -> &'b mut JSRef<'a, To> {
+    pub unsafe fn transmute_borrowed<'b, To>(&'b self) -> &'b JSRef<'a, To> {
         mem::transmute(self)
     }
 
