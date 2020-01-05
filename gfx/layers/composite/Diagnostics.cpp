@@ -61,6 +61,17 @@ Diagnostics::GetFrameOverlayString(const GPUStats& aStats)
                           ? float(aStats.mPixelsFilled) / float(aStats.mScreenPixels)
                           : 0.0f;
 
+  if (aStats.mDrawTime) {
+    mGPUDrawMs.Add(aStats.mDrawTime.value());
+  }
+
+  std::string gpuTimeString;
+  if (mGPUDrawMs.Empty()) {
+    gpuTimeString = "N/A";
+  } else {
+    gpuTimeString = nsPrintfCString("%0.1fms", mGPUDrawMs.Average()).get();
+  }
+
   
   
   
@@ -70,9 +81,10 @@ Diagnostics::GetFrameOverlayString(const GPUStats& aStats)
   
   
   nsPrintfCString line1("FPS: %d (TXN: %d)", fps, txnFps);
-  nsPrintfCString line2("[CC] Build: %0.1fms Exec: %0.1fms Fill Ratio: %0.1f/%0.1f",
+  nsPrintfCString line2("[CC] Build: %0.1fms Exec: %0.1fms GPU: %s Fill Ratio: %0.1f/%0.1f",
     mPrepareMs.Average(),
     mCompositeMs.Average(),
+    gpuTimeString.c_str(),
     pixelFillRatio,
     screenFillRatio);
   nsPrintfCString line3("[Content] DL: %0.1fms FLB: %0.1fms Raster: %0.1fms",

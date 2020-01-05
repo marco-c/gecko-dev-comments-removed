@@ -8,6 +8,7 @@
 
 #include "FPSCounter.h"
 #include "gfxPrefs.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/TimeStamp.h"
 #include <deque>
 #include <string>
@@ -31,12 +32,16 @@ public:
   }
 
   float Average() const;
+  bool Empty() const {
+    return mHistory.empty();
+  }
 
 private:
   static const size_t kMaxHistory = 60;
 
   std::deque<Entry> mHistory;
 };
+
 
 struct GPUStats
 {
@@ -49,7 +54,9 @@ struct GPUStats
   uint32_t mInvalidPixels;
   uint32_t mScreenPixels;
   uint32_t mPixelsFilled;
+  Maybe<float> mDrawTime;
 };
+
 
 class Diagnostics
 {
@@ -101,6 +108,7 @@ private:
   TimedMetric mUpdateMs;
   TimedMetric mPrepareMs;
   TimedMetric mCompositeMs;
+  TimedMetric mGPUDrawMs;
 };
 
 } 
