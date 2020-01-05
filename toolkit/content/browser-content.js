@@ -502,6 +502,40 @@ var Printing = {
     
     let articlePromise = ReaderMode.parseDocument(contentWindow.document).catch(Cu.reportError);
     articlePromise.then(function (article) {
+      
+      
+      
+      let webProgressListener = {
+        onStateChange: function (webProgress, req, flags, status) {
+          if (flags & Ci.nsIWebProgressListener.STATE_STOP) {
+            webProgress.removeProgressListener(webProgressListener);
+            let domUtils = content.QueryInterface(Ci.nsIInterfaceRequestor)
+                                  .getInterface(Ci.nsIDOMWindowUtils);
+            
+            
+            if (domUtils.isMozAfterPaintPending) {
+              addEventListener("MozAfterPaint", function onPaint() {
+                removeEventListener("MozAfterPaint", onPaint);
+                sendAsyncMessage("Printing:Preview:ReaderModeReady");
+              });
+            } else {
+              sendAsyncMessage("Printing:Preview:ReaderModeReady");
+            }
+          }
+        },
+
+        QueryInterface: XPCOMUtils.generateQI([
+          Ci.nsIWebProgressListener,
+          Ci.nsISupportsWeakReference,
+          Ci.nsIObserver,
+        ]),
+      };
+
+      
+      let webProgress =  docShell.QueryInterface(Ci.nsIInterfaceRequestor)
+                                 .getInterface(Ci.nsIWebProgress);
+      webProgress.addProgressListener(webProgressListener, Ci.nsIWebProgress.NOTIFY_STATE_REQUEST);
+
       content.document.head.innerHTML = "";
 
       
@@ -581,10 +615,6 @@ var Printing = {
 
       
       readerContent.style.display = "block";
-
-      
-      
-      sendAsyncMessage("Printing:Preview:ReaderModeReady");
     });
   },
 
@@ -1644,10 +1674,7 @@ let DateTimePickerListener = {
 
   getBoundingContentRect: function(aElement) {
     return BrowserUtils.getElementBoundingRect(aElement);
-  },
-
-  getTimePickerPref: function() {
-    return Services.prefs.getBoolPref("dom.forms.datetime.timepicker");
+    
   },
 
   
@@ -1675,9 +1702,7 @@ let DateTimePickerListener = {
   handleEvent: function(aEvent) {
     switch (aEvent.type) {
       case "MozOpenDateTimePicker": {
-        
-        if (!(aEvent.originalTarget instanceof content.HTMLInputElement) ||
-            (aEvent.originalTarget.type == "time" && !this.getTimePickerPref())) {
+        if (!(aEvent.originalTarget instanceof content.HTMLInputElement)) {
           return;
         }
         this._inputElement = aEvent.originalTarget;
