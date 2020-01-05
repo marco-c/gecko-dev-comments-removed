@@ -16,12 +16,14 @@
 #include <fstream>
 #include "platform.h"
 #include "shared-libraries.h"
+#include "mozilla/Sprintf.h"
 #include "mozilla/Unused.h"
 #include "nsDebug.h"
 #include "nsNativeCharsetUtils.h"
 
 #include "common/linux/file_id.h"
 #include <algorithm>
+
 
 
 
@@ -137,6 +139,27 @@ SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf()
 {
   SharedLibraryInfo info;
 
+#if defined(CONFIG_CASE_1)
+  
+  
+  char exeName[PATH_MAX];
+  memset(exeName, 0, sizeof(exeName));
+
+  ssize_t exeNameLen = readlink("/proc/self/exe", exeName, sizeof(exeName) - 1);
+  if (exeNameLen == -1) {
+    
+    exeName[0] = '\0';
+    exeNameLen = 0;
+    LOG("SharedLibraryInfo::GetInfoForSelf(): readlink failed");
+  } else {
+    
+    MOZ_RELEASE_ASSERT(exeNameLen >= 0 &&
+                       exeNameLen < static_cast<ssize_t>(sizeof(exeName)));
+  }
+
+  unsigned long exeExeAddr = 0;
+#endif
+
 #if defined(CONFIG_CASE_2)
   
   if (!dl_iterate_phdr) {
@@ -148,23 +171,21 @@ SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf()
   }
 #endif
 
-#if defined(CONFIG_CASE_2) || defined(CONFIG_CASE_3)
   
   
   
   pid_t pid = getpid();
   char path[PATH_MAX];
-  snprintf(path, PATH_MAX, "/proc/%d/maps", pid);
+  SprintfLiteral(path, "/proc/%d/maps", pid);
   std::ifstream maps(path);
   std::string line;
-  int count = 0;
   while (std::getline(maps, line)) {
     int ret;
     unsigned long start;
     unsigned long end;
-    char perm[6] = "";
+    char perm[6 + 1] = "";
     unsigned long offset;
-    char modulePath[PATH_MAX] = "";
+    char modulePath[PATH_MAX + 1] = "";
     ret = sscanf(line.c_str(),
                  "%lx-%lx %6s %lx %*s %*x %" PATH_MAX_STRING(PATH_MAX) "s\n",
                  &start, &end, perm, &offset, modulePath);
@@ -178,7 +199,14 @@ SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf()
       continue;
     }
 
-#if defined(CONFIG_CASE_2)
+#if defined(CONFIG_CASE_1)
+    
+    if (exeNameLen > 0 && strcmp(modulePath, exeName) == 0) {
+      exeExeAddr = start;
+    }
+    continue;
+    
+#elif defined(CONFIG_CASE_2)
     
     
     if (0 != strcmp(modulePath, "/dev/ashmem/dalvik-jit-code-cache")) {
@@ -195,6 +223,9 @@ SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf()
     
 #endif
 
+#if !defined(CONFIG_CASE_1)
+    
+    
     nsAutoString pathStr;
     mozilla::Unused <<
       NS_WARN_IF(NS_FAILED(NS_CopyNativeToUnicode(
@@ -209,19 +240,37 @@ SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf()
     SharedLibrary shlib(start, end, offset, getId(path),
                         nameStr, pathStr, nameStr, pathStr, "", "");
     info.AddSharedLibrary(shlib);
-    if (count > 10000) {
+    if (info.GetSize() > 10000) {
       LOG("SharedLibraryInfo::GetInfoForSelf(): "
           "implausibly large number of mappings acquired");
       break;
     }
-    count++;
+#endif
   }
-#endif 
 
 #if defined(CONFIG_CASE_1) || defined(CONFIG_CASE_2)
   
   
   dl_iterate_phdr(dl_iterate_callback, &info);
+#endif
+
+#if defined(CONFIG_CASE_1)
+  
+  
+  
+  
+  for (size_t i = 0; i < info.GetSize(); i++) {
+    SharedLibrary& lib = info.GetMutableEntry(i);
+    if (lib.GetStart() == exeExeAddr && lib.GetNativeDebugPath() == "") {
+      nsAutoString exeNameStr;
+      mozilla::Unused <<
+        NS_WARN_IF(NS_FAILED(NS_CopyNativeToUnicode(
+                               nsDependentCString(exeName), exeNameStr)));
+      lib.SetNativeDebugPath(exeNameStr);
+      
+      break;
+    }
+  }
 #endif
 
   return info;

@@ -57,10 +57,6 @@ read_procmaps(lul::LUL* aLUL)
       
       
       
-      
-      
-      
-      
       aLUL->NotifyExecutableArea(lib.GetStart(), lib.GetEnd()-lib.GetStart());
     }
 
