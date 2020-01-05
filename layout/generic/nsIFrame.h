@@ -1216,6 +1216,18 @@ public:
   }
 
   
+
+
+
+
+
+  nscoord SynthesizeBaselineFromBorderBox(mozilla::WritingMode aWM) const
+  {
+    nscoord borderBoxSize = BSize(aWM);
+    return aWM.IsAlphabeticalBaseline() ? borderBoxSize : borderBoxSize / 2;
+  }
+
+  
   
   
 
