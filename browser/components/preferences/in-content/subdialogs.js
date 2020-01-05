@@ -59,7 +59,7 @@ var gSubDialog = {
     }
     this._addDialogEventListeners();
 
-    let features = (!!aFeatures ? aFeatures + "," : "") + "resizable,dialog=no,centerscreen";
+    let features = (aFeatures ? aFeatures + "," : "") + "resizable,dialog=no,centerscreen";
     let dialog = window.openDialog(aURL, "dialogFrame", features, aParams);
     if (aClosingCallback) {
       this._closingCallback = aClosingCallback.bind(dialog);

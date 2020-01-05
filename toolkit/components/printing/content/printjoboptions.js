@@ -56,7 +56,7 @@ function initDialog()
 {
   gPrintBundle = document.getElementById("printBundle");
 
-  dialog = new Object;
+  dialog = {};
 
   dialog.paperList       = document.getElementById("paperList");
   dialog.paperGroup      = document.getElementById("paperGroup");
@@ -141,7 +141,7 @@ function createPaperArrayFromDefaults()
   gPaperArray = new Array();
 
   for (var i=0;i<paperNames.length;i++) {
-    var obj    = new Object();
+    var obj    = {};
     obj.name   = paperNames[i];
     obj.width  = paperWidths[i];
     obj.height = paperHeights[i];
@@ -177,7 +177,7 @@ function createPaperArrayFromPrinterFeatures()
   }
 
   for (var i=0;i<numPapers;i++) {
-    var obj    = new Object();
+    var obj       = {};
     obj.name      = gPrefs.getCharPref("print.tmp.printerfeatures." + printername + ".paper." + i + ".name");
     obj.width_mm  = gPrefs.getIntPref("print.tmp.printerfeatures."  + printername + ".paper." + i + ".width_mm");
     obj.height_mm = gPrefs.getIntPref("print.tmp.printerfeatures."  + printername + ".paper." + i + ".height_mm");

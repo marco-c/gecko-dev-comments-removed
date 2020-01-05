@@ -85,7 +85,7 @@ module.exports = {
     "no-ex-assign": 2,
 
     
-    
+    "no-extra-boolean-cast": 2,
 
     
     "no-extra-semi": 2,
@@ -118,7 +118,7 @@ module.exports = {
     "no-nested-ternary": 2,
 
     
-    
+    "no-new-object": 2,
 
     
     "no-obj-calls": 2,
@@ -136,7 +136,7 @@ module.exports = {
     
 
     
-    
+    "no-shadow-restricted-names": 2,
 
     
     
@@ -182,6 +182,9 @@ module.exports = {
 
     
     
+
+    
+    "spaced-comment": 2,
 
     
     "use-isnan": 2,

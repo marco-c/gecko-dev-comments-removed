@@ -487,7 +487,7 @@ Experiments.Experiments.prototype = {
       latestLogs: this._forensicsLogs,
       experiments: this._experiments ? [...this._experiments.keys()] : null,
       terminateReason: this._terminateReason,
-      activeExperiment: !!activeExperiment ? activeExperiment.id : null,
+      activeExperiment: activeExperiment ? activeExperiment.id : null,
     };
     if (this._latestError) {
       if (typeof this._latestError == "object") {
@@ -1564,7 +1564,7 @@ Experiments.ExperimentEntry.prototype = {
 
     
     
-    this._lastChangedDate = !!this._endDate ? this._endDate : this._policy.now();
+    this._lastChangedDate = this._endDate ? this._endDate : this._policy.now();
 
     return true;
   },
@@ -1976,7 +1976,7 @@ Experiments.ExperimentEntry.prototype = {
     }
 
     
-    if (!!(addon.operationsRequiringRestart & AddonManager.OP_NEEDS_RESTART_ENABLE)) {
+    if (addon.operationsRequiringRestart & AddonManager.OP_NEEDS_RESTART_ENABLE) {
       throw new Error("Experiment addon requires a restart: " + addon.id);
     }
 

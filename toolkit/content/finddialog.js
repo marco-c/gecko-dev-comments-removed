@@ -14,7 +14,7 @@ var gFindInstData;
 function initDialogObject()
 {
   
-  dialog = new Object;
+  dialog = {};
   dialog.findKey         = document.getElementById("dialog.findKey");
   dialog.caseSensitive   = document.getElementById("dialog.caseSensitive");
   dialog.wrap            = document.getElementById("dialog.wrap");

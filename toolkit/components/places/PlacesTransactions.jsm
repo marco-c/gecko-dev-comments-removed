@@ -1314,7 +1314,7 @@ PT.Annotate.prototype = {
       let undoAnnos = [];
       for (let newAnno of aNewAnnos) {
         let currentAnno = currentAnnos.find(a => a.name == newAnno.name);
-        if (!!currentAnno) {
+        if (currentAnno) {
           undoAnnos.push(currentAnno);
         }
         else {

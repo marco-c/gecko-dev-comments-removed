@@ -18,7 +18,7 @@ var gDoDebug = false;
 
 function initDialog()
 {
-  gDialog = new Object;
+  gDialog = {};
 
   gDialog.orientation     = document.getElementById("orientation");
   gDialog.portrait        = document.getElementById("portrait");

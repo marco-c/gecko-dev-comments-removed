@@ -18,7 +18,7 @@ var doDebug            = false;
 
 function initDialog()
 {
-  dialog = new Object;
+  dialog = {};
 
   dialog.propertiesButton = document.getElementById("properties");
   dialog.descText         = document.getElementById("descText");

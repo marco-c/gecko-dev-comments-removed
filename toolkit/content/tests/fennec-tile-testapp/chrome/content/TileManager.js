@@ -207,7 +207,7 @@ TileManager.prototype = {
 	  tile = null;
 
 	  
-	  if (!!(tc._tiles[i] && tc._tiles[i][j])) {
+	  if (tc._tiles[i] && tc._tiles[i][j]) {
 	    tile = tc._tiles[i][j];
 	  } else if (create) {
 	    

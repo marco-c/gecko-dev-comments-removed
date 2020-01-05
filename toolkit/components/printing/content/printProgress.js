@@ -220,7 +220,7 @@ function onLoad() {
         return;
     }
 
-    dialog = new Object;
+    dialog = {};
     dialog.strings = new Array;
     dialog.title        = document.getElementById("dialog.title");
     dialog.titleLabel   = document.getElementById("dialog.titleLabel");
