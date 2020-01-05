@@ -706,6 +706,12 @@ private:
 
   void StartDormantTimer()
   {
+    if (!mMaster->mMediaSeekable) {
+      
+      
+      return;
+    }
+
     auto timeout = MediaPrefs::DormantOnPauseTimeout();
     if (timeout < 0) {
       
