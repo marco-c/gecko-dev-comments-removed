@@ -265,7 +265,7 @@ nsHtml5TreeOpExecutor::ContinueInterruptedParsingAsync()
 {
   if (!mDocument || !mDocument->IsInBackgroundWindow()) {
     nsCOMPtr<nsIRunnable> flusher = new nsHtml5ExecutorReflusher(this);  
-    if (NS_FAILED(mDocument->Dispatch("ContinueInterruptedParsingAsync",
+    if (NS_FAILED(mDocument->Dispatch("nsHtml5ExecutorReflusher",
                                       dom::TaskCategory::Other,
                                       flusher.forget()))) {
       NS_WARNING("failed to dispatch executor flush event");
@@ -647,10 +647,6 @@ nsHtml5TreeOpExecutor::RunScript(nsIContent* aScriptElement)
 
   NS_ASSERTION(aScriptElement, "No script to run");
   nsCOMPtr<nsIScriptElement> sele = do_QueryInterface(aScriptElement);
-  if (!sele) {
-    MOZ_ASSERT(nsNameSpaceManager::GetInstance()->mSVGDisabled, "Node didn't QI to script, but SVG wasn't disabled.");
-    return;
-  }
   
   if (!mParser) {
     NS_ASSERTION(sele->IsMalformed(), "Script wasn't marked as malformed.");
