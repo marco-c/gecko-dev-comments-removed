@@ -147,6 +147,7 @@ impl HTMLOptionElementMethods for HTMLOptionElement {
         self.dirtiness.set(true);
         self.selectedness.set(selected);
         
+        
     }
 }
 
