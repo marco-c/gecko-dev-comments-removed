@@ -47,7 +47,7 @@ function base64UrlDecode(s) {
       s += "=";
       break; 
     default:
-      throw new Error("Illegal base64url string!");
+      throw new InputException("Illegal base64url string!");
   }
 
   
