@@ -55,10 +55,6 @@ public:
   ~NextFrameSeekTask();
 
   
-  
-  void UpdateSeekTargetTime();
-
-  
 
 
   MediaQueue<MediaData>& mAudioQueue;
