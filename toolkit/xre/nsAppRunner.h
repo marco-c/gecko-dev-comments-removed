@@ -43,9 +43,7 @@ class nsString;
 extern nsXREDirProvider* gDirServiceProvider;
 
 
-
-
-extern const nsXREAppData* gAppData;
+extern const mozilla::XREAppData* gAppData;
 extern bool gSafeMode;
 
 extern int    gArgc;
