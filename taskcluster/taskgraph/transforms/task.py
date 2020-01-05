@@ -202,10 +202,10 @@ task_description_schema = Schema({
         Required('env', default={}): {basestring: taskref_or_string},
 
         
-        Required('command'): [taskref_or_string],
+        'command': [taskref_or_string],
 
         
-        Required('max-run-time'): int,
+        'max-run-time': int,
 
         
         Optional('retry-exit-status'): int,
@@ -214,7 +214,7 @@ task_description_schema = Schema({
         Required('implementation'): 'generic-worker',
 
         
-        Required('command'): [taskref_or_string],
+        'command': [taskref_or_string],
 
         
         
@@ -239,7 +239,7 @@ task_description_schema = Schema({
         Required('env', default={}): {basestring: taskref_or_string},
 
         
-        Required('max-run-time'): int,
+        'max-run-time': int,
 
         
         Optional('os-groups', default=[]): [basestring],
@@ -248,14 +248,14 @@ task_description_schema = Schema({
 
         
         
-        Required('buildername'): basestring,
-        Required('sourcestamp'): {
+        'buildername': basestring,
+        'sourcestamp': {
             'branch': basestring,
             Optional('revision'): basestring,
             Optional('repository'): basestring,
             Optional('project'): basestring,
         },
-        Required('properties'): {
+        'properties': {
             'product': basestring,
             Extra: basestring,  
         },
