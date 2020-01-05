@@ -14,8 +14,7 @@ function* awaitResize(browser) {
   
 
   return Promise.race([
-    BrowserTestUtils.waitForEvent(browser, "WebExtPopupResized")
-      .then(() => BrowserTestUtils.waitForEvent(browser, "WebExtPopupResized")),
+    BrowserTestUtils.waitForEvent(browser, "WebExtPopupResized", event => event.detail === "delayed"),
     new Promise(resolve => setTimeout(resolve, 5000)),
   ]);
 }
@@ -35,8 +34,6 @@ add_task(function* testBrowserActionPopupResize() {
   });
 
   yield extension.startup();
-
-  clickBrowserAction(extension, window);
 
   let browser = yield openPanel(extension);
   let panelWindow = browser.contentWindow;

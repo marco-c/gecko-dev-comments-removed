@@ -28,12 +28,18 @@ XPCOMUtils.defineLazyModuleGetter(this, "Locale",
                                   "resource://gre/modules/Locale.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "MessageChannel",
                                   "resource://gre/modules/MessageChannel.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "NetUtil",
+                                  "resource://gre/modules/NetUtil.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Preferences",
                                   "resource://gre/modules/Preferences.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "PromiseUtils",
                                   "resource://gre/modules/PromiseUtils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Schemas",
                                   "resource://gre/modules/Schemas.jsm");
+
+XPCOMUtils.defineLazyServiceGetter(this, "styleSheetService",
+                                   "@mozilla.org/content/style-sheet-service;1",
+                                   "nsIStyleSheetService");
 
 function getConsole() {
   return new ConsoleAPI({
@@ -143,6 +149,20 @@ class DefaultWeakMap extends WeakMap {
   get(key) {
     if (!this.has(key)) {
       this.set(key, this.defaultConstructor());
+    }
+    return super.get(key);
+  }
+}
+
+class DefaultMap extends Map {
+  constructor(defaultConstructor, init) {
+    super(init);
+    this.defaultConstructor = defaultConstructor;
+  }
+
+  get(key) {
+    if (!this.has(key)) {
+      this.set(key, this.defaultConstructor(key));
     }
     return super.get(key);
   }
@@ -1129,6 +1149,35 @@ function promiseDocumentLoaded(doc) {
 
 
 
+
+
+
+
+
+function promiseEvent(element, eventName, useCapture = true, test = event => true) {
+  return new Promise(resolve => {
+    function listener(event) {
+      if (test(event)) {
+        element.removeEventListener(eventName, listener, useCapture);
+        resolve(event);
+      }
+    }
+    element.addEventListener(eventName, listener, useCapture);
+  });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 function promiseObserved(topic, test = () => true) {
   return new Promise(resolve => {
     let observer = (subject, topic, data) => {
@@ -1967,6 +2016,11 @@ function normalizeTime(date) {
                         ? parseInt(date, 10) : date);
 }
 
+const stylesheetMap = new DefaultMap(url => {
+  let uri = NetUtil.newURI(url);
+  return styleSheetService.preloadSheet(uri, styleSheetService.AGENT_SHEET);
+});
+
 this.ExtensionUtils = {
   detectLanguage,
   extend,
@@ -1979,11 +2033,13 @@ this.ExtensionUtils = {
   normalizeTime,
   promiseDocumentLoaded,
   promiseDocumentReady,
+  promiseEvent,
   promiseObserved,
   runSafe,
   runSafeSync,
   runSafeSyncWithoutClone,
   runSafeWithoutClone,
+  stylesheetMap,
   BaseContext,
   DefaultWeakMap,
   EventEmitter,
