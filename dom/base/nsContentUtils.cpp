@@ -1105,8 +1105,9 @@ nsContentUtils::ParseHTMLInteger(const nsAString& aValue,
       if (!value.isValid()) {
         result |= eParseHTMLInteger_Error | eParseHTMLInteger_ErrorOverflow;
         break;
+      } else {
+        foundValue = true;
       }
-      foundValue = true;
     } else if (*iter == char16_t('%')) {
       ++iter;
       result |= eParseHTMLInteger_IsPercent;
@@ -4941,20 +4942,22 @@ nsContentUtils::AppendNodeTextContent(nsINode* aNode, bool aDeep,
     return static_cast<nsIContent*>(aNode)->AppendTextTo(aResult,
                                                          aFallible);
   }
-  if (aDeep) {
+  else if (aDeep) {
     return AppendNodeTextContentsRecurse(aNode, aResult, aFallible);
   }
-
-  for (nsIContent* child = aNode->GetFirstChild();
-       child;
-       child = child->GetNextSibling()) {
-    if (child->IsNodeOfType(nsINode::eTEXT)) {
-      bool ok = child->AppendTextTo(aResult, fallible);
-      if (!ok) {
-        return false;
+  else {
+    for (nsIContent* child = aNode->GetFirstChild();
+         child;
+         child = child->GetNextSibling()) {
+      if (child->IsNodeOfType(nsINode::eTEXT)) {
+        bool ok = child->AppendTextTo(aResult, fallible);
+        if (!ok) {
+            return false;
+        }
       }
     }
   }
+
   return true;
 }
 
@@ -5753,8 +5756,9 @@ nsContentUtils::GetCurrentJSContextForThread()
   MOZ_ASSERT(IsInitialized());
   if (MOZ_LIKELY(NS_IsMainThread())) {
     return GetCurrentJSContext();
+  } else {
+    return workers::GetCurrentThreadJSContext();
   }
-  return workers::GetCurrentThreadJSContext();
 }
 
 template<typename StringType, typename CharType>
@@ -8454,6 +8458,7 @@ nsContentUtils::InternalContentPolicyTypeToExternal(nsContentPolicyType aType)
   case nsIContentPolicy::TYPE_INTERNAL_WORKER:
   case nsIContentPolicy::TYPE_INTERNAL_SHARED_WORKER:
   case nsIContentPolicy::TYPE_INTERNAL_SERVICE_WORKER:
+  case nsIContentPolicy::TYPE_INTERNAL_WORKER_IMPORT_SCRIPTS:
     return nsIContentPolicy::TYPE_SCRIPT;
 
   case nsIContentPolicy::TYPE_INTERNAL_EMBED:
@@ -8686,11 +8691,9 @@ nsContentUtils::InternalStorageAllowedForPrincipal(nsIPrincipal* aPrincipal,
   permissionManager->TestPermissionFromPrincipal(aPrincipal, "cookie", &perm);
   if (perm == nsIPermissionManager::DENY_ACTION) {
     return StorageAccess::eDeny;
-  }
-  if (perm == nsICookiePermission::ACCESS_SESSION) {
+  } else if (perm == nsICookiePermission::ACCESS_SESSION) {
     return std::min(access, StorageAccess::eSessionScoped);
-  }
-  if (perm == nsIPermissionManager::ALLOW_ACTION) {
+  } else if (perm == nsIPermissionManager::ALLOW_ACTION) {
     return access;
   }
 
