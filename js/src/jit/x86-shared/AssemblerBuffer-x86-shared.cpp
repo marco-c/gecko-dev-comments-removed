@@ -10,7 +10,9 @@
 
 #include "jsopcode.h"
 
-void js::jit::GenericAssembler::spew(const char* fmt, va_list va)
+#ifdef JS_JITSPEW
+void
+js::jit::GenericAssembler::spew(const char* fmt, va_list va)
 {
     
     
@@ -23,3 +25,4 @@ void js::jit::GenericAssembler::spew(const char* fmt, va_list va)
         js::jit::JitSpew(js::jit::JitSpew_Codegen, "%s", buf);
     }
 }
+#endif
