@@ -97,17 +97,13 @@ public:
     return OtherPid();
   }
 
-  void AddPendingCompositorUpdate() {
-    mPendingCompositorUpdates++;
+  void SetPendingCompositorUpdate(uint64_t aNumber) {
+    mPendingCompositorUpdate = Some(aNumber);
   }
-  void SetPendingCompositorUpdates(uint32_t aCount) {
-    
-    MOZ_ASSERT(mPendingCompositorUpdates == 0);
-    mPendingCompositorUpdates = aCount;
-  }
-  void AcknowledgeCompositorUpdate() {
-    MOZ_ASSERT(mPendingCompositorUpdates > 0);
-    mPendingCompositorUpdates--;
+  void AcknowledgeCompositorUpdate(uint64_t aNumber) {
+    if (mPendingCompositorUpdate == Some(aNumber)) {
+      mPendingCompositorUpdate = Nothing();
+    }
   }
 
 protected:
@@ -202,7 +198,7 @@ private:
 
   
   
-  uint32_t mPendingCompositorUpdates;
+  Maybe<uint64_t> mPendingCompositorUpdate;
 
   
   
