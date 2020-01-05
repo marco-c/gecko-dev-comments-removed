@@ -5,10 +5,10 @@
 
 #include "Helpers.h"
 #include "mozIStorageError.h"
-#include "plbase64.h"
 #include "prio.h"
 #include "nsString.h"
 #include "nsNavHistory.h"
+#include "mozilla/Base64.h"
 #include "mozilla/Services.h"
 
 
@@ -201,30 +201,6 @@ ReverseString(const nsString& aInput, nsString& aReversed)
   }
 }
 
-static
-nsresult
-Base64urlEncode(const uint8_t* aBytes,
-                uint32_t aNumBytes,
-                nsCString& _result)
-{
-  
-  
-  
-  
-  uint32_t length = (aNumBytes + 2) / 3 * 4; 
-  NS_ENSURE_TRUE(_result.SetCapacity(length + 1, fallible),
-                 NS_ERROR_OUT_OF_MEMORY);
-  _result.SetLength(length);
-  (void)PL_Base64Encode(reinterpret_cast<const char*>(aBytes), aNumBytes,
-                        _result.BeginWriting());
-
-  
-  
-  _result.ReplaceChar('+', '-');
-  _result.ReplaceChar('/', '_');
-  return NS_OK;
-}
-
 #ifdef XP_WIN
 } 
 } 
@@ -284,7 +260,8 @@ GenerateGUID(nsCString& _guid)
   nsresult rv = GenerateRandomBytes(kRequiredBytesLength, buffer);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  rv = Base64urlEncode(buffer, kRequiredBytesLength, _guid);
+  rv = Base64URLEncode(kRequiredBytesLength, buffer,
+                       Base64URLEncodePaddingPolicy::Omit, _guid);
   NS_ENSURE_SUCCESS(rv, rv);
 
   NS_ASSERTION(_guid.Length() == GUID_LENGTH, "GUID is not the right size!");
