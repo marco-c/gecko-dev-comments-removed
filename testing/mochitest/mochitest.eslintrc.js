@@ -11,6 +11,10 @@ module.exports = {
     "mozilla/simpletest": true,
   },
 
+  "plugins": [
+    "mozilla"
+  ],
+
   
   "globals": {
     
