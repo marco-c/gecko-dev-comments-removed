@@ -2,6 +2,7 @@
 
 
 
+#![feature(alloc)]
 #![feature(box_syntax)]
 #![feature(collections)]
 #![feature(core)]
