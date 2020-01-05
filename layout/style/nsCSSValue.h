@@ -113,7 +113,11 @@ protected:
                already_AddRefed<PtrHolder<nsIPrincipal>> aOriginPrincipal);
 
 public:
-  bool operator==(const URLValueData& aOther) const;
+  
+  
+  
+  
+  bool Equals(const URLValueData& aOther) const;
 
   
   
