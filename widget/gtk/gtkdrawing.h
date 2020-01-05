@@ -291,6 +291,11 @@ gint moz_gtk_init();
 
 
 
+void moz_gtk_refresh();
+
+
+
+
 
 
 
