@@ -1031,17 +1031,17 @@ private:
     }
 
     
+    if (!mOwner->IsActive()) {
+      return false;
+    }
+
+    
     if (IsSuspended()) {
       return true;
     }
 
     
     if (mOwner->mPaused) {
-      return false;
-    }
-
-    
-    if (!mOwner->IsActive()) {
       return false;
     }
 
