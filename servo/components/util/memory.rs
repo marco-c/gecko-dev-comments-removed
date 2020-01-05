@@ -6,11 +6,10 @@
 
 use libc::{c_char,c_int,c_void,size_t};
 use std::borrow::ToOwned;
+use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::collections::LinkedList;
 use std::ffi::CString;
-#[cfg(target_os = "linux")]
-use std::iter::AdditiveIterator;
 use std::old_io::timer::sleep;
 use std::mem::{size_of, transmute};
 use std::ptr::null_mut;
@@ -183,9 +182,15 @@ impl MemoryProfilerChan {
     }
 }
 
+
+#[macro_export]
+macro_rules! path {
+    ($($x:expr),*) => {{ vec![$( $x.to_owned() ),*] }}
+}
+
 pub struct MemoryReport {
     
-    pub name: String,
+    pub path: Vec<String>,
 
     
     pub size: u64,
@@ -328,7 +333,8 @@ impl MemoryProfiler {
     }
 
     fn handle_print_msg(&self) {
-        println!("{:12}: {}", "_size (MiB)_", "_category_");
+        println!("Begin memory reports");
+        println!("|");
 
         
         
@@ -336,21 +342,181 @@ impl MemoryProfiler {
         
         
         
+        let mut forest = ReportsForest::new();
         for reporter in self.reporters.values() {
             let (chan, port) = channel();
             if reporter.collect_reports(MemoryReportsChan(chan)) {
                 if let Ok(reports) = port.recv() {
-                    for report in reports {
-                        let mebi = 1024f64 * 1024f64;
-                        println!("{:12.2}: {}", (report.size as f64) / mebi, report.name);
+                    for report in reports.iter() {
+                        forest.insert(&report.path, report.size);
                     }
                 }
             }
         }
+        forest.print();
 
+        println!("|");
+        println!("End memory reports");
         println!("");
     }
 }
+
+
+
+struct ReportsTree {
+    
+    
+    size: u64,
+
+    
+    
+    count: u32,
+
+    
+    path_seg: String,
+
+    
+    children: Vec<ReportsTree>,
+}
+
+impl ReportsTree {
+    fn new(path_seg: String) -> ReportsTree {
+        ReportsTree {
+            size: 0,
+            count: 0,
+            path_seg: path_seg,
+            children: vec![]
+        }
+    }
+
+    
+    
+    fn find_child(&self, path_seg: &String) -> Option<usize> {
+        for (i, child) in self.children.iter().enumerate() {
+            if child.path_seg == *path_seg {
+                return Some(i);
+            }
+        }
+        None
+    }
+
+    
+    fn insert(&mut self, path: &[String], size: u64) {
+        let mut t: &mut ReportsTree = self;
+        for path_seg in path.iter() {
+            let i = match t.find_child(&path_seg) {
+                Some(i) => i,
+                None => {
+                    let new_t = ReportsTree::new(path_seg.clone());
+                    t.children.push(new_t);
+                    t.children.len() - 1
+                },
+            };
+            let tmp = t;    
+            t = &mut tmp.children[i];
+        }
+
+        t.size += size;
+        t.count += 1;
+    }
+
+    
+    
+    fn compute_interior_node_sizes(&mut self) -> u64 {
+        if !self.children.is_empty() {
+            
+            if self.size != 0 {
+                
+                panic!("one report's path is a sub-path of another report's path");
+            }
+            for child in self.children.iter_mut() {
+                self.size += child.compute_interior_node_sizes();
+            }
+        }
+        self.size
+    }
+
+    fn print(&self, depth: i32) {
+        if !self.children.is_empty() {
+            assert_eq!(self.count, 0);
+        }
+
+        let mut indent_str = String::new();
+        for _ in range(0, depth) {
+            indent_str.push_str("   ");
+        }
+
+        let mebi = 1024f64 * 1024f64;
+        let count_str = if self.count > 1 { format!(" {}", self.count) } else { "".to_owned() };
+        println!("|{}{:8.2} MiB -- {}{}",
+                 indent_str, (self.size as f64) / mebi, self.path_seg, count_str);
+
+        for child in self.children.iter() {
+            child.print(depth + 1);
+        }
+    }
+}
+
+
+
+struct ReportsForest {
+    trees: HashMap<String, ReportsTree>,
+}
+
+impl ReportsForest {
+    fn new() -> ReportsForest {
+        ReportsForest {
+            trees: HashMap::new(),
+        }
+    }
+
+    
+    fn insert(&mut self, path: &[String], size: u64) {
+        
+        if !self.trees.contains_key(&path[0]) {
+            self.trees.insert(path[0].clone(), ReportsTree::new(path[0].clone()));
+        }
+        let t = self.trees.get_mut(&path[0]).unwrap();
+
+        
+        t.insert(path.tail(), size);
+    }
+
+    fn print(&mut self) {
+        
+        for (_, tree) in self.trees.iter_mut() {
+            tree.compute_interior_node_sizes();
+        }
+
+        
+        
+        
+        let mut v = vec![];
+        for (_, tree) in self.trees.iter() {
+            v.push(tree);
+        }
+        v.sort_by(|a, b| {
+            if a.children.is_empty() && !b.children.is_empty() {
+                Ordering::Greater
+            } else if !a.children.is_empty() && b.children.is_empty() {
+                Ordering::Less
+            } else {
+                a.path_seg.cmp(&b.path_seg)
+            }
+        });
+
+        
+        for tree in v.iter() {
+            tree.print(0);
+            
+            if !tree.children.is_empty() {
+                println!("|");
+            }
+        }
+    }
+}
+
+
 
 
 struct SystemMemoryReporter;
@@ -359,40 +525,42 @@ impl MemoryReporter for SystemMemoryReporter {
     fn collect_reports(&self, reports_chan: MemoryReportsChan) -> bool {
         let mut reports = vec![];
         {
-            let mut report = |name: &str, size| {
+            let mut report = |path, size| {
                 if let Some(size) = size {
-                    reports.push(MemoryReport { name: name.to_owned(), size: size });
+                    reports.push(MemoryReport { path: path, size: size });
                 }
             };
 
             
-            report("vsize", get_vsize());
-            report("resident", get_resident());
+            report(path!["vsize"], get_vsize());
+            report(path!["resident"], get_resident());
 
             
             for seg in get_resident_segments().iter() {
-                report(seg.0.as_slice(), Some(seg.1));
+                report(path!["resident-according-to-smaps".to_owned(), seg.0.to_owned()],
+                       Some(seg.1));
             }
 
             
             
-            report("system-heap-allocated", get_system_heap_allocated());
+            report(path!["system-heap-allocated".to_owned()], get_system_heap_allocated());
 
             
             
 
             
-            report("jemalloc-heap-allocated", get_jemalloc_stat("stats.allocated"));
+            report(path!["jemalloc-heap-allocated".to_owned()],
+                   get_jemalloc_stat("stats.allocated"));
 
             
             
             
-            report("jemalloc-heap-active", get_jemalloc_stat("stats.active"));
+            report(path!["jemalloc-heap-active"], get_jemalloc_stat("stats.active"));
 
             
             
             
-            report("jemalloc-heap-mapped", get_jemalloc_stat("stats.mapped"));
+            report(path!["jemalloc-heap-mapped"], get_jemalloc_stat("stats.mapped"));
         }
         reports_chan.send(reports);
 
@@ -583,7 +751,6 @@ fn get_resident_segments() -> Vec<(String, u64)> {
 
             
             curr_seg_name.clear();
-            curr_seg_name.push_str("- ");
             if pathname == "" || pathname.starts_with("[stack:") {
                 
                 
@@ -609,7 +776,7 @@ fn get_resident_segments() -> Vec<(String, u64)> {
             if rss > 0 {
                 
                 let seg_name = if rss < 512 * 1024 {
-                    "- other".to_owned()
+                    "other".to_owned()
                 } else {
                     curr_seg_name.clone()
                 };
@@ -627,11 +794,6 @@ fn get_resident_segments() -> Vec<(String, u64)> {
 
     
     
-    
-    
-    let total = segs.iter().map(|&(_, size)| size).sum();
-    segs.push(("resident-according-to-smaps".to_owned(), total));
-
     
     segs.sort_by(|&(_, rss1), &(_, rss2)| rss2.cmp(&rss1));
 
