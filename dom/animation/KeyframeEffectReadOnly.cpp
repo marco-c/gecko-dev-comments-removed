@@ -18,7 +18,7 @@
 #include "mozilla/LookAndFeel.h" 
 #include "mozilla/KeyframeUtils.h"
 #include "mozilla/ServoBindings.h"
-#include "mozilla/StyleAnimationValue.h"
+#include "mozilla/StyleAnimationValueInlines.h"
 #include "Layers.h" 
 #include "nsComputedDOMStyle.h" 
 #include "nsContentUtils.h"  
