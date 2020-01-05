@@ -1526,17 +1526,25 @@ class Parser final : public ParserBase, private JS::AutoGCRooter
 
     Node objectLiteral(YieldHandling yieldHandling, PossibleError* possibleError);
 
+    Node bindingInitializer(Node lhs, YieldHandling yieldHandling);
+    Node bindingIdentifier(DeclarationKind kind, YieldHandling yieldHandling);
+    Node bindingIdentifierOrPattern(DeclarationKind kind, YieldHandling yieldHandling,
+                                    TokenKind tt);
+    Node objectBindingPattern(DeclarationKind kind, YieldHandling yieldHandling);
+    Node arrayBindingPattern(DeclarationKind kind, YieldHandling yieldHandling);
+
     
-    bool checkDestructuringPattern(Node pattern, const mozilla::Maybe<DeclarationKind>& maybeDecl,
-                                   PossibleError* possibleError = nullptr);
+    
+    bool checkDestructuringAssignmentPattern(Node pattern,
+                                             PossibleError* possibleError = nullptr);
 
     
     
     
     
-    bool checkDestructuringArray(Node arrayPattern, const mozilla::Maybe<DeclarationKind>& maybeDecl);
-    bool checkDestructuringObject(Node objectPattern, const mozilla::Maybe<DeclarationKind>& maybeDecl);
-    bool checkDestructuringName(Node expr, const mozilla::Maybe<DeclarationKind>& maybeDecl);
+    bool checkDestructuringAssignmentArray(Node arrayPattern);
+    bool checkDestructuringAssignmentObject(Node objectPattern);
+    bool checkDestructuringAssignmentName(Node expr);
 
     Node newNumber(const Token& tok) {
         return handler.newNumber(tok.number(), tok.decimalPoint(), tok.pos);

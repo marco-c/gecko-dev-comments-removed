@@ -4286,8 +4286,7 @@ Parser<ParseHandler, CharT>::PossibleError::transferErrorsTo(PossibleError* othe
 
 template <>
 bool
-Parser<FullParseHandler, char16_t>::checkDestructuringName(ParseNode* expr,
-                                                           const Maybe<DeclarationKind>& maybeDecl)
+Parser<FullParseHandler, char16_t>::checkDestructuringAssignmentName(ParseNode* expr)
 {
     MOZ_ASSERT(!handler.isUnparenthesizedDestructuringPattern(expr));
 
@@ -4300,22 +4299,6 @@ Parser<FullParseHandler, char16_t>::checkDestructuringName(ParseNode* expr,
     }
 
     
-    
-    if (maybeDecl) {
-        
-        
-        if (!handler.isUnparenthesizedName(expr)) {
-            errorAt(expr->pn_pos.begin, JSMSG_NO_VARIABLE_NAME);
-            return false;
-        }
-
-        RootedPropertyName name(context, expr->name());
-        
-        if (!checkBindingIdentifier(name, expr->pn_pos.begin, YieldIsName))
-            return false;
-        return noteDeclaredName(name, *maybeDecl, expr->pn_pos);
-    }
-
     
     if (handler.isNameAnyParentheses(expr)) {
         if (const char* chars = handler.nameIsArgumentsEvalAnyParentheses(expr, context)) {
@@ -4335,23 +4318,20 @@ Parser<FullParseHandler, char16_t>::checkDestructuringName(ParseNode* expr,
 
 template <>
 bool
-Parser<FullParseHandler, char16_t>::checkDestructuringPattern(ParseNode* pattern,
-                                                              const Maybe<DeclarationKind>& maybeDecl,
-                                                              PossibleError* possibleError );
+Parser<FullParseHandler, char16_t>::checkDestructuringAssignmentPattern(ParseNode* pattern,
+                                                                        PossibleError* possibleError );
 
 template <>
 bool
-Parser<SyntaxParseHandler, char16_t>::checkDestructuringPattern(Node pattern,
-                                                                const Maybe<DeclarationKind>& maybeDecl,
-                                                                PossibleError* possibleError )
+Parser<SyntaxParseHandler, char16_t>::checkDestructuringAssignmentPattern(Node pattern,
+                                                                          PossibleError* possibleError )
 {
     return abortIfSyntaxParser();
 }
 
 template <>
 bool
-Parser<FullParseHandler, char16_t>::checkDestructuringObject(ParseNode* objectPattern,
-                                                             const Maybe<DeclarationKind>& maybeDecl)
+Parser<FullParseHandler, char16_t>::checkDestructuringAssignmentObject(ParseNode* objectPattern)
 {
     MOZ_ASSERT(objectPattern->isKind(PNK_OBJECT));
 
@@ -4372,10 +4352,10 @@ Parser<FullParseHandler, char16_t>::checkDestructuringObject(ParseNode* objectPa
             target = target->pn_left;
 
         if (handler.isUnparenthesizedDestructuringPattern(target)) {
-            if (!checkDestructuringPattern(target, maybeDecl))
+            if (!checkDestructuringAssignmentPattern(target))
                 return false;
         } else {
-            if (!checkDestructuringName(target, maybeDecl))
+            if (!checkDestructuringAssignmentName(target))
                 return false;
         }
     }
@@ -4385,8 +4365,7 @@ Parser<FullParseHandler, char16_t>::checkDestructuringObject(ParseNode* objectPa
 
 template <>
 bool
-Parser<FullParseHandler, char16_t>::checkDestructuringArray(ParseNode* arrayPattern,
-                                                            const Maybe<DeclarationKind>& maybeDecl)
+Parser<FullParseHandler, char16_t>::checkDestructuringAssignmentArray(ParseNode* arrayPattern)
 {
     MOZ_ASSERT(arrayPattern->isKind(PNK_ARRAY));
 
@@ -4408,10 +4387,10 @@ Parser<FullParseHandler, char16_t>::checkDestructuringArray(ParseNode* arrayPatt
         }
 
         if (handler.isUnparenthesizedDestructuringPattern(target)) {
-            if (!this->checkDestructuringPattern(target, maybeDecl))
+            if (!this->checkDestructuringAssignmentPattern(target))
                 return false;
         } else {
-            if (!checkDestructuringName(target, maybeDecl))
+            if (!checkDestructuringAssignmentName(target))
                 return false;
         }
     }
@@ -4450,14 +4429,10 @@ Parser<FullParseHandler, char16_t>::checkDestructuringArray(ParseNode* arrayPatt
 
 
 
-
-
-
 template <>
 bool
-Parser<FullParseHandler, char16_t>::checkDestructuringPattern(ParseNode* pattern,
-                                                              const Maybe<DeclarationKind>& maybeDecl,
-                                                              PossibleError* possibleError )
+Parser<FullParseHandler, char16_t>::checkDestructuringAssignmentPattern(ParseNode* pattern,
+                                                                        PossibleError* possibleError )
 {
     if (pattern->isKind(PNK_ARRAYCOMP)) {
         errorAt(pattern->pn_pos.begin, JSMSG_ARRAY_COMP_LEFTSIDE);
@@ -4465,14 +4440,282 @@ Parser<FullParseHandler, char16_t>::checkDestructuringPattern(ParseNode* pattern
     }
 
     bool isDestructuring = pattern->isKind(PNK_ARRAY)
-                           ? checkDestructuringArray(pattern, maybeDecl)
-                           : checkDestructuringObject(pattern, maybeDecl);
+                           ? checkDestructuringAssignmentArray(pattern)
+                           : checkDestructuringAssignmentObject(pattern);
 
     
     if (isDestructuring && possibleError && !possibleError->checkForDestructuringError())
         return false;
 
     return isDestructuring;
+}
+
+class AutoClearInDestructuringDecl
+{
+    ParseContext* pc_;
+    Maybe<DeclarationKind> saved_;
+
+  public:
+    explicit AutoClearInDestructuringDecl(ParseContext* pc)
+      : pc_(pc),
+        saved_(pc->inDestructuringDecl)
+    {
+        pc->inDestructuringDecl = Nothing();
+        if (saved_ && *saved_ == DeclarationKind::FormalParameter)
+            pc->functionBox()->hasParameterExprs = true;
+    }
+
+    ~AutoClearInDestructuringDecl() {
+        pc_->inDestructuringDecl = saved_;
+    }
+};
+
+template <template <typename CharT> class ParseHandler, typename CharT>
+typename ParseHandler<CharT>::Node
+Parser<ParseHandler, CharT>::bindingInitializer(Node lhs, YieldHandling yieldHandling)
+{
+    MOZ_ASSERT(tokenStream.isCurrentTokenType(TOK_ASSIGN));
+
+    Node rhs;
+    {
+        AutoClearInDestructuringDecl autoClear(pc);
+        rhs = assignExpr(InAllowed, yieldHandling, TripledotProhibited);
+        if (!rhs)
+            return null();
+    }
+
+    handler.checkAndSetIsDirectRHSAnonFunction(rhs);
+
+    Node assign = handler.newAssignment(PNK_ASSIGN, lhs, rhs, JSOP_NOP);
+    if (!assign)
+        return null();
+
+    if (foldConstants && !FoldConstants(context, &assign, this))
+        return null();
+
+    return assign;
+}
+
+template <template <typename CharT> class ParseHandler, typename CharT>
+typename ParseHandler<CharT>::Node
+Parser<ParseHandler, CharT>::bindingIdentifier(DeclarationKind kind, YieldHandling yieldHandling)
+{
+    Rooted<PropertyName*> name(context, bindingIdentifier(yieldHandling));
+    if (!name)
+        return null();
+
+    Node binding = newName(name);
+    if (!binding || !noteDeclaredName(name, kind, pos()))
+        return null();
+
+    return binding;
+}
+
+template <template <typename CharT> class ParseHandler, typename CharT>
+typename ParseHandler<CharT>::Node
+Parser<ParseHandler, CharT>::bindingIdentifierOrPattern(DeclarationKind kind,
+                                                        YieldHandling yieldHandling, TokenKind tt)
+{
+    if (tt == TOK_LB)
+        return arrayBindingPattern(kind, yieldHandling);
+
+    if (tt == TOK_LC)
+        return objectBindingPattern(kind, yieldHandling);
+
+    if (!TokenKindIsPossibleIdentifierName(tt)) {
+        error(JSMSG_NO_VARIABLE_NAME);
+        return null();
+    }
+
+    return bindingIdentifier(kind, yieldHandling);
+}
+
+template <template <typename CharT> class ParseHandler, typename CharT>
+typename ParseHandler<CharT>::Node
+Parser<ParseHandler, CharT>::objectBindingPattern(DeclarationKind kind,
+                                                  YieldHandling yieldHandling)
+{
+    MOZ_ASSERT(tokenStream.isCurrentTokenType(TOK_LC));
+
+    if (!CheckRecursionLimit(context))
+        return null();
+
+    uint32_t begin = pos().begin;
+    Node literal = handler.newObjectLiteral(begin);
+    if (!literal)
+        return null();
+
+    RootedAtom propAtom(context);
+    for (;;) {
+        TokenKind tt;
+        if (!tokenStream.getToken(&tt))
+            return null();
+        if (tt == TOK_RC)
+            break;
+
+        TokenPos namePos = pos();
+
+        tokenStream.ungetToken();
+
+        PropertyType propType;
+        Node propName = propertyName(yieldHandling, literal, &propType, &propAtom);
+        if (!propName)
+            return null();
+
+        if (propType == PropertyType::Normal) {
+            
+
+            if (!tokenStream.getToken(&tt, TokenStream::Operand))
+                return null();
+
+            Node binding = bindingIdentifierOrPattern(kind, yieldHandling, tt);
+            if (!binding)
+                return null();
+
+            bool hasInitializer;
+            if (!tokenStream.matchToken(&hasInitializer, TOK_ASSIGN))
+                return null();
+
+            Node bindingExpr = hasInitializer
+                               ? bindingInitializer(binding, yieldHandling)
+                               : binding;
+            if (!bindingExpr)
+                return null();
+
+            if (!handler.addPropertyDefinition(literal, propName, bindingExpr))
+                return null();
+        } else if (propType == PropertyType::Shorthand) {
+            
+            
+            MOZ_ASSERT(TokenKindIsPossibleIdentifierName(tt));
+
+            Node binding = bindingIdentifier(kind, yieldHandling);
+            if (!binding)
+                return null();
+
+            if (!handler.addShorthand(literal, propName, binding))
+                return null();
+        } else if (propType == PropertyType::CoverInitializedName) {
+            
+            
+            MOZ_ASSERT(TokenKindIsPossibleIdentifierName(tt));
+
+            Node binding = bindingIdentifier(kind, yieldHandling);
+            if (!binding)
+                return null();
+
+            tokenStream.consumeKnownToken(TOK_ASSIGN);
+
+            Node bindingExpr = bindingInitializer(binding, yieldHandling);
+            if (!bindingExpr)
+                return null();
+
+            if (!handler.addPropertyDefinition(literal, propName, bindingExpr))
+                return null();
+        } else {
+            errorAt(namePos.begin, JSMSG_NO_VARIABLE_NAME);
+            return null();
+        }
+
+        if (!tokenStream.getToken(&tt))
+            return null();
+        if (tt == TOK_RC)
+            break;
+        if (tt != TOK_COMMA) {
+            reportMissingClosing(JSMSG_CURLY_AFTER_LIST, JSMSG_CURLY_OPENED, begin);
+            return null();
+        }
+    }
+
+    handler.setEndPosition(literal, pos().end);
+    return literal;
+}
+
+template <template <typename CharT> class ParseHandler, typename CharT>
+typename ParseHandler<CharT>::Node
+Parser<ParseHandler, CharT>::arrayBindingPattern(DeclarationKind kind, YieldHandling yieldHandling)
+{
+    MOZ_ASSERT(tokenStream.isCurrentTokenType(TOK_LB));
+
+    if (!CheckRecursionLimit(context))
+        return null();
+
+    uint32_t begin = pos().begin;
+    Node literal = handler.newArrayLiteral(begin);
+    if (!literal)
+        return null();
+
+     uint32_t index = 0;
+     TokenStream::Modifier modifier = TokenStream::Operand;
+     for (; ; index++) {
+         if (index >= NativeObject::MAX_DENSE_ELEMENTS_COUNT) {
+             error(JSMSG_ARRAY_INIT_TOO_BIG);
+             return null();
+         }
+
+         TokenKind tt;
+         if (!tokenStream.getToken(&tt, TokenStream::Operand))
+             return null();
+
+         if (tt == TOK_RB) {
+             tokenStream.ungetToken();
+             break;
+         }
+
+         if (tt == TOK_COMMA) {
+             if (!handler.addElision(literal, pos()))
+                 return null();
+         } else if (tt == TOK_TRIPLEDOT) {
+             uint32_t begin = pos().begin;
+
+             TokenKind tt;
+             if (!tokenStream.getToken(&tt, TokenStream::Operand))
+                 return null();
+
+             Node inner = bindingIdentifierOrPattern(kind, yieldHandling, tt);
+             if (!inner)
+                 return null();
+
+             if (!handler.addSpreadElement(literal, begin, inner))
+                 return null();
+         } else {
+             Node binding = bindingIdentifierOrPattern(kind, yieldHandling, tt);
+             if (!binding)
+                 return null();
+
+             bool hasInitializer;
+             if (!tokenStream.matchToken(&hasInitializer, TOK_ASSIGN))
+                 return null();
+
+             Node element = hasInitializer ? bindingInitializer(binding, yieldHandling) : binding;
+             if (!element)
+                 return null();
+
+             handler.addArrayElement(literal, element);
+         }
+
+         if (tt != TOK_COMMA) {
+             
+             bool matched;
+             if (!tokenStream.matchToken(&matched, TOK_COMMA))
+                 return null();
+             if (!matched) {
+                 modifier = TokenStream::None;
+                 break;
+             }
+             if (tt == TOK_TRIPLEDOT) {
+                 error(JSMSG_REST_WITH_COMMA);
+                 return null();
+             }
+         }
+     }
+
+     MUST_MATCH_TOKEN_MOD_WITH_REPORT(TOK_RB, modifier,
+                                      reportMissingClosing(JSMSG_BRACKET_AFTER_LIST,
+                                                           JSMSG_BRACKET_OPENED, begin));
+
+    handler.setEndPosition(literal, pos().end);
+    return literal;
 }
 
 template <template <typename CharT> class ParseHandler, typename CharT>
@@ -4484,16 +4727,15 @@ Parser<ParseHandler, CharT>::destructuringDeclaration(DeclarationKind kind,
     MOZ_ASSERT(tokenStream.isCurrentTokenType(tt));
     MOZ_ASSERT(tt == TOK_LB || tt == TOK_LC);
 
-    PossibleError possibleError(*this);
     Node pattern;
     {
         pc->inDestructuringDecl = Some(kind);
-        pattern = primaryExpr(yieldHandling, TripledotProhibited, tt, &possibleError);
+        if (tt == TOK_LB)
+            pattern = arrayBindingPattern(kind, yieldHandling);
+        else
+            pattern = objectBindingPattern(kind, yieldHandling);
         pc->inDestructuringDecl = Nothing();
     }
-
-    if (!pattern || !checkDestructuringPattern(pattern, Some(kind), &possibleError))
-        return null();
 
     return pattern;
 }
@@ -4611,6 +4853,12 @@ Parser<ParseHandler, CharT>::declarationPattern(Node decl, DeclarationKind declK
         
         
         
+        
+        
+        
+        TokenKind ignored;
+        if (!tokenStream.peekToken(&ignored))
+            return null();
         tokenStream.addModifierException(TokenStream::OperandIsNone);
     }
 
@@ -6041,7 +6289,7 @@ Parser<ParseHandler, CharT>::forHeadStart(YieldHandling yieldHandling,
 
     
     if (handler.isUnparenthesizedDestructuringPattern(*forInitialPart)) {
-        if (!checkDestructuringPattern(*forInitialPart, Nothing(), &possibleError))
+        if (!checkDestructuringAssignmentPattern(*forInitialPart, &possibleError))
             return false;
     } else if (handler.isNameAnyParentheses(*forInitialPart)) {
         const char* chars = handler.nameIsArgumentsEvalAnyParentheses(*forInitialPart, context);
@@ -7988,26 +8236,6 @@ Parser<ParseHandler, CharT>::condExpr1(InHandling inHandling, YieldHandling yiel
     return handler.newConditional(condition, thenExpr, elseExpr);
 }
 
-class AutoClearInDestructuringDecl
-{
-    ParseContext* pc_;
-    Maybe<DeclarationKind> saved_;
-
-  public:
-    explicit AutoClearInDestructuringDecl(ParseContext* pc)
-      : pc_(pc),
-        saved_(pc->inDestructuringDecl)
-    {
-        pc->inDestructuringDecl = Nothing();
-        if (saved_ && *saved_ == DeclarationKind::FormalParameter)
-            pc->functionBox()->hasParameterExprs = true;
-    }
-
-    ~AutoClearInDestructuringDecl() {
-        pc_->inDestructuringDecl = saved_;
-    }
-};
-
 template <template <typename CharT> class ParseHandler, typename CharT>
 typename ParseHandler<CharT>::Node
 Parser<ParseHandler, CharT>::assignExpr(InHandling inHandling, YieldHandling yieldHandling,
@@ -8239,7 +8467,7 @@ Parser<ParseHandler, CharT>::assignExpr(InHandling inHandling, YieldHandling yie
             return null();
         }
 
-        if (!checkDestructuringPattern(lhs, Nothing(), &possibleErrorInner))
+        if (!checkDestructuringAssignmentPattern(lhs, &possibleErrorInner))
             return null();
     } else if (handler.isNameAnyParentheses(lhs)) {
         if (const char* chars = handler.nameIsArgumentsEvalAnyParentheses(lhs, context)) {
