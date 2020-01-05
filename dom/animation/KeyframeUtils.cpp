@@ -616,25 +616,33 @@ KeyframeUtils::GetComputedKeyframeValues(const nsTArray<Keyframe>& aKeyframes,
       
       nsTArray<PropertyStyleAnimationValuePair> values;
 
-      
-      
-      if (nsCSSProps::IsShorthand(pair.mProperty)) {
-        nsCSSValueTokenStream* tokenStream = pair.mValue.GetTokenStreamValue();
+      if (styleBackend == StyleBackendType::Servo) {
         if (!StyleAnimationValue::ComputeValues(pair.mProperty,
-              CSSEnabledState::eForAllContent, aElement, aStyleContext,
-              tokenStream->mTokenStream,  false, values) ||
-            IsComputeValuesFailureKey(pair)) {
+              CSSEnabledState::eForAllContent, aStyleContext,
+              *pair.mServoDeclarationBlock, values)) {
           continue;
         }
       } else {
-        if (!StyleAnimationValue::ComputeValues(pair.mProperty,
-              CSSEnabledState::eForAllContent, aElement, aStyleContext,
-              pair.mValue,  false, values)) {
-          continue;
+        
+        
+        if (nsCSSProps::IsShorthand(pair.mProperty)) {
+          nsCSSValueTokenStream* tokenStream = pair.mValue.GetTokenStreamValue();
+          if (!StyleAnimationValue::ComputeValues(pair.mProperty,
+                CSSEnabledState::eForAllContent, aElement, aStyleContext,
+                tokenStream->mTokenStream,  false, values) ||
+              IsComputeValuesFailureKey(pair)) {
+            continue;
+          }
+        } else {
+          if (!StyleAnimationValue::ComputeValues(pair.mProperty,
+                CSSEnabledState::eForAllContent, aElement, aStyleContext,
+                pair.mValue,  false, values)) {
+            continue;
+          }
+          MOZ_ASSERT(values.Length() == 1,
+                    "Longhand properties should produce a single"
+                    " StyleAnimationValue");
         }
-        MOZ_ASSERT(values.Length() == 1,
-                   "Longhand properties should produce a single"
-                   " StyleAnimationValue");
       }
 
       for (auto& value : values) {

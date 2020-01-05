@@ -20,6 +20,7 @@
 class nsIFrame;
 class nsStyleContext;
 class gfx3DMatrix;
+struct ServoDeclarationBlock;
 
 namespace mozilla {
 
@@ -234,6 +235,17 @@ public:
                 const nsCSSValue& aSpecifiedValue,
                 bool aUseSVGMode,
                 nsTArray<PropertyStyleAnimationValuePair>& aResult);
+
+  
+
+
+
+  static MOZ_MUST_USE bool
+  ComputeValues(nsCSSPropertyID aProperty,
+                mozilla::CSSEnabledState aEnabledState,
+                nsStyleContext* aStyleContext,
+                const ServoDeclarationBlock& aDeclarations,
+                nsTArray<PropertyStyleAnimationValuePair>& aValues);
 
   
 

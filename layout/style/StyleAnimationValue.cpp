@@ -27,6 +27,7 @@
 #include "mozilla/dom/Element.h"
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/Likely.h"
+#include "mozilla/ServoBindings.h" 
 #include "gfxMatrix.h"
 #include "gfxQuaternion.h"
 #include "nsIDocument.h"
@@ -3037,6 +3038,37 @@ BuildStyleRule(nsCSSPropertyID aProperty,
 }
 
 static bool
+ComputeValuesFromStyleContext(
+  nsCSSPropertyID aProperty,
+  CSSEnabledState aEnabledState,
+  nsStyleContext* aStyleContext,
+  nsTArray<PropertyStyleAnimationValuePair>& aValues)
+{
+  
+  
+  if (nsCSSProps::IsShorthand(aProperty)) {
+    CSSPROPS_FOR_SHORTHAND_SUBPROPERTIES(p, aProperty, aEnabledState) {
+      if (nsCSSProps::kAnimTypeTable[*p] == eStyleAnimType_None) {
+        
+        continue;
+      }
+      PropertyStyleAnimationValuePair* pair = aValues.AppendElement();
+      pair->mProperty = *p;
+      if (!StyleAnimationValue::ExtractComputedValue(*p, aStyleContext,
+                                                     pair->mValue)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  PropertyStyleAnimationValuePair* pair = aValues.AppendElement();
+  pair->mProperty = aProperty;
+  return StyleAnimationValue::ExtractComputedValue(aProperty, aStyleContext,
+                                                   pair->mValue);
+}
+
+static bool
 ComputeValuesFromStyleRule(nsCSSPropertyID aProperty,
                            CSSEnabledState aEnabledState,
                            nsStyleContext* aStyleContext,
@@ -3099,28 +3131,8 @@ ComputeValuesFromStyleRule(nsCSSPropertyID aProperty,
     }
   }
 
-  
-  
-  if (nsCSSProps::IsShorthand(aProperty)) {
-    CSSPROPS_FOR_SHORTHAND_SUBPROPERTIES(p, aProperty, aEnabledState) {
-      if (nsCSSProps::kAnimTypeTable[*p] == eStyleAnimType_None) {
-        
-        continue;
-      }
-      PropertyStyleAnimationValuePair* pair = aValues.AppendElement();
-      pair->mProperty = *p;
-      if (!StyleAnimationValue::ExtractComputedValue(*p, tmpStyleContext,
-                                                     pair->mValue)) {
-        return false;
-      }
-    }
-    return true;
-  } else {
-    PropertyStyleAnimationValuePair* pair = aValues.AppendElement();
-    pair->mProperty = aProperty;
-    return StyleAnimationValue::ExtractComputedValue(aProperty, tmpStyleContext,
-                                                     pair->mValue);
-  }
+  return ComputeValuesFromStyleContext(aProperty, aEnabledState,
+                                       tmpStyleContext, aValues);
 }
 
  bool
@@ -3231,6 +3243,45 @@ StyleAnimationValue::ComputeValues(
                                          aTargetElement, aStyleContext,
                                          aSpecifiedValue, aUseSVGMode,
                                          aResult);
+}
+
+ bool
+StyleAnimationValue::ComputeValues(
+  nsCSSPropertyID aProperty,
+  CSSEnabledState aEnabledState,
+  nsStyleContext* aStyleContext,
+  const ServoDeclarationBlock& aDeclarations,
+  nsTArray<PropertyStyleAnimationValuePair>& aValues)
+{
+  MOZ_ASSERT(aStyleContext->PresContext()->StyleSet()->IsServo(),
+             "Should be using ServoStyleSet if we have a"
+             " ServoDeclarationBlock");
+
+  if (!nsCSSProps::IsEnabled(aProperty, aEnabledState)) {
+    return false;
+  }
+
+  RefPtr<ServoComputedValues> previousStyle =
+    aStyleContext->StyleSource().AsServoComputedValues();
+
+  
+  
+  auto declarations = const_cast<ServoDeclarationBlock*>(&aDeclarations);
+  RefPtr<ServoComputedValues> computedValues =
+    Servo_RestyleWithAddedDeclaration(declarations, previousStyle).Consume();
+  if (!computedValues) {
+    return false;
+  }
+
+  RefPtr<nsStyleContext> tmpStyleContext =
+    NS_NewStyleContext(aStyleContext, aStyleContext->PresContext(),
+                       aStyleContext->GetPseudo(),
+                       aStyleContext->GetPseudoType(),
+                       computedValues.forget(),
+                       false );
+
+  return ComputeValuesFromStyleContext(aProperty, aEnabledState,
+                                       tmpStyleContext, aValues);
 }
 
 bool
