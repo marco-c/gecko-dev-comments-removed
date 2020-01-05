@@ -6,6 +6,7 @@
 
 
 
+use dom::bindings::codegen::PrototypeList;
 use dom::bindings::js::{JS, JSRef, Root};
 use dom::bindings::str::ByteString;
 use dom::bindings::utils::{Reflectable, Reflector};
@@ -29,15 +30,13 @@ use libc;
 use std::default;
 use std::slice;
 
-use dom::bindings::codegen::PrototypeList;
-
 
 
 
 
 pub trait IDLInterface {
     
-    fn get_prototype_id(_: Option<Self>) -> PrototypeList::id;
+    fn get_prototype_id(_: Option<Self>) -> PrototypeList::ID;
     
     
     fn get_prototype_depth(_: Option<Self>) -> uint;

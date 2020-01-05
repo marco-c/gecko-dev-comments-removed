@@ -6,11 +6,12 @@ use geom::length::Length;
 use geom::point::Point2D;
 use geom::rect::Rect;
 use geom::size::Size2D;
+use geom::num::Zero;
 
 use serialize::{Encodable, Encoder};
 use std::default::Default;
 use std::i32;
-use std::num::{Float, NumCast, Zero};
+use std::num::{Float, NumCast};
 use std::fmt;
 
 
@@ -64,12 +65,19 @@ pub enum PagePx {}
 
 
 
-#[deriving(Clone, Hash, PartialEq, PartialOrd, Eq, Ord, Zero)]
+#[deriving(Clone, Hash, PartialEq, PartialOrd, Eq, Ord)]
 pub struct Au(pub i32);
 
 impl Default for Au {
     #[inline]
     fn default() -> Au {
+        Au(0)
+    }
+}
+
+impl Zero for Au {
+    #[inline]
+    fn zero() -> Au {
         Au(0)
     }
 }
