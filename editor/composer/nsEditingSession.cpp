@@ -12,7 +12,6 @@
 #include "nsAString.h"
 #include "nsComponentManagerUtils.h"    
 #include "nsComposerCommandsUpdater.h"  
-#include "nsContentUtils.h"
 #include "nsDebug.h"                    
 #include "nsEditingSession.h"
 #include "nsError.h"                    
@@ -993,8 +992,7 @@ nsEditingSession::TimerCallback(nsITimer* aTimer, void* aClosure)
   if (docShell) {
     nsCOMPtr<nsIWebNavigation> webNav(do_QueryInterface(docShell));
     if (webNav) {
-      webNav->LoadURI(u"about:blank", 0, nullptr, nullptr, nullptr,
-                      nsContentUtils::GetSystemPrincipal());
+      webNav->LoadURI(u"about:blank", 0, nullptr, nullptr, nullptr);
     }
   }
 }
