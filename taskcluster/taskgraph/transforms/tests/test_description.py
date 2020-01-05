@@ -106,7 +106,6 @@ test_description_schema = Schema({
     
     Optional('worker-implementation'): Any(
         'docker-worker',
-        'macosx-engine',
         'generic-worker',
         
         'docker-engine',
@@ -168,9 +167,6 @@ test_description_schema = Schema({
         
         
         Required('no-read-buildbot-config', default=False): bool,
-
-        
-        Optional('include-blob-upload-branch'): bool,
 
         
         
