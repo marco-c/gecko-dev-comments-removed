@@ -3,8 +3,6 @@ var Ci = Components.interfaces;
 var Cr = Components.results;
 var Cu = Components.utils;
 
-
-
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 try {

@@ -2,8 +2,6 @@
 
 
 
-
-
 function test() {
 
   let local = {};

@@ -1,10 +1,6 @@
 
 
 
-
-
-
-
 Cu.import("resource://services-sync/engines.js");
 
 

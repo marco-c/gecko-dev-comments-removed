@@ -2,8 +2,6 @@
 
 
 
-
-
 pref("services.sync.prefs.sync.testing.int", true);
 pref("services.sync.prefs.sync.testing.string", true);
 pref("services.sync.prefs.sync.testing.bool", true);
