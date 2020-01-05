@@ -196,6 +196,8 @@ pub enum ConstellationControlMsg {
     
     ExitPipeline(PipelineId),
     
+    ExitScriptThread,
+    
     SendEvent(PipelineId, CompositorEvent),
     
     Viewport(PipelineId, Rect<f32>),
@@ -259,6 +261,7 @@ impl fmt::Debug for ConstellationControlMsg {
             Resize(..) => "Resize",
             ResizeInactive(..) => "ResizeInactive",
             ExitPipeline(..) => "ExitPipeline",
+            ExitScriptThread => "ExitScriptThread",
             SendEvent(..) => "SendEvent",
             Viewport(..) => "Viewport",
             SetScrollState(..) => "SetScrollState",
