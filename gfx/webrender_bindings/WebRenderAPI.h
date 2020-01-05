@@ -204,6 +204,12 @@ public:
                      const float& aBorderRadius,
                      const WrBoxShadowClipMode& aClipMode);
 
+  WrClipRegion BuildClipRegion(const WrRect& aMain,
+                               const WrImageMask* aMask = nullptr);
+  WrClipRegion BuildClipRegion(const WrRect& aMain,
+                               const nsTArray<WrComplexClipRegion>& aComplex,
+                               const WrImageMask* aMask = nullptr);
+
   
   WrState* Raw() { return mWrState; }
 protected:
