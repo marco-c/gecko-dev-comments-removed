@@ -1700,26 +1700,31 @@ LastIndexOfImpl(const TextChar* text, size_t textLen, const PatChar* pat, size_t
     return -1;
 }
 
+
+
 bool
 js::str_lastIndexOf(JSContext* cx, unsigned argc, Value* vp)
 {
     CallArgs args = CallArgsFromVp(argc, vp);
-    RootedString textstr(cx, ToStringForStringFunction(cx, args.thisv()));
-    if (!textstr)
+
+    
+    RootedString str(cx, ToStringForStringFunction(cx, args.thisv()));
+    if (!str)
         return false;
 
-    RootedLinearString pat(cx, ArgToRootedString(cx, args, 0));
-    if (!pat)
+    
+    RootedLinearString searchStr(cx, ArgToRootedString(cx, args, 0));
+    if (!searchStr)
         return false;
 
-    size_t textLen = textstr->length();
-    size_t patLen = pat->length();
-    int start = textLen - patLen; 
-    if (start < 0) {
-        args.rval().setInt32(-1);
-        return true;
-    }
+    
+    size_t len = str->length();
 
+    
+    size_t searchLen = searchStr->length();
+
+    
+    int start = len - searchLen; 
     if (args.hasDefined(1)) {
         if (args[1].isInt32()) {
             int i = args[1].toInt32();
@@ -1741,29 +1746,36 @@ js::str_lastIndexOf(JSContext* cx, unsigned argc, Value* vp)
         }
     }
 
-    if (patLen == 0) {
-        args.rval().setInt32(start);
+    if (searchLen > len) {
+        args.rval().setInt32(-1);
         return true;
     }
 
-    JSLinearString* text = textstr->ensureLinear(cx);
+    if (searchLen == 0) {
+        args.rval().setInt32(start);
+        return true;
+    }
+    MOZ_ASSERT(0 <= start && size_t(start) < len);
+
+    JSLinearString* text = str->ensureLinear(cx);
     if (!text)
         return false;
 
+    
     int32_t res;
     AutoCheckCannotGC nogc;
     if (text->hasLatin1Chars()) {
         const Latin1Char* textChars = text->latin1Chars(nogc);
-        if (pat->hasLatin1Chars())
-            res = LastIndexOfImpl(textChars, textLen, pat->latin1Chars(nogc), patLen, start);
+        if (searchStr->hasLatin1Chars())
+            res = LastIndexOfImpl(textChars, len, searchStr->latin1Chars(nogc), searchLen, start);
         else
-            res = LastIndexOfImpl(textChars, textLen, pat->twoByteChars(nogc), patLen, start);
+            res = LastIndexOfImpl(textChars, len, searchStr->twoByteChars(nogc), searchLen, start);
     } else {
         const char16_t* textChars = text->twoByteChars(nogc);
-        if (pat->hasLatin1Chars())
-            res = LastIndexOfImpl(textChars, textLen, pat->latin1Chars(nogc), patLen, start);
+        if (searchStr->hasLatin1Chars())
+            res = LastIndexOfImpl(textChars, len, searchStr->latin1Chars(nogc), searchLen, start);
         else
-            res = LastIndexOfImpl(textChars, textLen, pat->twoByteChars(nogc), patLen, start);
+            res = LastIndexOfImpl(textChars, len, searchStr->twoByteChars(nogc), searchLen, start);
     }
 
     args.rval().setInt32(res);
