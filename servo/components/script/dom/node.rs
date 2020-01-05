@@ -666,19 +666,25 @@ impl Node {
 
     
     pub fn replace_with(&self, nodes: Vec<NodeOrString>) -> ErrorResult {
-        match self.parent_node.get() {
-            None => {
-                
-                Ok(())
-            },
-            Some(ref parent_node) => {
-                
-                let doc = self.owner_doc();
-                let node = try!(doc.node_from_nodes_and_strings(nodes));
-                
-                parent_node.ReplaceChild(node.r(), self).map(|_| ())
-            },
+        
+        let parent = if let Some(parent) = self.GetParentNode() {
+            parent
+        } else {
+            
+            return Ok(());
+        };
+        
+        let viable_next_sibling = first_node_not_in(self.following_siblings(), &nodes);
+        
+        let node = try!(self.owner_doc().node_from_nodes_and_strings(nodes));
+        if self.parent_node == Some(&*parent) {
+            
+            try!(parent.ReplaceChild(&node, self));
+        } else {
+            
+            try!(Node::pre_insert(&node, &parent, viable_next_sibling.r()));
         }
+        Ok(())
     }
 
     
