@@ -63,11 +63,6 @@ public class ActivityStream {
 
 
     public static boolean isUserEligible(Context context) {
-        if (AppConstants.MOZ_ANDROID_ACTIVITY_STREAM) {
-            
-            return true;
-        }
-
         if (AppConstants.NIGHTLY_BUILD && SwitchBoard.isInExperiment(context, Experiments.ACTIVITY_STREAM)) {
             
             
