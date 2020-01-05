@@ -19,7 +19,7 @@ use msg::compositor_msg::Epoch;
 use net_traits::image_cache_task::ImageCacheTask;
 use net_traits::PendingAsyncLoad;
 use profile_traits::mem::ReportsChan;
-use script_traits::{ConstellationControlMsg, LayoutControlMsg, ScriptControlChan};
+use script_traits::{ConstellationControlMsg, LayoutControlMsg};
 use script_traits::{OpaqueScriptLayoutChannel, StylesheetLoadResponder, UntrustedNodeAddress};
 use selectors::parser::PseudoElement;
 use std::any::Any;
@@ -167,7 +167,7 @@ pub struct ScriptReflow {
     
     pub document_root: TrustedNodeAddress,
     
-    pub script_chan: ScriptControlChan,
+    pub script_chan: Sender<ConstellationControlMsg>,
     
     pub window_size: WindowSizeData,
     
