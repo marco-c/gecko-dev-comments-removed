@@ -223,7 +223,7 @@ public:
     return mFlags.mBlock;
   }
   bool IsInline() const {
-    return 0 == mFlags.mBlock;
+    return !mFlags.mBlock;
   }
 
   
@@ -657,25 +657,25 @@ public:
   };
 
   struct FlagBits {
-    uint32_t mDirty : 1;
-    uint32_t mPreviousMarginDirty : 1;
-    uint32_t mHasClearance : 1;
-    uint32_t mBlock : 1;
-    uint32_t mImpactedByFloat : 1;
-    uint32_t mLineWrapped: 1;
-    uint32_t mInvalidateTextRuns : 1;
+    bool mDirty : 1;
+    bool mPreviousMarginDirty : 1;
+    bool mHasClearance : 1;
+    bool mBlock : 1;
+    bool mImpactedByFloat : 1;
+    bool mLineWrapped: 1;
+    bool mInvalidateTextRuns : 1;
     
     
-    uint32_t mResizeReflowOptimizationDisabled: 1;
-    uint32_t mEmptyCacheValid: 1;
-    uint32_t mEmptyCacheState: 1;
+    bool mResizeReflowOptimizationDisabled: 1;
+    bool mEmptyCacheValid: 1;
+    bool mEmptyCacheState: 1;
     
     
-    uint32_t mHasBullet : 1;
+    bool mHasBullet : 1;
     
     
-    uint32_t mHadFloatPushed : 1;
-    uint32_t mHasHashedFrames: 1;
+    bool mHadFloatPushed : 1;
+    bool mHasHashedFrames: 1;
     uint32_t mBreakType : 4;
   };
 
