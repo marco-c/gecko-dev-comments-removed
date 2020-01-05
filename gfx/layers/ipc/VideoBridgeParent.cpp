@@ -5,7 +5,6 @@
 
 
 #include "VideoBridgeParent.h"
-#include "CompositorThread.h"
 #include "mozilla/layers/TextureHost.h"
 
 namespace mozilla {
@@ -14,6 +13,7 @@ namespace layers {
 using namespace mozilla::ipc;
 using namespace mozilla::gfx;
 
+
 static VideoBridgeParent* sVideoBridgeSingleton;
 
 VideoBridgeParent::VideoBridgeParent()
@@ -21,7 +21,6 @@ VideoBridgeParent::VideoBridgeParent()
 {
   mSelfRef = this;
   sVideoBridgeSingleton = this;
-  mCompositorThreadRef = CompositorThreadHolder::GetSingleton();
 }
 
 VideoBridgeParent::~VideoBridgeParent()
@@ -51,7 +50,6 @@ VideoBridgeParent::ActorDestroy(ActorDestroyReason aWhy)
 void
 VideoBridgeParent::DeallocPVideoBridgeParent()
 {
-  mCompositorThreadRef = nullptr;
   mSelfRef = nullptr;
 }
 
@@ -62,7 +60,7 @@ VideoBridgeParent::AllocPTextureParent(const SurfaceDescriptor& aSharedData,
                                        const uint64_t& aSerial)
 {
   PTextureParent* parent =
-    TextureHost::CreateIPDLActor(this, aSharedData, aLayersBackend, aFlags, aSerial);
+    TextureHost::CreateIPDLActor(this, aSharedData, aLayersBackend, aFlags, aSerial, Nothing());
   mTextureMap[aSerial] = parent;
   return parent;
 }

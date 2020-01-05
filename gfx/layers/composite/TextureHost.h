@@ -21,6 +21,7 @@
 #include "mozilla/layers/LayersSurfaces.h"
 #include "mozilla/mozalloc.h"           
 #include "mozilla/UniquePtr.h"          
+#include "mozilla/webrender/WebRenderTypes.h"
 #include "nsCOMPtr.h"                   
 #include "nsDebug.h"                    
 #include "nsISupportsImpl.h"            
@@ -386,7 +387,8 @@ public:
     const SurfaceDescriptor& aDesc,
     ISurfaceAllocator* aDeallocator,
     LayersBackend aBackend,
-    TextureFlags aFlags);
+    TextureFlags aFlags,
+    wr::MaybeExternalImageId& aExternalImageId);
 
   
 
@@ -519,7 +521,8 @@ public:
                                          const SurfaceDescriptor& aSharedData,
                                          LayersBackend aLayersBackend,
                                          TextureFlags aFlags,
-                                         uint64_t aSerial);
+                                         uint64_t aSerial,
+                                         const wr::MaybeExternalImageId& aExternalImageId);
   static bool DestroyIPDLActor(PTextureParent* actor);
 
   

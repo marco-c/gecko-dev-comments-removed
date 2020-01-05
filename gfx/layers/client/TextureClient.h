@@ -25,6 +25,7 @@
 #include "mozilla/layers/LayersSurfaces.h"  
 #include "mozilla/mozalloc.h"           
 #include "mozilla/gfx/CriticalSection.h"
+#include "mozilla/webrender/WebRenderTypes.h"
 #include "nsCOMPtr.h"                   
 #include "nsISupportsImpl.h"            
 #include "GfxTexturesReporter.h"
@@ -746,6 +747,13 @@ protected:
 
   
   const uint64_t mSerial;
+
+  
+  
+  
+  
+  wr::MaybeExternalImageId mExternalImageId;
+
   
   static mozilla::Atomic<uint64_t> sSerialCounter;
 
