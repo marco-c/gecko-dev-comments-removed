@@ -199,6 +199,8 @@ pub enum Msg {
     ReturnUnusedNativeSurfaces(Vec<NativeSurface>),
     
     CollectMemoryReports(mem::ReportsChan),
+    
+    Status(Option<String>),
 }
 
 impl Debug for Msg {
@@ -229,6 +231,7 @@ impl Debug for Msg {
             Msg::HeadParsed => write!(f, "HeadParsed"),
             Msg::ReturnUnusedNativeSurfaces(..) => write!(f, "ReturnUnusedNativeSurfaces"),
             Msg::CollectMemoryReports(..) => write!(f, "CollectMemoryReports"),
+            Msg::Status(..) => write!(f, "Status"),
         }
     }
 }

@@ -108,6 +108,8 @@ pub trait WindowMethods {
     
     fn set_page_url(&self, url: Url);
     
+    fn status(&self, Option<String>);
+    
     fn load_start(&self, back: bool, forward: bool);
     
     fn load_end(&self, back: bool, forward: bool);
