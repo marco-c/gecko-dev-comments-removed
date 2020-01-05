@@ -3608,7 +3608,8 @@ ContentContribution(const GridItemInfo&               aGridItem,
   nsIFrame* child = aGridItem.mFrame;
   PhysicalAxis axis(aCBWM.PhysicalAxis(aAxis));
   nscoord size = nsLayoutUtils::IntrinsicForAxis(axis, aRC, child, aConstraint,
-                   aFlags | nsLayoutUtils::BAIL_IF_REFLOW_NEEDED);
+                   aFlags | nsLayoutUtils::BAIL_IF_REFLOW_NEEDED |
+                            nsLayoutUtils::ADD_PERCENTS);
   if (size == NS_INTRINSIC_WIDTH_UNKNOWN) {
     
     
@@ -3627,7 +3628,14 @@ ContentContribution(const GridItemInfo&               aGridItem,
     size = ::MeasuringReflow(child, aState.mReflowInput, aRC, availableSize);
     nsIFrame::IntrinsicISizeOffsetData offsets = child->IntrinsicBSizeOffsets();
     size += offsets.hMargin;
-    size = nsLayoutUtils::AddPercents(aConstraint, size, offsets.hPctMargin);
+    auto percent = offsets.hPctMargin;
+    if (!aState.mReflowInput) {
+      
+      
+      
+      percent += offsets.hPctPadding;
+    }
+    size = nsLayoutUtils::AddPercents(size, percent);
   }
   MOZ_ASSERT(aGridItem.mBaselineOffset[aAxis] >= 0,
              "baseline offset should be non-negative at this point");

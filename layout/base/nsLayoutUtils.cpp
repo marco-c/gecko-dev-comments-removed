@@ -5131,6 +5131,9 @@ nsLayoutUtils::MinSizeContributionForAxis(PhysicalAxis        aAxis,
                 aWM.IsVertical() ? "vertical" : "horizontal");
 #endif
 
+  
+  
+  aFlags |= nsLayoutUtils::ADD_PERCENTS;
   const nsStylePosition* const stylePos = aFrame->StylePosition();
   const nsStyleCoord* style = aAxis == eAxisHorizontal ? &stylePos->mMinWidth
                                                        : &stylePos->mMinHeight;
