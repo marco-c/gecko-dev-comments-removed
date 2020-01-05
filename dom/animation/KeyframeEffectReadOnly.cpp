@@ -613,6 +613,42 @@ KeyframeEffectReadOnly::ConstructKeyframeEffect(
   return effect.forget();
 }
 
+template<class KeyframeEffectType>
+ already_AddRefed<KeyframeEffectType>
+KeyframeEffectReadOnly::ConstructKeyframeEffect(const GlobalObject& aGlobal,
+                                                KeyframeEffectReadOnly& aSource,
+                                                ErrorResult& aRv)
+{
+  nsIDocument* doc = AnimationUtils::GetCurrentRealmDocument(aGlobal.Context());
+  if (!doc) {
+    aRv.Throw(NS_ERROR_FAILURE);
+    return nullptr;
+  }
+
+  
+  
+  
+  
+  
+  
+  RefPtr<KeyframeEffectType> effect =
+    new KeyframeEffectType(doc,
+                           aSource.mTarget,
+                           aSource.SpecifiedTiming(),
+                           aSource.mEffectOptions);
+  
+  
+  effect->mCumulativeChangeHint = aSource.mCumulativeChangeHint;
+
+  
+  
+  
+  RefPtr<nsStyleContext> styleContext = effect->GetTargetStyleContext();
+  nsTArray<Keyframe> keyframes(aSource.mKeyframes);
+  effect->SetKeyframes(Move(keyframes), styleContext);
+  return effect.forget();
+}
+
 void
 KeyframeEffectReadOnly::UpdateTargetRegistration()
 {
