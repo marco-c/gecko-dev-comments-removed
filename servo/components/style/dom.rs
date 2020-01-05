@@ -228,6 +228,11 @@ pub trait PresentationalHintsSynthetizer {
 }
 
 
+
+pub struct AnimationRules(pub Option<Arc<RwLock<PropertyDeclarationBlock>>>,
+                          pub Option<Arc<RwLock<PropertyDeclarationBlock>>>);
+
+
 pub trait TElement : PartialEq + Debug + Sized + Copy + Clone + ElementExt + PresentationalHintsSynthetizer {
     
     type ConcreteNode: TNode<ConcreteElement = Self>;
@@ -247,6 +252,11 @@ pub trait TElement : PartialEq + Debug + Sized + Copy + Clone + ElementExt + Pre
 
     
     fn style_attribute(&self) -> Option<&Arc<RwLock<PropertyDeclarationBlock>>>;
+
+    
+    fn get_animation_rules(&self, _pseudo: Option<&PseudoElement>) -> AnimationRules {
+        AnimationRules(None, None)
+    }
 
     
     fn get_state(&self) -> ElementState;
