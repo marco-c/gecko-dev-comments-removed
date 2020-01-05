@@ -34,8 +34,6 @@
 #include <stack>
 
 namespace mozilla {
-class AbstractThread;
-
 namespace ipc {
 
 class MessageChannel;
@@ -558,7 +556,6 @@ class MessageChannel : HasResultCodes, MessageLoop::DestructionObserver
     Side mSide;
     MessageLink* mLink;
     MessageLoop* mWorkerLoop;           
-    RefPtr<AbstractThread> mAbstractThread;
     RefPtr<CancelableRunnable> mChannelErrorTask;  
 
     
