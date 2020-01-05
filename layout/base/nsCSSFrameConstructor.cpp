@@ -4243,13 +4243,28 @@ nsCSSFrameConstructor::GetAnonymousContent(nsIContent* aParent,
 
     ConnectAnonymousTreeDescendants(content, aContent[i].mChildren);
 
-    
-    
-    if (aParentFrame->GetType() == nsGkAtoms::svgUseFrame) {
+    nsIAtom* parentFrameType = aParentFrame->GetType();
+    if (parentFrameType == nsGkAtoms::svgUseFrame) {
+      
+      
       content->SetFlags(NODE_IS_ANONYMOUS_ROOT);
     } else {
       content->SetIsNativeAnonymousRoot();
-      SetNativeAnonymousBitOnDescendants(content);
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (!(parentFrameType == nsGkAtoms::canvasFrame &&
+              content == static_cast<nsCanvasFrame*>(aParentFrame)
+                           ->GetCustomContentContainer())) {
+        SetNativeAnonymousBitOnDescendants(content);
+      }
     }
 
     bool anonContentIsEditable = content->HasFlag(NODE_IS_EDITABLE);
