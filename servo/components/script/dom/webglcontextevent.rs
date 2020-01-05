@@ -41,6 +41,17 @@ impl WebGLContextEvent {
         }
     }
 
+    pub fn new_uninitialized(global_ref: GlobalRef) -> Root<WebGLContextEvent> {
+        
+        
+        
+        let status_message = DOMString::new();
+        reflect_dom_object(
+                        box WebGLContextEvent::new_inherited(status_message),
+                        global_ref,
+                        WebGLContextEventBinding::Wrap)
+    }
+
     pub fn new(global: GlobalRef,
                type_: Atom,
                bubbles: EventBubbles,
