@@ -1582,7 +1582,7 @@ nsPlainTextSerializer::Write(const nsAString& aStr)
   
   
   if ((mPreFormattedMail && !mWrapColumn) || (IsInPre() && !mPreFormattedMail)
-      || (mSpanLevel > 0 && mEmptyLines >= 0 && str.First() == char16_t('>'))) {
+      || (mSpanLevel > 0 && mEmptyLines >= 0 && IsQuotedLine(str))) {
     
 
     
@@ -1657,10 +1657,11 @@ nsPlainTextSerializer::Write(const nsAString& aStr)
       mCurrentLine.Truncate();
       if (mFlags & nsIDocumentEncoder::OutputFormatFlowed) {
         if ((outputLineBreak || !spacesOnly) && 
+            !IsQuotedLine(stringpart) &&
             !stringpart.EqualsLiteral("-- ") &&
             !stringpart.EqualsLiteral("- -- "))
           stringpart.Trim(" ", false, true, true);
-        if (IsSpaceStuffable(stringpart.get()) && stringpart[0] != '>')
+        if (IsSpaceStuffable(stringpart.get()) && !IsQuotedLine(stringpart))
           mCurrentLine.Append(char16_t(' '));
       }
       mCurrentLine.Append(stringpart);

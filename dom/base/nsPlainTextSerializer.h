@@ -110,6 +110,11 @@ private:
     return mHeadLevel == 0;
   }
 
+  inline bool IsQuotedLine(const nsAString& aLine)
+  {
+    return !aLine.IsEmpty() && aLine.First() == char16_t('>');
+  }
+
   
   bool GetLastBool(const nsTArray<bool>& aStack);
   void SetLastBool(nsTArray<bool>& aStack, bool aValue);
