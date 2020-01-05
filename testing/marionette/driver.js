@@ -2653,6 +2653,19 @@ GeckoDriver.prototype.getTextFromDialog = function (cmd, resp) {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 GeckoDriver.prototype.sendKeysToDialog = function (cmd, resp) {
   let win = assert.window(this.getCurrentWindow());
   this._checkIfAlertIsPresent();
@@ -2665,7 +2678,7 @@ GeckoDriver.prototype.sendKeysToDialog = function (cmd, resp) {
   }
 
   event.sendKeysToElement(
-      cmd.parameters.value,
+      cmd.parameters.text,
       loginTextbox,
       {ignoreVisibility: true},
       this.dialog.window ? this.dialog.window : win);
