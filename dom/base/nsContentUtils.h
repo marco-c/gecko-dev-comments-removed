@@ -799,8 +799,10 @@ public:
 
 
 
-  static nsresult NameChanged(mozilla::dom::NodeInfo* aNodeInfo, nsIAtom* aName,
-                              mozilla::dom::NodeInfo** aResult);
+
+  static nsresult QNameChanged(mozilla::dom::NodeInfo* aNodeInfo,
+                               nsIAtom* aName,
+                               mozilla::dom::NodeInfo** aResult);
 
   
 

@@ -80,8 +80,8 @@ HTMLTableSectionElement::InsertRow(int32_t aIndex, ErrorResult& aError)
 
   
   RefPtr<mozilla::dom::NodeInfo> nodeInfo;
-  nsContentUtils::NameChanged(mNodeInfo, nsGkAtoms::tr,
-                              getter_AddRefs(nodeInfo));
+  nsContentUtils::QNameChanged(mNodeInfo, nsGkAtoms::tr,
+                               getter_AddRefs(nodeInfo));
 
   RefPtr<nsGenericHTMLElement> rowContent =
     NS_NewHTMLTableRowElement(nodeInfo.forget());

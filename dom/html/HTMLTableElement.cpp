@@ -403,8 +403,8 @@ HTMLTableElement::CreateTHead()
   if (!head) {
     
     RefPtr<mozilla::dom::NodeInfo> nodeInfo;
-    nsContentUtils::NameChanged(mNodeInfo, nsGkAtoms::thead,
-                                getter_AddRefs(nodeInfo));
+    nsContentUtils::QNameChanged(mNodeInfo, nsGkAtoms::thead,
+                                 getter_AddRefs(nodeInfo));
 
     head = NS_NewHTMLTableSectionElement(nodeInfo.forget());
     if (!head) {
@@ -447,8 +447,8 @@ HTMLTableElement::CreateTFoot()
   if (!foot) {
     
     RefPtr<mozilla::dom::NodeInfo> nodeInfo;
-    nsContentUtils::NameChanged(mNodeInfo, nsGkAtoms::tfoot,
-                                getter_AddRefs(nodeInfo));
+    nsContentUtils::QNameChanged(mNodeInfo, nsGkAtoms::tfoot,
+                                 getter_AddRefs(nodeInfo));
 
     foot = NS_NewHTMLTableSectionElement(nodeInfo.forget());
     if (!foot) {
@@ -478,8 +478,8 @@ HTMLTableElement::CreateCaption()
   if (!caption) {
     
     RefPtr<mozilla::dom::NodeInfo> nodeInfo;
-    nsContentUtils::NameChanged(mNodeInfo, nsGkAtoms::caption,
-                                getter_AddRefs(nodeInfo));
+    nsContentUtils::QNameChanged(mNodeInfo, nsGkAtoms::caption,
+                                 getter_AddRefs(nodeInfo));
 
     caption = NS_NewHTMLTableCaptionElement(nodeInfo.forget());
     if (!caption) {
@@ -573,8 +573,8 @@ HTMLTableElement::InsertRow(int32_t aIndex, ErrorResult& aError)
 
     
     RefPtr<mozilla::dom::NodeInfo> nodeInfo;
-    nsContentUtils::NameChanged(mNodeInfo, nsGkAtoms::tr,
-                                getter_AddRefs(nodeInfo));
+    nsContentUtils::QNameChanged(mNodeInfo, nsGkAtoms::tr,
+                                 getter_AddRefs(nodeInfo));
 
     newRow = NS_NewHTMLTableRowElement(nodeInfo.forget());
 
@@ -607,8 +607,8 @@ HTMLTableElement::InsertRow(int32_t aIndex, ErrorResult& aError)
 
     if (!rowGroup) { 
       RefPtr<mozilla::dom::NodeInfo> nodeInfo;
-      nsContentUtils::NameChanged(mNodeInfo, nsGkAtoms::tbody,
-                                  getter_AddRefs(nodeInfo));
+      nsContentUtils::QNameChanged(mNodeInfo, nsGkAtoms::tbody,
+                                   getter_AddRefs(nodeInfo));
 
       rowGroup = NS_NewHTMLTableSectionElement(nodeInfo.forget());
       if (rowGroup) {
@@ -621,8 +621,8 @@ HTMLTableElement::InsertRow(int32_t aIndex, ErrorResult& aError)
 
     if (rowGroup) {
       RefPtr<mozilla::dom::NodeInfo> nodeInfo;
-      nsContentUtils::NameChanged(mNodeInfo, nsGkAtoms::tr,
-                                  getter_AddRefs(nodeInfo));
+      nsContentUtils::QNameChanged(mNodeInfo, nsGkAtoms::tr,
+                                   getter_AddRefs(nodeInfo));
 
       newRow = NS_NewHTMLTableRowElement(nodeInfo.forget());
       if (newRow) {
