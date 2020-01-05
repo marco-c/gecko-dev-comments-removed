@@ -3728,3 +3728,10 @@ nsStandardURL::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
 
 } 
 } 
+
+
+nsresult
+Test_NormalizeIPv4(const nsCSubstring& host, nsCString& result)
+{
+    return nsStandardURL::NormalizeIPv4(host, result);
+}
