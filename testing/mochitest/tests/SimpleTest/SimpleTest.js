@@ -280,6 +280,8 @@ SimpleTest.ok = function (condition, name, diag, stack = null) {
     } else if (!test.result && usesFailurePatterns()) {
       if (recordIfMatchesFailurePattern(name, diag)) {
         test.result = true;
+        
+        name = '[suppressed] ' + name;
       }
       var successInfo = {status:"FAIL", expected:"FAIL", message:"TEST-KNOWN-FAIL"};
       var failureInfo = {status:"FAIL", expected:"PASS", message:"TEST-UNEXPECTED-FAIL"};
@@ -344,6 +346,8 @@ SimpleTest.todo = function(condition, name, diag) {
       
       
       test.result = false;
+      
+      name = '[suppressed] ' + name;
     }
     var successInfo = {status:"PASS", expected:"FAIL", message:"TEST-UNEXPECTED-PASS"};
     var failureInfo = {status:"FAIL", expected:"FAIL", message:"TEST-KNOWN-FAIL"};
@@ -1701,4 +1705,10 @@ function getAndroidSdk() {
         document.documentElement.removeChild(iframe);
     }
     return gAndroidSdk;
+}
+
+
+
+if (usesFailurePatterns()) {
+  SimpleTest.requestCompleteLog();
 }
