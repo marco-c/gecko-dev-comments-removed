@@ -125,16 +125,10 @@ SVGFEImageElement::AfterSetAttr(int32_t aNamespaceID, nsIAtom* aName,
       (aNamespaceID == kNameSpaceID_XLink ||
        aNamespaceID == kNameSpaceID_None)) {
 
-    
-    
-    
-    
-    if (!GetPrimaryFrame()) {
-      if (aValue) {
-        LoadSVGImage(true, aNotify);
-      } else {
-        CancelImageRequests(aNotify);
-      }
+    if (aValue) {
+      LoadSVGImage(true, aNotify);
+    } else {
+      CancelImageRequests(aNotify);
     }
   }
 
