@@ -145,6 +145,13 @@ private:
   inline StyleSheetInfo& SheetInfo();
   inline const StyleSheetInfo& SheetInfo() const;
 
+  
+  
+  
+  
+  bool AreRulesAvailable(const Maybe<nsIPrincipal*>& aSubjectPrincipal,
+                         ErrorResult& aRv);
+
 protected:
   
   

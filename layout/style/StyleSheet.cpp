@@ -193,4 +193,22 @@ StyleSheet::SubjectSubsumesInnerPrincipal(nsIPrincipal& aSubjectPrincipal,
   DidDirty();
 }
 
+bool
+StyleSheet::AreRulesAvailable(const Maybe<nsIPrincipal*>& aSubjectPrincipal,
+                              ErrorResult& aRv)
+{
+  
+  if (!SheetInfo().mComplete) {
+    aRv.Throw(NS_ERROR_DOM_INVALID_ACCESS_ERR);
+    return false;
+  }
+  
+  
+  SubjectSubsumesInnerPrincipal(aSubjectPrincipal, aRv);
+  if (NS_WARN_IF(aRv.Failed())) {
+    return false;
+  }
+  return true;
+}
+
 } 

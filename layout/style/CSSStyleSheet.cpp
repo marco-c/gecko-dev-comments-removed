@@ -1685,16 +1685,7 @@ CSSRuleList*
 CSSStyleSheet::GetCssRules(nsIPrincipal& aSubjectPrincipal,
                            ErrorResult& aRv)
 {
-  
-  if (!mInner->mComplete) {
-    aRv.Throw(NS_ERROR_DOM_INVALID_ACCESS_ERR);
-    return nullptr;
-  }
-  
-  
-  
-  SubjectSubsumesInnerPrincipal(aSubjectPrincipal, aRv);
-  if (NS_WARN_IF(aRv.Failed())) {
+  if (!AreRulesAvailable(aSubjectPrincipal, aRv)) {
     return nullptr;
   }
 
@@ -1722,13 +1713,9 @@ CSSStyleSheet::InsertRule(const nsAString& aRule, uint32_t aIndex,
                           nsIPrincipal& aSubjectPrincipal,
                           ErrorResult& aRv)
 {
-  
-  
-  SubjectSubsumesInnerPrincipal(aSubjectPrincipal, aRv);
-  if (NS_WARN_IF(aRv.Failed())) {
+  if (!AreRulesAvailable(aSubjectPrincipal, aRv)) {
     return 0;
   }
-
   return InsertRuleInternal(aRule, aIndex, aRv);
 }
 
@@ -1748,11 +1735,7 @@ CSSStyleSheet::InsertRuleInternal(const nsAString& aRule,
                                   uint32_t aIndex,
                                   ErrorResult& aRv)
 {
-  
-  if (!mInner->mComplete) {
-    aRv.Throw(NS_ERROR_DOM_INVALID_ACCESS_ERR);
-    return 0;
-  }
+  MOZ_ASSERT(mInner->mComplete);
 
   WillDirty();
   
@@ -1880,16 +1863,7 @@ CSSStyleSheet::DeleteRule(uint32_t aIndex,
                           nsIPrincipal& aSubjectPrincipal,
                           ErrorResult& aRv)
 {
-  
-  if (!mInner->mComplete) {
-    aRv.Throw(NS_ERROR_DOM_INVALID_ACCESS_ERR);
-    return;
-  }
-
-  
-  
-  SubjectSubsumesInnerPrincipal(aSubjectPrincipal, aRv);
-  if (NS_WARN_IF(aRv.Failed())) {
+  if (!AreRulesAvailable(aSubjectPrincipal, aRv)) {
     return;
   }
 
