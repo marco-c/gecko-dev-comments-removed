@@ -108,10 +108,6 @@ SelectLayerGeometry(const Maybe<gfx::Polygon>& aParentGeometry,
 {
   
   if (aParentGeometry && aChildGeometry) {
-    
-    
-    MOZ_ASSERT(false,
-               "Both parent and child geometry present in nested 3D context!");
     return Some(aParentGeometry->ClipPolygon(*aChildGeometry));
   }
 
@@ -453,12 +449,16 @@ RenderLayers(ContainerT* aContainer, LayerManagerComposite* aManager,
         layerToRender->SetClearRect(gfx::IntRect(0, 0, 0, 0));
       }
     } else {
+      
+      
       Maybe<gfx::Polygon> geometry =
         SelectLayerGeometry(aGeometry, childGeometry);
 
       
       
-      const bool isLeafLayer = layer->AsContainerLayer() == nullptr;
+      
+      ContainerLayer* container = layer->AsContainerLayer();
+      const bool isLeafLayer = !container || container->UseIntermediateSurface();
 
       if (geometry && isLeafLayer) {
         TransformLayerGeometry(layer, geometry);
