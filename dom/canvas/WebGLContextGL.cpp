@@ -1547,6 +1547,8 @@ WebGLContext::ReadPixelsImpl(GLint x, GLint y, GLsizei rawWidth, GLsizei rawHeig
     
     
 
+    OnBeforeReadCall();
+
     uint32_t readX, readY;
     uint32_t writeX, writeY;
     uint32_t rwWidth, rwHeight;
