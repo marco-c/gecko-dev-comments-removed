@@ -507,6 +507,13 @@ int VP9EncoderImpl::Encode(const VideoFrame& input_image,
   if (frame_types && frame_types->size() > 0) {
     frame_type = (*frame_types)[0];
   }
+  if (input_image.width() != codec_.width ||
+      input_image.height() != codec_.height) {
+    int ret = UpdateCodecFrameSize(input_image);
+    if (ret < 0) {
+      return ret;
+    }
+  }
   RTC_DCHECK_EQ(input_image.width(), static_cast<int>(raw_->d_w));
   RTC_DCHECK_EQ(input_image.height(), static_cast<int>(raw_->d_h));
 
@@ -565,6 +572,44 @@ int VP9EncoderImpl::Encode(const VideoFrame& input_image,
   timestamp_ += duration;
 
   return WEBRTC_VIDEO_CODEC_OK;
+}
+
+int VP9EncoderImpl::UpdateCodecFrameSize(
+    const VideoFrame& input_image) {
+  fprintf(stderr, "Reconfiging VP( from %dx%d to %dx%d\n",
+          codec_.width, codec_.height, input_image.width(), input_image.height());
+  
+  uint32_t old_bitrate_kbit = config_->rc_target_bitrate;
+  uint32_t old_framerate = codec_.maxFramerate;
+
+  codec_.width = input_image.width();
+  codec_.height = input_image.height();
+
+  vpx_img_free(raw_);
+  raw_ = vpx_img_wrap(NULL, VPX_IMG_FMT_I420, codec_.width, codec_.height,
+                      1, NULL);
+  
+  config_->g_w = codec_.width;
+  config_->g_h = codec_.height;
+
+  
+  config_->g_threads = NumberOfThreads(codec_.width, codec_.height,
+                                       num_cores_);
+  
+  cpu_speed_ = GetCpuSpeed(codec_.width, codec_.height);
+
+  
+  
+  
+  
+  
+  
+  vpx_codec_destroy(encoder_); 
+  int result = InitAndSetControlSettings(&codec_);
+  if (result == WEBRTC_VIDEO_CODEC_OK) {
+    return SetRates(old_bitrate_kbit, old_framerate);
+  }
+  return result;
 }
 
 void VP9EncoderImpl::PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
@@ -963,6 +1008,7 @@ int VP9DecoderImpl::ReturnFrame(const vpx_image_t* img, uint32_t timestamp) {
     return WEBRTC_VIDEO_CODEC_NO_OUTPUT;
   }
 
+#ifdef USE_WRAPPED_I420_BUFFER
   
   
   
@@ -972,6 +1018,7 @@ int VP9DecoderImpl::ReturnFrame(const vpx_image_t* img, uint32_t timestamp) {
   
   rtc::scoped_refptr<WrappedI420Buffer> img_wrapped_buffer(
       new rtc::RefCountedObject<webrtc::WrappedI420Buffer>(
+          img->d_w, img->d_h,
           img->d_w, img->d_h, img->planes[VPX_PLANE_Y],
           img->stride[VPX_PLANE_Y], img->planes[VPX_PLANE_U],
           img->stride[VPX_PLANE_U], img->planes[VPX_PLANE_V],
@@ -981,10 +1028,19 @@ int VP9DecoderImpl::ReturnFrame(const vpx_image_t* img, uint32_t timestamp) {
           
           rtc::KeepRefUntilDone(img_buffer)));
 
-  VideoFrame decoded_image;
-  decoded_image.set_video_frame_buffer(img_wrapped_buffer);
-  decoded_image.set_timestamp(timestamp);
-  int ret = decode_complete_callback_->Decoded(decoded_image);
+  VideoFrame decoded_image_;
+  decoded_image_.set_video_frame_buffer(img_wrapped_buffer);
+#else
+  decoded_image_.CreateFrame(img->planes[VPX_PLANE_Y],
+                             img->planes[VPX_PLANE_U],
+                             img->planes[VPX_PLANE_V],
+                             img->d_w, img->d_h,
+                             img->stride[VPX_PLANE_Y],
+                             img->stride[VPX_PLANE_U],
+                             img->stride[VPX_PLANE_V]);
+#endif
+  decoded_image_.set_timestamp(timestamp);
+  int ret = decode_complete_callback_->Decoded(decoded_image_);
   if (ret != 0)
     return ret;
   return WEBRTC_VIDEO_CODEC_OK;
