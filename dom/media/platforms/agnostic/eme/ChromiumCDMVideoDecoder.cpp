@@ -134,7 +134,15 @@ ChromiumCDMVideoDecoder::Drain()
 RefPtr<ShutdownPromise>
 ChromiumCDMVideoDecoder::Shutdown()
 {
-  return ShutdownPromise::CreateAndResolve(true, __func__);
+  if (!mCDMParent) {
+    
+    
+    
+    return ShutdownPromise::CreateAndResolve(true, __func__);
+  }
+  RefPtr<gmp::ChromiumCDMParent> cdm = mCDMParent;
+  return InvokeAsync(
+    mGMPThread, __func__, [cdm]() { return cdm->ShutdownVideoDecoder(); });
 }
 
 } 
