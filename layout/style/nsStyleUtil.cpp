@@ -741,6 +741,26 @@ nsStyleUtil::IsSignificantChild(nsIContent* aChild, bool aTextIsSignificant,
           !aChild->TextIsOnlyWhitespace());
 }
 
+ bool
+nsStyleUtil::ThreadSafeIsSignificantChild(const nsIContent* aChild,
+                                          bool aTextIsSignificant,
+                                          bool aWhitespaceIsSignificant)
+{
+  NS_ASSERTION(!aWhitespaceIsSignificant || aTextIsSignificant,
+               "Nonsensical arguments");
+
+  bool isText = aChild->IsNodeOfType(nsINode::eTEXT);
+
+  if (!isText && !aChild->IsNodeOfType(nsINode::eCOMMENT) &&
+      !aChild->IsNodeOfType(nsINode::ePROCESSING_INSTRUCTION)) {
+    return true;
+  }
+
+  return aTextIsSignificant && isText && aChild->TextLength() != 0 &&
+         (aWhitespaceIsSignificant ||
+          !aChild->ThreadSafeTextIsOnlyWhitespace());
+}
+
 
 
 

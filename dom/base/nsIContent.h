@@ -561,6 +561,11 @@ public:
   
 
 
+  virtual bool ThreadSafeTextIsOnlyWhitespace() const = 0;
+
+  
+
+
 
 
 

@@ -155,12 +155,16 @@ public:
 
 
 
+
+
+
   static bool StringPseudoMatches(const mozilla::dom::Element* aElement,
                                   mozilla::CSSPseudoClassType aPseudo,
                                   const char16_t* aString,
                                   const nsIDocument* aDocument,
                                   bool aForStyling,
                                   mozilla::EventStates aStateMask,
+                                  bool aIsGecko,
                                   bool* aSetSlowSelectorFlag,
                                   bool* const aDependence = nullptr);
 
