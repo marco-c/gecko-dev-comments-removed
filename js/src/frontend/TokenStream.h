@@ -26,6 +26,7 @@
 #include "frontend/TokenKind.h"
 #include "js/UniquePtr.h"
 #include "js/Vector.h"
+#include "vm/ErrorReporting.h"
 #include "vm/RegExpObject.h"
 #include "vm/String.h"
 
@@ -241,11 +242,6 @@ struct Token
     }
 };
 
-class CompileError : public JSErrorReport {
-  public:
-    void throwError(JSContext* cx);
-};
-
 extern const char*
 ReservedWordToCharZ(PropertyName* str);
 
@@ -268,37 +264,6 @@ IsStrictReservedWord(JSLinearString* str);
 class StrictModeGetter {
   public:
     virtual bool strictMode() = 0;
-};
-
-
-
-
-
-struct ErrorMetadata
-{
-    
-    const char* filename;
-
-    
-    
-    
-    uint32_t lineNumber;
-    uint32_t columnNumber;
-
-    
-    
-    
-    
-    
-    
-    UniqueTwoByteChars lineOfContext;
-
-    
-    size_t lineLength;
-
-    
-    
-    size_t tokenOffset;
 };
 
 class TokenStreamBase
@@ -586,12 +551,6 @@ class TokenStreamBase
     bool hasLookahead() const { return lookahead > 0; }
 
   public:
-    
-    
-    
-    void compileError(ErrorMetadata&& metadata, UniquePtr<JSErrorNotes> notes, unsigned flags,
-                      unsigned errorNumber, va_list args);
-
     MOZ_MUST_USE bool compileWarning(ErrorMetadata&& metadata, UniquePtr<JSErrorNotes> notes,
                                      unsigned flags, unsigned errorNumber, va_list args);
 

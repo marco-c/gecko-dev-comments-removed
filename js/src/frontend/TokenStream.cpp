@@ -686,7 +686,7 @@ TokenStream::reportStrictModeErrorNumberVA(UniquePtr<JSErrorNotes> notes, uint32
         return false;
 
     if (strictMode) {
-        compileError(Move(metadata), Move(notes), JSREPORT_ERROR, errorNumber, args);
+        ReportCompileError(cx, Move(metadata), Move(notes), JSREPORT_ERROR, errorNumber, args);
         return false;
     }
 
@@ -694,31 +694,23 @@ TokenStream::reportStrictModeErrorNumberVA(UniquePtr<JSErrorNotes> notes, uint32
                           errorNumber, args);
 }
 
-void
-CompileError::throwError(JSContext* cx)
+bool
+TokenStreamBase::compileWarning(ErrorMetadata&& metadata, UniquePtr<JSErrorNotes> notes,
+                                unsigned flags, unsigned errorNumber, va_list args)
 {
-    if (JSREPORT_IS_WARNING(flags)) {
-        CallWarningReporter(cx, this);
-        return;
+    if (options().werrorOption) {
+        flags &= ~JSREPORT_WARNING;
+        ReportCompileError(cx, Move(metadata), Move(notes), flags, errorNumber, args);
+        return false;
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    ErrorToException(cx, this, nullptr, nullptr);
+    return ReportCompileWarning(cx, Move(metadata), Move(notes), flags, errorNumber, args);
 }
 
 void
 TokenStreamBase::computeErrorMetadataNoOffset(ErrorMetadata* err)
 {
+    err->isMuted = mutedErrors;
     err->filename = filename;
     err->lineNumber = 0;
     err->columnNumber = 0;
@@ -733,6 +725,8 @@ TokenStream::computeErrorMetadata(ErrorMetadata* err, uint32_t offset)
         computeErrorMetadataNoOffset(err);
         return true;
     }
+
+    err->isMuted = mutedErrors;
 
     
     
@@ -816,82 +810,6 @@ TokenStream::computeLineOfContext(ErrorMetadata* err, uint32_t offset)
     return true;
 }
 
-void
-TokenStreamBase::compileError(ErrorMetadata&& metadata, UniquePtr<JSErrorNotes> notes,
-                              unsigned flags, unsigned errorNumber, va_list args)
-{
-    
-    
-    
-    CompileError tempErr;
-    CompileError* err = &tempErr;
-    if (cx->helperThread() && !cx->addPendingCompileError(&err))
-        return;
-
-    err->notes = Move(notes);
-    err->flags = flags;
-    err->errorNumber = errorNumber;
-    err->isMuted = mutedErrors;
-
-    err->filename = metadata.filename;
-    err->lineno = metadata.lineNumber;
-    err->column = metadata.columnNumber;
-
-    if (UniqueTwoByteChars lineOfContext = Move(metadata.lineOfContext))
-        err->initOwnedLinebuf(lineOfContext.release(), metadata.lineLength, metadata.tokenOffset);
-
-    if (!ExpandErrorArgumentsVA(cx, GetErrorMessage, nullptr, errorNumber,
-                                nullptr, ArgumentsAreLatin1, err, args))
-    {
-        return;
-    }
-
-    if (!cx->helperThread())
-        err->throwError(cx);
-}
-
-bool
-TokenStreamBase::compileWarning(ErrorMetadata&& metadata, UniquePtr<JSErrorNotes> notes,
-                                unsigned flags, unsigned errorNumber, va_list args)
-{
-    if (options().werrorOption) {
-        flags &= ~JSREPORT_WARNING;
-        compileError(Move(metadata), Move(notes), flags, errorNumber, args);
-        return false;
-    }
-
-    
-    
-    
-    CompileError tempErr;
-    CompileError* err = &tempErr;
-    if (cx->helperThread() && !cx->addPendingCompileError(&err))
-        return false;
-
-    err->notes = Move(notes);
-    err->flags = flags;
-    err->errorNumber = errorNumber;
-    err->isMuted = mutedErrors;
-
-    err->filename = metadata.filename;
-    err->lineno = metadata.lineNumber;
-    err->column = metadata.columnNumber;
-
-    if (UniqueTwoByteChars lineOfContext = Move(metadata.lineOfContext))
-        err->initOwnedLinebuf(lineOfContext.release(), metadata.lineLength, metadata.tokenOffset);
-
-    if (!ExpandErrorArgumentsVA(cx, GetErrorMessage, nullptr, errorNumber,
-                                nullptr, ArgumentsAreLatin1, err, args))
-    {
-        return false;
-    }
-
-    if (!cx->helperThread())
-        err->throwError(cx);
-
-    return true;
-}
-
 bool
 TokenStream::reportStrictModeError(unsigned errorNumber, ...)
 {
@@ -911,7 +829,7 @@ TokenStream::reportError(unsigned errorNumber, ...)
 
     ErrorMetadata metadata;
     if (computeErrorMetadata(&metadata, currentToken().pos.begin))
-        compileError(Move(metadata), nullptr, JSREPORT_ERROR, errorNumber, args);
+        ReportCompileError(cx, Move(metadata), nullptr, JSREPORT_ERROR, errorNumber, args);
 
     va_end(args);
 }
@@ -925,7 +843,7 @@ TokenStreamBase::reportErrorNoOffset(unsigned errorNumber, ...)
     ErrorMetadata metadata;
     computeErrorMetadataNoOffset(&metadata);
 
-    compileError(Move(metadata), nullptr, JSREPORT_ERROR, errorNumber, args);
+    ReportCompileError(cx, Move(metadata), nullptr, JSREPORT_ERROR, errorNumber, args);
 
     va_end(args);
 }
@@ -968,7 +886,7 @@ TokenStream::error(unsigned errorNumber, ...)
 
     ErrorMetadata metadata;
     if (computeErrorMetadata(&metadata, currentToken().pos.begin))
-        compileError(Move(metadata), nullptr, JSREPORT_ERROR, errorNumber, args);
+        ReportCompileError(cx, Move(metadata), nullptr, JSREPORT_ERROR, errorNumber, args);
 
     va_end(args);
 }
@@ -981,7 +899,7 @@ TokenStream::errorAt(uint32_t offset, unsigned errorNumber, ...)
 
     ErrorMetadata metadata;
     if (computeErrorMetadata(&metadata, offset))
-        compileError(Move(metadata), nullptr, JSREPORT_ERROR, errorNumber, args);
+        ReportCompileError(cx, Move(metadata), nullptr, JSREPORT_ERROR, errorNumber, args);
 
     va_end(args);
 }

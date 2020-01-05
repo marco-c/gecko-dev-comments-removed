@@ -35,6 +35,7 @@ namespace js {
 
 class AutoLockHelperThreadState;
 class AutoUnlockHelperThreadState;
+class CompileError;
 class PromiseTask;
 struct HelperThread;
 struct ParseTask;
@@ -628,7 +629,7 @@ struct ParseTask
 
     
     
-    Vector<frontend::CompileError*, 0, SystemAllocPolicy> errors;
+    Vector<CompileError*, 0, SystemAllocPolicy> errors;
     bool overRecursed;
     bool outOfMemory;
 
