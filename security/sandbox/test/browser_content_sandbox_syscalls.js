@@ -63,10 +63,10 @@ function openWriteCreateFlags() {
     let O_CREAT  = 0x200;
     return (O_WRONLY | O_CREAT);
   }
-    
-    let O_WRONLY = 0x01;
-    let O_CREAT  = 0x40;
-    return (O_WRONLY | O_CREAT);
+  
+  let O_WRONLY = 0x01;
+  let O_CREAT  = 0x40;
+  return (O_WRONLY | O_CREAT);
 }
 
 
