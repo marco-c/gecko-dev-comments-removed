@@ -877,8 +877,13 @@ function pollForReadyState(msg, start = undefined, callback = undefined) {
 
       
       } else if (doc.readyState == "interactive" &&
-          /about:.+(error)\?/.exec(doc.baseURI) &&
-          !doc.baseURI.startsWith(url)) {
+          doc.baseURI.startsWith("about:certerror")) {
+        callback();
+        sendError(new InsecureCertificateError(), command_id);
+
+      
+      } else if (doc.readyState == "interactive" &&
+          /about:.+(error)\?/.exec(doc.baseURI)) {
         callback();
         sendError(new UnknownError("Reached error page: " + doc.baseURI), command_id);
 
