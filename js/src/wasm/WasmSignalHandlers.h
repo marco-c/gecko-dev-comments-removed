@@ -33,7 +33,7 @@ namespace js {
 
 
 extern void
-InterruptRunningJitCode(JSRuntime* rt);
+InterruptRunningJitCode(JSContext* cx);
 
 namespace wasm {
 
@@ -41,7 +41,7 @@ namespace wasm {
 
 
 MOZ_MUST_USE bool
-EnsureSignalHandlers(JSRuntime* rt);
+EnsureSignalHandlers(JSContext* cx);
 
 
 
@@ -68,7 +68,7 @@ class MachExceptionHandler
     ~MachExceptionHandler() { uninstall(); }
     mach_port_t port() const { return port_; }
     bool installed() const { return installed_; }
-    bool install(JSRuntime* rt);
+    bool install(JSContext* cx);
 };
 #endif
 

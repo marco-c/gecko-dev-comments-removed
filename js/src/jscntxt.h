@@ -218,6 +218,12 @@ struct JSContext : public JS::RootingContext,
     JS::Zone* zone() const {
         MOZ_ASSERT_IF(!compartment(), !zone_);
         MOZ_ASSERT_IF(compartment(), js::GetCompartmentZone(compartment()) == zone_);
+        return zoneRaw();
+    }
+
+    
+    
+    JS::Zone* zoneRaw() const {
         return zone_;
     }
 
