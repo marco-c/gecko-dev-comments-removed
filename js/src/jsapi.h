@@ -3438,6 +3438,30 @@ JS_GetArrayLength(JSContext* cx, JS::Handle<JSObject*> obj, uint32_t* lengthp);
 extern JS_PUBLIC_API(bool)
 JS_SetArrayLength(JSContext* cx, JS::Handle<JSObject*> obj, uint32_t length);
 
+namespace JS {
+
+
+
+
+
+
+
+
+extern JS_PUBLIC_API(bool)
+IsMapObject(JSContext* cx, JS::HandleObject obj, bool* isMap);
+
+
+
+
+
+
+
+
+extern JS_PUBLIC_API(bool)
+IsSetObject(JSContext* cx, JS::HandleObject obj, bool* isSet);
+
+} 
+
 
 
 
