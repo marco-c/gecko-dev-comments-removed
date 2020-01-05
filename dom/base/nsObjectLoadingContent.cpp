@@ -3269,7 +3269,7 @@ nsObjectLoadingContent::ShouldPlay(FallbackType &aReason, bool aIgnoreCurrentTyp
   NS_ENSURE_TRUE(topDoc, false);
 
   
-  FlashClassification documentClassification = FlashClassification::Allowed;
+  FlashClassification documentClassification = FlashClassification::Unknown;
   if (IsFlashMIME(mContentType)) {
     documentClassification = ownerDoc->DocumentFlashClassification();
   }
@@ -3344,10 +3344,16 @@ nsObjectLoadingContent::ShouldPlay(FallbackType &aReason, bool aIgnoreCurrentTyp
     return false;
   }
 
+  
+  
+  
   switch (enabledState) {
   case nsIPluginTag::STATE_ENABLED:
-    return documentClassification == FlashClassification::Allowed;
+    return true;
   case nsIPluginTag::STATE_CLICKTOPLAY:
+    if (documentClassification == FlashClassification::Allowed) {
+      return true;
+    }
     return false;
   }
   MOZ_CRASH("Unexpected enabledState");
