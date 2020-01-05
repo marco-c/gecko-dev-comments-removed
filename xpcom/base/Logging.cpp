@@ -282,8 +282,6 @@ public:
     detail::LogFile* newFile = OpenFile(false, 0);
     detail::LogFile* oldFile = mOutFile.exchange(newFile);
 
-    printf("old: %p, new %p\n", newFile, oldFile);
-
     
     
     
