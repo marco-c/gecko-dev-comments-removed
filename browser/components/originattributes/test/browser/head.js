@@ -213,6 +213,8 @@ this.IsolationTestTools = {
       
       yield SpecialPowers.pushPrefEnv({"set": aPref});
 
+      yield SpecialPowers.pushPrefEnv({"set": [["dom.ipc.processCount", 1]]});
+
       yield aTask(aMode);
     });
   },

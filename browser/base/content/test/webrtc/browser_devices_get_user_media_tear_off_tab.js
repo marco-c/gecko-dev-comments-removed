@@ -65,7 +65,10 @@ var gTests = [
 
 function test() {
   waitForExplicitFinish();
+  SpecialPowers.pushPrefEnv({"set": [["dom.ipc.processCount", 1]]}, runTest);
+}
 
+function runTest() {
   
   
   gBrowser.addTab();
