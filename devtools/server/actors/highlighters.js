@@ -4,7 +4,7 @@
 
 "use strict";
 
-const { Ci, Cu } = require("chrome");
+const { Ci } = require("chrome");
 
 const { XPCOMUtils } = require("resource://gre/modules/XPCOMUtils.jsm");
 const EventEmitter = require("devtools/shared/event-emitter");
@@ -399,11 +399,6 @@ exports.HighlighterActor = protocol.ActorClassWithSpec(highlighterSpec, {
 
   _stopPickerListeners: function () {
     let target = this._highlighterEnv.pageListenerTarget;
-
-    if (!target) {
-      return;
-    }
-
     target.removeEventListener("mousemove", this._onHovered, true);
     target.removeEventListener("click", this._onPick, true);
     target.removeEventListener("mousedown", this._preventContentEvent, true);
@@ -478,7 +473,6 @@ exports.CustomHighlighterActor = protocol.ActorClassWithSpec(customHighlighterSp
   release: function () {},
 
   
-
 
 
 
@@ -619,25 +613,21 @@ HighlighterEnvironment.prototype = {
       throw new Error("Initialize HighlighterEnvironment with a tabActor " +
         "or window first");
     }
-    let win = this._tabActor ? this._tabActor.window : this._win;
-
-    return Cu.isDeadWrapper(win) ? null : win;
+    return this._tabActor ? this._tabActor.window : this._win;
   },
 
   get document() {
-    return this.window && this.window.document;
+    return this.window.document;
   },
 
   get docShell() {
-    return this.window &&
-           this.window.QueryInterface(Ci.nsIInterfaceRequestor)
+    return this.window.QueryInterface(Ci.nsIInterfaceRequestor)
                       .getInterface(Ci.nsIWebNavigation)
                       .QueryInterface(Ci.nsIDocShell);
   },
 
   get webProgress() {
-    return this.docShell &&
-           this.docShell.QueryInterface(Ci.nsIInterfaceRequestor)
+    return this.docShell.QueryInterface(Ci.nsIInterfaceRequestor)
                         .getInterface(Ci.nsIWebProgress);
   },
 
@@ -658,7 +648,7 @@ HighlighterEnvironment.prototype = {
     if (this._tabActor && this._tabActor.isRootActor) {
       return this.window;
     }
-    return this.docShell && this.docShell.chromeEventHandler;
+    return this.docShell.chromeEventHandler;
   },
 
   relayTabActorWindowReady: function (data) {
@@ -710,10 +700,6 @@ exports.CssTransformHighlighter = CssTransformHighlighter;
 const { SelectorHighlighter } = require("./highlighters/selector");
 register(SelectorHighlighter);
 exports.SelectorHighlighter = SelectorHighlighter;
-
-const { RectHighlighter } = require("./highlighters/rect");
-register(RectHighlighter);
-exports.RectHighlighter = RectHighlighter;
 
 const { GeometryEditorHighlighter } = require("./highlighters/geometry-editor");
 register(GeometryEditorHighlighter);
