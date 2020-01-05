@@ -611,12 +611,20 @@ SpecialPowersObserverAPI.prototype = {
         
         
         let extensionData = new ExtensionData(extension.rootURI);
-        extensionData.readManifest().then(() => {
-          return extensionData.initAllLocales();
-        }).then(() => {
-          if (extensionData.errors.length) {
-            return Promise.reject("Extension contains packaging errors");
+        extensionData.readManifest().then(
+          () => {
+            return extensionData.initAllLocales().then(() => {
+              if (extensionData.errors.length) {
+                return Promise.reject("Extension contains packaging errors");
+              }
+            });
+          },
+          () => {
+            
+            
+            
           }
+        ).then(() => {
           return extension.startup();
         }).then(() => {
           this._sendReply(aMessage, "SPExtensionMessage", {id, type: "extensionStarted", args: []});
