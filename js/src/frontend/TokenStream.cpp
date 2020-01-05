@@ -1202,7 +1202,15 @@ TokenStream::getTokenInternal(TokenKind* ttp, Modifier modifier)
                 
                 
                 
-                if (hadUnicodeEscape) {
+                
+                
+                
+                
+                
+                if (hadUnicodeEscape && !(
+                        (kw->tokentype == TOK_STRICT_RESERVED && !strictMode()) ||
+                         kw->tokentype == TOK_YIELD))
+                {
                     reportError(JSMSG_ESCAPED_KEYWORD);
                     goto error;
                 }
@@ -1210,7 +1218,7 @@ TokenStream::getTokenInternal(TokenKind* ttp, Modifier modifier)
                 tp->type = TOK_NAME;
                 if (!checkForKeyword(kw, &tp->type))
                     goto error;
-                if (tp->type != TOK_NAME)
+                if (tp->type != TOK_NAME && !hadUnicodeEscape)
                     goto out;
             }
         }

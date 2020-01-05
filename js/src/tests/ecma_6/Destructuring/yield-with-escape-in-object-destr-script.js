@@ -4,18 +4,8 @@
 
 
 
-var message = "Congratulations, you've fixed escape sequences in yield! Please enable the commented out tests in this file.";
-try {
-    eval(String.raw`var yi\u0065ld;`);
-} catch (e) {
-    message = "";
-}
-if (message) throw message;
-
-
-
-
-
+var {a: yi\u0065ld} = {a: "yield-with-name"};
+assertEq(yield, "yield-with-name");
 
 var {yi\u0065ld} = {yield: "yield-with-shorthand"};
 assertEq(yield, "yield-with-shorthand");
@@ -41,8 +31,8 @@ assertThrowsInstanceOf(() => eval(String.raw`
 
 
 {
-    
-    
+    let {a: yi\u0065ld} = {a: "yield-with-name"};
+    assertEq(yield, "yield-with-name");
 }
 
 {
@@ -73,8 +63,8 @@ assertThrowsInstanceOf(() => eval(String.raw`
 
 
 {
-    
-    
+    const {a: yi\u0065ld} = {a: "yield-with-name"};
+    assertEq(yield, "yield-with-name");
 }
 
 {
@@ -104,8 +94,8 @@ assertThrowsInstanceOf(() => eval(String.raw`
 
 
 
-
-
+({a: yi\u0065ld} = {a: "yield-with-name"});
+assertEq(yield, "yield-with-name");
 
 ({yi\u0065ld} = {yield: "yield-with-shorthand"});
 assertEq(yield, "yield-with-shorthand");
