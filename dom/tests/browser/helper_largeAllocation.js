@@ -345,8 +345,46 @@ function* largeAllocSuccessTests() {
     });
   });
 
+  
+  
   yield BrowserTestUtils.withNewTab("about:blank", function*(aBrowser) {
     info("Starting test 7");
+
+    let pid1 = yield getPID(aBrowser);
+    is(false, yield getInLAProc(aBrowser));
+
+    let ready = Promise.all([expectProcessCreated(),
+                             BrowserTestUtils.browserLoaded(aBrowser)]);
+    yield ContentTask.spawn(aBrowser, TEST_URI, TEST_URI => {
+      content.document.location = TEST_URI;
+    });
+
+    yield ready;
+
+    let pid2 = yield getPID(aBrowser);
+
+    isnot(pid1, pid2, "PIDs 1 and 2 should not match");
+    is(true, yield getInLAProc(aBrowser));
+
+    let newWindow = yield BrowserTestUtils.openNewBrowserWindow();
+
+    newWindow.gBrowser.adoptTab(gBrowser.getTabForBrowser(aBrowser), 0);
+    let newTab = newWindow.gBrowser.tabs[0];
+
+    is(newTab.linkedBrowser.currentURI.spec, TEST_URI);
+    is(newTab.linkedBrowser.remoteType, "webLargeAllocation");
+    let pid3 = yield getPID(newTab.linkedBrowser);
+
+    is(pid2, pid3, "PIDs 2 and 3 should match");
+    is(true, yield getInLAProc(newTab.linkedBrowser));
+
+    yield BrowserTestUtils.closeWindow(newWindow);
+  });
+
+  
+  
+  yield BrowserTestUtils.withNewTab("about:blank", function*(aBrowser) {
+    info("Starting test 8");
     yield SpecialPowers.pushPrefEnv({
       set: [
         ["dom.ipc.processCount.webLargeAllocation", 1]
@@ -394,7 +432,7 @@ function* largeAllocSuccessTests() {
 
   
   yield BrowserTestUtils.withNewTab("about:blank", function*(aBrowser) {
-    info("Starting test 8");
+    info("Starting test 9");
     let pid1 = yield getPID(aBrowser);
     is(false, yield getInLAProc(aBrowser));
 
@@ -414,6 +452,50 @@ function* largeAllocSuccessTests() {
 
     stopExpectNoProcess();
   });
+
+  
+  
+  yield BrowserTestUtils.withNewTab("about:blank", function*(aBrowser) {
+    info("Starting test 10");
+    yield SpecialPowers.pushPrefEnv({
+      set: [
+        ["dom.ipc.processCount.webLargeAllocation", 1]
+      ],
+    });
+
+    let pid1 = yield getPID(aBrowser);
+    is(false, yield getInLAProc(aBrowser));
+
+    let ready = Promise.all([expectProcessCreated(),
+                             BrowserTestUtils.browserLoaded(aBrowser)]);
+    yield ContentTask.spawn(aBrowser, TEST_URI, TEST_URI => {
+      content.document.location = TEST_URI;
+    });
+
+    yield ready;
+
+    let pid2 = yield getPID(aBrowser);
+
+    isnot(pid1, pid2, "PIDs 1 and 2 should not match");
+    is(true, yield getInLAProc(aBrowser));
+
+    let newWindow = yield BrowserTestUtils.openNewBrowserWindow();
+
+    newWindow.gBrowser.adoptTab(gBrowser.getTabForBrowser(aBrowser), 0);
+    let newTab = newWindow.gBrowser.tabs[0];
+
+    is(newTab.linkedBrowser.currentURI.spec, TEST_URI);
+    is(newTab.linkedBrowser.remoteType, "webLargeAllocation");
+    let pid3 = yield getPID(newTab.linkedBrowser);
+
+    is(pid2, pid3, "PIDs 2 and 3 should match");
+    is(true, yield getInLAProc(newTab.linkedBrowser));
+
+    yield BrowserTestUtils.closeWindow(newWindow);
+  });
+
+  
+  
 }
 
 function* largeAllocFailTests() {
