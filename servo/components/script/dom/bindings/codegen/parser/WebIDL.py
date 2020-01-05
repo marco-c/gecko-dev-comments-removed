@@ -6438,7 +6438,8 @@ class Parser(Tokenizer):
         self.parser = yacc.yacc(module=self,
                                 outputdir=outputdir,
                                 tabmodule='webidlyacc',
-                                errorlog=logger
+                                errorlog=logger,
+                                debug=False
                                 
                                 
                                 
