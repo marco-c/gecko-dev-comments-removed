@@ -1415,14 +1415,6 @@ SessionStore.prototype = {
     
     
     
-    if (aEntry.owner_b64) {
-      aEntry.triggeringPricipal_b64 = aEntry.owner_b64;
-      delete aEntry.owner_b64;
-    }
-
-    
-    
-    
     
     
     

@@ -413,14 +413,6 @@ var SessionHistoryInternal = {
     
     
     
-    if (entry.owner_b64) {
-      entry.triggeringPricipal_b64 = entry.owner_b64;
-      delete entry.owner_b64;
-    }
-
-    
-    
-    
     
     
     
