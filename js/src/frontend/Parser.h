@@ -923,6 +923,13 @@ class Parser final : private JS::AutoGCRooter, public StrictModeGetter
     MOZ_MUST_USE bool strictModeError(unsigned errorNumber, ...);
 
     
+
+
+
+
+    MOZ_MUST_USE bool strictModeErrorAt(uint32_t offset, unsigned errorNumber, ...);
+
+    
     MOZ_MUST_USE bool warning(unsigned errorNumber, ...);
 
     
