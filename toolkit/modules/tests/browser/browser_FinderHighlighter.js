@@ -116,6 +116,7 @@ function promiseTestHighlighterOutput(browser, word, expectedResult, extraTest =
         }
 
         
+        
         extraTest = eval(extraTest);
         extraTest(lastMaskNode, lastOutlineNode, rects);
 

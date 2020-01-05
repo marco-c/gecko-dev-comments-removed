@@ -722,6 +722,7 @@ xhr.prototype = {
     }
   },
   addEventListener(aEvent, aValue, aCapturing) {
+    
     eval("this._on" + aEvent + " = aValue");
   },
   flags: Ci.nsIClassInfo.SINGLETON,

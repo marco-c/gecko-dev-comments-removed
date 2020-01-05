@@ -9,8 +9,10 @@ function run_test() {
   for (var i = 0; i < tests.length; i++) {
     
     
+    
     var pub = eval("var f = function* " + tests[i].name + "() { yield tests[" + i + "](privateLoadContext); }; f");
     var priv = eval("var f = function* " + tests[i].name + "_private() { yield tests[" + i + "](privateLoadContext); }; f");
+    
     allTests.push(pub);
     allTests.push(priv);
   }

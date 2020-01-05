@@ -139,6 +139,7 @@ function* testSteps()
     let newValue = cursor.value;
     let destProp = Array.isArray(info.keyPath) ? info.keyPath[0] : info.keyPath;
     if (destProp) {
+      
       eval("newValue." + destProp + " = 'newKeyValue'");
     }
     else {

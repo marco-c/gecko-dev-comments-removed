@@ -38,6 +38,7 @@ function promiseNewLocationAndHistoryEntryReplaced(browser, snippet) {
     let shistory = webNavigation.sessionHistory;
 
     
+    
     eval(codeSnippet);
 
     return new Promise(resolve => {

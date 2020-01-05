@@ -15,11 +15,11 @@ module.exports = {
     "mozilla/no-useless-removeEventListener": "error",
     "mozilla/use-default-preference-values": "error",
     "mozilla/use-ownerGlobal": "error",
-
     
     "no-unsafe-negation": "error",
     
     "no-implied-eval": "error",
+    "no-eval": "error",
   },
   "env": {
     "es6": true

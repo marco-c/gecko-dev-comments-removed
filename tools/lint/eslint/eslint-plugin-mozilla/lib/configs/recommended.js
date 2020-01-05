@@ -119,6 +119,7 @@ module.exports = {
 
     
     "no-implied-eval": "error",
+    "no-eval": "error",
 
     
     "no-labels": "error",

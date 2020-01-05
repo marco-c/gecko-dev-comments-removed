@@ -502,6 +502,7 @@ add_task(function* test_log_err_only() {
 
 
   try {
+    
     eval("javascript syntax error");
   } catch (e) {
     log.error(e);
@@ -576,6 +577,7 @@ add_task(function* format_errors() {
   
   try {
     yield Promise.resolve();  
+    
     eval("javascript syntax error");
   } catch (e) {
     str = pFormat.format(e);

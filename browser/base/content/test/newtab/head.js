@@ -143,6 +143,7 @@ function performOnCell(aIndex, aFn) {
   return ContentTask.spawn(gWindow.gBrowser.selectedBrowser,
                            { index: aIndex, fn: aFn.toString() }, function* (args) {
     let cell = content.gGrid.cells[args.index];
+    
     return eval(args.fn)(cell);
   });
 }
