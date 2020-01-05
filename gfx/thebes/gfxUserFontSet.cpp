@@ -181,6 +181,8 @@ public:
     {
         
         mCheckOTLTables = gfxPrefs::ValidateOTLTables();
+        
+        mKeepVariationTables = gfxPrefs::KeepVariationTables();
     }
 
     virtual ots::TableAction GetTableAction(uint32_t aTag) override {
@@ -190,6 +192,14 @@ public:
              (aTag == TRUETYPE_TAG('G', 'D', 'E', 'F') ||
               aTag == TRUETYPE_TAG('G', 'P', 'O', 'S') ||
               aTag == TRUETYPE_TAG('G', 'S', 'U', 'B'))) ||
+            (mKeepVariationTables &&
+             (aTag == TRUETYPE_TAG('a', 'v', 'a', 'r') ||
+              aTag == TRUETYPE_TAG('c', 'v', 'a', 'r') ||
+              aTag == TRUETYPE_TAG('f', 'v', 'a', 'r') ||
+              aTag == TRUETYPE_TAG('g', 'v', 'a', 'r') ||
+              aTag == TRUETYPE_TAG('H', 'V', 'A', 'R') ||
+              aTag == TRUETYPE_TAG('M', 'V', 'A', 'R') ||
+              aTag == TRUETYPE_TAG('V', 'V', 'A', 'R'))) ||
             aTag == TRUETYPE_TAG('S', 'i', 'l', 'f') ||
             aTag == TRUETYPE_TAG('S', 'i', 'l', 'l') ||
             aTag == TRUETYPE_TAG('G', 'l', 'o', 'c') ||
@@ -229,6 +239,7 @@ private:
     gfxUserFontEntry* mUserFontEntry;
     nsTHashtable<nsCStringHashKey> mWarningsIssued;
     bool mCheckOTLTables;
+    bool mKeepVariationTables;
 };
 
 
