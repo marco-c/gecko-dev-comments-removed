@@ -580,23 +580,17 @@ nsSVGUtils::PaintFrameWithEffects(nsIFrame *aFrame,
   if (!svgChildFrame)
     return DrawResult::SUCCESS;
 
-  float opacity = aFrame->StyleEffects()->mOpacity;
-  if (opacity == 0.0f)
+  MaskUsage maskUsage;
+  DetermineMaskUsage(aFrame, true, maskUsage);
+  if (maskUsage.opacity == 0.0f) {
     return DrawResult::SUCCESS;
+  }
 
   const nsIContent* content = aFrame->GetContent();
   if (content->IsSVGElement() &&
       !static_cast<const nsSVGElement*>(content)->HasValidDimensions()) {
     return DrawResult::SUCCESS;
   }
-
-  
-
-
-  nsSVGEffects::EffectProperties effectProperties =
-    nsSVGEffects::GetEffectProperties(aFrame);
-
-  bool isOK = effectProperties.HasNoFilterOrHasValidFilter();
 
   if (aDirtyRect &&
       !(aFrame->GetStateBits() & NS_FRAME_IS_NONDISPLAY)) {
@@ -648,17 +642,13 @@ nsSVGUtils::PaintFrameWithEffects(nsIFrame *aFrame,
 
 
 
-  if (opacity != 1.0f && CanOptimizeOpacity(aFrame))
-    opacity = 1.0f;
+  
 
-  DrawTarget* drawTarget = aContext.GetDrawTarget();
-  bool complexEffects = false;
-
+  nsSVGEffects::EffectProperties effectProperties =
+    nsSVGEffects::GetEffectProperties(aFrame);
+  bool isOK = effectProperties.HasNoFilterOrHasValidFilter();
   nsSVGClipPathFrame *clipPathFrame = effectProperties.GetClipPathFrame(&isOK);
   nsSVGMaskFrame *maskFrame = effectProperties.GetFirstMaskFrame(&isOK);
-
-  bool isTrivialClip = clipPathFrame ? clipPathFrame->IsTrivial() : true;
-
   if (!isOK) {
     
     return DrawResult::SUCCESS;
@@ -670,22 +660,26 @@ nsSVGUtils::PaintFrameWithEffects(nsIFrame *aFrame,
 
   
 
-  if (opacity != 1.0f || maskFrame || (clipPathFrame && !isTrivialClip)
-      || aFrame->StyleEffects()->mMixBlendMode != NS_STYLE_BLEND_NORMAL) {
-    complexEffects = true;
+  bool shouldGenerateMask = (maskUsage.opacity != 1.0f ||
+                             maskUsage.shouldGenerateClipMaskLayer ||
+                             maskUsage.shouldGenerateMaskLayer ||
+                             aFrame->StyleEffects()->mMixBlendMode != NS_STYLE_BLEND_NORMAL);
 
+  if (shouldGenerateMask) {
     Matrix maskTransform;
-    RefPtr<SourceSurface> maskSurface =
-      maskFrame ? maskFrame->GetMaskForMaskedFrame(&aContext,
-                                                    aFrame, aTransform, opacity, &maskTransform)
-                : nullptr;
+    RefPtr<SourceSurface> maskSurface;
 
-    if (maskFrame && !maskSurface) {
-      
-      return DrawResult::SUCCESS;
+    if (maskUsage.shouldGenerateMaskLayer) {
+      maskSurface =
+        maskFrame->GetMaskForMaskedFrame(&aContext, aFrame, aTransform,
+                                         maskUsage.opacity, &maskTransform);
+
+      if (!maskSurface) {
+        
+        return DrawResult::SUCCESS;
+      }
     }
 
-    aContext.Save();
     if (!(aFrame->GetStateBits() & NS_FRAME_IS_NONDISPLAY)) {
       
       
@@ -700,7 +694,7 @@ nsSVGUtils::PaintFrameWithEffects(nsIFrame *aFrame,
       }
       aContext.Clip(NSRectToSnappedRect(overflowRect,
                                         aFrame->PresContext()->AppUnitsPerDevPixel(),
-                                        *drawTarget));
+                                        *aContext.GetDrawTarget()));
     }
 
     if (aFrame->StyleEffects()->mMixBlendMode != NS_STYLE_BLEND_NORMAL) {
@@ -726,10 +720,12 @@ nsSVGUtils::PaintFrameWithEffects(nsIFrame *aFrame,
       targetOffset = drawRect.TopLeft();
     }
 
-    if (clipPathFrame && !isTrivialClip) {
+    if (maskUsage.shouldGenerateClipMaskLayer) {
       Matrix clippedMaskTransform;
-      RefPtr<SourceSurface> clipMaskSurface = clipPathFrame->GetClipMask(aContext, aFrame, aTransform,
-                                                                         &clippedMaskTransform, maskSurface, maskTransform);
+      RefPtr<SourceSurface> clipMaskSurface =
+        clipPathFrame->GetClipMask(aContext, aFrame, aTransform,
+                                   &clippedMaskTransform, maskSurface,
+                                   maskTransform);
 
       if (clipMaskSurface) {
         maskSurface = clipMaskSurface;
@@ -737,21 +733,22 @@ nsSVGUtils::PaintFrameWithEffects(nsIFrame *aFrame,
       }
     }
 
-    if (maskFrame) {
-      target->PushGroupForBlendBack(gfxContentType::COLOR_ALPHA, 1.0,
-                                    maskSurface, maskTransform);
-    } else if (opacity != 1.0f || (clipPathFrame && !isTrivialClip)) {
-      target->PushGroupForBlendBack(gfxContentType::COLOR_ALPHA, opacity,
-                                    maskSurface, maskTransform);
-    }
+    
+    
+    float opacity = maskFrame ? 1.0 : maskUsage.opacity;
+    target->PushGroupForBlendBack(gfxContentType::COLOR_ALPHA, opacity,
+                                  maskSurface, maskTransform);
   }
 
   
 
 
-  if (clipPathFrame && isTrivialClip) {
-    aContext.Save();
-    clipPathFrame->ApplyClipPath(aContext, aFrame, aTransform);
+  if (maskUsage.shouldApplyClipPath || maskUsage.shouldApplyBasicShape) {
+    if (maskUsage.shouldApplyClipPath) {
+      clipPathFrame->ApplyClipPath(aContext, aFrame, aTransform);
+    } else {
+      nsCSSClipPathInstance::ApplyBasicShapeClip(aContext, aFrame);
+    }
   }
 
   DrawResult result = DrawResult::SUCCESS;
@@ -786,15 +783,11 @@ nsSVGUtils::PaintFrameWithEffects(nsIFrame *aFrame,
     result = svgChildFrame->PaintSVG(*target, aTransform, aDirtyRect);
   }
 
-  if (clipPathFrame && isTrivialClip) {
-    aContext.Restore();
+  if (maskUsage.shouldApplyClipPath || maskUsage.shouldApplyBasicShape) {
+    aContext.PopClip();
   }
 
-  
-  if (!complexEffects)
-    return result;
-
-  if (opacity != 1.0f || maskFrame || (clipPathFrame && !isTrivialClip)) {
+  if (shouldGenerateMask) {
     target->PopGroupAndBlend();
   }
 
@@ -809,7 +802,6 @@ nsSVGUtils::PaintFrameWithEffects(nsIFrame *aFrame,
     aContext.Paint();
   }
 
-  aContext.Restore();
   return result;
 }
 
