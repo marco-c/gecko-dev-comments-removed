@@ -516,16 +516,31 @@ static PSMutex gPSMutex;
 
 
 
+class TLSInfo
+{
+public:
+  static bool Init(PSLockRef) { return sThreadInfo.init(); }
 
+  
+  static ThreadInfo* Info(PSLockRef) { return sThreadInfo.get(); }
 
+  
+  static PseudoStack* Stack()
+  {
+    ThreadInfo* info = sThreadInfo.get();
+    return info ? info->Stack().get() : nullptr;
+  }
 
+  static void SetInfo(PSLockRef, ThreadInfo* aInfo) { sThreadInfo.set(aInfo); }
 
+private:
+  
+  
+  
+  static MOZ_THREAD_LOCAL(ThreadInfo*) sThreadInfo;
+};
 
-
-
-
-
-static MOZ_THREAD_LOCAL(PseudoStack *) tlsPseudoStack;
+MOZ_THREAD_LOCAL(ThreadInfo*) TLSInfo::sThreadInfo;
 
 
 static const char* const kMainThreadName = "GeckoMain";
@@ -1971,11 +1986,13 @@ NS_IMPL_ISUPPORTS(GeckoProfilerReporter, nsIMemoryReporter)
 
 
 
+
 static ThreadInfo*
 FindLiveThreadInfo(PSLockRef aLock, int* aIndexOut = nullptr)
 {
   
 
+  ThreadInfo* ret = nullptr;
   Thread::tid_t id = Thread::GetCurrentId();
   const CorePS::ThreadVector& liveThreads = CorePS::LiveThreads(aLock);
   for (uint32_t i = 0; i < liveThreads.size(); i++) {
@@ -1984,10 +2001,12 @@ FindLiveThreadInfo(PSLockRef aLock, int* aIndexOut = nullptr)
       if (aIndexOut) {
         *aIndexOut = i;
       }
-      return info;
+      ret = info;
+      break;
     }
   }
-  return nullptr;
+
+  return ret;
 }
 
 static void
@@ -1999,15 +2018,15 @@ locked_register_thread(PSLockRef aLock, const char* aName, void* stackTop)
 
   MOZ_RELEASE_ASSERT(!FindLiveThreadInfo(aLock));
 
-  if (!tlsPseudoStack.init()) {
+  if (!TLSInfo::Init(aLock)) {
     return;
   }
 
   ThreadInfo* info = new ThreadInfo(aName, Thread::GetCurrentId(),
                                     NS_IsMainThread(), stackTop);
-  NotNull<PseudoStack*> pseudoStack = info->Stack();
+  TLSInfo::SetInfo(aLock, info);
 
-  tlsPseudoStack.set(pseudoStack.get());
+  NotNull<PseudoStack*> pseudoStack = info->Stack();
 
   if (ActivePS::Exists(aLock) && ActivePS::ShouldProfileThread(aLock, info)) {
     info->StartProfiling();
@@ -2200,7 +2219,7 @@ profiler_shutdown()
 
     
     
-    tlsPseudoStack.set(nullptr);
+    TLSInfo::SetInfo(lock, nullptr);
 
 #ifdef MOZ_TASK_TRACER
     mozilla::tasktracer::ShutdownTaskTracer();
@@ -2709,6 +2728,7 @@ profiler_unregister_thread()
 
   int i;
   ThreadInfo* info = FindLiveThreadInfo(lock, &i);
+  MOZ_RELEASE_ASSERT(info == TLSInfo::Info(lock));
   if (info) {
     DEBUG_LOG("profiler_unregister_thread: %s", info->Name());
     if (ActivePS::Exists(lock) && info->IsBeingProfiled()) {
@@ -2721,7 +2741,7 @@ profiler_unregister_thread()
 
     
     
-    tlsPseudoStack.set(nullptr);
+    TLSInfo::SetInfo(lock, nullptr);
 
   } else {
     
@@ -2732,7 +2752,7 @@ profiler_unregister_thread()
     
     
     
-    MOZ_RELEASE_ASSERT(!tlsPseudoStack.get());
+    MOZ_RELEASE_ASSERT(!TLSInfo::Info(lock));
   }
 }
 
@@ -2743,7 +2763,7 @@ profiler_thread_sleep()
 
   MOZ_RELEASE_ASSERT(CorePS::Exists());
 
-  PseudoStack* pseudoStack = tlsPseudoStack.get();
+  PseudoStack* pseudoStack = TLSInfo::Stack();
   if (!pseudoStack) {
     return;
   }
@@ -2757,7 +2777,7 @@ profiler_thread_wake()
 
   MOZ_RELEASE_ASSERT(CorePS::Exists());
 
-  PseudoStack* pseudoStack = tlsPseudoStack.get();
+  PseudoStack* pseudoStack = TLSInfo::Stack();
   if (!pseudoStack) {
     return;
   }
@@ -2770,7 +2790,7 @@ profiler_thread_is_sleeping()
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
   MOZ_RELEASE_ASSERT(CorePS::Exists());
 
-  PseudoStack* pseudoStack = tlsPseudoStack.get();
+  PseudoStack* pseudoStack = TLSInfo::Stack();
   if (!pseudoStack) {
     return false;
   }
@@ -2785,7 +2805,7 @@ profiler_js_interrupt_callback()
 
   MOZ_RELEASE_ASSERT(CorePS::Exists());
 
-  PseudoStack* pseudoStack = tlsPseudoStack.get();
+  PseudoStack* pseudoStack = TLSInfo::Stack();
   if (!pseudoStack) {
     return;
   }
@@ -2819,7 +2839,7 @@ profiler_get_backtrace()
     return nullptr;
   }
 
-  PseudoStack* pseudoStack = tlsPseudoStack.get();
+  PseudoStack* pseudoStack = TLSInfo::Stack();
   if (!pseudoStack) {
     MOZ_ASSERT(pseudoStack);
     return nullptr;
@@ -2875,7 +2895,7 @@ profiler_get_backtrace_noalloc(char *output, size_t outputSize)
     return;
   }
 
-  PseudoStack *pseudoStack = tlsPseudoStack.get();
+  PseudoStack* pseudoStack = TLSInfo::Stack();
   if (!pseudoStack) {
     return;
   }
@@ -2927,7 +2947,7 @@ locked_profiler_add_marker(PSLockRef aLock, const char* aMarker,
   
   mozilla::UniquePtr<ProfilerMarkerPayload> payload(aPayload);
 
-  PseudoStack* pseudoStack = tlsPseudoStack.get();
+  PseudoStack* pseudoStack = TLSInfo::Stack();
   if (!pseudoStack) {
     return;
   }
@@ -3007,7 +3027,7 @@ profiler_get_pseudo_stack()
 {
   
 
-  return tlsPseudoStack.get();
+  return TLSInfo::Stack();
 }
 
 void
@@ -3017,7 +3037,7 @@ profiler_set_js_context(JSContext* aCx)
 
   MOZ_ASSERT(aCx);
 
-  PseudoStack* pseudoStack = tlsPseudoStack.get();
+  PseudoStack* pseudoStack = TLSInfo::Stack();
   if (!pseudoStack) {
     return;
   }
@@ -3032,10 +3052,14 @@ profiler_clear_js_context()
 
   MOZ_RELEASE_ASSERT(CorePS::Exists());
 
-  PseudoStack* pseudoStack = tlsPseudoStack.get();
-  if (!pseudoStack) {
+  PSAutoLock lock(gPSMutex);
+
+  ThreadInfo* info = TLSInfo::Info(lock);
+  if (!info) {
     return;
   }
+
+  NotNull<PseudoStack*> pseudoStack = info->Stack();
 
   if (!pseudoStack->mContext) {
     return;
@@ -3044,14 +3068,10 @@ profiler_clear_js_context()
   
   
 
-  PSAutoLock lock(gPSMutex);
-
   if (ActivePS::Exists(lock)) {
     ActivePS::SetIsPaused(lock, true);
 
     
-    ThreadInfo* info = FindLiveThreadInfo(lock);
-    MOZ_RELEASE_ASSERT(info);
     if (info->IsBeingProfiled()) {
       info->FlushSamplesAndMarkers(ActivePS::Buffer(lock),
                                    CorePS::ProcessStartTime(lock));
@@ -3066,6 +3086,12 @@ profiler_clear_js_context()
   pseudoStack->mContext = nullptr;
 }
 
+
+
+
+
+
+
 void*
 profiler_call_enter(const char* aInfo,
                     js::ProfileEntry::Category aCategory,
@@ -3074,13 +3100,14 @@ profiler_call_enter(const char* aInfo,
 {
   
 
-  PseudoStack* pseudoStack = tlsPseudoStack.get();
+  PseudoStack* pseudoStack = TLSInfo::Stack();
   if (!pseudoStack) {
     return pseudoStack;
   }
   pseudoStack->push(aInfo, aCategory, aFrameAddress, aCopy, aLine,
                     aDynamicString);
 
+  
   
   
   return pseudoStack;
