@@ -20,12 +20,6 @@
 
 extern crate servo;
 
-extern crate compositing;
-
-extern crate net;
-extern crate net_traits;
-
-extern crate util;
 
 extern crate glutin_app as app;
 extern crate time;
@@ -35,11 +29,11 @@ extern crate env_logger;
 #[macro_use]
 extern crate android_glue;
 
-use compositing::windowing::WindowEvent;
-use net_traits::hosts;
 use servo::Browser;
+use servo::compositing::windowing::WindowEvent;
+use servo::net_traits::hosts;
+use servo::util::opts;
 use std::rc::Rc;
-use util::opts;
 
 #[cfg(target_os="android")]
 use std::borrow::ToOwned;
