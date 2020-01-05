@@ -134,7 +134,6 @@ KeyframeEffect::SetTarget(const Nullable<ElementOrCSSPseudoElement>& aTarget)
   
   
   mRecordedContentTooLarge = false;
-  mRecordedFrameSize = false;
 }
 
 void
