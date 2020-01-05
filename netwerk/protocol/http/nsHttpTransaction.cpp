@@ -989,7 +989,16 @@ nsHttpTransaction::Close(nsresult reason)
     
     
     
-    if (reason == NS_ERROR_NET_RESET || reason == NS_OK) {
+    
+    
+    
+    
+    
+    
+    
+    
+    if ((reason == NS_ERROR_NET_RESET || reason == NS_OK) &&
+        !(mCaps & NS_HTTP_STICKY_CONNECTION)) {
 
         if (mForceRestart && NS_SUCCEEDED(Restart())) {
             if (mResponseHead) {
@@ -1222,6 +1231,10 @@ nsHttpTransaction::RestartInProgress()
     
     if (!mHaveAllHeaders)
         return NS_ERROR_NET_RESET;
+
+    if (mCaps & NS_HTTP_STICKY_CONNECTION) {
+        return NS_ERROR_NET_RESET;
+    }
 
     
     if (!mRestartInProgressVerifier.IsSetup())
