@@ -1,8 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
+//! CSS Multi-column layout http://dev.w3.org/csswg/css-multicol/
 
 #![deny(unsafe_code)]
 
@@ -29,8 +29,8 @@ use style::values::computed::{LengthOrPercentageOrAuto, LengthOrPercentageOrNone
 pub struct MulticolFlow {
     pub block_flow: BlockFlow,
 
-    
-    
+    /// Length between the inline-start edge of a column and that of the next.
+    /// That is, the used column-width + used column-gap.
     pub column_pitch: Au,
 }
 
@@ -41,7 +41,7 @@ pub struct MulticolColumnFlow {
 impl MulticolFlow {
     pub fn from_fragment(fragment: Fragment, float_kind: Option<FloatKind>) -> MulticolFlow {
         MulticolFlow {
-            block_flow: BlockFlow::from_fragment(fragment, float_kind),
+            block_flow: BlockFlow::from_fragment_and_float_kind(fragment, float_kind),
             column_pitch: Au(0),
         }
     }
@@ -50,7 +50,7 @@ impl MulticolFlow {
 impl MulticolColumnFlow {
     pub fn from_fragment(fragment: Fragment) -> MulticolColumnFlow {
         MulticolColumnFlow {
-            block_flow: BlockFlow::from_fragment(fragment, None),
+            block_flow: BlockFlow::from_fragment(fragment),
         }
     }
 }
@@ -73,7 +73,7 @@ impl Flow for MulticolFlow {
     }
 
     fn bubble_inline_sizes(&mut self) {
-        
+        // FIXME(SimonSapin) http://dev.w3.org/csswg/css-sizing/#multicol-intrinsic
         self.block_flow.bubble_inline_sizes();
     }
 
@@ -81,11 +81,11 @@ impl Flow for MulticolFlow {
         debug!("assign_inline_sizes({}): assigning inline_size for flow", "multicol");
         self.block_flow.compute_inline_sizes(shared_context);
 
-        
+        // Move in from the inline-start border edge.
         let inline_start_content_edge = self.block_flow.fragment.border_box.start.i +
             self.block_flow.fragment.border_padding.inline_start;
 
-        
+        // Distance from the inline-end margin edge to the inline-end content edge.
         let inline_end_content_edge =
             self.block_flow.fragment.margin.inline_end +
             self.block_flow.fragment.border_padding.inline_end;
@@ -98,7 +98,7 @@ impl Flow for MulticolFlow {
         {
             let column_style = self.block_flow.fragment.style.get_column();
 
-            
+            // `None` is 'normal': "UA-specified length. A value of 1em is suggested."
             let column_gap = column_style.column_gap.0.unwrap_or_else(||
                 self.block_flow.fragment.style.get_font().font_size);
             let mut column_count;
@@ -135,8 +135,8 @@ impl Flow for MulticolFlow {
                 } else if let LengthOrPercentageOrNone::Length(length) = style.max_block_size() {
                     length
                 } else {
-                    
-                    
+                    // FIXME: do column balancing instead
+                    // FIXME: (until column balancing) substract margins/borders/padding
                     LogicalSize::from_physical(
                         self.block_flow.base.writing_mode,
                         ctx.shared_context().viewport_size,
@@ -145,11 +145,11 @@ impl Flow for MulticolFlow {
             }
         });
 
-        
+        // Before layout, everything is in a single "column"
         assert!(self.block_flow.base.children.len() == 1);
         let mut column = self.block_flow.base.children.pop_front().unwrap();
 
-        
+        // Pretend there is no children for this:
         self.block_flow.assign_block_size(ctx);
 
         loop {

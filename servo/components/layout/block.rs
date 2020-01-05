@@ -1,29 +1,29 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+//! Layout for CSS block-level elements.
+//!
+//! As a terminology note, the term *absolute positioning* here refers to elements with position
+//! `absolute` or `fixed`. The term *positioned element* refers to elements with position
+//! `relative`, `absolute`, and `fixed`. The term *containing block* (occasionally abbreviated as
+//! *CB*) is the containing block for the current flow, which differs from the static containing
+//! block if the flow is absolutely-positioned.
+//!
+//! "CSS 2.1" or "CSS 2.2" refers to the editor's draft of the W3C "Cascading Style Sheets Level 2
+//! Revision 2 (CSS 2.2) Specification" available here:
+//!
+//!   http://dev.w3.org/csswg/css2/
+//!
+//! "INTRINSIC" refers to L. David Baron's "More Precise Definitions of Inline Layout and Table
+//! Layout" available here:
+//!
+//!   http://dbaron.org/css/intrinsic/
+//!
+//! "CSS-SIZING" refers to the W3C "CSS Intrinsic & Extrinsic Sizing Module Level 3" document
+//! available here:
+//!
+//!   http://dev.w3.org/csswg/css-sizing/
 
 #![deny(unsafe_code)]
 
@@ -36,7 +36,7 @@ use floats::{ClearType, FloatKind, Floats, PlacementInfo};
 use flow::{self, BaseFlow, EarlyAbsolutePositionInfo, Flow, FlowClass, ForceNonfloatedFlag};
 use flow::{BLOCK_POSITION_IS_STATIC, CLEARS_LEFT, CLEARS_RIGHT};
 use flow::{CONTAINS_TEXT_OR_REPLACED_FRAGMENTS, INLINE_POSITION_IS_STATIC};
-use flow::{FragmentationContext, PreorderFlowTraversal};
+use flow::{FragmentationContext, MARGINS_CANNOT_COLLAPSE, PreorderFlowTraversal};
 use flow::{ImmutableFlowUtils, LateAbsolutePositionInfo, MutableFlowUtils, OpaqueFlow};
 use flow::IS_ABSOLUTELY_POSITIONED;
 use flow_list::FlowList;
@@ -64,17 +64,17 @@ use style::values::computed::{LengthOrPercentageOrNone, LengthOrPercentage};
 use style::values::computed::LengthOrPercentageOrAuto;
 use util::clamp;
 
-
+/// Information specific to floated blocks.
 #[derive(Clone, RustcEncodable)]
 pub struct FloatedBlockInfo {
-    
+    /// The amount of inline size that is available for the float.
     pub containing_inline_size: Au,
 
-    
-    
+    /// The float ceiling, relative to `BaseFlow::position::cur_b` (i.e. the top part of the border
+    /// box).
     pub float_ceiling: Au,
 
-    
+    /// Left or right?
     pub float_kind: FloatKind,
 }
 
@@ -88,7 +88,7 @@ impl FloatedBlockInfo {
     }
 }
 
-
+/// The solutions for the block-size-and-margins constraint equation.
 #[derive(Copy, Clone)]
 struct BSizeConstraintSolution {
     block_start: Au,
@@ -111,15 +111,15 @@ impl BSizeConstraintSolution {
         }
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    /// Solve the vertical constraint equation for absolute non-replaced elements.
+    ///
+    /// CSS Section 10.6.4
+    /// Constraint equation:
+    /// block-start + block-end + block-size + margin-block-start + margin-block-end
+    /// = absolute containing block block-size - (vertical padding and border)
+    /// [aka available_block-size]
+    ///
+    /// Return the solution for the equation.
     fn solve_vertical_constraints_abs_nonreplaced(block_size: MaybeAuto,
                                                   block_start_margin: MaybeAuto,
                                                   block_end_margin: MaybeAuto,
@@ -133,10 +133,10 @@ impl BSizeConstraintSolution {
                 (MaybeAuto::Auto, MaybeAuto::Auto, MaybeAuto::Auto) => {
                     let margin_block_start = block_start_margin.specified_or_zero();
                     let margin_block_end = block_end_margin.specified_or_zero();
-                    
-                    
+                    // Now it is the same situation as block-start Specified and block-end
+                    // and block-size Auto.
                     let block_size = content_block_size;
-                    
+                    // Use a dummy value for `block_start`, since it has the static position.
                     (Au(0), block_size, margin_block_start, margin_block_end)
                 }
                 (MaybeAuto::Specified(block_start),
@@ -164,15 +164,15 @@ impl BSizeConstraintSolution {
                         }
                         (MaybeAuto::Specified(margin_block_start),
                          MaybeAuto::Specified(margin_block_end)) => {
-                            
+                            // Values are over-constrained. Ignore value for 'block-end'.
                             (block_start, block_size, margin_block_start, margin_block_end)
                         }
                     }
                 }
 
-                
+                // For the rest of the cases, auto values for margin are set to 0
 
-                
+                // If only one is Auto, solve for it
                 (MaybeAuto::Auto,
                  MaybeAuto::Specified(block_end),
                  MaybeAuto::Specified(block_size)) => {
@@ -197,8 +197,8 @@ impl BSizeConstraintSolution {
                     (block_start, available_block_size - sum, margin_block_start, margin_block_end)
                 }
 
-                
-                
+                // If block-size is auto, then block-size is content block-size. Solve for the
+                // non-auto value.
                 (MaybeAuto::Specified(block_start), MaybeAuto::Auto, MaybeAuto::Auto) => {
                     let margin_block_start = block_start_margin.specified_or_zero();
                     let margin_block_end = block_end_margin.specified_or_zero();
@@ -216,7 +216,7 @@ impl BSizeConstraintSolution {
                 (MaybeAuto::Auto, MaybeAuto::Auto, MaybeAuto::Specified(block_size)) => {
                     let margin_block_start = block_start_margin.specified_or_zero();
                     let margin_block_end = block_end_margin.specified_or_zero();
-                    
+                    // Use a dummy value for `block_start`, since it has the static position.
                     (Au(0), block_size, margin_block_start, margin_block_end)
                 }
             };
@@ -224,17 +224,17 @@ impl BSizeConstraintSolution {
         BSizeConstraintSolution::new(block_start, block_size, margin_block_start, margin_block_end)
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    /// Solve the vertical constraint equation for absolute replaced elements.
+    ///
+    /// Assumption: The used value for block-size has already been calculated.
+    ///
+    /// CSS Section 10.6.5
+    /// Constraint equation:
+    /// block-start + block-end + block-size + margin-block-start + margin-block-end
+    /// = absolute containing block block-size - (vertical padding and border)
+    /// [aka available block-size]
+    ///
+    /// Return the solution for the equation.
     fn solve_vertical_constraints_abs_replaced(block_size: Au,
                                                block_start_margin: MaybeAuto,
                                                block_end_margin: MaybeAuto,
@@ -248,7 +248,7 @@ impl BSizeConstraintSolution {
                 (MaybeAuto::Auto, MaybeAuto::Auto) => {
                     let margin_block_start = block_start_margin.specified_or_zero();
                     let margin_block_end = block_end_margin.specified_or_zero();
-                    
+                    // Use a dummy value for `block_start`, since it has the static position.
                     (Au(0), block_size, margin_block_start, margin_block_end)
                 }
                 (MaybeAuto::Specified(block_start), MaybeAuto::Specified(block_end)) => {
@@ -274,13 +274,13 @@ impl BSizeConstraintSolution {
                         }
                         (MaybeAuto::Specified(margin_block_start),
                          MaybeAuto::Specified(margin_block_end)) => {
-                            
+                            // Values are over-constrained. Ignore value for 'block-end'.
                             (block_start, block_size, margin_block_start, margin_block_end)
                         }
                     }
                 }
 
-                
+                // If only one is Auto, solve for it
                 (MaybeAuto::Auto, MaybeAuto::Specified(block_end)) => {
                     let margin_block_start = block_start_margin.specified_or_zero();
                     let margin_block_end = block_end_margin.specified_or_zero();
@@ -297,12 +297,12 @@ impl BSizeConstraintSolution {
     }
 }
 
-
-
-
-
-
-
+/// Performs block-size calculations potentially multiple times, taking
+/// (assuming an horizontal writing mode) `height`, `min-height`, and `max-height`
+/// into account. After each call to `next()`, the caller must call `.try()` with the
+/// current calculated value of `height`.
+///
+/// See CSS 2.1 § 10.7.
 pub struct CandidateBSizeIterator {
     block_size: MaybeAuto,
     max_block_size: Option<Au>,
@@ -312,16 +312,16 @@ pub struct CandidateBSizeIterator {
 }
 
 impl CandidateBSizeIterator {
-    
-    
-    
+    /// Creates a new candidate block-size iterator. `block_container_block-size` is `None` if the block-size
+    /// of the block container has not been determined yet. It will always be `Some` in the case of
+    /// absolutely-positioned containing blocks.
     pub fn new(fragment: &Fragment, block_container_block_size: Option<Au>)
                -> CandidateBSizeIterator {
-        
-        
-        
-        
-        
+        // Per CSS 2.1 § 10.7, (assuming an horizontal writing mode,)
+        // percentages in `min-height` and `max-height` refer to the height of
+        // the containing block.
+        // If that is not determined yet by the time we need to resolve
+        // `min-height` and `max-height`, percentage values are ignored.
 
         let block_size = match (fragment.style.content_block_size(), block_container_block_size) {
             (LengthOrPercentageOrAuto::Percentage(percent), Some(block_container_block_size)) => {
@@ -359,7 +359,7 @@ impl CandidateBSizeIterator {
             (LengthOrPercentage::Length(length), _) => length,
         };
 
-        
+        // If the style includes `box-sizing: border-box`, subtract the border and padding.
         let adjustment_for_box_sizing = match fragment.style.get_position().box_sizing {
             box_sizing::T::border_box => fragment.border_padding.block_start_end(),
             box_sizing::T::content_box => Au(0),
@@ -429,34 +429,34 @@ enum CandidateBSizeIteratorStatus {
     Found,
 }
 
-
+// A helper function used in block-size calculation.
 fn translate_including_floats(cur_b: &mut Au, delta: Au, floats: &mut Floats) {
     *cur_b = *cur_b + delta;
     let writing_mode = floats.writing_mode;
     floats.translate(LogicalSize::new(writing_mode, Au(0), -delta));
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+/// The real assign-block-sizes traversal for flows with position 'absolute'.
+///
+/// This is a traversal of an Absolute Flow tree.
+/// - Relatively positioned flows and the Root flow start new Absolute flow trees.
+/// - The kids of a flow in this tree will be the flows for which it is the
+/// absolute Containing Block.
+/// - Thus, leaf nodes and inner non-root nodes are all Absolute Flows.
+///
+/// A Flow tree can have several Absolute Flow trees (depending on the number
+/// of relatively positioned flows it has).
+///
+/// Note that flows with position 'fixed' just form a flat list as they all
+/// have the Root flow as their CB.
 pub struct AbsoluteAssignBSizesTraversal<'a>(pub &'a SharedStyleContext);
 
 impl<'a> PreorderFlowTraversal for AbsoluteAssignBSizesTraversal<'a> {
     #[inline]
     fn process(&self, flow: &mut Flow) {
         {
-            
-            
+            // The root of the absolute flow tree is definitely not absolutely
+            // positioned. Nothing to process here.
             let flow: &Flow = flow;
             if flow.contains_roots_of_absolute_flow_tree() {
                 return;
@@ -501,19 +501,19 @@ pub enum FormattingContextType {
     Other,
 }
 
-
+// A block formatting context.
 #[derive(RustcEncodable)]
 pub struct BlockFlow {
-    
+    /// Data common to all flows.
     pub base: BaseFlow,
 
-    
+    /// The associated fragment.
     pub fragment: Fragment,
 
-    
+    /// Additional floating flow members.
     pub float: Option<Box<FloatedBlockInfo>>,
 
-    
+    /// Various flags.
     flags: BlockFlowFlags,
 }
 
@@ -533,7 +533,12 @@ impl Encodable for BlockFlowFlags {
 }
 
 impl BlockFlow {
-    pub fn from_fragment(fragment: Fragment, float_kind: Option<FloatKind>) -> BlockFlow {
+    pub fn from_fragment(fragment: Fragment) -> BlockFlow {
+        BlockFlow::from_fragment_and_float_kind(fragment, None)
+    }
+
+    pub fn from_fragment_and_float_kind(fragment: Fragment, float_kind: Option<FloatKind>)
+                                        -> BlockFlow {
         let writing_mode = fragment.style().writing_mode;
         BlockFlow {
             base: BaseFlow::new(Some(fragment.style()), writing_mode, match float_kind {
@@ -1452,7 +1457,8 @@ impl BlockFlow {
             display::T::table_caption |
             display::T::table_row_group |
             display::T::table |
-            display::T::inline_block => {
+            display::T::inline_block |
+            display::T::flex => {
                 FormattingContextType::Other
             }
             _ if style.get_box().overflow_x != overflow_x::T::visible ||
@@ -1579,12 +1585,12 @@ impl BlockFlow {
     /// used for calculating shrink-to-fit width. Assumes that intrinsic sizes have already been
     /// computed for this flow.
     fn content_intrinsic_inline_sizes(&self) -> IntrinsicISizes {
-        let surrounding_inline_size = self.fragment.surrounding_intrinsic_inline_size();
+        let (border_padding, margin) = self.fragment.surrounding_intrinsic_inline_size();
         IntrinsicISizes {
             minimum_inline_size: self.base.intrinsic_inline_sizes.minimum_inline_size -
-                                    surrounding_inline_size,
+                                    border_padding - margin,
             preferred_inline_size: self.base.intrinsic_inline_sizes.preferred_inline_size -
-                                    surrounding_inline_size,
+                                    border_padding - margin,
         }
     }
 
@@ -1906,7 +1912,9 @@ impl Flow for BlockFlow {
                 self.fragment.restyle_damage.remove(REFLOW_OUT_OF_FLOW | REFLOW);
             }
             None
-        } else if self.is_root() || self.formatting_context_type() != FormattingContextType::None {
+        } else if self.is_root() ||
+                self.formatting_context_type() != FormattingContextType::None ||
+                self.base.flags.contains(MARGINS_CANNOT_COLLAPSE) {
             // Root element margins should never be collapsed according to CSS § 8.3.1.
             debug!("assign_block_size: assigning block_size for root flow {:?}",
                    flow::base(self).debug_id());
@@ -2979,7 +2987,7 @@ impl ISizeAndMarginsComputer for FloatReplaced {
         ISizeConstraintSolution::new(inline_size, margin_inline_start, margin_inline_end)
     }
 
-    
+    /// Calculate used value of inline-size just like we do for inline replaced elements.
     fn initial_computed_inline_size(&self,
                                     block: &mut BlockFlow,
                                     parent_flow_inline_size: Au,
@@ -2988,14 +2996,14 @@ impl ISizeAndMarginsComputer for FloatReplaced {
         let container_block_size = block.explicit_block_containing_size(shared_context);
         let fragment = block.fragment();
         fragment.assign_replaced_inline_size_if_necessary(parent_flow_inline_size, container_block_size);
-        
-        
+        // For replaced block flow, the rest of the constraint solving will
+        // take inline-size to be specified as the value computed here.
         MaybeAuto::Specified(fragment.content_inline_size())
     }
 }
 
 impl ISizeAndMarginsComputer for InlineBlockNonReplaced {
-    
+    /// Compute inline-start and inline-end margins and inline-size.
     fn solve_inline_size_constraints(&self,
                                      block: &mut BlockFlow,
                                      input: &ISizeConstraintInput)
@@ -3009,12 +3017,12 @@ impl ISizeAndMarginsComputer for InlineBlockNonReplaced {
              input.inline_end_margin,
              input.available_inline_size);
 
-        
+        // For inline-blocks, `auto` margins compute to 0.
         let inline_start_margin = inline_start_margin.specified_or_zero();
         let inline_end_margin = inline_end_margin.specified_or_zero();
 
-        
-        
+        // If inline-size is set to 'auto', and this is an inline block, use the
+        // shrink to fit algorithm (see CSS 2.1 § 10.3.9)
         let inline_size = match computed_inline_size {
             MaybeAuto::Auto => {
                 block.get_shrink_to_fit_inline_size(available_inline_size - (inline_start_margin +
@@ -3028,10 +3036,10 @@ impl ISizeAndMarginsComputer for InlineBlockNonReplaced {
 }
 
 impl ISizeAndMarginsComputer for InlineBlockReplaced {
-    
-    
-    
-    
+    /// Compute inline-start and inline-end margins and inline-size.
+    ///
+    /// ISize has already been calculated. We now calculate the margins just
+    /// like for non-replaced blocks.
     fn solve_inline_size_constraints(&self,
                                      block: &mut BlockFlow,
                                      input: &ISizeConstraintInput)
@@ -3050,12 +3058,12 @@ impl ISizeAndMarginsComputer for InlineBlockReplaced {
              input.inline_end_margin,
              input.available_inline_size);
 
-        
+        // For inline-blocks, `auto` margins compute to 0.
         let inline_start_margin = inline_start_margin.specified_or_zero();
         let inline_end_margin = inline_end_margin.specified_or_zero();
 
-        
-        
+        // If inline-size is set to 'auto', and this is an inline block, use the
+        // shrink to fit algorithm (see CSS 2.1 § 10.3.9)
         let inline_size = match computed_inline_size {
             MaybeAuto::Auto => {
                 block.get_shrink_to_fit_inline_size(available_inline_size - (inline_start_margin +
@@ -3067,7 +3075,7 @@ impl ISizeAndMarginsComputer for InlineBlockReplaced {
         ISizeConstraintSolution::new(inline_size, inline_start_margin, inline_end_margin)
     }
 
-    
+    /// Calculate used value of inline-size just like we do for inline replaced elements.
     fn initial_computed_inline_size(&self,
                                     block: &mut BlockFlow,
                                     parent_flow_inline_size: Au,
@@ -3076,15 +3084,15 @@ impl ISizeAndMarginsComputer for InlineBlockReplaced {
         let container_block_size = block.explicit_block_containing_size(shared_context);
         let fragment = block.fragment();
         fragment.assign_replaced_inline_size_if_necessary(parent_flow_inline_size, container_block_size);
-        
-        
+        // For replaced block flow, the rest of the constraint solving will
+        // take inline-size to be specified as the value computed here.
         MaybeAuto::Specified(fragment.content_inline_size())
     }
 }
 
 impl ISizeAndMarginsComputer for FlexItem {
-    
-    
+    // Replace the default method directly to prevent recalculating and setting margins again
+    // which has already been set by its parent.
     fn compute_used_inline_size(&self,
                                 block: &mut BlockFlow,
                                 shared_context: &SharedStyleContext,
@@ -3094,7 +3102,7 @@ impl ISizeAndMarginsComputer for FlexItem {
                                                                 container_block_size);
     }
 
-    
+    // The used inline size and margins are set by parent flex flow, do nothing here.
     fn solve_inline_size_constraints(&self,
                                      block: &mut BlockFlow,
                                      _: &ISizeConstraintInput)
@@ -3106,7 +3114,7 @@ impl ISizeAndMarginsComputer for FlexItem {
     }
 }
 
-
+/// A stacking context, a pseudo-stacking context, or a non-stacking context.
 #[derive(Copy, Clone, PartialEq)]
 pub enum BlockStackingContextType {
     NonstackingContext,

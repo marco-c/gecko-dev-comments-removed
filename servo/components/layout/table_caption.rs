@@ -1,8 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
+//! CSS table formatting contexts.
 
 #![deny(unsafe_code)]
 
@@ -21,7 +21,7 @@ use style::context::SharedStyleContext;
 use style::logical_geometry::LogicalSize;
 use style::properties::ServoComputedValues;
 
-
+/// A table formatting context.
 pub struct TableCaptionFlow {
     pub block_flow: BlockFlow,
 }
@@ -29,7 +29,7 @@ pub struct TableCaptionFlow {
 impl TableCaptionFlow {
     pub fn from_fragment(fragment: Fragment) -> TableCaptionFlow {
         TableCaptionFlow {
-            block_flow: BlockFlow::from_fragment(fragment, None)
+            block_flow: BlockFlow::from_fragment(fragment),
         }
     }
 }
