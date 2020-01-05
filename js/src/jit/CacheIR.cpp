@@ -53,6 +53,26 @@ EmitLoadSlotResult(CacheIRWriter& writer, ObjOperandId holderOp, NativeObject* h
     }
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 enum class ProxyStubType {
     None,
     DOMShadowed,
@@ -565,8 +585,8 @@ CheckDOMProxyExpandoDoesNotShadow(CacheIRWriter& writer, JSObject* obj, jsid id,
     ValOperandId expandoId;
     if (!expandoVal.isObject() && !expandoVal.isUndefined()) {
         ExpandoAndGeneration* expandoAndGeneration = (ExpandoAndGeneration*)expandoVal.toPrivate();
-        expandoId = writer.guardDOMExpandoGeneration(objId, expandoAndGeneration,
-                                                     expandoAndGeneration->generation);
+        expandoId = writer.loadDOMExpandoValueGuardGeneration(objId, expandoAndGeneration,
+                                                              expandoAndGeneration->generation);
         expandoVal = expandoAndGeneration->expando;
     } else {
         expandoId = writer.loadDOMExpandoValue(objId);
@@ -580,7 +600,7 @@ CheckDOMProxyExpandoDoesNotShadow(CacheIRWriter& writer, JSObject* obj, jsid id,
         
         NativeObject& expandoObj = expandoVal.toObject().as<NativeObject>();
         MOZ_ASSERT(!expandoObj.containsPure(id));
-        writer.guardDOMExpandoObject(expandoId, expandoObj.lastProperty());
+        writer.guardDOMExpandoMissingOrGuardShape(expandoId, expandoObj.lastProperty());
     } else {
         MOZ_CRASH("Invalid expando value");
     }
