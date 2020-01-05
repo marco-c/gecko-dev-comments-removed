@@ -165,7 +165,7 @@ function monotinicity_tester(source, testName) {
       ]) {
         
         
-        SilentAssert.leq(item[probe][k], 3 * snapshot.processData[probe][k],
+        SilentAssert.leq(item[probe][k], 6 * snapshot.processData[probe][k],
           `Sanity check (${name}): ${k} of component is not impossibly larger than that of process`);
       }
 
