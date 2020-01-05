@@ -5744,7 +5744,7 @@ nsDisplayTransform::nsDisplayTransform(nsDisplayListBuilder* aBuilder,
   , mNoExtendContext(false)
   , mIsTransformSeparator(false)
   , mTransformPreserves3DInited(false)
-  , mIsFullyVisible(false)
+  , mAllowAsyncAnimation(false)
 {
   MOZ_COUNT_CTOR(nsDisplayTransform);
   MOZ_ASSERT(aFrame, "Must have a frame!");
@@ -5800,7 +5800,7 @@ nsDisplayTransform::nsDisplayTransform(nsDisplayListBuilder* aBuilder,
                                        nsIFrame *aFrame, nsDisplayList *aList,
                                        const nsRect& aChildrenVisibleRect,
                                        uint32_t aIndex,
-                                       bool aIsFullyVisible)
+                                       bool aAllowAsyncAnimation)
   : nsDisplayItem(aBuilder, aFrame)
   , mStoredList(aBuilder, aFrame, aList)
   , mTransformGetter(nullptr)
@@ -5811,7 +5811,7 @@ nsDisplayTransform::nsDisplayTransform(nsDisplayListBuilder* aBuilder,
   , mNoExtendContext(false)
   , mIsTransformSeparator(false)
   , mTransformPreserves3DInited(false)
-  , mIsFullyVisible(aIsFullyVisible)
+  , mAllowAsyncAnimation(aAllowAsyncAnimation)
 {
   MOZ_COUNT_CTOR(nsDisplayTransform);
   MOZ_ASSERT(aFrame, "Must have a frame!");
@@ -5834,7 +5834,7 @@ nsDisplayTransform::nsDisplayTransform(nsDisplayListBuilder* aBuilder,
   , mNoExtendContext(false)
   , mIsTransformSeparator(false)
   , mTransformPreserves3DInited(false)
-  , mIsFullyVisible(false)
+  , mAllowAsyncAnimation(false)
 {
   MOZ_COUNT_CTOR(nsDisplayTransform);
   MOZ_ASSERT(aFrame, "Must have a frame!");
@@ -5858,7 +5858,7 @@ nsDisplayTransform::nsDisplayTransform(nsDisplayListBuilder* aBuilder,
   , mNoExtendContext(false)
   , mIsTransformSeparator(true)
   , mTransformPreserves3DInited(false)
-  , mIsFullyVisible(false)
+  , mAllowAsyncAnimation(false)
 {
   MOZ_COUNT_CTOR(nsDisplayTransform);
   MOZ_ASSERT(aFrame, "Must have a frame!");
@@ -6224,12 +6224,27 @@ nsDisplayOpacity::CanUseAsyncAnimations(nsDisplayListBuilder* aBuilder)
 bool
 nsDisplayTransform::CanUseAsyncAnimations(nsDisplayListBuilder* aBuilder)
 {
-  return mIsFullyVisible;
+  return mAllowAsyncAnimation;
 }
 
- bool
+static nsRect ComputePartialPrerenderArea(const nsRect& aDirtyRect,
+                                          const nsRect& aOverflow,
+                                          const nsSize& aPrerenderSize)
+{
+  
+  
+  
+  nscoord xExcess = aPrerenderSize.width - aDirtyRect.width;
+  nscoord yExcess = aPrerenderSize.height - aDirtyRect.height;
+  nsRect result = aDirtyRect;
+  result.Inflate(xExcess / 2, yExcess / 2);
+  return result.MoveInsideAndClamp(aOverflow);
+}
+
+ auto
 nsDisplayTransform::ShouldPrerenderTransformedContent(nsDisplayListBuilder* aBuilder,
-                                                      nsIFrame* aFrame)
+                                                      nsIFrame* aFrame,
+                                                      nsRect* aDirtyRect) -> PrerenderDecision
 {
   
   
@@ -6243,28 +6258,39 @@ nsDisplayTransform::ShouldPrerenderTransformedContent(nsDisplayListBuilder* aBui
       AnimationPerformanceWarning(
         AnimationPerformanceWarning::Type::TransformFrameInactive));
 
-    return false;
+    return NoPrerender;
   }
 
+  
+  
+  nsRect overflow = aFrame->GetVisualOverflowRectRelativeToSelf();
+  if (aDirtyRect->Contains(overflow)) {
+    return FullPrerender;
+  }
+
+  float viewportRatioX = gfxPrefs::AnimationPrerenderViewportRatioLimitX();
+  float viewportRatioY = gfxPrefs::AnimationPrerenderViewportRatioLimitY();
+  uint32_t absoluteLimitX = gfxPrefs::AnimationPrerenderAbsoluteLimitX();
+  uint32_t absoluteLimitY = gfxPrefs::AnimationPrerenderAbsoluteLimitY();
   nsSize refSize = aBuilder->RootReferenceFrame()->GetSize();
   
   
   
-  refSize += nsSize(refSize.width / 8, refSize.height / 8);
+  nsSize relativeLimit(nscoord(refSize.width * viewportRatioX),
+                       nscoord(refSize.height * viewportRatioY));
+  nsSize absoluteLimit(aFrame->PresContext()->DevPixelsToAppUnits(absoluteLimitX),
+                       aFrame->PresContext()->DevPixelsToAppUnits(absoluteLimitY));
+  nsSize maxSize = Min(relativeLimit, absoluteLimit);
   gfxSize scale = nsLayoutUtils::GetTransformToAncestorScale(aFrame);
-  nsSize frameSize = nsSize(
-    aFrame->GetVisualOverflowRectRelativeToSelf().Size().width * scale.width,
-    aFrame->GetVisualOverflowRectRelativeToSelf().Size().height * scale.height);
-  nscoord maxInAppUnits = nscoord_MAX;
-  if (frameSize <= refSize) {
-    maxInAppUnits = aFrame->PresContext()->DevPixelsToAppUnits(4096);
-    if (frameSize <= nsSize(maxInAppUnits, maxInAppUnits)) {
-      return true;
-    }
+  nsSize frameSize = nsSize(overflow.Size().width * scale.width,
+                            overflow.Size().height * scale.height);
+  if (frameSize <= maxSize) {
+    *aDirtyRect = overflow;
+    return FullPrerender;
+  } else if (gfxPrefs::PartiallyPrerenderAnimatedContent()) {
+    *aDirtyRect = ComputePartialPrerenderArea(*aDirtyRect, overflow, maxSize);
+    return PartialPrerender;
   }
-
-  nsRect visual = aFrame->GetVisualOverflowRect();
-
 
   EffectCompositor::SetPerformanceWarning(
     aFrame, eCSSProperty_transform,
@@ -6273,13 +6299,12 @@ nsDisplayTransform::ShouldPrerenderTransformedContent(nsDisplayListBuilder* aBui
       {
         nsPresContext::AppUnitsToIntCSSPixels(frameSize.width),
         nsPresContext::AppUnitsToIntCSSPixels(frameSize.height),
-        nsPresContext::AppUnitsToIntCSSPixels(refSize.width),
-        nsPresContext::AppUnitsToIntCSSPixels(refSize.height),
-        nsPresContext::AppUnitsToIntCSSPixels(visual.width),
-        nsPresContext::AppUnitsToIntCSSPixels(visual.height),
-        nsPresContext::AppUnitsToIntCSSPixels(maxInAppUnits)
+        nsPresContext::AppUnitsToIntCSSPixels(relativeLimit.width),
+        nsPresContext::AppUnitsToIntCSSPixels(relativeLimit.height),
+        nsPresContext::AppUnitsToIntCSSPixels(absoluteLimit.width),
+        nsPresContext::AppUnitsToIntCSSPixels(absoluteLimit.height),
       }));
-  return false;
+  return NoPrerender;
 }
 
 
@@ -6401,7 +6426,7 @@ already_AddRefed<Layer> nsDisplayTransform::BuildLayer(nsDisplayListBuilder *aBu
   nsDisplayListBuilder::AddAnimationsAndTransitionsToLayer(container, aBuilder,
                                                            this, mFrame,
                                                            eCSSProperty_transform);
-  if (mIsFullyVisible && MayBeAnimated(aBuilder)) {
+  if (mAllowAsyncAnimation && MayBeAnimated(aBuilder)) {
     
     
     
@@ -7504,10 +7529,15 @@ nsDisplayFilter::BuildLayer(nsDisplayListBuilder* aBuilder,
   nsSVGEffects::EffectProperties effectProperties =
     nsSVGEffects::GetEffectProperties(firstFrame);
 
-  ContainerLayerParameters newContainerParameters = aContainerParameters;
-  if (effectProperties.HasValidFilter()) {
-    newContainerParameters.mDisableSubpixelAntialiasingInDescendants = true;
+  if (effectProperties.HasInvalidFilter()) {
+    return nullptr;
   }
+
+  MOZ_ASSERT(effectProperties.mFilter && mFrame->StyleEffects()->HasFilters(),
+             "By getting here, we must have valid CSS filters.");
+
+  ContainerLayerParameters newContainerParameters = aContainerParameters;
+  newContainerParameters.mDisableSubpixelAntialiasingInDescendants = true;
 
   RefPtr<ContainerLayer> container = aManager->GetLayerBuilder()->
     BuildContainerLayerFor(aBuilder, aManager, mFrame, this, &mList,

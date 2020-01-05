@@ -14,6 +14,7 @@
 #include "mozilla/RefPtr.h"             
 #include "mozilla/gfx/MatrixFwd.h"      
 #include "mozilla/gfx/Point.h"          
+#include "mozilla/gfx/Polygon.h"        
 #include "mozilla/gfx/Rect.h"           
 #include "mozilla/gfx/Types.h"          
 #include "mozilla/ipc/ProtocolUtils.h"
@@ -83,7 +84,8 @@ public:
                          const gfx::Matrix4x4& aTransform,
                          const gfx::SamplingFilter aSamplingFilter,
                          const gfx::IntRect& aClipRect,
-                         const nsIntRegion* aVisibleRegion = nullptr) = 0;
+                         const nsIntRegion* aVisibleRegion = nullptr,
+                         const Maybe<gfx::Polygon>& aGeometry = Nothing()) = 0;
 
   
 
