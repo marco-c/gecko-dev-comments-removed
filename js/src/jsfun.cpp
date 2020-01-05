@@ -1630,11 +1630,9 @@ const JSFunctionSpec js::function_methods[] = {
 };
 
 static bool
-FunctionConstructor(JSContext* cx, unsigned argc, Value* vp, GeneratorKind generatorKind,
+FunctionConstructor(JSContext* cx, const CallArgs& args, GeneratorKind generatorKind,
                     FunctionAsyncKind asyncKind)
 {
-    CallArgs args = CallArgsFromVp(argc, vp);
-
     
     Rooted<GlobalObject*> global(cx, &args.callee().global());
     if (!GlobalObject::isRuntimeCodeGenEnabled(cx, global)) {
@@ -1751,15 +1749,22 @@ FunctionConstructor(JSContext* cx, unsigned argc, Value* vp, GeneratorKind gener
 
 
     RootedAtom anonymousAtom(cx, cx->names().anonymous);
+
+    
+    
     RootedObject proto(cx);
-    if (isStarGenerator) {
+    if (!isAsync) {
+        if (!GetPrototypeFromCallableConstructor(cx, args, &proto))
+            return false;
+    }
+
+    
+    
+    if (!proto && isStarGenerator) {
         
         
         proto = GlobalObject::getOrCreateStarGeneratorFunctionPrototype(cx, global);
         if (!proto)
-            return false;
-    } else {
-        if (!GetPrototypeFromCallableConstructor(cx, args, &proto))
             return false;
     }
 
@@ -1869,24 +1874,47 @@ FunctionConstructor(JSContext* cx, unsigned argc, Value* vp, GeneratorKind gener
 bool
 js::Function(JSContext* cx, unsigned argc, Value* vp)
 {
-    return FunctionConstructor(cx, argc, vp, NotGenerator, SyncFunction);
+    CallArgs args = CallArgsFromVp(argc, vp);
+    return FunctionConstructor(cx, args, NotGenerator, SyncFunction);
 }
 
 bool
 js::Generator(JSContext* cx, unsigned argc, Value* vp)
 {
-    return FunctionConstructor(cx, argc, vp, StarGenerator, SyncFunction);
+    CallArgs args = CallArgsFromVp(argc, vp);
+    return FunctionConstructor(cx, args, StarGenerator, SyncFunction);
 }
 
 bool
 js::AsyncFunctionConstructor(JSContext* cx, unsigned argc, Value* vp)
 {
     CallArgs args = CallArgsFromVp(argc, vp);
-    if (!FunctionConstructor(cx, argc, vp, StarGenerator, AsyncFunction))
+
+    
+    RootedObject newTarget(cx);
+    if (args.isConstructing())
+        newTarget = &args.newTarget().toObject();
+    else
+        newTarget = &args.callee();
+
+    if (!FunctionConstructor(cx, args, StarGenerator, AsyncFunction))
         return false;
 
+    
+    
+    RootedObject proto(cx);
+    if (!GetPrototypeFromConstructor(cx, newTarget, &proto))
+        return false;
+
+    
+    if (!proto) {
+        proto = GlobalObject::getOrCreateAsyncFunctionPrototype(cx, cx->global());
+        if (!proto)
+            return false;
+    }
+
     RootedFunction unwrapped(cx, &args.rval().toObject().as<JSFunction>());
-    RootedObject wrapped(cx, WrapAsyncFunction(cx, unwrapped));
+    RootedObject wrapped(cx, WrapAsyncFunctionWithProto(cx, unwrapped, proto));
     if (!wrapped)
         return false;
 
