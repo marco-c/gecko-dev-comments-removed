@@ -11,6 +11,7 @@
 #include "certdb.h"
 #include "hasht.h"
 #include "mozilla/ArrayUtils.h"
+#include "mozilla/Casting.h"
 #include "mozilla/PodOperations.h"
 #include "pk11pub.h"
 #include "pkix/pkixtypes.h"
@@ -32,9 +33,7 @@ struct nsMyTrustedEVInfo
   const unsigned char ev_root_sha256_fingerprint[SHA256_LENGTH];
   const char* issuer_base64;
   const char* serial_base64;
-  mozilla::UniqueCERTCertificate cert;
 };
-
 
 
 
@@ -125,7 +124,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
       0x03, 0x2C, 0x7B, 0xDC, 0x09, 0x70, 0x76, 0x49, 0xBF, 0xAA },
     "MBExDzANBgNVBAMMBmV2cm9vdA==",
     "W9j5PS8YoKgynZdYa9i2Kwexnp8=",
-    nullptr
   },
   {
     
@@ -150,7 +148,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
       0xE0, 0xDF, 0x1C, 0xAD, 0xB4, 0xC2, 0x76, 0xBB, 0x63, 0x24 },
     "MBsxGTAXBgNVBAMMEGV2X3Jvb3RfcnNhXzIwNDA=",
     "P1iIBgxk6kH+x64EUBTV3qoHuas=",
-    nullptr
   },
 #endif
   {
@@ -165,7 +162,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "LixMVEQuMSowKAYDVQQLEyFTZWN1cml0eSBDb21tdW5pY2F0aW9uIEVWIFJvb3RD"
     "QTE=",
     "AA==",
-    nullptr
   },
   {
     
@@ -178,7 +174,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "MDsxGDAWBgNVBAoTD0N5YmVydHJ1c3QsIEluYzEfMB0GA1UEAxMWQ3liZXJ0cnVz"
     "dCBHbG9iYWwgUm9vdA==",
     "BAAAAAABD4WqLUg=",
-    nullptr
   },
   {
     
@@ -191,7 +186,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "MEUxCzAJBgNVBAYTAkNIMRUwEwYDVQQKEwxTd2lzc1NpZ24gQUcxHzAdBgNVBAMT"
     "FlN3aXNzU2lnbiBHb2xkIENBIC0gRzI=",
     "ALtAHEP1Xk+w",
-    nullptr
   },
   {
     
@@ -205,7 +199,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "EyJTZWN1cmUgRGlnaXRhbCBDZXJ0aWZpY2F0ZSBTaWduaW5nMSkwJwYDVQQDEyBT"
     "dGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eQ==",
     "AQ==",
-    nullptr
   },
   {
     
@@ -219,7 +212,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "EyJTZWN1cmUgRGlnaXRhbCBDZXJ0aWZpY2F0ZSBTaWduaW5nMSkwJwYDVQQDEyBT"
     "dGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eQ==",
     "LQ==",
-    nullptr
   },
   {
     
@@ -232,7 +224,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "MFMxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSwwKgYDVQQD"
     "EyNTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eSBHMg==",
     "Ow==",
-    nullptr
   },
   {
     
@@ -248,7 +239,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "PFZlcmlTaWduIENsYXNzIDMgUHVibGljIFByaW1hcnkgQ2VydGlmaWNhdGlvbiBB"
     "dXRob3JpdHkgLSBHNQ==",
     "GNrRniZ96LtKIVjNzGs7Sg==",
-    nullptr
   },
   {
     
@@ -261,7 +251,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "MFgxCzAJBgNVBAYTAlVTMRYwFAYDVQQKEw1HZW9UcnVzdCBJbmMuMTEwLwYDVQQD"
     "EyhHZW9UcnVzdCBQcmltYXJ5IENlcnRpZmljYXRpb24gQXV0aG9yaXR5",
     "GKy1av1pthU6Y2yv2vrEoQ==",
-    nullptr
   },
   {
     
@@ -276,7 +265,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "MjAwNiB0aGF3dGUsIEluYy4gLSBGb3IgYXV0aG9yaXplZCB1c2Ugb25seTEfMB0G"
     "A1UEAxMWdGhhd3RlIFByaW1hcnkgUm9vdCBDQQ==",
     "NE7VVyDV7exJ9C/ON9srbQ==",
-    nullptr
   },
   {
     
@@ -290,7 +278,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "MSQwIgYDVQQKExtYUmFtcCBTZWN1cml0eSBTZXJ2aWNlcyBJbmMxLTArBgNVBAMT"
     "JFhSYW1wIEdsb2JhbCBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eQ==",
     "UJRs7Bjq1ZxN1ZfvdY+grQ==",
-    nullptr
   },
   {
     
@@ -303,7 +290,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "MEgxCzAJBgNVBAYTAlVTMSAwHgYDVQQKExdTZWN1cmVUcnVzdCBDb3Jwb3JhdGlv"
     "bjEXMBUGA1UEAxMOU2VjdXJlVHJ1c3QgQ0E=",
     "DPCOXAgWpa1Cf/DrJxhZ0A==",
-    nullptr
   },
   {
     
@@ -316,7 +302,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "MEoxCzAJBgNVBAYTAlVTMSAwHgYDVQQKExdTZWN1cmVUcnVzdCBDb3Jwb3JhdGlv"
     "bjEZMBcGA1UEAxMQU2VjdXJlIEdsb2JhbCBDQQ==",
     "B1YipOjUiolN9BPI8PjqpQ==",
-    nullptr
   },
   {
     
@@ -330,7 +315,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "DgYDVQQHEwdTYWxmb3JkMRowGAYDVQQKExFDT01PRE8gQ0EgTGltaXRlZDErMCkG"
     "A1UEAxMiQ09NT0RPIEVDQyBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eQ==",
     "H0evqmIAcFBUTAGem2OZKg==",
-    nullptr
   },
   {
     
@@ -344,7 +328,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "DgYDVQQHEwdTYWxmb3JkMRowGAYDVQQKExFDT01PRE8gQ0EgTGltaXRlZDEnMCUG"
     "A1UEAxMeQ09NT0RPIENlcnRpZmljYXRpb24gQXV0aG9yaXR5",
     "ToEtioJl4AsC7j41AkblPQ==",
-    nullptr
   },
   {
     
@@ -358,7 +341,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "QWRkVHJ1c3QgRXh0ZXJuYWwgVFRQIE5ldHdvcmsxIjAgBgNVBAMTGUFkZFRydXN0"
     "IEV4dGVybmFsIENBIFJvb3Q=",
     "AQ==",
-    nullptr
   },
   {
     
@@ -373,7 +355,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "GGh0dHA6Ly93d3cudXNlcnRydXN0LmNvbTEfMB0GA1UEAxMWVVROLVVTRVJGaXJz"
     "dC1IYXJkd2FyZQ==",
     "RL4Mi1AAJLQR0zYq/mUK/Q==",
-    nullptr
   },
   {
     
@@ -387,7 +368,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "Yy4xMTAvBgNVBAsTKEdvIERhZGR5IENsYXNzIDIgQ2VydGlmaWNhdGlvbiBBdXRo"
     "b3JpdHk=",
     "AA==",
-    nullptr
   },
   {
     
@@ -401,7 +381,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "dHRzZGFsZTEaMBgGA1UEChMRR29EYWRkeS5jb20sIEluYy4xMTAvBgNVBAMTKEdv"
     "IERhZGR5IFJvb3QgQ2VydGlmaWNhdGUgQXV0aG9yaXR5IC0gRzI=",
     "AA==",
-    nullptr
   },
   {
     
@@ -415,7 +394,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "LCBJbmMuMTIwMAYDVQQLEylTdGFyZmllbGQgQ2xhc3MgMiBDZXJ0aWZpY2F0aW9u"
     "IEF1dGhvcml0eQ==",
     "AA==",
-    nullptr
   },
   {
     
@@ -430,7 +408,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "MDAGA1UEAxMpU3RhcmZpZWxkIFJvb3QgQ2VydGlmaWNhdGUgQXV0aG9yaXR5IC0g"
     "RzI=",
     "AA==",
-    nullptr
   },
   {
     
@@ -444,7 +421,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "EHd3dy5kaWdpY2VydC5jb20xKzApBgNVBAMTIkRpZ2lDZXJ0IEhpZ2ggQXNzdXJh"
     "bmNlIEVWIFJvb3QgQ0E=",
     "AqxcJmoLQJuPC3nyrkYldw==",
-    nullptr
   },
   {
     
@@ -457,7 +433,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "MEUxCzAJBgNVBAYTAkJNMRkwFwYDVQQKExBRdW9WYWRpcyBMaW1pdGVkMRswGQYD"
     "VQQDExJRdW9WYWRpcyBSb290IENBIDI=",
     "BQk=",
-    nullptr
   },
   {
     
@@ -471,7 +446,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "Qy4xMDAuBgNVBAMTJ05ldHdvcmsgU29sdXRpb25zIENlcnRpZmljYXRlIEF1dGhv"
     "cml0eQ==",
     "V8szb8JcFuZHFhfjkDFo4A==",
-    nullptr
   },
   {
     
@@ -486,7 +460,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "bmNlMR8wHQYDVQQLExYoYykgMjAwNiBFbnRydXN0LCBJbmMuMS0wKwYDVQQDEyRF"
     "bnRydXN0IFJvb3QgQ2VydGlmaWNhdGlvbiBBdXRob3JpdHk=",
     "RWtQVA==",
-    nullptr
   },
   {
     
@@ -499,7 +472,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "MFcxCzAJBgNVBAYTAkJFMRkwFwYDVQQKExBHbG9iYWxTaWduIG52LXNhMRAwDgYD"
     "VQQLEwdSb290IENBMRswGQYDVQQDExJHbG9iYWxTaWduIFJvb3QgQ0E=",
     "BAAAAAABFUtaw5Q=",
-    nullptr
   },
   {
     
@@ -512,7 +484,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "MEwxIDAeBgNVBAsTF0dsb2JhbFNpZ24gUm9vdCBDQSAtIFIyMRMwEQYDVQQKEwpH"
     "bG9iYWxTaWduMRMwEQYDVQQDEwpHbG9iYWxTaWdu",
     "BAAAAAABD4Ym5g0=",
-    nullptr
   },
   {
     
@@ -525,7 +496,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "MEwxIDAeBgNVBAsTF0dsb2JhbFNpZ24gUm9vdCBDQSAtIFIzMRMwEQYDVQQKEwpH"
     "bG9iYWxTaWduMRMwEQYDVQQDEwpHbG9iYWxTaWdu",
     "BAAAAAABIVhTCKI=",
-    nullptr
   },
   {
     
@@ -538,7 +508,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "ME4xCzAJBgNVBAYTAk5PMR0wGwYDVQQKDBRCdXlwYXNzIEFTLTk4MzE2MzMyNzEg"
     "MB4GA1UEAwwXQnV5cGFzcyBDbGFzcyAzIFJvb3QgQ0E=",
     "Ag==",
-    nullptr
   },
   {
     
@@ -551,7 +520,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "MD0xCzAJBgNVBAYTAkZSMREwDwYDVQQKEwhDZXJ0cGx1czEbMBkGA1UEAxMSQ2xh"
     "c3MgMiBQcmltYXJ5IENB",
     "AIW9S/PY2uNp9pTXX8OlRCM=",
-    nullptr
   },
   {
     
@@ -566,7 +534,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "QTgyNzQzMjg3MRswGQYDVQQKExJBQyBDYW1lcmZpcm1hIFMuQS4xKTAnBgNVBAMT"
     "IENoYW1iZXJzIG9mIENvbW1lcmNlIFJvb3QgLSAyMDA4",
     "AKPaQn6ksa7a",
-    nullptr
   },
   {
     
@@ -581,7 +548,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "QTgyNzQzMjg3MRswGQYDVQQKExJBQyBDYW1lcmZpcm1hIFMuQS4xJzAlBgNVBAMT"
     "Hkdsb2JhbCBDaGFtYmVyc2lnbiBSb290IC0gMjAwOA==",
     "AMnN0+nVfSPO",
-    nullptr
   },
   {
     
@@ -594,7 +560,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "MEQxCzAJBgNVBAYTAlVTMRQwEgYDVQQKDAtBZmZpcm1UcnVzdDEfMB0GA1UEAwwW"
     "QWZmaXJtVHJ1c3QgQ29tbWVyY2lhbA==",
     "d3cGJyapsXw=",
-    nullptr
   },
   {
     
@@ -607,7 +572,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "MEQxCzAJBgNVBAYTAlVTMRQwEgYDVQQKDAtBZmZpcm1UcnVzdDEfMB0GA1UEAwwW"
     "QWZmaXJtVHJ1c3QgTmV0d29ya2luZw==",
     "fE8EORzUmS0=",
-    nullptr
   },
   {
     
@@ -620,7 +584,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "MEExCzAJBgNVBAYTAlVTMRQwEgYDVQQKDAtBZmZpcm1UcnVzdDEcMBoGA1UEAwwT"
     "QWZmaXJtVHJ1c3QgUHJlbWl1bQ==",
     "bYwURrGmCu4=",
-    nullptr
   },
   {
     
@@ -633,7 +596,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "MEUxCzAJBgNVBAYTAlVTMRQwEgYDVQQKDAtBZmZpcm1UcnVzdDEgMB4GA1UEAwwX"
     "QWZmaXJtVHJ1c3QgUHJlbWl1bSBFQ0M=",
     "dJclisc/elQ=",
-    nullptr
   },
   {
     
@@ -647,7 +609,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "LkEuMScwJQYDVQQLEx5DZXJ0dW0gQ2VydGlmaWNhdGlvbiBBdXRob3JpdHkxIjAg"
     "BgNVBAMTGUNlcnR1bSBUcnVzdGVkIE5ldHdvcmsgQ0E=",
     "BETA",
-    nullptr
   },
   {
     
@@ -661,7 +622,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "Uy5BLjEnMCUGA1UECxMeQ2VydHVtIENlcnRpZmljYXRpb24gQXV0aG9yaXR5MSQw"
     "IgYDVQQDExtDZXJ0dW0gVHJ1c3RlZCBOZXR3b3JrIENBIDI=",
     "IdbQSk8lD8kyN/yqXhKN6Q==",
-    nullptr
   },
   {
     
@@ -674,7 +634,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "MDgxCzAJBgNVBAYTAkVTMRQwEgYDVQQKDAtJWkVOUEUgUy5BLjETMBEGA1UEAwwK"
     "SXplbnBlLmNvbQ==",
     "ALC3WhZIX7/hy/WL1xnmfQ==",
-    nullptr
   },
   {
     
@@ -687,7 +646,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "MDgxCzAJBgNVBAYTAkVTMRQwEgYDVQQKDAtJWkVOUEUgUy5BLjETMBEGA1UEAwwK"
     "SXplbnBlLmNvbQ==",
     "ALC3WhZIX7/hy/WL1xnmfQ==",
-    nullptr
   },
   {
     
@@ -701,7 +659,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "U2VydmljZXMgR21iSDEfMB0GA1UECwwWVC1TeXN0ZW1zIFRydXN0IENlbnRlcjEl"
     "MCMGA1UEAwwcVC1UZWxlU2VjIEdsb2JhbFJvb3QgQ2xhc3MgMw==",
     "AQ==",
-    nullptr
   },
   {
     
@@ -715,7 +672,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "ayBJbmZvcm1hdGlvbiBDZW50ZXIxRzBFBgNVBAMMPkNoaW5hIEludGVybmV0IE5l"
     "dHdvcmsgSW5mb3JtYXRpb24gQ2VudGVyIEVWIENlcnRpZmljYXRlcyBSb290",
     "SJ8AAQ==",
-    nullptr
   },
   {
     
@@ -729,7 +685,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "b3QgQ0ExKjAoBgNVBAMMIVRXQ0EgUm9vdCBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0"
     "eQ==",
     "AQ==",
-    nullptr
   },
   {
     
@@ -742,7 +697,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "MFAxCzAJBgNVBAYTAkRFMRUwEwYDVQQKDAxELVRydXN0IEdtYkgxKjAoBgNVBAMM"
     "IUQtVFJVU1QgUm9vdCBDbGFzcyAzIENBIDIgRVYgMjAwOQ==",
     "CYP0",
-    nullptr
   },
   {
     
@@ -756,7 +710,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "aXRhbCBDZXJ0aWZpY2F0ZSBTZXJ2aWNlczEeMBwGA1UEAxMVU3dpc3Njb20gUm9v"
     "dCBFViBDQSAy",
     "APL6ZOJ0Y9ON/RAdBB92ylg=",
-    nullptr
   },
   {
     
@@ -771,7 +724,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "cmlTaWduLCBJbmMuIC0gRm9yIGF1dGhvcml6ZWQgdXNlIG9ubHkxODA2BgNVBAMT"
     "L1ZlcmlTaWduIFVuaXZlcnNhbCBSb290IENlcnRpZmljYXRpb24gQXV0aG9yaXR5",
     "QBrEZCGzEyEDDrvkEhrFHQ==",
-    nullptr
   },
   {
     
@@ -786,7 +738,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "bmx5MTYwNAYDVQQDEy1HZW9UcnVzdCBQcmltYXJ5IENlcnRpZmljYXRpb24gQXV0"
     "aG9yaXR5IC0gRzM=",
     "FaxulBmyeUtB9iepwxgPHw==",
-    nullptr
   },
   {
     
@@ -801,7 +752,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "MjAwOCB0aGF3dGUsIEluYy4gLSBGb3IgYXV0aG9yaXplZCB1c2Ugb25seTEkMCIG"
     "A1UEAxMbdGhhd3RlIFByaW1hcnkgUm9vdCBDQSAtIEcz",
     "YAGXt0an6rS0mtZLL/eQ+w==",
-    nullptr
   },
   {
     
@@ -814,7 +764,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "MFExCzAJBgNVBAYTAkVTMUIwQAYDVQQDDDlBdXRvcmlkYWQgZGUgQ2VydGlmaWNh"
     "Y2lvbiBGaXJtYXByb2Zlc2lvbmFsIENJRiBBNjI2MzQwNjg=",
     "U+w77vuySF8=",
-    nullptr
   },
   {
     
@@ -827,7 +776,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "MFExCzAJBgNVBAYTAlRXMRIwEAYDVQQKEwlUQUlXQU4tQ0ExEDAOBgNVBAsTB1Jv"
     "b3QgQ0ExHDAaBgNVBAMTE1RXQ0EgR2xvYmFsIFJvb3QgQ0E=",
     "DL4=",
-    nullptr
   },
   {
     
@@ -842,7 +790,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "xZ4uMSYwJAYDVQQLDB1FLVR1Z3JhIFNlcnRpZmlrYXN5b24gTWVya2V6aTEoMCYG"
     "A1UEAwwfRS1UdWdyYSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eQ==",
     "amg+nFGby1M=",
-    nullptr
   },
   {
     
@@ -856,7 +803,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "cyBTLnAuQS4vMDMzNTg1MjA5NjcxJzAlBgNVBAMMHkFjdGFsaXMgQXV0aGVudGlj"
     "YXRpb24gUm9vdCBDQQ==",
     "VwoRl0LE48w=",
-    nullptr
   },
   {
     
@@ -869,7 +815,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "MFUxCzAJBgNVBAYTAkNOMRowGAYDVQQKExFXb1NpZ24gQ0EgTGltaXRlZDEqMCgG"
     "A1UEAxMhQ2VydGlmaWNhdGlvbiBBdXRob3JpdHkgb2YgV29TaWdu",
     "XmjWEXGUY1BWAGjzPsnFkQ==",
-    nullptr
   },
   {
     
@@ -882,7 +827,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "MEYxCzAJBgNVBAYTAkNOMRowGAYDVQQKExFXb1NpZ24gQ0EgTGltaXRlZDEbMBkG"
     "A1UEAwwSQ0Eg5rKD6YCa5qC56K+B5Lmm",
     "UHBrzdgT/BtOOzNy0hFIjQ==",
-    nullptr
   },
   {
     
@@ -896,7 +840,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "EHd3dy5kaWdpY2VydC5jb20xJDAiBgNVBAMTG0RpZ2lDZXJ0IEFzc3VyZWQgSUQg"
     "Um9vdCBHMg==",
     "C5McOtY5Z+pnI7/Dr5r0Sw==",
-    nullptr
   },
   {
     
@@ -910,7 +853,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "EHd3dy5kaWdpY2VydC5jb20xJDAiBgNVBAMTG0RpZ2lDZXJ0IEFzc3VyZWQgSUQg"
     "Um9vdCBHMw==",
     "C6Fa+h3foLVJRK/NJKBs7A==",
-    nullptr,
   },
   {
     
@@ -924,7 +866,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "EHd3dy5kaWdpY2VydC5jb20xIDAeBgNVBAMTF0RpZ2lDZXJ0IEdsb2JhbCBSb290"
     "IEcy",
     "Azrx5qcRqaC7KGSxHQn65Q==",
-    nullptr,
   },
   {
     
@@ -938,7 +879,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "EHd3dy5kaWdpY2VydC5jb20xIDAeBgNVBAMTF0RpZ2lDZXJ0IEdsb2JhbCBSb290"
     "IEcz",
     "BVVWvPJepDU1w6QP1atFcg==",
-    nullptr
   },
   {
     
@@ -952,7 +892,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "EHd3dy5kaWdpY2VydC5jb20xITAfBgNVBAMTGERpZ2lDZXJ0IFRydXN0ZWQgUm9v"
     "dCBHNA==",
     "BZsbV56OITLiOQe9p3d1XA==",
-    nullptr
   },
   {
     
@@ -965,7 +904,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "MEgxCzAJBgNVBAYTAkJNMRkwFwYDVQQKExBRdW9WYWRpcyBMaW1pdGVkMR4wHAYD"
     "VQQDExVRdW9WYWRpcyBSb290IENBIDIgRzM=",
     "RFc0JFuBiZs18s64KztbpybwdSg=",
-    nullptr
   },
   {
     
@@ -979,7 +917,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "DgYDVQQHEwdTYWxmb3JkMRowGAYDVQQKExFDT01PRE8gQ0EgTGltaXRlZDErMCkG"
     "A1UEAxMiQ09NT0RPIFJTQSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eQ==",
     "TKr5yttjb+Af907YWwOGnQ==",
-    nullptr
   },
   {
     
@@ -993,7 +930,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "SmVyc2V5IENpdHkxHjAcBgNVBAoTFVRoZSBVU0VSVFJVU1QgTmV0d29yazEuMCwG"
     "A1UEAxMlVVNFUlRydXN0IFJTQSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eQ==",
     "Af1tMPyjylGoG7xkDjUDLQ==",
-    nullptr
   },
   {
     
@@ -1007,7 +943,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "SmVyc2V5IENpdHkxHjAcBgNVBAoTFVRoZSBVU0VSVFJVU1QgTmV0d29yazEuMCwG"
     "A1UEAxMlVVNFUlRydXN0IEVDQyBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eQ==",
     "XIuZxVqUxdJxVt7NiYDMJg==",
-    nullptr
   },
   {
     
@@ -1020,7 +955,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "MFAxJDAiBgNVBAsTG0dsb2JhbFNpZ24gRUNDIFJvb3QgQ0EgLSBSNDETMBEGA1UE"
     "ChMKR2xvYmFsU2lnbjETMBEGA1UEAxMKR2xvYmFsU2lnbg==",
     "KjikHJYKBN5CsiilC+g0mAI=",
-    nullptr
   },
   {
     
@@ -1033,7 +967,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "MFAxJDAiBgNVBAsTG0dsb2JhbFNpZ24gRUNDIFJvb3QgQ0EgLSBSNTETMBEGA1UE"
     "ChMKR2xvYmFsU2lnbjETMBEGA1UEAxMKR2xvYmFsU2lnbg==",
     "YFlJ4CYuu1X5CneKcflK2Gw=",
-    nullptr
   },
   {
     
@@ -1048,7 +981,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "A1UECxMcKGMpIDE5OTkgRW50cnVzdC5uZXQgTGltaXRlZDEzMDEGA1UEAxMqRW50"
     "cnVzdC5uZXQgQ2VydGlmaWNhdGlvbiBBdXRob3JpdHkgKDIwNDgp",
     "OGPe+A==",
-    nullptr
   },
   {
     
@@ -1061,7 +993,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "MFgxCzAJBgNVBAYTAk5MMR4wHAYDVQQKDBVTdGFhdCBkZXIgTmVkZXJsYW5kZW4x"
     "KTAnBgNVBAMMIFN0YWF0IGRlciBOZWRlcmxhbmRlbiBFViBSb290IENB",
     "AJiWjQ==",
-    nullptr
   },
   {
     
@@ -1077,7 +1008,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "MAYDVQQDEylFbnRydXN0IFJvb3QgQ2VydGlmaWNhdGlvbiBBdXRob3JpdHkgLSBH"
     "Mg==",
     "SlOMKA==",
-    nullptr
   },
   {
     
@@ -1093,7 +1023,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "MQYDVQQDEypFbnRydXN0IFJvb3QgQ2VydGlmaWNhdGlvbiBBdXRob3JpdHkgLSBF"
     "QzE=",
     "AKaLeSkAAAAAUNCR+Q==",
-    nullptr
   },
   {
     
@@ -1106,7 +1035,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "MFYxCzAJBgNVBAYTAkNOMTAwLgYDVQQKDCdDaGluYSBGaW5hbmNpYWwgQ2VydGlm"
     "aWNhdGlvbiBBdXRob3JpdHkxFTATBgNVBAMMDENGQ0EgRVYgUk9PVA==",
     "GErM1g==",
-    nullptr
   },
   {
     
@@ -1119,7 +1047,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "MFgxCzAJBgNVBAYTAkNOMRowGAYDVQQKExFXb1NpZ24gQ0EgTGltaXRlZDEtMCsG"
     "A1UEAxMkQ2VydGlmaWNhdGlvbiBBdXRob3JpdHkgb2YgV29TaWduIEcy",
     "ayXaioidfLwPBbOxemFFRA==",
-    nullptr
   },
   {
     
@@ -1132,7 +1059,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "MEYxCzAJBgNVBAYTAkNOMRowGAYDVQQKExFXb1NpZ24gQ0EgTGltaXRlZDEbMBkG"
     "A1UEAxMSQ0EgV29TaWduIEVDQyBSb290",
     "aEpYcIBr8I8C+vbe6LCQkA==",
-    nullptr
   },
   {
     
@@ -1147,7 +1073,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "SGl6bWV0bGVyaSBBLsWeLjFCMEAGA1UEAww5VMOcUktUUlVTVCBFbGVrdHJvbmlr"
     "IFNlcnRpZmlrYSBIaXptZXQgU2HEn2xhecSxY8Sxc8SxIEg2",
     "faHyZeyK",
-    nullptr
   },
   {
     
@@ -1160,7 +1085,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "MF0xCzAJBgNVBAYTAkpQMSUwIwYDVQQKExxTRUNPTSBUcnVzdCBTeXN0ZW1zIENP"
     "LixMVEQuMScwJQYDVQQLEx5TZWN1cml0eSBDb21tdW5pY2F0aW9uIFJvb3RDQTI=",
     "AA==",
-    nullptr
   },
   {
     
@@ -1174,7 +1098,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "RSBGb3VuZGF0aW9uIEVuZG9yc2VkMSgwJgYDVQQDEx9PSVNURSBXSVNlS2V5IEds"
     "b2JhbCBSb290IEdCIENB",
     "drEgUnTwhYdGs/gjGvbCwA==",
-    nullptr
   },
   {
     
@@ -1187,7 +1110,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "MD4xCzAJBgNVBAYTAkZSMREwDwYDVQQKDAhDZXJ0cGx1czEcMBoGA1UEAwwTQ2Vy"
     "dHBsdXMgUm9vdCBDQSBHMQ==",
     "ESBVg+QtPlRWhS2DN7cs3EYR",
-    nullptr
   },
   {
     
@@ -1200,7 +1122,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "MD4xCzAJBgNVBAYTAkZSMREwDwYDVQQKDAhDZXJ0cGx1czEcMBoGA1UEAwwTQ2Vy"
     "dHBsdXMgUm9vdCBDQSBHMg==",
     "ESDZkc6uo+jF5//pAq/Pc7xV",
-    nullptr
   },
   {
     
@@ -1213,7 +1134,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "MEAxCzAJBgNVBAYTAkZSMRIwEAYDVQQKDAlPcGVuVHJ1c3QxHTAbBgNVBAMMFE9w"
     "ZW5UcnVzdCBSb290IENBIEcx",
     "ESCzkFU5fX82bWTCp59rY45n",
-    nullptr
   },
   {
     
@@ -1226,7 +1146,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "MEAxCzAJBgNVBAYTAkZSMRIwEAYDVQQKDAlPcGVuVHJ1c3QxHTAbBgNVBAMMFE9w"
     "ZW5UcnVzdCBSb290IENBIEcy",
     "ESChaRu/vbm9UpaPI+hIvyYR",
-    nullptr
   },
   {
     
@@ -1239,7 +1158,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "MEAxCzAJBgNVBAYTAkZSMRIwEAYDVQQKDAlPcGVuVHJ1c3QxHTAbBgNVBAMMFE9w"
     "ZW5UcnVzdCBSb290IENBIEcz",
     "ESDm+Ez8JLC+BUCs2oMbNGA/",
-    nullptr
   },
   {
     
@@ -1255,7 +1173,6 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "PFZlcmlTaWduIENsYXNzIDMgUHVibGljIFByaW1hcnkgQ2VydGlmaWNhdGlvbiBB"
     "dXRob3JpdHkgLSBHNA==",
     "L4D+I4wOIg9IZxIokYessw==",
-    nullptr
   },
 };
 
@@ -1301,19 +1218,31 @@ CertIsAuthoritativeForEVPolicy(const UniqueCERTCertificate& cert,
     return false;
   }
 
+  unsigned char fingerprint[SHA256_LENGTH];
+  SECStatus srv =
+    PK11_HashBuf(SEC_OID_SHA256, fingerprint, cert->derCert.data,
+                 AssertedCast<int32_t>(cert->derCert.len));
+  if (srv != SECSuccess) {
+    return false;
+  }
+
   const SECOidData* cabforumOIDData = SECOID_FindOIDByTag(sCABForumEVOIDTag);
   for (const nsMyTrustedEVInfo& entry : myTrustedEVInfos) {
-    if (entry.cert && CERT_CompareCerts(cert.get(), entry.cert.get())) {
-      if (cabforumOIDData && cabforumOIDData->oid.len == policy.numBytes &&
-          mozilla::PodEqual(cabforumOIDData->oid.data, policy.bytes,
-                            policy.numBytes)) {
-        return true;
-      }
-      const SECOidData* oidData = SECOID_FindOIDByTag(entry.oid_tag);
-      if (oidData && oidData->oid.len == policy.numBytes &&
-          mozilla::PodEqual(oidData->oid.data, policy.bytes, policy.numBytes)) {
-        return true;
-      }
+    
+    
+    
+    if (!PodEqual(fingerprint, entry.ev_root_sha256_fingerprint)) {
+      continue;
+    }
+
+    if (cabforumOIDData && cabforumOIDData->oid.len == policy.numBytes &&
+        PodEqual(cabforumOIDData->oid.data, policy.bytes, policy.numBytes)) {
+      return true;
+    }
+    const SECOidData* oidData = SECOID_FindOIDByTag(entry.oid_tag);
+    if (oidData && oidData->oid.len == policy.numBytes &&
+        PodEqual(oidData->oid.data, policy.bytes, policy.numBytes)) {
+      return true;
     }
   }
 
@@ -1360,14 +1289,14 @@ IdentityInfoInit()
     ias.serialNumber.len = serialNumber.len;
     ias.serialNumber.type = siUnsignedInteger;
 
-    entry.cert = UniqueCERTCertificate(CERT_FindCertByIssuerAndSN(nullptr, &ias));
+    UniqueCERTCertificate cert(CERT_FindCertByIssuerAndSN(nullptr, &ias));
 
     
     
     
     
     
-    if (!entry.cert) {
+    if (!cert) {
 #ifdef DEBUG
       
       
@@ -1380,9 +1309,8 @@ IdentityInfoInit()
     }
 
     unsigned char certFingerprint[SHA256_LENGTH];
-    rv = PK11_HashBuf(SEC_OID_SHA256, certFingerprint,
-                      entry.cert->derCert.data,
-                      static_cast<int32_t>(entry.cert->derCert.len));
+    rv = PK11_HashBuf(SEC_OID_SHA256, certFingerprint, cert->derCert.data,
+                      AssertedCast<int32_t>(cert->derCert.len));
     PR_ASSERT(rv == SECSuccess);
     if (rv == SECSuccess) {
       bool same = !memcmp(certFingerprint, entry.ev_root_sha256_fingerprint,
@@ -1405,7 +1333,6 @@ IdentityInfoInit()
     }
 
     if (rv != SECSuccess) {
-      entry.cert = nullptr;
       entry.oid_tag = SEC_OID_UNKNOWN;
       return PR_FAILURE;
     }
@@ -1425,10 +1352,6 @@ EnsureIdentityInfoLoaded()
 void
 CleanupIdentityInfo()
 {
-  for (nsMyTrustedEVInfo& entry : myTrustedEVInfos) {
-    entry.cert = nullptr;
-  }
-
   memset(&sIdentityInfoCallOnce, 0, sizeof(PRCallOnceType));
 }
 
