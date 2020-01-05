@@ -355,6 +355,18 @@ protocol.ActorClassWithSpec(serviceWorkerRegistrationSpec, {
         "resource://devtools/server/service-worker-child.js", true);
       _serviceWorkerProcessScriptLoaded = true;
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    Services.perms.broadcastPermissionsForPrincipalToAllContentProcesses(this._registration.principal);
+
     Services.ppmm.broadcastAsyncMessage("serviceWorkerRegistration:start", {
       scope: this._registration.scope
     });
