@@ -75,7 +75,8 @@ ClipboardEvent::Constructor(const GlobalObject& aGlobal,
       
       
       clipboardData = new DataTransfer(ToSupports(e), eCopy, false, -1);
-      clipboardData->SetData(aParam.mDataType, aParam.mData, aRv);
+      clipboardData->SetData(aParam.mDataType, aParam.mData,
+                             Some(aGlobal.GetSubjectPrincipal()), aRv);
       NS_ENSURE_TRUE(!aRv.Failed(), nullptr);
     }
   }
