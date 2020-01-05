@@ -110,7 +110,6 @@
 #include "cert.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Casting.h"
-#include "mozilla/Mutex.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/UniquePtr.h"
@@ -150,14 +149,6 @@ namespace {
 
 nsIThreadPool* gCertVerificationThreadPool = nullptr;
 
-
-
-
-Mutex* gSSLVerificationTelemetryMutex = nullptr;
-
-
-Mutex* gSSLVerificationPK11Mutex = nullptr;
-
 } 
 
 
@@ -173,8 +164,6 @@ Mutex* gSSLVerificationPK11Mutex = nullptr;
 void
 InitializeSSLServerCertVerificationThreads()
 {
-  gSSLVerificationTelemetryMutex = new Mutex("SSLVerificationTelemetryMutex");
-  gSSLVerificationPK11Mutex = new Mutex("SSLVerificationPK11Mutex");
   
   
   
@@ -206,14 +195,6 @@ void StopSSLServerCertVerificationThreads()
   if (gCertVerificationThreadPool) {
     gCertVerificationThreadPool->Shutdown();
     NS_RELEASE(gCertVerificationThreadPool);
-  }
-  if (gSSLVerificationTelemetryMutex) {
-    delete gSSLVerificationTelemetryMutex;
-    gSSLVerificationTelemetryMutex = nullptr;
-  }
-  if (gSSLVerificationPK11Mutex) {
-    delete gSSLVerificationPK11Mutex;
-    gSSLVerificationPK11Mutex = nullptr;
   }
 }
 
@@ -1609,11 +1590,10 @@ SSLServerCertVerificationJob::Run()
     
     
     error = PR_GetError();
-    {
-      TimeStamp now = TimeStamp::Now();
-      MutexAutoLock telemetryMutex(*gSSLVerificationTelemetryMutex);
-      Telemetry::AccumulateTimeDelta(failureTelemetry, mJobStartTime, now);
-    }
+
+    TimeStamp now = TimeStamp::Now();
+    Telemetry::AccumulateTimeDelta(failureTelemetry, mJobStartTime, now);
+
     if (error != 0) {
       RefPtr<CertErrorRunnable> runnable(
           CreateCertErrorRunnable(*mCertVerifier, error, mInfoObject, mCert,
@@ -1871,9 +1851,7 @@ SSLServerCertVerificationResult::Run()
   if (mTelemetryID != Telemetry::HistogramCount) {
      Telemetry::Accumulate(mTelemetryID, mTelemetryValue);
   }
-  
-  ((nsNSSSocketInfo*) mInfoObject.get())
-    ->SetCertVerificationResult(mErrorCode, mErrorMessageType);
+  mInfoObject->SetCertVerificationResult(mErrorCode, mErrorMessageType);
   return NS_OK;
 }
 
