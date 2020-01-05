@@ -17,7 +17,7 @@ impl DocumentFragment {
     
     pub fn new_inherited(document: AbstractDocument) -> DocumentFragment {
         DocumentFragment {
-            node: Node::new(DocumentFragmentNodeTypeId, document),
+            node: Node::new_inherited(DocumentFragmentNodeTypeId, document),
         }
     }
 
