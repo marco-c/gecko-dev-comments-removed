@@ -12204,6 +12204,8 @@ nsIDocument::HasScriptsBlockedBySandbox()
 bool
 nsIDocument::InlineScriptAllowedByCSP()
 {
+  
+  
   nsCOMPtr<nsIContentSecurityPolicy> csp;
   nsresult rv = NodePrincipal()->GetCsp(getter_AddRefs(csp));
   NS_ENSURE_SUCCESS(rv, true);
@@ -12211,7 +12213,7 @@ nsIDocument::InlineScriptAllowedByCSP()
   if (csp) {
     nsresult rv = csp->GetAllowsInline(nsIContentPolicy::TYPE_SCRIPT,
                                        EmptyString(), 
-                                       false,         
+                                       true,          
                                        EmptyString(), 
                                        0,             
                                        &allowsInlineScript);
