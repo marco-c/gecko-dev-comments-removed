@@ -96,12 +96,17 @@ pub trait LayoutRPC {
     
     fn content_boxes(&self) -> ContentBoxesResponse;
     
+    fn node_geometry(&self) -> NodeGeometryResponse;
+    
     fn hit_test(&self, node: TrustedNodeAddress, point: Point2D<f32>) -> Result<HitTestResponse, ()>;
     fn mouse_over(&self, node: TrustedNodeAddress, point: Point2D<f32>) -> Result<MouseOverResponse, ()>;
 }
 
 pub struct ContentBoxResponse(pub Rect<Au>);
 pub struct ContentBoxesResponse(pub Vec<Rect<Au>>);
+pub struct NodeGeometryResponse {
+    pub client_rect: Rect<i32>,
+}
 pub struct HitTestResponse(pub UntrustedNodeAddress);
 pub struct MouseOverResponse(pub Vec<UntrustedNodeAddress>);
 
@@ -120,6 +125,7 @@ pub enum ReflowQueryType {
     NoQuery,
     ContentBoxQuery(TrustedNodeAddress),
     ContentBoxesQuery(TrustedNodeAddress),
+    NodeGeometryQuery(TrustedNodeAddress),
 }
 
 
