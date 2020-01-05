@@ -93,6 +93,8 @@ public:
   void SetPose(const dom::GamepadPoseState& aPose);
   const dom::GamepadPoseState& GetPose();
   dom::GamepadHand GetHand();
+  void SetVibrateIndex(uint64_t aIndex);
+  uint64_t GetVibrateIndex();
 
 protected:
   explicit VRControllerHost(VRDeviceType aType);
@@ -101,6 +103,7 @@ protected:
   VRControllerInfo mControllerInfo;
   
   uint64_t mButtonPressed;
+  uint64_t mVibrateIndex;
   dom::GamepadPoseState mPose;
 };
 

@@ -59,6 +59,8 @@ static pfn_VR_GetGenericInterface vr_GetGenericInterface = nullptr;
 #define BTN_MASK_FROM_ID(_id) \
   vr::ButtonMaskFromId(vr::EVRButtonId::_id)
 
+static const uint32_t kNumOpenVRHaptcs = 1;
+
 
 bool
 LoadOpenVRRuntime()
@@ -392,6 +394,8 @@ VRControllerOpenVR::VRControllerOpenVR(dom::GamepadHand aHand, uint32_t aNumButt
                                        uint32_t aNumAxes)
   : VRControllerHost(VRDeviceType::OpenVR)
   , mTrigger(0)
+  , mVibrateThread(nullptr)
+  , mIsVibrating(false)
 {
   MOZ_COUNT_CTOR_INHERITED(VRControllerOpenVR, VRControllerHost);
   mControllerInfo.mControllerName.AssignLiteral("OpenVR Gamepad");
@@ -399,10 +403,16 @@ VRControllerOpenVR::VRControllerOpenVR(dom::GamepadHand aHand, uint32_t aNumButt
   mControllerInfo.mHand = aHand;
   mControllerInfo.mNumButtons = aNumButtons;
   mControllerInfo.mNumAxes = aNumAxes;
+  mControllerInfo.mNumHaptics = kNumOpenVRHaptcs;
 }
 
 VRControllerOpenVR::~VRControllerOpenVR()
 {
+  if (mVibrateThread) {
+    mVibrateThread->Shutdown();
+    mVibrateThread = nullptr;
+  }
+
   MOZ_COUNT_DTOR_INHERITED(VRControllerOpenVR, VRControllerHost);
 }
 
@@ -428,6 +438,75 @@ float
 VRControllerOpenVR::GetTrigger()
 {
   return mTrigger;
+}
+
+void
+VRControllerOpenVR::UpdateVibrateHaptic(vr::IVRSystem* aVRSystem,
+                                        uint32_t aHapticIndex,
+                                        double aIntensity,
+                                        double aDuration,
+                                        uint64_t aVibrateIndex,
+                                        uint32_t aPromiseID)
+{
+  
+  MOZ_ASSERT(mVibrateThread == NS_GetCurrentThread());
+  
+  if (mVibrateIndex != aVibrateIndex) {
+    return;
+  }
+
+  double duration = (aIntensity == 0) ? 0 : aDuration;
+  
+  
+  
+  uint32_t microSec = (duration < 3.9 ? duration : 3.9) * 1000 * aIntensity;
+  aVRSystem->TriggerHapticPulse(GetTrackedIndex(),
+                                aHapticIndex, microSec);
+
+  
+  
+  const double kVibrateRate = 5.0;
+  if (duration >= kVibrateRate) {
+    MOZ_ASSERT(mVibrateThread);
+
+    RefPtr<Runnable> runnable =
+      NewRunnableMethod<vr::IVRSystem*, uint32_t, double, double, uint64_t, uint32_t>
+        (this, &VRControllerOpenVR::UpdateVibrateHaptic, aVRSystem,
+         aHapticIndex, aIntensity, duration - kVibrateRate, aVibrateIndex, aPromiseID);
+    NS_DelayedDispatchToCurrentThread(runnable.forget(), kVibrateRate);
+  }
+}
+
+void
+VRControllerOpenVR::VibrateHaptic(vr::IVRSystem* aVRSystem,
+                                  uint32_t aHapticIndex,
+                                  double aIntensity,
+                                  double aDuration,
+                                  uint32_t aPromiseID)
+{
+  
+  if (!mVibrateThread) {
+    nsresult rv = NS_NewThread(getter_AddRefs(mVibrateThread));
+    MOZ_ASSERT(mVibrateThread);
+
+    if (NS_FAILED(rv)) {
+      MOZ_ASSERT(false, "Failed to create async thread.");
+    }
+  }
+  ++mVibrateIndex;
+
+  mIsVibrating = true;
+  RefPtr<Runnable> runnable =
+      NewRunnableMethod<vr::IVRSystem*, uint32_t, double, double, uint64_t, uint32_t>
+        (this, &VRControllerOpenVR::UpdateVibrateHaptic, aVRSystem,
+         aHapticIndex, aIntensity, aDuration, mVibrateIndex, aPromiseID);
+  mVibrateThread->Dispatch(runnable.forget(), NS_DISPATCH_NORMAL);
+}
+
+void
+VRControllerOpenVR::StopVibrateHaptic()
+{
+  mIsVibrating = false;
 }
 
 VRSystemManagerOpenVR::VRSystemManagerOpenVR()
@@ -744,10 +823,45 @@ VRSystemManagerOpenVR::HandlePoseTracking(uint32_t aControllerIdx,
                                           const GamepadPoseState& aPose,
                                           VRControllerHost* aController)
 {
+  MOZ_ASSERT(aController);
   if (aPose != aController->GetPose()) {
     aController->SetPose(aPose);
     NewPoseState(aControllerIdx, aPose);
   }
+}
+
+void
+VRSystemManagerOpenVR::VibrateHaptic(uint32_t aControllerIdx,
+                                     uint32_t aHapticIndex,
+                                     double aIntensity,
+                                     double aDuration,
+                                     uint32_t aPromiseID)
+{
+  
+  
+  if (!mVRSystem) {
+    return;
+  }
+
+  RefPtr<impl::VRControllerOpenVR> controller = mOpenVRController[aControllerIdx];
+  MOZ_ASSERT(controller);
+
+  controller->VibrateHaptic(mVRSystem, aHapticIndex, aIntensity, aDuration, aPromiseID);
+}
+
+void
+VRSystemManagerOpenVR::StopVibrateHaptic(uint32_t aControllerIdx)
+{
+  
+  
+  if (!mVRSystem) {
+    return;
+  }
+
+  RefPtr<impl::VRControllerOpenVR> controller = mOpenVRController[aControllerIdx];
+  MOZ_ASSERT(controller);
+
+  controller->StopVibrateHaptic();
 }
 
 void
@@ -888,3 +1002,4 @@ VRSystemManagerOpenVR::RemoveControllers()
   mOpenVRController.Clear();
   mControllerCount = 0;
 }
+
