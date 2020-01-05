@@ -745,6 +745,7 @@ MediaDecoderStateMachine::MediaDecoderStateMachine(MediaDecoder* aDecoder,
   INIT_MIRROR(mPlayState, MediaDecoder::PLAY_STATE_LOADING),
   INIT_MIRROR(mNextPlayState, MediaDecoder::PLAY_STATE_PAUSED),
   INIT_MIRROR(mVolume, 1.0),
+  INIT_MIRROR(mLogicalPlaybackRate, 1.0),
   INIT_MIRROR(mPreservesPitch, true),
   INIT_MIRROR(mSameOriginMedia, false),
   INIT_MIRROR(mMediaPrincipalHandle, PRINCIPAL_HANDLE_NONE),
@@ -806,6 +807,7 @@ MediaDecoderStateMachine::InitializationTask(MediaDecoder* aDecoder)
   mPlayState.Connect(aDecoder->CanonicalPlayState());
   mNextPlayState.Connect(aDecoder->CanonicalNextPlayState());
   mVolume.Connect(aDecoder->CanonicalVolume());
+  mLogicalPlaybackRate.Connect(aDecoder->CanonicalPlaybackRate());
   mPreservesPitch.Connect(aDecoder->CanonicalPreservesPitch());
   mSameOriginMedia.Connect(aDecoder->CanonicalSameOriginMedia());
   mMediaPrincipalHandle.Connect(aDecoder->CanonicalMediaPrincipalHandle());
@@ -822,6 +824,7 @@ MediaDecoderStateMachine::InitializationTask(MediaDecoder* aDecoder)
   mWatchManager.Watch(mAudioCompleted, &MediaDecoderStateMachine::UpdateNextFrameStatus);
   mWatchManager.Watch(mVideoCompleted, &MediaDecoderStateMachine::UpdateNextFrameStatus);
   mWatchManager.Watch(mVolume, &MediaDecoderStateMachine::VolumeChanged);
+  mWatchManager.Watch(mLogicalPlaybackRate, &MediaDecoderStateMachine::LogicalPlaybackRateChanged);
   mWatchManager.Watch(mPreservesPitch, &MediaDecoderStateMachine::PreservesPitchChanged);
   mWatchManager.Watch(mEstimatedDuration, &MediaDecoderStateMachine::RecomputeDuration);
   mWatchManager.Watch(mExplicitDuration, &MediaDecoderStateMachine::RecomputeDuration);
@@ -1491,7 +1494,8 @@ MediaDecoderStateMachine::MaybeStartBuffering()
 
   bool shouldBuffer;
   if (mReader->UseBufferingHeuristics()) {
-    shouldBuffer = HasLowDecodedData() && HasLowBufferedData();
+    shouldBuffer = HasLowDecodedData(EXHAUSTED_DATA_MARGIN_USECS) &&
+                   HasLowBufferedData();
   } else {
     MOZ_ASSERT(mReader->IsWaitForDataSupported());
     shouldBuffer = (OutOfDecodedAudio() && mReader->IsWaitingAudioData()) ||
@@ -1706,6 +1710,7 @@ MediaDecoderStateMachine::Shutdown()
   mPlayState.DisconnectIfConnected();
   mNextPlayState.DisconnectIfConnected();
   mVolume.DisconnectIfConnected();
+  mLogicalPlaybackRate.DisconnectIfConnected();
   mPreservesPitch.DisconnectIfConnected();
   mSameOriginMedia.DisconnectIfConnected();
   mMediaPrincipalHandle.DisconnectIfConnected();
@@ -2313,28 +2318,17 @@ MediaDecoderStateMachine::StartMediaSink()
   }
 }
 
-bool
-MediaDecoderStateMachine::HasLowDecodedAudio()
-{
-  MOZ_ASSERT(OnTaskQueue());
-  return IsAudioDecoding() &&
-         GetDecodedAudioDuration() < EXHAUSTED_DATA_MARGIN_USECS * mPlaybackRate;
-}
-
-bool
-MediaDecoderStateMachine::HasLowDecodedVideo()
-{
-  MOZ_ASSERT(OnTaskQueue());
-  return IsVideoDecoding() &&
-         VideoQueue().GetSize() < LOW_VIDEO_FRAMES * mPlaybackRate;
-}
-
-bool
-MediaDecoderStateMachine::HasLowDecodedData()
+bool MediaDecoderStateMachine::HasLowDecodedData(int64_t aAudioUsecs)
 {
   MOZ_ASSERT(OnTaskQueue());
   MOZ_ASSERT(mReader->UseBufferingHeuristics());
-  return HasLowDecodedAudio() || HasLowDecodedVideo();
+  
+  
+  
+  
+  return ((IsAudioDecoding() && GetDecodedAudioDuration() < aAudioUsecs) ||
+         (IsVideoDecoding() &&
+          static_cast<uint32_t>(VideoQueue().GetSize()) < LOW_VIDEO_FRAMES));
 }
 
 bool MediaDecoderStateMachine::OutOfDecodedAudio()
@@ -2788,12 +2782,16 @@ bool MediaDecoderStateMachine::IsStateMachineScheduled() const
 }
 
 void
-MediaDecoderStateMachine::SetPlaybackRate(double aPlaybackRate)
+MediaDecoderStateMachine::LogicalPlaybackRateChanged()
 {
   MOZ_ASSERT(OnTaskQueue());
-  MOZ_ASSERT(aPlaybackRate != 0, "Should be handled by MediaDecoder::Pause()");
 
-  mPlaybackRate = aPlaybackRate;
+  if (mLogicalPlaybackRate == 0) {
+    
+    return;
+  }
+
+  mPlaybackRate = mLogicalPlaybackRate;
   mMediaSink->SetPlaybackRate(mPlaybackRate);
 
   if (mIsAudioPrerolling && DonePrerollingAudio()) {
@@ -2877,9 +2875,13 @@ void MediaDecoderStateMachine::OnMediaSinkAudioComplete()
   mAudioCompleted = true;
   
   ScheduleStateMachine();
+
+  
+  mOnDecoderDoctorEvent.Notify(
+    DecoderDoctorEvent{DecoderDoctorEvent::eAudioSinkStartup, NS_OK});
 }
 
-void MediaDecoderStateMachine::OnMediaSinkAudioError()
+void MediaDecoderStateMachine::OnMediaSinkAudioError(nsresult aResult)
 {
   MOZ_ASSERT(OnTaskQueue());
   MOZ_ASSERT(mInfo.HasAudio());
@@ -2887,6 +2889,11 @@ void MediaDecoderStateMachine::OnMediaSinkAudioError()
 
   mMediaSinkAudioPromise.Complete();
   mAudioCompleted = true;
+
+  
+  MOZ_ASSERT(NS_FAILED(aResult));
+  mOnDecoderDoctorEvent.Notify(
+    DecoderDoctorEvent{DecoderDoctorEvent::eAudioSinkStartup, aResult});
 
   
   if (HasVideo()) {

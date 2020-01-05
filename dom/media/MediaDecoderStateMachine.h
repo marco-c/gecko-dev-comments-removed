@@ -174,12 +174,6 @@ public:
   
   RefPtr<MediaDecoder::SeekPromise> InvokeSeek(SeekTarget aTarget);
 
-  void DispatchSetPlaybackRate(double aPlaybackRate)
-  {
-    OwnerThread()->DispatchStateChange(NewRunnableMethod<double>(
-      this, &MediaDecoderStateMachine::SetPlaybackRate, aPlaybackRate));
-  }
-
   
   void DispatchSetDormant(bool aDormant);
 
@@ -252,6 +246,9 @@ public:
   OnPlaybackEvent() { return mOnPlaybackEvent; }
   MediaEventSource<MediaResult>&
   OnPlaybackErrorEvent() { return mOnPlaybackErrorEvent; }
+
+  MediaEventSource<DecoderDoctorEvent>&
+  OnDecoderDoctorEvent() { return mOnDecoderDoctorEvent; }
 
   size_t SizeOfVideoQueue() const;
 
@@ -373,7 +370,7 @@ protected:
   void AudioAudibleChanged(bool aAudible);
 
   void VolumeChanged();
-  void SetPlaybackRate(double aPlaybackRate);
+  void LogicalPlaybackRateChanged();
   void PreservesPitchChanged();
 
   MediaQueue<MediaData>& AudioQueue() { return mAudioQueue; }
@@ -389,11 +386,9 @@ protected:
 
   
   
-  bool HasLowDecodedData();
-
-  bool HasLowDecodedAudio();
-
-  bool HasLowDecodedVideo();
+  
+  
+  bool HasLowDecodedData(int64_t aAudioUsecs);
 
   bool OutOfDecodedAudio();
 
@@ -561,7 +556,7 @@ private:
   void OnMediaSinkVideoComplete();
 
   
-  void OnMediaSinkAudioError();
+  void OnMediaSinkAudioError(nsresult aResult);
   void OnMediaSinkVideoError();
 
   
@@ -864,6 +859,8 @@ private:
   MediaEventProducer<MediaEventType> mOnPlaybackEvent;
   MediaEventProducer<MediaResult> mOnPlaybackErrorEvent;
 
+  MediaEventProducer<DecoderDoctorEvent> mOnDecoderDoctorEvent;
+
   
   
   bool mAudioOffloading;
@@ -893,6 +890,11 @@ private:
 
   
   Mirror<double> mVolume;
+
+  
+  
+  
+  Mirror<double> mLogicalPlaybackRate;
 
   
   Mirror<bool> mPreservesPitch;
