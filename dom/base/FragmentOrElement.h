@@ -33,9 +33,7 @@ class nsDOMStringMap;
 class nsIURI;
 
 namespace mozilla {
-namespace css {
-class Declaration;
-} 
+class DeclarationBlock;
 namespace dom {
 class DOMIntersectionObserver;
 class Element;
@@ -284,7 +282,7 @@ public:
     
 
 
-    RefPtr<mozilla::css::Declaration> mSMILOverrideStyleDeclaration;
+    RefPtr<mozilla::DeclarationBlock> mSMILOverrideStyleDeclaration;
 
     
 

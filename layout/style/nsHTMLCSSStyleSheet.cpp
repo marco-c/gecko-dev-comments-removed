@@ -66,12 +66,13 @@ nsHTMLCSSStyleSheet::ElementRulesMatching(nsPresContext* aPresContext,
                                           nsRuleWalker* aRuleWalker)
 {
   
-  if (DeclarationBlock* declaration = aElement->GetInlineStyleDeclaration()) {
+  DeclarationBlock* declaration = aElement->GetInlineStyleDeclaration();
+  if (declaration) {
     declaration->SetImmutable();
     aRuleWalker->Forward(declaration->AsGecko());
   }
 
-  css::Declaration* declaration = aElement->GetSMILOverrideStyleDeclaration();
+  declaration = aElement->GetSMILOverrideStyleDeclaration();
   if (declaration) {
     MOZ_ASSERT(aPresContext->RestyleManager()->IsGecko(),
                "stylo: ElementRulesMatching must not be called when we have "
@@ -81,7 +82,7 @@ nsHTMLCSSStyleSheet::ElementRulesMatching(nsPresContext* aPresContext,
       
       
       declaration->SetImmutable();
-      aRuleWalker->Forward(declaration);
+      aRuleWalker->Forward(declaration->AsGecko());
     }
   }
 }

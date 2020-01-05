@@ -271,15 +271,15 @@ public:
 
 
 
-  virtual css::Declaration* GetSMILOverrideStyleDeclaration();
+  virtual DeclarationBlock* GetSMILOverrideStyleDeclaration();
 
   
 
 
 
 
-  virtual nsresult SetSMILOverrideStyleDeclaration(css::Declaration* aDeclaration,
-                                                   bool aNotify);
+  virtual nsresult SetSMILOverrideStyleDeclaration(
+    DeclarationBlock* aDeclaration, bool aNotify);
 
   
 
