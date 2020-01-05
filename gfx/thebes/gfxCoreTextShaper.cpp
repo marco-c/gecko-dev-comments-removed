@@ -597,7 +597,7 @@ gfxCoreTextShaper::SetGlyphsFromRun(gfxShapedText *aShapedText,
             
             
             
-            while (1) {
+            while (true) {
                 gfxTextRun::DetailedGlyph *details = detailedGlyphs.AppendElement();
                 details->mGlyphID = glyphs[glyphStart];
                 details->mXOffset = 0;
