@@ -1761,24 +1761,3 @@ let DateTimePickerListener = {
 }
 
 DateTimePickerListener.init();
-
-
-
-
-
-addEventListener("DOMWindowCreated", function() {
-  if (event.target !== content.document ||
-      content.location == "" ||
-      content.location.protocol === "about:") {
-    return;
-  }
-
-  let amountHistogram = Services.telemetry.getHistogramById("TOTAL_SCROLL_Y");
-  let prevScrollY = 0;
-
-  content.addEventListener("scroll", function() {
-    let amount = Math.abs(content.scrollY - prevScrollY);
-    amountHistogram.add(amount);
-    prevScrollY = content.scrollY;
-  }, { passive: true });
-});
