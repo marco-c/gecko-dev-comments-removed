@@ -611,7 +611,8 @@ function makeFilteringListener(eventType, listener)
   
   
   let eventTypes = ["mousedown", "mouseup", "click"];
-  if (eventTypes.indexOf(eventType) == -1) {
+  if (!eventTypes.includes(eventType) || !listener ||
+      (typeof listener != "object" && typeof listener != "function")) {
     return listener;
   }
 
