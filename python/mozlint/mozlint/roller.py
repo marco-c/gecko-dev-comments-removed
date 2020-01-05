@@ -25,7 +25,7 @@ from .vcs import VCSFiles
 def _run_linters(queue, paths, **lintargs):
     parse = Parser()
     results = defaultdict(list)
-    return_code = 0
+    failed = []
 
     while True:
         try:
@@ -36,7 +36,7 @@ def _run_linters(queue, paths, **lintargs):
             
             linter_path = queue.get(False)
         except (Empty, IOError):
-            return results, return_code
+            return results, failed
 
         
         
@@ -48,7 +48,7 @@ def _run_linters(queue, paths, **lintargs):
 
         if not isinstance(res, (list, tuple)):
             if res:
-                return_code = 1
+                failed.append(linter['name'])
             continue
 
         for r in res:
@@ -84,7 +84,8 @@ class LintRoller(object):
         self.lintargs = lintargs
         self.lintargs['root'] = root or self.vcs.root or os.getcwd()
 
-        self.return_code = None
+        
+        self.failed = None
 
     def read(self, paths):
         """Parse one or more linters and add them to the registry.
@@ -143,12 +144,12 @@ class LintRoller(object):
         
         
         signal.signal(signal.SIGINT, signal.SIG_IGN)
-        self.return_code = 0
+        self.failed = []
         for worker in workers:
             
-            results, return_code = worker.get()
-            if results or return_code:
-                self.return_code = 1
+            results, failed = worker.get()
+            if failed:
+                self.failed.extend(failed)
             for k, v in results.iteritems():
                 all_results[k].extend(v)
         return all_results
