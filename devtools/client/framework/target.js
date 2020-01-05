@@ -14,6 +14,8 @@ const { XPCOMUtils } = require("resource://gre/modules/XPCOMUtils.jsm");
 loader.lazyRequireGetter(this, "DebuggerServer", "devtools/server/main", true);
 loader.lazyRequireGetter(this, "DebuggerClient",
   "devtools/shared/client/main", true);
+loader.lazyRequireGetter(this, "gDevTools",
+  "devtools/client/framework/devtools", true);
 
 const targets = new WeakMap();
 const promiseTargets = new WeakMap();
@@ -21,7 +23,7 @@ const promiseTargets = new WeakMap();
 
 
 
-exports.TargetFactory = {
+const TargetFactory = exports.TargetFactory = {
   
 
 
@@ -454,6 +456,7 @@ TabTarget.prototype = {
     this.tab.addEventListener("TabClose", this);
     this.tab.parentNode.addEventListener("TabSelect", this);
     this.tab.ownerDocument.defaultView.addEventListener("unload", this);
+    this.tab.addEventListener("TabRemotenessChange", this);
   },
 
   
@@ -467,6 +470,7 @@ TabTarget.prototype = {
     this._tab.ownerDocument.defaultView.removeEventListener("unload", this);
     this._tab.removeEventListener("TabClose", this);
     this._tab.parentNode.removeEventListener("TabSelect", this);
+    this._tab.removeEventListener("TabRemotenessChange", this);
   },
 
   
@@ -548,7 +552,36 @@ TabTarget.prototype = {
           this.emit("hidden", event);
         }
         break;
+      case "TabRemotenessChange":
+        this.onRemotenessChange();
+        break;
     }
+  },
+
+  
+  
+  
+  onRemotenessChange: function () {
+    
+    
+    
+    if (this._tab.isReponsiveDesignMode) {
+      return;
+    }
+
+    
+    let tab = this._tab;
+    let onToolboxDestroyed = (event, target) => {
+      if (target != this) {
+        return;
+      }
+      gDevTools.off("toolbox-destroyed", target);
+
+      
+      let newTarget = TargetFactory.forTab(tab);
+      gDevTools.showToolbox(newTarget);
+    };
+    gDevTools.on("toolbox-destroyed", onToolboxDestroyed);
   },
 
   

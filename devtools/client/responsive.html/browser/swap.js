@@ -52,6 +52,8 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
   return {
 
     start: Task.async(function* () {
+      tab.isReponsiveDesignMode = true;
+
       
       freezeNavigationState(tab);
 
@@ -150,6 +152,8 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
       
       
       tab.linkedBrowser.frameLoader.activateRemoteFrame();
+
+      delete tab.isReponsiveDesignMode;
     },
 
   };
