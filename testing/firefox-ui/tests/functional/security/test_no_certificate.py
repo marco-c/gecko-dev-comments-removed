@@ -39,7 +39,7 @@ class TestNoCertificate(PuppeteerMixin, MarionetteTestCase):
         self.assertFalse(favicon_hidden, 'The identity icon is visible')
 
         
-        self.assertEqual(self.locationbar.identity_organization_label.get_attribute('value'), '',
+        self.assertEqual(self.locationbar.identity_organization_label.get_property('value'), '',
                          'The organization has no label')
 
         
@@ -70,12 +70,12 @@ class TestNoCertificate(PuppeteerMixin, MarionetteTestCase):
 
         
         self.assertIn(urlparse(self.url).hostname,
-                      page_info.deck.security.domain.get_attribute('value'))
+                      page_info.deck.security.domain.get_property('value'))
 
         
-        self.assertEqual(page_info.deck.security.owner.get_attribute('value'),
+        self.assertEqual(page_info.deck.security.owner.get_property('value'),
                          page_info.localize_property('securityNoOwner'))
 
         
-        self.assertEqual(page_info.deck.security.verifier.get_attribute('value'),
+        self.assertEqual(page_info.deck.security.verifier.get_property('value'),
                          page_info.localize_property('notset'))
