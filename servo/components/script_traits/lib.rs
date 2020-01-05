@@ -159,6 +159,25 @@ pub enum MouseButton {
 }
 
 
+#[derive(Clone, Copy, Debug)]
+pub enum TouchEventType {
+    
+    Down,
+    
+    Move,
+    
+    Up,
+    
+    Cancel,
+}
+
+
+
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct TouchId(pub i32);
+
+
 pub enum CompositorEvent {
     
     ResizeEvent(WindowSizeData),
@@ -171,11 +190,7 @@ pub enum CompositorEvent {
     
     MouseMoveEvent(Point2D<f32>),
     
-    TouchDownEvent(i32, Point2D<f32>),
-    
-    TouchMoveEvent(i32, Point2D<f32>),
-    
-    TouchUpEvent(i32, Point2D<f32>),
+    TouchEvent(TouchEventType, TouchId, Point2D<f32>),
     
     KeyEvent(Key, KeyState, KeyModifiers),
 }

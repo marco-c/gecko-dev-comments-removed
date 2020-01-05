@@ -272,12 +272,6 @@ impl DebugOptions {
     pub fn new(debug_string: &str) -> Result<DebugOptions, &str> {
         let mut debug_options = DebugOptions::default();
 
-        
-        
-        if cfg!(target_os = "android") {
-            debug_options.convert_mouse_to_touch = true;
-        }
-
         for option in debug_string.split(',') {
             match option {
                 "help" => debug_options.help = true,
