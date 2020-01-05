@@ -20,9 +20,7 @@ use std::cell::Cell;
 use std::mem;
 use std::cmp::PartialEq;
 use std::ptr;
-use std::ptr::null;
 use std::slice;
-use std::str;
 use js::glue::{js_IsObjectProxyClass, js_IsFunctionProxyClass, IsProxyHandlerFamily};
 use js::glue::{GetGlobalForObjectCrossCompartment, UnwrapObject, GetProxyHandlerExtra};
 use js::glue::{IsWrapper, RUST_JSID_TO_STRING, RUST_JSID_IS_INT};
@@ -54,7 +52,7 @@ use js;
 #[allow(raw_pointer_deriving)]
 #[deriving(Encodable)]
 pub struct GlobalStaticData {
-    pub windowproxy_handler: Untraceable<*libc::c_void>,
+    pub windowproxy_handler: Untraceable<*const libc::c_void>,
 }
 
 pub fn GlobalStaticData() -> GlobalStaticData {
@@ -63,14 +61,14 @@ pub fn GlobalStaticData() -> GlobalStaticData {
     }
 }
 
-/// Returns whether the given `clasp` is one for a DOM object.
-fn is_dom_class(clasp: *JSClass) -> bool {
+
+fn is_dom_class(clasp: *const JSClass) -> bool {
     unsafe {
         ((*clasp).flags & js::JSCLASS_IS_DOMJSCLASS) != 0
     }
 }
 
-/// Returns whether `obj` is a DOM object implemented as a proxy.
+
 pub fn is_dom_proxy(obj: *mut JSObject) -> bool {
     unsafe {
         (js_IsObjectProxyClass(obj) || js_IsFunctionProxyClass(obj)) &&
@@ -78,13 +76,13 @@ pub fn is_dom_proxy(obj: *mut JSObject) -> bool {
     }
 }
 
-/// Returns the index of the slot wherein a pointer to the reflected DOM object
-/// is stored.
-///
-/// Fails if `obj` is not a DOM object.
+
+
+
+
 pub unsafe fn dom_object_slot(obj: *mut JSObject) -> u32 {
     let clasp = JS_GetClass(obj);
-    if is_dom_class(clasp) {
+    if is_dom_class(&*clasp) {
         DOM_OBJECT_SLOT as u32
     } else {
         assert!(is_dom_proxy(obj));
@@ -92,36 +90,36 @@ pub unsafe fn dom_object_slot(obj: *mut JSObject) -> u32 {
     }
 }
 
-/// Get the DOM object from the given reflector.
-pub unsafe fn unwrap<T>(obj: *mut JSObject) -> *T {
+
+pub unsafe fn unwrap<T>(obj: *mut JSObject) -> *const T {
     let slot = dom_object_slot(obj);
     let val = JS_GetReservedSlot(obj, slot);
-    val.to_private() as *T
+    val.to_private() as *const T
 }
 
-/// Get the `DOMClass` from `obj`, or `Err(())` if `obj` is not a DOM object.
+
 pub unsafe fn get_dom_class(obj: *mut JSObject) -> Result<DOMClass, ()> {
     let clasp = JS_GetClass(obj);
-    if is_dom_class(clasp) {
+    if is_dom_class(&*clasp) {
         debug!("plain old dom object");
-        let domjsclass: *DOMJSClass = clasp as *DOMJSClass;
+        let domjsclass: *const DOMJSClass = clasp as *const DOMJSClass;
         return Ok((*domjsclass).dom_class);
     }
     if is_dom_proxy(obj) {
         debug!("proxy dom object");
-        let dom_class: *DOMClass = GetProxyHandlerExtra(obj) as *DOMClass;
+        let dom_class: *const DOMClass = GetProxyHandlerExtra(obj) as *const DOMClass;
         return Ok(*dom_class);
     }
     debug!("not a dom object");
     return Err(());
 }
 
-/// Get a `JS<T>` for the given DOM object, unwrapping any wrapper around it
-/// first, and checking if the object is of the correct type.
-///
-/// Returns Err(()) if `obj` is an opaque security wrapper or if the object is
-/// not a reflector for a DOM object of the given type (as defined by the
-/// proto_id and proto_depth).
+
+
+
+
+
+
 pub fn unwrap_jsmanaged<T: Reflectable>(mut obj: *mut JSObject,
                                         proto_id: PrototypeList::id::ID,
                                         proto_depth: uint) -> Result<JS<T>, ()> {
@@ -129,7 +127,7 @@ pub fn unwrap_jsmanaged<T: Reflectable>(mut obj: *mut JSObject,
         let dom_class = get_dom_class(obj).or_else(|_| {
             if IsWrapper(obj) == 1 {
                 debug!("found wrapper");
-                obj = UnwrapObject(obj, /* stopAtOuter = */ 0, ptr::null());
+                obj = UnwrapObject(obj,  0, ptr::mut_null());
                 if obj.is_null() {
                     debug!("unwrapping security wrapper failed");
                     Err(())
@@ -156,25 +154,25 @@ pub fn unwrap_jsmanaged<T: Reflectable>(mut obj: *mut JSObject,
     }
 }
 
-/// Leak the given pointer.
-pub unsafe fn squirrel_away_unique<T>(x: Box<T>) -> *T {
+
+pub unsafe fn squirrel_away_unique<T>(x: Box<T>) -> *const T {
     mem::transmute(x)
 }
 
-/// Convert the given `JSString` to a `DOMString`. Fails if the string does not
-/// contain valid UTF-16.
+
+
 pub fn jsstring_to_str(cx: *mut JSContext, s: *mut JSString) -> DOMString {
     unsafe {
         let mut length = 0;
         let chars = JS_GetStringCharsAndLength(cx, s, &mut length);
         slice::raw::buf_as_slice(chars, length as uint, |char_vec| {
-            str::from_utf16(char_vec).unwrap()
+            String::from_utf16(char_vec).unwrap()
         })
     }
 }
 
-/// Convert the given `jsid` to a `DOMString`. Fails if the `jsid` is not a
-/// string, or if the string does not contain valid UTF-16.
+
+
 pub fn jsid_to_str(cx: *mut JSContext, id: jsid) -> DOMString {
     unsafe {
         assert!(RUST_JSID_IS_STRING(id) != 0);
@@ -182,29 +180,29 @@ pub fn jsid_to_str(cx: *mut JSContext, id: jsid) -> DOMString {
     }
 }
 
-/// The index of the slot wherein a pointer to the reflected DOM object is
-/// stored for non-proxy bindings.
-// We use slot 0 for holding the raw object.  This is safe for both
-// globals and non-globals.
+
+
+
+
 pub static DOM_OBJECT_SLOT: uint = 0;
 static DOM_PROXY_OBJECT_SLOT: uint = js::JSSLOT_PROXY_PRIVATE as uint;
 
-// NOTE: This is baked into the Ion JIT as 0 in codegen for LGetDOMProperty and
-// LSetDOMProperty. Those constants need to be changed accordingly if this value
-// changes.
+
+
+
 static DOM_PROTO_INSTANCE_CLASS_SLOT: u32 = 0;
 
-/// The index of the slot that contains a reference to the ProtoOrIfaceArray.
-// All DOM globals must have a slot at DOM_PROTOTYPE_SLOT.
+
+
 pub static DOM_PROTOTYPE_SLOT: u32 = js::JSCLASS_GLOBAL_SLOT_COUNT;
 
-/// The flag set on the `JSClass`es for DOM global objects.
-// NOTE: This is baked into the Ion JIT as 0 in codegen for LGetDOMProperty and
-// LSetDOMProperty. Those constants need to be changed accordingly if this value
-// changes.
+
+
+
+
 pub static JSCLASS_DOM_GLOBAL: u32 = js::JSCLASS_USERBIT1;
 
-/// Representation of an IDL constant value.
+
 #[deriving(Clone)]
 pub enum ConstantVal {
     IntVal(i32),
@@ -215,17 +213,17 @@ pub enum ConstantVal {
     VoidVal
 }
 
-/// Representation of an IDL constant.
+
 #[deriving(Clone)]
 pub struct ConstantSpec {
     pub name: &'static [u8],
     pub value: ConstantVal
 }
 
-/// The struct that holds inheritance information for DOM object reflectors.
+
 pub struct DOMClass {
-    /// A list of interfaces that this object implements, in order of decreasing
-    /// derivedness.
+    
+    
     pub interface_chain: [PrototypeList::id::ID, ..MAX_PROTO_CHAIN_LENGTH]
 }
 
@@ -265,23 +263,22 @@ pub fn CreateInterfaceObjects2(cx: *mut JSContext, global: *mut JSObject, receiv
                                protoProto: *mut JSObject,
                                protoClass: &'static JSClass,
                                constructor: Option<(NonNullJSNative, &'static str, u32)>,
-                               domClass: *DOMClass,
+                               domClass: *const DOMClass,
                                members: &'static NativeProperties) -> *mut JSObject {
     let proto = CreateInterfacePrototypeObject(cx, global, protoProto,
                                                protoClass, members);
 
     unsafe {
         JS_SetReservedSlot(proto, DOM_PROTO_INSTANCE_CLASS_SLOT,
-                           PrivateValue(domClass as *libc::c_void));
+                           PrivateValue(domClass as *const libc::c_void));
     }
 
     match constructor {
         Some((native, name, nargs)) => {
-            name.to_c_str().with_ref(|s| {
-                CreateInterfaceObject(cx, global, receiver,
-                                      native, nargs, proto,
-                                      members, s)
-            })
+            let s = name.to_c_str();
+            CreateInterfaceObject(cx, global, receiver,
+                                  native, nargs, proto,
+                                  members, s.as_ptr())
         },
         None => (),
     }
@@ -295,7 +292,7 @@ fn CreateInterfaceObject(cx: *mut JSContext, global: *mut JSObject, receiver: *m
                          constructorNative: NonNullJSNative,
                          ctorNargs: u32, proto: *mut JSObject,
                          members: &'static NativeProperties,
-                         name: *libc::c_char) {
+                         name: *const libc::c_char) {
     unsafe {
         let fun = JS_NewFunction(cx, Some(constructorNative), ctorNargs,
                                  JSFUN_CONSTRUCTOR, global, name);
@@ -347,7 +344,7 @@ fn DefineConstants(cx: *mut JSContext, obj: *mut JSObject, constants: &'static [
             VoidVal => UndefinedValue(),
         };
         unsafe {
-            assert!(JS_DefineProperty(cx, obj, spec.name.as_ptr() as *libc::c_char,
+            assert!(JS_DefineProperty(cx, obj, spec.name.as_ptr() as *const libc::c_char,
                                       jsval, None, None,
                                       JSPROP_ENUMERATE | JSPROP_READONLY |
                                       JSPROP_PERMANENT) != 0);
@@ -380,7 +377,7 @@ fn CreateInterfacePrototypeObject(cx: *mut JSContext, global: *mut JSObject,
                                   protoClass: &'static JSClass,
                                   members: &'static NativeProperties) -> *mut JSObject {
     unsafe {
-        let ourProto = JS_NewObjectWithUniqueType(cx, protoClass, parentProto, global);
+        let ourProto = JS_NewObjectWithUniqueType(cx, protoClass, &*parentProto, &*global);
         assert!(ourProto.is_not_null());
 
         match members.methods {
@@ -418,7 +415,7 @@ pub fn initialize_global(global: *mut JSObject) {
         let box_ = squirrel_away_unique(protoArray);
         JS_SetReservedSlot(global,
                            DOM_PROTOTYPE_SLOT,
-                           PrivateValue(box_ as *libc::c_void));
+                           PrivateValue(box_ as *const libc::c_void));
     }
 }
 
@@ -462,7 +459,7 @@ impl Reflector {
     /// Used by Temporary values to root the reflector, as required by the JSAPI rooting
     /// APIs.
     pub fn rootable(&self) -> *mut *mut JSObject {
-        &self.object as *Cell<*mut JSObject>
+        &self.object as *const Cell<*mut JSObject>
                      as *mut Cell<*mut JSObject>
                      as *mut *mut JSObject
     }
@@ -544,7 +541,7 @@ pub fn FindEnumStringIndex(cx: *mut JSContext,
         Ok(values.iter().position(|value| {
             value.len() == length as uint &&
             range(0, length as uint).all(|j| {
-                value[j] as u16 == *chars.offset(j as int)
+                value.as_bytes()[j] as u16 == *chars.offset(j as int)
             })
         }))
     }
@@ -560,17 +557,13 @@ pub fn get_dictionary_property(cx: *mut JSContext,
     fn has_property(cx: *mut JSContext, object: *mut JSObject, property: &CString,
                     found: &mut JSBool) -> bool {
         unsafe {
-            property.with_ref(|s| {
-                JS_HasProperty(cx, object, s, found) != 0
-            })
+            JS_HasProperty(cx, object, property.as_ptr(), found) != 0
         }
     }
     fn get_property(cx: *mut JSContext, object: *mut JSObject, property: &CString,
                     value: &mut JSVal) -> bool {
         unsafe {
-            property.with_ref(|s| {
-                JS_GetProperty(cx, object, s, value) != 0
-            })
+            JS_GetProperty(cx, object, property.as_ptr(), value) != 0
         }
     }
 
@@ -610,7 +603,7 @@ pub fn IsConvertibleToCallbackInterface(cx: *mut JSContext, obj: *mut JSObject) 
 }
 
 /// Create a DOM global object with the given class.
-pub fn CreateDOMGlobal(cx: *mut JSContext, class: *JSClass) -> *mut JSObject {
+pub fn CreateDOMGlobal(cx: *mut JSContext, class: *const JSClass) -> *mut JSObject {
     unsafe {
         let obj = JS_NewGlobalObject(cx, class, ptr::mut_null());
         if obj.is_null() {

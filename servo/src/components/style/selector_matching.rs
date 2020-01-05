@@ -28,10 +28,10 @@ pub enum StylesheetOrigin {
 }
 
 
-static SELECTOR_WHITESPACE: &'static [char] = &'static [' ', '\t', '\n', '\r', '\x0C'];
+static SELECTOR_WHITESPACE: &'static [char] = &[' ', '\t', '\n', '\r', '\x0C'];
 
-/// A newtype struct used to perform lowercase ASCII comparisons without allocating a whole new
-/// string.
+
+
 struct LowercaseAsciiString<'a>(&'a str);
 
 impl<'a> Equiv<DOMString> for LowercaseAsciiString<'a> {
@@ -46,47 +46,47 @@ impl<'a> Hash for LowercaseAsciiString<'a> {
     fn hash(&self, state: &mut SipState) {
         let LowercaseAsciiString(this) = *self;
         for b in this.bytes() {
-            // FIXME(pcwalton): This is a nasty hack for performance. We temporarily violate the
-            // `Ascii` type's invariants by using `to_ascii_nocheck`, but it's OK as we simply
-            // convert to a byte afterward.
+            
+            
+            
             unsafe {
                 state.write(&[b.to_ascii_nocheck().to_lowercase().to_byte()])
             };
         }
-        // Terminate the string with a non-UTF-8 character, to match what the built-in string
-        // `ToBytes` implementation does. (See `libstd/to_bytes.rs`.)
+        
+        
         state.write(&[0xff]);
     }
 }
 
-/// Map node attributes to Rules whose last simple selector starts with them.
-///
-/// e.g.,
-/// "p > img" would go into the set of Rules corresponding to the
-/// element "img"
-/// "a .foo .bar.baz" would go into the set of Rules corresponding to
-/// the class "bar"
-///
-/// Because we match Rules right-to-left (i.e., moving up the tree
-/// from a node), we need to compare the last simple selector in the
-/// Rule with the node.
-///
-/// So, if a node has ID "id1" and classes "foo" and "bar", then all
-/// the rules it matches will have their last simple selector starting
-/// either with "#id1" or with ".foo" or with ".bar".
-///
-/// Hence, the union of the rules keyed on each of node's classes, ID,
-/// element name, etc. will contain the Rules that actually match that
-/// node.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 struct SelectorMap {
-    // TODO: Tune the initial capacity of the HashMap
-    // FIXME: Use interned strings
+    
+    
     id_hash: HashMap<DOMString, Vec<Rule>>,
     class_hash: HashMap<DOMString, Vec<Rule>>,
     element_hash: HashMap<DOMString, Vec<Rule>>,
-    // For Rules that don't have ID, class, or element selectors.
+    
     universal_rules: Vec<Rule>,
-    /// Whether this hash is empty.
+    
     empty: bool,
 }
 
@@ -101,10 +101,10 @@ impl SelectorMap {
         }
     }
 
-    /// Append to `rule_list` all Rules in `self` that match node.
-    ///
-    /// Extract matching rules as per node's ID, classes, tag name, etc..
-    /// Sort the Rules at the end to maintain cascading order.
+    
+    
+    
+    
     fn get_all_matching_rules<E:TElement,
                               N:TNode<E>,
                               V:VecLike<MatchedProperty>>(
@@ -116,7 +116,7 @@ impl SelectorMap {
             return
         }
 
-        // At the end, we're going to sort the rules that we added, so remember where we began.
+        
         let init_len = matching_rules_list.vec_len();
         let element = node.as_element();
         match element.get_attr(&namespace::Null, "id") {
@@ -143,8 +143,8 @@ impl SelectorMap {
             None => {}
         }
 
-        // HTML elements in HTML documents must be matched case-insensitively.
-        // TODO(pradeep): Case-sensitivity depends on the document type.
+        
+        
         SelectorMap::get_matching_rules_from_hash_ignoring_case(node,
                                                                 &self.element_hash,
                                                                 element.get_local_name().as_slice(),
@@ -156,7 +156,7 @@ impl SelectorMap {
                                         matching_rules_list,
                                         shareable);
 
-        // Sort only the rules we just added.
+        
         sort::quicksort(matching_rules_list.vec_mut_slice_from(init_len));
     }
 
@@ -192,7 +192,7 @@ impl SelectorMap {
         }
     }
 
-    /// Adds rules in `rules` that match `node` to the `matching_rules` list.
+    
     fn get_matching_rules<E:TElement,
                           N:TNode<E>,
                           V:VecLike<MatchedProperty>>(
@@ -202,14 +202,14 @@ impl SelectorMap {
                           shareable: &mut bool) {
         for rule in rules.iter() {
             if matches_compound_selector(&*rule.selector, node, shareable) {
-                // TODO(pradeep): Is the cloning inefficient?
+                
                 matching_rules.vec_push(rule.property.clone());
             }
         }
     }
 
-    /// Insert rule into the correct hash.
-    /// Order in which to try: id_hash, class_hash, element_hash, universal_rules.
+    
+    
     fn insert(&mut self, rule: Rule) {
         self.empty = false;
 
@@ -260,13 +260,13 @@ impl SelectorMap {
         self.universal_rules.push(rule);
     }
 
-    /// Retrieve the first ID name in Rule, or None otherwise.
+    
     fn get_id_name(rule: &Rule) -> Option<String> {
         let simple_selector_sequence = &rule.selector.simple_selectors;
         for ss in simple_selector_sequence.iter() {
             match *ss {
-                // TODO(pradeep): Implement case-sensitivity based on the document type and quirks
-                // mode.
+                
+                
                 IDSelector(ref id) => return Some(id.as_slice().clone().to_string()),
                 _ => {}
             }
@@ -274,13 +274,13 @@ impl SelectorMap {
         return None
     }
 
-    /// Retrieve the FIRST class name in Rule, or None otherwise.
+    
     fn get_class_name(rule: &Rule) -> Option<String> {
         let simple_selector_sequence = &rule.selector.simple_selectors;
         for ss in simple_selector_sequence.iter() {
             match *ss {
-                // TODO(pradeep): Implement case-sensitivity based on the document type and quirks
-                // mode.
+                
+                
                 ClassSelector(ref class) => return Some(class.clone()),
                 _ => {}
             }
@@ -288,13 +288,13 @@ impl SelectorMap {
         return None
     }
 
-    /// Retrieve the name if it is a type selector, or None otherwise.
+    
     fn get_element_name(rule: &Rule) -> Option<String> {
         let simple_selector_sequence = &rule.selector.simple_selectors;
         for ss in simple_selector_sequence.iter() {
             match *ss {
-                // HTML elements in HTML documents must be matched case-insensitively
-                // TODO: case-sensitivity depends on the document type
+                
+                
                 LocalNameSelector(ref name) => return Some(name.as_slice().to_ascii_lower()),
                 _ => {}
             }
@@ -344,9 +344,9 @@ impl Stylist {
         // Take apart the StyleRule into individual Rules and insert
         // them into the SelectorMap of that priority.
         macro_rules! append(
-            ($priority: ident) => {
-                if style_rule.declarations.$priority.len() > 0 {
-                    for selector in style_rule.selectors.iter() {
+            ($style_rule: ident, $priority: ident) => {
+                if $style_rule.declarations.$priority.len() > 0 {
+                    for selector in $style_rule.selectors.iter() {
                         let map = match selector.pseudo_element {
                             None => &mut element_map,
                             Some(Before) => &mut before_map,
@@ -356,7 +356,7 @@ impl Stylist {
                                 selector: selector.compound_selectors.clone(),
                                 property: MatchedProperty {
                                     specificity: selector.specificity,
-                                    declarations: style_rule.declarations.$priority.clone(),
+                                    declarations: $style_rule.declarations.$priority.clone(),
                                     source_order: rules_source_order,
                                 },
                         });
@@ -367,8 +367,8 @@ impl Stylist {
 
         let device = &Device { media_type: Screen };  // TODO, use Print when printing
         iter_style_rules(stylesheet.rules.as_slice(), device, |style_rule| {
-            append!(normal);
-            append!(important);
+            append!(style_rule, normal);
+            append!(style_rule, important);
             rules_source_order += 1;
         });
         self.rules_source_order = rules_source_order;
@@ -511,10 +511,10 @@ impl Eq for MatchedProperty {}
 
 impl PartialOrd for MatchedProperty {
     #[inline]
-    fn lt(&self, other: &MatchedProperty) -> bool {
+    fn partial_cmp(&self, other: &MatchedProperty) -> Option<Ordering> {
         let this_rank = (self.specificity, self.source_order);
         let other_rank = (other.specificity, other.source_order);
-        this_rank < other_rank
+        this_rank.partial_cmp(&other_rank)
     }
 }
 

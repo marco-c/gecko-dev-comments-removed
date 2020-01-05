@@ -2,9 +2,7 @@
 
 
 
-#![crate_id = "github.com/mozilla/servo#compositing:0.1"]
-#![crate_type = "lib"]
-#![crate_type = "dylib"]
+#![crate_name = "compositing"]
 #![crate_type = "rlib"]
 
 #![comment = "The Servo Parallel Browser Project"]

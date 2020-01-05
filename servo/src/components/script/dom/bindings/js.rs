@@ -106,7 +106,7 @@ impl<T: Reflectable> Temporary<T> {
 
 
 pub struct JS<T> {
-    ptr: *T
+    ptr: *const T
 }
 
 impl<T> PartialEq for JS<T> {
@@ -125,11 +125,11 @@ impl <T> Clone for JS<T> {
 }
 
 impl JS<Node> {
-    /// Create a new JS-owned value wrapped from an address known to be a `Node` pointer.
+    
     pub unsafe fn from_trusted_node_address(inner: TrustedNodeAddress) -> JS<Node> {
         let TrustedNodeAddress(addr) = inner;
         JS {
-            ptr: addr as *Node
+            ptr: addr as *const Node
         }
     }
 }
@@ -138,21 +138,21 @@ impl JS<XMLHttpRequest> {
     pub unsafe fn from_trusted_xhr_address(inner: TrustedXHRAddress) -> JS<XMLHttpRequest> {
         let TrustedXHRAddress(addr) = inner;
         JS {
-            ptr: addr as *XMLHttpRequest
+            ptr: addr as *const XMLHttpRequest
         }
     }
 }
 
 impl<T: Reflectable> JS<T> {
-    /// Create a new JS-owned value wrapped from a raw Rust pointer.
-    pub unsafe fn from_raw(raw: *T) -> JS<T> {
+    
+    pub unsafe fn from_raw(raw: *const T) -> JS<T> {
         JS {
             ptr: raw
         }
     }
 
 
-    /// Root this JS-owned value to prevent its collection as garbage.
+    
     pub fn root<'a, 'b>(&self) -> Root<'a, 'b, T> {
         let collection = StackRoots.get().unwrap();
         unsafe {
@@ -169,8 +169,8 @@ impl<T: Assignable<U>, U: Reflectable> JS<U> {
     }
 }
 
-//XXXjdm This is disappointing. This only gets called from trace hooks, in theory,
-//       so it's safe to assume that self is rooted and thereby safe to access.
+
+
 impl<T: Reflectable> Reflectable for JS<T> {
     fn reflector<'a>(&'a self) -> &'a Reflector {
         unsafe {
@@ -180,23 +180,23 @@ impl<T: Reflectable> Reflectable for JS<T> {
 }
 
 impl<T: Reflectable> JS<T> {
-    /// Returns an unsafe pointer to the interior of this JS object without touching the borrow
-    /// flags. This is the only method that be safely accessed from layout. (The fact that this
-    /// is unsafe is what necessitates the layout wrappers.)
+    
+    
+    
     pub unsafe fn unsafe_get(&self) -> *mut T {
         mem::transmute_copy(&self.ptr)
     }
 
-    /// Store an unrooted value in this field. This is safe under the assumption that JS<T>
-    /// values are only used as fields in DOM types that are reachable in the GC graph,
-    /// so this unrooted value becomes transitively rooted for the lifetime of its new owner.
+    
+    
+    
     pub fn assign(&mut self, val: Temporary<T>) {
         *self = unsafe { val.inner() };
     }
 }
 
 impl<From, To> JS<From> {
-    //XXXjdm It would be lovely if this could be private.
+    
     pub unsafe fn transmute(self) -> JS<To> {
         mem::transmute(self)
     }
@@ -207,7 +207,7 @@ impl<From, To> JS<From> {
 }
 
 
-/// Get an `Option<JSRef<T>>` out of an `Option<Root<T>>`
+
 pub trait RootedReference<T> {
     fn root_ref<'a>(&'a self) -> Option<JSRef<'a, T>>;
 }
@@ -218,7 +218,7 @@ impl<'a, 'b, T: Reflectable> RootedReference<T> for Option<Root<'a, 'b, T>> {
     }
 }
 
-/// Get an `Option<Option<JSRef<T>>>` out of an `Option<Option<Root<T>>>`
+
 pub trait OptionalRootedReference<T> {
     fn root_ref<'a>(&'a self) -> Option<Option<JSRef<'a, T>>>;
 }
@@ -229,10 +229,10 @@ impl<'a, 'b, T: Reflectable> OptionalRootedReference<T> for Option<Option<Root<'
     }
 }
 
-/// Trait that allows extracting a `JS<T>` value from a variety of rooting-related containers,
-/// which in general is an unsafe operation since they can outlive the rooted lifetime of the
-/// original value.
-/*definitely not public*/ trait Assignable<T> {
+
+
+
+ trait Assignable<T> {
     unsafe fn get_js(&self) -> JS<T>;
 }
 
@@ -254,8 +254,8 @@ impl<T: Reflectable> Assignable<T> for Temporary<T> {
     }
 }
 
-/// Assign an optional rootable value (either of `JS<T>` or `Temporary<T>`) to an optional
-/// field of a DOM type (ie. `Option<JS<T>>`)
+
+
 pub trait OptionalSettable<T> {
     fn assign(&self, val: Option<T>);
 }
@@ -267,7 +267,7 @@ impl<T: Assignable<U>, U: Reflectable> OptionalSettable<T> for Cell<Option<JS<U>
 }
 
 
-/// Root a rootable `Option` type (used for `Option<Temporary<T>>`)
+
 pub trait OptionalRootable<T> {
     fn root<'a, 'b>(self) -> Option<Root<'a, 'b, T>>;
 }
@@ -278,7 +278,7 @@ impl<T: Reflectable> OptionalRootable<T> for Option<Temporary<T>> {
     }
 }
 
-/// Return an unrooted type for storing in optional DOM fields
+
 pub trait OptionalUnrootable<T> {
     fn unrooted(&self) -> Option<JS<T>>;
 }
@@ -289,7 +289,7 @@ impl<'a, T: Reflectable> OptionalUnrootable<T> for Option<JSRef<'a, T>> {
     }
 }
 
-/// Root a rootable `Option` type (used for `Option<JS<T>>`)
+
 pub trait OptionalRootedRootable<T> {
     fn root<'a, 'b>(&self) -> Option<Root<'a, 'b, T>>;
 }
@@ -300,7 +300,7 @@ impl<T: Reflectable> OptionalRootedRootable<T> for Option<JS<T>> {
     }
 }
 
-/// Root a rootable `Option<Option>` type (used for `Option<Option<JS<T>>>`)
+
 pub trait OptionalOptionalRootedRootable<T> {
     fn root<'a, 'b>(&self) -> Option<Option<Root<'a, 'b, T>>>;
 }
@@ -312,7 +312,7 @@ impl<T: Reflectable> OptionalOptionalRootedRootable<T> for Option<Option<JS<T>>>
 }
 
 
-/// Root a rootable `Result` type (any of `Temporary<T>` or `JS<T>`)
+
 pub trait ResultRootable<T,U> {
     fn root<'a, 'b>(self) -> Result<Root<'a, 'b, T>, U>;
 }
@@ -329,9 +329,9 @@ impl<T: Reflectable, U> ResultRootable<T, U> for Result<JS<T>, U> {
     }
 }
 
-/// Provides a facility to push unrooted values onto lists of rooted values. This is safe
-/// under the assumption that said lists are reachable via the GC graph, and therefore the
-/// new values are transitively rooted for the lifetime of their new owner.
+
+
+
 pub trait TemporaryPushable<T> {
     fn push_unrooted(&mut self, val: &T);
     fn insert_unrooted(&mut self, index: uint, val: &T);
@@ -347,32 +347,32 @@ impl<T: Assignable<U>, U: Reflectable> TemporaryPushable<T> for Vec<JS<U>> {
     }
 }
 
-/// An opaque, LIFO rooting mechanism.
+
 pub struct RootCollection {
     roots: RefCell<Vec<*mut JSObject>>,
 }
 
 impl RootCollection {
-    /// Create an empty collection of roots
+    
     pub fn new() -> RootCollection {
         RootCollection {
             roots: RefCell::new(vec!()),
         }
     }
 
-    /// Create a new stack-bounded root that will not outlive this collection
+    
     fn new_root<'a, 'b, T: Reflectable>(&'a self, unrooted: &JS<T>) -> Root<'a, 'b, T> {
         Root::new(self, unrooted)
     }
 
-    /// Track a stack-based root to ensure LIFO root ordering
+    
     fn root<'a, 'b, T: Reflectable>(&self, untracked: &Root<'a, 'b, T>) {
         let mut roots = self.roots.borrow_mut();
         roots.push(untracked.js_ptr);
         debug!("  rooting {:?}", untracked.js_ptr);
     }
 
-    /// Stop tracking a stack-based root, asserting if LIFO root ordering has been violated
+    
     fn unroot<'a, 'b, T: Reflectable>(&self, rooted: &Root<'a, 'b, T>) {
         let mut roots = self.roots.borrow_mut();
         debug!("unrooting {:?} (expecting {:?}", roots.last().unwrap(), rooted.js_ptr);
@@ -442,7 +442,7 @@ impl<'a, T: Reflectable> Deref<T> for JSRef<'a, T> {
 
 
 pub struct JSRef<'a, T> {
-    ptr: *T,
+    ptr: *const T,
     chain: ContravariantLifetime<'a>,
 }
 

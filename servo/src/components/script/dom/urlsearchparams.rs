@@ -18,7 +18,7 @@ use encoding::types::{Encoding, EncodeReplace};
 
 use std::cell::RefCell;
 use std::collections::hashmap::HashMap;
-use std::num::ToStrRadix;
+use std::fmt::radix;
 use std::ascii::OwnedStrAsciiExt;
 
 #[deriving(Encodable)]
@@ -43,10 +43,10 @@ impl URLSearchParams {
         let usp = URLSearchParams::new(global).root();
         match init {
             Some(eString(_s)) => {
-                
-                
-                
-                
+                // XXXManishearth we need to parse the input here
+                // http://url.spec.whatwg.org/#concept-urlencoded-parser
+                // We can use rust-url's implementation here:
+                // https://github.com/SimonSapin/rust-url/blob/master/form_urlencoded.rs#L29
             },
             Some(eURLSearchParams(u)) => {
                 let u = u.root();
@@ -98,12 +98,12 @@ pub trait URLSearchParamsHelpers {
 
 impl URLSearchParamsHelpers for URLSearchParams {
     fn serialize(&self, encoding: Option<&'static Encoding>) -> Vec<u8> {
-        
+        // http://url.spec.whatwg.org/#concept-urlencoded-serializer
         fn serialize_string(value: &DOMString, encoding: &'static Encoding) -> Vec<u8> {
-            
+            // http://url.spec.whatwg.org/#concept-urlencoded-byte-serializer
 
             let value = value.as_slice();
-            
+            // XXXManishearth should this be a strict encoding? Can unwrap()ing the result fail?
             let value = encoding.encode(value, EncodeReplace).unwrap();
             let mut buf = vec!();
             for i in value.iter() {
@@ -113,9 +113,11 @@ impl URLSearchParamsHelpers for URLSearchParams {
                     0x30 .. 0x39 | 0x41 .. 0x5A |
                     0x5F | 0x61..0x7A => vec!(*i),
                     a => {
-                        
-                        let mut encoded = vec!(0x25); 
-                        encoded.push_all(a.to_str_radix(16).into_ascii_upper().as_bytes());
+                        // http://url.spec.whatwg.org/#percent-encode
+                        let mut encoded = vec!(0x25); // %
+                        let s = format!("{}", radix(a, 16)).into_ascii_upper();
+                        let bytes = s.as_bytes();
+                        encoded.push_all(bytes);
                         encoded
                     }
                 };

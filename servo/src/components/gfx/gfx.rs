@@ -2,12 +2,10 @@
 
 
 
-#![crate_id = "github.com/mozilla/servo#gfx:0.1"]
-#![crate_type = "lib"]
-#![crate_type = "dylib"]
+#![crate_name = "gfx"]
 #![crate_type = "rlib"]
 
-#![feature(globs, macro_rules, phase)]
+#![feature(globs, macro_rules, phase, unsafe_destructor)]
 
 #![feature(phase)]
 #[phase(plugin, link)]

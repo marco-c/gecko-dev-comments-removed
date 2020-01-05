@@ -164,7 +164,7 @@ pub struct SharedLayoutData {
 pub struct LayoutData {
     chan: Option<LayoutChan>,
     _shared_data: SharedLayoutData,
-    _data: *(),
+    _data: *const (),
 }
 
 pub struct LayoutDataRef {
@@ -178,13 +178,13 @@ impl LayoutDataRef {
         }
     }
 
-    /// Returns true if there is layout data present.
+    
     #[inline]
     pub fn is_present(&self) -> bool {
         self.data_cell.borrow().is_some()
     }
 
-    /// Take the chan out of the layout data if it is present.
+    
     pub fn take_chan(&self) -> Option<LayoutChan> {
         let mut layout_data = self.data_cell.borrow_mut();
         match *layout_data {
@@ -193,38 +193,38 @@ impl LayoutDataRef {
         }
     }
 
-    /// Borrows the layout data immutably, *asserting that there are no mutators*. Bad things will
-    /// happen if you try to mutate the layout data while this is held. This is the only thread-
-    /// safe layout data accessor.
+    
+    
+    
     #[inline]
-    pub unsafe fn borrow_unchecked(&self) -> *Option<LayoutData> {
+    pub unsafe fn borrow_unchecked(&self) -> *const Option<LayoutData> {
         mem::transmute(&self.data_cell)
     }
 
-    /// Borrows the layout data immutably. This function is *not* thread-safe.
+    
     #[inline]
     pub fn borrow<'a>(&'a self) -> Ref<'a,Option<LayoutData>> {
         self.data_cell.borrow()
     }
 
-    /// Borrows the layout data mutably. This function is *not* thread-safe.
-    ///
-    /// FIXME(pcwalton): We should really put this behind a `MutLayoutView` phantom type, to
-    /// prevent CSS selector matching from mutably accessing nodes it's not supposed to and racing
-    /// on it. This has already resulted in one bug!
+    
+    
+    
+    
+    
     #[inline]
     pub fn borrow_mut<'a>(&'a self) -> RefMut<'a,Option<LayoutData>> {
         self.data_cell.borrow_mut()
     }
 }
 
-/// A trait that represents abstract layout data.
-///
-/// FIXME(pcwalton): Very very unsafe!!! We need to send these back to the layout task to be
-/// destroyed when this node is finalized.
+
+
+
+
 pub trait TLayoutData {}
 
-/// The different types of nodes.
+
 #[deriving(PartialEq,Encodable)]
 pub enum NodeTypeId {
     DoctypeNodeTypeId,
@@ -244,7 +244,7 @@ trait PrivateNodeHelpers {
 }
 
 impl<'a> PrivateNodeHelpers for JSRef<'a, Node> {
-    // http://dom.spec.whatwg.org/#node-is-inserted
+    
     fn node_inserted(&self) {
         assert!(self.parent_node().is_some());
         let document = document_from_node(self).root();
@@ -260,7 +260,7 @@ impl<'a> PrivateNodeHelpers for JSRef<'a, Node> {
         document.deref().content_changed();
     }
 
-    // http://dom.spec.whatwg.org/#node-is-removed
+    
     fn node_removed(&self, parent_in_doc: bool) {
         assert!(self.parent_node().is_none());
         let document = document_from_node(self).root();
@@ -272,13 +272,13 @@ impl<'a> PrivateNodeHelpers for JSRef<'a, Node> {
         document.deref().content_changed();
     }
 
-    //
-    // Pointer stitching
-    //
+    
+    
+    
 
-    /// Adds a new child to the end of this node's list of children.
-    ///
-    /// Fails unless `new_child` is disconnected from the tree.
+    
+    
+    
     fn add_child(&self, new_child: &JSRef<Node>, before: Option<JSRef<Node>>) {
         let doc = self.owner_doc().root();
         doc.deref().wait_until_safe_to_modify_dom();
@@ -319,9 +319,9 @@ impl<'a> PrivateNodeHelpers for JSRef<'a, Node> {
         new_child.parent_node.assign(Some(*self));
     }
 
-    /// Removes the given child from this node's list of children.
-    ///
-    /// Fails unless `child` is a child of this node.
+    
+    
+    
     fn remove_child(&self, child: &JSRef<Node>) {
         let doc = self.owner_doc().root();
         doc.deref().wait_until_safe_to_modify_dom();
@@ -403,12 +403,12 @@ pub trait NodeHelpers {
 }
 
 impl<'a> NodeHelpers for JSRef<'a, Node> {
-    /// Dumps the subtree rooted at this node, for debugging.
+    
     fn dump(&self) {
         self.dump_indent(0);
     }
 
-    /// Dumps the node tree, for debugging, with indentation.
+    
     fn dump_indent(&self, indent: uint) {
         let mut s = String::new();
         for _ in range(0, indent) {
@@ -418,7 +418,7 @@ impl<'a> NodeHelpers for JSRef<'a, Node> {
         s.push_str(self.debug_str().as_slice());
         debug!("{:s}", s);
 
-        // FIXME: this should have a pure version?
+        
         for kid in self.children() {
             kid.dump_indent(indent + 1u)
         }
@@ -538,7 +538,7 @@ impl<'a> NodeHelpers for JSRef<'a, Node> {
     }
 
     fn to_trusted_node_address(&self) -> TrustedNodeAddress {
-        TrustedNodeAddress(self.deref() as *Node as *libc::c_void)
+        TrustedNodeAddress(self.deref() as *const Node as *const libc::c_void)
     }
 
     fn get_bounding_content_box(&self) -> Rect<Au> {
@@ -665,7 +665,7 @@ pub fn from_untrusted_node_address(runtime: *mut JSRuntime, candidate: Untrusted
         if object.is_null() {
             fail!("Attempted to create a `JS<Node>` from an invalid pointer!")
         }
-        let boxed_node: *Node = utils::unwrap(object);
+        let boxed_node: *const Node = utils::unwrap(object);
         Temporary::new(JS::from_raw(boxed_node))
     }
 }
@@ -905,7 +905,7 @@ pub enum CloneChildrenFlag {
     DoNotCloneChildren
 }
 
-fn as_uintptr<T>(t: &T) -> uintptr_t { t as *T as uintptr_t }
+fn as_uintptr<T>(t: &T) -> uintptr_t { t as *const T as uintptr_t }
 
 impl Node {
     pub fn reflect_node<N: Reflectable+NodeBase>
@@ -1918,9 +1918,9 @@ pub fn window_from_node<T: NodeBase>(derived: &JSRef<T>) -> Temporary<Window> {
 }
 
 impl<'a> VirtualMethods for JSRef<'a, Node> {
-    fn super_type<'a>(&'a self) -> Option<&'a VirtualMethods+> {
+    fn super_type<'a>(&'a self) -> Option<&'a VirtualMethods> {
         let eventtarget: &JSRef<EventTarget> = EventTargetCast::from_ref(self);
-        Some(eventtarget as &VirtualMethods+)
+        Some(eventtarget as &VirtualMethods)
     }
 }
 

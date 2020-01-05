@@ -45,17 +45,16 @@ use servo_msg::constellation_msg;
 use servo_net::image_cache_task::ImageCacheTask;
 use servo_net::resource_task::ResourceTask;
 use servo_util::geometry::to_frac_px;
-use servo_util::task::send_on_failure;
+use servo_util::task::spawn_named_with_send_on_failure;
 use std::cell::RefCell;
 use std::comm::{channel, Sender, Receiver};
 use std::mem::replace;
 use std::rc::Rc;
-use std::task::TaskBuilder;
 use url::Url;
 
 use serialize::{Encoder, Encodable};
 
-local_data_key!(pub StackRoots: *RootCollection)
+local_data_key!(pub StackRoots: *const RootCollection)
 
 
 pub enum ScriptMsg {
@@ -116,7 +115,7 @@ pub struct StackRootTLS;
 
 impl StackRootTLS {
     pub fn new(roots: &RootCollection) -> StackRootTLS {
-        StackRoots.replace(Some(roots as *RootCollection));
+        StackRoots.replace(Some(roots as *const RootCollection));
         StackRootTLS
     }
 }
@@ -127,41 +126,41 @@ impl Drop for StackRootTLS {
     }
 }
 
-/// Information for an entire page. Pages are top-level browsing contexts and can contain multiple
-/// frames.
-///
-/// FIXME: Rename to `Page`, following WebKit?
+
+
+
+
 pub struct ScriptTask {
-    /// A handle to the information pertaining to page layout
+    
     page: RefCell<Rc<Page>>,
-    /// A handle to the image cache task.
+    
     image_cache_task: ImageCacheTask,
-    /// A handle to the resource task.
+    
     resource_task: ResourceTask,
 
-    /// The port on which the script task receives messages (load URL, exit, etc.)
+    
     port: Receiver<ScriptMsg>,
-    /// A channel to hand out when some other task needs to be able to respond to a message from
-    /// the script task.
+    
+    
     chan: ScriptChan,
 
-    /// For communicating load url messages to the constellation
+    
     constellation_chan: ConstellationChan,
-    /// A handle to the compositor for communicating ready state messages.
+    
     compositor: Box<ScriptListener>,
 
-    /// The JavaScript runtime.
+    
     js_runtime: js::rust::rt,
-    /// The JSContext.
+    
     js_context: RefCell<Option<Rc<Cx>>>,
 
     mouse_over_targets: RefCell<Option<Vec<JS<Node>>>>
 }
 
-/// In the event of task failure, all data on the stack runs its destructor. However, there
-/// are no reachable, owning pointers to the DOM memory, so it never gets freed by default
-/// when the script task fails. The ScriptMemoryFailsafe uses the destructor bomb pattern
-/// to forcibly tear down the JS compartments for pages associated with the failing ScriptTask.
+
+
+
+
 struct ScriptMemoryFailsafe<'a> {
     owner: Option<&'a ScriptTask>,
 }
@@ -195,7 +194,7 @@ impl<'a> Drop for ScriptMemoryFailsafe<'a> {
 }
 
 impl ScriptTask {
-    /// Creates a new script task.
+    
     pub fn new(id: PipelineId,
                compositor: Box<ScriptListener>,
                layout_chan: LayoutChan,
@@ -208,10 +207,10 @@ impl ScriptTask {
                -> Rc<ScriptTask> {
         let (js_runtime, js_context) = ScriptTask::new_rt_and_cx();
         unsafe {
-            // JS_SetWrapObjectCallbacks clobbers the existing wrap callback,
-            // and JSCompartment::wrap crashes if that happens. The only way
-            // to retrieve the default callback is as the result of
-            // JS_SetWrapObjectCallbacks, which is why we call it twice.
+            
+            
+            
+            
             let callback = JS_SetWrapObjectCallbacks((*js_runtime).ptr,
                                                      None,
                                                      Some(wrap_for_same_compartment),
@@ -268,11 +267,11 @@ impl ScriptTask {
         (**self.js_context.borrow().get_ref()).ptr
     }
 
-    /// Starts the script task. After calling this method, the script task will loop receiving
-    /// messages on its port.
+    
+    
     pub fn start(&self) {
         while self.handle_msgs() {
-            // Go on...
+            
         }
     }
 
@@ -287,10 +286,8 @@ impl ScriptTask {
                   resource_task: ResourceTask,
                   image_cache_task: ImageCacheTask,
                   window_size: WindowSizeData) {
-        let mut builder = TaskBuilder::new().named("ScriptTask");
         let ConstellationChan(const_chan) = constellation_chan.clone();
-        send_on_failure(&mut builder, FailureMsg(failure_msg), const_chan);
-        builder.spawn(proc() {
+        spawn_named_with_send_on_failure("ScriptTask", proc() {
             let script_task = ScriptTask::new(id,
                                               compositor as Box<ScriptListener>,
                                               layout_chan,
@@ -305,7 +302,7 @@ impl ScriptTask {
 
             // This must always be the very last operation performed before the task completes
             failsafe.neuter();
-        });
+        }, FailureMsg(failure_msg), const_chan);
     }
 
     /// Handle incoming control messages.

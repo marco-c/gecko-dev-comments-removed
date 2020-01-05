@@ -2,6 +2,6 @@
 
 
 
-pub fn fptr_is_null(fptr: *u8) -> bool {
+pub fn fptr_is_null(fptr: *const u8) -> bool {
     fptr.is_null()
 }

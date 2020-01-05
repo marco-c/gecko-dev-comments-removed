@@ -73,25 +73,25 @@ pub struct LayoutContext {
     
     
     
-    pub stylist: *Stylist,
+    pub stylist: *const Stylist,
 
-    /// The root node at which we're starting the layout.
+    
     pub reflow_root: OpaqueNode,
 
-    /// The URL.
+    
     pub url: Url,
 
-    /// The command line options.
+    
     pub opts: Opts,
 
-    /// The dirty rectangle, used during display list building.
+    
     pub dirty: Rect<Au>,
 }
 
 #[cfg(not(target_os="android"))]
 impl LayoutContext {
     pub fn font_context<'a>(&'a mut self) -> &'a mut FontContext {
-        // Sanity check.
+        
         {
             let mut task = Local::borrow(None::<Task>);
             match task.maybe_take_runtime::<GreenTask>() {
@@ -113,7 +113,7 @@ impl LayoutContext {
     }
 
     pub fn applicable_declarations_cache<'a>(&'a self) -> &'a mut ApplicableDeclarationsCache {
-        // Sanity check.
+        
         {
             let mut task = Local::borrow(None::<Task>);
             match task.maybe_take_runtime::<GreenTask>() {
@@ -135,7 +135,7 @@ impl LayoutContext {
     }
 
     pub fn style_sharing_candidate_cache<'a>(&'a self) -> &'a mut StyleSharingCandidateCache {
-        // Sanity check.
+        
         {
             let mut task = Local::borrow(None::<Task>);
             match task.maybe_take_runtime::<GreenTask>() {
@@ -158,11 +158,11 @@ impl LayoutContext {
 }
 
 
-// On Android, we don't have the __tls_* functions emitted by rustc, so we
-// need to use the slower local_data functions.
-// Making matters worse, the local_data functions are very particular about
-// enforcing the lifetimes associated with objects that they hold onto,
-// which causes us some trouble we work around as below.
+
+
+
+
+
 #[cfg(target_os="android")]
 impl LayoutContext {
     pub fn font_context<'a>(&'a mut self) -> &'a mut FontContext {

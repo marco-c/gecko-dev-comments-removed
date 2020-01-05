@@ -2,12 +2,11 @@
 
 
 
-#![crate_id = "github.com/mozilla/servo#util:0.1"]
-#![crate_type = "lib"]
-#![crate_type = "dylib"]
+#![crate_name = "util"]
 #![crate_type = "rlib"]
 
-#![feature(macro_rules)]
+
+#![feature(macro_rules,unsafe_destructor)]
 
 #![feature(phase)]
 #[phase(plugin, link)]

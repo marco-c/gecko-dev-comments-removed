@@ -2,9 +2,7 @@
 
 
 
-#![crate_id = "github.com/mozilla/servo#layout_traits:0.1"]
-#![crate_type = "lib"]
-#![crate_type = "dylib"]
+#![crate_name = "layout_traits"]
 #![crate_type = "rlib"]
 
 #![comment = "The Servo Parallel Browser Project"]

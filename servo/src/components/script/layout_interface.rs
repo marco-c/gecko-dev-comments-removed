@@ -65,12 +65,12 @@ pub enum LayoutQuery {
 
 
 
-pub struct TrustedNodeAddress(pub *c_void);
+pub struct TrustedNodeAddress(pub *const c_void);
 
 impl<S: Encoder<E>, E> Encodable<S, E> for TrustedNodeAddress {
     fn encode(&self, s: &mut S) -> Result<(), E> {
         let TrustedNodeAddress(addr) = *self;
-        let node = addr as *Node;
+        let node = addr as *const Node;
         unsafe {
             JS::from_raw(node).encode(s)
         }
@@ -79,7 +79,7 @@ impl<S: Encoder<E>, E> Encodable<S, E> for TrustedNodeAddress {
 
 
 
-pub type UntrustedNodeAddress = *c_void;
+pub type UntrustedNodeAddress = *const c_void;
 
 pub struct ContentBoxResponse(pub Rect<Au>);
 pub struct ContentBoxesResponse(pub Vec<Rect<Au>>);

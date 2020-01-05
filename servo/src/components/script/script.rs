@@ -2,15 +2,13 @@
 
 
 
-#![crate_id = "github.com/mozilla/servo#script:0.1"]
-#![crate_type = "lib"]
-#![crate_type = "dylib"]
+#![crate_name = "script"]
 #![crate_type = "rlib"]
 
 #![comment = "The Servo Parallel Browser Project"]
 #![license = "MPL"]
 
-#![feature(globs, macro_rules, struct_variant, phase)]
+#![feature(globs, macro_rules, struct_variant, phase, unsafe_destructor)]
 
 #![feature(phase)]
 

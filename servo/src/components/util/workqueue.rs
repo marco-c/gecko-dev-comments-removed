@@ -7,13 +7,13 @@
 
 
 
-use native;
+use native::task::NativeTaskBuilder;
 use rand::{Rng, XorShiftRng};
 use std::mem;
 use std::rand::weak_rng;
 use std::sync::atomics::{AtomicUint, SeqCst};
 use std::sync::deque::{Abort, BufferPool, Data, Empty, Stealer, Worker};
-use rustrt::task::TaskOpts;
+use std::task::TaskBuilder;
 
 
 
@@ -31,77 +31,77 @@ pub struct WorkUnit<QueueData, WorkData> {
 
 enum WorkerMsg<QueueData, WorkData> {
     
-    StartMsg(Worker<WorkUnit<QueueData, WorkData>>, *mut AtomicUint, *QueueData),
-    /// Tells the worker to stop. It can be restarted again with a `StartMsg`.
+    StartMsg(Worker<WorkUnit<QueueData, WorkData>>, *mut AtomicUint, *const QueueData),
+    
     StopMsg,
-    /// Tells the worker thread to terminate.
+    
     ExitMsg,
 }
 
-/// Messages to the supervisor.
+
 enum SupervisorMsg<QueueData, WorkData> {
     FinishedMsg,
     ReturnDequeMsg(uint, Worker<WorkUnit<QueueData, WorkData>>),
 }
 
-/// Information that the supervisor thread keeps about the worker threads.
+
 struct WorkerInfo<QueueData, WorkData> {
-    /// The communication channel to the workers.
+    
     chan: Sender<WorkerMsg<QueueData, WorkData>>,
-    /// The worker end of the deque, if we have it.
+    
     deque: Option<Worker<WorkUnit<QueueData, WorkData>>>,
-    /// The thief end of the work-stealing deque.
+    
     thief: Stealer<WorkUnit<QueueData, WorkData>>,
 }
 
-/// Information specific to each worker thread that the thread keeps.
+
 struct WorkerThread<QueueData, WorkData> {
-    /// The index of this worker.
+    
     index: uint,
-    /// The communication port from the supervisor.
+    
     port: Receiver<WorkerMsg<QueueData, WorkData>>,
-    /// The communication channel on which messages are sent to the supervisor.
+    
     chan: Sender<SupervisorMsg<QueueData, WorkData>>,
-    /// The thief end of the work-stealing deque for all other workers.
+    
     other_deques: Vec<Stealer<WorkUnit<QueueData, WorkData>>>,
-    /// The random number generator for this worker.
+    
     rng: XorShiftRng,
 }
 
 static SPIN_COUNT: uint = 1000;
 
 impl<QueueData: Send, WorkData: Send> WorkerThread<QueueData, WorkData> {
-    /// The main logic. This function starts up the worker and listens for
-    /// messages.
+    
+    
     fn start(&mut self) {
         loop {
-            // Wait for a start message.
+            
             let (mut deque, ref_count, queue_data) = match self.port.recv() {
                 StartMsg(deque, ref_count, queue_data) => (deque, ref_count, queue_data),
                 StopMsg => fail!("unexpected stop message"),
                 ExitMsg => return,
             };
 
-            // We're off!
-            //
-            // FIXME(pcwalton): Can't use labeled break or continue cross-crate due to a Rust bug.
+            
+            
+            
             loop {
-                // FIXME(pcwalton): Nasty workaround for the lack of labeled break/continue
-                // cross-crate.
+                
+                
                 let mut work_unit = unsafe {
                     mem::uninitialized()
                 };
                 match deque.pop() {
                     Some(work) => work_unit = work,
                     None => {
-                        // Become a thief.
+                        
                         let mut i = 0;
                         let mut should_continue = true;
                         loop {
                             let victim = (self.rng.next_u32() as uint) % self.other_deques.len();
                             match self.other_deques.get_mut(victim).steal() {
                                 Empty | Abort => {
-                                    // Continue.
+                                    
                                 }
                                 Data(work) => {
                                     work_unit = work;
@@ -132,7 +132,7 @@ impl<QueueData: Send, WorkData: Send> WorkerThread<QueueData, WorkData> {
                     }
                 }
 
-                // At this point, we have some work. Perform it.
+                
                 let mut proxy = WorkerProxy {
                     worker: &mut deque,
                     ref_count: ref_count,
@@ -140,8 +140,8 @@ impl<QueueData: Send, WorkData: Send> WorkerThread<QueueData, WorkData> {
                 };
                 (work_unit.fun)(work_unit.data, &mut proxy);
 
-                // The work is done. Now decrement the count of outstanding work items. If this was
-                // the last work unit in the queue, then send a message on the channel.
+                
+                
                 unsafe {
                     if (*ref_count).fetch_sub(1, SeqCst) == 1 {
                         self.chan.send(FinishedMsg)
@@ -149,21 +149,21 @@ impl<QueueData: Send, WorkData: Send> WorkerThread<QueueData, WorkData> {
                 }
             }
 
-            // Give the deque back to the supervisor.
+            
             self.chan.send(ReturnDequeMsg(self.index, deque))
         }
     }
 }
 
-/// A handle to the work queue that individual work units have.
+
 pub struct WorkerProxy<'a, QueueData, WorkData> {
     worker: &'a mut Worker<WorkUnit<QueueData, WorkData>>,
     ref_count: *mut AtomicUint,
-    queue_data: *QueueData,
+    queue_data: *const QueueData,
 }
 
 impl<'a, QueueData, WorkData: Send> WorkerProxy<'a, QueueData, WorkData> {
-    /// Enqueues a block into the work queue.
+    
     #[inline]
     pub fn push(&mut self, work_unit: WorkUnit<QueueData, WorkData>) {
         unsafe {
@@ -172,7 +172,7 @@ impl<'a, QueueData, WorkData: Send> WorkerProxy<'a, QueueData, WorkData> {
         self.worker.push(work_unit);
     }
 
-    /// Retrieves the queue user data.
+    
     #[inline]
     pub fn user_data<'a>(&'a self) -> &'a QueueData {
         unsafe {
@@ -181,23 +181,23 @@ impl<'a, QueueData, WorkData: Send> WorkerProxy<'a, QueueData, WorkData> {
     }
 }
 
-/// A work queue on which units of work can be submitted.
+
 pub struct WorkQueue<QueueData, WorkData> {
-    /// Information about each of the workers.
+    
     workers: Vec<WorkerInfo<QueueData, WorkData>>,
-    /// A port on which deques can be received from the workers.
+    
     port: Receiver<SupervisorMsg<QueueData, WorkData>>,
-    /// The amount of work that has been enqueued.
+    
     work_count: uint,
-    /// Arbitrary user data.
+    
     pub data: QueueData,
 }
 
 impl<QueueData: Send, WorkData: Send> WorkQueue<QueueData, WorkData> {
-    /// Creates a new work queue and spawns all the threads associated with
-    /// it.
+    
+    
     pub fn new(task_name: &'static str, thread_count: uint, user_data: QueueData) -> WorkQueue<QueueData, WorkData> {
-        // Set up data structures.
+        
         let (supervisor_chan, supervisor_port) = channel();
         let (mut infos, mut threads) = (vec!(), vec!());
         for i in range(0, thread_count) {
@@ -218,7 +218,7 @@ impl<QueueData: Send, WorkData: Send> WorkQueue<QueueData, WorkData> {
             });
         }
 
-        // Connect workers to one another.
+        
         for i in range(0, thread_count) {
             for j in range(0, thread_count) {
                 if i != j {
@@ -228,11 +228,9 @@ impl<QueueData: Send, WorkData: Send> WorkQueue<QueueData, WorkData> {
             assert!(threads.get(i).other_deques.len() == thread_count - 1)
         }
 
-        // Spawn threads.
+        
         for thread in threads.move_iter() {
-            let mut opts = TaskOpts::new();
-            opts.name = Some(task_name.into_maybe_owned());
-            native::task::spawn_opts(opts, proc() {
+            TaskBuilder::new().named(task_name).native().spawn(proc() {
                 let mut thread = thread;
                 thread.start()
             })

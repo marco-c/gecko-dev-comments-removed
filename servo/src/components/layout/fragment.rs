@@ -392,11 +392,11 @@ impl Fragment {
     
     
     pub fn debug_id(&self) -> uint {
-        self as *Fragment as uint
+        self as *const Fragment as uint
     }
 
-    /// Transforms this fragment into another fragment of the given type, with the given size, preserving all
-    /// the other data.
+    
+    
     pub fn transform(&self, size: LogicalSize<Au>, specific: SpecificFragmentInfo) -> Fragment {
         Fragment {
             node: self.node,
@@ -410,8 +410,8 @@ impl Fragment {
         }
     }
 
-    /// Uses the style only to estimate the intrinsic inline-sizes. These may be modified for text or
-    /// replaced elements.
+    
+    
     fn style_specified_intrinsic_inline_size(&self) -> IntrinsicISizes {
         let (use_margins, use_padding) = match self.specific {
             GenericFragment | IframeFragment(_) | ImageFragment(_) => (true, true),
@@ -419,7 +419,7 @@ impl Fragment {
             TableWrapperFragment => (true, false),
             TableRowFragment => (false, false),
             ScannedTextFragment(_) | TableColumnFragment(_) | UnscannedTextFragment(_) => {
-                // Styles are irrelevant for these kinds of fragments.
+                
                 return IntrinsicISizes::new()
             }
         };
@@ -443,7 +443,7 @@ impl Fragment {
             (Au(0), Au(0))
         };
 
-        // FIXME(#2261, pcwalton): This won't work well for inlines: is this OK?
+        
         let border = self.border_width(None);
         let surround_inline_size = margin_inline_start + margin_inline_end + padding_inline_start + padding_inline_end +
                 border.inline_start_end();
@@ -459,9 +459,9 @@ impl Fragment {
         text::line_height_from_style(self.style())
     }
 
-    /// Returns the sum of the inline-sizes of all the borders of this fragment. This is private because
-    /// it should only be called during intrinsic inline-size computation or computation of
-    /// `border_padding`. Other consumers of this information should simply consult that field.
+    
+    
+    
     #[inline]
     fn border_width(&self, inline_fragment_context: Option<InlineFragmentContext>)
                     -> LogicalMargin<Au> {
@@ -474,21 +474,21 @@ impl Fragment {
         }
     }
 
-    /// Computes the border, padding, and vertical margins from the containing block inline-size and the
-    /// style. After this call, the `border_padding` and the vertical direction of the `margin`
-    /// field will be correct.
+    
+    
+    
     pub fn compute_border_padding_margins(&mut self,
                                           containing_block_inline_size: Au,
                                           inline_fragment_context: Option<InlineFragmentContext>) {
-        // Compute vertical margins. Note that this value will be ignored by layout if the style
-        // specifies `auto`.
+        
+        
         match self.specific {
             TableFragment | TableCellFragment | TableRowFragment | TableColumnFragment(_) => {
                 self.margin.block_start = Au(0);
                 self.margin.block_end = Au(0)
             }
             _ => {
-                // NB: Percentages are relative to containing block inline-size (not block-size) per CSS 2.1.
+                
                 let margin = self.style().logical_margin();
                 self.margin.block_start = MaybeAuto::from_style(margin.block_start, containing_block_inline_size)
                     .specified_or_zero();
@@ -497,10 +497,10 @@ impl Fragment {
             }
         }
 
-        // Compute border.
+        
         let border = self.border_width(inline_fragment_context);
 
-        // Compute padding.
+        
         let padding = match self.specific {
             TableColumnFragment(_) | TableRowFragment |
             TableWrapperFragment => LogicalMargin::zero(self.style.writing_mode),
@@ -519,7 +519,7 @@ impl Fragment {
         self.border_padding = border + padding
     }
 
-    // Return offset from original position because of `position: relative`.
+    
     pub fn relative_position(&self,
                              containing_block_size: &LogicalSize<Au>,
                              inline_fragment_context: Option<InlineFragmentContext>)
@@ -540,7 +540,7 @@ impl Fragment {
             LogicalSize::new(style.writing_mode, offset_i, offset_b)
         }
 
-        // Go over the ancestor fragments and add all relative offsets (if any).
+        
         let mut rel_pos = LogicalSize::zero(self.style.writing_mode);
         match inline_fragment_context {
             None => {
@@ -559,9 +559,9 @@ impl Fragment {
         rel_pos
     }
 
-    /// Always inline for SCCP.
-    ///
-    /// FIXME(pcwalton): Just replace with the clear type from the style module for speed?
+    
+    
+    
     #[inline(always)]
     pub fn clear(&self) -> Option<ClearType> {
         let style = self.style();
@@ -573,7 +573,7 @@ impl Fragment {
         }
     }
 
-    /// Converts this fragment's computed style to a font style used for rendering.
+    
     pub fn font_style(&self) -> FontStyle {
         text::computed_style_to_font_style(self.style())
     }
@@ -583,8 +583,8 @@ impl Fragment {
         &*self.style
     }
 
-    /// Returns the text alignment of the computed style of the nearest ancestor-or-self `Element`
-    /// node.
+    
+    
     pub fn text_align(&self) -> text_align::T {
         self.style().get_inheritedtext().text_align
     }
@@ -597,21 +597,21 @@ impl Fragment {
         self.style().get_inheritedtext().white_space
     }
 
-    /// Returns the text decoration of this fragment, according to the style of the nearest ancestor
-    /// element.
-    ///
-    /// NB: This may not be the actual text decoration, because of the override rules specified in
-    /// CSS 2.1 § 16.3.1. Unfortunately, computing this properly doesn't really fit into Servo's
-    /// model. Therefore, this is a best lower bound approximation, but the end result may actually
-    /// have the various decoration flags turned on afterward.
+    
+    
+    
+    
+    
+    
+    
     pub fn text_decoration(&self) -> text_decoration::T {
         self.style().get_text().text_decoration
     }
 
-    /// Returns the inline-start offset from margin edge to content edge.
-    ///
-    /// FIXME(#2262, pcwalton): I think this method is pretty bogus, because it won't work for
-    /// inlines.
+    
+    
+    
+    
     pub fn inline_start_offset(&self) -> Au {
         match self.specific {
             TableWrapperFragment => self.margin.inline_start,
@@ -621,7 +621,7 @@ impl Fragment {
         }
     }
 
-    /// Returns true if this element can be split. This is true for text fragments.
+    
     pub fn can_split(&self) -> bool {
         match self.specific {
             ScannedTextFragment(..) => true,
@@ -629,17 +629,17 @@ impl Fragment {
         }
     }
 
-    /// Adds the display items necessary to paint the background of this fragment to the display
-    /// list if necessary.
+    
+    
     pub fn build_display_list_for_background_if_applicable(&self,
                                                            list: &mut DisplayList,
                                                            layout_context: &LayoutContext,
                                                            level: StackingLevel,
                                                            absolute_bounds: &Rect<Au>) {
-        // FIXME: This causes a lot of background colors to be displayed when they are clearly not
-        // needed. We could use display list optimization to clean this up, but it still seems
-        // inefficient. What we really want is something like "nearest ancestor element that
-        // doesn't have a fragment".
+        
+        
+        
+        
         let style = self.style();
         let background_color = style.resolve_color(style.get_background().background_color);
         if !background_color.alpha.approx_eq(&0.0) {
@@ -651,9 +651,9 @@ impl Fragment {
             list.push(SolidColorDisplayItemClass(display_item))
         }
 
-        // The background image is painted on top of the background color.
-        // Implements background image, per spec:
-        // http://www.w3.org/TR/CSS21/colors.html#background
+        
+        
+        
         let background = style.get_background();
         let image_url = match background.background_image {
             None => return,
@@ -663,9 +663,9 @@ impl Fragment {
         let mut holder = ImageHolder::new(image_url.clone(), layout_context.image_cache.clone());
         let image = match holder.get_image() {
             None => {
-                // No image data at all? Do nothing.
-                //
-                // TODO: Add some kind of placeholder background image.
+                
+                
+                
                 debug!("(building display list) no background image :(");
                 return
             }
@@ -673,7 +673,7 @@ impl Fragment {
         };
         debug!("(building display list) building background image");
 
-        // Adjust bounds for `background-position` and `background-attachment`.
+        
         let mut bounds = *absolute_bounds;
         let horizontal_position = model::specified(background.background_position.horizontal,
                                                    bounds.size.width);

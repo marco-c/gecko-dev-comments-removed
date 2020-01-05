@@ -2,8 +2,10 @@
 
 
 
-#![crate_id = "github.com/mozilla/servo#embedding:0.1"]
+#![crate_name = "embedding"]
 #![crate_type = "lib"]
+#![crate_type = "rlib"]
+#![crate_type = "dylib"]
 
 #![feature(globs, macro_rules, phase, thread_local)]
 

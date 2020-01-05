@@ -67,7 +67,7 @@ pub struct LayoutDataWrapper {
 
 pub trait LayoutDataAccess {
     
-    unsafe fn borrow_layout_data_unchecked(&self) -> *Option<LayoutDataWrapper>;
+    unsafe fn borrow_layout_data_unchecked(&self) -> *const Option<LayoutDataWrapper>;
     
     fn borrow_layout_data<'a>(&'a self) -> Ref<'a,Option<LayoutDataWrapper>>;
     
@@ -76,7 +76,7 @@ pub trait LayoutDataAccess {
 
 impl<'ln> LayoutDataAccess for LayoutNode<'ln> {
     #[inline(always)]
-    unsafe fn borrow_layout_data_unchecked(&self) -> *Option<LayoutDataWrapper> {
+    unsafe fn borrow_layout_data_unchecked(&self) -> *const Option<LayoutDataWrapper> {
         mem::transmute(self.get().layout_data.borrow_unchecked())
     }
 

@@ -2,9 +2,7 @@
 
 
 
-#![crate_id = "github.com/mozilla/servo#net:0.1"]
-#![crate_type = "lib"]
-#![crate_type = "dylib"]
+#![crate_name = "net"]
 #![crate_type = "rlib"]
 
 #![feature(default_type_params, globs, managed_boxes, phase)]

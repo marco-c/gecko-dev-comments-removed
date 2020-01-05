@@ -2,15 +2,13 @@
 
 
 
-#![crate_id = "github.com/mozilla/servo#layout:0.1"]
-#![crate_type = "lib"]
-#![crate_type = "dylib"]
+#![crate_name = "layout"]
 #![crate_type = "rlib"]
 
 #![comment = "The Servo Parallel Browser Project"]
 #![license = "MPL"]
 
-#![feature(globs, macro_rules, phase, thread_local)]
+#![feature(globs, macro_rules, phase, thread_local, unsafe_destructor)]
 
 #[phase(plugin, link)]
 extern crate log;
