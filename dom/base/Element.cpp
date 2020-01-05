@@ -2352,7 +2352,8 @@ Element::SetAttr(int32_t aNamespaceID, nsIAtom* aName,
 
   
   
-  nsAutoScriptBlocker scriptBlocker;
+  nsIDocument* document = GetComposedDoc();
+  mozAutoDocUpdate updateBatch(document, UPDATE_CONTENT_MODEL, aNotify);
 
   
   
@@ -2362,7 +2363,7 @@ Element::SetAttr(int32_t aNamespaceID, nsIAtom* aName,
 
   return SetAttrAndNotify(aNamespaceID, aName, aPrefix, oldValue,
                           attrValue, modType, hasListeners, aNotify,
-                          kCallAfterSetAttr);
+                          kCallAfterSetAttr, document, updateBatch);
 }
 
 nsresult
@@ -2399,9 +2400,11 @@ Element::SetParsedAttr(int32_t aNamespaceID, nsIAtom* aName,
   nsresult rv = BeforeSetAttr(aNamespaceID, aName, &value, aNotify);
   NS_ENSURE_SUCCESS(rv, rv);
 
+  nsIDocument* document = GetComposedDoc();
+  mozAutoDocUpdate updateBatch(document, UPDATE_CONTENT_MODEL, aNotify);
   return SetAttrAndNotify(aNamespaceID, aName, aPrefix, oldValue,
                           aParsedValue, modType, hasListeners, aNotify,
-                          kCallAfterSetAttr);
+                          kCallAfterSetAttr, document, updateBatch);
 }
 
 nsresult
@@ -2413,13 +2416,11 @@ Element::SetAttrAndNotify(int32_t aNamespaceID,
                           uint8_t aModType,
                           bool aFireMutation,
                           bool aNotify,
-                          bool aCallAfterSetAttr)
+                          bool aCallAfterSetAttr,
+                          nsIDocument* aComposedDocument,
+                          const mozAutoDocUpdate&)
 {
   nsresult rv;
-
-  nsIDocument* document = GetComposedDoc();
-  mozAutoDocUpdate updateBatch(document, UPDATE_CONTENT_MODEL, aNotify);
-
   nsMutationGuard::DidMutate();
 
   
@@ -2441,7 +2442,7 @@ Element::SetAttrAndNotify(int32_t aNamespaceID,
     
     
     if (!IsAttributeMapped(aName) ||
-        !SetMappedAttribute(document, aName, aParsedValue, &rv)) {
+        !SetMappedAttribute(aComposedDocument, aName, aParsedValue, &rv)) {
       rv = mAttrsAndChildren.SetAndSwapAttr(aName, aParsedValue);
     }
   }
@@ -2460,7 +2461,7 @@ Element::SetAttrAndNotify(int32_t aNamespaceID,
 
   NS_ENSURE_SUCCESS(rv, rv);
 
-  if (document || HasFlag(NODE_FORCE_XBL_BINDINGS)) {
+  if (aComposedDocument || HasFlag(NODE_FORCE_XBL_BINDINGS)) {
     RefPtr<nsXBLBinding> binding = GetXBLBinding();
     if (binding) {
       binding->AttributeChanged(aName, aNamespaceID, false, aNotify);
