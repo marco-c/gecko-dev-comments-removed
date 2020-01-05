@@ -4,14 +4,14 @@
 
 
 
-#include "TestHarness.h"
-
 #include <windows.h>
 #include <winnetwk.h>
 
 #include "mozilla/FileUtilsWin.h"
 #include "mozilla/DebugOnly.h"
 #include "nsCRTGlue.h"
+
+#include "gtest/gtest.h"
 
 class DriveMapping
 {
@@ -127,108 +127,67 @@ TestNtPathToDosPath(const wchar_t* aNtPath,
 {
   nsAutoString output;
   bool result = mozilla::NtPathToDosPath(nsDependentString(aNtPath), output);
-  return result && output == aExpectedDosPath;
+  return result && output == reinterpret_cast<const nsAString::char_type *>(aExpectedDosPath);
 }
 
-int main(int argc, char* argv[])
+TEST(NtPathToDosPath, Tests)
 {
-  ScopedXPCOM xpcom("NtPathToDosPath");
-  if (xpcom.failed()) {
-    fail("XPCOM Startup");
-    return 1;
-  }
   nsAutoString cDrive;
-  if (!DriveToNtPath(L'C', cDrive)) {
-    fail("Querying for this machine's C:");
-    return 1;
-  }
-
-  int result = 0;
+  ASSERT_TRUE(DriveToNtPath(L'C', cDrive));
 
   
-  if (!TestNtPathToDosPath(L"", L"")) {
-    fail("Empty string");
-    result = 1;
-  }
+  EXPECT_TRUE(TestNtPathToDosPath(L"", L""));
+
   
-  if (TestNtPathToDosPath(L"\\Device\\ThisDeviceDoesNotExist\\Foo", nullptr)) {
-    fail("Non-existent device");
-    result = 1;
-  }
+  EXPECT_FALSE(TestNtPathToDosPath(L"\\Device\\ThisDeviceDoesNotExist\\Foo", nullptr));
+
   
   nsAutoString testPath(cDrive);
   testPath.Append(L"\\Program Files");
-  if (!TestNtPathToDosPath(testPath.get(), L"C:\\Program Files")) {
-    fail("Base case");
-    result = 1;
-  }
+  EXPECT_TRUE(TestNtPathToDosPath(testPath.get(), L"C:\\Program Files"));
+
   
   nsAutoString ntShortName(cDrive);
   ntShortName.Append(L"\\progra~1");
-  if (!TestNtPathToDosPath(ntShortName.get(), L"C:\\Program Files")) {
-    fail("Short file name");
-    result = 1;
-  }
+  EXPECT_TRUE(TestNtPathToDosPath(ntShortName.get(), L"C:\\Program Files"));
+
   
-  if (!TestNtPathToDosPath(L"\\??\\C:\\Foo", L"C:\\Foo")) {
-    fail("Path specified as symbolic link");
-    result = 1;
-  }
+  EXPECT_TRUE(TestNtPathToDosPath(L"\\??\\C:\\Foo", L"C:\\Foo"));
+
   
-  if (TestNtPathToDosPath(L"\\??\\MountPointManager", nullptr)) {
-    fail("Other symbolic link");
-    result = 1;
-  }
+  EXPECT_FALSE(TestNtPathToDosPath(L"\\??\\MountPointManager", nullptr));
+
   
-  if (TestNtPathToDosPath(L"\\Device\\Afd\\Endpoint", nullptr)) {
-    fail("Socket");
-    result = 1;
-  }
+  EXPECT_FALSE(TestNtPathToDosPath(L"\\Device\\Afd\\Endpoint", nullptr));
+
   
-  if (!TestNtPathToDosPath(L"\\Device\\Mup\\127.0.0.1\\C$",
-                           L"\\\\127.0.0.1\\C$")) {
-    fail("Unmapped UNC path (\\Device\\Mup\\)");
-    result = 1;
-  }
+  EXPECT_TRUE(TestNtPathToDosPath(L"\\Device\\Mup\\127.0.0.1\\C$",
+                           L"\\\\127.0.0.1\\C$"));
+
   
-  if (!TestNtPathToDosPath(L"\\Device\\LanmanRedirector\\127.0.0.1\\C$",
-                           L"\\\\127.0.0.1\\C$")) {
-    fail("Unmapped UNC path (\\Device\\LanmanRedirector\\)");
-    result = 1;
-  }
+  EXPECT_TRUE(TestNtPathToDosPath(L"\\Device\\LanmanRedirector\\127.0.0.1\\C$",
+                           L"\\\\127.0.0.1\\C$"));
+
   DriveMapping drvMapping(NS_LITERAL_STRING("\\\\127.0.0.1\\C$"));
   
   if (drvMapping.Init()) {
     wchar_t expected[] = L" :\\";
     expected[0] = drvMapping.GetDriveLetter();
     nsAutoString networkPath;
-    if (!DriveToNtPath(drvMapping.GetDriveLetter(), networkPath)) {
-      fail("Querying network drive");
-      return 1;
-    }
-    networkPath += u"\\";
-    if (!TestNtPathToDosPath(networkPath.get(), expected)) {
-      fail("Mapped UNC path");
-      result = 1;
-    }
-    
-    
-    
-    if (!drvMapping.ChangeDriveLetter()) {
-      fail("Change drive letter");
-      return 1;
-    }
-    expected[0] = drvMapping.GetDriveLetter();
-    if (!DriveToNtPath(drvMapping.GetDriveLetter(), networkPath)) {
-      fail("Querying second network drive");
-      return 1;
-    }
-    networkPath += u"\\";
-    if (!TestNtPathToDosPath(networkPath.get(), expected)) {
-      fail("Re-mapped UNC path");
-      result = 1;
-    }
-  }
+    ASSERT_TRUE(DriveToNtPath(drvMapping.GetDriveLetter(), networkPath));
 
-  return result;
+    networkPath += u"\\";
+    EXPECT_TRUE(TestNtPathToDosPath(networkPath.get(), expected));
+
+    
+    
+    
+    ASSERT_TRUE(drvMapping.ChangeDriveLetter());
+
+    expected[0] = drvMapping.GetDriveLetter();
+    ASSERT_TRUE(DriveToNtPath(drvMapping.GetDriveLetter(), networkPath));
+
+    networkPath += u"\\";
+    EXPECT_TRUE(TestNtPathToDosPath(networkPath.get(), expected));
+  }
 }
