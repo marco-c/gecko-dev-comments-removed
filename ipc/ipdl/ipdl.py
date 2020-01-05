@@ -151,7 +151,9 @@ for f in files:
         log(3, '  pretty printed code:')
         ipdl.genipdl(ast, codedir)
 
-ipdl.checkFixedSyncMessages(parser)
+if not ipdl.checkFixedSyncMessages(parser):
+    
+    sys.exit(1)
 
 
 for f in files:
