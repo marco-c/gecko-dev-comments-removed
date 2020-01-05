@@ -761,10 +761,9 @@ class PseudoChildAPIManager extends ChildAPIManagerBase {
   }
 
   getFallbackImplementation(namespace, name) {
-    
     let useDirectParentAPI = (
       
-      namespace == "webNavigation" 
+      false
     );
 
     if (useDirectParentAPI) {
