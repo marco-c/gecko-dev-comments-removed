@@ -2495,11 +2495,15 @@ TSFTextStore::RestartComposition(ITfCompositionView* aCompositionView,
   PendingAction* action = LastOrNewPendingCompositionUpdate();
   action->mData = mComposition.mString;
   action->mRanges->Clear();
-  TextRange caretRange;
-  caretRange.mStartOffset = caretRange.mEndOffset =
-    uint32_t(oldComposition.mStart + commitString.Length());
-  caretRange.mRangeType = TextRangeType::eCaret;
-  action->mRanges->AppendElement(caretRange);
+  
+  
+  if (!action->mData.IsEmpty()) {
+    TextRange caretRange;
+    caretRange.mStartOffset = caretRange.mEndOffset =
+      uint32_t(oldComposition.mStart + commitString.Length());
+    caretRange.mRangeType = TextRangeType::eCaret;
+    action->mRanges->AppendElement(caretRange);
+  }
   action->mIncomplete = false;
 
   
@@ -2642,126 +2646,133 @@ TSFTextStore::RecordCompositionUpdateAction()
   
   action->mRanges->Clear();
 
-  TextRange newRange;
   
   
-  newRange.mStartOffset = 0;
-  newRange.mEndOffset = action->mData.Length();
-  newRange.mRangeType = TextRangeType::eRawClause;
-  action->mRanges->AppendElement(newRange);
-
-  RefPtr<ITfRange> range;
-  while (S_OK == enumRanges->Next(1, getter_AddRefs(range), nullptr) && range) {
-
-    LONG rangeStart = 0, rangeLength = 0;
-    if (FAILED(GetRangeExtent(range, &rangeStart, &rangeLength))) {
-      continue;
-    }
-    
-    
-    LONG start = std::min(std::max(rangeStart, mComposition.mStart),
-                          mComposition.EndOffset());
-    LONG end = std::max(std::min(rangeStart + rangeLength,
-                                 mComposition.EndOffset()),
-                        mComposition.mStart);
-    LONG length = end - start;
-    if (length < 0) {
-      MOZ_LOG(sTextStoreLog, LogLevel::Error,
-        ("0x%p   TSFTextStore::RecordCompositionUpdateAction() "
-         "ignores invalid range (%d-%d)",
-         this, rangeStart - mComposition.mStart,
-         rangeStart - mComposition.mStart + rangeLength));
-      continue;
-    }
-    if (!length) {
-      MOZ_LOG(sTextStoreLog, LogLevel::Debug,
-        ("0x%p   TSFTextStore::RecordCompositionUpdateAction() "
-         "ignores a range due to outside of the composition or empty "
-         "(%d-%d)",
-         this, rangeStart - mComposition.mStart,
-         rangeStart - mComposition.mStart + rangeLength));
-      continue;
-    }
-
+  if (!action->mData.IsEmpty()) {
     TextRange newRange;
-    newRange.mStartOffset = uint32_t(start - mComposition.mStart);
     
     
-    newRange.mEndOffset = mComposition.mString.Length();
+    newRange.mStartOffset = 0;
+    newRange.mEndOffset = action->mData.Length();
+    newRange.mRangeType = TextRangeType::eRawClause;
+    action->mRanges->AppendElement(newRange);
 
-    TF_DISPLAYATTRIBUTE attr;
-    hr = GetDisplayAttribute(attrPropetry, range, &attr);
-    if (FAILED(hr)) {
-      newRange.mRangeType = TextRangeType::eRawClause;
-    } else {
-      newRange.mRangeType = GetGeckoSelectionValue(attr);
-      if (GetColor(attr.crText, newRange.mRangeStyle.mForegroundColor)) {
-        newRange.mRangeStyle.mDefinedStyles |=
-                               TextRangeStyle::DEFINED_FOREGROUND_COLOR;
+    RefPtr<ITfRange> range;
+    while (enumRanges->Next(1, getter_AddRefs(range), nullptr) == S_OK) {
+      if (NS_WARN_IF(!range)) {
+        break;
       }
-      if (GetColor(attr.crBk, newRange.mRangeStyle.mBackgroundColor)) {
-        newRange.mRangeStyle.mDefinedStyles |=
-                               TextRangeStyle::DEFINED_BACKGROUND_COLOR;
+
+      LONG rangeStart = 0, rangeLength = 0;
+      if (FAILED(GetRangeExtent(range, &rangeStart, &rangeLength))) {
+        continue;
       }
-      if (GetColor(attr.crLine, newRange.mRangeStyle.mUnderlineColor)) {
-        newRange.mRangeStyle.mDefinedStyles |=
-                               TextRangeStyle::DEFINED_UNDERLINE_COLOR;
+      
+      
+      LONG start = std::min(std::max(rangeStart, mComposition.mStart),
+                            mComposition.EndOffset());
+      LONG end = std::max(std::min(rangeStart + rangeLength,
+                                   mComposition.EndOffset()),
+                          mComposition.mStart);
+      LONG length = end - start;
+      if (length < 0) {
+        MOZ_LOG(sTextStoreLog, LogLevel::Error,
+          ("0x%p   TSFTextStore::RecordCompositionUpdateAction() "
+           "ignores invalid range (%d-%d)",
+           this, rangeStart - mComposition.mStart,
+           rangeStart - mComposition.mStart + rangeLength));
+        continue;
       }
-      if (GetLineStyle(attr.lsStyle, newRange.mRangeStyle.mLineStyle)) {
-        newRange.mRangeStyle.mDefinedStyles |=
-                               TextRangeStyle::DEFINED_LINESTYLE;
-        newRange.mRangeStyle.mIsBoldLine = attr.fBoldLine != 0;
+      if (!length) {
+        MOZ_LOG(sTextStoreLog, LogLevel::Debug,
+          ("0x%p   TSFTextStore::RecordCompositionUpdateAction() "
+           "ignores a range due to outside of the composition or empty "
+           "(%d-%d)",
+           this, rangeStart - mComposition.mStart,
+           rangeStart - mComposition.mStart + rangeLength));
+        continue;
+      }
+
+      TextRange newRange;
+      newRange.mStartOffset = uint32_t(start - mComposition.mStart);
+      
+      
+      newRange.mEndOffset = mComposition.mString.Length();
+
+      TF_DISPLAYATTRIBUTE attr;
+      hr = GetDisplayAttribute(attrPropetry, range, &attr);
+      if (FAILED(hr)) {
+        newRange.mRangeType = TextRangeType::eRawClause;
+      } else {
+        newRange.mRangeType = GetGeckoSelectionValue(attr);
+        if (GetColor(attr.crText, newRange.mRangeStyle.mForegroundColor)) {
+          newRange.mRangeStyle.mDefinedStyles |=
+                                 TextRangeStyle::DEFINED_FOREGROUND_COLOR;
+        }
+        if (GetColor(attr.crBk, newRange.mRangeStyle.mBackgroundColor)) {
+          newRange.mRangeStyle.mDefinedStyles |=
+                                 TextRangeStyle::DEFINED_BACKGROUND_COLOR;
+        }
+        if (GetColor(attr.crLine, newRange.mRangeStyle.mUnderlineColor)) {
+          newRange.mRangeStyle.mDefinedStyles |=
+                                 TextRangeStyle::DEFINED_UNDERLINE_COLOR;
+        }
+        if (GetLineStyle(attr.lsStyle, newRange.mRangeStyle.mLineStyle)) {
+          newRange.mRangeStyle.mDefinedStyles |=
+                                 TextRangeStyle::DEFINED_LINESTYLE;
+          newRange.mRangeStyle.mIsBoldLine = attr.fBoldLine != 0;
+        }
+      }
+
+      TextRange& lastRange = action->mRanges->LastElement();
+      if (lastRange.mStartOffset == newRange.mStartOffset) {
+        
+        
+        lastRange = newRange;
+      } else {
+        lastRange.mEndOffset = newRange.mStartOffset;
+        action->mRanges->AppendElement(newRange);
       }
     }
 
-    TextRange& lastRange = action->mRanges->LastElement();
-    if (lastRange.mStartOffset == newRange.mStartOffset) {
-      
-      
-      lastRange = newRange;
-    } else {
-      lastRange.mEndOffset = newRange.mStartOffset;
-      action->mRanges->AppendElement(newRange);
+    
+    
+    
+    
+    
+    
+    
+    
+    if (!selectionForTSF.IsCollapsed() && action->mRanges->Length() == 1) {
+      TextRange& range = action->mRanges->ElementAt(0);
+      LONG start = selectionForTSF.MinOffset();
+      LONG end = selectionForTSF.MaxOffset();
+      if ((LONG)range.mStartOffset == start - mComposition.mStart &&
+          (LONG)range.mEndOffset == end - mComposition.mStart &&
+          range.mRangeStyle.IsNoChangeStyle()) {
+        range.mRangeStyle.Clear();
+        
+        range.mRangeType = TextRangeType::eSelectedRawClause;
+      }
     }
-  }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  if (!selectionForTSF.IsCollapsed() && action->mRanges->Length() == 1) {
-    TextRange& range = action->mRanges->ElementAt(0);
-    LONG start = selectionForTSF.MinOffset();
-    LONG end = selectionForTSF.MaxOffset();
-    if ((LONG)range.mStartOffset == start - mComposition.mStart &&
-        (LONG)range.mEndOffset == end - mComposition.mStart &&
-        range.mRangeStyle.IsNoChangeStyle()) {
-      range.mRangeStyle.Clear();
-      
-      range.mRangeType = TextRangeType::eSelectedRawClause;
+    
+    uint32_t caretPosition =
+      static_cast<uint32_t>(selectionForTSF.MaxOffset() - mComposition.mStart);
+
+    
+    
+    
+    
+    const TextRange* targetClause = action->mRanges->GetTargetClause();
+    if (!targetClause || targetClause->mRangeStyle.IsDefined() ||
+        caretPosition < targetClause->mStartOffset ||
+        caretPosition > targetClause->mEndOffset) {
+      TextRange caretRange;
+      caretRange.mStartOffset = caretRange.mEndOffset = caretPosition;
+      caretRange.mRangeType = TextRangeType::eCaret;
+      action->mRanges->AppendElement(caretRange);
     }
-  }
-
-  
-  uint32_t caretPosition =
-    static_cast<uint32_t>(selectionForTSF.MaxOffset() - mComposition.mStart);
-
-  
-  
-  
-  
-  const TextRange* targetClause = action->mRanges->GetTargetClause();
-  if (!targetClause || targetClause->mRangeStyle.IsDefined() ||
-      caretPosition < targetClause->mStartOffset ||
-      caretPosition > targetClause->mEndOffset) {
-    TextRange caretRange;
-    caretRange.mStartOffset = caretRange.mEndOffset = caretPosition;
-    caretRange.mRangeType = TextRangeType::eCaret;
-    action->mRanges->AppendElement(caretRange);
   }
 
   action->mIncomplete = false;
