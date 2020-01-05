@@ -3071,6 +3071,23 @@ this.AddonManagerPrivate = {
   getUpgradeListener: function(aId) {
     return AddonManagerInternal.upgradeListeners.get(aId);
   },
+
+  
+
+
+
+  isTemporaryInstallID: function(extensionId) {
+     if (!gStarted)
+       throw Components.Exception("AddonManager is not initialized",
+                                  Cr.NS_ERROR_NOT_INITIALIZED);
+
+     if (!extensionId || typeof extensionId != "string")
+       throw Components.Exception("extensionId must be a string",
+                                  Cr.NS_ERROR_INVALID_ARG);
+
+    return AddonManagerInternal._getProviderByName("XPIProvider")
+                               .isTemporaryInstallID(extensionId);
+  },
 };
 
 
