@@ -45,7 +45,7 @@ public:
                                uint16_t aOrientation) override;
 
     
-    virtual gfxFont*
+    mozilla::UniquePtr<gfxFont>
     CopyWithAntialiasOption(AntialiasOption anAAOption) override;
 
     
