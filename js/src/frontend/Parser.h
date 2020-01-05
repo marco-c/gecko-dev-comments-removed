@@ -1185,7 +1185,7 @@ class Parser final : public ParserBase, private JS::AutoGCRooter
 
     
     
-    Node standaloneLazyFunction(HandleFunction fun, bool strict,
+    Node standaloneLazyFunction(HandleFunction fun, uint32_t toStringStart, bool strict,
                                 GeneratorKind generatorKind, FunctionAsyncKind asyncKind);
 
     
