@@ -21,8 +21,24 @@ impl TaskSource<DOMManipulationTask> for DOMManipulationTaskSource {
 }
 
 impl DOMManipulationTaskSource {
-    pub fn clone(&self) -> Box<TaskSource<DOMManipulationTask> + Send> {
-        box DOMManipulationTaskSource((&self.0).clone())
+    pub fn queue_event(&self,
+                       target: &EventTarget,
+                       name: Atom,
+                       bubbles: EventBubbles,
+                       cancelable: EventCancelable) {
+        let target = Trusted::new(target);
+        let _ = self.0.send(MainThreadScriptMsg::DOMManipulation(DOMManipulationTask::FireEvent(
+            target, name, bubbles, cancelable)));
+    }
+
+    pub fn queue_simple_event(&self, target: &EventTarget, name: Atom) {
+        let target = Trusted::new(target);
+        let _ = self.0.send(MainThreadScriptMsg::DOMManipulation(DOMManipulationTask::FireSimpleEvent(
+            target, name)));
+    }
+
+    pub fn clone(&self) -> DOMManipulationTaskSource {
+        DOMManipulationTaskSource((&self.0).clone())
     }
 }
 
@@ -30,9 +46,9 @@ pub enum DOMManipulationTask {
     
     DocumentProgress(Box<Runnable + Send>),
     
-    FireEvent(Atom, Trusted<EventTarget>, EventBubbles, EventCancelable),
+    FireEvent(Trusted<EventTarget>, Atom, EventBubbles, EventCancelable),
     
-    FireSimpleEvent(Atom, Trusted<EventTarget>),
+    FireSimpleEvent(Trusted<EventTarget>, Atom),
     
     FireToggleEvent(Box<Runnable + Send>),
     
@@ -49,11 +65,11 @@ impl DOMManipulationTask {
 
         match self {
             DocumentProgress(runnable) => runnable.handler(),
-            FireEvent(name, element, bubbles, cancelable) => {
+            FireEvent(element, name, bubbles, cancelable) => {
                 let target = element.root();
                 target.fire_event(&*name, bubbles, cancelable);
             }
-            FireSimpleEvent(name, element) => {
+            FireSimpleEvent(element, name) => {
                 let target = element.root();
                 target.fire_simple_event(&*name);
             }
