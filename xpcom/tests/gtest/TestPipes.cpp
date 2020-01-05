@@ -725,6 +725,8 @@ TEST(Pipes, Write_AsyncWait_Clone)
   rv = writer->Write(inputData.Elements(), inputData.Length(), &numWritten);
   ASSERT_TRUE(NS_SUCCEEDED(rv));
 
+  
+  
   rv = writer->Write(inputData.Elements(), inputData.Length(), &numWritten);
   ASSERT_EQ(NS_BASE_STREAM_WOULD_BLOCK, rv);
 
@@ -736,13 +738,50 @@ TEST(Pipes, Write_AsyncWait_Clone)
 
   ASSERT_FALSE(cb->Called());
 
+  
   testing::ConsumeAndValidateStream(reader, inputData);
 
+  
+  
+  
+  ASSERT_TRUE(cb->Called());
+
+  
+  
+  
+  
+  rv = writer->Write(inputData.Elements(), inputData.Length(), &numWritten);
+  ASSERT_TRUE(NS_SUCCEEDED(rv));
+
+  
+  
+  
+  rv = writer->Write(inputData.Elements(), inputData.Length(), &numWritten);
+  ASSERT_TRUE(NS_FAILED(rv));
+
+  cb = new testing::OutputStreamCallback();
+  rv = writer->AsyncWait(cb, 0, 0, nullptr);
+  ASSERT_TRUE(NS_SUCCEEDED(rv));
+
+  
+  
   ASSERT_FALSE(cb->Called());
 
-  testing::ConsumeAndValidateStream(clone, inputData);
+  nsTArray<char> expectedCloneData;
+  expectedCloneData.AppendElements(inputData);
+  expectedCloneData.AppendElements(inputData);
 
+  
+  
+  testing::ConsumeAndValidateStream(clone, expectedCloneData);
+
+  
+  
   ASSERT_TRUE(cb->Called());
+
+  
+  
+  testing::ConsumeAndValidateStream(reader, inputData);
 }
 
 TEST(Pipes, Write_AsyncWait_Clone_CloseOriginal)
@@ -769,6 +808,8 @@ TEST(Pipes, Write_AsyncWait_Clone_CloseOriginal)
   rv = writer->Write(inputData.Elements(), inputData.Length(), &numWritten);
   ASSERT_TRUE(NS_SUCCEEDED(rv));
 
+  
+  
   rv = writer->Write(inputData.Elements(), inputData.Length(), &numWritten);
   ASSERT_EQ(NS_BASE_STREAM_WOULD_BLOCK, rv);
 
@@ -780,12 +821,91 @@ TEST(Pipes, Write_AsyncWait_Clone_CloseOriginal)
 
   ASSERT_FALSE(cb->Called());
 
-  testing::ConsumeAndValidateStream(clone, inputData);
+  
+  testing::ConsumeAndValidateStream(reader, inputData);
 
+  
+  
+  
+  ASSERT_TRUE(cb->Called());
+
+  
+  
+  
+  
+  rv = writer->Write(inputData.Elements(), inputData.Length(), &numWritten);
+  ASSERT_TRUE(NS_SUCCEEDED(rv));
+
+  
+  
+  
+  rv = writer->Write(inputData.Elements(), inputData.Length(), &numWritten);
+  ASSERT_TRUE(NS_FAILED(rv));
+
+  cb = new testing::OutputStreamCallback();
+  rv = writer->AsyncWait(cb, 0, 0, nullptr);
+  ASSERT_TRUE(NS_SUCCEEDED(rv));
+
+  
+  
   ASSERT_FALSE(cb->Called());
 
+  
+  
+  
   reader->Close();
 
+  
+  
+  ASSERT_FALSE(cb->Called());
+
+  
+  rv = writer->Write(inputData.Elements(), inputData.Length(), &numWritten);
+  ASSERT_TRUE(NS_FAILED(rv));
+
+  
+  
+  nsCOMPtr<nsIInputStream> clone2;
+  rv = NS_CloneInputStream(clone, getter_AddRefs(clone2));
+  ASSERT_TRUE(NS_SUCCEEDED(rv));
+
+  nsTArray<char> expectedCloneData;
+  expectedCloneData.AppendElements(inputData);
+  expectedCloneData.AppendElements(inputData);
+
+  
+  
+  testing::ConsumeAndValidateStream(clone, expectedCloneData);
+
+  
+  
+  ASSERT_TRUE(cb->Called());
+
+  
+  rv = writer->Write(inputData.Elements(), inputData.Length(), &numWritten);
+  ASSERT_TRUE(NS_SUCCEEDED(rv));
+
+  
+  cb = new testing::OutputStreamCallback();
+  rv = writer->AsyncWait(cb, 0, 0, nullptr);
+  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_FALSE(cb->Called());
+
+  
+  
+  clone->Close();
+
+  
+  
+  ASSERT_FALSE(cb->Called());
+  rv = writer->Write(inputData.Elements(), inputData.Length(), &numWritten);
+  ASSERT_TRUE(NS_FAILED(rv));
+
+  
+  expectedCloneData.AppendElements(inputData);
+  testing::ConsumeAndValidateStream(clone2, expectedCloneData);
+
+  
   ASSERT_TRUE(cb->Called());
 }
 
