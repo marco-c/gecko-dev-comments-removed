@@ -1002,10 +1002,12 @@ SessionStore.prototype = {
     
     
     let window = Services.wm.getMostRecentWindow("navigator:browser");
-    window.WindowEventDispatcher.sendRequest({
-      type: "PrivateBrowsing:Data",
-      session: (privateData.windows.length > 0 && privateData.windows[0].tabs.length > 0) ? JSON.stringify(privateData) : null
-    });
+    if (window) { 
+      window.WindowEventDispatcher.sendRequest({
+        type: "PrivateBrowsing:Data",
+        session: (privateData.windows.length > 0 && privateData.windows[0].tabs.length > 0) ? JSON.stringify(privateData) : null
+      });
+    }
 
     this._lastSaveTime = Date.now();
   },
