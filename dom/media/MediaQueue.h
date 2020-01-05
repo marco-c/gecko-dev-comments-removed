@@ -43,6 +43,7 @@ public:
 
   inline void Push(T* aItem) {
     ReentrantMonitorAutoEnter mon(mReentrantMonitor);
+    MOZ_ASSERT(!mEndOfStream);
     MOZ_ASSERT(aItem);
     NS_ADDREF(aItem);
     MOZ_ASSERT(aItem->GetEndTime() >= aItem->mTime);
@@ -88,8 +89,10 @@ public:
   
   void Finish() {
     ReentrantMonitorAutoEnter mon(mReentrantMonitor);
-    mEndOfStream = true;
-    mFinishEvent.Notify();
+    if (!mEndOfStream) {
+      mEndOfStream = true;
+      mFinishEvent.Notify();
+    }
   }
 
   
