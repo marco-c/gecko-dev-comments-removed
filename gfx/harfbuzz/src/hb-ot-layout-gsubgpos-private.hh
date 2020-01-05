@@ -998,6 +998,28 @@ static inline bool apply_lookup (hb_apply_context_t *c,
 
     
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     end += delta;
     if (end <= int (match_positions[idx]))
     {
