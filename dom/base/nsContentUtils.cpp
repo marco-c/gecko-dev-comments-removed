@@ -8812,18 +8812,33 @@ nsContentUtils::GetCookieBehaviorForPrincipal(nsIPrincipal* aPrincipal,
   switch (perm) {
     case nsICookiePermission::ACCESS_ALLOW:
       *aBehavior = nsICookieService::BEHAVIOR_ACCEPT;
+      *aLifetimePolicy = nsICookieService::ACCEPT_NORMALLY;
       break;
     case nsICookiePermission::ACCESS_DENY:
       *aBehavior = nsICookieService::BEHAVIOR_REJECT;
+      *aLifetimePolicy = nsICookieService::ACCEPT_NORMALLY;
       break;
     case nsICookiePermission::ACCESS_SESSION:
+      *aBehavior = nsICookieService::BEHAVIOR_ACCEPT;
       *aLifetimePolicy = nsICookieService::ACCEPT_SESSION;
       break;
     case nsICookiePermission::ACCESS_ALLOW_FIRST_PARTY_ONLY:
       *aBehavior = nsICookieService::BEHAVIOR_REJECT_FOREIGN;
+      
+      
+      
+      
+      
+      *aLifetimePolicy = nsICookieService::ACCEPT_NORMALLY;
       break;
     case nsICookiePermission::ACCESS_LIMIT_THIRD_PARTY:
       *aBehavior = nsICookieService::BEHAVIOR_LIMIT_FOREIGN;
+      
+      
+      
+      
+      
+      *aLifetimePolicy = nsICookieService::ACCEPT_NORMALLY;
       break;
   }
 }
