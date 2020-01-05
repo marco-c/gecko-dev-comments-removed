@@ -12,6 +12,7 @@
 #include "mozilla/gfx/TiledRegion.h"    
 #include "mozilla/gfx/Types.h"          
 #include "mozilla/layers/CompositorTypes.h"  
+#include "mozilla/layers/WebRenderLayersLogging.h"
 #include "nsAString.h"
 #include "nsPrintfCString.h"            
 #include "nsRegion.h"                   
