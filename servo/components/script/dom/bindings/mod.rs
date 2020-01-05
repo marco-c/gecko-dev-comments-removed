@@ -128,8 +128,9 @@
 
 
 
+pub use style::domrefcell as cell;
+
 pub mod callback;
-pub mod cell;
 pub mod conversions;
 pub mod error;
 pub mod global;

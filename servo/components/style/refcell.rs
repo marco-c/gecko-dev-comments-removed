@@ -15,8 +15,11 @@
 
 #![allow(unsafe_code)]
 
+#[cfg(feature = "servo")] use heapsize::HeapSizeOf;
 use std::cell::{UnsafeCell, Cell};
 use std::cmp::Ordering;
+use std::fmt::{self, Debug, Display};
+use std::marker::PhantomData;
 use std::ops::{Deref, DerefMut};
 
 
@@ -28,7 +31,13 @@ pub struct RefCell<T: ?Sized> {
     borrow: Cell<BorrowFlag>,
     value: UnsafeCell<T>,
 }
-type BorrowFlag = usize;
+
+#[cfg(feature = "servo")]
+impl<T: HeapSizeOf> HeapSizeOf for RefCell<T> {
+    fn heap_size_of_children(&self) -> usize {
+        self.borrow().heap_size_of_children()
+    }
+}
 
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
@@ -42,7 +51,42 @@ pub enum BorrowState {
 }
 
 
+pub struct BorrowError<'a, T: 'a + ?Sized> {
+    marker: PhantomData<&'a RefCell<T>>,
+}
 
+impl<'a, T: ?Sized> Debug for BorrowError<'a, T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("BorrowError").finish()
+    }
+}
+
+impl<'a, T: ?Sized> Display for BorrowError<'a, T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        Display::fmt("already mutably borrowed", f)
+    }
+}
+
+
+pub struct BorrowMutError<'a, T: 'a + ?Sized> {
+    marker: PhantomData<&'a RefCell<T>>,
+}
+
+impl<'a, T: ?Sized> Debug for BorrowMutError<'a, T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("BorrowMutError").finish()
+    }
+}
+
+impl<'a, T: ?Sized> Display for BorrowMutError<'a, T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        Display::fmt("already borrowed", f)
+    }
+}
+
+
+
+type BorrowFlag = usize;
 const UNUSED: BorrowFlag = 0;
 const WRITING: BorrowFlag = !0;
 
@@ -86,6 +130,22 @@ impl<T> RefCell<T> {
 }
 
 impl<T: ?Sized> RefCell<T> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -134,17 +194,51 @@ impl<T: ?Sized> RefCell<T> {
     
     
     
+    
     #[inline]
     pub fn borrow(&self) -> Ref<T> {
+        self.try_borrow().expect("already mutably borrowed")
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn try_borrow(&self) -> Result<Ref<T>, BorrowError<T>> {
         match BorrowRef::new(&self.borrow) {
-            Some(b) => Ref {
+            Some(b) => Ok(Ref {
                 value: unsafe { &*self.value.get() },
                 borrow: b,
-            },
-            None => panic!("RefCell<T> already mutably borrowed"),
+            }),
+            None => Err(BorrowError { marker: PhantomData }),
         }
     }
 
+    
     
     
     
@@ -183,15 +277,54 @@ impl<T: ?Sized> RefCell<T> {
     
     #[inline]
     pub fn borrow_mut(&self) -> RefMut<T> {
+        self.try_borrow_mut().expect("already borrowed")
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn try_borrow_mut(&self) -> Result<RefMut<T>, BorrowMutError<T>> {
         match BorrowRefMut::new(&self.borrow) {
-            Some(b) => RefMut {
+            Some(b) => Ok(RefMut {
                 value: unsafe { &mut *self.value.get() },
                 borrow: b,
-            },
-            None => panic!("RefCell<T> already borrowed"),
+            }),
+            None => Err(BorrowMutError { marker: PhantomData }),
         }
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -202,6 +335,33 @@ impl<T: ?Sized> RefCell<T> {
         &self.value
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn as_ptr(&self) -> *mut T {
+        self.value.get()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -375,6 +535,18 @@ impl<'b, T: ?Sized> Ref<'b, T> {
             borrow: orig.borrow,
         }
     }
+
+    #[inline]
+    pub fn filter_map<U: ?Sized, F>(orig: Ref<'b, T>, f: F) -> Option<Ref<'b, U>>
+        where F: FnOnce(&T) -> Option<&U>
+    {
+        f(orig.value).map(move |new_value| {
+            Ref {
+                value: new_value,
+                borrow: orig.borrow,
+            }
+        })
+    }
 }
 
 impl<'b, T: ?Sized> RefMut<'b, T> {
@@ -459,5 +631,37 @@ impl<'b, T: ?Sized> DerefMut for RefMut<'b, T> {
     #[inline]
     fn deref_mut(&mut self) -> &mut T {
         self.value
+    }
+}
+
+
+
+
+impl<T: ?Sized + Debug> Debug for RefCell<T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self.borrow_state() {
+            BorrowState::Unused | BorrowState::Reading => {
+                f.debug_struct("RefCell")
+                    .field("value", &self.borrow())
+                    .finish()
+            }
+            BorrowState::Writing => {
+                f.debug_struct("RefCell")
+                    .field("value", &"<borrowed>")
+                    .finish()
+            }
+        }
+    }
+}
+
+impl<'b, T: ?Sized + Debug> Debug for Ref<'b, T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        Debug::fmt(&**self, f)
+    }
+}
+
+impl<'b, T: ?Sized + Debug> Debug for RefMut<'b, T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        Debug::fmt(&*(self.deref()), f)
     }
 }

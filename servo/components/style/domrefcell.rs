@@ -4,17 +4,15 @@
 
 
 
-use dom::bindings::trace::JSTraceable;
-use js::jsapi::JSTracer;
-use std::cell::{BorrowError, BorrowMutError, Ref, RefCell, RefMut};
-use style::thread_state;
-use style::thread_state::SCRIPT;
+use refcell::{BorrowError, BorrowMutError, Ref, RefCell, RefMut};
+use thread_state;
 
 
 
 
 
-#[derive(Clone, HeapSizeOf)]
+#[derive(Clone)]
+#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct DOMRefCell<T> {
     value: RefCell<T>,
 }
@@ -48,7 +46,7 @@ impl<T> DOMRefCell<T> {
     
     #[allow(unsafe_code)]
     pub unsafe fn borrow_for_script_deallocation(&self) -> &mut T {
-        debug_assert!(thread_state::get().contains(SCRIPT));
+        debug_assert!(thread_state::get().contains(thread_state::SCRIPT));
         &mut *self.value.as_ptr()
     }
 
@@ -57,14 +55,6 @@ impl<T> DOMRefCell<T> {
     pub fn borrow_mut_for_layout(&self) -> RefMut<T> {
         debug_assert!(thread_state::get().is_layout());
         self.value.borrow_mut()
-    }
-}
-
-impl<T: JSTraceable> JSTraceable for DOMRefCell<T> {
-    fn trace(&self, trc: *mut JSTracer) {
-        unsafe {
-            (*self).borrow_for_gc_trace().trace(trc)
-        }
     }
 }
 

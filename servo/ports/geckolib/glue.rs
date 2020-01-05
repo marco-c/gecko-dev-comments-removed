@@ -356,7 +356,7 @@ pub extern "C" fn Servo_StyleSet_Drop(data: *mut RawServoStyleSet) -> () {
 }
 
 pub struct GeckoDeclarationBlock {
-    pub declarations: Option<PropertyDeclarationBlock>,
+    pub declarations: Option<Arc<PropertyDeclarationBlock>>,
     
     
     
@@ -377,7 +377,7 @@ pub extern "C" fn Servo_ParseStyleAttribute(bytes: *const u8, length: u32,
                                             -> ServoDeclarationBlockStrong {
     let value = unsafe { from_utf8_unchecked(slice::from_raw_parts(bytes, length as usize)) };
     GeckoDeclarationBlock::from_arc(Arc::new(GeckoDeclarationBlock {
-        declarations: GeckoElement::parse_style_attribute(value),
+        declarations: GeckoElement::parse_style_attribute(value).map(Arc::new),
         cache: AtomicPtr::new(cache),
         immutable: AtomicBool::new(false),
     }))
