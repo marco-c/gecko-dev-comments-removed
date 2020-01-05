@@ -284,19 +284,6 @@ HistoryDownloadElementShell.prototype = {
     this._updateState();
   },
 
-  get statusTextAndTip() {
-    let status = this.rawStatusTextAndTip;
-
-    
-    
-    if (!this.download.stopped) {
-      status.text = status.tip;
-    }
-    status.tip = "";
-
-    return status;
-  },
-
   onStateChanged() {
     this._updateState();
 
