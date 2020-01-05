@@ -29,19 +29,16 @@ extern crate bitflags;
 #[cfg(target_os = "macos")] extern crate core_text;
 
 
-#[cfg(target_os = "windows")] extern crate gdi32;
-#[cfg(target_os = "windows")] extern crate winapi;
+#[cfg(target_os = "windows")] extern crate dwrote;
 
 extern crate euclid;
 extern crate fnv;
 
-
 #[cfg(any(target_os = "linux", target_os = "android"))]
 extern crate fontconfig;
 extern crate fontsan;
-#[cfg(any(target_os = "linux", target_os = "android", target_os = "windows"))]
+#[cfg(any(target_os = "linux", target_os = "android"))]
 extern crate freetype;
-
 extern crate gfx_traits;
 
 
