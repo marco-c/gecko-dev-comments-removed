@@ -149,7 +149,9 @@ def check_lock(file_name, contents):
     contents = contents.splitlines(True)
     idx = 1
     packages = {}
-    exceptions = ["glutin", "wayland-kbd"]      
+
+    
+    exceptions = ["glutin", "wayland-kbd"]
 
     while idx < len(contents):
         content = contents[idx].strip()

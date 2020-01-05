@@ -13,8 +13,7 @@ use layers::platform::surface::{NativeDisplay, NativeSurface};
 use msg::compositor_msg::{Epoch, FrameTreeId, LayerId, LayerProperties};
 use msg::compositor_msg::{PaintListener, ScriptToCompositorMsg};
 use msg::constellation_msg::{AnimationState, ConstellationChan, PipelineId};
-use msg::constellation_msg::{Key, KeyModifiers, KeyState};
-use png;
+use msg::constellation_msg::{Image, Key, KeyModifiers, KeyState};
 use profile_traits::mem;
 use profile_traits::time;
 use std::fmt::{Debug, Error, Formatter};
@@ -193,7 +192,7 @@ pub enum Msg {
     
     SetCursor(Cursor),
     
-    CreatePng(IpcSender<Option<png::Image>>),
+    CreatePng(IpcSender<Option<Image>>),
     
     PaintTaskExited(PipelineId),
     
