@@ -549,8 +549,13 @@ nsCORSListenerProxy::CheckRequestApproved(nsIRequest* aRequest)
   
   nsresult status;
   nsresult rv = aRequest->GetStatus(&status);
-  NS_ENSURE_SUCCESS(rv, rv);
-  NS_ENSURE_SUCCESS(status, status);
+  if (NS_FAILED(rv)) {
+   return rv;
+  }
+
+  if (NS_FAILED(status)) {
+    return status;
+  }
 
   
   nsCOMPtr<nsIHttpChannel> http = do_QueryInterface(aRequest);
