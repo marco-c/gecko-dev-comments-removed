@@ -120,7 +120,7 @@ public:
   nsresult      Clear(nsPresContext* aPresContext);
   nsresult      Collapse(nsINode* aParentNode, int32_t aOffset);
   nsresult      Extend(nsINode* aParentNode, int32_t aOffset);
-  nsRange*      GetRangeAt(int32_t aIndex);
+  nsRange*      GetRangeAt(int32_t aIndex) const;
 
   
   
@@ -160,7 +160,7 @@ public:
   nsINode*     GetFocusNode();
   uint32_t     FocusOffset();
 
-  bool IsCollapsed();
+  bool IsCollapsed() const;
   void Collapse(nsINode& aNode, uint32_t aOffset, mozilla::ErrorResult& aRv);
   void CollapseToStart(mozilla::ErrorResult& aRv);
   void CollapseToEnd(mozilla::ErrorResult& aRv);
@@ -182,6 +182,15 @@ public:
   void Stringify(nsAString& aResult);
 
   bool ContainsNode(nsINode& aNode, bool aPartlyContained, mozilla::ErrorResult& aRv);
+
+  
+
+
+
+
+
+
+  bool ContainsPoint(const nsPoint& aPoint);
 
   void Modify(const nsAString& aAlter, const nsAString& aDirection,
               const nsAString& aGranularity, mozilla::ErrorResult& aRv);

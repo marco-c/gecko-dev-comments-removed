@@ -536,6 +536,16 @@ AccessibleCaretManager::SelectWordOrShortcut(const nsPoint& aPoint)
     ProvideHapticFeedback();
   };
 
+  
+  
+  
+  if (GetCaretMode() == CaretMode::Selection &&
+      GetSelection()->ContainsPoint(aPoint)) {
+    AC_LOG("%s: UpdateCarets() for current selection", __FUNCTION__);
+    UpdateCaretsWithHapticFeedback();
+    return NS_OK;
+  }
+
   if (!mPresShell) {
     return NS_ERROR_UNEXPECTED;
   }
@@ -611,16 +621,6 @@ AccessibleCaretManager::SelectWordOrShortcut(const nsPoint& aPoint)
   if (!ptFrame.IsAlive()) {
     
     return NS_ERROR_FAILURE;
-  }
-
-  if (GetCaretMode() == CaretMode::Selection &&
-      !mFirstCaret->IsLogicallyVisible() && !mSecondCaret->IsLogicallyVisible()) {
-    
-    
-    
-    AC_LOG("%s: UpdateCarets() for current selection", __FUNCTION__);
-    UpdateCaretsWithHapticFeedback();
-    return NS_OK;
   }
 
   
