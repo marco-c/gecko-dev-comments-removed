@@ -2,7 +2,7 @@
 
 
 
-use dom::namespace;
+use servo_util::namespace;
 use dom::attr::Attr;
 use dom::node::NodeIterator;
 use dom::node::{DoctypeNodeTypeId, DocumentFragmentNodeTypeId, CommentNodeTypeId, DocumentNodeTypeId, ElementNodeTypeId, TextNodeTypeId, AbstractNode};
