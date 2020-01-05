@@ -6,8 +6,7 @@
 
 
 use selectors::AttrSelector;
-use servo_util::atom::Atom;
-use servo_util::namespace::Namespace;
+use string_cache::{Atom, Namespace};
 
 
 pub trait TNode<'a, E: TElement<'a>> : Clone {
