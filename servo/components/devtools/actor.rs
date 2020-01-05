@@ -6,13 +6,11 @@
 
 use devtools_traits::PreciseTime;
 use rustc_serialize::json;
-use std::any::{Any, TypeId};
+use std::any::Any;
 use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
-use std::marker::Reflect;
-use std::mem::{replace, transmute};
+use std::mem::replace;
 use std::net::TcpStream;
-use std::raw::TraitObject;
 use std::sync::{Arc, Mutex};
 
 #[derive(PartialEq)]
@@ -24,7 +22,7 @@ pub enum ActorMessageStatus {
 
 
 
-pub trait Actor: Any {
+pub trait Actor: Any + ActorAsAny {
     fn handle_message(&self,
                       registry: &ActorRegistry,
                       msg_type: &str,
@@ -33,55 +31,14 @@ pub trait Actor: Any {
     fn name(&self) -> String;
 }
 
-impl Actor + Send {
-    
-    #[inline]
-    pub fn is<T: Reflect + 'static>(&self) -> bool {
-        
-        let t = TypeId::of::<T>();
+trait ActorAsAny {
+    fn actor_as_any(&self) -> &Any;
+    fn actor_as_any_mut(&mut self) -> &mut Any;
+}
 
-        
-        let boxed = self.get_type_id();
-
-        
-        t == boxed
-    }
-
-    
-    
-    #[inline]
-    #[allow(unsafe_code)]
-    pub fn downcast_ref<T: Reflect + 'static>(&self) -> Option<&T> {
-        if self.is::<T>() {
-            unsafe {
-                
-                let to: TraitObject = transmute(self);
-
-                
-                Some(transmute(to.data))
-            }
-        } else {
-            None
-        }
-    }
-
-    
-    
-    #[inline]
-    #[allow(unsafe_code)]
-    pub fn downcast_mut<T: Reflect + 'static>(&mut self) -> Option<&mut T> {
-        if self.is::<T>() {
-            unsafe {
-                
-                let to: TraitObject = transmute(self);
-
-                
-                Some(transmute(to.data))
-            }
-        } else {
-            None
-        }
-    }
+impl<T: Actor> ActorAsAny for T {
+    fn actor_as_any(&self) -> &Any { self }
+    fn actor_as_any_mut(&mut self) -> &mut Any { self }
 }
 
 
@@ -179,15 +136,15 @@ impl ActorRegistry {
     }
 
     
-    pub fn find<'a, T: Reflect + 'static>(&'a self, name: &str) -> &'a T {
+    pub fn find<'a, T: Any>(&'a self, name: &str) -> &'a T {
         let actor = self.actors.get(&name.to_string()).unwrap();
-        actor.downcast_ref::<T>().unwrap()
+        actor.actor_as_any().downcast_ref::<T>().unwrap()
     }
 
     
-    pub fn find_mut<'a, T: Reflect + 'static>(&'a mut self, name: &str) -> &'a mut T {
+    pub fn find_mut<'a, T: Any>(&'a mut self, name: &str) -> &'a mut T {
         let actor = self.actors.get_mut(&name.to_string()).unwrap();
-        actor.downcast_mut::<T>().unwrap()
+        actor.actor_as_any_mut().downcast_mut::<T>().unwrap()
     }
 
     
