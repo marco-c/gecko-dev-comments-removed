@@ -151,7 +151,9 @@ add_task(function* checkWrongSystemTimeWarning() {
     });
   }
 
-  let formatter = new Intl.DateTimeFormat();
+  let formatter = Services.intl.createDateTimeFormat(undefined, {
+    dateStyle: "short"
+  });
 
   
   let serverDate = new Date("2015/10/27");

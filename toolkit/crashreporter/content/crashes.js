@@ -78,11 +78,8 @@ function populateReportList() {
   var dateFormatter;
   var timeFormatter;
   try {
-    dateFormatter = new Intl.DateTimeFormat(undefined, { year: "2-digit",
-                                                         month: "numeric",
-                                                         day: "numeric" });
-    timeFormatter = new Intl.DateTimeFormat(undefined, { hour: "numeric",
-                                                         minute: "numeric" });
+    dateFormatter = Services.intl.createDateTimeFormat(undefined, { dateStyle: "short" });
+    timeFormatter = Services.intl.createDateTimeFormat(undefined, { timeStyle: "short" });
   } catch (e) {
     
     
