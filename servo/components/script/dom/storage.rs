@@ -13,7 +13,6 @@ use dom::bindings::str::DOMString;
 use dom::event::{Event, EventBubbles, EventCancelable};
 use dom::globalscope::GlobalScope;
 use dom::storageevent::StorageEvent;
-use dom::urlhelper::UrlHelper;
 use ipc_channel::ipc::{self, IpcSender};
 use net_traits::IpcSend;
 use net_traits::storage_thread::{StorageThreadMsg, StorageType};
@@ -193,14 +192,16 @@ impl Runnable for StorageEventRunnable {
             Some(&storage)
         );
 
-        let root_context = script_thread.root_browsing_context();
-        for it_context in root_context.iter() {
-            let it_window = it_context.active_window();
-            assert!(UrlHelper::SameOrigin(&ev_url, &it_window.get_url()));
-            
-            
-            if global.pipeline_id() != it_window.upcast::<GlobalScope>().pipeline_id() {
-                storage_event.upcast::<Event>().fire(it_window.upcast());
+        
+        
+        
+        for (id, document) in script_thread.borrow_documents().iter() {
+            if ev_url.origin() == document.window().get_url().origin() {
+                
+                
+                if global.pipeline_id() != id {
+                    storage_event.upcast::<Event>().fire(document.window().upcast());
+                }
             }
         }
     }

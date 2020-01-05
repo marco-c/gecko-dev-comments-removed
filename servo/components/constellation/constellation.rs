@@ -1636,12 +1636,12 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
                                    pipeline_id: PipelineId,
                                    event: MozBrowserEvent) {
         assert!(PREFS.is_mozbrowser_enabled());
-        let frame_id = self.pipelines.get(&pipeline_id).map(|pipeline| pipeline.frame_id);
 
         
         
         
         
+        let frame_id = self.pipelines.get(&pipeline_id).map(|pipeline| pipeline.frame_id);
         match self.pipelines.get(&parent_pipeline_id) {
             Some(pipeline) => pipeline.trigger_mozbrowser_event(frame_id, event),
             None => warn!("Pipeline {:?} handling mozbrowser event after closure.", parent_pipeline_id),
@@ -2219,6 +2219,7 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
 
     
     fn close_frame(&mut self, frame_id: FrameId, exit_mode: ExitPipelineMode) {
+        debug!("Closing frame {:?}.", frame_id);
         
         
         
@@ -2254,10 +2255,12 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
             };
             parent_pipeline.remove_child(frame_id);
         }
+        debug!("Closed frame {:?}.", frame_id);
     }
 
     
     fn close_pipeline(&mut self, pipeline_id: PipelineId, exit_mode: ExitPipelineMode) {
+        debug!("Closing pipeline {:?}.", pipeline_id);
         
         
         
@@ -2297,6 +2300,7 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
             ExitPipelineMode::Normal => pipeline.exit(),
             ExitPipelineMode::Force => pipeline.force_exit(),
         }
+        debug!("Closed pipeline {:?}.", pipeline_id);
     }
 
     
