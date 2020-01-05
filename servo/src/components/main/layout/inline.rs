@@ -2,6 +2,8 @@
 
 
 
+#![deny(unsafe_block)]
+
 use css::node_style::StyledNode;
 use layout::context::LayoutContext;
 use layout::floats::{FloatLeft, Floats, PlacementInfo};

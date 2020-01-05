@@ -4,6 +4,8 @@
 
 
 
+#![deny(unsafe_block)]
+
 use layout::block::{BlockFlow, MarginsMayNotCollapse, WidthAndMarginsComputer};
 use layout::context::LayoutContext;
 use layout::flow::{TableCellFlowClass, FlowClass, Flow};

@@ -4,6 +4,8 @@
 
 
 
+#![deny(unsafe_block)]
+
 use layout::fragment::Fragment;
 
 use computed = style::computed_values;
