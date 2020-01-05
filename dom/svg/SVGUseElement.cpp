@@ -327,10 +327,10 @@ SVGUseElement::CreateAnonymousContent()
   }
 
   
-  nsCOMPtr<nsIURI> baseURI = targetContent->GetBaseURI();
-  if (!baseURI)
+  mContentBaseURI = targetContent->GetBaseURI();
+  if (!mContentBaseURI) {
     return nullptr;
-  newcontent->SetExplicitBaseURI(baseURI);
+  }
 
   targetContent->AddMutationObserver(this);
   mClone = newcontent;

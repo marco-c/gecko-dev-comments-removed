@@ -77,6 +77,7 @@ public:
   already_AddRefed<SVGAnimatedLength> Height();
 
   nsIURI* GetSourceDocURI();
+  nsIURI* GetContentBaseURI() const { return mContentBaseURI; }
 
 protected:
   class SourceReference : public nsReferencedElement {
@@ -119,6 +120,7 @@ protected:
   nsCOMPtr<nsIContent> mOriginal; 
   nsCOMPtr<nsIContent> mClone;    
   SourceReference      mSource;   
+  nsCOMPtr<nsIURI> mContentBaseURI; 
 };
 
 } 
