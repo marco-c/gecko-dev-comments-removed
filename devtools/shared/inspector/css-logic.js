@@ -44,6 +44,9 @@ const { getTabPrefs } = require("devtools/shared/indentation");
 
 
 const Services = require("Services");
+
+loader.lazyImporter(this, "findCssSelector", "resource://gre/modules/css-selector.js");
+
 const CSSLexer = require("devtools/shared/css/lexer");
 const {LocalizationHelper} = require("devtools/shared/l10n");
 const styleInspectorL10N =
@@ -348,81 +351,7 @@ exports.prettifyCSS = prettifyCSS;
 
 
 
-function positionInNodeList(element, nodeList) {
-  for (let i = 0; i < nodeList.length; i++) {
-    if (element === nodeList[i]) {
-      return i;
-    }
-  }
-  return -1;
-}
 
-
-
-
-
-
-function findCssSelector(ele) {
-  ele = getRootBindingParent(ele);
-  let document = ele.ownerDocument;
-  if (!document || !document.contains(ele)) {
-    throw new Error("findCssSelector received element not inside document");
-  }
-
-  
-  if (ele.id &&
-      document.querySelectorAll("#" + CSS.escape(ele.id)).length === 1) {
-    return "#" + CSS.escape(ele.id);
-  }
-
-  
-  let tagName = ele.localName;
-  if (tagName === "html") {
-    return "html";
-  }
-  if (tagName === "head") {
-    return "head";
-  }
-  if (tagName === "body") {
-    return "body";
-  }
-
-  
-  let selector, index, matches;
-  if (ele.classList.length > 0) {
-    for (let i = 0; i < ele.classList.length; i++) {
-      
-      selector = "." + CSS.escape(ele.classList.item(i));
-      matches = document.querySelectorAll(selector);
-      if (matches.length === 1) {
-        return selector;
-      }
-      
-      selector = tagName + selector;
-      matches = document.querySelectorAll(selector);
-      if (matches.length === 1) {
-        return selector;
-      }
-      
-      index = positionInNodeList(ele, ele.parentNode.children) + 1;
-      selector = selector + ":nth-child(" + index + ")";
-      matches = document.querySelectorAll(selector);
-      if (matches.length === 1) {
-        return selector;
-      }
-    }
-  }
-
-  
-  
-  if (ele.parentNode !== document) {
-    index = positionInNodeList(ele, ele.parentNode.children) + 1;
-    selector = findCssSelector(ele.parentNode) + " > " +
-      tagName + ":nth-child(" + index + ")";
-  }
-
-  return selector;
-}
 exports.findCssSelector = findCssSelector;
 
 
