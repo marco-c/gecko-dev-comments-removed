@@ -912,7 +912,7 @@ nsDefaultURIFixup::KeywordURIFixup(const nsACString& aURIString,
 
     
     
-    if ((iter.size_forward() == 1 ||
+    if ((iterEnd - iter == 1 ||
          (lastSlashLoc == uint32_t(kNotFound) && *iter == '/')) &&
         
         (foundDots == 2 || foundDots == 3) &&
