@@ -221,7 +221,12 @@ class CompileInfo
                    + (fun ? 1 : 0);                         
         nargs_ = fun ? fun->nargs() : 0;
         nlocals_ = script->nfixed();
-        nstack_ = Max<unsigned>(script->nslots() - script->nfixed(), MinJITStackSize);
+
+        
+        
+        
+        uint32_t extra = script->isGlobalCode() ? 1 : 0;
+        nstack_ = Max<unsigned>(script->nslots() - script->nfixed(), MinJITStackSize) + extra;
         nslots_ = nimplicit_ + nargs_ + nlocals_ + nstack_;
 
         

@@ -1028,10 +1028,7 @@ CalleeToken
 TraceCalleeToken(JSTracer* trc, CalleeToken token);
 
 
-
-
-
-static const uint32_t MinJITStackSize = 2;
+static const uint32_t MinJITStackSize = 1;
 
 } 
 } 
