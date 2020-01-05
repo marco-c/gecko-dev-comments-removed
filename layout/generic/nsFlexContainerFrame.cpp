@@ -837,6 +837,20 @@ public:
     return mItems.getFirst();
   }
 
+  FlexItem* GetLastItem()
+  {
+    MOZ_ASSERT(mItems.isEmpty() == (mNumItems == 0),
+               "mNumItems bookkeeping is off");
+    return mItems.getLast();
+  }
+
+  const FlexItem* GetLastItem() const
+  {
+    MOZ_ASSERT(mItems.isEmpty() == (mNumItems == 0),
+               "mNumItems bookkeeping is off");
+    return mItems.getLast();
+  }
+
   bool IsEmpty() const
   {
     MOZ_ASSERT(mItems.isEmpty() == (mNumItems == 0),
@@ -4182,6 +4196,14 @@ nsFlexContainerFrame::DoFlexLayout(nsPresContext*           aPresContext,
 
   
   
+  
+  const FlexItem* const firstItem =
+    aAxisTracker.AreAxesInternallyReversed()
+    ? lines.getLast()->GetLastItem()
+    : lines.getFirst()->GetFirstItem();
+
+  
+  
   for (const FlexLine* line = lines.getFirst(); line; line = line->getNext()) {
     for (const FlexItem* item = line->GetFirstItem(); item;
          item = item->getNext()) {
@@ -4233,7 +4255,7 @@ nsFlexContainerFrame::DoFlexLayout(nsPresContext*           aPresContext,
       
       
       
-      if (item->Frame() == mFrames.FirstChild() &&
+      if (item == firstItem &&
           flexContainerAscent == nscoord_MIN) {
         flexContainerAscent = itemNormalBPos + item->ResolvedAscent();
       }
