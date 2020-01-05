@@ -211,6 +211,12 @@ public:
   virtual nsresult PageIn(ogg_page* aPage);
 
   
+  
+  virtual int64_t MaxKeyframeOffset() { return 0; }
+  
+  virtual int32_t KeyFrameGranuleJobs() { return 0; }
+
+  
   uint64_t mPacketCount;
 
   
@@ -367,12 +373,11 @@ public:
   bool IsKeyframe(ogg_packet* aPacket) override;
   nsresult PageIn(ogg_page* aPage) override;
   const TrackInfo* GetInfo() const override { return &mInfo; }
-
-  
-  
-  int64_t MaxKeyframeOffset();
-  
-  int32_t mKeyframe_granule_shift;
+  int64_t MaxKeyframeOffset() override;
+  int32_t KeyFrameGranuleJobs() override
+  {
+    return mTheoraInfo.keyframe_granule_shift;
+  }
 
 private:
   

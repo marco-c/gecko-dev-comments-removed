@@ -15,7 +15,6 @@
 namespace mozilla {
 
 class OggTrackDemuxer;
-class OggHeaders;
 
 class OggDemuxer : public MediaDataDemuxer
 {
@@ -203,7 +202,7 @@ private:
   
   
   
-  bool ReadHeaders(TrackInfo::TrackType aType, OggCodecState* aState, OggHeaders& aHeaders);
+  bool ReadHeaders(TrackInfo::TrackType aType, OggCodecState* aState);
 
   
   bool ReadOggChain(const media::TimeUnit& aLastEndTime);
@@ -217,10 +216,7 @@ private:
   void BuildSerialList(nsTArray<uint32_t>& aTracks);
 
   
-  void SetupTargetTheora(TheoraState* aTheoraState, OggHeaders& aHeaders);
-  void SetupTargetVorbis(VorbisState* aVorbisState, OggHeaders& aHeaders);
-  void SetupTargetOpus(OpusState* aOpusState, OggHeaders& aHeaders);
-  void SetupTargetFlac(FlacState* aFlacState, OggHeaders& aHeaders);
+  void SetupTarget(OggCodecState** aSavedState, OggCodecState* aNewState);
   void SetupTargetSkeleton();
   void SetupMediaTracksInfo(const nsTArray<uint32_t>& aSerials);
   void FillTags(TrackInfo* aInfo, MetadataTags* aTags);
@@ -256,17 +252,17 @@ private:
   OggCodecStore mCodecStore;
 
   
-  TheoraState* mTheoraState;
+  OggCodecState* mTheoraState;
 
   
-  VorbisState* mVorbisState;
+  OggCodecState* mVorbisState;
 
   
-  OpusState* mOpusState;
+  OggCodecState* mOpusState;
 
   
   
-  FlacState* mFlacState;
+  OggCodecState* mFlacState;
 
   OggCodecState* GetTrackCodecState(TrackInfo::TrackType aType) const;
   TrackInfo::TrackType GetCodecStateType(OggCodecState* aState) const;
@@ -296,17 +292,6 @@ private:
   MediaResourceIndex* CommonResource();
   OggStateContext mAudioOggState;
   OggStateContext mVideoOggState;
-
-  
-  
-  
-  
-  
-  
-  uint32_t mVorbisSerial;
-  uint32_t mOpusSerial;
-  uint32_t mTheoraSerial;
-  uint32_t mFlacSerial;
 
   Maybe<int64_t> mStartTime;
 
