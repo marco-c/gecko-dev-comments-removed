@@ -5,24 +5,35 @@
 
 
 
+use document_loader::LoadType;
 use dom::bindings::cell::DOMRefCell;
 use dom::bindings::codegen::Bindings::ServoHTMLParserBinding;
 use dom::bindings::global::GlobalRef;
 use dom::bindings::trace::JSTraceable;
 use dom::bindings::js::{JS, JSRef, Rootable, Temporary};
+use dom::bindings::refcounted::Trusted;
 use dom::bindings::utils::{Reflectable, Reflector, reflect_dom_object};
 use dom::document::{Document, DocumentHelpers};
-use dom::node::Node;
+use dom::node::{window_from_node, Node};
+use dom::window::Window;
+use network_listener::PreInvoke;
 use parse::Parser;
+use script_task::{ScriptTask, ScriptChan};
 
-use util::task_state;
+use msg::constellation_msg::{PipelineId, SubpageId};
+use net_traits::{Metadata, AsyncResponseListener};
 
+use encoding::all::UTF_8;
+use encoding::types::{Encoding, DecoderTrap};
+use std::cell::{Cell, RefCell};
 use std::default::Default;
 use url::Url;
 use js::jsapi::JSTracer;
 use html5ever::tokenizer;
 use html5ever::tree_builder;
 use html5ever::tree_builder::{TreeBuilder, TreeBuilderOpts};
+use hyper::header::ContentType;
+use hyper::mime::{Mime, TopLevel, SubLevel};
 
 #[must_root]
 #[jstraceable]
@@ -42,26 +53,156 @@ pub struct FragmentContext<'a> {
 pub type Tokenizer = tokenizer::Tokenizer<TreeBuilder<JS<Node>, Sink>>;
 
 
+pub struct ParserContext {
+    
+    parser: RefCell<Option<Trusted<ServoHTMLParser>>>,
+    
+    is_image_document: Cell<bool>,
+    
+    id: PipelineId,
+    
+    subpage: Option<SubpageId>,
+    
+    script_chan: Box<ScriptChan+Send>,
+    
+    url: Url,
+}
+
+impl ParserContext {
+    pub fn new(id: PipelineId, subpage: Option<SubpageId>, script_chan: Box<ScriptChan+Send>,
+               url: Url) -> ParserContext {
+        ParserContext {
+            parser: RefCell::new(None),
+            is_image_document: Cell::new(false),
+            id: id,
+            subpage: subpage,
+            script_chan: script_chan,
+            url: url,
+        }
+    }
+}
+
+impl AsyncResponseListener for ParserContext {
+    fn headers_available(&self, metadata: Metadata) {
+        let content_type = metadata.content_type.clone();
+
+        let parser = ScriptTask::page_fetch_complete(self.id.clone(), self.subpage.clone(),
+                                                     metadata);
+        let parser = match parser {
+            Some(parser) => parser,
+            None => return,
+        }.root();
+
+        let parser = parser.r();
+        let win = parser.window().root();
+        *self.parser.borrow_mut() = Some(Trusted::new(win.r().get_cx(), parser,
+                                                      self.script_chan.clone()));
+
+        match content_type {
+            Some(ContentType(Mime(TopLevel::Image, _, _))) => {
+                self.is_image_document.set(true);
+                let page = format!("<html><body><img src='{}' /></body></html>",
+                                   self.url.serialize());
+                parser.pending_input.borrow_mut().push(page);
+                parser.parse_sync();
+            }
+            Some(ContentType(Mime(TopLevel::Text, SubLevel::Plain, _))) => {
+                
+                
+
+                
+                
+                
+                
+                
+                let page = format!("<pre>\u{000A}<plaintext>");
+                parser.pending_input.borrow_mut().push(page);
+                parser.parse_sync();
+            },
+            _ => {}
+        }
+    }
+
+    fn data_available(&self, payload: Vec<u8>) {
+        if !self.is_image_document.get() {
+            
+            let data = UTF_8.decode(&payload, DecoderTrap::Replace).unwrap();
+            let parser = match self.parser.borrow().as_ref() {
+                Some(parser) => parser.to_temporary(),
+                None => return,
+            }.root();
+            parser.r().parse_chunk(data);
+        }
+    }
+
+    fn response_complete(&self, status: Result<(), String>) {
+        let parser = match self.parser.borrow().as_ref() {
+            Some(parser) => parser.to_temporary(),
+            None => return,
+        }.root();
+        let doc = parser.r().document.root();
+        doc.r().finish_load(LoadType::PageSource(self.url.clone()));
+
+        if let Err(err) = status {
+            debug!("Failed to load page URL {}, error: {}", self.url.serialize(), err);
+            
+        }
+
+        parser.r().last_chunk_received.set(true);
+        parser.r().parse_sync();
+    }
+}
+
+impl PreInvoke for ParserContext {
+}
+
+
 
 #[must_root]
 #[privatize]
 pub struct ServoHTMLParser {
     reflector_: Reflector,
     tokenizer: DOMRefCell<Tokenizer>,
+    
+    pending_input: DOMRefCell<Vec<String>>,
+    
+    document: JS<Document>,
+    
+    suspended: Cell<bool>,
+    
+    last_chunk_received: Cell<bool>,
+    
+    
+    pipeline: Option<PipelineId>,
 }
 
-impl Parser for ServoHTMLParser{
-    fn parse_chunk(&self, input: String) {
-        self.tokenizer().borrow_mut().feed(input);
+impl<'a> Parser for JSRef<'a, ServoHTMLParser> {
+    fn parse_chunk(self, input: String) {
+        self.document.root().r().set_current_parser(Some(self));
+        self.pending_input.borrow_mut().push(input);
+        self.parse_sync();
     }
-    fn finish(&self){
+
+    fn finish(self) {
+        assert!(!self.suspended.get());
+        assert!(self.pending_input.borrow().is_empty());
+
         self.tokenizer().borrow_mut().end();
+        debug!("finished parsing");
+
+        let document = self.document.root();
+        document.r().set_current_parser(None);
+
+        if let Some(pipeline) = self.pipeline {
+            ScriptTask::parsing_complete(pipeline);
+        }
     }
 }
 
 impl ServoHTMLParser {
     #[allow(unrooted_must_root)]
-    pub fn new(base_url: Option<Url>, document: JSRef<Document>) -> Temporary<ServoHTMLParser> {
+    pub fn new(base_url: Option<Url>, document: JSRef<Document>, pipeline: Option<PipelineId>)
+               -> Temporary<ServoHTMLParser> {
         let window = document.window().root();
         let sink = Sink {
             base_url: base_url,
@@ -78,6 +219,11 @@ impl ServoHTMLParser {
         let parser = ServoHTMLParser {
             reflector_: Reflector::new(),
             tokenizer: DOMRefCell::new(tok),
+            pending_input: DOMRefCell::new(vec!()),
+            document: JS::from_rooted(document),
+            suspended: Cell::new(false),
+            last_chunk_received: Cell::new(false),
+            pipeline: pipeline,
         };
 
         reflect_dom_object(box parser, GlobalRef::Window(window.r()),
@@ -111,6 +257,11 @@ impl ServoHTMLParser {
         let parser = ServoHTMLParser {
             reflector_: Reflector::new(),
             tokenizer: DOMRefCell::new(tok),
+            pending_input: DOMRefCell::new(vec!()),
+            document: JS::from_rooted(document),
+            suspended: Cell::new(false),
+            last_chunk_received: Cell::new(true),
+            pipeline: None,
         };
 
         reflect_dom_object(box parser, GlobalRef::Window(window.r()),
@@ -126,6 +277,73 @@ impl ServoHTMLParser {
 impl Reflectable for ServoHTMLParser {
     fn reflector<'a>(&'a self) -> &'a Reflector {
         &self.reflector_
+    }
+}
+
+trait PrivateServoHTMLParserHelpers {
+    
+    
+    fn parse_sync(self);
+    
+    fn window(self) -> Temporary<Window>;
+}
+
+impl<'a> PrivateServoHTMLParserHelpers for JSRef<'a, ServoHTMLParser> {
+    fn parse_sync(self) {
+        let mut first = true;
+
+        
+        
+        loop {
+            if self.suspended.get() {
+                return;
+            }
+
+            if self.pending_input.borrow().is_empty() && !first {
+                break;
+            }
+
+            let mut pending_input = self.pending_input.borrow_mut();
+            if !pending_input.is_empty() {
+                let chunk = pending_input.remove(0);
+                self.tokenizer.borrow_mut().feed(chunk);
+            } else {
+                self.tokenizer.borrow_mut().run();
+            }
+
+            first = false;
+        }
+
+        if self.last_chunk_received.get() {
+            self.finish();
+        }
+    }
+
+    fn window(self) -> Temporary<Window> {
+        let doc = self.document.root();
+        window_from_node(doc.r())
+    }
+}
+
+pub trait ServoHTMLParserHelpers {
+    
+    
+    
+    fn suspend(self);
+    
+    fn resume(self);
+}
+
+impl<'a> ServoHTMLParserHelpers for JSRef<'a, ServoHTMLParser> {
+    fn suspend(self) {
+        assert!(!self.suspended.get());
+        self.suspended.set(true);
+    }
+
+    fn resume(self) {
+        assert!(self.suspended.get());
+        self.suspended.set(false);
+        self.parse_sync();
     }
 }
 
@@ -152,11 +370,6 @@ impl JSTraceable for ServoHTMLParser {
         let tracer = &tracer as &tree_builder::Tracer<Handle=JS<Node>>;
 
         unsafe {
-            
-            
-            debug_assert!(task_state::get().contains(task_state::IN_HTML_PARSER)
-                || !self.tokenizer.is_mutably_borrowed());
-
             let tokenizer = self.tokenizer.borrow_for_gc_trace();
             let tree_builder = tokenizer.sink();
             tree_builder.trace_handles(tracer);
