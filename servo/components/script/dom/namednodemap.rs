@@ -52,7 +52,7 @@ impl<'a> NamedNodeMapMethods for JSRef<'a, NamedNodeMap> {
         
         let owner = owner.r();
         let attrs = owner.attrs();
-        attrs.as_slice().get(index as usize).map(|x| Temporary::new(x.clone()))
+        attrs.get(index as usize).map(|x| Temporary::new(x.clone()))
     }
 
     

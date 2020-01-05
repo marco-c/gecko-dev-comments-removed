@@ -544,7 +544,7 @@ impl<'a> NodeHelpers for JSRef<'a, Node> {
             s.push_str("    ");
         }
 
-        s.push_str(self.debug_str().as_slice());
+        s.push_str(&*self.debug_str());
         debug!("{:?}", s);
 
         
@@ -888,7 +888,7 @@ impl<'a> NodeHelpers for JSRef<'a, Node> {
     
     fn query_selector(self, selectors: DOMString) -> Fallible<Option<Temporary<Element>>> {
         
-        match parse_author_origin_selector_list_from_str(selectors.as_slice()) {
+        match parse_author_origin_selector_list_from_str(&selectors) {
             
             Err(()) => return Err(Syntax),
             
@@ -909,7 +909,7 @@ impl<'a> NodeHelpers for JSRef<'a, Node> {
     unsafe fn query_selector_iter(self, selectors: DOMString)
                                   -> Fallible<QuerySelectorIterator> {
         
-        match parse_author_origin_selector_list_from_str(selectors.as_slice()) {
+        match parse_author_origin_selector_list_from_str(&selectors) {
             
             Err(()) => Err(Syntax),
             
@@ -1734,7 +1734,7 @@ impl Node {
                     local: element.local_name().clone()
                 };
                 let element = Element::create(name,
-                    element.prefix().as_ref().map(|p| p.as_slice().to_owned()),
+                    element.prefix().as_ref().map(|p| (**p).to_owned()),
                     document.r(), ElementCreator::ScriptCreated);
                 NodeCast::from_temporary(element)
             },
