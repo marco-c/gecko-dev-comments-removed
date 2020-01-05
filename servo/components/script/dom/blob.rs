@@ -18,6 +18,7 @@ use num::ToPrimitive;
 use std::ascii::AsciiExt;
 use std::borrow::ToOwned;
 use std::cmp::{min, max};
+use std::cell::{Cell};
 
 #[derive(JSTraceable)]
 pub enum BlobTypeId {
@@ -32,8 +33,8 @@ pub struct Blob {
     type_: BlobTypeId,
     bytes: Option<Vec<u8>>,
     typeString: DOMString,
-    global: GlobalField
-    
+    global: GlobalField,
+    isClosed_: Cell<bool>
 }
 
 fn is_ascii_printable(string: &DOMString) -> bool{
@@ -50,8 +51,8 @@ impl Blob {
             type_: type_,
             bytes: bytes,
             typeString: typeString.to_owned(),
-            global: GlobalField::from_rooted(&global)
-            
+            global: GlobalField::from_rooted(&global),
+            isClosed_: Cell::new(false)
         }
     }
 
@@ -83,7 +84,6 @@ impl Blob {
 
 pub trait BlobHelpers {
     fn read_out_buffer(self) -> Receiver<Vec<u8>>;
-    fn read_out_type(self) -> DOMString;
 }
 
 impl<'a> BlobHelpers for &'a Blob {
@@ -91,9 +91,6 @@ impl<'a> BlobHelpers for &'a Blob {
         let (send, recv) = mpsc::channel();
         send.send(self.bytes.clone().unwrap_or(vec![])).unwrap();
         recv
-    }
-    fn read_out_type(self) -> DOMString {
-        self.typeString.clone()
     }
 }
 
@@ -160,14 +157,23 @@ impl<'a> BlobMethods for &'a Blob {
     }
 
     
-    
-    
-    
+    fn IsClosed(self) -> bool {
+        self.isClosed_.get()
+    }
 
     
-    
-    
-    
+    fn Close(self) {
+        
+        if self.isClosed_.get() {
+            return;
+        }
+
+        
+        self.isClosed_.set(true);
+
+        
+
+    }
 }
 
 impl FileDerived for Blob {
