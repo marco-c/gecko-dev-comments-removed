@@ -230,23 +230,6 @@ TextEditor::InsertFromDrop(nsIDOMEvent* aDropEvent)
   bool isCollapsed = selection->Collapsed();
 
   
-  nsCOMPtr<nsIDOMNode> userSelectNode = FindUserSelectAllNode(newSelectionParent);
-  if (userSelectNode) {
-    
-    
-    
-    
-    
-    
-    
-    
-
-    newSelectionParent = GetNodeLocation(userSelectNode, &newSelectionOffset);
-
-    NS_ENSURE_TRUE(newSelectionParent, NS_ERROR_FAILURE);
-  }
-
-  
   
   
   if (!isCollapsed) {

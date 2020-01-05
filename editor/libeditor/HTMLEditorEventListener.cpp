@@ -174,17 +174,6 @@ HTMLEditorEventListener::MouseDown(nsIDOMMouseEvent* aMouseEvent)
       
       
       if (element) {
-        nsCOMPtr<nsIDOMNode> selectAllNode =
-          htmlEditor->FindUserSelectAllNode(element);
-
-        if (selectAllNode) {
-          nsCOMPtr<nsIDOMElement> newElement = do_QueryInterface(selectAllNode);
-          if (newElement) {
-            node = selectAllNode;
-            element = newElement;
-          }
-        }
-
         if (isContextClick && !HTMLEditUtils::IsImage(node)) {
           selection->Collapse(parent, offset);
         } else {

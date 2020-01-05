@@ -194,8 +194,7 @@ WSRunObject::InsertBreak(nsCOMPtr<nsINode>* aInOutParent,
       
       
       nsresult rv = DeleteChars(*aInOutParent, *aInOutOffset,
-                                afterRun->mEndNode, afterRun->mEndOffset,
-                                eOutsideUserSelectAll);
+                                afterRun->mEndNode, afterRun->mEndOffset);
       NS_ENSURE_SUCCESS(rv, nullptr);
     } else if (afterRun->mType == WSType::normalWS) {
       
@@ -218,8 +217,7 @@ WSRunObject::InsertBreak(nsCOMPtr<nsINode>* aInOutParent,
       
       
       nsresult rv = DeleteChars(beforeRun->mStartNode, beforeRun->mStartOffset,
-                                *aInOutParent, *aInOutOffset,
-                                eOutsideUserSelectAll);
+                                *aInOutParent, *aInOutOffset);
       NS_ENSURE_SUCCESS(rv, nullptr);
     } else if (beforeRun->mType == WSType::normalWS) {
       
@@ -272,7 +270,7 @@ WSRunObject::InsertText(const nsAString& aStringToInsert,
       
       nsresult rv =
         DeleteChars(*aInOutParent, *aInOutOffset, afterRun->mEndNode,
-                    afterRun->mEndOffset, eOutsideUserSelectAll);
+                    afterRun->mEndOffset);
       NS_ENSURE_SUCCESS(rv, rv);
     } else if (afterRun->mType == WSType::normalWS) {
       
@@ -289,7 +287,7 @@ WSRunObject::InsertText(const nsAString& aStringToInsert,
       
       nsresult rv =
         DeleteChars(beforeRun->mStartNode, beforeRun->mStartOffset,
-                    *aInOutParent, *aInOutOffset, eOutsideUserSelectAll);
+                    *aInOutParent, *aInOutOffset);
       NS_ENSURE_SUCCESS(rv, rv);
     } else if (beforeRun->mType == WSType::normalWS) {
       
@@ -1158,8 +1156,7 @@ WSRunObject::PrepareToDeleteRangePriv(WSRunObject* aEndObject)
   if (afterRun && (afterRun->mType & WSType::leadingWS)) {
     nsresult rv =
       aEndObject->DeleteChars(aEndObject->mNode, aEndObject->mOffset,
-                              afterRun->mEndNode, afterRun->mEndOffset,
-                              eOutsideUserSelectAll);
+                              afterRun->mEndNode, afterRun->mEndOffset);
     NS_ENSURE_SUCCESS(rv, rv);
   }
   
@@ -1171,7 +1168,7 @@ WSRunObject::PrepareToDeleteRangePriv(WSRunObject* aEndObject)
       WSPoint point = aEndObject->GetCharAfter(aEndObject->mNode,
                                                aEndObject->mOffset);
       if (point.mTextNode && nsCRT::IsAsciiSpace(point.mChar)) {
-        nsresult rv = aEndObject->ConvertToNBSP(point, eOutsideUserSelectAll);
+        nsresult rv = aEndObject->ConvertToNBSP(point);
         NS_ENSURE_SUCCESS(rv, rv);
       }
     }
@@ -1179,7 +1176,7 @@ WSRunObject::PrepareToDeleteRangePriv(WSRunObject* aEndObject)
   
   if (beforeRun && (beforeRun->mType & WSType::trailingWS)) {
     nsresult rv = DeleteChars(beforeRun->mStartNode, beforeRun->mStartOffset,
-                              mNode, mOffset, eOutsideUserSelectAll);
+                              mNode, mOffset);
     NS_ENSURE_SUCCESS(rv, rv);
   } else if (beforeRun && beforeRun->mType == WSType::normalWS && !mPRE) {
     if ((afterRun && (afterRun->mType & WSType::trailingWS)) ||
@@ -1195,7 +1192,7 @@ WSRunObject::PrepareToDeleteRangePriv(WSRunObject* aEndObject)
                          getter_AddRefs(wsEndNode), &wsEndOffset);
         point.mTextNode = wsStartNode;
         point.mOffset = wsStartOffset;
-        nsresult rv = ConvertToNBSP(point, eOutsideUserSelectAll);
+        nsresult rv = ConvertToNBSP(point);
         NS_ENSURE_SUCCESS(rv, rv);
       }
     }
@@ -1248,27 +1245,11 @@ nsresult
 WSRunObject::DeleteChars(nsINode* aStartNode,
                          int32_t aStartOffset,
                          nsINode* aEndNode,
-                         int32_t aEndOffset,
-                         AreaRestriction aAR)
+                         int32_t aEndOffset)
 {
   
   
   NS_ENSURE_TRUE(aStartNode && aEndNode, NS_ERROR_NULL_POINTER);
-
-  if (aAR == eOutsideUserSelectAll) {
-    nsCOMPtr<nsIDOMNode> san =
-      mHTMLEditor->FindUserSelectAllNode(GetAsDOMNode(aStartNode));
-    if (san) {
-      return NS_OK;
-    }
-
-    if (aStartNode != aEndNode) {
-      san = mHTMLEditor->FindUserSelectAllNode(GetAsDOMNode(aEndNode));
-      if (san) {
-        return NS_OK;
-      }
-    }
-  }
 
   if (aStartNode == aEndNode && aStartOffset == aEndOffset) {
     
@@ -1436,19 +1417,11 @@ WSRunObject::GetCharBefore(const WSPoint &aPoint)
 }
 
 nsresult
-WSRunObject::ConvertToNBSP(WSPoint aPoint, AreaRestriction aAR)
+WSRunObject::ConvertToNBSP(WSPoint aPoint)
 {
   
   
   NS_ENSURE_TRUE(aPoint.mTextNode, NS_ERROR_NULL_POINTER);
-
-  if (aAR == eOutsideUserSelectAll) {
-    nsCOMPtr<nsIDOMNode> san =
-      mHTMLEditor->FindUserSelectAllNode(GetAsDOMNode(aPoint.mTextNode));
-    if (san) {
-      return NS_OK;
-    }
-  }
 
   
   AutoTransactionsConserveSelection dontSpazMySelection(mHTMLEditor);
