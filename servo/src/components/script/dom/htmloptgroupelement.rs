@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::utils::{DOMString, ErrorResult, null_string};
+use dom::bindings::utils::{DOMString, ErrorResult};
 use dom::htmlelement::HTMLElement;
 
 pub struct HTMLOptGroupElement {
@@ -14,13 +14,15 @@ impl HTMLOptGroupElement {
         false
     }
 
-    pub fn SetDisabled(&mut self, _disabled: bool, _rv: &mut ErrorResult) {
+    pub fn SetDisabled(&mut self, _disabled: bool) -> ErrorResult {
+        Ok(())
     }
 
     pub fn Label(&self) -> DOMString {
-        null_string
+        None
     }
 
-    pub fn SetLabel(&mut self, _label: &DOMString, _rv: &mut ErrorResult) {
+    pub fn SetLabel(&mut self, _label: &DOMString) -> ErrorResult {
+        Ok(())
     }
 }

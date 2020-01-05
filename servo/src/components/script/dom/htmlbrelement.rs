@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::utils::{DOMString, null_string, ErrorResult};
+use dom::bindings::utils::{DOMString, ErrorResult};
 use dom::htmlelement::HTMLElement;
 
 pub struct HTMLBRElement {
@@ -11,9 +11,10 @@ pub struct HTMLBRElement {
 
 impl HTMLBRElement {
     pub fn Clear(&self) -> DOMString {
-        null_string
+        None
     }
 
-    pub fn SetClear(&mut self, _text: &DOMString, _rv: &mut ErrorResult) {
+    pub fn SetClear(&mut self, _text: &DOMString) -> ErrorResult {
+        Ok(())
     }
 }

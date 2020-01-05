@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::utils::{DOMString, null_string, ErrorResult, CacheableWrapper};
+use dom::bindings::utils::{DOMString, ErrorResult, CacheableWrapper};
 use dom::htmlcollection::HTMLCollection;
 use dom::htmlelement::HTMLElement;
 use js::jsapi::{JSObject, JSContext};
@@ -13,10 +13,11 @@ pub struct HTMLMapElement {
 
 impl HTMLMapElement {
     pub fn Name(&self) -> DOMString {
-        null_string
+        None
     }
 
-    pub fn SetName(&mut self, _name: &DOMString, _rv: &mut ErrorResult) {
+    pub fn SetName(&mut self, _name: &DOMString) -> ErrorResult {
+        Ok(())
     }
 
     fn get_scope_and_cx(&self) -> (*JSObject, *JSContext) {

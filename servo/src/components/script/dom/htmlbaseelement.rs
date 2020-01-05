@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::utils::{DOMString, null_string, ErrorResult};
+use dom::bindings::utils::{DOMString, ErrorResult};
 use dom::htmlelement::HTMLElement;
 
 pub struct HTMLBaseElement {
@@ -11,16 +11,18 @@ pub struct HTMLBaseElement {
 
 impl HTMLBaseElement {
     pub fn Href(&self) -> DOMString {
-        null_string
+        None
     }
 
-    pub fn SetHref(&self, _href: &DOMString, _rv: &mut ErrorResult) {
+    pub fn SetHref(&self, _href: &DOMString) -> ErrorResult {
+        Ok(())
     }
 
     pub fn Target(&self) -> DOMString {
-        null_string
+        None
     }
 
-    pub fn SetTarget(&self, _target: &DOMString, _rv: &mut ErrorResult) {
+    pub fn SetTarget(&self, _target: &DOMString) -> ErrorResult {
+        Ok(())
     }
 }

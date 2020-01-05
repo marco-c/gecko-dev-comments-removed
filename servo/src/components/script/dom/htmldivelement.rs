@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::utils::{DOMString, null_string, ErrorResult};
+use dom::bindings::utils::{DOMString, ErrorResult};
 use dom::htmlelement::HTMLElement;
 
 pub struct HTMLDivElement {
@@ -11,9 +11,10 @@ pub struct HTMLDivElement {
 
 impl HTMLDivElement {
     pub fn Align(&self) -> DOMString {
-        null_string
+        None
     }
 
-    pub fn SetAlign(&mut self, _align: &DOMString, _rv: &mut ErrorResult) {
+    pub fn SetAlign(&mut self, _align: &DOMString) -> ErrorResult {
+        Ok(())
     }
 }

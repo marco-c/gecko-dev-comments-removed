@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::utils::{DOMString, str, null_string, ErrorResult};
+use dom::bindings::utils::{DOMString, Fallible, null_str_as_empty};
 use dom::characterdata::CharacterData;
 use dom::node::{AbstractNode, ScriptView, CommentNodeTypeId, Node};
 use dom::window::Window;
@@ -20,14 +20,11 @@ impl Comment {
         }
     }
 
-    pub fn Constructor(owner: @mut Window, data: &DOMString, _rv: &mut ErrorResult) -> AbstractNode<ScriptView> {
-        let s = match *data {
-            str(ref s) => s.clone(),
-            null_string => ~""
-        };
+    pub fn Constructor(owner: @mut Window, data: &DOMString) -> Fallible<AbstractNode<ScriptView>> {
+        let s = null_str_as_empty(data);
         unsafe {
             let compartment = (*owner.page).js_info.get_ref().js_compartment;
-            Node::as_abstract_node(compartment.cx.ptr, @Comment::new(s))
+            Ok(Node::as_abstract_node(compartment.cx.ptr, @Comment::new(s)))
         }
     }
 }

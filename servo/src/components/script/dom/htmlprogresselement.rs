@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::utils::{ErrorResult};
+use dom::bindings::utils::{ErrorResult, Fallible};
 use dom::htmlelement::HTMLElement;
 
 pub struct HTMLProgressElement {
@@ -14,21 +14,23 @@ impl HTMLProgressElement {
         0f64
     }
 
-    pub fn SetValue(&mut self, _value: f64, _rv: &mut ErrorResult) {
+    pub fn SetValue(&mut self, _value: f64) -> ErrorResult {
+        Ok(())
     }
 
     pub fn Max(&self) -> f64 {
         0f64
     }
 
-    pub fn SetMax(&mut self, _max: f64, _rv: &mut ErrorResult) {
+    pub fn SetMax(&mut self, _max: f64) -> ErrorResult {
+        Ok(())
     }
 
     pub fn Position(&self) -> f64 {
         0f64
     }
 
-    pub fn GetPositiom(&self, _rv: &mut ErrorResult) -> f64 {
-        0f64
+    pub fn GetPositiom(&self) -> Fallible<f64> {
+        Ok(0f64)
     }
 }

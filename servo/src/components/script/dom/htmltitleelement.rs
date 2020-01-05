@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::utils::{DOMString, null_string, ErrorResult};
+use dom::bindings::utils::{DOMString, ErrorResult};
 use dom::htmlelement::HTMLElement;
 
 pub struct HTMLTitleElement {
@@ -11,9 +11,10 @@ pub struct HTMLTitleElement {
 
 impl HTMLTitleElement {
     pub fn Text(&self) -> DOMString {
-        null_string
+        None
     }
 
-    pub fn SetText(&mut self, _text: &DOMString, _rv: &mut ErrorResult) {
+    pub fn SetText(&mut self, _text: &DOMString) -> ErrorResult {
+        Ok(())
     }
 }

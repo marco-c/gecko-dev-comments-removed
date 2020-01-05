@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::utils::{DOMString, null_string};
+use dom::bindings::utils::DOMString;
 use dom::htmlelement::HTMLElement;
 
 pub enum HeadingLevel {
@@ -21,7 +21,7 @@ pub struct HTMLHeadingElement {
 
 impl HTMLHeadingElement {
     pub fn Align(&self) -> DOMString {
-        null_string
+        None
     }
 
     pub fn SetAlign(&mut self, _align: &DOMString) {
