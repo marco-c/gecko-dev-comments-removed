@@ -672,16 +672,7 @@ NativeObject::putProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
 
 
 
-        bool extensible;
-
-        if (!IsExtensible(cx, obj, &extensible))
-            return nullptr;
-
-        if (!extensible) {
-            if (!cx->helperThread())
-                JSObject::reportNotExtensible(cx, obj);
-            return nullptr;
-        }
+        MOZ_ASSERT(obj->nonProxyIsExtensible());
 
         return addPropertyInternal(cx, obj, id, getter, setter, slot, attrs, flags,
                                    entry, true, keep);
