@@ -921,11 +921,13 @@ class Parser final : private JS::AutoGCRooter, public StrictModeGetter
     MOZ_MUST_USE bool strictModeError(unsigned errorNumber, ...);
 
     
+    MOZ_MUST_USE bool warning(unsigned errorNumber, ...);
+
+    
 
 
 
     MOZ_MUST_USE bool extraWarning(unsigned errorNumber, ...);
-
 
     Parser(ExclusiveContext* cx, LifoAlloc& alloc, const ReadOnlyCompileOptions& options,
            const char16_t* chars, size_t length, bool foldConstants, UsedNameTracker& usedNames,
