@@ -474,7 +474,7 @@ this.ExtensionData = class {
   
   
   normalizeLocaleCode(locale) {
-    return String.replace(locale, /_/g, "-");
+    return locale.replace(/_/g, "-");
   }
 
   
