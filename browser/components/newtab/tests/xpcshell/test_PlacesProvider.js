@@ -34,11 +34,11 @@ function run_test() {
 
 const TEST_URL = "https://mozilla.com/";
 
-const TIME_NOW = (new Date()).getTime();
+const TIME_NOW = new Date();
 
 
 function timeDaysAgo(numDays) {
-  return TIME_NOW - (numDays * 24 * 60 * 60 * 1000);
+  return new Date(TIME_NOW - (numDays * 24 * 60 * 60 * 1000));
 }
 
 
