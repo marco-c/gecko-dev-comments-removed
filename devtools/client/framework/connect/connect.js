@@ -79,12 +79,20 @@ var submit = Task.async(function* () {
 var onConnectionReady = Task.async(function* ([aType, aTraits]) {
   clearTimeout(gConnectionTimeout);
 
-  let response = yield gClient.listAddons();
+  let addons = [];
+  try {
+    let response = yield gClient.listAddons();
+    if (!response.error && response.addons.length > 0) {
+      addons = response.addons;
+    }
+  } catch(e) {
+    
+  }
 
   let parent = document.getElementById("addonActors");
-  if (!response.error && response.addons.length > 0) {
+  if (addons.length > 0) {
     
-    for (let addon of response.addons) {
+    for (let addon of addons) {
       if (!addon.debuggable) {
         continue;
       }
@@ -97,7 +105,7 @@ var onConnectionReady = Task.async(function* ([aType, aTraits]) {
     parent.remove();
   }
 
-  response = yield gClient.listTabs();
+  let response = yield gClient.listTabs();
 
   parent = document.getElementById("tabActors");
 
