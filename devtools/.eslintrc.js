@@ -234,7 +234,7 @@ module.exports = {
     
     "no-floating-decimal": "off",
     
-    "no-inline-comments": "error",
+    "no-inline-comments": "off",
     
     "no-lonely-if": "error",
     
