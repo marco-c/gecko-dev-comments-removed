@@ -35,12 +35,12 @@ var NetMonitorController = {
 
 
 
-  startupNetMonitor() {
+  startupNetMonitor(connection) {
     if (this._startup) {
       return this._startup;
     }
     this._startup = new Promise(async (resolve) => {
-      await this.connect();
+      await this.connect(connection);
       resolve();
     });
     return this._startup;
@@ -77,7 +77,7 @@ var NetMonitorController = {
 
 
 
-  connect() {
+  connect(connection) {
     if (this._connection) {
       return this._connection;
     }
@@ -86,9 +86,9 @@ var NetMonitorController = {
     this._connection = new Promise(async (resolve) => {
       
       
-      if (this._target.isTabActor) {
-        this.tabClient = this._target.activeTab;
-      }
+      this.toolbox = connection.toolbox;
+      this._target = connection.client.getTabTarget();
+      this.tabClient = this._target.isTabActor ? this._target.activeTab : null;
 
       let connectTimeline = () => {
         
@@ -315,7 +315,9 @@ var NetMonitorController = {
 
 
   viewSourceInDebugger(sourceURL, sourceLine) {
-    return this.toolbox.viewSourceInDebugger(sourceURL, sourceLine);
+    if (this.toolbox) {
+      this.toolbox.viewSourceInDebugger(sourceURL, sourceLine);
+    }
   },
 
   
