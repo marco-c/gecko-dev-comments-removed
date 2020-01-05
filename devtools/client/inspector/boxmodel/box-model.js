@@ -80,8 +80,7 @@ BoxModel.prototype = {
   isPanelVisible() {
     return this.inspector.toolbox.currentToolId === "inspector" &&
            this.inspector.sidebar &&
-           (this.inspector.sidebar.getCurrentTabID() === "layoutview" ||
-            this.inspector.sidebar.getCurrentTabID() === "computedview");
+           this.inspector.sidebar.getCurrentTabID() === "layoutview";
   },
 
   
@@ -166,11 +165,6 @@ BoxModel.prototype = {
   onNewSelection: function () {
     if (!this.isPanelVisibleAndNodeValid()) {
       return;
-    }
-
-    if (this.inspector.selection.isConnected() &&
-        this.inspector.selection.isElementNode()) {
-      this.trackReflows();
     }
 
     this.updateBoxModel();
