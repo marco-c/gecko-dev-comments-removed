@@ -17,6 +17,8 @@
 #include "sandbox/win/src/sandbox.h"
 #include "sandbox/win/src/sandbox_nt_util.h"
 
+#include "mozilla/sandboxing/permissionsService.h"
+
 namespace sandbox {
 
 FilesystemDispatcher::FilesystemDispatcher(PolicyBase* policy_base)
@@ -115,6 +117,16 @@ bool FilesystemDispatcher::NtCreateFile(IPCInfo* ipc,
   
   EvalResult result = policy_base_->EvalPolicy(IPC_NTCREATEFILE_TAG,
                                                params.GetBase());
+
+  
+  
+  if (ASK_BROKER != result &&
+      mozilla::sandboxing::PermissionsService::GetInstance()->
+        UserGrantedFileAccess(ipc->client_info->process_id, filename,
+                              desired_access, create_disposition)) {
+    result = ASK_BROKER;
+  }
+
   HANDLE handle;
   ULONG_PTR io_information = 0;
   NTSTATUS nt_status;
@@ -162,6 +174,16 @@ bool FilesystemDispatcher::NtOpenFile(IPCInfo* ipc,
   
   EvalResult result = policy_base_->EvalPolicy(IPC_NTOPENFILE_TAG,
                                                params.GetBase());
+
+  
+  
+  if (ASK_BROKER != result &&
+      mozilla::sandboxing::PermissionsService::GetInstance()->UserGrantedFileAccess(
+                                    ipc->client_info->process_id, filename,
+                                    desired_access, create_disposition)) {
+    result = ASK_BROKER;
+  }
+
   HANDLE handle;
   ULONG_PTR io_information = 0;
   NTSTATUS nt_status;
