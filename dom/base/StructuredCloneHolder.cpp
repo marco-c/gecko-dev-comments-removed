@@ -308,6 +308,7 @@ StructuredCloneHolder::Read(nsISupports* aParent,
   
   if (mSupportsTransferring) {
     mBlobImplArray.Clear();
+    mWasmModuleArray.Clear();
     mClonedSurfaces.Clear();
     Clear();
   }
