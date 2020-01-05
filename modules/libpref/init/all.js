@@ -4818,7 +4818,6 @@ pref("full-screen-api.warning.timeout", 3000);
 pref("full-screen-api.warning.delay", 500);
 
 
-pref("pointer-lock-api.prefixed.enabled", false);
 
 pref("pointer-lock-api.warning.timeout", 3000);
 
