@@ -73,9 +73,6 @@ const NEW_CLIENT_STATE = 'sta\0te';
 prefBranch.setBoolPref("browser.safebrowsing.debug", true);
 
 
-prefBranch.setCharPref("browser.safebrowsing.id", "Firefox\xFF\xFF");
-
-
 TEST_TABLE_DATA_LIST.forEach(function(t) {
   gListManager.registerTable(t.tableName,
                              t.providerName,
@@ -156,7 +153,7 @@ const SERVER_INVOLVED_TEST_CASE_LIST = [
     let requestV4 = gUrlUtils.makeUpdateRequestV4([TEST_TABLE_DATA_V4.tableName],
                                                   [""],
                                                   1);
-    gExpectedQueryV4 = "&$req=" + requestV4;
+    gExpectedQueryV4 = "&$req=" + btoa(requestV4);
 
     forceTableUpdate();
   },
@@ -176,7 +173,7 @@ add_test(function test_partialUpdateV4() {
   let requestV4 = gUrlUtils.makeUpdateRequestV4([TEST_TABLE_DATA_V4.tableName],
                                                 [btoa(NEW_CLIENT_STATE)],
                                                 1);
-  gExpectedQueryV4 = "&$req=" + requestV4;
+  gExpectedQueryV4 = "&$req=" + btoa(requestV4);
 
   forceTableUpdate();
 });
@@ -244,8 +241,6 @@ function run_test() {
 
     
     equal(request.queryString, gExpectedQueryV4);
-    equal(request.queryString.indexOf('+'), -1);
-    equal(request.queryString.indexOf('/'), -1);
 
     
     
