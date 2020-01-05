@@ -1507,20 +1507,6 @@ ContentChild::RecvSetProcessSandbox(const MaybeFileDesc& aBroker)
 }
 
 mozilla::ipc::IPCResult
-ContentChild::RecvNotifyLayerAllocated(const dom::TabId& aTabId, const uint64_t& aLayersId)
-{
-  if (!CompositorBridgeChild::Get()->IPCOpen()) {
-    return IPC_OK();
-  }
-
-  
-  
-  APZChild* apz = ContentProcessController::Create(aTabId);
-  CompositorBridgeChild::Get()->SendPAPZConstructor(apz, aLayersId);
-  return IPC_OK();
-}
-
-mozilla::ipc::IPCResult
 ContentChild::RecvBidiKeyboardNotify(const bool& aIsLangRTL,
                                      const bool& aHaveBidiKeyboards)
 {

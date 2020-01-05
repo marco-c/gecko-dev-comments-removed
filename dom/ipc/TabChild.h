@@ -722,6 +722,7 @@ private:
   void InitRenderingState(const TextureFactoryIdentifier& aTextureFactoryIdentifier,
                           const uint64_t& aLayersId,
                           PRenderFrameChild* aRenderFrame);
+  void InitAPZState();
 
   void DestroyWindow();
 
@@ -786,9 +787,6 @@ private:
   AutoTArray<bool, NUMBER_OF_AUDIO_CHANNELS> mAudioChannelsActive;
 
   RefPtr<layers::IAPZCTreeManager> mApzcTreeManager;
-  
-  
-  layers::APZChild* mAPZChild;
 
   
   uint64_t mLayerObserverEpoch;
