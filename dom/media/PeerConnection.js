@@ -427,6 +427,7 @@ RTCPeerConnection.prototype = {
     this.makeGetterSetterEH("onremovestream");
     this.makeGetterSetterEH("ondatachannel");
     this.makeGetterSetterEH("oniceconnectionstatechange");
+    this.makeGetterSetterEH("onicegatheringstatechange");
     this.makeGetterSetterEH("onidentityresult");
     this.makeGetterSetterEH("onpeeridentity");
     this.makeGetterSetterEH("onidpassertionerror");
@@ -1213,6 +1214,7 @@ RTCPeerConnection.prototype = {
   changeIceGatheringState: function(state) {
     this._iceGatheringState = state;
     _globalPCList.notifyLifecycleObservers(this, "icegatheringstatechange");
+    this.dispatchEvent(new this._win.Event("icegatheringstatechange"));
   },
 
   changeIceConnectionState: function(state) {
@@ -1423,6 +1425,9 @@ PeerConnectionObserver.prototype = {
 
   handleIceConnectionStateChange: function(iceConnectionState) {
     let pc = this._dompc;
+    if (pc.iceConnectionState === iceConnectionState) {
+      return;
+    }
     if (pc.iceConnectionState === 'new') {
       var checking_histogram = Services.telemetry.getHistogramById("WEBRTC_ICE_CHECKING_RATE");
       if (iceConnectionState === 'checking') {
@@ -1463,7 +1468,11 @@ PeerConnectionObserver.prototype = {
   
   
   handleIceGatheringStateChange: function(gatheringState) {
-    this._dompc.changeIceGatheringState(gatheringState);
+    let pc = this._dompc;
+    if (pc.iceGatheringState === gatheringState) {
+      return;
+    }
+    pc.changeIceGatheringState(gatheringState);
   },
 
   onStateChange: function(state) {
