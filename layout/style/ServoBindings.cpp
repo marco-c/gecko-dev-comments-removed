@@ -967,11 +967,14 @@ ServoBundledURI::IntoCssUrl()
   MOZ_ASSERT(mExtraData->GetReferrer());
   MOZ_ASSERT(mExtraData->GetPrincipal());
 
-  NS_ConvertUTF8toUTF16 url(reinterpret_cast<const char*>(mURLString),
-                            mURLStringLength);
+  nsString url;
+  nsDependentCSubstring urlString(reinterpret_cast<const char*>(mURLString),
+                                  mURLStringLength);
+  AppendUTF8toUTF16(urlString, url);
+  RefPtr<nsStringBuffer> urlBuffer = nsCSSValue::BufferFromString(url);
 
   RefPtr<css::URLValue> urlValue =
-    new css::URLValue(url, do_AddRef(mExtraData));
+    new css::URLValue(urlBuffer, do_AddRef(mExtraData));
   return urlValue.forget();
 }
 
@@ -997,11 +1000,14 @@ CreateStyleImageRequest(nsStyleImageRequest::Mode aModeFlags,
   MOZ_ASSERT(aURI.mExtraData->GetReferrer());
   MOZ_ASSERT(aURI.mExtraData->GetPrincipal());
 
-  NS_ConvertUTF8toUTF16 url(reinterpret_cast<const char*>(aURI.mURLString),
-                            aURI.mURLStringLength);
+  nsString url;
+  nsDependentCSubstring urlString(reinterpret_cast<const char*>(aURI.mURLString),
+                                  aURI.mURLStringLength);
+  AppendUTF8toUTF16(urlString, url);
+  RefPtr<nsStringBuffer> urlBuffer = nsCSSValue::BufferFromString(url);
 
   RefPtr<nsStyleImageRequest> req =
-    new nsStyleImageRequest(aModeFlags, url, do_AddRef(aURI.mExtraData));
+    new nsStyleImageRequest(aModeFlags, urlBuffer, do_AddRef(aURI.mExtraData));
   return req.forget();
 }
 
@@ -1722,6 +1728,25 @@ const nsMediaFeature*
 Gecko_GetMediaFeatures()
 {
   return nsMediaFeatures::features;
+}
+
+nsCSSKeyword
+Gecko_LookupCSSKeyword(const uint8_t* aString, uint32_t aLength)
+{
+  MOZ_ASSERT(NS_IsMainThread());
+
+  nsDependentCSubstring keyword(reinterpret_cast<const char*>(aString), aLength);
+  return nsCSSKeywords::LookupKeyword(keyword);
+}
+
+const char*
+Gecko_CSSKeywordString(nsCSSKeyword aKeyword, uint32_t* aLength)
+{
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(aLength);
+  const nsAFlatCString& value = nsCSSKeywords::GetStringValue(aKeyword);
+  *aLength = value.Length();
+  return value.get();
 }
 
 nsCSSFontFaceRule*
