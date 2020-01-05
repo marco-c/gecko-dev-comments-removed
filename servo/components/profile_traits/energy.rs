@@ -36,8 +36,8 @@ mod energymon {
 
     static mut EM: Option<*mut EnergyMon> = None;
 
-    
-    pub fn read_energy_uj() -> u64 {
+    fn init() {
+        
         static ONCE: Once = ONCE_INIT;
         ONCE.call_once(|| {
             if let Ok(em) = EnergyMon::new() {
@@ -47,7 +47,11 @@ mod energymon {
                 }
             }
         });
+    }
 
+    
+    pub fn read_energy_uj() -> u64 {
+        init();
         unsafe {
             
             EM.map_or(0, |em| (*em).read_uj().unwrap())
@@ -55,6 +59,7 @@ mod energymon {
     }
 
     pub fn get_min_interval_ms() -> u32 {
+        init();
         unsafe {
             EM.map_or(0, |em| ((*em).interval_us() as f64 / 1000.0).ceil() as u32)
         }
