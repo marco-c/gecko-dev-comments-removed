@@ -1245,7 +1245,13 @@ gfxAlphaBoxBlur::BlurInsetBox(gfxContext* aDestinationCtx,
     GetInsetBoxShadowRects(blurMargin, innerMargin, aShadowClipRect,
                            aDestinationRect, whitespaceRect, outerRect);
 
-  bool mirrorCorners = !aInnerClipRadii || aInnerClipRadii->AreRadiiSame();
+  
+  
+  Margin checkMargin = outerRect - whitespaceRect;
+  bool mirrorCorners =
+    checkMargin.left == checkMargin.right &&
+    checkMargin.top == checkMargin.bottom &&
+    (!aInnerClipRadii || aInnerClipRadii->AreRadiiSame());
   RefPtr<SourceSurface> minBlur =
     GetInsetBlur(outerRect, whitespaceRect, useDestRect, aShadowColor,
                  aBlurRadius, aInnerClipRadii, destDrawTarget, mirrorCorners);
