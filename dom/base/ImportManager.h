@@ -45,8 +45,8 @@
 #include "nsIStreamListener.h"
 #include "nsIWeakReferenceUtils.h"
 #include "nsRefPtrHashtable.h"
+#include "nsScriptLoader.h"
 #include "nsURIHashKey.h"
-#include "mozilla/dom/ScriptLoader.h"
 
 class nsIDocument;
 class nsIPrincipal;
@@ -184,8 +184,8 @@ public:
   
   
   
-  void AddBlockedScriptLoader(ScriptLoader* aScriptLoader);
-  bool RemoveBlockedScriptLoader(ScriptLoader* aScriptLoader);
+  void AddBlockedScriptLoader(nsScriptLoader* aScriptLoader);
+  bool RemoveBlockedScriptLoader(nsScriptLoader* aScriptLoader);
   void SetBlockingPredecessor(ImportLoader* aLoader);
 
 private:
@@ -230,7 +230,7 @@ private:
 
   
   
-  nsTArray<RefPtr<ScriptLoader>> mBlockedScriptLoaders;
+  nsTArray<RefPtr<nsScriptLoader>> mBlockedScriptLoaders;
 
   
   

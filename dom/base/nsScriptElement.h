@@ -4,25 +4,22 @@
 
 
 
-#ifndef mozilla_dom_ScriptElement_h
-#define mozilla_dom_ScriptElement_h
+#ifndef nsScriptElement_h
+#define nsScriptElement_h
 
 #include "mozilla/Attributes.h"
 #include "nsIScriptLoaderObserver.h"
 #include "nsIScriptElement.h"
 #include "nsStubMutationObserver.h"
 
-namespace mozilla {
-namespace dom {
 
 
 
 
 
 
-
-class ScriptElement : public nsIScriptElement,
-                      public nsStubMutationObserver
+class nsScriptElement : public nsIScriptElement,
+                        public nsStubMutationObserver
 {
 public:
   
@@ -34,7 +31,7 @@ public:
   NS_DECL_NSIMUTATIONOBSERVER_CONTENTAPPENDED
   NS_DECL_NSIMUTATIONOBSERVER_CONTENTINSERTED
 
-  explicit ScriptElement(FromParser aFromParser)
+  explicit nsScriptElement(mozilla::dom::FromParser aFromParser)
     : nsIScriptElement(aFromParser)
   {
   }
@@ -51,8 +48,5 @@ protected:
 
   virtual bool MaybeProcessScript() override;
 };
-
-} 
-} 
 
 #endif 

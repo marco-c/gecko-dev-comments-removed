@@ -36,15 +36,12 @@ class nsIAtom;
 class nsIChannel;
 class nsIContent;
 class nsNodeInfoManager;
+class nsScriptLoader;
 class nsIApplicationCache;
 
 namespace mozilla {
 namespace css {
 class Loader;
-} 
-
-namespace dom {
-class ScriptLoader;
 } 
 } 
 
@@ -279,7 +276,7 @@ protected:
   nsCOMPtr<nsIDocShell>         mDocShell;
   RefPtr<mozilla::css::Loader> mCSSLoader;
   RefPtr<nsNodeInfoManager>   mNodeInfoManager;
-  RefPtr<mozilla::dom::ScriptLoader> mScriptLoader;
+  RefPtr<nsScriptLoader>      mScriptLoader;
 
   
   int32_t mBackoffCount;
