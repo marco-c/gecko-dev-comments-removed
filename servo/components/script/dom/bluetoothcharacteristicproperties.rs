@@ -15,37 +15,37 @@ pub struct BluetoothCharacteristicProperties {
     reflector_: Reflector,
     broadcast: bool,
     read: bool,
-    writeWithoutResponse: bool,
+    write_without_response: bool,
     write: bool,
     notify: bool,
     indicate: bool,
-    authenticatedSignedWrites: bool,
-    reliableWrite: bool,
-    writableAuxiliaries: bool,
+    authenticated_signed_writes: bool,
+    reliable_write: bool,
+    writable_auxiliaries: bool,
 }
 
 impl BluetoothCharacteristicProperties {
     pub fn new_inherited(broadcast: bool,
                          read: bool,
-                         writeWithoutResponse: bool,
+                         write_without_response: bool,
                          write: bool,
                          notify: bool,
                          indicate: bool,
-                         authenticatedSignedWrites: bool,
-                         reliableWrite: bool,
-                         writableAuxiliaries: bool)
+                         authenticated_signed_writes: bool,
+                         reliable_write: bool,
+                         writable_auxiliaries: bool)
                          -> BluetoothCharacteristicProperties {
         BluetoothCharacteristicProperties {
             reflector_: Reflector::new(),
             broadcast: broadcast,
             read: read,
-            writeWithoutResponse: writeWithoutResponse,
+            write_without_response: write_without_response,
             write: write,
             notify: notify,
             indicate: indicate,
-            authenticatedSignedWrites: authenticatedSignedWrites,
-            reliableWrite: reliableWrite,
-            writableAuxiliaries: writableAuxiliaries,
+            authenticated_signed_writes: authenticated_signed_writes,
+            reliable_write: reliable_write,
+            writable_auxiliaries: writable_auxiliaries,
         }
     }
 
@@ -87,7 +87,7 @@ impl BluetoothCharacteristicPropertiesMethods for BluetoothCharacteristicPropert
 
     
     fn WriteWithoutResponse(&self) -> bool {
-        self.writeWithoutResponse
+        self.write_without_response
     }
 
     
@@ -107,16 +107,16 @@ impl BluetoothCharacteristicPropertiesMethods for BluetoothCharacteristicPropert
 
     
     fn AuthenticatedSignedWrites(&self) -> bool {
-        self.authenticatedSignedWrites
+        self.authenticated_signed_writes
     }
 
     
     fn ReliableWrite(&self) -> bool {
-        self.reliableWrite
+        self.reliable_write
     }
 
     
     fn WritableAuxiliaries(&self) -> bool {
-        self.writableAuxiliaries
+        self.writable_auxiliaries
     }
 }

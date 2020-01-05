@@ -73,8 +73,8 @@ pub struct Blob {
     #[ignore_heap_size_of = "No clear owner"]
     blob_impl: DOMRefCell<BlobImpl>,
     
-    typeString: String,
-    isClosed_: Cell<bool>,
+    type_string: String,
+    is_closed: Cell<bool>,
 }
 
 impl Blob {
@@ -85,20 +85,20 @@ impl Blob {
     }
 
     #[allow(unrooted_must_root)]
-    pub fn new_inherited(blob_impl: BlobImpl, typeString: String) -> Blob {
+    pub fn new_inherited(blob_impl: BlobImpl, type_string: String) -> Blob {
         Blob {
             reflector_: Reflector::new(),
             blob_impl: DOMRefCell::new(blob_impl),
             
             
-            typeString: normalize_type_string(&typeString),
-            isClosed_: Cell::new(false),
+            type_string: normalize_type_string(&type_string),
+            is_closed: Cell::new(false),
         }
     }
 
     #[allow(unrooted_must_root)]
     fn new_sliced(parent: &Blob, rel_pos: RelativePos,
-                  relativeContentType: DOMString) -> Root<Blob> {
+                  relative_content_type: DOMString) -> Root<Blob> {
         let global = parent.global();
         let blob_impl = match *parent.blob_impl.borrow() {
             BlobImpl::File(_) => {
@@ -115,7 +115,7 @@ impl Blob {
             }
         };
 
-        Blob::new(global.r(), blob_impl, relativeContentType.into())
+        Blob::new(global.r(), blob_impl, relative_content_type.into())
     }
 
     
@@ -222,7 +222,7 @@ impl Blob {
 
         let blob_buf = BlobBuf {
             filename: None,
-            type_string: self.typeString.clone(),
+            type_string: self.type_string.clone(),
             size: bytes.len() as u64,
             bytes: bytes.to_vec(),
         };
@@ -366,33 +366,33 @@ impl BlobMethods for Blob {
 
     
     fn Type(&self) -> DOMString {
-        DOMString::from(self.typeString.clone())
+        DOMString::from(self.type_string.clone())
     }
 
     
     fn Slice(&self,
              start: Option<i64>,
              end: Option<i64>,
-             contentType: Option<DOMString>)
+             content_type: Option<DOMString>)
              -> Root<Blob> {
         let rel_pos = RelativePos::from_opts(start, end);
-        Blob::new_sliced(self, rel_pos, contentType.unwrap_or(DOMString::from("")))
+        Blob::new_sliced(self, rel_pos, content_type.unwrap_or(DOMString::from("")))
     }
 
     
     fn IsClosed(&self) -> bool {
-        self.isClosed_.get()
+        self.is_closed.get()
     }
 
     
     fn Close(&self) {
         
-        if self.isClosed_.get() {
+        if self.is_closed.get() {
             return;
         }
 
         
-        self.isClosed_.set(true);
+        self.is_closed.set(true);
 
         
         self.clean_up_file_resource();
