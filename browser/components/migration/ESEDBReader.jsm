@@ -20,6 +20,8 @@ XPCOMUtils.defineLazyGetter(this, "log", () => {
   return new ConsoleAPI(consoleOptions);
 });
 
+XPCOMUtils.defineLazyModuleGetter(this, "OS", "resource://gre/modules/osfile.jsm");
+
 
 
 let gESEInstanceCounter = 0;
@@ -114,6 +116,7 @@ function convertESEError(errorCode) {
     case -1507 :
       
       return "The database format has changed, error code: " + errorCode;
+    case -1032 :
     case -1207 :
     case -1302 :
       return "The database or table is locked, error code: " + errorCode;
@@ -579,6 +582,21 @@ let ESEDBReader = {
     
     
     return new ESEDB(rootDir.path + "\\", dbFilePath, logDir.path + "\\");
+  },
+
+  async dbLocked(dbFile) {
+    let options = {winShare: OS.Constants.Win.FILE_SHARE_READ};
+    let locked = true;
+    await OS.File.open(dbFile.path, {read: true}, options).then(fileHandle => {
+      locked = false;
+      
+      
+      
+      return fileHandle.close();
+    }, () => {
+      Cu.reportError("ESE DB at " + dbFile.path + " is locked.");
+    });
+    return locked;
   },
 
   closeDB(db) {
