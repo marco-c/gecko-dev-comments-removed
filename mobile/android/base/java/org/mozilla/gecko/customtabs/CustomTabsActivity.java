@@ -28,40 +28,7 @@ public class CustomTabsActivity extends GeckoApp {
     }
 
     @Override
-    public void onBackPressed() {
-        final Tabs tabs = Tabs.getInstance();
-        final Tab tab = tabs.getSelectedTab();
-
-        
-        GeckoAppShell.sendRequestToGecko(new GeckoRequest("Browser:OnBackPressed", null) {
-            @Override
-            public void onResponse(NativeJSObject nativeJSObject) {
-                if (!nativeJSObject.getBoolean("handled")) {
-                    
-                    onDefault();
-                }
-            }
-
-            @Override
-            public void onError(NativeJSObject error) {
-                
-                onDefault();
-            }
-
-            
-            private void onDefault() {
-                ThreadUtils.postToUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        if (tab.doBack()) {
-                            return;
-                        }
-
-                        tabs.closeTab(tab);
-                        finish();
-                    }
-                });
-            }
-        });
+    protected void onDone() {
+        finish();
     }
 }
