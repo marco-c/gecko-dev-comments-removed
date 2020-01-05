@@ -142,12 +142,19 @@ function gotoPref(aCategory) {
   let categories = document.getElementById("categories");
   const kDefaultCategoryInternalName = "paneGeneral";
   let hash = document.location.hash;
+  
+  
+  let breakIndex = hash.indexOf("-");
+  let subcategory = breakIndex != -1 && hash.substring(breakIndex + 1);
+  if (subcategory) {
+    hash = hash.substring(0, breakIndex);
+  }
   let category = aCategory || hash.substr(1) || kDefaultCategoryInternalName;
   category = friendlyPrefCategoryNameToInternalName(category);
 
   
   
-  if (gLastHash == category)
+  if (gLastHash == category && !subcategory)
     return;
   let item = categories.querySelector(".category[value=" + category + "]");
   if (!item) {
@@ -163,7 +170,7 @@ function gotoPref(aCategory) {
   }
 
   let friendlyName = internalPrefCategoryNameToFriendlyName(category);
-  if (gLastHash || category != kDefaultCategoryInternalName) {
+  if (gLastHash || category != kDefaultCategoryInternalName || subcategory) {
     document.location.hash = friendlyName;
   }
   
@@ -171,7 +178,8 @@ function gotoPref(aCategory) {
   gLastHash = category;
   categories.selectedItem = item;
   window.history.replaceState(category, document.title);
-  search(category, "data-category");
+  search(category, "data-category", subcategory, "data-subcategory");
+
   let mainContent = document.querySelector(".main-content");
   mainContent.scrollTop = 0;
 
@@ -180,7 +188,7 @@ function gotoPref(aCategory) {
           .add(telemetryBucketForCategory(friendlyName));
 }
 
-function search(aQuery, aAttribute) {
+function search(aQuery, aAttribute, aSubquery, aSubAttribute) {
   let mainPrefPane = document.getElementById("mainPrefPane");
   let elements = mainPrefPane.children;
   for (let element of elements) {
@@ -190,7 +198,17 @@ function search(aQuery, aAttribute) {
     
     if (element.getAttribute("data-hidden-from-search") != "true") {
       let attributeValue = element.getAttribute(aAttribute);
-      element.hidden = (attributeValue != aQuery);
+      if (attributeValue == aQuery) {
+        if (!element.classList.contains("header") &&
+             aSubquery && aSubAttribute) {
+          let subAttributeValue = element.getAttribute(aSubAttribute);
+          element.hidden = subAttributeValue != aSubquery;
+        } else {
+          element.hidden = false;
+        }
+      } else {
+        element.hidden = true;
+      }
     }
   }
 
