@@ -1126,23 +1126,23 @@ function TypedArraySort(comparefn) {
     }
 
     if (comparefn === undefined) {
-        comparefn = TypedArrayCompare;
         
         if (IsUint8TypedArray(obj)) {
             return CountingSort(obj, len, false );
         } else if (IsInt8TypedArray(obj)) {
             return CountingSort(obj, len, true );
         } else if (IsUint16TypedArray(obj)) {
-            return RadixSort(obj, len, buffer, 2 , false , false , comparefn);
+            return RadixSort(obj, len, buffer, 2 , false , false , TypedArrayCompare);
         } else if (IsInt16TypedArray(obj)) {
-            return RadixSort(obj, len, buffer, 2 , true , false , comparefn);
+            return RadixSort(obj, len, buffer, 2 , true , false , TypedArrayCompare);
         } else if (IsUint32TypedArray(obj)) {
-            return RadixSort(obj, len, buffer, 4 , false , false , comparefn);
+            return RadixSort(obj, len, buffer, 4 , false , false , TypedArrayCompare);
         } else if (IsInt32TypedArray(obj)) {
-            return RadixSort(obj, len, buffer, 4 , true , false , comparefn);
+            return RadixSort(obj, len, buffer, 4 , true , false , TypedArrayCompare);
         } else if (IsFloat32TypedArray(obj)) {
-            return RadixSort(obj, len, buffer, 4 , true , true , comparefn);
+            return RadixSort(obj, len, buffer, 4 , true , true , TypedArrayCompare);
         }
+        return QuickSort(obj, len, TypedArrayCompare);
     }
 
     
