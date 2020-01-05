@@ -283,6 +283,15 @@ class nsDisplayListBuilder {
     nsRect mDirtyRect;
   };
 
+  
+
+
+
+
+
+
+  enum AGRState { AGR_NO, AGR_YES, AGR_MAYBE };
+
 public:
   typedef mozilla::FrameLayerBuilder FrameLayerBuilder;
   typedef mozilla::DisplayItemClip DisplayItemClip;
@@ -818,8 +827,9 @@ public:
           aBuilder->FindReferenceFrameFor(aForChild,
               &aBuilder->mCurrentOffsetToReferenceFrame);
       }
+      mCurrentAGRState = aBuilder->IsAnimatedGeometryRoot(aForChild);
       if (aBuilder->mCurrentFrame == aForChild->GetParent()) {
-        if (aBuilder->IsAnimatedGeometryRoot(aForChild)) {
+        if (mCurrentAGRState == AGR_YES) {
           aBuilder->mCurrentAGR = aBuilder->WrapAGRForFrame(aForChild, aBuilder->mCurrentAGR);
         }
       } else if (aForChild != aBuilder->mCurrentFrame) {
@@ -843,8 +853,10 @@ public:
       return mPrevAnimatedGeometryRoot;
     }
     bool IsAnimatedGeometryRoot() const {
-      return *mBuilder->mCurrentAGR == mBuilder->mCurrentFrame;
-
+      return mCurrentAGRState == AGR_YES;
+    }
+    bool MaybeAnimatedGeometryRoot() const {
+      return mCurrentAGRState == AGR_MAYBE;
     }
     void RestoreBuildingInvisibleItemsValue() {
       mBuilder->mBuildingInvisibleItems = mPrevBuildingInvisibleItems;
@@ -862,6 +874,7 @@ public:
     }
   private:
     nsDisplayListBuilder* mBuilder;
+    AGRState              mCurrentAGRState;
     const nsIFrame*       mPrevFrame;
     const nsIFrame*       mPrevReferenceFrame;
     nsIFrame*             mPrevAnimatedGeometryRoot;
@@ -1398,7 +1411,8 @@ private:
 
 
 
-  bool IsAnimatedGeometryRoot(nsIFrame* aFrame, nsIFrame** aParent = nullptr);
+  AGRState IsAnimatedGeometryRoot(nsIFrame* aFrame,
+                                  nsIFrame** aParent = nullptr);
 
   
 
