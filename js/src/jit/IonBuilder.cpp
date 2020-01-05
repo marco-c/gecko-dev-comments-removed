@@ -1578,6 +1578,11 @@ IonBuilder::blockIsOSREntry(const CFGBlock* block, const CFGBlock* predecessor)
         return false;
     }
 
+    if (block->stopPc() == block->startPc() && block->stopIns()->isBackEdge()) {
+        
+        return false;
+    }
+
     MOZ_ASSERT(*info().osrPc() == JSOP_LOOPENTRY);
     
     return GetNextPc(info().osrPc()) == entryPc;
