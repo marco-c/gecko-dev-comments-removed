@@ -33,7 +33,7 @@ function FunctionBind(thisArg, ...boundArgs) {
 
     
     
-    var funApply = std_Function_apply;
+    void std_Function_apply;
 
     
     return F;

@@ -828,7 +828,7 @@ function ArrayFrom(items, mapfn = undefined, thisArg = undefined) {
 
 
             
-            var mappedValue = mapping ? callContentFunction(mapfn, thisArg, nextValue, k) : nextValue;
+            var mappedValue = mapping ? callContentFunction(mapfn, T, nextValue, k) : nextValue;
 
             
             _DefineDataProperty(A, k++, mappedValue);
@@ -857,7 +857,7 @@ function ArrayFrom(items, mapfn = undefined, thisArg = undefined) {
         var kValue = items[k];
 
         
-        var mappedValue = mapping ? callContentFunction(mapfn, thisArg, kValue, k) : kValue;
+        var mappedValue = mapping ? callContentFunction(mapfn, T, kValue, k) : kValue;
 
         
         _DefineDataProperty(A, k, mappedValue);
