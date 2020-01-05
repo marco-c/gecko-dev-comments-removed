@@ -41,7 +41,6 @@
 #include "nsIPermissionManager.h"
 #include "nsIScriptContext.h"
 #include "nsIScriptTimeoutHandler.h"
-#include "nsITimeoutHandler.h"
 #include "nsIController.h"
 #include "nsScriptNameSpaceManager.h"
 #include "nsISlowScriptDebug.h"
@@ -1999,7 +1998,10 @@ nsGlobalWindow::UnmarkGrayTimers()
        timeout;
        timeout = timeout->getNext()) {
     if (timeout->mScriptHandler) {
-      timeout->mScriptHandler->MarkForCC();
+      Function* f = timeout->mScriptHandler->GetCallback();
+      if (f) {
+        f->MarkForCC();
+      }
     }
   }
 }
@@ -12057,7 +12059,7 @@ nsGlobalWindow::SetInterval(JSContext* aCx, const nsAString& aHandler,
 }
 
 nsresult
-nsGlobalWindow::SetTimeoutOrInterval(nsITimeoutHandler* aHandler,
+nsGlobalWindow::SetTimeoutOrInterval(nsIScriptTimeoutHandler* aHandler,
                                      int32_t interval, bool aIsInterval,
                                      int32_t* aReturn)
 {
@@ -12255,46 +12257,40 @@ nsGlobalWindow::RunTimeoutHandler(Timeout* aTimeout,
   }
 
   bool abortIntervalHandler = false;
-  nsCOMPtr<nsITimeoutHandler> basicHandler(timeout->mScriptHandler);
-  nsCOMPtr<nsIScriptTimeoutHandler> handler(do_QueryInterface(basicHandler));
-  if (handler) {
-    RefPtr<Function> callback = handler->GetCallback();
+  nsCOMPtr<nsIScriptTimeoutHandler> handler(timeout->mScriptHandler);
+  RefPtr<Function> callback = handler->GetCallback();
 
-    if (!callback) {
-      
-      const nsAString& script = handler->GetHandlerText();
+  if (!callback) {
+    
+    const nsAString& script = handler->GetHandlerText();
 
-      const char* filename = nullptr;
-      uint32_t lineNo = 0, dummyColumn = 0;
-      handler->GetLocation(&filename, &lineNo, &dummyColumn);
+    const char* filename = nullptr;
+    uint32_t lineNo = 0, dummyColumn = 0;
+    handler->GetLocation(&filename, &lineNo, &dummyColumn);
 
-      
-      
-      nsAutoMicroTask mt;
-      AutoEntryScript aes(this, reason, true);
-      JS::CompileOptions options(aes.cx());
-      options.setFileAndLine(filename, lineNo).setVersion(JSVERSION_DEFAULT);
-      JS::Rooted<JSObject*> global(aes.cx(), FastGetGlobalJSObject());
-      nsresult rv =
-        nsJSUtils::EvaluateString(aes.cx(), script, global, options);
-      if (rv == NS_SUCCESS_DOM_SCRIPT_EVALUATION_THREW_UNCATCHABLE) {
-        abortIntervalHandler = true;
-      }
-    } else {
-      
-      nsCOMPtr<nsISupports> me(static_cast<nsIDOMWindow*>(this));
-      ErrorResult rv;
-      JS::Rooted<JS::Value> ignoredVal(RootingCx());
-      callback->Call(me, handler->GetArgs(), &ignoredVal, rv, reason);
-      if (rv.IsUncatchableException()) {
-        abortIntervalHandler = true;
-      }
-
-      rv.SuppressException();
+    
+    
+    nsAutoMicroTask mt;
+    AutoEntryScript aes(this, reason, true);
+    JS::CompileOptions options(aes.cx());
+    options.setFileAndLine(filename, lineNo)
+           .setVersion(JSVERSION_DEFAULT);
+    JS::Rooted<JSObject*> global(aes.cx(), FastGetGlobalJSObject());
+    nsresult rv = nsJSUtils::EvaluateString(aes.cx(), script, global, options);
+    if (rv == NS_SUCCESS_DOM_SCRIPT_EVALUATION_THREW_UNCATCHABLE) {
+      abortIntervalHandler = true;
     }
   } else {
-    nsCOMPtr<nsISupports> kungFuDeathGrip(static_cast<nsIDOMWindow*>(this));
-    basicHandler->Call();
+    
+    nsCOMPtr<nsISupports> me(static_cast<nsIDOMWindow *>(this));
+    ErrorResult rv;
+    JS::Rooted<JS::Value> ignoredVal(RootingCx());
+    callback->Call(me, handler->GetArgs(), &ignoredVal, rv, reason);
+    if (rv.IsUncatchableException()) {
+      abortIntervalHandler = true;
+    }
+
+    rv.SuppressException();
   }
 
   
