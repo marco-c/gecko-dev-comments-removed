@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #[macro_export]
 macro_rules! make_getter(
@@ -126,8 +126,8 @@ macro_rules! make_enumerated_getter(
     );
 );
 
-
-
+// concat_idents! doesn't work for function name positions, so
+// we have to specify both the content name and the HTML name here
 #[macro_export]
 macro_rules! make_setter(
     ( $attr:ident, $htmlname:tt ) => (
@@ -263,9 +263,17 @@ macro_rules! make_nonzero_dimension_setter(
     );
 );
 
-
-
+/// For use on non-jsmanaged types
+/// Use #[derive(JSTraceable)] on JS managed types
 macro_rules! no_jsmanaged_fields(
+    ([$ty:ident; $count:expr]) => (
+        impl $crate::dom::bindings::trace::JSTraceable for [$ty; $count] {
+            #[inline]
+            fn trace(&self, _: *mut ::js::jsapi::JSTracer) {
+                // Do nothing
+            }
+        }
+    );
     ($($ty:ident),+) => (
         $(
             impl $crate::dom::bindings::trace::JSTraceable for $ty {
@@ -294,7 +302,7 @@ macro_rules! no_jsmanaged_fields(
     );
 );
 
-
+/// These are used to generate a event handler which has no special case.
 macro_rules! define_event_handler(
     ($handler: ident, $event_type: ident, $getter: ident, $setter: ident, $setter_fn: ident) => (
         fn $getter(&self) -> Option<::std::rc::Rc<$handler>> {
@@ -327,9 +335,9 @@ macro_rules! error_event_handler(
     )
 );
 
-
-
-
+// https://html.spec.whatwg.org/multipage/#globaleventhandlers
+// see webidls/EventHandler.webidl
+// As more methods get added, just update them here.
 macro_rules! global_event_handlers(
     () => (
         event_handler!(blur, GetOnblur, SetOnblur);
