@@ -1126,25 +1126,6 @@ ModuleGenerator::finish(const ShareableBytes& bytecode)
 
     
     
-    uint32_t bytesNeeded = masm_.bytesNeeded();
-    uint32_t padding = ComputeByteAlignment(bytesNeeded, gc::SystemPageSize());
-
-    
-    
-    Bytes code;
-    if (!code.initLengthUninitialized(bytesNeeded + padding))
-        return nullptr;
-
-    
-    
-    
-    masm_.executableCopy(code.begin(),  false);
-
-    
-    memset(code.begin() + bytesNeeded, 0, padding);
-
-    
-    
     if (!metadata_->callSites.appendAll(masm_.callSites()))
         return nullptr;
 
@@ -1202,14 +1183,29 @@ ModuleGenerator::finish(const ShareableBytes& bytecode)
 
     generateBytecodeHash(bytecode);
 
+    UniqueConstCodeSegment codeSegment = CodeSegment::create(masm_, bytecode, linkData_, *metadata_);
+    if (!codeSegment)
+        return nullptr;
+
+    UniqueConstBytes maybeDebuggingBytes;
+    if (metadata_->debugEnabled) {
+        maybeDebuggingBytes = codeSegment->unlinkedBytesForDebugging(linkData_);
+        if (!maybeDebuggingBytes)
+            return nullptr;
+    }
+
+    SharedCode code = js_new<Code>(Move(codeSegment), *metadata_, &bytecode);
+    if (!code)
+        return nullptr;
+
     return SharedModule(js_new<Module>(Move(assumptions_),
-                                       Move(code),
+                                       *code,
+                                       Move(maybeDebuggingBytes),
                                        Move(linkData_),
                                        Move(env_->imports),
                                        Move(env_->exports),
                                        Move(env_->dataSegments),
                                        Move(env_->elemSegments),
-                                       *metadata_,
                                        bytecode));
 }
 
