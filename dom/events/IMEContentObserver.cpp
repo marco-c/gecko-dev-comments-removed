@@ -135,8 +135,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(IMEContentObserver)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mEndOfAddedTextCache.mContainerNode)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mStartOfRemovingTextRangeCache.mContainerNode)
 
-  tmp->mIMENotificationRequests.mWantUpdates =
-    IMENotificationRequests::NOTIFY_NOTHING;
+  tmp->mUpdatePreference.mWantUpdates = nsIMEUpdatePreference::NOTIFY_NOTHING;
   tmp->mESM = nullptr;
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
@@ -433,7 +432,7 @@ IMEContentObserver::ObserveEditableNode()
     mEditor->AddEditorObserver(this);
   }
 
-  mIMENotificationRequests = mWidget->GetIMENotificationRequests();
+  mUpdatePreference = mWidget->GetIMEUpdatePreference();
   if (!WasInitializedWithPlugin()) {
     
     
@@ -444,12 +443,12 @@ IMEContentObserver::ObserveEditableNode()
     NS_ENSURE_SUCCESS_VOID(rv);
   }
 
-  if (mIMENotificationRequests.WantTextChange()) {
+  if (mUpdatePreference.WantTextChange()) {
     
     mRootContent->AddMutationObserver(this);
   }
 
-  if (mIMENotificationRequests.WantPositionChanged() && mDocShell) {
+  if (mUpdatePreference.WantPositionChanged() && mDocShell) {
     
     
     mDocShell->AddWeakScrollObserver(this);
@@ -515,11 +514,11 @@ IMEContentObserver::UnregisterObservers()
     mFocusedWidget = nullptr;
   }
 
-  if (mIMENotificationRequests.WantTextChange() && mRootContent) {
+  if (mUpdatePreference.WantTextChange() && mRootContent) {
     mRootContent->RemoveMutationObserver(this);
   }
 
-  if (mIMENotificationRequests.WantPositionChanged() && mDocShell) {
+  if (mUpdatePreference.WantPositionChanged() && mDocShell) {
     mDocShell->RemoveWeakScrollObserver(this);
     mDocShell->RemoveWeakReflowObserver(this);
   }
@@ -541,8 +540,7 @@ IMEContentObserver::Destroy()
   Clear();
 
   mWidget = nullptr;
-  mIMENotificationRequests.mWantUpdates =
-    IMENotificationRequests::NOTIFY_NOTHING;
+  mUpdatePreference.mWantUpdates = nsIMEUpdatePreference::NOTIFY_NOTHING;
 
   if (mESM) {
     mESM->OnStopObservingContent(this);
@@ -786,7 +784,7 @@ bool
 IMEContentObserver::OnMouseButtonEvent(nsPresContext* aPresContext,
                                        WidgetMouseEvent* aMouseEvent)
 {
-  if (!mIMENotificationRequests.WantMouseButtonEventOnChar()) {
+  if (!mUpdatePreference.WantMouseButtonEventOnChar()) {
     return false;
   }
   if (!aMouseEvent->IsTrusted() ||
@@ -1416,8 +1414,15 @@ IMEContentObserver::FlushMergeableNotifications()
   
   
   mQueuedSender = new IMENotificationSender(this);
-  NS_DispatchToCurrentThread(mQueuedSender);
-
+  nsIScriptGlobalObject* globalObject = mDocShell ?
+                                        mDocShell->GetScriptGlobalObject() :
+                                        nullptr;
+  if (globalObject) {
+    RefPtr<IMENotificationSender> queuedSender = mQueuedSender;
+    globalObject->Dispatch(nullptr, TaskCategory::Other, queuedSender.forget());
+  } else {
+    NS_DispatchToCurrentThread(mQueuedSender);
+  }
   MOZ_LOG(sIMECOLog, LogLevel::Debug,
     ("0x%p IMEContentObserver::FlushMergeableNotifications(), "
      "finished", this));
@@ -1542,7 +1547,17 @@ IMEContentObserver::IMENotificationSender::Run()
          "posting IMENotificationSender to current thread", this));
       mIMEContentObserver->mQueuedSender =
         new IMENotificationSender(mIMEContentObserver);
-      NS_DispatchToCurrentThread(mIMEContentObserver->mQueuedSender);
+      nsIScriptGlobalObject* globalObject =
+        mIMEContentObserver->mDocShell ?
+        mIMEContentObserver->mDocShell->GetScriptGlobalObject() : nullptr;
+      if (globalObject) {
+        RefPtr<IMENotificationSender> queuedSender =
+          mIMEContentObserver->mQueuedSender;
+        globalObject->Dispatch(nullptr, TaskCategory::Other,
+                               queuedSender.forget());
+      } else {
+        NS_DispatchToCurrentThread(mIMEContentObserver->mQueuedSender);
+      }
       return NS_OK;
     }
     
@@ -1606,7 +1621,17 @@ IMEContentObserver::IMENotificationSender::Run()
          "posting IMENotificationSender to current thread", this));
       mIMEContentObserver->mQueuedSender =
         new IMENotificationSender(mIMEContentObserver);
-      NS_DispatchToCurrentThread(mIMEContentObserver->mQueuedSender);
+      nsIScriptGlobalObject* globalObject =
+        mIMEContentObserver->mDocShell ?
+        mIMEContentObserver->mDocShell->GetScriptGlobalObject() : nullptr;
+      if (globalObject) {
+        RefPtr<IMENotificationSender> queuedSender =
+          mIMEContentObserver->mQueuedSender;
+        globalObject->Dispatch(nullptr, TaskCategory::Other,
+                               queuedSender.forget());
+      } else {
+        NS_DispatchToCurrentThread(mIMEContentObserver->mQueuedSender);
+      }
     }
   }
   return NS_OK;
