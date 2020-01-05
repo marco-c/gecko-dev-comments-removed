@@ -2686,6 +2686,9 @@ pref("layout.css.control-characters.visible", true);
 #endif
 
 
+pref("layout.css.column-span.enabled", false);
+
+
 
 
 

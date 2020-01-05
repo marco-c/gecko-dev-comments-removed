@@ -7814,6 +7814,17 @@ for (var prop in gCSSProperties) {
   }
 }
 
+if (IsCSSPropertyPrefEnabled("layout.css.column-span.enabled")) {
+  gCSSProperties["column-span"] = {
+    domProp: "columnSpan",
+    inherited: false,
+    type: CSS_TYPE_LONGHAND,
+    initial_values: [ "none" ],
+    other_values: [ "all" ],
+    invalid_values: [ "-1", "0", "auto", "2px" ]
+  };
+}
+
 if (false) {
   
   
