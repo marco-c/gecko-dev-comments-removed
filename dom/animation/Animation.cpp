@@ -546,6 +546,8 @@ Animation::Reverse(ErrorResult& aRv)
   if (IsRelevant()) {
     nsNodeUtils::AnimationChanged(this);
   }
+  
+  
 }
 
 
