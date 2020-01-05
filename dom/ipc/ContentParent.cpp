@@ -5035,10 +5035,27 @@ ContentParent::TransmitPermissionsFor(nsIChannel* aChannel)
 {
   MOZ_ASSERT(aChannel);
 #ifdef MOZ_PERMISSIONS
+  
+  
+  
+  
+  nsLoadFlags loadFlags;
+  nsresult rv = aChannel->GetLoadFlags(&loadFlags);
+  NS_ENSURE_SUCCESS(rv, rv);
 
-  nsresult rv;
-  if (!aChannel->IsDocument()) {
-    return NS_OK;
+  if (!(loadFlags & nsIChannel::LOAD_DOCUMENT_URI)) {
+    if (loadFlags & nsIRequest::LOAD_HTML_OBJECT_DATA) {
+      nsAutoCString mimeType;
+      aChannel->GetContentType(mimeType);
+      if (nsContentUtils::HtmlObjectContentTypeForMIMEType(mimeType, nullptr) !=
+          nsIObjectLoadingContent::TYPE_DOCUMENT) {
+        
+        return NS_OK;
+      }
+    } else {
+      
+      return NS_OK;
+    }
   }
 
   
