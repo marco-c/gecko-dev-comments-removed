@@ -252,6 +252,19 @@ class SidebarAction {
     }
     windowTracker.removeOpenListener(this.windowOpenListener);
   }
+
+  
+
+
+
+
+
+  triggerAction(window) {
+    let {SidebarUI} = window;
+    if (SidebarUI) {
+      SidebarUI.toggle(this.id);
+    }
+  }
 }
 
 SidebarAction.for = (extension) => {

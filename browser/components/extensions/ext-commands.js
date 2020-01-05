@@ -125,16 +125,22 @@ CommandList.prototype = {
     
     
     keyElement.addEventListener("command", (event) => {
+      let action;
       if (name == "_execute_page_action") {
-        let win = event.target.ownerGlobal;
-        pageActionFor(this.extension).triggerAction(win);
+        action = pageActionFor(this.extension);
       } else if (name == "_execute_browser_action") {
-        let win = event.target.ownerGlobal;
-        browserActionFor(this.extension).triggerAction(win);
+        action = browserActionFor(this.extension);
+      } else if (name == "_execute_sidebar_action") {
+        action = sidebarActionFor(this.extension);
       } else {
         this.extension.tabManager
             .addActiveTabPermission();
         this.emit("command", name);
+        return;
+      }
+      if (action) {
+        let win = event.target.ownerGlobal;
+        action.triggerAction(win);
       }
     });
     
