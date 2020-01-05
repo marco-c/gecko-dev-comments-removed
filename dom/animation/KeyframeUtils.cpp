@@ -1331,6 +1331,16 @@ BuildSegmentsFromValueEntries(nsTArray<KeyframeValueEntry>& aEntries,
     }
 
     
+    
+    
+    if (aEntries[i].mProperty == aEntries[i + 1].mProperty &&
+        aEntries[i].mOffset == aEntries[i + 1].mOffset &&
+        aEntries[i].mOffset != 1.0f && aEntries[i].mOffset != 0.0f) {
+      ++i;
+      continue;
+    }
+
+    
     if (aEntries[i].mProperty != aEntries[i + 1].mProperty &&
         aEntries[i].mOffset != 1.0f) {
       HandleMissingFinalKeyframe(aResult, aEntries[i], animationProperty);
@@ -1342,11 +1352,16 @@ BuildSegmentsFromValueEntries(nsTArray<KeyframeValueEntry>& aEntries,
 
     
     
-    size_t j;
+    
+    
+    
+    
+    
+    
+    size_t j = i + 1;
     if (aEntries[i].mOffset == 0.0f && aEntries[i + 1].mOffset == 0.0f) {
       
       MOZ_ASSERT(aEntries[i].mProperty == aEntries[i + 1].mProperty);
-      j = i + 1;
       while (j + 1 < n &&
              aEntries[j + 1].mOffset == 0.0f &&
              aEntries[j + 1].mProperty == aEntries[j].mProperty) {
@@ -1356,7 +1371,6 @@ BuildSegmentsFromValueEntries(nsTArray<KeyframeValueEntry>& aEntries,
       if (aEntries[i + 1].mOffset == 1.0f &&
           aEntries[i + 1].mProperty == aEntries[i].mProperty) {
         
-        j = i + 1;
         while (j + 1 < n &&
                aEntries[j + 1].mOffset == 1.0f &&
                aEntries[j + 1].mProperty == aEntries[j].mProperty) {
@@ -1369,12 +1383,6 @@ BuildSegmentsFromValueEntries(nsTArray<KeyframeValueEntry>& aEntries,
         ++i;
         continue;
       }
-    } else {
-      while (aEntries[i].mOffset == aEntries[i + 1].mOffset &&
-             aEntries[i].mProperty == aEntries[i + 1].mProperty) {
-        ++i;
-      }
-      j = i + 1;
     }
 
     
