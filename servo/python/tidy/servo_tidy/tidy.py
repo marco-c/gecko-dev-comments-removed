@@ -450,6 +450,8 @@ def check_rust(file_name, lines):
     prev_crate = {}
     prev_mod = {}
     prev_feature_name = ""
+    indent = 0
+    prev_indent = 0
 
     decl_message = "{} is not in alphabetical order"
     decl_expected = "\n\t\033[93mexpected: {}\033[0m"
@@ -458,6 +460,9 @@ def check_rust(file_name, lines):
     for idx, original_line in enumerate(lines):
         
         line = original_line.strip()
+        prev_indent = indent
+        indent = len(original_line) - len(line)
+
         is_attribute = re.search(r"#\[.*\]", line)
         is_comment = re.search(r"^//|^/\*|^\*", line)
 
@@ -578,10 +583,16 @@ def check_rust(file_name, lines):
         prev_open_brace = line.endswith("{")
 
         
+        if line.startswith(("{", "}")):
+            match = re.match(r"(?: {4})* {1,3}([{}])", original_line)
+            if match:
+                if indent != prev_indent - 4:
+                    yield (idx + 1, "space before {} is not a multiple of 4".format(match.group(1)))
+
+        
         if line.startswith("extern crate "):
             
             crate_name = line[13:-1]
-            indent = len(original_line) - len(line)
             if indent not in prev_crate:
                 prev_crate[indent] = ""
             if prev_crate[indent] > crate_name:
@@ -616,7 +627,6 @@ def check_rust(file_name, lines):
         
         if line.startswith("use "):
             import_block = True
-            indent = len(original_line) - len(line)
             if not line.endswith(";") and '{' in line:
                 yield (idx + 1, "use statement spans multiple lines")
             if '{ ' in line:
@@ -645,7 +655,6 @@ def check_rust(file_name, lines):
 
         
         if line.startswith("mod ") or line.startswith("pub mod "):
-            indent = len(original_line) - len(line)
             
             mod = line[4:-1] if line.startswith("mod ") else line[8:-1]
 

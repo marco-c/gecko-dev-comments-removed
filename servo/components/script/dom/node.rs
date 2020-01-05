@@ -2383,7 +2383,7 @@ impl NodeMethods for Node {
 
         
         Node::namespace_to_string(Node::locate_namespace(self, prefix))
-     }
+    }
 
     
     fn IsDefaultNamespace(&self, namespace: Option<DOMString>) -> bool {
