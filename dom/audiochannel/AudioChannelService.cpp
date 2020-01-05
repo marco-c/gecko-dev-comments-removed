@@ -1055,6 +1055,11 @@ AudioChannelService::AudioChannelWindow::RequestAudioFocus(AudioChannelAgent* aA
   MOZ_ASSERT(aAgent);
 
   
+  if (!aAgent->Window()) {
+    return;
+  }
+
+  
   if (mOwningAudioFocus) {
     return;
   }
