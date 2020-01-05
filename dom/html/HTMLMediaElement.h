@@ -16,7 +16,6 @@
 #include "DecoderTraits.h"
 #include "nsIAudioChannelAgent.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/dom/Promise.h"
 #include "mozilla/dom/TextTrackManager.h"
 #include "mozilla/WeakPtr.h"
 #include "MediaDecoder.h"
@@ -73,6 +72,7 @@ namespace dom {
 
 class MediaError;
 class MediaSource;
+class Promise;
 class TextTrackList;
 class AudioTrackList;
 class VideoTrackList;
@@ -1231,6 +1231,8 @@ protected:
   void UpdateCustomPolicyAfterPlayed();
 
   class nsAsyncEventRunner;
+  class nsNotifyAboutPlayingRunner;
+  class nsResolveOrRejectPendingPlayPromisesRunner;
   using nsGenericHTMLElement::DispatchEvent;
   
   nsresult DispatchEvent(const nsAString& aName);
@@ -1238,6 +1240,22 @@ protected:
   
   
   void OpenUnsupportedMediaWithExternalAppIfNeeded() const;
+  
+  
+  
+  nsTArray<RefPtr<Promise>> TakePendingPlayPromises();
+
+  
+  
+  void AsyncResolvePendingPlayPromises();
+
+  
+  
+  void AsyncRejectPendingPlayPromises(nsresult aError);
+
+  
+  
+  void NotifyAboutPlaying();
 
   
   
@@ -1671,6 +1689,17 @@ private:
   
   
   RefPtr<AudioChannelAgentCallback> mAudioChannelWrapper;
+  
+  
+  
+  nsTArray<RefPtr<Promise>> mPendingPlayPromises;
+
+  
+  
+  
+  
+  
+  nsTArray<nsResolveOrRejectPendingPlayPromisesRunner*> mPendingPlayPromisesRunners;
 };
 
 } 
