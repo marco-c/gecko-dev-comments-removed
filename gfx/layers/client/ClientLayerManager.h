@@ -222,10 +222,7 @@ public:
   
   void GetCompositorSideAPZTestData(APZTestData* aData) const;
 
-  virtual void SetTransactionIdAllocator(TransactionIdAllocator* aAllocator) override
-  {
-     mTransactionIdAllocator = aAllocator;
-  }
+  virtual void SetTransactionIdAllocator(TransactionIdAllocator* aAllocator) override;
 
   virtual uint64_t GetLastTransactionId() override { return mLatestTransactionId; }
 

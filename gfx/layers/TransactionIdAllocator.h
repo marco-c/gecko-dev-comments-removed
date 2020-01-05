@@ -56,6 +56,25 @@ public:
   
 
 
+
+
+
+
+  virtual void ClearPendingTransactions() = 0;
+
+  
+
+
+
+
+
+
+
+  virtual void ResetInitialTransactionId(uint64_t aTransactionId) = 0;
+
+  
+
+
   virtual mozilla::TimeStamp GetTransactionStart() = 0;
 };
 
