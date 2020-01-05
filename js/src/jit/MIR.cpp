@@ -6079,9 +6079,8 @@ PropertyReadNeedsTypeBarrier(CompilerConstraintList* constraints,
     
     
     
-    
     if (key->unknownProperties() || observed->empty() ||
-        key->clasp()->isProxy() || IsTypedObjectClass(key->clasp()))
+        key->clasp()->isProxy())
     {
         return BarrierKind::TypeSet;
     }
