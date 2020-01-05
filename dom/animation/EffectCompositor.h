@@ -249,6 +249,10 @@ public:
   
   bool PreTraverse(dom::Element* aElement, nsIAtom* aPseudoTagOrNull);
 
+  
+  
+  bool PreTraverseInSubtree(dom::Element* aElement);
+
 private:
   ~EffectCompositor() = default;
 
