@@ -652,7 +652,11 @@ public:
   
   void ForceTabPaint(TabParent* aTabParent, uint64_t aLayerObserverEpoch);
 
-  nsresult TransmitPermissionsFor(nsIChannel* aChannel);
+  
+  
+  
+  
+  nsresult AboutToLoadDocumentForChild(nsIChannel* aChannel);
 
   nsresult TransmitPermissionsForPrincipal(nsIPrincipal* aPrincipal);
 

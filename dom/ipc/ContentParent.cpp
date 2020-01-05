@@ -2227,7 +2227,12 @@ ContentParent::InitInternal(ProcessPriority aInitialPriority,
     SerializeURI(nullptr, xpcomInit.userContentSheetURL());
   }
 
+  
   gfxPlatform::GetPlatform()->BuildContentDeviceData(&xpcomInit.contentDeviceData());
+  
+  xpcomInit.gfxNonDefaultVarUpdates() = gfxVars::FetchNonDefaultVars();
+  
+  gfxVars::AddReceiver(this);
 
   nsCOMPtr<nsIGfxInfo> gfxInfo = services::GetGfxInfo();
   if (gfxInfo) {
@@ -5055,10 +5060,9 @@ ContentParent::ForceTabPaint(TabParent* aTabParent, uint64_t aLayerObserverEpoch
 }
 
 nsresult
-ContentParent::TransmitPermissionsFor(nsIChannel* aChannel)
+ContentParent::AboutToLoadDocumentForChild(nsIChannel* aChannel)
 {
   MOZ_ASSERT(aChannel);
-#ifdef MOZ_PERMISSIONS
 
   nsresult rv;
   if (!aChannel->IsDocument()) {
@@ -5078,7 +5082,6 @@ ContentParent::TransmitPermissionsFor(nsIChannel* aChannel)
 
   rv = TransmitPermissionsForPrincipal(principal);
   NS_ENSURE_SUCCESS(rv, rv);
-#endif
 
   return NS_OK;
 }

@@ -326,7 +326,7 @@ WyciwygChannelParent::OnStartRequest(nsIRequest *aRequest, nsISupports *aContext
   
   
   PContentParent* pcp = Manager()->Manager();
-  rv = static_cast<ContentParent*>(pcp)->TransmitPermissionsFor(chan);
+  rv = static_cast<ContentParent*>(pcp)->AboutToLoadDocumentForChild(chan);
   MOZ_ASSERT(NS_SUCCEEDED(rv));
 
   nsresult status;
