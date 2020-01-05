@@ -292,11 +292,6 @@ private:
   
   void UpdatePlaybackPosition(int64_t aTime);
 
-  
-  
-  
-  void StartBuffering();
-
   bool CanPlayThrough();
 
   MediaStatistics GetStatistics();
