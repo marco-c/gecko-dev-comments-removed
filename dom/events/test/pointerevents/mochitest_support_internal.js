@@ -69,13 +69,12 @@ function addListeners(elem) {
       }[event.pointerType];
 
       
-      if (!suppressPointerIdCheck) {
-        resultCallback({
-          name:   "Mismatched event.pointerId recieved.",
-          status: event.pointerId,
-          PASS:   pointerId
-        });
-      }
+      resultCallback({
+        name:   "Mismatched event.pointerId recieved.",
+        status: event.pointerId,
+        PASS:   pointerId
+      });
+
     });
   });
 }

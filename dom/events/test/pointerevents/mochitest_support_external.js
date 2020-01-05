@@ -203,7 +203,7 @@ function sendTouchEvent(int_win, elemId, touchEventType, params) {
 }
 
 
-function runTestInNewWindow(aFile, aSuppressPointerIdCheck = false) {
+function runTestInNewWindow(aFile) {
   var testURL = location.href.substring(0, location.href.lastIndexOf('/') + 1) + aFile;
   var testWindow = window.open(testURL, "_blank");
   var testDone = false;
@@ -212,7 +212,6 @@ function runTestInNewWindow(aFile, aSuppressPointerIdCheck = false) {
   
   
   testWindow.addEventListener("DOMContentLoaded", function() {
-    testWindow.suppressPointerIdCheck = aSuppressPointerIdCheck;
     var e = testWindow.document.createElement('script');
     e.type = 'text/javascript';
     e.src = "mochitest_support_internal.js";
