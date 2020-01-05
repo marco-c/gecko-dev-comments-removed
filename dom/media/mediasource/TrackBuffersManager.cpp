@@ -636,7 +636,8 @@ TrackBuffersManager::SegmentParserLoop()
     
     
     if (mSourceBufferAttributes->GetAppendState() == AppendState::WAITING_FOR_SEGMENT) {
-      if (NS_SUCCEEDED(mParser->IsInitSegmentPresent(mInputBuffer))) {
+      MediaResult haveInitSegment = mParser->IsInitSegmentPresent(mInputBuffer);
+      if (NS_SUCCEEDED(haveInitSegment)) {
         SetAppendState(AppendState::PARSING_INIT_SEGMENT);
         if (mFirstInitializationSegmentReceived) {
           
@@ -644,14 +645,26 @@ TrackBuffersManager::SegmentParserLoop()
         }
         continue;
       }
-      if (NS_SUCCEEDED(mParser->IsMediaSegmentPresent(mInputBuffer))) {
+      MediaResult haveMediaSegment =
+        mParser->IsMediaSegmentPresent(mInputBuffer);
+      if (NS_SUCCEEDED(haveMediaSegment)) {
         SetAppendState(AppendState::PARSING_MEDIA_SEGMENT);
         mNewMediaSegmentStarted = true;
         continue;
       }
       
       
-      MSE_DEBUG("Found invalid or incomplete data.");
+      if (haveInitSegment != NS_ERROR_NOT_AVAILABLE) {
+        MSE_DEBUG("Found invalid data.");
+        RejectAppend(haveInitSegment, __func__);
+        return;
+      }
+      if (haveMediaSegment != NS_ERROR_NOT_AVAILABLE) {
+        MSE_DEBUG("Found invalid data.");
+        RejectAppend(haveMediaSegment, __func__);
+        return;
+      }
+      MSE_DEBUG("Found incomplete data.");
       NeedMoreData();
       return;
     }
