@@ -4820,7 +4820,6 @@ pref("dom.mozNetworkStats.enabled", false);
 
 
 pref("dom.mozSettings.enabled", false);
-pref("dom.mozPermissionSettings.enabled", false);
 
 
 
