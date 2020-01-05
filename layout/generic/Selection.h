@@ -167,13 +167,20 @@ public:
   uint32_t     FocusOffset();
 
   bool IsCollapsed() const;
-  void Collapse(nsINode& aNode, uint32_t aOffset, mozilla::ErrorResult& aRv);
-  void CollapseToStart(mozilla::ErrorResult& aRv);
-  void CollapseToEnd(mozilla::ErrorResult& aRv);
 
-  void Extend(nsINode& aNode, uint32_t aOffset, mozilla::ErrorResult& aRv);
+  
+  
+  
+  void CollapseJS(nsINode& aNode, uint32_t aOffset,
+                  mozilla::ErrorResult& aRv);
+  void CollapseToStartJS(mozilla::ErrorResult& aRv);
+  void CollapseToEndJS(mozilla::ErrorResult& aRv);
 
-  void SelectAllChildren(nsINode& aNode, mozilla::ErrorResult& aRv);
+  void ExtendJS(nsINode& aNode, uint32_t aOffset,
+                mozilla::ErrorResult& aRv);
+
+  void SelectAllChildrenJS(nsINode& aNode, mozilla::ErrorResult& aRv);
+
   void DeleteFromDocument(mozilla::ErrorResult& aRv);
 
   uint32_t RangeCount() const
@@ -181,7 +188,7 @@ public:
     return mRanges.Length();
   }
   nsRange* GetRangeAt(uint32_t aIndex, mozilla::ErrorResult& aRv);
-  void AddRange(nsRange& aRange, mozilla::ErrorResult& aRv);
+  void AddRangeJS(nsRange& aRange, mozilla::ErrorResult& aRv);
   void RemoveRange(nsRange& aRange, mozilla::ErrorResult& aRv);
   void RemoveAllRanges(mozilla::ErrorResult& aRv);
 
@@ -201,9 +208,9 @@ public:
   void Modify(const nsAString& aAlter, const nsAString& aDirection,
               const nsAString& aGranularity, mozilla::ErrorResult& aRv);
 
-  void SetBaseAndExtent(nsINode& aAnchorNode, uint32_t aAnchorOffset,
-                        nsINode& aFocusNode, uint32_t aFocusOffset,
-                        mozilla::ErrorResult& aRv);
+  void SetBaseAndExtentJS(nsINode& aAnchorNode, uint32_t aAnchorOffset,
+                          nsINode& aFocusNode, uint32_t aFocusOffset,
+                          mozilla::ErrorResult& aRv);
 
   bool GetInterlinePosition(mozilla::ErrorResult& aRv);
   void SetInterlinePosition(bool aValue, mozilla::ErrorResult& aRv);
@@ -237,6 +244,17 @@ public:
                       int16_t aVPercent, int16_t aHPercent,
                       mozilla::ErrorResult& aRv);
 
+  
+  void Collapse(nsINode& aNode, uint32_t aOffset, mozilla::ErrorResult& aRv);
+  void CollapseToStart(mozilla::ErrorResult& aRv);
+  void CollapseToEnd(mozilla::ErrorResult& aRv);
+  void Extend(nsINode& aNode, uint32_t aOffset, mozilla::ErrorResult& aRv);
+  void AddRange(nsRange& aRange, mozilla::ErrorResult& aRv);
+  void SelectAllChildren(nsINode& aNode, mozilla::ErrorResult& aRv);
+  void SetBaseAndExtent(nsINode& aAnchorNode, uint32_t aAnchorOffset,
+                        nsINode& aFocusNode, uint32_t aFocusOffset,
+                        mozilla::ErrorResult& aRv);
+
   void AddSelectionChangeBlocker();
   void RemoveSelectionChangeBlocker();
   bool IsBlockingSelectionChangeEvents() const;
@@ -259,7 +277,8 @@ public:
     mSelectionType = aSelectionType;
   }
 
-  nsresult     NotifySelectionListeners();
+  nsresult NotifySelectionListeners(bool aCalledByJS);
+  nsresult NotifySelectionListeners();
 
   friend struct AutoUserInitiated;
   struct MOZ_RAII AutoUserInitiated
@@ -364,6 +383,12 @@ private:
 
 
   bool mUserInitiated;
+
+  
+
+
+
+  bool mCalledByJS;
 
   
   
