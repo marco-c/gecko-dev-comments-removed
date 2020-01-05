@@ -356,6 +356,14 @@ config = {
                 "--startup-timeout=300",
             ],
         },
+        "geckoview": {
+            "run_filename": "rungeckoview.py",
+            "testsdir": "mochitest",
+            "options": [
+                "--utility-path=%(utility_path)s",
+                "--symbols-path=%(symbols_path)s",
+            ],
+        },
 
     },  
     "download_minidump_stackwalk": True,
