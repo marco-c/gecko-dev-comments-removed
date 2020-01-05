@@ -542,8 +542,7 @@ CompositorBridgeParent::RecvMakeSnapshot(const SurfaceDescriptor& aInSnapshot,
 mozilla::ipc::IPCResult
 CompositorBridgeParent::RecvFlushRendering()
 {
-  if (mCompositorScheduler->NeedsComposite())
-  {
+  if (mCompositorScheduler->NeedsComposite()) {
     CancelCurrentCompositeTask();
     ForceComposeToTarget(nullptr);
   }
@@ -1140,6 +1139,16 @@ CompositorBridgeParent::DeallocPAPZParent(PAPZParent* aActor)
   return true;
 }
 
+mozilla::ipc::IPCResult
+CompositorBridgeParent::RecvGetCompositorOptions(const uint64_t& aLayersId,
+                                                 CompositorOptions* aOptions)
+{
+  
+  MOZ_ASSERT(aLayersId == 0);
+  *aOptions = mOptions;
+  return IPC_OK();
+}
+
 RefPtr<APZCTreeManager>
 CompositorBridgeParent::GetAPZCTreeManager()
 {
@@ -1519,18 +1528,15 @@ CompositorBridgeParent::NotifyVsync(const TimeStamp& aTimeStamp, const uint64_t&
 }
 
 mozilla::ipc::IPCResult
-CompositorBridgeParent::RecvNotifyChildCreated(const uint64_t& child,
-                                               CompositorOptions* aOptions)
+CompositorBridgeParent::RecvNotifyChildCreated(const uint64_t& child)
 {
   MonitorAutoLock lock(*sIndirectLayerTreesLock);
   NotifyChildCreated(child);
-  *aOptions = mOptions;
   return IPC_OK();
 }
 
 mozilla::ipc::IPCResult
-CompositorBridgeParent::RecvNotifyChildRecreated(const uint64_t& aChild,
-                                                 CompositorOptions* aOptions)
+CompositorBridgeParent::RecvNotifyChildRecreated(const uint64_t& aChild)
 {
   MonitorAutoLock lock(*sIndirectLayerTreesLock);
 
@@ -1540,7 +1546,6 @@ CompositorBridgeParent::RecvNotifyChildRecreated(const uint64_t& aChild,
   }
 
   NotifyChildCreated(aChild);
-  *aOptions = mOptions;
   return IPC_OK();
 }
 
@@ -1553,9 +1558,7 @@ CompositorBridgeParent::NotifyChildCreated(uint64_t aChild)
 }
 
 mozilla::ipc::IPCResult
-CompositorBridgeParent::RecvMapAndNotifyChildCreated(const uint64_t& aChild,
-                                                     const base::ProcessId& aOwnerPid,
-                                                     CompositorOptions* aOptions)
+CompositorBridgeParent::RecvMapAndNotifyChildCreated(const uint64_t& aChild, const base::ProcessId& aOwnerPid)
 {
   
   
@@ -1565,7 +1568,6 @@ CompositorBridgeParent::RecvMapAndNotifyChildCreated(const uint64_t& aChild,
 
   MonitorAutoLock lock(*sIndirectLayerTreesLock);
   NotifyChildCreated(aChild);
-  *aOptions = mOptions;
   return IPC_OK();
 }
 
@@ -1575,9 +1577,6 @@ CompositorBridgeParent::RecvAdoptChild(const uint64_t& child)
   APZCTreeManagerParent* parent;
   {
     MonitorAutoLock lock(*sIndirectLayerTreesLock);
-    
-    
-    MOZ_ASSERT(sIndirectLayerTrees[child].mParent->mOptions == mOptions);
     NotifyChildCreated(child);
     if (sIndirectLayerTrees[child].mLayerTree) {
       sIndirectLayerTrees[child].mLayerTree->SetLayerManager(mLayerManager);

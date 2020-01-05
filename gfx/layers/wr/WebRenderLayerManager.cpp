@@ -186,6 +186,7 @@ WebRenderLayer::DumpLayerInfo(const char* aLayerType, gfx::Rect& aRect)
 WebRenderLayerManager::WebRenderLayerManager(nsIWidget* aWidget)
   : mWidget(aWidget)
   , mLatestTransactionId(0)
+  , mNeedsComposite(false)
   , mTarget(nullptr)
 {
   MOZ_COUNT_CTOR(WebRenderLayerManager);
@@ -288,7 +289,6 @@ WebRenderLayerManager::EndTransaction(DrawPaintedLayerCallback aCallback,
                                       EndTransactionFlags aFlags)
 {
   DiscardImages();
-  WrBridge()->RemoveExpiredFontKeys();
 
   mPaintedLayerCallback = aCallback;
   mPaintedLayerCallbackData = aCallbackData;
@@ -314,6 +314,7 @@ WebRenderLayerManager::EndTransaction(DrawPaintedLayerCallback aCallback,
   WrBridge()->DPEnd(builder, size.ToUnknownSize(), sync, mLatestTransactionId);
 
   MakeSnapshotIfRequired(size);
+  mNeedsComposite = false;
 
   ClearDisplayItemLayers();
 
@@ -484,6 +485,27 @@ void
 WebRenderLayerManager::RemoveDidCompositeObserver(DidCompositeObserver* aObserver)
 {
   mDidCompositeObservers.RemoveElement(aObserver);
+}
+
+void
+WebRenderLayerManager::FlushRendering()
+{
+  CompositorBridgeChild* bridge = GetCompositorBridgeChild();
+  if (bridge) {
+    bridge->SendFlushRendering();
+  }
+}
+
+void
+WebRenderLayerManager::SendInvalidRegion(const nsIntRegion& aRegion)
+{
+  
+}
+
+void
+WebRenderLayerManager::Composite()
+{
+  WrBridge()->SendForceComposite();
 }
 
 void

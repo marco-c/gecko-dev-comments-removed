@@ -735,7 +735,7 @@ nsWindow::Destroy()
     }
 
     
-    RefPtr<nsDragService> dragService = nsDragService::GetInstance();
+    nsDragService *dragService = nsDragService::GetInstance();
     if (dragService && this == dragService->GetMostRecentDestWindow()) {
         dragService->ScheduleLeaveEvent();
     }
@@ -2073,13 +2073,11 @@ nsWindow::OnExposeEvent(cairo_t *cr)
     LayoutDeviceIntRegion region = exposeRegion;
     region.ScaleRoundOut(scale, scale);
 
-    ClientLayerManager *clientLayers = GetLayerManager()->AsClientLayerManager();
-
-    if (clientLayers && mCompositorSession) {
+    if (GetLayerManager()->AsKnowsCompositor() && mCompositorSession) {
         
         
-        clientLayers->SetNeedsComposite(true);
-        clientLayers->SendInvalidRegion(region.ToUnknownRegion());
+        GetLayerManager()->SetNeedsComposite(true);
+        GetLayerManager()->SendInvalidRegion(region.ToUnknownRegion());
     }
 
     RefPtr<nsWindow> strongThis(this);
@@ -2101,9 +2099,9 @@ nsWindow::OnExposeEvent(cairo_t *cr)
             return FALSE;
     }
 
-    if (clientLayers && clientLayers->NeedsComposite()) {
-      clientLayers->Composite();
-      clientLayers->SetNeedsComposite(false);
+    if (GetLayerManager()->AsKnowsCompositor() && GetLayerManager()->NeedsComposite()) {
+      GetLayerManager()->Composite();
+      GetLayerManager()->SetNeedsComposite(false);
     }
 
     LOGDRAW(("sending expose event [%p] %p 0x%lx (rects follow):\n",
@@ -3397,8 +3395,7 @@ nsWindow::OnDragDataReceivedEvent(GtkWidget *aWidget,
 {
     LOGDRAG(("nsWindow::OnDragDataReceived(%p)\n", (void*)this));
 
-    RefPtr<nsDragService> dragService = nsDragService::GetInstance();
-    dragService->
+    nsDragService::GetInstance()->
         TargetDataReceived(aWidget, aDragContext, aX, aY,
                            aSelectionData, aInfo, aTime);
 }
@@ -5912,8 +5909,7 @@ drag_motion_event_cb(GtkWidget *aWidget,
 
     LayoutDeviceIntPoint point = window->GdkPointToDevicePixels({ retx, rety });
 
-    RefPtr<nsDragService> dragService = nsDragService::GetInstance();
-    return dragService->
+    return nsDragService::GetInstance()->
         ScheduleMotionEvent(innerMostWindow, aDragContext,
                             point, aTime);
 }
@@ -5928,7 +5924,7 @@ drag_leave_event_cb(GtkWidget *aWidget,
     if (!window)
         return;
 
-    RefPtr<nsDragService> dragService = nsDragService::GetInstance();
+    nsDragService *dragService = nsDragService::GetInstance();
 
     nsWindow *mostRecentDragWindow = dragService->GetMostRecentDestWindow();
     if (!mostRecentDragWindow) {
@@ -5985,8 +5981,7 @@ drag_drop_event_cb(GtkWidget *aWidget,
 
     LayoutDeviceIntPoint point = window->GdkPointToDevicePixels({ retx, rety });
 
-    RefPtr<nsDragService> dragService = nsDragService::GetInstance();
-    return dragService->
+    return nsDragService::GetInstance()->
         ScheduleDropEvent(innerMostWindow, aDragContext,
                           point, aTime);
 }

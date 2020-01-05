@@ -328,6 +328,9 @@ public:
 
   virtual void Composite() {}
 
+  virtual void SetNeedsComposite(bool aNeedsComposite) {}
+  virtual bool NeedsComposite() const { return false; }
+
   virtual bool HasShadowManagerInternal() const { return false; }
   bool HasShadowManager() const { return HasShadowManagerInternal(); }
   virtual void StorePluginWidgetConfigurations(const nsTArray<nsIWidget::Configuration>& aConfigurations) {}
@@ -591,6 +594,8 @@ public:
 
 
   virtual void FlushRendering() { }
+
+  virtual void SendInvalidRegion(const nsIntRegion& aRegion) {}
 
   
 

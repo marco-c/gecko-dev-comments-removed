@@ -226,12 +226,10 @@ bool nsWindow::OnPaint(HDC aDC, uint32_t aNestingLevel)
     return true;
   }
 
-  ClientLayerManager *clientLayerManager = GetLayerManager()->AsClientLayerManager();
-
-  if (clientLayerManager && !mBounds.IsEqualEdges(mLastPaintBounds)) {
+  if (GetLayerManager()->AsKnowsCompositor() && !mBounds.IsEqualEdges(mLastPaintBounds)) {
     
     
-    clientLayerManager->Composite();
+    GetLayerManager()->Composite();
   }
   mLastPaintBounds = mBounds;
 
@@ -278,11 +276,11 @@ bool nsWindow::OnPaint(HDC aDC, uint32_t aNestingLevel)
 #endif
   nsIntRegion region = GetRegionToPaint(forceRepaint, ps, hDC);
 
-  if (clientLayerManager) {
+  if (GetLayerManager()->AsKnowsCompositor()) {
     
     
-    clientLayerManager->SetNeedsComposite(true);
-    clientLayerManager->SendInvalidRegion(region);
+    GetLayerManager()->SetNeedsComposite(true);
+    GetLayerManager()->SendInvalidRegion(region);
   }
 
   RefPtr<nsWindow> strongThis(this);
@@ -297,9 +295,9 @@ bool nsWindow::OnPaint(HDC aDC, uint32_t aNestingLevel)
     return false;
   }
 
-  if (clientLayerManager && clientLayerManager->NeedsComposite()) {
-    clientLayerManager->Composite();
-    clientLayerManager->SetNeedsComposite(false);
+  if (GetLayerManager()->AsKnowsCompositor() && GetLayerManager()->NeedsComposite()) {
+    GetLayerManager()->Composite();
+    GetLayerManager()->SetNeedsComposite(false);
   }
 
   bool result = true;

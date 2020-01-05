@@ -46,7 +46,6 @@ parent:
                    SurfaceFormat aFormat, ByteBuffer aBytes);
   sync DeleteImage(ImageKey aImageKey);
   async AddRawFont(FontKey aFontKey, ByteBuffer aBytes, uint32_t aFontIndex);
-  async DeleteFont(FontKey aFontKey);
   async DPBegin(IntSize aSize);
   async DPEnd(IntSize aSize, WebRenderParentCommand[] commands, OpDestroy[] toDestroy, uint64_t fwdTransactionId, uint64_t transactionId,
               ByteBuffer aDL, WrBuiltDisplayListDescriptor aDLDesc, ByteBuffer aAux, WrAuxiliaryListsDescriptor aAuxDesc);
@@ -58,6 +57,8 @@ parent:
   async RemoveExternalImageId(uint64_t aImageId);
   async SetLayerObserverEpoch(uint64_t layerObserverEpoch);
   async ClearCachedResources();
+  // Schedule a composite if one isn't already scheduled.
+  async ForceComposite();
 
   async Shutdown();
 child:
