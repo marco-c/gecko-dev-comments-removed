@@ -5654,9 +5654,14 @@ function handleDroppedLink(event, urlOrLinks, name)
 
   let userContextId = gBrowser.selectedBrowser.getAttribute("usercontextid");
 
-  let inBackground = Services.prefs.getBoolPref("browser.tabs.loadInBackground");
-  if (event.shiftKey)
-    inBackground = !inBackground;
+  
+  
+  let inBackground = false;
+  if (event) {
+    let inBackground = Services.prefs.getBoolPref("browser.tabs.loadInBackground");
+    if (event.shiftKey)
+      inBackground = !inBackground;
+  }
 
   Task.spawn(function*() {
     let urls = [];
@@ -5679,7 +5684,11 @@ function handleDroppedLink(event, urlOrLinks, name)
 
   
   
-  event.preventDefault();
+  if (event) {
+    
+    
+    event.preventDefault();
+  }
 }
 
 function BrowserSetForcedCharacterSet(aCharset)
