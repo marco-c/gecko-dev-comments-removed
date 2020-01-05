@@ -212,13 +212,8 @@ ServoStyleSet::GetContext(already_AddRefed<ServoComputedValues> aComputedValues,
 {
   
 
-  
-  
-  
-  bool skipFixup = false;
-
   RefPtr<nsStyleContext> result = NS_NewStyleContext(aParentContext, mPresContext, aPseudoTag,
-                                                     aPseudoType, Move(aComputedValues), skipFixup);
+                                                     aPseudoType, Move(aComputedValues));
 
   
   if (aElementForAnimation &&
@@ -495,12 +490,8 @@ ServoStyleSet::ResolveInheritingAnonymousBoxStyle(nsIAtom* aPseudoTag,
   }
 #endif
 
-  
-  
-  
-  return NS_NewStyleContext(aParentContext, mPresContext, aPseudoTag,
-                            CSSPseudoElementType::InheritingAnonBox,
-                            computedValues.forget(), false);
+  return GetContext(computedValues.forget(), aParentContext, aPseudoTag,
+                    CSSPseudoElementType::InheritingAnonBox, nullptr);
 }
 
 already_AddRefed<nsStyleContext>
