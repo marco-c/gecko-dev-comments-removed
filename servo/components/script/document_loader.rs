@@ -9,8 +9,8 @@ use dom::bindings::js::JS;
 use dom::document::Document;
 use ipc_channel::ipc::IpcSender;
 use msg::constellation_msg::{PipelineId, ReferrerPolicy};
-use net_traits::{AsyncResponseTarget, PendingAsyncLoad, LoadContext};
-use net_traits::{FetchResponseMsg, ResourceThreads, IpcSend};
+use net_traits::{AsyncResponseTarget, CoreResourceMsg, load_async};
+use net_traits::{FetchResponseMsg, LoadContext, ResourceThreads, IpcSend};
 use net_traits::request::RequestInit;
 use std::thread;
 use url::Url;
@@ -63,7 +63,7 @@ pub struct LoadBlocker {
 impl LoadBlocker {
     
     pub fn new(doc: &Document, load: LoadType) -> LoadBlocker {
-        doc.add_blocking_load(load.clone());
+        doc.mut_loader().add_blocking_load(load.clone());
         LoadBlocker {
             doc: JS::from_ref(doc),
             load: Some(load),
@@ -119,25 +119,8 @@ impl DocumentLoader {
     }
 
     
-    pub fn add_blocking_load(&mut self, load: LoadType) {
+    fn add_blocking_load(&mut self, load: LoadType) {
         self.blocking_loads.push(load);
-    }
-
-    
-    
-    pub fn prepare_async_load(&mut self,
-                              load: LoadType,
-                              referrer: &Document,
-                              referrer_policy: Option<ReferrerPolicy>) -> PendingAsyncLoad {
-        let context = load.to_load_context();
-        let url = load.url().clone();
-        self.add_blocking_load(load);
-        PendingAsyncLoad::new(context,
-                              self.resource_threads.sender(),
-                              url,
-                              self.pipeline,
-                              referrer_policy.or(referrer.get_referrer_policy()),
-                              Some(referrer.url().clone()))
     }
 
     
@@ -146,19 +129,25 @@ impl DocumentLoader {
                       listener: AsyncResponseTarget,
                       referrer: &Document,
                       referrer_policy: Option<ReferrerPolicy>) {
-        let pending = self.prepare_async_load(load, referrer, referrer_policy);
-        pending.load_async(listener)
+        let context = load.to_load_context();
+        let url = load.url().clone();
+        self.add_blocking_load(load);
+        load_async(context,
+                   self.resource_threads.sender(),
+                   url,
+                   self.pipeline,
+                   referrer_policy.or(referrer.get_referrer_policy()),
+                   Some(referrer.url().clone()),
+                   listener);
     }
 
     
     pub fn fetch_async(&mut self,
                        load: LoadType,
                        request: RequestInit,
-                       fetch_target: IpcSender<FetchResponseMsg>,
-                       referrer: &Document,
-                       referrer_policy: Option<ReferrerPolicy>) {
-        let pending = self.prepare_async_load(load, referrer, referrer_policy);
-        pending.fetch_async(request, fetch_target);
+                       fetch_target: IpcSender<FetchResponseMsg>) {
+        self.add_blocking_load(load);
+        self.resource_threads.sender().send(CoreResourceMsg::Fetch(request, fetch_target)).unwrap();
     }
 
     
