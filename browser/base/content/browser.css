@@ -761,7 +761,7 @@ html|*#fullscreen-exit-button {
   max-width: 280px;
 }
 
-.form-validation-anchor {
+.popup-anchor {
   
   opacity: 0;
   visibility: hidden;
