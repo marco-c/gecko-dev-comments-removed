@@ -774,19 +774,7 @@ public:
 
   virtual nsViewportInfo GetViewportInfo(const mozilla::ScreenIntSize& aDisplaySize) override;
 
-  enum class UseCounterReportKind {
-    
-    
-    
-    eDefault,
-
-    
-    
-    
-    eIncludeExternalResources,
-  };
-
-  void ReportUseCounters(UseCounterReportKind aKind = UseCounterReportKind::eDefault);
+  void ReportUseCounters();
 
   virtual void AddIntersectionObserver(
     mozilla::dom::DOMIntersectionObserver* aObserver) override;
