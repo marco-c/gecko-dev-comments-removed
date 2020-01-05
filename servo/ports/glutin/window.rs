@@ -307,7 +307,11 @@ impl Window {
                 }
             }
         } else {
-            for event in self.window.wait_events() {
+            
+            
+            
+            
+            for event in self.window.poll_events() {
                 close_event = self.handle_window_event(event);
                 if close_event {
                     break;
