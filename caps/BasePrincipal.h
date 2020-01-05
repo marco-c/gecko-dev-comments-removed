@@ -115,27 +115,18 @@ protected:
   virtual bool MayLoadInternal(nsIURI* aURI) = 0;
   friend class ::ExpandedPrincipal;
 
-  void
-  SetHasExplicitDomain()
-  {
-    mHasExplicitDomain = true;
-  }
-
   
   
   
-  void FinishInit(const OriginAttributes& aOriginAttributes);
+  void FinishInit();
 
   nsCOMPtr<nsIContentSecurityPolicy> mCSP;
   nsCOMPtr<nsIContentSecurityPolicy> mPreloadCSP;
   nsCOMPtr<nsIAtom> mOriginNoSuffix;
   nsCOMPtr<nsIAtom> mOriginSuffix;
-
-private:
   OriginAttributes mOriginAttributes;
   PrincipalKind mKind;
-  bool mHasExplicitDomain;
-  bool mInitialized;
+  bool mDomainSet;
 };
 
 inline bool
@@ -178,7 +169,7 @@ BasePrincipal::FastEqualsConsideringDomain(nsIPrincipal* aOther)
   
   
   auto other = Cast(aOther);
-  if (!mHasExplicitDomain && !other->mHasExplicitDomain) {
+  if (!mDomainSet && !other->mDomainSet) {
     return FastEquals(aOther);
   }
 
@@ -214,7 +205,7 @@ BasePrincipal::FastSubsumesConsideringDomain(nsIPrincipal* aOther)
   
   
   
-  if (!mHasExplicitDomain && !Cast(aOther)->mHasExplicitDomain) {
+  if (!mDomainSet && !Cast(aOther)->mDomainSet) {
     return FastSubsumes(aOther);
   }
 

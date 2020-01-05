@@ -47,6 +47,7 @@ public:
   
   bool mCodebaseImmutable;
   bool mDomainImmutable;
+  bool mInitialized;
 
 protected:
   virtual ~ContentPrincipal();
