@@ -594,7 +594,10 @@ function createKeyboardEventDictionary_(key, keyEvent, win = window) {
     if (!keyCode) {
       result.flags |= Ci.nsITextInputProcessor.KEY_KEEP_KEYCODE_ZERO;
     }
-    result.flags |= Ci.nsITextInputProcessor.KEY_FORCE_PRINTABLE_KEY;
+    
+    if (!("key" in keyEvent && keyName == keyEvent.key)) {
+      result.flags |= Ci.nsITextInputProcessor.KEY_FORCE_PRINTABLE_KEY;
+    }
   }
   var locationIsDefined = "location" in keyEvent;
   if (locationIsDefined && keyEvent.location === 0) {
@@ -1209,6 +1212,8 @@ function getKeyCode(c) {
 event.sendKeyDown = function (keyToSend, modifiers, document) {
   modifiers.type = "keydown";
   event.sendSingleKey(keyToSend, modifiers, document);
+  
+  
   if (["VK_SHIFT", "VK_CONTROL", "VK_ALT", "VK_META"].indexOf(getKeyCode(keyToSend)) < 0) {
     modifiers.type = "keypress";
     event.sendSingleKey(keyToSend, modifiers, document);
@@ -1222,12 +1227,27 @@ event.sendKeyUp = function (keyToSend, modifiers, window = undefined) {
   delete modifiers.type;
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
 event.sendSingleKey = function (keyToSend, modifiers, window = undefined) {
   let keyCode = getKeyCode(keyToSend);
   if (keyCode in KEYCODES_LOOKUP) {
+    
+    
+    
     let modName = KEYCODES_LOOKUP[keyCode];
     modifiers[modName] = !modifiers[modName];
-  } else if (modifiers.shiftKey) {
+  } else if (modifiers.shiftKey && keyCode != "Shift") {
     keyCode = keyCode.toUpperCase();
   }
   event.synthesizeKey(keyCode, modifiers, window);

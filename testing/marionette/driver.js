@@ -1635,6 +1635,32 @@ GeckoDriver.prototype.singleTap = function*(cmd, resp) {
 
 
 
+GeckoDriver.prototype.performActions = function(cmd, resp) {
+  switch (this.context) {
+    case Context.CHROME:
+      throw new UnsupportedOperationError(
+          "Command 'performActions' is not available in chrome context");
+    case Context.CONTENT:
+      return this.listener.performActions({"actions": cmd.parameters.actions});
+  }
+};
+
+
+
+
+GeckoDriver.prototype.releaseActions = function(cmd, resp) {
+  return this.listener.releaseActions();
+};
+
+
+
+
+
+
+
+
+
+
 
 GeckoDriver.prototype.actionChain = function*(cmd, resp) {
   let {chain, nextId} = cmd.parameters;
@@ -2839,6 +2865,8 @@ GeckoDriver.prototype.commands = {
   "timeouts": GeckoDriver.prototype.setTimeouts,  
   "setTimeouts": GeckoDriver.prototype.setTimeouts,
   "singleTap": GeckoDriver.prototype.singleTap,
+  "performActions": GeckoDriver.prototype.performActions,
+  "releaseActions": GeckoDriver.prototype.releaseActions,
   "actionChain": GeckoDriver.prototype.actionChain, 
   "multiAction": GeckoDriver.prototype.multiAction, 
   "executeAsyncScript": GeckoDriver.prototype.executeAsyncScript,
