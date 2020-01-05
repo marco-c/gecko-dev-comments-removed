@@ -2867,8 +2867,12 @@ nsIDocument::GetDocGroup() const
   
   if (mDocGroup) {
     nsAutoCString docGroupKey;
-    mozilla::dom::DocGroup::GetKey(NodePrincipal(), docGroupKey);
-    MOZ_ASSERT(mDocGroup->MatchesKey(docGroupKey));
+
+    
+    nsresult rv = mozilla::dom::DocGroup::GetKey(NodePrincipal(), docGroupKey);
+    if (NS_SUCCEEDED(rv)) {
+      MOZ_ASSERT(mDocGroup->MatchesKey(docGroupKey));
+    }
     
   }
 #endif
@@ -4377,9 +4381,12 @@ nsDocument::SetScopeObject(nsIGlobalObject* aGlobal)
       
       
       nsAutoCString docGroupKey;
-      mozilla::dom::DocGroup::GetKey(NodePrincipal(), docGroupKey);
+      nsresult rv =
+        mozilla::dom::DocGroup::GetKey(NodePrincipal(), docGroupKey);
       if (mDocGroup) {
-        MOZ_RELEASE_ASSERT(mDocGroup->MatchesKey(docGroupKey));
+        if (NS_SUCCEEDED(rv)) {
+          MOZ_RELEASE_ASSERT(mDocGroup->MatchesKey(docGroupKey));
+        }
       } else {
         mDocGroup = tabgroup->AddDocument(docGroupKey, this);
         MOZ_ASSERT(mDocGroup);

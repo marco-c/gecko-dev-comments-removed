@@ -44,7 +44,12 @@ public:
 
   NS_DECL_THREADSAFE_ISUPPORTS
 
-  static void GetKey(nsIPrincipal* aPrincipal, nsACString& aString);
+  
+  
+  
+  static MOZ_MUST_USE nsresult
+  GetKey(nsIPrincipal* aPrincipal, nsACString& aString);
+
   bool MatchesKey(const nsACString& aKey)
   {
     return aKey == mKey;

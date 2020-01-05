@@ -14,24 +14,34 @@
 namespace mozilla {
 namespace dom {
 
- void
+ nsresult
 DocGroup::GetKey(nsIPrincipal* aPrincipal, nsACString& aKey)
 {
   aKey.Truncate();
   nsCOMPtr<nsIURI> uri;
   nsresult rv = aPrincipal->GetURI(getter_AddRefs(uri));
-  
-  
-  if (NS_SUCCEEDED(rv) && uri) {
-    nsCOMPtr<nsIEffectiveTLDService> tldService =
-      do_GetService(NS_EFFECTIVETLDSERVICE_CONTRACTID);
-    if (tldService) {
-      rv = tldService->GetBaseDomain(uri, 0, aKey);
-      if (NS_FAILED(rv)) {
-        aKey.Truncate();
-      }
-    }
+  if (NS_FAILED(rv)) {
+    return NS_OK;   
   }
+
+  
+  
+  if (!uri) {
+    return NS_OK;   
+  }
+
+  nsCOMPtr<nsIEffectiveTLDService> tldService =
+    do_GetService(NS_EFFECTIVETLDSERVICE_CONTRACTID);
+  if (!tldService) {
+    return NS_ERROR_FAILURE;
+  }
+
+  rv = tldService->GetBaseDomain(uri, 0, aKey);
+  if (NS_FAILED(rv)) {
+    aKey.Truncate();
+  }
+
+  return NS_OK;   
 }
 
 void
