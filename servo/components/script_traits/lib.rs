@@ -166,15 +166,16 @@ impl LoadData {
 #[derive(Deserialize, Serialize)]
 pub struct NewLayoutInfo {
     
-    pub parent_pipeline_id: PipelineId,
+    
+    pub parent_info: Option<(PipelineId, FrameType)>,
     
     pub new_pipeline_id: PipelineId,
     
     pub frame_id: FrameId,
     
-    pub frame_type: FrameType,
-    
     pub load_data: LoadData,
+    
+    pub window_size: Option<WindowSizeData>,
     
     pub pipeline_port: IpcReceiver<LayoutControlMsg>,
     
