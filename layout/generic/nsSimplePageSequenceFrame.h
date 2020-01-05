@@ -9,7 +9,6 @@
 #include "nsIPageSequenceFrame.h"
 #include "nsContainerFrame.h"
 #include "nsIPrintSettings.h"
-#include "nsIPrintOptions.h"
 
 class nsIDateTimeFormat;
 
@@ -46,7 +45,6 @@ public:
   nsMargin    mEdgePaperMargin;
 
   nsCOMPtr<nsIPrintSettings> mPrintSettings;
-  nsCOMPtr<nsIPrintOptions> mPrintOptions;
 
   
   

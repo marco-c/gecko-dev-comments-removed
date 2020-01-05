@@ -5,7 +5,6 @@
 
 
 #include "PrintDataUtils.h"
-#include "nsIPrintOptions.h"
 #include "nsIPrintSettings.h"
 #include "nsIServiceManager.h"
 #include "nsIWebBrowserPrint.h"
