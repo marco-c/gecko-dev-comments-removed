@@ -87,8 +87,8 @@ enum class StyleClear : uint8_t {
 
 
 enum class StyleGeometryBox : uint8_t {
-  Content,
-  Padding,
+  Content, 
+  Padding, 
   Border,
   Margin,  
            
@@ -897,11 +897,6 @@ enum class StyleGridTrackBreadth : uint8_t {
 
 #define NS_STYLE_TOP_LAYER_NONE   0 // not in the top layer
 #define NS_STYLE_TOP_LAYER_TOP    1 // in the top layer
-
-
-#define NS_STYLE_TRANSFORM_BOX_BORDER_BOX                0
-#define NS_STYLE_TRANSFORM_BOX_FILL_BOX                  1
-#define NS_STYLE_TRANSFORM_BOX_VIEW_BOX                  2
 
 
 #define NS_STYLE_TRANSITION_TIMING_FUNCTION_EASE         0
