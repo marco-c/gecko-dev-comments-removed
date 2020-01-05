@@ -1307,7 +1307,6 @@ nsIDocument::nsIDocument()
     mFontFaceSetDirty(true),
     mGetUserFontSetCalled(false),
     mPostedFlushUserFontSet(false),
-    mBidiOptions(IBMBIDI_DEFAULT_BIDI_OPTIONS),
     mPartID(0),
     mDidFireDOMContentLoaded(true),
     mHasScrollLinkedEffect(false),
@@ -8812,7 +8811,10 @@ nsDocument::OnPageHide(bool aPersisted,
                         nullptr);
   }
 
-  DispatchPageTransition(target, NS_LITERAL_STRING("pagehide"), aPersisted);
+  {
+    PageUnloadingEventTimeStamp timeStamp(this);
+    DispatchPageTransition(target, NS_LITERAL_STRING("pagehide"), aPersisted);
+  }
 
   mVisible = false;
 
