@@ -10,42 +10,47 @@
 
 var { OS } = Cu.import("resource://gre/modules/osfile.jsm", {});
 
-add_task(function* () {
+add_task(function* testCAandTitle() {
   let cert = yield readCertificate("ca.pem", "CTu,CTu,CTu");
   let win = yield displayCertificate(cert);
   checkUsages(win, ["SSL Certificate Authority"]);
+
+  
+  
+  Assert.equal(win.document.title, "Certificate Viewer: \u201Cca\u201D",
+               "Actual and expected title should match");
   yield BrowserTestUtils.closeWindow(win);
 });
 
-add_task(function* () {
+add_task(function* testSSLEndEntity() {
   let cert = yield readCertificate("ssl-ee.pem", ",,");
   let win = yield displayCertificate(cert);
   checkUsages(win, ["SSL Server Certificate", "SSL Client Certificate"]);
   yield BrowserTestUtils.closeWindow(win);
 });
 
-add_task(function* () {
+add_task(function* testEmailEndEntity() {
   let cert = yield readCertificate("email-ee.pem", ",,");
   let win = yield displayCertificate(cert);
   checkUsages(win, ["Email Recipient Certificate", "Email Signer Certificate"]);
   yield BrowserTestUtils.closeWindow(win);
 });
 
-add_task(function* () {
+add_task(function* testCodeSignEndEntity() {
   let cert = yield readCertificate("code-ee.pem", ",,");
   let win = yield displayCertificate(cert);
   checkUsages(win, ["Object Signer"]);
   yield BrowserTestUtils.closeWindow(win);
 });
 
-add_task(function* () {
+add_task(function* testExpired() {
   let cert = yield readCertificate("expired-ca.pem", ",,");
   let win = yield displayCertificate(cert);
   checkError(win, "Could not verify this certificate because it has expired.");
   yield BrowserTestUtils.closeWindow(win);
 });
 
-add_task(function* () {
+add_task(function* testIssuerExpired() {
   let cert = yield readCertificate("ee-from-expired-ca.pem", ",,");
   let win = yield displayCertificate(cert);
   checkError(win,
@@ -54,7 +59,7 @@ add_task(function* () {
   yield BrowserTestUtils.closeWindow(win);
 });
 
-add_task(function* () {
+add_task(function* testUnknownIssuer() {
   let cert = yield readCertificate("unknown-issuer.pem", ",,");
   let win = yield displayCertificate(cert);
   checkError(win,
@@ -63,7 +68,7 @@ add_task(function* () {
   yield BrowserTestUtils.closeWindow(win);
 });
 
-add_task(function* () {
+add_task(function* testInsecureAlgo() {
   let cert = yield readCertificate("md5-ee.pem", ",,");
   let win = yield displayCertificate(cert);
   checkError(win,
@@ -73,7 +78,7 @@ add_task(function* () {
   yield BrowserTestUtils.closeWindow(win);
 });
 
-add_task(function* () {
+add_task(function* testUntrusted() {
   let cert = yield readCertificate("untrusted-ca.pem", "p,p,p");
   let win = yield displayCertificate(cert);
   checkError(win,
@@ -81,7 +86,7 @@ add_task(function* () {
   yield BrowserTestUtils.closeWindow(win);
 });
 
-add_task(function* () {
+add_task(function* testUntrustedIssuer() {
   let cert = yield readCertificate("ee-from-untrusted-ca.pem", ",,");
   let win = yield displayCertificate(cert);
   checkError(win,
@@ -90,7 +95,7 @@ add_task(function* () {
   yield BrowserTestUtils.closeWindow(win);
 });
 
-add_task(function* () {
+add_task(function* testRevoked() {
   
   
   
@@ -106,7 +111,7 @@ add_task(function* () {
   yield BrowserTestUtils.closeWindow(win);
 });
 
-add_task(function* () {
+add_task(function* testInvalid() {
   
   
   
@@ -129,13 +134,8 @@ add_task(function* () {
 
 
 function displayCertificate(certificate) {
-  let array = Cc["@mozilla.org/array;1"].createInstance(Ci.nsIMutableArray);
-  array.appendElement(certificate, false);
-  let params = Cc["@mozilla.org/embedcomp/dialogparam;1"]
-                 .createInstance(Ci.nsIDialogParamBlock);
-  params.objects = array;
   let win = window.openDialog("chrome://pippki/content/certViewer.xul", "",
-                              "", params);
+                              "", certificate);
   return TestUtils.topicObserved("ViewCertDetails:CertUsagesDone",
                                  (subject, data) => subject == win)
   .then(([subject, data]) => subject, error => { throw error; });

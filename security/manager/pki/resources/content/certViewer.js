@@ -3,6 +3,14 @@
 
 "use strict";
 
+
+
+
+
+
+
+
+
 const { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
 const { Services } = Cu.import("resource://gre/modules/Services.jsm", {});
 
@@ -16,7 +24,6 @@ const nsIASN1Sequence = Ci.nsIASN1Sequence;
 const nsIASN1PrintableItem = Ci.nsIASN1PrintableItem;
 const nsIASN1Tree = Ci.nsIASN1Tree;
 const nsASN1Tree = "@mozilla.org/security/nsASN1Tree;1";
-const nsIDialogParamBlock = Ci.nsIDialogParamBlock;
 
 var bundle;
 
@@ -71,21 +78,11 @@ function AddUsage(usage)
 
 function setWindowName()
 {
-  
-  var certdb = Components.classes[nsX509CertDB].getService(nsIX509CertDB);
-  var myName = self.name;
   bundle = document.getElementById("pippki_bundle");
-  var cert;
 
-  var certDetails = bundle.getString('certDetails');
-  if (myName != "") {
-    document.title = certDetails + '"' + myName + '"'; 
-    cert = certdb.findCertByNickname(myName);
-  } else {
-    var params = window.arguments[0].QueryInterface(nsIDialogParamBlock);
-    cert = params.objects.queryElementAt(0, nsIX509Cert);
-    document.title = certDetails + '"' + cert.windowTitle + '"'; 
-  }
+  let cert = window.arguments[0].QueryInterface(Ci.nsIX509Cert);
+  document.title = bundle.getFormattedString("certViewerTitle",
+                                             [cert.windowTitle]);
 
   
   

@@ -14,14 +14,25 @@ class nsISupports;
 
 
 
-
-
 class nsNSSDialogHelper
 {
 public:
   
+
+
+
+
+
+
+
+
+
+
+
+
+
   static nsresult openDialog(mozIDOMWindowProxy* window, const char* url,
                              nsISupports* params, bool modal = true);
 };
 
-#endif
+#endif 
