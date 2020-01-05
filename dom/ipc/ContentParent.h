@@ -84,10 +84,6 @@ class TabContext;
 class ContentBridgeParent;
 class GetFilesHelper;
 
-
-static NS_NAMED_LITERAL_STRING(DEFAULT_REMOTE_TYPE, "web");
-static NS_NAMED_LITERAL_STRING(NO_REMOTE_TYPE, "");
-
 class ContentParent final : public PContentParent
                           , public nsIContentParent
                           , public nsIObserver
@@ -133,7 +129,7 @@ public:
 
 
   static already_AddRefed<ContentParent>
-  GetNewOrUsedBrowserProcess(const nsAString& aRemoteType = NO_REMOTE_TYPE,
+  GetNewOrUsedBrowserProcess(bool aForBrowserElement = false,
                              hal::ProcessPriority aPriority =
                              hal::ProcessPriority::PROCESS_PRIORITY_FOREGROUND,
                              ContentParent* aOpener = nullptr,
@@ -586,7 +582,7 @@ private:
   FORWARD_SHMEM_ALLOCATOR_TO(PContentParent)
 
   ContentParent(ContentParent* aOpener,
-                const nsAString& aRemoteType);
+                bool aIsForBrowser);
 
   
   void InitializeMembers();
@@ -1057,8 +1053,6 @@ private:
 
   GeckoChildProcessHost* mSubprocess;
   ContentParent* mOpener;
-
-  nsString mRemoteType;
 
   ContentParentId mChildID;
   int32_t mGeolocationWatchID;
