@@ -11,6 +11,8 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import org.mozilla.gecko.R;
+import org.mozilla.gecko.Telemetry;
+import org.mozilla.gecko.TelemetryContract;
 import org.mozilla.gecko.home.HomeFragment;
 
 
@@ -19,6 +21,8 @@ import org.mozilla.gecko.home.HomeFragment;
 public class ActivityStreamHomeFragment
         extends HomeFragment {
     private ActivityStream activityStream;
+
+    private boolean isSessionActive;
 
     @Override
     protected void load() {
@@ -35,5 +39,52 @@ public class ActivityStreamHomeFragment
         }
 
         return activityStream;
+    }
+
+    @Override
+    public void setUserVisibleHint(boolean isVisibleToUser) {
+        super.setUserVisibleHint(isVisibleToUser);
+
+        if (isVisibleToUser) {
+            sendPanelShownTelemetry();
+        } else {
+            sendPanelHiddenTelemetry();
+        }
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+
+        if (!isSessionActive && getUserVisibleHint()) {
+            
+            sendPanelShownTelemetry();
+        }
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+
+        
+        sendPanelHiddenTelemetry();
+    }
+
+    private void sendPanelHiddenTelemetry() {
+        if (isSessionActive) {
+            Telemetry.sendUIEvent(TelemetryContract.Event.CANCEL, TelemetryContract.Method.PANEL, "as_newtab");
+
+            Telemetry.stopUISession(TelemetryContract.Session.ACTIVITY_STREAM, "newtab");
+
+            isSessionActive = false;
+        }
+    }
+
+    private void sendPanelShownTelemetry() {
+        Telemetry.startUISession(TelemetryContract.Session.ACTIVITY_STREAM, "newtab");
+
+        Telemetry.sendUIEvent(TelemetryContract.Event.SHOW, TelemetryContract.Method.PANEL, "as_newtab");
+
+        isSessionActive = true;
     }
 }

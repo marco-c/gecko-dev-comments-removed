@@ -232,6 +232,10 @@ public interface TelemetryContract {
 
     public enum Session {
         
+        
+        ACTIVITY_STREAM("activitystream.1"),
+
+        
         AWESOMESCREEN("awesomescreen.1"),
 
         
