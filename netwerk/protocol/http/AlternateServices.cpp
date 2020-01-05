@@ -946,7 +946,7 @@ AltSvcCache::GetAltServiceMapping(const nsACString &scheme, const nsACString &ho
     
     
     
-    mStorage = DataStorage::Get(NS_LITERAL_STRING("AlternateServices.txt"));
+    mStorage = DataStorage::Get(DataStorageClass::AlternateServices);
     if (mStorage) {
       bool storageWillPersist = false;
       if (NS_FAILED(mStorage->Init(storageWillPersist))) {

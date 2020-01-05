@@ -20,9 +20,13 @@
 #include "nsRefPtrHashtable.h"
 #include "nsString.h"
 
+class psm_DataStorageTest;
+
 namespace mozilla {
+class DataStorageMemoryReporter;
 
 namespace dom {
+class ContentChild;
 class DataStorageEntry;
 class DataStorageItem;
 }
@@ -88,6 +92,12 @@ enum DataStorageType {
   DataStorage_Private
 };
 
+enum class DataStorageClass {
+#define DATA_STORAGE(_) _,
+#include "mozilla/DataStorageList.h"
+#undef DATA_STORAGE
+};
+
 class DataStorage : public nsIObserver
 {
   typedef dom::DataStorageItem DataStorageItem;
@@ -98,8 +108,8 @@ public:
 
   
   
-  static already_AddRefed<DataStorage> Get(const nsString& aFilename);
-  static already_AddRefed<DataStorage> GetIfExists(const nsString& aFilename);
+  static already_AddRefed<DataStorage> Get(DataStorageClass aFilename);
+  static already_AddRefed<DataStorage> GetIfExists(DataStorageClass aFilename);
 
   
   
@@ -128,6 +138,9 @@ public:
   static void GetAllFileNames(nsTArray<nsString>& aItems);
 
   
+  static void GetAllChildProcessData(nsTArray<mozilla::dom::DataStorageEntry>& aEntries);
+
+  
   void GetAll(InfallibleTArray<DataStorageItem>* aItems);
 
   
@@ -138,6 +151,12 @@ public:
 private:
   explicit DataStorage(const nsString& aFilename);
   virtual ~DataStorage();
+
+  static already_AddRefed<DataStorage> GetFromRawFileName(const nsString& aFilename);
+
+  friend class ::psm_DataStorageTest;
+  friend class mozilla::dom::ContentChild;
+  friend class mozilla::DataStorageMemoryReporter;
 
   class Writer;
   class Reader;
@@ -202,8 +221,9 @@ private:
   uint32_t mTimerDelay; 
   bool mPendingWrite; 
   bool mShuttingDown;
-  mozilla::Atomic<bool> mInitCalled; 
   
+
+  mozilla::Atomic<bool> mInitCalled; 
 
   Monitor mReadyMonitor; 
   bool mReady; 
