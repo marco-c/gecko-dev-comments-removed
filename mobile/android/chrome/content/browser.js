@@ -4566,16 +4566,6 @@ Tab.prototype = {
     GlobalEventDispatcher.sendRequest(message);
   },
 
-  onProgressChange: function(aWebProgress, aRequest, aCurSelfProgress, aMaxSelfProgress, aCurTotalProgress, aMaxTotalProgress) {
-    
-    
-  },
-
-  onStatusChange: function(aBrowser, aWebProgress, aRequest, aStatus, aMessage) {
-    
-    
-  },
-
   OnHistoryNewEntry: function(newURI, oldIndex) {
     Services.obs.notifyObservers(this.browser, "Content:HistoryChange", null);
   },
