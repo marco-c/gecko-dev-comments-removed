@@ -363,7 +363,7 @@ impl Font {
     }
 }
 
-// Public API
+
 pub trait FontMethods {
     fn draw_text_into_context(rctx: &RenderContext,
                               run: &TextRun,
@@ -374,8 +374,8 @@ pub trait FontMethods {
     fn shape_text(@self, &str) -> GlyphStore;
     fn get_descriptor() -> FontDescriptor;
 
-    // these are used to get glyphs and advances in the case that the
-    // shaper can't figure it out.
+    
+    
     fn glyph_index(char) -> Option<GlyphIndex>;
     fn glyph_h_advance(GlyphIndex) -> FractionalPixel;
 }
@@ -431,7 +431,7 @@ pub impl Font : FontMethods {
             mNumGlyphs: azglyph_buf_len as uint32_t            
         }};
 
-        // TODO(Issue #64): this call needs to move into azure_hl.rs
+        
         AzDrawTargetFillGlyphs(target.azure_draw_target,
                                azfontref,
                                ptr::to_unsafe_ptr(&glyphbuf),
@@ -441,11 +441,10 @@ pub impl Font : FontMethods {
     }
 
     fn measure_text(run: &TextRun, range: Range) -> RunMetrics {
-        //assert range.is_valid_for_string(run.text);
-	//debug!("measuring text range '%s'", run.text.substr(range.begin(), range.length()));
+        assert range.is_valid_for_string(run.text);
 
-        // TODO(Issue #199): alter advance direction for RTL
-        // TODO(Issue #98): using inter-char and inter-word spacing settings  when measuring text
+        
+        
         let mut advance = Au(0);
         for run.glyphs.iter_glyphs_for_range(range) |_i, glyph| {
             advance += glyph.advance();
@@ -453,19 +452,16 @@ pub impl Font : FontMethods {
         let mut bounds = Rect(Point2D(Au(0), -self.metrics.ascent),
                               Size2D(advance, self.metrics.ascent + self.metrics.descent));
 
-        // TODO(Issue #125): support loose and tight bounding boxes; using the
-        // ascent+descent and advance is sometimes too generous and
-        // looking at actual glyph extents can yield a tighter box.
+        
+        
+        
 
-        let metrics = RunMetrics { advance_width: advance,
-                                  bounding_box: move bounds,
-                                  ascent: self.metrics.ascent,
-                                  descent: self.metrics.descent,
-                                 };
-        //debug!("Measured text range '%s' with metrics:", run.text.substr(range.begin(), range.length()));
-        //debug!("%?", metrics);
-
-        return metrics;
+        RunMetrics { 
+            advance_width: advance,
+            bounding_box: move bounds,
+            ascent: self.metrics.ascent,
+            descent: self.metrics.descent,
+        }
     }
 
     fn shape_text(@self, text: &str) -> GlyphStore {
@@ -476,8 +472,6 @@ pub impl Font : FontMethods {
     }
 
     fn get_descriptor() -> FontDescriptor {
-        
-        
         FontDescriptor::new(copy self.style, SelectorPlatformIdentifier(self.handle.face_identifier()))
     }
 
