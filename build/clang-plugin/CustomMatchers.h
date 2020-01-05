@@ -5,7 +5,6 @@
 #ifndef CustomMatchers_h__
 #define CustomMatchers_h__
 
-#include "MozChecker.h"
 #include "MemMoveAnnotation.h"
 #include "Utils.h"
 
@@ -15,25 +14,25 @@ namespace ast_matchers {
 
 
 AST_MATCHER(FunctionDecl, heapAllocator) {
-  return MozChecker::hasCustomAnnotation(&Node, "moz_heap_allocator");
+  return hasCustomAnnotation(&Node, "moz_heap_allocator");
 }
 
 
 
 AST_MATCHER(Decl, noArithmeticExprInArgs) {
-  return MozChecker::hasCustomAnnotation(&Node, "moz_no_arith_expr_in_arg");
+  return hasCustomAnnotation(&Node, "moz_no_arith_expr_in_arg");
 }
 
 
 
 AST_MATCHER(CXXRecordDecl, hasTrivialCtorDtor) {
-  return MozChecker::hasCustomAnnotation(&Node, "moz_trivial_ctor_dtor");
+  return hasCustomAnnotation(&Node, "moz_trivial_ctor_dtor");
 }
 
 
 
 AST_MATCHER(FunctionDecl, hasNoAddRefReleaseOnReturnAttr) {
-  return MozChecker::hasCustomAnnotation(&Node,
+  return hasCustomAnnotation(&Node,
                                          "moz_no_addref_release_on_return");
 }
 
@@ -121,7 +120,7 @@ AST_MATCHER(CXXRecordDecl, hasRefCntMember) {
 AST_MATCHER(QualType, hasVTable) { return typeHasVTable(Node); }
 
 AST_MATCHER(CXXRecordDecl, hasNeedsNoVTableTypeAttr) {
-  return MozChecker::hasCustomAnnotation(&Node, "moz_needs_no_vtable_type");
+  return hasCustomAnnotation(&Node, "moz_needs_no_vtable_type");
 }
 
 
@@ -131,12 +130,12 @@ AST_MATCHER(QualType, isNonMemMovable) {
 
 
 AST_MATCHER(CXXRecordDecl, needsMemMovableTemplateArg) {
-  return MozChecker::hasCustomAnnotation(&Node, "moz_needs_memmovable_type");
+  return hasCustomAnnotation(&Node, "moz_needs_memmovable_type");
 }
 
 
 AST_MATCHER(CXXRecordDecl, needsMemMovableMembers) {
-  return MozChecker::hasCustomAnnotation(&Node, "moz_needs_memmovable_members");
+  return hasCustomAnnotation(&Node, "moz_needs_memmovable_members");
 }
 
 AST_MATCHER(CXXConstructorDecl, isInterestingImplicitCtor) {
@@ -159,7 +158,7 @@ AST_MATCHER(CXXConstructorDecl, isInterestingImplicitCtor) {
 
 
 AST_MATCHER(CXXConstructorDecl, isMarkedImplicit) {
-  return MozChecker::hasCustomAnnotation(&Node, "moz_implicit");
+  return hasCustomAnnotation(&Node, "moz_implicit");
 }
 
 AST_MATCHER(CXXRecordDecl, isConcreteClass) { return !Node.isAbstract(); }
@@ -167,7 +166,7 @@ AST_MATCHER(CXXRecordDecl, isConcreteClass) { return !Node.isAbstract(); }
 AST_MATCHER(QualType, autoNonAutoableType) {
   if (const AutoType *T = Node->getContainedAutoType()) {
     if (const CXXRecordDecl *Rec = T->getAsCXXRecordDecl()) {
-      return MozChecker::hasCustomAnnotation(Rec, "moz_non_autoable");
+      return hasCustomAnnotation(Rec, "moz_non_autoable");
     }
   }
   return false;
@@ -225,7 +224,7 @@ AST_MATCHER(CXXRecordDecl, hasBaseClasses) {
 AST_MATCHER(CXXMethodDecl, isRequiredBaseMethod) {
   const CXXMethodDecl *Decl = Node.getCanonicalDecl();
   return Decl
-      && MozChecker::hasCustomAnnotation(Decl, "moz_required_base_method");
+      && hasCustomAnnotation(Decl, "moz_required_base_method");
 }
 
 AST_MATCHER(CXXMethodDecl, isNonVirtual) {
