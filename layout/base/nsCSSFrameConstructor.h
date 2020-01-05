@@ -165,6 +165,17 @@ private:
 
 
 
+
+  void LazilyStyleNewChildRange(nsIContent* aStartChild, nsIContent* aEndChild);
+
+  
+
+
+
+
+
+
+
   void StyleNewChildRange(nsIContent* aStartChild, nsIContent* aEndChild);
 
   
