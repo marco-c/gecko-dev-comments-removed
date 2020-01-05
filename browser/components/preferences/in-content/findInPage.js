@@ -202,9 +202,8 @@ var gSearchResultsPane = {
       let resultsFound = false;
 
       
-      let rootPreferences = document.getElementById("mainPrefPane")
-      let rootPreferencesChildren = rootPreferences
-        .querySelectorAll(":not([data-hidden-from-search])");
+      let rootPreferencesChildren = document
+        .querySelectorAll("#mainPrefPane > *:not([data-hidden-from-search])");
 
       
       for (let i = 0; i < rootPreferencesChildren.length; i++) {
@@ -289,10 +288,6 @@ var gSearchResultsPane = {
       
       if (nodeObject.getAttribute("value")) {
         valueResult = this.stringMatchesFilters(nodeObject.getAttribute("value"), searchPhrase);
-      }
-
-      if (nodeObject.tagName == "button" && (labelResult || valueResult)) {
-        nodeObject.setAttribute("highlightable", "true");
       }
 
       matchesFound = matchesFound || complexTextNodesResult || labelResult || valueResult;
