@@ -48,7 +48,7 @@ public final class MediaDrmProxy {
 
     private static boolean isSystemSupported() {
         
-        if (AppConstants.Versions.preMarshmallow) {
+        if (AppConstants.Versions.preLollipop) {
             if (DEBUG) Log.d(LOGTAG, "System Not supported !!, current SDK version is " + Build.VERSION.SDK_INT);
             return false;
         }
