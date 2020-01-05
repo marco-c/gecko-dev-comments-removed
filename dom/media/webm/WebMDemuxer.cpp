@@ -692,16 +692,14 @@ WebMDemuxer::GetNextPacket(TrackInfo::TrackType aType,
         if (isKeyframe) {
           
           
-          if (mLastSeenFrameWidth.isSome()
-              && mLastSeenFrameHeight.isSome()
-              && (si.w != mLastSeenFrameWidth.value()
-                  || si.h != mLastSeenFrameHeight.value())) {
-            mInfo.mVideo.mDisplay = nsIntSize(si.w, si.h);
+          auto dimensions = nsIntSize(si.w, si.h);
+          if (mLastSeenFrameSize.isSome()
+              && (dimensions != mLastSeenFrameSize.value())) {
+            mInfo.mVideo.mDisplay = dimensions;
             mSharedVideoTrackInfo =
               new TrackInfoSharedPtr(mInfo.mVideo, ++sStreamSourceID);
           }
-          mLastSeenFrameWidth = Some(si.w);
-          mLastSeenFrameHeight = Some(si.h);
+          mLastSeenFrameSize = Some(dimensions);
         }
       }
     }
