@@ -21,7 +21,7 @@ function do_state_written(aSubject, aTopic, aData) {
   ok(stateFile.exists());
   let stateFileContents = readFile(stateFile);
   
-  let lines = stateFileContents.split('\n').slice(0, -1);
+  let lines = stateFileContents.split("\n").slice(0, -1);
   
   
   

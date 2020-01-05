@@ -29,15 +29,15 @@ function checkStateWritten(aSubject, aTopic, aData) {
   ok(stateFile.exists());
   let stateFileContents = readFile(stateFile);
   
-  let lines = stateFileContents.split('\n').slice(0, -1);
+  let lines = stateFileContents.split("\n").slice(0, -1);
   equal(lines.length, EXPECTED_ENTRIES);
   let sites = {}; 
   for (let line of lines) {
-    let parts = line.split('\t');
+    let parts = line.split("\t");
     let host = parts[0];
     let score = parts[1];
     let lastAccessed = parts[2];
-    let entry = parts[3].split(',');
+    let entry = parts[3].split(",");
     let expectedColumns = EXPECTED_HSTS_COLUMNS;
     if (host.indexOf("HPKP") != -1) {
       expectedColumns = EXPECTED_HPKP_COLUMNS;

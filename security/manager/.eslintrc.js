@@ -85,12 +85,6 @@ module.exports = {
     "no-duplicate-case": "error",
 
     
-    "no-eval": "error",
-
-    
-    "no-labels": "error",
-
-    
     "no-else-return": "error",
 
     
@@ -98,6 +92,9 @@ module.exports = {
 
     
     "no-empty-pattern": "error",
+
+    
+    "no-eval": "error",
 
     
     "no-ex-assign": "error",
@@ -119,6 +116,9 @@ module.exports = {
 
     
     "no-irregular-whitespace": "error",
+
+    
+    "no-labels": "error",
 
     
     "no-lonely-if": "error",
@@ -165,6 +165,12 @@ module.exports = {
     "no-sparse-arrays": "error",
 
     
+    "no-tabs": "error",
+
+    
+    "no-template-curly-in-string": "error",
+
+    
     
     "no-throw-literal": "error",
 
@@ -185,6 +191,10 @@ module.exports = {
 
     
     "no-with": "error",
+
+    
+    
+    "quotes": ["error", "double", { "avoidEscape": true }],
 
     
     "semi": ["error", "always"],

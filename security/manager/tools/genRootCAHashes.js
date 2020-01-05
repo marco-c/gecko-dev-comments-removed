@@ -62,7 +62,7 @@ function writeString(fos, string) {
 
 
 function stripColons(hexString) {
-  return hexString.replace(/:/g, '');
+  return hexString.replace(/:/g, "");
 }
 
 
@@ -110,7 +110,7 @@ function loadTrustAnchors(file) {
 function writeTrustAnchors(file) {
   let fos = FileUtils.openSafeFileOutputStream(file);
 
-  let serializedData = JSON.stringify(gTrustAnchors, null, '  ');
+  let serializedData = JSON.stringify(gTrustAnchors, null, "  ");
   fos.write(JSON_HEADER, JSON_HEADER.length);
   fos.write(serializedData, serializedData.length);
 

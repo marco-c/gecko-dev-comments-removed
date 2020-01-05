@@ -35,9 +35,9 @@ function loadChain(prefix, names) {
 
 function run_test() {
   
-  const DATA = readFile(do_get_file(TEST_DATA_DIR + 'test.txt'));
+  const DATA = readFile(do_get_file(TEST_DATA_DIR + "test.txt"));
   const GOOD_SIGNATURE = "p384ecdsa=" +
-      readFile(do_get_file(TEST_DATA_DIR + 'test.txt.signature'))
+      readFile(do_get_file(TEST_DATA_DIR + "test.txt.signature"))
       .trim();
 
   const BAD_SIGNATURE = "p384ecdsa=WqRXFQ7tnlVufpg7A-ZavXvWd2Zln0o4woHBy26C2r" +
@@ -200,7 +200,7 @@ function run_test() {
     
     badChains.push(badSection);
     
-    badChains.push(badSection + '\n' + chainSuffix);
+    badChains.push(badSection + "\n" + chainSuffix);
   }
 
   for (let badChain of badChains) {

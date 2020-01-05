@@ -321,7 +321,7 @@ function output(sortedStatuses, currentList) {
       
       
       for (let c of status.name) {
-	writeTo("'" + c + "', ", fos);
+        writeTo("'" + c + "', ", fos);
       }
       writeTo("'\\0',\n", fos);
     }

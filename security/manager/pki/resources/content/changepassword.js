@@ -106,7 +106,7 @@ function process()
        }
 
        
-       document.getElementById('pw1').focus();
+       document.getElementById("pw1").focus();
      } else {
        
        oldpwbox.setAttribute("hidden", "false");
