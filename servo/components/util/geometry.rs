@@ -64,7 +64,7 @@ pub enum PagePx {}
 
 
 
-#[deriving(Clone, PartialEq, PartialOrd, Eq, Ord, Zero)]
+#[deriving(Clone, Hash, PartialEq, PartialOrd, Eq, Ord, Zero)]
 pub struct Au(pub i32);
 
 impl Default for Au {
