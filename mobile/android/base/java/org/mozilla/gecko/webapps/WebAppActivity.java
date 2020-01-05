@@ -118,6 +118,11 @@ public class WebAppActivity extends GeckoApp {
         Tabs.unregisterOnTabsChangedListener(this);
     }
 
+    @Override
+    protected int getNewTabFlags() {
+        return Tabs.LOADURL_WEBAPP | super.getNewTabFlags();
+    }
+
     
 
 
