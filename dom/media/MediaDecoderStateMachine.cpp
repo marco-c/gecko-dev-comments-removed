@@ -230,6 +230,14 @@ protected:
   MediaResource* Resource() const { return mMaster->mResource; }
   MediaDecoderReaderWrapper* Reader() const { return mMaster->mReader; }
   const MediaInfo& Info() const { return mMaster->Info(); }
+  bool IsExpectingMoreData() const
+  {
+    
+    
+    return Resource()->IsExpectingMoreData() ||
+           (Reader()->IsWaitForDataSupported() &&
+            (Reader()->IsWaitingAudioData() || Reader()->IsWaitingVideoData()));
+  }
 
   
   
@@ -1471,7 +1479,7 @@ DecodingState::MaybeStartBuffering()
 
   bool shouldBuffer;
   if (Reader()->UseBufferingHeuristics()) {
-    shouldBuffer = Resource()->IsExpectingMoreData() &&
+    shouldBuffer = IsExpectingMoreData() &&
                    mMaster->HasLowDecodedData() &&
                    mMaster->HasLowBufferedData();
   } else {
@@ -1611,7 +1619,7 @@ BufferingState::Step()
     if ((isLiveStream || !mMaster->CanPlayThrough()) &&
         elapsed < TimeDuration::FromSeconds(mBufferingWait * mMaster->mPlaybackRate) &&
         mMaster->HasLowBufferedData(mBufferingWait * USECS_PER_S) &&
-        Resource()->IsExpectingMoreData()) {
+        IsExpectingMoreData()) {
       SLOG("Buffering: wait %ds, timeout in %.3lfs",
            mBufferingWait, mBufferingWait - elapsed.ToSeconds());
       mMaster->ScheduleStateMachineIn(USECS_PER_S);
