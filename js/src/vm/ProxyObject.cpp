@@ -7,6 +7,9 @@
 #include "vm/ProxyObject.h"
 
 #include "jscompartment.h"
+
+#include "proxy/DeadObjectProxy.h"
+
 #include "jsobjinlines.h"
 
 using namespace js;
@@ -112,14 +115,20 @@ ProxyObject::setSameCompartmentPrivate(const Value& priv)
 }
 
 void
-ProxyObject::nuke(const BaseProxyHandler* handler)
+ProxyObject::nuke()
 {
+    
     setSameCompartmentPrivate(NullValue());
-    for (size_t i = 0; i < detail::PROXY_EXTRA_SLOTS; i++)
-        SetProxyExtra(this, i, NullValue());
 
     
-    setHandler(handler);
+    setHandler(&DeadObjectProxy::singleton);
+
+    
+    
+    
+    
+    
+    
 }
 
 JS_FRIEND_API(void)

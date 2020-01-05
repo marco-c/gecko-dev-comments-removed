@@ -108,7 +108,7 @@ class ProxyObject : public ShapedObject
 
     static void trace(JSTracer* trc, JSObject* obj);
 
-    void nuke(const BaseProxyHandler* handler);
+    void nuke();
 
     
     
