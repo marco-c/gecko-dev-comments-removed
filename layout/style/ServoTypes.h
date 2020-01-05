@@ -35,6 +35,29 @@ struct ServoCell {
   ServoCell() : value() {};
 };
 
+
+
+
+enum class ConsumeStyleBehavior {
+  Consume,
+  DontConsume,
+};
+
+
+
+
+enum class LazyComputeBehavior {
+  Allow,
+  Assert,
+};
+
+
+
+enum class SkipRootBehavior {
+  Skip,
+  DontSkip,
+};
+
 } 
 
 #endif 

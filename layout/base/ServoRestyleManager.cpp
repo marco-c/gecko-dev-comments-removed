@@ -18,6 +18,7 @@ namespace mozilla {
 
 ServoRestyleManager::ServoRestyleManager(nsPresContext* aPresContext)
   : RestyleManagerBase(aPresContext)
+  , mReentrantChanges(nullptr)
 {
 }
 
@@ -37,17 +38,26 @@ ServoRestyleManager::PostRestyleEvent(Element* aElement,
 
   
   
+  MOZ_ASSERT_IF(mInStyleRefresh, aRestyleHint == 0);
+
+  
+  
+  
+  if (mReentrantChanges) {
+    MOZ_ASSERT(aRestyleHint == 0);
+    mReentrantChanges->AppendElement(ReentrantChange { aElement, aMinChangeHint });
+    return;
+  }
+
+  
+  
   if (aRestyleHint & eRestyle_StyleAttribute) {
     aRestyleHint &= ~eRestyle_StyleAttribute;
     aRestyleHint |= eRestyle_Self | eRestyle_Subtree;
   }
 
-  
-  
   if (aRestyleHint || aMinChangeHint) {
-    ServoElementSnapshot* snapshot = SnapshotForElement(aElement);
-    snapshot->AddExplicitRestyleHint(aRestyleHint);
-    snapshot->AddExplicitChangeHint(aMinChangeHint);
+    Servo_NoteExplicitHints(aElement, aRestyleHint, aMinChangeHint);
   }
 
   PostRestyleEventInternal(false);
@@ -73,123 +83,67 @@ ServoRestyleManager::PostRebuildAllStyleDataEvent(nsChangeHint aExtraHint,
   NS_WARNING("stylo: ServoRestyleManager::PostRebuildAllStyleDataEvent not implemented");
 }
 
-static void
-MarkSelfAndDescendantsAsNotDirtyForServo(nsIContent* aContent)
+ void
+ServoRestyleManager::ClearServoDataFromSubtree(Element* aElement)
 {
-  aContent->UnsetIsDirtyForServo();
+  aElement->ClearServoData();
 
-  if (aContent->HasDirtyDescendantsForServo()) {
-    aContent->UnsetHasDirtyDescendantsForServo();
-
-    StyleChildrenIterator it(aContent);
-    for (nsIContent* n = it.GetNextChild(); n; n = it.GetNextChild()) {
-      MarkSelfAndDescendantsAsNotDirtyForServo(n);
+  StyleChildrenIterator it(aElement);
+  for (nsIContent* n = it.GetNextChild(); n; n = it.GetNextChild()) {
+    if (n->IsElement()) {
+      ClearServoDataFromSubtree(n->AsElement());
     }
   }
+
+  aElement->UnsetHasDirtyDescendantsForServo();
 }
 
  void
-ServoRestyleManager::ClearServoDataFromSubtree(nsIContent* aContent)
+ServoRestyleManager::ClearDirtyDescendantsFromSubtree(Element* aElement)
 {
-  aContent->ClearServoData();
-  aContent->SetIsDirtyForServo();
-  aContent->UnsetHasDirtyDescendantsForServo();
-
-  AllChildrenIterator it(aContent, nsIContent::eAllChildren);
+  StyleChildrenIterator it(aElement);
   for (nsIContent* n = it.GetNextChild(); n; n = it.GetNextChild()) {
-    ClearServoDataFromSubtree(n);
+    if (n->IsElement()) {
+      ClearDirtyDescendantsFromSubtree(n->AsElement());
+    }
   }
+
+  aElement->UnsetHasDirtyDescendantsForServo();
 }
 
 void
-ServoRestyleManager::RecreateStyleContexts(nsIContent* aContent,
+ServoRestyleManager::RecreateStyleContexts(Element* aElement,
                                            nsStyleContext* aParentContext,
                                            ServoStyleSet* aStyleSet,
                                            nsStyleChangeList& aChangeListToProcess)
 {
-  MOZ_ASSERT(aContent->IsElement() || aContent->IsNodeOfType(nsINode::eTEXT));
+  nsIFrame* primaryFrame = aElement->GetPrimaryFrame();
 
-  nsIFrame* primaryFrame = aContent->GetPrimaryFrame();
-  if (!primaryFrame && !aContent->IsDirtyForServo()) {
-    
-    
-    MarkSelfAndDescendantsAsNotDirtyForServo(aContent);
+  
+  
+  nsChangeHint changeHint = Servo_CheckChangeHint(aElement);
+  if (changeHint) {
+      aChangeListToProcess.AppendChange(primaryFrame, aElement, changeHint);
+  }
+
+  
+  
+  
+  
+  
+  if (changeHint & nsChangeHint_ReconstructFrame) {
+    ClearDirtyDescendantsFromSubtree(aElement);
     return;
   }
 
   
-  if (!aContent->IsElement()) {
-    if (primaryFrame) {
-      RefPtr<nsStyleContext> oldStyleContext = primaryFrame->StyleContext();
-      RefPtr<nsStyleContext> newContext =
-        aStyleSet->ResolveStyleForText(aContent, aParentContext);
-
-      for (nsIFrame* f = primaryFrame; f;
-           f = GetNextContinuationWithSameStyle(f, oldStyleContext)) {
-        f->SetStyleContext(newContext);
-      }
-    }
-
-    aContent->UnsetIsDirtyForServo();
-    return;
-  }
-
-  Element* element = aContent->AsElement();
-  if (element->IsDirtyForServo()) {
-    RefPtr<ServoComputedValues> computedValues =
-      Servo_ComputedValues_Get(aContent).Consume();
-    MOZ_ASSERT(computedValues);
-
-    nsChangeHint changeHint = nsChangeHint(0);
-
-    
-    ServoElementSnapshot* snapshot;
-    if (mModifiedElements.Get(element, &snapshot)) {
-      changeHint |= snapshot->ExplicitChangeHint();
-    }
-
-    
-    
-    
-    
-    if (primaryFrame) {
-      changeHint |= primaryFrame->StyleContext()->ConsumeStoredChangeHint();
-    } else {
-      const nsStyleDisplay* currentDisplay =
-        Servo_GetStyleDisplay(computedValues);
-      if (currentDisplay->mDisplay != StyleDisplay::None) {
-        changeHint |= nsChangeHint_ReconstructFrame;
-      }
-    }
-
-    
-    
-    if (changeHint) {
-      aChangeListToProcess.AppendChange(primaryFrame, element, changeHint);
-    }
-
-    
-    
-    
-    
-    
-    
-    if (changeHint & nsChangeHint_ReconstructFrame) {
-      
-      
-      
-      
-      
-      MarkSelfAndDescendantsAsNotDirtyForServo(element);
-      return;
-    }
-
-    
-    
-    if (!primaryFrame) {
-      aContent->UnsetIsDirtyForServo();
-      return;
-    }
+  
+  bool recreateContext = primaryFrame && changeHint;
+  if (recreateContext) {
+    RefPtr<ServoComputedValues> computedValues
+      = Servo_ResolveStyle(aElement, aStyleSet->mRawSet.get(),
+                           ConsumeStyleBehavior::Consume,
+                           LazyComputeBehavior::Assert).Consume();
 
     
     
@@ -219,69 +173,68 @@ ServoRestyleManager::RecreateStyleContexts(nsIContent* aContent,
     for (CSSPseudoElementType pseudoType : pseudosToRestyle) {
       nsIAtom* pseudoTag = nsCSSPseudoElements::GetPseudoAtom(pseudoType);
 
-      if (nsIFrame* pseudoFrame = FrameForPseudoElement(element, pseudoTag)) {
+      if (nsIFrame* pseudoFrame = FrameForPseudoElement(aElement, pseudoTag)) {
         
         
         RefPtr<nsStyleContext> pseudoContext =
-          aStyleSet->ProbePseudoElementStyle(element, pseudoType, newContext);
+          aStyleSet->ProbePseudoElementStyle(aElement, pseudoType, newContext);
+        MOZ_ASSERT(pseudoContext, "should have taken the ReconstructFrame path above");
+        pseudoFrame->SetStyleContext(pseudoContext);
 
         
         
         
-        MOZ_ASSERT_IF(!pseudoContext,
-                      changeHint & nsChangeHint_ReconstructFrame);
-        if (pseudoContext) {
-          pseudoFrame->SetStyleContext(pseudoContext);
-
-          
-          
-          
-          
-          StyleChildrenIterator it(pseudoFrame->GetContent());
-          for (nsIContent* n = it.GetNextChild(); n; n = it.GetNextChild()) {
-            if (n->IsNodeOfType(nsINode::eTEXT)) {
-              RefPtr<nsStyleContext> childContext =
-                aStyleSet->ResolveStyleForText(n, pseudoContext);
-              MOZ_ASSERT(n->GetPrimaryFrame(),
-                         "How? This node is created at FC time!");
-              n->GetPrimaryFrame()->SetStyleContext(childContext);
-            }
+        
+        StyleChildrenIterator it(pseudoFrame->GetContent());
+        for (nsIContent* n = it.GetNextChild(); n; n = it.GetNextChild()) {
+          if (n->IsNodeOfType(nsINode::eTEXT)) {
+            RefPtr<nsStyleContext> childContext =
+              aStyleSet->ResolveStyleForText(n, pseudoContext);
+            MOZ_ASSERT(n->GetPrimaryFrame(),
+                       "How? This node is created at FC time!");
+            n->GetPrimaryFrame()->SetStyleContext(childContext);
           }
         }
       }
     }
-
-    aContent->UnsetIsDirtyForServo();
   }
 
-  if (aContent->HasDirtyDescendantsForServo()) {
-    MOZ_ASSERT(primaryFrame,
-               "Frame construction should be scheduled, and it takes the "
-               "correct style for the children, so no need to be here.");
-    StyleChildrenIterator it(aContent);
+  bool traverseElementChildren = aElement->HasDirtyDescendantsForServo();
+  bool traverseTextChildren = recreateContext;
+  if (traverseElementChildren || traverseTextChildren) {
+    StyleChildrenIterator it(aElement);
     for (nsIContent* n = it.GetNextChild(); n; n = it.GetNextChild()) {
-      if (n->IsElement() || n->IsNodeOfType(nsINode::eTEXT)) {
-        RecreateStyleContexts(n, primaryFrame->StyleContext(),
+      if (traverseElementChildren && n->IsElement()) {
+        MOZ_ASSERT(primaryFrame,
+                   "Frame construction should be scheduled, and it takes the "
+                   "correct style for the children, so no need to be here.");
+        RecreateStyleContexts(n->AsElement(), primaryFrame->StyleContext(),
                               aStyleSet, aChangeListToProcess);
+      } else if (traverseTextChildren && n->IsNodeOfType(nsINode::eTEXT)) {
+        RecreateStyleContextsForText(n, primaryFrame->StyleContext(),
+                                     aStyleSet);
       }
     }
-    aContent->UnsetHasDirtyDescendantsForServo();
   }
+
+  aElement->UnsetHasDirtyDescendantsForServo();
 }
 
-static void
-MarkChildrenAsDirtyForServo(nsIContent* aContent)
+void
+ServoRestyleManager::RecreateStyleContextsForText(nsIContent* aTextNode,
+                                                  nsStyleContext* aParentContext,
+                                                  ServoStyleSet* aStyleSet)
 {
-  StyleChildrenIterator it(aContent);
+  nsIFrame* primaryFrame = aTextNode->GetPrimaryFrame();
+  if (primaryFrame) {
+    RefPtr<nsStyleContext> oldStyleContext = primaryFrame->StyleContext();
+    RefPtr<nsStyleContext> newContext =
+      aStyleSet->ResolveStyleForText(aTextNode, aParentContext);
 
-  nsIContent* n = it.GetNextChild();
-  bool hadChildren = bool(n);
-  for (; n; n = it.GetNextChild()) {
-    n->SetIsDirtyForServo();
-  }
-
-  if (hadChildren) {
-    aContent->SetHasDirtyDescendantsForServo();
+    for (nsIFrame* f = primaryFrame; f;
+         f = GetNextContinuationWithSameStyle(f, oldStyleContext)) {
+      f->SetStyleContext(newContext);
+    }
   }
 }
 
@@ -315,43 +268,6 @@ ServoRestyleManager::FrameForPseudoElement(const nsIContent* aContent,
   return nullptr;
 }
 
- void
-ServoRestyleManager::NoteRestyleHint(Element* aElement, nsRestyleHint aHint)
-{
-  const nsRestyleHint HANDLED_RESTYLE_HINTS = eRestyle_Self |
-                                              eRestyle_Subtree |
-                                              eRestyle_LaterSiblings |
-                                              eRestyle_SomeDescendants;
-  
-  
-  
-  
-  if (aHint & (eRestyle_Self | eRestyle_Subtree)) {
-    aElement->SetIsDirtyForServo();
-    aElement->MarkAncestorsAsHavingDirtyDescendantsForServo();
-  
-  
-  
-  } else if (aHint & eRestyle_SomeDescendants) {
-    MarkChildrenAsDirtyForServo(aElement);
-    aElement->MarkAncestorsAsHavingDirtyDescendantsForServo();
-  }
-
-  if (aHint & eRestyle_LaterSiblings) {
-    aElement->MarkAncestorsAsHavingDirtyDescendantsForServo();
-    for (nsIContent* cur = aElement->GetNextSibling(); cur;
-         cur = cur->GetNextSibling()) {
-      cur->SetIsDirtyForServo();
-    }
-  }
-
-  
-  if (aHint & ~HANDLED_RESTYLE_HINTS) {
-    NS_WARNING(nsPrintfCString("stylo: Unhandled restyle hint %s",
-                               RestyleManagerBase::RestyleHintToString(aHint).get()).get());
-  }
-}
-
 void
 ServoRestyleManager::ProcessPendingRestyles()
 {
@@ -374,66 +290,48 @@ ServoRestyleManager::ProcessPendingRestyles()
   ServoStyleSet* styleSet = StyleSet();
   nsIDocument* doc = PresContext()->Document();
   Element* root = doc->GetRootElement();
-  if (root) {
-    
-    
-    
-    
-    
-    while (!mModifiedElements.IsEmpty()) {
-      for (auto iter = mModifiedElements.Iter(); !iter.Done(); iter.Next()) {
-        ServoElementSnapshot* snapshot = iter.UserData();
-        Element* element = iter.Key();
 
-        
-        
-        
-        
-        
-        if (!element->IsInComposedDoc()) {
-          continue;
-        }
+  
+  if (HasPendingRestyles()) {
+    MOZ_ASSERT(root);
+    mInStyleRefresh = true;
+    styleSet->StyleDocument();
 
-        
-        
-        nsRestyleHint hint = styleSet->ComputeRestyleHint(element, snapshot);
-        hint |= snapshot->ExplicitRestyleHint();
+    
+    
+    
+    
+    
+    
+    
+    
+    PresContext()->FrameConstructor()->CreateNeededFrames();
 
-        if (hint) {
-          NoteRestyleHint(element, hint);
-        }
+    
+    nsStyleChangeList currentChanges;
+    RecreateStyleContexts(root, nullptr, styleSet, currentChanges);
+
+    
+    
+    
+    
+    
+    ReentrantChangeList newChanges;
+    mReentrantChanges = &newChanges;
+    while (!currentChanges.IsEmpty()) {
+      ProcessRestyledFrames(currentChanges);
+      MOZ_ASSERT(currentChanges.IsEmpty());
+      for (ReentrantChange& change: newChanges)  {
+        currentChanges.AppendChange(change.mContent->GetPrimaryFrame(),
+                                    change.mContent, change.mHint);
       }
-
-      if (!root->IsDirtyForServo() && !root->HasDirtyDescendantsForServo()) {
-        mModifiedElements.Clear();
-        break;
-      }
-
-      mInStyleRefresh = true;
-      styleSet->StyleDocument( true);
-
-      
-      
-      
-      
-      
-      
-      
-      
-      PresContext()->FrameConstructor()->CreateNeededFrames();
-
-      nsStyleChangeList changeList;
-      RecreateStyleContexts(root, nullptr, styleSet, changeList);
-
-      mModifiedElements.Clear();
-      ProcessRestyledFrames(changeList);
-
-      mInStyleRefresh = false;
+      newChanges.Clear();
     }
-  }
+    mReentrantChanges = nullptr;
 
-  MOZ_ASSERT(!doc->IsDirtyForServo());
-  doc->UnsetHasDirtyDescendantsForServo();
+    styleSet->AssertTreeIsClean();
+    mInStyleRefresh = false;
+  }
 
   IncrementRestyleGeneration();
 }
@@ -454,31 +352,6 @@ ServoRestyleManager::RestyleForInsertOrChange(nsINode* aContainer,
 void
 ServoRestyleManager::ContentInserted(nsINode* aContainer, nsIContent* aChild)
 {
-  if (aContainer == aContainer->OwnerDoc()) {
-    
-    
-    
-    
-    
-    
-    
-    MOZ_ASSERT(aChild == aChild->OwnerDoc()->GetRootElement());
-    MOZ_ASSERT(aChild->IsDirtyForServo());
-    StyleSet()->StyleDocument( false);
-    return;
-  }
-
-  if (!aContainer->HasServoData()) {
-    
-    
-    return;
-  }
-
-  
-  
-  
-  StyleSet()->StyleNewSubtree(aChild);
-
   RestyleForInsertOrChange(aContainer, aChild);
 }
 
@@ -499,22 +372,6 @@ void
 ServoRestyleManager::ContentAppended(nsIContent* aContainer,
                                      nsIContent* aFirstNewContent)
 {
-  if (!aContainer->HasServoData()) {
-    
-    
-    return;
-  }
-
-  
-  
-  
-  if (aFirstNewContent->GetNextSibling()) {
-    aContainer->SetHasDirtyDescendantsForServo();
-    StyleSet()->StyleNewChildren(aContainer);
-  } else {
-    StyleSet()->StyleNewSubtree(aFirstNewContent);
-  }
-
   RestyleForAppend(aContainer, aFirstNewContent);
 }
 
@@ -561,10 +418,12 @@ ServoRestyleManager::ContentStateChanged(nsIContent* aContent,
                               &restyleHint);
 
   EventStates previousState = aElement->StyleState() ^ aChangedBits;
-  ServoElementSnapshot* snapshot = SnapshotForElement(aElement);
-  snapshot->AddState(previousState);
+  ServoElementSnapshot* snapshot = Servo_Element_GetSnapshot(aElement);
+  if (snapshot) {
+    snapshot->AddState(previousState);
+    PostRestyleEvent(aElement, restyleHint, changeHint);
+  }
 
-  PostRestyleEvent(aElement, restyleHint, changeHint);
   return NS_OK;
 }
 
@@ -574,8 +433,10 @@ ServoRestyleManager::AttributeWillChange(Element* aElement,
                                          nsIAtom* aAttribute, int32_t aModType,
                                          const nsAttrValue* aNewValue)
 {
-  ServoElementSnapshot* snapshot = SnapshotForElement(aElement);
-  snapshot->AddAttrs(aElement);
+  ServoElementSnapshot* snapshot = Servo_Element_GetSnapshot(aElement);
+  if (snapshot) {
+    snapshot->AddAttrs(aElement);
+  }
 }
 
 void
@@ -583,7 +444,10 @@ ServoRestyleManager::AttributeChanged(Element* aElement, int32_t aNameSpaceID,
                                       nsIAtom* aAttribute, int32_t aModType,
                                       const nsAttrValue* aOldValue)
 {
-  MOZ_ASSERT(SnapshotForElement(aElement)->HasAttrs());
+#ifdef DEBUG
+  ServoElementSnapshot* snapshot = Servo_Element_GetSnapshot(aElement);
+  MOZ_ASSERT_IF(snapshot, snapshot->HasAttrs());
+#endif
   if (aAttribute == nsGkAtoms::style) {
     PostRestyleEvent(aElement, eRestyle_StyleAttribute, nsChangeHint(0));
   }
@@ -594,14 +458,6 @@ ServoRestyleManager::ReparentStyleContext(nsIFrame* aFrame)
 {
   NS_WARNING("stylo: ServoRestyleManager::ReparentStyleContext not implemented");
   return NS_OK;
-}
-
-ServoElementSnapshot*
-ServoRestyleManager::SnapshotForElement(Element* aElement)
-{
-  
-  
-  return mModifiedElements.LookupOrAdd(aElement, aElement);
 }
 
 } 

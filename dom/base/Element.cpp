@@ -1739,18 +1739,6 @@ Element::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
   
   
   
-  
-  
-  
-  
-  if (IsStyledByServo() && IsInComposedDoc()) {
-    MOZ_ASSERT(!HasServoData());
-    SetIsDirtyForServo();
-  }
-
-  
-  
-  
   NS_POSTCONDITION(aDocument == GetUncomposedDoc(), "Bound to wrong document");
   NS_POSTCONDITION(aParent == GetParent(), "Bound to wrong parent");
   NS_POSTCONDITION(aBindingParent == GetBindingParent(),
@@ -3921,4 +3909,13 @@ Element::UpdateIntersectionObservation(DOMIntersectionObserver* aObserver, int32
     }
   }
   return false;
+}
+
+void
+Element::ClearServoData() {
+#ifdef MOZ_STYLO
+  Servo_Element_ClearData(this);
+#else
+  MOZ_CRASH("Accessing servo node data in non-stylo build");
+#endif
 }

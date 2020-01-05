@@ -2429,7 +2429,9 @@ nsCSSFrameConstructor::ConstructDocElementFrame(Element*                 aDocEle
   
   RefPtr<nsStyleContext> styleContext;
   styleContext = mPresShell->StyleSet()->ResolveStyleFor(aDocElement,
-                                                         nullptr);
+                                                         nullptr,
+                                                         ConsumeStyleBehavior::Consume,
+                                                         LazyComputeBehavior::Allow);
 
   const nsStyleDisplay* display = styleContext->StyleDisplay();
 
@@ -2464,9 +2466,17 @@ nsCSSFrameConstructor::ConstructDocElementFrame(Element*                 aDocEle
       
       
       styleContext = mPresShell->StyleSet()->ResolveStyleFor(aDocElement,
-                                                             nullptr);
+                                                             nullptr,
+                                                             ConsumeStyleBehavior::Consume,
+                                                             LazyComputeBehavior::Allow);
       display = styleContext->StyleDisplay();
     }
+  }
+
+  
+  
+  if (ServoStyleSet* set = mPresShell->StyleSet()->GetAsServo()) {
+    set->StyleDocument();
   }
 
   
@@ -5022,10 +5032,14 @@ nsCSSFrameConstructor::ResolveStyleContext(nsStyleContext* aParentStyleContext,
     if (aState) {
       result = styleSet->ResolveStyleFor(aContent->AsElement(),
                                          aParentStyleContext,
+                                         ConsumeStyleBehavior::Consume,
+                                         LazyComputeBehavior::Assert,
                                          aState->mTreeMatchContext);
     } else {
       result = styleSet->ResolveStyleFor(aContent->AsElement(),
-                                         aParentStyleContext);
+                                         aParentStyleContext,
+                                         ConsumeStyleBehavior::Consume,
+                                         LazyComputeBehavior::Assert);
     }
   } else {
     NS_ASSERTION(aContent->IsNodeOfType(nsINode::eTEXT),
@@ -5711,6 +5725,11 @@ nsCSSFrameConstructor::AddFrameConstructionItemsInternal(nsFrameConstructorState
       pendingBinding = newPendingBinding;
       
       aState.AddPendingBinding(newPendingBinding.forget());
+    }
+
+    if (aContent->IsStyledByServo()) {
+      NS_WARNING("stylo: Skipping Unsupported binding re-resolve. This needs fixing.");
+      resolveStyle = false;
     }
 
     if (resolveStyle) {
@@ -7342,7 +7361,26 @@ nsCSSFrameConstructor::ContentAppended(nsIContent*     aContainer,
 
   if (aAllowLazyConstruction &&
       MaybeConstructLazily(CONTENTAPPEND, aContainer, aFirstNewContent)) {
+    if (aContainer->IsStyledByServo()) {
+      aContainer->AsElement()->NoteDirtyDescendantsForServo();
+    }
     return NS_OK;
+  }
+
+  
+  if (ServoStyleSet* set = mPresShell->StyleSet()->GetAsServo()) {
+    
+    
+    
+    
+    
+    if (!RestyleManager()->AsBase()->IsInStyleRefresh()) {
+      if (aFirstNewContent->GetNextSibling()) {
+        set->StyleNewChildren(aContainer);
+      } else {
+        set->StyleNewSubtree(aFirstNewContent);
+      }
+    }
   }
 
   LAYOUT_PHASE_TEMP_EXIT();
@@ -7787,7 +7825,22 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent*            aContainer,
 
     if (aAllowLazyConstruction &&
         MaybeConstructLazily(CONTENTINSERT, aContainer, aStartChild)) {
+      if (aContainer->IsStyledByServo()) {
+        aContainer->AsElement()->NoteDirtyDescendantsForServo();
+      }
       return NS_OK;
+    }
+  }
+
+  
+  if (ServoStyleSet* set = mPresShell->StyleSet()->GetAsServo()) {
+    
+    
+    
+    
+    
+    if (!RestyleManager()->AsBase()->IsInStyleRefresh()) {
+      set->StyleNewSubtree(aStartChild);
     }
   }
 
@@ -9255,7 +9308,9 @@ nsCSSFrameConstructor::MaybeRecreateFramesForElement(Element* aElement)
 
   
   RefPtr<nsStyleContext> newContext = mPresShell->StyleSet()->
-    ResolveStyleFor(aElement, oldContext->GetParent());
+    ResolveStyleFor(aElement, oldContext->GetParent(),
+                    ConsumeStyleBehavior::Consume,
+                    LazyComputeBehavior::Assert);
 
   if (oldDisplay == StyleDisplay::None) {
     ChangeUndisplayedContent(aElement, newContext);
@@ -10627,14 +10682,15 @@ nsCSSFrameConstructor::AddFCItemsForAnonymousContent(
       
       
       
-      MOZ_ASSERT_IF(content->IsStyledByServo(), !content->HasServoData());
+      MOZ_ASSERT_IF(content->IsStyledByServo(),
+                    !content->IsElement() || !content->AsElement()->HasServoData());
       styleContext = aAnonymousItems[i].mStyleContext.forget();
     } else {
       
       
       
       MOZ_ASSERT_IF(content->IsStyledByServo() && content->IsElement(),
-                    content->HasServoData());
+                    content->AsElement()->HasServoData());
       styleContext = ResolveStyleContext(aFrame, content, &aState);
     }
 

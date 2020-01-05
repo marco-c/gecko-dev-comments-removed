@@ -8,7 +8,6 @@
 #define nsINode_h___
 
 #include "mozilla/Likely.h"
-#include "mozilla/ServoTypes.h"
 #include "mozilla/UniquePtr.h"
 #include "nsCOMPtr.h"               
 #include "nsGkAtoms.h"              
@@ -186,14 +185,13 @@ enum {
   
   
   
+  
+  
   NODE_SHARED_RESTYLE_BIT_1 =             NODE_FLAG_BIT(21),
   NODE_SHARED_RESTYLE_BIT_2 =             NODE_FLAG_BIT(22),
 
   
-  NODE_IS_DIRTY_FOR_SERVO =               NODE_SHARED_RESTYLE_BIT_1,
-
-  
-  NODE_HAS_DIRTY_DESCENDANTS_FOR_SERVO =  NODE_SHARED_RESTYLE_BIT_2,
+  NODE_HAS_DIRTY_DESCENDANTS_FOR_SERVO =  NODE_SHARED_RESTYLE_BIT_1,
 
   
   NODE_TYPE_SPECIFIC_BITS_OFFSET =        23
@@ -980,48 +978,6 @@ public:
 #else
   bool IsStyledByServo() const { return false; }
 #endif
-
-  bool IsDirtyForServo() const
-  {
-    MOZ_ASSERT(IsStyledByServo());
-    return HasFlag(NODE_IS_DIRTY_FOR_SERVO);
-  }
-
-  bool HasDirtyDescendantsForServo() const
-  {
-    MOZ_ASSERT(IsStyledByServo());
-    return HasFlag(NODE_HAS_DIRTY_DESCENDANTS_FOR_SERVO);
-  }
-
-  void SetIsDirtyForServo() {
-    MOZ_ASSERT(IsStyledByServo());
-    SetFlags(NODE_IS_DIRTY_FOR_SERVO);
-  }
-
-  void SetHasDirtyDescendantsForServo() {
-    MOZ_ASSERT(IsStyledByServo());
-    SetFlags(NODE_HAS_DIRTY_DESCENDANTS_FOR_SERVO);
-  }
-
-  void SetIsDirtyAndHasDirtyDescendantsForServo() {
-    MOZ_ASSERT(IsStyledByServo());
-    SetFlags(NODE_HAS_DIRTY_DESCENDANTS_FOR_SERVO | NODE_IS_DIRTY_FOR_SERVO);
-  }
-
-  void UnsetIsDirtyForServo() {
-    MOZ_ASSERT(IsStyledByServo());
-    UnsetFlags(NODE_IS_DIRTY_FOR_SERVO);
-  }
-
-  void UnsetHasDirtyDescendantsForServo() {
-    MOZ_ASSERT(IsStyledByServo());
-    UnsetFlags(NODE_HAS_DIRTY_DESCENDANTS_FOR_SERVO);
-  }
-
-  void UnsetIsDirtyAndHasDirtyDescendantsForServo() {
-    MOZ_ASSERT(IsStyledByServo());
-    UnsetFlags(NODE_HAS_DIRTY_DESCENDANTS_FOR_SERVO | NODE_IS_DIRTY_FOR_SERVO);
-  }
 
   inline void UnsetRestyleFlagsIfGecko();
 
@@ -2061,16 +2017,6 @@ public:
 #undef TOUCH_EVENT
 #undef EVENT
 
-  bool HasServoData() {
-#ifdef MOZ_STYLO
-    return !!mServoData.Get();
-#else
-    MOZ_CRASH("Accessing servo node data in non-stylo build");
-#endif
-  }
-
-  void ClearServoData();
-
 protected:
   static bool Traverse(nsINode *tmp, nsCycleCollectionTraversalCallback &cb);
   static void Unlink(nsINode *tmp);
@@ -2108,11 +2054,6 @@ protected:
 
   
   nsSlots* mSlots;
-
-#ifdef MOZ_STYLO
-  
-  mozilla::ServoCell<ServoNodeData*> mServoData;
-#endif
 };
 
 inline nsIDOMNode* GetAsDOMNode(nsINode* aNode)

@@ -56,11 +56,15 @@ public:
 
   already_AddRefed<nsStyleContext>
   ResolveStyleFor(dom::Element* aElement,
-                  nsStyleContext* aParentContext);
+                  nsStyleContext* aParentContext,
+                  ConsumeStyleBehavior aConsume,
+                  LazyComputeBehavior aMayCompute);
 
   already_AddRefed<nsStyleContext>
   ResolveStyleFor(dom::Element* aElement,
                   nsStyleContext* aParentContext,
+                  ConsumeStyleBehavior aConsume,
+                  LazyComputeBehavior aMayCompute,
                   TreeMatchContext& aTreeMatchContext);
 
   already_AddRefed<nsStyleContext>
@@ -120,17 +124,8 @@ public:
   
 
 
-  nsRestyleHint ComputeRestyleHint(dom::Element* aElement,
-                                   ServoElementSnapshot* aSnapshot);
 
-  
-
-
-
-
-
-
-  void StyleDocument(bool aLeaveDirtyBits);
+  void StyleDocument();
 
   
 
@@ -152,6 +147,12 @@ public:
 
   void StyleNewChildren(nsIContent* aParent);
 
+#ifdef DEBUG
+  void AssertTreeIsClean();
+#else
+  void AssertTreeIsClean() {}
+#endif
+
 private:
   already_AddRefed<nsStyleContext> GetContext(already_AddRefed<ServoComputedValues>,
                                               nsStyleContext* aParentContext,
@@ -161,7 +162,9 @@ private:
   already_AddRefed<nsStyleContext> GetContext(nsIContent* aContent,
                                               nsStyleContext* aParentContext,
                                               nsIAtom* aPseudoTag,
-                                              CSSPseudoElementType aPseudoType);
+                                              CSSPseudoElementType aPseudoType,
+                                              ConsumeStyleBehavior aConsume,
+                                              LazyComputeBehavior aMayCompute);
 
   nsPresContext* mPresContext;
   UniquePtr<RawServoStyleSet> mRawSet;

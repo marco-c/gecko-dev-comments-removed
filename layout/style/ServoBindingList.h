@@ -19,7 +19,7 @@
 
 
 
-SERVO_BINDING_FUNC(Servo_Node_ClearNodeData, void, RawGeckoNodeBorrowed node)
+SERVO_BINDING_FUNC(Servo_Element_ClearData, void, RawGeckoElementBorrowed node)
 
 
 SERVO_BINDING_FUNC(Servo_StyleSheet_Empty, RawServoStyleSheetStrong,
@@ -133,8 +133,6 @@ SERVO_BINDING_FUNC(Servo_CSSSupports, bool,
                    const nsACString* name, const nsACString* value)
 
 
-SERVO_BINDING_FUNC(Servo_ComputedValues_Get, ServoComputedValuesStrong,
-                   RawGeckoNodeBorrowed node)
 SERVO_BINDING_FUNC(Servo_ComputedValues_GetForAnonymousBox,
                    ServoComputedValuesStrong,
                    ServoComputedValuesBorrowedOrNull parent_style_or_null,
@@ -157,13 +155,25 @@ SERVO_BINDING_FUNC(Servo_Initialize, void)
 SERVO_BINDING_FUNC(Servo_Shutdown, void)
 
 
-SERVO_BINDING_FUNC(Servo_ComputeRestyleHint, nsRestyleHint,
-                   RawGeckoElementBorrowed element, ServoElementSnapshot* snapshot,
-                   RawServoStyleSetBorrowed set)
+
+SERVO_BINDING_FUNC(Servo_Element_GetSnapshot, ServoElementSnapshot*,
+                   RawGeckoElementBorrowed element)
 
 
-SERVO_BINDING_FUNC(Servo_RestyleSubtree, void,
-                   RawGeckoNodeBorrowed node, RawServoStyleSetBorrowed set)
+SERVO_BINDING_FUNC(Servo_NoteExplicitHints, void, RawGeckoElementBorrowed element,
+                   nsRestyleHint restyle_hint, nsChangeHint change_hint)
+SERVO_BINDING_FUNC(Servo_CheckChangeHint, nsChangeHint, RawGeckoElementBorrowed element)
+SERVO_BINDING_FUNC(Servo_ResolveStyle, ServoComputedValuesStrong,
+                   RawGeckoElementBorrowed element, RawServoStyleSetBorrowed set,
+                   mozilla::ConsumeStyleBehavior consume, mozilla::LazyComputeBehavior compute)
+
+
+SERVO_BINDING_FUNC(Servo_TraverseSubtree, void,
+                   RawGeckoElementBorrowed root, RawServoStyleSetBorrowed set,
+                   mozilla::SkipRootBehavior skip_root)
+
+
+SERVO_BINDING_FUNC(Servo_AssertTreeIsClean, void, RawGeckoElementBorrowed root)
 
 
 #define STYLE_STRUCT(name, checkdata_cb)                            \

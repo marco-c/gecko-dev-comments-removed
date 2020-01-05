@@ -9,6 +9,7 @@
 
 #include "mozilla/EventStates.h"
 #include "mozilla/RestyleManagerBase.h"
+#include "mozilla/ServoBindings.h"
 #include "mozilla/ServoElementSnapshot.h"
 #include "nsChangeHint.h"
 #include "nsHashKeys.h"
@@ -79,8 +80,8 @@ public:
 
   bool HasPendingRestyles()
   {
-    return !mModifiedElements.IsEmpty() ||
-           PresContext()->Document()->HasDirtyDescendantsForServo();
+    Element* root = PresContext()->Document()->GetRootElement();
+    return root && root->HasDirtyDescendantsForServo();
   }
 
 
@@ -97,34 +98,30 @@ public:
 
 
 
+  static void ClearServoDataFromSubtree(Element* aElement);
 
-  static void ClearServoDataFromSubtree(nsIContent* aContent);
+  
+
+
+
+  static void ClearDirtyDescendantsFromSubtree(Element* aElement);
 
 protected:
-  ~ServoRestyleManager() {}
+  ~ServoRestyleManager() { MOZ_ASSERT(!mReentrantChanges); }
 
 private:
-  ServoElementSnapshot* SnapshotForElement(Element* aElement);
-
-  
-
-
-  nsClassHashtable<nsRefPtrHashKey<Element>, ServoElementSnapshot>
-    mModifiedElements;
-
   
 
 
 
-  void RecreateStyleContexts(nsIContent* aContent,
+  void RecreateStyleContexts(Element* aElement,
                              nsStyleContext* aParentContext,
                              ServoStyleSet* aStyleSet,
                              nsStyleChangeList& aChangeList);
 
-  
-
-
-  static void NoteRestyleHint(Element* aElement, nsRestyleHint aRestyleHint);
+  void RecreateStyleContextsForText(nsIContent* aTextNode,
+                                    nsStyleContext* aParentContext,
+                                    ServoStyleSet* aStyleSet);
 
   inline ServoStyleSet* StyleSet() const
   {
@@ -133,6 +130,19 @@ private:
                "style backend");
     return PresContext()->StyleSet()->AsServo();
   }
+
+  
+  
+  
+  struct ReentrantChange {
+    nsCOMPtr<nsIContent> mContent;
+    nsChangeHint mHint;
+  };
+  typedef AutoTArray<ReentrantChange, 10> ReentrantChangeList;
+
+  
+  
+  ReentrantChangeList* mReentrantChanges;
 };
 
 } 

@@ -17,6 +17,8 @@ struct nsCSSSelector;
 
 
 enum nsChangeHint {
+  nsChangeHint_Empty = 0,
+
   
   
   

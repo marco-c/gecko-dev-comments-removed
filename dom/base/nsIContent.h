@@ -938,14 +938,6 @@ public:
 
   mozilla::dom::Element* GetEditingHost();
 
-
-  
-
-
-
-
-  void MarkAncestorsAsHavingDirtyDescendantsForServo();
-
   
 
 
