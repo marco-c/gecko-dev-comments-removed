@@ -1547,6 +1547,20 @@ var gBrowserInit = {
       this.gmpInstallManager.simpleCheckAndInstall().then(null, () => {});
     }, {timeout: 1000 * 60});
 
+    
+    
+    
+    
+    
+    
+    setTimeout(() => {
+      let v = document.createElementNS("http://www.w3.org/1999/xhtml", "video");
+      let aacWorks = v.canPlayType("audio/mp4") != "";
+      Services.telemetry.getHistogramById("VIDEO_CAN_CREATE_AAC_DECODER").add(aacWorks);
+      let h264Works = v.canPlayType("video/mp4") != "";
+      Services.telemetry.getHistogramById("VIDEO_CAN_CREATE_H264_DECODER").add(h264Works);
+    }, 90 * 1000);
+
     SessionStore.promiseInitialized.then(() => {
       
       if (window.closed) {
