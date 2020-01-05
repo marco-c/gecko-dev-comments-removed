@@ -85,6 +85,12 @@ function* spawnTest() {
     }
   ]);
 
+  
+  yield helpers.audit(options, [{
+    setup: "unhighlight",
+    exec: {}
+  }]);
+
   yield helpers.closeToolbar(options);
   yield helpers.closeTab(options);
 }
