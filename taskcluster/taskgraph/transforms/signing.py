@@ -14,9 +14,6 @@ from taskgraph.transforms.task import task_description_schema
 from voluptuous import Schema, Any, Required, Optional
 
 
-ARTIFACT_URL = 'https://queue.taskcluster.net/v1/task/<{}>/artifacts/{}'
-
-
 
 
 task_description_schema = {str(k): v for k, v in task_description_schema.schema.iteritems()}
