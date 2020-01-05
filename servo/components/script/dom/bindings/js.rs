@@ -53,6 +53,8 @@ use layout_interface::TrustedNodeAddress;
 use script_task::STACK_ROOTS;
 
 use util::smallvec::{SmallVec, SmallVec16};
+
+use core::nonzero::NonZero;
 use std::cell::{Cell, UnsafeCell};
 use std::default::Default;
 use std::marker::ContravariantLifetime;
@@ -124,7 +126,7 @@ impl<T: Reflectable> Temporary<T> {
 
 #[must_root]
 pub struct JS<T> {
-    ptr: *const T
+    ptr: NonZero<*const T>
 }
 
 impl<T> Copy for JS<T> {}
@@ -149,8 +151,9 @@ impl JS<Node> {
     
     pub unsafe fn from_trusted_node_address(inner: TrustedNodeAddress) -> JS<Node> {
         let TrustedNodeAddress(addr) = inner;
+        assert!(!addr.is_null());
         JS {
-            ptr: addr as *const Node
+            ptr: NonZero::new(addr as *const Node)
         }
     }
 }
@@ -158,8 +161,9 @@ impl JS<Node> {
 impl<T: Reflectable> JS<T> {
     
     pub unsafe fn from_raw(raw: *const T) -> JS<T> {
+        assert!(!raw.is_null());
         JS {
-            ptr: raw
+            ptr: NonZero::new(raw)
         }
     }
 
@@ -313,7 +317,7 @@ impl<T: Reflectable> JS<T> {
     
     
     pub unsafe fn unsafe_get(&self) -> *const T {
-        self.ptr
+        *self.ptr
     }
 
     
@@ -577,14 +581,14 @@ impl<'a, T: Reflectable> Deref for JSRef<'a, T> {
     type Target = T;
     fn deref<'b>(&'b self) -> &'b T {
         unsafe {
-            &*self.ptr
+            &**self.ptr
         }
     }
 }
 
 
 pub struct JSRef<'a, T> {
-    ptr: *const T,
+    ptr: NonZero<*const T>,
     chain: ContravariantLifetime<'a>,
 }
 
@@ -630,7 +634,7 @@ impl<'a, T: Reflectable> JSRef<'a, T> {
     
     pub fn extended_deref(self) -> &'a T {
         unsafe {
-            &*self.ptr
+            &**self.ptr
         }
     }
 }
