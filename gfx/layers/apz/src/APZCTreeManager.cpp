@@ -1793,10 +1793,19 @@ APZCTreeManager::GetAPZCAtPoint(HitTestingTreeNode* aNode,
 
   if (*aOutHitResult != HitNothing) {
       MOZ_ASSERT(resultNode);
-      if (aOutHitScrollbar) {
-        for (HitTestingTreeNode* n = resultNode; n; n = n->GetParent()) {
-          if (n->IsScrollbarNode()) {
+      for (HitTestingTreeNode* n = resultNode; n; n = n->GetParent()) {
+        if (n->IsScrollbarNode()) {
+          if (aOutHitScrollbar) {
             *aOutHitScrollbar = true;
+          }
+          
+          
+          
+          
+          ScrollableLayerGuid guid(n->GetLayersId(), 0, n->GetScrollTargetId());
+          if (RefPtr<HitTestingTreeNode> scrollTarget = GetTargetNode(guid, &GuidComparatorIgnoringPresShell)) {
+            MOZ_ASSERT(scrollTarget->GetApzc());
+            return scrollTarget->GetApzc();
           }
         }
       }
