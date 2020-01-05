@@ -348,3 +348,17 @@ nsThreadManager::GetHighestNumberOfThreads()
   OffTheBooksMutexAutoLock lock(mLock);
   return mHighestNumberOfThreads;
 }
+
+NS_IMETHODIMP
+nsThreadManager::DispatchToMainThread(nsIRunnable *aEvent)
+{
+  
+  MOZ_ASSERT(NS_IsMainThread());
+
+  
+  if (NS_WARN_IF(!mMainThread)) {
+    return NS_ERROR_NOT_INITIALIZED;
+  }
+
+  return mMainThread->DispatchFromScript(aEvent, 0);
+}
