@@ -191,7 +191,7 @@ impl Attr {
     
     
     pub fn set_owner(&self, owner: Option<&Element>) {
-        let ref ns = self.identifier.namespace;
+        let ns = &self.identifier.namespace;
         match (self.owner().r(), owner) {
             (None, Some(new)) => {
                 

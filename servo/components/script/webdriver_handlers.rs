@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 use dom::bindings::codegen::Bindings::CSSStyleDeclarationBinding::CSSStyleDeclarationMethods;
 use dom::bindings::codegen::Bindings::DocumentBinding::DocumentMethods;
@@ -57,7 +57,7 @@ pub unsafe fn jsval_to_webdriver(cx: *mut JSContext, val: HandleValue) -> WebDri
     } else if val.get().is_double() || val.get().is_int32() {
         Ok(WebDriverJSValue::Number(FromJSValConvertible::from_jsval(cx, val, ()).unwrap()))
     } else if val.get().is_string() {
-        //FIXME: use jsstring_to_str when jsval grows to_jsstring
+        
         let string: DOMString = FromJSValConvertible::from_jsval(cx, val, StringificationBehavior::Default).unwrap();
         Ok(WebDriverJSValue::String(String::from(string)))
     } else if val.get().is_null() {
@@ -101,7 +101,7 @@ pub fn handle_get_frame_id(page: &Rc<Page>,
                            reply: IpcSender<Result<Option<PipelineId>, ()>>) {
     let window = match webdriver_frame_id {
         WebDriverFrameId::Short(_) => {
-            // This isn't supported yet
+            
             Ok(None)
         },
         WebDriverFrameId::Element(x) => {
@@ -163,7 +163,7 @@ pub fn handle_focus_element(page: &Rc<Page>,
         Some(ref node) => {
             match node.downcast::<HTMLElement>() {
                 Some(ref elem) => {
-                    // Need a way to find if this actually succeeded
+                    
                     elem.Focus();
                     Ok(())
                 }
@@ -191,7 +191,7 @@ pub fn handle_get_text(page: &Rc<Page>,
                        reply: IpcSender<Result<String, ()>>) {
     reply.send(match find_node_by_unique_id(&*page, pipeline, node_id) {
         Some(ref node) => {
-            Ok(node.GetTextContent().map(String::from).unwrap_or("".to_owned()))
+            Ok(node.GetTextContent().map_or("".to_owned(), String::from))
         },
         None => Err(())
     }).unwrap();
@@ -283,7 +283,7 @@ pub fn handle_is_selected(page: &Rc<Page>,
                 Ok(option_element.Selected())
             }
             else if let Some(_) = node.downcast::<HTMLElement>() {
-                Ok(false) // regular elements are not selectable
+                Ok(false) 
             }
             else {
                 Err(())

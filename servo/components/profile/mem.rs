@@ -649,8 +649,7 @@ mod system_reporter {
         
         
         
-        let segs: Vec<(String, usize)> = seg_map.into_iter().collect();
-        segs
+        seg_map.into_iter().collect()
     }
 
     #[cfg(not(target_os = "linux"))]

@@ -14,18 +14,18 @@ use std::io::{Read, Write};
 use std::net::TcpStream;
 
 pub trait JsonPacketStream {
-    fn write_json_packet<'a, T: Encodable>(&mut self, obj: &T);
+    fn write_json_packet<T: Encodable>(&mut self, obj: &T);
     fn read_json_packet(&mut self) -> Result<Option<Json>, String>;
 }
 
 impl JsonPacketStream for TcpStream {
-    fn write_json_packet<'a, T: Encodable>(&mut self, obj: &T) {
+    fn write_json_packet<T: Encodable>(&mut self, obj: &T) {
         let s = json::encode(obj).unwrap().replace("__type__", "type");
         println!("<- {}", s);
         write!(self, "{}:{}", s.len(), s).unwrap();
     }
 
-    fn read_json_packet<'a>(&mut self) -> Result<Option<Json>, String> {
+    fn read_json_packet(&mut self) -> Result<Option<Json>, String> {
         
         
         let mut buffer = vec!();

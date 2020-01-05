@@ -486,7 +486,7 @@ impl RootCollection {
     }
 
     
-    fn root<'b>(&self, untracked_reflector: *const Reflector) {
+    fn root(&self, untracked_reflector: *const Reflector) {
         debug_assert!(task_state::get().is_script());
         unsafe {
             let mut roots = &mut *self.roots.get();
@@ -496,7 +496,7 @@ impl RootCollection {
     }
 
     
-    fn unroot<'b, T: Reflectable>(&self, rooted: &Root<T>) {
+    fn unroot<T: Reflectable>(&self, rooted: &Root<T>) {
         debug_assert!(task_state::get().is_script());
         unsafe {
             let mut roots = &mut *self.roots.get();
