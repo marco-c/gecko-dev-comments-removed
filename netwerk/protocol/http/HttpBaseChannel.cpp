@@ -1522,6 +1522,9 @@ HttpBaseChannel::SetReferrerWithPolicy(nsIURI *referrer,
       referrerPolicy == REFERRER_POLICY_STRICT_ORIGIN ||
       (isCrossOrigin && (referrerPolicy == REFERRER_POLICY_ORIGIN_WHEN_XORIGIN ||
                          referrerPolicy == REFERRER_POLICY_STRICT_ORIGIN_WHEN_XORIGIN))) {
+    
+    
+    
     userReferrerTrimmingPolicy = 2;
   }
 
