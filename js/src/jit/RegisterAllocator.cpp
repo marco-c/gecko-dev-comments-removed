@@ -549,7 +549,7 @@ RegisterAllocator::getMoveGroupAfter(LInstruction* ins)
 void
 RegisterAllocator::dumpInstructions()
 {
-#ifdef DEBUG
+#ifdef JS_JITSPEW
     fprintf(stderr, "Instructions:\n");
 
     for (size_t blockIndex = 0; blockIndex < graph.numBlocks(); blockIndex++) {
