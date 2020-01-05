@@ -5267,25 +5267,18 @@ GCRuntime::beginSweepingSweepGroup(AutoLockForExclusiveAccess& lock)
     }
 
     
-
-
-
-
-
+    
 
     for (GCSweepGroupIter zone(rt); !zone.done(); zone.next()) {
         gcstats::AutoSCC scc(stats(), sweepGroupIndex);
+
         zone->arenas.queueForForegroundSweep(&fop, ForegroundObjectFinalizePhase);
         for (unsigned i = 0; i < ArrayLength(IncrementalFinalizePhases); ++i)
             zone->arenas.queueForForegroundSweep(&fop, IncrementalFinalizePhases[i]);
-    }
-    for (GCSweepGroupIter zone(rt); !zone.done(); zone.next()) {
-        gcstats::AutoSCC scc(stats(), sweepGroupIndex);
+
         for (unsigned i = 0; i < ArrayLength(BackgroundFinalizePhases); ++i)
             zone->arenas.queueForBackgroundSweep(&fop, BackgroundFinalizePhases[i]);
-    }
-    for (GCSweepGroupIter zone(rt); !zone.done(); zone.next()) {
-        gcstats::AutoSCC scc(stats(), sweepGroupIndex);
+
         zone->arenas.queueForegroundThingsForSweep(&fop);
     }
 
