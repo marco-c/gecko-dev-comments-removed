@@ -31,7 +31,6 @@ struct StyleSheetInfo
   StyleSheetInfo(CORSMode aCORSMode,
                  ReferrerPolicy aReferrerPolicy,
                  const dom::SRIMetadata& aIntegrity);
-  StyleSheetInfo(const StyleSheetInfo& aCopy);
 
   nsCOMPtr<nsIURI>       mSheetURI; 
   nsCOMPtr<nsIURI>       mOriginalSheetURI;  
