@@ -31,6 +31,12 @@ impl ToCss for MediaList {
     }
 }
 
+impl Default for MediaList {
+    fn default() -> MediaList {
+        MediaList { media_queries: vec![] }
+    }
+}
+
 #[derive(PartialEq, Eq, Copy, Clone, Debug)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub enum Range<T> {
@@ -253,8 +259,8 @@ impl MediaQuery {
 }
 
 pub fn parse_media_query_list(input: &mut Parser) -> MediaList {
-    let queries = if input.is_exhausted() {
-        vec![MediaQuery::new(None, MediaQueryType::All, vec!())]
+    if input.is_exhausted() {
+        Default::default()
     } else {
         let mut media_queries = vec![];
         loop {
@@ -269,9 +275,8 @@ pub fn parse_media_query_list(input: &mut Parser) -> MediaList {
                 Err(()) => break,
             }
         }
-        media_queries
-    };
-    MediaList { media_queries: queries }
+        MediaList { media_queries: media_queries }
+    }
 }
 
 impl MediaList {
@@ -279,7 +284,8 @@ impl MediaList {
         let viewport_size = device.au_viewport_size();
 
         
-        self.media_queries.iter().any(|mq| {
+        
+        self.media_queries.is_empty() || self.media_queries.iter().any(|mq| {
             
             let media_match = match mq.media_type {
                 MediaQueryType::MediaType(MediaType::Unknown(_)) => false,

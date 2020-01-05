@@ -46,7 +46,7 @@ pub struct Stylesheet {
     
     pub rules: Vec<CSSRule>,
     
-    pub media: Option<MediaList>,
+    pub media: MediaList,
     pub origin: Origin,
     pub dirty_on_viewport_size_change: bool,
 }
@@ -181,14 +181,14 @@ impl Stylesheet {
         Stylesheet {
             origin: origin,
             rules: rules,
-            media: None,
+            media: Default::default(),
             dirty_on_viewport_size_change:
                 input.seen_viewport_percentages(),
         }
     }
 
     
-    pub fn set_media(&mut self, media: Option<MediaList>) {
+    pub fn set_media(&mut self, media: MediaList) {
         self.media = media;
     }
 
@@ -197,7 +197,7 @@ impl Stylesheet {
     
     
     pub fn is_effective_for_device(&self, device: &Device) -> bool {
-        self.media.as_ref().map_or(true, |ref media| media.evaluate(device))
+        self.media.evaluate(device)
     }
 
     
