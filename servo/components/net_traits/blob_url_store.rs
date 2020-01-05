@@ -2,7 +2,6 @@
 
 
 
-use ipc_channel::ipc::IpcSender;
 use std::str::FromStr;
 use url::Url;
 use uuid::Uuid;
@@ -27,13 +26,6 @@ pub struct BlobURLStoreEntry {
     pub size: u64,
     
     pub bytes: Vec<u8>,
-}
-
-
-#[derive(Serialize, Deserialize)]
-pub enum BlobURLStoreMsg {
-    
-    Request(Uuid, IpcSender<Result<BlobURLStoreEntry, BlobURLStoreError>>),
 }
 
 
