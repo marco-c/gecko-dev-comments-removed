@@ -59,7 +59,9 @@ class Operand
     
     uint32_t base_ : 5;
     Scale scale_ : 3;
-    Register::Encoding index_ : 5;
+    
+    
+    Register::Encoding index_ : 8;
     int32_t disp_;
 
   public:
