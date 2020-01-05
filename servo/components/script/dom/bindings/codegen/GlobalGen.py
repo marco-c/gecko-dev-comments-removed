@@ -54,7 +54,8 @@ def main():
     parserResults = parser.finish()
 
     
-    with open('ParserResults.pkl', 'wb') as resultsFile:
+    resultsPath = os.path.join(outputdir, 'ParserResults.pkl')
+    with open(resultsPath, 'wb') as resultsFile:
         cPickle.dump(parserResults, resultsFile, -1)
 
     
