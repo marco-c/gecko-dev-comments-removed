@@ -2,11 +2,11 @@
 
 
 
+use app_units::Au;
 use std::cmp::{max, min};
 use std::fmt;
 use std::i32;
 use style::computed_values::float;
-use util::geometry::Au;
 use util::logical_geometry::WritingMode;
 use util::logical_geometry::{LogicalRect, LogicalSize};
 use util::persistent_list::PersistentList;

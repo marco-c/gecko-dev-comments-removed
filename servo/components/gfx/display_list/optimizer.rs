@@ -4,12 +4,13 @@
 
 
 
+use app_units::Au;
 use display_list::{DisplayItem, DisplayList, StackingContext};
 use euclid::rect::Rect;
 use euclid::{Matrix2D, Matrix4};
 use std::collections::linked_list::LinkedList;
 use std::sync::Arc;
-use util::geometry::{self, Au};
+use util::geometry;
 
 
 pub struct DisplayListOptimizer {

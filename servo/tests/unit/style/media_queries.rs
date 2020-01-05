@@ -2,13 +2,13 @@
 
 
 
+use app_units::Au;
 use euclid::size::Size2D;
 use std::borrow::ToOwned;
 use style::media_queries::*;
 use style::stylesheets::{Origin, Stylesheet, CSSRuleIteratorExt};
 use style::values::specified;
 use url::Url;
-use util::geometry::Au;
 
 
 fn test_media_rule<F>(css: &str, callback: F) where F: Fn(&MediaQueryList, &str) {

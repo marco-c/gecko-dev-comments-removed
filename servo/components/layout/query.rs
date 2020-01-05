@@ -4,6 +4,7 @@
 
 
 
+use app_units::Au;
 use euclid::point::Point2D;
 use euclid::rect::Rect;
 use flow_ref::FlowRef;
@@ -19,7 +20,6 @@ use script::layout_interface::{ResolvedStyleResponse, ScriptLayoutChan, TrustedN
 use sequential;
 use std::sync::{Arc, Mutex};
 use util::cursor::Cursor;
-use util::geometry::Au;
 use util::logical_geometry::WritingMode;
 
 pub struct LayoutRPCImpl(pub Arc<Mutex<LayoutTaskData>>);

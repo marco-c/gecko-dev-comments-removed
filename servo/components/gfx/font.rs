@@ -2,6 +2,7 @@
 
 
 
+use app_units::Au;
 use euclid::{Point2D, Rect, Size2D};
 use font_template::FontTemplateDescriptor;
 use platform::font::{FontHandle, FontTable};
@@ -20,7 +21,6 @@ use text::glyph::{GlyphId, GlyphStore};
 use text::shaping::ShaperMethods;
 use unicode_script::Script;
 use util::cache::HashCache;
-use util::geometry::Au;
 
 
 

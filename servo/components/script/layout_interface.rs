@@ -6,6 +6,7 @@
 
 
 
+use app_units::Au;
 use dom::node::LayoutData;
 use euclid::point::Point2D;
 use euclid::rect::Rect;
@@ -28,7 +29,6 @@ use style::animation::PropertyAnimation;
 use style::media_queries::MediaQueryList;
 use style::stylesheets::Stylesheet;
 use url::Url;
-use util::geometry::Au;
 pub use dom::node::TrustedNodeAddress;
 
 

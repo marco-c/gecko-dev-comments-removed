@@ -2,6 +2,7 @@
 
 
 
+use app_units::Au;
 use cssparser::{AtRuleParser, DeclarationListParser, DeclarationParser, Parser, parse_important};
 use euclid::scale_factor::ScaleFactor;
 use euclid::size::{Size2D, TypedSize2D};
@@ -12,7 +13,7 @@ use std::collections::hash_map::{Entry, HashMap};
 use std::intrinsics;
 use style_traits::viewport::{Orientation, UserZoom, ViewportConstraints, Zoom};
 use stylesheets::Origin;
-use util::geometry::{Au, ViewportPx};
+use util::geometry::ViewportPx;
 use values::computed::{Context, ToComputedValue};
 use values::specified::LengthOrPercentageOrAuto;
 

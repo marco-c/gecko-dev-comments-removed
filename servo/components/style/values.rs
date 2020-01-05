@@ -4,6 +4,34 @@
 
 pub use cssparser::RGBA;
 
+use app_units::Au;
+use std::fmt;
+
+
+
+
+
+pub trait AuExtensionMethods {
+    
+    fn to_css<W>(&self, dest: &mut W) -> fmt::Result where W: fmt::Write;
+
+    
+    
+    
+    #[inline]
+    fn to_css_string(&self) -> String {
+        let mut s = String::new();
+        self.to_css(&mut s).unwrap();
+        s
+    }
+}
+
+impl AuExtensionMethods for Au {
+    fn to_css<W>(&self, dest: &mut W) -> fmt::Result where W: fmt::Write {
+        write!(dest, "{}px", self.to_f64_px())
+    }
+}
+
 macro_rules! define_numbered_css_keyword_enum {
     ($name: ident: $( $css: expr => $variant: ident = $value: expr ),+,) => {
         define_numbered_css_keyword_enum!($name: $( $css => $variant = $value ),+);
@@ -40,6 +68,7 @@ pub type CSSFloat = f32;
 
 
 pub mod specified {
+    use app_units::Au;
     use cssparser::{self, CssStringWriter, Parser, ToCss, Token};
     use euclid::size::Size2D;
     use parser::ParserContext;
@@ -49,10 +78,9 @@ pub mod specified {
     use std::fmt::{self, Write};
     use std::ops::Mul;
     use style_traits::values::specified::AllowedNumericType;
+    use super::AuExtensionMethods;
     use super::CSSFloat;
     use url::Url;
-    use util::geometry::Au;
-
 
     #[derive(Clone, PartialEq, Debug, HeapSizeOf)]
     pub struct CSSColor {
@@ -1209,13 +1237,14 @@ pub mod specified {
 }
 
 pub mod computed {
+    use app_units::Au;
     use euclid::size::Size2D;
     use properties::longhands;
     use std::fmt;
+    use super::AuExtensionMethods;
     use super::specified::AngleOrCorner;
     use super::{CSSFloat, specified};
     use url::Url;
-    use util::geometry::Au;
     pub use cssparser::Color as CSSColor;
     pub use super::specified::{Angle, BorderStyle, Time};
 

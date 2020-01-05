@@ -2,6 +2,7 @@
 
 
 
+use app_units::Au;
 use cssparser::{Color, RGBA};
 use euclid::point::Point2D;
 use properties::ComputedValues;
@@ -25,7 +26,6 @@ use properties::longhands::z_index::computed_value::T as ZIndex;
 use std::cmp::Ordering;
 use std::iter::repeat;
 use util::bezier::Bezier;
-use util::geometry::Au;
 use values::CSSFloat;
 use values::computed::{Angle, LengthOrPercentageOrAuto, LengthOrPercentageOrNone};
 use values::computed::{Calc, Length, LengthOrPercentage, Time};
