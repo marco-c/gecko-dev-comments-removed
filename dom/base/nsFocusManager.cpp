@@ -11,6 +11,7 @@
 #include "AccessibleCaretEventHub.h"
 #include "nsIInterfaceRequestorUtils.h"
 #include "nsGkAtoms.h"
+#include "nsGlobalWindow.h"
 #include "nsContentUtils.h"
 #include "nsIDocument.h"
 #include "nsIEditor.h"
@@ -44,6 +45,7 @@
 #include "TabChild.h"
 #include "nsFrameLoader.h"
 #include "nsNumberControlFrame.h"
+#include "nsNetUtil.h"
 
 #include "mozilla/ContentEvents.h"
 #include "mozilla/dom/Element.h"
@@ -1849,6 +1851,8 @@ nsFocusManager::Focus(nsPIDOMWindowOuter* aWindow,
 
   SetFocusedWindowInternal(aWindow);
 
+  NotifyCurrentTopLevelContentWindowChange(aWindow);
+
   
   
   
@@ -3623,6 +3627,20 @@ nsFocusManager::SetFocusedWindowInternal(nsPIDOMWindowOuter* aWindow)
   }
 
   mFocusedWindow = aWindow;
+}
+
+void
+nsFocusManager::NotifyCurrentTopLevelContentWindowChange(
+                                                   nsPIDOMWindowOuter* aWindow)
+{
+  MOZ_ASSERT(aWindow);
+
+  nsCOMPtr<nsPIDOMWindowOuter> topWindow = aWindow->GetTop();
+  if (nsGlobalWindow::Cast(topWindow)->IsChromeWindow()) {
+    return;
+  }
+
+  NS_NotifyCurrentTopLevelOuterContentWindowId(topWindow->WindowID());
 }
 
 void
