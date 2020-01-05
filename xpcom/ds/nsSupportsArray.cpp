@@ -6,12 +6,11 @@
 
 #include <stdint.h>
 #include <string.h>
-#include "mozilla/CheckedInt.h"
-#include "mozilla/MathAlgorithms.h"
-#include "nsSupportsArray.h"
-#include "nsSupportsArrayEnumerator.h"
+
 #include "nsIObjectInputStream.h"
 #include "nsIObjectOutputStream.h"
+#include "nsSupportsArray.h"
+#include "nsSupportsArrayEnumerator.h"
 
 nsresult
 nsQueryElementAt::operator()(const nsIID& aIID, void** aResult) const
@@ -29,69 +28,11 @@ nsQueryElementAt::operator()(const nsIID& aIID, void** aResult) const
 
 nsSupportsArray::nsSupportsArray()
 {
-  mArray = mAutoArray;
-  mArraySize = kAutoArraySize;
-  mCount = 0;
 }
 
 nsSupportsArray::~nsSupportsArray()
 {
-  DeleteArray();
-}
-
-bool
-nsSupportsArray::GrowArrayBy(uint32_t aGrowBy)
-{
-  const uint32_t kGrowArrayBy = 8;
-  const uint32_t kLinearThreshold = 16 * sizeof(nsISupports*);
-
-  
-  
-  
-  
-  if (aGrowBy < kGrowArrayBy) {
-    aGrowBy = kGrowArrayBy;
-  }
-
-  CheckedUint32 newCount(mArraySize);
-  newCount += aGrowBy;  
-  CheckedUint32 newSize(sizeof(mArray[0]));
-  newSize *= newCount;
-
-  if (!newSize.isValid()) {
-    return false;
-  }
-
-  if (newSize.value() >= kLinearThreshold) {
-    
-    
-    
-    if (newSize.value() & (newSize.value() - 1)) {
-      newSize = UINT64_C(1) << mozilla::CeilingLog2(newSize.value());
-      if (!newSize.isValid()) {
-        return false;
-      }
-    }
-
-    newCount = newSize / sizeof(mArray[0]);
-  }
-  
-  
-  nsISupports** oldArray = mArray;
-
-  mArray = new nsISupports*[newCount.value()];
-  mArraySize = newCount.value();
-
-  if (oldArray) {                   
-    if (0 < mCount) {
-      ::memcpy(mArray, oldArray, mCount * sizeof(nsISupports*));
-    }
-    if (oldArray != &(mAutoArray[0])) {
-      delete[] oldArray;
-    }
-  }
-
-  return true;
+  Clear();
 }
 
 nsresult
@@ -120,42 +61,34 @@ nsSupportsArray::Read(nsIObjectInputStream* aStream)
     return rv;
   }
 
-  if (newArraySize <= kAutoArraySize) {
-    if (mArray != mAutoArray) {
-      delete[] mArray;
-      mArray = mAutoArray;
-    }
-    newArraySize = kAutoArraySize;
-  } else {
-    if (newArraySize <= mArraySize) {
-      
-      newArraySize = mArraySize;
-    } else {
-      nsISupports** array = new nsISupports*[newArraySize];
-      if (mArray != mAutoArray) {
-        delete[] mArray;
-      }
-      mArray = array;
-    }
-  }
-  mArraySize = newArraySize;
-
-  rv = aStream->Read32(&mCount);
+  uint32_t count;
+  rv = aStream->Read32(&count);
   if (NS_FAILED(rv)) {
     return rv;
   }
 
-  NS_ASSERTION(mCount <= mArraySize, "overlarge mCount!");
-  if (mCount > mArraySize) {
-    mCount = mArraySize;
+  NS_ASSERTION(count <= newArraySize, "overlarge mCount!");
+  if (count > newArraySize) {
+    count = newArraySize;
   }
 
-  for (uint32_t i = 0; i < mCount; i++) {
-    rv = aStream->ReadObject(true, &mArray[i]);
+  
+  
+  nsCOMArray<nsISupports> tmp;
+  tmp.SetCapacity(newArraySize);
+  tmp.SetCount(count);
+
+  auto elems = tmp.Elements();
+  for (uint32_t i = 0; i < count; i++) {
+    rv = aStream->ReadObject(true, &elems[i]);
     if (NS_FAILED(rv)) {
       return rv;
     }
   }
+
+  
+  mArray.Clear();
+  mArray.SwapElements(tmp);
 
   return NS_OK;
 }
@@ -165,17 +98,17 @@ nsSupportsArray::Write(nsIObjectOutputStream* aStream)
 {
   nsresult rv;
 
-  rv = aStream->Write32(mArraySize);
+  rv = aStream->Write32(mArray.Capacity());
   if (NS_FAILED(rv)) {
     return rv;
   }
 
-  rv = aStream->Write32(mCount);
+  rv = aStream->Write32(mArray.Length());
   if (NS_FAILED(rv)) {
     return rv;
   }
 
-  for (uint32_t i = 0; i < mCount; i++) {
+  for (size_t i = 0; i < mArray.Length(); i++) {
     rv = aStream->WriteObject(mArray[i], true);
     if (NS_FAILED(rv)) {
       return rv;
@@ -185,83 +118,35 @@ nsSupportsArray::Write(nsIObjectOutputStream* aStream)
   return NS_OK;
 }
 
-void
-nsSupportsArray::DeleteArray(void)
-{
-  Clear();
-  if (mArray != &(mAutoArray[0])) {
-    delete[] mArray;
-    mArray = mAutoArray;
-    mArraySize = kAutoArraySize;
-  }
-}
-
 NS_IMETHODIMP
 nsSupportsArray::GetElementAt(uint32_t aIndex, nsISupports** aOutPtr)
 {
-  *aOutPtr = nullptr;
-  if (aIndex < mCount) {
-    NS_IF_ADDREF(*aOutPtr = mArray[aIndex]);
-  }
+  nsCOMPtr<nsISupports> elm = mArray.SafeElementAt(aIndex);
+  elm.forget(aOutPtr);
   return NS_OK;
 }
 
 NS_IMETHODIMP_(int32_t)
 nsSupportsArray::IndexOf(const nsISupports* aPossibleElement)
 {
-  const nsISupports** start = (const nsISupports**)mArray;  
-  const nsISupports** ep = start;
-  const nsISupports** end = (start + mCount);
-  while (ep < end) {
-    if (aPossibleElement == *ep) {
-      return (ep - start);
-    }
-    ep++;
-  }
-  return -1;
+  
+  
+  return mArray.IndexOf(const_cast<nsISupports*>(aPossibleElement));
 }
 
 NS_IMETHODIMP_(bool)
 nsSupportsArray::InsertElementAt(nsISupports* aElement, uint32_t aIndex)
 {
-  if (aIndex <= mCount) {
-    CheckedUint32 newCount(mCount);
-    newCount += 1;
-    if (!newCount.isValid()) {
-      return false;
-    }
-
-    if (mArraySize < newCount.value()) {
-      
-      if (!GrowArrayBy(1)) {
-        return false;
-      }
-    }
-
-    
-    
-    uint32_t slide = (mCount - aIndex);
-    if (0 < slide) {
-      ::memmove(mArray + aIndex + 1, mArray + aIndex,
-                slide * sizeof(nsISupports*));
-    }
-
-    mArray[aIndex] = aElement;
-    NS_IF_ADDREF(aElement);
-    mCount++;
-
-    return true;
-  }
-  return false;
+  return mArray.InsertObjectAt(aElement, aIndex);
 }
 
 NS_IMETHODIMP_(bool)
 nsSupportsArray::ReplaceElementAt(nsISupports* aElement, uint32_t aIndex)
 {
-  if (aIndex < mCount) {
-    NS_IF_ADDREF(aElement);  
-    NS_IF_RELEASE(mArray[aIndex]);
-    mArray[aIndex] = aElement;
+  
+  
+  if (aIndex < mArray.Length()) {
+    mArray.ReplaceElementAt(aIndex, aElement);
     return true;
   }
   return false;
@@ -270,49 +155,27 @@ nsSupportsArray::ReplaceElementAt(nsISupports* aElement, uint32_t aIndex)
 NS_IMETHODIMP_(bool)
 nsSupportsArray::RemoveElementAt(uint32_t aIndex)
 {
-  if (aIndex + 1 <= mCount) {
-    NS_IF_RELEASE(mArray[aIndex]);
-
-    mCount -= 1;
-    int32_t slide = (mCount - aIndex);
-    if (0 < slide) {
-      ::memmove(mArray + aIndex, mArray + aIndex + 1,
-                slide * sizeof(nsISupports*));
-    }
-    return true;
-  }
-  return false;
+  return mArray.RemoveObjectAt(aIndex);
 }
 
 NS_IMETHODIMP
 nsSupportsArray::RemoveElement(nsISupports* aElement)
 {
-  int32_t theIndex = IndexOf(aElement);
-  if (theIndex >= 0) {
-    return RemoveElementAt(theIndex) ? NS_OK : NS_ERROR_FAILURE;
-  }
-
-  return NS_ERROR_FAILURE;
+  return mArray.RemoveObject(aElement) ? NS_OK : NS_ERROR_FAILURE;
 }
 
 NS_IMETHODIMP
 nsSupportsArray::Clear(void)
 {
-  if (0 < mCount) {
-    do {
-      --mCount;
-      NS_IF_RELEASE(mArray[mCount]);
-    } while (0 != mCount);
-  }
+  mArray.Clear();
   return NS_OK;
 }
 
 NS_IMETHODIMP
 nsSupportsArray::Enumerate(nsIEnumerator** aResult)
 {
-  nsSupportsArrayEnumerator* e = new nsSupportsArrayEnumerator(this);
-  *aResult = e;
-  NS_ADDREF(e);
+  RefPtr<nsSupportsArrayEnumerator> e = new nsSupportsArrayEnumerator(this);
+  e.forget(aResult);
   return NS_OK;
 }
 
@@ -325,10 +188,10 @@ nsSupportsArray::Clone(nsISupportsArray** aResult)
     return rv;
   }
 
-  uint32_t count = 0;
-  Count(&count);
-  for (uint32_t i = 0; i < count; i++) {
-    if (!newArray->InsertElementAt(mArray[i], i)) {
+  for (size_t i = 0; i < mArray.Length(); i++) {
+    
+    
+    if (!(bool)newArray->AppendElement(mArray[i])) {
       return NS_ERROR_OUT_OF_MEMORY;
     }
   }
