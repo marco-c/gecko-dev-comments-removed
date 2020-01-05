@@ -8,11 +8,14 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 import json
 import os
+import sys
 import subprocess
 import tarfile
 import tempfile
 import urllib2
 import which
+from subprocess import Popen, PIPE
+from io import BytesIO
 
 from taskgraph.util import docker
 
@@ -22,53 +25,27 @@ INDEX_URL = 'https://index.taskcluster.net/v1/task/' + docker.INDEX_PREFIX + '.{
 ARTIFACT_URL = 'https://queue.taskcluster.net/v1/task/{}/artifacts/{}'
 
 
-def load_image_by_name(image_name):
+def load_image_by_name(image_name, tag=None):
     context_path = os.path.join(GECKO, 'testing', 'docker', image_name)
     context_hash = docker.generate_context_hash(GECKO, context_path, image_name)
 
-    image_index_url = INDEX_URL.format('mozilla-central', image_name, context_hash)
+    image_index_url = INDEX_URL.format('level-3', image_name, context_hash)
     print("Fetching", image_index_url)
     task = json.load(urllib2.urlopen(image_index_url))
 
-    return load_image_by_task_id(task['taskId'])
+    return load_image_by_task_id(task['taskId'], tag)
 
 
-def load_image_by_task_id(task_id):
-    
-    
-    
-    filename = 'temp-docker-image.tar'
-
+def load_image_by_task_id(task_id, tag=None):
     artifact_url = ARTIFACT_URL.format(task_id, 'public/image.tar.zst')
-    print("Downloading", artifact_url)
-    tempfilename = 'temp-docker-image.tar.zst'
-    subprocess.check_call(['curl', '-#', '-L', '-o', tempfilename, artifact_url])
-    print("Decompressing")
-    subprocess.check_call(['zstd', '-d', tempfilename, '-o', filename])
-    print("Deleting temporary file")
-    os.unlink(tempfilename)
-
-    print("Determining image name")
-    tf = tarfile.open(filename)
-    repositories = json.load(tf.extractfile('repositories'))
-    name = repositories.keys()[0]
-    tag = repositories[name].keys()[0]
-    name = '{}:{}'.format(name, tag)
-    print("Image name:", name)
-
-    print("Loading image into docker")
-    try:
-        subprocess.check_call(['docker', 'load', '-i', filename])
-    except subprocess.CalledProcessError:
-        print("*** `docker load` failed.  You may avoid re-downloading that tarball by fixing the")
-        print("*** problem and running `docker load < {}`.".format(filename))
-        raise
-
-    print("Deleting temporary file")
-    os.unlink(filename)
-
-    print("The requested docker image is now available as", name)
-    print("Try: docker run -ti --rm {} bash".format(name))
+    result = load_image(artifact_url, tag)
+    print("Found docker image: {}:{}".format(result['image'], result['tag']))
+    if tag:
+        print("Re-tagged as: {}".format(tag))
+    else:
+        tag = '{}:{}'.format(result['image'], result['tag'])
+    print("Try: docker run -ti --rm {} bash".format(tag))
+    return True
 
 
 def build_context(name, outputFile):
@@ -130,3 +107,96 @@ def build_image(name):
         print('Create an image suitable for deploying/pushing by creating')
         print('a VERSION file in the image directory.')
         print('*' * 50)
+
+
+def load_image(url, imageName=None, imageTag=None):
+    """
+    Load docker image from URL as imageName:tag, if no imageName or tag is given
+    it will use whatever is inside the zstd compressed tarball.
+
+    Returns an object with properties 'image', 'tag' and 'layer'.
+    """
+    
+    
+    
+    if imageName and not imageTag:
+        if ':' in imageName:
+            imageName, imageTag = imageName.split(':', 1)
+        else:
+            imageTag = 'latest'
+
+    curl, zstd, docker = None, None, None
+    image, tag, layer = None, None, None
+    error = None
+    try:
+        
+        curl = Popen(['curl', '-#', '--fail', '-L', '--retry', '8', url], stdout=PIPE)
+        zstd = Popen(['zstd', '-d'], stdin=curl.stdout, stdout=PIPE)
+        tarin = tarfile.open(mode='r|', fileobj=zstd.stdout)
+        
+        docker = Popen(['docker', 'load'], stdin=PIPE)
+        tarout = tarfile.open(mode='w|', fileobj=docker.stdin, format=tarfile.GNU_FORMAT)
+
+        
+        for member in tarin:
+            
+            if not member.isfile():
+                tarout.addfile(member)
+                continue
+
+            
+            reader = tarin.extractfile(member)
+
+            
+            if member.name == 'repositories':
+                
+                repos = json.loads(reader.read())
+                reader.close()
+
+                
+                if len(repos.keys()) > 1:
+                    raise Exception('file contains more than one image')
+                image = repos.keys()[0]
+                if len(repos[image].keys()) > 1:
+                    raise Exception('file contains more than one tag')
+                tag = repos[image].keys()[0]
+                layer = repos[image][tag]
+
+                
+                data = json.dumps({imageName or image: {imageTag or tag: layer}})
+                reader = BytesIO(data)
+                member.size = len(data)
+
+            
+            tarout.addfile(member, reader)
+            reader.close()
+        tarout.close()
+    except Exception:
+        error = sys.exc_info()[0]
+    finally:
+        def trykill(proc):
+            try:
+                proc.kill()
+            except:
+                pass
+
+        
+        if curl and curl.wait() != 0:
+            trykill(zstd)
+            trykill(docker)
+            raise Exception('failed to download from url: {}'.format(url))
+        if zstd and zstd.wait() != 0:
+            trykill(docker)
+            raise Exception('zstd decompression failed')
+        if docker:
+            docker.stdin.close()
+        if docker and docker.wait() != 0:
+            raise Exception('loading into docker failed')
+        if error:
+            raise error
+
+    
+    if not image or not tag or not layer:
+        raise Exception('No repositories file found!')
+
+    return {'image': image, 'tag': tag, 'layer': layer}
