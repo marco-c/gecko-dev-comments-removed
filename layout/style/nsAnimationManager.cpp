@@ -328,7 +328,7 @@ UpdateOldAnimationPropertiesWithNew(
   
   
   if (aOld.GetEffect()) {
-    AnimationEffectReadOnly* oldEffect = aOld.GetEffect();
+    dom::AnimationEffectReadOnly* oldEffect = aOld.GetEffect();
     animationChanged = oldEffect->SpecifiedTiming() != aNewTiming;
     oldEffect->SetSpecifiedTiming(aNewTiming);
 
