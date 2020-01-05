@@ -255,6 +255,8 @@ public:
     , mDisplayWidth(0)
     , mDisplayHeight(0)
     , mTrackRate(aTrackRate)
+    , mTotalFrameDuration(0)
+    , mLastFrameDuration(0)
     , mVideoBitrate(0)
   {}
 
@@ -340,7 +342,14 @@ protected:
 
 
 
-  VideoChunk mLastChunk;
+  StreamTime mTotalFrameDuration;
+
+  
+
+
+
+  VideoFrame mLastFrame;
+  StreamTime mLastFrameDuration;
 
   
 

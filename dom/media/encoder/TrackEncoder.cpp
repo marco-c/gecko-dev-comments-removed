@@ -199,8 +199,6 @@ VideoTrackEncoder::Init(const VideoSegment& aSegment)
     return;
   }
 
-  mLastChunk.mDuration = 0;
-
   mInitCounter++;
   TRACK_LOG(LogLevel::Debug, ("Init the video encoder %d times", mInitCounter));
   VideoSegment::ConstChunkIterator iter(aSegment);
@@ -281,91 +279,34 @@ VideoTrackEncoder::AppendVideoSegment(const VideoSegment& aSegment)
 
   
   
-  VideoSegment::ConstChunkIterator iter(aSegment);
-  for (; !iter.IsEnded(); iter.Next()) {
+  VideoSegment::ChunkIterator iter(const_cast<VideoSegment&>(aSegment));
+  while (!iter.IsEnded()) {
     VideoChunk chunk = *iter;
-
-    if (mLastChunk.mTimeStamp.IsNull()) {
-      if (chunk.IsNull()) {
-        
-        
-        mLastChunk.mDuration += chunk.mDuration;
-        continue;
-      }
-
-      
-      
-      MOZ_ASSERT(!chunk.mTimeStamp.IsNull());
-      const StreamTime nullDuration = mLastChunk.mDuration;
-      mLastChunk = chunk;
-
-      TRACK_LOG(LogLevel::Verbose,
-                ("[VideoTrackEncoder]: Got first video chunk after %lld ticks.",
-                 nullDuration));
-      
-      
-      mLastChunk.mTimeStamp -=
-        TimeDuration::FromMicroseconds(
-          RateConvertTicksRoundUp(PR_USEC_PER_SEC, mTrackRate, nullDuration));
-    }
-
-    MOZ_ASSERT(!mLastChunk.IsNull());
-    if (mLastChunk.CanCombineWithFollowing(chunk) || chunk.IsNull()) {
-      TRACK_LOG(LogLevel::Verbose,
-                ("[VideoTrackEncoder]: Got dupe or null chunk."));
-      
-      
-      mLastChunk.mDuration += chunk.mDuration;
-
-      if (mLastChunk.mDuration < mTrackRate) {
-        TRACK_LOG(LogLevel::Verbose,
-                  ("[VideoTrackEncoder]: Ignoring dupe/null chunk of duration "
-                   "%lld", chunk.mDuration));
-        continue;
-      }
-
-      TRACK_LOG(LogLevel::Verbose,
-                ("[VideoTrackEncoder]: Chunk >1 second. duration=%lld, "
-                 "trackRate=%lld", mLastChunk.mDuration, mTrackRate));
+    mLastFrameDuration += chunk.GetDuration();
+    
+    
+    
+    if ((mLastFrame != chunk.mFrame) ||
+        (mLastFrameDuration >= mTrackRate)) {
+      RefPtr<layers::Image> image = chunk.mFrame.GetImage();
 
       
       
-      chunk.mTimeStamp = mLastChunk.mTimeStamp + TimeDuration::FromSeconds(1);
-
-      if (chunk.IsNull()) {
-        
-        
-        chunk.mFrame = mLastChunk.mFrame;
+      
+      
+      
+      
+      if (image) {
+        mRawSegment.AppendFrame(image.forget(),
+                                mLastFrameDuration,
+                                chunk.mFrame.GetIntrinsicSize(),
+                                PRINCIPAL_HANDLE_NONE,
+                                chunk.mFrame.GetForceBlack());
+        mLastFrameDuration = 0;
       }
     }
-
-    TimeDuration diff = chunk.mTimeStamp - mLastChunk.mTimeStamp;
-    if (diff <= TimeDuration::FromSeconds(0)) {
-      
-      
-      
-      
-      
-      TRACK_LOG(LogLevel::Warning,
-                ("[VideoTrackEncoder]: Underrun detected. Diff=%.5fs",
-                 diff.ToSeconds()));
-      chunk.mTimeStamp = mLastChunk.mTimeStamp;
-    } else {
-      RefPtr<layers::Image> lastImage = mLastChunk.mFrame.GetImage();
-      TRACK_LOG(LogLevel::Verbose,
-                ("[VideoTrackEncoder]: Appending video frame %p, duration=%.5f",
-                 lastImage.get(), diff.ToSeconds()));
-      mRawSegment.AppendFrame(lastImage.forget(),
-                              RateConvertTicksRoundUp(
-                                  mTrackRate, PR_USEC_PER_SEC,
-                                  diff.ToMicroseconds()),
-                              mLastChunk.mFrame.GetIntrinsicSize(),
-                              PRINCIPAL_HANDLE_NONE,
-                              mLastChunk.mFrame.GetForceBlack(),
-                              mLastChunk.mTimeStamp);
-    }
-
-    mLastChunk = chunk;
+    mLastFrame.TakeFrom(&chunk.mFrame);
+    iter.Next();
   }
 
   if (mRawSegment.GetDuration() > 0) {
