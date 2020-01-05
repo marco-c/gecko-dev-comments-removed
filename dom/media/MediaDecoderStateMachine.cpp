@@ -367,6 +367,11 @@ public:
     return mMaster->mQueuedSeek.mPromise.Ensure(__func__);
   }
 
+  void HandleVideoSuspendTimeout() override
+  {
+    
+  }
+
 private:
   bool mPendingDormant = false;
 };
