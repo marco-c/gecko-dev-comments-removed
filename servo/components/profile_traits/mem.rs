@@ -24,10 +24,46 @@ impl ProfilerChan {
 }
 
 
+
+
+
+
+
+
+
+
+
+#[derive(Deserialize, Serialize)]
+pub enum ReportKind {
+    
+    
+    ExplicitJemallocHeapSize,
+
+    
+    
+    ExplicitSystemHeapSize,
+
+    
+    ExplicitNonHeapSize,
+
+    
+    ExplicitUnknownLocationSize,
+
+    
+    
+    
+    
+    NonExplicitSize,
+}
+
+
 #[derive(Deserialize, Serialize)]
 pub struct Report {
     
     pub path: Vec<String>,
+
+    
+    pub kind: ReportKind,
 
     
     pub size: usize,
