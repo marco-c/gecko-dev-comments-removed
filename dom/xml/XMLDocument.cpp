@@ -291,10 +291,17 @@ XMLDocument::Load(const nsAString& aUrl, ErrorResult& aRv)
     return false;
   }
 
+  
+  
+  
+  
+  
+  
+  nsIDocument* docForWarning = callingDoc ? callingDoc.get() : this;
   if (nsContentUtils::IsCallerChrome()) {
-    WarnOnceAbout(nsIDocument::eChromeUseOfDOM3LoadMethod);
+    docForWarning->WarnOnceAbout(nsIDocument::eChromeUseOfDOM3LoadMethod);
   } else {
-    WarnOnceAbout(nsIDocument::eUseOfDOM3LoadMethod);
+    docForWarning->WarnOnceAbout(nsIDocument::eUseOfDOM3LoadMethod);
   } 
 
   nsIURI *baseURI = mDocumentURI;
