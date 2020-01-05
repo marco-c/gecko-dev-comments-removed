@@ -917,9 +917,6 @@ pref("dom.presentation.controller.enabled", true);
 pref("dom.presentation.receiver.enabled", true); 
 #endif
 
-pref("dom.presentation.discovery.enabled", true);
-pref("dom.presentation.discovery.legacy.enabled", true); 
-
 pref("dom.audiochannel.audioCompeting", true);
 pref("dom.audiochannel.mediaControl", true);
 
