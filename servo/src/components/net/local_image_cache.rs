@@ -12,9 +12,9 @@ use image_cache_task::{Decode, GetImage, ImageCacheTask, ImageFailed, ImageNotRe
 use image_cache_task::{ImageResponseMsg, Prefetch, WaitForImage};
 
 use std::comm::Port;
-use std::task;
 use servo_util::url::{UrlMap, url_map};
 use extra::url::Url;
+use servo_util::task::spawn_named;
 
 pub trait ImageResponder {
     fn respond(&self) -> proc(ImageResponseMsg);
@@ -45,8 +45,8 @@ struct ImageState {
 }
 
 impl LocalImageCache {
-    
-    
+    /// The local cache will only do a single remote request for a given
+    /// URL in each 'round'. Layout should call this each time it begins
     pub fn next_round(&mut self, on_image_available: ~ImageResponder:Send) {
         self.round_number += 1;
         self.on_image_available = Some(on_image_available);
@@ -77,14 +77,14 @@ impl LocalImageCache {
         self.image_cache_task.send(Decode((*url).clone()));
     }
 
-    
+    // FIXME: Should return a Future
     pub fn get_image(&mut self, url: &Url) -> Port<ImageResponseMsg> {
         {
             let state = self.get_state(url);
 
-            
+            // Save the previous round number for comparison
             let last_round = state.last_request_round;
-            
+            // Set the current round number for this image
             state.last_request_round = self.round_number;
 
             match state.last_response {
@@ -99,8 +99,8 @@ impl LocalImageCache {
                         chan.send(ImageNotReady);
                         return port;
                     } else {
-                        
-                        
+                        // We haven't requested the image from the
+                        // remote cache this round
                     }
                 }
                 ImageFailed => {
@@ -117,16 +117,16 @@ impl LocalImageCache {
         let response = response_port.recv();
         match response {
             ImageNotReady => {
-                
-                
-                
-                
-                
+                // Need to reflow when the image is available
+                // FIXME: Instead we should be just passing a Future
+                // to the caller, then to the display list. Finally,
+                // the compositor should be resonsible for waiting
+                // on the image to load and triggering layout
                 let image_cache_task = self.image_cache_task.clone();
                 assert!(self.on_image_available.is_some());
                 let on_image_available = self.on_image_available.as_ref().unwrap().respond();
                 let url = (*url).clone();
-                do task::spawn {
+                do spawn_named("LocalImageCache") {
                     let (response_port, response_chan) = Chan::new();
                     image_cache_task.send(WaitForImage(url.clone(), response_chan));
                     on_image_available(response_port.recv());
