@@ -709,16 +709,13 @@ class GatherDecls(TcheckVisitor):
             
             
             qname = p.qname()
-            if 0 == len(qname.quals):
-                fullname = None
-            else:
-                fullname = str(qname)
+            fullname = str(qname)
             p.decl = self.declare(
                 loc=p.loc,
                 type=ProtocolType(qname, p.nestedRange, p.sendSemantics,
                                   stateless=(0 == len(p.transitionStmts))),
                 shortname=p.name,
-                fullname=fullname)
+                fullname=None if 0 == len(qname.quals) else fullname)
 
             p.parentEndpointDecl = self.declare(
                 loc=p.loc,
