@@ -21,7 +21,6 @@
 #include "nsCycleCollectionParticipant.h"
 
 #include "nsGeoPosition.h"
-#include "nsIDOMEventListener.h"
 #include "nsIDOMGeoGeolocation.h"
 #include "nsIDOMGeoPosition.h"
 #include "nsIDOMGeoPositionError.h"
@@ -87,7 +86,6 @@ public:
 
   
   void     SetDisconnectTimer();
-  void     StopDisconnectTimer();
 
   
   void     UpdateAccuracy(bool aForceHigh = false);
@@ -125,8 +123,7 @@ namespace dom {
 
 class Geolocation final : public nsIDOMGeoGeolocation,
                           public nsIGeolocationUpdate,
-                          public nsWrapperCache,
-                          public nsIDOMEventListener
+                          public nsWrapperCache
 {
 public:
 
@@ -135,8 +132,6 @@ public:
 
   NS_DECL_NSIGEOLOCATIONUPDATE
   NS_DECL_NSIDOMGEOGEOLOCATION
-
-  NS_DECL_NSIDOMEVENTLISTENER
 
   Geolocation();
 
@@ -153,9 +148,6 @@ public:
 
   
   void NotifyAllowedRequest(nsGeolocationRequest* aRequest);
-
-  
-  bool ContainsRequest(nsGeolocationRequest* aRequest);
 
   
   void RemoveRequest(nsGeolocationRequest* request);
