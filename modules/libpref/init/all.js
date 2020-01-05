@@ -2906,6 +2906,9 @@ pref("svg.disabled", false);
 pref("dom.ipc.processCount.webLargeAllocation", 2);
 
 
+pref("dom.largeAllocationHeader.enabled", true);
+
+
 
 #if defined(NIGHTLY_BUILD)
 pref("browser.tabs.remote.separateFileUriProcess", true);
