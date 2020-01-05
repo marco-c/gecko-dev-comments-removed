@@ -11703,6 +11703,12 @@ nsDocument::SetPointerLock(Element* aElement, int aCursorStyle)
   nsIPresShell* shell = GetShell();
   if (!shell) {
     NS_WARNING("SetPointerLock(): No PresShell");
+    if (!aElement) {
+      
+      
+      
+      EventStateManager::SetPointerLock(nullptr, nullptr);
+    }
     return false;
   }
   nsPresContext* presContext = shell->GetPresContext();
@@ -11728,7 +11734,7 @@ nsDocument::SetPointerLock(Element* aElement, int aCursorStyle)
   RefPtr<EventStateManager> esm = presContext->EventStateManager();
   esm->SetCursor(aCursorStyle, nullptr, false,
                  0.0f, 0.0f, widget, true);
-  esm->SetPointerLock(widget, aElement);
+  EventStateManager::SetPointerLock(widget, aElement);
 
   return true;
 }
