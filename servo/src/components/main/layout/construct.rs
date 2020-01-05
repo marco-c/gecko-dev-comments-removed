@@ -280,6 +280,9 @@ impl<'self> FlowConstructor<'self> {
 
                     // Flush any inline boxes that we were gathering up. This allows us to handle
                     // {ib} splits.
+                    debug!("flushing {} inline box(es) to flow A",
+                           opt_boxes_for_inline_flow.as_ref()
+                                                    .map_default(0, |boxes| boxes.len()));
                     self.flush_inline_boxes_to_flow_if_necessary(&mut opt_boxes_for_inline_flow,
                                                                  flow,
                                                                  node);
@@ -312,6 +315,10 @@ impl<'self> FlowConstructor<'self> {
                                 }
 
                                 // Flush any inline boxes that we were gathering up.
+                                debug!("flushing {} inline box(es) to flow A",
+                                       opt_boxes_for_inline_flow.as_ref()
+                                                                .map_default(0,
+                                                                             |boxes| boxes.len()));
                                 self.flush_inline_boxes_to_flow_if_necessary(
                                         &mut opt_boxes_for_inline_flow,
                                         flow,
@@ -473,6 +480,8 @@ impl<'self> PostorderNodeMutTraversal for FlowConstructor<'self> {
             DocumentNodeTypeId(_) => (display::none, float::none),
         };
 
+        debug!("building flow for node: {:?} {:?}", display, float);
+
         // Switch on display and floatedness.
         match (display, float) {
             // `display: none` contributes no flow construction result. Nuke the flow construction
@@ -563,16 +572,17 @@ impl NodeUtils for AbstractNode<LayoutView> {
     }
 }
 
-
+/// Strips ignorable whitespace from the start of a list of boxes.
 fn strip_ignorable_whitespace_from_start(opt_boxes: &mut Option<~[Box]>) {
     match util::replace(opt_boxes, None) {
         None => return,
         Some(boxes) => {
-            
+            // FIXME(pcwalton): This is slow because vector shift is broken. :(
             let mut found_nonwhitespace = false;
             let mut result = ~[];
             for box in boxes.move_iter() {
                 if !found_nonwhitespace && box.is_whitespace_only() {
+                    debug!("stripping ignorable whitespace from start");
                     continue
                 }
 
@@ -585,12 +595,13 @@ fn strip_ignorable_whitespace_from_start(opt_boxes: &mut Option<~[Box]>) {
     }
 }
 
-
+/// Strips ignorable whitespace from the end of a list of boxes.
 fn strip_ignorable_whitespace_from_end(opt_boxes: &mut Option<~[Box]>) {
     match *opt_boxes {
         None => {}
         Some(ref mut boxes) => {
             while boxes.len() > 0 && boxes.last().is_whitespace_only() {
+                debug!("stripping ignorable whitespace from end");
                 let _ = boxes.pop();
             }
         }
