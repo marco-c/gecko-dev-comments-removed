@@ -229,7 +229,6 @@ DEFAULT_TEST_PREFS = {
     'browser.newtabpage.introShown': True,
     
     'general.useragent.updates.enabled': False,
-    'dom.apps.customization.enabled': True,
     'media.eme.enabled': True,
     'media.eme.apiVisible': True,
     

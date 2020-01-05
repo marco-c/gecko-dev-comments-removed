@@ -17,9 +17,6 @@ Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/Promise.jsm");
 
-XPCOMUtils.defineLazyModuleGetter(this, "UserCustomizations",
-  "resource://gre/modules/UserCustomizations.jsm");
-
 const APPS_SERVICE_CID = Components.ID("{05072afa-92fe-45bf-ae22-39b69c117058}");
 
 function AppsService()
@@ -124,16 +121,6 @@ AppsService.prototype = {
     
     
     return null;
-  },
-
-  isExtensionResource: function(aURI) {
-    
-    
-    if (Services.appinfo.processType != Ci.nsIXULRuntime.PROCESS_TYPE_DEFAULT) {
-      throw Cr.NS_ERROR_FAILURE;
-    }
-
-    return UserCustomizations.isFromExtension(aURI);
   },
 
   classID : APPS_SERVICE_CID,

@@ -107,14 +107,6 @@ var DoPreloadPostfork = function(aCallback) {
 
     
     
-    try {
-      if (Services.prefs.getBoolPref("dom.apps.customization.enabled")) {
-        Cu.import("resource://gre/modules/UserCustomizations.jsm");
-      }
-    } catch(e) {}
-
-    
-    
     Cc["@mozilla.org/AppsService;1"].getService(Ci["nsIAppsService"]);
 
     
