@@ -80,6 +80,7 @@
 #include "nsCSSProps.h"
 #include "nsPluginFrame.h"
 #include "DisplayItemScrollClip.h"
+#include "nsSVGMaskFrame.h"
 
 
 
@@ -6826,6 +6827,127 @@ bool nsDisplaySVGEffects::ValidateSVGFrame()
   return true;
 }
 
+static IntRect
+ComputeClipExtsInDeviceSpace(gfxContext& aCtx)
+{
+  gfxContextMatrixAutoSaveRestore matRestore(&aCtx);
+
+  
+  aCtx.SetMatrix(gfxMatrix());
+  gfxRect clippedFrameSurfaceRect = aCtx.GetClipExtents();
+  clippedFrameSurfaceRect.RoundOut();
+
+  IntRect result;
+  ToRect(clippedFrameSurfaceRect).ToIntRect(&result);
+  return mozilla::gfx::Factory::CheckSurfaceSize(result.Size()) ? result
+                                                                : IntRect();
+}
+
+typedef nsSVGIntegrationUtils::PaintFramesParams PaintFramesParams;
+
+static nsPoint
+ComputeOffsetToUserSpace(const PaintFramesParams& aParams)
+{
+  nsIFrame* frame = aParams.frame;
+  nsPoint offsetToBoundingBox = aParams.builder->ToReferenceFrame(frame) -
+                         nsSVGIntegrationUtils::GetOffsetToBoundingBox(frame);
+  if (!frame->IsFrameOfType(nsIFrame::eSVG)) {
+    
+    
+    offsetToBoundingBox = nsPoint(
+      frame->PresContext()->RoundAppUnitsToNearestDevPixels(offsetToBoundingBox.x),
+      frame->PresContext()->RoundAppUnitsToNearestDevPixels(offsetToBoundingBox.y));
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  gfxPoint toUserSpaceGfx = nsSVGUtils::FrameSpaceInCSSPxToUserSpaceOffset(frame);
+  nsPoint toUserSpace =
+    nsPoint(nsPresContext::CSSPixelsToAppUnits(float(toUserSpaceGfx.x)),
+            nsPresContext::CSSPixelsToAppUnits(float(toUserSpaceGfx.y)));
+
+  return (offsetToBoundingBox - toUserSpace);
+}
+
+static void
+ComputeMaskGeometry(PaintFramesParams& aParams)
+{
+  
+  
+  nsIFrame* firstFrame =
+    nsLayoutUtils::FirstContinuationOrIBSplitSibling(aParams.frame);
+
+  const nsStyleSVGReset *svgReset = firstFrame->StyleSVGReset();
+
+  nsSVGEffects::EffectProperties effectProperties =
+    nsSVGEffects::GetEffectProperties(firstFrame);
+  nsTArray<nsSVGMaskFrame *> maskFrames = effectProperties.GetMaskFrames();
+
+  if (maskFrames.Length() == 0) {
+    return;
+  }
+
+  gfxContext& ctx = aParams.ctx;
+  nsIFrame* frame = aParams.frame;
+
+  nsPoint offsetToUserSpace = ComputeOffsetToUserSpace(aParams);
+  gfxPoint devPixelOffsetToUserSpace =
+    nsLayoutUtils::PointToGfxPoint(offsetToUserSpace,
+                                   frame->PresContext()->AppUnitsPerDevPixel());
+
+  gfxContextMatrixAutoSaveRestore matSR(&ctx);
+  ctx.SetMatrix(ctx.CurrentMatrix().Translate(devPixelOffsetToUserSpace));
+
+  
+  int32_t appUnitsPerDevPixel = frame->PresContext()->AppUnitsPerDevPixel();
+  nsRect userSpaceBorderArea = aParams.borderArea - offsetToUserSpace;
+  nsRect userSpaceDirtyRect = aParams.dirtyRect - offsetToUserSpace;
+
+  
+  gfxRect maskInUserSpace;
+  for (size_t i = 0; i < maskFrames.Length() ; i++) {
+    nsSVGMaskFrame* maskFrame = maskFrames[i];
+    gfxRect currentMaskSurfaceRect;
+
+    if (maskFrame) {
+      currentMaskSurfaceRect = maskFrame->GetMaskArea(aParams.frame);
+    } else {
+      nsCSSRendering::ImageLayerClipState clipState;
+      nsCSSRendering::GetImageLayerClip(svgReset->mMask.mLayers[i],
+                                       frame,
+                                       *frame->StyleBorder(),
+                                       userSpaceBorderArea,
+                                       userSpaceDirtyRect,
+                                       false, 
+                                       appUnitsPerDevPixel,
+                                       &clipState);
+      currentMaskSurfaceRect = clipState.mDirtyRectGfx;
+    }
+
+    maskInUserSpace = maskInUserSpace.Union(currentMaskSurfaceRect);
+  }
+
+  ctx.Save();
+
+  if (!maskInUserSpace.IsEmpty()) {
+    ctx.Clip(maskInUserSpace);
+  }
+
+  IntRect result = ComputeClipExtsInDeviceSpace(ctx);
+  ctx.Restore();
+
+  aParams.maskRect = result;
+}
+
 nsDisplayMask::nsDisplayMask(nsDisplayListBuilder* aBuilder,
                              nsIFrame* aFrame, nsDisplayList* aList,
                              bool aHandleOpacity,
@@ -6944,6 +7066,8 @@ nsDisplayMask::PaintAsLayer(nsDisplayListBuilder* aBuilder,
   context->Clip(NSRectToSnappedRect(mVisibleRect,
                                     mFrame->PresContext()->AppUnitsPerDevPixel(),
                                     *aCtx->GetDrawTarget()));
+
+  ComputeMaskGeometry(params);
 
   image::DrawResult result =
     nsSVGIntegrationUtils::PaintMaskAndClipPath(params);
