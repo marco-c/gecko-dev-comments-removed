@@ -39,7 +39,7 @@ const RequestListContent = createClass({
     dispatch: PropTypes.func.isRequired,
     displayedRequests: PropTypes.object.isRequired,
     firstRequestStartedMillis: PropTypes.number.isRequired,
-    fromCache: PropTypes.bool.isRequired,
+    fromCache: PropTypes.bool,
     onCauseBadgeClick: PropTypes.func.isRequired,
     onItemMouseDown: PropTypes.func.isRequired,
     onSecurityIconClick: PropTypes.func.isRequired,
@@ -266,6 +266,14 @@ module.exports = connect(
   }),
   (dispatch) => ({
     dispatch,
+    
+
+
+    onCauseBadgeClick: (cause) => {
+      if (cause.stacktrace && cause.stacktrace.length > 0) {
+        dispatch(Actions.selectDetailsPanelTab("stack-trace"));
+      }
+    },
     onItemMouseDown: (id) => dispatch(Actions.selectRequest(id)),
     
 
@@ -274,14 +282,6 @@ module.exports = connect(
     onSecurityIconClick: (securityState) => {
       if (securityState && securityState !== "insecure") {
         dispatch(Actions.selectDetailsPanelTab("security"));
-      }
-    },
-    
-
-
-    onCauseBadgeClick: (cause) => {
-      if (cause.stacktrace && cause.stacktrace.length > 0) {
-        dispatch(Actions.selectDetailsPanelTab("stack-trace"));
       }
     },
     onSelectDelta: (delta) => dispatch(Actions.selectDelta(delta)),
