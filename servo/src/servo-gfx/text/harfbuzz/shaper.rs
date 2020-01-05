@@ -359,6 +359,7 @@ pub impl HarfbuzzShaper {
                 
                 
                 
+                
                 let shape = glyph_data.get_entry_for_glyph(glyph_span.begin(), &mut y_pos);
                 let data = GlyphData(shape.codepoint, shape.advance, shape.offset, false, true, true);
                 glyphs.add_glyph_for_char_index(char_idx, &data);
@@ -366,9 +367,14 @@ pub impl HarfbuzzShaper {
                 
                 let datas = DVec();
 
-                while glyph_span.length() > 0 {
-                    let shape = glyph_data.get_entry_for_glyph(glyph_span.begin(), &mut y_pos);
-                    datas.push(GlyphData(shape.codepoint, shape.advance, shape.offset, false, true, true));
+                for glyph_span.eachi |glyph_i| {
+                    let shape = glyph_data.get_entry_for_glyph(glyph_i, &mut y_pos);
+                    datas.push(GlyphData(shape.codepoint, 
+                                         shape.advance, 
+                                         shape.offset,
+                                         false, 
+                                         true,  
+                                         glyph_i > glyph_span.begin())); 
                     glyph_span.adjust_by(1,-1);
                 }
 
