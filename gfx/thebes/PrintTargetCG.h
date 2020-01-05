@@ -15,25 +15,24 @@ namespace gfx {
 
 
 
-
-
-
-
 class PrintTargetCG final : public PrintTarget
 {
 public:
   static already_AddRefed<PrintTargetCG>
-  CreateOrNull(const IntSize& aSize, gfxImageFormat aFormat);
+  CreateOrNull(PMPrintSession aPrintSession, const IntSize& aSize);
 
-  static already_AddRefed<PrintTargetCG>
-  CreateOrNull(CGContextRef aContext, const IntSize& aSize);
+  virtual nsresult BeginPage() final;
+  virtual nsresult EndPage() final;
 
   virtual already_AddRefed<DrawTarget>
   GetReferenceDrawTarget(DrawEventRecorder* aRecorder) final;
 
 private:
-  PrintTargetCG(cairo_surface_t* aCairoSurface,
+  PrintTargetCG(PMPrintSession aPrintSession,
                 const IntSize& aSize);
+  ~PrintTargetCG();
+
+  PMPrintSession mPrintSession;
 };
 
 } 
