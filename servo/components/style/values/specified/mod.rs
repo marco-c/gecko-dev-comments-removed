@@ -42,7 +42,33 @@ pub mod grid;
 pub mod image;
 pub mod length;
 pub mod position;
-pub mod url;
+
+
+pub mod url {
+use cssparser::Parser;
+use parser::{Parse, ParserContext};
+use values::HasViewportPercentage;
+use values::computed::ComputedValueAsSpecified;
+
+#[cfg(feature = "servo")]
+pub use ::servo::url::*;
+#[cfg(feature = "gecko")]
+pub use ::gecko::url::*;
+
+impl Parse for SpecifiedUrl {
+    fn parse(context: &ParserContext, input: &mut Parser) -> Result<Self, ()> {
+        let url = try!(input.expect_url());
+        Self::parse_from_string(url, context)
+    }
+}
+
+impl Eq for SpecifiedUrl {}
+
+
+impl ComputedValueAsSpecified for SpecifiedUrl {}
+
+no_viewport_percentage!(SpecifiedUrl);
+}
 
 no_viewport_percentage!(i32);  
 

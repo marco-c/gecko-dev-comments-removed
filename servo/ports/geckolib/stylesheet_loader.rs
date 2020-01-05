@@ -42,14 +42,15 @@ impl StyleStylesheetLoader for StylesheetLoader {
         
         
         
-        let (spec_bytes, spec_len): (*const u8, usize) = import.url.as_slice_components()
-            .expect("Import only loads valid URLs");
+        let (spec_bytes, spec_len): (*const u8, usize) = import.url.as_slice_components();
 
+        let base_uri = import.url.base.mRawPtr;
         let arc = make_arc(import);
         unsafe {
             Gecko_LoadStyleSheet(self.0,
                                  self.1,
                                  HasArcFFI::arc_as_borrowed(&arc),
+                                 base_uri,
                                  spec_bytes,
                                  spec_len as u32,
                                  media_string.as_bytes().as_ptr(),
