@@ -20,6 +20,8 @@
 #include "mozilla/CSSEnabledState.h"
 #include "mozilla/UseCounter.h"
 #include "mozilla/EnumTypeTraits.h"
+#include "mozilla/Preferences.h"
+#include "nsXULAppAPI.h"
 
 
 
@@ -631,6 +633,12 @@ public:
   static bool IsEnabled(nsCSSPropertyID aProperty) {
     MOZ_ASSERT(0 <= aProperty && aProperty < eCSSProperty_COUNT_with_aliases,
                "out of range");
+    
+    
+    
+    MOZ_ASSERT(XRE_IsParentProcess() ||
+               mozilla::Preferences::InitPhase() == END_ALL_PREFS,
+               "Checking style preferences before they have been set");
     return gPropertyEnabled[aProperty];
   }
 
