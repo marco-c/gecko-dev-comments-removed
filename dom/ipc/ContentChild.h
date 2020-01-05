@@ -645,6 +645,11 @@ public:
   virtual bool
   RecvBlobURLUnregistration(const nsCString& aURI) override;
 
+#if defined(XP_WIN) && defined(ACCESSIBILITY)
+  bool
+  SendGetA11yContentId();
+#endif 
+
   
 
 
