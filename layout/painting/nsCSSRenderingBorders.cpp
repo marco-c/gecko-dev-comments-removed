@@ -677,7 +677,8 @@ nsCSSBorderRenderer::GetSideClipSubPath(mozilla::Side aSide)
 Point
 nsCSSBorderRenderer::GetStraightBorderPoint(mozilla::Side aSide,
                                             Corner aCorner,
-                                            bool* aIsUnfilled)
+                                            bool* aIsUnfilled,
+                                            Float aDotOffset)
 {
   
   
@@ -735,6 +736,15 @@ nsCSSBorderRenderer::GetStraightBorderPoint(mozilla::Side aSide,
   if (IsZeroSize(radius)) {
     radius.width = 0.0f;
     radius.height = 0.0f;
+  }
+  if (style == NS_STYLE_BORDER_STYLE_DOTTED) {
+    
+    
+    if (isHorizontal) {
+      P.x -= signs[0] * aDotOffset * borderWidth;
+    } else {
+      P.y -= signs[1] * aDotOffset * borderWidth;
+    }
   }
   if (style == NS_STYLE_BORDER_STYLE_DOTTED &&
       otherStyle == NS_STYLE_BORDER_STYLE_DOTTED) {
@@ -1767,7 +1777,8 @@ nsCSSBorderRenderer::SetupDashedOptions(StrokeOptions* aStrokeOptions,
       
       aStrokeOptions->mDashOffset = halfDash;
     }
-  } else if (isCorner) {
+  } else if (style != NS_STYLE_BORDER_STYLE_DOTTED && isCorner) {
+    
     
     
     
@@ -1853,8 +1864,10 @@ nsCSSBorderRenderer::DrawDashedOrDottedSide(mozilla::Side aSide)
 
   nscolor borderColor = mBorderColors[aSide];
   bool ignored;
-  Point start = GetStraightBorderPoint(aSide, GetCCWCorner(aSide), &ignored);
-  Point end = GetStraightBorderPoint(aSide, GetCWCorner(aSide), &ignored);
+  
+  
+  Point start = GetStraightBorderPoint(aSide, GetCCWCorner(aSide), &ignored, 0.5f);
+  Point end = GetStraightBorderPoint(aSide, GetCWCorner(aSide), &ignored, 0.5f);
   if (borderWidth < 2.0f) {
     
     if (IsHorizontalSide(aSide)) {
@@ -1873,9 +1886,44 @@ nsCSSBorderRenderer::DrawDashedOrDottedSide(mozilla::Side aSide)
   Float dash[2];
   SetupDashedOptions(&strokeOptions, dash, aSide, borderLength, false);
 
+  
+  
+  
+  mozilla::Side mergeSide = aSide;
+  while (IsCornerMergeable(GetCCWCorner(mergeSide))) {
+    mergeSide = PREV_SIDE(mergeSide);
+    
+    
+    if (mergeSide == aSide) {
+      mergeSide = eSideTop;
+      break;
+    }
+  }
+  while (mergeSide != aSide) {
+    
+    
+    
+    Float mergeLength =
+      GetBorderLength(mergeSide,
+                      GetStraightBorderPoint(mergeSide, GetCCWCorner(mergeSide), &ignored, 0.5f),
+                      mOuterRect.AtCorner(GetCWCorner(mergeSide)));
+    
+    
+    
+    
+    strokeOptions.mDashOffset += mergeLength + borderWidth;
+    mergeSide = NEXT_SIDE(mergeSide);
+  }
+
+  DrawOptions drawOptions;
+  if (mBorderStyles[aSide] == NS_STYLE_BORDER_STYLE_DOTTED) {
+    drawOptions.mAntialiasMode = AntialiasMode::NONE;
+  }
+
   mDrawTarget->StrokeLine(start, end,
                           ColorPattern(ToDeviceColor(borderColor)),
-                          strokeOptions);
+                          strokeOptions,
+                          drawOptions);
 }
 
 void
@@ -2335,8 +2383,11 @@ nsCSSBorderRenderer::DrawDashedOrDottedCorner(mozilla::Side aSide,
   nscolor borderColor = mBorderColors[aSide];
   Point points[4];
   bool ignored;
-  points[0] = GetStraightBorderPoint(sideH, aCorner, &ignored);
-  points[3] = GetStraightBorderPoint(sideV, aCorner, &ignored);
+  
+  
+  
+  points[0] = GetStraightBorderPoint(sideH, aCorner, &ignored, -0.5f);
+  points[3] = GetStraightBorderPoint(sideV, aCorner, &ignored, -0.5f);
   
   if (borderWidthH < 2.0f) {
     points[0].x = round(points[0].x);
@@ -3210,29 +3261,6 @@ nsCSSBorderRenderer::DrawBorders()
     mDrawTarget->StrokeRect(rect, color, strokeOptions);
     return;
   }
-
-  if (allBordersSame &&
-      mCompositeColors[0] == nullptr &&
-      allBordersSameWidth &&
-      mBorderStyles[0] == NS_STYLE_BORDER_STYLE_DOTTED &&
-      mBorderWidths[0] < 3 &&
-      mNoBorderRadius &&
-      !mAvoidStroke)
-  {
-    
-    
-    Rect rect = mOuterRect;
-    rect.Deflate(mBorderWidths[0] / 2.0);
-    Float dash = mBorderWidths[0];
-    strokeOptions.mDashPattern = &dash;
-    strokeOptions.mDashLength = 1;
-    strokeOptions.mDashOffset = 0.5f * dash;
-    DrawOptions drawOptions;
-    drawOptions.mAntialiasMode = AntialiasMode::NONE;
-    mDrawTarget->StrokeRect(rect, color, strokeOptions, drawOptions);
-    return;
-  }
-
 
   if (allBordersSame &&
       mCompositeColors[0] == nullptr &&

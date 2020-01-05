@@ -180,7 +180,8 @@ private:
   
   Point GetStraightBorderPoint(mozilla::Side aSide,
                                mozilla::Corner aCorner,
-                               bool* aIsUnfilled);
+                               bool* aIsUnfilled,
+                               Float aDotOffset = 0.0f);
 
   
   
