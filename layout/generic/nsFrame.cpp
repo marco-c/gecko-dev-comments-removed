@@ -5169,9 +5169,12 @@ nsFrame::ComputeSizeWithIntrinsicDimensions(nsRenderingContext*  aRenderingConte
         tentISize = nsPresContext::CSSPixelsToAppUnits(300);
       }
 
+      
+      
+      
       if ((aFlags & ComputeSizeFlags::eIClampMarginBoxMinSize) &&
-          tentISize > iSize) {
-        stretchI = eStretch;
+          stretchI != eStretch && tentISize > iSize) {
+        stretchI = (stretchB == eStretch ? eStretch : eStretchPreservingRatio);
       }
 
       if (hasIntrinsicBSize) {
@@ -5182,9 +5185,10 @@ nsFrame::ComputeSizeWithIntrinsicDimensions(nsRenderingContext*  aRenderingConte
         tentBSize = nsPresContext::CSSPixelsToAppUnits(150);
       }
 
+      
       if ((aFlags & ComputeSizeFlags::eBClampMarginBoxMinSize) &&
-          tentBSize > bSize) {
-        stretchB = eStretch;
+          stretchB != eStretch && tentBSize > bSize) {
+        stretchB = (stretchI == eStretch ? eStretch : eStretchPreservingRatio);
       }
 
       if (aIntrinsicRatio != nsSize(0, 0)) {
