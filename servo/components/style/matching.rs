@@ -110,7 +110,7 @@ impl<E: TElement> PartialEq<StyleSharingCandidate<E>> for StyleSharingCandidate<
 
 
 pub struct StyleSharingCandidateCache<E: TElement> {
-    cache: LRUCache<StyleSharingCandidate<E>, ()>,
+    cache: LRUCache<StyleSharingCandidate<E>>,
 }
 
 
@@ -366,7 +366,7 @@ impl<E: TElement> StyleSharingCandidateCache<E> {
         }
     }
 
-    fn iter_mut(&mut self) -> IterMut<(StyleSharingCandidate<E>, ())> {
+    fn iter_mut(&mut self) -> IterMut<StyleSharingCandidate<E>> {
         self.cache.iter_mut()
     }
 
@@ -410,7 +410,7 @@ impl<E: TElement> StyleSharingCandidateCache<E> {
             element: unsafe { SendElement::new(*element) },
             common_style_affecting_attributes: None,
             class_attributes: None,
-        }, ());
+        });
     }
 
     
@@ -881,8 +881,10 @@ pub trait MatchMethods : TElement {
         }
 
         let mut should_clear_cache = false;
-        for (i, &mut (ref mut candidate, ())) in style_sharing_candidate_cache.iter_mut().enumerate() {
-            let sharing_result = self.share_style_with_candidate_if_possible(shared_context, candidate);
+        for (i, candidate) in style_sharing_candidate_cache.iter_mut().enumerate() {
+            let sharing_result =
+                self.share_style_with_candidate_if_possible(shared_context,
+                                                            candidate);
             match sharing_result {
                 Ok(shared_style) => {
                     
