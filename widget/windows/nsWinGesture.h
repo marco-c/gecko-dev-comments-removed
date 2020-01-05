@@ -18,7 +18,7 @@
 #include "mozilla/TouchEvents.h"
 
 
-#if WINVER < 0x0602
+#if WINVER < 0x0601
 
 DECLARE_HANDLE(HGESTUREINFO);
 
