@@ -146,8 +146,12 @@ var gCSSProperties = {
   },
   'border-bottom-width': {
     
-    types: [
-    ]
+    types: [ 'length' ],
+    setup: t => {
+      var element = createElement(t);
+      element.style.borderBottomStyle = 'solid';
+      return element;
+    }
   },
   'border-collapse': {
     
@@ -230,8 +234,12 @@ var gCSSProperties = {
   },
   'border-left-width': {
     
-    types: [
-    ]
+    types: [ 'length' ],
+    setup: t => {
+      var element = createElement(t);
+      element.style.borderLeftStyle = 'solid';
+      return element;
+    }
   },
   'border-right-color': {
     
@@ -246,8 +254,12 @@ var gCSSProperties = {
   },
   'border-right-width': {
     
-    types: [
-    ]
+    types: [ 'length' ],
+    setup: t => {
+      var element = createElement(t);
+      element.style.borderRightStyle = 'solid';
+      return element;
+    }
   },
   'border-spacing': {
     
@@ -277,8 +289,12 @@ var gCSSProperties = {
   },
   'border-top-width': {
     
-    types: [
-    ]
+    types: [ 'length' ],
+    setup: t => {
+      var element = createElement(t);
+      element.style.borderTopStyle = 'solid';
+      return element;
+    }
   },
   'bottom': {
     
@@ -360,8 +376,7 @@ var gCSSProperties = {
   },
   'column-gap': {
     
-    types: [
-    ]
+    types: [ 'length' ]
   },
   'column-rule-color': {
     
@@ -382,12 +397,17 @@ var gCSSProperties = {
   },
   'column-rule-width': {
     
-    types: [
-    ]
+    types: [ 'length' ],
+    setup: t => {
+      var element = createElement(t);
+      element.style.columnRuleStyle = 'solid';
+      return element;
+    }
   },
   'column-width': {
     
-    types: [
+    types: [ 'length',
+      { type: 'discrete', options: [ [ 'auto', '1px' ] ] }
     ]
   },
   'contain': {
@@ -745,8 +765,7 @@ var gCSSProperties = {
   },
   'letter-spacing': {
     
-    types: [
-    ]
+    types: [ 'length' ]
   },
   'lighting-color': {
     
@@ -1007,8 +1026,7 @@ var gCSSProperties = {
   },
   'outline-offset': {
     
-    types: [
-    ]
+    types: [ 'length' ]
   },
   'outline-style': {
     
@@ -1018,8 +1036,12 @@ var gCSSProperties = {
   },
   'outline-width': {
     
-    types: [
-    ]
+    types: [ 'length' ],
+    setup: t => {
+      var element = createElement(t);
+      element.style.outlineStyle = 'solid';
+      return element;
+    }
   },
   'overflow': {
     
@@ -1116,8 +1138,7 @@ var gCSSProperties = {
   },
   'perspective': {
     
-    types: [
-    ]
+    types: [ 'length' ]
   },
   'perspective-origin': {
     
