@@ -17,6 +17,8 @@ import android.support.annotation.NonNull;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.graphics.drawable.DrawableCompat;
 
+import org.mozilla.gecko.AppConstants;
+
 public class DrawableUtil {
 
     
@@ -53,6 +55,13 @@ public class DrawableUtil {
             @NonNull final ColorStateList colorList) {
         final Drawable wrappedDrawable = DrawableCompat.wrap(drawable.mutate());
         DrawableCompat.setTintList(wrappedDrawable, colorList);
+
+        
+        
+        if (AppConstants.Versions.preMarshmallow) {
+            wrappedDrawable.setBounds(0, 0, wrappedDrawable.getIntrinsicHeight(), wrappedDrawable.getIntrinsicHeight());
+        }
+
         return wrappedDrawable;
     }
 }
