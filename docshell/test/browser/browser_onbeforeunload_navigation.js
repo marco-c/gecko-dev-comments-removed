@@ -116,15 +116,20 @@ function runNextTest() {
     }
     
     stayingOnPage = false;
+    
+    contentWindow.onbeforeunload = null;
     currentTest = 0;
   }
 
 
   if (!stayingOnPage) {
+    
+    
+    
+    contentWindow = null;
+
     onAfterPageLoad = runCurrentTest;
     loadExpected = TEST_PAGE;
-    
-    contentWindow.onbeforeunload = null;
     testTab.linkedBrowser.loadURI(TEST_PAGE);
   } else {
     runCurrentTest();
