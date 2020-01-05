@@ -2019,10 +2019,15 @@ nsPresContext::MediaFeatureValuesChanged(nsRestyleHint aRestyleHint,
     } else {
       NS_WARNING("stylo: ServoStyleSets don't support responding to medium "
                  "changes yet. See bug 1290228.");
+      aRestyleHint |= eRestyle_Subtree;
     }
   }
 
   if (mUsesViewportUnits && mPendingViewportChange) {
+    
+    
+    
+    
     
     aRestyleHint |= eRestyle_ForceDescendants;
   }
