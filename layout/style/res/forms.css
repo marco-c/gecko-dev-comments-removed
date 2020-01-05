@@ -30,6 +30,11 @@
   flex-direction: inherit;
   flex-wrap: inherit;
   
+  -moz-box-orient: inherit;
+  -moz-box-direction: inherit;
+  -moz-box-pack: inherit;
+  -moz-box-align: inherit;
+  
   grid-auto-columns: inherit;
   grid-auto-rows: inherit;
   grid-auto-flow: inherit;
@@ -672,6 +677,11 @@ button {
   
   flex-direction: inherit;
   flex-wrap: inherit;
+  
+  -moz-box-orient: inherit;
+  -moz-box-direction: inherit;
+  -moz-box-pack: inherit;
+  -moz-box-align: inherit;
   
   grid-auto-columns: inherit;
   grid-auto-rows: inherit;
