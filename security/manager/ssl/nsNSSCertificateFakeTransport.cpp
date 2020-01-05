@@ -220,8 +220,7 @@ nsNSSCertificateFakeTransport::Write(nsIObjectOutputStream* aStream)
 
   
   
-  uint32_t status = static_cast<uint32_t>(nsNSSCertificate::ev_status_unknown);
-  nsresult rv = aStream->Write32(status);
+  nsresult rv = aStream->Write32(0);
   if (NS_FAILED(rv)) {
     return rv;
   }
@@ -240,8 +239,8 @@ nsNSSCertificateFakeTransport::Read(nsIObjectInputStream* aStream)
 {
   
   
-  uint32_t cachedEVStatus;
-  nsresult rv = aStream->Read32(&cachedEVStatus);
+  uint32_t unusedCachedEVStatus;
+  nsresult rv = aStream->Read32(&unusedCachedEVStatus);
   if (NS_FAILED(rv)) {
     return rv;
   }
