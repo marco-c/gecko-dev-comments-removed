@@ -450,6 +450,8 @@ pub struct IFrameLoadInfo {
     
     pub parent_pipeline_id: PipelineId,
     
+    pub frame_id: FrameId,
+    
     pub old_pipeline_id: Option<PipelineId>,
     
     pub new_pipeline_id: PipelineId,
