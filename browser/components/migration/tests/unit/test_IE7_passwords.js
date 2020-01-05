@@ -378,6 +378,15 @@ add_task(function* test_passwordsAvailable() {
     loginCount += website.logins.length;
     Assert.equal(logins.length, loginCount,
                  "The number of logins has increased after the migration");
+    
+    
+    
+    Assert.greaterOrEqual(MigrationUtils._importQuantities.logins, loginCount,
+                          "Telemetry quantities equal or exceed the actual import.");
+    
+    
+    MigrationUtils._importQuantities.logins = 0;
+
     let startIndex = loginCount - website.logins.length;
     
     for (let i = 0; i < website.logins.length; i++) {
