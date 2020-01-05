@@ -48,11 +48,6 @@ ANRReporter::RequestNativeStack(bool aUnwind)
 jni::String::LocalRef
 ANRReporter::GetNativeStack()
 {
-    if (!profiler_is_active()) {
-        
-        return nullptr;
-    }
-
     
     const PRIntervalTime timeout = PR_SecondsToInterval(5);
     const PRIntervalTime startTime = PR_IntervalNow();
@@ -60,7 +55,12 @@ ANRReporter::GetNativeStack()
     
     typedef mozilla::UniquePtr<char[]> ProfilePtr;
 
+    
+    
     ProfilePtr profile(profiler_get_profile());
+    if (!profile) {
+        return nullptr;
+    }
 
     while (profile && !strstr(profile.get(), "\"samples\":[{")) {
         
