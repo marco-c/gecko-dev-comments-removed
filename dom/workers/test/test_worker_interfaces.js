@@ -179,7 +179,7 @@ var interfaceNamesInGlobalScope =
 
     "ServiceWorkerRegistration",
 
-    "StorageManager",
+    {name: "StorageManager", nightly: true},
 
     "SubtleCrypto",
 
