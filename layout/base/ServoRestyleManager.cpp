@@ -38,7 +38,8 @@ ServoRestyleManager::PostRestyleEvent(Element* aElement,
   
   
   if (aRestyleHint & eRestyle_StyleAttribute) {
-    aRestyleHint |= eRestyle_Subtree;
+    aRestyleHint &= ~eRestyle_StyleAttribute;
+    aRestyleHint |= eRestyle_Self | eRestyle_Subtree;
   }
 
   
@@ -140,11 +141,7 @@ ServoRestyleManager::RecreateStyleContexts(nsIContent* aContent,
 
     
     
-    
-    
-    
-    
-    if (!primaryFrame || (changeHint & nsChangeHint_ReconstructFrame)) {
+    if (!primaryFrame) {
       aContent->UnsetIsDirtyForServo();
       return;
     }
