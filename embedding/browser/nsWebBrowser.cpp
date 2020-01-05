@@ -245,8 +245,8 @@ nsWebBrowser::RemoveWebBrowserListener(nsIWeakReference* aListener,
     
     int32_t count = mListenerArray->Length();
     while (count > 0) {
-      if (mListenerArray->ElementAt(count).Equals(aListener, aIID)) {
-        mListenerArray->RemoveElementAt(count);
+      if (mListenerArray->ElementAt(count-1).Equals(aListener, aIID)) {
+        mListenerArray->RemoveElementAt(count-1);
         break;
       }
       count--;
