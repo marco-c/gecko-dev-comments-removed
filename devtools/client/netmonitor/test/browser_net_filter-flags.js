@@ -8,6 +8,8 @@
 
 const REQUESTS = [
   { url: "sjs_content-type-test-server.sjs?fmt=html&res=undefined&text=Sample" },
+  { url: "sjs_content-type-test-server.sjs?fmt=html&res=undefined&text=Sample" +
+         "&cookies=1" },
   { url: "sjs_content-type-test-server.sjs?fmt=css&text=sample" },
   { url: "sjs_content-type-test-server.sjs?fmt=js&text=sample" },
   { url: "sjs_content-type-test-server.sjs?fmt=font" },
@@ -18,6 +20,17 @@ const REQUESTS = [
 ];
 
 const EXPECTED_REQUESTS = [
+  {
+    method: "GET",
+    url: CONTENT_TYPE_SJS + "?fmt=html",
+    data: {
+      fuzzyUrl: true,
+      status: 200,
+      statusText: "OK",
+      type: "html",
+      fullMimeType: "text/html; charset=utf-8"
+    }
+  },
   {
     method: "GET",
     url: CONTENT_TYPE_SJS + "?fmt=html",
@@ -125,67 +138,91 @@ add_task(function* () {
 
   info("Starting test... ");
 
-  let waitNetwork = waitForNetworkEvents(monitor, 8);
+  let waitNetwork = waitForNetworkEvents(monitor, REQUESTS.length);
   loadCommonFrameScript();
   yield performRequestsInContent(REQUESTS);
   yield waitNetwork;
 
   
   setFreetextFilter("is:running");
-  testContents([0, 0, 0, 0, 0, 0, 0, 0]);
+  testContents([0, 0, 0, 0, 0, 0, 0, 0, 0]);
 
   
   setFreetextFilter("is:from-cache");
-  testContents([0, 0, 0, 0, 0, 0, 0, 1]);
+  testContents([0, 0, 0, 0, 0, 0, 0, 0, 1]);
 
   setFreetextFilter("is:cached");
-  testContents([0, 0, 0, 0, 0, 0, 0, 1]);
+  testContents([0, 0, 0, 0, 0, 0, 0, 0, 1]);
 
   
   setFreetextFilter("-is:from-cache");
-  testContents([1, 1, 1, 1, 1, 1, 1, 0]);
+  testContents([1, 1, 1, 1, 1, 1, 1, 1, 0]);
 
   setFreetextFilter("-is:cached");
-  testContents([1, 1, 1, 1, 1, 1, 1, 0]);
+  testContents([1, 1, 1, 1, 1, 1, 1, 1, 0]);
 
   
   setFreetextFilter("status-code:200");
-  testContents([1, 1, 1, 1, 1, 1, 1, 0]);
+  testContents([1, 1, 1, 1, 1, 1, 1, 1, 0]);
 
   
   setFreetextFilter("-status-code:200");
-  testContents([0, 0, 0, 0, 0, 0, 0, 1]);
+  testContents([0, 0, 0, 0, 0, 0, 0, 0, 1]);
 
   
   setFreetextFilter("mime-type:HtmL");
-  testContents([1, 0, 0, 0, 0, 0, 0, 0]);
+  testContents([1, 1, 0, 0, 0, 0, 0, 0, 0]);
 
   
   setFreetextFilter("-mime-type:HtmL");
-  testContents([0, 1, 1, 1, 1, 1, 1, 1]);
+  testContents([0, 0, 1, 1, 1, 1, 1, 1, 1]);
 
   
   setFreetextFilter("method:get");
-  testContents([1, 1, 1, 1, 1, 1, 1, 1]);
+  testContents([1, 1, 1, 1, 1, 1, 1, 1, 1]);
 
   
   setFreetextFilter("method:post");
-  testContents([0, 0, 0, 0, 0, 0, 0, 0]);
+  testContents([0, 0, 0, 0, 0, 0, 0, 0, 0]);
 
   
   setFreetextFilter("scheme:http");
-  testContents([1, 1, 1, 1, 1, 1, 1, 1]);
+  testContents([1, 1, 1, 1, 1, 1, 1, 1, 1]);
 
   setFreetextFilter("scheme:https");
-  testContents([0, 0, 0, 0, 0, 0, 0, 0]);
-
-  
-  setFreetextFilter("-mime-type:HtmL status-code:200");
-  testContents([0, 1, 1, 1, 1, 1, 1, 0]);
+  testContents([0, 0, 0, 0, 0, 0, 0, 0, 0]);
 
   
   setFreetextFilter("regexp:content.*?Sam");
-  testContents([1, 0, 0, 0, 0, 0, 0, 0]);
+  testContents([1, 1, 0, 0, 0, 0, 0, 0, 0]);
+
+  
+  setFreetextFilter("set-cookie-name:name2");
+  testContents([0, 1, 0, 0, 0, 0, 0, 0, 0]);
+
+  setFreetextFilter("set-cookie-name:not-existing");
+  testContents([0, 0, 0, 0, 0, 0, 0, 0, 0]);
+
+  
+  setFreetextFilter("set-cookie-value:value2");
+  testContents([0, 1, 0, 0, 0, 0, 0, 0, 0]);
+
+  setFreetextFilter("set-cookie-value:not-existing");
+  testContents([0, 0, 0, 0, 0, 0, 0, 0, 0]);
+
+  
+  setFreetextFilter("set-cookie-domain:.example.com");
+  testContents([0, 1, 0, 0, 0, 0, 0, 0, 0]);
+
+  setFreetextFilter("set-cookie-domain:.foo.example.com");
+  testContents([0, 1, 0, 0, 0, 0, 0, 0, 0]);
+
+  setFreetextFilter("set-cookie-domain:.not-existing.example.com");
+  testContents([0, 0, 0, 0, 0, 0, 0, 0, 0]);
+
+  
+  setFreetextFilter("-mime-type:HtmL status-code:200");
+  testContents([0, 0, 1, 1, 1, 1, 1, 1, 0]);
 
   yield teardown(monitor);
 
