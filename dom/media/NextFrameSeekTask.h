@@ -58,10 +58,6 @@ public:
 
   bool IsVideoRequestPending() const;
 
-  bool IsAudioSeekComplete() const;
-
-  bool IsVideoSeekComplete() const;
-
   
   
   void UpdateSeekTargetTime();

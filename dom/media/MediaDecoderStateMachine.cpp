@@ -1593,9 +1593,23 @@ private:
     Reader()->RequestVideoData(false, media::TimeUnit());
   }
 
+  bool IsAudioSeekComplete() const
+  {
+    
+    
+    return !Reader()->IsRequestingAudioData() && !Reader()->IsWaitingAudioData();
+  }
+
+  bool IsVideoSeekComplete() const
+  {
+    
+    
+    return !mTask->IsVideoRequestPending() && !mTask->NeedMoreVideo();
+  }
+
   void MaybeFinishSeek()
   {
-    if (mTask->IsAudioSeekComplete() && mTask->IsVideoSeekComplete()) {
+    if (IsAudioSeekComplete() && IsVideoSeekComplete()) {
       mTask->UpdateSeekTargetTime();
 
       auto time = mTask->mTarget.GetTime().ToMicroseconds();

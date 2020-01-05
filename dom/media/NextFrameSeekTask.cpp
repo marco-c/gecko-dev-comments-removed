@@ -120,24 +120,6 @@ NextFrameSeekTask::IsVideoRequestPending() const
   return mReader->IsRequestingVideoData() || mReader->IsWaitingVideoData();
 }
 
-bool
-NextFrameSeekTask::IsAudioSeekComplete() const
-{
-  AssertOwnerThread();
-  
-  
-  return !mReader->IsRequestingAudioData() && !mReader->IsWaitingAudioData();
-}
-
-bool
-NextFrameSeekTask::IsVideoSeekComplete() const
-{
-  AssertOwnerThread();
-  
-  
-  return !IsVideoRequestPending() && !NeedMoreVideo();
-}
-
 void
 NextFrameSeekTask::UpdateSeekTargetTime()
 {
