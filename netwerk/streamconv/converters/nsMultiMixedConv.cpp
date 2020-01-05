@@ -20,24 +20,7 @@
 #include "nsNetUtil.h"
 #include "nsIURI.h"
 #include "nsHttpHeaderArray.h"
-
-
-
-
-
-
-static uint32_t
-LengthToToken(const char *cursor, const char *token)
-{
-    uint32_t len = token - cursor;
-    
-    if (len && *(token-1) == '\n') {
-        --len;
-        if (len && *(token-2) == '\r')
-            --len;
-    }
-    return len;
-}
+#include "mozilla/AutoRestore.h"
 
 nsPartChannel::nsPartChannel(nsIChannel *aMultipartChannel, uint32_t aPartID,
                              nsIStreamListener* aListener) :
@@ -477,360 +460,372 @@ nsMultiMixedConv::AsyncConvertData(const char *aFromType, const char *aToType,
 }
 
 
-class AutoFree
+NS_IMETHODIMP
+nsMultiMixedConv::OnStartRequest(nsIRequest *request, nsISupports *ctxt)
 {
-public:
-  AutoFree() : mBuffer(nullptr) {}
-
-  explicit AutoFree(char *buffer) : mBuffer(buffer) {}
-
-  ~AutoFree() {
-    free(mBuffer);
-  }
-
-  AutoFree& operator=(char *buffer) {
-    mBuffer = buffer;
-    return *this;
-  }
-
-  operator char*() const {
-    return mBuffer;
-  }
-private:
-  char *mBuffer;
-};
-
-
-NS_IMETHODIMP
-nsMultiMixedConv::OnDataAvailable(nsIRequest *request, nsISupports *context,
-                                  nsIInputStream *inStr, uint64_t sourceOffset,
-                                  uint32_t count) {
-    nsresult rv = NS_OK;
-    AutoFree buffer(nullptr);
-    uint32_t bufLen = 0, read = 0;
-
-    NS_ASSERTION(request, "multimixed converter needs a request");
-
-    nsCOMPtr<nsIChannel> channel = do_QueryInterface(request, &rv);
-    if (NS_FAILED(rv)) return rv;
-
     
-    {
-        bufLen = count + mBufLen;
-        NS_ENSURE_TRUE((bufLen >= count) && (bufLen >= mBufLen),
-                       NS_ERROR_FAILURE);
-        buffer = (char *) malloc(bufLen);
-        if (!buffer)
-            return NS_ERROR_OUT_OF_MEMORY;
+    NS_ASSERTION(mBoundary.IsEmpty(), "a second on start???");
 
-        if (mBufLen) {
-            
-            memcpy(buffer, mBuffer, mBufLen);
-            free(mBuffer);
-            mBuffer = 0;
-            mBufLen = 0;
-        }
-        
-        rv = inStr->Read(buffer + (bufLen - count), count, &read);
+    nsresult rv;
 
-        if (NS_FAILED(rv) || read == 0) return rv;
-        NS_ASSERTION(read == count, "poor data size assumption");
-    }
-
-    char *cursor = buffer;
-
-    if (mFirstOnData) {
-        
-        
-        
-        
-        mFirstOnData = false;
-        NS_ASSERTION(!mBufLen, "this is our first time through, we can't have buffered data");
-        const char * token = mToken.get();
-
-        PushOverLine(cursor, bufLen);
-
-        bool needMoreChars = bufLen < mTokenLen + 2;
-        nsAutoCString firstBuffer(buffer, bufLen);
-        int32_t posCR = firstBuffer.Find("\r");
-
-        if (needMoreChars || (posCR == kNotFound)) {
-            
-            
-            
-            mFirstOnData = true;
-        } else if (!PL_strnstr(cursor, token, mTokenLen + 2)) {
-            char *newBuffer = (char *) realloc(buffer, bufLen + mTokenLen + 1);
-            if (!newBuffer)
-                return NS_ERROR_OUT_OF_MEMORY;
-            buffer = newBuffer;
-
-            memmove(buffer + mTokenLen + 1, buffer, bufLen);
-            memcpy(buffer, token, mTokenLen);
-            buffer[mTokenLen] = '\n';
-
-            bufLen += (mTokenLen + 1);
-
-            
-            cursor = buffer;
-        }
-    }
-
-    char *token = nullptr;
-
-    if (mProcessingHeaders) {
-        
-        
-        
-        bool done = false;
-        rv = ParseHeaders(channel, cursor, bufLen, &done);
-        if (NS_FAILED(rv)) return rv;
-
-        if (done) {
-            mProcessingHeaders = false;
-            rv = SendStart(channel);
-            if (NS_FAILED(rv)) return rv;
-        }
-    }
-
-    int32_t tokenLinefeed = 1;
-    while ( (token = FindToken(cursor, bufLen)) ) {
-
-        if (((token + mTokenLen) < (cursor + bufLen)) &&
-            (*(token + mTokenLen + 1) == '-')) {
-            
-            rv = SendData(cursor, LengthToToken(cursor, token));
-            if (NS_FAILED(rv)) return rv;
-            if (mPartChannel) {
-                mPartChannel->SetIsLastPart();
-            }
-            return SendStop(NS_OK);
-        }
-
-        if (!mNewPart && token > cursor) {
-            
-            NS_ASSERTION(!mProcessingHeaders, "we should be pushing raw data");
-            rv = SendData(cursor, LengthToToken(cursor, token));
-            bufLen -= token - cursor;
-            if (NS_FAILED(rv)) return rv;
-        }
-        
-        token += mTokenLen;
-        bufLen -= mTokenLen;
-        tokenLinefeed = PushOverLine(token, bufLen);
-
-        if (mNewPart) {
-            
-            mNewPart = false;
-            cursor = token;
-            bool done = false;
-            rv = ParseHeaders(channel, cursor, bufLen, &done);
-            if (NS_FAILED(rv)) return rv;
-
-            if (done) {
-                rv = SendStart(channel);
-                if (NS_FAILED(rv)) return rv;
-            }
-            else {
-                
-                
-                mProcessingHeaders = true;
-                break;
-            }
-        }
-        else {
-            mNewPart = true;
-            
-            mContentType.Truncate();
-            mContentLength = UINT64_MAX;
-            mContentDisposition.Truncate();
-            mIsByteRangeRequest = false;
-            mByteRangeStart = 0;
-            mByteRangeEnd = 0;
-            
-            rv = SendStop(NS_OK);
-            if (NS_FAILED(rv)) return rv;
-            
-            
-            token -= mTokenLen + tokenLinefeed;
-            bufLen += mTokenLen + tokenLinefeed;
-            cursor = token;
-        }
-    }
-
-    
-    
-    
-
-    
-    uint32_t bufAmt = 0;
-    if (mProcessingHeaders)
-        bufAmt = bufLen;
-    else if (bufLen) {
-        
-        
-        
-        
-        
-        
-        if (!mPartChannel || !(cursor[bufLen-1] == nsCRT::LF) )
-            bufAmt = std::min(mTokenLen - 1, bufLen);
-    }
-
-    if (bufAmt) {
-        rv = BufferData(cursor + (bufLen - bufAmt), bufAmt);
-        if (NS_FAILED(rv)) return rv;
-        bufLen -= bufAmt;
-    }
-
-    if (bufLen) {
-        rv = SendData(cursor, bufLen);
-        if (NS_FAILED(rv)) return rv;
-    }
-
-    return rv;
-}
-
-
-
-NS_IMETHODIMP
-nsMultiMixedConv::OnStartRequest(nsIRequest *request, nsISupports *ctxt) {
-    
-    NS_ASSERTION(mToken.IsEmpty(), "a second on start???");
-    const char *bndry = nullptr;
-    nsAutoCString delimiter;
-    nsresult rv = NS_OK;
     mContext = ctxt;
-
-    mFirstOnData = true;
     mTotalSent   = 0;
-
-    nsCOMPtr<nsIChannel> channel = do_QueryInterface(request, &rv);
+    mChannel = do_QueryInterface(request, &rv);
     if (NS_FAILED(rv)) return rv;
 
+    nsAutoCString contentType;
+
     
-    nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(channel, &rv);
+    nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(mChannel, &rv);
     if (NS_SUCCEEDED(rv)) {
-        rv = httpChannel->GetResponseHeader(NS_LITERAL_CSTRING("content-type"), delimiter);
+        rv = httpChannel->GetResponseHeader(NS_LITERAL_CSTRING("content-type"), contentType);
         if (NS_FAILED(rv)) {
             return rv;
         }
     } else {
         
-        rv = channel->GetContentType(delimiter);
+        rv = mChannel->GetContentType(contentType);
         if (NS_FAILED(rv)) {
             return NS_ERROR_FAILURE;
         }
     }
 
-    bndry = strstr(delimiter.BeginWriting(), "boundary");
-
-    if (!bndry) {
-        return NS_ERROR_FAILURE;
+    Tokenizer p(contentType);
+    p.SkipUntil(Token::Char(';'));
+    if (!p.CheckChar(';')) {
+        return NS_ERROR_CORRUPTED_CONTENT;
+    }
+    p.SkipWhites();
+    if (!p.CheckWord("boundary")) {
+        return NS_ERROR_CORRUPTED_CONTENT;
+    }
+    p.SkipWhites();
+    if (!p.CheckChar('=')) {
+        return NS_ERROR_CORRUPTED_CONTENT;
+    }
+    p.SkipWhites();
+    Unused << p.ReadUntil(Token::Char(';'), mBoundary);
+    mBoundary.Trim(" \""); 
+    if (mBoundary.IsEmpty()) {
+        return NS_ERROR_CORRUPTED_CONTENT;
     }
 
-    bndry = strchr(bndry, '=');
-    if (!bndry) return NS_ERROR_FAILURE;
+    mHeaderTokens[HEADER_CONTENT_TYPE] =
+      mTokenizer.AddCustomToken("content-type", mTokenizer.CASE_INSENSITIVE, false);
+    mHeaderTokens[HEADER_CONTENT_LENGTH] =
+      mTokenizer.AddCustomToken("content-length", mTokenizer.CASE_INSENSITIVE, false);
+    mHeaderTokens[HEADER_CONTENT_DISPOSITION] =
+      mTokenizer.AddCustomToken("content-disposition", mTokenizer.CASE_INSENSITIVE, false);
+    mHeaderTokens[HEADER_SET_COOKIE] =
+      mTokenizer.AddCustomToken("set-cookie", mTokenizer.CASE_INSENSITIVE, false);
+    mHeaderTokens[HEADER_CONTENT_RANGE] =
+      mTokenizer.AddCustomToken("content-range", mTokenizer.CASE_INSENSITIVE, false);
+    mHeaderTokens[HEADER_RANGE] =
+      mTokenizer.AddCustomToken("range", mTokenizer.CASE_INSENSITIVE, false);
 
-    bndry++; 
+    mLFToken = mTokenizer.AddCustomToken("\n", mTokenizer.CASE_SENSITIVE, false);
+    mCRLFToken = mTokenizer.AddCustomToken("\r\n", mTokenizer.CASE_SENSITIVE, false);
 
-    char *attrib = (char *) strchr(bndry, ';');
-    if (attrib) *attrib = '\0';
+    SwitchToControlParsing();
 
-    nsAutoCString boundaryString(bndry);
-    if (attrib) *attrib = ';';
-
-    boundaryString.Trim(" \"");
-
-    mToken = boundaryString;
-    mTokenLen = boundaryString.Length();
-
-    if (mTokenLen == 0) {
-        return NS_ERROR_FAILURE;
-    }
+    mBoundaryToken =
+      mTokenizer.AddCustomToken(mBoundary, mTokenizer.CASE_SENSITIVE);
+    mBoundaryTokenWithDashes =
+      mTokenizer.AddCustomToken(NS_LITERAL_CSTRING("--") + mBoundary, mTokenizer.CASE_SENSITIVE);
 
     return NS_OK;
+}
+
+
+NS_IMETHODIMP
+nsMultiMixedConv::OnDataAvailable(nsIRequest *request, nsISupports *context,
+                                  nsIInputStream *inStr, uint64_t sourceOffset,
+                                  uint32_t count)
+{
+    
+    
+    MOZ_DIAGNOSTIC_ASSERT(!mInOnDataAvailable, "nsMultiMixedConv::OnDataAvailable reentered!");
+    MOZ_DIAGNOSTIC_ASSERT(!mRawData, "There are unsent data from the previous tokenizer feed!");
+
+    if (mInOnDataAvailable) {
+        
+        return NS_ERROR_UNEXPECTED;
+    }
+
+    mozilla::AutoRestore<bool> restore(mInOnDataAvailable);
+    mInOnDataAvailable = true;
+
+    nsresult rv_feed = mTokenizer.FeedInput(inStr, count);
+    
+    
+    nsresult rv_send = SendData();
+
+    return NS_FAILED(rv_send) ? rv_send : rv_feed;
 }
 
 NS_IMETHODIMP
 nsMultiMixedConv::OnStopRequest(nsIRequest *request, nsISupports *ctxt,
                                 nsresult aStatus)
 {
-    if (mToken.IsEmpty()) { 
+    nsresult rv;
+
+    if (mBoundary.IsEmpty()) { 
         return NS_ERROR_FAILURE;
     }
 
     if (mPartChannel) {
         mPartChannel->SetIsLastPart();
 
-        
-        
-        if (mBufLen > 0 && mBuffer) {
-            (void) SendData(mBuffer, mBufLen);
-            
-            
-            free(mBuffer);
-            mBuffer = nullptr;
-            mBufLen = 0;
+        MOZ_DIAGNOSTIC_ASSERT(!mRawData, "There are unsent data from the previous tokenizer feed!");
+
+        rv = mTokenizer.FinishInput();
+        if (NS_SUCCEEDED(aStatus)) {
+            aStatus = rv;
         }
+        rv = SendData();
+        if (NS_SUCCEEDED(aStatus)) {
+            aStatus = rv;
+        }
+
         (void) SendStop(aStatus);
-    } else if (NS_FAILED(aStatus)) {
+    } else if (NS_FAILED(aStatus) && !mRequestListenerNotified) {
         
         
         
 
-        
-        
-        
-        
-
+        (void) mFinalListener->OnStartRequest(request, ctxt);
         (void) mFinalListener->OnStopRequest(request, ctxt, aStatus);
     }
 
     return NS_OK;
 }
 
+nsresult
+nsMultiMixedConv::ConsumeToken(Token const & token)
+{
+  nsresult rv;
+
+  switch (mParserState) {
+    case BOUNDARY:
+      if (token.Equals(mBoundaryTokenWithDashes)) {
+        
+        
+        mTokenizer.RemoveCustomToken(mBoundaryToken);
+        mParserState = BOUNDARY_CRLF;
+        break;
+      }
+      if (token.Equals(mBoundaryToken)) {
+        
+        mTokenizer.RemoveCustomToken(mBoundaryTokenWithDashes);
+        mParserState = BOUNDARY_CRLF;
+        break;
+      }
+
+      
+      
+      
+      mParserState = HEADER_NAME;
+      mResponseHeader = HEADER_UNKNOWN;
+      SetHeaderTokensEnabled(true);
+      mTokenizer.Rollback();
+      break;
+
+    case BOUNDARY_CRLF:
+      if (token.Equals(Token::NewLine())) {
+        mParserState = HEADER_NAME;
+        mResponseHeader = HEADER_UNKNOWN;
+        HeadersToDefault();
+        SetHeaderTokensEnabled(true);
+        break;
+      }
+      return NS_ERROR_CORRUPTED_CONTENT;
+
+    case HEADER_NAME:
+      SetHeaderTokensEnabled(false);
+      if (token.Equals(Token::NewLine())) {
+        mParserState = BODY_INIT;
+        SwitchToBodyParsing();
+        break;
+      }
+      for (uint32_t h = HEADER_CONTENT_TYPE; h < HEADER_UNKNOWN; ++h) {
+        if (token.Equals(mHeaderTokens[h])) {
+          mResponseHeader = static_cast<EHeader>(h);
+          break;
+        }
+      }
+      mParserState = HEADER_SEP;
+      break;
+
+    case HEADER_SEP:
+      if (token.Equals(Token::Char(':'))) {
+        mParserState = HEADER_VALUE;
+        mResponseHeaderValue.Truncate();
+        break;
+      }
+      if (mResponseHeader == HEADER_UNKNOWN) {
+        
+        break;
+      }
+      if (token.Equals(Token::Whitespace())) {
+        
+        break;
+      }
+      return NS_ERROR_CORRUPTED_CONTENT;
+
+    case HEADER_VALUE:
+      if (token.Equals(Token::Whitespace()) && mResponseHeaderValue.IsEmpty()) {
+        
+        break;
+      }
+      if (token.Equals(Token::NewLine())) {
+        nsresult rv = ProcessHeader();
+        if (NS_FAILED(rv)) {
+          return rv;
+        }
+        mParserState = HEADER_NAME;
+        mResponseHeader = HEADER_UNKNOWN;
+        SetHeaderTokensEnabled(true);
+      } else {
+        mResponseHeaderValue.Append(token.Fragment());
+      }
+      break;
+
+    case BODY_INIT:
+      rv = SendStart();
+      if (NS_FAILED(rv)) {
+        return rv;
+      }
+      mParserState = BODY;
+      MOZ_FALLTHROUGH;
+
+    case BODY: {
+      if (!token.Equals(mLFToken) && !token.Equals(mCRLFToken)) {
+        if (token.Equals(mBoundaryTokenWithDashes) ||
+            token.Equals(mBoundaryToken)) {
+          
+          SwitchToControlParsing();
+          mParserState = TRAIL_DASH1;
+          break;
+        }
+        AccumulateData(token);
+        break;
+      }
+
+      
+      
+      
+      Token token2;
+      if (!mTokenizer.Next(token2)) {
+        
+        
+        
+        mTokenizer.NeedMoreInput();
+        break;
+      }
+      if (token2.Equals(mBoundaryTokenWithDashes) ||
+          token2.Equals(mBoundaryToken)) {
+        SwitchToControlParsing();
+        mParserState = TRAIL_DASH1;
+        break;
+      }
+
+      AccumulateData(token);
+      AccumulateData(token2);
+      break;
+    }
+
+    case TRAIL_DASH1:
+      if (token.Equals(Token::NewLine())) {
+        rv = SendStop(NS_OK);
+        if (NS_FAILED(rv)) {
+          return rv;
+        }
+        mParserState = BOUNDARY_CRLF;
+        mTokenizer.Rollback();
+        break;
+      }
+      if (token.Equals(Token::Char('-'))) {
+        mParserState = TRAIL_DASH2;
+        break;
+      }
+      return NS_ERROR_CORRUPTED_CONTENT;
+
+    case TRAIL_DASH2:
+      if (token.Equals(Token::Char('-'))) {
+        mPartChannel->SetIsLastPart();
+        
+        rv = SendStop(NS_OK);
+        if (NS_FAILED(rv)) {
+          return rv;
+        }
+        mParserState = EPILOGUE;
+        break;
+      }
+      return NS_ERROR_CORRUPTED_CONTENT;
+
+    case EPILOGUE:
+      
+      break;
+
+    default:
+      MOZ_ASSERT(false, "Missing parser state handling branch");
+      break;
+  } 
+
+  return NS_OK;
+}
+
+void
+nsMultiMixedConv::SetHeaderTokensEnabled(bool aEnable)
+{
+    for (uint32_t h = HEADER_FIRST; h < HEADER_UNKNOWN; ++h) {
+        mTokenizer.EnableCustomToken(mHeaderTokens[h], aEnable);
+    }
+}
+
+void
+nsMultiMixedConv::SwitchToBodyParsing()
+{
+    mTokenizer.SetTokenizingMode(Tokenizer::Mode::CUSTOM_ONLY);
+    mTokenizer.EnableCustomToken(mLFToken, true);
+    mTokenizer.EnableCustomToken(mCRLFToken, true);
+    mTokenizer.EnableCustomToken(mBoundaryTokenWithDashes, true);
+    mTokenizer.EnableCustomToken(mBoundaryToken, true);
+}
+
+void
+nsMultiMixedConv::SwitchToControlParsing()
+{
+    mTokenizer.SetTokenizingMode(Tokenizer::Mode::FULL);
+    mTokenizer.EnableCustomToken(mLFToken, false);
+    mTokenizer.EnableCustomToken(mCRLFToken, false);
+    mTokenizer.EnableCustomToken(mBoundaryTokenWithDashes, false);
+    mTokenizer.EnableCustomToken(mBoundaryToken, false);
+}
 
 
 nsMultiMixedConv::nsMultiMixedConv() :
-  mCurrentPartID(0)
+    mCurrentPartID(0),
+    mInOnDataAvailable(false),
+    mTokenizer([this](Token const& token, mozilla::IncrementalTokenizer&) -> nsresult {
+        return this->ConsumeToken(token);
+    })
 {
-    mTokenLen           = 0;
-    mNewPart            = true;
     mContentLength      = UINT64_MAX;
-    mBuffer             = nullptr;
-    mBufLen             = 0;
-    mProcessingHeaders  = false;
     mByteRangeStart     = 0;
     mByteRangeEnd       = 0;
     mTotalSent          = 0;
     mIsByteRangeRequest = false;
+    mParserState        = INIT;
+    mRawData            = nullptr;
+    mRequestListenerNotified = false;
 }
 
-nsMultiMixedConv::~nsMultiMixedConv() {
-    NS_ASSERTION(!mBuffer, "all buffered data should be gone");
-    if (mBuffer) {
-        free(mBuffer);
-        mBuffer = nullptr;
-    }
-}
+nsMultiMixedConv::~nsMultiMixedConv() {}
 
 nsresult
-nsMultiMixedConv::BufferData(char *aData, uint32_t aLen) {
-    NS_ASSERTION(!mBuffer, "trying to over-write buffer");
-
-    char *buffer = (char *) malloc(aLen);
-    if (!buffer) return NS_ERROR_OUT_OF_MEMORY;
-
-    memcpy(buffer, aData, aLen);
-    mBuffer = buffer;
-    mBufLen = aLen;
-    return NS_OK;
-}
-
-
-nsresult
-nsMultiMixedConv::SendStart(nsIChannel *aChannel) {
+nsMultiMixedConv::SendStart()
+{
     nsresult rv = NS_OK;
 
     nsCOMPtr<nsIStreamListener> partListener(mFinalListener);
@@ -853,10 +848,10 @@ nsMultiMixedConv::SendStart(nsIChannel *aChannel) {
 
     
     
-    NS_ASSERTION(!mPartChannel, "tisk tisk, shouldn't be overwriting a channel");
+    MOZ_ASSERT(!mPartChannel, "tisk tisk, shouldn't be overwriting a channel");
 
     nsPartChannel *newChannel;
-    newChannel = new nsPartChannel(aChannel, mCurrentPartID++, partListener);
+    newChannel = new nsPartChannel(mChannel, mCurrentPartID++, partListener);
     if (!newChannel)
         return NS_ERROR_OUT_OF_MEMORY;
 
@@ -893,14 +888,23 @@ nsMultiMixedConv::SendStart(nsIChannel *aChannel) {
 
     
     
+    
+    mRequestListenerNotified = true;
+
+    
+    
     return mPartChannel->SendOnStartRequest(mContext);
 }
 
-
 nsresult
-nsMultiMixedConv::SendStop(nsresult aStatus) {
+nsMultiMixedConv::SendStop(nsresult aStatus)
+{
     
-    nsresult rv = NS_OK;
+    
+    nsresult rv = SendData();
+    if (NS_SUCCEEDED(aStatus)) {
+        aStatus = rv;
+    }
     if (mPartChannel) {
         rv = mPartChannel->SendOnStopRequest(mContext, aStatus);
         
@@ -917,192 +921,134 @@ nsMultiMixedConv::SendStop(nsresult aStatus) {
     return rv;
 }
 
-nsresult
-nsMultiMixedConv::SendData(char *aBuffer, uint32_t aLen) {
+void
+nsMultiMixedConv::AccumulateData(Token const & aToken)
+{
+    if (!mRawData) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        mRawData = aToken.Fragment().BeginReading();
+        mRawDataLength = 0;
+    }
 
-    nsresult rv = NS_OK;
-    
-    if (!mPartChannel) return NS_ERROR_FAILURE; 
+    mRawDataLength += aToken.Fragment().Length();
+}
+
+nsresult
+nsMultiMixedConv::SendData()
+{
+    nsresult rv;
+
+    if (!mRawData) {
+        return NS_OK;
+    }
+
+    nsACString::const_char_iterator rawData = mRawData;
+    mRawData = nullptr;
+
+    if (!mPartChannel) {
+        return NS_ERROR_FAILURE; 
+    }
 
     if (mContentLength != UINT64_MAX) {
         
         
-        if ((uint64_t(aLen) + mTotalSent) > mContentLength)
-            aLen = static_cast<uint32_t>(mContentLength - mTotalSent);
+        if ((uint64_t(mRawDataLength) + mTotalSent) > mContentLength)
+            mRawDataLength = static_cast<uint32_t>(mContentLength - mTotalSent);
 
-        if (aLen == 0)
+        if (mRawDataLength == 0)
             return NS_OK;
     }
 
     uint64_t offset = mTotalSent;
-    mTotalSent += aLen;
+    mTotalSent += mRawDataLength;
 
     nsCOMPtr<nsIStringInputStream> ss(
             do_CreateInstance("@mozilla.org/io/string-input-stream;1", &rv));
     if (NS_FAILED(rv))
         return rv;
 
-    rv = ss->ShareData(aBuffer, aLen);
+    rv = ss->ShareData(rawData, mRawDataLength);
+    mRawData = nullptr;
     if (NS_FAILED(rv))
         return rv;
 
     nsCOMPtr<nsIInputStream> inStream(do_QueryInterface(ss, &rv));
     if (NS_FAILED(rv)) return rv;
 
-    return mPartChannel->SendOnDataAvailable(mContext, inStream, offset, aLen);
+    return mPartChannel->SendOnDataAvailable(mContext, inStream, offset, mRawDataLength);
 }
 
-int32_t
-nsMultiMixedConv::PushOverLine(char *&aPtr, uint32_t &aLen) {
-    int32_t chars = 0;
-    if ((aLen > 0) && (*aPtr == nsCRT::CR || *aPtr == nsCRT::LF)) {
-        if ((aLen > 1) && (aPtr[1] == nsCRT::LF))
-            chars++;
-        chars++;
-        aPtr += chars;
-        aLen -= chars;
-    }
-    return chars;
+void
+nsMultiMixedConv::HeadersToDefault()
+{
+    mContentLength = UINT64_MAX;
+    mContentType.Truncate();
+    mContentDisposition.Truncate();
+    mIsByteRangeRequest = false;
 }
 
 nsresult
-nsMultiMixedConv::ParseHeaders(nsIChannel *aChannel, char *&aPtr, 
-                               uint32_t &aLen, bool *_retval) {
-    
-    
-    nsresult rv = NS_OK;
-    char *cursor = aPtr, *newLine = nullptr;
-    uint32_t cursorLen = aLen;
-    bool done = false;
-    uint32_t lineFeedIncrement = 1;
+nsMultiMixedConv::ProcessHeader()
+{
+    mozilla::Tokenizer p(mResponseHeaderValue);
 
-    mContentLength = UINT64_MAX; 
-    while (cursorLen && (newLine = (char *) memchr(cursor, nsCRT::LF, cursorLen))) {
-        
-        if ((newLine > cursor) && (newLine[-1] == nsCRT::CR) ) { 
-            lineFeedIncrement = 2;
-            newLine--;
-        }
-        else
-            lineFeedIncrement = 1; 
-
-        if (newLine == cursor) {
-            
-            NS_ASSERTION(cursorLen >= lineFeedIncrement, "oops!");
-
-            cursor += lineFeedIncrement;
-            cursorLen -= lineFeedIncrement;
-
-            done = true;
-            break;
-        }
-
-        char tmpChar = *newLine;
-        *newLine = '\0'; 
-
-        char *colon = (char *) strchr(cursor, ':');
-        if (colon) {
-            *colon = '\0';
-            nsAutoCString headerStr(cursor);
-            headerStr.CompressWhitespace();
-            *colon = ':';
-
-            nsAutoCString headerVal(colon + 1);
-            headerVal.CompressWhitespace();
-
-            
-            if (headerStr.LowerCaseEqualsLiteral("content-type")) {
-                mContentType = headerVal;
-            } else if (headerStr.LowerCaseEqualsLiteral("content-length")) {
-                mContentLength = nsCRT::atoll(headerVal.get());
-            } else if (headerStr.LowerCaseEqualsLiteral("content-disposition")) {
-                mContentDisposition = headerVal;
-            } else if (headerStr.LowerCaseEqualsLiteral("set-cookie")) {
-                nsCOMPtr<nsIHttpChannelInternal> httpInternal =
-                    do_QueryInterface(aChannel);
-                if (httpInternal) {
-                    httpInternal->SetCookie(headerVal.get());
-                }
-            } else if (headerStr.LowerCaseEqualsLiteral("content-range") || 
-                       headerStr.LowerCaseEqualsLiteral("range") ) {
-                
-                char* tmpPtr;
-
-                tmpPtr = (char *) strchr(colon + 1, '/');
-                if (tmpPtr) 
-                    *tmpPtr = '\0';
-
-                
-                char *range = (char *) strchr(colon + 2, ' ');
-                if (!range)
-                    return NS_ERROR_FAILURE;
-
-                do {
-                    range++;
-                } while (*range == ' ');
-
-                if (range[0] == '*'){
-                    mByteRangeStart = mByteRangeEnd = 0;
-                }
-                else {
-                    tmpPtr = (char *) strchr(range, '-');
-                    if (!tmpPtr)
-                        return NS_ERROR_FAILURE;
-                    
-                    tmpPtr[0] = '\0';
-                    
-                    mByteRangeStart = nsCRT::atoll(range);
-                    tmpPtr++;
-                    mByteRangeEnd = nsCRT::atoll(tmpPtr);
-                }
-
-                mIsByteRangeRequest = true;
-                if (mContentLength == UINT64_MAX)
-                    mContentLength = uint64_t(mByteRangeEnd - mByteRangeStart + 1);
-            }
-        }
-        *newLine = tmpChar;
-        newLine += lineFeedIncrement;
-        cursorLen -= (newLine - cursor);
-        cursor = newLine;
+    switch (mResponseHeader) {
+    case HEADER_CONTENT_TYPE:
+      mContentType = mResponseHeaderValue;
+      mContentType.CompressWhitespace();
+      break;
+    case HEADER_CONTENT_LENGTH:
+      p.SkipWhites();
+      if (!p.ReadInteger(&mContentLength)) {
+        return NS_ERROR_CORRUPTED_CONTENT;
+      }
+      break;
+    case HEADER_CONTENT_DISPOSITION:
+      mContentDisposition = mResponseHeaderValue;
+      mContentDisposition.CompressWhitespace();
+      break;
+    case HEADER_SET_COOKIE: {
+      nsCOMPtr<nsIHttpChannelInternal> httpInternal = do_QueryInterface(mChannel);
+      mResponseHeaderValue.CompressWhitespace();
+      if (httpInternal) {
+        httpInternal->SetCookie(mResponseHeaderValue.get());
+      }
+      break;
+    }
+    case HEADER_RANGE:
+    case HEADER_CONTENT_RANGE: {
+      if (!p.CheckWord("bytes") ||
+          !p.CheckWhite()) {
+        return NS_ERROR_CORRUPTED_CONTENT;
+      }
+      p.SkipWhites();
+      if (p.CheckChar('*')) {
+        mByteRangeStart = mByteRangeEnd = 0;
+      } else if (!p.ReadInteger(&mByteRangeStart) ||
+                 !p.CheckChar('-') ||
+                 !p.ReadInteger(&mByteRangeEnd)) {
+        return NS_ERROR_CORRUPTED_CONTENT;
+      }
+      mIsByteRangeRequest = true;
+      if (mContentLength == UINT64_MAX) {
+        mContentLength = uint64_t(mByteRangeEnd - mByteRangeStart + 1);
+      }
+      break;
+    }
+    case HEADER_UNKNOWN:
+      
+      break;
     }
 
-    aPtr = cursor;
-    aLen = cursorLen;
-
-    *_retval = done;
-    return rv;
-}
-
-char *
-nsMultiMixedConv::FindToken(char *aCursor, uint32_t aLen) {
-    
-    const char *token = mToken.get();
-    char *cur = aCursor;
-
-    if (!(token && aCursor && *token)) {
-        NS_WARNING("bad data");
-        return nullptr;
-    }
-
-    for (; aLen >= mTokenLen; aCursor++, aLen--) {
-        if (!memcmp(aCursor, token, mTokenLen) ) {
-            if ((aCursor - cur) >= 2) {
-                
-                if ((*(aCursor-1) == '-') && (*(aCursor-2) == '-')) {
-                    aCursor -= 2;
-                    aLen += 2;
-
-                    
-                    mToken.Assign(aCursor, mTokenLen + 2);
-                    mTokenLen = mToken.Length();
-                }
-            }
-            return aCursor;
-        }
-    }
-
-    return nullptr;
+    return NS_OK;
 }
 
 nsresult
@@ -1113,8 +1059,6 @@ NS_NewMultiMixedConv(nsMultiMixedConv** aMultiMixedConv)
         return NS_ERROR_NULL_POINTER;
 
     *aMultiMixedConv = new nsMultiMixedConv();
-    if (! *aMultiMixedConv)
-        return NS_ERROR_OUT_OF_MEMORY;
 
     NS_ADDREF(*aMultiMixedConv);
     return NS_OK;
