@@ -2908,7 +2908,10 @@ pref("dom.ipc.processCount", 1);
 pref("svg.disabled", false);
 
 
-pref("dom.ipc.processCount.webLargeAllocation", 2);
+pref("dom.ipc.processCount.webLargeAllocation", 10);
+
+
+pref("dom.largeAllocationHeader.enabled", true);
 
 
 

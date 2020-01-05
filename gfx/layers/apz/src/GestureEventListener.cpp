@@ -8,6 +8,7 @@
 #include <math.h>                       
 #include <stddef.h>                     
 #include "AsyncPanZoomController.h"     
+#include "InputBlockState.h"            
 #include "base/task.h"                  
 #include "gfxPrefs.h"                   
 #include "InputBlockState.h"            

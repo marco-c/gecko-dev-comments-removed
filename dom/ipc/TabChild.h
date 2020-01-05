@@ -662,29 +662,22 @@ public:
   uintptr_t GetNativeWindowHandle() const { return mNativeWindowHandle; }
 #endif
 
-  bool TakeIsFreshProcess()
+  
+  
+  bool TakeAwaitingLargeAlloc();
+  bool IsAwaitingLargeAlloc();
+
+  
+  
+  
+  static bool InLargeAllocProcess()
   {
-    if (mIsFreshProcess) {
-      MOZ_ASSERT(!sWasFreshProcess,
-                 "At most one tabGroup may be a fresh process per process");
-      sWasFreshProcess = true;
-      mIsFreshProcess = false;
-      return true;
-    }
-    return false;
+    return sInLargeAllocProcess;
   }
 
   already_AddRefed<nsISHistory> GetRelatedSHistory();
 
   mozilla::dom::TabGroup* TabGroup();
-
-  
-  
-  
-  static bool GetWasFreshProcess()
-  {
-    return sWasFreshProcess;
-  }
 
 protected:
   virtual ~TabChild();
@@ -723,7 +716,8 @@ protected:
 
   virtual mozilla::ipc::IPCResult RecvNotifyPartialSHistoryDeactive() override;
 
-  virtual mozilla::ipc::IPCResult RecvSetFreshProcess() override;
+  virtual mozilla::ipc::IPCResult RecvSetIsLargeAllocation(const bool& aIsLA,
+                                                           const bool& aNewProcess) override;
 
 private:
   void HandleDoubleTap(const CSSPoint& aPoint, const Modifiers& aModifiers,
@@ -814,7 +808,7 @@ private:
   CSSSize mUnscaledInnerSize;
   bool mDidSetRealShowInfo;
   bool mDidLoadURLInit;
-  bool mIsFreshProcess;
+  bool mAwaitingLA;
 
   bool mSkipKeyPress;
 
@@ -835,7 +829,7 @@ private:
   uintptr_t mNativeWindowHandle;
 #endif 
 
-  static bool sWasFreshProcess;
+  static bool sInLargeAllocProcess;
 
   DISALLOW_EVIL_CONSTRUCTORS(TabChild);
 };
