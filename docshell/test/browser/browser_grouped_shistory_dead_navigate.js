@@ -28,6 +28,7 @@ add_task(function* () {
 
     
     yield BrowserTestUtils.removeTab(tab2);
+    yield BrowserTestUtils.waitForCondition(() => browser1.canGoBack);
     browser1.goBack();
     yield BrowserTestUtils.browserLoaded(browser1);
     yield ContentTask.spawn(browser1, null, function() {
