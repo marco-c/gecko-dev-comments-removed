@@ -4,6 +4,7 @@
 
 
 
+use geom::point::Point2D;
 use geom::size::Size2D;
 
 
@@ -14,6 +15,9 @@ pub type ResizeCallback = @fn(uint, uint);
 
 
 pub type LoadUrlCallback = @fn(&str);
+
+
+pub type ScrollCallback = @fn(Point2D<f32>);
 
 
 pub trait ApplicationMethods {
@@ -34,8 +38,12 @@ pub trait WindowMethods<A> {
     pub fn set_resize_callback(&mut self, new_resize_callback: ResizeCallback);
     
     pub fn set_load_url_callback(&mut self, new_load_url_callback: LoadUrlCallback);
+    
+    pub fn set_scroll_callback(&mut self, new_scroll_callback: ScrollCallback);
 
     
     pub fn check_loop(@mut self);
+    
+    pub fn set_needs_display(@mut self);
 }
 
