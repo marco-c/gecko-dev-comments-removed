@@ -165,6 +165,86 @@ private:
    virtual void Invoke(Element* aElement) override;
 };
 
+
+class CustomElementReactionsStack
+{
+public:
+  NS_INLINE_DECL_REFCOUNTING(CustomElementReactionsStack)
+
+  CustomElementReactionsStack()
+    : mIsBackupQueueProcessing(false)
+  {
+  }
+
+  
+  
+  
+  typedef nsTArray<nsWeakPtr> ElementQueue;
+
+  
+
+
+
+  void EnqueueUpgradeReaction(CustomElementRegistry* aRegistry,
+                              Element* aElement,
+                              CustomElementDefinition* aDefinition);
+
+  
+  
+  void CreateAndPushElementQueue();
+
+  
+  
+  
+  void PopAndInvokeElementQueue();
+
+private:
+  ~CustomElementReactionsStack() {};
+
+  typedef nsTArray<nsAutoPtr<CustomElementReaction>> ReactionQueue;
+  typedef nsClassHashtable<nsISupportsHashKey, ReactionQueue>
+    ElementReactionQueueMap;
+
+  ElementReactionQueueMap mElementReactionQueueMap;
+
+  nsTArray<ElementQueue> mReactionsStack;
+  ElementQueue mBackupQueue;
+  
+  bool mIsBackupQueueProcessing;
+
+  void InvokeBackupQueue();
+
+  
+
+
+
+  void InvokeReactions(ElementQueue& aElementQueue);
+
+  void Enqueue(Element* aElement, CustomElementReaction* aReaction);
+
+private:
+  class ProcessBackupQueueRunnable : public mozilla::Runnable {
+    public:
+      explicit ProcessBackupQueueRunnable(CustomElementReactionsStack* aReactionStack)
+        : mReactionStack(aReactionStack)
+      {
+        MOZ_ASSERT(!mReactionStack->mIsBackupQueueProcessing,
+                   "mIsBackupQueueProcessing should be initially false");
+        mReactionStack->mIsBackupQueueProcessing = true;
+      }
+
+      NS_IMETHOD Run() override
+      {
+        mReactionStack->InvokeBackupQueue();
+        mReactionStack->mIsBackupQueueProcessing = false;
+        return NS_OK;
+      }
+
+    private:
+      RefPtr<CustomElementReactionsStack> mReactionStack;
+  };
+};
+
 class CustomElementRegistry final : public nsISupports,
                                     public nsWrapperCache
 {
@@ -210,23 +290,7 @@ public:
   void GetCustomPrototype(nsIAtom* aAtom,
                           JS::MutableHandle<JSObject*> aPrototype);
 
-  
-
-
-
-  void EnqueueUpgradeReaction(Element* aElement,
-                              CustomElementDefinition* aDefinition);
-
   void Upgrade(Element* aElement, CustomElementDefinition* aDefinition);
-
-  
-  
-  void CreateAndPushElementQueue();
-
-  
-  
-  
-  void PopAndInvokeElementQueue();
 
 private:
   ~CustomElementRegistry();
@@ -244,22 +308,8 @@ private:
 
   void UpgradeCandidates(JSContext* aCx,
                          nsIAtom* aKey,
-                         CustomElementDefinition* aDefinition);
-
-  void InvokeBackupQueue();
-
-  void Enqueue(Element* aElement, CustomElementReaction* aReaction);
-
-  
-  
-  
-  typedef nsTArray<nsWeakPtr> ElementQueue;
-
-  
-
-
-
-  void InvokeReactions(ElementQueue& aElementQueue);
+                         CustomElementDefinition* aDefinition,
+                         ErrorResult& aRv);
 
   typedef nsClassHashtable<nsISupportsHashKey, CustomElementDefinition>
     DefinitionMap;
@@ -301,17 +351,6 @@ private:
 
   
   bool mIsCustomDefinitionRunning;
-  
-  bool mIsBackupQueueProcessing;
-
-  typedef nsTArray<nsAutoPtr<CustomElementReaction>> ReactionQueue;
-  typedef nsClassHashtable<nsISupportsHashKey, ReactionQueue>
-    ElementReactionQueueMap;
-
-  ElementReactionQueueMap mElementReactionQueueMap;
-
-  nsTArray<ElementQueue> mReactionsStack;
-  ElementQueue mBackupQueue;
 
 private:
   class MOZ_RAII AutoSetRunningFlag final {
@@ -332,28 +371,6 @@ private:
       CustomElementRegistry* mRegistry;
   };
 
-private:
-  class ProcessBackupQueueRunnable : public mozilla::Runnable {
-    public:
-      explicit ProcessBackupQueueRunnable(CustomElementRegistry* aRegistry)
-        : mRegistry(aRegistry)
-      {
-        MOZ_ASSERT(!mRegistry->mIsBackupQueueProcessing,
-                   "mIsBackupQueueProcessing should be initially false");
-        mRegistry->mIsBackupQueueProcessing = true;
-      }
-
-      NS_IMETHOD Run() override
-      {
-        mRegistry->InvokeBackupQueue();
-        mRegistry->mIsBackupQueueProcessing = false;
-        return NS_OK;
-      }
-
-    private:
-      RefPtr<CustomElementRegistry> mRegistry;
-  };
-
 public:
   nsISupports* GetParentObject() const;
 
@@ -370,15 +387,15 @@ public:
 
 class MOZ_RAII AutoCEReaction final {
   public:
-    explicit AutoCEReaction(CustomElementRegistry* aRegistry)
-      : mRegistry(aRegistry) {
-      mRegistry->CreateAndPushElementQueue();
+    explicit AutoCEReaction(CustomElementReactionsStack* aReactionsStack)
+      : mReactionsStack(aReactionsStack) {
+      mReactionsStack->CreateAndPushElementQueue();
     }
     ~AutoCEReaction() {
-      mRegistry->PopAndInvokeElementQueue();
+      mReactionsStack->PopAndInvokeElementQueue();
     }
   private:
-    RefPtr<CustomElementRegistry> mRegistry;
+    RefPtr<CustomElementReactionsStack> mReactionsStack;
 };
 
 } 
