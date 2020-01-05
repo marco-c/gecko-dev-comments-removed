@@ -141,6 +141,16 @@ VideoDecoderParent::RecvFlush()
   if (mDecoder) {
     mDecoder->Flush();
   }
+
+  
+  
+  
+  RefPtr<VideoDecoderParent> self = this;
+  mManagerTaskQueue->Dispatch(NS_NewRunnableFunction([self]() {
+    if (!self->mDestroyed) {
+      Unused << self->SendFlushComplete();
+    }
+  }));
   return IPC_OK();
 }
 
