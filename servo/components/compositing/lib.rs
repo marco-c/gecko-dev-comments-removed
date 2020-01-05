@@ -78,6 +78,13 @@ pub mod windowing;
 
 
 #[derive(Deserialize, Serialize)]
+pub enum AnimationTickType {
+    Script,
+    Layout,
+}
+
+
+#[derive(Deserialize, Serialize)]
 pub enum CompositorMsg {
     Exit,
     FrameSize(PipelineId, Size2D<f32>),
@@ -98,7 +105,7 @@ pub enum CompositorMsg {
     Navigate(Option<(PipelineId, SubpageId)>, NavigationDirection),
     ResizedWindow(WindowSizeData),
     
-    TickAnimation(PipelineId),
+    TickAnimation(PipelineId, AnimationTickType),
     
     WebDriverCommand(WebDriverCommandMsg),
 }
