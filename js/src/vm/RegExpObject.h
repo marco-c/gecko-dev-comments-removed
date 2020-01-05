@@ -35,8 +35,6 @@
 
 
 
-
-
 namespace js {
 
 struct MatchPair;
@@ -236,6 +234,10 @@ class RegExpShared : public gc::TenuredCell
 #endif
 };
 
+using RootedRegExpShared = JS::Rooted<RegExpShared*>;
+using HandleRegExpShared = JS::Handle<RegExpShared*>;
+using MutableHandleRegExpShared = JS::MutableHandle<RegExpShared*>;
+
 class RegExpCompartment
 {
     struct Key {
@@ -306,10 +308,11 @@ class RegExpCompartment
 
     bool empty() { return set_.empty(); }
 
-    bool get(JSContext* cx, JSAtom* source, RegExpFlag flags, RegExpGuard* g);
+    bool get(JSContext* cx, JSAtom* source, RegExpFlag flags, MutableHandleRegExpShared shared);
 
     
-    bool get(JSContext* cx, HandleAtom source, JSString* maybeOpt, RegExpGuard* g);
+    bool get(JSContext* cx, HandleAtom source, JSString* maybeOpt,
+             MutableHandleRegExpShared shared);
 
     
     ArrayObject* getOrCreateMatchResultTemplateObject(JSContext* cx) {
@@ -431,7 +434,7 @@ class RegExpObject : public NativeObject
     static bool isOriginalFlagGetter(JSNative native, RegExpFlag* mask);
 
     static MOZ_MUST_USE bool getShared(JSContext* cx, Handle<RegExpObject*> regexp,
-                                       RegExpGuard* g);
+                                       MutableHandleRegExpShared shared);
 
     bool hasShared() {
         return !!sharedRef();
@@ -463,7 +466,7 @@ class RegExpObject : public NativeObject
 
 
     static MOZ_MUST_USE bool createShared(JSContext* cx, Handle<RegExpObject*> regexp,
-                                          RegExpGuard* g);
+                                          MutableHandleRegExpShared shared);
 
     ReadBarriered<RegExpShared*>& sharedRef() {
         auto& ref = NativeObject::privateRef(PRIVATE_SLOT);
@@ -485,12 +488,12 @@ ParseRegExpFlags(JSContext* cx, JSString* flagStr, RegExpFlag* flagsOut);
 
 
 inline bool
-RegExpToShared(JSContext* cx, HandleObject obj, RegExpGuard* g)
+RegExpToShared(JSContext* cx, HandleObject obj, MutableHandleRegExpShared shared)
 {
     if (obj->is<RegExpObject>())
-        return RegExpObject::getShared(cx, obj.as<RegExpObject>(), g);
+        return RegExpObject::getShared(cx, obj.as<RegExpObject>(), shared);
 
-    return Proxy::regexp_toShared(cx, obj, g);
+    return Proxy::regexp_toShared(cx, obj, shared);
 }
 
 template<XDRMode mode>
