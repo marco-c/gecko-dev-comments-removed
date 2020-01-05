@@ -22,6 +22,8 @@
 #include "nsISerializable.h"
 #include "nsIAssociatedContentSecurity.h"
 #include "nsIApplicationCacheService.h"
+#include "nsIAuthPrompt.h"
+#include "nsIAuthPrompt2.h"
 #include "mozilla/ipc/InputStreamUtils.h"
 #include "mozilla/ipc/URIUtils.h"
 #include "SerializedLoadContext.h"
@@ -31,6 +33,7 @@
 #include "mozilla/ipc/BackgroundUtils.h"
 #include "nsIOService.h"
 #include "nsICachingChannel.h"
+#include "nsIPromptFactory.h"
 #include "mozilla/LoadInfo.h"
 #include "nsQueryObject.h"
 #include "mozilla/BasePrincipal.h"
@@ -175,6 +178,8 @@ NS_INTERFACE_MAP_END
 NS_IMETHODIMP
 HttpChannelParent::GetInterface(const nsIID& aIID, void **result)
 {
+  nsresult rv;
+
   if (aIID.Equals(NS_GET_IID(nsIAuthPromptProvider)) ||
       aIID.Equals(NS_GET_IID(nsISecureBrowserUI))) {
     if (mTabParent) {
@@ -190,6 +195,20 @@ HttpChannelParent::GetInterface(const nsIID& aIID, void **result)
   }
 
   
+  
+  
+  if (!mTabParent &&
+      (aIID.Equals(NS_GET_IID(nsIAuthPrompt)) ||
+       aIID.Equals(NS_GET_IID(nsIAuthPrompt2)))) {
+    nsCOMPtr<nsIPromptFactory> wwatch =
+      do_GetService(NS_WINDOWWATCHER_CONTRACTID, &rv);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    return wwatch->GetPrompt(nullptr, aIID,
+                             reinterpret_cast<void**>(result));
+  }
+
+  
   if (aIID.Equals(NS_GET_IID(nsILoadContext)) && mLoadContext) {
     nsCOMPtr<nsILoadContext> copy = mLoadContext;
     copy.forget(result);
@@ -202,7 +221,6 @@ HttpChannelParent::GetInterface(const nsIID& aIID, void **result)
       nsCOMPtr<nsPIDOMWindowOuter> win =frameElement->OwnerDoc()->GetWindow();
       NS_ENSURE_TRUE(win, NS_ERROR_UNEXPECTED);
 
-      nsresult rv;
       nsCOMPtr<nsIWindowWatcher> wwatch =
         do_GetService(NS_WINDOWWATCHER_CONTRACTID, &rv);
 
