@@ -113,7 +113,7 @@ public class MediaControlService extends Service implements Tabs.OnTabsChangedLi
                 
                 
                 if (playingTab == tab && !isMediaPlaying()) {
-                    mController.getTransportControls().play();
+                    notifyControlInterfaceChanged(ACTION_PAUSE);
                 }
                 break;
             case CLOSED:
