@@ -1,4 +1,4 @@
-
+  
 
 
 
@@ -1348,4 +1348,3 @@ function* initWorkerDebugger(TAB_URL, WORKER_URL) {
 
   return {client, tab, tabClient, workerClient, toolbox, gDebugger};
 }
-
