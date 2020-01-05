@@ -10,39 +10,28 @@
 use std::fmt;
 use style_traits::ToCss;
 use values::computed::LengthOrPercentage;
-use values::generics::position::{Position as GenericPosition, PositionWithKeyword};
-use values::generics::position::HorizontalPosition as GenericHorizontalPosition;
-use values::generics::position::VerticalPosition as GenericVerticalPosition;
+use values::generics::position::Position as GenericPosition;
 
 
-pub type Position = PositionWithKeyword<LengthOrPercentage>;
-
-impl Copy for Position {}
+pub type Position = GenericPosition<HorizontalPosition, VerticalPosition>;
 
 
-pub type OriginPosition = GenericPosition<LengthOrPercentage, LengthOrPercentage>;
+pub type HorizontalPosition = LengthOrPercentage;
 
-impl Copy for OriginPosition {}
 
-impl OriginPosition {
-    #[inline]
-    
-    pub fn center() -> OriginPosition {
-        GenericPosition {
-            horizontal: LengthOrPercentage::Percentage(0.5),
-            vertical: LengthOrPercentage::Percentage(0.5),
-        }
-    }
-}
+pub type VerticalPosition = LengthOrPercentage;
 
 impl Position {
-    #[inline]
     
+    #[inline]
+    pub fn center() -> Self {
+        Self::new(LengthOrPercentage::Percentage(0.5), LengthOrPercentage::Percentage(0.5))
+    }
+
+    
+    #[inline]
     pub fn zero() -> Self {
-        Position {
-            horizontal: GenericHorizontalPosition(LengthOrPercentage::zero()),
-            vertical: GenericVerticalPosition(LengthOrPercentage::zero()),
-        }
+        Self::new(LengthOrPercentage::zero(), LengthOrPercentage::zero())
     }
 }
 
@@ -51,31 +40,5 @@ impl ToCss for Position {
         self.horizontal.to_css(dest)?;
         dest.write_str(" ")?;
         self.vertical.to_css(dest)
-    }
-}
-
-
-pub type HorizontalPosition = GenericHorizontalPosition<LengthOrPercentage>;
-
-impl Copy for HorizontalPosition {}
-
-impl HorizontalPosition {
-    #[inline]
-    
-    pub fn zero() -> HorizontalPosition {
-        GenericHorizontalPosition(LengthOrPercentage::Percentage(0.0))
-    }
-}
-
-
-pub type VerticalPosition = GenericVerticalPosition<LengthOrPercentage>;
-
-impl Copy for VerticalPosition {}
-
-impl VerticalPosition {
-    #[inline]
-    
-    pub fn zero() -> VerticalPosition {
-        GenericVerticalPosition(LengthOrPercentage::Percentage(0.0))
     }
 }

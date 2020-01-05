@@ -3,7 +3,6 @@
 
 
 use app_units::Au;
-use parsing::parse;
 use style::values::HasViewportPercentage;
 use style::values::specified::{AbsoluteLength, NoCalcLength, ViewportPercentageLength};
 

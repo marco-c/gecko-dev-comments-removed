@@ -7,132 +7,52 @@
 
 
 
-use app_units::Au;
 use cssparser::Parser;
 use parser::{Parse, ParserContext};
-use properties::longhands::parse_origin;
-use std::mem;
-use values::Either;
-use values::computed::{CalcLengthOrPercentage, Context};
+use std::fmt;
+use style_traits::ToCss;
+use values::HasViewportPercentage;
+use values::computed::{CalcLengthOrPercentage, ComputedValueAsSpecified, Context};
 use values::computed::{LengthOrPercentage as ComputedLengthOrPercentage, ToComputedValue};
-use values::computed::position as computed_position;
-use values::generics::position::{Position as GenericPosition, PositionValue, PositionWithKeyword};
-use values::generics::position::HorizontalPosition as GenericHorizontalPosition;
-use values::generics::position::VerticalPosition as GenericVerticalPosition;
+use values::generics::position::Position as GenericPosition;
 use values::specified::{AllowQuirks, LengthOrPercentage, Percentage};
 
-pub use values::generics::position::Keyword;
+
+pub type Position = GenericPosition<HorizontalPosition, VerticalPosition>;
 
 
-pub type Position = PositionWithKeyword<PositionValue<LengthOrPercentage>>;
+pub type HorizontalPosition = PositionComponent<X>;
 
 
-pub type OriginPosition = GenericPosition<LengthOrPercentage, LengthOrPercentage>;
+pub type VerticalPosition = PositionComponent<Y>;
 
-impl Parse for OriginPosition {
-    fn parse(context: &ParserContext, input: &mut Parser) -> Result<Self, ()> {
-        let result = parse_origin(context, input)?;
-        match result.depth {
-            Some(_) => Err(()),
-            None => Ok(GenericPosition {
-                horizontal: result.horizontal.unwrap_or(LengthOrPercentage::Percentage(Percentage(0.5))),
-                vertical: result.vertical.unwrap_or(LengthOrPercentage::Percentage(Percentage(0.5))),
-            })
-        }
-    }
+
+#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[derive(Clone, Debug, PartialEq)]
+pub enum PositionComponent<S> {
+    
+    Center,
+    
+    Length(LengthOrPercentage),
+    
+    Side(S, Option<LengthOrPercentage>),
 }
 
-type PositionComponent = Either<LengthOrPercentage, Keyword>;
-
-impl Position {
-    
-    pub fn from_components(mut first_position: Option<PositionComponent>,
-                           mut second_position: Option<PositionComponent>,
-                           first_keyword: Option<PositionComponent>,
-                           second_keyword: Option<PositionComponent>) -> Result<Position, ()> {
-        
-        let first_key = first_keyword.clone().unwrap_or(Either::Second(Keyword::Left));
-        let second_key = second_keyword.clone().unwrap_or(Either::Second(Keyword::Top));
-
-        let (horiz_keyword, vert_keyword) = match (&first_key, &second_key) {
-            
-            (&Either::Second(Keyword::Center), _) if first_position.is_some() => return Err(()),
-            (_, &Either::Second(Keyword::Center)) if second_position.is_some() => return Err(()),
-
-            
-
-            
-            (&Either::Second(k), _) if k.is_logical() => return Err(()),
-            (_, &Either::Second(k)) if k.is_logical() => return Err(()),
-
-             
-            (&Either::Second(k1), &Either::Second(k2))
-                if (k1.is_horizontal() && k2.is_horizontal()) || (k1.is_vertical() && k2.is_vertical()) =>
-                    return Err(()),
-
-            
-            (&Either::First(_), &Either::Second(k)) if k.is_horizontal() => return Err(()),
-            (&Either::Second(k), &Either::First(_)) if k.is_vertical() => return Err(()),
-
-            
-            (&Either::Second(k1), &Either::Second(k2))
-                if (k1.is_vertical() && k2.is_horizontal()) || (k1.is_vertical() && k2 == Keyword::Center) ||
-                   (k1 == Keyword::Center && k2.is_horizontal()) => {
-                mem::swap(&mut first_position, &mut second_position);
-                (second_keyword, first_keyword)
-            },
-
-            
-            _ => (first_keyword, second_keyword),
-        };
-
-        let (mut h_pos, mut h_key, mut v_pos, mut v_key) = (None, None, None, None);
-        if let Some(Either::First(l)) = first_position {
-            h_pos = Some(l);
-        }
-
-        if let Some(Either::First(l)) = second_position {
-            v_pos = Some(l);
-        }
-
-        if let Some(Either::Second(k)) = horiz_keyword {
-            h_key = Some(k);
-        }
-
-        if let Some(Either::Second(k)) = vert_keyword {
-            v_key = Some(k);
-        }
-
-        Ok(Position {
-            horizontal: GenericHorizontalPosition(PositionValue {
-                keyword: h_key,
-                position: h_pos,
-            }),
-            vertical: GenericVerticalPosition(PositionValue {
-                keyword: v_key,
-                position: v_pos,
-            }),
-        })
-    }
-
-    
-    pub fn center() -> Position {
-        Position {
-            horizontal: GenericHorizontalPosition(PositionValue {
-                keyword: Some(Keyword::Center),
-                position: None,
-            }),
-            vertical: GenericVerticalPosition(PositionValue {
-                keyword: Some(Keyword::Center),
-                position: None,
-            }),
-        }
-    }
+define_css_keyword_enum! { X:
+    "left" => Left,
+    "right" => Right,
 }
+add_impls_for_keyword_enum!(X);
+
+define_css_keyword_enum! { Y:
+    "top" => Top,
+    "bottom" => Bottom,
+}
+add_impls_for_keyword_enum!(Y);
 
 impl Parse for Position {
     fn parse(context: &ParserContext, input: &mut Parser) -> Result<Self, ()> {
-        Position::parse_quirky(context, input, AllowQuirks::No)
+        Self::parse_quirky(context, input, AllowQuirks::No)
     }
 }
 
@@ -142,143 +62,242 @@ impl Position {
                         input: &mut Parser,
                         allow_quirks: AllowQuirks)
                         -> Result<Self, ()> {
-        let first = input.try(|i| PositionComponent::parse_quirky(context, i, allow_quirks))?;
-        let second = input.try(|i| PositionComponent::parse_quirky(context, i, allow_quirks))
-                          .unwrap_or(Either::Second(Keyword::Center));
-
-        if let Ok(third) = input.try(|i| PositionComponent::parse_quirky(context, i, allow_quirks)) {
-            
-            if let Ok(fourth) = input.try(|i| PositionComponent::parse_quirky(context, i, allow_quirks)) {
-                
-                Position::from_components(Some(second), Some(fourth), Some(first), Some(third))
-            } else {
-                
-                if let Either::First(_) = first {
-                    return Err(())      
+        match input.try(|i| PositionComponent::parse_quirky(context, i, allow_quirks)) {
+            Ok(x_pos @ PositionComponent::Center) => {
+                if let Ok(y_pos) = input.try(|i| PositionComponent::parse_quirky(context, i, allow_quirks)) {
+                    return Ok(Self::new(x_pos, y_pos));
                 }
-
-                
-                match (&second, &third) {
-                    (&Either::First(_), &Either::First(_)) => Err(()),
-                    
-                    (&Either::First(_), _) => Position::from_components(Some(second), None,
-                                                                        Some(first), Some(third)),
-                    
-                    _ => Position::from_components(None, Some(third), Some(first), Some(second)),
-                }
-            }
-        } else {
-            
-            match (&first, &second) {
-                (&Either::First(_), &Either::First(_)) =>
-                    Position::from_components(Some(first), Some(second), None, None),
-                (&Either::First(_), &Either::Second(_)) =>
-                    Position::from_components(Some(first), None, None, Some(second)),
-                (&Either::Second(_), &Either::First(_)) =>
-                    Position::from_components(None, Some(second), Some(first), None),
-                (&Either::Second(_), &Either::Second(_)) =>
-                    Position::from_components(None, None, Some(first), Some(second)),
-            }
-        }
-    }
-}
-
-impl PositionComponent {
-    
-    fn parse_quirky(context: &ParserContext,
-                    input: &mut Parser,
-                    allow_quirks: AllowQuirks) -> Result<Self, ()> {
-        input.try(|i| LengthOrPercentage::parse_quirky(context, i, allow_quirks))
-            .map(Either::First)
-            .or_else(|()| input.try(Keyword::parse).map(Either::Second))
-    }
-}
-
-impl PositionValue<LengthOrPercentage> {
-    
-    fn computed_value(&self, context: &Context) -> ComputedLengthOrPercentage {
-        match self.keyword {
-            Some(Keyword::Center) => ComputedLengthOrPercentage::Percentage(0.5),
-            Some(k) if k.is_other_side() => match self.position {
-                Some(ref x) => {
-                    let (length, percentage) = match *x {
-                        LengthOrPercentage::Percentage(Percentage(y)) => (Au(0), Some(1.0 - y)),
-                        LengthOrPercentage::Length(ref y) => (-y.to_computed_value(context), Some(1.0)),
-                        _ => (Au(0), None),
-                    };
-
-                    ComputedLengthOrPercentage::Calc(CalcLengthOrPercentage {
-                        length: length,
-                        percentage: percentage
-                    })
-                },
-                None => ComputedLengthOrPercentage::Percentage(1.0),
+                let x_pos = input
+                    .try(|i| PositionComponent::parse_quirky(context, i, allow_quirks))
+                    .unwrap_or(x_pos);
+                let y_pos = PositionComponent::Center;
+                return Ok(Self::new(x_pos, y_pos));
             },
-            _ => self.position.as_ref().map(|l| l.to_computed_value(context))
-                              .unwrap_or(ComputedLengthOrPercentage::Percentage(0.0)),
+            Ok(PositionComponent::Side(x_keyword, lop)) => {
+                if input.try(|i| i.expect_ident_matching("center")).is_ok() {
+                    let x_pos = PositionComponent::Side(x_keyword, lop);
+                    let y_pos = PositionComponent::Center;
+                    return Ok(Self::new(x_pos, y_pos));
+                }
+                if let Ok(y_keyword) = input.try(Y::parse) {
+                    let y_lop = input.try(|i| LengthOrPercentage::parse_quirky(context, i, allow_quirks)).ok();
+                    let x_pos = PositionComponent::Side(x_keyword, lop);
+                    let y_pos = PositionComponent::Side(y_keyword, y_lop);
+                    return Ok(Self::new(x_pos, y_pos));
+                }
+                let x_pos = PositionComponent::Side(x_keyword, None);
+                let y_pos = lop.map_or(PositionComponent::Center, PositionComponent::Length);
+                return Ok(Self::new(x_pos, y_pos));
+            },
+            Ok(x_pos @ PositionComponent::Length(_)) => {
+                if let Ok(y_keyword) = input.try(Y::parse) {
+                    let y_pos = PositionComponent::Side(y_keyword, None);
+                    return Ok(Self::new(x_pos, y_pos));
+                }
+                if let Ok(y_lop) = input.try(|i| LengthOrPercentage::parse_quirky(context, i, allow_quirks)) {
+                    let y_pos = PositionComponent::Length(y_lop);
+                    return Ok(Self::new(x_pos, y_pos));
+                }
+                let y_pos = PositionComponent::Center;
+                let _ = input.try(|i| i.expect_ident_matching("center"));
+                return Ok(Self::new(x_pos, y_pos));
+            },
+            Err(_) => {},
+        }
+        let y_keyword = Y::parse(input)?;
+        let lop_and_x_pos: Result<_, ()> = input.try(|i| {
+            let y_lop = i.try(|i| LengthOrPercentage::parse_quirky(context, i, allow_quirks)).ok();
+            if let Ok(x_keyword) = i.try(X::parse) {
+                let x_lop = i.try(|i| LengthOrPercentage::parse_quirky(context, i, allow_quirks)).ok();
+                let x_pos = PositionComponent::Side(x_keyword, x_lop);
+                return Ok((y_lop, x_pos));
+            }
+            i.expect_ident_matching("center")?;
+            let x_pos = PositionComponent::Center;
+            Ok((y_lop, x_pos))
+        });
+        if let Ok((y_lop, x_pos)) = lop_and_x_pos {
+            let y_pos = PositionComponent::Side(y_keyword, y_lop);
+            return Ok(Self::new(x_pos, y_pos));
+        }
+        let x_pos = PositionComponent::Center;
+        let y_pos = PositionComponent::Side(y_keyword, None);
+        Ok(Self::new(x_pos, y_pos))
+    }
+
+    
+    #[inline]
+    pub fn center() -> Self {
+        Self::new(PositionComponent::Center, PositionComponent::Center)
+    }
+}
+
+impl ToCss for Position {
+    fn to_css<W>(&self, dest: &mut W) -> fmt::Result where W: fmt::Write {
+        match (&self.horizontal, &self.vertical) {
+            (x_pos @ &PositionComponent::Side(_, Some(_)), &PositionComponent::Length(ref y_lop)) => {
+                x_pos.to_css(dest)?;
+                dest.write_str(" top ")?;
+                y_lop.to_css(dest)
+            },
+            (&PositionComponent::Length(ref x_lop), y_pos @ &PositionComponent::Side(_, Some(_))) => {
+                dest.write_str("left ")?;
+                x_lop.to_css(dest)?;
+                dest.write_str(" ")?;
+                y_pos.to_css(dest)
+            },
+            (x_pos, y_pos) => {
+                x_pos.to_css(dest)?;
+                dest.write_str(" ")?;
+                y_pos.to_css(dest)
+            },
         }
     }
 }
 
-
-pub type HorizontalPosition = GenericHorizontalPosition<PositionValue<LengthOrPercentage>>;
-
-impl ToComputedValue for HorizontalPosition {
-    type ComputedValue = computed_position::HorizontalPosition;
-
-    #[inline]
-    fn to_computed_value(&self, context: &Context) -> computed_position::HorizontalPosition {
-        GenericHorizontalPosition(self.0.computed_value(context))
-    }
-
-    #[inline]
-    fn from_computed_value(computed: &computed_position::HorizontalPosition) -> HorizontalPosition {
-        GenericHorizontalPosition(PositionValue {
-            keyword: None,
-            position: Some(ToComputedValue::from_computed_value(&computed.0)),
-        })
+impl<S> HasViewportPercentage for PositionComponent<S> {
+    fn has_viewport_percentage(&self) -> bool {
+        match *self {
+            PositionComponent::Length(ref lop) |
+            PositionComponent::Side(_, Some(ref lop)) => {
+                lop.has_viewport_percentage()
+            },
+            _ => false,
+        }
     }
 }
 
-impl HorizontalPosition {
-    #[inline]
+impl<S: Parse> Parse for PositionComponent<S> {
+    fn parse(context: &ParserContext, input: &mut Parser) -> Result<Self, ()> {
+        Self::parse_quirky(context, input, AllowQuirks::No)
+    }
+}
+
+impl<S: Parse> PositionComponent<S> {
     
-    pub fn left() -> HorizontalPosition {
-        GenericHorizontalPosition(PositionValue {
-            keyword: Some(Keyword::Left),
-            position: None,
-        })
+    pub fn parse_quirky(context: &ParserContext,
+                        input: &mut Parser,
+                        allow_quirks: AllowQuirks)
+                        -> Result<Self, ()> {
+        if input.try(|i| i.expect_ident_matching("center")).is_ok() {
+            return Ok(PositionComponent::Center);
+        }
+        if let Ok(lop) = input.try(|i| LengthOrPercentage::parse_quirky(context, i, allow_quirks)) {
+            return Ok(PositionComponent::Length(lop));
+        }
+        let keyword = S::parse(context, input)?;
+        let lop = input.try(|i| LengthOrPercentage::parse_quirky(context, i, allow_quirks)).ok();
+        Ok(PositionComponent::Side(keyword, lop))
     }
 }
 
-
-
-pub type VerticalPosition = GenericVerticalPosition<PositionValue<LengthOrPercentage>>;
-
-impl ToComputedValue for VerticalPosition {
-    type ComputedValue = computed_position::VerticalPosition;
-
-    #[inline]
-    fn to_computed_value(&self, context: &Context) -> computed_position::VerticalPosition {
-        GenericVerticalPosition(self.0.computed_value(context))
-    }
-
-    #[inline]
-    fn from_computed_value(computed: &computed_position::VerticalPosition) -> VerticalPosition {
-        GenericVerticalPosition(PositionValue {
-            keyword: None,
-            position: Some(ToComputedValue::from_computed_value(&computed.0)),
-        })
-    }
-}
-
-impl VerticalPosition {
-    #[inline]
+impl<S> PositionComponent<S> {
     
-    pub fn top() -> VerticalPosition {
-        GenericVerticalPosition(PositionValue {
-            keyword: Some(Keyword::Top),
-            position: None,
-        })
+    pub fn zero() -> Self {
+        PositionComponent::Length(LengthOrPercentage::Percentage(Percentage(0.)))
+    }
+}
+
+impl<S: ToCss> ToCss for PositionComponent<S> {
+    fn to_css<W>(&self, dest: &mut W) -> fmt::Result where W: fmt::Write {
+        match *self {
+            PositionComponent::Center => {
+                dest.write_str("center")
+            },
+            PositionComponent::Length(ref lop) => {
+                lop.to_css(dest)
+            },
+            PositionComponent::Side(ref keyword, ref lop) => {
+                keyword.to_css(dest)?;
+                if let Some(ref lop) = *lop {
+                    dest.write_str(" ")?;
+                    lop.to_css(dest)?;
+                }
+                Ok(())
+            },
+        }
+    }
+}
+
+impl<S: Side> ToComputedValue for PositionComponent<S> {
+    type ComputedValue = ComputedLengthOrPercentage;
+
+    fn to_computed_value(&self, context: &Context) -> Self::ComputedValue {
+        match *self {
+            PositionComponent::Center => {
+                ComputedLengthOrPercentage::Percentage(0.5)
+            },
+            PositionComponent::Side(ref keyword, None) => {
+                let p = if keyword.is_start() { 0. } else { 1. };
+                ComputedLengthOrPercentage::Percentage(p)
+            },
+            PositionComponent::Side(ref keyword, Some(ref length)) if !keyword.is_start() => {
+                match length.to_computed_value(context) {
+                    ComputedLengthOrPercentage::Length(length) => {
+                        ComputedLengthOrPercentage::Calc(CalcLengthOrPercentage {
+                            length: -length,
+                            percentage: Some(1.0),
+                        })
+                    },
+                    ComputedLengthOrPercentage::Percentage(p) => {
+                        ComputedLengthOrPercentage::Percentage(1.0 - p)
+                    },
+                    ComputedLengthOrPercentage::Calc(calc) => {
+                        ComputedLengthOrPercentage::Calc(CalcLengthOrPercentage {
+                            length: -calc.length,
+                            percentage: Some(1.0 - calc.percentage.unwrap_or(0.)),
+                        })
+                    },
+                }
+            },
+            PositionComponent::Side(_, Some(ref length)) |
+            PositionComponent::Length(ref length) => {
+                length.to_computed_value(context)
+            },
+        }
+    }
+
+    fn from_computed_value(computed: &Self::ComputedValue) -> Self {
+        PositionComponent::Length(ToComputedValue::from_computed_value(computed))
+    }
+}
+
+impl<S: Side> PositionComponent<S> {
+    
+    pub fn initial_specified_value() -> Self {
+        PositionComponent::Side(S::start(), None)
+    }
+}
+
+
+pub trait Side {
+    
+    fn start() -> Self;
+
+    
+    fn is_start(&self) -> bool;
+}
+
+impl Side for X {
+    #[inline]
+    fn start() -> Self {
+        X::Left
+    }
+
+    #[inline]
+    fn is_start(&self) -> bool {
+        *self == X::Left
+    }
+}
+
+impl Side for Y {
+    #[inline]
+    fn start() -> Self {
+        Y::Top
+    }
+
+    #[inline]
+    fn is_start(&self) -> bool {
+        *self == Y::Top
     }
 }
