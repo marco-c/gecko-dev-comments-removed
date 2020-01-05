@@ -2414,8 +2414,11 @@ Toolbox.prototype = {
           
           
           
-          if (win.location) {
+          
+          try {
             win.location.replace("about:blank");
+          } catch(e) {
+            
           }
 
           
