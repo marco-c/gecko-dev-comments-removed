@@ -264,13 +264,24 @@ class JsepVideoCodecDescription : public JsepCodecDescription {
   }
 
   virtual void
-  EnableFec() {
+  EnableFec(std::string redPayloadType, std::string ulpfecPayloadType) {
     
     
     
     
     
+
+    
+    
+    uint16_t redPt, ulpfecPt;
+    if (!SdpHelper::GetPtAsInt(redPayloadType, &redPt) ||
+        !SdpHelper::GetPtAsInt(ulpfecPayloadType, &ulpfecPt)) {
+      return;
+    }
+
     mFECEnabled = true;
+    mREDPayloadType = redPt;
+    mULPFECPayloadType = ulpfecPt;
   }
 
   void
@@ -710,10 +721,8 @@ class JsepVideoCodecDescription : public JsepCodecDescription {
       if (codec->mType == SdpMediaSection::kVideo &&
           codec->mEnabled &&
           codec->mName != "red") {
-        uint8_t pt = (uint8_t)strtoul(codec->mDefaultPt.c_str(), nullptr, 10);
-        
-        
-        if (pt == 0 && codec->mDefaultPt != "0") {
+        uint16_t pt;
+        if (!SdpHelper::GetPtAsInt(codec->mDefaultPt, &pt)) {
           continue;
         }
         mRedundantEncodings.push_back(pt);
@@ -730,6 +739,8 @@ class JsepVideoCodecDescription : public JsepCodecDescription {
   bool mTmmbrEnabled;
   bool mRembEnabled;
   bool mFECEnabled;
+  uint8_t mREDPayloadType;
+  uint8_t mULPFECPayloadType;
   std::vector<uint8_t> mRedundantEncodings;
 
   
