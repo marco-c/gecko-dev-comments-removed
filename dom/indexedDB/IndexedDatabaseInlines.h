@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef IndexedDatabaseInlines_h
 #define IndexedDatabaseInlines_h
@@ -24,6 +24,7 @@ namespace indexedDB {
 inline
 StructuredCloneFile::StructuredCloneFile()
   : mType(eBlob)
+  , mValid(true)
 {
   MOZ_COUNT_CTOR(StructuredCloneFile);
 }
@@ -41,7 +42,8 @@ StructuredCloneFile::operator==(const StructuredCloneFile& aOther) const
   return this->mBlob == aOther.mBlob &&
          this->mMutableFile == aOther.mMutableFile &&
          this->mFileInfo == aOther.mFileInfo &&
-         this->mType == aOther.mType;
+         this->mType == aOther.mType &&
+         this->mValid == aOther.mValid;
 }
 
 inline
@@ -93,8 +95,8 @@ StructuredCloneReadInfo::operator=(StructuredCloneReadInfo&& aCloneReadInfo)
   return *this;
 }
 
-} 
-} 
-} 
+} // namespace indexedDB
+} // namespace dom
+} // namespace mozilla
 
-#endif 
+#endif // IndexedDatabaseInlines_h

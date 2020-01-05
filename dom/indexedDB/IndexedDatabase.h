@@ -38,6 +38,8 @@ struct StructuredCloneFile
   RefPtr<IDBMutableFile> mMutableFile;
   RefPtr<FileInfo> mFileInfo;
   FileType mType;
+  
+  bool mValid;
 
   
   inline
