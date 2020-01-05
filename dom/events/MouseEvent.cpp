@@ -364,8 +364,7 @@ MouseEvent::GetScreenX(int32_t* aScreenX)
 int32_t
 MouseEvent::ScreenX(CallerType aCallerType)
 {
-  if (aCallerType != CallerType::System &&
-      nsContentUtils::ResistFingerprinting()) {
+  if (nsContentUtils::ResistFingerprinting(aCallerType)) {
     
     
     return Event::GetClientCoords(mPresContext, mEvent, mEvent->mRefPoint,
@@ -386,8 +385,7 @@ MouseEvent::GetScreenY(int32_t* aScreenY)
 int32_t
 MouseEvent::ScreenY(CallerType aCallerType)
 {
-  if (aCallerType != CallerType::System &&
-      nsContentUtils::ResistFingerprinting()) {
+  if (nsContentUtils::ResistFingerprinting(aCallerType)) {
     
     
     return Event::GetClientCoords(mPresContext, mEvent, mEvent->mRefPoint,

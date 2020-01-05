@@ -28,6 +28,7 @@
 #include "nsTArrayForwardDeclare.h"
 #include "Units.h"
 #include "mozilla/dom/AutocompleteInfoBinding.h"
+#include "mozilla/dom/BindingDeclarations.h" 
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/net/ReferrerPolicy.h"
@@ -2086,9 +2087,10 @@ public:
 
 
 
-  static bool ResistFingerprinting()
+  static bool ResistFingerprinting(mozilla::dom::CallerType aCallerType)
   {
-    return sPrivacyResistFingerprinting;
+    return aCallerType != mozilla::dom::CallerType::System &&
+           sPrivacyResistFingerprinting;
   }
 
   
