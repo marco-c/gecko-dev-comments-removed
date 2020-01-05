@@ -36,8 +36,8 @@ use syntax::parse::token::intern;
 pub mod jstraceable;
 
 pub mod heap_size;
-
 pub mod lints;
+
 pub mod reflector;
 
 pub mod casing;
