@@ -6300,7 +6300,9 @@ PresShell::Paint(nsView*        aViewToPaint,
     mIsFirstPaint = false;
   }
 
-  layerManager->BeginTransaction();
+  if (!layerManager->BeginTransaction()) {
+    return;
+  }
 
   if (frame) {
     
