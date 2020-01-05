@@ -1556,11 +1556,6 @@ int setup_wasapi_stream_one_side(cubeb_stream * stm,
 
 
   if (mix_format->nChannels > 2) {
-    
-    if (direction == eCapture) {
-      XASSERT(false && "Multichannel recording is not supported.");
-    }
-
     handle_channel_layout(stm, mix_format, stream_params);
   }
 
