@@ -218,9 +218,6 @@ GLContextEGL::GLContextEGL(CreateContextFlags flags, const SurfaceCaps& caps,
     , mShareWithEGLImage(false)
     , mOwnsContext(true)
 {
-    
-    SetProfileVersion(ContextProfile::OpenGLES, 200);
-
 #ifdef DEBUG
     printf_stderr("Initializing context %p surface %p on display %p\n", mContext, mSurface, EGL_DISPLAY());
 #endif
