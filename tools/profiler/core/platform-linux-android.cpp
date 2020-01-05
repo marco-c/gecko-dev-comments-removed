@@ -62,7 +62,6 @@
 #include <stdarg.h>
 
 #include "prenv.h"
-#include "mozilla/Atomics.h"
 #include "mozilla/LinuxSignal.h"
 #include "mozilla/DebugOnly.h"
 #include "ProfileEntry.h"
@@ -146,7 +145,7 @@ static void* setup_atfork() {
 }
 #endif 
 
-static mozilla::Atomic<ThreadInfo*> gCurrentThreadInfo;
+static ThreadInfo* gCurrentThreadInfo;
 static sem_t gSignalHandlingDone;
 
 static void SetSampleContext(TickSample* sample, void* context)
@@ -178,13 +177,6 @@ SigprofHandler(int signal, siginfo_t* info, void* context)
   
   int savedErrno = errno;
 
-  
-  if (!gSampler) {
-    sem_post(&gSignalHandlingDone);
-    errno = savedErrno;
-    return;
-  }
-
   TickSample sample_obj;
   TickSample* sample = &sample_obj;
   sample->context = context;
@@ -198,7 +190,6 @@ SigprofHandler(int signal, siginfo_t* info, void* context)
 
   Tick(sample);
 
-  gCurrentThreadInfo = NULL;
   sem_post(&gSignalHandlingDone);
   errno = savedErrno;
 }
@@ -328,6 +319,8 @@ SigprofSender(void* aArg)
 
         
         sem_wait(&gSignalHandlingDone);
+
+        gCurrentThreadInfo = nullptr;
         isFirstProfiledThread = false;
       }
 #if defined(USE_LUL_STACKWALK)
