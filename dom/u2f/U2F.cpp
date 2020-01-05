@@ -177,6 +177,23 @@ U2FRegisterTask::Run()
   }
 
   
+  SECStatus srv;
+  nsCString cAppId = NS_ConvertUTF16toUTF8(mAppId);
+  CryptoBuffer appParam;
+  if (!appParam.SetLength(SHA256_LENGTH, fallible)) {
+    ReturnError(ErrorCode::OTHER_ERROR);
+    return NS_ERROR_FAILURE;
+  }
+
+  srv = PK11_HashBuf(SEC_OID_SHA256, appParam.Elements(),
+                     reinterpret_cast<const uint8_t*>(cAppId.BeginReading()),
+                     cAppId.Length());
+  if (srv != SECSuccess) {
+    ReturnError(ErrorCode::OTHER_ERROR);
+    return NS_ERROR_FAILURE;
+  }
+
+  
   for (size_t i = 0; i < mRegisterRequests.Length(); ++i) {
     RegisterRequest request(mRegisterRequests[i]);
 
@@ -196,20 +213,8 @@ U2FRegisterTask::Run()
     }
 
     
-    SECStatus srv;
-    nsCString cAppId = NS_ConvertUTF16toUTF8(mAppId);
-    CryptoBuffer appParam;
     CryptoBuffer challengeParam;
-    if (!appParam.SetLength(SHA256_LENGTH, fallible) ||
-        !challengeParam.SetLength(SHA256_LENGTH, fallible)) {
-      ReturnError(ErrorCode::OTHER_ERROR);
-      return NS_ERROR_FAILURE;
-    }
-
-    srv = PK11_HashBuf(SEC_OID_SHA256, appParam.Elements(),
-                       reinterpret_cast<const uint8_t*>(cAppId.BeginReading()),
-                       cAppId.Length());
-    if (srv != SECSuccess) {
+    if (!challengeParam.SetLength(SHA256_LENGTH, fallible)) {
       ReturnError(ErrorCode::OTHER_ERROR);
       return NS_ERROR_FAILURE;
     }
@@ -331,6 +336,23 @@ U2FSignTask::Run()
   }
 
   
+  SECStatus srv;
+  nsCString cAppId = NS_ConvertUTF16toUTF8(mAppId);
+  CryptoBuffer appParam;
+  if (!appParam.SetLength(SHA256_LENGTH, fallible)) {
+    ReturnError(ErrorCode::OTHER_ERROR);
+    return NS_ERROR_FAILURE;
+  }
+
+  srv = PK11_HashBuf(SEC_OID_SHA256, appParam.Elements(),
+                     reinterpret_cast<const uint8_t*>(cAppId.BeginReading()),
+                     cAppId.Length());
+  if (srv != SECSuccess) {
+    ReturnError(ErrorCode::OTHER_ERROR);
+    return NS_ERROR_FAILURE;
+  }
+
+  
   for (size_t i = 0; i < mRegisteredKeys.Length(); i += 1) {
     RegisteredKey request(mRegisteredKeys[i]);
 
@@ -355,20 +377,8 @@ U2FSignTask::Run()
     }
 
     
-    SECStatus srv;
-    nsCString cAppId = NS_ConvertUTF16toUTF8(mAppId);
-    CryptoBuffer appParam;
     CryptoBuffer challengeParam;
-    if (!appParam.SetLength(SHA256_LENGTH, fallible) ||
-        !challengeParam.SetLength(SHA256_LENGTH, fallible)) {
-      ReturnError(ErrorCode::OTHER_ERROR);
-      return NS_ERROR_FAILURE;
-    }
-
-    srv = PK11_HashBuf(SEC_OID_SHA256, appParam.Elements(),
-                       reinterpret_cast<const uint8_t*>(cAppId.BeginReading()),
-                       cAppId.Length());
-    if (srv != SECSuccess) {
+    if (!challengeParam.SetLength(SHA256_LENGTH, fallible)) {
       ReturnError(ErrorCode::OTHER_ERROR);
       return NS_ERROR_FAILURE;
     }
