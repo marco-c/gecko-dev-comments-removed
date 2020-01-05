@@ -50,6 +50,7 @@ class VideoFrameContainer;
 class MediaDecoderStateMachine;
 
 enum class MediaEventType : int8_t;
+enum class Visibility : uint8_t;
 
 
 
@@ -190,7 +191,7 @@ public:
 
   
   virtual void NotifyOwnerActivityChanged(bool aIsDocumentVisible,
-                                          bool aIsElementVisible,
+                                          Visibility aElementVisibility,
                                           bool aIsElementInTree);
 
   
@@ -374,7 +375,7 @@ private:
 
   
   virtual void SetElementVisibility(bool aIsDocumentVisible,
-                                    bool aIsElementVisible,
+                                    Visibility aElementVisibility,
                                     bool aIsElementInTree);
 
   
@@ -711,7 +712,7 @@ protected:
   bool mIsDocumentVisible;
 
   
-  bool mIsElementVisible;
+  Visibility mElementVisibility;
 
   
   bool mIsElementInTree;
