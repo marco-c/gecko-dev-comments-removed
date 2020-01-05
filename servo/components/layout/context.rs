@@ -92,9 +92,6 @@ pub struct SharedLayoutContext {
     pub font_cache_thread: Mutex<FontCacheThread>,
 
     
-    pub url: Url,
-
-    
     pub visible_rects: Arc<HashMap<LayerId, Rect<Au>, BuildHasherDefault<FnvHasher>>>,
 
     
