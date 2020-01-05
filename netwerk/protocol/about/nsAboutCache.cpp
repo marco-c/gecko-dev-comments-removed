@@ -491,7 +491,18 @@ nsAboutCache::Channel::OnCacheEntryInfo(nsIURI *aURI, const nsACString & aIdEnha
 
     
     mBuffer.AppendLiteral("    <td>");
-    if (aExpirationTime < 0xFFFFFFFF) {
+
+    
+    
+    
+    
+    
+    
+    
+    
+    if (aExpirationTime == 0) {
+        mBuffer.AppendLiteral("Expired Immediately");
+    } else if (aExpirationTime < 0xFFFFFFFF) {
         PrintTimeString(buf, sizeof(buf), aExpirationTime);
         mBuffer.Append(buf);
     } else {

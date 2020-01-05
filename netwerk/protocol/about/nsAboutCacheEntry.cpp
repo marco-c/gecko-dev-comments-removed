@@ -427,7 +427,18 @@ nsAboutCacheEntry::Channel::WriteCacheEntryDescription(nsICacheEntry *entry)
 
     
     entry->GetExpirationTime(&u);
-    if (u < 0xFFFFFFFF) {
+
+    
+    
+    
+    
+    
+    
+    
+    
+    if (u == 0) {
+        APPEND_ROW("expires", "Expired Immediately");
+    } else if (u < 0xFFFFFFFF) {
         PrintTimeString(timeBuf, sizeof(timeBuf), u);
         APPEND_ROW("expires", timeBuf);
     } else {
