@@ -730,6 +730,15 @@ typedef void
 
 
 
+
+
+
+
+using JSExternalStringSizeofCallback =
+    size_t (*)(JSString* str, mozilla::MallocSizeOf mallocSizeOf);
+
+
+
 static MOZ_ALWAYS_INLINE JS::Value
 JS_NumberValue(double d)
 {
@@ -1294,6 +1303,9 @@ JS_SetCompartmentNameCallback(JSContext* cx, JSCompartmentNameCallback callback)
 
 extern JS_PUBLIC_API(void)
 JS_SetWrapObjectCallbacks(JSContext* cx, const JSWrapObjectCallbacks* callbacks);
+
+extern JS_PUBLIC_API(void)
+JS_SetExternalStringSizeofCallback(JSContext* cx, JSExternalStringSizeofCallback callback);
 
 extern JS_PUBLIC_API(void)
 JS_SetCompartmentPrivate(JSCompartment* compartment, void* data);

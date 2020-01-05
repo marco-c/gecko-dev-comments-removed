@@ -844,6 +844,9 @@ struct JSRuntime : public JS::shadow::Runtime,
     
     JSCompartmentNameCallback compartmentNameCallback;
 
+    
+    JSExternalStringSizeofCallback externalStringSizeofCallback;
+
     js::ActivityCallback  activityCallback;
     void*                activityCallbackArg;
     void triggerActivityCallback(bool active);
