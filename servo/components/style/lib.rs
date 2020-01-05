@@ -103,6 +103,8 @@ pub mod values;
 pub mod viewport;
 pub mod workqueue;
 
+use std::sync::Arc;
+
 
 
 #[macro_use]
@@ -126,3 +128,11 @@ macro_rules! reexport_computed_values {
     }
 }
 longhand_properties_idents!(reexport_computed_values);
+
+
+#[inline]
+pub fn arc_ptr_eq<T: 'static>(a: &Arc<T>, b: &Arc<T>) -> bool {
+    let a: &T = &**a;
+    let b: &T = &**b;
+    (a as *const T) == (b as *const T)
+}
