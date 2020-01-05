@@ -255,6 +255,10 @@ public:
 
   TimeStamp AnimationTimeToTimeStamp(const StickyTimeDuration& aTime) const;
 
+  
+  
+  TimeStamp ElapsedTimeToTimeStamp(const StickyTimeDuration& aElapsedTime) const;
+
   bool IsPausedOrPausing() const
   {
     return PlayState() == AnimationPlayState::Paused ||

@@ -229,10 +229,6 @@ protected:
 
   
   
-  TimeStamp ElapsedTimeToTimeStamp(const StickyTimeDuration& aElapsedTime) const;
-
-  
-  
   
   
   

@@ -718,6 +718,15 @@ Animation::AnimationTimeToTimeStamp(const StickyTimeDuration& aTime) const
   return result;
 }
 
+TimeStamp
+Animation::ElapsedTimeToTimeStamp(
+  const StickyTimeDuration& aElapsedTime) const
+{
+  return AnimationTimeToTimeStamp(aElapsedTime +
+                                  mEffect->SpecifiedTiming().mDelay);
+}
+
+
 
 void
 Animation::SilentlySetCurrentTime(const TimeDuration& aSeekTime)
