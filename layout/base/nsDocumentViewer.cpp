@@ -2210,19 +2210,24 @@ nsDocumentViewer::Hide(void)
     mPresShell->CaptureHistoryState(getter_AddRefs(layoutState));
   }
 
-  DestroyPresShell();
+  {
+    
+    
+    nsAutoScriptBlocker scriptBlocker;
+    DestroyPresShell();
 
-  DestroyPresContext();
+    DestroyPresContext();
 
-  mViewManager   = nullptr;
-  mWindow        = nullptr;
-  mDeviceContext = nullptr;
-  mParentWidget  = nullptr;
+    mViewManager   = nullptr;
+    mWindow        = nullptr;
+    mDeviceContext = nullptr;
+    mParentWidget  = nullptr;
 
-  nsCOMPtr<nsIBaseWindow> base_win(mContainer);
+    nsCOMPtr<nsIBaseWindow> base_win(mContainer);
 
-  if (base_win && !mAttachedToParent) {
-    base_win->SetParentWidget(nullptr);
+    if (base_win && !mAttachedToParent) {
+      base_win->SetParentWidget(nullptr);
+    }
   }
 
   return NS_OK;
