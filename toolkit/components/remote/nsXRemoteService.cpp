@@ -221,7 +221,7 @@ nsXRemoteService::HandleNewProperty(XID aWindowId, Display* aDisplay,
     return true;
   }
 
-  else if (aChangedAtom == sMozResponseAtom) {
+  if (aChangedAtom == sMozResponseAtom) {
     
     return true;
   }
