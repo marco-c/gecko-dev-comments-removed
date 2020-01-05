@@ -622,7 +622,7 @@ ExpandErrorArgumentsVA(ExclusiveContext* cx, JSErrorCallback callback,
 
 
 extern void
-ReportUsageError(JSContext* cx, HandleObject callee, const char* msg);
+ReportUsageErrorASCII(JSContext* cx, HandleObject callee, const char* msg);
 
 
 
