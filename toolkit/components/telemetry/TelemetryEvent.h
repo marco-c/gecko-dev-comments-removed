@@ -8,6 +8,12 @@
 
 #include "mozilla/TelemetryEventEnums.h"
 
+namespace mozilla {
+namespace Telemetry {
+  struct ChildEventData;
+}
+}
+
 
 
 
@@ -29,6 +35,10 @@ nsresult RecordEvent(const nsACString& aCategory, const nsACString& aMethod,
 void SetEventRecordingEnabled(const nsACString& aCategory, bool aEnabled);
 nsresult CreateSnapshots(uint32_t aDataset, bool aClear, JSContext* aCx,
                          uint8_t optional_argc, JS::MutableHandleValue aResult);
+
+
+nsresult RecordChildEvents(GeckoProcessType aProcessType,
+                           const nsTArray<mozilla::Telemetry::ChildEventData>& aEvents);
 
 
 void ClearEvents();

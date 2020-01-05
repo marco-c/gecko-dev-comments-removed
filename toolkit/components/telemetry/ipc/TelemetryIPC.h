@@ -20,10 +20,12 @@ struct Accumulation;
 struct KeyedAccumulation;
 struct ScalarAction;
 struct KeyedScalarAction;
+struct ChildEventData;
 
 }
 
 namespace TelemetryIPC {
+
 
 
 
@@ -37,7 +39,9 @@ void AccumulateChildHistograms(GeckoProcessType aProcessType, const nsTArray<Tel
 
 
 
+
 void AccumulateChildKeyedHistograms(GeckoProcessType aProcessType, const nsTArray<Telemetry::KeyedAccumulation>& aAccumulations);
+
 
 
 
@@ -51,7 +55,16 @@ void UpdateChildScalars(GeckoProcessType aProcessType, const nsTArray<Telemetry:
 
 
 
+
 void UpdateChildKeyedScalars(GeckoProcessType aProcessType, const nsTArray<Telemetry::KeyedScalarAction>& aScalarActions);
+
+
+
+
+
+
+
+void RecordChildEvents(GeckoProcessType aProcessType, const nsTArray<Telemetry::ChildEventData>& aEvents);
 
 }
 }
