@@ -3538,7 +3538,9 @@ class IDLMaplikeOrSetlikeOrIterableBase(IDLInterfaceMember):
                                    self.maplikeOrSetlikeOrIterableType),
                                   [self.location, member.location])
             
-            if (isAncestor or (member.isAttr() or member.isConst()) and
+            
+            
+            if ((isAncestor or member.isAttr() or member.isConst()) and
                 member.identifier.name in self.disallowedNonMethodNames):
                 raise WebIDLError("Member '%s' conflicts "
                                   "with reserved %s method." %
@@ -3740,6 +3742,7 @@ class IDLMaplikeOrSetlike(IDLMaplikeOrSetlikeOrIterableBase):
                                     True,
                                     maplikeOrSetlike=self))
         self.reserved_ro_names = ["size"]
+        self.disallowedMemberNames.append("size")
 
         
         self.addMethod("entries", members, False, BuiltinTypes[IDLBuiltinType.Types.object],
