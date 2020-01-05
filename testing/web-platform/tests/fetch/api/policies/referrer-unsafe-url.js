@@ -1,6 +1,10 @@
 if (this.document === undefined) {
   importScripts("/resources/testharness.js");
   importScripts("../resources/utils.js");
+
+  
+  
+  importScripts("nested-policy.js");
 }
 
 var referrerUrl = location.href;
