@@ -952,7 +952,7 @@ public:
 
   bool             SuppressingResizeReflow() const { return mSuppressResizeReflow; }
 
-  gfxUserFontSet* GetUserFontSet();
+  gfxUserFontSet* GetUserFontSet(bool aFlushUserFontSet = true);
 
   
   

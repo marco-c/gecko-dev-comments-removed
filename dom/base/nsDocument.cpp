@@ -12782,7 +12782,7 @@ nsAutoSyncOperation::~nsAutoSyncOperation()
 }
 
 gfxUserFontSet*
-nsIDocument::GetUserFontSet()
+nsIDocument::GetUserFontSet(bool aFlushUserFontSet)
 {
   
   
@@ -12797,7 +12797,7 @@ nsIDocument::GetUserFontSet()
   
   
   mGetUserFontSetCalled = true;
-  if (mFontFaceSetDirty) {
+  if (mFontFaceSetDirty && aFlushUserFontSet) {
     
     
     
