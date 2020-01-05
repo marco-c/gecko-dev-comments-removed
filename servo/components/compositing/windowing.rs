@@ -123,5 +123,7 @@ pub trait WindowMethods {
     
     
     fn prepare_for_composite(&self) -> bool;
-}
 
+    
+    fn handle_key(&self, key: Key, mods: KeyModifiers);
+}
