@@ -5731,17 +5731,17 @@ bool
 HTMLMediaElement::IsPlayingThroughTheAudioChannel() const
 {
   
+  if (mError) {
+    return false;
+  }
+
+  
   if (IsSuspendedByAudioChannel()) {
     return true;
   }
 
   
   if (mPaused) {
-    return false;
-  }
-
-  
-  if (mError) {
     return false;
   }
 
