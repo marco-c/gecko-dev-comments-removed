@@ -1,0 +1,18 @@
+fn main() {
+    
+    match self.documents.borrow_mut() {
+        _ => {}
+    }
+    
+    match self.documents.borrow() {
+        _ => {}
+    }
+    
+    match { self.documents.borrow().find_window(id) } {
+        => {}
+    }
+    
+    match self.documents_status.borrow() {
+        => {}
+    }
+}
