@@ -112,7 +112,7 @@ const PropertiesView = createClass({
     
     
     if (member.level === 0 ||
-      (typeof member.value === "object" && member.value.value)) {
+      (typeof member.value === "object" && member.value && member.value.value)) {
       return null;
     }
 
