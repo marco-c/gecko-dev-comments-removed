@@ -113,8 +113,6 @@ function Inspector(toolbox) {
   this.onPanelWindowResize = this.onPanelWindowResize.bind(this);
   this.onSidebarShown = this.onSidebarShown.bind(this);
   this.onSidebarHidden = this.onSidebarHidden.bind(this);
-  this.onShowBoxModelHighlighterForNode =
-    this.onShowBoxModelHighlighterForNode.bind(this);
 
   this._target.on("will-navigate", this._onBeforeNavigate);
   this._detectingActorFeatures = this._detectActorFeatures();
@@ -1952,32 +1950,7 @@ Inspector.prototype = {
     this.inspector.resolveRelativeURL(link, this.selection.nodeFront).then(url => {
       clipboardHelper.copyString(url);
     }, console.error);
-  },
-
-  
-
-
-
-  getCommonComponentProps() {
-    return {
-      setSelectedNode: this.selection.setNodeFront,
-      onShowBoxModelHighlighterForNode: this.onShowBoxModelHighlighterForNode,
-    };
-  },
-
-  
-
-
-
-
-
-
-
-
-  onShowBoxModelHighlighterForNode(nodeFront, options) {
-    let toolbox = this.toolbox;
-    toolbox.highlighterUtils.highlightNodeFront(nodeFront, options);
-  },
+  }
 };
 
 
