@@ -751,15 +751,16 @@ int ProfileBuffer::FindLastSampleOfThread(int aThreadId)
     }
   }
 
+  
   return -1;
 }
 
-void
+bool
 ProfileBuffer::DuplicateLastSample(int aThreadId, const TimeStamp& aStartTime)
 {
   int lastSampleStartPos = FindLastSampleOfThread(aThreadId);
   if (lastSampleStartPos == -1) {
-    return;
+    return false;
   }
 
   MOZ_ASSERT(mEntries[lastSampleStartPos].isThreadId());
@@ -773,7 +774,7 @@ ProfileBuffer::DuplicateLastSample(int aThreadId, const TimeStamp& aStartTime)
     switch (mEntries[readPos].kind()) {
       case ProfileBufferEntry::Kind::ThreadId:
         
-        return;
+        return true;
       case ProfileBufferEntry::Kind::Time:
         
         addTag(ProfileBufferEntry::Time((TimeStamp::Now() -
@@ -788,6 +789,7 @@ ProfileBuffer::DuplicateLastSample(int aThreadId, const TimeStamp& aStartTime)
         break;
     }
   }
+  return true;
 }
 
 
