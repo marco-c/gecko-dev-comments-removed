@@ -368,24 +368,16 @@ KeyframeEffectReadOnly::ComposeStyle(
         prop.mSegments.LastElement();
       
       
-      DebugOnly<bool> accumulateResult =
+      fromValue =
         StyleAnimationValue::Accumulate(prop.mProperty,
-                                        fromValue,
                                         lastSegment.mToValue,
+                                        Move(fromValue),
                                         computedTiming.mCurrentIteration);
-      
-      
-      
-      
-      MOZ_ASSERT(accumulateResult || prop.mProperty == eCSSProperty_filter,
-                 "could not accumulate value");
-      accumulateResult =
+      toValue =
         StyleAnimationValue::Accumulate(prop.mProperty,
-                                        toValue,
                                         lastSegment.mToValue,
+                                        Move(toValue),
                                         computedTiming.mCurrentIteration);
-      MOZ_ASSERT(accumulateResult || prop.mProperty == eCSSProperty_filter,
-                 "could not accumulate value");
     }
 
     

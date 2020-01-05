@@ -152,20 +152,11 @@ public:
 
 
 
-
-
-
-
-
-
-
-
-
-
-  static MOZ_MUST_USE bool
-  Accumulate(nsCSSPropertyID aProperty, StyleAnimationValue& aDest,
-             const StyleAnimationValue& aValueToAccumulate,
-             uint64_t aCount);
+  static StyleAnimationValue
+  Accumulate(nsCSSPropertyID aProperty,
+             const StyleAnimationValue& aA,
+             StyleAnimationValue&& aB,
+             uint64_t aCount = 1);
 
   
   
