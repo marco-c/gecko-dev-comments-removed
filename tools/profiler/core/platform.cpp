@@ -1913,14 +1913,7 @@ profiler_get_features()
     
     "leaf",
 #endif
-#if !defined(SPS_OS_windows)
-    
-    "unwinder",
-#endif
     "java",
-    
-    "jank",
-    
     
     "js",
     
@@ -1937,6 +1930,8 @@ profiler_get_features()
     "mainthreadio",
     
     "memory",
+    
+    "restyle",
 #ifdef MOZ_TASK_TRACER
     
     "tasktracer",
