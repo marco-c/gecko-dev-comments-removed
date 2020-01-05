@@ -9,7 +9,7 @@
 use atomic_refcell::{AtomicRefCell, AtomicRefMut};
 use context::{SharedStyleContext, StyleContext, ThreadLocalStyleContext};
 use data::{ElementData, ElementStyles, StoredRestyleHint};
-use dom::{NodeInfo, TElement, TNode};
+use dom::{DirtyDescendants, NodeInfo, TElement, TNode};
 use matching::{MatchMethods, MatchResults};
 use restyle_hints::{RESTYLE_DESCENDANTS, RESTYLE_SELF};
 use selector_parser::RestyleDamage;
@@ -387,7 +387,7 @@ fn resolve_style_internal<E, F>(context: &mut StyleContext<E>,
         
         
         
-        unsafe { element.set_dirty_descendants() };
+        unsafe { element.note_descendants::<DirtyDescendants>() };
     }
 
     
