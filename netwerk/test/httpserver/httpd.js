@@ -162,6 +162,9 @@ const HEADERS_SUFFIX = HIDDEN_CHAR + "headers" + HIDDEN_CHAR;
 const SJS_TYPE = "sjs";
 
 
+const DEFAULT_KEEP_ALIVE_TIMEOUT = 2 * 60;
+
+
 var firstStamp = 0;
 
 
@@ -237,6 +240,8 @@ const WritablePropertyBag = CC("@mozilla.org/hash-property-bag;1",
                                "nsIWritablePropertyBag2");
 const SupportsString = CC("@mozilla.org/supports-string;1",
                           "nsISupportsString");
+
+const Timer = CC("@mozilla.org/timer;1", "nsITimer");
 
 
 var BinaryInputStream = CC("@mozilla.org/binaryinputstream;1",
@@ -391,6 +396,13 @@ function nsHttpServer()
 
 
   this._connections = {};
+
+  
+
+
+
+
+  this._keepAliveEnabled = true;
 }
 nsHttpServer.prototype =
 {
@@ -435,14 +447,7 @@ nsHttpServer.prototype =
     {
       var conn = new Connection(input, output, this, socket.port, trans.port,
                                 connectionNumber);
-      var reader = new RequestReader(conn);
-
-      
-
-      
-      
-      
-      input.asyncWait(reader, 0, 0, gThreadManager.mainThread);
+      conn.read();
     }
     catch (e)
     {
@@ -472,7 +477,7 @@ nsHttpServer.prototype =
   {
     dumpn(">>> shutting down server on port " + socket.port);
     for (var n in this._connections) {
-      if (!this._connections[n]._requestStarted) {
+      if (!this._connections[n]._requestStarted || this._connections[n].isIdle()) {
         this._connections[n].close();
       }
     }
@@ -743,6 +748,18 @@ nsHttpServer.prototype =
     return this;
   },
 
+  
+  
+  
+  get keepAliveEnabled()
+  {
+    return this._keepAliveEnabled;
+  },
+
+  set keepAliveEnabled(doKeepAlive)
+  {
+    this._keepAliveEnabled = doKeepAlive;
+  },
 
   
 
@@ -840,6 +857,22 @@ nsHttpServer.prototype =
     
     Components.utils.forceGC();
   },
+
+  
+
+
+
+  _connectionIdle: function(connection)
+  {
+    
+    if (this._socketClosed)
+    {
+      connection.close();
+      return;
+    }
+
+    connection.persist();
+   },
 
   
 
@@ -1187,10 +1220,63 @@ function Connection(input, output, server, port, outgoingPort, number)
   this._processed = false;
 
   
-  this._requestStarted = false; 
+  this._requestStarted = false;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  this._currentIncomingPort = 80;
+
+  
+
+
+
+  this._keepAliveTimeout = DEFAULT_KEEP_ALIVE_TIMEOUT;
+
+  
+
+
+
+  this.persist();
 }
 Connection.prototype =
 {
+  
+
+
+
+  read: function()
+  {
+    dumpn("*** read on connection " + this);
+    this._processed = false;
+    this.request = null;
+
+    this.server._connectionIdle(this);
+
+    var reader = new RequestReader(this);
+
+    
+
+    try
+    {
+      this.input.asyncWait(reader, 0, 0, gThreadManager.mainThread);
+    }
+    catch (e)
+    {
+      this.close();
+    }
+  },
+
   
   close: function()
   {
@@ -1199,6 +1285,12 @@ Connection.prototype =
 
     dumpn("*** closing connection " + this.number +
           " on port " + this._outgoingPort);
+
+    if (this._idleTimer)
+    {
+      this._idleTimer.cancel();
+      this._idleTimer = null;
+    }
 
     this.input.close();
     this.output.close();
@@ -1213,6 +1305,36 @@ Connection.prototype =
   },
 
   
+  persist: function()
+  {
+    
+    
+    var idleTimer = this._idleTimer;
+    if (idleTimer)
+      this._idleTimer.cancel();
+    else
+      this._idleTimer = idleTimer = new Timer();
+
+    dumpn("*** persisting idle connection " + this +
+          " for " + this._keepAliveTimeout + " seconds");
+
+    var connection = this;
+    idleTimer.initWithCallback(function()
+    {
+      
+      
+      
+      
+      if (!connection.isIdle())
+        return;
+
+      dumpn("*** closing idle connection " + connection);
+      connection.close();
+    }, this._keepAliveTimeout * 1000, Ci.nsITimer.TYPE_ONE_SHOT);
+  },
+
+  
+
 
 
 
@@ -1246,6 +1368,16 @@ Connection.prototype =
     this._processed = true;
     this.request = request;
     this.server._handler.handleError(code, this);
+  },
+
+  
+
+
+
+
+  isIdle: function()
+  {
+    return this.request === null && !this._closed;
   },
 
   
@@ -1363,7 +1495,7 @@ RequestReader.prototype =
     }
     catch (e)
     {
-      if (streamClosed(e))
+      if (streamClosed(e) && !this._connection._closed)
       {
         dumpn("*** WARNING: unexpected error when reading from socket; will " +
               "be treated as if the input stream had been closed");
@@ -1601,7 +1733,10 @@ RequestReader.prototype =
         
         
         
-        port = +port || 80;
+        
+        
+        
+        port = +port || this._connection._currentIncomingPort;
 
         var scheme = identity.getScheme(host, port);
         if (!scheme)
@@ -1788,6 +1923,10 @@ RequestReader.prototype =
         dumpn("*** serverIdentity unknown or path does not start with '/'");
         throw HTTP_400;
       }
+
+      
+      
+      this._connection._currentIncomingPort = port;
     }
 
     var splitter = fullPath.indexOf("?");
@@ -3542,6 +3681,17 @@ function Response(connection)
 
 
 
+
+
+  var req = connection.request;
+  this._closeConnection = !connection.server._keepAliveEnabled ||
+                          (req.hasHeader("Connection")
+                          ? req.getHeader("Connection").split(",").includes("close")
+                          : !req._httpVersion.atLeast(nsHttpVersion.HTTP_1_1));
+  
+
+
+
   this._httpVersion = nsHttpVersion.HTTP_1_1;
 
   
@@ -3597,6 +3747,12 @@ function Response(connection)
 
 
   this._processAsync = false;
+
+  
+
+
+
+  this._chunked = false;
 
   
 
@@ -3779,6 +3935,7 @@ Response.prototype =
     }
 
     this._powerSeized = true;
+    this._closeConnection = true;
     if (this._bodyOutputStream)
       this._startAsyncProcessor();
   },
@@ -3795,11 +3952,25 @@ Response.prototype =
 
     dumpn("*** finishing connection " + this._connection.number);
     this._startAsyncProcessor(); 
+
+    
+    
+    if (this._chunked)
+      this.bodyOutputStream;
+
     if (this._bodyOutputStream)
       this._bodyOutputStream.close();
     this._finished = true;
   },
 
+  
+  
+  
+  closeConnection: function()
+  {
+    dumpn("*** disable keep-alive for connection " + this._connection.number);
+    this._closeConnection = true;
+  },
 
   
 
@@ -3927,6 +4098,9 @@ Response.prototype =
     dumpn("*** abort(<" + e + ">)");
 
     
+    this._closeConnection = true;
+
+    
     var copier = this._asyncCopier;
     if (copier)
     {
@@ -3965,7 +4139,11 @@ Response.prototype =
   {
     NS_ASSERT(!this._ended, "ending this response twice?!?!");
 
-    this._connection.close();
+    if (this._closeConnection)
+      this._connection.close();
+    else
+      this._connection.read(); 
+
     if (this._bodyOutputStream)
       this._bodyOutputStream.close();
 
@@ -4028,7 +4206,43 @@ Response.prototype =
     
 
     var headers = this._headers;
-    headers.setHeader("Connection", "close", false);
+    if (headers.hasHeader("Connection"))
+    {
+      
+      
+      this._closeConnection = this._closeConnection ||
+        headers.getHeader("Connection").split(",").includes("close");
+    }
+    else
+    {
+      
+      
+      var connectionHeaderValue = this._closeConnection
+                                ? "close"
+                                : "keep-alive";
+      headers.setHeader("Connection", connectionHeaderValue, false);
+    }
+
+    if (headers.hasHeader("Keep-Alive"))
+    {
+      
+      
+      var keepAliveTimeout = headers.getHeader("Keep-Alive")
+                             .match(/^timeout=(\d+)$/);
+      if (keepAliveTimeout)
+      {
+        var seconds = parseInt(keepAliveTimeout[1], 10);
+        this._connection._keepAliveTimeout = Math.min(seconds, DEFAULT_KEEP_ALIVE_TIMEOUT);
+      }
+    }
+    else if (!this._closeConnection)
+    {
+      
+      headers.setHeader("Keep-Alive",
+                        "timeout=" + this._connection._keepAliveTimeout,
+                        false);
+    }
+
     headers.setHeader("Server", "httpd.js", false);
     if (!headers.hasHeader("Date"))
       headers.setHeader("Date", toDateString(Date.now()), false);
@@ -4050,6 +4264,11 @@ Response.prototype =
       headers.setHeader("Content-Length", "" + avail, false);
     }
 
+    this._chunked = !this._headers.hasHeader("Content-Length");
+    dumpn("*** this._chunked= " + this._chunked);
+
+    if (this._chunked)
+      headers.setHeader("Transfer-Encoding", "chunked", false);
 
     
     dumpn("*** header post-processing completed, sending response head...");
@@ -4115,7 +4334,7 @@ Response.prototype =
     var headerCopier = this._asyncCopier =
       new WriteThroughCopier(responseHeadPipe.inputStream,
                              this._connection.output,
-                             copyObserver, null);
+                             copyObserver, null, false);
 
     responseHeadPipe.outputStream.close();
 
@@ -4178,7 +4397,7 @@ Response.prototype =
     dumpn("*** starting async copier of body data...");
     this._asyncCopier =
       new WriteThroughCopier(this._bodyInputStream, this._connection.output,
-                            copyObserver, null);
+                             copyObserver, null, this._chunked);
   },
 
   
@@ -4229,7 +4448,9 @@ function wouldBlock(e)
 
 
 
-function WriteThroughCopier(source, sink, observer, context)
+
+
+function WriteThroughCopier(source, sink, observer, context, chunked)
 {
   if (!source || !sink || !observer)
     throw Cr.NS_ERROR_NULL_POINTER;
@@ -4245,6 +4466,9 @@ function WriteThroughCopier(source, sink, observer, context)
 
   
   this._context = context;
+
+  
+  this._chunked = chunked;
 
   
 
@@ -4354,7 +4578,37 @@ WriteThroughCopier.prototype =
       {
         var data = input.readByteArray(bytesWanted);
         bytesConsumed = data.length;
-        this._pendingData.push(String.fromCharCode.apply(String, data));
+        var dataStr = String.fromCharCode.apply(String, data);
+        if (this._chunked)
+        {
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          data = bytesConsumed.toString(16).toUpperCase()
+               + "\r\n"
+               + dataStr
+               + "\r\n";
+          this._pendingData.push(data);
+        }
+        else
+        {
+          this._pendingData.push(dataStr);
+        }
       }
 
       dumpn("*** " + bytesConsumed + " bytes read");
@@ -4622,6 +4876,25 @@ WriteThroughCopier.prototype =
     dumpn("*** _doneReadingSource(0x" + e.toString(16) + ")");
 
     this._finishSource(e);
+
+    if (this._chunked && this._sink !== null)
+    {
+      
+      dumpn("*** _doneReadingSource - write EOF chunk");
+      this._chunked = false;
+      this._pendingData.push("0\r\n\r\n");
+      try
+      {
+        this._waitToWriteData();
+        return;
+      }
+      catch (e)
+      {
+        dumpn("!!! unexpected error waiting to write pending data: " + e);
+        throw e;
+      }
+    }
+
     if (this._pendingData.length === 0)
       this._sink = null;
     else
