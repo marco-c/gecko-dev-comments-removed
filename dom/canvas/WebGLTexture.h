@@ -57,7 +57,6 @@ class WebGLTexture final
     : public nsWrapperCache
     , public WebGLRefCountedObject<WebGLTexture>
     , public LinkedListElement<WebGLTexture>
-    , public WebGLContextBoundObject
 {
     
     friend class WebGLContext;

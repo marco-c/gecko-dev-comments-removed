@@ -18,19 +18,8 @@ WebGLContext::BindVertexArray(WebGLVertexArray* array)
     if (IsContextLost())
         return;
 
-    if (!ValidateObjectAllowDeletedOrNull("bindVertexArrayObject", array))
+    if (array && !ValidateObject("bindVertexArrayObject", *array))
         return;
-
-    if (array && array->IsDeleted()) {
-        
-
-
-
-
-
-        ErrorInvalidOperation("bindVertexArray: can't bind a deleted array!");
-        return;
-    }
 
     InvalidateBufferFetching();
 
@@ -68,13 +57,7 @@ WebGLContext::CreateVertexArrayImpl()
 void
 WebGLContext::DeleteVertexArray(WebGLVertexArray* array)
 {
-    if (IsContextLost())
-        return;
-
-    if (array == nullptr)
-        return;
-
-    if (array->IsDeleted())
+    if (!ValidateDeleteObject("deleteVertexArray", array))
         return;
 
     if (mBoundVertexArray == array)
@@ -84,18 +67,9 @@ WebGLContext::DeleteVertexArray(WebGLVertexArray* array)
 }
 
 bool
-WebGLContext::IsVertexArray(WebGLVertexArray* array)
+WebGLContext::IsVertexArray(const WebGLVertexArray* array)
 {
-    if (IsContextLost())
-        return false;
-
-    if (!array)
-        return false;
-
-    if (!ValidateObjectAllowDeleted("isVertexArray", array))
-        return false;
-
-    if (array->IsDeleted())
+    if (!ValidateIsObject("isVertexArray", array))
         return false;
 
     MakeContextCurrent();

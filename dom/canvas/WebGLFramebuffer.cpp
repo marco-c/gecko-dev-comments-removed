@@ -604,7 +604,7 @@ WebGLFBAttachPoint::GetParameter(const char* funcName, WebGLContext* webgl, JSCo
 
 
 WebGLFramebuffer::WebGLFramebuffer(WebGLContext* webgl, GLuint fbo)
-    : WebGLContextBoundObject(webgl)
+    : WebGLRefCountedObject(webgl)
     , mGLName(fbo)
 #ifdef ANDROID
     , mIsFB(false)
@@ -1301,7 +1301,7 @@ WebGLFramebuffer::FramebufferRenderbuffer(const char* funcName, GLenum attachEnu
     }
 
     
-    if (!mContext->ValidateObjectAllowNull("framebufferRenderbuffer: rb", rb))
+    if (rb && !mContext->ValidateObject("framebufferRenderbuffer: rb", *rb))
         return;
 
     
@@ -1343,10 +1343,10 @@ WebGLFramebuffer::FramebufferTexture2D(const char* funcName, GLenum attachEnum,
     }
 
     
-    if (!mContext->ValidateObjectAllowNull("framebufferTexture2D: texture", tex))
-        return;
-
     if (tex) {
+        if (!mContext->ValidateObject("framebufferTexture2D: texture", *tex))
+            return;
+
         if (!tex->HasEverBeenBound()) {
             mContext->ErrorInvalidOperation("%s: `texture` has never been bound.",
                                             funcName);
@@ -1420,23 +1420,24 @@ WebGLFramebuffer::FramebufferTextureLayer(const char* funcName, GLenum attachEnu
     const auto& attach = maybeAttach.value();
 
     
-    if (!mContext->ValidateObjectAllowNull("framebufferTextureLayer: texture", tex))
-        return;
-
-    if (tex && !tex->HasEverBeenBound()) {
-        mContext->ErrorInvalidOperation("%s: `texture` has never been bound.", funcName);
-        return;
-    }
-
-    
     if (layer < 0)
         return mContext->ErrorInvalidValue("%s: `layer` must be >= 0.", funcName);
 
     if (level < 0)
         return mContext->ErrorInvalidValue("%s: `level` must be >= 0.", funcName);
 
+    
     TexImageTarget texImageTarget = LOCAL_GL_TEXTURE_3D;
     if (tex) {
+        if (!mContext->ValidateObject("framebufferTextureLayer: texture", *tex))
+            return;
+
+        if (!tex->HasEverBeenBound()) {
+            mContext->ErrorInvalidOperation("%s: `texture` has never been bound.",
+                                            funcName);
+            return;
+        }
+
         texImageTarget = tex->Target().get();
         switch (texImageTarget.get()) {
         case LOCAL_GL_TEXTURE_3D:

@@ -12,7 +12,55 @@
 
 namespace mozilla {
 
+template<typename> class LinkedList;
 class WebGLContext;
+
+
+
+
+
+
+class WebGLContextBoundObject
+{
+public:
+    WebGLContext* const mContext;
+private:
+    const uint32_t mContextGeneration;
+
+public:
+    explicit WebGLContextBoundObject(WebGLContext* webgl);
+
+    bool IsCompatibleWithContext(const WebGLContext* other) const;
+};
+
+
+
+class WebGLDeletableObject : public WebGLContextBoundObject
+{
+    template<typename> friend class WebGLRefCountedObject;
+
+private:
+    enum DeletionStatus { Default, DeleteRequested, Deleted };
+
+    DeletionStatus mDeletionStatus;
+
+    
+
+    explicit WebGLDeletableObject(WebGLContext* webgl)
+      : WebGLContextBoundObject(webgl)
+      , mDeletionStatus(Default)
+    {}
+
+    ~WebGLDeletableObject() {
+        MOZ_ASSERT(mDeletionStatus == Deleted,
+                   "Derived class destructor must call DeleteOnce().");
+    }
+
+public:
+    bool IsDeleted() const { return mDeletionStatus == Deleted; }
+    bool IsDeleteRequested() const { return mDeletionStatus != Default; }
+};
+
 
 
 
@@ -92,21 +140,23 @@ class WebGLContext;
 
 
 template<typename Derived>
-class WebGLRefCountedObject
+class WebGLRefCountedObject : public WebGLDeletableObject
 {
-public:
-    enum DeletionStatus { Default, DeleteRequested, Deleted };
+    friend class WebGLContext;
+    template<typename T> friend void ClearLinkedList(LinkedList<T>& list);
 
-    WebGLRefCountedObject()
-      : mDeletionStatus(Default)
-    {}
+private:
+    nsAutoRefCnt mWebGLRefCnt;
+
+public:
+    WebGLRefCountedObject(WebGLContext* webgl)
+        : WebGLDeletableObject(webgl)
+    { }
 
     ~WebGLRefCountedObject() {
         MOZ_ASSERT(mWebGLRefCnt == 0,
                    "Destroying WebGL object still referenced by other WebGL"
                    " objects.");
-        MOZ_ASSERT(mDeletionStatus == Deleted,
-                   "Derived class destructor must call DeleteOnce().");
     }
 
     
@@ -129,14 +179,7 @@ public:
         MaybeDelete();
     }
 
-    bool IsDeleted() const {
-        return mDeletionStatus == Deleted;
-    }
-
-    bool IsDeleteRequested() const {
-        return mDeletionStatus != Default;
-    }
-
+protected:
     void DeleteOnce() {
         if (mDeletionStatus != Deleted) {
             static_cast<Derived*>(this)->Delete();
@@ -152,10 +195,6 @@ private:
             DeleteOnce();
         }
     }
-
-protected:
-    nsAutoRefCnt mWebGLRefCnt;
-    DeletionStatus mDeletionStatus;
 };
 
 
@@ -257,21 +296,6 @@ private:
 
 protected:
     T* mRawPtr;
-};
-
-
-
-
-class WebGLContextBoundObject
-{
-public:
-    explicit WebGLContextBoundObject(WebGLContext* webgl);
-
-    bool IsCompatibleWithContext(const WebGLContext* other) const;
-
-    WebGLContext* const mContext;
-protected:
-    const uint32_t mContextGeneration;
 };
 
 
