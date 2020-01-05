@@ -13,20 +13,17 @@
 #define nsMediaList_h_
 
 #include "nsAutoPtr.h"
-#include "nsIDOMMediaList.h"
 #include "nsTArray.h"
 #include "nsIAtom.h"
 #include "nsCSSValue.h"
-#include "nsWrapperCache.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/ErrorResult.h"
+#include "mozilla/dom/MediaList.h"
 
 class nsPresContext;
 class nsAString;
 struct nsMediaFeature;
 
 namespace mozilla {
-class StyleSheet;
 namespace css {
 class DocumentRule;
 } 
@@ -250,72 +247,40 @@ private:
   nsTArray<nsMediaExpression> mExpressions;
 };
 
-class nsMediaList final : public nsIDOMMediaList
-                        , public nsWrapperCache
+class nsMediaList final : public mozilla::dom::MediaList
 {
 public:
-  typedef mozilla::ErrorResult ErrorResult;
-
   nsMediaList();
 
-  virtual JSObject*
-  WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
-  nsISupports* GetParentObject() const
-  {
-    return nullptr;
-  }
-
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(nsMediaList)
-
-  NS_DECL_NSIDOMMEDIALIST
-
-  void GetText(nsAString& aMediaText);
-  void SetText(const nsAString& aMediaText);
+  void GetText(nsAString& aMediaText) final;
+  void SetText(const nsAString& aMediaText) final;
 
   
   
   bool Matches(nsPresContext* aPresContext,
                  nsMediaQueryResultCacheKey* aKey);
 
-  void SetStyleSheet(mozilla::StyleSheet* aSheet);
   void AppendQuery(nsAutoPtr<nsMediaQuery>& aQuery) {
     
     mArray.AppendElement(aQuery.forget());
   }
 
-  already_AddRefed<nsMediaList> Clone();
+  already_AddRefed<mozilla::dom::MediaList> Clone() final;
 
   nsMediaQuery* MediumAt(int32_t aIndex) { return mArray[aIndex]; }
   void Clear() { mArray.Clear(); }
 
   
-  
-  uint32_t Length() { return mArray.Length(); }
-  void IndexedGetter(uint32_t aIndex, bool& aFound, nsAString& aReturn);
-  
-  void DeleteMedium(const nsAString& aMedium, ErrorResult& aRv)
-  {
-    aRv = DeleteMedium(aMedium);
-  }
-  void AppendMedium(const nsAString& aMedium, ErrorResult& aRv)
-  {
-    aRv = AppendMedium(aMedium);
-  }
+  uint32_t Length() final { return mArray.Length(); }
+  void IndexedGetter(uint32_t aIndex, bool& aFound,
+                     nsAString& aReturn) final;
 
 protected:
   ~nsMediaList();
 
-  template<typename Func>
-  nsresult DoMediaChange(Func aCallback);
-
-  nsresult Delete(const nsAString & aOldMedium);
-  nsresult Append(const nsAString & aOldMedium);
+  nsresult Delete(const nsAString & aOldMedium) final;
+  nsresult Append(const nsAString & aOldMedium) final;
 
   InfallibleTArray<nsAutoPtr<nsMediaQuery> > mArray;
-  
-  
-  
-  mozilla::StyleSheet* mStyleSheet;
 };
 #endif 

@@ -41,6 +41,10 @@ namespace mozilla {
 
 class ErrorResult;
 
+namespace dom {
+class MediaList;
+}
+
 namespace css {
 
 class MediaRule final : public ConditionRule,
@@ -92,7 +96,7 @@ public:
   
   virtual void SetConditionText(const nsAString& aConditionText,
                                 ErrorResult& aRv) override;
-  nsMediaList* Media() const;
+  dom::MediaList* Media() const;
   
   virtual size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf)
     const override MOZ_MUST_OVERRIDE;

@@ -20,7 +20,6 @@
 class nsIDocument;
 class nsINode;
 class nsIPrincipal;
-class nsMediaList;
 class nsCSSRuleProcessor;
 
 namespace mozilla {
@@ -32,6 +31,7 @@ struct CSSStyleSheetInner;
 
 namespace dom {
 class CSSRuleList;
+class MediaList;
 class SRIMetadata;
 } 
 
@@ -150,7 +150,7 @@ public:
   inline void SetPrincipal(nsIPrincipal* aPrincipal);
 
   void SetTitle(const nsAString& aTitle) { mTitle = aTitle; }
-  void SetMedia(nsMediaList* aMedia);
+  void SetMedia(dom::MediaList* aMedia);
 
   
   inline CORSMode GetCORSMode() const;
@@ -170,7 +170,7 @@ public:
   
   inline StyleSheet* GetParentStyleSheet() const;
   
-  nsMediaList* Media();
+  dom::MediaList* Media();
   bool Disabled() const { return mDisabled; }
   
 
@@ -262,7 +262,7 @@ protected:
   nsIDocument*          mDocument; 
   nsINode*              mOwningNode; 
 
-  RefPtr<nsMediaList> mMedia;
+  RefPtr<dom::MediaList> mMedia;
 
   RefPtr<StyleSheet> mNext;
 
