@@ -1611,6 +1611,20 @@ class RecursionCheck
     RegExpCompiler* compiler_;
 };
 
+static inline bool
+IsLatin1Equivalent(char16_t c, RegExpCompiler* compiler)
+{
+    if (c <= kMaxOneByteCharCode)
+        return true;
+
+    if (!compiler->ignore_case())
+        return false;
+
+    char16_t converted = ConvertNonLatin1ToLatin1(c, compiler->unicode());
+
+    return converted != 0 && converted <= kMaxOneByteCharCode;
+}
+
 
 
 RegExpCompiler::RegExpCompiler(JSContext* cx, LifoAlloc* alloc, int capture_count,
@@ -3647,36 +3661,32 @@ EmitSimpleCharacter(RegExpCompiler* compiler,
 
 
 
+
+
+
+
 static inline bool
-EmitAtomNonLetter(RegExpCompiler* compiler,
-                  char16_t c,
-                  jit::Label* on_failure,
-                  int cp_offset,
-                  bool check,
-                  bool preloaded)
+EmitAtomSingle(RegExpCompiler* compiler,
+               char16_t c,
+               jit::Label* on_failure,
+               int cp_offset,
+               bool check,
+               bool preloaded)
 {
     RegExpMacroAssembler* macro_assembler = compiler->macro_assembler();
+    
     bool ascii = compiler->ascii();
     char16_t chars[kEcma262UnCanonicalizeMaxWidth];
     int length = GetCaseIndependentLetters(c, ascii, compiler->unicode(), chars);
-    if (length < 1) {
-        
-        
-        return false;  
-    }
+    if (length != 1)
+        return false;
+
     bool checked = false;
-    
-    if (length == 1) {
-        if (ascii && c > kMaxOneByteCharCode) {
-            
-            return false;  
-        }
-        if (!preloaded) {
-            macro_assembler->LoadCurrentCharacter(cp_offset, on_failure, check);
-            checked = check;
-        }
-        macro_assembler->CheckNotCharacter(c, on_failure);
+    if (!preloaded) {
+        macro_assembler->LoadCurrentCharacter(cp_offset, on_failure, check);
+        checked = check;
     }
+    macro_assembler->CheckNotCharacter(chars[0], on_failure);
     return checked;
 }
 
@@ -3724,12 +3734,12 @@ ShortCutEmitCharacterPair(RegExpMacroAssembler* macro_assembler,
 
 
 static inline bool
-EmitAtomLetter(RegExpCompiler* compiler,
-               char16_t c,
-               jit::Label* on_failure,
-               int cp_offset,
-               bool check,
-               bool preloaded)
+EmitAtomMulti(RegExpCompiler* compiler,
+              char16_t c,
+              jit::Label* on_failure,
+              int cp_offset,
+              bool check,
+              bool preloaded)
 {
     RegExpMacroAssembler* macro_assembler = compiler->macro_assembler();
     bool ascii = compiler->ascii();
@@ -3825,19 +3835,19 @@ TextNode::TextEmitPass(RegExpCompiler* compiler,
                 switch (pass) {
                   case NON_ASCII_MATCH:
                     MOZ_ASSERT(ascii);
-                    if (quarks[j] > kMaxOneByteCharCode) {
+                    if (!IsLatin1Equivalent(quarks[j], compiler)) {
                         assembler->JumpOrBacktrack(backtrack);
                         return;
                     }
                     break;
-                  case NON_LETTER_CHARACTER_MATCH:
-                    emit_function = &EmitAtomNonLetter;
+                  case CASE_SINGLE_CHARACTER_MATCH:
+                    emit_function = &EmitAtomSingle;
                     break;
                   case SIMPLE_CHARACTER_MATCH:
                     emit_function = &EmitSimpleCharacter;
                     break;
-                  case CASE_CHARACTER_MATCH:
-                    emit_function = &EmitAtomLetter;
+                  case CASE_MUTLI_CHARACTER_MATCH:
+                    emit_function = &EmitAtomMulti;
                     break;
                   default:
                     break;
@@ -3886,7 +3896,7 @@ TextNode::SkipPass(int int_pass, bool ignore_case)
     TextEmitPassType pass = static_cast<TextEmitPassType>(int_pass);
     if (ignore_case)
         return pass == SIMPLE_CHARACTER_MATCH;
-    return pass == NON_LETTER_CHARACTER_MATCH || pass == CASE_CHARACTER_MATCH;
+    return pass == CASE_SINGLE_CHARACTER_MATCH || pass == CASE_MUTLI_CHARACTER_MATCH;
 }
 
 
