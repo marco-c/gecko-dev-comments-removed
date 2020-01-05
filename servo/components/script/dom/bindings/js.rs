@@ -248,26 +248,37 @@ impl<T: Reflectable> MutNullableJS<T> {
     pub unsafe fn get_inner(&self) -> Option<JS<T>> {
         self.ptr.get()
     }
+
+    pub fn or_init(&self, cb: || -> Temporary<T>) -> Temporary<T> {
+        match self.get() {
+            Some(inner) => inner,
+            None => {
+                let inner = cb();
+                self.assign(Some(inner));
+                inner
+            },
+        }
+    }
 }
 
 impl<T: Reflectable> JS<T> {
-    
-    
-    
+    /// Returns an unsafe pointer to the interior of this JS object without touching the borrow
+    /// flags. This is the only method that be safely accessed from layout. (The fact that this
+    /// is unsafe is what necessitates the layout wrappers.)
     pub unsafe fn unsafe_get(&self) -> *mut T {
         mem::transmute_copy(&self.ptr)
     }
 
-    
-    
-    
+    /// Store an unrooted value in this field. This is safe under the assumption that JS<T>
+    /// values are only used as fields in DOM types that are reachable in the GC graph,
+    /// so this unrooted value becomes transitively rooted for the lifetime of its new owner.
     pub fn assign(&mut self, val: Temporary<T>) {
         *self = unsafe { val.inner() };
     }
 }
 
 impl<From, To> JS<From> {
-    
+    //XXXjdm It would be lovely if this could be private.
     pub unsafe fn transmute(self) -> JS<To> {
         mem::transmute(self)
     }
@@ -278,7 +289,7 @@ impl<From, To> JS<From> {
 }
 
 
-
+/// Get an `Option<JSRef<T>>` out of an `Option<Root<T>>`
 pub trait RootedReference<T> {
     fn root_ref<'a>(&'a self) -> Option<JSRef<'a, T>>;
 }
@@ -289,7 +300,7 @@ impl<'a, 'b, T: Reflectable> RootedReference<T> for Option<Root<'a, 'b, T>> {
     }
 }
 
-
+/// Get an `Option<Option<JSRef<T>>>` out of an `Option<Option<Root<T>>>`
 pub trait OptionalRootedReference<T> {
     fn root_ref<'a>(&'a self) -> Option<Option<JSRef<'a, T>>>;
 }
@@ -300,9 +311,9 @@ impl<'a, 'b, T: Reflectable> OptionalRootedReference<T> for Option<Option<Root<'
     }
 }
 
-
-
-
+/// Trait that allows extracting a `JS<T>` value from a variety of rooting-related containers,
+/// which in general is an unsafe operation since they can outlive the rooted lifetime of the
+/// original value.
 pub trait Assignable<T> {
     unsafe fn get_js(&self) -> JS<T>;
 }
@@ -325,8 +336,8 @@ impl<T: Reflectable> Assignable<T> for Temporary<T> {
     }
 }
 
-
-
+/// Assign an optional rootable value (either of `JS<T>` or `Temporary<T>`) to an optional
+/// field of a DOM type (ie. `Option<JS<T>>`)
 pub trait OptionalSettable<T> {
     fn assign(&self, val: Option<T>);
 }
@@ -338,7 +349,7 @@ impl<T: Assignable<U>, U: Reflectable> OptionalSettable<T> for Cell<Option<JS<U>
 }
 
 
-
+/// Root a rootable `Option` type (used for `Option<Temporary<T>>`)
 pub trait OptionalRootable<T> {
     fn root<'a, 'b>(self) -> Option<Root<'a, 'b, T>>;
 }
@@ -349,7 +360,7 @@ impl<T: Reflectable> OptionalRootable<T> for Option<Temporary<T>> {
     }
 }
 
-
+/// Return an unrooted type for storing in optional DOM fields
 pub trait OptionalUnrootable<T> {
     fn unrooted(&self) -> Option<JS<T>>;
 }
@@ -360,7 +371,7 @@ impl<'a, T: Reflectable> OptionalUnrootable<T> for Option<JSRef<'a, T>> {
     }
 }
 
-
+/// Root a rootable `Option` type (used for `Option<JS<T>>`)
 pub trait OptionalRootedRootable<T> {
     fn root<'a, 'b>(&self) -> Option<Root<'a, 'b, T>>;
 }
@@ -371,7 +382,7 @@ impl<T: Reflectable> OptionalRootedRootable<T> for Option<JS<T>> {
     }
 }
 
-
+/// Root a rootable `Option<Option>` type (used for `Option<Option<JS<T>>>`)
 pub trait OptionalOptionalRootedRootable<T> {
     fn root<'a, 'b>(&self) -> Option<Option<Root<'a, 'b, T>>>;
 }
@@ -383,7 +394,7 @@ impl<T: Reflectable> OptionalOptionalRootedRootable<T> for Option<Option<JS<T>>>
 }
 
 
-
+/// Root a rootable `Result` type (any of `Temporary<T>` or `JS<T>`)
 pub trait ResultRootable<T,U> {
     fn root<'a, 'b>(self) -> Result<Root<'a, 'b, T>, U>;
 }
@@ -400,9 +411,9 @@ impl<T: Reflectable, U> ResultRootable<T, U> for Result<JS<T>, U> {
     }
 }
 
-
-
-
+/// Provides a facility to push unrooted values onto lists of rooted values. This is safe
+/// under the assumption that said lists are reachable via the GC graph, and therefore the
+/// new values are transitively rooted for the lifetime of their new owner.
 pub trait TemporaryPushable<T> {
     fn push_unrooted(&mut self, val: &T);
     fn insert_unrooted(&mut self, index: uint, val: &T);
@@ -418,20 +429,20 @@ impl<T: Assignable<U>, U: Reflectable> TemporaryPushable<T> for Vec<JS<U>> {
     }
 }
 
-
+/// An opaque, LIFO rooting mechanism.
 pub struct RootCollection {
     roots: UnsafeCell<SmallVec16<*mut JSObject>>,
 }
 
 impl RootCollection {
-    
+    /// Create an empty collection of roots
     pub fn new() -> RootCollection {
         RootCollection {
             roots: UnsafeCell::new(SmallVec16::new()),
         }
     }
 
-    
+    /// Track a stack-based root to ensure LIFO root ordering
     fn root<'a, 'b, T: Reflectable>(&self, untracked: &Root<'a, 'b, T>) {
         unsafe {
             let roots = self.roots.get();
@@ -440,7 +451,7 @@ impl RootCollection {
         }
     }
 
-    
+    /// Stop tracking a stack-based root, asserting if LIFO root ordering has been violated
     fn unroot<'a, 'b, T: Reflectable>(&self, rooted: &Root<'a, 'b, T>) {
         unsafe {
             let roots = self.roots.get();
