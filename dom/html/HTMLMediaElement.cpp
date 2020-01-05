@@ -3150,6 +3150,12 @@ HTMLMediaElement::AddCaptureMediaTrackToOutputStream(MediaTrack* aTrack,
   }
   aOutputStream.mCapturingMediaStream = true;
 
+  if (aOutputStream.mStream == mSrcStream) {
+    
+    
+    return;
+  }
+
   MediaStream* outputSource = aOutputStream.mStream->GetInputStream();
   if (!outputSource) {
     NS_ERROR("No output source stream");
