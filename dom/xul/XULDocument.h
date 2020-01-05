@@ -13,7 +13,7 @@
 #include "nsTArray.h"
 
 #include "mozilla/dom/XMLDocument.h"
-#include "mozilla/StyleSheetHandle.h"
+#include "mozilla/StyleSheet.h"
 #include "nsForwardReference.h"
 #include "nsIContent.h"
 #include "nsIDOMXULCommandDispatcher.h"
@@ -163,7 +163,7 @@ public:
     NS_DECL_NSIDOMXULDOCUMENT
 
     
-    NS_IMETHOD StyleSheetLoaded(mozilla::StyleSheetHandle aSheet,
+    NS_IMETHOD StyleSheetLoaded(mozilla::StyleSheet* aSheet,
                                 bool aWasAlternate,
                                 nsresult aStatus) override;
 
@@ -344,7 +344,7 @@ protected:
 
 
 
-    nsTArray<StyleSheetHandle::RefPtr> mOverlaySheets;
+    nsTArray<RefPtr<StyleSheet>> mOverlaySheets;
 
     nsCOMPtr<nsIDOMXULCommandDispatcher>     mCommandDispatcher; 
 

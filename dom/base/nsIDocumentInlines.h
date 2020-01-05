@@ -35,7 +35,7 @@ nsIDocument::FindDocStyleSheetInsertionPoint(
     if (sheetDocIndex > newDocIndex)
       break;
 
-    mozilla::StyleSheetHandle sheetHandle = sheet;
+    mozilla::StyleSheet* sheetHandle = sheet;
 
     
     

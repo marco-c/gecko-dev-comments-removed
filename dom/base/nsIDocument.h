@@ -34,7 +34,7 @@
 #include "mozilla/UniquePtr.h"
 #include "mozilla/CORSMode.h"
 #include "mozilla/StyleBackendType.h"
-#include "mozilla/StyleSheetHandle.h"
+#include "mozilla/StyleSheet.h"
 #include <bitset>                        
 
 #ifdef MOZILLA_INTERNAL_API
@@ -997,7 +997,7 @@ public:
 
 
 
-  virtual void EnsureOnDemandBuiltInUASheet(mozilla::StyleSheetHandle aSheet) = 0;
+  virtual void EnsureOnDemandBuiltInUASheet(mozilla::StyleSheet* aSheet) = 0;
 
   
 
@@ -1013,7 +1013,7 @@ public:
 
 
 
-  virtual mozilla::StyleSheetHandle GetStyleSheetAt(int32_t aIndex) const = 0;
+  virtual mozilla::StyleSheet* GetStyleSheetAt(int32_t aIndex) const = 0;
 
   
 
@@ -1022,7 +1022,7 @@ public:
 
 
 
-  virtual void InsertStyleSheetAt(mozilla::StyleSheetHandle aSheet,
+  virtual void InsertStyleSheetAt(mozilla::StyleSheet* aSheet,
                                   int32_t aIndex) = 0;
 
   
@@ -1032,7 +1032,7 @@ public:
 
 
   virtual int32_t GetIndexOfStyleSheet(
-      const mozilla::StyleSheetHandle aSheet) const = 0;
+      const mozilla::StyleSheet* aSheet) const = 0;
 
   
 
@@ -1043,24 +1043,24 @@ public:
 
 
   virtual void UpdateStyleSheets(
-      nsTArray<mozilla::StyleSheetHandle::RefPtr>& aOldSheets,
-      nsTArray<mozilla::StyleSheetHandle::RefPtr>& aNewSheets) = 0;
+      nsTArray<RefPtr<mozilla::StyleSheet>>& aOldSheets,
+      nsTArray<RefPtr<mozilla::StyleSheet>>& aNewSheets) = 0;
 
   
 
 
-  virtual void AddStyleSheet(mozilla::StyleSheetHandle aSheet) = 0;
+  virtual void AddStyleSheet(mozilla::StyleSheet* aSheet) = 0;
 
   
 
 
-  virtual void RemoveStyleSheet(mozilla::StyleSheetHandle aSheet) = 0;
+  virtual void RemoveStyleSheet(mozilla::StyleSheet* aSheet) = 0;
 
   
 
 
 
-  virtual void SetStyleSheetApplicableState(mozilla::StyleSheetHandle aSheet,
+  virtual void SetStyleSheetApplicableState(mozilla::StyleSheet* aSheet,
                                             bool aApplicable) = 0;
 
   enum additionalSheetType {
@@ -1073,10 +1073,10 @@ public:
   virtual nsresult LoadAdditionalStyleSheet(additionalSheetType aType,
                                             nsIURI* aSheetURI) = 0;
   virtual nsresult AddAdditionalStyleSheet(additionalSheetType aType,
-                                           mozilla::StyleSheetHandle aSheet) = 0;
+                                           mozilla::StyleSheet* aSheet) = 0;
   virtual void RemoveAdditionalStyleSheet(additionalSheetType aType,
                                           nsIURI* sheetURI) = 0;
-  virtual mozilla::StyleSheetHandle GetFirstAdditionalAuthorSheet() = 0;
+  virtual mozilla::StyleSheet* GetFirstAdditionalAuthorSheet() = 0;
 
   
 
@@ -1397,11 +1397,11 @@ public:
 
   
   
-  virtual void StyleRuleChanged(mozilla::StyleSheetHandle aStyleSheet,
+  virtual void StyleRuleChanged(mozilla::StyleSheet* aStyleSheet,
                                 mozilla::css::Rule* aStyleRule) = 0;
-  virtual void StyleRuleAdded(mozilla::StyleSheetHandle aStyleSheet,
+  virtual void StyleRuleAdded(mozilla::StyleSheet* aStyleSheet,
                               mozilla::css::Rule* aStyleRule) = 0;
-  virtual void StyleRuleRemoved(mozilla::StyleSheetHandle aStyleSheet,
+  virtual void StyleRuleRemoved(mozilla::StyleSheet* aStyleSheet,
                                 mozilla::css::Rule* aStyleRule) = 0;
 
   
@@ -2209,7 +2209,7 @@ public:
 
 
   virtual nsresult LoadChromeSheetSync(nsIURI* aURI, bool aIsAgentSheet,
-                                       mozilla::StyleSheetHandle::RefPtr* aSheet) = 0;
+                                       RefPtr<mozilla::StyleSheet>* aSheet) = 0;
 
   
 

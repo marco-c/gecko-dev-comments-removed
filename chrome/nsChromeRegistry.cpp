@@ -29,14 +29,14 @@
 #include "nsIScriptError.h"
 #include "nsIWindowMediator.h"
 #include "nsIPrefService.h"
-#include "mozilla/StyleSheetHandle.h"
-#include "mozilla/StyleSheetHandleInlines.h"
+#include "mozilla/StyleSheet.h"
+#include "mozilla/StyleSheetInlines.h"
 
 nsChromeRegistry* nsChromeRegistry::gChromeRegistry;
 
 
 
-using mozilla::StyleSheetHandle;
+using mozilla::StyleSheet;
 using mozilla::dom::IsChromeURI;
 
 
@@ -402,17 +402,17 @@ nsresult nsChromeRegistry::RefreshWindow(nsPIDOMWindowOuter* aWindow)
   nsCOMPtr<nsIPresShell> shell = document->GetShell();
   if (shell) {
     
-    nsTArray<StyleSheetHandle::RefPtr> agentSheets;
+    nsTArray<RefPtr<StyleSheet>> agentSheets;
     rv = shell->GetAgentStyleSheets(agentSheets);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    nsTArray<StyleSheetHandle::RefPtr> newAgentSheets;
-    for (StyleSheetHandle sheet : agentSheets) {
+    nsTArray<RefPtr<StyleSheet>> newAgentSheets;
+    for (StyleSheet* sheet : agentSheets) {
       nsIURI* uri = sheet->GetSheetURI();
 
       if (IsChromeURI(uri)) {
         
-        StyleSheetHandle::RefPtr newSheet;
+        RefPtr<StyleSheet> newSheet;
         rv = document->LoadChromeSheetSync(uri, true, &newSheet);
         if (NS_FAILED(rv)) return rv;
         if (newSheet) {
@@ -433,26 +433,26 @@ nsresult nsChromeRegistry::RefreshWindow(nsPIDOMWindowOuter* aWindow)
   int32_t count = document->GetNumberOfStyleSheets();
 
   
-  nsTArray<StyleSheetHandle::RefPtr> oldSheets(count);
-  nsTArray<StyleSheetHandle::RefPtr> newSheets(count);
+  nsTArray<RefPtr<StyleSheet>> oldSheets(count);
+  nsTArray<RefPtr<StyleSheet>> newSheets(count);
 
   
   for (int32_t i = 0; i < count; i++) {
     
-    StyleSheetHandle styleSheet = document->GetStyleSheetAt(i);
+    StyleSheet* styleSheet = document->GetStyleSheetAt(i);
     oldSheets.AppendElement(styleSheet);
   }
 
   
   
-  for (StyleSheetHandle sheet : oldSheets) {
+  for (StyleSheet* sheet : oldSheets) {
     MOZ_ASSERT(sheet, "GetStyleSheetAt shouldn't return nullptr for "
                       "in-range sheet indexes");
     nsIURI* uri = sheet->GetSheetURI();
 
     if (!sheet->IsInline() && IsChromeURI(uri)) {
       
-      StyleSheetHandle::RefPtr newSheet;
+      RefPtr<StyleSheet> newSheet;
       
       
       document->LoadChromeSheetSync(uri, false, &newSheet);

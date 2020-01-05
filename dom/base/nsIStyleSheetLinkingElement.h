@@ -8,7 +8,7 @@
 
 
 #include "nsISupports.h"
-#include "mozilla/StyleSheetHandle.h"
+#include "mozilla/StyleSheet.h"
 
 class nsICSSLoaderObserver;
 class nsIURI;
@@ -28,14 +28,14 @@ public:
 
 
 
-  NS_IMETHOD SetStyleSheet(mozilla::StyleSheetHandle aStyleSheet) = 0;
+  NS_IMETHOD SetStyleSheet(mozilla::StyleSheet* aStyleSheet) = 0;
 
   
 
 
 
 
-  NS_IMETHOD_(mozilla::StyleSheetHandle) GetStyleSheet() = 0;
+  NS_IMETHOD_(mozilla::StyleSheet*) GetStyleSheet() = 0;
 
   
 

@@ -7,7 +7,7 @@
 #define StylesheetTransactions_h
 
 #include "mozilla/EditTransactionBase.h" 
-#include "mozilla/StyleSheetHandle.h"   
+#include "mozilla/StyleSheet.h"   
 #include "nsCycleCollectionParticipant.h"
 #include "nsID.h"                       
 #include "nscore.h"                     
@@ -24,7 +24,7 @@ public:
 
 
 
-  NS_IMETHOD Init(nsIEditor* aEditor, StyleSheetHandle aSheet);
+  NS_IMETHOD Init(nsIEditor* aEditor, StyleSheet* aSheet);
 
   AddStyleSheetTransaction();
 
@@ -38,7 +38,7 @@ protected:
   
   nsIEditor* mEditor;
   
-  mozilla::StyleSheetHandle::RefPtr mSheet;
+  RefPtr<mozilla::StyleSheet> mSheet;
 };
 
 
@@ -50,7 +50,7 @@ public:
 
 
 
-  NS_IMETHOD Init(nsIEditor* aEditor, StyleSheetHandle aSheet);
+  NS_IMETHOD Init(nsIEditor* aEditor, StyleSheet* aSheet);
 
   RemoveStyleSheetTransaction();
 
@@ -64,7 +64,7 @@ protected:
   
   nsIEditor* mEditor;
   
-  StyleSheetHandle::RefPtr mSheet;
+  RefPtr<StyleSheet> mSheet;
 
 };
 

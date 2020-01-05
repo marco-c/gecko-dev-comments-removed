@@ -8,7 +8,7 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/CSSEditUtils.h"
-#include "mozilla/StyleSheetHandle.h"
+#include "mozilla/StyleSheet.h"
 #include "mozilla/TextEditor.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/File.h"
@@ -365,7 +365,7 @@ public:
   NS_IMETHOD GetRootElement(nsIDOMElement** aRootElement) override;
 
   
-  NS_IMETHOD StyleSheetLoaded(StyleSheetHandle aSheet,
+  NS_IMETHOD StyleSheetLoaded(StyleSheet* aSheet,
                               bool aWasAlternate, nsresult aStatus) override;
 
   
@@ -417,15 +417,15 @@ public:
   
 
 
-  StyleSheetHandle GetStyleSheetForURL(const nsAString& aURL);
-  void GetURLForStyleSheet(StyleSheetHandle aStyleSheet,
+  StyleSheet* GetStyleSheetForURL(const nsAString& aURL);
+  void GetURLForStyleSheet(StyleSheet* aStyleSheet,
                            nsAString& aURL);
 
   
 
 
   nsresult AddNewStyleSheetToList(const nsAString &aURL,
-                                  StyleSheetHandle aStyleSheet);
+                                  StyleSheet* aStyleSheet);
   nsresult RemoveStyleSheetFromList(const nsAString &aURL);
 
   bool IsCSSEnabled()
@@ -907,7 +907,7 @@ protected:
 
   
   nsTArray<nsString> mStyleSheetURLs;
-  nsTArray<StyleSheetHandle::RefPtr> mStyleSheets;
+  nsTArray<RefPtr<StyleSheet>> mStyleSheets;
 
   
   nsTArray<PropItem*> mDefaultStyles;

@@ -2086,7 +2086,7 @@ CSSStyleSheet::InsertRuleIntoGroup(const nsAString & aRule,
 
 
 NS_IMETHODIMP
-CSSStyleSheet::StyleSheetLoaded(StyleSheetHandle aSheet,
+CSSStyleSheet::StyleSheetLoaded(StyleSheet* aSheet,
                                 bool aWasAlternate,
                                 nsresult aStatus)
 {

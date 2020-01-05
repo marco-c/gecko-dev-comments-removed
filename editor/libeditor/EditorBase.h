@@ -9,7 +9,7 @@
 #include "mozilla/Assertions.h"         
 #include "mozilla/OwningNonNull.h"      
 #include "mozilla/SelectionState.h"     
-#include "mozilla/StyleSheetHandle.h"   
+#include "mozilla/StyleSheet.h"   
 #include "mozilla/dom/Text.h"
 #include "nsCOMPtr.h"                   
 #include "nsCycleCollectionParticipant.h"
@@ -328,14 +328,14 @@ protected:
 
 
   NS_IMETHOD CreateTxnForAddStyleSheet(
-               StyleSheetHandle aSheet,
+               StyleSheet* aSheet,
                AddStyleSheetTransaction** aTransaction);
 
   
 
 
   NS_IMETHOD CreateTxnForRemoveStyleSheet(
-               StyleSheetHandle aSheet,
+               StyleSheet* aSheet,
                RemoveStyleSheetTransaction** aTransaction);
 
   nsresult DeleteText(nsGenericDOMDataNode& aElement,
