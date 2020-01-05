@@ -1374,8 +1374,7 @@ var gCSSProperties = {
   },
   'transform': {
     
-    types: [
-    ]
+    types: [ 'transformList' ]
   },
   'transform-box': {
     
@@ -1467,6 +1466,18 @@ function testAnimationSamples(animation, idlName, testSamples) {
                   testSample.expected,
                   'The value should be ' + testSample.expected +
                   ' at ' + testSample.time + 'ms');
+  });
+}
+
+function testAnimationSampleMatrices(animation, idlName, testSamples) {
+  var target = animation.effect.target;
+  testSamples.forEach(function(testSample) {
+    animation.currentTime = testSample.time;
+    var actual = getComputedStyle(target)[idlName];
+    var expected = createMatrixFromArray(testSample.expected);
+    assert_matrix_equals(actual, expected,
+                         'The value should be ' + expected +
+                         ' at ' + testSample.time + 'ms but got ' + actual);
   });
 }
 
