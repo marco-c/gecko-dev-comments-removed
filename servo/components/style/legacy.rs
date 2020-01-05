@@ -167,25 +167,23 @@ impl PresentationalHintSynthesis for Stylist {
                     shareable);
             }
             name if *name == atom!("input") => {
-                match element.get_integer_attribute(IntegerAttribute::Size) {
-                    Some(value) if value != 0 => {
-                        
-                        
-                        
-                        
-                        let value = match element.get_attr(&ns!(""), &atom!("type")) {
-                            Some("text") | Some("password") => {
-                                specified::Length::ServoCharacterWidth(specified::CharacterWidth(value))
+                
+                match element.get_attr(&ns!(""), &atom!("type")) {
+                    Some("text") | Some("password") => {
+                        match element.get_integer_attribute(IntegerAttribute::Size) {
+                            Some(value) if value != 0 => {
+                                let value = specified::Length::ServoCharacterWidth(
+                                    specified::CharacterWidth(value));
+                                matching_rules_list.vec_push(from_declaration(
+                                        PropertyDeclaration::Width(SpecifiedValue(
+                                            specified::LengthOrPercentageOrAuto::Length(value)))));
+                                *shareable = false
                             }
-                            _ => specified::Length::Absolute(Au::from_px(value as isize)),
-                        };
-                        matching_rules_list.vec_push(from_declaration(
-                                PropertyDeclaration::Width(SpecifiedValue(
-                                    specified::LengthOrPercentageOrAuto::Length(value)))));
-                        *shareable = false
+                            Some(_) | None => {}
+                        }
                     }
-                    Some(_) | None => {}
-                }
+                    _ => {}
+                };
             }
             name if *name == atom!("textarea") => {
                 match element.get_integer_attribute(IntegerAttribute::Cols) {
