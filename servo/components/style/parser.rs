@@ -69,8 +69,6 @@ pub fn log_css_error(input: &mut Parser, position: SourcePosition, message: &str
 
 
 
-
-
 pub trait Parse {
-    fn parse(input: &mut Parser) -> Result<Self, ()> where Self: Sized;
+    fn parse(context: &ParserContext, input: &mut Parser) -> Result<Self, ()> where Self: Sized;
 }

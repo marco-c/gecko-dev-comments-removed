@@ -2,8 +2,11 @@
 
 
 
+use cssparser::Parser;
+use media_queries::CSSErrorReporterTest;
 use parsing::parse;
-use style::parser::Parse;
+use style::parser::{Parse, ParserContext};
+use style::stylesheets::Origin;
 use style::values::specified::basic_shape::*;
 use style_traits::ToCss;
 
@@ -11,8 +14,8 @@ use style_traits::ToCss;
 
 macro_rules! assert_roundtrip_basicshape {
     ($fun:expr, $input:expr, $output:expr) => {
-        assert_roundtrip!($fun, $input, $output);
-        assert_roundtrip!(BasicShape::parse, $input, $output);
+        assert_roundtrip_with_context!($fun, $input, $output);
+        assert_roundtrip_with_context!(BasicShape::parse, $input, $output);
     }
 }
 
