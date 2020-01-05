@@ -1446,8 +1446,6 @@ gfxWindowsPlatform::RecordContentDeviceFailure(TelemetryDeviceCode aDevice)
 void
 gfxWindowsPlatform::InitializeDevices()
 {
-  MOZ_ASSERT(!InSafeMode());
-
   if (XRE_IsParentProcess()) {
     
     
