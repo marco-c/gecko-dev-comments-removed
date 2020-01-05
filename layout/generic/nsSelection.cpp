@@ -925,6 +925,8 @@ nsFrameSelection::Init(nsIPresShell *aShell, nsIContent *aLimiter)
 
     Preferences::AddBoolVarCache(&sSelectionEventsEnabled,
                                  "dom.select_events.enabled", false);
+    Preferences::AddBoolVarCache(&sSelectionEventsOnTextControlsEnabled,
+                                 "dom.select_events.textcontrols.enabled", false);
   }
 
   RefPtr<AccessibleCaretEventHub> eventHub = mShell->GetAccessibleCaretEventHub();
@@ -949,6 +951,7 @@ nsFrameSelection::Init(nsIPresShell *aShell, nsIContent *aLimiter)
 }
 
 bool nsFrameSelection::sSelectionEventsEnabled = false;
+bool nsFrameSelection::sSelectionEventsOnTextControlsEnabled = false;
 
 nsresult
 nsFrameSelection::MoveCaret(nsDirection       aDirection,
@@ -3861,24 +3864,39 @@ Selection::AddItem(nsRange* aItem, int32_t* aOutIndex, bool aNoStartSelect)
         bool defaultAction = true;
 
         
+        
+        
+        
+        bool dispatchEvent = true;
         nsCOMPtr<nsINode> target = aItem->GetStartParent();
-        while (target && target->IsInNativeAnonymousSubtree()) {
-          target = target->GetParent();
+        if (nsFrameSelection::sSelectionEventsOnTextControlsEnabled) {
+          
+          while (target && target->IsInNativeAnonymousSubtree()) {
+            target = target->GetParent();
+          }
+        } else {
+          if (target->IsInNativeAnonymousSubtree()) {
+            
+            
+            dispatchEvent = false;
+          }
         }
 
-        nsContentUtils::DispatchTrustedEvent(GetParentObject(), target,
-                                             NS_LITERAL_STRING("selectstart"),
-                                             true, true, &defaultAction);
+        if (dispatchEvent) {
+          nsContentUtils::DispatchTrustedEvent(GetParentObject(), target,
+                                               NS_LITERAL_STRING("selectstart"),
+                                               true, true, &defaultAction);
 
-        if (!defaultAction) {
-          return NS_OK;
-        }
+          if (!defaultAction) {
+            return NS_OK;
+          }
 
-        
-        
-        
-        if (!aItem->IsPositioned()) {
-          return NS_ERROR_UNEXPECTED;
+          
+          
+          
+          if (!aItem->IsPositioned()) {
+            return NS_ERROR_UNEXPECTED;
+          }
         }
       }
 
@@ -6720,33 +6738,54 @@ SelectionChangeListener::NotifySelectionChanged(nsIDOMDocument* aDoc,
     return NS_OK;
   }
 
-  nsCOMPtr<nsINode> target;
+  
+  
+  
+  
+  if (nsFrameSelection::sSelectionEventsOnTextControlsEnabled) {
+    nsCOMPtr<nsINode> target;
 
-  
-  
-  
-  
-  
-  if (nsFrameSelection* fs = sel->GetFrameSelection()) {
-    if (nsCOMPtr<nsIContent> root = fs->GetLimiter()) {
-      while (root && root->IsInNativeAnonymousSubtree()) {
-        root = root->GetParent();
+    
+    
+    
+    
+    
+    if (nsFrameSelection* fs = sel->GetFrameSelection()) {
+      if (nsCOMPtr<nsIContent> root = fs->GetLimiter()) {
+        while (root && root->IsInNativeAnonymousSubtree()) {
+          root = root->GetParent();
+        }
+
+        target = root.forget();
       }
-
-      target = root.forget();
     }
-  }
 
-  
-  if (!target) {
+    
+    if (!target) {
+      nsCOMPtr<nsIDocument> doc = do_QueryInterface(aDoc);
+      target = doc.forget();
+    }
+
+    if (target) {
+      RefPtr<AsyncEventDispatcher> asyncDispatcher =
+        new AsyncEventDispatcher(target, NS_LITERAL_STRING("selectionchange"), false);
+      asyncDispatcher->PostDOMEvent();
+    }
+  } else {
+    if (nsFrameSelection* fs = sel->GetFrameSelection()) {
+      if (nsCOMPtr<nsIContent> root = fs->GetLimiter()) {
+        if (root->IsInNativeAnonymousSubtree()) {
+          return NS_OK;
+        }
+      }
+    }
+
     nsCOMPtr<nsIDocument> doc = do_QueryInterface(aDoc);
-    target = doc.forget();
-  }
-
-  if (target) {
-    RefPtr<AsyncEventDispatcher> asyncDispatcher =
-      new AsyncEventDispatcher(target, NS_LITERAL_STRING("selectionchange"), false);
-    asyncDispatcher->PostDOMEvent();
+    if (doc) {
+      RefPtr<AsyncEventDispatcher> asyncDispatcher =
+        new AsyncEventDispatcher(doc, NS_LITERAL_STRING("selectionchange"), false);
+      asyncDispatcher->PostDOMEvent();
+    }
   }
 
   return NS_OK;

@@ -143,6 +143,13 @@ pref("dom.select_events.enabled", false);
 #endif
 
 
+#ifdef NIGHTLY_BUILD
+pref("dom.select_events.textcontrols.enabled", true);
+#else
+pref("dom.select_events.textcontrols.enabled", false);
+#endif
+
+
 pref("dom.workers.enabled", true);
 
 
