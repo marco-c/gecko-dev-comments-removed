@@ -78,6 +78,7 @@ struct CacheIndexRecord {
 
 
 
+
   uint32_t        mFlags;
 
   CacheIndexRecord()
@@ -208,6 +209,13 @@ public:
   }
   uint32_t GetExpirationTime() const { return mRec->mExpirationTime; }
 
+  void     SetHasAltData(bool aHasAltData)
+  {
+    aHasAltData ? mRec->mFlags |= kHasAltDataMask
+                : mRec->mFlags &= ~kHasAltDataMask;
+  }
+  bool     GetHasAltData() const { return !!(mRec->mFlags & kHasAltDataMask); }
+
   
   void     SetFileSize(uint32_t aFileSize)
   {
@@ -311,7 +319,9 @@ private:
   
   static const uint32_t kPinnedMask      = 0x04000000;
 
-  static const uint32_t kReservedMask    = 0x03000000;
+  
+  static const uint32_t kHasAltDataMask = 0x02000000;
+  static const uint32_t kReservedMask    = 0x01000000;
 
   
   static const uint32_t kFileSizeMask    = 0x00FFFFFF;
@@ -363,6 +373,12 @@ public:
     CacheIndexEntry::SetExpirationTime(aExpirationTime);
   }
 
+  void SetHasAltData(bool aHasAltData)
+  {
+    mUpdateFlags |= kHasAltDataUpdatedMask;
+    CacheIndexEntry::SetHasAltData(aHasAltData);
+  }
+
   void SetFileSize(uint32_t aFileSize)
   {
     mUpdateFlags |= kFileSizeUpdatedMask;
@@ -379,12 +395,20 @@ public:
       aDst->mRec->mExpirationTime = mRec->mExpirationTime;
     }
     aDst->mRec->mOriginAttrsHash = mRec->mOriginAttrsHash;
+
+    if (mUpdateFlags & kHasAltDataUpdatedMask &&
+        ((aDst->mRec->mFlags ^ mRec->mFlags) & kHasAltDataMask)) {
+      
+      aDst->mRec->mFlags ^= kHasAltDataMask;
+    }
+
     if (mUpdateFlags & kFileSizeUpdatedMask) {
-      aDst->mRec->mFlags = mRec->mFlags;
+      
+      aDst->mRec->mFlags |= (mRec->mFlags & ~kHasAltDataMask);
     } else {
       
       aDst->mRec->mFlags &= kFileSizeMask;
-      aDst->mRec->mFlags |= (mRec->mFlags & ~kFileSizeMask);
+      aDst->mRec->mFlags |= (mRec->mFlags & ~kHasAltDataMask & ~kFileSizeMask);
     }
   }
 
@@ -392,6 +416,7 @@ private:
   static const uint32_t kFrecencyUpdatedMask = 0x00000001;
   static const uint32_t kExpirationUpdatedMask = 0x00000002;
   static const uint32_t kFileSizeUpdatedMask = 0x00000004;
+  static const uint32_t kHasAltDataUpdatedMask = 0x00000008;
 
   uint32_t mUpdateFlags;
 };
@@ -632,6 +657,7 @@ public:
   static nsresult UpdateEntry(const SHA1Sum::Hash *aHash,
                               const uint32_t      *aFrecency,
                               const uint32_t      *aExpirationTime,
+                              const bool          *aHasAltData,
                               const uint32_t      *aSize);
 
   
@@ -731,6 +757,7 @@ private:
   static bool HasEntryChanged(CacheIndexEntry *aEntry,
                               const uint32_t  *aFrecency,
                               const uint32_t  *aExpirationTime,
+                              const bool      *aHasAltData,
                               const uint32_t  *aSize);
 
   
@@ -833,9 +860,9 @@ private:
   
   nsresult ScheduleUpdateTimer(uint32_t aDelay);
   nsresult SetupDirectoryEnumerator();
-  void InitEntryFromDiskData(CacheIndexEntry *aEntry,
-                             CacheFileMetadata *aMetaData,
-                             int64_t aFileSize);
+  nsresult InitEntryFromDiskData(CacheIndexEntry *aEntry,
+                                 CacheFileMetadata *aMetaData,
+                                 int64_t aFileSize);
   
   bool IsUpdatePending();
   
