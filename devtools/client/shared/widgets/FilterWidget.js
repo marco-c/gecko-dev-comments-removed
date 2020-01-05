@@ -116,10 +116,13 @@ const SPECIAL_VALUES = new Set(["none", "unset", "initial", "inherit"]);
 
 
 
-function CSSFilterEditorWidget(el, value = "") {
+
+
+function CSSFilterEditorWidget(el, value = "", cssIsValid) {
   this.doc = el.ownerDocument;
   this.win = this.doc.defaultView;
   this.el = el;
+  this._cssIsValid = cssIsValid;
 
   this._addButtonClick = this._addButtonClick.bind(this);
   this._removeButtonClick = this._removeButtonClick.bind(this);
@@ -768,7 +771,7 @@ CSSFilterEditorWidget.prototype = {
       
       
       if (name !== "url") {
-        if (!DOMUtils.cssPropertyIsValid("filter", name + "(" + value + ")")) {
+        if (!this._cssIsValid("filter", name + "(" + value + ")")) {
           value = null;
         }
       }

@@ -65,6 +65,10 @@ function CssProperties(db) {
   this.isKnown = this.isKnown.bind(this);
   this.isInherited = this.isInherited.bind(this);
   this.supportsType = this.supportsType.bind(this);
+  this.isValidOnClient = this.isValidOnClient.bind(this);
+
+  
+  this._dummyElements = new WeakMap();
 }
 
 CssProperties.prototype = {
@@ -77,6 +81,45 @@ CssProperties.prototype = {
 
   isKnown(property) {
     return !!this.properties[property] || isCssVariable(property);
+  },
+
+  
+
+
+
+
+
+
+
+  isValidOnClient(name, value, doc) {
+    let dummyElement = this._dummyElements.get(doc);
+    if (!dummyElement) {
+      dummyElement = doc.createElement("div");
+      this._dummyElements.set(doc, dummyElement);
+    }
+
+    
+    
+    const sanitizedValue = ("" + value).replace(/!\s*important\s*$/, "");
+
+    
+    dummyElement.style[name] = sanitizedValue;
+    const isValid = !!dummyElement.style[name];
+
+    
+    dummyElement.style[name] = "";
+    return isValid;
+  },
+
+  
+
+
+
+
+
+
+  getValidityChecker(doc) {
+    return (name, value) => this.isValidOnClient(name, value, doc);
   },
 
   

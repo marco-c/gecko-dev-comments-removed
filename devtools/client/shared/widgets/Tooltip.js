@@ -919,9 +919,13 @@ Heritage.extend(SwatchBasedEditorTooltip.prototype, {
 
 
 
-function SwatchFilterTooltip(toolbox) {
+
+
+
+function SwatchFilterTooltip(toolbox, cssIsValid) {
   let stylesheet = "chrome://devtools/content/shared/widgets/filter-widget.css";
   SwatchBasedEditorTooltip.call(this, toolbox, stylesheet);
+  this._cssIsValid = cssIsValid;
 
   
   this.widget = this.setFilterContent("none");
@@ -945,7 +949,7 @@ Heritage.extend(SwatchBasedEditorTooltip.prototype, {
 
     this.tooltip.setContent(container, { width: 510, height: 200 });
 
-    return new CSSFilterEditorWidget(container, filter);
+    return new CSSFilterEditorWidget(container, filter, this._cssIsValid);
   },
 
   show: Task.async(function* () {
