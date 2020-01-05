@@ -638,8 +638,9 @@ LayerManagerComposite::RenderDebugOverlay(const IntRect& aBounds)
       text,
       IntPoint(2, 5),
       Matrix4x4(),
-      30,
-      650);
+      24,
+      600,
+      TextRenderer::FontType::FixedWidth);
 
     if (mUnusedApzTransformWarning) {
       
