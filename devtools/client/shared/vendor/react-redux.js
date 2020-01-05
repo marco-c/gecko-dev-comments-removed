@@ -1,5 +1,5 @@
-var REACT_PATH = "devtools/client/shared/vendor/react";
-var REDUX_PATH = "devtools/client/shared/vendor/redux";
+const REACT_PATH = "devtools/client/shared/vendor/react";
+const REDUX_PATH = "devtools/client/shared/vendor/redux";
 
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
@@ -7,10 +7,10 @@ var REDUX_PATH = "devtools/client/shared/vendor/redux";
 	else if(typeof define === 'function' && define.amd)
 		define(["react", "redux"], factory);
 	else if(typeof exports === 'object')
-		exports["ReactRedux"] = factory(require("react"), require("redux"));
+		exports["ReactRedux"] = factory(require(REACT_PATH), require(REDUX_PATH));
 	else
 		root["ReactRedux"] = factory(root["React"], root["Redux"]);
-})(this, function(__WEBPACK_EXTERNAL_MODULE_10__, __WEBPACK_EXTERNAL_MODULE_11__) {
+})(this, function(__WEBPACK_EXTERNAL_MODULE_2__, __WEBPACK_EXTERNAL_MODULE_22__) {
 return  (function(modules) { 
  	
  	var installedModules = {};
@@ -60,70 +60,61 @@ return  (function(modules) {
 	'use strict';
 
 	exports.__esModule = true;
+	exports.connect = exports.connectAdvanced = exports.Provider = undefined;
 
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	var _Provider = __webpack_require__(7);
 
-	var _react = __webpack_require__(10);
+	var _Provider2 = _interopRequireDefault(_Provider);
 
-	var _react2 = _interopRequireDefault(_react);
+	var _connectAdvanced = __webpack_require__(3);
 
-	var _componentsCreateAll = __webpack_require__(2);
+	var _connectAdvanced2 = _interopRequireDefault(_connectAdvanced);
 
-	var _componentsCreateAll2 = _interopRequireDefault(_componentsCreateAll);
+	var _connect = __webpack_require__(8);
 
-	var _createAll = _componentsCreateAll2['default'](_react2['default']);
+	var _connect2 = _interopRequireDefault(_connect);
 
-	var Provider = _createAll.Provider;
-	var connect = _createAll.connect;
-	exports.Provider = Provider;
-	exports.connect = connect;
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	exports.Provider = _Provider2.default;
+	exports.connectAdvanced = _connectAdvanced2.default;
+	exports.connect = _connect2.default;
 
  },
 
  function(module, exports) {
 
-	"use strict";
-
-	exports.__esModule = true;
-	exports["default"] = createStoreShape;
-
-	function createStoreShape(PropTypes) {
-	  return PropTypes.shape({
-	    subscribe: PropTypes.func.isRequired,
-	    dispatch: PropTypes.func.isRequired,
-	    getState: PropTypes.func.isRequired
-	  });
-	}
-
-	module.exports = exports["default"];
-
- },
-
- function(module, exports, __webpack_require__) {
-
 	'use strict';
 
 	exports.__esModule = true;
-	exports['default'] = createAll;
+	exports.default = warning;
+	
 
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
-	var _createProvider = __webpack_require__(4);
 
-	var _createProvider2 = _interopRequireDefault(_createProvider);
 
-	var _createConnect = __webpack_require__(3);
 
-	var _createConnect2 = _interopRequireDefault(_createConnect);
-
-	function createAll(React) {
-	  var Provider = _createProvider2['default'](React);
-	  var connect = _createConnect2['default'](React);
-
-	  return { Provider: Provider, connect: connect };
+	function warning(message) {
+	  
+	  if (typeof console !== 'undefined' && typeof console.error === 'function') {
+	    console.error(message);
+	  }
+	  
+	  try {
+	    
+	    
+	    
+	    throw new Error(message);
+	    
+	  } catch (e) {}
+	  
 	}
 
-	module.exports = exports['default'];
+ },
+
+ function(module, exports) {
+
+	module.exports = __WEBPACK_EXTERNAL_MODULE_2__;
 
  },
 
@@ -135,263 +126,298 @@ return  (function(modules) {
 
 	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
-	exports['default'] = createConnect;
+	exports.default = connectAdvanced;
 
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
-
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
-
-	function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
-	var _utilsCreateStoreShape = __webpack_require__(1);
-
-	var _utilsCreateStoreShape2 = _interopRequireDefault(_utilsCreateStoreShape);
-
-	var _utilsShallowEqual = __webpack_require__(6);
-
-	var _utilsShallowEqual2 = _interopRequireDefault(_utilsShallowEqual);
-
-	var _utilsIsPlainObject = __webpack_require__(5);
-
-	var _utilsIsPlainObject2 = _interopRequireDefault(_utilsIsPlainObject);
-
-	var _utilsWrapActionCreators = __webpack_require__(7);
-
-	var _utilsWrapActionCreators2 = _interopRequireDefault(_utilsWrapActionCreators);
-
-	var _hoistNonReactStatics = __webpack_require__(8);
+	var _hoistNonReactStatics = __webpack_require__(16);
 
 	var _hoistNonReactStatics2 = _interopRequireDefault(_hoistNonReactStatics);
 
-	var _invariant = __webpack_require__(9);
+	var _invariant = __webpack_require__(17);
 
 	var _invariant2 = _interopRequireDefault(_invariant);
 
-	var defaultMapStateToProps = function defaultMapStateToProps() {
-	  return {};
-	};
-	var defaultMapDispatchToProps = function defaultMapDispatchToProps(dispatch) {
-	  return { dispatch: dispatch };
-	};
-	var defaultMergeProps = function defaultMergeProps(stateProps, dispatchProps, parentProps) {
-	  return _extends({}, parentProps, stateProps, dispatchProps);
-	};
+	var _react = __webpack_require__(2);
 
-	function getDisplayName(Component) {
-	  return Component.displayName || Component.name || 'Component';
-	}
+	var _Subscription = __webpack_require__(14);
 
+	var _Subscription2 = _interopRequireDefault(_Subscription);
+
+	var _storeShape = __webpack_require__(5);
+
+	var _storeShape2 = _interopRequireDefault(_storeShape);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+	function _objectWithoutProperties(obj, keys) { var target = {}; for (var i in obj) { if (keys.indexOf(i) >= 0) continue; if (!Object.prototype.hasOwnProperty.call(obj, i)) continue; target[i] = obj[i]; } return target; }
+
+	var hotReloadingVersion = 0;
+	function connectAdvanced(
 	
-	var nextVersion = 0;
 
-	function createConnect(React) {
-	  var Component = React.Component;
-	  var PropTypes = React.PropTypes;
 
-	  var storeShape = _utilsCreateStoreShape2['default'](PropTypes);
 
-	  return function connect(mapStateToProps, mapDispatchToProps, mergeProps) {
-	    var options = arguments.length <= 3 || arguments[3] === undefined ? {} : arguments[3];
 
-	    var shouldSubscribe = Boolean(mapStateToProps);
-	    var finalMapStateToProps = mapStateToProps || defaultMapStateToProps;
-	    var finalMapDispatchToProps = _utilsIsPlainObject2['default'](mapDispatchToProps) ? _utilsWrapActionCreators2['default'](mapDispatchToProps) : mapDispatchToProps || defaultMapDispatchToProps;
-	    var finalMergeProps = mergeProps || defaultMergeProps;
-	    var shouldUpdateStateProps = finalMapStateToProps.length > 1;
-	    var shouldUpdateDispatchProps = finalMapDispatchToProps.length > 1;
-	    var _options$pure = options.pure;
-	    var pure = _options$pure === undefined ? true : _options$pure;
 
-	    
-	    var version = nextVersion++;
 
-	    function computeStateProps(store, props) {
-	      var state = store.getState();
-	      var stateProps = shouldUpdateStateProps ? finalMapStateToProps(state, props) : finalMapStateToProps(state);
 
-	      _invariant2['default'](_utilsIsPlainObject2['default'](stateProps), '`mapStateToProps` must return an object. Instead received %s.', stateProps);
-	      return stateProps;
-	    }
 
-	    function computeDispatchProps(store, props) {
-	      var dispatch = store.dispatch;
 
-	      var dispatchProps = shouldUpdateDispatchProps ? finalMapDispatchToProps(dispatch, props) : finalMapDispatchToProps(dispatch);
 
-	      _invariant2['default'](_utilsIsPlainObject2['default'](dispatchProps), '`mapDispatchToProps` must return an object. Instead received %s.', dispatchProps);
-	      return dispatchProps;
-	    }
 
-	    function _computeNextState(stateProps, dispatchProps, parentProps) {
-	      var mergedProps = finalMergeProps(stateProps, dispatchProps, parentProps);
-	      _invariant2['default'](_utilsIsPlainObject2['default'](mergedProps), '`mergeProps` must return an object. Instead received %s.', mergedProps);
-	      return mergedProps;
-	    }
 
-	    return function wrapWithConnect(WrappedComponent) {
-	      var Connect = (function (_Component) {
-	        _inherits(Connect, _Component);
 
-	        Connect.prototype.shouldComponentUpdate = function shouldComponentUpdate(nextProps, nextState) {
-	          if (!pure) {
-	            this.updateStateProps(nextProps);
-	            this.updateDispatchProps(nextProps);
-	            this.updateState(nextProps);
-	            return true;
-	          }
+	selectorFactory) {
+	  var _contextTypes, _childContextTypes;
 
-	          var storeChanged = nextState.storeState !== this.state.storeState;
-	          var propsChanged = !_utilsShallowEqual2['default'](nextProps, this.props);
-	          var mapStateProducedChange = false;
-	          var dispatchPropsChanged = false;
+	  var _ref = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
 
-	          if (storeChanged || propsChanged && shouldUpdateStateProps) {
-	            mapStateProducedChange = this.updateStateProps(nextProps);
-	          }
+	  var _ref$getDisplayName = _ref.getDisplayName;
+	  var
+	  
+	  
+	  getDisplayName = _ref$getDisplayName === undefined ? function (name) {
+	    return 'ConnectAdvanced(' + name + ')';
+	  } : _ref$getDisplayName;
+	  var _ref$methodName = _ref.methodName;
+	  var
 
-	          if (propsChanged && shouldUpdateDispatchProps) {
-	            dispatchPropsChanged = this.updateDispatchProps(nextProps);
-	          }
+	  
+	  
+	  methodName = _ref$methodName === undefined ? 'connectAdvanced' : _ref$methodName;
+	  var _ref$renderCountProp = _ref.renderCountProp;
+	  var
 
-	          if (propsChanged || mapStateProducedChange || dispatchPropsChanged) {
-	            this.updateState(nextProps);
-	            return true;
-	          }
+	  
+	  
+	  renderCountProp = _ref$renderCountProp === undefined ? undefined : _ref$renderCountProp;
+	  var _ref$shouldHandleStat = _ref.shouldHandleStateChanges;
+	  var
 
-	          return false;
-	        };
+	  
+	  shouldHandleStateChanges = _ref$shouldHandleStat === undefined ? true : _ref$shouldHandleStat;
+	  var _ref$storeKey = _ref.storeKey;
+	  var
 
-	        function Connect(props, context) {
-	          _classCallCheck(this, Connect);
+	  
+	  storeKey = _ref$storeKey === undefined ? 'store' : _ref$storeKey;
+	  var _ref$withRef = _ref.withRef;
+	  var
 
-	          _Component.call(this, props, context);
-	          this.version = version;
-	          this.store = props.store || context.store;
+	  
+	  withRef = _ref$withRef === undefined ? false : _ref$withRef;
 
-	          _invariant2['default'](this.store, 'Could not find "store" in either the context or ' + ('props of "' + this.constructor.displayName + '". ') + 'Either wrap the root component in a <Provider>, ' + ('or explicitly pass "store" as a prop to "' + this.constructor.displayName + '".'));
+	  var connectOptions = _objectWithoutProperties(_ref, ['getDisplayName', 'methodName', 'renderCountProp', 'shouldHandleStateChanges', 'storeKey', 'withRef']);
 
-	          this.stateProps = computeStateProps(this.store, props);
-	          this.dispatchProps = computeDispatchProps(this.store, props);
-	          this.state = { storeState: null };
-	          this.updateState();
-	        }
+	  var subscriptionKey = storeKey + 'Subscription';
+	  var version = hotReloadingVersion++;
 
-	        Connect.prototype.computeNextState = function computeNextState() {
-	          var props = arguments.length <= 0 || arguments[0] === undefined ? this.props : arguments[0];
+	  var contextTypes = (_contextTypes = {}, _contextTypes[storeKey] = _storeShape2.default, _contextTypes[subscriptionKey] = _react.PropTypes.instanceOf(_Subscription2.default), _contextTypes);
+	  var childContextTypes = (_childContextTypes = {}, _childContextTypes[subscriptionKey] = _react.PropTypes.instanceOf(_Subscription2.default), _childContextTypes);
 
-	          return _computeNextState(this.stateProps, this.dispatchProps, props);
-	        };
+	  return function wrapWithConnect(WrappedComponent) {
+	    (0, _invariant2.default)(typeof WrappedComponent == 'function', 'You must pass a component to the function returned by ' + ('connect. Instead received ' + WrappedComponent));
 
-	        Connect.prototype.updateStateProps = function updateStateProps() {
-	          var props = arguments.length <= 0 || arguments[0] === undefined ? this.props : arguments[0];
+	    var wrappedComponentName = WrappedComponent.displayName || WrappedComponent.name || 'Component';
 
-	          var nextStateProps = computeStateProps(this.store, props);
-	          if (_utilsShallowEqual2['default'](nextStateProps, this.stateProps)) {
-	            return false;
-	          }
+	    var displayName = getDisplayName(wrappedComponentName);
 
-	          this.stateProps = nextStateProps;
-	          return true;
-	        };
+	    var selectorFactoryOptions = _extends({}, connectOptions, {
+	      getDisplayName: getDisplayName,
+	      methodName: methodName,
+	      renderCountProp: renderCountProp,
+	      shouldHandleStateChanges: shouldHandleStateChanges,
+	      storeKey: storeKey,
+	      withRef: withRef,
+	      displayName: displayName,
+	      wrappedComponentName: wrappedComponentName,
+	      WrappedComponent: WrappedComponent
+	    });
 
-	        Connect.prototype.updateDispatchProps = function updateDispatchProps() {
-	          var props = arguments.length <= 0 || arguments[0] === undefined ? this.props : arguments[0];
+	    var Connect = function (_Component) {
+	      _inherits(Connect, _Component);
 
-	          var nextDispatchProps = computeDispatchProps(this.store, props);
-	          if (_utilsShallowEqual2['default'](nextDispatchProps, this.dispatchProps)) {
-	            return false;
-	          }
+	      function Connect(props, context) {
+	        _classCallCheck(this, Connect);
 
-	          this.dispatchProps = nextDispatchProps;
-	          return true;
-	        };
+	        var _this = _possibleConstructorReturn(this, _Component.call(this, props, context));
 
-	        Connect.prototype.updateState = function updateState() {
-	          var props = arguments.length <= 0 || arguments[0] === undefined ? this.props : arguments[0];
+	        _this.version = version;
+	        _this.state = {};
+	        _this.renderCount = 0;
+	        _this.store = _this.props[storeKey] || _this.context[storeKey];
+	        _this.parentSub = props[subscriptionKey] || context[subscriptionKey];
 
-	          this.nextState = this.computeNextState(props);
-	        };
+	        _this.setWrappedInstance = _this.setWrappedInstance.bind(_this);
 
-	        Connect.prototype.isSubscribed = function isSubscribed() {
-	          return typeof this.unsubscribe === 'function';
-	        };
+	        (0, _invariant2.default)(_this.store, 'Could not find "' + storeKey + '" in either the context or ' + ('props of "' + displayName + '". ') + 'Either wrap the root component in a <Provider>, ' + ('or explicitly pass "' + storeKey + '" as a prop to "' + displayName + '".'));
 
-	        Connect.prototype.trySubscribe = function trySubscribe() {
-	          if (shouldSubscribe && !this.unsubscribe) {
-	            this.unsubscribe = this.store.subscribe(this.handleChange.bind(this));
-	            this.handleChange();
-	          }
-	        };
+	        
+	        
+	        _this.getState = _this.store.getState.bind(_this.store);
 
-	        Connect.prototype.tryUnsubscribe = function tryUnsubscribe() {
-	          if (this.unsubscribe) {
-	            this.unsubscribe();
-	            this.unsubscribe = null;
-	          }
-	        };
-
-	        Connect.prototype.componentDidMount = function componentDidMount() {
-	          this.trySubscribe();
-	        };
-
-	        Connect.prototype.componentWillUnmount = function componentWillUnmount() {
-	          this.tryUnsubscribe();
-	        };
-
-	        Connect.prototype.handleChange = function handleChange() {
-	          if (!this.unsubscribe) {
-	            return;
-	          }
-
-	          this.setState({
-	            storeState: this.store.getState()
-	          });
-	        };
-
-	        Connect.prototype.getWrappedInstance = function getWrappedInstance() {
-	          return this.refs.wrappedInstance;
-	        };
-
-	        Connect.prototype.render = function render() {
-	          return React.createElement(WrappedComponent, _extends({ ref: 'wrappedInstance'
-	          }, this.nextState));
-	        };
-
-	        return Connect;
-	      })(Component);
-
-	      Connect.displayName = 'Connect(' + getDisplayName(WrappedComponent) + ')';
-	      Connect.WrappedComponent = WrappedComponent;
-	      Connect.contextTypes = {
-	        store: storeShape
-	      };
-	      Connect.propTypes = {
-	        store: storeShape
-	      };
-
-	      if (true) {
-	        Connect.prototype.componentWillUpdate = function componentWillUpdate() {
-	          if (this.version === version) {
-	            return;
-	          }
-
-	          
-	          this.version = version;
-
-	          
-	          this.trySubscribe();
-	          this.updateStateProps();
-	          this.updateDispatchProps();
-	          this.updateState();
-	        };
+	        _this.initSelector();
+	        _this.initSubscription();
+	        return _this;
 	      }
 
-	      return _hoistNonReactStatics2['default'](Connect, WrappedComponent);
-	    };
+	      Connect.prototype.getChildContext = function getChildContext() {
+	        var _ref2;
+
+	        return _ref2 = {}, _ref2[subscriptionKey] = this.subscription, _ref2;
+	      };
+
+	      Connect.prototype.componentDidMount = function componentDidMount() {
+	        if (!shouldHandleStateChanges) return;
+
+	        
+	        
+	        
+	        
+	        
+	        
+	        this.subscription.trySubscribe();
+	        this.selector.run(this.props);
+	        if (this.selector.shouldComponentUpdate) this.forceUpdate();
+	      };
+
+	      Connect.prototype.componentWillReceiveProps = function componentWillReceiveProps(nextProps) {
+	        this.selector.run(nextProps);
+	      };
+
+	      Connect.prototype.shouldComponentUpdate = function shouldComponentUpdate() {
+	        return this.selector.shouldComponentUpdate;
+	      };
+
+	      Connect.prototype.componentWillUnmount = function componentWillUnmount() {
+	        if (this.subscription) this.subscription.tryUnsubscribe();
+	        
+	        
+	        this.subscription = null;
+	        this.store = null;
+	        this.parentSub = null;
+	        this.selector.run = function () {};
+	      };
+
+	      Connect.prototype.getWrappedInstance = function getWrappedInstance() {
+	        (0, _invariant2.default)(withRef, 'To access the wrapped instance, you need to specify ' + ('{ withRef: true } in the options argument of the ' + methodName + '() call.'));
+	        return this.wrappedInstance;
+	      };
+
+	      Connect.prototype.setWrappedInstance = function setWrappedInstance(ref) {
+	        this.wrappedInstance = ref;
+	      };
+
+	      Connect.prototype.initSelector = function initSelector() {
+	        var dispatch = this.store.dispatch;
+	        var getState = this.getState;
+
+	        var sourceSelector = selectorFactory(dispatch, selectorFactoryOptions);
+
+	        
+	        var selector = this.selector = {
+	          shouldComponentUpdate: true,
+	          props: sourceSelector(getState(), this.props),
+	          run: function runComponentSelector(props) {
+	            try {
+	              var nextProps = sourceSelector(getState(), props);
+	              if (selector.error || nextProps !== selector.props) {
+	                selector.shouldComponentUpdate = true;
+	                selector.props = nextProps;
+	                selector.error = null;
+	              }
+	            } catch (error) {
+	              selector.shouldComponentUpdate = true;
+	              selector.error = error;
+	            }
+	          }
+	        };
+	      };
+
+	      Connect.prototype.initSubscription = function initSubscription() {
+	        var _this2 = this;
+
+	        if (shouldHandleStateChanges) {
+	          (function () {
+	            var subscription = _this2.subscription = new _Subscription2.default(_this2.store, _this2.parentSub);
+	            var dummyState = {};
+
+	            subscription.onStateChange = function onStateChange() {
+	              this.selector.run(this.props);
+
+	              if (!this.selector.shouldComponentUpdate) {
+	                subscription.notifyNestedSubs();
+	              } else {
+	                this.componentDidUpdate = function componentDidUpdate() {
+	                  this.componentDidUpdate = undefined;
+	                  subscription.notifyNestedSubs();
+	                };
+
+	                this.setState(dummyState);
+	              }
+	            }.bind(_this2);
+	          })();
+	        }
+	      };
+
+	      Connect.prototype.isSubscribed = function isSubscribed() {
+	        return Boolean(this.subscription) && this.subscription.isSubscribed();
+	      };
+
+	      Connect.prototype.addExtraProps = function addExtraProps(props) {
+	        if (!withRef && !renderCountProp) return props;
+	        
+	        
+	        
+	        
+	        var withExtras = _extends({}, props);
+	        if (withRef) withExtras.ref = this.setWrappedInstance;
+	        if (renderCountProp) withExtras[renderCountProp] = this.renderCount++;
+	        return withExtras;
+	      };
+
+	      Connect.prototype.render = function render() {
+	        var selector = this.selector;
+	        selector.shouldComponentUpdate = false;
+
+	        if (selector.error) {
+	          throw selector.error;
+	        } else {
+	          return (0, _react.createElement)(WrappedComponent, this.addExtraProps(selector.props));
+	        }
+	      };
+
+	      return Connect;
+	    }(_react.Component);
+
+	    Connect.WrappedComponent = WrappedComponent;
+	    Connect.displayName = displayName;
+	    Connect.childContextTypes = childContextTypes;
+	    Connect.contextTypes = contextTypes;
+	    Connect.propTypes = contextTypes;
+
+	    if (true) {
+	      Connect.prototype.componentWillUpdate = function componentWillUpdate() {
+	        
+	        if (this.version !== version) {
+	          this.version = version;
+	          this.initSelector();
+
+	          if (this.subscription) this.subscription.tryUnsubscribe();
+	          this.initSubscription();
+	          if (shouldHandleStateChanges) this.subscription.trySubscribe();
+	        }
+	      };
+	    }
+
+	    return (0, _hoistNonReactStatics2.default)(Connect, WrappedComponent);
 	  };
 	}
-
-	module.exports = exports['default'];
 
  },
 
@@ -400,157 +426,610 @@ return  (function(modules) {
 	'use strict';
 
 	exports.__esModule = true;
-	exports['default'] = createProvider;
+	exports.wrapMapToPropsConstant = wrapMapToPropsConstant;
+	exports.getDependsOnOwnProps = getDependsOnOwnProps;
+	exports.wrapMapToPropsFunc = wrapMapToPropsFunc;
 
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	var _verifyPlainObject = __webpack_require__(6);
 
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+	var _verifyPlainObject2 = _interopRequireDefault(_verifyPlainObject);
 
-	function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-	var _utilsCreateStoreShape = __webpack_require__(1);
+	function wrapMapToPropsConstant(getConstant) {
+	  return function initConstantSelector(dispatch, options) {
+	    var constant = getConstant(dispatch, options);
 
-	var _utilsCreateStoreShape2 = _interopRequireDefault(_utilsCreateStoreShape);
-
-	function isUsingOwnerContext(React) {
-	  var version = React.version;
-
-	  if (typeof version !== 'string') {
-	    return true;
-	  }
-
-	  var sections = version.split('.');
-	  var major = parseInt(sections[0], 10);
-	  var minor = parseInt(sections[1], 10);
-
-	  return major === 0 && minor === 13;
+	    function constantSelector() {
+	      return constant;
+	    }
+	    constantSelector.dependsOnOwnProps = false;
+	    return constantSelector;
+	  };
 	}
 
-	function createProvider(React) {
-	  var Component = React.Component;
-	  var PropTypes = React.PropTypes;
-	  var Children = React.Children;
-
-	  var storeShape = _utilsCreateStoreShape2['default'](PropTypes);
-	  var requireFunctionChild = isUsingOwnerContext(React);
-
-	  var didWarnAboutChild = false;
-	  function warnAboutFunctionChild() {
-	    if (didWarnAboutChild || requireFunctionChild) {
-	      return;
-	    }
-
-	    didWarnAboutChild = true;
-	    console.error( 
-	    'With React 0.14 and later versions, you no longer need to ' + 'wrap <Provider> child into a function.');
-	  }
-	  function warnAboutElementChild() {
-	    if (didWarnAboutChild || !requireFunctionChild) {
-	      return;
-	    }
-
-	    didWarnAboutChild = true;
-	    console.error( 
-	    'With React 0.13, you need to ' + 'wrap <Provider> child into a function. ' + 'This restriction will be removed with React 0.14.');
-	  }
-
-	  var didWarnAboutReceivingStore = false;
-	  function warnAboutReceivingStore() {
-	    if (didWarnAboutReceivingStore) {
-	      return;
-	    }
-
-	    didWarnAboutReceivingStore = true;
-	    console.error( 
-	    '<Provider> does not support changing `store` on the fly. ' + 'It is most likely that you see this error because you updated to ' + 'Redux 2.x and React Redux 2.x which no longer hot reload reducers ' + 'automatically. See https://github.com/rackt/react-redux/releases/' + 'tag/v2.0.0 for the migration instructions.');
-	  }
-
-	  var Provider = (function (_Component) {
-	    _inherits(Provider, _Component);
-
-	    Provider.prototype.getChildContext = function getChildContext() {
-	      return { store: this.store };
-	    };
-
-	    function Provider(props, context) {
-	      _classCallCheck(this, Provider);
-
-	      _Component.call(this, props, context);
-	      this.store = props.store;
-	    }
-
-	    Provider.prototype.componentWillReceiveProps = function componentWillReceiveProps(nextProps) {
-	      var store = this.store;
-	      var nextStore = nextProps.store;
-
-	      if (store !== nextStore) {
-	        warnAboutReceivingStore();
-	      }
-	    };
-
-	    Provider.prototype.render = function render() {
-	      var children = this.props.children;
-
-	      if (typeof children === 'function') {
-	        warnAboutFunctionChild();
-	        children = children();
-	      } else {
-	        warnAboutElementChild();
-	      }
-
-	      return Children.only(children);
-	    };
-
-	    return Provider;
-	  })(Component);
-
-	  Provider.childContextTypes = {
-	    store: storeShape.isRequired
-	  };
-	  Provider.propTypes = {
-	    store: storeShape.isRequired,
-	    children: (requireFunctionChild ? PropTypes.func : PropTypes.element).isRequired
-	  };
-
-	  return Provider;
+	
+	
+	
+	
+	
+	
+	
+	function getDependsOnOwnProps(mapToProps) {
+	  return mapToProps.dependsOnOwnProps !== null && mapToProps.dependsOnOwnProps !== undefined ? Boolean(mapToProps.dependsOnOwnProps) : mapToProps.length !== 1;
 	}
 
-	module.exports = exports['default'];
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	function wrapMapToPropsFunc(mapToProps, methodName) {
+	  return function initProxySelector(dispatch, _ref) {
+	    var displayName = _ref.displayName;
+
+	    var proxy = function mapToPropsProxy(stateOrDispatch, ownProps) {
+	      return proxy.dependsOnOwnProps ? proxy.mapToProps(stateOrDispatch, ownProps) : proxy.mapToProps(stateOrDispatch);
+	    };
+
+	    proxy.dependsOnOwnProps = getDependsOnOwnProps(mapToProps);
+
+	    proxy.mapToProps = function detectFactoryAndVerify(stateOrDispatch, ownProps) {
+	      proxy.mapToProps = mapToProps;
+	      var props = proxy(stateOrDispatch, ownProps);
+
+	      if (typeof props === 'function') {
+	        proxy.mapToProps = props;
+	        proxy.dependsOnOwnProps = getDependsOnOwnProps(props);
+	        props = proxy(stateOrDispatch, ownProps);
+	      }
+
+	      if (true) (0, _verifyPlainObject2.default)(props, displayName, methodName);
+
+	      return props;
+	    };
+
+	    return proxy;
+	  };
+	}
 
  },
 
- function(module, exports) {
+ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
 	exports.__esModule = true;
-	exports['default'] = isPlainObject;
-	var fnToString = function fnToString(fn) {
-	  return Function.prototype.toString.call(fn);
+
+	var _react = __webpack_require__(2);
+
+	exports.default = _react.PropTypes.shape({
+	  subscribe: _react.PropTypes.func.isRequired,
+	  dispatch: _react.PropTypes.func.isRequired,
+	  getState: _react.PropTypes.func.isRequired
+	});
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	exports.__esModule = true;
+	exports.default = verifyPlainObject;
+
+	var _isPlainObject = __webpack_require__(21);
+
+	var _isPlainObject2 = _interopRequireDefault(_isPlainObject);
+
+	var _warning = __webpack_require__(1);
+
+	var _warning2 = _interopRequireDefault(_warning);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function verifyPlainObject(value, displayName, methodName) {
+	  if (!(0, _isPlainObject2.default)(value)) {
+	    (0, _warning2.default)(methodName + '() in ' + displayName + ' must return a plain object. Instead received ' + value + '.');
+	  }
+	}
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	exports.__esModule = true;
+	exports.default = undefined;
+
+	var _react = __webpack_require__(2);
+
+	var _storeShape = __webpack_require__(5);
+
+	var _storeShape2 = _interopRequireDefault(_storeShape);
+
+	var _warning = __webpack_require__(1);
+
+	var _warning2 = _interopRequireDefault(_warning);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+	var didWarnAboutReceivingStore = false;
+	function warnAboutReceivingStore() {
+	  if (didWarnAboutReceivingStore) {
+	    return;
+	  }
+	  didWarnAboutReceivingStore = true;
+
+	  (0, _warning2.default)('<Provider> does not support changing `store` on the fly. ' + 'It is most likely that you see this error because you updated to ' + 'Redux 2.x and React Redux 2.x which no longer hot reload reducers ' + 'automatically. See https://github.com/reactjs/react-redux/releases/' + 'tag/v2.0.0 for the migration instructions.');
+	}
+
+	var Provider = function (_Component) {
+	  _inherits(Provider, _Component);
+
+	  Provider.prototype.getChildContext = function getChildContext() {
+	    return { store: this.store };
+	  };
+
+	  function Provider(props, context) {
+	    _classCallCheck(this, Provider);
+
+	    var _this = _possibleConstructorReturn(this, _Component.call(this, props, context));
+
+	    _this.store = props.store;
+	    return _this;
+	  }
+
+	  Provider.prototype.render = function render() {
+	    return _react.Children.only(this.props.children);
+	  };
+
+	  return Provider;
+	}(_react.Component);
+
+	exports.default = Provider;
+
+
+	if (true) {
+	  Provider.prototype.componentWillReceiveProps = function (nextProps) {
+	    var store = this.store;
+	    var nextStore = nextProps.store;
+
+
+	    if (store !== nextStore) {
+	      warnAboutReceivingStore();
+	    }
+	  };
+	}
+
+	Provider.propTypes = {
+	  store: _storeShape2.default.isRequired,
+	  children: _react.PropTypes.element.isRequired
 	};
+	Provider.childContextTypes = {
+	  store: _storeShape2.default.isRequired
+	};
+	Provider.displayName = 'Provider';
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	exports.__esModule = true;
+
+	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+	exports.createConnect = createConnect;
+
+	var _connectAdvanced = __webpack_require__(3);
+
+	var _connectAdvanced2 = _interopRequireDefault(_connectAdvanced);
+
+	var _shallowEqual = __webpack_require__(15);
+
+	var _shallowEqual2 = _interopRequireDefault(_shallowEqual);
+
+	var _mapDispatchToProps = __webpack_require__(9);
+
+	var _mapDispatchToProps2 = _interopRequireDefault(_mapDispatchToProps);
+
+	var _mapStateToProps = __webpack_require__(10);
+
+	var _mapStateToProps2 = _interopRequireDefault(_mapStateToProps);
+
+	var _mergeProps = __webpack_require__(11);
+
+	var _mergeProps2 = _interopRequireDefault(_mergeProps);
+
+	var _selectorFactory = __webpack_require__(12);
+
+	var _selectorFactory2 = _interopRequireDefault(_selectorFactory);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function _objectWithoutProperties(obj, keys) { var target = {}; for (var i in obj) { if (keys.indexOf(i) >= 0) continue; if (!Object.prototype.hasOwnProperty.call(obj, i)) continue; target[i] = obj[i]; } return target; }
 
 	
 
 
 
 
-	function isPlainObject(obj) {
-	  if (!obj || typeof obj !== 'object') {
-	    return false;
+
+
+
+
+
+
+
+
+
+
+
+
+	function match(arg, factories, name) {
+	  for (var i = factories.length - 1; i >= 0; i--) {
+	    var result = factories[i](arg);
+	    if (result) return result;
 	  }
 
-	  var proto = typeof obj.constructor === 'function' ? Object.getPrototypeOf(obj) : Object.prototype;
-
-	  if (proto === null) {
-	    return true;
-	  }
-
-	  var constructor = proto.constructor;
-
-	  return typeof constructor === 'function' && constructor instanceof constructor && fnToString(constructor) === fnToString(Object);
+	  return function (dispatch, options) {
+	    throw new Error('Invalid value of type ' + typeof arg + ' for ' + name + ' argument when connecting component ' + options.wrappedComponentName + '.');
+	  };
 	}
 
-	module.exports = exports['default'];
+	function strictEqual(a, b) {
+	  return a === b;
+	}
+
+	
+	
+	function createConnect() {
+	  var _ref = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+
+	  var _ref$connectHOC = _ref.connectHOC;
+	  var connectHOC = _ref$connectHOC === undefined ? _connectAdvanced2.default : _ref$connectHOC;
+	  var _ref$mapStateToPropsF = _ref.mapStateToPropsFactories;
+	  var mapStateToPropsFactories = _ref$mapStateToPropsF === undefined ? _mapStateToProps2.default : _ref$mapStateToPropsF;
+	  var _ref$mapDispatchToPro = _ref.mapDispatchToPropsFactories;
+	  var mapDispatchToPropsFactories = _ref$mapDispatchToPro === undefined ? _mapDispatchToProps2.default : _ref$mapDispatchToPro;
+	  var _ref$mergePropsFactor = _ref.mergePropsFactories;
+	  var mergePropsFactories = _ref$mergePropsFactor === undefined ? _mergeProps2.default : _ref$mergePropsFactor;
+	  var _ref$selectorFactory = _ref.selectorFactory;
+	  var selectorFactory = _ref$selectorFactory === undefined ? _selectorFactory2.default : _ref$selectorFactory;
+
+	  return function connect(mapStateToProps, mapDispatchToProps, mergeProps) {
+	    var _ref2 = arguments.length <= 3 || arguments[3] === undefined ? {} : arguments[3];
+
+	    var _ref2$pure = _ref2.pure;
+	    var pure = _ref2$pure === undefined ? true : _ref2$pure;
+	    var _ref2$areStatesEqual = _ref2.areStatesEqual;
+	    var areStatesEqual = _ref2$areStatesEqual === undefined ? strictEqual : _ref2$areStatesEqual;
+	    var _ref2$areOwnPropsEqua = _ref2.areOwnPropsEqual;
+	    var areOwnPropsEqual = _ref2$areOwnPropsEqua === undefined ? _shallowEqual2.default : _ref2$areOwnPropsEqua;
+	    var _ref2$areStatePropsEq = _ref2.areStatePropsEqual;
+	    var areStatePropsEqual = _ref2$areStatePropsEq === undefined ? _shallowEqual2.default : _ref2$areStatePropsEq;
+	    var _ref2$areMergedPropsE = _ref2.areMergedPropsEqual;
+	    var areMergedPropsEqual = _ref2$areMergedPropsE === undefined ? _shallowEqual2.default : _ref2$areMergedPropsE;
+
+	    var extraOptions = _objectWithoutProperties(_ref2, ['pure', 'areStatesEqual', 'areOwnPropsEqual', 'areStatePropsEqual', 'areMergedPropsEqual']);
+
+	    var initMapStateToProps = match(mapStateToProps, mapStateToPropsFactories, 'mapStateToProps');
+	    var initMapDispatchToProps = match(mapDispatchToProps, mapDispatchToPropsFactories, 'mapDispatchToProps');
+	    var initMergeProps = match(mergeProps, mergePropsFactories, 'mergeProps');
+
+	    return connectHOC(selectorFactory, _extends({
+	      
+	      methodName: 'connect',
+
+	      
+	      getDisplayName: function getDisplayName(name) {
+	        return 'Connect(' + name + ')';
+	      },
+
+	      
+	      shouldHandleStateChanges: Boolean(mapStateToProps),
+
+	      
+	      initMapStateToProps: initMapStateToProps,
+	      initMapDispatchToProps: initMapDispatchToProps,
+	      initMergeProps: initMergeProps,
+	      pure: pure,
+	      areStatesEqual: areStatesEqual,
+	      areOwnPropsEqual: areOwnPropsEqual,
+	      areStatePropsEqual: areStatePropsEqual,
+	      areMergedPropsEqual: areMergedPropsEqual
+
+	    }, extraOptions));
+	  };
+	}
+
+	exports.default = createConnect();
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	exports.__esModule = true;
+	exports.whenMapDispatchToPropsIsFunction = whenMapDispatchToPropsIsFunction;
+	exports.whenMapDispatchToPropsIsMissing = whenMapDispatchToPropsIsMissing;
+	exports.whenMapDispatchToPropsIsObject = whenMapDispatchToPropsIsObject;
+
+	var _redux = __webpack_require__(22);
+
+	var _wrapMapToProps = __webpack_require__(4);
+
+	function whenMapDispatchToPropsIsFunction(mapDispatchToProps) {
+	  return typeof mapDispatchToProps === 'function' ? (0, _wrapMapToProps.wrapMapToPropsFunc)(mapDispatchToProps, 'mapDispatchToProps') : undefined;
+	}
+
+	function whenMapDispatchToPropsIsMissing(mapDispatchToProps) {
+	  return !mapDispatchToProps ? (0, _wrapMapToProps.wrapMapToPropsConstant)(function (dispatch) {
+	    return { dispatch: dispatch };
+	  }) : undefined;
+	}
+
+	function whenMapDispatchToPropsIsObject(mapDispatchToProps) {
+	  return mapDispatchToProps && typeof mapDispatchToProps === 'object' ? (0, _wrapMapToProps.wrapMapToPropsConstant)(function (dispatch) {
+	    return (0, _redux.bindActionCreators)(mapDispatchToProps, dispatch);
+	  }) : undefined;
+	}
+
+	exports.default = [whenMapDispatchToPropsIsFunction, whenMapDispatchToPropsIsMissing, whenMapDispatchToPropsIsObject];
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	exports.__esModule = true;
+	exports.whenMapStateToPropsIsFunction = whenMapStateToPropsIsFunction;
+	exports.whenMapStateToPropsIsMissing = whenMapStateToPropsIsMissing;
+
+	var _wrapMapToProps = __webpack_require__(4);
+
+	function whenMapStateToPropsIsFunction(mapStateToProps) {
+	  return typeof mapStateToProps === 'function' ? (0, _wrapMapToProps.wrapMapToPropsFunc)(mapStateToProps, 'mapStateToProps') : undefined;
+	}
+
+	function whenMapStateToPropsIsMissing(mapStateToProps) {
+	  return !mapStateToProps ? (0, _wrapMapToProps.wrapMapToPropsConstant)(function () {
+	    return {};
+	  }) : undefined;
+	}
+
+	exports.default = [whenMapStateToPropsIsFunction, whenMapStateToPropsIsMissing];
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	exports.__esModule = true;
+
+	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+	exports.defaultMergeProps = defaultMergeProps;
+	exports.wrapMergePropsFunc = wrapMergePropsFunc;
+	exports.whenMergePropsIsFunction = whenMergePropsIsFunction;
+	exports.whenMergePropsIsOmitted = whenMergePropsIsOmitted;
+
+	var _verifyPlainObject = __webpack_require__(6);
+
+	var _verifyPlainObject2 = _interopRequireDefault(_verifyPlainObject);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function defaultMergeProps(stateProps, dispatchProps, ownProps) {
+	  return _extends({}, ownProps, stateProps, dispatchProps);
+	}
+
+	function wrapMergePropsFunc(mergeProps) {
+	  return function initMergePropsProxy(dispatch, _ref) {
+	    var displayName = _ref.displayName;
+	    var pure = _ref.pure;
+	    var areMergedPropsEqual = _ref.areMergedPropsEqual;
+
+	    var hasRunOnce = false;
+	    var mergedProps = void 0;
+
+	    return function mergePropsProxy(stateProps, dispatchProps, ownProps) {
+	      var nextMergedProps = mergeProps(stateProps, dispatchProps, ownProps);
+
+	      if (hasRunOnce) {
+	        if (!pure || !areMergedPropsEqual(nextMergedProps, mergedProps)) mergedProps = nextMergedProps;
+	      } else {
+	        hasRunOnce = true;
+	        mergedProps = nextMergedProps;
+
+	        if (true) (0, _verifyPlainObject2.default)(mergedProps, displayName, 'mergeProps');
+	      }
+
+	      return mergedProps;
+	    };
+	  };
+	}
+
+	function whenMergePropsIsFunction(mergeProps) {
+	  return typeof mergeProps === 'function' ? wrapMergePropsFunc(mergeProps) : undefined;
+	}
+
+	function whenMergePropsIsOmitted(mergeProps) {
+	  return !mergeProps ? function () {
+	    return defaultMergeProps;
+	  } : undefined;
+	}
+
+	exports.default = [whenMergePropsIsFunction, whenMergePropsIsOmitted];
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	exports.__esModule = true;
+	exports.impureFinalPropsSelectorFactory = impureFinalPropsSelectorFactory;
+	exports.pureFinalPropsSelectorFactory = pureFinalPropsSelectorFactory;
+	exports.default = finalPropsSelectorFactory;
+
+	var _verifySubselectors = __webpack_require__(13);
+
+	var _verifySubselectors2 = _interopRequireDefault(_verifySubselectors);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function _objectWithoutProperties(obj, keys) { var target = {}; for (var i in obj) { if (keys.indexOf(i) >= 0) continue; if (!Object.prototype.hasOwnProperty.call(obj, i)) continue; target[i] = obj[i]; } return target; }
+
+	function impureFinalPropsSelectorFactory(mapStateToProps, mapDispatchToProps, mergeProps, dispatch) {
+	  return function impureFinalPropsSelector(state, ownProps) {
+	    return mergeProps(mapStateToProps(state, ownProps), mapDispatchToProps(dispatch, ownProps), ownProps);
+	  };
+	}
+
+	function pureFinalPropsSelectorFactory(mapStateToProps, mapDispatchToProps, mergeProps, dispatch, _ref) {
+	  var areStatesEqual = _ref.areStatesEqual;
+	  var areOwnPropsEqual = _ref.areOwnPropsEqual;
+	  var areStatePropsEqual = _ref.areStatePropsEqual;
+
+	  var hasRunAtLeastOnce = false;
+	  var state = void 0;
+	  var ownProps = void 0;
+	  var stateProps = void 0;
+	  var dispatchProps = void 0;
+	  var mergedProps = void 0;
+
+	  function handleFirstCall(firstState, firstOwnProps) {
+	    state = firstState;
+	    ownProps = firstOwnProps;
+	    stateProps = mapStateToProps(state, ownProps);
+	    dispatchProps = mapDispatchToProps(dispatch, ownProps);
+	    mergedProps = mergeProps(stateProps, dispatchProps, ownProps);
+	    hasRunAtLeastOnce = true;
+	    return mergedProps;
+	  }
+
+	  function handleNewPropsAndNewState() {
+	    stateProps = mapStateToProps(state, ownProps);
+
+	    if (mapDispatchToProps.dependsOnOwnProps) dispatchProps = mapDispatchToProps(dispatch, ownProps);
+
+	    mergedProps = mergeProps(stateProps, dispatchProps, ownProps);
+	    return mergedProps;
+	  }
+
+	  function handleNewProps() {
+	    if (mapStateToProps.dependsOnOwnProps) stateProps = mapStateToProps(state, ownProps);
+
+	    if (mapDispatchToProps.dependsOnOwnProps) dispatchProps = mapDispatchToProps(dispatch, ownProps);
+
+	    mergedProps = mergeProps(stateProps, dispatchProps, ownProps);
+	    return mergedProps;
+	  }
+
+	  function handleNewState() {
+	    var nextStateProps = mapStateToProps(state, ownProps);
+	    var statePropsChanged = !areStatePropsEqual(nextStateProps, stateProps);
+	    stateProps = nextStateProps;
+
+	    if (statePropsChanged) mergedProps = mergeProps(stateProps, dispatchProps, ownProps);
+
+	    return mergedProps;
+	  }
+
+	  function handleSubsequentCalls(nextState, nextOwnProps) {
+	    var propsChanged = !areOwnPropsEqual(nextOwnProps, ownProps);
+	    var stateChanged = !areStatesEqual(nextState, state);
+	    state = nextState;
+	    ownProps = nextOwnProps;
+
+	    if (propsChanged && stateChanged) return handleNewPropsAndNewState();
+	    if (propsChanged) return handleNewProps();
+	    if (stateChanged) return handleNewState();
+	    return mergedProps;
+	  }
+
+	  return function pureFinalPropsSelector(nextState, nextOwnProps) {
+	    return hasRunAtLeastOnce ? handleSubsequentCalls(nextState, nextOwnProps) : handleFirstCall(nextState, nextOwnProps);
+	  };
+	}
+
+	
+
+	
+	
+	
+	
+
+	function finalPropsSelectorFactory(dispatch, _ref2) {
+	  var initMapStateToProps = _ref2.initMapStateToProps;
+	  var initMapDispatchToProps = _ref2.initMapDispatchToProps;
+	  var initMergeProps = _ref2.initMergeProps;
+
+	  var options = _objectWithoutProperties(_ref2, ['initMapStateToProps', 'initMapDispatchToProps', 'initMergeProps']);
+
+	  var mapStateToProps = initMapStateToProps(dispatch, options);
+	  var mapDispatchToProps = initMapDispatchToProps(dispatch, options);
+	  var mergeProps = initMergeProps(dispatch, options);
+
+	  if (true) {
+	    (0, _verifySubselectors2.default)(mapStateToProps, mapDispatchToProps, mergeProps, options.displayName);
+	  }
+
+	  var selectorFactory = options.pure ? pureFinalPropsSelectorFactory : impureFinalPropsSelectorFactory;
+
+	  return selectorFactory(mapStateToProps, mapDispatchToProps, mergeProps, dispatch, options);
+	}
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	exports.__esModule = true;
+	exports.default = verifySubselectors;
+
+	var _warning = __webpack_require__(1);
+
+	var _warning2 = _interopRequireDefault(_warning);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function verify(selector, methodName, displayName) {
+	  if (!selector) {
+	    throw new Error('Unexpected value for ' + methodName + ' in ' + displayName + '.');
+	  } else if (methodName === 'mapStateToProps' || methodName === 'mapDispatchToProps') {
+	    if (!selector.hasOwnProperty('dependsOnOwnProps')) {
+	      (0, _warning2.default)('The selector for ' + methodName + ' of ' + displayName + ' did not specify a value for dependsOnOwnProps.');
+	    }
+	  }
+	}
+
+	function verifySubselectors(mapStateToProps, mapDispatchToProps, mergeProps, displayName) {
+	  verify(mapStateToProps, 'mapStateToProps', displayName);
+	  verify(mapDispatchToProps, 'mapDispatchToProps', displayName);
+	  verify(mergeProps, 'mergeProps', displayName);
+	}
 
  },
 
@@ -559,51 +1038,124 @@ return  (function(modules) {
 	"use strict";
 
 	exports.__esModule = true;
-	exports["default"] = shallowEqual;
 
-	function shallowEqual(objA, objB) {
-	  if (objA === objB) {
-	    return true;
-	  }
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-	  var keysA = Object.keys(objA);
-	  var keysB = Object.keys(objB);
+	
+	
+	
 
-	  if (keysA.length !== keysB.length) {
-	    return false;
-	  }
+	var CLEARED = null;
+	var nullListeners = {
+	  notify: function notify() {}
+	};
 
+	function createListenerCollection() {
 	  
-	  var hasOwn = Object.prototype.hasOwnProperty;
-	  for (var i = 0; i < keysA.length; i++) {
-	    if (!hasOwn.call(objB, keysA[i]) || objA[keysA[i]] !== objB[keysA[i]]) {
-	      return false;
+	  
+	  var current = [];
+	  var next = [];
+
+	  return {
+	    clear: function clear() {
+	      next = CLEARED;
+	      current = CLEARED;
+	    },
+	    notify: function notify() {
+	      var listeners = current = next;
+	      for (var i = 0; i < listeners.length; i++) {
+	        listeners[i]();
+	      }
+	    },
+	    subscribe: function subscribe(listener) {
+	      var isSubscribed = true;
+	      if (next === current) next = current.slice();
+	      next.push(listener);
+
+	      return function unsubscribe() {
+	        if (!isSubscribed || current === CLEARED) return;
+	        isSubscribed = false;
+
+	        if (next === current) next = current.slice();
+	        next.splice(next.indexOf(listener), 1);
+	      };
 	    }
-	  }
-
-	  return true;
-	}
-
-	module.exports = exports["default"];
-
- },
-
- function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	exports.__esModule = true;
-	exports['default'] = wrapActionCreators;
-
-	var _redux = __webpack_require__(11);
-
-	function wrapActionCreators(actionCreators) {
-	  return function (dispatch) {
-	    return _redux.bindActionCreators(actionCreators, dispatch);
 	  };
 	}
 
-	module.exports = exports['default'];
+	var Subscription = function () {
+	  function Subscription(store, parentSub) {
+	    _classCallCheck(this, Subscription);
+
+	    this.store = store;
+	    this.parentSub = parentSub;
+	    this.unsubscribe = null;
+	    this.listeners = nullListeners;
+	  }
+
+	  Subscription.prototype.addNestedSub = function addNestedSub(listener) {
+	    this.trySubscribe();
+	    return this.listeners.subscribe(listener);
+	  };
+
+	  Subscription.prototype.notifyNestedSubs = function notifyNestedSubs() {
+	    this.listeners.notify();
+	  };
+
+	  Subscription.prototype.isSubscribed = function isSubscribed() {
+	    return Boolean(this.unsubscribe);
+	  };
+
+	  Subscription.prototype.trySubscribe = function trySubscribe() {
+	    if (!this.unsubscribe) {
+	      
+	      this.unsubscribe = this.parentSub ? this.parentSub.addNestedSub(this.onStateChange) : this.store.subscribe(this.onStateChange);
+
+	      this.listeners = createListenerCollection();
+	    }
+	  };
+
+	  Subscription.prototype.tryUnsubscribe = function tryUnsubscribe() {
+	    if (this.unsubscribe) {
+	      this.unsubscribe();
+	      this.unsubscribe = null;
+	      this.listeners.clear();
+	      this.listeners = nullListeners;
+	    }
+	  };
+
+	  return Subscription;
+	}();
+
+	exports.default = Subscription;
+
+ },
+
+ function(module, exports) {
+
+	"use strict";
+
+	exports.__esModule = true;
+	exports.default = shallowEqual;
+	var hasOwn = Object.prototype.hasOwnProperty;
+
+	function shallowEqual(a, b) {
+	  if (a === b) return true;
+
+	  var countA = 0;
+	  var countB = 0;
+
+	  for (var key in a) {
+	    if (hasOwn.call(a, key) && a[key] !== b[key]) return false;
+	    countA++;
+	  }
+
+	  for (var _key in b) {
+	    if (hasOwn.call(b, _key)) countB++;
+	  }
+
+	  return countA === countB;
+	}
 
  },
 
@@ -636,10 +1188,16 @@ return  (function(modules) {
 	};
 
 	module.exports = function hoistNonReactStatics(targetComponent, sourceComponent) {
-	    var keys = Object.getOwnPropertyNames(sourceComponent);
-	    for (var i=0; i<keys.length; ++i) {
-	        if (!REACT_STATICS[keys[i]] && !KNOWN_STATICS[keys[i]]) {
-	            targetComponent[keys[i]] = sourceComponent[keys[i]];
+	    if (typeof sourceComponent !== 'string') { 
+	        var keys = Object.getOwnPropertyNames(sourceComponent);
+	        for (var i=0; i<keys.length; ++i) {
+	            if (!REACT_STATICS[keys[i]] && !KNOWN_STATICS[keys[i]]) {
+	                try {
+	                    targetComponent[keys[i]] = sourceComponent[keys[i]];
+	                } catch (error) {
+
+	                }
+	            }
 	        }
 	    }
 
@@ -652,8 +1210,6 @@ return  (function(modules) {
  function(module, exports, __webpack_require__) {
 
 	
-
-
 
 
 
@@ -693,9 +1249,9 @@ return  (function(modules) {
 	      var args = [a, b, c, d, e, f];
 	      var argIndex = 0;
 	      error = new Error(
-	        'Invariant Violation: ' +
 	        format.replace(/%s/g, function() { return args[argIndex++]; })
 	      );
+	      error.name = 'Invariant Violation';
 	    }
 
 	    error.framesToPop = 1; 
@@ -710,13 +1266,165 @@ return  (function(modules) {
 
  function(module, exports) {
 
-	module.exports = __WEBPACK_EXTERNAL_MODULE_10__;
+	
+	var nativeGetPrototype = Object.getPrototypeOf;
+
+	
+
+
+
+
+
+
+	function getPrototype(value) {
+	  return nativeGetPrototype(Object(value));
+	}
+
+	module.exports = getPrototype;
+
 
  },
 
  function(module, exports) {
 
-	module.exports = __WEBPACK_EXTERNAL_MODULE_11__;
+	
+
+
+
+
+
+
+	function isHostObject(value) {
+	  
+	  
+	  var result = false;
+	  if (value != null && typeof value.toString != 'function') {
+	    try {
+	      result = !!(value + '');
+	    } catch (e) {}
+	  }
+	  return result;
+	}
+
+	module.exports = isHostObject;
+
+
+ },
+
+ function(module, exports) {
+
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	function isObjectLike(value) {
+	  return !!value && typeof value == 'object';
+	}
+
+	module.exports = isObjectLike;
+
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	var getPrototype = __webpack_require__(18),
+	    isHostObject = __webpack_require__(19),
+	    isObjectLike = __webpack_require__(20);
+
+	
+	var objectTag = '[object Object]';
+
+	
+	var objectProto = Object.prototype;
+
+	
+	var funcToString = Function.prototype.toString;
+
+	
+	var hasOwnProperty = objectProto.hasOwnProperty;
+
+	
+	var objectCtorString = funcToString.call(Object);
+
+	
+
+
+
+
+	var objectToString = objectProto.toString;
+
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	function isPlainObject(value) {
+	  if (!isObjectLike(value) ||
+	      objectToString.call(value) != objectTag || isHostObject(value)) {
+	    return false;
+	  }
+	  var proto = getPrototype(value);
+	  if (proto === null) {
+	    return true;
+	  }
+	  var Ctor = hasOwnProperty.call(proto, 'constructor') && proto.constructor;
+	  return (typeof Ctor == 'function' &&
+	    Ctor instanceof Ctor && funcToString.call(Ctor) == objectCtorString);
+	}
+
+	module.exports = isPlainObject;
+
+
+ },
+
+ function(module, exports) {
+
+	module.exports = __WEBPACK_EXTERNAL_MODULE_22__;
 
  }
  ])
