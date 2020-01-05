@@ -20,8 +20,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class NotificationHandler {
     private static String LOGTAG = "GeckoNotifHandler";
-    private final ConcurrentHashMap<Integer, Notification>
-            mNotifications = new ConcurrentHashMap<Integer, Notification>();
+    private final ConcurrentHashMap<String, Notification>
+            mNotifications = new ConcurrentHashMap<>();
     private final Context mContext;
     private final NotificationManagerCompat mNotificationManager;
 
@@ -36,7 +36,7 @@ public class NotificationHandler {
 
 
     private Notification mForegroundNotification;
-    private int mForegroundNotificationId;
+    private String mForegroundNotificationName;
 
     public NotificationHandler(Context context) {
         mContext = context;
@@ -53,10 +53,10 @@ public class NotificationHandler {
 
 
 
-    public void add(final int notificationID, String aImageUrl, String aHost, String aAlertTitle,
+    public void add(final String aName, String aImageUrl, String aHost, String aAlertTitle,
                     String aAlertText, PendingIntent contentIntent, PendingIntent deleteIntent) {
         
-        remove(notificationID);
+        remove(aName);
 
         final NotificationCompat.Builder builder = new NotificationCompat.Builder(mContext)
                 .setContentTitle(aAlertTitle)
@@ -78,8 +78,8 @@ public class NotificationHandler {
         builder.setWhen(System.currentTimeMillis());
         final Notification notification = builder.build();
 
-        mNotificationManager.notify(notificationID, notification);
-        mNotifications.put(notificationID, notification);
+        mNotificationManager.notify(aName, 0, notification);
+        mNotifications.put(aName, notification);
     }
 
     
@@ -88,13 +88,24 @@ public class NotificationHandler {
 
 
 
-    public void add(int id, Notification notification) {
-        mNotificationManager.notify(id, notification);
-        mNotifications.put(id, notification);
+    public void add(String name, Notification notification) {
+        if (isOngoing(notification)) {
+            
+            mNotificationManager.cancel(name, 0);
 
-        if (mForegroundNotification == null && isOngoing(notification)) {
-            setForegroundNotification(id, notification);
+            if (mForegroundNotificationName == null) {
+                setForegroundNotification(name, notification);
+            } else if (name.equals(mForegroundNotificationName)) {
+                mNotificationManager.notify(R.id.foregroundNotification, notification);
+            }
+
+        } else {
+            
+            updateForegroundNotification(name);
+            mNotificationManager.notify(name, 0, notification);
         }
+
+        mNotifications.put(name, notification);
     }
 
     
@@ -105,8 +116,8 @@ public class NotificationHandler {
 
 
 
-    public void update(int notificationID, long aProgress, long aProgressMax, String aAlertText) {
-        Notification notification = mNotifications.get(notificationID);
+    public void update(String aName, long aProgress, long aProgressMax, String aAlertText) {
+        Notification notification = mNotifications.get(aName);
         if (notification == null) {
             return;
         }
@@ -119,7 +130,7 @@ public class NotificationHandler {
                 .setProgress((int) aProgressMax, (int) aProgress, false)
                 .build();
 
-        add(notificationID, notification);
+        add(aName, notification);
     }
 
     
@@ -127,12 +138,12 @@ public class NotificationHandler {
 
 
 
-    public void remove(int notificationID) {
-        final Notification notification = mNotifications.remove(notificationID);
+    public void remove(String aName) {
+        final Notification notification = mNotifications.remove(aName);
         if (notification != null) {
-            updateForegroundNotification(notificationID, notification);
+            updateForegroundNotification(aName);
         }
-        mNotificationManager.cancel(notificationID);
+        mNotificationManager.cancel(aName, 0);
     }
 
     
@@ -153,8 +164,8 @@ public class NotificationHandler {
 
 
 
-    public boolean isOngoing(int notificationID) {
-        final Notification notification = mNotifications.get(notificationID);
+    public boolean isOngoing(String aName) {
+        final Notification notification = mNotifications.get(aName);
         return isOngoing(notification);
     }
 
@@ -171,27 +182,27 @@ public class NotificationHandler {
         return false;
     }
 
-    protected void setForegroundNotification(int id, Notification notification) {
-        mForegroundNotificationId = id;
+    protected void setForegroundNotification(String name, Notification notification) {
+        mForegroundNotificationName = name;
         mForegroundNotification = notification;
     }
 
-    private void updateForegroundNotification(int oldId, Notification oldNotification) {
-        if (mForegroundNotificationId == oldId) {
+    private void updateForegroundNotification(String oldName) {
+        if (oldName != null && oldName.equals(mForegroundNotificationName)) {
             
             
             
             Notification foregroundNotification = null;
-            int foregroundId = 0;
-            for (final Integer id : mNotifications.keySet()) {
-                final Notification notification = mNotifications.get(id);
+            String foregroundName = null;
+            for (final String name : mNotifications.keySet()) {
+                final Notification notification = mNotifications.get(name);
                 if (isOngoing(notification)) {
                     foregroundNotification = notification;
-                    foregroundId = id;
+                    foregroundName = name;
                     break;
                 }
             }
-            setForegroundNotification(foregroundId, foregroundNotification);
+            setForegroundNotification(foregroundName, foregroundNotification);
         }
     }
 }
