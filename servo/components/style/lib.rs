@@ -32,7 +32,16 @@
 #![cfg_attr(feature = "servo", plugin(heapsize_plugin))]
 #![cfg_attr(feature = "servo", plugin(plugins))]
 
-#![deny(unsafe_code)]
+#![deny(warnings)]
+
+
+
+
+
+
+
+
+#![allow(unused_unsafe)]
 
 #![recursion_limit = "500"]  
 

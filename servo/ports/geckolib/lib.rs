@@ -2,6 +2,7 @@
 
 
 
+#![deny(warnings)]
 
 #[macro_use]extern crate style;
 extern crate app_units;

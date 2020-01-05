@@ -109,8 +109,8 @@ ATOM_TEMPLATE = ("            #[link_name = \"{link_name}\"]\n"
                  "            pub static {name}: *mut {type};")
 
 UNSAFE_STATIC = ("#[inline(always)]\n"
-                 "pub fn unsafe_atom_from_static(ptr: *mut nsIAtom) -> Atom {\n"
-                 "    unsafe { Atom::from_static(ptr) }\n"
+                 "pub unsafe fn atom_from_static(ptr: *mut nsIAtom) -> Atom {\n"
+                 "    Atom::from_static(ptr)\n"
                  "}\n\n")
 
 CFG_IF = '''
@@ -131,9 +131,14 @@ cfg_if! {{
 }}
 '''
 
-RULE_TEMPLATE = ('("{atom}") => '
-                 '{{ $crate::string_cache::atom_macro::unsafe_atom_from_static'
-                 '($crate::string_cache::atom_macro::{name} as *mut _) }};')
+RULE_TEMPLATE = ('("{atom}") =>\n  '
+                 '{{ '
+                 
+                 
+                 
+                 'unsafe {{ $crate::string_cache::atom_macro::atom_from_static'
+                 '($crate::string_cache::atom_macro::{name} as *mut _) }}'
+                 ' }};')
 
 MACRO = '''
 #[macro_export]
