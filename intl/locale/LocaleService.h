@@ -37,6 +37,36 @@ namespace intl {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class LocaleService : public mozILocaleService,
                       public nsIObserver
 {
@@ -56,6 +86,8 @@ public:
     Matching,
     Lookup
   };
+
+  explicit LocaleService(bool aIsServer);
 
   
 
@@ -103,6 +135,18 @@ public:
 
 
 
+  void AssignAppLocales(const nsTArray<nsCString>& aAppLocales);
+  void AssignRequestedLocales(const nsTArray<nsCString>& aRequestedLocales);
+
+  
+
+
+
+
+
+
+
+
 
 
 
@@ -140,7 +184,16 @@ public:
 
 
 
-  void Refresh();
+
+
+
+
+
+
+
+  void OnAvailableLocalesChanged();
+  void OnRequestedLocalesChanged();
+  void OnLocalesChanged();
 
   
 
@@ -174,6 +227,8 @@ public:
 
   static bool LanguagesMatch(const nsCString& aRequested,
                              const nsCString& aAvailable);
+
+  bool IsServer();
 
 private:
   
@@ -226,6 +281,9 @@ private:
   virtual ~LocaleService();
 
   nsTArray<nsCString> mAppLocales;
+  nsTArray<nsCString> mRequestedLocales;
+  nsTArray<nsCString> mAvailableLocales;
+  const bool mIsServer;
 
   static StaticRefPtr<LocaleService> sInstance;
 };
