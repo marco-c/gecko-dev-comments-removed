@@ -137,15 +137,15 @@ var gSyncUI = {
   
   
   
-  _loginFailed() {
+  loginFailed() {
     
     
     
     if (!this.weaveService.ready) {
-      this.log.debug("_loginFailed has sync not ready, so returning false");
+      this.log.debug("loginFailed has sync not ready, so returning false");
       return false;
     }
-    this.log.debug("_loginFailed has sync state=${sync}",
+    this.log.debug("loginFailed has sync state=${sync}",
                    { sync: Weave.Status.login});
     return Weave.Status.login == Weave.LOGIN_FAILED_LOGIN_REJECTED;
   },
@@ -163,7 +163,7 @@ var gSyncUI = {
       if (!gBrowser)
         return Promise.resolve();
 
-      let loginFailed = this._loginFailed();
+      let loginFailed = this.loginFailed();
 
       
       document.getElementById("sync-reauth-state").hidden = true;
@@ -266,7 +266,7 @@ var gSyncUI = {
   
   handleToolbarButton() {
     this._needsSetup().then(needsSetup => {
-      if (needsSetup || this._loginFailed()) {
+      if (needsSetup || this.loginFailed()) {
         this.openSetup();
       } else {
         this.doSync();
@@ -380,7 +380,7 @@ var gSyncUI = {
 
     let needsSetup = yield this._needsSetup();
     let needsVerification = yield this._needsVerification();
-    let loginFailed = this._loginFailed();
+    let loginFailed = this.loginFailed();
     
     
     
