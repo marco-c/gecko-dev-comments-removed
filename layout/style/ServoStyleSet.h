@@ -265,6 +265,11 @@ private:
 
   void ClearNonInheritingStyleContexts();
 
+  
+
+
+  void PreTraverse();
+
   nsPresContext* mPresContext;
   UniquePtr<RawServoStyleSet> mRawSet;
   EnumeratedArray<SheetType, SheetType::Count,

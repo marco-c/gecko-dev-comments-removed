@@ -201,11 +201,20 @@ ServoStyleSet::ResolveMappedAttrDeclarationBlocks()
   }
 }
 
-bool
-ServoStyleSet::PrepareAndTraverseSubtree(RawGeckoElementBorrowed aRoot,
-                                         mozilla::TraversalRootBehavior aRootBehavior) {
+void
+ServoStyleSet::PreTraverse()
+{
   ResolveMappedAttrDeclarationBlocks();
 
+  
+  
+  mPresContext->EffectCompositor()->PreTraverse();
+}
+
+bool
+ServoStyleSet::PrepareAndTraverseSubtree(RawGeckoElementBorrowed aRoot,
+                                         mozilla::TraversalRootBehavior aRootBehavior)
+{
   
   
   
@@ -608,6 +617,8 @@ ServoStyleSet::HasStateDependentStyle(dom::Element* aElement,
 bool
 ServoStyleSet::StyleDocument()
 {
+  PreTraverse();
+
   
   
   bool postTraversalRequired = false;
@@ -624,6 +635,9 @@ void
 ServoStyleSet::StyleNewSubtree(Element* aRoot)
 {
   MOZ_ASSERT(!aRoot->HasServoData());
+
+  PreTraverse();
+
   DebugOnly<bool> postTraversalRequired =
     PrepareAndTraverseSubtree(aRoot, TraversalRootBehavior::Normal);
   MOZ_ASSERT(!postTraversalRequired);
@@ -632,6 +646,8 @@ ServoStyleSet::StyleNewSubtree(Element* aRoot)
 void
 ServoStyleSet::StyleNewChildren(Element* aParent)
 {
+  PreTraverse();
+
   PrepareAndTraverseSubtree(aParent, TraversalRootBehavior::UnstyledChildrenOnly);
   
   
