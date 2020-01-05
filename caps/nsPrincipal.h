@@ -40,11 +40,6 @@ public:
   
 
 
-  static nsresult GetOriginForURI(nsIURI* aURI, nsACString& aOrigin);
-
-  
-
-
   static void InitializeStatics();
 
   PrincipalKind Kind() override { return eCodebasePrincipal; }
