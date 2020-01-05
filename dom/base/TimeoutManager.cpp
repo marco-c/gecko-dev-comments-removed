@@ -605,7 +605,7 @@ TimeoutManager::MaybeApplyBackPressure()
   
   
   nsCOMPtr<nsIRunnable> r =
-    NewNonOwningRunnableMethod<StorensRefPtrPassByPtr<nsGlobalWindow>>(this,
+    NewNonOwningRunnableMethod<StoreRefPtrPassByPtr<nsGlobalWindow>>(this,
       &TimeoutManager::CancelOrUpdateBackPressure, &mWindow);
   nsresult rv = queue->Dispatch(r.forget(), NS_DISPATCH_NORMAL);
   NS_ENSURE_SUCCESS_VOID(rv);
@@ -668,7 +668,7 @@ TimeoutManager::CancelOrUpdateBackPressure(nsGlobalWindow* aWindow)
   
   
   nsCOMPtr<nsIRunnable> r =
-    NewNonOwningRunnableMethod<StorensRefPtrPassByPtr<nsGlobalWindow>>(this,
+    NewNonOwningRunnableMethod<StoreRefPtrPassByPtr<nsGlobalWindow>>(this,
       &TimeoutManager::CancelOrUpdateBackPressure, &mWindow);
   MOZ_ALWAYS_SUCCEEDS(queue->Dispatch(r.forget(), NS_DISPATCH_NORMAL));
 }

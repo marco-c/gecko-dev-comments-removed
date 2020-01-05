@@ -540,17 +540,17 @@ struct IsParameterStorageClass<StoreConstRefPassByConstLRef<S>>
   : public mozilla::TrueType {};
 
 template<typename T>
-struct StorensRefPtrPassByPtr
+struct StoreRefPtrPassByPtr
 {
   typedef RefPtr<T> stored_type;
   typedef T* passed_type;
   stored_type m;
   template <typename A>
-  MOZ_IMPLICIT StorensRefPtrPassByPtr(A&& a) : m(mozilla::Forward<A>(a)) {}
+  MOZ_IMPLICIT StoreRefPtrPassByPtr(A&& a) : m(mozilla::Forward<A>(a)) {}
   passed_type PassAsParameter() { return m.get(); }
 };
 template<typename S>
-struct IsParameterStorageClass<StorensRefPtrPassByPtr<S>>
+struct IsParameterStorageClass<StoreRefPtrPassByPtr<S>>
   : public mozilla::TrueType {};
 
 template<typename T>
@@ -671,7 +671,7 @@ struct NonnsISupportsPointerStorageClass
 template<typename TWithoutPointer>
 struct PointerStorageClass
   : mozilla::Conditional<HasRefCountMethods<TWithoutPointer>::value,
-                         StorensRefPtrPassByPtr<TWithoutPointer>,
+                         StoreRefPtrPassByPtr<TWithoutPointer>,
                          typename NonnsISupportsPointerStorageClass<
                            TWithoutPointer
                          >::Type>
@@ -688,7 +688,7 @@ struct LValueReferenceStorageClass
 template<typename T>
 struct SmartPointerStorageClass
   : mozilla::Conditional<mozilla::IsRefcountedSmartPointer<T>::value,
-                         StorensRefPtrPassByPtr<
+                         StoreRefPtrPassByPtr<
                            typename mozilla::RemoveSmartPointer<T>::Type>,
                          StoreCopyPassByConstLRef<T>>
 {};
