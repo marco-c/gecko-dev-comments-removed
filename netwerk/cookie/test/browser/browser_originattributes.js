@@ -69,7 +69,7 @@ add_task(function* test() {
 
 function *checkCookies(expectedValues, time) {
   for (let userContextId of Object.keys(expectedValues)) {
-    let cookiesFromTitle = yield* getCookiesFromTitle(userContextId);
+    let cookiesFromTitle = yield* getCookiesFromJS(userContextId);
     let cookiesFromManager = getCookiesFromManager(userContextId);
 
     let expectedValue = expectedValues[userContextId];
@@ -93,20 +93,17 @@ function getCookiesFromManager(userContextId) {
   return cookies;
 }
 
-function* getCookiesFromTitle(userContextId) {
+function* getCookiesFromJS(userContextId) {
   let {tab, browser} = yield* openTabInUserContext(TEST_URL, userContextId);
 
   
-  yield ContentTask.spawn(browser, null, function(opts) {
-    content.document.title = content.document.cookie;
+  let cookieString = yield ContentTask.spawn(browser, null, function() {
+    return content.document.cookie;
   });
 
   
-  let cookieString = browser.contentDocument.title.split(";");
-
-  
   let cookies = {};
-  for (let cookie of cookieString) {
+  for (let cookie of cookieString.split(";")) {
     let [name, value] = cookie.trim().split("=");
     cookies[name] = value;
   }
