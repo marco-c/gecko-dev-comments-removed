@@ -274,10 +274,12 @@ CreateRoot(nsCOMPtr<mozIStorageConnection>& aDBConn,
   nsCOMPtr<mozIStorageStatement> stmt;
   nsresult rv = aDBConn->CreateStatement(NS_LITERAL_CSTRING(
     "INSERT INTO moz_bookmarks "
-      "(type, position, title, dateAdded, lastModified, guid, parent) "
+      "(type, position, title, dateAdded, lastModified, guid, parent, "
+       "syncChangeCounter, syncStatus) "
     "VALUES (:item_type, :item_position, :item_title,"
-            ":date_added, :last_modified, :guid,"
-            "IFNULL((SELECT id FROM moz_bookmarks WHERE parent = 0), 0))"
+            ":date_added, :last_modified, :guid, "
+            "IFNULL((SELECT id FROM moz_bookmarks WHERE parent = 0), 0), "
+            "1, :sync_status)"
   ), getter_AddRefs(stmt));
   if (NS_FAILED(rv)) return rv;
 
@@ -294,6 +296,9 @@ CreateRoot(nsCOMPtr<mozIStorageConnection>& aDBConn,
   rv = stmt->BindInt64ByName(NS_LITERAL_CSTRING("last_modified"), timestamp);
   if (NS_FAILED(rv)) return rv;
   rv = stmt->BindUTF8StringByName(NS_LITERAL_CSTRING("guid"), aGuid);
+  if (NS_FAILED(rv)) return rv;
+  rv = stmt->BindInt32ByName(NS_LITERAL_CSTRING("sync_status"),
+                             nsINavBookmarksService::SYNC_STATUS_NEW);
   if (NS_FAILED(rv)) return rv;
   rv = stmt->Execute();
   if (NS_FAILED(rv)) return rv;
@@ -877,6 +882,13 @@ Database::InitSchema(bool* aDatabaseMigrated)
 
       
 
+      if (currentSchemaVersion < 36) {
+        rv = MigrateV36Up();
+        NS_ENSURE_SUCCESS(rv, rv);
+      }
+
+      
+
       
 
       rv = UpdateBookmarkRootTitles();
@@ -926,6 +938,8 @@ Database::InitSchema(bool* aDatabaseMigrated)
 
     
     rv = mMainConn->ExecuteSimpleSQL(CREATE_MOZ_BOOKMARKS);
+    NS_ENSURE_SUCCESS(rv, rv);
+    rv = mMainConn->ExecuteSimpleSQL(CREATE_MOZ_BOOKMARKS_DELETED);
     NS_ENSURE_SUCCESS(rv, rv);
     rv = mMainConn->ExecuteSimpleSQL(CREATE_IDX_MOZ_BOOKMARKS_PLACETYPE);
     NS_ENSURE_SUCCESS(rv, rv);
@@ -1033,6 +1047,27 @@ Database::CreateBookmarkRoots()
 
   int64_t mobileRootId = CreateMobileRoot();
   if (mobileRootId <= 0) return NS_ERROR_FAILURE;
+  {
+    nsCOMPtr<mozIStorageStatement> mobileRootSyncStatusStmt;
+    rv = mMainConn->CreateStatement(NS_LITERAL_CSTRING(
+      "UPDATE moz_bookmarks SET syncStatus = :sync_status WHERE id = :id"
+    ), getter_AddRefs(mobileRootSyncStatusStmt));
+    if (NS_FAILED(rv)) return rv;
+    mozStorageStatementScoper mobileRootSyncStatusScoper(
+      mobileRootSyncStatusStmt);
+
+    rv = mobileRootSyncStatusStmt->BindInt32ByName(
+      NS_LITERAL_CSTRING("sync_status"),
+      nsINavBookmarksService::SYNC_STATUS_NEW
+    );
+    if (NS_FAILED(rv)) return rv;
+    rv = mobileRootSyncStatusStmt->BindInt64ByName(NS_LITERAL_CSTRING("id"),
+                                                   mobileRootId);
+    if (NS_FAILED(rv)) return rv;
+
+    rv = mobileRootSyncStatusStmt->Execute();
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
 
 #if DEBUG
   nsCOMPtr<mozIStorageStatement> stmt;
@@ -1906,6 +1941,52 @@ Database::MigrateV35Up() {
     
     rv = DeleteBookmarkItem(folderIds[i]);
     if (NS_FAILED(rv)) return rv;
+  }
+
+  return NS_OK;
+}
+
+nsresult
+Database::MigrateV36Up() {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  
+  nsCOMPtr<mozIStorageStatement> syncStatusStmt;
+  nsresult rv = mMainConn->CreateStatement(NS_LITERAL_CSTRING(
+    "SELECT syncStatus FROM moz_bookmarks"
+  ), getter_AddRefs(syncStatusStmt));
+  if (NS_FAILED(rv)) {
+    
+    
+    
+    rv = mMainConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
+      "ALTER TABLE moz_bookmarks "
+      "ADD COLUMN syncStatus INTEGER DEFAULT 0 NOT NULL"
+    ));
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+
+  nsCOMPtr<mozIStorageStatement> syncChangeCounterStmt;
+  rv = mMainConn->CreateStatement(NS_LITERAL_CSTRING(
+    "SELECT syncChangeCounter FROM moz_bookmarks"
+  ), getter_AddRefs(syncChangeCounterStmt));
+  if (NS_FAILED(rv)) {
+    
+    
+    
+    rv = mMainConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
+      "ALTER TABLE moz_bookmarks "
+      "ADD COLUMN syncChangeCounter INTEGER DEFAULT 1 NOT NULL"));
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+
+  nsCOMPtr<mozIStorageStatement> tombstoneTableStmt;
+  rv = mMainConn->CreateStatement(NS_LITERAL_CSTRING(
+    "SELECT 1 FROM moz_bookmarks_deleted"
+  ), getter_AddRefs(tombstoneTableStmt));
+  if (NS_FAILED(rv)) {
+    rv = mMainConn->ExecuteSimpleSQL(CREATE_MOZ_BOOKMARKS_DELETED);
+    NS_ENSURE_SUCCESS(rv, rv);
   }
 
   return NS_OK;
