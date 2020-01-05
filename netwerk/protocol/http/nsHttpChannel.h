@@ -533,6 +533,11 @@ private:
     uint32_t                          mOfflineCacheLastModifiedTime;
 
     mozilla::TimeStamp                mOnStartRequestTimestamp;
+    
+    mozilla::TimeStamp                mSuspendTimestamp;
+    
+    
+    uint32_t                          mSuspendTotalTime;
 
     
     enum {
