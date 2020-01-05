@@ -57,3 +57,10 @@ TEST(Intl_Locale_LocaleService, GetAppLocaleAsLangTag) {
 
   ASSERT_TRUE(appLocales[0] == locale);
 }
+
+TEST(Intl_Locale_LocaleService, IsAppLocaleRTL) {
+  
+  LocaleService::GetInstance()->IsAppLocaleRTL();
+  ASSERT_TRUE(true);
+
+}
