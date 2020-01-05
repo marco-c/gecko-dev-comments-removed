@@ -23,7 +23,7 @@ function run_test() {
   const propertiesErrorMessage = "If this assertion fails, then the client side CSS " +
                                  "properties list in devtools is out of sync with the " +
                                  "CSS properties on the platform. To fix this " +
-                                 "assertion run `mach generate-css-db` to re-generate " +
+                                 "assertion run `mach devtools-css-db` to re-generate " +
                                  "the client side properties.";
 
   
