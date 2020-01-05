@@ -20,6 +20,7 @@ XPCOMUtils.defineLazyGetter(this, "kDebug", () => {
 });
 
 const kContentChangeThresholdPx = 5;
+const kBrightTextSampleSize = 5;
 const kModalHighlightRepaintFreqMs = 100;
 const kHighlightAllPref = "findbar.highlightAll";
 const kModalHighlightPref = "findbar.modalHighlight";
@@ -357,7 +358,6 @@ FinderHighlighter.prototype = {
 
     this._removeHighlightAllMask(window);
     this._removeModalHighlightListeners(window);
-    delete dict.brightText;
 
     dict.visible = false;
   },
@@ -413,11 +413,6 @@ FinderHighlighter.prototype = {
         return;
       }
 
-      let fontStyle = this._getRangeFontStyle(foundRange);
-      if (typeof dict.brightText == "undefined") {
-        dict.brightText = this._isColorBright(fontStyle.color);
-      }
-
       if (data.findAgain)
         dict.updateAllRanges = true;
 
@@ -426,7 +421,7 @@ FinderHighlighter.prototype = {
       else
         this._maybeCreateModalHighlightNodes(window);
 
-      this._updateRangeOutline(dict, textContent, fontStyle);
+      this._updateRangeOutline(dict, textContent);
     }
 
     let outlineNode = dict.modalHighlightOutline;
@@ -462,6 +457,7 @@ FinderHighlighter.prototype = {
     dict.dynamicRangesSet.clear();
     dict.frames.clear();
     dict.modalHighlightRectsMap.clear();
+    dict.brightText = null;
   },
 
   
@@ -709,6 +705,48 @@ FinderHighlighter.prototype = {
       return false;
     cssColor.shift();
     return new Color(...cssColor).isBright;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  _detectBrightText(dict) {
+    let sampleSize = Math.min(dict.modalHighlightRectsMap.size, kBrightTextSampleSize);
+    let ranges = [...dict.modalHighlightRectsMap.keys()];
+    let rangesCount = ranges.length;
+    
+    if (sampleSize % 2 == 0) {
+      
+      if (dict.currentFoundRange) {
+        ranges.push(dict.currentFoundRange);
+        ++sampleSize;
+        ++rangesCount;
+      } else {
+        --sampleSize;
+      }
+    }
+    let brightCount = 0;
+    for (let i = 0; i < sampleSize; ++i) {
+      let range = ranges[Math.floor((rangesCount / sampleSize) * i)];
+      let fontStyle = this._getRangeFontStyle(range);
+      if (this._isColorBright(fontStyle.color))
+        ++brightCount;
+    }
+
+    dict.brightText = (brightCount >= Math.ceil(sampleSize / 2));
   },
 
   
@@ -1012,6 +1050,8 @@ FinderHighlighter.prototype = {
 
     
     let {width, height} = dict.lastWindowDimensions = this._getWindowDimensions(window);
+    if (typeof dict.brightText != "boolean" || dict.updateAllRanges)
+      this._detectBrightText(dict);
     let maskStyle = this._getStyleString(kModalStyles.maskNode,
       [ ["width", width + "px"], ["height", height + "px"] ],
       dict.brightText ? kModalStyles.maskNodeBrightText : [],
