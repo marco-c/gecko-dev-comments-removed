@@ -57,6 +57,7 @@
 #include "nsLayoutUtils.h"
 #include "nsMappedAttributes.h"
 #include "nsView.h"
+#include "nsBaseWidget.h"
 #include "GroupedSHistory.h"
 #include "PartialSHistory.h"
 
@@ -1256,6 +1257,12 @@ nsFrameLoader::ShowRemoteFrame(const ScreenIntSize& size,
   if (!mRemoteBrowserShown) {
     if (!mOwnerContent ||
         !mOwnerContent->GetComposedDoc()) {
+      return false;
+    }
+
+    
+    nsIWidget* widget = nsContentUtils::WidgetForContent(mOwnerContent);
+    if (!widget || static_cast<nsBaseWidget*>(widget)->IsSmallPopup()) {
       return false;
     }
 
