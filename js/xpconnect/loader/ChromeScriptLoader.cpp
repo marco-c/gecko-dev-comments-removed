@@ -30,6 +30,9 @@ class AsyncScriptCompiler final : public nsIIncrementalStreamLoaderObserver
                                 , public Runnable
 {
 public:
+    
+    
+    
     NS_DECL_ISUPPORTS_INHERITED
     NS_DECL_NSIINCREMENTALSTREAMLOADEROBSERVER
     NS_DECL_NSIRUNNABLE
