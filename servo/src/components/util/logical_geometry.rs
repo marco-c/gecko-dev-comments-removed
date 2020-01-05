@@ -9,8 +9,8 @@ use std::cmp::{min, max};
 use std::fmt::{Show, Formatter, FormatError};
 use std::num::Zero;
 
-
 bitflags!(
+    #[deriving(Encodable)]
     flags WritingMode: u8 {
         static FlagRTL = 1 << 0,
         static FlagVertical = 1 << 1,
@@ -79,11 +79,11 @@ impl Show for WritingMode {
 
 
 #[cfg(ndebug)]
-#[deriving(PartialEq, Eq, Clone)]
+#[deriving(Encodable, PartialEq, Eq, Clone)]
 struct DebugWritingMode;
 
 #[cfg(not(ndebug))]
-#[deriving(PartialEq, Eq, Clone)]
+#[deriving(Encodable, PartialEq, Eq, Clone)]
 struct DebugWritingMode {
     mode: WritingMode
 }
@@ -134,7 +134,7 @@ impl Show for DebugWritingMode {
 
 
 
-#[deriving(PartialEq, Eq, Clone)]
+#[deriving(Encodable, PartialEq, Eq, Clone)]
 pub struct LogicalSize<T> {
     pub inline: T,  
     pub block: T,  
@@ -271,7 +271,7 @@ impl<T: Sub<T, T>> Sub<LogicalSize<T>, LogicalSize<T>> for LogicalSize<T> {
 
 
 
-#[deriving(PartialEq, Eq, Clone)]
+#[deriving(PartialEq, Encodable, Eq, Clone)]
 pub struct LogicalPoint<T> {
     pub i: T,  
     pub b: T,  
@@ -444,7 +444,7 @@ impl<T: Sub<T,T>> Sub<LogicalSize<T>, LogicalPoint<T>> for LogicalPoint<T> {
 
 
 
-#[deriving(PartialEq, Eq, Clone)]
+#[deriving(Encodable, PartialEq, Eq, Clone)]
 pub struct LogicalMargin<T> {
     pub block_start: T,
     pub inline_end: T,
@@ -726,7 +726,7 @@ impl<T: Sub<T, T>> Sub<LogicalMargin<T>, LogicalMargin<T>> for LogicalMargin<T> 
 
 
 
-#[deriving(PartialEq, Eq, Clone)]
+#[deriving(Encodable, PartialEq, Eq, Clone)]
 pub struct LogicalRect<T> {
     pub start: LogicalPoint<T>,
     pub size: LogicalSize<T>,

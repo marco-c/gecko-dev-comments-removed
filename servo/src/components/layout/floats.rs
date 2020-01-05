@@ -11,7 +11,7 @@ use style::computed_values::float;
 use sync::Arc;
 
 
-#[deriving(Clone)]
+#[deriving(Clone, Encodable)]
 pub enum FloatKind {
     FloatLeft,
     FloatRight

@@ -10,6 +10,7 @@ use floats::{FloatLeft, Floats, PlacementInfo};
 use flow::{BaseFlow, FlowClass, Flow, InlineFlowClass};
 use flow;
 use fragment::{Fragment, ScannedTextFragment, ScannedTextFragmentInfo, SplitInfo};
+use layout_debug;
 use model::IntrinsicISizes;
 use text;
 use wrapper::ThreadSafeLayoutNode;
@@ -58,6 +59,7 @@ use sync::Arc;
 
 
 
+#[deriving(Encodable)]
 pub struct Line {
     
     
@@ -140,6 +142,7 @@ pub struct Line {
 }
 
 int_range_index! {
+    #[deriving(Encodable)]
     #[doc = "The index of a fragment in a flattened vector of DOM elements."]
     struct FragmentIndex(int)
 }
@@ -147,7 +150,7 @@ int_range_index! {
 
 
 
-#[deriving(Clone, PartialEq, PartialOrd, Eq, Ord, Zero)]
+#[deriving(Clone, Encodable, PartialEq, PartialOrd, Eq, Ord, Zero)]
 pub struct LineIndices {
     
     
@@ -625,6 +628,7 @@ impl LineBreaker {
 }
 
 
+#[deriving(Encodable)]
 pub struct InlineFragments {
     
     pub fragments: Vec<Fragment>,
@@ -709,6 +713,7 @@ impl InlineFragments {
 }
 
 
+#[deriving(Encodable)]
 pub struct InlineFlow {
     
     pub base: BaseFlow,
@@ -902,6 +907,8 @@ impl Flow for InlineFlow {
     }
 
     fn bubble_inline_sizes(&mut self, _: &LayoutContext) {
+        let _scope = layout_debug_scope!("inline::bubble_inline_sizes {:s}", self.base.debug_id());
+
         let writing_mode = self.base.writing_mode;
         for kid in self.base.child_iter() {
             flow::mut_base(kid).floats = Floats::new(writing_mode);
@@ -927,6 +934,8 @@ impl Flow for InlineFlow {
     
     
     fn assign_inline_sizes(&mut self, _: &LayoutContext) {
+        let _scope = layout_debug_scope!("inline::assign_inline_sizes {:s}", self.base.debug_id());
+
         
         
         
@@ -955,7 +964,7 @@ impl Flow for InlineFlow {
 
     
     fn assign_block_size(&mut self, ctx: &LayoutContext) {
-        debug!("assign_block_size_inline: assigning block_size for flow");
+        let _scope = layout_debug_scope!("inline::assign_block_size {:s}", self.base.debug_id());
 
         
         
