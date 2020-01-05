@@ -255,6 +255,7 @@ HistoryStore.prototype = {
 
   applyIncomingBatch: function applyIncomingBatch(records) {
     let failed = [];
+    let blockers = [];
 
     
     
@@ -263,11 +264,12 @@ HistoryStore.prototype = {
       let record = records[k] = records[i];
       let shouldApply;
 
-      
       try {
         if (record.deleted) {
-          
-          this.remove(record);
+          let promise = this.remove(record);
+          promise = promise.then(null, ex => failed.push(record.id));
+          blockers.push(promise);
+
           
           shouldApply = false;
         } else {
@@ -287,21 +289,35 @@ HistoryStore.prototype = {
     }
     records.length = k; 
 
-    
-    if (!records.length) {
-      return failed;
+    let handleAsyncOperationsComplete = Async.makeSyncCallback();
+
+    if (records.length) {
+      blockers.push(new Promise(resolve => {
+        let updatePlacesCallback = {
+          handleResult: function handleResult() {},
+          handleError: function handleError(resultCode, placeInfo) {
+            failed.push(placeInfo.guid);
+          },
+          handleCompletion: resolve,
+        };
+        this._asyncHistory.updatePlaces(records, updatePlacesCallback);
+      }));
     }
 
-    let updatePlacesCallback = {
-      handleResult: function handleResult() {},
-      handleError: function handleError(resultCode, placeInfo) {
-        failed.push(placeInfo.guid);
-      },
-      handleCompletion: Async.makeSyncCallback()
-    };
-    this._asyncHistory.updatePlaces(records, updatePlacesCallback);
-    Async.waitForSyncCallback(updatePlacesCallback.handleCompletion);
-    return failed;
+    
+    
+    
+    Promise.all(blockers).then(
+      handleAsyncOperationsComplete,
+      ex => {
+        
+        
+        
+        handleAsyncOperationsComplete();
+        throw ex;
+      });
+    Async.waitForSyncCallback(handleAsyncOperationsComplete);
+      return failed;
   },
 
   
@@ -388,15 +404,15 @@ HistoryStore.prototype = {
   },
 
   remove: function HistStore_remove(record) {
-    let page = this._findURLByGUID(record.id);
-    if (page == null) {
-      this._log.debug("Page already removed: " + record.id);
-      return;
-    }
-
-    let uri = Utils.makeURI(page.url);
-    PlacesUtils.history.removePage(uri);
-    this._log.trace("Removed page: " + [record.id, page.url, page.title]);
+    return PlacesUtils.history.remove(record.id).then(
+      (removed) => {
+        if (removed) {
+          this._log.trace("Removed page: " + record.id);
+        } else {
+          this._log.debug("Page already removed: " + record.id);
+        }
+    });
+    this._log.trace("Removing page: " + record.id);
   },
 
   itemExists: function HistStore_itemExists(id) {
