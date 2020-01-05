@@ -207,15 +207,12 @@ function testNoClone() {
     assertEq(typeof serialize(b, [], {SharedArrayBuffer: 'allow'}), "object");
 }
 
-
-
-
 function testRedundantTransfer() {
-    var sab1 = b;
-    var blob = serialize(sab1, [sab1]);
-    var sab2 = deserialize(blob);
-    if (typeof sharedAddress != "undefined")
-	assertEq(sharedAddress(sab1), sharedAddress(sab2));
+    
+    assertThrowsInstanceOf(() => {
+	var sab1 = b;
+	var blob = serialize(sab1, [sab1]);
+    }, TypeError);
 }
 
 function testApplicable() {
