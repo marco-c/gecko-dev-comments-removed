@@ -1335,7 +1335,7 @@ GetErrorMessage(void* userRef, const unsigned errorNumber);
 
 
 
-class MOZ_STACK_CLASS AutoStableStringChars
+class MOZ_STACK_CLASS JS_FRIEND_API(AutoStableStringChars)
 {
     
 
@@ -2987,7 +2987,7 @@ class GCHeapProfiler
     virtual void reset() = 0;
 };
 
-class MemProfiler
+class JS_FRIEND_API(MemProfiler)
 {
     static mozilla::Atomic<uint32_t, mozilla::Relaxed> sActiveProfilerCount;
     static NativeProfiler* sNativeProfiler;
@@ -3005,8 +3005,8 @@ class MemProfiler
   public:
     explicit MemProfiler(JSRuntime* aRuntime) : mGCHeapProfiler(nullptr), mRuntime(aRuntime) {}
 
-    void start(GCHeapProfiler* aGCHeapProfiler);
-    void stop();
+    JS_FRIEND_API(void) start(GCHeapProfiler* aGCHeapProfiler);
+    JS_FRIEND_API(void) stop();
 
     GCHeapProfiler* getGCHeapProfiler() const {
         return mGCHeapProfiler;
@@ -3016,7 +3016,7 @@ class MemProfiler
         return sActiveProfilerCount > 0;
     }
 
-    static MemProfiler* GetMemProfiler(JSContext* context);
+    static JS_FRIEND_API(MemProfiler*) GetMemProfiler(JSContext* context);
 
     static void SetNativeProfiler(NativeProfiler* aProfiler) {
         sNativeProfiler = aProfiler;

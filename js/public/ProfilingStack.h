@@ -23,7 +23,7 @@ namespace js {
 
 
 
-class ProfileEntry
+class JS_PUBLIC_API(ProfileEntry)
 {
     
     
