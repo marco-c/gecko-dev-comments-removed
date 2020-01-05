@@ -810,10 +810,10 @@ fn bp_position(a_node: &Node, a_offset: u32,
         
         let mut b_ancestors = b_node.inclusive_ancestors();
         let child = b_ancestors.find(|child| {
-            child.r().GetParentNode().unwrap().r() == a_node
+            child.GetParentNode().unwrap().r() == a_node
         }).unwrap();
         
-        if child.r().index() < a_offset {
+        if child.index() < a_offset {
             Some(Ordering::Greater)
         } else {
             
