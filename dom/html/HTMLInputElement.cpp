@@ -3754,7 +3754,7 @@ HTMLInputElement::DispatchSelectEvent(nsPresContext* aPresContext)
 
   
   if (!mHandlingSelectEvent) {
-    WidgetEvent event(nsContentUtils::LegacyIsCallerChromeOrNativeCode(), eFormSelect);
+    WidgetEvent event(true, eFormSelect);
 
     mHandlingSelectEvent = true;
     EventDispatcher::Dispatch(static_cast<nsIContent*>(this),
