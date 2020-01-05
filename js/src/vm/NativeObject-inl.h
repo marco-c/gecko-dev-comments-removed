@@ -556,11 +556,6 @@ LookupPropertyInline(ExclusiveContext* cx,
                      typename MaybeRooted<PropertyResult, allowGC>::MutableHandleType propp)
 {
     
-
-
-
-
-    
     typename MaybeRooted<NativeObject*, allowGC>::RootType current(cx, obj);
 
     while (true) {

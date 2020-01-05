@@ -1965,24 +1965,6 @@ GetDOMProxyProto(JSObject* obj)
     return obj->staticPrototype();
 }
 
-
-
-
-bool
-EffectlesslyLookupProperty(JSContext* cx, HandleObject obj, HandleId id,
-                           MutableHandleObject holder, MutableHandle<PropertyResult> prop)
-{
-    prop.setNotFound();
-    holder.set(nullptr);
-
-    if (LookupPropertyPure(cx, obj, id, holder.address(), prop.address()))
-        return true;
-
-    holder.set(nullptr);
-    prop.setNotFound();
-    return true;
-}
-
 bool
 IsCacheableProtoChain(JSObject* obj, JSObject* holder, bool isDOMProxy)
 {
