@@ -2,7 +2,7 @@
 
 
 
-use std::path::Path;
+use std::old_path::Path;
 use std::mem::size_of;
 use std::mem::transmute;
 use std::mem::zeroed;
