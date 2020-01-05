@@ -28,7 +28,8 @@
 #define STRETCH_CONSIDER_EMBELLISHMENTS 0x00000002 // size calculations include embellishments
 
 class nsMathMLContainerFrame : public nsContainerFrame,
-                               public nsMathMLFrame {
+                               public nsMathMLFrame
+{
   friend class nsMathMLmfencedFrame;
 public:
   nsMathMLContainerFrame(nsStyleContext* aContext)
@@ -60,18 +61,6 @@ public:
       aFlagsValues, aFlagsToUpdate);
     return NS_OK;
   }
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  void
-  SetIncrementScriptLevel(int32_t aChildIndex, bool aIncrement);
 
   
   

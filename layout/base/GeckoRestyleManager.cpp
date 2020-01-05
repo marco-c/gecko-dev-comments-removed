@@ -247,6 +247,8 @@ GeckoRestyleManager::AttributeChanged(Element* aElement,
                                       int32_t aModType,
                                       const nsAttrValue* aOldValue)
 {
+  MOZ_ASSERT(!mInStyleRefresh);
+
   
   
   

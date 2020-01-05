@@ -7,50 +7,82 @@
 #define nsMathMLmunderoverFrame_h___
 
 #include "mozilla/Attributes.h"
+#include "nsIReflowCallback.h"
 #include "nsMathMLContainerFrame.h"
 
 
 
 
 
-class nsMathMLmunderoverFrame : public nsMathMLContainerFrame {
+class nsMathMLmunderoverFrame final
+  : public nsMathMLContainerFrame
+  , public nsIReflowCallback
+{
+
 public:
   NS_DECL_FRAMEARENA_HELPERS
 
   friend nsIFrame* NS_NewMathMLmunderoverFrame(nsIPresShell* aPresShell, nsStyleContext* aContext);
 
-  virtual nsresult
-  Place(DrawTarget*          aDrawTarget,
-        bool                 aPlaceOrigin,
-        ReflowOutput& aDesiredSize) override;
+  nsresult Place(DrawTarget* aDrawTarget,
+                 bool aPlaceOrigin,
+                 ReflowOutput& aDesiredSize) override;
 
-  NS_IMETHOD
-  InheritAutomaticData(nsIFrame* aParent) override;
+  NS_IMETHOD InheritAutomaticData(nsIFrame* aParent) override;
 
-  NS_IMETHOD
-  TransmitAutomaticData() override;
+  NS_IMETHOD TransmitAutomaticData() override;
 
-  NS_IMETHOD
-  UpdatePresentationData(uint32_t        aFlagsValues,
-                         uint32_t        aFlagsToUpdate) override;
+  NS_IMETHOD UpdatePresentationData(uint32_t aFlagsValues,
+                                    uint32_t aFlagsToUpdate) override;
 
-  virtual nsresult
-  AttributeChanged(int32_t         aNameSpaceID,
-                   nsIAtom*        aAttribute,
-                   int32_t         aModType) override;
+  void DestroyFrom(nsIFrame* aRoot) override;
 
-  uint8_t
-  ScriptIncrement(nsIFrame* aFrame) override;
+  nsresult AttributeChanged(int32_t aNameSpaceID,
+                            nsIAtom* aAttribute,
+                            int32_t aModType) override;
+
+  uint8_t ScriptIncrement(nsIFrame* aFrame) override;
+
+  
+  bool ReflowFinished() override;
+  void ReflowCallbackCanceled() override;
 
 protected:
-  explicit nsMathMLmunderoverFrame(nsStyleContext* aContext) : nsMathMLContainerFrame(aContext),
-                                                               mIncrementUnder(false),
-                                                               mIncrementOver(false) {}
+  explicit nsMathMLmunderoverFrame(nsStyleContext* aContext)
+    : nsMathMLContainerFrame(aContext)
+    , mIncrementUnder(false)
+    , mIncrementOver(false)
+  {}
+
   virtual ~nsMathMLmunderoverFrame();
 
 private:
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  void SetIncrementScriptLevel(uint32_t aChildIndex, bool aIncrement);
+  void SetPendingPostReflowIncrementScriptLevel();
+
   bool mIncrementUnder;
   bool mIncrementOver;
+
+  struct SetIncrementScriptLevelCommand
+  {
+    uint32_t mChildIndex;
+    bool mDoIncrement;
+  };
+
+  nsTArray<SetIncrementScriptLevelCommand>
+    mPostReflowIncrementScriptLevelCommands;
 };
 
 

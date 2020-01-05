@@ -16,7 +16,6 @@
 #include "nsIDOMMutationEvent.h"
 #include "nsGkAtoms.h"
 #include "nsDisplayList.h"
-#include "nsIReflowCallback.h"
 #include "mozilla/Likely.h"
 #include "nsIScriptError.h"
 #include "nsContentUtils.h"
@@ -1316,38 +1315,6 @@ nsMathMLContainerFrame::PositionRowChildFrames(nscoord aOffsetX,
                       nullptr, dx, dy, 0);
     ++child;
   }
-}
-
-class ForceReflow : public nsIReflowCallback {
-public:
-  virtual bool ReflowFinished() override {
-    return true;
-  }
-  virtual void ReflowCallbackCanceled() override {}
-};
-
-
-
-static ForceReflow gForceReflow;
-
-void
-nsMathMLContainerFrame::SetIncrementScriptLevel(int32_t aChildIndex, bool aIncrement)
-{
-  nsIFrame* child = PrincipalChildList().FrameAt(aChildIndex);
-  if (!child)
-    return;
-  nsIContent* content = child->GetContent();
-  if (!content->IsMathMLElement())
-    return;
-  nsMathMLElement* element = static_cast<nsMathMLElement*>(content);
-
-  if (element->GetIncrementScriptLevel() == aIncrement)
-    return;
-
-  
-  
-  element->SetIncrementScriptLevel(aIncrement, true);
-  PresContext()->PresShell()->PostReflowCallback(&gForceReflow);
 }
 
 
