@@ -73,6 +73,36 @@ function alertPromptService(title, message)
   ps.alert(window, title, message);
 }
 
+const DEFAULT_CERT_EXTENSION = "crt";
+
+
+
+
+
+
+
+
+
+
+function certToFilename(cert) {
+  let filename = cert.commonName;
+  if (!filename) {
+    filename = cert.windowTitle;
+  }
+
+  
+  filename = filename.replace(/\s/g, "")
+                     .replace(/\./g, "")
+                     .replace(/\\/g, "")
+                     .replace(/\//g, "");
+
+  
+  
+  
+  
+  return `${filename}.${DEFAULT_CERT_EXTENSION}`;
+}
+
 function exportToFile(parent, cert)
 {
   var bundle = document.getElementById("pippki_bundle");
@@ -85,17 +115,8 @@ function exportToFile(parent, cert)
            createInstance(nsIFilePicker);
   fp.init(parent, bundle.getString("SaveCertAs"),
           nsIFilePicker.modeSave);
-  let filename = cert.commonName;
-  if (filename.length == 0) {
-    filename = cert.windowTitle;
-  }
-  
-  
-  
-  
-  
-  fp.defaultString = filename.replace(/\s*/g, "") + ".crt";
-  fp.defaultExtension = "crt";
+  fp.defaultString = certToFilename(cert);
+  fp.defaultExtension = DEFAULT_CERT_EXTENSION;
   fp.appendFilter(bundle.getString("CertFormatBase64"), "*.crt; *.pem");
   fp.appendFilter(bundle.getString("CertFormatBase64Chain"), "*.crt; *.pem");
   fp.appendFilter(bundle.getString("CertFormatDER"), "*.der");
