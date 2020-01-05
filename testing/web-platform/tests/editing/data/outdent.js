@@ -1,3 +1,4 @@
+
 var browserTests = [
 ["<blockquote><p>foo[bar]</p><p>baz</p></blockquote><p>extra",
     [["outdent",""]],

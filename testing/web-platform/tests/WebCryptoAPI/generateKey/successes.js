@@ -1,5 +1,5 @@
 
-function run_test(algorithmNames) {
+function run_test(algorithmNames, slowTest) {
     var subtle = crypto.subtle; 
 
     setup({explicit_timeout: true});
@@ -74,7 +74,7 @@ function run_test(algorithmNames) {
     
     
     testVectors.forEach(function(vector) {
-        allNameVariants(vector.name).forEach(function(name) {
+        allNameVariants(vector.name, slowTest).forEach(function(name) {
             allAlgorithmSpecifiersFor(name).forEach(function(algorithm) {
                 allValidUsages(vector.usages, false, vector.mandatoryUsages).forEach(function(usages) {
                     [false, true].forEach(function(extractable) {

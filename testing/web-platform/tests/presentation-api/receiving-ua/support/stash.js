@@ -1,5 +1,5 @@
 var Stash = function(inbound, outbound) {
-  this.stashPath = '/presentation-api/controlling-ua/support/stash.py?id=';
+  this.stashPath = '/presentation-api/receiving-ua/support/stash.py?id=';
   this.inbound = inbound;
   this.outbound = outbound;
 }
@@ -26,6 +26,21 @@ Stash.prototype.send = function(result) {
   }).then(text => {
     return text === 'ok' ? null : Promise.reject();
   })
+};
+
+
+Stash.prototype.sendBeacon = function(result) {
+  if ('sendBeacon' in navigator) {
+    navigator.sendBeacon(this.stashPath + this.outbound, JSON.stringify({ type: 'data', data: result }));
+  }
+  
+  else {
+    return new Promise(resolve, reject => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', this.stashPath + this.outbound, false);
+      xhr.send(JSON.stringify({ type: 'data', data: result }));
+    });
+  }
 };
 
 

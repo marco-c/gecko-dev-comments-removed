@@ -57,8 +57,20 @@ oninstall = function(e) {
       e.waitUntil(fulfillPromise());
       break;
     case 'install-reject-precedence':
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
       e.waitUntil(fulfillPromise());
       e.waitUntil(rejectPromise());
+      e.waitUntil(fulfillPromise());
       break;
   }
 };

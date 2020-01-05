@@ -1,0 +1,7 @@
+"use strict";
+importScripts("./test-incrementer.js");
+
+self.onmessage = ({ data }) => {
+  
+  setupDestinationIncrementer(data, data);
+};

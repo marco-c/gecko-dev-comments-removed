@@ -1,7 +1,3 @@
-
-
-
-
 from client import Cookies, Element, Find, Session, Timeouts, Window
 from error import (
     ElementNotSelectableException,

@@ -1,3 +1,4 @@
+
 var browserTests = [
 ["foo[]bar",
     [["forecolor","#0000FF"]],

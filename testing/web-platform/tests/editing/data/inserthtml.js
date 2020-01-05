@@ -1,3 +1,4 @@
+
 var browserTests = [
 ["foo[]bar",
     [["stylewithcss","true"],["inserthtml","ab<b>c</b>d"]],

@@ -1,0 +1,3 @@
+
+
+testIsPerWindow("location");

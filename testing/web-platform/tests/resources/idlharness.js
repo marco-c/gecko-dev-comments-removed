@@ -437,6 +437,31 @@ IdlArray.prototype.test = function()
 IdlArray.prototype.assert_type_is = function(value, type)
 
 {
+    if (type.idlType in this.members
+    && this.members[type.idlType] instanceof IdlTypedef) {
+        this.assert_type_is(value, this.members[type.idlType].idlType);
+        return;
+    }
+    if (type.union) {
+        for (var i = 0; i < type.idlType.length; i++) {
+            try {
+                this.assert_type_is(value, type.idlType[i]);
+                
+                return;
+            } catch(e) {
+                if (e instanceof AssertionError) {
+                    
+                    continue;
+                }
+                throw e;
+            }
+        }
+        
+        assert_true(false, "Attribute has value " + format_value(value)
+                    + " which doesn't match any of the types in the union");
+
+    }
+
     
 
 
@@ -621,10 +646,6 @@ IdlArray.prototype.assert_type_is = function(value, type)
         assert_equals(typeof value, "string");
     }
     else if (this.members[type] instanceof IdlDictionary)
-    {
-        
-    }
-    else if (this.members[type] instanceof IdlTypedef)
     {
         
     }
@@ -1048,13 +1069,19 @@ IdlInterface.prototype.test_self = function()
         
         
         
-        assert_class_string(self[this.name].prototype, this.name + "Prototype",
-                            "class string of " + this.name + ".prototype");
+
+        
+        
+        
+
+        
+        
+
         
         
         if (!this.has_stringifier()) {
-            assert_equals(String(self[this.name].prototype), "[object " + this.name + "Prototype]",
-                    "String(" + this.name + ".prototype)");
+            
+            
         }
     }.bind(this), this.name + " interface: existence and properties of interface prototype object");
 
@@ -2004,7 +2031,7 @@ function IdlTypedef(obj)
     this.name = obj.name;
 
     
-    this.values = obj.values;
+    this.idlType = obj.idlType;
 
 }
 

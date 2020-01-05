@@ -469,6 +469,37 @@ ReflectionTests.typeMap = {
 
 
 
+    "clamped unsigned long": {
+        "jsType": "number",
+        "domTests": [minInt - 1, minInt, -36,  -1,   0,    1, maxInt,
+                     maxInt + 1, maxUnsigned, maxUnsigned + 1, "", "-1", "-0", "0", "1",
+                     "\u00097", "\u000B7", "\u000C7", "\u00207", "\u00A07", "\uFEFF7",
+                     "\u000A7", "\u000D7", "\u20287", "\u20297", "\u16807", "\u180E7",
+                     "\u20007", "\u20017", "\u20027", "\u20037", "\u20047", "\u20057",
+                     "\u20067", "\u20077", "\u20087", "\u20097", "\u200A7", "\u202F7",
+                     "\u30007",
+                     " " + binaryString + " foo ", undefined, 1.5, true, false,
+                     {"test": 6}, NaN, +Infinity, -Infinity, "\0",
+                     {toString:function() {return 2;}, valueOf: null},
+                     {valueOf:function() {return 3;}}],
+        "idlTests": [0, 1, 257, maxInt, "-0", maxInt + 1, maxUnsigned],
+        "idlDomExpected": [0, 1, 257, maxInt, 0, null, null],
+    },
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -680,6 +711,54 @@ ReflectionTests.reflects = function(data, idlName, idlObj, domName, domObj) {
                 }
             }
         }
+        break;
+
+        case "clamped unsigned long":
+        [data.min - 1, data.min, data.max, data.max + 1].forEach(function(val) {
+          if (domTests.indexOf(val) == -1) {
+            domTests.push(val);
+          }
+          if (idlTests.indexOf(val) == -1 && 0 <= val && val <= maxUnsigned) {
+            idlTests.push(val);
+            if (typeof val != "number") {
+              val = ReflectionTests.parseNonneg(val);
+            }
+            idlDomExpected.push(val > maxInt ? null : val);
+          }
+        });
+
+        
+        domExpected = domTests.map(function(val) {
+            var parsed = ReflectionTests.parseNonneg(String(val));
+            if (parsed === false) {
+                return defaultVal;
+            }
+            if (parsed < data.min) {
+              return data.min;
+            }
+            if (parsed > data.max) {
+              return data.max;
+            }
+            return parsed;
+        });
+        idlIdlExpected = idlTests.map(function(val) {
+            if (typeof val != "number") {
+              val = ReflectionTests.parseNonneg(val);
+            }
+            if (val < 0 || val > maxUnsigned) {
+              throw "Test bug: val should be an unsigned long";
+            }
+            if (val > maxInt) {
+              return defaultVal;
+            }
+            if (val < data.min) {
+              return data.min;
+            }
+            if (val > data.max) {
+              return data.max;
+            }
+            return val;
+        });
         break;
     }
     if (domObj.tagName.toLowerCase() == "canvas" && (domName == "width" || domName == "height")) {

@@ -219,12 +219,13 @@ function allValidUsages(validUsages, emptyIsValid, mandatoryUsages) {
 
 
 
-function allNameVariants(name) {
+function allNameVariants(name, slowTest) {
     var upCaseName = name.toUpperCase();
     var lowCaseName = name.toLowerCase();
     var mixedCaseName = upCaseName.substring(0, 1) + lowCaseName.substring(1);
 
+    
+    
+    if (slowTest) return [mixedCaseName];
     return [upCaseName, lowCaseName, mixedCaseName];
 }
-
-

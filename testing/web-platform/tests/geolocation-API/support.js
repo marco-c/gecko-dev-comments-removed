@@ -2,7 +2,7 @@ var geo;
 
 setup(function() {
   geo = navigator.geolocation;
-}, {explicit_done: true});
+});
 
 
 

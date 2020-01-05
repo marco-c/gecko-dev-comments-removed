@@ -1,3 +1,4 @@
+
 var browserTests = [
 ["foo[]bar<p>extra",
     [["justifyleft",""]],

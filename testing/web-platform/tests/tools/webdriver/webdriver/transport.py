@@ -1,11 +1,6 @@
-
-
-
-
 import httplib
 import json
 import urlparse
-
 
 class Response(object):
     """Describes an HTTP response received from a remote en"Describes an HTTP
@@ -45,7 +40,6 @@ class Response(object):
             assert "value" in body
 
         return cls(status, body)
-
 
 class HTTPWireProtocol(object):
     """Transports messages (commands and responses) over the WebDriver
