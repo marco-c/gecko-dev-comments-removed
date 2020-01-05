@@ -172,7 +172,7 @@ JSString*
 js::ObjectToSource(JSContext* cx, HandleObject obj)
 {
     
-    bool outermost = (cx->cycleDetectorSet().count() == 0);
+    bool outermost = cx->cycleDetectorVector().empty();
 
     AutoCycleDetector detector(cx, obj);
     if (!detector.init())
