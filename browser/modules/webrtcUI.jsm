@@ -20,8 +20,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "PluralForm",
                                   "resource://gre/modules/PluralForm.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Task",
                                   "resource://gre/modules/Task.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "SitePermissions",
-                                  "resource:///modules/SitePermissions.jsm");
 
 XPCOMUtils.defineLazyGetter(this, "gBrandBundle", function() {
   return Services.strings.createBundle("chrome://branding/locale/brand.properties");
@@ -335,25 +333,30 @@ function getHost(uri, href) {
 }
 
 function prompt(aBrowser, aRequest) {
-  let {audioDevices: audioDevices, videoDevices: videoDevices,
-       sharingScreen: sharingScreen, sharingAudio: sharingAudio,
-       requestTypes: requestTypes} = aRequest;
-
-  
-  
-  if ((audioDevices.length && SitePermissions
-        .get(null, "microphone", aBrowser).state == SitePermissions.BLOCK) ||
-      (videoDevices.length && SitePermissions
-        .get(null, sharingScreen ? "screen" : "camera", aBrowser).state == SitePermissions.BLOCK)) {
-    denyRequest(aBrowser, aRequest);
-    return;
-  }
-
+  let { audioDevices, videoDevices, sharingScreen, sharingAudio,
+        requestTypes } = aRequest;
   let uri = Services.io.newURI(aRequest.documentURI);
   let host = getHost(uri);
   let chromeDoc = aBrowser.ownerDocument;
   let stringBundle = chromeDoc.defaultView.gNavigatorBundle;
-  let stringId = "getUserMedia.share" + requestTypes.join("And") + "2.message";
+
+  
+  
+  
+  let joinedRequestTypes = requestTypes.join("And");
+  let stringId = [
+    
+    "getUserMedia.shareCamera2.message",
+    "getUserMedia.shareMicrophone2.message",
+    "getUserMedia.shareScreen3.message",
+    "getUserMedia.shareAudioCapture2.message",
+    
+    "getUserMedia.shareCameraAndMicrophone2.message",
+    "getUserMedia.shareCameraAndAudioCapture2.message",
+    "getUserMedia.shareScreenAndMicrophone3.message",
+    "getUserMedia.shareScreenAndAudioCapture3.message",
+  ].find(id => id.includes(joinedRequestTypes));
+
   let message = stringBundle.getFormattedString(stringId, [host]);
 
   let notification; 
@@ -372,16 +375,13 @@ function prompt(aBrowser, aRequest) {
       accessKey: stringBundle.getString("getUserMedia.dontAllow.accesskey"),
       callback(aState) {
         denyRequest(notification.browser, aRequest);
-        let scope = SitePermissions.SCOPE_TEMPORARY;
         if (aState && aState.checkboxChecked) {
-          scope = SitePermissions.SCOPE_PERSISTENT;
+          let perms = Services.perms;
+          if (audioDevices.length)
+            perms.add(uri, "microphone", perms.DENY_ACTION);
+          if (videoDevices.length)
+            perms.add(uri, sharingScreen ? "screen" : "camera", perms.DENY_ACTION);
         }
-        if (audioDevices.length)
-          SitePermissions.set(uri, "microphone",
-                              SitePermissions.BLOCK, scope, notification.browser);
-        if (videoDevices.length)
-          SitePermissions.set(uri, sharingScreen ? "screen" : "camera",
-                              SitePermissions.BLOCK, scope, notification.browser);
       }
     }
   ];
@@ -393,7 +393,7 @@ function prompt(aBrowser, aRequest) {
   
   let reasonForNoPermanentAllow = "";
   if (sharingScreen) {
-    reasonForNoPermanentAllow = "getUserMedia.reasonForNoPermanentAllow.screen";
+    reasonForNoPermanentAllow = "getUserMedia.reasonForNoPermanentAllow.screen2";
   } else if (sharingAudio) {
     reasonForNoPermanentAllow = "getUserMedia.reasonForNoPermanentAllow.audio";
   } else if (!aRequest.secure) {
@@ -441,36 +441,42 @@ function prompt(aBrowser, aRequest) {
       
       
       
-      
-      
       if (aRequest.secure) {
-        let micAllowed =
-          SitePermissions.get(uri, "microphone").state == SitePermissions.ALLOW;
-        let camAllowed =
-          SitePermissions.get(uri, "camera").state == SitePermissions.ALLOW;
-
         let perms = Services.perms;
+
+        let micPerm = perms.testExactPermission(uri, "microphone");
+        if (micPerm == perms.PROMPT_ACTION)
+          micPerm = perms.UNKNOWN_ACTION;
+
+        let camPerm = perms.testExactPermission(uri, "camera");
+
         let mediaManagerPerm =
           perms.testExactPermission(uri, "MediaManagerVideo");
         if (mediaManagerPerm) {
           perms.remove(uri, "MediaManagerVideo");
         }
 
+        if (camPerm == perms.PROMPT_ACTION)
+          camPerm = perms.UNKNOWN_ACTION;
+
         
         if (videoDevices.length && sharingScreen)
-          camAllowed = false;
+          camPerm = perms.UNKNOWN_ACTION;
 
-        if ((!audioDevices.length || micAllowed) &&
-            (!videoDevices.length || camAllowed)) {
+        
+        
+        
+        
+        if ((!audioDevices.length || micPerm) && (!videoDevices.length || camPerm)) {
           
           let allowedDevices = [];
-          if (videoDevices.length && camAllowed) {
+          if (videoDevices.length && camPerm == perms.ALLOW_ACTION) {
             allowedDevices.push(videoDevices[0].deviceIndex);
             Services.perms.add(uri, "MediaManagerVideo",
                                Services.perms.ALLOW_ACTION,
                                Services.perms.EXPIRE_SESSION);
           }
-          if (audioDevices.length && micAllowed)
+          if (audioDevices.length && micPerm == perms.ALLOW_ACTION)
             allowedDevices.push(audioDevices[0].deviceIndex);
 
           
@@ -664,24 +670,21 @@ function prompt(aBrowser, aRequest) {
             
             perms.add(uri, "MediaManagerVideo", perms.ALLOW_ACTION,
                       perms.EXPIRE_SESSION);
-            if (remember)
-              SitePermissions.set(uri, "camera", SitePermissions.ALLOW);
-          } else {
-            let scope = remember ? SitePermissions.SCOPE_PERSISTENT : SitePermissions.SCOPE_TEMPORARY;
-            SitePermissions.set(uri, "camera", SitePermissions.BLOCK, scope, aBrowser);
+          }
+          if (remember) {
+            perms.add(uri, "camera",
+                      allowCamera ? perms.ALLOW_ACTION : perms.DENY_ACTION);
           }
         }
         if (audioDevices.length) {
           if (!sharingAudio) {
             let audioDeviceIndex = doc.getElementById("webRTC-selectMicrophone-menulist").value;
             let allowMic = audioDeviceIndex != "-1";
-            if (allowMic) {
+            if (allowMic)
               allowedDevices.push(audioDeviceIndex);
-              if (remember)
-                SitePermissions.set(uri, "microphone", SitePermissions.ALLOW);
-            } else {
-                let scope = remember ? SitePermissions.SCOPE_PERSISTENT : SitePermissions.SCOPE_TEMPORARY;
-                SitePermissions.set(uri, "microphone", SitePermissions.BLOCK, scope, aBrowser);
+            if (remember) {
+              perms.add(uri, "microphone",
+                        allowMic ? perms.ALLOW_ACTION : perms.DENY_ACTION);
             }
           } else {
             
