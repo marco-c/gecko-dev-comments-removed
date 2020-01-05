@@ -36,23 +36,6 @@ public:
                                           nsCString* contentCharset,
                                           bool& isBase64,
                                           nsCString* dataBuffer);
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    static MOZ_MUST_USE nsresult ParsePathWithoutRef(
-        const nsACString& aPath,
-        nsCString& aContentType,
-        nsCString* aContentCharset,
-        bool& aIsBase64,
-        nsDependentCSubstring* aDataBuffer);
 };
 
 #endif 
