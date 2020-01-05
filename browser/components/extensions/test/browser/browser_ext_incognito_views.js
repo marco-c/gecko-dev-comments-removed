@@ -3,6 +3,9 @@
 "use strict";
 
 add_task(function* testIncognitoViews() {
+  
+  EventUtils.synthesizeMouseAtCenter(gURLBar, {type: "mouseover"}, window);
+
   let extension = ExtensionTestUtils.loadExtension({
     manifest: {
       "permissions": ["tabs"],

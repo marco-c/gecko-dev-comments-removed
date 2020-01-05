@@ -122,6 +122,8 @@ BrowserAction.prototype = {
         node.setAttribute("constrain-size", "true");
 
         node.onmousedown = event => this.handleEvent(event);
+        node.onmouseover = event => this.handleEvent(event);
+        node.onmouseout = event => this.handleEvent(event);
 
         this.updateButton(node, this.defaults);
       },
@@ -209,10 +211,10 @@ BrowserAction.prototype = {
           let popupURL = this.getProperty(tab, "popup");
           let enabled = this.getProperty(tab, "enabled");
 
-          if (popupURL && enabled) {
+          if (popupURL && enabled && (this.pendingPopup || !ViewPopup.for(this.extension, window))) {
             
             
-            if (!this.pendingPopup && !this.tabManager.hasActiveTabPermission(tab)) {
+            if (!this.tabManager.hasActiveTabPermission(tab)) {
               this.tabManager.addActiveTabPermission(tab);
               this.tabToRevokeDuringClearPopup = tab;
             }
@@ -241,6 +243,26 @@ BrowserAction.prototype = {
           }
         }
         break;
+
+      case "mouseover": {
+        
+        
+        let tab = window.gBrowser.selectedTab;
+        let popupURL = this.getProperty(tab, "popup");
+        let enabled = this.getProperty(tab, "enabled");
+
+        if (popupURL && enabled && (this.pendingPopup || !ViewPopup.for(this.extension, window))) {
+          this.pendingPopup = this.getPopup(window, popupURL, true);
+        }
+        break;
+      }
+
+      case "mouseout":
+        if (this.pendingPopup) {
+          this.clearPopup();
+        }
+        break;
+
 
       case "popupshowing":
         const menu = event.target;
@@ -273,20 +295,26 @@ BrowserAction.prototype = {
 
 
 
-  getPopup(window, popupURL) {
+
+
+  getPopup(window, popupURL, blockParser = false) {
     this.clearPopupTimeout();
     let {pendingPopup} = this;
     this.pendingPopup = null;
 
     if (pendingPopup) {
       if (pendingPopup.window === window && pendingPopup.popupURL === popupURL) {
+        if (!this.blockParser) {
+          pendingPopup.unblockParser();
+        }
+
         return pendingPopup;
       }
       pendingPopup.destroy();
     }
 
     let fixedWidth = this.widget.areaType == CustomizableUI.TYPE_MENU_PANEL;
-    return new ViewPopup(this.extension, window, popupURL, this.browserStyle, fixedWidth);
+    return new ViewPopup(this.extension, window, popupURL, this.browserStyle, fixedWidth, blockParser);
   },
 
   

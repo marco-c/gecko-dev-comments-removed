@@ -3,6 +3,9 @@
 "use strict";
 
 function* testExecuteBrowserActionWithOptions(options = {}) {
+  
+  EventUtils.synthesizeMouseAtCenter(gURLBar, {type: "mouseover"}, window);
+
   let extensionOptions = {};
 
   extensionOptions.manifest = {
