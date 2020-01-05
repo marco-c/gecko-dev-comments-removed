@@ -69,6 +69,7 @@ const CMD_OR_ALT : constellation_msg::KeyModifiers = SUPER;
 const CMD_OR_ALT : constellation_msg::KeyModifiers = ALT;
 
 
+#[cfg(feature = "window")]
 const LINE_HEIGHT : f32 = 38.0;
 
 
