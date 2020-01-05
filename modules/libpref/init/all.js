@@ -1221,6 +1221,8 @@ pref("privacy.trackingprotection.enabled",  false);
 
 pref("privacy.trackingprotection.pbmode.enabled",  true);
 
+pref("privacy.trackingprotection.annotate_channels",  false);
+
 pref("dom.event.contextmenu.enabled",       true);
 pref("dom.event.clipboardevents.enabled",   true);
 #if defined(XP_WIN) && !defined(RELEASE_OR_BETA) || defined(MOZ_WIDGET_GTK) && !defined(RELEASE_OR_BETA)
@@ -5164,8 +5166,6 @@ pref("browser.safebrowsing.id", "Firefox");
 
 
 pref("snav.enabled", false);
-
-
 
 
 pref("layout.accessiblecaret.enabled", false);

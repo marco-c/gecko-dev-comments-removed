@@ -122,10 +122,6 @@ private:
 
   
   
-  bool mCheckTracking;
-
-  
-  
   bool mCheckBlockedURIs;
 
   
