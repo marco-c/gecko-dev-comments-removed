@@ -233,6 +233,15 @@ struct ParamTraits<WRImageMask>
   }
 };
 
+template<>
+struct ParamTraits<WRTextureFilter>
+  : public ContiguousEnumSerializer<
+        WRTextureFilter,
+        WRTextureFilter::Linear,
+        WRTextureFilter::Sentinel>
+{
+};
+
 } 
 
 #endif 
