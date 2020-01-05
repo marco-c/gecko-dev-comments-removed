@@ -5,12 +5,11 @@
 
 
 #include "MediaPrefs.h"
-#include "MediaContentType.h"
+#include "MediaContainerType.h"
 #include "MediaDecoderStateMachine.h"
 #include "MediaFormatReader.h"
 #include "OggDemuxer.h"
 #include "OggDecoder.h"
-#include "nsContentTypeParser.h"
 
 namespace mozilla {
 
@@ -26,21 +25,21 @@ MediaDecoderStateMachine* OggDecoder::CreateStateMachine()
 
 
 bool
-OggDecoder::IsSupportedType(const MediaContentType& aContentType)
+OggDecoder::IsSupportedType(const MediaContainerType& aContainerType)
 {
   if (!MediaPrefs::OggEnabled()) {
     return false;
   }
 
-  if (aContentType.Type() != MEDIAMIMETYPE("audio/ogg") &&
-      aContentType.Type() != MEDIAMIMETYPE("video/ogg") &&
-      aContentType.Type() != MEDIAMIMETYPE("application/ogg")) {
+  if (aContainerType.Type() != MEDIAMIMETYPE("audio/ogg") &&
+      aContainerType.Type() != MEDIAMIMETYPE("video/ogg") &&
+      aContainerType.Type() != MEDIAMIMETYPE("application/ogg")) {
     return false;
   }
 
-  const bool isOggVideo = (aContentType.Type() != MEDIAMIMETYPE("audio/ogg"));
+  const bool isOggVideo = (aContainerType.Type() != MEDIAMIMETYPE("audio/ogg"));
 
-  const MediaCodecs& codecs = aContentType.ExtendedType().Codecs();
+  const MediaCodecs& codecs = aContainerType.ExtendedType().Codecs();
   if (codecs.IsEmpty()) {
     
     return true;

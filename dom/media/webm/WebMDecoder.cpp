@@ -5,7 +5,7 @@
 
 
 #include "mozilla/Preferences.h"
-#include "MediaContentType.h"
+#include "MediaContainerType.h"
 #include "MediaDecoderStateMachine.h"
 #include "WebMDemuxer.h"
 #include "WebMDecoder.h"
@@ -22,18 +22,18 @@ MediaDecoderStateMachine* WebMDecoder::CreateStateMachine()
 
 
 bool
-WebMDecoder::IsSupportedType(const MediaContentType& aContentType)
+WebMDecoder::IsSupportedType(const MediaContainerType& aContainerType)
 {
   if (!Preferences::GetBool("media.webm.enabled")) {
     return false;
   }
 
-  bool isVideo = aContentType.Type() == MEDIAMIMETYPE("video/webm");
-  if (aContentType.Type() != MEDIAMIMETYPE("audio/webm") && !isVideo) {
+  bool isVideo = aContainerType.Type() == MEDIAMIMETYPE("video/webm");
+  if (aContainerType.Type() != MEDIAMIMETYPE("audio/webm") && !isVideo) {
     return false;
   }
 
-  const MediaCodecs& codecs = aContentType.ExtendedType().Codecs();
+  const MediaCodecs& codecs = aContainerType.ExtendedType().Codecs();
   if (codecs.IsEmpty()) {
     
     return true;

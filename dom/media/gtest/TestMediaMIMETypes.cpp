@@ -4,7 +4,7 @@
 
 
 #include "gtest/gtest.h"
-#include "MediaContentType.h"
+#include "MediaMIMETypes.h"
 
 using namespace mozilla;
 

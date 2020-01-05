@@ -41,7 +41,7 @@ using mozilla::CheckedUint32;
 
 namespace mozilla {
 
-class MediaContentType;
+class MediaContainerType;
 
 
 extern const nsLiteralCString kEMEKeySystemClearkey;
@@ -357,9 +357,9 @@ CreateTrackInfoWithMIMEType(const nsACString& aCodecMIMEType);
 
 
 UniquePtr<TrackInfo>
-CreateTrackInfoWithMIMETypeAndContentTypeExtraParameters(
+CreateTrackInfoWithMIMETypeAndContainerTypeExtraParameters(
   const nsACString& aCodecMIMEType,
-  const MediaContentType& aContentType);
+  const MediaContainerType& aContainerType);
 
 namespace detail {
 

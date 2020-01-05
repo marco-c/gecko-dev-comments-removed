@@ -4,7 +4,7 @@
 
 
 #include "mozilla/Preferences.h"
-#include "MediaContentType.h"
+#include "MediaContainerType.h"
 #include "MediaResource.h"
 #include "mozilla/dom/HTMLMediaElement.h"
 #include "mozilla/Services.h"
@@ -227,7 +227,7 @@ AndroidMediaPluginHost::~AndroidMediaPluginHost() {
   MOZ_COUNT_DTOR(AndroidMediaPluginHost);
 }
 
-bool AndroidMediaPluginHost::FindDecoder(const MediaContentType& aMimeType,
+bool AndroidMediaPluginHost::FindDecoder(const MediaContainerType& aMimeType,
                                          MediaCodecs* aCodecs)
 {
   const char *chars;
@@ -253,7 +253,7 @@ bool AndroidMediaPluginHost::FindDecoder(const MediaContentType& aMimeType,
 }
 
 MPAPI::Decoder *AndroidMediaPluginHost::CreateDecoder(MediaResource *aResource,
-                                                      const MediaContentType& aMimeType)
+                                                      const MediaContainerType& aMimeType)
 {
   NS_ENSURE_TRUE(aResource, nullptr);
 

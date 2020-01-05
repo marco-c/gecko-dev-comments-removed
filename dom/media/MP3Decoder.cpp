@@ -6,7 +6,7 @@
 
 
 #include "MP3Decoder.h"
-#include "MediaContentType.h"
+#include "MediaContainerType.h"
 #include "MediaDecoderStateMachine.h"
 #include "MediaFormatReader.h"
 #include "MP3Demuxer.h"
@@ -38,14 +38,14 @@ MP3Decoder::IsEnabled() {
 }
 
 
-bool MP3Decoder::IsSupportedType(const MediaContentType& aContentType)
+bool MP3Decoder::IsSupportedType(const MediaContainerType& aContainerType)
 {
-  if (aContentType.Type() == MEDIAMIMETYPE("audio/mp3")
-      || aContentType.Type() == MEDIAMIMETYPE("audio/mpeg")) {
+  if (aContainerType.Type() == MEDIAMIMETYPE("audio/mp3")
+      || aContainerType.Type() == MEDIAMIMETYPE("audio/mpeg")) {
     return
       IsEnabled()
-      && (aContentType.ExtendedType().Codecs().IsEmpty()
-          || aContentType.ExtendedType().Codecs().AsString().EqualsASCII("mp3"));
+      && (aContainerType.ExtendedType().Codecs().IsEmpty()
+          || aContainerType.ExtendedType().Codecs().AsString().EqualsASCII("mp3"));
   }
   return false;
 }

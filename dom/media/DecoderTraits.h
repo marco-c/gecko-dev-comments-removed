@@ -16,7 +16,7 @@ namespace mozilla {
 
 class AbstractMediaDecoder;
 class DecoderDoctorDiagnostics;
-class MediaContentType;
+class MediaContainerType;
 class MediaDecoder;
 class MediaDecoderOwner;
 class MediaDecoderReader;
@@ -30,8 +30,8 @@ enum CanPlayStatus {
 class DecoderTraits {
 public:
   
-  static CanPlayStatus CanHandleContentType(const MediaContentType& aContentType,
-                                            DecoderDoctorDiagnostics* aDiagnostics);
+  static CanPlayStatus CanHandleContainerType(const MediaContainerType& aContainerType,
+                                              DecoderDoctorDiagnostics* aDiagnostics);
 
   
   
@@ -48,7 +48,7 @@ public:
 
   
   
-  static MediaDecoderReader* CreateReader(const MediaContentType& aType,
+  static MediaDecoderReader* CreateReader(const MediaContainerType& aType,
                                           AbstractMediaDecoder* aDecoder);
 
   
@@ -58,7 +58,7 @@ public:
 
   
   
-  static bool IsMP4SupportedType(const MediaContentType& aType,
+  static bool IsMP4SupportedType(const MediaContainerType& aType,
                                  DecoderDoctorDiagnostics* aDiagnostics);
 };
 

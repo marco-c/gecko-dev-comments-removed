@@ -12,7 +12,7 @@
 namespace mozilla {
 
 class MediaCodecs;
-class MediaContentType;
+class MediaContainerType;
 
 
 class DirectShowDecoder : public MediaDecoder
@@ -36,7 +36,7 @@ public:
   
   
   
-  static bool GetSupportedCodecs(const MediaContentType& aType,
+  static bool GetSupportedCodecs(const MediaContainerType& aType,
                                  MediaCodecs* aOutCodecs);
 
   

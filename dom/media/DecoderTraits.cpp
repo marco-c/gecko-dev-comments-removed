@@ -5,7 +5,7 @@
 
 
 #include "DecoderTraits.h"
-#include "MediaContentType.h"
+#include "MediaContainerType.h"
 #include "MediaDecoder.h"
 #include "nsMimeTypes.h"
 #include "mozilla/Preferences.h"
@@ -51,7 +51,7 @@ namespace mozilla
 {
 
 static bool
-IsHttpLiveStreamingType(const MediaContentType& aType)
+IsHttpLiveStreamingType(const MediaContainerType& aType)
 {
   return 
          
@@ -63,7 +63,7 @@ IsHttpLiveStreamingType(const MediaContentType& aType)
 
 #ifdef MOZ_ANDROID_OMX
 static bool
-IsAndroidMediaType(const MediaContentType& aType)
+IsAndroidMediaType(const MediaContainerType& aType)
 {
   if (!MediaDecoder::IsAndroidMediaPluginEnabled()) {
     return false;
@@ -77,7 +77,7 @@ IsAndroidMediaType(const MediaContentType& aType)
 #endif
 
  bool
-DecoderTraits::IsMP4SupportedType(const MediaContentType& aType,
+DecoderTraits::IsMP4SupportedType(const MediaContainerType& aType,
                                   DecoderDoctorDiagnostics* aDiagnostics)
 {
 #ifdef MOZ_FMP4
@@ -89,14 +89,14 @@ DecoderTraits::IsMP4SupportedType(const MediaContentType& aType,
 
 static
 CanPlayStatus
-CanHandleCodecsType(const MediaContentType& aType,
+CanHandleCodecsType(const MediaContainerType& aType,
                     DecoderDoctorDiagnostics* aDiagnostics)
 {
   
   MOZ_ASSERT(aType.ExtendedType().HaveCodecs());
 
   
-  const MediaContentType mimeType(aType.Type());
+  const MediaContainerType mimeType(aType.Type());
 
   if (OggDecoder::IsSupportedType(mimeType)) {
     if (OggDecoder::IsSupportedType(aType)) {
@@ -107,7 +107,7 @@ CanHandleCodecsType(const MediaContentType& aType,
       return CANPLAY_NO;
     }
   }
-  if (WaveDecoder::IsSupportedType(MediaContentType(mimeType))) {
+  if (WaveDecoder::IsSupportedType(MediaContainerType(mimeType))) {
     if (WaveDecoder::IsSupportedType(aType)) {
       return CANPLAY_YES;
     } else {
@@ -172,7 +172,7 @@ CanHandleCodecsType(const MediaContentType& aType,
 
 static
 CanPlayStatus
-CanHandleMediaType(const MediaContentType& aType,
+CanHandleMediaType(const MediaContainerType& aType,
                    DecoderDoctorDiagnostics* aDiagnostics)
 {
   MOZ_ASSERT(NS_IsMainThread());
@@ -189,7 +189,7 @@ CanHandleMediaType(const MediaContentType& aType,
   }
 
   
-  const MediaContentType mimeType(aType.Type());
+  const MediaContainerType mimeType(aType.Type());
 
   if (OggDecoder::IsSupportedType(mimeType)) {
     return CANPLAY_MAYBE;
@@ -232,22 +232,22 @@ CanHandleMediaType(const MediaContentType& aType,
 
 
 CanPlayStatus
-DecoderTraits::CanHandleContentType(const MediaContentType& aContentType,
-                                    DecoderDoctorDiagnostics* aDiagnostics)
+DecoderTraits::CanHandleContainerType(const MediaContainerType& aContainerType,
+                                      DecoderDoctorDiagnostics* aDiagnostics)
 {
-  return CanHandleMediaType(aContentType, aDiagnostics);
+  return CanHandleMediaType(aContainerType, aDiagnostics);
 }
 
 
 bool DecoderTraits::ShouldHandleMediaType(const char* aMIMEType,
                                           DecoderDoctorDiagnostics* aDiagnostics)
 {
-  Maybe<MediaContentType> contentType = MakeMediaContentType(aMIMEType);
-  if (!contentType) {
+  Maybe<MediaContainerType> containerType = MakeMediaContainerType(aMIMEType);
+  if (!containerType) {
     return false;
   }
 
-  if (WaveDecoder::IsSupportedType(*contentType)) {
+  if (WaveDecoder::IsSupportedType(*containerType)) {
     
     
     
@@ -259,21 +259,21 @@ bool DecoderTraits::ShouldHandleMediaType(const char* aMIMEType,
   
   
   
-  if (contentType->Type() == MEDIAMIMETYPE("video/quicktime")) {
+  if (containerType->Type() == MEDIAMIMETYPE("video/quicktime")) {
     RefPtr<nsPluginHost> pluginHost = nsPluginHost::GetInst();
     if (pluginHost &&
-        pluginHost->HavePluginForType(contentType->Type().AsString())) {
+        pluginHost->HavePluginForType(containerType->Type().AsString())) {
       return false;
     }
   }
 
-  return CanHandleMediaType(*contentType, aDiagnostics) != CANPLAY_NO;
+  return CanHandleMediaType(*containerType, aDiagnostics) != CANPLAY_NO;
 }
 
 
 static
 already_AddRefed<MediaDecoder>
-InstantiateDecoder(const MediaContentType& aType,
+InstantiateDecoder(const MediaContainerType& aType,
                    MediaDecoderOwner* aOwner,
                    DecoderDoctorDiagnostics* aDiagnostics)
 {
@@ -343,7 +343,7 @@ DecoderTraits::CreateDecoder(const nsACString& aType,
                              DecoderDoctorDiagnostics* aDiagnostics)
 {
   MOZ_ASSERT(NS_IsMainThread());
-  Maybe<MediaContentType> type = MakeMediaContentType(aType);
+  Maybe<MediaContainerType> type = MakeMediaContainerType(aType);
   if (!type) {
     return nullptr;
   }
@@ -352,7 +352,7 @@ DecoderTraits::CreateDecoder(const nsACString& aType,
 
 
 MediaDecoderReader*
-DecoderTraits::CreateReader(const MediaContentType& aType,
+DecoderTraits::CreateReader(const MediaContainerType& aType,
                             AbstractMediaDecoder* aDecoder)
 {
   MOZ_ASSERT(NS_IsMainThread());
@@ -414,7 +414,7 @@ bool DecoderTraits::IsSupportedInVideoDocument(const nsACString& aType)
     return false;
   }
 
-  Maybe<MediaContentType> type = MakeMediaContentType(aType);
+  Maybe<MediaContainerType> type = MakeMediaContainerType(aType);
   if (!type) {
     return false;
   }

@@ -7,7 +7,7 @@
 #include "mozilla/dom/MediaKeySystemAccess.h"
 #include "mozilla/dom/MediaKeySystemAccessBinding.h"
 #include "mozilla/Preferences.h"
-#include "MediaContentType.h"
+#include "MediaContainerType.h"
 #include "MediaPrefs.h"
 #ifdef MOZ_FMP4
 #include "MP4Decoder.h"
@@ -574,21 +574,21 @@ GetSupportedCapabilities(const CodecType aCodecType,
     }
     
     
-    Maybe<MediaContentType> maybeContentType =
-      MakeMediaContentType(contentTypeString);
-    if (!maybeContentType) {
+    Maybe<MediaContainerType> maybeContainerType =
+      MakeMediaContainerType(contentTypeString);
+    if (!maybeContainerType) {
       EME_LOG("MediaKeySystemConfiguration (label='%s') "
               "MediaKeySystemMediaCapability('%s','%s') unsupported; "
-              "failed to parse contentType as MIME type.",
+              "failed to parse contentTypeString as MIME type.",
               NS_ConvertUTF16toUTF8(aPartialConfig.mLabel).get(),
               NS_ConvertUTF16toUTF8(contentTypeString).get(),
               NS_ConvertUTF16toUTF8(robustness).get());
       continue;
     }
-    const MediaContentType& contentType = *maybeContentType;
+    const MediaContainerType& containerType = *maybeContainerType;
     bool invalid = false;
     nsTArray<EMECodecString> codecs;
-    for (const auto& codecString : contentType.ExtendedType().Codecs().Range()) {
+    for (const auto& codecString : containerType.ExtendedType().Codecs().Range()) {
       EMECodecString emeCodec = ToEMEAPICodecString(nsString(codecString));
       if (emeCodec.IsEmpty()) {
         invalid = true;
@@ -613,7 +613,7 @@ GetSupportedCapabilities(const CodecType aCodecType,
     
     
     const bool isMP4 =
-      DecoderTraits::IsMP4SupportedType(contentType, aDiagnostics);
+      DecoderTraits::IsMP4SupportedType(containerType, aDiagnostics);
     if (isMP4 && !aKeySystem.mMP4.IsSupported()) {
       EME_LOG("MediaKeySystemConfiguration (label='%s') "
               "MediaKeySystemMediaCapability('%s','%s') unsupported; "
@@ -623,7 +623,7 @@ GetSupportedCapabilities(const CodecType aCodecType,
               NS_ConvertUTF16toUTF8(robustness).get());
       continue;
     }
-    const bool isWebM = WebMDecoder::IsSupportedType(contentType);
+    const bool isWebM = WebMDecoder::IsSupportedType(containerType);
     if (isWebM && !aKeySystem.mWebM.IsSupported()) {
       EME_LOG("MediaKeySystemConfiguration (label='%s') "
               "MediaKeySystemMediaCapability('%s','%s') unsupported; "
@@ -678,7 +678,7 @@ GetSupportedCapabilities(const CodecType aCodecType,
     }
 
     
-    const auto majorType = GetMajorType(contentType.Type());
+    const auto majorType = GetMajorType(containerType.Type());
     if (majorType == Invalid) {
       EME_LOG("MediaKeySystemConfiguration (label='%s') "
               "MediaKeySystemMediaCapability('%s','%s') unsupported; "

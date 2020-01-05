@@ -4,8 +4,8 @@
 
 
 
-#ifndef MediaContentType_h_
-#define MediaContentType_h_
+#ifndef MediaContainerType_h_
+#define MediaContainerType_h_
 
 #include "MediaMIMETypes.h"
 #include "mozilla/Maybe.h"
@@ -14,20 +14,20 @@
 namespace mozilla {
 
 
-class MediaContentType
+class MediaContainerType
 {
 public:
-  explicit MediaContentType(const MediaMIMEType& aType)
+  explicit MediaContainerType(const MediaMIMEType& aType)
     : mExtendedMIMEType(aType)
   {}
-  explicit MediaContentType(MediaMIMEType&& aType)
+  explicit MediaContainerType(MediaMIMEType&& aType)
     : mExtendedMIMEType(Move(aType))
   {}
-  explicit MediaContentType(const MediaExtendedMIMEType& aType)
+  explicit MediaContainerType(const MediaExtendedMIMEType& aType)
     : mExtendedMIMEType(aType)
   {
   }
-  explicit MediaContentType(MediaExtendedMIMEType&& aType)
+  explicit MediaContainerType(MediaExtendedMIMEType&& aType)
     : mExtendedMIMEType(Move(aType))
   {
   }
@@ -45,9 +45,9 @@ private:
   MediaExtendedMIMEType mExtendedMIMEType;
 };
 
-Maybe<MediaContentType> MakeMediaContentType(const nsAString& aType);
-Maybe<MediaContentType> MakeMediaContentType(const nsACString& aType);
-Maybe<MediaContentType> MakeMediaContentType(const char* aType);
+Maybe<MediaContainerType> MakeMediaContainerType(const nsAString& aType);
+Maybe<MediaContainerType> MakeMediaContainerType(const nsACString& aType);
+Maybe<MediaContainerType> MakeMediaContainerType(const char* aType);
 
 } 
 
