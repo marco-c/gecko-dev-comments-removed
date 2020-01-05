@@ -107,6 +107,11 @@ private:
   
   bool                       mNeedsRebuild;
   
+
+  const bool                 mNotify;
+  
+  int32_t                    mInitialSelectedIndex;
+  
   nsMutationGuard            mGuard;
 };
 
