@@ -9,8 +9,6 @@ Components.utils.import("resource://gre/modules/DownloadUtils.jsm");
 Components.utils.import("resource://gre/modules/LoadContextInfo.jsm");
 Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
 
-const PREF_UPLOAD_ENABLED = "datareporting.healthreport.uploadEnabled";
-
 var gAdvancedPane = {
   _inited: false,
 
@@ -33,29 +31,15 @@ var gAdvancedPane = {
       window.addEventListener("unload", onUnload);
       Services.prefs.addObserver("app.update.", this, false);
       this.updateReadPrefs();
-    }
-    if (AppConstants.MOZ_CRASHREPORTER) {
-      this.initSubmitCrashes();
-    }
-    this.initTelemetry();
-    if (AppConstants.MOZ_TELEMETRY_REPORTING) {
-      this.initSubmitHealthReport();
-    }
-    this.updateOnScreenKeyboardVisibility();
-
-    setEventListener("layers.acceleration.disabled", "change",
-                     gAdvancedPane.updateHardwareAcceleration);
-    if (AppConstants.MOZ_TELEMETRY_REPORTING) {
-      setEventListener("submitHealthReportBox", "command",
-                       gAdvancedPane.updateSubmitHealthReport);
-    }
-
-    if (AppConstants.MOZ_UPDATER) {
       setEventListener("updateRadioGroup", "command",
                        gAdvancedPane.updateWritePrefs);
       setEventListener("showUpdateHistory", "command",
                        gAdvancedPane.showUpdates);
     }
+    this.updateOnScreenKeyboardVisibility();
+
+    setEventListener("layers.acceleration.disabled", "change",
+                     gAdvancedPane.updateHardwareAcceleration);
   },
 
 
@@ -135,89 +119,6 @@ var gAdvancedPane = {
       var fromPref = document.getElementById("layers.acceleration.disabled");
       var toPref = document.getElementById("gfx.direct2d.disabled");
       toPref.value = fromPref.value;
-    }
-  },
-
-  
-
-  
-
-
-  _setupLearnMoreLink(pref, element) {
-    
-    let url = Services.prefs.getCharPref(pref);
-    let el = document.getElementById(element);
-
-    if (url) {
-      el.setAttribute("href", url);
-    } else {
-      el.setAttribute("hidden", "true");
-    }
-  },
-
-  
-
-
-  initSubmitCrashes() {
-    this._setupLearnMoreLink("toolkit.crashreporter.infoURL",
-                             "crashReporterLearnMore");
-  },
-
-  
-
-
-
-
-  initTelemetry() {
-    if (AppConstants.MOZ_TELEMETRY_REPORTING) {
-      this._setupLearnMoreLink("toolkit.telemetry.infoURL", "telemetryLearnMore");
-    }
-  },
-
-  
-
-
-
-  setTelemetrySectionEnabled(aEnabled) {
-    if (AppConstants.MOZ_TELEMETRY_REPORTING) {
-      
-      let disabled = !aEnabled;
-      document.getElementById("submitTelemetryBox").disabled = disabled;
-      if (disabled) {
-        
-        Services.prefs.setBoolPref("toolkit.telemetry.enabled", false);
-      }
-      document.getElementById("telemetryDataDesc").disabled = disabled;
-    }
-  },
-
-  
-
-
-  initSubmitHealthReport() {
-    if (AppConstants.MOZ_TELEMETRY_REPORTING) {
-      this._setupLearnMoreLink("datareporting.healthreport.infoURL", "FHRLearnMore");
-
-      let checkbox = document.getElementById("submitHealthReportBox");
-
-      if (Services.prefs.prefIsLocked(PREF_UPLOAD_ENABLED)) {
-        checkbox.setAttribute("disabled", "true");
-        return;
-      }
-
-      checkbox.checked = Services.prefs.getBoolPref(PREF_UPLOAD_ENABLED);
-      this.setTelemetrySectionEnabled(checkbox.checked);
-    }
-  },
-
-  
-
-
-  updateSubmitHealthReport() {
-    if (AppConstants.MOZ_TELEMETRY_REPORTING) {
-      let checkbox = document.getElementById("submitHealthReportBox");
-      Services.prefs.setBoolPref(PREF_UPLOAD_ENABLED, checkbox.checked);
-      this.setTelemetrySectionEnabled(checkbox.checked);
     }
   },
 
