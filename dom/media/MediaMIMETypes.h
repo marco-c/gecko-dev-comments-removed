@@ -76,6 +76,16 @@ public:
     return !mMIMEType.Equals(aOther.mMIMEType);
   }
 
+  
+  bool HasApplicationMajorType() const;
+  
+  
+  bool HasAudioMajorType() const;
+  
+  
+  
+  bool HasVideoMajorType() const;
+
 private:
   friend Maybe<MediaMIMEType> MakeMediaMIMEType(const nsAString& aType);
   friend class MediaExtendedMIMEType;
