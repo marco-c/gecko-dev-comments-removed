@@ -340,7 +340,6 @@ class SupportFilesConverter(object):
     """
     def __init__(self):
         self._fields = (('head', set()),
-                        ('tail', set()),
                         ('support-files', set()),
                         ('generated-files', set()))
 
