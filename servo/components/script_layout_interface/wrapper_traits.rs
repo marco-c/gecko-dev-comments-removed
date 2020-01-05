@@ -176,7 +176,7 @@ pub trait ThreadSafeLayoutNode: Clone + Copy + Debug + GetLayoutData + NodeInfo 
     
     
     
-    fn style_for_text_node(&self) -> Arc<ServoComputedValues>;
+    fn parent_style(&self) -> Arc<ServoComputedValues>;
 
     #[inline]
     fn is_element_or_elements_pseudo(&self) -> bool {
@@ -222,8 +222,10 @@ pub trait ThreadSafeLayoutNode: Clone + Copy + Debug + GetLayoutData + NodeInfo 
         if let Some(el) = self.as_element() {
             el.style(context)
         } else {
+            
+            
             debug_assert!(self.is_text_node());
-            self.style_for_text_node()
+            self.parent_style()
         }
     }
 
@@ -232,7 +234,8 @@ pub trait ThreadSafeLayoutNode: Clone + Copy + Debug + GetLayoutData + NodeInfo 
             el.selected_style()
         } else {
             debug_assert!(self.is_text_node());
-            self.style_for_text_node()
+            
+            self.parent_style()
         }
     }
 
