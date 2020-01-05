@@ -22,11 +22,38 @@ namespace intl {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class LocaleService : public mozILocaleService
 {
 public:
   NS_DECL_ISUPPORTS
   NS_DECL_MOZILOCALESERVICE
+
+  
+
+
+
+
+
+  enum class LangNegStrategy {
+    Filtering,
+    Matching,
+    Lookup
+  };
 
   
 
@@ -72,15 +99,82 @@ public:
 
   void Refresh();
 
-protected:
-  nsTArray<nsCString> mAppLocales;
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  bool NegotiateLanguages(const nsTArray<nsCString>& aRequested,
+                          const nsTArray<nsCString>& aAvailable,
+                          const nsACString& aDefaultLocale,
+                          LangNegStrategy aLangNegStrategy,
+                          nsTArray<nsCString>& aRetVal);
 
 private:
+  
+
+
+
+
+
+
+  class Locale
+  {
+  public:
+    Locale(const nsCString& aLocale, bool aRange);
+
+    bool Matches(const Locale& aLocale) const;
+
+    void SetVariantRange();
+    void SetRegionRange();
+
+    bool AddLikelySubtags(); 
+
+    const nsCString& AsString() const {
+      return mLocaleStr;
+    }
+
+    bool operator== (const Locale& aOther) {
+      const auto& cmp = nsCaseInsensitiveCStringComparator();
+      return mLanguage.Equals(aOther.mLanguage, cmp) &&
+             mScript.Equals(aOther.mScript, cmp) &&
+             mRegion.Equals(aOther.mRegion, cmp) &&
+             mVariant.Equals(aOther.mVariant, cmp);
+    }
+
+  private:
+    const nsCString& mLocaleStr;
+    nsCString mLanguage;
+    nsCString mScript;
+    nsCString mRegion;
+    nsCString mVariant;
+  };
+
+  void FilterMatches(const nsTArray<nsCString>& aRequested,
+                     const nsTArray<nsCString>& aAvailable,
+                     LangNegStrategy aStrategy,
+                     nsTArray<nsCString>& aRetVal);
+
   virtual ~LocaleService() {};
+
+  nsTArray<nsCString> mAppLocales;
 
   static StaticRefPtr<LocaleService> sInstance;
 };
-
 } 
 } 
 
