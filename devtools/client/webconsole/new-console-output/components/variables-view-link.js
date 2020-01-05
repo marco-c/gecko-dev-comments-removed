@@ -25,6 +25,8 @@ function VariablesViewLink(props) {
   return (
     dom.a({
       onClick: openVariablesView.bind(null, object),
+      
+      "data-link-actor-id": object.actor,
       className: className || "cm-variable",
       draggable: false,
     }, children)

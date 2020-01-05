@@ -5,6 +5,7 @@
 
 
 
+
 "use strict";
 
 
@@ -139,4 +140,40 @@ function findMessages(hud, text, selector = ".message") {
     (el) => el.textContent.includes(text)
   );
   return elements;
+}
+
+
+
+
+
+
+
+
+
+
+
+function* openContextMenu(hud, element) {
+  let onConsoleMenuOpened = hud.ui.newConsoleOutput.once("menu-open");
+  synthesizeContextMenuEvent(element);
+  yield onConsoleMenuOpened;
+  return hud.ui.newConsoleOutput.toolbox.doc.getElementById("webconsole-menu");
+}
+
+
+
+
+
+
+
+
+
+function hideContextMenu(hud) {
+  let popup = hud.ui.newConsoleOutput.toolbox.doc.getElementById("webconsole-menu");
+  if (!popup) {
+    return Promise.resolve();
+  }
+
+  let onPopupHidden = once(popup, "popuphidden");
+  popup.hidePopup();
+  return onPopupHidden;
 }
