@@ -732,6 +732,10 @@ WebrtcVideoConduit::ConfigureSendMediaCodec(const VideoCodecConfig* codecConfig)
     CSFLogError(logTag, "%s Codec Mismatch ", __FUNCTION__);
     return kMediaConduitInvalidSendCodec;
   }
+
+  
+  mNegotiatedMaxBitrate = codecConfig->mTias / 1000;
+
   
   CodecConfigToWebRTCCodec(codecConfig, video_codec);
   if (mSendingWidth != 0) {
@@ -751,8 +755,6 @@ WebrtcVideoConduit::ConfigureSendMediaCodec(const VideoCodecConfig* codecConfig)
     mSendingHeight = 0;
     mSendingFramerate = video_codec.maxFramerate;
   }
-  
-  mNegotiatedMaxBitrate = MinIgnoreZero(mPrefMaxBitrate, video_codec.maxBitrate);
 
   video_codec.mode = mCodecMode;
 
