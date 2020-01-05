@@ -183,6 +183,7 @@ function tunnelToInnerBrowser(outer, inner) {
 
       
       
+      
       Object.defineProperty(inner.ownerGlobal, "PopupNotifications", {
         get() {
           return outer.ownerGlobal.PopupNotifications;
@@ -190,7 +191,46 @@ function tunnelToInnerBrowser(outer, inner) {
         configurable: true,
         enumerable: true,
       });
+
+      
+      
+      
+      
+      Object.defineProperty(inner.ownerGlobal, "whereToOpenLink", {
+        get() {
+          return outer.ownerGlobal.whereToOpenLink;
+        },
+        configurable: true,
+        enumerable: true,
+      });
+
+      
+      inner.addEventListener("mozbrowseropenwindow", this);
     }),
+
+    handleEvent(event) {
+      if (event.type != "mozbrowseropenwindow") {
+        return;
+      }
+
+      
+      
+      
+      
+      
+      
+      
+      let { detail } = event;
+      event.preventDefault();
+      let uri = Services.io.newURI(detail.url, null, null);
+      
+      
+      
+      
+      browserWindow.browserDOMWindow
+                   .openURI(uri, null, Ci.nsIBrowserDOMWindow.OPEN_NEWTAB,
+                            Ci.nsIBrowserDOMWindow.OPEN_NEWTAB);
+    },
 
     stop() {
       let tab = gBrowser.getTabForBrowser(outer);
@@ -225,6 +265,10 @@ function tunnelToInnerBrowser(outer, inner) {
 
       
       delete inner.ownerGlobal.PopupNotifications;
+      delete inner.ownerGlobal.whereToOpenLink;
+
+      
+      inner.removeEventListener("mozbrowseropenwindow", this);
 
       mmTunnel.destroy();
       mmTunnel = null;
