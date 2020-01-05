@@ -360,7 +360,17 @@ function waitUntilMetaDataSaved(expectedState, expectedChecksum, callback) {
       if (stateBase64 === btoa(expectedState) &&
           checksumBase64 === btoa(expectedChecksum)) {
         do_print('State has been saved to disk!');
-        callback();
+
+        
+        
+        dbService.getTables(cachedMetadata => {
+          equal(cachedMetadata, metaData);
+          callback();
+        });
+
+        
+        
+        
         didCallback = true;
       }
 

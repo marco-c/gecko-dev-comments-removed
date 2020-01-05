@@ -159,6 +159,14 @@ private:
   uint32_t mHashKey;
   
   nsDataHashtable<nsCStringHashKey, int64_t> mTableFreshness;
+
+  
+  
+  nsCString mTableRequestResult;
+
+  
+  
+  bool mIsTableRequestResultOutdated;
 };
 
 } 
