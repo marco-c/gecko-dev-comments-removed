@@ -962,6 +962,9 @@ public:
     SweepAllWrappedNativeTearOffs();
 
     static void
+    UpdateWeakPointersInAllScopesAfterGC();
+
+    void
     UpdateWeakPointersAfterGC();
 
     static void
@@ -1443,6 +1446,9 @@ public:
 
     JSObject*
     GetJSProtoObject() const { return mJSProtoObject; }
+
+    JSObject*
+    GetJSProtoObjectPreserveColor() const { return mJSProtoObject.unbarrieredGet(); }
 
     nsIClassInfo*
     GetClassInfo()     const {return mClassInfo;}
@@ -2443,7 +2449,8 @@ xpc_DumpJSStack(bool showArgs, bool showLocals, bool showThisProps);
 
 
 
-extern JS::UniqueChars
+
+extern char*
 xpc_PrintJSStack(JSContext* cx, bool showArgs, bool showLocals,
                  bool showThisProps);
 

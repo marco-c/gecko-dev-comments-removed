@@ -623,6 +623,13 @@ js::ZoneGlobalsAreAllGray(JS::Zone* zone)
     return true;
 }
 
+JS_FRIEND_API(bool)
+js::IsObjectZoneSweepingOrCompacting(JSObject* obj)
+{
+    MOZ_ASSERT(obj);
+    return MaybeForwarded(obj)->zone()->isGCSweepingOrCompacting();
+}
+
 namespace {
 struct VisitGrayCallbackFunctor {
     GCThingCallback callback_;
@@ -784,14 +791,14 @@ FormatValue(JSContext* cx, const Value& vArg, JSAutoByteString& bytes)
 
 
 
-static JS::UniqueChars
+static char*
 MOZ_FORMAT_PRINTF(3, 4)
-sprintf_append(JSContext* cx, JS::UniqueChars&& buf, const char* fmt, ...)
+sprintf_append(JSContext* cx, char* buf, const char* fmt, ...)
 {
     va_list ap;
 
     va_start(ap, fmt);
-    JS::UniqueChars result = JS_vsprintf_append(Move(buf), fmt, ap);
+    char* result = JS_vsprintf_append(buf, fmt, ap);
     va_end(ap);
 
     if (!result) {
@@ -802,8 +809,8 @@ sprintf_append(JSContext* cx, JS::UniqueChars&& buf, const char* fmt, ...)
     return result;
 }
 
-static JS::UniqueChars
-FormatFrame(JSContext* cx, const FrameIter& iter, JS::UniqueChars&& inBuf, int num,
+static char*
+FormatFrame(JSContext* cx, const FrameIter& iter, char* buf, int num,
             bool showArgs, bool showLocals, bool showThisProps)
 {
     MOZ_ASSERT(!cx->isExceptionPending());
@@ -831,17 +838,16 @@ FormatFrame(JSContext* cx, const FrameIter& iter, JS::UniqueChars&& inBuf, int n
     }
 
     
-    JS::UniqueChars buf(Move(inBuf));
     if (funname) {
         JSAutoByteString funbytes;
         char* str = funbytes.encodeLatin1(cx, funname);
         if (!str)
             return nullptr;
-        buf = sprintf_append(cx, Move(buf), "%d %s(", num, str);
+        buf = sprintf_append(cx, buf, "%d %s(", num, str);
     } else if (fun) {
-        buf = sprintf_append(cx, Move(buf), "%d anonymous(", num);
+        buf = sprintf_append(cx, buf, "%d anonymous(", num);
     } else {
-        buf = sprintf_append(cx, Move(buf), "%d <TOP LEVEL>", num);
+        buf = sprintf_append(cx, buf, "%d <TOP LEVEL>", num);
     }
     if (!buf)
         return nullptr;
@@ -890,7 +896,7 @@ FormatFrame(JSContext* cx, const FrameIter& iter, JS::UniqueChars&& inBuf, int n
             }
 
             if (value) {
-                buf = sprintf_append(cx, Move(buf), "%s%s%s%s%s%s",
+                buf = sprintf_append(cx, buf, "%s%s%s%s%s%s",
                                      !first ? ", " : "",
                                      name ? name :"",
                                      name ? " = " : "",
@@ -902,7 +908,7 @@ FormatFrame(JSContext* cx, const FrameIter& iter, JS::UniqueChars&& inBuf, int n
 
                 first = false;
             } else {
-                buf = sprintf_append(cx, Move(buf),
+                buf = sprintf_append(cx, buf,
                                      "    <Failed to get argument while inspecting stack frame>\n");
                 if (!buf)
                     return nullptr;
@@ -912,7 +918,7 @@ FormatFrame(JSContext* cx, const FrameIter& iter, JS::UniqueChars&& inBuf, int n
     }
 
     
-    buf = sprintf_append(cx, Move(buf), "%s [\"%s\":%d]\n",
+    buf = sprintf_append(cx, buf, "%s [\"%s\":%d]\n",
                          fun ? ")" : "",
                          filename ? filename : "<unknown>",
                          lineno);
@@ -937,9 +943,9 @@ FormatFrame(JSContext* cx, const FrameIter& iter, JS::UniqueChars&& inBuf, int n
                 const char* str = thisValBytes.encodeLatin1(cx, thisValStr);
                 if (!str)
                     return nullptr;
-                buf = sprintf_append(cx, Move(buf), "    this = %s\n", str);
+                buf = sprintf_append(cx, buf, "    this = %s\n", str);
             } else {
-                buf = sprintf_append(cx, Move(buf), "    <failed to get 'this' value>\n");
+                buf = sprintf_append(cx, buf, "    <failed to get 'this' value>\n");
             }
             if (!buf)
                 return nullptr;
@@ -966,7 +972,7 @@ FormatFrame(JSContext* cx, const FrameIter& iter, JS::UniqueChars&& inBuf, int n
                 if (cx->isThrowingOutOfMemory())
                     return nullptr;
                 cx->clearPendingException();
-                buf = sprintf_append(cx, Move(buf),
+                buf = sprintf_append(cx, buf,
                                      "    <Failed to fetch property while inspecting stack frame>\n");
                 if (!buf)
                     return nullptr;
@@ -990,13 +996,13 @@ FormatFrame(JSContext* cx, const FrameIter& iter, JS::UniqueChars&& inBuf, int n
             }
 
             if (name && value) {
-                buf = sprintf_append(cx, Move(buf), "    this.%s = %s%s%s\n",
+                buf = sprintf_append(cx, buf, "    this.%s = %s%s%s\n",
                                      name,
                                      v.isString() ? "\"" : "",
                                      value,
                                      v.isString() ? "\"" : "");
             } else {
-                buf = sprintf_append(cx, Move(buf),
+                buf = sprintf_append(cx, buf,
                                      "    <Failed to format values while inspecting stack frame>\n");
             }
             if (!buf)
@@ -1008,23 +1014,22 @@ FormatFrame(JSContext* cx, const FrameIter& iter, JS::UniqueChars&& inBuf, int n
     return buf;
 }
 
-static JS::UniqueChars
-FormatWasmFrame(JSContext* cx, const FrameIter& iter, JS::UniqueChars&& inBuf, int num,
-                bool showArgs)
+static char*
+FormatWasmFrame(JSContext* cx, const FrameIter& iter, char* buf, int num, bool showArgs)
 {
     JSAtom* functionDisplayAtom = iter.functionDisplayAtom();
     UniqueChars nameStr;
     if (functionDisplayAtom)
         nameStr = StringToNewUTF8CharsZ(cx, *functionDisplayAtom);
 
-    JS::UniqueChars buf = sprintf_append(cx, Move(inBuf), "%d %s()",
-                                         num,
-                                         nameStr ? nameStr.get() : "<wasm-function>");
+    buf = sprintf_append(cx, buf, "%d %s()",
+                         num,
+                         nameStr ? nameStr.get() : "<wasm-function>");
     if (!buf)
         return nullptr;
     const char* filename = iter.filename();
     uint32_t lineno = iter.computeLine();
-    buf = sprintf_append(cx, Move(buf), " [\"%s\":%d]\n",
+    buf = sprintf_append(cx, buf, " [\"%s\":%d]\n",
                          filename ? filename : "<unknown>",
                          lineno);
 
@@ -1032,25 +1037,23 @@ FormatWasmFrame(JSContext* cx, const FrameIter& iter, JS::UniqueChars&& inBuf, i
     return buf;
 }
 
-JS_FRIEND_API(JS::UniqueChars)
-JS::FormatStackDump(JSContext* cx, JS::UniqueChars&& inBuf, bool showArgs, bool showLocals,
-                    bool showThisProps)
+JS_FRIEND_API(char*)
+JS::FormatStackDump(JSContext* cx, char* buf, bool showArgs, bool showLocals, bool showThisProps)
 {
     int num = 0;
 
-    JS::UniqueChars buf(Move(inBuf));
     for (AllFramesIter i(cx); !i.done(); ++i) {
         if (i.hasScript())
-            buf = FormatFrame(cx, i, Move(buf), num, showArgs, showLocals, showThisProps);
+            buf = FormatFrame(cx, i, buf, num, showArgs, showLocals, showThisProps);
         else
-            buf = FormatWasmFrame(cx, i, Move(buf), num, showArgs);
+            buf = FormatWasmFrame(cx, i, buf, num, showArgs);
         if (!buf)
             return nullptr;
         num++;
     }
 
     if (!num)
-        buf = JS_sprintf_append(Move(buf), "JavaScript stack is empty\n");
+        buf = JS_sprintf_append(buf, "JavaScript stack is empty\n");
 
     return buf;
 }

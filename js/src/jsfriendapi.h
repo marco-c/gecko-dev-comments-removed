@@ -267,9 +267,8 @@ DumpBacktrace(JSContext* cx);
 namespace JS {
 
 
-extern JS_FRIEND_API(JS::UniqueChars)
-FormatStackDump(JSContext* cx, JS::UniqueChars&& buf, bool showArgs, bool showLocals,
-                bool showThisProps);
+extern JS_FRIEND_API(char*)
+FormatStackDump(JSContext* cx, char* buf, bool showArgs, bool showLocals, bool showThisProps);
 
 
 
@@ -472,6 +471,9 @@ AreGCGrayBitsValid(JSContext* cx);
 
 extern JS_FRIEND_API(bool)
 ZoneGlobalsAreAllGray(JS::Zone* zone);
+
+extern JS_FRIEND_API(bool)
+IsObjectZoneSweepingOrCompacting(JSObject* obj);
 
 typedef void
 (*GCThingCallback)(void* closure, JS::GCCellPtr thing);

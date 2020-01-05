@@ -569,14 +569,14 @@ XPCWrappedNative::Destroy()
 {
     mScriptable = nullptr;
 
+#ifdef DEBUG
+    
     XPCWrappedNativeScope* scope = GetScope();
     if (scope) {
         Native2WrappedNativeMap* map = scope->GetWrappedNativeMap();
-
-        
-        
-        map->Remove(this);
+        MOZ_ASSERT(map->Find(GetIdentityObject()) != this);
     }
+#endif
 
     if (mIdentity) {
         XPCJSRuntime* rt = GetRuntime();
@@ -2141,15 +2141,15 @@ XPCWrappedNative::ToString(XPCWrappedNativeTearOff* to  ) const
 #  define PARAM_ADDR(w)
 #endif
 
-    UniqueChars sz;
-    UniqueChars name;
+    char* sz = nullptr;
+    char* name = nullptr;
 
     nsCOMPtr<nsIXPCScriptable> scr = GetScriptable();
     if (scr)
         name = JS_smprintf("%s", scr->GetJSClass()->name);
     if (to) {
         const char* fmt = name ? " (%s)" : "%s";
-        name = JS_sprintf_append(Move(name), fmt,
+        name = JS_sprintf_append(name, fmt,
                                  to->GetInterface()->GetNameString());
     } else if (!name) {
         XPCNativeSet* set = GetSet();
@@ -2158,15 +2158,15 @@ XPCWrappedNative::ToString(XPCWrappedNativeTearOff* to  ) const
         uint16_t count = set->GetInterfaceCount();
 
         if (count == 1)
-            name = JS_sprintf_append(Move(name), "%s", array[0]->GetNameString());
+            name = JS_sprintf_append(name, "%s", array[0]->GetNameString());
         else if (count == 2 && array[0] == isupp) {
-            name = JS_sprintf_append(Move(name), "%s", array[1]->GetNameString());
+            name = JS_sprintf_append(name, "%s", array[1]->GetNameString());
         } else {
             for (uint16_t i = 0; i < count; i++) {
                 const char* fmt = (i == 0) ?
                                     "(%s" : (i == count-1) ?
                                         ", %s)" : ", %s";
-                name = JS_sprintf_append(Move(name), fmt,
+                name = JS_sprintf_append(name, fmt,
                                          array[i]->GetNameString());
             }
         }
@@ -2180,9 +2180,12 @@ XPCWrappedNative::ToString(XPCWrappedNativeTearOff* to  ) const
     if (scr) {
         fmt = "[object %s" FMT_ADDR FMT_STR(" (native") FMT_ADDR FMT_STR(")") "]";
     }
-    sz = JS_smprintf(fmt, name.get() PARAM_ADDR(this) PARAM_ADDR(mIdentity.get()));
+    sz = JS_smprintf(fmt, name PARAM_ADDR(this) PARAM_ADDR(mIdentity.get()));
 
-    return sz.release();
+    JS_smprintf_free(name);
+
+
+    return sz;
 
 #undef FMT_ADDR
 #undef PARAM_ADDR
