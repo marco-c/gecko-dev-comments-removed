@@ -545,11 +545,12 @@ ImplCycleCollectionUnlink(CallbackObjectHolder<T, U>& aField)
 
 
 template<typename T>
-class RootedCallback : public JS::Rooted<T>
+class MOZ_RAII RootedCallback : public JS::Rooted<T>
 {
 public:
   explicit RootedCallback(JSContext* cx)
     : JS::Rooted<T>(cx)
+    , mCx(cx)
   {}
 
   
@@ -599,6 +600,8 @@ private:
   {
     return aOwningNonNull.isInitialized();
   }
+
+  JSContext* mCx;
 };
 
 } 
