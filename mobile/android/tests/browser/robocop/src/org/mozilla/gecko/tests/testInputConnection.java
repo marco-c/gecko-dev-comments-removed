@@ -13,6 +13,7 @@ import org.mozilla.gecko.tests.helpers.NavigationHelper;
 
 import com.robotium.solo.Condition;
 
+import android.os.SystemClock;
 import android.view.KeyEvent;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
@@ -35,25 +36,25 @@ public class testInputConnection extends JavascriptBridgeTest {
         getJS().syncCall("focus_input", INITIAL_TEXT);
         mGeckoView.mTextInput
             .waitForInputConnection()
-            .testInputConnection(new BasicInputConnectionTest());
+            .testInputConnection(new BasicInputConnectionTest("input"));
 
         
         getJS().syncCall("focus_text_area", INITIAL_TEXT);
         mGeckoView.mTextInput
             .waitForInputConnection()
-            .testInputConnection(new BasicInputConnectionTest());
+            .testInputConnection(new BasicInputConnectionTest("textarea"));
 
         
         getJS().syncCall("focus_content_editable", INITIAL_TEXT);
         mGeckoView.mTextInput
             .waitForInputConnection()
-            .testInputConnection(new BasicInputConnectionTest());
+            .testInputConnection(new BasicInputConnectionTest("contentEditable"));
 
         
         getJS().syncCall("focus_design_mode", INITIAL_TEXT);
         mGeckoView.mTextInput
             .waitForInputConnection()
-            .testInputConnection(new BasicInputConnectionTest());
+            .testInputConnection(new BasicInputConnectionTest("designMode"));
 
         
         getJS().syncCall("focus_resetting_input", "");
@@ -71,6 +72,12 @@ public class testInputConnection extends JavascriptBridgeTest {
     }
 
     private class BasicInputConnectionTest extends InputConnectionTest {
+        private final String mType;
+
+        BasicInputConnectionTest(final String type) {
+            mType = type;
+        }
+
         @Override
         public void test(final InputConnection ic, EditorInfo info) {
             waitFor("focus change", new Condition() {
@@ -144,10 +151,13 @@ public class testInputConnection extends JavascriptBridgeTest {
             assertTextAndSelectionAt("Can finish composition", ic, "frabar", 6);
 
             
-            final KeyEvent shiftKey = new KeyEvent(KeyEvent.ACTION_DOWN,
-                                                   KeyEvent.KEYCODE_SHIFT_LEFT);
-            final KeyEvent leftKey = new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_LEFT);
-            final KeyEvent tKey = new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_T);
+            final long time = SystemClock.uptimeMillis();
+            final KeyEvent shiftKey = new KeyEvent(time, time, KeyEvent.ACTION_DOWN,
+                                                   KeyEvent.KEYCODE_SHIFT_LEFT, 0);
+            final KeyEvent leftKey = new KeyEvent(time, time, KeyEvent.ACTION_DOWN,
+                                                  KeyEvent.KEYCODE_DPAD_LEFT, 0);
+            final KeyEvent tKey = new KeyEvent(time, time, KeyEvent.ACTION_DOWN,
+                                               KeyEvent.KEYCODE_T, 0);
 
             ic.sendKeyEvent(shiftKey);
             ic.sendKeyEvent(leftKey);
@@ -221,8 +231,8 @@ public class testInputConnection extends JavascriptBridgeTest {
             assertTextAndSelectionAt("Can clear text", ic, "", 0);
 
             
-            final KeyEvent delKey = new KeyEvent(KeyEvent.ACTION_DOWN,
-                                                 KeyEvent.KEYCODE_DEL);
+            final KeyEvent delKey = new KeyEvent(time, time, KeyEvent.ACTION_DOWN,
+                                                 KeyEvent.KEYCODE_DEL, 0);
 
             ic.beginBatchEdit();
             ic.commitText("foo", 1);
@@ -249,9 +259,12 @@ public class testInputConnection extends JavascriptBridgeTest {
             
             ic.commitText("b", 1);
             
-            
-            processGeckoEvents();
-            processInputConnectionEvents();
+            if (mType.equals("input") || mType.equals("textarea")) {
+                assertTextAndSelectionAt("Can handle text replacement", ic, "abc", 2);
+            } else {
+                processGeckoEvents();
+                processInputConnectionEvents();
+            }
 
             ic.deleteSurroundingText(2, 1);
             assertTextAndSelectionAt("Can clear text", ic, "", 0);
