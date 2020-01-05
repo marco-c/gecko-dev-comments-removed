@@ -866,7 +866,10 @@ GLContext::InitWithPrefixImpl(const char* prefix, bool trygl)
     raw_fGetIntegerv(LOCAL_GL_MAX_VIEWPORT_DIMS, mMaxViewportDims);
 
 #ifdef XP_MACOSX
-    if (mWorkAroundDriverBugs) {
+    if (mWorkAroundDriverBugs &&
+        nsCocoaFeatures::OSXVersionMajor() == 10 &&
+        nsCocoaFeatures::OSXVersionMinor() < 12)
+    {
         if (mVendor == GLVendor::Intel) {
             
             mMaxTextureSize        = std::min(mMaxTextureSize,        4096);
