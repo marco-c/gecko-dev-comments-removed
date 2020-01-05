@@ -71,7 +71,7 @@ use std::sync::Arc;
 use std::sync::mpsc::{Receiver, Sender};
 use style_traits::{CSSPixel, UnsafeNode};
 use webdriver_msg::{LoadStatus, WebDriverScriptCommand};
-use webvr_traits::{WebVRDisplayEvent, WebVRMsg};
+use webvr_traits::{WebVREvent, WebVRMsg};
 
 pub use script_msg::{LayoutMsg, ScriptMsg, EventResult, LogEntry};
 pub use script_msg::{ServiceWorkerMsg, ScopeThings, SWManagerMsg, SWManagerSenders, DOMMessage};
@@ -281,7 +281,7 @@ pub enum ConstellationControlMsg {
     
     Reload(PipelineId),
     
-    WebVREvent(PipelineId, WebVREventMsg)
+    WebVREvents(PipelineId, Vec<WebVREvent>)
 }
 
 impl fmt::Debug for ConstellationControlMsg {
@@ -314,7 +314,7 @@ impl fmt::Debug for ConstellationControlMsg {
             FramedContentChanged(..) => "FramedContentChanged",
             ReportCSSError(..) => "ReportCSSError",
             Reload(..) => "Reload",
-            WebVREvent(..) => "WebVREvent",
+            WebVREvents(..) => "WebVREvents",
         };
         write!(formatter, "ConstellationMsg::{}", variant)
     }
@@ -752,15 +752,7 @@ pub enum ConstellationMsg {
     
     SetWebVRThread(IpcSender<WebVRMsg>),
     
-    WebVREvent(Vec<PipelineId>, WebVREventMsg),
-}
-
-
-
-#[derive(Deserialize, Serialize, Clone)]
-pub enum WebVREventMsg {
-    
-    DisplayEvent(WebVRDisplayEvent)
+    WebVREvents(Vec<PipelineId>, Vec<WebVREvent>),
 }
 
 
