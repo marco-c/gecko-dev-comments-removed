@@ -220,23 +220,7 @@ this.ExtensionsUI = {
 
     let perms = info.permissions || {hosts: [], permissions: []};
 
-    result.msgs = [];
-    for (let permission of perms.permissions) {
-      let key = `webextPerms.description.${permission}`;
-      if (permission == "nativeMessaging") {
-        let brandBundle = Services.strings.createBundle(BRAND_PROPERTIES);
-        let appName = brandBundle.GetStringFromName("brandShortName");
-        result.msgs.push(bundle.formatStringFromName(key, [appName], 1));
-      } else {
-        try {
-          result.msgs.push(bundle.GetStringFromName(key));
-        } catch (err) {
-          
-          
-        }
-      }
-    }
-
+    
     let allUrls = false, wildcards = [], sites = [];
     for (let permission of perms.hosts) {
       if (permission == "<all_urls>") {
@@ -256,6 +240,10 @@ this.ExtensionsUI = {
       }
     }
 
+    
+    
+    
+    result.msgs = [];
     if (allUrls) {
       result.msgs.push(bundle.GetStringFromName("webextPerms.hostDescription.allUrls"));
     } else {
@@ -281,6 +269,30 @@ this.ExtensionsUI = {
              "webextPerms.hostDescription.tooManyWildcards");
       format(sites, "webextPerms.hostDescription.oneSite",
              "webextPerms.hostDescription.tooManySites");
+    }
+
+    let permissionKey = perm => `webextPerms.description.${perm}`;
+
+    
+    const NATIVE_MSG_PERM = "nativeMessaging";
+    if (perms.permissions.includes(NATIVE_MSG_PERM)) {
+      let brandBundle = Services.strings.createBundle(BRAND_PROPERTIES);
+      let appName = brandBundle.GetStringFromName("brandShortName");
+      result.msgs.push(bundle.formatStringFromName(permissionKey(NATIVE_MSG_PERM), [appName], 1));
+    }
+
+    
+    for (let permission of perms.permissions) {
+      
+      if (permission == "nativeMessaging") {
+        continue;
+      }
+      try {
+        result.msgs.push(bundle.GetStringFromName(permissionKey(permission)));
+      } catch (err) {
+        
+        
+      }
     }
 
     return result;

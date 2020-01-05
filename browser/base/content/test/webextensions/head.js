@@ -129,6 +129,37 @@ function is_visible(element) {
 
 
 
+
+
+
+
+function checkPermissionString(string, key, param, msg) {
+  let localizedString = param ?
+                        gBrowserBundle.formatStringFromName(key, [param], 1) :
+                        gBrowserBundle.GetStringFromName(key);
+
+  
+  
+  if (localizedString.includes("%S")) {
+    let i = localizedString.indexOf("%S");
+    ok(string.startsWith(localizedString.slice(0, i)), msg);
+    ok(string.endsWith(localizedString.slice(i + 2)), msg);
+  } else {
+    is(string, localizedString, msg);
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
 async function testInstallMethod(installFn) {
   const PERMS_XPI = "browser_webext_permissions.xpi";
   const NO_PERMS_XPI = "browser_webext_nopermissions.xpi";
@@ -196,7 +227,24 @@ async function testInstallMethod(installFn) {
 
       is(header.getAttribute("hidden"), "", "Permission list header is visible");
       is(ul.childElementCount, 5, "Permissions list has 5 entries");
-      
+
+      checkPermissionString(ul.children[0].textContent,
+                            "webextPerms.hostDescription.wildcard",
+                            "wildcard.domain",
+                            "First permission is domain permission");
+      checkPermissionString(ul.children[1].textContent,
+                            "webextPerms.hostDescription.oneSite",
+                            "singlehost.domain",
+                            "Second permission is single host permission");
+      checkPermissionString(ul.children[2].textContent,
+                            "webextPerms.description.nativeMessaging", null,
+                            "Third permission is nativeMessaging");
+      checkPermissionString(ul.children[3].textContent,
+                            "webextPerms.description.tabs", null,
+                            "Fourth permission is tabs");
+      checkPermissionString(ul.children[4].textContent,
+                            "webextPerms.description.history", null,
+                            "Fifth permission is history");
     } else if (filename == NO_PERMS_XPI) {
       
       ok(isDefaultIcon(icon), "Icon is the default extension icon");
