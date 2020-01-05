@@ -2134,6 +2134,10 @@ MOZ_MUST_USE bool
 js::AsyncFunctionThrown(JSContext* cx, Handle<PromiseObject*> resultPromise)
 {
     
+    if (!cx->isExceptionPending())
+        return false;
+
+    
     RootedValue exc(cx);
     if (!GetAndClearException(cx, &exc))
         return false;
