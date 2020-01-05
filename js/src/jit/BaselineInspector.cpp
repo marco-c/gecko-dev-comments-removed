@@ -122,7 +122,6 @@ GetCacheIRReceiverForNativeReadSlot(ICCacheIR_Monitored* stub, ReceiverGuard* re
     
     
     
-    
 
     *receiver = ReceiverGuard();
     CacheIRReader reader(stub->stubInfo());
@@ -141,13 +140,6 @@ GetCacheIRReceiverForNativeReadSlot(ICCacheIR_Monitored* stub, ReceiverGuard* re
 
     if (reader.matchOp(CacheOp::GuardShape, objId)) {
         receiver->shape = stub->stubInfo()->getStubField<Shape*>(stub, reader.stubOffset());
-
-        
-        
-        
-        if (reader.matchOp(CacheOp::LoadUnboxedExpando, ObjOperandId(0)))
-            objId = reader.objOperandId();
-
         return reader.matchOpEither(CacheOp::LoadFixedSlotResult, CacheOp::LoadDynamicSlotResult);
     }
 
