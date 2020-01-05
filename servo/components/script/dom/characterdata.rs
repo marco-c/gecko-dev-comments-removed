@@ -6,8 +6,8 @@
 
 use dom::bindings::cell::DOMRefCell;
 use dom::bindings::codegen::Bindings::CharacterDataBinding::CharacterDataMethods;
-use dom::bindings::codegen::InheritTypes::{ElementCast, NodeCast};
 use dom::bindings::codegen::UnionTypes::NodeOrString;
+use dom::bindings::conversions::Castable;
 use dom::bindings::error::{Error, ErrorResult, Fallible};
 use dom::bindings::js::{LayoutJS, Root};
 use dom::document::Document;
@@ -113,35 +113,33 @@ impl CharacterDataMethods for CharacterData {
 
     
     fn Before(&self, nodes: Vec<NodeOrString>) -> ErrorResult {
-        NodeCast::from_ref(self).before(nodes)
+        self.upcast::<Node>().before(nodes)
     }
 
     
     fn After(&self, nodes: Vec<NodeOrString>) -> ErrorResult {
-        NodeCast::from_ref(self).after(nodes)
+        self.upcast::<Node>().after(nodes)
     }
 
     
     fn ReplaceWith(&self, nodes: Vec<NodeOrString>) -> ErrorResult {
-        NodeCast::from_ref(self).replace_with(nodes)
+        self.upcast::<Node>().replace_with(nodes)
     }
 
     
     fn Remove(&self) {
-        let node = NodeCast::from_ref(self);
+        let node = self.upcast::<Node>();
         node.remove_self();
     }
 
     
     fn GetPreviousElementSibling(&self) -> Option<Root<Element>> {
-        NodeCast::from_ref(self).preceding_siblings()
-                                .filter_map(ElementCast::to_root).next()
+        self.upcast::<Node>().preceding_siblings().filter_map(Root::downcast).next()
     }
 
     
     fn GetNextElementSibling(&self) -> Option<Root<Element>> {
-        NodeCast::from_ref(self).following_siblings()
-                                .filter_map(ElementCast::to_root).next()
+        self.upcast::<Node>().following_siblings().filter_map(Root::downcast).next()
     }
 }
 
@@ -157,7 +155,7 @@ impl CharacterData {
     }
 
     fn content_changed(&self) {
-        let node = NodeCast::from_ref(self);
+        let node = self.upcast::<Node>();
         let document = node.owner_doc();
         document.r().content_changed(node, NodeDamage::OtherNodeDamage);
     }
