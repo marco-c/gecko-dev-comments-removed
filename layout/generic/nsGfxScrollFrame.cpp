@@ -4227,7 +4227,7 @@ ScrollFrameHelper::ScrollToRestoredPosition()
       if (!weakFrame.IsAlive()) {
         return;
       }
-      if (PageIsStillLoading()) {
+      if (PageIsStillLoading() || NS_SUBTREE_DIRTY(mOuter)) {
         
         
         
