@@ -48,6 +48,7 @@ using mozilla::MutexAutoLock;
 
 nsTArray<GfxDriverInfo>* GfxInfoBase::mDriverInfo;
 bool GfxInfoBase::mDriverInfoObserverInitialized;
+bool GfxInfoBase::mShutdownOccurred;
 
 
 class ShutdownObserver : public nsIObserver
@@ -72,6 +73,8 @@ public:
 
     for (uint32_t i = 0; i < DeviceVendorMax; i++)
       delete GfxDriverInfo::mDeviceVendors[i];
+
+    GfxInfoBase::mShutdownOccurred = true;
 
     return NS_OK;
   }
@@ -162,6 +165,7 @@ GetPrefNameForFeature(int32_t aFeature)
     case nsIGfxInfo::FEATURE_VP8_HW_DECODE:
     case nsIGfxInfo::FEATURE_VP9_HW_DECODE:
     case nsIGfxInfo::FEATURE_DX_INTEROP2:
+    case nsIGfxInfo::FEATURE_GPU_PROCESS:
       
       break;
     default:
@@ -860,6 +864,13 @@ GfxInfoBase::GetFeatureStatusImpl(int32_t aFeature,
     return NS_OK;
   }
 
+  if (mShutdownOccurred) {
+    
+    
+    
+    return NS_OK;
+  }
+
   
   
   OperatingSystem os = (aOS ? *aOS : OperatingSystem::Unknown);
@@ -1332,6 +1343,9 @@ GfxInfoBase::BuildFeatureStateLog(JSContext* aCx, const FeatureState& aFeature,
 void
 GfxInfoBase::DescribeFeatures(JSContext* aCx, JS::Handle<JSObject*> aObj)
 {
+  JS::Rooted<JSObject*> obj(aCx);
+  gfx::FeatureStatus gpuProcess = gfxConfig::GetValue(Feature::GPU_PROCESS);
+  InitFeatureObject(aCx, aObj, "gpuProcess", FEATURE_GPU_PROCESS, Some(gpuProcess), &obj);
 }
 
 bool
