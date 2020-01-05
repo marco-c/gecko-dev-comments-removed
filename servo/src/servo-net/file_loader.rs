@@ -2,16 +2,17 @@
 
 
 
-use core::task::spawn;
-use resource::resource_task::{Payload, Done, LoaderTask};
-use core::io::{file_reader, ReaderUtil};
+use resource_task::{Done, LoaderTask, Payload};
+
+use core::io::{ReaderUtil, file_reader};
+use core::task;
 
 static READ_SIZE: uint = 1024;
 
 pub fn factory() -> LoaderTask {
 	let f: LoaderTask = |url, progress_chan| {
-		assert!(url.scheme == ~"file");
-		do spawn {
+		assert!("file" == url.scheme);
+		do task::spawn {
 			
 			match file_reader(&Path(url.path)) {
 				Ok(reader) => {

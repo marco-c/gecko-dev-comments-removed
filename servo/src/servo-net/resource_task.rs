@@ -4,15 +4,13 @@
 
 
 
-
-
-
+use file_loader;
+use http_loader;
 
 use core::cell::Cell;
 use core::comm::{Chan, Port, SharedChan};
-use resource::util::spawn_listener;
 use std::net::url::{Url, to_str};
-use super::{file_loader, http_loader};
+use util::spawn_listener;
 
 pub enum ControlMsg {
     

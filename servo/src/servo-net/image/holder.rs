@@ -3,14 +3,13 @@
 
 
 use image::base::Image;
-use resource::image_cache_task::{ImageReady, ImageNotReady, ImageFailed};
-use resource::local_image_cache::LocalImageCache;
+use image_cache_task::{ImageReady, ImageNotReady, ImageFailed};
+use local_image_cache::LocalImageCache;
 
 use core::util::replace;
 use geom::size::Size2D;
 use std::net::url::Url;
 use std::arc::{ARC, clone, get};
-
 
 
 
@@ -46,18 +45,16 @@ pub impl ImageHolder {
         holder
     }
 
-    /**
-    This version doesn't perform any computation, but may be stale w.r.t.
-    newly-available image data that determines size.
-
-    The intent is that the impure version is used during layout when
-    dimensions are used for computing layout.
-    */
+    /// This version doesn't perform any computation, but may be stale w.r.t. newly-available image
+    /// data that determines size.
+    ///
+    /// The intent is that the impure version is used during layout when dimensions are used for
+    /// computing layout.
     fn size(&self) -> Size2D<int> {
         self.cached_size
     }
     
-    /** Query and update current image size */
+    /// Query and update the current image size.
     fn get_size(&mut self) -> Option<Size2D<int>> {
         debug!("get_size() %?", self.url);
         match self.get_image() {
@@ -103,3 +100,4 @@ pub impl ImageHolder {
         return result;
     }
 }
+

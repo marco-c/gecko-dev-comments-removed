@@ -23,8 +23,6 @@ pub struct LayerBufferSet {
 
 
 
-
-
 pub trait Compositor {
     fn begin_drawing(&self, next_dt: comm::Chan<LayerBufferSet>);
     fn draw(&self, next_dt: comm::Chan<LayerBufferSet>, +draw_me: LayerBufferSet);

@@ -4,15 +4,12 @@
 
 
 
-
-
-use resource::resource_task::{ResourceTask, ProgressMsg, Load, Payload, Done};
-
 use core::cell::Cell;
 use core::comm::Port;
 use core::str;
 use newcss::stylesheet::Stylesheet;
 use newcss::util::DataStream;
+use servo_net::resource_task::{ResourceTask, ProgressMsg, Load, Payload, Done};
 use std::net::url::Url;
 
 
