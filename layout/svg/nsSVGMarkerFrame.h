@@ -94,6 +94,11 @@ public:
                                   const nsSVGMark *aMark,
                                   float aStrokeWidth);
 
+  
+  void DoUpdateStyleOfOwnedAnonBoxes(mozilla::ServoStyleSet& aStyleSet,
+                                     nsStyleChangeList& aChangeList,
+                                     nsChangeHint aHintForThisFrame) override;
+
 private:
   
   mozilla::SVGGeometryFrame *mMarkedFrame;
