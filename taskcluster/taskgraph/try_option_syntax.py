@@ -525,7 +525,8 @@ class TryOptionSyntax(object):
         if attr('kind') in ('desktop-test', 'android-test'):
             return match_test(self.unittests, 'unittest_try_name')
         elif attr('kind') in JOB_KINDS:
-            if self.jobs is None:
+            
+            if not self.jobs:
                 return True
             if attr('build_platform') in self.jobs:
                 return True
