@@ -11693,7 +11693,10 @@ nsDocShell::OnNewURI(nsIURI* aURI, nsIChannel* aChannel,
 
   
   
-  if (rootSH && (mLoadType & (LOAD_CMD_HISTORY | LOAD_CMD_RELOAD))) {
+  
+  if (rootSH &&
+       ((mLoadType & (LOAD_CMD_HISTORY | LOAD_CMD_RELOAD)) ||
+         mLoadType == LOAD_NORMAL_REPLACE)) {
     nsCOMPtr<nsISHistoryInternal> shInternal(do_QueryInterface(rootSH));
     if (shInternal) {
       rootSH->GetIndex(&mPreviousTransIndex);
@@ -12330,8 +12333,13 @@ nsDocShell::AddToSessionHistory(nsIURI* aURI, nsIChannel* aChannel,
     bool addToSHistory = !LOAD_TYPE_HAS_FLAGS(mLoadType, LOAD_FLAGS_REPLACE_HISTORY);
     if (!addToSHistory) {
       
+      
+      
       int32_t index = 0;
-      mSessionHistory->GetIndex(&index);
+      mSessionHistory->GetRequestedIndex(&index);
+      if (index == -1) {
+        mSessionHistory->GetIndex(&index);
+      }
       nsCOMPtr<nsISHistoryInternal> shPrivate =
         do_QueryInterface(mSessionHistory);
       
