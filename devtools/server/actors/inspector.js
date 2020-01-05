@@ -2959,9 +2959,10 @@ function standardTreeWalkerFilter(node) {
   }
 
   
-  if (node.nodeType == Ci.nsIDOMNode.TEXT_NODE &&
-      !/[^\s]/.exec(node.nodeValue)) {
-    return nodeFilterConstants.FILTER_SKIP;
+  if (isWhitespaceTextNode(node)) {
+    return nodeHasSize(node)
+           ? nodeFilterConstants.FILTER_ACCEPT
+           : nodeFilterConstants.FILTER_SKIP;
   }
 
   
@@ -2983,11 +2984,35 @@ function standardTreeWalkerFilter(node) {
 
 function allAnonymousContentTreeWalkerFilter(node) {
   
-  if (node.nodeType == Ci.nsIDOMNode.TEXT_NODE &&
-      !/[^\s]/.exec(node.nodeValue)) {
-    return nodeFilterConstants.FILTER_SKIP;
+  if (isWhitespaceTextNode(node)) {
+    return nodeHasSize(node)
+           ? nodeFilterConstants.FILTER_ACCEPT
+           : nodeFilterConstants.FILTER_SKIP;
   }
   return nodeFilterConstants.FILTER_ACCEPT;
+}
+
+
+
+
+
+
+function isWhitespaceTextNode(node) {
+  return node.nodeType == Ci.nsIDOMNode.TEXT_NODE && !/[^\s]/.exec(node.nodeValue);
+}
+
+
+
+
+
+
+function nodeHasSize(node) {
+  if (!node.getBoxQuads) {
+    return false;
+  }
+
+  let quads = node.getBoxQuads();
+  return quads.length && quads.some(quad => quad.bounds.width && quad.bounds.height);
 }
 
 
