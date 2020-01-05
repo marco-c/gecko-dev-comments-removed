@@ -3300,7 +3300,18 @@ nsRange::ExcludeNonSelectableNodes(nsTArray<RefPtr<nsRange>>* aOutRanges)
           }
 
           
-          rv = CreateRange(node, 0, endParent, endOffset,
+          nsINode* startParent = node;
+          int32_t startOffset = 0;
+          
+          
+          if (content && content->HasIndependentSelection()) {
+            nsINode* parent = startParent->GetParent();
+            if (parent) {
+              startOffset = parent->IndexOf(startParent);
+              startParent = parent;
+            }
+          }
+          rv = CreateRange(startParent, startOffset, endParent, endOffset,
                            getter_AddRefs(newRange));
           if (NS_FAILED(rv) || newRange->Collapsed()) {
             newRange = nullptr;
