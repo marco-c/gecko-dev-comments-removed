@@ -229,7 +229,7 @@ imgRequestProxy::ChangeOwner(imgRequest* aNewOwner)
   
   
   if (mDecodeRequested) {
-    StartDecoding();
+    StartDecoding(imgIContainer::FLAG_NONE);
   }
 
   return NS_OK;
@@ -358,14 +358,14 @@ imgRequestProxy::CancelAndForgetObserver(nsresult aStatus)
 }
 
 NS_IMETHODIMP
-imgRequestProxy::StartDecoding()
+imgRequestProxy::StartDecoding(uint32_t aFlags)
 {
   
   mDecodeRequested = true;
 
   RefPtr<Image> image = GetImage();
   if (image) {
-    return image->StartDecoding();
+    return image->StartDecoding(aFlags);
   }
 
   if (GetOwner()) {

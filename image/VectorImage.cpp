@@ -1026,7 +1026,7 @@ VectorImage::RecoverFromLossOfSurfaces()
 }
 
 NS_IMETHODIMP
-VectorImage::StartDecoding()
+VectorImage::StartDecoding(uint32_t aFlags)
 {
   
   return NS_OK;
