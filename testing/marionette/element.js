@@ -923,11 +923,6 @@ element.isVisible = function (el, x = undefined, y = undefined) {
   return true;
 };
 
-element.isInteractable = function (el) {
-  return element.isPointerInteractable(el) ||
-      element.isKeyboardInteractable(el);
-};
-
 
 
 
