@@ -12,6 +12,7 @@
 #define nsCSSFrameConstructor_h___
 
 #include "mozilla/Attributes.h"
+#include "mozilla/LinkedList.h"
 #include "mozilla/RestyleManagerBase.h"
 #include "mozilla/RestyleManagerHandle.h"
 
@@ -785,7 +786,7 @@ private:
                   uint32_t aDataLength);
 
   
-  class FrameConstructionItemList {
+  class FrameConstructionItemList final {
   public:
     FrameConstructionItemList() :
       mInlineCount(0),
@@ -797,20 +798,13 @@ private:
       mParentHasNoXBLChildren(false),
       mTriedConstructingFrames(false)
     {
-      PR_INIT_CLIST(&mItems);
       memset(mDesiredParentCounts, 0, sizeof(mDesiredParentCounts));
     }
 
     ~FrameConstructionItemList() {
-      PRCList* cur = PR_NEXT_LINK(&mItems);
-      while (cur != &mItems) {
-        PRCList* next = PR_NEXT_LINK(cur);
-        delete ToItem(cur);
-        cur = next;
+      while (FrameConstructionItem* item = mItems.popFirst()) {
+        delete item;
       }
-
-      
-      
 
       
       
@@ -836,7 +830,7 @@ private:
     bool HasLineBoundaryAtStart() { return mLineBoundaryAtStart; }
     bool HasLineBoundaryAtEnd() { return mLineBoundaryAtEnd; }
     bool ParentHasNoXBLChildren() { return mParentHasNoXBLChildren; }
-    bool IsEmpty() const { return PR_CLIST_IS_EMPTY(&mItems); }
+    bool IsEmpty() const { return mItems.isEmpty(); }
     bool AnyItemsNeedBlockParent() const { return mLineParticipantCount != 0; }
     bool AreAllItemsInline() const { return mInlineCount == mItemCount; }
     bool AreAllItemsBlock() const { return mBlockCount == mItemCount; }
@@ -862,7 +856,7 @@ private:
                                   aPendingBinding, aStyleContext,
                                   aSuppressWhiteSpaceOptimizations,
                                   aAnonChildren);
-      PR_APPEND_LINK(item, &mItems);
+      mItems.insertBack(item);
       ++mItemCount;
       ++mDesiredParentCounts[item->DesiredParentType()];
       return item;
@@ -883,7 +877,7 @@ private:
                                   aPendingBinding, aStyleContext,
                                   aSuppressWhiteSpaceOptimizations,
                                   aAnonChildren);
-      PR_INSERT_LINK(item, &mItems);
+      mItems.insertFront(item);
       ++mItemCount;
       ++mDesiredParentCounts[item->DesiredParentType()];
       return item;
@@ -898,31 +892,26 @@ private:
     void BlockItemAdded() { ++mBlockCount; }
     void LineParticipantItemAdded() { ++mLineParticipantCount; }
 
-    class Iterator;
-    friend class Iterator;
-
     class Iterator {
     public:
-      explicit Iterator(FrameConstructionItemList& list) :
-        mCurrent(PR_NEXT_LINK(&list.mItems)),
-        mEnd(&list.mItems),
-        mList(list)
+      explicit Iterator(FrameConstructionItemList& aList)
+        : mCurrent(aList.mItems.getFirst())
+        , mList(aList)
       {}
       Iterator(const Iterator& aOther) :
         mCurrent(aOther.mCurrent),
-        mEnd(aOther.mEnd),
         mList(aOther.mList)
       {}
 
       bool operator==(const Iterator& aOther) const {
-        NS_ASSERTION(mEnd == aOther.mEnd, "Iterators for different lists?");
+        MOZ_ASSERT(&mList == &aOther.mList, "Iterators for different lists?");
         return mCurrent == aOther.mCurrent;
       }
       bool operator!=(const Iterator& aOther) const {
         return !(*this == aOther);
       }
       Iterator& operator=(const Iterator& aOther) {
-        NS_ASSERTION(mEnd == aOther.mEnd, "Iterators for different lists?");
+        MOZ_ASSERT(&mList == &aOther.mList, "Iterators for different lists?");
         mCurrent = aOther.mCurrent;
         return *this;
       }
@@ -931,31 +920,27 @@ private:
         return &mList;
       }
 
-      operator FrameConstructionItem& () {
-        return item();
-      }
-
       FrameConstructionItem& item() {
         MOZ_ASSERT(!IsDone(), "Should have checked IsDone()!");
-        return *FrameConstructionItemList::ToItem(mCurrent);
+        return *mCurrent;
       }
 
       const FrameConstructionItem& item() const {
         MOZ_ASSERT(!IsDone(), "Should have checked IsDone()!");
-        return *FrameConstructionItemList::ToItem(mCurrent);
+        return *mCurrent;
       }
 
-      bool IsDone() const { return mCurrent == mEnd; }
-      bool AtStart() const { return mCurrent == PR_NEXT_LINK(mEnd); }
+      bool IsDone() const { return mCurrent == nullptr; }
+      bool AtStart() const { return mCurrent == mList.mItems.getFirst(); }
       void Next() {
         NS_ASSERTION(!IsDone(), "Should have checked IsDone()!");
-        mCurrent = PR_NEXT_LINK(mCurrent);
+        mCurrent = mCurrent->getNext();
       }
       void Prev() {
         NS_ASSERTION(!AtStart(), "Should have checked AtStart()!");
-        mCurrent = PR_PREV_LINK(mCurrent);
+        mCurrent = mCurrent ? mCurrent->getPrevious() : mList.mItems.getLast();
       }
-      void SetToEnd() { mCurrent = mEnd; }
+      void SetToEnd() { mCurrent = nullptr; }
 
       
       
@@ -1021,16 +1006,11 @@ private:
       void DeleteItemsTo(const Iterator& aEnd);
 
     private:
-      PRCList* mCurrent;
-      PRCList* mEnd;
+      FrameConstructionItem* mCurrent;
       FrameConstructionItemList& mList;
     };
 
   private:
-    static FrameConstructionItem* ToItem(PRCList* item) {
-      return static_cast<FrameConstructionItem*>(item);
-    }
-
     struct UndisplayedItem {
       UndisplayedItem(nsIContent* aContent, nsStyleContext* aStyleContext) :
         mContent(aContent), mStyleContext(aStyleContext)
@@ -1044,7 +1024,7 @@ private:
     
     void AdjustCountsForItem(FrameConstructionItem* aItem, int32_t aDelta);
 
-    PRCList mItems;
+    mozilla::LinkedList<FrameConstructionItem> mItems;
     uint32_t mInlineCount;
     uint32_t mBlockCount;
     uint32_t mLineParticipantCount;
@@ -1070,9 +1050,8 @@ private:
 
 
 
-  struct FrameConstructionItem : public PRCList {
-    
-    
+  struct FrameConstructionItem final
+    : public mozilla::LinkedListElement<FrameConstructionItem> {
     FrameConstructionItem(const FrameConstructionData* aFCData,
                           nsIContent* aContent,
                           nsIAtom* aTag,
