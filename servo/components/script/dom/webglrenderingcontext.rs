@@ -1739,12 +1739,12 @@ impl WebGLRenderingContextMethods for WebGLRenderingContext {
         Ok(())
     }
 
-    
+    // https://www.khronos.org/registry/webgl/specs/latest/1.0/#5.14.3
     fn SampleCoverage(&self, value: f32, invert: bool) {
         self.ipc_renderer.send(CanvasMsg::WebGL(WebGLCommand::SampleCoverage(value, invert))).unwrap();
     }
 
-    
+    // https://www.khronos.org/registry/webgl/specs/latest/1.0/#5.14.4
     fn Scissor(&self, x: i32, y: i32, width: i32, height: i32) {
         if width < 0 || height < 0 {
             return self.webgl_error(InvalidValue)
@@ -1755,7 +1755,7 @@ impl WebGLRenderingContextMethods for WebGLRenderingContext {
             .unwrap()
     }
 
-    
+    // https://www.khronos.org/registry/webgl/specs/latest/1.0/#5.14.3
     fn StencilFunc(&self, func: u32, ref_: i32, mask: u32) {
         match func {
             constants::NEVER | constants::LESS | constants::EQUAL | constants::LEQUAL |
@@ -1767,7 +1767,7 @@ impl WebGLRenderingContextMethods for WebGLRenderingContext {
         }
     }
 
-    
+    // https://www.khronos.org/registry/webgl/specs/latest/1.0/#5.14.3
     fn StencilFuncSeparate(&self, face: u32, func: u32, ref_: i32, mask: u32) {
         match face {
             constants::FRONT | constants::BACK | constants::FRONT_AND_BACK => (),
@@ -1784,14 +1784,14 @@ impl WebGLRenderingContextMethods for WebGLRenderingContext {
         }
     }
 
-    
+    // https://www.khronos.org/registry/webgl/specs/latest/1.0/#5.14.3
     fn StencilMask(&self, mask: u32) {
         self.ipc_renderer
             .send(CanvasMsg::WebGL(WebGLCommand::StencilMask(mask)))
             .unwrap()
     }
 
-    
+    // https://www.khronos.org/registry/webgl/specs/latest/1.0/#5.14.3
     fn StencilMaskSeparate(&self, face: u32, mask: u32) {
         match face {
             constants::FRONT | constants::BACK | constants::FRONT_AND_BACK =>
@@ -1802,7 +1802,7 @@ impl WebGLRenderingContextMethods for WebGLRenderingContext {
         }
     }
 
-    
+    // https://www.khronos.org/registry/webgl/specs/latest/1.0/#5.14.3
     fn StencilOp(&self, fail: u32, zfail: u32, zpass: u32) {
         if self.validate_stencil_actions(fail) && self.validate_stencil_actions(zfail) &&
            self.validate_stencil_actions(zpass) {
@@ -1814,7 +1814,7 @@ impl WebGLRenderingContextMethods for WebGLRenderingContext {
         }
     }
 
-    
+    // https://www.khronos.org/registry/webgl/specs/latest/1.0/#5.14.3
     fn StencilOpSeparate(&self, face: u32, fail: u32, zfail: u32, zpass: u32) {
         match face {
             constants::FRONT | constants::BACK | constants::FRONT_AND_BACK => (),
@@ -1831,7 +1831,7 @@ impl WebGLRenderingContextMethods for WebGLRenderingContext {
         }
     }
 
-    
+    // https://www.khronos.org/registry/webgl/specs/latest/1.0/#5.14.9
     fn LinkProgram(&self, program: Option<&WebGLProgram>) {
         if let Some(program) = program {
             if let Err(e) = program.link() {
@@ -1840,19 +1840,19 @@ impl WebGLRenderingContextMethods for WebGLRenderingContext {
         }
     }
 
-    
+    // https://www.khronos.org/registry/webgl/specs/latest/1.0/#5.14.9
     fn ShaderSource(&self, shader: Option<&WebGLShader>, source: DOMString) {
         if let Some(shader) = shader {
             shader.set_source(source)
         }
     }
 
-    
+    // https://www.khronos.org/registry/webgl/specs/latest/1.0/#5.14.9
     fn GetShaderSource(&self, shader: Option<&WebGLShader>) -> Option<DOMString> {
         shader.and_then(|s| s.source())
     }
 
-    
+    // https://www.khronos.org/registry/webgl/specs/latest/1.0/#5.14.10
     fn Uniform1f(&self,
                   uniform: Option<&WebGLUniformLocation>,
                   val: f32) {
@@ -1863,7 +1863,7 @@ impl WebGLRenderingContextMethods for WebGLRenderingContext {
         }
     }
 
-    
+    // https://www.khronos.org/registry/webgl/specs/latest/1.0/#5.14.10
     fn Uniform1i(&self,
                   uniform: Option<&WebGLUniformLocation>,
                   val: i32) {
@@ -1874,7 +1874,7 @@ impl WebGLRenderingContextMethods for WebGLRenderingContext {
         }
     }
 
-    
+    // https://www.khronos.org/registry/webgl/specs/latest/1.0/#5.14.10
     #[allow(unsafe_code)]
     fn Uniform1iv(&self,
                   cx: *mut JSContext,
@@ -1892,7 +1892,7 @@ impl WebGLRenderingContextMethods for WebGLRenderingContext {
         Ok(())
     }
 
-    
+    // https://www.khronos.org/registry/webgl/specs/latest/1.0/#5.14.10
     #[allow(unsafe_code)]
     fn Uniform1fv(&self,
                   cx: *mut JSContext,
@@ -1910,7 +1910,7 @@ impl WebGLRenderingContextMethods for WebGLRenderingContext {
         Ok(())
     }
 
-    
+    // https://www.khronos.org/registry/webgl/specs/latest/1.0/#5.14.10
     fn Uniform2f(&self,
                   uniform: Option<&WebGLUniformLocation>,
                   x: f32, y: f32) {
@@ -1921,7 +1921,7 @@ impl WebGLRenderingContextMethods for WebGLRenderingContext {
         }
     }
 
-    
+    // https://www.khronos.org/registry/webgl/specs/latest/1.0/#5.14.10
     #[allow(unsafe_code)]
     fn Uniform2fv(&self,
                   cx: *mut JSContext,
@@ -1941,7 +1941,7 @@ impl WebGLRenderingContextMethods for WebGLRenderingContext {
         Ok(())
     }
 
-    
+    // https://www.khronos.org/registry/webgl/specs/latest/1.0/#5.14.10
     fn Uniform2i(&self,
                   uniform: Option<&WebGLUniformLocation>,
                   x: i32, y: i32) {
@@ -1954,7 +1954,7 @@ impl WebGLRenderingContextMethods for WebGLRenderingContext {
         }
     }
 
-    
+    // https://www.khronos.org/registry/webgl/specs/latest/1.0/#5.14.10
     #[allow(unsafe_code)]
     fn Uniform2iv(&self,
                   cx: *mut JSContext,
@@ -1974,7 +1974,7 @@ impl WebGLRenderingContextMethods for WebGLRenderingContext {
         Ok(())
     }
 
-    
+    // https://www.khronos.org/registry/webgl/specs/latest/1.0/#5.14.10
     fn Uniform3f(&self,
                   uniform: Option<&WebGLUniformLocation>,
                   x: f32, y: f32, z: f32) {
@@ -1987,7 +1987,7 @@ impl WebGLRenderingContextMethods for WebGLRenderingContext {
         }
     }
 
-    
+    // https://www.khronos.org/registry/webgl/specs/latest/1.0/#5.14.10
     #[allow(unsafe_code)]
     fn Uniform3fv(&self,
                   cx: *mut JSContext,
@@ -2007,7 +2007,7 @@ impl WebGLRenderingContextMethods for WebGLRenderingContext {
         Ok(())
     }
 
-    
+    // https://www.khronos.org/registry/webgl/specs/latest/1.0/#5.14.10
     fn Uniform3i(&self,
                   uniform: Option<&WebGLUniformLocation>,
                   x: i32, y: i32, z: i32) {
@@ -2020,7 +2020,7 @@ impl WebGLRenderingContextMethods for WebGLRenderingContext {
         }
     }
 
-    
+    // https://www.khronos.org/registry/webgl/specs/latest/1.0/#5.14.10
     #[allow(unsafe_code)]
     fn Uniform3iv(&self,
                   cx: *mut JSContext,
@@ -2040,7 +2040,7 @@ impl WebGLRenderingContextMethods for WebGLRenderingContext {
         Ok(())
     }
 
-    
+    // https://www.khronos.org/registry/webgl/specs/latest/1.0/#5.14.10
     fn Uniform4i(&self,
                   uniform: Option<&WebGLUniformLocation>,
                   x: i32, y: i32, z: i32, w: i32) {
@@ -2054,7 +2054,7 @@ impl WebGLRenderingContextMethods for WebGLRenderingContext {
     }
 
 
-    
+    // https://www.khronos.org/registry/webgl/specs/latest/1.0/#5.14.10
     #[allow(unsafe_code)]
     fn Uniform4iv(&self,
                   cx: *mut JSContext,
@@ -2074,7 +2074,7 @@ impl WebGLRenderingContextMethods for WebGLRenderingContext {
         Ok(())
     }
 
-    
+    // https://www.khronos.org/registry/webgl/specs/latest/1.0/#5.14.10
     fn Uniform4f(&self,
                   uniform: Option<&WebGLUniformLocation>,
                   x: f32, y: f32, z: f32, w: f32) {
@@ -2087,7 +2087,7 @@ impl WebGLRenderingContextMethods for WebGLRenderingContext {
         }
     }
 
-    
+    // https://www.khronos.org/registry/webgl/specs/latest/1.0/#5.14.10
     #[allow(unsafe_code)]
     fn Uniform4fv(&self,
                   cx: *mut JSContext,
@@ -2107,7 +2107,7 @@ impl WebGLRenderingContextMethods for WebGLRenderingContext {
         Ok(())
     }
 
-    
+    // https://www.khronos.org/registry/webgl/specs/latest/1.0/#5.14.10
     #[allow(unsafe_code)]
     fn UniformMatrix2fv(&self,
                         cx: *mut JSContext,
@@ -2127,7 +2127,7 @@ impl WebGLRenderingContextMethods for WebGLRenderingContext {
         Ok(())
     }
 
-    
+    // https://www.khronos.org/registry/webgl/specs/latest/1.0/#5.14.10
     #[allow(unsafe_code)]
     fn UniformMatrix3fv(&self,
                         cx: *mut JSContext,
@@ -2147,7 +2147,7 @@ impl WebGLRenderingContextMethods for WebGLRenderingContext {
         Ok(())
     }
 
-    
+    // https://www.khronos.org/registry/webgl/specs/latest/1.0/#5.14.10
     #[allow(unsafe_code)]
     fn UniformMatrix4fv(&self,
                         cx: *mut JSContext,
@@ -2167,7 +2167,7 @@ impl WebGLRenderingContextMethods for WebGLRenderingContext {
         Ok(())
     }
 
-    
+    // https://www.khronos.org/registry/webgl/specs/latest/1.0/#5.14.9
     fn UseProgram(&self, program: Option<&WebGLProgram>) {
         if let Some(program) = program {
             match program.use_program() {
@@ -2177,7 +2177,7 @@ impl WebGLRenderingContextMethods for WebGLRenderingContext {
         }
     }
 
-    
+    // https://www.khronos.org/registry/webgl/specs/latest/1.0/#5.14.9
     fn ValidateProgram(&self, program: Option<&WebGLProgram>) {
         if let Some(program) = program {
             if let Err(e) = program.validate() {
@@ -2186,12 +2186,12 @@ impl WebGLRenderingContextMethods for WebGLRenderingContext {
         }
     }
 
-    
+    // https://www.khronos.org/registry/webgl/specs/latest/1.0/#5.14.10
     fn VertexAttrib1f(&self, indx: u32, x: f32) {
         self.vertex_attrib(indx, x, 0f32, 0f32, 1f32)
     }
 
-    
+    // https://www.khronos.org/registry/webgl/specs/latest/1.0/#5.14.10
     #[allow(unsafe_code)]
     fn VertexAttrib1fv(&self, cx: *mut JSContext, indx: u32, data: *mut JSObject) -> Fallible<()> {
         assert!(!data.is_null());
@@ -2203,12 +2203,12 @@ impl WebGLRenderingContextMethods for WebGLRenderingContext {
         Ok(())
     }
 
-    
+    // https://www.khronos.org/registry/webgl/specs/latest/1.0/#5.14.10
     fn VertexAttrib2f(&self, indx: u32, x: f32, y: f32) {
         self.vertex_attrib(indx, x, y, 0f32, 1f32)
     }
 
-    
+    // https://www.khronos.org/registry/webgl/specs/latest/1.0/#5.14.10
     #[allow(unsafe_code)]
     fn VertexAttrib2fv(&self, cx: *mut JSContext, indx: u32, data: *mut JSObject) -> Fallible<()> {
         assert!(!data.is_null());
@@ -2220,12 +2220,12 @@ impl WebGLRenderingContextMethods for WebGLRenderingContext {
         Ok(())
     }
 
-    
+    // https://www.khronos.org/registry/webgl/specs/latest/1.0/#5.14.10
     fn VertexAttrib3f(&self, indx: u32, x: f32, y: f32, z: f32) {
         self.vertex_attrib(indx, x, y, z, 1f32)
     }
 
-    
+    // https://www.khronos.org/registry/webgl/specs/latest/1.0/#5.14.10
     #[allow(unsafe_code)]
     fn VertexAttrib3fv(&self, cx: *mut JSContext, indx: u32, data: *mut JSObject) -> Fallible<()> {
         assert!(!data.is_null());
@@ -2237,12 +2237,12 @@ impl WebGLRenderingContextMethods for WebGLRenderingContext {
         Ok(())
     }
 
-    
+    // https://www.khronos.org/registry/webgl/specs/latest/1.0/#5.14.10
     fn VertexAttrib4f(&self, indx: u32, x: f32, y: f32, z: f32, w: f32) {
         self.vertex_attrib(indx, x, y, z, w)
     }
 
-    
+    // https://www.khronos.org/registry/webgl/specs/latest/1.0/#5.14.10
     #[allow(unsafe_code)]
     fn VertexAttrib4fv(&self, cx: *mut JSContext, indx: u32, data: *mut JSObject) -> Fallible<()> {
         assert!(!data.is_null());
@@ -2255,15 +2255,15 @@ impl WebGLRenderingContextMethods for WebGLRenderingContext {
         Ok(())
     }
 
-    
+    // https://www.khronos.org/registry/webgl/specs/latest/1.0/#5.14.10
     fn VertexAttribPointer(&self, attrib_id: u32, size: i32, data_type: u32,
                            normalized: bool, stride: i32, offset: i64) {
         if attrib_id > self.limits.max_vertex_attribs {
             return self.webgl_error(InvalidValue);
         }
 
-        
-        
+        // GLES spec: If offset or stride  is negative, an INVALID_VALUE error will be generated
+        // WebGL spec: the maximum supported stride is 255
         if stride < 0 || stride > 255 || offset < 0 {
             return self.webgl_error(InvalidValue);
         }
@@ -2274,7 +2274,7 @@ impl WebGLRenderingContextMethods for WebGLRenderingContext {
             return self.webgl_error(InvalidOperation);
         }
 
-        
+        // stride and offset must be multiple of data_type
         match data_type {
             constants::BYTE | constants::UNSIGNED_BYTE => {},
             constants::SHORT | constants::UNSIGNED_SHORT => {
@@ -2296,7 +2296,7 @@ impl WebGLRenderingContextMethods for WebGLRenderingContext {
         self.ipc_renderer.send(msg).unwrap()
     }
 
-    
+    // https://www.khronos.org/registry/webgl/specs/latest/1.0/#5.14.4
     fn Viewport(&self, x: i32, y: i32, width: i32, height: i32) {
         if width < 0 || height < 0 {
             return self.webgl_error(InvalidValue)
@@ -2307,7 +2307,7 @@ impl WebGLRenderingContextMethods for WebGLRenderingContext {
             .unwrap()
     }
 
-    
+    // https://www.khronos.org/registry/webgl/specs/latest/1.0/#5.14.8
     #[allow(unsafe_code)]
     fn TexImage2D(&self,
                   _cx: *mut JSContext,
@@ -2341,7 +2341,7 @@ impl WebGLRenderingContextMethods for WebGLRenderingContext {
             data_type,
         } = match validator.validate() {
             Ok(result) => result,
-            Err(_) => return Ok(()), 
+            Err(_) => return Ok(()), // NB: The validator sets the correct error for us.
         };
 
         let expected_byte_length =
@@ -2352,14 +2352,20 @@ impl WebGLRenderingContextMethods for WebGLRenderingContext {
                 Err(()) => return Ok(()),
             };
 
-        
-        
+        // If data is null, a buffer of sufficient size
+        // initialized to 0 is passed.
         let buff = match data {
             None => vec![0u8; expected_byte_length as usize],
             Some(data) => data,
         };
 
-        if buff.len() != expected_byte_length as usize {
+        // From the WebGL spec:
+        //
+        //     "If pixels is non-null but its size is less than what
+        //      is required by the specified width, height, format,
+        //      type, and pixel storage parameters, generates an
+        //      INVALID_OPERATION error."
+        if buff.len() < expected_byte_length as usize {
             return Ok(self.webgl_error(InvalidOperation));
         }
 
@@ -2369,7 +2375,7 @@ impl WebGLRenderingContextMethods for WebGLRenderingContext {
         Ok(())
     }
 
-    
+    // https://www.khronos.org/registry/webgl/specs/latest/1.0/#5.14.8
     fn TexImage2D_(&self,
                    target: u32,
                    level: i32,
@@ -2377,7 +2383,7 @@ impl WebGLRenderingContextMethods for WebGLRenderingContext {
                    format: u32,
                    data_type: u32,
                    source: Option<ImageDataOrHTMLImageElementOrHTMLCanvasElementOrHTMLVideoElement>) -> Fallible<()> {
-        
+        // Get pixels from image source
         let (pixels, size) = match self.get_image_pixels(source) {
             Ok((pixels, size)) => (pixels, size),
             Err(_) => return Ok(()),
@@ -2399,7 +2405,7 @@ impl WebGLRenderingContextMethods for WebGLRenderingContext {
             data_type,
         } = match validator.validate() {
             Ok(result) => result,
-            Err(_) => return Ok(()), 
+            Err(_) => return Ok(()), // NB: The validator sets the correct error for us.
         };
 
         self.tex_image_2d(texture, target, data_type, format,
@@ -2407,7 +2413,7 @@ impl WebGLRenderingContextMethods for WebGLRenderingContext {
         Ok(())
     }
 
-    
+    // https://www.khronos.org/registry/webgl/specs/latest/1.0/#5.14.8
     #[allow(unsafe_code)]
     fn TexSubImage2D(&self,
                      _cx: *mut JSContext,
@@ -2441,7 +2447,7 @@ impl WebGLRenderingContextMethods for WebGLRenderingContext {
             ..
         } = match validator.validate() {
             Ok(result) => result,
-            Err(_) => return Ok(()), 
+            Err(_) => return Ok(()), // NB: The validator sets the correct error for us.
         };
 
         let expected_byte_length =
@@ -2452,15 +2458,20 @@ impl WebGLRenderingContextMethods for WebGLRenderingContext {
                 Err(()) => return Ok(()),
             };
 
-        
-        
+        // If data is null, a buffer of sufficient size
+        // initialized to 0 is passed.
         let buff = match data {
             None => vec![0u8; expected_byte_length as usize],
             Some(data) => data,
         };
 
-        if expected_byte_length != 0 &&
-            buff.len() != expected_byte_length as usize {
+        // From the WebGL spec:
+        //
+        //     "If pixels is non-null but its size is less than what
+        //      is required by the specified width, height, format,
+        //      type, and pixel storage parameters, generates an
+        //      INVALID_OPERATION error."
+        if buff.len() < expected_byte_length as usize {
             return Ok(self.webgl_error(InvalidOperation));
         }
 

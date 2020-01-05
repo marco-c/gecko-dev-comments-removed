@@ -163,17 +163,17 @@ impl<'a> WebGLValidator for CommonTexImage2DValidator<'a> {
             return Err(TexImageValidationError::NegativeDimension);
         }
 
-        
-        
-        
-        if self.width as u32 > max_size || self.height as u32 > max_size {
-            self.context.webgl_error(InvalidValue);
-            return Err(TexImageValidationError::TextureTooBig);
-        }
-
         let width = self.width as u32;
         let height = self.height as u32;
         let level = self.level as u32;
+
+        
+        
+        
+        if width > max_size >> level || height > max_size >> level {
+            self.context.webgl_error(InvalidValue);
+            return Err(TexImageValidationError::TextureTooBig);
+        }
 
         
         
