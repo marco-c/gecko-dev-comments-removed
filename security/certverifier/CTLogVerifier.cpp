@@ -197,10 +197,16 @@ CTLogVerifier::Verify(const LogEntry& entry,
   if (rv != Success) {
     return rv;
   }
+
+  
+  
   Input sctExtensionsInput;
-  rv = BufferToInput(sct.extensions, sctExtensionsInput);
-  if (rv != Success) {
-    return rv;
+  if (sct.extensions.length() > 0) {
+    rv = sctExtensionsInput.Init(sct.extensions.begin(),
+                                 sct.extensions.length());
+    if (rv != Success) {
+      return rv;
+    }
   }
 
   Buffer serializedData;

@@ -278,7 +278,7 @@ struct VectorTesting;
 template<typename T,
          size_t MinInlineCapacity = 0,
          class AllocPolicy = MallocAllocPolicy>
-class Vector final : private AllocPolicy
+class MOZ_NON_PARAM Vector final : private AllocPolicy
 {
   
 
@@ -294,36 +294,40 @@ class Vector final : private AllocPolicy
 
   
 
-  static const int kMaxInlineBytes = 1024;
-
-  
-
   
 
 
 
 
 
+  static constexpr size_t kMaxInlineBytes =
+    1024 - (sizeof(AllocPolicy) + sizeof(T*) + sizeof(size_t) + sizeof(size_t));
+
+  
 
 
 
-  template<int M, int Dummy>
-  struct ElemSize
+
+
+
+
+
+  template<size_t MinimumInlineCapacity, size_t Dummy>
+  struct ComputeCapacity
   {
-    static const size_t value = sizeof(T);
-  };
-  template<int Dummy>
-  struct ElemSize<0, Dummy>
-  {
-    static const size_t value = 1;
+    static constexpr size_t value =
+      tl::Min<MinimumInlineCapacity, kMaxInlineBytes / sizeof(T)>::value;
   };
 
-  static const size_t kInlineCapacity =
-    tl::Min<MinInlineCapacity, kMaxInlineBytes / ElemSize<MinInlineCapacity, 0>::value>::value;
+  template<size_t Dummy>
+  struct ComputeCapacity<0, Dummy>
+  {
+    static constexpr size_t value = 0;
+  };
 
   
-  static const size_t kInlineBytes =
-    tl::Max<1, kInlineCapacity * ElemSize<MinInlineCapacity, 0>::value>::value;
+  static constexpr size_t kInlineCapacity =
+    ComputeCapacity<MinInlineCapacity, 0>::value;
 
   
 
@@ -348,7 +352,33 @@ class Vector final : private AllocPolicy
 #endif
 
   
-  AlignedStorage<kInlineBytes> mStorage;
+
+
+
+
+
+
+
+
+  template<size_t Capacity, size_t Dummy>
+  struct InlineStorage
+  {
+    alignas(T) unsigned char mBytes[Capacity * sizeof(T)];
+
+    
+    
+    void* data() { return mBytes; }
+
+    T* addr() { return static_cast<T*>(data()); }
+  };
+
+  template<size_t Dummy>
+  struct InlineStorage<0, Dummy>
+  {
+    T* addr() { return nullptr; }
+  };
+
+  InlineStorage<kInlineCapacity, 0> mStorage;
 
 #ifdef DEBUG
   friend class ReentrancyGuard;
@@ -364,7 +394,7 @@ class Vector final : private AllocPolicy
 
   T* inlineStorage()
   {
-    return static_cast<T*>(mStorage.addr());
+    return mStorage.addr();
   }
 
   T* beginNoCheck() const
@@ -772,7 +802,7 @@ Vector<T, N, AP>::Vector(AP aAP)
   , mEntered(false)
 #endif
 {
-  mBegin = static_cast<T*>(mStorage.addr());
+  mBegin = inlineStorage();
 }
 
 
@@ -792,7 +822,7 @@ Vector<T, N, AllocPolicy>::Vector(Vector&& aRhs)
 
   if (aRhs.usingInlineStorage()) {
     
-    mBegin = static_cast<T*>(mStorage.addr());
+    mBegin = inlineStorage();
     Impl::moveConstruct(mBegin, aRhs.beginNoCheck(), aRhs.endNoCheck());
     
 
@@ -804,7 +834,7 @@ Vector<T, N, AllocPolicy>::Vector(Vector&& aRhs)
 
 
     mBegin = aRhs.mBegin;
-    aRhs.mBegin = static_cast<T*>(aRhs.mStorage.addr());
+    aRhs.mBegin = aRhs.inlineStorage();
     aRhs.mCapacity = kInlineCapacity;
     aRhs.mLength = 0;
 #ifdef DEBUG
@@ -1143,7 +1173,7 @@ Vector<T, N, AP>::clearAndFree()
     return;
   }
   this->free_(beginNoCheck());
-  mBegin = static_cast<T*>(mStorage.addr());
+  mBegin = inlineStorage();
   mCapacity = kInlineCapacity;
 #ifdef DEBUG
   mReserved = 0;
@@ -1371,7 +1401,7 @@ Vector<T, N, AP>::extractRawBuffer()
   }
 
   T* ret = mBegin;
-  mBegin = static_cast<T*>(mStorage.addr());
+  mBegin = inlineStorage();
   mLength = 0;
   mCapacity = kInlineCapacity;
 #ifdef DEBUG
@@ -1397,7 +1427,7 @@ Vector<T, N, AP>::extractOrCopyRawBuffer()
 
   Impl::moveConstruct(copy, beginNoCheck(), endNoCheck());
   Impl::destroy(beginNoCheck(), endNoCheck());
-  mBegin = static_cast<T*>(mStorage.addr());
+  mBegin = inlineStorage();
   mLength = 0;
   mCapacity = kInlineCapacity;
 #ifdef DEBUG
@@ -1425,7 +1455,7 @@ Vector<T, N, AP>::replaceRawBuffer(T* aP, size_t aLength)
 
 
 
-    mBegin = static_cast<T*>(mStorage.addr());
+    mBegin = inlineStorage();
     mLength = aLength;
     mCapacity = kInlineCapacity;
     Impl::moveConstruct(mBegin, aP, aP + aLength);
