@@ -1662,8 +1662,6 @@ def UnionTypes(descriptors):
 
     
     
-    headers = set()
-    declarations = set()
     unionStructs = dict()
     for d in descriptors:
         for t in getTypes(d):
@@ -1671,53 +1669,10 @@ def UnionTypes(descriptors):
             if t.isUnion():
                 name = str(t)
                 if not name in unionStructs:
-                    unionStructs[name] = CGUnionStruct(t, d)
-                    for f in t.flatMemberTypes:
-                        f = f.unroll()
-                        if f.isInterface():
-                            if f.isSpiderMonkeyInterface():
-                                headers.add("jsfriendapi.h")
-                                headers.add("mozilla/dom/TypedArray.h")
-                            else:
-                                typeDesc = d.getDescriptor(f.inner.identifier.name)
-                                if typeDesc is not None:
-                                    declarations.add((typeDesc.nativeType, False))
-                        elif f.isDictionary():
-                            declarations.add((f.inner.identifier.name, True))
+                    unionStructs[name] = CGList([CGUnionStruct(t, d), CGUnionConversionStruct(t, d)])
 
-    return (headers, declarations, CGList(SortedDictValues(unionStructs), "\n"))
+    return CGList(SortedDictValues(unionStructs), "\n\n")
 
-def UnionConversions(descriptors):
-    """
-    Returns a CGThing to declare all union argument conversion helper structs.
-    """
-    
-    
-    unionConversions = dict()
-    for d in descriptors:
-        def addUnionTypes(type):
-            if type.isUnion():
-                type = type.unroll()
-                name = str(type)
-                if not name in unionConversions:
-                    unionConversions[name] = CGUnionConversionStruct(type, d)
-
-        members = [m for m in d.interface.members]
-        if d.interface.ctor():
-            members.append(d.interface.ctor())
-        signatures = [s for m in members if m.isMethod() for s in m.signatures()]
-        for s in signatures:
-            assert len(s) == 2
-            (_, arguments) = s
-            for a in arguments:
-                addUnionTypes(a.type)
-
-        for m in members:
-            if m.isAttr() and not m.readonly:
-                addUnionTypes(m.type)
-
-    return CGWrapper(CGList(SortedDictValues(unionConversions), "\n"),
-                     post="\n\n")
 
 class Argument():
     """
@@ -5343,49 +5298,7 @@ class GlobalGenRoots():
     @staticmethod
     def UnionTypes(config):
 
-        (includes, declarations, unions) = UnionTypes(config.getDescriptors())
-        includes.add("mozilla/dom/BindingUtils.h")
-
-        
-        
-        curr = unions
-
-        curr = CGWrapper(curr, post='\n')
-
-        namespaces = []
-        stack = [CGList([])]
-        for (clazz, isStruct) in SortedTuples(declarations):
-            elements = clazz.split("::")
-            elements.pop()
-            
-            i = 0
-            if len(elements) > 0:
-                common = min(len(namespaces), len(elements))
-                while i < common and namespaces[i] == elements[i]:
-                    i += 1
-
-            
-            namespaces = namespaces[:i]
-
-            
-            for j, namespace in enumerate(elements[i:]):
-                namespaces.append(namespace)
-                
-                list = CGList([])
-                
-                stack[i + j].append(CGNamespace(namespace, list))
-                
-                
-                stack[i + j + 1:] = [list]
-
-            
-
-        curr = CGList([stack[0], curr, UnionConversions(config.getDescriptors())], "\n")
-
-        
-
-        
-        
+        curr = UnionTypes(config.getDescriptors())
 
         curr = CGImports(curr, [
             'dom::bindings::utils::unwrap_jsmanaged',
