@@ -2999,15 +2999,9 @@ Http2Session::Finish0RTT(bool aRestart, bool aAlpnChanged)
         aRestart, aAlpnChanged));
 
   for (size_t i = 0; i < m0RTTStreams.Length(); ++i) {
-    
-    
-    
-    
-    
-    
     Http2Stream *stream = mStreamIDHash.Get(m0RTTStreams[i]);
     if (stream) {
-      stream->Finish0RTT(aAlpnChanged, aAlpnChanged);
+      stream->Finish0RTT(aRestart, aAlpnChanged);
     }
   }
 

@@ -141,6 +141,7 @@ nsHttpTransaction::nsHttpTransaction()
     , mSynchronousRatePaceRequest(false)
     , mClassOfService(0)
     , m0RTTInProgress(false)
+    , mEarlyDataDisposition(EARLY_NONE)
     , mTransportStatus(NS_OK)
 {
     LOG(("Creating nsHttpTransaction @%p\n", this));
@@ -734,6 +735,11 @@ nsHttpTransaction::ReadSegments(nsAHttpSegmentReader *reader,
     mReader = reader;
     nsresult rv = mRequestStream->ReadSegments(ReadRequestSegment, this, count, countRead);
     mReader = nullptr;
+
+    if (m0RTTInProgress && (mEarlyDataDisposition == EARLY_NONE) &&
+        NS_SUCCEEDED(rv) && (*countRead > 0)) {
+        mEarlyDataDisposition = EARLY_SENT;
+    }
 
     if (mDeferredSendProgress && mConnection && mConnection->Transport()) {
         
@@ -1460,6 +1466,12 @@ nsHttpTransaction::HandleContentStart()
     MOZ_ASSERT(PR_GetCurrentThread() == gSocketThread);
 
     if (mResponseHead) {
+        if (mEarlyDataDisposition == EARLY_ACCEPTED) {
+            Unused << mResponseHead->SetHeader(nsHttp::X_Firefox_Early_Data, NS_LITERAL_CSTRING("accepted"));
+        } else if (mEarlyDataDisposition == EARLY_SENT) {
+            Unused << mResponseHead->SetHeader(nsHttp::X_Firefox_Early_Data, NS_LITERAL_CSTRING("sent"));
+        } 
+
         if (LOG3_ENABLED()) {
             LOG3(("http response [\n"));
             nsAutoCString headers;
@@ -2170,6 +2182,11 @@ nsHttpTransaction::Finish0RTT(bool aRestart, bool aAlpnChanged )
     LOG(("nsHttpTransaction::Finish0RTT %p %d %d\n", this, aRestart, aAlpnChanged));
     MOZ_ASSERT(m0RTTInProgress);
     m0RTTInProgress = false;
+    if (!aRestart && (mEarlyDataDisposition == EARLY_SENT)) {
+        
+        
+        mEarlyDataDisposition = EARLY_ACCEPTED;
+    }
     if (aRestart) {
         
         nsCOMPtr<nsISeekableStream> seekable =
@@ -2185,6 +2202,15 @@ nsHttpTransaction::Finish0RTT(bool aRestart, bool aAlpnChanged )
         mConnection->GetSecurityInfo(getter_AddRefs(mSecurityInfo));
     }
     return NS_OK;
+}
+
+void
+nsHttpTransaction::Refused0RTT()
+{
+    LOG(("nsHttpTransaction::Refused0RTT %p\n", this));
+    if (mEarlyDataDisposition == EARLY_ACCEPTED) {
+        mEarlyDataDisposition = EARLY_SENT; 
+    }
 }
 
 } 

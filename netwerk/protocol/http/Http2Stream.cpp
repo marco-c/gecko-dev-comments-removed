@@ -1513,7 +1513,23 @@ Http2Stream::Finish0RTT(bool aRestart, bool aAlpnChanged)
 {
   MOZ_ASSERT(mTransaction);
   mAttempting0RTT = false;
-  return mTransaction->Finish0RTT(aRestart, aAlpnChanged);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  nsresult rv = mTransaction->Finish0RTT(aAlpnChanged, aAlpnChanged);
+  if (aRestart) {
+    nsHttpTransaction *trans = mTransaction->QueryHttpTransaction();
+    if (trans) {
+      trans->Refused0RTT();
+    }
+  }
+  return rv;
 }
 
 
