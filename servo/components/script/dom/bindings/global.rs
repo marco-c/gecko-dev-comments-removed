@@ -18,7 +18,7 @@ use ipc_channel::ipc::IpcSender;
 use js::jsapi::{CurrentGlobalOrNull, GetGlobalForObjectCrossCompartment};
 use js::jsapi::{JSContext, JSObject, JS_GetClass, MutableHandleValue};
 use js::{JSCLASS_IS_DOMJSCLASS, JSCLASS_IS_GLOBAL};
-use msg::constellation_msg::{ConstellationChan, PanicMsg, PipelineId};
+use msg::constellation_msg::{PanicMsg, PipelineId};
 use net_traits::ResourceThread;
 use profile_traits::{mem, time};
 use script_runtime::{CommonScriptMsg, ScriptChan, ScriptPort};
@@ -90,7 +90,7 @@ impl<'a> GlobalRef<'a> {
     }
 
     
-    pub fn constellation_chan(&self) -> &ConstellationChan<ConstellationMsg> {
+    pub fn constellation_chan(&self) -> &IpcSender<ConstellationMsg> {
         match *self {
             GlobalRef::Window(window) => window.constellation_chan(),
             GlobalRef::Worker(worker) => worker.constellation_chan(),
