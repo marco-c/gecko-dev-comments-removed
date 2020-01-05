@@ -208,7 +208,7 @@ IPCBlobInputStream::AsyncWait(nsIInputStreamCallback* aCallback,
     mCallbackEventTarget = aEventTarget;
     mState = ePending;
 
-    mActor->StreamNeeded(this);
+    mActor->StreamNeeded(this, aEventTarget);
     return NS_OK;
 
   
