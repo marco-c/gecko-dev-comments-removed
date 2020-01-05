@@ -53,12 +53,6 @@ public:
   void HandleNotWaited(const WaitForDataRejectValue& aRejection) override;
 
   ~NextFrameSeekTask();
-
-  
-
-
-  const int64_t mCurrentTime;
-  media::TimeUnit mDuration;
 };
 
 } 
