@@ -92,6 +92,10 @@ public:
   MOZ_IMPLICIT SVGBBox(const gfxRect& aRect)
     : mBBox(ToRect(aRect)), mIsEmpty(false) {}
 
+  operator const Rect& () {
+    return mBBox;
+  }
+
   gfxRect ToThebesRect() const {
     return ThebesRect(mBBox);
   }
@@ -327,11 +331,6 @@ public:
 
   static void NotifyChildrenOfSVGChange(nsIFrame *aFrame, uint32_t aFlags);
 
-  
-
-
-  static nsRect GetCoveredRegion(const nsFrameList &aFrames);
-
   static nsRect TransformFrameRectToOuterSVG(const nsRect& aRect,
                                              const gfxMatrix& aMatrix,
                                              nsPresContext* aPresContext);
@@ -400,16 +399,32 @@ public:
     
     
     
-    eUseFrameBoundsForOuterSVG = 1 << 6
+    eUseFrameBoundsForOuterSVG = 1 << 6,
+    
+    eForGetClientRects         = 1 << 7,
   };
   
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
   static gfxRect GetBBox(nsIFrame *aFrame,
                          
                          
-                         uint32_t aFlags = eBBoxIncludeFillGeometry);
+                         uint32_t aFlags = eBBoxIncludeFillGeometry,
+                         const gfxMatrix* aToBoundsSpace = nullptr);
 
   
 

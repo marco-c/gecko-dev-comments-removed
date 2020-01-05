@@ -95,9 +95,6 @@ public:
   virtual nsIFrame* GetFrameForPoint(const gfxPoint& aPoint) = 0;
 
   
-  virtual nsRect GetCoveredRegion()=0;
-
-  
   
   
   
