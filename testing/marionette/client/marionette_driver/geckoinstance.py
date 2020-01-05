@@ -32,9 +32,6 @@ class GeckoInstance(object):
         
         "datareporting.policy.dataSubmissionPolicyBypassNotification": True,
 
-        
-        
-        "dom.ipc.cpows.forbid-unsafe-from-browser": False,
         "dom.ipc.reportProcessHangs": False,
 
         
