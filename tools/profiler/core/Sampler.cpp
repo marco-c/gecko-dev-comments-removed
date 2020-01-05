@@ -9,7 +9,7 @@
 #include <fstream>
 #include <sstream>
 #include "GeckoProfiler.h"
-#include "SaveProfileTask.h"
+#include "nsIProfileSaveEvent.h"
 #include "nsThreadUtils.h"
 #include "prenv.h"
 #include "prtime.h"
@@ -100,6 +100,35 @@ using namespace mozilla;
 
 
 
+class ProfileSaveEvent final : public nsIProfileSaveEvent {
+public:
+  typedef void (*AddSubProfileFunc)(const char* aProfile, void* aClosure);
+  NS_DECL_ISUPPORTS
+
+  ProfileSaveEvent(AddSubProfileFunc aFunc, void* aClosure)
+    : mFunc(aFunc)
+    , mClosure(aClosure)
+  {}
+
+  NS_IMETHOD AddSubProfile(const char* aProfile) override {
+    mFunc(aProfile, mClosure);
+    return NS_OK;
+  }
+private:
+  ~ProfileSaveEvent() {}
+
+  AddSubProfileFunc mFunc;
+  void* mClosure;
+};
+
+NS_IMPL_ISUPPORTS(ProfileSaveEvent, nsIProfileSaveEvent)
+
+
+
+
+
+
+
 static void
 AddSharedLibraryInfoToStream(std::ostream& aStream, const SharedLibrary& aLib)
 {
@@ -176,7 +205,6 @@ Sampler::Sampler(double aInterval, int aEntrySize,
   , active_(false)
   , entrySize_(aEntrySize)
   , mBuffer(new ProfileBuffer(aEntrySize))
-  , mSaveRequested(false)
 {
   MOZ_COUNT_CTOR(Sampler);
 
@@ -374,19 +402,6 @@ Sampler::UnregisterCurrentThread()
       }
     }
   }
-}
-
-void
-Sampler::HandleSaveRequest()
-{
-  if (!mSaveRequested)
-    return;
-  mSaveRequested = false;
-
-  
-  
-  nsCOMPtr<nsIRunnable> runnable = new SaveProfileTask();
-  NS_DispatchToMainThread(runnable);
 }
 
 void

@@ -263,12 +263,6 @@ public:
   SyncProfile* GetBacktrace();
 
   
-  void RequestSave() { mSaveRequested = true; }
-
-  
-  void HandleSaveRequest();
-
-  
   
   void DeleteExpiredMarkers();
 
@@ -388,7 +382,6 @@ private:
 #endif
 
   RefPtr<ProfileBuffer> mBuffer;
-  bool mSaveRequested;
   bool mAddLeafAddresses;
   bool mUseStackWalk;
   bool mProfileJS;
