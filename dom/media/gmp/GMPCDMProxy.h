@@ -220,13 +220,6 @@ private:
 
   
   
-  
-  
-  
-  uint32_t mDecryptionJobCount;
-
-  
-  
   bool mShutdownCalled;
 
   uint32_t mDecryptorId;
