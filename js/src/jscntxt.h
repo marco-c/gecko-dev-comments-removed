@@ -502,6 +502,11 @@ struct JSContext : public JS::RootingContext,
 #endif
 
     
+    
+    
+    js::ThreadLocalData<unsigned> enableAccessValidation;
+
+    
 
 
 

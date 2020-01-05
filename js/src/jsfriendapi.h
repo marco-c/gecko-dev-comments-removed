@@ -2893,6 +2893,20 @@ class MOZ_STACK_CLASS JS_FRIEND_API(AutoAssertNoContentJS)
     bool prevAllowContentJS_;
 };
 
+
+
+
+
+extern JS_FRIEND_API(void)
+EnableAccessValidation(JSContext* cx, bool enabled);
+
+
+
+
+
+extern JS_FRIEND_API(void)
+SetCompartmentValidAccessPtr(JSContext* cx, JS::HandleObject global, bool* accessp);
+
 } 
 
 class NativeProfiler
