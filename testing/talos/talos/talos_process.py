@@ -5,6 +5,7 @@
 import time
 import psutil
 import mozcrash
+import traceback
 from mozprocess import ProcessHandler
 from threading import Event
 
@@ -120,6 +121,7 @@ def run_browser(command, minidump_dir, timeout=None, on_started=None,
         
         
         if not event.wait(timeout):
+            LOG.info("Timeout waiting for test completion; killing browser...")
             
             mozcrash.kill_and_get_minidump(proc.pid, minidump_dir)
             raise TalosError("timeout")
@@ -137,9 +139,14 @@ def run_browser(command, minidump_dir, timeout=None, on_started=None,
     finally:
         
         
-        return_code = context.kill_process()
-        if return_code is None:
-            return_code = proc.wait(1)
+        try:
+            return_code = context.kill_process()
+            if return_code is None:
+                return_code = proc.wait(1)
+        except:
+            
+            LOG.info("Unable to kill process")
+            LOG.info(traceback.format_exc())
 
     reader.output.append(
         "__startBeforeLaunchTimestamp%d__endBeforeLaunchTimestamp"
