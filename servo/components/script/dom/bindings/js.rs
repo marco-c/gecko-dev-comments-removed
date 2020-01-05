@@ -87,13 +87,6 @@ impl<T: Reflectable> JS<T> {
             ptr: unsafe { NonZero::new(&*obj) }
         }
     }
-    
-    
-    
-    
-    pub fn assign(&mut self, val: Root<T>) {
-        self.ptr = val.ptr.clone();
-    }
 }
 
 impl<T: Reflectable> Deref for JS<T> {
