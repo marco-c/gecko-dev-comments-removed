@@ -306,13 +306,6 @@ pref("mathml.disabled",    false);
 pref("mathml.scale_stretchy_operators.enabled", true);
 
 
-#ifdef RELEASE_OR_BETA
-pref("dom.MediaError.message.enabled", false);
-#else
-pref("dom.MediaError.message.enabled", true);
-#endif
-
-
 #ifdef NIGHTLY_BUILD
 pref("media.dormant-on-pause-timeout-ms", 5000);
 #else
