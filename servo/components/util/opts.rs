@@ -28,14 +28,14 @@ pub struct Opts {
     
     
     
-    pub paint_threads: uint,
+    pub paint_threads: usize,
 
     
     
     pub gpu_painting: bool,
 
     
-    pub tile_size: uint,
+    pub tile_size: usize,
 
     
     
@@ -54,7 +54,7 @@ pub struct Opts {
 
     
     
-    pub layout_threads: uint,
+    pub layout_threads: usize,
 
     pub nonincremental_layout: bool,
 
@@ -102,7 +102,7 @@ pub struct Opts {
     pub devtools_port: Option<u16>,
 
     
-    pub initial_window_size: TypedSize2D<ScreenPx, uint>,
+    pub initial_window_size: TypedSize2D<ScreenPx, u32>,
 
     
     pub user_agent: Option<String>,
@@ -256,7 +256,7 @@ pub fn from_cmdline_args(args: &[String]) -> bool {
         opt_match.free.clone()
     };
 
-    let tile_size: uint = match opt_match.opt_str("s") {
+    let tile_size: usize = match opt_match.opt_str("s") {
         Some(tile_size_str) => tile_size_str.parse().unwrap(),
         None => 512,
     };
@@ -265,7 +265,7 @@ pub fn from_cmdline_args(args: &[String]) -> bool {
         ScaleFactor(dppx_str.parse().unwrap())
     );
 
-    let mut paint_threads: uint = match opt_match.opt_str("t") {
+    let mut paint_threads: usize = match opt_match.opt_str("t") {
         Some(paint_threads_str) => paint_threads_str.parse().unwrap(),
         None => cmp::max(rt::default_sched_threads() * 3 / 4, 1),
     };
@@ -280,7 +280,7 @@ pub fn from_cmdline_args(args: &[String]) -> bool {
 
     let gpu_painting = !FORCE_CPU_PAINTING && opt_match.opt_present("g");
 
-    let mut layout_threads: uint = match opt_match.opt_str("y") {
+    let mut layout_threads: usize = match opt_match.opt_str("y") {
         Some(layout_threads_str) => layout_threads_str.parse().unwrap(),
         None => cmp::max(rt::default_sched_threads() * 3 / 4, 1),
     };
@@ -301,7 +301,7 @@ pub fn from_cmdline_args(args: &[String]) -> bool {
 
     let initial_window_size = match opt_match.opt_str("resolution") {
         Some(res_string) => {
-            let res: Vec<uint> = res_string.split('x').map(|r| r.parse().unwrap()).collect();
+            let res: Vec<u32> = res_string.split('x').map(|r| r.parse().unwrap()).collect();
             TypedSize2D(res[0], res[1])
         }
         None => {

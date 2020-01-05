@@ -57,23 +57,23 @@ use std::mem::{forget, min_align_of, size_of, transmute};
 use std::ptr;
 
 use std::sync::Mutex;
-use std::sync::atomic::{AtomicInt, AtomicPtr};
+use std::sync::atomic::{AtomicIsize, AtomicPtr};
 use std::sync::atomic::Ordering::SeqCst;
 
 
 
-static K: int = 4;
+static K: isize = 4;
 
 
 
 
 
 
-static MIN_BITS: uint = 7;
+static MIN_BITS: usize = 7;
 
 struct Deque<T> {
-    bottom: AtomicInt,
-    top: AtomicInt,
+    bottom: AtomicIsize,
+    top: AtomicIsize,
     array: AtomicPtr<Buffer<T>>,
     pool: BufferPool<T>,
 }
@@ -139,7 +139,7 @@ pub struct BufferPool<T> {
 
 struct Buffer<T> {
     storage: *const T,
-    log_size: uint,
+    log_size: usize,
 }
 
 unsafe impl<T: 'static> Send for Buffer<T> { }
@@ -159,7 +159,7 @@ impl<T: Send> BufferPool<T> {
         (Worker { deque: a }, Stealer { deque: b })
     }
 
-    fn alloc(&mut self, bits: uint) -> Box<Buffer<T>> {
+    fn alloc(&mut self, bits: usize) -> Box<Buffer<T>> {
         unsafe {
             let mut pool = self.pool.lock().unwrap();
             match pool.iter().position(|x| x.size() >= (1 << bits)) {
@@ -228,8 +228,8 @@ impl<T: Send> Deque<T> {
     fn new(mut pool: BufferPool<T>) -> Deque<T> {
         let buf = pool.alloc(MIN_BITS);
         Deque {
-            bottom: AtomicInt::new(0),
-            top: AtomicInt::new(0),
+            bottom: AtomicIsize::new(0),
+            top: AtomicIsize::new(0),
             array: AtomicPtr::new(unsafe { transmute(buf) }),
             pool: pool,
         }
@@ -299,7 +299,7 @@ impl<T: Send> Deque<T> {
         }
     }
 
-    unsafe fn maybe_shrink(&self, b: int, t: int) {
+    unsafe fn maybe_shrink(&self, b: isize, t: isize) {
         let a = self.array.load(SeqCst);
         if b - t < (*a).size() / K && b - t > (1 << MIN_BITS) {
             self.swap_buffer(b, a, (*a).resize(b, t, -1));
@@ -313,7 +313,7 @@ impl<T: Send> Deque<T> {
     
     
     
-    unsafe fn swap_buffer(&self, b: int, old: *mut Buffer<T>,
+    unsafe fn swap_buffer(&self, b: isize, old: *mut Buffer<T>,
                           buf: Buffer<T>) -> *mut Buffer<T> {
         let newbuf: *mut Buffer<T> = transmute(box buf);
         self.array.store(newbuf, SeqCst);
@@ -345,12 +345,12 @@ impl<T: Send> Drop for Deque<T> {
 }
 
 #[inline]
-fn buffer_alloc_size<T>(log_size: uint) -> uint {
+fn buffer_alloc_size<T>(log_size: usize) -> usize {
     (1 << log_size) * size_of::<T>()
 }
 
 impl<T: Send> Buffer<T> {
-    unsafe fn new(log_size: uint) -> Buffer<T> {
+    unsafe fn new(log_size: usize) -> Buffer<T> {
         let size = buffer_alloc_size::<T>(log_size);
         let buffer = allocate(size, min_align_of::<T>());
         if buffer.is_null() { ::alloc::oom() }
@@ -360,12 +360,12 @@ impl<T: Send> Buffer<T> {
         }
     }
 
-    fn size(&self) -> int { 1 << self.log_size }
+    fn size(&self) -> isize { 1 << self.log_size }
 
     
-    fn mask(&self) -> int { (1 << self.log_size) - 1 }
+    fn mask(&self) -> isize { (1 << self.log_size) - 1 }
 
-    unsafe fn elem(&self, i: int) -> *const T {
+    unsafe fn elem(&self, i: isize) -> *const T {
         self.storage.offset(i & self.mask())
     }
 
@@ -373,23 +373,23 @@ impl<T: Send> Buffer<T> {
     
     
     
-    unsafe fn get(&self, i: int) -> T {
+    unsafe fn get(&self, i: isize) -> T {
         ptr::read(self.elem(i))
     }
 
     
     
-    unsafe fn put(&self, i: int, t: T) {
+    unsafe fn put(&self, i: isize, t: T) {
         ptr::write(self.elem(i) as *mut T, t);
     }
 
     
     
-    unsafe fn resize(&self, b: int, t: int, delta: int) -> Buffer<T> {
+    unsafe fn resize(&self, b: isize, t: isize, delta: isize) -> Buffer<T> {
         
         
         
-        let buf = Buffer::new(self.log_size + delta as uint);
+        let buf = Buffer::new(self.log_size + delta as usize);
         for i in range(t, b) {
             buf.put(i, self.get(i));
         }
