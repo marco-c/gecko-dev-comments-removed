@@ -11,6 +11,7 @@
 #include "pkix/Input.h"
 #include "pkix/pkix.h"
 #include "pkix/Result.h"
+#include "ScopedNSSTypes.h"
 #include "SignedCertificateTimestamp.h"
 #include "SignedTreeHead.h"
 
@@ -72,6 +73,11 @@ private:
   pkix::Result VerifySignature(pkix::Input data, pkix::Input signature);
   pkix::Result VerifySignature(const Buffer& data, const Buffer& signature);
 
+  
+  
+  
+  
+  UniqueSECKEYPublicKey mPublicECKey;
   Buffer mSubjectPublicKeyInfo;
   Buffer mKeyId;
   DigitallySigned::SignatureAlgorithm mSignatureAlgorithm;

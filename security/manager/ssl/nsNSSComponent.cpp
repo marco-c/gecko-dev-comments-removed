@@ -1839,6 +1839,10 @@ nsNSSComponent::ShutdownNSS()
       MOZ_LOG(gPIPNSSLog, LogLevel::Error, ("failed to evaporate resources"));
       return;
     }
+    
+    
+    
+    mDefaultCertVerifier = nullptr;
     UnloadLoadableRoots();
     if (SECSuccess != ::NSS_Shutdown()) {
       MOZ_LOG(gPIPNSSLog, LogLevel::Error, ("NSS SHUTDOWN FAILURE"));
