@@ -2,8 +2,8 @@
 
 
 
+use rustc::hir;
 use rustc::lint::{LateContext, LintPass, LintArray, LateLintPass, LintContext};
-use rustc_front::hir;
 use syntax::ast;
 use syntax::attr::AttrMetaMethods;
 

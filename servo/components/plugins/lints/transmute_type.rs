@@ -2,8 +2,8 @@
 
 
 
+use rustc::hir;
 use rustc::lint::{LateContext, LintPass, LintArray, LateLintPass, LintContext};
-use rustc_front::hir;
 use syntax::attr::AttrMetaMethods;
 
 declare_lint!(TRANSMUTE_TYPE_LINT, Allow,

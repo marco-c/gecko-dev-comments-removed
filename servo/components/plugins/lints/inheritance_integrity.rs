@@ -2,9 +2,8 @@
 
 
 
+use rustc::hir::{self, def};
 use rustc::lint::{LateContext, LintPass, LintArray, Level, LateLintPass, LintContext};
-use rustc::middle::def;
-use rustc_front::hir;
 use syntax::ast;
 use utils::match_lang_ty;
 

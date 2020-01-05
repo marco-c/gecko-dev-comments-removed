@@ -15,10 +15,10 @@ pub fn expand_reflector(cx: &mut ExtCtxt, span: Span, _: &MetaItem, annotatable:
             let struct_name = item.ident;
             
             match def.fields().iter().find(
-                    |f| match_ty_unwrap(&*f.node.ty, &["dom", "bindings", "reflector", "Reflector"]).is_some()) {
+                    |f| match_ty_unwrap(&*f.ty, &["dom", "bindings", "reflector", "Reflector"]).is_some()) {
                 
                 Some(f) => {
-                    let field_name = f.node.ident();
+                    let field_name = f.ident;
                     let impl_item = quote_item!(cx,
                         impl ::dom::bindings::reflector::Reflectable for $struct_name {
                             fn reflector<'a>(&'a self) -> &'a ::dom::bindings::reflector::Reflector {
@@ -33,7 +33,7 @@ pub fn expand_reflector(cx: &mut ExtCtxt, span: Span, _: &MetaItem, annotatable:
                 },
                 
                 None => {
-                    let field_name = def.fields()[0].node.ident();
+                    let field_name = def.fields()[0].ident;
                     let impl_item = quote_item!(cx,
                         impl ::dom::bindings::reflector::Reflectable for $struct_name {
                             fn reflector<'a>(&'a self) -> &'a ::dom::bindings::reflector::Reflector {
