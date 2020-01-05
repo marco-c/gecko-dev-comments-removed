@@ -87,7 +87,57 @@ pub struct Line {
     
     
     pub range: Range<LineIndices>,
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub bounds: Rect<Au>,
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub green_zone: Size2D<Au>
 }
 
@@ -117,7 +167,6 @@ pub struct LineIndices {
     
     
     pub fragment_index: FragmentIndex,
-
     
     
     
@@ -252,57 +301,51 @@ impl LineBreaker {
     pub fn scan_for_lines(&mut self, flow: &mut InlineFlow) {
         self.reset_scanner();
 
-        
-        let InlineFragments {
-            fragments: old_fragments,
-            map: mut map
-        } = mem::replace(&mut flow.fragments, InlineFragments::new());
+        let mut old_fragments = mem::replace(&mut flow.fragments, InlineFragments::new());
 
-        let mut old_fragment_iter = old_fragments.iter();
-        loop {
-            
-            let cur_fragment = if self.work_list.is_empty() {
-                match old_fragment_iter.next() {
-                    None => break,
-                    Some(fragment) => {
-                        debug!("LineBreaker: Working with fragment from flow: b{}",
-                               fragment.debug_id());
-                        (*fragment).clone()
+        { 
+            let mut old_fragment_iter = old_fragments.fragments.iter();
+            loop {
+                
+                let cur_fragment = if self.work_list.is_empty() {
+                    match old_fragment_iter.next() {
+                        None => break,
+                        Some(fragment) => {
+                            debug!("LineBreaker: Working with fragment from flow: b{}",
+                                   fragment.debug_id());
+                            (*fragment).clone()
+                        }
                     }
+                } else {
+                    let fragment = self.work_list.pop_front().unwrap();
+                    debug!("LineBreaker: Working with fragment from work list: b{}",
+                           fragment.debug_id());
+                    fragment
+                };
+
+                let fragment_was_appended = match cur_fragment.white_space() {
+                    white_space::normal => self.try_append_to_line(cur_fragment, flow),
+                    white_space::pre => self.try_append_to_line_by_new_line(cur_fragment),
+                };
+
+                if !fragment_was_appended {
+                    debug!("LineBreaker: Fragment wasn't appended, because line {:u} was full.",
+                            self.lines.len());
+                    self.flush_current_line();
+                } else {
+                    debug!("LineBreaker: appended a fragment to line {:u}", self.lines.len());
                 }
-            } else {
-                let fragment = self.work_list.pop_front().unwrap();
-                debug!("LineBreaker: Working with fragment from work list: b{}",
-                       fragment.debug_id());
-                fragment
-            };
+            }
 
-            let fragment_was_appended = match cur_fragment.white_space() {
-                white_space::normal => self.try_append_to_line(cur_fragment, flow),
-                white_space::pre => self.try_append_to_line_by_new_line(cur_fragment),
-            };
-
-            if !fragment_was_appended {
-                debug!("LineBreaker: Fragment wasn't appended, because line {:u} was full.",
+            if self.pending_line.range.length() > num::zero() {
+                debug!("LineBreaker: Partially full line {:u} left at end of scanning.",
                         self.lines.len());
                 self.flush_current_line();
-            } else {
-                debug!("LineBreaker: appended a fragment to line {:u}", self.lines.len());
             }
         }
 
-        if self.pending_line.range.length() > num::zero() {
-            debug!("LineBreaker: Partially full line {:u} left at end of scanning.",
-                    self.lines.len());
-            self.flush_current_line();
-        }
-
-        map.fixup(old_fragments.as_slice(), self.new_fragments.as_slice());
-        flow.fragments = InlineFragments {
-            fragments: mem::replace(&mut self.new_fragments, Vec::new()),
-            map: map,
-        };
-
+        old_fragments.fixup(mem::replace(&mut self.new_fragments, vec![]));
+        flow.fragments = old_fragments;
         flow.lines = mem::replace(&mut self.lines, Vec::new());
     }
 
@@ -588,7 +631,7 @@ impl LineBreaker {
 
 pub struct FragmentIterator<'a> {
     iter: Enumerate<Items<'a,Fragment>>,
-    map: &'a InlineFragmentMap,
+    ranges: &'a Vec<InlineFragmentRange>,
 }
 
 impl<'a> Iterator<(&'a Fragment, InlineFragmentContext<'a>)> for FragmentIterator<'a> {
@@ -598,7 +641,7 @@ impl<'a> Iterator<(&'a Fragment, InlineFragmentContext<'a>)> for FragmentIterato
             None => None,
             Some((i, fragment)) => Some((
                 fragment,
-                InlineFragmentContext::new(self.map, FragmentIndex(i as int)),
+                InlineFragmentContext::new(self.ranges, FragmentIndex(i as int)),
             )),
         }
     }
@@ -607,7 +650,7 @@ impl<'a> Iterator<(&'a Fragment, InlineFragmentContext<'a>)> for FragmentIterato
 
 pub struct MutFragmentIterator<'a> {
     iter: Enumerate<MutItems<'a,Fragment>>,
-    map: &'a InlineFragmentMap,
+    ranges: &'a Vec<InlineFragmentRange>,
 }
 
 impl<'a> Iterator<(&'a mut Fragment, InlineFragmentContext<'a>)> for MutFragmentIterator<'a> {
@@ -617,7 +660,7 @@ impl<'a> Iterator<(&'a mut Fragment, InlineFragmentContext<'a>)> for MutFragment
             None => None,
             Some((i, fragment)) => Some((
                 fragment,
-                InlineFragmentContext::new(self.map, FragmentIndex(i as int)),
+                InlineFragmentContext::new(self.ranges, FragmentIndex(i as int)),
             )),
         }
     }
@@ -628,15 +671,16 @@ pub struct InlineFragments {
     
     pub fragments: Vec<Fragment>,
     
-    pub map: InlineFragmentMap,
+    
+    pub ranges: Vec<InlineFragmentRange>,
 }
 
 impl InlineFragments {
     
     pub fn new() -> InlineFragments {
         InlineFragments {
-            fragments: Vec::new(),
-            map: InlineFragmentMap::new(),
+            fragments: vec![],
+            ranges: vec![],
         }
     }
 
@@ -652,26 +696,24 @@ impl InlineFragments {
 
     
     pub fn push(&mut self, fragment: Fragment, style: Arc<ComputedValues>) {
-        self.map.push(style, Range::new(FragmentIndex(self.fragments.len() as int), FragmentIndex(1)));
+        self.ranges.push(InlineFragmentRange::new(
+            style, Range::new(FragmentIndex(self.fragments.len() as int), FragmentIndex(1)),
+        ));
         self.fragments.push(fragment)
     }
 
     
-    pub fn push_all(&mut self, other: InlineFragments) {
-        let InlineFragments {
-            fragments: other_fragments,
-            map: other_map
-        } = other;
+    pub fn push_all(&mut self, InlineFragments { fragments, ranges }: InlineFragments) {
         let adjustment = FragmentIndex(self.fragments.len() as int);
-        self.map.push_all(other_map, adjustment);
-        self.fragments.push_all_move(other_fragments);
+        self.push_all_ranges(ranges, adjustment);
+        self.fragments.push_all_move(fragments);
     }
 
     
     pub fn iter<'a>(&'a self) -> FragmentIterator<'a> {
         FragmentIterator {
             iter: self.fragments.as_slice().iter().enumerate(),
-            map: &self.map,
+            ranges: &self.ranges,
         }
     }
 
@@ -680,7 +722,7 @@ impl InlineFragments {
     pub fn mut_iter<'a>(&'a mut self) -> MutFragmentIterator<'a> {
         MutFragmentIterator {
             iter: self.fragments.as_mut_slice().mut_iter().enumerate(),
-            map: &self.map,
+            ranges: &self.ranges,
         }
     }
 
@@ -692,6 +734,171 @@ impl InlineFragments {
     
     pub fn get_mut<'a>(&'a mut self, index: uint) -> &'a mut Fragment {
         self.fragments.get_mut(index)
+    }
+
+    
+    pub fn push_range(&mut self, style: Arc<ComputedValues>, range: Range<FragmentIndex>) {
+        self.ranges.push(InlineFragmentRange::new(style, range))
+    }
+
+    
+    fn push_all_ranges(&mut self, ranges: Vec<InlineFragmentRange>, adjustment: FragmentIndex) {
+        for other_range in ranges.move_iter() {
+            let InlineFragmentRange {
+                style: other_style,
+                range: mut other_range
+            } = other_range;
+ 
+            other_range.shift_by(adjustment);
+            self.push_range(other_style, other_range)
+        }
+    }
+
+    
+    pub fn get_mut_range<'a>(&'a mut self, index: FragmentIndex) -> &'a mut InlineFragmentRange {
+        self.ranges.get_mut(index.to_uint())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn fixup(&mut self, new_fragments: Vec<Fragment>) {
+        
+        let old_list = mem::replace(&mut self.ranges, vec![]);
+        let mut worklist = vec![];        
+        let mut old_list_iter = old_list.move_iter().peekable();
+
+        { 
+            let mut new_fragments_iter = new_fragments.iter().enumerate().peekable();
+            
+            
+            for (i, old_fragment) in self.fragments.iter().enumerate() {
+                let old_fragment_index = FragmentIndex(i as int);
+                
+                let new_fragment_start = match new_fragments_iter.peek() {
+                    Some(&(index, new_fragment)) if new_fragment.node == old_fragment.node => {
+                        
+                        FragmentIndex(index as int)
+                    }
+                    Some(_) | None => {
+                        
+                        continue
+                    }
+                };
+                drop(new_fragments_iter.next());
+
+                
+                loop {
+                    match new_fragments_iter.peek() {
+                        Some(&(_, new_fragment)) if new_fragment.node == old_fragment.node => {}
+                        Some(_) | None => break,
+                    }
+                    drop(new_fragments_iter.next());
+                }
+
+                
+                loop {
+                    match old_list_iter.peek() {
+                        None => break,
+                        Some(fragment_range) => {
+                            if fragment_range.range.begin() > old_fragment_index {
+                                
+                                break
+                            }
+                            
+                            
+                            
+                            
+                        }
+                    };
+
+                    let InlineFragmentRange {
+                        style: style,
+                        range: old_range,
+                    } = old_list_iter.next().unwrap();
+                    worklist.push(InlineFragmentFixupWorkItem {
+                        style: style,
+                        new_start_index: new_fragment_start,
+                        old_end_index: old_range.end(),
+                    });
+                }
+
+                
+                loop {
+                    match worklist.as_slice().last() {
+                        None => break,
+                        Some(last_work_item) => {
+                            if last_work_item.old_end_index > old_fragment_index + FragmentIndex(1) {
+                                
+                                break
+                            }
+                        }
+                    }
+
+                    let new_last_index = match new_fragments_iter.peek() {
+                        None => {
+                            
+                            FragmentIndex(new_fragments.len() as int)
+                        }
+                        Some(&(index, _)) => {
+                            FragmentIndex(index as int)
+                        },
+                    };
+
+                    let InlineFragmentFixupWorkItem {
+                        style,
+                        new_start_index,
+                        ..
+                    } = worklist.pop().unwrap();
+                    let range = Range::new(new_start_index, new_last_index - new_start_index);
+                    self.ranges.push(InlineFragmentRange::new(style, range))
+                }
+            }
+        }
+        self.fragments = new_fragments;
+    }
+
+    
+    pub fn strip_ignorable_whitespace_from_start(&mut self) {
+        if self.is_empty() {
+            return;
+        }
+
+        
+        let mut found_nonwhitespace = false;
+        let mut new_fragments = Vec::new();
+        for fragment in self.fragments.iter() {
+            if !found_nonwhitespace && fragment.is_whitespace_only() {
+                debug!("stripping ignorable whitespace from start");
+                continue;
+            }
+
+            found_nonwhitespace = true;
+            new_fragments.push(fragment.clone())
+        }
+
+        self.fixup(new_fragments);
+    }
+
+    
+    pub fn strip_ignorable_whitespace_from_end(&mut self) {
+        if self.is_empty() {
+            return;
+        }
+
+        let mut new_fragments = self.fragments.clone();
+        while new_fragments.len() > 0 && new_fragments.as_slice().last().get_ref().is_whitespace_only() {
+            debug!("stripping ignorable whitespace from end");
+            drop(new_fragments.pop());
+        }
+
+        self.fixup(new_fragments);
     }
 }
 
@@ -1174,176 +1381,27 @@ impl<'a> Iterator<&'a InlineFragmentRange> for RangeIterator<'a> {
 
 
 
-pub struct InlineFragmentMap {
-    list: Vec<InlineFragmentRange>,
-}
-
-impl InlineFragmentMap {
-    
-    pub fn new() -> InlineFragmentMap {
-        InlineFragmentMap {
-            list: Vec::new(),
-        }
-    }
-
-    
-    pub fn push(&mut self, style: Arc<ComputedValues>, range: Range<FragmentIndex>) {
-        self.list.push(InlineFragmentRange::new(style, range))
-    }
-
-    
-    
-    fn push_all(&mut self, other: InlineFragmentMap, adjustment: FragmentIndex) {
-        let InlineFragmentMap {
-            list: other_list
-        } = other;
-
-        for other_range in other_list.move_iter() {
-            let InlineFragmentRange {
-                style: other_style,
-                range: mut other_range
-            } = other_range;
-
-            other_range.shift_by(adjustment);
-            self.push(other_style, other_range)
-        }
-    }
-
-    
-    pub fn get_mut<'a>(&'a mut self, index: FragmentIndex) -> &'a mut InlineFragmentRange {
-        &mut self.list.as_mut_slice()[index.to_uint()]
-    }
-
-    
-    #[inline(always)]
-    fn ranges_for_index<'a>(&'a self, index: FragmentIndex) -> RangeIterator<'a> {
-        RangeIterator {
-            iter: self.list.as_slice().iter(),
-            index: index,
-            seen_first: false,
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn fixup(&mut self, old_fragments: &[Fragment], new_fragments: &[Fragment]) {
-        
-        let old_list = mem::replace(&mut self.list, Vec::new());
-        let mut worklist = Vec::new();        
-        let mut old_list_iter = old_list.move_iter().peekable();
-        let mut new_fragments_iter = new_fragments.iter().enumerate().peekable();
-
-        
-        
-        for (i, old_fragment) in old_fragments.iter().enumerate() {
-            let old_fragment_index = FragmentIndex(i as int);
-            
-            let new_fragment_start = match new_fragments_iter.peek() {
-                Some(&(index, new_fragment)) if new_fragment.node == old_fragment.node => {
-                    
-                    FragmentIndex(index as int)
-                }
-                Some(_) | None => {
-                    
-                    continue
-                }
-            };
-            drop(new_fragments_iter.next());
-
-            
-            loop {
-                match new_fragments_iter.peek() {
-                    Some(&(_, new_fragment)) if new_fragment.node == old_fragment.node => {}
-                    Some(_) | None => break,
-                }
-                drop(new_fragments_iter.next());
-            }
-
-            
-            loop {
-                match old_list_iter.peek() {
-                    None => break,
-                    Some(fragment_range) => {
-                        if fragment_range.range.begin() > old_fragment_index {
-                            
-                            break
-                        }
-                        
-                        
-                        
-                        
-                    }
-                };
-
-                let InlineFragmentRange {
-                    style: style,
-                    range: old_range,
-                } = old_list_iter.next().unwrap();
-                worklist.push(InlineFragmentFixupWorkItem {
-                    style: style,
-                    new_start_index: new_fragment_start,
-                    old_end_index: old_range.end(),
-                });
-            }
-
-            
-            loop {
-                match worklist.as_slice().last() {
-                    None => break,
-                    Some(last_work_item) => {
-                        if last_work_item.old_end_index > old_fragment_index + FragmentIndex(1) {
-                            
-                            break
-                        }
-                    }
-                }
-
-                let new_last_index = match new_fragments_iter.peek() {
-                    None => {
-                        
-                        FragmentIndex(new_fragments.len() as int)
-                    }
-                    Some(&(index, _)) => {
-                        FragmentIndex(index as int)
-                    },
-                };
-
-                let InlineFragmentFixupWorkItem {
-                    style,
-                    new_start_index,
-                    ..
-                } = worklist.pop().unwrap();
-                let range = Range::new(new_start_index, new_last_index - new_start_index);
-                self.list.push(InlineFragmentRange::new(style, range))
-            }
-        }
-    }
-}
-
-
-
 pub struct InlineFragmentContext<'a> {
-    map: &'a InlineFragmentMap,
+    ranges: &'a Vec<InlineFragmentRange>,
     index: FragmentIndex,
 }
 
 impl<'a> InlineFragmentContext<'a> {
-    pub fn new<'a>(map: &'a InlineFragmentMap, index: FragmentIndex) -> InlineFragmentContext<'a> {
+    pub fn new<'a>(ranges: &'a Vec<InlineFragmentRange>, index: FragmentIndex) -> InlineFragmentContext<'a> {
         InlineFragmentContext {
-            map: map,
+            ranges: ranges,
             index: index,
         }
     }
 
+    
+    #[inline(always)]
     pub fn ranges(&self) -> RangeIterator<'a> {
-        self.map.ranges_for_index(self.index)
+        RangeIterator {
+            iter: self.ranges.iter(),
+            index: self.index,
+            seen_first: false,
+        }
     }
 }
 
