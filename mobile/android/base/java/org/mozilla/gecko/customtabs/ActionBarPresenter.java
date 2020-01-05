@@ -177,16 +177,6 @@ public class ActionBarPresenter {
         mUrlView.setOnLongClickListener(listener);
     }
 
-    
-
-
-
-
-    @ColorInt
-    public int getTextPrimaryColor() {
-        return mTextPrimaryColor;
-    }
-
     private void initIndicator() {
         mActionBar.setDisplayHomeAsUpEnabled(true);
         final Drawable icon = mActionBar.getThemedContext().getDrawable(R.drawable.ic_close_light);
