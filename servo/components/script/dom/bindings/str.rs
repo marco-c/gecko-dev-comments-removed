@@ -11,6 +11,7 @@ use std::ops;
 use std::str;
 use std::str::FromStr;
 use util::mem::HeapSizeOf;
+use util::str::is_token;
 
 
 #[derive(JSTraceable, Clone, Eq, PartialEq, HeapSizeOf)]
@@ -49,35 +50,7 @@ impl ByteString {
     
     pub fn is_token(&self) -> bool {
         let ByteString(ref vec) = *self;
-        if vec.is_empty() {
-            return false; 
-        }
-        vec.iter().all(|&x| {
-            
-            match x {
-                0...31 | 127 => false, 
-                40 |
-                41 |
-                60 |
-                62 |
-                64 |
-                44 |
-                59 |
-                58 |
-                92 |
-                34 |
-                47 |
-                91 |
-                93 |
-                63 |
-                61 |
-                123 |
-                125 |
-                32 => false, 
-                x if x > 127 => false, 
-                _ => true,
-            }
-        })
+        is_token(vec)
     }
 
     
