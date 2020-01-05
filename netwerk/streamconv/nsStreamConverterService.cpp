@@ -67,8 +67,7 @@ nsStreamConverterService::nsStreamConverterService()
 {
 }
 
-nsStreamConverterService::~nsStreamConverterService() {
-}
+nsStreamConverterService::~nsStreamConverterService() = default;
 
 
 

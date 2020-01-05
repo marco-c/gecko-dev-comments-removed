@@ -98,7 +98,7 @@ public:
 private:
   
   
-  virtual ~DataChannelShutdown() {}
+  virtual ~DataChannelShutdown() = default;
 
 public:
   NS_IMETHOD Observe(nsISupports* aSubject, const char* aTopic,
