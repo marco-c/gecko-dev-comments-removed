@@ -113,4 +113,15 @@ assertErrorMessage(() => wasmEvalText(`
 `), SyntaxError, /import after global definition/);
 
 
+assertErrorMessage(() => wasmEvalText('(module (memory (export)))'), SyntaxError, parsingError);
+assertErrorMessage(() => wasmEvalText('(module (memory (export "g")))'), SyntaxError, parsingError);
+wasmEvalText('(module (memory $t (export "g") 0))');
+
+const mem = new WebAssembly.Memory({ initial: 1 });
+assertErrorMessage(() => wasmEvalText('(module (memory $t (import) 1))'), SyntaxError, parsingError);
+assertErrorMessage(() => wasmEvalText('(module (memory $t (import "mod") 1))'), SyntaxError, parsingError);
+assertErrorMessage(() => wasmEvalText('(module (memory $t (import "mod" "field")))'), SyntaxError, parsingError);
+wasmEvalText('(module (memory $t (import "mod" "field") 1))', { mod: {field: mem} });
+
+
 
