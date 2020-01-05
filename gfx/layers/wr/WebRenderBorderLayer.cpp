@@ -6,7 +6,6 @@
 #include "WebRenderBorderLayer.h"
 
 #include "WebRenderLayersLogging.h"
-#include "gfxPrefs.h"
 #include "mozilla/gfx/Rect.h"
 #include "mozilla/webrender/webrender_ffi.h"
 #include "mozilla/layers/WebRenderBridgeChild.h"
@@ -22,17 +21,27 @@ WebRenderBorderLayer::RenderLayer()
 {
   WrScrollFrameStackingContextGenerator scrollFrames(this);
 
-  Rect rect = RelativeToVisible(mRect.ToUnknownRect());
+  LayerIntRect bounds = GetVisibleRegion().GetBounds();
+  Rect rect(0, 0, bounds.width, bounds.height);
   Rect clip;
+  Matrix4x4 transform = GetTransform();
   if (GetClipRect().isSome()) {
-    clip = RelativeToTransformedVisible(IntRectToRect(GetClipRect().ref().ToUnknownRect()));
+    clip = RelativeToVisible(transform.Inverse().TransformBounds(IntRectToRect(GetClipRect().ref().ToUnknownRect())));
   } else {
     clip = rect;
   }
 
-  Rect relBounds = TransformedVisibleBoundsRelativeToParent();
+  Rect relBounds = VisibleBoundsRelativeToParent();
+  if (!transform.IsIdentity()) {
+    
+    gfx::Matrix4x4 boundTransform = transform;
+    boundTransform._41 = 0.0f;
+    boundTransform._42 = 0.0f;
+    boundTransform._43 = 0.0f;
+    relBounds.MoveTo(boundTransform.TransformPoint(relBounds.TopLeft()));
+  }
+
   Rect overflow(0, 0, relBounds.width, relBounds.height);
-  Matrix4x4 transform;
 
   if (gfxPrefs::LayersDump()) {
     printf_stderr("BorderLayer %p using bounds=%s, overflow=%s, transform=%s, rect=%s, clip=%s\n",
