@@ -106,6 +106,7 @@ var CaptivePortalWatcher = {
     if (win != Services.ww.activeWindow) {
       this._delayedCaptivePortalDetectedInProgress = true;
       Services.obs.addObserver(this, "xul-window-visible", false);
+      return;
     }
 
     this._showNotification();
@@ -149,6 +150,7 @@ var CaptivePortalWatcher = {
         return;
       }
 
+      self._showNotification();
       if (time <= self.PORTAL_RECHECK_DELAY_MS) {
         
         
@@ -190,7 +192,7 @@ var CaptivePortalWatcher = {
   _showNotification() {
     let buttons = [
       {
-        label: this._browserBundle.GetStringFromName("captivePortal.showLoginPage2"),
+        label: this._browserBundle.GetStringFromName("captivePortal.showLoginPage"),
         callback: () => {
           this.ensureCaptivePortalTab();
 
@@ -201,7 +203,7 @@ var CaptivePortalWatcher = {
       },
     ];
 
-    let message = this._browserBundle.GetStringFromName("captivePortal.infoMessage3");
+    let message = this._browserBundle.GetStringFromName("captivePortal.infoMessage2");
 
     let closeHandler = (aEventName) => {
       if (aEventName != "removed") {
