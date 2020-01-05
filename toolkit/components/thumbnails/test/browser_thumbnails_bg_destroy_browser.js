@@ -19,7 +19,13 @@ function* runTests() {
   ok(thumbnailExists(url1), "First file should exist after capture.");
   removeThumbnail(url1);
 
-  yield wait(2000);
+  
+  for (let i = 0; i < 5; i++) {
+    yield wait(1000);
+    if (BackgroundPageThumbs._thumbBrowser === undefined) {
+      break;
+    }
+  }
   is(BackgroundPageThumbs._thumbBrowser, undefined,
      "Thumb browser should be destroyed after timeout.");
   BackgroundPageThumbs._destroyBrowserTimeout = defaultTimeout;
