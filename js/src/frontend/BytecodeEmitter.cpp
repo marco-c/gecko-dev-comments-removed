@@ -5886,7 +5886,7 @@ BytecodeEmitter::emitDestructuringOpsObject(ParseNode* pattern, DestructuringFla
 
     MOZ_ASSERT(this->stackDepth > 0);                             
 
-    if (!emitRequireObjectCoercible())                            
+    if (!emit1(JSOP_CHECKOBJCOERCIBLE))                           
         return false;
 
     bool needsRestPropertyExcludedSet = pattern->pn_count > 1 &&
@@ -6922,42 +6922,6 @@ BytecodeEmitter::emitWith(ParseNode* pn)
 }
 
 bool
-BytecodeEmitter::emitRequireObjectCoercible()
-{
-    
-    
-    
-
-#ifdef DEBUG
-    auto depth = this->stackDepth;
-#endif
-    MOZ_ASSERT(depth > 0);                 
-    if (!emit1(JSOP_DUP))                  
-        return false;
-
-    
-    
-    if (!emitAtomOp(cx->names().RequireObjectCoercible,
-                    JSOP_GETINTRINSIC))    
-    {
-        return false;
-    }
-    if (!emit1(JSOP_UNDEFINED))            
-        return false;
-    if (!emit2(JSOP_PICK, 2))              
-        return false;
-    if (!emitCall(JSOP_CALL_IGNORES_RV, 1))
-        return false;
-    checkTypeSet(JSOP_CALL_IGNORES_RV);
-
-    if (!emit1(JSOP_POP))                  
-        return false;
-
-    MOZ_ASSERT(depth == this->stackDepth);
-    return true;
-}
-
-bool
 BytecodeEmitter::emitCopyDataProperties(CopyOption option)
 {
     DebugOnly<int32_t> depth = this->stackDepth;
@@ -7316,6 +7280,10 @@ BytecodeEmitter::emitForOf(ParseNode* forOfLoop, EmitterScope* headLexicalEmitte
         auto loopDepth = this->stackDepth;
 #endif
 
+        
+        if (!updateSourceCoordNotes(forOfHead->pn_pos.begin))
+            return false;
+
         if (!emit1(JSOP_POP))                             
             return false;
         if (!emit1(JSOP_DUP))                             
@@ -7523,6 +7491,10 @@ BytecodeEmitter::emitForIn(ParseNode* forInLoop, EmitterScope* headLexicalEmitte
 
     
     loopInfo.continueTarget = { offset() };
+
+    
+    if (!updateSourceCoordNotes(forInHead->pn_pos.begin))
+        return false;
 
     if (!emitLoopEntry(nullptr, initialJump))             
         return false;
