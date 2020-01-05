@@ -1068,7 +1068,7 @@ public:
     : public nsExpirationTracker<SelectorCacheKey, 4>
   {
     public:
-      SelectorCache();
+      explicit SelectorCache(nsIEventTarget* aEventTarget);
 
       
       void CacheList(const nsAString& aSelector, nsCSSSelectorList* aSelectorList);
@@ -1091,9 +1091,12 @@ public:
       nsClassHashtable<nsStringHashKey, nsCSSSelectorList> mTable;
   };
 
-  SelectorCache& GetSelectorCache()
-  {
-    return mSelectorCache;
+  SelectorCache& GetSelectorCache() {
+    if (!mSelectorCache) {
+      mSelectorCache =
+        new SelectorCache(EventTargetFor(mozilla::TaskCategory::Other));
+    }
+    return *mSelectorCache;
   }
   
   
@@ -2916,7 +2919,8 @@ protected:
 private:
   mutable std::bitset<eDeprecatedOperationCount> mDeprecationWarnedAbout;
   mutable std::bitset<eDocumentWarningCount> mDocWarningWarnedAbout;
-  SelectorCache mSelectorCache;
+  
+  nsAutoPtr<SelectorCache> mSelectorCache;
 
 protected:
   ~nsIDocument();
