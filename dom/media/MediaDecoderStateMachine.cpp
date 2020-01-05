@@ -910,7 +910,7 @@ public:
       return;
     }
 
-    mTask->AdjustFastSeekIfNeeded(audio);
+    AdjustFastSeekIfNeeded(audio);
 
     if (mTask->mTarget.IsFast()) {
       
@@ -943,7 +943,7 @@ public:
 
     SSAMPLELOG("HandleVideoDecoded [%lld,%lld]", video->mTime, video->GetEndTime());
 
-    mTask->AdjustFastSeekIfNeeded(video);
+    AdjustFastSeekIfNeeded(video);
 
     if (mTask->mTarget.IsFast()) {
       
@@ -1116,6 +1116,21 @@ private:
     MOZ_ASSERT(!Reader()->IsRequestingVideoData());
     MOZ_ASSERT(!Reader()->IsWaitingVideoData());
     Reader()->RequestVideoData(false, media::TimeUnit());
+  }
+
+  void AdjustFastSeekIfNeeded(MediaData* aSample)
+  {
+    if (mTask->mTarget.IsFast() &&
+        mTask->mTarget.GetTime() > mTask->mCurrentTimeBeforeSeek &&
+        aSample->mTime < mTask->mCurrentTimeBeforeSeek.ToMicroseconds()) {
+      
+      
+      
+      
+      
+      
+      mTask->mTarget.SetType(SeekTarget::Accurate);
+    }
   }
 
   void OnSeekTaskResolved(const SeekTaskResolveValue& aValue)

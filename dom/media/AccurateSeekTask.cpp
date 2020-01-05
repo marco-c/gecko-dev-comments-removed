@@ -259,21 +259,4 @@ AccurateSeekTask::MaybeFinishSeek()
   }
 }
 
-void
-AccurateSeekTask::AdjustFastSeekIfNeeded(MediaData* aSample)
-{
-  AssertOwnerThread();
-  if (mTarget.IsFast() &&
-      mTarget.GetTime() > mCurrentTimeBeforeSeek &&
-      aSample->mTime < mCurrentTimeBeforeSeek.ToMicroseconds()) {
-    
-    
-    
-    
-    
-    
-    mTarget.SetType(SeekTarget::Accurate);
-  }
-}
-
 } 
