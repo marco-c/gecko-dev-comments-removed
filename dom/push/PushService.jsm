@@ -19,6 +19,7 @@ Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 const {
   PushCrypto,
   getCryptoParams,
+  CryptoError,
 } = Cu.import("resource://gre/modules/PushCrypto.jsm");
 const {PushDB} = Cu.import("resource://gre/modules/PushDB.jsm");
 
@@ -36,9 +37,6 @@ const CONNECTION_PROTOCOLS = (function() {
 XPCOMUtils.defineLazyServiceGetter(this, "gPushNotifier",
                                    "@mozilla.org/push/Notifier;1",
                                    "nsIPushNotifier");
-
-XPCOMUtils.defineLazyGetter(this, "gDOMBundle", () =>
-  Services.strings.createBundle("chrome://global/locale/dom/dom.properties"));
 
 this.EXPORTED_SYMBOLS = ["PushService"];
 
@@ -849,41 +847,16 @@ this.PushService = {
 
 
 
-  _decryptMessage(record, headers, data) {
-    return Promise.resolve().then(_ => {
-      let cryptoParams = getCryptoParams(headers);
-      if (!cryptoParams) {
-        return null;
-      }
-      return PushCrypto.decodeMsg(
-        data,
-        record.p256dhPrivateKey,
-        record.p256dhPublicKey,
-        cryptoParams.dh,
-        cryptoParams.salt,
-        cryptoParams.rs,
-        record.authenticationSecret,
-        cryptoParams.padSize
-      );
-    });
-  },
-
-  
-
-
-
-
-
-
-
-
   _decryptAndNotifyApp(record, messageID, headers, data) {
-    return this._decryptMessage(record, headers, data)
+    return PushCrypto.decrypt(record.p256dhPrivateKey, record.p256dhPublicKey,
+                              record.authenticationSecret, headers, data)
       .then(
         message => this._notifyApp(record, messageID, message),
         error => {
-          let message = gDOMBundle.formatStringFromName(
-            "PushMessageDecryptionFailure", [record.scope, String(error)], 2);
+          console.warn("decryptAndNotifyApp: Error decrypting message",
+            record.scope, messageID, error);
+
+          let message = error.format(record.scope);
           gPushNotifier.notifyError(record.scope, record.principal, message,
                                     Ci.nsIScriptError.errorFlag);
           return Ci.nsIPushErrorReporter.ACK_DECRYPTION_ERROR;
