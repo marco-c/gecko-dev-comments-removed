@@ -85,15 +85,15 @@ GetFrom(nsFrameLoader* aFrameLoader)
   return nsContentUtils::LayerManagerForDocument(doc);
 }
 
-RenderFrameParent::RenderFrameParent(nsFrameLoader* aFrameLoader)
+RenderFrameParent::RenderFrameParent(nsFrameLoader* aFrameLoader, bool* aSuccess)
   : mLayersId(0)
-  , mLayersConnected(false)
   , mFrameLoader(aFrameLoader)
   , mFrameLoaderDestroyed(false)
   , mAsyncPanZoomEnabled(false)
   , mInitted(false)
 {
   mInitted = Init(aFrameLoader);
+  *aSuccess = mInitted;
 }
 
 RenderFrameParent::~RenderFrameParent()
@@ -118,11 +118,11 @@ RenderFrameParent::Init(nsFrameLoader* aFrameLoader)
     
     browser->Manager()->AsContentParent()->AllocateLayerTreeId(browser, &mLayersId);
     if (lm && lm->GetCompositorBridgeChild()) {
-      mLayersConnected = lm->GetCompositorBridgeChild()->SendNotifyChildCreated(mLayersId);
+      lm->GetCompositorBridgeChild()->SendNotifyChildCreated(mLayersId);
     }
   } else if (XRE_IsContentProcess()) {
     ContentChild::GetSingleton()->SendAllocateLayerTreeId(browser->Manager()->ChildID(), browser->GetTabId(), &mLayersId);
-    mLayersConnected = CompositorBridgeChild::Get()->SendNotifyChildCreated(mLayersId);
+    CompositorBridgeChild::Get()->SendNotifyChildCreated(mLayersId);
   }
 
   mInitted = true;
@@ -170,7 +170,8 @@ RenderFrameParent::BuildLayer(nsDisplayListBuilder* aBuilder,
     return nullptr;
   }
 
-  if (!mLayersId) {
+  uint64_t id = GetLayerTreeId();
+  if (!id) {
     return nullptr;
   }
 
@@ -184,7 +185,7 @@ RenderFrameParent::BuildLayer(nsDisplayListBuilder* aBuilder,
     
     return nullptr;
   }
-  static_cast<RefLayer*>(layer.get())->SetReferentId(mLayersId);
+  static_cast<RefLayer*>(layer.get())->SetReferentId(id);
   nsIntPoint offset = GetContentRectLayerOffset(aFrame, aBuilder);
   
   
@@ -208,7 +209,7 @@ RenderFrameParent::OwnerContentChanged(nsIContent* aContent)
   RefPtr<LayerManager> lm = mFrameLoader ? GetFrom(mFrameLoader) : nullptr;
   
   if (lm && lm->GetCompositorBridgeChild()) {
-    mLayersConnected = lm->GetCompositorBridgeChild()->SendAdoptChild(mLayersId);
+    lm->GetCompositorBridgeChild()->SendAdoptChild(mLayersId);
     FrameLayerBuilder::InvalidateAllLayers(lm);
   }
 }
@@ -248,6 +249,12 @@ RenderFrameParent::TriggerRepaint()
   }
 
   docFrame->InvalidateLayer(nsDisplayItem::TYPE_REMOTE);
+}
+
+uint64_t
+RenderFrameParent::GetLayerTreeId() const
+{
+  return mLayersId;
 }
 
 void
@@ -312,7 +319,7 @@ RenderFrameParent::EnsureLayersConnected()
     return;
   }
 
-  mLayersConnected = lm->GetCompositorBridgeChild()->SendNotifyChildRecreated(mLayersId);
+  lm->GetCompositorBridgeChild()->SendNotifyChildRecreated(mLayersId);
 }
 
 } 
