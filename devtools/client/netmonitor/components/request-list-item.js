@@ -277,7 +277,8 @@ const CauseColumn = createFactory(createClass({
     let causeHasStack = false;
 
     if (cause) {
-      causeType = cause.type;
+      
+      causeType = typeof cause.type === "string" ? cause.type : "unknown";
       causeUri = cause.loadingDocumentUri;
       causeHasStack = cause.stacktrace && cause.stacktrace.length > 0;
     }

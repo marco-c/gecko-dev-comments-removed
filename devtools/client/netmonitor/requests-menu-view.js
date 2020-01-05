@@ -23,7 +23,6 @@ const { Prefs } = require("./prefs");
 const {
   formDataURI,
   writeHeaderText,
-  loadCauseString,
   getFormDataSections,
 } = require("./request-utils");
 
@@ -228,12 +227,6 @@ RequestsMenuView.prototype = {
 
     
     let startedMillis = Date.parse(startedDateTime);
-
-    
-    if (cause) {
-      let type = loadCauseString(cause.type);
-      cause = Object.assign({}, cause, { type });
-    }
 
     const action = Actions.addRequest(
       id,
