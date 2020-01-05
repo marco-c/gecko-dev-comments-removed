@@ -976,16 +976,19 @@ CompositorD3D11::BeginFrame(const nsIntRegion& aInvalidRegion,
   }
 
   if (mDevice->GetDeviceRemovedReason() != S_OK) {
-    gfxCriticalNote << "GFX: D3D11 skip BeginFrame with device-removed.";
     ReadUnlockTextures();
     *aRenderBoundsOut = IntRect();
 
-    
-    
-    if (XRE_IsGPUProcess()) {
-      GPUParent::GetSingleton()->NotifyDeviceReset();
-    }
+    if (!mAttachments->IsDeviceReset()) {
+      gfxCriticalNote << "GFX: D3D11 skip BeginFrame with device-removed.";
 
+      
+      
+      if (XRE_IsGPUProcess()) {
+        GPUParent::GetSingleton()->NotifyDeviceReset();
+      }
+      mAttachments->SetDeviceReset();
+    }
     return;
   }
 
