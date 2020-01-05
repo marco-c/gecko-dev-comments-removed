@@ -255,7 +255,7 @@ TEST(RacingServiceManager, Test)
 
   
   nsCOMPtr<nsIThread> newThread;
-  rv = NS_NewNamedThread("RacingServMan", getter_AddRefs(newThread), runnable);
+  rv = NS_NewThread(getter_AddRefs(newThread), runnable);
   ASSERT_TRUE(NS_SUCCEEDED(rv));
 
   {

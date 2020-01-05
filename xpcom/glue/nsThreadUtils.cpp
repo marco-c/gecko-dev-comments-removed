@@ -95,16 +95,13 @@ IncrementalRunnable::SetDeadline(TimeStamp aDeadline)
 
 
 nsresult
-NS_NewNamedThread(const nsACString& aName,
-                  nsIThread** aResult,
-                  nsIRunnable* aEvent,
-                  uint32_t aStackSize)
+NS_NewThread(nsIThread** aResult, nsIRunnable* aEvent, uint32_t aStackSize)
 {
   nsCOMPtr<nsIThread> thread;
 #ifdef MOZILLA_INTERNAL_API
   nsresult rv =
-    nsThreadManager::get().nsThreadManager::NewNamedThread(aName, aStackSize,
-                                                           getter_AddRefs(thread));
+    nsThreadManager::get().nsThreadManager::NewThread(0, aStackSize,
+                                                      getter_AddRefs(thread));
 #else
   nsresult rv;
   nsCOMPtr<nsIThreadManager> mgr =
@@ -113,7 +110,7 @@ NS_NewNamedThread(const nsACString& aName,
     return rv;
   }
 
-  rv = mgr->NewNamedThread(aName, aStackSize, getter_AddRefs(thread));
+  rv = mgr->NewThread(0, aStackSize, getter_AddRefs(thread));
 #endif
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
@@ -129,12 +126,6 @@ NS_NewNamedThread(const nsACString& aName,
   *aResult = nullptr;
   thread.swap(*aResult);
   return NS_OK;
-}
-
-nsresult
-NS_NewThread(nsIThread** aResult, nsIRunnable* aEvent, uint32_t aStackSize)
-{
-  return NS_NewNamedThread(NS_LITERAL_CSTRING(""), aResult, aEvent, aStackSize);
 }
 
 nsresult
@@ -390,6 +381,56 @@ NS_ProcessNextEvent(nsIThread* aThread, bool aMayWait)
   return NS_SUCCEEDED(aThread->ProcessNextEvent(aMayWait, &val)) && val;
 }
 
+#ifndef XPCOM_GLUE_AVOID_NSPR
+
+namespace {
+
+class nsNameThreadRunnable final : public nsIRunnable
+{
+  ~nsNameThreadRunnable() {}
+
+public:
+  explicit nsNameThreadRunnable(const nsACString& aName) : mName(aName) {}
+
+  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_NSIRUNNABLE
+
+protected:
+  const nsCString mName;
+};
+
+NS_IMPL_ISUPPORTS(nsNameThreadRunnable, nsIRunnable)
+
+NS_IMETHODIMP
+nsNameThreadRunnable::Run()
+{
+  PR_SetCurrentThreadName(mName.BeginReading());
+  return NS_OK;
+}
+
+} 
+
+void
+NS_SetThreadName(nsIThread* aThread, const nsACString& aName)
+{
+  if (!aThread) {
+    return;
+  }
+
+  aThread->Dispatch(new nsNameThreadRunnable(aName),
+                    nsIEventTarget::DISPATCH_NORMAL);
+}
+
+#else 
+
+void
+NS_SetThreadName(nsIThread* aThread, const nsACString& aName)
+{
+  
+}
+
+#endif
+
 #ifdef MOZILLA_INTERNAL_API
 nsIThread*
 NS_GetCurrentThread()
@@ -399,13 +440,23 @@ NS_GetCurrentThread()
 #endif
 
 
-nsCString
-nsThreadPoolNaming::GetNextThreadName(const nsACString& aPoolName)
+void
+nsThreadPoolNaming::SetThreadPoolName(const nsACString& aPoolName,
+                                      nsIThread* aThread)
 {
   nsCString name(aPoolName);
   name.AppendLiteral(" #");
   name.AppendInt(++mCounter, 10); 
-  return name;
+
+  if (aThread) {
+    
+    NS_SetThreadName(aThread, name);
+  } else {
+    
+#ifndef XPCOM_GLUE_AVOID_NSPR
+    PR_SetCurrentThreadName(name.BeginReading());
+#endif
+  }
 }
 
 

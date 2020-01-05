@@ -249,14 +249,6 @@ nsThreadManager::NewThread(uint32_t aCreationFlags,
                            uint32_t aStackSize,
                            nsIThread** aResult)
 {
-  return NewNamedThread(NS_LITERAL_CSTRING(""), aStackSize, aResult);
-}
-
-NS_IMETHODIMP
-nsThreadManager::NewNamedThread(const nsACString& aName,
-                                uint32_t aStackSize,
-                                nsIThread** aResult)
-{
   
   
   
@@ -265,7 +257,7 @@ nsThreadManager::NewNamedThread(const nsACString& aName,
   }
 
   RefPtr<nsThread> thr = new nsThread(nsThread::NOT_MAIN_THREAD, aStackSize);
-  nsresult rv = thr->Init(aName);  
+  nsresult rv = thr->Init();  
   if (NS_FAILED(rv)) {
     return rv;
   }
