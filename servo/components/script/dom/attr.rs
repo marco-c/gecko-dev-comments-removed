@@ -21,7 +21,7 @@ use std::mem;
 use std::ops::Deref;
 use string_cache::{Atom, Namespace};
 use style::values::specified::Length;
-use util::str::{DOMString, parse_unsigned_integer, parse_legacy_color};
+use util::str::{DOMString, LengthOrPercentageOrAuto, parse_unsigned_integer, parse_legacy_color, parse_length};
 use util::str::{split_html_space_chars, str_join};
 
 #[derive(JSTraceable, PartialEq, Clone, HeapSizeOf)]
@@ -32,6 +32,7 @@ pub enum AttrValue {
     Atom(Atom),
     Length(DOMString, Option<Length>),
     Color(DOMString, Option<RGBA>),
+    Dimension(DOMString, LengthOrPercentageOrAuto),
 }
 
 impl AttrValue {
@@ -81,6 +82,11 @@ impl AttrValue {
     pub fn from_legacy_color(string: DOMString) -> AttrValue {
         let parsed = parse_legacy_color(&string).ok();
         AttrValue::Color(string, parsed)
+    }
+
+    pub fn from_dimension(string: DOMString) -> AttrValue {
+        let parsed = parse_length(&string);
+        AttrValue::Dimension(string, parsed)
     }
 
     
@@ -136,6 +142,18 @@ impl AttrValue {
     
     
     
+    pub fn as_dimension(&self) -> &LengthOrPercentageOrAuto {
+        match *self {
+            AttrValue::Dimension(_, ref l) => l,
+            _ => panic!("Dimension not found"),
+        }
+    }
+
+    
+    
+    
+    
+    
     
     
     pub fn as_uint(&self) -> u32 {
@@ -156,7 +174,8 @@ impl Deref for AttrValue {
                 AttrValue::TokenList(ref value, _) |
                 AttrValue::UInt(ref value, _) |
                 AttrValue::Length(ref value, _) |
-                AttrValue::Color(ref value, _) => &value,
+                AttrValue::Color(ref value, _) |
+                AttrValue::Dimension(ref value, _) => &value,
             AttrValue::Atom(ref value) => &value,
         }
     }
