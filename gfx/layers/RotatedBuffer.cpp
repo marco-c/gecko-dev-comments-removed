@@ -406,20 +406,6 @@ ComputeBufferRect(const IntRect& aRequestedRect)
   
   
   rect.width = std::max(aRequestedRect.width, 64);
-#ifdef MOZ_WIDGET_GONK
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (rect.height > 0) {
-    rect.height = std::max(aRequestedRect.height, 32);
-  }
-#endif
   return rect;
 }
 
@@ -480,7 +466,7 @@ RotatedContentBuffer::BeginPaint(PaintedLayer* aLayer,
     }
 
     if (mode == SurfaceMode::SURFACE_COMPONENT_ALPHA) {
-#if defined(MOZ_GFX_OPTIMIZE_MOBILE) || defined(MOZ_WIDGET_GONK)
+#if defined(MOZ_GFX_OPTIMIZE_MOBILE)
       mode = SurfaceMode::SURFACE_SINGLE_CHANNEL_ALPHA;
 #else
       if (!aLayer->GetParent() ||

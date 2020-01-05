@@ -173,10 +173,6 @@ public:
     Endpoint<PImageBridgeChild>&& aImageBridge,
     Endpoint<PVRManagerChild>&& aVRBridge) override;
 
-  PSharedBufferManagerChild*
-  AllocPSharedBufferManagerChild(mozilla::ipc::Transport* aTransport,
-                                  base::ProcessId aOtherProcess) override;
-
   PProcessHangMonitorChild*
   AllocPProcessHangMonitorChild(Transport* aTransport,
                                 ProcessId aOtherProcess) override;
@@ -334,6 +330,10 @@ public:
   virtual PHandlerServiceChild* AllocPHandlerServiceChild() override;
 
   virtual bool DeallocPHandlerServiceChild(PHandlerServiceChild*) override;
+
+  virtual PTelephonyChild* AllocPTelephonyChild() override;
+
+  virtual bool DeallocPTelephonyChild(PTelephonyChild*) override;
 
   virtual PMediaChild* AllocPMediaChild() override;
 

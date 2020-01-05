@@ -33,10 +33,6 @@
 #include "nsISupportsImpl.h"            
 #include "nsRect.h"                     
 
-#ifdef MOZ_WIDGET_GONK
-#include "GrallocImages.h"
-#endif
-
 namespace mozilla {
 namespace layers {
 
@@ -221,28 +217,6 @@ ImageClientSingle::UpdateImage(ImageContainer* aContainer, uint32_t aContentFlag
 
   for (auto& img : images) {
     Image* image = img.mImage;
-
-#ifdef MOZ_WIDGET_GONK
-    if (image->GetFormat() == ImageFormat::OVERLAY_IMAGE) {
-      OverlayImage* overlayImage = static_cast<OverlayImage*>(image);
-      OverlaySource source;
-      if (overlayImage->GetSidebandStream().IsValid()) {
-        
-        
-        RefPtr<GonkNativeHandle::NhObj> nhObj = overlayImage->GetSidebandStream().GetDupNhObj();
-        GonkNativeHandle handle(nhObj);
-        if (!handle.IsValid()) {
-          return false;
-        }
-        source.handle() = OverlayHandle(handle);
-      } else {
-        source.handle() = OverlayHandle(overlayImage->GetOverlayId());
-      }
-      source.size() = overlayImage->GetSize();
-      GetForwarder()->UseOverlaySource(this, source, image->GetPictureRect());
-      continue;
-    }
-#endif
 
     RefPtr<TextureClient> texture = image->GetTextureClient(GetForwarder());
     const bool hasTextureClient = !!texture;

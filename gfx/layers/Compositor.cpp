@@ -14,13 +14,6 @@
 #include "gfx2DGlue.h"
 #include "nsAppRunner.h"
 
-#if defined(MOZ_WIDGET_GONK) && ANDROID_VERSION >= 17
-#include "libdisplay/GonkDisplay.h"     
-#include <ui/Fence.h>
-#include "nsWindow.h"
-#include "nsScreenManagerGonk.h"
-#endif
-
 namespace mozilla {
 
 namespace layers {
@@ -607,37 +600,6 @@ Compositor::IsValid() const
   return !!mParent;
 }
 
-#if defined(MOZ_WIDGET_GONK) && ANDROID_VERSION >= 17
-void
-Compositor::SetDispAcquireFence(Layer* aLayer)
-{
-  
-  
-  
-  
-  
-  
-  if (!aLayer || !mWidget) {
-    return;
-  }
-  nsWindow* window = static_cast<nsWindow*>(mWidget->RealWidget());
-  RefPtr<FenceHandle::FdObj> fence = new FenceHandle::FdObj(
-      window->GetScreen()->GetPrevDispAcquireFd());
-  mReleaseFenceHandle.Merge(FenceHandle(fence));
-}
-
-FenceHandle
-Compositor::GetReleaseFence()
-{
-  if (!mReleaseFenceHandle.IsValid()) {
-    return FenceHandle();
-  }
-
-  RefPtr<FenceHandle::FdObj> fdObj = mReleaseFenceHandle.GetDupFdObj();
-  return FenceHandle(fdObj);
-}
-
-#else
 void
 Compositor::SetDispAcquireFence(Layer* aLayer)
 {
@@ -648,7 +610,6 @@ Compositor::GetReleaseFence()
 {
   return FenceHandle();
 }
-#endif
 
 } 
 } 

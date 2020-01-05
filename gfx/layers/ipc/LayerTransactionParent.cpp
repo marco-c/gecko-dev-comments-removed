@@ -52,8 +52,6 @@ using mozilla::layout::RenderFrameParent;
 namespace mozilla {
 namespace layers {
 
-class PGrallocBufferParent;
-
 
 
 static ShadowLayerParent*

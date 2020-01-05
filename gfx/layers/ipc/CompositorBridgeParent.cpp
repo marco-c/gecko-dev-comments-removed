@@ -85,11 +85,6 @@
 # include "mozilla/widget/CompositorWidgetParent.h"
 #endif
 
-#ifdef MOZ_WIDGET_GONK
-#include "GeckoTouchDispatcher.h"
-#include "nsScreenManagerGonk.h"
-#endif
-
 #include "LayerScope.h"
 
 namespace mozilla {
@@ -349,24 +344,9 @@ CompositorVsyncScheduler::CompositorVsyncScheduler(CompositorBridgeParent* aComp
   , mCurrentCompositeTask(nullptr)
   , mSetNeedsCompositeMonitor("SetNeedsCompositeMonitor")
   , mSetNeedsCompositeTask(nullptr)
-#ifdef MOZ_WIDGET_GONK
-#if ANDROID_VERSION >= 19
-  , mDisplayEnabled(false)
-  , mSetDisplayMonitor("SetDisplayMonitor")
-  , mSetDisplayTask(nullptr)
-#endif
-#endif
 {
   MOZ_ASSERT(NS_IsMainThread() || XRE_GetProcessType() == GeckoProcessType_GPU);
   mVsyncObserver = new Observer(this);
-#ifdef MOZ_WIDGET_GONK
-  GeckoTouchDispatcher::GetInstance()->SetCompositorVsyncScheduler(this);
-
-#if ANDROID_VERSION >= 19
-  RefPtr<nsScreenManagerGonk> screenManager = nsScreenManagerGonk::GetInstance();
-  screenManager->SetCompositorVsyncScheduler(this);
-#endif
-#endif
 
   
   
@@ -382,54 +362,6 @@ CompositorVsyncScheduler::~CompositorVsyncScheduler()
   mCompositorBridgeParent = nullptr;
 }
 
-#ifdef MOZ_WIDGET_GONK
-#if ANDROID_VERSION >= 19
-void
-CompositorVsyncScheduler::SetDisplay(bool aDisplayEnable)
-{
-  
-  
-  if (!CompositorThreadHolder::IsInCompositorThread()) {
-    MOZ_ASSERT(NS_IsMainThread());
-    MonitorAutoLock lock(mSetDisplayMonitor);
-    RefPtr<CancelableRunnable> task =
-      NewCancelableRunnableMethod<bool>(this, &CompositorVsyncScheduler::SetDisplay, aDisplayEnable);
-    mSetDisplayTask = task;
-    ScheduleTask(task.forget(), 0);
-    return;
-  } else {
-    MonitorAutoLock lock(mSetDisplayMonitor);
-    mSetDisplayTask = nullptr;
-  }
-
-  if (mDisplayEnabled == aDisplayEnable) {
-    return;
-  }
-
-  mDisplayEnabled = aDisplayEnable;
-  if (!mDisplayEnabled) {
-    CancelCurrentSetNeedsCompositeTask();
-    CancelCurrentCompositeTask();
-  }
-}
-
-void
-CompositorVsyncScheduler::CancelSetDisplayTask()
-{
-  MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
-  MonitorAutoLock lock(mSetDisplayMonitor);
-  if (mSetDisplayTask) {
-    mSetDisplayTask->Cancel();
-    mSetDisplayTask = nullptr;
-  }
-
-  
-  
-  mDisplayEnabled = false;
-}
-#endif 
-#endif 
-
 void
 CompositorVsyncScheduler::Destroy()
 {
@@ -442,11 +374,6 @@ CompositorVsyncScheduler::Destroy()
   mVsyncObserver->Destroy();
   mVsyncObserver = nullptr;
 
-#ifdef MOZ_WIDGET_GONK
-#if ANDROID_VERSION >= 19
-  CancelSetDisplayTask();
-#endif
-#endif
   CancelCurrentSetNeedsCompositeTask();
   CancelCurrentCompositeTask();
 }
@@ -520,15 +447,6 @@ CompositorVsyncScheduler::SetNeedsComposite()
     MonitorAutoLock lock(mSetNeedsCompositeMonitor);
     mSetNeedsCompositeTask = nullptr;
   }
-
-#ifdef MOZ_WIDGET_GONK
-#if ANDROID_VERSION >= 19
-  
-  if (!mDisplayEnabled) {
-    return;
-  }
-#endif
-#endif
 
   mNeedsComposite++;
   if (!mIsObservingVsync && mNeedsComposite) {
@@ -652,9 +570,6 @@ CompositorVsyncScheduler::UnobserveVsync()
 void
 CompositorVsyncScheduler::DispatchTouchEvents(TimeStamp aVsyncTimestamp)
 {
-#ifdef MOZ_WIDGET_GONK
-  GeckoTouchDispatcher::GetInstance()->NotifyVsync(aVsyncTimestamp);
-#endif
 }
 
 void

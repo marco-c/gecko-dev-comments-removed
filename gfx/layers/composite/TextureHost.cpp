@@ -35,11 +35,6 @@
 #include "../d3d11/CompositorD3D11.h"
 #endif
 
-#ifdef MOZ_WIDGET_GONK
-#include "../opengl/GrallocTextureClient.h"
-#include "../opengl/GrallocTextureHost.h"
-#endif
-
 #ifdef MOZ_X11
 #include "mozilla/layers/X11TextureHost.h"
 #endif
@@ -241,7 +236,6 @@ TextureHost::Create(const SurfaceDescriptor& aDesc,
     case SurfaceDescriptor::TSurfaceDescriptorSharedGLTexture:
       return CreateTextureHostOGL(aDesc, aDeallocator, aFlags);
 
-    case SurfaceDescriptor::TSurfaceDescriptorGralloc:
     case SurfaceDescriptor::TSurfaceDescriptorMacIOSurface:
       if (aBackend == LayersBackend::LAYERS_OPENGL) {
         return CreateTextureHostOGL(aDesc, aDeallocator, aFlags);
@@ -387,8 +381,7 @@ TextureHost::NotifyNotUsed()
 
   
   
-  if (!(GetFlags() & TextureFlags::RECYCLE) &&
-      !AsGrallocTextureHostOGL()) {
+  if (!(GetFlags() & TextureFlags::RECYCLE)) {
     return;
   }
 
@@ -398,12 +391,10 @@ TextureHost::NotifyNotUsed()
   
   
   
-  
   if (!compositor ||
       compositor->IsDestroyed() ||
       compositor->AsBasicCompositor() ||
-      HasIntermediateBuffer() ||
-      AsGrallocTextureHostOGL()) {
+      HasIntermediateBuffer()) {
     static_cast<TextureParent*>(mActor)->NotifyNotUsed(mFwdTransactionId);
     return;
   }

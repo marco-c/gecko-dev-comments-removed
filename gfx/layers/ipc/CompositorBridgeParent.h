@@ -95,19 +95,6 @@ public:
   explicit CompositorVsyncScheduler(CompositorBridgeParent* aCompositorBridgeParent,
                                     widget::CompositorWidget* aWidget);
 
-#ifdef MOZ_WIDGET_GONK
-  
-  
-  
-#if ANDROID_VERSION >= 19
-  
-  
-  
-  
-  void SetDisplay(bool aDisplayEnable);
-#endif
-#endif
-
   bool NotifyVsync(TimeStamp aVsyncTimestamp);
   void SetNeedsComposite();
   void OnForceComposeToTarget();
@@ -144,11 +131,6 @@ private:
   void DispatchTouchEvents(TimeStamp aVsyncTimestamp);
   void DispatchVREvents(TimeStamp aVsyncTimestamp);
   void CancelCurrentSetNeedsCompositeTask();
-#ifdef MOZ_WIDGET_GONK
-#if ANDROID_VERSION >= 19
-  void CancelSetDisplayTask();
-#endif
-#endif
 
   class Observer final : public VsyncObserver
   {
@@ -183,14 +165,6 @@ private:
 
   mozilla::Monitor mSetNeedsCompositeMonitor;
   RefPtr<CancelableRunnable> mSetNeedsCompositeTask;
-
-#ifdef MOZ_WIDGET_GONK
-#if ANDROID_VERSION >= 19
-  bool mDisplayEnabled;
-  mozilla::Monitor mSetDisplayMonitor;
-  RefPtr<CancelableRunnable> mSetDisplayTask;
-#endif
-#endif
 };
 
 class CompositorBridgeParentBase : public PCompositorBridgeParent,

@@ -15,17 +15,11 @@
 #include "mozilla/gfx/BaseSize.h"       
 #include "mozilla/gfx/Logging.h"        
 #include "mozilla/layers/ISurfaceAllocator.h"
-#include "mozilla/layers/GrallocTextureHost.h"
 #include "nsRegion.h"                   
 #include "AndroidSurfaceTexture.h"
 #include "GfxTexturesReporter.h"        
 #include "GLBlitTextureImageHelper.h"
 #include "GeckoProfiler.h"
-
-#ifdef MOZ_WIDGET_GONK
-# include "GrallocImages.h"  
-# include "EGLImageHelpers.h"
-#endif
 
 #ifdef XP_MACOSX
 #include "mozilla/layers/MacIOSurfaceTextureHostOGL.h"
@@ -81,15 +75,6 @@ CreateTextureHostOGL(const SurfaceDescriptor& aDesc,
       const SurfaceDescriptorMacIOSurface& desc =
         aDesc.get_SurfaceDescriptorMacIOSurface();
       result = new MacIOSurfaceTextureHostOGL(aFlags, desc);
-      break;
-    }
-#endif
-
-#ifdef MOZ_WIDGET_GONK
-    case SurfaceDescriptor::TSurfaceDescriptorGralloc: {
-      const SurfaceDescriptorGralloc& desc =
-        aDesc.get_SurfaceDescriptorGralloc();
-      result = new GrallocTextureHostOGL(aFlags, desc);
       break;
     }
 #endif

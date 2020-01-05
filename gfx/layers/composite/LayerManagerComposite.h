@@ -326,7 +326,7 @@ private:
 
 
   void Render(const nsIntRegion& aInvalidRegion, const nsIntRegion& aOpaqueRegion);
-#if defined(MOZ_WIDGET_ANDROID) || defined(MOZ_WIDGET_GONK)
+#if defined(MOZ_WIDGET_ANDROID)
   void RenderToPresentationSurface();
 #endif
 

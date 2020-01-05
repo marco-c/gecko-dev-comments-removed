@@ -1234,13 +1234,6 @@ gfxFT2FontList::FindFonts()
         NS_RUNTIMEABORT("Could not read the system fonts directory");
     }
 
-#ifdef MOZ_WIDGET_GONK
-    
-    
-    root.AppendLiteral("/hidden");
-    FindFontsInDir(root, mFontNameCache.get(), FT2FontFamily::kHidden);
-#endif
-
     
     
     
@@ -1564,9 +1557,7 @@ gfxFontFamily*
 gfxFT2FontList::GetDefaultFontForPlatform(const gfxFontStyle* aStyle)
 {
     gfxFontFamily *ff = nullptr;
-#ifdef MOZ_WIDGET_GONK
-    ff = FindFamily(NS_LITERAL_STRING("Fira Sans"));
-#elif defined(MOZ_WIDGET_ANDROID)
+#if defined(MOZ_WIDGET_ANDROID)
     ff = FindFamily(NS_LITERAL_STRING("Roboto"));
     if (!ff) {
         ff = FindFamily(NS_LITERAL_STRING("Droid Sans"));

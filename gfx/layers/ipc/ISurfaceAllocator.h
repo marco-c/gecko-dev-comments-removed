@@ -17,18 +17,6 @@
 #include "mozilla/layers/LayersMessages.h" 
 #include "LayersTypes.h"
 
-
-
-
-
-
-
-
-
-#ifdef MOZ_WIDGET_GONK
-#define MOZ_HAVE_SURFACEDESCRIPTORGRALLOC
-#endif
-
 namespace mozilla {
 namespace ipc {
 class Shmem;

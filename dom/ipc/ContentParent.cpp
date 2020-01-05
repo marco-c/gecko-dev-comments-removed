@@ -68,6 +68,7 @@
 #include "mozilla/dom/PushNotifier.h"
 #include "mozilla/dom/FlyWebPublishedServerIPC.h"
 #include "mozilla/dom/quota/QuotaManagerService.h"
+#include "mozilla/dom/telephony/TelephonyParent.h"
 #include "mozilla/dom/time/DateCacheCleaner.h"
 #include "mozilla/embedding/printingui/PrintingParent.h"
 #include "mozilla/gfx/gfxVars.h"
@@ -84,7 +85,6 @@
 #include "mozilla/layers/CompositorThread.h"
 #include "mozilla/layers/ImageBridgeParent.h"
 #include "mozilla/layers/LayerTreeOwnerTracker.h"
-#include "mozilla/layers/SharedBufferManagerParent.h"
 #include "mozilla/layout/RenderFrameParent.h"
 #include "mozilla/LookAndFeel.h"
 #include "mozilla/media/MediaParent.h"
@@ -290,6 +290,7 @@ using namespace mozilla::dom::devicestorage;
 using namespace mozilla::dom::icc;
 using namespace mozilla::dom::power;
 using namespace mozilla::dom::mobileconnection;
+using namespace mozilla::dom::telephony;
 using namespace mozilla::media;
 using namespace mozilla::embedding;
 using namespace mozilla::gfx;
@@ -2212,10 +2213,6 @@ ContentParent::InitInternal(ProcessPriority aInitialPriority,
 
       gpm->AddListener(this);
     }
-#ifdef MOZ_WIDGET_GONK
-    DebugOnly<bool> opened = PSharedBufferManager::Open(this);
-    MOZ_ASSERT(opened);
-#endif
   }
 
   if (gAppData) {
@@ -2845,13 +2842,6 @@ ContentParent::AllocPProcessHangMonitorParent(Transport* aTransport,
   return mHangMonitorActor;
 }
 
-PSharedBufferManagerParent*
-ContentParent::AllocPSharedBufferManagerParent(mozilla::ipc::Transport* aTransport,
-                                                base::ProcessId aOtherProcess)
-{
-  return SharedBufferManagerParent::Create(aTransport, aOtherProcess);
-}
-
 bool
 ContentParent::RecvGetProcessAttributes(ContentParentId* aCpId,
                                         bool* aIsForApp, bool* aIsForBrowser)
@@ -3425,6 +3415,25 @@ bool
 ContentParent::DeallocPHandlerServiceParent(PHandlerServiceParent* aHandlerServiceParent)
 {
   static_cast<HandlerServiceParent*>(aHandlerServiceParent)->Release();
+  return true;
+}
+
+PTelephonyParent*
+ContentParent::AllocPTelephonyParent()
+{
+  if (!AssertAppProcessPermission(this, "telephony")) {
+    return nullptr;
+  }
+
+  TelephonyParent* actor = new TelephonyParent();
+  NS_ADDREF(actor);
+  return actor;
+}
+
+bool
+ContentParent::DeallocPTelephonyParent(PTelephonyParent* aActor)
+{
+  static_cast<TelephonyParent*>(aActor)->Release();
   return true;
 }
 

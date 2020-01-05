@@ -16,12 +16,6 @@
 #endif
 
 #if defined(XP_UNIX)
-    #ifdef MOZ_WIDGET_GONK
-        #include "libdisplay/GonkDisplay.h"
-        #include "nsWindow.h"
-        #include "nsScreenManagerGonk.h"
-    #endif
-
     #ifdef MOZ_WIDGET_ANDROID
         #include <android/native_window.h>
         #include <android/native_window_jni.h>
@@ -30,13 +24,6 @@
     #ifdef ANDROID
         #include <android/log.h>
         #define LOG(args...)  __android_log_print(ANDROID_LOG_INFO, "Gonk" , ## args)
-
-        #ifdef MOZ_WIDGET_GONK
-            #include "cutils/properties.h"
-            #include <ui/GraphicBuffer.h>
-
-            using namespace android;
-        #endif
     #endif
 
     #define GLES2_LIB "libGLESv2.so"
@@ -237,17 +224,6 @@ GLContextEGL::~GLContextEGL()
     sEGLLibrary.fDestroyContext(EGL_DISPLAY(), mContext);
     sEGLLibrary.UnsetCachedCurrentContext();
 
-#if defined(MOZ_WIDGET_GONK) && ANDROID_VERSION < 17
-    if (!mIsOffscreen) {
-      
-      
-      
-      
-      
-      return;
-    }
-#endif
-
     mozilla::gl::DestroySurface(mSurface);
 }
 
@@ -437,12 +413,6 @@ GLContextEGL::SwapBuffers()
                           ? mSurfaceOverride
                           : mSurface;
     if (surface) {
-#if defined(MOZ_WIDGET_GONK) && ANDROID_VERSION < 17
-        if (!mIsOffscreen) {
-            
-            return true;
-        }
-#endif
         return sEGLLibrary.fSwapBuffers(EGL_DISPLAY(), surface);
     } else {
         return false;
@@ -633,9 +603,6 @@ static const EGLint kEGLConfigAttribsRGBA32[] = {
     LOCAL_EGL_GREEN_SIZE,      8,
     LOCAL_EGL_BLUE_SIZE,       8,
     LOCAL_EGL_ALPHA_SIZE,      8,
-#if defined(MOZ_WIDGET_GONK) && ANDROID_VERSION >= 17
-    LOCAL_EGL_FRAMEBUFFER_TARGET_ANDROID, LOCAL_EGL_TRUE,
-#endif
     EGL_ATTRIBS_LIST_SAFE_TERMINATION_WORKING_AROUND_BUGS
 };
 
@@ -666,29 +633,6 @@ CreateConfig(EGLConfig* aConfig, int32_t depth, nsIWidget* aWidget)
         ncfg < 1) {
         return false;
     }
-
-#ifdef MOZ_WIDGET_GONK
-    
-    
-    
-    
-    
-    
-    
-    
-    nsWindow* window = static_cast<nsWindow*>(aWidget);
-    for (int j = 0; j < ncfg; ++j) {
-        EGLConfig config = configs[j];
-        EGLint format;
-        if (sEGLLibrary.fGetConfigAttrib(EGL_DISPLAY(), config,
-                                         LOCAL_EGL_NATIVE_VISUAL_ID, &format) &&
-            format == window->GetScreen()->GetSurfaceFormat())
-        {
-            *aConfig = config;
-            return true;
-        }
-    }
-#endif
 
     for (int j = 0; j < ncfg; ++j) {
         EGLConfig config = configs[j];

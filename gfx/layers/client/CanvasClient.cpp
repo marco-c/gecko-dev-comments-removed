@@ -17,7 +17,6 @@
 #include "mozilla/layers/AsyncCanvasRenderer.h"
 #include "mozilla/layers/CompositableForwarder.h"
 #include "mozilla/layers/CompositorBridgeChild.h" 
-#include "mozilla/layers/GrallocTextureClient.h"
 #include "mozilla/layers/LayersTypes.h"
 #include "mozilla/layers/TextureClient.h"  
 #include "mozilla/layers/TextureClientOGL.h"

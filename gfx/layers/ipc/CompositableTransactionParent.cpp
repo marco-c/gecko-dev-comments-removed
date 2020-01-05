@@ -16,7 +16,6 @@
 #include "mozilla/layers/CompositorTypes.h"
 #include "mozilla/layers/ContentHost.h"  
 #include "mozilla/layers/ImageBridgeParent.h" 
-#include "mozilla/layers/SharedBufferManagerParent.h"
 #include "mozilla/layers/LayerManagerComposite.h"
 #include "mozilla/layers/LayersSurfaces.h"  
 #include "mozilla/layers/LayersTypes.h"  
@@ -61,7 +60,7 @@ ScheduleComposition(CompositableHost* aCompositable)
   return true;
 }
 
-#if defined(DEBUG) || defined(MOZ_WIDGET_GONK)
+#if defined(DEBUG)
 static bool ValidatePictureRect(const mozilla::gfx::IntSize& aSize,
                                 const nsIntRect& aPictureRect)
 {
@@ -246,16 +245,6 @@ CompositableParentManager::ReceiveCompositableUpdate(const CompositableOperation
       }
       break;
     }
-#ifdef MOZ_WIDGET_GONK
-    case CompositableOperationDetail::TOpUseOverlaySource: {
-      const OpUseOverlaySource& op = aEdit.detail().get_OpUseOverlaySource();
-      if (!ValidatePictureRect(op.overlay().size(), op.picture())) {
-        return false;
-      }
-      compositable->UseOverlaySource(op.overlay(), op.picture());
-      break;
-    }
-#endif
     default: {
       MOZ_ASSERT(false, "bad type");
     }

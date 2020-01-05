@@ -22,10 +22,6 @@
 #include "nsRegion.h"                   
 #include "nsTArray.h"                   
 
-#if defined(MOZ_WIDGET_GONK) && ANDROID_VERSION >= 17
-#include <ui/Fence.h>
-#endif
-
 namespace mozilla {
 
 struct TileUnit {};

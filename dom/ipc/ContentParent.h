@@ -67,7 +67,6 @@ class PJavaScriptParent;
 } 
 
 namespace layers {
-class PSharedBufferManagerParent;
 struct TextureFactoryIdentifier;
 } 
 
@@ -702,10 +701,6 @@ private:
   AllocPGMPServiceParent(mozilla::ipc::Transport* aTransport,
                          base::ProcessId aOtherProcess) override;
 
-  PSharedBufferManagerParent*
-  AllocPSharedBufferManagerParent(mozilla::ipc::Transport* aTranport,
-                                   base::ProcessId aOtherProcess) override;
-
   PBackgroundParent*
   AllocPBackgroundParent(Transport* aTransport, ProcessId aOtherProcess)
                          override;
@@ -842,6 +837,10 @@ private:
   virtual PHandlerServiceParent* AllocPHandlerServiceParent() override;
 
   virtual bool DeallocPHandlerServiceParent(PHandlerServiceParent*) override;
+
+  virtual PTelephonyParent* AllocPTelephonyParent() override;
+
+  virtual bool DeallocPTelephonyParent(PTelephonyParent*) override;
 
   virtual PMediaParent* AllocPMediaParent() override;
 
