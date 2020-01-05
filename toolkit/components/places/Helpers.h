@@ -137,7 +137,7 @@ void ReverseString(const nsString& aInput, nsString& aReversed);
 
 
 
-nsresult GenerateGUID(nsCString& _guid);
+nsresult GenerateGUID(nsACString& _guid);
 
 
 
