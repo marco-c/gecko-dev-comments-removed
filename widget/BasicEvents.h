@@ -511,6 +511,10 @@ public:
   
 
 
+  bool CanBeSentToRemoteProcess() const;
+  
+
+
 
   bool IsRetargetedNativeEventDelivererForPlugin() const;
   
