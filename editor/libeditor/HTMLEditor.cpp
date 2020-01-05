@@ -3577,14 +3577,10 @@ HTMLEditor::SelectEntireDocument(Selection* aSelection)
   nsCOMPtr<nsIEditRules> rules(mRules);
 
   
-  nsCOMPtr<nsIDOMElement> rootElement = do_QueryInterface(GetRoot());
+  if (rules->DocumentIsEmpty()) {
+    
+    Element* rootElement = GetRoot();
 
-  
-  bool bDocIsEmpty;
-  nsresult rv = rules->DocumentIsEmpty(&bDocIsEmpty);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  if (bDocIsEmpty) {
     
     return aSelection->Collapse(rootElement, 0);
   }
