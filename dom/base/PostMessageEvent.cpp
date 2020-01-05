@@ -144,14 +144,15 @@ PostMessageEvent::Run()
   Nullable<WindowProxyOrMessagePort> source;
   source.SetValue().SetAsWindowProxy() = mSource ? mSource->AsOuter() : nullptr;
 
+  Sequence<OwningNonNull<MessagePort>> ports;
+  if (!TakeTransferredPortsAsSequence(ports)) {
+    return NS_ERROR_OUT_OF_MEMORY;
+  }
+
   event->InitMessageEvent(nullptr, NS_LITERAL_STRING("message"),
                           false , false ,
                           messageData, mCallerOrigin,
-                          EmptyString(), source,
-                          Sequence<OwningNonNull<MessagePort>>());
-
-  nsTArray<RefPtr<MessagePort>> ports = TakeTransferredPorts();
-  event->SetPorts(Move(ports));
+                          EmptyString(), source, ports);
 
   
   
