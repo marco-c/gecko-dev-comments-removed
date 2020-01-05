@@ -95,7 +95,6 @@ ObjectElements::MakeElementsCopyOnWrite(ExclusiveContext* cx, NativeObject* obj)
     
     
     MOZ_ASSERT(!header->isCopyOnWrite());
-    MOZ_ASSERT(!header->isFrozen());
     header->flags |= COPY_ON_WRITE;
 
     header->ownerObject().init(obj);
@@ -499,8 +498,10 @@ NativeObject::shrinkSlots(ExclusiveContext* cx, uint32_t oldCount, uint32_t newC
     MOZ_ASSERT_IF(!is<ArrayObject>(), newCount >= SLOT_CAPACITY_MIN);
 
     HeapSlot* newslots = ReallocateObjectBuffer<HeapSlot>(cx, this, slots_, oldCount, newCount);
-    if (!newslots)
+    if (!newslots) {
+        cx->recoverFromOutOfMemory();
         return;  
+    }
 
     slots_ = newslots;
 }
@@ -799,7 +800,6 @@ NativeObject::growElements(ExclusiveContext* cx, uint32_t reqCapacity)
 {
     MOZ_ASSERT(nonProxyIsExtensible());
     MOZ_ASSERT(canHaveNonEmptyElements());
-    MOZ_ASSERT(!denseElementsAreFrozen());
     if (denseElementsAreCopyOnWrite())
         MOZ_CRASH();
 
@@ -894,7 +894,6 @@ NativeObject::shrinkElements(ExclusiveContext* cx, uint32_t reqCapacity)
 NativeObject::CopyElementsForWrite(ExclusiveContext* cx, NativeObject* obj)
 {
     MOZ_ASSERT(obj->denseElementsAreCopyOnWrite());
-    MOZ_ASSERT(!obj->denseElementsAreFrozen());
 
     
     MOZ_ASSERT(obj->getElementsHeader()->ownerObject() != obj);
