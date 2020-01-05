@@ -1264,19 +1264,13 @@ Toolbox.prototype = {
       iframe.style.visibility = "visible";
 
       
+      this.setIframeDocumentDir(iframe);
+
+      
       
       
       
       let built = definition.build(iframe.contentWindow, this);
-
-      
-      let docEl = iframe.contentWindow && iframe.contentWindow.document.documentElement;
-      if (docEl && docEl.namespaceURI === HTML_NS) {
-        let top = this.win.top;
-        let topDocEl = top.document.documentElement;
-        let isRtl = top.getComputedStyle(topDocEl).direction === "rtl";
-        docEl.setAttribute("dir", isRtl ? "rtl" : "ltr");
-      }
 
       if (!(typeof built.then == "function")) {
         let panel = built;
@@ -1348,6 +1342,28 @@ Toolbox.prototype = {
     }
 
     return deferred.promise;
+  },
+
+  
+
+
+
+
+  setIframeDocumentDir: function (iframe) {
+    let docEl = iframe.contentWindow && iframe.contentWindow.document.documentElement;
+    if (!docEl || docEl.namespaceURI !== HTML_NS) {
+      
+      
+      return;
+    }
+
+    if (docEl.hasAttribute("dir")) {
+      
+      let top = this.win.top;
+      let topDocEl = top.document.documentElement;
+      let isRtl = top.getComputedStyle(topDocEl).direction === "rtl";
+      docEl.setAttribute("dir", isRtl ? "rtl" : "ltr");
+    }
   },
 
   
