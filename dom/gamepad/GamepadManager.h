@@ -58,29 +58,6 @@ class GamepadManager final : public nsIObserver,
   void RemoveGamepad(uint32_t aIndex, GamepadServiceType aServiceType);
 
   
-  
-  
-  
-  void NewButtonEvent(uint32_t aIndex, GamepadServiceType aServiceType, uint32_t aButton,
-                      bool aPressed, bool aTouched, double aValue);
-
-  
-  
-  
-  void NewAxisMoveEvent(uint32_t aIndex, GamepadServiceType aServiceType,
-                        uint32_t aAxis, double aValue);
-
-  
-  
-  void NewPoseEvent(uint32_t aIndex, GamepadServiceType aServiceType,
-                    const GamepadPoseState& aState);
-
-  
-  
-  void NewHandChangeEvent(uint32_t aIndex, GamepadServiceType aServiceType,
-                          GamepadHand aHand);
-
-  
   void SyncGamepadState(uint32_t aIndex, Gamepad* aGamepad);
 
   
@@ -140,6 +117,11 @@ class GamepadManager final : public nsIObserver,
  private:
 
   nsresult Init();
+
+  void MaybeConvertToNonstandardGamepadEvent(const GamepadChangeEvent& aEvent,
+                                             nsGlobalWindow* aWindow);
+
+  bool SetGamepadByEvent(const GamepadChangeEvent& aEvent, nsGlobalWindow* aWindow = nullptr);
 
   bool MaybeWindowHasSeenGamepad(nsGlobalWindow* aWindow, uint32_t aIndex);
   
