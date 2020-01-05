@@ -18,7 +18,9 @@
 #include "mozilla/Services.h"
 #include "mozilla/Unused.h"
 #include "nsNetCID.h"
+#include "nsReadableUtils.h"
 #include "nsServiceManagerUtils.h"
+#include "nsString.h"
 
 class nsIURI;
 class nsIPrincipal;
@@ -54,26 +56,9 @@ namespace mozilla { class OriginAttributes; }
 template <class> class nsCOMPtr;
 template <typename> struct already_AddRefed;
 
-#ifdef MOZILLA_INTERNAL_API
-#include "nsReadableUtils.h"
-#include "nsString.h"
-#else
-#include "nsStringAPI.h"
-#endif
-
-#ifdef MOZILLA_INTERNAL_API
 already_AddRefed<nsIIOService> do_GetIOService(nsresult *error = 0);
 
 already_AddRefed<nsINetUtil> do_GetNetUtil(nsresult *error = 0);
-
-#else
-
-const nsGetServiceByContractIDWithError do_GetIOService(nsresult *error = 0);
-
-
-const nsGetServiceByContractIDWithError do_GetNetUtil(nsresult *error = 0);
-
-#endif
 
 
 nsresult net_EnsureIOService(nsIIOService **ios, nsCOMPtr<nsIIOService> &grip);
@@ -559,14 +544,9 @@ nsresult NS_ReadInputStreamToBuffer(nsIInputStream *aInputStream,
                                     void **aDest,
                                     uint32_t aCount);
 
-
-#ifdef MOZILLA_INTERNAL_API
-
 nsresult NS_ReadInputStreamToString(nsIInputStream *aInputStream,
                                     nsACString &aDest,
                                     uint32_t aCount);
-
-#endif
 
 nsresult
 NS_LoadPersistentPropertiesFromURISpec(nsIPersistentProperties **outResult,
@@ -978,10 +958,5 @@ bool InScriptableRange(uint64_t val);
 
 } 
 } 
-
-
-#ifndef MOZILLA_INTERNAL_API
-#include "nsNetUtilInlines.h"
-#endif
 
 #endif 

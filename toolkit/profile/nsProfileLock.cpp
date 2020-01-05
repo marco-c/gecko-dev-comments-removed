@@ -3,10 +3,10 @@
 
 
 
-#include "nsProfileStringTypes.h"
 #include "nsProfileLock.h"
 #include "nsCOMPtr.h"
 #include "nsQueryObject.h"
+#include "nsString.h"
 
 #if defined(XP_WIN)
 #include "ProfileUnlockerWin.h"

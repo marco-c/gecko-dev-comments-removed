@@ -50,7 +50,7 @@ struct ScopedCloseFDTraits
 };
 typedef Scoped<ScopedCloseFDTraits> ScopedClose;
 
-#if !defined(XPCOM_GLUE)
+#if defined(MOZILLA_INTERNAL_API)
 
 
 
