@@ -49,6 +49,10 @@ protected:
 
   
   
+  nsCString                                mRawBuffer;
+
+  
+  
   
   nsString                                 mBuffer;
 };
