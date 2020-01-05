@@ -43,6 +43,8 @@ const BROWSER_STARTUP_FINISHED = "browser-delayed-startup-finished";
 const CLICK_TO_START_PREF = "marionette.debugging.clicktostart";
 const CONTENT_LISTENER_PREF = "marionette.contentListener";
 
+const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
+
 const SUPPORTED_STRATEGIES = new Set([
   element.Strategy.ClassName,
   element.Strategy.Selector,
@@ -427,7 +429,13 @@ GeckoDriver.prototype.registerBrowser = function (id, be) {
   let reg = {};
   
   let mainContent = this.curBrowser.mainContentId === null;
-  if (be.getAttribute("type") != "content") {
+  
+  
+  
+  
+  
+  if (this.appName != "Firefox" || be.namespaceURI != XUL_NS ||
+      be.nodeName != "browser" || be.getTabBrowser()) {
     
     let uid = this.generateFrameId(id);
     reg.id = uid;
