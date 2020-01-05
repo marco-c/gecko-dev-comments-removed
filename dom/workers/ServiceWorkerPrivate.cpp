@@ -1384,7 +1384,8 @@ public:
 
     nsAutoCString referrer;
     
-    httpChannel->GetRequestHeader(NS_LITERAL_CSTRING("Referer"), referrer);
+    Unused << httpChannel->GetRequestHeader(NS_LITERAL_CSTRING("Referer"),
+                                            referrer);
     if (!referrer.IsEmpty()) {
       mReferrer = referrer;
     } else {
@@ -1439,15 +1440,18 @@ public:
 
     
     uint32_t redirectMode;
-    internalChannel->GetRedirectMode(&redirectMode);
+    rv = internalChannel->GetRedirectMode(&redirectMode);
+    MOZ_ASSERT(NS_SUCCEEDED(rv));
     mRequestRedirect = static_cast<RequestRedirect>(redirectMode);
 
     
     uint32_t cacheMode;
-    internalChannel->GetFetchCacheMode(&cacheMode);
+    rv = internalChannel->GetFetchCacheMode(&cacheMode);
+    MOZ_ASSERT(NS_SUCCEEDED(rv));
     mCacheMode = static_cast<RequestCache>(cacheMode);
 
-    internalChannel->GetIntegrityMetadata(mIntegrity);
+    rv = internalChannel->GetIntegrityMetadata(mIntegrity);
+    MOZ_ASSERT(NS_SUCCEEDED(rv));
 
     mRequestCredentials = InternalRequest::MapChannelToRequestCredentials(channel);
 

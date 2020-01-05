@@ -148,7 +148,7 @@ FetchUtil::SetRequestReferrer(nsIPrincipal* aPrincipal,
   }
 
   nsCOMPtr<nsIURI> referrerURI;
-  aChannel->GetReferrer(getter_AddRefs(referrerURI));
+  Unused << aChannel->GetReferrer(getter_AddRefs(referrerURI));
 
   
   

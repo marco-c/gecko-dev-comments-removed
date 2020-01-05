@@ -188,9 +188,9 @@ ChannelMediaResource::OnStartRequest(nsIRequest* aRequest)
   bool seekable = false;
   if (hc) {
     uint32_t responseStatus = 0;
-    hc->GetResponseStatus(&responseStatus);
+    Unused << hc->GetResponseStatus(&responseStatus);
     bool succeeded = false;
-    hc->GetRequestSucceeded(&succeeded);
+    Unused << hc->GetRequestSucceeded(&succeeded);
 
     if (!succeeded && NS_SUCCEEDED(status)) {
       
@@ -217,8 +217,8 @@ ChannelMediaResource::OnStartRequest(nsIRequest* aRequest)
     }
 
     nsAutoCString ranges;
-    hc->GetResponseHeader(NS_LITERAL_CSTRING("Accept-Ranges"),
-                          ranges);
+    Unused << hc->GetResponseHeader(NS_LITERAL_CSTRING("Accept-Ranges"),
+                                    ranges);
     bool acceptsRanges = ranges.EqualsLiteral("bytes");
     
     bool dataIsBounded = false;

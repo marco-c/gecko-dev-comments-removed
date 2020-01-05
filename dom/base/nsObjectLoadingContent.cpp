@@ -2599,8 +2599,9 @@ nsObjectLoadingContent::OpenChannel()
   
   nsCOMPtr<nsIHttpChannel> httpChan(do_QueryInterface(chan));
   if (httpChan) {
-    httpChan->SetReferrerWithPolicy(doc->GetDocumentURI(),
-                                    doc->GetReferrerPolicy());
+    rv = httpChan->SetReferrerWithPolicy(doc->GetDocumentURI(),
+                                         doc->GetReferrerPolicy());
+    MOZ_ASSERT(NS_SUCCEEDED(rv));
 
     
     nsCOMPtr<nsITimedChannel> timedChannel(do_QueryInterface(httpChan));

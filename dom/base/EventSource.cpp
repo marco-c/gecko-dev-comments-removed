@@ -995,18 +995,22 @@ EventSourceImpl::SetupHttpChannel()
 {
   AssertIsOnMainThread();
   MOZ_ASSERT(!IsShutDown());
-  mHttpChannel->SetRequestMethod(NS_LITERAL_CSTRING("GET"));
+  DebugOnly<nsresult> rv =
+    mHttpChannel->SetRequestMethod(NS_LITERAL_CSTRING("GET"));
+  MOZ_ASSERT(NS_SUCCEEDED(rv));
 
   
 
-  mHttpChannel->SetRequestHeader(NS_LITERAL_CSTRING("Accept"),
+  rv = mHttpChannel->SetRequestHeader(NS_LITERAL_CSTRING("Accept"),
     NS_LITERAL_CSTRING(TEXT_EVENT_STREAM), false);
+  MOZ_ASSERT(NS_SUCCEEDED(rv));
 
   
 
   if (!mLastEventID.IsEmpty()) {
-    mHttpChannel->SetRequestHeader(NS_LITERAL_CSTRING("Last-Event-ID"),
+    rv = mHttpChannel->SetRequestHeader(NS_LITERAL_CSTRING("Last-Event-ID"),
       NS_ConvertUTF16toUTF8(mLastEventID), false);
+    MOZ_ASSERT(NS_SUCCEEDED(rv));
   }
 }
 

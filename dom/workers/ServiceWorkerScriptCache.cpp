@@ -671,11 +671,13 @@ CompareNetwork::Initialize(nsIPrincipal* aPrincipal, const nsAString& aURL, nsIL
   nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(mChannel);
   if (httpChannel) {
     
-    httpChannel->SetRedirectionLimit(0);
+    rv = httpChannel->SetRedirectionLimit(0);
+    MOZ_ASSERT(NS_SUCCEEDED(rv));
 
-    httpChannel->SetRequestHeader(NS_LITERAL_CSTRING("Service-Worker"),
-                                  NS_LITERAL_CSTRING("script"),
-                                   false);
+    rv = httpChannel->SetRequestHeader(NS_LITERAL_CSTRING("Service-Worker"),
+                                       NS_LITERAL_CSTRING("script"),
+                                        false);
+    MOZ_ASSERT(NS_SUCCEEDED(rv));
   }
 
   nsCOMPtr<nsIStreamLoader> loader;
@@ -765,7 +767,7 @@ CompareNetwork::OnStreamComplete(nsIStreamLoader* aLoader, nsISupports* aContext
     
     
     uint32_t status = 0;
-    httpChannel->GetResponseStatus(&status); 
+    Unused << httpChannel->GetResponseStatus(&status); 
     nsAutoString statusAsText;
     statusAsText.AppendInt(status);
 

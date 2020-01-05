@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "nsCOMArray.h"
 #include "nsIAuthPrompt.h"
@@ -78,7 +78,7 @@ public:
     NS_DECL_NSIREQUESTOBSERVER
     NS_DECL_NSIINTERFACEREQUESTOR
 
-    // nsIContentSink
+    
     NS_IMETHOD WillParse(void) override { return NS_OK; }
     NS_IMETHOD DidBuildModel(bool aTerminated) override;
     NS_IMETHOD WillInterrupt(void) override { return NS_OK; }
@@ -97,7 +97,7 @@ private:
 protected:
     ~txStylesheetSink() {}
 
-    // This exists solely to suppress a warning from nsDerivedSafe
+    
     txStylesheetSink();
 };
 
@@ -209,7 +209,7 @@ txStylesheetSink::ReportError(const char16_t *aErrorText,
 {
     NS_PRECONDITION(aError && aSourceText && aErrorText, "Check arguments!!!");
 
-    // The expat driver should report the error.
+    
     *_retval = true;
 
     mCompiler->cancel(NS_ERROR_FAILURE, aErrorText, aSourceText);
@@ -256,7 +256,7 @@ txStylesheetSink::OnStartRequest(nsIRequest *aRequest, nsISupports *aContext)
 
     nsCOMPtr<nsIChannel> channel = do_QueryInterface(aRequest);
 
-    // check channel's charset...
+    
     nsAutoCString charsetVal;
     nsAutoCString charset;
     if (NS_SUCCEEDED(channel->GetContentCharset(charsetVal))) {
@@ -274,8 +274,8 @@ txStylesheetSink::OnStartRequest(nsIRequest *aRequest, nsISupports *aContext)
     nsAutoCString contentType;
     channel->GetContentType(contentType);
 
-    // Time to sniff! Note: this should go away once file channels do
-    // sniffing themselves.
+    
+    
     nsCOMPtr<nsIURI> uri;
     channel->GetURI(getter_AddRefs(uri));
     bool sniff;
@@ -308,14 +308,14 @@ txStylesheetSink::OnStopRequest(nsIRequest *aRequest, nsISupports *aContext,
 
     nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(aRequest);
     if (httpChannel) {
-        httpChannel->GetRequestSucceeded(&success);
+        Unused << httpChannel->GetRequestSucceeded(&success);
     }
 
     nsresult result = aStatusCode;
     if (!success) {
-        // XXX We sometimes want to use aStatusCode here, but the parser resets
-        //     it to NS_ERROR_NOINTERFACE because we don't implement
-        //     nsIHTMLContentSink.
+        
+        
+        
         result = NS_ERROR_XSLT_NETWORK_ERROR;
     }
     else if (!mCheckedForXML) {
@@ -380,10 +380,10 @@ private:
     RefPtr<txMozillaXSLTProcessor> mProcessor;
     nsCOMPtr<nsIDocument> mLoaderDocument;
 
-    // This exists solely to suppress a warning from nsDerivedSafe
+    
     txCompileObserver();
 
-    // Private destructor, to discourage deletion outside of Release():
+    
     ~txCompileObserver()
     {
     }
@@ -451,7 +451,7 @@ txCompileObserver::startLoad(nsIURI* aUri, txStylesheetCompiler* aCompiler,
                     getter_AddRefs(channel),
                     aUri,
                     mLoaderDocument,
-                    aReferrerPrincipal, // triggeringPrincipal
+                    aReferrerPrincipal, 
                     nsILoadInfo::SEC_REQUIRE_CORS_DATA_INHERITS,
                     nsIContentPolicy::TYPE_XSLT,
                     loadGroup);
@@ -462,14 +462,17 @@ txCompileObserver::startLoad(nsIURI* aUri, txStylesheetCompiler* aCompiler,
 
     nsCOMPtr<nsIHttpChannel> httpChannel(do_QueryInterface(channel));
     if (httpChannel) {
-        httpChannel->SetRequestHeader(NS_LITERAL_CSTRING("Accept"),
-                                      NS_LITERAL_CSTRING("*/*"),
-                                      false);
+        DebugOnly<nsresult> rv;
+        rv = httpChannel->SetRequestHeader(NS_LITERAL_CSTRING("Accept"),
+                                           NS_LITERAL_CSTRING("*/*"),
+                                           false);
+        MOZ_ASSERT(NS_SUCCEEDED(rv));
 
         nsCOMPtr<nsIURI> referrerURI;
         aReferrerPrincipal->GetURI(getter_AddRefs(referrerURI));
         if (referrerURI) {
-            httpChannel->SetReferrerWithPolicy(referrerURI, aReferrerPolicy);
+            rv = httpChannel->SetReferrerWithPolicy(referrerURI, aReferrerPolicy);
+            MOZ_ASSERT(NS_SUCCEEDED(rv));
         }
     }
 
@@ -510,10 +513,10 @@ TX_LoadSheet(nsIURI* aUri, txMozillaXSLTProcessor* aProcessor,
     return observer->startLoad(aUri, compiler, principal, aReferrerPolicy);
 }
 
-/**
- * handling DOM->txStylesheet
- * Observer needs to do synchronous loads.
- */
+
+
+
+
 static nsresult
 handleNode(nsINode* aNode, txStylesheetCompiler* aCompiler)
 {
@@ -545,7 +548,7 @@ handleNode(nsINode* aNode, txStylesheetCompiler* aCompiler)
                                      attsCount);
         NS_ENSURE_SUCCESS(rv, rv);
 
-        // explicitly destroy the attrs here since we no longer need it
+        
         atts = nullptr;
 
         for (nsIContent* child = element->GetFirstChild();
@@ -587,7 +590,7 @@ public:
     NS_INLINE_DECL_REFCOUNTING(txSyncCompileObserver)
 
 private:
-    // Private destructor, to discourage deletion outside of Release():
+    
     ~txSyncCompileObserver()
     {
     }
@@ -622,8 +625,8 @@ txSyncCompileObserver::loadURI(const nsAString& aUri,
       BasePrincipal::CreateCodebasePrincipal(referrerUri, OriginAttributes());
     NS_ENSURE_TRUE(referrerPrincipal, NS_ERROR_FAILURE);
 
-    // This is probably called by js, a loadGroup for the channel doesn't
-    // make sense.
+    
+    
     nsCOMPtr<nsINode> source;
     if (mProcessor) {
       source =
@@ -664,7 +667,7 @@ nsresult
 TX_CompileStylesheet(nsINode* aNode, txMozillaXSLTProcessor* aProcessor,
                      txStylesheet** aStylesheet)
 {
-    // If we move GetBaseURI to nsINode this can be simplified.
+    
     nsCOMPtr<nsIDocument> doc = aNode->OwnerDoc();
 
     nsCOMPtr<nsIURI> uri;
@@ -684,8 +687,8 @@ TX_CompileStylesheet(nsINode* aNode, txMozillaXSLTProcessor* aProcessor,
     nsIURI* docUri = doc->GetDocumentURI();
     NS_ENSURE_TRUE(docUri, NS_ERROR_FAILURE);
 
-    // We need to remove the ref, a URI with a ref would mean that we have an
-    // embedded stylesheet.
+    
+    
     docUri->CloneIgnoringRef(getter_AddRefs(uri));
     NS_ENSURE_TRUE(uri, NS_ERROR_FAILURE);
 

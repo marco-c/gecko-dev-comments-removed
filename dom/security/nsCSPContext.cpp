@@ -1000,7 +1000,8 @@ nsCSPContext::SendReports(nsISupports* aBlockedContentSource,
     
     nsCOMPtr<nsIHttpChannel> httpChannel(do_QueryInterface(reportChannel));
     if (httpChannel) {
-      httpChannel->SetRequestMethod(NS_LITERAL_CSTRING("POST"));
+      rv = httpChannel->SetRequestMethod(NS_LITERAL_CSTRING("POST"));
+      MOZ_ASSERT(NS_SUCCEEDED(rv));
     }
 
     RefPtr<CSPViolationReportListener> listener = new CSPViolationReportListener();

@@ -427,7 +427,8 @@ XMLDocument::Load(const nsAString& aUrl, CallerType aCallerType,
   
   nsCOMPtr<nsIHttpChannelInternal> httpChannel = do_QueryInterface(channel);
   if (httpChannel) {
-    httpChannel->SetCorsMode(nsIHttpChannelInternal::CORS_MODE_SAME_ORIGIN);
+    rv = httpChannel->SetCorsMode(nsIHttpChannelInternal::CORS_MODE_SAME_ORIGIN);
+    MOZ_ASSERT(NS_SUCCEEDED(rv));
   }
 
   
