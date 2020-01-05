@@ -74,20 +74,6 @@ public:
   bool IsWaitForDataSupported() const override { return true; }
   RefPtr<WaitForDataPromise> WaitForData(MediaData::Type aType) override;
 
-  
-  bool IsDemuxOnlySupported() const override { return true; }
-
-  void SetDemuxOnly(bool aDemuxedOnly) override
-  {
-    if (OnTaskQueue()) {
-      mDemuxOnly = aDemuxedOnly;
-      return;
-    }
-    nsCOMPtr<nsIRunnable> r = NewRunnableMethod<bool>(
-      this, &MediaDecoderReader::SetDemuxOnly, aDemuxedOnly);
-    OwnerThread()->Dispatch(r.forget());
-  }
-
   bool UseBufferingHeuristics() const override
   {
     return mTrackDemuxersMayBlock;
@@ -547,9 +533,6 @@ private:
 
   
   bool mTrackDemuxersMayBlock;
-
-  
-  Atomic<bool> mDemuxOnly;
 
   
   void SetSeekTarget(const SeekTarget& aTarget);

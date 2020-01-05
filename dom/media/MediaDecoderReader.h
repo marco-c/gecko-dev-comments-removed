@@ -154,14 +154,6 @@ public:
 
   
   
-  virtual bool IsDemuxOnlySupported() const { return false; }
-
-  
-  
-  virtual void SetDemuxOnly(bool ) {}
-
-  
-  
   
   virtual RefPtr<MetadataPromise> AsyncReadMetadata();
 

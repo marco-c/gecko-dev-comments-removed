@@ -326,8 +326,6 @@ private:
   
   bool IsPlaying() const;
 
-  
-  
   void OnAudioDecoded(MediaData* aAudio);
   void OnVideoDecoded(MediaData* aVideo, TimeStamp aDecodeStartTime);
   void OnNotDecoded(MediaData::Type aType, const MediaResult& aError);
@@ -346,8 +344,7 @@ protected:
 
   
   
-
-  void Push(MediaData* aSample, MediaData::Type aSampleType);
+  void Push(MediaData* aSample);
 
   void OnAudioPopped(const RefPtr<MediaData>& aSample);
   void OnVideoPopped(const RefPtr<MediaData>& aSample);
