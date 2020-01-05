@@ -27,6 +27,9 @@ this.PluginContent = function (global) {
   this.init(global);
 }
 
+const FLASH_MIME_TYPE = "application/x-shockwave-flash";
+const REPLACEMENT_STYLE_SHEET = Services.io.newURI("chrome://pluginproblem/content/pluginReplaceBinding.css", null, null);
+
 PluginContent.prototype = {
   init: function (global) {
     this.global = global;
@@ -39,6 +42,7 @@ PluginContent.prototype = {
 
     
     global.addEventListener("PluginBindingAttached", this, true, true);
+    global.addEventListener("PluginPlaceholderReplaced", this, true, true);
     global.addEventListener("PluginCrashed",         this, true);
     global.addEventListener("PluginOutdated",        this, true);
     global.addEventListener("PluginInstantiated",    this, true);
@@ -62,6 +66,7 @@ PluginContent.prototype = {
     let global = this.global;
 
     global.removeEventListener("PluginBindingAttached", this, true);
+    global.removeEventListener("PluginPlaceholderReplaced", this, true, true);
     global.removeEventListener("PluginCrashed",         this, true);
     global.removeEventListener("PluginOutdated",        this, true);
     global.removeEventListener("PluginInstantiated",    this, true);
@@ -174,6 +179,15 @@ PluginContent.prototype = {
   },
 
   _getPluginInfo: function (pluginElement) {
+    if (pluginElement instanceof Ci.nsIDOMHTMLAnchorElement) {
+      
+      let pluginHost = Cc["@mozilla.org/plugin/host;1"].getService(Ci.nsIPluginHost);
+      return {
+        pluginName: "Shockwave Flash",
+        mimetype: FLASH_MIME_TYPE,
+        permissionString: pluginHost.getPermissionStringForType(FLASH_MIME_TYPE)
+      };
+    }
     let pluginHost = Cc["@mozilla.org/plugin/host;1"].getService(Ci.nsIPluginHost);
     pluginElement.QueryInterface(Ci.nsIObjectLoadingContent);
 
@@ -421,15 +435,37 @@ PluginContent.prototype = {
     }
 
     if (eventType == "HiddenPlugin") {
-      let pluginTag = event.tag.QueryInterface(Ci.nsIPluginTag);
-      if (event.target.defaultView.top.document != this.content.document) {
-        return;
+      let win = event.target.defaultView;
+      if (!win.mozHiddenPluginTouched) {
+        let pluginTag = event.tag.QueryInterface(Ci.nsIPluginTag);
+        if (win.top.document != this.content.document) {
+          return;
+        }
+        this._showClickToPlayNotification(pluginTag, false);
+        let winUtils = win.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIDOMWindowUtils);
+        try {
+          winUtils.loadSheet(REPLACEMENT_STYLE_SHEET, win.AGENT_SHEET);
+          win.mozHiddenPluginTouched = true;
+        } catch (e) {
+          Cu.reportError("Error adding plugin replacement style sheet: " + e);
+        }
       }
-      this._showClickToPlayNotification(pluginTag, false);
     }
 
     let plugin = event.target;
     let doc = plugin.ownerDocument;
+
+    if (eventType == "PluginPlaceholderReplaced") {
+      plugin.removeAttribute("href");
+      let overlay = this.getPluginUI(plugin, "main");
+      this.setVisibility(plugin, overlay, true);
+      let inIDOMUtils = Cc["@mozilla.org/inspector/dom-utils;1"]
+                          .getService(Ci.inIDOMUtils);
+      
+      inIDOMUtils.addPseudoClassLock(plugin, "-moz-handler-clicktoplay");
+      overlay.addEventListener("click", this, true);
+      return;
+    }
 
     if (!(plugin instanceof Ci.nsIObjectLoadingContent))
       return;
@@ -509,7 +545,7 @@ PluginContent.prototype = {
         break;
     }
 
-    if (this._getPluginInfo(plugin).mimetype === "application/x-shockwave-flash") {
+    if (this._getPluginInfo(plugin).mimetype === FLASH_MIME_TYPE) {
       this._recordFlashPluginTelemetry(eventType, plugin);
     }
 
@@ -661,12 +697,19 @@ PluginContent.prototype = {
   _handleClickToPlayEvent: function (plugin) {
     let doc = plugin.ownerDocument;
     let pluginHost = Cc["@mozilla.org/plugin/host;1"].getService(Ci.nsIPluginHost);
-    let objLoadingContent = plugin.QueryInterface(Ci.nsIObjectLoadingContent);
-    
-    
-    if (!this.isKnownPlugin(objLoadingContent))
-      return;
-    let permissionString = pluginHost.getPermissionStringForType(objLoadingContent.actualType);
+    let permissionString;
+    if (plugin instanceof Ci.nsIDOMHTMLAnchorElement) {
+      
+      permissionString = pluginHost.getPermissionStringForType(FLASH_MIME_TYPE);
+    } else {
+      let objLoadingContent = plugin.QueryInterface(Ci.nsIObjectLoadingContent);
+      
+      
+      if (!this.isKnownPlugin(objLoadingContent))
+        return;
+      permissionString = pluginHost.getPermissionStringForType(objLoadingContent.actualType);
+    }
+
     let principal = doc.defaultView.top.document.nodePrincipal;
     let pluginPermission = Services.perms.testPermissionFromPrincipal(principal, permissionString);
 
@@ -688,7 +731,6 @@ PluginContent.prototype = {
     let document = event.target.ownerDocument;
     let plugin = document.getBindingParent(event.target);
     let contentWindow = plugin.ownerGlobal.top;
-    let objLoadingContent = plugin.QueryInterface(Ci.nsIObjectLoadingContent);
     let overlay = this.getPluginUI(plugin, "main");
     
     if (!(event.originalTarget instanceof contentWindow.HTMLAnchorElement) &&
@@ -729,6 +771,7 @@ PluginContent.prototype = {
     let pluginHost = Cc["@mozilla.org/plugin/host;1"].getService(Ci.nsIPluginHost);
 
     let pluginFound = false;
+    let placeHolderFound = false;
     for (let plugin of plugins) {
       plugin.QueryInterface(Ci.nsIObjectLoadingContent);
       if (!this.isKnownPlugin(plugin)) {
@@ -736,7 +779,11 @@ PluginContent.prototype = {
       }
       if (pluginInfo.permissionString == pluginHost.getPermissionStringForType(plugin.actualType)) {
         let overlay = this.getPluginUI(plugin, "main");
-        pluginFound = true;
+        if (plugin instanceof Ci.nsIDOMHTMLAnchorElement) {
+          placeHolderFound = true;
+        } else {
+          pluginFound = true;
+        }
         if (newState == "block") {
           if (overlay) {
             overlay.addEventListener("click", this, true);
@@ -754,8 +801,9 @@ PluginContent.prototype = {
     
     
     
+    
     if (newState != "block" &&
-       (!pluginFound || contentWindow.pluginRequiresReload)) {
+       (!pluginFound || placeHolderFound || contentWindow.pluginRequiresReload)) {
       this.reloadPage();
     }
     this.updateNotificationUI();
