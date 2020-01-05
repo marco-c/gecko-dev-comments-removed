@@ -82,22 +82,6 @@ typedef GMPErr (*GMPCreateRecordPtr)(const char* aRecordName,
 typedef GMPErr (*GMPSetTimerOnMainThreadPtr)(GMPTask* aTask, int64_t aTimeoutMS);
 typedef GMPErr (*GMPGetCurrentTimePtr)(GMPTimestamp* aOutTime);
 
-typedef void (*RecvGMPRecordIteratorPtr)(GMPRecordIterator* aRecordIterator,
-                                         void* aUserArg,
-                                         GMPErr aStatus);
-
-
-
-
-
-
-
-
-
-
-typedef GMPErr (*GMPCreateRecordIteratorPtr)(RecvGMPRecordIteratorPtr aRecvIteratorFunc,
-                                             void* aUserArg);
-
 struct GMPPlatformAPI {
   
   
@@ -112,7 +96,6 @@ struct GMPPlatformAPI {
   GMPCreateRecordPtr createrecord;
   GMPSetTimerOnMainThreadPtr settimer;
   GMPGetCurrentTimePtr getcurrenttime;
-  GMPCreateRecordIteratorPtr getrecordenumerator;
 };
 
 #endif 

@@ -50,9 +50,6 @@ GMPErr GMPSetTimerOnMainThread(GMPTask* aTask, int64_t aTimeoutMS);
 
 GMPErr GMPGetCurrentTime(GMPTimestamp* aOutTime);
 
-GMPErr GMPCreateRecordIterator(RecvGMPRecordIteratorPtr aRecvIteratorFunc,
-                               void* aUserArg);
-
 } 
 
 #endif 
