@@ -132,7 +132,7 @@ impl<'a> PreorderDomTraversal for RecalcStyleForNode<'a> {
         
         
         
-        node.initialize_layout_data(self.layout_context.shared.layout_chan.clone());
+        node.initialize_layout_data();
 
         
         let parent_opt = node.layout_parent_node(self.layout_context.shared);
