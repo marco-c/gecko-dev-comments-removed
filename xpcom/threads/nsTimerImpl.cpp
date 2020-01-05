@@ -434,6 +434,7 @@ nsTimerImpl::Fire(int32_t aGeneration)
   uint8_t oldType;
   uint32_t oldDelay;
   TimeStamp oldTimeout;
+  nsCOMPtr<nsITimer> kungFuDeathGrip;
 
   {
     
@@ -447,6 +448,10 @@ nsTimerImpl::Fire(int32_t aGeneration)
     oldType = mType;
     oldDelay = mDelay;
     oldTimeout = mTimeout;
+    
+    
+    
+    kungFuDeathGrip = mITimer;
   }
 
   PROFILER_LABEL("Timer", "Fire",
