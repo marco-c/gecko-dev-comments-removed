@@ -5,17 +5,28 @@
 
 "use strict";
 
-const constants = require("devtools/client/webconsole/new-console-output/constants");
+const {
+  FILTER_BAR_TOGGLE,
+  MESSAGE_ADD,
+} = require("devtools/client/webconsole/new-console-output/constants");
 const Immutable = require("devtools/client/shared/vendor/immutable");
 
 const UiState = Immutable.Record({
   filterBarVisible: false,
   filteredMessageVisible: false,
+  autoscroll: true,
 });
 
 function ui(state = new UiState(), action) {
+  
+  
+  
+  
+  
+  state = state.set("autoscroll", action.type == MESSAGE_ADD);
+
   switch (action.type) {
-    case constants.FILTER_BAR_TOGGLE:
+    case FILTER_BAR_TOGGLE:
       return state.set("filterBarVisible", !state.filterBarVisible);
   }
 

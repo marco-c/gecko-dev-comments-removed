@@ -3,10 +3,18 @@
 
 
 
+
 "use strict";
 
 function getAllUi(state) {
   return state.ui;
 }
 
-exports.getAllUi = getAllUi;
+function getScrollSetting(state) {
+  return getAllUi(state).autoscroll;
+}
+
+module.exports = {
+  getAllUi,
+  getScrollSetting,
+};
