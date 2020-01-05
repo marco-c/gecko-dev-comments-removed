@@ -28,25 +28,8 @@ public:
   { }
 
   
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  explicit SVGImageContext(const Maybe<CSSIntSize>& aViewportSize,
+  
+  explicit SVGImageContext(const CSSIntSize& aViewportSize,
                            const Maybe<SVGPreserveAspectRatio>& aPreserveAspectRatio = Nothing(),
                            gfxFloat aOpacity = 1.0,
                            bool aIsPaintingSVGImageElement = false)
@@ -58,11 +41,11 @@ public:
 
   bool MaybeStoreContextPaint(nsIFrame* aFromFrame);
 
-  const Maybe<CSSIntSize>& GetViewportSize() const {
+  const CSSIntSize& GetViewportSize() const {
     return mViewportSize;
   }
 
-  void SetViewportSize(const Maybe<CSSIntSize>& aSize) {
+  void SetViewportSize(const CSSIntSize& aSize) {
     mViewportSize = aSize;
   }
 
@@ -103,23 +86,21 @@ public:
       hash = HashGeneric(hash, mContextPaint->Hash());
     }
     return HashGeneric(hash,
-                       mViewportSize.map(HashSize).valueOr(0),
+                       mViewportSize.width,
+                       mViewportSize.height,
                        mPreserveAspectRatio.map(HashPAR).valueOr(0),
                        HashBytes(&mGlobalOpacity, sizeof(mGlobalOpacity)),
                        mIsPaintingSVGImageElement);
   }
 
 private:
-  static uint32_t HashSize(const CSSIntSize& aSize) {
-    return HashGeneric(aSize.width, aSize.height);
-  }
   static uint32_t HashPAR(const SVGPreserveAspectRatio& aPAR) {
     return aPAR.Hash();
   }
 
   
   RefPtr<SVGContextPaint>       mContextPaint;
-  Maybe<CSSIntSize>             mViewportSize;
+  CSSIntSize                    mViewportSize;
   Maybe<SVGPreserveAspectRatio> mPreserveAspectRatio;
   gfxFloat                      mGlobalOpacity;
   bool                          mIsPaintingSVGImageElement;
