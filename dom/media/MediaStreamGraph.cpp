@@ -1256,6 +1256,8 @@ MediaStreamGraphImpl::UpdateGraph(GraphTime aEndBlockingDecisions)
   
   MOZ_ASSERT(aEndBlockingDecisions >= mStateComputedTime);
 
+  UpdateStreamOrder();
+
   bool ensureNextIteration = false;
 
   
@@ -1406,22 +1408,7 @@ MediaStreamGraphImpl::OneIteration(GraphTime aStateEnd)
   
   RunMessagesInQueue();
 
-  UpdateStreamOrder();
-
-  bool switchingFromSystemClockDriver = false;
-  {
-    MonitorAutoLock mon(mMonitor);
-    switchingFromSystemClockDriver = CurrentDriver()->AsSystemClockDriver() && CurrentDriver()->Switching();
-  }
-
   GraphTime stateEnd = std::min(aStateEnd, mEndTime);
-
-  
-  
-  if (switchingFromSystemClockDriver) {
-    stateEnd = mProcessedTime;
-  }
-
   UpdateGraph(stateEnd);
 
   mStateComputedTime = stateEnd;
