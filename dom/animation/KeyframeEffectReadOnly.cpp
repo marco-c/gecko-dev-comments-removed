@@ -351,33 +351,6 @@ KeyframeEffectReadOnly::CompositeValue(
 }
 
 StyleAnimationValue
-KeyframeEffectReadOnly::ResolveBaseStyle(nsCSSPropertyID aProperty,
-                                         nsStyleContext* aStyleContext)
-{
-  StyleAnimationValue result;
-  if (mBaseStyleValues.Get(aProperty, &result)) {
-    return result;
-  }
-
-  RefPtr<nsStyleContext> styleContextWithoutAnimation =
-    aStyleContext->PresContext()->StyleSet()->AsGecko()->
-      ResolveStyleByRemovingAnimation(mTarget->mElement,
-                                      aStyleContext,
-                                      eRestyle_AllHintsWithAnimations);
-  bool success =
-    StyleAnimationValue::ExtractComputedValue(aProperty,
-                                              styleContextWithoutAnimation,
-                                              result);
-
-  MOZ_ASSERT(success, "Should be able to extract computed animation value");
-  MOZ_ASSERT(!result.IsNull(), "Should have a valid StyleAnimationValue");
-
-  mBaseStyleValues.Put(aProperty, result);
-
-  return result;
-}
-
-StyleAnimationValue
 KeyframeEffectReadOnly::GetUnderlyingStyle(
   nsCSSPropertyID aProperty,
   const RefPtr<AnimValuesStyleRule>& aAnimationRule)
@@ -395,7 +368,12 @@ KeyframeEffectReadOnly::GetUnderlyingStyle(
     
     RefPtr<nsStyleContext> styleContext =
       GetTargetStyleContextWithoutAnimation();
-    result = ResolveBaseStyle(aProperty, styleContext);
+    result = EffectCompositor::GetBaseStyle(aProperty,
+                                            styleContext,
+                                            *mTarget->mElement,
+                                            mTarget->mPseudoType);
+    MOZ_ASSERT(!result.IsNull(), "The base style should be set");
+    SetNeedsBaseStyle(aProperty);
   }
 
   return result;
@@ -456,6 +434,12 @@ KeyframeEffectReadOnly::EnsureBaseStylesForCompositor(
       continue;
     }
 
+    
+    
+    if (NeedsBaseStyle(property.mProperty)) {
+      continue;
+    }
+
     for (const AnimationPropertySegment& segment : property.mSegments) {
       if (segment.mFromComposite == dom::CompositeOperation::Replace &&
           segment.mToComposite == dom::CompositeOperation::Replace) {
@@ -467,8 +451,13 @@ KeyframeEffectReadOnly::EnsureBaseStylesForCompositor(
       }
       MOZ_RELEASE_ASSERT(styleContext);
 
-      StyleAnimationValue result =
-        ResolveBaseStyle(property.mProperty, styleContext);
+      Unused << EffectCompositor::GetBaseStyle(property.mProperty,
+                                               styleContext,
+                                               *mTarget->mElement,
+                                               mTarget->mPseudoType);
+      
+      
+      SetNeedsBaseStyle(property.mProperty);
       break;
     }
   }
@@ -510,6 +499,8 @@ KeyframeEffectReadOnly::ComposeStyle(
 
   nsPresContext* presContext = GetPresContext();
   bool isServoBackend = presContext && presContext->StyleSet()->IsServo();
+
+  mNeedsBaseStyleSet.Empty();
 
   for (size_t propIdx = 0, propEnd = mProperties.Length();
        propIdx != propEnd; ++propIdx)
@@ -614,9 +605,6 @@ KeyframeEffectReadOnly::ComposeStyle(
         CompositeValue(prop.mProperty, aStyleRule.mGecko,
                        segment->mToValue.mGecko,
                        segment->mToComposite);
-      if (fromValue.IsNull() || toValue.IsNull()) {
-        continue;
-      }
 
       
       if (mEffectOptions.mIterationComposite ==
@@ -1744,6 +1732,31 @@ KeyframeEffectReadOnly::HasComputedTimingChanged() const
           mCurrentIterationOnLastCompose);
 }
 
+void
+KeyframeEffectReadOnly::SetNeedsBaseStyle(nsCSSPropertyID aProperty)
+{
+  for (size_t i = 0; i < LayerAnimationInfo::kRecords; i++) {
+    if (LayerAnimationInfo::sRecords[i].mProperty == aProperty) {
+      mNeedsBaseStyleSet.AddProperty(aProperty);
+      break;
+    }
+  }
+}
+
+bool
+KeyframeEffectReadOnly::NeedsBaseStyle(nsCSSPropertyID aProperty) const
+{
+  for (size_t i = 0; i < LayerAnimationInfo::kRecords; i++) {
+    if (LayerAnimationInfo::sRecords[i].mProperty == aProperty) {
+      return mNeedsBaseStyleSet.HasProperty(aProperty);
+    }
+  }
+  MOZ_ASSERT_UNREACHABLE(
+    "Expected a property that can be run on the compositor");
+
+  return false;
+}
+
 bool
 KeyframeEffectReadOnly::ContainsAnimatedScale(const nsIFrame* aFrame) const
 {
@@ -1756,15 +1769,19 @@ KeyframeEffectReadOnly::ContainsAnimatedScale(const nsIFrame* aFrame) const
       continue;
     }
 
-    StyleAnimationValue baseStyle = BaseStyle(prop.mProperty);
-    if (baseStyle.IsNull()) {
-      
-      
-      return true;
-    }
-    gfxSize size = baseStyle.GetScaleValue(aFrame);
-    if (size != gfxSize(1.0f, 1.0f)) {
-      return true;
+    if (NeedsBaseStyle(prop.mProperty)) {
+      StyleAnimationValue baseStyle =
+        EffectCompositor::GetBaseStyle(prop.mProperty, aFrame);
+      MOZ_ASSERT(!baseStyle.IsNull(), "The base value should be set");
+      if (baseStyle.IsNull()) {
+        
+        
+        return true;
+      }
+      gfxSize size = baseStyle.GetScaleValue(aFrame);
+      if (size != gfxSize(1.0f, 1.0f)) {
+        return true;
+      }
     }
 
     

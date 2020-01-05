@@ -286,15 +286,11 @@ public:
 
   
   
-  bool ContainsAnimatedScale(const nsIFrame* aFrame) const;
+  bool NeedsBaseStyle(nsCSSPropertyID aProperty) const;
 
-  StyleAnimationValue BaseStyle(nsCSSPropertyID aProperty) const
-  {
-    StyleAnimationValue result;
-    bool hasProperty = mBaseStyleValues.Get(aProperty, &result);
-    MOZ_ASSERT(hasProperty || result.IsNull());
-    return result;
-  }
+  
+  
+  bool ContainsAnimatedScale(const nsIFrame* aFrame) const;
 
 protected:
   KeyframeEffectReadOnly(nsIDocument* aDocument,
@@ -388,12 +384,12 @@ protected:
 
   
   
-  void EnsureBaseStylesForCompositor(
-    const nsCSSPropertyIDSet& aPropertiesToSkip);
+  void SetNeedsBaseStyle(nsCSSPropertyID aProperty);
 
   
-  StyleAnimationValue ResolveBaseStyle(nsCSSPropertyID aProperty,
-                                       nsStyleContext* aStyleContext);
+  
+  void EnsureBaseStylesForCompositor(
+    const nsCSSPropertyIDSet& aPropertiesToSkip);
 
   Maybe<OwningAnimationTarget> mTarget;
 
@@ -422,7 +418,7 @@ protected:
   
   
   
-  nsDataHashtable<nsUint32HashKey, StyleAnimationValue> mBaseStyleValues;
+  nsCSSPropertyIDSet mNeedsBaseStyleSet;
 
 private:
   nsChangeHint mCumulativeChangeHint;
