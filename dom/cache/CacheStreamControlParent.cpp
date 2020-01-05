@@ -85,6 +85,11 @@ CacheStreamControlParent::ActorDestroy(ActorDestroyReason aReason)
 {
   NS_ASSERT_OWNINGTHREAD(CacheStreamControlParent);
   CloseAllReadStreamsWithoutReporting();
+  
+  
+  if (!mStreamList) {
+    return;
+  }
   mStreamList->RemoveStreamControl(this);
   mStreamList->NoteClosedAll();
   mStreamList = nullptr;
