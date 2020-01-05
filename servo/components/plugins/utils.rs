@@ -2,16 +2,11 @@
 
 
 
-use rustc::hir::{self, def};
 use rustc::hir::def_id::DefId;
 use rustc::lint::{LateContext, LintContext};
 use syntax::ast;
-use syntax::attr::mark_used;
 use syntax::codemap::{ExpnFormat, Span};
 use syntax::ptr::P;
-
-
-
 
 
 pub fn match_ty_unwrap<'a>(ty: &'a ast::Ty, segments: &[&str]) -> Option<&'a [P<ast::Ty>]> {
@@ -40,31 +35,6 @@ pub fn match_ty_unwrap<'a>(ty: &'a ast::Ty, segments: &[&str]) -> Option<&'a [P<
         },
         _ => None
     }
-}
-
-
-pub fn match_lang_ty(cx: &LateContext, ty: &hir::Ty, value: &str) -> bool {
-    let def = match ty.node {
-        hir::TyPath(hir::QPath::Resolved(_, ref path)) => path.def,
-        _ => return false,
-    };
-
-    if let def::Def::PrimTy(_) = def {
-        return false;
-    }
-
-    match_lang_did(cx, def.def_id(), value)
-}
-
-pub fn match_lang_did(cx: &LateContext, did: DefId, value: &str) -> bool {
-    cx.tcx.get_attrs(did).iter().any(|attr| {
-        if attr.check_name("servo_lang") && attr.value_str().map_or(false, |v| v == value) {
-            mark_used(attr);
-            true
-        } else {
-            false
-        }
-    })
 }
 
 

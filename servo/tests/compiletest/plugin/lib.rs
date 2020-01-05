@@ -3,8 +3,6 @@
 
 
 extern crate compiletest_helper;
-#[macro_use]
-extern crate deny_public_fields;
 
 #[test]
 fn compile_test() {

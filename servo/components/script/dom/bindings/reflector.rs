@@ -27,9 +27,8 @@ pub fn reflect_dom_object<T, U>(
 
 
 #[allow(unrooted_must_root)]
-#[must_root]
-#[servo_lang = "reflector"]
 #[derive(HeapSizeOf)]
+#[must_root]
 
 pub struct Reflector {
     #[ignore_heap_size_of = "defined and measured in rust-mozjs"]
