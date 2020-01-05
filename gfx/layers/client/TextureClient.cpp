@@ -94,12 +94,13 @@ void DeallocateTextureClient(TextureDeallocParams params);
 
 
 
-class TextureChild final : public ChildActor<PTextureChild>
+class TextureChild final : PTextureChild
 {
   ~TextureChild()
   {
     
     MOZ_ASSERT(!mTextureData);
+    MOZ_ASSERT(mOwnerCalledDestroy);
   }
 public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(TextureChild)
@@ -113,6 +114,7 @@ public:
   , mMainThreadOnly(false)
   , mIPCOpen(false)
   , mOwnsTextureData(false)
+  , mOwnerCalledDestroy(false)
   {}
 
   bool Recv__delete__() override { return true; }
@@ -143,6 +145,19 @@ private:
     mIPCOpen = false;
     Release();
   }
+
+  
+  
+  
+  
+  void Destroy(CompositableForwarder* aFwd);
+
+  
+  
+  
+  
+  
+  void DestroySynchronously(CompositableForwarder* aFwd);
 
   
   
@@ -218,6 +233,7 @@ private:
   bool mMainThreadOnly;
   bool mIPCOpen;
   bool mOwnsTextureData;
+  bool mOwnerCalledDestroy;
 
   friend class TextureClient;
   friend void DeallocateTextureClient(TextureDeallocParams params);
@@ -255,6 +271,32 @@ TextureChild::ActorDestroy(ActorDestroyReason why)
   if (mTextureData) {
     DestroyTextureData(mTextureData, GetAllocator(), mOwnsTextureData, mMainThreadOnly);
     mTextureData = nullptr;
+  }
+}
+
+void
+TextureChild::Destroy(CompositableForwarder* aFwd)
+{
+  MOZ_ASSERT(!mOwnerCalledDestroy);
+  if (!mOwnerCalledDestroy) {
+    mOwnerCalledDestroy = true;
+    if (!aFwd || !aFwd->DestroyInTransaction(this, false)) {
+      this->SendDestroy();
+    }
+  }
+}
+
+void
+TextureChild::DestroySynchronously(CompositableForwarder* aFwd)
+{
+  MOZ_PERFORMANCE_WARNING("gfx", "IPDL actor requires synchronous deallocation");
+  MOZ_ASSERT(!mOwnerCalledDestroy);
+  if (!mOwnerCalledDestroy) {
+    mOwnerCalledDestroy = true;
+    if (!aFwd || !aFwd->DestroyInTransaction(this, true)) {
+      this->SendDestroySync();
+      this->SendDestroy();
+    }
   }
 }
 
@@ -408,14 +450,6 @@ void TextureClient::Destroy(bool aForceSync)
 
     DeallocateTextureClient(params);
   }
-}
-
-bool
-TextureClient::DestroyFallback(PTextureChild* aActor)
-{
-  
-  MOZ_ASSERT(false);
-  return aActor->SendDestroySync();
 }
 
 void
