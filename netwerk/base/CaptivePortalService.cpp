@@ -45,6 +45,8 @@ CaptivePortalService::CaptivePortalService()
 
 CaptivePortalService::~CaptivePortalService()
 {
+  LOG(("CaptivePortalService::~CaptivePortalService isParentProcess:%d\n",
+       XRE_GetProcessType() == GeckoProcessType_Default));
 }
 
 nsresult
@@ -76,6 +78,7 @@ CaptivePortalService::PerformCheck()
 nsresult
 CaptivePortalService::RearmTimer()
 {
+  LOG(("CaptivePortalService::RearmTimer\n"));
   
   MOZ_ASSERT(XRE_GetProcessType() == GeckoProcessType_Default);
   if (mTimer) {
@@ -292,13 +295,12 @@ CaptivePortalService::Observe(nsISupports *aSubject,
     
     mState = UNLOCKED_PORTAL;
     mLastChecked = TimeStamp::Now();
-    mRequestInProgress = false;
     mSlackCount = 0;
     mDelay = mMinInterval;
+
     RearmTimer();
   } else if (!strcmp(aTopic, kAbortCaptivePortalLoginEvent)) {
     
-    mRequestInProgress = false;
     mState = UNKNOWN;
     mLastChecked = TimeStamp::Now();
     mSlackCount = 0;
@@ -336,15 +338,16 @@ CaptivePortalService::Complete(bool success)
   LOG(("CaptivePortalService::Complete(success=%d) mState=%d\n", success, mState));
   MOZ_ASSERT(XRE_GetProcessType() == GeckoProcessType_Default);
   mLastChecked = TimeStamp::Now();
-  if ((mState == UNKNOWN || mState == NOT_CAPTIVE) && success) {
-    mState = NOT_CAPTIVE;
-    
-    
-    if (!mEverBeenCaptive) {
-      mDelay = 0;
-      if (mTimer) {
-        mTimer->Cancel();
-      }
+
+  
+  
+  
+
+  if (success) {
+    if (mEverBeenCaptive) {
+      mState = UNLOCKED_PORTAL;
+    } else {
+      mState = NOT_CAPTIVE;
     }
   }
 
