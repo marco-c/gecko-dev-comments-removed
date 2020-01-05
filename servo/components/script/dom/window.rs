@@ -47,7 +47,7 @@ use js::rust::with_compartment;
 use url::{Url, UrlParser};
 
 use libc;
-use rustc_serialize::base64::{FromBase64, ToBase64, STANDARD};
+use serialize::base64::{FromBase64, ToBase64, STANDARD};
 use std::cell::{Ref, RefMut};
 use std::default::Default;
 use std::ffi::CString;
@@ -140,7 +140,7 @@ pub fn base64_btoa(btoa: DOMString) -> Fallible<DOMString> {
 
 pub fn base64_atob(atob: DOMString) -> Fallible<DOMString> {
     
-    let mut input = atob.as_slice();
+    let input = atob.as_slice();
 
     
     
@@ -152,7 +152,7 @@ pub fn base64_atob(atob: DOMString) -> Fallible<DOMString> {
     let without_spaces = input.chars()
         .filter(|&c| ! is_html_space(c))
         .collect::<String>();
-    input = without_spaces.as_slice();
+    let mut input = without_spaces.as_slice();
 
     
     

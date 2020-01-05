@@ -50,13 +50,13 @@ impl TextRunScanner {
         let mut last_whitespace = true;
         while !fragments.is_empty() {
             
-            self.clump.append(dlist::split(&mut fragments));
+            self.clump.append(&mut dlist::split(&mut fragments));
             while !fragments.is_empty() && self.clump
                                                .back()
                                                .unwrap()
                                                .can_merge_with_fragment(fragments.front()
                                                                                  .unwrap()) {
-                self.clump.append(dlist::split(&mut fragments));
+                self.clump.append(&mut dlist::split(&mut fragments));
             }
 
             

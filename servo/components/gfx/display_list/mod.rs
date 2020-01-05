@@ -512,7 +512,7 @@ impl BaseDisplayItem {
 
 
 
-#[derive(Clone, PartialEq, Show)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct ClippingRegion {
     
     pub main: Rect<Au>,
@@ -526,7 +526,7 @@ pub struct ClippingRegion {
 
 
 
-#[derive(Clone, PartialEq, Show)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct ComplexClippingRegion {
     
     pub rect: Rect<Au>,
@@ -750,7 +750,7 @@ pub struct BorderDisplayItem {
 
 
 
-#[derive(Clone, Default, PartialEq, Show, Copy)]
+#[derive(Clone, Default, PartialEq, Debug, Copy)]
 pub struct BorderRadii<T> {
     pub top_left: T,
     pub top_right: T,
@@ -931,7 +931,7 @@ impl DisplayItem {
     }
 }
 
-impl fmt::Show for DisplayItem {
+impl fmt::Debug for DisplayItem {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{} @ {:?} ({:x})",
             match *self {

@@ -27,7 +27,7 @@ use util::geometry::PagePx;
 use util::memory::MemoryProfilerChan;
 use util::time::TimeProfilerChan;
 use std::sync::mpsc::{channel, Sender, Receiver};
-use std::fmt::{Error, Formatter, Show};
+use std::fmt::{Error, Formatter, Debug};
 use std::rc::Rc;
 
 
@@ -223,7 +223,7 @@ pub enum Msg {
     PaintTaskExited(PipelineId),
 }
 
-impl Show for Msg {
+impl Debug for Msg {
     fn fmt(&self, f: &mut Formatter) -> Result<(),Error> {
         match *self {
             Msg::Exit(..) => write!(f, "Exit"),

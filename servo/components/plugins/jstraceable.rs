@@ -15,25 +15,25 @@ use syntax::parse::token::InternedString;
 pub fn expand_dom_struct(_: &mut ExtCtxt, _: Span, _: &MetaItem, item: P<Item>) -> P<Item> {
     let mut item2 = (*item).clone();
     {
-        let mut add_attr = |&mut :s| {
+        let mut add_attr = |s| {
             item2.attrs.push(attr::mk_attr_outer(attr::mk_attr_id(), attr::mk_word_item(InternedString::new(s))));
         };
         add_attr("must_root");
         add_attr("privatize");
         add_attr("jstraceable");
 
-        // The following attributes are only for internal usage
+        
         add_attr("_generate_reflector");
-        // #[dom_struct] gets consumed, so this lets us keep around a residue
-        // Do NOT register a modifier/decorator on this attribute
+        
+        
         add_attr("_dom_struct_marker");
     }
     P(item2)
 }
 
-/// Provides the hook to expand `#[jstraceable]` into an implementation of `JSTraceable`
-///
-/// The expansion basically calls `trace()` on all of the fields of the struct/enum, erroring if they do not implement the method.
+
+
+
 pub fn expand_jstraceable(cx: &mut ExtCtxt, span: Span, mitem: &MetaItem, item: &Item, mut push: Box<FnMut(P<Item>)>) {
     let trait_def = TraitDef {
         span: span,
@@ -41,7 +41,7 @@ pub fn expand_jstraceable(cx: &mut ExtCtxt, span: Span, mitem: &MetaItem, item: 
         path: ty::Path::new(vec!("dom","bindings","trace","JSTraceable")),
         additional_bounds: Vec::new(),
         generics: ty::LifetimeBounds::empty(),
-        methods: vec!(
+        methods: vec![
             MethodDef {
                 name: "trace",
                 generics: ty::LifetimeBounds::empty(),
@@ -53,20 +53,21 @@ pub fn expand_jstraceable(cx: &mut ExtCtxt, span: Span, mitem: &MetaItem, item: 
                                                                                   InternedString::new("always")))),
                 combine_substructure: combine_substructure(box jstraceable_substructure)
             }
-        )
+        ],
+        associated_types: vec![],
     };
-    trait_def.expand(cx, mitem, item, |:a| push(a))
+    trait_def.expand(cx, mitem, item, |a| push(a))
 }
 
-// Mostly copied from syntax::ext::deriving::hash
-/// Defines how the implementation for `trace()` is to be generated
+
+
 fn jstraceable_substructure(cx: &mut ExtCtxt, trait_span: Span, substr: &Substructure) -> P<Expr> {
     let state_expr = match substr.nonself_args {
         [ref state_expr] => state_expr,
         _ => cx.span_bug(trait_span, "incorrect number of arguments in `jstraceable`")
     };
     let trace_ident = substr.method_ident;
-    let call_trace = |&:span, thing_expr| {
+    let call_trace = |span, thing_expr| {
         let expr = cx.expr_method_call(span, thing_expr, trace_ident, vec!(state_expr.clone()));
         cx.stmt_expr(expr)
     };

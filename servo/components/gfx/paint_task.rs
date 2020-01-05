@@ -144,10 +144,10 @@ impl<C> PaintTask<C> where C: PaintListener + Send {
                   time_profiler_chan: TimeProfilerChan,
                   shutdown_chan: Sender<()>) {
         let ConstellationChan(c) = constellation_chan.clone();
-        spawn_named_with_send_on_failure("PaintTask", task_state::PAINT, move |:| {
+        spawn_named_with_send_on_failure("PaintTask", task_state::PAINT, move || {
             {
-                // Ensures that the paint task and graphics context are destroyed before the
-                // shutdown message.
+                
+                
                 let mut compositor = compositor;
                 let native_graphics_context = compositor.get_graphics_metadata().map(
                     |md| NativePaintingGraphicsContext::from_metadata(&md));
@@ -155,7 +155,7 @@ impl<C> PaintTask<C> where C: PaintListener + Send {
                                                               font_cache_task,
                                                               time_profiler_chan.clone());
 
-                // FIXME: rust/#5967
+                
                 let mut paint_task = PaintTask {
                     id: id,
                     port: port,
@@ -173,13 +173,13 @@ impl<C> PaintTask<C> where C: PaintListener + Send {
 
                 paint_task.start();
 
-                // Destroy all the buffers.
+                
                 match paint_task.native_graphics_context.as_ref() {
                     Some(ctx) => paint_task.buffer_map.clear(ctx),
                     None => (),
                 }
 
-                // Tell all the worker threads to shut down.
+                
                 for worker_thread in paint_task.worker_threads.iter_mut() {
                     worker_thread.exit()
                 }
@@ -277,9 +277,9 @@ impl<C> PaintTask<C> where C: PaintListener + Send {
                         break;
                     }
 
-                    // If we own buffers in the compositor and we are not exiting completely, wait
-                    // for the compositor to return buffers, so that we can release them properly.
-                    // When doing a complete exit, the compositor lets all buffers leak.
+                    
+                    
+                    
                     println!("PaintTask: Saw ExitMsg, {} buffers in use", self.used_buffer_count);
                     waiting_for_compositor_buffers_to_exit = true;
                     exit_response_channel = response_channel;
@@ -288,8 +288,8 @@ impl<C> PaintTask<C> where C: PaintListener + Send {
         }
     }
 
-    /// Retrieves an appropriately-sized layer buffer from the cache to match the requirements of
-    /// the given tile, or creates one if a suitable one cannot be found.
+    
+    
     fn find_or_create_layer_buffer_for_tile(&mut self, tile: &BufferRequest, scale: f32)
                                             -> Option<Box<LayerBuffer>> {
         let width = tile.screen_rect.size.width;
@@ -311,8 +311,8 @@ impl<C> PaintTask<C> where C: PaintListener + Send {
             None => {}
         }
 
-        // Create an empty native surface. We mark it as not leaking
-        // in case it dies in transit to the compositor task.
+        
+        
         let mut native_surface: NativeSurface =
             layers::platform::surface::NativeSurface::new(native_graphics_context!(self),
                                                           Size2D(width as i32, height as i32),
@@ -336,7 +336,7 @@ impl<C> PaintTask<C> where C: PaintListener + Send {
               mut tiles: Vec<BufferRequest>,
               scale: f32,
               layer_id: LayerId) {
-        profile(TimeProfilerCategory::Painting, None, self.time_profiler_chan.clone(), |:| {
+        profile(TimeProfilerCategory::Painting, None, self.time_profiler_chan.clone(), || {
             // Bail out if there is no appropriate stacking context.
             let stacking_context = if let Some(ref stacking_context) = self.root_stacking_context {
                 match display_list::find_stacking_context_with_layer_id(stacking_context,
@@ -360,7 +360,7 @@ impl<C> PaintTask<C> where C: PaintListener + Send {
                                                           stacking_context.clone(),
                                                           scale);
             }
-            let new_buffers = (0..tile_count).map(|&mut :i| {
+            let new_buffers = (0..tile_count).map(|i| {
                 let thread_id = i % self.worker_threads.len();
                 self.worker_threads[thread_id].get_painted_tile_buffer()
             }).collect();
@@ -425,7 +425,7 @@ impl WorkerThreadProxy {
         } else {
             opts::get().layout_threads
         };
-        (0..thread_count).map(|&:_| {
+        (0..thread_count).map(|_| {
             let (from_worker_sender, from_worker_receiver) = channel();
             let (to_worker_sender, to_worker_receiver) = channel();
             let native_graphics_metadata = native_graphics_metadata.clone();
@@ -582,7 +582,7 @@ impl WorkerThread {
         // GPU painting mode, so that it doesn't have to recreate it.
         if !opts::get().gpu_painting {
             let mut buffer = layer_buffer.unwrap();
-            draw_target.snapshot().get_data_surface().with_data(|&mut:data| {
+            draw_target.snapshot().get_data_surface().with_data(|data| {
                 buffer.native_surface.upload(native_graphics_context!(self), data);
                 debug!("painting worker thread uploading to native surface {}",
                        buffer.native_surface.get_id());

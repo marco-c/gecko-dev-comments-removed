@@ -77,7 +77,7 @@ pub struct HitTestResponse(pub UntrustedNodeAddress);
 pub struct MouseOverResponse(pub Vec<UntrustedNodeAddress>);
 
 
-#[derive(PartialEq, Show)]
+#[derive(PartialEq, Debug)]
 pub enum ReflowGoal {
     
     ForDisplay,

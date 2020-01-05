@@ -290,7 +290,7 @@ impl ImageFragmentInfo {
         fn convert_length(node: &ThreadSafeLayoutNode, name: &Atom) -> Option<Au> {
             let element = node.as_element();
             element.get_attr(&ns!(""), name).and_then(|string| {
-                let n: Option<int> = FromStr::from_str(string);
+                let n: Option<int> = FromStr::from_str(string).ok();
                 n
             }).and_then(|pixels| Some(Au::from_px(pixels)))
         }
@@ -589,7 +589,7 @@ impl ScannedTextFragmentInfo {
 
 
 
-#[derive(Show, Clone)]
+#[derive(Debug, Clone)]
 pub struct SplitInfo {
     
     
@@ -667,7 +667,7 @@ impl TableColumnFragmentInfo {
         let span = {
             let element = node.as_element();
             element.get_attr(&ns!(""), &atom!("span")).and_then(|string| {
-                let n: Option<int> = FromStr::from_str(string);
+                let n: Option<int> = FromStr::from_str(string).ok();
                 n
             }).unwrap_or(0)
         };
@@ -2016,7 +2016,7 @@ impl Fragment {
     }
 }
 
-impl fmt::Show for Fragment {
+impl fmt::Debug for Fragment {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         try!(write!(f, "({} {} ", self.debug_id(), self.specific.get_type()));
         try!(write!(f, "bp {:?}", self.border_padding));
@@ -2059,7 +2059,7 @@ pub trait FragmentBorderBoxIterator {
 
 
 
-#[derive(Clone, PartialEq, Show)]
+#[derive(Clone, PartialEq, Debug)]
 pub enum CoordinateSystem {
     
     Parent,

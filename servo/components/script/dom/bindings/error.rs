@@ -20,7 +20,7 @@ use std::ffi::CString;
 use std::ptr;
 
 
-#[derive(Show, Clone)]
+#[derive(Debug, Clone)]
 pub enum Error {
     
     IndexSize,

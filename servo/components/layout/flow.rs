@@ -67,7 +67,7 @@ use std::sync::Arc;
 
 
 
-pub trait Flow: fmt::Show + Sync {
+pub trait Flow: fmt::Debug + Sync {
     
     
     
@@ -428,7 +428,7 @@ pub trait MutableOwnedFlowUtils {
     fn set_absolute_descendants(&mut self, abs_descendants: AbsDescendants);
 }
 
-#[derive(RustcEncodable, PartialEq, Show)]
+#[derive(RustcEncodable, PartialEq, Debug)]
 pub enum FlowClass {
     Block,
     Inline,
@@ -784,7 +784,7 @@ pub struct BaseFlow {
 unsafe impl Send for BaseFlow {}
 unsafe impl Sync for BaseFlow {}
 
-impl fmt::Show for BaseFlow {
+impl fmt::Debug for BaseFlow {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f,
                "@ {:?}, CC {}, ADC {}",

@@ -5,7 +5,7 @@
 use std::cmp::{PartialOrd, PartialEq, Ordering};
 
 #[cfg(test)]
-use std::fmt::Show;
+use std::fmt::Debug;
 
 
 
@@ -74,7 +74,7 @@ fn test_find_all_elems<T: PartialEq + PartialOrd + Eq + Ord>(arr: &[T]) {
 }
 
 #[cfg(test)]
-fn test_miss_all_elems<T: PartialEq + PartialOrd + Eq + Ord + Show>(arr: &[T], misses: &[T]) {
+fn test_miss_all_elems<T: PartialEq + PartialOrd + Eq + Ord + Debug>(arr: &[T], misses: &[T]) {
     let mut i = 0;
     while i < misses.len() {
         let res = arr.binary_search_(&misses[i]);

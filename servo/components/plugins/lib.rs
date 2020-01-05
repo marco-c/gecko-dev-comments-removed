@@ -12,10 +12,9 @@
 
 
 
-#![feature(plugin_registrar, quote, plugin, box_syntax)]
+#![feature(plugin_registrar, quote, plugin, box_syntax, rustc_private, core)]
 
 #![allow(missing_copy_implementations)]
-#![allow(unstable)]
 
 #[plugin]
 #[macro_use]

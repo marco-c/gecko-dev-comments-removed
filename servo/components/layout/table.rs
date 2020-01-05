@@ -398,7 +398,7 @@ impl Flow for TableFlow {
     }
 }
 
-impl fmt::Show for TableFlow {
+impl fmt::Debug for TableFlow {
     
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "TableFlow: {:?}", self.block_flow)
@@ -443,7 +443,7 @@ impl ISizeAndMarginsComputer for InternalTable {
 
 
 
-#[derive(Clone, RustcEncodable, Show, Copy)]
+#[derive(Clone, RustcEncodable, Debug, Copy)]
 pub struct ColumnIntrinsicInlineSize {
     
     pub preferred: Au,

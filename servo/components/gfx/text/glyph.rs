@@ -22,7 +22,7 @@ use util::vec::*;
 
 
 
-#[derive(Clone, Show, Copy)]
+#[derive(Clone, Debug, Copy)]
 struct GlyphEntry {
     value: u32,
 }
@@ -251,7 +251,7 @@ impl GlyphEntry {
 
 
 
-#[derive(Clone, Show, Copy)]
+#[derive(Clone, Debug, Copy)]
 struct DetailedGlyph {
     id: GlyphId,
     
@@ -270,7 +270,7 @@ impl DetailedGlyph {
     }
 }
 
-#[derive(PartialEq, Clone, Eq, Show, Copy)]
+#[derive(PartialEq, Clone, Eq, Debug, Copy)]
 struct DetailedGlyphRecord {
     
     entry_offset: CharIndex,
@@ -594,7 +594,7 @@ impl<'a> GlyphStore {
         let entry = match first_glyph_data.is_missing {
             true  => GlyphEntry::missing(glyph_count),
             false => {
-                let glyphs_vec: Vec<DetailedGlyph> = (0..glyph_count as uint).map(|&:i| {
+                let glyphs_vec: Vec<DetailedGlyph> = (0..glyph_count as uint).map(|i| {
                     DetailedGlyph::new(data_for_glyphs[i].id,
                                        data_for_glyphs[i].advance,
                                        data_for_glyphs[i].offset)
@@ -612,7 +612,7 @@ impl<'a> GlyphStore {
         self.entry_buffer[i.to_uint()] = entry;
     }
 
-    // used when a character index has no associated glyph---for example, a ligature continuation.
+    
     pub fn add_nonglyph_for_char_index(&mut self, i: CharIndex, cluster_start: bool, ligature_start: bool) {
         assert!(i < self.char_len());
 
@@ -786,7 +786,7 @@ impl<'a> Iterator for GlyphIterator<'a> {
             self.next_glyph_range()
         } else {
             
-            self.char_range.next().and_then(|:i| {
+            self.char_range.next().and_then(|i| {
                 self.char_index = i;
                 assert!(i < self.store.char_len());
                 let entry = self.store.entry_buffer[i.to_uint()];

@@ -2,8 +2,8 @@
 
 
 
-use std::io;
-use std::io::Writer;
+use std::old_io as io;
+use std::old_io::Writer;
 use std::mem;
 use std::mem::size_of;
 use std::slice;

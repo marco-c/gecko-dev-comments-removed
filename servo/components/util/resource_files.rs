@@ -2,14 +2,14 @@
 
 
 
-use std::io::{File, IoResult};
-use std::path::Path;
+use std::old_io::{File, IoResult};
+use std::old_path::Path;
 
 #[cfg(not(target_os = "android"))]
 use opts;
 
 #[cfg(not(target_os = "android"))]
-use std::io::fs::PathExtensions;
+use std::old_io::fs::PathExtensions;
 #[cfg(not(target_os = "android"))]
 use std::os;
 

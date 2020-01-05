@@ -3,10 +3,9 @@
 
 
 #![feature(box_syntax, plugin)]
-#![feature(int_uint)]
+#![feature(int_uint, core, libc, std_misc)]
 
 #![allow(missing_copy_implementations)]
-#![allow(unstable)]
 
 #[macro_use]
 extern crate log;

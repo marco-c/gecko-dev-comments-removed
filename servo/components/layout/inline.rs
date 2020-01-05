@@ -68,7 +68,7 @@ static FONT_SUPERSCRIPT_OFFSET_RATIO: f64 = 0.34;
 
 
 
-#[derive(RustcEncodable, Show, Copy)]
+#[derive(RustcEncodable, Debug, Copy)]
 pub struct Line {
     
     
@@ -712,7 +712,7 @@ pub struct InlineFragments {
     pub fragments: Vec<Fragment>,
 }
 
-impl fmt::Show for InlineFragments {
+impl fmt::Debug for InlineFragments {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{:?}", self.fragments)
     }
@@ -1392,7 +1392,7 @@ impl Flow for InlineFlow {
     }
 }
 
-impl fmt::Show for InlineFlow {
+impl fmt::Debug for InlineFlow {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{:?} - {:x} - {:?}", self.class(), self.base.debug_id(), self.fragments)
     }

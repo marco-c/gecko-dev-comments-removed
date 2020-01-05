@@ -31,7 +31,7 @@ use rustc_serialize::{Encoder, Encodable};
 
 
 
-#[derive(Show, Copy)]
+#[derive(Debug, Copy)]
 pub enum ScreenPx {}
 
 
@@ -43,7 +43,7 @@ pub enum ScreenPx {}
 
 
 
-#[derive(RustcEncodable, Show, Copy)]
+#[derive(RustcEncodable, Debug, Copy)]
 pub enum ViewportPx {}
 
 
@@ -52,7 +52,7 @@ pub enum ViewportPx {}
 
 
 
-#[derive(RustcEncodable, Show, Copy)]
+#[derive(RustcEncodable, Debug, Copy)]
 pub enum PagePx {}
 
 
@@ -120,7 +120,7 @@ impl Encodable for Au {
     }
 }
 
-impl fmt::Show for Au {
+impl fmt::Debug for Au {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}px", to_frac_px(*self))
     }}

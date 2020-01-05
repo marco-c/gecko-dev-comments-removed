@@ -3,8 +3,8 @@
 
 
 use std::borrow::ToOwned;
-use std::io;
-use std::io::File;
+use std::old_io as io;
+use std::old_io::File;
 
 
 

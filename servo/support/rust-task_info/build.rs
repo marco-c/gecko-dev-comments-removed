@@ -2,9 +2,10 @@
 
 
 
+#![feature(io)]
+
 use std::old_io::process::{Command, ProcessExit, StdioContainer};
 use std::os;
-
 
 fn main() {
     let out_dir = os::getenv("OUT_DIR").unwrap();
