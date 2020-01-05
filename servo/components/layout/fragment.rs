@@ -386,7 +386,8 @@ pub struct ScannedTextFragmentInfo {
 
 impl ScannedTextFragmentInfo {
     
-    pub fn new(run: Arc<Box<TextRun>>, range: Range<CharIndex>, content_inline_size: Au) -> ScannedTextFragmentInfo {
+    pub fn new(run: Arc<Box<TextRun>>, range: Range<CharIndex>, content_inline_size: Au)
+               -> ScannedTextFragmentInfo {
         ScannedTextFragmentInfo {
             run: run,
             range: range,
@@ -509,7 +510,10 @@ impl Fragment {
     }
 
     
-    pub fn new_anonymous_table_fragment(node: &ThreadSafeLayoutNode, specific: SpecificFragmentInfo) -> Fragment {
+    pub fn new_anonymous_table_fragment(node: &ThreadSafeLayoutNode,
+                                        specific: SpecificFragmentInfo)
+                                        -> Fragment {
+        
         
         
         

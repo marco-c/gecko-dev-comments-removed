@@ -6,83 +6,69 @@
 
 #![deny(unsafe_block)]
 
-use flow::Flow;
 use fragment::{Fragment, ScannedTextFragmentInfo, UnscannedTextFragment};
+use inline::InlineFragments;
 
 use gfx::font::{FontMetrics,RunMetrics};
 use gfx::font_context::FontContext;
 use gfx::text::glyph::CharIndex;
 use gfx::text::text_run::TextRun;
-use gfx::text::util::{CompressWhitespaceNewline, transform_text, CompressNone};
+use gfx::text::util::{mod, CompressWhitespaceNewline, CompressNone};
+use servo_util::dlist;
 use servo_util::geometry::Au;
 use servo_util::logical_geometry::{LogicalSize, WritingMode};
 use servo_util::range::Range;
-use servo_util::smallvec::SmallVec;
+use servo_util::smallvec::{SmallVec, SmallVec1};
+use std::collections::{DList, Deque};
+use std::mem;
 use style::ComputedValues;
 use style::computed_values::{line_height, text_orientation, white_space};
 use style::style_structs::Font as FontStyle;
 use sync::Arc;
 
-struct NewLinePositions {
-    new_line_pos: Vec<CharIndex>,
-}
-
-
-fn can_coalesce_text_nodes(fragments: &[Fragment], left_i: uint, right_i: uint) -> bool {
-    assert!(left_i != right_i);
-    fragments[left_i].can_merge_with_fragment(&fragments[right_i])
-}
-
 
 pub struct TextRunScanner {
-    pub clump: Range<CharIndex>,
+    pub clump: DList<Fragment>,
 }
 
 impl TextRunScanner {
     pub fn new() -> TextRunScanner {
         TextRunScanner {
-            clump: Range::empty(),
+            clump: DList::new(),
         }
     }
 
-    pub fn scan_for_runs(&mut self, font_context: &mut FontContext, flow: &mut Flow) {
-        {
-            let inline = flow.as_immutable_inline();
-            debug!("TextRunScanner: scanning {:u} fragments for text runs...", inline.fragments.len());
-        }
-
-        let fragments = &mut flow.as_inline().fragments;
-
-        let mut last_whitespace = true;
-        let mut new_fragments = Vec::new();
-        for fragment_i in range(0, fragments.fragments.len()) {
-            debug!("TextRunScanner: considering fragment: {:u}", fragment_i);
-            if fragment_i > 0 && !can_coalesce_text_nodes(fragments.fragments.as_slice(), fragment_i - 1, fragment_i) {
-                last_whitespace = self.flush_clump_to_list(font_context,
-                                                           fragments.fragments.as_slice(),
-                                                           &mut new_fragments,
-                                                           last_whitespace);
-            }
-
-            self.clump.extend_by(CharIndex(1));
-        }
+    pub fn scan_for_runs(&mut self, font_context: &mut FontContext, mut fragments: DList<Fragment>)
+                         -> InlineFragments {
+        debug!("TextRunScanner: scanning {:u} fragments for text runs...", fragments.len());
 
         
-        if self.clump.length() > CharIndex(0) {
-            drop(self.flush_clump_to_list(font_context,
-                                          fragments.fragments.as_slice(),
-                                          &mut new_fragments,
-                                          last_whitespace))
+        
+        let mut new_fragments = Vec::with_capacity(fragments.len());
+        let mut last_whitespace = true;
+        while !fragments.is_empty() {
+            
+            self.clump.append(dlist::split(&mut fragments));
+            while !fragments.is_empty() && self.clump
+                                               .back()
+                                               .unwrap()
+                                               .can_merge_with_fragment(fragments.front()
+                                                                                 .unwrap()) {
+                self.clump.append(dlist::split(&mut fragments));
+            }
+
+            
+            last_whitespace = self.flush_clump_to_list(font_context,
+                                                       &mut new_fragments,
+                                                       last_whitespace);
         }
 
-        debug!("TextRunScanner: swapping out fragments.");
-
-        fragments.fragments = new_fragments;
+        debug!("TextRunScanner: complete.");
+        InlineFragments {
+            fragments: new_fragments,
+        }
     }
 
-    
-    
-    
     
     
     
@@ -91,173 +77,107 @@ impl TextRunScanner {
     
     fn flush_clump_to_list(&mut self,
                            font_context: &mut FontContext,
-                           in_fragments: &[Fragment],
                            out_fragments: &mut Vec<Fragment>,
-                           last_whitespace: bool)
+                           mut last_whitespace: bool)
                            -> bool {
-        assert!(self.clump.length() > CharIndex(0));
+        debug!("TextRunScanner: flushing {} fragments in range", self.clump.len());
 
-        debug!("TextRunScanner: flushing fragments in range={}", self.clump);
-        let is_singleton = self.clump.length() == CharIndex(1);
-
-        let is_text_clump = match in_fragments[self.clump.begin().to_uint()].specific {
-            UnscannedTextFragment(_) => true,
-            _ => false,
-        };
-
-        let mut new_whitespace = last_whitespace;
-        match (is_singleton, is_text_clump) {
-            (false, false) => {
-                fail!("WAT: can't coalesce non-text nodes in flush_clump_to_list()!")
+        debug_assert!(!self.clump.is_empty());
+        match self.clump.front().unwrap().specific {
+            UnscannedTextFragment(_) => {}
+            _ => {
+                debug_assert!(self.clump.len() == 1,
+                              "WAT: can't coalesce non-text nodes in flush_clump_to_list()!");
+                out_fragments.push(self.clump.pop_front().unwrap());
+                return last_whitespace
             }
-            (true, false) => {
-                
-                debug!("TextRunScanner: pushing single non-text fragment in range: {}", self.clump);
-                let new_fragment = in_fragments[self.clump.begin().to_uint()].clone();
-                out_fragments.push(new_fragment)
-            },
-            (true, true)  => {
-                let old_fragment = &in_fragments[self.clump.begin().to_uint()];
-                let text = match old_fragment.specific {
+        }
+
+        
+        
+        
+        
+        
+        let mut new_ranges: SmallVec1<Range<CharIndex>> = SmallVec1::new();
+        let mut new_line_positions: SmallVec1<NewLinePositions> = SmallVec1::new();
+        let mut char_total = CharIndex(0);
+        let run = {
+            let fontgroup;
+            let compression;
+            {
+                let in_fragment = self.clump.front().unwrap();
+                let font_style = in_fragment.style().get_font();
+                fontgroup = font_context.get_layout_font_group_for_style(font_style);
+                compression = match in_fragment.white_space() {
+                    white_space::normal | white_space::nowrap => CompressWhitespaceNewline,
+                    white_space::pre => CompressNone,
+                }
+            }
+
+            
+            let mut run_text = String::new();
+            for in_fragment in self.clump.iter() {
+                let in_fragment = match in_fragment.specific {
                     UnscannedTextFragment(ref text_fragment_info) => &text_fragment_info.text,
                     _ => fail!("Expected an unscanned text fragment!"),
                 };
 
-                let font_style = old_fragment.style().get_font();
+                let mut new_line_pos = Vec::new();
+                let old_length = CharIndex(run_text.as_slice().char_len() as int);
+                last_whitespace = util::transform_text(in_fragment.as_slice(),
+                                                       compression,
+                                                       last_whitespace,
+                                                       &mut run_text,
+                                                       &mut new_line_pos);
+                new_line_positions.push(NewLinePositions(new_line_pos));
 
-                let compression = match old_fragment.white_space() {
-                    white_space::normal | white_space::nowrap => CompressWhitespaceNewline,
-                    white_space::pre => CompressNone,
-                };
-
-                let mut new_line_pos = vec![];
-
-                let (transformed_text, whitespace) = transform_text(text.as_slice(),
-                                                                    compression,
-                                                                    last_whitespace,
-                                                                    &mut new_line_pos);
-
-                new_whitespace = whitespace;
-
-                if transformed_text.len() > 0 {
-                    
-                    
-                    
-                    let fontgroup = font_context.get_layout_font_group_for_style(font_style);
-                    let run = box fontgroup.create_textrun(
-                        transformed_text.clone());
-
-                    debug!("TextRunScanner: pushing single text fragment in range: {} ({})",
-                           self.clump,
-                           *text);
-                    let range = Range::new(CharIndex(0), run.char_len());
-                    let new_metrics = run.metrics_for_range(&range);
-                    let bounding_box_size = bounding_box_for_run_metrics(
-                        &new_metrics, old_fragment.style.writing_mode);
-                    let new_text_fragment_info =
-                        ScannedTextFragmentInfo::new(Arc::new(run), range, old_fragment.border_box.size.inline);
-                    let mut new_fragment = old_fragment.transform(bounding_box_size, new_text_fragment_info);
-                    new_fragment.new_line_pos = new_line_pos;
-                    out_fragments.push(new_fragment)
-                }
-            },
-            (false, true) => {
-                
-                
-                
-                let in_fragment = &in_fragments[self.clump.begin().to_uint()];
-                let font_style = in_fragment.style().get_font();
-                let fontgroup = font_context.get_layout_font_group_for_style(font_style);
-
-                let compression = match in_fragment.white_space() {
-                    white_space::normal | white_space::nowrap => CompressWhitespaceNewline,
-                    white_space::pre => CompressNone,
-                };
-
-                let mut new_line_positions: Vec<NewLinePositions> = vec![];
-
-                
-                let mut last_whitespace_in_clump = new_whitespace;
-                let transformed_strs: Vec<String> = Vec::from_fn(self.clump.length().to_uint(), |i| {
-                    let idx = CharIndex(i as int) + self.clump.begin();
-                    let in_fragment = match in_fragments[idx.to_uint()].specific {
-                        UnscannedTextFragment(ref text_fragment_info) => &text_fragment_info.text,
-                        _ => fail!("Expected an unscanned text fragment!"),
-                    };
-
-                    let mut new_line_pos = vec![];
-
-                    let (new_str, new_whitespace) = transform_text(in_fragment.as_slice(),
-                                                                   compression,
-                                                                   last_whitespace_in_clump,
-                                                                   &mut new_line_pos);
-                    new_line_positions.push(NewLinePositions { new_line_pos: new_line_pos });
-
-                    last_whitespace_in_clump = new_whitespace;
-                    new_str
-                });
-                new_whitespace = last_whitespace_in_clump;
-
-                
-                
-                let mut run_str = String::new();
-
-                let mut new_ranges: Vec<Range<CharIndex>> =
-                    Vec::with_capacity(transformed_strs.len());
-
-                let mut char_total = CharIndex(0);
-                for i in range(0, transformed_strs.len() as int) {
-                    let added_chars = CharIndex(transformed_strs[i as uint].as_slice().char_len() as int);
-                    new_ranges.push(Range::new(char_total, added_chars));
-                    run_str.push_str(transformed_strs[i as uint].as_slice());
-                    char_total = char_total + added_chars;
-                }
-
-                
-                
-                
-                let clump = self.clump;
-                let run = if clump.length() != CharIndex(0) && run_str.len() > 0 {
-                    Some(Arc::new(box TextRun::new(&mut *fontgroup.fonts.get(0).borrow_mut(),
-                                                   run_str.to_string())))
-                } else {
-                    None
-                };
-
-                // Make new fragments with the run and adjusted text indices.
-                debug!("TextRunScanner: pushing fragment(s) in range: {}", self.clump);
-                for i in clump.each_index() {
-                    let logical_offset = i - self.clump.begin();
-                    let range = new_ranges[logical_offset.to_uint()];
-                    if range.length() == CharIndex(0) {
-                        debug!("Elided an `UnscannedTextFragment` because it was zero-length after \
-                                compression; {}", in_fragments[i.to_uint()]);
-                        continue
-                    }
-
-                    let old_fragment = &in_fragments[i.to_uint()];
-                    let new_text_fragment_info =
-                        ScannedTextFragmentInfo::new(
-                            run.as_ref().unwrap().clone(),
-                            range,
-                            old_fragment.border_box.size.inline);
-                    let new_metrics = new_text_fragment_info.run.metrics_for_range(&range);
-                    let bounding_box_size = bounding_box_for_run_metrics(
-                        &new_metrics, old_fragment.style.writing_mode);
-                    let mut new_fragment = old_fragment.transform(bounding_box_size, new_text_fragment_info);
-                    new_fragment.new_line_pos = new_line_positions[logical_offset.to_uint()].new_line_pos.clone();
-                    out_fragments.push(new_fragment)
-                }
+                let added_chars = CharIndex(run_text.as_slice().char_len() as int) - old_length;
+                new_ranges.push(Range::new(char_total, added_chars));
+                char_total = char_total + added_chars;
             }
-        } // End of match.
 
-        let end = self.clump.end(); // FIXME: borrow checker workaround
-        self.clump.reset(end, CharIndex(0));
+            
+            
+            
+            
+            if run_text.len() == 0 {
+                self.clump = DList::new();
+                return last_whitespace
+            }
+            Arc::new(box TextRun::new(&mut *fontgroup.fonts.get(0).borrow_mut(), run_text))
+        };
 
-        new_whitespace
-    } // End of `flush_clump_to_list`.
+        // Make new fragments with the run and adjusted text indices.
+        debug!("TextRunScanner: pushing {} fragment(s)", self.clump.len());
+        for (logical_offset, old_fragment) in
+                mem::replace(&mut self.clump, DList::new()).into_iter().enumerate() {
+            let range = *new_ranges.get(logical_offset);
+            if range.is_empty() {
+                debug!("Elided an `UnscannedTextFragment` because it was zero-length after \
+                        compression; {}",
+                       old_fragment);
+                continue
+            }
+
+            let text_inline_size = old_fragment.border_box.size.inline;
+            let new_text_fragment_info =
+                ScannedTextFragmentInfo::new(run.clone(), range, text_inline_size);
+            let new_metrics = new_text_fragment_info.run.metrics_for_range(&range);
+            let bounding_box_size = bounding_box_for_run_metrics(&new_metrics,
+                                                                 old_fragment.style.writing_mode);
+            let mut new_fragment = old_fragment.transform(bounding_box_size,
+                                                          new_text_fragment_info);
+            let &NewLinePositions(ref mut new_line_positions) =
+                new_line_positions.get_mut(logical_offset);
+            new_fragment.new_line_pos = mem::replace(new_line_positions, Vec::new());
+            out_fragments.push(new_fragment)
+        }
+
+        last_whitespace
+    }
 }
 
+struct NewLinePositions(Vec<CharIndex>);
 
 #[inline]
 fn bounding_box_for_run_metrics(metrics: &RunMetrics, writing_mode: WritingMode)
@@ -303,3 +223,5 @@ pub fn line_height_from_style(style: &ComputedValues, metrics: &FontMetrics) -> 
         line_height::Length(l) => l
     }
 }
+
+
