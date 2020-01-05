@@ -145,6 +145,26 @@ protected:
 
 };
 
+struct VRFrameInfo
+{
+  VRFrameInfo();
+
+  void Update(const gfx::VRDisplayInfo& aInfo,
+              const gfx::VRHMDSensorState& aState,
+              float aDepthNear,
+              float aDepthFar);
+
+  void Clear();
+  bool IsDirty();
+
+  gfx::VRHMDSensorState mVRState;
+  gfx::Matrix4x4 mLeftProjection;
+  gfx::Matrix4x4 mLeftView;
+  gfx::Matrix4x4 mRightProjection;
+  gfx::Matrix4x4 mRightView;
+
+};
+
 class VRFrameData final : public nsWrapperCache
 {
 public:
@@ -155,10 +175,7 @@ public:
   static already_AddRefed<VRFrameData> Constructor(const GlobalObject& aGlobal,
                                                    ErrorResult& aRv);
 
-  void Update(const gfx::VRDisplayInfo& aInfo,
-              const gfx::VRHMDSensorState& aState,
-              float aDepthNear,
-              float aDepthFar);
+  void Update(const VRFrameInfo& aFrameInfo);
 
   
   double Timestamp() const;
@@ -185,17 +202,12 @@ protected:
   ~VRFrameData();
   nsCOMPtr<nsISupports> mParent;
 
-  gfx::VRHMDSensorState mVRState;
+  VRFrameInfo mFrameInfo;
   RefPtr<VRPose> mPose;
   JS::Heap<JSObject*> mLeftProjectionMatrix;
   JS::Heap<JSObject*> mLeftViewMatrix;
   JS::Heap<JSObject*> mRightProjectionMatrix;
   JS::Heap<JSObject*> mRightViewMatrix;
-
-  gfx::Matrix4x4 mLeftProjection;
-  gfx::Matrix4x4 mLeftView;
-  gfx::Matrix4x4 mRightProjection;
-  gfx::Matrix4x4 mRightView;
 
   void LazyCreateMatrix(JS::Heap<JSObject*>& aArray, gfx::Matrix4x4& aMat,
                         JSContext* aCx, JS::MutableHandle<JSObject*> aRetval,
@@ -332,6 +344,7 @@ protected:
   virtual void LastRelease() override;
 
   void ExitPresentInternal();
+  void UpdateFrameInfo();
 
   RefPtr<gfx::VRDisplayClient> mClient;
 
@@ -345,6 +358,15 @@ protected:
   double mDepthFar;
 
   RefPtr<gfx::VRDisplayPresentation> mPresentation;
+
+  
+
+
+
+
+
+
+  VRFrameInfo mFrameInfo;
 };
 
 } 
