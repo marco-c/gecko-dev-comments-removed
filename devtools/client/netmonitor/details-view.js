@@ -5,11 +5,11 @@
 
 
 
-
 "use strict";
 
 const promise = require("promise");
 const EventEmitter = require("devtools/shared/event-emitter");
+const Editor = require("devtools/client/sourceeditor/editor");
 const { Heritage } = require("devtools/client/shared/widgets/view-helpers");
 const { Task } = require("devtools/shared/task");
 const { ToolSidebar } = require("devtools/client/framework/sidebar");
