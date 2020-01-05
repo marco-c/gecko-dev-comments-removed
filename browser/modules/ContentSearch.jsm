@@ -259,7 +259,7 @@ this.ContentSearch = {
     return;
   },
 
-  getSuggestions: Task.async(function* (engineName, searchString, browser, remoteTimeout = null) {
+  getSuggestions: Task.async(function* (engineName, searchString, browser) {
     let engine = Services.search.getEngineByName(engineName);
     if (!engine) {
       throw new Error("Unknown engine name: " + engineName);
@@ -270,7 +270,6 @@ this.ContentSearch = {
     let ok = SearchSuggestionController.engineOffersSuggestions(engine);
     controller.maxLocalResults = ok ? MAX_LOCAL_SUGGESTIONS : MAX_SUGGESTIONS;
     controller.maxRemoteResults = ok ? MAX_SUGGESTIONS : 0;
-    controller.remoteTimeout = remoteTimeout || undefined;
     let priv = PrivateBrowsingUtils.isBrowserPrivate(browser);
     
     

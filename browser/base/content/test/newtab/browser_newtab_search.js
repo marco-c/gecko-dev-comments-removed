@@ -126,11 +126,6 @@ add_task(function* () {
   yield* checkCurrentEngine(ENGINE_SUGGESTIONS);
 
   
-  yield ContentTask.spawn(gBrowser.selectedBrowser, {}, function* () {
-    content.gSearch._contentSearchController.remoteTimeout = 5000;
-  });
-
-  
   
   
   let suggestionsOpenPromise = new Promise(resolve => {

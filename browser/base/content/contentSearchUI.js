@@ -65,10 +65,6 @@ function ContentSearchUIController(inputElement, tableParent, healthReportKey,
 
 ContentSearchUIController.prototype = {
 
-  
-  
-  
-  remoteTimeout: undefined,
   _oneOffButtons: [],
   
   
@@ -716,7 +712,6 @@ ContentSearchUIController.prototype = {
       this._sendMsg("GetSuggestions", {
         engineName: this.defaultEngine.name,
         searchString: this.input.value,
-        remoteTimeout: this.remoteTimeout,
       });
     }
   },
