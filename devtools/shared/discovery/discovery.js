@@ -139,20 +139,43 @@ Transport.prototype = {
 
 
 
+
 function LocalDevice() {
   this._name = LocalDevice.UNKNOWN;
+  if ("@mozilla.org/settingsService;1" in Cc) {
+    this._settings =
+      Cc["@mozilla.org/settingsService;1"].getService(Ci.nsISettingsService);
+    Services.obs.addObserver(this, "mozsettings-changed", false);
+  }
   
   this._get();
 }
 
+LocalDevice.SETTING = "devtools.discovery.device";
 LocalDevice.UNKNOWN = "unknown";
 
 LocalDevice.prototype = {
 
   _get: function () {
+    if (!this._settings) {
+      
+      
+      this._generate();
+      return;
+    }
     
-    
-    this._generate();
+    this._settings.createLock().get(LocalDevice.SETTING, {
+      handle: (_, name) => {
+        if (name && name !== LocalDevice.UNKNOWN) {
+          this._name = name;
+          log("Device: " + this._name);
+          return;
+        }
+        
+        this._generate();
+      },
+      handleError: () => log("Failed to get device name setting")
+    });
   },
 
   
@@ -180,13 +203,39 @@ LocalDevice.prototype = {
     }
   },
 
+  
+
+
+  observe: function (subject, topic, data) {
+    if (topic !== "mozsettings-changed") {
+      return;
+    }
+    if ("wrappedJSObject" in subject) {
+      subject = subject.wrappedJSObject;
+    }
+    if (subject.key !== LocalDevice.SETTING) {
+      return;
+    }
+    this._name = subject.value;
+    log("Device: " + this._name);
+  },
+
   get name() {
     return this._name;
   },
 
   set name(name) {
-    this._name = name;
-    log("Device: " + this._name);
+    if (!this._settings) {
+      this._name = name;
+      log("Device: " + this._name);
+      return;
+    }
+    
+    
+    this._settings.createLock().set(LocalDevice.SETTING, name, {
+      handle: () => {},
+      handleError: () => log("Failed to set device name setting")
+    });
   }
 
 };

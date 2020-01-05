@@ -278,6 +278,7 @@ pref("ui.threedlightshadow", "#ece7e2");
 pref("ui.threedshadow", "#aea194");
 pref("ui.windowframe", "#efebe7");
 
+
 pref("ui.menu", "#f97c17");
 pref("ui.menutext", "#ffffff");
 pref("ui.infobackground", "#343e40");
@@ -407,6 +408,9 @@ pref("dom.webapps.firstRunWithSIM", true);
 
 pref("dom.mozApps.single_variant_sourcedir", "/persist/svoperapps");
 #endif
+
+
+pref("dom.mozSettings.enabled", true);
 
 
 pref("device.camera.enabled", true);
@@ -911,6 +915,27 @@ pref("dom.mapped_arraybuffer.enabled", true);
 
 
 pref("dom.udpsocket.enabled", true);
+
+
+pref("dom.tv.enabled", true);
+
+
+pref("dom.inputport.enabled", true);
+
+pref("dom.mozSettings.SettingsDB.debug.enabled", true);
+pref("dom.mozSettings.SettingsManager.debug.enabled", true);
+pref("dom.mozSettings.SettingsRequestManager.debug.enabled", true);
+pref("dom.mozSettings.SettingsService.debug.enabled", true);
+
+pref("dom.mozSettings.SettingsDB.verbose.enabled", false);
+pref("dom.mozSettings.SettingsManager.verbose.enabled", false);
+pref("dom.mozSettings.SettingsRequestManager.verbose.enabled", false);
+pref("dom.mozSettings.SettingsService.verbose.enabled", false);
+
+
+
+
+pref("dom.mozSettings.allowForceReadOnly", false);
 
 
 

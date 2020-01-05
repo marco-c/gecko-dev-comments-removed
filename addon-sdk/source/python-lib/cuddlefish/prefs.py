@@ -216,6 +216,7 @@ DEFAULT_TEST_PREFS = {
     'layout.css.report_errors': True,
     'layout.css.grid.enabled': True,
     'layout.spammy_warnings.enabled': False,
+    'dom.mozSettings.enabled': True,
     
     'network.http.bypass-cachelock-threshold': 200000,
     

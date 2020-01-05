@@ -4847,6 +4847,9 @@ pref("dom.push.http2.maxRetries", 2);
 pref("dom.push.http2.retryInterval", 5000);
 
 
+pref("dom.mozSettings.enabled", false);
+
+
 
 
 #if defined(XP_MACOSX)
@@ -5283,6 +5286,23 @@ pref("intl.allow-insecure-text-input", false);
 
 
 pref("dom.meta-viewport.enabled", false);
+
+
+pref("dom.mozSettings.SettingsDB.debug.enabled", false);
+pref("dom.mozSettings.SettingsManager.debug.enabled", false);
+pref("dom.mozSettings.SettingsRequestManager.debug.enabled", false);
+pref("dom.mozSettings.SettingsService.debug.enabled", false);
+
+
+pref("dom.mozSettings.SettingsDB.verbose.enabled", false);
+pref("dom.mozSettings.SettingsManager.verbose.enabled", false);
+pref("dom.mozSettings.SettingsRequestManager.verbose.enabled", false);
+pref("dom.mozSettings.SettingsService.verbose.enabled", false);
+
+
+
+
+pref("dom.mozSettings.allowForceReadOnly", false);
 
 
 #ifdef NIGHTLY_BUILD

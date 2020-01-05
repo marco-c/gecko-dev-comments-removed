@@ -194,6 +194,12 @@ user_pref("media.mediasource.mp4.enabled", true);
 user_pref("media.mediasource.webm.enabled", true);
 
 
+user_pref("dom.mozContacts.enabled", true);
+
+
+user_pref("dom.mozSettings.enabled", true);
+
+
 user_pref("network.http.bypass-cachelock-threshold", 200000);
 
 
