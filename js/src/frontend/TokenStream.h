@@ -364,10 +364,12 @@ class MOZ_STACK_CLASS TokenStream
     
     bool reportError(unsigned errorNumber, ...);
     bool reportErrorNoOffset(unsigned errorNumber, ...);
-    bool reportWarning(unsigned errorNumber, ...);
 
     
     void error(unsigned errorNumber, ...);
+
+    
+    MOZ_MUST_USE bool warning(unsigned errorNumber, ...);
 
     static const uint32_t NoOffset = UINT32_MAX;
 
