@@ -5518,7 +5518,7 @@ nsGridContainerFrame::ReflowInFragmentainer(GridReflowInput&     aState,
     childAvailableSize = bEndRow;
     if (aStatus.IsComplete()) {
       aStatus.SetOverflowIncomplete();
-      aStatus |= NS_FRAME_REFLOW_NEXTINFLOW;
+      aStatus.SetNextInFlowNeedsReflow();
     }
   } else {
     
@@ -5704,7 +5704,7 @@ nsGridContainerFrame::ReflowRowsInFragmentainer(
       !overflowIncompleteItems.IsEmpty()) {
     if (aStatus.IsComplete()) {
       aStatus.SetOverflowIncomplete();
-      aStatus |= NS_FRAME_REFLOW_NEXTINFLOW;
+      aStatus.SetNextInFlowNeedsReflow();
     }
     
     
@@ -6174,7 +6174,7 @@ nsGridContainerFrame::Reflow(nsPresContext*           aPresContext,
   if (HasAnyStateBits(NS_FRAME_IS_OVERFLOW_CONTAINER)) {
     if (!aStatus.IsComplete()) {
       aStatus.SetOverflowIncomplete();
-      aStatus |= NS_FRAME_REFLOW_NEXTINFLOW;
+      aStatus.SetNextInFlowNeedsReflow();
     }
     bSize = 0;
     desiredSize.BSize(wm) = bSize + bp.BStartEnd(wm);

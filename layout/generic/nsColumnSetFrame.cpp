@@ -648,7 +648,7 @@ nsColumnSetFrame::ReflowChildren(ReflowOutput&     aDesiredSize,
       ReflowChild(child, PresContext(), kidDesiredSize, kidReflowInput,
                   wm, origin, containerSize, 0, aStatus);
 
-      reflowNext = (aStatus & NS_FRAME_REFLOW_NEXTINFLOW) != 0;
+      reflowNext = aStatus.NextInFlowNeedsReflow();
 
 #ifdef DEBUG_roc
       printf("*** Reflowed child #%d %p: status = %d, desiredSize=%d,%d CarriedOutBEndMargin=%d\n",
@@ -694,7 +694,7 @@ nsColumnSetFrame::ReflowChildren(ReflowOutput&     aDesiredSize,
       
       
       if (!kidNextInFlow) {
-        NS_ASSERTION(aStatus & NS_FRAME_REFLOW_NEXTINFLOW,
+        NS_ASSERTION(aStatus.NextInFlowNeedsReflow(),
                      "We have to create a continuation, but the block doesn't want us to reflow it?");
 
         
@@ -705,13 +705,13 @@ nsColumnSetFrame::ReflowChildren(ReflowOutput&     aDesiredSize,
       
       if (aStatus.IsOverflowIncomplete()) {
         if (!(kidNextInFlow->GetStateBits() & NS_FRAME_IS_OVERFLOW_CONTAINER)) {
-          aStatus |= NS_FRAME_REFLOW_NEXTINFLOW;
+          aStatus.SetNextInFlowNeedsReflow();
           reflowNext = true;
           kidNextInFlow->AddStateBits(NS_FRAME_IS_OVERFLOW_CONTAINER);
         }
       }
       else if (kidNextInFlow->GetStateBits() & NS_FRAME_IS_OVERFLOW_CONTAINER) {
-        aStatus |= NS_FRAME_REFLOW_NEXTINFLOW;
+        aStatus.SetNextInFlowNeedsReflow();
         reflowNext = true;
         kidNextInFlow->RemoveStateBits(NS_FRAME_IS_OVERFLOW_CONTAINER);
       }
@@ -727,7 +727,7 @@ nsColumnSetFrame::ReflowChildren(ReflowOutput&     aDesiredSize,
 
       if (columnCount >= aConfig.mBalanceColCount) {
         
-        aStatus |= NS_FRAME_REFLOW_NEXTINFLOW;
+        aStatus.SetNextInFlowNeedsReflow();
         kidNextInFlow->AddStateBits(NS_FRAME_IS_DIRTY);
         
         
