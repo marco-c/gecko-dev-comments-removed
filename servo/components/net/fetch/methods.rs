@@ -24,6 +24,7 @@ use std::io::Read;
 use std::mem;
 use std::rc::Rc;
 use std::sync::mpsc::{Sender, Receiver};
+use subresource_integrity::is_response_integrity_valid;
 
 pub type Target<'a> = &'a mut (FetchTaskTarget + Send);
 
@@ -268,6 +269,7 @@ pub fn main_fetch(request: Rc<Request>,
         response
     };
 
+    let mut response_loaded = false;
     {
         
         let network_error_res;
@@ -297,50 +299,33 @@ pub fn main_fetch(request: Rc<Request>,
             let mut body = internal_response.body.lock().unwrap();
             *body = ResponseBody::Empty;
         }
-
-        
-        
-        
-
-        
-        
-
-        
-        
-        
-        
-        
-        
     }
+     
+    let response = if !response.is_network_error() && *request.integrity_metadata.borrow() != "" {
+        
+        wait_for_response(&response, target, done_chan);
+        response_loaded = true;
+
+        
+        let ref integrity_metadata = *request.integrity_metadata.borrow();
+        if response.termination_reason.is_none() &&
+           !is_response_integrity_valid(integrity_metadata, &response) {
+            Response::network_error(NetworkError::Internal("Subresource integrity validation failed".into()))
+        } else {
+            response
+        }
+    } else {
+        response
+    };
 
     
     if request.synchronous {
         
         
         target.process_response(&response);
-
-        if let Some(ref ch) = *done_chan {
-            loop {
-                match ch.1.recv()
-                        .expect("fetch worker should always send Done before terminating") {
-                    Data::Payload(vec) => {
-                        target.process_response_chunk(vec);
-                    }
-                    Data::Done => break,
-                }
-            }
-        } else {
-            let body = response.body.lock().unwrap();
-            if let ResponseBody::Done(ref vec) = *body {
-                
-                
-                
-                target.process_response_chunk(vec.clone());
-            } else {
-                assert!(*body == ResponseBody::Empty)
-            }
+        if !response_loaded {
+            wait_for_response(&response, target, done_chan);
         }
-
         
         target.process_response_eof(&response);
         return response;
@@ -360,13 +345,25 @@ pub fn main_fetch(request: Rc<Request>,
     target.process_response(&response);
 
     
+    if !response_loaded {
+       wait_for_response(&response, target, done_chan);
+    }
+
+    
+    target.process_response_eof(&response);
+
+    
+    return response;
+}
+
+fn wait_for_response(response: &Response, target: Target, done_chan: &mut DoneChannel) {
     if let Some(ref ch) = *done_chan {
         loop {
             match ch.1.recv()
                     .expect("fetch worker should always send Done before terminating") {
                 Data::Payload(vec) => {
                     target.process_response_chunk(vec);
-                }
+                },
                 Data::Done => break,
             }
         }
@@ -381,12 +378,6 @@ pub fn main_fetch(request: Rc<Request>,
             assert!(*body == ResponseBody::Empty)
         }
     }
-
-    
-    target.process_response_eof(&response);
-
-    
-    return response;
 }
 
 
@@ -518,3 +509,4 @@ fn is_null_body_status(status: &Option<StatusCode>) -> bool {
         _ => false
     }
 }
+

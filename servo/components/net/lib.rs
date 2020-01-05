@@ -60,8 +60,8 @@ pub mod image_cache_thread;
 pub mod mime_classifier;
 pub mod resource_thread;
 mod storage_thread;
+pub mod subresource_integrity;
 mod websocket_loader;
-
 
 pub mod fetch {
     pub mod cors_cache;
