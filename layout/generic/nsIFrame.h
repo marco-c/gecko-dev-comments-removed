@@ -39,6 +39,7 @@
 #include "nsStyleContext.h"
 #include "nsStyleStruct.h"
 #include "Visibility.h"
+#include "nsChangeHint.h"
 
 #ifdef ACCESSIBILITY
 #include "mozilla/a11y/AccTypes.h"
@@ -81,6 +82,7 @@ class nsLineList_iterator;
 class nsAbsoluteContainingBlock;
 class nsIContent;
 class nsContainerFrame;
+class nsStyleChangeList;
 
 struct nsPeekOffsetStruct;
 struct nsPoint;
@@ -95,6 +97,7 @@ enum class CSSPseudoElementType : uint8_t;
 class EventStates;
 struct ReflowInput;
 class ReflowOutput;
+class ServoStyleSet;
 
 namespace layers {
 class Layer;
@@ -3067,6 +3070,35 @@ public:
 
 
   virtual nsStyleContext* GetParentStyleContext(nsIFrame** aProviderFrame) const = 0;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  void UpdateStyleOfOwnedAnonBoxes(mozilla::ServoStyleSet& aStyleSet,
+                                   nsStyleChangeList& aChangeList,
+                                   nsChangeHint aHintForThisFrame) {
+    if (GetStateBits() & NS_FRAME_OWNS_ANON_BOXES) {
+      DoUpdateStyleOfOwnedAnonBoxes(aStyleSet, aChangeList, aHintForThisFrame);
+    }
+  }
+
+  
+
+
+
+  virtual void DoUpdateStyleOfOwnedAnonBoxes(mozilla::ServoStyleSet& aStyleSet,
+                                             nsStyleChangeList& aChangeList,
+                                             nsChangeHint aHintForThisFrame);
 
   
 
