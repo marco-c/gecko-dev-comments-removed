@@ -376,6 +376,12 @@ public:
   
   nscoord mConsumedBSize;
 
+  
+  
+  
+  
+  mozilla::Maybe<nscoord> mLineBSize;
+
 private:
   bool CanPlaceFloat(nscoord aFloatISize,
                      const nsFlowAreaRect& aFloatAvailableSpace);

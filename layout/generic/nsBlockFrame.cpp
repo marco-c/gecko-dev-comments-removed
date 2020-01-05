@@ -3766,6 +3766,7 @@ nsBlockFrame::ReflowInlineFrames(BlockReflowInput& aState,
   LineReflowStatus lineReflowStatus;
   do {
     nscoord availableSpaceBSize = 0;
+    aState.mLineBSize.reset();
     do {
       bool allowPullUp = true;
       nsIFrame* forceBreakInFrame = nullptr;
@@ -4474,40 +4475,61 @@ nsBlockFrame::PlaceLine(BlockReflowInput& aState,
   
   
   
-  LogicalRect oldFloatAvailableSpace(aFloatAvailableSpace);
+
+  
+  
+  LogicalRect floatAvailableSpaceWithOldLineBSize =
+    aState.mLineBSize.isNothing()
+    ? aState.GetFloatAvailableSpace(aLine->BStart()).mRect
+    : aState.GetFloatAvailableSpaceForBSize(aLine->BStart(),
+                                            aState.mLineBSize.value(),
+                                            nullptr).mRect;
+
   
   
   aAvailableSpaceBSize = std::max(aAvailableSpaceBSize, aLine->BSize());
-  aFloatAvailableSpace =
+  LogicalRect floatAvailableSpaceWithLineBSize =
     aState.GetFloatAvailableSpaceForBSize(aLine->BStart(),
                                           aAvailableSpaceBSize,
-                                          aFloatStateBeforeLine).mRect;
-  NS_ASSERTION(aFloatAvailableSpace.BStart(wm) ==
-               oldFloatAvailableSpace.BStart(wm), "yikes");
-  
-  aFloatAvailableSpace.BSize(wm) = oldFloatAvailableSpace.BSize(wm);
-
-  
-  
-  const nscoord iStartDiff =
-    aFloatAvailableSpace.IStart(wm) - oldFloatAvailableSpace.IStart(wm);
-  const nscoord iEndDiff =
-    aFloatAvailableSpace.IEnd(wm) - oldFloatAvailableSpace.IEnd(wm);
-  if (iStartDiff < 0) {
-    aFloatAvailableSpace.IStart(wm) -= iStartDiff;
-    aFloatAvailableSpace.ISize(wm) += iStartDiff;
-  }
-  if (iEndDiff > 0) {
-    aFloatAvailableSpace.ISize(wm) -= iEndDiff;
-  }
+                                          nullptr).mRect;
 
   
   
   
   
   
-  if (AvailableSpaceShrunk(wm, oldFloatAvailableSpace, aFloatAvailableSpace,
-                           false)) {
+  if (AvailableSpaceShrunk(wm, floatAvailableSpaceWithOldLineBSize,
+                           floatAvailableSpaceWithLineBSize, false)) {
+    
+    aState.mLineBSize = Some(aLine->BSize());
+
+    
+    
+    
+    LogicalRect oldFloatAvailableSpace(aFloatAvailableSpace);
+    aFloatAvailableSpace =
+      aState.GetFloatAvailableSpaceForBSize(aLine->BStart(),
+                                            aAvailableSpaceBSize,
+                                            aFloatStateBeforeLine).mRect;
+    NS_ASSERTION(aFloatAvailableSpace.BStart(wm) ==
+                 oldFloatAvailableSpace.BStart(wm), "yikes");
+    
+    aFloatAvailableSpace.BSize(wm) = oldFloatAvailableSpace.BSize(wm);
+
+    
+    
+    const nscoord iStartDiff =
+      aFloatAvailableSpace.IStart(wm) - oldFloatAvailableSpace.IStart(wm);
+    const nscoord iEndDiff =
+      aFloatAvailableSpace.IEnd(wm) - oldFloatAvailableSpace.IEnd(wm);
+    if (iStartDiff < 0) {
+      aFloatAvailableSpace.IStart(wm) -= iStartDiff;
+      aFloatAvailableSpace.ISize(wm) += iStartDiff;
+    }
+    if (iEndDiff > 0) {
+      aFloatAvailableSpace.ISize(wm) -= iEndDiff;
+    }
+
     return false;
   }
 
