@@ -3204,7 +3204,7 @@ protected:
   const nsStyleText*              mTextStyle;
   const nsTextFragment*           mFrag;
   const nsIFrame*                 mLineContainer;
-  const nsTextFrame*              mFrame;
+  nsTextFrame*                    mFrame;
   gfxSkipCharsIterator            mStart;  
   const gfxSkipCharsIterator      mTempIterator;
 
