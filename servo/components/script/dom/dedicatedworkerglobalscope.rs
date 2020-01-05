@@ -371,5 +371,11 @@ impl DedicatedWorkerGlobalScopeMethods for DedicatedWorkerGlobalScope {
     }
 
     
+    fn Close(&self) {
+        
+        self.upcast::<WorkerGlobalScope>().close();
+    }
+
+    
     event_handler!(message, GetOnmessage, SetOnmessage);
 }
