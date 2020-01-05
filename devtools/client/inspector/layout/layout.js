@@ -80,6 +80,12 @@ LayoutView.prototype = {
       
 
 
+
+      showBoxModelProperties: true,
+
+      
+
+
       onHideBoxModelHighlighter: () => {
         let toolbox = this.inspector.toolbox;
         toolbox.highlighterUtils.unhighlight();
