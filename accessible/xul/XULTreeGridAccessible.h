@@ -124,6 +124,7 @@ public:
                                            LeafAccessible)
 
   
+  virtual void Shutdown() override;
   virtual TableCellAccessible* AsTableCell() override { return this; }
   virtual nsIntRect Bounds() const override;
   virtual ENameValueFlag Name(nsString& aName) override;

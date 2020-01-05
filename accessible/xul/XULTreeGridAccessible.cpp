@@ -455,6 +455,18 @@ NS_IMPL_RELEASE_INHERITED(XULTreeGridCellAccessible, LeafAccessible)
 
 
 
+void
+XULTreeGridCellAccessible::Shutdown()
+{
+  mTree = nullptr;
+  mTreeView = nullptr;
+  mRow = -1;
+  mColumn = nullptr;
+  mParent = nullptr; 
+
+  LeafAccessible::Shutdown();
+}
+
 Accessible*
 XULTreeGridCellAccessible::FocusedChild()
 {
