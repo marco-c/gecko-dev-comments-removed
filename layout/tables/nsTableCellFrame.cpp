@@ -490,70 +490,50 @@ nsTableCellFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
                                    const nsDisplayListSet& aLists)
 {
   DO_GLOBAL_REFLOW_COUNT_DSP("nsTableCellFrame");
-  if (IsVisibleInSelection(aBuilder)) {
-    nsTableFrame* tableFrame = GetTableFrame();
-    int32_t emptyCellStyle = GetContentEmpty() && !tableFrame->IsBorderCollapse() ?
-                                StyleTableBorder()->mEmptyCells
-                                : NS_STYLE_TABLE_EMPTY_CELLS_SHOW;
+  nsTableFrame* tableFrame = GetTableFrame();
+  int32_t emptyCellStyle = GetContentEmpty() && !tableFrame->IsBorderCollapse() ?
+                              StyleTableBorder()->mEmptyCells
+                              : NS_STYLE_TABLE_EMPTY_CELLS_SHOW;
+  
+  if (StyleVisibility()->IsVisible() &&
+      (NS_STYLE_TABLE_EMPTY_CELLS_HIDE != emptyCellStyle)) {
     
-    if (StyleVisibility()->IsVisible() &&
-        (NS_STYLE_TABLE_EMPTY_CELLS_HIDE != emptyCellStyle)) {
-      
-      bool hasBoxShadow = !!StyleEffects()->mBoxShadow;
-      if (hasBoxShadow) {
-        aLists.BorderBackground()->AppendNewToTop(
-          new (aBuilder) nsDisplayBoxShadowOuter(aBuilder, this));
-      }
-    
-      
-      if (aBuilder->IsForEventDelivery() ||
-          !StyleBackground()->IsTransparent(this) ||
-          StyleDisplay()->UsedAppearance()) {
-        if (!tableFrame->IsBorderCollapse()) {
-          nsDisplayBackgroundImage::AppendBackgroundItemsToTop(aBuilder,
-              this,
-              GetRectRelativeToSelf(),
-              aLists.BorderBackground());
-        } else if (aBuilder->IsAtRootOfPseudoStackingContext() ||
-                   aBuilder->IsForEventDelivery()) {
-          
-          
-          
-          nsDisplayTableItem* item =
-            new (aBuilder) nsDisplayTableCellBackground(aBuilder, this);
-          aLists.BorderBackground()->AppendNewToTop(item);
-          item->UpdateForFrameBackground(this);
-        } else {
-          
-          
-          nsDisplayTableItem* currentItem = aBuilder->GetCurrentTableItem();
-          if (currentItem) {
-            currentItem->UpdateForFrameBackground(this);
-          }
-        }
-      }
-    
-      
-      if (hasBoxShadow) {
-        aLists.BorderBackground()->AppendNewToTop(
-          new (aBuilder) nsDisplayBoxShadowInner(aBuilder, this));
-      }
-    
-      
-      ProcessBorders(tableFrame, aBuilder, aLists);
-    
-      
-      if (IsSelected()) {
-        aLists.BorderBackground()->AppendNewToTop(new (aBuilder)
-          nsDisplayGeneric(aBuilder, this, ::PaintTableCellSelection,
-                           "TableCellSelection",
-                           nsDisplayItem::TYPE_TABLE_CELL_SELECTION));
-      }
+    bool hasBoxShadow = !!StyleEffects()->mBoxShadow;
+    if (hasBoxShadow) {
+      aLists.BorderBackground()->AppendNewToTop(
+        new (aBuilder) nsDisplayBoxShadowOuter(aBuilder, this));
     }
+
     
+    if (aBuilder->IsForEventDelivery() ||
+        !StyleBackground()->IsTransparent(this) ||
+        StyleDisplay()->UsedAppearance()) {
+      nsDisplayBackgroundImage::AppendBackgroundItemsToTop(aBuilder,
+          this,
+          GetRectRelativeToSelf(),
+          aLists.BorderBackground());
+    }
+
     
-    DisplayOutline(aBuilder, aLists);
+    if (hasBoxShadow) {
+      aLists.BorderBackground()->AppendNewToTop(
+        new (aBuilder) nsDisplayBoxShadowInner(aBuilder, this));
+    }
+
+    
+    ProcessBorders(tableFrame, aBuilder, aLists);
+
+    
+    if (IsSelected()) {
+      aLists.BorderBackground()->AppendNewToTop(new (aBuilder)
+        nsDisplayGeneric(aBuilder, this, ::PaintTableCellSelection,
+                         "TableCellSelection",
+                         nsDisplayItem::TYPE_TABLE_CELL_SELECTION));
+    }
   }
+
+  
+  DisplayOutline(aBuilder, aLists);
 
   
   
