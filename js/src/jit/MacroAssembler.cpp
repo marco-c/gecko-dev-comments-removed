@@ -2851,7 +2851,7 @@ MacroAssembler::wasmEmitTrapOutOfLineCode()
             break;
           }
           case wasm::TrapSite::MemoryAccess: {
-            append(wasm::MemoryAccess(site.codeOffset, size()));
+            append(wasm::MemoryAccess(site.codeOffset, currentOffset()));
             break;
           }
         }
@@ -2875,7 +2875,6 @@ MacroAssembler::wasmEmitTrapOutOfLineCode()
             setFramePushed(site.framePushed);
 
             
-            
             size_t alreadyPushed = sizeof(AsmJSFrame) + framePushed();
             size_t toPush = ABIArgGenerator().stackBytesConsumedSoFar();
             if (size_t dec = StackDecrementForCall(ABIStackAlignment, alreadyPushed, toPush))
@@ -2889,12 +2888,12 @@ MacroAssembler::wasmEmitTrapOutOfLineCode()
             
             wasm::CallSiteDesc desc(site.bytecodeOffset, wasm::CallSiteDesc::TrapExit);
             call(desc, site.trap);
+        }
 
 #ifdef DEBUG
-            
-            breakpoint();
+        
+        breakpoint();
 #endif
-        }
     }
 
     
