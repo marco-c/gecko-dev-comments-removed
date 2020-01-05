@@ -625,7 +625,7 @@ impl Document {
             
             
             
-            let rect = element.upcast::<Node>().bounding_content_box();
+            let rect = element.upcast::<Node>().bounding_content_box_or_zero();
 
             
             

@@ -54,7 +54,7 @@ pub struct LayoutThreadData {
     pub stylist: Arc<Stylist>,
 
     
-    pub content_box_response: Rect<Au>,
+    pub content_box_response: Option<Rect<Au>>,
 
     
     pub content_boxes_response: Vec<Rect<Au>>,
@@ -384,15 +384,12 @@ impl FragmentBorderBoxIterator for MarginRetrievingFragmentBorderBoxIterator {
 }
 
 pub fn process_content_box_request<N: LayoutNode>(
-        requested_node: N, layout_root: &mut Flow) -> Rect<Au> {
+        requested_node: N, layout_root: &mut Flow) -> Option<Rect<Au>> {
     
     
     let mut iterator = UnioningFragmentBorderBoxIterator::new(requested_node.opaque());
     sequential::iterate_through_flow_tree_fragment_border_boxes(layout_root, &mut iterator);
-    match iterator.rect {
-        Some(rect) => rect,
-        None       => Rect::zero()
-    }
+    iterator.rect
 }
 
 pub fn process_content_boxes_request<N: LayoutNode>(requested_node: N, layout_root: &mut Flow)
