@@ -94,7 +94,7 @@ public class StreamRecyclerAdapter extends RecyclerView.Adapter<StreamItem> impl
 
     @Override
     public void onItemClicked(RecyclerView recyclerView, int position, View v) {
-        if (position < 1) {
+        if (getItemViewType(position) != HighlightItem.LAYOUT_ID) {
             
             return;
         }
