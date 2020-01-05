@@ -78,30 +78,6 @@ nsGfxButtonControlFrame::AppendAnonymousContentTo(nsTArray<nsIContent*>& aElemen
   }
 }
 
-
-
-nsIFrame*
-nsGfxButtonControlFrame::CreateFrameFor(nsIContent*      aContent)
-{
-  nsIFrame * newFrame = nullptr;
-
-  if (aContent == mTextContent) {
-    nsContainerFrame* parentFrame = do_QueryFrame(mFrames.FirstChild());
-
-    nsPresContext* presContext = PresContext();
-    RefPtr<nsStyleContext> textStyleContext;
-    textStyleContext = presContext->StyleSet()->
-      ResolveStyleForText(mTextContent, mStyleContext);
-
-    newFrame = NS_NewTextFrame(presContext->PresShell(), textStyleContext);
-    
-    newFrame->Init(mTextContent, parentFrame, nullptr);
-    mTextContent->SetPrimaryFrame(newFrame);
-  }
-
-  return newFrame;
-}
-
 NS_QUERYFRAME_HEAD(nsGfxButtonControlFrame)
   NS_QUERYFRAME_ENTRY(nsIAnonymousContentCreator)
 NS_QUERYFRAME_TAIL_INHERITING(nsHTMLButtonControlFrame)
