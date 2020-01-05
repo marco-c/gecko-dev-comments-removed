@@ -265,6 +265,7 @@ public:
                                   JS::MutableHandle<JS::PropertyDescriptor> aDesc);
 
   
+  static bool ShouldResistFingerprinting();
   static bool ShouldResistFingerprinting(nsIDocShell* aDocShell);
 
   

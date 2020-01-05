@@ -1179,8 +1179,14 @@ var gBrowserInit = {
     
     Services.obs.notifyObservers(window, "browser-window-before-show", "");
 
+    let isResistFingerprintingEnabled = gPrefService.getBoolPref("privacy.resistFingerprinting");
+
     
-    if (!document.documentElement.hasAttribute("width")) {
+    if (isResistFingerprintingEnabled) {
+      
+      
+      document.documentElement.setAttribute("sizemode", "normal");
+    } else if (!document.documentElement.hasAttribute("width")) {
       const TARGET_WIDTH = 1280;
       const TARGET_HEIGHT = 1040;
       let width = Math.min(screen.availWidth * .9, TARGET_WIDTH);
