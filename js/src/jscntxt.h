@@ -303,25 +303,9 @@ struct JSContext : public JS::RootingContext,
     friend class js::jit::DebugModeOSRVolatileJitFrameIterator;
     friend void js::ReportOverRecursed(JSContext*, unsigned errorNumber);
 
-    
-    
-    
-    void yieldToEmbedding() {
-        (*yieldCallback_)(this);
-    }
-
-    void setYieldCallback(js::YieldCallback callback) {
-        yieldCallback_ = callback;
-    }
-
   private:
     static JS::Error reportedError;
     static JS::OOM reportedOOM;
-
-    
-    
-    
-    js::ThreadLocalData<js::YieldCallback> yieldCallback_;
 
   public:
     inline JS::Result<> boolToResult(bool ok);
