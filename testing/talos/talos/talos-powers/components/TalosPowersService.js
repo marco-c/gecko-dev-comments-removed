@@ -279,8 +279,23 @@ TalosPowersService.prototype = {
 
 
 
-
   ParentExecServices: {
+
+    
+    startFrameTimeRecording: function(arg, callback, win) {
+      var rv = win.QueryInterface(Ci.nsIInterfaceRequestor)
+                  .getInterface(Ci.nsIDOMWindowUtils)
+                  .startFrameTimeRecording();
+      callback(rv);
+    },
+
+    
+    stopFrameTimeRecording: function(arg, callback, win) {
+      var rv = win.QueryInterface(Ci.nsIInterfaceRequestor)
+                  .getInterface(Ci.nsIDOMWindowUtils)
+                  .stopFrameTimeRecording(arg);
+      callback(rv);
+    },
   },
 
   RecieveParentExecCommand(msg) {
