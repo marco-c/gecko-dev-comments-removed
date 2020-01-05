@@ -5,6 +5,7 @@
 
 package org.mozilla.gecko.util;
 
+import org.mozilla.gecko.AppConstants;
 import org.mozilla.gecko.SysInfo;
 
 import android.content.Context;
@@ -91,6 +92,12 @@ public final class HardwareUtils {
 
 
     public static boolean isSupportedSystem() {
+        
+        
+        if (Build.VERSION.SDK_INT < AppConstants.Versions.MIN_SDK_VERSION) {
+            return false;
+        }
+
         
         final boolean isSystemARM = isARMSystem();
         final boolean isSystemX86 = isX86System();
