@@ -19,22 +19,6 @@ pub type DOMString = String;
 pub type StaticCharVec = &'static [char];
 pub type StaticStringVec = &'static [&'static str];
 
-pub fn null_str_as_empty(s: &Option<DOMString>) -> DOMString {
-    
-    
-    match *s {
-        Some(ref s) => s.clone(),
-        None => "".to_owned()
-    }
-}
-
-pub fn null_str_as_empty_ref<'a>(s: &'a Option<DOMString>) -> &'a str {
-    match *s {
-        Some(ref s) => s,
-        None => ""
-    }
-}
-
 
 
 const WHITESPACE: &'static [char] = &[' ', '\t', '\x0a', '\x0c', '\x0d'];
