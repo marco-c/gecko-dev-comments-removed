@@ -12,8 +12,6 @@
 
 
 
-const {Ci, Cu} = require("chrome");
-
 
 
 

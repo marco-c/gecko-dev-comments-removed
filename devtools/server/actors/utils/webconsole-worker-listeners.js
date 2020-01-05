@@ -4,6 +4,8 @@
 
 
 
+
+
 "use strict";
 
 
@@ -18,18 +20,17 @@ function ConsoleAPIListener(window, owner, consoleID) {
   this.observe = this.observe.bind(this);
 }
 
-ConsoleAPIListener.prototype =
-{
+ConsoleAPIListener.prototype = {
   init: function () {
     setConsoleEventHandler(this.observe);
   },
   destroy: function () {
     setConsoleEventHandler(null);
   },
-  observe: function(message) {
+  observe: function (message) {
     this.owner.onConsoleAPICall(message.wrappedJSObject);
   },
-  getCachedMessages: function() {
+  getCachedMessages: function () {
     return retrieveConsoleEvents();
   }
 };

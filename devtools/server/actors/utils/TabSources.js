@@ -4,7 +4,6 @@
 
 "use strict";
 
-const { Ci, Cu } = require("chrome");
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 const { assert, fetch } = DevToolsUtils;
 const EventEmitter = require("devtools/shared/event-emitter");
@@ -137,18 +136,16 @@ TabSources.prototype = {
         
         originalUrl = source.url;
         source = null;
-      }
-      else if (this._sourceActors.has(source)) {
+      } else if (this._sourceActors.has(source)) {
         return this._sourceActors.get(source);
       }
-    }
-    else if (originalUrl) {
+    } else if (originalUrl) {
       
       
       
       
-      for (let [source, actor] of this._sourceActors) {
-        if (source.url === originalUrl) {
+      for (let [sourceData, actor] of this._sourceActors) {
+        if (sourceData.url === originalUrl) {
           return actor;
         }
       }
@@ -168,7 +165,7 @@ TabSources.prototype = {
     });
 
     let sourceActorStore = this._thread.sourceActorStore;
-    var id = sourceActorStore.getReusableActorId(source, originalUrl);
+    let id = sourceActorStore.getReusableActorId(source, originalUrl);
     if (id) {
       actor.actorID = id;
     }
@@ -179,15 +176,13 @@ TabSources.prototype = {
     if (this._autoBlackBox &&
         !this.neverAutoBlackBoxSources.has(actor.url) &&
         this._isMinifiedURL(actor.url)) {
-
       this.blackBox(actor.url);
       this.neverAutoBlackBoxSources.add(actor.url);
     }
 
     if (source) {
       this._sourceActors.set(source, actor);
-    }
-    else {
+    } else {
       this._sourceMappedSourceActors[originalUrl] = actor;
     }
 
@@ -201,8 +196,7 @@ TabSources.prototype = {
       
       
       this.emit("newSource", actor);
-    }
-    else {
+    } else {
       
       
       
@@ -246,7 +240,6 @@ TabSources.prototype = {
     }
 
     throw new Error("getSourceActorByURL: could not find source for " + url);
-    return null;
   },
 
   
@@ -257,19 +250,19 @@ TabSources.prototype = {
 
 
 
-  _isMinifiedURL: function (aURL) {
-    if (!aURL) {
+  _isMinifiedURL: function (uri) {
+    if (!uri) {
       return false;
     }
 
     try {
-      let url = new URL(aURL);
+      let url = new URL(uri);
       let pathname = url.pathname;
       return MINIFIED_SOURCE_REGEXP.test(pathname.slice(pathname.lastIndexOf("/") + 1));
     } catch (e) {
       
       
-      return MINIFIED_SOURCE_REGEXP.test(aURL);
+      return MINIFIED_SOURCE_REGEXP.test(uri);
     }
   },
 
@@ -282,15 +275,15 @@ TabSources.prototype = {
 
 
 
-  createNonSourceMappedActor: function (aSource) {
+  createNonSourceMappedActor: function (source) {
     
     
     
     
     
     
-    let url = isEvalSource(aSource) ? null : aSource.url;
-    let spec = { source: aSource };
+    let url = isEvalSource(source) ? null : source.url;
+    let spec = { source };
 
     
     
@@ -301,51 +294,47 @@ TabSources.prototype = {
 
     
     
-    let element = aSource.element ? aSource.element.unsafeDereference() : null;
+    let element = source.element ? source.element.unsafeDereference() : null;
     if (element && (element.tagName !== "SCRIPT" || !element.hasAttribute("src"))) {
       spec.isInlineSource = true;
-    } else if (aSource.introductionType === "wasm") {
+    } else if (source.introductionType === "wasm") {
       
       spec.contentType = "text/wasm";
-    } else {
-      if (url) {
-        
-        
-        if (url.indexOf("Scratchpad/") === 0 ||
-            url.indexOf("javascript:") === 0 ||
-            url === "debugger eval code") {
-          spec.contentType = "text/javascript";
-        } else {
-          try {
-            let pathname = new URL(url).pathname;
-            let filename = pathname.slice(pathname.lastIndexOf("/") + 1);
-            let index = filename.lastIndexOf(".");
-            let extension = index >= 0 ? filename.slice(index + 1) : "";
-            if (extension === "xml") {
-              
-              
-              
-              spec.isInlineSource = true;
-            }
-            else if (extension === "js") {
-              spec.contentType = "text/javascript";
-            }
-          } catch (e) {
+    } else if (url) {
+      
+      
+      if (url.indexOf("Scratchpad/") === 0 ||
+          url.indexOf("javascript:") === 0 ||
+          url === "debugger eval code") {
+        spec.contentType = "text/javascript";
+      } else {
+        try {
+          let pathname = new URL(url).pathname;
+          let filename = pathname.slice(pathname.lastIndexOf("/") + 1);
+          let index = filename.lastIndexOf(".");
+          let extension = index >= 0 ? filename.slice(index + 1) : "";
+          if (extension === "xml") {
             
             
-            const filename = url;
-            const index = filename.lastIndexOf(".");
-            const extension = index >= 0 ? filename.slice(index + 1) : "";
-            if (extension === "js") {
-              spec.contentType = "text/javascript";
-            }
+            
+            spec.isInlineSource = true;
+          } else if (extension === "js") {
+            spec.contentType = "text/javascript";
+          }
+        } catch (e) {
+          
+          
+          const filename = url;
+          const index = filename.lastIndexOf(".");
+          const extension = index >= 0 ? filename.slice(index + 1) : "";
+          if (extension === "js") {
+            spec.contentType = "text/javascript";
           }
         }
       }
-      else {
-        
-        spec.contentType = "text/javascript";
-      }
+    } else {
+      
+      spec.contentType = "text/javascript";
     }
 
     return this.source(spec);
@@ -362,16 +351,16 @@ TabSources.prototype = {
 
 
 
-  _createSourceMappedActors: function (aSource) {
-    if (!this._useSourceMaps || !aSource.sourceMapURL) {
+  _createSourceMappedActors: function (source) {
+    if (!this._useSourceMaps || !source.sourceMapURL) {
       return resolve(null);
     }
 
-    return this.fetchSourceMap(aSource)
+    return this.fetchSourceMap(source)
       .then(map => {
         if (map) {
           return map.sources.map(s => {
-            return this.source({ originalUrl: s, generatedSource: aSource });
+            return this.source({ originalUrl: s, generatedSource: source });
           }).filter(isNotNull);
         }
         return null;
@@ -388,9 +377,9 @@ TabSources.prototype = {
 
 
 
-  createSourceActors: function (aSource) {
-    return this._createSourceMappedActors(aSource).then(actors => {
-      let actor = this.createNonSourceMappedActor(aSource);
+  createSourceActors: function (source) {
+    return this._createSourceMappedActors(source).then(actors => {
+      let actor = this.createNonSourceMappedActor(source);
       return (actors || [actor]).filter(isNotNull);
     });
   },
@@ -405,27 +394,25 @@ TabSources.prototype = {
 
 
 
-  fetchSourceMap: function (aSource) {
+  fetchSourceMap: function (source) {
     if (!this._useSourceMaps) {
       return resolve(null);
-    }
-    else if (this._sourceMaps.has(aSource)) {
-      return this._sourceMaps.get(aSource);
-    }
-    else if (!aSource || !aSource.sourceMapURL) {
+    } else if (this._sourceMaps.has(source)) {
+      return this._sourceMaps.get(source);
+    } else if (!source || !source.sourceMapURL) {
       return resolve(null);
     }
 
-    let sourceMapURL = aSource.sourceMapURL;
-    if (aSource.url) {
-      sourceMapURL = joinURI(aSource.url, sourceMapURL);
+    let sourceMapURL = source.sourceMapURL;
+    if (source.url) {
+      sourceMapURL = joinURI(source.url, sourceMapURL);
     }
-    let result = this._fetchSourceMap(sourceMapURL, aSource.url);
+    let result = this._fetchSourceMap(sourceMapURL, source.url);
 
     
     
     
-    this._sourceMaps.set(aSource, result);
+    this._sourceMaps.set(source, result);
     return result;
   },
 
@@ -434,19 +421,21 @@ TabSources.prototype = {
 
 
 
-  getSourceMap: function (aSource) {
-    return resolve(this._sourceMaps.get(aSource));
+  getSourceMap: function (source) {
+    return resolve(this._sourceMaps.get(source));
+  },
+
+  
+
+
+  setSourceMap: function (source, map) {
+    this._sourceMaps.set(source, resolve(map));
   },
 
   
 
 
 
-  setSourceMap: function (aSource, aMap) {
-    this._sourceMaps.set(aSource, resolve(aMap));
-  },
-
-  
 
 
 
@@ -456,21 +445,18 @@ TabSources.prototype = {
 
 
 
-
-
-
-  _fetchSourceMap: function (aAbsSourceMapURL, aSourceURL) {
+  _fetchSourceMap: function (absSourceMapURL, sourceURL) {
     assert(this._useSourceMaps,
            "Cannot fetch sourcemaps if they are disabled");
 
-    if (this._sourceMapCache[aAbsSourceMapURL]) {
-      return this._sourceMapCache[aAbsSourceMapURL];
+    if (this._sourceMapCache[absSourceMapURL]) {
+      return this._sourceMapCache[absSourceMapURL];
     }
 
-    let fetching = fetch(aAbsSourceMapURL, { loadFromCache: false })
+    let fetching = fetch(absSourceMapURL, { loadFromCache: false })
       .then(({ content }) => {
         let map = new SourceMapConsumer(content);
-        this._setSourceMapRoot(map, aAbsSourceMapURL, aSourceURL);
+        this._setSourceMapRoot(map, absSourceMapURL, sourceURL);
         return map;
       })
       .then(null, error => {
@@ -479,31 +465,31 @@ TabSources.prototype = {
         }
         return null;
       });
-    this._sourceMapCache[aAbsSourceMapURL] = fetching;
+    this._sourceMapCache[absSourceMapURL] = fetching;
     return fetching;
   },
 
   
 
 
-  _setSourceMapRoot: function (aSourceMap, aAbsSourceMapURL, aScriptURL) {
+  _setSourceMapRoot: function (sourceMap, absSourceMapURL, scriptURL) {
     
     
-    if (aSourceMap.hasContentsOfAllSources()) {
+    if (sourceMap.hasContentsOfAllSources()) {
       return;
     }
 
     const base = this._dirname(
-      aAbsSourceMapURL.indexOf("data:") === 0
-        ? aScriptURL
-        : aAbsSourceMapURL);
-    aSourceMap.sourceRoot = aSourceMap.sourceRoot
-      ? joinURI(base, aSourceMap.sourceRoot)
+      absSourceMapURL.indexOf("data:") === 0
+        ? scriptURL
+        : absSourceMapURL);
+    sourceMap.sourceRoot = sourceMap.sourceRoot
+      ? joinURI(base, sourceMap.sourceRoot)
       : base;
   },
 
-  _dirname: function (aPath) {
-    let url = new URL(aPath);
+  _dirname: function (path) {
+    let url = new URL(path);
     let href = url.href;
     return href.slice(0, href.lastIndexOf("/"));
   },
@@ -523,11 +509,11 @@ TabSources.prototype = {
 
 
 
-  clearSourceMapCache: function (aSourceMapURL, opts = { hard: false }) {
-    let oldSm = this._sourceMapCache[aSourceMapURL];
+  clearSourceMapCache: function (sourceMapURL, opts = { hard: false }) {
+    let oldSm = this._sourceMapCache[sourceMapURL];
 
     if (opts.hard) {
-      delete this._sourceMapCache[aSourceMapURL];
+      delete this._sourceMapCache[sourceMapURL];
     }
 
     if (oldSm) {
@@ -554,8 +540,7 @@ TabSources.prototype = {
 
 
 
-  setSourceMapHard: function (aSource, aUrl, aMap) {
-    let url = aUrl;
+  setSourceMapHard: function (source, url, map) {
     if (!url) {
       
       
@@ -566,12 +551,12 @@ TabSources.prototype = {
       
       url = "internal://sourcemap" + (this._anonSourceMapId++) + "/";
     }
-    aSource.sourceMapURL = url;
+    source.sourceMapURL = url;
 
     
     
-    this._sourceMapCache[url] = resolve(aMap);
-    this.emit("updatedSource", this.getSourceActor(aSource));
+    this._sourceMapCache[url] = resolve(map);
+    this.emit("updatedSource", this.getSourceActor(source));
   },
 
   
@@ -583,14 +568,14 @@ TabSources.prototype = {
 
 
 
-  getFrameLocation: function (aFrame) {
-    if (!aFrame || !aFrame.script) {
+  getFrameLocation: function (frame) {
+    if (!frame || !frame.script) {
       return new GeneratedLocation();
     }
     let {lineNumber, columnNumber} =
-        aFrame.script.getOffsetLocation(aFrame.offset);
+        frame.script.getOffsetLocation(frame.offset);
     return new GeneratedLocation(
-      this.createNonSourceMappedActor(aFrame.script.source),
+      this.createNonSourceMappedActor(frame.script.source),
       lineNumber,
       columnNumber
     );
@@ -610,7 +595,6 @@ TabSources.prototype = {
       generatedColumn
     } = generatedLocation;
     let source = generatedSourceActor.source;
-    let url = source ? source.url : generatedSourceActor._originalUrl;
 
     
     
@@ -684,7 +668,6 @@ TabSources.prototype = {
     });
   },
 
-
   
 
 
@@ -739,8 +722,8 @@ TabSources.prototype = {
 
 
 
-  isBlackBoxed: function (aURL) {
-    return this.blackBoxedSources.has(aURL);
+  isBlackBoxed: function (url) {
+    return this.blackBoxedSources.has(url);
   },
 
   
@@ -749,8 +732,8 @@ TabSources.prototype = {
 
 
 
-  blackBox: function (aURL) {
-    this.blackBoxedSources.add(aURL);
+  blackBox: function (url) {
+    this.blackBoxedSources.add(url);
   },
 
   
@@ -759,8 +742,8 @@ TabSources.prototype = {
 
 
 
-  unblackBox: function (aURL) {
-    this.blackBoxedSources.delete(aURL);
+  unblackBox: function (url) {
+    this.blackBoxedSources.delete(url);
   },
 
   
@@ -769,8 +752,8 @@ TabSources.prototype = {
 
 
 
-  isPrettyPrinted: function (aURL) {
-    return this.prettyPrintedSources.has(aURL);
+  isPrettyPrinted: function (url) {
+    return this.prettyPrintedSources.has(url);
   },
 
   
@@ -779,15 +762,15 @@ TabSources.prototype = {
 
 
 
-  prettyPrint: function (aURL, aIndent) {
-    this.prettyPrintedSources.set(aURL, aIndent);
+  prettyPrint: function (url, indent) {
+    this.prettyPrintedSources.set(url, indent);
   },
 
   
 
 
-  prettyPrintIndent: function (aURL) {
-    return this.prettyPrintedSources.get(aURL);
+  prettyPrintIndent: function (url) {
+    return this.prettyPrintedSources.get(url);
   },
 
   
@@ -796,8 +779,8 @@ TabSources.prototype = {
 
 
 
-  disablePrettyPrint: function (aURL) {
-    this.prettyPrintedSources.delete(aURL);
+  disablePrettyPrint: function (url) {
+    this.prettyPrintedSources.delete(url);
   },
 
   iter: function () {
@@ -817,16 +800,16 @@ TabSources.prototype = {
 
 
 
-function isHiddenSource(aSource) {
+function isHiddenSource(source) {
   
-  return aSource.text === "() {\n}";
+  return source.text === "() {\n}";
 }
 
 
 
 
-function isNotNull(aThing) {
-  return aThing !== null;
+function isNotNull(thing) {
+  return thing !== null;
 }
 
 exports.TabSources = TabSources;

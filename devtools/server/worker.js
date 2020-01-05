@@ -1,4 +1,11 @@
+
+
+
+
 "use strict";
+
+
+
 
 
 
@@ -42,14 +49,14 @@ this.addEventListener("message", function (event) {
   let packet = JSON.parse(event.data);
   switch (packet.type) {
     case "connect":
-    
+      
       let connection = DebuggerServer.connectToParent(packet.id, this);
       connections[packet.id] = {
-        connection : connection,
+        connection,
         rpcs: []
       };
 
-    
+      
       let pool = new ActorPool(connection);
       connection.addActorPool(pool);
 
@@ -87,8 +94,8 @@ this.addEventListener("message", function (event) {
       let consoleActor = new WebConsoleActor(connection, parent);
       pool.addActor(consoleActor);
 
-    
-    
+      
+      
       postMessage(JSON.stringify({
         type: "connected",
         id: packet.id,

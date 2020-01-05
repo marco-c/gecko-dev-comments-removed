@@ -2,11 +2,13 @@
 
 
 
+
+
 "use strict";
 
-let { classes: Cc, interfaces: Ci, utils: Cu } = Components;
-let swm = Cc["@mozilla.org/serviceworkers/manager;1"].
-  getService(Ci.nsIServiceWorkerManager);
+let { classes: Cc, interfaces: Ci } = Components;
+let swm = Cc["@mozilla.org/serviceworkers/manager;1"]
+  .getService(Ci.nsIServiceWorkerManager);
 
 addMessageListener("serviceWorkerRegistration:start", message => {
   let { data } = message;

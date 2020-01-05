@@ -1,5 +1,10 @@
 
-const {Cc, Ci, Cu, components} = require("chrome");
+
+
+
+"use strict";
+
+const {Cc, Ci, components} = require("chrome");
 const {isWindowIncluded} = require("devtools/shared/layout/utils");
 const Services = require("Services");
 const {XPCOMUtils} = require("resource://gre/modules/XPCOMUtils.jsm");
@@ -31,8 +36,7 @@ function ConsoleServiceListener(window, listener) {
 }
 exports.ConsoleServiceListener = ConsoleServiceListener;
 
-ConsoleServiceListener.prototype =
-{
+ConsoleServiceListener.prototype = {
   QueryInterface: XPCOMUtils.generateQI([Ci.nsIConsoleListener]),
 
   
@@ -196,8 +200,7 @@ function ConsoleAPIListener(window, owner, {addonId} = {}) {
 }
 exports.ConsoleAPIListener = ConsoleAPIListener;
 
-ConsoleAPIListener.prototype =
-{
+ConsoleAPIListener.prototype = {
   QueryInterface: XPCOMUtils.generateQI([Ci.nsIObserver]),
 
   
@@ -384,8 +387,7 @@ function ConsoleReflowListener(window, listener) {
 
 exports.ConsoleReflowListener = ConsoleReflowListener;
 
-ConsoleReflowListener.prototype =
-{
+ConsoleReflowListener.prototype = {
   QueryInterface: XPCOMUtils.generateQI([Ci.nsIReflowObserver,
                                          Ci.nsISupportsWeakReference]),
   docshell: null,

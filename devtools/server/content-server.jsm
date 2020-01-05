@@ -4,9 +4,8 @@
 
 "use strict";
 
-const Ci = Components.interfaces;
-const Cc = Components.classes;
-const Cu = Components.utils;
+const { utils: Cu, interfaces: Ci } = Components;
+
 
 this.EXPORTED_SYMBOLS = ["init"];
 

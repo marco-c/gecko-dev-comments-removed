@@ -6,7 +6,7 @@
 
 "use strict";
 
-const {Cc, Ci, Cu, components} = require("chrome");
+const {Ci, Cu} = require("chrome");
 
 
 if (!isWorker) {
