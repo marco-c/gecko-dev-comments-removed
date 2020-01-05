@@ -6,14 +6,10 @@
 
 use layout::box::Box;
 use layout::context::LayoutContext;
-use std::cast::transmute;
-use script::dom::node::AbstractNode;
+use layout::util::OpaqueNode;
 
 use gfx;
 use style;
-
-
-
 
 pub trait ExtraDisplayListData {
     fn new(box: &Box) -> Self;
@@ -21,11 +17,9 @@ pub trait ExtraDisplayListData {
 
 pub type Nothing = ();
 
-impl ExtraDisplayListData for AbstractNode<()> {
-    fn new(box: &Box) -> AbstractNode<()> {
-        unsafe {
-            transmute(box.node)
-        }
+impl ExtraDisplayListData for OpaqueNode {
+    fn new(box: &Box) -> OpaqueNode {
+        box.node
     }
 }
 

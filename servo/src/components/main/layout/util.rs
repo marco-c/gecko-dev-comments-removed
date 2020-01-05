@@ -12,6 +12,7 @@ use servo_util::slot::{MutSlotRef, SlotRef};
 use servo_util::tree::TreeNodeRef;
 use std::cast;
 use std::iter::Enumerate;
+use std::libc::uintptr_t;
 use std::vec::VecIterator;
 use style::{ComputedValues, PropertyDeclaration};
 
@@ -179,6 +180,38 @@ impl LayoutDataAccess for AbstractNode<LayoutView> {
         unsafe {
             cast::transmute(self.node().layout_data.mutate())
         }
+    }
+}
+
+
+
+
+
+
+
+#[deriving(Clone, Eq)]
+pub struct OpaqueNode(uintptr_t);
+
+impl<T> Equiv<AbstractNode<T>> for OpaqueNode {
+    fn equiv(&self, node: &AbstractNode<T>) -> bool {
+        unsafe {
+            **self == cast::transmute_copy::<AbstractNode<T>,uintptr_t>(node)
+        }
+    }
+}
+
+impl OpaqueNode {
+    
+    pub fn from_node<T>(node: &AbstractNode<T>) -> OpaqueNode {
+        unsafe {
+            OpaqueNode(cast::transmute_copy(node))
+        }
+    }
+
+    
+    
+    pub unsafe fn to_node<T>(&self) -> AbstractNode<T> {
+        cast::transmute(**self)
     }
 }
 
