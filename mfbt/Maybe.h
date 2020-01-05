@@ -438,12 +438,11 @@ public:
 
 
 
-template<typename T,
-         typename U = typename std::remove_cv<
-           typename std::remove_reference<T>::type>::type>
-Maybe<U>
+template<typename T>
+Maybe<typename RemoveCV<typename RemoveReference<T>::Type>::Type>
 Some(T&& aValue)
 {
+  typedef typename RemoveCV<typename RemoveReference<T>::Type>::Type U;
   Maybe<U> value;
   value.emplace(Forward<T>(aValue));
   return value;
