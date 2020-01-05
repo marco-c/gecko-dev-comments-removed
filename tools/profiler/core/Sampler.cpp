@@ -526,9 +526,14 @@ Sampler::StreamJSON(SpliceableJSONWriter& aWriter, double aSinceTime)
   aWriter.End();
 }
 
-void
-Sampler::FlushOnJSShutdown(JSContext* aContext)
+void PseudoStack::flushSamplerOnJSShutdown()
 {
+  MOZ_ASSERT(mContext);
+
+  if (!gIsActive) {
+    return;
+  }
+
   gIsPaused = true;
 
   {
@@ -542,7 +547,7 @@ Sampler::FlushOnJSShutdown(JSContext* aContext)
       }
 
       
-      if (info->Stack()->mContext != aContext) {
+      if (info->Stack()->mContext != mContext) {
         continue;
       }
 
@@ -552,21 +557,6 @@ Sampler::FlushOnJSShutdown(JSContext* aContext)
   }
 
   gIsPaused = false;
-}
-
-void PseudoStack::flushSamplerOnJSShutdown()
-{
-  MOZ_ASSERT(mContext);
-
-  
-  
-  if (!NS_IsMainThread()) {
-    return;
-  }
-
-  if (gSampler) {
-    gSampler->FlushOnJSShutdown(mContext);
-  }
 }
 
 
