@@ -1637,7 +1637,6 @@ impl Node {
     
     pub fn clone(node: &Node, maybe_doc: Option<&Document>,
                  clone_children: CloneChildrenFlag) -> Root<Node> {
-
         
         let document = match maybe_doc {
             Some(doc) => Root::from_ref(doc),
@@ -1993,7 +1992,6 @@ impl NodeMethods for Node {
 
     
     fn ReplaceChild(&self, node: &Node, child: &Node) -> Fallible<Root<Node>> {
-
         
         match self.type_id() {
             NodeTypeId::Document(_) |

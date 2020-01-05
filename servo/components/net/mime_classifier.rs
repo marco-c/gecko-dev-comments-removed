@@ -266,7 +266,6 @@ trait Matches {
 }
 
 impl <'a, T: Iterator<Item=&'a u8> + Clone> Matches for T {
-
     
     
     
@@ -587,7 +586,6 @@ struct FeedsClassifier;
 impl FeedsClassifier {
     
     fn classify_impl(&self, data: &[u8]) -> Option<(&'static str, &'static str)> {
-
         
         if data.len() < 3 {
             return None;
@@ -603,7 +601,6 @@ impl FeedsClassifier {
         
         
         loop {
-
             if matcher.find(|&x| *x == b'<').is_none() {
                 return None;
             }

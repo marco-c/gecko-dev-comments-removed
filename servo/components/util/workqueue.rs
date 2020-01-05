@@ -275,7 +275,6 @@ impl<QueueData: Sync, WorkData: Send> WorkQueue<QueueData, WorkData> {
 
         
         for (i, thread) in threads.into_iter().enumerate() {
-
             spawn_named(
                 format!("{} worker {}/{}", thread_name, i + 1, thread_count),
                 move || {

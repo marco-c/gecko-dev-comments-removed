@@ -80,7 +80,6 @@ impl File {
 }
 
 impl FileMethods for File {
-
     
     fn Name(&self) -> DOMString {
         self.name.clone()

@@ -116,7 +116,6 @@ pub struct ImageCacheThread {
 
 
 impl ImageCacheThread {
-
     
     pub fn new(chan: IpcSender<ImageCacheCommand>) -> ImageCacheThread {
         ImageCacheThread {

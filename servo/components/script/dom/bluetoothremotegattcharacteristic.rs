@@ -75,7 +75,6 @@ impl BluetoothRemoteGATTCharacteristic {
 }
 
 impl BluetoothRemoteGATTCharacteristicMethods for BluetoothRemoteGATTCharacteristic {
-
     
     fn Properties(&self) -> Root<BluetoothCharacteristicProperties> {
         self.properties.get()

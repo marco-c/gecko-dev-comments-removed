@@ -32,7 +32,6 @@ impl PluginArray {
 impl PluginArrayMethods for PluginArray {
     
     fn Refresh(&self, _reload: bool) {
-
     }
 
     

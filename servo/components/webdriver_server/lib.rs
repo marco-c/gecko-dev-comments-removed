@@ -778,7 +778,6 @@ impl WebDriverHandler<ServoExtensionRoute> for Handler {
     fn handle_command(&mut self,
                       _session: &Option<Session>,
                       msg: &WebDriverMessage<ServoExtensionRoute>) -> WebDriverResult<WebDriverResponse> {
-
         
         
         match msg.command {

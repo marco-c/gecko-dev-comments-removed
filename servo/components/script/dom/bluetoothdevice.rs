@@ -49,7 +49,6 @@ impl BluetoothDevice {
 }
 
 impl BluetoothDeviceMethods for BluetoothDevice {
-
      
     fn Id(&self) -> DOMString {
         self.id.clone()

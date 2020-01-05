@@ -138,9 +138,7 @@ impl Profiler {
             let (chan, port) = ipc::channel().unwrap();
             reporter.collect_reports(ReportsChan(chan));
             if let Ok(mut reports) = port.recv() {
-
                 for report in &mut reports {
-
                     
                     match report.kind {
                         ReportKind::ExplicitJemallocHeapSize |

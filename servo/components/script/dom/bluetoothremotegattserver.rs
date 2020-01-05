@@ -49,7 +49,6 @@ impl BluetoothRemoteGATTServer {
 }
 
 impl BluetoothRemoteGATTServerMethods for BluetoothRemoteGATTServer {
-
     
     fn Device(&self) -> Root<BluetoothDevice> {
         self.device.get()

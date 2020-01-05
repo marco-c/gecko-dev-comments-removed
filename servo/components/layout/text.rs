@@ -411,7 +411,6 @@ impl TextRunScanner {
 #[inline]
 fn bounding_box_for_run_metrics(metrics: &RunMetrics, writing_mode: WritingMode)
                                 -> LogicalSize<Au> {
-
     
     
     

@@ -182,7 +182,7 @@ impl Profiler {
                 });
                 
                 match option {
-                    &OutputOptions::FileName(_) => {},
+                    &OutputOptions::FileName(_) => {  },
                     &OutputOptions::Stdout(period) => {
                         
                         let chan = chan.clone();
@@ -389,7 +389,7 @@ impl Profiler {
                 }
                 writeln!(&mut lock, "").unwrap();
             },
-            None => {},
+            None => {  },
         };
     }
 }

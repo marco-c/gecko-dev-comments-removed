@@ -299,6 +299,7 @@ def check_rust(file_name, lines):
     whitespace = False
 
     prev_use = None
+    prev_open_brace = False
     current_indent = 0
     prev_crate = {}
     prev_mod = {}
@@ -342,10 +343,10 @@ def check_rust(file_name, lines):
             line = re.sub(r"'(\\.|[^\\'])*?'", "''", line)
 
         
-        line = re.sub('//.*?$|/\*.*?$|^\*.*?$', '', line)
+        line = re.sub('//.*?$|/\*.*?$|^\*.*?$', '//', line)
 
         
-        line = re.sub('^#[A-Za-z0-9\(\)\[\]_]*?$', '', line)
+        line = re.sub('^#[A-Za-z0-9\(\)\[\]_]*?$', '#[]', line)
 
         
         
@@ -400,6 +401,10 @@ def check_rust(file_name, lines):
                     continue
 
                 yield (idx + 1, message.format(*match.groups(), **match.groupdict()))
+
+        if prev_open_brace and not line:
+            yield (idx + 1, "found an empty line following a {")
+        prev_open_brace = line.endswith("{")
 
         
         if line.startswith("extern crate "):

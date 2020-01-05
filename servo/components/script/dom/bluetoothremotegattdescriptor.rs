@@ -68,7 +68,6 @@ impl BluetoothRemoteGATTDescriptor {
 }
 
 impl BluetoothRemoteGATTDescriptorMethods for BluetoothRemoteGATTDescriptor {
-
     
     fn Characteristic(&self) -> Root<BluetoothRemoteGATTCharacteristic> {
        self.characteristic.get()

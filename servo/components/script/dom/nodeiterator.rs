@@ -166,7 +166,6 @@ impl NodeIteratorMethods for NodeIterator {
 
         
         for preceding_node in node.preceding_nodes(&self.root_node) {
-
             
             let result = try!(self.accept_node(preceding_node.r()));
 

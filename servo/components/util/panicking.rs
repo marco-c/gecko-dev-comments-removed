@@ -28,7 +28,6 @@ pub fn set_thread_local_hook(local: Box<FnBox(&Any)>) {
 
 
 pub fn initiate_panic_hook() {
-
     
     HOOK_SET.call_once(|| {
         

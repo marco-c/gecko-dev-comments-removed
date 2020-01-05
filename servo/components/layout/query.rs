@@ -51,7 +51,6 @@ fn overflow_direction(writing_mode: &WritingMode) -> OverflowDirection {
 }
 
 impl LayoutRPC for LayoutRPCImpl {
-
     
     
     fn content_box(&self) -> ContentBoxResponse {

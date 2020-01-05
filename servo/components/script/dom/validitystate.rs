@@ -53,7 +53,6 @@ impl ValidityState {
 }
 
 impl ValidityStateMethods for ValidityState {
-
     
     fn ValueMissing(&self) -> bool {
         false
