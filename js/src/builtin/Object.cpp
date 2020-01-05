@@ -860,9 +860,7 @@ EnumerableOwnProperties(JSContext* cx, const JS::CallArgs& args, EnumerableOwnPr
             
 
             
-            if (obj->isNative() && desc.hasValue())
-                value = desc.value();
-            else if (!GetProperty(cx, obj, obj, id, &value))
+            if (!GetProperty(cx, obj, obj, id, &value))
                 return false;
         }
 
