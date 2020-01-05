@@ -17,6 +17,16 @@ add_task(function* test_toolbar_element_restyles_on_activation() {
   let win2 = yield BrowserTestUtils.openNewBrowserWindow();
   yield new Promise(resolve => waitForFocus(resolve, win2));
 
+  
+  win1.getComputedStyle(win1.document.firstElementChild);
+  win2.getComputedStyle(win2.document.firstElementChild);
+
+  
+  
+  
+  Services.focus.clearFocus(win1);
+  Services.focus.clearFocus(win2);
+
   let utils1 = SpecialPowers.getDOMWindowUtils(win1);
   restyles.win1.initial = utils1.elementsRestyled;
 
