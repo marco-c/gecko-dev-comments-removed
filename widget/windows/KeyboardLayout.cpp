@@ -3134,6 +3134,23 @@ NativeKey::GetFollowingCharMessage(MSG& aCharMsg)
     
     
     
+    if (IsCharMessage(removedMsg) && !nextKeyMsg.wParam &&
+        WinUtils::GetScanCode(nextKeyMsg.lParam) == 0xFF) {
+      aCharMsg = removedMsg;
+      MOZ_LOG(sNativeKeyLogger, LogLevel::Warning,
+        ("%p   NativeKey::GetFollowingCharMessage(), WARNING, succeeded to "
+         "remove a char message, but the removed message was changed from "
+         "the found message but the found message was odd, so, ignoring the "
+         "odd found message and respecting the removed message, aCharMsg=%s, "
+         "nextKeyMsg=%s, kFoundCharMsg=%s",
+         this, ToString(aCharMsg).get(), ToString(nextKeyMsg).get(),
+         ToString(kFoundCharMsg).get()));
+      return true;
+    }
+
+    
+    
+    
     MOZ_LOG(sNativeKeyLogger, LogLevel::Error,
       ("%p   NativeKey::GetFollowingCharMessage(), FAILED, removed message "
        "is really different from what we have already found, removedMsg=%s, "
