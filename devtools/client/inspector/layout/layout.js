@@ -103,6 +103,15 @@ LayoutView.prototype = {
 
 
 
+
+      setSelectedNode: (nodeFront) => {
+        this.inspector.selection.setNodeFront(nodeFront, "layout-panel");
+      },
+
+      
+
+
+
       showBoxModelProperties: true,
 
       onHideBoxModelHighlighter,
