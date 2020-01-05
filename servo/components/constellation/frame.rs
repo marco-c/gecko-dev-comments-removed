@@ -4,7 +4,7 @@
 
 use msg::constellation_msg::{FrameId, PipelineId};
 use pipeline::Pipeline;
-use servo_url::ServoUrl;
+use script_traits::LoadData;
 use std::collections::HashMap;
 use std::iter::once;
 use std::mem::replace;
@@ -18,7 +18,6 @@ use std::time::Instant;
 
 
 
-#[derive(Debug, Clone)]
 pub struct Frame {
     
     pub id: FrameId,
@@ -30,7 +29,7 @@ pub struct Frame {
     pub pipeline_id: PipelineId,
 
     
-    pub url: ServoUrl,
+    pub load_data: LoadData,
 
     
     pub prev: Vec<FrameState>,
@@ -42,12 +41,12 @@ pub struct Frame {
 impl Frame {
     
     
-    pub fn new(id: FrameId, pipeline_id: PipelineId, url: ServoUrl) -> Frame {
+    pub fn new(id: FrameId, pipeline_id: PipelineId, load_data: LoadData) -> Frame {
         Frame {
             id: id,
             pipeline_id: pipeline_id,
             instant: Instant::now(),
-            url: url,
+            load_data: load_data,
             prev: vec!(),
             next: vec!(),
         }
@@ -59,17 +58,17 @@ impl Frame {
             instant: self.instant,
             frame_id: self.id,
             pipeline_id: Some(self.pipeline_id),
-            url: self.url.clone(),
+            load_data: self.load_data.clone(),
         }
     }
 
     
-    pub fn load(&mut self, pipeline_id: PipelineId, url: ServoUrl) {
+    pub fn load(&mut self, pipeline_id: PipelineId, load_data: LoadData) {
         let current = self.current();
         self.prev.push(current);
         self.instant = Instant::now();
         self.pipeline_id = pipeline_id;
-        self.url = url;
+        self.load_data = load_data;
     }
 
     
@@ -78,10 +77,10 @@ impl Frame {
     }
 
     
-    pub fn update_current(&mut self, pipeline_id: PipelineId, entry: &FrameState) {
+    pub fn update_current(&mut self, pipeline_id: PipelineId, entry: FrameState) {
         self.pipeline_id = pipeline_id;
         self.instant = entry.instant;
-        self.url = entry.url.clone();
+        self.load_data = entry.load_data;
     }
 }
 
@@ -90,7 +89,7 @@ impl Frame {
 
 
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct FrameState {
     
     pub instant: Instant,
@@ -100,19 +99,10 @@ pub struct FrameState {
     pub pipeline_id: Option<PipelineId>,
 
     
-    pub url: ServoUrl,
+    pub load_data: LoadData,
 
     
     pub frame_id: FrameId,
-}
-
-impl FrameState {
-    
-    
-    pub fn replace_pipeline(&mut self, pipeline_id: PipelineId, url: ServoUrl) {
-        self.pipeline_id = Some(pipeline_id);
-        self.url = url;
-    }
 }
 
 
@@ -122,18 +112,15 @@ pub struct FrameChange {
     pub frame_id: FrameId,
 
     
-    
-    pub old_pipeline_id: Option<PipelineId>,
-
-    
     pub new_pipeline_id: PipelineId,
 
     
-    pub url: ServoUrl,
+    pub load_data: LoadData,
 
     
     
-    pub replace: Option<FrameState>,
+    
+    pub replace_instant: Option<Instant>,
 }
 
 
