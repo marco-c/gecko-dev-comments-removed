@@ -28,7 +28,7 @@ public:
   static uint32_t GetNestingLevel() { return sNestingLevel; }
   static void SetNestingLevel(uint32_t aLevel) { sNestingLevel = aLevel; }
 
-  bool HasTimeouts() const { return !mTimeouts.isEmpty(); }
+  bool HasTimeouts() const { return !mTimeouts.IsEmpty(); }
 
   nsresult SetTimeout(nsITimeoutHandler* aHandler,
                       int32_t interval, bool aIsInterval,
@@ -87,7 +87,7 @@ public:
   template <class Callable>
   void ForEachTimeout(Callable c)
   {
-    for (Timeout* timeout = mTimeouts.getFirst();
+    for (Timeout* timeout = mTimeouts.GetFirst();
          timeout;
          timeout = timeout->getNext()) {
       c(timeout);
@@ -98,18 +98,46 @@ private:
   nsresult ResetTimersForThrottleReduction(int32_t aPreviousThrottleDelayMS);
 
 private:
+  typedef mozilla::LinkedList<mozilla::dom::Timeout> TimeoutList;
+  struct Timeouts {
+    Timeouts()
+      : mTimeoutInsertionPoint(nullptr)
+    {
+    }
+
+    const Timeout* GetFirst() const { return mTimeoutList.getFirst(); }
+    Timeout* GetFirst() { return mTimeoutList.getFirst(); }
+    const Timeout* GetLast() const { return mTimeoutList.getLast(); }
+    Timeout* GetLast() { return mTimeoutList.getLast(); }
+    bool IsEmpty() const { return mTimeoutList.isEmpty(); }
+    void InsertFront(Timeout* aTimeout) { mTimeoutList.insertFront(aTimeout); }
+    void Clear() { mTimeoutList.clear(); }
+
+    void SetInsertionPoint(Timeout* aTimeout)
+    {
+      mTimeoutInsertionPoint = aTimeout;
+    }
+    Timeout* InsertionPoint()
+    {
+      return mTimeoutInsertionPoint;
+    }
+
+  private:
+    
+    
+    
+    
+    TimeoutList               mTimeoutList;
+    
+    
+    
+    mozilla::dom::Timeout*    mTimeoutInsertionPoint;
+  };
+
   
   
   nsGlobalWindow&             mWindow;
-  
-  
-  
-  
-  mozilla::LinkedList<mozilla::dom::Timeout> mTimeouts;
-  
-  
-  
-  mozilla::dom::Timeout*      mTimeoutInsertionPoint;
+  Timeouts                    mTimeouts;
   uint32_t                    mTimeoutIdCounter;
   uint32_t                    mTimeoutFiringDepth;
   mozilla::dom::Timeout*      mRunningTimeout;

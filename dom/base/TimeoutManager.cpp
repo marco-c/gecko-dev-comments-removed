@@ -76,7 +76,6 @@ CalculateNewBackPressureDelayMS(uint32_t aBacklogDepth)
 
 TimeoutManager::TimeoutManager(nsGlobalWindow& aWindow)
   : mWindow(aWindow),
-    mTimeoutInsertionPoint(nullptr),
     mTimeoutIdCounter(1),
     mTimeoutFiringDepth(0),
     mRunningTimeout(nullptr),
@@ -226,7 +225,7 @@ TimeoutManager::ClearTimeout(int32_t aTimerId, Timeout::Reason aReason)
   uint32_t timerId = (uint32_t)aTimerId;
   Timeout* timeout;
 
-  for (timeout = mTimeouts.getFirst(); timeout; timeout = timeout->getNext()) {
+  for (timeout = mTimeouts.GetFirst(); timeout; timeout = timeout->getNext()) {
     if (timeout->mTimeoutId == timerId && timeout->mReason == aReason) {
       if (timeout->mRunning) {
         
@@ -296,7 +295,7 @@ TimeoutManager::RunTimeout(Timeout* aTimeout)
   
   
   last_expired_timeout = nullptr;
-  for (Timeout* timeout = mTimeouts.getFirst();
+  for (Timeout* timeout = mTimeouts.GetFirst();
        timeout && timeout->mWhen <= deadline;
        timeout = timeout->getNext()) {
     if (timeout->mFiringDepth == 0) {
@@ -339,12 +338,12 @@ TimeoutManager::RunTimeout(Timeout* aTimeout)
   last_expired_timeout->setNext(dummy_timeout);
   RefPtr<Timeout> timeoutExtraRef(dummy_timeout);
 
-  last_insertion_point = mTimeoutInsertionPoint;
+  last_insertion_point = mTimeouts.InsertionPoint();
   
   
-  mTimeoutInsertionPoint = dummy_timeout;
+  mTimeouts.SetInsertionPoint(dummy_timeout);
 
-  for (Timeout* timeout = mTimeouts.getFirst();
+  for (Timeout* timeout = mTimeouts.GetFirst();
        timeout != dummy_timeout && !mWindow.IsFrozen();
        timeout = nextTimeout) {
     nextTimeout = timeout->getNext();
@@ -387,7 +386,7 @@ TimeoutManager::RunTimeout(Timeout* aTimeout)
       MOZ_ASSERT(dummy_timeout->HasRefCntOne(), "dummy_timeout may leak");
       Unused << timeoutExtraRef.forget().take();
 
-      mTimeoutInsertionPoint = last_insertion_point;
+      mTimeouts.SetInsertionPoint(last_insertion_point);
 
       return;
     }
@@ -417,7 +416,7 @@ TimeoutManager::RunTimeout(Timeout* aTimeout)
   timeoutExtraRef = nullptr;
   MOZ_ASSERT(dummy_timeout->HasRefCntOne(), "dummy_timeout may leak");
 
-  mTimeoutInsertionPoint = last_insertion_point;
+  mTimeouts.SetInsertionPoint(last_insertion_point);
 
   MaybeApplyBackPressure();
 }
@@ -605,8 +604,8 @@ TimeoutManager::ResetTimersForThrottleReduction(int32_t aPreviousThrottleDelayMS
   
   
   
-  for (Timeout* timeout = mTimeoutInsertionPoint ?
-         mTimeoutInsertionPoint->getNext() : mTimeouts.getFirst();
+  for (Timeout* timeout = mTimeouts.InsertionPoint() ?
+         mTimeouts.InsertionPoint()->getNext() : mTimeouts.GetFirst();
        timeout; ) {
     
     
@@ -687,14 +686,15 @@ TimeoutManager::ClearAllTimeouts()
   Timeout* timeout;
   Timeout* nextTimeout;
 
-  for (timeout = mTimeouts.getFirst(); timeout; timeout = nextTimeout) {
+  for (timeout = mTimeouts.GetFirst(); timeout; timeout = nextTimeout) {
     
 
 
 
 
-    if (mRunningTimeout == timeout)
-      mTimeoutInsertionPoint = nullptr;
+    if (mRunningTimeout == timeout) {
+      mTimeouts.SetInsertionPoint(nullptr);
+    }
 
     nextTimeout = timeout->getNext();
 
@@ -716,7 +716,7 @@ TimeoutManager::ClearAllTimeouts()
   }
 
   
-  mTimeouts.clear();
+  mTimeouts.Clear();
 }
 
 void
@@ -724,10 +724,9 @@ TimeoutManager::InsertTimeoutIntoList(Timeout* aTimeout)
 {
   
   
-  
   Timeout* prevSibling;
-  for (prevSibling = mTimeouts.getLast();
-       prevSibling && prevSibling != mTimeoutInsertionPoint &&
+  for (prevSibling = mTimeouts.GetLast();
+       prevSibling && prevSibling != mTimeouts.InsertionPoint() &&
          
          
          (mWindow.IsFrozen() ?
@@ -741,7 +740,7 @@ TimeoutManager::InsertTimeoutIntoList(Timeout* aTimeout)
   if (prevSibling) {
     prevSibling->setNext(aTimeout);
   } else {
-    mTimeouts.insertFront(aTimeout);
+    mTimeouts.InsertFront(aTimeout);
   }
 
   aTimeout->mFiringDepth = 0;
@@ -775,7 +774,7 @@ TimeoutManager::EndRunningTimeout(Timeout* aTimeout)
 void
 TimeoutManager::UnmarkGrayTimers()
 {
-  for (Timeout* timeout = mTimeouts.getFirst();
+  for (Timeout* timeout = mTimeouts.GetFirst();
        timeout;
        timeout = timeout->getNext()) {
     if (timeout->mScriptHandler) {
@@ -787,7 +786,7 @@ TimeoutManager::UnmarkGrayTimers()
 void
 TimeoutManager::Suspend()
 {
-  for (Timeout* t = mTimeouts.getFirst(); t; t = t->getNext()) {
+  for (Timeout* t = mTimeouts.GetFirst(); t; t = t->getNext()) {
     
     
     
@@ -810,7 +809,7 @@ TimeoutManager::Resume()
   TimeStamp now = TimeStamp::Now();
   DebugOnly<bool> _seenDummyTimeout = false;
 
-  for (Timeout* t = mTimeouts.getFirst(); t; t = t->getNext()) {
+  for (Timeout* t = mTimeouts.GetFirst(); t; t = t->getNext()) {
     
     
     
@@ -856,7 +855,7 @@ void
 TimeoutManager::Freeze()
 {
   TimeStamp now = TimeStamp::Now();
-  for (Timeout *t = mTimeouts.getFirst(); t; t = t->getNext()) {
+  for (Timeout *t = mTimeouts.GetFirst(); t; t = t->getNext()) {
     
     
     
@@ -879,7 +878,7 @@ TimeoutManager::Thaw()
   TimeStamp now = TimeStamp::Now();
   DebugOnly<bool> _seenDummyTimeout = false;
 
-  for (Timeout *t = mTimeouts.getFirst(); t; t = t->getNext()) {
+  for (Timeout *t = mTimeouts.GetFirst(); t; t = t->getNext()) {
     
     
     
