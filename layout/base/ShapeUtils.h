@@ -10,7 +10,11 @@
 #include "nsCoord.h"
 #include "nsStyleConsts.h"
 
+struct nsPoint;
+struct nsRect;
+
 namespace mozilla {
+class StyleBasicShape;
 
 
 
@@ -28,6 +32,14 @@ struct ShapeUtils final
                                     const nscoord aCenter,
                                     const nscoord aPosMin,
                                     const nscoord aPosMax);
+
+  
+  
+  
+  
+  static nsPoint ComputeCircleOrEllipseCenter(
+    StyleBasicShape* const aBasicShape,
+    const nsRect& aRefBox);
 };
 
 } 
