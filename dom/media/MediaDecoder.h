@@ -570,7 +570,10 @@ protected:
   
   
   
-  virtual int64_t CurrentPosition() { return mCurrentPosition; }
+  virtual int64_t CurrentPosition()
+  {
+    return mCurrentPosition.Ref().ToMicroseconds();
+  }
 
   
   double mDuration;
@@ -762,7 +765,7 @@ protected:
   Mirror<MediaDecoderOwner::NextFrameStatus> mNextFrameStatus;
 
   
-  Mirror<int64_t> mCurrentPosition;
+  Mirror<media::TimeUnit> mCurrentPosition;
 
   
   Mirror<media::NullableTimeUnit> mStateMachineDuration;

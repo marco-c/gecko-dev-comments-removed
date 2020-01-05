@@ -451,7 +451,7 @@ protected:
   media::TimeUnit GetMediaTime() const
   {
     MOZ_ASSERT(OnTaskQueue());
-    return media::TimeUnit::FromMicroseconds(mCurrentPosition.Ref());
+    return mCurrentPosition;
   }
 
   
@@ -749,7 +749,7 @@ private:
   
   
   
-  Canonical<int64_t> mCurrentPosition;
+  Canonical<media::TimeUnit> mCurrentPosition;
 
   
   Canonical<int64_t> mPlaybackOffset;
@@ -769,7 +769,7 @@ public:
   {
     return &mNextFrameStatus;
   }
-  AbstractCanonical<int64_t>* CanonicalCurrentPosition()
+  AbstractCanonical<media::TimeUnit>* CanonicalCurrentPosition()
   {
     return &mCurrentPosition;
   }
