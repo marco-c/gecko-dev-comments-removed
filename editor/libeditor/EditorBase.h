@@ -313,8 +313,8 @@ protected:
   
 
 
-  nsresult CreateTxnForDeleteNode(nsINode* aNode,
-                                  DeleteNodeTransaction** aTransaction);
+  already_AddRefed<DeleteNodeTransaction>
+    CreateTxnForDeleteNode(nsINode* aNode);
 
   nsresult CreateTxnForDeleteSelection(
              EDirection aAction,
