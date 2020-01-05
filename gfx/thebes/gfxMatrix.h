@@ -115,6 +115,18 @@ public:
     
 
 
+    bool IsRectilinear() const {
+      if (FuzzyEqual(_12, 0) && FuzzyEqual(_21, 0)) {
+        return true;
+      } else if (FuzzyEqual(_22, 0) && FuzzyEqual(_11, 0)) {
+        return true;
+      }
+      return false;
+    }
+
+    
+
+
 
 
 
