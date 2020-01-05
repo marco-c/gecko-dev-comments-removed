@@ -113,7 +113,6 @@ class WannabeChildAPIManager extends ChildAPIManager {
     
     if (namespace == "runtime" && name == "connectNative" || 
         namespace == "runtime" && name == "sendNativeMessage" || 
-        namespace == "tabs" && name == "onRemoved" || 
         namespace == "webNavigation" || 
         namespace == "webRequest") { 
       shouldSynchronouslyUseParentAPI = true;
@@ -336,7 +335,6 @@ class ContentGlobal {
     }
   }
 }
-
 
 this.ExtensionChild = {
   

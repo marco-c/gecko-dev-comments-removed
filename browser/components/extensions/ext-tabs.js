@@ -113,13 +113,6 @@ let tabListener = {
     this.initialized = true;
   },
 
-  destroy() {
-    AllWindowEvents.removeListener("TabClose", this);
-    AllWindowEvents.removeListener("TabOpen", this);
-    WindowListManager.removeOpenListener(this.handleWindowOpen);
-    WindowListManager.removeCloseListener(this.handleWindowClose);
-  },
-
   handleEvent(event) {
     switch (event.type) {
       case "TabOpen":
@@ -216,7 +209,17 @@ let tabListener = {
     let windowId = WindowManager.getId(tab.ownerGlobal);
     let tabId = TabManager.getId(tab);
 
-    this.emit("tab-removed", {tab, tabId, windowId, isWindowClosing});
+    
+    
+    
+    
+    
+    
+    
+    
+    Services.tm.mainThread.dispatch(() => {
+      this.emit("tab-removed", {tab, tabId, windowId, isWindowClosing});
+    }, Ci.nsIThread.DISPATCH_NORMAL);
   },
 
   tabReadyInitialized: false,
@@ -270,6 +273,12 @@ let tabListener = {
   },
 };
 
+
+extensions.on("startup", () => {
+  tabListener.init();
+});
+
+
 extensions.registerSchemaAPI("tabs", "addon_parent", context => {
   let {extension} = context;
   let self = {
@@ -286,7 +295,6 @@ extensions.registerSchemaAPI("tabs", "addon_parent", context => {
           fire(TabManager.convert(extension, event.tab));
         };
 
-        tabListener.init();
         tabListener.on("tab-created", listener);
         return () => {
           tabListener.off("tab-created", listener);
@@ -311,7 +319,6 @@ extensions.registerSchemaAPI("tabs", "addon_parent", context => {
           fire(event.tabId, {newWindowId: event.newWindowId, newPosition: event.newPosition});
         };
 
-        tabListener.init();
         tabListener.on("tab-attached", listener);
         return () => {
           tabListener.off("tab-attached", listener);
@@ -323,7 +330,6 @@ extensions.registerSchemaAPI("tabs", "addon_parent", context => {
           fire(event.tabId, {oldWindowId: event.oldWindowId, oldPosition: event.oldPosition});
         };
 
-        tabListener.init();
         tabListener.on("tab-detached", listener);
         return () => {
           tabListener.off("tab-detached", listener);
@@ -335,7 +341,6 @@ extensions.registerSchemaAPI("tabs", "addon_parent", context => {
           fire(event.tabId, {windowId: event.windowId, isWindowClosing: event.isWindowClosing});
         };
 
-        tabListener.init();
         tabListener.on("tab-removed", listener);
         return () => {
           tabListener.off("tab-removed", listener);
@@ -1037,7 +1042,6 @@ extensions.registerSchemaAPI("tabs", "addon_parent", context => {
           }
         };
 
-        tabListener.init();
         tabListener.on("tab-attached", tabCreated);
         tabListener.on("tab-created", tabCreated);
 
