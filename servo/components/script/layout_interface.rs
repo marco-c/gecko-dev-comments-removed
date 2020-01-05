@@ -101,8 +101,8 @@ pub trait LayoutRPC {
     
     fn node_geometry(&self) -> NodeGeometryResponse;
     
-    fn hit_test(&self, node: TrustedNodeAddress, point: Point2D<f32>) -> Result<HitTestResponse, ()>;
-    fn mouse_over(&self, node: TrustedNodeAddress, point: Point2D<f32>) -> Result<MouseOverResponse, ()>;
+    fn hit_test(&self, point: Point2D<f32>) -> Result<HitTestResponse, ()>;
+    fn mouse_over(&self, point: Point2D<f32>) -> Result<MouseOverResponse, ()>;
     
     fn resolved_style(&self) -> ResolvedStyleResponse;
     fn offset_parent(&self) -> OffsetParentResponse;
