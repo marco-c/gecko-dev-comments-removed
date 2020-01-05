@@ -168,6 +168,13 @@ nsIContent::GetFlattenedTreeParentNodeInternal(FlattenedParentType aType) const
       OwnerDoc()->GetRootElement() == parent) {
     
     
+    if (IsGeneratedContentContainerForBefore() ||
+        IsGeneratedContentContainerForAfter()) {
+      return parent;
+    }
+
+    
+    
     
     
     
