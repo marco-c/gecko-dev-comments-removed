@@ -332,8 +332,11 @@ DataTransfer::GetTypes(nsTArray<nsString>& aTypes, CallerType aCallerType) const
       continue;
     }
 
+    
+    
+    
     nsAutoString type;
-    item->GetType(type);
+    item->GetInternalType(type);
     if (item->Kind() == DataTransferItem::KIND_STRING || type.EqualsASCII(kFileMime)) {
       
       aTypes.AppendElement(type);
@@ -521,8 +524,11 @@ DataTransfer::MozTypesAt(uint32_t aIndex, CallerType aCallerType,
         continue;
       }
 
+      
+      
+      
       nsAutoString type;
-      items[i]->GetType(type);
+      items[i]->GetInternalType(type);
       if (NS_WARN_IF(!types->Add(type))) {
         aRv.Throw(NS_ERROR_FAILURE);
         return nullptr;
@@ -981,7 +987,7 @@ DataTransfer::GetTransferable(uint32_t aIndex, nsILoadContext* aLoadContext)
       }
 
       nsAutoString type;
-      formatitem->GetType(type);
+      formatitem->GetInternalType(type);
 
       
       bool isCustomFormat = true;

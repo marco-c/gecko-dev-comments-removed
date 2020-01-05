@@ -230,6 +230,37 @@ DataTransferItem::FillInExternalData()
   }
 }
 
+void
+DataTransferItem::GetType(nsAString& aType)
+{
+  
+  
+  if (Kind() != KIND_FILE) {
+    aType = mType;
+    return;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  ErrorResult rv;
+  RefPtr<File> file = GetAsFile(*nsContentUtils::GetSystemPrincipal(), rv);
+  MOZ_ASSERT(!rv.Failed(), "Failed to get file data with system principal");
+
+  
+  if (NS_WARN_IF(!file)) {
+    aType = mType;
+    return;
+  }
+
+  file->GetType(aType);
+}
+
 already_AddRefed<File>
 DataTransferItem::GetAsFile(nsIPrincipal& aSubjectPrincipal,
                             ErrorResult& aRv)
