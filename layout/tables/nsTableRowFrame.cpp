@@ -937,7 +937,8 @@ nsTableRowFrame::ReflowChildren(nsPresContext*           aPresContext,
         
         
         if (status.IsIncomplete()) {
-          aStatus = NS_FRAME_NOT_COMPLETE;
+          aStatus.Reset();
+          aStatus.SetIncomplete();
         }
       } else {
         if (iCoord != origKidNormalPosition.I(wm)) {
@@ -1026,7 +1027,8 @@ nsTableRowFrame::ReflowChildren(nsPresContext*           aPresContext,
       iCoord += kidFrame->ISize(wm);
 
       if (kidFrame->GetNextInFlow()) {
-        aStatus = NS_FRAME_NOT_COMPLETE;
+        aStatus.Reset();
+        aStatus.SetIncomplete();
       }
     }
     ConsiderChildOverflow(aDesiredSize.mOverflowAreas, kidFrame);

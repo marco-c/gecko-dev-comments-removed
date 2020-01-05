@@ -1012,7 +1012,8 @@ nsImageFrame::Reflow(nsPresContext*          aPresContext,
     
     
     aMetrics.Height() = std::max(nsPresContext::CSSPixelsToAppUnits(1), aReflowInput.AvailableHeight());
-    aStatus = NS_FRAME_NOT_COMPLETE;
+    aStatus.Reset();
+    aStatus.SetIncomplete();
   }
 
   aMetrics.SetOverflowAreasToDesiredBounds();

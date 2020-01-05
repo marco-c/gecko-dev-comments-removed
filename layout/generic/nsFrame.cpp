@@ -6759,13 +6759,12 @@ nsFrame::IsFrameTreeTooDeep(const ReflowInput& aReflowInput,
     aMetrics.mCarriedOutBEndMargin.Zero();
     aMetrics.mOverflowAreas.Clear();
 
+    aStatus.Reset();
     if (GetNextInFlow()) {
       
       
       
-      aStatus = NS_FRAME_NOT_COMPLETE;
-    } else {
-      aStatus = NS_FRAME_COMPLETE;
+      aStatus.SetIncomplete();
     }
 
     return true;
