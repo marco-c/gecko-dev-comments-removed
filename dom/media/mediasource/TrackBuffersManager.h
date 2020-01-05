@@ -234,7 +234,7 @@ private:
   RefPtr<SourceBufferResource> mCurrentInputBuffer;
   RefPtr<MediaDataDemuxer> mInputDemuxer;
   
-  uint32_t mProcessedInput;
+  uint64_t mProcessedInput;
   Maybe<media::TimeUnit> mLastParsedEndTime;
 
   void OnDemuxerInitDone(nsresult);
