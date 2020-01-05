@@ -31,12 +31,9 @@ public:
 
 
 
-
-  nsresult Init(EditorBase* aEditorBase,
-                nsRange* aRange,
-                RangeUpdater* aRangeUpdater);
-
-  DeleteRangeTransaction();
+  DeleteRangeTransaction(EditorBase& aEditorBase,
+                         nsRange& aRangeToDelete,
+                         RangeUpdater* aRangeUpdater);
 
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(DeleteRangeTransaction,
                                            EditAggregateTransaction)
@@ -48,7 +45,7 @@ public:
 
   virtual void LastRelease() override
   {
-    mRange = nullptr;
+    mRangeToDelete = nullptr;
     EditAggregateTransaction::LastRelease();
   }
 
@@ -64,10 +61,10 @@ protected:
                                      nsIEditor::EDirection aAction);
 
   
-  RefPtr<nsRange> mRange;
+  EditorBase& mEditorBase;
 
   
-  EditorBase* mEditorBase;
+  RefPtr<nsRange> mRangeToDelete;
 
   
   RangeUpdater* mRangeUpdater;

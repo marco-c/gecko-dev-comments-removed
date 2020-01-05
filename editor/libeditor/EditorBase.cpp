@@ -4368,9 +4368,10 @@ EditorBase::CreateTxnForDeleteSelection(EDirection aAction,
     
     
     if (!range->Collapsed()) {
-      RefPtr<DeleteRangeTransaction> transaction = new DeleteRangeTransaction();
-      transaction->Init(this, range, &mRangeUpdater);
-      aggregateTransaction->AppendChild(transaction);
+      RefPtr<DeleteRangeTransaction> deleteRangeTransaction =
+        new DeleteRangeTransaction(*this, *range, &mRangeUpdater);
+      
+      aggregateTransaction->AppendChild(deleteRangeTransaction);
     } else if (aAction != eNone) {
       
       
