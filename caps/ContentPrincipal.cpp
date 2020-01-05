@@ -127,6 +127,29 @@ ContentPrincipal::GetScriptLocation(nsACString &aStr)
   return mCodebase->GetSpec(aStr);
 }
 
+static nsresult
+AssignFullSpecToOriginNoSuffix(nsIURI* aURI, nsACString& aOriginNoSuffix)
+{
+  nsresult rv = aURI->GetAsciiSpec(aOriginNoSuffix);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  
+
+  int32_t pos = aOriginNoSuffix.FindChar('?');
+  int32_t hashPos = aOriginNoSuffix.FindChar('#');
+
+  if (hashPos != kNotFound && (pos == kNotFound || hashPos < pos)) {
+    pos = hashPos;
+  }
+
+  if (pos != kNotFound) {
+    aOriginNoSuffix.Truncate(pos);
+  }
+
+  return NS_OK;
+}
+
  nsresult
 ContentPrincipal::GenerateOriginNoSuffixFromURI(nsIURI* aURI,
                                                 nsACString& aOriginNoSuffix)
@@ -143,6 +166,7 @@ ContentPrincipal::GenerateOriginNoSuffixFromURI(nsIURI* aURI,
   MOZ_ASSERT(!NS_IsAboutBlank(origin),
              "The inner URI for about:blank must be moz-safe-about:blank");
 
+  
   if (!nsScriptSecurityManager::GetStrictFileOriginPolicy() &&
       NS_URIIsLocalFile(origin)) {
     
@@ -151,6 +175,18 @@ ContentPrincipal::GenerateOriginNoSuffixFromURI(nsIURI* aURI,
     return NS_OK;
   }
 
+
+  nsresult rv;
+
+#if IS_ORIGIN_IS_FULL_SPEC_DEFINED
+  bool fullSpec = false;
+  rv = NS_URIChainHasFlags(origin, nsIProtocolHandler::ORIGIN_IS_FULL_SPEC, &fullSpec);
+  NS_ENSURE_SUCCESS(rv, rv);
+  if (fullSpec) {
+    return AssignFullSpecToOriginNoSuffix(origin, aOriginNoSuffix);
+  }
+#endif
+
   nsAutoCString hostPort;
 
   
@@ -158,7 +194,7 @@ ContentPrincipal::GenerateOriginNoSuffixFromURI(nsIURI* aURI,
   
   
   bool isChrome;
-  nsresult rv = origin->SchemeIs("chrome", &isChrome);
+  rv = origin->SchemeIs("chrome", &isChrome);
   if (NS_SUCCEEDED(rv) && !isChrome) {
     rv = origin->GetAsciiHostPort(hostPort);
     
@@ -230,24 +266,7 @@ ContentPrincipal::GenerateOriginNoSuffixFromURI(nsIURI* aURI,
     return NS_ERROR_FAILURE;
   }
 
-  rv = origin->GetAsciiSpec(aOriginNoSuffix);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  
-
-  int32_t pos = aOriginNoSuffix.FindChar('?');
-  int32_t hashPos = aOriginNoSuffix.FindChar('#');
-
-  if (hashPos != kNotFound && (pos == kNotFound || hashPos < pos)) {
-    pos = hashPos;
-  }
-
-  if (pos != kNotFound) {
-    aOriginNoSuffix.Truncate(pos);
-  }
-
-  return NS_OK;
+  return AssignFullSpecToOriginNoSuffix(origin, aOriginNoSuffix);
 }
 
 bool
