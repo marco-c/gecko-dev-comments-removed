@@ -656,7 +656,6 @@ public:
     , mName(aName)
     , mGeneration(0)
   {
-    SetIsNotDOMBinding();
   }
 
 private:
@@ -680,6 +679,28 @@ public:
   
   uint16_t Type() const override;
   void GetCssTextImpl(nsAString& aCssText) const override;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   
   
