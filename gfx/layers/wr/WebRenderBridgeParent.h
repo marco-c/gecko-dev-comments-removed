@@ -69,6 +69,7 @@ public:
                                             InfallibleTArray<uint8_t>* aOutImageSnapshot) override;
 
   void ActorDestroy(ActorDestroyReason aWhy) override;
+  void SetWebRenderProfilerEnabled(bool aEnabled);
 
   
   bool IsPendingComposite() override { return false; }
