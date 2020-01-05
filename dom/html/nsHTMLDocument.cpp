@@ -116,6 +116,7 @@
 #include "nsLayoutStylesheetCache.h"
 #include "mozilla/StyleSheet.h"
 #include "mozilla/StyleSheetInlines.h"
+#include "mozilla/Unused.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -2795,17 +2796,21 @@ nsHTMLDocument::EditingStateChanged()
     
     
     
-    bool unused;
-    rv = ExecCommand(NS_LITERAL_STRING("insertBrOnReturn"), false,
-                     NS_LITERAL_STRING("false"), &unused);
+    
+    
+    
+    ErrorResult errorResult;
+    Unused << ExecCommand(NS_LITERAL_STRING("insertBrOnReturn"), false,
+                          NS_LITERAL_STRING("false"), CallerType::NonSystem,
+                          errorResult);
 
-    if (NS_FAILED(rv)) {
+    if (errorResult.Failed()) {
       
       
       editSession->TearDownEditorOnWindow(window);
       mEditingState = eOff;
 
-      return rv;
+      return errorResult.StealNSResult();
     }
   }
 
@@ -3121,22 +3126,11 @@ ConvertToMidasInternalCommand(const nsAString & inCommandID,
                                             dummyBool, dummyBool, true);
 }
 
-
-NS_IMETHODIMP
-nsHTMLDocument::ExecCommand(const nsAString& commandID,
-                            bool doShowUI,
-                            const nsAString& value,
-                            bool* _retval)
-{
-  ErrorResult rv;
-  *_retval = ExecCommand(commandID, doShowUI, value, rv);
-  return rv.StealNSResult();
-}
-
 bool
 nsHTMLDocument::ExecCommand(const nsAString& commandID,
                             bool doShowUI,
                             const nsAString& value,
+                            CallerType aCallerType,
                             ErrorResult& rv)
 {
   
@@ -3196,7 +3190,7 @@ nsHTMLDocument::ExecCommand(const nsAString& commandID,
   }
 
   bool restricted = commandID.LowerCaseEqualsLiteral("paste");
-  if (restricted && !nsContentUtils::IsCallerChrome()) {
+  if (restricted && aCallerType != CallerType::System) {
     return false;
   }
 
@@ -3260,17 +3254,10 @@ nsHTMLDocument::ExecCommand(const nsAString& commandID,
   return !rv.Failed();
 }
 
-NS_IMETHODIMP
-nsHTMLDocument::QueryCommandEnabled(const nsAString& commandID,
-                                    bool* _retval)
-{
-  ErrorResult rv;
-  *_retval = QueryCommandEnabled(commandID, rv);
-  return rv.StealNSResult();
-}
-
 bool
-nsHTMLDocument::QueryCommandEnabled(const nsAString& commandID, ErrorResult& rv)
+nsHTMLDocument::QueryCommandEnabled(const nsAString& commandID,
+                                    CallerType aCallerType,
+                                    ErrorResult& rv)
 {
   nsAutoCString cmdToDispatch;
   if (!ConvertToMidasInternalCommand(commandID, cmdToDispatch)) {
@@ -3286,7 +3273,7 @@ nsHTMLDocument::QueryCommandEnabled(const nsAString& commandID, ErrorResult& rv)
 
   
   bool restricted = commandID.LowerCaseEqualsLiteral("paste");
-  if (restricted && !nsContentUtils::IsCallerChrome()) {
+  if (restricted && aCallerType != CallerType::System) {
     return false;
   }
 
@@ -3454,16 +3441,9 @@ nsHTMLDocument::QueryCommandState(const nsAString& commandID, ErrorResult& rv)
   return retval;
 }
 
-NS_IMETHODIMP
-nsHTMLDocument::QueryCommandSupported(const nsAString & commandID,
-                                      bool *_retval)
-{
-  *_retval = QueryCommandSupported(commandID);
-  return NS_OK;
-}
-
 bool
-nsHTMLDocument::QueryCommandSupported(const nsAString& commandID)
+nsHTMLDocument::QueryCommandSupported(const nsAString& commandID,
+                                      CallerType aCallerType)
 {
   
   
@@ -3471,7 +3451,7 @@ nsHTMLDocument::QueryCommandSupported(const nsAString& commandID)
   
   
   
-  if (!nsContentUtils::IsCallerChrome()) {
+  if (aCallerType != CallerType::System) {
     if (commandID.LowerCaseEqualsLiteral("paste")) {
       return false;
     }
