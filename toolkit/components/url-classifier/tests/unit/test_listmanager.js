@@ -69,6 +69,7 @@ let gUpdatedCntForTableData = 0;
 let gIsV4Updated = false;   
 
 const NEW_CLIENT_STATE = 'sta\0te';
+const CHECKSUM = 'check\0sum';
 
 prefBranch.setBoolPref("browser.safebrowsing.debug", true);
 
@@ -264,7 +265,11 @@ function run_test() {
     
     
     
-    let content = "\x0A\x0C\x08\x02\x20\x02\x3A\x06\x73\x74\x61\x00\x74\x65";
+    
+    
+    
+    
+    let content = "\x0A\x33\x08\x02\x20\x02\x2A\x18\x08\x01\x12\x14\x08\x04\x12\x10\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x02\x00\x00\x00\x03\x3A\x06\x73\x74\x61\x00\x74\x65\x42\x0B\x0A\x09\x63\x68\x65\x63\x6B\x00\x73\x75\x6D\x12\x08\x08\x08\x10\x80\x94\xEB\xDC\x03";
 
     response.bodyOutputStream.write(content, content.length);
 
@@ -276,10 +281,7 @@ function run_test() {
       return;
     }
 
-    
-    
-    
-    waitUntilStateSavedToPref(NEW_CLIENT_STATE, () => {
+    waitUntilMetaDataSaved(NEW_CLIENT_STATE, CHECKSUM, () => {
       gIsV4Updated = true;
 
       if (gUpdatedCntForTableData === SERVER_INVOLVED_TEST_CASE_LIST.length) {
@@ -333,21 +335,42 @@ function readFileToString(aFilename) {
   return buf;
 }
 
-function waitUntilStateSavedToPref(expectedState, callback) {
-  const STATE_PREF_NAME_PREFIX = 'browser.safebrowsing.provider.google4.state.';
+function waitUntilMetaDataSaved(expectedState, expectedChecksum, callback) {
+  let dbService = Cc["@mozilla.org/url-classifier/dbservice;1"]
+                     .getService(Ci.nsIUrlClassifierDBService);
 
-  let stateBase64 = '';
+  dbService.getTables(metaData => {
+    do_print("metadata: " + metaData);
+    let didCallback = false;
+    metaData.split("\n").some(line => {
+      
+      let p = line.indexOf(";");
+      if (-1 === p) {
+        return false; 
+      }
+      let tableName = line.substring(0, p);
+      let metadata = line.substring(p + 1).split(":");
+      let stateBase64 = metadata[0];
+      let checksumBase64 = metadata[1];
 
-  try {
-    stateBase64 =
-      prefBranch.getCharPref(STATE_PREF_NAME_PREFIX + 'test-phish-proto');
-  } catch (e) {}
+      if (tableName !== 'test-phish-proto') {
+        return false; 
+      }
 
-  if (stateBase64 === btoa(expectedState)) {
-    do_print('State has been saved to pref!');
-    callback();
-    return;
-  }
+      if (stateBase64 === btoa(expectedState) &&
+          checksumBase64 === btoa(expectedChecksum)) {
+        do_print('State has been saved to disk!');
+        callback();
+        didCallback = true;
+      }
 
-  do_timeout(1000, waitUntilStateSavedToPref.bind(null, expectedState, callback));
+      return true; 
+    });
+
+    if (!didCallback) {
+      do_timeout(1000, waitUntilMetaDataSaved.bind(null, expectedState,
+                                                         expectedChecksum,
+                                                         callback));
+    }
+  });
 }

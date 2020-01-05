@@ -125,6 +125,8 @@ private:
   bool CheckValidUpdate(nsTArray<TableUpdate*>* aUpdates,
                         const nsACString& aTable);
 
+  nsresult LoadMetadata(nsIFile* aDirectory, nsACString& aResult);
+
   
   nsCOMPtr<nsIFile> mCacheDirectory;
   
