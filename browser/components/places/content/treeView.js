@@ -781,8 +781,11 @@ PlacesTreeView.prototype = {
       return;
 
     let column = this._findColumnByType(aColumnType);
-    if (column && !column.element.hidden)
+    if (column && !column.element.hidden) {
+      if (aColumnType == this.COLUMN_TYPE_TITLE)
+        this._tree.removeImageCacheEntry(row, column);
       this._tree.invalidateCell(row, column);
+    }
 
     
     if (aColumnType != this.COLUMN_TYPE_LASTMODIFIED) {

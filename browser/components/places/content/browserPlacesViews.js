@@ -511,6 +511,8 @@ PlacesViewBase.prototype = {
     if (elt.localName == "menupopup") {
       elt = elt.parentNode;
     }
+    
+    elt.removeAttribute("image");
     elt.setAttribute("image", aPlacesNode.icon);
   },
 
