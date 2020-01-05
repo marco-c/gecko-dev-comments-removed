@@ -2,9 +2,10 @@
 
 
 
+use connector::create_http_connector;
 use data_loader::decode;
 use fetch::cors_cache::CORSCache;
-use http_loader::{NetworkHttpRequestFactory, create_http_connector, obtain_response};
+use http_loader::{NetworkHttpRequestFactory, obtain_response};
 use hyper::header::{Accept, AcceptLanguage, Authorization, AccessControlAllowCredentials};
 use hyper::header::{AccessControlAllowOrigin, AccessControlAllowHeaders, AccessControlAllowMethods};
 use hyper::header::{AccessControlRequestHeaders, AccessControlMaxAge, AccessControlRequestMethod, Basic};
