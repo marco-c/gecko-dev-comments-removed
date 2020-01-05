@@ -194,10 +194,8 @@ add_task(function* () {
 
 
 add_task(function* () {
-  let nSyncs = 0;
   mockedInternal.getTabClients = () => [];
   mockedInternal.syncTabs = () => {
-    nSyncs++;
     return Promise.resolve();
   }
 

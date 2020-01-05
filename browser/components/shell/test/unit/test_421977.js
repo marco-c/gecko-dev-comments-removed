@@ -70,9 +70,9 @@ function run_test() {
   try {
     
     
-    var gsettings = Cc["@mozilla.org/gsettings-service;1"].
-                    getService(Ci.nsIGSettingsService).
-                    getCollectionForSchema("org.gnome.desktop.background");
+    Cc["@mozilla.org/gsettings-service;1"].
+      getService(Ci.nsIGSettingsService).
+      getCollectionForSchema("org.gnome.desktop.background");
     return;
   } catch (e) { }
 

@@ -68,7 +68,6 @@ add_task(function* test_sessionRestore() {
   
   let SessionStore =
     Cu.import("resource:///modules/sessionstore/SessionStore.jsm", {}).SessionStore;
-  let backupState = SessionStore.getBrowserState();
 
   
   

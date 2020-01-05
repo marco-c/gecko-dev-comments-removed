@@ -503,7 +503,6 @@ function swapTextForItem(item, target) {
   
   
   let visitStack = [ item ];
-  let source = target == "translation" ? "original" : "translation";
 
   while (visitStack.length > 0) {
     let curItem = visitStack.shift();

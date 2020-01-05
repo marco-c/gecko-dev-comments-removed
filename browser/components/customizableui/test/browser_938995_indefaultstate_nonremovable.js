@@ -8,7 +8,6 @@ const kWidgetId = "test-non-removable-widget";
 
 
 add_task(function() {
-  let navbar = document.getElementById("nav-bar");
   ok(CustomizableUI.inDefaultState, "Should start in default state");
 
   let button = createDummyXULButton(kWidgetId, "Test non-removable inDefaultState handling");

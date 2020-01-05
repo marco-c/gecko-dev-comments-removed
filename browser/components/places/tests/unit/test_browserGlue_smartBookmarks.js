@@ -37,7 +37,7 @@ function countFolderChildren(aFolderItemId) {
 
 add_task(function* setup() {
   
-  let bg = Cc["@mozilla.org/browser/browserglue;1"].getService(Ci.nsIObserver);
+  Cc["@mozilla.org/browser/browserglue;1"].getService(Ci.nsIObserver);
 
   
   PlacesUtils.history;

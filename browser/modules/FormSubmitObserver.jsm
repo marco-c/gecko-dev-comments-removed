@@ -195,7 +195,6 @@ FormSubmitObserver.prototype =
     
     
     let offset = 0;
-    let position = "";
 
     if (aElement.tagName == 'INPUT' &&
         (aElement.type == 'radio' || aElement.type == 'checkbox')) {

@@ -401,7 +401,6 @@ var gPermissionManager = {
     this._permissions = [];
 
     
-    var count = 0;
     var enumerator = Services.perms.enumerator;
     while (enumerator.hasMoreElements()) {
       var nextPermission = enumerator.getNext().QueryInterface(Components.interfaces.nsIPermission);

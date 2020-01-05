@@ -113,7 +113,6 @@ add_task(function* test() {
 
     
     
-    let value = USER_CONTEXTS[userContextId];
 
     
     let tabInfo = yield* openTabInUserContext(testURL, userContextId);

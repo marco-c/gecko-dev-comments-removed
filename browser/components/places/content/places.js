@@ -79,6 +79,7 @@ var PlacesOrganizer = {
             break;
           default:
             throw new Error("Invalid container type found: " + container);
+            break;
         }
         PlacesUtils.asContainer(this._places.selectedNode).containerOpen = true;
       }
@@ -571,7 +572,6 @@ var PlacesOrganizer = {
 
 
     var infoBox = document.getElementById("infoBox");
-    var infoBoxExpander = document.getElementById("infoBoxExpander");
     var infoBoxExpanderWrapper = document.getElementById("infoBoxExpanderWrapper");
     var additionalInfoBroadcaster = document.getElementById("additionalInfoBroadcaster");
 
@@ -973,6 +973,7 @@ var PlacesQueryBuilder = {
         break;
       default:
         throw "Invalid search scope";
+        break;
     }
 
     
@@ -1368,7 +1369,7 @@ var ContentArea = {
     
     let viewOptions = ContentTree.viewOptions;
     if (this._specialViews.has(this.currentPlace)) {
-      let { view, options } = this._specialViews.get(this.currentPlace);
+      let { options } = this._specialViews.get(this.currentPlace);
       for (let option in options) {
         viewOptions[option] = options[option];
       }

@@ -334,7 +334,7 @@ var CustomizableUIInternal = {
     
     if (!gSavedState) {
       
-      for (let [id, widget] of gPalette) {
+      for (let [, widget] of gPalette) {
         if (widget.defaultArea && widget._introducedInVersion === "pref") {
           let prefId = "browser.toolbarbuttons.introduced." + widget.id;
           Services.prefs.setBoolPref(prefId, true);
@@ -610,7 +610,6 @@ var CustomizableUIInternal = {
     if (gBuildAreas.has(area) && gBuildAreas.get(area).has(aToolbar)) {
       return;
     }
-    let document = aToolbar.ownerDocument;
     let areaProperties = gAreas.get(area);
 
     
@@ -1079,7 +1078,7 @@ var CustomizableUIInternal = {
       this.notifyListeners("onWidgetInstanceRemoved", widget.id, document);
     }
 
-    for (let [area, areaMap] of gPendingBuildAreas) {
+    for (let [, areaMap] of gPendingBuildAreas) {
       let toDelete = [];
       for (let [areaNode, ] of areaMap) {
         if (areaNode.ownerDocument == document) {
@@ -1087,7 +1086,7 @@ var CustomizableUIInternal = {
         }
       }
       for (let areaNode of toDelete) {
-        areaMap.delete(toDelete);
+        areaMap.delete(areaNode);
       }
     }
 
@@ -2184,7 +2183,7 @@ var CustomizableUIInternal = {
     
     let seenAreas = new Set();
     let widgetMightNeedAutoAdding = true;
-    for (let [area, placements] of gPlacements) {
+    for (let [area, ] of gPlacements) {
       seenAreas.add(area);
       let areaIsRegistered = gAreas.has(area);
       let index = gPlacements.get(area).indexOf(widget.id);

@@ -117,7 +117,6 @@ add_task(function*() {
   let shownPromise = popupShown(contextMenu);
   let urlBarContainer = document.getElementById("urlbar-container");
   
-  let urlbarRect = urlBarContainer.getBoundingClientRect();
   EventUtils.synthesizeMouse(urlBarContainer, 100, 1, {type: "contextmenu", button: 2 });
   yield shownPromise;
 

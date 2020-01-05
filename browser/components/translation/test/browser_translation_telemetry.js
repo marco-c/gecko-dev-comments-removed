@@ -218,7 +218,8 @@ add_task(function* test_show_original() {
 });
 
 add_task(function* test_language_change() {
-  for (let i of Array(4)) {
+  
+  for (let i of Array(4)) { 
     let tab = yield offerTranslationFor("<h1>Hallo Welt!</h1>", "fr");
     let browser = tab.linkedBrowser;
     

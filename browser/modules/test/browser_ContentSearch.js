@@ -114,7 +114,6 @@ add_task(function* searchInBackgroundTab() {
   
   
   yield addTab();
-  let searchBrowser = gBrowser.selectedBrowser;
   let engine = Services.search.currentEngine;
   let data = {
     engineName: engine.name,
