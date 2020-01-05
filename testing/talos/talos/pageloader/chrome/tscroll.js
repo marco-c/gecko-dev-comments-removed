@@ -12,10 +12,63 @@ function testScroll(target, stepSize, opt_reportFunc, opt_numSteps)
     win = window;
   }
 
+  var report;
+  
+
+
+
+
+
+
+
+
+  function P_setupReportFn() {
+    return new Promise(function(resolve) {
+      report = opt_reportFunc || win.tpRecordTime;
+      if (report == 'PageLoader:RecordTime') {
+        report = function(duration, start, name) {
+          var msg = { time: duration, startTime: start, testName: name };
+          sendAsyncMessage('PageLoader:RecordTime', msg);
+        }
+        resolve();
+        return;
+      }
+
+      
+      
+      if (!report && document.head) {
+        var imported = document.createElement('script');
+        imported.addEventListener("load", function() {
+          report = tpRecordTime;
+          resolve();
+        });
+
+        imported.src = '../../scripts/talos-debug.js?dummy=' + Date.now(); 
+        document.head.appendChild(imported);
+        return;
+      }
+
+      resolve();
+    });
+  }
+
+  function FP_wait(ms) {
+    return function() {
+      return new Promise(function(resolve) {
+        setTimeout(resolve, ms);
+      });
+    };
+  }
+
   function rAF(fn) {
     return content.requestAnimationFrame(fn);
   }
 
+  function P_rAF() {
+    return new Promise(function(resolve) {
+      rAF(resolve);
+    });
+  }
 
   function myNow() {
     return (win.performance && win.performance.now) ?
@@ -44,79 +97,68 @@ function testScroll(target, stepSize, opt_reportFunc, opt_numSteps)
   
   
   
-  function startTest()
-  {
-    
-    var start = myNow();
-    var lastScrollPos = getPos();
-    var lastScrollTime = start;
-    var durations = [];
-    var report = opt_reportFunc || tpRecordTime;
-    if (report == 'PageLoader:RecordTime') {
-      report = function(duration) {
-        var msg = { time: duration, startTime: '', testName: '' };
-        sendAsyncMessage('PageLoader:RecordTime', msg);
-      }
-    }
-
-    function tick() {
-      var now = myNow();
-      var duration = now - lastScrollTime;
-      lastScrollTime = now;
-
-      durations.push(duration);
-      doScrollTick();
-
+  function P_syncScrollTest() {
+    return new Promise(function(resolve) {
       
-      if ((getPos() == lastScrollPos) || (opt_numSteps && (durations.length >= (opt_numSteps + 2)))) {
-        if (typeof(Profiler) !== "undefined") {
-          Profiler.pause();
+      var start = myNow();
+      var lastScrollPos = getPos();
+      var lastScrollTime = start;
+      var durations = [];
+
+      function tick() {
+        var now = myNow();
+        var duration = now - lastScrollTime;
+        lastScrollTime = now;
+
+        durations.push(duration);
+        doScrollTick();
+
+        
+        if ((getPos() == lastScrollPos) || (opt_numSteps && (durations.length >= (opt_numSteps + 2)))) {
+          if (typeof(Profiler) !== "undefined") {
+            Profiler.pause();
+          }
+
+          
+          
+          
+          
+
+          durations.pop(); 
+          durations.pop(); 
+
+          if (win.talosDebug)
+            win.talosDebug.displayData = true; 
+
+          
+          var sum = 0;
+          for (var i = 0; i < durations.length; i++)
+            sum += Number(durations[i]);
+
+          
+          resolve(durations.length ? sum / durations.length : 0);
+          return;
         }
 
-        
-        
-        
-        
-
-        durations.pop(); 
-        durations.pop(); 
-
-        if (win.talosDebug)
-          win.talosDebug.displayData = true; 
-
-        
-        var sum = 0;
-        for (var i = 0; i < durations.length; i++)
-          sum += Number(durations[i]);
-
-        
-        report(durations.length ? sum / durations.length : 0);
-        return;
+        lastScrollPos = getPos();
+        rAF(tick);
       }
 
-      lastScrollPos = getPos();
+      if (typeof(Profiler) !== "undefined") {
+        Profiler.resume();
+      }
       rAF(tick);
-    }
-
-    if (typeof(Profiler) !== "undefined") {
-      Profiler.resume();
-    }
-    rAF(tick);
+    });
   }
 
-  
-  
-  
-  if(!opt_reportFunc && document.head) {
-    var imported = document.createElement('script');
-    imported.src = '../../scripts/talos-debug.js?dummy=' + Date.now(); 
-    document.head.appendChild(imported);
-  }
-
-  setTimeout(function(){
-    gotoTop();
-    rAF(startTest);
-  }, 260);
+  P_setupReportFn()
+  .then(FP_wait(260))
+  .then(gotoTop)
+  .then(P_rAF)
+  .then(P_syncScrollTest)
+  .then(function(result) { 
+    report(result);
+  });
 }
 
 
