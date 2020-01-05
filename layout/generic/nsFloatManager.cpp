@@ -714,14 +714,16 @@ nsFloatManager::FloatInfo::ComputeEllipseXInterceptDiff(
 
   
   
-  if (aBandYMost >= aShapeBoxY &&
+  if (aTopCornerRadiusY > 0 &&
+      aBandYMost >= aShapeBoxY &&
       aBandYMost <= aShapeBoxY + aTopCornerRadiusY) {
     
     nscoord y = aTopCornerRadiusY - (aBandYMost - aShapeBoxY);
     nscoord xIntercept =
       XInterceptAtY(y, aTopCornerRadiusX, aTopCornerRadiusY);
     xDiff = aTopCornerRadiusX - xIntercept;
-  } else if (aBandY >= aShapeBoxYMost - aBottomCornerRadiusY &&
+  } else if (aBottomCornerRadiusY > 0 &&
+             aBandY >= aShapeBoxYMost - aBottomCornerRadiusY &&
              aBandY <= aShapeBoxYMost) {
     
     nscoord y = aBottomCornerRadiusY - (aShapeBoxYMost - aBandY);
