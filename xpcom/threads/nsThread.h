@@ -8,6 +8,7 @@
 #define nsThread_h__
 
 #include "mozilla/Mutex.h"
+#include "nsIIdlePeriod.h"
 #include "nsIThreadInternal.h"
 #include "nsISupportsPriority.h"
 #include "nsEventQueue.h"
@@ -94,6 +95,10 @@ public:
 private:
   void DoMainThreadSpecificProcessing(bool aReallyWait);
 
+  void GetIdleEvent(nsIRunnable** aEvent, mozilla::MutexAutoLock& aProofOfLock);
+  void GetEvent(bool aWait, nsIRunnable** aEvent,
+                mozilla::MutexAutoLock& aProofOfLock);
+
 protected:
   class nsChainedEventQueue;
 
@@ -178,6 +183,9 @@ protected:
                         NotNull<nsChainedEventQueue*> aQueue)
       : mThread(aThread)
       , mQueue(aQueue)
+
+
+
     {
     }
 
@@ -207,6 +215,13 @@ protected:
 
   NotNull<nsChainedEventQueue*> mEvents;  
   nsChainedEventQueue mEventsRoot;
+
+  
+  
+  
+  
+  nsCOMPtr<nsIIdlePeriod> mIdlePeriod;
+  nsEventQueue mIdleEvents;
 
   int32_t   mPriority;
   PRThread* mThread;
