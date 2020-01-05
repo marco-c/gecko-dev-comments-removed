@@ -260,8 +260,6 @@ function Discovery() {
   this._onRemoteScan = this._onRemoteScan.bind(this);
   this._onRemoteUpdate = this._onRemoteUpdate.bind(this);
   this._purgeMissingDevices = this._purgeMissingDevices.bind(this);
-
-  Services.obs.addObserver(this, "network-active-changed", false);
 }
 
 Discovery.prototype = {
@@ -378,24 +376,6 @@ Discovery.prototype = {
     this._transports.update.off("message", this._onRemoteUpdate);
     this._transports.update.destroy();
     this._transports.update = null;
-  },
-
-  observe: function (subject, topic, data) {
-    if (topic !== "network-active-changed") {
-      return;
-    }
-    let activeNetworkInfo = subject;
-    if (!activeNetworkInfo) {
-      log("No active network info");
-      return;
-    }
-    activeNetworkInfo = activeNetworkInfo.QueryInterface(Ci.nsINetworkInfo);
-    log("Active network changed to: " + activeNetworkInfo.type);
-    
-    
-    if (activeNetworkInfo.type === Ci.nsINetworkInfo.NETWORK_TYPE_WIFI) {
-      this._restartListening();
-    }
   },
 
   _restartListening: function () {
