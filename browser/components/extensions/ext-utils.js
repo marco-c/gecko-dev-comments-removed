@@ -95,53 +95,6 @@ TabContext.prototype = {
   },
 };
 
-function getBrowserInfo(browser) {
-  if (!browser.ownerGlobal.gBrowser) {
-    
-    
-    browser = browser.ownerGlobal.QueryInterface(Ci.nsIInterfaceRequestor)
-                     .getInterface(Ci.nsIDocShell)
-                     .chromeEventHandler;
-
-    if (!browser) {
-      return {};
-    }
-  }
-
-  let result = {};
-
-  let window = browser.ownerGlobal;
-  if (window.gBrowser) {
-    let tab = window.gBrowser.getTabForBrowser(browser);
-    if (tab) {
-      result.tabId = tabTracker.getId(tab);
-    }
-
-    result.windowId = windowTracker.getId(window);
-  }
-
-  return result;
-}
-global.getBrowserInfo = getBrowserInfo;
-
-
-
-let onGetTabAndWindowId = {
-  receiveMessage({name, target, sync}) {
-    let result = getBrowserInfo(target);
-
-    if (result.tabId) {
-      if (sync) {
-        return result;
-      }
-      target.messageManager.sendAsyncMessage("Extension:SetTabAndWindowId", result);
-    }
-  },
-};
-
-Services.mm.addMessageListener("Extension:GetTabAndWindowId", onGetTabAndWindowId);
-
-
 
 class WindowTracker extends WindowTrackerBase {
   addProgressListener(window, listener) {
@@ -378,17 +331,33 @@ class TabTracker extends TabTrackerBase {
     }, Ci.nsIThread.DISPATCH_NORMAL);
   }
 
-  getBrowserId(browser) {
+  getBrowserData(browser) {
+    if (browser.ownerGlobal.location.href === "about:addons") {
+      
+      
+      browser = browser.ownerGlobal.QueryInterface(Ci.nsIInterfaceRequestor)
+                       .getInterface(Ci.nsIDocShell)
+                       .chromeEventHandler;
+    }
+
+    let result = {
+      tabId: -1,
+      windowId: -1,
+    };
+
     let {gBrowser} = browser.ownerGlobal;
     
     
     if (gBrowser && gBrowser.getTabForBrowser) {
+      result.windowId = windowTracker.getId(browser.ownerGlobal);
+
       let tab = gBrowser.getTabForBrowser(browser);
       if (tab) {
-        return this.getId(tab);
+        result.tabId = this.getId(tab);
       }
     }
-    return -1;
+
+    return result;
   }
 
   get activeTab() {

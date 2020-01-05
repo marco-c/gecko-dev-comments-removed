@@ -11,7 +11,6 @@ module.exports = {
     "Window": true,
     "WindowEventManager": true,
     "browserActionFor": true,
-    "getBrowserInfo": true,
     "getCookieStoreIdForTab": true,
     "makeWidgetId": true,
     "pageActionFor": true,

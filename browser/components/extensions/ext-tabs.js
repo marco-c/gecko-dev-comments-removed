@@ -33,7 +33,7 @@ function getSender(extension, target, sender) {
     tabId = sender.tabId;
     delete sender.tabId;
   } else if (target instanceof Ci.nsIDOMXULElement) {
-    tabId = getBrowserInfo(target).tabId;
+    tabId = tabTracker.getBrowserData(target).tabId;
   }
 
   if (tabId) {
@@ -46,7 +46,6 @@ function getSender(extension, target, sender) {
 
 
 global.tabGetSender = getSender;
-
 
 
 extensions.on("page-shutdown", (type, context) => {
@@ -65,16 +64,6 @@ extensions.on("page-shutdown", (type, context) => {
       }
     }
   }
-});
-
-extensions.on("fill-browser-data", (type, browser, data) => {
-  let tabId, windowId;
-  if (browser) {
-    ({tabId, windowId} = getBrowserInfo(browser));
-  }
-
-  data.tabId = tabId || -1;
-  data.windowId = windowId || -1;
 });
 
 
