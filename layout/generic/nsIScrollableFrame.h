@@ -453,7 +453,9 @@ public:
   
 
 
-  virtual void NotifyApproximateFrameVisibilityUpdate() = 0;
+
+
+  virtual void NotifyApproximateFrameVisibilityUpdate(bool aIgnoreDisplayPort) = 0;
 
   
 
