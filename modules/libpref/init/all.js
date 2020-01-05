@@ -2835,6 +2835,8 @@ pref("plugins.click_to_play", false);
 #ifdef NIGHTLY_BUILD
 
 pref("plugins.navigator.hidden_ctp_plugin", "Shockwave Flash");
+#else
+pref("plugins.navigator.hidden_ctp_plugin", "");
 #endif
 
 pref("plugin.default.state", 2);
@@ -5069,7 +5071,8 @@ pref("dom.vr.openvr.enabled", false);
 
 
 
-pref("dom.vr.poseprediction.enabled", true);
+
+pref("dom.vr.poseprediction.enabled", false);
 
 
 
@@ -5614,11 +5617,7 @@ pref("dom.webkitBlink.dirPicker.enabled", true);
 pref("dom.webkitBlink.filesystem.enabled", true);
 #endif
 
-#ifdef RELEASE_OR_BETA
-pref("media.block-autoplay-until-in-foreground", false);
-#else
 pref("media.block-autoplay-until-in-foreground", true);
-#endif
 
 #ifdef MOZ_STYLO
 
