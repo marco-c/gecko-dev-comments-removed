@@ -51,7 +51,9 @@ function* freePortal(aSuccess) {
   }, "Waiting for Captive Portal Service to update state after portal freed.");
 }
 
-function* openWindowAndWaitForPortalUI(aLongRecheck) {
+
+
+function* focusWindowAndWaitForPortalUI(aLongRecheck, win) {
   
   
   
@@ -61,7 +63,10 @@ function* openWindowAndWaitForPortalUI(aLongRecheck) {
   
   Preferences.set("captivedetect.portalRecheckDelayMS", aLongRecheck ? -1 : 1000000);
 
-  let win = yield openWindowAndWaitForFocus();
+  if (!win) {
+    win = yield BrowserTestUtils.openNewBrowserWindow();
+  }
+  yield SimpleTest.promiseFocus(win);
 
   
   
@@ -175,7 +180,7 @@ let testCasesForBothSuccessAndAbort = [
 
   function* test_detectedWithNoBrowserWindow_Open(aSuccess) {
     yield portalDetected();
-    let win = yield openWindowAndWaitForPortalUI();
+    let win = yield focusWindowAndWaitForPortalUI();
     yield freePortal(aSuccess);
     ensureNoPortalTab(win);
     ensureNoPortalNotification(win);
@@ -190,9 +195,45 @@ let testCasesForBothSuccessAndAbort = [
 
 
 
+  function* test_detectedWithNoBrowserWindow_Focused(aSuccess) {
+    let win1 = yield openWindowAndWaitForFocus();
+    let win2 = yield openWindowAndWaitForFocus();
+    
+    yield SimpleTest.promiseFocus(window);
+
+    yield portalDetected();
+
+    
+    ensurePortalNotification(win1);
+    ensureNoPortalTab(win1);
+    ensurePortalNotification(win2);
+    ensureNoPortalTab(win2);
+
+    yield focusWindowAndWaitForPortalUI(false, win2);
+
+    yield freePortal(aSuccess);
+
+    ensureNoPortalNotification(win1);
+    ensureNoPortalTab(win2);
+    ensureNoPortalNotification(win2);
+
+    yield closeWindowAndWaitForXulWindowVisible(win2);
+    
+    
+    yield BrowserTestUtils.closeWindow(win1);
+  },
+
+  
+
+
+
+
+
+
+
   function* test_detectedWithNoBrowserWindow_LongRecheck(aSuccess) {
     yield portalDetected();
-    let win = yield openWindowAndWaitForPortalUI(true);
+    let win = yield focusWindowAndWaitForPortalUI(true);
     yield freePortal(aSuccess);
     ensureNoPortalTab(win);
     ensureNoPortalNotification(win);
@@ -247,7 +288,7 @@ let singleRunTestCases = [
 
   function* test_detectedWithNoBrowserWindow_Redirect() {
     yield portalDetected();
-    let win = yield openWindowAndWaitForPortalUI();
+    let win = yield focusWindowAndWaitForPortalUI();
     let browser = win.gBrowser.selectedTab.linkedBrowser;
     let loadPromise =
       BrowserTestUtils.browserLoaded(browser, false, CANONICAL_URL_REDIRECTED);
