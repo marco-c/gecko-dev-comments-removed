@@ -62,6 +62,69 @@ enum MessageData {
     Binary(Vec<u8>),
 }
 
+
+
+const BLOCKED_PORTS_LIST: &'static [u16] = &[
+    1,    
+    7,    
+    9,    
+    11,   
+    13,   
+    15,   
+    17,   
+    19,   
+    20,   
+    21,   
+    22,   
+    23,   
+    25,   
+    37,   
+    42,   
+    43,   
+    53,   
+    77,   
+    79,   
+    87,   
+    95,   
+    101,  
+    102,  
+    103,  
+    104,  
+    109,  
+    110,  
+    111,  
+    113,  
+    115,  
+    117,  
+    119,  
+    123,  
+    135,  
+    139,  
+    143,  
+    179,  
+    389,  
+    465,  
+    512,  
+    513,  
+    514,  
+    515,  
+    526,  
+    530,  
+    531,  
+    532,  
+    540,  
+    556,  
+    563,  
+    587,  
+    601,  
+    636,  
+    993,  
+    995,  
+    2049, 
+    4045, 
+    6000, 
+];
+
 #[dom_struct]
 pub struct WebSocket {
     eventtarget: EventTarget,
@@ -133,7 +196,13 @@ impl WebSocket {
         let net_url = try!(parse_url(&replace_hosts(&resource_url)).map_err(|_| Error::Syntax));
 
         // Step 2: Disallow https -> ws connections.
+
         // Step 3: Potentially block access to some ports.
+        let port: u16 = resource_url.port_or_default().unwrap();
+
+        if BLOCKED_PORTS_LIST.iter().any(|&p| p == port) {
+            return Err(Error::Security);
+        }
 
         // Step 4.
         let protocols: &[DOMString] = protocols
