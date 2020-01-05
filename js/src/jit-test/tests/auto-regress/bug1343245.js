@@ -1,3 +1,4 @@
+
 var o = {
     __iterator__: function() {
         return {};
