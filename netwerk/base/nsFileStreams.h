@@ -55,10 +55,19 @@ protected:
 
     int32_t mBehaviorFlags;
 
-    
-
-
-    bool mDeferredOpen;
+    enum {
+      
+      eUnitialized,
+      
+      eDeferredOpen,
+      
+      eOpened,
+      
+      eClosed,
+      
+      
+      eError
+    } mState;
 
     struct OpenParams {
         nsCOMPtr<nsIFile> localFile;
@@ -70,6 +79,8 @@ protected:
 
 
     OpenParams mOpenParams;
+
+    nsresult mErrorValue;
 
     
 
@@ -93,6 +104,7 @@ protected:
     virtual nsresult DoOpen();
 
     
+
 
 
 
