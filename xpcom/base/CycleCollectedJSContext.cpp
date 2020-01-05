@@ -81,6 +81,7 @@
 #include "nsDOMJSUtils.h"
 #include "nsJSUtils.h"
 #include "nsWrapperCache.h"
+#include "nsStringBuffer.h"
 
 #ifdef MOZ_CRASHREPORTER
 #include "nsExceptionHandler.h"
@@ -531,6 +532,7 @@ CycleCollectedJSContext::Initialize(JSContext* aParentContext,
   JS::SetOutOfMemoryCallback(mJSContext, OutOfMemoryCallback, this);
   JS::SetLargeAllocationFailureCallback(mJSContext,
                                         LargeAllocationFailureCallback, this);
+  JS_SetExternalStringSizeofCallback(mJSContext, SizeofExternalStringCallback);
   JS_SetDestroyZoneCallback(mJSContext, XPCStringConvert::FreeZoneCache);
   JS_SetSweepZoneCallback(mJSContext, XPCStringConvert::ClearZoneCache);
   JS::SetBuildIdOp(mJSContext, GetBuildId);
@@ -915,6 +917,23 @@ CycleCollectedJSContext::LargeAllocationFailureCallback(void* aData)
   CycleCollectedJSContext* self = static_cast<CycleCollectedJSContext*>(aData);
 
   self->OnLargeAllocationFailure();
+}
+
+ size_t
+CycleCollectedJSContext::SizeofExternalStringCallback(JSString* aStr,
+                                                      MallocSizeOf aMallocSizeOf)
+{
+  if (!XPCStringConvert::IsDOMString(aStr)) {
+    
+    return 0;
+  }
+
+  const char16_t* chars = JS_GetTwoByteExternalStringChars(aStr);
+  const nsStringBuffer* buf = nsStringBuffer::FromData((void*)chars);
+  
+  
+  
+  return buf->SizeOfIncludingThisIfUnshared(aMallocSizeOf);
 }
 
 class PromiseJobRunnable final : public Runnable
