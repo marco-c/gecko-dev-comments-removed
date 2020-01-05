@@ -511,7 +511,6 @@ class PerfherderResourceOptionsMixin(ScriptMixin):
             
             
             
-            
             try:
                 
                 with open('/etc/instance_metadata.json', 'rb') as fh:
