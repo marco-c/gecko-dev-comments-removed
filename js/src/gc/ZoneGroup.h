@@ -21,8 +21,6 @@ class AutoKeepAtoms;
 
 typedef Vector<JS::Zone*, 4, SystemAllocPolicy> ZoneVector;
 
-using ScriptAndCountsVector = GCVector<ScriptAndCounts, 0, SystemAllocPolicy>;
-
 
 
 
@@ -130,12 +128,6 @@ class ZoneGroup
     ZoneGroupData<mozilla::LinkedList<js::Debugger>> debuggerList_;
   public:
     mozilla::LinkedList<js::Debugger>& debuggerList() { return debuggerList_.ref(); }
-
-    
-    ZoneGroupOrIonCompileData<bool> profilingScripts;
-
-    
-    ZoneGroupData<JS::PersistentRooted<ScriptAndCountsVector>*> scriptAndCountsVector;
 };
 
 class MOZ_RAII AutoAccessZoneGroup

@@ -253,6 +253,8 @@ CanUseExtraThreads()
 
 void DisableExtraThreads();
 
+using ScriptAndCountsVector = GCVector<ScriptAndCounts, 0, SystemAllocPolicy>;
+
 class AutoLockForExclusiveAccess;
 } 
 
@@ -570,6 +572,12 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
 
     
     js::ActiveThreadData<JSVersion> defaultVersion_;
+
+    
+    js::ActiveThreadOrIonCompileData<bool> profilingScripts;
+
+    
+    js::ActiveThreadData<JS::PersistentRooted<js::ScriptAndCountsVector>*> scriptAndCountsVector;
 
   private:
     

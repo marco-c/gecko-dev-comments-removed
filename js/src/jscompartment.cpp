@@ -692,7 +692,7 @@ JSCompartment::traceRoots(JSTracer* trc, js::gc::GCRuntime::TraceOrMarkRuntime t
     
     
     if (scriptCountsMap &&
-        zone()->group()->profilingScripts &&
+        trc->runtime()->profilingScripts &&
         !JS::CurrentThreadIsHeapMinorCollecting())
     {
         MOZ_ASSERT_IF(!trc->runtime()->isBeingDestroyed(), collectCoverage());
@@ -1204,7 +1204,7 @@ bool
 JSCompartment::collectCoverageForDebug() const
 {
     return debuggerObservesCoverage() ||
-           zone()->group()->profilingScripts ||
+           runtimeFromAnyThread()->profilingScripts ||
            runtimeFromAnyThread()->lcovOutput().isEnabled();
 }
 
