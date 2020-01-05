@@ -7945,17 +7945,10 @@ js::gc::detail::CellIsNotGray(const Cell* cell)
     if (!rt->gc.isIncrementalGCInProgress() || tc->zone()->wasGCStarted())
         return false;
 
-    
-    
-    
-# ifdef ANDROID
-    return true;
-# else
     Zone* sourceZone = rt->gc.marker.stackContainsCrossZonePointerTo(tc);
     if (sourceZone && sourceZone->wasGCStarted())
         return true;
 
     return false;
-# endif
 }
 #endif

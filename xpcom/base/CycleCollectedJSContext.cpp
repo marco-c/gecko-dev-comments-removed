@@ -1319,8 +1319,15 @@ CycleCollectedJSContext::CheckGrayBits() const
   MOZ_ASSERT(mJSContext);
   MOZ_ASSERT(!JS::IsIncrementalGCInProgress(mJSContext),
              "Don't call CheckGrayBits during a GC.");
+
+#ifndef ANDROID
+  
+  
+  
+
   MOZ_ASSERT(js::CheckGrayMarkingState(mJSContext));
   MOZ_ASSERT(CheckWeakMappingGrayBitsTracer::Check(mJSContext));
+#endif
 }
 
 bool
