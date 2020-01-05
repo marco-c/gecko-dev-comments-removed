@@ -616,9 +616,12 @@ RuleRewriter.prototype = {
 
     
     let pushParen = (token, closer) => {
-      result += text.substring(previousOffset, token.startOffset);
-      parenStack.push({closer, offset: result.length});
-      result += text.substring(token.startOffset, token.endOffset);
+      result = result + text.substring(previousOffset, token.startOffset) +
+        text.substring(token.startOffset, token.endOffset);
+      
+      
+      
+      parenStack.push({closer, offset: result.length - 1});
       previousOffset = token.endOffset;
     };
 
