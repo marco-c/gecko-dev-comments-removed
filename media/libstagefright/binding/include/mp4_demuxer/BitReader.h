@@ -34,6 +34,8 @@ public:
 
   
   size_t BitCount() const;
+  
+  size_t BitsLeft() const;
 
 private:
   nsAutoPtr<stagefright::ABitReader> mBitReader;
