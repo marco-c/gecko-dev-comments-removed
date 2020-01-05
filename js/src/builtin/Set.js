@@ -40,7 +40,12 @@ function SetConstructorInit(iterable) {
         var nextValue = next.value;
 
         
-        callContentFunction(adder, set, nextValue);
+        try {
+            callContentFunction(adder, set, nextValue);
+        } catch (e) {
+            IteratorCloseThrow(iter);
+            throw e;
+        }
     }
 }
 
