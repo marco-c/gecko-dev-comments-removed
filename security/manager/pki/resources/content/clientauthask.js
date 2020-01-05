@@ -6,6 +6,39 @@
 
 "use strict";
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 const { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
 
 const { Services } = Cu.import("resource://gre/modules/Services.jsm", {});
@@ -24,16 +57,9 @@ var certArray;
 
 
 
-var dialogParams;
-
-
-
-
 var rememberBox;
 
 function onLoad() {
-  dialogParams = window.arguments[0].QueryInterface(Ci.nsIDialogParamBlock);
-
   bundle = document.getElementById("pippki_bundle");
   let rememberSetting =
     Services.prefs.getBoolPref("security.remember_cert_checkbox_default_setting");
@@ -42,10 +68,10 @@ function onLoad() {
   rememberBox.label = bundle.getString("clientAuthRemember");
   rememberBox.checked = rememberSetting;
 
-  let hostname = dialogParams.GetString(0);
-  let org = dialogParams.GetString(1);
-  let issuerOrg = dialogParams.GetString(2);
-  let port = dialogParams.GetInt(0);
+  let hostname = window.arguments[0];
+  let org = window.arguments[1];
+  let issuerOrg = window.arguments[2];
+  let port = window.arguments[3];
   let formattedOrg = bundle.getFormattedString("clientAuthMessage1", [org]);
   let formattedIssuerOrg = bundle.getFormattedString("clientAuthMessage2",
                                                      [issuerOrg]);
@@ -57,7 +83,7 @@ function onLoad() {
   setText("issuer", formattedIssuerOrg);
 
   let selectElement = document.getElementById("nicknames");
-  certArray = dialogParams.objects.queryElementAt(0, Ci.nsIArray);
+  certArray = window.arguments[4].QueryInterface(Ci.nsIArray);
   for (let i = 0; i < certArray.length; i++) {
     let menuItemNode = document.createElement("menuitem");
     let cert = certArray.queryElementAt(i, Ci.nsIX509Cert);
@@ -113,21 +139,17 @@ function onCertSelected() {
 }
 
 function doOK() {
-  
-  dialogParams.SetInt(0, 1);
+  let retVals = window.arguments[5].QueryInterface(Ci.nsIWritablePropertyBag2);
+  retVals.setPropertyAsBool("certChosen", true);
   let index = parseInt(document.getElementById("nicknames").value);
-  
-  
-  dialogParams.SetInt(1, index);
-  
-  dialogParams.SetInt(2, rememberBox.checked);
+  retVals.setPropertyAsUint32("selectedIndex", index);
+  retVals.setPropertyAsBool("rememberSelection", rememberBox.checked);
   return true;
 }
 
 function doCancel() {
-  
-  dialogParams.SetInt(0, 0);
-  
-  dialogParams.SetInt(2, rememberBox.checked);
+  let retVals = window.arguments[5].QueryInterface(Ci.nsIWritablePropertyBag2);
+  retVals.setPropertyAsBool("certChosen", false);
+  retVals.setPropertyAsBool("rememberSelection", rememberBox.checked);
   return true;
 }
