@@ -52,7 +52,8 @@ TruncateComments(const nsAString& src, nsAString* const out)
 
     const nsString commentBeginnings[] = { NS_LITERAL_STRING("//"),
                                            NS_LITERAL_STRING("/*"),
-                                           nsString() };
+                                           nsString() }; 
+                                                         
     const nsString lineCommentEndings[] = { NS_LITERAL_STRING("\\\n"),
                                             NS_LITERAL_STRING("\n"),
                                             nsString() };
@@ -63,8 +64,10 @@ TruncateComments(const nsAString& src, nsAString* const out)
     while (srcItr != srcEnd) {
         size_t foundId;
         fnEmitUntil( fnFindSoonestOf(commentBeginnings, 2, &foundId) );
-        fnEmitUntil(srcItr + commentBeginnings[foundId].Length());
-
+        fnEmitUntil(srcItr + commentBeginnings[foundId].Length()); 
+                                                                   
+                                                                   
+                                                                   
         switch (foundId) {
         case 0: 
             while (true) {
