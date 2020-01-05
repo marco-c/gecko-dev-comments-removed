@@ -6,6 +6,7 @@
 
 #include "mozilla/ServoStyleSet.h"
 
+#include "gfxPlatformFontList.h"
 #include "mozilla/DocumentStyleRootIterator.h"
 #include "mozilla/ServoRestyleManager.h"
 #include "mozilla/dom/AnonymousContent.h"
@@ -15,6 +16,7 @@
 #include "mozilla/dom/KeyframeEffectReadOnly.h"
 #include "nsCSSAnonBoxes.h"
 #include "nsCSSPseudoElements.h"
+#include "nsDeviceContext.h"
 #include "nsHTMLStyleSheet.h"
 #include "nsIDocumentInlines.h"
 #include "nsPrintfCString.h"
@@ -40,6 +42,9 @@ ServoStyleSet::Init(nsPresContext* aPresContext)
 {
   mPresContext = aPresContext;
   mRawSet.reset(Servo_StyleSet_Init(aPresContext));
+
+  mPresContext->DeviceContext()->InitFontCache();
+  gfxPlatformFontList::PlatformFontList()->InitLangService();
 
   
   
@@ -228,6 +233,9 @@ ServoStyleSet::PreTraverseSync()
   
   
   mPresContext->Document()->GetDocumentState();
+
+  
+  mPresContext->Document()->GetUserFontSet();
 }
 
 void
