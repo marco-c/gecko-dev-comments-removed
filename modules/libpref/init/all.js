@@ -4817,9 +4817,6 @@ pref("dom.push.http2.maxRetries", 2);
 pref("dom.push.http2.retryInterval", 5000);
 
 
-pref("dom.mozNetworkStats.enabled", false);
-
-
 pref("dom.mozSettings.enabled", false);
 
 
@@ -5532,8 +5529,3 @@ pref("dom.storageManager.enabled", true);
 #else
 pref("dom.storageManager.enabled", false);
 #endif
-
-
-
-pref("browser.storageManager.enabled", false);
-

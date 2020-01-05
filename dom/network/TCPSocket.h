@@ -179,10 +179,6 @@ private:
   void ActivateTLS();
   
   nsresult MaybeReportErrorAndCloseIfOpen(nsresult status);
-#ifdef MOZ_WIDGET_GONK
-  
-  void SaveNetworkStats(bool aEnforce);
-#endif
 
   
   nsresult FireDataEvent(JSContext* aCx, const nsAString& aType,
@@ -248,10 +244,6 @@ private:
   bool mObserversActive;
 
 #ifdef MOZ_WIDGET_GONK
-  
-  uint32_t mTxBytes;
-  
-  uint32_t mRxBytes;
   
   uint32_t mAppId;
   

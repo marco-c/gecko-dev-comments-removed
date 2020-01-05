@@ -214,18 +214,9 @@ private:
     nsCOMPtr<nsICancelable>  mProxyRequest;
     bool                     mDeferredCallbackPending;
 
-
-
-    uint64_t                           mCountRecv;
 #ifdef MOZ_WIDGET_GONK
     nsMainThreadPtrHandle<nsINetworkInfo> mActiveNetworkInfo;
 #endif
-    nsresult                           SaveNetworkStats(bool);
-    void                               CountRecvBytes(uint64_t recvBytes)
-    {
-        mCountRecv += recvBytes;
-        SaveNetworkStats(false);
-    }
 };
 
 #endif 

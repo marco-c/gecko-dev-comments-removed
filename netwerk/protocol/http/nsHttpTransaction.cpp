@@ -138,8 +138,6 @@ nsHttpTransaction::nsHttpTransaction()
     , mSubmittedRatePacing(false)
     , mPassedRatePacing(false)
     , mSynchronousRatePaceRequest(false)
-    , mCountRecv(0)
-    , mCountSent(0)
     , mAppId(NECKO_NO_APP_ID)
     , mIsInIsolatedMozBrowser(false)
     , mClassOfService(0)
@@ -694,6 +692,9 @@ nsHttpTransaction::ReadRequestSegment(nsIInputStream *stream,
                                       uint32_t count,
                                       uint32_t *countRead)
 {
+    
+    
+
     nsHttpTransaction *trans = (nsHttpTransaction *) closure;
     nsresult rv = trans->mReader->OnReadSegment(buf, count, countRead);
     if (NS_FAILED(rv)) return rv;
@@ -703,7 +704,6 @@ nsHttpTransaction::ReadRequestSegment(nsIInputStream *stream,
         trans->SetRequestStart(TimeStamp::Now(), true);
     }
 
-    trans->CountSentBytes(*countRead);
     trans->mSentData = true;
     return NS_OK;
 }
@@ -799,7 +799,6 @@ nsHttpTransaction::WritePipeSegment(nsIOutputStream *stream,
     if (NS_FAILED(rv)) return rv; 
 
     MOZ_ASSERT(*countWritten > 0, "bad writer");
-    trans->CountRecvBytes(*countWritten);
     trans->mReceivedData = true;
     trans->mTransferSize += *countWritten;
 
@@ -875,45 +874,6 @@ nsHttpTransaction::WriteSegments(nsAHttpSegmentWriter *writer,
 
     reentrantFlag = false;
     return rv;
-}
-
-nsresult
-nsHttpTransaction::SaveNetworkStats(bool enforce)
-{
-#ifdef MOZ_WIDGET_GONK
-    
-    if (!mActiveNetworkInfo || mAppId == NECKO_NO_APP_ID) {
-        return NS_OK;
-    }
-
-    if (mCountRecv <= 0 && mCountSent <= 0) {
-        
-        return NS_OK;
-    }
-
-    
-    
-    
-    uint64_t totalBytes = mCountRecv + mCountSent;
-    if (!enforce && totalBytes < NETWORK_STATS_THRESHOLD) {
-        return NS_OK;
-    }
-
-    
-    
-    RefPtr<Runnable> event =
-        new SaveNetworkStatsEvent(mAppId, mIsInIsolatedMozBrowser, mActiveNetworkInfo,
-                                  mCountRecv, mCountSent, false);
-    NS_DispatchToMainThread(event);
-
-    
-    mCountSent = 0;
-    mCountRecv = 0;
-
-    return NS_OK;
-#else
-    return NS_ERROR_NOT_IMPLEMENTED;
-#endif
 }
 
 void
@@ -1131,9 +1091,6 @@ nsHttpTransaction::Close(nsresult reason)
         MutexAutoLock lock(mLock);
         mConnection = nullptr;
     }
-
-    
-    SaveNetworkStats(true);
 
     mStatus = reason;
     mTransactionDone = true; 

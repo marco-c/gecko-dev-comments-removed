@@ -301,26 +301,11 @@ private:
 
   nsCOMPtr<nsIDashboardEventNotifier> mConnectionLogService;
 
-
-
-  Atomic<uint64_t, Relaxed>       mCountRecv;
-  Atomic<uint64_t, Relaxed>       mCountSent;
   uint32_t                        mAppId;
   bool                            mIsInIsolatedMozBrowser;
 #ifdef MOZ_WIDGET_GONK
   nsMainThreadPtrHandle<nsINetworkInfo> mActiveNetworkInfo;
 #endif
-  nsresult                        SaveNetworkStats(bool);
-  void                            CountRecvBytes(uint64_t recvBytes)
-  {
-    mCountRecv += recvBytes;
-    SaveNetworkStats(false);
-  }
-  void                            CountSentBytes(uint64_t sentBytes)
-  {
-    mCountSent += sentBytes;
-    SaveNetworkStats(false);
-  }
 };
 
 class WebSocketSSLChannel : public WebSocketChannel
