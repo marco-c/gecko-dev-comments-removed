@@ -26,6 +26,20 @@ use euclid::Matrix4D;
 use euclid::rect::Rect;
 use msg::constellation_msg::PipelineId;
 use std::fmt::{self, Debug, Formatter};
+use std::sync::atomic::{ATOMIC_USIZE_INIT, AtomicUsize, Ordering};
+
+
+
+
+
+static NEXT_SPECIAL_STACKING_CONTEXT_ID: AtomicUsize = ATOMIC_USIZE_INIT;
+
+
+
+
+
+const SPECIAL_STACKING_CONTEXT_ID_MASK: usize = 0xffff;
+
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum LayerKind {
@@ -159,15 +173,33 @@ pub struct StackingContextId(
 );
 
 impl StackingContextId {
-    #[inline(always)]
+    #[inline]
     pub fn new(id: usize) -> StackingContextId {
         StackingContextId::new_of_type(id, FragmentType::FragmentBody)
     }
 
-    #[inline(always)]
+    
+    fn next_special_id() -> usize {
+        
+        ((NEXT_SPECIAL_STACKING_CONTEXT_ID.fetch_add(1, Ordering::SeqCst) + 1) << 2) &
+            SPECIAL_STACKING_CONTEXT_ID_MASK
+    }
+
+    #[inline]
     pub fn new_of_type(id: usize, fragment_type: FragmentType) -> StackingContextId {
-        debug_assert_eq!(id & fragment_type as usize, 0);
-        StackingContextId(id | fragment_type as usize)
+        debug_assert_eq!(id & (fragment_type as usize), 0);
+        if fragment_type == FragmentType::FragmentBody {
+            StackingContextId(id)
+        } else {
+            StackingContextId(StackingContextId::next_special_id() | (fragment_type as usize))
+        }
+    }
+
+    
+    
+    #[inline(always)]
+    pub fn new_outer(fragment_type: FragmentType) -> StackingContextId {
+        StackingContextId(StackingContextId::next_special_id() | (fragment_type as usize))
     }
 
     #[inline]
@@ -179,7 +211,26 @@ impl StackingContextId {
     pub fn id(&self) -> usize {
         self.0 & !3
     }
+
+    
+    #[inline]
+    pub fn root() -> StackingContextId {
+        StackingContextId(0)
+    }
+
+    
+    
+    
+    
+    #[inline]
+    pub fn is_special(&self) -> bool {
+        (self.0 & !SPECIAL_STACKING_CONTEXT_ID_MASK) == 0
+    }
 }
+
+
+
+
 
 
 #[derive(Clone, Debug, PartialEq, Eq, Copy, Hash, Deserialize, Serialize, HeapSizeOf)]

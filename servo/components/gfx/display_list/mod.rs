@@ -487,14 +487,15 @@ impl DisplayList {
     
     
     
-    pub fn hit_test(&self, point: Point2D<Au>) -> Vec<DisplayItemMetadata> {
+    pub fn hit_test(&self, point: &Point2D<Au>, scroll_offsets: &ScrollOffsetMap)
+                    -> Vec<DisplayItemMetadata> {
         let mut traversal = DisplayListTraversal {
             display_list: self,
             current_item_index: 0,
             last_item_index: self.list.len() - 1,
         };
         let mut result = Vec::new();
-        self.root_stacking_context.hit_test(&mut traversal, point, &mut result);
+        self.root_stacking_context.hit_test(&mut traversal, point, scroll_offsets, &mut result);
         result.reverse();
         result
     }
@@ -610,24 +611,38 @@ impl StackingContext {
 
     pub fn hit_test<'a>(&self,
                         traversal: &mut DisplayListTraversal<'a>,
-                        point: Point2D<Au>,
+                        point: &Point2D<Au>,
+                        scroll_offsets: &ScrollOffsetMap,
                         result: &mut Vec<DisplayItemMetadata>) {
         
-        let point = if self.context_type == StackingContextType::Real {
-            let point = point - self.bounds.origin;
+        let mut point = if self.context_type == StackingContextType::Real {
+            let point = *point - self.bounds.origin;
             let inv_transform = self.transform.invert();
             let frac_point = inv_transform.transform_point(&Point2D::new(point.x.to_f32_px(),
                                                                          point.y.to_f32_px()));
             Point2D::new(Au::from_f32_px(frac_point.x), Au::from_f32_px(frac_point.y))
         } else {
-            point
+            *point
         };
+
+        
+        
+        
+        
+        
+        
+        if self.id != StackingContextId::root() {
+            if let Some(scroll_offset) = scroll_offsets.get(&self.id) {
+                point.x -= Au::from_f32_px(scroll_offset.x);
+                point.y -= Au::from_f32_px(scroll_offset.y);
+            }
+        }
 
         for child in self.children.iter() {
             while let Some(item) = traversal.advance(self) {
                 item.hit_test(point, result);
             }
-            child.hit_test(traversal, point, result);
+            child.hit_test(traversal, &point, scroll_offsets, result);
         }
 
         while let Some(item) = traversal.advance(self) {
@@ -1415,3 +1430,7 @@ impl WebRenderImageInfo {
         }
     }
 }
+
+
+pub type ScrollOffsetMap = HashMap<StackingContextId, Point2D<f32>>;
+

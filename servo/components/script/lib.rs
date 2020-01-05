@@ -112,8 +112,9 @@ mod unpremultiplytable;
 mod webdriver_handlers;
 
 use dom::bindings::codegen::RegisterBindings;
-use js::jsapi::SetDOMProxyInformation;
+use js::jsapi::{Handle, JSContext, JSObject, SetDOMProxyInformation};
 use std::ptr;
+use util::opts;
 
 #[cfg(target_os = "linux")]
 #[allow(unsafe_code)]
@@ -168,3 +169,14 @@ pub fn init() {
 
     perform_platform_specific_initialization();
 }
+
+
+
+
+
+
+#[allow(unsafe_code)]
+pub unsafe fn script_can_initiate_scroll(_: *mut JSContext, _: Handle<*mut JSObject>) -> bool {
+    !opts::get().use_webrender
+}
+

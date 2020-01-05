@@ -40,6 +40,7 @@ use euclid::rect::Rect;
 use gfx_traits::Epoch;
 use gfx_traits::LayerId;
 use gfx_traits::StackingContextId;
+use heapsize::HeapSizeOf;
 use ipc_channel::ipc::{IpcReceiver, IpcSender};
 use libc::c_void;
 use msg::constellation_msg::{FrameId, FrameType, Key, KeyModifiers, KeyState, LoadData};
@@ -52,6 +53,7 @@ use net_traits::bluetooth_thread::BluetoothMethodMsg;
 use net_traits::image_cache_thread::ImageCacheThread;
 use net_traits::response::HttpsState;
 use profile_traits::mem;
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::collections::HashMap;
 use std::sync::mpsc::{Sender, Receiver};
 use url::Url;
@@ -61,10 +63,38 @@ pub use script_msg::{LayoutMsg, ScriptMsg, EventResult};
 
 
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub struct UntrustedNodeAddress(pub *const c_void);
+
+impl HeapSizeOf for UntrustedNodeAddress {
+    fn heap_size_of_children(&self) -> usize {
+        0
+    }
+}
+
 #[allow(unsafe_code)]
 unsafe impl Send for UntrustedNodeAddress {}
+
+impl Serialize for UntrustedNodeAddress {
+    fn serialize<S: Serializer>(&self, s: &mut S) -> Result<(), S::Error> {
+        (self.0 as usize).serialize(s)
+    }
+}
+
+impl Deserialize for UntrustedNodeAddress {
+    fn deserialize<D: Deserializer>(d: &mut D) -> Result<UntrustedNodeAddress, D::Error> {
+        let value: usize = try!(Deserialize::deserialize(d));
+        Ok(UntrustedNodeAddress::from_id(value))
+    }
+}
+
+impl UntrustedNodeAddress {
+    
+    #[inline]
+    pub fn from_id(id: usize) -> UntrustedNodeAddress {
+        UntrustedNodeAddress(id as *const c_void)
+    }
+}
 
 
 #[derive(Deserialize, Serialize)]
@@ -126,7 +156,7 @@ pub enum ConstellationControlMsg {
     
     Viewport(PipelineId, Rect<f32>),
     
-    SetScrollState(PipelineId, Point2D<f32>),
+    SetScrollState(PipelineId, Vec<(UntrustedNodeAddress, Point2D<f32>)>),
     
     GetTitle(PipelineId),
     
