@@ -380,12 +380,6 @@ nsIContent::GetBaseURI(bool aTryUseXHRDocBaseURI) const
       }
     }
 
-    nsIURI* explicitBaseURI = elem->GetExplicitBaseURI();
-    if (explicitBaseURI) {
-      base = explicitBaseURI;
-      break;
-    }
-
     
     elem->GetAttr(kNameSpaceID_XML, nsGkAtoms::base, attr);
     if (!attr.IsEmpty()) {

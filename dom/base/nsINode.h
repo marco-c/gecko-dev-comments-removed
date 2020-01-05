@@ -1293,14 +1293,6 @@ public:
   
 
 
-  nsresult SetExplicitBaseURI(nsIURI* aURI);
-  
-
-
-
-  
-
-
 
 
 
@@ -1329,16 +1321,6 @@ public:
   
   virtual bool IsHTMLContentElement() const { return false; }
 
-protected:
-  nsIURI* GetExplicitBaseURI() const {
-    if (!HasProperties()) {
-      return nullptr;
-    }
-
-    return static_cast<nsIURI*>(GetProperty(nsGkAtoms::baseURIProperty));
-  }
-
-public:
   void GetTextContent(nsAString& aTextContent,
                       mozilla::OOMReporter& aError)
   {
