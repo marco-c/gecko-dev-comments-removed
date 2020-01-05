@@ -2,6 +2,7 @@
 
 
 
+use std::collections::HashSet;
 use std::slice::Iter;
 
 
@@ -15,6 +16,14 @@ pub struct ServiceUUIDSequence(Vec<String>);
 impl ServiceUUIDSequence {
     pub fn new(vec: Vec<String>) -> ServiceUUIDSequence {
         ServiceUUIDSequence(vec)
+    }
+
+    fn get_services_set(&self) -> HashSet<String> {
+        let mut set = HashSet::new();
+        for s in self.0.iter() {
+            set.insert(s.clone());
+        }
+        set
     }
 }
 
@@ -69,6 +78,14 @@ impl BluetoothScanfilterSequence {
     pub fn iter(&self) -> Iter<BluetoothScanfilter> {
         self.0.iter()
     }
+
+    fn get_services_set(&self) -> HashSet<String> {
+        let mut set = HashSet::new();
+        for filter in self.iter() {
+            set = &set | &filter.services.get_services_set();
+        }
+        set
+    }
 }
 
 #[derive(Deserialize, Serialize)]
@@ -89,5 +106,9 @@ impl RequestDeviceoptions {
 
     pub fn get_filters(&self) -> &BluetoothScanfilterSequence {
         &self.filters
+    }
+
+    pub fn get_services_set(&self) -> HashSet<String> {
+        &self.filters.get_services_set() | &self.optional_services.get_services_set()
     }
 }
