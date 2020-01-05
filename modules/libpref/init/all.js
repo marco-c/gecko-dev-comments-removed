@@ -774,13 +774,7 @@ pref("gfx.font_rendering.opentype_svg.enabled", true);
 
 
 pref("gfx.canvas.azure.backends", "direct2d1.1,skia,cairo");
-
-#ifdef NIGHTLY_BUILD
 pref("gfx.content.azure.backends", "direct2d1.1,skia,cairo");
-#else
-pref("gfx.content.azure.backends", "direct2d1.1,cairo");
-#endif
-
 #else
 #ifdef XP_MACOSX
 pref("gfx.content.azure.backends", "skia");
@@ -1593,6 +1587,16 @@ pref("network.http.tcp_keepalive.long_lived_idle_time", 600);
 
 pref("network.http.enforce-framing.http1", false); 
 pref("network.http.enforce-framing.soft", true);
+
+
+
+
+
+pref("network.http.enable-packaged-apps", false);
+
+
+
+pref("network.http.signed-packages.enabled", false);
 
 
 
