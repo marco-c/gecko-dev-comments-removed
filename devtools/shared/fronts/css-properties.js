@@ -205,9 +205,8 @@ const initCssProperties = Task.async(function* (toolbox) {
   
   if (toolbox.target.hasActor("cssProperties")) {
     front = CssPropertiesFront(client, toolbox.target.form);
-    const serverDB = yield front.getCSSDatabase();
+    const serverDB = yield front.getCSSDatabase(getClientBrowserVersion(toolbox));
 
-    
     
     if (!serverDB.properties && !serverDB.margin) {
       db = CSS_PROPERTIES_DB;
@@ -248,6 +247,16 @@ function getCssProperties(toolbox) {
 
 function getClientCssProperties() {
   return new CssProperties(normalizeCssData(CSS_PROPERTIES_DB));
+}
+
+
+
+
+
+function getClientBrowserVersion(toolbox) {
+  const regexResult = toolbox.win.navigator
+                             .userAgent.match(/Firefox\/(\d+)\.\d/);
+  return Array.isArray(regexResult) ? regexResult[1] : "0";
 }
 
 

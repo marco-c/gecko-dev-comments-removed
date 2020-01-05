@@ -10,6 +10,10 @@ loader.lazyGetter(this, "DOMUtils", () => {
   return Cc["@mozilla.org/inspector/dom-utils;1"].getService(Ci.inIDOMUtils);
 });
 
+loader.lazyGetter(this, "appInfo", () => {
+  return Cc["@mozilla.org/xre/app-info;1"].getService(Ci.nsIXULAppInfo);
+});
+
 const protocol = require("devtools/shared/protocol");
 const { ActorClassWithSpec, Actor } = protocol;
 const { cssPropertiesSpec } = require("devtools/shared/specs/css-properties");
@@ -28,7 +32,15 @@ exports.CssPropertiesActor = ActorClassWithSpec(cssPropertiesSpec, {
     Actor.prototype.destroy.call(this);
   },
 
-  getCSSDatabase() {
+  getCSSDatabase(clientBrowserVersion) {
+    
+    
+    const serverBrowserVersion = appInfo.platformVersion.match(/^\d+/)[0];
+
+    if (clientBrowserVersion !== 0 && clientBrowserVersion === serverBrowserVersion) {
+      return {};
+    }
+
     const properties = generateCssProperties();
     const pseudoElements = DOMUtils.getCSSPseudoElementNames();
 
