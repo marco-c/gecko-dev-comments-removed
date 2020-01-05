@@ -1254,7 +1254,7 @@ pref("privacy.trackingprotection.enabled",  false);
 
 pref("privacy.trackingprotection.pbmode.enabled",  true);
 
-pref("privacy.trackingprotection.annotate_channels",  true);
+pref("privacy.trackingprotection.annotate_channels", false);
 
 
 pref("privacy.trackingprotection.lower_network_priority",  false);
@@ -5669,8 +5669,5 @@ pref("fuzzing.enabled", false);
 
 
 pref("layers.advanced.border-layers", 2);
-pref("layers.advanced.boxshadow-inset-layers", 2);
 pref("layers.advanced.boxshadow-outer-layers", 2);
 pref("layers.advanced.caret-layers", 2);
-pref("layers.advanced.displaybuttonborder-layers", 2);
-pref("layers.advanced.outline-layers", 2);
