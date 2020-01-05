@@ -5,8 +5,6 @@
 
 
 
-
-
 "use strict";
 
 const {utils: Cu, interfaces: Ci} = Components;
@@ -14,49 +12,24 @@ const {utils: Cu, interfaces: Ci} = Components;
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 
-XPCOMUtils.defineLazyModuleGetter(this, "UpdateUtils",
-                                  "resource://gre/modules/UpdateUtils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "NewTabPrefsProvider",
                                   "resource:///modules/NewTabPrefsProvider.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "Locale",
-                                  "resource://gre/modules/Locale.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "NewTabRemoteResources",
-                                  "resource:///modules/NewTabRemoteResources.jsm");
 
 const LOCAL_NEWTAB_URL = "chrome://browser/content/newtab/newTab.xhtml";
 
-const REMOTE_NEWTAB_PATH = "/newtab/v%VERSION%/%CHANNEL%/%LOCALE%/index.html";
+const ACTIVITY_STREAM_URL = "resource://activity-stream/data/content/activity-stream.html";
 
 const ABOUT_URL = "about:newtab";
 
 
-const PREF_REMOTE_ENABLED = "browser.newtabpage.remote";
-
-
-const PREF_REMOTE_CS_TEST = "browser.newtabpage.remote.content-signing-test";
-
-
-const PREF_MATCH_OS_LOCALE = "intl.locale.matchOS";
-
-
-const PREF_SELECTED_LOCALE = "general.useragent.locale";
-
-
-const PREF_REMOTE_MODE = "browser.newtabpage.remote.mode";
-
-
-const PREF_REMOTE_VERSION = "browser.newtabpage.remote.version";
-
-const VALID_CHANNELS = new Set(["esr", "release", "beta", "aurora", "nightly"]);
+const PREF_ACTIVITY_STREAM_ENABLED = "browser.newtabpage.activity-stream.enabled";
 
 function AboutNewTabService() {
-  NewTabPrefsProvider.prefs.on(PREF_REMOTE_ENABLED, this._handleToggleEvent.bind(this));
-
-  this._updateRemoteMaybe = this._updateRemoteMaybe.bind(this);
-
-  
-  this.toggleRemote(Services.prefs.getBoolPref(PREF_REMOTE_ENABLED));
+  NewTabPrefsProvider.prefs.on(PREF_ACTIVITY_STREAM_ENABLED, this._handleToggleEvent.bind(this));
+  this.toggleActivityStream(Services.prefs.getBoolPref(PREF_ACTIVITY_STREAM_ENABLED));
 }
+
+
 
 
 
@@ -93,8 +66,7 @@ function AboutNewTabService() {
 AboutNewTabService.prototype = {
 
   _newTabURL: ABOUT_URL,
-  _remoteEnabled: false,
-  _remoteURL: null,
+  _activityStreamEnabled: false,
   _overridden: false,
 
   classID: Components.ID("{dfcd2adc-7867-4d3a-ba70-17501f208142}"),
@@ -104,7 +76,7 @@ AboutNewTabService.prototype = {
   }],
 
   _handleToggleEvent(prefName, stateEnabled, forceState) { 
-    if (this.toggleRemote(stateEnabled, forceState)) {
+    if (this.toggleActivityStream(stateEnabled, forceState)) {
       Services.obs.notifyObservers(null, "newtab-url-changed", ABOUT_URL);
     }
   },
@@ -123,65 +95,22 @@ AboutNewTabService.prototype = {
 
 
 
-  toggleRemote(stateEnabled, forceState) {
+  toggleActivityStream(stateEnabled, forceState) {
 
-    if (!forceState && (this._overriden || stateEnabled === this._remoteEnabled)) {
+    if (!forceState && (this.overridden || stateEnabled === this.activityStreamEnabled)) {
       
       return false;
     }
-
-    let csTest = Services.prefs.getBoolPref(PREF_REMOTE_CS_TEST);
     if (stateEnabled) {
-      if (!csTest) {
-        this._remoteURL = this.generateRemoteURL();
-      } else {
-        this._remoteURL = this._newTabURL;
-      }
-      NewTabPrefsProvider.prefs.on(
-        PREF_SELECTED_LOCALE,
-        this._updateRemoteMaybe);
-      NewTabPrefsProvider.prefs.on(
-        PREF_MATCH_OS_LOCALE,
-        this._updateRemoteMaybe);
-      NewTabPrefsProvider.prefs.on(
-        PREF_REMOTE_MODE,
-        this._updateRemoteMaybe);
-      NewTabPrefsProvider.prefs.on(
-        PREF_REMOTE_VERSION,
-        this._updateRemoteMaybe);
-      this._remoteEnabled = true;
+      this._activityStreamEnabled = true;
     } else {
-      NewTabPrefsProvider.prefs.off(PREF_SELECTED_LOCALE, this._updateRemoteMaybe);
-      NewTabPrefsProvider.prefs.off(PREF_MATCH_OS_LOCALE, this._updateRemoteMaybe);
-      NewTabPrefsProvider.prefs.off(PREF_REMOTE_MODE, this._updateRemoteMaybe);
-      NewTabPrefsProvider.prefs.off(PREF_REMOTE_VERSION, this._updateRemoteMaybe);
-      this._remoteEnabled = false;
+      this._activityStreamEnabled = false;
     }
-    if (!csTest) {
-      this._newTabURL = ABOUT_URL;
-    }
+    this._newtabURL = ABOUT_URL;
     return true;
   },
 
   
-
-
-  generateRemoteURL() {
-    let releaseName = this.releaseFromUpdateChannel(UpdateUtils.UpdateChannel);
-    let path = REMOTE_NEWTAB_PATH
-      .replace("%VERSION%", this.remoteVersion)
-      .replace("%LOCALE%", Locale.getLocale())
-      .replace("%CHANNEL%", releaseName);
-    let mode = Services.prefs.getCharPref(PREF_REMOTE_MODE);
-    if (!(mode in NewTabRemoteResources.MODE_CHANNEL_MAP)) {
-      mode = "production";
-    }
-    return NewTabRemoteResources.MODE_CHANNEL_MAP[mode].origin + path;
-  },
-
-  
-
-
 
 
 
@@ -190,54 +119,17 @@ AboutNewTabService.prototype = {
 
 
   get defaultURL() {
-    let csTest = Services.prefs.getBoolPref(PREF_REMOTE_CS_TEST);
-    if (this._remoteEnabled || csTest) {
-      return this._remoteURL;
+    if (this.activityStreamEnabled) {
+      return this.activityStreamURL;
     }
     return LOCAL_NEWTAB_URL;
-  },
-
-  
-
-
-
-
-  _updateRemoteMaybe() {
-    if (!this._remoteEnabled || this._overridden) {
-      return;
-    }
-
-    let url = this.generateRemoteURL();
-    if (url !== this._remoteURL) {
-      this._remoteURL = url;
-      Services.obs.notifyObservers(null, "newtab-url-changed",
-        this._remoteURL);
-    }
-  },
-
-  
-
-
-
-
-  releaseFromUpdateChannel(channelName) {
-    return VALID_CHANNELS.has(channelName) ? channelName : "nightly";
   },
 
   get newTabURL() {
     return this._newTabURL;
   },
 
-  get remoteVersion() {
-    return Services.prefs.getCharPref(PREF_REMOTE_VERSION);
-  },
-
-  get remoteReleaseName() {
-    return this.releaseFromUpdateChannel(UpdateUtils.UpdateChannel);
-  },
-
   set newTabURL(aNewTabURL) {
-    let csTest = Services.prefs.getBoolPref(PREF_REMOTE_CS_TEST);
     aNewTabURL = aNewTabURL.trim();
     if (aNewTabURL === ABOUT_URL) {
       
@@ -246,25 +138,8 @@ AboutNewTabService.prototype = {
     } else if (aNewTabURL === "") {
       aNewTabURL = "about:blank";
     }
-    let remoteURL = this.generateRemoteURL();
-    let prefRemoteEnabled = Services.prefs.getBoolPref(PREF_REMOTE_ENABLED);
-    let isResetLocal = !prefRemoteEnabled && aNewTabURL === LOCAL_NEWTAB_URL;
-    let isResetRemote = prefRemoteEnabled && aNewTabURL === remoteURL;
 
-    if (isResetLocal || isResetRemote) {
-      if (this._overriden && !csTest) {
-        
-        this.resetNewTabURL();
-      }
-      return;
-    }
-    
-    if (!csTest) {
-      this.toggleRemote(false);
-    } else {
-      
-      this._remoteURL = aNewTabURL;
-    }
+    this.toggleActivityStream(false);
     this._newTabURL = aNewTabURL;
     this._overridden = true;
     Services.obs.notifyObservers(null, "newtab-url-changed", this._newTabURL);
@@ -274,14 +149,18 @@ AboutNewTabService.prototype = {
     return this._overridden;
   },
 
-  get remoteEnabled() {
-    return this._remoteEnabled;
+  get activityStreamEnabled() {
+    return this._activityStreamEnabled;
+  },
+
+  get activityStreamURL() {
+    return ACTIVITY_STREAM_URL;
   },
 
   resetNewTabURL() {
     this._overridden = false;
     this._newTabURL = ABOUT_URL;
-    this.toggleRemote(Services.prefs.getBoolPref(PREF_REMOTE_ENABLED), true);
+    this.toggleActivityStream(Services.prefs.getBoolPref(PREF_ACTIVITY_STREAM_ENABLED), true);
     Services.obs.notifyObservers(null, "newtab-url-changed", this._newTabURL);
   }
 };

@@ -149,16 +149,6 @@ AboutRedirector::NewChannel(nsIURI* aURI,
         NS_ENSURE_SUCCESS(rv, rv);
         rv = aboutNewTabService->GetDefaultURL(url);
         NS_ENSURE_SUCCESS(rv, rv);
-
-        
-        
-        bool remoteEnabled = false;
-        rv = aboutNewTabService->GetRemoteEnabled(&remoteEnabled);
-        NS_ENSURE_SUCCESS(rv, rv);
-        if (remoteEnabled) {
-          NS_ENSURE_ARG_POINTER(aLoadInfo);
-          aLoadInfo->SetVerifySignedContent(true);
-        }
       }
       
       if (url.IsEmpty()) {

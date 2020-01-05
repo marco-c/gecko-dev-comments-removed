@@ -1191,19 +1191,7 @@ pref("browser.newtabpage.directory.source", "https://tiles.services.mozilla.com/
 pref("browser.newtabpage.directory.ping", "https://tiles.services.mozilla.com/v3/links/");
 
 
-pref("browser.newtabpage.remote", false);
-
-
-pref("browser.newtabpage.remote.version", "1");
-
-
-pref("browser.newtabpage.remote.mode", "production");
-
-
-pref("browser.newtabpage.remote.content-signing-test", false);
-
-
-pref("browser.newtabpage.remote.keys", "");
+pref("browser.newtabpage.activity-stream.enabled", false);
 
 
 pref("full-screen-api.enabled", true);

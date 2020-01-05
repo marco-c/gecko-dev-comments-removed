@@ -2541,10 +2541,7 @@ function URLBarSetURI(aURI) {
 
     
     
-    
-    let defaultRemoteURL = gAboutNewTabService.remoteEnabled &&
-                           uri.spec === gAboutNewTabService.newTabURL;
-    if ((gInitialPages.includes(uri.spec) || defaultRemoteURL) &&
+    if (gInitialPages.includes(uri.spec) &&
         checkEmptyPageOrigin(gBrowser.selectedBrowser, uri)) {
       value = "";
     } else {

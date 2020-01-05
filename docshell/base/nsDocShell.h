@@ -738,9 +738,6 @@ protected:
   
   already_AddRefed<nsDocShell> GetParentDocshell();
 
-  
-  bool IsAboutNewtab(nsIURI* aURI);
-
 protected:
   nsresult GetCurScrollPos(int32_t aScrollOrientation, int32_t* aCurPos);
   nsresult SetCurScrollPosEx(int32_t aCurHorizontalPos,
