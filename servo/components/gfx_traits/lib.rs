@@ -20,18 +20,6 @@ use range::RangeIndex;
 use std::sync::atomic::{ATOMIC_USIZE_INIT, AtomicUsize, Ordering};
 
 
-
-
-
-static NEXT_SPECIAL_STACKING_CONTEXT_ID: AtomicUsize = ATOMIC_USIZE_INIT;
-
-
-
-
-
-const SPECIAL_STACKING_CONTEXT_ID_MASK: usize = 0xffff;
-
-
 #[derive(PartialEq, Eq, Debug, Copy, Clone, PartialOrd, Ord, Deserialize, Serialize)]
 pub struct Epoch(pub u32);
 
@@ -46,89 +34,29 @@ impl Epoch {
 pub struct StackingContextId(
     
     
-    usize
+    u64
 );
 
 impl StackingContextId {
-    #[inline]
-    pub fn new(id: usize) -> StackingContextId {
-        StackingContextId::new_of_type(id, FragmentType::FragmentBody)
-    }
-
-    
-    fn next_special_id() -> usize {
-        
-        ((NEXT_SPECIAL_STACKING_CONTEXT_ID.fetch_add(1, Ordering::SeqCst) + 1) << 2) &
-            SPECIAL_STACKING_CONTEXT_ID_MASK
-    }
-
-    #[inline]
-    pub fn new_of_type(id: usize, fragment_type: FragmentType) -> StackingContextId {
-        debug_assert_eq!(id & (fragment_type as usize), 0);
-        if fragment_type == FragmentType::FragmentBody {
-            StackingContextId(id)
-        } else {
-            StackingContextId(StackingContextId::next_special_id() | (fragment_type as usize))
-        }
-    }
-
     
     #[inline]
     pub fn root() -> StackingContextId {
         StackingContextId(0)
     }
+
+    
+    #[inline]
+    pub fn new(id: u64) -> StackingContextId {
+        StackingContextId(id)
+    }
 }
 
-
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, HeapSizeOf, PartialEq, Serialize)]
-pub struct ScrollRootId(
-    
-    
-    pub usize
-);
-
-impl ScrollRootId {
-    
-    fn next_special_id() -> usize {
-        
-        ((NEXT_SPECIAL_STACKING_CONTEXT_ID.fetch_add(1, Ordering::SeqCst) + 1) << 2) &
-            SPECIAL_STACKING_CONTEXT_ID_MASK
-    }
-
-    #[inline]
-    pub fn new_of_type(id: usize, fragment_type: FragmentType) -> ScrollRootId {
-        debug_assert_eq!(id & (fragment_type as usize), 0);
-        if fragment_type == FragmentType::FragmentBody {
-            ScrollRootId(id)
-        } else {
-            ScrollRootId(ScrollRootId::next_special_id() | (fragment_type as usize))
-        }
-    }
-
-    
-    #[inline]
-    pub fn root() -> ScrollRootId {
-        ScrollRootId(0)
-    }
-
-    
-    
-    
-    
-    #[inline]
-    pub fn is_special(&self) -> bool {
-        (self.0 & !SPECIAL_STACKING_CONTEXT_ID_MASK) == 0
-    }
-
-    #[inline]
-    pub fn id(&self) -> usize {
-        self.0 & !3
-    }
-
-    #[inline]
-    pub fn fragment_type(&self) -> FragmentType {
-        FragmentType::from_usize(self.0 & 3)
-    }
+int_range_index! {
+    #[derive(Deserialize, Serialize)]
+    #[doc = "An index that refers to a byte offset in a text run. This could \
+             point to the middle of a glyph."]
+    #[derive(HeapSizeOf)]
+    struct ByteIndex(isize)
 }
 
 
@@ -146,22 +74,37 @@ pub enum FragmentType {
     AfterPseudoContent,
 }
 
-impl FragmentType {
-    #[inline]
-    pub fn from_usize(n: usize) -> FragmentType {
-        debug_assert!(n < 3);
-        match n {
-            0 => FragmentType::FragmentBody,
-            1 => FragmentType::BeforePseudoContent,
-            _ => FragmentType::AfterPseudoContent,
-        }
+
+
+
+
+static NEXT_SPECIAL_STACKING_CONTEXT_ID: AtomicUsize = ATOMIC_USIZE_INIT;
+
+
+
+
+
+const SPECIAL_STACKING_CONTEXT_ID_MASK: usize = 0xffff;
+
+
+fn next_special_id() -> usize {
+    
+    ((NEXT_SPECIAL_STACKING_CONTEXT_ID.fetch_add(1, Ordering::SeqCst) + 1) << 2) &
+        SPECIAL_STACKING_CONTEXT_ID_MASK
+}
+
+pub fn combine_id_with_fragment_type(id: usize, fragment_type: FragmentType) ->  usize {
+    debug_assert_eq!(id & (fragment_type as usize), 0);
+    if fragment_type == FragmentType::FragmentBody {
+        id
+    } else {
+        next_special_id() | (fragment_type as usize)
     }
 }
 
-int_range_index! {
-    #[derive(Deserialize, Serialize)]
-    #[doc = "An index that refers to a byte offset in a text run. This could \
-             point to the middle of a glyph."]
-    #[derive(HeapSizeOf)]
-    struct ByteIndex(isize)
+pub fn node_id_from_clip_id(id: usize) -> Option<usize> {
+    if (id & !SPECIAL_STACKING_CONTEXT_ID_MASK) != 0 {
+        return Some((id & !3) as usize);
+    }
+    None
 }
