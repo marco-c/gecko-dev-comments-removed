@@ -359,6 +359,29 @@ mozHunspell::LoadDictionaryList(bool aNotifyChildProcesses)
   }
 
   
+  char* dicEnv = PR_GetEnv("DICPATH");
+  if (dicEnv) {
+    
+    nsTArray<nsCOMPtr<nsIFile>> dirs;
+    nsAutoCString env(dicEnv); 
+
+    char* currPath = nullptr;
+    char* nextPaths = env.BeginWriting();
+    while ((currPath = NS_strtok(":", &nextPaths))) {
+      nsCOMPtr<nsIFile> dir;
+      rv = NS_NewNativeLocalFile(nsCString(currPath), true, getter_AddRefs(dir));
+      if (NS_SUCCEEDED(rv)) {
+        dirs.AppendElement(dir);
+      }
+    }
+
+    
+    for (int32_t i = dirs.Length() - 1; i >= 0; i--) {
+      LoadDictionariesFromDir(dirs[i]);
+    }
+  }
+
+  
   nsCOMPtr<nsISimpleEnumerator> dictDirs;
   rv = dirSvc->Get(DICTIONARY_SEARCH_DIRECTORY_LIST,
                    NS_GET_IID(nsISimpleEnumerator), getter_AddRefs(dictDirs));
