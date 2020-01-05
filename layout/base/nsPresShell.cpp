@@ -1698,13 +1698,6 @@ PresShell::Initialize(nscoord aWidth, nscoord aHeight)
   mPresContext->SetVisibleArea(nsRect(0, 0, aWidth, aHeight));
 
   if (mStyleSet->IsServo() && mDocument->GetRootElement()) {
-    
-    
-    
-    
-    
-    
-    mDocument->GetRootElement()->SetIsDirtyForServo();
     mStyleSet->AsServo()->StyleDocument( false);
   }
 
