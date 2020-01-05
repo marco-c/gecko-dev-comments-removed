@@ -189,13 +189,17 @@ var Bookmarks = Object.freeze({
       
       let uri = item.hasOwnProperty("url") ? PlacesUtils.toURI(item.url) : null;
       let itemId = yield PlacesUtils.promiseItemId(item.guid);
-      notify(observers, "onItemAdded", [ itemId, parent._id, item.index,
-                                         item.type, uri, item.title || null,
-                                         PlacesUtils.toPRTime(item.dateAdded), item.guid,
-                                         item.parentGuid, item.source ]);
 
       
       let isTagging = parent._parentId == PlacesUtils.tagsFolderId;
+      let isTagsFolder = parent._id == PlacesUtils.tagsFolderId;
+      notify(observers, "onItemAdded", [ itemId, parent._id, item.index,
+                                         item.type, uri, item.title || null,
+                                         PlacesUtils.toPRTime(item.dateAdded), item.guid,
+                                         item.parentGuid, item.source ],
+                                       { isTagging: isTagging || isTagsFolder });
+
+      
       if (isTagging) {
         for (let entry of (yield fetchBookmarksByURL(item))) {
           notify(observers, "onItemChanged", [ entry._id, "tags", false, "",
@@ -430,12 +434,13 @@ var Bookmarks = Object.freeze({
       let { source = Bookmarks.SOURCES.DEFAULT } = options;
       let observers = PlacesUtils.bookmarks.getObservers();
       let uri = item.hasOwnProperty("url") ? PlacesUtils.toURI(item.url) : null;
+      let isUntagging = item._grandParentId == PlacesUtils.tagsFolderId;
       notify(observers, "onItemRemoved", [ item._id, item._parentId, item.index,
                                            item.type, uri, item.guid,
                                            item.parentGuid,
-                                           source ]);
+                                           source ],
+                                         { isTagging: isUntagging });
 
-      let isUntagging = item._grandParentId == PlacesUtils.tagsFolderId;
       if (isUntagging) {
         for (let entry of (yield fetchBookmarksByURL(item))) {
           notify(observers, "onItemChanged", [ entry._id, "tags", false, "",
@@ -791,8 +796,19 @@ var Bookmarks = Object.freeze({
 
 
 
-function notify(observers, notification, args) {
+
+
+
+function notify(observers, notification, args, information = {}) {
   for (let observer of observers) {
+    if (information.isTagging && observer.skipTags) {
+      continue;
+    }
+
+    if (information.isDescendantRemoval && observer.skipDescendantsOnItemRemoval) {
+      continue;
+    }
+
     try {
       observer[notification](...args);
     } catch (ex) {}
@@ -1484,7 +1500,10 @@ Task.async(function* (db, folderGuids, options) {
     notify(observers, "onItemRemoved", [ item._id, item._parentId,
                                          item.index, item.type, uri,
                                          item.guid, item.parentGuid,
-                                         source ]);
+                                         source ],
+                                       
+                                       
+                                       { isDescendantRemoval: true });
 
     let isUntagging = item._grandParentId == PlacesUtils.tagsFolderId;
     if (isUntagging) {
