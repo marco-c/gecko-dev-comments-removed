@@ -27,6 +27,7 @@ extern crate debug;
 extern crate serialize;
 extern crate sync;
 extern crate "msg" as servo_msg;
+extern crate "util" as servo_util;
 
 use actor::{Actor, ActorRegistry};
 use actors::console::ConsoleActor;
@@ -37,6 +38,7 @@ use protocol::JsonPacketSender;
 
 use devtools_traits::{ServerExitMsg, DevtoolsControlMsg, NewGlobal, DevtoolScriptControlMsg};
 use servo_msg::constellation_msg::PipelineId;
+use servo_util::task::spawn_named;
 
 use std::cell::RefCell;
 use std::comm;
@@ -44,7 +46,6 @@ use std::comm::{Disconnected, Empty};
 use std::io::{TcpListener, TcpStream};
 use std::io::{Acceptor, Listener, EndOfFile, TimedOut};
 use std::num;
-use std::task::TaskBuilder;
 use serialize::json;
 use sync::{Arc, Mutex};
 
@@ -61,7 +62,7 @@ mod protocol;
 /// Spin up a devtools server that listens for connections on the specified port.
 pub fn start_server(port: u16) -> Sender<DevtoolsControlMsg> {
     let (sender, receiver) = comm::channel();
-    TaskBuilder::new().named("devtools").spawn(proc() {
+    spawn_named("Devtools", proc() {
         run_server(receiver, port)
     });
     sender
@@ -172,15 +173,15 @@ fn run_server(receiver: Receiver<DevtoolsControlMsg>, port: u16) {
         actors.register(box inspector);
     }
 
-    
-    
-    
-    
-    
+    //TODO: figure out some system that allows us to watch for new connections,
+    //      shut down existing ones at arbitrary times, and also watch for messages
+    //      from multiple script tasks simultaneously. Polling for new connections
+    //      for 300ms and then checking the receiver is not a good compromise
+    //      (and makes Servo hang on exit if there's an open connection, no less).
 
-    
+    //TODO: make constellation send ServerExitMsg on shutdown.
 
-    
+    // accept connections and process them, spawning a new tasks for each one
     loop {
         match acceptor.accept() {
             Err(ref e) if e.kind == TimedOut => {
@@ -190,10 +191,10 @@ fn run_server(receiver: Receiver<DevtoolsControlMsg>, port: u16) {
                     Err(Empty) => acceptor.set_timeout(Some(POLL_TIMEOUT)),
                 }
             }
-            Err(_e) => {  }
+            Err(_e) => { /* connection failed */ }
             Ok(stream) => {
                 let actors = actors.clone();
-                spawn(proc() {
+                spawn_named("DevtoolsClientHandler", proc() {
                     
                     handle_client(actors, stream.clone())
                 })
