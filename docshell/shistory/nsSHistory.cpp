@@ -32,11 +32,16 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/Services.h"
 #include "mozilla/StaticPtr.h"
+#include "mozilla/dom/TabGroup.h"
 
 using namespace mozilla;
 
 #define PREF_SHISTORY_SIZE "browser.sessionhistory.max_entries"
 #define PREF_SHISTORY_MAX_TOTAL_VIEWERS "browser.sessionhistory.max_total_viewers"
+#define CONTENT_VIEWER_TIMEOUT_SECONDS "browser.sessionhistory.contentViewerTimeout"
+
+
+#define CONTENT_VIEWER_TIMEOUT_SECONDS_DEFAULT (30 * 60)
 
 static const char* kObservedPrefs[] = {
   PREF_SHISTORY_SIZE,
@@ -251,6 +256,7 @@ NS_INTERFACE_MAP_BEGIN(nsSHistory)
   NS_INTERFACE_MAP_ENTRY(nsISHistory)
   NS_INTERFACE_MAP_ENTRY(nsIWebNavigation)
   NS_INTERFACE_MAP_ENTRY(nsISHistoryInternal)
+  NS_INTERFACE_MAP_ENTRY(nsISupportsWeakReference)
 NS_INTERFACE_MAP_END
 
 
@@ -378,6 +384,8 @@ NS_IMETHODIMP
 nsSHistory::AddEntry(nsISHEntry* aSHEntry, bool aPersist)
 {
   NS_ENSURE_ARG(aSHEntry);
+
+  aSHEntry->SetSHistory(this);
 
   
   
@@ -1296,6 +1304,30 @@ nsSHistory::EvictExpiredContentViewerForEntry(nsIBFCacheEntry* aEntry)
   return NS_OK;
 }
 
+NS_IMETHODIMP
+nsSHistory::AddToExpirationTracker(nsIBFCacheEntry* aEntry)
+{
+  RefPtr<nsSHEntryShared> entry = static_cast<nsSHEntryShared*>(aEntry);
+  if (!mHistoryTracker || !entry) {
+    return NS_ERROR_FAILURE;
+  }
+
+  mHistoryTracker->AddObject(entry);
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsSHistory::RemoveFromExpirationTracker(nsIBFCacheEntry* aEntry)
+{
+  RefPtr<nsSHEntryShared> entry = static_cast<nsSHEntryShared*>(aEntry);
+  if (!mHistoryTracker || !entry) {
+    return NS_ERROR_FAILURE;
+  }
+
+  mHistoryTracker->RemoveObject(entry);
+  return NS_OK;
+}
+
 
 
 
@@ -1896,6 +1928,23 @@ NS_IMETHODIMP
 nsSHistory::SetRootDocShell(nsIDocShell* aDocShell)
 {
   mRootDocShell = aDocShell;
+
+  
+  
+  if (mRootDocShell) {
+    nsCOMPtr<nsPIDOMWindowOuter> win = mRootDocShell->GetWindow();
+    if (!win) {
+      return NS_ERROR_UNEXPECTED;
+    }
+
+    RefPtr<mozilla::dom::TabGroup> tabGroup = win->TabGroup();
+    mHistoryTracker = mozilla::MakeUnique<HistoryTracker>(
+      this,
+      mozilla::Preferences::GetUint(CONTENT_VIEWER_TIMEOUT_SECONDS,
+                                    CONTENT_VIEWER_TIMEOUT_SECONDS_DEFAULT),
+      tabGroup->EventTargetFor(mozilla::TaskCategory::Other));
+  }
+
   return NS_OK;
 }
 

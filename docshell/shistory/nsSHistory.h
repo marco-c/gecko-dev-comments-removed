@@ -16,9 +16,10 @@
 #include "nsIWebNavigation.h"
 #include "nsSHEntryShared.h"
 #include "nsTObserverArray.h"
-#include "nsWeakPtr.h"
+#include "nsWeakReference.h"
 
 #include "mozilla/LinkedList.h"
+#include "mozilla/UniquePtr.h"
 
 class nsIDocShell;
 class nsSHEnumerator;
@@ -29,9 +30,37 @@ class nsISHTransaction;
 class nsSHistory final : public mozilla::LinkedListElement<nsSHistory>,
                          public nsISHistory,
                          public nsISHistoryInternal,
-                         public nsIWebNavigation
+                         public nsIWebNavigation,
+                         public nsSupportsWeakReference
 {
 public:
+
+  
+  class HistoryTracker final : public nsExpirationTracker<nsSHEntryShared, 3>
+  {
+  public:
+    explicit HistoryTracker(nsSHistory* aSHistory,
+                            uint32_t aTimeout,
+                            nsIEventTarget* aEventTarget)
+      : nsExpirationTracker(1000 * aTimeout / 2, "HistoryTracker", aEventTarget)
+    {
+      MOZ_ASSERT(aSHistory);
+      mSHistory = aSHistory;
+    }
+
+  protected:
+    virtual void NotifyExpired(nsSHEntryShared* aObj)
+    {
+      RemoveObject(aObj);
+      mSHistory->EvictExpiredContentViewerForEntry(aObj);
+    }
+
+  private:
+    
+    
+    nsSHistory* mSHistory;
+  };
+
   nsSHistory();
   NS_DECL_ISUPPORTS
   NS_DECL_NSISHISTORY
@@ -86,6 +115,9 @@ private:
   
   
   bool RemoveDuplicate(int32_t aIndex, bool aKeepNext);
+
+  
+  mozilla::UniquePtr<HistoryTracker> mHistoryTracker;
 
   nsCOMPtr<nsISHTransaction> mListRoot;
   int32_t mIndex;

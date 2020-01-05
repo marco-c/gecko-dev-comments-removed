@@ -30,46 +30,9 @@ uint64_t gSHEntrySharedID = 0;
 
 } 
 
-#define CONTENT_VIEWER_TIMEOUT_SECONDS "browser.sessionhistory.contentViewerTimeout"
-
-#define CONTENT_VIEWER_TIMEOUT_SECONDS_DEFAULT (30 * 60)
-
-typedef nsExpirationTracker<nsSHEntryShared, 3> HistoryTrackerBase;
-class HistoryTracker final : public HistoryTrackerBase
-{
-public:
-  explicit HistoryTracker(uint32_t aTimeout)
-    : HistoryTrackerBase(1000 * aTimeout / 2, "HistoryTracker")
-  {
-  }
-
-protected:
-  virtual void NotifyExpired(nsSHEntryShared* aObj)
-  {
-    RemoveObject(aObj);
-    aObj->Expire();
-  }
-};
-
-static HistoryTracker* gHistoryTracker = nullptr;
-
-void
-nsSHEntryShared::EnsureHistoryTracker()
-{
-  if (!gHistoryTracker) {
-    
-    
-    gHistoryTracker = new HistoryTracker(
-      mozilla::Preferences::GetUint(CONTENT_VIEWER_TIMEOUT_SECONDS,
-                                    CONTENT_VIEWER_TIMEOUT_SECONDS_DEFAULT));
-  }
-}
-
 void
 nsSHEntryShared::Shutdown()
 {
-  delete gHistoryTracker;
-  gHistoryTracker = nullptr;
 }
 
 nsSHEntryShared::nsSHEntryShared()
@@ -88,20 +51,6 @@ nsSHEntryShared::nsSHEntryShared()
 nsSHEntryShared::~nsSHEntryShared()
 {
   RemoveFromExpirationTracker();
-
-#ifdef DEBUG
-  if (gHistoryTracker) {
-    
-    
-    nsExpirationTracker<nsSHEntryShared, 3>::Iterator iterator(gHistoryTracker);
-
-    nsSHEntryShared* elem;
-    while ((elem = iterator.Next()) != nullptr) {
-      NS_ASSERTION(elem != this, "Found dead entry still in the tracker!");
-    }
-  }
-#endif
-
   if (mContentViewer) {
     RemoveFromBFCacheSync();
   }
@@ -132,8 +81,9 @@ nsSHEntryShared::Duplicate(nsSHEntryShared* aEntry)
 void
 nsSHEntryShared::RemoveFromExpirationTracker()
 {
-  if (gHistoryTracker && GetExpirationState()->IsTracked()) {
-    gHistoryTracker->RemoveObject(this);
+  nsCOMPtr<nsISHistoryInternal> shistory = do_QueryReferent(mSHistory);
+  if (shistory && GetExpirationState()->IsTracked()) {
+    shistory->RemoveFromExpirationTracker(this);
   }
 }
 
@@ -174,34 +124,6 @@ nsSHEntryShared::DropPresentationState()
   mEditorData = nullptr;
 }
 
-void
-nsSHEntryShared::Expire()
-{
-  
-  
-  if (!mContentViewer) {
-    return;
-  }
-  nsCOMPtr<nsIDocShell> container;
-  mContentViewer->GetContainer(getter_AddRefs(container));
-  nsCOMPtr<nsIDocShellTreeItem> treeItem = do_QueryInterface(container);
-  if (!treeItem) {
-    return;
-  }
-  
-  
-  nsCOMPtr<nsIDocShellTreeItem> root;
-  treeItem->GetSameTypeRootTreeItem(getter_AddRefs(root));
-  nsCOMPtr<nsIWebNavigation> webNav = do_QueryInterface(root);
-  nsCOMPtr<nsISHistory> history;
-  webNav->GetSessionHistory(getter_AddRefs(history));
-  nsCOMPtr<nsISHistoryInternal> historyInt = do_QueryInterface(history);
-  if (!historyInt) {
-    return;
-  }
-  historyInt->EvictExpiredContentViewerForEntry(this);
-}
-
 nsresult
 nsSHEntryShared::SetContentViewer(nsIContentViewer* aViewer)
 {
@@ -215,8 +137,13 @@ nsSHEntryShared::SetContentViewer(nsIContentViewer* aViewer)
   mContentViewer = aViewer;
 
   if (mContentViewer) {
-    EnsureHistoryTracker();
-    gHistoryTracker->AddObject(this);
+    
+    
+    
+    nsCOMPtr<nsISHistoryInternal> shistory = do_QueryReferent(mSHistory);
+    if (shistory) {
+      shistory->AddToExpirationTracker(this);
+    }
 
     nsCOMPtr<nsIDOMDocument> domDoc;
     mContentViewer->GetDOMDocument(getter_AddRefs(domDoc));
