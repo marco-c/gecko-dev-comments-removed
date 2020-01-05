@@ -1,6 +1,5 @@
 use font::{Font, FontStyle, FontWeight300};
-use native_font::NativeFont;
-use font_context::FontContext;
+use native::{FontHandle, FontContext};
 
 
 const TEST_FONT: [u8 * 33004] = #include_bin("JosefinSans-SemiBold.ttf");
@@ -44,7 +43,7 @@ impl FontCache {
     
     priv fn create_font(style: &FontStyle) -> Result<@Font, ()> {
         let font_bin = @test_font_bin();
-        let native_font = NativeFont::new(self.fctx, font_bin, style.pt_size);
+        let native_font = FontHandle::new(self.fctx, font_bin, style.pt_size);
         let native_font = if native_font.is_ok() {
             result::unwrap(move native_font)
         } else {
