@@ -117,6 +117,13 @@ JSCompartment::~JSCompartment()
     js_delete(nonSyntacticLexicalEnvironments_),
     js_free(enumerators);
 
+#ifdef DEBUG
+    
+    
+    if (!rt->gc.shutdownCollectedEverything())
+        unboxedLayouts.clear();
+#endif
+
     runtime_->numCompartments--;
 }
 
