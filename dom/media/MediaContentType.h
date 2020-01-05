@@ -17,6 +17,12 @@ namespace mozilla {
 class MediaContentType
 {
 public:
+  explicit MediaContentType(const MediaMIMEType& aType)
+    : mExtendedMIMEType(aType)
+  {}
+  explicit MediaContentType(MediaMIMEType&& aType)
+    : mExtendedMIMEType(Move(aType))
+  {}
   explicit MediaContentType(const MediaExtendedMIMEType& aType)
     : mExtendedMIMEType(aType)
   {
@@ -26,10 +32,11 @@ public:
   {
   }
 
+  const MediaMIMEType& Type() const { return mExtendedMIMEType.Type(); }
   const MediaExtendedMIMEType& ExtendedType() const { return mExtendedMIMEType; }
 
   
-  const nsACString& GetMIMEType() const { return mExtendedMIMEType.Type(); }
+  const nsACString& GetMIMEType() const { return mExtendedMIMEType.Type().AsString(); }
 
   
   bool HaveCodecs() const { return mExtendedMIMEType.HaveCodecs(); }

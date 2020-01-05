@@ -13,12 +13,35 @@
 namespace mozilla {
 
 
+class MediaMIMEType
+{
+public:
+  
+  const nsACString& AsString() const { return mMIMEType; }
+
+private:
+  friend Maybe<MediaMIMEType> MakeMediaMIMEType(const nsAString& aType);
+  friend class MediaExtendedMIMEType;
+  explicit MediaMIMEType(const nsACString& aType);
+
+  nsCString mMIMEType; 
+};
+
+Maybe<MediaMIMEType> MakeMediaMIMEType(const nsAString& aType);
+Maybe<MediaMIMEType> MakeMediaMIMEType(const nsACString& aType);
+Maybe<MediaMIMEType> MakeMediaMIMEType(const char* aType);
+
+
+
 
 class MediaExtendedMIMEType
 {
 public:
+  explicit MediaExtendedMIMEType(const MediaMIMEType& aType);
+  explicit MediaExtendedMIMEType(MediaMIMEType&& aType);
+
   
-  const nsACString& Type() const { return mMIMEType; }
+  const MediaMIMEType& Type() const { return mMIMEType; }
 
   
   bool HaveCodecs() const { return mHaveCodecs; }
@@ -43,13 +66,13 @@ private:
     return (aNumber < 0) ? Maybe<int32_t>(Nothing()) : Some(int32_t(aNumber));
   }
 
-  nsCString mMIMEType; 
-  bool mHaveCodecs; 
+  MediaMIMEType mMIMEType; 
+  bool mHaveCodecs = false; 
   nsString mCodecs;
-  int32_t mWidth; 
-  int32_t mHeight; 
-  int32_t mFramerate; 
-  int32_t mBitrate; 
+  int32_t mWidth = -1; 
+  int32_t mHeight = -1; 
+  int32_t mFramerate = -1; 
+  int32_t mBitrate = -1; 
 };
 
 Maybe<MediaExtendedMIMEType> MakeMediaExtendedMIMEType(const nsAString& aType);
