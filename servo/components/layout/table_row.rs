@@ -21,6 +21,7 @@ use gfx_traits::print_tree::PrintTree;
 use layout_debug;
 use model::MaybeAuto;
 use rustc_serialize::{Encodable, Encoder};
+use script_layout_interface::restyle_damage::{REFLOW, REFLOW_OUT_OF_FLOW};
 use std::cmp::max;
 use std::fmt;
 use std::iter::{Enumerate, IntoIterator, Peekable};
@@ -106,73 +107,84 @@ impl TableRowFlow {
     
     #[inline(always)]
     fn assign_block_size_table_row_base(&mut self, layout_context: &LayoutContext) {
-        
-        
-        let mut max_block_size = Au(0);
-        let thread_id = self.block_flow.base.thread_id;
-        for kid in self.block_flow.base.child_iter_mut() {
-            kid.place_float_if_applicable();
-            if !flow::base(kid).flags.is_float() {
-                kid.assign_block_size_for_inorder_child_if_necessary(layout_context, thread_id);
+        if self.block_flow.base.restyle_damage.contains(REFLOW) {
+            
+            
+            let mut max_block_size = Au(0);
+            let thread_id = self.block_flow.base.thread_id;
+            for kid in self.block_flow.base.child_iter_mut() {
+                kid.place_float_if_applicable();
+                if !flow::base(kid).flags.is_float() {
+                    kid.assign_block_size_for_inorder_child_if_necessary(layout_context,
+                                                                         thread_id);
+                }
+
+                {
+                    let child_fragment = kid.as_mut_table_cell().fragment();
+                    
+                    let child_specified_block_size =
+                        MaybeAuto::from_style(child_fragment.style().content_block_size(),
+                                              Au(0)).specified_or_zero();
+                    max_block_size =
+                        max(max_block_size,
+                            child_specified_block_size +
+                            child_fragment.border_padding.block_start_end());
+                }
+                let child_node = flow::mut_base(kid);
+                child_node.position.start.b = Au(0);
+                max_block_size = max(max_block_size, child_node.position.size.block);
             }
 
-            {
-                let child_fragment = kid.as_mut_table_cell().fragment();
+            let mut block_size = max_block_size;
+            
+            block_size = match MaybeAuto::from_style(self.block_flow
+                                                         .fragment
+                                                         .style()
+                                                         .content_block_size(),
+                                                     Au(0)) {
+                MaybeAuto::Auto => block_size,
+                MaybeAuto::Specified(value) => max(value, block_size),
+            };
+
+            
+            let mut position = self.block_flow.fragment.border_box;
+            position.size.block = block_size;
+            self.block_flow.fragment.border_box = position;
+            self.block_flow.base.position.size.block = block_size;
+
+            
+            for kid in self.block_flow.base.child_iter_mut() {
+                let child_table_cell = kid.as_mut_table_cell();
+                {
+                    let kid_fragment = child_table_cell.mut_fragment();
+                    let mut position = kid_fragment.border_box;
+                    position.size.block = block_size;
+                    kid_fragment.border_box = position;
+                }
+
                 
-                let child_specified_block_size =
-                    MaybeAuto::from_style(child_fragment.style().content_block_size(),
-                                          Au(0)).specified_or_zero();
-                max_block_size =
-                    max(max_block_size,
-                        child_specified_block_size +
-                        child_fragment.border_padding.block_start_end());
+                child_table_cell.block_flow.base.position.size.block = block_size;
+
+                
+                child_table_cell.valign_children();
+
+                
+                
+                child_table_cell.block_flow.base.early_absolute_position_info =
+                    EarlyAbsolutePositionInfo {
+                        relative_containing_block_size: self.block_flow
+                                                            .fragment
+                                                            .content_box()
+                                                            .size,
+                        relative_containing_block_mode: self.block_flow
+                                                            .fragment
+                                                            .style()
+                                                            .writing_mode,
+                    };
             }
-            let child_node = flow::mut_base(kid);
-            child_node.position.start.b = Au(0);
-            max_block_size = max(max_block_size, child_node.position.size.block);
         }
 
-        let mut block_size = max_block_size;
-        
-        block_size = match MaybeAuto::from_style(self.block_flow
-                                                     .fragment
-                                                     .style()
-                                                     .content_block_size(),
-                                                 Au(0)) {
-            MaybeAuto::Auto => block_size,
-            MaybeAuto::Specified(value) => max(value, block_size),
-        };
-
-        
-        let mut position = self.block_flow.fragment.border_box;
-        position.size.block = block_size;
-        self.block_flow.fragment.border_box = position;
-        self.block_flow.base.position.size.block = block_size;
-
-        
-        for kid in self.block_flow.base.child_iter_mut() {
-            let child_table_cell = kid.as_mut_table_cell();
-            {
-                let kid_fragment = child_table_cell.mut_fragment();
-                let mut position = kid_fragment.border_box;
-                position.size.block = block_size;
-                kid_fragment.border_box = position;
-            }
-
-            
-            child_table_cell.block_flow.base.position.size.block = block_size;
-
-            
-            child_table_cell.valign_children();
-
-            
-            
-            child_table_cell.block_flow.base.early_absolute_position_info =
-                EarlyAbsolutePositionInfo {
-                    relative_containing_block_size: self.block_flow.fragment.content_box().size,
-                    relative_containing_block_mode: self.block_flow.fragment.style().writing_mode,
-                };
-        }
+        self.block_flow.base.restyle_damage.remove(REFLOW_OUT_OF_FLOW | REFLOW);
     }
 
     pub fn populate_collapsed_border_spacing<'a, I>(
