@@ -276,7 +276,7 @@ class WasmTableObject : public NativeObject
     
     
 
-    static WasmTableObject* create(JSContext* cx, wasm::Limits limits);
+    static WasmTableObject* create(JSContext* cx, const wasm::Limits& limits);
     wasm::Table& table() const;
 };
 
