@@ -201,13 +201,17 @@ const Message = createClass({
       collapse,
       dom.span({ className: "message-body-wrapper" },
         dom.span({ className: "message-flex-body" },
-          dom.span({ className: "message-body devtools-monospace" },
+          
+          " ", dom.span({ className: "message-body devtools-monospace" },
             messageBody,
             learnMore
           ),
-          repeat,
-          location
+          " ", repeat,
+          " ", location
         ),
+        
+        "\n",
+        
         attachment
       )
     );
