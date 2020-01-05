@@ -37,13 +37,13 @@ function DatePicker(context) {
       const now = new Date();
       const { year = now.getFullYear(),
               month = now.getMonth(),
-              date = now.getDate(),
+              day = now.getDate(),
               locale } = this.props;
 
       
       
       const dateKeeper = new DateKeeper({
-        year, month, date
+        year, month, day
       }, {
         calViewSize: CAL_VIEW_SIZE,
         firstDayOfWeek: 0,
@@ -68,6 +68,7 @@ function DatePicker(context) {
           this.state.isDateSet = true;
           this._update();
           this._dispatchState();
+          this._closePopup();
         },
         setYear: year => {
           dateKeeper.setYear(year);
@@ -151,20 +152,29 @@ function DatePicker(context) {
     
 
 
+    _closePopup() {
+      window.postMessage({
+        name: "ClosePopup"
+      }, "*");
+    },
+
+    
+
+
     _dispatchState() {
-      const { year, month, date } = this.state.dateKeeper.state;
-      const { isYearSet, isMonthSet, isDateSet } = this.state;
+      const { year, month, day } = this.state.dateKeeper.state;
+      const { isYearSet, isMonthSet, isDaySet } = this.state;
       
       
       window.postMessage({
-        name: "DatePickerPopupChanged",
+        name: "PickerPopupChanged",
         detail: {
           year,
           month,
-          date,
+          day,
           isYearSet,
           isMonthSet,
-          isDateSet
+          isDaySet
         }
       }, "*");
     },
@@ -221,11 +231,11 @@ function DatePicker(context) {
 
     handleMessage(event) {
       switch (event.data.name) {
-        case "DatePickerSetValue": {
+        case "PickerSetValue": {
           this.set(event.data.detail);
           break;
         }
-        case "DatePickerInit": {
+        case "PickerInit": {
           this.init(event.data.detail);
           break;
         }
@@ -242,18 +252,22 @@ function DatePicker(context) {
 
 
 
-    set(dateState) {
-      if (dateState.year != undefined) {
+    set({ year, month, day }) {
+      const { dateKeeper } = this.state;
+
+      if (year != undefined) {
         this.state.isYearSet = true;
       }
-      if (dateState.month != undefined) {
+      if (month != undefined) {
         this.state.isMonthSet = true;
       }
-      if (dateState.date != undefined) {
-        this.state.isDateSet = true;
+      if (day != undefined) {
+        this.state.isDaySet = true;
       }
 
-      this.state.dateKeeper.set(dateState);
+      dateKeeper.set({
+        year, month, day
+      });
       this._update();
     }
   };

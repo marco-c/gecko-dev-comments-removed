@@ -204,7 +204,7 @@ function TimePicker(context) {
       
       
       window.postMessage({
-        name: "TimePickerPopupChanged",
+        name: "PickerPopupChanged",
         detail: {
           hour,
           minute,
@@ -246,11 +246,11 @@ function TimePicker(context) {
 
     handleMessage(event) {
       switch (event.data.name) {
-        case "TimePickerSetValue": {
+        case "PickerSetValue": {
           this.set(event.data.detail);
           break;
         }
-        case "TimePickerInit": {
+        case "PickerInit": {
           this.init(event.data.detail);
           break;
         }
