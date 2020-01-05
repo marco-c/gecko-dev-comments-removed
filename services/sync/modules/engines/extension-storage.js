@@ -149,10 +149,14 @@ class EncryptionRemoteTransformer {
   decode(record) {
     const self = this;
     return Task.spawn(function* () {
-      const keyBundle = yield self.getKeys();
       if (!record.ciphertext) {
+        
+        if (record.deleted) {
+          return record;
+        }
         throw new Error("No ciphertext: nothing to decrypt?");
       }
+      const keyBundle = yield self.getKeys();
       
       let computedHMAC = ciphertextHMAC(keyBundle, record.id, record.IV, record.ciphertext);
 
