@@ -1535,7 +1535,7 @@ private:
   void ClearAllBoxObjects();
 
   
-  bool IsAboutPage();
+  bool IsAboutPage() const;
 
   
   nsDocument(const nsDocument& aOther);
