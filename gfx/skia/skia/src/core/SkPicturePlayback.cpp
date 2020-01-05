@@ -1,9 +1,9 @@
-/*
- * Copyright 2014 Google Inc.
- *
- * Use of this source code is governed by a BSD-style license that can be
- * found in the LICENSE file.
- */
+
+
+
+
+
+
 
 #include "SkCanvas.h"
 #include "SkPatchUtils.h"
@@ -16,7 +16,7 @@
 #include "SkTDArray.h"
 #include "SkTypes.h"
 
-// matches old SkCanvas::SaveFlags
+
 enum LegacySaveFlags {
     kHasAlphaLayer_LegacySaveFlags    = 0x04,
     kClipToLayer_LegacySaveFlags      = 0x10,
@@ -34,18 +34,18 @@ SkCanvas::SaveLayerFlags SkCanvas::LegacySaveFlagsToSaveLayerFlags(uint32_t flag
     return layerFlags;
 }
 
-/*
- * Read the next op code and chunk size from 'reader'. The returned size
- * is the entire size of the chunk (including the opcode). Thus, the
- * offset just prior to calling ReadOpAndSize + 'size' is the offset
- * to the next chunk's op code. This also means that the size of a chunk
- * with no arguments (just an opcode) will be 4.
- */
+
+
+
+
+
+
+
 DrawType SkPicturePlayback::ReadOpAndSize(SkReadBuffer* reader, uint32_t* size) {
     uint32_t temp = reader->readInt();
     uint32_t op;
     if (((uint8_t)temp) == temp) {
-        // old skp file - no size information
+        
         op = temp;
         *size = 0;
     } else {
@@ -95,7 +95,7 @@ void SkPicturePlayback::draw(SkCanvas* canvas,
                                       fPictureData->opData()->size()));
     }
 
-    // Record this, so we can concat w/ it if we encounter a setMatrix()
+    
     SkMatrix initialMatrix = canvas->getTotalMatrix();
 
     SkAutoCanvasRestore acr(canvas, false);
@@ -115,7 +115,7 @@ void SkPicturePlayback::draw(SkCanvas* canvas,
         this->handleOp(reader, op, size, canvas, initialMatrix);
     }
 
-    // need to propagate invalid state to the parent reader
+    
     if (buffer) {
         buffer->validate(reader->isValid());
     }
@@ -181,7 +181,7 @@ void SkPicturePlayback::handleOp(SkReadBuffer* reader,
                 reader->skip(offsetToRestore - reader->offset());
             }
         } break;
-        case PUSH_CULL: break;  // Deprecated, safe to ignore both push and pop.
+        case PUSH_CULL: break;  
         case POP_CULL:  break;
         case CONCAT: {
             SkMatrix matrix;
@@ -237,9 +237,9 @@ void SkPicturePlayback::handleOp(SkReadBuffer* reader,
             const SkPaint* paint = fPictureData->getPaint(reader);
             const SkImage* image = fPictureData->getBitmapAsImage(reader);
             SkRect storage;
-            const SkRect* src = get_rect_ptr(reader, &storage);   // may be null
+            const SkRect* src = get_rect_ptr(reader, &storage);   
             SkRect dst;
-            reader->readRect(&dst);     // required
+            reader->readRect(&dst);     
             SkCanvas::SrcRectConstraint constraint = (SkCanvas::SrcRectConstraint)reader->readInt();
             if (src) {
                 canvas->drawImageRect(image, *src, dst, paint, constraint);
@@ -270,10 +270,10 @@ void SkPicturePlayback::handleOp(SkReadBuffer* reader,
             canvas->clear(reader->readInt());
             break;
         case DRAW_DATA: {
-            // This opcode is now dead, just need to skip it for backwards compatibility
+            
             size_t length = reader->readInt();
             (void)reader->skip(length);
-            // skip handles padding the read out to a multiple of 4
+            
         } break;
         case DRAW_DRAWABLE:
             canvas->drawDrawable(fPictureData->getDrawable(reader));
@@ -296,18 +296,18 @@ void SkPicturePlayback::handleOp(SkReadBuffer* reader,
         case BEGIN_COMMENT_GROUP: {
             SkString tmp;
             reader->readString(&tmp);
-            // deprecated (M44)
+            
             break;
         }
         case COMMENT: {
             SkString tmp;
             reader->readString(&tmp);
             reader->readString(&tmp);
-            // deprecated (M44)
+            
             break;
         }
         case END_COMMENT_GROUP:
-            // deprecated (M44)
+            
             break;
         case DRAW_IMAGE: {
             const SkPaint* paint = fPictureData->getPaint(reader);
@@ -348,13 +348,13 @@ void SkPicturePlayback::handleOp(SkReadBuffer* reader,
             const SkPaint* paint = fPictureData->getPaint(reader);
             const SkImage* image = fPictureData->getImage(reader);
             SkRect storage;
-            const SkRect* src = get_rect_ptr(reader, &storage);   // may be null
+            const SkRect* src = get_rect_ptr(reader, &storage);   
             SkRect dst;
-            reader->readRect(&dst);     // required
-            // DRAW_IMAGE_RECT_STRICT assumes this constraint, and doesn't store it
+            reader->readRect(&dst);     
+            
             SkCanvas::SrcRectConstraint constraint = SkCanvas::kStrict_SrcRectConstraint;
             if (DRAW_IMAGE_RECT == op) {
-                // newer op-code stores the constraint explicitly
+                
                 constraint = (SkCanvas::SrcRectConstraint)reader->readInt();
             }
             canvas->legacy_drawImageRect(image, src, dst, paint, constraint);
@@ -500,11 +500,11 @@ void SkPicturePlayback::handleOp(SkReadBuffer* reader,
             }
         } break;
         case DRAW_SPRITE: {
-            /* const SkPaint* paint = */ fPictureData->getPaint(reader);
-            /* const SkImage* image = */ fPictureData->getBitmapAsImage(reader);
-            /* int left = */ reader->readInt();
-            /* int top = */ reader->readInt();
-            // drawSprite removed dec-2015
+             fPictureData->getPaint(reader);
+             fPictureData->getBitmapAsImage(reader);
+             reader->readInt();
+             reader->readInt();
+            
         } break;
         case DRAW_TEXT: {
             const SkPaint* paint = fPictureData->getPaint(reader);
@@ -530,10 +530,10 @@ void SkPicturePlayback::handleOp(SkReadBuffer* reader,
             TextContainer text;
             get_text(reader, &text);
             const SkScalar* ptr = (const SkScalar*)reader->skip(4 * sizeof(SkScalar));
-            // ptr[0] == x
-            // ptr[1] == y
-            // ptr[2] == top
-            // ptr[3] == bottom
+            
+            
+            
+            
             SkRect clip;
             canvas->getClipBounds(&clip);
             float top = ptr[2];
@@ -608,7 +608,7 @@ void SkPicturePlayback::handleOp(SkReadBuffer* reader,
             canvas->rotate(reader->readScalar());
             break;
         case SAVE:
-            // SKPs with version < 29 also store a SaveFlags param.
+            
             if (size > 4) {
                 if (reader->validate(8 == size)) {
                     reader->readInt();

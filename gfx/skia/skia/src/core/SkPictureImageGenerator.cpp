@@ -1,9 +1,9 @@
-/*
- * Copyright 2015 Google Inc.
- *
- * Use of this source code is governed by a BSD-style license that can be
- * found in the LICENSE file.
- */
+
+
+
+
+
+
 
 #include "SkImage_Base.h"
 #include "SkImageGenerator.h"
@@ -120,14 +120,14 @@ bool SkPictureImageGenerator::onGenerateScaledPixels(const SkISize& scaledSize,
     return true;
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////
+
 
 SkImageGenerator* SkImageGenerator::NewFromPicture(const SkISize& size, const SkPicture* picture,
                                                    const SkMatrix* matrix, const SkPaint* paint) {
     return SkPictureImageGenerator::Create(size, picture, matrix, paint);
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////
+
 
 #if SK_SUPPORT_GPU
 #include "GrTexture.h"
@@ -136,9 +136,9 @@ GrTexture* SkPictureImageGenerator::onGenerateTexture(GrContext* ctx, const SkIR
     const SkImageInfo& info = this->getInfo();
     SkImageInfo surfaceInfo = subset ? info.makeWH(subset->width(), subset->height()) : info;
 
-    //
-    // TODO: respect the usage, by possibly creating a different (pow2) surface
-    //
+    
+    
+    
     sk_sp<SkSurface> surface(SkSurface::MakeRenderTarget(ctx, SkBudgeted::kYes, surfaceInfo));
     if (!surface) {
         return nullptr;
@@ -148,7 +148,7 @@ GrTexture* SkPictureImageGenerator::onGenerateTexture(GrContext* ctx, const SkIR
     if (subset) {
         matrix.postTranslate(-subset->x(), -subset->y());
     }
-    surface->getCanvas()->clear(0); // does NewRenderTarget promise to do this for us?
+    surface->getCanvas()->clear(0); 
     surface->getCanvas()->drawPicture(fPicture, &matrix, fPaint.getMaybeNull());
     sk_sp<SkImage> image(surface->makeImageSnapshot());
     if (!image) {

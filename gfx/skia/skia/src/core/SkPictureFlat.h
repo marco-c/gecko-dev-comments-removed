@@ -1,9 +1,9 @@
-/*
- * Copyright 2011 Google Inc.
- *
- * Use of this source code is governed by a BSD-style license that can be
- * found in the LICENSE file.
- */
+
+
+
+
+
+
 #ifndef SkPictureFlat_DEFINED
 #define SkPictureFlat_DEFINED
 
@@ -17,13 +17,13 @@
 #include "SkPtrRecorder.h"
 #include "SkTDynamicHash.h"
 
-/*
- * Note: While adding new DrawTypes, it is necessary to add to the end of this list
- *       and update LAST_DRAWTYPE_ENUM to avoid having the code read older skps wrong.
- *       (which can cause segfaults)
- *
- *       Reordering can be done during version updates.
- */
+
+
+
+
+
+
+
 enum DrawType {
     UNUSED,
     CLIP_PATH,
@@ -32,7 +32,7 @@ enum DrawType {
     CLIP_RRECT,
     CONCAT,
     DRAW_BITMAP,
-    DRAW_BITMAP_MATRIX, // deprecated, M41 was last Chromium version to write this to an .skp
+    DRAW_BITMAP_MATRIX, 
     DRAW_BITMAP_NINE,
     DRAW_BITMAP_RECT,
     DRAW_CLEAR,
@@ -43,15 +43,15 @@ enum DrawType {
     DRAW_PICTURE,
     DRAW_POINTS,
     DRAW_POS_TEXT,
-    DRAW_POS_TEXT_TOP_BOTTOM, // fast variant of DRAW_POS_TEXT
+    DRAW_POS_TEXT_TOP_BOTTOM, 
     DRAW_POS_TEXT_H,
-    DRAW_POS_TEXT_H_TOP_BOTTOM, // fast variant of DRAW_POS_TEXT_H
+    DRAW_POS_TEXT_H_TOP_BOTTOM, 
     DRAW_RECT,
     DRAW_RRECT,
     DRAW_SPRITE,
     DRAW_TEXT,
     DRAW_TEXT_ON_PATH,
-    DRAW_TEXT_TOP_BOTTOM,   // fast variant of DRAW_TEXT
+    DRAW_TEXT_TOP_BOTTOM,   
     DRAW_VERTICES,
     RESTORE,
     ROTATE,
@@ -62,20 +62,20 @@ enum DrawType {
     SKEW,
     TRANSLATE,
     NOOP,
-    BEGIN_COMMENT_GROUP, // deprecated (M44)
-    COMMENT,             // deprecated (M44)
-    END_COMMENT_GROUP,   // deprecated (M44)
+    BEGIN_COMMENT_GROUP, 
+    COMMENT,             
+    END_COMMENT_GROUP,   
 
-    // new ops -- feel free to re-alphabetize on next version bump
+    
     DRAW_DRRECT,
-    PUSH_CULL,  // deprecated, M41 was last Chromium version to write this to an .skp
-    POP_CULL,   // deprecated, M41 was last Chromium version to write this to an .skp
+    PUSH_CULL,  
+    POP_CULL,   
 
-    DRAW_PATCH, // could not add in aphabetical order
+    DRAW_PATCH, 
     DRAW_PICTURE_MATRIX_PAINT,
     DRAW_TEXT_BLOB,
     DRAW_IMAGE,
-    DRAW_IMAGE_RECT_STRICT, // deprecated (M45)
+    DRAW_IMAGE_RECT_STRICT, 
     DRAW_ATLAS,
     DRAW_IMAGE_NINE,
     DRAW_IMAGE_RECT,
@@ -98,7 +98,7 @@ enum DrawType {
     LAST_DRAWTYPE_ENUM = DRAW_REGION
 };
 
-// In the 'match' method, this constant will match any flavor of DRAW_BITMAP*
+
 static const int kDRAW_BITMAP_FLAVOR = LAST_DRAWTYPE_ENUM+1;
 
 enum DrawVertexFlags {
@@ -124,9 +124,9 @@ enum SaveLayerRecFlatFlags {
     SAVELAYERREC_HAS_FLAGS      = 1 << 3,
 };
 
-///////////////////////////////////////////////////////////////////////////////
-// clipparams are packed in 5 bits
-//  doAA:1 | clipOp:4
+
+
+
 
 static inline uint32_t ClipParams_pack(SkCanvas::ClipOp op, bool doAA) {
     unsigned doAABit = doAA ? 1 : 0;
@@ -141,7 +141,7 @@ static inline bool ClipParams_unpackDoAA(uint32_t packed) {
     return SkToBool((packed >> 4) & 1);
 }
 
-///////////////////////////////////////////////////////////////////////////////
+
 
 class SkTypefacePlayback {
 public:

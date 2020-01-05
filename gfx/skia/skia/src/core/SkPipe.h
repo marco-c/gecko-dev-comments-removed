@@ -1,9 +1,9 @@
-/*
- * Copyright 2016 Google Inc.
- *
- * Use of this source code is governed by a BSD-style license that can be
- * found in the LICENSE file.
- */
+
+
+
+
+
+
 
 #ifndef SkPipe_DEFINED
 #define SkPipe_DEFINED
@@ -22,7 +22,7 @@ public:
     SkPipeSerializer();
     ~SkPipeSerializer();
 
-    // Ownership is not transferred, so caller must ceep the serializer alive
+    
     void setTypefaceSerializer(SkTypefaceSerializer*);
 
     void resetCache();
@@ -46,7 +46,7 @@ public:
     SkPipeDeserializer();
     ~SkPipeDeserializer();
 
-    // Ownership is not transferred, so caller must ceep the deserializer alive
+    
     void setTypefaceDeserializer(SkTypefaceDeserializer*);
 
     sk_sp<SkImage> readImage(const SkData* data) {
@@ -73,7 +73,7 @@ private:
     std::unique_ptr<Impl> fImpl;
 };
 
-//////////////////////////////////////////////////////////////////////////////////////////////////
+
 
 class SkTypefaceSerializer {
 public:

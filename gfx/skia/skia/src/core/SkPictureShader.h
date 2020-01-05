@@ -1,9 +1,9 @@
-/*
- * Copyright 2014 Google Inc.
- *
- * Use of this source code is governed by a BSD-style license that can be
- * found in the LICENSE file.
- */
+
+
+
+
+
+
 
 #ifndef SkPictureShader_DEFINED
 #define SkPictureShader_DEFINED
@@ -13,12 +13,12 @@
 class SkBitmap;
 class SkPicture;
 
-/*
- * An SkPictureShader can be used to draw SkPicture-based patterns.
- *
- * The SkPicture is first rendered into a tile, which is then used to shade the area according
- * to specified tiling rules.
- */
+
+
+
+
+
+
 class SkPictureShader : public SkShader {
 public:
     static sk_sp<SkShader> Make(sk_sp<SkPicture>, TileMode, TileMode, const SkMatrix*,
@@ -73,4 +73,4 @@ private:
     typedef SkShader INHERITED;
 };
 
-#endif // SkPictureShader_DEFINED
+#endif 
