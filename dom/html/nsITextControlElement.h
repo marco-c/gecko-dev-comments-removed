@@ -199,13 +199,6 @@ public:
 
   static already_AddRefed<nsITextControlElement>
   GetTextControlElementFromEditingHost(nsIContent* aHost);
-
-  
-
-
-  virtual void GetSelectionRange(int32_t* aSelectionStart,
-                                 int32_t* aSelectionEnd,
-                                 mozilla::ErrorResult& aRv) = 0;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsITextControlElement,
