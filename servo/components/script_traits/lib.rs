@@ -41,7 +41,7 @@ use gfx_traits::Epoch;
 use gfx_traits::LayerId;
 use ipc_channel::ipc::{IpcReceiver, IpcSender};
 use libc::c_void;
-use msg::constellation_msg::{ConstellationChan, PanicMsg, PipelineId, WindowSizeData};
+use msg::constellation_msg::{ConstellationChan, PanicMsg, PipelineId, WindowSizeData, WindowSizeType};
 use msg::constellation_msg::{Key, KeyModifiers, KeyState, LoadData};
 use msg::constellation_msg::{PipelineNamespaceId, SubpageId};
 use msg::webdriver_msg::WebDriverScriptCommand;
@@ -109,7 +109,7 @@ pub enum ConstellationControlMsg {
     
     AttachLayout(NewLayoutInfo),
     
-    Resize(PipelineId, WindowSizeData),
+    Resize(PipelineId, WindowSizeData, WindowSizeType),
     
     ResizeInactive(PipelineId, WindowSizeData),
     
@@ -220,7 +220,7 @@ pub enum MouseEventType {
 #[derive(Deserialize, Serialize)]
 pub enum CompositorEvent {
     
-    ResizeEvent(WindowSizeData),
+    ResizeEvent(WindowSizeData, WindowSizeType),
     
     MouseButtonEvent(MouseEventType, MouseButton, Point2D<f32>),
     
