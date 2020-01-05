@@ -119,7 +119,7 @@ public:
 
 
   DocAccessibleParent* ParentDoc() const;
-  static const int32_t kNoParentDoc = UINT64_MAX;
+  static const uint64_t kNoParentDoc = UINT64_MAX;
 
   
 
@@ -218,8 +218,8 @@ private:
   MOZ_MUST_USE bool CheckDocTree() const;
   xpcAccessibleGeneric* GetXPCAccessible(ProxyAccessible* aProxy);
 
-  nsTArray<int32_t> mChildDocs;
-  int32_t mParentDoc;
+  nsTArray<uint64_t> mChildDocs;
+  uint64_t mParentDoc;
 
 #if defined(XP_WIN)
   
