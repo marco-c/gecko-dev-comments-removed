@@ -43,10 +43,6 @@ else {
   moduleResolve = loaderModule.resolve;
 }
 
-var pathMapping = Object.keys(options.paths)
-                        .sort((a, b) => b.length - a.length)
-                        .map(p => [p, options.paths[p]]);
-
 
 var { getNewLoaderID } = require('../../framescript/FrameScriptManager.jsm');
 var PATH = options.paths[''];
@@ -326,13 +322,12 @@ function remoteRequire(id, module = null) {
   
   if (module)
     id = moduleResolve(id, module.id);
-  let uri = loaderModule.resolveURI(id, pathMapping);
 
   
-  if (remoteModules.has(uri))
+  if (remoteModules.has(id))
     return;
 
-  remoteModules.add(uri);
-  processes.port.emit('sdk/remote/require', uri);
+  remoteModules.add(id);
+  processes.port.emit('sdk/remote/require', id);
 }
 exports.remoteRequire = remoteRequire;

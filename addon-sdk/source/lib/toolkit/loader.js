@@ -723,29 +723,57 @@ function addTrailingSlash(path) {
   return path.replace(/\/*$/, "/");
 }
 
+function compileMapping(paths) {
+  
+  let mapping = Object.keys(paths)
+                      .sort((a, b) => b.length - a.length)
+                      .map(path => [path, paths[path]]);
+
+  const PATTERN = /([.\\?+*(){}[\]^$])/g;
+  const escapeMeta = str => str.replace(PATTERN, '\\$1')
+
+  let patterns = [];
+  paths = {};
+
+  for (let [path, uri] of mapping) {
+    
+    if (path.endsWith("/")) {
+      path = path.slice(0, -1);
+      uri = uri.replace(/\/+$/, "");
+    }
+
+    paths[path] = uri;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (path == "")
+      patterns.push("");
+    else
+      patterns.push(`${escapeMeta(path)}(?=$|/)`);
+  }
+
+  let pattern = new RegExp(`^(${patterns.join('|')})`);
+
+  
+  
+  return id => {
+    return id.replace(pattern, (m0, m1) => paths[m1]);
+  };
+}
+
 const resolveURI = iced(function resolveURI(id, mapping) {
   
   if (isAbsoluteURI(id))
     return normalizeExt(id);
 
-  for (let [path, uri] of mapping) {
-    
-    let stripped = path.replace(/\/+$/, "");
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if(stripped === "" || id === stripped || id.startsWith(stripped + "/")) {
-      return normalizeExt(id.replace(path, uri));
-    }
-  }
-  return null;
+  return normalizeExt(mapping(id))
 });
 Loader.resolveURI = resolveURI;
 
@@ -1093,10 +1121,7 @@ function Loader(options) {
   
   let destructor = freeze(Object.create(null));
 
-  
-  let mapping = Object.keys(paths)
-                      .sort((a, b) => b.length - a.length)
-                      .map(path => [path, paths[path]]);
+  let mapping = compileMapping(paths);
 
   
   modules = override({
