@@ -3806,7 +3806,7 @@ GCRuntime::beginMarkPhase(JS::gcreason::Reason reason, AutoLockForExclusiveAcces
     for (CompartmentsIter c(rt, WithAtoms); !c.done(); c.next()) {
         c->marked = false;
         c->scheduledForDestruction = false;
-        c->maybeAlive = false;
+        c->maybeAlive = c->hasBeenEntered() || !c->zone()->isGCScheduled();
         if (shouldPreserveJITCode(c, currentTime, reason))
             c->zone()->setPreservingCode(true);
     }
@@ -3930,11 +3930,9 @@ GCRuntime::beginMarkPhase(JS::gcreason::Reason reason, AutoLockForExclusiveAcces
     gcstats::AutoPhase ap2(stats, gcstats::PHASE_MARK_ROOTS);
 
     if (isIncremental) {
-        gcstats::AutoPhase ap3(stats, gcstats::PHASE_BUFFER_GRAY_ROOTS);
         bufferGrayRoots();
+        markCompartments();
     }
-
-    markCompartments();
 
     return true;
 }
@@ -3968,26 +3966,43 @@ GCRuntime::markCompartments()
 
 
 
+
+
+
+
+
+
     
-    for (CompartmentsIter c(rt, SkipAtoms); !c.done(); c.next()) {
-        for (JSCompartment::WrapperEnum e(c); !e.empty(); e.popFront()) {
+
+    Vector<JSCompartment*, 0, js::SystemAllocPolicy> workList;
+
+    for (CompartmentsIter comp(rt, SkipAtoms); !comp.done(); comp.next()) {
+        if (comp->maybeAlive) {
+            if (!workList.append(comp))
+                return;
+        }
+    }
+
+    while (!workList.empty()) {
+        JSCompartment* comp = workList.popCopy();
+        for (JSCompartment::WrapperEnum e(comp); !e.empty(); e.popFront()) {
             if (e.front().key().is<JSString*>())
                 continue;
             JSCompartment* dest = e.front().mutableKey().compartment();
-            if (dest)
+            if (dest && !dest->maybeAlive) {
                 dest->maybeAlive = true;
+                if (!workList.append(dest))
+                    return;
+            }
         }
     }
 
     
 
-
-
-
-    
-    for (GCCompartmentsIter c(rt); !c.done(); c.next()) {
-        if (!c->maybeAlive && !rt->isAtomsCompartment(c))
-            c->scheduledForDestruction = true;
+    for (GCCompartmentsIter comp(rt); !comp.done(); comp.next()) {
+        MOZ_ASSERT(!comp->scheduledForDestruction);
+        if (!comp->maybeAlive && !rt->isAtomsCompartment(comp))
+            comp->scheduledForDestruction = true;
     }
 }
 
