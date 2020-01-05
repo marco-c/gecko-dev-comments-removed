@@ -316,3 +316,18 @@ fn extract_inner_rect_impl<U>(rect: &TypedRect<f32, U>,
         None
     }
 }
+
+
+
+pub fn recycle_vec<T>(mut old_vec: Vec<T>) -> Vec<T> {
+    if old_vec.capacity() > 2 * old_vec.len() {
+        
+        
+        
+        return Vec::with_capacity(old_vec.len());
+    }
+
+    old_vec.clear();
+
+    return old_vec;
+}

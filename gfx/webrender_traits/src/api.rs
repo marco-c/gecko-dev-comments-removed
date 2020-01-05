@@ -582,7 +582,7 @@ pub enum VRCompositorCommand {
 
 
 pub trait VRCompositorHandler: Send {
-    fn handle(&mut self, command: VRCompositorCommand, texture_id: Option<u32>);
+    fn handle(&mut self, command: VRCompositorCommand, texture: Option<(u32, DeviceIntSize)>);
 }
 
 pub trait RenderNotifier: Send {
