@@ -48,7 +48,7 @@ protected:
   
   RefPtr<ShutdownPromise> ProcessShutdown();
   void Output(MediaData* aSample);
-  void InputExhausted();
+  void ReturnDecodedData();
   void DrainComplete();
   void Error(const MediaResult& aError);
   void AssertOnTaskQueue()
@@ -68,6 +68,10 @@ protected:
   RefPtr<TaskQueue> mTaskQueue;
   
   bool mShutdown = false;
+  
+  bool mDrained = true;
+  
+  bool mDraining = false;
   MozPromiseHolder<DecodePromise> mDecodePromise;
   MozPromiseHolder<DecodePromise> mDrainPromise;
   DecodedData mDecodedData;
