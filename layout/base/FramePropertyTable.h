@@ -189,11 +189,24 @@ public:
 
 
 
+
+
+
+
+
   template<typename T>
   bool Has(const nsIFrame* aFrame, Descriptor<T> aProperty)
   {
     bool foundResult = false;
-    mozilla::Unused << GetInternal(aFrame, aProperty, &foundResult);
+    mozilla::Unused << GetInternal(aFrame, aProperty, false, &foundResult);
+    return foundResult;
+  }
+
+  template<typename T>
+  bool HasSkippingBitCheck(const nsIFrame* aFrame, Descriptor<T> aProperty)
+  {
+    bool foundResult = false;
+    mozilla::Unused << GetInternal(aFrame, aProperty, true, &foundResult);
     return foundResult;
   }
 
@@ -212,7 +225,7 @@ public:
   PropertyType<T> Get(const nsIFrame* aFrame, Descriptor<T> aProperty,
                       bool* aFoundResult = nullptr)
   {
-    void* ptr = GetInternal(aFrame, aProperty, aFoundResult);
+    void* ptr = GetInternal(aFrame, aProperty, false, aFoundResult);
     return ReinterpretHelper<T>::FromPointer(ptr);
   }
   
@@ -231,7 +244,7 @@ public:
   PropertyType<T> Remove(nsIFrame* aFrame, Descriptor<T> aProperty,
                          bool* aFoundResult = nullptr)
   {
-    void* ptr = RemoveInternal(aFrame, aProperty, aFoundResult);
+    void* ptr = RemoveInternal(aFrame, aProperty, false, aFoundResult);
     return ReinterpretHelper<T>::FromPointer(ptr);
   }
   
@@ -240,10 +253,22 @@ public:
 
 
 
+
+
+
+
+
+
   template<typename T>
   void Delete(nsIFrame* aFrame, Descriptor<T> aProperty)
   {
-    DeleteInternal(aFrame, aProperty);
+    DeleteInternal(aFrame, aProperty, false);
+  }
+
+  template<typename T>
+  void DeleteSkippingBitCheck(nsIFrame* aFrame, Descriptor<T> aProperty)
+  {
+    DeleteInternal(aFrame, aProperty, true);
   }
   
 
@@ -262,12 +287,13 @@ protected:
                    void* aValue);
 
   void* GetInternal(const nsIFrame* aFrame, UntypedDescriptor aProperty,
-                    bool* aFoundResult);
+                    bool aSkipBitCheck, bool* aFoundResult);
 
   void* RemoveInternal(nsIFrame* aFrame, UntypedDescriptor aProperty,
-                       bool* aFoundResult);
+                       bool aSkipBitCheck, bool* aFoundResult);
 
-  void DeleteInternal(nsIFrame* aFrame, UntypedDescriptor aProperty);
+  void DeleteInternal(nsIFrame* aFrame, UntypedDescriptor aProperty,
+                      bool aSkipBitCheck);
 
   template<typename T>
   struct ReinterpretHelper
