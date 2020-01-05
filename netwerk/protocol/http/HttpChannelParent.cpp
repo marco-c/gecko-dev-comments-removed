@@ -393,16 +393,12 @@ HttpChannelParent::DoAsyncOpen(  const URIParams&           aURI,
     mChannel->SetOriginalURI(originalUri);
   if (docUri)
     mChannel->SetDocumentURI(docUri);
-  if (referrerUri) {
-    rv = mChannel->SetReferrerWithPolicyInternal(referrerUri, aReferrerPolicy);
-    MOZ_ASSERT(NS_SUCCEEDED(rv));
-  }
+  if (referrerUri)
+    mChannel->SetReferrerWithPolicyInternal(referrerUri, aReferrerPolicy);
   if (apiRedirectToUri)
     mChannel->RedirectTo(apiRedirectToUri);
-  if (topWindowUri) {
-    rv = mChannel->SetTopWindowURI(topWindowUri);
-    MOZ_ASSERT(NS_SUCCEEDED(rv));
-  }
+  if (topWindowUri)
+    mChannel->SetTopWindowURI(topWindowUri);
   if (aLoadFlags != nsIRequest::LOAD_NORMAL)
     mChannel->SetLoadFlags(aLoadFlags);
 
@@ -495,8 +491,7 @@ HttpChannelParent::DoAsyncOpen(  const URIParams&           aURI,
     if (!aSecurityInfoSerialization.IsEmpty()) {
       nsCOMPtr<nsISupports> secInfo;
       NS_DeserializeObject(aSecurityInfoSerialization, getter_AddRefs(secInfo));
-      rv = mChannel->OverrideSecurityInfo(secInfo);
-      MOZ_ASSERT(NS_SUCCEEDED(rv));
+      mChannel->OverrideSecurityInfo(secInfo);
     }
   } else {
     nsLoadFlags newLoadFlags;
@@ -562,7 +557,6 @@ HttpChannelParent::DoAsyncOpen(  const URIParams&           aURI,
     if (setChooseApplicationCache) {
       OriginAttributes attrs;
       NS_GetOriginAttributes(mChannel, attrs);
-      attrs.StripAttributes(OriginAttributes::STRIP_ADDON_ID);
 
       nsCOMPtr<nsIPrincipal> principal =
         BasePrincipal::CreateCodebasePrincipal(uri, attrs);
@@ -735,20 +729,17 @@ HttpChannelParent::RecvRedirect2Verify(const nsresult& result,
     if (newHttpChannel) {
       nsCOMPtr<nsIURI> apiRedirectUri = DeserializeURI(aAPIRedirectURI);
 
-      if (apiRedirectUri) {
-        rv = newHttpChannel->RedirectTo(apiRedirectUri);
-        MOZ_ASSERT(NS_SUCCEEDED(rv));
-      }
+      if (apiRedirectUri)
+        newHttpChannel->RedirectTo(apiRedirectUri);
 
       for (uint32_t i = 0; i < changedHeaders.Length(); i++) {
         if (changedHeaders[i].mEmpty) {
-          rv = newHttpChannel->SetEmptyRequestHeader(changedHeaders[i].mHeader);
+          newHttpChannel->SetEmptyRequestHeader(changedHeaders[i].mHeader);
         } else {
-          rv = newHttpChannel->SetRequestHeader(changedHeaders[i].mHeader,
-                                                changedHeaders[i].mValue,
-                                                changedHeaders[i].mMerge);
+          newHttpChannel->SetRequestHeader(changedHeaders[i].mHeader,
+                                           changedHeaders[i].mValue,
+                                           changedHeaders[i].mMerge);
         }
-        MOZ_ASSERT(NS_SUCCEEDED(rv));
       }
 
       
@@ -774,8 +765,7 @@ HttpChannelParent::RecvRedirect2Verify(const nsresult& result,
       }
 
       nsCOMPtr<nsIURI> referrerUri = DeserializeURI(aReferrerURI);
-      rv = newHttpChannel->SetReferrerWithPolicy(referrerUri, referrerPolicy);
-      MOZ_ASSERT(NS_SUCCEEDED(rv));
+      newHttpChannel->SetReferrerWithPolicy(referrerUri, referrerPolicy);
 
       nsCOMPtr<nsIApplicationCacheChannel> appCacheChannel =
         do_QueryInterface(newHttpChannel);
@@ -1662,8 +1652,8 @@ HttpChannelParent::StartDiversion()
   
   
   nsCOMPtr<nsIStreamListener> converterListener;
-  Unused << mChannel->DoApplyContentConversions(mDivertListener,
-                                                getter_AddRefs(converterListener));
+  mChannel->DoApplyContentConversions(mDivertListener,
+                                      getter_AddRefs(converterListener));
   if (converterListener) {
     mDivertListener = converterListener.forget();
   }
