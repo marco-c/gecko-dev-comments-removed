@@ -1,5 +1,5 @@
 enum format {
-    fo_rgba_8888;
+    fo_rgba_8888
     
 }
 
