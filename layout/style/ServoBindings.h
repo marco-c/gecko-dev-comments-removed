@@ -233,6 +233,14 @@ void Gecko_FontFamilyList_AppendGeneric(FontFamilyList* list, FontFamilyType fam
 void Gecko_CopyFontFamilyFrom(nsFont* dst, const nsFont* src);
 
 
+void Gecko_SetImageOrientation(nsStyleVisibility* aVisibility,
+                               double aRadians,
+                               bool aFlip);
+void Gecko_SetImageOrientationAsFromImage(nsStyleVisibility* aVisibility);
+void Gecko_CopyImageOrientationFrom(nsStyleVisibility* aDst,
+                                    const nsStyleVisibility* aSrc);
+
+
 void Gecko_SetListStyleType(nsStyleList* style_struct, uint32_t type);
 void Gecko_CopyListStyleTypeFrom(nsStyleList* dst, const nsStyleList* src);
 
