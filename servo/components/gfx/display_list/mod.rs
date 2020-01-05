@@ -590,13 +590,13 @@ pub struct StackingContext {
     pub establishes_3d_context: bool,
 
     
-    pub scrolls_overflow_area: bool,
-
-    
     pub layer_info: Option<LayerInfo>,
 
     
     pub children: Vec<StackingContext>,
+
+    
+    pub overflow_scroll_id: Option<StackingContextId>,
 }
 
 impl StackingContext {
@@ -612,8 +612,8 @@ impl StackingContext {
                transform: Matrix4D<f32>,
                perspective: Matrix4D<f32>,
                establishes_3d_context: bool,
-               scrolls_overflow_area: bool,
-               layer_info: Option<LayerInfo>)
+               layer_info: Option<LayerInfo>,
+               scroll_id: Option<StackingContextId>)
                -> StackingContext {
         StackingContext {
             id: id,
@@ -626,9 +626,9 @@ impl StackingContext {
             transform: transform,
             perspective: perspective,
             establishes_3d_context: establishes_3d_context,
-            scrolls_overflow_area: scrolls_overflow_area,
             layer_info: layer_info,
             children: Vec::new(),
+            overflow_scroll_id: scroll_id,
         }
     }
 
@@ -648,13 +648,10 @@ impl StackingContext {
     fn update_overflow_for_all_children(&mut self) {
         for child in self.children.iter() {
             if self.context_type == StackingContextType::Real &&
-               child.context_type == StackingContextType::Real &&
-               !self.scrolls_overflow_area {
+               child.context_type == StackingContextType::Real {
                 
                 
-                let overflow =
-                    child.overflow_rect_in_parent_space();
-
+                let overflow = child.overflow_rect_in_parent_space();
                 self.overflow = self.overflow.union(&overflow);
             }
         }
@@ -740,7 +737,7 @@ impl fmt::Debug for StackingContext {
             "Pseudo-StackingContext"
         };
 
-        let scrollable_string = if self.scrolls_overflow_area {
+        let scrollable_string = if self.overflow_scroll_id.is_some() {
             " (scrolls overflow area)"
         } else {
             ""
