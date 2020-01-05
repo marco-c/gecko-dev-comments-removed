@@ -57,7 +57,6 @@ pub extern "C" fn cef_run_message_loop() {
         layout_threads: 1,
         nonincremental_layout: false,
         
-        exit_after_load: false,
         output_file: None,
         headless: false,
         hard_fail: false,

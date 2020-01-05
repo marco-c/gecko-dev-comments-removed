@@ -56,8 +56,6 @@ pub enum WindowEvent {
     
     NavigationWindowEvent(WindowNavigateMsg),
     
-    FinishedWindowEvent,
-    
     QuitWindowEvent,
     
     KeyEvent(Key, KeyState, KeyModifiers),
@@ -77,7 +75,6 @@ impl Show for WindowEvent {
             ZoomWindowEvent(..) => write!(f, "Zoom"),
             PinchZoomWindowEvent(..) => write!(f, "PinchZoom"),
             NavigationWindowEvent(..) => write!(f, "Navigation"),
-            FinishedWindowEvent => write!(f, "Finished"),
             QuitWindowEvent => write!(f, "Quit"),
         }
     }
