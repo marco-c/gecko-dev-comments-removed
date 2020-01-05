@@ -81,6 +81,7 @@ impl ops::Deref for ByteString {
 
 
 
+#[derive(Clone, HeapSizeOf)]
 pub struct USVString(pub String);
 
 

@@ -69,6 +69,7 @@ pub enum ScriptThreadEventCategory {
     UpdateReplacedElement,
     WebSocketEvent,
     WorkerEvent,
+    ServiceWorkerEvent
 }
 
 

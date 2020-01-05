@@ -272,7 +272,7 @@ pub enum TimerSource {
     
     FromWindow(PipelineId),
     
-    FromWorker
+    FromWorker,
 }
 
 
