@@ -489,7 +489,8 @@ nsStyleBorder::CalcDifference(const nsStyleBorder& aNewData) const
         mBorderImageRepeatV != aNewData.mBorderImageRepeatV ||
         mBorderImageSlice   != aNewData.mBorderImageSlice   ||
         mBorderImageFill    != aNewData.mBorderImageFill    ||
-        mBorderImageWidth   != aNewData.mBorderImageWidth) {
+        mBorderImageWidth   != aNewData.mBorderImageWidth   ||
+        mBorderImageOutset  != aNewData.mBorderImageOutset) {
       return nsChangeHint_RepaintFrame;
     }
   }
@@ -509,18 +510,6 @@ nsStyleBorder::CalcDifference(const nsStyleBorder& aNewData) const
   
   
   if (mBorder != aNewData.mBorder) {
-    return nsChangeHint_NeutralChange;
-  }
-
-  
-  
-  
-  if (mBorderImageSource  != aNewData.mBorderImageSource  ||
-      mBorderImageRepeatH != aNewData.mBorderImageRepeatH ||
-      mBorderImageRepeatV != aNewData.mBorderImageRepeatV ||
-      mBorderImageSlice   != aNewData.mBorderImageSlice   ||
-      mBorderImageFill    != aNewData.mBorderImageFill    ||
-      mBorderImageWidth   != aNewData.mBorderImageWidth) {
     return nsChangeHint_NeutralChange;
   }
 
@@ -2268,7 +2257,7 @@ nsStyleImage::StartDecoding() const
     if (!req) {
       return false;
     }
-    return req->StartDecodingWithResult(imgIContainer::FLAG_NONE);
+    return req->StartDecodingWithResult(imgIContainer::FLAG_ASYNC_NOTIFY);
   }
   
   return mType != eStyleImageType_Null ? true : false;
@@ -4144,10 +4133,6 @@ nsStyleUIReset::CalcDifference(const nsStyleUIReset& aNewData) const
 
   if (mWindowDragging != aNewData.mWindowDragging) {
     return nsChangeHint_SchedulePaint;
-  }
-
-  if (mIMEMode != aNewData.mIMEMode) {
-    return nsChangeHint_NeutralChange;
   }
 
   return nsChangeHint(0);
