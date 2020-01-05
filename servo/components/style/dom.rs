@@ -37,8 +37,7 @@ impl OpaqueNode {
     
     #[inline]
     pub fn id(&self) -> usize {
-        let OpaqueNode(pointer) = *self;
-        pointer
+        self.0
     }
 }
 
