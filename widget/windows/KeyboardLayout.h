@@ -719,6 +719,16 @@ public:
 
 
 
+  UniCharsAndModifiers GetNativeUniCharsAndModifiers(
+                         uint8_t aVirtualKey,
+                         const ModifierKeyState& aModKeyState) const;
+
+  
+
+
+
+
+
   void OnLayoutChange(HKL aKeyboardLayout)
   {
     MOZ_ASSERT(!mIsOverridden);
