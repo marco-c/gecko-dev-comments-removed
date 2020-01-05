@@ -70,11 +70,12 @@ nsFormFillController::nsFormFillController() :
   mListNode(nullptr),
   
   
-  mFocusAfterContextMenuThreshold(250),
+  
+  mFocusAfterContextMenuThreshold(400),
   mTimeout(50),
   mMinResultsForPopup(1),
   mMaxRows(0),
-  mLastContextMenuEventTimeStamp(TimeStamp::Now()),
+  mLastContextMenuEventTimeStamp(TimeStamp()),
   mDisableAutoComplete(false),
   mCompleteDefaultIndex(false),
   mCompleteSelectedIndex(false),
@@ -1029,8 +1030,15 @@ nsFormFillController::FocusEventDelayedCallback(nsIFormControl* aFormControl)
 {
   nsCOMPtr<nsIFormControl> formControl = do_QueryInterface(mFocusedInputNode);
 
-  if (!formControl || formControl != aFormControl) {
+  if (!formControl || formControl != aFormControl ||
+      formControl->GetType() != NS_FORM_INPUT_PASSWORD) {
     return;
+  }
+
+  
+  if (mLastContextMenuEventTimeStamp.IsNull()) {
+   ShowPopup();
+   return;
   }
 
   uint64_t timeDiff = fabs((TimeStamp::Now() - mLastContextMenuEventTimeStamp).ToMilliseconds());
@@ -1039,8 +1047,7 @@ nsFormFillController::FocusEventDelayedCallback(nsIFormControl* aFormControl)
   
   
   
-  if (timeDiff > mFocusAfterContextMenuThreshold
-      && formControl->GetType() == NS_FORM_INPUT_PASSWORD) {
+  if (timeDiff > mFocusAfterContextMenuThreshold) {
    ShowPopup();
   }
 }
