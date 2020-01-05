@@ -38,7 +38,7 @@ add_task(function*() {
   handlerSvc.store(protoInfo);
 
   
-  let link = browser.contentDocument.getElementById("link");
+  let link = "#link";
   const expectedURL = "https://example.com/foobar?uri=testprotocol%3Atest";
 
   let promiseTabOpened =
