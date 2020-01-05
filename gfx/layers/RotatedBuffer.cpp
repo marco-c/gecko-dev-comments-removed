@@ -427,8 +427,10 @@ RotatedContentBuffer::BeginPaint(PaintedLayer* aLayer,
   PaintState result;
   
   
+  
   bool canHaveRotation = gfxPlatform::BufferRotationEnabled() &&
-                         !(aFlags & (PAINT_WILL_RESAMPLE | PAINT_NO_ROTATION));
+                         !(aFlags & (PAINT_WILL_RESAMPLE | PAINT_NO_ROTATION)) &&
+                         !(aLayer->Manager()->AsWebRenderLayerManager());
 
   nsIntRegion validRegion = aLayer->GetValidRegion();
 
