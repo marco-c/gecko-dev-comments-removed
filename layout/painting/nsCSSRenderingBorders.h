@@ -18,6 +18,7 @@
 #include "nsStyleConsts.h"
 #include "nsStyleStruct.h"
 #include "nsPresContext.h"
+#include "gfxUtils.h"
 
 struct nsBorderColors;
 class nsDisplayBorder;
@@ -25,6 +26,9 @@ class nsDisplayBorder;
 namespace mozilla {
 namespace gfx {
 class GradientStops;
+} 
+namespace layers {
+class WebRenderDisplayItemLayer;
 } 
 } 
 
@@ -97,6 +101,9 @@ public:
 
   
   void DrawBorders();
+
+  void CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBuilder,
+                               mozilla::layers::WebRenderDisplayItemLayer* aLayer);
 
   
   static void ComputeInnerRadii(const RectCornerRadii& aRadii,
