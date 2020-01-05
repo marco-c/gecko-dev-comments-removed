@@ -237,12 +237,6 @@ DataViewObject::constructSameCompartment(JSContext* cx, HandleObject bufobj, con
 
 
 
-
-
-
-
-
-
 bool
 DataViewObject::constructWrapped(JSContext* cx, HandleObject bufobj, const CallArgs& args)
 {
