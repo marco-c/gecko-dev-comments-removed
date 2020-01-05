@@ -1,6 +1,6 @@
 use euclid::Size2D;
 use gleam::gl;
-use gleam::gl::types::{GLuint};
+use gleam::gl::types::{GLint, GLuint};
 
 use NativeGLContextMethods;
 use GLContextAttributes;
@@ -141,8 +141,11 @@ impl<Native> GLContext<Native>
             return db.get_framebuffer();
         }
 
-        let ret = gl::get_integer_v(gl::FRAMEBUFFER_BINDING);
-        ret as GLuint
+        unsafe {
+            let mut ret : GLint = 0;
+            gl::GetIntegerv(gl::FRAMEBUFFER_BINDING, &mut ret);
+            ret as GLuint
+        }
     }
 
     pub fn draw_buffer_size(&self) -> Option<Size2D<i32>> {
@@ -155,7 +158,7 @@ impl<Native> GLContext<Native>
         if self.draw_buffer.is_some() {
             let color_attachment_type =
                 self.borrow_draw_buffer().unwrap().color_attachment_type();
-            self.init_offscreen(size, color_attachment_type)
+            self.create_draw_buffer(size, color_attachment_type)
         } else {
             Err("No DrawBuffer found")
         }
@@ -180,10 +183,10 @@ impl<T: NativeGLContextMethods> GLContextPrivateMethods for GLContext<T> {
 
         debug_assert!(self.is_current());
 
-        gl::clear_color(0.0, 0.0, 0.0, 0.0);
-        gl::clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT | gl::STENCIL_BUFFER_BIT);
-        gl::scissor(0, 0, size.width, size.height);
-        gl::viewport(0, 0, size.width, size.height);
+        unsafe {
+            gl::Scissor(0, 0, size.width, size.height);
+            gl::Viewport(0, 0, size.width, size.height);
+        }
 
         Ok(())
     }

@@ -69,12 +69,12 @@ fn test_repeat() {
 
 #[test]
 fn test_meta() {
-    // this would not compile if STRING were not marked #[derive(Copy, Clone)]
+    
     let copy_of_string = STRING;
-    // just to make sure it was copied
+    
     assert!(&STRING as *const _ != &copy_of_string as *const _);
 
-    // this would not compile if STRING were not marked #[derive(Debug)]
+    
     assert_eq!(format!("{:?}", STRING), "STRING { __private_field: () }".to_string());
 }
 
@@ -96,7 +96,7 @@ fn test_visibility() {
     assert_eq!(*visibility::FOO, Box::new(0));
 }
 
-// This should not cause a warning about a missing Copy implementation
+
 lazy_static! {
     pub static ref VAR: i32 = { 0 };
 }
@@ -112,7 +112,7 @@ fn transmute() -> X { X }
 fn __static_ref_initialize() -> X { X }
 fn test(_: Vec<X>) -> X { X }
 
-// All these names should not be shadowed
+
 lazy_static! {
     static ref ITEM_NAME_TEST: X = {
         test(vec![X, Once(X).0, ONCE_INIT.0, DATA, ONCE,

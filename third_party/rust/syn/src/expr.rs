@@ -1,26 +1,9 @@
 use super::*;
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
-pub struct Expr {
-    pub node: ExprKind,
-    pub attrs: Vec<Attribute>,
-}
-
-impl From<ExprKind> for Expr {
-    fn from(node: ExprKind) -> Expr {
-        Expr {
-            node: node,
-            attrs: Vec::new(),
-        }
-    }
-}
-
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
-pub enum ExprKind {
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub enum Expr {
     
     Box(Box<Expr>),
-    
-    InPlace(Box<Expr>, Box<Expr>),
     
     Vec(Vec<Expr>),
     
@@ -86,9 +69,9 @@ pub enum ExprKind {
     
     Match(Box<Expr>, Vec<Arm>),
     
-    Closure(CaptureBy, Box<FnDecl>, Box<Expr>),
+    Closure(CaptureBy, Box<FnDecl>, Block),
     
-    Block(Unsafety, Block),
+    Block(BlockCheckMode, Block),
 
     
     Assign(Box<Expr>, Box<Expr>),
@@ -117,7 +100,7 @@ pub enum ExprKind {
     
     AddrOf(Mutability, Box<Expr>),
     
-    Break(Option<Ident>, Option<Box<Expr>>),
+    Break(Option<Ident>),
     
     Continue(Option<Ident>),
     
@@ -145,23 +128,28 @@ pub enum ExprKind {
     Try(Box<Expr>),
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct FieldValue {
     pub ident: Ident,
     pub expr: Expr,
-    pub is_shorthand: bool,
 }
 
 
 
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Block {
     
     pub stmts: Vec<Stmt>,
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+pub enum BlockCheckMode {
+    Default,
+    Unsafe,
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum Stmt {
     
     Local(Box<Local>),
@@ -177,7 +165,7 @@ pub enum Stmt {
     Mac(Box<(Mac, MacStmtStyle, Vec<Attribute>)>),
 }
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum MacStmtStyle {
     
     
@@ -191,7 +179,7 @@ pub enum MacStmtStyle {
 }
 
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Local {
     pub pat: Box<Pat>,
     pub ty: Option<Box<Ty>>,
@@ -200,10 +188,7 @@ pub struct Local {
     pub attrs: Vec<Attribute>,
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
-
-
-#[cfg_attr(feature = "clippy", allow(enum_variant_names))]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum Pat {
     
     Wild,
@@ -238,9 +223,9 @@ pub enum Pat {
     
     Ref(Box<Pat>, Mutability),
     
-    Lit(Box<Expr>),
+    Lit(Box<Lit>),
     
-    Range(Box<Expr>, Box<Expr>),
+    Range(Box<Lit>, Box<Lit>),
     
     
     Slice(Vec<Pat>, Option<Box<Pat>>, Vec<Pat>),
@@ -258,7 +243,7 @@ pub enum Pat {
 
 
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Arm {
     pub attrs: Vec<Attribute>,
     pub pats: Vec<Pat>,
@@ -267,14 +252,14 @@ pub struct Arm {
 }
 
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum CaptureBy {
     Value,
     Ref,
 }
 
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum RangeLimits {
     
     HalfOpen,
@@ -287,7 +272,7 @@ pub enum RangeLimits {
 
 
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct FieldPat {
     
     pub ident: Ident,
@@ -296,7 +281,7 @@ pub struct FieldPat {
     pub is_shorthand: bool,
 }
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum BindingMode {
     ByRef(Mutability),
     ByValue(Mutability),
@@ -305,180 +290,141 @@ pub enum BindingMode {
 #[cfg(feature = "parsing")]
 pub mod parsing {
     use super::*;
-    use {BinOp, Delimited, DelimToken, FnArg, FnDecl, FunctionRetTy, Ident, Lifetime, Mac,
-         TokenTree, Ty, UnOp, Unsafety};
+    use {BinOp, Delimited, DelimToken, FnArg, FnDecl, FunctionRetTy, Ident, Lifetime, TokenTree,
+         Ty};
     use attr::parsing::outer_attr;
     use generics::parsing::lifetime;
-    use ident::parsing::{ident, wordlike};
+    use ident::parsing::ident;
     use item::parsing::item;
     use lit::parsing::{digits, lit};
-    use mac::parsing::{mac, token_trees};
-    use nom::IResult::{self, Error};
+    use mac::parsing::mac;
+    use nom::IResult::Error;
     use op::parsing::{assign_op, binop, unop};
-    use ty::parsing::{mutability, path, qpath, ty, unsafety};
+    use ty::parsing::{mutability, path, qpath, ty};
 
-    
-    
-    macro_rules! named_ambiguous_expr {
-        ($name:ident -> $o:ty, $allow_struct:ident, $submac:ident!( $($args:tt)* )) => {
-            fn $name(i: &str, $allow_struct: bool) -> $crate::nom::IResult<&str, $o> {
-                $submac!(i, $($args)*)
-            }
-        };
-    }
+    named!(pub expr -> Expr, do_parse!(
+        mut e: alt!(
+            expr_lit // must be before expr_struct
+            |
+            expr_struct // must be before expr_path
+            |
+            expr_paren // must be before expr_tup
+            |
+            expr_mac // must be before expr_path
+            |
+            expr_break // must be before expr_path
+            |
+            expr_continue // must be before expr_path
+            |
+            expr_ret // must be before expr_path
+            |
+            expr_box
+            |
+            expr_vec
+            |
+            expr_tup
+            |
+            expr_unary
+            |
+            expr_if
+            |
+            expr_while
+            |
+            expr_for_loop
+            |
+            expr_loop
+            |
+            expr_match
+            |
+            expr_closure
+            |
+            expr_block
+            |
+            expr_range
+            |
+            expr_path
+            |
+            expr_addr_of
+            |
+            expr_repeat
+        ) >>
+        many0!(alt!(
+            tap!(args: and_call => {
+                e = Expr::Call(Box::new(e), args);
+            })
+            |
+            tap!(more: and_method_call => {
+                let (method, ascript, mut args) = more;
+                args.insert(0, e);
+                e = Expr::MethodCall(method, ascript, args);
+            })
+            |
+            tap!(more: and_binary => {
+                let (op, other) = more;
+                e = Expr::Binary(op, Box::new(e), Box::new(other));
+            })
+            |
+            tap!(ty: and_cast => {
+                e = Expr::Cast(Box::new(e), Box::new(ty));
+            })
+            |
+            tap!(ty: and_ascription => {
+                e = Expr::Type(Box::new(e), Box::new(ty));
+            })
+            |
+            tap!(v: and_assign => {
+                e = Expr::Assign(Box::new(e), Box::new(v));
+            })
+            |
+            tap!(more: and_assign_op => {
+                let (op, v) = more;
+                e = Expr::AssignOp(op, Box::new(e), Box::new(v));
+            })
+            |
+            tap!(field: and_field => {
+                e = Expr::Field(Box::new(e), field);
+            })
+            |
+            tap!(field: and_tup_field => {
+                e = Expr::TupField(Box::new(e), field as usize);
+            })
+            |
+            tap!(i: and_index => {
+                e = Expr::Index(Box::new(e), Box::new(i));
+            })
+            |
+            tap!(more: and_range => {
+                let (limits, hi) = more;
+                e = Expr::Range(Some(Box::new(e)), hi.map(Box::new), limits);
+            })
+            |
+            tap!(_try: punct!("?") => {
+                e = Expr::Try(Box::new(e));
+            })
+        )) >>
+        (e)
+    ));
 
-    macro_rules! ambiguous_expr {
-        ($i:expr, $allow_struct:ident) => {
-            ambiguous_expr($i, $allow_struct, true)
-        };
-    }
+    named!(expr_mac -> Expr, map!(mac, Expr::Mac));
 
-    named!(pub expr -> Expr, ambiguous_expr!(true));
-
-    named!(expr_no_struct -> Expr, ambiguous_expr!(false));
-
-    fn ambiguous_expr(i: &str, allow_struct: bool, allow_block: bool) -> IResult<&str, Expr> {
-        do_parse!(
-            i,
-            mut e: alt!(
-                expr_lit // must be before expr_struct
-                |
-                cond_reduce!(allow_struct, expr_struct) // must be before expr_path
-                |
-                expr_paren // must be before expr_tup
-                |
-                expr_mac // must be before expr_path
-                |
-                call!(expr_break, allow_struct) // must be before expr_path
-                |
-                expr_continue // must be before expr_path
-                |
-                call!(expr_ret, allow_struct) // must be before expr_path
-                |
-                call!(expr_box, allow_struct)
-                |
-                expr_in_place
-                |
-                expr_vec
-                |
-                expr_tup
-                |
-                call!(expr_unary, allow_struct)
-                |
-                expr_if
-                |
-                expr_while
-                |
-                expr_for_loop
-                |
-                expr_loop
-                |
-                expr_match
-                |
-                call!(expr_closure, allow_struct)
-                |
-                cond_reduce!(allow_block, expr_block)
-                |
-                call!(expr_range, allow_struct)
-                |
-                expr_path
-                |
-                call!(expr_addr_of, allow_struct)
-                |
-                expr_repeat
-            ) >>
-            many0!(alt!(
-                tap!(args: and_call => {
-                    e = ExprKind::Call(Box::new(e.into()), args);
-                })
-                |
-                tap!(more: and_method_call => {
-                    let (method, ascript, mut args) = more;
-                    args.insert(0, e.into());
-                    e = ExprKind::MethodCall(method, ascript, args);
-                })
-                |
-                tap!(more: call!(and_binary, allow_struct) => {
-                    let (op, other) = more;
-                    e = ExprKind::Binary(op, Box::new(e.into()), Box::new(other));
-                })
-                |
-                tap!(ty: and_cast => {
-                    e = ExprKind::Cast(Box::new(e.into()), Box::new(ty));
-                })
-                |
-                tap!(ty: and_ascription => {
-                    e = ExprKind::Type(Box::new(e.into()), Box::new(ty));
-                })
-                |
-                tap!(v: call!(and_assign, allow_struct) => {
-                    e = ExprKind::Assign(Box::new(e.into()), Box::new(v));
-                })
-                |
-                tap!(more: call!(and_assign_op, allow_struct) => {
-                    let (op, v) = more;
-                    e = ExprKind::AssignOp(op, Box::new(e.into()), Box::new(v));
-                })
-                |
-                tap!(field: and_field => {
-                    e = ExprKind::Field(Box::new(e.into()), field);
-                })
-                |
-                tap!(field: and_tup_field => {
-                    e = ExprKind::TupField(Box::new(e.into()), field as usize);
-                })
-                |
-                tap!(i: and_index => {
-                    e = ExprKind::Index(Box::new(e.into()), Box::new(i));
-                })
-                |
-                tap!(more: call!(and_range, allow_struct) => {
-                    let (limits, hi) = more;
-                    e = ExprKind::Range(Some(Box::new(e.into())), hi.map(Box::new), limits);
-                })
-                |
-                tap!(_try: punct!("?") => {
-                    e = ExprKind::Try(Box::new(e.into()));
-                })
-            )) >>
-            (e.into())
-        )
-    }
-
-    named!(expr_mac -> ExprKind, map!(mac, ExprKind::Mac));
-
-    named!(expr_paren -> ExprKind, do_parse!(
+    named!(expr_paren -> Expr, do_parse!(
         punct!("(") >>
         e: expr >>
         punct!(")") >>
-        (ExprKind::Paren(Box::new(e)))
+        (Expr::Paren(Box::new(e)))
     ));
 
-    named_ambiguous_expr!(expr_box -> ExprKind, allow_struct, do_parse!(
+    named!(expr_box -> Expr, do_parse!(
         keyword!("box") >>
-        inner: ambiguous_expr!(allow_struct) >>
-        (ExprKind::Box(Box::new(inner)))
+        inner: expr >>
+        (Expr::Box(Box::new(inner)))
     ));
 
-    named!(expr_in_place -> ExprKind, do_parse!(
-        keyword!("in") >>
-        place: expr_no_struct >>
-        punct!("{") >>
-        value: within_block >>
-        punct!("}") >>
-        (ExprKind::InPlace(
-            Box::new(place),
-            Box::new(ExprKind::Block(Unsafety::Normal, Block {
-                stmts: value,
-            }).into()),
-        ))
-    ));
-
-    named!(expr_vec -> ExprKind, do_parse!(
+    named!(expr_vec -> Expr, do_parse!(
         punct!("[") >>
         elems: terminated_list!(punct!(","), expr) >>
         punct!("]") >>
-        (ExprKind::Vec(elems))
+        (Expr::Vec(elems))
     ));
 
     named!(and_call -> Vec<Expr>, do_parse!(
@@ -505,25 +451,22 @@ pub mod parsing {
         (method, ascript, args)
     ));
 
-    named!(expr_tup -> ExprKind, do_parse!(
+    named!(expr_tup -> Expr, do_parse!(
         punct!("(") >>
         elems: terminated_list!(punct!(","), expr) >>
         punct!(")") >>
-        (ExprKind::Tup(elems))
+        (Expr::Tup(elems))
     ));
 
-    named_ambiguous_expr!(and_binary -> (BinOp, Expr), allow_struct, tuple!(
-        binop,
-        ambiguous_expr!(allow_struct)
-    ));
+    named!(and_binary -> (BinOp, Expr), tuple!(binop, expr));
 
-    named_ambiguous_expr!(expr_unary -> ExprKind, allow_struct, do_parse!(
+    named!(expr_unary -> Expr, do_parse!(
         operator: unop >>
-        operand: ambiguous_expr!(allow_struct) >>
-        (ExprKind::Unary(operator, Box::new(operand)))
+        operand: expr >>
+        (Expr::Unary(operator, Box::new(operand)))
     ));
 
-    named!(expr_lit -> ExprKind, map!(lit, ExprKind::Lit));
+    named!(expr_lit -> Expr, map!(lit, Expr::Lit));
 
     named!(and_cast -> Ty, do_parse!(
         keyword!("as") >>
@@ -543,14 +486,14 @@ pub mod parsing {
             keyword!("let") >>
             pat: pat >>
             punct!("=") >>
-            value: expr_no_struct >>
+            value: expr >>
             (Cond::Let(pat, value))
         )
         |
-        map!(expr_no_struct, Cond::Expr)
+        map!(expr, Cond::Expr)
     ));
 
-    named!(expr_if -> ExprKind, do_parse!(
+    named!(expr_if -> Expr, do_parse!(
         keyword!("if") >>
         cond: cond >>
         punct!("{") >>
@@ -565,93 +508,75 @@ pub mod parsing {
                     punct!("{") >>
                     else_block: within_block >>
                     punct!("}") >>
-                    (ExprKind::Block(Unsafety::Normal, Block {
+                    (Expr::Block(BlockCheckMode::Default, Block {
                         stmts: else_block,
-                    }).into())
+                    }))
                 )
             )
         )) >>
         (match cond {
-            Cond::Let(pat, expr) => ExprKind::IfLet(
+            Cond::Let(pat, expr) => Expr::IfLet(
                 Box::new(pat),
                 Box::new(expr),
                 Block {
                     stmts: then_block,
                 },
-                else_block.map(|els| Box::new(els.into())),
+                else_block.map(Box::new),
             ),
-            Cond::Expr(cond) => ExprKind::If(
+            Cond::Expr(cond) => Expr::If(
                 Box::new(cond),
                 Block {
                     stmts: then_block,
                 },
-                else_block.map(|els| Box::new(els.into())),
+                else_block.map(Box::new),
             ),
         })
     ));
 
-    named!(expr_for_loop -> ExprKind, do_parse!(
+    named!(expr_for_loop -> Expr, do_parse!(
         lbl: option!(terminated!(label, punct!(":"))) >>
         keyword!("for") >>
         pat: pat >>
         keyword!("in") >>
-        expr: expr_no_struct >>
+        expr: expr >>
         loop_block: block >>
-        (ExprKind::ForLoop(Box::new(pat), Box::new(expr), loop_block, lbl))
+        (Expr::ForLoop(Box::new(pat), Box::new(expr), loop_block, lbl))
     ));
 
-    named!(expr_loop -> ExprKind, do_parse!(
+    named!(expr_loop -> Expr, do_parse!(
         lbl: option!(terminated!(label, punct!(":"))) >>
         keyword!("loop") >>
         loop_block: block >>
-        (ExprKind::Loop(loop_block, lbl))
+        (Expr::Loop(loop_block, lbl))
     ));
 
-    named!(expr_match -> ExprKind, do_parse!(
+    named!(expr_match -> Expr, do_parse!(
         keyword!("match") >>
-        obj: expr_no_struct >>
+        obj: expr >>
         punct!("{") >>
-        mut arms: many0!(do_parse!(
-            arm: match_arm >>
-            cond!(arm_requires_comma(&arm), punct!(",")) >>
-            cond!(!arm_requires_comma(&arm), option!(punct!(","))) >>
-            (arm)
+        arms: many0!(do_parse!(
+            attrs: many0!(outer_attr) >>
+            pats: separated_nonempty_list!(punct!("|"), pat) >>
+            guard: option!(preceded!(keyword!("if"), expr)) >>
+            punct!("=>") >>
+            body: alt!(
+                map!(block, |blk| Expr::Block(BlockCheckMode::Default, blk))
+                |
+                expr
+            ) >>
+            option!(punct!(",")) >>
+            (Arm {
+                attrs: attrs,
+                pats: pats,
+                guard: guard.map(Box::new),
+                body: Box::new(body),
+            })
         )) >>
-        last_arm: option!(match_arm) >>
         punct!("}") >>
-        (ExprKind::Match(Box::new(obj), {
-            arms.extend(last_arm);
-            arms
-        }))
+        (Expr::Match(Box::new(obj), arms))
     ));
 
-    fn arm_requires_comma(arm: &Arm) -> bool {
-        if let ExprKind::Block(Unsafety::Normal, _) = arm.body.node {
-            false
-        } else {
-            true
-        }
-    }
-
-    named!(match_arm -> Arm, do_parse!(
-        attrs: many0!(outer_attr) >>
-        pats: separated_nonempty_list!(punct!("|"), pat) >>
-        guard: option!(preceded!(keyword!("if"), expr)) >>
-        punct!("=>") >>
-        body: alt!(
-            map!(block, |blk| ExprKind::Block(Unsafety::Normal, blk).into())
-            |
-            expr
-        ) >>
-        (Arm {
-            attrs: attrs,
-            pats: pats,
-            guard: guard.map(Box::new),
-            body: Box::new(body),
-        })
-    ));
-
-    named_ambiguous_expr!(expr_closure -> ExprKind, allow_struct, do_parse!(
+    named!(expr_closure -> Expr, do_parse!(
         capture: capture_by >>
         punct!("|") >>
         inputs: terminated_list!(punct!(","), closure_arg) >>
@@ -661,19 +586,23 @@ pub mod parsing {
                 punct!("->") >>
                 ty: ty >>
                 body: block >>
-                (FunctionRetTy::Ty(ty), ExprKind::Block(Unsafety::Normal, body).into())
+                ((FunctionRetTy::Ty(ty), body))
             )
             |
-            map!(ambiguous_expr!(allow_struct), |e| (FunctionRetTy::Default, e))
+            map!(expr, |e| (
+                FunctionRetTy::Default,
+                Block {
+                    stmts: vec![Stmt::Expr(Box::new(e))],
+                },
+            ))
         ) >>
-        (ExprKind::Closure(
+        (Expr::Closure(
             capture,
             Box::new(FnDecl {
                 inputs: inputs,
                 output: ret_and_body.0,
-                variadic: false,
             }),
-            Box::new(ret_and_body.1),
+            ret_and_body.1,
         ))
     ));
 
@@ -683,19 +612,19 @@ pub mod parsing {
         (FnArg::Captured(pat, ty.unwrap_or(Ty::Infer)))
     ));
 
-    named!(expr_while -> ExprKind, do_parse!(
+    named!(expr_while -> Expr, do_parse!(
         lbl: option!(terminated!(label, punct!(":"))) >>
         keyword!("while") >>
         cond: cond >>
         while_block: block >>
         (match cond {
-            Cond::Let(pat, expr) => ExprKind::WhileLet(
+            Cond::Let(pat, expr) => Expr::WhileLet(
                 Box::new(pat),
                 Box::new(expr),
                 while_block,
                 lbl,
             ),
-            Cond::Expr(cond) => ExprKind::While(
+            Cond::Expr(cond) => Expr::While(
                 Box::new(cond),
                 while_block,
                 lbl,
@@ -703,26 +632,25 @@ pub mod parsing {
         })
     ));
 
-    named!(expr_continue -> ExprKind, do_parse!(
+    named!(expr_continue -> Expr, do_parse!(
         keyword!("continue") >>
         lbl: option!(label) >>
-        (ExprKind::Continue(lbl))
+        (Expr::Continue(lbl))
     ));
 
-    named_ambiguous_expr!(expr_break -> ExprKind, allow_struct, do_parse!(
+    named!(expr_break -> Expr, do_parse!(
         keyword!("break") >>
         lbl: option!(label) >>
-        val: option!(call!(ambiguous_expr, allow_struct, false)) >>
-        (ExprKind::Break(lbl, val.map(Box::new)))
+        (Expr::Break(lbl))
     ));
 
-    named_ambiguous_expr!(expr_ret -> ExprKind, allow_struct, do_parse!(
+    named!(expr_ret -> Expr, do_parse!(
         keyword!("return") >>
-        ret_value: option!(ambiguous_expr!(allow_struct)) >>
-        (ExprKind::Ret(ret_value.map(Box::new)))
+        ret_value: option!(expr) >>
+        (Expr::Ret(ret_value.map(Box::new)))
     ));
 
-    named!(expr_struct -> ExprKind, do_parse!(
+    named!(expr_struct -> Expr, do_parse!(
         path: path >>
         punct!("{") >>
         fields: separated_list!(punct!(","), field_value) >>
@@ -734,49 +662,40 @@ pub mod parsing {
         )) >>
         cond!(!fields.is_empty() && base.is_none(), option!(punct!(","))) >>
         punct!("}") >>
-        (ExprKind::Struct(path, fields, base.map(Box::new)))
+        (Expr::Struct(path, fields, base.map(Box::new)))
     ));
 
-    named!(field_value -> FieldValue, alt!(
-        do_parse!(
-            name: wordlike >>
-            punct!(":") >>
-            value: expr >>
-            (FieldValue {
-                ident: name,
-                expr: value,
-                is_shorthand: false,
-            })
-        )
-        |
-        map!(ident, |name: Ident| FieldValue {
-            ident: name.clone(),
-            expr: ExprKind::Path(None, name.into()).into(),
-            is_shorthand: true,
+    named!(field_value -> FieldValue, do_parse!(
+        name: ident >>
+        punct!(":") >>
+        value: expr >>
+        (FieldValue {
+            ident: name,
+            expr: value,
         })
     ));
 
-    named!(expr_repeat -> ExprKind, do_parse!(
+    named!(expr_repeat -> Expr, do_parse!(
         punct!("[") >>
         value: expr >>
         punct!(";") >>
         times: expr >>
         punct!("]") >>
-        (ExprKind::Repeat(Box::new(value), Box::new(times)))
+        (Expr::Repeat(Box::new(value), Box::new(times)))
     ));
 
-    named!(expr_block -> ExprKind, do_parse!(
-        rules: unsafety >>
+    named!(expr_block -> Expr, do_parse!(
+        rules: block_check_mode >>
         b: block >>
-        (ExprKind::Block(rules, Block {
+        (Expr::Block(rules, Block {
             stmts: b.stmts,
         }))
     ));
 
-    named_ambiguous_expr!(expr_range -> ExprKind, allow_struct, do_parse!(
+    named!(expr_range -> Expr, do_parse!(
         limits: range_limits >>
-        hi: option!(ambiguous_expr!(allow_struct)) >>
-        (ExprKind::Range(None, hi.map(Box::new), limits))
+        hi: option!(expr) >>
+        (Expr::Range(None, hi.map(Box::new), limits))
     ));
 
     named!(range_limits -> RangeLimits, alt!(
@@ -785,24 +704,18 @@ pub mod parsing {
         punct!("..") => { |_| RangeLimits::HalfOpen }
     ));
 
-    named!(expr_path -> ExprKind, map!(qpath, |(qself, path)| ExprKind::Path(qself, path)));
+    named!(expr_path -> Expr, map!(qpath, |(qself, path)| Expr::Path(qself, path)));
 
-    named_ambiguous_expr!(expr_addr_of -> ExprKind, allow_struct, do_parse!(
+    named!(expr_addr_of -> Expr, do_parse!(
         punct!("&") >>
         mutability: mutability >>
-        expr: ambiguous_expr!(allow_struct) >>
-        (ExprKind::AddrOf(mutability, Box::new(expr)))
+        expr: expr >>
+        (Expr::AddrOf(mutability, Box::new(expr)))
     ));
 
-    named_ambiguous_expr!(and_assign -> Expr, allow_struct, preceded!(
-        punct!("="),
-        ambiguous_expr!(allow_struct)
-    ));
+    named!(and_assign -> Expr, preceded!(punct!("="), expr));
 
-    named_ambiguous_expr!(and_assign_op -> (BinOp, Expr), allow_struct, tuple!(
-        assign_op,
-        ambiguous_expr!(allow_struct)
-    ));
+    named!(and_assign_op -> (BinOp, Expr), tuple!(assign_op, expr));
 
     named!(and_field -> Ident, preceded!(punct!("."), ident));
 
@@ -810,10 +723,7 @@ pub mod parsing {
 
     named!(and_index -> Expr, delimited!(punct!("["), expr, punct!("]")));
 
-    named_ambiguous_expr!(and_range -> (RangeLimits, Option<Expr>), allow_struct, tuple!(
-        range_limits,
-        option!(call!(ambiguous_expr, allow_struct, false))
-    ));
+    named!(and_range -> (RangeLimits, Option<Expr>), tuple!(range_limits, option!(expr)));
 
     named!(pub block -> Block, do_parse!(
         punct!("{") >>
@@ -824,7 +734,13 @@ pub mod parsing {
         })
     ));
 
-    named!(pub within_block -> Vec<Stmt>, do_parse!(
+    named!(block_check_mode -> BlockCheckMode, alt!(
+        keyword!("unsafe") => { |_| BlockCheckMode::Unsafe }
+        |
+        epsilon!() => { |_| BlockCheckMode::Default }
+    ));
+
+    named!(within_block -> Vec<Stmt>, do_parse!(
         many0!(punct!(";")) >>
         mut standalone: many0!(terminated!(standalone_stmt, many0!(punct!(";")))) >>
         last: option!(expr) >>
@@ -849,29 +765,21 @@ pub mod parsing {
 
     named!(stmt_mac -> Stmt, do_parse!(
         attrs: many0!(outer_attr) >>
-        what: path >>
-        punct!("!") >>
-    // Only parse braces here; paren and bracket will get parsed as
-    // expression statements
-        punct!("{") >>
-        tts: token_trees >>
-        punct!("}") >>
+        mac: mac >>
         semi: option!(punct!(";")) >>
-        (Stmt::Mac(Box::new((
-            Mac {
-                path: what,
-                tts: vec![TokenTree::Delimited(Delimited {
-                    delim: DelimToken::Brace,
-                    tts: tts,
-                })],
-            },
-            if semi.is_some() {
+        ({
+            let style = if semi.is_some() {
                 MacStmtStyle::Semicolon
+            } else if let Some(&TokenTree::Delimited(Delimited { delim, .. })) = mac.tts.last() {
+                match delim {
+                    DelimToken::Paren | DelimToken::Bracket => MacStmtStyle::NoBraces,
+                    DelimToken::Brace => MacStmtStyle::Braces,
+                }
             } else {
-                MacStmtStyle::Braces
-            },
-            attrs,
-        ))))
+                MacStmtStyle::NoBraces
+            };
+            Stmt::Mac(Box::new((mac, style, attrs)))
+        })
     ));
 
     named!(stmt_local -> Stmt, do_parse!(
@@ -892,33 +800,29 @@ pub mod parsing {
     named!(stmt_item -> Stmt, map!(item, |i| Stmt::Item(Box::new(i))));
 
     fn requires_semi(e: &Expr) -> bool {
-        match e.node {
-            ExprKind::If(_, _, _) |
-            ExprKind::IfLet(_, _, _, _) |
-            ExprKind::While(_, _, _) |
-            ExprKind::WhileLet(_, _, _, _) |
-            ExprKind::ForLoop(_, _, _, _) |
-            ExprKind::Loop(_, _) |
-            ExprKind::Match(_, _) |
-            ExprKind::Block(_, _) => false,
+        match *e {
+            Expr::If(_, _, _) |
+            Expr::IfLet(_, _, _, _) |
+            Expr::While(_, _, _) |
+            Expr::WhileLet(_, _, _, _) |
+            Expr::ForLoop(_, _, _, _) |
+            Expr::Loop(_, _) |
+            Expr::Match(_, _) |
+            Expr::Block(_, _) => false,
 
             _ => true,
         }
     }
 
     named!(stmt_expr -> Stmt, do_parse!(
-        attrs: many0!(outer_attr) >>
-        mut e: expr >>
+        e: expr >>
         semi: option!(punct!(";")) >>
-        ({
-            e.attrs = attrs;
-            if semi.is_some() {
-                Stmt::Semi(Box::new(e))
-            } else if requires_semi(&e) {
-                return Error;
-            } else {
-                Stmt::Expr(Box::new(e))
-            }
+        (if semi.is_some() {
+            Stmt::Semi(Box::new(e))
+        } else if requires_semi(&e) {
+            return Error;
+        } else {
+            Stmt::Expr(Box::new(e))
         })
     ));
 
@@ -935,8 +839,6 @@ pub mod parsing {
         |
         pat_mac // must be before pat_ident
         |
-        pat_lit // must be before pat_ident
-        |
         pat_ident // must be before pat_path
         |
         pat_path
@@ -945,7 +847,8 @@ pub mod parsing {
         |
         pat_ref
         |
-        pat_slice
+        pat_lit
+    // TODO: Vec
     ));
 
     named!(pat_mac -> Pat, map!(mac, Pat::Mac));
@@ -961,11 +864,7 @@ pub mod parsing {
     named!(pat_ident -> Pat, do_parse!(
         mode: option!(keyword!("ref")) >>
         mutability: mutability >>
-        name: alt!(
-            ident
-            |
-            keyword!("self") => { Into::into }
-        ) >>
+        name: ident >>
         not!(peek!(punct!("<"))) >>
         not!(peek!(punct!("::"))) >>
         subpat: option!(preceded!(punct!("@"), pat)) >>
@@ -1001,7 +900,7 @@ pub mod parsing {
 
     named!(field_pat -> FieldPat, alt!(
         do_parse!(
-            ident: wordlike >>
+            ident: ident >>
             punct!(":") >>
             pat: pat >>
             (FieldPat {
@@ -1012,28 +911,21 @@ pub mod parsing {
         )
         |
         do_parse!(
-            boxed: option!(keyword!("box")) >>
             mode: option!(keyword!("ref")) >>
             mutability: mutability >>
             ident: ident >>
-            ({
-                let mut pat = Pat::Ident(
+            (FieldPat {
+                ident: ident.clone(),
+                pat: Box::new(Pat::Ident(
                     if mode.is_some() {
                         BindingMode::ByRef(mutability)
                     } else {
                         BindingMode::ByValue(mutability)
                     },
-                    ident.clone(),
+                    ident,
                     None,
-                );
-                if boxed.is_some() {
-                    pat = Pat::Box(Box::new(pat));
-                }
-                FieldPat {
-                    ident: ident,
-                    pat: Box::new(pat),
-                    is_shorthand: true,
-                }
+                )),
+                is_shorthand: true,
             })
         )
     ));
@@ -1074,61 +966,13 @@ pub mod parsing {
         (Pat::Ref(Box::new(pat), mutability))
     ));
 
-    named!(pat_lit -> Pat, do_parse!(
-        lit: pat_lit_expr >>
-        (if let ExprKind::Path(_, _) = lit.node {
-            return IResult::Error; // these need to be parsed by pat_path
-        } else {
-            Pat::Lit(Box::new(lit))
-        })
-    ));
+    named!(pat_lit -> Pat, map!(lit, |lit| Pat::Lit(Box::new(lit))));
 
     named!(pat_range -> Pat, do_parse!(
-        lo: pat_lit_expr >>
+        lo: lit >>
         punct!("...") >>
-        hi: pat_lit_expr >>
+        hi: lit >>
         (Pat::Range(Box::new(lo), Box::new(hi)))
-    ));
-
-    named!(pat_lit_expr -> Expr, do_parse!(
-        neg: option!(punct!("-")) >>
-        v: alt!(
-            lit => { ExprKind::Lit }
-            |
-            path => { |p| ExprKind::Path(None, p) }
-        ) >>
-        (if neg.is_some() {
-            ExprKind::Unary(UnOp::Neg, Box::new(v.into())).into()
-        } else {
-            v.into()
-        })
-    ));
-
-    named!(pat_slice -> Pat, do_parse!(
-        punct!("[") >>
-        mut before: separated_list!(punct!(","), pat) >>
-        after: option!(do_parse!(
-            comma_before_dots: option!(cond_reduce!(!before.is_empty(), punct!(","))) >>
-            punct!("..") >>
-            after: many0!(preceded!(punct!(","), pat)) >>
-            cond!(!after.is_empty(), option!(punct!(","))) >>
-            (comma_before_dots.is_some(), after)
-        )) >>
-        cond!(after.is_none(), option!(punct!(","))) >>
-        punct!("]") >>
-        (match after {
-            None => Pat::Slice(before, None, Vec::new()),
-            Some((true, after)) => {
-                if before.is_empty() {
-                    return IResult::Error;
-                }
-                Pat::Slice(before, Some(Box::new(Pat::Wild)), after)
-            }
-            Some((false, after)) => {
-                let rest = before.pop().unwrap_or(Pat::Wild);
-                Pat::Slice(before, Some(Box::new(rest)), after)
-            }
-        })
     ));
 
     named!(capture_by -> CaptureBy, alt!(
@@ -1143,39 +987,33 @@ pub mod parsing {
 #[cfg(feature = "printing")]
 mod printing {
     use super::*;
-    use {FnArg, FunctionRetTy, Mutability, Ty, Unsafety};
+    use {FnArg, FunctionRetTy, Mutability, Ty};
     use attr::FilterAttrs;
     use quote::{Tokens, ToTokens};
 
     impl ToTokens for Expr {
         fn to_tokens(&self, tokens: &mut Tokens) {
-            tokens.append_all(self.attrs.outer());
-            match self.node {
-                ExprKind::Box(ref inner) => {
+            match *self {
+                Expr::Box(ref inner) => {
                     tokens.append("box");
                     inner.to_tokens(tokens);
                 }
-                ExprKind::InPlace(ref place, ref value) => {
-                    tokens.append("in");
-                    place.to_tokens(tokens);
-                    value.to_tokens(tokens);
-                }
-                ExprKind::Vec(ref tys) => {
+                Expr::Vec(ref tys) => {
                     tokens.append("[");
                     tokens.append_separated(tys, ",");
                     tokens.append("]");
                 }
-                ExprKind::Call(ref func, ref args) => {
+                Expr::Call(ref func, ref args) => {
                     func.to_tokens(tokens);
                     tokens.append("(");
                     tokens.append_separated(args, ",");
                     tokens.append(")");
                 }
-                ExprKind::MethodCall(ref ident, ref ascript, ref args) => {
+                Expr::MethodCall(ref ident, ref ascript, ref args) => {
                     args[0].to_tokens(tokens);
                     tokens.append(".");
                     ident.to_tokens(tokens);
-                    if !ascript.is_empty() {
+                    if ascript.len() > 0 {
                         tokens.append("::");
                         tokens.append("<");
                         tokens.append_separated(ascript, ",");
@@ -1185,7 +1023,7 @@ mod printing {
                     tokens.append_separated(&args[1..], ",");
                     tokens.append(")");
                 }
-                ExprKind::Tup(ref fields) => {
+                Expr::Tup(ref fields) => {
                     tokens.append("(");
                     tokens.append_separated(fields, ",");
                     if fields.len() == 1 {
@@ -1193,27 +1031,27 @@ mod printing {
                     }
                     tokens.append(")");
                 }
-                ExprKind::Binary(op, ref left, ref right) => {
+                Expr::Binary(op, ref left, ref right) => {
                     left.to_tokens(tokens);
                     op.to_tokens(tokens);
                     right.to_tokens(tokens);
                 }
-                ExprKind::Unary(op, ref expr) => {
+                Expr::Unary(op, ref expr) => {
                     op.to_tokens(tokens);
                     expr.to_tokens(tokens);
                 }
-                ExprKind::Lit(ref lit) => lit.to_tokens(tokens),
-                ExprKind::Cast(ref expr, ref ty) => {
+                Expr::Lit(ref lit) => lit.to_tokens(tokens),
+                Expr::Cast(ref expr, ref ty) => {
                     expr.to_tokens(tokens);
                     tokens.append("as");
                     ty.to_tokens(tokens);
                 }
-                ExprKind::Type(ref expr, ref ty) => {
+                Expr::Type(ref expr, ref ty) => {
                     expr.to_tokens(tokens);
                     tokens.append(":");
                     ty.to_tokens(tokens);
                 }
-                ExprKind::If(ref cond, ref then_block, ref else_block) => {
+                Expr::If(ref cond, ref then_block, ref else_block) => {
                     tokens.append("if");
                     cond.to_tokens(tokens);
                     then_block.to_tokens(tokens);
@@ -1222,7 +1060,7 @@ mod printing {
                         else_block.to_tokens(tokens);
                     }
                 }
-                ExprKind::IfLet(ref pat, ref expr, ref then_block, ref else_block) => {
+                Expr::IfLet(ref pat, ref expr, ref then_block, ref else_block) => {
                     tokens.append("if");
                     tokens.append("let");
                     pat.to_tokens(tokens);
@@ -1234,7 +1072,7 @@ mod printing {
                         else_block.to_tokens(tokens);
                     }
                 }
-                ExprKind::While(ref cond, ref body, ref label) => {
+                Expr::While(ref cond, ref body, ref label) => {
                     if let Some(ref label) = *label {
                         label.to_tokens(tokens);
                         tokens.append(":");
@@ -1243,7 +1081,7 @@ mod printing {
                     cond.to_tokens(tokens);
                     body.to_tokens(tokens);
                 }
-                ExprKind::WhileLet(ref pat, ref expr, ref body, ref label) => {
+                Expr::WhileLet(ref pat, ref expr, ref body, ref label) => {
                     if let Some(ref label) = *label {
                         label.to_tokens(tokens);
                         tokens.append(":");
@@ -1255,7 +1093,7 @@ mod printing {
                     expr.to_tokens(tokens);
                     body.to_tokens(tokens);
                 }
-                ExprKind::ForLoop(ref pat, ref expr, ref body, ref label) => {
+                Expr::ForLoop(ref pat, ref expr, ref body, ref label) => {
                     if let Some(ref label) = *label {
                         label.to_tokens(tokens);
                         tokens.append(":");
@@ -1266,7 +1104,7 @@ mod printing {
                     expr.to_tokens(tokens);
                     body.to_tokens(tokens);
                 }
-                ExprKind::Loop(ref body, ref label) => {
+                Expr::Loop(ref body, ref label) => {
                     if let Some(ref label) = *label {
                         label.to_tokens(tokens);
                         tokens.append(":");
@@ -1274,14 +1112,14 @@ mod printing {
                     tokens.append("loop");
                     body.to_tokens(tokens);
                 }
-                ExprKind::Match(ref expr, ref arms) => {
+                Expr::Match(ref expr, ref arms) => {
                     tokens.append("match");
                     expr.to_tokens(tokens);
                     tokens.append("{");
                     tokens.append_all(arms);
                     tokens.append("}");
                 }
-                ExprKind::Closure(capture, ref decl, ref expr) => {
+                Expr::Closure(capture, ref decl, ref body) => {
                     capture.to_tokens(tokens);
                     tokens.append("|");
                     for (i, input) in decl.inputs.iter().enumerate() {
@@ -1297,45 +1135,55 @@ mod printing {
                     }
                     tokens.append("|");
                     match decl.output {
-                        FunctionRetTy::Default => {  }
+                        FunctionRetTy::Default => {
+                            if body.stmts.len() == 1 {
+                                if let Stmt::Expr(ref expr) = body.stmts[0] {
+                                    expr.to_tokens(tokens);
+                                } else {
+                                    body.to_tokens(tokens);
+                                }
+                            } else {
+                                body.to_tokens(tokens);
+                            }
+                        }
                         FunctionRetTy::Ty(ref ty) => {
                             tokens.append("->");
                             ty.to_tokens(tokens);
+                            body.to_tokens(tokens);
                         }
                     }
-                    expr.to_tokens(tokens);
                 }
-                ExprKind::Block(rules, ref block) => {
+                Expr::Block(rules, ref block) => {
                     rules.to_tokens(tokens);
                     block.to_tokens(tokens);
                 }
-                ExprKind::Assign(ref var, ref expr) => {
+                Expr::Assign(ref var, ref expr) => {
                     var.to_tokens(tokens);
                     tokens.append("=");
                     expr.to_tokens(tokens);
                 }
-                ExprKind::AssignOp(op, ref var, ref expr) => {
+                Expr::AssignOp(op, ref var, ref expr) => {
                     var.to_tokens(tokens);
                     tokens.append(op.assign_op().unwrap());
                     expr.to_tokens(tokens);
                 }
-                ExprKind::Field(ref expr, ref field) => {
+                Expr::Field(ref expr, ref field) => {
                     expr.to_tokens(tokens);
                     tokens.append(".");
                     field.to_tokens(tokens);
                 }
-                ExprKind::TupField(ref expr, field) => {
+                Expr::TupField(ref expr, field) => {
                     expr.to_tokens(tokens);
                     tokens.append(".");
                     tokens.append(&field.to_string());
                 }
-                ExprKind::Index(ref expr, ref index) => {
+                Expr::Index(ref expr, ref index) => {
                     expr.to_tokens(tokens);
                     tokens.append("[");
                     index.to_tokens(tokens);
                     tokens.append("]");
                 }
-                ExprKind::Range(ref from, ref to, limits) => {
+                Expr::Range(ref from, ref to, limits) => {
                     from.to_tokens(tokens);
                     match limits {
                         RangeLimits::HalfOpen => tokens.append(".."),
@@ -1343,8 +1191,8 @@ mod printing {
                     }
                     to.to_tokens(tokens);
                 }
-                ExprKind::Path(None, ref path) => path.to_tokens(tokens),
-                ExprKind::Path(Some(ref qself), ref path) => {
+                Expr::Path(None, ref path) => path.to_tokens(tokens),
+                Expr::Path(Some(ref qself), ref path) => {
                     tokens.append("<");
                     qself.ty.to_tokens(tokens);
                     if qself.position > 0 {
@@ -1365,26 +1213,25 @@ mod printing {
                         segment.to_tokens(tokens);
                     }
                 }
-                ExprKind::AddrOf(mutability, ref expr) => {
+                Expr::AddrOf(mutability, ref expr) => {
                     tokens.append("&");
                     mutability.to_tokens(tokens);
                     expr.to_tokens(tokens);
                 }
-                ExprKind::Break(ref opt_label, ref opt_val) => {
+                Expr::Break(ref opt_label) => {
                     tokens.append("break");
                     opt_label.to_tokens(tokens);
-                    opt_val.to_tokens(tokens);
                 }
-                ExprKind::Continue(ref opt_label) => {
+                Expr::Continue(ref opt_label) => {
                     tokens.append("continue");
                     opt_label.to_tokens(tokens);
                 }
-                ExprKind::Ret(ref opt_expr) => {
+                Expr::Ret(ref opt_expr) => {
                     tokens.append("return");
                     opt_expr.to_tokens(tokens);
                 }
-                ExprKind::Mac(ref mac) => mac.to_tokens(tokens),
-                ExprKind::Struct(ref path, ref fields, ref base) => {
+                Expr::Mac(ref mac) => mac.to_tokens(tokens),
+                Expr::Struct(ref path, ref fields, ref base) => {
                     path.to_tokens(tokens);
                     tokens.append("{");
                     tokens.append_separated(fields, ",");
@@ -1397,19 +1244,19 @@ mod printing {
                     }
                     tokens.append("}");
                 }
-                ExprKind::Repeat(ref expr, ref times) => {
+                Expr::Repeat(ref expr, ref times) => {
                     tokens.append("[");
                     expr.to_tokens(tokens);
                     tokens.append(";");
                     times.to_tokens(tokens);
                     tokens.append("]");
                 }
-                ExprKind::Paren(ref expr) => {
+                Expr::Paren(ref expr) => {
                     tokens.append("(");
                     expr.to_tokens(tokens);
                     tokens.append(")");
                 }
-                ExprKind::Try(ref expr) => {
+                Expr::Try(ref expr) => {
                     expr.to_tokens(tokens);
                     tokens.append("?");
                 }
@@ -1420,10 +1267,8 @@ mod printing {
     impl ToTokens for FieldValue {
         fn to_tokens(&self, tokens: &mut Tokens) {
             self.ident.to_tokens(tokens);
-            if !self.is_shorthand {
-                tokens.append(":");
-                self.expr.to_tokens(tokens);
-            }
+            tokens.append(":");
+            self.expr.to_tokens(tokens);
         }
     }
 
@@ -1439,8 +1284,8 @@ mod printing {
             }
             tokens.append("=>");
             self.body.to_tokens(tokens);
-            match self.body.node {
-                ExprKind::Block(Unsafety::Normal, _) => {
+            match *self.body {
+                Expr::Block(_, _) => {
                     
                 }
                 _ => tokens.append(","),
@@ -1527,12 +1372,7 @@ mod printing {
                                 tokens.append_separated(&pats[pos..], ",");
                             }
                         }
-                        None => {
-                            tokens.append_separated(pats, ",");
-                            if pats.len() == 1 {
-                                tokens.append(",");
-                            }
-                        }
+                        None => tokens.append_separated(pats, ","),
                     }
                     tokens.append(")");
                 }
@@ -1551,24 +1391,7 @@ mod printing {
                     tokens.append("...");
                     hi.to_tokens(tokens);
                 }
-                Pat::Slice(ref before, ref rest, ref after) => {
-                    tokens.append("[");
-                    tokens.append_separated(before, ",");
-                    if let Some(ref rest) = *rest {
-                        if !before.is_empty() {
-                            tokens.append(",");
-                        }
-                        if **rest != Pat::Wild {
-                            rest.to_tokens(tokens);
-                        }
-                        tokens.append("..");
-                        if !after.is_empty() {
-                            tokens.append(",");
-                        }
-                        tokens.append_separated(after, ",");
-                    }
-                    tokens.append("]");
-                }
+                Pat::Slice(ref _before, ref _dots, ref _after) => unimplemented!(),
                 Pat::Mac(ref mac) => mac.to_tokens(tokens),
             }
         }
@@ -1616,8 +1439,21 @@ mod printing {
     impl ToTokens for Block {
         fn to_tokens(&self, tokens: &mut Tokens) {
             tokens.append("{");
-            tokens.append_all(&self.stmts);
+            for stmt in &self.stmts {
+                stmt.to_tokens(tokens);
+            }
             tokens.append("}");
+        }
+    }
+
+    impl ToTokens for BlockCheckMode {
+        fn to_tokens(&self, tokens: &mut Tokens) {
+            match *self {
+                BlockCheckMode::Default => {
+                    
+                }
+                BlockCheckMode::Unsafe => tokens.append("unsafe"),
+            }
         }
     }
 
@@ -1633,7 +1469,9 @@ mod printing {
                 }
                 Stmt::Mac(ref mac) => {
                     let (ref mac, style, ref attrs) = **mac;
-                    tokens.append_all(attrs.outer());
+                    for attr in attrs.outer() {
+                        attr.to_tokens(tokens);
+                    }
                     mac.to_tokens(tokens);
                     match style {
                         MacStmtStyle::Semicolon => tokens.append(";"),
@@ -1648,7 +1486,6 @@ mod printing {
 
     impl ToTokens for Local {
         fn to_tokens(&self, tokens: &mut Tokens) {
-            tokens.append_all(self.attrs.outer());
             tokens.append("let");
             self.pat.to_tokens(tokens);
             if let Some(ref ty) = self.ty {

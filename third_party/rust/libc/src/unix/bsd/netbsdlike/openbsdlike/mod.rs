@@ -1,5 +1,7 @@
+pub type c_long = i64;
+pub type c_ulong = u64;
 pub type clock_t = i64;
-pub type suseconds_t = ::c_long;
+pub type suseconds_t = i64;
 pub type dev_t = i32;
 pub type sigset_t = ::c_uint;
 pub type blksize_t = ::int32_t;
@@ -108,9 +110,6 @@ s! {
         pub si_code: ::c_int,
         pub si_errno: ::c_int,
         pub si_addr: *mut ::c_char,
-        #[cfg(target_pointer_width = "32")]
-        __pad: [u8; 112],
-        #[cfg(target_pointer_width = "64")]
         __pad: [u8; 108],
     }
 
@@ -434,8 +433,6 @@ extern {
                   newlen: ::size_t)
                   -> ::c_int;
     pub fn getentropy(buf: *mut ::c_void, buflen: ::size_t) -> ::c_int;
-    pub fn pledge(promises: *const ::c_char,
-                  paths: *mut *const ::c_char) -> ::c_int;
 }
 
 cfg_if! {
@@ -449,6 +446,3 @@ cfg_if! {
         // Unknown target_os
     }
 }
-
-mod other;
-pub use self::other::*;

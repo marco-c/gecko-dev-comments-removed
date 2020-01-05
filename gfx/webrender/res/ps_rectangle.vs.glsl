@@ -4,26 +4,20 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 void main(void) {
-    Primitive prim = load_primitive();
+    Primitive prim = load_primitive(gl_InstanceID);
     Rectangle rect = fetch_rectangle(prim.prim_index);
     vColor = rect.color;
 #ifdef WR_FEATURE_TRANSFORM
     TransformVertexInfo vi = write_transform_vertex(prim.local_rect,
                                                     prim.local_clip_rect,
-                                                    prim.z,
                                                     prim.layer,
                                                     prim.tile);
     vLocalRect = vi.clipped_local_rect;
     vLocalPos = vi.local_pos;
 #else
-    VertexInfo vi = write_vertex(prim.local_rect,
-                                 prim.local_clip_rect,
-                                 prim.z,
-                                 prim.layer,
-                                 prim.tile);
-#endif
-
-#ifdef WR_FEATURE_CLIP
-    write_clip(vi.global_clamped_pos, prim.clip_area);
+    write_vertex(prim.local_rect,
+                 prim.local_clip_rect,
+                 prim.layer,
+                 prim.tile);
 #endif
 }

@@ -127,53 +127,48 @@ impl NativeGLContextMethods for NativeGLContext {
             
             let (tx, rx) = mpsc::channel();
             dispatcher.dispatch(Box::new(move || {
-                let result = unsafe {
+                unsafe {
                     if wgl::MakeCurrent(ptr::null_mut(), ptr::null_mut()) == 0 {
-                        Err(())
-                    } else {
-                        Ok(())
+                        error!("WGL MakeCurrent failed");
                     }
-                };
-                tx.send(result).unwrap();
-            }));
-            
-            if rx.recv().unwrap().is_err() {
-                return Err("Error creating WGL context: WGL::MakeCurrent failed in shared context")
-            }
-        }
-
-        let result = match unsafe { utils::create_offscreen(render_ctx, &WGLAttributes::default()) } {
-            Ok(ref res) => {
-                let ctx = NativeGLContext {
-                    render_ctx: res.0,
-                    device_ctx: res.1,
-                    weak: false,
-                };
-                Ok(ctx)
-            }
-            Err(s) => {
-                error!("WGL: {}", s);
-                Err("Error creating WGL context")
-            }
-        };
-
-        
-        if let Some(ref dispatcher) = dispatcher {
-            let (tx, rx) = mpsc::channel();
-            let handle = NativeGLContextHandle(render_ctx, device_ctx);
-            dispatcher.dispatch(Box::new(move || {
-                unsafe { 
-                    if wgl::MakeCurrent(handle.1 as *const _, handle.0 as *const _) == 0 {
-                        error!("Error restoring WGL shared context: WGL MakeCurrent failed");
-                    } 
-                };
+                }
                 tx.send(()).unwrap();
             }));
             
             rx.recv().unwrap();
         }
 
-        result
+        match unsafe { utils::create_offscreen(render_ctx, &WGLAttributes::default()) } {
+            Ok(ref res) => {
+                let ctx = NativeGLContext {
+                    render_ctx: res.0,
+                    device_ctx: res.1,
+                    weak: false,
+                };
+
+                
+                if let Some(ref dispatcher) = dispatcher {
+                    let (tx, rx) = mpsc::channel();
+                    let handle = NativeGLContextHandle(render_ctx, device_ctx);
+                    dispatcher.dispatch(Box::new(move || {
+                        unsafe { 
+                            if wgl::MakeCurrent(handle.1 as *const _, handle.0 as *const _) == 0 {
+                                error!("WGL MakeCurrent failed!");
+                            } 
+                        };
+                        tx.send(()).unwrap();
+                    }));
+                    
+                    rx.recv().unwrap();
+                }
+
+                Ok(ctx)
+            }
+            Err(s) => {
+                error!("WGL: {}", s);
+                Err("Error creating WGL context")
+            }
+        }
     }
 
     fn is_current(&self) -> bool {

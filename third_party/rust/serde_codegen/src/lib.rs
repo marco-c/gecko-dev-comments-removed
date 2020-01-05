@@ -2,6 +2,7 @@
 #![cfg_attr(feature = "clippy", feature(plugin))]
 #![cfg_attr(feature = "clippy", allow(too_many_arguments))]
 #![cfg_attr(feature = "clippy", allow(used_underscore_binding))]
+#![cfg_attr(not(feature = "with-syntex"), feature(rustc_private, plugin))]
 
 
 #![recursion_limit = "192"]
@@ -15,12 +16,25 @@ extern crate syntex;
 #[macro_use]
 extern crate syntex_syntax as syntax;
 
+#[cfg(not(feature = "with-syntex"))]
+#[macro_use]
+extern crate syntax;
+
+#[cfg(not(feature = "with-syntex"))]
+extern crate rustc_plugin;
+
 extern crate syn;
 #[macro_use]
 extern crate quote;
 
+#[cfg(feature = "with-syn")]
+extern crate post_expansion;
+
 #[cfg(feature = "with-syntex")]
 use std::path::Path;
+
+#[cfg(not(feature = "with-syntex"))]
+use syntax::feature_gate::AttributeType;
 
 mod bound;
 mod de;
@@ -38,11 +52,11 @@ fn syntex_registry() -> syntex::Registry {
 
         impl fold::Folder for StripAttributeFolder {
             fn fold_attribute(&mut self, attr: ast::Attribute) -> Option<ast::Attribute> {
-                if attr.value.name == "serde" {
-                    if let ast::MetaItemKind::List(..) = attr.value.node {
-                        return None;
-                    }
+                match attr.node.value.node {
+                    ast::MetaItemKind::List(ref n, _) if n == &"serde" => { return None; }
+                    _ => {}
                 }
+
                 Some(attr)
             }
 
@@ -59,8 +73,8 @@ fn syntex_registry() -> syntex::Registry {
     reg.add_attr("feature(custom_derive)");
     reg.add_attr("feature(custom_attribute)");
 
-    reg.add_decorator("derive_Serialize", shim::expand_derive_serialize);
-    reg.add_decorator("derive_Deserialize", shim::expand_derive_deserialize);
+    reg.add_decorator("derive_Serialize", expand_derive_serialize);
+    reg.add_decorator("derive_Deserialize", expand_derive_deserialize);
 
     reg.add_post_expansion_pass(strip_attributes);
 
@@ -93,9 +107,24 @@ pub fn expand<S, D>(src: S, dst: D) -> Result<(), syntex::Error>
     syntex::with_extra_stack(expand_thread)
 }
 
+#[cfg(not(feature = "with-syntex"))]
+pub fn register(reg: &mut rustc_plugin::Registry) {
+    reg.register_syntax_extension(
+        syntax::parse::token::intern("derive_Serialize"),
+        syntax::ext::base::MultiDecorator(
+            Box::new(expand_derive_serialize)));
+
+    reg.register_syntax_extension(
+        syntax::parse::token::intern("derive_Deserialize"),
+        syntax::ext::base::MultiDecorator(
+            Box::new(expand_derive_deserialize)));
+
+    reg.register_attribute("serde".to_owned(), AttributeType::Normal);
+}
+
 macro_rules! shim {
     ($name:ident $pkg:ident :: $func:ident) => {
-        pub fn $func(
+        fn $func(
             cx: &mut ::syntax::ext::base::ExtCtxt,
             span: ::syntax::codemap::Span,
             meta_item: &::syntax::ast::MetaItem,
@@ -116,12 +145,13 @@ macro_rules! shim {
 
             use syntax::{attr, ast, visit};
             struct MarkSerdeAttributesUsed;
-            impl<'a> visit::Visitor<'a> for MarkSerdeAttributesUsed {
+            impl visit::Visitor for MarkSerdeAttributesUsed {
                 fn visit_attribute(&mut self, attr: &ast::Attribute) {
-                    if attr.value.name == "serde" {
-                        if let ast::MetaItemKind::List(..) = attr.value.node {
+                    match attr.node.value.node {
+                        ast::MetaItemKind::List(ref name, _) if name == "serde" => {
                             attr::mark_used(attr);
                         }
+                        _ => {}
                     }
                 }
             }
@@ -130,7 +160,6 @@ macro_rules! shim {
             use syntax::print::pprust;
             let s = pprust::item_to_string(item);
 
-            use {syn, $pkg};
             let syn_item = syn::parse_macro_input(&s).unwrap();
             let expanded = match $pkg::$func(&syn_item) {
                 Ok(expanded) => expanded.to_string(),
@@ -149,24 +178,70 @@ macro_rules! shim {
     };
 }
 
-#[cfg(feature = "with-syntex")]
-mod shim {
-    shim!(Serialize ser::expand_derive_serialize);
-    shim!(Deserialize de::expand_derive_deserialize);
-}
+shim!(Serialize ser::expand_derive_serialize);
+shim!(Deserialize de::expand_derive_deserialize);
 
 #[cfg(feature = "with-syn")]
-#[doc(hidden)]
-
-pub fn expand_derive_serialize(item: &str) -> Result<quote::Tokens, String> {
+pub fn expand_single_item(item: &str) -> Result<String, String> {
     let syn_item = syn::parse_macro_input(item).unwrap();
-    ser::expand_derive_serialize(&syn_item)
-}
+    let (ser, de, syn_item) = strip_serde_derives(syn_item);
+    let expanded_ser = if ser {
+        Some(try!(ser::expand_derive_serialize(&syn_item)))
+    } else {
+        None
+    };
+    let expanded_de = if de {
+        Some(try!(de::expand_derive_deserialize(&syn_item)))
+    } else {
+        None
+    };
+    let syn_item = post_expansion::strip_attrs_later(syn_item, &["serde"], "serde");
+    return Ok(quote!(#expanded_ser #expanded_de #syn_item).to_string());
 
-#[cfg(feature = "with-syn")]
-#[doc(hidden)]
-
-pub fn expand_derive_deserialize(item: &str) -> Result<quote::Tokens, String> {
-    let syn_item = syn::parse_macro_input(item).unwrap();
-    de::expand_derive_deserialize(&syn_item)
+    fn strip_serde_derives(item: syn::MacroInput) -> (bool, bool, syn::MacroInput) {
+        let mut ser = false;
+        let mut de = false;
+        let item = syn::MacroInput {
+            attrs: item.attrs.into_iter().flat_map(|attr| {
+                if attr.is_sugared_doc || attr.style != syn::AttrStyle::Outer {
+                    return Some(attr);
+                }
+                let (name, nested) = match attr.value {
+                    syn::MetaItem::List(name, nested) => (name, nested),
+                    _ => return Some(attr)
+                };
+                if name != "derive" {
+                    return Some(syn::Attribute {
+                        style: syn::AttrStyle::Outer,
+                        value: syn::MetaItem::List(name, nested),
+                        is_sugared_doc: false,
+                    });
+                }
+                let rest: Vec<_> = nested.into_iter().filter(|nested| {
+                    match *nested {
+                        syn::MetaItem::Word(ref word) if word == "Serialize" => {
+                            ser = true;
+                            false
+                        }
+                        syn::MetaItem::Word(ref word) if word == "Deserialize" => {
+                            de = true;
+                            false
+                        }
+                        _ => true,
+                    }
+                }).collect();
+                if rest.is_empty() {
+                    None
+                } else {
+                    Some(syn::Attribute {
+                        style: syn::AttrStyle::Outer,
+                        value: syn::MetaItem::List(name, rest),
+                        is_sugared_doc: false,
+                    })
+                }
+            }).collect(),
+            ..item
+        };
+        (ser, de, item)
+    }
 }

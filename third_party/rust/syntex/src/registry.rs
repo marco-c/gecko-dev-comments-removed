@@ -5,7 +5,7 @@ use std::rc::Rc;
 
 use syntex_syntax::ast;
 use syntex_syntax::attr;
-use syntex_syntax::codemap::DUMMY_SP;
+use syntex_syntax::codemap::{DUMMY_SP, respan};
 use syntex_syntax::ext::base::{
     ExtCtxt,
     IdentMacroExpander,
@@ -19,8 +19,9 @@ use syntex_syntax::ext::base::{
 use syntex_syntax::ext::expand;
 use syntex_syntax::feature_gate;
 use syntex_syntax::parse;
+use syntex_syntax::parse::token::intern;
 use syntex_syntax::print::pprust;
-use syntex_syntax::symbol::Symbol;
+use syntex_syntax::ptr::P;
 
 use super::resolver;
 use super::error::Error;
@@ -31,7 +32,7 @@ pub struct Registry {
     syntax_exts: Vec<NamedSyntaxExtension>,
     pre_expansion_passes: Vec<Box<Pass>>,
     post_expansion_passes: Vec<Box<Pass>>,
-    cfg: Vec<ast::MetaItem>,
+    cfg: Vec<P<ast::MetaItem>>,
     attrs: Vec<ast::Attribute>,
 }
 
@@ -63,19 +64,18 @@ impl Registry {
             attr.to_string(),
             &parse_sess).unwrap();
 
-        self.attrs.push(ast::Attribute {
+        self.attrs.push(respan(DUMMY_SP, ast::Attribute_ {
             id: attr::mk_attr_id(),
             style: ast::AttrStyle::Outer,
             value: meta_item,
             is_sugared_doc: false,
-            span: DUMMY_SP,
-        });
+        }));
     }
 
     pub fn add_macro<F>(&mut self, name: &str, extension: F)
         where F: TTMacroExpander + 'static
     {
-        let name = Symbol::intern(name);
+        let name = intern(name);
         let syntax_extension = SyntaxExtension::NormalTT(
             Box::new(extension),
             None,
@@ -87,7 +87,7 @@ impl Registry {
     pub fn add_ident_macro<F>(&mut self, name: &str, extension: F)
         where F: IdentMacroExpander + 'static
     {
-        let name = Symbol::intern(name);
+        let name = intern(name);
         let syntax_extension = SyntaxExtension::IdentTT(
             Box::new(extension),
             None,
@@ -99,7 +99,7 @@ impl Registry {
     pub fn add_decorator<F>(&mut self, name: &str, extension: F)
         where F: MultiItemDecorator + 'static
     {
-        let name = Symbol::intern(name);
+        let name = intern(name);
         let syntax_extension = SyntaxExtension::MultiDecorator(Box::new(extension));
         self.syntax_exts.push((name, syntax_extension));
     }
@@ -107,7 +107,7 @@ impl Registry {
     pub fn add_modifier<F>(&mut self, name: &str, extension: F)
         where F: MultiItemModifier + 'static
     {
-        let name = Symbol::intern(name);
+        let name = intern(name);
         let syntax_extension = SyntaxExtension::MultiModifier(Box::new(extension));
         self.syntax_exts.push((name, syntax_extension));
     }
@@ -190,7 +190,6 @@ impl Registry {
 
         let mut ecfg = expand::ExpansionConfig::default(crate_name.to_owned());
         ecfg.features = Some(&features);
-        ecfg.keep_macs = true;
 
         let mut resolver = resolver::Resolver::new(sess);
 

@@ -19,7 +19,7 @@ use attr;
 use codemap::{self, CodeMap};
 use syntax_pos::{self, BytePos};
 use errors;
-use parse::token::{self, BinOpToken, Token};
+use parse::token::{self, keywords, BinOpToken, Token, InternedString};
 use parse::lexer::comments;
 use parse;
 use print::pp::{self, break_offset, word, space, zerobreak, hardbreak};
@@ -27,7 +27,6 @@ use print::pp::{Breaks, eof};
 use print::pp::Breaks::{Consistent, Inconsistent};
 use ptr::P;
 use std_inject;
-use symbol::{Symbol, keywords};
 use tokenstream::{self, TokenTree};
 
 use std::ascii;
@@ -120,13 +119,14 @@ pub fn print_crate<'a>(cm: &'a CodeMap,
         
 
         
-        let prelude_import_meta = attr::mk_list_word_item(Symbol::intern("prelude_import"));
-        let list = attr::mk_list_item(Symbol::intern("feature"), vec![prelude_import_meta]);
+        let prelude_import_meta = attr::mk_list_word_item(InternedString::new("prelude_import"));
+        let list = attr::mk_list_item(InternedString::new("feature"),
+                                      vec![prelude_import_meta]);
         let fake_attr = attr::mk_attr_inner(attr::mk_attr_id(), list);
         try!(s.print_attribute(&fake_attr));
 
         
-        let no_std_meta = attr::mk_word_item(Symbol::intern("no_std"));
+        let no_std_meta = attr::mk_word_item(InternedString::new("no_std"));
         let fake_attr = attr::mk_attr_inner(attr::mk_attr_id(), no_std_meta);
         try!(s.print_attribute(&fake_attr));
     }
@@ -285,7 +285,7 @@ pub fn token_to_string(tok: &Token) -> String {
         token::Comment              => "/* */".to_string(),
         token::Shebang(s)           => format!("/* shebang: {}*/", s),
 
-        token::Interpolated(ref nt) => match **nt {
+        token::Interpolated(ref nt) => match *nt {
             token::NtExpr(ref e)        => expr_to_string(&e),
             token::NtMeta(ref e)        => meta_item_to_string(&e),
             token::NtTy(ref e)          => ty_to_string(&e),
@@ -371,7 +371,7 @@ pub fn fn_block_to_string(p: &ast::FnDecl) -> String {
 }
 
 pub fn path_to_string(p: &ast::Path) -> String {
-    to_string(|s| s.print_path(p, false, 0, false))
+    to_string(|s| s.print_path(p, false, 0))
 }
 
 pub fn ident_to_string(id: ast::Ident) -> String {
@@ -435,8 +435,7 @@ pub fn visibility_qualified(vis: &ast::Visibility, s: &str) -> String {
     match *vis {
         ast::Visibility::Public => format!("pub {}", s),
         ast::Visibility::Crate(_) => format!("pub(crate) {}", s),
-        ast::Visibility::Restricted { ref path, .. } =>
-            format!("pub({}) {}", to_string(|s| s.print_path(path, false, 0, true)), s),
+        ast::Visibility::Restricted { ref path, .. } => format!("pub({}) {}", path, s),
         ast::Visibility::Inherited => s.to_string()
     }
 }
@@ -631,7 +630,7 @@ pub trait PrintState<'a> {
             _ => ()
         }
         match lit.node {
-            ast::LitKind::Str(st, style) => self.print_string(&st.as_str(), style),
+            ast::LitKind::Str(ref st, style) => self.print_string(&st, style),
             ast::LitKind::Byte(byte) => {
                 let mut res = String::from("b'");
                 res.extend(ascii::escape_default(byte).map(|c| c as char));
@@ -647,7 +646,8 @@ pub trait PrintState<'a> {
             ast::LitKind::Int(i, t) => {
                 match t {
                     ast::LitIntType::Signed(st) => {
-                        word(self.writer(), &st.val_to_string(i as i64))
+                        word(self.writer(),
+                             &st.val_to_string(i as i64))
                     }
                     ast::LitIntType::Unsigned(ut) => {
                         word(self.writer(), &ut.val_to_string(i))
@@ -664,7 +664,7 @@ pub trait PrintState<'a> {
                          &f,
                          t.ty_to_string()))
             }
-            ast::LitKind::FloatUnsuffixed(ref f) => word(self.writer(), &f.as_str()),
+            ast::LitKind::FloatUnsuffixed(ref f) => word(self.writer(), &f[..]),
             ast::LitKind::Bool(val) => {
                 if val { word(self.writer(), "true") } else { word(self.writer(), "false") }
             }
@@ -727,7 +727,7 @@ pub trait PrintState<'a> {
                               trailing_hardbreak: bool) -> io::Result<()> {
         let mut count = 0;
         for attr in attrs {
-            if attr.style == kind {
+            if attr.node.style == kind {
                 try!(self.print_attribute_inline(attr, is_inline));
                 if is_inline {
                     try!(self.nbsp());
@@ -751,11 +751,11 @@ pub trait PrintState<'a> {
             try!(self.hardbreak_if_not_bol());
         }
         try!(self.maybe_print_comment(attr.span.lo));
-        if attr.is_sugared_doc {
-            try!(word(self.writer(), &attr.value_str().unwrap().as_str()));
+        if attr.node.is_sugared_doc {
+            try!(word(self.writer(), &attr.value_str().unwrap()));
             hardbreak(self.writer())
         } else {
-            match attr.style {
+            match attr.node.style {
                 ast::AttrStyle::Inner => try!(word(self.writer(), "#![")),
                 ast::AttrStyle::Outer => try!(word(self.writer(), "#[")),
             }
@@ -778,16 +778,16 @@ pub trait PrintState<'a> {
     fn print_meta_item(&mut self, item: &ast::MetaItem) -> io::Result<()> {
         try!(self.ibox(INDENT_UNIT));
         match item.node {
-            ast::MetaItemKind::Word => {
-                try!(word(self.writer(), &item.name.as_str()));
+            ast::MetaItemKind::Word(ref name) => {
+                try!(word(self.writer(), &name));
             }
-            ast::MetaItemKind::NameValue(ref value) => {
-                try!(self.word_space(&item.name.as_str()));
+            ast::MetaItemKind::NameValue(ref name, ref value) => {
+                try!(self.word_space(&name[..]));
                 try!(self.word_space("="));
                 try!(self.print_literal(value));
             }
-            ast::MetaItemKind::List(ref items) => {
-                try!(word(self.writer(), &item.name.as_str()));
+            ast::MetaItemKind::List(ref name, ref items) => {
+                try!(word(self.writer(), &name));
                 try!(self.popen());
                 try!(self.commasep(Consistent,
                               &items[..],
@@ -1021,7 +1021,7 @@ impl<'a> State<'a> {
                                  &generics));
             }
             ast::TyKind::Path(None, ref path) => {
-                try!(self.print_path(path, false, 0, false));
+                try!(self.print_path(path, false, 0));
             }
             ast::TyKind::Path(Some(ref qself), ref path) => {
                 try!(self.print_qpath(path, qself, false))
@@ -1315,7 +1315,7 @@ impl<'a> State<'a> {
                 for b in bounds.iter() {
                     if let TraitTyParamBound(ref ptr, ast::TraitBoundModifier::Maybe) = *b {
                         try!(space(&mut self.s));
-                        try!(self.word_space("for )"));
+                        try!(self.word_space("for ?"));
                         try!(self.print_trait_ref(&ptr.trait_ref));
                     } else {
                         real_bounds.push(b.clone());
@@ -1332,7 +1332,7 @@ impl<'a> State<'a> {
             }
             ast::ItemKind::Mac(codemap::Spanned { ref node, .. }) => {
                 try!(self.print_visibility(&item.vis));
-                try!(self.print_path(&node.path, false, 0, false));
+                try!(self.print_path(&node.path, false, 0));
                 try!(word(&mut self.s, "! "));
                 try!(self.print_ident(item.ident));
                 try!(self.cbox(INDENT_UNIT));
@@ -1347,7 +1347,7 @@ impl<'a> State<'a> {
     }
 
     fn print_trait_ref(&mut self, t: &ast::TraitRef) -> io::Result<()> {
-        self.print_path(&t.path, false, 0, false)
+        self.print_path(&t.path, false, 0)
     }
 
     fn print_formal_lifetime_list(&mut self, lifetimes: &[ast::LifetimeDef]) -> io::Result<()> {
@@ -1405,10 +1405,8 @@ impl<'a> State<'a> {
         match *vis {
             ast::Visibility::Public => self.word_nbsp("pub"),
             ast::Visibility::Crate(_) => self.word_nbsp("pub(crate)"),
-            ast::Visibility::Restricted { ref path, .. } => {
-                let path = to_string(|s| s.print_path(path, false, 0, true));
-                self.word_nbsp(&format!("pub({})", path))
-            }
+            ast::Visibility::Restricted { ref path, .. } =>
+                self.word_nbsp(&format!("pub({})", path)),
             ast::Visibility::Inherited => Ok(())
         }
     }
@@ -1573,7 +1571,7 @@ impl<'a> State<'a> {
             }
             ast::TraitItemKind::Macro(codemap::Spanned { ref node, .. }) => {
                 
-                try!(self.print_path(&node.path, false, 0, false));
+                try!(self.print_path(&node.path, false, 0));
                 try!(word(&mut self.s, "! "));
                 try!(self.cbox(INDENT_UNIT));
                 try!(self.popen());
@@ -1609,7 +1607,7 @@ impl<'a> State<'a> {
             }
             ast::ImplItemKind::Macro(codemap::Spanned { ref node, .. }) => {
                 
-                try!(self.print_path(&node.path, false, 0, false));
+                try!(self.print_path(&node.path, false, 0));
                 try!(word(&mut self.s, "! "));
                 try!(self.cbox(INDENT_UNIT));
                 try!(self.popen());
@@ -1795,7 +1793,7 @@ impl<'a> State<'a> {
 
     pub fn print_mac(&mut self, m: &ast::Mac, delim: token::DelimToken)
                      -> io::Result<()> {
-        try!(self.print_path(&m.node.path, false, 0, false));
+        try!(self.print_path(&m.node.path, false, 0));
         try!(word(&mut self.s, "!"));
         match delim {
             token::Paren => try!(self.popen()),
@@ -1887,7 +1885,7 @@ impl<'a> State<'a> {
                          fields: &[ast::Field],
                          wth: &Option<P<ast::Expr>>,
                          attrs: &[Attribute]) -> io::Result<()> {
-        try!(self.print_path(path, true, 0, false));
+        try!(self.print_path(path, true, 0));
         try!(word(&mut self.s, "{"));
         try!(self.print_inner_attributes_inline(attrs));
         try!(self.commasep_cmnt(
@@ -2130,8 +2128,26 @@ impl<'a> State<'a> {
 
                 try!(self.print_fn_block_args(&decl));
                 try!(space(&mut self.s));
-                try!(self.print_expr(body));
-                try!(self.end()); 
+
+                let default_return = match decl.output {
+                    ast::FunctionRetTy::Default(..) => true,
+                    _ => false
+                };
+
+                match body.stmts.last().map(|stmt| &stmt.node) {
+                    Some(&ast::StmtKind::Expr(ref i_expr)) if default_return &&
+                                                              body.stmts.len() == 1 => {
+                        
+                        if let ast::ExprKind::Block(ref blk) = i_expr.node {
+                            try!(self.print_block_unclosed_with_attrs(&blk, &i_expr.attrs));
+                        } else {
+                            
+                            try!(self.print_expr(&i_expr));
+                            try!(self.end()); 
+                        }
+                    }
+                    _ => try!(self.print_block_unclosed(&body)),
+                }
 
                 
                 
@@ -2188,20 +2204,16 @@ impl<'a> State<'a> {
                 }
             }
             ast::ExprKind::Path(None, ref path) => {
-                try!(self.print_path(path, true, 0, false))
+                try!(self.print_path(path, true, 0))
             }
             ast::ExprKind::Path(Some(ref qself), ref path) => {
                 try!(self.print_qpath(path, qself, true))
             }
-            ast::ExprKind::Break(opt_ident, ref opt_expr) => {
+            ast::ExprKind::Break(opt_ident) => {
                 try!(word(&mut self.s, "break"));
                 try!(space(&mut self.s));
                 if let Some(ident) = opt_ident {
                     try!(self.print_ident(ident.node));
-                    try!(space(&mut self.s));
-                }
-                if let Some(ref expr) = *opt_expr {
-                    try!(self.print_expr(expr));
                     try!(space(&mut self.s));
                 }
             }
@@ -2226,18 +2238,19 @@ impl<'a> State<'a> {
             ast::ExprKind::InlineAsm(ref a) => {
                 try!(word(&mut self.s, "asm!"));
                 try!(self.popen());
-                try!(self.print_string(&a.asm.as_str(), a.asm_str_style));
+                try!(self.print_string(&a.asm, a.asm_str_style));
                 try!(self.word_space(":"));
 
-                try!(self.commasep(Inconsistent, &a.outputs, |s, out| {
-                    let constraint = out.constraint.as_str();
-                    let mut ch = constraint.chars();
+                try!(self.commasep(Inconsistent, &a.outputs,
+                                   |s, out| {
+                    let mut ch = out.constraint.chars();
                     match ch.next() {
                         Some('=') if out.is_rw => {
                             try!(s.print_string(&format!("+{}", ch.as_str()),
                                            ast::StrStyle::Cooked))
                         }
-                        _ => try!(s.print_string(&constraint, ast::StrStyle::Cooked))
+                        _ => try!(s.print_string(&out.constraint,
+                                            ast::StrStyle::Cooked))
                     }
                     try!(s.popen());
                     try!(s.print_expr(&out.expr));
@@ -2247,8 +2260,9 @@ impl<'a> State<'a> {
                 try!(space(&mut self.s));
                 try!(self.word_space(":"));
 
-                try!(self.commasep(Inconsistent, &a.inputs, |s, &(co, ref o)| {
-                    try!(s.print_string(&co.as_str(), ast::StrStyle::Cooked));
+                try!(self.commasep(Inconsistent, &a.inputs,
+                                   |s, &(ref co, ref o)| {
+                    try!(s.print_string(&co, ast::StrStyle::Cooked));
                     try!(s.popen());
                     try!(s.print_expr(&o));
                     try!(s.pclose());
@@ -2259,7 +2273,7 @@ impl<'a> State<'a> {
 
                 try!(self.commasep(Inconsistent, &a.clobbers,
                                    |s, co| {
-                    try!(s.print_string(&co.as_str(), ast::StrStyle::Cooked));
+                    try!(s.print_string(&co, ast::StrStyle::Cooked));
                     Ok(())
                 }));
 
@@ -2336,27 +2350,22 @@ impl<'a> State<'a> {
     fn print_path(&mut self,
                   path: &ast::Path,
                   colons_before_params: bool,
-                  depth: usize,
-                  defaults_to_global: bool)
+                  depth: usize)
                   -> io::Result<()>
     {
         try!(self.maybe_print_comment(path.span.lo));
 
-        let mut segments = path.segments[..path.segments.len()-depth].iter();
-        if defaults_to_global && path.is_global() {
-            segments.next();
-        }
-        for (i, segment) in segments.enumerate() {
-            if i > 0 {
+        let mut first = !path.global;
+        for segment in &path.segments[..path.segments.len()-depth] {
+            if first {
+                first = false
+            } else {
                 try!(word(&mut self.s, "::"))
             }
-            if segment.identifier.name != keywords::CrateRoot.name() &&
-               segment.identifier.name != "$crate" {
-                try!(self.print_ident(segment.identifier));
-                if let Some(ref parameters) = segment.parameters {
-                    try!(self.print_path_parameters(parameters, colons_before_params));
-                }
-            }
+
+            try!(self.print_ident(segment.identifier));
+
+            try!(self.print_path_parameters(&segment.parameters, colons_before_params));
         }
 
         Ok(())
@@ -2374,16 +2383,13 @@ impl<'a> State<'a> {
             try!(space(&mut self.s));
             try!(self.word_space("as"));
             let depth = path.segments.len() - qself.position;
-            try!(self.print_path(&path, false, depth, false));
+            try!(self.print_path(&path, false, depth));
         }
         try!(word(&mut self.s, ">"));
         try!(word(&mut self.s, "::"));
         let item_segment = path.segments.last().unwrap();
         try!(self.print_ident(item_segment.identifier));
-        match item_segment.parameters {
-            Some(ref parameters) => self.print_path_parameters(parameters, colons_before_params),
-            None => Ok(()),
-        }
+        self.print_path_parameters(&item_segment.parameters, colons_before_params)
     }
 
     fn print_path_parameters(&mut self,
@@ -2391,6 +2397,10 @@ impl<'a> State<'a> {
                              colons_before_params: bool)
                              -> io::Result<()>
     {
+        if parameters.is_empty() {
+            return Ok(());
+        }
+
         if colons_before_params {
             try!(word(&mut self.s, "::"))
         }
@@ -2477,7 +2487,7 @@ impl<'a> State<'a> {
                 }
             }
             PatKind::TupleStruct(ref path, ref elts, ddpos) => {
-                try!(self.print_path(path, true, 0, false));
+                try!(self.print_path(path, true, 0));
                 try!(self.popen());
                 if let Some(ddpos) = ddpos {
                     try!(self.commasep(Inconsistent, &elts[..ddpos], |s, p| s.print_pat(&p)));
@@ -2495,13 +2505,13 @@ impl<'a> State<'a> {
                 try!(self.pclose());
             }
             PatKind::Path(None, ref path) => {
-                try!(self.print_path(path, true, 0, false));
+                try!(self.print_path(path, true, 0));
             }
             PatKind::Path(Some(ref qself), ref path) => {
                 try!(self.print_qpath(path, qself, false));
             }
             PatKind::Struct(ref path, ref fields, etc) => {
-                try!(self.print_path(path, true, 0, false));
+                try!(self.print_path(path, true, 0));
                 try!(self.nbsp());
                 try!(self.word_space("{"));
                 try!(self.commasep_cmnt(
@@ -2848,7 +2858,7 @@ impl<'a> State<'a> {
                     try!(self.print_lifetime_bounds(lifetime, bounds));
                 }
                 ast::WherePredicate::EqPredicate(ast::WhereEqPredicate{ref path, ref ty, ..}) => {
-                    try!(self.print_path(path, false, 0, false));
+                    try!(self.print_path(path, false, 0));
                     try!(space(&mut self.s));
                     try!(self.word_space("="));
                     try!(self.print_type(&ty));
@@ -2862,7 +2872,7 @@ impl<'a> State<'a> {
     pub fn print_view_path(&mut self, vp: &ast::ViewPath) -> io::Result<()> {
         match vp.node {
             ast::ViewPathSimple(ident, ref path) => {
-                try!(self.print_path(path, false, 0, true));
+                try!(self.print_path(path, false, 0));
 
                 if path.segments.last().unwrap().identifier.name !=
                         ident.name {
@@ -2875,7 +2885,7 @@ impl<'a> State<'a> {
             }
 
             ast::ViewPathGlob(ref path) => {
-                try!(self.print_path(path, false, 0, true));
+                try!(self.print_path(path, false, 0));
                 word(&mut self.s, "::*")
             }
 
@@ -2883,7 +2893,7 @@ impl<'a> State<'a> {
                 if path.segments.is_empty() {
                     try!(word(&mut self.s, "{"));
                 } else {
-                    try!(self.print_path(path, false, 0, true));
+                    try!(self.print_path(path, false, 0));
                     try!(word(&mut self.s, "::{"));
                 }
                 try!(self.commasep(Inconsistent, &idents[..], |s, w| {
@@ -3090,11 +3100,12 @@ mod tests {
 
     use ast;
     use codemap;
+    use parse::token;
     use syntax_pos;
 
     #[test]
     fn test_fun_to_string() {
-        let abba_ident = ast::Ident::from_str("abba");
+        let abba_ident = token::str_to_ident("abba");
 
         let decl = ast::FnDecl {
             inputs: Vec::new(),
@@ -3110,7 +3121,7 @@ mod tests {
 
     #[test]
     fn test_variant_to_string() {
-        let ident = ast::Ident::from_str("principal_skinner");
+        let ident = token::str_to_ident("principal_skinner");
 
         let var = codemap::respan(syntax_pos::DUMMY_SP, ast::Variant_ {
             name: ident,

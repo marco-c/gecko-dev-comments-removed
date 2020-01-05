@@ -1,6 +1,6 @@
 use super::*;
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Variant {
     pub ident: Ident,
     pub attrs: Vec<Attribute>,
@@ -9,7 +9,7 @@ pub struct Variant {
     pub discriminant: Option<ConstExpr>,
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum VariantData {
     Struct(Vec<Field>),
     Tuple(Vec<Field>),
@@ -34,7 +34,7 @@ impl VariantData {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Field {
     pub ident: Option<Ident>,
     pub vis: Visibility,
@@ -42,51 +42,33 @@ pub struct Field {
     pub ty: Ty,
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum Visibility {
     Public,
-    Crate,
-    Restricted(Box<Path>),
     Inherited,
 }
 
 #[cfg(feature = "parsing")]
 pub mod parsing {
     use super::*;
-    use WhereClause;
     use attr::parsing::outer_attr;
     use constant::parsing::const_expr;
-    use generics::parsing::where_clause;
     use ident::parsing::ident;
-    use ty::parsing::{path, ty};
+    use ty::parsing::ty;
 
-    named!(pub struct_body -> (WhereClause, VariantData), alt!(
-        do_parse!(
-            wh: where_clause >>
-            body: struct_like_body >>
-            (wh, VariantData::Struct(body))
-        )
+    named!(pub struct_body -> VariantData, alt!(
+        struct_like_body => { VariantData::Struct }
         |
-        do_parse!(
-            body: tuple_like_body >>
-            wh: where_clause >>
-            punct!(";") >>
-            (wh, VariantData::Tuple(body))
-        )
+        terminated!(tuple_like_body, punct!(";")) => { VariantData::Tuple }
         |
-        do_parse!(
-            wh: where_clause >>
-            punct!(";") >>
-            (wh, VariantData::Unit)
-        )
+        punct!(";") => { |_| VariantData::Unit }
     ));
 
-    named!(pub enum_body -> (WhereClause, Vec<Variant>), do_parse!(
-        wh: where_clause >>
+    named!(pub enum_body -> Vec<Variant>, do_parse!(
         punct!("{") >>
         variants: terminated_list!(punct!(","), variant) >>
         punct!("}") >>
-        (wh, variants)
+        (variants)
     ));
 
     named!(variant -> Variant, do_parse!(
@@ -149,22 +131,6 @@ pub mod parsing {
     ));
 
     named!(pub visibility -> Visibility, alt!(
-        do_parse!(
-            keyword!("pub") >>
-            punct!("(") >>
-            keyword!("crate") >>
-            punct!(")") >>
-            (Visibility::Crate)
-        )
-        |
-        do_parse!(
-            keyword!("pub") >>
-            punct!("(") >>
-            restricted: path >>
-            punct!(")") >>
-            (Visibility::Restricted(Box::new(restricted)))
-        )
-        |
         keyword!("pub") => { |_| Visibility::Public }
         |
         epsilon!() => { |_| Visibility::Inherited }
@@ -224,21 +190,8 @@ mod printing {
 
     impl ToTokens for Visibility {
         fn to_tokens(&self, tokens: &mut Tokens) {
-            match *self {
-                Visibility::Public => tokens.append("pub"),
-                Visibility::Crate => {
-                    tokens.append("pub");
-                    tokens.append("(");
-                    tokens.append("crate");
-                    tokens.append(")");
-                }
-                Visibility::Restricted(ref path) => {
-                    tokens.append("pub");
-                    tokens.append("(");
-                    path.to_tokens(tokens);
-                    tokens.append(")");
-                }
-                Visibility::Inherited => {}
+            if let Visibility::Public = *self {
+                tokens.append("pub");
             }
         }
     }

@@ -4,17 +4,14 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 void main(void) {
-    Primitive prim = load_primitive();
+    Primitive prim = load_primitive(gl_InstanceID);
     TextRun text = fetch_text_run(prim.prim_index);
     Glyph glyph = fetch_glyph(prim.sub_index);
-    ResourceRect res = fetch_resource_rect(prim.user_data.x);
-
-    vec4 local_rect = vec4(glyph.offset.xy, (res.uv_rect.zw - res.uv_rect.xy) / uDevicePixelRatio);
+    vec4 local_rect = vec4(glyph.offset.xy, (glyph.uv_rect.zw - glyph.uv_rect.xy) / uDevicePixelRatio);
 
 #ifdef WR_FEATURE_TRANSFORM
     TransformVertexInfo vi = write_transform_vertex(local_rect,
                                                     prim.local_clip_rect,
-                                                    prim.z,
                                                     prim.layer,
                                                     prim.tile);
     vLocalRect = vi.clipped_local_rect;
@@ -23,17 +20,14 @@ void main(void) {
 #else
     VertexInfo vi = write_vertex(local_rect,
                                  prim.local_clip_rect,
-                                 prim.z,
                                  prim.layer,
                                  prim.tile);
     vec2 f = (vi.local_clamped_pos - vi.local_rect.p0) / (vi.local_rect.p1 - vi.local_rect.p0);
 #endif
 
-    write_clip(vi.global_clamped_pos, prim.clip_area);
-
-    vec2 texture_size = vec2(textureSize(sColor0, 0));
-    vec2 st0 = res.uv_rect.xy / texture_size;
-    vec2 st1 = res.uv_rect.zw / texture_size;
+    vec2 texture_size = vec2(textureSize(sDiffuse, 0));
+    vec2 st0 = glyph.uv_rect.xy / texture_size;
+    vec2 st1 = glyph.uv_rect.zw / texture_size;
 
     vColor = text.color;
     vUv = mix(st0, st1, f);

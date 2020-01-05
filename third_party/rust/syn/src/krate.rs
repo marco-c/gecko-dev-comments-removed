@@ -1,6 +1,6 @@
 use super::*;
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Crate {
     pub shebang: Option<String>,
     pub attrs: Vec<Attribute>,
@@ -11,27 +11,18 @@ pub struct Crate {
 pub mod parsing {
     use super::*;
     use attr::parsing::inner_attr;
-    use item::parsing::items;
+    use space::whitespace;
+    use item::parsing::item;
 
     named!(pub krate -> Crate, do_parse!(
-        option!(byte_order_mark) >>
-        shebang: option!(shebang) >>
         attrs: many0!(inner_attr) >>
-        items: items >>
+        items: many0!(item) >>
+        option!(whitespace) >>
         (Crate {
-            shebang: shebang,
+            shebang: None,
             attrs: attrs,
             items: items,
         })
-    ));
-
-    named!(byte_order_mark -> &str, tag!("\u{feff}"));
-
-    named!(shebang -> String, do_parse!(
-        tag!("#!") >>
-        not!(peek!(tag!("["))) >>
-        content: take_until!("\n") >>
-        (format!("#!{}", content))
     ));
 }
 
@@ -43,9 +34,6 @@ mod printing {
 
     impl ToTokens for Crate {
         fn to_tokens(&self, tokens: &mut Tokens) {
-            if let Some(ref shebang) = self.shebang {
-                tokens.append(&format!("{}\n", shebang));
-            }
             for attr in self.attrs.inner() {
                 attr.to_tokens(tokens);
             }

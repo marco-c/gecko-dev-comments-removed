@@ -4,13 +4,12 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 void main(void) {
-    Primitive prim = load_primitive();
+    Primitive prim = load_primitive(gl_InstanceID);
     BoxShadow bs = fetch_boxshadow(prim.prim_index);
     vec4 segment_rect = fetch_instance_geometry(prim.sub_index);
 
     VertexInfo vi = write_vertex(segment_rect,
                                  prim.local_clip_rect,
-                                 prim.z,
                                  prim.layer,
                                  prim.tile);
 

@@ -1,5 +1,5 @@
 use nom::IResult;
-use space::{skip_whitespace, word_break};
+use space::{whitespace, word_break};
 
 macro_rules! punct {
     ($i:expr, $punct:expr) => {
@@ -8,7 +8,10 @@ macro_rules! punct {
 }
 
 pub fn punct<'a>(input: &'a str, token: &'static str) -> IResult<&'a str, &'a str> {
-    let input = skip_whitespace(input);
+    let input = match whitespace(input) {
+        IResult::Done(rest, _) => rest,
+        IResult::Error => input,
+    };
     if input.starts_with(token) {
         IResult::Done(&input[token.len()..], token)
     } else {
@@ -91,11 +94,12 @@ macro_rules! terminated_list {
     };
 }
 
-pub fn separated_list<'a, T>(mut input: &'a str,
-                             sep: &'static str,
-                             f: fn(&'a str) -> IResult<&'a str, T>,
-                             terminated: bool)
-                             -> IResult<&'a str, Vec<T>> {
+pub fn separated_list<'a, T>(
+    mut input: &'a str,
+    sep: &'static str,
+    f: fn(&'a str) -> IResult<&'a str, T>,
+    terminated: bool,
+) -> IResult<&'a str, Vec<T>> {
     let mut res = Vec::new();
 
     

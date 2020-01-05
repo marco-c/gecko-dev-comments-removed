@@ -5,21 +5,19 @@
 use euclid::Matrix4D;
 use fnv::FnvHasher;
 use gleam::gl;
-use internal_types::{PackedVertex, RenderTargetMode, TextureSampler, DEFAULT_TEXTURE};
-use internal_types::{BlurAttribute, ClearAttribute, ClipAttribute, VertexAttribute};
-use internal_types::{DebugFontVertex, DebugColorVertex};
+use internal_types::{PackedVertex, PackedVertexForQuad};
+use internal_types::{RenderTargetMode, TextureSampler};
+use internal_types::{VertexAttribute, DebugFontVertex, DebugColorVertex};
 
-use super::shader_source;
 use std::collections::HashMap;
 use std::fs::File;
 use std::hash::BuildHasherDefault;
 use std::io::Read;
-use std::mem;
 use std::path::PathBuf;
+use std::mem;
 
 
 use webrender_traits::{ColorF, ImageFormat};
-use webrender_traits::{DeviceIntPoint, DeviceIntRect, DeviceIntSize};
 
 #[cfg(not(any(target_arch = "arm", target_arch = "aarch64")))]
 const GL_FORMAT_A: gl::GLuint = gl::RED;
@@ -39,7 +37,7 @@ const SHADER_VERSION: &'static str = "#version 150\n";
 #[cfg(any(target_arch = "arm", target_arch = "aarch64"))]
 const SHADER_VERSION: &'static str = "#version 300 es\n";
 
-static SHADER_PREAMBLE: &'static str = "shared";
+static SHADER_PREAMBLE: &'static str = "shared.glsl";
 
 pub type ViewportDimensions = [u32; 2];
 
@@ -47,11 +45,6 @@ lazy_static! {
     pub static ref MAX_TEXTURE_SIZE: gl::GLint = {
         gl::get_integer_v(gl::MAX_TEXTURE_SIZE)
     };
-}
-
-#[repr(u32)]
-pub enum DepthFunction {
-    Less = gl::LESS,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -72,32 +65,6 @@ pub enum VertexFormat {
     Rectangles,
     DebugFont,
     DebugColor,
-    Clear,
-    Blur,
-    Clip,
-}
-
-enum FBOTarget {
-    Read,
-    Draw,
-}
-
-fn get_optional_shader_source(shader_name: &str, base_path: &Option<PathBuf>) -> Option<String> {
-    if let Some(ref base) = *base_path {
-        let shader_path = base.join(&format!("{}.glsl", shader_name));
-        if shader_path.exists() {
-            let mut source = String::new();
-            File::open(&shader_path).unwrap().read_to_string(&mut source).unwrap();
-            return Some(source);
-        }
-    }
-
-    shader_source::SHADERS.get(shader_name).and_then(|s| Some((*s).to_owned()))
-}
-
-fn get_shader_source(shader_name: &str, base_path: &Option<PathBuf>) -> String {
-    get_optional_shader_source(shader_name, base_path)
-        .expect(&format!("Couldn't get required shader: {}", shader_name))
 }
 
 pub trait FileWatcherHandler : Send {
@@ -105,18 +72,17 @@ pub trait FileWatcherHandler : Send {
 }
 
 impl VertexFormat {
-    fn bind(&self, main: VBOId, instance: VBOId, offset: gl::GLuint, instance_stride: gl::GLint) {
+    fn bind(&self, main: VBOId, aux: Option<VBOId>, offset: gl::GLuint) {
         main.bind();
 
         match *self {
             VertexFormat::DebugFont => {
                 gl::enable_vertex_attrib_array(VertexAttribute::Position as gl::GLuint);
-                gl::enable_vertex_attrib_array(VertexAttribute::Color as gl::GLuint);
-                gl::enable_vertex_attrib_array(VertexAttribute::ColorTexCoord as gl::GLuint);
+                gl::enable_vertex_attrib_array(VertexAttribute::ColorRectTL as gl::GLuint);
+                gl::enable_vertex_attrib_array(VertexAttribute::ColorTexCoordRectTop as
+                                               gl::GLuint);
 
-                gl::vertex_attrib_divisor(VertexAttribute::Position as gl::GLuint, 0);
-                gl::vertex_attrib_divisor(VertexAttribute::Color as gl::GLuint, 0);
-                gl::vertex_attrib_divisor(VertexAttribute::ColorTexCoord as gl::GLuint, 0);
+                self.set_divisors(0);
 
                 let vertex_stride = mem::size_of::<DebugFontVertex>() as gl::GLuint;
 
@@ -126,13 +92,13 @@ impl VertexFormat {
                                           false,
                                           vertex_stride as gl::GLint,
                                           0 + vertex_stride * offset);
-                gl::vertex_attrib_pointer(VertexAttribute::Color as gl::GLuint,
+                gl::vertex_attrib_pointer(VertexAttribute::ColorRectTL as gl::GLuint,
                                           4,
                                           gl::UNSIGNED_BYTE,
                                           true,
                                           vertex_stride as gl::GLint,
                                           8 + vertex_stride * offset);
-                gl::vertex_attrib_pointer(VertexAttribute::ColorTexCoord as gl::GLuint,
+                gl::vertex_attrib_pointer(VertexAttribute::ColorTexCoordRectTop as gl::GLuint,
                                           2,
                                           gl::FLOAT,
                                           false,
@@ -141,10 +107,9 @@ impl VertexFormat {
             }
             VertexFormat::DebugColor => {
                 gl::enable_vertex_attrib_array(VertexAttribute::Position as gl::GLuint);
-                gl::enable_vertex_attrib_array(VertexAttribute::Color as gl::GLuint);
+                gl::enable_vertex_attrib_array(VertexAttribute::ColorRectTL as gl::GLuint);
 
-                gl::vertex_attrib_divisor(VertexAttribute::Position as gl::GLuint, 0);
-                gl::vertex_attrib_divisor(VertexAttribute::Color as gl::GLuint, 0);
+                self.set_divisors(0);
 
                 let vertex_stride = mem::size_of::<DebugColorVertex>() as gl::GLuint;
 
@@ -154,18 +119,17 @@ impl VertexFormat {
                                           false,
                                           vertex_stride as gl::GLint,
                                           0 + vertex_stride * offset);
-                gl::vertex_attrib_pointer(VertexAttribute::Color as gl::GLuint,
+                gl::vertex_attrib_pointer(VertexAttribute::ColorRectTL as gl::GLuint,
                                           4,
                                           gl::UNSIGNED_BYTE,
                                           true,
                                           vertex_stride as gl::GLint,
                                           8 + vertex_stride * offset);
             }
-            VertexFormat::Rectangles |
-            VertexFormat::Triangles => {
-                let vertex_stride = mem::size_of::<PackedVertex>() as gl::GLuint;
+            VertexFormat::Rectangles => {
                 gl::enable_vertex_attrib_array(VertexAttribute::Position as gl::GLuint);
-                gl::vertex_attrib_divisor(VertexAttribute::Position as gl::GLuint, 0);
+
+                let vertex_stride = mem::size_of::<PackedVertex>() as gl::GLuint;
 
                 gl::vertex_attrib_pointer(VertexAttribute::Position as gl::GLuint,
                                           2,
@@ -174,113 +138,115 @@ impl VertexFormat {
                                           vertex_stride as gl::GLint,
                                           0);
 
-                instance.bind();
-                let mut offset = 0;
+                aux.as_ref().unwrap().bind();
 
-                for &attrib in [VertexAttribute::GlobalPrimId,
-                                VertexAttribute::PrimitiveAddress,
-                                VertexAttribute::TaskIndex,
-                                VertexAttribute::ClipTaskIndex,
-                                VertexAttribute::LayerIndex,
-                                VertexAttribute::ElementIndex,
-                                VertexAttribute::ZIndex,
-                               ].into_iter() {
-                    gl::enable_vertex_attrib_array(attrib as gl::GLuint);
-                    gl::vertex_attrib_divisor(attrib as gl::GLuint, 1);
-                    gl::vertex_attrib_i_pointer(attrib as gl::GLuint,
-                                                1,
-                                                gl::INT,
-                                                instance_stride,
-                                                offset);
-                    offset += 4;
-                }
+                gl::enable_vertex_attrib_array(VertexAttribute::PositionRect as gl::GLuint);
+                gl::enable_vertex_attrib_array(VertexAttribute::ColorRectTL as gl::GLuint);
+                gl::enable_vertex_attrib_array(VertexAttribute::ColorRectTR as gl::GLuint);
+                gl::enable_vertex_attrib_array(VertexAttribute::ColorRectBR as gl::GLuint);
+                gl::enable_vertex_attrib_array(VertexAttribute::ColorRectBL as gl::GLuint);
+                gl::enable_vertex_attrib_array(VertexAttribute::ColorTexCoordRectTop as
+                                               gl::GLuint);
+                gl::enable_vertex_attrib_array(VertexAttribute::ColorTexCoordRectBottom as
+                                               gl::GLuint);
+                gl::enable_vertex_attrib_array(VertexAttribute::MaskTexCoordRectTop as gl::GLuint);
+                gl::enable_vertex_attrib_array(VertexAttribute::MaskTexCoordRectBottom as
+                                               gl::GLuint);
+                gl::enable_vertex_attrib_array(VertexAttribute::Misc as gl::GLuint);
 
-                gl::enable_vertex_attrib_array(VertexAttribute::UserData as gl::GLuint);
-                gl::vertex_attrib_divisor(VertexAttribute::UserData as gl::GLuint, 1);
-                gl::vertex_attrib_i_pointer(VertexAttribute::UserData as gl::GLuint,
-                                            2,
-                                            gl::INT,
-                                            instance_stride,
-                                            offset);
+                self.set_divisors(1);
+
+                let vertex_stride = mem::size_of::<PackedVertexForQuad>() as gl::GLuint;
+
+                gl::vertex_attrib_pointer(VertexAttribute::PositionRect as gl::GLuint,
+                                          4,
+                                          gl::FLOAT,
+                                          false,
+                                          vertex_stride as gl::GLint,
+                                          0 + vertex_stride * offset);
+                gl::vertex_attrib_pointer(VertexAttribute::ColorRectTL as gl::GLuint,
+                                          4,
+                                          gl::UNSIGNED_BYTE,
+                                          false,
+                                          vertex_stride as gl::GLint,
+                                          16 + vertex_stride * offset);
+                gl::vertex_attrib_pointer(VertexAttribute::ColorRectTR as gl::GLuint,
+                                          4,
+                                          gl::UNSIGNED_BYTE,
+                                          false,
+                                          vertex_stride as gl::GLint,
+                                          20 + vertex_stride * offset);
+                gl::vertex_attrib_pointer(VertexAttribute::ColorRectBR as gl::GLuint,
+                                          4,
+                                          gl::UNSIGNED_BYTE,
+                                          false,
+                                          vertex_stride as gl::GLint,
+                                          24 + vertex_stride * offset);
+                gl::vertex_attrib_pointer(VertexAttribute::ColorRectBL as gl::GLuint,
+                                          4,
+                                          gl::UNSIGNED_BYTE,
+                                          false,
+                                          vertex_stride as gl::GLint,
+                                          28 + vertex_stride * offset);
+                gl::vertex_attrib_pointer(VertexAttribute::ColorTexCoordRectTop as gl::GLuint,
+                                          4,
+                                          gl::FLOAT,
+                                          false,
+                                          vertex_stride as gl::GLint,
+                                          32 + vertex_stride * offset);
+                gl::vertex_attrib_pointer(VertexAttribute::ColorTexCoordRectBottom as gl::GLuint,
+                                          4,
+                                          gl::FLOAT,
+                                          false,
+                                          vertex_stride as gl::GLint,
+                                          48 + vertex_stride * offset);
+                gl::vertex_attrib_pointer(VertexAttribute::MaskTexCoordRectTop as gl::GLuint,
+                                          4,
+                                          gl::UNSIGNED_SHORT,
+                                          false,
+                                          vertex_stride as gl::GLint,
+                                          64 + vertex_stride * offset);
+                gl::vertex_attrib_pointer(VertexAttribute::MaskTexCoordRectBottom as gl::GLuint,
+                                          4,
+                                          gl::UNSIGNED_SHORT,
+                                          false,
+                                          vertex_stride as gl::GLint,
+                                          72 + vertex_stride * offset);
+                gl::vertex_attrib_pointer(VertexAttribute::Misc as gl::GLuint,
+                                          4,
+                                          gl::UNSIGNED_BYTE,
+                                          false,
+                                          vertex_stride as gl::GLint,
+                                          80 + vertex_stride * offset);
             }
-            VertexFormat::Clear => {
-                let vertex_stride = mem::size_of::<PackedVertex>() as gl::GLuint;
-                gl::enable_vertex_attrib_array(ClearAttribute::Position as gl::GLuint);
-                gl::vertex_attrib_divisor(ClearAttribute::Position as gl::GLuint, 0);
+            VertexFormat::Triangles => {
+                gl::enable_vertex_attrib_array(VertexAttribute::Position as gl::GLuint);
 
-                gl::vertex_attrib_pointer(ClearAttribute::Position as gl::GLuint,
+                self.set_divisors(0);
+
+                let vertex_stride = mem::size_of::<PackedVertex>() as gl::GLuint;
+
+                gl::vertex_attrib_pointer(VertexAttribute::Position as gl::GLuint,
                                           2,
                                           gl::FLOAT,
                                           false,
                                           vertex_stride as gl::GLint,
-                                          0);
-
-                instance.bind();
-
-                gl::enable_vertex_attrib_array(ClearAttribute::Rectangle as gl::GLuint);
-                gl::vertex_attrib_divisor(ClearAttribute::Rectangle as gl::GLuint, 1);
-                gl::vertex_attrib_i_pointer(ClearAttribute::Rectangle as gl::GLuint,
-                                            4,
-                                            gl::INT,
-                                            instance_stride,
-                                            0);
-            }
-            VertexFormat::Blur => {
-                let vertex_stride = mem::size_of::<PackedVertex>() as gl::GLuint;
-                gl::enable_vertex_attrib_array(BlurAttribute::Position as gl::GLuint);
-                gl::vertex_attrib_divisor(BlurAttribute::Position as gl::GLuint, 0);
-
-                gl::vertex_attrib_pointer(BlurAttribute::Position as gl::GLuint,
-                                          2,
-                                          gl::FLOAT,
-                                          false,
-                                          vertex_stride as gl::GLint,
-                                          0);
-
-                instance.bind();
-
-                for (i, &attrib) in [BlurAttribute::RenderTaskIndex,
-                                     BlurAttribute::SourceTaskIndex,
-                                     BlurAttribute::Direction,
-                                    ].into_iter().enumerate() {
-                    gl::enable_vertex_attrib_array(attrib as gl::GLuint);
-                    gl::vertex_attrib_divisor(attrib as gl::GLuint, 1);
-                    gl::vertex_attrib_i_pointer(attrib as gl::GLuint,
-                                                1,
-                                                gl::INT,
-                                                instance_stride,
-                                                (i * 4) as gl::GLuint);
-                }
-            }
-            VertexFormat::Clip => {
-                let vertex_stride = mem::size_of::<PackedVertex>() as gl::GLuint;
-                gl::enable_vertex_attrib_array(ClipAttribute::Position as gl::GLuint);
-                gl::vertex_attrib_divisor(ClipAttribute::Position as gl::GLuint, 0);
-
-                gl::vertex_attrib_pointer(ClipAttribute::Position as gl::GLuint,
-                                          2,
-                                          gl::FLOAT,
-                                          false,
-                                          vertex_stride as gl::GLint,
-                                          0);
-
-                instance.bind();
-
-                for (i, &attrib) in [ClipAttribute::RenderTaskIndex,
-                                     ClipAttribute::LayerIndex,
-                                     ClipAttribute::DataIndex,
-                                     ClipAttribute::SegmentIndex,
-                                    ].into_iter().enumerate() {
-                    gl::enable_vertex_attrib_array(attrib as gl::GLuint);
-                    gl::vertex_attrib_divisor(attrib as gl::GLuint, 1);
-                    gl::vertex_attrib_i_pointer(attrib as gl::GLuint,
-                                                1,
-                                                gl::INT,
-                                                instance_stride,
-                                                (i * 4) as gl::GLuint);
-                }
+                                          0 + vertex_stride * offset);
             }
         }
+    }
+
+    fn set_divisors(&self, divisor: u32) {
+        gl::vertex_attrib_divisor(VertexAttribute::PositionRect as gl::GLuint, divisor);
+        gl::vertex_attrib_divisor(VertexAttribute::ColorRectTL as gl::GLuint, divisor);
+        gl::vertex_attrib_divisor(VertexAttribute::ColorRectTR as gl::GLuint, divisor);
+        gl::vertex_attrib_divisor(VertexAttribute::ColorRectBR as gl::GLuint, divisor);
+        gl::vertex_attrib_divisor(VertexAttribute::ColorRectBL as gl::GLuint, divisor);
+        gl::vertex_attrib_divisor(VertexAttribute::ColorTexCoordRectTop as gl::GLuint, divisor);
+        gl::vertex_attrib_divisor(VertexAttribute::ColorTexCoordRectBottom as gl::GLuint, divisor);
+        gl::vertex_attrib_divisor(VertexAttribute::MaskTexCoordRectTop as gl::GLuint, divisor);
+        gl::vertex_attrib_divisor(VertexAttribute::MaskTexCoordRectBottom as gl::GLuint, divisor);
+        gl::vertex_attrib_divisor(VertexAttribute::Misc as gl::GLuint, divisor);
     }
 }
 
@@ -302,8 +268,6 @@ impl TextureId {
             target: gl::TEXTURE_2D,
         }
     }
-
-    pub fn is_valid(&self) -> bool { *self != TextureId::invalid() }
 }
 
 impl ProgramId {
@@ -331,12 +295,8 @@ impl UBOId {
 }
 
 impl FBOId {
-    fn bind(&self, target: FBOTarget) {
-        let target = match target {
-            FBOTarget::Read => gl::READ_FRAMEBUFFER,
-            FBOTarget::Draw => gl::DRAW_FRAMEBUFFER,
-        };
-        gl::bind_framebuffer(target, self.0);
+    fn bind(&self) {
+        gl::bind_framebuffer(gl::FRAMEBUFFER, self.0);
     }
 }
 
@@ -363,10 +323,8 @@ impl Drop for Texture {
 struct Program {
     id: gl::GLuint,
     u_transform: gl::GLint,
-    u_device_pixel_ratio: gl::GLint,
-    name: String,
-    vs_source: String,
-    fs_source: String,
+    vs_path: PathBuf,
+    fs_path: PathBuf,
     prefix: Option<String>,
     vs_id: Option<gl::GLuint>,
     fs_id: Option<gl::GLuint>,
@@ -381,28 +339,49 @@ impl Program {
         gl::attach_shader(self.id, fs_id);
 
         gl::bind_attrib_location(self.id, VertexAttribute::Position as gl::GLuint, "aPosition");
-        gl::bind_attrib_location(self.id, VertexAttribute::Color as gl::GLuint, "aColor");
-        gl::bind_attrib_location(self.id, VertexAttribute::ColorTexCoord as gl::GLuint, "aColorTexCoord");
-
-        gl::bind_attrib_location(self.id, VertexAttribute::GlobalPrimId as gl::GLuint, "aGlobalPrimId");
-        gl::bind_attrib_location(self.id, VertexAttribute::PrimitiveAddress as gl::GLuint, "aPrimitiveAddress");
-        gl::bind_attrib_location(self.id, VertexAttribute::TaskIndex as gl::GLuint, "aTaskIndex");
-        gl::bind_attrib_location(self.id, VertexAttribute::ClipTaskIndex as gl::GLuint, "aClipTaskIndex");
-        gl::bind_attrib_location(self.id, VertexAttribute::LayerIndex as gl::GLuint, "aLayerIndex");
-        gl::bind_attrib_location(self.id, VertexAttribute::ElementIndex as gl::GLuint, "aElementIndex");
-        gl::bind_attrib_location(self.id, VertexAttribute::UserData as gl::GLuint, "aUserData");
-        gl::bind_attrib_location(self.id, VertexAttribute::ZIndex as gl::GLuint, "aZIndex");
-
-        gl::bind_attrib_location(self.id, ClearAttribute::Rectangle as gl::GLuint, "aClearRectangle");
-
-        gl::bind_attrib_location(self.id, BlurAttribute::RenderTaskIndex as gl::GLuint, "aBlurRenderTaskIndex");
-        gl::bind_attrib_location(self.id, BlurAttribute::SourceTaskIndex as gl::GLuint, "aBlurSourceTaskIndex");
-        gl::bind_attrib_location(self.id, BlurAttribute::Direction as gl::GLuint, "aBlurDirection");
-
-        gl::bind_attrib_location(self.id, ClipAttribute::RenderTaskIndex as gl::GLuint, "aClipRenderTaskIndex");
-        gl::bind_attrib_location(self.id, ClipAttribute::LayerIndex as gl::GLuint, "aClipLayerIndex");
-        gl::bind_attrib_location(self.id, ClipAttribute::DataIndex as gl::GLuint, "aClipDataIndex");
-        gl::bind_attrib_location(self.id, ClipAttribute::SegmentIndex as gl::GLuint, "aClipSegmentIndex");
+        gl::bind_attrib_location(self.id,
+                                 VertexAttribute::PositionRect as gl::GLuint,
+                                 "aPositionRect");
+        gl::bind_attrib_location(self.id,
+                                 VertexAttribute::ColorRectTL as gl::GLuint,
+                                 "aColorRectTL");
+        gl::bind_attrib_location(self.id,
+                                 VertexAttribute::ColorRectTR as gl::GLuint,
+                                 "aColorRectTR");
+        gl::bind_attrib_location(self.id,
+                                 VertexAttribute::ColorRectBR as gl::GLuint,
+                                 "aColorRectBR");
+        gl::bind_attrib_location(self.id,
+                                 VertexAttribute::ColorRectBL as gl::GLuint,
+                                 "aColorRectBL");
+        gl::bind_attrib_location(self.id,
+                                 VertexAttribute::ColorTexCoordRectTop as gl::GLuint,
+                                 "aColorTexCoordRectTop");
+        gl::bind_attrib_location(self.id,
+                                 VertexAttribute::MaskTexCoordRectTop as gl::GLuint,
+                                 "aMaskTexCoordRectTop");
+        gl::bind_attrib_location(self.id,
+                                 VertexAttribute::ColorTexCoordRectBottom as gl::GLuint,
+                                 "aColorTexCoordRectBottom");
+        gl::bind_attrib_location(self.id,
+                                 VertexAttribute::MaskTexCoordRectBottom as gl::GLuint,
+                                 "aMaskTexCoordRectBottom");
+        gl::bind_attrib_location(self.id,
+                                 VertexAttribute::BorderRadii as gl::GLuint,
+                                 "aBorderRadii");
+        gl::bind_attrib_location(self.id,
+                                 VertexAttribute::BorderPosition as gl::GLuint,
+                                 "aBorderPosition");
+        gl::bind_attrib_location(self.id,
+                                 VertexAttribute::BlurRadius as gl::GLuint,
+                                 "aBlurRadius");
+        gl::bind_attrib_location(self.id,
+                                 VertexAttribute::DestTextureSize as gl::GLuint,
+                                 "aDestTextureSize");
+        gl::bind_attrib_location(self.id,
+                                 VertexAttribute::SourceTextureSize as gl::GLuint,
+                                 "aSourceTextureSize");
+        gl::bind_attrib_location(self.id, VertexAttribute::Misc as gl::GLuint, "aMisc");
 
         gl::link_program(self.id);
         if gl::get_program_iv(self.id, gl::LINK_STATUS) == (0 as gl::GLint) {
@@ -428,28 +407,30 @@ impl Drop for Program {
 
 struct VAO {
     id: gl::GLuint,
-    ibo_id: IBOId,
+    vertex_format: VertexFormat,
     main_vbo_id: VBOId,
-    instance_vbo_id: VBOId,
-    instance_stride: gl::GLint,
-    owns_indices: bool,
-    owns_vertices: bool,
-    owns_instances: bool,
+    aux_vbo_id: Option<VBOId>,
+    ibo_id: IBOId,
+    owns_vbos: bool,
 }
 
 impl Drop for VAO {
     fn drop(&mut self) {
         gl::delete_vertex_arrays(&[self.id]);
 
-        if self.owns_indices {
+        if self.owns_vbos {
             
-            gl::delete_buffers(&[self.ibo_id.0]);
-        }
-        if self.owns_vertices {
-            gl::delete_buffers(&[self.main_vbo_id.0]);
-        }
-        if self.owns_instances {
-            gl::delete_buffers(&[self.instance_vbo_id.0])
+            
+            if self.vertex_format != VertexFormat::Rectangles {
+                gl::delete_buffers(&[self.main_vbo_id.0]);
+            }
+            if let Some(VBOId(aux_vbo_id)) = self.aux_vbo_id {
+                gl::delete_buffers(&[aux_vbo_id]);
+            }
+
+            
+            let IBOId(ibo_id) = self.ibo_id;
+            gl::delete_buffers(&[ibo_id]);
         }
     }
 }
@@ -480,10 +461,6 @@ pub struct UBOId(gl::GLuint);
 
 const MAX_EVENTS_PER_FRAME: usize = 256;
 const MAX_PROFILE_FRAMES: usize = 4;
-
-pub trait NamedTag {
-    fn get_label(&self) -> &str;
-}
 
 #[derive(Debug, Clone)]
 pub struct GpuSample<T> {
@@ -539,13 +516,10 @@ impl<T> GpuFrameProfile<T> {
     }
 
     #[cfg(not(target_os = "android"))]
-    fn add_marker(&mut self, tag: T) -> GpuMarker
-    where T: NamedTag {
+    fn add_marker(&mut self, tag: T) {
         if self.pending_query != 0 {
             gl::end_query(gl::TIME_ELAPSED);
         }
-
-        let marker = GpuMarker::new(tag.get_label());
 
         if self.next_query < MAX_EVENTS_PER_FRAME {
             self.pending_query = self.queries[self.next_query];
@@ -559,7 +533,6 @@ impl<T> GpuFrameProfile<T> {
         }
 
         self.next_query += 1;
-        marker
     }
 
     #[cfg(target_os = "android")]
@@ -638,47 +611,9 @@ impl<T> GpuProfiler<T> {
         self.next_frame = (self.next_frame + 1) % MAX_PROFILE_FRAMES;
     }
 
-    #[cfg(not(target_os = "android"))]
-    pub fn add_marker(&mut self, tag: T) -> GpuMarker
-    where T: NamedTag {
-        self.frames[self.next_frame].add_marker(tag)
-    }
-
-    #[cfg(target_os = "android")]
     pub fn add_marker(&mut self, tag: T) {
-        self.frames[self.next_frame].add_marker(tag)
-    }
-}
-
-#[must_use]
-pub struct GpuMarker(());
-
-#[cfg(any(target_arch="arm", target_arch="aarch64"))]
-impl GpuMarker {
-    pub fn new(_: &str) -> GpuMarker {
-        GpuMarker(())
-    }
-
-    pub fn fire(_: &str) {}
-}
-
-
-#[cfg(not(any(target_arch="arm", target_arch="aarch64")))]
-impl GpuMarker {
-    pub fn new(message: &str) -> GpuMarker {
-       gl::push_group_marker_ext(message);
-       GpuMarker(())
-    }
-
-    pub fn fire(message: &str) {
-        gl::insert_event_marker_ext(message);
-    }
-}
-
-#[cfg(not(any(target_arch="arm", target_arch="aarch64")))]
-impl Drop for GpuMarker {
-    fn drop(&mut self) {
-        gl::pop_group_marker_ext();
+        let frame = &mut self.frames[self.next_frame];
+        frame.add_marker(tag);
     }
 }
 
@@ -686,7 +621,6 @@ impl Drop for GpuMarker {
 pub enum VertexUsageHint {
     Static,
     Dynamic,
-    Stream,
 }
 
 impl VertexUsageHint {
@@ -694,7 +628,6 @@ impl VertexUsageHint {
         match *self {
             VertexUsageHint::Static => gl::STATIC_DRAW,
             VertexUsageHint::Dynamic => gl::DYNAMIC_DRAW,
-            VertexUsageHint::Stream => gl::STREAM_DRAW,
         }
     }
 }
@@ -787,10 +720,8 @@ pub struct Device {
     bound_textures: [TextureId; 16],
     bound_program: ProgramId,
     bound_vao: VAOId,
-    bound_read_fbo: FBOId,
-    bound_draw_fbo: FBOId,
-    default_read_fbo: gl::GLuint,
-    default_draw_fbo: gl::GLuint,
+    bound_fbo: FBOId,
+    default_fbo: gl::GLuint,
     device_pixel_ratio: f32,
 
     
@@ -800,8 +731,9 @@ pub struct Device {
     inside_frame: bool,
 
     
-    resource_override_path: Option<PathBuf>,
+    resource_path: PathBuf,
     textures: HashMap<TextureId, Texture, BuildHasherDefault<FnvHasher>>,
+    raw_textures: HashMap<TextureId, (u32, u32, u32, u32), BuildHasherDefault<FnvHasher>>,
     programs: HashMap<ProgramId, Program, BuildHasherDefault<FnvHasher>>,
     vaos: HashMap<VAOId, VAO, BuildHasherDefault<FnvHasher>>,
 
@@ -815,18 +747,21 @@ pub struct Device {
 }
 
 impl Device {
-    pub fn new(resource_override_path: Option<PathBuf>,
+    pub fn new(resource_path: PathBuf,
+               device_pixel_ratio: f32,
                _file_changed_handler: Box<FileWatcherHandler>) -> Device {
         
 
-        let shader_preamble = get_shader_source(SHADER_PREAMBLE, &resource_override_path);
+        let mut path = resource_path.clone();
+        path.push(SHADER_PREAMBLE);
+        let mut f = File::open(&path).unwrap();
+        let mut shader_preamble = String::new();
+        f.read_to_string(&mut shader_preamble).unwrap();
         
 
         Device {
-            resource_override_path: resource_override_path,
-            
-            
-            device_pixel_ratio: 1.0,
+            resource_path: resource_path,
+            device_pixel_ratio: device_pixel_ratio,
             inside_frame: false,
 
             capabilities: Capabilities {
@@ -837,12 +772,11 @@ impl Device {
             bound_textures: [ TextureId::invalid(); 16 ],
             bound_program: ProgramId(0),
             bound_vao: VAOId(0),
-            bound_read_fbo: FBOId(0),
-            bound_draw_fbo: FBOId(0),
-            default_read_fbo: 0,
-            default_draw_fbo: 0,
+            bound_fbo: FBOId(0),
+            default_fbo: 0,
 
             textures: HashMap::with_hasher(Default::default()),
+            raw_textures: HashMap::with_hasher(Default::default()),
             programs: HashMap::with_hasher(Default::default()),
             vaos: HashMap::with_hasher(Default::default()),
 
@@ -857,20 +791,20 @@ impl Device {
         &self.capabilities
     }
 
-    pub fn compile_shader(name: &str,
-                          source_str: &str,
+    pub fn compile_shader(path: &PathBuf,
                           shader_type: gl::GLenum,
                           shader_preamble: &[String],
                           panic_on_fail: bool)
                           -> Option<gl::GLuint> {
-        debug!("compile {:?}", name);
+        debug!("compile {:?}", path);
 
+        let mut f = File::open(&path).unwrap();
         let mut s = String::new();
         s.push_str(SHADER_VERSION);
         for prefix in shader_preamble {
             s.push_str(&prefix);
         }
-        s.push_str(source_str);
+        f.read_to_string(&mut s).unwrap();
 
         let id = gl::create_shader(shader_type);
         let mut source = Vec::new();
@@ -879,7 +813,7 @@ impl Device {
         gl::compile_shader(id);
         let log = gl::get_shader_info_log(id);
         if gl::get_shader_iv(id, gl::COMPILE_STATUS) == (0 as gl::GLint) {
-            println!("Failed to compile shader: {:?}\n{}", name, log);
+            println!("Failed to compile shader: {:?}\n{}", path, log);
             if panic_on_fail {
                 panic!("-- Shader compile failed - exiting --");
             }
@@ -887,22 +821,19 @@ impl Device {
             None
         } else {
             if !log.is_empty() {
-                println!("Warnings detected on shader: {:?}\n{}", name, log);
+                println!("Warnings detected on shader: {:?}\n{}", path, log);
             }
             Some(id)
         }
     }
 
-    pub fn begin_frame(&mut self, device_pixel_ratio: f32) {
+    pub fn begin_frame(&mut self) {
         debug_assert!(!self.inside_frame);
         self.inside_frame = true;
-        self.device_pixel_ratio = device_pixel_ratio;
 
         
-        let default_read_fbo = gl::get_integer_v(gl::READ_FRAMEBUFFER_BINDING);
-        self.default_read_fbo = default_read_fbo as gl::GLuint;
-        let default_draw_fbo = gl::get_integer_v(gl::DRAW_FRAMEBUFFER_BINDING);
-        self.default_draw_fbo = default_draw_fbo as gl::GLuint;
+        let default_fbo = gl::get_integer_v(gl::FRAMEBUFFER_BINDING);
+        self.default_fbo = default_fbo as gl::GLuint;
 
         
         for i in 0..self.bound_textures.len() {
@@ -920,8 +851,7 @@ impl Device {
         self.clear_vertex_array();
 
         
-        self.bound_read_fbo = FBOId(self.default_read_fbo);
-        self.bound_draw_fbo = FBOId(self.default_draw_fbo);
+        self.bound_fbo = FBOId(self.default_fbo);
 
         
         gl::pixel_store_i(gl::UNPACK_ALIGNMENT, 1);
@@ -944,31 +874,18 @@ impl Device {
         }
     }
 
-    pub fn bind_read_target(&mut self, texture_id: Option<(TextureId, i32)>) {
+    pub fn bind_render_target(&mut self,
+                              texture_id: Option<(TextureId, i32)>,
+                              dimensions: Option<ViewportDimensions>) {
         debug_assert!(self.inside_frame);
 
-        let fbo_id = texture_id.map_or(FBOId(self.default_read_fbo), |texture_id| {
+        let fbo_id = texture_id.map_or(FBOId(self.default_fbo), |texture_id| {
             self.textures.get(&texture_id.0).unwrap().fbo_ids[texture_id.1 as usize]
         });
 
-        if self.bound_read_fbo != fbo_id {
-            self.bound_read_fbo = fbo_id;
-            fbo_id.bind(FBOTarget::Read);
-        }
-    }
-
-    pub fn bind_draw_target(&mut self,
-                            texture_id: Option<(TextureId, i32)>,
-                            dimensions: Option<ViewportDimensions>) {
-        debug_assert!(self.inside_frame);
-
-        let fbo_id = texture_id.map_or(FBOId(self.default_draw_fbo), |texture_id| {
-            self.textures.get(&texture_id.0).unwrap().fbo_ids[texture_id.1 as usize]
-        });
-
-        if self.bound_draw_fbo != fbo_id {
-            self.bound_draw_fbo = fbo_id;
-            fbo_id.bind(FBOTarget::Draw);
+        if self.bound_fbo != fbo_id {
+            self.bound_fbo = fbo_id;
+            fbo_id.bind();
         }
 
         if let Some(dimensions) = dimensions {
@@ -987,9 +904,7 @@ impl Device {
         }
 
         let program = self.programs.get(&program_id).unwrap();
-        self.set_uniforms(program,
-                          projection,
-                          self.device_pixel_ratio);
+        self.set_uniforms(program, projection);
     }
 
     pub fn create_texture_ids(&mut self,
@@ -1029,8 +944,33 @@ impl Device {
     }
 
     pub fn get_texture_dimensions(&self, texture_id: TextureId) -> (u32, u32) {
-        let texture = &self.textures[&texture_id];
-        (texture.width, texture.height)
+        if let Some(texture) = self.textures.get(&texture_id) {
+            (texture.width, texture.height)
+        } else {
+            let dimensions = self.raw_textures.get(&texture_id).unwrap();
+            (dimensions.2, dimensions.3)
+        }
+    }
+
+    pub fn texture_has_alpha(&self, texture_id: TextureId) -> bool {
+        if let Some(texture) = self.textures.get(&texture_id) {
+            texture.format == ImageFormat::RGBA8
+        } else {
+            true
+        }
+    }
+
+    pub fn update_raw_texture(&mut self,
+                              texture_id: TextureId,
+                              x0: u32,
+                              y0: u32,
+                              width: u32,
+                              height: u32) {
+        self.raw_textures.insert(texture_id, (x0, y0, width, height));
+    }
+
+    pub fn remove_raw_texture(&mut self, texture_id: TextureId) {
+        self.raw_textures.remove(&texture_id);
     }
 
     fn set_texture_parameters(&mut self, target: gl::GLuint, filter: TextureFilter) {
@@ -1092,7 +1032,7 @@ impl Device {
 
         match mode {
             RenderTargetMode::SimpleRenderTarget => {
-                self.bind_texture(DEFAULT_TEXTURE, texture_id);
+                self.bind_texture(TextureSampler::Color, texture_id);
                 self.set_texture_parameters(texture_id.target, filter);
                 self.upload_texture_image(texture_id.target,
                                           width,
@@ -1104,12 +1044,12 @@ impl Device {
                 self.create_fbo_for_texture_if_necessary(texture_id, None);
             }
             RenderTargetMode::LayerRenderTarget(layer_count) => {
-                self.bind_texture(DEFAULT_TEXTURE, texture_id);
+                self.bind_texture(TextureSampler::Color, texture_id);
                 self.set_texture_parameters(texture_id.target, filter);
                 self.create_fbo_for_texture_if_necessary(texture_id, Some(layer_count));
             }
             RenderTargetMode::None => {
-                self.bind_texture(DEFAULT_TEXTURE, texture_id);
+                self.bind_texture(TextureSampler::Color, texture_id);
                 self.set_texture_parameters(texture_id.target, filter);
                 self.upload_texture_image(texture_id.target,
                                           width,
@@ -1120,10 +1060,6 @@ impl Device {
                                           pixels);
             }
         }
-    }
-
-    pub fn get_render_target_layer_count(&self, texture_id: TextureId) -> usize {
-        self.textures[&texture_id].fbo_ids.len()
     }
 
     pub fn create_fbo_for_texture_if_necessary(&mut self,
@@ -1168,21 +1104,6 @@ impl Device {
                                                   texture_id.name,
                                                   0,
                                                   fbo_index as gl::GLint);
-
-                    
-                    
-                    
-                    let renderbuffer_ids = gl::gen_renderbuffers(1);
-                    let depth_rb = renderbuffer_ids[0];
-                    gl::bind_renderbuffer(gl::RENDERBUFFER, depth_rb);
-                    gl::renderbuffer_storage(gl::RENDERBUFFER,
-                                             gl::DEPTH_COMPONENT24,
-                                             texture.width as gl::GLsizei,
-                                             texture.height as gl::GLsizei);
-                    gl::framebuffer_renderbuffer(gl::FRAMEBUFFER,
-                                                 gl::DEPTH_ATTACHMENT,
-                                                 gl::RENDERBUFFER,
-                                                 depth_rb);
                 }
             }
             None => {
@@ -1203,36 +1124,7 @@ impl Device {
             }
         }
 
-        
-        gl::bind_framebuffer(gl::READ_FRAMEBUFFER, self.bound_read_fbo.0);
-        gl::bind_framebuffer(gl::DRAW_FRAMEBUFFER, self.bound_draw_fbo.0);
-    }
-
-    pub fn blit_render_target(&mut self,
-                              src_texture: Option<(TextureId, i32)>,
-                              src_rect: Option<DeviceIntRect>,
-                              dest_rect: DeviceIntRect) {
-        debug_assert!(self.inside_frame);
-
-        let src_rect = src_rect.unwrap_or_else(|| {
-            let texture = self.textures.get(&src_texture.unwrap().0).expect("unknown texture id!");
-            DeviceIntRect::new(DeviceIntPoint::zero(),
-                               DeviceIntSize::new(texture.width as gl::GLint,
-                                                  texture.height as gl::GLint))
-        });
-
-        self.bind_read_target(src_texture);
-
-        gl::blit_framebuffer(src_rect.origin.x,
-                             src_rect.origin.y,
-                             src_rect.origin.x + src_rect.size.width,
-                             src_rect.origin.y + src_rect.size.height,
-                             dest_rect.origin.x,
-                             dest_rect.origin.y,
-                             dest_rect.origin.x + dest_rect.size.width,
-                             dest_rect.origin.y + dest_rect.size.height,
-                             gl::COLOR_BUFFER_BIT,
-                             gl::LINEAR);
+        gl::bind_framebuffer(gl::FRAMEBUFFER, self.default_fbo);
     }
 
     pub fn resize_texture(&mut self,
@@ -1250,8 +1142,8 @@ impl Device {
         self.init_texture(temp_texture_id, old_width, old_height, format, filter, mode, None);
         self.create_fbo_for_texture_if_necessary(temp_texture_id, None);
 
-        self.bind_read_target(Some((texture_id, 0)));
-        self.bind_texture(DEFAULT_TEXTURE, temp_texture_id);
+        self.bind_render_target(Some((texture_id, 0)), None);
+        self.bind_texture(TextureSampler::Color, temp_texture_id);
 
         gl::copy_tex_sub_image_2d(temp_texture_id.target,
                                   0,
@@ -1265,8 +1157,8 @@ impl Device {
         self.deinit_texture(texture_id);
         self.init_texture(texture_id, new_width, new_height, format, filter, mode, None);
         self.create_fbo_for_texture_if_necessary(texture_id, None);
-        self.bind_read_target(Some((temp_texture_id, 0)));
-        self.bind_texture(DEFAULT_TEXTURE, texture_id);
+        self.bind_render_target(Some((temp_texture_id, 0)), None);
+        self.bind_texture(TextureSampler::Color, texture_id);
 
         gl::copy_tex_sub_image_2d(texture_id.target,
                                   0,
@@ -1277,14 +1169,14 @@ impl Device {
                                   old_width as i32,
                                   old_height as i32);
 
-        self.bind_read_target(None);
+        self.bind_render_target(None, None);
         self.deinit_texture(temp_texture_id);
     }
 
     pub fn deinit_texture(&mut self, texture_id: TextureId) {
         debug_assert!(self.inside_frame);
 
-        self.bind_texture(DEFAULT_TEXTURE, texture_id);
+        self.bind_texture(TextureSampler::Color, texture_id);
 
         let texture = self.textures.get_mut(&texture_id).unwrap();
         let (internal_format, gl_format) = gl_texture_formats_for_image_format(texture.format);
@@ -1324,29 +1216,30 @@ impl Device {
         debug_assert!(self.inside_frame);
 
         let pid = gl::create_program();
+        let base_path = self.resource_path.join(base_filename);
 
-        let mut vs_name = String::from(base_filename);
-        vs_name.push_str(".vs");
-        let mut fs_name = String::from(base_filename);
-        fs_name.push_str(".fs");
+        let vs_path = base_path.with_extension("vs.glsl");
+        
+
+        let fs_path = base_path.with_extension("fs.glsl");
+        
 
         let mut include = format!("// Base shader: {}\n", base_filename);
         for inc_filename in include_filenames {
-            let src = get_shader_source(inc_filename, &self.resource_override_path);
-            include.push_str(&src);
+            let include_path = self.resource_path.join(inc_filename).with_extension("glsl");
+            File::open(&include_path).unwrap().read_to_string(&mut include).unwrap();
         }
 
-        if let Some(shared_src) = get_optional_shader_source(base_filename, &self.resource_override_path) {
-            include.push_str(&shared_src);
+        let shared_path = base_path.with_extension("glsl");
+        if let Ok(mut f) = File::open(&shared_path) {
+            f.read_to_string(&mut include).unwrap();
         }
 
         let program = Program {
-            name: base_filename.to_owned(),
             id: pid,
             u_transform: -1,
-            u_device_pixel_ratio: -1,
-            vs_source: get_shader_source(&vs_name, &self.resource_override_path),
-            fs_source: get_shader_source(&fs_name, &self.resource_override_path),
+            vs_path: vs_path,
+            fs_path: fs_path,
             prefix: prefix,
             vs_id: None,
             fs_id: None,
@@ -1388,13 +1281,11 @@ impl Device {
         fs_preamble.push(include);
 
         
-        let vs_id = Device::compile_shader(&program.name,
-                                           &program.vs_source,
+        let vs_id = Device::compile_shader(&program.vs_path,
                                            gl::VERTEX_SHADER,
                                            &vs_preamble,
                                            panic_on_fail);
-        let fs_id = Device::compile_shader(&program.name,
-                                           &program.fs_source,
+        let fs_id = Device::compile_shader(&program.fs_path,
                                            gl::FRAGMENT_SHADER,
                                            &fs_preamble,
                                            panic_on_fail);
@@ -1438,24 +1329,19 @@ impl Device {
                 }
 
                 program.u_transform = gl::get_uniform_location(program.id, "uTransform");
-                program.u_device_pixel_ratio = gl::get_uniform_location(program.id, "uDevicePixelRatio");
 
                 program_id.bind();
-                let u_color_0 = gl::get_uniform_location(program.id, "sColor0");
-                if u_color_0 != -1 {
-                    gl::uniform_1i(u_color_0, TextureSampler::Color0 as i32);
-                }
-                let u_color1 = gl::get_uniform_location(program.id, "sColor1");
-                if u_color1 != -1 {
-                    gl::uniform_1i(u_color1, TextureSampler::Color1 as i32);
-                }
-                let u_color_2 = gl::get_uniform_location(program.id, "sColor2");
-                if u_color_2 != -1 {
-                    gl::uniform_1i(u_color_2, TextureSampler::Color2 as i32);
+                let u_diffuse = gl::get_uniform_location(program.id, "sDiffuse");
+                if u_diffuse != -1 {
+                    gl::uniform_1i(u_diffuse, TextureSampler::Color as i32);
                 }
                 let u_mask = gl::get_uniform_location(program.id, "sMask");
                 if u_mask != -1 {
                     gl::uniform_1i(u_mask, TextureSampler::Mask as i32);
+                }
+                let u_device_pixel_ratio = gl::get_uniform_location(program.id, "uDevicePixelRatio");
+                if u_device_pixel_ratio != -1 {
+                    gl::uniform_1f(u_device_pixel_ratio, self.device_pixel_ratio);
                 }
 
                 let u_cache = gl::get_uniform_location(program.id, "sCache");
@@ -1496,11 +1382,6 @@ impl Device {
                 let u_data128 = gl::get_uniform_location(program.id, "sData128");
                 if u_data128 != -1 {
                     gl::uniform_1i(u_data128, TextureSampler::Data128    as i32);
-                }
-
-                let u_resource_rects = gl::get_uniform_location(program.id, "sResourceRects");
-                if u_resource_rects != -1 {
-                    gl::uniform_1i(u_resource_rects, TextureSampler::ResourceRects as i32);
                 }
             }
         }
@@ -1554,15 +1435,11 @@ impl Device {
         gl::uniform_2f(location, x, y);
     }
 
-    fn set_uniforms(&self,
-                    program: &Program,
-                    transform: &Matrix4D<f32>,
-                    device_pixel_ratio: f32) {
+    fn set_uniforms(&self, program: &Program, transform: &Matrix4D<f32>) {
         debug_assert!(self.inside_frame);
         gl::uniform_matrix_4fv(program.u_transform,
                                false,
                                &transform.to_row_major_array());
-        gl::uniform_1f(program.u_device_pixel_ratio, device_pixel_ratio);
     }
 
     fn update_image_for_2d_texture(&mut self,
@@ -1624,7 +1501,7 @@ impl Device {
             gl::pixel_store_i(gl::UNPACK_ROW_LENGTH, row_length as gl::GLint);
         }
 
-        self.bind_texture(DEFAULT_TEXTURE, texture_id);
+        self.bind_texture(TextureSampler::Color, texture_id);
         self.update_image_for_2d_texture(texture_id.target,
                                          x0 as gl::GLint,
                                          y0 as gl::GLint,
@@ -1637,6 +1514,25 @@ impl Device {
         if let Some(..) = stride {
             gl::pixel_store_i(gl::UNPACK_ROW_LENGTH, 0 as gl::GLint);
         }
+    }
+
+    pub fn read_framebuffer_rect(&mut self,
+                                 texture_id: TextureId,
+                                 dest_x: i32,
+                                 dest_y: i32,
+                                 src_x: i32,
+                                 src_y: i32,
+                                 width: i32,
+                                 height: i32) {
+        self.bind_texture(TextureSampler::Color, texture_id);
+        gl::copy_tex_sub_image_2d(texture_id.target,
+                                  0,
+                                  dest_x,
+                                  dest_y,
+                                  src_x as gl::GLint,
+                                  src_y as gl::GLint,
+                                  width as gl::GLint,
+                                  height as gl::GLint);
     }
 
     fn clear_vertex_array(&mut self) {
@@ -1658,13 +1554,10 @@ impl Device {
     fn create_vao_with_vbos(&mut self,
                             format: VertexFormat,
                             main_vbo_id: VBOId,
-                            instance_vbo_id: VBOId,
+                            aux_vbo_id: Option<VBOId>,
                             ibo_id: IBOId,
-                            vertex_offset: gl::GLuint,
-                            instance_stride: gl::GLint,
-                            owns_vertices: bool,
-                            owns_instances: bool,
-                            owns_indices: bool)
+                            offset: gl::GLuint,
+                            owns_vbos: bool)
                             -> VAOId {
         debug_assert!(self.inside_frame);
 
@@ -1673,18 +1566,15 @@ impl Device {
 
         gl::bind_vertex_array(vao_id);
 
-        format.bind(main_vbo_id, instance_vbo_id, vertex_offset, instance_stride);
-        ibo_id.bind(); 
+        format.bind(main_vbo_id, aux_vbo_id, offset);
 
         let vao = VAO {
             id: vao_id,
-            ibo_id: ibo_id,
+            vertex_format: format,
             main_vbo_id: main_vbo_id,
-            instance_vbo_id: instance_vbo_id,
-            instance_stride: instance_stride,
-            owns_indices: owns_indices,
-            owns_vertices: owns_vertices,
-            owns_instances: owns_instances,
+            aux_vbo_id: aux_vbo_id,
+            ibo_id: ibo_id,
+            owns_vbos: owns_vbos,
         };
 
         gl::bind_vertex_array(0);
@@ -1697,29 +1587,21 @@ impl Device {
         vao_id
     }
 
-    pub fn create_vao(&mut self, format: VertexFormat, inst_stride: gl::GLint) -> VAOId {
+    pub fn create_vao(&mut self, format: VertexFormat, quad_vertex_buffer: Option<VBOId>)
+                      -> VAOId {
         debug_assert!(self.inside_frame);
 
-        let buffer_ids = gl::gen_buffers(3);
+        let buffer_ids = gl::gen_buffers(2);
         let ibo_id = IBOId(buffer_ids[0]);
-        let main_vbo_id = VBOId(buffer_ids[1]);
-        let intance_vbo_id = VBOId(buffer_ids[2]);
-
-        self.create_vao_with_vbos(format, main_vbo_id, intance_vbo_id, ibo_id, 0, inst_stride, true, true, true)
-    }
-
-    pub fn create_vao_with_new_instances(&mut self, format: VertexFormat, inst_stride: gl::GLint,
-                                         base_vao: VAOId) -> VAOId {
-        debug_assert!(self.inside_frame);
-
-        let buffer_ids = gl::gen_buffers(1);
-        let intance_vbo_id = VBOId(buffer_ids[0]);
-        let (main_vbo_id, ibo_id) = {
-            let vao = self.vaos.get(&base_vao).unwrap();
-            (vao.main_vbo_id, vao.ibo_id)
+        let (main_vbo_id, aux_vbo_id) = if format == VertexFormat::Rectangles {
+            (quad_vertex_buffer.expect("A quad vertex buffer must be supplied to `create_vao()` if
+                                        we are to render rectangles!"),
+             Some(VBOId(buffer_ids[1])))
+        } else {
+            (VBOId(buffer_ids[1]), None)
         };
 
-        self.create_vao_with_vbos(format, main_vbo_id, intance_vbo_id, ibo_id, 0, inst_stride, false, true, false)
+        self.create_vao_with_vbos(format, main_vbo_id, aux_vbo_id, ibo_id, 0, true)
     }
 
     pub fn update_vao_main_vertices<V>(&mut self,
@@ -1729,24 +1611,10 @@ impl Device {
         debug_assert!(self.inside_frame);
 
         let vao = self.vaos.get(&vao_id).unwrap();
-        debug_assert_eq!(self.bound_vao, vao_id);
+        debug_assert!(self.bound_vao == vao_id);
 
         vao.main_vbo_id.bind();
         gl::buffer_data(gl::ARRAY_BUFFER, &vertices, usage_hint.to_gl());
-    }
-
-    pub fn update_vao_instances<V>(&mut self,
-                                   vao_id: VAOId,
-                                   instances: &[V],
-                                   usage_hint: VertexUsageHint) {
-        debug_assert!(self.inside_frame);
-
-        let vao = self.vaos.get(&vao_id).unwrap();
-        debug_assert_eq!(self.bound_vao, vao_id);
-        debug_assert_eq!(vao.instance_stride as usize, mem::size_of::<V>());
-
-        vao.instance_vbo_id.bind();
-        gl::buffer_data(gl::ARRAY_BUFFER, &instances, usage_hint.to_gl());
     }
 
     pub fn update_vao_indices<I>(&mut self,
@@ -1756,7 +1624,7 @@ impl Device {
         debug_assert!(self.inside_frame);
 
         let vao = self.vaos.get(&vao_id).unwrap();
-        debug_assert_eq!(self.bound_vao, vao_id);
+        debug_assert!(self.bound_vao == vao_id);
 
         vao.ibo_id.bind();
         gl::buffer_data(gl::ELEMENT_ARRAY_BUFFER, &indices, usage_hint.to_gl());
@@ -1793,8 +1661,7 @@ impl Device {
     }
 
     pub fn end_frame(&mut self) {
-        self.bind_draw_target(None, None);
-        self.bind_read_target(None);
+        self.bind_render_target(None, None);
 
         debug_assert!(self.inside_frame);
         self.inside_frame = false;
@@ -1848,40 +1715,13 @@ impl Device {
         }
     }
 
-    pub fn clear_target(&self,
-                        color: Option<[f32; 4]>,
-                        depth: Option<f32>) {
-        let mut clear_bits = 0;
-
-        if let Some(color) = color {
-            gl::clear_color(color[0], color[1], color[2], color[3]);
-            clear_bits |= gl::COLOR_BUFFER_BIT;
-        }
-
-        if let Some(depth) = depth {
-            gl::clear_depth(depth as f64);
-            clear_bits |= gl::DEPTH_BUFFER_BIT;
-        }
-
-        if clear_bits != 0 {
-            gl::clear(clear_bits);
-        }
-    }
-
-    pub fn enable_depth(&self) {
-        gl::enable(gl::DEPTH_TEST);
+    pub fn clear_color(&self, c: [f32; 4]) {
+        gl::clear_color(c[0], c[1], c[2], c[3]);
+        gl::clear(gl::COLOR_BUFFER_BIT);
     }
 
     pub fn disable_depth(&self) {
         gl::disable(gl::DEPTH_TEST);
-    }
-
-    pub fn set_depth_func(&self, depth_func: DepthFunction) {
-        gl::depth_func(depth_func as gl::GLuint);
-    }
-
-    pub fn enable_depth_write(&self) {
-        gl::depth_mask(true);
     }
 
     pub fn disable_depth_write(&self) {
@@ -1919,12 +1759,6 @@ impl Device {
     pub fn set_blend_mode_subpixel(&self, color: ColorF) {
         gl::blend_color(color.r, color.g, color.b, color.a);
         gl::blend_func(gl::CONSTANT_COLOR, gl::ONE_MINUS_SRC_COLOR);
-    }
-
-    pub fn set_blend_mode_multiply(&self) {
-        gl::blend_func_separate(gl::ZERO, gl::SRC_COLOR,
-                                gl::ZERO, gl::SRC_ALPHA);
-        gl::blend_equation(gl::FUNC_ADD);
     }
 }
 

@@ -3,13 +3,13 @@
 
 
 use debug_font_data;
-use device::{Device, GpuMarker, ProgramId, VAOId, TextureId, VertexFormat};
+use device::{Device, ProgramId, VAOId, TextureId, VertexFormat};
 use device::{TextureFilter, VertexUsageHint, TextureTarget};
 use euclid::{Matrix4D, Point2D, Size2D, Rect};
 use internal_types::{ORTHO_NEAR_PLANE, ORTHO_FAR_PLANE, TextureSampler};
 use internal_types::{DebugFontVertex, DebugColorVertex, RenderTargetMode, PackedColor};
 use std::f32;
-use webrender_traits::{ColorF, ImageFormat, DeviceUintSize};
+use webrender_traits::{ColorF, ImageFormat};
 
 pub struct DebugRenderer {
     font_vertices: Vec<DebugFontVertex>,
@@ -31,9 +31,9 @@ impl DebugRenderer {
         let font_program_id = device.create_program("debug_font", "shared_other");
         let color_program_id = device.create_program("debug_color", "shared_other");
 
-        let font_vao = device.create_vao(VertexFormat::DebugFont, 32);
-        let line_vao = device.create_vao(VertexFormat::DebugColor, 32);
-        let tri_vao = device.create_vao(VertexFormat::DebugColor, 32);
+        let font_vao = device.create_vao(VertexFormat::DebugFont, None);
+        let line_vao = device.create_vao(VertexFormat::DebugColor, None);
+        let tri_vao = device.create_vao(VertexFormat::DebugColor, None);
 
         let font_texture_id = device.create_texture_ids(1, TextureTarget::Default)[0];
         device.init_texture(font_texture_id,
@@ -160,21 +160,23 @@ impl DebugRenderer {
 
     pub fn render(&mut self,
                   device: &mut Device,
-                  viewport_size: &DeviceUintSize) {
-        let _gm = GpuMarker::new("debug");
-        device.disable_depth();
-        device.set_blend(true);
-        device.set_blend_mode_alpha();
+                  viewport_size: &Size2D<u32>) {
+        if !self.font_indices.is_empty() ||
+           !self.line_vertices.is_empty() ||
+           !self.tri_vertices.is_empty() {
 
-        let projection = Matrix4D::ortho(0.0,
-                                         viewport_size.width as f32,
-                                         viewport_size.height as f32,
-                                         0.0,
-                                         ORTHO_NEAR_PLANE,
-                                         ORTHO_FAR_PLANE);
+            device.disable_depth();
+            device.set_blend(true);
+            device.set_blend_mode_alpha();
 
-        
-        if !self.tri_vertices.is_empty() {
+            let projection = Matrix4D::ortho(0.0,
+                                             viewport_size.width as f32,
+                                             viewport_size.height as f32,
+                                             0.0,
+                                             ORTHO_NEAR_PLANE,
+                                             ORTHO_FAR_PLANE);
+
+            
             device.bind_program(self.color_program_id, &projection);
             device.bind_vao(self.tri_vao);
             device.update_vao_indices(self.tri_vao,
@@ -184,22 +186,17 @@ impl DebugRenderer {
                                             &self.tri_vertices,
                                             VertexUsageHint::Dynamic);
             device.draw_triangles_u32(0, self.tri_indices.len() as i32);
-        }
 
-        
-        if !self.line_vertices.is_empty() {
-            device.bind_program(self.color_program_id, &projection);
+            
             device.bind_vao(self.line_vao);
             device.update_vao_main_vertices(self.line_vao,
                                             &self.line_vertices,
                                             VertexUsageHint::Dynamic);
             device.draw_nonindexed_lines(0, self.line_vertices.len() as i32);
-        }
 
-        
-        if !self.font_indices.is_empty() {
+            
             device.bind_program(self.font_program_id, &projection);
-            device.bind_texture(TextureSampler::Color0, self.font_texture_id);
+            device.bind_texture(TextureSampler::Color, self.font_texture_id);
             device.bind_vao(self.font_vao);
             device.update_vao_indices(self.font_vao,
                                       &self.font_indices,

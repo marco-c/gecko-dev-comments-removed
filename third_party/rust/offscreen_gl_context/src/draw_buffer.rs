@@ -5,6 +5,8 @@ use gleam::gl::types::{GLuint, GLenum, GLint};
 use GLContext;
 use NativeGLContextMethods;
 
+use std::ptr;
+
 #[derive(Debug)]
 pub enum ColorAttachmentType {
     Texture,
@@ -39,9 +41,11 @@ impl ColorAttachment {
 
 impl Drop for ColorAttachment {
     fn drop(&mut self) {
-        match *self {
-            ColorAttachment::Renderbuffer(id) => gl::delete_renderbuffers(&[id]),
-            ColorAttachment::Texture(tex_id) => gl::delete_textures(&[tex_id]),
+        unsafe {
+            match *self {
+                ColorAttachment::Renderbuffer(mut id) => gl::DeleteRenderbuffers(1, &mut id),
+                ColorAttachment::Texture(mut tex_id) => gl::DeleteTextures(1, &mut tex_id),
+            }
         }
     }
 }
@@ -65,10 +69,14 @@ pub struct DrawBuffer {
 
 fn create_renderbuffer(format: GLenum,
                        size: &Size2D<i32>) -> GLuint {
-    let ret = gl::gen_renderbuffers(1)[0];
-    gl::bind_renderbuffer(gl::RENDERBUFFER, ret);
-    gl::renderbuffer_storage(gl::RENDERBUFFER, format, size.width, size.height);
-    gl::bind_renderbuffer(gl::RENDERBUFFER, 0);
+    let mut ret: GLuint = 0;
+
+    unsafe {
+        gl::GenRenderbuffers(1, &mut ret);
+        gl::BindRenderbuffer(gl::RENDERBUFFER, ret);
+        gl::RenderbufferStorage(gl::RENDERBUFFER, format, size.width, size.height);
+        gl::BindRenderbuffer(gl::RENDERBUFFER, 0);
+    }
 
     ret
 }
@@ -113,8 +121,10 @@ impl DrawBuffer {
 
         try!(draw_buffer.init(context, color_attachment_type));
 
-        debug_assert!(gl::check_frame_buffer_status(gl::FRAMEBUFFER) == gl::FRAMEBUFFER_COMPLETE);
-        debug_assert!(gl::get_error() == gl::NO_ERROR);
+        unsafe {
+            debug_assert!(gl::CheckFramebufferStatus(gl::FRAMEBUFFER) == gl::FRAMEBUFFER_COMPLETE);
+            debug_assert!(gl::get_error() == gl::NO_ERROR);
+        }
 
         Ok(draw_buffer)
     }
@@ -157,11 +167,18 @@ impl DrawBuffer {
 
 impl Drop for DrawBuffer {
     fn drop(&mut self) {
-        gl::delete_framebuffers(&[self.framebuffer]);
+        unsafe {
+            gl::DeleteFramebuffers(1, &mut self.framebuffer);
 
-        
-        
-        gl::delete_renderbuffers(&[self.stencil_renderbuffer, self.depth_renderbuffer]);
+            
+            
+            let mut renderbuffers = [
+                self.stencil_renderbuffer,
+                self.depth_renderbuffer
+            ];
+
+            gl::DeleteRenderbuffers(2, renderbuffers.as_mut_ptr());
+        }
     }
 }
 
@@ -192,26 +209,31 @@ impl DrawBufferHelpers for DrawBuffer {
 
             
             ColorAttachmentType::Texture => {
-                let texture = gl::gen_textures(1)[0];
-                debug_assert!(texture != 0);
-
-                gl::bind_texture(gl::TEXTURE_2D, texture);
-                gl::tex_image_2d(gl::TEXTURE_2D, 0,
-                                 formats.texture_internal as GLint, self.size.width, self.size.height, 0, formats.texture, formats.texture_type, None);
+                let mut texture = 0;
 
                 
-                gl::tex_parameter_i(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::NEAREST as GLint);
-                gl::tex_parameter_i(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::NEAREST as GLint);
+                unsafe {
+                    gl::GenTextures(1, &mut texture);
+                    debug_assert!(texture != 0);
 
-                
-                gl::tex_parameter_i(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::CLAMP_TO_EDGE as GLint);
-                gl::tex_parameter_i(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::CLAMP_TO_EDGE as GLint);
+                    gl::BindTexture(gl::TEXTURE_2D, texture);
+                    gl::TexImage2D(gl::TEXTURE_2D, 0,
+                                   formats.texture_internal as GLint, self.size.width, self.size.height, 0, formats.texture, formats.texture_type, ptr::null_mut());
 
-                gl::bind_texture(gl::TEXTURE_2D, 0);
+                    
+                    gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::NEAREST as GLint);
+                    gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::NEAREST as GLint);
 
-                debug_assert!(gl::get_error() == gl::NO_ERROR);
+                    
+                    gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::CLAMP_TO_EDGE as GLint);
+                    gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::CLAMP_TO_EDGE as GLint);
 
-                Some(ColorAttachment::Texture(texture))
+                    gl::BindTexture(gl::TEXTURE_2D, 0);
+
+                    debug_assert!(gl::get_error() == gl::NO_ERROR);
+
+                    Some(ColorAttachment::Texture(texture))
+                }
             },
         };
 
@@ -226,48 +248,52 @@ impl DrawBufferHelpers for DrawBuffer {
             debug_assert!(self.stencil_renderbuffer != 0);
         }
 
-        self.framebuffer = gl::gen_framebuffers(1)[0];
-        debug_assert!(self.framebuffer != 0);
+        unsafe {
+            gl::GenFramebuffers(1, &mut self.framebuffer);
+            debug_assert!(self.framebuffer != 0);
+        }
 
         
         self.attach_to_framebuffer()
     }
 
     fn attach_to_framebuffer(&mut self) -> Result<(), &'static str> {
-        gl::bind_framebuffer(gl::FRAMEBUFFER, self.framebuffer);
-        
-        debug_assert!(gl::is_framebuffer(self.framebuffer) == gl::TRUE);
+        unsafe {
+            gl::BindFramebuffer(gl::FRAMEBUFFER, self.framebuffer);
+            
+            debug_assert!(gl::IsFramebuffer(self.framebuffer) == gl::TRUE);
 
-        match *self.color_attachment.as_ref().unwrap() {
-            ColorAttachment::Renderbuffer(color_renderbuffer) => {
-                gl::framebuffer_renderbuffer(gl::FRAMEBUFFER,
+            match *self.color_attachment.as_ref().unwrap() {
+                ColorAttachment::Renderbuffer(color_renderbuffer) => {
+                    gl::FramebufferRenderbuffer(gl::FRAMEBUFFER,
+                                                gl::COLOR_ATTACHMENT0,
+                                                gl::RENDERBUFFER,
+                                                color_renderbuffer);
+                    debug_assert!(gl::IsRenderbuffer(color_renderbuffer) == gl::TRUE);
+                },
+                ColorAttachment::Texture(texture_id) => {
+                    gl::FramebufferTexture2D(gl::FRAMEBUFFER,
                                              gl::COLOR_ATTACHMENT0,
-                                             gl::RENDERBUFFER,
-                                             color_renderbuffer);
-                debug_assert!(gl::is_renderbuffer(color_renderbuffer) == gl::TRUE);
-            },
-            ColorAttachment::Texture(texture_id) => {
-                gl::framebuffer_texture_2d(gl::FRAMEBUFFER,
-                                           gl::COLOR_ATTACHMENT0,
-                                           gl::TEXTURE_2D,
-                                           texture_id, 0);
-            },
-        }
+                                             gl::TEXTURE_2D,
+                                             texture_id, 0);
+                },
+            }
 
-        if self.depth_renderbuffer != 0 {
-            gl::framebuffer_renderbuffer(gl::FRAMEBUFFER,
-                                         gl::DEPTH_ATTACHMENT,
-                                         gl::RENDERBUFFER,
-                                         self.depth_renderbuffer);
-            debug_assert!(gl::is_renderbuffer(self.depth_renderbuffer) == gl::TRUE);
-        }
+            if self.depth_renderbuffer != 0 {
+                gl::FramebufferRenderbuffer(gl::FRAMEBUFFER,
+                                            gl::DEPTH_ATTACHMENT,
+                                            gl::RENDERBUFFER,
+                                            self.depth_renderbuffer);
+                debug_assert!(gl::IsRenderbuffer(self.depth_renderbuffer) == gl::TRUE);
+            }
 
-        if self.stencil_renderbuffer != 0 {
-            gl::framebuffer_renderbuffer(gl::FRAMEBUFFER,
-                                         gl::STENCIL_ATTACHMENT,
-                                         gl::RENDERBUFFER,
-                                         self.stencil_renderbuffer);
-            debug_assert!(gl::is_renderbuffer(self.stencil_renderbuffer) == gl::TRUE);
+            if self.stencil_renderbuffer != 0 {
+                gl::FramebufferRenderbuffer(gl::FRAMEBUFFER,
+                                            gl::STENCIL_ATTACHMENT,
+                                            gl::RENDERBUFFER,
+                                            self.stencil_renderbuffer);
+                debug_assert!(gl::IsRenderbuffer(self.stencil_renderbuffer) == gl::TRUE);
+            }
         }
 
         Ok(())

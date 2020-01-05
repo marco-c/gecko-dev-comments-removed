@@ -3,16 +3,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#if defined(GL_ES)
-    #if GL_ES == 1
-        #ifdef GL_FRAGMENT_PRECISION_HIGH
-        precision highp sampler2DArray;
-        #else
-        precision mediump sampler2DArray;
-        #endif
-    #endif
-#endif
-
 #define PST_TOP_LEFT     0
 #define PST_TOP          1
 #define PST_TOP_RIGHT    2
@@ -30,18 +20,26 @@
 #define UV_NORMALIZED    uint(0)
 #define UV_PIXEL         uint(1)
 
+// Border styles as defined in webrender_traits/types.rs
+#define BORDER_STYLE_NONE         0
+#define BORDER_STYLE_SOLID        1
+#define BORDER_STYLE_DOUBLE       2
+#define BORDER_STYLE_DOTTED       3
+#define BORDER_STYLE_DASHED       4
+#define BORDER_STYLE_HIDDEN       5
+#define BORDER_STYLE_GROOVE       6
+#define BORDER_STYLE_RIDGE        7
+#define BORDER_STYLE_INSET        8
+#define BORDER_STYLE_OUTSET       9
+
 #define MAX_STOPS_PER_ANGLE_GRADIENT 8
-#define MAX_STOPS_PER_RADIAL_GRADIENT 8
 
 uniform sampler2DArray sCache;
-
-flat varying vec4 vClipMaskUvBounds;
-varying vec3 vClipMaskUv;
 
 #ifdef WR_VERTEX_SHADER
 
 #define VECS_PER_LAYER             13
-#define VECS_PER_RENDER_TASK        3
+#define VECS_PER_RENDER_TASK        2
 #define VECS_PER_PRIM_GEOM          2
 
 #define GRADIENT_HORIZONTAL     0
@@ -51,28 +49,19 @@ varying vec3 vClipMaskUv;
 uniform sampler2D sLayers;
 uniform sampler2D sRenderTasks;
 uniform sampler2D sPrimGeometry;
+uniform sampler2D sClips;
 
 uniform sampler2D sData16;
 uniform sampler2D sData32;
 uniform sampler2D sData64;
 uniform sampler2D sData128;
-uniform sampler2D sResourceRects;
 
-// Instanced attributes
-in int aGlobalPrimId;
-in int aPrimitiveAddress;
-in int aTaskIndex;
-in int aClipTaskIndex;
-in int aLayerIndex;
-in int aElementIndex;
-in ivec2 aUserData;
-in int aZIndex;
-
-// get_fetch_uv is a macro to work around a macOS Intel driver parsing bug.
-// TODO: convert back to a function once the driver issues are resolved, if ever.
-// https://github.com/servo/webrender/pull/623
-// https://github.com/servo/servo/issues/13953
-#define get_fetch_uv(i, vpi)  ivec2(vpi * (i % (WR_MAX_VERTEX_TEXTURE_WIDTH/vpi)), i / (WR_MAX_VERTEX_TEXTURE_WIDTH/vpi))
+ivec2 get_fetch_uv(int index, int vecs_per_item) {
+    int items_per_row = WR_MAX_VERTEX_TEXTURE_WIDTH / vecs_per_item;
+    int y = index / items_per_row;
+    int x = vecs_per_item * (index % items_per_row);
+    return ivec2(x, y);
+}
 
 ivec2 get_fetch_uv_1(int index) {
     return get_fetch_uv(index, 1);
@@ -95,6 +84,10 @@ struct Layer {
     mat4 inv_transform;
     vec4 local_clip_rect;
     vec4 screen_vertices[4];
+};
+
+layout(std140) uniform Data {
+    ivec4 int_data[WR_MAX_UBO_VECTORS];
 };
 
 Layer fetch_layer(int index) {
@@ -131,7 +124,6 @@ Layer fetch_layer(int index) {
 struct RenderTaskData {
     vec4 data0;
     vec4 data1;
-    vec4 data2;
 };
 
 RenderTaskData fetch_render_task(int index) {
@@ -141,7 +133,6 @@ RenderTaskData fetch_render_task(int index) {
 
     task.data0 = texelFetchOffset(sRenderTasks, uv, 0, ivec2(0, 0));
     task.data1 = texelFetchOffset(sRenderTasks, uv, 0, ivec2(1, 0));
-    task.data2 = texelFetchOffset(sRenderTasks, uv, 0, ivec2(2, 0));
 
     return task;
 }
@@ -159,29 +150,6 @@ Tile fetch_tile(int index) {
     tile.size_target_index = task.data1;
 
     return tile;
-}
-
-struct ClipArea {
-    vec4 task_bounds;
-    vec4 screen_origin_target_index;
-    vec4 inner_rect;
-};
-
-ClipArea fetch_clip_area(int index) {
-    ClipArea area;
-
-    if (index == 0x7FFFFFFF) { //special sentinel task index
-        area.task_bounds = vec4(0.0, 0.0, 0.0, 0.0);
-        area.screen_origin_target_index = vec4(0.0, 0.0, 0.0, 0.0);
-        area.inner_rect = vec4(0.0);
-    } else {
-        RenderTaskData task = fetch_render_task(index);
-        area.task_bounds = task.data0;
-        area.screen_origin_target_index = task.data1;
-        area.inner_rect = task.data2;
-    }
-
-    return area;
 }
 
 struct Gradient {
@@ -216,34 +184,44 @@ GradientStop fetch_gradient_stop(int index) {
     return stop;
 }
 
-struct RadialGradient {
-    vec4 start_end_center;
-    vec4 start_end_radius;
-};
-
-RadialGradient fetch_radial_gradient(int index) {
-    RadialGradient gradient;
-
-    ivec2 uv = get_fetch_uv_2(index);
-
-    gradient.start_end_center = texelFetchOffset(sData32, uv, 0, ivec2(0, 0));
-    gradient.start_end_radius = texelFetchOffset(sData32, uv, 0, ivec2(1, 0));
-
-    return gradient;
-}
-
 struct Glyph {
     vec4 offset;
+    vec4 uv_rect;
 };
 
 Glyph fetch_glyph(int index) {
     Glyph glyph;
 
-    ivec2 uv = get_fetch_uv_1(index);
+    ivec2 uv = get_fetch_uv_2(index);
 
-    glyph.offset = texelFetchOffset(sData16, uv, 0, ivec2(0, 0));
+    glyph.offset = texelFetchOffset(sData32, uv, 0, ivec2(0, 0));
+    glyph.uv_rect = texelFetchOffset(sData32, uv, 0, ivec2(1, 0));
 
     return glyph;
+}
+
+struct Border {
+    vec4 style;
+    vec4 widths;
+    vec4 colors[4];
+    vec4 radii[2];
+};
+
+Border fetch_border(int index) {
+    Border border;
+
+    ivec2 uv = get_fetch_uv_8(index);
+
+    border.style = texelFetchOffset(sData128, uv, 0, ivec2(0, 0));
+    border.widths = texelFetchOffset(sData128, uv, 0, ivec2(1, 0));
+    border.colors[0] = texelFetchOffset(sData128, uv, 0, ivec2(2, 0));
+    border.colors[1] = texelFetchOffset(sData128, uv, 0, ivec2(3, 0));
+    border.colors[2] = texelFetchOffset(sData128, uv, 0, ivec2(4, 0));
+    border.colors[3] = texelFetchOffset(sData128, uv, 0, ivec2(5, 0));
+    border.radii[0] = texelFetchOffset(sData128, uv, 0, ivec2(6, 0));
+    border.radii[1] = texelFetchOffset(sData128, uv, 0, ivec2(7, 0));
+
+    return border;
 }
 
 vec4 fetch_instance_geometry(int index) {
@@ -274,26 +252,49 @@ struct PrimitiveInstance {
     int global_prim_index;
     int specific_prim_index;
     int render_task_index;
-    int clip_task_index;
     int layer_index;
+    int clip_address;
     int sub_index;
-    int z;
     ivec2 user_data;
 };
 
-PrimitiveInstance fetch_prim_instance() {
+PrimitiveInstance fetch_instance(int index) {
     PrimitiveInstance pi;
 
-    pi.global_prim_index = aGlobalPrimId;
-    pi.specific_prim_index = aPrimitiveAddress;
-    pi.render_task_index = aTaskIndex;
-    pi.clip_task_index = aClipTaskIndex;
-    pi.layer_index = aLayerIndex;
-    pi.sub_index = aElementIndex;
-    pi.user_data = aUserData;
-    pi.z = aZIndex;
+    int offset = index * 2;
+
+    ivec4 data0 = int_data[offset + 0];
+    ivec4 data1 = int_data[offset + 1];
+
+    pi.global_prim_index = data0.x;
+    pi.specific_prim_index = data0.y;
+    pi.render_task_index = data0.z;
+    pi.layer_index = data0.w;
+    pi.clip_address = data1.x;
+    pi.sub_index = data1.y;
+    pi.user_data = data1.zw;
 
     return pi;
+}
+
+struct BlurCommand {
+    int task_id;
+    int src_task_id;
+    int dir;
+};
+
+BlurCommand fetch_blur(int index) {
+    BlurCommand blur;
+
+    int offset = index * 1;
+
+    ivec4 data0 = int_data[offset + 0];
+
+    blur.task_id = data0.x;
+    blur.src_task_id = data0.y;
+    blur.dir = data0.z;
+
+    return blur;
 }
 
 struct CachePrimitiveInstance {
@@ -301,19 +302,19 @@ struct CachePrimitiveInstance {
     int specific_prim_index;
     int render_task_index;
     int sub_index;
-    ivec2 user_data;
 };
 
-CachePrimitiveInstance fetch_cache_instance() {
+CachePrimitiveInstance fetch_cache_instance(int index) {
     CachePrimitiveInstance cpi;
 
-    PrimitiveInstance pi = fetch_prim_instance();
+    int offset = index * 1;
 
-    cpi.global_prim_index = pi.global_prim_index;
-    cpi.specific_prim_index = pi.specific_prim_index;
-    cpi.render_task_index = pi.render_task_index;
-    cpi.sub_index = pi.sub_index;
-    cpi.user_data = pi.user_data;
+    ivec4 data0 = int_data[offset + 0];
+
+    cpi.global_prim_index = data0.x;
+    cpi.specific_prim_index = data0.y;
+    cpi.render_task_index = data0.z;
+    cpi.sub_index = data0.w;
 
     return cpi;
 }
@@ -321,42 +322,106 @@ CachePrimitiveInstance fetch_cache_instance() {
 struct Primitive {
     Layer layer;
     Tile tile;
-    ClipArea clip_area;
     vec4 local_rect;
     vec4 local_clip_rect;
     int prim_index;
+    int clip_index;
     // when sending multiple primitives of the same type (e.g. border segments)
     // this index allows the vertex shader to recognize the difference
     int sub_index;
     ivec2 user_data;
-    float z;
 };
 
-Primitive load_primitive_custom(PrimitiveInstance pi) {
+Primitive load_primitive(int index) {
     Primitive prim;
+
+    PrimitiveInstance pi = fetch_instance(index);
 
     prim.layer = fetch_layer(pi.layer_index);
     prim.tile = fetch_tile(pi.render_task_index);
-    prim.clip_area = fetch_clip_area(pi.clip_task_index);
 
     PrimitiveGeometry pg = fetch_prim_geometry(pi.global_prim_index);
     prim.local_rect = pg.local_rect;
     prim.local_clip_rect = pg.local_clip_rect;
 
     prim.prim_index = pi.specific_prim_index;
+    prim.clip_index = pi.clip_address;
     prim.sub_index = pi.sub_index;
     prim.user_data = pi.user_data;
-    prim.z = float(pi.z);
 
     return prim;
 }
 
-Primitive load_primitive() {
-    PrimitiveInstance pi = fetch_prim_instance();
+struct ClipRect {
+    vec4 rect;
+    vec4 dummy;
+};
 
-    return load_primitive_custom(pi);
+ClipRect fetch_clip_rect(int index) {
+    ClipRect rect;
+
+    ivec2 uv = get_fetch_uv_2(index);
+
+    rect.rect = texelFetchOffset(sData32, uv, 0, ivec2(0, 0));
+    //rect.dummy = texelFetchOffset(sData32, uv, 0, ivec2(1, 0));
+    rect.dummy = vec4(0.0, 0.0, 0.0, 0.0);
+
+    return rect;
 }
 
+struct ImageMaskData {
+    vec4 uv_rect;
+    vec4 local_rect;
+};
+
+ImageMaskData fetch_mask_data(int index) {
+    ImageMaskData info;
+
+    ivec2 uv = get_fetch_uv_2(index);
+
+    info.uv_rect = texelFetchOffset(sData32, uv, 0, ivec2(0, 0));
+    info.local_rect = texelFetchOffset(sData32, uv, 0, ivec2(1, 0));
+
+    return info;
+}
+
+struct ClipCorner {
+    vec4 rect;
+    vec4 outer_inner_radius;
+};
+
+ClipCorner fetch_clip_corner(int index) {
+    ClipCorner corner;
+
+    ivec2 uv = get_fetch_uv_2(index);
+
+    corner.rect = texelFetchOffset(sData32, uv, 0, ivec2(0, 0));
+    corner.outer_inner_radius = texelFetchOffset(sData32, uv, 0, ivec2(1, 0));
+
+    return corner;
+}
+
+struct ClipData {
+    ClipRect rect;
+    ClipCorner top_left;
+    ClipCorner top_right;
+    ClipCorner bottom_left;
+    ClipCorner bottom_right;
+    ImageMaskData mask_data;
+};
+
+ClipData fetch_clip(int index) {
+    ClipData clip;
+
+    clip.rect = fetch_clip_rect(index + 0);
+    clip.top_left = fetch_clip_corner(index + 1);
+    clip.top_right = fetch_clip_corner(index + 2);
+    clip.bottom_left = fetch_clip_corner(index + 3);
+    clip.bottom_right = fetch_clip_corner(index + 4);
+    clip.mask_data = fetch_mask_data(index + 5);
+
+    return clip;
+}
 
 // Return the intersection of the plane (set up by "normal" and "point")
 // with the ray (set up by "ray_origin" and "ray_dir"),
@@ -419,7 +484,6 @@ struct VertexInfo {
 
 VertexInfo write_vertex(vec4 instance_rect,
                         vec4 local_clip_rect,
-                        float z,
                         Layer layer,
                         Tile tile) {
     vec2 p0 = floor(0.5 + instance_rect.xy * uDevicePixelRatio) / uDevicePixelRatio;
@@ -433,7 +497,7 @@ VertexInfo write_vertex(vec4 instance_rect,
 
     local_pos = clamp_rect(local_pos, layer.local_clip_rect);
 
-    vec4 world_pos = layer.transform * vec4(local_pos, 0.0, 1.0);
+    vec4 world_pos = layer.transform * vec4(local_pos, 0, 1);
     world_pos.xyz /= world_pos.w;
 
     vec2 device_pos = world_pos.xy * uDevicePixelRatio;
@@ -447,7 +511,7 @@ VertexInfo write_vertex(vec4 instance_rect,
 
     vec2 final_pos = clamped_pos + tile.screen_origin_task_origin.zw - tile.screen_origin_task_origin.xy;
 
-    gl_Position = uTransform * vec4(final_pos, z, 1.0);
+    gl_Position = uTransform * vec4(final_pos, 0, 1);
 
     VertexInfo vi = VertexInfo(Rect(p0, p1), local_clamped_pos.xy, clamped_pos.xy);
     return vi;
@@ -457,13 +521,11 @@ VertexInfo write_vertex(vec4 instance_rect,
 
 struct TransformVertexInfo {
     vec3 local_pos;
-    vec2 global_clamped_pos;
     vec4 clipped_local_rect;
 };
 
 TransformVertexInfo write_transform_vertex(vec4 instance_rect,
                                            vec4 local_clip_rect,
-                                           float z,
                                            Layer layer,
                                            Tile tile) {
     vec2 lp0_base = instance_rect.xy;
@@ -515,26 +577,12 @@ TransformVertexInfo write_transform_vertex(vec4 instance_rect,
     // apply the task offset
     vec2 final_pos = clamped_pos + tile.screen_origin_task_origin.zw - tile.screen_origin_task_origin.xy;
 
-    gl_Position = uTransform * vec4(final_pos, z, 1.0);
+    gl_Position = uTransform * vec4(final_pos, 0, 1);
 
-    return TransformVertexInfo(layer_pos.xyw, clamped_pos, clipped_local_rect);
+    return TransformVertexInfo(layer_pos.xyw, clipped_local_rect);
 }
 
 #endif //WR_FEATURE_TRANSFORM
-
-struct ResourceRect {
-    vec4 uv_rect;
-};
-
-ResourceRect fetch_resource_rect(int index) {
-    ResourceRect rect;
-
-    ivec2 uv = get_fetch_uv_1(index);
-
-    rect.uv_rect = texelFetchOffset(sResourceRects, uv, 0, ivec2(0, 0));
-
-    return rect;
-}
 
 struct Rectangle {
     vec4 color;
@@ -565,6 +613,7 @@ TextRun fetch_text_run(int index) {
 }
 
 struct Image {
+    vec4 st_rect;                        // Location of the image texture in the texture atlas.
     vec4 stretch_size_and_tile_spacing;  // Size of the actual image and amount of space between
                                          //     tiled instances of this image.
 };
@@ -572,36 +621,10 @@ struct Image {
 Image fetch_image(int index) {
     Image image;
 
-    ivec2 uv = get_fetch_uv_1(index);
+    ivec2 uv = get_fetch_uv_2(index);
 
-    image.stretch_size_and_tile_spacing = texelFetchOffset(sData16, uv, 0, ivec2(0, 0));
-
-    return image;
-}
-
-// YUV color spaces
-#define YUV_REC601 1
-#define YUV_REC709 2
-
-struct YuvImage {
-    vec4 y_st_rect;
-    vec4 u_st_rect;
-    vec4 v_st_rect;
-    vec2 size;
-    int color_space;
-};
-
-YuvImage fetch_yuv_image(int index) {
-    YuvImage image;
-
-    ivec2 uv = get_fetch_uv_4(index);
-
-    image.y_st_rect = texelFetchOffset(sData64, uv, 0, ivec2(0, 0));
-    image.u_st_rect = texelFetchOffset(sData64, uv, 0, ivec2(1, 0));
-    image.v_st_rect = texelFetchOffset(sData64, uv, 0, ivec2(2, 0));
-    vec4 size_color_space = texelFetchOffset(sData64, uv, 0, ivec2(3, 0));
-    image.size = size_color_space.xy;
-    image.color_space = int(size_color_space.z);
+    image.st_rect = texelFetchOffset(sData32, uv, 0, ivec2(0, 0));
+    image.stretch_size_and_tile_spacing = texelFetchOffset(sData32, uv, 0, ivec2(1, 0));
 
     return image;
 }
@@ -626,13 +649,33 @@ BoxShadow fetch_boxshadow(int index) {
     return bs;
 }
 
-void write_clip(vec2 global_pos, ClipArea area) {
-    vec2 texture_size = vec2(textureSize(sCache, 0).xy);
-    vec2 uv = global_pos + area.task_bounds.xy - area.screen_origin_target_index.xy;
-    vClipMaskUvBounds = area.task_bounds / texture_size.xyxy;
-    vClipMaskUv = vec3(uv / texture_size, area.screen_origin_target_index.z);
+struct Blend {
+    ivec4 src_id_target_id_op_amount;
+};
+
+Blend fetch_blend(int index) {
+    Blend blend;
+
+    int offset = index * 1;
+    blend.src_id_target_id_op_amount = int_data[offset + 0];
+
+    return blend;
 }
-#endif //WR_VERTEX_SHADER
+
+struct Composite {
+    ivec4 src0_src1_target_id_op;
+};
+
+Composite fetch_composite(int index) {
+    Composite composite;
+
+    int offset = index * 1;
+
+    composite.src0_src1_target_id_op = int_data[offset + 0];
+
+    return composite;
+}
+#endif
 
 #ifdef WR_FRAGMENT_SHADER
 float distance_from_rect(vec2 p, vec2 origin, vec2 size) {
@@ -652,14 +695,4 @@ vec2 init_transform_fs(vec3 local_pos, vec4 local_rect, out float fragment_alpha
 
     return pos;
 }
-
-float do_clip() {
-    // anything outside of the mask is considered transparent
-    bvec4 inside = lessThanEqual(
-        vec4(vClipMaskUvBounds.xy, vClipMaskUv.xy),
-        vec4(vClipMaskUv.xy, vClipMaskUvBounds.zw));
-    // check for the dummy bounds, which are given to the opaque objects
-    return vClipMaskUvBounds.xy == vClipMaskUvBounds.zw ? 1.0:
-        all(inside) ? textureLod(sCache, vClipMaskUv, 0.0).r : 0.0;
-}
-#endif //WR_FRAGMENT_SHADER
+#endif

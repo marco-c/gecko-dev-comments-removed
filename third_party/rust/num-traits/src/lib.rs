@@ -1,14 +1,14 @@
-// Copyright 2013-2014 The Rust Project Developers. See the COPYRIGHT
-// file at the top-level directory of this distribution and at
-// http://rust-lang.org/COPYRIGHT.
-//
-// Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
-// http://www.apache.org/licenses/LICENSE-2.0> or the MIT license
-// <LICENSE-MIT or http://opensource.org/licenses/MIT>, at your
-// option. This file may not be copied, modified, or distributed
-// except according to those terms.
 
-//! Numeric traits for generic mathematics
+
+
+
+
+
+
+
+
+
+
 
 use std::ops::{Add, Sub, Mul, Div, Rem};
 
@@ -31,14 +31,14 @@ pub mod cast;
 pub mod int;
 pub mod pow;
 
-/// The base trait for numeric types
+
 pub trait Num: PartialEq + Zero + One
     + Add<Output = Self> + Sub<Output = Self>
     + Mul<Output = Self> + Div<Output = Self> + Rem<Output = Self>
 {
     type FromStrRadixErr;
 
-    /// Convert from a string and radix <= 36.
+    
     fn from_str_radix(str: &str, radix: u32) -> Result<Self, Self::FromStrRadixErr>;
 }
 
@@ -62,16 +62,16 @@ pub enum FloatErrorKind {
     Empty,
     Invalid,
 }
-// FIXME: std::num::ParseFloatError is stable in 1.0, but opaque to us,
-// so there's not really any way for us to reuse it.
+
+
 #[derive(Debug)]
 pub struct ParseFloatError {
     pub kind: FloatErrorKind,
 }
 
-// FIXME: The standard library from_str_radix on floats was deprecated, so we're stuck
-// with this implementation ourselves until we want to make a breaking change.
-// (would have to drop it from `Num` though)
+
+
+
 macro_rules! float_trait_impl {
     ($name:ident for $($t:ty)*) => ($(
         impl $name for $t {
@@ -226,7 +226,7 @@ float_trait_impl!(Num for f32 f64);
 
 #[test]
 fn from_str_radix_unwrap() {
-    // The Result error must impl Debug to allow unwrap()
+    
 
     let i: i32 = Num::from_str_radix("0", 10).unwrap();
     assert_eq!(i, 0);

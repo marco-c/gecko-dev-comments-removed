@@ -66,7 +66,6 @@ pub mod prelude {
     pub use ast::Ident;
     pub use codemap::{DUMMY_SP, Span};
     pub use ext::base::{ExtCtxt, MacResult};
-    pub use parse::token::{self, Token, DelimToken};
-    pub use symbol::keywords;
+    pub use parse::token::{self, Token, DelimToken, keywords, str_to_ident};
     pub use tokenstream::{TokenTree, TokenStream};
 }

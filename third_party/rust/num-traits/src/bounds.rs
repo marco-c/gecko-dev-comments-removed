@@ -2,12 +2,12 @@ use std::{usize, u8, u16, u32, u64};
 use std::{isize, i8, i16, i32, i64};
 use std::{f32, f64};
 
-/// Numbers which have upper and lower bounds
+
 pub trait Bounded {
-    // FIXME (#5527): These should be associated constants
-    /// returns the smallest finite number this type can represent
+    
+    
     fn min_value() -> Self;
-    /// returns the largest finite number this type can represent
+    
     fn max_value() -> Self;
 }
 

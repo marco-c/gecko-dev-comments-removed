@@ -4,11 +4,10 @@
 
 use byteorder::{LittleEndian, ReadBytesExt};
 use frame::Frame;
-use internal_types::{FontTemplate, GLContextHandleWrapper, GLContextWrapper};
-use internal_types::{SourceTexture, ResultMsg, RendererFrame};
+use internal_types::{FontTemplate, GLContextHandleWrapper, GLContextWrapper, ResultMsg, RendererFrame};
+use ipc_channel::ipc::{IpcBytesReceiver, IpcBytesSender, IpcReceiver};
 use profiler::BackendProfileCounters;
-use record;
-use resource_cache::ResourceCache;
+use resource_cache::{DummyResources, ResourceCache};
 use scene::Scene;
 use std::collections::HashMap;
 use std::fs;
@@ -16,10 +15,10 @@ use std::io::{Cursor, Read};
 use std::sync::{Arc, Mutex};
 use std::sync::mpsc::Sender;
 use texture_cache::TextureCache;
-use webrender_traits::{ApiMsg, AuxiliaryLists, BuiltDisplayList, IdNamespace, ImageData};
+use webrender_traits::{ApiMsg, AuxiliaryLists, BuiltDisplayList, IdNamespace};
 use webrender_traits::{RenderNotifier, RenderDispatcher, WebGLCommand, WebGLContextId};
-use webrender_traits::channel::{PayloadHelperMethods, PayloadReceiver, PayloadSender, MsgReceiver};
-use webrender_traits::{VRCompositorCommand, VRCompositorHandler};
+use device::TextureId;
+use record;
 use tiling::FrameBuilderConfig;
 use offscreen_gl_context::GLContextDispatcher;
 
@@ -28,15 +27,16 @@ use offscreen_gl_context::GLContextDispatcher;
 
 
 pub struct RenderBackend {
-    api_rx: MsgReceiver<ApiMsg>,
-    payload_rx: PayloadReceiver,
-    payload_tx: PayloadSender,
+    api_rx: IpcReceiver<ApiMsg>,
+    payload_rx: IpcBytesReceiver,
+    payload_tx: IpcBytesSender,
     result_tx: Sender<ResultMsg>,
 
     device_pixel_ratio: f32,
     next_namespace_id: IdNamespace,
 
     resource_cache: ResourceCache,
+    dummy_resources: DummyResources,
 
     scene: Scene,
     frame: Frame,
@@ -49,27 +49,26 @@ pub struct RenderBackend {
     main_thread_dispatcher: Arc<Mutex<Option<Box<RenderDispatcher>>>>,
 
     next_webgl_id: usize,
-
-    vr_compositor_handler: Arc<Mutex<Option<Box<VRCompositorHandler>>>>
 }
 
 impl RenderBackend {
-    pub fn new(api_rx: MsgReceiver<ApiMsg>,
-               payload_rx: PayloadReceiver,
-               payload_tx: PayloadSender,
+    pub fn new(api_rx: IpcReceiver<ApiMsg>,
+               payload_rx: IpcBytesReceiver,
+               payload_tx: IpcBytesSender,
                result_tx: Sender<ResultMsg>,
                device_pixel_ratio: f32,
                texture_cache: TextureCache,
+               dummy_resources: DummyResources,
                enable_aa: bool,
                notifier: Arc<Mutex<Option<Box<RenderNotifier>>>>,
                webrender_context_handle: Option<GLContextHandleWrapper>,
                config: FrameBuilderConfig,
                debug: bool,
                enable_recording:bool,
-               main_thread_dispatcher: Arc<Mutex<Option<Box<RenderDispatcher>>>>,
-               vr_compositor_handler: Arc<Mutex<Option<Box<VRCompositorHandler>>>>) -> RenderBackend {
+               main_thread_dispatcher:  Arc<Mutex<Option<Box<RenderDispatcher>>>>) -> RenderBackend {
 
         let resource_cache = ResourceCache::new(texture_cache,
+                                                device_pixel_ratio,
                                                 enable_aa);
 
         RenderBackend {
@@ -79,6 +78,7 @@ impl RenderBackend {
             result_tx: result_tx,
             device_pixel_ratio: device_pixel_ratio,
             resource_cache: resource_cache,
+            dummy_resources: dummy_resources,
             scene: Scene::new(),
             frame: Frame::new(debug, config),
             next_namespace_id: IdNamespace(1),
@@ -89,7 +89,6 @@ impl RenderBackend {
             enable_recording:enable_recording,
             main_thread_dispatcher: main_thread_dispatcher,
             next_webgl_id: 0,
-            vr_compositor_handler: vr_compositor_handler
         }
     }
 
@@ -99,7 +98,6 @@ impl RenderBackend {
         if self.enable_recording {
             fs::create_dir("record").ok();
         }
-
         loop {
             let msg = self.api_rx.recv();
             match msg {
@@ -125,14 +123,21 @@ impl RenderBackend {
                             };
                             tx.send(glyph_dimensions).unwrap();
                         }
-                        ApiMsg::AddImage(id, descriptor, data) => {
-                            if let ImageData::Raw(ref bytes) = data {
-                                profile_counters.image_templates.inc(bytes.len());
-                            }
-                            self.resource_cache.add_image_template(id, descriptor, data);
+                        ApiMsg::AddImage(id, width, height, stride, format, bytes) => {
+                            profile_counters.image_templates.inc(bytes.len());
+                            self.resource_cache.add_image_template(id,
+                                                                   width,
+                                                                   height,
+                                                                   stride,
+                                                                   format,
+                                                                   bytes);
                         }
-                        ApiMsg::UpdateImage(id, descriptor, bytes) => {
-                            self.resource_cache.update_image_template(id, descriptor, bytes);
+                        ApiMsg::UpdateImage(id, width, height, format, bytes) => {
+                            self.resource_cache.update_image_template(id,
+                                                                      width,
+                                                                      height,
+                                                                      format,
+                                                                      bytes);
                         }
                         ApiMsg::DeleteImage(id) => {
                             self.resource_cache.delete_image_template(id);
@@ -145,40 +150,60 @@ impl RenderBackend {
 
                             sender.send(result).unwrap();
                         }
-                        ApiMsg::SetRootDisplayList(background_color,
-                                                   epoch,
-                                                   pipeline_id,
-                                                   viewport_size,
-                                                   display_list_descriptor,
-                                                   auxiliary_lists_descriptor) => {
+                        ApiMsg::SetRootStackingContext(stacking_context_id,
+                                                       background_color,
+                                                       epoch,
+                                                       pipeline_id,
+                                                       viewport_size,
+                                                       stacking_contexts,
+                                                       display_lists,
+                                                       auxiliary_lists_descriptor) => {
+                            for (id, stacking_context) in stacking_contexts.into_iter() {
+                                self.scene.add_stacking_context(id,
+                                                                pipeline_id,
+                                                                epoch,
+                                                                stacking_context);
+                            }
+
                             let mut leftover_auxiliary_data = vec![];
                             let mut auxiliary_data;
                             loop {
                                 auxiliary_data = self.payload_rx.recv().unwrap();
                                 {
                                     let mut payload_reader = Cursor::new(&auxiliary_data[..]);
+                                    let payload_stacking_context_id =
+                                        payload_reader.read_u32::<LittleEndian>().unwrap();
                                     let payload_epoch =
                                         payload_reader.read_u32::<LittleEndian>().unwrap();
-                                    if payload_epoch == epoch.0 {
+                                    if payload_epoch == epoch.0 &&
+                                            payload_stacking_context_id == stacking_context_id.0 {
                                         break
                                     }
                                 }
                                 leftover_auxiliary_data.push(auxiliary_data)
                             }
                             for leftover_auxiliary_data in leftover_auxiliary_data {
-                                self.payload_tx.send_vec(leftover_auxiliary_data).unwrap()
+                                self.payload_tx.send(&leftover_auxiliary_data[..]).unwrap()
                             }
                             if self.enable_recording {
                                 record::write_payload(frame_counter, &auxiliary_data);
                             }
-
-                            let mut auxiliary_data = Cursor::new(&mut auxiliary_data[4..]);
-                            let mut built_display_list_data =
-                                vec![0; display_list_descriptor.size()];
-                            auxiliary_data.read_exact(&mut built_display_list_data[..]).unwrap();
-                            let built_display_list =
-                                BuiltDisplayList::from_data(built_display_list_data,
-                                                            display_list_descriptor);
+                            let mut auxiliary_data = Cursor::new(&mut auxiliary_data[8..]);
+                            for (display_list_id,
+                                 display_list_descriptor) in display_lists.into_iter() {
+                                let mut built_display_list_data =
+                                    vec![0; display_list_descriptor.size()];
+                                auxiliary_data.read_exact(&mut built_display_list_data[..])
+                                              .unwrap();
+                                let built_display_list =
+                                    BuiltDisplayList::from_data(built_display_list_data,
+                                                                display_list_descriptor);
+                                self.scene.add_display_list(display_list_id,
+                                                            pipeline_id,
+                                                            epoch,
+                                                            built_display_list,
+                                                            &mut self.resource_cache);
+                            }
 
                             let mut auxiliary_lists_data =
                                 vec![0; auxiliary_lists_descriptor.size()];
@@ -186,23 +211,35 @@ impl RenderBackend {
                             let auxiliary_lists =
                                 AuxiliaryLists::from_data(auxiliary_lists_data,
                                                           auxiliary_lists_descriptor);
+                            let frame = profile_counters.total_time.profile(|| {
+                                self.scene.set_root_stacking_context(pipeline_id,
+                                                                     epoch,
+                                                                     stacking_context_id,
+                                                                     background_color,
+                                                                     viewport_size,
+                                                                     &mut self.resource_cache,
+                                                                     auxiliary_lists);
 
-                            self.scene.set_root_display_list(pipeline_id,
-                                                             epoch,
-                                                             built_display_list,
-                                                             background_color,
-                                                             viewport_size,
-                                                             auxiliary_lists);
-                            self.build_scene();
+                                self.build_scene();
+                                self.render()
+                            });
+
+                            if self.scene.root_pipeline_id.is_some() {
+                                self.publish_frame_and_notify_compositor(frame, &mut profile_counters);
+                                frame_counter += 1;
+                            }
                         }
                         ApiMsg::SetRootPipeline(pipeline_id) => {
-                            self.scene.set_root_pipeline_id(pipeline_id);
+                            let frame = profile_counters.total_time.profile(|| {
+                                self.scene.set_root_pipeline_id(pipeline_id);
 
-                            if self.scene.display_lists.get(&pipeline_id).is_none() {
-                                continue;
-                            }
+                                self.build_scene();
+                                self.render()
+                            });
 
-                            self.build_scene();
+                            
+                            self.publish_frame_and_notify_compositor(frame, &mut profile_counters);
+                            frame_counter += 1;
                         }
                         ApiMsg::Scroll(delta, cursor, move_phase) => {
                             let frame = profile_counters.total_time.profile(|| {
@@ -221,30 +258,24 @@ impl RenderBackend {
                                 None => self.notify_compositor_of_new_scroll_frame(false),
                             }
                         }
-                        ApiMsg::ScrollLayersWithScrollId(origin, pipeline_id, scroll_root_id) => {
-                            let frame = profile_counters.total_time.profile(|| {
-                                if self.frame.scroll_layers(origin, pipeline_id, scroll_root_id) {
-                                    Some(self.render())
-                                } else {
-                                    None
-                                }
-                            });
-
-                            match frame {
-                                Some(frame) => {
-                                    self.publish_frame(frame, &mut profile_counters);
-                                    self.notify_compositor_of_new_scroll_frame(true)
-                                }
-                                None => self.notify_compositor_of_new_scroll_frame(false),
-                            }
-
-                        }
                         ApiMsg::TickScrollingBounce => {
                             let frame = profile_counters.total_time.profile(|| {
                                 self.frame.tick_scrolling_bounce_animations();
                                 self.render()
                             });
 
+                            self.publish_frame_and_notify_compositor(frame, &mut profile_counters);
+                        }
+                        ApiMsg::SetScrollOffset(scroll_id, offset) => {
+                            if let Some(ref mut layer) = self.frame.layers.get_mut(&scroll_id) {
+                                layer.scrolling.offset.x = offset.x;
+                                layer.scrolling.offset.y = offset.y;
+                            }
+                        }
+                        ApiMsg::GenerateFrame => {
+                            let frame = profile_counters.total_time.profile(|| {
+                                self.render()
+                            });
                             self.publish_frame_and_notify_compositor(frame, &mut profile_counters);
                         }
                         ApiMsg::TranslatePointToLayerSpace(..) => {
@@ -276,8 +307,7 @@ impl RenderBackend {
                                         self.webgl_contexts.insert(id, ctx);
 
                                         self.resource_cache
-                                            .add_webgl_texture(id, SourceTexture::WebGL(texture_id),
-                                                               real_size);
+                                            .add_webgl_texture(id, TextureId::new(texture_id), real_size);
 
                                         tx.send(Ok((id, limits))).unwrap();
                                     },
@@ -297,8 +327,7 @@ impl RenderBackend {
                                     
                                     let (real_size, texture_id, _) = ctx.get_info();
                                     self.resource_cache
-                                        .update_webgl_texture(context_id, SourceTexture::WebGL(texture_id),
-                                                              real_size);
+                                        .update_webgl_texture(context_id, TextureId::new(texture_id), real_size);
                                 },
                                 Err(msg) => {
                                     error!("Error resizing WebGLContext: {}", msg);
@@ -312,43 +341,10 @@ impl RenderBackend {
                             ctx.make_current();
                             ctx.apply_command(command);
                             self.current_bound_webgl_context_id = Some(context_id);
-                        },
-
-                        ApiMsg::VRCompositorCommand(context_id, command) => {
-                            self.handle_vr_compositor_command(context_id, command);
-                        }
-                        ApiMsg::GenerateFrame => {
-                            let frame = profile_counters.total_time.profile(|| {
-                                self.render()
-                            });
-                            if self.scene.root_pipeline_id.is_some() {
-                                self.publish_frame_and_notify_compositor(frame, &mut profile_counters);
-                                frame_counter += 1;
-                            }
-                        }
-                        ApiMsg::ExternalEvent(evt) => {
-                            let notifier = self.notifier.lock();
-                            notifier.unwrap()
-                                    .as_mut()
-                                    .unwrap()
-                                    .external_event(evt);
-                        }
-                        ApiMsg::ShutDown => {
-                            let notifier = self.notifier.lock();
-                            notifier.unwrap()
-                                    .as_mut()
-                                    .unwrap()
-                                    .shut_down();
-                            break;
                         }
                     }
                 }
                 Err(..) => {
-                    let notifier = self.notifier.lock();
-                    notifier.unwrap()
-                            .as_mut()
-                            .unwrap()
-                            .shut_down();
                     break;
                 }
             }
@@ -377,7 +373,11 @@ impl RenderBackend {
             webgl_context.unbind();
         }
 
-        self.frame.create(&self.scene, &mut new_pipeline_sizes);
+        self.frame.create(&self.scene,
+                          &mut self.resource_cache,
+                          &self.dummy_resources,
+                          &mut new_pipeline_sizes,
+                          self.device_pixel_ratio);
 
         let mut updated_pipeline_sizes = HashMap::new();
 
@@ -430,15 +430,18 @@ impl RenderBackend {
                                      &self.scene.pipeline_auxiliary_lists,
                                      self.device_pixel_ratio);
 
+        let pending_update = self.resource_cache.pending_updates();
+        if !pending_update.updates.is_empty() {
+            self.result_tx.send(ResultMsg::UpdateTextureCache(pending_update)).unwrap();
+        }
+
         frame
     }
 
     fn publish_frame(&mut self,
                      frame: RendererFrame,
                      profile_counters: &mut BackendProfileCounters) {
-        let pending_update = self.resource_cache.pending_updates();
-        let pending_external_image_update = self.resource_cache.pending_external_image_updates();
-        let msg = ResultMsg::NewFrame(frame, pending_update, pending_external_image_update, profile_counters.clone());
+        let msg = ResultMsg::NewFrame(frame, profile_counters.clone());
         self.result_tx.send(msg).unwrap();
         profile_counters.reset();
     }
@@ -464,20 +467,6 @@ impl RenderBackend {
         let mut notifier = self.notifier.lock();
         notifier.as_mut().unwrap().as_mut().unwrap().new_scroll_frame_ready(composite_needed);
     }
-
-    fn handle_vr_compositor_command(&mut self, ctx_id: WebGLContextId, cmd: VRCompositorCommand) {
-        let texture = match cmd {
-            VRCompositorCommand::SubmitFrame(..) => {
-                    match self.resource_cache.get_webgl_texture(&ctx_id).texture_id {
-                        SourceTexture::WebGL(texture_id) => Some(texture_id),
-                        _=> None
-                    }
-            },
-            _ => None
-        };
-        let mut handler = self.vr_compositor_handler.lock();
-        handler.as_mut().unwrap().as_mut().unwrap().handle(cmd, texture);
-    }
 }
 
 struct WebRenderGLDispatcher {
@@ -490,3 +479,4 @@ impl GLContextDispatcher for WebRenderGLDispatcher {
         dispatcher.as_mut().unwrap().as_mut().unwrap().dispatch(f);
     }
 }
+

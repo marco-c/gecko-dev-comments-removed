@@ -14,19 +14,17 @@ pub use self::TyParamBound::*;
 pub use self::UnsafeSource::*;
 pub use self::ViewPath_::*;
 pub use self::PathParameters::*;
-pub use symbol::Symbol as Name;
 pub use util::ThinVec;
 
 use syntax_pos::{mk_sp, Span, DUMMY_SP, ExpnId};
 use codemap::{respan, Spanned};
 use abi::Abi;
 use ext::hygiene::SyntaxContext;
+use parse::token::{self, keywords, InternedString};
 use print::pprust;
 use ptr::P;
-use symbol::{Symbol, keywords};
 use tokenstream::{TokenTree};
 
-use std::collections::HashSet;
 use std::fmt;
 use std::rc::Rc;
 use std::u32;
@@ -35,25 +33,51 @@ use serialize::{self, Encodable, Decodable, Encoder, Decoder};
 
 
 
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct Name(pub u32);
+
+
+
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Ident {
-    pub name: Symbol,
+    pub name: Name,
     pub ctxt: SyntaxContext
+}
+
+impl Name {
+    pub fn as_str(self) -> token::InternedString {
+        token::InternedString::new_from_name(self)
+    }
+}
+
+impl fmt::Debug for Name {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}({})", self, self.0)
+    }
+}
+
+impl fmt::Display for Name {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Display::fmt(&self.as_str(), f)
+    }
+}
+
+impl Encodable for Name {
+    fn encode<S: Encoder>(&self, s: &mut S) -> Result<(), S::Error> {
+        s.emit_str(&self.as_str())
+    }
+}
+
+impl Decodable for Name {
+    fn decode<D: Decoder>(d: &mut D) -> Result<Name, D::Error> {
+        Ok(token::intern(&try!(d.read_str())))
+    }
 }
 
 impl Ident {
     pub fn with_empty_ctxt(name: Name) -> Ident {
         Ident { name: name, ctxt: SyntaxContext::empty() }
-    }
-
-    
-    pub fn from_str(s: &str) -> Ident {
-        Ident::with_empty_ctxt(Symbol::intern(s))
-    }
-
-    pub fn unhygienize(&self) -> Ident {
-        Ident { name: self.name, ctxt: SyntaxContext::empty() }
     }
 }
 
@@ -113,6 +137,8 @@ pub struct Path {
     pub span: Span,
     
     
+    pub global: bool,
+    
     pub segments: Vec<PathSegment>,
 }
 
@@ -134,21 +160,14 @@ impl Path {
     pub fn from_ident(s: Span, identifier: Ident) -> Path {
         Path {
             span: s,
-            segments: vec![identifier.into()],
+            global: false,
+            segments: vec![
+                PathSegment {
+                    identifier: identifier,
+                    parameters: PathParameters::none()
+                }
+            ],
         }
-    }
-
-    pub fn default_to_global(mut self) -> Path {
-        let name = self.segments[0].identifier.name;
-        if !self.is_global() && name != "$crate" &&
-           name != keywords::SelfValue.name() && name != keywords::Super.name() {
-            self.segments.insert(0, PathSegment::crate_root());
-        }
-        self
-    }
-
-    pub fn is_global(&self) -> bool {
-        !self.segments.is_empty() && self.segments[0].identifier.name == keywords::CrateRoot.name()
     }
 }
 
@@ -165,24 +184,7 @@ pub struct PathSegment {
     
     
     
-    
-    
-    pub parameters: Option<P<PathParameters>>,
-}
-
-impl From<Ident> for PathSegment {
-    fn from(id: Ident) -> Self {
-        PathSegment { identifier: id, parameters: None }
-    }
-}
-
-impl PathSegment {
-    pub fn crate_root() -> Self {
-        PathSegment {
-            identifier: keywords::CrateRoot.ident(),
-            parameters: None,
-        }
-    }
+    pub parameters: PathParameters,
 }
 
 
@@ -196,8 +198,79 @@ pub enum PathParameters {
     Parenthesized(ParenthesizedParameterData),
 }
 
+impl PathParameters {
+    pub fn none() -> PathParameters {
+        PathParameters::AngleBracketed(AngleBracketedParameterData {
+            lifetimes: Vec::new(),
+            types: P::new(),
+            bindings: P::new(),
+        })
+    }
 
-#[derive(Clone, PartialEq, Eq, RustcEncodable, RustcDecodable, Hash, Debug, Default)]
+    pub fn is_empty(&self) -> bool {
+        match *self {
+            PathParameters::AngleBracketed(ref data) => data.is_empty(),
+
+            
+            
+            PathParameters::Parenthesized(..) => false,
+        }
+    }
+
+    pub fn has_lifetimes(&self) -> bool {
+        match *self {
+            PathParameters::AngleBracketed(ref data) => !data.lifetimes.is_empty(),
+            PathParameters::Parenthesized(_) => false,
+        }
+    }
+
+    pub fn has_types(&self) -> bool {
+        match *self {
+            PathParameters::AngleBracketed(ref data) => !data.types.is_empty(),
+            PathParameters::Parenthesized(..) => true,
+        }
+    }
+
+    
+    
+    pub fn types(&self) -> Vec<&P<Ty>> {
+        match *self {
+            PathParameters::AngleBracketed(ref data) => {
+                data.types.iter().collect()
+            }
+            PathParameters::Parenthesized(ref data) => {
+                data.inputs.iter()
+                    .chain(data.output.iter())
+                    .collect()
+            }
+        }
+    }
+
+    pub fn lifetimes(&self) -> Vec<&Lifetime> {
+        match *self {
+            PathParameters::AngleBracketed(ref data) => {
+                data.lifetimes.iter().collect()
+            }
+            PathParameters::Parenthesized(_) => {
+                Vec::new()
+            }
+        }
+    }
+
+    pub fn bindings(&self) -> Vec<&TypeBinding> {
+        match *self {
+            PathParameters::AngleBracketed(ref data) => {
+                data.bindings.iter().collect()
+            }
+            PathParameters::Parenthesized(_) => {
+                Vec::new()
+            }
+        }
+    }
+}
+
+
+#[derive(Clone, PartialEq, Eq, RustcEncodable, RustcDecodable, Hash, Debug)]
 pub struct AngleBracketedParameterData {
     
     pub lifetimes: Vec<Lifetime>,
@@ -209,10 +282,9 @@ pub struct AngleBracketedParameterData {
     pub bindings: P<[TypeBinding]>,
 }
 
-impl Into<Option<P<PathParameters>>> for AngleBracketedParameterData {
-    fn into(self) -> Option<P<PathParameters>> {
-        let empty = self.lifetimes.is_empty() && self.types.is_empty() && self.bindings.is_empty();
-        if empty { None } else { Some(P(PathParameters::AngleBracketed(self))) }
+impl AngleBracketedParameterData {
+    fn is_empty(&self) -> bool {
+        self.lifetimes.is_empty() && self.types.is_empty() && self.bindings.is_empty()
     }
 }
 
@@ -327,14 +399,6 @@ impl Generics {
     pub fn is_parameterized(&self) -> bool {
         self.is_lt_parameterized() || self.is_type_parameterized()
     }
-    pub fn span_for_name(&self, name: &str) -> Option<Span> {
-        for t in &self.ty_params {
-            if t.ident.name == name {
-                return Some(t.span);
-            }
-        }
-        None
-    }
 }
 
 impl Default for Generics {
@@ -407,7 +471,7 @@ pub struct WhereEqPredicate {
 
 
 
-pub type CrateConfig = HashSet<(Name, Option<Symbol>)>;
+pub type CrateConfig = Vec<P<MetaItem>>;
 
 #[derive(Clone, PartialEq, Eq, RustcEncodable, RustcDecodable, Hash, Debug)]
 pub struct Crate {
@@ -426,7 +490,7 @@ pub type NestedMetaItem = Spanned<NestedMetaItemKind>;
 #[derive(Clone, Eq, RustcEncodable, RustcDecodable, Hash, Debug, PartialEq)]
 pub enum NestedMetaItemKind {
     
-    MetaItem(MetaItem),
+    MetaItem(P<MetaItem>),
     
     
     
@@ -436,30 +500,53 @@ pub enum NestedMetaItemKind {
 
 
 
-#[derive(Clone, PartialEq, Eq, RustcEncodable, RustcDecodable, Hash, Debug)]
-pub struct MetaItem {
-    pub name: Name,
-    pub node: MetaItemKind,
-    pub span: Span,
-}
+pub type MetaItem = Spanned<MetaItemKind>;
 
 
 
 
-#[derive(Clone, PartialEq, Eq, RustcEncodable, RustcDecodable, Hash, Debug)]
+#[derive(Clone, Eq, RustcEncodable, RustcDecodable, Hash, Debug)]
 pub enum MetaItemKind {
     
     
     
-    Word,
+    Word(InternedString),
     
     
     
-    List(Vec<NestedMetaItem>),
+    List(InternedString, Vec<NestedMetaItem>),
     
     
     
-    NameValue(Lit)
+    NameValue(InternedString, Lit),
+}
+
+
+impl PartialEq for MetaItemKind {
+    fn eq(&self, other: &MetaItemKind) -> bool {
+        use self::MetaItemKind::*;
+        match *self {
+            Word(ref ns) => match *other {
+                Word(ref no) => (*ns) == (*no),
+                _ => false
+            },
+            List(ref ns, ref miss) => match *other {
+                List(ref no, ref miso) => {
+                    ns == no &&
+                        miss.iter().all(|mi| {
+                            miso.iter().any(|x| x.node == mi.node)
+                        })
+                }
+                _ => false
+            },
+            NameValue(ref ns, ref vs) => match *other {
+                NameValue(ref no, ref vo) => {
+                    (*ns) == (*no) && vs.node == vo.node
+                }
+                _ => false
+            },
+        }
+    }
 }
 
 
@@ -925,7 +1012,7 @@ pub enum ExprKind {
     
     
     
-    Closure(CaptureBy, P<FnDecl>, P<Expr>, Span),
+    Closure(CaptureBy, P<FnDecl>, P<Block>, Span),
     
     Block(P<Block>),
 
@@ -956,14 +1043,14 @@ pub enum ExprKind {
     
     AddrOf(Mutability, P<Expr>),
     
-    Break(Option<SpannedIdent>, Option<P<Expr>>),
+    Break(Option<SpannedIdent>),
     
     Continue(Option<SpannedIdent>),
     
     Ret(Option<P<Expr>>),
 
     
-    InlineAsm(P<InlineAsm>),
+    InlineAsm(InlineAsm),
 
     
     Mac(Mac),
@@ -1054,7 +1141,7 @@ pub enum LitIntType {
 #[derive(Clone, PartialEq, Eq, RustcEncodable, RustcDecodable, Hash, Debug)]
 pub enum LitKind {
     
-    Str(Symbol, StrStyle),
+    Str(InternedString, StrStyle),
     
     ByteStr(Rc<Vec<u8>>),
     
@@ -1064,9 +1151,9 @@ pub enum LitKind {
     
     Int(u64, LitIntType),
     
-    Float(Symbol, FloatTy),
+    Float(InternedString, FloatTy),
     
-    FloatUnsuffixed(Symbol),
+    FloatUnsuffixed(InternedString),
     
     Bool(bool),
 }
@@ -1171,7 +1258,6 @@ pub enum IntTy {
     I16,
     I32,
     I64,
-    I128,
 }
 
 impl fmt::Debug for IntTy {
@@ -1193,8 +1279,7 @@ impl IntTy {
             IntTy::I8 => "i8",
             IntTy::I16 => "i16",
             IntTy::I32 => "i32",
-            IntTy::I64 => "i64",
-            IntTy::I128 => "i128",
+            IntTy::I64 => "i64"
         }
     }
 
@@ -1205,6 +1290,15 @@ impl IntTy {
         format!("{}{}", val as u64, self.ty_to_string())
     }
 
+    pub fn ty_max(&self) -> u64 {
+        match *self {
+            IntTy::I8 => 0x80,
+            IntTy::I16 => 0x8000,
+            IntTy::Is | IntTy::I32 => 0x80000000, 
+            IntTy::I64 => 0x8000000000000000
+        }
+    }
+
     pub fn bit_width(&self) -> Option<usize> {
         Some(match *self {
             IntTy::Is => return None,
@@ -1212,7 +1306,6 @@ impl IntTy {
             IntTy::I16 => 16,
             IntTy::I32 => 32,
             IntTy::I64 => 64,
-            IntTy::I128 => 128,
         })
     }
 }
@@ -1224,7 +1317,6 @@ pub enum UintTy {
     U16,
     U32,
     U64,
-    U128,
 }
 
 impl UintTy {
@@ -1234,13 +1326,21 @@ impl UintTy {
             UintTy::U8 => "u8",
             UintTy::U16 => "u16",
             UintTy::U32 => "u32",
-            UintTy::U64 => "u64",
-            UintTy::U128 => "u128",
+            UintTy::U64 => "u64"
         }
     }
 
     pub fn val_to_string(&self, val: u64) -> String {
         format!("{}{}", val, self.ty_to_string())
+    }
+
+    pub fn ty_max(&self) -> u64 {
+        match *self {
+            UintTy::U8 => 0xff,
+            UintTy::U16 => 0xffff,
+            UintTy::Us | UintTy::U32 => 0xffffffff, 
+            UintTy::U64 => 0xffffffffffffffff
+        }
     }
 
     pub fn bit_width(&self) -> Option<usize> {
@@ -1250,7 +1350,6 @@ impl UintTy {
             UintTy::U16 => 16,
             UintTy::U32 => 32,
             UintTy::U64 => 64,
-            UintTy::U128 => 128,
         })
     }
 }
@@ -1386,7 +1485,7 @@ pub enum AsmDialect {
 
 #[derive(Clone, PartialEq, Eq, RustcEncodable, RustcDecodable, Hash, Debug)]
 pub struct InlineAsmOutput {
-    pub constraint: Symbol,
+    pub constraint: InternedString,
     pub expr: P<Expr>,
     pub is_rw: bool,
     pub is_indirect: bool,
@@ -1397,11 +1496,11 @@ pub struct InlineAsmOutput {
 
 #[derive(Clone, PartialEq, Eq, RustcEncodable, RustcDecodable, Hash, Debug)]
 pub struct InlineAsm {
-    pub asm: Symbol,
+    pub asm: InternedString,
     pub asm_str_style: StrStyle,
     pub outputs: Vec<InlineAsmOutput>,
-    pub inputs: Vec<(Symbol, P<Expr>)>,
-    pub clobbers: Vec<Symbol>,
+    pub inputs: Vec<(InternedString, P<Expr>)>,
+    pub clobbers: Vec<InternedString>,
     pub volatile: bool,
     pub alignstack: bool,
     pub dialect: AsmDialect,
@@ -1459,13 +1558,12 @@ impl Arg {
     }
 
     pub fn from_self(eself: ExplicitSelf, eself_ident: SpannedIdent) -> Arg {
-        let span = mk_sp(eself.span.lo, eself_ident.span.hi);
         let infer_ty = P(Ty {
             id: DUMMY_NODE_ID,
             node: TyKind::ImplicitSelf,
-            span: span,
+            span: DUMMY_SP,
         });
-        let arg = |mutbl, ty| Arg {
+        let arg = |mutbl, ty, span| Arg {
             pat: P(Pat {
                 id: DUMMY_NODE_ID,
                 node: PatKind::Ident(BindingMode::ByValue(mutbl), eself_ident, None),
@@ -1475,13 +1573,15 @@ impl Arg {
             id: DUMMY_NODE_ID,
         };
         match eself.node {
-            SelfKind::Explicit(ty, mutbl) => arg(mutbl, ty),
-            SelfKind::Value(mutbl) => arg(mutbl, infer_ty),
+            SelfKind::Explicit(ty, mutbl) => {
+                arg(mutbl, ty, mk_sp(eself.span.lo, eself_ident.span.hi))
+            }
+            SelfKind::Value(mutbl) => arg(mutbl, infer_ty, eself.span),
             SelfKind::Region(lt, mutbl) => arg(Mutability::Immutable, P(Ty {
                 id: DUMMY_NODE_ID,
                 node: TyKind::Rptr(lt, MutTy { ty: infer_ty, mutbl: mutbl }),
-                span: span,
-            })),
+                span: DUMMY_SP,
+            }), eself.span),
         }
     }
 }
@@ -1648,6 +1748,8 @@ impl ViewPath_ {
 }
 
 
+pub type Attribute = Spanned<Attribute_>;
+
 
 
 
@@ -1661,14 +1763,12 @@ pub enum AttrStyle {
 pub struct AttrId(pub usize);
 
 
-
 #[derive(Clone, PartialEq, Eq, RustcEncodable, RustcDecodable, Hash, Debug)]
-pub struct Attribute {
+pub struct Attribute_ {
     pub id: AttrId,
     pub style: AttrStyle,
-    pub value: MetaItem,
+    pub value: P<MetaItem>,
     pub is_sugared_doc: bool,
-    pub span: Span,
 }
 
 
@@ -1764,6 +1864,10 @@ impl VariantData {
         if let VariantData::Unit(..) = *self { true } else { false }
     }
 }
+
+
+
+
 
 
 
@@ -1907,6 +2011,8 @@ pub struct MacroDef {
     pub attrs: Vec<Attribute>,
     pub id: NodeId,
     pub span: Span,
+    pub imported_from: Option<Ident>,
+    pub allow_internal_unstable: bool,
     pub body: Vec<TokenTree>,
 }
 

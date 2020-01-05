@@ -3,7 +3,7 @@ use super::*;
 use std::iter;
 
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Attribute {
     pub style: AttrStyle,
     pub value: MetaItem,
@@ -19,7 +19,7 @@ impl Attribute {
 
 
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum AttrStyle {
     Outer,
     Inner,
@@ -28,7 +28,7 @@ pub enum AttrStyle {
 
 
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum MetaItem {
     
     
@@ -37,7 +37,7 @@ pub enum MetaItem {
     
     
     
-    List(Ident, Vec<NestedMetaItem>),
+    List(Ident, Vec<MetaItem>),
     
     
     
@@ -52,19 +52,6 @@ impl MetaItem {
             MetaItem::NameValue(ref name, _) => name.as_ref(),
         }
     }
-}
-
-
-
-
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
-pub enum NestedMetaItem {
-    
-    MetaItem(MetaItem),
-    
-    
-    
-    Literal(Lit),
 }
 
 pub trait FilterAttrs<'a> {
@@ -98,6 +85,7 @@ impl<'a, T> FilterAttrs<'a> for T
 pub mod parsing {
     use super::*;
     use ident::parsing::ident;
+    use lit::{Lit, StrStyle};
     use lit::parsing::lit;
     use space::{block_comment, whitespace};
 
@@ -123,7 +111,10 @@ pub mod parsing {
                 style: AttrStyle::Inner,
                 value: MetaItem::NameValue(
                     "doc".into(),
-                    format!("//!{}", content).into(),
+                    Lit::Str(
+                        format!("//!{}", content),
+                        StrStyle::Cooked,
+                    ),
                 ),
                 is_sugared_doc: true,
             })
@@ -137,7 +128,7 @@ pub mod parsing {
                 style: AttrStyle::Inner,
                 value: MetaItem::NameValue(
                     "doc".into(),
-                    com.into(),
+                    Lit::Str(com.to_owned(), StrStyle::Cooked),
                 ),
                 is_sugared_doc: true,
             })
@@ -165,7 +156,10 @@ pub mod parsing {
                 style: AttrStyle::Outer,
                 value: MetaItem::NameValue(
                     "doc".into(),
-                    format!("///{}", content).into(),
+                    Lit::Str(
+                        format!("///{}", content),
+                        StrStyle::Cooked,
+                    ),
                 ),
                 is_sugared_doc: true,
             })
@@ -179,7 +173,7 @@ pub mod parsing {
                 style: AttrStyle::Outer,
                 value: MetaItem::NameValue(
                     "doc".into(),
-                    com.into(),
+                    Lit::Str(com.to_owned(), StrStyle::Cooked),
                 ),
                 is_sugared_doc: true,
             })
@@ -190,7 +184,7 @@ pub mod parsing {
         do_parse!(
             id: ident >>
             punct!("(") >>
-            inner: terminated_list!(punct!(","), nested_meta_item) >>
+            inner: terminated_list!(punct!(","), meta_item) >>
             punct!(")") >>
             (MetaItem::List(id, inner))
         )
@@ -203,12 +197,6 @@ pub mod parsing {
         )
         |
         map!(ident, MetaItem::Word)
-    ));
-
-    named!(nested_meta_item -> NestedMetaItem, alt!(
-        meta_item => { NestedMetaItem::MetaItem }
-        |
-        lit => { NestedMetaItem::Literal }
     ));
 }
 
@@ -273,19 +261,6 @@ mod printing {
                     name.to_tokens(tokens);
                     tokens.append("=");
                     value.to_tokens(tokens);
-                }
-            }
-        }
-    }
-
-    impl ToTokens for NestedMetaItem {
-        fn to_tokens(&self, tokens: &mut Tokens) {
-            match *self {
-                NestedMetaItem::MetaItem(ref nested) => {
-                    nested.to_tokens(tokens);
-                }
-                NestedMetaItem::Literal(ref lit) => {
-                    lit.to_tokens(tokens);
                 }
             }
         }

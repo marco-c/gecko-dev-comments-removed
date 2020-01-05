@@ -3,9 +3,10 @@
 
 
 use app_units::Au;
-use device::TextureFilter;
-use euclid::{TypedPoint2D, UnknownUnit};
+use device::{TextureId, TextureFilter};
+use euclid::{Point2D, Rect, Size2D, TypedRect, TypedPoint2D, TypedSize2D, Length, UnknownUnit};
 use fnv::FnvHasher;
+use freelist::{FreeListItem, FreeListItemId};
 use offscreen_gl_context::{NativeGLContext, NativeGLContextHandle};
 use offscreen_gl_context::{GLContext, NativeGLContextMethods, GLContextDispatcher};
 use offscreen_gl_context::{OSMesaContext, OSMesaContextHandle};
@@ -14,39 +15,13 @@ use profiler::BackendProfileCounters;
 use std::collections::{HashMap, HashSet};
 use std::f32;
 use std::hash::BuildHasherDefault;
-use std::{i32, usize};
+use std::i32;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tiling;
-use webrender_traits::{Epoch, ColorF, PipelineId, DeviceIntSize};
-use webrender_traits::{ImageFormat, MixBlendMode, NativeFontHandle};
-use webrender_traits::{ExternalImageId, ScrollLayerId, WebGLCommand};
-
-
-
-
-
-
-
-
-
-
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
-pub struct CacheTextureId(pub usize);
-
-
-
-
-
-
-
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
-pub enum SourceTexture {
-    Invalid,
-    TextureCache(CacheTextureId),
-    WebGL(u32),                         
-    External(ExternalImageId),
-}
+use webrender_traits::{Epoch, ColorF, PipelineId};
+use webrender_traits::{ImageFormat, MixBlendMode, NativeFontHandle, DisplayItem};
+use webrender_traits::{ScrollLayerId, WebGLCommand};
 
 pub enum GLContextHandleWrapper {
     Native(NativeGLContextHandle),
@@ -63,12 +38,12 @@ impl GLContextHandleWrapper {
     }
 
     pub fn new_context(&self,
-                       size: DeviceIntSize,
+                       size: Size2D<i32>,
                        attributes: GLContextAttributes,
                        dispatcher: Option<Box<GLContextDispatcher>>) -> Result<GLContextWrapper, &'static str> {
         match *self {
             GLContextHandleWrapper::Native(ref handle) => {
-                let ctx = GLContext::<NativeGLContext>::new_shared_with_dispatcher(size.to_untyped(),
+                let ctx = GLContext::<NativeGLContext>::new_shared_with_dispatcher(size,
                                                                                    attributes,
                                                                                    ColorAttachmentType::Texture,
                                                                                    Some(handle),
@@ -76,7 +51,7 @@ impl GLContextHandleWrapper {
                 ctx.map(GLContextWrapper::Native)
             }
             GLContextHandleWrapper::OSMesa(ref handle) => {
-                let ctx = GLContext::<OSMesaContext>::new_shared_with_dispatcher(size.to_untyped(),
+                let ctx = GLContext::<OSMesaContext>::new_shared_with_dispatcher(size,
                                                                                  attributes,
                                                                                  ColorAttachmentType::Texture,
                                                                                  Some(handle),
@@ -126,7 +101,7 @@ impl GLContextWrapper {
         }
     }
 
-    pub fn get_info(&self) -> (DeviceIntSize, u32, GLLimits) {
+    pub fn get_info(&self) -> (Size2D<i32>, u32, GLLimits) {
         match *self {
             GLContextWrapper::Native(ref ctx) => {
                 let (real_size, texture_id) = {
@@ -136,7 +111,7 @@ impl GLContextWrapper {
 
                 let limits = ctx.borrow_limits().clone();
 
-                (DeviceIntSize::from_untyped(&real_size), texture_id, limits)
+                (real_size, texture_id, limits)
             }
             GLContextWrapper::OSMesa(ref ctx) => {
                 let (real_size, texture_id) = {
@@ -146,21 +121,33 @@ impl GLContextWrapper {
 
                 let limits = ctx.borrow_limits().clone();
 
-                (DeviceIntSize::from_untyped(&real_size), texture_id, limits)
+                (real_size, texture_id, limits)
             }
         }
     }
 
-    pub fn resize(&mut self, size: &DeviceIntSize) -> Result<(), &'static str> {
+    pub fn resize(&mut self, size: &Size2D<i32>) -> Result<(), &'static str> {
         match *self {
             GLContextWrapper::Native(ref mut ctx) => {
-                ctx.resize(size.to_untyped())
+                ctx.resize(*size)
             }
             GLContextWrapper::OSMesa(ref mut ctx) => {
-                ctx.resize(size.to_untyped())
+                ctx.resize(*size)
             }
         }
     }
+}
+
+pub type DeviceRect = TypedRect<i32, DevicePixel>;
+pub type DevicePoint = TypedPoint2D<i32, DevicePixel>;
+pub type DeviceSize = TypedSize2D<i32, DevicePixel>;
+pub type DeviceLength = Length<i32, DevicePixel>;
+
+#[derive(Hash, Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd)]
+pub struct DevicePixel;
+
+pub fn device_pixel(value: f32, device_pixel_ratio: f32) -> DeviceLength {
+    DeviceLength::new((value * device_pixel_ratio).round() as i32)
 }
 
 const COLOR_FLOAT_TO_FIXED: f32 = 255.0;
@@ -169,17 +156,17 @@ pub const ANGLE_FLOAT_TO_FIXED: f32 = 65535.0;
 pub const ORTHO_NEAR_PLANE: f32 = -1000000.0;
 pub const ORTHO_FAR_PLANE: f32 = 1000000.0;
 
-#[derive(Clone)]
+
 pub enum FontTemplate {
     Raw(Arc<Vec<u8>>),
     Native(NativeFontHandle),
 }
 
+pub type DrawListId = FreeListItemId;
+
 #[derive(Debug, PartialEq, Eq)]
 pub enum TextureSampler {
-    Color0,
-    Color1,
-    Color2,
+    Color,
     Mask,
     Cache,
     Data16,
@@ -189,84 +176,25 @@ pub enum TextureSampler {
     Layers,
     RenderTasks,
     Geometry,
-    ResourceRects,
 }
 
-impl TextureSampler {
-    pub fn color(n: usize) -> TextureSampler {
-        match n {
-            0 => TextureSampler::Color0,
-            1 => TextureSampler::Color1,
-            2 => TextureSampler::Color2,
-            _ => {
-                panic!("There are only 3 color samplers.");
-            }
-        }
-    }
-}
-
-
-
-#[derive(Copy, Clone, Debug)]
-pub struct BatchTextures {
-    pub colors: [SourceTexture; 3],
-}
-
-impl BatchTextures {
-    pub fn no_texture() -> Self {
-        BatchTextures {
-            colors: [SourceTexture::Invalid; 3],
-        }
-    }
-}
-
-
-pub const DEFAULT_TEXTURE: TextureSampler = TextureSampler::Color0;
-
-#[derive(Clone, Copy, Debug)]
 pub enum VertexAttribute {
-    
     Position,
-    Color,
-    ColorTexCoord,
-    
-    GlobalPrimId,
-    PrimitiveAddress,
-    TaskIndex,
-    ClipTaskIndex,
-    LayerIndex,
-    ElementIndex,
-    UserData,
-    ZIndex,
-}
-
-#[derive(Clone, Copy, Debug)]
-pub enum ClearAttribute {
-    
-    Position,
-    
-    Rectangle,
-}
-
-#[derive(Clone, Copy, Debug)]
-pub enum BlurAttribute {
-    
-    Position,
-    
-    RenderTaskIndex,
-    SourceTaskIndex,
-    Direction,
-}
-
-#[derive(Clone, Copy, Debug)]
-pub enum ClipAttribute {
-    
-    Position,
-    
-    RenderTaskIndex,
-    LayerIndex,
-    DataIndex,
-    SegmentIndex,
+    PositionRect,
+    ColorRectTL,
+    ColorRectTR,
+    ColorRectBR,
+    ColorRectBL,
+    ColorTexCoordRectTop,
+    MaskTexCoordRectTop,
+    ColorTexCoordRectBottom,
+    MaskTexCoordRectBottom,
+    BorderRadii,
+    BorderPosition,
+    BlurRadius,
+    DestTextureSize,
+    SourceTextureSize,
+    Misc,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -291,12 +219,44 @@ impl PackedColor {
 
 #[derive(Debug, Clone, Copy)]
 #[repr(C)]
+pub struct PackedVertexForQuad {
+    pub x: f32,
+    pub y: f32,
+    pub width: f32,
+    pub height: f32,
+    pub color_tl: PackedColor,
+    pub color_tr: PackedColor,
+    pub color_br: PackedColor,
+    pub color_bl: PackedColor,
+    pub u_tl: f32,
+    pub v_tl: f32,
+    pub u_tr: f32,
+    pub v_tr: f32,
+    pub u_br: f32,
+    pub v_br: f32,
+    pub u_bl: f32,
+    pub v_bl: f32,
+    pub mu_tl: u16,
+    pub mv_tl: u16,
+    pub mu_tr: u16,
+    pub mv_tr: u16,
+    pub mu_br: u16,
+    pub mv_br: u16,
+    pub mu_bl: u16,
+    pub mv_bl: u16,
+    pub matrix_index: u8,
+    pub clip_in_rect_index: u8,
+    pub clip_out_rect_index: u8,
+    pub tile_params_index: u8,
+}
+
+#[derive(Debug, Clone, Copy)]
+#[repr(C)]
 pub struct PackedVertex {
     pub pos: [f32; 2],
 }
 
 #[derive(Debug)]
-#[repr(C)]
 pub struct DebugFontVertex {
     pub x: f32,
     pub y: f32,
@@ -317,7 +277,6 @@ impl DebugFontVertex {
     }
 }
 
-#[repr(C)]
 pub struct DebugColorVertex {
     pub x: f32,
     pub y: f32,
@@ -341,17 +300,28 @@ pub enum RenderTargetMode {
     LayerRenderTarget(i32),      
 }
 
-pub enum TextureUpdateOp {
-    Create(u32, u32, ImageFormat, TextureFilter, RenderTargetMode, Option<Arc<Vec<u8>>>),
-    Update(u32, u32, u32, u32, Arc<Vec<u8>>, Option<u32>),
-    Grow(u32, u32, ImageFormat, TextureFilter, RenderTargetMode),
-    Free
+#[derive(Debug)]
+pub enum TextureUpdateDetails {
+    Raw,
+    Blit(Vec<u8>, Option<u32>),
 }
 
-pub type ExternalImageUpdateList = Vec<ExternalImageId>;
+#[derive(Clone, Copy, Debug)]
+pub struct TextureImage {
+    pub texture_id: TextureId,
+    pub texel_uv: Rect<f32>,
+    pub pixel_uv: Point2D<u32>,
+}
+
+pub enum TextureUpdateOp {
+    Create(u32, u32, ImageFormat, TextureFilter, RenderTargetMode, Option<Vec<u8>>),
+    Update(u32, u32, u32, u32, TextureUpdateDetails),
+    Grow(u32, u32, ImageFormat, TextureFilter, RenderTargetMode),
+    Remove
+}
 
 pub struct TextureUpdate {
-    pub id: CacheTextureId,
+    pub id: TextureId,
     pub op: TextureUpdateOp,
 }
 
@@ -398,8 +368,9 @@ impl RendererFrame {
 }
 
 pub enum ResultMsg {
+    UpdateTextureCache(TextureUpdateList),
     RefreshShader(PathBuf),
-    NewFrame(RendererFrame, TextureUpdateList, ExternalImageUpdateList, BackendProfileCounters),
+    NewFrame(RendererFrame, BackendProfileCounters),
 }
 
 #[repr(u32)]
@@ -409,8 +380,38 @@ pub enum AxisDirection {
     Vertical,
 }
 
-#[derive(Debug, Clone, Copy, Eq, Hash, PartialEq)]
+#[derive(Debug, Clone, Copy)]
 pub struct StackingContextIndex(pub usize);
+
+#[derive(Debug)]
+pub struct DrawList {
+    pub items: Vec<DisplayItem>,
+    pub stacking_context_index: Option<StackingContextIndex>,
+    pub pipeline_id: PipelineId,
+    
+    next_free_id: Option<FreeListItemId>,
+}
+
+impl DrawList {
+    pub fn new(items: Vec<DisplayItem>, pipeline_id: PipelineId) -> DrawList {
+        DrawList {
+            items: items,
+            stacking_context_index: None,
+            pipeline_id: pipeline_id,
+            next_free_id: None,
+        }
+    }
+}
+
+impl FreeListItem for DrawList {
+    fn next_free_id(&self) -> Option<FreeListItemId> {
+        self.next_free_id
+    }
+
+    fn set_next_free_id(&mut self, id: Option<FreeListItemId>) {
+        self.next_free_id = id;
+    }
+}
 
 #[derive(Clone, Copy, Debug)]
 pub struct RectUv<T, U = UnknownUnit> {

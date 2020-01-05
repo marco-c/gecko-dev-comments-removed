@@ -9,16 +9,14 @@ mod support;
 fn gnu_smoke() {
     let test = Test::gnu();
     test.gcc()
-        .file("foo.c")
-        .compile("libfoo.a");
+        .file("foo.c").compile("libfoo.a");
 
-    test.cmd(0)
-        .must_have("-O2")
-        .must_have("foo.c")
-        .must_not_have("-g")
-        .must_have("-c")
-        .must_have("-ffunction-sections")
-        .must_have("-fdata-sections");
+    test.cmd(0).must_have("-O2")
+               .must_have("foo.c")
+               .must_not_have("-g")
+               .must_have("-c")
+               .must_have("-ffunction-sections")
+               .must_have("-fdata-sections");
     test.cmd(1).must_have(test.td.path().join("foo.o"));
 }
 
@@ -27,12 +25,10 @@ fn gnu_opt_level_1() {
     let test = Test::gnu();
     test.gcc()
         .opt_level(1)
-        .file("foo.c")
-        .compile("libfoo.a");
+        .file("foo.c").compile("libfoo.a");
 
-    test.cmd(0)
-        .must_have("-O1")
-        .must_not_have("-O2");
+    test.cmd(0).must_have("-O1")
+               .must_not_have("-O2");
 }
 
 #[test]
@@ -40,15 +36,13 @@ fn gnu_opt_level_s() {
     let test = Test::gnu();
     test.gcc()
         .opt_level_str("s")
-        .file("foo.c")
-        .compile("libfoo.a");
+        .file("foo.c").compile("libfoo.a");
 
-    test.cmd(0)
-        .must_have("-Os")
-        .must_not_have("-O1")
-        .must_not_have("-O2")
-        .must_not_have("-O3")
-        .must_not_have("-Oz");
+    test.cmd(0).must_have("-Os")
+               .must_not_have("-O1")
+               .must_not_have("-O2")
+               .must_not_have("-O3")
+               .must_not_have("-Oz");
 }
 
 #[test]
@@ -56,8 +50,7 @@ fn gnu_debug() {
     let test = Test::gnu();
     test.gcc()
         .debug(true)
-        .file("foo.c")
-        .compile("libfoo.a");
+        .file("foo.c").compile("libfoo.a");
     test.cmd(0).must_have("-g");
 }
 
@@ -69,12 +62,10 @@ fn gnu_x86_64() {
         test.gcc()
             .target(&target)
             .host(&target)
-            .file("foo.c")
-            .compile("libfoo.a");
+            .file("foo.c").compile("libfoo.a");
 
-        test.cmd(0)
-            .must_have("-fPIC")
-            .must_have("-m64");
+        test.cmd(0).must_have("-fPIC")
+                   .must_have("-m64");
     }
 }
 
@@ -87,8 +78,7 @@ fn gnu_x86_64_no_pic() {
             .pic(false)
             .target(&target)
             .host(&target)
-            .file("foo.c")
-            .compile("libfoo.a");
+            .file("foo.c").compile("libfoo.a");
 
         test.cmd(0).must_not_have("-fPIC");
     }
@@ -102,12 +92,10 @@ fn gnu_i686() {
         test.gcc()
             .target(&target)
             .host(&target)
-            .file("foo.c")
-            .compile("libfoo.a");
+            .file("foo.c").compile("libfoo.a");
 
-        test.cmd(0)
-            .must_not_have("-fPIC")
-            .must_have("-m32");
+        test.cmd(0).must_not_have("-fPIC")
+                   .must_have("-m32");
     }
 }
 
@@ -120,8 +108,7 @@ fn gnu_i686_pic() {
             .pic(true)
             .target(&target)
             .host(&target)
-            .file("foo.c")
-            .compile("libfoo.a");
+            .file("foo.c").compile("libfoo.a");
 
         test.cmd(0).must_have("-fPIC");
     }
@@ -132,8 +119,7 @@ fn gnu_set_stdlib() {
     let test = Test::gnu();
     test.gcc()
         .cpp_set_stdlib(Some("foo"))
-        .file("foo.c")
-        .compile("libfoo.a");
+        .file("foo.c").compile("libfoo.a");
 
     test.cmd(0).must_not_have("-stdlib=foo");
 }
@@ -143,8 +129,7 @@ fn gnu_include() {
     let test = Test::gnu();
     test.gcc()
         .include("foo/bar")
-        .file("foo.c")
-        .compile("libfoo.a");
+        .file("foo.c").compile("libfoo.a");
 
     test.cmd(0).must_have("-I").must_have("foo/bar");
 }
@@ -155,8 +140,7 @@ fn gnu_define() {
     test.gcc()
         .define("FOO", Some("bar"))
         .define("BAR", None)
-        .file("foo.c")
-        .compile("libfoo.a");
+        .file("foo.c").compile("libfoo.a");
 
     test.cmd(0).must_have("-DFOO=bar").must_have("-DBAR");
 }
@@ -165,8 +149,7 @@ fn gnu_define() {
 fn gnu_compile_assembly() {
     let test = Test::gnu();
     test.gcc()
-        .file("foo.S")
-        .compile("libfoo.a");
+        .file("foo.S").compile("libfoo.a");
     test.cmd(0).must_have("foo.S");
 }
 
@@ -174,14 +157,12 @@ fn gnu_compile_assembly() {
 fn msvc_smoke() {
     let test = Test::msvc();
     test.gcc()
-        .file("foo.c")
-        .compile("libfoo.a");
+        .file("foo.c").compile("libfoo.a");
 
-    test.cmd(0)
-        .must_have("/O2")
-        .must_have("foo.c")
-        .must_not_have("/Z7")
-        .must_have("/c");
+    test.cmd(0).must_have("/O2")
+               .must_have("foo.c")
+               .must_not_have("/Z7")
+               .must_have("/c");
     test.cmd(1).must_have(test.td.path().join("foo.o"));
 }
 
@@ -190,8 +171,7 @@ fn msvc_opt_level_0() {
     let test = Test::msvc();
     test.gcc()
         .opt_level(0)
-        .file("foo.c")
-        .compile("libfoo.a");
+        .file("foo.c").compile("libfoo.a");
 
     test.cmd(0).must_not_have("/O2");
 }
@@ -201,8 +181,7 @@ fn msvc_debug() {
     let test = Test::msvc();
     test.gcc()
         .debug(true)
-        .file("foo.c")
-        .compile("libfoo.a");
+        .file("foo.c").compile("libfoo.a");
     test.cmd(0).must_have("/Z7");
 }
 
@@ -211,8 +190,7 @@ fn msvc_include() {
     let test = Test::msvc();
     test.gcc()
         .include("foo/bar")
-        .file("foo.c")
-        .compile("libfoo.a");
+        .file("foo.c").compile("libfoo.a");
 
     test.cmd(0).must_have("/I").must_have("foo/bar");
 }
@@ -223,8 +201,7 @@ fn msvc_define() {
     test.gcc()
         .define("FOO", Some("bar"))
         .define("BAR", None)
-        .file("foo.c")
-        .compile("libfoo.a");
+        .file("foo.c").compile("libfoo.a");
 
     test.cmd(0).must_have("/DFOO=bar").must_have("/DBAR");
 }

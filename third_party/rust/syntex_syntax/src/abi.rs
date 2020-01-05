@@ -41,7 +41,6 @@ pub enum Abi {
     Aapcs,
     Win64,
     SysV64,
-    PtxKernel,
 
     
     Rust,
@@ -50,7 +49,6 @@ pub enum Abi {
     RustIntrinsic,
     RustCall,
     PlatformIntrinsic,
-    Unadjusted
 }
 
 #[allow(non_camel_case_types)]
@@ -84,7 +82,6 @@ const AbiDatas: &'static [AbiData] = &[
     AbiData {abi: Abi::Aapcs, name: "aapcs", generic: false },
     AbiData {abi: Abi::Win64, name: "win64", generic: false },
     AbiData {abi: Abi::SysV64, name: "sysv64", generic: false },
-    AbiData {abi: Abi::PtxKernel, name: "ptx-kernel", generic: false },
 
     
     AbiData {abi: Abi::Rust, name: "Rust", generic: true },
@@ -93,7 +90,6 @@ const AbiDatas: &'static [AbiData] = &[
     AbiData {abi: Abi::RustIntrinsic, name: "rust-intrinsic", generic: true },
     AbiData {abi: Abi::RustCall, name: "rust-call", generic: true },
     AbiData {abi: Abi::PlatformIntrinsic, name: "platform-intrinsic", generic: true },
-    AbiData {abi: Abi::Unadjusted, name: "unadjusted", generic: true },
 ];
 
 

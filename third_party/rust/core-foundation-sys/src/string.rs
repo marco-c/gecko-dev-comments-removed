@@ -221,10 +221,7 @@ extern {
                                          -> CFStringRef;
     
     
-    pub fn CFStringCreateWithCString(alloc: CFAllocatorRef,
-                                     cStr: *const c_char,
-                                     encoding: CFStringEncoding)
-                                     -> CFStringRef;
+    
     
     
     
@@ -262,11 +259,7 @@ extern {
     
     
     
-    pub fn CFStringGetCString(theString: CFStringRef,
-                              buffer: *mut c_char,
-                              bufferSize: CFIndex,
-                              encoding: CFStringEncoding)
-                              -> Boolean;
+    
     pub fn CFStringGetCStringPtr(theString: CFStringRef,
                                  encoding: CFStringEncoding)
                                  -> *const c_char;

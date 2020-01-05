@@ -3,10 +3,11 @@
 
 
 use app_units::Au;
-use webrender_traits::{FontKey, ColorU, FontRenderMode, GlyphDimensions, NativeFontHandle};
+use webrender_traits::{FontKey, FontRenderMode, GlyphDimensions, NativeFontHandle};
 
-use freetype::freetype::{FT_Render_Mode, FT_Pixel_Mode};
-use freetype::freetype::{FT_Done_FreeType, FT_Library_SetLcdFilter};
+use freetype::freetype::{FTErrorMethods, FT_PIXEL_MODE_GRAY, FT_PIXEL_MODE_MONO, FT_PIXEL_MODE_LCD};
+use freetype::freetype::{FT_Done_FreeType, FT_RENDER_MODE_LCD, FT_Library_SetLcdFilter};
+use freetype::freetype::{FT_RENDER_MODE_NORMAL, FT_RENDER_MODE_MONO};
 use freetype::freetype::{FT_Library, FT_Set_Char_Size};
 use freetype::freetype::{FT_Face, FT_Long, FT_UInt, FT_F26Dot6};
 use freetype::freetype::{FT_Init_FreeType, FT_Load_Glyph, FT_Render_Glyph};
@@ -44,9 +45,7 @@ impl FontContext {
         let mut lib: FT_Library = ptr::null_mut();
         unsafe {
             let result = FT_Init_FreeType(&mut lib);
-            if !result.succeeded() {
-                panic!("Unable to initialize FreeType library {:?}", result);
-            }
+            if !result.succeeded() { panic!("Unable to initialize FreeType library {}", result); }
 
             
             let result = FT_Library_SetLcdFilter(lib, FT_LcdFilter::FT_LCD_FILTER_DEFAULT);
@@ -90,12 +89,14 @@ impl FontContext {
     fn load_glyph(&self,
                   font_key: FontKey,
                   size: Au,
-                  character: u32) -> Option<FT_GlyphSlot> {
+                  character: u32,
+                  device_pixel_ratio: f32) -> Option<FT_GlyphSlot> {
         debug_assert!(self.faces.contains_key(&font_key));
         let face = self.faces.get(&font_key).unwrap();
 
         unsafe {
-            let char_size = float_to_fixed_ft(size.to_f64_px());
+            let char_size = float_to_fixed_ft(((0.5f64 + size.to_f64_px()) *
+                                               device_pixel_ratio as f64).floor());
             let result = FT_Set_Char_Size(face.face, char_size as FT_F26Dot6, 0, 0, 0);
             assert!(result.succeeded());
 
@@ -114,8 +115,9 @@ impl FontContext {
     pub fn get_glyph_dimensions(&self,
                                 font_key: FontKey,
                                 size: Au,
-                                character: u32) -> Option<GlyphDimensions> {
-        self.load_glyph(font_key, size, character).and_then(|slot| {
+                                character: u32,
+                                device_pixel_ratio: f32) -> Option<GlyphDimensions> {
+        self.load_glyph(font_key, size, character, device_pixel_ratio).and_then(|slot| {
             let metrics = unsafe { &(*slot).metrics };
             if metrics.width == 0 || metrics.height == 0 {
                 None
@@ -133,113 +135,111 @@ impl FontContext {
     pub fn rasterize_glyph(&mut self,
                            font_key: FontKey,
                            size: Au,
-                           color: ColorU,
                            character: u32,
+                           device_pixel_ratio: f32,
                            render_mode: FontRenderMode) -> Option<RasterizedGlyph> {
         let mut glyph = None;
 
         if let Some(slot) = self.load_glyph(font_key,
                                             size,
-                                            character) {
+                                            character,
+                                            device_pixel_ratio) {
             let render_mode = match render_mode {
-                FontRenderMode::Mono => FT_Render_Mode::FT_RENDER_MODE_MONO,
-                FontRenderMode::Alpha => FT_Render_Mode::FT_RENDER_MODE_NORMAL,
-                FontRenderMode::Subpixel => FT_Render_Mode::FT_RENDER_MODE_LCD,
+                FontRenderMode::Mono => FT_RENDER_MODE_MONO,
+                FontRenderMode::Alpha => FT_RENDER_MODE_NORMAL,
+                FontRenderMode::Subpixel => FT_RENDER_MODE_LCD,
             };
 
-            let result = unsafe { FT_Render_Glyph(slot, render_mode) };
+            unsafe {
+                let result = FT_Render_Glyph(slot, render_mode);
 
-            if result.succeeded() {
-                let bitmap = unsafe { &(*slot).bitmap };
+                if result.succeeded() {
+                    let bitmap = &(*slot).bitmap;
+                    let bitmap_mode = bitmap.pixel_mode as u32;
 
-                let metrics = unsafe { &(*slot).metrics };
-                let mut glyph_width = (metrics.width >> 6) as i32;
-                let glyph_height = (metrics.height >> 6) as i32;
-                let mut final_buffer = Vec::with_capacity(glyph_width as usize *
-                                                          glyph_height as usize *
-                                                          4);
+                    let metrics = &(*slot).metrics;
+                    let mut glyph_width = (metrics.width >> 6) as i32;
+                    let glyph_height = (metrics.height >> 6) as i32;
+                    let mut final_buffer = Vec::with_capacity(glyph_width as usize *
+                                                              glyph_height as usize *
+                                                              4);
 
-                if bitmap.pixel_mode == FT_Pixel_Mode::FT_PIXEL_MODE_MONO as u8 {
-                    
-                    
-                    let offset_x = unsafe { (metrics.horiBearingX >> 6) as i32 - (*slot).bitmap_left };
-                    let offset_y = unsafe { (metrics.horiBearingY >> 6) as i32 - (*slot).bitmap_top };
+                    match bitmap_mode {
+                        FT_PIXEL_MODE_MONO => {
+                            
+                            
+                            let offset_x = (metrics.horiBearingX >> 6) as i32 - (*slot).bitmap_left;
+                            let offset_y = (metrics.horiBearingY >> 6) as i32 - (*slot).bitmap_top;
 
-                    
-                    
-                    
-                    
-                    
-                    for iy in 0..glyph_height {
-                        let y = iy - offset_y;
-                        for ix in 0..glyph_width {
-                            let x = ix + offset_x;
-                            let valid_byte = x >= 0 &&
-                                y >= 0 &&
-                                x < bitmap.width as i32 &&
-                                y < bitmap.rows as i32;
-                            let byte_value = if valid_byte {
-                                let byte_index = (y * bitmap.pitch as i32) + (x >> 3);
-
-                                unsafe {
-                                    let bit_index = x & 7;
-                                    let byte_ptr = bitmap.buffer.offset(byte_index as isize);
-                                    let bit = (*byte_ptr & (0x80 >> bit_index)) != 0;
-                                    if bit {
-                                        0xff
+                            
+                            
+                            
+                            
+                            
+                            for iy in 0..glyph_height {
+                                let y = iy - offset_y;
+                                for ix in 0..glyph_width {
+                                    let x = ix + offset_x;
+                                    let valid_byte = x >= 0 &&
+                                                     y >= 0 &&
+                                                     x < bitmap.width &&
+                                                     y < bitmap.rows;
+                                    let byte_value = if valid_byte {
+                                        let byte_index = (y * bitmap.pitch) + (x >> 3);
+                                        let bit_index = x & 7;
+                                        let byte_ptr = bitmap.buffer.offset(byte_index as isize);
+                                        let bit = (*byte_ptr & (0x80 >> bit_index)) != 0;
+                                        if bit {
+                                            0xff
+                                        } else {
+                                            0
+                                        }
                                     } else {
                                         0
-                                    }
+                                    };
+
+                                    final_buffer.extend_from_slice(&[ 0xff, 0xff, 0xff, byte_value ]);
                                 }
-                            } else {
-                                0
-                            };
-
-                            final_buffer.extend_from_slice(&[ 0xff, 0xff, 0xff, byte_value ]);
-                        }
-                    }
-                } else if bitmap.pixel_mode == FT_Pixel_Mode::FT_PIXEL_MODE_GRAY as u8 {
-                    
-                    
-
-                    let buffer = unsafe {
-                        slice::from_raw_parts(
-                            bitmap.buffer,
-                            (bitmap.width * bitmap.rows) as usize
-                        )
-                    };
-
-                    
-                    for &byte in buffer.iter() {
-                        final_buffer.extend_from_slice(&[ 0xff, 0xff, 0xff, byte ]);
-                    }
-                } else if bitmap.pixel_mode == FT_Pixel_Mode::FT_PIXEL_MODE_LCD as u8 {
-                    
-                    glyph_width += 2;
-
-                    for y in 0..bitmap.rows {
-                        for x in 0..(bitmap.width / 3) {
-                            let index = (y as i32 * bitmap.pitch) + (x as i32 * 3);
-
-                            unsafe {
-                                let ptr = bitmap.buffer.offset(index as isize);
-                                let b = *ptr;
-                                let g = *(ptr.offset(1));
-                                let r = *(ptr.offset(2));
-
-                                final_buffer.extend_from_slice(&[r, g, b, 0xff]);
                             }
                         }
-                    }
-                } else {
-                    panic!("Unexpected render mode: {}!", bitmap.pixel_mode);
-                }
+                        FT_PIXEL_MODE_GRAY => {
+                            
+                            
 
-                glyph = Some(RasterizedGlyph {
-                    width: glyph_width as u32,
-                    height: glyph_height as u32,
-                    bytes: final_buffer,
-                });
+                            let buffer = slice::from_raw_parts(
+                                bitmap.buffer,
+                                (bitmap.width * bitmap.rows) as usize
+                            );
+
+                            
+                            for &byte in buffer.iter() {
+                                final_buffer.extend_from_slice(&[ 0xff, 0xff, 0xff, byte ]);
+                            }
+                        }
+                        FT_PIXEL_MODE_LCD => {
+                            
+                            glyph_width += 2;
+
+                            for y in 0..bitmap.rows {
+                                for x in 0..(bitmap.width / 3) {
+                                    let index = (y * bitmap.pitch) + (x * 3);
+                                    let ptr = bitmap.buffer.offset(index as isize);
+                                    let b = *ptr;
+                                    let g = *(ptr.offset(1));
+                                    let r = *(ptr.offset(2));
+                                    final_buffer.extend_from_slice(&[ r, g, b, 0xff ]);
+                                }
+                            }
+                        }
+                        _ => panic!("Unexpected render mode!"),
+                    }
+
+                    glyph = Some(RasterizedGlyph {
+                        width: glyph_width as u32,
+                        height: glyph_height as u32,
+                        bytes: final_buffer,
+                    });
+                }
             }
         }
 

@@ -16,10 +16,13 @@ pub use self::Token::*;
 
 use ast::{self};
 use ptr::P;
-use symbol::keywords;
+use util::interner::Interner;
 use tokenstream;
 
+use serialize::{Decodable, Decoder, Encodable, Encoder};
+use std::cell::RefCell;
 use std::fmt;
+use std::ops::Deref;
 use std::rc::Rc;
 
 #[derive(Clone, RustcEncodable, RustcDecodable, PartialEq, Eq, Hash, Debug, Copy)]
@@ -120,7 +123,7 @@ pub enum Token {
     Lifetime(ast::Ident),
 
     
-    Interpolated(Rc<Nonterminal>),
+    Interpolated(Nonterminal),
     
     
     DocComment(ast::Name),
@@ -169,15 +172,12 @@ impl Token {
             DotDot | DotDotDot          => true, 
             Lt | BinOp(Shl)             => true, 
             ModSep                      => true,
+            Interpolated(NtExpr(..))    => true,
+            Interpolated(NtIdent(..))   => true,
+            Interpolated(NtBlock(..))   => true,
+            Interpolated(NtPath(..))    => true,
             Pound                       => true, 
-            Interpolated(ref nt) => match **nt {
-                NtExpr(..) => true,
-                NtIdent(..) => true,
-                NtBlock(..) => true,
-                NtPath(..) => true,
-                _ => false,
-            },
-            _ => false,
+            _                           => false,
         }
     }
 
@@ -215,12 +215,10 @@ impl Token {
 
     
     pub fn is_path(&self) -> bool {
-        if let Interpolated(ref nt) = *self {
-            if let NtPath(..) = **nt {
-                return true;
-            }
+        match *self {
+            Interpolated(NtPath(..))    => true,
+            _                           => false,
         }
-        false
     }
 
     
@@ -292,19 +290,19 @@ impl Token {
 pub enum Nonterminal {
     NtItem(P<ast::Item>),
     NtBlock(P<ast::Block>),
-    NtStmt(ast::Stmt),
+    NtStmt(P<ast::Stmt>),
     NtPat(P<ast::Pat>),
     NtExpr(P<ast::Expr>),
     NtTy(P<ast::Ty>),
-    NtIdent(ast::SpannedIdent),
+    NtIdent(Box<ast::SpannedIdent>),
     
-    NtMeta(ast::MetaItem),
-    NtPath(ast::Path),
-    NtTT(tokenstream::TokenTree),
+    NtMeta(P<ast::MetaItem>),
+    NtPath(Box<ast::Path>),
+    NtTT(P<tokenstream::TokenTree>), 
     
     NtArm(ast::Arm),
-    NtImplItem(ast::ImplItem),
-    NtTraitItem(ast::TraitItem),
+    NtImplItem(P<ast::ImplItem>),
+    NtTraitItem(P<ast::TraitItem>),
     NtGenerics(ast::Generics),
     NtWhereClause(ast::WhereClause),
     NtArg(ast::Arg),
@@ -331,4 +329,281 @@ impl fmt::Debug for Nonterminal {
             NtArg(..) => f.pad("NtArg(..)"),
         }
     }
+}
+
+
+
+
+macro_rules! declare_keywords {(
+    $( ($index: expr, $konst: ident, $string: expr) )*
+) => {
+    pub mod keywords {
+        use ast;
+        #[derive(Clone, Copy, PartialEq, Eq)]
+        pub struct Keyword {
+            ident: ast::Ident,
+        }
+        impl Keyword {
+            #[inline] pub fn ident(self) -> ast::Ident { self.ident }
+            #[inline] pub fn name(self) -> ast::Name { self.ident.name }
+        }
+        $(
+            #[allow(non_upper_case_globals)]
+            pub const $konst: Keyword = Keyword {
+                ident: ast::Ident {
+                    name: ast::Name($index),
+                    ctxt: ::ext::hygiene::SyntaxContext(0),
+                }
+            };
+        )*
+    }
+
+    fn mk_fresh_ident_interner() -> IdentInterner {
+        Interner::prefill(&[$($string,)*])
+    }
+}}
+
+
+
+
+
+
+declare_keywords! {
+    // Invalid identifier
+    (0,  Invalid,        "")
+
+    // Strict keywords used in the language.
+    (1,  As,             "as")
+    (2,  Box,            "box")
+    (3,  Break,          "break")
+    (4,  Const,          "const")
+    (5,  Continue,       "continue")
+    (6,  Crate,          "crate")
+    (7,  Else,           "else")
+    (8,  Enum,           "enum")
+    (9,  Extern,         "extern")
+    (10, False,          "false")
+    (11, Fn,             "fn")
+    (12, For,            "for")
+    (13, If,             "if")
+    (14, Impl,           "impl")
+    (15, In,             "in")
+    (16, Let,            "let")
+    (17, Loop,           "loop")
+    (18, Match,          "match")
+    (19, Mod,            "mod")
+    (20, Move,           "move")
+    (21, Mut,            "mut")
+    (22, Pub,            "pub")
+    (23, Ref,            "ref")
+    (24, Return,         "return")
+    (25, SelfValue,      "self")
+    (26, SelfType,       "Self")
+    (27, Static,         "static")
+    (28, Struct,         "struct")
+    (29, Super,          "super")
+    (30, Trait,          "trait")
+    (31, True,           "true")
+    (32, Type,           "type")
+    (33, Unsafe,         "unsafe")
+    (34, Use,            "use")
+    (35, Where,          "where")
+    (36, While,          "while")
+
+    // Keywords reserved for future use.
+    (37, Abstract,       "abstract")
+    (38, Alignof,        "alignof")
+    (39, Become,         "become")
+    (40, Do,             "do")
+    (41, Final,          "final")
+    (42, Macro,          "macro")
+    (43, Offsetof,       "offsetof")
+    (44, Override,       "override")
+    (45, Priv,           "priv")
+    (46, Proc,           "proc")
+    (47, Pure,           "pure")
+    (48, Sizeof,         "sizeof")
+    (49, Typeof,         "typeof")
+    (50, Unsized,        "unsized")
+    (51, Virtual,        "virtual")
+    (52, Yield,          "yield")
+
+    // Weak keywords, have special meaning only in specific contexts.
+    (53, Default,        "default")
+    (54, StaticLifetime, "'static")
+    (55, Union,          "union")
+}
+
+
+pub type IdentInterner = Interner;
+
+
+
+
+pub fn with_ident_interner<T, F: FnOnce(&mut IdentInterner) -> T>(f: F) -> T {
+    thread_local!(static KEY: RefCell<IdentInterner> = {
+        RefCell::new(mk_fresh_ident_interner())
+    });
+    KEY.with(|interner| f(&mut *interner.borrow_mut()))
+}
+
+
+pub fn reset_ident_interner() {
+    with_ident_interner(|interner| *interner = mk_fresh_ident_interner());
+}
+
+pub fn clear_ident_interner() {
+    with_ident_interner(|interner| *interner = IdentInterner::new());
+}
+
+
+
+
+
+
+
+
+
+
+#[derive(Clone, PartialEq, Hash, PartialOrd, Eq, Ord)]
+pub struct InternedString {
+    string: Rc<String>,
+}
+
+impl InternedString {
+    #[inline]
+    pub fn new(string: &'static str) -> InternedString {
+        InternedString {
+            string: Rc::new(string.to_owned()),
+        }
+    }
+
+    #[inline]
+    fn new_from_rc_str(string: Rc<String>) -> InternedString {
+        InternedString {
+            string: string,
+        }
+    }
+
+    #[inline]
+    pub fn new_from_name(name: ast::Name) -> InternedString {
+        with_ident_interner(|interner| InternedString::new_from_rc_str(interner.get(name)))
+    }
+}
+
+impl Deref for InternedString {
+    type Target = str;
+
+    fn deref(&self) -> &str { &self.string }
+}
+
+impl fmt::Debug for InternedString {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Debug::fmt(&self.string, f)
+    }
+}
+
+impl fmt::Display for InternedString {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Display::fmt(&self.string, f)
+    }
+}
+
+impl<'a> PartialEq<&'a str> for InternedString {
+    #[inline(always)]
+    fn eq(&self, other: & &'a str) -> bool {
+        PartialEq::eq(&self.string[..], *other)
+    }
+    #[inline(always)]
+    fn ne(&self, other: & &'a str) -> bool {
+        PartialEq::ne(&self.string[..], *other)
+    }
+}
+
+impl<'a> PartialEq<InternedString> for &'a str {
+    #[inline(always)]
+    fn eq(&self, other: &InternedString) -> bool {
+        PartialEq::eq(*self, &other.string[..])
+    }
+    #[inline(always)]
+    fn ne(&self, other: &InternedString) -> bool {
+        PartialEq::ne(*self, &other.string[..])
+    }
+}
+
+impl PartialEq<str> for InternedString {
+    #[inline(always)]
+    fn eq(&self, other: &str) -> bool {
+        PartialEq::eq(&self.string[..], other)
+    }
+    #[inline(always)]
+    fn ne(&self, other: &str) -> bool {
+        PartialEq::ne(&self.string[..], other)
+    }
+}
+
+impl PartialEq<InternedString> for str {
+    #[inline(always)]
+    fn eq(&self, other: &InternedString) -> bool {
+        PartialEq::eq(self, &other.string[..])
+    }
+    #[inline(always)]
+    fn ne(&self, other: &InternedString) -> bool {
+        PartialEq::ne(self, &other.string[..])
+    }
+}
+
+impl Decodable for InternedString {
+    fn decode<D: Decoder>(d: &mut D) -> Result<InternedString, D::Error> {
+        Ok(intern(&try!(d.read_str())).as_str())
+    }
+}
+
+impl Encodable for InternedString {
+    fn encode<S: Encoder>(&self, s: &mut S) -> Result<(), S::Error> {
+        s.emit_str(&self.string)
+    }
+}
+
+
+
+#[inline]
+pub fn intern_and_get_ident(s: &str) -> InternedString {
+    intern(s).as_str()
+}
+
+
+#[inline]
+pub fn intern(s: &str) -> ast::Name {
+    with_ident_interner(|interner| interner.intern(s))
+}
+
+
+#[inline]
+pub fn gensym(s: &str) -> ast::Name {
+    with_ident_interner(|interner| interner.gensym(s))
+}
+
+
+#[inline]
+pub fn str_to_ident(s: &str) -> ast::Ident {
+    ast::Ident::with_empty_ctxt(intern(s))
+}
+
+
+#[inline]
+pub fn gensym_ident(s: &str) -> ast::Ident {
+    ast::Ident::with_empty_ctxt(gensym(s))
+}
+
+
+
+
+pub fn fresh_name(src: ast::Ident) -> ast::Name {
+    with_ident_interner(|interner| interner.gensym_copy(src.name))
+    
+    
+    
+    
+
 }

@@ -43,7 +43,7 @@ pub type FileName = String;
 
 
 
-#[derive(Clone, Copy, Hash, PartialEq, Eq, Ord, PartialOrd)]
+#[derive(Clone, Copy, Hash, PartialEq, Eq)]
 pub struct Span {
     pub lo: BytePos,
     pub hi: BytePos,
@@ -58,7 +58,7 @@ pub struct Span {
 
 
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Clone)]
 pub struct MultiSpan {
     primary_spans: Vec<Span>,
     span_labels: Vec<(Span, String)>,
@@ -245,7 +245,7 @@ impl From<Span> for MultiSpan {
     }
 }
 
-#[derive(PartialEq, Eq, Clone, Debug, Hash, RustcEncodable, RustcDecodable, Copy, Ord, PartialOrd)]
+#[derive(PartialEq, Eq, Clone, Debug, Hash, RustcEncodable, RustcDecodable, Copy)]
 pub struct ExpnId(pub u32);
 
 pub const NO_EXPANSION: ExpnId = ExpnId(!0);

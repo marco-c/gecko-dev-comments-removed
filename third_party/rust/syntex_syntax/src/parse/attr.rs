@@ -11,11 +11,12 @@
 use attr;
 use ast;
 use syntax_pos::{mk_sp, Span};
-use codemap::spanned;
+use codemap::{spanned, Spanned};
 use parse::common::SeqSep;
 use parse::PResult;
 use parse::token;
 use parse::parser::{Parser, TokenType};
+use ptr::P;
 
 #[derive(PartialEq, Eq, Debug)]
 enum InnerAttributeParsePolicy<'a> {
@@ -48,9 +49,13 @@ impl<'a> Parser<'a> {
                     just_parsed_doc_comment = false;
                 }
                 token::DocComment(s) => {
-                    let Span { lo, hi, .. } = self.span;
-                    let attr = attr::mk_sugared_doc_attr(attr::mk_attr_id(), s, lo, hi);
-                    if attr.style != ast::AttrStyle::Outer {
+                    let attr = ::attr::mk_sugared_doc_attr(
+                        attr::mk_attr_id(),
+                        self.id_to_interned_str(ast::Ident::with_empty_ctxt(s)),
+                        self.span.lo,
+                        self.span.hi
+                    );
+                    if attr.node.style != ast::AttrStyle::Outer {
                         let mut err = self.fatal("expected outer doc comment");
                         err.note("inner doc comments like this (starting with \
                                   `//!` or `/*!`) can only appear before items");
@@ -140,12 +145,14 @@ impl<'a> Parser<'a> {
             style = ast::AttrStyle::Inner;
         }
 
-        Ok(ast::Attribute {
-            id: attr::mk_attr_id(),
-            style: style,
-            value: value,
-            is_sugared_doc: false,
+        Ok(Spanned {
             span: span,
+            node: ast::Attribute_ {
+                id: attr::mk_attr_id(),
+                style: style,
+                value: value,
+                is_sugared_doc: false,
+            },
         })
     }
 
@@ -165,14 +172,15 @@ impl<'a> Parser<'a> {
                     }
 
                     let attr = try!(self.parse_attribute(true));
-                    assert!(attr.style == ast::AttrStyle::Inner);
+                    assert!(attr.node.style == ast::AttrStyle::Inner);
                     attrs.push(attr);
                 }
                 token::DocComment(s) => {
                     
                     let Span { lo, hi, .. } = self.span;
-                    let attr = attr::mk_sugared_doc_attr(attr::mk_attr_id(), s, lo, hi);
-                    if attr.style == ast::AttrStyle::Inner {
+                    let str = self.id_to_interned_str(ast::Ident::with_empty_ctxt(s));
+                    let attr = attr::mk_sugared_doc_attr(attr::mk_attr_id(), str, lo, hi);
+                    if attr.node.style == ast::AttrStyle::Inner {
                         attrs.push(attr);
                         self.bump();
                     } else {
@@ -205,12 +213,9 @@ impl<'a> Parser<'a> {
     
     
     
-    pub fn parse_meta_item(&mut self) -> PResult<'a, ast::MetaItem> {
+    pub fn parse_meta_item(&mut self) -> PResult<'a, P<ast::MetaItem>> {
         let nt_meta = match self.token {
-            token::Interpolated(ref nt) => match **nt {
-                token::NtMeta(ref e) => Some(e.clone()),
-                _ => None,
-            },
+            token::Interpolated(token::NtMeta(ref e)) => Some(e.clone()),
             _ => None,
         };
 
@@ -221,15 +226,24 @@ impl<'a> Parser<'a> {
 
         let lo = self.span.lo;
         let ident = try!(self.parse_ident());
-        let node = if self.eat(&token::Eq) {
-            ast::MetaItemKind::NameValue(try!(self.parse_unsuffixed_lit()))
-        } else if self.token == token::OpenDelim(token::Paren) {
-            ast::MetaItemKind::List(try!(self.parse_meta_seq()))
-        } else {
-            ast::MetaItemKind::Word
-        };
-        let hi = self.prev_span.hi;
-        Ok(ast::MetaItem { name: ident.name, node: node, span: mk_sp(lo, hi) })
+        let name = self.id_to_interned_str(ident);
+        match self.token {
+            token::Eq => {
+                self.bump();
+                let lit = try!(self.parse_unsuffixed_lit());
+                let hi = self.prev_span.hi;
+                Ok(P(spanned(lo, hi, ast::MetaItemKind::NameValue(name, lit))))
+            }
+            token::OpenDelim(token::Paren) => {
+                let inner_items = try!(self.parse_meta_seq());
+                let hi = self.prev_span.hi;
+                Ok(P(spanned(lo, hi, ast::MetaItemKind::List(name, inner_items))))
+            }
+            _ => {
+                let hi = self.prev_span.hi;
+                Ok(P(spanned(lo, hi, ast::MetaItemKind::Word(name))))
+            }
+        }
     }
 
     

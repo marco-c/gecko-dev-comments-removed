@@ -176,14 +176,14 @@ impl<'a, W: Write> Encoder for EncoderWriter<'a, W> {
         f(self)
     }
     fn emit_enum_struct_variant<F>(&mut self,
-                                   v_name: &str,
-                                   v_id: usize,
-                                   len: usize,
+                                   _: &str,
+                                   _: usize,
+                                   _: usize,
                                    f: F)
                                    -> EncodingResult<()>
         where F: FnOnce(&mut EncoderWriter<'a, W>) -> EncodingResult<()>
     {
-        self.emit_enum_variant(v_name, v_id, len, f)
+        f(self)
     }
     fn emit_enum_struct_variant_field<F>(&mut self, _: &str, _: usize, f: F) -> EncodingResult<()>
         where F: FnOnce(&mut EncoderWriter<'a, W>) -> EncodingResult<()>

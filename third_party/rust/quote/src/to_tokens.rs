@@ -1,47 +1,16 @@
 use super::Tokens;
 
-use std::borrow::Cow;
-
-
 pub trait ToTokens {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     fn to_tokens(&self, &mut Tokens);
 }
 
-impl<'a, T: ?Sized + ToTokens> ToTokens for &'a T {
+impl<'a, T: ToTokens> ToTokens for &'a T {
     fn to_tokens(&self, tokens: &mut Tokens) {
         (**self).to_tokens(tokens);
     }
 }
 
-impl<'a, T: ?Sized + ToOwned + ToTokens> ToTokens for Cow<'a, T> {
-    fn to_tokens(&self, tokens: &mut Tokens) {
-        (**self).to_tokens(tokens);
-    }
-}
-
-impl<T: ?Sized + ToTokens> ToTokens for Box<T> {
+impl<T: ToTokens> ToTokens for Box<T> {
     fn to_tokens(&self, tokens: &mut Tokens) {
         (**self).to_tokens(tokens);
     }
@@ -57,17 +26,7 @@ impl<T: ToTokens> ToTokens for Option<T> {
 
 impl ToTokens for str {
     fn to_tokens(&self, tokens: &mut Tokens) {
-        let mut escaped = "\"".to_string();
-        for ch in self.chars() {
-            match ch {
-                '\0' => escaped.push_str(r"\0"),
-                '\'' => escaped.push_str("'"),
-                _ => escaped.extend(ch.escape_default().map(|c| c as char)),
-            }
-        }
-        escaped.push('"');
-
-        tokens.append(&escaped);
+        tokens.append(&escape_str(self));
     }
 }
 
@@ -87,29 +46,26 @@ impl ToTokens for char {
     }
 }
 
-
 #[derive(Debug)]
 pub struct ByteStr<'a>(pub &'a str);
 
 impl<'a> ToTokens for ByteStr<'a> {
     fn to_tokens(&self, tokens: &mut Tokens) {
-        let mut escaped = "b\"".to_string();
-        for b in self.0.bytes() {
-            match b {
-                b'\0' => escaped.push_str(r"\0"),
-                b'\t' => escaped.push_str(r"\t"),
-                b'\n' => escaped.push_str(r"\n"),
-                b'\r' => escaped.push_str(r"\r"),
-                b'"' => escaped.push_str("\\\""),
-                b'\\' => escaped.push_str("\\\\"),
-                b'\x20' ... b'\x7E' => escaped.push(b as char),
-                _ => escaped.push_str(&format!("\\x{:02X}", b)),
-            }
-        }
-        escaped.push('"');
-
-        tokens.append(&escaped);
+        tokens.append(&format!("b{}", escape_str(self.0)));
     }
+}
+
+fn escape_str(s: &str) -> String {
+    let mut escaped = "\"".to_string();
+    for ch in s.chars() {
+        match ch {
+            '\0' => escaped.push_str(r"\0"),
+            '\'' => escaped.push_str("'"),
+            _ => escaped.extend(ch.escape_default().map(|c| c as char)),
+        }
+    }
+    escaped.push('"');
+    escaped
 }
 
 macro_rules! impl_to_tokens_display {
@@ -125,21 +81,11 @@ macro_rules! impl_to_tokens_display {
 impl_to_tokens_display!(Tokens);
 impl_to_tokens_display!(bool);
 
-
-#[derive(Debug)]
-pub struct Hex<T>(pub T);
-
 macro_rules! impl_to_tokens_integer {
     ($ty:ty) => {
         impl ToTokens for $ty {
             fn to_tokens(&self, tokens: &mut Tokens) {
                 tokens.append(&format!(concat!("{}", stringify!($ty)), self));
-            }
-        }
-
-        impl ToTokens for Hex<$ty> {
-            fn to_tokens(&self, tokens: &mut Tokens) {
-                tokens.append(&format!(concat!("0x{:X}", stringify!($ty)), self.0));
             }
         }
     };
@@ -192,166 +138,3 @@ macro_rules! impl_to_tokens_floating {
 }
 impl_to_tokens_floating!(f32);
 impl_to_tokens_floating!(f64);
-
-impl<T: ToTokens> ToTokens for [T] {
-    fn to_tokens(&self, tokens: &mut Tokens) {
-        tokens.append("[");
-        for item in self {
-            item.to_tokens(tokens);
-            tokens.append(",");
-        }
-        tokens.append("]");
-    }
-}
-
-impl<T: ToTokens> ToTokens for Vec<T> {
-    fn to_tokens(&self, tokens: &mut Tokens) {
-        self[..].to_tokens(tokens)
-    }
-}
-
-macro_rules! array_impls {
-    ($($N:expr)+) => {
-        $(
-            impl<T: ToTokens> ToTokens for [T; $N] {
-                fn to_tokens(&self, tokens: &mut Tokens) {
-                    self[..].to_tokens(tokens)
-                }
-            }
-        )+
-    }
-}
-
-array_impls! {
-     0  1  2  3  4  5  6  7  8  9
-    10 11 12 13 14 15 16 17 18 19
-    20 21 22 23 24 25 26 27 28 29
-    30 31 32
-}
-
-macro_rules! tuple_impls {
-    ($(
-        $Tuple:ident {
-            $(($idx:tt) -> $T:ident)*
-        }
-    )+) => {
-        $(
-            impl<$($T: ToTokens),*> ToTokens for ($($T,)*) {
-                fn to_tokens(&self, tokens: &mut Tokens) {
-                    tokens.append("(");
-                    $(
-                        self.$idx.to_tokens(tokens);
-                        tokens.append(",");
-                    )*
-                    tokens.append(")");
-                }
-            }
-        )+
-    }
-}
-
-tuple_impls! {
-    Tuple0 {}
-    Tuple1 {
-        (0) -> A
-    }
-    Tuple2 {
-        (0) -> A
-        (1) -> B
-    }
-    Tuple3 {
-        (0) -> A
-        (1) -> B
-        (2) -> C
-    }
-    Tuple4 {
-        (0) -> A
-        (1) -> B
-        (2) -> C
-        (3) -> D
-    }
-    Tuple5 {
-        (0) -> A
-        (1) -> B
-        (2) -> C
-        (3) -> D
-        (4) -> E
-    }
-    Tuple6 {
-        (0) -> A
-        (1) -> B
-        (2) -> C
-        (3) -> D
-        (4) -> E
-        (5) -> F
-    }
-    Tuple7 {
-        (0) -> A
-        (1) -> B
-        (2) -> C
-        (3) -> D
-        (4) -> E
-        (5) -> F
-        (6) -> G
-    }
-    Tuple8 {
-        (0) -> A
-        (1) -> B
-        (2) -> C
-        (3) -> D
-        (4) -> E
-        (5) -> F
-        (6) -> G
-        (7) -> H
-    }
-    Tuple9 {
-        (0) -> A
-        (1) -> B
-        (2) -> C
-        (3) -> D
-        (4) -> E
-        (5) -> F
-        (6) -> G
-        (7) -> H
-        (8) -> I
-    }
-    Tuple10 {
-        (0) -> A
-        (1) -> B
-        (2) -> C
-        (3) -> D
-        (4) -> E
-        (5) -> F
-        (6) -> G
-        (7) -> H
-        (8) -> I
-        (9) -> J
-    }
-    Tuple11 {
-        (0) -> A
-        (1) -> B
-        (2) -> C
-        (3) -> D
-        (4) -> E
-        (5) -> F
-        (6) -> G
-        (7) -> H
-        (8) -> I
-        (9) -> J
-        (10) -> K
-    }
-    Tuple12 {
-        (0) -> A
-        (1) -> B
-        (2) -> C
-        (3) -> D
-        (4) -> E
-        (5) -> F
-        (6) -> G
-        (7) -> H
-        (8) -> I
-        (9) -> J
-        (10) -> K
-        (11) -> L
-    }
-}

@@ -25,18 +25,18 @@ macro_rules! named {
 }
 
 macro_rules! call {
-    ($i:expr, $fun:expr $(, $args:expr)*) => {
-        $fun($i $(, $args)*)
+    ($i:expr, $fun:expr) => {
+        $fun($i)
     };
 }
 
 macro_rules! map {
     ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => {
-        map_impl!($i, $submac!($($args)*), call!($g))
+        map_impl!($i, $submac!($($args)*), call!($g));
     };
 
     ($i:expr, $f:expr, $g:expr) => {
-        map_impl!($i, call!($f), call!($g))
+        map_impl!($i, call!($f), call!($g));
     };
 }
 
@@ -61,13 +61,12 @@ macro_rules! not {
     };
 }
 
-
 macro_rules! cond {
     ($i:expr, $cond:expr, $submac:ident!( $($args:tt)* )) => {
         if $cond {
             match $submac!($i, $($args)*) {
                 $crate::nom::IResult::Done(i, o) => $crate::nom::IResult::Done(i, ::std::option::Option::Some(o)),
-                $crate::nom::IResult::Error => $crate::nom::IResult::Error,
+                $crate::nom::IResult::Error => $crate::nom::IResult::Done($i, ::std::option::Option::None),
             }
         } else {
             $crate::nom::IResult::Done($i, ::std::option::Option::None)
@@ -75,21 +74,7 @@ macro_rules! cond {
     };
 
     ($i:expr, $cond:expr, $f:expr) => {
-        cond!($i, $cond, call!($f))
-    };
-}
-
-macro_rules! cond_reduce {
-    ($i:expr, $cond:expr, $submac:ident!( $($args:tt)* )) => {
-        if $cond {
-            $submac!($i, $($args)*)
-        } else {
-            $crate::nom::IResult::Error
-        }
-    };
-
-    ($i:expr, $cond:expr, $f:expr) => {
-        cond_reduce!($i, $cond, call!($f))
+        cond!($i, $cond, call!($f));
     };
 }
 
@@ -102,15 +87,15 @@ macro_rules! preceded {
     };
 
     ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => {
-        preceded!($i, $submac!($($args)*), call!($g))
+        preceded!($i, $submac!($($args)*), call!($g));
     };
 
     ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => {
-        preceded!($i, call!($f), $submac!($($args)*))
+        preceded!($i, call!($f), $submac!($($args)*));
     };
 
     ($i:expr, $f:expr, $g:expr) => {
-        preceded!($i, call!($f), call!($g))
+        preceded!($i, call!($f), call!($g));
     };
 }
 
@@ -123,15 +108,15 @@ macro_rules! terminated {
     };
 
     ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => {
-        terminated!($i, $submac!($($args)*), call!($g))
+        terminated!($i, $submac!($($args)*), call!($g));
     };
 
     ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => {
-        terminated!($i, call!($f), $submac!($($args)*))
+        terminated!($i, call!($f), $submac!($($args)*));
     };
 
     ($i:expr, $f:expr, $g:expr) => {
-        terminated!($i, call!($f), call!($g))
+        terminated!($i, call!($f), call!($g));
     };
 }
 
@@ -173,9 +158,7 @@ macro_rules! many0 {
     };
 }
 
-pub fn many0<'a, T>(mut input: &'a str,
-                    f: fn(&'a str) -> IResult<&'a str, T>)
-                    -> IResult<&'a str, Vec<T>> {
+pub fn many0<'a, T>(mut input: &'a str, f: fn(&'a str) -> IResult<&'a str, T>) -> IResult<&'a str, Vec<T>> {
     let mut res = Vec::new();
 
     loop {
@@ -232,12 +215,22 @@ macro_rules! take_while1 {
     };
 }
 
+pub fn str_chars(s: &str) -> Vec<char> {
+    
+    
+    let mut result = Vec::new();
+    for ch in s.chars() {
+        result.push(ch);
+    }
+    result
+}
+
 macro_rules! take_until {
     ($input:expr, $substr:expr) => {{
         if $substr.len() > $input.len() {
             $crate::nom::IResult::Error
         } else {
-            let substr_vec: Vec<char> = $substr.chars().collect();
+            let substr_vec: Vec<char> = $crate::nom::str_chars($substr);
             let mut window: Vec<char> = vec![];
             let mut offset = $input.len();
             let mut parsed = false;
@@ -304,7 +297,7 @@ macro_rules! delimited {
     };
 
     ($i:expr, $f:expr, $($rest:tt)+) => {
-        delimited!($i, call!($f), $($rest)*)
+        delimited!($i, call!($f), $($rest)*);
     };
 }
 
@@ -345,15 +338,15 @@ macro_rules! separated_nonempty_list {
     }};
 
     ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => {
-        separated_nonempty_list!($i, $submac!($($args)*), call!($g))
+        separated_nonempty_list!($i, $submac!($($args)*), call!($g));
     };
 
     ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => {
-        separated_nonempty_list!($i, call!($f), $submac!($($args)*))
+        separated_nonempty_list!($i, call!($f), $submac!($($args)*));
     };
 
     ($i:expr, $f:expr, $g:expr) => {
-        separated_nonempty_list!($i, call!($f), call!($g))
+        separated_nonempty_list!($i, call!($f), call!($g));
     };
 }
 
@@ -366,7 +359,7 @@ macro_rules! tuple {
 
 macro_rules! tuple_parser {
     ($i:expr, ($($parsed:tt),*), $e:ident, $($rest:tt)*) => {
-        tuple_parser!($i, ($($parsed),*), call!($e), $($rest)*)
+        tuple_parser!($i, ($($parsed),*), call!($e), $($rest)*);
     };
 
     ($i:expr, (), $submac:ident!( $($args:tt)* ), $($rest:tt)*) => {
@@ -386,7 +379,7 @@ macro_rules! tuple_parser {
     };
 
     ($i:expr, ($($parsed:tt),*), $e:ident) => {
-        tuple_parser!($i, ($($parsed),*), call!($e))
+        tuple_parser!($i, ($($parsed),*), call!($e));
     };
 
     ($i:expr, (), $submac:ident!( $($args:tt)* )) => {
@@ -407,7 +400,7 @@ macro_rules! tuple_parser {
 
 macro_rules! alt {
     ($i:expr, $e:ident | $($rest:tt)*) => {
-        alt!($i, call!($e) | $($rest)*)
+        alt!($i, call!($e) | $($rest)*);
     };
 
     ($i:expr, $subrule:ident!( $($args:tt)*) | $($rest:tt)*) => {
@@ -425,26 +418,33 @@ macro_rules! alt {
     };
 
     ($i:expr, $e:ident => { $gen:expr } | $($rest:tt)*) => {
-        alt!($i, call!($e) => { $gen } | $($rest)*)
+        alt!($i, call!($e) => { $gen } | $($rest)*);
     };
 
     ($i:expr, $e:ident => { $gen:expr }) => {
-        alt!($i, call!($e) => { $gen })
+        alt!($i, call!($e) => { $gen });
     };
 
     ($i:expr, $subrule:ident!( $($args:tt)* ) => { $gen:expr }) => {
         match $subrule!($i, $($args)*) {
             $crate::nom::IResult::Done(i, o) => $crate::nom::IResult::Done(i, $gen(o)),
-            $crate::nom::IResult::Error => $crate::nom::IResult::Error,
+            $crate::nom::IResult::Error => alt!($i)
         }
     };
 
     ($i:expr, $e:ident) => {
-        alt!($i, call!($e))
+        alt!($i, call!($e));
     };
 
     ($i:expr, $subrule:ident!( $($args:tt)*)) => {
-        $subrule!($i, $($args)*)
+        match $subrule!( $i, $($args)* ) {
+            $crate::nom::IResult::Done(i, o) => $crate::nom::IResult::Done(i, o),
+            $crate::nom::IResult::Error => alt!($i),
+        }
+    };
+
+    ($i:expr) => {
+        $crate::nom::IResult::Error
     };
 }
 
@@ -454,7 +454,7 @@ macro_rules! do_parse {
     };
 
     ($i:expr, $e:ident >> $($rest:tt)*) => {
-        do_parse!($i, call!($e) >> $($rest)*)
+        do_parse!($i, call!($e) >> $($rest)*);
     };
 
     ($i:expr, $submac:ident!( $($args:tt)* ) >> $($rest:tt)*) => {
@@ -466,7 +466,7 @@ macro_rules! do_parse {
     };
 
     ($i:expr, $field:ident : $e:ident >> $($rest:tt)*) => {
-        do_parse!($i, $field: call!($e) >> $($rest)*)
+        do_parse!($i, $field: call!($e) >> $($rest)*);
     };
 
     ($i:expr, $field:ident : $submac:ident!( $($args:tt)* ) >> $($rest:tt)*) => {
@@ -480,7 +480,7 @@ macro_rules! do_parse {
     };
 
     ($i:expr, mut $field:ident : $e:ident >> $($rest:tt)*) => {
-        do_parse!($i, mut $field: call!($e) >> $($rest)*)
+        do_parse!($i, $field: call!($e) >> $($rest)*);
     };
 
     ($i:expr, mut $field:ident : $submac:ident!( $($args:tt)* ) >> $($rest:tt)*) => {

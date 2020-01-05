@@ -6,14 +6,13 @@
 
 
 use app_units::Au;
-use channel::{PayloadSender, MsgSender};
 #[cfg(feature = "nightly")]
 use core::nonzero::NonZero;
+use euclid::{Matrix4D, Point2D, Rect, Size2D};
+use ipc_channel::ipc::{IpcBytesSender, IpcSender};
 use offscreen_gl_context::{GLContextAttributes, GLLimits};
-use std::sync::Arc;
 
 #[cfg(target_os = "macos")] use core_graphics::font::CGFont;
-#[cfg(target_os = "windows")] use dwrote::FontDescriptor;
 
 #[derive(Debug, Copy, Clone)]
 pub enum RendererKind {
@@ -21,60 +20,45 @@ pub enum RendererKind {
     OSMesa,
 }
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Deserialize, Serialize)]
 pub enum ApiMsg {
     AddRawFont(FontKey, Vec<u8>),
     AddNativeFont(FontKey, NativeFontHandle),
     
-    GetGlyphDimensions(Vec<GlyphKey>, MsgSender<Vec<Option<GlyphDimensions>>>),
+    GetGlyphDimensions(Vec<GlyphKey>, IpcSender<Vec<Option<GlyphDimensions>>>),
     
-    AddImage(ImageKey, ImageDescriptor, ImageData),
+    AddImage(ImageKey, u32, u32, Option<u32>, ImageFormat, Vec<u8>),
     
-    UpdateImage(ImageKey, ImageDescriptor, Vec<u8>),
+    UpdateImage(ImageKey, u32, u32, ImageFormat, Vec<u8>),
     
     DeleteImage(ImageKey),
-    CloneApi(MsgSender<IdNamespace>),
+    CloneApi(IpcSender<IdNamespace>),
     
     
     
     
-    SetRootDisplayList(Option<ColorF>,
-                       Epoch,
-                       PipelineId,
-                       LayoutSize,
-                       BuiltDisplayListDescriptor,
-                       AuxiliaryListsDescriptor),
+    
+    
+    
+    
+    SetRootStackingContext(StackingContextId,
+                           ColorF,
+                           Epoch,
+                           PipelineId,
+                           Size2D<f32>,
+                           Vec<(StackingContextId, StackingContext)>,
+                           Vec<(DisplayListId, BuiltDisplayListDescriptor)>,
+                           AuxiliaryListsDescriptor),
     SetRootPipeline(PipelineId),
-    Scroll(ScrollLocation, WorldPoint, ScrollEventPhase),
-    ScrollLayersWithScrollId(LayoutPoint, PipelineId, ServoScrollRootId),
+    Scroll(Point2D<f32>, Point2D<f32>, ScrollEventPhase),
     TickScrollingBounce,
-    TranslatePointToLayerSpace(WorldPoint, MsgSender<(LayoutPoint, PipelineId)>),
-    GetScrollLayerState(MsgSender<Vec<ScrollLayerState>>),
-    RequestWebGLContext(DeviceIntSize, GLContextAttributes, MsgSender<Result<(WebGLContextId, GLLimits), String>>),
-    ResizeWebGLContext(WebGLContextId, DeviceIntSize),
-    WebGLCommand(WebGLContextId, WebGLCommand),
+    SetScrollOffset(ScrollLayerId, Point2D<f32>),
     GenerateFrame,
-    
-    VRCompositorCommand(WebGLContextId, VRCompositorCommand),
-    
-    
-    
-    ExternalEvent(ExternalEvent),
-    ShutDown,
-}
-
-
-#[derive(Clone, Deserialize, Serialize)]
-pub struct ExternalEvent {
-    raw: usize,
-}
-
-unsafe impl Send for ExternalEvent {}
-
-impl ExternalEvent {
-    pub fn from_raw(raw: usize) -> Self { ExternalEvent { raw: raw } }
-    
-    pub fn unwrap(self) -> usize { self.raw }
+    TranslatePointToLayerSpace(Point2D<f32>, IpcSender<(Point2D<f32>, PipelineId)>),
+    GetScrollLayerState(IpcSender<Vec<ScrollLayerState>>),
+    RequestWebGLContext(Size2D<i32>, GLContextAttributes, IpcSender<Result<(WebGLContextId, GLLimits), String>>),
+    ResizeWebGLContext(WebGLContextId, Size2D<i32>),
+    WebGLCommand(WebGLContextId, WebGLCommand),
 }
 
 #[derive(Copy, Clone, Deserialize, Serialize, Debug)]
@@ -116,10 +100,10 @@ pub struct BorderDisplayItem {
 
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
 pub struct BorderRadius {
-    pub top_left: LayoutSize,
-    pub top_right: LayoutSize,
-    pub bottom_left: LayoutSize,
-    pub bottom_right: LayoutSize,
+    pub top_left: Size2D<f32>,
+    pub top_right: Size2D<f32>,
+    pub bottom_left: Size2D<f32>,
+    pub bottom_right: Size2D<f32>,
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
@@ -152,8 +136,8 @@ pub enum BoxShadowClipMode {
 
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
 pub struct BoxShadowDisplayItem {
-    pub box_bounds: LayoutRect,
-    pub offset: LayoutPoint,
+    pub box_bounds: Rect<f32>,
+    pub offset: Point2D<f32>,
     pub color: ColorF,
     pub blur_radius: f32,
     pub spread_radius: f32,
@@ -191,82 +175,30 @@ pub struct ColorF {
 }
 known_heap_size!(0, ColorF);
 
-#[derive(Clone, Copy, Hash, Eq, Debug, Deserialize, PartialEq, PartialOrd, Ord, Serialize)]
-pub struct ColorU {
-    pub r: u8,
-    pub g: u8,
-    pub b: u8,
-    pub a: u8,
-}
-
-impl From<ColorF> for ColorU {
-    fn from(color: ColorF) -> ColorU {
-        ColorU {
-            r: ColorU::round_to_int(color.r),
-            g: ColorU::round_to_int(color.g),
-            b: ColorU::round_to_int(color.b),
-            a: ColorU::round_to_int(color.a),
-        }
-    }
-}
-
-impl Into<ColorF> for ColorU {
-    fn into(self) -> ColorF {
-        ColorF {
-            r: self.r as f32 / 255.0,
-            g: self.g as f32 / 255.0,
-            b: self.b as f32 / 255.0,
-            a: self.a as f32 / 255.0,
-        }
-    }
-}
-
-impl ColorU {
-    fn round_to_int(x: f32) -> u8 {
-        debug_assert!((0.0 <= x) && (x <= 1.0));
-        let f = (255.0 * x) + 0.5;
-        let val = f.floor();
-        debug_assert!(val <= 255.0);
-        val as u8
-    }
-
-    pub fn new(r: u8, g: u8, b: u8, a: u8) -> ColorU {
-        ColorU {
-            r: r,
-            g: g,
-            b: b,
-            a: a,
-        }
-    }
-}
-
-#[derive(Copy, Clone, Debug, Deserialize, PartialEq, Serialize)]
-pub struct ImageDescriptor {
-    pub format: ImageFormat,
-    pub width: u32,
-    pub height: u32,
-    pub stride: Option<u32>,
-    pub is_opaque: bool,
-}
-
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
 pub struct ImageMask {
     pub image: ImageKey,
-    pub rect: LayoutRect,
+    pub rect: Rect<f32>,
     pub repeat: bool,
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
 pub struct ClipRegion {
-    pub main: LayoutRect,
+    pub main: Rect<f32>,
     pub complex: ItemRange,
     pub image_mask: Option<ImageMask>,
+}
+
+impl ClipRegion {
+    pub fn is_complex(&self) -> bool {
+        self.complex.length !=0 || self.image_mask.is_some()
+    }
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
 pub struct ComplexClipRegion {
     
-    pub rect: LayoutRect,
+    pub rect: Rect<f32>,
     
     pub radii: BorderRadius,
 }
@@ -274,8 +206,16 @@ pub struct ComplexClipRegion {
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
 pub struct DisplayItem {
     pub item: SpecificDisplayItem,
-    pub rect: LayoutRect,
+    pub rect: Rect<f32>,
     pub clip: ClipRegion,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
+pub struct DisplayListId(pub u32, pub u32);
+
+#[derive(Clone, Copy, Deserialize, Serialize)]
+pub struct DisplayListItem {
+    pub specific: SpecificDisplayListItem,
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
@@ -283,6 +223,11 @@ pub enum DisplayListMode {
     Default,
     PseudoFloat,
     PseudoPositionedContent,
+}
+
+#[derive(Clone, Copy, Deserialize, Serialize)]
+pub struct DrawListInfo {
+    pub items: ItemRange,
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
@@ -301,38 +246,30 @@ pub enum FilterOp {
     Sepia(f32),
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, Serialize, Ord, PartialOrd)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
 pub struct FontKey(u32, u32);
 
-#[derive(Debug, Copy, Clone, Hash, Eq, PartialEq, Serialize, Deserialize, Ord, PartialOrd)]
+#[derive(Debug, Copy, Clone, Hash, Eq, PartialEq, Serialize, Deserialize)]
 pub enum FontRenderMode {
     Mono,
     Alpha,
     Subpixel,
 }
 
-#[derive(Clone, Hash, PartialEq, Eq, Debug, Deserialize, Serialize, Ord, PartialOrd)]
+#[derive(Clone, Hash, PartialEq, Eq, Debug, Deserialize, Serialize)]
 pub struct GlyphKey {
     pub font_key: FontKey,
-    
-    
-    
-    
-    
     pub size: Au,
     pub index: u32,
-    pub color: ColorU,
 }
 
 impl GlyphKey {
     pub fn new(font_key: FontKey,
                size: Au,
-               color: ColorF,
                index: u32) -> GlyphKey {
         GlyphKey {
             font_key: font_key,
             size: size,
-            color: ColorU::from(color),
             index: index,
         }
     }
@@ -354,8 +291,8 @@ pub struct GlyphInstance {
 
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
 pub struct GradientDisplayItem {
-    pub start_point: LayoutPoint,
-    pub end_point: LayoutPoint,
+    pub start_point: Point2D<f32>,
+    pub end_point: Point2D<f32>,
     pub stops: ItemRange,
 }
 
@@ -366,48 +303,22 @@ pub struct GradientStop {
 }
 known_heap_size!(0, GradientStop);
 
-#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
-pub struct RadialGradientDisplayItem {
-    pub start_center: LayoutPoint,
-    pub start_radius: f32,
-    pub end_center: LayoutPoint,
-    pub end_radius: f32,
-    pub stops: ItemRange,
-}
-
-#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
-pub struct PushStackingContextDisplayItem {
-    pub stacking_context: StackingContext,
-}
-
-#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
-pub struct PushScrollLayerItem {
-    pub content_size: LayoutSize,
-    pub id: ScrollLayerId,
-}
-
-#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
-pub struct IframeDisplayItem {
-    pub pipeline_id: PipelineId,
-}
-
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 pub struct IdNamespace(pub u32);
+
+#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
+pub struct IframeInfo {
+    pub id: PipelineId,
+    pub bounds: Rect<f32>,
+    pub clip: ClipRegion,
+}
 
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
 pub struct ImageDisplayItem {
     pub image_key: ImageKey,
-    pub stretch_size: LayoutSize,
-    pub tile_spacing: LayoutSize,
+    pub stretch_size: Size2D<f32>,
+    pub tile_spacing: Size2D<f32>,
     pub image_rendering: ImageRendering,
-}
-
-#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
-pub struct YuvImageDisplayItem {
-    pub y_image_key: ImageKey,
-    pub u_image_key: ImageKey,
-    pub v_image_key: ImageKey,
-    pub color_space: YuvColorSpace,
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
@@ -417,46 +328,6 @@ pub enum ImageFormat {
     RGB8,
     RGBA8,
     RGBAF32,
-}
-
-impl ImageFormat {
-    pub fn bytes_per_pixel(self) -> Option<u32> {
-        match self {
-            ImageFormat::A8 => Some(1),
-            ImageFormat::RGB8 => Some(3),
-            ImageFormat::RGBA8 => Some(4),
-            ImageFormat::RGBAF32 => Some(16),
-            ImageFormat::Invalid => None,
-        }
-    }
-}
-
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
-pub enum YuvColorSpace {
-    Rec601 = 1, 
-    Rec709 = 2,
-}
-
-
-
-
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
-pub struct ExternalImageId(pub u64);
-
-#[derive(Clone, Serialize, Deserialize)]
-pub enum ImageData {
-    Raw(Arc<Vec<u8>>),
-    External(ExternalImageId),
-}
-
-impl ImageData {
-    pub fn new(bytes: Vec<u8>) -> ImageData {
-        ImageData::Raw(Arc::new(bytes))
-    }
-
-    pub fn new_shared(bytes: Arc<Vec<u8>>) -> ImageData {
-        ImageData::Raw(bytes)
-    }
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
@@ -469,7 +340,7 @@ pub enum ImageRendering {
     Pixelated,
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
 pub struct ItemRange {
     pub start: usize,
     pub length: usize,
@@ -499,12 +370,9 @@ pub enum MixBlendMode {
 pub type NativeFontHandle = CGFont;
 
 
-#[cfg(not(any(target_os = "macos", target_os = "windows")))]
-#[cfg_attr(not(any(target_os = "macos", target_os = "windows")), derive(Clone, Serialize, Deserialize))]
+#[cfg(not(target_os = "macos"))]
+#[cfg_attr(not(target_os = "macos"), derive(Clone, Serialize, Deserialize))]
 pub struct NativeFontHandle;
-
-#[cfg(target_os = "windows")]
-pub type NativeFontHandle = FontDescriptor;
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
 pub struct PipelineId(pub u32, pub u32);
@@ -516,16 +384,14 @@ pub struct RectangleDisplayItem {
 
 #[derive(Clone, Deserialize, Serialize)]
 pub struct RenderApiSender {
-    api_sender: MsgSender<ApiMsg>,
-    payload_sender: PayloadSender,
+    api_sender: IpcSender<ApiMsg>,
+    payload_sender: IpcBytesSender,
 }
 
 pub trait RenderNotifier: Send {
     fn new_frame_ready(&mut self);
     fn new_scroll_frame_ready(&mut self, composite_needed: bool);
-    fn pipeline_size_changed(&mut self, pipeline_id: PipelineId, size: Option<LayoutSize>);
-    fn external_event(&mut self, _evt: ExternalEvent) { unimplemented!() }
-    fn shut_down(&mut self) {}
+    fn pipeline_size_changed(&mut self, pipeline_id: PipelineId, size: Option<Size2D<f32>>);
 }
 
 
@@ -553,22 +419,6 @@ pub struct ScrollLayerId {
     pub info: ScrollLayerInfo,
 }
 
-impl ScrollLayerId {
-    pub fn root(pipeline_id: PipelineId) -> ScrollLayerId {
-        ScrollLayerId {
-            pipeline_id: pipeline_id,
-            info: ScrollLayerInfo::Scrollable(0, ServoScrollRootId(0)),
-        }
-    }
-
-    pub fn scroll_root_id(&self) -> Option<ServoScrollRootId> {
-        match self.info {
-            ScrollLayerInfo::Scrollable(_, scroll_root_id) => Some(scroll_root_id),
-            ScrollLayerInfo::Fixed => None,
-        }
-    }
-}
-
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
 pub enum ScrollLayerInfo {
     Fixed,
@@ -579,24 +429,13 @@ pub enum ScrollLayerInfo {
 pub struct ScrollLayerState {
     pub pipeline_id: PipelineId,
     pub scroll_root_id: ServoScrollRootId,
-    pub scroll_offset: LayoutPoint,
+    pub scroll_offset: Point2D<f32>,
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub enum ScrollPolicy {
     Scrollable,
     Fixed,
-}
-known_heap_size!(0, ScrollPolicy);
-
-#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
-pub enum ScrollLocation {
-    
-    Delta(LayoutPoint), 
-    
-    Start,
-    
-    End 
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
@@ -607,28 +446,40 @@ pub enum SpecificDisplayItem {
     Rectangle(RectangleDisplayItem),
     Text(TextDisplayItem),
     Image(ImageDisplayItem),
-    YuvImage(YuvImageDisplayItem),
     WebGL(WebGLDisplayItem),
     Border(BorderDisplayItem),
     BoxShadow(BoxShadowDisplayItem),
     Gradient(GradientDisplayItem),
-    RadialGradient(RadialGradientDisplayItem),
-    Iframe(IframeDisplayItem),
-    PushStackingContext(PushStackingContextDisplayItem),
-    PopStackingContext,
-    PushScrollLayer(PushScrollLayerItem),
-    PopScrollLayer,
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Copy, Deserialize, Serialize)]
+pub enum SpecificDisplayListItem {
+    DrawList(DrawListInfo),
+    StackingContext(StackingContextInfo),
+    Iframe(IframeInfo),
+}
+
+#[derive(Clone, Deserialize, Serialize)]
 pub struct StackingContext {
+    pub scroll_layer_id: Option<ScrollLayerId>,
     pub scroll_policy: ScrollPolicy,
-    pub bounds: LayoutRect,
+    pub bounds: Rect<f32>,
+    pub overflow: Rect<f32>,
     pub z_index: i32,
-    pub transform: LayoutTransform,
-    pub perspective: LayoutTransform,
+    pub display_lists: Vec<DisplayListId>,
+    pub transform: Matrix4D<f32>,
+    pub perspective: Matrix4D<f32>,
+    pub establishes_3d_context: bool,
     pub mix_blend_mode: MixBlendMode,
     pub filters: ItemRange,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
+pub struct StackingContextId(pub u32, pub u32);
+
+#[derive(Clone, Copy, Deserialize, Serialize)]
+pub struct StackingContextInfo {
+    pub id: StackingContextId,
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
@@ -642,7 +493,7 @@ pub struct TextDisplayItem {
 
 #[derive(Clone, Deserialize, Serialize)]
 pub enum WebGLCommand {
-    GetContextAttributes(MsgSender<GLContextAttributes>),
+    GetContextAttributes(IpcSender<GLContextAttributes>),
     ActiveTexture(u32),
     BlendColor(f32, f32, f32, f32),
     BlendEquation(u32),
@@ -669,12 +520,12 @@ pub enum WebGLCommand {
     CompileShader(WebGLShaderId, String),
     CopyTexImage2D(u32, i32, u32, i32, i32, i32, i32, i32),
     CopyTexSubImage2D(u32, i32, i32, i32, i32, i32, i32, i32),
-    CreateBuffer(MsgSender<Option<WebGLBufferId>>),
-    CreateFramebuffer(MsgSender<Option<WebGLFramebufferId>>),
-    CreateRenderbuffer(MsgSender<Option<WebGLRenderbufferId>>),
-    CreateTexture(MsgSender<Option<WebGLTextureId>>),
-    CreateProgram(MsgSender<Option<WebGLProgramId>>),
-    CreateShader(u32, MsgSender<Option<WebGLShaderId>>),
+    CreateBuffer(IpcSender<Option<WebGLBufferId>>),
+    CreateFramebuffer(IpcSender<Option<WebGLFramebufferId>>),
+    CreateRenderbuffer(IpcSender<Option<WebGLRenderbufferId>>),
+    CreateTexture(IpcSender<Option<WebGLTextureId>>),
+    CreateProgram(IpcSender<Option<WebGLProgramId>>),
+    CreateShader(u32, IpcSender<Option<WebGLShaderId>>),
     DeleteBuffer(WebGLBufferId),
     DeleteFramebuffer(WebGLFramebufferId),
     DeleteRenderbuffer(WebGLRenderbufferId),
@@ -691,20 +542,20 @@ pub enum WebGLCommand {
     EnableVertexAttribArray(u32),
     FramebufferRenderbuffer(u32, u32, u32, Option<WebGLRenderbufferId>),
     FramebufferTexture2D(u32, u32, u32, Option<WebGLTextureId>, i32),
-    GetBufferParameter(u32, u32, MsgSender<WebGLResult<WebGLParameter>>),
-    GetParameter(u32, MsgSender<WebGLResult<WebGLParameter>>),
-    GetProgramParameter(WebGLProgramId, u32, MsgSender<WebGLResult<WebGLParameter>>),
-    GetShaderParameter(WebGLShaderId, u32, MsgSender<WebGLResult<WebGLParameter>>),
-    GetActiveAttrib(WebGLProgramId, u32, MsgSender<WebGLResult<(i32, u32, String)>>),
-    GetActiveUniform(WebGLProgramId, u32, MsgSender<WebGLResult<(i32, u32, String)>>),
-    GetAttribLocation(WebGLProgramId, String, MsgSender<Option<i32>>),
-    GetUniformLocation(WebGLProgramId, String, MsgSender<Option<i32>>),
-    GetVertexAttrib(u32, u32, MsgSender<WebGLResult<WebGLParameter>>),
-    GetShaderInfoLog(WebGLShaderId, MsgSender<String>),
-    GetProgramInfoLog(WebGLProgramId, MsgSender<String>),
+    GetBufferParameter(u32, u32, IpcSender<WebGLResult<WebGLParameter>>),
+    GetParameter(u32, IpcSender<WebGLResult<WebGLParameter>>),
+    GetProgramParameter(WebGLProgramId, u32, IpcSender<WebGLResult<WebGLParameter>>),
+    GetShaderParameter(WebGLShaderId, u32, IpcSender<WebGLResult<WebGLParameter>>),
+    GetActiveAttrib(WebGLProgramId, u32, IpcSender<WebGLResult<(i32, u32, String)>>),
+    GetActiveUniform(WebGLProgramId, u32, IpcSender<WebGLResult<(i32, u32, String)>>),
+    GetAttribLocation(WebGLProgramId, String, IpcSender<Option<i32>>),
+    GetUniformLocation(WebGLProgramId, String, IpcSender<Option<i32>>),
+    GetVertexAttrib(u32, u32, IpcSender<WebGLResult<WebGLParameter>>),
+    GetShaderInfoLog(WebGLShaderId, IpcSender<String>),
+    GetProgramInfoLog(WebGLProgramId, IpcSender<String>),
     PolygonOffset(f32, f32),
     RenderbufferStorage(u32, u32, i32, i32),
-    ReadPixels(i32, i32, i32, i32, u32, u32, MsgSender<Vec<u8>>),
+    ReadPixels(i32, i32, i32, i32, u32, u32, IpcSender<Vec<u8>>),
     SampleCoverage(f32, bool),
     Scissor(i32, i32, i32, i32),
     StencilFunc(u32, i32, u32),
@@ -714,7 +565,7 @@ pub enum WebGLCommand {
     StencilOp(u32, u32, u32),
     StencilOpSeparate(u32, u32, u32, u32),
     Hint(u32, u32),
-    IsEnabled(u32, MsgSender<bool>),
+    IsEnabled(u32, IpcSender<bool>),
     LineWidth(f32),
     PixelStorei(u32, i32),
     LinkProgram(WebGLProgramId),
@@ -747,9 +598,9 @@ pub enum WebGLCommand {
     TexParameteri(u32, u32, i32),
     TexParameterf(u32, u32, f32),
     TexSubImage2D(u32, i32, i32, i32, i32, i32, u32, u32, Vec<u8>),
-    DrawingBufferWidth(MsgSender<i32>),
-    DrawingBufferHeight(MsgSender<i32>),
-    Finish(MsgSender<()>),
+    DrawingBufferWidth(IpcSender<i32>),
+    DrawingBufferHeight(IpcSender<i32>),
+    Finish(IpcSender<()>),
     Flush,
     GenerateMipmap(u32),
 }
@@ -890,21 +741,4 @@ pub enum WebGLShaderParameter {
     Int(i32),
     Bool(bool),
     Invalid,
-}
-
-pub type VRCompositorId = u64;
-
-
-#[derive(Clone, Deserialize, Serialize)]
-pub enum VRCompositorCommand {
-    Create(VRCompositorId),
-    SyncPoses(VRCompositorId, f64, f64, MsgSender<Result<Vec<u8>,()>>),
-    SubmitFrame(VRCompositorId, [f32; 4], [f32; 4]),
-    Release(VRCompositorId)
-}
-
-
-
-pub trait VRCompositorHandler: Send {
-    fn handle(&mut self, command: VRCompositorCommand, texture_id: Option<u32>);
 }

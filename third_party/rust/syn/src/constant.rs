@@ -1,6 +1,6 @@
 use super::*;
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum ConstExpr {
     
     
@@ -18,23 +18,7 @@ pub enum ConstExpr {
     
     
     Path(Path),
-    
-    Index(Box<ConstExpr>, Box<ConstExpr>),
-    
-    Paren(Box<ConstExpr>),
-    
-    
-    Other(Other),
 }
-
-#[cfg(not(feature = "full"))]
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
-pub struct Other {
-    _private: (),
-}
-
-#[cfg(feature = "full")]
-pub type Other = Expr;
 
 #[cfg(feature = "parsing")]
 pub mod parsing {
@@ -46,13 +30,11 @@ pub mod parsing {
 
     named!(pub const_expr -> ConstExpr, do_parse!(
         mut e: alt!(
-            expr_unary
-            |
             expr_lit
             |
-            expr_path
+            expr_unary
             |
-            expr_paren
+            path => { ConstExpr::Path }
         ) >>
         many0!(alt!(
             tap!(args: and_call => {
@@ -66,10 +48,6 @@ pub mod parsing {
             |
             tap!(ty: and_cast => {
                 e = ConstExpr::Cast(Box::new(e), Box::new(ty));
-            })
-            |
-            tap!(i: and_index => {
-                e = ConstExpr::Index(Box::new(e), Box::new(i));
             })
         )) >>
         (e)
@@ -91,17 +69,6 @@ pub mod parsing {
     ));
 
     named!(expr_lit -> ConstExpr, map!(lit, ConstExpr::Lit));
-
-    named!(expr_path -> ConstExpr, map!(path, ConstExpr::Path));
-
-    named!(and_index -> ConstExpr, delimited!(punct!("["), const_expr, punct!("]")));
-
-    named!(expr_paren -> ConstExpr, do_parse!(
-        punct!("(") >>
-        e: const_expr >>
-        punct!(")") >>
-        (ConstExpr::Paren(Box::new(e)))
-    ));
 
     named!(and_cast -> Ty, do_parse!(
         keyword!("as") >>
@@ -140,28 +107,7 @@ mod printing {
                     ty.to_tokens(tokens);
                 }
                 ConstExpr::Path(ref path) => path.to_tokens(tokens),
-                ConstExpr::Index(ref expr, ref index) => {
-                    expr.to_tokens(tokens);
-                    tokens.append("[");
-                    index.to_tokens(tokens);
-                    tokens.append("]");
-                }
-                ConstExpr::Paren(ref expr) => {
-                    tokens.append("(");
-                    expr.to_tokens(tokens);
-                    tokens.append(")");
-                }
-                ConstExpr::Other(ref other) => {
-                    other.to_tokens(tokens);
-                }
             }
-        }
-    }
-
-    #[cfg(not(feature = "full"))]
-    impl ToTokens for Other {
-        fn to_tokens(&self, _tokens: &mut Tokens) {
-            unreachable!()
         }
     }
 }

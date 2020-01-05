@@ -60,43 +60,30 @@ mod geometry;
 mod gpu_store;
 mod internal_types;
 mod layer;
-mod mask_cache;
 mod prim_store;
 mod profiler;
 mod record;
 mod render_backend;
 mod resource_cache;
 mod scene;
-mod scroll_tree;
 mod spring;
 mod texture_cache;
 mod tiling;
 mod util;
-
-mod shader_source {
-    include!(concat!(env!("OUT_DIR"), "/shaders.rs"));
-}
-
-pub use record::{ApiRecordingReceiver, set_recording_detour, WEBRENDER_RECORDING_HEADER};
+pub mod bindings;
 
 mod platform {
     #[cfg(target_os="macos")]
     pub use platform::macos::font;
-    #[cfg(any(target_os = "android", all(unix, not(target_os = "macos"))))]
+    #[cfg(any(target_os = "android", target_os = "windows", all(unix, not(target_os = "macos"))))]
     pub use platform::unix::font;
-    #[cfg(target_os = "windows")]
-    pub use platform::windows::font;
 
     #[cfg(target_os="macos")]
     pub mod macos {
         pub mod font;
     }
-    #[cfg(any(target_os = "android", all(unix, not(target_os = "macos"))))]
+    #[cfg(any(target_os = "android", target_os = "windows", all(unix, not(target_os = "macos"))))]
     pub mod unix {
-        pub mod font;
-    }
-    #[cfg(target_os = "windows")]
-    pub mod windows {
         pub mod font;
     }
 }
@@ -107,25 +94,28 @@ pub mod renderer;
 extern crate core_graphics;
 #[cfg(target_os="macos")]
 extern crate core_text;
-
-#[cfg(all(unix, not(target_os="macos")))]
+#[cfg(target_os="macos")]
+extern crate core_foundation;
+#[cfg(not(target_os="macos"))]
 extern crate freetype;
 
-#[cfg(target_os = "windows")]
-extern crate dwrote;
+#[cfg(target_os="windows")]
+extern crate kernel32;
+#[cfg(target_os="windows")]
+extern crate winapi;
 
 extern crate app_units;
 extern crate bincode;
 extern crate euclid;
 extern crate fnv;
 extern crate gleam;
+extern crate ipc_channel;
 extern crate num_traits;
 
 extern crate time;
 extern crate webrender_traits;
 extern crate offscreen_gl_context;
 extern crate byteorder;
-extern crate threadpool;
+extern crate rayon;
 
-pub use renderer::{ExternalImage, ExternalImageSource, ExternalImageHandler};
 pub use renderer::{Renderer, RendererOptions};

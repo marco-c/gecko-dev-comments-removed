@@ -1,11 +1,11 @@
-/// Saturating math operations
+
 pub trait Saturating {
-    /// Saturating addition operator.
-    /// Returns a+b, saturating at the numeric bounds instead of overflowing.
+    
+    
     fn saturating_add(self, v: Self) -> Self;
 
-    /// Saturating subtraction operator.
-    /// Returns a-b, saturating at the numeric bounds instead of overflowing.
+    
+    
     fn saturating_sub(self, v: Self) -> Self;
 }
 

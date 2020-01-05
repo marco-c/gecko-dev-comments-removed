@@ -3,25 +3,32 @@
 
 
 use display_list::AuxiliaryListsBuilder;
-use {FilterOp, MixBlendMode, ScrollPolicy, StackingContext};
-use {LayoutTransform, LayoutRect};
+use euclid::{Matrix4D, Rect};
+use {FilterOp, MixBlendMode, ScrollLayerId, ScrollPolicy, StackingContext};
 
 impl StackingContext {
-    pub fn new(scroll_policy: ScrollPolicy,
-               bounds: LayoutRect,
+    pub fn new(scroll_layer_id: Option<ScrollLayerId>,
+               scroll_policy: ScrollPolicy,
+               bounds: Rect<f32>,
+               overflow: Rect<f32>,
                z_index: i32,
-               transform: &LayoutTransform,
-               perspective: &LayoutTransform,
+               transform: &Matrix4D<f32>,
+               perspective: &Matrix4D<f32>,
+               establishes_3d_context: bool,
                mix_blend_mode: MixBlendMode,
                filters: Vec<FilterOp>,
                auxiliary_lists_builder: &mut AuxiliaryListsBuilder)
                -> StackingContext {
         StackingContext {
+            scroll_layer_id: scroll_layer_id,
             scroll_policy: scroll_policy,
             bounds: bounds,
+            overflow: overflow,
             z_index: z_index,
+            display_lists: Vec::new(),
             transform: transform.clone(),
             perspective: perspective.clone(),
+            establishes_3d_context: establishes_3d_context,
             mix_blend_mode: mix_blend_mode,
             filters: auxiliary_lists_builder.add_filters(&filters),
         }

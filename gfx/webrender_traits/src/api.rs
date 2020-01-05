@@ -3,20 +3,19 @@
 
 
 use byteorder::{LittleEndian, WriteBytesExt};
-use channel::{self, MsgSender, PayloadHelperMethods, PayloadSender};
+use euclid::{Point2D, Size2D};
+use ipc_channel::ipc::{self, IpcBytesSender, IpcSender};
 use offscreen_gl_context::{GLContextAttributes, GLLimits};
 use std::cell::Cell;
-use {ApiMsg, ColorF, DisplayListBuilder, Epoch, ImageDescriptor};
-use {FontKey, IdNamespace, ImageKey, NativeFontHandle, PipelineId};
-use {RenderApiSender, ResourceId, ScrollEventPhase, ScrollLayerState, ScrollLocation, ServoScrollRootId};
-use {GlyphKey, GlyphDimensions, ImageData, WebGLContextId, WebGLCommand};
-use {DeviceIntSize, LayoutPoint, LayoutSize, WorldPoint};
-use VRCompositorCommand;
-use ExternalEvent;
+use {ApiMsg, AuxiliaryLists, BuiltDisplayList, ColorF, DisplayListId, Epoch};
+use {FontKey, IdNamespace, ImageFormat, ImageKey, NativeFontHandle, PipelineId};
+use {RenderApiSender, ResourceId, ScrollEventPhase, ScrollLayerId, ScrollLayerState};
+use {StackingContext, StackingContextId, WebGLContextId, WebGLCommand};
+use {GlyphKey, GlyphDimensions};
 
 impl RenderApiSender {
-    pub fn new(api_sender: MsgSender<ApiMsg>,
-               payload_sender: PayloadSender)
+    pub fn new(api_sender: IpcSender<ApiMsg>,
+               payload_sender: IpcBytesSender)
                -> RenderApiSender {
         RenderApiSender {
             api_sender: api_sender,
@@ -29,7 +28,7 @@ impl RenderApiSender {
             ref api_sender,
             ref payload_sender
         } = *self;
-        let (sync_tx, sync_rx) = channel::msg_channel().unwrap();
+        let (sync_tx, sync_rx) = ipc::channel().unwrap();
         let msg = ApiMsg::CloneApi(sync_tx);
         api_sender.send(msg).unwrap();
         RenderApi {
@@ -42,8 +41,8 @@ impl RenderApiSender {
 }
 
 pub struct RenderApi {
-    pub api_sender: MsgSender<ApiMsg>,
-    pub payload_sender: PayloadSender,
+    pub api_sender: IpcSender<ApiMsg>,
+    pub payload_sender: IpcBytesSender,
     pub id_namespace: IdNamespace,
     pub next_id: Cell<ResourceId>,
 }
@@ -76,7 +75,7 @@ impl RenderApi {
     
     pub fn get_glyph_dimensions(&self, glyph_keys: Vec<GlyphKey>)
                                 -> Vec<Option<GlyphDimensions>> {
-        let (tx, rx) = channel::msg_channel().unwrap();
+        let (tx, rx) = ipc::channel().unwrap();
         let msg = ApiMsg::GetGlyphDimensions(glyph_keys, tx);
         self.api_sender.send(msg).unwrap();
         rx.recv().unwrap()
@@ -90,10 +89,14 @@ impl RenderApi {
 
     
     pub fn add_image(&self,
-                     descriptor: ImageDescriptor,
-                     data: ImageData) -> ImageKey {
-        let key = self.alloc_image();
-        let msg = ApiMsg::AddImage(key, descriptor, data);
+                     width: u32,
+                     height: u32,
+                     stride: Option<u32>,
+                     format: ImageFormat,
+                     bytes: Vec<u8>) -> ImageKey {
+        let new_id = self.next_unique_id();
+        let key = ImageKey::new(new_id.0, new_id.1);
+        let msg = ApiMsg::AddImage(key, width, height, stride, format, bytes);
         self.api_sender.send(msg).unwrap();
         key
     }
@@ -104,9 +107,11 @@ impl RenderApi {
     
     pub fn update_image(&self,
                         key: ImageKey,
-                        descriptor: ImageDescriptor,
+                        width: u32,
+                        height: u32,
+                        format: ImageFormat,
                         bytes: Vec<u8>) {
-        let msg = ApiMsg::UpdateImage(key, descriptor, bytes);
+        let msg = ApiMsg::UpdateImage(key, width, height, format, bytes);
         self.api_sender.send(msg).unwrap();
     }
 
@@ -150,42 +155,49 @@ impl RenderApi {
     
     
     
-    pub fn set_root_display_list(&self,
-                                 background_color: Option<ColorF>,
-                                 epoch: Epoch,
-                                 viewport_size: LayoutSize,
-                                 builder: DisplayListBuilder) {
-        let pipeline_id = builder.pipeline_id;
-        let (display_list, auxiliary_lists) = builder.finalize();
-        let msg = ApiMsg::SetRootDisplayList(background_color,
-                                             epoch,
-                                             pipeline_id,
-                                             viewport_size,
-                                             display_list.descriptor().clone(),
-                                             *auxiliary_lists.descriptor());
+    
+    
+    pub fn set_root_stacking_context(&self,
+                                     stacking_context_id: StackingContextId,
+                                     background_color: ColorF,
+                                     epoch: Epoch,
+                                     pipeline_id: PipelineId,
+                                     viewport_size: Size2D<f32>,
+                                     stacking_contexts: Vec<(StackingContextId, StackingContext)>,
+                                     display_lists: Vec<(DisplayListId, BuiltDisplayList)>,
+                                     auxiliary_lists: AuxiliaryLists) {
+        let display_list_descriptors = display_lists.iter().map(|&(display_list_id,
+                                                                   ref built_display_list)| {
+            (display_list_id, (*built_display_list.descriptor()).clone())
+        }).collect();
+        let msg = ApiMsg::SetRootStackingContext(stacking_context_id,
+                                                 background_color,
+                                                 epoch,
+                                                 pipeline_id,
+                                                 viewport_size,
+                                                 stacking_contexts,
+                                                 display_list_descriptors,
+                                                 *auxiliary_lists.descriptor());
         self.api_sender.send(msg).unwrap();
 
         let mut payload = vec![];
+        payload.write_u32::<LittleEndian>(stacking_context_id.0).unwrap();
         payload.write_u32::<LittleEndian>(epoch.0).unwrap();
-        payload.extend_from_slice(display_list.data());
+
+        for &(_, ref built_display_list) in &display_lists {
+            payload.extend_from_slice(built_display_list.data());
+        }
         payload.extend_from_slice(auxiliary_lists.data());
-        self.payload_sender.send_vec(payload).unwrap();
+
+        self.payload_sender.send(&payload[..]).unwrap();
     }
 
     
     
     
     
-    pub fn scroll(&self, scroll_location: ScrollLocation, cursor: WorldPoint, phase: ScrollEventPhase) {
-        let msg = ApiMsg::Scroll(scroll_location, cursor, phase);
-        self.api_sender.send(msg).unwrap();
-    }
-
-    pub fn scroll_layers_with_scroll_root_id(&self,
-                                             new_scroll_origin: LayoutPoint,
-                                             pipeline_id: PipelineId,
-                                             scroll_root_id: ServoScrollRootId) {
-        let msg = ApiMsg::ScrollLayersWithScrollId(new_scroll_origin, pipeline_id, scroll_root_id);
+    pub fn scroll(&self, delta: Point2D<f32>, cursor: Point2D<f32>, phase: ScrollEventPhase) {
+        let msg = ApiMsg::Scroll(delta, cursor, phase);
         self.api_sender.send(msg).unwrap();
     }
 
@@ -194,31 +206,41 @@ impl RenderApi {
         self.api_sender.send(msg).unwrap();
     }
 
+    pub fn set_scroll_offset(&self, scroll_id: ScrollLayerId, offset: Point2D<f32>) {
+        let msg = ApiMsg::SetScrollOffset(scroll_id, offset);
+        self.api_sender.send(msg).unwrap();
+    }
+
+    pub fn generate_frame(&self) {
+        let msg = ApiMsg::GenerateFrame;
+        self.api_sender.send(msg).unwrap();
+    }
+
     
-    pub fn translate_point_to_layer_space(&self, point: &WorldPoint)
-                                          -> (LayoutPoint, PipelineId) {
-        let (tx, rx) = channel::msg_channel().unwrap();
+    pub fn translate_point_to_layer_space(&self, point: &Point2D<f32>)
+                                          -> (Point2D<f32>, PipelineId) {
+        let (tx, rx) = ipc::channel().unwrap();
         let msg = ApiMsg::TranslatePointToLayerSpace(*point, tx);
         self.api_sender.send(msg).unwrap();
         rx.recv().unwrap()
     }
 
     pub fn get_scroll_layer_state(&self) -> Vec<ScrollLayerState> {
-        let (tx, rx) = channel::msg_channel().unwrap();
+        let (tx, rx) = ipc::channel().unwrap();
         let msg = ApiMsg::GetScrollLayerState(tx);
         self.api_sender.send(msg).unwrap();
         rx.recv().unwrap()
     }
 
-    pub fn request_webgl_context(&self, size: &DeviceIntSize, attributes: GLContextAttributes)
+    pub fn request_webgl_context(&self, size: &Size2D<i32>, attributes: GLContextAttributes)
                                  -> Result<(WebGLContextId, GLLimits), String> {
-        let (tx, rx) = channel::msg_channel().unwrap();
+        let (tx, rx) = ipc::channel().unwrap();
         let msg = ApiMsg::RequestWebGLContext(*size, attributes, tx);
         self.api_sender.send(msg).unwrap();
         rx.recv().unwrap()
     }
 
-    pub fn resize_webgl_context(&self, context_id: WebGLContextId, size: &DeviceIntSize) {
+    pub fn resize_webgl_context(&self, context_id: WebGLContextId, size: &Size2D<i32>) {
         let msg = ApiMsg::ResizeWebGLContext(context_id, *size);
         self.api_sender.send(msg).unwrap();
     }
@@ -228,23 +250,16 @@ impl RenderApi {
         self.api_sender.send(msg).unwrap();
     }
 
-    pub fn generate_frame(&self) {
-        let msg = ApiMsg::GenerateFrame;
-        self.api_sender.send(msg).unwrap();
+    #[inline]
+    pub fn next_stacking_context_id(&self) -> StackingContextId {
+        let new_id = self.next_unique_id();
+        StackingContextId(new_id.0, new_id.1)
     }
 
-    pub fn send_vr_compositor_command(&self, context_id: WebGLContextId, command: VRCompositorCommand) {
-        let msg = ApiMsg::VRCompositorCommand(context_id, command);
-        self.api_sender.send(msg).unwrap();
-    }
-
-    pub fn send_external_event(&self, evt: ExternalEvent) {
-        let msg = ApiMsg::ExternalEvent(evt);
-        self.api_sender.send(msg).unwrap();
-    }
-
-    pub fn shut_down(&self) {
-        self.api_sender.send(ApiMsg::ShutDown).unwrap();
+    #[inline]
+    pub fn next_display_list_id(&self) -> DisplayListId {
+        let new_id = self.next_unique_id();
+        DisplayListId(new_id.0, new_id.1)
     }
 
     #[inline]
@@ -255,3 +270,4 @@ impl RenderApi {
         (namespace, id)
     }
 }
+

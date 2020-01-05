@@ -1,6 +1,9 @@
 language: rust
 rust:
- - 1.8.0
+ # Jemalloc prefixing change between these two versions
+ - nightly-2016-02-14
+ - nightly-2016-02-17
+
  - nightly
  - beta
  - stable
@@ -15,5 +18,5 @@ notifications:
 script:
  - cargo test
  - "[ $TRAVIS_RUST_VERSION != nightly ] || cargo test --features unstable"
- - "[ $TRAVIS_RUST_VERSION != nightly ] || cargo test --manifest-path derive/Cargo.toml"
+ - "[ $TRAVIS_RUST_VERSION != nightly ] || cargo test --manifest-path plugin/Cargo.toml"
 

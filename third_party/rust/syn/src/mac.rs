@@ -6,7 +6,7 @@ use super::*;
 
 
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Mac {
     pub path: Path,
     pub tts: Vec<TokenTree>,
@@ -24,7 +24,7 @@ pub struct Mac {
 
 
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum TokenTree {
     
     Token(Token),
@@ -32,7 +32,7 @@ pub enum TokenTree {
     Delimited(Delimited),
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Delimited {
     
     pub delim: DelimToken,
@@ -40,7 +40,7 @@ pub struct Delimited {
     pub tts: Vec<TokenTree>,
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum Token {
     
     Eq,
@@ -84,7 +84,7 @@ pub enum Token {
     DocComment(String),
 }
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum BinOpToken {
     Plus,
     Minus,
@@ -99,7 +99,7 @@ pub enum BinOpToken {
 }
 
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum DelimToken {
     
     Paren,
@@ -114,39 +114,42 @@ pub mod parsing {
     use super::*;
     use Lifetime;
     use generics::parsing::lifetime;
-    use ident::parsing::word;
+    use ident::parsing::ident;
     use lit::parsing::lit;
     use space::{block_comment, whitespace};
-    use ty::parsing::path;
 
     named!(pub mac -> Mac, do_parse!(
-        what: path >>
+        name: ident >>
         punct!("!") >>
         body: delimited >>
         (Mac {
-            path: what,
+            path: name.into(),
             tts: vec![TokenTree::Delimited(body)],
         })
     ));
 
-    named!(pub token_trees -> Vec<TokenTree>, many0!(token_tree));
+    named!(pub token_trees -> Vec<TokenTree>, do_parse!(
+        tts: many0!(token_tree) >>
+        option!(whitespace) >>
+        (tts)
+    ));
 
     named!(pub delimited -> Delimited, alt!(
         delimited!(
             punct!("("),
-            token_trees,
+            many0!(token_tree),
             punct!(")")
         ) => { |tts| Delimited { delim: DelimToken::Paren, tts: tts } }
         |
         delimited!(
             punct!("["),
-            token_trees,
+            many0!(token_tree),
             punct!("]")
         ) => { |tts| Delimited { delim: DelimToken::Bracket, tts: tts } }
         |
         delimited!(
             punct!("{"),
-            token_trees,
+            many0!(token_tree),
             punct!("}")
         ) => { |tts| Delimited { delim: DelimToken::Brace, tts: tts } }
     ));
@@ -176,17 +179,17 @@ pub mod parsing {
         |
         punct!(".") => { |_| Token::Dot }
         |
-        map!(doc_comment, Token::DocComment) // must be before bin_op
-        |
-        map!(bin_op_eq, Token::BinOpEq) // must be before bin_op
+        map!(bin_op_eq, Token::BinOpEq)
         |
         map!(bin_op, Token::BinOp)
         |
         map!(lit, Token::Literal)
         |
-        map!(word, Token::Ident)
+        map!(ident, Token::Ident)
         |
         map!(lifetime, |lt: Lifetime| Token::Lifetime(lt.ident))
+        |
+        map!(doc_comment, Token::DocComment)
         |
         punct!("<=") => { |_| Token::Le }
         |
@@ -380,9 +383,9 @@ mod printing {
                 Token::Dollar => tokens.append("$"),
                 Token::Question => tokens.append("?"),
                 Token::Literal(ref lit) => lit.to_tokens(tokens),
-                Token::Ident(ref ident) |
-                Token::Lifetime(ref ident) => ident.to_tokens(tokens),
+                Token::Ident(ref ident) => ident.to_tokens(tokens),
                 Token::Underscore => tokens.append("_"),
+                Token::Lifetime(ref ident) => ident.to_tokens(tokens),
                 Token::DocComment(ref com) => {
                     tokens.append(&format!("{}\n", com));
                 }

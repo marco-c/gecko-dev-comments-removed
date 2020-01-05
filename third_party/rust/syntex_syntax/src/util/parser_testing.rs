@@ -8,10 +8,11 @@
 
 
 
-use ast::{self, Ident};
+use ast;
 use parse::{ParseSess,PResult,filemap_to_tts};
 use parse::{lexer, new_parser_from_source_str};
 use parse::parser::Parser;
+use parse::token;
 use ptr::P;
 use tokenstream;
 use std::iter::Peekable;
@@ -78,8 +79,8 @@ pub fn string_to_pat(source_str: String) -> P<ast::Pat> {
 }
 
 
-pub fn strs_to_idents(ids: Vec<&str> ) -> Vec<Ident> {
-    ids.iter().map(|u| Ident::from_str(*u)).collect()
+pub fn strs_to_idents(ids: Vec<&str> ) -> Vec<ast::Ident> {
+    ids.iter().map(|u| token::str_to_ident(*u)).collect()
 }
 
 

@@ -4,12 +4,11 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 void main(void) {
-    Primitive prim = load_primitive();
+    Primitive prim = load_primitive(gl_InstanceID);
     Gradient gradient = fetch_gradient(prim.prim_index);
 
     VertexInfo vi = write_vertex(prim.local_rect,
                                  prim.local_clip_rect,
-                                 prim.z,
                                  prim.layer,
                                  prim.tile);
 

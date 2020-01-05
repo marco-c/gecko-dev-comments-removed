@@ -34,7 +34,6 @@ impl IntoLifetimeDef for LifetimeDef {
 impl IntoLifetimeDef for Lifetime {
     fn into_lifetime_def(self) -> LifetimeDef {
         LifetimeDef {
-            attrs: vec![],
             lifetime: self,
             bounds: vec![],
         }
@@ -95,7 +94,6 @@ impl<F> LifetimeDefBuilder<F>
 
     pub fn build(self) -> F::Result {
         self.callback.invoke(LifetimeDef {
-            attrs: vec![],
             lifetime: self.lifetime,
             bounds: self.bounds,
         })

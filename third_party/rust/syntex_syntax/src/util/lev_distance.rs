@@ -8,8 +8,9 @@
 
 
 
+use ast::Name;
 use std::cmp;
-use symbol::Symbol;
+use parse::token::InternedString;
 
 
 pub fn lev_distance(a: &str, b: &str) -> usize {
@@ -47,14 +48,14 @@ pub fn lev_distance(a: &str, b: &str) -> usize {
 
 pub fn find_best_match_for_name<'a, T>(iter_names: T,
                                        lookup: &str,
-                                       dist: Option<usize>) -> Option<Symbol>
-    where T: Iterator<Item = &'a Symbol> {
+                                       dist: Option<usize>) -> Option<InternedString>
+    where T: Iterator<Item = &'a Name> {
     let max_dist = dist.map_or_else(|| cmp::max(lookup.len(), 3) / 3, |d| d);
     iter_names
-    .filter_map(|&name| {
+    .filter_map(|name| {
         let dist = lev_distance(lookup, &name.as_str());
         match dist <= max_dist {    
-            true => Some((name, dist)),
+            true => Some((name.as_str(), dist)),
             false => None,
         }
     })

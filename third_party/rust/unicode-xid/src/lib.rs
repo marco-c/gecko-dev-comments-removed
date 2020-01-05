@@ -41,14 +41,16 @@
 #![doc(html_logo_url = "https://unicode-rs.github.io/unicode-rs_sm.png",
        html_favicon_url = "https://unicode-rs.github.io/unicode-rs_sm.png")]
 
-#![no_std]
-#![cfg_attr(feature = "bench", feature(test, unicode))]
+#![cfg_attr(feature = "no_std", no_std)]
+#![cfg_attr(feature = "no_std", feature(no_std, core_slice_ext))]
 
-#[cfg(test)]
+#![cfg_attr(test, feature(test, unicode))]
+
+#[cfg(all(test, feature = "no_std"))]
 #[macro_use]
 extern crate std;
 
-#[cfg(feature = "bench")]
+#[cfg(test)]
 extern crate test;
 
 use tables::derived_property;

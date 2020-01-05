@@ -3,18 +3,18 @@
 
 
 use app_units::Au;
+use euclid::{Point2D, Rect, Size2D};
 use std::mem;
 use std::slice;
 use {AuxiliaryLists, AuxiliaryListsDescriptor, BorderDisplayItem, BorderRadius};
 use {BorderSide, BoxShadowClipMode, BoxShadowDisplayItem, BuiltDisplayList};
 use {BuiltDisplayListDescriptor, ClipRegion, ComplexClipRegion, ColorF};
-use {DisplayItem, DisplayListMode, FilterOp, YuvColorSpace};
-use {FontKey, GlyphInstance, GradientDisplayItem, RadialGradientDisplayItem, GradientStop, IframeDisplayItem};
-use {ImageDisplayItem, ImageKey, ImageMask, ImageRendering, ItemRange, MixBlendMode, PipelineId};
-use {PushScrollLayerItem, PushStackingContextDisplayItem, RectangleDisplayItem, ScrollLayerId};
-use {ScrollPolicy, ServoScrollRootId, SpecificDisplayItem, StackingContext, TextDisplayItem};
-use {WebGLContextId, WebGLDisplayItem, YuvImageDisplayItem};
-use {LayoutTransform, LayoutPoint, LayoutRect, LayoutSize};
+use {DisplayItem, DisplayListItem, DisplayListMode, DrawListInfo, FilterOp};
+use {FontKey, GlyphInstance, GradientDisplayItem, GradientStop, IframeInfo};
+use {ImageDisplayItem, ImageKey, ImageRendering, ItemRange, PipelineId};
+use {RectangleDisplayItem, SpecificDisplayItem, SpecificDisplayListItem};
+use {StackingContextId, StackingContextInfo, TextDisplayItem};
+use {WebGLContextId, WebGLDisplayItem};
 
 impl BuiltDisplayListDescriptor {
     pub fn size(&self) -> usize {
@@ -38,41 +38,40 @@ impl BuiltDisplayList {
         &self.descriptor
     }
 
-    pub fn all_display_items<'a>(&'a self) -> &'a [DisplayItem] {
+    pub fn display_list_items<'a>(&'a self) -> &'a [DisplayListItem] {
         unsafe {
             convert_blob_to_pod(&self.data[0..self.descriptor.display_list_items_size])
         }
     }
+
+    pub fn display_items<'a>(&'a self, range: &ItemRange) -> &'a [DisplayItem] {
+        unsafe {
+            range.get(convert_blob_to_pod(&self.data[self.descriptor.display_list_items_size..]))
+        }
+    }
 }
 
-#[derive(Clone)]
 pub struct DisplayListBuilder {
     pub mode: DisplayListMode,
-    pub list: Vec<DisplayItem>,
-    auxiliary_lists_builder: AuxiliaryListsBuilder,
-    pub pipeline_id: PipelineId,
-    next_scroll_layer_id: usize,
+
+    pub work_list: Vec<DisplayItem>,
+
+    pub display_list_items: Vec<DisplayListItem>,
+    pub display_items: Vec<DisplayItem>,
 }
 
 impl DisplayListBuilder {
-    pub fn new(pipeline_id: PipelineId) -> DisplayListBuilder {
+    pub fn new() -> DisplayListBuilder {
         DisplayListBuilder {
             mode: DisplayListMode::Default,
-            list: Vec::new(),
-            auxiliary_lists_builder: AuxiliaryListsBuilder::new(),
-            pipeline_id: pipeline_id,
-            next_scroll_layer_id: 0,
-        }
-    }
-
-    pub fn print_display_list(&mut self) {
-        for item in &self.list {
-            println!("{:?}", item);
+            work_list: Vec::new(),
+            display_list_items: Vec::new(),
+            display_items: Vec::new(),
         }
     }
 
     pub fn push_rect(&mut self,
-                     rect: LayoutRect,
+                     rect: Rect<f32>,
                      clip: ClipRegion,
                      color: ColorF) {
         let item = RectangleDisplayItem {
@@ -85,14 +84,14 @@ impl DisplayListBuilder {
             clip: clip,
         };
 
-        self.list.push(display_item);
+        self.push_item(display_item);
     }
 
     pub fn push_image(&mut self,
-                      rect: LayoutRect,
+                      rect: Rect<f32>,
                       clip: ClipRegion,
-                      stretch_size: LayoutSize,
-                      tile_spacing: LayoutSize,
+                      stretch_size: Size2D<f32>,
+                      tile_spacing: Size2D<f32>,
                       image_rendering: ImageRendering,
                       key: ImageKey) {
         let item = ImageDisplayItem {
@@ -108,30 +107,11 @@ impl DisplayListBuilder {
             clip: clip,
         };
 
-        self.list.push(display_item);
-    }
-
-    pub fn push_yuv_image(&mut self,
-                          rect: LayoutRect,
-                          clip: ClipRegion,
-                          y_key: ImageKey,
-                          u_key: ImageKey,
-                          v_key: ImageKey,
-                          color_space: YuvColorSpace) {
-        self.list.push(DisplayItem {
-            item: SpecificDisplayItem::YuvImage(YuvImageDisplayItem {
-                y_image_key: y_key,
-                u_image_key: u_key,
-                v_image_key: v_key,
-                color_space: color_space,
-            }),
-            rect: rect,
-            clip: clip,
-        });
+        self.push_item(display_item);
     }
 
     pub fn push_webgl_canvas(&mut self,
-                             rect: LayoutRect,
+                             rect: Rect<f32>,
                              clip: ClipRegion,
                              context_id: WebGLContextId) {
         let item = WebGLDisplayItem {
@@ -144,17 +124,18 @@ impl DisplayListBuilder {
             clip: clip,
         };
 
-        self.list.push(display_item);
+        self.push_item(display_item);
     }
 
     pub fn push_text(&mut self,
-                     rect: LayoutRect,
+                     rect: Rect<f32>,
                      clip: ClipRegion,
                      glyphs: Vec<GlyphInstance>,
                      font_key: FontKey,
                      color: ColorF,
                      size: Au,
-                     blur_radius: Au) {
+                     blur_radius: Au,
+                     auxiliary_lists_builder: &mut AuxiliaryListsBuilder) {
         
         
         
@@ -164,7 +145,7 @@ impl DisplayListBuilder {
         if size < Au::from_px(4096) {
             let item = TextDisplayItem {
                 color: color,
-                glyphs: self.auxiliary_lists_builder.add_glyph_instances(&glyphs),
+                glyphs: auxiliary_lists_builder.add_glyph_instances(&glyphs),
                 font_key: font_key,
                 size: size,
                 blur_radius: blur_radius,
@@ -176,12 +157,12 @@ impl DisplayListBuilder {
                 clip: clip,
             };
 
-            self.list.push(display_item);
+            self.push_item(display_item);
         }
     }
 
     pub fn push_border(&mut self,
-                       rect: LayoutRect,
+                       rect: Rect<f32>,
                        clip: ClipRegion,
                        left: BorderSide,
                        top: BorderSide,
@@ -202,14 +183,14 @@ impl DisplayListBuilder {
             clip: clip,
         };
 
-        self.list.push(display_item);
+        self.push_item(display_item);
     }
 
     pub fn push_box_shadow(&mut self,
-                           rect: LayoutRect,
+                           rect: Rect<f32>,
                            clip: ClipRegion,
-                           box_bounds: LayoutRect,
-                           offset: LayoutPoint,
+                           box_bounds: Rect<f32>,
+                           offset: Point2D<f32>,
                            color: ColorF,
                            blur_radius: f32,
                            spread_radius: f32,
@@ -231,19 +212,31 @@ impl DisplayListBuilder {
             clip: clip,
         };
 
-        self.list.push(display_item);
+        self.push_item(display_item);
+    }
+
+    pub fn push_stacking_context(&mut self, stacking_context_id: StackingContextId) {
+        self.flush();
+        let info = StackingContextInfo {
+            id: stacking_context_id,
+        };
+        let item = DisplayListItem {
+            specific: SpecificDisplayListItem::StackingContext(info),
+        };
+        self.display_list_items.push(item);
     }
 
     pub fn push_gradient(&mut self,
-                         rect: LayoutRect,
+                         rect: Rect<f32>,
                          clip: ClipRegion,
-                         start_point: LayoutPoint,
-                         end_point: LayoutPoint,
-                         stops: Vec<GradientStop>) {
+                         start_point: Point2D<f32>,
+                         end_point: Point2D<f32>,
+                         stops: Vec<GradientStop>,
+                         auxiliary_lists_builder: &mut AuxiliaryListsBuilder) {
         let item = GradientDisplayItem {
             start_point: start_point,
             end_point: end_point,
-            stops: self.auxiliary_lists_builder.add_gradient_stops(&stops),
+            stops: auxiliary_lists_builder.add_gradient_stops(&stops),
         };
 
         let display_item = DisplayItem {
@@ -252,133 +245,68 @@ impl DisplayListBuilder {
             clip: clip,
         };
 
-        self.list.push(display_item);
+        self.push_item(display_item);
     }
 
-    pub fn push_radial_gradient(&mut self,
-                                rect: LayoutRect,
-                                clip: ClipRegion,
-                                start_center: LayoutPoint,
-                                start_radius: f32,
-                                end_center: LayoutPoint,
-                                end_radius: f32,
-                                stops: Vec<GradientStop>) {
-        let item = RadialGradientDisplayItem {
-            start_center: start_center,
-            start_radius: start_radius,
-            end_center: end_center,
-            end_radius: end_radius,
-            stops: self.auxiliary_lists_builder.add_gradient_stops(&stops),
-        };
-
-        let display_item = DisplayItem {
-            item: SpecificDisplayItem::RadialGradient(item),
-            rect: rect,
+    pub fn push_iframe(&mut self,
+                       rect: Rect<f32>,
+                       clip: ClipRegion,
+                       iframe: PipelineId) {
+        self.flush();
+        let info = IframeInfo {
+            id: iframe,
+            bounds: rect,
             clip: clip,
         };
-
-        self.list.push(display_item);
+        let item = DisplayListItem {
+            specific: SpecificDisplayListItem::Iframe(info),
+        };
+        self.display_list_items.push(item);
     }
 
-    pub fn push_stacking_context(&mut self,
-                                 scroll_policy: ScrollPolicy,
-                                 bounds: LayoutRect,
-                                 clip: ClipRegion,
-                                 z_index: i32,
-                                 transform: &LayoutTransform,
-                                 perspective: &LayoutTransform,
-                                 mix_blend_mode: MixBlendMode,
-                                 filters: Vec<FilterOp>) {
-        let stacking_context = StackingContext {
-            scroll_policy: scroll_policy,
-            bounds: bounds,
-            z_index: z_index,
-            transform: transform.clone(),
-            perspective: perspective.clone(),
-            mix_blend_mode: mix_blend_mode,
-            filters: self.auxiliary_lists_builder.add_filters(&filters),
-        };
-
-        let item = DisplayItem {
-            item: SpecificDisplayItem::PushStackingContext(PushStackingContextDisplayItem {
-                stacking_context: stacking_context
-            }),
-            rect: LayoutRect::zero(),
-            clip: clip,
-        };
-        self.list.push(item);
+    fn push_item(&mut self, item: DisplayItem) {
+        self.work_list.push(item);
     }
 
-    pub fn pop_stacking_context(&mut self) {
-        let item = DisplayItem {
-            item: SpecificDisplayItem::PopStackingContext,
-            rect: LayoutRect::zero(),
-            clip: ClipRegion::simple(&LayoutRect::zero()),
-        };
-        self.list.push(item);
-    }
-
-    pub fn push_scroll_layer(&mut self,
-                             clip: LayoutRect,
-                             content_size: LayoutSize,
-                             scroll_root_id: ServoScrollRootId) {
-        let scroll_layer_id = self.next_scroll_layer_id;
-        self.next_scroll_layer_id += 1;
-
-        let item = PushScrollLayerItem {
-            content_size: content_size,
-            id: ScrollLayerId::new(self.pipeline_id, scroll_layer_id, scroll_root_id),
-        };
-
-        let item = DisplayItem {
-            item: SpecificDisplayItem::PushScrollLayer(item),
-            rect: clip,
-            clip: ClipRegion::simple(&LayoutRect::zero()),
-        };
-        self.list.push(item);
-    }
-
-    pub fn pop_scroll_layer(&mut self) {
-        let item = DisplayItem {
-            item: SpecificDisplayItem::PopScrollLayer,
-            rect: LayoutRect::zero(),
-            clip: ClipRegion::simple(&LayoutRect::zero()),
-        };
-        self.list.push(item);
-    }
-
-    pub fn push_iframe(&mut self, rect: LayoutRect, clip: ClipRegion, pipeline_id: PipelineId) {
-        let item = DisplayItem {
-            item: SpecificDisplayItem::Iframe(IframeDisplayItem { pipeline_id: pipeline_id }),
-            rect: rect,
-            clip: clip,
-        };
-        self.list.push(item);
-    }
-
-    pub fn new_clip_region(&mut self,
-                           rect: &LayoutRect,
-                           complex: Vec<ComplexClipRegion>,
-                           image_mask: Option<ImageMask>)
-                           -> ClipRegion {
-        ClipRegion::new(rect, complex, image_mask, &mut self.auxiliary_lists_builder)
-    }
-
-    pub fn finalize(self) -> (BuiltDisplayList, AuxiliaryLists) {
-        unsafe {
-            let blob = convert_pod_to_blob(&self.list).to_vec();
-            let display_list_items_size = blob.len();
-
-            (BuiltDisplayList {
-                 descriptor: BuiltDisplayListDescriptor {
-                     mode: self.mode,
-                     display_list_items_size: display_list_items_size,
-                     display_items_size: 0,
-                 },
-                 data: blob,
-             },
-             self.auxiliary_lists_builder.finalize())
+    fn flush(&mut self) {
+        let items = mem::replace(&mut self.work_list, Vec::new());
+        if items.is_empty() {
+            return
         }
+
+        let draw_list = DrawListInfo {
+            items: ItemRange::new(&mut self.display_items, &items),
+        };
+        self.display_list_items.push(DisplayListItem {
+            specific: SpecificDisplayListItem::DrawList(draw_list),
+        });
+    }
+
+    pub fn finalize(mut self) -> BuiltDisplayList {
+        self.flush();
+
+        unsafe {
+            let mut blob = convert_pod_to_blob(&self.display_list_items).to_vec();
+            let display_list_items_size = blob.len();
+            blob.extend_from_slice(convert_pod_to_blob(&self.display_items));
+            let display_items_size = blob.len() - display_list_items_size;
+            BuiltDisplayList {
+                descriptor: BuiltDisplayListDescriptor {
+                    mode: self.mode,
+                    display_list_items_size: display_list_items_size,
+                    display_items_size: display_items_size,
+                },
+                data: blob,
+            }
+        }
+    }
+
+    pub fn display_items<'a>(&'a self, range: &ItemRange) -> &'a [DisplayItem] {
+        range.get(&self.display_items)
+    }
+
+    pub fn display_items_mut<'a>(&'a mut self, range: &ItemRange) -> &'a mut [DisplayItem] {
+        range.get_mut(&mut self.display_items)
     }
 }
 

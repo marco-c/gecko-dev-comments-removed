@@ -1,7 +1,5 @@
 use Ctxt;
 use syn;
-use syn::MetaItem::{List, NameValue, Word};
-use syn::NestedMetaItem::{Literal, MetaItem};
 
 
 
@@ -107,7 +105,7 @@ impl Item {
             for meta_item in meta_items {
                 match meta_item {
                     
-                    MetaItem(NameValue(ref name, ref lit)) if name == "rename" => {
+                    syn::MetaItem::NameValue(ref name, ref lit) if name == "rename" => {
                         if let Ok(s) = get_string_from_lit(cx, name.as_ref(), name.as_ref(), lit) {
                             ser_name.set(s.clone());
                             de_name.set(s);
@@ -115,7 +113,7 @@ impl Item {
                     }
 
                     
-                    MetaItem(List(ref name, ref meta_items)) if name == "rename" => {
+                    syn::MetaItem::List(ref name, ref meta_items) if name == "rename" => {
                         if let Ok((ser, de)) = get_renames(cx, meta_items) {
                             ser_name.set_opt(ser);
                             de_name.set_opt(de);
@@ -123,12 +121,12 @@ impl Item {
                     }
 
                     
-                    MetaItem(Word(ref name)) if name == "deny_unknown_fields" => {
+                    syn::MetaItem::Word(ref name) if name == "deny_unknown_fields" => {
                         deny_unknown_fields.set_true();
                     }
 
                     
-                    MetaItem(NameValue(ref name, ref lit)) if name == "bound" => {
+                    syn::MetaItem::NameValue(ref name, ref lit) if name == "bound" => {
                         if let Ok(where_predicates) = parse_lit_into_where(cx, name.as_ref(), name.as_ref(), lit) {
                             ser_bound.set(where_predicates.clone());
                             de_bound.set(where_predicates);
@@ -136,20 +134,16 @@ impl Item {
                     }
 
                     
-                    MetaItem(List(ref name, ref meta_items)) if name == "bound" => {
+                    syn::MetaItem::List(ref name, ref meta_items) if name == "bound" => {
                         if let Ok((ser, de)) = get_where_predicates(cx, meta_items) {
                             ser_bound.set_opt(ser);
                             de_bound.set_opt(de);
                         }
                     }
 
-                    MetaItem(ref meta_item) => {
+                    _ => {
                         cx.error(format!("unknown serde container attribute `{}`",
                                          meta_item.name()));
-                    }
-
-                    Literal(_) => {
-                        cx.error(format!("unexpected literal in serde container attribute"));
                     }
                 }
             }
@@ -187,22 +181,18 @@ impl Item {
 #[derive(Debug)]
 pub struct Variant {
     name: Name,
-    skip_deserializing: bool,
-    skip_serializing: bool,
 }
 
 impl Variant {
     pub fn from_ast(cx: &Ctxt, variant: &syn::Variant) -> Self {
         let mut ser_name = Attr::none(cx, "rename");
         let mut de_name = Attr::none(cx, "rename");
-        let mut skip_deserializing = BoolAttr::none(cx, "skip_deserializing");
-        let mut skip_serializing = BoolAttr::none(cx, "skip_serializing");
 
         for meta_items in variant.attrs.iter().filter_map(get_serde_meta_items) {
             for meta_item in meta_items {
                 match meta_item {
                     
-                    MetaItem(NameValue(ref name, ref lit)) if name == "rename" => {
+                    syn::MetaItem::NameValue(ref name, ref lit) if name == "rename" => {
                         if let Ok(s) = get_string_from_lit(cx, name.as_ref(), name.as_ref(), lit) {
                             ser_name.set(s.clone());
                             de_name.set(s);
@@ -210,28 +200,16 @@ impl Variant {
                     }
 
                     
-                    MetaItem(List(ref name, ref meta_items)) if name == "rename" => {
+                    syn::MetaItem::List(ref name, ref meta_items) if name == "rename" => {
                         if let Ok((ser, de)) = get_renames(cx, meta_items) {
                             ser_name.set_opt(ser);
                             de_name.set_opt(de);
                         }
                     }
-                    
-                    MetaItem(Word(ref name)) if name == "skip_deserializing" => {
-                        skip_deserializing.set_true();
-                    }
-                    
-                    MetaItem(Word(ref name)) if name == "skip_serializing" => {
-                        skip_serializing.set_true();
-                    }
 
-                    MetaItem(ref meta_item) => {
+                    _ => {
                         cx.error(format!("unknown serde variant attribute `{}`",
                                          meta_item.name()));
-                    }
-
-                    Literal(_) => {
-                        cx.error(format!("unexpected literal in serde variant attribute"));
                     }
                 }
             }
@@ -242,21 +220,11 @@ impl Variant {
                 serialize: ser_name.get().unwrap_or_else(|| variant.ident.to_string()),
                 deserialize: de_name.get().unwrap_or_else(|| variant.ident.to_string()),
             },
-            skip_deserializing: skip_deserializing.get(),
-            skip_serializing: skip_serializing.get(),
         }
     }
 
     pub fn name(&self) -> &Name {
         &self.name
-    }
-
-    pub fn skip_deserializing(&self) -> bool {
-        self.skip_deserializing
-    }
-
-    pub fn skip_serializing(&self) -> bool {
-        self.skip_serializing
     }
 }
 
@@ -310,7 +278,7 @@ impl Field {
             for meta_item in meta_items {
                 match meta_item {
                     
-                    MetaItem(NameValue(ref name, ref lit)) if name == "rename" => {
+                    syn::MetaItem::NameValue(ref name, ref lit) if name == "rename" => {
                         if let Ok(s) = get_string_from_lit(cx, name.as_ref(), name.as_ref(), lit) {
                             ser_name.set(s.clone());
                             de_name.set(s);
@@ -318,7 +286,7 @@ impl Field {
                     }
 
                     
-                    MetaItem(List(ref name, ref meta_items)) if name == "rename" => {
+                    syn::MetaItem::List(ref name, ref meta_items) if name == "rename" => {
                         if let Ok((ser, de)) = get_renames(cx, meta_items) {
                             ser_name.set_opt(ser);
                             de_name.set_opt(de);
@@ -326,50 +294,50 @@ impl Field {
                     }
 
                     
-                    MetaItem(Word(ref name)) if name == "default" => {
+                    syn::MetaItem::Word(ref name) if name == "default" => {
                         default.set(FieldDefault::Default);
                     }
 
                     
-                    MetaItem(NameValue(ref name, ref lit)) if name == "default" => {
+                    syn::MetaItem::NameValue(ref name, ref lit) if name == "default" => {
                         if let Ok(path) = parse_lit_into_path(cx, name.as_ref(), lit) {
                             default.set(FieldDefault::Path(path));
                         }
                     }
 
                     
-                    MetaItem(Word(ref name)) if name == "skip_serializing" => {
+                    syn::MetaItem::Word(ref name) if name == "skip_serializing" => {
                         skip_serializing.set_true();
                     }
 
                     
-                    MetaItem(Word(ref name)) if name == "skip_deserializing" => {
+                    syn::MetaItem::Word(ref name) if name == "skip_deserializing" => {
                         skip_deserializing.set_true();
                     }
 
                     
-                    MetaItem(NameValue(ref name, ref lit)) if name == "skip_serializing_if" => {
+                    syn::MetaItem::NameValue(ref name, ref lit) if name == "skip_serializing_if" => {
                         if let Ok(path) = parse_lit_into_path(cx, name.as_ref(), lit) {
                             skip_serializing_if.set(path);
                         }
                     }
 
                     
-                    MetaItem(NameValue(ref name, ref lit)) if name == "serialize_with" => {
+                    syn::MetaItem::NameValue(ref name, ref lit) if name == "serialize_with" => {
                         if let Ok(path) = parse_lit_into_path(cx, name.as_ref(), lit) {
                             serialize_with.set(path);
                         }
                     }
 
                     
-                    MetaItem(NameValue(ref name, ref lit)) if name == "deserialize_with" => {
+                    syn::MetaItem::NameValue(ref name, ref lit) if name == "deserialize_with" => {
                         if let Ok(path) = parse_lit_into_path(cx, name.as_ref(), lit) {
                             deserialize_with.set(path);
                         }
                     }
 
                     
-                    MetaItem(NameValue(ref name, ref lit)) if name == "bound" => {
+                    syn::MetaItem::NameValue(ref name, ref lit) if name == "bound" => {
                         if let Ok(where_predicates) = parse_lit_into_where(cx, name.as_ref(), name.as_ref(), lit) {
                             ser_bound.set(where_predicates.clone());
                             de_bound.set(where_predicates);
@@ -377,20 +345,16 @@ impl Field {
                     }
 
                     
-                    MetaItem(List(ref name, ref meta_items)) if name == "bound" => {
+                    syn::MetaItem::List(ref name, ref meta_items) if name == "bound" => {
                         if let Ok((ser, de)) = get_where_predicates(cx, meta_items) {
                             ser_bound.set_opt(ser);
                             de_bound.set_opt(de);
                         }
                     }
 
-                    MetaItem(ref meta_item) => {
+                    _ => {
                         cx.error(format!("unknown serde field attribute `{}`",
                                          meta_item.name()));
-                    }
-
-                    Literal(_) => {
-                        cx.error(format!("unexpected literal in serde field attribute"));
                     }
                 }
             }
@@ -460,7 +424,7 @@ type SerAndDe<T> = (Option<T>, Option<T>);
 fn get_ser_and_de<T, F>(
     cx: &Ctxt,
     attr_name: &'static str,
-    items: &[syn::NestedMetaItem],
+    items: &[syn::MetaItem],
     f: F
 ) -> Result<SerAndDe<T>, ()>
     where F: Fn(&Ctxt, &str, &str, &syn::Lit) -> Result<T, ()>,
@@ -470,13 +434,13 @@ fn get_ser_and_de<T, F>(
 
     for item in items {
         match *item {
-            MetaItem(NameValue(ref name, ref lit)) if name == "serialize" => {
+            syn::MetaItem::NameValue(ref name, ref lit) if name == "serialize" => {
                 if let Ok(v) = f(cx, attr_name, name.as_ref(), lit) {
                     ser_item.set(v);
                 }
             }
 
-            MetaItem(NameValue(ref name, ref lit)) if name == "deserialize" => {
+            syn::MetaItem::NameValue(ref name, ref lit) if name == "deserialize" => {
                 if let Ok(v) = f(cx, attr_name, name.as_ref(), lit) {
                     de_item.set(v);
                 }
@@ -495,21 +459,21 @@ fn get_ser_and_de<T, F>(
 
 fn get_renames(
     cx: &Ctxt,
-    items: &[syn::NestedMetaItem],
+    items: &[syn::MetaItem],
 ) -> Result<SerAndDe<String>, ()> {
     get_ser_and_de(cx, "rename", items, get_string_from_lit)
 }
 
 fn get_where_predicates(
     cx: &Ctxt,
-    items: &[syn::NestedMetaItem],
+    items: &[syn::MetaItem],
 ) -> Result<SerAndDe<Vec<syn::WherePredicate>>, ()> {
     get_ser_and_de(cx, "bound", items, parse_lit_into_where)
 }
 
-pub fn get_serde_meta_items(attr: &syn::Attribute) -> Option<Vec<syn::NestedMetaItem>> {
+pub fn get_serde_meta_items(attr: &syn::Attribute) -> Option<Vec<syn::MetaItem>> {
     match attr.value {
-        List(ref name, ref items) if name == "serde" => {
+        syn::MetaItem::List(ref name, ref items) if name == "serde" => {
             Some(items.iter().cloned().collect())
         }
         _ => None

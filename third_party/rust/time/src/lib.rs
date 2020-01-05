@@ -36,7 +36,6 @@
 #![allow(trivial_numeric_casts)]
 #![cfg_attr(test, deny(warnings))]
 
-#[cfg(target_os = "redox")] extern crate syscall;
 #[cfg(unix)] extern crate libc;
 #[cfg(windows)] extern crate kernel32;
 #[cfg(windows)] extern crate winapi;
@@ -1148,7 +1147,6 @@ mod tests {
     }
 
     #[test]
-    #[allow(deprecated)]
     fn test_timespec_hash() {
         use std::hash::{Hash, Hasher};
 

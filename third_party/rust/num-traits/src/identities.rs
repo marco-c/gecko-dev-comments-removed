@@ -1,25 +1,25 @@
 use std::ops::{Add, Mul};
 
-/// Defines an additive identity element for `Self`.
+
 pub trait Zero: Sized + Add<Self, Output = Self> {
-    /// Returns the additive identity element of `Self`, `0`.
-    ///
-    /// # Laws
-    ///
-    /// ```{.text}
-    /// a + 0 = a       ∀ a ∈ Self
-    /// 0 + a = a       ∀ a ∈ Self
-    /// ```
-    ///
-    /// # Purity
-    ///
-    /// This function should return the same result at all times regardless of
-    /// external mutable state, for example values stored in TLS or in
-    /// `static mut`s.
-    // FIXME (#5527): This should be an associated constant
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     fn zero() -> Self;
 
-    /// Returns `true` if `self` is equal to the additive identity.
+    
     #[inline]
     fn is_zero(&self) -> bool;
 }
@@ -50,23 +50,23 @@ zero_impl!(i64,   0i64);
 zero_impl!(f32, 0.0f32);
 zero_impl!(f64, 0.0f64);
 
-/// Defines a multiplicative identity element for `Self`.
+
 pub trait One: Sized + Mul<Self, Output = Self> {
-    /// Returns the multiplicative identity element of `Self`, `1`.
-    ///
-    /// # Laws
-    ///
-    /// ```{.text}
-    /// a * 1 = a       ∀ a ∈ Self
-    /// 1 * a = a       ∀ a ∈ Self
-    /// ```
-    ///
-    /// # Purity
-    ///
-    /// This function should return the same result at all times regardless of
-    /// external mutable state, for example values stored in TLS or in
-    /// `static mut`s.
-    // FIXME (#5527): This should be an associated constant
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     fn one() -> Self;
 }
 
@@ -95,10 +95,10 @@ one_impl!(f32, 1.0f32);
 one_impl!(f64, 1.0f64);
 
 
-// Some helper functions provided for backwards compatibility.
 
-/// Returns the additive identity, `0`.
+
+
 #[inline(always)] pub fn zero<T: Zero>() -> T { Zero::zero() }
 
-/// Returns the multiplicative identity, `1`.
+
 #[inline(always)] pub fn one<T: One>() -> T { One::one() }

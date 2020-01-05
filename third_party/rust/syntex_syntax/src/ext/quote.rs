@@ -26,7 +26,6 @@ use tokenstream::{self, TokenTree};
 
 
 
-
 pub mod rt {
     use ast;
     use codemap::Spanned;
@@ -34,7 +33,6 @@ pub mod rt {
     use parse::{self, token, classify};
     use ptr::P;
     use std::rc::Rc;
-    use symbol::Symbol;
 
     use tokenstream::{self, TokenTree};
 
@@ -82,71 +80,67 @@ pub mod rt {
 
     impl ToTokens for ast::Path {
         fn to_tokens(&self, _cx: &ExtCtxt) -> Vec<TokenTree> {
-            let nt = token::NtPath(self.clone());
-            vec![TokenTree::Token(DUMMY_SP, token::Interpolated(Rc::new(nt)))]
+            vec![TokenTree::Token(DUMMY_SP,
+                                  token::Interpolated(token::NtPath(Box::new(self.clone()))))]
         }
     }
 
     impl ToTokens for ast::Ty {
         fn to_tokens(&self, _cx: &ExtCtxt) -> Vec<TokenTree> {
-            let nt = token::NtTy(P(self.clone()));
-            vec![TokenTree::Token(self.span, token::Interpolated(Rc::new(nt)))]
+            vec![TokenTree::Token(self.span, token::Interpolated(token::NtTy(P(self.clone()))))]
         }
     }
 
     impl ToTokens for ast::Block {
         fn to_tokens(&self, _cx: &ExtCtxt) -> Vec<TokenTree> {
-            let nt = token::NtBlock(P(self.clone()));
-            vec![TokenTree::Token(self.span, token::Interpolated(Rc::new(nt)))]
+            vec![TokenTree::Token(self.span, token::Interpolated(token::NtBlock(P(self.clone()))))]
         }
     }
 
     impl ToTokens for ast::Generics {
         fn to_tokens(&self, _cx: &ExtCtxt) -> Vec<TokenTree> {
-            let nt = token::NtGenerics(self.clone());
-            vec![TokenTree::Token(DUMMY_SP, token::Interpolated(Rc::new(nt)))]
+            vec![TokenTree::Token(DUMMY_SP, token::Interpolated(token::NtGenerics(self.clone())))]
         }
     }
 
     impl ToTokens for ast::WhereClause {
         fn to_tokens(&self, _cx: &ExtCtxt) -> Vec<TokenTree> {
-            let nt = token::NtWhereClause(self.clone());
-            vec![TokenTree::Token(DUMMY_SP, token::Interpolated(Rc::new(nt)))]
+            vec![TokenTree::Token(DUMMY_SP,
+                                  token::Interpolated(token::NtWhereClause(self.clone())))]
         }
     }
 
     impl ToTokens for P<ast::Item> {
         fn to_tokens(&self, _cx: &ExtCtxt) -> Vec<TokenTree> {
-            let nt = token::NtItem(self.clone());
-            vec![TokenTree::Token(self.span, token::Interpolated(Rc::new(nt)))]
+            vec![TokenTree::Token(self.span, token::Interpolated(token::NtItem(self.clone())))]
         }
     }
 
     impl ToTokens for ast::ImplItem {
         fn to_tokens(&self, _cx: &ExtCtxt) -> Vec<TokenTree> {
-            let nt = token::NtImplItem(self.clone());
-            vec![TokenTree::Token(self.span, token::Interpolated(Rc::new(nt)))]
+            vec![TokenTree::Token(self.span,
+                                  token::Interpolated(token::NtImplItem(P(self.clone()))))]
         }
     }
 
     impl ToTokens for P<ast::ImplItem> {
         fn to_tokens(&self, _cx: &ExtCtxt) -> Vec<TokenTree> {
-            let nt = token::NtImplItem((**self).clone());
-            vec![TokenTree::Token(self.span, token::Interpolated(Rc::new(nt)))]
+            vec![TokenTree::Token(self.span, token::Interpolated(token::NtImplItem(self.clone())))]
         }
     }
 
     impl ToTokens for ast::TraitItem {
         fn to_tokens(&self, _cx: &ExtCtxt) -> Vec<TokenTree> {
-            let nt = token::NtTraitItem(self.clone());
-            vec![TokenTree::Token(self.span, token::Interpolated(Rc::new(nt)))]
+            vec![TokenTree::Token(self.span,
+                                  token::Interpolated(token::NtTraitItem(P(self.clone()))))]
         }
     }
 
     impl ToTokens for ast::Stmt {
         fn to_tokens(&self, _cx: &ExtCtxt) -> Vec<TokenTree> {
-            let nt = token::NtStmt(self.clone());
-            let mut tts = vec![TokenTree::Token(self.span, token::Interpolated(Rc::new(nt)))];
+            let mut tts = vec![
+                TokenTree::Token(self.span, token::Interpolated(token::NtStmt(P(self.clone()))))
+            ];
 
             
             if classify::stmt_ends_with_semi(&self.node) {
@@ -159,36 +153,31 @@ pub mod rt {
 
     impl ToTokens for P<ast::Expr> {
         fn to_tokens(&self, _cx: &ExtCtxt) -> Vec<TokenTree> {
-            let nt = token::NtExpr(self.clone());
-            vec![TokenTree::Token(self.span, token::Interpolated(Rc::new(nt)))]
+            vec![TokenTree::Token(self.span, token::Interpolated(token::NtExpr(self.clone())))]
         }
     }
 
     impl ToTokens for P<ast::Pat> {
         fn to_tokens(&self, _cx: &ExtCtxt) -> Vec<TokenTree> {
-            let nt = token::NtPat(self.clone());
-            vec![TokenTree::Token(self.span, token::Interpolated(Rc::new(nt)))]
+            vec![TokenTree::Token(self.span, token::Interpolated(token::NtPat(self.clone())))]
         }
     }
 
     impl ToTokens for ast::Arm {
         fn to_tokens(&self, _cx: &ExtCtxt) -> Vec<TokenTree> {
-            let nt = token::NtArm(self.clone());
-            vec![TokenTree::Token(DUMMY_SP, token::Interpolated(Rc::new(nt)))]
+            vec![TokenTree::Token(DUMMY_SP, token::Interpolated(token::NtArm(self.clone())))]
         }
     }
 
     impl ToTokens for ast::Arg {
         fn to_tokens(&self, _cx: &ExtCtxt) -> Vec<TokenTree> {
-            let nt = token::NtArg(self.clone());
-            vec![TokenTree::Token(DUMMY_SP, token::Interpolated(Rc::new(nt)))]
+            vec![TokenTree::Token(DUMMY_SP, token::Interpolated(token::NtArg(self.clone())))]
         }
     }
 
     impl ToTokens for P<ast::Block> {
         fn to_tokens(&self, _cx: &ExtCtxt) -> Vec<TokenTree> {
-            let nt = token::NtBlock(self.clone());
-            vec![TokenTree::Token(DUMMY_SP, token::Interpolated(Rc::new(nt)))]
+            vec![TokenTree::Token(DUMMY_SP, token::Interpolated(token::NtBlock(self.clone())))]
         }
     }
 
@@ -213,10 +202,9 @@ pub mod rt {
     impl_to_tokens_slice! { P<ast::Item>, [] }
     impl_to_tokens_slice! { ast::Arg, [TokenTree::Token(DUMMY_SP, token::Comma)] }
 
-    impl ToTokens for ast::MetaItem {
+    impl ToTokens for P<ast::MetaItem> {
         fn to_tokens(&self, _cx: &ExtCtxt) -> Vec<TokenTree> {
-            let nt = token::NtMeta(self.clone());
-            vec![TokenTree::Token(DUMMY_SP, token::Interpolated(Rc::new(nt)))]
+            vec![TokenTree::Token(DUMMY_SP, token::Interpolated(token::NtMeta(self.clone())))]
         }
     }
 
@@ -225,13 +213,13 @@ pub mod rt {
             let mut r = vec![];
             
             r.push(TokenTree::Token(self.span, token::Pound));
-            if self.style == ast::AttrStyle::Inner {
+            if self.node.style == ast::AttrStyle::Inner {
                 r.push(TokenTree::Token(self.span, token::Not));
             }
             r.push(TokenTree::Delimited(self.span, Rc::new(tokenstream::Delimited {
                 delim: token::Bracket,
                 open_span: self.span,
-                tts: self.value.to_tokens(cx),
+                tts: self.node.value.to_tokens(cx),
                 close_span: self.span,
             })));
             r
@@ -240,7 +228,8 @@ pub mod rt {
 
     impl ToTokens for str {
         fn to_tokens(&self, cx: &ExtCtxt) -> Vec<TokenTree> {
-            let lit = ast::LitKind::Str(Symbol::intern(self), ast::StrStyle::Cooked);
+            let lit = ast::LitKind::Str(
+                token::intern_and_get_ident(self), ast::StrStyle::Cooked);
             dummy_spanned(lit).to_tokens(cx)
         }
     }
@@ -406,7 +395,7 @@ pub fn parse_block_panic(parser: &mut Parser) -> P<Block> {
     panictry!(parser.parse_block())
 }
 
-pub fn parse_meta_item_panic(parser: &mut Parser) -> ast::MetaItem {
+pub fn parse_meta_item_panic(parser: &mut Parser) -> P<ast::MetaItem> {
     panictry!(parser.parse_meta_item())
 }
 
@@ -528,17 +517,17 @@ pub fn expand_quote_matcher(cx: &mut ExtCtxt,
     base::MacEager::expr(expanded)
 }
 
-fn ids_ext(strs: Vec<String>) -> Vec<ast::Ident> {
-    strs.iter().map(|s| ast::Ident::from_str(s)).collect()
+fn ids_ext(strs: Vec<String> ) -> Vec<ast::Ident> {
+    strs.iter().map(|str| str_to_ident(&(*str))).collect()
 }
 
-fn id_ext(s: &str) -> ast::Ident {
-    ast::Ident::from_str(s)
+fn id_ext(str: &str) -> ast::Ident {
+    str_to_ident(str)
 }
 
 
 fn mk_ident(cx: &ExtCtxt, sp: Span, ident: ast::Ident) -> P<ast::Expr> {
-    let e_str = cx.expr_str(sp, ident.name);
+    let e_str = cx.expr_str(sp, ident.name.as_str());
     cx.expr_method_call(sp,
                         cx.expr_ident(sp, id_ext("ext_cx")),
                         id_ext("ident_of"),
@@ -547,7 +536,7 @@ fn mk_ident(cx: &ExtCtxt, sp: Span, ident: ast::Ident) -> P<ast::Expr> {
 
 
 fn mk_name(cx: &ExtCtxt, sp: Span, ident: ast::Ident) -> P<ast::Expr> {
-    let e_str = cx.expr_str(sp, ident.name);
+    let e_str = cx.expr_str(sp, ident.name.as_str());
     cx.expr_method_call(sp,
                         cx.expr_ident(sp, id_ext("ext_cx")),
                         id_ext("name_of"),

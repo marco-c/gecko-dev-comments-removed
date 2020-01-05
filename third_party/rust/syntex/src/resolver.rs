@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::rc::Rc;
 
-use syntex_syntax::ast::{self, Attribute, Name};
+use syntex_syntax::ast::{self, Attribute};
 use syntex_syntax::ext::base::{
     self,
     Determinacy,
@@ -11,8 +11,8 @@ use syntex_syntax::ext::base::{
 };
 use syntex_syntax::ext::expand::Expansion;
 use syntex_syntax::ext::hygiene::Mark;
+use syntex_syntax::parse::token::intern;
 use syntex_syntax::parse::ParseSess;
-use syntex_syntax::ptr::P;
 
 pub struct Resolver<'a> {
     session: &'a ParseSess,
@@ -33,19 +33,23 @@ impl<'a> base::Resolver for Resolver<'a> {
         ast::DUMMY_NODE_ID
     }
     fn get_module_scope(&mut self, _id: ast::NodeId) -> Mark { Mark::root() }
-    fn eliminate_crate_var(&mut self, item: P<ast::Item>) -> P<ast::Item> { item }
-    fn is_whitelisted_legacy_custom_derive(&self, _name: Name) -> bool { false }
 
     fn visit_expansion(&mut self, _invoc: Mark, _expansion: &Expansion) {}
+    fn add_macro(&mut self, _scope: Mark, def: ast::MacroDef, _export: bool) {
+        self.session.span_diagnostic.span_bug(
+            def.span,
+            "add_macro is not supported yet");
+    }
     fn add_ext(&mut self, ident: ast::Ident, ext: Rc<SyntaxExtension>) {
         self.extensions.insert(ident.name, ext);
     }
     fn add_expansions_at_stmt(&mut self, _id: ast::NodeId, _macros: Vec<Mark>) {}
 
-    fn resolve_imports(&mut self) {}
     fn find_attr_invoc(&mut self, attrs: &mut Vec<Attribute>) -> Option<Attribute> {
         for i in 0..attrs.len() {
-            if let Some(ext) = self.extensions.get(&attrs[i].value.name) {
+            let name = intern(&attrs[i].name());
+
+            if let Some(ext) = self.extensions.get(&name) {
                 match **ext {
                     MultiModifier(..) | MultiDecorator(..) => return Some(attrs.remove(i)),
                     _ => {}
@@ -57,26 +61,29 @@ impl<'a> base::Resolver for Resolver<'a> {
     fn find_extension(&mut self, _scope: Mark, name: ast::Name) -> Option<Rc<SyntaxExtension>> {
         self.extensions.get(&name).map(|ext| ext.clone())
     }
+    fn find_mac(&mut self, scope: Mark, mac: &ast::Mac) -> Option<Rc<SyntaxExtension>> {
+        let path = &mac.node.path;
+        if path.segments.len() > 1 || path.global ||
+           !path.segments[0].parameters.is_empty() {
+            
+            self.session.span_diagnostic.span_err(path.span,
+                                                  "expected macro name without module separators");
+            return None;
+        }
+        let name = path.segments[0].identifier.name;
+        self.find_extension(scope, name)
+    }
     fn resolve_macro(&mut self, scope: Mark, path: &ast::Path, force: bool)
                      -> Result<Rc<SyntaxExtension>, Determinacy> {
-        let ast::Path { ref segments, span } = *path;
-        if segments.iter().any(|segment| segment.parameters.is_some()) {
-            let kind =
-                if segments.last().unwrap().parameters.is_some() { "macro" } else { "module" };
-            let msg = format!("type parameters are not allowed on {}s", kind);
-            self.session.span_diagnostic.span_err(path.span, &msg);
-            return Err(Determinacy::Determined);
-        }
-
-        let path: Vec<_> = segments.iter().map(|seg| seg.identifier).collect();
-
-        if path.len() > 1 {
+        if path.segments.len() > 1 || path.global ||
+            !path.segments[0].parameters.is_empty() {
             
-            self.session.span_diagnostic.span_err(span, "expected macro name without module separators");
-            return Err(Determinacy::Determined);
-        }        
-
-        let name = path[0].name;
+            self.session.span_diagnostic.span_err(path.span,
+                                                    "expected macro name without module separators");
+            return Err(Determinacy::Undetermined);
+        }
+        let name = path.segments[0].identifier.name;
+        let span = path.span;
 
         self.find_extension(scope, name).ok_or_else(|| {
             if force {

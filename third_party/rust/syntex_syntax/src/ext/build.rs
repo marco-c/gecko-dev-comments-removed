@@ -11,11 +11,11 @@
 use abi::Abi;
 use ast::{self, Ident, Generics, Expr, BlockCheckMode, UnOp, PatKind};
 use attr;
-use syntax_pos::{Span, DUMMY_SP};
+use syntax_pos::{Span, DUMMY_SP, Pos};
 use codemap::{dummy_spanned, respan, Spanned};
 use ext::base::ExtCtxt;
+use parse::token::{self, keywords, InternedString};
 use ptr::P;
-use symbol::{Symbol, keywords};
 
 
 mod syntax {
@@ -149,7 +149,7 @@ pub trait AstBuilder {
     fn expr_vec(&self, sp: Span, exprs: Vec<P<ast::Expr>>) -> P<ast::Expr>;
     fn expr_vec_ng(&self, sp: Span) -> P<ast::Expr>;
     fn expr_vec_slice(&self, sp: Span, exprs: Vec<P<ast::Expr>>) -> P<ast::Expr>;
-    fn expr_str(&self, sp: Span, s: Symbol) -> P<ast::Expr>;
+    fn expr_str(&self, sp: Span, s: InternedString) -> P<ast::Expr>;
 
     fn expr_some(&self, sp: Span, expr: P<ast::Expr>) -> P<ast::Expr>;
     fn expr_none(&self, sp: Span) -> P<ast::Expr>;
@@ -158,7 +158,7 @@ pub trait AstBuilder {
 
     fn expr_tuple(&self, sp: Span, exprs: Vec<P<ast::Expr>>) -> P<ast::Expr>;
 
-    fn expr_fail(&self, span: Span, msg: Symbol) -> P<ast::Expr>;
+    fn expr_fail(&self, span: Span, msg: InternedString) -> P<ast::Expr>;
     fn expr_unreachable(&self, span: Span) -> P<ast::Expr>;
 
     fn expr_ok(&self, span: Span, expr: P<ast::Expr>) -> P<ast::Expr>;
@@ -198,13 +198,17 @@ pub trait AstBuilder {
     fn lambda_fn_decl(&self,
                       span: Span,
                       fn_decl: P<ast::FnDecl>,
-                      body: P<ast::Expr>,
+                      blk: P<ast::Block>,
                       fn_decl_span: Span)
                       -> P<ast::Expr>;
 
-    fn lambda(&self, span: Span, ids: Vec<ast::Ident>, body: P<ast::Expr>) -> P<ast::Expr>;
-    fn lambda0(&self, span: Span, body: P<ast::Expr>) -> P<ast::Expr>;
-    fn lambda1(&self, span: Span, body: P<ast::Expr>, ident: ast::Ident) -> P<ast::Expr>;
+    fn lambda(&self, span: Span, ids: Vec<ast::Ident>, blk: P<ast::Block>) -> P<ast::Expr>;
+    fn lambda0(&self, span: Span, blk: P<ast::Block>) -> P<ast::Expr>;
+    fn lambda1(&self, span: Span, blk: P<ast::Block>, ident: ast::Ident) -> P<ast::Expr>;
+
+    fn lambda_expr(&self, span: Span, ids: Vec<ast::Ident> , blk: P<ast::Expr>) -> P<ast::Expr>;
+    fn lambda_expr_0(&self, span: Span, expr: P<ast::Expr>) -> P<ast::Expr>;
+    fn lambda_expr_1(&self, span: Span, expr: P<ast::Expr>, ident: ast::Ident) -> P<ast::Expr>;
 
     fn lambda_stmts(&self, span: Span, ids: Vec<ast::Ident>,
                     blk: Vec<ast::Stmt>) -> P<ast::Expr>;
@@ -275,22 +279,22 @@ pub trait AstBuilder {
                     generics: Generics) -> P<ast::Item>;
     fn item_ty(&self, span: Span, name: Ident, ty: P<ast::Ty>) -> P<ast::Item>;
 
-    fn attribute(&self, sp: Span, mi: ast::MetaItem) -> ast::Attribute;
+    fn attribute(&self, sp: Span, mi: P<ast::MetaItem>) -> ast::Attribute;
 
-    fn meta_word(&self, sp: Span, w: ast::Name) -> ast::MetaItem;
+    fn meta_word(&self, sp: Span, w: InternedString) -> P<ast::MetaItem>;
 
-    fn meta_list_item_word(&self, sp: Span, w: ast::Name) -> ast::NestedMetaItem;
+    fn meta_list_item_word(&self, sp: Span, w: InternedString) -> ast::NestedMetaItem;
 
     fn meta_list(&self,
                  sp: Span,
-                 name: ast::Name,
+                 name: InternedString,
                  mis: Vec<ast::NestedMetaItem> )
-                 -> ast::MetaItem;
+                 -> P<ast::MetaItem>;
     fn meta_name_value(&self,
                        sp: Span,
-                       name: ast::Name,
+                       name: InternedString,
                        value: ast::LitKind)
-                       -> ast::MetaItem;
+                       -> P<ast::MetaItem>;
 
     fn item_use(&self, sp: Span,
                 vis: ast::Visibility, vp: P<ast::ViewPath>) -> P<ast::Item>;
@@ -322,24 +326,24 @@ impl<'a> AstBuilder for ExtCtxt<'a> {
                 bindings: Vec<ast::TypeBinding> )
                 -> ast::Path {
         let last_identifier = idents.pop().unwrap();
-        let mut segments: Vec<ast::PathSegment> = Vec::new();
-        if global {
-            segments.push(ast::PathSegment::crate_root());
-        }
-
-        segments.extend(idents.into_iter().map(Into::into));
-        let parameters = if lifetimes.is_empty() && types.is_empty() && bindings.is_empty() {
-            None
-        } else {
-            Some(P(ast::PathParameters::AngleBracketed(ast::AngleBracketedParameterData {
+        let mut segments: Vec<ast::PathSegment> = idents.into_iter()
+                                                      .map(|ident| {
+            ast::PathSegment {
+                identifier: ident,
+                parameters: ast::PathParameters::none(),
+            }
+        }).collect();
+        segments.push(ast::PathSegment {
+            identifier: last_identifier,
+            parameters: ast::PathParameters::AngleBracketed(ast::AngleBracketedParameterData {
                 lifetimes: lifetimes,
                 types: P::from_vec(types),
                 bindings: P::from_vec(bindings),
-            })))
-        };
-        segments.push(ast::PathSegment { identifier: last_identifier, parameters: parameters });
+            })
+        });
         ast::Path {
             span: sp,
+            global: global,
             segments: segments,
         }
     }
@@ -367,14 +371,13 @@ impl<'a> AstBuilder for ExtCtxt<'a> {
                  bindings: Vec<ast::TypeBinding>)
                  -> (ast::QSelf, ast::Path) {
         let mut path = trait_path;
-        let parameters = ast::AngleBracketedParameterData {
-            lifetimes: lifetimes,
-            types: P::from_vec(types),
-            bindings: P::from_vec(bindings),
-        };
         path.segments.push(ast::PathSegment {
             identifier: ident,
-            parameters: Some(P(ast::PathParameters::AngleBracketed(parameters))),
+            parameters: ast::PathParameters::AngleBracketed(ast::AngleBracketedParameterData {
+                lifetimes: lifetimes,
+                types: P::from_vec(types),
+                bindings: P::from_vec(bindings),
+            })
         });
 
         (ast::QSelf {
@@ -660,11 +663,23 @@ impl<'a> AstBuilder for ExtCtxt<'a> {
     }
 
     fn expr_field_access(&self, sp: Span, expr: P<ast::Expr>, ident: ast::Ident) -> P<ast::Expr> {
-        let id = Spanned { node: ident, span: sp };
+        let field_span = Span {
+            lo: sp.lo - Pos::from_usize(ident.name.as_str().len()),
+            hi: sp.hi,
+            expn_id: sp.expn_id,
+        };
+
+        let id = Spanned { node: ident, span: field_span };
         self.expr(sp, ast::ExprKind::Field(expr, id))
     }
     fn expr_tup_field_access(&self, sp: Span, expr: P<ast::Expr>, idx: usize) -> P<ast::Expr> {
-        let id = Spanned { node: idx, span: sp };
+        let field_span = Span {
+            lo: sp.lo - Pos::from_usize(idx.to_string().len()),
+            hi: sp.hi,
+            expn_id: sp.expn_id,
+        };
+
+        let id = Spanned { node: idx, span: field_span };
         self.expr(sp, ast::ExprKind::TupField(expr, id))
     }
     fn expr_addr_of(&self, sp: Span, e: P<ast::Expr>) -> P<ast::Expr> {
@@ -712,8 +727,7 @@ impl<'a> AstBuilder for ExtCtxt<'a> {
         self.expr(sp, ast::ExprKind::Lit(P(respan(sp, lit))))
     }
     fn expr_usize(&self, span: Span, i: usize) -> P<ast::Expr> {
-        self.expr_lit(span, ast::LitKind::Int(i as u64,
-                                              ast::LitIntType::Unsigned(ast::UintTy::Us)))
+        self.expr_lit(span, ast::LitKind::Int(i as u64, ast::LitIntType::Unsigned(ast::UintTy::Us)))
     }
     fn expr_isize(&self, sp: Span, i: isize) -> P<ast::Expr> {
         if i < 0 {
@@ -722,13 +736,11 @@ impl<'a> AstBuilder for ExtCtxt<'a> {
             let lit = self.expr_lit(sp, ast::LitKind::Int(i, lit_ty));
             self.expr_unary(sp, ast::UnOp::Neg, lit)
         } else {
-            self.expr_lit(sp, ast::LitKind::Int(i as u64,
-                                                ast::LitIntType::Signed(ast::IntTy::Is)))
+            self.expr_lit(sp, ast::LitKind::Int(i as u64, ast::LitIntType::Signed(ast::IntTy::Is)))
         }
     }
     fn expr_u32(&self, sp: Span, u: u32) -> P<ast::Expr> {
-        self.expr_lit(sp, ast::LitKind::Int(u as u64,
-                                            ast::LitIntType::Unsigned(ast::UintTy::U32)))
+        self.expr_lit(sp, ast::LitKind::Int(u as u64, ast::LitIntType::Unsigned(ast::UintTy::U32)))
     }
     fn expr_u8(&self, sp: Span, u: u8) -> P<ast::Expr> {
         self.expr_lit(sp, ast::LitKind::Int(u as u64, ast::LitIntType::Unsigned(ast::UintTy::U8)))
@@ -747,7 +759,7 @@ impl<'a> AstBuilder for ExtCtxt<'a> {
     fn expr_vec_slice(&self, sp: Span, exprs: Vec<P<ast::Expr>>) -> P<ast::Expr> {
         self.expr_addr_of(sp, self.expr_vec(sp, exprs))
     }
-    fn expr_str(&self, sp: Span, s: Symbol) -> P<ast::Expr> {
+    fn expr_str(&self, sp: Span, s: InternedString) -> P<ast::Expr> {
         self.expr_lit(sp, ast::LitKind::Str(s, ast::StrStyle::Cooked))
     }
 
@@ -769,7 +781,7 @@ impl<'a> AstBuilder for ExtCtxt<'a> {
 
 
     fn expr_break(&self, sp: Span) -> P<ast::Expr> {
-        self.expr(sp, ast::ExprKind::Break(None, None))
+        self.expr(sp, ast::ExprKind::Break(None))
     }
 
 
@@ -777,9 +789,10 @@ impl<'a> AstBuilder for ExtCtxt<'a> {
         self.expr(sp, ast::ExprKind::Tup(exprs))
     }
 
-    fn expr_fail(&self, span: Span, msg: Symbol) -> P<ast::Expr> {
+    fn expr_fail(&self, span: Span, msg: InternedString) -> P<ast::Expr> {
         let loc = self.codemap().lookup_char_pos(span.lo);
-        let expr_file = self.expr_str(span, Symbol::intern(&loc.file.name));
+        let expr_file = self.expr_str(span,
+                                      token::intern_and_get_ident(&loc.file.name));
         let expr_line = self.expr_u32(span, loc.line as u32);
         let expr_file_line_tuple = self.expr_tuple(span, vec![expr_file, expr_line]);
         let expr_file_line_ptr = self.expr_addr_of(span, expr_file_line_tuple);
@@ -792,7 +805,9 @@ impl<'a> AstBuilder for ExtCtxt<'a> {
     }
 
     fn expr_unreachable(&self, span: Span) -> P<ast::Expr> {
-        self.expr_fail(span, Symbol::intern("internal error: entered unreachable code"))
+        self.expr_fail(span,
+                       InternedString::new(
+                           "internal error: entered unreachable code"))
     }
 
     fn expr_ok(&self, sp: Span, expr: P<ast::Expr>) -> P<ast::Expr> {
@@ -925,19 +940,19 @@ impl<'a> AstBuilder for ExtCtxt<'a> {
     fn lambda_fn_decl(&self,
                       span: Span,
                       fn_decl: P<ast::FnDecl>,
-                      body: P<ast::Expr>,
+                      blk: P<ast::Block>,
                       fn_decl_span: Span) 
                       -> P<ast::Expr> {
         self.expr(span, ast::ExprKind::Closure(ast::CaptureBy::Ref,
                                                fn_decl,
-                                               body,
+                                               blk,
                                                fn_decl_span))
     }
 
     fn lambda(&self,
               span: Span,
               ids: Vec<ast::Ident>,
-              body: P<ast::Expr>)
+              blk: P<ast::Block>)
               -> P<ast::Expr> {
         let fn_decl = self.fn_decl(
             ids.iter().map(|id| self.arg(span, *id, self.ty_infer(span))).collect(),
@@ -947,15 +962,26 @@ impl<'a> AstBuilder for ExtCtxt<'a> {
         
         
         
-        self.expr(span, ast::ExprKind::Closure(ast::CaptureBy::Ref, fn_decl, body, span))
+        self.expr(span, ast::ExprKind::Closure(ast::CaptureBy::Ref, fn_decl, blk, span))
     }
 
-    fn lambda0(&self, span: Span, body: P<ast::Expr>) -> P<ast::Expr> {
-        self.lambda(span, Vec::new(), body)
+    fn lambda0(&self, span: Span, blk: P<ast::Block>) -> P<ast::Expr> {
+        self.lambda(span, Vec::new(), blk)
     }
 
-    fn lambda1(&self, span: Span, body: P<ast::Expr>, ident: ast::Ident) -> P<ast::Expr> {
-        self.lambda(span, vec![ident], body)
+    fn lambda1(&self, span: Span, blk: P<ast::Block>, ident: ast::Ident) -> P<ast::Expr> {
+        self.lambda(span, vec![ident], blk)
+    }
+
+    fn lambda_expr(&self, span: Span, ids: Vec<ast::Ident>,
+                   expr: P<ast::Expr>) -> P<ast::Expr> {
+        self.lambda(span, ids, self.block_expr(expr))
+    }
+    fn lambda_expr_0(&self, span: Span, expr: P<ast::Expr>) -> P<ast::Expr> {
+        self.lambda0(span, self.block_expr(expr))
+    }
+    fn lambda_expr_1(&self, span: Span, expr: P<ast::Expr>, ident: ast::Ident) -> P<ast::Expr> {
+        self.lambda1(span, self.block_expr(expr), ident)
     }
 
     fn lambda_stmts(&self,
@@ -963,14 +989,14 @@ impl<'a> AstBuilder for ExtCtxt<'a> {
                     ids: Vec<ast::Ident>,
                     stmts: Vec<ast::Stmt>)
                     -> P<ast::Expr> {
-        self.lambda(span, ids, self.expr_block(self.block(span, stmts)))
+        self.lambda(span, ids, self.block(span, stmts))
     }
     fn lambda_stmts_0(&self, span: Span, stmts: Vec<ast::Stmt>) -> P<ast::Expr> {
-        self.lambda0(span, self.expr_block(self.block(span, stmts)))
+        self.lambda0(span, self.block(span, stmts))
     }
     fn lambda_stmts_1(&self, span: Span, stmts: Vec<ast::Stmt>,
                       ident: ast::Ident) -> P<ast::Expr> {
-        self.lambda1(span, self.expr_block(self.block(span, stmts)), ident)
+        self.lambda1(span, self.block(span, stmts), ident)
     }
 
     fn arg(&self, span: Span, ident: ast::Ident, ty: P<ast::Ty>) -> ast::Arg {
@@ -1135,25 +1161,25 @@ impl<'a> AstBuilder for ExtCtxt<'a> {
         self.item_ty_poly(span, name, ty, Generics::default())
     }
 
-    fn attribute(&self, sp: Span, mi: ast::MetaItem) -> ast::Attribute {
+    fn attribute(&self, sp: Span, mi: P<ast::MetaItem>) -> ast::Attribute {
         attr::mk_spanned_attr_outer(sp, attr::mk_attr_id(), mi)
     }
 
-    fn meta_word(&self, sp: Span, w: ast::Name) -> ast::MetaItem {
+    fn meta_word(&self, sp: Span, w: InternedString) -> P<ast::MetaItem> {
         attr::mk_spanned_word_item(sp, w)
     }
 
-    fn meta_list_item_word(&self, sp: Span, w: ast::Name) -> ast::NestedMetaItem {
+    fn meta_list_item_word(&self, sp: Span, w: InternedString) -> ast::NestedMetaItem {
         respan(sp, ast::NestedMetaItemKind::MetaItem(attr::mk_spanned_word_item(sp, w)))
     }
 
-    fn meta_list(&self, sp: Span, name: ast::Name, mis: Vec<ast::NestedMetaItem>)
-                 -> ast::MetaItem {
+    fn meta_list(&self, sp: Span, name: InternedString, mis: Vec<ast::NestedMetaItem>)
+                 -> P<ast::MetaItem> {
         attr::mk_spanned_list_item(sp, name, mis)
     }
 
-    fn meta_name_value(&self, sp: Span, name: ast::Name, value: ast::LitKind)
-                       -> ast::MetaItem {
+    fn meta_name_value(&self, sp: Span, name: InternedString, value: ast::LitKind)
+                       -> P<ast::MetaItem> {
         attr::mk_spanned_name_value_item(sp, name, respan(sp, value))
     }
 

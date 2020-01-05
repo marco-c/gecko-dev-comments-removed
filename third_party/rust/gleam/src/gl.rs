@@ -67,7 +67,7 @@ pub fn read_buffer(mode: GLenum) {
     }
 }
 
-fn calculate_length(width: GLsizei, height: GLsizei, format: GLenum, pixel_type: GLenum) -> usize {
+pub fn read_pixels(x: GLint, y: GLint, width: GLsizei, height: GLsizei, format: GLenum, pixel_type: GLenum) -> Vec<u8> {
     let colors = match format {
         ffi::RGB => 3,
 #[cfg(not(target_os="android"))]
@@ -87,28 +87,16 @@ fn calculate_length(width: GLsizei, height: GLsizei, format: GLenum, pixel_type:
         _ => panic!("unsupported pixel_type for read_pixels"),
     };
 
-    return (width * height * colors * depth) as usize;
-}
-
-pub fn read_pixels_into_buffer(x: GLint, y: GLint, width: GLsizei, height: GLsizei,
-                               format: GLenum, pixel_type: GLenum, dst_buffer: &mut [u8]) {
-    
-    assert!(calculate_length(width, height, format, pixel_type) == dst_buffer.len());
+    let len = width * height * colors * depth;
+    let mut pixels: Vec<u8> = Vec::new();
+    pixels.reserve(len as usize);
 
     unsafe {
         
         ffi::PixelStorei(ffi::PACK_ALIGNMENT, 1);
-        ffi::ReadPixels(x, y, width, height, format, pixel_type, dst_buffer.as_mut_ptr() as *mut c_void);
+        ffi::ReadPixels(x, y, width, height, format, pixel_type, pixels.as_mut_ptr() as *mut c_void);
+        pixels.set_len(len as usize);
     }
-}
-
-pub fn read_pixels(x: GLint, y: GLint, width: GLsizei, height: GLsizei, format: GLenum, pixel_type: GLenum) -> Vec<u8> {
-    let len = calculate_length(width, height, format, pixel_type);
-    let mut pixels: Vec<u8> = Vec::new();
-    pixels.reserve(len);
-    unsafe { pixels.set_len(len); }
-
-    read_pixels_into_buffer(x, y, width, height, format, pixel_type, pixels.as_mut_slice());
 
     pixels
 }
@@ -665,31 +653,6 @@ pub fn framebuffer_texture_layer(target: GLenum,
 }
 
 #[inline]
-pub fn blit_framebuffer(srcX0: GLint,
-                        srcY0: GLint,
-                        srcX1: GLint,
-                        srcY1: GLint,
-                        dstX0: GLint,
-                        dstY0: GLint,
-                        dstX1: GLint,
-                        dstY1: GLint,
-                        mask: GLbitfield,
-                        filter: GLenum) {
-    unsafe {
-        ffi::BlitFramebuffer(srcX0,
-                             srcY0,
-                             srcX1,
-                             srcY1,
-                             dstX0,
-                             dstY0,
-                             dstX1,
-                             dstY1,
-                             mask,
-                             filter);
-    }
-}
-
-#[inline]
 pub fn vertex_attrib_4f(index: GLuint,
                         x: GLfloat,
                         y: GLfloat,
@@ -730,21 +693,6 @@ pub fn vertex_attrib_pointer(index: GLuint,
                                  normalized as GLboolean,
                                  stride,
                                  offset as *const GLvoid)
-    }
-}
-
-#[inline]
-pub fn vertex_attrib_i_pointer(index: GLuint,
-                               size: GLint,
-                               type_: GLenum,
-                               stride: GLsizei,
-                               offset: GLuint) {
-    unsafe {
-        ffi::VertexAttribIPointer(index,
-                                  size,
-                                  type_,
-                                  stride,
-                                  offset as *const GLvoid)
     }
 }
 
@@ -921,27 +869,6 @@ pub fn is_shader(shader: GLuint) -> GLboolean {
 pub fn is_texture(texture: GLenum) -> GLboolean {
     unsafe {
         ffi::IsTexture(texture)
-    }
-}
-
-#[inline]
-pub fn is_framebuffer(framebuffer: GLenum) -> GLboolean {
-    unsafe {
-        ffi::IsFramebuffer(framebuffer)
-    }
-}
-
-#[inline]
-pub fn is_renderbuffer(renderbuffer: GLenum) -> GLboolean {
-    unsafe {
-        ffi::IsRenderbuffer(renderbuffer)
-    }
-}
-
-#[inline]
-pub fn check_frame_buffer_status(target: GLenum) -> GLenum {
-    unsafe {
-        ffi::CheckFramebufferStatus(target)
     }
 }
 
@@ -1487,35 +1414,5 @@ pub fn egl_image_target_texture2d_oes(target: GLenum, image: GLeglImageOES) {
 pub fn generate_mipmap(target: GLenum) {
     unsafe {
         ffi::GenerateMipmap(target)
-    }
-}
-
-#[inline]
-#[cfg(not(target_os="android"))]
-pub fn insert_event_marker_ext(message: &str) {
-    if ffi::InsertEventMarkerEXT::is_loaded() {
-        unsafe {
-            ffi::InsertEventMarkerEXT(message.len() as GLsizei, message.as_ptr() as *const _);
-        }
-    }
-}
-
-#[inline]
-#[cfg(not(target_os="android"))]
-pub fn push_group_marker_ext(message: &str) {
-    if ffi::PushGroupMarkerEXT::is_loaded() {
-        unsafe {
-            ffi::PushGroupMarkerEXT(message.len() as GLsizei, message.as_ptr() as *const _);
-        }
-    }
-}
-
-#[inline]
-#[cfg(not(target_os="android"))]
-pub fn pop_group_marker_ext() {
-    if ffi::PopGroupMarkerEXT::is_loaded() {
-        unsafe {
-            ffi::PopGroupMarkerEXT();
-        }
     }
 }

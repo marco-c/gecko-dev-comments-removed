@@ -3,7 +3,7 @@
 
 
 #![cfg_attr(feature = "nightly", feature(nonzero))]
-#![cfg_attr(feature = "serde_derive", feature(rustc_attrs, structural_match))]
+#![cfg_attr(feature = "serde_derive", feature(proc_macro, rustc_attrs, structural_match))]
 
 extern crate app_units;
 extern crate byteorder;
@@ -13,7 +13,6 @@ extern crate euclid;
 extern crate gleam;
 #[macro_use]
 extern crate heapsize;
-#[cfg(feature = "ipc")]
 extern crate ipc_channel;
 extern crate offscreen_gl_context;
 extern crate serde;
@@ -21,11 +20,7 @@ extern crate serde;
 #[macro_use]
 extern crate serde_derive;
 
-#[cfg(target_os = "macos")]
-extern crate core_graphics;
-
-#[cfg(target_os = "windows")]
-extern crate dwrote;
+#[cfg(target_os = "macos")] extern crate core_graphics;
 
 #[cfg(feature = "serde_codegen")]
 include!(concat!(env!("OUT_DIR"), "/types.rs"));
@@ -33,14 +28,11 @@ include!(concat!(env!("OUT_DIR"), "/types.rs"));
 #[cfg(feature = "serde_derive")]
 include!("types.rs");
 
-mod units;
 mod api;
-pub mod channel;
 mod display_item;
 mod display_list;
 mod stacking_context;
 mod webgl;
 
 pub use api::RenderApi;
-pub use display_list::DisplayListBuilder;
-pub use units::*;
+pub use display_list::{AuxiliaryListsBuilder, DisplayListBuilder};

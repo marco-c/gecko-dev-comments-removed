@@ -51,8 +51,6 @@ pub enum ExpnFormat {
     MacroAttribute(Name),
     
     MacroBang(Name),
-    
-    CompilerDesugaring(Name)
 }
 
 #[derive(Clone, PartialEq, Eq, RustcEncodable, RustcDecodable, Hash, Debug, Copy)]
@@ -107,9 +105,8 @@ pub struct NameAndSpan {
 impl NameAndSpan {
     pub fn name(&self) -> Name {
         match self.format {
-            ExpnFormat::MacroAttribute(s) |
-            ExpnFormat::MacroBang(s) |
-            ExpnFormat::CompilerDesugaring(s) => s,
+            ExpnFormat::MacroAttribute(s) => s,
+            ExpnFormat::MacroBang(s) => s,
         }
     }
 }
@@ -816,7 +813,6 @@ impl CodeMap {
                     let (pre, post) = match ei.callee.format {
                         MacroAttribute(..) => ("#[", "]"),
                         MacroBang(..) => ("", "!"),
-                        CompilerDesugaring(..) => ("desugaring of `", "`"),
                     };
                     let macro_decl_name = format!("{}{}{}",
                                                   pre,
@@ -875,7 +871,6 @@ impl CodeMapper for CodeMap {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use symbol::keywords;
     use std::rc::Rc;
 
     #[test]
@@ -1102,9 +1097,10 @@ mod tests {
     #[test]
     fn t11() {
         
+        use ast::Name;
         let cm = init_code_map();
         let root = Span { lo: BytePos(0), hi: BytePos(11), expn_id: NO_EXPANSION };
-        let format = ExpnFormat::MacroBang(keywords::Invalid.name());
+        let format = ExpnFormat::MacroBang(Name(0u32));
         let callee = NameAndSpan { format: format,
                                    allow_internal_unstable: false,
                                    span: None };
@@ -1201,9 +1197,11 @@ mod tests {
     fn init_expansion_chain(cm: &CodeMap) -> Span {
         
         
+        use ast::Name;
+
         let root = Span { lo: BytePos(0), hi: BytePos(11), expn_id: NO_EXPANSION };
 
-        let format_root = ExpnFormat::MacroBang(keywords::Invalid.name());
+        let format_root = ExpnFormat::MacroBang(Name(0u32));
         let callee_root = NameAndSpan { format: format_root,
                                         allow_internal_unstable: false,
                                         span: Some(root) };
@@ -1212,7 +1210,7 @@ mod tests {
         let id_a1 = cm.record_expansion(info_a1);
         let span_a1 = Span { lo: BytePos(12), hi: BytePos(23), expn_id: id_a1 };
 
-        let format_a = ExpnFormat::MacroBang(keywords::As.name());
+        let format_a = ExpnFormat::MacroBang(Name(1u32));
         let callee_a = NameAndSpan { format: format_a,
                                       allow_internal_unstable: false,
                                       span: Some(span_a1) };
@@ -1225,7 +1223,7 @@ mod tests {
         let id_b1 = cm.record_expansion(info_b1);
         let span_b1 = Span { lo: BytePos(25), hi: BytePos(36), expn_id: id_b1 };
 
-        let format_b = ExpnFormat::MacroBang(keywords::Box.name());
+        let format_b = ExpnFormat::MacroBang(Name(2u32));
         let callee_b = NameAndSpan { format: format_b,
                                      allow_internal_unstable: false,
                                      span: None };

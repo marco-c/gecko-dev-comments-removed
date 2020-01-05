@@ -496,7 +496,6 @@ fn deserialize_item_enum(
 
     let variant_visitor = deserialize_field_visitor(
         variants.iter()
-            .filter(|variant| !variant.attrs.skip_deserializing())
             .map(|variant| variant.attrs.name().deserialize_name())
             .collect(),
         item_attrs,
@@ -519,7 +518,7 @@ fn deserialize_item_enum(
 
     
     let mut variant_arms = vec![];
-    for (i, variant) in variants.iter().filter(|variant| !variant.attrs.skip_deserializing()).enumerate() {
+    for (i, variant) in variants.iter().enumerate() {
         let variant_name = aster::id(format!("__field{}", i));
         let variant_name = quote!(__Field::#variant_name);
 

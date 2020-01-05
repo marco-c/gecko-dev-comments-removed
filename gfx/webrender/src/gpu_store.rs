@@ -5,7 +5,7 @@
 use renderer::MAX_VERTEX_TEXTURE_WIDTH;
 use std::mem;
 
-#[derive(Debug, Copy, Clone, Eq, Hash, PartialEq)]
+#[derive(Debug, Copy, Clone)]
 pub struct GpuStoreAddress(pub i32);
 
 

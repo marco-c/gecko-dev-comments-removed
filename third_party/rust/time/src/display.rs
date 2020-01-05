@@ -1,4 +1,4 @@
-use std::fmt::{self, Write};
+use std::fmt::{self, Display};
 
 use super::{TmFmt, Tm, Fmt};
 
@@ -13,7 +13,7 @@ impl<'a> fmt::Display for TmFmt<'a> {
                         
                         try!(parse_type(fmt, chars.next().unwrap(), self.tm));
                     } else {
-                        try!(fmt.write_char(ch));
+                        try!(write!(fmt, "{}", ch));
                     }
                 }
 
@@ -96,7 +96,7 @@ fn iso_week(fmt: &mut fmt::Formatter, ch:char, tm: &Tm) -> fmt::Result {
 
 fn parse_type(fmt: &mut fmt::Formatter, ch: char, tm: &Tm) -> fmt::Result {
     match ch {
-        'A' => fmt.write_str(match tm.tm_wday {
+        'A' => write!(fmt, "{}", match tm.tm_wday {
             0 => "Sunday",
             1 => "Monday",
             2 => "Tuesday",
@@ -106,7 +106,7 @@ fn parse_type(fmt: &mut fmt::Formatter, ch: char, tm: &Tm) -> fmt::Result {
             6 => "Saturday",
             _ => unreachable!(),
         }),
-        'a' => fmt.write_str(match tm.tm_wday {
+        'a' => write!(fmt, "{}", match tm.tm_wday {
             0 => "Sun",
             1 => "Mon",
             2 => "Tue",
@@ -116,7 +116,7 @@ fn parse_type(fmt: &mut fmt::Formatter, ch: char, tm: &Tm) -> fmt::Result {
             6 => "Sat",
             _ => unreachable!(),
         }),
-        'B' => fmt.write_str(match tm.tm_mon {
+        'B' => write!(fmt, "{}", match tm.tm_mon {
             0 => "January",
             1 => "February",
             2 => "March",
@@ -131,7 +131,7 @@ fn parse_type(fmt: &mut fmt::Formatter, ch: char, tm: &Tm) -> fmt::Result {
             11 => "December",
             _ => unreachable!(),
         }),
-        'b' | 'h' => fmt.write_str(match tm.tm_mon {
+        'b' | 'h' => write!(fmt, "{}", match tm.tm_mon {
             0 => "Jan",
             1 => "Feb",
             2 => "Mar",
@@ -149,20 +149,20 @@ fn parse_type(fmt: &mut fmt::Formatter, ch: char, tm: &Tm) -> fmt::Result {
         'C' => write!(fmt, "{:02}", (tm.tm_year + 1900) / 100),
         'c' => {
             try!(parse_type(fmt, 'a', tm));
-            try!(fmt.write_str(" "));
+            try!(write!(fmt, " "));
             try!(parse_type(fmt, 'b', tm));
-            try!(fmt.write_str(" "));
+            try!(write!(fmt, " "));
             try!(parse_type(fmt, 'e', tm));
-            try!(fmt.write_str(" "));
+            try!(write!(fmt, " "));
             try!(parse_type(fmt, 'T', tm));
-            try!(fmt.write_str(" "));
+            try!(write!(fmt, " "));
             parse_type(fmt, 'Y', tm)
         }
         'D' | 'x' => {
             try!(parse_type(fmt, 'm', tm));
-            try!(fmt.write_str("/"));
+            try!(write!(fmt, "/"));
             try!(parse_type(fmt, 'd', tm));
-            try!(fmt.write_str("/"));
+            try!(write!(fmt, "/"));
             parse_type(fmt, 'y', tm)
         }
         'd' => write!(fmt, "{:02}", tm.tm_mday),
@@ -170,9 +170,9 @@ fn parse_type(fmt: &mut fmt::Formatter, ch: char, tm: &Tm) -> fmt::Result {
         'f' => write!(fmt, "{:09}", tm.tm_nsec),
         'F' => {
             try!(parse_type(fmt, 'Y', tm));
-            try!(fmt.write_str("-"));
+            try!(write!(fmt, "-"));
             try!(parse_type(fmt, 'm', tm));
-            try!(fmt.write_str("-"));
+            try!(write!(fmt, "-"));
             parse_type(fmt, 'd', tm)
         }
         'G' => iso_week(fmt, 'G', tm),
@@ -194,33 +194,33 @@ fn parse_type(fmt: &mut fmt::Formatter, ch: char, tm: &Tm) -> fmt::Result {
         }
         'M' => write!(fmt, "{:02}", tm.tm_min),
         'm' => write!(fmt, "{:02}", tm.tm_mon + 1),
-        'n' => fmt.write_str("\n"),
-        'P' => fmt.write_str(if tm.tm_hour < 12 { "am" } else { "pm" }),
-        'p' => fmt.write_str(if (tm.tm_hour) < 12 { "AM" } else { "PM" }),
+        'n' => write!(fmt, "\n"),
+        'P' => write!(fmt, "{}", if tm.tm_hour < 12 { "am" } else { "pm" }),
+        'p' => write!(fmt, "{}", if (tm.tm_hour) < 12 { "AM" } else { "PM" }),
         'R' => {
             try!(parse_type(fmt, 'H', tm));
-            try!(fmt.write_str(":"));
+            try!(write!(fmt, ":"));
             parse_type(fmt, 'M', tm)
         }
         'r' => {
             try!(parse_type(fmt, 'I', tm));
-            try!(fmt.write_str(":"));
+            try!(write!(fmt, ":"));
             try!(parse_type(fmt, 'M', tm));
-            try!(fmt.write_str(":"));
+            try!(write!(fmt, ":"));
             try!(parse_type(fmt, 'S', tm));
-            try!(fmt.write_str(" "));
+            try!(write!(fmt, " "));
             parse_type(fmt, 'p', tm)
         }
         'S' => write!(fmt, "{:02}", tm.tm_sec),
         's' => write!(fmt, "{}", tm.to_timespec().sec),
         'T' | 'X' => {
             try!(parse_type(fmt, 'H', tm));
-            try!(fmt.write_str(":"));
+            try!(write!(fmt, ":"));
             try!(parse_type(fmt, 'M', tm));
-            try!(fmt.write_str(":"));
+            try!(write!(fmt, ":"));
             parse_type(fmt, 'S', tm)
         }
-        't' => fmt.write_str("\t"),
+        't' => write!(fmt, "\t"),
         'U' => write!(fmt, "{:02}", (tm.tm_yday - tm.tm_wday + 7) / 7),
         'u' => {
             let i = tm.tm_wday;
@@ -229,9 +229,9 @@ fn parse_type(fmt: &mut fmt::Formatter, ch: char, tm: &Tm) -> fmt::Result {
         'V' => iso_week(fmt, 'V', tm),
         'v' => {
             try!(parse_type(fmt, 'e', tm));
-            try!(fmt.write_str("-"));
+            try!(write!(fmt, "-"));
             try!(parse_type(fmt, 'b', tm));
-            try!(fmt.write_str("-"));
+            try!(write!(fmt, "-"));
             parse_type(fmt, 'Y', tm)
         }
         'W' => {
@@ -241,7 +241,7 @@ fn parse_type(fmt: &mut fmt::Formatter, ch: char, tm: &Tm) -> fmt::Result {
         'Y' => write!(fmt, "{}", tm.tm_year + 1900),
         'y' => write!(fmt, "{:02}", (tm.tm_year + 1900) % 100),
         
-        'Z' => fmt.write_str(if tm.tm_utcoff == 0 { "UTC"} else { "" }),
+        'Z' => write!(fmt, "{}", if tm.tm_utcoff == 0 { "UTC"} else { "" }),
         'z' => {
             let sign = if tm.tm_utcoff > 0 { '+' } else { '-' };
             let mut m = abs(tm.tm_utcoff) / 60;
@@ -250,7 +250,7 @@ fn parse_type(fmt: &mut fmt::Formatter, ch: char, tm: &Tm) -> fmt::Result {
             write!(fmt, "{}{:02}{:02}", sign, h, m)
         }
         '+' => write!(fmt, "{}", tm.rfc3339()),
-        '%' => fmt.write_str("%"),
+        '%' => write!(fmt, "{}", "%"),
         _   => unreachable!(),
     }
 }

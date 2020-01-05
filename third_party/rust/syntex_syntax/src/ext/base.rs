@@ -18,10 +18,10 @@ use errors::DiagnosticBuilder;
 use ext::expand::{self, Expansion};
 use ext::hygiene::Mark;
 use fold::{self, Folder};
-use parse::{self, parser, DirectoryOwnership};
+use parse::{self, parser};
 use parse::token;
+use parse::token::{InternedString, str_to_ident};
 use ptr::P;
-use symbol::Symbol;
 use util::small_vector::SmallVector;
 
 use std::path::PathBuf;
@@ -217,7 +217,8 @@ pub trait IdentMacroExpander {
                    cx: &'cx mut ExtCtxt,
                    sp: Span,
                    ident: ast::Ident,
-                   token_tree: Vec<tokenstream::TokenTree>)
+                   token_tree: Vec<tokenstream::TokenTree>,
+                   attrs: Vec<ast::Attribute>)
                    -> Box<MacResult+'cx>;
 }
 
@@ -233,7 +234,8 @@ impl<F> IdentMacroExpander for F
                    cx: &'cx mut ExtCtxt,
                    sp: Span,
                    ident: ast::Ident,
-                   token_tree: Vec<tokenstream::TokenTree>)
+                   token_tree: Vec<tokenstream::TokenTree>,
+                   _attrs: Vec<ast::Attribute>)
                    -> Box<MacResult+'cx>
     {
         (*self)(cx, sp, ident, token_tree)
@@ -438,7 +440,7 @@ impl MacResult for DummyResult {
         if self.expr_only {
             None
         } else {
-            Some(SmallVector::new())
+            Some(SmallVector::zero())
         }
     }
 
@@ -446,7 +448,7 @@ impl MacResult for DummyResult {
         if self.expr_only {
             None
         } else {
-            Some(SmallVector::new())
+            Some(SmallVector::zero())
         }
     }
 
@@ -454,7 +456,7 @@ impl MacResult for DummyResult {
         if self.expr_only {
             None
         } else {
-            Some(SmallVector::new())
+            Some(SmallVector::zero())
         }
     }
 
@@ -515,17 +517,17 @@ pub type NamedSyntaxExtension = (Name, SyntaxExtension);
 pub trait Resolver {
     fn next_node_id(&mut self) -> ast::NodeId;
     fn get_module_scope(&mut self, id: ast::NodeId) -> Mark;
-    fn eliminate_crate_var(&mut self, item: P<ast::Item>) -> P<ast::Item>;
-    fn is_whitelisted_legacy_custom_derive(&self, name: Name) -> bool;
 
     fn visit_expansion(&mut self, mark: Mark, expansion: &Expansion);
+    fn add_macro(&mut self, scope: Mark, def: ast::MacroDef, export: bool);
     fn add_ext(&mut self, ident: ast::Ident, ext: Rc<SyntaxExtension>);
     fn add_expansions_at_stmt(&mut self, id: ast::NodeId, macros: Vec<Mark>);
 
-    fn resolve_imports(&mut self);
     fn find_attr_invoc(&mut self, attrs: &mut Vec<Attribute>) -> Option<Attribute>;
     
     fn find_extension(&mut self, scope: Mark, name: ast::Name) -> Option<Rc<SyntaxExtension>>;
+    
+    fn find_mac(&mut self, scope: Mark, mac: &ast::Mac) -> Option<Rc<SyntaxExtension>>;
     fn resolve_macro(&mut self, scope: Mark, path: &ast::Path, force: bool)
                      -> Result<Rc<SyntaxExtension>, Determinacy>;
 }
@@ -541,18 +543,17 @@ pub struct DummyResolver;
 impl Resolver for DummyResolver {
     fn next_node_id(&mut self) -> ast::NodeId { ast::DUMMY_NODE_ID }
     fn get_module_scope(&mut self, _id: ast::NodeId) -> Mark { Mark::root() }
-    fn eliminate_crate_var(&mut self, item: P<ast::Item>) -> P<ast::Item> { item }
-    fn is_whitelisted_legacy_custom_derive(&self, _name: Name) -> bool { false }
 
     fn visit_expansion(&mut self, _invoc: Mark, _expansion: &Expansion) {}
+    fn add_macro(&mut self, _scope: Mark, _def: ast::MacroDef, _export: bool) {}
     fn add_ext(&mut self, _ident: ast::Ident, _ext: Rc<SyntaxExtension>) {}
     fn add_expansions_at_stmt(&mut self, _id: ast::NodeId, _macros: Vec<Mark>) {}
 
-    fn resolve_imports(&mut self) {}
     fn find_attr_invoc(&mut self, _attrs: &mut Vec<Attribute>) -> Option<Attribute> { None }
     fn find_extension(&mut self, _scope: Mark, _name: ast::Name) -> Option<Rc<SyntaxExtension>> {
         None
     }
+    fn find_mac(&mut self, _scope: Mark, _mac: &ast::Mac) -> Option<Rc<SyntaxExtension>> { None }
     fn resolve_macro(&mut self, _scope: Mark, _path: &ast::Path, _force: bool)
                      -> Result<Rc<SyntaxExtension>, Determinacy> {
         Err(Determinacy::Determined)
@@ -571,7 +572,9 @@ pub struct ExpansionData {
     pub depth: usize,
     pub backtrace: ExpnId,
     pub module: Rc<ModuleData>,
-    pub directory_ownership: DirectoryOwnership,
+
+    
+    pub no_noninline_mod: bool,
 }
 
 
@@ -602,7 +605,7 @@ impl<'a> ExtCtxt<'a> {
                 depth: 0,
                 backtrace: NO_EXPANSION,
                 module: Rc::new(ModuleData { mod_path: Vec::new(), directory: PathBuf::new() }),
-                directory_ownership: DirectoryOwnership::Owned,
+                no_noninline_mod: false,
             },
         }
     }
@@ -620,9 +623,7 @@ impl<'a> ExtCtxt<'a> {
 
     pub fn new_parser_from_tts(&self, tts: &[tokenstream::TokenTree])
         -> parser::Parser<'a> {
-        let mut parser = parse::tts_to_parser(self.parse_sess, tts.to_vec());
-        parser.allow_interpolated_tts = false; 
-        parser
+        parse::tts_to_parser(self.parse_sess, tts.to_vec())
     }
     pub fn codemap(&self) -> &'a CodeMap { self.parse_sess.codemap() }
     pub fn parse_sess(&self) -> &'a parse::ParseSess { self.parse_sess }
@@ -644,7 +645,7 @@ impl<'a> ExtCtxt<'a> {
         loop {
             if self.codemap().with_expn_info(expn_id, |info| {
                 info.map_or(None, |i| {
-                    if i.callee.name() == "include" {
+                    if i.callee.name().as_str() == "include" {
                         
                         return None;
                     }
@@ -736,7 +737,7 @@ impl<'a> ExtCtxt<'a> {
         self.ecfg.trace_mac = x
     }
     pub fn ident_of(&self, st: &str) -> ast::Ident {
-        ast::Ident::from_str(st)
+        str_to_ident(st)
     }
     pub fn std_path(&self, components: &[&str]) -> Vec<ast::Ident> {
         let mut v = Vec::new();
@@ -747,7 +748,7 @@ impl<'a> ExtCtxt<'a> {
         return v
     }
     pub fn name_of(&self, st: &str) -> ast::Name {
-        Symbol::intern(st)
+        token::intern(st)
     }
 }
 
@@ -755,7 +756,7 @@ impl<'a> ExtCtxt<'a> {
 
 
 pub fn expr_to_spanned_string(cx: &mut ExtCtxt, expr: P<ast::Expr>, err_msg: &str)
-                              -> Option<Spanned<(Symbol, ast::StrStyle)>> {
+                              -> Option<Spanned<(InternedString, ast::StrStyle)>> {
     
     let expr = expr.map(|mut expr| {
         expr.span.expn_id = cx.backtrace();
@@ -766,7 +767,7 @@ pub fn expr_to_spanned_string(cx: &mut ExtCtxt, expr: P<ast::Expr>, err_msg: &st
     let expr = cx.expander().fold_expr(expr);
     match expr.node {
         ast::ExprKind::Lit(ref l) => match l.node {
-            ast::LitKind::Str(s, style) => return Some(respan(expr.span, (s, style))),
+            ast::LitKind::Str(ref s, style) => return Some(respan(expr.span, (s.clone(), style))),
             _ => cx.span_err(l.span, err_msg)
         },
         _ => cx.span_err(expr.span, err_msg)
@@ -775,7 +776,7 @@ pub fn expr_to_spanned_string(cx: &mut ExtCtxt, expr: P<ast::Expr>, err_msg: &st
 }
 
 pub fn expr_to_string(cx: &mut ExtCtxt, expr: P<ast::Expr>, err_msg: &str)
-                      -> Option<(Symbol, ast::StrStyle)> {
+                      -> Option<(InternedString, ast::StrStyle)> {
     expr_to_spanned_string(cx, expr, err_msg).map(|s| s.node)
 }
 

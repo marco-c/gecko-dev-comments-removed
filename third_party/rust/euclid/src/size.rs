@@ -227,11 +227,6 @@ impl<T: NumCast + Copy, Unit> TypedSize2D<T, Unit> {
     }
 }
 
-
-pub fn size2<T, U>(w: T, h: T) -> TypedSize2D<T, U> {
-    TypedSize2D::new(w, h)
-}
-
 #[cfg(test)]
 mod size2d {
     use super::Size2D;

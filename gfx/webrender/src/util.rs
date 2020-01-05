@@ -2,10 +2,8 @@
 
 
 
-use euclid::{Point2D, Rect, Size2D};
-use euclid::{TypedRect, TypedPoint2D, TypedSize2D, TypedPoint4D, TypedMatrix4D};
-use webrender_traits::{DeviceIntRect, DeviceIntPoint, DeviceIntSize, DeviceIntLength};
-use webrender_traits::{LayerRect, WorldPoint4D, LayerPoint4D, LayerToWorldTransform};
+use euclid::{Matrix4D, Point2D, Point4D, Rect, Size2D};
+use internal_types::{DeviceRect, DevicePoint, DeviceSize, DeviceLength};
 use num_traits::Zero;
 use time::precise_time_ns;
 
@@ -34,9 +32,9 @@ impl Drop for ProfileScope {
 }
 
 
-pub trait MatrixHelpers<Src, Dst> {
-    fn transform_point_and_perspective_project(&self, point: &TypedPoint4D<f32, Src>) -> TypedPoint2D<f32, Dst>;
-    fn transform_rect(&self, rect: &TypedRect<f32, Src>) -> TypedRect<f32, Dst>;
+pub trait MatrixHelpers {
+    fn transform_point_and_perspective_project(&self, point: &Point4D<f32>) -> Point2D<f32>;
+    fn transform_rect(&self, rect: &Rect<f32>) -> Rect<f32>;
 
     
     
@@ -48,23 +46,23 @@ pub trait MatrixHelpers<Src, Dst> {
 
     
     
-    fn reset_after_transforming_rect(&self) -> TypedMatrix4D<f32, Src, Dst>;
+    fn reset_after_transforming_rect(&self) -> Matrix4D<f32>;
 
     fn is_identity(&self) -> bool;
 }
 
-impl<Src, Dst> MatrixHelpers<Src, Dst> for TypedMatrix4D<f32, Src, Dst> {
-    fn transform_point_and_perspective_project(&self, point: &TypedPoint4D<f32, Src>) -> TypedPoint2D<f32, Dst> {
+impl MatrixHelpers for Matrix4D<f32> {
+    fn transform_point_and_perspective_project(&self, point: &Point4D<f32>) -> Point2D<f32> {
         let point = self.transform_point4d(point);
-        TypedPoint2D::new(point.x / point.w, point.y / point.w)
+        Point2D::new(point.x / point.w, point.y / point.w)
     }
 
-    fn transform_rect(&self, rect: &TypedRect<f32, Src>) -> TypedRect<f32, Dst> {
+    fn transform_rect(&self, rect: &Rect<f32>) -> Rect<f32> {
         let top_left = self.transform_point(&rect.origin);
         let top_right = self.transform_point(&rect.top_right());
         let bottom_left = self.transform_point(&rect.bottom_left());
         let bottom_right = self.transform_point(&rect.bottom_right());
-        TypedRect::from_points(&[top_left, top_right, bottom_right, bottom_left])
+        Rect::from_points(&top_left, &top_right, &bottom_right, &bottom_left)
     }
 
     fn can_losslessly_transform_a_2d_rect(&self) -> bool {
@@ -75,8 +73,8 @@ impl<Src, Dst> MatrixHelpers<Src, Dst> for TypedMatrix4D<f32, Src, Dst> {
         self.m12 == 0.0 && self.m21 == 0.0
     }
 
-    fn reset_after_transforming_rect(&self) -> TypedMatrix4D<f32, Src, Dst> {
-        TypedMatrix4D::row_major(
+    fn reset_after_transforming_rect(&self) -> Matrix4D<f32> {
+        Matrix4D::row_major(
             1.0,      0.0,      self.m13, 0.0,
             0.0,      1.0,      self.m23, 0.0,
             self.m31, self.m32, self.m33, self.m34,
@@ -85,17 +83,44 @@ impl<Src, Dst> MatrixHelpers<Src, Dst> for TypedMatrix4D<f32, Src, Dst> {
     }
 
     fn is_identity(&self) -> bool {
-        *self == TypedMatrix4D::identity()
+        *self == Matrix4D::identity()
     }
 }
 
-pub trait RectHelpers<U> where Self: Sized {
+pub trait RectHelpers where Self: Sized {
+
+    fn from_points(a: &Point2D<f32>,
+                   b: &Point2D<f32>,
+                   c: &Point2D<f32>,
+                   d: &Point2D<f32>)
+                   -> Self;
     fn contains_rect(&self, other: &Self) -> bool;
     fn from_floats(x0: f32, y0: f32, x1: f32, y1: f32) -> Self;
     fn is_well_formed_and_nonempty(&self) -> bool;
 }
 
-impl<U> RectHelpers<U> for TypedRect<f32, U> {
+impl RectHelpers for Rect<f32> {
+
+    fn from_points(a: &Point2D<f32>, b: &Point2D<f32>, c: &Point2D<f32>, d: &Point2D<f32>) -> Rect<f32> {
+        let (mut min_x, mut min_y) = (a.x, a.y);
+        let (mut max_x, mut max_y) = (min_x, min_y);
+        for point in &[b, c, d] {
+            if point.x < min_x {
+                min_x = point.x
+            }
+            if point.x > max_x {
+                max_x = point.x
+            }
+            if point.y < min_y {
+                min_y = point.y
+            }
+            if point.y > max_y {
+                max_y = point.y
+            }
+        }
+        Rect::new(Point2D::new(min_x, min_y),
+                  Size2D::new(max_x - min_x, max_y - min_y))
+    }
 
     fn contains_rect(&self, other: &Self) -> bool {
         self.origin.x <= other.origin.x &&
@@ -104,9 +129,9 @@ impl<U> RectHelpers<U> for TypedRect<f32, U> {
         self.max_y() >= other.max_y()
     }
 
-    fn from_floats(x0: f32, y0: f32, x1: f32, y1: f32) -> Self {
-        TypedRect::new(TypedPoint2D::new(x0, y0),
-                       TypedSize2D::new(x1 - x0, y1 - y0))
+    fn from_floats(x0: f32, y0: f32, x1: f32, y1: f32) -> Rect<f32> {
+        Rect::new(Point2D::new(x0, y0),
+                  Size2D::new(x1 - x0, y1 - y0))
     }
 
     fn is_well_formed_and_nonempty(&self) -> bool {
@@ -116,17 +141,17 @@ impl<U> RectHelpers<U> for TypedRect<f32, U> {
 
 
 
-pub fn rect_is_empty<N:PartialEq + Zero, U>(rect: &TypedRect<N, U>) -> bool {
+pub fn rect_is_empty<N:PartialEq + Zero>(rect: &Rect<N>) -> bool {
     rect.size.width == Zero::zero() || rect.size.height == Zero::zero()
 }
 
 #[inline]
-pub fn rect_from_points(x0: DeviceIntLength,
-                        y0: DeviceIntLength,
-                        x1: DeviceIntLength,
-                        y1: DeviceIntLength) -> DeviceIntRect {
-    DeviceIntRect::new(DeviceIntPoint::from_lengths(x0, y0),
-                       DeviceIntSize::from_lengths(x1 - x0, y1 - y0))
+pub fn rect_from_points(x0: DeviceLength,
+                        y0: DeviceLength,
+                        x1: DeviceLength,
+                        y1: DeviceLength) -> DeviceRect {
+    DeviceRect::new(DevicePoint::from_lengths(x0, y0),
+                    DeviceSize::from_lengths(x1 - x0, y1 - y0))
 }
 
 #[inline]
@@ -142,9 +167,9 @@ pub fn lerp(a: f32, b: f32, t: f32) -> f32 {
     (b - a) * t + a
 }
 
-pub fn subtract_rect<U>(rect: &TypedRect<f32, U>,
-                        other: &TypedRect<f32, U>,
-                        results: &mut Vec<TypedRect<f32, U>>) {
+pub fn subtract_rect(rect: &Rect<f32>,
+                     other: &Rect<f32>,
+                     results: &mut Vec<Rect<f32>>) {
     results.clear();
 
     let int = rect.intersection(other);
@@ -160,19 +185,19 @@ pub fn subtract_rect<U>(rect: &TypedRect<f32, U>,
             let ox1 = ox0 + int.size.width;
             let oy1 = oy0 + int.size.height;
 
-            let r = TypedRect::from_untyped(&rect_from_points_f(rx0, ry0, ox0, ry1));
+            let r = rect_from_points_f(rx0, ry0, ox0, ry1);
             if r.size.width > 0.0 && r.size.height > 0.0 {
                 results.push(r);
             }
-            let r = TypedRect::from_untyped(&rect_from_points_f(ox0, ry0, ox1, oy0));
+            let r = rect_from_points_f(ox0, ry0, ox1, oy0);
             if r.size.width > 0.0 && r.size.height > 0.0 {
                 results.push(r);
             }
-            let r = TypedRect::from_untyped(&rect_from_points_f(ox0, oy1, ox1, ry1));
+            let r = rect_from_points_f(ox0, oy1, ox1, ry1);
             if r.size.width > 0.0 && r.size.height > 0.0 {
                 results.push(r);
             }
-            let r = TypedRect::from_untyped(&rect_from_points_f(ox1, ry0, rx1, ry1));
+            let r = rect_from_points_f(ox1, ry0, rx1, ry1);
             if r.size.width > 0.0 && r.size.height > 0.0 {
                 results.push(r);
             }
@@ -191,17 +216,16 @@ pub enum TransformedRectKind {
 
 #[derive(Debug, Clone)]
 pub struct TransformedRect {
-    pub local_rect: LayerRect,
-    pub bounding_rect: DeviceIntRect,
-    pub inner_rect: DeviceIntRect,
-    pub vertices: [WorldPoint4D; 4],
+    pub local_rect: Rect<f32>,
+    pub bounding_rect: DeviceRect,
+    pub vertices: [Point4D<f32>; 4],
     pub kind: TransformedRectKind,
 }
 
 impl TransformedRect {
-    pub fn new(rect: &LayerRect,
-               transform: &LayerToWorldTransform,
-               device_pixel_ratio: f32) -> TransformedRect {
+    pub fn new(rect: &Rect<f32>,
+           transform: &Matrix4D<f32>,
+           device_pixel_ratio: f32) -> TransformedRect {
 
         let kind = if transform.can_losslessly_transform_and_perspective_project_a_2d_rect() {
             TransformedRectKind::AxisAligned
@@ -244,53 +268,50 @@ impl TransformedRect {
 
 
                 let vertices = [
-                    transform.transform_point4d(&LayerPoint4D::new(rect.origin.x,
-                                                                   rect.origin.y,
-                                                                   0.0,
-                                                                   1.0)),
-                    transform.transform_point4d(&LayerPoint4D::new(rect.bottom_left().x,
-                                                                   rect.bottom_left().y,
-                                                                   0.0,
-                                                                   1.0)),
-                    transform.transform_point4d(&LayerPoint4D::new(rect.bottom_right().x,
-                                                                   rect.bottom_right().y,
-                                                                   0.0,
-                                                                   1.0)),
-                    transform.transform_point4d(&LayerPoint4D::new(rect.top_right().x,
-                                                                   rect.top_right().y,
-                                                                   0.0,
-                                                                   1.0)),
+                    transform.transform_point4d(&Point4D::new(rect.origin.x,
+                                                              rect.origin.y,
+                                                              0.0,
+                                                              1.0)),
+                    transform.transform_point4d(&Point4D::new(rect.bottom_left().x,
+                                                              rect.bottom_left().y,
+                                                              0.0,
+                                                              1.0)),
+                    transform.transform_point4d(&Point4D::new(rect.bottom_right().x,
+                                                              rect.bottom_right().y,
+                                                              0.0,
+                                                              1.0)),
+                    transform.transform_point4d(&Point4D::new(rect.top_right().x,
+                                                              rect.top_right().y,
+                                                              0.0,
+                                                              1.0)),
                 ];
 
-                let (mut xs, mut ys) = ([0.0; 4], [0.0; 4]);
 
-                for (vertex, (x, y)) in vertices.iter().zip(xs.iter_mut().zip(ys.iter_mut())) {
+                let mut screen_min : Point2D<f32> = Point2D::new(10000000.0, 10000000.0);
+                let mut screen_max : Point2D<f32>  = Point2D::new(-10000000.0, -10000000.0);
+
+                for vertex in &vertices {
                     let inv_w = 1.0 / vertex.w;
-                    *x = vertex.x * inv_w;
-                    *y = vertex.y * inv_w;
+                    let vx = vertex.x * inv_w;
+                    let vy = vertex.y * inv_w;
+                    screen_min.x = screen_min.x.min(vx);
+                    screen_min.y = screen_min.y.min(vy);
+                    screen_max.x = screen_max.x.max(vx);
+                    screen_max.y = screen_max.y.max(vy);
                 }
 
-                xs.sort_by(|a, b| a.partial_cmp(b).unwrap());
-                ys.sort_by(|a, b| a.partial_cmp(b).unwrap());
+                let screen_min_dp = DevicePoint::new((screen_min.x * device_pixel_ratio).floor() as i32,
+                                                     (screen_min.y * device_pixel_ratio).floor() as i32);
+                let screen_max_dp = DevicePoint::new((screen_max.x * device_pixel_ratio).ceil() as i32,
+                                                     (screen_max.y * device_pixel_ratio).ceil() as i32);
 
-                let outer_min_dp = DeviceIntPoint::new((xs[0] * device_pixel_ratio).floor() as i32,
-                                                       (ys[0] * device_pixel_ratio).floor() as i32);
-                let outer_max_dp = DeviceIntPoint::new((xs[3] * device_pixel_ratio).ceil() as i32,
-                                                       (ys[3] * device_pixel_ratio).ceil() as i32);
-                let inner_min_dp = DeviceIntPoint::new((xs[1] * device_pixel_ratio).ceil() as i32,
-                                                       (ys[1] * device_pixel_ratio).ceil() as i32);
-                let inner_max_dp = DeviceIntPoint::new((xs[2] * device_pixel_ratio).floor() as i32,
-                                                       (ys[2] * device_pixel_ratio).floor() as i32);
+                let screen_rect_dp = DeviceRect::new(screen_min_dp, DeviceSize::new(screen_max_dp.x - screen_min_dp.x,
+                                                                                    screen_max_dp.y - screen_min_dp.y));
 
                 TransformedRect {
                     local_rect: *rect,
                     vertices: vertices,
-                    bounding_rect: DeviceIntRect::new(outer_min_dp,
-                                                      DeviceIntSize::new(outer_max_dp.x - outer_min_dp.x,
-                                                                         outer_max_dp.y - outer_min_dp.y)),
-                    inner_rect: DeviceIntRect::new(inner_min_dp,
-                                                   DeviceIntSize::new(inner_max_dp.x - inner_min_dp.x,
-                                                                      inner_max_dp.y - inner_min_dp.y)),
+                    bounding_rect: screen_rect_dp,
                     kind: kind,
                 }
                 
