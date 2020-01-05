@@ -52,9 +52,7 @@ HttpChannelParent::HttpChannelParent(const PBrowserOrId& iframeEmbedding,
                                      nsILoadContext* aLoadContext,
                                      PBOverrideStatus aOverrideStatus)
   : mIPCClosed(false)
-  , mStoredStatus(NS_OK)
-  , mStoredProgress(0)
-  , mStoredProgressMax(0)
+  , mIgnoreProgress(false)
   , mSentRedirect1Begin(false)
   , mSentRedirect1BeginFailed(false)
   , mReceivedRedirect2Verify(false)
@@ -1257,6 +1255,10 @@ HttpChannelParent::OnDataAvailable(nsIRequest *aRequest,
   nsresult channelStatus = NS_OK;
   mChannel->GetStatus(&channelStatus);
 
+  nsresult transportStatus =
+    (mChannel->IsReadingFromCache()) ? NS_NET_STATUS_READING
+                                     : NS_NET_STATUS_RECEIVING_FROM;
+
   static uint32_t const kCopyChunkSize = 128 * 1024;
   uint32_t toRead = std::min<uint32_t>(aCount, kCopyChunkSize);
 
@@ -1272,12 +1274,7 @@ HttpChannelParent::OnDataAvailable(nsIRequest *aRequest,
       return rv;
     }
 
-    
-    
-    
-    
-    if (mIPCClosed || !SendOnTransportAndData(channelStatus, mStoredStatus,
-                                              mStoredProgress, mStoredProgressMax,
+    if (mIPCClosed || !SendOnTransportAndData(channelStatus, transportStatus,
                                               aOffset, toRead, data)) {
       return NS_ERROR_UNEXPECTED;
     }
@@ -1301,18 +1298,16 @@ HttpChannelParent::OnProgress(nsIRequest *aRequest,
                               int64_t aProgressMax)
 {
   
+  if (mIgnoreProgress) {
+    mIgnoreProgress = false;
+    return NS_OK;
+  }
+
   
-  if (mStoredStatus == NS_NET_STATUS_RECEIVING_FROM ||
-      mStoredStatus == NS_NET_STATUS_READING)
-  {
-    mStoredProgress = aProgress;
-    mStoredProgressMax = aProgressMax;
-  } else {
-    
-    
-    
-    if (mIPCClosed || !SendOnProgress(aProgress, aProgressMax))
-      return NS_ERROR_UNEXPECTED;
+  
+  
+  if (mIPCClosed || !SendOnProgress(aProgress, aProgressMax)) {
+    return NS_ERROR_UNEXPECTED;
   }
 
   return NS_OK;
@@ -1326,14 +1321,19 @@ HttpChannelParent::OnStatus(nsIRequest *aRequest,
 {
   
   if (aStatus == NS_NET_STATUS_RECEIVING_FROM ||
-      aStatus == NS_NET_STATUS_READING)
-  {
-    mStoredStatus = aStatus;
+      aStatus == NS_NET_STATUS_READING) {
+    
+    
+    
+    mIgnoreProgress = true;
     return NS_OK;
   }
+
   
-  if (mIPCClosed || !SendOnStatus(aStatus))
+  if (mIPCClosed || !SendOnStatus(aStatus)) {
     return NS_ERROR_UNEXPECTED;
+  }
+
   return NS_OK;
 }
 

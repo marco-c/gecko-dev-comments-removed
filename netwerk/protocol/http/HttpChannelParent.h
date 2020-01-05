@@ -223,9 +223,8 @@ private:
 
   
   
-  nsresult mStoredStatus;
-  int64_t mStoredProgress;
-  int64_t mStoredProgressMax;
+  
+  bool mIgnoreProgress              : 1;
 
   bool mSentRedirect1Begin          : 1;
   bool mSentRedirect1BeginFailed    : 1;

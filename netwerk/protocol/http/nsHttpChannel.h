@@ -267,6 +267,10 @@ public:
     bool AwaitingCacheCallbacks();
     void SetCouldBeSynthesized();
 
+    
+    
+    bool IsReadingFromCache() const { return mIsReadingFromCache; }
+
 private: 
     RefPtr<TransactionObserver> mTransactionObserver;
 public:
@@ -597,6 +601,10 @@ private:
     HttpChannelSecurityWarningReporter* mWarningReporter;
 
     RefPtr<ADivertableParentChannel> mParentChannel;
+
+    
+    Atomic<bool> mIsReadingFromCache;
+
 protected:
     virtual void DoNotifyListenerCleanup() override;
 
