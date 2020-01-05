@@ -41,11 +41,7 @@ public:
   
   nsresult InitTimer(nsIEventTarget* aTarget, uint32_t aDelay);
 
-  enum class Reason
-  {
-    eTimeoutOrInterval,
-    eIdleCallbackTimeout,
-  };
+  enum class Reason { eTimeoutOrInterval, eIdleCallbackTimeout };
 
 #ifdef DEBUG
   bool HasRefCnt(uint32_t aCount) const;
@@ -80,8 +76,6 @@ public:
   
   bool mIsTracking;
 
-  
-  
   Reason mReason;
 
   
