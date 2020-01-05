@@ -81,7 +81,7 @@ public:
 
     SkBinaryWriteBuffer(uint32_t flags = 0);
     SkBinaryWriteBuffer(void* initialStorage, size_t storageSize, uint32_t flags = 0);
-    ~SkBinaryWriteBuffer() override;
+    ~SkBinaryWriteBuffer();
 
     bool isCrossProcess() const override {
         return SkToBool(fFlags & kCrossProcess_Flag);
@@ -136,8 +136,10 @@ public:
 
 
 
-    void setPixelSerializer(sk_sp<SkPixelSerializer>);
-    SkPixelSerializer* getPixelSerializer() const { return fPixelSerializer.get(); }
+
+
+    void setPixelSerializer(SkPixelSerializer*);
+    SkPixelSerializer* getPixelSerializer() const { return fPixelSerializer; }
 
 private:
     const uint32_t fFlags;
@@ -146,7 +148,7 @@ private:
 
     SkRefCntSet* fTFSet;
 
-    sk_sp<SkPixelSerializer> fPixelSerializer;
+    SkAutoTUnref<SkPixelSerializer> fPixelSerializer;
 
     
     SkTHashMap<SkString, uint32_t> fFlattenableDict;

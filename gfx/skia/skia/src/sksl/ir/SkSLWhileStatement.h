@@ -4,7 +4,7 @@
 
 
 
-
+ 
 #ifndef SKSL_WHILESTATEMENT
 #define SKSL_WHILESTATEMENT
 
@@ -17,17 +17,17 @@ namespace SkSL {
 
 
 struct WhileStatement : public Statement {
-    WhileStatement(Position position, std::unique_ptr<Expression> test,
+    WhileStatement(Position position, std::unique_ptr<Expression> test, 
                    std::unique_ptr<Statement> statement)
     : INHERITED(position, kWhile_Kind)
     , fTest(std::move(test))
     , fStatement(std::move(statement)) {}
 
-    String description() const override {
+    std::string description() const override {
         return "while (" + fTest->description() + ") " + fStatement->description();
     }
 
-    std::unique_ptr<Expression> fTest;
+    const std::unique_ptr<Expression> fTest;
     const std::unique_ptr<Statement> fStatement;
 
     typedef Statement INHERITED;

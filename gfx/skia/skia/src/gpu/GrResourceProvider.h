@@ -8,10 +8,12 @@
 #ifndef GrResourceProvider_DEFINED
 #define GrResourceProvider_DEFINED
 
+#include "GrBatchAtlas.h"
 #include "GrBuffer.h"
-#include "GrGpu.h"
+#include "GrTextureProvider.h"
 #include "GrPathRange.h"
 
+class GrBatchAtlas;
 class GrPath;
 class GrRenderTarget;
 class GrSingleOwner;
@@ -27,79 +29,16 @@ class SkTypeface;
 
 
 
-class GrResourceProvider {
+
+
+
+class GrResourceProvider : protected GrTextureProvider {
 public:
     GrResourceProvider(GrGpu* gpu, GrResourceCache* cache, GrSingleOwner* owner);
 
     template <typename T> T* findAndRefTByUniqueKey(const GrUniqueKey& key) {
         return static_cast<T*>(this->findAndRefResourceByUniqueKey(key));
     }
-
-    
-    
-
-    
-
-
-
-
-
-
-
-
-    sk_sp<GrTextureProxy> createMipMappedTexture(const GrSurfaceDesc& desc, SkBudgeted budgeted,
-                                                 const GrMipLevel* texels, int mipLevelCount,
-                                                 uint32_t flags = 0,
-                                                 SkDestinationSurfaceColorMode mipColorMode =
-                                                        SkDestinationSurfaceColorMode::kLegacy);
-
-    
-
-    void assignUniqueKeyToProxy(const GrUniqueKey& key, GrTextureProxy*);
-
-    
-    sk_sp<GrTextureProxy> findProxyByUniqueKey(const GrUniqueKey& key);
-
-    
-
-
-
-
-
-
-    GrTexture* createApproxTexture(const GrSurfaceDesc&, uint32_t flags);
-
-    
-
-    sk_sp<GrTexture> createTexture(const GrSurfaceDesc& desc, SkBudgeted budgeted,
-                                   uint32_t flags = 0);
-
-    
-    
-
-    
-
-
-
-
-
-
-
-    sk_sp<GrTexture> wrapBackendTexture(const GrBackendTextureDesc& desc,
-                                        GrWrapOwnership = kBorrow_GrWrapOwnership);
-
-    
-
-
-
-
-
-
-
-
-    sk_sp<GrRenderTarget> wrapBackendRenderTarget(const GrBackendRenderTargetDesc& desc);
-
-    static const int kMinScratchTextureSize;
 
     
 
@@ -149,24 +88,24 @@ public:
     GrPathRange* createGlyphs(const SkTypeface*, const SkScalerContextEffects&,
                               const SkDescriptor*, const GrStyle&);
 
-    
+    using GrTextureProvider::assignUniqueKeyToResource;
+    using GrTextureProvider::findAndRefResourceByUniqueKey;
+    using GrTextureProvider::findAndRefTextureByUniqueKey;
+    using GrTextureProvider::abandon;
+
     enum Flags {
-        kExact_Flag           = 0x1,
-
         
 
 
 
 
 
-        kNoPendingIO_Flag     = 0x2,
-
-        kNoCreate_Flag        = 0x4,
+        kNoPendingIO_Flag = 0x1,
 
         
 
 
-        kRequireGpuMemory_Flag = 0x8,
+        kRequireGpuMemory_Flag = 0x2,
     };
 
     
@@ -183,12 +122,37 @@ public:
     GrBuffer* createBuffer(size_t size, GrBufferType intendedType, GrAccessPattern, uint32_t flags,
                            const void* data = nullptr);
 
+    GrTexture* createApproxTexture(const GrSurfaceDesc& desc, uint32_t flags) {
+        SkASSERT(0 == flags || kNoPendingIO_Flag == flags);
+        return this->internalCreateApproxTexture(desc, flags);
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    GrBatchAtlas* createAtlas(GrPixelConfig, int width, int height, int numPlotsX, int numPlotsY,
+                              GrBatchAtlas::EvictionFunc func, void* data);
 
     
 
 
 
     GrStencilAttachment* attachStencilAttachment(GrRenderTarget* rt);
+
+    const GrCaps* caps() { return this->gpu()->caps(); }
 
      
 
@@ -199,63 +163,9 @@ public:
 
 
 
-     sk_sp<GrRenderTarget> wrapBackendTextureAsRenderTarget(const GrBackendTextureDesc& desc);
-
-    
-
-
-
-    void assignUniqueKeyToResource(const GrUniqueKey&, GrGpuResource*);
-
-    
-
-
-
-
-    GrGpuResource* findAndRefResourceByUniqueKey(const GrUniqueKey&);
-
-    sk_sp<GrSemaphore> SK_WARN_UNUSED_RESULT makeSemaphore();
-
-    
-    
-    void takeOwnershipOfSemaphore(sk_sp<GrSemaphore>);
-    
-    
-    
-    
-    void releaseOwnershipOfSemaphore(sk_sp<GrSemaphore>);
-
-    void abandon() {
-        fCache = nullptr;
-        fGpu = nullptr;
-    }
-
-    
-    
-    static bool IsFunctionallyExact(GrSurfaceProxy* proxy);
-
-    const GrCaps* caps() const { return fCaps.get(); }
+     GrRenderTarget* wrapBackendTextureAsRenderTarget(const GrBackendTextureDesc& desc);
 
 private:
-    GrTexture* findAndRefTextureByUniqueKey(const GrUniqueKey& key);
-    void assignUniqueKeyToTexture(const GrUniqueKey& key, GrTexture* texture) {
-        SkASSERT(key.isValid());
-        this->assignUniqueKeyToResource(key, texture);
-    }
-
-    GrTexture* refScratchTexture(const GrSurfaceDesc&, uint32_t scratchTextureFlags);
-
-    GrResourceCache* cache() { return fCache; }
-    const GrResourceCache* cache() const { return fCache; }
-
-    GrGpu* gpu() { return fGpu; }
-    const GrGpu* gpu() const { return fGpu; }
-
-    bool isAbandoned() const {
-        SkASSERT(SkToBool(fGpu) == SkToBool(fCache));
-        return !SkToBool(fCache);
-    }
-
     const GrBuffer* createInstancedIndexBuffer(const uint16_t* pattern,
                                                int patternSize,
                                                int reps,
@@ -264,13 +174,9 @@ private:
 
     const GrBuffer* createQuadIndexBuffer();
 
-    GrResourceCache*    fCache;
-    GrGpu*              fGpu;
-    sk_sp<const GrCaps> fCaps;
-    GrUniqueKey         fQuadIndexBufferKey;
+    GrUniqueKey fQuadIndexBufferKey;
 
-    
-    SkDEBUGCODE(mutable GrSingleOwner* fSingleOwner;)
+    typedef GrTextureProvider INHERITED;
 };
 
 #endif

@@ -19,7 +19,7 @@ SK_C_PLUS_PLUS_BEGIN_GUARD
 
 
 
-SK_API sk_data_t* sk_data_new_empty(void);
+SK_API sk_data_t* sk_data_new_empty();
 
 
 

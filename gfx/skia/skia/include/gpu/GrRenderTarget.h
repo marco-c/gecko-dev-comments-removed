@@ -12,9 +12,9 @@
 #include "SkRect.h"
 
 class GrCaps;
-class GrRenderTargetOpList;
-class GrRenderTargetPriv;
+class GrDrawTarget;
 class GrStencilAttachment;
+class GrRenderTargetPriv;
 
 
 
@@ -87,6 +87,12 @@ public:
     const SkIRect& getResolveRect() const { return fResolveRect; }
 
     
+
+
+
+    void discard();
+
+    
     
     
     enum ResolveType {
@@ -109,6 +115,9 @@ public:
     GrRenderTargetPriv renderTargetPriv();
     const GrRenderTargetPriv renderTargetPriv() const;
 
+    void setLastDrawTarget(GrDrawTarget* dt);
+    GrDrawTarget* getLastDrawTarget() { return fLastDrawTarget; }
+
 protected:
     enum class Flags {
         kNone                = 0,
@@ -120,6 +129,7 @@ protected:
 
     GrRenderTarget(GrGpu*, const GrSurfaceDesc&, Flags = Flags::kNone,
                    GrStencilAttachment* = nullptr);
+    ~GrRenderTarget() override;
 
     
     void onAbandon() override;
@@ -133,13 +143,20 @@ private:
     virtual bool completeStencilAttachment() = 0;
 
     friend class GrRenderTargetPriv;
-    friend class GrRenderTargetProxy; 
 
     GrStencilAttachment*  fStencilAttachment;
     uint8_t               fMultisampleSpecsID;
     Flags                 fFlags;
 
     SkIRect               fResolveRect;
+
+    
+    
+    
+    
+    
+    
+    GrDrawTarget* fLastDrawTarget;
 
     typedef GrSurface INHERITED;
 };

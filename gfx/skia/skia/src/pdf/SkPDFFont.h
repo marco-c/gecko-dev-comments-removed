@@ -15,7 +15,6 @@
 #include "SkTDArray.h"
 #include "SkTypeface.h"
 
-class SkAutoGlyphCache;
 class SkPDFCanon;
 class SkPDFFont;
 
@@ -29,7 +28,7 @@ class SkPDFFont;
 class SkPDFFont : public SkPDFDict {
 
 public:
-    ~SkPDFFont() override;
+    virtual ~SkPDFFont();
 
     
 
@@ -47,8 +46,6 @@ public:
         return type == SkAdvancedTypefaceMetrics::kType1CID_Font ||
                type == SkAdvancedTypefaceMetrics::kTrueType_Font;
     }
-
-    static SkAutoGlyphCache MakeVectorCache(SkTypeface*, int* sizeOut);
 
     
 

@@ -5,10 +5,8 @@
 
 
 
-#include "SkAutoMalloc.h"
 #include "SkDistanceFieldGen.h"
 #include "SkPoint.h"
-#include "SkTemplates.h"
 
 struct DFData {
     float   fAlpha;      

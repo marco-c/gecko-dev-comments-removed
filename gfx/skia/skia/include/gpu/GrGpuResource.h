@@ -93,11 +93,6 @@ protected:
     bool internalHasRef() const { return SkToBool(fRefCnt); }
 
 private:
-    friend class GrIORefProxy; 
-    
-    template <typename T>
-    friend void testingOnly_getIORefCnts(const T*, int* refCnt, int* readCnt, int* writeCnt);
-
     void addPendingRead() const {
         this->validate();
         ++fPendingReads;
@@ -180,38 +175,12 @@ public:
         return fGpuMemorySize;
     }
 
-    class UniqueID {
-    public:
-        static UniqueID InvalidID() {
-            return UniqueID(uint32_t(SK_InvalidUniqueID));
-        }
-
-        UniqueID() {}
-
-        explicit UniqueID(uint32_t id) : fID(id) {}
-
-        uint32_t asUInt() const { return fID; }
-
-        bool operator==(const UniqueID& other) const {
-            return fID == other.fID;
-        }
-        bool operator!=(const UniqueID& other) const {
-            return !(*this == other);
-        }
-
-        void makeInvalid() { fID = SK_InvalidUniqueID; }
-        bool isInvalid() const { return SK_InvalidUniqueID == fID; }
-
-    protected:
-        uint32_t fID;
-    };
-
     
 
 
 
 
-    UniqueID uniqueID() const { return fUniqueID; }
+    uint32_t uniqueID() const { return fUniqueID; }
 
     
 
@@ -259,11 +228,6 @@ protected:
     
     
     void registerWithCacheWrapped();
-
-    
-    
-    
-    void detachFromCache();
 
     GrGpuResource(GrGpu*);
     virtual ~GrGpuResource();
@@ -315,30 +279,28 @@ private:
     void makeUnbudgeted();
 
 #ifdef SK_DEBUG
-    friend class GrGpu;  
+    friend class GrGpu; 
 #endif
-
     
     
-    int fCacheArrayIndex;
+    int                         fCacheArrayIndex;
     
     
-    uint32_t fTimestamp;
-    uint32_t fExternalFlushCntWhenBecamePurgeable;
-    GrStdSteadyClock::time_point fTimeWhenBecamePurgeable;
+    uint32_t                    fTimestamp;
+    uint32_t                    fExternalFlushCntWhenBecamePurgeable;
 
     static const size_t kInvalidGpuMemorySize = ~static_cast<size_t>(0);
-    GrScratchKey fScratchKey;
-    GrUniqueKey fUniqueKey;
+    GrScratchKey                fScratchKey;
+    GrUniqueKey                 fUniqueKey;
 
     
     
-    GrGpu* fGpu;
-    mutable size_t fGpuMemorySize;
+    GrGpu*                      fGpu;
+    mutable size_t              fGpuMemorySize;
 
-    SkBudgeted fBudgeted;
-    bool fRefsWrappedObjects;
-    const UniqueID fUniqueID;
+    SkBudgeted                  fBudgeted;
+    bool                        fRefsWrappedObjects;
+    const uint32_t              fUniqueID;
 
     typedef GrIORef<GrGpuResource> INHERITED;
     friend class GrIORef<GrGpuResource>; 

@@ -10,52 +10,50 @@
 
 SkRasterPipeline::SkRasterPipeline() {}
 
+void SkRasterPipeline::append(SkRasterPipeline::Fn body,
+                              SkRasterPipeline::Fn tail,
+                              void* ctx) {
+    
+    
+    (fBody.empty() ? fBodyStart : fBody.back().fNext) = body;
+    (fTail.empty() ? fTailStart : fTail.back().fNext) = tail;
+
+    
+    
+    fBody.push_back({ &JustReturn, ctx });
+    fTail.push_back({ &JustReturn, ctx });
+}
+
 void SkRasterPipeline::append(StockStage stage, void* ctx) {
-    SkASSERT(stage != from_srgb);
-    fStages.push_back({stage, ctx});
+    this->append(SkOpts::stages_4[stage], SkOpts::stages_1_3[stage], ctx);
 }
 
 void SkRasterPipeline::extend(const SkRasterPipeline& src) {
-    fStages.insert(fStages.end(),
-                   src.fStages.begin(), src.fStages.end());
-}
+    SkASSERT(src.fBody.count() == src.fTail.count());
 
-void SkRasterPipeline::run(size_t x, size_t n) const {
-    if (!fStages.empty()) {
-        if (this->run_with_jumper(x, n)) {
-            return;
-        }
-        SkOpts::run_pipeline(x,n, fStages.data(), SkToInt(fStages.size()));
+    Fn body = src.fBodyStart,
+       tail = src.fTailStart;
+    for (int i = 0; i < src.fBody.count(); i++) {
+        SkASSERT(src.fBody[i].fCtx == src.fTail[i].fCtx);
+        this->append(body, tail, src.fBody[i].fCtx);
+        body = src.fBody[i].fNext;
+        tail = src.fTail[i].fNext;
     }
 }
 
-void SkRasterPipeline::dump() const {
-    SkDebugf("SkRasterPipeline, %d stages\n", SkToInt(fStages.size()));
-    for (auto&& st : fStages) {
-        const char* name = "";
-        switch (st.stage) {
-        #define M(x) case x: name = #x; break;
-            SK_RASTER_PIPELINE_STAGES(M)
-        #undef M
-        }
-        SkDebugf("\t%s\n", name);
-    }
-    SkDebugf("\n");
-}
-
-
-
-
-
-
-
-
-
-void SkRasterPipeline::append_from_srgb(SkAlphaType at) {
+void SkRasterPipeline::run(size_t x, size_t n) {
     
-    fStages.push_back({from_srgb, nullptr});
+    Sk4f v;
 
-    if (at == kPremul_SkAlphaType) {
-        this->append(SkRasterPipeline::clamp_a);
+    while (n >= 4) {
+        fBodyStart(fBody.begin(), x,0, v,v,v,v, v,v,v,v);
+        x += 4;
+        n -= 4;
+    }
+    if (n > 0) {
+        fTailStart(fTail.begin(), x,n, v,v,v,v, v,v,v,v);
     }
 }
+
+void SK_VECTORCALL SkRasterPipeline::JustReturn(Stage*, size_t, size_t, Sk4f,Sk4f,Sk4f,Sk4f,
+                                                                        Sk4f,Sk4f,Sk4f,Sk4f) {}

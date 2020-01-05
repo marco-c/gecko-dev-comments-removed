@@ -18,7 +18,7 @@ SkBitmapRegionCodec::SkBitmapRegionCodec(SkAndroidCodec* codec)
 
 bool SkBitmapRegionCodec::decodeRegion(SkBitmap* bitmap, SkBRDAllocator* allocator,
         const SkIRect& desiredSubset, int sampleSize, SkColorType prefColorType,
-        bool requireUnpremul, sk_sp<SkColorSpace> prefColorSpace) {
+        bool requireUnpremul) {
 
     
     if (sampleSize < 1) {
@@ -52,13 +52,15 @@ bool SkBitmapRegionCodec::decodeRegion(SkBitmap* bitmap, SkBRDAllocator* allocat
     
     SkColorType dstColorType = fCodec->computeOutputColorType(prefColorType);
     SkAlphaType dstAlphaType = fCodec->computeOutputAlphaType(requireUnpremul);
-    sk_sp<SkColorSpace> dstColorSpace = fCodec->computeOutputColorSpace(dstColorType,
-                                                                        prefColorSpace);
-    SkImageInfo decodeInfo = SkImageInfo::Make(scaledSize.width(), scaledSize.height(),
-                                               dstColorType, dstAlphaType, dstColorSpace);
 
     
-    sk_sp<SkColorTable> colorTable(nullptr);
+    
+    sk_sp<SkColorSpace> colorSpace = nullptr;
+    SkImageInfo decodeInfo = SkImageInfo::Make(scaledSize.width(), scaledSize.height(),
+                                               dstColorType, dstAlphaType, colorSpace);
+
+    
+    SkAutoTUnref<SkColorTable> colorTable(nullptr);
     int maxColors = 256;
     SkPMColor colors[256];
     if (kIndex_8_SkColorType == dstColorType) {
@@ -133,6 +135,8 @@ bool SkBitmapRegionCodec::decodeRegion(SkBitmap* bitmap, SkBRDAllocator* allocat
 }
 
 bool SkBitmapRegionCodec::conversionSupported(SkColorType colorType) {
-    SkImageInfo dstInfo = fCodec->getInfo().makeColorType(colorType);
-    return conversion_possible(dstInfo, fCodec->getInfo());
+    
+    sk_sp<SkColorSpace> colorSpace = nullptr;
+    SkImageInfo dstInfo = fCodec->getInfo().makeColorType(colorType).makeColorSpace(colorSpace);
+    return conversion_possible_ignore_color_space(dstInfo, fCodec->getInfo());
 }

@@ -24,6 +24,9 @@ public:
 
     SkStreamAsset* openStream(const FontIdentity&) override;
 
+    
+    sk_sp<SkDataTable> getFamilyNames() override;
+
 protected:
     virtual bool isAccessible(const char* filename);
 

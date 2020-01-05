@@ -52,6 +52,21 @@ public:
 
     typedef bool (*InstallPixelRefProc)(const void* src, size_t length, SkBitmap* dst);
 
+#ifdef SK_SUPPORT_LEGACY_PICTUREINSTALLPIXELREF
+    
+
+
+
+
+
+
+
+    static sk_sp<SkPicture> MakeFromStream(SkStream*, InstallPixelRefProc proc);
+    static sk_sp<SkPicture> MakeFromStream(SkStream* stream, std::nullptr_t) {
+        return MakeFromStream(stream);
+    }
+#endif
+
     
 
 
@@ -167,6 +182,18 @@ public:
     static void SetPictureIOSecurityPrecautionsEnabled_Dangerous(bool set);
     static bool PictureIOSecurityPrecautionsEnabled();
 
+#ifdef SK_SUPPORT_LEGACY_PICTURE_PTR
+    static SkPicture* CreateFromStream(SkStream* stream, InstallPixelRefProc proc) {
+        return MakeFromStream(stream, proc).release();
+    }
+    static SkPicture* CreateFromStream(SkStream* stream) {
+        return MakeFromStream(stream).release();
+    }
+    static SkPicture* CreateFromBuffer(SkReadBuffer& rbuf) {
+        return MakeFromBuffer(rbuf).release();
+    }
+#endif
+
 private:
     
     SkPicture();
@@ -198,12 +225,10 @@ private:
     
     
     
-    
-    
 
     
     static const uint32_t     MIN_PICTURE_VERSION = 35;     
-    static const uint32_t CURRENT_PICTURE_VERSION = 52;
+    static const uint32_t CURRENT_PICTURE_VERSION = 50;
 
     static_assert(MIN_PICTURE_VERSION <= 41,
                   "Remove kFontFileName and related code from SkFontDescriptor.cpp.");

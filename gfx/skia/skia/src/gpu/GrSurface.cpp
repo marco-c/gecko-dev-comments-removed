@@ -7,28 +7,15 @@
 
 #include "GrSurface.h"
 #include "GrContext.h"
-#include "GrOpList.h"
 #include "GrSurfacePriv.h"
-#include "GrTexture.h"
 
-#include "SkGr.h"
-#include "SkMathPriv.h"
+#include "SkBitmap.h"
+#include "SkGrPriv.h"
+#include "SkImageEncoder.h"
+#include <stdio.h>
 
-GrSurface::~GrSurface() {
-    if (fLastOpList) {
-        fLastOpList->clearTarget();
-    }
-    SkSafeUnref(fLastOpList);
-
-    
-    SkASSERT(NULL == fReleaseProc);
-}
-
-size_t GrSurface::WorstCaseSize(const GrSurfaceDesc& desc, bool useNextPow2) {
+size_t GrSurface::WorstCaseSize(const GrSurfaceDesc& desc) {
     size_t size;
-
-    int width = useNextPow2 ? GrNextPow2(desc.fWidth) : desc.fWidth;
-    int height = useNextPow2 ? GrNextPow2(desc.fHeight) : desc.fHeight;
 
     bool isRenderTarget = SkToBool(desc.fFlags & kRenderTarget_GrSurfaceFlag);
     if (isRenderTarget) {
@@ -40,54 +27,21 @@ size_t GrSurface::WorstCaseSize(const GrSurfaceDesc& desc, bool useNextPow2) {
         }
         SkASSERT(kUnknown_GrPixelConfig != desc.fConfig);
         SkASSERT(!GrPixelConfigIsCompressed(desc.fConfig));
-        size_t colorBytes = (size_t) width * height * GrBytesPerPixel(desc.fConfig);
+        size_t colorBytes = GrBytesPerPixel(desc.fConfig);
+        SkASSERT(colorBytes > 0);
 
-        
-        
-        
-
-        size = colorValuesPerPixel * colorBytes;
-        size += colorBytes/3; 
+        size = (size_t) colorValuesPerPixel * desc.fWidth * desc.fHeight * colorBytes;
     } else {
         if (GrPixelConfigIsCompressed(desc.fConfig)) {
-            size = GrCompressedFormatDataSize(desc.fConfig, width, height);
+            size = GrCompressedFormatDataSize(desc.fConfig, desc.fWidth, desc.fHeight);
         } else {
-            size = (size_t) width * height * GrBytesPerPixel(desc.fConfig);
+            size = (size_t) desc.fWidth * desc.fHeight * GrBytesPerPixel(desc.fConfig);
         }
 
         size += size/3;  
     }
 
     return size;
-}
-
-size_t GrSurface::ComputeSize(const GrSurfaceDesc& desc,
-                              int colorSamplesPerPixel,
-                              bool hasMIPMaps,
-                              bool useNextPow2) {
-    size_t colorSize;
-
-    int width = useNextPow2 ? GrNextPow2(desc.fWidth) : desc.fWidth;
-    int height = useNextPow2 ? GrNextPow2(desc.fHeight) : desc.fHeight;
-
-    SkASSERT(kUnknown_GrPixelConfig != desc.fConfig);
-    if (GrPixelConfigIsCompressed(desc.fConfig)) {
-        colorSize = GrCompressedFormatDataSize(desc.fConfig, width, height);
-    } else {
-        colorSize = (size_t) width * height * GrBytesPerPixel(desc.fConfig);
-    }
-    SkASSERT(colorSize > 0);
-
-    size_t finalSize = colorSamplesPerPixel * colorSize;
-
-    if (hasMIPMaps) {
-        
-        
-        finalSize += colorSize/3;
-    }
-
-    SkASSERT(finalSize <= WorstCaseSize(desc, useNextPow2));
-    return finalSize;
 }
 
 template<typename T> static bool adjust_params(int surfaceWidth,
@@ -139,6 +93,63 @@ bool GrSurfacePriv::AdjustWritePixelParams(int surfaceWidth,
 
 
 
+bool GrSurface::writePixels(int left, int top, int width, int height,
+                            GrPixelConfig config, const void* buffer, size_t rowBytes,
+                            uint32_t pixelOpsFlags) {
+    
+    GrContext* context = this->getContext();
+    if (nullptr == context) {
+        return false;
+    }
+    return context->writeSurfacePixels(this, left, top, width, height, config, buffer,
+                                       rowBytes, pixelOpsFlags);
+}
+
+bool GrSurface::readPixels(int left, int top, int width, int height,
+                           GrPixelConfig config, void* buffer, size_t rowBytes,
+                           uint32_t pixelOpsFlags) {
+    
+    GrContext* context = this->getContext();
+    if (nullptr == context) {
+        return false;
+    }
+    return context->readSurfacePixels(this, left, top, width, height, config, buffer,
+                                      rowBytes, pixelOpsFlags);
+}
+
+
+
+bool GrSurface::savePixels(const char* filename) {
+    SkBitmap bm;
+    if (!bm.tryAllocPixels(SkImageInfo::MakeN32Premul(this->width(), this->height()))) {
+        return false;
+    }
+
+    bool result = this->readPixels(0, 0, this->width(), this->height(), kSkia8888_GrPixelConfig,
+                                   bm.getPixels());
+    if (!result) {
+        SkDebugf("------ failed to read pixels for %s\n", filename);
+        return false;
+    }
+
+    
+    remove(filename);
+
+    if (!SkImageEncoder::EncodeFile(filename, bm, SkImageEncoder::kPNG_Type, 100)) {
+        SkDebugf("------ failed to encode %s\n", filename);
+        remove(filename);   
+        return false;
+    }
+
+    return true;
+}
+
+void GrSurface::flushWrites() {
+    if (!this->wasDestroyed()) {
+        this->getContext()->flushSurfaceWrites(this);
+    }
+}
+
 bool GrSurface::hasPendingRead() const {
     const GrTexture* thisTex = this->asTexture();
     if (thisTex && thisTex->internalHasPendingRead()) {
@@ -183,16 +194,4 @@ void GrSurface::onRelease() {
 void GrSurface::onAbandon() {
     this->invokeReleaseProc();
     this->INHERITED::onAbandon();
-}
-
-void GrSurface::setLastOpList(GrOpList* opList) {
-    if (fLastOpList) {
-        
-#ifdef ENABLE_MDB
-        SkASSERT(fLastOpList->isClosed());
-#endif
-        fLastOpList->clearTarget();
-    }
-
-    SkRefCnt_SafeAssign(fLastOpList, opList);
 }

@@ -9,9 +9,6 @@
 #define GrMemoryPool_DEFINED
 
 #include "GrTypes.h"
-#ifdef SK_DEBUG
-#include "SkTHash.h"
-#endif
 
 
 
@@ -23,13 +20,6 @@
 class GrMemoryPool {
 public:
     
-
-
-
-
-
-
-
 
 
 
@@ -57,16 +47,6 @@ public:
 
 
     size_t size() const { return fSize; }
-
-    
-
-
-    size_t preallocSize() const { return fHead->fSize; }
-
-    
-
-
-    constexpr static size_t kSmallestMinAllocSize = 1 << 10;
 
 private:
     struct BlockHeader;
@@ -97,93 +77,25 @@ private:
     struct AllocHeader {
 #ifdef SK_DEBUG
         uint32_t fSentinal;      
-        int32_t fID;             
 #endif
         BlockHeader* fHeader;    
     };
 
-    size_t                            fSize;
-    size_t                            fMinAllocSize;
-    BlockHeader*                      fHead;
-    BlockHeader*                      fTail;
-#ifdef SK_DEBUG
-    int                               fAllocationCnt;
-    int                               fAllocBlockCnt;
-    SkTHashSet<int32_t>               fAllocatedIDs;
-#endif
-
-protected:
     enum {
         
         kAlignment    = 8,
         kHeaderSize   = GR_CT_ALIGN_UP(sizeof(BlockHeader), kAlignment),
         kPerAllocPad  = GR_CT_ALIGN_UP(sizeof(AllocHeader), kAlignment),
     };
+    size_t                            fSize;
+    size_t                            fPreallocSize;
+    size_t                            fMinAllocSize;
+    BlockHeader*                      fHead;
+    BlockHeader*                      fTail;
+#ifdef SK_DEBUG
+    int                               fAllocationCnt;
+    int                               fAllocBlockCnt;
+#endif
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-template <class T>
-class GrObjectMemoryPool: public GrMemoryPool {
-public:
-    
-
-
-
-    GrObjectMemoryPool(size_t preallocCount, size_t minAllocCount)
-        : GrMemoryPool(CountToSize(preallocCount),
-                       CountToSize(SkTMax(minAllocCount, kSmallestMinAllocCount))) {
-    }
-
-    
-
-
-
-    T* allocate() { return static_cast<T*>(GrMemoryPool::allocate(sizeof(T))); }
-
-private:
-    constexpr static size_t kTotalObjectSize =
-        kPerAllocPad + GR_CT_ALIGN_UP(sizeof(T), kAlignment);
-
-    constexpr static size_t CountToSize(size_t count) {
-        return kHeaderSize + count * kTotalObjectSize;
-    }
-
-public:
-    
-
-
-    constexpr static size_t kSmallestMinAllocCount =
-        (GrMemoryPool::kSmallestMinAllocSize - kHeaderSize + kTotalObjectSize - 1) /
-            kTotalObjectSize;
-};
-
-template <class T>
-constexpr size_t GrObjectMemoryPool<T>::kSmallestMinAllocCount;
 
 #endif

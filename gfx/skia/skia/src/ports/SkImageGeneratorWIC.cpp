@@ -120,7 +120,7 @@ SkImageGenerator* SkImageGeneratorWIC::NewFromEncodedWIC(SkData* data) {
 
     
     
-    SkImageInfo info = SkImageInfo::MakeS32(width, height, alphaType);
+    SkImageInfo info = SkImageInfo::MakeN32(width, height, alphaType);
     return new SkImageGeneratorWIC(info, imagingFactory.release(), imageSource.release(), data);
 }
 
@@ -132,7 +132,7 @@ SkImageGeneratorWIC::SkImageGeneratorWIC(const SkImageInfo& info,
     , fData(SkRef(data))
 {}
 
-SkData* SkImageGeneratorWIC::onRefEncodedData(GrContext* ctx) {
+SkData* SkImageGeneratorWIC::onRefEncodedData(SK_REFENCODEDDATA_CTXPARAM) {
     return SkRef(fData.get());
 }
 

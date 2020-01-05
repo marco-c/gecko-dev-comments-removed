@@ -4,49 +4,26 @@
 
 
 
-
+ 
 #ifndef SKSL_CONSTRUCTOR
 #define SKSL_CONSTRUCTOR
 
 #include "SkSLExpression.h"
-#include "SkSLFloatLiteral.h"
-#include "SkSLIntLiteral.h"
-#include "SkSLIRGenerator.h"
 
 namespace SkSL {
 
 
 
 
-
-
-
-
-
-
 struct Constructor : public Expression {
-    Constructor(Position position, const Type& type,
+    Constructor(Position position, const Type& type, 
                 std::vector<std::unique_ptr<Expression>> arguments)
     : INHERITED(position, kConstructor_Kind, type)
     , fArguments(std::move(arguments)) {}
 
-    virtual std::unique_ptr<Expression> constantPropagate(
-                                                        const IRGenerator& irGenerator,
-                                                        const DefinitionMap& definitions) override {
-        if (fArguments.size() == 1 && fArguments[0]->fKind == Expression::kIntLiteral_Kind &&
-            
-            fType == *irGenerator.fContext.fFloat_Type) {
-            int64_t intValue = ((IntLiteral&) *fArguments[0]).fValue;
-            return std::unique_ptr<Expression>(new FloatLiteral(irGenerator.fContext,
-                                                                fPosition,
-                                                                intValue));
-        }
-        return nullptr;
-    }
-
-    String description() const override {
-        String result = fType.description() + "(";
-        String separator;
+    std::string description() const override {
+        std::string result = fType.description() + "(";
+        std::string separator = "";
         for (size_t i = 0; i < fArguments.size(); i++) {
             result += separator;
             result += fArguments[i]->description();
@@ -65,7 +42,7 @@ struct Constructor : public Expression {
         return true;
     }
 
-    std::vector<std::unique_ptr<Expression>> fArguments;
+    const std::vector<std::unique_ptr<Expression>> fArguments;
 
     typedef Expression INHERITED;
 };

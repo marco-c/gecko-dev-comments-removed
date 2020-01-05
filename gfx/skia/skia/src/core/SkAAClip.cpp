@@ -1037,10 +1037,8 @@ public:
 
     void addAntiRectRun(int x, int y, int width, int height,
                         SkAlpha leftAlpha, SkAlpha rightAlpha) {
-        
-        
-        
-        SkASSERT(fBounds.contains(x + width + (rightAlpha > 0 ? 1 : 0),
+        SkASSERT(fBounds.contains(x + width - 1 +
+                 (leftAlpha > 0 ? 1 : 0) + (rightAlpha > 0 ? 1 : 0),
                  y + height - 1));
         SkASSERT(width >= 0);
 
@@ -1050,9 +1048,6 @@ public:
             width++;
         } else if (leftAlpha > 0) {
           this->addRun(x++, y, leftAlpha, 1);
-        } else {
-          
-          x++;
         }
         if (rightAlpha == 0xFF) {
             width++;
@@ -1279,17 +1274,9 @@ public:
 
 
     void blitV(int x, int y, int height, SkAlpha alpha) override {
-        if (height == 1) {
-            
-            
-            const SkAlpha alphas[2] = {alpha, 0};
-            const int16_t runs[2] = {1, 0};
-            this->blitAntiH(x, y, alphas, runs);
-        } else {
-            this->recordMinY(y);
-            fBuilder->addColumn(x, y, alpha, height);
-            fLastY = y + height - 1;
-        }
+        this->recordMinY(y);
+        fBuilder->addColumn(x, y, alpha, height);
+        fLastY = y + height - 1;
     }
 
     void blitRect(int x, int y, int width, int height) override {
@@ -1333,14 +1320,10 @@ public:
             
             
             
-            
-            
-            
-            
             int localX = x;
             int localCount = count;
             if (x < fLeft) {
-                SkASSERT(0x10 > *alpha);
+                SkASSERT(0 == *alpha);
                 int gap = fLeft - x;
                 SkASSERT(gap <= count);
                 localX += gap;
@@ -1348,7 +1331,7 @@ public:
             }
             int right = x + count;
             if (right > fRight) {
-                SkASSERT(0x10 > *alpha);
+                SkASSERT(0 == *alpha);
                 localCount -= right - fRight;
                 SkASSERT(localCount >= 0);
             }
@@ -1403,31 +1386,21 @@ bool SkAAClip::setPath(const SkPath& path, const SkRegion* clip, bool doAA) {
         clip = &tmpClip;
     }
 
-    
-    
-    
-    SkRegion snugClip(*clip);
-
     if (path.isInverseFillType()) {
         ibounds = clip->getBounds();
     } else {
         if (ibounds.isEmpty() || !ibounds.intersect(clip->getBounds())) {
             return this->setEmpty();
         }
-        snugClip.op(ibounds, SkRegion::kIntersect_Op);
     }
 
     Builder        builder(ibounds);
     BuilderBlitter blitter(&builder);
 
     if (doAA) {
-        if (gSkUseAnalyticAA.load()) {
-            SkScan::AAAFillPath(path, snugClip, &blitter, true);
-        } else {
-            SkScan::AntiFillPath(path, snugClip, &blitter, true);
-        }
+        SkScan::AntiFillPath(path, *clip, &blitter, true);
     } else {
-        SkScan::FillPath(path, snugClip, &blitter);
+        SkScan::FillPath(path, *clip, &blitter);
     }
 
     blitter.finish();

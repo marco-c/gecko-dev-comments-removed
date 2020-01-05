@@ -22,6 +22,7 @@ SkData::SkData(const void* ptr, size_t size, ReleaseProc proc, void* context) {
 
 
 
+
 SkData::SkData(size_t size) {
     fPtr = (char*)(this + 1);   
     fSize = size;
@@ -69,12 +70,12 @@ sk_sp<SkData> SkData::PrivateNewWithCopy(const void* srcOrNull, size_t length) {
         sk_throw();
     }
 
-    void* storage = ::operator new (actualLength);
-    sk_sp<SkData> data(new (storage) SkData(length));
+    char* storage = (char*)sk_malloc_throw(actualLength);
+    SkData* data = new (storage) SkData(length);
     if (srcOrNull) {
         memcpy(data->writable_data(), srcOrNull, length);
     }
-    return data;
+    return sk_sp<SkData>(data);
 }
 
 void SkData::DummyReleaseProc(const void*, void*) {}
@@ -143,7 +144,8 @@ sk_sp<SkData> SkData::MakeFromFD(int fd) {
     if (nullptr == addr) {
         return nullptr;
     }
-    return SkData::MakeWithProc(addr, size, sk_mmap_releaseproc, reinterpret_cast<void*>(size));
+
+    return SkData::MakeWithProc(addr, size, sk_mmap_releaseproc, nullptr);
 }
 
 

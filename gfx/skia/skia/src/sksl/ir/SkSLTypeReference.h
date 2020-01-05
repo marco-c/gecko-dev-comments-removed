@@ -4,7 +4,7 @@
 
 
 
-
+ 
 #ifndef SKSL_TYPEREFERENCE
 #define SKSL_TYPEREFERENCE
 
@@ -22,8 +22,9 @@ struct TypeReference : public Expression {
     : INHERITED(position, kTypeReference_Kind, *context.fInvalid_Type)
     , fValue(type) {}
 
-    String description() const override {
-        return fValue.name();
+    std::string description() const override {
+        ASSERT(false);
+        return "<type>";
     }
 
     const Type& fValue;

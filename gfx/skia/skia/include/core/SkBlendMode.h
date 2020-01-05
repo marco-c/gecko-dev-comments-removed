@@ -8,8 +8,6 @@
 #ifndef SkBlendMode_DEFINED
 #define SkBlendMode_DEFINED
 
-#include "SkTypes.h"
-
 enum class SkBlendMode {
     kClear,    
     kSrc,      
@@ -49,10 +47,5 @@ enum class SkBlendMode {
     kLuminosity,
     kLastMode = kLuminosity
 };
-
-
-
-
-SK_API const char* SkBlendMode_Name(SkBlendMode);
 
 #endif

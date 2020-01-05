@@ -126,12 +126,6 @@ struct SkVector4 {
     }
 };
 
-
-
-
-
-
-
 class SK_API SkMatrix44 {
 public:
 
@@ -497,10 +491,7 @@ private:
         return 0 == fTypeMask;
     }
 
-    inline const SkMScalar* values() const { return &fMat[0][0]; }
-
     friend class SkColorSpace;
-    friend class SkColorSpace_XYZ;
 };
 
 #endif

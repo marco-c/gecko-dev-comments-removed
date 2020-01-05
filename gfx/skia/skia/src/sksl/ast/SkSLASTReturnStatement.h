@@ -4,7 +4,7 @@
 
 
 
-
+ 
 #ifndef SKSL_ASTRETURNSTATEMENT
 #define SKSL_ASTRETURNSTATEMENT
 
@@ -21,12 +21,12 @@ struct ASTReturnStatement : public ASTStatement {
     : INHERITED(position, kReturn_Kind)
     , fExpression(std::move(expression)) {}
 
-    String description() const override {
-        String result("return");
+    std::string description() const override {
+        std::string result("return");
         if (fExpression) {
             result += " " + fExpression->description();
         }
-        return result + ";";
+        return result + ";";        
     }
 
     const std::unique_ptr<ASTExpression> fExpression;

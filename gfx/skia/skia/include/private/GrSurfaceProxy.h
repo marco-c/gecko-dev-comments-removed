@@ -9,189 +9,13 @@
 #define GrSurfaceProxy_DEFINED
 
 #include "GrGpuResource.h"
-#include "GrSurface.h"
-
 #include "SkRect.h"
 
-class GrCaps;
-class GrRenderTargetOpList;
-class GrRenderTargetProxy;
-class GrResourceProvider;
-class GrSurfaceContext;
-class GrSurfaceProxyPriv;
-class GrTextureOpList;
 class GrTextureProxy;
+class GrRenderTargetProxy;
 
-
-
-
-
-
-class GrIORefProxy : public SkNoncopyable {
+class GrSurfaceProxy : public GrIORef<GrSurfaceProxy> {
 public:
-    void ref() const {
-        this->validate();
-
-        ++fRefCnt;
-        if (fTarget) {
-            fTarget->ref();
-        }
-    }
-
-    void unref() const {
-        this->validate();
-
-        if (fTarget) {
-            fTarget->unref();
-        }
-
-        if (!(--fRefCnt)) {
-            delete this;
-            return;
-        }
-
-        this->validate();
-    }
-
-    void validate() const {
-#ifdef SK_DEBUG    
-        SkASSERT(fRefCnt >= 1);
-        SkASSERT(fPendingReads >= 0);
-        SkASSERT(fPendingWrites >= 0);
-        SkASSERT(fRefCnt + fPendingReads + fPendingWrites >= 1);
-
-        if (fTarget) {
-            SkASSERT(!fPendingReads && !fPendingWrites);
-            
-            
-            
-            SkASSERT(fTarget->fRefCnt >= fRefCnt);
-        }
-#endif
-    }
-
-    int32_t getProxyRefCnt_TestOnly() const;
-    int32_t getBackingRefCnt_TestOnly() const;
-    int32_t getPendingReadCnt_TestOnly() const;
-    int32_t getPendingWriteCnt_TestOnly() const;
-
-protected:
-    GrIORefProxy() : fTarget(nullptr), fRefCnt(1), fPendingReads(0), fPendingWrites(0) {}
-    GrIORefProxy(sk_sp<GrSurface> surface) : fRefCnt(1), fPendingReads(0), fPendingWrites(0) {
-        
-        
-        fTarget = surface.release();
-    }
-    virtual ~GrIORefProxy() {
-        
-        
-    }
-
-    
-    
-    
-    void transferRefs() {
-        SkASSERT(fTarget);
-
-        fTarget->fRefCnt += (fRefCnt-1); 
-        fTarget->fPendingReads += fPendingReads;
-        fTarget->fPendingWrites += fPendingWrites;
-
-        fPendingReads = 0;
-        fPendingWrites = 0;
-    }
-
-    bool internalHasPendingIO() const {
-        if (fTarget) {
-            return fTarget->internalHasPendingIO();
-        }
-
-        return SkToBool(fPendingWrites | fPendingReads);
-    }
-
-    bool internalHasPendingWrite() const {
-        if (fTarget) {
-            return fTarget->internalHasPendingWrite();
-        }
-
-        return SkToBool(fPendingWrites);
-    }
-
-    
-    
-    GrSurface* fTarget;
-
-private:
-    
-    friend class GrGpuResourceRef;
-    template <typename, GrIOType> friend class GrPendingIOResource;
-
-    void addPendingRead() const {
-        this->validate();
-
-        if (fTarget) {
-            fTarget->addPendingRead();
-            return;
-        }
-
-        ++fPendingReads;
-    }
-
-    void completedRead() const {
-        this->validate();
-
-        if (fTarget) {
-            fTarget->completedRead();
-            return;
-        }
-    
-        SkFAIL("How was the read completed if the Proxy hasn't been instantiated?");
-    }
-
-    void addPendingWrite() const {
-        this->validate();
-
-        if (fTarget) {
-            fTarget->addPendingWrite();
-            return;
-        }
-
-        ++fPendingWrites;
-    }
-
-    void completedWrite() const {
-        this->validate();
-
-        if (fTarget) {
-            fTarget->completedWrite();
-            return;
-        }
-    
-        SkFAIL("How was the write completed if the Proxy hasn't been instantiated?");
-    }
-
-    mutable int32_t fRefCnt;
-    mutable int32_t fPendingReads;
-    mutable int32_t fPendingWrites;
-};
-
-class GrSurfaceProxy : public GrIORefProxy {
-public:
-    static sk_sp<GrSurfaceProxy> MakeWrapped(sk_sp<GrSurface>);
-    static sk_sp<GrTextureProxy> MakeWrapped(sk_sp<GrTexture>);
-
-    static sk_sp<GrTextureProxy> MakeDeferred(GrResourceProvider*,
-                                              const GrSurfaceDesc&, SkBackingFit,
-                                              SkBudgeted, uint32_t flags = 0);
-
-    
-    
-    static sk_sp<GrTextureProxy> MakeDeferred(GrResourceProvider*,
-                                              const GrSurfaceDesc&, SkBudgeted,
-                                              const void* srcData, size_t rowBytes);
-
-    static sk_sp<GrSurfaceProxy> MakeWrappedBackend(GrContext*, GrBackendTextureDesc&);
-
     const GrSurfaceDesc& desc() const { return fDesc; }
 
     GrSurfaceOrigin origin() const {
@@ -200,65 +24,16 @@ public:
         return fDesc.fOrigin;
     }
     int width() const { return fDesc.fWidth; }
-    int height() const { return fDesc.fHeight; }
+    int height() const { return fDesc.fWidth; }
     GrPixelConfig config() const { return fDesc.fConfig; }
 
-    class UniqueID {
-    public:
-        static UniqueID InvalidID() {
-            return UniqueID(uint32_t(SK_InvalidUniqueID));
-        }
-
-        
-        explicit UniqueID(const GrGpuResource::UniqueID& id) : fID(id.asUInt()) { }
-        
-        UniqueID() : fID(GrGpuResource::CreateUniqueID()) { }
-
-        uint32_t asUInt() const { return fID; }
-
-        bool operator==(const UniqueID& other) const {
-            return fID == other.fID;
-        }
-        bool operator!=(const UniqueID& other) const {
-            return !(*this == other);
-        }
-
-        void makeInvalid() { fID = SK_InvalidUniqueID; }
-        bool isInvalid() const { return SK_InvalidUniqueID == fID; }
-
-    private:
-        explicit UniqueID(uint32_t id) : fID(id) {}
-
-        uint32_t fID;
-    };
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    UniqueID uniqueID() const { return fUniqueID; }
-
-    GrSurface* instantiate(GrResourceProvider* resourceProvider);
+    uint32_t uniqueID() const { return fUniqueID; }
 
     
 
 
     SkRect getBoundsRect() const { return SkRect::MakeIWH(this->width(), this->height()); }
-
-    int worstCaseWidth(const GrCaps& caps) const;
-    int worstCaseHeight(const GrCaps& caps) const;
-
+  
     
 
 
@@ -276,113 +51,42 @@ public:
 
     SkBudgeted isBudgeted() const { return fBudgeted; }
 
-    void setLastOpList(GrOpList* opList);
-    GrOpList* getLastOpList() { return fLastOpList; }
-
-    GrRenderTargetOpList* getLastRenderTargetOpList();
-    GrTextureOpList* getLastTextureOpList();
-
-    
-
-
-
-
-
-
-    size_t gpuMemorySize() const {
-        if (kInvalidGpuMemorySize == fGpuMemorySize) {
-            fGpuMemorySize = this->onGpuMemorySize();
-            SkASSERT(kInvalidGpuMemorySize != fGpuMemorySize);
-        }
-        return fGpuMemorySize;
-    }
-
-    
-    
-    
-    static sk_sp<GrTextureProxy> Copy(GrContext*, GrSurfaceProxy* src,
-                                      SkIRect srcRect, SkBudgeted);
-
-    
-    
-    static sk_sp<GrTextureProxy> Copy(GrContext* context, GrSurfaceProxy* src,
-                                      SkBudgeted budgeted);
-
-    
-    static sk_sp<GrSurfaceContext> TestCopy(GrContext* context, const GrSurfaceDesc& dstDesc,
-                                            GrSurfaceProxy* srcProxy);
-
-    bool isWrapped_ForTesting() const;
-
-    SkDEBUGCODE(void validate(GrContext*) const;)
-
-    
-    GrSurfaceProxyPriv priv();
-    const GrSurfaceProxyPriv priv() const;
-
 protected:
     
-    GrSurfaceProxy(const GrSurfaceDesc& desc, SkBackingFit fit, SkBudgeted budgeted, uint32_t flags)
+    GrSurfaceProxy(const GrSurfaceDesc& desc, SkBackingFit fit, SkBudgeted budgeted)
         : fDesc(desc)
         , fFit(fit)
         , fBudgeted(budgeted)
-        , fFlags(flags)
-        
-        , fMipColorMode(SkDestinationSurfaceColorMode::kLegacy)
-        , fGpuMemorySize(kInvalidGpuMemorySize)
-        , fLastOpList(nullptr) {
-        
+        , fUniqueID(GrGpuResource::CreateUniqueID()) {
     }
 
     
-    GrSurfaceProxy(sk_sp<GrSurface> surface, SkBackingFit fit);
-
-    virtual ~GrSurfaceProxy();
-
-    friend class GrSurfaceProxyPriv;
-
-    
-    bool hasPendingIO() const {
-        return this->internalHasPendingIO();
+    GrSurfaceProxy(const GrSurfaceDesc& desc, SkBackingFit fit, 
+                   SkBudgeted budgeted, uint32_t uniqueID)
+        : fDesc(desc)
+        , fFit(fit)
+        , fBudgeted(budgeted)
+        , fUniqueID(uniqueID) {
     }
 
-    bool hasPendingWrite() const {
-        return this->internalHasPendingWrite();
-    }
+    virtual ~GrSurfaceProxy() {}
 
     
-    GrSurfaceDesc        fDesc;
-    SkBackingFit         fFit;      
-    mutable SkBudgeted   fBudgeted; 
-                                    
-    const uint32_t       fFlags;
-
-    SkDestinationSurfaceColorMode fMipColorMode;
-
-    const UniqueID       fUniqueID; 
-
-    static const size_t kInvalidGpuMemorySize = ~static_cast<size_t>(0);
-    SkDEBUGCODE(size_t getRawGpuMemorySize_debugOnly() const { return fGpuMemorySize; })
+    const GrSurfaceDesc fDesc;
+    const SkBackingFit  fFit;      
+    const SkBudgeted    fBudgeted; 
+    const uint32_t      fUniqueID; 
 
 private:
-    virtual size_t onGpuMemorySize() const = 0;
 
     
-    
-    
-    
-    mutable size_t      fGpuMemorySize;
+    void notifyAllCntsAreZero(CntType) const { delete this; }
+    bool notifyRefCountIsZero() const { return true; }
+
+    typedef GrIORef<GrSurfaceProxy> INHERITED;
 
     
-    
-    
-    
-    
-    
-    GrOpList* fLastOpList;
-
-
-    typedef GrIORefProxy INHERITED;
+    friend class GrIORef<GrSurfaceProxy>;
 };
 
 #endif

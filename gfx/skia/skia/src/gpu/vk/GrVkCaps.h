@@ -13,7 +13,7 @@
 #include "vk/GrVkDefines.h"
 
 struct GrVkInterface;
-class GrShaderCaps;
+class GrGLSLCaps;
 
 
 
@@ -37,8 +37,6 @@ public:
         return SkToBool(ConfigInfo::kRenderable_Flag & fConfigTable[config].fOptimalFlags);
     }
 
-    bool canConfigBeImageStorage(GrPixelConfig) const override { return false; }
-
     bool isConfigTexturableLinearly(GrPixelConfig config) const {
         return SkToBool(ConfigInfo::kTextureable_Flag & fConfigTable[config].fLinearFlags);
     }
@@ -60,41 +58,24 @@ public:
         return SkToBool(ConfigInfo::kBlitSrc_Flag & flags);
     }
 
-    
     bool canUseGLSLForShaderModule() const {
         return fCanUseGLSLForShaderModule;
     }
 
-    
-    
     bool mustDoCopiesFromOrigin() const {
         return fMustDoCopiesFromOrigin;
     }
 
-    
+    bool allowInitializationErrorOnTearDown() const {
+        return fAllowInitializationErrorOnTearDown;
+    }
+
     bool supportsCopiesAsDraws() const {
         return fSupportsCopiesAsDraws;
     }
 
-    
-    
-    
     bool mustSubmitCommandsBeforeCopyOp() const {
         return fMustSubmitCommandsBeforeCopyOp;
-    }
-
-    
-    
-    
-    bool mustSleepOnTearDown() const {
-        return fMustSleepOnTearDown;
-    }
-
-    
-    
-    
-    bool newSecondaryCBOnPipelineChange() const {
-        return fNewSecondaryCBOnPipelineChange;
     }
 
     
@@ -104,15 +85,12 @@ public:
         return fPreferedStencilFormat;
     }
 
-    bool initDescForDstCopy(const GrRenderTargetProxy* src, GrSurfaceDesc* desc,
-                            bool* rectsMustMatch, bool* disallowSubrect) const override;
+    GrGLSLCaps* glslCaps() const { return reinterpret_cast<GrGLSLCaps*>(fShaderCaps.get()); }
 
 private:
     enum VkVendor {
-        kAMD_VkVendor = 4098,
-        kImagination_VkVendor = 4112,
-        kNvidia_VkVendor = 4318,
         kQualcomm_VkVendor = 20803,
+        kNvidia_VkVendor = 4318,
     };
 
     void init(const GrContextOptions& contextOptions, const GrVkInterface* vkInterface,
@@ -120,7 +98,7 @@ private:
     void initGrCaps(const VkPhysicalDeviceProperties&,
                     const VkPhysicalDeviceMemoryProperties&,
                     uint32_t featureFlags);
-    void initShaderCaps(const VkPhysicalDeviceProperties&, uint32_t featureFlags);
+    void initGLSLCaps(const VkPhysicalDeviceProperties&, uint32_t featureFlags);
     void initSampleCount(const VkPhysicalDeviceProperties& properties);
 
 
@@ -147,17 +125,25 @@ private:
 
     StencilFormat fPreferedStencilFormat;
 
+    
     bool fCanUseGLSLForShaderModule;
 
+    
+    
     bool fMustDoCopiesFromOrigin;
 
+    
+    
+    
+    bool fAllowInitializationErrorOnTearDown;
+
+    
     bool fSupportsCopiesAsDraws;
 
+    
+    
+    
     bool fMustSubmitCommandsBeforeCopyOp;
-
-    bool fMustSleepOnTearDown;
-
-    bool fNewSecondaryCBOnPipelineChange;
 
     typedef GrCaps INHERITED;
 };

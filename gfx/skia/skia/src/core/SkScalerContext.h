@@ -8,13 +8,13 @@
 #ifndef SkScalerContext_DEFINED
 #define SkScalerContext_DEFINED
 
-#include "SkGlyph.h"
 #include "SkMask.h"
 #include "SkMaskGamma.h"
 #include "SkMatrix.h"
 #include "SkPaint.h"
 #include "SkTypeface.h"
 
+class SkGlyph;
 class SkDescriptor;
 class SkMaskFilter;
 class SkPathEffect;
@@ -211,7 +211,7 @@ public:
         kHinting_Mask   = kHintingBit1_Flag | kHintingBit2_Flag,
     };
 
-    SkScalerContext(sk_sp<SkTypeface>, const SkScalerContextEffects&, const SkDescriptor*);
+    SkScalerContext(SkTypeface*, const SkScalerContextEffects&, const SkDescriptor*);
     virtual ~SkScalerContext();
 
     SkTypeface* getTypeface() const { return fTypeface.get(); }
@@ -248,7 +248,7 @@ public:
     void        getAdvance(SkGlyph*);
     void        getMetrics(SkGlyph*);
     void        getImage(const SkGlyph&);
-    void        getPath(SkPackedGlyphID, SkPath*);
+    void        getPath(const SkGlyph&, SkPath*);
     void        getFontMetrics(SkPaint::FontMetrics*);
 
     
@@ -310,7 +310,10 @@ protected:
 
 
 
-    virtual void generatePath(SkGlyphID glyphId, SkPath* path) = 0;
+
+
+
+    virtual void generatePath(const SkGlyph& glyph, SkPath* path) = 0;
 
     
     virtual void generateFontMetrics(SkPaint::FontMetrics*) = 0;
@@ -347,8 +350,13 @@ private:
     
     bool fGenerateImageFromPath;
 
-    void internalGetPath(SkPackedGlyphID id, SkPath* fillPath,
+    void internalGetPath(const SkGlyph& glyph, SkPath* fillPath,
                          SkPath* devPath, SkMatrix* fillToDevMatrix);
+
+    
+    
+    
+    SkScalerContext* getContextFromChar(SkUnichar uni, uint16_t* glyphID);
 
     
 protected:

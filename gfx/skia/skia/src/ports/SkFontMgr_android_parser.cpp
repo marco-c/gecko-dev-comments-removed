@@ -10,7 +10,6 @@
 #include "SkFixed.h"
 #include "SkFontMgr.h"
 #include "SkFontMgr_android_parser.h"
-#include "SkMalloc.h"
 #include "SkOSFile.h"
 #include "SkStream.h"
 #include "SkTDArray.h"
@@ -101,18 +100,18 @@ struct FamilyData {
         , fHandler(&topLevelHandler, 1)
     { }
 
-    XML_Parser fParser;                         
-    SkTDArray<FontFamily*>& fFamilies;          
-    std::unique_ptr<FontFamily> fCurrentFamily; 
-    FontFileInfo* fCurrentFontInfo;             
-    int fVersion;                               
-    const SkString& fBasePath;                  
-    const bool fIsFallback;                     
-    const char* fFilename;                      
+    XML_Parser fParser;                       
+    SkTDArray<FontFamily*>& fFamilies;        
+    SkAutoTDelete<FontFamily> fCurrentFamily; 
+    FontFileInfo* fCurrentFontInfo;           
+    int fVersion;                             
+    const SkString& fBasePath;                
+    const bool fIsFallback;                   
+    const char* fFilename;                    
 
-    int fDepth;                                 
-    int fSkip;                                  
-    SkTDArray<const TagHandler*> fHandler;      
+    int fDepth;                               
+    int fSkip;                                
+    SkTDArray<const TagHandler*> fHandler;    
 };
 
 static bool memeq(const char* s1, const char* s2, size_t n1, size_t n2) {
@@ -168,8 +167,8 @@ static const TagHandler axisHandler = {
                 if (valueLen == 4) {
                     axisTag = SkSetFourByteTag(value[0], value[1], value[2], value[3]);
                     axisTagIsValid = true;
-                    for (int j = 0; j < file.fVariationDesignPosition.count() - 1; ++j) {
-                        if (file.fVariationDesignPosition[j].axis == axisTag) {
+                    for (int j = 0; j < file.fAxes.count() - 1; ++j) {
+                        if (file.fAxes[j].fTag == axisTag) {
                             axisTagIsValid = false;
                             SK_FONTCONFIGPARSER_WARNING("'%c%c%c%c' axis specified more than once",
                                                         (axisTag >> 24) & 0xFF,
@@ -190,9 +189,9 @@ static const TagHandler axisHandler = {
             }
         }
         if (axisTagIsValid && axisStyleValueIsValid) {
-            auto& coordinate = file.fVariationDesignPosition.push_back();
-            coordinate.axis = axisTag;
-            coordinate.value = SkFixedToScalar(axisStyleValue);
+            SkFontMgr::FontParameters::Axis& axis = file.fAxes.push_back();
+            axis.fTag = axisTag;
+            axis.fStyleValue = SkFixedToScalar(axisStyleValue);
         }
     },
     nullptr,

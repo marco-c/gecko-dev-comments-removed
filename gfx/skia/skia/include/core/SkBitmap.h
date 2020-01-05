@@ -20,9 +20,9 @@ struct SkIRect;
 struct SkRect;
 class SkPaint;
 class SkPixelRef;
+class SkPixelRefFactory;
+class SkRegion;
 class SkString;
-
-
 
 
 
@@ -85,7 +85,6 @@ public:
     SkColorType colorType() const { return fInfo.colorType(); }
     SkAlphaType alphaType() const { return fInfo.alphaType(); }
     SkColorSpace* colorSpace() const { return fInfo.colorSpace(); }
-    sk_sp<SkColorSpace> refColorSpace() const { return fInfo.refColorSpace(); }
 
     
 
@@ -118,7 +117,7 @@ public:
 
 
 
-    bool isNull() const { return nullptr == fPixelRef; }
+    bool isNull() const { return NULL == fPixelRef; }
 
     
 
@@ -216,10 +215,7 @@ public:
 
 
 
-    static bool ComputeIsOpaque(const SkBitmap& bm) {
-        SkAutoPixmapUnlock result;
-        return bm.requestLock(&result) && result.pixmap().computeIsOpaque();
-    }
+    static bool ComputeIsOpaque(const SkBitmap&);
 
     
 
@@ -237,20 +233,16 @@ public:
 
     bool setInfo(const SkImageInfo&, size_t rowBytes = 0);
 
-    enum AllocFlags {
-        kZeroPixels_AllocFlag   = 1 << 0,
-    };
     
 
 
 
 
 
+    bool SK_WARN_UNUSED_RESULT tryAllocPixels(const SkImageInfo&, SkPixelRefFactory*, SkColorTable*);
 
-    bool SK_WARN_UNUSED_RESULT tryAllocPixels(const SkImageInfo& info, sk_sp<SkColorTable> ctable,
-                                              uint32_t flags = 0);
-    void allocPixels(const SkImageInfo& info, sk_sp<SkColorTable> ctable, uint32_t flags = 0) {
-        if (!this->tryAllocPixels(info, std::move(ctable), flags)) {
+    void allocPixels(const SkImageInfo& info, SkPixelRefFactory* factory, SkColorTable* ctable) {
+        if (!this->tryAllocPixels(info, factory, ctable)) {
             sk_throw();
         }
     }
@@ -289,11 +281,6 @@ public:
         SkImageInfo info = SkImageInfo::MakeN32(width, height,
                                             isOpaque ? kOpaque_SkAlphaType : kPremul_SkAlphaType);
         this->allocPixels(info);
-    }
-
-    
-    void allocPixels(const SkImageInfo& info, std::nullptr_t, SkColorTable* ctable) {
-        this->allocPixels(info, sk_ref_sp(ctable));
     }
 
     
@@ -358,6 +345,27 @@ public:
 
 
 
+
+
+
+
+
+    bool copyPixelsTo(void* const dst, size_t dstSize, size_t dstRowBytes = 0,
+                      bool preserveDstPad = false) const;
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
     bool SK_WARN_UNUSED_RESULT tryAllocPixels(SkColorTable* ctable = NULL) {
         return this->tryAllocPixels(NULL, ctable);
     }
@@ -396,7 +404,7 @@ public:
 
 
 
-    SkPixelRef* pixelRef() const { return fPixelRef.get(); }
+    SkPixelRef* pixelRef() const { return fPixelRef; }
 
     
 
@@ -417,7 +425,16 @@ public:
 
 
 
-    void setPixelRef(sk_sp<SkPixelRef>, int dx, int dy);
+
+    SkPixelRef* setPixelRef(SkPixelRef* pr, int dx, int dy);
+
+    SkPixelRef* setPixelRef(SkPixelRef* pr, const SkIPoint& origin) {
+        return this->setPixelRef(pr, origin.fX, origin.fY);
+    }
+
+    SkPixelRef* setPixelRef(SkPixelRef* pr) {
+        return this->setPixelRef(pr, 0, 0);
+    }
 
     
 
@@ -430,6 +447,15 @@ public:
 
 
     void unlockPixels() const;
+
+    
+
+
+
+
+
+    
+    bool lockPixelsAreWritable() const;
 
     bool requestLock(SkAutoPixmapUnlock* result) const;
 
@@ -505,13 +531,7 @@ public:
 
 
 
-
-
-    SkColor getColor(int x, int y) const {
-        SkPixmap pixmap;
-        SkAssertResult(this->peekPixels(&pixmap));
-        return pixmap.getColor(x, y);
-    }
+    SkColor getColor(int x, int y) const;
 
     
 
@@ -566,7 +586,6 @@ public:
 
     bool extractSubset(SkBitmap* dst, const SkIRect& subset) const;
 
-#ifdef SK_BUILD_FOR_ANDROID
     
 
 
@@ -579,25 +598,10 @@ public:
 
 
 
-    bool copyTo(SkBitmap* dst, SkColorType ct, Allocator*) const;
+    bool copyTo(SkBitmap* dst, SkColorType ct, Allocator* = NULL) const;
 
-    bool copyTo(SkBitmap* dst, Allocator* allocator) const {
+    bool copyTo(SkBitmap* dst, Allocator* allocator = NULL) const {
         return this->copyTo(dst, this->colorType(), allocator);
-    }
-#endif
-
-    
-
-
-
-
-
-
-
-    bool copyTo(SkBitmap* dst, SkColorType ct) const;
-
-    bool copyTo(SkBitmap* dst) const {
-        return this->copyTo(dst, this->colorType());
     }
 
     
@@ -621,23 +625,6 @@ public:
 
     bool readPixels(const SkImageInfo& dstInfo, void* dstPixels, size_t dstRowBytes,
                     int srcX, int srcY) const;
-    bool readPixels(const SkPixmap& dst, int srcX, int srcY) const;
-    bool readPixels(const SkPixmap& dst) const {
-        return this->readPixels(dst, 0, 0);
-    }
-
-    
-
-
-
-
-
-    bool writePixels(const SkPixmap& src, int dstX, int dstY) {
-        return this->writePixels(src, dstX, dstY, SkTransferFunctionBehavior::kRespect);
-    }
-    bool writePixels(const SkPixmap& src) {
-        return this->writePixels(src, 0, 0);
-    }
 
     
 
@@ -728,16 +715,37 @@ public:
         bool allocPixelRef(SkBitmap*, SkColorTable*) override;
     };
 
+    class RLEPixels {
+    public:
+        RLEPixels(int width, int height);
+        virtual ~RLEPixels();
+
+        uint8_t* packedAtY(int y) const {
+            SkASSERT((unsigned)y < (unsigned)fHeight);
+            return fYPtrs[y];
+        }
+
+        
+        void setPackedAtY(int y, uint8_t* addr) {
+            SkASSERT((unsigned)y < (unsigned)fHeight);
+            fYPtrs[y] = addr;
+        }
+
+    private:
+        uint8_t** fYPtrs;
+        int       fHeight;
+    };
+
     SK_TO_STRING_NONVIRT()
 
 private:
-    mutable sk_sp<SkPixelRef> fPixelRef;
-    mutable int               fPixelLockCount;
+    mutable SkPixelRef* fPixelRef;
+    mutable int         fPixelLockCount;
     
-    mutable void*             fPixels;
-    mutable SkColorTable*     fColorTable;    
+    mutable void*       fPixels;
+    mutable SkColorTable* fColorTable;    
 
-    SkIPoint                  fPixelRefOrigin;
+    SkIPoint    fPixelRefOrigin;
 
     enum Flags {
         kImageIsVolatile_Flag   = 0x02,
@@ -750,13 +758,9 @@ private:
 #endif
     };
 
-    SkImageInfo               fInfo;
-    uint32_t                  fRowBytes;
-    uint8_t                   fFlags;
-
-    bool writePixels(const SkPixmap& src, int x, int y, SkTransferFunctionBehavior behavior);
-
-    bool internalCopyTo(SkBitmap* dst, SkColorType ct, Allocator*) const;
+    SkImageInfo fInfo;
+    uint32_t    fRowBytes;
+    uint8_t     fFlags;
 
     
 
@@ -766,7 +770,6 @@ private:
     static void WriteRawPixels(SkWriteBuffer*, const SkBitmap&);
     static bool ReadRawPixels(SkReadBuffer*, SkBitmap*);
 
-    friend class SkImage_Raster;
     friend class SkReadBuffer;        
     friend class SkBinaryWriteBuffer; 
     friend struct SkBitmapProcState;

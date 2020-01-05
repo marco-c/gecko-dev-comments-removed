@@ -25,17 +25,6 @@ static void output_message(j_common_ptr info) {
     print_message(info, "output_message");
 }
 
-static void progress_monitor(j_common_ptr info) {
-  int scan = ((j_decompress_ptr)info)->input_scan_number;
-  
-  
-  
-  
-  if (scan >= 100) {
-      skjpeg_err_exit(info);
-  }
-}
-
 bool JpegDecoderMgr::returnFalse(const char caller[]) {
     print_message((j_common_ptr) &fDInfo, caller);
     return false;
@@ -82,8 +71,6 @@ void JpegDecoderMgr::init() {
     fInit = true;
     fDInfo.src = &fSrcMgr;
     fDInfo.err->output_message = &output_message;
-    fDInfo.progress = &fProgressMgr;
-    fProgressMgr.progress_monitor = &progress_monitor;
 }
 
 JpegDecoderMgr::~JpegDecoderMgr() {

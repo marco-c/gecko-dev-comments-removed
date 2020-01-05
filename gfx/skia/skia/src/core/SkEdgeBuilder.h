@@ -7,12 +7,11 @@
 #ifndef SkEdgeBuilder_DEFINED
 #define SkEdgeBuilder_DEFINED
 
-#include "SkArenaAlloc.h"
+#include "SkChunkAlloc.h"
 #include "SkRect.h"
 #include "SkTDArray.h"
 
 struct SkEdge;
-struct SkAnalyticEdge;
 class SkEdgeClipper;
 class SkPath;
 
@@ -22,11 +21,9 @@ public:
 
     
     
-    int build(const SkPath& path, const SkIRect* clip, int shiftUp, bool clipToTheRight,
-              bool analyticAA = false);
+    int build(const SkPath& path, const SkIRect* clip, int shiftUp, bool clipToTheRight);
 
-    SkEdge** edgeList() { return (SkEdge**)fEdgeList; }
-    SkAnalyticEdge** analyticEdgeList() { return (SkAnalyticEdge**)fEdgeList; }
+    SkEdge** edgeList() { return fEdgeList; }
 
 private:
     enum Combine {
@@ -35,15 +32,11 @@ private:
         kTotal_Combine
     };
 
-    Combine CombineVertical(const SkEdge* edge, SkEdge* last);
-    Combine CombineVertical(const SkAnalyticEdge* edge, SkAnalyticEdge* last);
+    static Combine CombineVertical(const SkEdge* edge, SkEdge* last);
     Combine checkVertical(const SkEdge* edge, SkEdge** edgePtr);
-    Combine checkVertical(const SkAnalyticEdge* edge, SkAnalyticEdge** edgePtr);
-    bool vertical_line(const SkEdge* edge);
-    bool vertical_line(const SkAnalyticEdge* edge);
 
-    SkArenaAlloc        fAlloc;
-    SkTDArray<void*>    fList;
+    SkChunkAlloc        fAlloc;
+    SkTDArray<SkEdge*>  fList;
 
     
 
@@ -51,10 +44,9 @@ private:
 
 
 
-    void**      fEdgeList;
+    SkEdge**    fEdgeList;
 
     int         fShiftUp;
-    bool        fAnalyticAA;
 
 public:
     void addLine(const SkPoint pts[]);

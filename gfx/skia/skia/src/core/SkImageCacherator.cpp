@@ -7,7 +7,6 @@
 
 #include "SkBitmap.h"
 #include "SkBitmapCache.h"
-#include "SkColorSpace_Base.h"
 #include "SkImage_Base.h"
 #include "SkImageCacherator.h"
 #include "SkMallocPixelRef.h"
@@ -17,14 +16,13 @@
 
 #if SK_SUPPORT_GPU
 #include "GrContext.h"
-#include "GrContextPriv.h"
 #include "GrGpuResourcePriv.h"
-#include "GrImageTextureMaker.h"
+#include "GrImageIDTextureAdjuster.h"
 #include "GrResourceKey.h"
-#include "GrResourceProvider.h"
-#include "GrSamplerParams.h"
+#include "GrTextureParams.h"
 #include "GrYUVProvider.h"
 #include "SkGr.h"
+#include "SkGrPriv.h"
 #endif
 
 
@@ -34,101 +32,52 @@
 
 
 
-
-class SkImageCacherator::ScopedGenerator {
-public:
-    ScopedGenerator(const sk_sp<SharedGenerator>& gen)
-      : fSharedGenerator(gen)
-      , fAutoAquire(gen->fMutex) {}
-
-    SkImageGenerator* operator->() const {
-        fSharedGenerator->fMutex.assertHeld();
-        return fSharedGenerator->fGenerator.get();
-    }
-
-    operator SkImageGenerator*() const {
-        fSharedGenerator->fMutex.assertHeld();
-        return fSharedGenerator->fGenerator.get();
-    }
-
-private:
-    const sk_sp<SharedGenerator>& fSharedGenerator;
-    SkAutoExclusive               fAutoAquire;
-};
-
-SkImageCacherator::Validator::Validator(sk_sp<SharedGenerator> gen, const SkIRect* subset)
-    : fSharedGenerator(std::move(gen)) {
-
-    if (!fSharedGenerator) {
-        return;
+SkImageCacherator* SkImageCacherator::NewFromGenerator(SkImageGenerator* gen,
+                                                       const SkIRect* subset) {
+    if (!gen) {
+        return nullptr;
     }
 
     
-    
-    const SkImageInfo& info = fSharedGenerator->fGenerator->getInfo();
+    SkAutoTDelete<SkImageGenerator> genHolder(gen);
+
+    const SkImageInfo& info = gen->getInfo();
     if (info.isEmpty()) {
-        fSharedGenerator.reset();
-        return;
+        return nullptr;
     }
 
-    fUniqueID = fSharedGenerator->fGenerator->uniqueID();
+    uint32_t uniqueID = gen->uniqueID();
     const SkIRect bounds = SkIRect::MakeWH(info.width(), info.height());
     if (subset) {
         if (!bounds.contains(*subset)) {
-            fSharedGenerator.reset();
-            return;
+            return nullptr;
         }
         if (*subset != bounds) {
             
-            fUniqueID = SkNextID::ImageID();
+            uniqueID = SkNextID::ImageID();
         }
     } else {
         subset = &bounds;
     }
 
-    fInfo   = info.makeWH(subset->width(), subset->height());
-    fOrigin = SkIPoint::Make(subset->x(), subset->y());
-
     
     
-    if (fInfo.colorType() == kIndex_8_SkColorType) {
-        fInfo = fInfo.makeColorType(kN32_SkColorType);
-    }
+    genHolder.release();
+
+    return new SkImageCacherator(gen, gen->getInfo().makeWH(subset->width(), subset->height()),
+                                 SkIPoint::Make(subset->x(), subset->y()), uniqueID);
 }
 
-SkImageCacherator* SkImageCacherator::NewFromGenerator(std::unique_ptr<SkImageGenerator> gen,
-                                                       const SkIRect* subset) {
-    Validator validator(SharedGenerator::Make(std::move(gen)), subset);
-
-    return validator ? new SkImageCacherator(&validator) : nullptr;
-}
-
-SkImageCacherator::SkImageCacherator(Validator* validator)
-    : fSharedGenerator(std::move(validator->fSharedGenerator)) 
-    , fInfo(validator->fInfo)
-    , fOrigin(validator->fOrigin)
-{
-    SkASSERT(fSharedGenerator);
-    SkASSERT(fInfo.colorType() != kIndex_8_SkColorType);
-    
-    
-    fIDRecs[kLegacy_CachedFormat].fOnce([this, validator] {
-        fIDRecs[kLegacy_CachedFormat].fUniqueID = validator->fUniqueID;
-    });
-}
-
-SkImageCacherator::~SkImageCacherator() {}
-
-uint32_t SkImageCacherator::getUniqueID(CachedFormat format) const {
-    IDRec* rec = &fIDRecs[format];
-    rec->fOnce([rec] {
-        rec->fUniqueID = SkNextID::ImageID();
-    });
-    return rec->fUniqueID;
-}
+SkImageCacherator::SkImageCacherator(SkImageGenerator* gen, const SkImageInfo& info,
+                                     const SkIPoint& origin, uint32_t uniqueID)
+    : fNotThreadSafeGenerator(gen)
+    , fInfo(info)
+    , fOrigin(origin)
+    , fUniqueID(uniqueID)
+{}
 
 SkData* SkImageCacherator::refEncoded(GrContext* ctx) {
-    ScopedGenerator generator(fSharedGenerator);
+    ScopedGenerator generator(this);
     return generator->refEncodedData(ctx);
 }
 
@@ -139,179 +88,111 @@ static bool check_output_bitmap(const SkBitmap& bitmap, uint32_t expectedID) {
     return true;
 }
 
+
+
+
+bool SkImageCacherator::generateBitmap(SkBitmap* bitmap) {
+    SkBitmap::Allocator* allocator = SkResourceCache::GetAllocator();
+
+    ScopedGenerator generator(this);
+    const SkImageInfo& genInfo = generator->getInfo();
+    if (fInfo.dimensions() == genInfo.dimensions()) {
+        SkASSERT(fOrigin.x() == 0 && fOrigin.y() == 0);
+        
+        return generator->tryGenerateBitmap(bitmap, fInfo, allocator);
+    } else {
+        
+        
+
+        SkBitmap full;
+        if (!generator->tryGenerateBitmap(&full, genInfo, allocator)) {
+            return false;
+        }
+        if (!bitmap->tryAllocPixels(fInfo, nullptr, full.getColorTable())) {
+            return false;
+        }
+        return full.readPixels(bitmap->info(), bitmap->getPixels(), bitmap->rowBytes(),
+                               fOrigin.x(), fOrigin.y());
+    }
+}
+
 bool SkImageCacherator::directGeneratePixels(const SkImageInfo& info, void* pixels, size_t rb,
-                                             int srcX, int srcY,
-                                             SkTransferFunctionBehavior behavior) {
-    ScopedGenerator generator(fSharedGenerator);
+                                             int srcX, int srcY) {
+    ScopedGenerator generator(this);
     const SkImageInfo& genInfo = generator->getInfo();
     
     if (srcX || srcY || genInfo.width() != info.width() || genInfo.height() != info.height()) {
         return false;
     }
-
-    SkImageGenerator::Options opts;
-    opts.fBehavior = behavior;
-    return generator->getPixels(info, pixels, rb, &opts);
+    return generator->getPixels(info, pixels, rb);
 }
 
 
 
-bool SkImageCacherator::lockAsBitmapOnlyIfAlreadyCached(SkBitmap* bitmap, CachedFormat format) {
-    uint32_t uniqueID = this->getUniqueID(format);
-    return SkBitmapCache::Find(SkBitmapCacheDesc::Make(uniqueID,
-                                                       fInfo.width(), fInfo.height()), bitmap) &&
-           check_output_bitmap(*bitmap, uniqueID);
-}
-
-static bool generate_pixels(SkImageGenerator* gen, const SkPixmap& pmap, int originX, int originY) {
-    const int genW = gen->getInfo().width();
-    const int genH = gen->getInfo().height();
-    const SkIRect srcR = SkIRect::MakeWH(genW, genH);
-    const SkIRect dstR = SkIRect::MakeXYWH(originX, originY, pmap.width(), pmap.height());
-    if (!srcR.contains(dstR)) {
-        return false;
-    }
-
-    
-    
-    SkBitmap full;
-    SkPixmap fullPM;
-    const SkPixmap* dstPM = &pmap;
-    if (srcR != dstR) {
-        if (!full.tryAllocPixels(pmap.info().makeWH(genW, genH))) {
-            return false;
-        }
-        if (!full.peekPixels(&fullPM)) {
-            return false;
-        }
-        dstPM = &fullPM;
-    }
-
-    if (!gen->getPixels(dstPM->info(), dstPM->writable_addr(), dstPM->rowBytes())) {
-        return false;
-    }
-
-    if (srcR != dstR) {
-        if (!full.readPixels(pmap, originX, originY)) {
-            return false;
-        }
-    }
-    return true;
+bool SkImageCacherator::lockAsBitmapOnlyIfAlreadyCached(SkBitmap* bitmap) {
+    return SkBitmapCache::Find(fUniqueID, bitmap) && check_output_bitmap(*bitmap, fUniqueID);
 }
 
 bool SkImageCacherator::tryLockAsBitmap(SkBitmap* bitmap, const SkImage* client,
-                                        SkImage::CachingHint chint, CachedFormat format,
-                                        const SkImageInfo& info) {
-    if (this->lockAsBitmapOnlyIfAlreadyCached(bitmap, format)) {
+                                        SkImage::CachingHint chint) {
+    if (this->lockAsBitmapOnlyIfAlreadyCached(bitmap)) {
         return true;
     }
-
-    uint32_t uniqueID = this->getUniqueID(format);
-
-    SkBitmap tmpBitmap;
-    SkBitmapCache::RecPtr cacheRec;
-    SkPixmap pmap;
-    if (SkImage::kAllow_CachingHint == chint) {
-        auto desc = SkBitmapCacheDesc::Make(uniqueID, info.width(), info.height());
-        cacheRec = SkBitmapCache::Alloc(desc, info, &pmap);
-        if (!cacheRec) {
-            return false;
-        }
-    } else {
-        if (!tmpBitmap.tryAllocPixels(info)) {
-            return false;
-        }
-        if (!tmpBitmap.peekPixels(&pmap)) {
-            return false;
-        }
-    }
-
-    ScopedGenerator generator(fSharedGenerator);
-    if (!generate_pixels(generator, pmap, fOrigin.x(), fOrigin.y())) {
+    if (!this->generateBitmap(bitmap)) {
         return false;
     }
 
-    if (cacheRec) {
-        SkBitmapCache::Add(std::move(cacheRec), bitmap);
-        SkASSERT(bitmap->getPixels());  
-        SkASSERT(bitmap->isImmutable());
-        SkASSERT(bitmap->getGenerationID() == uniqueID);
+    bitmap->pixelRef()->setImmutableWithID(fUniqueID);
+    if (SkImage::kAllow_CachingHint == chint) {
+        SkBitmapCache::Add(fUniqueID, *bitmap);
         if (client) {
             as_IB(client)->notifyAddedToCache();
         }
-    } else {
-        *bitmap = tmpBitmap;
-        bitmap->lockPixels();
-        bitmap->pixelRef()->setImmutableWithID(uniqueID);
     }
     return true;
 }
 
-bool SkImageCacherator::lockAsBitmap(GrContext* context, SkBitmap* bitmap, const SkImage* client,
-                                     SkColorSpace* dstColorSpace,
+bool SkImageCacherator::lockAsBitmap(SkBitmap* bitmap, const SkImage* client,
                                      SkImage::CachingHint chint) {
-    CachedFormat format = this->chooseCacheFormat(dstColorSpace);
-    SkImageInfo cacheInfo = this->buildCacheInfo(format);
-    const uint32_t uniqueID = this->getUniqueID(format);
-
-    if (this->tryLockAsBitmap(bitmap, client, chint, format, cacheInfo)) {
-        return check_output_bitmap(*bitmap, uniqueID);
+    if (this->tryLockAsBitmap(bitmap, client, chint)) {
+        return check_output_bitmap(*bitmap, fUniqueID);
     }
 
 #if SK_SUPPORT_GPU
-    if (!context) {
-        bitmap->reset();
-        return false;
-    }
-
     
-    sk_sp<GrTextureProxy> proxy;
+    SkAutoTUnref<GrTexture> tex;
 
     {
-        ScopedGenerator generator(fSharedGenerator);
-        proxy = generator->generateTexture(context, cacheInfo, fOrigin);
+        ScopedGenerator generator(this);
+        SkIRect subset = SkIRect::MakeXYWH(fOrigin.x(), fOrigin.y(), fInfo.width(), fInfo.height());
+        tex.reset(generator->generateTexture(nullptr, &subset));
     }
-    if (!proxy) {
+    if (!tex) {
         bitmap->reset();
         return false;
     }
 
-    const auto desc = SkBitmapCacheDesc::Make(uniqueID, fInfo.width(), fInfo.height());
-    SkBitmapCache::RecPtr rec;
-    SkPixmap pmap;
+    if (!bitmap->tryAllocPixels(fInfo)) {
+        bitmap->reset();
+        return false;
+    }
+
+    const uint32_t pixelOpsFlags = 0;
+    if (!tex->readPixels(0, 0, bitmap->width(), bitmap->height(),
+                         SkImageInfo2GrPixelConfig(fInfo, *tex->getContext()->caps()),
+                         bitmap->getPixels(), bitmap->rowBytes(), pixelOpsFlags)) {
+        bitmap->reset();
+        return false;
+    }
+
+    bitmap->pixelRef()->setImmutableWithID(fUniqueID);
     if (SkImage::kAllow_CachingHint == chint) {
-        rec = SkBitmapCache::Alloc(desc, cacheInfo, &pmap);
-        if (!rec) {
-            bitmap->reset();
-            return false;
-        }
-    } else {
-        if (!bitmap->tryAllocPixels(cacheInfo)) {
-            bitmap->reset();
-            return false;
-        }
-    }
-
-    sk_sp<GrSurfaceContext> sContext(context->contextPriv().makeWrappedSurfaceContext(
-                                                    proxy,
-                                                    fInfo.refColorSpace())); 
-    if (!sContext) {
-        bitmap->reset();
-        return false;
-    }
-
-    if (!sContext->readPixels(pmap.info(), pmap.writable_addr(), pmap.rowBytes(), 0, 0)) {
-        bitmap->reset();
-        return false;
-    }
-
-    if (rec) {
-        SkBitmapCache::Add(std::move(rec), bitmap);
+        SkBitmapCache::Add(fUniqueID, *bitmap);
         if (client) {
             as_IB(client)->notifyAddedToCache();
         }
     }
-    return check_output_bitmap(*bitmap, uniqueID);
+    return check_output_bitmap(*bitmap, fUniqueID);
 #else
     return false;
 #endif
@@ -319,180 +200,7 @@ bool SkImageCacherator::lockAsBitmap(GrContext* context, SkBitmap* bitmap, const
 
 
 
-
-
-
-
-
-struct CacheCaps {
-    CacheCaps(const GrCaps* caps) : fCaps(caps) {}
-
 #if SK_SUPPORT_GPU
-    bool supportsHalfFloat() const {
-        return !fCaps ||
-            (fCaps->isConfigTexturable(kRGBA_half_GrPixelConfig) &&
-             fCaps->isConfigRenderable(kRGBA_half_GrPixelConfig, false));
-    }
-
-    bool supportsSRGB() const {
-        return !fCaps ||
-            (fCaps->srgbSupport() && fCaps->isConfigTexturable(kSRGBA_8888_GrPixelConfig));
-    }
-
-    bool supportsSBGR() const {
-        return !fCaps || fCaps->srgbSupport();
-    }
-#else
-    bool supportsHalfFloat() const { return true; }
-    bool supportsSRGB() const { return true; }
-    bool supportsSBGR() const { return true; }
-#endif
-
-    const GrCaps* fCaps;
-};
-
-SkImageCacherator::CachedFormat SkImageCacherator::chooseCacheFormat(SkColorSpace* dstColorSpace,
-                                                                     const GrCaps* grCaps) {
-    SkColorSpace* cs = fInfo.colorSpace();
-    if (!cs || !dstColorSpace) {
-        return kLegacy_CachedFormat;
-    }
-
-    CacheCaps caps(grCaps);
-    switch (fInfo.colorType()) {
-        case kUnknown_SkColorType:
-        case kAlpha_8_SkColorType:
-        case kRGB_565_SkColorType:
-        case kARGB_4444_SkColorType:
-            
-            
-            return kLegacy_CachedFormat;
-
-        case kIndex_8_SkColorType:
-            SkDEBUGFAIL("Index_8 should have been remapped at construction time.");
-            return kLegacy_CachedFormat;
-
-        case kGray_8_SkColorType:
-            
-            
-            
-            
-            
-            if (cs->gammaCloseToSRGB() && caps.supportsSRGB()) {
-                return kSRGB8888_CachedFormat;
-            } else {
-                return kLegacy_CachedFormat;
-            }
-
-        case kRGBA_8888_SkColorType:
-            if (cs->gammaCloseToSRGB()) {
-                if (caps.supportsSRGB()) {
-                    return kSRGB8888_CachedFormat;
-                } else if (caps.supportsHalfFloat()) {
-                    return kLinearF16_CachedFormat;
-                } else {
-                    return kLegacy_CachedFormat;
-                }
-            } else {
-                if (caps.supportsHalfFloat()) {
-                    return kLinearF16_CachedFormat;
-                } else if (caps.supportsSRGB()) {
-                    return kSRGB8888_CachedFormat;
-                } else {
-                    return kLegacy_CachedFormat;
-                }
-            }
-
-        case kBGRA_8888_SkColorType:
-            
-            if (caps.supportsSBGR()) {
-                if (cs->gammaCloseToSRGB()) {
-                    return kSBGR8888_CachedFormat;
-                } else if (caps.supportsHalfFloat()) {
-                    return kLinearF16_CachedFormat;
-                } else if (caps.supportsSRGB()) {
-                    return kSRGB8888_CachedFormat;
-                } else {
-                    
-                    return kLegacy_CachedFormat;
-                }
-            } else {
-                if (cs->gammaCloseToSRGB()) {
-                    if (caps.supportsSRGB()) {
-                        return kSRGB8888_CachedFormat;
-                    } else if (caps.supportsHalfFloat()) {
-                        return kLinearF16_CachedFormat;
-                    } else {
-                        return kLegacy_CachedFormat;
-                    }
-                } else {
-                    if (caps.supportsHalfFloat()) {
-                        return kLinearF16_CachedFormat;
-                    } else if (caps.supportsSRGB()) {
-                        return kSRGB8888_CachedFormat;
-                    } else {
-                        return kLegacy_CachedFormat;
-                    }
-                }
-            }
-
-        case kRGBA_F16_SkColorType:
-            if (caps.supportsHalfFloat()) {
-                return kLinearF16_CachedFormat;
-            } else if (caps.supportsSRGB()) {
-                return kSRGB8888_CachedFormat;
-            } else {
-                return kLegacy_CachedFormat;
-            }
-    }
-    SkDEBUGFAIL("Unreachable");
-    return kLegacy_CachedFormat;
-}
-
-SkImageInfo SkImageCacherator::buildCacheInfo(CachedFormat format) {
-    switch (format) {
-        case kLegacy_CachedFormat:
-            return fInfo.makeColorSpace(nullptr);
-        case kLinearF16_CachedFormat:
-            return fInfo.makeColorType(kRGBA_F16_SkColorType)
-                        .makeColorSpace(as_CSB(fInfo.colorSpace())->makeLinearGamma());
-        case kSRGB8888_CachedFormat:
-            
-            
-            
-            if (fInfo.colorSpace()->gammaCloseToSRGB()) {
-                return fInfo.makeColorType(kRGBA_8888_SkColorType);
-            } else {
-                return fInfo.makeColorType(kRGBA_8888_SkColorType)
-                            .makeColorSpace(as_CSB(fInfo.colorSpace())->makeSRGBGamma());
-            }
-        case kSBGR8888_CachedFormat:
-            
-            if (fInfo.colorSpace()->gammaCloseToSRGB()) {
-                return fInfo.makeColorType(kBGRA_8888_SkColorType);
-            } else {
-                return fInfo.makeColorType(kBGRA_8888_SkColorType)
-                            .makeColorSpace(as_CSB(fInfo.colorSpace())->makeSRGBGamma());
-            }
-        default:
-            SkDEBUGFAIL("Invalid cached format");
-            return fInfo;
-    }
-}
-
-
-
-#if SK_SUPPORT_GPU
-
-void SkImageCacherator::makeCacheKeyFromOrigKey(const GrUniqueKey& origKey, CachedFormat format,
-                                                GrUniqueKey* cacheKey) {
-    SkASSERT(!cacheKey->isValid());
-    if (origKey.isValid()) {
-        static const GrUniqueKey::Domain kDomain = GrUniqueKey::GenerateDomain();
-        GrUniqueKey::Builder builder(cacheKey, origKey, kDomain, 1);
-        builder[0] = format;
-    }
-}
 
 #ifdef SK_SUPPORT_COMPRESSED_TEXTURES_IN_CACHERATOR
 static GrTexture* load_compressed_into_texture(GrContext* ctx, SkData* data, GrSurfaceDesc desc) {
@@ -504,7 +212,7 @@ static GrTexture* load_compressed_into_texture(GrContext* ctx, SkData* data, GrS
     }
 
     desc.fConfig = config;
-    return ctx->resourceProvider()->createTexture(desc, SkBudgeted::kYes, rawStart, 0);
+    return ctx->textureProvider()->createTexture(desc, SkBudgeted::kYes, rawStart, 0);
 }
 #endif
 
@@ -523,20 +231,11 @@ public:
     }
 };
 
-static void set_key_on_proxy(GrResourceProvider* resourceProvider,
-                             GrTextureProxy* proxy, const GrUniqueKey& key) {
+static GrTexture* set_key_and_return(GrTexture* tex, const GrUniqueKey& key) {
     if (key.isValid()) {
-        resourceProvider->assignUniqueKeyToProxy(key, proxy);
+        tex->resourcePriv().setUniqueKey(key);
     }
-}
-
-sk_sp<SkColorSpace> SkImageCacherator::getColorSpace(GrContext* ctx, SkColorSpace* dstColorSpace) {
-    
-    
-    
-    CachedFormat format = this->chooseCacheFormat(dstColorSpace, ctx->caps());
-    SkImageInfo cacheInfo = this->buildCacheInfo(format);
-    return sk_ref_sp(cacheInfo.colorSpace());
+    return tex;
 }
 
 
@@ -548,12 +247,10 @@ sk_sp<SkColorSpace> SkImageCacherator::getColorSpace(GrContext* ctx, SkColorSpac
 
 
 
-sk_sp<GrTextureProxy> SkImageCacherator::lockTextureProxy(GrContext* ctx,
-                                                          const GrUniqueKey& origKey,
-                                                          const SkImage* client,
-                                                          SkImage::CachingHint chint,
-                                                          bool willBeMipped,
-                                                          SkColorSpace* dstColorSpace) {
+GrTexture* SkImageCacherator::lockTexture(GrContext* ctx, const GrUniqueKey& key,
+                                          const SkImage* client, SkImage::CachingHint chint,
+                                          bool willBeMipped,
+                                          SkSourceGammaTreatment gammaTreatment) {
     
     
     enum LockTexturePath {
@@ -568,39 +265,26 @@ sk_sp<GrTextureProxy> SkImageCacherator::lockTextureProxy(GrContext* ctx,
     enum { kLockTexturePathCount = kRGBA_LockTexturePath + 1 };
 
     
-    
-    CachedFormat format = this->chooseCacheFormat(dstColorSpace, ctx->caps());
-
-    
-    GrUniqueKey key;
-    this->makeCacheKeyFromOrigKey(origKey, format, &key);
-
-    
     if (key.isValid()) {
-        if (sk_sp<GrTextureProxy> proxy = ctx->resourceProvider()->findProxyByUniqueKey(key)) {
+        if (GrTexture* tex = ctx->textureProvider()->findAndRefTextureByUniqueKey(key)) {
             SK_HISTOGRAM_ENUMERATION("LockTexturePath", kPreExisting_LockTexturePath,
                                      kLockTexturePathCount);
-            return proxy;
+            return tex;
         }
     }
-
-    
-    
-    
-    SkImageInfo cacheInfo = this->buildCacheInfo(format);
 
     
     {
-        ScopedGenerator generator(fSharedGenerator);
-        if (sk_sp<GrTextureProxy> proxy = generator->generateTexture(ctx, cacheInfo, fOrigin)) {
+        ScopedGenerator generator(this);
+        SkIRect subset = SkIRect::MakeXYWH(fOrigin.x(), fOrigin.y(), fInfo.width(), fInfo.height());
+        if (GrTexture* tex = generator->generateTexture(ctx, &subset)) {
             SK_HISTOGRAM_ENUMERATION("LockTexturePath", kNative_LockTexturePath,
                                      kLockTexturePathCount);
-            set_key_on_proxy(ctx->resourceProvider(), proxy.get(), key);
-            return proxy;
+            return set_key_and_return(tex, key);
         }
     }
 
-    const GrSurfaceDesc desc = GrImageInfoToSurfaceDesc(cacheInfo, *ctx->caps());
+    const GrSurfaceDesc desc = GrImageInfoToSurfaceDesc(fInfo, *ctx->caps());
 
 #ifdef SK_SUPPORT_COMPRESSED_TEXTURES_IN_CACHERATOR
     
@@ -616,32 +300,31 @@ sk_sp<GrTextureProxy> SkImageCacherator::lockTextureProxy(GrContext* ctx,
 #endif
 
     
-    if (!ctx->contextPriv().disableGpuYUVConversion()) {
-        ScopedGenerator generator(fSharedGenerator);
+    {
+        ScopedGenerator generator(this);
         Generator_GrYUVProvider provider(generator);
-        if (sk_sp<GrTextureProxy> proxy = provider.refAsTextureProxy(ctx, desc, true)) {
+        sk_sp<GrTexture> tex = provider.refAsTexture(ctx, desc, true);
+        if (tex) {
             SK_HISTOGRAM_ENUMERATION("LockTexturePath", kYUV_LockTexturePath,
                                      kLockTexturePathCount);
-            set_key_on_proxy(ctx->resourceProvider(), proxy.get(), key);
-            return proxy;
+            return set_key_and_return(tex.release(), key);
         }
     }
 
     
     SkBitmap bitmap;
-    if (this->tryLockAsBitmap(&bitmap, client, chint, format, cacheInfo)) {
-        sk_sp<GrTextureProxy> proxy;
+    if (this->tryLockAsBitmap(&bitmap, client, chint)) {
+        GrTexture* tex = nullptr;
         if (willBeMipped) {
-            proxy = GrGenerateMipMapsAndUploadToTextureProxy(ctx, bitmap, dstColorSpace);
+            tex = GrGenerateMipMapsAndUploadToTexture(ctx, bitmap, gammaTreatment);
         }
-        if (!proxy) {
-            proxy = GrUploadBitmapToTextureProxy(ctx->resourceProvider(), bitmap);
+        if (!tex) {
+            tex = GrUploadBitmapToTexture(ctx, bitmap);
         }
-        if (proxy) {
+        if (tex) {
             SK_HISTOGRAM_ENUMERATION("LockTexturePath", kRGBA_LockTexturePath,
                                      kLockTexturePathCount);
-            set_key_on_proxy(ctx->resourceProvider(), proxy.get(), key);
-            return proxy;
+            return set_key_and_return(tex, key);
         }
     }
     SK_HISTOGRAM_ENUMERATION("LockTexturePath", kFailure_LockTexturePath,
@@ -651,21 +334,23 @@ sk_sp<GrTextureProxy> SkImageCacherator::lockTextureProxy(GrContext* ctx,
 
 
 
-sk_sp<GrTextureProxy> SkImageCacherator::lockAsTextureProxy(GrContext* ctx,
-                                                            const GrSamplerParams& params,
-                                                            SkColorSpace* dstColorSpace,
-                                                            sk_sp<SkColorSpace>* texColorSpace,
-                                                            const SkImage* client,
-                                                            SkScalar scaleAdjust[2],
-                                                            SkImage::CachingHint chint) {
+GrTexture* SkImageCacherator::lockAsTexture(GrContext* ctx, const GrTextureParams& params,
+                                            SkSourceGammaTreatment gammaTreatment,
+                                            const SkImage* client, SkImage::CachingHint chint) {
     if (!ctx) {
         return nullptr;
     }
 
-    return GrImageTextureMaker(ctx, this, client, chint).refTextureProxyForParams(params,
-                                                                                  dstColorSpace,
-                                                                                  texColorSpace,
-                                                                                  scaleAdjust);
+    return GrImageTextureMaker(ctx, this, client, chint).refTextureForParams(params,
+                                                                             gammaTreatment);
+}
+
+#else
+
+GrTexture* SkImageCacherator::lockAsTexture(GrContext* ctx, const GrTextureParams&,
+                                            SkSourceGammaTreatment gammaTreatment,
+                                            const SkImage* client, SkImage::CachingHint) {
+    return nullptr;
 }
 
 #endif

@@ -4,7 +4,7 @@
 
 
 
-
+ 
 #ifndef SKSL_ASTFORSTATEMENT
 #define SKSL_ASTFORSTATEMENT
 
@@ -16,7 +16,7 @@ namespace SkSL {
 
 
 struct ASTForStatement : public ASTStatement {
-    ASTForStatement(Position position, std::unique_ptr<ASTStatement> initializer,
+    ASTForStatement(Position position, std::unique_ptr<ASTStatement> initializer, 
                    std::unique_ptr<ASTExpression> test, std::unique_ptr<ASTExpression> next,
                    std::unique_ptr<ASTStatement> statement)
     : INHERITED(position, kFor_Kind)
@@ -25,8 +25,8 @@ struct ASTForStatement : public ASTStatement {
     , fNext(std::move(next))
     , fStatement(std::move(statement)) {}
 
-    String description() const override {
-        String result("for (");
+    std::string description() const override {
+        std::string result = "for (";
         if (fInitializer) {
             result.append(fInitializer->description());
         }

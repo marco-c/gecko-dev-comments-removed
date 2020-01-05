@@ -8,9 +8,16 @@
 #ifndef SkFontMgr_android_DEFINED
 #define SkFontMgr_android_DEFINED
 
-#include "SkRefCnt.h"
+#include "SkTypes.h"
 
 class SkFontMgr;
+
+
+
+
+
+SK_API void SkUseTestFontConfigFile(const char* mainconf, const char* fallbackconf,
+                                    const char* fontsdir);
 
 struct SkFontMgr_Android_CustomFonts {
     
@@ -40,6 +47,6 @@ struct SkFontMgr_Android_CustomFonts {
 };
 
 
-SK_API sk_sp<SkFontMgr> SkFontMgr_New_Android(const SkFontMgr_Android_CustomFonts* custom);
+SK_API SkFontMgr* SkFontMgr_New_Android(const SkFontMgr_Android_CustomFonts* custom);
 
 #endif 

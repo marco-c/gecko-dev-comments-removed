@@ -41,6 +41,12 @@ public:
 
     static bool Resize(SkBitmap* result, const SkPixmap& src, ResizeMethod method,
                        int dest_width, int dest_height, SkBitmap::Allocator* = nullptr);
+
+     
+
+
+
+    static void PlatformConvolutionProcs(SkConvolutionProcs*);
 };
 
 #endif

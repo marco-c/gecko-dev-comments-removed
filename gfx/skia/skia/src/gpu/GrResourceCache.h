@@ -52,7 +52,6 @@ public:
     static const size_t kDefaultMaxSize             = 96 * (1 << 20);
     
     
-    
     static const int    kDefaultMaxUnusedFlushes =
             1  * 
             60 * 
@@ -161,9 +160,6 @@ public:
     void purgeAllUnlocked();
 
     
-    void purgeResourcesNotUsedSince(GrStdSteadyClock::time_point);
-
-    
 
     bool requestsFlush() const { return fRequestFlush; }
 
@@ -213,10 +209,6 @@ public:
     void dumpStats(SkString*) const;
 
     void dumpStatsKeyValuePairs(SkTArray<SkString>* keys, SkTArray<double>* value) const;
-#endif
-
-#ifdef SK_DEBUG
-    int countUniqueKeysWithTag(const char* tag) const;
 #endif
 
     

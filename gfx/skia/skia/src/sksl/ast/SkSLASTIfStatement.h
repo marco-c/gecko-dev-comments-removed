@@ -4,7 +4,7 @@
 
 
 
-
+ 
 #ifndef SKSL_ASTIFSTATEMENT
 #define SKSL_ASTIFSTATEMENT
 
@@ -16,15 +16,15 @@ namespace SkSL {
 
 
 struct ASTIfStatement : public ASTStatement {
-    ASTIfStatement(Position position, std::unique_ptr<ASTExpression> test,
+    ASTIfStatement(Position position, std::unique_ptr<ASTExpression> test, 
                    std::unique_ptr<ASTStatement> ifTrue, std::unique_ptr<ASTStatement> ifFalse)
     : INHERITED(position, kIf_Kind)
     , fTest(std::move(test))
     , fIfTrue(std::move(ifTrue))
     , fIfFalse(std::move(ifFalse)) {}
 
-    String description() const override {
-        String result("if (");
+    std::string description() const override {
+        std::string result("if (");
         result += fTest->description();
         result += ") ";
         result += fIfTrue->description();
@@ -32,7 +32,7 @@ struct ASTIfStatement : public ASTStatement {
             result += " else ";
             result += fIfFalse->description();
         }
-        return result;
+        return result;        
     }
 
     const std::unique_ptr<ASTExpression> fTest;

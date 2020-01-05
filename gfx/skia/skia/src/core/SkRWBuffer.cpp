@@ -5,10 +5,8 @@
 
 
 
-#include "SkRWBuffer.h"
-
 #include "SkAtomics.h"
-#include "SkMalloc.h"
+#include "SkRWBuffer.h"
 #include "SkStream.h"
 
 
@@ -272,7 +270,7 @@ public:
         fGlobalOffset = fLocalOffset = 0;
     }
 
-    ~SkROBufferStreamAsset() override { fBuffer->unref(); }
+    virtual ~SkROBufferStreamAsset() { fBuffer->unref(); }
 
     size_t getLength() const override { return fBuffer->size(); }
 
@@ -357,6 +355,6 @@ private:
 };
 
 SkStreamAsset* SkRWBuffer::newStreamSnapshot() const {
-    sk_sp<SkROBuffer> buffer(this->newRBufferSnapshot());
-    return new SkROBufferStreamAsset(buffer.get());
+    SkAutoTUnref<SkROBuffer> buffer(this->newRBufferSnapshot());
+    return new SkROBufferStreamAsset(buffer);
 }

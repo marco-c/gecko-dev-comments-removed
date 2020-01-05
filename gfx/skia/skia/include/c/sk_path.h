@@ -21,7 +21,7 @@ typedef enum {
 } sk_path_direction_t;
 
 
-SK_API sk_path_t* sk_path_new(void);
+SK_API sk_path_t* sk_path_new();
 
 SK_API void sk_path_delete(sk_path_t*);
 

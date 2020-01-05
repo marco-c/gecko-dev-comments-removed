@@ -36,7 +36,7 @@ double SkDCubic::binarySearch(double min, double max, double axisIntercept,
     double calcDist = calcPos - axisIntercept;
     do {
         double priorT = t - step;
-        SkOPASSERT(priorT >= min);
+        SkASSERT(priorT >= min);
         SkDPoint lessPt = ptAtT(priorT);
         if (approximately_equal_half(lessPt.fX, cubicAtT.fX)
                 && approximately_equal_half(lessPt.fY, cubicAtT.fY)) {
@@ -77,10 +77,13 @@ double SkDCubic::binarySearch(double min, double max, double axisIntercept,
 
 
 double SkDCubic::calcPrecision() const {
-    return ((fPts[1] - fPts[0]).length()
-            + (fPts[2] - fPts[1]).length()
-            + (fPts[3] - fPts[2]).length()) / gPrecisionUnit;
+    SkDRect dRect;
+    dRect.setBounds(*this);  
+    double width = dRect.fRight - dRect.fLeft;
+    double height = dRect.fBottom - dRect.fTop;
+    return (width > height ? width : height) / gPrecisionUnit;
 }
+
 
 
 static void interp_cubic_coords(const double* src, double* dst, double t) {
@@ -229,53 +232,34 @@ bool SkDCubic::isLinear(int startIndex, int endIndex) const {
     return approximately_zero_when_compared_to(distance, largest);
 }
 
-
-
-
-
-static double derivative_at_t(const double* src, double t) {
-    double one_t = 1 - t;
-    double a = src[0];
-    double b = src[2];
-    double c = src[4];
-    double d = src[6];
-    return 3 * ((b - a) * one_t * one_t + 2 * (c - b) * t * one_t + (d - c) * t * t);
-}
-
-int SkDCubic::ComplexBreak(const SkPoint pointsPtr[4], SkScalar* t) {
-    SkDCubic cubic;
-    cubic.set(pointsPtr);
-    if (cubic.monotonicInX() && cubic.monotonicInY()) {
-        return 0;
-    }
+bool SkDCubic::ComplexBreak(const SkPoint pointsPtr[4], SkScalar* t) {
     SkScalar d[3];
     SkCubicType cubicType = SkClassifyCubic(pointsPtr, d);
-    switch (cubicType) {
-        case kLoop_SkCubicType: {
-            
-            
-            SkScalar tempSqrt = SkScalarSqrt(4.f * d[0] * d[2] - 3.f * d[1] * d[1]);
-            SkScalar ls = d[1] - tempSqrt;
-            SkScalar lt = 2.f * d[0];
-            SkScalar ms = d[1] + tempSqrt;
-            SkScalar mt = 2.f * d[0];
-            if (roughly_between(0, ls, lt) && roughly_between(0, ms, mt)) {
-                ls = ls / lt;
-                ms = ms / mt;
-                SkASSERT(roughly_between(0, ls, 1) && roughly_between(0, ms, 1));
-                t[0] = (ls + ms) / 2;
-                SkASSERT(roughly_between(0, *t, 1));
-                return (int) (t[0] > 0 && t[0] < 1);
-            }
-        }
+    if (cubicType == kLoop_SkCubicType) {
         
-        case kSerpentine_SkCubicType:
-        case kCusp_SkCubicType: {
-            double inflectionTs[2];
-            int infTCount = cubic.findInflections(inflectionTs);
+        
+        SkScalar tempSqrt = SkScalarSqrt(4.f * d[0] * d[2] - 3.f * d[1] * d[1]);
+        SkScalar ls = d[1] - tempSqrt;
+        SkScalar lt = 2.f * d[0];
+        SkScalar ms = d[1] + tempSqrt;
+        SkScalar mt = 2.f * d[0];
+        if (roughly_between(0, ls, lt) && roughly_between(0, ms, mt)) {
+            ls = ls / lt;
+            ms = ms / mt;
+            SkASSERT(roughly_between(0, ls, 1) && roughly_between(0, ms, 1));
+            *t = (ls + ms) / 2;
+            SkASSERT(roughly_between(0, *t, 1));
+            return *t > 0 && *t < 1;
+        }
+    } else if (kSerpentine_SkCubicType == cubicType || kCusp_SkCubicType == cubicType) {
+        SkDCubic cubic;
+        cubic.set(pointsPtr);
+        double inflectionTs[2];
+        int infTCount = cubic.findInflections(inflectionTs);
+        if (infTCount == 2) {
             double maxCurvature[3];
             int roots = cubic.findMaxCurvature(maxCurvature);
-    #if DEBUG_CUBIC_SPLIT
+#if DEBUG_CUBIC_SPLIT
             SkDebugf("%s\n", __FUNCTION__);
             cubic.dump();
             for (int index = 0; index < infTCount; ++index) {
@@ -292,42 +276,19 @@ int SkDCubic::ComplexBreak(const SkPoint pointsPtr[4], SkScalar* t) {
                 SkDLine perp = {{pt - dPt, pt + dPt}};
                 perp.dump();
             }
-    #endif
-            if (infTCount == 2) {
-                for (int index = 0; index < roots; ++index) {
-                    if (between(inflectionTs[0], maxCurvature[index], inflectionTs[1])) {
-                        t[0] = maxCurvature[index];
-                        return (int) (t[0] > 0 && t[0] < 1);
-                    }
+#endif
+            for (int index = 0; index < roots; ++index) {
+                if (between(inflectionTs[0], maxCurvature[index], inflectionTs[1])) {
+                    *t = maxCurvature[index];
+                    return *t > 0 && *t < 1;
                 }
-            } else {
-                int resultCount = 0;
-                
-                double precision = cubic.calcPrecision() * 2;
-                for (int index = 0; index < roots; ++index) {
-                    double testT = maxCurvature[index];
-                    if (0 >= testT || testT >= 1) {
-                        continue;
-                    }
-                    
-                    SkDVector dPt = { derivative_at_t(&cubic.fPts[0].fX, testT),
-                            derivative_at_t(&cubic.fPts[0].fY, testT) };
-                    double dPtLen = dPt.length();
-                    if (dPtLen < precision) {
-                        t[resultCount++] = testT;
-                    }
-                }
-                if (!resultCount && infTCount == 1) {
-                    t[0] = inflectionTs[0];
-                    resultCount = (int) (t[0] > 0 && t[0] < 1);
-                }
-                return resultCount;
             }
+        } else if (infTCount == 1) {
+            *t = inflectionTs[0];
+            return *t > 0 && *t < 1;
         }
-        default:
-            ;
     }
-    return 0;
+    return false;
 }
 
 bool SkDCubic::monotonicInX() const {
@@ -500,6 +461,19 @@ int SkDCubic::RootsReal(double A, double B, double C, double D, double s[3]) {
         }
     }
     return static_cast<int>(roots - s);
+}
+
+
+
+
+
+static double derivative_at_t(const double* src, double t) {
+    double one_t = 1 - t;
+    double a = src[0];
+    double b = src[2];
+    double c = src[4];
+    double d = src[6];
+    return 3 * ((b - a) * one_t * one_t + 2 * (c - b) * t * one_t + (d - c) * t * t);
 }
 
 
@@ -714,15 +688,6 @@ void SkDCubic::subDivide(const SkDPoint& a, const SkDPoint& d,
     if (AlmostBequalUlps(dst[1].fY, d.fY)) {
         dst[1].fY = d.fY;
     }
-}
-
-bool SkDCubic::toFloatPoints(SkPoint* pts) const {
-    const double* dCubic = &fPts[0].fX;
-    SkScalar* cubic = &pts[0].fX;
-    for (int index = 0; index < kPointCount * 2; ++index) {
-        *cubic++ = SkDoubleToScalar(*dCubic++);
-    }
-    return SkScalarsAreFinite(&pts->fX, kPointCount * 2);
 }
 
 double SkDCubic::top(const SkDCubic& dCurve, double startT, double endT, SkDPoint*topPt) const {

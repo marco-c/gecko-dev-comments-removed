@@ -4,7 +4,7 @@
 
 
 
-
+ 
 #ifndef SKSL_BOOLLITERAL
 #define SKSL_BOOLLITERAL
 
@@ -21,8 +21,8 @@ struct BoolLiteral : public Expression {
     : INHERITED(position, kBoolLiteral_Kind, *context.fBool_Type)
     , fValue(value) {}
 
-    String description() const override {
-        return String(fValue ? "true" : "false");
+    std::string description() const override {
+        return fValue ? "true" : "false";
     }
 
     bool isConstant() const override {

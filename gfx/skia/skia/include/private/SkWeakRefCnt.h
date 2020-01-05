@@ -60,7 +60,7 @@ public:
 
     
 
-    ~SkWeakRefCnt() override {
+    virtual ~SkWeakRefCnt() {
 #ifdef SK_DEBUG
         SkASSERT(getWeakCnt() == 1);
         fWeakCnt.store(0, std::memory_order_relaxed);

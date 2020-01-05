@@ -143,7 +143,7 @@ private:
         kPathsPerGroup = 16 
     };
 
-    mutable sk_sp<PathGenerator> fPathGenerator;
+    mutable SkAutoTUnref<PathGenerator> fPathGenerator;
     mutable SkTArray<uint8_t, true > fGeneratedPaths;
     const int fNumPaths;
 

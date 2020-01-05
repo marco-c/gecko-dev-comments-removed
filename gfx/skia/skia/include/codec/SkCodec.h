@@ -10,7 +10,7 @@
 
 #include "../private/SkTemplates.h"
 #include "SkColor.h"
-#include "SkEncodedImageFormat.h"
+#include "SkEncodedFormat.h"
 #include "SkEncodedInfo.h"
 #include "SkImageInfo.h"
 #include "SkSize.h"
@@ -18,10 +18,7 @@
 #include "SkTypes.h"
 #include "SkYUVSizeInfo.h"
 
-#include <vector>
-
 class SkColorSpace;
-class SkColorSpaceXform;
 class SkData;
 class SkPngChunkReader;
 class SkSampler;
@@ -35,7 +32,7 @@ class ColorCodecBench;
 
 
 
-class SK_API SkCodec : SkNoncopyable {
+class SkCodec : SkNoncopyable {
 public:
     
 
@@ -176,7 +173,7 @@ public:
     
 
 
-    SkEncodedImageFormat getEncodedFormat() const { return this->onGetEncodedFormat(); }
+    SkEncodedFormat getEncodedFormat() const { return this->onGetEncodedFormat(); }
 
     
 
@@ -246,13 +243,10 @@ public:
     struct Options {
         Options()
             : fZeroInitialized(kNo_ZeroInitialized)
-            , fSubset(nullptr)
-            , fFrameIndex(0)
-            , fHasPriorFrame(false)
-            , fPremulBehavior(SkTransferFunctionBehavior::kRespect)
+            , fSubset(NULL)
         {}
 
-        ZeroInitialized            fZeroInitialized;
+        ZeroInitialized fZeroInitialized;
         
 
 
@@ -270,41 +264,7 @@ public:
 
 
 
-        const SkIRect*             fSubset;
-
-        
-
-
-
-
-        size_t                     fFrameIndex;
-
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        bool                       fHasPriorFrame;
-
-        
-
-
-
-
-
-        SkTransferFunctionBehavior fPremulBehavior;
+        SkIRect*        fSubset;
     };
 
     
@@ -562,6 +522,19 @@ public:
 
 
         kBottomUp_SkScanlineOrder,
+
+        
+
+
+
+
+
+
+
+
+
+
+        kOutOfOrder_SkScanlineOrder,
     };
 
     
@@ -593,87 +566,6 @@ public:
 
     int outputScanline(int inputScanline) const;
 
-    
-
-
-
-
-    size_t getFrameCount() {
-        return this->onGetFrameCount();
-    }
-
-    
-    
-    static constexpr size_t kNone = static_cast<size_t>(-1);
-
-    
-
-
-    struct FrameInfo {
-        
-
-
-
-        size_t fRequiredFrame;
-
-        
-
-
-        size_t fDuration;
-
-        
-
-
-
-
-
-        bool fFullyReceived;
-
-        
-
-
-
-        SkAlphaType fAlphaType;
-    };
-
-    
-
-
-
-
-
-
-    bool getFrameInfo(size_t index, FrameInfo* info) const {
-        return this->onGetFrameInfo(index, info);
-    }
-
-    
-
-
-
-
-
-
-
-
-
-    std::vector<FrameInfo> getFrameInfo();
-
-    static constexpr int kRepetitionCountInfinite = -1;
-
-    
-
-
-
-
-
-
-
-
-    int getRepetitionCount() {
-        return this->onGetRepetitionCount();
-    }
-
 protected:
     
 
@@ -682,7 +574,7 @@ protected:
             int height,
             const SkEncodedInfo&,
             SkStream*,
-            sk_sp<SkColorSpace>,
+            sk_sp<SkColorSpace> = nullptr,
             Origin = kTopLeft_Origin);
 
     
@@ -708,7 +600,7 @@ protected:
         return false;
     }
 
-    virtual SkEncodedImageFormat onGetEncodedFormat() const = 0;
+    virtual SkEncodedFormat onGetEncodedFormat() const = 0;
 
     
 
@@ -814,42 +706,25 @@ protected:
 
     virtual int onOutputScanline(int inputScanline) const;
 
-    bool initializeColorXform(const SkImageInfo& dstInfo,
-                              SkTransferFunctionBehavior premulBehavior);
-    SkColorSpaceXform* colorXform() const { return fColorXform.get(); }
+    
 
-    virtual size_t onGetFrameCount() {
-        return 1;
-    }
 
-    virtual bool onGetFrameInfo(size_t, FrameInfo*) const {
-        return false;
-    }
 
-    virtual int onGetRepetitionCount() {
-        return 0;
-    }
-
-    void setUnsupportedICC(bool SkDEBUGCODE(value)) { SkDEBUGCODE(fUnsupportedICC = value); }
-
+    virtual sk_sp<SkData> getICCData() const { return nullptr; }
 private:
-    const SkEncodedInfo                fEncodedInfo;
-    const SkImageInfo                  fSrcInfo;
-    std::unique_ptr<SkStream>          fStream;
-    bool                               fNeedsRewind;
-    const Origin                       fOrigin;
+    const SkEncodedInfo         fEncodedInfo;
+    const SkImageInfo           fSrcInfo;
+    SkAutoTDelete<SkStream>     fStream;
+    bool                        fNeedsRewind;
+    const Origin                fOrigin;
 
-    SkImageInfo                        fDstInfo;
-    SkCodec::Options                   fOptions;
-    std::unique_ptr<SkColorSpaceXform> fColorXform;
+    SkImageInfo                 fDstInfo;
+    SkCodec::Options            fOptions;
 
     
-    int                                fCurrScanline;
+    int                         fCurrScanline;
 
-    bool                               fStartedIncrementalDecode;
-#ifdef SK_DEBUG
-    bool                               fUnsupportedICC = false;
-#endif
+    bool                        fStartedIncrementalDecode;
 
     
 
@@ -911,10 +786,13 @@ private:
 
     virtual SkSampler* getSampler(bool ) { return nullptr; }
 
+    
+    
+    friend class DM::ColorCodecSrc;
+    friend class ColorCodecBench;
+
     friend class DM::CodecSrc;  
     friend class SkSampledCodec;
     friend class SkIcoCodec;
-    friend struct Sniffer; 
-    friend class AutoCleanPng; 
 };
 #endif 

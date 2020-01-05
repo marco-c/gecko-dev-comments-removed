@@ -9,7 +9,6 @@
 #define GrSimpleTextureEffect_DEFINED
 
 #include "GrSingleTextureEffect.h"
-#include "GrTextureProxy.h"
 
 class GrInvariantOutput;
 
@@ -21,57 +20,59 @@ class GrInvariantOutput;
 class GrSimpleTextureEffect : public GrSingleTextureEffect {
 public:
     
-    static sk_sp<GrFragmentProcessor> Make(GrResourceProvider* resourceProvider,
-                                           sk_sp<GrTextureProxy> proxy,
+    static sk_sp<GrFragmentProcessor> Make(GrTexture* tex,
                                            sk_sp<GrColorSpaceXform> colorSpaceXform,
                                            const SkMatrix& matrix) {
         return sk_sp<GrFragmentProcessor>(
-            new GrSimpleTextureEffect(resourceProvider, std::move(proxy),
-                                      std::move(colorSpaceXform), matrix,
-                                      GrSamplerParams::kNone_FilterMode));
+            new GrSimpleTextureEffect(tex, std::move(colorSpaceXform), matrix,
+                                      GrTextureParams::kNone_FilterMode));
     }
 
     
-    static sk_sp<GrFragmentProcessor> Make(GrResourceProvider* resourceProvider,
-                                           sk_sp<GrTextureProxy> proxy,
+    static sk_sp<GrFragmentProcessor> Make(GrTexture* tex,
                                            sk_sp<GrColorSpaceXform> colorSpaceXform,
-                                           const SkMatrix& matrix,
-                                           GrSamplerParams::FilterMode filterMode) {
+                                            const SkMatrix& matrix,
+                                            GrTextureParams::FilterMode filterMode) {
         return sk_sp<GrFragmentProcessor>(
-            new GrSimpleTextureEffect(resourceProvider, std::move(proxy),
-                                      std::move(colorSpaceXform),
-                                      matrix, filterMode));
+            new GrSimpleTextureEffect(tex, std::move(colorSpaceXform), matrix, filterMode));
     }
 
-    static sk_sp<GrFragmentProcessor> Make(GrResourceProvider* resourceProvider,
-                                           sk_sp<GrTextureProxy> proxy,
+    static sk_sp<GrFragmentProcessor> Make(GrTexture* tex,
                                            sk_sp<GrColorSpaceXform> colorSpaceXform,
                                            const SkMatrix& matrix,
-                                           const GrSamplerParams& p) {
-        return sk_sp<GrFragmentProcessor>(new GrSimpleTextureEffect(resourceProvider,
-                                                                    std::move(proxy),
-                                                                    std::move(colorSpaceXform),
+                                           const GrTextureParams& p) {
+        return sk_sp<GrFragmentProcessor>(new GrSimpleTextureEffect(tex, std::move(colorSpaceXform),
                                                                     matrix, p));
     }
 
-    ~GrSimpleTextureEffect() override {}
+    virtual ~GrSimpleTextureEffect() {}
 
     const char* name() const override { return "SimpleTexture"; }
 
 private:
-    GrSimpleTextureEffect(GrResourceProvider*, sk_sp<GrTextureProxy>,
-                          sk_sp<GrColorSpaceXform>, const SkMatrix& matrix,
-                          GrSamplerParams::FilterMode);
+    GrSimpleTextureEffect(GrTexture* texture,
+                          sk_sp<GrColorSpaceXform> colorSpaceXform,
+                          const SkMatrix& matrix,
+                          GrTextureParams::FilterMode filterMode)
+        : GrSingleTextureEffect(texture, std::move(colorSpaceXform), matrix, filterMode) {
+        this->initClassID<GrSimpleTextureEffect>();
+    }
 
-    GrSimpleTextureEffect(GrResourceProvider*, sk_sp<GrTextureProxy>,
-                          sk_sp<GrColorSpaceXform>, const SkMatrix& matrix,
-                          const GrSamplerParams&);
+    GrSimpleTextureEffect(GrTexture* texture,
+                          sk_sp<GrColorSpaceXform> colorSpaceXform,
+                          const SkMatrix& matrix,
+                          const GrTextureParams& params)
+        : GrSingleTextureEffect(texture, std::move(colorSpaceXform), matrix, params) {
+        this->initClassID<GrSimpleTextureEffect>();
+    }
 
     GrGLSLFragmentProcessor* onCreateGLSLInstance() const override;
 
-    void onGetGLSLProcessorKey(const GrShaderCaps&, GrProcessorKeyBuilder*) const override;
+    void onGetGLSLProcessorKey(const GrGLSLCaps&, GrProcessorKeyBuilder*) const override;
 
     bool onIsEqual(const GrFragmentProcessor& other) const override { return true; }
+
+    void onComputeInvariantOutput(GrInvariantOutput* inout) const override;
 
     GR_DECLARE_FRAGMENT_PROCESSOR_TEST;
 

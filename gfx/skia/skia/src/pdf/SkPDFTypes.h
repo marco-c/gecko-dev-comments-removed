@@ -187,7 +187,7 @@ public:
     
 
     SkPDFArray();
-    ~SkPDFArray() override;
+    virtual ~SkPDFArray();
 
     
     void emitObject(SkWStream* stream,
@@ -235,7 +235,7 @@ public:
 
     explicit SkPDFDict(const char type[] = nullptr);
 
-    ~SkPDFDict() override;
+    virtual ~SkPDFDict();
 
     
     void emitObject(SkWStream* stream,
@@ -298,7 +298,7 @@ private:
 class SkPDFSharedStream final : public SkPDFObject {
 public:
     SkPDFSharedStream(std::unique_ptr<SkStreamAsset> data);
-    ~SkPDFSharedStream() override;
+    ~SkPDFSharedStream();
     SkPDFDict* dict() { return &fDict; }
     void emitObject(SkWStream*,
                     const SkPDFObjNumMap&) const override;
@@ -327,7 +327,7 @@ public:
 
     explicit SkPDFStream(sk_sp<SkData> data);
     explicit SkPDFStream(std::unique_ptr<SkStreamAsset> stream);
-    ~SkPDFStream() override;
+    virtual ~SkPDFStream();
 
     SkPDFDict* dict() { return &fDict; }
 

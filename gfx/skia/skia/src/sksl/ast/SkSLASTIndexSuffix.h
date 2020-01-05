@@ -4,7 +4,7 @@
 
 
 
-
+ 
 #ifndef SKSL_ASTINDEXSUFFIX
 #define SKSL_ASTINDEXSUFFIX
 
@@ -16,25 +16,15 @@ namespace SkSL {
 
 
 
-
 struct ASTIndexSuffix : public ASTSuffix {
-    ASTIndexSuffix(Position position)
-    : INHERITED(position, ASTSuffix::kIndex_Kind)
-    , fExpression(nullptr) {}
-
-    ASTIndexSuffix(std::unique_ptr<ASTExpression> expression)
-    : INHERITED(expression ? expression->fPosition : Position(), ASTSuffix::kIndex_Kind)
+    ASTIndexSuffix(std::unique_ptr<ASTExpression> expression) 
+    : INHERITED(expression->fPosition, ASTSuffix::kIndex_Kind)
     , fExpression(std::move(expression)) {}
 
-    String description() const override {
-        if (fExpression) {
-            return "[" + fExpression->description() + "]";
-        } else {
-            return String("[]");
-        }
+    std::string description() const override {
+        return "[" + fExpression->description() + "]";
     }
 
-    
     std::unique_ptr<ASTExpression> fExpression;
 
     typedef ASTSuffix INHERITED;

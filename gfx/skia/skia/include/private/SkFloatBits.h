@@ -10,7 +10,7 @@
 #define SkFloatBits_DEFINED
 
 #include "SkTypes.h"
-#include "SkSafe_math.h"
+#include <math.h>
 
 
 

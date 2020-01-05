@@ -5,16 +5,16 @@
 
 
 
+
 #include "GrGLCaps.h"
+
 #include "GrContextOptions.h"
 #include "GrGLContext.h"
 #include "GrGLRenderTarget.h"
-#include "GrGLTexture.h"
-#include "GrShaderCaps.h"
-#include "GrSurfaceProxyPriv.h"
+#include "glsl/GrGLSLCaps.h"
+#include "instanced/GLInstancedRendering.h"
 #include "SkTSearch.h"
 #include "SkTSort.h"
-#include "instanced/GLInstancedRendering.h"
 
 GrGLCaps::GrGLCaps(const GrContextOptions& contextOptions,
                    const GrGLContextInfo& ctxInfo,
@@ -51,12 +51,10 @@ GrGLCaps::GrGLCaps(const GrContextOptions& contextOptions,
     fMipMapLevelAndLodControlSupport = false;
     fRGBAToBGRAReadbackConversionsAreSlow = false;
     fDoManualMipmapping = false;
-    fSRGBDecodeDisableSupport = false;
-    fSRGBDecodeDisableAffectsMipmaps = false;
 
-    fBlitFramebufferFlags = kNoSupport_BlitFramebufferFlag;
+    fBlitFramebufferSupport = kNone_BlitFramebufferSupport;
 
-    fShaderCaps.reset(new GrShaderCaps(contextOptions));
+    fShaderCaps.reset(new GrGLSLCaps(contextOptions));
 
     this->init(contextOptions, ctxInfo, glInterface);
 }
@@ -122,7 +120,7 @@ void GrGLCaps::init(const GrContextOptions& contextOptions,
 
     
     
-    if (kOSMesa_GrGLRenderer != ctxInfo.renderer()) {
+    if (kMesa_GrGLDriver != ctxInfo.driver()) {
         if (kGL_GrGLStandard == standard) {
             fTextureRedSupport = version >= GR_GL_VER(3,0) ||
                                  ctxInfo.hasExtension("GL_ARB_texture_rg");
@@ -256,101 +254,70 @@ void GrGLCaps::init(const GrContextOptions& contextOptions,
 
     
     this->initGLSL(ctxInfo);
-    GrShaderCaps* shaderCaps = fShaderCaps.get();
+    GrGLSLCaps* glslCaps = static_cast<GrGLSLCaps*>(fShaderCaps.get());
 
-    if (!contextOptions.fSuppressPathRendering) {
-        shaderCaps->fPathRenderingSupport = this->hasPathRenderingSupport(ctxInfo, gli);
-    }
+    glslCaps->fPathRenderingSupport = this->hasPathRenderingSupport(ctxInfo, gli);
 
     
     
-    shaderCaps->fDstReadInShaderSupport = shaderCaps->fFBFetchSupport;
+    glslCaps->fDstReadInShaderSupport = glslCaps->fFBFetchSupport;
 
     
     if (kGL_GrGLStandard == standard) {
-        shaderCaps->fDualSourceBlendingSupport = (ctxInfo.version() >= GR_GL_VER(3, 3) ||
+        glslCaps->fDualSourceBlendingSupport = (ctxInfo.version() >= GR_GL_VER(3, 3) ||
             ctxInfo.hasExtension("GL_ARB_blend_func_extended")) &&
             GrGLSLSupportsNamedFragmentShaderOutputs(ctxInfo.glslGeneration());
-        shaderCaps->fShaderDerivativeSupport = true;
+        glslCaps->fShaderDerivativeSupport = true;
         
-        shaderCaps->fGeometryShaderSupport = ctxInfo.version() >= GR_GL_VER(3, 2) &&
+        glslCaps->fGeometryShaderSupport = ctxInfo.version() >= GR_GL_VER(3, 2) &&
             ctxInfo.glslGeneration() >= k150_GrGLSLGeneration;
-        shaderCaps->fIntegerSupport = ctxInfo.version() >= GR_GL_VER(3, 0) &&
+        glslCaps->fIntegerSupport = ctxInfo.version() >= GR_GL_VER(3, 0) &&
             ctxInfo.glslGeneration() >= k130_GrGLSLGeneration;
     }
     else {
-        shaderCaps->fDualSourceBlendingSupport = ctxInfo.hasExtension("GL_EXT_blend_func_extended");
+        glslCaps->fDualSourceBlendingSupport = ctxInfo.hasExtension("GL_EXT_blend_func_extended");
 
-        shaderCaps->fShaderDerivativeSupport = ctxInfo.version() >= GR_GL_VER(3, 0) ||
+        glslCaps->fShaderDerivativeSupport = ctxInfo.version() >= GR_GL_VER(3, 0) ||
             ctxInfo.hasExtension("GL_OES_standard_derivatives");
 
-        shaderCaps->fGeometryShaderSupport = ctxInfo.hasExtension("GL_EXT_geometry_shader");
-
-        shaderCaps->fIntegerSupport = ctxInfo.version() >= GR_GL_VER(3, 0) &&
+        glslCaps->fIntegerSupport = ctxInfo.version() >= GR_GL_VER(3, 0) &&
             ctxInfo.glslGeneration() >= k330_GrGLSLGeneration; 
+    }
+
+    if (ctxInfo.hasExtension("GL_EXT_shader_pixel_local_storage")) {
+        #define GL_MAX_SHADER_PIXEL_LOCAL_STORAGE_FAST_SIZE_EXT 0x8F63
+        GR_GL_GetIntegerv(gli, GL_MAX_SHADER_PIXEL_LOCAL_STORAGE_FAST_SIZE_EXT,
+                          &glslCaps->fPixelLocalStorageSize);
+        glslCaps->fPLSPathRenderingSupport = glslCaps->fFBFetchSupport;
+    }
+    else {
+        glslCaps->fPixelLocalStorageSize = 0;
+        glslCaps->fPLSPathRenderingSupport = false;
     }
 
     
     static const uint8_t kMaxSaneSamplers = 32;
     GrGLint maxSamplers;
     GR_GL_GetIntegerv(gli, GR_GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS, &maxSamplers);
-    shaderCaps->fMaxVertexSamplers = SkTMin<GrGLint>(kMaxSaneSamplers, maxSamplers);
-    if (shaderCaps->fGeometryShaderSupport) {
+    glslCaps->fMaxVertexSamplers = SkTMin<GrGLint>(kMaxSaneSamplers, maxSamplers);
+    if (glslCaps->fGeometryShaderSupport) {
         GR_GL_GetIntegerv(gli, GR_GL_MAX_GEOMETRY_TEXTURE_IMAGE_UNITS, &maxSamplers);
-        shaderCaps->fMaxGeometrySamplers = SkTMin<GrGLint>(kMaxSaneSamplers, maxSamplers);
+        glslCaps->fMaxGeometrySamplers = SkTMin<GrGLint>(kMaxSaneSamplers, maxSamplers);
     }
     GR_GL_GetIntegerv(gli, GR_GL_MAX_TEXTURE_IMAGE_UNITS, &maxSamplers);
-    shaderCaps->fMaxFragmentSamplers = SkTMin<GrGLint>(kMaxSaneSamplers, maxSamplers);
+    glslCaps->fMaxFragmentSamplers = SkTMin<GrGLint>(kMaxSaneSamplers, maxSamplers);
     GR_GL_GetIntegerv(gli, GR_GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &maxSamplers);
-    shaderCaps->fMaxCombinedSamplers = SkTMin<GrGLint>(kMaxSaneSamplers, maxSamplers);
-
-    if (kGL_GrGLStandard == standard) {
-        shaderCaps->fImageLoadStoreSupport = ctxInfo.version() >= GR_GL_VER(4, 2);
-        if (!shaderCaps->fImageLoadStoreSupport &&
-            ctxInfo.hasExtension("GL_ARB_shader_image_load_store")) {
-            shaderCaps->fImageLoadStoreSupport = true;
-            shaderCaps->fImageLoadStoreExtensionString = "GL_ARB_shader_image_load_store";
-        }
-    } else {
-        shaderCaps->fImageLoadStoreSupport = ctxInfo.version() >= GR_GL_VER(3, 1);
-    }
-    if (shaderCaps->fImageLoadStoreSupport) {
-        
-        static constexpr int kMaxSaneImages = 4;
-        GrGLint maxUnits;
-        GR_GL_GetIntegerv(gli, GR_GL_MAX_IMAGE_UNITS, &maxUnits);
-        GR_GL_GetIntegerv(gli, GR_GL_MAX_VERTEX_IMAGE_UNIFORMS,
-                          &shaderCaps->fMaxVertexImageStorages);
-        if (shaderCaps->fGeometryShaderSupport) {
-            GR_GL_GetIntegerv(gli, GR_GL_MAX_GEOMETRY_IMAGE_UNIFORMS,
-                              &shaderCaps->fMaxGeometryImageStorages);
-        }
-        GR_GL_GetIntegerv(gli, GR_GL_MAX_FRAGMENT_IMAGE_UNIFORMS,
-                          &shaderCaps->fMaxFragmentImageStorages);
-        GR_GL_GetIntegerv(gli, GR_GL_MAX_COMBINED_IMAGE_UNIFORMS,
-                          &shaderCaps->fMaxCombinedImageStorages);
-        
-        shaderCaps->fMaxCombinedImageStorages = SkTMin(SkTMin(shaderCaps->fMaxCombinedImageStorages,
-                                                              maxUnits), kMaxSaneImages);
-        shaderCaps->fMaxVertexImageStorages = SkTMin(maxUnits,
-                                                     shaderCaps->fMaxVertexImageStorages);
-        shaderCaps->fMaxGeometryImageStorages = SkTMin(maxUnits,
-                                                       shaderCaps->fMaxGeometryImageStorages);
-        shaderCaps->fMaxFragmentImageStorages =  SkTMin(maxUnits,
-                                                        shaderCaps->fMaxFragmentImageStorages);
-    }
+    glslCaps->fMaxCombinedSamplers = SkTMin<GrGLint>(kMaxSaneSamplers, maxSamplers);
 
     
 
 
 
-    
     
     
     if (fMultisampleDisableSupport &&
-        shaderCaps->dualSourceBlendingSupport() &&
-        fShaderCaps->pathRenderingSupport() &&
-        (contextOptions.fGpuPathRenderers & GrContextOptions::GpuPathRenderers::kStencilAndCover)) {
+        glslCaps->dualSourceBlendingSupport() &&
+        fShaderCaps->pathRenderingSupport()) {
         fUsesMixedSamples = ctxInfo.hasExtension("GL_NV_framebuffer_mixed_samples") ||
                 ctxInfo.hasExtension("GL_CHROMIUM_framebuffer_mixed_samples");
         
@@ -431,10 +398,10 @@ void GrGLCaps::init(const GrContextOptions& contextOptions,
     
     
     if (fBufferMapThreshold < 0) {
+        
+        
+        
 #if 0
-        
-        
-        
         fBufferMapThreshold = kChromium_GrGLDriver == ctxInfo.driver() ? 0 : SK_MaxS32;
 #else
         fBufferMapThreshold = SK_MaxS32;
@@ -500,8 +467,7 @@ void GrGLCaps::init(const GrContextOptions& contextOptions,
 
     if (kPowerVR54x_GrGLRenderer == ctxInfo.renderer() ||
         kPowerVRRogue_GrGLRenderer == ctxInfo.renderer() ||
-        (kAdreno3xx_GrGLRenderer == ctxInfo.renderer() &&
-         ctxInfo.driver() != kChromium_GrGLDriver)) {
+        kAdreno3xx_GrGLRenderer == ctxInfo.renderer()) {
         fUseDrawInsteadOfClear = true;
     }
 
@@ -569,7 +535,7 @@ void GrGLCaps::init(const GrContextOptions& contextOptions,
         fDrawRangeElementsSupport = version >= GR_GL_VER(3,0);
     }
 
-    this->initShaderPrecisionTable(ctxInfo, gli, shaderCaps);
+    this->initShaderPrecisionTable(ctxInfo, gli, glslCaps);
 
     if (contextOptions.fUseShaderSwizzling) {
         fTextureSwizzleSupport = false;
@@ -595,15 +561,6 @@ void GrGLCaps::init(const GrContextOptions& contextOptions,
 
     
     
-    fCrossContextTextureSupport = fFenceSyncSupport;
-#ifdef SK_BUILD_FOR_WIN
-    if (kIntel_GrGLVendor == ctxInfo.vendor()) {
-        fCrossContextTextureSupport = false;
-    }
-#endif
-
-    
-    
     
     
     if (fMipMapLevelAndLodControlSupport &&
@@ -614,16 +571,12 @@ void GrGLCaps::init(const GrContextOptions& contextOptions,
         fDoManualMipmapping = true;
     }
 
-    fSRGBDecodeDisableSupport = ctxInfo.hasExtension("GL_EXT_texture_sRGB_decode");
-    fSRGBDecodeDisableAffectsMipmaps = fSRGBDecodeDisableSupport &&
-        kChromium_GrGLDriver != ctxInfo.driver();
-
     
     
-    this->initConfigTable(contextOptions, ctxInfo, gli, shaderCaps);
+    this->initConfigTable(ctxInfo, gli, glslCaps);
 
     this->applyOptionsOverrides(contextOptions);
-    shaderCaps->applyOptionsOverrides(contextOptions);
+    glslCaps->applyOptionsOverrides(contextOptions);
 }
 
 const char* get_glsl_version_decl_string(GrGLStandard standard, GrGLSLGeneration generation,
@@ -669,14 +622,6 @@ const char* get_glsl_version_decl_string(GrGLStandard standard, GrGLSLGeneration
             } else {
                 return "#version 400 compatibility\n";
             }
-        case k420_GrGLSLGeneration:
-            SkASSERT(kGL_GrGLStandard == standard);
-            if (isCoreProfile) {
-                return "#version 420\n";
-            }
-            else {
-                return "#version 420 compatibility\n";
-            }
         case k310es_GrGLSLGeneration:
             SkASSERT(kGLES_GrGLStandard == standard);
             return "#version 310 es\n";
@@ -695,107 +640,106 @@ void GrGLCaps::initGLSL(const GrGLContextInfo& ctxInfo) {
 
 
 
-    GrShaderCaps* shaderCaps = fShaderCaps.get();
-    shaderCaps->fGLSLGeneration = ctxInfo.glslGeneration();
+    GrGLSLCaps* glslCaps = static_cast<GrGLSLCaps*>(fShaderCaps.get());
+    glslCaps->fGLSLGeneration = ctxInfo.glslGeneration();
     if (kGLES_GrGLStandard == standard) {
         if (ctxInfo.hasExtension("GL_EXT_shader_framebuffer_fetch")) {
-            shaderCaps->fFBFetchNeedsCustomOutput = (version >= GR_GL_VER(3, 0));
-            shaderCaps->fFBFetchSupport = true;
-            shaderCaps->fFBFetchColorName = "gl_LastFragData[0]";
-            shaderCaps->fFBFetchExtensionString = "GL_EXT_shader_framebuffer_fetch";
+            glslCaps->fFBFetchNeedsCustomOutput = (version >= GR_GL_VER(3, 0));
+            glslCaps->fFBFetchSupport = true;
+            glslCaps->fFBFetchColorName = "gl_LastFragData[0]";
+            glslCaps->fFBFetchExtensionString = "GL_EXT_shader_framebuffer_fetch";
         }
         else if (ctxInfo.hasExtension("GL_NV_shader_framebuffer_fetch")) {
             
-            shaderCaps->fFBFetchNeedsCustomOutput = false;
-            shaderCaps->fFBFetchSupport = true;
-            shaderCaps->fFBFetchColorName = "gl_LastFragData[0]";
-            shaderCaps->fFBFetchExtensionString = "GL_NV_shader_framebuffer_fetch";
+            glslCaps->fFBFetchNeedsCustomOutput = false;
+            glslCaps->fFBFetchSupport = true;
+            glslCaps->fFBFetchColorName = "gl_LastFragData[0]";
+            glslCaps->fFBFetchExtensionString = "GL_NV_shader_framebuffer_fetch";
         }
         else if (ctxInfo.hasExtension("GL_ARM_shader_framebuffer_fetch")) {
             
-            shaderCaps->fFBFetchNeedsCustomOutput = false;
-            shaderCaps->fFBFetchSupport = true;
-            shaderCaps->fFBFetchColorName = "gl_LastFragColorARM";
-            shaderCaps->fFBFetchExtensionString = "GL_ARM_shader_framebuffer_fetch";
+            glslCaps->fFBFetchNeedsCustomOutput = false;
+            glslCaps->fFBFetchSupport = true;
+            glslCaps->fFBFetchColorName = "gl_LastFragColorARM";
+            glslCaps->fFBFetchExtensionString = "GL_ARM_shader_framebuffer_fetch";
         }
-        shaderCaps->fUsesPrecisionModifiers = true;
+        glslCaps->fUsesPrecisionModifiers = true;
     }
 
     
     
     
     if (kAdreno5xx_GrGLRenderer == ctxInfo.renderer()) {
-        shaderCaps->fFBFetchSupport = false;
+        glslCaps->fFBFetchSupport = false;
     }
 
-    shaderCaps->fBindlessTextureSupport = ctxInfo.hasExtension("GL_NV_bindless_texture");
+    glslCaps->fBindlessTextureSupport = ctxInfo.hasExtension("GL_NV_bindless_texture");
 
     if (kGL_GrGLStandard == standard) {
-        shaderCaps->fFlatInterpolationSupport = ctxInfo.glslGeneration() >= k130_GrGLSLGeneration;
+        glslCaps->fFlatInterpolationSupport = ctxInfo.glslGeneration() >= k130_GrGLSLGeneration;
     } else {
-        shaderCaps->fFlatInterpolationSupport =
+        glslCaps->fFlatInterpolationSupport =
             ctxInfo.glslGeneration() >= k330_GrGLSLGeneration; 
     }
 
     if (kGL_GrGLStandard == standard) {
-        shaderCaps->fNoPerspectiveInterpolationSupport =
+        glslCaps->fNoPerspectiveInterpolationSupport =
             ctxInfo.glslGeneration() >= k130_GrGLSLGeneration;
     } else {
         if (ctxInfo.hasExtension("GL_NV_shader_noperspective_interpolation")) {
-            shaderCaps->fNoPerspectiveInterpolationSupport = true;
-            shaderCaps->fNoPerspectiveInterpolationExtensionString =
+            glslCaps->fNoPerspectiveInterpolationSupport = true;
+            glslCaps->fNoPerspectiveInterpolationExtensionString =
                 "GL_NV_shader_noperspective_interpolation";
         }
     }
 
     if (kGL_GrGLStandard == standard) {
-        shaderCaps->fMultisampleInterpolationSupport =
+        glslCaps->fMultisampleInterpolationSupport =
                 ctxInfo.glslGeneration() >= k400_GrGLSLGeneration;
     } else {
         if (ctxInfo.glslGeneration() >= k320es_GrGLSLGeneration) {
-            shaderCaps->fMultisampleInterpolationSupport = true;
+            glslCaps->fMultisampleInterpolationSupport = true;
         } else if (ctxInfo.hasExtension("GL_OES_shader_multisample_interpolation")) {
-            shaderCaps->fMultisampleInterpolationSupport = true;
-            shaderCaps->fMultisampleInterpolationExtensionString =
+            glslCaps->fMultisampleInterpolationSupport = true;
+            glslCaps->fMultisampleInterpolationExtensionString =
                 "GL_OES_shader_multisample_interpolation";
         }
     }
 
     if (kGL_GrGLStandard == standard) {
-        shaderCaps->fSampleVariablesSupport = ctxInfo.glslGeneration() >= k400_GrGLSLGeneration;
+        glslCaps->fSampleVariablesSupport = ctxInfo.glslGeneration() >= k400_GrGLSLGeneration;
     } else {
         if (ctxInfo.glslGeneration() >= k320es_GrGLSLGeneration) {
-            shaderCaps->fSampleVariablesSupport = true;
+            glslCaps->fSampleVariablesSupport = true;
         } else if (ctxInfo.hasExtension("GL_OES_sample_variables")) {
-            shaderCaps->fSampleVariablesSupport = true;
-            shaderCaps->fSampleVariablesExtensionString = "GL_OES_sample_variables";
+            glslCaps->fSampleVariablesSupport = true;
+            glslCaps->fSampleVariablesExtensionString = "GL_OES_sample_variables";
         }
     }
 
-    if (shaderCaps->fSampleVariablesSupport &&
+    if (glslCaps->fSampleVariablesSupport &&
         ctxInfo.hasExtension("GL_NV_sample_mask_override_coverage")) {
         
-        shaderCaps->fSampleMaskOverrideCoverageSupport =
+        glslCaps->fSampleMaskOverrideCoverageSupport =
             kNVIDIA_GrGLDriver != ctxInfo.driver() ||
             ctxInfo.driverVersion() >= GR_GL_DRIVER_VER(361,00);
     }
 
     
-    shaderCaps->fDropsTileOnZeroDivide = kQualcomm_GrGLVendor == ctxInfo.vendor();
+    glslCaps->fDropsTileOnZeroDivide = kQualcomm_GrGLVendor == ctxInfo.vendor();
 
     
     
     
     
     
-    shaderCaps->fCanUseAnyFunctionInShader = kImagination_GrGLVendor != ctxInfo.vendor();
+    glslCaps->fCanUseAnyFunctionInShader = kImagination_GrGLVendor != ctxInfo.vendor();
 
-    shaderCaps->fVersionDeclString = get_glsl_version_decl_string(standard,
-                                                                  shaderCaps->fGLSLGeneration,
-                                                                  fIsCoreProfile);
+    glslCaps->fVersionDeclString = get_glsl_version_decl_string(standard, glslCaps->fGLSLGeneration,
+                                                                fIsCoreProfile);
 
-    if (kGLES_GrGLStandard == standard && k110_GrGLSLGeneration == shaderCaps->fGLSLGeneration) {
-        shaderCaps->fShaderDerivativeExtensionString = "GL_OES_standard_derivatives";
+    if (kGLES_GrGLStandard == standard && k110_GrGLSLGeneration == glslCaps->fGLSLGeneration) {
+        glslCaps->fShaderDerivativeExtensionString = "GL_OES_standard_derivatives";
     }
 
     
@@ -805,52 +749,52 @@ void GrGLCaps::initGLSL(const GrGLContextInfo& ctxInfo) {
         kGLES_GrGLStandard != standard &&
         (ctxInfo.glslGeneration() >= k150_GrGLSLGeneration ||
          ctxInfo.hasExtension("GL_ARB_fragment_coord_conventions"))) {
-        shaderCaps->fFragCoordConventionsExtensionString = "GL_ARB_fragment_coord_conventions";
+        glslCaps->fFragCoordConventionsExtensionString = "GL_ARB_fragment_coord_conventions";
     }
 
     if (kGLES_GrGLStandard == standard) {
-        shaderCaps->fSecondaryOutputExtensionString = "GL_EXT_blend_func_extended";
+        glslCaps->fSecondaryOutputExtensionString = "GL_EXT_blend_func_extended";
     }
 
     if (ctxInfo.hasExtension("GL_OES_EGL_image_external")) {
         if (ctxInfo.glslGeneration() == k110_GrGLSLGeneration) {
-            shaderCaps->fExternalTextureSupport = true;
+            glslCaps->fExternalTextureSupport = true;
         } else if (ctxInfo.hasExtension("GL_OES_EGL_image_external_essl3") ||
                    ctxInfo.hasExtension("OES_EGL_image_external_essl3")) {
             
-            shaderCaps->fExternalTextureSupport = true;
+            glslCaps->fExternalTextureSupport = true;
         }
     }
 
-    if (shaderCaps->fExternalTextureSupport) {
+    if (glslCaps->fExternalTextureSupport) {
         if (ctxInfo.glslGeneration() == k110_GrGLSLGeneration) {
-            shaderCaps->fExternalTextureExtensionString = "GL_OES_EGL_image_external";
+            glslCaps->fExternalTextureExtensionString = "GL_OES_EGL_image_external";
         } else {
-            shaderCaps->fExternalTextureExtensionString = "GL_OES_EGL_image_external_essl3";
+            glslCaps->fExternalTextureExtensionString = "GL_OES_EGL_image_external_essl3";
         }
     }
 
     if (kGL_GrGLStandard == standard) {
-        shaderCaps->fTexelFetchSupport = ctxInfo.glslGeneration() >= k130_GrGLSLGeneration;
+        glslCaps->fTexelFetchSupport = ctxInfo.glslGeneration() >= k130_GrGLSLGeneration;
     } else {
-        shaderCaps->fTexelFetchSupport =
+        glslCaps->fTexelFetchSupport =
             ctxInfo.glslGeneration() >= k330_GrGLSLGeneration; 
     }
 
-    if (shaderCaps->fTexelFetchSupport) {
+    if (glslCaps->fTexelFetchSupport) {
         if (kGL_GrGLStandard == standard) {
-            shaderCaps->fTexelBufferSupport = ctxInfo.version() >= GR_GL_VER(3, 1) &&
+            glslCaps->fTexelBufferSupport = ctxInfo.version() >= GR_GL_VER(3, 1) &&
                                             ctxInfo.glslGeneration() >= k330_GrGLSLGeneration;
         } else {
             if (ctxInfo.version() >= GR_GL_VER(3, 2) &&
                 ctxInfo.glslGeneration() >= k320es_GrGLSLGeneration) {
-                shaderCaps->fTexelBufferSupport = true;
+                glslCaps->fTexelBufferSupport = true;
             } else if (ctxInfo.hasExtension("GL_OES_texture_buffer")) {
-                shaderCaps->fTexelBufferSupport = true;
-                shaderCaps->fTexelBufferExtensionString = "GL_OES_texture_buffer";
+                glslCaps->fTexelBufferSupport = true;
+                glslCaps->fTexelBufferExtensionString = "GL_OES_texture_buffer";
             } else if (ctxInfo.hasExtension("GL_EXT_texture_buffer")) {
-                shaderCaps->fTexelBufferSupport = true;
-                shaderCaps->fTexelBufferExtensionString = "GL_EXT_texture_buffer";
+                glslCaps->fTexelBufferSupport = true;
+                glslCaps->fTexelBufferExtensionString = "GL_EXT_texture_buffer";
             }
         }
     }
@@ -858,28 +802,21 @@ void GrGLCaps::initGLSL(const GrGLContextInfo& ctxInfo) {
     
     
     if (kTegra3_GrGLRenderer == ctxInfo.renderer()) {
-        shaderCaps->fCanUseMinAndAbsTogether = false;
+        glslCaps->fCanUseMinAndAbsTogether = false;
     }
 
     
     
     if (kIntel_GrGLVendor == ctxInfo.vendor()) {
-        shaderCaps->fMustForceNegatedAtanParamToFloat = true;
+        glslCaps->fMustForceNegatedAtanParamToFloat = true;
     }
 
     
     
     
-    if (shaderCaps->fFBFetchSupport && kQualcomm_GrGLVendor == ctxInfo.vendor()) {
-        shaderCaps->fRequiresLocalOutputColorForFBFetch = true;
+    if (glslCaps->fFBFetchSupport && kQualcomm_GrGLVendor == ctxInfo.vendor()) {
+        glslCaps->fRequiresLocalOutputColorForFBFetch = true;
     }
-
-#ifdef SK_BUILD_FOR_MAC
-    
-    
-    
-    shaderCaps->fMustImplementGSInvocationsWithLoop = true;
-#endif
 }
 
 bool GrGLCaps::hasPathRenderingSupport(const GrGLContextInfo& ctxInfo, const GrGLInterface* gli) {
@@ -915,24 +852,19 @@ bool GrGLCaps::hasPathRenderingSupport(const GrGLContextInfo& ctxInfo, const GrG
     return true;
 }
 
-bool GrGLCaps::readPixelsSupported(GrPixelConfig surfaceConfig,
+bool GrGLCaps::readPixelsSupported(GrPixelConfig rtConfig,
                                    GrPixelConfig readConfig,
                                    std::function<void (GrGLenum, GrGLint*)> getIntegerv,
-                                   std::function<bool ()> bindRenderTarget,
-                                   std::function<void ()> unbindRenderTarget) const {
+                                   std::function<bool ()> bindRenderTarget) const {
     
     
-    if (!this->canConfigBeFBOColorAttachment(surfaceConfig)) {
-        return false;
-    }
-
-    if (GrPixelConfigIsSint(surfaceConfig) != GrPixelConfigIsSint(readConfig)) {
+    if (!this->isConfigRenderable(rtConfig, false)) {
         return false;
     }
 
     GrGLenum readFormat;
     GrGLenum readType;
-    if (!this->getReadPixelsFormat(surfaceConfig, readConfig, &readFormat, &readType)) {
+    if (!this->getReadPixelsFormat(rtConfig, readConfig, &readFormat, &readType)) {
         return false;
     }
 
@@ -941,12 +873,8 @@ bool GrGLCaps::readPixelsSupported(GrPixelConfig surfaceConfig,
         
         
         
-        
-        
-        
-        if (readFormat != GR_GL_RED && readFormat != GR_GL_RG && readFormat != GR_GL_RGB &&
-            readFormat != GR_GL_RGBA && readFormat != GR_GL_BGRA &&
-            readFormat != GR_GL_RGBA_INTEGER) {
+        if (readFormat != GR_GL_RED && readFormat != GR_GL_RGB && readFormat != GR_GL_RGBA &&
+            readFormat != GR_GL_BGRA) {
             return false;
         }
         
@@ -961,27 +889,21 @@ bool GrGLCaps::readPixelsSupported(GrPixelConfig surfaceConfig,
     }
 
     
-    switch (fConfigTable[surfaceConfig].fFormatType) {
-        case kNormalizedFixedPoint_FormatType:
-            if (GR_GL_RGBA == readFormat && GR_GL_UNSIGNED_BYTE == readType) {
-                return true;
-            }
-            break;
-        case kInteger_FormatType:
-            if (GR_GL_RGBA_INTEGER == readFormat && GR_GL_INT == readType) {
-                return true;
-            }
-            break;
-        case kFloat_FormatType:
-            if (GR_GL_RGBA == readFormat && GR_GL_FLOAT == readType) {
-                return true;
-            }
-            break;
+
+    if (kNormalizedFixedPoint_FormatType == fConfigTable[rtConfig].fFormatType) {
+        if (GR_GL_RGBA == readFormat && GR_GL_UNSIGNED_BYTE == readType) {
+            return true;
+        }
+    } else {
+        SkASSERT(kFloat_FormatType == fConfigTable[rtConfig].fFormatType);
+        if (GR_GL_RGBA == readFormat && GR_GL_FLOAT == readType) {
+            return true;
+        }
     }
 
-    if (0 == fConfigTable[surfaceConfig].fSecondReadPixelsFormat.fFormat) {
+    if (0 == fConfigTable[rtConfig].fSecondReadPixelsFormat.fFormat) {
         ReadPixelsFormat* rpFormat =
-            const_cast<ReadPixelsFormat*>(&fConfigTable[surfaceConfig].fSecondReadPixelsFormat);
+            const_cast<ReadPixelsFormat*>(&fConfigTable[rtConfig].fSecondReadPixelsFormat);
         GrGLint format = 0, type = 0;
         if (!bindRenderTarget()) {
             return false;
@@ -990,14 +912,15 @@ bool GrGLCaps::readPixelsSupported(GrPixelConfig surfaceConfig,
         getIntegerv(GR_GL_IMPLEMENTATION_COLOR_READ_TYPE, &type);
         rpFormat->fFormat = format;
         rpFormat->fType = type;
-        unbindRenderTarget();
     }
 
-    return fConfigTable[surfaceConfig].fSecondReadPixelsFormat.fFormat == readFormat &&
-           fConfigTable[surfaceConfig].fSecondReadPixelsFormat.fType == readType;
+    return fConfigTable[rtConfig].fSecondReadPixelsFormat.fFormat == readFormat &&
+           fConfigTable[rtConfig].fSecondReadPixelsFormat.fType == readType;
 }
 
 void GrGLCaps::initFSAASupport(const GrGLContextInfo& ctxInfo, const GrGLInterface* gli) {
+
+    fMSFBOType = kNone_MSFBOType;
     if (kGL_GrGLStandard != ctxInfo.standard()) {
         
         
@@ -1007,10 +930,12 @@ void GrGLCaps::initFSAASupport(const GrGLContextInfo& ctxInfo, const GrGLInterfa
             fMSFBOType = kES_IMG_MsToTexture_MSFBOType;
         } else if (fUsesMixedSamples) {
             fMSFBOType = kMixedSamples_MSFBOType;
-        } else if (ctxInfo.version() >= GR_GL_VER(3,0) ||
-                   ctxInfo.hasExtension("GL_CHROMIUM_framebuffer_multisample") ||
-                   ctxInfo.hasExtension("GL_ANGLE_framebuffer_multisample")) {
-            fMSFBOType = kStandard_MSFBOType;
+        } else if (ctxInfo.version() >= GR_GL_VER(3,0)) {
+            fMSFBOType = GrGLCaps::kES_3_0_MSFBOType;
+        } else if (ctxInfo.hasExtension("GL_CHROMIUM_framebuffer_multisample")) {
+            
+            
+            fMSFBOType = kDesktop_EXT_MSFBOType;
         } else if (ctxInfo.hasExtension("GL_APPLE_framebuffer_multisample")) {
             fMSFBOType = kES_Apple_MSFBOType;
         }
@@ -1018,42 +943,34 @@ void GrGLCaps::initFSAASupport(const GrGLContextInfo& ctxInfo, const GrGLInterfa
         
         
         if (ctxInfo.version() >= GR_GL_VER(3, 0)) {
-            fBlitFramebufferFlags = kNoFormatConversionForMSAASrc_BlitFramebufferFlag |
-                                    kNoMSAADst_BlitFramebufferFlag |
-                                    kRectsMustMatchForMSAASrc_BlitFramebufferFlag;
-        } else if (ctxInfo.hasExtension("GL_CHROMIUM_framebuffer_multisample") ||
-                   ctxInfo.hasExtension("GL_ANGLE_framebuffer_blit")) {
+            fBlitFramebufferSupport = kFull_BlitFramebufferSupport;
+        } else if (ctxInfo.hasExtension("GL_CHROMIUM_framebuffer_multisample")) {
             
             
-            fBlitFramebufferFlags = kNoScalingOrMirroring_BlitFramebufferFlag |
-                                    kResolveMustBeFull_BlitFrambufferFlag |
-                                    kNoMSAADst_BlitFramebufferFlag |
-                                    kNoFormatConversion_BlitFramebufferFlag |
-                                    kRectsMustMatchForMSAASrc_BlitFramebufferFlag;
+            fBlitFramebufferSupport = kNoScalingNoMirroring_BlitFramebufferSupport;
         }
     } else {
         if (fUsesMixedSamples) {
             fMSFBOType = kMixedSamples_MSFBOType;
-            fBlitFramebufferFlags = 0;
-        } else if (ctxInfo.version() >= GR_GL_VER(3,0) ||
-                   ctxInfo.hasExtension("GL_ARB_framebuffer_object")) {
-            fMSFBOType = kStandard_MSFBOType;
-            fBlitFramebufferFlags = 0;
+            fBlitFramebufferSupport = kFull_BlitFramebufferSupport;
+        } else if ((ctxInfo.version() >= GR_GL_VER(3,0)) ||
+            ctxInfo.hasExtension("GL_ARB_framebuffer_object")) {
+            fMSFBOType = GrGLCaps::kDesktop_ARB_MSFBOType;
+            fBlitFramebufferSupport = kFull_BlitFramebufferSupport;
         } else if (ctxInfo.hasExtension("GL_EXT_framebuffer_multisample") &&
                    ctxInfo.hasExtension("GL_EXT_framebuffer_blit")) {
-            fMSFBOType = kEXT_MSFBOType;
-            fBlitFramebufferFlags = 0;
+            fMSFBOType = GrGLCaps::kDesktop_EXT_MSFBOType;
+            fBlitFramebufferSupport = kFull_BlitFramebufferSupport;
         }
     }
 }
 
 void GrGLCaps::initBlendEqationSupport(const GrGLContextInfo& ctxInfo) {
-    GrShaderCaps* shaderCaps = static_cast<GrShaderCaps*>(fShaderCaps.get());
+    GrGLSLCaps* glslCaps = static_cast<GrGLSLCaps*>(fShaderCaps.get());
 
     
     
     if (kAdreno4xx_GrGLRenderer == ctxInfo.renderer() ||
-        kAdreno5xx_GrGLRenderer == ctxInfo.renderer() ||
         kIntel_GrGLDriver == ctxInfo.driver() ||
         kChromium_GrGLDriver == ctxInfo.driver()) {
         return;
@@ -1061,20 +978,20 @@ void GrGLCaps::initBlendEqationSupport(const GrGLContextInfo& ctxInfo) {
 
     if (ctxInfo.hasExtension("GL_NV_blend_equation_advanced_coherent")) {
         fBlendEquationSupport = kAdvancedCoherent_BlendEquationSupport;
-        shaderCaps->fAdvBlendEqInteraction = GrShaderCaps::kAutomatic_AdvBlendEqInteraction;
+        glslCaps->fAdvBlendEqInteraction = GrGLSLCaps::kAutomatic_AdvBlendEqInteraction;
     } else if (ctxInfo.hasExtension("GL_KHR_blend_equation_advanced_coherent")) {
         fBlendEquationSupport = kAdvancedCoherent_BlendEquationSupport;
-        shaderCaps->fAdvBlendEqInteraction = GrShaderCaps::kGeneralEnable_AdvBlendEqInteraction;
+        glslCaps->fAdvBlendEqInteraction = GrGLSLCaps::kGeneralEnable_AdvBlendEqInteraction;
     } else if (kNVIDIA_GrGLDriver == ctxInfo.driver() &&
                ctxInfo.driverVersion() < GR_GL_DRIVER_VER(337,00)) {
         
         return;
     } else if (ctxInfo.hasExtension("GL_NV_blend_equation_advanced")) {
         fBlendEquationSupport = kAdvanced_BlendEquationSupport;
-        shaderCaps->fAdvBlendEqInteraction = GrShaderCaps::kAutomatic_AdvBlendEqInteraction;
+        glslCaps->fAdvBlendEqInteraction = GrGLSLCaps::kAutomatic_AdvBlendEqInteraction;
     } else if (ctxInfo.hasExtension("GL_KHR_blend_equation_advanced")) {
         fBlendEquationSupport = kAdvanced_BlendEquationSupport;
-        shaderCaps->fAdvBlendEqInteraction = GrShaderCaps::kGeneralEnable_AdvBlendEqInteraction;
+        glslCaps->fAdvBlendEqInteraction = GrGLSLCaps::kGeneralEnable_AdvBlendEqInteraction;
         
         
     } else {
@@ -1165,20 +1082,22 @@ SkString GrGLCaps::dump() const {
 
     static const char* kMSFBOExtStr[] = {
         "None",
+        "ARB",
         "EXT",
-        "Standard",
+        "ES 3.0",
         "Apple",
         "IMG MS To Texture",
         "EXT MS To Texture",
         "MixedSamples",
     };
     GR_STATIC_ASSERT(0 == kNone_MSFBOType);
-    GR_STATIC_ASSERT(1 == kEXT_MSFBOType);
-    GR_STATIC_ASSERT(2 == kStandard_MSFBOType);
-    GR_STATIC_ASSERT(3 == kES_Apple_MSFBOType);
-    GR_STATIC_ASSERT(4 == kES_IMG_MsToTexture_MSFBOType);
-    GR_STATIC_ASSERT(5 == kES_EXT_MsToTexture_MSFBOType);
-    GR_STATIC_ASSERT(6 == kMixedSamples_MSFBOType);
+    GR_STATIC_ASSERT(1 == kDesktop_ARB_MSFBOType);
+    GR_STATIC_ASSERT(2 == kDesktop_EXT_MSFBOType);
+    GR_STATIC_ASSERT(3 == kES_3_0_MSFBOType);
+    GR_STATIC_ASSERT(4 == kES_Apple_MSFBOType);
+    GR_STATIC_ASSERT(5 == kES_IMG_MsToTexture_MSFBOType);
+    GR_STATIC_ASSERT(6 == kES_EXT_MsToTexture_MSFBOType);
+    GR_STATIC_ASSERT(7 == kMixedSamples_MSFBOType);
     GR_STATIC_ASSERT(SK_ARRAY_COUNT(kMSFBOExtStr) == kLast_MSFBOType + 1);
 
     static const char* kInvalidateFBTypeStr[] = {
@@ -1258,10 +1177,9 @@ static GrGLenum precision_to_gl_float_type(GrSLPrecision p) {
         return GR_GL_MEDIUM_FLOAT;
     case kHigh_GrSLPrecision:
         return GR_GL_HIGH_FLOAT;
-    default:
-        SkFAIL("Unexpected precision type.");
-        return -1;
     }
+    SkFAIL("Unknown precision.");
+    return -1;
 }
 
 static GrGLenum shader_type_to_gl_shader(GrShaderType type) {
@@ -1279,7 +1197,7 @@ static GrGLenum shader_type_to_gl_shader(GrShaderType type) {
 
 void GrGLCaps::initShaderPrecisionTable(const GrGLContextInfo& ctxInfo,
                                         const GrGLInterface* intf,
-                                        GrShaderCaps* shaderCaps) {
+                                        GrGLSLCaps* glslCaps) {
     if (kGLES_GrGLStandard == ctxInfo.standard() || ctxInfo.version() >= GR_GL_VER(4, 1) ||
         ctxInfo.hasExtension("GL_ARB_ES2_compatibility")) {
         for (int s = 0; s < kGrShaderTypeCount; ++s) {
@@ -1287,7 +1205,7 @@ void GrGLCaps::initShaderPrecisionTable(const GrGLContextInfo& ctxInfo,
                 GrShaderType shaderType = static_cast<GrShaderType>(s);
                 GrGLenum glShader = shader_type_to_gl_shader(shaderType);
                 GrShaderCaps::PrecisionInfo* first = nullptr;
-                shaderCaps->fShaderPrecisionVaries = false;
+                glslCaps->fShaderPrecisionVaries = false;
                 for (int p = 0; p < kGrSLPrecisionCount; ++p) {
                     GrSLPrecision precision = static_cast<GrSLPrecision>(p);
                     GrGLenum glPrecision = precision_to_gl_float_type(precision);
@@ -1295,15 +1213,15 @@ void GrGLCaps::initShaderPrecisionTable(const GrGLContextInfo& ctxInfo,
                     GrGLint bits;
                     GR_GL_GetShaderPrecisionFormat(intf, glShader, glPrecision, range, &bits);
                     if (bits) {
-                        shaderCaps->fFloatPrecisions[s][p].fLogRangeLow = range[0];
-                        shaderCaps->fFloatPrecisions[s][p].fLogRangeHigh = range[1];
-                        shaderCaps->fFloatPrecisions[s][p].fBits = bits;
+                        glslCaps->fFloatPrecisions[s][p].fLogRangeLow = range[0];
+                        glslCaps->fFloatPrecisions[s][p].fLogRangeHigh = range[1];
+                        glslCaps->fFloatPrecisions[s][p].fBits = bits;
                         if (!first) {
-                            first = &shaderCaps->fFloatPrecisions[s][p];
+                            first = &glslCaps->fFloatPrecisions[s][p];
                         }
-                        else if (!shaderCaps->fShaderPrecisionVaries) {
-                            shaderCaps->fShaderPrecisionVaries =
-                                                     (*first != shaderCaps->fFloatPrecisions[s][p]);
+                        else if (!glslCaps->fShaderPrecisionVaries) {
+                            glslCaps->fShaderPrecisionVaries =
+                                                     (*first != glslCaps->fFloatPrecisions[s][p]);
                         }
                     }
                 }
@@ -1312,13 +1230,13 @@ void GrGLCaps::initShaderPrecisionTable(const GrGLContextInfo& ctxInfo,
     }
     else {
         
-        shaderCaps->fShaderPrecisionVaries = false;
+        glslCaps->fShaderPrecisionVaries = false;
         for (int s = 0; s < kGrShaderTypeCount; ++s) {
             if (kGeometry_GrShaderType != s) {
                 for (int p = 0; p < kGrSLPrecisionCount; ++p) {
-                    shaderCaps->fFloatPrecisions[s][p].fLogRangeLow = 127;
-                    shaderCaps->fFloatPrecisions[s][p].fLogRangeHigh = 127;
-                    shaderCaps->fFloatPrecisions[s][p].fBits = 23;
+                    glslCaps->fFloatPrecisions[s][p].fLogRangeLow = 127;
+                    glslCaps->fFloatPrecisions[s][p].fLogRangeHigh = 127;
+                    glslCaps->fFloatPrecisions[s][p].fBits = 23;
                 }
             }
         }
@@ -1327,13 +1245,13 @@ void GrGLCaps::initShaderPrecisionTable(const GrGLContextInfo& ctxInfo,
     
     
     
-    if (shaderCaps->fGeometryShaderSupport) {
+    if (glslCaps->fGeometryShaderSupport) {
         for (int p = 0; p < kGrSLPrecisionCount; ++p) {
-            shaderCaps->fFloatPrecisions[kGeometry_GrShaderType][p] =
-                                               shaderCaps->fFloatPrecisions[kVertex_GrShaderType][p];
+            glslCaps->fFloatPrecisions[kGeometry_GrShaderType][p] =
+                                               glslCaps->fFloatPrecisions[kVertex_GrShaderType][p];
         }
     }
-    shaderCaps->initSamplerPrecisionTable();
+    glslCaps->initSamplerPrecisionTable();
 }
 
 bool GrGLCaps::bgraIsInternalFormat() const {
@@ -1411,9 +1329,8 @@ bool GrGLCaps::getExternalFormat(GrPixelConfig surfaceConfig, GrPixelConfig memo
     return true;
 }
 
-void GrGLCaps::initConfigTable(const GrContextOptions& contextOptions,
-                               const GrGLContextInfo& ctxInfo, const GrGLInterface* gli,
-                               GrShaderCaps* shaderCaps) {
+void GrGLCaps::initConfigTable(const GrGLContextInfo& ctxInfo, const GrGLInterface* gli,
+                               GrGLSLCaps* glslCaps) {
     
 
 
@@ -1483,12 +1400,11 @@ void GrGLCaps::initConfigTable(const GrContextOptions& contextOptions,
 
 
 
-    uint32_t nonMSAARenderFlags = ConfigInfo::kRenderable_Flag |
-                                  ConfigInfo::kFBOColorAttachment_Flag;
-    uint32_t allRenderFlags = nonMSAARenderFlags;
+    uint32_t allRenderFlags = ConfigInfo::kRenderable_Flag;
     if (kNone_MSFBOType != fMSFBOType) {
         allRenderFlags |= ConfigInfo::kRenderableWithMSAA_Flag;
     }
+
     GrGLStandard standard = ctxInfo.standard();
     GrGLVersion version = ctxInfo.version();
 
@@ -1499,8 +1415,10 @@ void GrGLCaps::initConfigTable(const GrContextOptions& contextOptions,
                               ctxInfo.hasExtension("GL_ARB_texture_storage") ||
                               ctxInfo.hasExtension("GL_EXT_texture_storage");
     } else {
-        texStorageSupported = version >= GR_GL_VER(3,0) ||
-                              ctxInfo.hasExtension("GL_EXT_texture_storage");
+        
+        texStorageSupported = (version >= GR_GL_VER(3,0) &&
+                               kQualcomm_GrGLVendor != ctxInfo.vendor()) &&
+                               ctxInfo.hasExtension("GL_EXT_texture_storage");
     }
 
     
@@ -1569,7 +1487,7 @@ void GrGLCaps::initConfigTable(const GrContextOptions& contextOptions,
             }
         } else if (ctxInfo.hasExtension("GL_EXT_texture_format_BGRA8888")) {
             fConfigTable[kBGRA_8888_GrPixelConfig].fFlags = ConfigInfo::kTextureable_Flag |
-                                                            nonMSAARenderFlags;
+                                                            ConfigInfo::kRenderable_Flag;
             if (ctxInfo.hasExtension("GL_CHROMIUM_renderbuffer_format_BGRA8888") &&
                 (this->usesMSAARenderBuffers() || this->fMSFBOType == kMixedSamples_MSFBOType)) {
                 fConfigTable[kBGRA_8888_GrPixelConfig].fFlags |=
@@ -1598,37 +1516,19 @@ void GrGLCaps::initConfigTable(const GrContextOptions& contextOptions,
             fSRGBWriteControl = true;
         }
     } else {
-        fSRGBSupport = ctxInfo.version() >= GR_GL_VER(3,0) || ctxInfo.hasExtension("GL_EXT_sRGB");
-#if defined(SK_CPU_X86)
-        if (kPowerVRRogue_GrGLRenderer == ctxInfo.renderer()) {
-            
-            
-            fSRGBSupport = false;
-        }
-#endif
+        
+        fSRGBSupport = kPowerVRRogue_GrGLRenderer != ctxInfo.renderer() &&
+            (ctxInfo.version() >= GR_GL_VER(3,0) || ctxInfo.hasExtension("GL_EXT_sRGB"));
         
         
         
         fSRGBWriteControl = kAdreno4xx_GrGLRenderer != ctxInfo.renderer() &&
             ctxInfo.hasExtension("GL_EXT_sRGB_write_control");
     }
-    if (contextOptions.fRequireDecodeDisableForSRGB && !fSRGBDecodeDisableSupport) {
-        
+    if (!ctxInfo.hasExtension("GL_EXT_texture_sRGB_decode")) {
         
         fSRGBSupport = false;
     }
-
-    
-    
-    
-    
-    
-    
-    
-    if (kSkia8888_GrPixelConfig == kBGRA_8888_GrPixelConfig && kGLES_GrGLStandard == standard) {
-        fSRGBSupport = false;
-    }
-
     fConfigTable[kSRGBA_8888_GrPixelConfig].fFormats.fBaseInternalFormat = GR_GL_SRGB_ALPHA;
     fConfigTable[kSRGBA_8888_GrPixelConfig].fFormats.fSizedInternalFormat = GR_GL_SRGB8_ALPHA8;
     
@@ -1666,33 +1566,6 @@ void GrGLCaps::initConfigTable(const GrContextOptions& contextOptions,
     }
     fConfigTable[kSBGRA_8888_GrPixelConfig].fSwizzle = GrSwizzle::RGBA();
 
-    bool hasIntegerTextures;
-    if (standard == kGL_GrGLStandard) {
-        hasIntegerTextures = version >= GR_GL_VER(3, 0) ||
-                             ctxInfo.hasExtension("GL_EXT_texture_integer");
-    } else {
-        hasIntegerTextures = (version >= GR_GL_VER(3, 0));
-    }
-    
-    if (ctxInfo.glslGeneration() == k110_GrGLSLGeneration) {
-        hasIntegerTextures = false;
-    }
-    fConfigTable[kRGBA_8888_sint_GrPixelConfig].fFormats.fBaseInternalFormat  = GR_GL_RGBA_INTEGER;
-    fConfigTable[kRGBA_8888_sint_GrPixelConfig].fFormats.fSizedInternalFormat = GR_GL_RGBA8I;
-    fConfigTable[kRGBA_8888_sint_GrPixelConfig].fFormats.fExternalFormat[kOther_ExternalFormatUsage] = GR_GL_RGBA_INTEGER;
-    fConfigTable[kRGBA_8888_sint_GrPixelConfig].fFormats.fExternalType = GR_GL_BYTE;
-    fConfigTable[kRGBA_8888_sint_GrPixelConfig].fFormatType = kInteger_FormatType;
-    
-    
-    if (hasIntegerTextures) {
-        fConfigTable[kRGBA_8888_sint_GrPixelConfig].fFlags = ConfigInfo::kTextureable_Flag |
-                                                             ConfigInfo::kFBOColorAttachment_Flag;
-        if (texStorageSupported) {
-            fConfigTable[kRGBA_8888_sint_GrPixelConfig].fFlags |=
-                ConfigInfo::kCanUseTexStorage_Flag;
-        }
-    }
-
     fConfigTable[kRGB_565_GrPixelConfig].fFormats.fBaseInternalFormat = GR_GL_RGB;
     if (this->ES2CompatibilitySupport()) {
         fConfigTable[kRGB_565_GrPixelConfig].fFormats.fSizedInternalFormat = GR_GL_RGB565;
@@ -1705,7 +1578,7 @@ void GrGLCaps::initConfigTable(const GrContextOptions& contextOptions,
     fConfigTable[kRGB_565_GrPixelConfig].fFormatType = kNormalizedFixedPoint_FormatType;
     fConfigTable[kRGB_565_GrPixelConfig].fFlags = ConfigInfo::kTextureable_Flag;
     if (kGL_GrGLStandard == standard) {
-        if (version >= GR_GL_VER(4, 2) || ctxInfo.hasExtension("GL_ARB_ES2_compatibility")) {
+        if (version >= GR_GL_VER(4, 2) || ctxInfo.hasExtension("GL_ES2_compatibility")) {
             fConfigTable[kRGB_565_GrPixelConfig].fFlags |= allRenderFlags;
         }
     } else {
@@ -1742,9 +1615,6 @@ void GrGLCaps::initConfigTable(const GrContextOptions& contextOptions,
     }
     fConfigTable[kRGBA_4444_GrPixelConfig].fSwizzle = GrSwizzle::RGBA();
 
-    fConfigTable[kAlpha_8_GrPixelConfig].fFormats.fExternalType = GR_GL_UNSIGNED_BYTE;
-    fConfigTable[kAlpha_8_GrPixelConfig].fFormatType = kNormalizedFixedPoint_FormatType;
-    fConfigTable[kAlpha_8_GrPixelConfig].fFlags = ConfigInfo::kTextureable_Flag;
     if (this->textureRedSupport()) {
         fConfigTable[kAlpha_8_GrPixelConfig].fFormats.fBaseInternalFormat = GR_GL_RED;
         fConfigTable[kAlpha_8_GrPixelConfig].fFormats.fSizedInternalFormat = GR_GL_R8;
@@ -1761,8 +1631,12 @@ void GrGLCaps::initConfigTable(const GrContextOptions& contextOptions,
             GR_GL_ALPHA;
         fConfigTable[kAlpha_8_GrPixelConfig].fSwizzle = GrSwizzle::AAAA();
     }
+    fConfigTable[kAlpha_8_GrPixelConfig].fFormats.fExternalType = GR_GL_UNSIGNED_BYTE;
+    fConfigTable[kAlpha_8_GrPixelConfig].fFormatType = kNormalizedFixedPoint_FormatType;
+    fConfigTable[kAlpha_8_GrPixelConfig].fFlags = ConfigInfo::kTextureable_Flag;
     if (this->textureRedSupport() ||
-        (kStandard_MSFBOType == this->msFBOType() && ctxInfo.renderer() != kOSMesa_GrGLRenderer)) {
+        (kDesktop_ARB_MSFBOType == this->msFBOType() &&
+         ctxInfo.renderer() != kOSMesa_GrGLRenderer)) {
         
         
         
@@ -1772,39 +1646,6 @@ void GrGLCaps::initConfigTable(const GrContextOptions& contextOptions,
         fConfigTable[kAlpha_8_GrPixelConfig].fFlags |= ConfigInfo::kCanUseTexStorage_Flag;
     }
 
-    fConfigTable[kGray_8_GrPixelConfig].fFormats.fExternalType = GR_GL_UNSIGNED_BYTE;
-    fConfigTable[kGray_8_GrPixelConfig].fFormatType = kNormalizedFixedPoint_FormatType;
-    fConfigTable[kGray_8_GrPixelConfig].fFlags = ConfigInfo::kTextureable_Flag;
-    if (this->textureRedSupport()) {
-        fConfigTable[kGray_8_GrPixelConfig].fFormats.fBaseInternalFormat = GR_GL_RED;
-        fConfigTable[kGray_8_GrPixelConfig].fFormats.fSizedInternalFormat = GR_GL_R8;
-        fConfigTable[kGray_8_GrPixelConfig].fFormats.fExternalFormat[kOther_ExternalFormatUsage] =
-            GR_GL_RED;
-        fConfigTable[kGray_8_GrPixelConfig].fSwizzle = GrSwizzle::RRRA();
-        if (texelBufferSupport) {
-            fConfigTable[kGray_8_GrPixelConfig].fFlags |= ConfigInfo::kCanUseWithTexelBuffer_Flag;
-        }
-    } else {
-        fConfigTable[kGray_8_GrPixelConfig].fFormats.fBaseInternalFormat = GR_GL_LUMINANCE;
-        fConfigTable[kGray_8_GrPixelConfig].fFormats.fSizedInternalFormat = GR_GL_LUMINANCE8;
-        fConfigTable[kGray_8_GrPixelConfig].fFormats.fExternalFormat[kOther_ExternalFormatUsage] =
-            GR_GL_LUMINANCE;
-        fConfigTable[kGray_8_GrPixelConfig].fSwizzle = GrSwizzle::RGBA();
-    }
-#if 0 
-    if (this->textureRedSupport() ||
-        (kDesktop_ARB_MSFBOType == this->msFBOType() &&
-         ctxInfo.renderer() != kOSMesa_GrGLRenderer)) {
-        
-        
-        
-        fConfigTable[kGray_8_GrPixelConfig].fFlags |= allRenderFlags;
-    }
-#endif
-    if (texStorageSupported) {
-        fConfigTable[kGray_8_GrPixelConfig].fFlags |= ConfigInfo::kCanUseTexStorage_Flag;
-    }
-
     
     
     
@@ -1812,7 +1653,8 @@ void GrGLCaps::initConfigTable(const GrContextOptions& contextOptions,
     bool hasFPTextures = false;
     bool hasHalfFPTextures = false;
     
-    uint32_t fpRenderFlags = (kGL_GrGLStandard == standard) ? allRenderFlags : nonMSAARenderFlags;
+    uint32_t fpRenderFlags = (kGL_GrGLStandard == standard) ?
+                              allRenderFlags : (uint32_t)ConfigInfo::kRenderable_Flag;
 
     if (kGL_GrGLStandard == standard) {
         if (version >= GR_GL_VER(3, 0) || ctxInfo.hasExtension("GL_ARB_texture_float")) {
@@ -1835,31 +1677,28 @@ void GrGLCaps::initConfigTable(const GrContextOptions& contextOptions,
         }
     }
 
-    for (auto fpconfig : {kRGBA_float_GrPixelConfig, kRG_float_GrPixelConfig}) {
-        const GrGLenum format = kRGBA_float_GrPixelConfig == fpconfig ? GR_GL_RGBA : GR_GL_RG;
-        fConfigTable[fpconfig].fFormats.fBaseInternalFormat = format;
-        fConfigTable[fpconfig].fFormats.fSizedInternalFormat =
-            kRGBA_float_GrPixelConfig == fpconfig ? GR_GL_RGBA32F : GR_GL_RG32F;
-        fConfigTable[fpconfig].fFormats.fExternalFormat[kOther_ExternalFormatUsage] = format;
-        fConfigTable[fpconfig].fFormats.fExternalType = GR_GL_FLOAT;
-        fConfigTable[fpconfig].fFormatType = kFloat_FormatType;
-        if (hasFPTextures) {
-            fConfigTable[fpconfig].fFlags = ConfigInfo::kTextureable_Flag;
-            
-            
-            if (kGL_GrGLStandard == standard 
+    fConfigTable[kRGBA_float_GrPixelConfig].fFormats.fBaseInternalFormat = GR_GL_RGBA;
+    fConfigTable[kRGBA_float_GrPixelConfig].fFormats.fSizedInternalFormat = GR_GL_RGBA32F;
+    fConfigTable[kRGBA_float_GrPixelConfig].fFormats.fExternalFormat[kOther_ExternalFormatUsage] =
+        GR_GL_RGBA;
+    fConfigTable[kRGBA_float_GrPixelConfig].fFormats.fExternalType = GR_GL_FLOAT;
+    fConfigTable[kRGBA_float_GrPixelConfig].fFormatType = kFloat_FormatType;
+    if (hasFPTextures) {
+        fConfigTable[kRGBA_float_GrPixelConfig].fFlags = ConfigInfo::kTextureable_Flag;
+        
+        
+        if (kGL_GrGLStandard == standard 
 ) {
-                fConfigTable[fpconfig].fFlags |= fpRenderFlags;
-            }
+            fConfigTable[kRGBA_float_GrPixelConfig].fFlags |= fpRenderFlags;
         }
-        if (texStorageSupported) {
-            fConfigTable[fpconfig].fFlags |= ConfigInfo::kCanUseTexStorage_Flag;
-        }
-        if (texelBufferSupport) {
-            fConfigTable[fpconfig].fFlags |= ConfigInfo::kCanUseWithTexelBuffer_Flag;
-        }
-        fConfigTable[fpconfig].fSwizzle = GrSwizzle::RGBA();
     }
+    if (texStorageSupported) {
+        fConfigTable[kRGBA_float_GrPixelConfig].fFlags |= ConfigInfo::kCanUseTexStorage_Flag;
+    }
+    if (texelBufferSupport) {
+        fConfigTable[kRGBA_float_GrPixelConfig].fFlags |= ConfigInfo::kCanUseWithTexelBuffer_Flag;
+    }
+    fConfigTable[kRGBA_float_GrPixelConfig].fSwizzle = GrSwizzle::RGBA();
 
     if (this->textureRedSupport()) {
         fConfigTable[kAlpha_half_GrPixelConfig].fFormats.fBaseInternalFormat = GR_GL_RED;
@@ -1878,37 +1717,31 @@ void GrGLCaps::initConfigTable(const GrContextOptions& contextOptions,
             = GR_GL_ALPHA;
         fConfigTable[kAlpha_half_GrPixelConfig].fSwizzle = GrSwizzle::AAAA();
     }
-    
-    
-    
-    if (kGL_GrGLStandard == ctxInfo.standard() ||
-        (ctxInfo.version() >= GR_GL_VER(3, 0) && kANGLE_GrGLDriver != ctxInfo.driver())) {
+    if (kGL_GrGLStandard == ctxInfo.standard() || ctxInfo.version() >= GR_GL_VER(3, 0)) {
         fConfigTable[kAlpha_half_GrPixelConfig].fFormats.fExternalType = GR_GL_HALF_FLOAT;
     } else {
         fConfigTable[kAlpha_half_GrPixelConfig].fFormats.fExternalType = GR_GL_HALF_FLOAT_OES;
     }
     fConfigTable[kAlpha_half_GrPixelConfig].fFormatType = kFloat_FormatType;
-    if (texStorageSupported) {
-        fConfigTable[kAlpha_half_GrPixelConfig].fFlags |= ConfigInfo::kCanUseTexStorage_Flag;
-    }
     if (hasHalfFPTextures) {
         fConfigTable[kAlpha_half_GrPixelConfig].fFlags = ConfigInfo::kTextureable_Flag;
         
         
-        if (kGL_GrGLStandard == standard || version >= GR_GL_VER(3, 2) ||
+        if (kGL_GrGLStandard == standard || version >= GR_GL_VER(3,2) ||
             (this->textureRedSupport() &&
              ctxInfo.hasExtension("GL_EXT_color_buffer_half_float"))) {
             fConfigTable[kAlpha_half_GrPixelConfig].fFlags |= fpRenderFlags;
         }
+    }
+    if (texStorageSupported) {
+        fConfigTable[kAlpha_half_GrPixelConfig].fFlags |= ConfigInfo::kCanUseTexStorage_Flag;
     }
 
     fConfigTable[kRGBA_half_GrPixelConfig].fFormats.fBaseInternalFormat = GR_GL_RGBA;
     fConfigTable[kRGBA_half_GrPixelConfig].fFormats.fSizedInternalFormat = GR_GL_RGBA16F;
     fConfigTable[kRGBA_half_GrPixelConfig].fFormats.fExternalFormat[kOther_ExternalFormatUsage] =
         GR_GL_RGBA;
-    
-    if (kGL_GrGLStandard == ctxInfo.standard() ||
-        (ctxInfo.version() >= GR_GL_VER(3, 0) && kANGLE_GrGLDriver != ctxInfo.driver())) {
+    if (kGL_GrGLStandard == ctxInfo.standard() || ctxInfo.version() >= GR_GL_VER(3, 0)) {
         fConfigTable[kRGBA_half_GrPixelConfig].fFormats.fExternalType = GR_GL_HALF_FLOAT;
     } else {
         fConfigTable[kRGBA_half_GrPixelConfig].fFormats.fExternalType = GR_GL_HALF_FLOAT_OES;
@@ -1940,28 +1773,105 @@ void GrGLCaps::initConfigTable(const GrContextOptions& contextOptions,
 
     
     
-    {
-        fConfigTable[kETC1_GrPixelConfig].fFormats.fBaseInternalFormat = GR_GL_COMPRESSED_ETC1_RGB8;
-        fConfigTable[kETC1_GrPixelConfig].fFormats.fSizedInternalFormat =
-                                                                         GR_GL_COMPRESSED_ETC1_RGB8;
-        fConfigTable[kETC1_GrPixelConfig].fFormats.fExternalFormat[kOther_ExternalFormatUsage] = 0;
-        fConfigTable[kETC1_GrPixelConfig].fFormats.fExternalType = 0;
-        fConfigTable[kETC1_GrPixelConfig].fFormatType = kNormalizedFixedPoint_FormatType;
-        if (kGL_GrGLStandard == standard) {
-            if (version >= GR_GL_VER(4, 3) || ctxInfo.hasExtension("GL_ARB_ES3_compatibility")) {
-                fConfigTable[kETC1_GrPixelConfig].fFlags = ConfigInfo::kTextureable_Flag;
-            }
-        } else {
-            if (version >= GR_GL_VER(3, 0) ||
-                ctxInfo.hasExtension("GL_OES_compressed_ETC1_RGB8_texture") ||
-                
-                (ctxInfo.hasExtension("GL_OES_compressed_ETC2_RGB8_texture") &&
-                 ctxInfo.hasExtension("GL_OES_compressed_ETC2_RGBA8_texture"))) {
-                fConfigTable[kETC1_GrPixelConfig].fFlags = ConfigInfo::kTextureable_Flag;
+
+    fConfigTable[kIndex_8_GrPixelConfig].fFormats.fBaseInternalFormat = GR_GL_PALETTE8_RGBA8;
+    fConfigTable[kIndex_8_GrPixelConfig].fFormats.fSizedInternalFormat = GR_GL_PALETTE8_RGBA8;
+    fConfigTable[kIndex_8_GrPixelConfig].fFormats.fExternalFormat[kOther_ExternalFormatUsage] = 0;
+    fConfigTable[kIndex_8_GrPixelConfig].fFormats.fExternalType = 0;
+    fConfigTable[kIndex_8_GrPixelConfig].fFormatType = kNormalizedFixedPoint_FormatType;
+    
+    if (false) {
+        
+        GrGLint numFormats;
+        GR_GL_GetIntegerv(gli, GR_GL_NUM_COMPRESSED_TEXTURE_FORMATS, &numFormats);
+        if (numFormats) {
+            SkAutoSTMalloc<10, GrGLint> formats(numFormats);
+            GR_GL_GetIntegerv(gli, GR_GL_COMPRESSED_TEXTURE_FORMATS, formats);
+            for (int i = 0; i < numFormats; ++i) {
+                if (GR_GL_PALETTE8_RGBA8 == formats[i]) {
+                    fConfigTable[kIndex_8_GrPixelConfig].fFlags = ConfigInfo::kTextureable_Flag;
+                    break;
+                }
             }
         }
-        fConfigTable[kETC1_GrPixelConfig].fSwizzle = GrSwizzle::RGBA();
     }
+    fConfigTable[kIndex_8_GrPixelConfig].fSwizzle = GrSwizzle::RGBA();
+
+    
+    fConfigTable[kLATC_GrPixelConfig].fFormats.fBaseInternalFormat =
+        GR_GL_COMPRESSED_LUMINANCE_LATC1;
+    fConfigTable[kLATC_GrPixelConfig].fFormats.fSizedInternalFormat =
+        GR_GL_COMPRESSED_LUMINANCE_LATC1;
+    if (ctxInfo.hasExtension("GL_EXT_texture_compression_latc") ||
+        ctxInfo.hasExtension("GL_NV_texture_compression_latc")) {
+        fConfigTable[kLATC_GrPixelConfig].fFlags = ConfigInfo::kTextureable_Flag;
+    } else if ((kGL_GrGLStandard == standard && version >= GR_GL_VER(3, 0)) ||
+               ctxInfo.hasExtension("GL_EXT_texture_compression_rgtc") ||
+               ctxInfo.hasExtension("GL_ARB_texture_compression_rgtc")) {
+        
+        fConfigTable[kLATC_GrPixelConfig].fFlags = ConfigInfo::kTextureable_Flag;
+        fConfigTable[kLATC_GrPixelConfig].fFormats.fBaseInternalFormat =
+            GR_GL_COMPRESSED_RED_RGTC1;
+        fConfigTable[kLATC_GrPixelConfig].fFormats.fSizedInternalFormat =
+            GR_GL_COMPRESSED_RED_RGTC1;
+    } else if (ctxInfo.hasExtension("GL_AMD_compressed_3DC_texture")) {
+        fConfigTable[kLATC_GrPixelConfig].fFlags = ConfigInfo::kTextureable_Flag;
+        fConfigTable[kLATC_GrPixelConfig].fFormats.fBaseInternalFormat = GR_GL_COMPRESSED_3DC_X;
+        fConfigTable[kLATC_GrPixelConfig].fFormats.fSizedInternalFormat =
+            GR_GL_COMPRESSED_3DC_X;
+
+    }
+    fConfigTable[kLATC_GrPixelConfig].fFormats.fExternalFormat[kOther_ExternalFormatUsage] = 0;
+    fConfigTable[kLATC_GrPixelConfig].fFormats.fExternalType = 0;
+    fConfigTable[kLATC_GrPixelConfig].fFormatType = kNormalizedFixedPoint_FormatType;
+    fConfigTable[kLATC_GrPixelConfig].fSwizzle = GrSwizzle::RRRR();
+
+    fConfigTable[kETC1_GrPixelConfig].fFormats.fBaseInternalFormat = GR_GL_COMPRESSED_ETC1_RGB8;
+    fConfigTable[kETC1_GrPixelConfig].fFormats.fSizedInternalFormat = GR_GL_COMPRESSED_ETC1_RGB8;
+    fConfigTable[kETC1_GrPixelConfig].fFormats.fExternalFormat[kOther_ExternalFormatUsage] = 0;
+    fConfigTable[kETC1_GrPixelConfig].fFormats.fExternalType = 0;
+    fConfigTable[kETC1_GrPixelConfig].fFormatType = kNormalizedFixedPoint_FormatType;
+    if (kGL_GrGLStandard == standard) {
+        if (version >= GR_GL_VER(4, 3) || ctxInfo.hasExtension("GL_ARB_ES3_compatibility")) {
+            fConfigTable[kETC1_GrPixelConfig].fFlags = ConfigInfo::kTextureable_Flag;
+        }
+    } else {
+        if (version >= GR_GL_VER(3, 0) ||
+            ctxInfo.hasExtension("GL_OES_compressed_ETC1_RGB8_texture") ||
+            
+            (ctxInfo.hasExtension("GL_OES_compressed_ETC2_RGB8_texture") &&
+             ctxInfo.hasExtension("GL_OES_compressed_ETC2_RGBA8_texture"))) {
+            fConfigTable[kETC1_GrPixelConfig].fFlags = ConfigInfo::kTextureable_Flag;
+        }
+    }
+    fConfigTable[kETC1_GrPixelConfig].fSwizzle = GrSwizzle::RGBA();
+
+    fConfigTable[kR11_EAC_GrPixelConfig].fFormats.fBaseInternalFormat = GR_GL_COMPRESSED_R11_EAC;
+    fConfigTable[kR11_EAC_GrPixelConfig].fFormats.fSizedInternalFormat = GR_GL_COMPRESSED_R11_EAC;
+    fConfigTable[kR11_EAC_GrPixelConfig].fFormats.fExternalFormat[kOther_ExternalFormatUsage] = 0;
+    fConfigTable[kR11_EAC_GrPixelConfig].fFormats.fExternalType = 0;
+    fConfigTable[kR11_EAC_GrPixelConfig].fFormatType = kNormalizedFixedPoint_FormatType;
+    
+    
+    if (kGLES_GrGLStandard == standard && version >= GR_GL_VER(3,0)) {
+        fConfigTable[kR11_EAC_GrPixelConfig].fFlags = ConfigInfo::kTextureable_Flag;
+    }
+    fConfigTable[kR11_EAC_GrPixelConfig].fSwizzle = GrSwizzle::RRRR();
+
+    fConfigTable[kASTC_12x12_GrPixelConfig].fFormats.fBaseInternalFormat =
+        GR_GL_COMPRESSED_RGBA_ASTC_12x12;
+    fConfigTable[kASTC_12x12_GrPixelConfig].fFormats.fSizedInternalFormat =
+        GR_GL_COMPRESSED_RGBA_ASTC_12x12;
+    fConfigTable[kASTC_12x12_GrPixelConfig].fFormats.fExternalFormat[kOther_ExternalFormatUsage] =
+        0;
+    fConfigTable[kASTC_12x12_GrPixelConfig].fFormats.fExternalType = 0;
+    fConfigTable[kASTC_12x12_GrPixelConfig].fFormatType = kNormalizedFixedPoint_FormatType;
+    if (ctxInfo.hasExtension("GL_KHR_texture_compression_astc_hdr") ||
+        ctxInfo.hasExtension("GL_KHR_texture_compression_astc_ldr") ||
+        ctxInfo.hasExtension("GL_OES_texture_compression_astc")) {
+        fConfigTable[kASTC_12x12_GrPixelConfig].fFlags = ConfigInfo::kTextureable_Flag;
+    }
+    fConfigTable[kASTC_12x12_GrPixelConfig].fSwizzle = GrSwizzle::RGBA();
 
     
 
@@ -2016,7 +1926,7 @@ void GrGLCaps::initConfigTable(const GrContextOptions& contextOptions,
     
     if (!this->textureSwizzleSupport()) {
         for (int i = 0; i < kGrPixelConfigCnt; ++i) {
-            shaderCaps->fConfigTextureSwizzle[i] = fConfigTable[i].fSwizzle;
+            glslCaps->fConfigTextureSwizzle[i] = fConfigTable[i].fSwizzle;
         }
     }
 
@@ -2028,26 +1938,8 @@ void GrGLCaps::initConfigTable(const GrContextOptions& contextOptions,
             GrPixelConfig config = static_cast<GrPixelConfig>(i);
             if (GrPixelConfigIsAlphaOnly(config) &&
                 fConfigTable[i].fFormats.fBaseInternalFormat == GR_GL_RED) {
-                shaderCaps->fConfigOutputSwizzle[i] = GrSwizzle::AAAA();
+                glslCaps->fConfigOutputSwizzle[i] = GrSwizzle::AAAA();
             }
-        }
-    }
-
-    
-    
-    
-    if (this->shaderCaps()->imageLoadStoreSupport()) {
-        fConfigTable[kRGBA_8888_sint_GrPixelConfig].fFlags |=
-                ConfigInfo::kCanUseAsImageStorage_Flag;
-        
-        
-        
-        
-        if (kGL_GrGLStandard == ctxInfo.standard()) {
-            fConfigTable[kRGBA_8888_GrPixelConfig].fFlags |= ConfigInfo::kCanUseAsImageStorage_Flag;
-            fConfigTable[kRGBA_float_GrPixelConfig].fFlags |=
-                    ConfigInfo::kCanUseAsImageStorage_Flag;
-            fConfigTable[kRGBA_half_GrPixelConfig].fFlags |= ConfigInfo::kCanUseAsImageStorage_Flag;
         }
     }
 
@@ -2055,10 +1947,6 @@ void GrGLCaps::initConfigTable(const GrContextOptions& contextOptions,
     
     ConfigInfo defaultEntry;
     for (int i = 0; i < kGrPixelConfigCnt; ++i) {
-        
-        
-        SkASSERT(!((ConfigInfo::kRenderable_Flag) && !(ConfigInfo::kFBOColorAttachment_Flag)));
-        SkASSERT(!((ConfigInfo::kRenderableWithMSAA_Flag) && !(ConfigInfo::kRenderable_Flag)));
         SkASSERT(defaultEntry.fFormats.fBaseInternalFormat !=
                  fConfigTable[i].fFormats.fBaseInternalFormat);
         SkASSERT(defaultEntry.fFormats.fSizedInternalFormat !=
@@ -2070,93 +1958,6 @@ void GrGLCaps::initConfigTable(const GrContextOptions& contextOptions,
         SkASSERT(defaultEntry.fFormats.fExternalType != fConfigTable[i].fFormats.fExternalType);
     }
 #endif
-}
-
-bool GrGLCaps::initDescForDstCopy(const GrRenderTargetProxy* src, GrSurfaceDesc* desc,
-                                  bool* rectsMustMatch, bool* disallowSubrect) const {
-    
-    *rectsMustMatch = false;
-
-    
-    *disallowSubrect = false;
-
-    
-    
-    if (src->asTextureProxy() && this->isConfigRenderable(src->config(), false)) {
-        desc->fOrigin = kBottomLeft_GrSurfaceOrigin;
-        desc->fFlags = kRenderTarget_GrSurfaceFlag;
-        desc->fConfig = src->config();
-        return true;
-    }
-
-    {
-        
-        
-        const GrTexture* srcTexture = src->priv().peekTexture();
-        const GrGLTexture* glSrcTexture = static_cast<const GrGLTexture*>(srcTexture);
-        if (glSrcTexture && glSrcTexture->target() != GR_GL_TEXTURE_2D) {
-            
-            return false;
-        }
-    }
-
-    
-    
-    
-    
-    GrSurfaceOrigin originForBlitFramebuffer = kDefault_GrSurfaceOrigin;
-    bool rectsMustMatchForBlitFramebuffer = false;
-    bool disallowSubrectForBlitFramebuffer = false;
-    if (src->numColorSamples() &&
-        (this->blitFramebufferSupportFlags() & kResolveMustBeFull_BlitFrambufferFlag)) {
-        rectsMustMatchForBlitFramebuffer = true;
-        disallowSubrectForBlitFramebuffer = true;
-        
-        originForBlitFramebuffer = src->origin();
-    } else if (src->numColorSamples() && (this->blitFramebufferSupportFlags() &
-                                          kRectsMustMatchForMSAASrc_BlitFramebufferFlag)) {
-        rectsMustMatchForBlitFramebuffer = true;
-        
-        originForBlitFramebuffer = src->origin();
-    } else if (this->blitFramebufferSupportFlags() & kNoScalingOrMirroring_BlitFramebufferFlag) {
-        originForBlitFramebuffer = src->origin();
-    }
-
-    
-    if (this->bgraIsInternalFormat() && kBGRA_8888_GrPixelConfig == src->config()) {
-        
-        
-        if (this->canConfigBeFBOColorAttachment(kBGRA_8888_GrPixelConfig)) {
-            desc->fOrigin = originForBlitFramebuffer;
-            desc->fConfig = kBGRA_8888_GrPixelConfig;
-            *rectsMustMatch = rectsMustMatchForBlitFramebuffer;
-            *disallowSubrect = disallowSubrectForBlitFramebuffer;
-            return true;
-        }
-        return false;
-    }
-
-    {
-        bool srcIsMSAARenderbuffer = src->desc().fSampleCnt > 0 && this->usesMSAARenderBuffers();
-        if (srcIsMSAARenderbuffer) {
-            
-            
-            if (this->canConfigBeFBOColorAttachment(src->config())) {
-                desc->fOrigin = originForBlitFramebuffer;
-                desc->fConfig = src->config();
-                *rectsMustMatch = rectsMustMatchForBlitFramebuffer;
-                *disallowSubrect = disallowSubrectForBlitFramebuffer;
-                return true;
-            }
-            return false;
-        }
-    }
-
-    
-    desc->fConfig = src->config();
-    desc->fOrigin = src->origin();
-    desc->fFlags = kNone_GrSurfaceFlags;
-    return true;
 }
 
 void GrGLCaps::onApplyOptionsOverrides(const GrContextOptions& options) {

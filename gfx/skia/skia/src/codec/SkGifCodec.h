@@ -4,17 +4,15 @@
 
 
 
-#ifndef SkGifCodec_DEFINED
-#define SkGifCodec_DEFINED
 
 #include "SkCodec.h"
-#include "SkCodecAnimation.h"
 #include "SkColorSpace.h"
 #include "SkColorTable.h"
 #include "SkImageInfo.h"
 #include "SkSwizzler.h"
 
-#include "SkGifImageReader.h"
+struct GifFileType;
+struct SavedImage;
 
 
 
@@ -32,32 +30,45 @@ public:
 
     static SkCodec* NewFromStream(SkStream*);
 
-    
-    bool haveDecodedRow(size_t frameIndex, const unsigned char* rowBegin,
-                        size_t rowNumber, unsigned repeatCount, bool writeTransparentPixels);
 protected:
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    static bool ReadHeader(SkStream* stream, SkCodec** codecOut,
+            GifFileType** gifOut);
+
     
 
 
     Result onGetPixels(const SkImageInfo&, void*, size_t, const Options&,
             SkPMColor*, int*, int*) override;
 
-    SkEncodedImageFormat onGetEncodedFormat() const override {
-        return SkEncodedImageFormat::kGIF;
+    SkEncodedFormat onGetEncodedFormat() const override {
+        return kGIF_SkEncodedFormat;
     }
 
     bool onRewind() override;
 
     uint64_t onGetFillValue(const SkImageInfo&) const override;
 
-    size_t onGetFrameCount() override;
-    bool onGetFrameInfo(size_t, FrameInfo*) const override;
-    int onGetRepetitionCount() override;
-
-    Result onStartIncrementalDecode(const SkImageInfo& , void*, size_t,
-            const SkCodec::Options&, SkPMColor*, int*) override;
-
-    Result onIncrementalDecode(int*) override;
+    int onOutputScanline(int inputScanline) const override;
 
 private:
 
@@ -67,7 +78,41 @@ private:
 
 
 
-    void initializeColorTable(const SkImageInfo& dstInfo, size_t frameIndex);
+
+
+
+
+     static Result ReadUpToFirstImage(GifFileType* gif, uint32_t* transIndex);
+
+     
+
+
+
+
+
+
+
+
+
+
+
+
+     static bool GetDimensions(GifFileType* gif, SkISize* size, SkIRect* frameRect);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+    void initializeColorTable(const SkImageInfo& dstInfo, SkPMColor* colorPtr,
+            int* inputColorCount);
 
    
 
@@ -85,74 +130,76 @@ private:
 
 
 
-    void initializeSwizzler(const SkImageInfo& dstInfo, size_t frameIndex);
+    void initializeSwizzler(const SkImageInfo& dstInfo,
+            const Options& options);
 
     SkSampler* getSampler(bool createIfNecessary) override {
         SkASSERT(fSwizzler);
-        return fSwizzler.get();
+        return fSwizzler;
     }
 
     
 
 
+    bool readRow();
 
+    Result onStartScanlineDecode(const SkImageInfo& dstInfo, const Options& opts,
+                   SkPMColor inputColorPtr[], int* inputColorCount) override;
 
+    int onGetScanlines(void* dst, int count, size_t rowBytes) override;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    Result decodeFrame(bool firstAttempt, const Options& opts, int* rowsDecoded);
-
-    
-
-
-    void applyXformRow(const SkImageInfo& dstInfo, void* dst, const uint8_t* src) const;
+    bool onSkipScanlines(int count) override;
 
     
 
 
 
 
-    SkGifCodec(const SkEncodedInfo&, const SkImageInfo&, SkGifImageReader*);
 
-    std::unique_ptr<SkGifImageReader>   fReader;
-    std::unique_ptr<uint8_t[]>          fTmpBuffer;
-    std::unique_ptr<SkSwizzler>         fSwizzler;
-    sk_sp<SkColorTable>                 fCurrColorTable;
-    
-    
-    
-    
-    bool                                fCurrColorTableIsReal;
-    
-    bool                                fFilledBackground;
-    
-    
-    bool                                fFirstCallToIncrementalDecode;
 
-    void*                               fDst;
-    size_t                              fDstRowBytes;
+
+
+
+
+
+    void handleScanlineFrame(int count, int* rowsBeforeFrame, int* rowsInFrame);
+
+    SkScanlineOrder onGetScanlineOrder() const override;
 
     
+
+
+
+    static void CloseGif(GifFileType* gif);
+
     
-    int                                 fRowsDecoded;
-    std::unique_ptr<uint32_t[]>         fXformBuffer;
-    bool                                fXformOnDecode;
+
+
+
+    static void FreeExtension(SavedImage* image);
+
+    
+
+
+
+
+
+
+
+
+
+
+    SkGifCodec(int width, int height, const SkEncodedInfo& info, SkStream* stream,
+            GifFileType* gif, uint32_t transIndex, const SkIRect& frameRect, bool frameIsSubset);
+
+    SkAutoTCallVProc<GifFileType, CloseGif> fGif; 
+    SkAutoTDeleteArray<uint8_t>             fSrcBuffer;
+    const SkIRect                           fFrameRect;
+    const uint32_t                          fTransIndex;
+    uint32_t                                fFillIndex;
+    const bool                              fFrameIsSubset;
+    SkAutoTDelete<SkSwizzler>               fSwizzler;
+    SkAutoTUnref<SkColorTable>              fColorTable;
 
     typedef SkCodec INHERITED;
 };
-#endif  

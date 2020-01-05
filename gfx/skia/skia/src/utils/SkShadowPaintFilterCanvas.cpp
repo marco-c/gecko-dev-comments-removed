@@ -56,7 +56,7 @@ SkISize SkShadowPaintFilterCanvas::ComputeDepthMapSize(const SkLights::Light& li
         
         
         
-        return {width * 4, height * 4};
+        return SkISize::Make(width * 4, height * 4);
     }
 
     int dMapWidth = SkMin32(maxDepth * fabs(light.dir().fX) + width,

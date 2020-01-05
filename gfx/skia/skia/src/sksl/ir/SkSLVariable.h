@@ -4,7 +4,7 @@
 
 
 
-
+ 
 #ifndef SKSL_VARIABLE
 #define SKSL_VARIABLE
 
@@ -27,16 +27,16 @@ struct Variable : public Symbol {
         kParameter_Storage
     };
 
-    Variable(Position position, Modifiers modifiers, String name, const Type& type,
+    Variable(Position position, Modifiers modifiers, std::string name, const Type& type,
              Storage storage)
     : INHERITED(position, kVariable_Kind, std::move(name))
     , fModifiers(modifiers)
     , fType(type)
     , fStorage(storage)
-    , fReadCount(0)
-    , fWriteCount(0) {}
+    , fIsReadFrom(false)
+    , fIsWrittenTo(false) {}
 
-    virtual String description() const override {
+    virtual std::string description() const override {
         return fModifiers.description() + fType.fName + " " + fName;
     }
 
@@ -44,12 +44,8 @@ struct Variable : public Symbol {
     const Type& fType;
     const Storage fStorage;
 
-    
-    
-    mutable int fReadCount;
-    
-    
-    mutable int fWriteCount;
+    mutable bool fIsReadFrom;
+    mutable bool fIsWrittenTo;
 
     typedef Symbol INHERITED;
 };

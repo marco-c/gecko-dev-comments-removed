@@ -26,9 +26,6 @@ public:
     void wait();
 
     
-    bool try_wait();
-
-    
     void cleanup();
 
 private:

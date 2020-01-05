@@ -57,7 +57,7 @@ public:
 
 private:
     struct DrawData {
-        SkCanvas*        fCanvas;
+        SkCanvas*        fCanvas;  
         const SkPicture* fPicture; 
         SkMatrix         fMatrix;
         SkPaint*         fPaint;   

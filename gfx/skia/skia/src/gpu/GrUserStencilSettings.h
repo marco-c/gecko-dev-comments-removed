@@ -182,19 +182,6 @@ struct GrUserStencilSettings {
     GrUserStencilSettings() = delete;
     GrUserStencilSettings(const GrUserStencilSettings&) = delete;
 
-    uint16_t flags(bool hasStencilClip) const {
-        return fFrontFlags[hasStencilClip] & fBackFlags[hasStencilClip];
-    }
-    bool isDisabled(bool hasStencilClip) const {
-        return this->flags(hasStencilClip) & kDisabled_StencilFlag;
-    }
-    bool isTwoSided(bool hasStencilClip) const {
-        return !(this->flags(hasStencilClip) & kSingleSided_StencilFlag);
-    }
-    bool usesWrapOp(bool hasStencilClip) const {
-        return !(this->flags(hasStencilClip) & kNoWrapOps_StencilFlag);
-    }
-
     const uint16_t   fFrontFlags[2]; 
     const Face       fFront;
     const uint16_t   fBackFlags[2]; 

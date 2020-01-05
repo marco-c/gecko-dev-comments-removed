@@ -25,9 +25,18 @@
 
 
 
-class SkRecord : public SkRefCnt {
+class SkRecord : public SkNVRefCnt<SkRecord> {
+    enum {
+        
+        kInlineRecords      = 4, 
+        kInlineAllocLgBytes = 8, 
+    };
 public:
-    SkRecord();
+    SkRecord()
+        : fCount(0)
+        , fReserved(kInlineRecords)
+        , fAlloc(kInlineAllocLgBytes+1,  
+                 fInlineAlloc, sizeof(fInlineAlloc)) {}
     ~SkRecord();
 
     
@@ -178,11 +187,12 @@ private:
     
     
     int fCount, fReserved;
-    SkAutoTMalloc<Record> fRecords;
+    SkAutoSTMalloc<kInlineRecords, Record> fRecords;
 
     
     
     SkVarAlloc fAlloc;
+    char fInlineAlloc[1 << kInlineAllocLgBytes];
 };
 
 #endif

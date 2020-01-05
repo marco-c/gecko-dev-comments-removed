@@ -103,10 +103,10 @@ public:
     void update();
     void patchToMatrix(const SkPatch3D&, SkMatrix* matrix) const;
 
-    SkPoint3D   fLocation;   
-    SkPoint3D   fAxis;       
-    SkPoint3D   fZenith;     
-    SkPoint3D   fObserver;   
+    SkPoint3D   fLocation;
+    SkPoint3D   fAxis;
+    SkPoint3D   fZenith;
+    SkPoint3D   fObserver;
 
 private:
     mutable SkMatrix    fOrientation;

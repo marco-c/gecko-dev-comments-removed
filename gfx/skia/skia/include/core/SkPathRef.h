@@ -40,7 +40,7 @@ class SK_API SkPathRef final : public SkNVRefCnt<SkPathRef> {
 public:
     class Editor {
     public:
-        Editor(sk_sp<SkPathRef>* pathRef,
+        Editor(SkAutoTUnref<SkPathRef>* pathRef,
                int incReserveVerbs = 0,
                int incReservePoints = 0);
 
@@ -230,7 +230,7 @@ public:
     
 
 
-    static void CreateTransformedCopy(sk_sp<SkPathRef>* dst,
+    static void CreateTransformedCopy(SkAutoTUnref<SkPathRef>* dst,
                                       const SkPathRef& src,
                                       const SkMatrix& matrix);
 
@@ -241,7 +241,7 @@ public:
 
 
 
-    static void Rewind(sk_sp<SkPathRef>* pathRef);
+    static void Rewind(SkAutoTUnref<SkPathRef>* pathRef);
 
     ~SkPathRef();
     int countPoints() const { SkDEBUGCODE(this->validate();) return fPointCnt; }

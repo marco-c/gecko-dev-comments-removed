@@ -25,7 +25,7 @@ public:
 
 
 
-    static std::unique_ptr<SkCanvas> Make(const SkRect& bounds, SkXMLWriter*);
+    static SkCanvas* Create(const SkRect& bounds, SkXMLWriter*);
 };
 
 #endif

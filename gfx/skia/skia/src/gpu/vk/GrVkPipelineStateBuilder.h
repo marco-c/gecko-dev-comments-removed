@@ -14,7 +14,6 @@
 #include "GrVkPipelineState.h"
 #include "GrVkUniformHandler.h"
 #include "GrVkVaryingHandler.h"
-#include "SkSLCompiler.h"
 
 #include "vk/GrVkDefines.h"
 
@@ -30,40 +29,36 @@ public:
 
 
 
-
-
     static GrVkPipelineState* CreatePipelineState(GrVkGpu*,
                                                   const GrPipeline&,
-                                                  const GrStencilSettings&,
                                                   const GrPrimitiveProcessor&,
                                                   GrPrimitiveType,
-                                                  GrVkPipelineState::Desc*,
+                                                  const GrVkPipelineState::Desc&,
                                                   const GrVkRenderPass& renderPass);
 
     const GrCaps* caps() const override;
+    const GrGLSLCaps* glslCaps() const override;
 
     GrVkGpu* gpu() const { return fGpu; }
 
-    void finalizeFragmentOutputColor(GrShaderVar& outputColor) override;
-    void finalizeFragmentSecondaryColor(GrShaderVar& outputColor) override;
+    void finalizeFragmentOutputColor(GrGLSLShaderVar& outputColor) override;
+    void finalizeFragmentSecondaryColor(GrGLSLShaderVar& outputColor) override;
 
 private:
     GrVkPipelineStateBuilder(GrVkGpu*,
                              const GrPipeline&,
                              const GrPrimitiveProcessor&,
-                             GrProgramDesc*);
+                             const GrProgramDesc&);
 
-    GrVkPipelineState* finalize(const GrStencilSettings&,
-                                GrPrimitiveType primitiveType,
+    GrVkPipelineState* finalize(GrPrimitiveType primitiveType,
                                 const GrVkRenderPass& renderPass,
-                                GrVkPipelineState::Desc*);
+                                const GrVkPipelineState::Desc&);
 
-    bool createVkShaderModule(VkShaderStageFlagBits stage,
-                              const GrGLSLShaderBuilder& builder,
-                              VkShaderModule* shaderModule,
-                              VkPipelineShaderStageCreateInfo* stageInfo,
-                              const SkSL::Program::Settings& settings,
-                              GrVkPipelineState::Desc* desc);
+    static bool CreateVkShaderModule(const GrVkGpu* gpu,
+                                     VkShaderStageFlagBits stage,
+                                     const GrGLSLShaderBuilder& builder,
+                                     VkShaderModule* shaderModule,
+                                     VkPipelineShaderStageCreateInfo* stageInfo);
 
     GrGLSLUniformHandler* uniformHandler() override { return &fUniformHandler; }
     const GrGLSLUniformHandler* uniformHandler() const override { return &fUniformHandler; }

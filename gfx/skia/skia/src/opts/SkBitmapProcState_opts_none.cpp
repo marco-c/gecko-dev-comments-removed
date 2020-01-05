@@ -22,3 +22,6 @@
 
 
 void SkBitmapProcState::platformProcs() {}
+
+
+void SkBitmapScaler::PlatformConvolutionProcs(SkConvolutionProcs*) {}

@@ -8,7 +8,7 @@
 #ifndef SkGraphics_DEFINED
 #define SkGraphics_DEFINED
 
-#include "SkRefCnt.h"
+#include "SkTypes.h"
 
 class SkData;
 class SkImageGenerator;
@@ -157,8 +157,7 @@ public:
 
     static void SetTLSFontCacheLimit(size_t bytes);
 
-    typedef std::unique_ptr<SkImageGenerator>
-                                            (*ImageGeneratorFromEncodedDataFactory)(sk_sp<SkData>);
+    typedef SkImageGenerator* (*ImageGeneratorFromEncodedFactory)(SkData*);
 
     
 
@@ -167,8 +166,8 @@ public:
 
 
 
-    static ImageGeneratorFromEncodedDataFactory
-                    SetImageGeneratorFromEncodedDataFactory(ImageGeneratorFromEncodedDataFactory);
+    static ImageGeneratorFromEncodedFactory
+           SetImageGeneratorFromEncodedFactory(ImageGeneratorFromEncodedFactory);
 };
 
 class SkAutoGraphics {

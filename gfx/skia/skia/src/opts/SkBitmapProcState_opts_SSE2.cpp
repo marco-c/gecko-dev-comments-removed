@@ -7,7 +7,6 @@
 
 #include <emmintrin.h>
 #include "SkBitmapProcState_opts_SSE2.h"
-#include "SkBitmapProcState_utils.h"
 #include "SkColorPriv.h"
 #include "SkPaint.h"
 #include "SkUtils.h"
@@ -263,7 +262,8 @@ void ClampX_ClampY_filter_scale_SSE2(const SkBitmapProcState& s, uint32_t xy[],
     SkFixed fx = mapper.fixedX();
 
     
-    if (can_truncate_to_fixed_for_decal(fx, dx, count, maxX)) {
+    if (dx > 0 && (unsigned)(fx >> 16) <= maxX &&
+        (unsigned)((fx + dx * (count - 1)) >> 16) < maxX) {
         if (count >= 4) {
             
             while ((size_t(xy) & 0x0F) != 0) {

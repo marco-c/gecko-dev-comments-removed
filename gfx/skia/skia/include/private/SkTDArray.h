@@ -11,7 +11,6 @@
 #define SkTDArray_DEFINED
 
 #include "SkTypes.h"
-#include "SkMalloc.h"
 
 template <typename T> class SkTDArray {
 public:
@@ -72,12 +71,6 @@ public:
         SkTSwap(fReserve, other.fReserve);
         SkTSwap(fCount, other.fCount);
     }
-
-    
-    
-    struct Deleter {
-        void operator()(const void* p) { sk_free((void*)p); }
-    };
 
     
 
@@ -235,7 +228,7 @@ public:
         }
         return -1;
     }
-
+    
     int find(const T& elem) const {
         const T* iter = fArray;
         const T* stop = fArray + fCount;

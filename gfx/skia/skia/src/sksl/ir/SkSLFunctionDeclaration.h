@@ -4,11 +4,10 @@
 
 
 
-
+ 
 #ifndef SKSL_FUNCTIONDECLARATION
 #define SKSL_FUNCTIONDECLARATION
 
-#include "SkSLExpression.h"
 #include "SkSLModifiers.h"
 #include "SkSLSymbol.h"
 #include "SkSLSymbolTable.h"
@@ -21,17 +20,16 @@ namespace SkSL {
 
 
 struct FunctionDeclaration : public Symbol {
-    FunctionDeclaration(Position position, String name,
+    FunctionDeclaration(Position position, std::string name, 
                         std::vector<const Variable*> parameters, const Type& returnType)
     : INHERITED(position, kFunctionDeclaration_Kind, std::move(name))
     , fDefined(false)
-    , fBuiltin(false)
     , fParameters(std::move(parameters))
     , fReturnType(returnType) {}
 
-    String description() const override {
-        String result = fReturnType.description() + " " + fName + "(";
-        String separator;
+    std::string description() const override {
+        std::string result = fReturnType.description() + " " + fName + "(";
+        std::string separator = "";
         for (auto p : fParameters) {
             result += separator;
             separator = ", ";
@@ -56,52 +54,7 @@ struct FunctionDeclaration : public Symbol {
         return true;
     }
 
-    
-
-
-
-
-
-
-
-
-
-
-    bool determineFinalTypes(const std::vector<std::unique_ptr<Expression>>& arguments,
-                             std::vector<const Type*>* outParameterTypes,
-                             const Type** outReturnType) const {
-        assert(arguments.size() == fParameters.size());
-        int genericIndex = -1;
-        for (size_t i = 0; i < arguments.size(); i++) {
-            if (fParameters[i]->fType.kind() == Type::kGeneric_Kind) {
-                std::vector<const Type*> types = fParameters[i]->fType.coercibleTypes();
-                if (genericIndex == -1) {
-                    for (size_t j = 0; j < types.size(); j++) {
-                        if (arguments[i]->fType.canCoerceTo(*types[j])) {
-                            genericIndex = j;
-                            break;
-                        }
-                    }
-                    if (genericIndex == -1) {
-                        return false;
-                    }
-                }
-                outParameterTypes->push_back(types[genericIndex]);
-            } else {
-                outParameterTypes->push_back(&fParameters[i]->fType);
-            }
-        }
-        if (fReturnType.kind() == Type::kGeneric_Kind) {
-            assert(genericIndex != -1);
-            *outReturnType = fReturnType.coercibleTypes()[genericIndex];
-        } else {
-            *outReturnType = &fReturnType;
-        }
-        return true;
-    }
-
     mutable bool fDefined;
-    bool fBuiltin;
     const std::vector<const Variable*> fParameters;
     const Type& fReturnType;
 

@@ -11,12 +11,14 @@
 #include "GrFragmentProcessor.h"
 #include "GrShaderVar.h"
 #include "glsl/GrGLSLProgramDataManager.h"
-#include "glsl/GrGLSLUniformHandler.h"
+#include "glsl/GrGLSLSampler.h"
 
 class GrProcessor;
 class GrProcessorKeyBuilder;
+class GrGLSLCaps;
 class GrGLSLFPBuilder;
 class GrGLSLFPFragmentBuilder;
+class GrGLSLUniformHandler;
 
 class GrGLSLFragmentProcessor {
 public:
@@ -28,9 +30,8 @@ public:
         }
     }
 
-    using UniformHandle      = GrGLSLUniformHandler::UniformHandle;
-    using SamplerHandle      = GrGLSLUniformHandler::SamplerHandle;
-    using ImageStorageHandle = GrGLSLUniformHandler::ImageStorageHandle;
+    typedef GrGLSLProgramDataManager::UniformHandle UniformHandle;
+    typedef GrGLSLProgramDataManager::UniformHandle SamplerHandle;
 
 private:
     
@@ -70,20 +71,12 @@ private:
 public:
     using TransformedCoordVars = BuilderInputProvider<GrShaderVar, GrFragmentProcessor,
                                                       &GrFragmentProcessor::numCoordTransforms>;
-    using TextureSamplers = BuilderInputProvider<SamplerHandle, GrResourceIOProcessor,
-                                                 &GrResourceIOProcessor::numTextureSamplers>;
-    using BufferSamplers = BuilderInputProvider<SamplerHandle, GrResourceIOProcessor,
-                                                &GrResourceIOProcessor::numBuffers>;
-    using ImageStorages = BuilderInputProvider<ImageStorageHandle, GrResourceIOProcessor,
-                                               &GrResourceIOProcessor::numImageStorages>;
+    using TextureSamplers = BuilderInputProvider<SamplerHandle, GrProcessor,
+                                                 &GrProcessor::numTextures>;
+    using BufferSamplers = BuilderInputProvider<SamplerHandle, GrProcessor,
+                                                &GrProcessor::numBuffers>;
 
     
-
-
-
-
-
-
 
 
 
@@ -111,36 +104,33 @@ public:
     struct EmitArgs {
         EmitArgs(GrGLSLFPFragmentBuilder* fragBuilder,
                  GrGLSLUniformHandler* uniformHandler,
-                 const GrShaderCaps* caps,
+                 const GrGLSLCaps* caps,
                  const GrFragmentProcessor& fp,
                  const char* outputColor,
                  const char* inputColor,
                  const TransformedCoordVars& transformedCoordVars,
                  const TextureSamplers& textureSamplers,
                  const BufferSamplers& bufferSamplers,
-                 const ImageStorages& imageStorages,
                  bool gpImplementsDistanceVector)
             : fFragBuilder(fragBuilder)
             , fUniformHandler(uniformHandler)
-            , fShaderCaps(caps)
+            , fGLSLCaps(caps)
             , fFp(fp)
             , fOutputColor(outputColor)
             , fInputColor(inputColor)
             , fTransformedCoords(transformedCoordVars)
             , fTexSamplers(textureSamplers)
             , fBufferSamplers(bufferSamplers)
-            , fImageStorages(imageStorages)
             , fGpImplementsDistanceVector(gpImplementsDistanceVector) {}
         GrGLSLFPFragmentBuilder* fFragBuilder;
         GrGLSLUniformHandler* fUniformHandler;
-        const GrShaderCaps* fShaderCaps;
+        const GrGLSLCaps* fGLSLCaps;
         const GrFragmentProcessor& fFp;
         const char* fOutputColor;
         const char* fInputColor;
         const TransformedCoordVars& fTransformedCoords;
         const TextureSamplers& fTexSamplers;
         const BufferSamplers& fBufferSamplers;
-        const ImageStorages& fImageStorages;
         bool fGpImplementsDistanceVector;
     };
 
@@ -148,7 +138,7 @@ public:
 
     void setData(const GrGLSLProgramDataManager& pdman, const GrFragmentProcessor& processor);
 
-    static void GenKey(const GrProcessor&, const GrShaderCaps&, GrProcessorKeyBuilder*) {}
+    static void GenKey(const GrProcessor&, const GrGLSLCaps&, GrProcessorKeyBuilder*) {}
 
     int numChildProcessors() const { return fChildProcessors.count(); }
 
@@ -194,7 +184,8 @@ protected:
 
 
 
-    virtual void onSetData(const GrGLSLProgramDataManager&, const GrFragmentProcessor&) {}
+    
+    virtual void onSetData(const GrGLSLProgramDataManager&, const GrProcessor&) {}
 
 private:
     void internalEmitChild(int, const char*, const char*, EmitArgs&);

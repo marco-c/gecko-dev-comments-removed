@@ -9,7 +9,6 @@
 #include "gl/GrGLDefines.h"
 #include "gl/GrGLUtil.h"
 
-#include "SkMakeUnique.h"
 #include "SkTSearch.h"
 #include "SkTSort.h"
 
@@ -100,12 +99,12 @@ bool GrGLExtensions::init(GrGLStandard standard,
         if (!extensions) {
             return false;
         }
-        eat_space_sep_strings(fStrings.get(), extensions);
+        eat_space_sep_strings(fStrings, extensions);
     }
     if (queryString) {
         const char* extensions = queryString(eglDisplay, GR_EGL_EXTENSIONS);
 
-        eat_space_sep_strings(fStrings.get(), extensions);
+        eat_space_sep_strings(fStrings, extensions);
     }
     if (!fStrings->empty()) {
         SkTLessFunctionToFunctorAdaptor<SkString, extension_compare> cmp;
@@ -123,16 +122,17 @@ bool GrGLExtensions::has(const char ext[]) const {
 bool GrGLExtensions::remove(const char ext[]) {
     SkASSERT(fInitialized);
     int idx = find_string(*fStrings, ext);
-    if (idx < 0) {
+    if (idx >= 0) {
+        
+        
+        SkAutoTDelete< SkTArray<SkString> > oldStrings(fStrings.release());
+        fStrings.reset(new SkTArray<SkString>(oldStrings->count() - 1));
+        fStrings->push_back_n(idx, &oldStrings->front());
+        fStrings->push_back_n(oldStrings->count() - idx - 1, &(*oldStrings)[idx] + 1);
+        return true;
+    } else {
         return false;
     }
-
-    
-    
-    fStrings->removeShuffle(idx);
-    SkTLessFunctionToFunctorAdaptor<SkString, extension_compare> cmp;
-    SkTInsertionSort(&(fStrings->operator[](idx)), &fStrings->back(), cmp);
-    return true;
 }
 
 void GrGLExtensions::add(const char ext[]) {
@@ -140,9 +140,9 @@ void GrGLExtensions::add(const char ext[]) {
     if (idx < 0) {
         
         
-        fStrings->emplace_back(ext);
+        fStrings->push_back().set(ext);
         SkTLessFunctionToFunctorAdaptor<SkString, extension_compare> cmp;
-        SkTInsertionSort(&fStrings->front(), &fStrings->back(), cmp);
+        SkTQSort(&fStrings->front(), &fStrings->back(), cmp);
     }
 }
 

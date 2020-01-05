@@ -4,7 +4,7 @@
 
 
 
-
+ 
 #ifndef SKSL_ASTFLOATLITERAL
 #define SKSL_ASTFLOATLITERAL
 
@@ -20,7 +20,7 @@ struct ASTFloatLiteral : public ASTExpression {
     : INHERITED(position, kFloat_Kind)
     , fValue(value) {}
 
-    String description() const override {
+    std::string description() const override {
         return to_string(fValue);
     }
 

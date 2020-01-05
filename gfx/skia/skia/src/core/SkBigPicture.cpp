@@ -28,7 +28,9 @@ void SkBigPicture::playback(SkCanvas* canvas, AbortCallback* callback) const {
     SkASSERT(canvas);
 
     
-    const bool useBBH = !canvas->getLocalClipBounds().contains(this->cullRect());
+    SkRect clipBounds = { 0, 0, 0, 0 };
+    (void)canvas->getClipBounds(&clipBounds);
+    const bool useBBH = !clipBounds.contains(this->cullRect());
 
     SkRecordDraw(*fRecord,
                  canvas,

@@ -8,9 +8,9 @@
 #ifndef SkFontMgr_DEFINED
 #define SkFontMgr_DEFINED
 
-#include "SkFontArguments.h"
 #include "SkFontStyle.h"
 #include "SkRefCnt.h"
+#include "SkScalar.h"
 #include "SkTypes.h"
 
 class SkData;
@@ -102,10 +102,51 @@ public:
 
     SkTypeface* createFromStream(SkStreamAsset*, int ttcIndex = 0) const;
 
+    struct FontParameters {
+        struct Axis {
+            SkFourByteTag fTag;
+            SkScalar fStyleValue;
+        };
+
+        FontParameters() : fCollectionIndex(0), fAxisCount(0), fAxes(nullptr) {}
+
+        
+
+
+
+
+        FontParameters& setCollectionIndex(int collectionIndex) {
+            fCollectionIndex = collectionIndex;
+            return *this;
+        }
+
+        
+
+
+
+
+
+
+        FontParameters& setAxes(const Axis* axes, int axisCount) {
+            fAxisCount = axisCount;
+            fAxes = axes;
+            return *this;
+        }
+
+        int getCollectionIndex() const {
+            return fCollectionIndex;
+        }
+        const Axis* getAxes(int* axisCount) const {
+            *axisCount = fAxisCount;
+            return fAxes;
+        }
+    private:
+        int fCollectionIndex;
+        int fAxisCount;
+        const Axis* fAxes;
+    };
     
-    using FontParameters = SkFontArguments;
-    
-    SkTypeface* createFromStream(SkStreamAsset*, const SkFontArguments&) const;
+    SkTypeface* createFromStream(SkStreamAsset*, const FontParameters&) const;
 
     
 
@@ -125,7 +166,10 @@ public:
     SkTypeface* legacyCreateTypeface(const char familyName[], SkFontStyle style) const;
 
     
-    static sk_sp<SkFontMgr> RefDefault();
+
+
+
+    static SkFontMgr* RefDefault();
 
 protected:
     virtual int onCountFamilies() const = 0;
@@ -146,16 +190,14 @@ protected:
     virtual SkTypeface* onCreateFromData(SkData*, int ttcIndex) const = 0;
     virtual SkTypeface* onCreateFromStream(SkStreamAsset*, int ttcIndex) const = 0;
     
-    virtual SkTypeface* onCreateFromStream(SkStreamAsset*, const SkFontArguments&) const;
+    virtual SkTypeface* onCreateFromStream(SkStreamAsset*, const FontParameters&) const;
     virtual SkTypeface* onCreateFromFontData(std::unique_ptr<SkFontData>) const;
     virtual SkTypeface* onCreateFromFile(const char path[], int ttcIndex) const = 0;
 
     virtual SkTypeface* onLegacyCreateTypeface(const char familyName[], SkFontStyle) const = 0;
 
 private:
-
-    
-    static sk_sp<SkFontMgr> Factory();
+    static SkFontMgr* Factory();    
 
     typedef SkRefCnt INHERITED;
 };

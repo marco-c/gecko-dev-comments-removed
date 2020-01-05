@@ -9,7 +9,6 @@
 #define GrContextOptions_DEFINED
 
 #include "SkTypes.h"
-#include "GrTypes.h"
 
 struct GrContextOptions {
     GrContextOptions() {}
@@ -42,8 +41,17 @@ struct GrContextOptions {
 
     
 
-    int fMaxOpCombineLookback = -1;
-    int fMaxOpCombineLookahead = -1;
+    bool fClipBatchToBounds = false;
+
+    
+
+
+    bool fDrawBatchBounds = false;
+
+    
+
+    int fMaxBatchLookback = -1;
+    int fMaxBatchLookahead = -1;
 
     
 
@@ -60,6 +68,10 @@ struct GrContextOptions {
 
     
 
+    bool fDisableDistanceFieldPaths = false;
+
+    
+
 
 
     bool fAllowPathMaskCaching = false;
@@ -69,44 +81,7 @@ struct GrContextOptions {
 
 
 
-
-    bool fRequireDecodeDisableForSRGB = true;
-
-    
-
-
-
-    bool fDisableGpuYUVConversion = false;
-
-    
-
-
-    bool fSuppressPathRendering = false;
-
-    
-
-
-    enum class GpuPathRenderers {
-        kNone              = 0, 
-        kDashLine          = 1 << 0,
-        kStencilAndCover   = 1 << 1,
-        kMSAA              = 1 << 2,
-        kAAHairline        = 1 << 3,
-        kAAConvex          = 1 << 4,
-        kAALinearizing     = 1 << 5,
-        kSmall             = 1 << 6,
-        kTessellating      = 1 << 7,
-        kDefault           = 1 << 8,
-
-        kAll               = kDefault | (kDefault - 1),
-
-        
-        kDistanceField     = kSmall
-    };
-
-    GpuPathRenderers fGpuPathRenderers = GpuPathRenderers::kAll;
+    bool fForceSWPathMasks = false;
 };
-
-GR_MAKE_BITFIELD_CLASS_OPS(GrContextOptions::GpuPathRenderers)
 
 #endif
