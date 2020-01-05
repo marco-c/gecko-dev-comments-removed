@@ -29,16 +29,16 @@ use self::Error::*;
 
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct TermInfo {
     
     pub names: Vec<String>,
     
-    pub bools: HashMap<String, bool>,
+    pub bools: HashMap<&'static str, bool>,
     
-    pub numbers: HashMap<String, u16>,
+    pub numbers: HashMap<&'static str, u16>,
     
-    pub strings: HashMap<String, Vec<u8>>,
+    pub strings: HashMap<&'static str, Vec<u8>>,
 }
 
 impl TermInfo {
@@ -75,10 +75,49 @@ impl TermInfo {
     
     
     fn _from_path(path: &Path) -> Result<TermInfo> {
-        let file = try!(File::open(path).map_err(|e| ::Error::Io(e)));
+        let file = try!(File::open(path).map_err(::Error::Io));
         let mut reader = BufReader::new(file);
         parse(&mut reader, false)
     }
+
+    
+    pub fn apply_cap(&self, cmd: &str, params: &[Param], out: &mut io::Write) -> Result<()> {
+        match self.strings.get(cmd) {
+            Some(cmd) => {
+                match expand(cmd, params, &mut Variables::new()) {
+                    Ok(s) => {
+                        try!(out.write_all(&s));
+                        Ok(())
+                    }
+                    Err(e) => Err(e.into()),
+                }
+            }
+            None => Err(::Error::NotSupported),
+        }
+    }
+
+    
+    pub fn reset(&self, out: &mut io::Write) -> Result<()> {
+        
+        
+        let cmd = match [("sgr0", &[] as &[Param]), ("sgr", &[Param::Number(0)]), ("op", &[])]
+                            .iter()
+                            .filter_map(|&(cap, params)| {
+                                self.strings.get(cap).map(|c| (c, params))
+                            })
+                            .next() {
+            Some((op, params)) => {
+                match expand(op, params, &mut Variables::new()) {
+                    Ok(cmd) => cmd,
+                    Err(e) => return Err(e.into()),
+                }
+            }
+            None => return Err(::Error::NotSupported),
+        };
+        try!(out.write_all(&cmd));
+        Ok(())
+    }
+
 }
 
 #[derive(Debug, Eq, PartialEq)]
@@ -113,9 +152,9 @@ pub enum Error {
 impl ::std::fmt::Display for Error {
     fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
         use std::error::Error;
-        match self {
-            &NotUtf8(e) => write!(f, "{}", e),
-            &BadMagic(v) => write!(f, "bad magic number {:x} in terminfo header", v),
+        match *self {
+            NotUtf8(e) => write!(f, "{}", e),
+            BadMagic(v) => write!(f, "bad magic number {:x} in terminfo header", v),
             _ => f.write_str(self.description()),
         }
     }
@@ -129,22 +168,22 @@ impl ::std::convert::From<::std::string::FromUtf8Error> for Error {
 
 impl ::std::error::Error for Error {
     fn description(&self) -> &str {
-        match self {
-            &BadMagic(..) => "incorrect magic number at start of file",
-            &ShortNames => "no names exposed, need at least one",
-            &TooManyBools => "more boolean properties than libterm knows about",
-            &TooManyNumbers => "more number properties than libterm knows about",
-            &TooManyStrings => "more string properties than libterm knows about",
-            &InvalidLength => "invalid length field value, must be >= -1",
-            &NotUtf8(ref e) => e.description(),
-            &NamesMissingNull => "names table missing NUL terminator",
-            &StringsMissingNull => "string table missing NUL terminator",
+        match *self {
+            BadMagic(..) => "incorrect magic number at start of file",
+            ShortNames => "no names exposed, need at least one",
+            TooManyBools => "more boolean properties than libterm knows about",
+            TooManyNumbers => "more number properties than libterm knows about",
+            TooManyStrings => "more string properties than libterm knows about",
+            InvalidLength => "invalid length field value, must be >= -1",
+            NotUtf8(ref e) => e.description(),
+            NamesMissingNull => "names table missing NUL terminator",
+            StringsMissingNull => "string table missing NUL terminator",
         }
     }
 
     fn cause(&self) -> Option<&::std::error::Error> {
-        match self {
-            &NotUtf8(ref e) => Some(e),
+        match *self {
+            NotUtf8(ref e) => Some(e),
             _ => None,
         }
     }
@@ -181,18 +220,19 @@ fn cap_for_attr(attr: Attr) -> &'static str {
 
 
 
+#[derive(Clone, Debug)]
 pub struct TerminfoTerminal<T> {
     num_colors: u16,
     out: T,
     ti: TermInfo,
 }
 
-impl<T: Write + Send> Terminal for TerminfoTerminal<T> {
+impl<T: Write> Terminal for TerminfoTerminal<T> {
     type Output = T;
     fn fg(&mut self, color: color::Color) -> Result<()> {
         let color = self.dim_if_necessary(color);
         if self.num_colors > color {
-            return self.apply_cap("setaf", &[Param::Number(color as i32)]);
+            return self.ti.apply_cap("setaf", &[Param::Number(color as i32)], &mut self.out);
         }
         Err(::Error::ColorOutOfRange)
     }
@@ -200,7 +240,7 @@ impl<T: Write + Send> Terminal for TerminfoTerminal<T> {
     fn bg(&mut self, color: color::Color) -> Result<()> {
         let color = self.dim_if_necessary(color);
         if self.num_colors > color {
-            return self.apply_cap("setab", &[Param::Number(color as i32)]);
+            return self.ti.apply_cap("setab", &[Param::Number(color as i32)], &mut self.out);
         }
         Err(::Error::ColorOutOfRange)
     }
@@ -209,7 +249,7 @@ impl<T: Write + Send> Terminal for TerminfoTerminal<T> {
         match attr {
             Attr::ForegroundColor(c) => self.fg(c),
             Attr::BackgroundColor(c) => self.bg(c),
-            _ => self.apply_cap(cap_for_attr(attr), &[]),
+            _ => self.ti.apply_cap(cap_for_attr(attr), &[], &mut self.out),
         }
     }
 
@@ -224,24 +264,7 @@ impl<T: Write + Send> Terminal for TerminfoTerminal<T> {
     }
 
     fn reset(&mut self) -> Result<()> {
-        
-        
-        let cmd = match [("sgr0", &[] as &[Param]),
-                         ("sgr", &[Param::Number(0)]),
-                         ("op", &[])]
-                            .iter()
-                            .filter_map(|&(cap, params)| self.ti.strings.get(cap).map(|c| (c, params)))
-                            .next() {
-            Some((op, params)) => {
-                match expand(op, params, &mut Variables::new()) {
-                    Ok(cmd) => cmd,
-                    Err(e) => return Err(e.into()),
-                }
-            }
-            None => return Err(::Error::NotSupported),
-        };
-        try!(self.out.write_all(&cmd));
-        Ok(())
+        self.ti.reset(&mut self.out)
     }
 
     fn supports_reset(&self) -> bool {
@@ -253,22 +276,22 @@ impl<T: Write + Send> Terminal for TerminfoTerminal<T> {
     }
 
     fn cursor_up(&mut self) -> Result<()> {
-        self.apply_cap("cuu1", &[])
+        self.ti.apply_cap("cuu1", &[], &mut self.out)
     }
 
     fn delete_line(&mut self) -> Result<()> {
-        self.apply_cap("dl", &[])
+        self.ti.apply_cap("el", &[], &mut self.out)
     }
 
     fn carriage_return(&mut self) -> Result<()> {
-        self.apply_cap("cr", &[])
+        self.ti.apply_cap("cr", &[], &mut self.out)
     }
 
-    fn get_ref<'a>(&'a self) -> &'a T {
+    fn get_ref(&self) -> &T {
         &self.out
     }
 
-    fn get_mut<'a>(&'a mut self) -> &'a mut T {
+    fn get_mut(&mut self) -> &mut T {
         &mut self.out
     }
 
@@ -279,7 +302,7 @@ impl<T: Write + Send> Terminal for TerminfoTerminal<T> {
     }
 }
 
-impl<T: Write + Send> TerminfoTerminal<T> {
+impl<T: Write> TerminfoTerminal<T> {
     
     pub fn new_with_terminfo(out: T, terminfo: TermInfo) -> TerminfoTerminal<T> {
         let nc = if terminfo.strings.contains_key("setaf") &&
@@ -308,21 +331,6 @@ impl<T: Write + Send> TerminfoTerminal<T> {
             color - 8
         } else {
             color
-        }
-    }
-
-    fn apply_cap(&mut self, cmd: &str, params: &[Param]) -> Result<()> {
-        match self.ti.strings.get(cmd) {
-            Some(cmd) => {
-                match expand(&cmd, params, &mut Variables::new()) {
-                    Ok(s) => {
-                        try!(self.out.write_all(&s));
-                        Ok(())
-                    }
-                    Err(e) => Err(e.into()),
-                }
-            }
-            None => Err(::Error::NotSupported),
         }
     }
 }

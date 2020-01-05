@@ -25,36 +25,47 @@ pub fn get_dbpath_for_term(term: &str) -> Option<PathBuf> {
     };
 
     
-    match env::var_os("TERMINFO") {
-        Some(dir) => dirs_to_search.push(PathBuf::from(dir)),
-        None => {
-            if let Some(mut homedir) = env::home_dir() {
-                
-                homedir.push(".terminfo");
-                dirs_to_search.push(homedir)
-            }
-            match env::var("TERMINFO_DIRS") {
-                Ok(dirs) => {
-                    for i in dirs.split(':') {
-                        if i == "" {
-                            dirs_to_search.push(PathBuf::from("/usr/share/terminfo"));
-                        } else {
-                            dirs_to_search.push(PathBuf::from(i));
-                        }
-                    }
-                }
-                
-                
-                
-                
-                Err(..) => {
-                    dirs_to_search.push(PathBuf::from("/etc/terminfo"));
-                    dirs_to_search.push(PathBuf::from("/lib/terminfo"));
-                    dirs_to_search.push(PathBuf::from("/usr/share/terminfo"));
-                }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if let Some(dir) = env::var_os("TERMINFO") {
+        dirs_to_search.push(PathBuf::from(dir));
+    }
+
+    if let Ok(dirs) = env::var("TERMINFO_DIRS") {
+        for i in dirs.split(':') {
+            if i == "" {
+                dirs_to_search.push(PathBuf::from("/usr/share/terminfo"));
+            } else {
+                dirs_to_search.push(PathBuf::from(i));
             }
         }
-    };
+    } else {
+        
+        
+        
+        
+        
+        if let Some(mut homedir) = env::home_dir() {
+            homedir.push(".terminfo");
+            dirs_to_search.push(homedir)
+        }
+
+        dirs_to_search.push(PathBuf::from("/etc/terminfo"));
+        dirs_to_search.push(PathBuf::from("/lib/terminfo"));
+        dirs_to_search.push(PathBuf::from("/usr/share/terminfo"));
+        dirs_to_search.push(PathBuf::from("/boot/system/data/terminfo"));
+    }
 
     
     for mut p in dirs_to_search {

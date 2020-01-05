@@ -232,12 +232,22 @@ macro_rules! take_while1 {
     };
 }
 
+pub fn str_chars(s: &str) -> Vec<char> {
+    
+    
+    let mut result = Vec::new();
+    for ch in s.chars() {
+        result.push(ch);
+    }
+    result
+}
+
 macro_rules! take_until {
     ($input:expr, $substr:expr) => {{
         if $substr.len() > $input.len() {
             $crate::nom::IResult::Error
         } else {
-            let substr_vec: Vec<char> = $substr.chars().collect();
+            let substr_vec: Vec<char> = $crate::nom::str_chars($substr);
             let mut window: Vec<char> = vec![];
             let mut offset = $input.len();
             let mut parsed = false;
