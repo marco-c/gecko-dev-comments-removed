@@ -6,6 +6,8 @@
 
 
 
+
+
 var TEST_PAGE = "data:text/html;charset=utf-8,";
 
 function test() {
