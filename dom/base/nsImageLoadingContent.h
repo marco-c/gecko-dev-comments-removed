@@ -375,7 +375,12 @@ protected:
 
 
 
-  void TrackImage(imgIRequest* aImage);
+
+
+
+
+
+  void TrackImage(imgIRequest* aImage, nsIFrame* aFrame = nullptr);
   void UntrackImage(imgIRequest* aImage,
                     const Maybe<OnNonvisible>& aNonvisibleAction = Nothing());
 

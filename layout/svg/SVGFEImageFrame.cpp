@@ -107,6 +107,12 @@ SVGFEImageFrame::Init(nsIContent*       aContent,
   nsFrame::Init(aContent, aParent, aPrevInFlow);
 
   
+  
+  
+  
+  
+  
+  
   IncApproximateVisibleCount();
 
   nsCOMPtr<nsIImageLoadingContent> imageLoader =

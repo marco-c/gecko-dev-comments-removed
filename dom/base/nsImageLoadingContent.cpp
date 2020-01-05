@@ -484,8 +484,8 @@ nsImageLoadingContent::FrameCreated(nsIFrame* aFrame)
 
   mFrameCreateCalled = true;
 
-  TrackImage(mCurrentRequest);
-  TrackImage(mPendingRequest);
+  TrackImage(mCurrentRequest, aFrame);
+  TrackImage(mPendingRequest, aFrame);
 
   
   
@@ -1464,7 +1464,8 @@ nsImageLoadingContent::OnVisibilityChange(Visibility aNewVisibility,
 }
 
 void
-nsImageLoadingContent::TrackImage(imgIRequest* aImage)
+nsImageLoadingContent::TrackImage(imgIRequest* aImage,
+                                  nsIFrame* aFrame )
 {
   if (!aImage)
     return;
@@ -1477,13 +1478,21 @@ nsImageLoadingContent::TrackImage(imgIRequest* aImage)
     return;
   }
 
+  if (!aFrame) {
+    aFrame = GetOurPrimaryFrame();
+  }
+
   
-  
-  
-  
-  nsIFrame* frame = GetOurPrimaryFrame();
-  if ((frame && frame->GetVisibility() == Visibility::APPROXIMATELY_NONVISIBLE) ||
-      (!frame && !mFrameCreateCalled)) {
+
+
+
+
+
+
+
+
+
+  if (!aFrame || aFrame->GetVisibility() == Visibility::APPROXIMATELY_NONVISIBLE) {
     return;
   }
 

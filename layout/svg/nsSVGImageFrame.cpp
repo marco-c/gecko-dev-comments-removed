@@ -159,6 +159,12 @@ nsSVGImageFrame::Init(nsIContent*       aContent,
   if (GetStateBits() & NS_FRAME_IS_NONDISPLAY) {
     
     
+    
+    
+    
+    
+    
+    
     IncApproximateVisibleCount();
   }
 
