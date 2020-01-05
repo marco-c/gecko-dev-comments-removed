@@ -5227,7 +5227,9 @@ ContainerState::Finish(uint32_t* aTextContentFlags,
 {
   mPaintedLayerDataTree.Finish();
 
-  if (!mParameters.mForEventsAndPluginsOnly) {
+  if (!mParameters.mForEventsAndPluginsOnly && !gfxPrefs::LayoutUseContainersForRootFrames()) {
+    
+    
     NS_ASSERTION(mContainerBounds.IsEqualInterior(mAccumulatedChildBounds),
                  "Bounds computation mismatch");
   }
