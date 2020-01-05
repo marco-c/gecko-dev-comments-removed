@@ -742,40 +742,49 @@ ProfileBuffer::StreamMarkersToJSON(SpliceableJSONWriter& aWriter,
   }
 }
 
-int ProfileBuffer::FindLastSampleOfThread(int aThreadId)
+int
+ProfileBuffer::FindLastSampleOfThread(const LastSample& aLS)
 {
   
   
-  int currPos = (mWritePos + mEntrySize - 1) % mEntrySize;
-  int stopPos = (mReadPos + mEntrySize - 1) % mEntrySize;
-  while (currPos != stopPos) {
-    ProfileBufferEntry entry = mEntries[currPos];
-    if (entry.isThreadId() && entry.mTagInt == aThreadId) {
-      return currPos;
-    }
-    currPos--;
-    if (currPos < 0) {
+  
+  
+  if (aLS.mGeneration == mGeneration ||
+      (mGeneration > 0 && aLS.mGeneration == mGeneration - 1)) {
+    int ix = aLS.mPos;
+
+    if (ix == -1) {
       
       
-      currPos = mEntrySize - 1;
+      return -1;
     }
+
+    
+    
+    MOZ_RELEASE_ASSERT(0 <= ix && ix < mEntrySize);
+    ProfileBufferEntry& entry = mEntries[ix];
+    bool isStillValid = entry.isThreadId() && entry.mTagInt == aLS.mThreadId;
+    return isStillValid ? ix : -1;
   }
 
   
+  
+  MOZ_ASSERT(aLS.mGeneration <= mGeneration - 2);
   return -1;
 }
 
 bool
-ProfileBuffer::DuplicateLastSample(int aThreadId, const TimeStamp& aStartTime)
+ProfileBuffer::DuplicateLastSample(const TimeStamp& aStartTime, LastSample& aLS)
 {
-  int lastSampleStartPos = FindLastSampleOfThread(aThreadId);
+  int lastSampleStartPos = FindLastSampleOfThread(aLS);
   if (lastSampleStartPos == -1) {
     return false;
   }
 
-  MOZ_ASSERT(mEntries[lastSampleStartPos].isThreadId());
+  MOZ_ASSERT(mEntries[lastSampleStartPos].isThreadId() &&
+             mEntries[lastSampleStartPos].mTagInt == aLS.mThreadId);
 
-  addTag(mEntries[lastSampleStartPos]);
+  addTagThreadId(aLS);
 
   
   for (int readPos = (lastSampleStartPos + 1) % mEntrySize;

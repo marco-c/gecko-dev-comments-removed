@@ -19,14 +19,41 @@ public:
 
   ~ProfileBuffer();
 
+  
+  
+  struct LastSample {
+    explicit LastSample(int aThreadId)
+      : mThreadId(aThreadId)
+      , mGeneration(0)
+      , mPos(-1)
+    {}
+
+    
+    const int mThreadId;
+    
+    uint32_t mGeneration;
+    
+    int mPos;
+  };
+
+  
   void addTag(const ProfileBufferEntry& aTag);
+
+  
+  
+  void addTagThreadId(LastSample& aLS);
+
   void StreamSamplesToJSON(SpliceableJSONWriter& aWriter, int aThreadId, double aSinceTime,
                            JSContext* cx, UniqueStacks& aUniqueStacks);
   void StreamMarkersToJSON(SpliceableJSONWriter& aWriter, int aThreadId,
                            const mozilla::TimeStamp& aStartTime,
                            double aSinceTime,
                            UniqueStacks& aUniqueStacks);
-  bool DuplicateLastSample(int aThreadId, const mozilla::TimeStamp& aStartTime);
+
+  
+  
+  bool DuplicateLastSample(const mozilla::TimeStamp& aStartTime,
+                           LastSample& aLS);
 
   void addStoredMarker(ProfilerMarker* aStoredMarker);
 
@@ -38,7 +65,7 @@ public:
 
 protected:
   char* processDynamicTag(int readPos, int* tagsConsumed, char* tagBuff);
-  int FindLastSampleOfThread(int aThreadId);
+  int FindLastSampleOfThread(const LastSample& aLS);
 
 public:
   

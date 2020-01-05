@@ -38,6 +38,8 @@ public:
 
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
+  ProfileBuffer::LastSample& LastSample() { return mLastSample; }
+
  private:
   mozilla::UniqueFreePtr<char> mName;
   int mThreadId;
@@ -104,6 +106,12 @@ private:
   mozilla::Maybe<UniqueStacks> mUniqueStacks;
 
   ThreadResponsiveness mRespInfo;
+
+  
+  
+  
+  
+  ProfileBuffer::LastSample mLastSample;
 };
 
 #endif
