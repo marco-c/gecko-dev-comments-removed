@@ -84,7 +84,7 @@ impl Attr {
             name: name, 
             namespace: namespace,
             prefix: prefix,
-            owner: Cell::new(owner.unrooted()),
+            owner: Cell::new(JS::from_rooted(owner)),
         }
     }
 
