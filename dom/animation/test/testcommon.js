@@ -165,6 +165,15 @@ function waitForFrame() {
 
 
 
+function waitForIdleCallback() {
+  return new Promise(function(resolve, reject) {
+    window.requestIdleCallback(resolve);
+  });
+}
+
+
+
+
 
 
 
@@ -211,8 +220,6 @@ if (opener) {
   for (var funcName of ["async_test", "assert_not_equals", "assert_equals",
                         "assert_approx_equals", "assert_less_than",
                         "assert_less_than_equal", "assert_greater_than",
-                        "assert_greater_than_equal",
-                        "assert_not_exists",
                         "assert_between_inclusive",
                         "assert_true", "assert_false",
                         "assert_class_string", "assert_throws",
@@ -222,8 +229,6 @@ if (opener) {
   }
 
   window.EventWatcher = opener.EventWatcher;
-  
-  window.W3CTest = opener.W3CTest;
 
   function done() {
     opener.add_completion_callback(function() {
