@@ -746,8 +746,25 @@ SdpHelper::AddCommonExtmaps(
   auto& theirExtmap = remoteMsection.GetAttributeList().GetExtmap().mExtmaps;
   for (auto i = theirExtmap.begin(); i != theirExtmap.end(); ++i) {
     for (auto j = localExtensions.begin(); j != localExtensions.end(); ++j) {
-      if (i->extensionname == j->extensionname) {
-        localExtmap->mExtmaps.push_back(*i);
+      
+      
+      if (i->extensionname == j->extensionname &&
+          (((i->direction == SdpDirectionAttribute::Direction::kSendrecv ||
+             i->direction == SdpDirectionAttribute::Direction::kSendonly) &&
+            (j->direction == SdpDirectionAttribute::Direction::kSendrecv ||
+             j->direction == SdpDirectionAttribute::Direction::kRecvonly)) ||
+
+           ((i->direction == SdpDirectionAttribute::Direction::kSendrecv ||
+             i->direction == SdpDirectionAttribute::Direction::kRecvonly) &&
+            (j->direction == SdpDirectionAttribute::Direction::kSendrecv ||
+             j->direction == SdpDirectionAttribute::Direction::kSendonly)))) {
+        auto k = *i; 
+        if (j->direction == SdpDirectionAttribute::Direction::kSendonly) {
+          k.direction = SdpDirectionAttribute::Direction::kRecvonly;
+        } else if (j->direction == SdpDirectionAttribute::Direction::kRecvonly) {
+          k.direction = SdpDirectionAttribute::Direction::kSendonly;
+        }
+        localExtmap->mExtmaps.push_back(k);
 
         
         
