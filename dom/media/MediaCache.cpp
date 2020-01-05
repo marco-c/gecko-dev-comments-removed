@@ -1530,6 +1530,12 @@ MediaCache::AllocateAndWriteBlock(
       bo->mStream = stream;
     }
 
+    if (block->mOwners.IsEmpty()) {
+      
+      
+      return;
+    }
+
     
     for (auto& bo : block->mOwners) {
       bo.mStreamBlock = streamBlockIndex;
