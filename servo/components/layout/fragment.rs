@@ -2049,7 +2049,7 @@ impl Fragment {
     }
 
     
-    pub fn compute_overflow(&self) -> Rect<Au> {
+    pub fn compute_overflow(&self, relative_containing_block_size: &LogicalSize<Au>) -> Rect<Au> {
         
         let container_size = Size2D::zero();
         let mut border_box = self.border_box.to_physical(self.style.writing_mode, container_size);
@@ -2058,10 +2058,9 @@ impl Fragment {
         
         
         
-        let relative_position =
-            self.relative_position(&LogicalSize::zero(self.style.writing_mode));
-        border_box = border_box.translate_by_size(&relative_position.to_physical(
-                self.style.writing_mode));
+        let relative_position = self.relative_position(relative_containing_block_size);
+        border_box =
+            border_box.translate_by_size(&relative_position.to_physical(self.style.writing_mode));
         let mut overflow = border_box;
 
         

@@ -222,7 +222,11 @@ pub trait Flow: fmt::Debug + Sync + Send + 'static {
         if impacted {
             mut_base(self).thread_id = parent_thread_id;
             self.assign_block_size(layout_context);
-            self.store_overflow(layout_context);
+            
+            
+            if !self.contains_relatively_positioned_fragments() {
+                self.store_overflow(layout_context)
+            }
             mut_base(self).restyle_damage.remove(REFLOW_OUT_OF_FLOW | REFLOW);
         }
         impacted
@@ -246,7 +250,7 @@ pub trait Flow: fmt::Debug + Sync + Send + 'static {
         match self.class() {
             FlowClass::Block |
             FlowClass::TableCaption |
-            FlowClass::TableCell if !base(self).children.is_empty() => {
+            FlowClass::TableCell => {
                 
                 let container_size = Size2D::zero();
                 for kid in mut_base(self).children.iter_mut() {
@@ -309,13 +313,6 @@ pub trait Flow: fmt::Debug + Sync + Send + 'static {
     
     
     
-
-    
-    
-    
-    fn is_store_overflow_delayed(&mut self) -> bool {
-        false
-    }
 
     fn is_root(&self) -> bool {
         false
@@ -460,6 +457,11 @@ pub trait ImmutableFlowUtils {
     fn is_inline_flow(self) -> bool;
 
     
+    
+    
+    fn can_calculate_overflow_area_early(self) -> bool;
+
+    
     fn dump(self);
 
     
@@ -495,6 +497,12 @@ pub trait MutableFlowUtils {
     
     
     fn repair_style_and_bubble_inline_sizes(self, style: &Arc<ComputedValues>);
+
+    
+    fn early_store_overflow(self, layout_context: &LayoutContext);
+
+    
+    fn late_store_overflow(self, layout_context: &LayoutContext);
 }
 
 pub trait MutableOwnedFlowUtils {
@@ -781,14 +789,29 @@ pub type AbsoluteDescendantOffsetIter<'a> = Zip<AbsoluteDescendantIter<'a>, Iter
 
 
 
-#[derive(RustcEncodable, Copy, Clone)]
-pub struct AbsolutePositionInfo {
+pub struct EarlyAbsolutePositionInfo {
     
     pub relative_containing_block_size: LogicalSize<Au>,
 
     
     pub relative_containing_block_mode: WritingMode,
+}
 
+impl EarlyAbsolutePositionInfo {
+    pub fn new(writing_mode: WritingMode) -> EarlyAbsolutePositionInfo {
+        
+        
+        EarlyAbsolutePositionInfo {
+            relative_containing_block_size: LogicalSize::zero(writing_mode),
+            relative_containing_block_mode: writing_mode,
+        }
+    }
+}
+
+
+
+#[derive(RustcEncodable, Copy, Clone)]
+pub struct LateAbsolutePositionInfo {
     
     
     
@@ -800,13 +823,9 @@ pub struct AbsolutePositionInfo {
     pub layers_needed_for_positioned_flows: bool,
 }
 
-impl AbsolutePositionInfo {
-    pub fn new(writing_mode: WritingMode) -> AbsolutePositionInfo {
-        
-        
-        AbsolutePositionInfo {
-            relative_containing_block_size: LogicalSize::zero(writing_mode),
-            relative_containing_block_mode: writing_mode,
+impl LateAbsolutePositionInfo {
+    pub fn new() -> LateAbsolutePositionInfo {
+        LateAbsolutePositionInfo {
             stacking_relative_position_of_absolute_containing_block: Point2D::zero(),
             layers_needed_for_positioned_flows: false,
         }
@@ -876,7 +895,12 @@ pub struct BaseFlow {
 
     
     
-    pub absolute_position_info: AbsolutePositionInfo,
+    pub early_absolute_position_info: EarlyAbsolutePositionInfo,
+
+    
+    
+    
+    pub late_absolute_position_info: LateAbsolutePositionInfo,
 
     
     pub clip: ClippingRegion,
@@ -1038,7 +1062,8 @@ impl BaseFlow {
             block_container_explicit_block_size: None,
             absolute_cb: ContainingBlockLink::new(),
             display_list_building_result: DisplayListBuildingResult::None,
-            absolute_position_info: AbsolutePositionInfo::new(writing_mode),
+            early_absolute_position_info: EarlyAbsolutePositionInfo::new(writing_mode),
+            late_absolute_position_info: LateAbsolutePositionInfo::new(),
             clip: ClippingRegion::max(),
             stacking_relative_position_of_display_port: Rect::zero(),
             flags: flags,
@@ -1277,6 +1302,13 @@ impl<'a> ImmutableFlowUtils for &'a Flow {
     }
 
     
+    
+    
+    fn can_calculate_overflow_area_early(self) -> bool {
+        !self.contains_relatively_positioned_fragments()
+    }
+
+    
     fn dump(self) {
         self.dump_with_level(0)
     }
@@ -1353,6 +1385,20 @@ impl<'a> MutableFlowUtils for &'a mut Flow {
         }
 
         traversal.process(*self)
+    }
+
+    
+    fn early_store_overflow(self, layout_context: &LayoutContext) {
+        if self.can_calculate_overflow_area_early() {
+            self.store_overflow(layout_context)
+        }
+    }
+
+    
+    fn late_store_overflow(self, layout_context: &LayoutContext) {
+        if !self.can_calculate_overflow_area_early() {
+            self.store_overflow(layout_context)
+        }
     }
 }
 
