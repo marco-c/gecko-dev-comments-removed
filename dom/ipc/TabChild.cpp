@@ -431,14 +431,6 @@ TabChild::TabChild(nsIContentChild* aManager,
   }
 }
 
-const CompositorOptions&
-TabChild::GetCompositorOptions() const
-{
-  
-  MOZ_ASSERT(mCompositorOptions);
-  return mCompositorOptions.ref();
-}
-
 bool
 TabChild::AsyncPanZoomEnabled() const
 {
