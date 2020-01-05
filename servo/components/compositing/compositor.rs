@@ -1192,9 +1192,12 @@ impl<Window: WindowMethods> IOCompositor<Window> {
         }
 
         
-        let msg = ConstellationMsg::TickAnimation(pipeline_id, AnimationTickType::Layout);
-        if let Err(e) = self.constellation_chan.send(msg) {
-            warn!("Sending tick to constellation failed ({}).", e);
+        let animations_running = self.pipeline_details(pipeline_id).animations_running;
+        if animations_running {
+            let msg = ConstellationMsg::TickAnimation(pipeline_id, AnimationTickType::Layout);
+            if let Err(e) = self.constellation_chan.send(msg) {
+                warn!("Sending tick to constellation failed ({}).", e);
+            }
         }
     }
 
