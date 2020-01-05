@@ -17,14 +17,14 @@ use std::os;
 
 
 
-pub fn make_url(str_url: ~str, current_url: Option<Url>) -> Url {
+pub fn make_url(str_url: &str, current_url: Option<Url>) -> Url {
     let str_url = str_url.trim_chars(& &[' ', '\t', '\n', '\r', '\x0C']).to_owned();
     let schm = url::get_scheme(str_url);
     let str_url = match schm {
         Err(_) => {
             if current_url.is_none() {
-                // Assume we've been given a file path. If it's absolute just return
-                // it, otherwise make it absolute with the cwd.
+                
+                
                 if str_url.starts_with("/") {
                     ~"file://" + str_url
                 } else {
