@@ -260,14 +260,6 @@
 
 
 
-:-moz-native-anonymous .highlighted-rect {
-  position: absolute;
-  background: var(--highlighter-content-color);
-  opacity: 0.8;
-}
-
-
-
 :-moz-native-anonymous .geometry-editor-root {
   
 
