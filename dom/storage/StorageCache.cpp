@@ -248,60 +248,6 @@ namespace {
 
 
 
-class StorageCacheHolder : public nsITimerCallback
-{
-  virtual ~StorageCacheHolder() {}
-
-  NS_DECL_ISUPPORTS
-
-  NS_IMETHOD
-  Notify(nsITimer* aTimer) override
-  {
-    mCache = nullptr;
-    return NS_OK;
-  }
-
-  RefPtr<StorageCache> mCache;
-
-public:
-  explicit StorageCacheHolder(StorageCache* aCache) : mCache(aCache) {}
-};
-
-NS_IMPL_ISUPPORTS(StorageCacheHolder, nsITimerCallback)
-
-} 
-
-void
-StorageCache::KeepAlive()
-{
-  
-  
-  if (!mManager) {
-    return;
-  }
-
-  if (!NS_IsMainThread()) {
-    
-    NS_DispatchToMainThread(NewRunnableMethod(this, &StorageCache::KeepAlive));
-    return;
-  }
-
-  nsCOMPtr<nsITimer> timer = do_CreateInstance("@mozilla.org/timer;1");
-  if (!timer) {
-    return;
-  }
-
-  RefPtr<StorageCacheHolder> holder = new StorageCacheHolder(this);
-  timer->InitWithCallback(holder, DOM_STORAGE_CACHE_KEEP_ALIVE_TIME_MS,
-                          nsITimer::TYPE_ONE_SHOT);
-
-  mKeepAliveTimer.swap(timer);
-}
-
-namespace {
-
-
-
 
 class TelemetryAutoTimer
 {
@@ -667,9 +613,6 @@ StorageCache::LoadItem(const nsAString& aKey, const nsString& aValue)
 void
 StorageCache::LoadDone(nsresult aRv)
 {
-  
-  KeepAlive();
-
   MonitorAutoLock monitor(mMonitor);
   mLoadResult = aRv;
   mLoaded = true;

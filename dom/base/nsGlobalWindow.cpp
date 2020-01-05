@@ -11563,48 +11563,43 @@ nsGlobalWindow::Observe(nsISupports* aSubject, const char* aTopic,
   }
 
   bool isPrivateBrowsing = IsPrivateBrowsing();
+  
+  
+  
+  
+  
+  
+  
   if ((!nsCRT::strcmp(aTopic, "dom-storage2-changed") && !isPrivateBrowsing) ||
       (!nsCRT::strcmp(aTopic, "dom-private-storage2-changed") && isPrivateBrowsing)) {
     if (!IsInnerWindow() || !AsInner()->IsCurrentInnerWindow()) {
       return NS_OK;
     }
 
-    nsIPrincipal *principal;
-    nsresult rv;
+    nsIPrincipal *principal = GetPrincipal();
+    if (!principal) {
+      return NS_OK;
+    }
 
     RefPtr<StorageEvent> event = static_cast<StorageEvent*>(aSubject);
     if (!event) {
       return NS_ERROR_FAILURE;
     }
 
-    RefPtr<Storage> changingStorage = event->GetStorageArea();
-    if (!changingStorage) {
-      return NS_ERROR_FAILURE;
-    }
-
-    nsCOMPtr<nsIDOMStorage> istorage = changingStorage.get();
-
     bool fireMozStorageChanged = false;
     nsAutoString eventType;
     eventType.AssignLiteral("storage");
-    principal = GetPrincipal();
-    if (!principal) {
-      return NS_OK;
-    }
 
-    if (changingStorage->IsPrivate() != IsPrivateBrowsing()) {
-      return NS_OK;
-    }
+    if (!NS_strcmp(aData, u"sessionStorage")) {
+      nsCOMPtr<nsIDOMStorage> changingStorage = event->GetStorageArea();
+      MOZ_ASSERT(changingStorage);
 
-    switch (changingStorage->GetType())
-    {
-    case Storage::SessionStorage:
-    {
       bool check = false;
 
       nsCOMPtr<nsIDOMStorageManager> storageManager = do_QueryInterface(GetDocShell());
       if (storageManager) {
-        rv = storageManager->CheckStorage(principal, istorage, &check);
+        nsresult rv = storageManager->CheckStorage(principal, changingStorage,
+                                                   &check);
         if (NS_FAILED(rv)) {
           return rv;
         }
@@ -11625,44 +11620,43 @@ nsGlobalWindow::Observe(nsISupports* aSubject, const char* aTopic,
       if (fireMozStorageChanged) {
         eventType.AssignLiteral("MozSessionStorageChanged");
       }
-      break;
     }
 
-    case Storage::LocalStorage:
-    {
-      
-      
-      nsIPrincipal* storagePrincipal = changingStorage->GetPrincipal();
+    else {
+      MOZ_ASSERT(!NS_strcmp(aData, u"localStorage"));
+      nsIPrincipal* storagePrincipal = event->GetPrincipal();
+      if (!storagePrincipal) {
+        return NS_OK;
+      }
 
       bool equals = false;
-      rv = storagePrincipal->Equals(principal, &equals);
+      nsresult rv = storagePrincipal->Equals(principal, &equals);
       NS_ENSURE_SUCCESS(rv, rv);
 
-      if (!equals)
+      if (!equals) {
         return NS_OK;
+      }
 
-      fireMozStorageChanged = mLocalStorage == changingStorage;
+      fireMozStorageChanged = mLocalStorage == event->GetStorageArea();
+
       if (fireMozStorageChanged) {
         eventType.AssignLiteral("MozLocalStorageChanged");
       }
-      break;
-    }
-    default:
-      return NS_OK;
     }
 
     
     
     ErrorResult error;
-    RefPtr<StorageEvent> newEvent = CloneStorageEvent(eventType, event, error);
+    RefPtr<StorageEvent> clonedEvent =
+      CloneStorageEvent(eventType, event, error);
     if (error.Failed()) {
       return error.StealNSResult();
     }
 
-    newEvent->SetTrusted(true);
+    clonedEvent->SetTrusted(true);
 
     if (fireMozStorageChanged) {
-      WidgetEvent* internalEvent = newEvent->WidgetEventPtr();
+      WidgetEvent* internalEvent = clonedEvent->WidgetEventPtr();
       internalEvent->mFlags.mOnlyChromeDispatch = true;
     }
 
@@ -11671,12 +11665,12 @@ nsGlobalWindow::Observe(nsISupports* aSubject, const char* aTopic,
       
       
 
-      mPendingStorageEvents.AppendElement(newEvent);
+      mPendingStorageEvents.AppendElement(clonedEvent);
       return NS_OK;
     }
 
     bool defaultActionEnabled;
-    DispatchEvent(newEvent, &defaultActionEnabled);
+    DispatchEvent(clonedEvent, &defaultActionEnabled);
 
     return NS_OK;
   }
@@ -11767,10 +11761,19 @@ nsGlobalWindow::CloneStorageEvent(const nsAString& aType,
   aEvent->GetUrl(dict.mUrl);
 
   RefPtr<Storage> storageArea = aEvent->GetStorageArea();
-  MOZ_ASSERT(storageArea);
 
   RefPtr<Storage> storage;
-  if (storageArea->GetType() == Storage::LocalStorage) {
+
+  
+  if (!storageArea) {
+    storage = GetLocalStorage(aRv);
+    if (aRv.Failed() || !storage) {
+      return nullptr;
+    }
+
+    
+    storage->ApplyEvent(aEvent);
+  } else if (storageArea->GetType() == Storage::LocalStorage) {
     storage = GetLocalStorage(aRv);
   } else {
     MOZ_ASSERT(storageArea->GetType() == Storage::SessionStorage);
@@ -11782,7 +11785,7 @@ nsGlobalWindow::CloneStorageEvent(const nsAString& aType,
   }
 
   MOZ_ASSERT(storage);
-  MOZ_ASSERT(storage->IsForkOf(storageArea));
+  MOZ_ASSERT_IF(storageArea, storage->IsForkOf(storageArea));
 
   dict.mStorageArea = storage;
 
@@ -12942,6 +12945,13 @@ nsGlobalWindow::EventListenerAdded(nsIAtom* aType)
       aType == nsGkAtoms::onvrdisplaydisconnect ||
       aType == nsGkAtoms::onvrdisplaypresentchange) {
     NotifyVREventListenerAdded();
+  }
+
+  
+  if (aType == nsGkAtoms::onstorage) {
+    ErrorResult rv;
+    GetLocalStorage(rv);
+    rv.SuppressException();
   }
 }
 
