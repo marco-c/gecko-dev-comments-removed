@@ -181,6 +181,7 @@ enum class WrRepeatMode : uint32_t
 
 
 typedef uint64_t WrExternalImageId;
+typedef mozilla::gfx::Point Point2D;    
 
 
 
@@ -262,14 +263,12 @@ struct WrColor
 struct WrGlyphInstance
 {
   uint32_t index;
-  float x;
-  float y;
+  Point2D point;
 
   bool operator==(const WrGlyphInstance& other) const
   {
     return index == other.index &&
-           x == other.x &&
-           y == other.y;
+           point == other.point;
   }
 };
 
