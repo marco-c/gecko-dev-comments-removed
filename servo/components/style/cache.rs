@@ -6,27 +6,28 @@
 
 #![deny(missing_docs)]
 
-use std::{iter, slice};
+use std::collections::VecDeque;
+use std::collections::vec_deque;
 
 
 
 
 pub struct LRUCache<K> {
-    entries: Vec<K>,
+    entries: VecDeque<K>,
     cache_size: usize,
 }
 
 
-pub type LRUCacheIterator<'a, K> = iter::Rev<slice::Iter<'a, K>>;
+pub type LRUCacheIterator<'a, K> = vec_deque::Iter<'a, K>;
 
 
-pub type LRUCacheMutIterator<'a, K> = iter::Rev<slice::IterMut<'a, K>>;
+pub type LRUCacheMutIterator<'a, K> = vec_deque::IterMut<'a, K>;
 
 impl<K: PartialEq> LRUCache<K> {
     
     pub fn new(size: usize) -> Self {
         LRUCache {
-          entries: vec![],
+          entries: VecDeque::with_capacity(size),
           cache_size: size,
         }
     }
@@ -41,28 +42,29 @@ impl<K: PartialEq> LRUCache<K> {
     pub fn touch(&mut self, pos: usize) {
         let last_index = self.entries.len() - 1;
         if pos != last_index {
-            let entry = self.entries.remove(pos);
-            self.entries.push(entry);
+            let entry = self.entries.remove(pos).unwrap();
+            self.entries.push_front(entry);
         }
     }
 
     
     
-    pub fn iter(&self) -> LRUCacheIterator<K> {
-        self.entries.iter().rev()
+    pub fn iter(&self) -> vec_deque::Iter<K> {
+        self.entries.iter()
     }
 
     
-    pub fn iter_mut(&mut self) -> LRUCacheMutIterator<K> {
-        self.entries.iter_mut().rev()
+    pub fn iter_mut(&mut self) -> vec_deque::IterMut<K> {
+        self.entries.iter_mut()
     }
 
     
     pub fn insert(&mut self, key: K) {
         if self.entries.len() == self.cache_size {
-            self.entries.remove(0);
+            self.entries.pop_back();
         }
-        self.entries.push(key);
+        self.entries.push_front(key);
+        debug_assert!(self.entries.len() <= self.cache_size);
     }
 
     

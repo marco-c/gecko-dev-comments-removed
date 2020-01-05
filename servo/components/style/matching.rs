@@ -13,7 +13,7 @@ use atomic_refcell::AtomicRefMut;
 use bit_vec::BitVec;
 use cache::{LRUCache, LRUCacheMutIterator};
 use cascade_info::CascadeInfo;
-use context::{CurrentElementInfo, SequentialTask, SharedStyleContext, StyleContext};
+use context::{CurrentElementInfo, SelectorFlagsMap, SharedStyleContext, StyleContext};
 use data::{ComputedStyle, ElementData, ElementStyles, RestyleData};
 use dom::{AnimationRules, SendElement, TElement, TNode};
 use font_metrics::FontMetricsProvider;
@@ -108,7 +108,7 @@ fn element_matches_candidate<E: TElement>(element: &E,
                                           shared: &SharedStyleContext,
                                           bloom: &BloomFilter,
                                           info: &mut CurrentElementInfo,
-                                          tasks: &mut Vec<SequentialTask<E>>)
+                                          selector_flags_map: &mut SelectorFlagsMap<E>)
                                           -> Result<ComputedStyle, CacheMiss> {
     macro_rules! miss {
         ($miss: ident) => {
@@ -157,7 +157,7 @@ fn element_matches_candidate<E: TElement>(element: &E,
     }
 
     if !revalidate(element, candidate, candidate_element,
-                   shared, bloom, info, tasks) {
+                   shared, bloom, info, selector_flags_map) {
         miss!(Revalidation)
     }
 
@@ -205,7 +205,7 @@ fn revalidate<E: TElement>(element: &E,
                            shared: &SharedStyleContext,
                            bloom: &BloomFilter,
                            info: &mut CurrentElementInfo,
-                           tasks: &mut Vec<SequentialTask<E>>)
+                           selector_flags_map: &mut SelectorFlagsMap<E>)
                            -> bool {
     
     
@@ -235,7 +235,7 @@ fn revalidate<E: TElement>(element: &E,
         
         
         let mut set_selector_flags = |el: &E, flags: ElementSelectorFlags| {
-            element.apply_selector_flags(tasks, el, flags);
+            element.apply_selector_flags(selector_flags_map, el, flags);
         };
         info.revalidation_match_results =
             Some(stylist.match_revalidation_selectors(element, bloom,
@@ -560,9 +560,9 @@ trait PrivateMatchMethods: TElement {
             tasks.insert(EFFECT_PROPERTIES);
         }
         if !tasks.is_empty() {
-            let task = SequentialTask::update_animations(self.as_node().as_element().unwrap(),
-                                                         pseudo.cloned(),
-                                                         tasks);
+            let task = ::context::SequentialTask::update_animations(*self,
+                                                                    pseudo.cloned(),
+                                                                    tasks);
             context.thread_local.tasks.push(task);
         }
     }
@@ -698,11 +698,11 @@ trait PrivateMatchMethods: TElement {
                                               shared: &SharedStyleContext,
                                               bloom: &BloomFilter,
                                               info: &mut CurrentElementInfo,
-                                              tasks: &mut Vec<SequentialTask<Self>>)
+                                              selector_flags_map: &mut SelectorFlagsMap<Self>)
                                               -> Result<ComputedStyle, CacheMiss> {
         let candidate_element = *candidate.element;
         element_matches_candidate(self, candidate, &candidate_element,
-                                  shared, bloom, info, tasks)
+                                  shared, bloom, info, selector_flags_map)
     }
 }
 
@@ -802,9 +802,9 @@ pub trait MatchMethods : TElement {
         let mut rule_nodes_changed = false;
         let bloom = context.thread_local.bloom_filter.filter();
 
-        let tasks = &mut context.thread_local.tasks;
+        let map = &mut context.thread_local.selector_flags;
         let mut set_selector_flags = |element: &Self, flags: ElementSelectorFlags| {
-            self.apply_selector_flags(tasks, element, flags);
+            self.apply_selector_flags(map, element, flags);
         };
 
         
@@ -844,9 +844,9 @@ pub trait MatchMethods : TElement {
             Vec::<ApplicableDeclarationBlock>::with_capacity(16);
         let mut rule_nodes_changed = false;
 
-        let tasks = &mut context.thread_local.tasks;
+        let map = &mut context.thread_local.selector_flags;
         let mut set_selector_flags = |element: &Self, flags: ElementSelectorFlags| {
-            self.apply_selector_flags(tasks, element, flags);
+            self.apply_selector_flags(map, element, flags);
         };
 
         
@@ -923,7 +923,7 @@ pub trait MatchMethods : TElement {
     
     
     fn apply_selector_flags(&self,
-                            tasks: &mut Vec<SequentialTask<Self>>,
+                            map: &mut SelectorFlagsMap<Self>,
                             element: &Self,
                             flags: ElementSelectorFlags) {
         
@@ -942,21 +942,17 @@ pub trait MatchMethods : TElement {
                 
                 
                 if !element.has_selector_flags(self_flags) {
-                    let task =
-                        SequentialTask::set_selector_flags(element.clone(),
-                                                           self_flags);
-                    tasks.push(task);
+                    map.insert_flags(*element, self_flags);
                 }
             }
         }
+
+        
         let parent_flags = flags.for_parent();
         if !parent_flags.is_empty() {
             if let Some(p) = element.parent_element() {
-                
-                
                 if !p.has_selector_flags(parent_flags) {
-                    let task = SequentialTask::set_selector_flags(p, parent_flags);
-                    tasks.push(task);
+                    map.insert_flags(p, parent_flags);
                 }
             }
         }
@@ -1055,7 +1051,7 @@ pub trait MatchMethods : TElement {
         let current_element_info =
             &mut context.thread_local.current_element_info.as_mut().unwrap();
         let bloom = context.thread_local.bloom_filter.filter();
-        let tasks = &mut context.thread_local.tasks;
+        let selector_flags_map = &mut context.thread_local.selector_flags;
         let mut should_clear_cache = false;
         for (i, candidate) in cache.iter_mut().enumerate() {
             let sharing_result =
@@ -1063,7 +1059,7 @@ pub trait MatchMethods : TElement {
                                                             &context.shared,
                                                             bloom,
                                                             current_element_info,
-                                                            tasks);
+                                                            selector_flags_map);
             match sharing_result {
                 Ok(shared_style) => {
                     

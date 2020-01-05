@@ -9,10 +9,12 @@ use animation::{Animation, PropertyAnimation};
 use app_units::Au;
 use bit_vec::BitVec;
 use bloom::StyleBloom;
+use cache::LRUCache;
 use data::ElementData;
 use dom::{OpaqueNode, TNode, TElement, SendElement};
 use error_reporting::ParseErrorReporter;
 use euclid::Size2D;
+use fnv::FnvHashMap;
 use font_metrics::FontMetricsProvider;
 #[cfg(feature = "gecko")] use gecko_bindings::structs;
 use matching::StyleSharingCandidateCache;
@@ -282,9 +284,7 @@ bitflags! {
 
 pub enum SequentialTask<E: TElement> {
     
-    
-    SetSelectorFlags(SendElement<E>, ElementSelectorFlags),
-
+    Unused(SendElement<E>),
     #[cfg(feature = "gecko")]
     
     
@@ -297,20 +297,12 @@ impl<E: TElement> SequentialTask<E> {
         use self::SequentialTask::*;
         debug_assert!(thread_state::get() == thread_state::LAYOUT);
         match self {
-            SetSelectorFlags(el, flags) => {
-                unsafe { el.set_selector_flags(flags) };
-            }
+            Unused(_) => unreachable!(),
             #[cfg(feature = "gecko")]
             UpdateAnimations(el, pseudo, tasks) => {
                 unsafe { el.update_animations(pseudo.as_ref(), tasks) };
             }
         }
-    }
-
-    
-    pub fn set_selector_flags(el: E, flags: ElementSelectorFlags) -> Self {
-        use self::SequentialTask::*;
-        SetSelectorFlags(unsafe { SendElement::new(el) }, flags)
     }
 
     #[cfg(feature = "gecko")]
@@ -319,6 +311,59 @@ impl<E: TElement> SequentialTask<E> {
                              tasks: UpdateAnimationsTasks) -> Self {
         use self::SequentialTask::*;
         UpdateAnimations(unsafe { SendElement::new(el) }, pseudo, tasks)
+    }
+}
+
+
+
+pub struct SelectorFlagsMap<E: TElement> {
+    
+    map: FnvHashMap<SendElement<E>, ElementSelectorFlags>,
+    
+    
+    cache: LRUCache<(SendElement<E>, ElementSelectorFlags)>,
+}
+
+#[cfg(debug_assertions)]
+impl<E: TElement> Drop for SelectorFlagsMap<E> {
+    fn drop(&mut self) {
+        debug_assert!(self.map.is_empty());
+    }
+}
+
+impl<E: TElement> SelectorFlagsMap<E> {
+    
+    pub fn new() -> Self {
+        SelectorFlagsMap {
+            map: FnvHashMap::default(),
+            cache: LRUCache::new(4),
+        }
+    }
+
+    
+    pub fn insert_flags(&mut self, element: E, flags: ElementSelectorFlags) {
+        let el = unsafe { SendElement::new(element) };
+        
+        if self.cache.iter().find(|x| x.0 == el)
+               .map_or(ElementSelectorFlags::empty(), |x| x.1)
+               .contains(flags) {
+            return;
+        }
+
+        let f = self.map.entry(el).or_insert(ElementSelectorFlags::empty());
+        *f |= flags;
+
+        
+        
+        self.cache.insert((unsafe { SendElement::new(element) }, *f))
+    }
+
+    
+    pub fn apply_flags(&mut self) {
+        debug_assert!(thread_state::get() == thread_state::LAYOUT);
+        for (el, flags) in self.map.drain() {
+            unsafe { el.set_selector_flags(flags); }
+        }
     }
 }
 
@@ -340,6 +385,11 @@ pub struct ThreadLocalStyleContext<E: TElement> {
     
     pub tasks: Vec<SequentialTask<E>>,
     
+    
+    
+    
+    pub selector_flags: SelectorFlagsMap<E>,
+    
     pub statistics: TraversalStatistics,
     
     pub current_element_info: Option<CurrentElementInfo>,
@@ -356,6 +406,7 @@ impl<E: TElement> ThreadLocalStyleContext<E> {
             bloom_filter: StyleBloom::new(),
             new_animations_sender: shared.local_context_creation_data.lock().unwrap().new_animations_sender.clone(),
             tasks: Vec::new(),
+            selector_flags: SelectorFlagsMap::new(),
             statistics: TraversalStatistics::default(),
             current_element_info: None,
             font_metrics_provider: E::FontMetricsProvider::create_from(shared),
@@ -393,9 +444,12 @@ impl<E: TElement> ThreadLocalStyleContext<E> {
 impl<E: TElement> Drop for ThreadLocalStyleContext<E> {
     fn drop(&mut self) {
         debug_assert!(self.current_element_info.is_none());
+        debug_assert!(thread_state::get() == thread_state::LAYOUT);
 
         
-        debug_assert!(thread_state::get() == thread_state::LAYOUT);
+        self.selector_flags.apply_flags();
+
+        
         for task in self.tasks.drain(..) {
             task.execute();
         }
