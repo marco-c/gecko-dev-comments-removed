@@ -856,6 +856,7 @@ BookmarksStore.prototype = {
 function BookmarksTracker(name, engine) {
   this._batchDepth = 0;
   this._batchSawScoreIncrement = false;
+  this._migratedOldEntries = false;
   Tracker.call(this, name, engine);
 
   delete this.changedIDs; 
@@ -933,10 +934,61 @@ BookmarksTracker.prototype = {
     }
   },
 
+  
+  
+  _migrateOldEntries: Task.async(function* () {
+    let existingIDs = yield Utils.jsonLoad("changes/" + this.file, this);
+    if (existingIDs === null) {
+      
+      
+      
+      
+      this._log.debug("migrateOldEntries: Missing bookmarks tracker file; " +
+                      "skipping migration");
+      return null;
+    }
+
+    if (!this._needsMigration()) {
+      
+      
+      
+      this._log.debug("migrateOldEntries: Bookmarks engine disabled or " +
+                      "first sync; skipping migration");
+      return Utils.jsonRemove("changes/" + this.file, this);
+    }
+
+    
+    
+    this._log.debug("migrateOldEntries: Migrating old tracker entries");
+    let entries = [];
+    for (let syncID in existingIDs) {
+      let change = existingIDs[syncID];
+      
+      
+      let timestamp = typeof change == "number" ? change : change.modified;
+      entries.push({
+        syncId: syncID,
+        modified: timestamp * 1000,
+      });
+    }
+    yield PlacesSyncUtils.bookmarks.migrateOldTrackerEntries(entries);
+    return Utils.jsonRemove("changes/" + this.file, this);
+  }),
+
+  _needsMigration() {
+    return this.engine && this.engineIsEnabled() && this.engine.lastSync > 0;
+  },
+
   observe: function observe(subject, topic, data) {
     Tracker.prototype.observe.call(this, subject, topic, data);
 
     switch (topic) {
+      case "weave:engine:start-tracking":
+        if (!this._migratedOldEntries) {
+          this._migratedOldEntries = true;
+          Async.promiseSpinningly(this._migrateOldEntries());
+        }
+        break;
       case "bookmarks-restore-begin":
         this._log.debug("Ignoring changes from importing bookmarks.");
         break;

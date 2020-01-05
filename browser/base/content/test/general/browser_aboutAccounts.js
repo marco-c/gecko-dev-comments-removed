@@ -329,9 +329,10 @@ var gTests = [
     yield setSignedInUser();
     let tab = yield promiseNewTabLoadEvent("about:accounts");
     
+    let loadPromise = promiseOneMessage(tab, "test:document:load");
     yield signOut();
     
-    yield promiseOneMessage(tab, "test:document:load");
+    yield loadPromise;
     is(tab.linkedBrowser.contentDocument.location.href, "about:accounts?action=signin");
   }
 },
@@ -436,11 +437,10 @@ function promiseNewTabLoadEvent(aUrl)
   let mm = browser.messageManager;
 
   
-  mm.loadFrameScript(CHROME_BASE + "content_aboutAccounts.js", true);
   
-  return promiseOneMessage(tab, "test:document:load").then(
-    () => tab
-  );
+  let promise = promiseOneMessage(tab, "test:document:load");
+  mm.loadFrameScript(CHROME_BASE + "content_aboutAccounts.js", true);
+  return promise.then(() => tab);
 }
 
 
@@ -452,12 +452,12 @@ function promiseNewTabWithIframeLoadEvent(aUrl) {
   let mm = browser.messageManager;
 
   
-  mm.loadFrameScript(CHROME_BASE + "content_aboutAccounts.js", true);
   
   mm.addMessageListener("test:iframe:load", function onFrameLoad(message) {
     mm.removeMessageListener("test:iframe:load", onFrameLoad);
     deferred.resolve([tab, message.data.url]);
   });
+  mm.loadFrameScript(CHROME_BASE + "content_aboutAccounts.js", true);
   return deferred.promise;
 }
 
