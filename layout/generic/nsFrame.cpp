@@ -1116,9 +1116,10 @@ nsIFrame::GetPaddingRect() const
 }
 
 WritingMode
-nsIFrame::GetWritingMode(nsIFrame* aSubFrame) const
+nsIFrame::GetWritingMode(WritingMode aSelfWM, nsIFrame* aSubFrame) const
 {
-  WritingMode writingMode = GetWritingMode();
+  MOZ_ASSERT(aSelfWM == GetWritingMode());
+  WritingMode writingMode = aSelfWM;
 
   if (StyleTextReset()->mUnicodeBidi & NS_STYLE_UNICODE_BIDI_PLAINTEXT) {
     nsBidiLevel frameLevel = nsBidiPresUtils::GetFrameBaseLevel(aSubFrame);
@@ -1894,7 +1895,7 @@ nsFrame::DisplayBackgroundUnconditional(nsDisplayListBuilder* aBuilder,
   
   
   if (aBuilder->IsForEventDelivery() || aForceBackground ||
-      !StyleBackground()->IsTransparent(this) || StyleDisplay()->mAppearance) {
+      !StyleBackground()->IsTransparent() || StyleDisplay()->mAppearance) {
     return nsDisplayBackgroundImage::AppendBackgroundItemsToTop(
         aBuilder, this, GetRectRelativeToSelf(), aLists.BorderBackground());
   }
@@ -4512,17 +4513,9 @@ nsIFrame::InlineMinISizeData::OptionallyBreak(nscoord aHyphenWidth)
 }
 
 void
-nsIFrame::InlinePrefISizeData::ForceBreak(StyleClear aBreakType)
+nsIFrame::InlinePrefISizeData::ForceBreak()
 {
-  MOZ_ASSERT(aBreakType == StyleClear::None ||
-             aBreakType == StyleClear::Both ||
-             aBreakType == StyleClear::Left ||
-             aBreakType == StyleClear::Right,
-             "Must be a physical break type");
-
-  
-  
-  if (mFloats.Length() != 0 && aBreakType != StyleClear::None) {
+  if (mFloats.Length() != 0) {
             
             
     nscoord floats_done = 0,
@@ -4530,12 +4523,11 @@ nsIFrame::InlinePrefISizeData::ForceBreak(StyleClear aBreakType)
             
             floats_cur_left = 0,
             floats_cur_right = 0;
-    const WritingMode wm = mLineContainerWM;
 
     for (uint32_t i = 0, i_end = mFloats.Length(); i != i_end; ++i) {
       const FloatInfo& floatInfo = mFloats[i];
       const nsStyleDisplay* floatDisp = floatInfo.Frame()->StyleDisplay();
-      StyleClear breakType = floatDisp->PhysicalBreakType(wm);
+      StyleClear breakType = floatDisp->PhysicalBreakType(mLineContainerWM);
       if (breakType == StyleClear::Left ||
           breakType == StyleClear::Right ||
           breakType == StyleClear::Both) {
@@ -4552,7 +4544,7 @@ nsIFrame::InlinePrefISizeData::ForceBreak(StyleClear aBreakType)
         }
       }
 
-      StyleFloat floatStyle = floatDisp->PhysicalFloats(wm);
+      StyleFloat floatStyle = floatDisp->PhysicalFloats(mLineContainerWM);
       nscoord& floats_cur =
         floatStyle == StyleFloat::Left ? floats_cur_left : floats_cur_right;
       nscoord floatWidth = floatInfo.Width();
@@ -4569,44 +4561,7 @@ nsIFrame::InlinePrefISizeData::ForceBreak(StyleClear aBreakType)
 
     mCurrentLine = NSCoordSaturatingAdd(mCurrentLine, floats_done);
 
-    if (aBreakType == StyleClear::Both) {
-      mFloats.Clear();
-    } else {
-      
-      
-      
-      
-      
-      nsTArray<FloatInfo> newFloats;
-      MOZ_ASSERT(aBreakType == StyleClear::Left ||
-                 aBreakType == StyleClear::Right,
-                 "Other values should have been handled in other branches");
-      StyleFloat clearFloatType =
-        aBreakType == StyleClear::Left ? StyleFloat::Left : StyleFloat::Right;
-      
-      
-      for (FloatInfo& floatInfo : Reversed(mFloats)) {
-        const nsStyleDisplay* floatDisp = floatInfo.Frame()->StyleDisplay();
-        if (floatDisp->PhysicalFloats(wm) != clearFloatType) {
-          newFloats.AppendElement(floatInfo);
-        } else {
-          
-          
-          
-          
-          
-          
-          
-          StyleClear floatBreakType = floatDisp->PhysicalBreakType(wm);
-          if (floatBreakType != aBreakType &&
-              floatBreakType != StyleClear::None) {
-            break;
-          }
-        }
-      }
-      newFloats.Reverse();
-      mFloats = Move(newFloats);
-    }
+    mFloats.Clear();
   }
 
   mCurrentLine =
@@ -5436,7 +5391,7 @@ nsRect
 nsFrame::ComputeSimpleTightBounds(DrawTarget* aDrawTarget) const
 {
   if (StyleOutline()->mOutlineStyle != NS_STYLE_BORDER_STYLE_NONE ||
-      StyleBorder()->HasBorder() || !StyleBackground()->IsTransparent(this) ||
+      StyleBorder()->HasBorder() || !StyleBackground()->IsTransparent() ||
       StyleDisplay()->mAppearance) {
     
     

@@ -771,7 +771,9 @@ public:
 
 
 
-  mozilla::WritingMode GetWritingMode(nsIFrame* aSubFrame) const;
+
+  mozilla::WritingMode GetWritingMode(mozilla::WritingMode aSelfWM,
+                                      nsIFrame* aSubFrame) const;
 
   
 
@@ -2020,29 +2022,11 @@ public:
   };
 
   struct InlinePrefISizeData : public InlineIntrinsicISizeData {
-    typedef mozilla::StyleClear StyleClear;
-
     InlinePrefISizeData()
       : mLineIsEmpty(true)
     {}
 
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    void ForceBreak(StyleClear aBreakType = StyleClear::Both);
+    void ForceBreak();
 
     
     void DefaultAddInlinePrefISize(nscoord aISize);
