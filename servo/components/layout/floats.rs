@@ -413,6 +413,10 @@ impl Floats {
         }
         clearance
     }
+
+    pub fn is_present(&self) -> bool {
+        self.list.is_present()
+    }
 }
 
 
