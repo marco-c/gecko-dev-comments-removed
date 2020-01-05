@@ -2005,7 +2005,7 @@ WebSocket::CreateAndDispatchMessageEvent(const nsACString& aData,
   
   
 
-  RefPtr<MessageEvent> event = NS_NewDOMMessageEvent(this, nullptr, nullptr);
+  RefPtr<MessageEvent> event = new MessageEvent(this, nullptr, nullptr);
 
   event->InitMessageEvent(nullptr, NS_LITERAL_STRING("message"), false, false,
                           jsData, mImpl->mUTF16Origin, EmptyString(), nullptr,

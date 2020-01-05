@@ -1078,8 +1078,7 @@ EventSource::DispatchAllMessageEvents()
     
     
 
-    RefPtr<MessageEvent> event =
-      NS_NewDOMMessageEvent(this, nullptr, nullptr);
+    RefPtr<MessageEvent> event = new MessageEvent(this, nullptr, nullptr);
 
     event->InitMessageEvent(nullptr, message->mEventName, false, false, jsData,
                             mOrigin, message->mLastEventID, nullptr, nullptr);
