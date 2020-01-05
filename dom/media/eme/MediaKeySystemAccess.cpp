@@ -310,6 +310,7 @@ GetSupportedKeySystems()
       widevine.mSessionTypes.AppendElement(MediaKeySessionType::Persistent_license);
 #endif
       widevine.mAudioRobustness.AppendElement(NS_LITERAL_STRING("SW_SECURE_CRYPTO"));
+      widevine.mVideoRobustness.AppendElement(NS_LITERAL_STRING("SW_SECURE_CRYPTO"));
       widevine.mVideoRobustness.AppendElement(NS_LITERAL_STRING("SW_SECURE_DECODE"));
 #if defined(XP_WIN)
       
