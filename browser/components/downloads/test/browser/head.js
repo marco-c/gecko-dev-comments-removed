@@ -9,7 +9,6 @@
 
 
 
-
 XPCOMUtils.defineLazyModuleGetter(this, "Downloads",
                                   "resource://gre/modules/Downloads.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "DownloadsCommon",
@@ -22,6 +21,9 @@ XPCOMUtils.defineLazyModuleGetter(this, "Task",
                                   "resource://gre/modules/Task.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "PlacesUtils",
                                   "resource://gre/modules/PlacesUtils.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "HttpServer",
+    "resource://testing-common/httpd.js");
+
 const nsIDM = Ci.nsIDownloadManager;
 
 var gTestTargetFile = FileUtils.getFile("TmpD", ["dm-ui-test.file"]);
@@ -29,9 +31,10 @@ gTestTargetFile.createUnique(Ci.nsIFile.NORMAL_FILE_TYPE, FileUtils.PERMS_FILE);
 
 
 
+
 Services.scriptloader.loadSubScript("resource://testing-common/sinon-1.16.1.js");
 
-registerCleanupFunction(function () {
+registerCleanupFunction(function() {
   gTestTargetFile.remove(false);
 
   delete window.sinon;
@@ -41,9 +44,7 @@ registerCleanupFunction(function () {
 
 
 
-
-function promiseOpenAndLoadWindow(aOptions)
-{
+function promiseOpenAndLoadWindow(aOptions) {
   return new Promise((resolve, reject) => {
     let win = OpenBrowserWindow(aOptions);
     win.addEventListener("load", function() {
@@ -66,8 +67,7 @@ function promiseOpenAndLoadWindow(aOptions)
 
 
 
-function promiseTabLoadEvent(tab, url, eventType="load")
-{
+function promiseTabLoadEvent(tab, url, eventType = "load") {
   let deferred = Promise.defer();
   info("Wait tab event: " + eventType);
 
@@ -96,8 +96,7 @@ function promiseTabLoadEvent(tab, url, eventType="load")
   return deferred.promise;
 }
 
-function promiseWindowClosed(win)
-{
+function promiseWindowClosed(win) {
   let promise = new Promise((resolve, reject) => {
     Services.obs.addObserver(function obs(subject, topic) {
       if (subject == win) {
@@ -111,15 +110,13 @@ function promiseWindowClosed(win)
 }
 
 
-function promiseFocus()
-{
+function promiseFocus() {
   let deferred = Promise.defer();
   waitForFocus(deferred.resolve);
   return deferred.promise;
 }
 
-function promisePanelOpened()
-{
+function promisePanelOpened() {
   let deferred = Promise.defer();
 
   if (DownloadsPanel.panel && DownloadsPanel.panel.state == "open") {
@@ -128,7 +125,7 @@ function promisePanelOpened()
 
   
   let originalOnPopupShown = DownloadsPanel.onPopupShown;
-  DownloadsPanel.onPopupShown = function () {
+  DownloadsPanel.onPopupShown = function() {
     DownloadsPanel.onPopupShown = originalOnPopupShown;
     originalOnPopupShown.apply(this, arguments);
 
@@ -140,8 +137,7 @@ function promisePanelOpened()
   return deferred.promise;
 }
 
-function* task_resetState()
-{
+function* task_resetState() {
   
   let publicList = yield Downloads.getList(Downloads.PUBLIC);
   let downloads = yield publicList.getAll();
@@ -155,8 +151,7 @@ function* task_resetState()
   yield promiseFocus();
 }
 
-function* task_addDownloads(aItems)
-{
+function* task_addDownloads(aItems) {
   let startTimeMs = Date.now();
 
   let publicList = yield Downloads.getList(Downloads.PUBLIC);
@@ -184,8 +179,7 @@ function* task_addDownloads(aItems)
   }
 }
 
-function* task_openPanel()
-{
+function* task_openPanel() {
   yield promiseFocus();
 
   let promise = promisePanelOpened();
@@ -198,7 +192,7 @@ function* setDownloadDir() {
   tmpDir.append("testsavedir");
   if (!tmpDir.exists()) {
     tmpDir.create(Ci.nsIFile.DIRECTORY_TYPE, 0o755);
-    registerCleanupFunction(function () {
+    registerCleanupFunction(function() {
       try {
         tmpDir.remove(true);
       } catch (e) {

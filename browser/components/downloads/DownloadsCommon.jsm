@@ -32,7 +32,6 @@ this.EXPORTED_SYMBOLS = [
 
 
 
-
 const { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
@@ -111,7 +110,7 @@ var PrefObserver = {
   observe(aSubject, aTopic, aData) {
     if (this.prefs.hasOwnProperty(aData)) {
       delete this[aData];
-      return this[aData] = this.getPref(aData);
+      this[aData] = this.getPref(aData);
     }
   },
   register(prefs) {
@@ -119,7 +118,7 @@ var PrefObserver = {
     kPrefBranch.addObserver("", this, true);
     for (let key in prefs) {
       let name = key;
-      XPCOMUtils.defineLazyGetter(this, name, function () {
+      XPCOMUtils.defineLazyGetter(this, name, function() {
         return PrefObserver.getPref(name);
       });
     }
@@ -131,7 +130,6 @@ PrefObserver.register({
   animateNotifications: true,
   showPanelDropmarker: true,
 });
-
 
 
 
@@ -166,14 +164,14 @@ this.DownloadsCommon = {
       let string = enumerator.getNext().QueryInterface(Ci.nsIPropertyElement);
       let stringName = string.key;
       if (stringName in kDownloadsStringsRequiringFormatting) {
-        strings[stringName] = function () {
+        strings[stringName] = function() {
           
           return sb.formatStringFromName(stringName,
                                          Array.slice(arguments, 0),
                                          arguments.length);
         };
       } else if (stringName in kDownloadsStringsRequiringPluralForm) {
-        strings[stringName] = function (aCount) {
+        strings[stringName] = function(aCount) {
           
           let formattedString = sb.formatStringFromName(stringName,
                                          Array.slice(arguments, 0),
@@ -243,9 +241,8 @@ this.DownloadsCommon = {
   getData(aWindow) {
     if (PrivateBrowsingUtils.isContentWindowPrivate(aWindow)) {
       return PrivateDownloadsData;
-    } else {
-      return DownloadsData;
     }
+    return DownloadsData;
   },
 
   
@@ -265,9 +262,8 @@ this.DownloadsCommon = {
   getIndicatorData(aWindow) {
     if (PrivateBrowsingUtils.isContentWindowPrivate(aWindow)) {
       return PrivateDownloadsIndicatorData;
-    } else {
-      return DownloadsIndicatorData;
     }
+    return DownloadsIndicatorData;
   },
 
   
@@ -286,12 +282,11 @@ this.DownloadsCommon = {
         return this._privateSummary;
       }
       return this._privateSummary = new DownloadsSummaryData(true, aNumToExclude);
-    } else {
-      if (this._summary) {
-        return this._summary;
-      }
-      return this._summary = new DownloadsSummaryData(false, aNumToExclude);
     }
+    if (this._summary) {
+      return this._summary;
+    }
+    return this._summary = new DownloadsSummaryData(false, aNumToExclude);
   },
   _summary: null,
   _privateSummary: null,
@@ -666,7 +661,7 @@ XPCOMUtils.defineLazyGetter(this.DownloadsCommon, "error", () => {
 
 
 
-XPCOMUtils.defineLazyGetter(DownloadsCommon, "isWinVistaOrHigher", function () {
+XPCOMUtils.defineLazyGetter(DownloadsCommon, "isWinVistaOrHigher", function() {
   let os = Cc["@mozilla.org/xre/app-info;1"].getService(Ci.nsIXULRuntime).OS;
   if (os != "WINNT") {
     return false;
@@ -674,7 +669,6 @@ XPCOMUtils.defineLazyGetter(DownloadsCommon, "isWinVistaOrHigher", function () {
   let sysInfo = Cc["@mozilla.org/system-info;1"].getService(Ci.nsIPropertyBag2);
   return parseFloat(sysInfo.getProperty("version")) >= 6;
 });
-
 
 
 
@@ -756,7 +750,6 @@ DownloadsDataCtor.prototype = {
     indicatorData.attention = DownloadsCommon.ATTENTION_NONE;
   },
 
-  
   
 
   onDownloadAdded(download) {
@@ -848,7 +841,6 @@ DownloadsDataCtor.prototype = {
   },
 
   
-  
 
   
 
@@ -896,7 +888,6 @@ DownloadsDataCtor.prototype = {
     aView.onDataLoadCompleted();
   },
 
-  
   
 
   
@@ -958,9 +949,7 @@ XPCOMUtils.defineLazyGetter(this, "DownloadsData", function() {
 
 
 
-
 const DownloadsViewPrototype = {
-  
   
 
   
@@ -1036,7 +1025,6 @@ const DownloadsViewPrototype = {
     }
   },
 
-  
   
 
   
@@ -1148,7 +1136,6 @@ const DownloadsViewPrototype = {
 
 
 
-
 function DownloadsIndicatorDataCtor(aPrivate) {
   this._isPrivate = aPrivate;
   this._views = [];
@@ -1170,7 +1157,6 @@ DownloadsIndicatorDataCtor.prototype = {
     }
   },
 
-  
   
 
   onDataLoadCompleted() {
@@ -1228,7 +1214,6 @@ DownloadsIndicatorDataCtor.prototype = {
     this._updateViews();
   },
 
-  
   
 
   
@@ -1288,7 +1273,6 @@ DownloadsIndicatorDataCtor.prototype = {
                                                 : this._attention;
   },
 
-  
   
 
   
@@ -1386,7 +1370,6 @@ XPCOMUtils.defineLazyGetter(this, "DownloadsIndicatorData", function() {
 
 
 
-
 function DownloadsSummaryData(aIsPrivate, aNumToExclude) {
   this._numToExclude = aNumToExclude;
   
@@ -1442,7 +1425,6 @@ DownloadsSummaryData.prototype = {
   
   
   
-  
 
   onDataLoadCompleted() {
     DownloadsViewPrototype.onDataLoadCompleted.call(this);
@@ -1476,7 +1458,6 @@ DownloadsSummaryData.prototype = {
   },
 
   
-  
 
   
 
@@ -1504,7 +1485,6 @@ DownloadsSummaryData.prototype = {
     aView.details = this._details;
   },
 
-  
   
 
   

@@ -30,7 +30,7 @@ add_task(function* test_basic_functionality() {
   
   var originalCountLimit = DownloadsView.kItemCountLimit;
   DownloadsView.kItemCountLimit = DownloadData.length;
-  registerCleanupFunction(function () {
+  registerCleanupFunction(function() {
     DownloadsView.kItemCountLimit = originalCountLimit;
   });
 

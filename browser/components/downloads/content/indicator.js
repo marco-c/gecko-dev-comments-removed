@@ -24,8 +24,8 @@
 
 
 
-"use strict";
 
+"use strict";
 
 
 
@@ -195,7 +195,6 @@ Object.defineProperty(this, "DownloadsButton", {
 
 
 
-
 const DownloadsIndicatorView = {
   
 
@@ -288,7 +287,6 @@ const DownloadsIndicatorView = {
   },
 
   
-  
 
   
 
@@ -357,7 +355,7 @@ const DownloadsIndicatorView = {
     
     
     let notifier = this.notifier;
-    if (notifier.style.transform == '') {
+    if (notifier.style.transform == "") {
       let anchorRect = anchor.getBoundingClientRect();
       let notifierRect = notifier.getBoundingClientRect();
       let topDiff = anchorRect.top - notifierRect.top;
@@ -366,19 +364,18 @@ const DownloadsIndicatorView = {
       let widthDiff = anchorRect.width - notifierRect.width;
       let translateX = (leftDiff + .5 * widthDiff) + "px";
       let translateY = (topDiff + .5 * heightDiff) + "px";
-      notifier.style.transform = "translate(" +  translateX + ", " + translateY + ")";
+      notifier.style.transform = "translate(" + translateX + ", " + translateY + ")";
     }
     notifier.setAttribute("notification", aType);
     anchor.setAttribute("notification", aType);
     this._notificationTimeout = setTimeout(() => {
       anchor.removeAttribute("notification");
       notifier.removeAttribute("notification");
-      notifier.style.transform = '';
+      notifier.style.transform = "";
       
     }, 2000);
   },
 
-  
   
 
   
@@ -524,7 +521,6 @@ const DownloadsIndicatorView = {
   },
   _attention: DownloadsCommon.ATTENTION_NONE,
 
-  
   
 
   onWindowUnload() {

@@ -59,6 +59,7 @@
 
 
 
+
 "use strict";
 
 var { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
@@ -83,9 +84,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "Services",
 
 
 
-
 const DownloadsPanel = {
-  
   
 
   
@@ -192,7 +191,6 @@ const DownloadsPanel = {
     DownloadsCommon.log("DownloadsPanel terminated.");
   },
 
-  
   
 
   
@@ -308,9 +306,11 @@ const DownloadsPanel = {
         this.keyFocusing = false;
         break;
       case "keydown":
-        return this._onKeyDown(aEvent);
+        this._onKeyDown(aEvent);
+        break;
       case "keypress":
-        return this._onKeyPress(aEvent);
+        this._onKeyPress(aEvent);
+        break;
       case "popupshown":
         if (this.setHeightToFitOnShow) {
           this.setHeightToFitOnShow = false;
@@ -329,7 +329,6 @@ const DownloadsPanel = {
   },
 
   
-  
 
   
 
@@ -338,7 +337,6 @@ const DownloadsPanel = {
     this._openPopupIfDataReady();
   },
 
-  
   
 
   onWindowUnload() {
@@ -408,7 +406,6 @@ const DownloadsPanel = {
   },
 
   
-  
 
   
 
@@ -429,7 +426,6 @@ const DownloadsPanel = {
     this.hidePanel();
   },
 
-  
   
 
   
@@ -631,7 +627,6 @@ XPCOMUtils.defineConstant(this, "DownloadsPanel", DownloadsPanel);
 
 
 
-
 const DownloadsOverlayLoader = {
   
 
@@ -712,9 +707,7 @@ XPCOMUtils.defineConstant(this, "DownloadsOverlayLoader", DownloadsOverlayLoader
 
 
 
-
 const DownloadsView = {
-  
   
 
   
@@ -791,7 +784,6 @@ const DownloadsView = {
     return this.downloadsHistory = document.getElementById("downloadsHistory");
   },
 
-  
   
 
   
@@ -918,8 +910,7 @@ const DownloadsView = {
 
 
 
-  _addViewItem(download, aNewest)
-  {
+  _addViewItem(download, aNewest) {
     DownloadsCommon.log("Adding a new DownloadsViewItem to the downloads list.",
                         "aNewest =", aNewest);
 
@@ -950,7 +941,6 @@ const DownloadsView = {
     this._itemsForElements.delete(element);
   },
 
-  
   
 
   
@@ -1130,7 +1120,6 @@ XPCOMUtils.defineConstant(this, "DownloadsView", DownloadsView);
 
 
 
-
 function DownloadsViewItem(download, aElement) {
   this.download = download;
   this.element = aElement;
@@ -1199,7 +1188,6 @@ DownloadsViewItem.prototype = {
     }
   },
 
-  
   
 
   cmd_delete() {
@@ -1275,9 +1263,7 @@ DownloadsViewItem.prototype = {
 
 
 
-
 const DownloadsViewController = {
-  
   
 
   initialize() {
@@ -1288,7 +1274,6 @@ const DownloadsViewController = {
     window.controllers.removeController(this);
   },
 
-  
   
 
   supportsCommand(aCommand) {
@@ -1353,7 +1338,6 @@ const DownloadsViewController = {
   onEvent() {},
 
   
-  
 
   updateCommands() {
     function updateCommandsForObject(object) {
@@ -1368,7 +1352,6 @@ const DownloadsViewController = {
   },
 
   
-  
 
   downloadsCmd_clearList() {
     DownloadsCommon.getData(window).removeFinished();
@@ -1376,7 +1359,6 @@ const DownloadsViewController = {
 };
 
 XPCOMUtils.defineConstant(this, "DownloadsViewController", DownloadsViewController);
-
 
 
 
@@ -1568,7 +1550,6 @@ XPCOMUtils.defineConstant(this, "DownloadsSummary", DownloadsSummary);
 
 
 
-
 const DownloadsFooter = {
 
   
@@ -1620,7 +1601,6 @@ const DownloadsFooter = {
 };
 
 XPCOMUtils.defineConstant(this, "DownloadsFooter", DownloadsFooter);
-
 
 
 

@@ -49,7 +49,7 @@ this.DownloadsViewUI = {
 
 
 
-this.DownloadsViewUI.DownloadElementShell = function () {}
+this.DownloadsViewUI.DownloadElementShell = function() {}
 
 this.DownloadsViewUI.DownloadElementShell.prototype = {
   
@@ -242,10 +242,10 @@ this.DownloadsViewUI.DownloadElementShell.prototype = {
       }
 
       let referrer = this.download.source.referrer || this.download.source.url;
-      let [displayHost, fullHost] = DownloadUtils.getURIHost(referrer);
+      let [displayHost ] = DownloadUtils.getURIHost(referrer);
 
       let date = new Date(this.download.endTime);
-      let [displayDate, fullDate] = DownloadUtils.getReadableDates(date);
+      let [displayDate ] = DownloadUtils.getReadableDates(date);
 
       let firstPart = s.statusSeparator(stateLabel, displayHost);
       fullStatus = s.statusSeparator(firstPart, displayDate);
@@ -279,8 +279,6 @@ this.DownloadsViewUI.DownloadElementShell.prototype = {
     }
     throw new Error("Unexpected reputationCheckVerdict: " +
                     this.download.error.reputationCheckVerdict);
-    
-    return [null, null];
   },
 
   
@@ -306,6 +304,7 @@ this.DownloadsViewUI.DownloadElementShell.prototype = {
       } else if (action == "confirmBlock") {
         return this.download.confirmBlock();
       }
+      return Promise.resolve();
     }).catch(Cu.reportError);
   },
 

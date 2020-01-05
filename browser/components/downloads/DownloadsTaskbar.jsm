@@ -16,7 +16,6 @@ this.EXPORTED_SYMBOLS = [
 
 
 
-
 const Cc = Components.classes;
 const Ci = Components.interfaces;
 const Cu = Components.utils;
@@ -31,7 +30,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "RecentWindow",
 XPCOMUtils.defineLazyModuleGetter(this, "Services",
                                   "resource://gre/modules/Services.jsm");
 
-XPCOMUtils.defineLazyGetter(this, "gWinTaskbar", function () {
+XPCOMUtils.defineLazyGetter(this, "gWinTaskbar", function() {
   if (!("@mozilla.org/windows-taskbar;1" in Cc)) {
     return null;
   }
@@ -40,12 +39,11 @@ XPCOMUtils.defineLazyGetter(this, "gWinTaskbar", function () {
   return winTaskbar.available && winTaskbar;
 });
 
-XPCOMUtils.defineLazyGetter(this, "gMacTaskbarProgress", function () {
+XPCOMUtils.defineLazyGetter(this, "gMacTaskbarProgress", function() {
   return ("@mozilla.org/widget/macdocksupport;1" in Cc) &&
          Cc["@mozilla.org/widget/macdocksupport;1"]
            .getService(Ci.nsITaskbarProgress);
 });
-
 
 
 
@@ -111,7 +109,6 @@ this.DownloadsTaskbar = {
           return;
         }
         this._summary = summary;
-        return this._summary.addView(this);
       }).then(null, Cu.reportError);
     }
   },
@@ -150,7 +147,6 @@ this.DownloadsTaskbar = {
     });
   },
 
-  
   
 
   onSummaryChanged() {
