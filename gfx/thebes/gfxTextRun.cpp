@@ -1711,7 +1711,6 @@ gfxFontGroup::gfxFontGroup(const FontFamilyList& aFontFamilyList,
     , mPageLang(gfxPlatformFontList::GetFontPrefLangFor(aStyle->language))
     , mLastPrefFirstFont(false)
     , mSkipDrawing(false)
-    , mSkipUpdateUserFonts(false)
 {
     
     
@@ -2440,7 +2439,7 @@ gfxFontGroup::InitScriptRun(DrawTarget* aDrawTarget,
                  "don't call InitScriptRun with aborted shaping state");
 
     
-    if (!mSkipUpdateUserFonts && mUserFontSet &&
+    if (mUserFontSet &&
         mCurrGeneration != mUserFontSet->GetGeneration()) {
         UpdateUserFonts();
     }
@@ -3177,8 +3176,6 @@ gfxFontGroup::GetRebuildGeneration()
         return 0;
     return mUserFontSet->GetRebuildGeneration();
 }
-
-
 
 void
 gfxFontGroup::UpdateUserFonts()

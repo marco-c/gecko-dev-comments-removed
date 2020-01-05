@@ -251,14 +251,6 @@ public:
     
     
     
-    gfxUserFontEntry* FindUserFontEntryAndLoad(gfxFontFamily* aFamily,
-                                               const gfxFontStyle& aFontStyle,
-                                               bool& aNeedsBold,
-                                               bool& aWaitForUserFont);
-
-    
-    
-    
     virtual nsresult CheckFontLoad(const gfxFontFaceSrc* aFontFaceSrc,
                                    nsIPrincipal** aPrincipal,
                                    bool* aBypassCache) = 0;
