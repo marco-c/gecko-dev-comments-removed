@@ -881,7 +881,8 @@ LIRGenerator::visitTest(MTest* test)
         
         if (comp->isInt32Comparison() ||
             comp->compareType() == MCompare::Compare_UInt32 ||
-            comp->compareType() == MCompare::Compare_Object)
+            comp->compareType() == MCompare::Compare_Object ||
+            comp->compareType() == MCompare::Compare_Symbol)
         {
             JSOp op = ReorderComparison(comp->jsop(), &left, &right);
             LAllocation lhs = useRegister(left);
@@ -1126,7 +1127,8 @@ LIRGenerator::visitCompare(MCompare* comp)
     
     if (comp->isInt32Comparison() ||
         comp->compareType() == MCompare::Compare_UInt32 ||
-        comp->compareType() == MCompare::Compare_Object)
+        comp->compareType() == MCompare::Compare_Object ||
+        comp->compareType() == MCompare::Compare_Symbol)
     {
         JSOp op = ReorderComparison(comp->jsop(), &left, &right);
         LAllocation lhs = useRegister(left);

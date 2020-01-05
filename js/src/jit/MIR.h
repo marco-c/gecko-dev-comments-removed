@@ -4546,6 +4546,9 @@ class MCompare
         Compare_String,
 
         
+        Compare_Symbol,
+
+        
         
         
         
