@@ -1265,6 +1265,16 @@ ExpressionDecompiler::decompilePC(jsbytecode* pc)
         return write("super.") &&
                quote(prop, '\0');
       }
+      case JSOP_SETELEM:
+      case JSOP_STRICTSETELEM:
+        
+        
+        
+        
+        return decompilePCForStackOperand(pc, -3) &&
+               write("[") &&
+               decompilePCForStackOperand(pc, -2) &&
+               write("]");
       case JSOP_GETELEM:
       case JSOP_CALLELEM:
         return decompilePCForStackOperand(pc, -2) &&
