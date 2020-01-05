@@ -7,12 +7,14 @@
 
 
 
+#include "mozilla/Atomics.h"
+
 #include "jscntxt.h"
 
 #include "jsapi-tests/tests.h"
 
 static js::ProfileEntry pstack[10];
-static uint32_t psize = 0;
+static mozilla::Atomic<uint32_t> psize;
 static uint32_t max_stack = 0;
 
 static void

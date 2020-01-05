@@ -261,7 +261,7 @@ public:
       return;
     }
 
-    volatile js::ProfileEntry& entry = mStack[mStackPointer];
+    volatile js::ProfileEntry& entry = mStack[int(mStackPointer)];
 
     
     
@@ -288,8 +288,7 @@ public:
 
   uint32_t stackSize() const
   {
-    return std::min(mStackPointer,
-                    mozilla::sig_safe_t(mozilla::ArrayLength(mStack)));
+    return std::min(uint32_t(mStackPointer), uint32_t(mozilla::ArrayLength(mStack)));
   }
 
   
@@ -304,7 +303,7 @@ public:
 
     js::SetContextProfilingStack(aContext,
                                  (js::ProfileEntry*) mStack,
-                                 (uint32_t*) &mStackPointer,
+                                 &mStackPointer,
                                  (uint32_t) mozilla::ArrayLength(mStack));
     pollJSSampling();
   }
@@ -425,7 +424,7 @@ private:
 
   
   
-  mozilla::sig_safe_t mStackPointer;
+  mozilla::Atomic<uint32_t> mStackPointer;
 
   
   
