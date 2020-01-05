@@ -5,6 +5,7 @@
 "use strict";
 
 const {
+  UPDATE_GRID_COLOR,
   UPDATE_GRID_HIGHLIGHTED,
   UPDATE_GRIDS,
 } = require("./index");
@@ -19,11 +20,27 @@ module.exports = {
 
 
 
+  updateGridColor(nodeFront, color) {
+    return {
+      type: UPDATE_GRID_COLOR,
+      color,
+      nodeFront,
+    };
+  },
+
+  
+
+
+
+
+
+
+
   updateGridHighlighted(nodeFront, highlighted) {
     return {
       type: UPDATE_GRID_HIGHLIGHTED,
-      nodeFront,
       highlighted,
+      nodeFront,
     };
   },
 
