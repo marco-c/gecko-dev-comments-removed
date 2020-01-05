@@ -28,7 +28,6 @@ class OutOfLineCode;
 class CodeGenerator;
 class MacroAssembler;
 class IonCache;
-class IonIC;
 
 template <class ArgSeq, class StoreOutputTo>
 class OutOfLineCallVM;
@@ -104,16 +103,6 @@ class CodeGeneratorShared : public LElementVisitor
 
     
     js::Vector<uint32_t, 0, SystemAllocPolicy> cacheList_;
-
-    
-    js::Vector<uint32_t, 0, SystemAllocPolicy> icList_;
-
-    
-    struct CompileTimeICInfo {
-        CodeOffset icOffsetForJump;
-        CodeOffset icOffsetForPush;
-    };
-    js::Vector<CompileTimeICInfo, 0, SystemAllocPolicy> icInfo_;
 
     
     Vector<PatchableBackedgeInfo, 0, SystemAllocPolicy> patchableBackedges_;
@@ -307,21 +296,6 @@ class CodeGeneratorShared : public LElementVisitor
         return index;
     }
 
-    template <typename T>
-    inline size_t allocateIC(const T& cache) {
-        static_assert(mozilla::IsBaseOf<IonIC, T>::value, "T must inherit from IonIC");
-        size_t index;
-        masm.propagateOOM(allocateData(sizeof(mozilla::AlignedStorage2<T>), &index));
-        masm.propagateOOM(icList_.append(index));
-        masm.propagateOOM(icInfo_.append(CompileTimeICInfo()));
-        if (masm.oom())
-            return SIZE_MAX;
-        
-        MOZ_ASSERT(index == icList_.back());
-        new (&runtimeData_[index]) T(cache);
-        return index;
-    }
-
   protected:
     
     void encode(LRecoverInfo* recover);
@@ -463,14 +437,6 @@ class CodeGeneratorShared : public LElementVisitor
 #endif
     }
 
-    template <typename T>
-    CodeOffset pushArgWithPatch(const T& t) {
-#ifdef DEBUG
-        pushedArgs_++;
-#endif
-        return masm.PushWithPatch(t);
-    }
-
     void storeResultTo(Register reg) {
         masm.storeCallWordResult(reg);
     }
@@ -491,8 +457,6 @@ class CodeGeneratorShared : public LElementVisitor
                                     const StoreOutputTo& out);
 
     void addCache(LInstruction* lir, size_t cacheIndex);
-    void addIC(LInstruction* lir, size_t cacheIndex);
-
     bool addCacheLocations(const CacheLocationList& locs, size_t* numLocs, size_t* offset);
     ReciprocalMulConstants computeDivisionConstants(uint32_t d, int maxLog);
 
