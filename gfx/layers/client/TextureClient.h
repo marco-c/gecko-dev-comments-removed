@@ -21,6 +21,7 @@
 #include "mozilla/ipc/Shmem.h"          
 #include "mozilla/layers/AtomicRefCountedWithFinalize.h"
 #include "mozilla/layers/CompositorTypes.h"  
+#include "mozilla/layers/ISurfaceAllocator.h"
 #include "mozilla/layers/LayersTypes.h"
 #include "mozilla/layers/LayersSurfaces.h"  
 #include "mozilla/mozalloc.h"           

@@ -12,7 +12,7 @@
 
 namespace mozilla {
 namespace layers {
-class ISurfaceAllocator;
+class LayersIPCChannel;
 } 
 
 namespace gl {
@@ -29,7 +29,7 @@ struct SurfaceCaps final
 
     
     
-    RefPtr<layers::ISurfaceAllocator> surfaceAllocator;
+    RefPtr<layers::LayersIPCChannel> surfaceAllocator;
 
     SurfaceCaps();
     SurfaceCaps(const SurfaceCaps& other);
