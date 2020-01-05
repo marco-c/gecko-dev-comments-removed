@@ -734,6 +734,33 @@ function injectAPI(source, dest) {
 
 
 
+class LimitedSet extends Set {
+  constructor(limit, iterable = undefined) {
+    super(iterable);
+    this.limit = limit;
+  }
+
+  truncate(limit) {
+    for (let item of this) {
+      if (this.size <= limit) {
+        break;
+      }
+      this.delete(item);
+    }
+  }
+
+  add(item) {
+    if (!this.has(item) && this.size >= this.limit) {
+      this.truncate(this.limit - 1);
+    }
+    super.add(item);
+  }
+}
+
+
+
+
+
 
 
 
@@ -1037,6 +1064,10 @@ class MessageManagerProxy {
     Cu.reportError(`Cannot send message: Other side disconnected: ${uneval(args)}`);
   }
 
+  get isDisconnected() {
+    return !this.messageManager;
+  }
+
   
 
 
@@ -1152,6 +1183,7 @@ this.ExtensionUtils = {
   EventEmitter,
   ExtensionError,
   IconDetails,
+  LimitedSet,
   LocaleData,
   MessageManagerProxy,
   PlatformInfo,
