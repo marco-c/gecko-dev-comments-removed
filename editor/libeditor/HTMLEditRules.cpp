@@ -1456,7 +1456,10 @@ HTMLEditRules::WillLoadHTML(Selection* aSelection,
   
 
   if (mBogusNode) {
-    mTextEditor->DeleteNode(mBogusNode);
+    if (NS_WARN_IF(!mHTMLEditor)) {
+      return NS_ERROR_UNEXPECTED;
+    }
+    mHTMLEditor->DeleteNode(mBogusNode);
     mBogusNode = nullptr;
   }
 
@@ -3800,7 +3803,10 @@ HTMLEditRules::WillCSSIndent(Selection* aSelection,
       } else {
         if (!curQuote) {
           
-          if (!mTextEditor->CanContainTag(*curParent, *nsGkAtoms::div)) {
+          if (NS_WARN_IF(!mHTMLEditor)) {
+            return NS_ERROR_UNEXPECTED;
+          }
+          if (!mHTMLEditor->CanContainTag(*curParent, *nsGkAtoms::div)) {
             return NS_OK; 
           }
 
@@ -4028,7 +4034,10 @@ HTMLEditRules::WillHTMLIndent(Selection* aSelection,
 
         if (!curQuote) {
           
-          if (!mTextEditor->CanContainTag(*curParent, *nsGkAtoms::blockquote)) {
+          if (NS_WARN_IF(!mHTMLEditor)) {
+            return NS_ERROR_UNEXPECTED;
+          }
+          if (!mHTMLEditor->CanContainTag(*curParent, *nsGkAtoms::blockquote)) {
             return NS_OK; 
           }
 
@@ -4773,7 +4782,7 @@ HTMLEditRules::WillAlign(Selection& aSelection,
     
     if (!curDiv || transitionList[i]) {
       
-      if (!mTextEditor->CanContainTag(*curParent, *nsGkAtoms::div)) {
+      if (!htmlEditor->CanContainTag(*curParent, *nsGkAtoms::div)) {
         
         return NS_OK;
       }
@@ -6392,7 +6401,10 @@ HTMLEditRules::ReturnInParagraph(Selection* aSelection,
     } else {
       if (doesCRCreateNewP) {
         nsCOMPtr<nsIDOMNode> tmp;
-        rv = mTextEditor->SplitNode(aNode, aOffset, getter_AddRefs(tmp));
+        if (NS_WARN_IF(!mHTMLEditor)) {
+          return NS_ERROR_UNEXPECTED;
+        }
+        rv = mHTMLEditor->SplitNode(aNode, aOffset, getter_AddRefs(tmp));
         NS_ENSURE_SUCCESS(rv, rv);
         selNode = tmp;
       }
@@ -6614,7 +6626,7 @@ HTMLEditRules::ReturnInListItem(Selection& aSelection,
           nsCOMPtr<Element> newListItem =
             htmlEditor->CreateNode(listAtom, list, itemOffset + 1);
           NS_ENSURE_STATE(newListItem);
-          rv = mTextEditor->DeleteNode(&aListItem);
+          rv = htmlEditor->DeleteNode(&aListItem);
           NS_ENSURE_SUCCESS(rv, rv);
           rv = aSelection.Collapse(newListItem, 0);
           NS_ENSURE_SUCCESS(rv, rv);
@@ -8868,7 +8880,7 @@ HTMLEditRules::DocumentModifiedWorker()
   
   
   if (mBogusNode) {
-    mTextEditor->DeleteNode(mBogusNode);
+    htmlEditor->DeleteNode(mBogusNode);
     mBogusNode = nullptr;
   }
 
