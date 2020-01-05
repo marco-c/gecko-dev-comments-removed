@@ -93,11 +93,18 @@ class DataTextureSourceD3D9 : public DataTextureSource
                             , public BigImageIterator
 {
 public:
+  
+  
+  
   DataTextureSourceD3D9(gfx::SurfaceFormat aFormat,
                         CompositorD3D9* aCompositor,
                         TextureFlags aFlags = TextureFlags::DEFAULT,
                         StereoMode aStereoMode = StereoMode::MONO);
 
+  
+  
+  
+  
   DataTextureSourceD3D9(gfx::SurfaceFormat aFormat,
                         gfx::IntSize aSize,
                         CompositorD3D9* aCompositor,
@@ -120,7 +127,8 @@ public:
 
   virtual IDirect3DTexture9* GetD3D9Texture() override;
 
-  virtual DataTextureSource* AsDataTextureSource() override { return this; }
+  
+  virtual DataTextureSource* AsDataTextureSource() override { return mAllowTextureUploads ? this : nullptr; }
 
   virtual void DeallocateDeviceData() override { mTexture = nullptr; }
 
@@ -165,6 +173,7 @@ protected:
   TextureFlags mFlags;
   bool mIsTiled;
   bool mIterating;
+  bool mAllowTextureUploads;
 };
 
 
