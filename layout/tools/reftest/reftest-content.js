@@ -24,6 +24,7 @@ CU.import("resource://gre/modules/Timer.jsm");
 CU.import("resource://gre/modules/AsyncSpellCheckTestHelper.jsm");
 
 var gBrowserIsRemote;
+var gIsWebRenderEnabled;
 var gHaveCanvasSnapshot = false;
 
 
@@ -1024,6 +1025,15 @@ function SendContentReady()
 {
     let gfxInfo = (NS_GFXINFO_CONTRACTID in CC) && CC[NS_GFXINFO_CONTRACTID].getService(CI.nsIGfxInfo);
     let info = gfxInfo.getInfo();
+
+    
+    
+    try {
+        gIsWebRenderEnabled = gfxInfo.WebRenderEnabled;
+    } catch (e) {
+        gIsWebRenderEnabled = false;
+    }
+
     try {
         info.D2DEnabled = gfxInfo.D2DEnabled;
         info.DWriteEnabled = gfxInfo.DWriteEnabled;
@@ -1131,28 +1141,40 @@ function SendUpdateCanvasForEvent(event, contentRootElement)
       }
       return;
     }
-    
-    var rectList = event.clientRects;
-    LogInfo("SendUpdateCanvasForEvent with " + rectList.length + " rects");
-    for (var i = 0; i < rectList.length; ++i) {
-        var r = rectList[i];
-        
-        var left = Math.floor(roundTo(r.left*scale, 0.001));
-        var top = Math.floor(roundTo(r.top*scale, 0.001));
-        var right = Math.ceil(roundTo(r.right*scale, 0.001));
-        var bottom = Math.ceil(roundTo(r.bottom*scale, 0.001));
-        LogInfo("Rect: " + left + " " + top + " " + right + " " + bottom);
 
-        rects.push({ left: left, top: top, right: right, bottom: bottom });
+    var message;
+    if (gIsWebRenderEnabled && !windowUtils().isMozAfterPaintPending) {
+        
+        
+        
+
+        LogInfo("Webrender enabled, sending update whole canvas for invalidation");
+        message = "reftest:UpdateWholeCanvasForInvalidation";
+    } else {
+        var rectList = event.clientRects;
+        LogInfo("SendUpdateCanvasForEvent with " + rectList.length + " rects");
+        for (var i = 0; i < rectList.length; ++i) {
+            var r = rectList[i];
+            
+            var left = Math.floor(roundTo(r.left * scale, 0.001));
+            var top = Math.floor(roundTo(r.top * scale, 0.001));
+            var right = Math.ceil(roundTo(r.right * scale, 0.001));
+            var bottom = Math.ceil(roundTo(r.bottom * scale, 0.001));
+            LogInfo("Rect: " + left + " " + top + " " + right + " " + bottom);
+
+            rects.push({ left: left, top: top, right: right, bottom: bottom });
+        }
+
+        message = "reftest:UpdateCanvasForInvalidation";
     }
 
     
     
     if (!gBrowserIsRemote) {
-        sendSyncMessage("reftest:UpdateCanvasForInvalidation", { rects: rects });
+        sendSyncMessage(message, { rects: rects });
     } else {
         SynchronizeForSnapshot(SYNC_ALLOW_DISABLE);
-        sendAsyncMessage("reftest:UpdateCanvasForInvalidation", { rects: rects });
+        sendAsyncMessage(message, { rects: rects });
     }
 }
 if (content.document.readyState == "complete") {
