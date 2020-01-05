@@ -6,7 +6,9 @@
 
 #![deny(missing_docs)]
 
+use context::TraversalStatistics;
 use dom::{TElement, TNode};
+use std::borrow::Borrow;
 use traversal::{DomTraversal, PerLevelTraversalData, PreTraverseToken};
 
 
@@ -56,5 +58,11 @@ pub fn traverse_dom<E, D>(traversal: &D,
         }
     } else {
         doit(traversal, &mut traversal_data, &mut tlc, root.as_node());
+    }
+
+    
+    let tlsc = tlc.borrow();
+    if TraversalStatistics::should_dump() {
+        println!("{}", tlsc.statistics);
     }
 }

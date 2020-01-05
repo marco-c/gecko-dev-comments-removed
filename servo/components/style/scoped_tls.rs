@@ -61,4 +61,10 @@ impl<'scope, T: Send> ScopedTLS<'scope, T> {
 
         RefMut::map(opt, |x| x.as_mut().unwrap())
     }
+
+    
+    
+    pub unsafe fn unsafe_get(&self) -> &[RefCell<Option<T>>] {
+        &self.slots
+    }
 }
