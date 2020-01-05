@@ -783,24 +783,42 @@ Database::BackupAndReplaceDatabaseFile(nsCOMPtr<mozIStorageService>& aStorage)
   }
 
   
+  
+  
+  
+
+  
   if (mMainConn) {
-    
-    
     rv = mMainConn->Close();
-    NS_ENSURE_SUCCESS(rv, rv);
+    NS_ENSURE_SUCCESS(rv, ForceCrashAndReplaceDatabase(
+      NS_LITERAL_CSTRING("Unable to close the corrupt database.")));
   }
 
   
   rv = databaseFile->Remove(false);
-  NS_ENSURE_SUCCESS(rv, rv);
+  if (NS_FAILED(rv) && rv != NS_ERROR_FILE_TARGET_DOES_NOT_EXIST) {
+    return ForceCrashAndReplaceDatabase(
+      NS_LITERAL_CSTRING("Unable to remove the corrupt database file."));
+  }
 
   
   
   
   rv = aStorage->OpenUnsharedDatabase(databaseFile, getter_AddRefs(mMainConn));
-  NS_ENSURE_SUCCESS(rv, rv);
+  NS_ENSURE_SUCCESS(rv, ForceCrashAndReplaceDatabase(
+    NS_LITERAL_CSTRING("Unable to open a new database connection.")));
 
   return NS_OK;
+}
+
+nsresult
+Database::ForceCrashAndReplaceDatabase(const nsCString& aReason)
+{
+  Preferences::SetBool(PREF_FORCE_DATABASE_REPLACEMENT, true);
+  
+  
+  MOZ_CRASH_UNSAFE_OOL(aReason.get());
+  return NS_ERROR_FAILURE;
 }
 
 nsresult
@@ -2059,7 +2077,23 @@ Database::MigrateV35Up() {
   MOZ_ASSERT(NS_IsMainThread());
 
   int64_t mobileRootId = CreateMobileRoot();
-  if (mobileRootId <= 0) return NS_ERROR_FAILURE;
+  if (mobileRootId <= 0)  {
+    
+    
+    
+    nsCOMPtr<mozIStorageStatement> checkRootsStmt;
+    nsresult rv = mMainConn->CreateStatement(NS_LITERAL_CSTRING(
+      "SELECT id FROM moz_bookmarks WHERE parent = 0"
+    ), getter_AddRefs(checkRootsStmt));
+    NS_ENSURE_SUCCESS(rv, rv);
+    mozStorageStatementScoper scoper(checkRootsStmt);
+    bool hasResult = false;
+    rv = checkRootsStmt->ExecuteStep(&hasResult);
+    if (NS_SUCCEEDED(rv) && !hasResult) {
+      return NS_OK;
+    }
+    return NS_ERROR_FAILURE;
+  }
 
   
   

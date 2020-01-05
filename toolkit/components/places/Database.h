@@ -237,6 +237,12 @@ protected:
 
 
 
+  nsresult ForceCrashAndReplaceDatabase(const nsCString& aReason);
+
+  
+
+
+
 
 
 
