@@ -539,6 +539,8 @@ patched_LdrLoadDll (PWCHAR filePath, PULONG flags, PUNICODE_STRING moduleFileNam
   wchar_t *fname = moduleFileName->Buffer;
   UniquePtr<wchar_t[]> full_fname;
 
+  const DllBlockInfo* info = &sWindowsDllBlocklist[0];
+
   
   
   
@@ -619,7 +621,6 @@ patched_LdrLoadDll (PWCHAR filePath, PULONG flags, PUNICODE_STRING moduleFileNam
   }
 
   
-  const DllBlockInfo* info = &sWindowsDllBlocklist[0];
   while (info->name) {
     if (strcmp(info->name, dllName) == 0)
       break;
