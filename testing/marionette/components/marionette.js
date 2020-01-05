@@ -115,12 +115,27 @@ const prefs = {
 };
 
 function MarionetteComponent() {
+  
+  
+  
   this.enabled = prefs.enabled;
-  this.loaded = false;
-  this.logger = this.setupLogger(prefs.logLevel);
+
+  
+  
+  this.running = false;
+
+  
   this.server = null;
+
+  
+  
   this.gfxWindow = null;
+
+  
+  
   this.finalUIStartup = false;
+
+  this.logger = this.setupLogger(prefs.logLevel);
 }
 
 MarionetteComponent.prototype = {
@@ -131,7 +146,7 @@ MarionetteComponent.prototype = {
       [Ci.nsICommandLineHandler, Ci.nsIObserver]),
   _xpcom_categories: [
     {category: "command-line-handler", entry: "b-marionette"},
-    {category: "profile-after-change", service: true}
+    {category: "profile-after-change", service: true},
   ],
 };
 
@@ -163,8 +178,6 @@ MarionetteComponent.prototype.observe = function (subject, topic, data) {
       prefs.readFromEnvironment(ENV_PREF_VAR);
 
       if (this.enabled) {
-        this.logger.debug("Marionette is enabled");
-
         
         
         if (Services.appinfo.inSafeMode) {
@@ -227,9 +240,8 @@ MarionetteComponent.prototype.setupLogger = function (level) {
   return logger;
 };
 
-
 MarionetteComponent.prototype.suppressSafeModeDialog = function (win) {
-  win.addEventListener("load", function() {
+  win.addEventListener("load", () => {
     if (win.document.getElementById("safeModeDialog")) {
       
       win.setTimeout(() => {
@@ -240,11 +252,11 @@ MarionetteComponent.prototype.suppressSafeModeDialog = function (win) {
 };
 
 MarionetteComponent.prototype.init = function () {
-  if (this.loaded || !this.enabled || !this.finalUIStartup) {
+  if (this.running || !this.enabled || !this.finalUIStartup) {
     return;
   }
 
-  this.loaded = true;
+  this.running = true;
 
   if (!prefs.forceLocal) {
     
@@ -257,28 +269,28 @@ MarionetteComponent.prototype.init = function () {
     insaneSacrificialGoat.asyncListen(this);
   }
 
-  let so;
+  let s;
   try {
     Cu.import("chrome://marionette/content/server.js");
-    so = new server.TCPListener(prefs.port, prefs.forceLocal);
-    so.start();
-    this.logger.info(`Listening on port ${so.port}`);
+    s = new server.TCPListener(prefs.port, prefs.forceLocal);
+    s.start();
+    this.logger.info(`Listening on port ${s.port}`);
   } catch (e) {
     this.logger.error(`Error on starting server: ${e}`);
-    dump(e.toString() + "\n" + e.stack + "\n");
+    dump(`${e.toString()}\n${e.stack}\n`);
   } finally {
-    if (so) {
-      this.server = so;
+    if (s) {
+      this.server = s;
     }
   }
 };
 
 MarionetteComponent.prototype.uninit = function () {
-  if (!this.loaded) {
+  if (!this.running) {
     return;
   }
   this.server.stop();
-  this.loaded = false;
+  this.running = false;
 };
 
 this.NSGetFactory = XPCOMUtils.generateNSGetFactory([MarionetteComponent]);
