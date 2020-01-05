@@ -13,6 +13,7 @@ use gfx::font_context::{FontContext, FontContextInfo};
 use green::task::GreenTask;
 use script::layout_interface::LayoutChan;
 use servo_msg::constellation_msg::ConstellationChan;
+use servo_net::image::holder::LocalImageCacheHandle;
 use servo_util::geometry::Au;
 use servo_util::opts::Opts;
 use std::cast;
@@ -23,7 +24,7 @@ use std::rt::local::Local;
 #[cfg(not(target_os="android"))]
 use std::rt::task::Task;
 use style::{ComputedValues, Stylist};
-use sync::{Arc, Mutex};
+use sync::Arc;
 use url::Url;
 
 #[cfg(target_os="android")]
@@ -56,24 +57,23 @@ local_data_key!(style_sharing_candidate_cache: *mut StyleSharingCandidateCache)
 #[deriving(Clone)]
 pub struct LayoutContext {
     
-    
-    pub image_cache: Arc<Mutex<*()>>,
+    pub image_cache: LocalImageCacheHandle,
 
-    /// The current screen size.
+    
     pub screen_size: Size2D<Au>,
 
-    /// A channel up to the constellation.
+    
     pub constellation_chan: ConstellationChan,
 
-    /// A channel up to the layout task.
+    
     pub layout_chan: LayoutChan,
 
-    /// Information needed to construct a font context.
+    
     pub font_context_info: FontContextInfo,
 
-    /// The CSS selector stylist.
-    ///
-    /// FIXME(pcwalton): Make this no longer an unsafe pointer once we have fast `RWArc`s.
+    
+    
+    
     pub stylist: *Stylist,
 
     /// The initial set of CSS properties.
