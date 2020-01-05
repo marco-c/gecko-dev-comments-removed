@@ -69,6 +69,19 @@ pub struct cef_main_args {
 
 pub type cef_color_t = c_uint;
 
+pub enum cef_json_parser_error_t {
+  JSON_NO_ERROR = 0,
+  JSON_INVALID_ESCAPE,
+  JSON_SYNTAX_ERROR,
+  JSON_UNEXPECTED_TOKEN,
+  JSON_TRAILING_COMMA,
+  JSON_TOO_MUCH_NESTING,
+  JSON_UNEXPECTED_DATA_AFTER_ROOT,
+  JSON_UNSUPPORTED_ENCODING,
+  JSON_UNQUOTED_DICTIONARY_KEY,
+  JSON_PARSE_ERROR_COUNT
+}
+
 
 
 
@@ -377,6 +390,22 @@ impl cef_rect {
             height: 0,
         }
     }
+}
+
+pub type cef_draggable_region_t = cef_draggable_region;
+
+
+
+pub struct cef_draggable_region {
+  
+  
+  
+  pub bounds: cef_rect_t,
+
+  
+  
+  
+  pub draggable: i32
 }
 
 
@@ -1915,3 +1944,90 @@ pub struct _cef_request_context_settings {
 
 pub type cef_request_context_settings_t = _cef_request_context_settings;
 pub type CefRequestContextSettings = cef_request_context_settings_t;
+
+
+
+
+pub enum cef_pdf_print_margin_type_t {
+  
+  
+  
+  PDF_PRINT_MARGIN_DEFAULT = 0,
+
+  
+  
+  
+  PDF_PRINT_MARGIN_NONE,
+
+  
+  
+  
+  PDF_PRINT_MARGIN_MINIMUM,
+
+  
+  
+  
+  PDF_PRINT_MARGIN_CUSTOM,
+}
+
+
+
+
+pub struct cef_pdf_print_settings {
+  
+  
+  
+  
+  pub header_footer_title: cef_string_t,
+
+  
+  
+  
+  
+  pub header_footer_url: cef_string_t,
+
+  
+  
+  
+  
+  pub page_width: i32,
+  pub page_height: i32,
+
+  
+  
+  
+  
+  pub margin_top: f64,
+  pub margin_right: f64,
+  pub margin_bottom: f64,
+  pub margin_left: f64,
+
+  
+  
+  
+  pub margin_type: cef_pdf_print_margin_type_t,
+
+  
+  
+  
+  
+  pub header_footer_enabled: i32,
+
+  
+  
+  
+  pub selection_only: i32,
+
+  
+  
+  
+  pub landscape: i32,
+
+  
+  
+  
+  
+  pub backgrounds_enabled: i32,
+}
+pub type cef_pdf_print_settings_t = cef_pdf_print_settings;
+pub type CefPdfPrintSettings = cef_pdf_print_settings;

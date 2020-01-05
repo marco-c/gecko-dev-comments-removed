@@ -110,14 +110,6 @@ pub struct _cef_navigation_entry_t {
   
   
   
-  pub get_frame_name: Option<extern "C" fn(
-      this: *mut cef_navigation_entry_t) -> types::cef_string_userfree_t>,
-
-  
-  
-  
-  
-  
   pub get_completion_time: Option<extern "C" fn(
       this: *mut cef_navigation_entry_t) -> types::cef_time_t>,
 
@@ -321,23 +313,6 @@ impl CefNavigationEntry {
     unsafe {
       CefWrap::to_rust(
         ((*self.c_object).has_post_data.unwrap())(
-          self.c_object))
-    }
-  }
-
-  
-  
-  
-  
-  
-  pub fn get_frame_name(&self) -> String {
-    if self.c_object.is_null() ||
-       self.c_object as usize == mem::POST_DROP_USIZE {
-      panic!("called a CEF method on a null object")
-    }
-    unsafe {
-      CefWrap::to_rust(
-        ((*self.c_object).get_frame_name.unwrap())(
           self.c_object))
     }
   }

@@ -86,6 +86,17 @@ pub struct _cef_display_handler_t {
   
   
   
+  pub on_fullscreen_mode_change: Option<extern "C" fn(
+      this: *mut cef_display_handler_t, browser: *mut interfaces::cef_browser_t,
+      fullscreen: libc::c_int) -> ()>,
+
+  
+  
+  
+  
+  
+  
+  
   
   pub on_tooltip: Option<extern "C" fn(this: *mut cef_display_handler_t,
       browser: *mut interfaces::cef_browser_t,
@@ -245,6 +256,28 @@ impl CefDisplayHandler {
           self.c_object,
           CefWrap::to_c(browser),
           CefWrap::to_c(icon_urls)))
+    }
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  pub fn on_fullscreen_mode_change(&self, browser: interfaces::CefBrowser,
+      fullscreen: libc::c_int) -> () {
+    if self.c_object.is_null() ||
+       self.c_object as usize == mem::POST_DROP_USIZE {
+      panic!("called a CEF method on a null object")
+    }
+    unsafe {
+      CefWrap::to_rust(
+        ((*self.c_object).on_fullscreen_mode_change.unwrap())(
+          self.c_object,
+          CefWrap::to_c(browser),
+          CefWrap::to_c(fullscreen)))
     }
   }
 

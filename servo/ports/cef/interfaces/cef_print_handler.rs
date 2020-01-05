@@ -399,6 +399,13 @@ pub struct _cef_print_handler_t {
   
   
   
+  
+  pub get_pdf_paper_size: Option<extern "C" fn(this: *mut cef_print_handler_t,
+      device_units_per_inch: libc::c_int) -> types::cef_size_t>,
+
+  
+  
+  
   pub ref_count: u32,
 
   
@@ -554,6 +561,24 @@ impl CefPrintHandler {
       CefWrap::to_rust(
         ((*self.c_object).on_print_reset.unwrap())(
           self.c_object))
+    }
+  }
+
+  
+  
+  
+  
+  pub fn get_pdf_paper_size(&self,
+      device_units_per_inch: libc::c_int) -> types::cef_size_t {
+    if self.c_object.is_null() ||
+       self.c_object as usize == mem::POST_DROP_USIZE {
+      panic!("called a CEF method on a null object")
+    }
+    unsafe {
+      CefWrap::to_rust(
+        ((*self.c_object).get_pdf_paper_size.unwrap())(
+          self.c_object,
+          CefWrap::to_c(device_units_per_inch)))
     }
   }
 } 
