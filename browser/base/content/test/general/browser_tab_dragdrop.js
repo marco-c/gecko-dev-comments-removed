@@ -37,9 +37,7 @@ function loadURI(tab, url) {
 
 
 function* cacheObjectValue(browser) {
-  info("11111111")
   yield ContentTask.spawn(browser, null, function*() {
-    info("ct--------------11111111")
     let plugin = content.document.wrappedJSObject.body.firstChild;
     info(`plugin is ${plugin}`);
     let win = content.document.defaultView;
