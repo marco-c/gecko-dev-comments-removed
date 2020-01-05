@@ -28,20 +28,34 @@ public:
                                          uint32_t aActionType);
   
   NS_IMETHOD EndDragSession(bool aDoneDrag);
+  NS_IMETHOD UpdateDragImage(nsIDOMNode* aImage, int32_t aImageX, int32_t aImageY);
 
   
   NS_IMETHOD GetData(nsITransferable * aTransferable, uint32_t aItemIndex);
   NS_IMETHOD IsDataFlavorSupported(const char *aDataFlavor, bool *_retval);
   NS_IMETHOD GetNumDropItems(uint32_t * aNumItems);
 
+  void DragMovedWithView(NSDraggingSession* aSession, NSPoint aPoint);
+
 protected:
   virtual ~nsDragService();
 
 private:
 
+  
+  
   NSImage* ConstructDragImage(nsIDOMNode* aDOMNode,
-                              mozilla::LayoutDeviceIntRect* aDragRect,
-                              nsIScriptableRegion* aRegion);
+                              nsIScriptableRegion* aRegion,
+                              NSPoint* aImagePoint);
+
+  
+  
+  
+  NSImage* ConstructDragImage(nsIDOMNode* aDOMNode,
+                              nsIScriptableRegion* aRegion,
+                              mozilla::CSSIntPoint aPoint,
+                              mozilla::LayoutDeviceIntRect* aDragRect);
+
   bool IsValidType(NSString* availableType, bool allowFileURL);
   NSString* GetStringForType(NSPasteboardItem* item, const NSString* type,
                              bool allowFileURL = false);
@@ -51,6 +65,8 @@ private:
   nsCOMPtr<nsIArray> mDataItems; 
   ChildView* mNativeDragView;
   NSEvent* mNativeDragEvent;
+
+  bool mDragImageChanged;
 };
 
 #endif 
