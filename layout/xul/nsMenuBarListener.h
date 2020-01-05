@@ -17,13 +17,20 @@
 class nsMenuBarFrame;
 class nsIDOMKeyEvent;
 
+namespace mozilla {
+namespace dom {
+class EventTarget;
+} 
+} 
+
 
 
 
 class nsMenuBarListener final : public nsIDOMEventListener
 {
 public:
-  explicit nsMenuBarListener(nsMenuBarFrame* aMenuBar);
+  explicit nsMenuBarListener(nsMenuBarFrame* aMenuBarFrame,
+                             nsIContent* aMenuBarContent);
 
   NS_DECL_ISUPPORTS
 
@@ -73,6 +80,11 @@ protected:
 
   
   nsMenuBarFrame* mMenuBarFrame;
+  
+  
+  
+  
+  mozilla::dom::EventTarget* mEventTarget;
   
   bool mAccessKeyDown;
   

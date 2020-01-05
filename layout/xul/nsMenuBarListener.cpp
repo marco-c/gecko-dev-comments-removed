@@ -36,21 +36,67 @@ int32_t nsMenuBarListener::mAccessKey = -1;
 Modifiers nsMenuBarListener::mAccessKeyMask = 0;
 bool nsMenuBarListener::mAccessKeyFocuses = false;
 
-nsMenuBarListener::nsMenuBarListener(nsMenuBarFrame* aMenuBar) 
-  :mAccessKeyDown(false), mAccessKeyDownCanceled(false)
+nsMenuBarListener::nsMenuBarListener(nsMenuBarFrame* aMenuBarFrame,
+                                     nsIContent* aMenuBarContent)
+  : mMenuBarFrame(aMenuBarFrame)
+  , mEventTarget(aMenuBarContent ? aMenuBarContent->GetComposedDoc() : nullptr)
+  , mAccessKeyDown(false)
+  , mAccessKeyDownCanceled(false)
 {
-  mMenuBarFrame = aMenuBar;
+  MOZ_ASSERT(mEventTarget);
+
+  
+  
+
+  
+  
+
+  mEventTarget->AddSystemEventListener(NS_LITERAL_STRING("keypress"),
+                                       this, false);
+  mEventTarget->AddSystemEventListener(NS_LITERAL_STRING("keydown"),
+                                       this, false);
+  mEventTarget->AddSystemEventListener(NS_LITERAL_STRING("keyup"), this, false);
+  mEventTarget->AddSystemEventListener(NS_LITERAL_STRING("mozaccesskeynotfound"),
+                                       this, false);
+
+  
+  mEventTarget->AddEventListener(NS_LITERAL_STRING("mousedown"), this, true);
+  mEventTarget->AddEventListener(NS_LITERAL_STRING("mousedown"), this, false);
+  mEventTarget->AddEventListener(NS_LITERAL_STRING("blur"), this, true);
+
+  mEventTarget->AddEventListener(
+                  NS_LITERAL_STRING("MozDOMFullscreen:Entered"), this, false);
 }
 
 
 nsMenuBarListener::~nsMenuBarListener() 
 {
+  MOZ_ASSERT(!mEventTarget,
+             "OnDestroyMenuBarFrame() should've alreay been called");
 }
 
 void
 nsMenuBarListener::OnDestroyMenuBarFrame()
 {
+  mEventTarget->RemoveSystemEventListener(NS_LITERAL_STRING("keypress"),
+                                          this, false);
+  mEventTarget->RemoveSystemEventListener(NS_LITERAL_STRING("keydown"),
+                                          this, false);
+  mEventTarget->RemoveSystemEventListener(NS_LITERAL_STRING("keyup"),
+                                          this, false);
+  mEventTarget->RemoveSystemEventListener(
+                  NS_LITERAL_STRING("mozaccesskeynotfound"), this, false);
+
+  mEventTarget->RemoveEventListener(NS_LITERAL_STRING("mousedown"), this, true);
+  mEventTarget->RemoveEventListener(NS_LITERAL_STRING("mousedown"),
+                                    this, false);
+  mEventTarget->RemoveEventListener(NS_LITERAL_STRING("blur"), this, true);
+
+  mEventTarget->RemoveEventListener(
+                  NS_LITERAL_STRING("MozDOMFullscreen:Entered"), this, false);
+
   mMenuBarFrame = nullptr;
+  mEventTarget = nullptr;
 }
 
 void

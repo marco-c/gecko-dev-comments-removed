@@ -50,13 +50,12 @@ NS_QUERYFRAME_TAIL_INHERITING(nsBoxFrame)
 
 
 
-nsMenuBarFrame::nsMenuBarFrame(nsStyleContext* aContext):
-  nsBoxFrame(aContext),
-    mStayActive(false),
-    mIsActive(false),
-    mActiveByKeyboard(false),
-    mCurrentMenu(nullptr),
-    mTarget(nullptr)
+nsMenuBarFrame::nsMenuBarFrame(nsStyleContext* aContext)
+  : nsBoxFrame(aContext)
+  , mStayActive(false)
+  , mIsActive(false)
+  , mActiveByKeyboard(false)
+  , mCurrentMenu(nullptr)
 {
 } 
 
@@ -68,26 +67,7 @@ nsMenuBarFrame::Init(nsIContent*       aContent,
   nsBoxFrame::Init(aContent, aParent, aPrevInFlow);
 
   
-  mMenuBarListener = new nsMenuBarListener(this);
-
-  
-  
-  mTarget = aContent->GetComposedDoc();
-
-  
-  
-
-  mTarget->AddSystemEventListener(NS_LITERAL_STRING("keypress"), mMenuBarListener, false);
-  mTarget->AddSystemEventListener(NS_LITERAL_STRING("keydown"), mMenuBarListener, false);
-  mTarget->AddSystemEventListener(NS_LITERAL_STRING("keyup"), mMenuBarListener, false);
-  mTarget->AddSystemEventListener(NS_LITERAL_STRING("mozaccesskeynotfound"), mMenuBarListener, false);
-
-  
-  mTarget->AddEventListener(NS_LITERAL_STRING("mousedown"), mMenuBarListener, true);
-  mTarget->AddEventListener(NS_LITERAL_STRING("mousedown"), mMenuBarListener, false);
-  mTarget->AddEventListener(NS_LITERAL_STRING("blur"), mMenuBarListener, true);
-
-  mTarget->AddEventListener(NS_LITERAL_STRING("MozDOMFullscreen:Entered"), mMenuBarListener, false);
+  mMenuBarListener = new nsMenuBarListener(this, aContent);
 }
 
 NS_IMETHODIMP
@@ -416,17 +396,6 @@ nsMenuBarFrame::DestroyFrom(nsIFrame* aDestructRoot)
   nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
   if (pm)
     pm->SetActiveMenuBar(this, false);
-
-  mTarget->RemoveSystemEventListener(NS_LITERAL_STRING("keypress"), mMenuBarListener, false);
-  mTarget->RemoveSystemEventListener(NS_LITERAL_STRING("keydown"), mMenuBarListener, false);
-  mTarget->RemoveSystemEventListener(NS_LITERAL_STRING("keyup"), mMenuBarListener, false);
-  mTarget->RemoveSystemEventListener(NS_LITERAL_STRING("mozaccesskeynotfound"), mMenuBarListener, false);
-
-  mTarget->RemoveEventListener(NS_LITERAL_STRING("mousedown"), mMenuBarListener, true);
-  mTarget->RemoveEventListener(NS_LITERAL_STRING("mousedown"), mMenuBarListener, false);
-  mTarget->RemoveEventListener(NS_LITERAL_STRING("blur"), mMenuBarListener, true);
-
-  mTarget->RemoveEventListener(NS_LITERAL_STRING("MozDOMFullscreen:Entered"), mMenuBarListener, false);
 
   mMenuBarListener->OnDestroyMenuBarFrame();
   mMenuBarListener = nullptr;
