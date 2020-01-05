@@ -349,6 +349,7 @@ private:
       mDecodeRequest.DisconnectIfExists();
       mDrainRequest.DisconnectIfExists();
       mDrainState = DrainState::None;
+      CancelWaitingForKey();
       mOutput.Clear();
       mNumSamplesInput = 0;
       mNumSamplesOutput = 0;
@@ -381,6 +382,19 @@ private:
       mFlushed = true;
     }
 
+    bool CancelWaitingForKey()
+    {
+      if (!mWaitingForKey) {
+        return false;
+      }
+      mWaitingForKey = false;
+      if (IsWaiting() || mWaitingPromise.IsEmpty()) {
+        return false;
+      }
+      mWaitingPromise.Resolve(mType, __func__);
+      return true;
+    }
+
     
     
     
@@ -389,11 +403,11 @@ private:
       MOZ_ASSERT(mOwner->OnTaskQueue());
       mDemuxEOS = false;
       mWaitingForData = false;
-      mWaitingForKey = false;
       mQueuedSamples.Clear();
       mDecodeRequest.DisconnectIfExists();
       mDrainRequest.DisconnectIfExists();
       mDrainState = DrainState::None;
+      CancelWaitingForKey();
       mTimeThreshold.reset();
       mLastSampleTime.reset();
       mOutput.Clear();
