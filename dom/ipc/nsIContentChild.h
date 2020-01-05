@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef mozilla_dom_nsIContentChild_h
 #define mozilla_dom_nsIContentChild_h
@@ -23,7 +23,7 @@ class nsString;
 
 namespace IPC {
 class Principal;
-} // namespace IPC
+} 
 
 namespace mozilla {
 namespace ipc {
@@ -31,12 +31,12 @@ class FileDescriptor;
 class PFileDescriptorSetChild;
 class PSendStreamChild;
 class Shmem;
-} // namespace ipc
+} 
 
 namespace jsipc {
 class PJavaScriptChild;
 class CpowEntry;
-} // namespace jsipc
+} 
 
 namespace dom {
 
@@ -69,7 +69,6 @@ public:
                           const IPCTabContext& aContext,
                           const uint32_t& aChromeFlags,
                           const ContentParentId& aCpID,
-                          const bool& aIsForApp,
                           const bool& aIsForBrowser) = 0;
 
   virtual mozilla::ipc::PFileDescriptorSetChild*
@@ -86,7 +85,6 @@ protected:
                                             const IPCTabContext& aContext,
                                             const uint32_t& aChromeFlags,
                                             const ContentParentId& aCpId,
-                                            const bool& aIsForApp,
                                             const bool& aIsForBrowser);
   virtual bool DeallocPBrowserChild(PBrowserChild*);
 
@@ -112,7 +110,7 @@ protected:
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsIContentChild, NS_ICONTENTCHILD_IID)
 
-} // namespace dom
-} // namespace mozilla
+} 
+} 
 
-#endif /* mozilla_dom_nsIContentChild_h */
+#endif 

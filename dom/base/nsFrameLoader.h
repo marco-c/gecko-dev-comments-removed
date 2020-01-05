@@ -36,7 +36,6 @@ class AutoResetInFrameSwap;
 class nsITabParent;
 class nsIDocShellTreeItem;
 class nsIDocShellTreeOwner;
-class mozIApplication;
 
 namespace mozilla {
 
@@ -246,20 +245,6 @@ private:
 
 
 
-
-
-  bool OwnerIsMozBrowserOrAppFrame();
-
-  
-
-
-
-  bool OwnerIsAppFrame();
-
-  
-
-
-
   bool OwnerIsMozBrowserFrame();
 
   
@@ -276,18 +261,6 @@ private:
 
 
   void GetOwnerAppManifestURL(nsAString& aOut);
-
-  
-
-
-
-  already_AddRefed<mozIApplication> GetOwnApp();
-
-  
-
-
-
-  already_AddRefed<mozIApplication> GetContainingApp();
 
   
 
