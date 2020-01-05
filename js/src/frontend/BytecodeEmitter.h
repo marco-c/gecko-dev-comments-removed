@@ -701,8 +701,7 @@ struct MOZ_STACK_CLASS BytecodeEmitter
 
     
     
-    MOZ_MUST_USE bool emitIteratorNext(ParseNode* pn, IteratorKind kind = IteratorKind::Sync,
-                                       bool allowSelfHosted = false);
+    MOZ_MUST_USE bool emitIteratorNext(ParseNode* pn, bool allowSelfHosted = false);
     MOZ_MUST_USE bool emitIteratorClose(IteratorKind iterKind = IteratorKind::Sync,
                                         CompletionKind completionKind = CompletionKind::Normal,
                                         bool allowSelfHosted = false);
