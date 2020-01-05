@@ -5558,4 +5558,4 @@ pref("prompts.authentication_dialog_abuse_limit", 3);
 
 
 pref("browser.storageManager.enabled", false);
-pref("dom.IntersectionObserver.enabled", true);
+pref("dom.IntersectionObserver.enabled", false);
