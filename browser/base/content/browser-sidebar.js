@@ -31,24 +31,6 @@ var SidebarUI = {
     this.browser = document.getElementById("sidebar");
     this._title = document.getElementById("sidebar-title");
     this._splitter = document.getElementById("sidebar-splitter");
-
-    if (!this.adoptFromWindow(window.opener)) {
-      let commandID = this._box.getAttribute("sidebarcommand");
-      if (commandID) {
-        let command = document.getElementById(commandID);
-        if (command) {
-          this._delayedLoad = true;
-          this._box.hidden = false;
-          this._splitter.hidden = false;
-          command.setAttribute("checked", "true");
-        } else {
-          
-          
-          
-          this._box.removeAttribute("sidebarcommand");
-        }
-      }
-    }
   },
 
   uninit() {
@@ -69,14 +51,6 @@ var SidebarUI = {
 
 
   adoptFromWindow(sourceWindow) {
-    
-    
-    if (!sourceWindow || sourceWindow.closed ||
-        !sourceWindow.document.documentURIObject.schemeIs("chrome") ||
-        PrivateBrowsingUtils.isWindowPrivate(window) != PrivateBrowsingUtils.isWindowPrivate(sourceWindow)) {
-      return false;
-    }
-
     
     
     
@@ -108,23 +82,55 @@ var SidebarUI = {
     
     
     this._box.setAttribute("src", sourceUI.browser.getAttribute("src"));
-    this._delayedLoad = true;
 
     this._box.hidden = false;
     this._splitter.hidden = false;
     commandElem.setAttribute("checked", "true");
+    this.browser.setAttribute("src", this._box.getAttribute("src"));
     return true;
+  },
+
+  windowPrivacyMatches(w1, w2) {
+    return PrivateBrowsingUtils.isWindowPrivate(w1) === PrivateBrowsingUtils.isWindowPrivate(w2);
   },
 
   
 
 
   startDelayedLoad() {
-    if (!this._delayedLoad) {
+    let sourceWindow = window.opener;
+    
+    
+    
+    if (sourceWindow) {
+      if (sourceWindow.closed || sourceWindow.location.protocol != "chrome:" ||
+        !this.windowPrivacyMatches(sourceWindow, window)) {
+        return;
+      }
+      
+      if (this.adoptFromWindow(sourceWindow)) {
+        return;
+      }
+    }
+
+    
+    let commandID = this._box.getAttribute("sidebarcommand");
+    if (!commandID) {
       return;
     }
 
-    this.browser.setAttribute("src", this._box.getAttribute("src"));
+    let command = document.getElementById(commandID);
+    if (command) {
+      this._box.hidden = false;
+      this._splitter.hidden = false;
+      command.setAttribute("checked", "true");
+      this.browser.setAttribute("src", this._box.getAttribute("src"));
+    } else {
+      
+      
+      
+      this._box.removeAttribute("sidebarcommand");
+    }
   },
 
   
@@ -235,8 +241,7 @@ var SidebarUI = {
       this._box.setAttribute("src", url);
 
       if (this.browser.contentDocument.location.href != url) {
-        let onLoad = event => {
-          this.browser.removeEventListener("load", onLoad, true);
+        this.browser.addEventListener("load", event => {
 
           
           
@@ -247,9 +252,7 @@ var SidebarUI = {
           sidebarOnLoad(event);
 
           resolve();
-        };
-
-        this.browser.addEventListener("load", onLoad, true);
+        }, {capture: true, once: true});
       } else {
         
         this._fireFocusedEvent();

@@ -817,7 +817,7 @@ class ExtensionBaseContextChild extends BaseContext {
   }
 
   get windowId() {
-    if (this.viewType == "tab" || this.viewType == "popup") {
+    if (["tab", "popup", "sidebar"].includes(this.viewType)) {
       let globalView = ExtensionChild.contentGlobals.get(this.messageManager);
       return globalView ? globalView.windowId : -1;
     }

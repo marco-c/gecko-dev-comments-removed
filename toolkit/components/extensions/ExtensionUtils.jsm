@@ -317,6 +317,13 @@ let IconDetails = {
       image.src = imageURL;
     });
   },
+
+  
+  
+  
+  escapeUrl(url) {
+    return url.replace(/[\\\s"]/g, encodeURIComponent);
+  },
 };
 
 const LISTENERS = Symbol("listeners");
