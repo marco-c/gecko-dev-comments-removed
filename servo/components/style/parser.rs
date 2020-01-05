@@ -9,7 +9,9 @@
 use cssparser::{Parser, SourcePosition, UnicodeRange};
 use error_reporting::ParseErrorReporter;
 #[cfg(feature = "gecko")]
-use gecko_bindings::sugar::refptr::{GeckoArcPrincipal, GeckoArcURI};
+use gecko_bindings::structs::URLExtraData;
+#[cfg(feature = "gecko")]
+use gecko_bindings::sugar::refptr::RefPtr;
 use servo_url::ServoUrl;
 use style_traits::OneOrMoreCommaSeparated;
 use stylesheets::Origin;
@@ -22,11 +24,7 @@ pub struct ParserContextExtraData;
 #[cfg(feature = "gecko")]
 pub struct ParserContextExtraData {
     
-    pub base: Option<GeckoArcURI>,
-    
-    pub referrer: Option<GeckoArcURI>,
-    
-    pub principal: Option<GeckoArcPrincipal>,
+    pub data: Option<RefPtr<URLExtraData>>,
 }
 
 #[cfg(not(feature = "gecko"))]
@@ -39,7 +37,7 @@ impl Default for ParserContextExtraData {
 #[cfg(feature = "gecko")]
 impl Default for ParserContextExtraData {
     fn default() -> Self {
-        ParserContextExtraData { base: None, referrer: None, principal: None }
+        ParserContextExtraData { data: None }
     }
 }
 
@@ -48,15 +46,10 @@ impl ParserContextExtraData {
     
     
     
-    pub unsafe fn new(data: *const ::gecko_bindings::structs::GeckoParserExtraData) -> Self {
-        
-        
-        
-        unsafe { ParserContextExtraData {
-            base: Some((*data).mBaseURI.to_safe()),
-            referrer: Some((*data).mReferrer.to_safe()),
-            principal: Some((*data).mPrincipal.to_safe()),
-        }}
+    pub unsafe fn new(data: *mut URLExtraData) -> Self {
+        ParserContextExtraData {
+            data: Some(RefPtr::new(data)),
+        }
     }
 }
 

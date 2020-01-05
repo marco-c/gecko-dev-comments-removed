@@ -261,12 +261,9 @@ macro_rules! impl_threadsafe_refcount {
     );
 }
 
-impl_threadsafe_refcount!(::gecko_bindings::structs::ThreadSafePrincipalHolder,
-                          Gecko_AddRefPrincipalArbitraryThread,
-                          Gecko_ReleasePrincipalArbitraryThread);
-impl_threadsafe_refcount!(::gecko_bindings::structs::ThreadSafeURIHolder,
-                          Gecko_AddRefURIArbitraryThread,
-                          Gecko_ReleaseURIArbitraryThread);
+impl_threadsafe_refcount!(::gecko_bindings::structs::RawGeckoURLExtraData,
+                          Gecko_AddRefURLExtraDataArbitraryThread,
+                          Gecko_ReleaseURLExtraDataArbitraryThread);
 impl_threadsafe_refcount!(::gecko_bindings::structs::nsStyleQuoteValues,
                           Gecko_AddRefQuoteValuesArbitraryThread,
                           Gecko_ReleaseQuoteValuesArbitraryThread);
@@ -276,10 +273,3 @@ impl_threadsafe_refcount!(::gecko_bindings::structs::nsCSSValueSharedList,
 impl_threadsafe_refcount!(::gecko_bindings::structs::mozilla::css::URLValue,
                           Gecko_AddRefCSSURLValueArbitraryThread,
                           Gecko_ReleaseCSSURLValueArbitraryThread);
-
-
-pub type GeckoArcPrincipal = RefPtr<::gecko_bindings::structs::ThreadSafePrincipalHolder>;
-
-
-
-pub type GeckoArcURI = RefPtr<::gecko_bindings::structs::ThreadSafeURIHolder>;
