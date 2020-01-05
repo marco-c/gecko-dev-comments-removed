@@ -3,6 +3,9 @@
 
 
 
+
+
+
 "use strict";
 
 
@@ -11,13 +14,14 @@ Services.scriptloader.loadSubScript(
   this);
 
 const { EVENTS } = require("devtools/client/netmonitor/constants");
-var { Toolbox } = require("devtools/client/framework/toolbox");
+let { Toolbox } = require("devtools/client/framework/toolbox");
 const {
   decodeUnicodeUrl,
   getUrlBaseName,
   getUrlQuery,
   getUrlHost,
 } = require("devtools/client/netmonitor/utils/request-utils");
+
 
 const EXAMPLE_URL = "http://example.com/browser/devtools/client/netmonitor/test/";
 const HTTPS_EXAMPLE_URL = "https://example.com/browser/devtools/client/netmonitor/test/";
@@ -71,6 +75,7 @@ const TEST_IMAGE_DATA_URI = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAA
 const FRAME_SCRIPT_UTILS_URL = "chrome://devtools/content/shared/frame-script-utils.js";
 
 
+
 waitForExplicitFinish();
 
 const gEnableLogging = Services.prefs.getBoolPref("devtools.debugger.log");
@@ -91,45 +96,45 @@ registerCleanupFunction(() => {
   Services.prefs.clearUserPref("devtools.cache.disabled");
 });
 
-function waitForNavigation(aTarget) {
+function waitForNavigation(target) {
   let deferred = promise.defer();
-  aTarget.once("will-navigate", () => {
-    aTarget.once("navigate", () => {
+  target.once("will-navigate", () => {
+    target.once("navigate", () => {
       deferred.resolve();
     });
   });
   return deferred.promise;
 }
 
-function reconfigureTab(aTarget, aOptions) {
+function reconfigureTab(target, options) {
   let deferred = promise.defer();
-  aTarget.activeTab.reconfigure(aOptions, deferred.resolve);
+  target.activeTab.reconfigure(options, deferred.resolve);
   return deferred.promise;
 }
 
-function toggleCache(aTarget, aDisabled) {
-  let options = { cacheDisabled: aDisabled, performReload: true };
-  let navigationFinished = waitForNavigation(aTarget);
+function toggleCache(target, disabled) {
+  let options = { cacheDisabled: disabled, performReload: true };
+  let navigationFinished = waitForNavigation(target);
 
   
-  Services.prefs.setBoolPref("devtools.cache.disabled", aDisabled);
+  Services.prefs.setBoolPref("devtools.cache.disabled", disabled);
 
-  return reconfigureTab(aTarget, options).then(() => navigationFinished);
+  return reconfigureTab(target, options).then(() => navigationFinished);
 }
 
-function initNetMonitor(aUrl, aWindow, aEnableCache) {
+function initNetMonitor(url, window, enableCache) {
   info("Initializing a network monitor pane.");
 
   return Task.spawn(function* () {
-    let tab = yield addTab(aUrl);
-    info("Net tab added successfully: " + aUrl);
+    let tab = yield addTab(url);
+    info("Net tab added successfully: " + url);
 
     let target = TargetFactory.forTab(tab);
 
     yield target.makeRemote();
     info("Target remoted.");
 
-    if (!aEnableCache) {
+    if (!enableCache) {
       info("Disabling cache and reloading page.");
       yield toggleCache(target, true);
       info("Cache disabled when the current and all future toolboxes are open.");
@@ -175,9 +180,9 @@ function teardown(monitor) {
   });
 }
 
-function waitForNetworkEvents(aMonitor, aGetRequests, aPostRequests = 0) {
+function waitForNetworkEvents(monitor, getRequests, postRequests = 0) {
   let deferred = promise.defer();
-  let panel = aMonitor.panelWin;
+  let panel = monitor.panelWin;
   let progress = {};
   let genericEvents = 0;
   let postEvents = 0;
@@ -200,9 +205,13 @@ function waitForNetworkEvents(aMonitor, aGetRequests, aPostRequests = 0) {
   ];
 
   function initProgressForURL(url) {
-    if (progress[url]) return;
+    if (progress[url]) {
+      return;
+    }
     progress[url] = {};
-    awaitedEventsToListeners.forEach(([e]) => progress[url][e] = 0);
+    awaitedEventsToListeners.forEach(function ([e]) {
+      progress[url][e] = 0;
+    });
   }
 
   function updateProgressForURL(url, event) {
@@ -222,8 +231,8 @@ function waitForNetworkEvents(aMonitor, aGetRequests, aPostRequests = 0) {
 
   function maybeResolve(event, actor) {
     info("> Network events progress: " +
-      genericEvents + "/" + ((aGetRequests + aPostRequests) * 13) + ", " +
-      postEvents + "/" + (aPostRequests * 2) + ", " +
+      genericEvents + "/" + ((getRequests + postRequests) * 13) + ", " +
+      postEvents + "/" + (postRequests * 2) + ", " +
       "got " + event + " for " + actor);
 
     let networkInfo =
@@ -237,9 +246,8 @@ function waitForNetworkEvents(aMonitor, aGetRequests, aPostRequests = 0) {
     
     
     
-    if (genericEvents >= (aGetRequests + aPostRequests) * 13 &&
-        postEvents >= aPostRequests * 2) {
-
+    if (genericEvents >= (getRequests + postRequests) * 13 &&
+        postEvents >= postRequests * 2) {
       awaitedEventsToListeners.forEach(([e, l]) => panel.off(EVENTS[e], l));
       executeSoon(deferred.resolve);
     }
@@ -249,39 +257,40 @@ function waitForNetworkEvents(aMonitor, aGetRequests, aPostRequests = 0) {
   return deferred.promise;
 }
 
-function verifyRequestItemTarget(document, requestList, requestItem, aMethod,
-                                 aUrl, aData = {}) {
-  info("> Verifying: " + aMethod + " " + aUrl + " " + aData.toSource());
+function verifyRequestItemTarget(document, requestList, requestItem, method,
+                                 url, data = {}) {
+  info("> Verifying: " + method + " " + url + " " + data.toSource());
 
   let visibleIndex = requestList.indexOf(requestItem);
 
   info("Visible index of item: " + visibleIndex);
 
   let { fuzzyUrl, status, statusText, cause, type, fullMimeType,
-        transferred, size, time, displayedStatus } = aData;
+        transferred, size, time, displayedStatus } = data;
 
   let target = document.querySelectorAll(".request-list-item")[visibleIndex];
-  let unicodeUrl = decodeUnicodeUrl(aUrl);
-  let name = getUrlBaseName(aUrl);
-  let query = getUrlQuery(aUrl);
-  let hostPort = getUrlHost(aUrl);
+  let unicodeUrl = decodeUnicodeUrl(url);
+  let name = getUrlBaseName(url);
+  let query = getUrlQuery(url);
+  let hostPort = getUrlHost(url);
   let remoteAddress = requestItem.remoteAddress;
 
   if (fuzzyUrl) {
-    ok(requestItem.method.startsWith(aMethod), "The attached method is correct.");
-    ok(requestItem.url.startsWith(aUrl), "The attached url is correct.");
+    ok(requestItem.method.startsWith(method), "The attached method is correct.");
+    ok(requestItem.url.startsWith(url), "The attached url is correct.");
   } else {
-    is(requestItem.method, aMethod, "The attached method is correct.");
-    is(requestItem.url, aUrl, "The attached url is correct.");
+    is(requestItem.method, method, "The attached method is correct.");
+    is(requestItem.url, url, "The attached url is correct.");
   }
 
   is(target.querySelector(".requests-list-method").textContent,
-    aMethod, "The displayed method is correct.");
+    method, "The displayed method is correct.");
 
   if (fuzzyUrl) {
     ok(target.querySelector(".requests-list-file").textContent.startsWith(
       name + (query ? "?" + query : "")), "The displayed file is correct.");
-    ok(target.querySelector(".requests-list-file").getAttribute("title").startsWith(unicodeUrl),
+    ok(target.querySelector(".requests-list-file").getAttribute("title")
+                                                  .startsWith(unicodeUrl),
       "The tooltip file is correct.");
   } else {
     is(target.querySelector(".requests-list-file").textContent,
@@ -298,13 +307,15 @@ function verifyRequestItemTarget(document, requestList, requestItem, aMethod,
     domainTooltip, "The tooltip domain is correct.");
 
   if (status !== undefined) {
-    let value = target.querySelector(".requests-list-status-icon").getAttribute("data-code");
+    let value = target.querySelector(".requests-list-status-icon")
+                      .getAttribute("data-code");
     let codeValue = target.querySelector(".requests-list-status-code").textContent;
     let tooltip = target.querySelector(".requests-list-status").getAttribute("title");
     info("Displayed status: " + value);
     info("Displayed code: " + codeValue);
     info("Tooltip status: " + tooltip);
-    is(value, displayedStatus ? displayedStatus : status, "The displayed status is correct.");
+    is(value, displayedStatus ? displayedStatus : status,
+      "The displayed status is correct.");
     is(codeValue, status, "The displayed status code is correct.");
     is(tooltip, status + " " + statusText, "The tooltip status is correct.");
   }
@@ -314,7 +325,7 @@ function verifyRequestItemTarget(document, requestList, requestItem, aMethod,
     info("Displayed cause: " + value);
     info("Tooltip cause: " + tooltip);
     is(value, cause.type, "The displayed cause is correct.");
-    is(tooltip, cause.loadingDocumentUri, "The tooltip cause is correct.")
+    is(tooltip, cause.loadingDocumentUri, "The tooltip cause is correct.");
   }
   if (type !== undefined) {
     let value = target.querySelector(".requests-list-type").textContent;
@@ -326,7 +337,8 @@ function verifyRequestItemTarget(document, requestList, requestItem, aMethod,
   }
   if (transferred !== undefined) {
     let value = target.querySelector(".requests-list-transferred").textContent;
-    let tooltip = target.querySelector(".requests-list-transferred").getAttribute("title");
+    let tooltip = target.querySelector(".requests-list-transferred")
+                        .getAttribute("title");
     info("Displayed transferred size: " + value);
     info("Tooltip transferred size: " + tooltip);
     is(value, transferred, "The displayed transferred size is correct.");
@@ -342,7 +354,8 @@ function verifyRequestItemTarget(document, requestList, requestItem, aMethod,
   }
   if (time !== undefined) {
     let value = target.querySelector(".requests-list-timings-total").textContent;
-    let tooltip = target.querySelector(".requests-list-timings-total").getAttribute("title");
+    let tooltip = target.querySelector(".requests-list-timings-total")
+                        .getAttribute("title");
     info("Displayed time: " + value);
     info("Tooltip time: " + tooltip);
     ok(~~(value.match(/[0-9]+/)) >= 0, "The displayed time is correct.");
@@ -403,12 +416,12 @@ function testFilterButtons(monitor, filterType) {
 
 
 
-function testFilterButtonsCustom(aMonitor, aIsChecked) {
-  let doc = aMonitor.panelWin.document;
+function testFilterButtonsCustom(monitor, isChecked) {
+  let doc = monitor.panelWin.document;
   let buttons = doc.querySelectorAll("#requests-list-filter-buttons button");
-  for (let i = 0; i < aIsChecked.length; i++) {
+  for (let i = 0; i < isChecked.length; i++) {
     let button = buttons[i];
-    if (aIsChecked[i]) {
+    if (isChecked[i]) {
       is(button.classList.contains("checked"), true,
         "The " + button.id + " button should have a 'checked' class.");
       is(button.getAttribute("aria-pressed"), "true",
@@ -473,9 +486,8 @@ function executeInContent(name, data = {}, objects = {}, expectResponse = true) 
   mm.sendAsyncMessage(name, data, objects);
   if (expectResponse) {
     return waitForContentMessage(name);
-  } else {
-    return promise.resolve();
   }
+  return promise.resolve();
 }
 
 
