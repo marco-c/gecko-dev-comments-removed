@@ -1039,12 +1039,7 @@ AllocateObjectBufferWithInit(JSContext* cx, TypedArrayObject* obj, int32_t count
 
     
     
-    
-    
-    
     if (count <= 0) {
-        if (count == 0)
-            obj->setInlineElements();
         obj->setFixedSlot(TypedArrayObject::LENGTH_SLOT, Int32Value(0));
         return;
     }
@@ -1112,6 +1107,10 @@ MacroAssembler::initTypedArraySlots(Register obj, Register temp, Register length
         size_t numZeroPointers = ((nbytes + 7) & ~0x7) / sizeof(char *);
         for (size_t i = 0; i < numZeroPointers; i++)
             storePtr(ImmWord(0), Address(obj, dataOffset + i * sizeof(char *)));
+#ifdef DEBUG
+        if (nbytes == 0)
+            store8(Imm32(TypedArrayObject::ZeroLengthArrayData), Address(obj, dataSlotOffset));
+#endif
     } else {
         if (lengthKind == TypedArrayLength::Fixed)
             move32(Imm32(length), lengthReg);
