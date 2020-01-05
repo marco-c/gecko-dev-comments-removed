@@ -290,20 +290,10 @@ FileReader::DoReadData(uint64_t aCount)
     mResult.GetMutableData(&buf, oldLen + aCount, fallible);
     NS_ENSURE_TRUE(buf, NS_ERROR_OUT_OF_MEMORY);
 
-    nsresult rv;
-
-    
-    
-    
-    if (!mBufferedStream) {
-      rv = NS_NewBufferedInputStream(getter_AddRefs(mBufferedStream),
-                                     mAsyncStream, 8192);
-      NS_ENSURE_SUCCESS(rv, rv);
-    }
-
     uint32_t bytesRead = 0;
-    rv = mBufferedStream->ReadSegments(ReadFuncBinaryString, buf + oldLen,
-                                       aCount, &bytesRead);
+    nsresult rv =
+      mAsyncStream->ReadSegments(ReadFuncBinaryString, buf + oldLen, aCount,
+                                 &bytesRead);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
@@ -360,7 +350,6 @@ FileReader::ReadFileContent(Blob& aBlob,
   mResultArrayBuffer = nullptr;
 
   mAsyncStream = nullptr;
-  mBufferedStream = nullptr;
 
   mTransferred = 0;
   mTotal = 0;
@@ -385,30 +374,27 @@ FileReader::ReadFileContent(Blob& aBlob,
     return;
   }
 
-  mAsyncStream = do_QueryInterface(stream);
-  if (!mAsyncStream) {
-    nsCOMPtr<nsITransport> transport;
-    aRv = sts->CreateInputTransport(stream,
-                                     0,
-                                     -1,
-                                     true,
-                                    getter_AddRefs(transport));
-    if (NS_WARN_IF(aRv.Failed())) {
-      return;
-    }
-
-    nsCOMPtr<nsIInputStream> wrapper;
-    aRv = transport->OpenInputStream( 0,
-                                      0,
-                                      0,
-                                     getter_AddRefs(wrapper));
-    if (NS_WARN_IF(aRv.Failed())) {
-      return;
-    }
-
-    mAsyncStream = do_QueryInterface(wrapper);
+  nsCOMPtr<nsITransport> transport;
+  aRv = sts->CreateInputTransport(stream,
+                                   0,
+                                   -1,
+                                   true,
+                                  getter_AddRefs(transport));
+  if (NS_WARN_IF(aRv.Failed())) {
+    return;
   }
 
+  nsCOMPtr<nsIInputStream> wrapper;
+  aRv = transport->OpenInputStream( 0,
+                                    0,
+                                    0,
+                                   getter_AddRefs(wrapper));
+  if (NS_WARN_IF(aRv.Failed())) {
+    return;
+  }
+
+  MOZ_ASSERT(!mAsyncStream);
+  mAsyncStream = do_QueryInterface(wrapper);
   MOZ_ASSERT(mAsyncStream);
 
   mTotal = mBlob->GetSize(aRv);
@@ -543,7 +529,6 @@ FileReader::FreeDataAndDispatchSuccess()
   FreeFileData();
   mResult.SetIsVoid(false);
   mAsyncStream = nullptr;
-  mBufferedStream = nullptr;
   mBlob = nullptr;
 
   
@@ -559,7 +544,6 @@ FileReader::FreeDataAndDispatchError()
   FreeFileData();
   mResult.SetIsVoid(true);
   mAsyncStream = nullptr;
-  mBufferedStream = nullptr;
   mBlob = nullptr;
 
   
@@ -745,7 +729,6 @@ FileReader::Abort()
   mResultArrayBuffer = nullptr;
 
   mAsyncStream = nullptr;
-  mBufferedStream = nullptr;
   mBlob = nullptr;
 
   
@@ -797,11 +780,6 @@ FileReader::Shutdown()
   if (mAsyncStream) {
     mAsyncStream->Close();
     mAsyncStream = nullptr;
-  }
-
-  if (mBufferedStream) {
-    mBufferedStream->Close();
-    mBufferedStream = nullptr;
   }
 
   FreeFileData();
