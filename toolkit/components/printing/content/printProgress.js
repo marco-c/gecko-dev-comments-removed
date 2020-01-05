@@ -90,7 +90,6 @@ var progressListener = {
       {
         dialog.tempLabel.setAttribute("hidden", "true");
         dialog.progress.setAttribute("hidden", "false");
-        dialog.cancel.setAttribute("disabled", "false");
 
         var progressLabel = getString("progress");
         if (progressLabel == "") {
@@ -229,10 +228,8 @@ function onLoad() {
     dialog.progressText = document.getElementById("dialog.progressText");
     dialog.progressLabel = document.getElementById("dialog.progressLabel");
     dialog.tempLabel    = document.getElementById("dialog.tempLabel");
-    dialog.cancel       = document.getElementById("cancel");
 
     dialog.progress.setAttribute("hidden", "true");
-    dialog.cancel.setAttribute("disabled", "true");
 
     var progressLabel = getString("preparing");
     if (progressLabel == "") {
@@ -243,15 +240,10 @@ function onLoad() {
     dialog.title.value = docTitle;
 
     
-    var object = this;
-    doSetOKCancel("", function () { return object.onCancel(); });
-
-    
     loadDialog();
 
     
     printProgress.registerListener(progressListener);
-    moveToAlertPosition();
     
     window.setTimeout(doneIniting, 500);
 }

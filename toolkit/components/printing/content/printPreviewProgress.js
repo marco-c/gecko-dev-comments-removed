@@ -101,7 +101,6 @@ function onLoad() {
 
   
   printProgress.registerListener(progressListener);
-  moveToAlertPosition();
 
   
   window.setTimeout(doneIniting, 100);
