@@ -8,8 +8,6 @@
 #include "mozilla/dom/TabGroup.h"
 #include "mozilla/Telemetry.h"
 #include "nsIDocShell.h"
-#include "nsIEffectiveTLDService.h"
-#include "nsIURI.h"
 
 namespace mozilla {
 namespace dom {
@@ -17,31 +15,19 @@ namespace dom {
  nsresult
 DocGroup::GetKey(nsIPrincipal* aPrincipal, nsACString& aKey)
 {
-  aKey.Truncate();
-  nsCOMPtr<nsIURI> uri;
-  nsresult rv = aPrincipal->GetURI(getter_AddRefs(uri));
-  if (NS_FAILED(rv)) {
-    return NS_OK;   
-  }
-
   
   
-  if (!uri) {
-    return NS_OK;   
-  }
-
-  nsCOMPtr<nsIEffectiveTLDService> tldService =
-    do_GetService(NS_EFFECTIVETLDSERVICE_CONTRACTID);
-  if (!tldService) {
-    return NS_ERROR_FAILURE;
-  }
-
-  rv = tldService->GetBaseDomain(uri, 0, aKey);
+  nsresult rv = aPrincipal->GetBaseDomain(aKey);
   if (NS_FAILED(rv)) {
+    
+    
+    
+    
+    
     aKey.Truncate();
   }
 
-  return NS_OK;   
+  return rv;
 }
 
 void
