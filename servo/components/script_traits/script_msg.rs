@@ -18,6 +18,7 @@ use ipc_channel::ipc::IpcSender;
 use msg::constellation_msg::{Key, KeyModifiers, KeyState};
 use msg::constellation_msg::{PipelineId, TraversalDirection};
 use net_traits::CoreResourceMsg;
+use net_traits::storage_thread::StorageType;
 use offscreen_gl_context::{GLContextAttributes, GLLimits};
 use style_traits::cursor::Cursor;
 use style_traits::viewport::ViewportConstraints;
@@ -59,6 +60,9 @@ pub enum LogEntry {
 
 #[derive(Deserialize, Serialize)]
 pub enum ScriptMsg {
+    
+    
+    BroadcastStorageEvent(PipelineId, StorageType, Url, Option<String>, Option<String>, Option<String>),
     
     ChangeRunningAnimationsState(PipelineId, AnimationState),
     

@@ -60,6 +60,7 @@ use net_traits::{ReferrerPolicy, ResourceThreads};
 use net_traits::image::base::Image;
 use net_traits::image_cache_thread::ImageCacheThread;
 use net_traits::response::HttpsState;
+use net_traits::storage_thread::StorageType;
 use profile_traits::mem;
 use profile_traits::time as profile_time;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
@@ -246,6 +247,9 @@ pub enum ConstellationControlMsg {
     },
     
     
+    DispatchStorageEvent(PipelineId, StorageType, Url, Option<String>, Option<String>, Option<String>),
+    
+    
     FramedContentChanged(PipelineId, FrameId),
     
     ReportCSSError(PipelineId, String, usize, usize, String),
@@ -279,6 +283,7 @@ impl fmt::Debug for ConstellationControlMsg {
             TransitionEnd(..) => "TransitionEnd",
             WebFontLoaded(..) => "WebFontLoaded",
             DispatchFrameLoadEvent { .. } => "DispatchFrameLoadEvent",
+            DispatchStorageEvent(..) => "DispatchStorageEvent",
             FramedContentChanged(..) => "FramedContentChanged",
             ReportCSSError(..) => "ReportCSSError",
             Reload(..) => "Reload"
