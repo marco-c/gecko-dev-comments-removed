@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import org.mozilla.gecko.util.ActivityResultHandler;
+import org.mozilla.gecko.util.FileUtils;
 import org.mozilla.gecko.util.ThreadUtils;
 
 import android.app.Activity;
@@ -173,7 +174,7 @@ class FilePickerResultHandler implements ActivityResultHandler {
         private final Uri uri;
         private final File cacheDir;
         private final int tabId;
-        String tempFile;
+        private File tempDir;
 
         public FileLoaderCallbacks(Uri uri, File cacheDir, int tabId) {
             this.uri = uri;
@@ -195,30 +196,29 @@ class FilePickerResultHandler implements ActivityResultHandler {
         @Override
         public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
             if (cursor.moveToFirst()) {
-                String name = cursor.getString(0);
-                
-                String fileName = "tmp_" + Process.myPid() + "-";
-                String fileExt;
-                int period;
+                String fileName = cursor.getString(0);
 
                 final FragmentActivity fa = (FragmentActivity) GeckoAppShell.getGeckoInterface().getActivity();
                 final ContentResolver cr = fa.getContentResolver();
 
                 
-                if (name == null || (period = name.lastIndexOf('.')) == -1) {
+                if (fileName == null || fileName.lastIndexOf('.') == -1) {
                     String mimeType = cr.getType(uri);
-                    fileExt = "." + GeckoAppShell.getExtensionFromMimeType(mimeType);
-                } else {
-                    fileExt = name.substring(period);
-                    fileName += name.substring(0, period);
+                    String fileExt = "." + GeckoAppShell.getExtensionFromMimeType(mimeType);
+                    if (fileName == null) {
+                        
+                        fileName = "tmp_" + Process.myPid() + fileExt;
+                    } else {
+                        fileName += fileExt;
+                    }
                 }
 
                 
                 FileOutputStream fos = null;
                 try {
-                    cacheDir.mkdir();
+                    tempDir = FileUtils.createTempDir(cacheDir, "tmp_");
 
-                    File file = File.createTempFile(fileName, fileExt, cacheDir);
+                    File file = new File(tempDir, fileName);
                     fos = new FileOutputStream(file);
                     InputStream is = cr.openInputStream(uri);
                     byte[] buf = new byte[4096];
@@ -229,10 +229,10 @@ class FilePickerResultHandler implements ActivityResultHandler {
                     }
                     fos.close();
                     is.close();
-                    tempFile = file.getAbsolutePath();
+                    String tempFile = file.getAbsolutePath();
                     sendResult((tempFile == null) ? "" : tempFile);
 
-                    if (tabId > -1 && !TextUtils.isEmpty(tempFile)) {
+                    if (tabId > -1 && tempDir != null) {
                         Tabs.registerOnTabsChangedListener(this);
                     }
                 } catch (IOException ex) {
@@ -266,8 +266,7 @@ class FilePickerResultHandler implements ActivityResultHandler {
                 ThreadUtils.postToBackgroundThread(new Runnable() {
                     @Override
                     public void run() {
-                        File f = new File(tempFile);
-                        f.delete();
+                        FileUtils.delete(tempDir, true);
                     }
                 });
 
