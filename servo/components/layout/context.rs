@@ -204,9 +204,8 @@ impl<'a> LayoutContext<'a> {
                     }
                     
                     (ImageState::NotRequested, false) => {
-                        self.shared.image_cache_task.request_image(url,
-                                                                   self.shared.image_cache_sender.clone(),
-                                                                   None);
+                        self.shared.image_cache_task
+                            .request_image(url, self.shared.image_cache_sender.clone(), None);
                         None
                     }
                     
@@ -218,3 +217,4 @@ impl<'a> LayoutContext<'a> {
         }
     }
 }
+

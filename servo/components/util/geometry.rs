@@ -57,6 +57,9 @@ pub enum ViewportPx {}
 pub enum PagePx {}
 
 
+pub const AU_PER_PX: i32 = 60;
+
+
 
 
 
@@ -202,57 +205,57 @@ impl Au {
 
     #[inline]
     pub fn from_px(px: i32) -> Au {
-        Au((px * 60) as i32)
+        Au((px * AU_PER_PX) as i32)
     }
 
     #[inline]
     pub fn from_page_px(px: Length<PagePx, f32>) -> Au {
-        Au((px.get() * 60f32) as i32)
+        Au((px.get() * (AU_PER_PX as f32)) as i32)
     }
 
     
     #[inline]
     pub fn to_px(self) -> i32 {
-        self.0 / 60
+        self.0 / AU_PER_PX
     }
 
     
     #[inline]
     pub fn to_prev_px(self) -> i32 {
-        ((self.0 as f64) / 60f64).floor() as i32
+        ((self.0 as f64) / (AU_PER_PX as f64)).floor() as i32
     }
 
     
     #[inline]
     pub fn to_next_px(self) -> i32 {
-        ((self.0 as f64) / 60f64).ceil() as i32
+        ((self.0 as f64) / (AU_PER_PX as f64)).ceil() as i32
     }
 
     #[inline]
     pub fn to_nearest_px(self) -> i32 {
-        ((self.0 as f64) / 60f64).round() as i32
+        ((self.0 as f64) / (AU_PER_PX as f64)).round() as i32
     }
 
     #[inline]
     pub fn to_f32_px(self) -> f32 {
-        (self.0 as f32) / 60f32
+        (self.0 as f32) / (AU_PER_PX as f32)
     }
 
     #[inline]
     pub fn to_f64_px(self) -> f64 {
-        (self.0 as f64) / 60f64
+        (self.0 as f64) / (AU_PER_PX as f64)
     }
 
     #[inline]
     pub fn to_snapped(self) -> Au {
-        let res = self.0 % 60i32;
-        return if res >= 30i32 { return Au(self.0 - res + 60i32) }
+        let res = self.0 % AU_PER_PX;
+        return if res >= 30i32 { return Au(self.0 - res + AU_PER_PX) }
                        else { return Au(self.0 - res) };
     }
 
     #[inline]
     pub fn from_f32_px(px: f32) -> Au {
-        Au((px * 60f32) as i32)
+        Au((px * (AU_PER_PX as f32)) as i32)
     }
 
     #[inline]
@@ -262,7 +265,7 @@ impl Au {
 
     #[inline]
     pub fn from_f64_px(px: f64) -> Au {
-        Au((px * 60.) as i32)
+        Au((px * (AU_PER_PX as f64)) as i32)
     }
 }
 
