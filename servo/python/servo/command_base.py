@@ -140,6 +140,18 @@ class CommandBase(object):
         if self.config["android"]["toolchain"]:
             env["ANDROID_TOOLCHAIN"] = self.config["android"]["toolchain"]
 
+        
+        
+        
+        
+        
+        if "ANDROID_SDK" in env:
+            env["ANDROID_HOME"] = env["ANDROID_SDK"]
+        if "ANDROID_NDK" in env:
+            env["NDK_HOME"] = env["ANDROID_NDK"]
+        if "ANDROID_TOOLCHAIN" in env:
+            env["NDK_STANDALONE"] = env["ANDROID_TOOLCHAIN"]
+
         return env
 
     def servo_crate(self):
