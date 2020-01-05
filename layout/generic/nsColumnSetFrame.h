@@ -72,10 +72,6 @@ public:
 
   virtual nsIAtom* GetType() const override;
 
-  virtual void PaintColumnRule(nsRenderingContext* aCtx,
-                               const nsRect&        aDirtyRect,
-                               const nsPoint&       aPt);
-
   
 
 
@@ -95,6 +91,11 @@ public:
     return MakeFrameName(NS_LITERAL_STRING("ColumnSet"), aResult);
   }
 #endif
+
+  void CreateBorderRenderers(nsTArray<nsCSSBorderRenderer>& aBorderRenderers,
+                             nsRenderingContext* aCtx,
+                             const nsRect& aDirtyRect,
+                             const nsPoint& aPt);
 
 protected:
   nscoord        mLastBalanceBSize;
