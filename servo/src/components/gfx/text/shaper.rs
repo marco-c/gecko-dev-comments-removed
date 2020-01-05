@@ -21,7 +21,7 @@ pub trait ShaperMethods {
 
 
 pub impl Shaper {
-    pub fn new(font: @mut Font) -> Shaper {
+    pub fn new(font: &mut Font) -> Shaper {
         harfbuzz::shaper::HarfbuzzShaper::new(font)
     }
 }

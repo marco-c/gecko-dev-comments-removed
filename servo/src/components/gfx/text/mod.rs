@@ -9,7 +9,6 @@
 
 
 pub use text::shaping::Shaper;
-pub use text::text_run::SendableTextRun;
 pub use text::text_run::TextRun;
 
 pub mod glyph;
