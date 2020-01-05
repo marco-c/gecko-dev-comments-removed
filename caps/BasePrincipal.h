@@ -104,6 +104,8 @@ public:
 
   
   void InheritFromNecko(const NeckoOriginAttributes& aAttrs);
+
+  void StripUserContextIdAndFirstPartyDomain();
 };
 
 
@@ -313,6 +315,8 @@ public:
   };
 
   virtual PrincipalKind Kind() = 0;
+
+  already_AddRefed<BasePrincipal> CloneStrippingUserContextIdAndFirstPartyDomain();
 
 protected:
   virtual ~BasePrincipal();

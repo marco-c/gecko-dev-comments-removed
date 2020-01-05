@@ -123,12 +123,7 @@ GetOriginFromPrincipal(nsIPrincipal* aPrincipal, nsACString& aOrigin)
   attrs.mPrivateBrowsingId = 0;
 
   
-
-  
-  attrs.mUserContextId = nsIScriptSecurityManager::DEFAULT_USER_CONTEXT_ID;
-
-  
-  attrs.mFirstPartyDomain.Truncate();
+  attrs.StripUserContextIdAndFirstPartyDomain();
 
   attrs.CreateSuffix(suffix);
   aOrigin.Append(suffix);
@@ -145,12 +140,7 @@ GetPrincipalFromOrigin(const nsACString& aOrigin, nsIPrincipal** aPrincipal)
   }
 
   
-
-  
-  attrs.mUserContextId = nsIScriptSecurityManager::DEFAULT_USER_CONTEXT_ID;
-
-  
-  attrs.mFirstPartyDomain.Truncate();
+  attrs.StripUserContextIdAndFirstPartyDomain();
 
   nsCOMPtr<nsIURI> uri;
   nsresult rv = NS_NewURI(getter_AddRefs(uri), originNoSuffix);
@@ -2065,11 +2055,14 @@ nsPermissionManager::GetPermissionObject(nsIPrincipal* aPrincipal,
   NS_ENSURE_SUCCESS(rv, rv);
 
   PermissionEntry& perm = entry->GetPermissions()[idx];
-  nsCOMPtr<nsIPermission> r = new nsPermission(principal,
-                                               mTypeArray.ElementAt(perm.mType),
-                                               perm.mPermission,
-                                               perm.mExpireType,
-                                               perm.mExpireTime);
+  nsCOMPtr<nsIPermission> r = nsPermission::Create(principal,
+                                                   mTypeArray.ElementAt(perm.mType),
+                                                   perm.mPermission,
+                                                   perm.mExpireType,
+                                                   perm.mExpireTime);
+  if (NS_WARN_IF(!r)) {
+    return NS_ERROR_FAILURE;
+  }
   r.forget(aResult);
   return NS_OK;
 }
@@ -2209,12 +2202,7 @@ nsPermissionManager::GetPermissionHashKey(nsIPrincipal* aPrincipal,
       mozilla::BasePrincipal::Cast(aPrincipal)->OriginAttributesRef();
 
     
-
-    
-    attrs.mUserContextId = nsIScriptSecurityManager::DEFAULT_USER_CONTEXT_ID;
-
-    
-    attrs.mFirstPartyDomain.Truncate();
+    attrs.StripUserContextIdAndFirstPartyDomain();
 
     nsCOMPtr<nsIPrincipal> principal =
       mozilla::BasePrincipal::CreateCodebasePrincipal(newURI, attrs);
@@ -2248,12 +2236,16 @@ NS_IMETHODIMP nsPermissionManager::GetEnumerator(nsISimpleEnumerator **aEnum)
         continue;
       }
 
-      array.AppendObject(
-        new nsPermission(principal,
-                         mTypeArray.ElementAt(permEntry.mType),
-                         permEntry.mPermission,
-                         permEntry.mExpireType,
-                         permEntry.mExpireTime));
+      nsCOMPtr<nsIPermission> permission =
+        nsPermission::Create(principal,
+                             mTypeArray.ElementAt(permEntry.mType),
+                             permEntry.mPermission,
+                             permEntry.mExpireType,
+                             permEntry.mExpireTime);
+      if (NS_WARN_IF(!permission)) {
+        continue;
+      }
+      array.AppendObject(permission);
     }
   }
 
@@ -2278,12 +2270,16 @@ NS_IMETHODIMP nsPermissionManager::GetAllForURI(nsIURI* aURI, nsISimpleEnumerato
         continue;
       }
 
-      array.AppendObject(
-        new nsPermission(principal,
-                         mTypeArray.ElementAt(permEntry.mType),
-                         permEntry.mPermission,
-                         permEntry.mExpireType,
-                         permEntry.mExpireTime));
+      nsCOMPtr<nsIPermission> permission =
+        nsPermission::Create(principal,
+                             mTypeArray.ElementAt(permEntry.mType),
+                             permEntry.mPermission,
+                             permEntry.mExpireType,
+                             permEntry.mExpireTime);
+      if (NS_WARN_IF(!permission)) {
+        continue;
+      }
+      array.AppendObject(permission);
     }
   }
 
@@ -2328,12 +2324,16 @@ nsPermissionManager::RemoveAllModifiedSince(int64_t aModificationTime)
         continue;
       }
 
-      array.AppendObject(
-        new nsPermission(principal,
-                         mTypeArray.ElementAt(permEntry.mType),
-                         permEntry.mPermission,
-                         permEntry.mExpireType,
-                         permEntry.mExpireTime));
+      nsCOMPtr<nsIPermission> permission =
+        nsPermission::Create(principal,
+                             mTypeArray.ElementAt(permEntry.mType),
+                             permEntry.mPermission,
+                             permEntry.mExpireType,
+                             permEntry.mExpireTime);
+      if (NS_WARN_IF(!permission)) {
+        continue;
+      }
+      array.AppendObject(permission);
     }
   }
 
@@ -2400,12 +2400,16 @@ nsPermissionManager::RemovePermissionsWithAttributes(mozilla::OriginAttributesPa
     }
 
     for (const auto& permEntry : entry->GetPermissions()) {
-      permissions.AppendObject(
-        new nsPermission(principal,
-                         mTypeArray.ElementAt(permEntry.mType),
-                         permEntry.mPermission,
-                         permEntry.mExpireType,
-                         permEntry.mExpireTime));
+      nsCOMPtr<nsIPermission> permission =
+        nsPermission::Create(principal,
+                             mTypeArray.ElementAt(permEntry.mType),
+                             permEntry.mPermission,
+                             permEntry.mExpireType,
+                             permEntry.mExpireTime);
+      if (NS_WARN_IF(!permission)) {
+        continue;
+      }
+      permissions.AppendObject(permission);
     }
   }
 
@@ -2536,8 +2540,8 @@ nsPermissionManager::NotifyObserversWithPermission(nsIPrincipal*     aPrincipal,
                                                    const char16_t  *aData)
 {
   nsCOMPtr<nsIPermission> permission =
-    new nsPermission(aPrincipal, aType, aPermission,
-                     aExpireType, aExpireTime);
+    nsPermission::Create(aPrincipal, aType, aPermission,
+                         aExpireType, aExpireTime);
   if (permission)
     NotifyObservers(permission, aData);
 }
