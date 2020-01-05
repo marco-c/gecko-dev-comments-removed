@@ -68,16 +68,13 @@ let FormLikeFactory = {
       throw new Error("createFromField requires a field in a document");
     }
 
-    let rootElement = this.findRootForField(aField);
-    if (rootElement instanceof Ci.nsIDOMHTMLFormElement) {
-      return this.createFromForm(rootElement);
+    if (aField.form) {
+      return this.createFromForm(aField.form);
     }
 
     let doc = aField.ownerDocument;
     let elements = [];
-    for (let el of rootElement.querySelectorAll("input")) {
-      
-      
+    for (let el of doc.documentElement.querySelectorAll("input")) {
       if (!el.form) {
         elements.push(el);
       }
@@ -85,31 +82,15 @@ let FormLikeFactory = {
     let formLike = {
       action: doc.baseURI,
       autocomplete: "on",
+      
+      
       elements,
       ownerDocument: doc,
-      rootElement,
+      rootElement: doc.documentElement,
     };
 
     this._addToJSONProperty(formLike);
     return formLike;
-  },
-
-  
-
-
-
-
-
-
-
-
-
-  findRootForField(aField) {
-    if (aField.form) {
-      return aField.form;
-    }
-
-    return aField.ownerDocument.documentElement;
   },
 
   

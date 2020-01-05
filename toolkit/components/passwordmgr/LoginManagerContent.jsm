@@ -10,7 +10,6 @@ this.EXPORTED_SYMBOLS = [ "LoginManagerContent",
 
 const { classes: Cc, interfaces: Ci, results: Cr, utils: Cu } = Components;
 const PASSWORD_INPUT_ADDED_COALESCING_THRESHOLD_MS = 1;
-const AUTOCOMPLETE_AFTER_CONTEXTMENU_THRESHOLD_MS = 250;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
@@ -18,7 +17,6 @@ Cu.import("resource://gre/modules/PrivateBrowsingUtils.jsm");
 Cu.import("resource://gre/modules/InsecurePasswordUtils.jsm");
 Cu.import("resource://gre/modules/Promise.jsm");
 Cu.import("resource://gre/modules/Preferences.jsm");
-Cu.import("resource://gre/modules/Timer.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "DeferredTask", "resource://gre/modules/DeferredTask.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "FormLikeFactory",
@@ -41,13 +39,11 @@ XPCOMUtils.defineLazyGetter(this, "log", () => {
 
 
 var gEnabled, gAutofillForms, gStoreWhenAutocompleteOff;
-var gLastContextMenuEventTimeStamp = 0;
 
 var observer = {
   QueryInterface : XPCOMUtils.generateQI([Ci.nsIObserver,
                                           Ci.nsIFormSubmitObserver,
                                           Ci.nsIWebProgressListener,
-                                          Ci.nsIDOMEventListener,
                                           Ci.nsISupportsWeakReference]),
 
   
@@ -111,33 +107,6 @@ var observer = {
 
     log("onStateChange handled:", channel);
     LoginManagerContent._onNavigation(aWebProgress.DOMWindow.document);
-  },
-
-  handleEvent(aEvent) {
-    if (!aEvent.isTrusted) {
-      return;
-    }
-
-    if (!gEnabled) {
-      return;
-    }
-
-    switch (aEvent.type) {
-      
-      case "focus": {
-        LoginManagerContent._onUsernameFocus(aEvent);
-        break;
-      }
-
-      case "contextmenu": {
-        gLastContextMenuEventTimeStamp = aEvent.timeStamp;
-        break;
-      }
-
-      default: {
-        throw new Error("Unexpected event");
-      }
-    }
   },
 };
 
@@ -463,10 +432,6 @@ var LoginManagerContent = {
     let loginFormState = this.loginFormStateByDocument.get(document);
     if (!loginFormState) {
       loginFormState = {
-        
-
-
-        fillsByRootElement: new WeakMap(),
         loginFormRootElements: new Set(),
       };
       this.loginFormStateByDocument.set(document, loginFormState);
@@ -560,45 +525,6 @@ var LoginManagerContent = {
   
 
 
-
-  _onUsernameFocus(event) {
-    let focusedField = event.target;
-    if (!focusedField.mozIsTextField(true) || focusedField.readOnly) {
-      return;
-    }
-
-    if (this._isLoginAlreadyFilled(focusedField)) {
-      log("_onUsernameFocus: Already filled");
-      return;
-    }
-
-    
-
-
-
-
-
-
-    setTimeout(function maybeOpenAutocompleteAfterFocus() {
-      
-      
-      let timeDiff = Math.abs(gLastContextMenuEventTimeStamp - event.timeStamp);
-      if (timeDiff < AUTOCOMPLETE_AFTER_CONTEXTMENU_THRESHOLD_MS) {
-        log("Not opening autocomplete after focus since a context menu was opened within",
-            timeDiff, "ms");
-        return;
-      }
-
-      if (this._formFillService.focusedInput == focusedField) {
-        log("maybeOpenAutocompleteAfterFocus: Opening the autocomplete popup");
-        this._formFillService.showPopup();
-      } else {
-        log("maybeOpenAutocompleteAfterFocus: FormFillController has a different focused input");
-      }
-    }.bind(this), 0);
-  },
-
-  
 
 
   onUsernameInput(event) {
@@ -993,15 +919,9 @@ var LoginManagerContent = {
 
 
   _fillForm(form, autofillForm, clobberUsername, clobberPassword,
-            userTriggered, foundLogins, recipes, {inputElement} = {}) {
-    if (form instanceof Ci.nsIDOMHTMLFormElement) {
-      throw new Error("_fillForm should only be called with FormLike objects");
-    }
-
+                        userTriggered, foundLogins, recipes, {inputElement} = {}) {
     log("_fillForm", form.elements);
     let ignoreAutocomplete = true;
-    
-    let autofillResult = -1;
     const AUTOFILL_RESULT = {
       FILLED: 0,
       NO_PASSWORD_FIELD: 1,
@@ -1016,6 +936,15 @@ var LoginManagerContent = {
       INSECURE: 10,
     };
 
+    function recordAutofillResult(result) {
+      if (userTriggered) {
+        
+        return;
+      }
+      const autofillResultHist = Services.telemetry.getHistogramById("PWMGR_FORM_AUTOFILL_RESULT");
+      autofillResultHist.add(result);
+    }
+
     try {
       
       
@@ -1023,7 +952,7 @@ var LoginManagerContent = {
           (InsecurePasswordUtils.isFormSecure(form) ||
           !LoginHelper.showInsecureFieldWarning)) {
         
-        autofillResult = AUTOFILL_RESULT.NO_SAVED_LOGINS;
+        recordAutofillResult(AUTOFILL_RESULT.NO_SAVED_LOGINS);
         return;
       }
 
@@ -1053,14 +982,16 @@ var LoginManagerContent = {
       
       if (passwordField == null) {
         log("not filling form, no password field found");
-        autofillResult = AUTOFILL_RESULT.NO_PASSWORD_FIELD;
+        recordAutofillResult(AUTOFILL_RESULT.NO_PASSWORD_FIELD);
         return;
       }
+
+      this._formFillService.markAsLoginManagerField(passwordField);
 
       
       if (passwordField.disabled || passwordField.readOnly) {
         log("not filling form, password field disabled or read-only");
-        autofillResult = AUTOFILL_RESULT.PASSWORD_DISABLED_READONLY;
+        recordAutofillResult(AUTOFILL_RESULT.PASSWORD_DISABLED_READONLY);
         return;
       }
 
@@ -1078,7 +1009,7 @@ var LoginManagerContent = {
       
       if (foundLogins.length == 0) {
         
-        autofillResult = AUTOFILL_RESULT.NO_SAVED_LOGINS;
+        recordAutofillResult(AUTOFILL_RESULT.NO_SAVED_LOGINS);
         return;
       }
 
@@ -1086,7 +1017,7 @@ var LoginManagerContent = {
       if (!userTriggered && !LoginHelper.insecureAutofill &&
           !InsecurePasswordUtils.isFormSecure(form)) {
         log("not filling form since it's insecure");
-        autofillResult = AUTOFILL_RESULT.INSECURE;
+        recordAutofillResult(AUTOFILL_RESULT.INSECURE);
         return;
       }
 
@@ -1121,14 +1052,14 @@ var LoginManagerContent = {
 
       if (logins.length == 0) {
         log("form not filled, none of the logins fit in the field");
-        autofillResult = AUTOFILL_RESULT.NO_LOGINS_FIT;
+        recordAutofillResult(AUTOFILL_RESULT.NO_LOGINS_FIT);
         return;
       }
 
       
       if (passwordField.value && !clobberPassword) {
         log("form not filled, the password field was already filled");
-        autofillResult = AUTOFILL_RESULT.EXISTING_PASSWORD;
+        recordAutofillResult(AUTOFILL_RESULT.EXISTING_PASSWORD);
         return;
       }
 
@@ -1145,7 +1076,7 @@ var LoginManagerContent = {
                                            l.username.toLowerCase() == username);
         if (matchingLogins.length == 0) {
           log("Password not filled. None of the stored logins match the username already present.");
-          autofillResult = AUTOFILL_RESULT.EXISTING_USERNAME;
+          recordAutofillResult(AUTOFILL_RESULT.EXISTING_USERNAME);
           return;
         }
 
@@ -1174,7 +1105,7 @@ var LoginManagerContent = {
 
         if (matchingLogins.length != 1) {
           log("Multiple logins for form, so not filling any.");
-          autofillResult = AUTOFILL_RESULT.MULTIPLE_LOGINS;
+          recordAutofillResult(AUTOFILL_RESULT.MULTIPLE_LOGINS);
           return;
         }
 
@@ -1185,13 +1116,13 @@ var LoginManagerContent = {
 
       if (!autofillForm) {
         log("autofillForms=false but form can be filled");
-        autofillResult = AUTOFILL_RESULT.NO_AUTOFILL_FORMS;
+        recordAutofillResult(AUTOFILL_RESULT.NO_AUTOFILL_FORMS);
         return;
       }
 
       if (isAutocompleteOff && !ignoreAutocomplete) {
         log("Not filling the login because we're respecting autocomplete=off");
-        autofillResult = AUTOFILL_RESULT.AUTOCOMPLETE_OFF;
+        recordAutofillResult(AUTOFILL_RESULT.AUTOCOMPLETE_OFF);
         return;
       }
 
@@ -1212,101 +1143,19 @@ var LoginManagerContent = {
           usernameField.setUserInput(selectedLogin.username);
         }
       }
-
-      let doc = form.ownerDocument;
       if (passwordField.value != selectedLogin.password) {
         passwordField.setUserInput(selectedLogin.password);
-        let autoFilledLogin = {
-          guid: selectedLogin.QueryInterface(Ci.nsILoginMetaInfo).guid,
-          username: selectedLogin.username,
-          usernameField: usernameField ? Cu.getWeakReference(usernameField) : null,
-          password: selectedLogin.password,
-          passwordField: Cu.getWeakReference(passwordField),
-        };
-        log("Saving autoFilledLogin", autoFilledLogin.guid, "for", form.rootElement);
-        this.stateForDocument(doc).fillsByRootElement.set(form.rootElement, autoFilledLogin);
       }
 
       log("_fillForm succeeded");
-      autofillResult = AUTOFILL_RESULT.FILLED;
-
+      recordAutofillResult(AUTOFILL_RESULT.FILLED);
+      let doc = form.ownerDocument;
       let win = doc.defaultView;
       let messageManager = messageManagerFromWindow(win);
       messageManager.sendAsyncMessage("LoginStats:LoginFillSuccessful");
     } finally {
-      if (autofillResult == -1) {
-        
-        throw new Error("_fillForm: autofillResult must be specified");
-      }
-
-      if (!userTriggered) {
-        
-        Services.telemetry.getHistogramById("PWMGR_FORM_AUTOFILL_RESULT").add(autofillResult);
-
-        if (usernameField) {
-          let focusedElement = this._formFillService.focusedInput;
-          if (usernameField == focusedElement &&
-              autofillResult !== AUTOFILL_RESULT.FILLED) {
-            log("_fillForm: Opening username autocomplete popup since the form wasn't autofilled");
-            this._formFillService.showPopup();
-          }
-        }
-      }
-
-      if (usernameField) {
-        log("_fillForm: Attaching event listeners to usernameField");
-        usernameField.addEventListener("focus", observer);
-        usernameField.addEventListener("contextmenu", observer);
-      }
-
       Services.obs.notifyObservers(form.rootElement, "passwordmgr-processed-form", null);
     }
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  _isLoginAlreadyFilled(aUsernameField) {
-    let formLikeRoot = FormLikeFactory.findRootForField(aUsernameField);
-    
-    let existingFormLike = this._formLikeByRootElement.get(formLikeRoot);
-    if (!existingFormLike) {
-      throw new Error("_isLoginAlreadyFilled called with a username field with " +
-                      "no rootElement FormLike");
-    }
-
-    log("_isLoginAlreadyFilled: existingFormLike", existingFormLike);
-    let filledLogin = this.stateForDocument(aUsernameField.ownerDocument).fillsByRootElement.get(formLikeRoot);
-    if (!filledLogin) {
-      return false;
-    }
-
-    
-    let autoFilledUsernameField = filledLogin.usernameField ? filledLogin.usernameField.get() : null;
-    let autoFilledPasswordField = filledLogin.passwordField.get();
-
-    
-    if (!autoFilledUsernameField ||
-        autoFilledUsernameField != aUsernameField ||
-        autoFilledUsernameField.value != filledLogin.username ||
-        !autoFilledPasswordField ||
-        autoFilledPasswordField.value != filledLogin.password) {
-      return false;
-    }
-
-    return true;
   },
 
   
