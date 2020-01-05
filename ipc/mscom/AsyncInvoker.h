@@ -10,6 +10,7 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/DebugOnly.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/Move.h"
 #include "mozilla/mscom/Aggregation.h"
 #include "mozilla/mscom/Utils.h"
@@ -194,7 +195,8 @@ public:
   HRESULT Wait(DWORD aTimeout = INFINITE) const
   {
     if (!mAsyncCall) {
-      return E_POINTER;
+      
+      return S_OK;
     }
 
     return mAsyncCall->Wait(0, aTimeout);
@@ -244,56 +246,111 @@ protected:
 
 
 
-template <typename AsyncInterface,
+
+
+
+
+
+template <typename SyncInterface, typename AsyncInterface,
           template <typename Iface> class WaitPolicy = detail::FireAndForgetInvoker>
 class MOZ_RAII AsyncInvoker final : public WaitPolicy<AsyncInterface>
 {
 public:
+  typedef SyncInterface SyncInterfaceT;
+  typedef AsyncInterface AsyncInterfaceT;
+
   
 
 
 
 
-  explicit AsyncInvoker(IUnknown* aSyncProxy)
+
+
+
+
+
+  explicit AsyncInvoker(SyncInterface* aSyncObj, Maybe<bool> aIsProxy = Nothing())
+    : mSyncObj(ResolveIsProxy(aSyncObj, aIsProxy) ? nullptr : aSyncObj)
   {
-    MOZ_ASSERT(aSyncProxy);
-    MOZ_ASSERT(IsProxy(aSyncProxy));
+    MOZ_ASSERT(aSyncObj);
+
+    if (mSyncObj) {
+      return;
+    }
 
     RefPtr<ICallFactory> callFactory;
-    if (FAILED(aSyncProxy->QueryInterface(IID_ICallFactory,
-                                          getter_AddRefs(callFactory)))) {
+    if (FAILED(aSyncObj->QueryInterface(IID_ICallFactory,
+                                        getter_AddRefs(callFactory)))) {
       return;
     }
 
     mAsyncCall = new AsyncCallType(callFactory);
   }
 
-  explicit operator bool() const
-  {
-    return mAsyncCall && mAsyncCall->GetInterface();
-  }
+  
 
-  AsyncInterface* operator->() const
+
+
+
+
+
+
+
+
+
+
+  template <typename SyncMethod, typename AsyncMethod, typename... Args>
+  HRESULT Invoke(SyncMethod aSyncMethod, AsyncMethod aAsyncMethod, Args... aArgs)
   {
-    return mAsyncCall->GetInterface();
+    if (mSyncObj) {
+      return (mSyncObj->*aSyncMethod)(Forward<Args>(aArgs)...);
+    }
+
+    MOZ_ASSERT(mAsyncCall);
+    if (!mAsyncCall) {
+      return E_POINTER;
+    }
+
+    AsyncInterface* asyncInterface = mAsyncCall->GetInterface();
+    MOZ_ASSERT(asyncInterface);
+    if (!asyncInterface) {
+      return E_POINTER;
+    }
+
+    return (asyncInterface->*aAsyncMethod)(Forward<Args>(aArgs)...);
   }
 
   AsyncInvoker(const AsyncInvoker& aOther) = delete;
   AsyncInvoker(AsyncInvoker&& aOther) = delete;
   AsyncInvoker& operator=(const AsyncInvoker& aOther) = delete;
   AsyncInvoker& operator=(AsyncInvoker&& aOther) = delete;
+
+private:
+  static bool ResolveIsProxy(SyncInterface* aSyncObj, const Maybe<bool>& aIsProxy)
+  {
+    MOZ_ASSERT(aSyncObj);
+    return aIsProxy.isSome() ? aIsProxy.value() : IsProxy(aSyncObj);
+  }
+
+private:
+  RefPtr<SyncInterface> mSyncObj;
 };
 
-template <typename AsyncInterface>
-using WaitableAsyncInvoker = AsyncInvoker<AsyncInterface, detail::WaitableInvoker>;
+template <typename SyncInterface, typename AsyncInterface>
+using WaitableAsyncInvoker = AsyncInvoker<SyncInterface, AsyncInterface, detail::WaitableInvoker>;
 
 } 
 } 
 
 #define ASYNC_INVOKER_FOR(SyncIface) \
-  mozilla::mscom::AsyncInvoker<Async##SyncIface>
+  mozilla::mscom::AsyncInvoker<SyncIface, Async##SyncIface>
 
 #define WAITABLE_ASYNC_INVOKER_FOR(SyncIface) \
-  mozilla::mscom::WaitableAsyncInvoker<Async##SyncIface>
+  mozilla::mscom::WaitableAsyncInvoker<SyncIface, Async##SyncIface>
+
+#define ASYNC_INVOKE(InvokerObj, SyncMethodName, ...) \
+  InvokerObj.Invoke(&decltype(InvokerObj)::SyncInterfaceT::SyncMethodName, \
+                    &decltype(InvokerObj)::AsyncInterfaceT::Begin_##SyncMethodName, \
+                    __VA_ARGS__)
 
 #endif 
