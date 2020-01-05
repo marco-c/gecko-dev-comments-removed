@@ -372,8 +372,10 @@ GeometryEditorHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
 
     let { pageListenerTarget } = this.highlighterEnv;
 
-    DOM_EVENTS.forEach(type =>
-      pageListenerTarget.removeEventListener(type, this));
+    if (pageListenerTarget) {
+      DOM_EVENTS.forEach(type =>
+        pageListenerTarget.removeEventListener(type, this));
+    }
 
     AutoRefreshHighlighter.prototype.destroy.call(this);
 
@@ -389,11 +391,16 @@ GeometryEditorHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
       return;
     }
 
-    const { type, pageX, pageY } = event;
+    const { target, type, pageX, pageY } = event;
 
     switch (type) {
       case "pagehide":
-        this.destroy();
+        
+        
+        if (target.defaultView === this.win) {
+          this.destroy();
+        }
+
         break;
       case "mousedown":
         
