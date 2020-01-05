@@ -57,6 +57,7 @@ nsContextMenu.prototype = {
         onAudio: this.onAudio,
         onCanvas: this.onCanvas,
         onEditableArea: this.onEditableArea,
+        onPassword: this.onPassword,
         srcUrl: this.mediaURL,
         frameUrl: gContextMenuContentData ? gContextMenuContentData.docLocation : undefined,
         pageUrl: this.browser ? this.browser.currentURI.spec : undefined,
@@ -566,10 +567,28 @@ nsContextMenu.prototype = {
   },
 
   inspectNode: function() {
+    let {devtools} = Cu.import("resource://devtools/shared/Loader.jsm", {});
     let gBrowser = this.browser.ownerGlobal.gBrowser;
-    let { require } = Cu.import("resource://devtools/shared/Loader.jsm", {});
-    let { gDevToolsBrowser } = require("devtools/client/framework/devtools-browser");
-    return gDevToolsBrowser.inspectNode(gBrowser.selectedTab, this.target);
+    let target = devtools.TargetFactory.forTab(gBrowser.selectedTab);
+
+    return gDevTools.showToolbox(target, "inspector").then(toolbox => {
+      let inspector = toolbox.getCurrentPanel();
+
+      
+      
+      let onNewNode = inspector.selection.once("new-node-front");
+
+      this.browser.messageManager.sendAsyncMessage("debug:inspect", {}, {node: this.target});
+      inspector.walker.findInspectingNode().then(nodeFront => {
+        inspector.selection.setNodeFront(nodeFront, "browser-context-menu");
+      });
+
+      return onNewNode.then(() => {
+        
+        
+        return inspector.once("inspector-updated");
+      });
+    });
   },
 
   
