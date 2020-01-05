@@ -395,6 +395,8 @@ pref("media.decoder-doctor.verbose", false);
 
 pref("media.decoder-doctor.wmf-disabled-is-failure", false);
 
+pref("media.decoder-doctor.new-issue-endpoint", "https://webcompat.com/issues/new");
+
 
 #ifdef NIGHTLY_BUILD
 pref("media.suspend-bkgnd-video.enabled", true);
