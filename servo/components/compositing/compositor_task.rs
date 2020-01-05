@@ -280,7 +280,6 @@ impl CompositorTask {
 pub trait CompositorEventListener {
     fn handle_events(&mut self, events: Vec<WindowEvent>) -> bool;
     fn repaint_synchronously(&mut self);
-    fn shutdown(&mut self);
     fn pinch_zoom_level(&self) -> f32;
     
     fn title_for_main_frame(&self);

@@ -69,6 +69,14 @@ impl CompositorEventListener for NullCompositor {
 
             Msg::ShutdownComplete => {
                 debug!("constellation completed shutdown");
+
+                
+                
+                while self.port.try_recv_compositor_msg().is_some() {}
+
+                self.time_profiler_chan.send(time::ProfilerMsg::Exit);
+                self.mem_profiler_chan.send(mem::ProfilerMsg::Exit);
+
                 return false
             }
 
@@ -129,15 +137,6 @@ impl CompositorEventListener for NullCompositor {
     }
 
     fn repaint_synchronously(&mut self) {}
-
-    fn shutdown(&mut self) {
-        
-        
-        while self.port.try_recv_compositor_msg().is_some() {}
-
-        self.time_profiler_chan.send(time::ProfilerMsg::Exit);
-        self.mem_profiler_chan.send(mem::ProfilerMsg::Exit);
-    }
 
     fn pinch_zoom_level(&self) -> f32 {
         1.0
