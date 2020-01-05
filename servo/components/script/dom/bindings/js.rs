@@ -88,6 +88,12 @@ impl<T: Reflectable> JS<T> {
     }
 }
 
+impl<T: Reflectable> JSTraceable for JS<T> {
+    fn trace(&self, trc: *mut JSTracer) {
+        trace_reflector(trc, "", unsafe { (**self.ptr).reflector() });
+    }
+}
+
 
 
 #[allow_unrooted_interior]
@@ -148,13 +154,6 @@ impl LayoutJS<Node> {
     }
 }
 
-impl<T: Reflectable> Reflectable for JS<T> {
-    fn reflector(&self) -> &Reflector {
-        unsafe {
-            (**self.ptr).reflector()
-        }
-    }
-}
 
 
 
