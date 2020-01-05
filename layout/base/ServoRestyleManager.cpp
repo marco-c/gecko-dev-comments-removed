@@ -259,6 +259,13 @@ ServoRestyleManager::ProcessPostTraversal(Element* aElement,
         MOZ_ASSERT(pseudoContext, "should have taken the ReconstructFrame path above");
         pseudoFrame->SetStyleContext(pseudoContext);
 
+        if (pseudoFrame->GetStateBits() & NS_FRAME_OWNS_ANON_BOXES) {
+          
+          
+          pseudoFrame->UpdateStyleOfOwnedAnonBoxes(*aStyleSet, aChangeList,
+                                                   nsChangeHint_Hints_NotHandledForDescendants);
+        }
+
         
         
         
