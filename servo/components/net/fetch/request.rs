@@ -114,7 +114,7 @@ pub struct Request {
 }
 
 impl Request {
-    pub fn new(url: Url, context: Context, isServiceWorkerGlobalScope: bool) -> Request {
+    pub fn new(url: Url, context: Context, is_service_worker_global_scope: bool) -> Request {
          Request {
             method: Method::Get,
             url: url,
@@ -122,7 +122,7 @@ impl Request {
             unsafe_request: false,
             body: None,
             preserve_content_codings: false,
-            is_service_worker_global_scope: isServiceWorkerGlobalScope,
+            is_service_worker_global_scope: is_service_worker_global_scope,
             skip_service_worker: false,
             context: context,
             context_frame_type: ContextFrameType::ContextNone,
@@ -263,14 +263,14 @@ impl Request {
                 if !response.headers.has::<Location>() {
                     return response;
                 }
-                let location = response.headers.get::<Location>();
-                if location.is_none() {
-                    return Response::network_error();
-                }
+                let location = match response.headers.get::<Location>() {
+                    None => return Response::network_error(),
+                    Some(location) => location,
+                };
                 
-                let locationUrl = Url::parse(location.unwrap());
+                let location_url = Url::parse(location);
                 
-                let locationUrl = match locationUrl {
+                let location_url = match location_url {
                     Ok(url) => url,
                     Err(_) => return Response::network_error()
                 };
@@ -288,8 +288,8 @@ impl Request {
                     
                     
                     
-                    if cors_flag && (!locationUrl.username().unwrap_or("").is_empty() ||
-                                      locationUrl.password().is_some()) {
+                    if cors_flag && (!location_url.username().unwrap_or("").is_empty() ||
+                                      location_url.password().is_some()) {
                         return Response::network_error();
                     }
                     
@@ -299,7 +299,7 @@ impl Request {
                         self.method = Method::Get;
                     }
                     
-                    self.url = locationUrl;
+                    self.url = location_url;
                     
                     return self.fetch(cors_flag);
                 }
