@@ -38693,10 +38693,10 @@
             "url": "/secure-contexts/shared-worker-secure-first.https.html"
           }
         ],
-        "web-animations/animation-model/animation-types/spacing-keyframes-shapes.html": [
+        "uievents/order-of-events/focus-events/focus-automated-blink-webkit.html": [
           {
-            "path": "web-animations/animation-model/animation-types/spacing-keyframes-shapes.html",
-            "url": "/web-animations/animation-model/animation-types/spacing-keyframes-shapes.html"
+            "path": "uievents/order-of-events/focus-events/focus-automated-blink-webkit.html",
+            "url": "/uievents/order-of-events/focus-events/focus-automated-blink-webkit.html"
           }
         ],
         "webaudio/the-audio-api/the-constantsourcenode-interface/test-constantsourcenode.html": [

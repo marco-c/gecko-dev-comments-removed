@@ -2021,6 +2021,49 @@ public:
   nsCOMPtr<EventTarget>   mRelatedTarget;
 };
 
+class FocusInOutEvent : public Runnable
+{
+public:
+  FocusInOutEvent(nsISupports* aTarget, EventMessage aEventMessage,
+                 nsPresContext* aContext,
+                 nsPIDOMWindowOuter* aOriginalFocusedWindow,
+                 nsIContent* aOriginalFocusedContent,
+                 EventTarget* aRelatedTarget)
+    : mTarget(aTarget)
+    , mContext(aContext)
+    , mEventMessage(aEventMessage)
+    , mOriginalFocusedWindow(aOriginalFocusedWindow)
+    , mOriginalFocusedContent(aOriginalFocusedContent)
+    , mRelatedTarget(aRelatedTarget)
+  {
+  }
+
+  NS_IMETHOD Run() override
+  {
+    nsCOMPtr<nsIContent> originalWindowFocus = mOriginalFocusedWindow ?
+        mOriginalFocusedWindow->GetFocusedNode() :
+        nullptr;
+    
+    
+    if (mEventMessage == eFocusOut ||
+        originalWindowFocus == mOriginalFocusedContent) {
+      InternalFocusEvent event(true, mEventMessage);
+      event.mFlags.mBubbles = true;
+      event.mFlags.mCancelable = false;
+      event.mRelatedTarget = mRelatedTarget;
+      return EventDispatcher::Dispatch(mTarget, mContext, &event);
+    }
+    return NS_OK;
+  }
+
+  nsCOMPtr<nsISupports>        mTarget;
+  RefPtr<nsPresContext>        mContext;
+  EventMessage                 mEventMessage;
+  nsCOMPtr<nsPIDOMWindowOuter> mOriginalFocusedWindow;
+  nsCOMPtr<nsIContent>         mOriginalFocusedContent;
+  nsCOMPtr<EventTarget>        mRelatedTarget;
+};
+
 static nsIDocument*
 GetDocumentHelper(EventTarget* aTarget)
 {
@@ -2031,6 +2074,26 @@ GetDocumentHelper(EventTarget* aTarget)
   }
 
   return node->OwnerDoc();
+}
+
+void nsFocusManager::SendFocusInOrOutEvent(EventMessage aEventMessage,
+                                     nsIPresShell* aPresShell,
+                                     nsISupports* aTarget,
+                                     nsPIDOMWindowOuter* aCurrentFocusedWindow,
+                                     nsIContent* aCurrentFocusedContent,
+                                     EventTarget* aRelatedTarget)
+{
+  NS_ASSERTION(aEventMessage == eFocusIn || aEventMessage == eFocusOut,
+      "Wrong event type for SendFocusInOrOutEvent");
+
+  nsContentUtils::AddScriptRunner(
+      new FocusInOutEvent(
+        aTarget,
+        aEventMessage,
+        aPresShell->GetPresContext(),
+        aCurrentFocusedWindow,
+        aCurrentFocusedContent,
+        aRelatedTarget));
 }
 
 void
@@ -2049,6 +2112,11 @@ nsFocusManager::SendFocusOrBlurEvent(EventMessage aEventMessage,
   nsCOMPtr<EventTarget> eventTarget = do_QueryInterface(aTarget);
   nsCOMPtr<nsIDocument> eventTargetDoc = GetDocumentHelper(eventTarget);
   nsCOMPtr<nsIDocument> relatedTargetDoc = GetDocumentHelper(aRelatedTarget);
+  nsCOMPtr<nsPIDOMWindowOuter> currentWindow = mFocusedWindow;
+  nsCOMPtr<nsPIDOMWindowInner> targetWindow = do_QueryInterface(aTarget);
+  nsCOMPtr<nsIDocument> targetDocument = do_QueryInterface(aTarget);
+  nsCOMPtr<nsIContent> currentFocusedContent = currentWindow ?
+      currentWindow->GetFocusedNode() : nullptr;
 
   
   if (eventTargetDoc != relatedTargetDoc) {
@@ -2099,6 +2167,19 @@ nsFocusManager::SendFocusOrBlurEvent(EventMessage aEventMessage,
     nsContentUtils::AddScriptRunner(
       new FocusBlurEvent(aTarget, aEventMessage, aPresShell->GetPresContext(),
                          aWindowRaised, aIsRefocus, aRelatedTarget));
+
+    
+    
+    
+    
+    
+    
+    
+    if (!targetWindow && !targetDocument) {
+      EventMessage focusInOrOutMessage = aEventMessage == eFocus ? eFocusIn : eFocusOut;
+      SendFocusInOrOutEvent(focusInOrOutMessage, aPresShell, aTarget,
+          currentWindow, currentFocusedContent, aRelatedTarget);
+    }
   }
 }
 

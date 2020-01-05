@@ -299,6 +299,30 @@ protected:
   
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  void SendFocusInOrOutEvent(mozilla::EventMessage aEventMessage,
+                             nsIPresShell* aPresShell,
+                             nsISupports* aTarget,
+                             nsPIDOMWindowOuter* aCurrentFocusedWindow,
+                             nsIContent* aCurrentFocusedContent,
+                             mozilla::dom::EventTarget* aRelatedTarget = nullptr);
+
+  
+
+
   void ScrollIntoView(nsIPresShell* aPresShell,
                       nsIContent* aContent,
                       uint32_t aFlags);
