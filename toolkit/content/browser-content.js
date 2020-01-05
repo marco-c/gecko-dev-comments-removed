@@ -651,7 +651,19 @@ var Printing = {
       if (printSettings && simplifiedMode)
         printSettings.docURL = contentWindow.document.baseURI;
 
-      docShell.printPreview.printPreview(printSettings, contentWindow, this);
+      
+      
+      
+      Services.tm.mainThread.dispatch(() => {
+        try {
+          docShell.printPreview.printPreview(printSettings, contentWindow, this);
+        } catch (error) {
+          
+          
+          Components.utils.reportError(error);
+          notifyEntered(error);
+        }
+      }, Ci.nsIThread.DISPATCH_NORMAL);
     } catch (error) {
       
       
