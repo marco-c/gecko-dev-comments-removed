@@ -825,7 +825,7 @@ impl Node {
                     .map(|elem| elem.upcast::<Node>() == self)
                     .unwrap_or(false),
 
-            shortValue: self.GetNodeValue().unwrap_or(DOMString::new()), 
+            shortValue: self.GetNodeValue().unwrap_or_default(), 
             incompleteValue: false, 
         }
     }
@@ -1893,7 +1893,7 @@ impl NodeMethods for Node {
     
     fn SetNodeValue(&self, val: Option<DOMString>) {
         if let Some(character_data) = self.downcast::<CharacterData>() {
-            character_data.SetData(val.unwrap_or(DOMString::new()));
+            character_data.SetData(val.unwrap_or_default());
         }
     }
 
@@ -1918,7 +1918,7 @@ impl NodeMethods for Node {
 
     
     fn SetTextContent(&self, value: Option<DOMString>) {
-        let value = value.unwrap_or(DOMString::new());
+        let value = value.unwrap_or_default();
         match self.type_id() {
             NodeTypeId::DocumentFragment |
             NodeTypeId::Element(..) => {
