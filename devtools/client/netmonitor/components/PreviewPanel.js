@@ -12,9 +12,7 @@ const { div, iframe } = DOM;
 
 
 
-function PreviewPanel({
-  request,
-}) {
+function PreviewPanel({ request }) {
   const htmlBody = request.responseContent ?
     request.responseContent.content.text : "";
 
