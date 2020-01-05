@@ -80,7 +80,7 @@ def make_task_description(config, jobs):
         formats = set([])
         for artifacts in job['upstream-artifacts']:
             for f in artifacts['formats']:
-                formats.update(f)  
+                formats.add(f)  
         for format in formats:
             signing_format_scopes.append("project:releng:signing:format:{}".format(format))
 
