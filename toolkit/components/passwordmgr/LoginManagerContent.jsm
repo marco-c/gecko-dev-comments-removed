@@ -432,10 +432,6 @@ var LoginManagerContent = {
     let loginFormState = this.loginFormStateByDocument.get(document);
     if (!loginFormState) {
       loginFormState = {
-        
-
-
-        fillsByRootElement: new WeakMap(),
         loginFormRootElements: new Set(),
       };
       this.loginFormStateByDocument.set(document, loginFormState);
@@ -923,11 +919,7 @@ var LoginManagerContent = {
 
 
   _fillForm(form, autofillForm, clobberUsername, clobberPassword,
-            userTriggered, foundLogins, recipes, {inputElement} = {}) {
-    if (form instanceof Ci.nsIDOMHTMLFormElement) {
-      throw new Error("_fillForm should only be called with FormLike objects");
-    }
-
+                        userTriggered, foundLogins, recipes, {inputElement} = {}) {
     log("_fillForm", form.elements);
     let ignoreAutocomplete = true;
     
@@ -1144,24 +1136,13 @@ var LoginManagerContent = {
           usernameField.setUserInput(selectedLogin.username);
         }
       }
-
-      let doc = form.ownerDocument;
       if (passwordField.value != selectedLogin.password) {
         passwordField.setUserInput(selectedLogin.password);
-        let autoFilledLogin = {
-          guid: selectedLogin.QueryInterface(Ci.nsILoginMetaInfo).guid,
-          username: selectedLogin.username,
-          usernameField: usernameField ? Cu.getWeakReference(usernameField) : null,
-          password: selectedLogin.password,
-          passwordField: Cu.getWeakReference(passwordField),
-        };
-        log("Saving autoFilledLogin", autoFilledLogin.guid, "for", form.rootElement);
-        this.stateForDocument(doc).fillsByRootElement.set(form.rootElement, autoFilledLogin);
       }
 
       log("_fillForm succeeded");
       autofillResult = AUTOFILL_RESULT.FILLED;
-
+      let doc = form.ownerDocument;
       let win = doc.defaultView;
       let messageManager = messageManagerFromWindow(win);
       messageManager.sendAsyncMessage("LoginStats:LoginFillSuccessful");
@@ -1178,52 +1159,6 @@ var LoginManagerContent = {
 
       Services.obs.notifyObservers(form.rootElement, "passwordmgr-processed-form", null);
     }
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  _isLoginAlreadyFilled(aUsernameField) {
-    let formLikeRoot = FormLikeFactory.findRootForField(aUsernameField);
-    
-    let existingFormLike = this._formLikeByRootElement.get(formLikeRoot);
-    if (!existingFormLike) {
-      throw new Error("_isLoginAlreadyFilled called with a username field with " +
-                      "no rootElement FormLike");
-    }
-
-    log("_isLoginAlreadyFilled: existingFormLike", existingFormLike);
-    let filledLogin = this.stateForDocument(aUsernameField.ownerDocument).fillsByRootElement.get(formLikeRoot);
-    if (!filledLogin) {
-      return false;
-    }
-
-    
-    let autoFilledUsernameField = filledLogin.usernameField ? filledLogin.usernameField.get() : null;
-    let autoFilledPasswordField = filledLogin.passwordField.get();
-
-    
-    if (!autoFilledUsernameField ||
-        autoFilledUsernameField != aUsernameField ||
-        autoFilledUsernameField.value != filledLogin.username ||
-        !autoFilledPasswordField ||
-        autoFilledPasswordField.value != filledLogin.password) {
-      return false;
-    }
-
-    return true;
   },
 
   
