@@ -1,54 +1,12 @@
 
 
 
+const {
+  setupTestRunner,
+  editorSelect
+} = require("devtools/client/debugger/new/integration-tests");
 
-
-
-
-function isElementVisible(dbg, elementName) {
-  const bpLine = findElement(dbg, elementName);
-  const cm = findElement(dbg, "codeMirror");
-  return bpLine && isVisibleWithin(cm, bpLine);
-}
-
-add_task(function* () {
-  
-  
-  
-  requestLongerTimeout(2);
-
-  const dbg = yield initDebugger("doc-scripts.html");
-  const { selectors: { getSelectedSource }, getState } = dbg;
-  const simple1 = findSource(dbg, "simple1.js");
-  const simple2 = findSource(dbg, "simple2.js");
-
-  
-  yield addBreakpoint(dbg, simple1, 4);
-  ok(!getSelectedSource(getState()), "No selected source");
-
-  
-  invokeInTab("main");
-  yield waitForPaused(dbg);
-  assertPausedLocation(dbg, simple1, 4);
-
-  
-  
-  yield stepIn(dbg);
-  assertPausedLocation(dbg, simple2, 2);
-
-  
-  yield stepOut(dbg);
-  yield stepOut(dbg);
-  assertPausedLocation(dbg, simple1, 5);
-  yield resume(dbg);
-
-  
-  
-  let longSrc = findSource(dbg, "long.js");
-  yield addBreakpoint(dbg, longSrc, 66);
-
-  invokeInTab("testModel");
-  yield waitForPaused(dbg);
-  assertPausedLocation(dbg, longSrc, 66);
-  ok(isElementVisible(dbg, "breakpoint"), "Breakpoint is visible");
+add_task(function*() {
+  setupTestRunner(this);
+  yield editorSelect(this);
 });

@@ -4,20 +4,12 @@
 
 
 
-add_task(function* () {
-  const dbg = yield initDebugger("doc-sourcemap-bogus.html");
-  const { selectors: { getSources }, getState } = dbg;
+const {
+  setupTestRunner,
+  sourceMapsBogus
+} = require("devtools/client/debugger/new/integration-tests");
 
-  yield selectSource(dbg, "bogus-map.js");
-
-  
-  
-  yield addBreakpoint(dbg, "bogus-map.js", 4);
-  invokeInTab("runCode");
-  yield waitForPaused(dbg);
-  assertPausedLocation(dbg, "bogus-map.js", 4);
-
-  
-  
-  is(getSources(getState()).size, 1, "Only 1 source exists");
+add_task(function*() {
+  setupTestRunner(this);
+  yield sourceMapsBogus(this);
 });

@@ -2,12 +2,14 @@
 
 
 
+
+
 const {
   setupTestRunner,
-  searching
+  asm
 } = require("devtools/client/debugger/new/integration-tests");
 
 add_task(function*() {
   setupTestRunner(this);
-  yield searching(this);
+  yield asm(this);
 });
