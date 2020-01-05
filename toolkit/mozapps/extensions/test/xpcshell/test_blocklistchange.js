@@ -474,13 +474,9 @@ function Pmanual_update(aVersion) {
           onInstallEnded: resolve
         })
       }));
-    }
 
-    
-    
-    let webInstaller = Cc["@mozilla.org/addons/web-install-listener;1"]
-                       .getService(Ci.amIWebInstallListener);
-    webInstaller.onWebInstallRequested(null, null, installs);
+      AddonManager.installAddonFromAOM(null, null, install);
+    }
 
     return Promise.all(completePromises);
   });
