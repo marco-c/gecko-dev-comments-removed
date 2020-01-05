@@ -277,6 +277,11 @@ VideoTrackEncoder::AppendVideoSegment(const VideoSegment& aSegment)
 {
   ReentrantMonitorAutoEnter mon(mReentrantMonitor);
 
+  if (mEndOfStream) {
+    MOZ_ASSERT(false);
+    return NS_OK;
+  }
+
   
   
   VideoSegment::ConstChunkIterator iter(aSegment);
@@ -330,6 +335,9 @@ VideoTrackEncoder::AppendVideoSegment(const VideoSegment& aSegment)
       
       chunk.mTimeStamp = mLastChunk.mTimeStamp + TimeDuration::FromSeconds(1);
 
+      
+      chunk.mDuration = 0;
+
       if (chunk.IsNull()) {
         
         
@@ -353,14 +361,16 @@ VideoTrackEncoder::AppendVideoSegment(const VideoSegment& aSegment)
       TRACK_LOG(LogLevel::Verbose,
                 ("[VideoTrackEncoder]: Appending video frame %p, duration=%.5f",
                  lastImage.get(), diff.ToSeconds()));
-      mRawSegment.AppendFrame(lastImage.forget(),
-                              RateConvertTicksRoundUp(
-                                  mTrackRate, PR_USEC_PER_SEC,
-                                  diff.ToMicroseconds()),
-                              mLastChunk.mFrame.GetIntrinsicSize(),
-                              PRINCIPAL_HANDLE_NONE,
-                              mLastChunk.mFrame.GetForceBlack(),
-                              mLastChunk.mTimeStamp);
+      CheckedInt64 duration = UsecsToFrames(diff.ToMicroseconds(), mTrackRate);
+      MOZ_ASSERT(duration.isValid());
+      if (duration.isValid()) {
+        mRawSegment.AppendFrame(lastImage.forget(),
+                                duration.value(),
+                                mLastChunk.mFrame.GetIntrinsicSize(),
+                                PRINCIPAL_HANDLE_NONE,
+                                mLastChunk.mFrame.GetForceBlack(),
+                                mLastChunk.mTimeStamp);
+      }
     }
 
     mLastChunk = chunk;
