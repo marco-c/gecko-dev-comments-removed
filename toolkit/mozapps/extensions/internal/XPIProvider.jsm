@@ -2472,6 +2472,8 @@ this.XPIStates = {
   },
 };
 
+const hasOwnProperty = Function.call.bind({}.hasOwnProperty);
+
 this.XPIProvider = {
   get name() {
     return "XPIProvider";
@@ -2519,6 +2521,23 @@ this.XPIProvider = {
   _toolboxProcessLoaded: false,
   
   _closing: false,
+
+  
+
+
+
+
+
+
+
+  addonIsActive(addonId) {
+    if (hasOwnProperty(this.bootstrappedAddons, addonId)) {
+      return true;
+    }
+
+    let [, state] = XPIStates.findAddon(addonId);
+    return state && state.enabled;
+  },
 
   
 
