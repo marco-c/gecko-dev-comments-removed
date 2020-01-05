@@ -143,6 +143,7 @@ Script.prototype = {
 
   matches(window) {
     let uri = window.document.documentURIObject;
+    let principal = window.document.nodePrincipal;
 
     
     
@@ -150,16 +151,25 @@ Script.prototype = {
       return false;
     }
 
-    if (this.match_about_blank && ["about:blank", "about:srcdoc"].includes(uri.spec)) {
-      const principal = window.document.nodePrincipal;
+    if (this.match_about_blank) {
+      
+      
+      if (uri.spec === "about:blank" && window === window.top && principal.isNullPrincipal) {
+        return true;
+      }
 
       
       
-      if (window === window.top && principal.isNullPrincipal) {
-        return true;
+      if (["about:blank", "about:srcdoc"].includes(uri.spec)) {
+        uri = principal.URI;
       }
-      
-      
+    }
+
+    
+    if (Services.netUtils.URIChainHasFlags(uri, Ci.nsIProtocolHandler.URI_INHERITS_SECURITY_CONTEXT)) {
+      if (!this.match_about_blank) {
+        return false;
+      }
       uri = principal.URI;
     }
 
