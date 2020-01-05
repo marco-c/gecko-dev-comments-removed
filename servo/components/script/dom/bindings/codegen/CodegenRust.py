@@ -2868,7 +2868,10 @@ class CGUnionStruct(CGThing):
         enumConversions = [
             "            e%s(ref inner) => inner.to_jsval(cx)," % v["name"] for v in templateVars
         ]
-        return ("""pub enum %s {
+        
+        
+        return ("""#[allow(unrooted_must_root)]
+pub enum %s {
 %s
 }
 

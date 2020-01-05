@@ -34,6 +34,7 @@ pub enum GlobalRoot<'a, 'b> {
 
 
 #[deriving(Encodable)]
+#[must_root]
 pub enum GlobalField {
     WindowField(JS<Window>),
     WorkerField(JS<WorkerGlobalScope>),

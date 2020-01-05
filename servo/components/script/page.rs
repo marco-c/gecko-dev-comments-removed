@@ -425,6 +425,7 @@ impl Page {
 
 
 #[deriving(Encodable)]
+#[must_root]
 pub struct Frame {
     
     pub document: JS<Document>,

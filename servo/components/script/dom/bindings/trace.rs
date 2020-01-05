@@ -83,6 +83,7 @@ pub fn trace_jsval(tracer: *mut JSTracer, description: &str, val: JSVal) {
 }
 
 
+#[allow(unrooted_must_root)]
 pub fn trace_reflector(tracer: *mut JSTracer, description: &str, reflector: &Reflector) {
     trace_object(tracer, description, reflector.get_jsobject())
 }

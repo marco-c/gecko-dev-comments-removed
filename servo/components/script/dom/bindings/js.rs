@@ -61,6 +61,7 @@ use std::mem;
 
 
 
+#[allow(unrooted_must_root)]
 pub struct Temporary<T> {
     inner: JS<T>,
     
@@ -106,11 +107,13 @@ impl<T: Reflectable> Temporary<T> {
 }
 
 
+#[must_root]
 pub struct JS<T> {
     ptr: *const T
 }
 
 impl<T> PartialEq for JS<T> {
+    #[allow(unrooted_must_root)]
     fn eq(&self, other: &JS<T>) -> bool {
         self.ptr == other.ptr
     }
@@ -371,6 +374,7 @@ impl RootCollection {
     }
 
     
+    #[allow(unrooted_must_root)]
     fn new_root<'a, 'b, T: Reflectable>(&'a self, unrooted: &JS<T>) -> Root<'a, 'b, T> {
         Root::new(self, unrooted)
     }
