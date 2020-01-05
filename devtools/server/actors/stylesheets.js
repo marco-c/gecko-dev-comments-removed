@@ -441,6 +441,25 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
       return promise.resolve(content);
     }
 
+    return this.fetchStylesheet(this.href).then(({ content }) => {
+      this.text = content;
+      return content;
+    });
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  fetchStylesheet: Task.async(function* (href) {
     let options = {
       loadFromCache: true,
       policy: Ci.nsIContentPolicy.TYPE_INTERNAL_STYLESHEET,
@@ -451,19 +470,30 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
     
     
     
+
     
-    
-    
-    if (!/^(chrome|file|resource):\/\//.test(this.href)) {
+    let excludedProtocolsRe = /^(chrome|file|resource|moz-extension):\/\//;
+    if (!excludedProtocolsRe.test(this.href)) {
+      
       options.window = this.window;
       options.principal = this.document.nodePrincipal;
     }
 
-    return fetch(this.href, options).then(({ content }) => {
-      this.text = content;
-      return content;
-    });
-  },
+    let result;
+    try {
+      result = yield fetch(this.href, options);
+    } catch (e) {
+      
+      
+      console.error(`stylesheets actor: fetch failed for ${this.href},` +
+        ` using system principal instead.`);
+      options.window = undefined;
+      options.principal = undefined;
+      result = yield fetch(this.href, options);
+    }
+
+    return result;
+  }),
 
   
 
