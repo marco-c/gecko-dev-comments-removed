@@ -3,7 +3,7 @@
 
 
 use ipc_channel::ipc::IpcSharedMemory;
-use piston_image::{self, DynamicImage, GenericImage, ImageFormat};
+use piston_image::{self, DynamicImage, ImageFormat};
 use util::opts;
 
 pub use msg::constellation_msg::{Image, PixelFormat};

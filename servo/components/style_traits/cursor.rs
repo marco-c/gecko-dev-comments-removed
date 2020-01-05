@@ -5,7 +5,6 @@
 
 
 use cssparser::ToCss;
-use std::ascii::AsciiExt;
 
 macro_rules! define_cursor {
     ($( $css: expr => $variant: ident = $value: expr, )+) => {

@@ -3,10 +3,8 @@
 
 
 use dom::bindings::codegen::Bindings::DOMPointBinding::{DOMPointInit, DOMPointMethods};
-use dom::bindings::codegen::Bindings::DOMPointReadOnlyBinding::DOMPointReadOnlyMethods;
 use dom::bindings::codegen::Bindings::DOMQuadBinding::{DOMQuadInit, DOMQuadMethods, Wrap};
-use dom::bindings::codegen::Bindings::DOMRectBinding::DOMRectMethods;
-use dom::bindings::codegen::Bindings::DOMRectReadOnlyBinding::{DOMRectInit, DOMRectReadOnlyMethods};
+use dom::bindings::codegen::Bindings::DOMRectReadOnlyBinding::{DOMRectInit};
 use dom::bindings::error::Fallible;
 use dom::bindings::global::GlobalRef;
 use dom::bindings::js::{Root, JS};
