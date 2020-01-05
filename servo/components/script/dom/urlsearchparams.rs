@@ -88,6 +88,18 @@ impl URLSearchParamsMethods for URLSearchParams {
     }
 
     
+    fn GetAll(&self, name: USVString) -> Vec<USVString> {
+        let list = self.list.borrow();
+        list.iter().filter_map(|&(ref k, ref v)| {
+            if k == &name.0 {
+                Some(USVString(v.clone()))
+            } else {
+                None
+            }
+        }).collect()
+    }
+
+    
     fn Has(&self, name: USVString) -> bool {
         let list = self.list.borrow();
         list.iter().any(|&(ref k, _)| k == &name.0)
