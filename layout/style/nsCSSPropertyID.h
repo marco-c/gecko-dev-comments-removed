@@ -63,10 +63,7 @@ enum nsCSSPropertyID {
   eCSSPropertyExtra_x_auto_value,
 
   
-  eCSSPropertyExtra_variable,
-
-  
-  eCSSProperty_DOM
+  eCSSPropertyExtra_variable
 };
 
 namespace mozilla {

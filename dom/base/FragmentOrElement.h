@@ -37,7 +37,6 @@ namespace css {
 class Declaration;
 } 
 namespace dom {
-class DOMIntersectionObserver;
 class Element;
 } 
 } 
@@ -345,16 +344,6 @@ public:
 
 
     RefPtr<CustomElementData> mCustomElementData;
-
-    
-
-
-    struct IntersectionObserverRegistration {
-      DOMIntersectionObserver* observer;
-      int32_t previousThreshold;
-    };
-
-    nsTArray<IntersectionObserverRegistration> mRegisteredIntersectionObservers;
   };
 
 protected:
