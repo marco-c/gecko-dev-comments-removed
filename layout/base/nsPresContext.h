@@ -955,9 +955,13 @@ public:
   
   void EnsureSafeToHandOutCSSRules();
 
-  void NotifyInvalidation(const nsRect& aRect);
   
-  void NotifyInvalidation(const nsIntRect& aRect);
+  
+  
+  
+  void NotifyInvalidation(uint64_t aTransactionId, const nsRect& aRect);
+  
+  void NotifyInvalidation(uint64_t aTransactionId, const nsIntRect& aRect);
   
   void NotifyDidPaintForSubtree(uint32_t aFlags, uint64_t aTransactionId = 0,
                                 const mozilla::TimeStamp& aTimeStamp = mozilla::TimeStamp());
