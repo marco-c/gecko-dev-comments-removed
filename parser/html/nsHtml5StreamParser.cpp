@@ -981,14 +981,12 @@ nsHtml5StreamParser::OnStartRequest(nsIRequest* aRequest, nsISupports* aContext)
   }
   
   nsCOMPtr<nsIWyciwygChannel> wyciwygChannel(do_QueryInterface(mRequest));
-  if (mCharsetSource < kCharsetFromUtf8OnlyMime && !wyciwygChannel) {
+  if (!wyciwygChannel) {
     
     
     return NS_OK;
   }
 
-  
-  
   
   mReparseForbidden = true;
   mFeedChardet = false;
@@ -1321,7 +1319,10 @@ nsHtml5StreamParser::FlushTreeOpsAndDisarmTimer()
     mTokenizer->FlushViewSource();
   }
   mTreeBuilder->Flush();
-  if (NS_FAILED(NS_DispatchToMainThread(mExecutorFlusher))) {
+  nsCOMPtr<nsIRunnable> runnable(mExecutorFlusher);
+  if (NS_FAILED(mExecutor->GetDocument()->Dispatch("FlushTreeOpsAndDisarmTimer",
+                                                   dom::TaskCategory::Other,
+                                                   runnable.forget()))) {
     NS_WARNING("failed to dispatch executor flush event");
   }
 }

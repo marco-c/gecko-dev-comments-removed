@@ -673,8 +673,15 @@ public:
   }
 
   bool
-  IsPlaybackBlocked()
+  IsAllowedToPlay()
   {
+    
+    
+    if (mSuspended == nsISuspendedTypes::SUSPENDED_PAUSE ||
+        mSuspended == nsISuspendedTypes::SUSPENDED_BLOCK) {
+      return false;
+    }
+
     
     
     
@@ -682,10 +689,10 @@ public:
       
       
       UpdateAudioChannelPlayingState(true );
-      return true;
+      return false;
     }
 
-    return false;
+    return true;
   }
 
   float
@@ -3561,8 +3568,7 @@ HTMLMediaElement::NotifyXPCOMShutdown()
 void
 HTMLMediaElement::Play(ErrorResult& aRv)
 {
-  if (mAudioChannelWrapper && mAudioChannelWrapper->IsPlaybackBlocked()) {
-    
+  if (!IsAllowedToPlay()) {
     MaybeDoLoad();
     return;
   }
@@ -3578,11 +3584,6 @@ HTMLMediaElement::Play(ErrorResult& aRv)
 nsresult
 HTMLMediaElement::PlayInternal()
 {
-  if (!IsAllowedToPlay()) {
-    
-    return NS_OK;
-  }
-
   
   mHasUserInteraction = true;
 
@@ -3656,8 +3657,7 @@ HTMLMediaElement::MaybeDoLoad()
 
 NS_IMETHODIMP HTMLMediaElement::Play()
 {
-  if (mAudioChannelWrapper && mAudioChannelWrapper->IsPlaybackBlocked()) {
-    
+  if (!IsAllowedToPlay()) {
     MaybeDoLoad();
     return NS_OK;
   }
@@ -5489,13 +5489,8 @@ bool HTMLMediaElement::CanActivateAutoplay()
     return false;
   }
 
-  if (mAudioChannelWrapper) {
-    
-    if (mAudioChannelWrapper->GetSuspendType() == nsISuspendedTypes::SUSPENDED_PAUSE ||
-        mAudioChannelWrapper->GetSuspendType() == nsISuspendedTypes::SUSPENDED_BLOCK ||
-        mAudioChannelWrapper->IsPlaybackBlocked()) {
-      return false;
-    }
+  if (mAudioChannelWrapper && !mAudioChannelWrapper->IsAllowedToPlay()) {
+    return false;
   }
 
   bool hasData =
@@ -5658,7 +5653,9 @@ nsresult HTMLMediaElement::DispatchAsyncEvent(const nsAString& aName)
   }
 
   nsCOMPtr<nsIRunnable> event = new nsAsyncEventRunner(aName, this);
-  NS_DispatchToMainThread(event);
+  OwnerDoc()->Dispatch("HTMLMediaElement::DispatchAsyncEvent",
+                       TaskCategory::Other,
+                       event.forget());
 
   if ((aName.EqualsLiteral("play") || aName.EqualsLiteral("playing"))) {
     mPlayTime.Start();
@@ -6320,13 +6317,7 @@ HTMLMediaElement::IsAllowedToPlay()
 
   
   if (mAudioChannelWrapper) {
-    
-    if (mAudioChannelWrapper->GetSuspendType() == nsISuspendedTypes::SUSPENDED_PAUSE ||
-        mAudioChannelWrapper->GetSuspendType() == nsISuspendedTypes::SUSPENDED_BLOCK) {
-      return false;
-    }
-
-    return true;
+    return mAudioChannelWrapper->IsAllowedToPlay();
   }
 
   
