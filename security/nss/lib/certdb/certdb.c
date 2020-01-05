@@ -1295,12 +1295,16 @@ CERT_AddOKDomainName(CERTCertificate *cert, const char *hn)
         PORT_SetError(SEC_ERROR_INVALID_ARGS);
         return SECFailure;
     }
-    domainOK = (CERTOKDomainName *)PORT_ArenaZAlloc(
-        cert->arena, (sizeof *domainOK) + newNameLen);
-    if (!domainOK)
+    domainOK = (CERTOKDomainName *)PORT_ArenaZAlloc(cert->arena, sizeof(*domainOK));
+    if (!domainOK) {
         return SECFailure; 
+    }
+    domainOK->name = (char *)PORT_ArenaZAlloc(cert->arena, newNameLen + 1);
+    if (!domainOK->name) {
+        return SECFailure; 
+    }
 
-    PORT_Strcpy(domainOK->name, hn);
+    PORT_Strncpy(domainOK->name, hn, newNameLen + 1);
     sec_lower_string(domainOK->name);
 
     
@@ -1402,7 +1406,6 @@ cert_VerifySubjectAltName(const CERTCertificate *cert, const char *hn)
         goto fail;
     }
     isIPaddr = (PR_SUCCESS == PR_StringToNetAddr(hn, &netAddr));
-    rv = SECFailure;
     arena = PORT_NewArena(DER_DEFAULT_CHUNKSIZE);
     if (!arena)
         goto fail;

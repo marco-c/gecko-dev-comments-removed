@@ -364,7 +364,8 @@ SSL_IMPORT SECStatus SSL_CipherPolicyGet(PRInt32 cipher, PRInt32 *policy);
 
 
 
-
+SSL_IMPORT SECStatus SSL_SignatureSchemePrefSet(
+    PRFileDesc *fd, const SSLSignatureScheme *schemes, unsigned int count);
 
 
 SSL_IMPORT SECStatus SSL_SignaturePrefSet(
@@ -378,9 +379,15 @@ SSL_IMPORT SECStatus SSL_SignaturePrefSet(
 
 
 
+SSL_IMPORT SECStatus SSL_SignatureSchemePrefGet(
+    PRFileDesc *fd, SSLSignatureScheme *algorithms, unsigned int *count,
+    unsigned int maxCount);
+
+
 SSL_IMPORT SECStatus SSL_SignaturePrefGet(
     PRFileDesc *fd, SSLSignatureAndHashAlg *algorithms, unsigned int *count,
     unsigned int maxCount);
+
 
 
 

@@ -117,8 +117,7 @@ struct GFMethodStr {
 
 GFMethod *GFMethod_consGFp(const mp_int *irr);
 GFMethod *GFMethod_consGFp_mont(const mp_int *irr);
-GFMethod *GFMethod_consGF2m(const mp_int *irr,
-                            const unsigned int irr_arr[5]);
+
 
 void GFMethod_free(GFMethod *meth);
 

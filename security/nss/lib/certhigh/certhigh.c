@@ -142,6 +142,10 @@ CERT_FindUserCertsByUsage(CERTCertDBHandle *handle,
         nn = nicknames->numnicknames;
         nnptr = nicknames->nicknames;
 
+        if (!certList) {
+            goto loser;
+        }
+
         flags = (PRBool *)PORT_ZAlloc(sizeof(PRBool) * nn);
         if (flags == NULL) {
             goto loser;

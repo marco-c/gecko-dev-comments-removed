@@ -1080,7 +1080,8 @@ ssl_UpdateSupportedGroups(sslSocket *ss, SECItem *data)
 
     
 
-    if (!ss->opt.requireDHENamedGroups && !ss->ssl3.hs.peerSupportsFfdheGroups) {
+    if (ss->version < SSL_LIBRARY_VERSION_TLS_1_3 &&
+        !ss->opt.requireDHENamedGroups && !ss->ssl3.hs.peerSupportsFfdheGroups) {
         
 
         for (i = 0; i < SSL_NAMED_GROUP_COUNT; ++i) {

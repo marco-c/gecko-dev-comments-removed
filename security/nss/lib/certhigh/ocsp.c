@@ -4128,9 +4128,7 @@ CERT_VerifyOCSPResponseSignature(CERTOCSPResponse *response,
 
 
 
-    if (ocsp_CertIsOCSPDefaultResponder(handle, signerCert)) {
-        rv = SECSuccess;
-    } else {
+    if (!ocsp_CertIsOCSPDefaultResponder(handle, signerCert)) {
         SECCertUsage certUsage;
         if (CERT_IsCACert(signerCert, NULL)) {
             certUsage = certUsageAnyCA;
