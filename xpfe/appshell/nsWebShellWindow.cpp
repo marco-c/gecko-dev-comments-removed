@@ -152,14 +152,14 @@ nsresult nsWebShellWindow::Initialize(nsIXULWindow* aParent,
   
   if (gfxPlatform::IsHeadless()) {
     mWindow = nsIWidget::CreateHeadlessWidget();
-    if (mWindow) {
-      rv = NS_OK;
+    if (!mWindow) {
+      return NS_ERROR_FAILURE;
     }
   } else {
     mWindow = do_CreateInstance(kWindowCID, &rv);
-  }
-  if (NS_OK != rv) {
-    return rv;
+    if (NS_OK != rv) {
+      return rv;
+    }
   }
 
   
