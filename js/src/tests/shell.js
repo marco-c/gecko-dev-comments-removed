@@ -440,20 +440,6 @@
 
 
 
-
-
-
-  
-  
-  function testPassesUnlessItThrows() {
-    print(PASSED);
-  }
-  global.testPassesUnlessItThrows = testPassesUnlessItThrows;
-
-  
-
-
-
   function AddTestCase(description, expect, actual) {
     new TestCase(SECTION, description, expect, actual);
   }

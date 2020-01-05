@@ -309,40 +309,12 @@ var gPageCompleted;
 var GLOBAL = this + '';
 
 
-var jstestsTestPassesUnlessItThrows = false;
-var jstestsRestoreFunction;
 var jstestsOptions;
-
-
-
-
-
-
-
-function testPassesUnlessItThrows() {
-  jstestsTestPassesUnlessItThrows = true;
-}
-
-
-
-
-
-
-function setRestoreFunction(restore) {
-  jstestsRestoreFunction = restore;
-}
 
 window.onerror = function (msg, page, line)
 {
-  jstestsTestPassesUnlessItThrows = false;
-
   
   options = jstestsOptions;
-
-  
-  if (typeof jstestsRestoreFunction === "function") {
-    jstestsRestoreFunction();
-  }
 
   optionsPush();
 
@@ -631,17 +603,6 @@ function jsTestDriverEnd()
 
   
   options = jstestsOptions;
-
-  
-  if (typeof jstestsRestoreFunction === "function") {
-    jstestsRestoreFunction();
-  }
-
-  if (jstestsTestPassesUnlessItThrows) {
-    var testcase = new TestCase("unknown-test-name", "", true, true);
-    print(PASSED);
-    jstestsTestPassesUnlessItThrows = false;
-  }
 
   try
   {
