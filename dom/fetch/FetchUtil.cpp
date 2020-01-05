@@ -3,8 +3,10 @@
 #include "nsError.h"
 #include "nsIUnicodeDecoder.h"
 #include "nsString.h"
+#include "nsIDocument.h"
 
 #include "mozilla/dom/EncodingUtils.h"
+#include "mozilla/dom/InternalRequest.h"
 
 namespace mozilla {
 namespace dom {
@@ -108,6 +110,60 @@ FetchUtil::ExtractHeader(nsACString::const_iterator& aStart,
   aHeaderValue.CompressWhitespace();
 
   return PushOverLine(aStart, aEnd);
+}
+
+
+nsresult
+FetchUtil::SetRequestReferrer(nsIPrincipal* aPrincipal,
+                              nsIDocument* aDoc,
+                              nsIHttpChannel* aChannel,
+                              InternalRequest* aRequest) {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  nsAutoString referrer;
+  aRequest->GetReferrer(referrer);
+  net::ReferrerPolicy policy = aRequest->GetReferrerPolicy();
+
+  nsresult rv = NS_OK;
+  if (referrer.IsEmpty()) {
+    
+    rv = aChannel->SetReferrerWithPolicy(nullptr, net::RP_No_Referrer);
+    NS_ENSURE_SUCCESS(rv, rv);
+  } else if (referrer.EqualsLiteral(kFETCH_CLIENT_REFERRER_STR)) {
+    rv = nsContentUtils::SetFetchReferrerURIWithPolicy(aPrincipal,
+                                                       aDoc,
+                                                       aChannel,
+                                                       policy);
+    NS_ENSURE_SUCCESS(rv, rv);
+  } else {
+    
+    
+    
+    nsCOMPtr<nsIURI> referrerURI;
+    rv = NS_NewURI(getter_AddRefs(referrerURI), referrer, nullptr, nullptr);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    rv = aChannel->SetReferrerWithPolicy(referrerURI, policy);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+
+  nsCOMPtr<nsIURI> referrerURI;
+  aChannel->GetReferrer(getter_AddRefs(referrerURI));
+
+  
+  
+  
+  if (referrerURI) {
+    nsAutoCString spec;
+    rv = referrerURI->GetSpec(spec);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    aRequest->SetReferrer(NS_ConvertUTF8toUTF16(spec));
+  } else {
+    aRequest->SetReferrer(EmptyString());
+  }
+
+  return NS_OK;
 }
 
 } 
