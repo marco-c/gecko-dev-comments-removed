@@ -1036,10 +1036,8 @@ XMLHttpRequestMainThread::CloseRequestWithError(const ProgressEventType aType)
     if (!mFlagSyncLooping) {
       if (mUpload && !mUploadComplete) {
         mUploadComplete = true;
-        DispatchProgressEvent(mUpload, ProgressEventType::progress, 0, 0);
         DispatchProgressEvent(mUpload, aType, 0, 0);
       }
-      DispatchProgressEvent(this, ProgressEventType::progress, 0, 0);
       DispatchProgressEvent(this, aType, 0, 0);
     }
   }
@@ -2185,7 +2183,6 @@ XMLHttpRequestMainThread::ChangeStateToDone()
   
   
   if (!mFlagSynchronous && mUpload && !mUploadComplete) {
-    DispatchProgressEvent(mUpload, ProgressEventType::progress, 0, 0);
     DispatchProgressEvent(mUpload, ProgressEventType::error, 0, 0);
   }
 
