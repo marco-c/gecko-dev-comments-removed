@@ -3033,23 +3033,11 @@ protected:
   RefPtr<mozilla::dom::FontFaceSet> mFontFaceSet;
 
   
-  nsCompatibility mCompatMode;
-
-  
-  ReadyState mReadyState;
-
   
   
-  mozilla::StyleBackendType mStyleBackendType;
-
-#ifdef MOZILLA_INTERNAL_API
   
-  mozilla::dom::VisibilityState mVisibilityState;
-  static_assert(sizeof(mozilla::dom::VisibilityState) == sizeof(uint8_t),
-                "Error size of mVisibilityState and mDummy");
-#else
-  uint8_t mDummy;
-#endif
+  
+  
 
   
   bool mBidiEnabled : 1;
@@ -3198,6 +3186,25 @@ protected:
 
   
   bool mEverInForeground : 1;
+
+  
+  nsCompatibility mCompatMode;
+
+  
+  ReadyState mReadyState;
+
+  
+  
+  mozilla::StyleBackendType mStyleBackendType;
+
+#ifdef MOZILLA_INTERNAL_API
+  
+  mozilla::dom::VisibilityState mVisibilityState;
+  static_assert(sizeof(mozilla::dom::VisibilityState) == sizeof(uint8_t),
+                "Error size of mVisibilityState and mDummy");
+#else
+  uint8_t mDummy;
+#endif
 
   enum Type {
     eUnknown, 
