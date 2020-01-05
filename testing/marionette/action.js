@@ -511,14 +511,11 @@ action.InputState.Null = class Null extends InputState {
 
 
 
-
-
 action.InputState.Pointer = class Pointer extends InputState {
-  constructor(subtype, primary) {
+  constructor(subtype) {
     super();
     this.pressed = new Set();
     this.subtype = subtype;
-    this.primary = primary;
     this.x = 0;
     this.y = 0;
   }
@@ -740,18 +737,13 @@ action.Sequence = class extends Array {
 
 
 
-
-
-
 action.PointerParameters = class {
-  constructor(pointerType = "mouse", primary = true) {
+  constructor(pointerType = "mouse") {
     this.pointerType = action.PointerType.get(pointerType);
-    assert.boolean(primary);
-    this.primary = primary;
   }
 
   toString() {
-    return `[pointerParameters ${this.pointerType}, primary=${this.primary}]`;
+    return `[pointerParameters ${this.pointerType}]`;
   }
 
   
@@ -765,7 +757,7 @@ action.PointerParameters = class {
     if (typeof parametersData == "undefined") {
       return new action.PointerParameters();
     } else {
-      return new action.PointerParameters(parametersData.pointerType, parametersData.primary);
+      return new action.PointerParameters(parametersData.pointerType);
     }
   }
 };
@@ -793,7 +785,6 @@ action.processPointerAction = function processPointerAction(id, pointerParams, a
         `${action.inputStateMap.get(id).subtype}, got: ${subtype}`);
   }
   act.pointerType = pointerParams.pointerType;
-  act.primary = pointerParams.primary;
 };
 
 
