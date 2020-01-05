@@ -289,6 +289,15 @@ class TabBase {
 
 
 
+  get frameLoader() {
+    return this.browser.frameLoader;
+  }
+
+  
+
+
+
+
 
   get cookieStoreId() {
     throw new Error("Not implemented");
@@ -456,7 +465,10 @@ class TabBase {
 
 
 
-  convert() {
+
+
+
+  convert(fallbackTab = null) {
     let result = {
       id: this.id,
       index: this.index,
@@ -471,6 +483,13 @@ class TabBase {
       audible: this.audible,
       mutedInfo: this.mutedInfo,
     };
+
+    
+    
+    if (fallbackTab && (!result.width || !result.height)) {
+      result.width = fallbackTab.width;
+      result.height = fallbackTab.height;
+    }
 
     if (this.extension.hasPermission("cookies")) {
       result.cookieStoreId = this.cookieStoreId;
@@ -1635,8 +1654,12 @@ class TabManagerBase {
 
 
 
-  convert(nativeTab) {
-    return this.getWrapper(nativeTab).convert();
+
+
+
+  convert(nativeTab, fallbackTab = null) {
+    return this.getWrapper(nativeTab)
+               .convert(fallbackTab && this.getWrapper(fallbackTab));
   }
 
   

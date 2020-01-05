@@ -240,11 +240,16 @@ class TabTracker extends TabTrackerBase {
 
         
         
+        
+        let currentTab = nativeTab.ownerGlobal.gBrowser.selectedTab;
+
+        
+        
         Promise.resolve().then(() => {
           if (event.detail.adoptedTab) {
             this.emitAttached(event.originalTarget);
           } else {
-            this.emitCreated(event.originalTarget);
+            this.emitCreated(event.originalTarget, currentTab);
           }
         });
         break;
@@ -391,8 +396,10 @@ class TabTracker extends TabTrackerBase {
 
 
 
-  emitCreated(nativeTab) {
-    this.emit("tab-created", {nativeTab});
+
+
+  emitCreated(nativeTab, currentTab) {
+    this.emit("tab-created", {nativeTab, currentTab});
   }
 
   
@@ -479,12 +486,18 @@ class Tab extends TabBase {
     return this.nativeTab.linkedBrowser;
   }
 
+  get frameLoader() {
+    
+    
+    return super.frameLoader || {lazyWidth: 0, lazyHeight: 0};
+  }
+
   get cookieStoreId() {
     return getCookieStoreIdForTab(this, this.nativeTab);
   }
 
   get height() {
-    return this.browser.clientHeight;
+    return this.frameLoader.lazyHeight;
   }
 
   get index() {
@@ -525,7 +538,7 @@ class Tab extends TabBase {
   }
 
   get width() {
-    return this.browser.clientWidth;
+    return this.frameLoader.lazyWidth;
   }
 
   get window() {
