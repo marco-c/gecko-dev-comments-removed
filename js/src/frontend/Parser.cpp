@@ -287,19 +287,13 @@ EvalSharedContext::EvalSharedContext(ExclusiveContext* cx, JSObject* enclosingEn
     
     
     
-    if (enclosingEnv && enclosingScope->kind() == ScopeKind::NonSyntactic) {
-        
-        
-        JSObject* env = enclosingEnv;
+    if (enclosingEnv && enclosingEnv->is<DebugEnvironmentProxy>()) {
+        JSObject* env = &enclosingEnv->as<DebugEnvironmentProxy>().environment();
         while (env) {
-            if (env->is<DebugEnvironmentProxy>())
-                env = &env->as<DebugEnvironmentProxy>().environment();
-
             if (env->is<CallObject>()) {
                 computeThisBinding(env->as<CallObject>().callee().nonLazyScript()->bodyScope());
                 break;
             }
-
             env = env->enclosingEnvironment();
         }
     }
