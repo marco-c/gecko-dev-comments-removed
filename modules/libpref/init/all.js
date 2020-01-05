@@ -2559,7 +2559,7 @@ pref("layout.css.convertFromNode.enabled", true);
 pref("layout.css.text-align-unsafe-value.enabled", false);
 
 
-pref("layout.css.text-justify.enabled", false);
+pref("layout.css.text-justify.enabled", true);
 
 
 
