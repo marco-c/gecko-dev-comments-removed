@@ -15,6 +15,7 @@
 #include "nsCoord.h"
 #include "nsFrameList.h" 
 #include "nsIntervalSet.h"
+#include "nsPoint.h"
 #include "nsTArray.h"
 
 class nsIPresShell;
@@ -22,6 +23,7 @@ class nsIFrame;
 class nsPresContext;
 namespace mozilla {
 struct ReflowInput;
+class StyleBasicShape;
 } 
 
 
@@ -364,6 +366,7 @@ private:
                               const nscoord aBEnd) const = 0;
     virtual nscoord BStart() const = 0;
     virtual nscoord BEnd() const = 0;
+    virtual bool IsEmpty() const = 0;
   };
 
   
@@ -384,6 +387,7 @@ private:
                       const nscoord aBEnd) const override;
     nscoord BStart() const override { return mShapeBoxRect.y; }
     nscoord BEnd() const override { return mShapeBoxRect.YMost(); }
+    bool IsEmpty() const override { return mShapeBoxRect.IsEmpty(); };
 
   private:
     
@@ -392,6 +396,35 @@ private:
     const nsRect mShapeBoxRect;
     
     nsIFrame* const mFrame;
+  };
+
+  
+  class CircleShapeInfo final : public ShapeInfo
+  {
+  public:
+    CircleShapeInfo(mozilla::StyleBasicShape* const aBasicShape,
+                    nscoord aLineLeft,
+                    nscoord aBlockStart,
+                    const mozilla::LogicalRect& aShapeBoxRect,
+                    mozilla::WritingMode aWM,
+                    const nsSize& aContainerSize);
+
+    nscoord LineLeft(mozilla::WritingMode aWM,
+                     const nscoord aBStart,
+                     const nscoord aBEnd) const override;
+    nscoord LineRight(mozilla::WritingMode aWM,
+                      const nscoord aBStart,
+                      const nscoord aBEnd) const override;
+    nscoord BStart() const override { return mCenter.y - mRadius; }
+    nscoord BEnd() const override { return mCenter.y + mRadius; }
+    bool IsEmpty() const override { return mRadius == 0; };
+
+  private:
+    
+    
+    nsPoint mCenter;
+    
+    nscoord mRadius;
   };
 
   struct FloatInfo {
@@ -421,6 +454,7 @@ private:
                       const nscoord aBStart, const nscoord aBEnd) const;
     nscoord BStart(ShapeType aShapeType) const;
     nscoord BEnd(ShapeType aShapeType) const;
+    bool IsEmpty(ShapeType aShapeType) const;
 
 #ifdef NS_BUILD_REFCNT_LOGGING
     FloatInfo(FloatInfo&& aOther);
