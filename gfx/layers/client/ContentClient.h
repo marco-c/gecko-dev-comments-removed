@@ -266,7 +266,7 @@ public:
 
   virtual TextureFlags ExtraTextureFlags() const
   {
-    return TextureFlags::IMMEDIATE_UPLOAD;
+    return TextureFlags::NO_FLAGS;
   }
 
 protected:
@@ -303,8 +303,6 @@ protected:
   
   
   nsTArray<RefPtr<TextureClient> > mOldTextures;
-
-  Maybe<nsIntRegion> mUpdatedRegion;
 
   bool mIsNewBuffer;
   bool mFrontAndBackBufferDiffer;
@@ -404,6 +402,11 @@ public:
   virtual TextureInfo GetTextureInfo() const override
   {
     return TextureInfo(CompositableType::CONTENT_SINGLE, mTextureFlags | ExtraTextureFlags());
+  }
+
+  virtual TextureFlags ExtraTextureFlags() const override
+  {
+    return TextureFlags::IMMEDIATE_UPLOAD;
   }
 };
 

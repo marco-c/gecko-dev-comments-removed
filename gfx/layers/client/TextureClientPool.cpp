@@ -286,7 +286,7 @@ void
 TextureClientPool::ReturnUnlockedClients()
 {
   for (auto it = mTextureClientsDeferred.begin(); it != mTextureClientsDeferred.end();) {
-    MOZ_ASSERT((*it)->GetReadLock()->AsNonBlockingLock()->GetReadCount() >= 1);
+    MOZ_ASSERT((*it)->GetReadLock()->GetReadCount() >= 1);
     
     if (!(*it)->IsReadLocked()) {
       mTextureClients.push(*it);

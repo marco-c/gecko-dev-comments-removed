@@ -17,6 +17,8 @@
 namespace mozilla {
 namespace layers {
 
+typedef std::vector<mozilla::layers::EditReply> EditReplyVector;
+
 
 
 
@@ -45,7 +47,8 @@ protected:
   
 
 
-  bool ReceiveCompositableUpdate(const CompositableOperation& aEdit);
+  bool ReceiveCompositableUpdate(const CompositableOperation& aEdit,
+                                 EditReplyVector& replyv);
 
   void ReleaseCompositable(const CompositableHandle& aHandle);
 
