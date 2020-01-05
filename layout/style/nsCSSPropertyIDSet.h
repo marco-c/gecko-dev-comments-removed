@@ -68,7 +68,7 @@ public:
     }
 
     
-    nsCSSPropertyIDSet Invert() const {
+    nsCSSPropertyIDSet Inverse() const {
       nsCSSPropertyIDSet result;
       for (size_t i = 0; i < mozilla::ArrayLength(mProperties); ++i) {
         result.mProperties[i] = ~mProperties[i];
