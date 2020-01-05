@@ -2,14 +2,12 @@
 
 
 
-import os
-
 from marionette_driver.marionette import HTMLElement
 
 from decorators import use_class_as_property
 
 
-__version__ = '51.0.0'
+__version__ = '52.0.0'
 
 
 class Puppeteer(object):
