@@ -406,7 +406,7 @@ impl TestBindingMethods for TestBinding {
     fn PassNullableString(&self, _: Option<DOMString>) {}
     fn PassNullableUsvstring(&self, _: Option<USVString>) {}
     fn PassNullableByteString(&self, _: Option<ByteString>) {}
-    
+    // fn PassNullableEnum(self, _: Option<TestEnum>) {}
     fn PassNullableInterface(&self, _: Option<&Blob>) {}
     fn PassNullableObject(&self, _: *mut JSContext, _: *mut JSObject) {}
     fn PassNullableUnion(&self, _: Option<HTMLElementOrLong>) {}
@@ -463,7 +463,7 @@ impl TestBindingMethods for TestBinding {
     fn PassOptionalNullableString(&self, _: Option<Option<DOMString>>) {}
     fn PassOptionalNullableUsvstring(&self, _: Option<Option<USVString>>) {}
     fn PassOptionalNullableByteString(&self, _: Option<Option<ByteString>>) {}
-    
+    // fn PassOptionalNullableEnum(self, _: Option<Option<TestEnum>>) {}
     fn PassOptionalNullableInterface(&self, _: Option<Option<&Blob>>) {}
     fn PassOptionalNullableObject(&self, _: *mut JSContext, _: Option<*mut JSObject>) {}
     fn PassOptionalNullableUnion(&self, _: Option<Option<HTMLElementOrLong>>) {}
@@ -497,19 +497,19 @@ impl TestBindingMethods for TestBinding {
     fn PassOptionalNullableUnsignedLongWithDefault(&self, _: Option<u32>) {}
     fn PassOptionalNullableLongLongWithDefault(&self, _: Option<i64>) {}
     fn PassOptionalNullableUnsignedLongLongWithDefault(&self, _: Option<u64>) {}
-    
-    
-    
-    
+    // fn PassOptionalNullableUnrestrictedFloatWithDefault(self, _: Option<f32>) {}
+    // fn PassOptionalNullableFloatWithDefault(self, _: Option<Finite<f32>>) {}
+    // fn PassOptionalNullableUnrestrictedDoubleWithDefault(self, _: Option<f64>) {}
+    // fn PassOptionalNullableDoubleWithDefault(self, _: Option<Finite<f64>>) {}
     fn PassOptionalNullableStringWithDefault(&self, _: Option<DOMString>) {}
     fn PassOptionalNullableUsvstringWithDefault(&self, _: Option<USVString>) {}
     fn PassOptionalNullableByteStringWithDefault(&self, _: Option<ByteString>) {}
-    
+    // fn PassOptionalNullableEnumWithDefault(self, _: Option<TestEnum>) {}
     fn PassOptionalNullableInterfaceWithDefault(&self, _: Option<&Blob>) {}
     fn PassOptionalNullableObjectWithDefault(&self, _: *mut JSContext, _: *mut JSObject) {}
     fn PassOptionalNullableUnionWithDefault(&self, _: Option<HTMLElementOrLong>) {}
     fn PassOptionalNullableUnion2WithDefault(&self, _: Option<EventOrString>) {}
-    
+    // fn PassOptionalNullableCallbackFunctionWithDefault(self, _: Option<Function>) {}
     fn PassOptionalNullableCallbackInterfaceWithDefault(&self, _: Option<Rc<EventListener>>) {}
     fn PassOptionalAnyWithDefault(&self, _: *mut JSContext, _: HandleValue) {}
 
@@ -522,13 +522,13 @@ impl TestBindingMethods for TestBinding {
     fn PassOptionalNullableUnsignedLongWithNonNullDefault(&self, _: Option<u32>) {}
     fn PassOptionalNullableLongLongWithNonNullDefault(&self, _: Option<i64>) {}
     fn PassOptionalNullableUnsignedLongLongWithNonNullDefault(&self, _: Option<u64>) {}
-    
-    
-    
-    
+    // fn PassOptionalNullableUnrestrictedFloatWithNonNullDefault(self, _: Option<f32>) {}
+    // fn PassOptionalNullableFloatWithNonNullDefault(self, _: Option<Finite<f32>>) {}
+    // fn PassOptionalNullableUnrestrictedDoubleWithNonNullDefault(self, _: Option<f64>) {}
+    // fn PassOptionalNullableDoubleWithNonNullDefault(self, _: Option<Finite<f64>>) {}
     fn PassOptionalNullableStringWithNonNullDefault(&self, _: Option<DOMString>) {}
     fn PassOptionalNullableUsvstringWithNonNullDefault(&self, _: Option<USVString>) {}
-    
+    // fn PassOptionalNullableEnumWithNonNullDefault(self, _: Option<TestEnum>) {}
 
     fn PassVariadicBoolean(&self, _: Vec<bool>) {}
     fn PassVariadicBooleanAndDefault(&self, _: bool, _: Vec<bool>) {}
@@ -580,6 +580,8 @@ impl TestBindingMethods for TestBinding {
             ptr::write_volatile(p, 0xbaadc0de);
         }
     }
+
+    fn Panic(&self) { panic!("explicit panic from script") }
 }
 
 impl TestBinding {
