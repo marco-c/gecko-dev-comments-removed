@@ -38,27 +38,55 @@ use style_traits::{PagePx, ViewportPx};
 use webrender_traits;
 
 
+
+
+
 pub struct Pipeline {
+    
     pub id: PipelineId,
+
     
     pub frame_id: FrameId,
+
+    
+    
+    
+    
+    
     pub parent_info: Option<(PipelineId, FrameType)>,
+
+    
     pub event_loop: Rc<EventLoop>,
+
     
     pub layout_chan: IpcSender<LayoutControlMsg>,
+
     
     pub compositor_proxy: Box<CompositorProxy + 'static + Send>,
+
+    
+    
     
     pub url: ServoUrl,
+
     
     pub title: Option<String>,
+
+    
+    
     pub size: Option<TypedSize2D<f32, PagePx>>,
+
     
     
     pub running_animations: bool,
+
+    
     pub children: Vec<FrameId>,
+
+    
     
     pub is_private: bool,
+
     
     
     pub visible: bool,
@@ -71,52 +99,74 @@ pub struct Pipeline {
 pub struct InitialPipelineState {
     
     pub id: PipelineId,
+
     
     pub frame_id: FrameId,
+
     
     pub top_level_frame_id: FrameId,
+
     
     
     pub parent_info: Option<(PipelineId, FrameType)>,
+
     
     pub constellation_chan: IpcSender<ScriptMsg>,
+
     
     pub layout_to_constellation_chan: IpcSender<LayoutMsg>,
+
     
     pub scheduler_chan: IpcSender<TimerEventRequest>,
+
     
     pub compositor_proxy: Box<CompositorProxy + 'static + Send>,
+
     
     pub devtools_chan: Option<Sender<DevtoolsControlMsg>>,
+
     
     pub bluetooth_thread: IpcSender<BluetoothRequest>,
+
     
     pub swmanager_thread: IpcSender<SWManagerMsg>,
+
     
     pub image_cache_thread: ImageCacheThread,
+
     
     pub font_cache_thread: FontCacheThread,
+
     
     pub resource_threads: ResourceThreads,
+
     
     pub time_profiler_chan: time::ProfilerChan,
+
     
     pub mem_profiler_chan: profile_mem::ProfilerChan,
+
     
     pub window_size: Option<TypedSize2D<f32, PagePx>>,
+
     
     pub device_pixel_ratio: ScaleFactor<f32, ViewportPx, DevicePixel>,
-    
+
     
     pub event_loop: Option<Rc<EventLoop>>,
+
     
     pub load_data: LoadData,
+
     
     pub pipeline_namespace_id: PipelineNamespaceId,
+
     
     pub prev_visibility: Option<bool>,
+
     
     pub webrender_api_sender: webrender_traits::RenderApiSender,
+
     
     pub is_private: bool,
 }
@@ -276,6 +326,8 @@ impl Pipeline {
         pipeline
     }
 
+    /// A normal exit of the pipeline, which waits for the compositor,
+    /// and delegates layout shutdown to the script thread.
     pub fn exit(&self) {
         debug!("pipeline {:?} exiting", self.id);
 
@@ -298,18 +350,8 @@ impl Pipeline {
         }
     }
 
-    pub fn freeze(&self) {
-        if let Err(e) = self.event_loop.send(ConstellationControlMsg::Freeze(self.id)) {
-            warn!("Sending freeze message failed ({}).", e);
-        }
-    }
-
-    pub fn thaw(&self) {
-        if let Err(e) = self.event_loop.send(ConstellationControlMsg::Thaw(self.id)) {
-            warn!("Sending freeze message failed ({}).", e);
-        }
-    }
-
+    /// A forced exit of the shutdown, which does not wait for the compositor,
+    /// or for the script thread to shut down layout.
     pub fn force_exit(&self) {
         if let Err(e) = self.event_loop.send(ConstellationControlMsg::ExitPipeline(self.id)) {
             warn!("Sending script exit message failed ({}).", e);
@@ -319,6 +361,21 @@ impl Pipeline {
         }
     }
 
+    /// Notify this pipeline that it is no longer fully active.
+    pub fn freeze(&self) {
+        if let Err(e) = self.event_loop.send(ConstellationControlMsg::Freeze(self.id)) {
+            warn!("Sending freeze message failed ({}).", e);
+        }
+    }
+
+    /// Notify this pipeline that it is fully active.
+    pub fn thaw(&self) {
+        if let Err(e) = self.event_loop.send(ConstellationControlMsg::Thaw(self.id)) {
+            warn!("Sending freeze message failed ({}).", e);
+        }
+    }
+
+    /// The compositor's view of a pipeline.
     pub fn to_sendable(&self) -> CompositionPipeline {
         CompositionPipeline {
             id: self.id.clone(),
@@ -327,10 +384,12 @@ impl Pipeline {
         }
     }
 
+    /// Add a new child frame.
     pub fn add_child(&mut self, frame_id: FrameId) {
         self.children.push(frame_id);
     }
 
+    /// Remove a child frame.
     pub fn remove_child(&mut self, frame_id: FrameId) {
         match self.children.iter().position(|id| *id == frame_id) {
             None => return warn!("Pipeline remove child already removed ({:?}).", frame_id),
@@ -338,6 +397,9 @@ impl Pipeline {
         };
     }
 
+    /// Send a mozbrowser event to the script thread for this pipeline.
+    /// This will cause an event to be fired on an iframe in the document,
+    /// or on the `Window` if no frame is given.
     pub fn trigger_mozbrowser_event(&self,
                                      child_id: Option<FrameId>,
                                      event: MozBrowserEvent) {
@@ -351,13 +413,18 @@ impl Pipeline {
         }
     }
 
+    /// Notify the script thread that this pipeline is visible.
     fn notify_visibility(&self) {
         let script_msg = ConstellationControlMsg::ChangeFrameVisibilityStatus(self.id, self.visible);
         let compositor_msg = CompositorMsg::PipelineVisibilityChanged(self.id, self.visible);
-        self.event_loop.send(script_msg).expect("Pipeline script chan");
+        let err = self.event_loop.send(script_msg);
+        if let Err(e) = err {
+            warn!("Sending visibility change failed ({}).", e);
+        }
         self.compositor_proxy.send(compositor_msg);
     }
 
+    /// Change the visibility of this pipeline.
     pub fn change_visibility(&mut self, visible: bool) {
         if visible == self.visible {
             return;
@@ -368,6 +435,9 @@ impl Pipeline {
 
 }
 
+/// Creating a new pipeline may require creating a new event loop.
+/// This is the data used to initialize the event loop.
+/// TODO: simplify this, and unify it with `InitialPipelineState` if possible.
 #[derive(Deserialize, Serialize)]
 pub struct UnprivilegedPipelineContent {
     id: PipelineId,
@@ -537,10 +607,13 @@ impl UnprivilegedPipelineContent {
     }
 }
 
+
 trait CommandMethods {
+    
     fn arg<T>(&mut self, arg: T)
         where T: AsRef<OsStr>;
 
+    
     fn env<T, U>(&mut self, key: T, val: U)
         where T: AsRef<OsStr>, U: AsRef<OsStr>;
 }
