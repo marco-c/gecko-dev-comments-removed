@@ -15,13 +15,35 @@ bool is_in_compositor_thread();
 bool is_in_render_thread();
 void* get_proc_address_from_glcontext(void* glcontext_ptr, const char* procname);
 
-enum WrImageFormat {
+enum class WrImageFormat {
     Invalid,
     A8,
     RGB8,
     RGBA8,
-    RGBAF32
+    RGBAF32,
+
+    Sentinel 
 };
+
+#ifdef DEBUG
+
+
+
+
+class DebugEnumSizeChecker { 
+  enum DummyWrImageFormatEnum {
+    Invalid,
+    A8,
+    RGB8,
+    RGBA8,
+    RGBAF32,
+    Sentinel
+  };
+
+  static_assert(sizeof(WrImageFormat) == sizeof(DummyWrImageFormatEnum),
+    "Size of enum doesn't match size of enum class!");
+};
+#endif
 
 typedef uint64_t WrWindowId;
 typedef uint64_t WrImageKey;
@@ -77,7 +99,7 @@ struct WrGlyphArray {
   }
 };
 
-enum WrBorderStyle {
+enum class WrBorderStyle {
   None,
   Solid,
   Double,
@@ -87,7 +109,9 @@ enum WrBorderStyle {
   Groove,
   Ridge,
   Inset,
-  Outset
+  Outset,
+
+  Sentinel 
 };
 
 struct WrBorderSide {
@@ -137,7 +161,8 @@ enum class WrTextureFilter
 {
   Linear,
   Point,
-  Sentinel,
+
+  Sentinel 
 };
 
 typedef uint64_t WrImageIdType;
@@ -145,7 +170,7 @@ struct WrExternalImageIdId {
   WrImageIdType id;
 };
 
-enum WrExternalImageIdType {
+enum class WrExternalImageIdType {
     TEXTURE_HANDLE, 
     
     
@@ -196,7 +221,8 @@ enum class WrMixBlendMode
     Saturation,
     Color,
     Luminosity,
-    Sentinel,
+
+    Sentinel 
 };
 
 struct WrWindowState;
