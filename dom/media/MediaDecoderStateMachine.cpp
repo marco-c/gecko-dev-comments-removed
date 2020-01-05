@@ -2975,19 +2975,6 @@ MediaDecoderStateMachine::DispatchDecodeTasksIfNeeded()
     return;
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
   const bool needToDecodeAudio = NeedToDecodeAudio();
   const bool needToDecodeVideo = NeedToDecodeVideo();
 
