@@ -5655,6 +5655,9 @@ pref("dom.storageManager.enabled", true);
 pref("dom.storageManager.enabled", false);
 #endif
 
+pref("dom.storageManager.prompt.testing", false);
+pref("dom.storageManager.prompt.testing.allow", false);
+
 
 
 #ifdef NIGHTLY_BUILD
