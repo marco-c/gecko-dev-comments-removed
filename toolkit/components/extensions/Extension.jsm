@@ -199,7 +199,10 @@ var UninstallObserver = {
       Services.qms.clearStoragesForPrincipal(principal);
 
       
-      Services.domStorageManager.getStorage(null, principal).clear();
+      let storage = Services.domStorageManager.getStorage(null, principal);
+      if (storage) {
+        storage.clear();
+      }
     }
 
     if (!this.leaveUuid) {
