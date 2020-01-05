@@ -30,7 +30,7 @@ add_task(function* () {
   yield waitForClipboardPromise(function setup() {
     
     
-    monitor._toolbox.doc
+    monitor.toolbox.doc
       .querySelector("#request-menu-context-copy-url").click();
   }, requestItem.url);
 

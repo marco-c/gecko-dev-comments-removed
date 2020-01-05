@@ -2,8 +2,6 @@
 
 
 
-
-
 "use strict";
 
 const {
@@ -69,6 +67,7 @@ module.exports = connect(
   dispatch => ({
     onPerfClick: () => dispatch(Actions.openStatistics(true)),
     onReloadClick: () =>
-      NetMonitorController.triggerActivity(ACTIVITY_TYPE.RELOAD.WITH_CACHE_DEFAULT),
+      window.NetMonitorController
+        .triggerActivity(ACTIVITY_TYPE.RELOAD.WITH_CACHE_DEFAULT),
   })
 )(RequestListEmptyNotice);

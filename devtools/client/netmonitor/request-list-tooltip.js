@@ -2,8 +2,6 @@
 
 
 
-
-
 "use strict";
 
 const { Task } = require("devtools/shared/task");
@@ -28,7 +26,7 @@ const setTooltipImageContent = Task.async(function* (tooltip, itemEl, requestIte
     return false;
   }
 
-  let string = yield gNetwork.getString(text);
+  let string = yield window.gNetwork.getString(text);
   let src = formDataURI(mimeType, encoding, string);
   let maxDim = REQUESTS_TOOLTIP_IMAGE_MAX_DIM;
   let { naturalWidth, naturalHeight } = yield getImageDimensions(tooltip.doc, src);
@@ -92,7 +90,7 @@ const setTooltipStackTraceContent = Task.async(function* (tooltip, requestItem) 
     frameEl.addEventListener("click", () => {
       
       tooltip.hide();
-      NetMonitorController.viewSourceInDebugger(filename, lineNumber);
+      window.NetMonitorController.viewSourceInDebugger(filename, lineNumber);
     });
 
     el.appendChild(frameEl);

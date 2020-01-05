@@ -2,8 +2,6 @@
 
 
 
-
-
 "use strict";
 
 const {
@@ -162,7 +160,7 @@ const HeadersPanel = createClass({
             readOnly: true,
             value: `${status} ${statusText}`,
           }),
-          NetMonitorController.supportsCustomRequest && button({
+          window.NetMonitorController.supportsCustomRequest && button({
             className: "devtools-button",
             onClick: cloneSelectedRequest,
           }, EDIT_AND_RESEND),

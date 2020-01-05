@@ -2,8 +2,6 @@
 
 
 
-
-
 "use strict";
 
 const { createClass, PropTypes, DOM } = require("devtools/client/shared/vendor/react");

@@ -2,8 +2,6 @@
 
 
 
-
-
 "use strict";
 
 const {
@@ -48,7 +46,7 @@ function cloneSelectedRequest() {
 
 
 function sendCustomRequest() {
-  if (!NetMonitorController.supportsCustomRequest) {
+  if (!window.NetMonitorController.supportsCustomRequest) {
     return cloneSelectedRequest();
   }
 
@@ -72,7 +70,7 @@ function sendCustomRequest() {
       data.body = selected.requestPostData.postData.text;
     }
 
-    NetMonitorController.webConsoleClient.sendHTTPRequest(data, (response) => {
+    window.NetMonitorController.webConsoleClient.sendHTTPRequest(data, (response) => {
       return dispatch({
         type: SEND_CUSTOM_REQUEST,
         id: response.eventActor.actor,

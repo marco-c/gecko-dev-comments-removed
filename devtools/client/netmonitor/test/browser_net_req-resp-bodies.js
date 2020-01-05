@@ -32,13 +32,13 @@ add_task(function* () {
   verifyRequest(0);
 
   
-  let onWebConsole = monitor._toolbox.once("webconsole-selected");
-  monitor._toolbox.selectTool("webconsole");
+  let onWebConsole = monitor.toolbox.once("webconsole-selected");
+  monitor.toolbox.selectTool("webconsole");
   yield onWebConsole;
 
   
-  let onNetMonitor = monitor._toolbox.once("netmonitor-selected");
-  monitor._toolbox.selectTool("netmonitor");
+  let onNetMonitor = monitor.toolbox.once("netmonitor-selected");
+  monitor.toolbox.selectTool("netmonitor");
   yield onNetMonitor;
 
   

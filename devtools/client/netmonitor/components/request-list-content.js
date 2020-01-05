@@ -2,8 +2,6 @@
 
 
 
-
-
 "use strict";
 
 const { KeyCodes } = require("devtools/client/shared/keycodes");
@@ -58,7 +56,10 @@ const RequestListContent = createClass({
       cloneSelectedRequest: () => dispatch(Actions.cloneSelectedRequest()),
       openStatistics: (open) => dispatch(Actions.openStatistics(open)),
     });
-    this.tooltip = new HTMLTooltip(NetMonitorController._toolbox.doc, { type: "arrow" });
+    this.tooltip = new HTMLTooltip(
+      window.NetMonitorController._toolbox.doc,
+      { type: "arrow" }
+     );
   },
 
   componentDidMount() {

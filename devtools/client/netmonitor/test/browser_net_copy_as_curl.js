@@ -58,7 +58,7 @@ add_task(function* () {
   yield waitForClipboardPromise(function setup() {
     
     
-    monitor._toolbox.doc
+    monitor.toolbox.doc
       .querySelector("#request-menu-context-copy-as-curl").click();
   }, function validate(result) {
     if (typeof result !== "string") {

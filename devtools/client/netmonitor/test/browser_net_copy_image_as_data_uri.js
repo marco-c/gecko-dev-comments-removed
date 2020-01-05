@@ -27,7 +27,7 @@ add_task(function* () {
   yield waitForClipboardPromise(function setup() {
     
     
-    monitor._toolbox.doc
+    monitor.toolbox.doc
       .querySelector("#request-menu-context-copy-image-as-data-uri").click();
   }, TEST_IMAGE_DATA_URI);
 

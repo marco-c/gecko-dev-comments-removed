@@ -34,7 +34,7 @@ add_task(function* () {
   let onTabOpen = once(gBrowser.tabContainer, "TabOpen", false);
   
   
-  monitor._toolbox.doc
+  monitor.toolbox.doc
     .querySelector("#request-menu-context-newtab").click();
   yield onTabOpen;
 

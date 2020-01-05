@@ -43,7 +43,7 @@ add_task(function* () {
   yield waitForClipboardPromise(function setup() {
     
     
-    monitor._toolbox.doc
+    monitor.toolbox.doc
       .querySelector("#request-menu-context-copy-request-headers").click();
   }, function validate(result) {
     
@@ -68,7 +68,7 @@ add_task(function* () {
   yield waitForClipboardPromise(function setup() {
     
     
-    monitor._toolbox.doc
+    monitor.toolbox.doc
       .querySelector("#response-menu-context-copy-response-headers").click();
   }, function validate(result) {
     
