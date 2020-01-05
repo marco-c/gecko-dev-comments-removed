@@ -426,7 +426,7 @@ public:
   }
 
   NS_IMETHOD Run() override {
-    MOZ_ASSERT (NS_GetCurrentThread() == mClone->getAsyncExecutionTarget());
+    MOZ_ASSERT (NS_GetCurrentThread() == mConnection->getAsyncExecutionTarget());
 
     nsresult rv = mConnection->initializeClone(mClone, mReadOnly);
     if (NS_FAILED(rv)) {
@@ -1332,7 +1332,10 @@ Connection::AsyncClone(bool aReadOnly,
 
   RefPtr<AsyncInitializeClone> initEvent =
     new AsyncInitializeClone(this, clone, aReadOnly, aCallback);
-  nsCOMPtr<nsIEventTarget> target = clone->getAsyncExecutionTarget();
+  
+  
+  
+  nsCOMPtr<nsIEventTarget> target = getAsyncExecutionTarget();
   if (!target) {
     return NS_ERROR_UNEXPECTED;
   }
