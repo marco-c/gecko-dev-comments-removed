@@ -355,10 +355,9 @@ nsSliderFrame::BuildDisplayListForChildren(nsDisplayListBuilder*   aBuilder,
     
     
 
-    uint32_t flags = 0;
+    uint32_t flags = aBuilder->GetCurrentScrollbarFlags();
     mozilla::layers::FrameMetrics::ViewID scrollTargetId =
-      mozilla::layers::FrameMetrics::NULL_SCROLL_ID;
-    aBuilder->GetScrollbarInfo(&scrollTargetId, &flags);
+      aBuilder->GetCurrentScrollbarTarget();
     bool thumbGetsLayer = (scrollTargetId != layers::FrameMetrics::NULL_SCROLL_ID);
     nsLayoutUtils::SetScrollbarThumbLayerization(thumb, thumbGetsLayer);
 

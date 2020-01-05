@@ -1297,9 +1297,11 @@ public:
   }
 
   
-  void SetIsScrollbarContainer()
+  
+  
+  void SetIsScrollbarContainer(FrameMetrics::ViewID aScrollId)
   {
-    if (mSimpleAttrs.SetIsScrollbarContainer()) {
+    if (mSimpleAttrs.SetIsScrollbarContainer(aScrollId)) {
       MutatedSimple();
     }
   }
