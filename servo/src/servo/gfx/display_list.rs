@@ -1,5 +1,5 @@
 use azure::azure_hl::DrawTarget;
-use gfx::render_task::{draw_solid_color, draw_image, draw_glyphs};
+use gfx::render_task::{draw_solid_color, draw_image, draw_text};
 use gfx::geometry::*;
 use geom::rect::Rect;
 use image::base::Image;
@@ -7,9 +7,10 @@ use render_task::RenderContext;
 
 use std::arc::{ARC, clone};
 use dvec::DVec;
-use text::glyph::Glyph;
+use text::text_run::TextRun;
 
 pub use layout::display_list_builder::DisplayListBuilder;
+
 
 struct DisplayItem {
     draw: ~fn((&DisplayItem), (&RenderContext)),
@@ -17,20 +18,13 @@ struct DisplayItem {
     data : DisplayItemData
 }
 
-enum DisplayItemData {
+pub enum DisplayItemData {
     SolidColorData(u8, u8, u8),
-    GlyphData(GlyphRun),
+    // TODO: need to provide spacing data for text run.
+    // (i.e, to support rendering of CSS 'word-spacing' and 'letter-spacing')
+    // TODO: don't copy text runs, ever.
+    TextData(~TextRun, uint, uint),
     ImageData(ARC<~image::base::Image>),
-    PaddingData(u8, u8, u8, u8) // This is a hack to make fonts work (?)
-}
-
-/**
-A run of glyphs in a single font. This is distinguished from any similar
-structure used by layout in that this must be sendable, whereas the text
-shaping data structures may end up unsendable.
-*/
-pub struct GlyphRun {
-    glyphs: ~[Glyph]
 }
 
 fn draw_SolidColor(self: &DisplayItem, ctx: &RenderContext) {
@@ -40,9 +34,9 @@ fn draw_SolidColor(self: &DisplayItem, ctx: &RenderContext) {
     }        
 }
 
-fn draw_Glyphs(self: &DisplayItem, ctx: &RenderContext) {
+fn draw_Text(self: &DisplayItem, ctx: &RenderContext) {
     match self.data {
-        GlyphData(run) => draw_glyphs(ctx, self.bounds, &run),
+        TextData(~run, offset, len) => draw_text(ctx, self.bounds, &run, offset, len),
         _ => fail
     }        
 }
@@ -56,25 +50,23 @@ fn draw_Image(self: &DisplayItem, ctx: &RenderContext) {
 
 pub fn SolidColor(bounds: Rect<au>, r: u8, g: u8, b: u8) -> DisplayItem {
     DisplayItem { 
-        // TODO: this seems wrong.
         draw: |self, ctx| draw_SolidColor(self, ctx),
         bounds: bounds,
         data: SolidColorData(r, g, b)
     }
 }
 
-pub fn Glyphs(bounds: Rect<au>, run: GlyphRun) -> DisplayItem {
+pub fn Text(bounds: Rect<au>, run: ~TextRun, offset: uint, length: uint) -> DisplayItem {
     DisplayItem {
-        draw: |self, ctx| draw_Glyphs(self, ctx),
+        draw: |self, ctx| draw_Text(self, ctx),
         bounds: bounds,
-        data: GlyphData(run)
+        data: TextData(run, offset, length)
     }
 }
 
 // ARC should be cloned into ImageData, but Images are not sendable
 pub fn Image(bounds: Rect<au>, image: ARC<~image::base::Image>) -> DisplayItem {
     DisplayItem {
-        // TODO: this seems wrong.
         draw: |self, ctx| draw_Image(self, ctx),
         bounds: bounds,
         data: ImageData(clone(&image))
