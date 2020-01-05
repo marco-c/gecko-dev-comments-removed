@@ -55,6 +55,7 @@ use gfx::render_task::RenderLayer;
 use servo_msg::compositor_msg::LayerId;
 use servo_util::geometry::Au;
 use std::cast;
+use std::fmt;
 use std::iter::Zip;
 use std::num::Zero;
 use std::sync::atomics::Relaxed;
@@ -65,7 +66,7 @@ use style::computed_values::{clear, position, text_align};
 
 
 
-pub trait Flow {
+pub trait Flow: fmt::Show + ToStr {
     
     
     
@@ -267,14 +268,9 @@ pub trait Flow {
             LayerId(pointer, fragment_id)
         }
     }
-
-    
-    fn debug_str(&self) -> ~str {
-        "???".to_owned()
-    }
 }
 
-// Base access
+
 
 #[inline(always)]
 pub fn base<'a>(this: &'a Flow) -> &'a BaseFlow {
@@ -284,7 +280,7 @@ pub fn base<'a>(this: &'a Flow) -> &'a BaseFlow {
     }
 }
 
-/// Iterates over the children of this immutable flow.
+
 pub fn imm_child_iter<'a>(flow: &'a Flow) -> FlowListIterator<'a> {
     base(flow).children.iter()
 }
@@ -297,50 +293,50 @@ pub fn mut_base<'a>(this: &'a mut Flow) -> &'a mut BaseFlow {
     }
 }
 
-/// Returns the last child of this flow.
+
 pub fn last_child<'a>(flow: &'a mut Flow) -> Option<&'a mut Flow> {
     mut_base(flow).children.back_mut()
 }
 
-/// Iterates over the children of this flow.
+
 pub fn child_iter<'a>(flow: &'a mut Flow) -> MutFlowListIterator<'a> {
     mut_base(flow).children.mut_iter()
 }
 
 pub trait ImmutableFlowUtils {
-    // Convenience functions
+    
 
-    /// Returns true if this flow is a block or a float flow.
+    
     fn is_block_like(self) -> bool;
 
-    /// Returns true if this flow is a table flow.
+    
     fn is_table(self) -> bool;
 
-    /// Returns true if this flow is a table caption flow.
+    
     fn is_table_caption(self) -> bool;
 
-    /// Returns true if this flow is a proper table child.
+    
     fn is_proper_table_child(self) -> bool;
 
-    /// Returns true if this flow is a table row flow.
+    
     fn is_table_row(self) -> bool;
 
-    /// Returns true if this flow is a table cell flow.
+    
     fn is_table_cell(self) -> bool;
 
-    /// Returns true if this flow is a table colgroup flow.
+    
     fn is_table_colgroup(self) -> bool;
 
-    /// Returns true if this flow is a table rowgroup flow.
+    
     fn is_table_rowgroup(self) -> bool;
 
-    /// Returns true if this flow is one of table-related flows.
+    
     fn is_table_kind(self) -> bool;
 
-    /// Returns true if anonymous flow is needed between this flow and child flow.
+    
     fn need_anonymous_flow(self, child: &Flow) -> bool;
 
-    /// Generates missing child flow of this flow.
+    
     fn generate_missing_child_flow(self, node: &ThreadSafeLayoutNode) -> ~Flow:Share;
 
     /// Returns true if this flow has no children.
@@ -915,7 +911,7 @@ impl<'a> ImmutableFlowUtils for &'a Flow {
         for _ in range(0, level) {
             indent.push_str("| ")
         }
-        debug!("{}+ {}", indent, self.debug_str());
+        debug!("{}+ {}", indent, self.to_str());
         for kid in imm_child_iter(self) {
             kid.dump_with_level(level + 1)
         }

@@ -16,6 +16,7 @@ use layout::wrapper::ThreadSafeLayoutNode;
 
 use servo_util::geometry::Au;
 use servo_util::geometry;
+use std::fmt;
 use style::computed_values::table_layout;
 
 
@@ -287,10 +288,12 @@ impl Flow for TableFlow {
     fn compute_absolute_position(&mut self) {
         self.block_flow.compute_absolute_position()
     }
+}
 
-    fn debug_str(&self) -> ~str {
-        let txt = "TableFlow: ".to_owned();
-        txt.append(self.block_flow.box_.debug_str())
+impl fmt::Show for TableFlow {
+    
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f.buf, "TableFlow: {}", self.block_flow)
     }
 }
 
