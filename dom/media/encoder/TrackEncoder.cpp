@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*-*/
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 #include "TrackEncoder.h"
 #include "AudioChannelFormat.h"
 #include "MediaStreamGraph.h"
@@ -20,7 +20,7 @@ static const int DEFAULT_SAMPLING_RATE = 16000;
 static const int DEFAULT_FRAME_WIDTH = 640;
 static const int DEFAULT_FRAME_HEIGHT = 480;
 static const int DEFAULT_TRACK_RATE = USECS_PER_S;
-// 30 seconds threshold if the encoder still can't not be initialized.
+
 static const int INIT_FAILED_DURATION = 30;
 
 TrackEncoder::TrackEncoder()
@@ -58,7 +58,7 @@ AudioTrackEncoder::NotifyQueuedTrackChanges(MediaStreamGraph* aGraph,
 
   const AudioSegment& audio = static_cast<const AudioSegment&>(aQueuedMedia);
 
-  // Check and initialize parameters for codec encoder.
+  
   if (!mInitialized) {
     mInitCounter++;
     TRACK_LOG(LogLevel::Debug, ("Init the audio encoder %d times", mInitCounter));
@@ -66,8 +66,8 @@ AudioTrackEncoder::NotifyQueuedTrackChanges(MediaStreamGraph* aGraph,
     while (!iter.IsEnded()) {
       AudioChunk chunk = *iter;
 
-      // The number of channels is determined by the first non-null chunk, and
-      // thus the audio encoder is initialized at this time.
+      
+      
       if (!chunk.IsNull()) {
         nsresult rv = Init(chunk.mChannelData.Length(), aGraph->GraphRate());
         if (NS_FAILED(rv)) {
@@ -90,11 +90,11 @@ AudioTrackEncoder::NotifyQueuedTrackChanges(MediaStreamGraph* aGraph,
     }
   }
 
-  // Append and consume this raw segment.
+  
   AppendAudioSegment(audio);
 
 
-  // The stream has stopped and reached the end of track.
+  
   if (aTrackEvents == TrackEventCommand::TRACK_EVENT_ENDED) {
     TRACK_LOG(LogLevel::Info, ("[AudioTrackEncoder]: Receive TRACK_EVENT_ENDED ."));
     NotifyEndOfStream();
@@ -106,8 +106,8 @@ AudioTrackEncoder::NotifyEndOfStream()
 {
   ReentrantMonitorAutoEnter mon(mReentrantMonitor);
 
-  // If source audio track is completely silent till the end of encoding,
-  // initialize the encoder with default channel counts and sampling rate.
+  
+  
   if (!mCanceled && !mInitialized) {
     Init(DEFAULT_CHANNELS, DEFAULT_SAMPLING_RATE);
   }
@@ -124,7 +124,7 @@ AudioTrackEncoder::AppendAudioSegment(const AudioSegment& aSegment)
   AudioSegment::ChunkIterator iter(const_cast<AudioSegment&>(aSegment));
   while (!iter.IsEnded()) {
     AudioChunk chunk = *iter;
-    // Append and consume both non-null and null chunks.
+    
     mRawSegment.AppendAndConsumeChunk(&chunk);
     iter.Next();
   }
@@ -136,7 +136,7 @@ AudioTrackEncoder::AppendAudioSegment(const AudioSegment& aSegment)
   return NS_OK;
 }
 
-/*static*/
+
 void
 AudioTrackEncoder::InterleaveTrackData(AudioChunk& aChunk,
                                        int32_t aDuration,
@@ -168,7 +168,7 @@ AudioTrackEncoder::InterleaveTrackData(AudioChunk& aChunk,
   };
 }
 
-/*static*/
+
 void
 AudioTrackEncoder::DeInterleaveTrackData(AudioDataValue* aInput,
                                          int32_t aDuration,
@@ -260,12 +260,12 @@ VideoTrackEncoder::NotifyQueuedTrackChanges(MediaStreamGraph* aGraph,
 
   const VideoSegment& video = static_cast<const VideoSegment&>(aQueuedMedia);
 
-   // Check and initialize parameters for codec encoder.
+   
   Init(video);
 
   AppendVideoSegment(video);
 
-  // The stream has stopped and reached the end of track.
+  
   if (aTrackEvents == TrackEventCommand::TRACK_EVENT_ENDED) {
     TRACK_LOG(LogLevel::Info, ("[VideoTrackEncoder]: Receive TRACK_EVENT_ENDED ."));
     NotifyEndOfStream();
@@ -283,22 +283,22 @@ VideoTrackEncoder::AppendVideoSegment(const VideoSegment& aSegment)
     return NS_OK;
   }
 
-  // Append all video segments from MediaStreamGraph, including null an
-  // non-null frames.
+  
+  
   VideoSegment::ConstChunkIterator iter(aSegment);
   for (; !iter.IsEnded(); iter.Next()) {
     VideoChunk chunk = *iter;
 
     if (mLastChunk.mTimeStamp.IsNull()) {
       if (chunk.IsNull()) {
-        // The start of this track is frameless. We need to track the time
-        // it takes to get the first frame.
+        
+        
         mLastChunk.mDuration += chunk.mDuration;
         continue;
       }
 
-      // This is the first real chunk in the track. Use its timestamp as the
-      // starting point for this track.
+      
+      
       MOZ_ASSERT(!chunk.mTimeStamp.IsNull());
       const StreamTime nullDuration = mLastChunk.mDuration;
       mLastChunk = chunk;
@@ -307,15 +307,15 @@ VideoTrackEncoder::AppendVideoSegment(const VideoSegment& aSegment)
       TRACK_LOG(LogLevel::Verbose,
                 ("[VideoTrackEncoder]: Got first video chunk after %" PRId64 " ticks.",
                  nullDuration));
-      // Adapt to the time before the first frame. This extends the first frame
-      // from [start, end] to [0, end], but it'll do for now.
-      CheckedInt64 diff = FramesToUsecs(nullDuration, mTrackRate);
-      if (!diff.isValid()) {
+      
+      
+      auto diff = FramesToTimeUnit(nullDuration, mTrackRate);
+      if (!diff.IsValid()) {
         NS_ERROR("null duration overflow");
         return NS_ERROR_DOM_MEDIA_OVERFLOW_ERR;
       }
 
-      mLastChunk.mTimeStamp -= TimeDuration::FromMicroseconds(diff.value());
+      mLastChunk.mTimeStamp -= diff.ToTimeDuration();
       mLastChunk.mDuration += nullDuration;
     }
 
@@ -323,8 +323,8 @@ VideoTrackEncoder::AppendVideoSegment(const VideoSegment& aSegment)
     if (mLastChunk.CanCombineWithFollowing(chunk) || chunk.IsNull()) {
       TRACK_LOG(LogLevel::Verbose,
                 ("[VideoTrackEncoder]: Got dupe or null chunk."));
-      // This is the same frame as before (or null). We extend the last chunk
-      // with its duration.
+      
+      
       mLastChunk.mDuration += chunk.mDuration;
 
       if (mLastChunk.mDuration < mTrackRate) {
@@ -338,16 +338,16 @@ VideoTrackEncoder::AppendVideoSegment(const VideoSegment& aSegment)
                 ("[VideoTrackEncoder]: Chunk >1 second. duration=%" PRId64 ", "
                  "trackRate=%" PRId32, mLastChunk.mDuration, mTrackRate));
 
-      // If we have gotten dupes for over a second, we force send one
-      // to the encoder to make sure there is some output.
+      
+      
       chunk.mTimeStamp = mLastChunk.mTimeStamp + TimeDuration::FromSeconds(1);
 
-      // chunk's duration has already been accounted for.
+      
       chunk.mDuration = 0;
 
       if (chunk.IsNull()) {
-        // Ensure that we don't pass null to the encoder by making mLastChunk
-        // null later on.
+        
+        
         chunk.mFrame = mLastChunk.mFrame;
       }
     }
@@ -376,11 +376,11 @@ VideoTrackEncoder::AppendVideoSegment(const VideoSegment& aSegment)
 
     if (duration.isValid()) {
       if (duration.value() <= 0) {
-        // The timestamp for mLastChunk is newer than for chunk.
-        // This means the durations reported from MediaStreamGraph for
-        // mLastChunk were larger than the timestamp diff - and durations were
-        // used to trigger the 1-second frame above. This could happen due to
-        // drift or underruns in the graph.
+        
+        
+        
+        
+        
         TRACK_LOG(LogLevel::Warning,
                   ("[VideoTrackEncoder]: Underrun detected. Diff=%" PRId64,
                    duration.value()));
@@ -411,15 +411,15 @@ VideoTrackEncoder::NotifyEndOfStream()
 {
   ReentrantMonitorAutoEnter mon(mReentrantMonitor);
 
-  // If source video track is muted till the end of encoding, initialize the
-  // encoder with default frame width, frame height, and track rate.
+  
+  
   if (!mCanceled && !mInitialized) {
     Init(DEFAULT_FRAME_WIDTH, DEFAULT_FRAME_HEIGHT,
          DEFAULT_FRAME_WIDTH, DEFAULT_FRAME_HEIGHT);
   }
 
   if (mEndOfStream) {
-    // We have already been notified.
+    
     return;
   }
 
@@ -448,4 +448,4 @@ VideoTrackEncoder::SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) cons
   return mRawSegment.SizeOfExcludingThis(aMallocSizeOf);
 }
 
-} // namespace mozilla
+} 

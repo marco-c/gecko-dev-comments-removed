@@ -58,7 +58,10 @@ public:
   void AddSizeOfResources(MediaSourceDecoder::ResourceSizes* aSizes);
 
   
-  static const media::TimeUnit EOS_FUZZ;
+  
+  
+  static constexpr media::TimeUnit EOS_FUZZ =
+    media::TimeUnit::FromMicroseconds(500000);
 
 private:
   ~MediaSourceDemuxer();
