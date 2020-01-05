@@ -10807,6 +10807,10 @@ IsWebkitGradientCoordLarger(const nsCSSValue& aStartCoord,
 
 
 
+
+
+
+
 void
 CSSParserImpl::FinalizeLinearWebkitGradient(nsCSSValueGradient* aGradient,
                                             const nsCSSValuePair& aStartPoint,
@@ -10814,51 +10818,53 @@ CSSParserImpl::FinalizeLinearWebkitGradient(nsCSSValueGradient* aGradient,
 {
   MOZ_ASSERT(!aGradient->mIsRadial, "passed-in gradient must be linear");
 
-  
-  
-  
-  if (aStartPoint.mYValue == aEndPoint.mYValue) {
-    aGradient->mBgPos.mYValue.SetIntValue(NS_STYLE_IMAGELAYER_POSITION_CENTER,
+  if (aStartPoint == aEndPoint ||
+      aStartPoint.mXValue.GetUnit() != aEndPoint.mXValue.GetUnit() ||
+      aStartPoint.mYValue.GetUnit() != aEndPoint.mYValue.GetUnit()) {
+    
+    
+    
+    
+    
+    aGradient->mBgPos.mYValue.SetIntValue(NS_STYLE_IMAGELAYER_POSITION_BOTTOM,
                                           eCSSUnit_Enumerated);
-    if (IsWebkitGradientCoordLarger(aStartPoint.mXValue, aEndPoint.mXValue)) {
-      aGradient->mBgPos.mXValue.SetIntValue(NS_STYLE_IMAGELAYER_POSITION_LEFT,
-                                            eCSSUnit_Enumerated);
-    } else {
-      aGradient->mBgPos.mXValue.SetIntValue(NS_STYLE_IMAGELAYER_POSITION_RIGHT,
-                                            eCSSUnit_Enumerated);
-    }
-    return;
-  }
-
-  
-  
-  
-  if (aStartPoint.mXValue == aEndPoint.mXValue) {
     aGradient->mBgPos.mXValue.SetIntValue(NS_STYLE_IMAGELAYER_POSITION_CENTER,
                                           eCSSUnit_Enumerated);
-    if (IsWebkitGradientCoordLarger(aStartPoint.mYValue, aEndPoint.mYValue)) {
-      aGradient->mBgPos.mYValue.SetIntValue(NS_STYLE_IMAGELAYER_POSITION_TOP,
-                                            eCSSUnit_Enumerated);
-    } else {
-      aGradient->mBgPos.mYValue.SetIntValue(NS_STYLE_IMAGELAYER_POSITION_BOTTOM,
-                                            eCSSUnit_Enumerated);
-    }
     return;
   }
 
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  aGradient->mIsLegacySyntax = true;
-  aGradient->mBgPos = aStartPoint;
+
+  int32_t targetX;
+  if (aStartPoint.mXValue == aEndPoint.mXValue) {
+    targetX = NS_STYLE_IMAGELAYER_POSITION_CENTER;
+  } else if (IsWebkitGradientCoordLarger(aStartPoint.mXValue,
+                                         aEndPoint.mXValue)) {
+    targetX = NS_STYLE_IMAGELAYER_POSITION_LEFT;
+  } else {
+    MOZ_ASSERT(IsWebkitGradientCoordLarger(aEndPoint.mXValue,
+                                           aStartPoint.mXValue),
+               "IsWebkitGradientCoordLarger returning inconsistent results?");
+    targetX = NS_STYLE_IMAGELAYER_POSITION_RIGHT;
+  }
+
+  int32_t targetY;
+  if (aStartPoint.mYValue == aEndPoint.mYValue) {
+    targetY = NS_STYLE_IMAGELAYER_POSITION_CENTER;
+  } else if (IsWebkitGradientCoordLarger(aStartPoint.mYValue,
+                                         aEndPoint.mYValue)) {
+    targetY = NS_STYLE_IMAGELAYER_POSITION_TOP;
+  } else {
+    MOZ_ASSERT(IsWebkitGradientCoordLarger(aEndPoint.mYValue,
+                                           aStartPoint.mYValue),
+               "IsWebkitGradientCoordLarger returning inconsistent results?");
+    targetY = NS_STYLE_IMAGELAYER_POSITION_BOTTOM;
+  }
+
+  aGradient->mBgPos.mXValue.SetIntValue(targetX, eCSSUnit_Enumerated);
+  aGradient->mBgPos.mYValue.SetIntValue(targetY, eCSSUnit_Enumerated);
 }
 
 
