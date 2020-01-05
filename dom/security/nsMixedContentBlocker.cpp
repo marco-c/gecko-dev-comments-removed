@@ -61,7 +61,7 @@ bool nsMixedContentBlocker::sUseHSTS = false;
 
 bool nsMixedContentBlocker::sSendHSTSPriming = false;
 
-uint32_t nsMixedContentBlocker::sHSTSPrimingCacheTimeout = (60 * 24 * 7);
+uint32_t nsMixedContentBlocker::sHSTSPrimingCacheTimeout = (60 * 60 * 24 * 7);
 
 bool
 IsEligibleForHSTSPriming(nsIURI* aContentLocation) {
