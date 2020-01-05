@@ -983,6 +983,11 @@ void TransportLayerDtls::PacketReceived(TransportLayer* layer,
     return;
   }
 
+  
+  if (data[0] < 20 || data[0] > 63) {
+    return;
+  }
+
   nspr_io_adapter_->PacketReceived(data, len);
 
   
@@ -994,7 +999,6 @@ void TransportLayerDtls::PacketReceived(TransportLayer* layer,
   if (state_ == TS_OPEN) {
     
     unsigned char buf[9216];
-
     int32_t rv;
     
     do {
