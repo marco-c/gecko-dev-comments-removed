@@ -12,7 +12,6 @@ var {
 } = ExtensionCommon;
 
 var {
-  EventManager,
   SingletonEventManager,
 } = ExtensionUtils;
 
@@ -65,12 +64,6 @@ add_task(function* test_post_unload_promises() {
 add_task(function* test_post_unload_listeners() {
   let context = new StubContext();
 
-  let fireEvent;
-  let onEvent = new EventManager(context, "onEvent", fire => {
-    fireEvent = fire;
-    return () => {};
-  });
-
   let fireSingleton;
   let onSingleton = new SingletonEventManager(context, "onSingleton", fire => {
     fireSingleton = () => {
@@ -84,31 +77,24 @@ add_task(function* test_post_unload_listeners() {
   };
 
   
-  onEvent.addListener(fail);
   onSingleton.addListener(fail);
 
-  let promises = [
-    new Promise(resolve => onEvent.addListener(resolve)),
-    new Promise(resolve => onSingleton.addListener(resolve)),
-  ];
+  let promise = new Promise(resolve => onSingleton.addListener(resolve));
 
-  fireEvent("onEvent");
   fireSingleton("onSingleton");
 
   
   
   
   
-  onEvent.removeListener(fail);
   onSingleton.removeListener(fail);
 
   
   
-  yield Promise.all(promises);
+  yield promise;
 
   
   
-  onEvent.addListener(fail);
   onSingleton.addListener(fail);
 
   
@@ -116,9 +102,6 @@ add_task(function* test_post_unload_listeners() {
   
   
   
-  fireEvent("onEvent");
-  Promise.resolve("onEvent").then(fireEvent);
-
   fireSingleton("onSingleton");
   Promise.resolve("onSingleton").then(fireSingleton);
 
