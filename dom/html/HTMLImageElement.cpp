@@ -710,6 +710,13 @@ HTMLImageElement::IntrinsicState() const
     nsImageLoadingContent::ImageState();
 }
 
+void
+HTMLImageElement::NodeInfoChanged()
+{
+  
+  mLastSelectedSource = nullptr;
+}
+
 
 already_AddRefed<HTMLImageElement>
 HTMLImageElement::Image(const GlobalObject& aGlobal,
