@@ -8819,9 +8819,6 @@ nsDocShell::RestoreFromHistory()
   nsCOMPtr<nsPIDOMWindowOuter> privWin = GetWindow();
   NS_ASSERTION(privWin, "could not get nsPIDOMWindow interface");
 
-  rv = privWin->RestoreWindowState(windowState);
-  NS_ENSURE_SUCCESS(rv, rv);
-
   
   
   document->NotifyPossibleTitleChange(false);
@@ -8881,6 +8878,12 @@ nsDocShell::RestoreFromHistory()
     rv = childShell->BeginRestore(nullptr, false);
     NS_ENSURE_SUCCESS(rv, rv);
   }
+
+  
+  
+  
+  rv = privWin->RestoreWindowState(windowState);
+  NS_ENSURE_SUCCESS(rv, rv);
 
   nsCOMPtr<nsIPresShell> shell = GetPresShell();
 
