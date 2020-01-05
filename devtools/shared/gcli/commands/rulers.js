@@ -2,14 +2,13 @@
 
 
 
-
 "use strict";
 
-const EventEmitter = require("devtools/shared/event-emitter");
-const eventEmitter = new EventEmitter();
 const events = require("sdk/event/core");
+
 loader.lazyRequireGetter(this, "getOuterId", "sdk/window/utils", true);
-loader.lazyRequireGetter(this, "getBrowserForTab", "sdk/tabs/utils", true);
+loader.lazyRequireGetter(this, "CommandState",
+  "devtools/shared/gcli/command-state", true);
 
 const l10n = require("gcli/l10n");
 require("devtools/server/actors/inspector");
@@ -17,10 +16,6 @@ const { RulersHighlighter, HighlighterEnvironment } =
   require("devtools/server/actors/highlighters");
 
 const highlighters = new WeakMap();
-const visibleHighlighters = new Set();
-
-const isCheckedFor = (tab) =>
-  tab ? visibleHighlighters.has(getBrowserForTab(tab).outerWindowID) : false;
 
 exports.items = [
   
@@ -35,33 +30,26 @@ exports.items = [
     buttonClass: "command-button command-button-invertable",
     tooltipText: l10n.lookup("rulersTooltip"),
     state: {
-      isChecked: ({_tab}) => isCheckedFor(_tab),
-      onChange: (target, handler) => eventEmitter.on("changed", handler),
-      offChange: (target, handler) => eventEmitter.off("changed", handler)
+      isChecked: (target) => CommandState.isEnabledForTarget(target, "rulers"),
+      onChange: (target, handler) => CommandState.on("changed", handler),
+      offChange: (target, handler) => CommandState.off("changed", handler)
     },
     exec: function* (args, context) {
       let { target } = context.environment;
 
       
       let response = yield context.updateExec("rulers_server");
-      let { visible, id } = response.data;
+      let isEnabled = response.data;
 
-      if (visible) {
-        visibleHighlighters.add(id);
+      if (isEnabled) {
+        CommandState.enableForTarget(target, "rulers");
       } else {
-        visibleHighlighters.delete(id);
+        CommandState.disableForTarget(target, "rulers");
       }
 
-      eventEmitter.emit("changed", { target });
-
       
       
-      let onNavigate = () => {
-        visibleHighlighters.delete(id);
-        eventEmitter.emit("changed", { target });
-      };
-      target.off("will-navigate", onNavigate);
-      target.once("will-navigate", onNavigate);
+      target.once("will-navigate", () => CommandState.disableForTarget(target, "rulers"));
     }
   },
   
@@ -74,14 +62,13 @@ exports.items = [
     exec: function (args, context) {
       let env = context.environment;
       let { document } = env;
-      let id = getOuterId(env.window);
 
       
       
       if (highlighters.has(document)) {
         let { highlighter } = highlighters.get(document);
         highlighter.destroy();
-        return {visible: false, id};
+        return false;
       }
 
       
@@ -104,7 +91,7 @@ exports.items = [
       });
 
       highlighter.show();
-      return {visible: true, id};
+      return true;
     }
   }
 ];

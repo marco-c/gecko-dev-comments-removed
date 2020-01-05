@@ -575,12 +575,10 @@ Toolbox.prototype = {
 
 
 
-
-
   _createButtonState: function (options) {
     let isCheckedValue = false;
     const { id, className, description, onClick, isInStartContainer, setup, teardown,
-            isTargetSupported, isChecked, autoToggle } = options;
+            isTargetSupported, isChecked } = options;
     const toolbox = this;
     const button = {
       id,
@@ -589,9 +587,6 @@ Toolbox.prototype = {
       onClick(event) {
         if (typeof onClick == "function") {
           onClick(event, toolbox);
-        }
-        if (autoToggle) {
-          button.isChecked = !button.isChecked;
         }
       },
       isTargetSupported,
