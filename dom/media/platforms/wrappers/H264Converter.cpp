@@ -332,32 +332,11 @@ H264Converter::CheckForSPSChange(MediaRawData* aSample)
   if (CanRecycleDecoder()) {
     
     UpdateConfigFromExtraData(extra_data);
-    
-    
-    
-    
-    
-    
-    RefPtr<H264Converter> self = this;
     if (!sample->mTrackInfo) {
       sample->mTrackInfo = new TrackInfoSharedPtr(mCurrentConfig, 0);
     }
-    mDecoder->Flush()
-      ->Then(AbstractThread::GetCurrent()->AsTaskQueue(),
-             __func__,
-             [self, sample, this]() {
-               mFlushRequest.Complete();
-               DecodeFirstSample(sample);
-             },
-             [self, this](const MediaResult& aError) {
-               mFlushRequest.Complete();
-               mDecodePromise.Reject(aError, __func__);
-             })
-      ->Track(mFlushRequest);
     mNeedKeyframe = true;
-    
-    
-    return NS_ERROR_DOM_MEDIA_INITIALIZING_DECODER;
+    return NS_OK;
   }
 
   
