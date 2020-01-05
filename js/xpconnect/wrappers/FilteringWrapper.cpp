@@ -301,6 +301,20 @@ CrossOriginXrayWrapper::delete_(JSContext* cx, JS::Handle<JSObject*> wrapper,
     return false;
 }
 
+bool
+CrossOriginXrayWrapper::setPrototype(JSContext* cx, JS::HandleObject wrapper,
+                                     JS::HandleObject proto,
+                                     JS::ObjectOpResult& result) const
+{
+    
+    
+    
+    
+    
+    
+    return result.failCantSetProto();
+}
+
 #define XOW FilteringWrapper<CrossOriginXrayWrapper, CrossOriginAccessiblePropertiesOnly>
 #define NNXOW FilteringWrapper<CrossCompartmentSecurityWrapper, Opaque>
 #define NNXOWC FilteringWrapper<CrossCompartmentSecurityWrapper, OpaqueWithCall>
