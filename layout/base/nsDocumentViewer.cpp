@@ -1065,6 +1065,9 @@ nsDocumentViewer::LoadComplete(nsresult aStatus)
 
   nsJSContext::LoadEnd();
 
+  
+  PokeGC(JS::gcreason::LOAD_END);
+
 #ifdef NS_PRINTING
   
   if (mPrintIsPending) {
