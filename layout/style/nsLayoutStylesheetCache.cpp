@@ -79,7 +79,7 @@ nsLayoutStylesheetCache::ScrollbarsSheet()
   if (!mScrollbarsSheet) {
     
     LoadSheetURL("chrome://global/skin/scrollbars.css",
-                 &mScrollbarsSheet, eSafeAgentSheetFeatures, eCrash);
+                 &mScrollbarsSheet, eAuthorSheetFeatures, eCrash);
   }
 
   return mScrollbarsSheet;
