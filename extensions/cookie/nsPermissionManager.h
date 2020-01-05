@@ -209,6 +209,20 @@ public:
   nsresult
   RemovePermissionsWithAttributes(mozilla::OriginAttributesPattern& aAttrs);
 
+  
+
+
+
+
+
+
+
+
+
+
+
+  static void GetKeyForPrincipal(nsIPrincipal* aPrincipal, nsACString& aPermissionKey);
+
 private:
   virtual ~nsPermissionManager();
 
