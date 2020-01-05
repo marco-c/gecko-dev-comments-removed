@@ -1654,8 +1654,6 @@ protected:
         return true;
     }
 
-    bool ValidateForNonTransformFeedback(const char* funcName, WebGLBuffer* buffer);
-
 public:
     template<typename T>
     bool ValidateNonNull(const char* funcName, const dom::Nullable<T>& maybe) {
@@ -1882,17 +1880,9 @@ protected:
 
     
 
-private:
-    mutable bool mBuffersForUB_Dirty;
-    mutable std::set<const WebGLBuffer*> mBuffersForUB;
-
-public:
-    void OnUBIndexedBindingsChanged() const { mBuffersForUB_Dirty = true; }
-    const decltype(mBuffersForUB)& BuffersForUB() const;
-
-    
-
 protected:
+    GLuint mEmptyTFO;
+
     
     
     
