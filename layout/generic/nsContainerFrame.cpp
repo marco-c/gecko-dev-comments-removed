@@ -1309,7 +1309,7 @@ nsContainerFrame::ReflowOverflowContainerChildren(nsPresContext*           aPres
 
         tracker.Insert(nif, frameStatus);
       }
-      NS_MergeReflowStatusInto(&aStatus, frameStatus);
+      aStatus.MergeCompletionStatusFrom(frameStatus);
       
       
       
