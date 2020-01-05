@@ -36,14 +36,6 @@ static NEXT_SPECIAL_STACKING_CONTEXT_ID: AtomicUsize = ATOMIC_USIZE_INIT;
 const SPECIAL_STACKING_CONTEXT_ID_MASK: usize = 0xffff;
 
 
-
-
-
-
-#[derive(Copy, Clone, Debug)]
-pub enum DevicePixel {}
-
-
 #[derive(PartialEq, Eq, Debug, Copy, Clone, PartialOrd, Ord, Deserialize, Serialize)]
 pub struct Epoch(pub u32);
 

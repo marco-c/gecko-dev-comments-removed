@@ -48,7 +48,6 @@ use euclid::point::Point2D;
 use euclid::rect::Rect;
 use euclid::scale_factor::ScaleFactor;
 use euclid::size::TypedSize2D;
-use gfx_traits::DevicePixel;
 use gfx_traits::Epoch;
 use gfx_traits::ScrollRootId;
 use heapsize::HeapSizeOf;
@@ -641,6 +640,12 @@ pub struct StackingContextScrollState {
     
     pub scroll_offset: Point2D<f32>,
 }
+
+
+
+
+#[derive(Copy, Clone, Debug)]
+pub enum DevicePixel {}
 
 
 #[derive(Copy, Clone, Deserialize, Serialize, HeapSizeOf)]
