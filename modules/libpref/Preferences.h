@@ -266,27 +266,26 @@ public:
   
 
 
-
-
-
-  enum MatchKind {
-    PrefixMatch,
-    ExactMatch,
-  };
   static nsresult RegisterCallback(PrefChangedFunc aCallback,
                                    const char* aPref,
-                                   void* aClosure = nullptr,
-                                   MatchKind aMatchKind = PrefixMatch);
+                                   void* aClosure = nullptr)
+  {
+    return RegisterCallback(aCallback, aPref, aClosure, ExactMatch);
+  }
   static nsresult UnregisterCallback(PrefChangedFunc aCallback,
                                      const char* aPref,
-                                     void* aClosure = nullptr,
-                                     MatchKind aMatchKind = PrefixMatch);
+                                     void* aClosure = nullptr)
+  {
+    return UnregisterCallback(aCallback, aPref, aClosure, ExactMatch);
+  }
   
   
   static nsresult RegisterCallbackAndCall(PrefChangedFunc aCallback,
                                           const char* aPref,
-                                          void* aClosure = nullptr,
-                                          MatchKind aMatchKind = PrefixMatch);
+                                          void* aClosure = nullptr)
+  {
+    return RegisterCallbackAndCall(aCallback, aPref, aClosure, ExactMatch);
+  }
 
   
 
@@ -441,6 +440,31 @@ protected:
   nsresult SavePrefFileInternal(nsIFile* aFile);
   nsresult WritePrefFile(nsIFile* aFile);
   nsresult MakeBackupPrefFile(nsIFile *aFile);
+
+  
+
+
+
+public:
+  
+  enum MatchKind {
+    PrefixMatch,
+    ExactMatch,
+  };
+
+protected:
+  static nsresult RegisterCallback(PrefChangedFunc aCallback,
+                                   const char* aPref,
+                                   void* aClosure,
+                                   MatchKind aMatchKind);
+  static nsresult UnregisterCallback(PrefChangedFunc aCallback,
+                                     const char* aPref,
+                                     void* aClosure,
+                                     MatchKind aMatchKind);
+  static nsresult RegisterCallbackAndCall(PrefChangedFunc aCallback,
+                                          const char* aPref,
+                                          void* aClosure,
+                                          MatchKind aMatchKind);
 
 private:
   nsCOMPtr<nsIFile>        mCurrentFile;
