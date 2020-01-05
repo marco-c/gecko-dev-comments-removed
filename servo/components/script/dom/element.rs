@@ -38,6 +38,7 @@ use std::ascii::StrAsciiExt;
 use std::cell::RefCell;
 use std::default::Default;
 use std::mem;
+use std::slice::Items;
 use string_cache::{Atom, Namespace};
 use url::UrlParser;
 
@@ -172,6 +173,7 @@ pub trait RawLayoutElementHelpers {
     unsafe fn get_attr_vals_for_layout<'a>(&'a self, name: &str) -> Vec<&'a str>;
     unsafe fn get_attr_atom_for_layout(&self, namespace: &Namespace, name: &str) -> Option<Atom>;
     unsafe fn has_class_for_layout(&self, name: &str) -> bool;
+    unsafe fn get_classes_for_layout<'a>(&'a self) -> Option<Items<'a,Atom>>;
 }
 
 impl RawLayoutElementHelpers for Element {
@@ -233,6 +235,19 @@ impl RawLayoutElementHelpers for Element {
             let attr = attr.unsafe_get();
             (*attr).value_tokens_forever().map(|mut tokens| { tokens.any(|atom| atom.as_slice() == name) })
         }.take().unwrap())
+    }
+
+    #[inline]
+    #[allow(unrooted_must_root)]
+    unsafe fn get_classes_for_layout<'a>(&'a self) -> Option<Items<'a,Atom>> {
+        let attrs: *const Vec<JS<Attr>> = mem::transmute(&self.attrs);
+        (*attrs).iter().find(|attr: & &JS<Attr>| {
+            let attr = attr.unsafe_get();
+            (*attr).local_name_atom_forever().as_slice() == "class"
+        }).and_then(|attr| {
+            let attr = attr.unsafe_get();
+            (*attr).value_tokens_forever()
+        })
     }
 }
 
@@ -1044,12 +1059,27 @@ impl<'a> style::TElement<'a> for JSRef<'a, Element> {
         node.get_enabled_state()
     }
     fn has_class(self, name: &str) -> bool {
-        
-        
+        // FIXME(zwarich): Remove this when UFCS lands and there is a better way
+        // of disambiguating methods.
         fn has_class<T: AttributeHandlers>(this: T, name: &str) -> bool {
             this.has_class(name)
         }
 
         has_class(self, name)
+    }
+    fn each_class(self, callback: |&Atom|) {
+        match self.get_attribute(ns!(""), "class").root() {
+            None => {}
+            Some(attr) => {
+                match attr.deref().value().tokens() {
+                    None => {}
+                    Some(mut tokens) => {
+                        for token in tokens {
+                            callback(token)
+                        }
+                    }
+                }
+            }
+        }
     }
 }
