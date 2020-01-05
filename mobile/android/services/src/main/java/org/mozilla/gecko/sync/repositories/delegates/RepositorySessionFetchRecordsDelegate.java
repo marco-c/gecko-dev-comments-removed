@@ -9,8 +9,8 @@ import java.util.concurrent.ExecutorService;
 import org.mozilla.gecko.sync.repositories.domain.Record;
 
 public interface RepositorySessionFetchRecordsDelegate {
-  public void onFetchFailed(Exception ex, Record record);
-  public void onFetchedRecord(Record record);
+  void onFetchFailed(Exception ex);
+  void onFetchedRecord(Record record);
 
   
 
@@ -21,7 +21,7 @@ public interface RepositorySessionFetchRecordsDelegate {
 
 
 
-  public void onFetchCompleted(final long fetchEnd);
+  void onFetchCompleted(final long fetchEnd);
 
   
 
