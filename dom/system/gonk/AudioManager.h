@@ -141,11 +141,6 @@ protected:
 
 private:
   nsAutoPtr<mozilla::hal::SwitchObserver> mObserver;
-#ifdef MOZ_B2G_RIL
-  bool                                    mMuteCallToRIL;
-  
-  bool                                    mIsMicMuted;
-#endif
 
   void HandleBluetoothStatusChanged(nsISupports* aSubject,
                                     const char* aTopic,
