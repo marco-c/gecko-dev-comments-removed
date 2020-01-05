@@ -52,11 +52,7 @@ const GRID_GAP_ALPHA = 0.5;
 
 
 
-const gCachedGridPattern = new WeakMap();
-
-const ROW_KEY = {};
-
-const COLUMN_KEY = {};
+const gCachedGridPattern = new Map();
 
 
 
@@ -369,15 +365,26 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
 
 
 
-  getGridGapPattern(dimension) {
-    if (gCachedGridPattern.has(dimension)) {
-      return gCachedGridPattern.get(dimension);
+
+
+
+  getGridGapPattern(devicePixelRatio, dimension) {
+    let gridPatternMap = null;
+
+    if (gCachedGridPattern.has(devicePixelRatio)) {
+      gridPatternMap = gCachedGridPattern.get(devicePixelRatio);
+    } else {
+      gridPatternMap = new Map();
+    }
+
+    if (gridPatternMap.has(dimension)) {
+      return gridPatternMap.get(dimension);
     }
 
     
     let canvas = createNode(this.win, { nodeType: "canvas" });
-    canvas.width = GRID_GAP_PATTERN_WIDTH;
-    canvas.height = GRID_GAP_PATTERN_HEIGHT;
+    let width = canvas.width = GRID_GAP_PATTERN_WIDTH * devicePixelRatio;
+    let height = canvas.height = GRID_GAP_PATTERN_HEIGHT * devicePixelRatio;
 
     let ctx = canvas.getContext("2d");
     ctx.save();
@@ -385,12 +392,12 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     ctx.beginPath();
     ctx.translate(.5, .5);
 
-    if (dimension === COLUMN_KEY) {
+    if (dimension === COLUMNS) {
       ctx.moveTo(0, 0);
-      ctx.lineTo(GRID_GAP_PATTERN_WIDTH, GRID_GAP_PATTERN_HEIGHT);
+      ctx.lineTo(width, height);
     } else {
-      ctx.moveTo(GRID_GAP_PATTERN_WIDTH, 0);
-      ctx.lineTo(0, GRID_GAP_PATTERN_HEIGHT);
+      ctx.moveTo(width, 0);
+      ctx.lineTo(0, height);
     }
 
     ctx.strokeStyle = this.color;
@@ -399,7 +406,10 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     ctx.restore();
 
     let pattern = ctx.createPattern(canvas, "repeat");
-    gCachedGridPattern.set(dimension, pattern);
+
+    gridPatternMap.set(dimension, pattern);
+    gCachedGridPattern.set(devicePixelRatio, gridPatternMap);
+
     return pattern;
   },
 
@@ -433,8 +443,7 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
   },
 
   _clearCache() {
-    gCachedGridPattern.delete(ROW_KEY);
-    gCachedGridPattern.delete(COLUMN_KEY);
+    gCachedGridPattern.clear();
   },
 
   
@@ -695,7 +704,6 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     this.canvas.setAttribute("height", height);
     this.canvas.setAttribute("style",
       `width:${width / ratio}px;height:${height / ratio}px;`);
-    this.ctx.scale(ratio, ratio);
 
     this.ctx.clearRect(0, 0, width, height);
   },
@@ -821,6 +829,12 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
 
 
   renderLine(linePos, startPos, endPos, dimensionType, lineType) {
+    let ratio = this.win.devicePixelRatio;
+
+    linePos = Math.round(linePos * ratio);
+    startPos = Math.round(startPos * ratio);
+    endPos = Math.round(endPos * ratio);
+
     this.ctx.save();
     this.ctx.setLineDash(GRID_LINES_PROPERTIES[lineType].lineDash);
     this.ctx.beginPath();
@@ -855,6 +869,11 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
 
 
   renderGridLineNumber(lineNumber, linePos, startPos, dimensionType) {
+    let ratio = this.win.devicePixelRatio;
+
+    linePos = Math.round(linePos * ratio);
+    startPos = Math.round(startPos * ratio);
+
     this.ctx.save();
 
     let textWidth = this.ctx.measureText(lineNumber).width;
@@ -888,16 +907,21 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
 
 
   renderGridGap(linePos, startPos, endPos, breadth, dimensionType) {
+    let ratio = this.win.devicePixelRatio;
+
+    linePos = Math.round(linePos * ratio);
+    startPos = Math.round(startPos * ratio);
+    endPos = Math.round(endPos * ratio);
+    breadth = Math.round(breadth * ratio);
+
     this.ctx.save();
+    this.ctx.fillStyle = this.getGridGapPattern(ratio, dimensionType);
 
     if (dimensionType === COLUMNS) {
-      this.ctx.fillStyle = this.getGridGapPattern(COLUMN_KEY);
       this.ctx.fillRect(linePos, startPos, breadth, endPos - startPos);
     } else {
-      this.ctx.fillStyle = this.getGridGapPattern(ROW_KEY);
       this.ctx.fillRect(startPos, linePos, endPos - startPos, breadth);
     }
-
     this.ctx.restore();
   },
 
