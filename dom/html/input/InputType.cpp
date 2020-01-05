@@ -108,3 +108,15 @@ InputType::DropReference()
   
   mInputElement = nullptr;
 }
+
+bool
+InputType::IsTooLong() const
+{
+  return false;
+}
+
+bool
+InputType::IsTooShort() const
+{
+  return false;
+}
