@@ -378,23 +378,36 @@ void
 MediaFormatReader::DecoderData::ShutdownDecoder()
 {
   MutexAutoLock lock(mMutex);
-  if (mDecoder) {
-    RefPtr<MediaFormatReader> owner = mOwner;
-    TrackType type = mType == MediaData::AUDIO_DATA
-                     ? TrackType::kAudioTrack
-                     : TrackType::kVideoTrack;
-    mShuttingDown = true;
-    mDecoder->Shutdown()
-      ->Then(mOwner->OwnerThread(), __func__,
-             [owner, this, type]() {
-               mShuttingDown = false;
-               mShutdownPromise.ResolveIfExists(true, __func__);
-               owner->ScheduleUpdate(type);
-             },
-             []() { MOZ_RELEASE_ASSERT(false, "Can't ever be here"); });
+
+  if (!mDecoder) {
+    
+    return;
   }
-  mDescription = "shutdown";
+
+  if (mFlushing) {
+    
+    if (mShutdownPromise.IsEmpty()) {
+      mOwner->mShutdownPromisePool->Track(mShutdownPromise.Ensure(__func__));
+    }
+    return;
+  }
+
+  if (!mShutdownPromise.IsEmpty()) {
+    
+    
+    mDecoder->Shutdown()->ChainTo(mShutdownPromise.Steal(), __func__);
+  } else {
+    
+    mOwner->mShutdownPromisePool->Track(mDecoder->Shutdown());
+  }
+
+  
+  
   mDecoder = nullptr;
+  mDescription = "shutdown";
+  mOwner->ScheduleUpdate(mType == MediaData::AUDIO_DATA
+                         ? TrackType::kAudioTrack
+                         : TrackType::kVideoTrack);
 }
 
 void
@@ -1142,44 +1155,14 @@ MediaFormatReader::ShutdownDecoder(TrackType aTrack)
 {
   LOGV("%s", TrackTypeToStr(aTrack));
 
+  
+  mDecoderFactory->ShutdownDecoder(aTrack);
+
   auto& decoder = GetDecoderData(aTrack);
-  if (!decoder.mDecoder) {
-    LOGV("Already shut down");
-    return;
-  }
-  if (!decoder.mShutdownPromise.IsEmpty()) {
-    LOGV("Shutdown already in progress");
-    return;
-  }
-
-  if (!decoder.mFlushed && decoder.mDecoder) {
-    
-    
-    
-    decoder.Flush();
-    mShutdownPromisePool->Track(decoder.mShutdownPromise.Ensure(__func__));
-    return;
-  }
-
-  if (decoder.mFlushing || decoder.mShuttingDown) {
-    
-    
-    mShutdownPromisePool->Track(decoder.mShutdownPromise.Ensure(__func__));
-    return;
-  }
-
-  if (!decoder.mDecoder) {
-    
-    
-    
-    
-    mDecoderFactory->ShutdownDecoder(aTrack);
-    return;
-  }
-
+  
+  decoder.Flush();
   
   decoder.ShutdownDecoder();
-  mShutdownPromisePool->Track(decoder.mShutdownPromise.Ensure(__func__));
 }
 
 RefPtr<ShutdownPromise>
