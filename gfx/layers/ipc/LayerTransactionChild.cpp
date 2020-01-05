@@ -34,8 +34,6 @@ LayerTransactionChild::Destroy()
   
   
   mDestroyed = true;
-  MOZ_ASSERT(0 == ManagedPLayerChild().Count(),
-             "layers should have been cleaned up by now");
 
   SendShutdown();
 }
