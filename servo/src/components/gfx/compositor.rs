@@ -4,6 +4,7 @@
 
 use azure::azure_hl::{DrawTarget};
 use geom::rect::Rect;
+use geom::size::Size2D;
 
 pub struct LayerBuffer {
     draw_target: DrawTarget,
@@ -24,6 +25,6 @@ pub struct LayerBufferSet {
 
 
 pub trait Compositor {
-    fn paint(&self, layer_buffer_set: LayerBufferSet);
+    fn paint(&self, layer_buffer_set: LayerBufferSet, new_size: Size2D<uint>);
 }
 

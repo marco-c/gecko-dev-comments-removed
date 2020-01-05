@@ -17,6 +17,10 @@ pub type ResizeCallback = @fn(uint, uint);
 pub type LoadUrlCallback = @fn(&str);
 
 
+
+pub type ClickCallback = @fn(Point2D<f32>);
+
+
 pub type ScrollCallback = @fn(Point2D<f32>);
 
 
@@ -38,6 +42,8 @@ pub trait WindowMethods<A> {
     pub fn set_resize_callback(&mut self, new_resize_callback: ResizeCallback);
     
     pub fn set_load_url_callback(&mut self, new_load_url_callback: LoadUrlCallback);
+    
+    pub fn set_click_callback(&mut self, new_click_callback: ClickCallback);
     
     pub fn set_scroll_callback(&mut self, new_scroll_callback: ScrollCallback);
 

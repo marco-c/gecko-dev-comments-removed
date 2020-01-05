@@ -6,12 +6,13 @@
 
 
 
-use dom::node::{AbstractNode, ScriptView};
+use dom::node::{AbstractNode, ScriptView, LayoutView};
 use script_task::ScriptMsg;
 
 use core::comm::{Chan, SharedChan};
 use geom::rect::Rect;
 use geom::size::Size2D;
+use geom::point::Point2D;
 use gfx::geometry::Au;
 use newcss::stylesheet::Stylesheet;
 use std::net::url::Url;
@@ -24,9 +25,7 @@ pub enum Msg {
     AddStylesheetMsg(Stylesheet),
 
     
-    
-    
-    BuildMsg(~BuildData),
+    ReflowMsg(~Reflow),
 
     
     
@@ -43,6 +42,8 @@ pub enum LayoutQuery {
     ContentBoxQuery(AbstractNode<ScriptView>),
     
     ContentBoxesQuery(AbstractNode<ScriptView>),
+    
+    HitTestQuery(AbstractNode<ScriptView>, Point2D<f32>),
 }
 
 
@@ -54,44 +55,65 @@ pub enum LayoutResponse {
     ContentBoxResponse(Rect<Au>),
     
     ContentBoxesResponse(~[Rect<Au>]),
+    
+    HitTestResponse(AbstractNode<LayoutView>),
 }
 
 
-pub enum Damage {
+pub enum DocumentDamageLevel {
     
-    NoDamage,
+    MatchSelectorsDocumentDamage,
     
-    ReflowDamage,
-    
-    MatchSelectorsDamage,
+    ReflowDocumentDamage,
 }
 
-impl Damage {
+impl DocumentDamageLevel {
     
     
     
     
-    fn add(&mut self, new_damage: Damage) {
+    fn add(&mut self, new_damage: DocumentDamageLevel) {
         match (*self, new_damage) {
-            (NoDamage, _) => *self = new_damage,
-            (ReflowDamage, NoDamage) => *self = ReflowDamage,
-            (ReflowDamage, new_damage) => *self = new_damage,
-            (MatchSelectorsDamage, _) => *self = MatchSelectorsDamage
+            (ReflowDocumentDamage, new_damage) => *self = new_damage,
+            (MatchSelectorsDocumentDamage, _) => *self = MatchSelectorsDocumentDamage,
         }
     }
 }
 
 
-pub struct BuildData {
-    node: AbstractNode<ScriptView>,
+
+
+pub struct DocumentDamage {
     
-    damage: Damage,
+    root: AbstractNode<ScriptView>,
+    
+    level: DocumentDamageLevel,
+}
+
+
+#[deriving(Eq)]
+pub enum ReflowGoal {
+    
+    ReflowForDisplay,
+    
+    ReflowForScriptQuery,
+}
+
+
+pub struct Reflow {
+    
+    document_root: AbstractNode<ScriptView>,
+    
+    damage: DocumentDamage,
+    
+    goal: ReflowGoal,
     
     url: Url,
     
     script_chan: SharedChan<ScriptMsg>,
     
     window_size: Size2D<uint>,
+    
     script_join_chan: Chan<()>,
 }
 
