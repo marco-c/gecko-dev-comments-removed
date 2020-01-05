@@ -39,6 +39,7 @@ public interface GlobalSessionCallback {
   void handleSuccess(GlobalSession globalSession);
   void handleStageCompleted(Stage currentState, GlobalSession globalSession);
   void handleIncompleteStage(Stage currentState, GlobalSession globalSession);
+  void handleFullSyncNecessary();
 
   
 

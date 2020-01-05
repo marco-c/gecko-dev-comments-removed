@@ -34,6 +34,7 @@ import org.mozilla.gecko.fxa.login.State.StateLabel;
 import org.mozilla.gecko.fxa.sync.FxAccountSyncDelegate.Result;
 import org.mozilla.gecko.sync.BackoffHandler;
 import org.mozilla.gecko.sync.GlobalSession;
+import org.mozilla.gecko.sync.MetaGlobal;
 import org.mozilla.gecko.sync.PrefsBackoffHandler;
 import org.mozilla.gecko.sync.SharedPreferencesClientsDataDelegate;
 import org.mozilla.gecko.sync.SyncConfiguration;
@@ -132,6 +133,7 @@ public class FxAccountSyncAdapter extends AbstractThreadedSyncAdapter {
 
     
     private final List<String> stageNamesForFollowUpSync = Collections.synchronizedList(new ArrayList<String>());
+    private boolean fullSyncNecessary = false;
 
     public SyncDelegate(BlockingQueue<Result> latch, SyncResult syncResult, AndroidFxAccount fxAccount, Collection<String> stageNamesToSync) {
       super(latch, syncResult);
@@ -198,6 +200,14 @@ public class FxAccountSyncAdapter extends AbstractThreadedSyncAdapter {
     public void handleIncompleteStage(Stage currentState,
                                       GlobalSession globalSession) {
       syncDelegate.requestFollowUpSync(currentState.getRepositoryName());
+    }
+
+    
+
+
+    @Override
+    public void handleFullSyncNecessary() {
+      syncDelegate.fullSyncNecessary = true;
     }
 
     @Override
@@ -454,6 +464,7 @@ public class FxAccountSyncAdapter extends AbstractThreadedSyncAdapter {
     Collection<String> stageNamesToSync = Utils.getStagesToSyncFromBundle(knownStageNames, extras);
 
     final SyncDelegate syncDelegate = new SyncDelegate(latch, syncResult, fxAccount, stageNamesToSync);
+    Result offeredResult = null;
 
     try {
       
@@ -591,12 +602,31 @@ public class FxAccountSyncAdapter extends AbstractThreadedSyncAdapter {
         }
       });
 
-      latch.take();
+      offeredResult = latch.take();
     } catch (Exception e) {
       Logger.error(LOG_TAG, "Got error syncing.", e);
       syncDelegate.handleError(e);
     } finally {
       fxAccount.releaseSharedAccountStateLock();
+    }
+
+    lastSyncRealtimeMillis = SystemClock.elapsedRealtime();
+
+    
+    
+    if (offeredResult == null) {
+      Logger.error(LOG_TAG, "Did not receive a sync result from the delegate.");
+      return;
+    }
+
+    
+    
+    
+    
+    if (syncDelegate.fullSyncNecessary) {
+      Logger.info(LOG_TAG, "Syncing done. Full follow-up sync necessary, requesting immediate sync.");
+      fxAccount.requestImmediateSync(null, null);
+      return;
     }
 
     
@@ -611,12 +641,13 @@ public class FxAccountSyncAdapter extends AbstractThreadedSyncAdapter {
       );
     }
 
-    if (stagesToSyncAgain.length > 0) {
-      Logger.info(LOG_TAG, "Syncing done. Requesting an immediate follow-up sync.");
-      fxAccount.requestImmediateSync(stagesToSyncAgain, null);
-    } else {
+    if (stagesToSyncAgain.length == 0) {
       Logger.info(LOG_TAG, "Syncing done.");
+      return;
     }
-    lastSyncRealtimeMillis = SystemClock.elapsedRealtime();
+
+    
+    Logger.info(LOG_TAG, "Syncing done. Requesting an immediate follow-up sync.");
+    fxAccount.requestImmediateSync(stagesToSyncAgain, null);
   }
 }
