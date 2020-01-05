@@ -95,7 +95,8 @@ VRManager::VRManager()
   }
 #endif
   
-  if (gfxPrefs::VREnabled()) {
+  
+  if (XRE_IsParentProcess() && gfxPrefs::VREnabled()) {
     Preferences::SetBool("dom.gamepad.extensions.enabled", true);
   }
 }
