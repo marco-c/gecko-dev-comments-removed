@@ -1815,6 +1815,10 @@ Loader::SheetComplete(SheetLoadData* aLoadData, nsresult aStatus)
 {
   LOG(("css::Loader::SheetComplete"));
 
+  if (aLoadData->mSheet->IsServo() && NS_FAILED(aStatus)) {
+    aLoadData->mSheet->AsServo()->LoadFailed();
+  }
+
   
   
   

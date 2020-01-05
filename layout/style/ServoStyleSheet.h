@@ -40,6 +40,13 @@ public:
                                    nsIPrincipal* aSheetPrincipal,
                                    uint32_t aLineNumber);
 
+  
+
+
+
+
+  void LoadFailed();
+
   size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const;
 
 #ifdef DEBUG
