@@ -417,6 +417,18 @@ var FullScreen = {
     
     
     
+    
+    
+    
+    
+    if (this._isRemoteBrowser(aBrowser)) {
+      aBrowser.messageManager.sendAsyncMessage("DOMFullscreen:Entered");
+    }
+
+    
+    
+    
+    
     if (!aBrowser || gBrowser.selectedBrowser != aBrowser ||
         
         
@@ -425,14 +437,6 @@ var FullScreen = {
       
       setTimeout(() => document.exitFullscreen(), 0);
       return;
-    }
-
-    
-    
-    
-    
-    if (this._isRemoteBrowser(aBrowser)) {
-      aBrowser.messageManager.sendAsyncMessage("DOMFullscreen:Entered");
     }
 
     document.documentElement.setAttribute("inDOMFullscreen", true);
