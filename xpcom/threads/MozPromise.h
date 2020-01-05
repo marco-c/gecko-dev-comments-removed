@@ -278,11 +278,6 @@ public:
   {
   public:
     virtual void Disconnect() = 0;
-
-    
-    
-    bool IsDisconnected() const { return mDisconnected; }
-
     virtual void AssertIsDead() = 0;
 
   protected:
@@ -364,22 +359,21 @@ protected:
       aPromise->mMutex.AssertCurrentThreadOwns();
       MOZ_ASSERT(!aPromise->IsPending());
 
-      RefPtr<Runnable> runnable =
-        static_cast<Runnable*>(new (typename ThenValueBase::ResolveOrRejectRunnable)(this, aPromise));
+      nsCOMPtr<nsIRunnable> r = new ResolveOrRejectRunnable(this, aPromise);
       PROMISE_LOG("%s Then() call made from %s [Runnable=%p, Promise=%p, ThenValue=%p]",
-                  aPromise->mValue.IsResolve() ? "Resolving" : "Rejecting", ThenValueBase::mCallSite,
-                  runnable.get(), aPromise, this);
+                  aPromise->mValue.IsResolve() ? "Resolving" : "Rejecting", mCallSite,
+                  r.get(), aPromise, this);
 
       
       
       
       
-      mResponseTarget->Dispatch(runnable.forget(), AbstractThread::DontAssertDispatchSuccess);
+      mResponseTarget->Dispatch(r.forget(), AbstractThread::DontAssertDispatchSuccess);
     }
 
     void Disconnect() override
     {
-      MOZ_DIAGNOSTIC_ASSERT(ThenValueBase::mResponseTarget->IsCurrentThreadIn());
+      MOZ_DIAGNOSTIC_ASSERT(mResponseTarget->IsCurrentThreadIn());
       MOZ_DIAGNOSTIC_ASSERT(!Request::mComplete);
       Request::mDisconnected = true;
 
