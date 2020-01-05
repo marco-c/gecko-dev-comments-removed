@@ -918,21 +918,6 @@ for (uint32_t i = 0; i < length; ++i) {
 
         typePtr = descriptor.nativeType
 
-        
-        
-        
-        
-        
-
-        
-        holderType = None
-        initialValue = None
-        if argIsPointer or isOptional:
-            declType = "Option<" + typePtr + ">"
-            initialValue = "None"
-        else:
-            declType = typePtr
-
         templateBody = ""
         if descriptor.castable:
             if descriptor.interface.isConsequential():
@@ -969,10 +954,11 @@ for (uint32_t i = 0; i < length; ++i) {
                                           type, "${declName} = None",
                                           failureCode)
 
-        declType = CGGeneric(declType)
-        if holderType is not None:
-            holderType = CGGeneric(holderType)
-        return (templateBody, declType, holderType, isOptional, initialValue)
+        declType = CGGeneric(typePtr)
+        if argIsPointer or isOptional:
+            declType = CGWrapper(declType, pre="Option<", post=">")
+
+        return (templateBody, declType, None, isOptional, "None" if isOptional else None)
 
     if type.isSpiderMonkeyInterface():
         assert not isEnforceRange and not isClamp
