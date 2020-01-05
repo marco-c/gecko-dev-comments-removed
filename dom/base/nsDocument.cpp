@@ -11416,6 +11416,15 @@ nsDocument::RequestFullScreen(UniquePtr<FullscreenRequest>&& aRequest)
   
   
   Element* elem = aRequest->GetElement();
+  if (!elem->IsHTMLElement() && !elem->IsXULElement() &&
+      !elem->IsSVGElement(nsGkAtoms::svg) &&
+      !elem->IsMathMLElement(nsGkAtoms::math)) {
+    DispatchFullscreenError("FullscreenDeniedNotHTMLSVGOrMathML");
+    return;
+  }
+
+  
+  
   if (!FullscreenElementReadyCheck(elem, aRequest->mIsCallerChrome)) {
     return;
   }
