@@ -4833,8 +4833,9 @@ this.XPIProvider = {
         activeAddon.bootstrapScope[feature] = gGlobalScope[feature];
 
       
-      activeAddon.bootstrapScope["console"] = new ConsoleAPI(
-        { consoleID: "addon/" + aId });
+      XPCOMUtils.defineLazyGetter(
+        activeAddon.bootstrapScope, "console",
+        () => new ConsoleAPI({ consoleID: "addon/" + aId }));
 
       
       
