@@ -319,6 +319,19 @@ gfxUserFontEntry::GetFamilyNameAndURIForLogging(nsACString& aFamilyName,
   } else {
     if (mSrcList[mSrcIndex].mURI) {
       mSrcList[mSrcIndex].mURI->GetSpec(aURI);
+      
+      
+      
+      
+      const uint32_t kMaxURILengthForLogging = 256;
+      
+      
+      const char kEllipsis[] = { ' ', '\xE2', '\x80', '\xA6', ' ' };
+      if (aURI.Length() > kMaxURILengthForLogging) {
+        aURI.Replace(kMaxURILengthForLogging / 2,
+                     aURI.Length() - kMaxURILengthForLogging,
+                     kEllipsis, ArrayLength(kEllipsis));
+      }
     } else {
       aURI.AppendLiteral("(invalid URI)");
     }
