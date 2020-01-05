@@ -39,9 +39,6 @@ module.exports = {
     
 
     
-    "block-spacing": "warn",
-
-    
     "array-bracket-spacing": ["error", "never"],
 
     
@@ -56,12 +53,6 @@ module.exports = {
 
     
     "comma-style": "error",
-
-    
-    "computed-property-spacing": ["warn", "never"],
-
-    
-    "consistent-return": "off",
 
     
     "curly": ["error", "all"],
@@ -92,17 +83,6 @@ module.exports = {
     "no-empty": "error",
 
     
-    "no-extra-boolean-cast": "warn",
-
-    
-    "no-lonely-if": "warn",
-
-    
-    
-    
-    "no-multi-spaces": "warn",
-
-    
     "no-spaced-func": "warn",
 
     
@@ -118,13 +98,7 @@ module.exports = {
     "semi": ["error", "always"],
 
     
-    "space-before-function-paren": ["error", {"anonymous": "never", "named": "never"}],
-
-    
     "space-infix-ops": ["error", {"int32Hint": true}],
-
-    
-    "space-unary-ops": ["warn", {"nonwords": false}],
 
     
     
@@ -232,9 +206,6 @@ module.exports = {
     "no-inline-comments": "off",
 
     
-    "no-labels": ["error", {"allowLoop": true}],
-
-    
     "no-multi-str": "warn",
 
     
@@ -267,9 +238,6 @@ module.exports = {
     
     
     "no-return-assign": "error",
-
-    
-    "no-shadow": "off",
 
     
     "no-sync": "off",
@@ -312,9 +280,6 @@ module.exports = {
     "quote-props": "off",
 
     
-    "quotes": ["warn", "double", {"avoidEscape": true, "allowTemplateLiterals": true}],
-
-    
     "radix": "error",
 
     
@@ -323,9 +288,6 @@ module.exports = {
     
     
     "sort-vars": "off",
-
-    
-    "spaced-comment": ["error", "always"],
 
     
     "strict": ["error", "global"],
