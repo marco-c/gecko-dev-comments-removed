@@ -2346,6 +2346,10 @@ RangeAnalysis::addRangeAssertions()
     for (ReversePostorderIterator iter(graph_.rpoBegin()); iter != graph_.rpoEnd(); iter++) {
         MBasicBlock* block = *iter;
 
+        
+        if (block->unreachable())
+            continue;
+
         for (MDefinitionIterator iter(block); iter; iter++) {
             MDefinition* ins = *iter;
 
