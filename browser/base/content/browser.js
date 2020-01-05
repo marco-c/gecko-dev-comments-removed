@@ -1292,8 +1292,6 @@ var gBrowserInit = {
     PanelUI.init();
     LightweightThemeListener.init();
 
-    SidebarUI.startDelayedLoad();
-
     UpdateUrlbarSearchSplitterState();
 
     if (!(isBlankPageURL(uriToLoad) || uriToLoad == "about:privatebrowsing") ||
@@ -1467,6 +1465,7 @@ var gBrowserInit = {
       
       RestoreLastSessionObserver.init();
 
+      SidebarUI.startDelayedLoad();
       SocialUI.init();
 
       
