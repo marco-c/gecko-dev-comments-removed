@@ -1147,12 +1147,13 @@ LayerManagerComposite::RenderToolbar()
 
     EffectChain effects;
     effects.mPrimaryEffect = animator->GetToolbarEffect(mCompositor->AsCompositorOGL());
-    if (!effects.mPrimaryEffect) {
-      
-      effects.mPrimaryEffect = new EffectSolidColor(gfx::Color(1, 0, 0));
+    
+    
+    
+    if (effects.mPrimaryEffect) {
+      mCompositor->DrawQuad(gfx::Rect(0, 0, mRenderBounds.width, toolbarHeight),
+                            IntRect(0, 0, mRenderBounds.width, toolbarHeight), effects, 1.0, gfx::Matrix4x4());
     }
-    mCompositor->DrawQuad(gfx::Rect(0, 0, mRenderBounds.width, toolbarHeight),
-                          IntRect(0, 0, mRenderBounds.width, toolbarHeight), effects, 1.0, gfx::Matrix4x4());
 
     
     gfx::Matrix4x4 mat = mCompositor->AsCompositorOGL()->GetProjMatrix();
