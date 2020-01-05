@@ -149,20 +149,20 @@ private:
   bool AreBorderSideFinalStylesSame(uint8_t aSides);
 
   
-  bool IsSolidCornerStyle(uint8_t aStyle, mozilla::css::Corner aCorner);
+  bool IsSolidCornerStyle(uint8_t aStyle, mozilla::Corner aCorner);
 
   
-  bool IsCornerMergeable(mozilla::css::Corner aCorner);
+  bool IsCornerMergeable(mozilla::Corner aCorner);
 
   
-  BorderColorStyle BorderColorStyleForSolidCorner(uint8_t aStyle, mozilla::css::Corner aCorner);
+  BorderColorStyle BorderColorStyleForSolidCorner(uint8_t aStyle, mozilla::Corner aCorner);
 
   
   
   
 
   
-  Rect GetCornerRect(mozilla::css::Corner aCorner);
+  Rect GetCornerRect(mozilla::Corner aCorner);
   
   Rect GetSideClipWithoutCornersRect(mozilla::Side aSide);
 
@@ -178,14 +178,14 @@ private:
 
   
   Point GetStraightBorderPoint(mozilla::Side aSide,
-                               mozilla::css::Corner aCorner,
+                               mozilla::Corner aCorner,
                                bool* aIsUnfilled);
 
   
   
   void GetOuterAndInnerBezier(Bezier* aOuterBezier,
                               Bezier* aInnerBezier,
-                              mozilla::css::Corner aCorner);
+                              mozilla::Corner aCorner);
 
   
   
@@ -230,19 +230,19 @@ private:
 
   
   void DrawDashedOrDottedCorner(mozilla::Side aSide,
-                                mozilla::css::Corner aCorner);
+                                mozilla::Corner aCorner);
 
   
   void DrawDottedCornerSlow(mozilla::Side aSide,
-                            mozilla::css::Corner aCorner);
+                            mozilla::Corner aCorner);
 
   
   void DrawDashedCornerSlow(mozilla::Side aSide,
-                            mozilla::css::Corner aCorner);
+                            mozilla::Corner aCorner);
 
   
   void DrawFallbackSolidCorner(mozilla::Side aSide,
-                               mozilla::css::Corner aCorner);
+                               mozilla::Corner aCorner);
 
   
   bool AllBordersSameWidth();

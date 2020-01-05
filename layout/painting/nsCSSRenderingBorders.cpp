@@ -68,8 +68,8 @@ static void ComputeBorderCornerDimensions(const Float* aBorderWidths,
 #define PREV_SIDE(_s) mozilla::Side(((_s) + 3) & 3)
 
 
-#define NEXT_CORNER(_s) mozilla::css::Corner(((_s) + 1) & 3)
-#define PREV_CORNER(_s) mozilla::css::Corner(((_s) + 3) & 3)
+#define NEXT_CORNER(_s) Corner(((_s) + 1) & 3)
+#define PREV_CORNER(_s) Corner(((_s) + 3) & 3)
 
 
 
@@ -115,27 +115,27 @@ nsCSSBorderRenderer::AllCornersZeroSize(const RectCornerRadii& corners) {
 }
 
 static mozilla::Side
-GetHorizontalSide(mozilla::css::Corner aCorner)
+GetHorizontalSide(Corner aCorner)
 {
   return (aCorner == C_TL || aCorner == C_TR) ? eSideTop : eSideBottom;
 }
 
 static mozilla::Side
-GetVerticalSide(mozilla::css::Corner aCorner)
+GetVerticalSide(Corner aCorner)
 {
   return (aCorner == C_TL || aCorner == C_BL) ? eSideLeft : eSideRight;
 }
 
-static mozilla::css::Corner
+static Corner
 GetCWCorner(mozilla::Side aSide)
 {
-  return mozilla::css::Corner(NEXT_SIDE(aSide));
+  return Corner(NEXT_SIDE(aSide));
 }
 
-static mozilla::css::Corner
+static Corner
 GetCCWCorner(mozilla::Side aSide)
 {
-  return mozilla::css::Corner(aSide);
+  return Corner(aSide);
 }
 
 static bool
@@ -334,7 +334,7 @@ nsCSSBorderRenderer::AreBorderSideFinalStylesSame(uint8_t aSides)
 }
 
 bool
-nsCSSBorderRenderer::IsSolidCornerStyle(uint8_t aStyle, mozilla::css::Corner aCorner)
+nsCSSBorderRenderer::IsSolidCornerStyle(uint8_t aStyle, Corner aCorner)
 {
   switch (aStyle) {
     case NS_STYLE_BORDER_STYLE_SOLID:
@@ -357,7 +357,7 @@ nsCSSBorderRenderer::IsSolidCornerStyle(uint8_t aStyle, mozilla::css::Corner aCo
 }
 
 bool
-nsCSSBorderRenderer::IsCornerMergeable(mozilla::css::Corner aCorner)
+nsCSSBorderRenderer::IsCornerMergeable(Corner aCorner)
 {
   
   
@@ -407,7 +407,7 @@ nsCSSBorderRenderer::IsCornerMergeable(mozilla::css::Corner aCorner)
 }
 
 BorderColorStyle
-nsCSSBorderRenderer::BorderColorStyleForSolidCorner(uint8_t aStyle, mozilla::css::Corner aCorner)
+nsCSSBorderRenderer::BorderColorStyleForSolidCorner(uint8_t aStyle, Corner aCorner)
 {
   
   
@@ -437,7 +437,7 @@ nsCSSBorderRenderer::BorderColorStyleForSolidCorner(uint8_t aStyle, mozilla::css
 }
 
 Rect
-nsCSSBorderRenderer::GetCornerRect(mozilla::css::Corner aCorner)
+nsCSSBorderRenderer::GetCornerRect(Corner aCorner)
 {
   Point offset(0.f, 0.f);
 
@@ -676,7 +676,7 @@ nsCSSBorderRenderer::GetSideClipSubPath(mozilla::Side aSide)
 
 Point
 nsCSSBorderRenderer::GetStraightBorderPoint(mozilla::Side aSide,
-                                            mozilla::css::Corner aCorner,
+                                            Corner aCorner,
                                             bool* aIsUnfilled)
 {
   
@@ -1061,7 +1061,7 @@ nsCSSBorderRenderer::GetStraightBorderPoint(mozilla::Side aSide,
 void
 nsCSSBorderRenderer::GetOuterAndInnerBezier(Bezier* aOuterBezier,
                                             Bezier* aInnerBezier,
-                                            mozilla::css::Corner aCorner)
+                                            Corner aCorner)
 {
   
   
@@ -2260,7 +2260,7 @@ nsCSSBorderRenderer::DrawDottedSideSlow(mozilla::Side aSide)
 
 void
 nsCSSBorderRenderer::DrawDashedOrDottedCorner(mozilla::Side aSide,
-                                              mozilla::css::Corner aCorner)
+                                              Corner aCorner)
 {
   
   
@@ -2366,7 +2366,7 @@ nsCSSBorderRenderer::DrawDashedOrDottedCorner(mozilla::Side aSide,
 
 void
 nsCSSBorderRenderer::DrawDottedCornerSlow(mozilla::Side aSide,
-                                          mozilla::css::Corner aCorner)
+                                          Corner aCorner)
 {
   NS_ASSERTION(mBorderStyles[aSide] == NS_STYLE_BORDER_STYLE_DOTTED,
                "Style should be dotted.");
@@ -2443,7 +2443,7 @@ DashedPathOverlapsRect(Rect& pathRect,
 
 void
 nsCSSBorderRenderer::DrawDashedCornerSlow(mozilla::Side aSide,
-                                          mozilla::css::Corner aCorner)
+                                          Corner aCorner)
 {
   NS_ASSERTION(mBorderStyles[aSide] == NS_STYLE_BORDER_STYLE_DASHED,
                "Style should be dashed.");
@@ -2559,7 +2559,7 @@ nsCSSBorderRenderer::DrawDashedCornerSlow(mozilla::Side aSide,
 
 void
 nsCSSBorderRenderer::DrawFallbackSolidCorner(mozilla::Side aSide,
-                                             mozilla::css::Corner aCorner)
+                                             Corner aCorner)
 {
   
   
@@ -2788,7 +2788,7 @@ ComputeCornerSkirtSize(Float aAlpha1, Float aAlpha2,
 
 static void
 DrawBorderRadius(DrawTarget* aDrawTarget,
-                 mozilla::css::Corner c,
+                 Corner c,
                  const Point& aOuterCorner, const Point& aInnerCorner,
                  const twoFloats& aCornerMultPrev, const twoFloats& aCornerMultNext,
                  const Size& aCornerDims,
@@ -2995,8 +2995,8 @@ nsCSSBorderRenderer::DrawNoCompositeColorSolidBorder()
     
 
     
-    mozilla::css::Corner c = mozilla::css::Corner((i+1) % 4);
-    mozilla::css::Corner prevCorner = mozilla::css::Corner(i);
+    Corner c = Corner((i+1) % 4);
+    Corner prevCorner = Corner(i);
 
     
     
