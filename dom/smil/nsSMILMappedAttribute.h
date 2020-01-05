@@ -19,7 +19,7 @@
 
 
 
-#define SMIL_MAPPED_ATTR_STYLERULE_ATOM nsGkAtoms::_empty
+#define SMIL_MAPPED_ATTR_STYLEDECL_ATOM nsGkAtoms::_empty
 
 
 

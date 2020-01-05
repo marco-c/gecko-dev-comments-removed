@@ -131,7 +131,7 @@ nsSMILMappedAttribute::FlushChangesToTargetAttr() const
 {
   
   mElement->DeleteProperty(SMIL_MAPPED_ATTR_ANIMVAL,
-                           SMIL_MAPPED_ATTR_STYLERULE_ATOM);
+                           SMIL_MAPPED_ATTR_STYLEDECL_ATOM);
   nsIDocument* doc = mElement->GetUncomposedDoc();
 
   
