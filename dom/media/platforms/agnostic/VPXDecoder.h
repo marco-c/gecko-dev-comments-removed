@@ -34,8 +34,7 @@ public:
   enum Codec: uint8_t
   {
     VP8 = 1 << 0,
-    VP9 = 1 << 1,
-    Unknown = 1 << 7,
+    VP9 = 1 << 1
   };
 
   
@@ -61,7 +60,7 @@ private:
 
   const VideoInfo& mInfo;
 
-  const Codec mCodec;
+  const int mCodec;
 };
 
 } 
