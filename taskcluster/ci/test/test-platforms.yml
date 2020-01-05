@@ -15,18 +15,6 @@
 ##
 # Linux platforms (matching /linux.*/)
 
-linux32/debug:
-    build-platform: linux/debug
-    test-sets:
-        - linux32-tests
-        - external-media-tests
-linux32/opt:
-    build-platform: linux/opt
-    test-sets:
-        -  linux32-tests
-        -  linux32-opt-tests
-        - external-media-tests
-
 linux64/debug:
     build-platform: linux64/debug
     test-sets:
@@ -40,7 +28,6 @@ linux64/opt:
         - external-media-tests
         - web-platform-tests
         - opt-only-tests
-        - desktop-screenshot-capture
         - talos
 
 # TODO: use 'pgo' and 'asan' labels here, instead of -pgo/opt
@@ -50,7 +37,6 @@ linux64-pgo/opt:
         - common-tests
         - external-media-tests
         - web-platform-tests
-        - talos
 
 linux64-asan/opt:
     build-platform: linux64-asan/opt
@@ -67,11 +53,8 @@ linux64-stylo/opt:
     build-platform: linux64-stylo/opt
     test-sets:
         - stylo-tests
-        - talos
 
-# QR builds just run a subset right now. Note that the tests in this
-# test set are further restricted in tests.yml to run on certain projects
-# only, to avoid adding too much infra load.
+# QR builds just run a subset right now
 linux64-qr/opt:
     build-platform: linux64-qr/opt
     test-sets:
@@ -98,12 +81,10 @@ windows7-32-vm/debug:
     build-platform: win32/debug
     test-sets:
         - windows-vm-tests
-        - external-media-tests
 windows7-32-vm/opt:
     build-platform: win32/opt
     test-sets:
         - windows-vm-tests
-        - external-media-tests
 
 # win32 gpu
 #windows7-32/debug:
@@ -120,12 +101,10 @@ windows10-64-vm/debug:
     build-platform: win64/debug
     test-sets:
         - windows-vm-tests
-        - external-media-tests
 windows10-64-vm/opt:
     build-platform: win64/opt
     test-sets:
         - windows-vm-tests
-        - external-media-tests
 
 # win64 gpu
 #windows10-64/debug:
@@ -144,11 +123,10 @@ macosx64/debug:
     build-platform: macosx64/debug
     test-sets:
         - macosx64-tests-debug
-# Disable bbb talos tests for mac until we disable bb scheduling
-# macosx64/opt:
-#     build-platform: macosx64/opt
-#     test-sets:
-#         - macosx64-tests-talos
+macosx64/opt:
+    build-platform: macosx64/opt
+    test-sets:
+        - macosx64-tests-talos
 
 ##
 # Android platforms (matching /android.*/)

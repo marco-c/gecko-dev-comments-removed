@@ -428,7 +428,7 @@ public:
 
 
 
-  virtual already_AddRefed<BorderLayer> CreateBorderLayer() { return nullptr; }
+  virtual already_AddRefed<BorderLayer> CreateBorderLayer() = 0;
   
 
 

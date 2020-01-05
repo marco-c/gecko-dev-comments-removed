@@ -1559,7 +1559,8 @@ TabChild::RecvMouseEvent(const nsString& aType,
                          const bool&     aIgnoreRootScrollFrame)
 {
   APZCCallbackHelper::DispatchMouseEvent(GetPresShell(), aType, CSSPoint(aX, aY),
-      aButton, aClickCount, aModifiers, aIgnoreRootScrollFrame, nsIDOMMouseEvent::MOZ_SOURCE_UNKNOWN);
+      aButton, aClickCount, aModifiers, aIgnoreRootScrollFrame,
+      nsIDOMMouseEvent::MOZ_SOURCE_UNKNOWN, 0 );
   return IPC_OK();
 }
 
