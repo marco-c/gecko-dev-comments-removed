@@ -1391,6 +1391,56 @@ nsCSSRendering::EndFrameTreesLocked()
   }
 }
 
+bool
+nsCSSRendering::HasBoxShadowNativeTheme(nsIFrame* aFrame,
+                                        bool& aMaybeHasBorderRadius)
+{
+  const nsStyleDisplay* styleDisplay = aFrame->StyleDisplay();
+  nsITheme::Transparency transparency;
+  if (aFrame->IsThemed(styleDisplay, &transparency)) {
+    aMaybeHasBorderRadius = false;
+    
+    
+    return transparency != nsITheme::eOpaque;
+  }
+
+  aMaybeHasBorderRadius = true;
+  return false;
+}
+
+gfx::Color
+nsCSSRendering::GetShadowColor(nsCSSShadowItem* aShadow,
+                               nsIFrame* aFrame,
+                               float aOpacity)
+{
+  
+  nscolor shadowColor;
+  if (aShadow->mHasColor)
+    shadowColor = aShadow->mColor;
+  else
+    shadowColor = aFrame->StyleColor()->mColor;
+
+  Color color = Color::FromABGR(shadowColor);
+  color.a *= aOpacity;
+  return color;
+}
+
+nsRect
+nsCSSRendering::GetShadowRect(const nsRect aFrameArea,
+                              bool aNativeTheme,
+                              nsIFrame* aForFrame)
+{
+  nsRect frameRect = aNativeTheme ?
+    aForFrame->GetVisualOverflowRectRelativeToSelf() + aFrameArea.TopLeft() :
+    aFrameArea;
+  Sides skipSides = aForFrame->GetSkipSides();
+  frameRect = ::BoxDecorationRectForBorder(aForFrame, frameRect, skipSides);
+
+  
+  
+  return frameRect;
+}
+
 void
 nsCSSRendering::PaintBoxShadowOuter(nsPresContext* aPresContext,
                                     nsRenderingContext& aRenderingContext,
@@ -1405,25 +1455,11 @@ nsCSSRendering::PaintBoxShadowOuter(nsPresContext* aPresContext,
     return;
 
   bool hasBorderRadius;
-  bool nativeTheme; 
+  
+  bool nativeTheme = HasBoxShadowNativeTheme(aForFrame, hasBorderRadius);
   const nsStyleDisplay* styleDisplay = aForFrame->StyleDisplay();
-  nsITheme::Transparency transparency;
-  if (aForFrame->IsThemed(styleDisplay, &transparency)) {
-    
-    hasBorderRadius = false;
-    
-    
-    nativeTheme = transparency != nsITheme::eOpaque;
-  } else {
-    nativeTheme = false;
-    hasBorderRadius = true; 
-  }
 
-  nsRect frameRect = nativeTheme ?
-    aForFrame->GetVisualOverflowRectRelativeToSelf() + aFrameArea.TopLeft() :
-    aFrameArea;
-  Sides skipSides = aForFrame->GetSkipSides();
-  frameRect = ::BoxDecorationRectForBorder(aForFrame, frameRect, skipSides);
+  nsRect frameRect = GetShadowRect(aFrameArea, nativeTheme, aForFrame);
 
   
   
@@ -1487,15 +1523,7 @@ nsCSSRendering::PaintBoxShadowOuter(nsPresContext* aPresContext,
     shadowGfxRectPlusBlur.RoundOut();
     MaybeSnapToDevicePixels(shadowGfxRectPlusBlur, aDrawTarget, true);
 
-    
-    nscolor shadowColor;
-    if (shadowItem->mHasColor)
-      shadowColor = shadowItem->mColor;
-    else
-      shadowColor = aForFrame->StyleColor()->mColor;
-
-    Color gfxShadowColor(Color::FromABGR(shadowColor));
-    gfxShadowColor.a *= aOpacity;
+    Color gfxShadowColor = GetShadowColor(shadowItem, aForFrame, aOpacity);
 
     if (nativeTheme) {
       nsContextBoxBlur blurringArea;
@@ -1569,6 +1597,7 @@ nsCSSRendering::PaintBoxShadowOuter(nsPresContext* aPresContext,
 
       
       nsRect fragmentClip = shadowRectPlusBlur;
+      Sides skipSides = aForFrame->GetSkipSides();
       if (!skipSides.IsEmpty()) {
         if (skipSides.Left()) {
           nscoord xmost = fragmentClip.XMost();
@@ -1762,11 +1791,7 @@ nsCSSRendering::PaintBoxShadowInner(nsPresContext* aPresContext,
     Rect shadowGfxRect = NSRectToRect(paddingRect, twipsPerPixel);
     shadowGfxRect.Round();
 
-    
-    Color shadowColor = Color::FromABGR(shadowItem->mHasColor ?
-                                          shadowItem->mColor :
-                                          aForFrame->StyleColor()->mColor);
-
+    Color shadowColor = GetShadowColor(shadowItem, aForFrame, 1.0);
     renderContext->Save();
 
     
