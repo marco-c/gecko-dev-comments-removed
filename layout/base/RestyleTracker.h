@@ -350,7 +350,9 @@ RestyleTracker::AddPendingRestyle(Element* aElement,
       
       
       MOZ_ASSERT(curData, "expected to find a RestyleData for cur");
-      curData->mDescendants.AppendElement(aElement);
+      if (curData) {
+        curData->mDescendants.AppendElement(aElement);
+      }
     }
   }
 
