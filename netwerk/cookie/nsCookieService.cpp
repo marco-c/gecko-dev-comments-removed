@@ -3039,6 +3039,47 @@ public:
   }
 };
 
+static bool
+DomainMatches(nsCookie* aCookie, const nsACString& aHost) {
+  
+  
+  
+  return aCookie->RawHost() == aHost ||
+      (aCookie->IsDomain() && StringEndsWith(aHost, aCookie->Host()));
+}
+
+static bool
+PathMatches(nsCookie* aCookie, const nsACString& aPath) {
+  
+  uint32_t cookiePathLen = aCookie->Path().Length();
+  if (cookiePathLen > 0 && aCookie->Path().Last() == '/')
+    --cookiePathLen;
+
+  
+  
+  if (!StringBeginsWith(aPath, Substring(aCookie->Path(), 0, cookiePathLen)))
+    return false;
+
+  
+  
+  if (aPath.Length() > cookiePathLen &&
+      !ispathdelimiter(aPath.CharAt(cookiePathLen))) {
+    
+
+
+
+
+
+
+
+    return false;
+  }
+
+  
+  
+  return true;
+}
+
 void
 nsCookieService::GetCookieStringInternal(nsIURI *aHostURI,
                                          bool aIsForeign,
@@ -3119,11 +3160,7 @@ nsCookieService::GetCookieStringInternal(nsIURI *aHostURI,
     cookie = cookies[i];
 
     
-    
-    
-    
-    if (cookie->RawHost() != hostFromURI &&
-        !(cookie->IsDomain() && StringEndsWith(hostFromURI, cookie->Host())))
+    if (!DomainMatches(cookie, hostFromURI))
       continue;
 
     
@@ -3136,26 +3173,8 @@ nsCookieService::GetCookieStringInternal(nsIURI *aHostURI,
       continue;
 
     
-    uint32_t cookiePathLen = cookie->Path().Length();
-    if (cookiePathLen > 0 && cookie->Path().Last() == '/')
-      --cookiePathLen;
-
-    
-    if (!StringBeginsWith(pathFromURI, Substring(cookie->Path(), 0, cookiePathLen)))
+    if (!PathMatches(cookie, pathFromURI))
       continue;
-
-    if (pathFromURI.Length() > cookiePathLen &&
-        !ispathdelimiter(pathFromURI.CharAt(cookiePathLen))) {
-      
-
-
-
-
-
-
-
-      continue;
-    }
 
     
     if (cookie->Expiry() <= currentTime) {
@@ -4014,26 +4033,34 @@ nsCookieService::CheckDomain(nsCookieAttributes &aCookieAttributes,
   return true;
 }
 
+nsCString
+GetPathFromURI(nsIURI* aHostURI)
+{
+  
+  
+  
+  
+  nsAutoCString path;
+  nsCOMPtr<nsIURL> hostURL = do_QueryInterface(aHostURI);
+  if (hostURL) {
+    hostURL->GetDirectory(path);
+  } else {
+    aHostURI->GetPath(path);
+    int32_t slash = path.RFindChar('/');
+    if (slash != kNotFound) {
+      path.Truncate(slash + 1);
+    }
+  }
+  return path;
+}
+
 bool
 nsCookieService::CheckPath(nsCookieAttributes &aCookieAttributes,
                            nsIURI             *aHostURI)
 {
   
   if (aCookieAttributes.path.IsEmpty() || aCookieAttributes.path.First() != '/') {
-    
-    
-    
-    
-    nsCOMPtr<nsIURL> hostURL = do_QueryInterface(aHostURI);
-    if (hostURL) {
-      hostURL->GetDirectory(aCookieAttributes.path);
-    } else {
-      aHostURI->GetPath(aCookieAttributes.path);
-      int32_t slash = aCookieAttributes.path.RFindChar('/');
-      if (slash != kNotFound) {
-        aCookieAttributes.path.Truncate(slash + 1);
-      }
-    }
+    aCookieAttributes.path = GetPathFromURI(aHostURI);
 
 #if 0
   } else {
@@ -4369,7 +4396,7 @@ nsCookieService::FindStaleCookie(nsCookieEntry *aEntry,
   if (aSource) {
     GetBaseDomain(aSource, baseDomain, requireHostMatch);
     aSource->GetAsciiHost(sourceHost);
-    aSource->GetPath(sourcePath);
+    sourcePath = GetPathFromURI(aSource);
   }
 
   const nsCookieEntry::ArrayType &cookies = aEntry->GetCookies();
@@ -4405,19 +4432,12 @@ nsCookieService::FindStaleCookie(nsCookieEntry *aEntry,
     
     
 
-    uint32_t cookiePathLen = cookie->Path().Length();
-    if (cookiePathLen > 0 && cookie->Path().Last() == '/')
-      --cookiePathLen;
-
     
     
     
     bool isPrimaryEvictionCandidate = true;
     if (aSource) {
-      bool pathMatches = StringBeginsWith(sourcePath, Substring(cookie->Path(), 0, cookiePathLen));
-      bool domainMatches = cookie->RawHost() == sourceHost ||
-          (cookie->IsDomain() && StringEndsWith(sourceHost, cookie->Host()));
-      isPrimaryEvictionCandidate = !pathMatches || !domainMatches;
+      isPrimaryEvictionCandidate = !PathMatches(cookie, sourcePath) || !DomainMatches(cookie, sourceHost);
     }
 
     int64_t lastAccessed = cookie->LastAccessed();
