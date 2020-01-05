@@ -895,7 +895,8 @@ class DebugEnvironmentProxy : public ProxyObject
 
     
     
-    bool getMaybeSentinelValue(JSContext* cx, HandleId id, MutableHandleValue vp);
+    static bool getMaybeSentinelValue(JSContext* cx, Handle<DebugEnvironmentProxy*> env,
+                                      HandleId id, MutableHandleValue vp);
 
     
     
