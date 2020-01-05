@@ -2467,10 +2467,7 @@ void MediaDecoderStateMachine::RecomputeDuration()
     duration = TimeUnit::FromSeconds(d);
   } else if (mEstimatedDuration.Ref().isSome()) {
     duration = mEstimatedDuration.Ref().ref();
-  } else if (mInfo.isSome() && Info().mMetadataDuration.isSome()) {
-    
-    
-    
+  } else if (Info().mMetadataDuration.isSome()) {
     duration = Info().mMetadataDuration.ref();
   } else {
     return;
