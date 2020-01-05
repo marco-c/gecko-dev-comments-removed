@@ -160,6 +160,9 @@ private:
   already_AddRefed<DrawTarget>
   CreateClipMask(gfxContext& aReferenceContext, IntPoint& aOffset);
 
+  DrawResult PaintFrameIntoMask(nsIFrame *aFrame, nsIFrame* aClippedFrame,
+                                gfxContext& aTarget, const gfxMatrix& aMatrix);
+
   
   
   
