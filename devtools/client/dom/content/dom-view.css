@@ -99,11 +99,8 @@ body {
 
 
 .devtools-searchbox {
-  float: right;
-}
-
-.devtools-searchbox:dir(rtl) {
-  float: left;
+  margin-inline-start: auto; 
+  flex: none; 
 }
 
 
