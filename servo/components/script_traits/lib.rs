@@ -24,13 +24,12 @@ extern crate serialize;
 use devtools_traits::DevtoolsControlChan;
 use libc::c_void;
 use servo_msg::constellation_msg::{ConstellationChan, PipelineId, Failure, WindowSizeData};
-use servo_msg::constellation_msg::SubpageId;
+use servo_msg::constellation_msg::{LoadData, SubpageId};
 use servo_msg::compositor_msg::ScriptListener;
 use servo_net::image_cache_task::ImageCacheTask;
 use servo_net::resource_task::ResourceTask;
 use servo_util::smallvec::SmallVec1;
 use std::any::Any;
-use url::Url;
 
 use geom::point::Point2D;
 
@@ -50,7 +49,7 @@ pub struct NewLayoutInfo {
 
 pub enum ConstellationControlMsg {
     
-    LoadMsg(PipelineId, Url),
+    LoadMsg(PipelineId, LoadData),
     
     AttachLayoutMsg(NewLayoutInfo),
     
