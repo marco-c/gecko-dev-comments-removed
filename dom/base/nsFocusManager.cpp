@@ -1537,7 +1537,7 @@ nsFocusManager::CheckIfFocusable(nsIContent* aContent, uint32_t aFlags)
 
   
   
-  nsIContent* redirectedFocus = GetRedirectedFocus(aContent);
+  nsCOMPtr<nsIContent> redirectedFocus = GetRedirectedFocus(aContent);
   if (redirectedFocus)
     return CheckIfFocusable(redirectedFocus, aFlags);
 
@@ -3377,8 +3377,9 @@ nsFocusManager::FocusFirst(nsIContent* aRootContent, nsIContent** aNextContent)
 
       if (aRootContent->GetAttr(kNameSpaceID_None,
                                nsGkAtoms::retargetdocumentfocus, retarget)) {
+        nsCOMPtr<Element> element = doc->GetElementById(retarget);
         nsCOMPtr<nsIContent> retargetElement =
-          CheckIfFocusable(doc->GetElementById(retarget), 0);
+          CheckIfFocusable(element, 0);
         if (retargetElement) {
           retargetElement.forget(aNextContent);
           return NS_OK;
