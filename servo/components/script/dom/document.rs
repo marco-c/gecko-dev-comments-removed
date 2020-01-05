@@ -908,7 +908,7 @@ impl<'a> DocumentMethods for JSRef<'a, Document> {
         self.url().serialize()
     }
 
-    // https://html.spec.whatwg.org/multipage/interaction.html#dom-document-activeelement
+    // https://html.spec.whatwg.org/multipage/#dom-document-activeelement
     fn GetActiveElement(self) -> Option<Temporary<Element>> {
         // TODO: Step 2.
 

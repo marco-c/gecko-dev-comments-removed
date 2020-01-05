@@ -153,7 +153,7 @@ pub enum ScriptOrigin {
 
 impl<'a> HTMLScriptElementHelpers for JSRef<'a, HTMLScriptElement> {
     fn prepare(self) {
-        // https://html.spec.whatwg.org/multipage/scripting.html#prepare-a-script
+        // https://html.spec.whatwg.org/multipage/#prepare-a-script
         // Step 1.
         if self.already_started.get() {
             return;
