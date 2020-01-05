@@ -636,7 +636,7 @@ TrackBuffersManager::SegmentParserLoop()
     
     
     if (mSourceBufferAttributes->GetAppendState() == AppendState::WAITING_FOR_SEGMENT) {
-      if (mParser->IsInitSegmentPresent(mInputBuffer)) {
+      if (NS_SUCCEEDED(mParser->IsInitSegmentPresent(mInputBuffer))) {
         SetAppendState(AppendState::PARSING_INIT_SEGMENT);
         if (mFirstInitializationSegmentReceived) {
           
@@ -644,7 +644,7 @@ TrackBuffersManager::SegmentParserLoop()
         }
         continue;
       }
-      if (mParser->IsMediaSegmentPresent(mInputBuffer)) {
+      if (NS_SUCCEEDED(mParser->IsMediaSegmentPresent(mInputBuffer))) {
         SetAppendState(AppendState::PARSING_MEDIA_SEGMENT);
         mNewMediaSegmentStarted = true;
         continue;

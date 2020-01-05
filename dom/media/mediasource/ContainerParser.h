@@ -10,6 +10,7 @@
 #include "mozilla/RefPtr.h"
 #include "nsString.h"
 #include "MediaResource.h"
+#include "MediaResult.h"
 
 namespace mozilla {
 
@@ -24,12 +25,18 @@ public:
   
   
   
-  virtual bool IsInitSegmentPresent(MediaByteBuffer* aData);
+  
+  
+  
+  virtual MediaResult IsInitSegmentPresent(MediaByteBuffer* aData);
 
   
   
   
-  virtual bool IsMediaSegmentPresent(MediaByteBuffer* aData);
+  
+  
+  
+  virtual MediaResult IsMediaSegmentPresent(MediaByteBuffer* aData);
 
   
   

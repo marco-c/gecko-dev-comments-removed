@@ -38,7 +38,7 @@ ContainerParser::ContainerParser(const nsACString& aType)
 
 ContainerParser::~ContainerParser() = default;
 
-bool
+MediaResult
 ContainerParser::IsInitSegmentPresent(MediaByteBuffer* aData)
 {
   MSE_DEBUG(ContainerParser, "aLength=%u [%x%x%x%x]",
@@ -47,10 +47,10 @@ ContainerParser::IsInitSegmentPresent(MediaByteBuffer* aData)
             aData->Length() > 1 ? (*aData)[1] : 0,
             aData->Length() > 2 ? (*aData)[2] : 0,
             aData->Length() > 3 ? (*aData)[3] : 0);
-  return false;
+  return NS_ERROR_NOT_AVAILABLE;
 }
 
-bool
+MediaResult
 ContainerParser::IsMediaSegmentPresent(MediaByteBuffer* aData)
 {
   MSE_DEBUG(ContainerParser, "aLength=%u [%x%x%x%x]",
@@ -59,7 +59,7 @@ ContainerParser::IsMediaSegmentPresent(MediaByteBuffer* aData)
             aData->Length() > 1 ? (*aData)[1] : 0,
             aData->Length() > 2 ? (*aData)[2] : 0,
             aData->Length() > 3 ? (*aData)[3] : 0);
-  return false;
+  return NS_ERROR_NOT_AVAILABLE;
 }
 
 bool
@@ -123,7 +123,7 @@ public:
   static const unsigned NS_PER_USEC = 1000;
   static const unsigned USEC_PER_SEC = 1000000;
 
-  bool IsInitSegmentPresent(MediaByteBuffer* aData) override
+  MediaResult IsInitSegmentPresent(MediaByteBuffer* aData) override
   {
     ContainerParser::IsInitSegmentPresent(aData);
     
@@ -143,12 +143,12 @@ public:
     if (aData->Length() >= 4 &&
         (*aData)[0] == 0x1a && (*aData)[1] == 0x45 && (*aData)[2] == 0xdf &&
         (*aData)[3] == 0xa3) {
-      return true;
+      return NS_OK;
     }
-    return false;
+    return NS_ERROR_NOT_AVAILABLE;
   }
 
-  bool IsMediaSegmentPresent(MediaByteBuffer* aData) override
+  MediaResult IsMediaSegmentPresent(MediaByteBuffer* aData) override
   {
     ContainerParser::IsMediaSegmentPresent(aData);
     
@@ -166,23 +166,24 @@ public:
     if (aData->Length() >= 4 &&
         (*aData)[0] == 0x1f && (*aData)[1] == 0x43 && (*aData)[2] == 0xb6 &&
         (*aData)[3] == 0x75) {
-      return true;
+      return NS_OK;
     }
     
     if (aData->Length() >= 4 &&
         (*aData)[0] == 0x1c && (*aData)[1] == 0x53 && (*aData)[2] == 0xbb &&
         (*aData)[3] == 0x6b) {
-      return true;
+      return NS_OK;
     }
-    return false;
+    return NS_ERROR_NOT_AVAILABLE;
   }
 
   bool ParseStartAndEndTimestamps(MediaByteBuffer* aData,
                                   int64_t& aStart, int64_t& aEnd) override
   {
-    bool initSegment = IsInitSegmentPresent(aData);
+    bool initSegment = NS_SUCCEEDED(IsInitSegmentPresent(aData));
 
-    if (mLastMapping && (initSegment || IsMediaSegmentPresent(aData))) {
+    if (mLastMapping &&
+        (initSegment || NS_SUCCEEDED(IsMediaSegmentPresent(aData)))) {
       
       
       
@@ -337,20 +338,20 @@ public:
     : ContainerParser(aType)
   {}
 
-  bool IsInitSegmentPresent(MediaByteBuffer* aData) override
+  MediaResult IsInitSegmentPresent(MediaByteBuffer* aData) override
   {
     ContainerParser::IsInitSegmentPresent(aData);
     
     
     
     AtomParser parser(mType, aData);
-    return parser.StartWithInitSegment();
+    return parser.StartWithInitSegment() ? NS_OK : NS_ERROR_NOT_AVAILABLE;
   }
 
-  bool IsMediaSegmentPresent(MediaByteBuffer* aData) override
+  MediaResult IsMediaSegmentPresent(MediaByteBuffer* aData) override
   {
     AtomParser parser(mType, aData);
-    return parser.StartWithMediaSegment();
+    return parser.StartWithMediaSegment() ? NS_OK : NS_ERROR_NOT_AVAILABLE;
   }
 
 private:
@@ -420,7 +421,7 @@ public:
   bool ParseStartAndEndTimestamps(MediaByteBuffer* aData,
                                   int64_t& aStart, int64_t& aEnd) override
   {
-    bool initSegment = IsInitSegmentPresent(aData);
+    bool initSegment = NS_SUCCEEDED(IsInitSegmentPresent(aData));
     if (initSegment) {
       mResource = new SourceBufferResource(NS_LITERAL_CSTRING("video/mp4"));
       mStream = new MP4Stream(mResource);
@@ -554,24 +555,24 @@ public:
     return true;
   }
 
-  bool IsInitSegmentPresent(MediaByteBuffer* aData) override
+  MediaResult IsInitSegmentPresent(MediaByteBuffer* aData) override
   {
     
     ContainerParser::IsInitSegmentPresent(aData);
 
     Header header;
     if (!Parse(aData, header)) {
-      return false;
+      return NS_ERROR_NOT_AVAILABLE;
     }
 
     MSE_DEBUGV(ADTSContainerParser, "%llu byte frame %d aac frames%s",
         (unsigned long long)header.frame_length, (int)header.aac_frames,
         header.have_crc ? " crc" : "");
 
-    return true;
+    return NS_OK;
   }
 
-  bool IsMediaSegmentPresent(MediaByteBuffer* aData) override
+  MediaResult IsMediaSegmentPresent(MediaByteBuffer* aData) override
   {
     
     ContainerParser::IsMediaSegmentPresent(aData);
@@ -583,17 +584,17 @@ public:
     
     Header header;
     if (!Parse(aData, header)) {
-      return false;
+      return NS_ERROR_NOT_AVAILABLE;
     }
     
     
     
     if (aData->Length() <= header.header_length) {
-      return false;
+      return NS_ERROR_NOT_AVAILABLE;
     }
 
     
-    return true;
+    return NS_OK;
   }
 
   bool ParseStartAndEndTimestamps(MediaByteBuffer* aData,
