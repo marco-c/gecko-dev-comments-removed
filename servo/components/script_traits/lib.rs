@@ -777,6 +777,8 @@ pub struct WorkerGlobalScopeInit {
     pub worker_id: WorkerId,
     
     pub pipeline_id: PipelineId,
+    
+    pub origin: ImmutableOrigin,
 }
 
 
