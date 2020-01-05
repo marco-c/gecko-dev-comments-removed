@@ -3611,8 +3611,17 @@ var SessionStoreInternal = {
     
     this.markTabAsRestoring(aTab);
 
+    
+    
+    
+    let newFrameloader =
+      aReloadInFreshProcess || !!browser.frameLoader.groupedSessionHistory;
     let isRemotenessUpdate =
-      tabbrowser.updateBrowserRemotenessByURL(browser, uri, aReloadInFreshProcess);
+      tabbrowser.updateBrowserRemotenessByURL(browser, uri, {
+        freshProcess: aReloadInFreshProcess,
+        newFrameloader: newFrameloader,
+      });
+
     if (isRemotenessUpdate) {
       
       
