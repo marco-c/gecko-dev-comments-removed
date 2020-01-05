@@ -126,11 +126,11 @@ def taskgraph_decision(options):
 
     
     
-    write_artifact('task-graph.json', tgg.optimized_task_graph.to_json())
+    write_artifact('task-graph.json', tgg.morphed_task_graph.to_json())
     write_artifact('label-to-taskid.json', tgg.label_to_taskid)
 
     
-    create_tasks(tgg.optimized_task_graph, tgg.label_to_taskid, parameters)
+    create_tasks(tgg.morphed_task_graph, tgg.label_to_taskid, parameters)
 
 
 def get_decision_parameters(options):
