@@ -9,7 +9,6 @@
 #include "mozilla/FlushType.h"           
 #include "nsAutoPtr.h"                   
 #include "nsCOMArray.h"                  
-#include "nsCRT.h"                       
 #include "nsCompatibility.h"             
 #include "nsCOMPtr.h"                    
 #include "nsGkAtoms.h"                   
@@ -217,7 +216,6 @@ public:
   typedef mozilla::dom::FullscreenRequest FullscreenRequest;
 
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_IDOCUMENT_IID)
-  NS_DECL_AND_IMPL_ZEROING_OPERATOR_NEW
 
 #ifdef MOZILLA_INTERNAL_API
   nsIDocument();

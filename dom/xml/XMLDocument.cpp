@@ -229,11 +229,13 @@ namespace dom {
 
 XMLDocument::XMLDocument(const char* aContentType)
   : nsDocument(aContentType),
-    mAsync(true)
+    mChannelIsPending(false),
+    mAsync(true),
+    mLoopingForSyncLoad(false),
+    mIsPlainDocument(false),
+    mSuppressParserErrorElement(false),
+    mSuppressParserErrorConsoleMessages(false)
 {
-  
-  
-
   mType = eGenericXML;
 }
 

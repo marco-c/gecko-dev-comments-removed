@@ -169,15 +169,19 @@ NS_NewHTMLDocument(nsIDocument** aInstancePtrResult, bool aLoadedAsData)
   return NS_OK;
 }
 
-  
-  
-
 nsHTMLDocument::nsHTMLDocument()
   : nsDocument("text/html")
+  , mNumForms(0)
+  , mWriteLevel(0)
+  , mLoadFlags(0)
+  , mTooDeepWriteRecursion(false)
+  , mDisableDocWrite(false)
+  , mWarnedWidthHeight(false)
+  , mContentEditableCount(0)
+  , mEditingState(EditingState::eOff)
+  , mDisableCookieAccess(false)
+  , mPendingMaybeEditingStateChanged(false)
 {
-  
-  
-
   mType = eHTML;
   mDefaultElementType = kNameSpaceID_XHTML;
   mCompatMode = eCompatibility_NavQuirks;

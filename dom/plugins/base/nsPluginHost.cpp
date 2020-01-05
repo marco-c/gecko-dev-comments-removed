@@ -265,8 +265,10 @@ static bool UnloadPluginsASAP()
 }
 
 nsPluginHost::nsPluginHost()
-  
-  
+  : mPluginsLoaded(false)
+  , mOverrideInternalTypes(false)
+  , mPluginsDisabled(false)
+  , mPluginEpoch(0)
 {
   
   

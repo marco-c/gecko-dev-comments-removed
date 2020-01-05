@@ -102,9 +102,6 @@ PluginStreamListener::OnStartRequest(nsIRequest* request, nsISupports *ctxt)
   return MediaDocumentStreamListener::OnStartRequest(request, ctxt);
 }
 
-  
-  
-
 PluginDocument::PluginDocument()
 {}
 
