@@ -163,6 +163,11 @@ TypedArrayObject::finalize(FreeOp* fop, JSObject* obj)
     MOZ_ASSERT(!IsInsideNursery(obj));
     TypedArrayObject* curObj = &obj->as<TypedArrayObject>();
 
+    
+    
+    if (!curObj->elementsRaw())
+        return;
+
     curObj->assertZeroLengthArrayData();
 
     
