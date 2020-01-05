@@ -112,6 +112,9 @@ FormAutofillHandler.prototype = {
   autofillFormFields(autofillResult) {
     for (let field of autofillResult) {
       
+      
+
+      
       let fieldDetail = this.fieldDetails[field.index];
 
       

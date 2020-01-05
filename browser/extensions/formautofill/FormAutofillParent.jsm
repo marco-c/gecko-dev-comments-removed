@@ -112,10 +112,8 @@ FormAutofillParent.prototype = {
 
   _onStatusChanged() {
     if (this._enabled) {
-      Services.ppmm.addMessageListener("FormAutofill:PopulateFieldValues", this);
       Services.ppmm.addMessageListener("FormAutofill:GetProfiles", this);
     } else {
-      Services.ppmm.removeMessageListener("FormAutofill:PopulateFieldValues", this);
       Services.ppmm.removeMessageListener("FormAutofill:GetProfiles", this);
     }
 
@@ -141,9 +139,6 @@ FormAutofillParent.prototype = {
 
   receiveMessage({name, data, target}) {
     switch (name) {
-      case "FormAutofill:PopulateFieldValues":
-        this._populateFieldValues(data, target);
-        break;
       case "FormAutofill:GetProfiles":
         this._getProfiles(data, target);
         break;
@@ -176,28 +171,9 @@ FormAutofillParent.prototype = {
       this._profileStore = null;
     }
 
-    Services.ppmm.removeMessageListener("FormAutofill:PopulateFieldValues", this);
     Services.ppmm.removeMessageListener("FormAutofill:GetProfiles", this);
     Services.obs.removeObserver(this, "advanced-pane-loaded");
     Services.prefs.removeObserver(ENABLED_PREF, this);
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  _populateFieldValues({guid, fields}, target) {
-    this._profileStore.notifyUsed(guid);
-    this._fillInFields(this._profileStore.get(guid), fields);
-    target.sendAsyncMessage("FormAutofill:fillForm", {fields});
   },
 
   
@@ -221,42 +197,6 @@ FormAutofillParent.prototype = {
     }
 
     target.sendAsyncMessage("FormAutofill:Profiles", profiles);
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  _getDataByFieldName(profile, fieldName) {
-    
-    return profile[fieldName];
-  },
-
-  
-
-
-
-
-
-
-  _fillInFields(profile, fields) {
-    for (let field of fields) {
-      let value = this._getDataByFieldName(profile, field.fieldName);
-      if (value !== undefined) {
-        field.value = value;
-      }
-    }
   },
 };
 

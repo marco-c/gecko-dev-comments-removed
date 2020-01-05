@@ -10,12 +10,17 @@ const {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
+XPCOMUtils.defineLazyModuleGetter(this, "FormAutofillUtils",
+                                  "resource://formautofill/FormAutofillUtils.jsm");
+
 this.ProfileAutoCompleteResult = function(searchString,
-                                           fieldName,
-                                           matchingProfiles,
-                                           {resultCode = null}) {
+                                          focusedFieldName,
+                                          allFieldNames,
+                                          matchingProfiles,
+                                          {resultCode = null}) {
   this.searchString = searchString;
-  this._fieldName = fieldName;
+  this._focusedFieldName = focusedFieldName;
+  this._allFieldNames = allFieldNames;
   this._matchingProfiles = matchingProfiles;
 
   if (resultCode) {
@@ -25,6 +30,10 @@ this.ProfileAutoCompleteResult = function(searchString,
   } else {
     this.searchResult = Ci.nsIAutoCompleteResult.RESULT_NOMATCH;
   }
+
+  this._popupLabels = this._generateLabels(this._focusedFieldName,
+                                           this._allFieldNames,
+                                           this._matchingProfiles);
 };
 
 ProfileAutoCompleteResult.prototype = {
@@ -42,10 +51,16 @@ ProfileAutoCompleteResult.prototype = {
   searchResult: null,
 
   
-  _fieldName: "",
+  _focusedFieldName: "",
+
+  
+  _allFieldNames: null,
 
   
   _matchingProfiles: null,
+
+  
+  _popupLabels: null,
 
   
 
@@ -65,14 +80,69 @@ ProfileAutoCompleteResult.prototype = {
 
 
 
+
+
+
+  _getSecondaryLabel(focusedFieldName, allFieldNames, profile) {
+    
+
+
+    const possibleNameFields = ["given-name", "additional-name", "family-name"];
+    focusedFieldName = possibleNameFields.includes(focusedFieldName) ?
+                       "name" : focusedFieldName;
+    if (!profile.name) {
+      profile.name = FormAutofillUtils.generateFullName(profile["given-name"],
+                                                        profile["family-name"],
+                                                        profile["additional-name"]);
+    }
+
+    const secondaryLabelOrder = [
+      "street-address",  
+      "name",            
+      "address-level2",  
+      "organization",    
+      "address-level1",  
+      "country",         
+      "postal-code",     
+      "tel",             
+      "email",           
+    ];
+
+    for (const currentFieldName of secondaryLabelOrder) {
+      if (focusedFieldName != currentFieldName &&
+          allFieldNames.includes(currentFieldName) &&
+          profile[currentFieldName]) {
+        return profile[currentFieldName];
+      }
+    }
+
+    return ""; 
+  },
+
+  _generateLabels(focusedFieldName, allFieldNames, profiles) {
+    return profiles.map(profile => {
+      return {
+        primary: profile[focusedFieldName],
+        secondary: this._getSecondaryLabel(focusedFieldName,
+                                           allFieldNames,
+                                           profile),
+      };
+    });
+  },
+
+  
+
+
+
+
   getValueAt(index) {
     this._checkIndexBounds(index);
-    return this._matchingProfiles[index].guid;
+    return this._popupLabels[index].primary;
   },
 
   getLabelAt(index) {
     this._checkIndexBounds(index);
-    return this._matchingProfiles[index].organization;
+    return JSON.stringify(this._popupLabels[index]);
   },
 
   
@@ -82,7 +152,7 @@ ProfileAutoCompleteResult.prototype = {
 
   getCommentAt(index) {
     this._checkIndexBounds(index);
-    return this._matchingProfiles[index].streetAddress;
+    return JSON.stringify(this._matchingProfiles[index]);
   },
 
   
