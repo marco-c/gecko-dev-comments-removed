@@ -209,6 +209,8 @@ impl Pipeline {
     }
 
     pub fn exit(&self) {
+        debug!("pipeline {:?} exiting", self.id);
+
         
         
         let ScriptChan(ref chan) = self.script_chan;
