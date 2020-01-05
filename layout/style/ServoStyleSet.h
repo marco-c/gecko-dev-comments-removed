@@ -81,13 +81,6 @@ public:
                             dom::Element* aPseudoElement);
 
   
-  
-  
-  already_AddRefed<nsStyleContext>
-  ResolveTransientStyle(dom::Element* aElement,
-                        mozilla::CSSPseudoElementType aPseudoType);
-
-  
   already_AddRefed<nsStyleContext>
   ResolveAnonymousBoxStyle(nsIAtom* aPseudoTag, nsStyleContext* aParentContext,
                            uint32_t aFlags = 0);
