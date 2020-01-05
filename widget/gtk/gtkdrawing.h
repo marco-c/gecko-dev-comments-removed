@@ -508,18 +508,6 @@ moz_gtk_get_tab_thickness(WidgetNodeType aNodeType);
 
 
 
-gboolean moz_gtk_images_in_menus(void);
-
-
-
-
-
-gboolean moz_gtk_images_in_buttons(void);
-
-
-
-
-
 gboolean moz_gtk_has_scrollbar_buttons(void);
 
 #if (MOZ_WIDGET_GTK == 2)

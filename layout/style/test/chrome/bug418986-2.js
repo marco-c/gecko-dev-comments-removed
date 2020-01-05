@@ -37,7 +37,6 @@ var expected_values = [
 
 
 var suppressed_toggles = [
-  "-moz-images-in-menus",
   "-moz-mac-graphite-theme",
   
 

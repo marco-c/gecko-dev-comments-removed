@@ -339,14 +339,6 @@ public:
     
 
 
-    eIntID_ImagesInMenus,
-    
-
-
-    eIntID_ImagesInButtons,
-    
-
-
     eIntID_MenuBarDrag,
     
 
