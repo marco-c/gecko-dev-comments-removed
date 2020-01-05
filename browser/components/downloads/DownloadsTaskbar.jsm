@@ -106,9 +106,10 @@ this.DownloadsTaskbar = {
         
         
         if (this._summary) {
-          return;
+          return undefined;
         }
         this._summary = summary;
+        return this._summary.addView(this);
       }).then(null, Cu.reportError);
     }
   },
