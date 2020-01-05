@@ -96,7 +96,8 @@ impl RenderListener for CompositorChan {
             if first {
                 self.chan.send(CreateRootCompositorLayerIfNecessary(pipeline_id,
                                                                     metadata.id,
-                                                                    size));
+                                                                    size,
+                                                                    metadata.background_color));
                 first = false
             } else {
                 self.chan
@@ -166,7 +167,7 @@ pub enum Msg {
 
     
     
-    CreateRootCompositorLayerIfNecessary(PipelineId, LayerId, Size2D<f32>),
+    CreateRootCompositorLayerIfNecessary(PipelineId, LayerId, Size2D<f32>, Color),
     
     
     CreateDescendantCompositorLayerIfNecessary(PipelineId, LayerId, Rect<f32>, ScrollPolicy),
