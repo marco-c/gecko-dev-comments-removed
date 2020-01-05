@@ -2,51 +2,16 @@
 
 
 use std::arc::{ARC, get, clone};
-use dom::node::{Node, LayoutData, NodeTree};
-use core::dvec::DVec;
-use newcss::values::*;
+use dom::node::{Node, NodeTree};
 use newcss::{SelectCtx, SelectResults};
-use newcss::color::{Color, rgb};
-use newcss::color::css_colors::{white, black};
 use layout::context::LayoutContext;
 use select_handler::NodeSelectHandler;
 
 trait StyleMethods {
-    fn initialize_layout_data() -> Option<@LayoutData>;
-    fn initialize_style_for_subtree(ctx: &LayoutContext, refs: &DVec<@LayoutData>);
     fn recompute_style_for_subtree(ctx: &LayoutContext, select_ctx: &SelectCtx);
 }
 
 impl Node : StyleMethods {
-    
-
-
-    fn initialize_layout_data() -> Option<@LayoutData> {
-        match self.has_aux() {
-            false => {
-                let data = @LayoutData({
-                    mut style : None,
-                    mut flow  : None
-                });
-                self.set_aux(data); Some(data)
-            },
-            true => None
-        }
-    }
-
-    
-
-
-
-    fn initialize_style_for_subtree(_ctx: &LayoutContext, refs: &DVec<@LayoutData>) {
-        do self.traverse_preorder |n| {
-            match n.initialize_layout_data() {
-                Some(r) => refs.push(r),
-                None => {}
-            }
-        }
-    }
-
     
 
 
