@@ -575,23 +575,29 @@ nsContextMenu.prototype = {
   },
 
   
+
+
+
+
+
+
+
+
   setTarget(aNode, aRangeParent, aRangeOffset) {
     
     
     
-    let editFlags;
     this.isRemote = gContextMenuContentData && gContextMenuContentData.isRemote;
     if (this.isRemote) {
       aNode = gContextMenuContentData.event.target;
       aRangeParent = gContextMenuContentData.event.rangeParent;
       aRangeOffset = gContextMenuContentData.event.rangeOffset;
-      editFlags = gContextMenuContentData.editFlags;
     }
 
     const xulNS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
     if (aNode.nodeType == Node.DOCUMENT_NODE ||
         
-        (aNode.namespaceURI == xulNS && !isXULTextLinkLabel(aNode))) {
+        (aNode.namespaceURI == xulNS && !this._isXULTextLinkLabel(aNode))) {
       this.shouldDisplay = false;
       return;
     }
@@ -646,12 +652,15 @@ nsContextMenu.prototype = {
     let ownerDoc = this.target.ownerDocument;
     this.ownerDoc = ownerDoc;
 
+    let editFlags;
+
     
     
     if (this.isRemote) {
       this.browser = gContextMenuContentData.browser;
       this.principal = gContextMenuContentData.principal;
       this.frameOuterWindowID = gContextMenuContentData.frameOuterWindowID;
+      editFlags = gContextMenuContentData.editFlags;
     } else {
       editFlags = SpellCheckHelper.isEditable(this.target, window);
       this.browser = ownerDoc.defaultView
@@ -669,104 +678,134 @@ nsContextMenu.prototype = {
 
     
     this.inSyntheticDoc = ownerDoc.mozSyntheticDocument;
-    
-    if (this.target.nodeType == Node.ELEMENT_NODE) {
-      
-      
-      
-      if (this.target instanceof Ci.nsIImageLoadingContent &&
-          this.target.currentURI) {
-        this.onImage = true;
 
-        var request =
-          this.target.getRequest(Ci.nsIImageLoadingContent.CURRENT_REQUEST);
-        if (request && (request.imageStatus & request.STATUS_SIZE_AVAILABLE))
-          this.onLoadedImage = true;
-        if (request &&
-            (request.imageStatus & request.STATUS_LOAD_COMPLETE) &&
-            !(request.imageStatus & request.STATUS_ERROR)) {
-          this.onCompletedImage = true;
-        }
+    this._setTargetForNodesNoChildren(editFlags, aRangeParent, aRangeOffset);
 
-        this.mediaURL = this.target.currentURI.spec;
+    this._setTargetForNodesWithChildren(editFlags, aRangeParent, aRangeOffset);
+  },
 
-        var descURL = this.target.getAttribute("longdesc");
-        if (descURL) {
-          this.imageDescURL = makeURLAbsolute(ownerDoc.body.baseURI, descURL);
-        }
-      } else if (this.target instanceof HTMLCanvasElement) {
-        this.onCanvas = true;
-      } else if (this.target instanceof HTMLVideoElement) {
-        let mediaURL = this.target.currentSrc || this.target.src;
-        if (this.isMediaURLReusable(mediaURL)) {
-          this.mediaURL = mediaURL;
-        }
-        if (this._isProprietaryDRM()) {
-          this.onDRMMedia = true;
-        }
-        
-        
-        
-        if (this.target.readyState >= this.target.HAVE_METADATA &&
-            (this.target.videoWidth == 0 || this.target.videoHeight == 0)) {
-          this.onAudio = true;
-        } else {
-          this.onVideo = true;
-        }
-      } else if (this.target instanceof HTMLAudioElement) {
-        this.onAudio = true;
-        let mediaURL = this.target.currentSrc || this.target.src;
-        if (this.isMediaURLReusable(mediaURL)) {
-          this.mediaURL = mediaURL;
-        }
-        if (this._isProprietaryDRM()) {
-          this.onDRMMedia = true;
-        }
-      } else if (editFlags & (SpellCheckHelper.INPUT | SpellCheckHelper.TEXTAREA)) {
-        this.onTextInput = (editFlags & SpellCheckHelper.TEXTINPUT) !== 0;
-        this.onNumeric = (editFlags & SpellCheckHelper.NUMERIC) !== 0;
-        this.onEditableArea = (editFlags & SpellCheckHelper.EDITABLE) !== 0;
-        this.onPassword = (editFlags & SpellCheckHelper.PASSWORD) !== 0;
-        if (this.onEditableArea) {
-          if (this.isRemote) {
-            InlineSpellCheckerUI.initFromRemote(gContextMenuContentData.spellInfo);
-          } else {
-            InlineSpellCheckerUI.init(this.target.QueryInterface(Ci.nsIDOMNSEditableElement).editor);
-            InlineSpellCheckerUI.initFromEvent(aRangeParent, aRangeOffset);
-          }
-        }
-        this.onKeywordField = (editFlags & SpellCheckHelper.KEYWORD);
-      } else if (this.target instanceof HTMLHtmlElement) {
-        var bodyElt = ownerDoc.body;
-        if (bodyElt) {
-          let computedURL;
-          try {
-            computedURL = this.getComputedURL(bodyElt, "background-image");
-            this._hasMultipleBGImages = false;
-          } catch (e) {
-            this._hasMultipleBGImages = true;
-          }
-          if (computedURL) {
-            this.hasBGImage = true;
-            this.bgImageURL = makeURLAbsolute(bodyElt.baseURI,
-                                              computedURL);
-          }
-        }
-      } else if ((this.target instanceof HTMLEmbedElement ||
-                this.target instanceof HTMLObjectElement ||
-                this.target instanceof HTMLAppletElement) &&
-               this.target.displayedType == HTMLObjectElement.TYPE_NULL &&
-               this.target.pluginFallbackType == HTMLObjectElement.PLUGIN_CLICK_TO_PLAY) {
-        this.onCTPPlugin = true;
-      }
+  
 
-      this.canSpellCheck = this._isSpellCheckEnabled(this.target);
-    } else if (this.target.nodeType == Node.TEXT_NODE) {
+
+
+
+
+
+
+  _setTargetForNodesNoChildren(editFlags, rangeParent, rangeOffset) {
+    if (this.target.nodeType == Node.TEXT_NODE) {
       
       this.canSpellCheck = this.target.parentNode &&
                            this._isSpellCheckEnabled(this.target);
+      return;
     }
 
+    
+    
+    if (this.target.nodeType != Node.ELEMENT_NODE) {
+      return;
+    }
+    
+    
+    
+    if (this.target instanceof Ci.nsIImageLoadingContent &&
+        this.target.currentURI) {
+      this.onImage = true;
+
+      var request =
+        this.target.getRequest(Ci.nsIImageLoadingContent.CURRENT_REQUEST);
+      if (request && (request.imageStatus & request.STATUS_SIZE_AVAILABLE))
+        this.onLoadedImage = true;
+      if (request &&
+          (request.imageStatus & request.STATUS_LOAD_COMPLETE) &&
+          !(request.imageStatus & request.STATUS_ERROR)) {
+        this.onCompletedImage = true;
+      }
+
+      this.mediaURL = this.target.currentURI.spec;
+
+      var descURL = this.target.getAttribute("longdesc");
+      if (descURL) {
+        this.imageDescURL = makeURLAbsolute(this.ownerDoc.body.baseURI, descURL);
+      }
+    } else if (this.target instanceof HTMLCanvasElement) {
+      this.onCanvas = true;
+    } else if (this.target instanceof HTMLVideoElement) {
+      let mediaURL = this.target.currentSrc || this.target.src;
+      if (this.isMediaURLReusable(mediaURL)) {
+        this.mediaURL = mediaURL;
+      }
+      if (this._isProprietaryDRM()) {
+        this.onDRMMedia = true;
+      }
+      
+      
+      
+      if (this.target.readyState >= this.target.HAVE_METADATA &&
+          (this.target.videoWidth == 0 || this.target.videoHeight == 0)) {
+        this.onAudio = true;
+      } else {
+        this.onVideo = true;
+      }
+    } else if (this.target instanceof HTMLAudioElement) {
+      this.onAudio = true;
+      let mediaURL = this.target.currentSrc || this.target.src;
+      if (this.isMediaURLReusable(mediaURL)) {
+        this.mediaURL = mediaURL;
+      }
+      if (this._isProprietaryDRM()) {
+        this.onDRMMedia = true;
+      }
+    } else if (editFlags & (SpellCheckHelper.INPUT | SpellCheckHelper.TEXTAREA)) {
+      this.onTextInput = (editFlags & SpellCheckHelper.TEXTINPUT) !== 0;
+      this.onNumeric = (editFlags & SpellCheckHelper.NUMERIC) !== 0;
+      this.onEditableArea = (editFlags & SpellCheckHelper.EDITABLE) !== 0;
+      this.onPassword = (editFlags & SpellCheckHelper.PASSWORD) !== 0;
+      if (this.onEditableArea) {
+        if (this.isRemote) {
+          InlineSpellCheckerUI.initFromRemote(gContextMenuContentData.spellInfo);
+        } else {
+          InlineSpellCheckerUI.init(this.target.QueryInterface(Ci.nsIDOMNSEditableElement).editor);
+          InlineSpellCheckerUI.initFromEvent(rangeParent, rangeOffset);
+        }
+      }
+      this.onKeywordField = (editFlags & SpellCheckHelper.KEYWORD);
+    } else if (this.target instanceof HTMLHtmlElement) {
+      var bodyElt = this.ownerDoc.body;
+      if (bodyElt) {
+        let computedURL;
+        try {
+          computedURL = this.getComputedURL(bodyElt, "background-image");
+          this._hasMultipleBGImages = false;
+        } catch (e) {
+          this._hasMultipleBGImages = true;
+        }
+        if (computedURL) {
+          this.hasBGImage = true;
+          this.bgImageURL = makeURLAbsolute(bodyElt.baseURI,
+                                            computedURL);
+        }
+      }
+    } else if ((this.target instanceof HTMLEmbedElement ||
+              this.target instanceof HTMLObjectElement ||
+              this.target instanceof HTMLAppletElement) &&
+             this.target.displayedType == HTMLObjectElement.TYPE_NULL &&
+             this.target.pluginFallbackType == HTMLObjectElement.PLUGIN_CLICK_TO_PLAY) {
+      this.onCTPPlugin = true;
+    }
+
+    this.canSpellCheck = this._isSpellCheckEnabled(this.target);
+  },
+
+  
+
+
+
+
+
+
+
+  _setTargetForNodesWithChildren(editFlags, rangeParent, rangeOffset) {
     
     
     var elem = this.target;
@@ -776,7 +815,7 @@ nsContextMenu.prototype = {
         if (!this.onLink &&
             
             
-             (isXULTextLinkLabel(elem) ||
+             (this._isXULTextLinkLabel(elem) ||
               (elem instanceof HTMLAnchorElement && elem.href) ||
               (elem instanceof HTMLAreaElement && elem.href) ||
               elem instanceof HTMLLinkElement ||
@@ -834,11 +873,11 @@ nsContextMenu.prototype = {
       this.onMathML = true;
 
     
-    var docDefaultView = ownerDoc.defaultView;
+    var docDefaultView = this.ownerDoc.defaultView;
     if (docDefaultView != docDefaultView.top) {
       this.inFrame = true;
 
-      if (ownerDoc.isSrcdocDocument) {
+      if (this.ownerDoc.isSrcdocDocument) {
           this.inSrcdocFrame = true;
       }
     }
@@ -862,26 +901,33 @@ nsContextMenu.prototype = {
         if (this.isRemote) {
           InlineSpellCheckerUI.initFromRemote(gContextMenuContentData.spellInfo);
         } else {
-          var targetWin = ownerDoc.defaultView;
+          var targetWin = this.ownerDoc.defaultView;
           var editingSession = targetWin.QueryInterface(Ci.nsIInterfaceRequestor)
                                         .getInterface(Ci.nsIWebNavigation)
                                         .QueryInterface(Ci.nsIInterfaceRequestor)
                                         .getInterface(Ci.nsIEditingSession);
           InlineSpellCheckerUI.init(editingSession.getEditorForWindow(targetWin));
-          InlineSpellCheckerUI.initFromEvent(aRangeParent, aRangeOffset);
+          InlineSpellCheckerUI.initFromEvent(rangeParent, rangeOffset);
         }
         var canSpell = InlineSpellCheckerUI.canSpellCheck && this.canSpellCheck;
         this.showItem("spell-check-enabled", canSpell);
         this.showItem("spell-separator", canSpell);
       }
     }
+  },
 
-    function isXULTextLinkLabel(node) {
-      return node.namespaceURI == xulNS &&
-             node.tagName == "label" &&
-             node.classList.contains("text-link") &&
-             node.href;
-    }
+  
+
+
+
+
+
+  _isXULTextLinkLabel(node) {
+    const xulNS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
+    return node.namespaceURI == xulNS &&
+           node.tagName == "label" &&
+           node.classList.contains("text-link") &&
+           node.href;
   },
 
   
