@@ -2,7 +2,6 @@
 
 
 
-#![cfg_attr(feature = "servo", feature(core_intrinsics))]
 #![cfg_attr(feature = "servo", feature(custom_derive))]
 #![cfg_attr(feature = "servo", feature(fnbox))]
 #![cfg_attr(feature = "servo", feature(plugin))]
@@ -40,12 +39,6 @@ pub mod prefs;
 pub mod resource_files;
 pub mod thread;
 pub mod thread_state;
-
-#[cfg(feature = "servo")]
-#[allow(unsafe_code)]
-pub fn breakpoint() {
-    unsafe { ::std::intrinsics::breakpoint() };
-}
 
 
 #[inline]
