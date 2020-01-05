@@ -10,7 +10,6 @@
 #include <algorithm>
 
 #include "mozilla/ReflowInput.h"
-#include "mozilla/ShapeUtils.h"
 #include "nsBlockFrame.h"
 #include "nsError.h"
 #include "nsIPresShell.h"
@@ -188,7 +187,7 @@ nsFloatManager::GetFlowArea(WritingMode aWM, nscoord aBCoord, nscoord aBSize,
       
       break;
     }
-    if (fi.IsEmpty(aShapeType)) {
+    if (fi.IsEmpty()) {
       
       
       
@@ -616,60 +615,6 @@ nsFloatManager::BoxShapeInfo::LineRight(WritingMode aWM,
 
 
 
-nsFloatManager::CircleShapeInfo::CircleShapeInfo(
-  StyleBasicShape* const aBasicShape,
-  nscoord aLineLeft,
-  nscoord aBlockStart,
-  const LogicalRect& aShapeBoxRect,
-  WritingMode aWM,
-  const nsSize& aContainerSize)
-{
-  
-  
-  
-  nsRect physicalShapeBoxRect =
-    aShapeBoxRect.GetPhysicalRect(aWM, aContainerSize);
-  nsPoint physicalCenter =
-    ShapeUtils::ComputeCircleOrEllipseCenter(aBasicShape, physicalShapeBoxRect);
-  mRadius =
-    ShapeUtils::ComputeCircleRadius(aBasicShape, physicalCenter,
-                                    physicalShapeBoxRect);
-
-  
-  
-  
-  LogicalPoint logicalCenter(aWM, physicalCenter, aContainerSize);
-  mCenter = nsPoint(logicalCenter.LineRelative(aWM, aContainerSize) + aLineLeft,
-                    logicalCenter.B(aWM) + aBlockStart);
-}
-
-nscoord
-nsFloatManager::CircleShapeInfo::LineLeft(WritingMode aWM,
-                                          const nscoord aBStart,
-                                          const nscoord aBEnd) const
-{
-  nscoord lineLeftDiff =
-    ComputeEllipseLineInterceptDiff(BStart(), BEnd(),
-                                    mRadius, mRadius, mRadius, mRadius,
-                                    aBStart, aBEnd);
-  return mCenter.x - mRadius + lineLeftDiff;
-}
-
-nscoord
-nsFloatManager::CircleShapeInfo::LineRight(WritingMode aWM,
-                                           const nscoord aBStart,
-                                           const nscoord aBEnd) const
-{
-  nscoord lineRightDiff =
-    ComputeEllipseLineInterceptDiff(BStart(), BEnd(),
-                                    mRadius, mRadius, mRadius, mRadius,
-                                    aBStart, aBEnd);
-  return mCenter.x + mRadius - lineRightDiff;
-}
-
-
-
-
 nsFloatManager::FloatInfo::FloatInfo(nsIFrame* aFrame,
                                      nscoord aLineLeft, nscoord aBlockStart,
                                      const LogicalRect& aMarginRect,
@@ -706,8 +651,7 @@ nsFloatManager::FloatInfo::FloatInfo(nsIFrame* aFrame,
       
       break;
     case StyleShapeOutsideShapeBox::NoBox:
-      MOZ_ASSERT(shapeOutside.GetType() != StyleShapeSourceType::Box,
-                 "Box source type must have <shape-box> specified!");
+      MOZ_ASSERT_UNREACHABLE("Why don't we have a shape-box?");
       break;
   }
 
@@ -716,17 +660,6 @@ nsFloatManager::FloatInfo::FloatInfo(nsIFrame* aFrame,
                         rect.BStart(aWM) + aBlockStart,
                         rect.ISize(aWM), rect.BSize(aWM));
     mShapeInfo = MakeUnique<BoxShapeInfo>(shapeBoxRect, mFrame);
-  } else if (shapeOutside.GetType() == StyleShapeSourceType::Shape) {
-    StyleBasicShape* const basicShape = shapeOutside.GetBasicShape();
-
-    if (basicShape->GetShapeType() == StyleBasicShapeType::Circle) {
-      mShapeInfo = MakeUnique<CircleShapeInfo>(basicShape, aLineLeft, aBlockStart,
-                                               rect, aWM, aContainerSize);
-    }
-  } else if (shapeOutside.GetType() == StyleShapeSourceType::URL) {
-    
-  } else {
-    MOZ_ASSERT_UNREACHABLE("Unknown StyleShapeSourceType!");
   }
 }
 
@@ -761,11 +694,7 @@ nsFloatManager::FloatInfo::LineLeft(WritingMode aWM,
   if (!mShapeInfo) {
     return LineLeft();
   }
-  
-  
-  
-  
-  return std::max(LineLeft(), mShapeInfo->LineLeft(aWM, aBStart, aBEnd));
+  return mShapeInfo->LineLeft(aWM, aBStart, aBEnd);
 }
 
 nscoord
@@ -782,8 +711,7 @@ nsFloatManager::FloatInfo::LineRight(WritingMode aWM,
   if (!mShapeInfo) {
     return LineRight();
   }
-  
-  return std::min(LineRight(), mShapeInfo->LineRight(aWM, aBStart, aBEnd));
+  return mShapeInfo->LineRight(aWM, aBStart, aBEnd);
 }
 
 nscoord
@@ -797,8 +725,7 @@ nsFloatManager::FloatInfo::BStart(ShapeType aShapeType) const
   if (!mShapeInfo) {
     return BStart();
   }
-  
-  return std::max(BStart(), mShapeInfo->BStart());
+  return mShapeInfo->BStart();
 }
 
 nscoord
@@ -812,22 +739,7 @@ nsFloatManager::FloatInfo::BEnd(ShapeType aShapeType) const
   if (!mShapeInfo) {
     return BEnd();
   }
-  
-  return std::min(BEnd(), mShapeInfo->BEnd());
-}
-
-bool
-nsFloatManager::FloatInfo::IsEmpty(ShapeType aShapeType) const
-{
-  if (aShapeType == ShapeType::Margin) {
-    return IsEmpty();
-  }
-
-  MOZ_ASSERT(aShapeType == ShapeType::ShapeOutside);
-  if (!mShapeInfo) {
-    return IsEmpty();
-  }
-  return mShapeInfo->IsEmpty();
+  return mShapeInfo->BEnd();
 }
 
  nscoord
