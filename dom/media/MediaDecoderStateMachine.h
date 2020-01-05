@@ -693,6 +693,8 @@ private:
   RefPtr<CDMProxy> mCDMProxy;
   MozPromiseRequestHolder<MediaDecoder::CDMProxyPromise> mCDMProxyPromise;
 
+  const bool mIsMSE;
+
 private:
   
   Mirror<media::TimeIntervals> mBuffered;
