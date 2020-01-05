@@ -46,15 +46,6 @@ DOMDownloadManagerImpl.prototype = {
     this.initDOMRequestHelper(aWindow,
                               ["Downloads:Added",
                                "Downloads:Removed"]);
-
-    
-    let appsService = Cc["@mozilla.org/AppsService;1"]
-                        .getService(Ci.nsIAppsService);
-    let principal = aWindow.document.nodePrincipal;
-    
-    
-    this._manifestURL = appsService.getManifestURLByLocalId(principal.appId) ||
-                          null;
   },
 
   uninit: function() {
@@ -164,7 +155,7 @@ DOMDownloadManagerImpl.prototype = {
         path: computedPath,
         contentType: aAdoptDownloadDict.contentType,
         startTime: aAdoptDownloadDict.startTime.valueOf() || Date.now(),
-        sourceAppManifestURL: this._manifestURL
+        sourceAppManifestURL: ""
       };
 
       DownloadsIPC.adoptDownload(jsonDownload).then(
