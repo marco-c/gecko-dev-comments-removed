@@ -38,19 +38,6 @@ NS_INTERFACE_MAP_END
 
 
 
-static void
-RegisterAllocation(nsIGlobalObject* aGlobal, size_t aBytes)
-{
-  AutoJSAPI jsapi;
-  if (jsapi.Init(aGlobal)) {
-    JS_updateMallocCounter(jsapi.cx(), aBytes);
-  }
-}
-
-
-
-
-
 
 static IntRect
 FixUpNegativeDimension(const IntRect& aRect, ErrorResult& aRv)
@@ -720,9 +707,6 @@ ImageBitmap::CreateFromCloneData(nsIGlobalObject* aGlobal,
   RefPtr<ImageBitmap> ret = new ImageBitmap(aGlobal, data,
                                             aData->mIsPremultipliedAlpha);
 
-  
-  RegisterAllocation(aGlobal, ret->mDataWrapper->GetBufferLength());
-
   ret->mIsCroppingAreaOutSideOfSourceImage =
     aData->mIsCroppingAreaOutSideOfSourceImage;
 
@@ -757,10 +741,6 @@ ImageBitmap::CreateFromOffscreenCanvas(nsIGlobalObject* aGlobal,
     CreateImageFromSurface(surface);
 
   RefPtr<ImageBitmap> ret = new ImageBitmap(aGlobal, data);
-
-  
-  RegisterAllocation(aGlobal, ret->mDataWrapper->GetBufferLength());
-
   return ret.forget();
 }
 
@@ -885,7 +865,6 @@ ImageBitmap::CreateInternal(nsIGlobalObject* aGlobal, HTMLCanvasElement& aCanvas
   
   
   
-  bool needToReportMemoryAllocation = false;
   if ((aCanvasEl.GetCurrentContextType() == CanvasContextType::WebGL1 ||
        aCanvasEl.GetCurrentContextType() == CanvasContextType::WebGL2) &&
       aCropRect.isSome()) {
@@ -896,7 +875,6 @@ ImageBitmap::CreateInternal(nsIGlobalObject* aGlobal, HTMLCanvasElement& aCanvas
     RefPtr<DataSourceSurface> dataSurface = surface->GetDataSurface();
     croppedSurface = CropAndCopyDataSourceSurface(dataSurface, cropRect);
     cropRect.MoveTo(0, 0);
-    needToReportMemoryAllocation = true;
   }
   else {
     croppedSurface = surface;
@@ -916,11 +894,6 @@ ImageBitmap::CreateInternal(nsIGlobalObject* aGlobal, HTMLCanvasElement& aCanvas
   }
 
   RefPtr<ImageBitmap> ret = new ImageBitmap(aGlobal, data);
-
-  
-  if (needToReportMemoryAllocation) {
-    RegisterAllocation(aGlobal, ret->mDataWrapper->GetBufferLength());
-  }
 
   
   if (ret && aCropRect.isSome()) {
@@ -986,9 +959,6 @@ ImageBitmap::CreateInternal(nsIGlobalObject* aGlobal, ImageData& aImageData,
   RefPtr<ImageBitmap> ret = new ImageBitmap(aGlobal, data, false);
 
   
-  RegisterAllocation(aGlobal, ret->mDataWrapper->GetBufferLength());
-
-  
   
 
   
@@ -1028,9 +998,6 @@ ImageBitmap::CreateInternal(nsIGlobalObject* aGlobal, CanvasRenderingContext2D& 
   }
 
   RefPtr<ImageBitmap> ret = new ImageBitmap(aGlobal, data);
-
-  
-  RegisterAllocation(aGlobal, ret->mDataWrapper->GetBufferLength());
 
   
   if (ret && aCropRect.isSome()) {
@@ -1272,9 +1239,6 @@ protected:
         return false;
       }
     }
-
-    
-    RegisterAllocation(mGlobalObject, imageBitmap->mDataWrapper->GetBufferLength());
 
     mPromise->MaybeResolve(imageBitmap);
     return true;
@@ -1560,9 +1524,6 @@ ImageBitmap::ReadStructuredClone(JSContext* aCx,
     if (!GetOrCreateDOMReflector(aCx, imageBitmap, &value)) {
       return nullptr;
     }
-
-    
-    RegisterAllocation(aParent, imageBitmap->mDataWrapper->GetBufferLength());
   }
 
   return &(value.toObject());
@@ -2150,9 +2111,6 @@ ImageBitmap::Create(nsIGlobalObject* aGlobal,
   
   
   RefPtr<ImageBitmap> imageBitmap = new ImageBitmap(aGlobal, data, false);
-
-  
-  RegisterAllocation(aGlobal, imageBitmap->mDataWrapper->GetBufferLength());
 
   
   
