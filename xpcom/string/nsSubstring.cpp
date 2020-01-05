@@ -425,18 +425,4 @@ bool Gecko_FallibleSetLengthString(nsAString* aThis, uint32_t aLength)
   return aThis->SetLength(aLength, mozilla::fallible);
 }
 
-
-
-
-
-void Gecko_TruncateString(nsAString* aThis)
-{
-  aThis->Truncate();
-}
-
-void Gecko_TruncateCString(nsACString* aThis)
-{
-  aThis->Truncate();
-}
-
 } 
