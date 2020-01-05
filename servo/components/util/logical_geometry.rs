@@ -319,8 +319,10 @@ impl<T: Sub<T, Output=T>> Sub for LogicalSize<T> {
 
 #[derive(PartialEq, RustcEncodable, Eq, Clone, Copy)]
 pub struct LogicalPoint<T> {
-    pub i: T,  
-    pub b: T,  
+    
+    pub i: T,
+    
+    pub b: T,
     debug_writing_mode: DebugWritingMode,
 }
 

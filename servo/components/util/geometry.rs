@@ -89,7 +89,9 @@ pub static MAX_RECT: Rect<Au> = Rect {
 
 
 
-pub fn rect_contains_point<T: PartialOrd + Add<T, Output=T>>(rect: Rect<T>, point: Point2D<T>) -> bool {
+pub fn rect_contains_point<T>(rect: Rect<T>, point: Point2D<T>) -> bool
+    where T: PartialOrd + Add<T, Output=T>
+{
     point.x >= rect.origin.x && point.x < rect.origin.x + rect.size.width &&
         point.y >= rect.origin.y && point.y < rect.origin.y + rect.size.height
 }
