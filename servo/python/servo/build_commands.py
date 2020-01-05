@@ -1,3 +1,12 @@
+
+
+
+
+
+
+
+
+
 from __future__ import print_function, unicode_literals
 
 import os
@@ -331,6 +340,6 @@ class MachCommands(CommandBase):
             opts += ["--manifest-path", manifest_path]
         if verbose:
             opts += ["-v"]
-	opts += params
+        opts += params
         return subprocess.call(["cargo", "clean"] + opts,
                                env=self.build_env(), cwd=self.servo_crate())
