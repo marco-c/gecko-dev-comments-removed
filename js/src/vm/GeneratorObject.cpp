@@ -6,6 +6,8 @@
 
 #include "vm/GeneratorObject.h"
 
+#include "jsobj.h"
+
 #include "jsatominlines.h"
 #include "jsscriptinlines.h"
 
@@ -332,5 +334,34 @@ GlobalObject::initStarGenerators(JSContext* cx, Handle<GlobalObject*> global)
     global->setReservedSlot(STAR_GENERATOR_OBJECT_PROTO, ObjectValue(*genObjectProto));
     global->setReservedSlot(STAR_GENERATOR_FUNCTION, ObjectValue(*genFunction));
     global->setReservedSlot(STAR_GENERATOR_FUNCTION_PROTO, ObjectValue(*genFunctionProto));
+    return true;
+}
+
+MOZ_MUST_USE bool
+js::CheckStarGeneratorResumptionValue(JSContext* cx, HandleValue v)
+{
+    
+    if (!v.isObject())
+        return false;
+
+    JSObject* obj = &v.toObject();
+
+    
+    Value doneVal;
+    if (!GetPropertyPure(cx, obj, NameToId(cx->names().done), &doneVal))
+        return false;
+    if (!doneVal.isBoolean())
+        return false;
+
+    
+    JSObject* ignored;
+    Shape* shape;
+    if (!LookupPropertyPure(cx, obj, NameToId(cx->names().value), &ignored, &shape))
+        return false;
+    if (!shape)
+        return false;
+    if (!shape->hasDefaultGetter())
+        return false;
+
     return true;
 }
