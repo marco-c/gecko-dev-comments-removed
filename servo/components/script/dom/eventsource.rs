@@ -82,7 +82,7 @@ impl EventSourceMethods for EventSource {
 
     
     fn Url(&self) -> DOMString {
-        DOMString::from(self.url.serialize())
+        DOMString::from(self.url.as_str())
     }
 
     

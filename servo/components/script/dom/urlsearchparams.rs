@@ -14,7 +14,7 @@ use dom::bindings::str::USVString;
 use dom::bindings::weakref::MutableWeakRef;
 use dom::url::URL;
 use encoding::types::EncodingRef;
-use url::form_urlencoded::{parse, serialize_with_encoding};
+use url::form_urlencoded;
 use util::str::DOMString;
 
 
@@ -31,7 +31,7 @@ impl URLSearchParams {
     fn new_inherited(url: Option<&URL>) -> URLSearchParams {
         URLSearchParams {
             reflector_: Reflector::new(),
-            list: DOMRefCell::new(vec![]),
+            list: DOMRefCell::new(url.map_or(Vec::new(), |url| url.query_pairs())),
             url: MutableWeakRef::new(url),
         }
     }
@@ -49,7 +49,8 @@ impl URLSearchParams {
         match init {
             Some(USVStringOrURLSearchParams::USVString(init)) => {
                 
-                *query.list.borrow_mut() = parse(init.0.as_bytes());
+                *query.list.borrow_mut() = form_urlencoded::parse(init.0.as_bytes())
+                    .into_owned().collect();
             },
             Some(USVStringOrURLSearchParams::URLSearchParams(init)) => {
                 
@@ -110,26 +111,28 @@ impl URLSearchParamsMethods for URLSearchParams {
 
     
     fn Set(&self, name: USVString, value: USVString) {
-        
-        let mut list = self.list.borrow_mut();
-        let mut index = None;
-        let mut i = 0;
-        list.retain(|&(ref k, _)| {
-            if index.is_none() {
-                if k == &name.0 {
-                    index = Some(i);
+        {
+            
+            let mut list = self.list.borrow_mut();
+            let mut index = None;
+            let mut i = 0;
+            list.retain(|&(ref k, _)| {
+                if index.is_none() {
+                    if k == &name.0 {
+                        index = Some(i);
+                    } else {
+                        i += 1;
+                    }
+                    true
                 } else {
-                    i += 1;
+                    k != &name.0
                 }
-                true
-            } else {
-                k != &name.0
-            }
-        });
-        match index {
-            Some(index) => list[index].1 = value.0,
-            None => list.push((name.0, value.0)), 
-        };
+            });
+            match index {
+                Some(index) => list[index].1 = value.0,
+                None => list.push((name.0, value.0)), 
+            };
+        }  
         
         self.update_steps();
     }
@@ -145,7 +148,10 @@ impl URLSearchParams {
     
     pub fn serialize(&self, encoding: Option<EncodingRef>) -> String {
         let list = self.list.borrow();
-        serialize_with_encoding(list.iter(), encoding)
+        form_urlencoded::Serializer::new(String::new())
+            .encoding_override(encoding)
+            .extend_pairs(&*list)
+            .finish()
     }
 }
 
@@ -154,7 +160,7 @@ impl URLSearchParams {
     
     fn update_steps(&self) {
         if let Some(url) = self.url.root() {
-            url.set_query(self.serialize(None));
+            url.set_query_pairs(&self.list.borrow())
         }
     }
 }

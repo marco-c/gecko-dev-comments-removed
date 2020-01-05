@@ -2,9 +2,10 @@
 
 
 
-use std::cell::RefCell;
+use ref_filter_map::ref_filter_map;
+use std::cell::{RefCell, Ref};
 use std::rc::Rc;
-use url::{OpaqueOrigin, Origin as UrlOrigin};
+use url::Origin as UrlOrigin;
 use url::{Url, Host};
 
 
@@ -21,9 +22,8 @@ no_jsmanaged_fields!(Origin);
 impl Origin {
     
     pub fn opaque_identifier() -> Origin {
-        let opaque = UrlOrigin::UID(OpaqueOrigin::new());
         Origin {
-            inner: Rc::new(RefCell::new(opaque)),
+            inner: Rc::new(RefCell::new(UrlOrigin::new_opaque())),
         }
     }
 
@@ -40,18 +40,15 @@ impl Origin {
 
     
     pub fn is_scheme_host_port_tuple(&self) -> bool {
-        match *self.inner.borrow() {
-            UrlOrigin::Tuple(..) => true,
-            UrlOrigin::UID(..) => false,
-        }
+        self.inner.borrow().is_tuple()
     }
 
     
-    pub fn host(&self) -> Option<Host> {
-        match *self.inner.borrow() {
-            UrlOrigin::Tuple(_, ref host, _) => Some(host.clone()),
-            UrlOrigin::UID(..) => None,
-        }
+    pub fn host(&self) -> Option<Ref<Host<String>>> {
+        ref_filter_map(self.inner.borrow(), |origin| match *origin {
+            UrlOrigin::Tuple(_, ref host, _) => Some(host),
+            UrlOrigin::Opaque(..) => None,
+        })
     }
 
     
