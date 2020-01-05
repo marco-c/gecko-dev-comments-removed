@@ -1129,10 +1129,13 @@ HttpChannelParent::OnStartRequest(nsIRequest *aRequest, nsISupports *aContext)
 
   
   
-  PContentParent* pcp = Manager()->Manager();
-  nsresult rv =
-    static_cast<ContentParent*>(pcp)->TransmitPermissionsFor(chan);
-  MOZ_ASSERT(NS_SUCCEEDED(rv));
+  if (!mIPCClosed) {
+    PContentParent* pcp = Manager()->Manager();
+    MOZ_ASSERT(pcp, "We should have a manager if our IPC isn't closed");
+    DebugOnly<nsresult> rv =
+      static_cast<ContentParent*>(pcp)->TransmitPermissionsFor(chan);
+    MOZ_ASSERT(NS_SUCCEEDED(rv));
+  }
 
   nsHttpResponseHead *responseHead = chan->GetResponseHead();
   nsHttpRequestHead  *requestHead = chan->GetRequestHead();
@@ -1200,7 +1203,7 @@ HttpChannelParent::OnStartRequest(nsIRequest *aRequest, nsISupports *aContext)
 
   
   requestHead->Enter();
-  rv = NS_OK;
+  nsresult rv = NS_OK;
   if (mIPCClosed ||
       !SendOnStartRequest(channelStatus,
                           responseHead ? *responseHead : nsHttpResponseHead(),
