@@ -61,23 +61,6 @@ public:
     return mFiles.Clear();
   }
 
-  static FileList* FromSupports(nsISupports* aSupports)
-  {
-#ifdef DEBUG
-    {
-      nsCOMPtr<nsIDOMFileList> list_qi = do_QueryInterface(aSupports);
-
-      
-      
-      
-      NS_ASSERTION(list_qi == static_cast<nsIDOMFileList*>(aSupports),
-                   "Uh, fix QI!");
-    }
-#endif
-
-    return static_cast<FileList*>(aSupports);
-  }
-
   File* Item(uint32_t aIndex) const;
 
   File* IndexedGetter(uint32_t aIndex, bool& aFound) const;
