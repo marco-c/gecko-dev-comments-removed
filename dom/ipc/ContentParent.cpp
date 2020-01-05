@@ -4161,24 +4161,6 @@ ContentParent::RecvRequestAnonymousTemporaryFile(const uint64_t& aID)
   return IPC_OK();
 }
 
-mozilla::ipc::IPCResult
-ContentParent::RecvOpenAnonymousTemporaryFile(FileDescOrError *aFD)
-{
-  PRFileDesc *prfd;
-  nsresult rv = NS_OpenAnonymousTemporaryFile(&prfd);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    
-    
-    *aFD = rv;
-    return IPC_OK();
-  }
-  *aFD = FileDescriptor(FileDescriptor::PlatformHandleType(PR_FileDesc2NativeHandle(prfd)));
-  
-  
-  PR_Close(prfd);
-  return IPC_OK();
-}
-
 static NS_DEFINE_CID(kFormProcessorCID, NS_FORMPROCESSOR_CID);
 
 mozilla::ipc::IPCResult
