@@ -874,7 +874,7 @@ class Dumper_Linux(Dumper):
                                                       rel_path))
             shutil.move(file_dbg, full_path)
             
-            os.system("gzip -f %s" % full_path)
+            os.system("gzip -4 -f %s" % full_path)
             self.output(sys.stdout, rel_path + ".gz")
         else:
             if os.path.isfile(file_dbg):
