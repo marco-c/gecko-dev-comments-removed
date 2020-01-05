@@ -6,9 +6,16 @@
 
 const Services = require("Services");
 const { Task } = require("devtools/shared/task");
+const { getCssProperties } = require("devtools/shared/fronts/css-properties");
+const { ReflowFront } = require("devtools/shared/fronts/reflow");
+
+const { InplaceEditor } = require("devtools/client/shared/inplace-editor");
 const { createFactory, createElement } = require("devtools/client/shared/vendor/react");
 const { Provider } = require("devtools/client/shared/vendor/react-redux");
 
+const {
+  updateLayout,
+} = require("./actions/box-model");
 const {
   updateGridHighlighted,
   updateGrids,
@@ -21,10 +28,13 @@ const {
 const App = createFactory(require("./components/App"));
 const Store = require("./store");
 
+const EditingSession = require("./utils/editing-session");
+
 const { LocalizationHelper } = require("devtools/shared/l10n");
 const INSPECTOR_L10N =
   new LocalizationHelper("devtools/client/locales/inspector.properties");
 
+const NUMERIC = /^-?[\d\.]+$/;
 const SHOW_GRID_LINE_NUMBERS = "devtools.gridinspector.showGridLineNumbers";
 const SHOW_INFINITE_LINES_PREF = "devtools.gridinspector.showInfiniteLines";
 
@@ -35,15 +45,19 @@ function LayoutView(inspector, window) {
   this.store = null;
   this.walker = this.inspector.walker;
 
+  this.updateBoxModel = this.updateBoxModel.bind(this);
+
   this.onGridLayoutChange = this.onGridLayoutChange.bind(this);
   this.onHighlighterChange = this.onHighlighterChange.bind(this);
+  this.onNewSelection = this.onNewSelection.bind(this);
   this.onSidebarSelect = this.onSidebarSelect.bind(this);
+
+  this.init();
 
   this.highlighters.on("grid-highlighter-hidden", this.onHighlighterChange);
   this.highlighters.on("grid-highlighter-shown", this.onHighlighterChange);
+  this.inspector.selection.on("new-node-front", this.onNewSelection);
   this.inspector.sidebar.on("select", this.onSidebarSelect);
-
-  this.init();
 }
 
 LayoutView.prototype = {
@@ -63,6 +77,95 @@ LayoutView.prototype = {
     this.loadHighlighterSettings();
 
     let app = App({
+      
+
+
+      onHideBoxModelHighlighter: () => {
+        let toolbox = this.inspector.toolbox;
+        toolbox.highlighterUtils.unhighlight();
+      },
+
+      
+
+
+
+
+
+
+
+
+
+
+      onShowBoxModelEditor: (element, event, property) => {
+        let session = new EditingSession({
+          inspector: this.inspector,
+          doc: this.document,
+          elementRules: this.elementRules,
+        });
+        let initialValue = session.getProperty(property);
+
+        let editor = new InplaceEditor({
+          element: element,
+          initial: initialValue,
+          contentType: InplaceEditor.CONTENT_TYPES.CSS_VALUE,
+          property: {
+            name: property
+          },
+          start: self => {
+            self.elt.parentNode.classList.add("boxmodel-editing");
+          },
+          change: value => {
+            if (NUMERIC.test(value)) {
+              value += "px";
+            }
+
+            let properties = [
+              { name: property, value: value }
+            ];
+
+            if (property.substring(0, 7) == "border-") {
+              let bprop = property.substring(0, property.length - 5) + "style";
+              let style = session.getProperty(bprop);
+              if (!style || style == "none" || style == "hidden") {
+                properties.push({ name: bprop, value: "solid" });
+              }
+            }
+
+            session.setProperties(properties).catch(e => console.error(e));
+          },
+          done: (value, commit) => {
+            editor.elt.parentNode.classList.remove("boxmodel-editing");
+            if (!commit) {
+              session.revert().then(() => {
+                session.destroy();
+              }, e => console.error(e));
+              return;
+            }
+
+            let node = this.inspector.selection.nodeFront;
+            this.inspector.pageStyle.getLayout(node, {
+              autoMargins: true,
+            }).then(layout => {
+              this.store.dispatch(updateLayout(layout));
+            }, e => console.error(e));
+          },
+          contextMenu: this.inspector.onTextBoxContextMenu,
+          cssProperties: getCssProperties(this.inspector.toolbox)
+        }, event);
+      },
+
+      
+
+
+
+
+
+      onShowBoxModelHighlighter: (options = {}) => {
+        let toolbox = this.inspector.toolbox;
+        let nodeFront = this.inspector.selection.nodeFront;
+
+        toolbox.highlighterUtils.highlightNodeFront(nodeFront, options);
+      },
 
       
 
@@ -120,7 +223,6 @@ LayoutView.prototype = {
           }
         }
       },
-
     });
 
     let provider = createElement(Provider, {
@@ -147,8 +249,15 @@ LayoutView.prototype = {
   destroy() {
     this.highlighters.off("grid-highlighter-hidden", this.onHighlighterChange);
     this.highlighters.off("grid-highlighter-shown", this.onHighlighterChange);
+    this.inspector.selection.off("new-node-front", this.onNewSelection);
     this.inspector.sidebar.off("select", this.onSidebarSelect);
     this.layoutInspector.off("grid-layout-changed", this.onGridLayoutChange);
+
+    if (this.reflowFront) {
+      this.untrackReflows();
+      this.reflowFront.destroy();
+      this.reflowFront = null;
+    }
 
     this.document = null;
     this.inspector = null;
@@ -169,6 +278,16 @@ LayoutView.prototype = {
   
 
 
+
+  isPanelVisibleAndNodeValid() {
+    return this.isPanelVisible() &&
+           this.inspector.selection.isConnected() &&
+           this.inspector.selection.isElementNode();
+  },
+
+  
+
+
   loadHighlighterSettings() {
     let { dispatch } = this.store;
 
@@ -182,11 +301,77 @@ LayoutView.prototype = {
   
 
 
+  trackReflows() {
+    if (!this.reflowFront) {
+      let { target } = this.inspector;
+      if (target.form.reflowActor) {
+        this.reflowFront = ReflowFront(target.client,
+                                       target.form);
+      } else {
+        return;
+      }
+    }
+
+    this.reflowFront.on("reflows", this.updateBoxModel);
+    this.reflowFront.start();
+  },
+
+  
+
+
+  untrackReflows() {
+    if (!this.reflowFront) {
+      return;
+    }
+
+    this.reflowFront.off("reflows", this.updateBoxModel);
+    this.reflowFront.stop();
+  },
+
+  
+
+
+  updateBoxModel() {
+    let lastRequest = Task.spawn((function* () {
+      if (!(this.isPanelVisible() &&
+          this.inspector.selection.isConnected() &&
+          this.inspector.selection.isElementNode())) {
+        return null;
+      }
+
+      let node = this.inspector.selection.nodeFront;
+      let layout = yield this.inspector.pageStyle.getLayout(node, {
+        autoMargins: true,
+      });
+      let styleEntries = yield this.inspector.pageStyle.getApplied(node, {});
+      this.elementRules = styleEntries.map(e => e.rule);
+
+      
+      
+      this.store.dispatch(updateLayout(layout));
+
+      
+      if (this._lastRequest != lastRequest) {
+        return this._lastRequest;
+      }
+
+      this._lastRequest = null;
+
+      this.inspector.emit("boxmodel-view-updated");
+      return null;
+    }).bind(this)).catch(console.error);
+
+    this._lastRequest = lastRequest;
+  },
+
+  
 
 
 
 
-  refresh: Task.async(function* (gridFronts) {
+
+
+  updateGridPanel: Task.async(function* (gridFronts) {
     
     if (!this.inspector || !this.store) {
       return;
@@ -221,7 +406,7 @@ LayoutView.prototype = {
 
   onGridLayoutChange(grids) {
     if (this.isPanelVisible()) {
-      this.refresh(grids);
+      this.updateGridPanel(grids);
     }
   },
 
@@ -243,17 +428,35 @@ LayoutView.prototype = {
   
 
 
+  onNewSelection: function () {
+    if (!this.isPanelVisibleAndNodeValid()) {
+      return;
+    }
+
+    this.updateBoxModel();
+  },
+
+  
+
+
 
 
 
   onSidebarSelect() {
     if (!this.isPanelVisible()) {
       this.layoutInspector.off("grid-layout-changed", this.onGridLayoutChange);
+      this.untrackReflows();
       return;
     }
 
+    if (this.inspector.selection.isConnected() &&
+        this.inspector.selection.isElementNode()) {
+      this.trackReflows();
+    }
+
     this.layoutInspector.on("grid-layout-changed", this.onGridLayoutChange);
-    this.refresh();
+    this.updateBoxModel();
+    this.updateGridPanel();
   },
 
 };
