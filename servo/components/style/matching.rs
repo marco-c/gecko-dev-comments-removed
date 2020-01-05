@@ -1175,23 +1175,30 @@ pub trait MatchMethods : TElement {
     
     
     fn insert_into_bloom_filter(&self, bf: &mut BloomFilter) {
-        bf.insert(&*self.get_local_name());
-        bf.insert(&*self.get_namespace());
-        self.get_id().map(|id| bf.insert(&id));
-
+        bf.insert_hash(self.get_local_name().get_hash());
+        bf.insert_hash(self.get_namespace().get_hash());
+        if let Some(id) = self.get_id() {
+            bf.insert_hash(id.get_hash());
+        }
         
-        self.each_class(|class| bf.insert(class));
+        self.each_class(|class| {
+            bf.insert_hash(class.get_hash())
+        });
     }
 
     
     
     fn remove_from_bloom_filter(&self, bf: &mut BloomFilter) {
-        bf.remove(&*self.get_local_name());
-        bf.remove(&*self.get_namespace());
-        self.get_id().map(|id| bf.remove(&id));
+        bf.remove_hash(self.get_local_name().get_hash());
+        bf.remove_hash(self.get_namespace().get_hash());
+        if let Some(id) = self.get_id() {
+            bf.remove_hash(id.get_hash());
+        }
 
         
-        self.each_class(|class| bf.remove(class));
+        self.each_class(|class| {
+            bf.remove_hash(class.get_hash())
+        });
     }
 
     
