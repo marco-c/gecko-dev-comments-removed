@@ -42,6 +42,9 @@ test_description_schema = Schema({
     Optional('unittest-try-name'): basestring,
 
     
+    Optional('talos-try-name'): basestring,
+
+    
     
     'treeherder-symbol': basestring,
 
@@ -224,6 +227,9 @@ test_description_schema = Schema({
 
     
     'test-name': basestring,
+
+    
+    Optional('product'): basestring,
 
 }, required=True)
 
