@@ -1268,7 +1268,7 @@ ScrollFrameHelper::HandleScrollbarStyleSwitching()
   }
 }
 
-#if defined(MOZ_B2G) || defined(MOZ_WIDGET_ANDROID)
+#if defined(MOZ_WIDGET_ANDROID)
 static bool IsFocused(nsIContent* aContent)
 {
   
@@ -1317,7 +1317,7 @@ ScrollFrameHelper::WantAsyncScroll() const
   bool isHScrollable = (scrollRange.width >= oneDevPixel) &&
                        (styles.mHorizontal != NS_STYLE_OVERFLOW_HIDDEN);
 
-#if defined(MOZ_B2G) || defined(MOZ_WIDGET_ANDROID)
+#if defined(MOZ_WIDGET_ANDROID)
   
   bool canScrollWithoutScrollbars = IsFocused(mOuter->GetContent());
 #else
