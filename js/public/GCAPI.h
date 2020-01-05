@@ -652,25 +652,6 @@ ExposeGCThingToActiveJS(JS::GCCellPtr thing)
     MOZ_ASSERT(!js::gc::detail::CellIsMarkedGray(thing.asCell()));
 }
 
-static MOZ_ALWAYS_INLINE void
-GCThingReadBarrier(JS::GCCellPtr thing)
-{
-    
-    
-    if (IsInsideNursery(thing.asCell()))
-        return;
-
-    
-    
-    if (thing.mayBeOwnedByOtherRuntime())
-        return;
-
-    MOZ_DIAGNOSTIC_ASSERT(BarriersAreAllowedOnCurrentThread());
-
-    if (IsIncrementalBarrierNeededOnTenuredGCThing(thing))
-        JS::IncrementalReadBarrier(thing);
-}
-
 } 
 } 
 
@@ -693,16 +674,6 @@ static MOZ_ALWAYS_INLINE void
 ExposeScriptToActiveJS(JSScript* script)
 {
     js::gc::ExposeGCThingToActiveJS(GCCellPtr(script));
-}
-
-
-
-
-static MOZ_ALWAYS_INLINE void
-StringReadBarrier(JSString* string)
-{
-    MOZ_ASSERT(js::CurrentThreadCanAccessZone(GetStringZone(string)));
-    js::gc::GCThingReadBarrier(GCCellPtr(string));
 }
 
 
