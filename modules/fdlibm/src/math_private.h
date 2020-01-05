@@ -276,7 +276,7 @@ do {								\
 
 
 
-#if FLT_EVAL_METHOD == 0 || __GNUC__ == 0
+#if !defined(_MSC_VER) && (FLT_EVAL_METHOD == 0 || __GNUC__ == 0)
 #define	STRICT_ASSIGN(type, lval, rval)	((lval) = (rval))
 #else
 #define	STRICT_ASSIGN(type, lval, rval) do {	\
