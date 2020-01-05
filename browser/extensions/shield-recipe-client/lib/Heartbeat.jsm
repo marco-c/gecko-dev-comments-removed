@@ -100,6 +100,7 @@ this.Heartbeat = class {
 
     
     this.handleWindowClosed = this.handleWindowClosed.bind(this);
+    this.close = this.close.bind(this);
 
     if (this.options.engagementButtonLabel) {
       this.buttons = [{
@@ -208,7 +209,7 @@ this.Heartbeat = class {
     }, surveyDuration);
 
     this.sandboxManager.addHold("heartbeat");
-    CleanupManager.addCleanupHandler(() => this.close());
+    CleanupManager.addCleanupHandler(this.close);
   }
 
   maybeNotifyHeartbeat(name, data = {}) {
@@ -281,10 +282,7 @@ this.Heartbeat = class {
       this.eventEmitter.emit("TelemetrySent", Cu.cloneInto(payload, this.sandboxManager.sandbox));
 
       
-      if (this.surveyEndTimer) {
-        clearTimeout(this.surveyEndTimer);
-        this.surveyEndTimer = null;
-      }
+      this.endTimerIfPresent("surveyEndTimer");
 
       this.pingSent = true;
       this.surveyResults = null;
@@ -315,12 +313,16 @@ this.Heartbeat = class {
       this.chromeWindow.gBrowser.selectedTab = this.chromeWindow.gBrowser.addTab(this.options.postAnswerUrl.toString());
     }
 
-    if (this.surveyEndTimer) {
-      clearTimeout(this.surveyEndTimer);
-      this.surveyEndTimer = null;
-    }
+    this.endTimerIfPresent("surveyEndTimer");
 
-    setTimeout(() => this.close(), NOTIFICATION_TIME);
+    this.engagementCloseTimer = setTimeout(() => this.close(), NOTIFICATION_TIME);
+  }
+
+  endTimerIfPresent(timerName) {
+    if (this[timerName]) {
+      clearTimeout(this[timerName]);
+      this[timerName] = null;
+    }
   }
 
   handleWindowClosed() {
@@ -333,6 +335,10 @@ this.Heartbeat = class {
   }
 
   cleanup() {
+    
+    this.endTimerIfPresent("surveyEndTimer");
+    this.endTimerIfPresent("engagementCloseTimer");
+
     this.sandboxManager.removeHold("heartbeat");
     
     this.chromeWindow.removeEventListener("SSWindowClosing", this.handleWindowClosed);
@@ -340,7 +346,10 @@ this.Heartbeat = class {
     this.chromeWindow = null;
     this.notificationBox = null;
     this.notification = null;
+    this.notice = null;
     this.eventEmitter = null;
     this.sandboxManager = null;
+    
+    CleanupManager.removeCleanupHandler(this.close);
   }
 };
