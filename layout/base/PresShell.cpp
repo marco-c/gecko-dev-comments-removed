@@ -2078,6 +2078,12 @@ PresShell::SetIgnoreFrameDestruction(bool aIgnore)
 void
 PresShell::NotifyDestroyingFrame(nsIFrame* aFrame)
 {
+  
+  
+  
+  FrameLayerBuilder::RemoveFrameFromLayerManager(aFrame, aFrame->DisplayItemData());
+  aFrame->DisplayItemData().Clear();
+
   if (!mIgnoreFrameDestruction) {
     mDocument->StyleImageLoader()->DropRequestsForFrame(aFrame);
 
@@ -2115,13 +2121,6 @@ PresShell::NotifyDestroyingFrame(nsIFrame* aFrame)
     }
 
     mFramesToDirty.RemoveEntry(aFrame);
-  } else {
-    
-    
-    
-    
-    mPresContext->PropertyTable()->
-      Delete(aFrame, FrameLayerBuilder::LayerManagerDataProperty());
   }
 }
 
