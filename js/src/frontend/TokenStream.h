@@ -237,17 +237,9 @@ struct Token
     }
 };
 
-struct CompileError {
-    JSErrorReport report;
-    CompileError() {}
-    ~CompileError();
+class CompileError : public JSErrorReport {
+public:
     void throwError(JSContext* cx);
-
-  private:
-    
-    
-    void operator=(const CompileError&) = delete;
-    CompileError(const CompileError&) = delete;
 };
 
 
