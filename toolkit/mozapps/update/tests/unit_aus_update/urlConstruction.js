@@ -179,7 +179,7 @@ function getServicePack() {
   
   const SZCSDVERSIONLENGTH = 128;
   const OSVERSIONINFOEXW = new ctypes.StructType('OSVERSIONINFOEXW',
-      [
+    [
       {dwOSVersionInfoSize: DWORD},
       {dwMajorVersion: DWORD},
       {dwMinorVersion: DWORD},
@@ -191,7 +191,7 @@ function getServicePack() {
       {wSuiteMask: WORD},
       {wProductType: BYTE},
       {wReserved: BYTE}
-      ]);
+    ]);
 
   let kernel32 = ctypes.open("kernel32");
   try {
@@ -224,7 +224,7 @@ function getProcArchitecture() {
   
   
   const SYSTEM_INFO = new ctypes.StructType('SYSTEM_INFO',
-      [
+    [
       {wProcessorArchitecture: WORD},
       {wReserved: WORD},
       {dwPageSize: DWORD},
@@ -236,7 +236,7 @@ function getProcArchitecture() {
       {dwAllocationGranularity: DWORD},
       {wProcessorLevel: WORD},
       {wProcessorRevision: WORD}
-      ]);
+    ]);
 
   let kernel32 = ctypes.open("kernel32");
   try {
@@ -293,8 +293,8 @@ function getSystemCapabilities() {
         instructionSet = "MMX";
       }
     } catch (e) {
-        Cu.reportError("Error getting processor instruction set. " +
-                       "Exception: " + e);
+      Cu.reportError("Error getting processor instruction set. " +
+                     "Exception: " + e);
     }
 
     lib.close();
