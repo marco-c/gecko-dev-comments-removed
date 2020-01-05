@@ -45,6 +45,8 @@ struct OggPacketDeletePolicy
   }
 };
 
+using OggPacketPtr = UniquePtr<ogg_packet, OggPacketDeletePolicy>;
+
 
 class OggPacketDeallocator : public nsDequeFunctor
 {
