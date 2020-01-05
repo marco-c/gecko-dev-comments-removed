@@ -81,9 +81,8 @@ impl FontTemplateData {
     
     
     pub fn bytes(&self) -> Vec<u8> {
-        match self.bytes_if_in_memory() {
-            Some(font_data) => return font_data,
-            None => {}
+        if let Some(font_data) = self.bytes_if_in_memory() {
+            return font_data;
         }
 
         let path = ServoUrl::parse(&*self.ctfont(0.0)
