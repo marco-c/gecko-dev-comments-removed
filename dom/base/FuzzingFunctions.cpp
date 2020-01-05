@@ -1,0 +1,30 @@
+
+
+
+
+
+
+#include "FuzzingFunctions.h"
+
+#include "nsJSEnvironment.h"
+#include "js/GCAPI.h"
+
+namespace mozilla {
+namespace dom {
+
+ void
+FuzzingFunctions::GarbageCollect(const GlobalObject&)
+{
+  nsJSContext::GarbageCollectNow(JS::gcreason::COMPONENT_UTILS,
+                                 nsJSContext::NonIncrementalGC,
+                                 nsJSContext::NonShrinkingGC);
+}
+
+ void
+FuzzingFunctions::CycleCollect(const GlobalObject&)
+{
+  nsJSContext::CycleCollectNow();
+}
+
+} 
+} 
