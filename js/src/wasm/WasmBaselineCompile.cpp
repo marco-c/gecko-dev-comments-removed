@@ -2423,7 +2423,13 @@ class BaseCompiler
         MOZ_RELEASE_ASSERT(HaveSignalHandlers());
     }
 
-    void jumpTable(LabelVector& labels) {
+    void jumpTable(LabelVector& labels, Label* theTable) {
+        
+        
+        masm.flush();
+
+        masm.bind(theTable);
+
 #if defined(JS_CODEGEN_X64) || defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_ARM)
         for (uint32_t i = 0; i < labels.length(); i++) {
             CodeLabel cl;
@@ -2436,7 +2442,9 @@ class BaseCompiler
 #endif
     }
 
-    void tableSwitch(Label* theTable, RegI32 switchValue) {
+    void tableSwitch(Label* theTable, RegI32 switchValue, Label* dispatchCode) {
+        masm.bind(dispatchCode);
+
 #if defined(JS_CODEGEN_X64) || defined(JS_CODEGEN_X86)
         ScratchI32 scratch(*this);
         CodeLabel tableCl;
@@ -2448,6 +2456,11 @@ class BaseCompiler
 
         masm.jmp(Operand(scratch, switchValue, ScalePointer));
 #elif defined(JS_CODEGEN_ARM)
+        
+        
+        
+        masm.flush();
+
         ScratchI32 scratch(*this);
 
         
@@ -2461,6 +2474,7 @@ class BaseCompiler
         
         ScratchRegisterScope arm_scratch(*this);
 
+        
         
         masm.ma_sub(Imm32(offset + 8), scratch, arm_scratch);
 
@@ -5535,13 +5549,11 @@ BaseCompiler::emitBrTable()
     
 
     Label theTable;
-    masm.bind(&theTable);
-    jumpTable(stubs);
+    jumpTable(stubs, &theTable);
 
     
 
-    masm.bind(&dispatchCode);
-    tableSwitch(&theTable, rc);
+    tableSwitch(&theTable, rc, &dispatchCode);
 
     deadCode_ = true;
 
