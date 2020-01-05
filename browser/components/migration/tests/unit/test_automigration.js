@@ -576,11 +576,9 @@ add_task(function* checkUndoVisitsState() {
   
   let frecencyUpdatesHandled = new Promise(resolve => {
     PlacesUtils.history.addObserver({
-      onFrecencyChanged(aURI) {
-        if (aURI.spec == "http://www.unrelated.org/") {
-          PlacesUtils.history.removeObserver(this);
-          resolve();
-        }
+      onManyFrecenciesChanged() {
+        PlacesUtils.history.removeObserver(this);
+        resolve();
       }
     }, false);
   });
