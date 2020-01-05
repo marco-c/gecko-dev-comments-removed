@@ -40,7 +40,9 @@ WyciwygChannelParent::ActorDestroy(ActorDestroyReason why)
   mIPCClosed = true;
 
   
-  mChannel->SetNotificationCallbacks(nullptr);
+  if (mChannel) {
+    mChannel->SetNotificationCallbacks(nullptr);
+  }
 }
 
 
