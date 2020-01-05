@@ -1440,8 +1440,6 @@ SeekingState::SeekCompleted()
   
   
   if (!mMaster->mSentFirstFrameLoadedEvent) {
-    
-    MOZ_ASSERT(Reader()->ForceZeroStartTime());
     mMaster->FinishDecodeFirstFrame();
   }
 
