@@ -18,11 +18,10 @@ using namespace mozilla::dom;
 namespace mozilla {
 namespace css {
 
-
 #define CALL_INNER(inner_, call_)               \
   ((inner_).is<GeckoGroupRuleRules>()           \
     ? (inner_).as<GeckoGroupRuleRules>().call_  \
-    : (inner_).as<GeckoGroupRuleRules>().call_)
+    : (inner_).as<ServoGroupRuleRules>().call_)
 
 
 
@@ -193,6 +192,25 @@ GeckoGroupRuleRules::SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const
   
   
   return n;
+}
+
+
+
+
+
+#ifdef DEBUG
+void
+ServoGroupRuleRules::List(FILE* out, int32_t aIndent) const
+{
+  
+}
+#endif
+
+size_t
+ServoGroupRuleRules::SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const
+{
+  
+  return 0;
 }
 
 
