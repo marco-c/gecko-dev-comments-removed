@@ -418,12 +418,7 @@ function checkSettingsSection(data) {
   }
 
   
-  
-  if (gIsGonk) {
-    Assert.ok(!("addonCompatibilityCheckEnabled" in data.settings), "Must not be available on Gonk.");
-  } else {
-    Assert.equal(data.settings.addonCompatibilityCheckEnabled, AddonManager.checkCompatibility);
-  }
+  Assert.equal(data.settings.addonCompatibilityCheckEnabled, AddonManager.checkCompatibility);
 
   
   
@@ -559,7 +554,7 @@ function checkSystemSection(data) {
   Assert.ok(Array.isArray(cpuData.extensions), "CPU extensions must be available.");
 
   
-  if (gIsAndroid || gIsGonk) {
+  if (gIsAndroid) {
     let deviceData = data.system.device;
     Assert.ok(checkNullOrString(deviceData.model));
     Assert.ok(checkNullOrString(deviceData.manufacturer));
@@ -588,7 +583,7 @@ function checkSystemSection(data) {
       Assert.ok((osData["windowsUBR"] === null) || Number.isFinite(osData["windowsUBR"]),
                 "windowsUBR must be null or a number.");
     }
-  } else if (gIsAndroid || gIsGonk) {
+  } else if (gIsAndroid) {
     Assert.ok(checkNullOrString(osData.kernelVersion));
   }
 
@@ -836,10 +831,8 @@ add_task(function* setup() {
   loadAddonManager(APP_ID, APP_NAME, APP_VERSION, PLATFORM_VERSION);
 
   
-  if (!gIsGonk) {
-    LightweightThemeManager.currentTheme =
-      spoofTheme(PERSONA_ID, PERSONA_NAME, PERSONA_DESCRIPTION);
-  }
+  LightweightThemeManager.currentTheme =
+    spoofTheme(PERSONA_ID, PERSONA_NAME, PERSONA_DESCRIPTION);
   
   registerFakePluginHost();
 
@@ -1199,8 +1192,7 @@ add_task(function* test_addonsAndPlugins() {
   Assert.ok(targetPlugin.mimeTypes.find(m => m == PLUGIN_MIME_TYPE2));
   Assert.ok(!targetPlugin.mimeTypes.find(m => m == "Not There."));
 
-  let personaId = (gIsGonk) ? null : PERSONA_ID;
-  Assert.equal(data.addons.persona, personaId, "The correct Persona Id must be reported.");
+  Assert.equal(data.addons.persona, PERSONA_ID, "The correct Persona Id must be reported.");
 
   
   yield AddonManagerTesting.uninstallAddonByID(ADDON_ID);
