@@ -13,7 +13,7 @@
 #include <stdlib.h>
 
 
-extern int gSeccompTsyncBroadcastSignum;
+extern MOZ_EXPORT int gSeccompTsyncBroadcastSignum;
 
 
 

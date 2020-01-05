@@ -69,7 +69,7 @@ __sanitizer_sandbox_on_notify(__sanitizer_sandbox_arguments *args);
 #endif 
 
 
-int gSeccompTsyncBroadcastSignum = 0;
+MOZ_EXPORT int gSeccompTsyncBroadcastSignum = 0;
 
 namespace mozilla {
 
