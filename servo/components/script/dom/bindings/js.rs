@@ -84,6 +84,14 @@ impl<T: Reflectable> Unrooted<T> {
     }
 
     
+    #[allow(unrooted_must_root)]
+    pub fn from_js(ptr: JS<T>) -> Unrooted<T> {
+        Unrooted {
+            ptr: ptr.ptr
+        }
+    }
+
+    
     pub fn reflector<'a>(&'a self) -> &'a Reflector {
         unsafe {
             (**self.ptr).reflector()
@@ -189,7 +197,7 @@ pub struct JS<T> {
 
 impl<T> JS<T> {
     
-    fn to_layout(self) -> LayoutJS<T> {
+    pub unsafe fn to_layout(self) -> LayoutJS<T> {
         LayoutJS {
             ptr: self.ptr.clone()
         }
@@ -283,7 +291,7 @@ impl<U: Reflectable> JS<U> {
 impl<T: Reflectable> Reflectable for JS<T> {
     fn reflector<'a>(&'a self) -> &'a Reflector {
         unsafe {
-            (*self.unsafe_get()).reflector()
+            (**self.ptr).reflector()
         }
     }
 }
@@ -384,14 +392,8 @@ impl<T: Reflectable> MutNullableJS<T> {
 
     
     
-    pub unsafe fn get_inner(&self) -> Option<JS<T>> {
-        self.ptr.get()
-    }
-
-    
-    
     pub unsafe fn get_inner_as_layout(&self) -> Option<LayoutJS<T>> {
-        self.get_inner().map(|js| js.to_layout())
+        self.ptr.get().map(|js| js.to_layout())
     }
 
     
@@ -411,12 +413,6 @@ impl<T: Reflectable> MutNullableJS<T> {
 }
 
 impl<T: Reflectable> JS<T> {
-    
-    
-    pub unsafe fn unsafe_get(&self) -> *const T {
-        *self.ptr
-    }
-
     
     
     
