@@ -514,6 +514,7 @@ pref("media.getusermedia.playout_delay", 100);
 pref("media.navigator.audio.full_duplex", true);
 
 pref("media.navigator.hardware.vp8_encode.acceleration_enabled", false);
+pref("media.navigator.hardware.vp8_encode.acceleration_remote_enabled", false);
 pref("media.navigator.hardware.vp8_decode.acceleration_enabled", false);
 #elif defined(XP_LINUX)
 pref("media.peerconnection.capture_delay", 70);
@@ -2835,8 +2836,6 @@ pref("plugins.click_to_play", false);
 #ifdef NIGHTLY_BUILD
 
 pref("plugins.navigator.hidden_ctp_plugin", "Shockwave Flash");
-#else
-pref("plugins.navigator.hidden_ctp_plugin", "");
 #endif
 
 pref("plugin.default.state", 2);
