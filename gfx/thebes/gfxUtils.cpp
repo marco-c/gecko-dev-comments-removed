@@ -885,7 +885,7 @@ gfxUtils::CopySurfaceToDataSourceSurfaceWithFormat(SourceSurface* aSurface,
 
   Rect bounds(0, 0, aSurface->GetSize().width, aSurface->GetSize().height);
 
-  if (aSurface->GetType() != SurfaceType::DATA) {
+  if (!aSurface->IsDataSourceSurface()) {
     
     
     
