@@ -531,11 +531,6 @@ impl Document {
     }
 
     
-    pub fn disarm_reflow_timeout(&self) {
-        self.reflow_timeout.set(None)
-    }
-
-    
     pub fn unregister_named_element(&self, to_unregister: &Element, id: Atom) {
         debug!("Removing named element from document {:p}: {:p} id={}",
                self,
@@ -1556,6 +1551,15 @@ impl Document {
                 self.process_deferred_scripts();
             },
             LoadType::PageSource(_) => {
+                if self.browsing_context.is_some() {
+                    
+                    self.reflow_timeout.set(None);
+                    self.upcast::<Node>().dirty(NodeDamage::OtherNodeDamage);
+                    self.window.reflow(ReflowGoal::ForDisplay,
+                                       ReflowQueryType::NoQuery,
+                                       ReflowReason::FirstLoad);
+                }
+
                 
                 
 
