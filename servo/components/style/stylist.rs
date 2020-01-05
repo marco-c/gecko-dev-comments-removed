@@ -512,6 +512,7 @@ impl Stylist {
         self.push_applicable_declarations(element,
                                           None,
                                           None,
+                                          None,
                                           AnimationRules(None, None),
                                           Some(pseudo),
                                           guards,
@@ -631,6 +632,7 @@ impl Stylist {
                                         element: &E,
                                         parent_bf: Option<&BloomFilter>,
                                         style_attribute: Option<&Arc<Locked<PropertyDeclarationBlock>>>,
+                                        smil_override: Option<&Arc<Locked<PropertyDeclarationBlock>>>,
                                         animation_rules: AnimationRules,
                                         pseudo_element: Option<&PseudoElement>,
                                         guards: &StylesheetGuards,
@@ -710,6 +712,16 @@ impl Stylist {
             }
 
             debug!("style attr: {:?}", relations);
+
+            
+            
+            if let Some(so) = smil_override {
+                Push::push(
+                    applicable_declarations,
+                    ApplicableDeclarationBlock::from_declarations(so.clone(),
+                                                                  CascadeLevel::SMILOverride));
+            }
+            debug!("SMIL: {:?}", relations);
 
             
             

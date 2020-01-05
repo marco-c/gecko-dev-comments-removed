@@ -255,18 +255,18 @@ impl RuleTree {
     }
 
     
-    pub fn remove_animation_and_transition_rules(&self, path: &StrongRuleNode) -> StrongRuleNode {
+    pub fn remove_animation_rules(&self, path: &StrongRuleNode) -> StrongRuleNode {
         
         if !path.has_animation_or_transition_rules() {
             return path.clone();
         }
 
-        let iter = path.self_and_ancestors().take_while(|node| node.cascade_level() >= CascadeLevel::Animations);
+        let iter = path.self_and_ancestors().take_while(
+            |node| node.cascade_level() >= CascadeLevel::SMILOverride);
         let mut last = path;
         let mut children = vec![];
         for node in iter {
-            if node.cascade_level() != CascadeLevel::Animations &&
-               node.cascade_level() != CascadeLevel::Transitions {
+            if node.cascade_level().is_animation() {
                 children.push((node.get().source.clone().unwrap(), node.cascade_level()));
             }
             last = node;
@@ -302,6 +302,8 @@ pub enum CascadeLevel {
     
     StyleAttributeNormal,
     
+    SMILOverride,
+    
     Animations,
     
     AuthorImportant,
@@ -333,6 +335,7 @@ impl CascadeLevel {
         match *self {
             CascadeLevel::Transitions |
             CascadeLevel::Animations |
+            CascadeLevel::SMILOverride |
             CascadeLevel::StyleAttributeNormal |
             CascadeLevel::StyleAttributeImportant => true,
             _ => false,
@@ -360,6 +363,17 @@ impl CascadeLevel {
             Importance::Important
         } else {
             Importance::Normal
+        }
+    }
+
+    
+    #[inline]
+    pub fn is_animation(&self) -> bool {
+        match *self {
+            CascadeLevel::SMILOverride |
+            CascadeLevel::Animations |
+            CascadeLevel::Transitions => true,
+            _ => false,
         }
     }
 }
@@ -780,8 +794,8 @@ impl StrongRuleNode {
     
     pub fn has_animation_or_transition_rules(&self) -> bool {
         self.self_and_ancestors()
-            .take_while(|node| node.cascade_level() >= CascadeLevel::Animations)
-            .any(|node| matches!(node.cascade_level(), CascadeLevel::Animations | CascadeLevel::Transitions))
+            .take_while(|node| node.cascade_level() >= CascadeLevel::SMILOverride)
+            .any(|node| node.cascade_level().is_animation())
     }
 }
 

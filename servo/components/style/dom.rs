@@ -320,6 +320,11 @@ pub trait TElement : Eq + PartialEq + Debug + Hash + Sized + Copy + Clone +
     fn style_attribute(&self) -> Option<&Arc<Locked<PropertyDeclarationBlock>>>;
 
     
+    fn get_smil_override(&self) -> Option<&Arc<Locked<PropertyDeclarationBlock>>> {
+        None
+    }
+
+    
     fn get_animation_rules(&self, _pseudo: Option<&PseudoElement>) -> AnimationRules {
         AnimationRules(None, None)
     }
