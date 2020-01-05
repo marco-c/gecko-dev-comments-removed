@@ -145,6 +145,9 @@ this.CrashManager = function(options) {
   this._crashPromises = new Map();
 
   
+  this._pingPromise = null;
+
+  
   this._store = null;
 
   
@@ -449,7 +452,12 @@ this.CrashManager.prototype = Object.freeze({
         this._crashPromises.delete(id);
         deferred.resolve();
       }
-    }.bind(this));
+
+      
+      if (processType === this.PROCESS_TYPE_CONTENT) {
+        this._sendCrashPing(id, processType, date, metadata);
+      }
+   }.bind(this));
 
     return promise;
   },
@@ -609,7 +617,7 @@ this.CrashManager.prototype = Object.freeze({
     }.bind(this));
   },
 
-  _filterAnnotations: function (annotations) {
+  _filterAnnotations: function(annotations) {
     let filteredAnnotations = {};
 
     for (let line in annotations) {
@@ -621,7 +629,7 @@ this.CrashManager.prototype = Object.freeze({
     return filteredAnnotations;
   },
 
-  _sendCrashPing: function (crashId, type, date, metadata) {
+  _sendCrashPing: function(crashId, type, date, metadata = {}) {
     
     
     let reportMeta = Cu.cloneInto(metadata, myScope);
@@ -634,7 +642,7 @@ this.CrashManager.prototype = Object.freeze({
     
     reportMeta = this._filterAnnotations(reportMeta);
 
-    TelemetryController.submitExternalPing("crash",
+    this._pingPromise = TelemetryController.submitExternalPing("crash",
       {
         version: 1,
         crashDate: date.toISOString().slice(0, 10), 
