@@ -20,6 +20,11 @@
 
 
 
+
+
+
+
+
 "use strict";
 
 const testCases = [
@@ -124,7 +129,8 @@ function* testTables() {
 }
 
 add_task(function* () {
-  yield openTabAndSetupStorage(MAIN_DOMAIN + "storage-listings.html");
+  yield openTabAndSetupStorage(
+    MAIN_DOMAIN + "storage-listings-with-fragment.html#abc");
 
   testTree();
   yield testTables();
