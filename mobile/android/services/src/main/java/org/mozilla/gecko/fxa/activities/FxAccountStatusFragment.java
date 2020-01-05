@@ -471,10 +471,6 @@ public class FxAccountStatusFragment
     accountProfileInformationReceiver = new FxAccountProfileInformationReceiver();
     LocalBroadcastManager.getInstance(getActivity()).registerReceiver(accountProfileInformationReceiver, intentFilter);
 
-    
-    final float cornerRadius = getResources().getDimension(R.dimen.fxaccount_profile_image_width) / 2;
-    profileAvatarTarget = new PicassoPreferenceIconTarget(getResources(), profilePreference, cornerRadius);
-
     refresh();
   }
 
@@ -517,6 +513,10 @@ public class FxAccountStatusFragment
     if (fxAccount == null) {
       throw new IllegalArgumentException("fxAccount must not be null");
     }
+
+    
+    final float cornerRadius = getResources().getDimension(R.dimen.fxaccount_profile_image_width) / 2;
+    profileAvatarTarget = new PicassoPreferenceIconTarget(getResources(), profilePreference, cornerRadius);
 
     updateProfileInformation();
     updateAuthServerPreference();
