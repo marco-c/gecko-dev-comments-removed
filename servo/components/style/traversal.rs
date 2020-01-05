@@ -6,7 +6,7 @@
 
 use atomic_refcell::{AtomicRefCell, AtomicRefMut};
 use context::{SharedStyleContext, StyleContext};
-use data::{ElementData, StoredRestyleHint};
+use data::{ElementData, ElementStyles, StoredRestyleHint};
 use dom::{TElement, TNode};
 use matching::{MatchMethods, StyleSharingResult};
 use restyle_hints::{RESTYLE_DESCENDANTS, RESTYLE_SELF};
@@ -266,39 +266,76 @@ pub fn relations_are_shareable(relations: &StyleRelations) -> bool {
 }
 
 
-
-pub fn style_element_in_display_none_subtree<E, F>(context: &StyleContext<E>,
-                                                   element: E, init_data: &F) -> E
+fn resolve_style_internal<E, F>(context: &StyleContext<E>, element: E, ensure_data: &F)
+                                -> Option<E>
     where E: TElement,
           F: Fn(E),
 {
-    
-    if element.get_data().is_some() {
-        
-        debug_assert!(cfg!(feature = "gecko") || element.borrow_data().unwrap().has_current_styles());
-        debug_assert!(element.borrow_data().unwrap().styles().is_display_none());
-        return element;
-    }
-
-    
-    let parent = element.parent_element().unwrap();
-    let display_none_root = style_element_in_display_none_subtree(context, parent, init_data);
-
-    
-    init_data(element);
-
-    
+    ensure_data(element);
     let mut data = element.mutate_data().unwrap();
-    let match_results = element.match_element(context, None);
-    unsafe {
+    let mut display_none_root = None;
+
+    
+    if data.get_styles().is_none() {
+        
+        if let Some(parent) = element.parent_element() {
+            display_none_root = resolve_style_internal(context, parent, ensure_data);
+        }
+
+        
+        let match_results = element.match_element(context, None);
         let shareable = match_results.primary_is_shareable();
-        element.cascade_node(context, &mut data, Some(parent),
+        element.cascade_node(context, &mut data, element.parent_element(),
                              match_results.primary,
                              match_results.per_pseudo,
                              shareable);
+
+        
+        
+        
+        unsafe { element.set_dirty_descendants() };
     }
 
-    display_none_root
+    
+    
+    if display_none_root.is_none() && data.styles().is_display_none() {
+        display_none_root = Some(element);
+    }
+
+    return display_none_root
+}
+
+
+
+
+
+pub fn resolve_style<E, F, G, H>(context: &StyleContext<E>, element: E,
+                                 ensure_data: &F, clear_data: &G, callback: H)
+    where E: TElement,
+          F: Fn(E),
+          G: Fn(E),
+          H: FnOnce(&ElementStyles)
+{
+    
+    let display_none_root = resolve_style_internal(context, element, ensure_data);
+
+    
+    
+    
+    callback(element.borrow_data().unwrap().styles());
+
+    
+    if let Some(root) = display_none_root {
+        let mut curr = element;
+        loop {
+            unsafe { curr.unset_dirty_descendants(); }
+            if curr == root {
+                break;
+            }
+            clear_data(curr);
+            curr = curr.parent_element().unwrap();
+        }
+    }
 }
 
 

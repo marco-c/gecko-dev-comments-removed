@@ -260,14 +260,6 @@ impl<'le> GeckoElement<'le> {
         }
     }
 
-    pub fn get_pseudo_style(&self, pseudo: &PseudoElement) -> Option<Arc<ComputedValues>> {
-        
-        
-        
-        self.borrow_data().and_then(|data| data.styles().pseudos
-                                               .get(pseudo).map(|c| c.values.clone()))
-    }
-
     
     pub unsafe fn ensure_data(&self) -> &AtomicRefCell<ElementData> {
         match self.get_data() {
