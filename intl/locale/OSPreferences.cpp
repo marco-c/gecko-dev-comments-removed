@@ -38,21 +38,12 @@ OSPreferences::GetInstance()
 bool
 OSPreferences::GetSystemLocales(nsTArray<nsCString>& aRetVal)
 {
-  if (!mSystemLocales.IsEmpty()) {
-    aRetVal = mSystemLocales;
-    return true;
+  bool status = true;
+  if (mSystemLocales.IsEmpty()) {
+    status = ReadSystemLocales(mSystemLocales);
   }
-
-  if (ReadSystemLocales(aRetVal)) {
-    mSystemLocales = aRetVal;
-    return true;
-  }
-
-  
-  
-  
-  aRetVal.AppendElement(NS_LITERAL_CSTRING("en-US"));
-  return false;
+  aRetVal = mSystemLocales;
+  return status;
 }
 
 void
@@ -279,22 +270,21 @@ bool
 OSPreferences::GetDateTimeConnectorPattern(const nsACString& aLocale,
                                            nsAString& aRetVal)
 {
+  bool result = false;
 #ifdef ENABLE_INTL_API
   UErrorCode status = U_ZERO_ERROR;
   UDateTimePatternGenerator* pg = udatpg_open(PromiseFlatCString(aLocale).get(), &status);
-  if (U_FAILURE(status)) {
-    return false;
+  if (U_SUCCESS(status)) {
+    int32_t resultSize;
+    const UChar* value = udatpg_getDateTimeFormat(pg, &resultSize);
+    MOZ_ASSERT(resultSize >= 0);
+
+    aRetVal.Assign((char16_t*)value, resultSize);
+    result = true;
   }
-
-  int32_t resultSize;
-  const UChar* value = udatpg_getDateTimeFormat(pg, &resultSize);
-  MOZ_ASSERT(resultSize >= 0);
-
-  aRetVal.Assign((char16_t*)value, resultSize);
-  return true;
-#else
-  return false;
+  udatpg_close(pg);
 #endif
+  return result;
 }
 
 
@@ -303,22 +293,15 @@ OSPreferences::GetDateTimeConnectorPattern(const nsACString& aLocale,
 NS_IMETHODIMP
 OSPreferences::GetSystemLocales(uint32_t* aCount, char*** aOutArray)
 {
-  AutoTArray<nsCString,10> tempLocales;
-  nsTArray<nsCString>* systemLocalesPtr;
-
-  if (!mSystemLocales.IsEmpty()) {
-    
-    systemLocalesPtr = &mSystemLocales;
-  } else {
-    
-    GetSystemLocales(tempLocales);
-    systemLocalesPtr = &tempLocales;
+  if (mSystemLocales.IsEmpty()) {
+    ReadSystemLocales(mSystemLocales);
   }
-  *aCount = systemLocalesPtr->Length();
+
+  *aCount = mSystemLocales.Length();
   *aOutArray = static_cast<char**>(moz_xmalloc(*aCount * sizeof(char*)));
 
   for (uint32_t i = 0; i < *aCount; i++) {
-    (*aOutArray)[i] = moz_xstrdup((*systemLocalesPtr)[i].get());
+    (*aOutArray)[i] = moz_xstrdup(mSystemLocales[i].get());
   }
 
   return NS_OK;
@@ -327,14 +310,12 @@ OSPreferences::GetSystemLocales(uint32_t* aCount, char*** aOutArray)
 NS_IMETHODIMP
 OSPreferences::GetSystemLocale(nsACString& aRetVal)
 {
+  if (mSystemLocales.IsEmpty()) {
+    ReadSystemLocales(mSystemLocales);
+  }
+
   if (!mSystemLocales.IsEmpty()) {
     aRetVal = mSystemLocales[0];
-  } else {
-    AutoTArray<nsCString,10> locales;
-    GetSystemLocales(locales);
-    if (!locales.IsEmpty()) {
-      aRetVal = locales[0];
-    }
   }
   return NS_OK;
 }
