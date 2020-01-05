@@ -85,6 +85,7 @@ public:
     , mIsNotNull(true)
 #endif
   {
+    MOZ_DIAGNOSTIC_ASSERT(aUsePrivateBrowsing == (aAttrs.mPrivateBrowsingId > 0));
   }
 
   
