@@ -46,6 +46,7 @@ use hyper::method::Method;
 use hyper::mime::{Attr, Mime};
 use hyper_serde::Serde;
 use ipc_channel::ipc::{self, IpcReceiver, IpcSender};
+use ipc_channel::router::ROUTER;
 use msg::constellation_msg::{PipelineId, ReferrerPolicy};
 use request::{Request, RequestInit};
 use response::{HttpsState, Response};
@@ -262,18 +263,6 @@ pub trait Action<Listener> {
     fn process(self, listener: &mut Listener);
 }
 
-
-
-#[derive(Deserialize, Serialize)]
-pub enum ResponseAction {
-    
-    HeadersAvailable(Result<Metadata, NetworkError>),
-    
-    DataAvailable(Vec<u8>),
-    
-    ResponseComplete(Result<(), NetworkError>)
-}
-
 impl<T: FetchResponseListener> Action<T> for FetchResponseMsg {
     
     fn process(self, listener: &mut T) {
@@ -288,23 +277,9 @@ impl<T: FetchResponseListener> Action<T> for FetchResponseMsg {
 }
 
 
-
-#[derive(Deserialize, Serialize)]
-pub struct AsyncResponseTarget {
-    pub sender: IpcSender<ResponseAction>,
-}
-
-impl AsyncResponseTarget {
-    pub fn invoke_with_listener(&self, action: ResponseAction) {
-        self.sender.send(action).unwrap()
-    }
-}
-
-
 #[derive(Deserialize, Serialize)]
 pub enum LoadConsumer {
     Channel(IpcSender<LoadResponse>),
-    Listener(AsyncResponseTarget),
 }
 
 
@@ -446,106 +421,83 @@ pub enum CoreResourceMsg {
     Exit(IpcSender<()>),
 }
 
-struct LoadOriginData {
-    pipeline: Option<PipelineId>,
-    referrer_policy: Option<ReferrerPolicy>,
-    referrer_url: Option<Url>
+
+pub fn fetch_async<F>(request: RequestInit,
+                      core_resource_thread: &CoreResourceThread,
+                      f: F)
+    where F: Fn(FetchResponseMsg) + Send + 'static
+{
+    let (action_sender, action_receiver) = ipc::channel().unwrap();
+    ROUTER.add_route(action_receiver.to_opaque(), box move |message| {
+        f(message.to().unwrap());
+    });
+    core_resource_thread.send(CoreResourceMsg::Fetch(request, action_sender)).unwrap();
 }
 
-impl LoadOrigin for LoadOriginData {
-    fn referrer_url(&self) -> Option<Url> {
-        self.referrer_url.clone()
-    }
-    fn referrer_policy(&self) -> Option<ReferrerPolicy> {
-        self.referrer_policy.clone()
-    }
-    fn pipeline_id(&self) -> Option<PipelineId> {
-        self.pipeline
-    }
-}
-
-
-pub fn load_async(context: LoadContext,
-                  core_resource_thread: CoreResourceThread,
-                  url: Url,
-                  pipeline: Option<PipelineId>,
-                  referrer_policy: Option<ReferrerPolicy>,
-                  referrer_url: Option<Url>,
-                  listener: AsyncResponseTarget) {
-    let load = LoadOriginData {
-        pipeline: pipeline,
-        referrer_policy: referrer_policy,
-        referrer_url: referrer_url
-    };
-    let load_data = LoadData::new(context, url, &load);
-    let consumer = LoadConsumer::Listener(listener);
-    core_resource_thread.send(CoreResourceMsg::Load(load_data, consumer, None)).unwrap();
-}
-
-
-
-
-
-
+/// Message sent in response to `Load`.  Contains metadata, and a port
+/// for receiving the data.
+///
+/// Even if loading fails immediately, we send one of these and the
+/// progress_port will provide the error.
 #[derive(Serialize, Deserialize)]
 pub struct LoadResponse {
-    
+    /// Metadata, such as from HTTP headers.
     pub metadata: Metadata,
-    
+    /// Port for reading data.
     pub progress_port: IpcReceiver<ProgressMsg>,
 }
 
 #[derive(Clone, Deserialize, Serialize, HeapSizeOf)]
 pub struct ResourceCORSData {
-    
+    /// CORS Preflight flag
     pub preflight: bool,
-    
+    /// Origin of CORS Request
     pub origin: Url,
 }
 
-
+/// Metadata about a loaded resource, such as is obtained from HTTP headers.
 #[derive(Clone, Deserialize, Serialize, HeapSizeOf)]
 pub struct Metadata {
-    
+    /// Final URL after redirects.
     pub final_url: Url,
 
     #[ignore_heap_size_of = "Defined in hyper"]
-    
+    /// MIME type / subtype.
     pub content_type: Option<Serde<ContentType>>,
 
-    
+    /// Character set.
     pub charset: Option<String>,
 
     #[ignore_heap_size_of = "Defined in hyper"]
-    
+    /// Headers
     pub headers: Option<Serde<Headers>>,
 
-    
+    /// HTTP Status
     pub status: Option<(u16, Vec<u8>)>,
 
-    
+    /// Is successful HTTPS connection
     pub https_state: HttpsState,
 
-    
+    /// Referrer Url
     pub referrer: Option<Url>,
 }
 
 impl Metadata {
-    
+    /// Metadata with defaults for everything optional.
     pub fn default(url: Url) -> Self {
         Metadata {
             final_url:    url,
             content_type: None,
             charset:      None,
             headers: None,
-            
+            // https://fetch.spec.whatwg.org/#concept-response-status-message
             status: Some((200, b"OK".to_vec())),
             https_state: HttpsState::None,
             referrer: None,
         }
     }
 
-    
+    /// Extract the parts of a Mime that we care about.
     pub fn set_content_type(&mut self, content_type: Option<&Mime>) {
         match self.headers {
             None => self.headers = Some(Serde(Headers::new())),
@@ -571,72 +523,78 @@ impl Metadata {
     }
 }
 
-
+/// The creator of a given cookie
 #[derive(PartialEq, Copy, Clone, Deserialize, Serialize)]
 pub enum CookieSource {
-    
+    /// An HTTP API
     HTTP,
-    
+    /// A non-HTTP API
     NonHTTP,
 }
 
-
+/// Messages sent in response to a `Load` message
 #[derive(PartialEq, Debug, Deserialize, Serialize)]
 pub enum ProgressMsg {
-    
+    /// Binary data - there may be multiple of these
     Payload(Vec<u8>),
-    
+    /// Indicates loading is complete, either successfully or not
     Done(Result<(), NetworkError>),
 }
 
-
-pub fn load_whole_resource(context: LoadContext,
-                           core_resource_thread: &CoreResourceThread,
-                           url: Url,
-                           load_origin: &LoadOrigin)
-        -> Result<(Metadata, Vec<u8>), NetworkError> {
-    let (start_chan, start_port) = ipc::channel().unwrap();
-    let load_data = LoadData::new(context, url, load_origin);
-    core_resource_thread.send(CoreResourceMsg::Load(load_data, LoadConsumer::Channel(start_chan), None)).unwrap();
-    let response = start_port.recv().unwrap();
+/// Convenience function for synchronously loading a whole resource.
+pub fn load_whole_resource(request: RequestInit,
+                           core_resource_thread: &CoreResourceThread)
+                           -> Result<(Metadata, Vec<u8>), NetworkError> {
+    let (action_sender, action_receiver) = ipc::channel().unwrap();
+    core_resource_thread.send(CoreResourceMsg::Fetch(request, action_sender)).unwrap();
 
     let mut buf = vec!();
+    let mut metadata = None;
     loop {
-        match response.progress_port.recv().unwrap() {
-            ProgressMsg::Payload(data) => buf.extend_from_slice(&data),
-            ProgressMsg::Done(Ok(())) => return Ok((response.metadata, buf)),
-            ProgressMsg::Done(Err(e)) => return Err(e)
+        match action_receiver.recv().unwrap() {
+            FetchResponseMsg::ProcessRequestBody |
+            FetchResponseMsg::ProcessRequestEOF => (),
+            FetchResponseMsg::ProcessResponse(Ok(m)) => {
+                metadata = Some(match m {
+                    FetchMetadata::Unfiltered(m) => m,
+                    FetchMetadata::Filtered { unsafe_, .. } => unsafe_
+                })
+            },
+            FetchResponseMsg::ProcessResponseChunk(data) => buf.extend_from_slice(&data),
+            FetchResponseMsg::ProcessResponseEOF(Ok(())) => return Ok((metadata.unwrap(), buf)),
+            FetchResponseMsg::ProcessResponse(Err(e)) |
+            FetchResponseMsg::ProcessResponseEOF(Err(e)) => return Err(e)
         }
     }
 }
 
-
+/// Defensively unwraps the protocol string from the response object's protocol
 pub fn unwrap_websocket_protocol(wsp: Option<&header::WebSocketProtocol>) -> Option<&str> {
     wsp.and_then(|protocol_list| protocol_list.get(0).map(|protocol| protocol.as_ref()))
 }
 
-
+/// An unique identifier to keep track of each load message in the resource handler
 #[derive(Clone, PartialEq, Eq, Copy, Hash, Debug, Deserialize, Serialize, HeapSizeOf)]
 pub struct ResourceId(pub u32);
 
 #[derive(Deserialize, Serialize)]
 pub enum ConstellationMsg {
-    
+    /// Queries whether a pipeline or its ancestors are private
     IsPrivate(PipelineId, IpcSender<bool>),
 }
 
-
+/// Network errors that have to be exported out of the loaders
 #[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize, HeapSizeOf)]
 pub enum NetworkError {
-    
+    /// Could be any of the internal errors, like unsupported scheme, connection errors, etc.
     Internal(String),
     LoadCancelled,
-    
+    /// SSL validation error that has to be handled in the HTML parser
     SslValidation(Url, String),
 }
 
-
-
+/// Normalize `slice`, as defined by
+/// [the Fetch Spec](https://fetch.spec.whatwg.org/#concept-header-value-normalize).
 pub fn trim_http_whitespace(mut slice: &[u8]) -> &[u8] {
     const HTTP_WS_BYTES: &'static [u8] = b"\x09\x0A\x0D\x20";
 
