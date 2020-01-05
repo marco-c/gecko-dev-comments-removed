@@ -930,8 +930,17 @@ pub trait MatchMethods : TElement {
         let self_flags = flags.for_self();
         if !self_flags.is_empty() {
             if element == self {
+                
+                
+                
                 unsafe { element.set_selector_flags(self_flags); }
             } else {
+                
+                
+                
+                
+                
+                
                 if !element.has_selector_flags(self_flags) {
                     let task =
                         SequentialTask::set_selector_flags(element.clone(),
