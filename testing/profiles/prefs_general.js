@@ -338,6 +338,8 @@ user_pref("browser.urlbar.suggest.searches", false);
 
 user_pref("browser.urlbar.userMadeSearchSuggestionsChoice", true);
 
+user_pref("browser.urlbar.usepreloadedtopurls.enabled", false);
+
 user_pref("dom.audiochannel.mutedByDefault", false);
 
 user_pref("webextensions.tests", true);

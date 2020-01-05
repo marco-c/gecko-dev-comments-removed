@@ -10,6 +10,8 @@
 
 const { classes: Cc, interfaces: Ci, results: Cr, utils: Cu } = Components;
 
+const MS_PER_DAY = 86400000; 
+
 
 
 const MATCH_ANYWHERE = Ci.mozIPlacesAutoComplete.MATCH_ANYWHERE;
@@ -46,6 +48,9 @@ const PREF_SUGGEST_HISTORY_ONLYTYPED = [ "suggest.history.onlyTyped", false ];
 const PREF_SUGGEST_SEARCHES =       [ "suggest.searches",       false ];
 
 const PREF_MAX_CHARS_FOR_SUGGEST =  [ "maxCharsForSearchSuggestions", 20];
+
+const PREF_PREFILL_SITES_ENABLED =  [ "usepreloadedtopurls.enabled",   true ];
+const PREF_PREFILL_SITES_EXPIRE_DAYS = [ "usepreloadedtopurls.expire_days",  14 ];
 
 
 
@@ -284,6 +289,8 @@ XPCOMUtils.defineLazyModuleGetter(this, "PlacesRemoteTabsAutocompleteProvider",
                                   "resource://gre/modules/PlacesRemoteTabsAutocompleteProvider.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "BrowserUtils",
                                   "resource://gre/modules/BrowserUtils.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "ProfileAge",
+                                  "resource://gre/modules/ProfileAge.jsm");
 
 XPCOMUtils.defineLazyServiceGetter(this, "textURIService",
                                    "@mozilla.org/intl/texttosuburi;1",
@@ -466,6 +473,8 @@ XPCOMUtils.defineLazyGetter(this, "Prefs", () => {
     store.suggestTyped = prefs.get(...PREF_SUGGEST_HISTORY_ONLYTYPED);
     store.suggestSearches = prefs.get(...PREF_SUGGEST_SEARCHES);
     store.maxCharsForSearchSuggestions = prefs.get(...PREF_MAX_CHARS_FOR_SUGGEST);
+    store.prefillSitesEnabled = prefs.get(...PREF_PREFILL_SITES_ENABLED);
+    store.prefillSitesExpireDays = prefs.get(...PREF_PREFILL_SITES_EXPIRE_DAYS);
     store.keywordEnabled = true;
     try {
       store.keywordEnabled = Services.prefs.getBoolPref("keyword.enabled");
@@ -537,6 +546,42 @@ XPCOMUtils.defineLazyGetter(this, "Prefs", () => {
   Services.prefs.addObserver("keyword.enabled", store, true);
 
   return Object.seal(store);
+});
+
+
+
+function PrefillSite(url, title) {
+  this.uri = NetUtil.newURI(url);
+  this.title = title;
+  this._matchTitle = title.toLowerCase();
+}
+
+
+
+
+
+
+
+XPCOMUtils.defineLazyGetter(this, "PrefillSiteStorage", () => Object.seal({
+  sites: [],
+
+  add(url, title) {
+    let site = new PrefillSite(url, title);
+    this.sites.push(site);
+  },
+
+  populate() {
+    this.add("https://google.com/", "Google");
+    this.add("https://youtube.com/", "YouTube");
+    this.add("https://facebook.com/", "Facebook");
+    this.add("https://baidu.com/", "\u767E\u5EA6\u4E00\u4E0B\uFF0C\u4F60\u5C31\u77E5\u9053");
+    this.add("https://wikipedia.org/", "Wikipedia");
+    this.add("https://yahoo.com/", "Yahoo");
+  },
+}));
+
+XPCOMUtils.defineLazyGetter(this, "ProfileAgeCreatedPromise", () => {
+  return (new ProfileAge(null, null)).created;
 });
 
 
@@ -930,6 +975,9 @@ Search.prototype = {
     queries.push(this._searchQuery);
 
     
+    yield this._checkPrefillSitesExpiry();
+
+    
     
     
     this._addingHeuristicFirstMatch = true;
@@ -992,10 +1040,61 @@ Search.prototype = {
       ExtensionSearchHandler.handleInputCancelled();
     }
 
+    this._matchPrefillSites();
+
     
     
     yield Promise.all(this._remoteMatchesPromises);
   }),
+
+
+  *_checkPrefillSitesExpiry() {
+    if (!Prefs.prefillSitesEnabled)
+      return;
+    let profileCreationDate = yield ProfileAgeCreatedPromise;
+    let daysSinceProfileCreation = (Date.now() - profileCreationDate) / MS_PER_DAY;
+    if (daysSinceProfileCreation > Prefs.prefillSitesExpireDays)
+      Services.prefs.setBoolPref("browser.urlbar.usepreloadedtopurls.enabled", false);
+  },
+
+  
+  _matchPrefillSites() {
+    if (!Prefs.prefillSitesEnabled)
+      return;
+    for (let site of PrefillSiteStorage.sites) {
+      if (site.uri.host.includes(this._searchString) ||
+          site._matchTitle.includes(this._searchString)) {
+        let match = {
+          value: site.uri.spec,
+          comment: site.title,
+          style: "prefill-site",
+          finalCompleteValue: site.uri.spec,
+          frecency: FRECENCY_DEFAULT - 1,
+        };
+        this._addMatch(match);
+      }
+    }
+  },
+
+  _matchPrefillSiteForAutofill() {
+    if (!Prefs.prefillSitesEnabled)
+      return false;
+    for (let site of PrefillSiteStorage.sites) {
+      if (site.uri.host.startsWith(this._searchString)) {
+        let match = {
+          value: stripPrefix(site.uri.spec),
+          comment: site.title,
+          style: "autofill",
+          finalCompleteValue: site.uri.spec,
+          frecency: FRECENCY_DEFAULT,
+        };
+        this._result.setDefaultIndex(0);
+        this._addMatch(match);
+        return true;
+      }
+    }
+    return false;
+  },
 
   *_matchFirstHeuristicResult(conn) {
     
@@ -1039,6 +1138,13 @@ Search.prototype = {
     if (this.pending && shouldAutofill) {
       
       let matched = yield this._matchSearchEngineUrl();
+      if (matched) {
+        return true;
+      }
+    }
+
+    if (this.pending && shouldAutofill) {
+      let matched = this._matchPrefillSiteForAutofill();
       if (matched) {
         return true;
       }
@@ -1951,6 +2057,14 @@ function UnifiedComplete() {
   
   
   Prefs;
+
+  if (Prefs.prefillSitesEnabled) {
+    
+    
+    
+    ProfileAgeCreatedPromise;
+    PrefillSiteStorage.populate(); 
+  }
 }
 
 UnifiedComplete.prototype = {
@@ -1999,9 +2113,9 @@ UnifiedComplete.prototype = {
 
         return conn;
       }).then(null, ex => {
- dump("Couldn't get database handle: " + ex + "\n");
-                                       Cu.reportError(ex);
-});
+        dump("Couldn't get database handle: " + ex + "\n");
+        Cu.reportError(ex);
+      });
     }
     return this._promiseDatabase;
   },
@@ -2014,6 +2128,10 @@ UnifiedComplete.prototype = {
 
   unregisterOpenPage(uri, userContextId) {
     SwitchToTabStorage.delete(uri, userContextId);
+  },
+
+  addPrefillSite(url, title) {
+    PrefillSiteStorage.add(url, title);
   },
 
   
