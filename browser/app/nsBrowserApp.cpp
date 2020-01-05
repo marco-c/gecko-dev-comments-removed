@@ -259,43 +259,47 @@ static int do_main(int argc, char* argv[], char* envp[], nsIFile *xreDirectory)
     return XRE_XPCShellMain(--argc, argv, envp, &shellData);
   }
 
-  XREAppData appData;
-  appData.xreDirectory = xreDirectory;
-
   if (appini) {
+    XREAppData appData;
     rv = XRE_ParseAppData(appini, appData);
     if (NS_FAILED(rv)) {
       Output("Couldn't read application.ini");
       return 255;
     }
-
-    appini->GetParent(getter_AddRefs(appData.directory));
-  } else {
+#if defined(HAS_DLL_BLOCKLIST)
     
-    appData = sAppData;
-
-    nsCOMPtr<nsIFile> exeFile;
-    rv = mozilla::BinaryPath::GetFile(argv[0], getter_AddRefs(exeFile));
-    if (NS_FAILED(rv)) {
-      Output("Couldn't find the application directory.\n");
-      return 255;
-    }
-
-    nsCOMPtr<nsIFile> greDir;
-    exeFile->GetParent(getter_AddRefs(greDir));
-#ifdef XP_MACOSX
-    greDir->SetNativeLeafName(NS_LITERAL_CSTRING(kOSXResourcesFolder));
+    
+    
+    appData->flags |=
+      DllBlocklist_CheckStatus() ? NS_XRE_DLL_BLOCKLIST_ENABLED : 0;
 #endif
-    nsCOMPtr<nsIFile> appSubdir;
-    greDir->Clone(getter_AddRefs(appSubdir));
-    appSubdir->Append(NS_LITERAL_STRING(kDesktopFolder));
-    appData.directory = appSubdir;
+    appData.xreDirectory = xreDirectory;
+    appini->GetParent(getter_AddRefs(appData.directory));
+    return XRE_main(argc, argv, appData, mainFlags);
   }
 
+  XREAppData appData;
+  appData = sAppData;
+  nsCOMPtr<nsIFile> exeFile;
+  rv = mozilla::BinaryPath::GetFile(argv[0], getter_AddRefs(exeFile));
+  if (NS_FAILED(rv)) {
+    Output("Couldn't find the application directory.\n");
+    return 255;
+  }
+
+  nsCOMPtr<nsIFile> greDir;
+  exeFile->GetParent(getter_AddRefs(greDir));
+#ifdef XP_MACOSX
+  greDir->SetNativeLeafName(NS_LITERAL_CSTRING(kOSXResourcesFolder));
+#endif
+  nsCOMPtr<nsIFile> appSubdir;
+  greDir->Clone(getter_AddRefs(appSubdir));
+  appSubdir->Append(NS_LITERAL_STRING(kDesktopFolder));
+
+  appData.directory = appSubdir;
+  appData.xreDirectory = xreDirectory;
+
 #if defined(HAS_DLL_BLOCKLIST)
-  
-  
-  
   appData.flags |=
     DllBlocklist_CheckStatus() ? NS_XRE_DLL_BLOCKLIST_ENABLED : 0;
 #endif
