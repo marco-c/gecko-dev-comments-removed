@@ -5,6 +5,7 @@
 use app_units::Au;
 use euclid::point::Point2D;
 use euclid::rect::Rect;
+use gfx_traits::ScrollRootId;
 use script_traits::UntrustedNodeAddress;
 use style::properties::longhands::{margin_top, margin_right, margin_bottom, margin_left, overflow_x};
 
@@ -28,6 +29,8 @@ pub trait LayoutRPC {
     
     fn node_scroll_area(&self) -> NodeGeometryResponse;
     
+    fn node_scroll_root_id(&self) -> NodeScrollRootIdResponse;
+    
     fn hit_test(&self) -> HitTestResponse;
     
     fn resolved_style(&self) -> ResolvedStyleResponse;
@@ -47,6 +50,8 @@ pub struct NodeGeometryResponse {
 }
 
 pub struct NodeOverflowResponse(pub Option<Point2D<overflow_x::computed_value::T>>);
+
+pub struct NodeScrollRootIdResponse(pub ScrollRootId);
 
 pub struct HitTestResponse {
     pub node_address: Option<UntrustedNodeAddress>,

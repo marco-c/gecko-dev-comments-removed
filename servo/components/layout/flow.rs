@@ -406,7 +406,10 @@ pub trait Flow: fmt::Debug + Sync + Send + 'static {
     
     
     
-    fn print_extra_flow_children(&self, _: &mut PrintTree) {
+    fn print_extra_flow_children(&self, _: &mut PrintTree) { }
+
+    fn scroll_root_id(&self) -> ScrollRootId {
+        base(self).scroll_root_id
     }
 }
 
