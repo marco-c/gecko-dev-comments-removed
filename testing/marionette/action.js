@@ -366,8 +366,9 @@ action.PointerOrigin.get = function(obj) {
 
 action.PointerType = {
   Mouse: "mouse",
-  Pen: "pen",
-  Touch: "touch",
+  
+  
+  
 };
 
 
@@ -567,6 +568,48 @@ action.InputState.Pointer = class Pointer extends InputState {
     this.subtype = action.PointerType.get(subtype);
     this.x = 0;
     this.y = 0;
+  }
+
+  
+
+
+
+
+
+
+
+
+  isPressed(button) {
+    assert.positiveInteger(button);
+    return this.pressed.has(button);
+  }
+
+  
+
+
+
+
+
+
+
+
+  press(button) {
+    assert.positiveInteger(button);
+    return this.pressed.add(button);
+  }
+
+   
+
+
+
+
+
+
+
+
+  release(button) {
+    assert.positiveInteger(button);
+    return this.pressed.delete(button);
   }
 };
 
@@ -859,6 +902,21 @@ action.Key = class {
 };
 
 
+action.Mouse = class {
+  constructor(type, button = 0) {
+    this.type = type;
+    assert.positiveInteger(button);
+    this.button = button;
+    this.buttons = 0;
+  }
+
+  update(inputState) {
+    let allButtons = Array.from(inputState.pressed);
+    this.buttons = allButtons.reduce((a, i) => a + Math.pow(2, i), 0);
+  }
+};
+
+
 
 
 
@@ -962,7 +1020,11 @@ function toEvents(tickDuration, seenEls, container) {
         return dispatchKeyDown(a, inputState, container.frame);
 
       case action.PointerDown:
+        return dispatchPointerDown(a, inputState, container.frame);
+
       case action.PointerUp:
+        return dispatchPointerUp(a, inputState, container.frame);
+
       case action.PointerMove:
       case action.PointerCancel:
         throw new UnsupportedOperationError();
@@ -1030,6 +1092,84 @@ function dispatchKeyUp(a, inputState, win) {
     keyEvent.update(inputState);
     event.sendKeyUp(keyEvent.key, keyEvent, win);
 
+    resolve();
+  });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function dispatchPointerDown(a, inputState, win) {
+  return new Promise(resolve => {
+    if (inputState.isPressed(a.button)) {
+      resolve();
+      return;
+    }
+    inputState.press(a.button);
+    
+    action.inputsToCancel.push(Object.assign({}, a, {subtype: action.PointerUp}));
+    switch (inputState.subtype) {
+      case action.PointerType.Mouse:
+        let mouseEvent = new action.Mouse("mousedown", a.button);
+        mouseEvent.update(inputState);
+        event.synthesizeMouseAtPoint(inputState.x, inputState.y, mouseEvent, win);
+        break;
+      case action.PointerType.Pen:
+      case action.PointerType.Touch:
+        throw new UnsupportedOperationError("Only 'mouse' pointer type is supported.");
+        break;
+      default:
+        throw new TypeError(`Unknown pointer type: ${inputState.subtype}`);
+    }
+    resolve();
+  });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function dispatchPointerUp(a, inputState, win) {
+  return new Promise(resolve => {
+    if (!inputState.isPressed(a.button)) {
+      resolve();
+      return;
+    }
+    inputState.release(a.button);
+    switch (inputState.subtype) {
+      case action.PointerType.Mouse:
+        let mouseEvent = new action.Mouse("mouseup", a.button);
+        mouseEvent.update(inputState);
+        event.synthesizeMouseAtPoint(inputState.x, inputState.y,
+            mouseEvent, win);
+        break;
+      case action.PointerType.Pen:
+      case action.PointerType.Touch:
+        throw new UnsupportedOperationError("Only 'mouse' pointer type is supported.");
+      default:
+        throw new TypeError(`Unknown pointer type: ${inputState.subtype}`);
+    }
     resolve();
   });
 }
