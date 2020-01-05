@@ -140,12 +140,14 @@ public:
     
 
     
-    if (aData->Length() >= 4 &&
-        (*aData)[0] == 0x1a && (*aData)[1] == 0x45 && (*aData)[2] == 0xdf &&
+    if (aData->Length() < 4) {
+      return NS_ERROR_NOT_AVAILABLE;
+    }
+    if ((*aData)[0] == 0x1a && (*aData)[1] == 0x45 && (*aData)[2] == 0xdf &&
         (*aData)[3] == 0xa3) {
       return NS_OK;
     }
-    return NS_ERROR_NOT_AVAILABLE;
+    return MediaResult(NS_ERROR_FAILURE, RESULT_DETAIL("Invalid webm content"));
   }
 
   MediaResult IsMediaSegmentPresent(MediaByteBuffer* aData) override
@@ -163,18 +165,19 @@ public:
     
 
     
-    if (aData->Length() >= 4 &&
-        (*aData)[0] == 0x1f && (*aData)[1] == 0x43 && (*aData)[2] == 0xb6 &&
+    if (aData->Length() < 4) {
+      return NS_ERROR_NOT_AVAILABLE;
+    }
+    if ((*aData)[0] == 0x1f && (*aData)[1] == 0x43 && (*aData)[2] == 0xb6 &&
         (*aData)[3] == 0x75) {
       return NS_OK;
     }
     
-    if (aData->Length() >= 4 &&
-        (*aData)[0] == 0x1c && (*aData)[1] == 0x53 && (*aData)[2] == 0xbb &&
+    if ((*aData)[0] == 0x1c && (*aData)[1] == 0x53 && (*aData)[2] == 0xbb &&
         (*aData)[3] == 0x6b) {
       return NS_OK;
     }
-    return NS_ERROR_NOT_AVAILABLE;
+    return MediaResult(NS_ERROR_FAILURE, RESULT_DETAIL("Invalid webm content"));
   }
 
   bool ParseStartAndEndTimestamps(MediaByteBuffer* aData,
