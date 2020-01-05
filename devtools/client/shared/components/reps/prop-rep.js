@@ -9,7 +9,10 @@
 define(function (require, exports, module) {
   
   const React = require("devtools/client/shared/vendor/react");
-  const { createFactories } = require("./rep-utils");
+  const {
+    createFactories,
+    wrapRender,
+  } = require("./rep-utils");
   const { MODE } = require("./constants");
   
   const { span } = React.DOM;
@@ -19,7 +22,7 @@ define(function (require, exports, module) {
 
 
 
-  let PropRep = React.createFactory(React.createClass({
+  let PropRep = React.createClass({
     displayName: "PropRep",
 
     propTypes: {
@@ -36,7 +39,7 @@ define(function (require, exports, module) {
       mode: React.PropTypes.oneOf(Object.keys(MODE).map(key => MODE[key])),
     },
 
-    render: function () {
+    render: wrapRender(function () {
       const { Grip } = require("./grip");
       let { Rep } = createFactories(require("./rep"));
 
@@ -66,8 +69,8 @@ define(function (require, exports, module) {
           }, this.props.delim)
         )
       );
-    }
-  }));
+    })
+  });
 
   
   exports.PropRep = PropRep;

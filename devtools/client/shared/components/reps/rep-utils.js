@@ -148,6 +148,27 @@ define(function (require, exports, module) {
   }
 
   
+
+
+
+  function wrapRender(renderMethod) {
+    return function () {
+      try {
+        return renderMethod.call(this);
+      } catch (e) {
+        return React.DOM.span(
+          {
+            className: "objectBox objectBox-failure",
+            title: "This object could not be rendered, " +
+                   "please file a bug on bugzilla.mozilla.org"
+          },
+          
+          "Invalid object");
+      }
+    };
+  }
+
+  
   exports.createFactories = createFactories;
   exports.isGrip = isGrip;
   exports.cropString = cropString;
@@ -156,5 +177,6 @@ define(function (require, exports, module) {
   exports.parseURLEncodedText = parseURLEncodedText;
   exports.getFileName = getFileName;
   exports.getURLDisplayString = getURLDisplayString;
+  exports.wrapRender = wrapRender;
   exports.sanitizeString = sanitizeString;
 });
