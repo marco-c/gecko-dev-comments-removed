@@ -5440,24 +5440,22 @@ BytecodeEmitter::setOrEmitSetFunName(ParseNode* maybeFun, HandleAtom name,
     if (maybeFun->isKind(PNK_FUNCTION)) {
         
         
-        RootedFunction fun(cx, maybeFun->pn_funbox->function());
+        JSFunction* fun = maybeFun->pn_funbox->function();
 
         
         
         
         if (fun->hasCompileTimeName()) {
 #ifdef DEBUG
-            RootedAtom funName(cx, NameToFunctionName(cx, name, prefixKind));
+            RootedFunction rootedFun(cx, fun);
+            JSAtom* funName = NameToFunctionName(cx, name, prefixKind);
             if (!funName)
                 return false;
-            MOZ_ASSERT(funName == maybeFun->pn_funbox->function()->compileTimeName());
+            MOZ_ASSERT(funName == rootedFun->compileTimeName());
 #endif
             return true;
         }
 
-        RootedAtom funName(cx, NameToFunctionName(cx, name, prefixKind));
-        if (!funName)
-            return false;
         fun->setCompileTimeName(name);
         return true;
     }
