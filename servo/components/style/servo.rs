@@ -3,14 +3,14 @@
 
 use context;
 use data;
-use properties::ComputedValues;
+use properties::ServoComputedValues;
 use selector_impl::ServoSelectorImpl;
 use selector_matching;
 use stylesheets;
 
 
 pub type Stylesheet = stylesheets::Stylesheet<ServoSelectorImpl>;
-pub type PrivateStyleData = data::PrivateStyleData<ServoSelectorImpl, ComputedValues>;
+pub type PrivateStyleData = data::PrivateStyleData<ServoSelectorImpl, ServoComputedValues>;
 pub type Stylist = selector_matching::Stylist<ServoSelectorImpl>;
 pub type StylistWrapper = context::StylistWrapper<ServoSelectorImpl>;
 pub type SharedStyleContext = context::SharedStyleContext<ServoSelectorImpl>;

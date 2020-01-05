@@ -50,7 +50,7 @@ use std::{fmt, mem, raw};
 use style::computed_values::{clear, display, empty_cells, float, position, overflow_x, text_align};
 use style::dom::TRestyleDamage;
 use style::logical_geometry::{LogicalRect, LogicalSize, WritingMode};
-use style::properties::{self, ComputedValues, TComputedValues};
+use style::properties::{self, ServoComputedValues, TComputedValues};
 use style::values::computed::LengthOrPercentageOrAuto;
 use table::{ColumnComputedInlineSize, ColumnIntrinsicInlineSize, TableFlow};
 use table_caption::TableCaptionFlow;
@@ -410,7 +410,7 @@ pub trait Flow: fmt::Debug + Sync + Send + 'static {
 
     
     
-    fn repair_style(&mut self, new_style: &Arc<ComputedValues>);
+    fn repair_style(&mut self, new_style: &Arc<ServoComputedValues>);
 
     
     
@@ -542,7 +542,7 @@ pub trait MutableFlowUtils {
 
     
     
-    fn repair_style_and_bubble_inline_sizes(self, style: &Arc<ComputedValues>);
+    fn repair_style_and_bubble_inline_sizes(self, style: &Arc<ServoComputedValues>);
 }
 
 pub trait MutableOwnedFlowUtils {
@@ -1051,7 +1051,7 @@ pub enum ForceNonfloatedFlag {
 
 impl BaseFlow {
     #[inline]
-    pub fn new(style: Option<&ComputedValues>,
+    pub fn new(style: Option<&ServoComputedValues>,
                writing_mode: WritingMode,
                force_nonfloated: ForceNonfloatedFlag)
                -> BaseFlow {
@@ -1422,7 +1422,7 @@ impl<'a> MutableFlowUtils for &'a mut Flow {
 
     
     
-    fn repair_style_and_bubble_inline_sizes(self, style: &Arc<ComputedValues>) {
+    fn repair_style_and_bubble_inline_sizes(self, style: &Arc<ServoComputedValues>) {
         self.repair_style(style);
         self.bubble_inline_sizes();
     }
@@ -1579,4 +1579,3 @@ impl OpaqueFlow {
         }
     }
 }
-
