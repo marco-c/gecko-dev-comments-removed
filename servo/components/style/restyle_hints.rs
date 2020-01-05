@@ -218,7 +218,7 @@ fn combinator_to_restyle_hint(combinator: Option<Combinator>) -> RestyleHint {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, HeapSizeOf)]
 struct Sensitivities {
     pub states: ElementState,
     pub attrs: bool,
@@ -255,14 +255,14 @@ impl Sensitivities {
 
 
 
-#[derive(Debug)]
+#[derive(Debug, HeapSizeOf)]
 struct Dependency<Impl: SelectorImplExt> {
     selector: Arc<CompoundSelector<Impl>>,
     combinator: Option<Combinator>,
     sensitivities: Sensitivities,
 }
 
-#[derive(Debug)]
+#[derive(Debug, HeapSizeOf)]
 pub struct DependencySet<Impl: SelectorImplExt> {
     deps: Vec<Dependency<Impl>>,
 }
