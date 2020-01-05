@@ -67,12 +67,6 @@ MediaStreamPlayback.prototype = {
       return p;
     }));
 
-    
-    
-    if (!this.mediaStream.stop) {
-      return;
-    }
-    this.mediaStream.stop();
     return timeout(waitForEnded(), ENDED_TIMEOUT_LENGTH, "ended event never fired")
              .then(() => ok(true, "ended event successfully fired"))
              .then(() => noTrackEnded);
