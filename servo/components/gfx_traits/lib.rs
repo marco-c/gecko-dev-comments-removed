@@ -2,14 +2,24 @@
 
 
 
+#![feature(custom_derive, plugin)]
+#![plugin(serde_macros)]
 #![crate_name = "gfx_traits"]
 #![crate_type = "rlib"]
 
 extern crate azure;
 extern crate layers;
 extern crate msg;
+extern crate serde;
 
 pub mod color;
 mod paint_listener;
 
 pub use paint_listener::PaintListener;
+use msg::constellation_msg::Failure;
+
+
+#[derive(Deserialize, Serialize)]
+pub enum PaintMsg {
+    Failure(Failure),
+}

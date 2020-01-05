@@ -241,12 +241,6 @@ pub enum MouseButton {
     Right,
 }
 
-
-#[derive(Deserialize, Serialize)]
-pub enum PaintMsg {
-    Failure(Failure),
-}
-
 #[derive(Clone, Eq, PartialEq, Deserialize, Serialize, Debug)]
 pub enum AnimationState {
     AnimationsPresent,
