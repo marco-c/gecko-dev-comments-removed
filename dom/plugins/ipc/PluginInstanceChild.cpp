@@ -4078,6 +4078,13 @@ PluginInstanceChild::InvalidateRectDelayed(void)
     }
 
     mCurrentInvalidateTask = nullptr;
+
+    
+    
+    if (IsUsingDirectDrawing()) {
+        return;
+    }
+
     if (mAccumulatedInvalidRect.IsEmpty()) {
         return;
     }
