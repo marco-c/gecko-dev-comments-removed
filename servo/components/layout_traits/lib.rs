@@ -41,9 +41,7 @@ pub struct LayoutControlChan(pub IpcSender<LayoutControlMsg>);
 
 
 pub trait LayoutThreadFactory {
-    
-    fn create(_phantom: Option<&mut Self>,
-              id: PipelineId,
+    fn create(id: PipelineId,
               url: Url,
               is_iframe: bool,
               chan: OpaqueScriptLayoutChannel,
