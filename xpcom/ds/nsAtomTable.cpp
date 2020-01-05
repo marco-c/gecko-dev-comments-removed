@@ -536,6 +536,19 @@ NS_InitAtomTable()
   gAtomTable = new PLDHashTable(&AtomTableOps, sizeof(AtomTableEntry),
                                 ATOM_HASHTABLE_INITIAL_LENGTH);
   gAtomTableLock = new Mutex("Atom Table Lock");
+
+  
+  
+  
+  
+  
+  
+  NS_STATIC_ATOM_BUFFER(empty, "");
+  static nsIAtom* empty_atom = nullptr;
+  static const nsStaticAtom default_atoms[] = {
+    NS_STATIC_ATOM(empty, &empty_atom)
+  };
+  NS_RegisterStaticAtoms(default_atoms);
 }
 
 void
