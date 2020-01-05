@@ -3728,7 +3728,7 @@ nsCSSFrameConstructor::FindInputData(Element* aElement,
   nsCOMPtr<nsIFormControl> control = do_QueryInterface(aElement);
   NS_ASSERTION(control, "input doesn't implement nsIFormControl?");
 
-  auto controlType = control->GetType();
+  auto controlType = control->ControlType();
 
   
   
@@ -5767,55 +5767,44 @@ nsCSSFrameConstructor::AddFrameConstructionItemsInternal(nsFrameConstructorState
   const nsStyleDisplay* display = aStyleContext->StyleDisplay();
   RefPtr<nsStyleContext> styleContext(aStyleContext);
   PendingBinding* pendingBinding = nullptr;
-  if (aFlags & ITEM_ALLOW_XBL_BASE) {
-    if (display->mBinding) {
+  if ((aFlags & ITEM_ALLOW_XBL_BASE) && display->mBinding)
+  {
+    
+
+    nsXBLService* xblService = nsXBLService::GetInstance();
+    if (!xblService)
+      return;
+
+    bool resolveStyle;
+
+    nsAutoPtr<PendingBinding> newPendingBinding(new PendingBinding());
+
+    nsresult rv = xblService->LoadBindings(aContent, display->mBinding->GetURI(),
+                                           display->mBinding->mOriginPrincipal,
+                                           getter_AddRefs(newPendingBinding->mBinding),
+                                           &resolveStyle);
+    if (NS_FAILED(rv) && rv != NS_ERROR_XBL_BLOCKED)
+      return;
+
+    if (newPendingBinding->mBinding) {
+      pendingBinding = newPendingBinding;
       
-
-      nsXBLService* xblService = nsXBLService::GetInstance();
-      if (!xblService)
-        return;
-
-      bool resolveStyle;
-
-      nsAutoPtr<PendingBinding> newPendingBinding(new PendingBinding());
-
-      nsresult rv = xblService->LoadBindings(aContent, display->mBinding->GetURI(),
-                                             display->mBinding->mOriginPrincipal,
-                                             getter_AddRefs(newPendingBinding->mBinding),
-                                             &resolveStyle);
-      if (NS_FAILED(rv) && rv != NS_ERROR_XBL_BLOCKED)
-        return;
-
-      if (newPendingBinding->mBinding) {
-        pendingBinding = newPendingBinding;
-        
-        aState.AddPendingBinding(newPendingBinding.forget());
-      }
-
-      if (aContent->IsStyledByServo()) {
-        NS_WARNING("stylo: Skipping Unsupported binding re-resolve. This needs fixing.");
-        resolveStyle = false;
-      }
-
-      if (resolveStyle) {
-        styleContext =
-          ResolveStyleContext(styleContext->GetParent(), aContent, &aState);
-        display = styleContext->StyleDisplay();
-        aStyleContext = styleContext;
-      }
-
-      aTag = mDocument->BindingManager()->ResolveTag(aContent, &aNameSpaceID);
-    } else if (display->mBinding.ForceGet()) {
-      if (aContent->IsStyledByServo()) {
-        
-        
-        
-        
-        
-        
-        mPresShell->StyleSet()->AsServo()->StyleNewChildren(aContent->AsElement());
-      }
+      aState.AddPendingBinding(newPendingBinding.forget());
     }
+
+    if (aContent->IsStyledByServo()) {
+      NS_WARNING("stylo: Skipping Unsupported binding re-resolve. This needs fixing.");
+      resolveStyle = false;
+    }
+
+    if (resolveStyle) {
+      styleContext =
+        ResolveStyleContext(styleContext->GetParent(), aContent, &aState);
+      display = styleContext->StyleDisplay();
+      aStyleContext = styleContext;
+    }
+
+    aTag = mDocument->BindingManager()->ResolveTag(aContent, &aNameSpaceID);
   }
 
   bool isGeneratedContent = ((aFlags & ITEM_IS_GENERATED_CONTENT) != 0);

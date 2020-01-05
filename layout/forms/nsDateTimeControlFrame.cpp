@@ -383,8 +383,8 @@ nsDateTimeControlFrame::AttributeChanged(int32_t aNameSpaceID,
       auto contentAsInputElem = static_cast<dom::HTMLInputElement*>(mContent);
       
       
-      if (contentAsInputElem->GetType() == NS_FORM_INPUT_TIME ||
-          contentAsInputElem->GetType() == NS_FORM_INPUT_DATE) {
+      if (contentAsInputElem->ControlType() == NS_FORM_INPUT_TIME ||
+          contentAsInputElem->ControlType() == NS_FORM_INPUT_DATE) {
         nsCOMPtr<nsIDateTimeInputArea> inputAreaContent =
           do_QueryInterface(mInputAreaContent);
         if (aAttribute == nsGkAtoms::value) {
