@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsCollation_h__
-#define nsCollation_h__
+#ifndef nsCollationFactory_h__
+#define nsCollationFactory_h__
 
 
 #include "nsICollation.h"
@@ -21,10 +21,8 @@ class nsCollationFactory final : public nsICollationFactory {
   ~nsCollationFactory() {}
 
 public: 
-  NS_DECL_ISUPPORTS 
-
-  NS_IMETHOD CreateCollation(nsICollation** instancePtr) override;
-  NS_IMETHOD CreateCollationForLocale(const nsACString& locale, nsICollation** instancePtr) override;
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSICOLLATIONFACTORY
 
   nsCollationFactory() {}
 };

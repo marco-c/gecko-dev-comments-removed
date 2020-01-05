@@ -9,7 +9,7 @@
 
 
 #include "nsICollation.h"
-#include "nsCollation.h"  
+#include "nsCollationFactory.h"  
 #include "plstr.h"
 
 

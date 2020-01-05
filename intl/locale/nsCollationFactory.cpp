@@ -3,7 +3,7 @@
 
 
 
-#include "nsCollation.h"
+#include "nsCollationFactory.h"
 #include "nsCollationCID.h"
 #include "nsUnicharUtils.h"
 #include "prmem.h"
