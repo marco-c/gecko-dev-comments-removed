@@ -7,16 +7,8 @@
 #ifndef GFX_FONT_VARIATIONS_H
 #define GFX_FONT_VARIATIONS_H
 
+#include "mozilla/gfx/FontVariation.h"
 
-struct gfxFontVariation {
-    uint32_t mTag;
-    float mValue;
-};
-
-inline bool
-operator==(const gfxFontVariation& a, const gfxFontVariation& b)
-{
-    return (a.mTag == b.mTag) && (a.mValue == b.mValue);
-}
+typedef mozilla::gfx::FontVariation gfxFontVariation;
 
 #endif
