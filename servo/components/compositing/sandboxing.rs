@@ -2,7 +2,6 @@
 
 
 
-use gaol::platform;
 use gaol::profile::{Operation, PathPattern, Profile};
 use std::path::PathBuf;
 use util::resource_files;
@@ -10,6 +9,7 @@ use util::resource_files;
 
 #[cfg(target_os = "macos")]
 pub fn content_process_sandbox_profile() -> Profile {
+    use gaol::platform;
     Profile::new(vec![
         Operation::FileReadAll(PathPattern::Literal(PathBuf::from("/dev/urandom"))),
         Operation::FileReadAll(PathPattern::Subpath(resource_files::resources_dir_path())),
