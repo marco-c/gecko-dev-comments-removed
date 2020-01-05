@@ -151,6 +151,13 @@ def bootstrap(topdir):
 
     
     
+    if ' ' in topdir:
+        print('Cannot run mach in a path with spaces.')
+        print('Current path:', topdir)
+        sys.exit(1)
+
+    
+    
     
     if not (3, 0) > sys.version_info >= (2, 7):
         print('Python 2.7 or above (but not Python 3) is required to run mach.')
