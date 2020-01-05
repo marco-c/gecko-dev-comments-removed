@@ -60,12 +60,12 @@ public:
   }
 
   
-  enum class CascadeLevel {
+  enum class CascadeLevel : uint32_t {
     
     
-    Animations,
+    Animations = 0,
     
-    Transitions
+    Transitions = 1
   };
   
   
