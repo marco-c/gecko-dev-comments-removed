@@ -13,6 +13,7 @@ const { InplaceEditor } = require("devtools/client/shared/inplace-editor");
 const {
   updateGeometryEditorEnabled,
   updateLayout,
+  updateOffsetParent,
 } = require("./actions/box-model");
 
 const EditingSession = require("./utils/editing-session");
@@ -166,6 +167,15 @@ BoxModel.prototype = {
       layout = Object.assign({}, layout, {
         isPositionEditable,
       });
+
+      const actorCanGetOffSetParent
+        = yield this.inspector.target.actorHasMethod("domwalker", "getOffsetParent");
+
+      if (actorCanGetOffSetParent) {
+        
+        let offsetParent = yield this.inspector.walker.getOffsetParent(node);
+        this.store.dispatch(updateOffsetParent(offsetParent));
+      }
 
       
       
