@@ -506,12 +506,13 @@ static bool
 InvokeInterruptCallback(JSContext* cx)
 {
     MOZ_ASSERT(cx->requestDepth >= 1);
+    MOZ_ASSERT(!cx->compartment()->isAtomsCompartment());
 
     cx->runtime()->gc.gcIfRequested();
 
     
     
-    jit::AttachFinishedCompilations(cx);
+    jit::AttachFinishedCompilations(cx->zone()->group(), cx);
 
     
     

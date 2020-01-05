@@ -96,6 +96,11 @@ class ZoneGroup
   public:
     mozilla::LinkedList<js::Debugger>& debuggerList() { return debuggerList_.ref(); }
 
+    
+    
+    
+    mozilla::Atomic<size_t> numFinishedBuilders;
+
   private:
     
     typedef mozilla::LinkedList<js::jit::IonBuilder> IonBuilderList;

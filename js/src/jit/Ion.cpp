@@ -2051,12 +2051,14 @@ CompileBackEnd(MIRGenerator* mir)
 
 
 static IonBuilder*
-GetFinishedBuilder(JSContext* cx, GlobalHelperThreadState::IonBuilderVector& finished)
+GetFinishedBuilder(ZoneGroup* group, GlobalHelperThreadState::IonBuilderVector& finished)
 {
     for (size_t i = 0; i < finished.length(); i++) {
         IonBuilder* testBuilder = finished[i];
-        if (testBuilder->script()->runtimeFromAnyThread() == cx->runtime()) {
+        if (testBuilder->script()->runtimeFromAnyThread() == group->runtime &&
+            testBuilder->script()->zone()->group() == group) {
             HelperThreadState().remove(finished, &i);
+            group->numFinishedBuilders--;
             return testBuilder;
         }
     }
@@ -2065,44 +2067,46 @@ GetFinishedBuilder(JSContext* cx, GlobalHelperThreadState::IonBuilderVector& fin
 }
 
 void
-AttachFinishedCompilations(JSContext* cx)
+AttachFinishedCompilations(ZoneGroup* group, JSContext* maybecx)
 {
-    JitCompartment* ion = cx->compartment()->jitCompartment();
-    if (!ion)
+    MOZ_ASSERT_IF(maybecx, maybecx->zone()->group() == group);
+
+    if (!group->numFinishedBuilders)
         return;
 
-    {
-        AutoLockHelperThreadState lock;
+    AutoLockHelperThreadState lock;
+    GlobalHelperThreadState::IonBuilderVector& finished = HelperThreadState().ionFinishedList(lock);
 
-        GlobalHelperThreadState::IonBuilderVector& finished = HelperThreadState().ionFinishedList(lock);
+    
+    
+    while (true) {
+        
+        IonBuilder* builder = GetFinishedBuilder(group, finished);
+        if (!builder)
+            break;
+
+        JSScript* script = builder->script();
+        MOZ_ASSERT(script->hasBaselineScript());
+        script->baselineScript()->setPendingIonBuilder(group->runtime, script, builder);
+        group->ionLazyLinkListAdd(builder);
 
         
         
-        while (true) {
-            
-            IonBuilder* builder = GetFinishedBuilder(cx, finished);
-            if (!builder)
-                break;
-
-            JSScript* script = builder->script();
-            MOZ_ASSERT(script->hasBaselineScript());
-            script->baselineScript()->setPendingIonBuilder(cx->runtime(), script, builder);
-            cx->zone()->group()->ionLazyLinkListAdd(builder);
-
-            
-            
-            while (cx->zone()->group()->ionLazyLinkListSize() > 100) {
-                jit::IonBuilder* builder = cx->zone()->group()->ionLazyLinkList().getLast();
-                RootedScript script(cx, builder->script());
+        
+        
+        if (maybecx) {
+            while (group->ionLazyLinkListSize() > 100) {
+                jit::IonBuilder* builder = group->ionLazyLinkList().getLast();
+                RootedScript script(maybecx, builder->script());
 
                 AutoUnlockHelperThreadState unlock(lock);
-                AutoCompartment ac(cx, script);
-                jit::LinkIonScript(cx, script);
+                AutoCompartment ac(maybecx, script);
+                jit::LinkIonScript(maybecx, script);
             }
-
-            continue;
         }
     }
+
+    MOZ_ASSERT(!group->numFinishedBuilders);
 }
 
 static void

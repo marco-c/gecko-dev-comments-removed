@@ -24,6 +24,7 @@ ZoneGroup::ZoneGroup(JSRuntime* runtime)
 #endif
     jitZoneGroup(this, nullptr),
     debuggerList_(this),
+    numFinishedBuilders(0),
     ionLazyLinkListSize_(0)
 {}
 
@@ -67,6 +68,11 @@ ZoneGroup::enter()
         ownerContext_ = CooperatingContext(cx);
         if (cx->generationalDisabled)
             nursery().disable();
+
+        
+        
+        
+        jit::AttachFinishedCompilations(this, nullptr);
     }
     enterCount++;
 }
@@ -100,6 +106,7 @@ ZoneGroup::ionLazyLinkListRemove(jit::IonBuilder* builder)
 {
     MOZ_ASSERT(CurrentThreadCanAccessRuntime(runtime),
                "Should only be mutated by the active thread.");
+    MOZ_ASSERT(this == builder->script()->zone()->group());
     MOZ_ASSERT(ionLazyLinkListSize_ > 0);
 
     builder->removeFrom(ionLazyLinkList());
@@ -113,6 +120,7 @@ ZoneGroup::ionLazyLinkListAdd(jit::IonBuilder* builder)
 {
     MOZ_ASSERT(CurrentThreadCanAccessRuntime(runtime),
                "Should only be mutated by the active thread.");
+    MOZ_ASSERT(this == builder->script()->zone()->group());
     ionLazyLinkList().insertFront(builder);
     ionLazyLinkListSize_++;
 }
