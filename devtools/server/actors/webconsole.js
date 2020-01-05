@@ -898,17 +898,36 @@ WebConsoleActor.prototype =
         result = evalResult.yield;
       } else if ("throw" in evalResult) {
         let error = evalResult.throw;
-        errorGrip = this.createValueGrip(error);
-        
-        
-        let unsafeDereference = error && (typeof error === "object") &&
-                                error.unsafeDereference();
-        errorMessage = unsafeDereference && unsafeDereference.toString
-          ? unsafeDereference.toString()
-          : String(error);
 
-          
-          
+        errorGrip = this.createValueGrip(error);
+
+        errorMessage = String(error);
+        if (typeof error === "object" && error !== null) {
+          try {
+            errorMessage = DevToolsUtils.callPropertyOnObject(error, "toString");
+          } catch (e) {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            if (typeof error.unsafeDereference === "function") {
+              errorMessage = error.unsafeDereference().toString();
+            }
+          }
+        }
+
+        
+        
         try {
           errorDocURL = ErrorDocs.GetURL(error);
         } catch (ex) {}

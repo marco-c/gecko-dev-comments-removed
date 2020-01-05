@@ -43,9 +43,8 @@ add_task(function* testWhilePaused() {
 
   info("Trying to get the result of command3");
   executed = yield command3;
-  
-  todo(executed.textContent.includes("ReferenceError: foobar is not defined"),
-      "command3 executed successfully");
+  ok(executed.textContent.includes("ReferenceError: foobar is not defined"),
+     "command3 executed successfully");
 
   let onceResumed = gTarget.once("thread-resumed");
   EventUtils.sendMouseEvent({ type: "mousedown" }, gResumeButton, gDebugger);
