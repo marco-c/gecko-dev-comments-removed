@@ -254,6 +254,12 @@ RootActor.prototype = {
 
 
 
+    tabList.onListChanged = this._onTabListChanged;
+
+    
+
+
+
 
 
 
@@ -299,13 +305,6 @@ RootActor.prototype = {
 
       
       this._appendExtraActors(reply);
-
-      
-
-
-
-
-      tabList.onListChanged = this._onTabListChanged;
 
       return reply;
     });

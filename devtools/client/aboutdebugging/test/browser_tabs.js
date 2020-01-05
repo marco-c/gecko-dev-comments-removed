@@ -43,6 +43,10 @@ add_task(function* () {
   }
 
   
+  
+  yield waitUntil(() => newTabTarget.title === TAB_URL);
+
+  
   is(newTabTarget.textContent, "foo", "The tab title got updated");
   is(newTabTarget.title, TAB_URL, "The tab tooltip is the url");
 
