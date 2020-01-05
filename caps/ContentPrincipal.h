@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsPrincipal_h__
-#define nsPrincipal_h__
+#ifndef ContentPrincipal_h
+#define ContentPrincipal_h
 
 #include "nsCOMPtr.h"
 #include "nsJSPrincipals.h"
@@ -15,7 +15,7 @@
 #include "nsScriptSecurityManager.h"
 #include "mozilla/BasePrincipal.h"
 
-class nsPrincipal final : public mozilla::BasePrincipal
+class ContentPrincipal final : public mozilla::BasePrincipal
 {
 public:
   NS_DECL_NSISERIALIZABLE
@@ -29,7 +29,7 @@ public:
   bool IsCodebasePrincipal() const override { return true; }
   nsresult GetOriginInternal(nsACString& aOrigin) override;
 
-  nsPrincipal();
+  ContentPrincipal();
 
   
   nsresult Init(nsIURI* aCodebase,
@@ -50,9 +50,10 @@ public:
   bool mInitialized;
 
 protected:
-  virtual ~nsPrincipal();
+  virtual ~ContentPrincipal();
 
-  bool SubsumesInternal(nsIPrincipal* aOther, DocumentDomainConsideration aConsideration) override;
+  bool SubsumesInternal(nsIPrincipal* aOther,
+                        DocumentDomainConsideration aConsideration) override;
   bool MayLoadInternal(nsIURI* aURI) override;
 
 private:

@@ -277,6 +277,7 @@ class Permissions(object):
                     
                     
                     
+                    
                     origin = location.scheme + "://" + location.host
                     if (location.scheme != 'http' or location.port != '80') and \
                        (location.scheme != 'https' or location.port != '443'):
