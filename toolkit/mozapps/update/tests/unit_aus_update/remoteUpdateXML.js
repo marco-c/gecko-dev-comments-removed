@@ -14,6 +14,11 @@ function run_test() {
   start_httpserver();
   setUpdateURLOverride(gURLData + gHTTPHandlerPath);
   setUpdateChannel("test_channel");
+
+  
+  
+  Services.prefs.deleteBranch("app.update.download.backgroundInterval");
+
   standardInit();
   do_execute_soon(run_test_pt01);
 }

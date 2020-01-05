@@ -14,6 +14,10 @@ function run_test() {
 
   
   
+  Services.prefs.deleteBranch("app.update.download.backgroundInterval");
+
+  
+  
   
   let patches = getLocalPatchString("partial", "http://partial/", "SHA256",
                                     "cd43", "86", "true", STATE_PENDING);
