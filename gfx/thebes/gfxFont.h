@@ -81,7 +81,6 @@ struct gfxFontStyle {
                  bool aPrinterFont,
                  bool aWeightSynthesis, bool aStyleSynthesis,
                  const nsString& aLanguageOverride);
-    gfxFontStyle(const gfxFontStyle& aStyle);
 
     
     
@@ -137,6 +136,15 @@ struct gfxFontStyle {
     int8_t stretch;
 
     
+    uint8_t style;
+
+    
+    uint8_t variantCaps;
+
+    
+    uint8_t variantSubSuper;
+
+    
     
     
     bool systemFont : 1;
@@ -146,9 +154,6 @@ struct gfxFontStyle {
 
     
     bool useGrayscaleAntialiasing : 1;
-
-    
-    uint8_t style : 2;
 
     
     bool allowSyntheticWeight : 1;
@@ -161,12 +166,6 @@ struct gfxFontStyle {
     
     
     bool explicitLanguage : 1;
-
-    
-    uint8_t variantCaps;
-
-    
-    uint8_t variantSubSuper;
 
     
     
@@ -193,6 +192,8 @@ struct gfxFontStyle {
             (*reinterpret_cast<const uint64_t*>(&size) ==
              *reinterpret_cast<const uint64_t*>(&other.size)) &&
             (style == other.style) &&
+            (weight == other.weight) &&
+            (stretch == other.stretch) &&
             (variantCaps == other.variantCaps) &&
             (variantSubSuper == other.variantSubSuper) &&
             (allowSyntheticWeight == other.allowSyntheticWeight) &&
@@ -201,16 +202,14 @@ struct gfxFontStyle {
             (printerFont == other.printerFont) &&
             (useGrayscaleAntialiasing == other.useGrayscaleAntialiasing) &&
             (explicitLanguage == other.explicitLanguage) &&
-            (weight == other.weight) &&
-            (stretch == other.stretch) &&
             (language == other.language) &&
             (baselineOffset == other.baselineOffset) &&
             (*reinterpret_cast<const uint32_t*>(&sizeAdjust) ==
              *reinterpret_cast<const uint32_t*>(&other.sizeAdjust)) &&
             (featureSettings == other.featureSettings) &&
-            (languageOverride == other.languageOverride) &&
             (alternateValues == other.alternateValues) &&
-            (featureValueLookup == other.featureValueLookup);
+            (featureValueLookup == other.featureValueLookup) &&
+            (languageOverride == other.languageOverride);
     }
 
     static void ParseFontFeatureSettings(const nsString& aFeatureString,
