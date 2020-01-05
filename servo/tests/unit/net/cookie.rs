@@ -2,8 +2,7 @@
 
 
 
-extern crate cookie as cookie_rs;
-
+use cookie_rs;
 use net::cookie::Cookie;
 use net::cookie_storage::CookieStorage;
 use net_traits::CookieSource;
