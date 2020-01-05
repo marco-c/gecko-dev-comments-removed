@@ -4189,7 +4189,13 @@ nsPIDOMWindowInner::IsPlayingAudio()
   if (!acs) {
     return false;
   }
-  return acs->IsWindowActive(GetOuterWindow());
+  auto outer = GetOuterWindow();
+  if (!outer) {
+    
+    
+    return false;
+  }
+  return acs->IsWindowActive(outer);
 }
 
 mozilla::dom::TimeoutManager&
