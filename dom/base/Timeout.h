@@ -36,8 +36,6 @@ public:
 
   nsresult InitTimer(uint32_t aDelay);
 
-  enum class Reason { eTimeoutOrInterval, eIdleCallbackTimeout };
-
   static void TimerNameCallback(nsITimer* aTimer, void* aClosure, char* aBuf,
                                 size_t aLen);
 
@@ -60,10 +58,8 @@ public:
   
   bool mIsInterval;
 
-  Reason mReason;
-
   
-  uint32_t mTimeoutId;
+  uint32_t mPublicId;
 
   
   uint32_t mInterval;
