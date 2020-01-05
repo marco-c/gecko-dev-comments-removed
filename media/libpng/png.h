@@ -299,6 +299,7 @@
 
 
 
+
 #ifndef PNG_H
 #define PNG_H
 
@@ -314,9 +315,9 @@
 
 
 
-#define PNG_LIBPNG_VER_STRING "1.6.28+apng"
+#define PNG_LIBPNG_VER_STRING "1.6.29+apng"
 #define PNG_HEADER_VERSION_STRING \
-     " libpng version 1.6.28+apng - January 5, 2017\n"
+     " libpng version 1.6.29+apng - March 16, 2017\n"
 
 #define PNG_LIBPNG_VER_SONUM   16
 #define PNG_LIBPNG_VER_DLLNUM  16
@@ -324,7 +325,7 @@
 
 #define PNG_LIBPNG_VER_MAJOR   1
 #define PNG_LIBPNG_VER_MINOR   6
-#define PNG_LIBPNG_VER_RELEASE 28
+#define PNG_LIBPNG_VER_RELEASE 29
 
 
 
@@ -355,7 +356,7 @@
 
 
 
-#define PNG_LIBPNG_VER 10628 /* 1.6.28 */
+#define PNG_LIBPNG_VER 10629 /* 1.6.29 */
 
 
 
@@ -480,7 +481,7 @@ extern "C" {
 
 
 
-typedef char* png_libpng_version_1_6_28;
+typedef char* png_libpng_version_1_6_29;
 
 
 
@@ -3255,7 +3256,10 @@ PNG_EXPORT(245, int, png_image_write_to_memory, (png_imagep image, void *memory,
 #  define PNG_MIPS_MSA   6 /* HARDWARE: MIPS Msa SIMD instructions supported */
 #endif
 #define PNG_IGNORE_ADLER32 8
-#define PNG_OPTION_NEXT  10 /* Next option - numbers must be even */
+#ifdef PNG_POWERPC_VSX_API_SUPPORTED
+#  define PNG_POWERPC_VSX   10 /* HARDWARE: PowerPC VSX SIMD instructions supported */
+#endif
+#define PNG_OPTION_NEXT  12 /* Next option - numbers must be even */
 
 
 #define PNG_OPTION_UNSET   0 /* Unset - defaults to off */
