@@ -1130,13 +1130,24 @@ CreateForWidget(Display* aXDisplay, Window aXWindow, bool aForceAccelerated)
 
     SurfaceCaps caps = SurfaceCaps::Any();
     GLContextGLX* shareContext = GetGlobalContextGLX();
+#ifdef MOZ_ENABLE_WEBRENDER
+    RefPtr<GLContextGLX> gl;
+    if (gfxPrefs::WebRenderEnabled()) {
+      gl = GLContextGLX::CreateGLContext(CreateContextFlags::NONE,
+                                         caps, shareContext, false,
+                                         aXDisplay, aXWindow, config,
+                                         
+                                         false, nullptr, ContextProfile::OpenGLCore); 
+    } else {
+      gl = GLContextGLX::CreateGLContext(CreateContextFlags::NONE,
+                                         caps, shareContext, false,
+                                         aXDisplay, aXWindow, config,
+                                         false);
+    }
+#else
     RefPtr<GLContextGLX> gl = GLContextGLX::CreateGLContext(CreateContextFlags::NONE,
                                                             caps, shareContext, false,
                                                             aXDisplay, aXWindow, config,
-#ifdef MOZ_ENABLE_WEBRENDER
-                                                            
-                                                            false, nullptr, ContextProfile::OpenGLCore); 
-#else
                                                             false);
 #endif
     return gl.forget();
