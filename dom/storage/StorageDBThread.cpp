@@ -27,6 +27,7 @@
 #include "mozilla/IOInterposer.h"
 #include "mozilla/Services.h"
 #include "mozilla/Tokenizer.h"
+#include "GeckoProfiler.h"
 
 
 
@@ -339,6 +340,7 @@ StorageDBThread::SetDefaultPriority()
 void
 StorageDBThread::ThreadFunc(void* aArg)
 {
+  AutoProfilerRegister registerThread("localStorage DB");
   PR_SetCurrentThreadName("localStorage DB");
   mozilla::IOInterposer::RegisterCurrentThread();
 
