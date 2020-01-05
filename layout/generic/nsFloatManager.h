@@ -335,10 +335,10 @@ private:
     
     
     
-    nscoord LineLeft(ShapeType aShapeType, const nscoord aBStart,
-                     const nscoord aBEnd) const;
-    nscoord LineRight(ShapeType aShapeType, const nscoord aBStart,
-                     const nscoord aBEnd) const;
+    nscoord LineLeft(mozilla::WritingMode aWM, ShapeType aShapeType,
+                     const nscoord aBStart, const nscoord aBEnd) const;
+    nscoord LineRight(mozilla::WritingMode aWM, ShapeType aShapeType,
+                      const nscoord aBStart, const nscoord aBEnd) const;
 
     nscoord BStart(ShapeType aShapeType) const
     {

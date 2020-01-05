@@ -221,7 +221,7 @@ nsFloatManager::GetFlowArea(WritingMode aWM, nscoord aBCoord, nscoord aBSize,
       if (floatStyle == StyleFloat::Left) {
         
         nscoord lineRightEdge =
-          fi.LineRight(aShapeType, blockStart, bandBlockEnd);
+          fi.LineRight(aWM, aShapeType, blockStart, bandBlockEnd);
         if (lineRightEdge > lineLeft) {
           lineLeft = lineRightEdge;
           
@@ -233,7 +233,7 @@ nsFloatManager::GetFlowArea(WritingMode aWM, nscoord aBCoord, nscoord aBSize,
       } else {
         
         nscoord lineLeftEdge =
-          fi.LineLeft(aShapeType, blockStart, bandBlockEnd);
+          fi.LineLeft(aWM, aShapeType, blockStart, bandBlockEnd);
         if (lineLeftEdge < lineRight) {
           lineRight = lineLeftEdge;
           
@@ -593,7 +593,8 @@ nsFloatManager::FloatInfo::~FloatInfo()
 #endif
 
 nscoord
-nsFloatManager::FloatInfo::LineLeft(ShapeType aShapeType,
+nsFloatManager::FloatInfo::LineLeft(WritingMode aWM,
+                                    ShapeType aShapeType,
                                     const nscoord aBStart,
                                     const nscoord aBEnd) const
 {
@@ -614,12 +615,32 @@ nsFloatManager::FloatInfo::LineLeft(ShapeType aShapeType,
     if (!hasRadii) {
       return ShapeBoxRect().x;
     }
+
     
+    
+    mozilla::Side lineLeftSide =
+      aWM.PhysicalSide(aWM.LogicalSideForLineRelativeDir(eLineRelativeDirLeft));
+    nscoord blockStartCornerRadiusL =
+      radii[NS_SIDE_TO_HALF_CORNER(lineLeftSide, true, false)];
+    nscoord blockStartCornerRadiusB =
+      radii[NS_SIDE_TO_HALF_CORNER(lineLeftSide, true, true)];
+    nscoord blockEndCornerRadiusL =
+      radii[NS_SIDE_TO_HALF_CORNER(lineLeftSide, false, false)];
+    nscoord blockEndCornerRadiusB =
+      radii[NS_SIDE_TO_HALF_CORNER(lineLeftSide, false, true)];
+
+    if (aWM.IsLineInverted()) {
+      
+      
+      std::swap(blockStartCornerRadiusL, blockEndCornerRadiusL);
+      std::swap(blockStartCornerRadiusB, blockEndCornerRadiusB);
+    }
+
     nscoord lineLeftDiff =
       ComputeEllipseXInterceptDiff(
         ShapeBoxRect().y, ShapeBoxRect().YMost(),
-        radii[NS_CORNER_TOP_LEFT_X], radii[NS_CORNER_TOP_LEFT_Y],
-        radii[NS_CORNER_BOTTOM_LEFT_X], radii[NS_CORNER_BOTTOM_LEFT_Y],
+        blockStartCornerRadiusL, blockStartCornerRadiusB,
+        blockEndCornerRadiusL, blockEndCornerRadiusB,
         aBStart, aBEnd);
     return ShapeBoxRect().x + lineLeftDiff;
   }
@@ -630,7 +651,8 @@ nsFloatManager::FloatInfo::LineLeft(ShapeType aShapeType,
 }
 
 nscoord
-nsFloatManager::FloatInfo::LineRight(ShapeType aShapeType,
+nsFloatManager::FloatInfo::LineRight(WritingMode aWM,
+                                     ShapeType aShapeType,
                                      const nscoord aBStart,
                                      const nscoord aBEnd) const
 {
@@ -651,12 +673,32 @@ nsFloatManager::FloatInfo::LineRight(ShapeType aShapeType,
     if (!hasRadii) {
       return ShapeBoxRect().XMost();
     }
+
     
+    
+    mozilla::Side lineRightSide =
+      aWM.PhysicalSide(aWM.LogicalSideForLineRelativeDir(eLineRelativeDirRight));
+    nscoord blockStartCornerRadiusL =
+      radii[NS_SIDE_TO_HALF_CORNER(lineRightSide, false, false)];
+    nscoord blockStartCornerRadiusB =
+      radii[NS_SIDE_TO_HALF_CORNER(lineRightSide, false, true)];
+    nscoord blockEndCornerRadiusL =
+      radii[NS_SIDE_TO_HALF_CORNER(lineRightSide, true, false)];
+    nscoord blockEndCornerRadiusB =
+      radii[NS_SIDE_TO_HALF_CORNER(lineRightSide, true, true)];
+
+    if (aWM.IsLineInverted()) {
+      
+      
+      std::swap(blockStartCornerRadiusL, blockEndCornerRadiusL);
+      std::swap(blockStartCornerRadiusB, blockEndCornerRadiusB);
+    }
+
     nscoord lineRightDiff =
       ComputeEllipseXInterceptDiff(
         ShapeBoxRect().y, ShapeBoxRect().YMost(),
-        radii[NS_CORNER_TOP_RIGHT_X], radii[NS_CORNER_TOP_RIGHT_Y],
-        radii[NS_CORNER_BOTTOM_RIGHT_X], radii[NS_CORNER_BOTTOM_RIGHT_Y],
+        blockStartCornerRadiusL, blockStartCornerRadiusB,
+        blockEndCornerRadiusL, blockEndCornerRadiusB,
         aBStart, aBEnd);
     return ShapeBoxRect().XMost() - lineRightDiff;
   }
