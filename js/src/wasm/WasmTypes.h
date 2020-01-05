@@ -259,7 +259,7 @@ ToMIRType(ValType vt)
 
 
 
-enum class ExprType : uint32_t 
+enum class ExprType
 {
     Void  = uint8_t(TypeCode::BlockVoid),
 

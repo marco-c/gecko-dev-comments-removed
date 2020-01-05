@@ -1127,9 +1127,7 @@ RenderExpr(WasmRenderContext& c, AstExpr& expr, bool newLine )
             return false;
         break;
       default:
-        
-        
-        return Fail(c, "unexpected expression kind");
+        MOZ_CRASH("Bad AstExprKind");
     }
 
     return !newLine || c.buffer.append("\n");

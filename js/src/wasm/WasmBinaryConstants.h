@@ -69,12 +69,10 @@ enum class TypeCode
     
     BlockVoid                            = 0x40,  
 
-    
-    Max                                  = 0x7f,
     Limit                                = 0x80
 };
 
-enum class ValType : uint32_t 
+enum class ValType
 {
     I32                                  = uint8_t(TypeCode::I32),
     I64                                  = uint8_t(TypeCode::I64),
@@ -115,7 +113,7 @@ enum class MemoryTableFlags
     Default                              = 0x0
 };
 
-enum class Expr : uint32_t 
+enum class Expr
 {
     
     Unreachable                          = 0x00,
