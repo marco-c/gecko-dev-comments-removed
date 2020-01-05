@@ -330,6 +330,10 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
 #endif
 
   private:
+#ifdef DEBUG
+    js::WriteOnceData<bool> initialized_;
+#endif
+
     
     
     
@@ -901,6 +905,7 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
     }
 
     explicit JSRuntime(JSRuntime* parentRuntime);
+    ~JSRuntime();
 
     
     
