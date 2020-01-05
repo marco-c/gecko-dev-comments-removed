@@ -2,6 +2,8 @@
 
 
 
+const {PrefObserver} = require("devtools/client/shared/prefs");
+
 
 
 
@@ -58,7 +60,9 @@ var WebAudioEditorController = {
     
     
     
-    gDevTools.on("pref-changed", this._onThemeChange);
+
+    this._prefObserver = new PrefObserver("");
+    this._prefObserver.on("devtools.theme", this._onThemeChange);
 
     
     
@@ -90,7 +94,8 @@ var WebAudioEditorController = {
     gFront.off("disconnect-node", this._onDisconnectNode);
     gFront.off("change-param", this._onChangeParam);
     gFront.off("destroy-node", this._onDestroyNode);
-    gDevTools.off("pref-changed", this._onThemeChange);
+    this._prefObserver.off("devtools.theme", this._onThemeChange);
+    this._prefObserver.destroy();
   },
 
   
@@ -129,8 +134,9 @@ var WebAudioEditorController = {
 
 
 
-  _onThemeChange: function (event, data) {
-    window.emit(EVENTS.THEME_CHANGE, data.newValue);
+  _onThemeChange: function () {
+    let newValue = Services.prefs.getCharPref("devtools.theme");
+    window.emit(EVENTS.THEME_CHANGE, newValue);
   },
 
   

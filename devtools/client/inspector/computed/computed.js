@@ -199,13 +199,12 @@ function CssComputedView(inspector, document, pageStyle) {
   this.noResults = this.styleDocument.getElementById("computedview-no-results");
 
   
-  this._handlePrefChange = this._handlePrefChange.bind(this);
-  gDevTools.on("pref-changed", this._handlePrefChange);
-
   
+  this._handlePrefChange = this._handlePrefChange.bind(this);
   this._onSourcePrefChanged = this._onSourcePrefChanged.bind(this);
   this._prefObserver = new PrefObserver("devtools.");
   this._prefObserver.on(PREF_ORIG_SOURCES, this._onSourcePrefChanged);
+  this._prefObserver.on("devtools.defaultColorUnit", this._handlePrefChange);
 
   
   this._viewedElement = null;
@@ -262,8 +261,7 @@ CssComputedView.prototype = {
   },
 
   _handlePrefChange: function (event, data) {
-    if (this._computed && (data.pref === "devtools.defaultColorUnit" ||
-        data.pref === PREF_ORIG_SOURCES)) {
+    if (this._computed) {
       this.refreshPanel();
     }
   },
@@ -600,6 +598,7 @@ CssComputedView.prototype = {
   },
 
   _onSourcePrefChanged: function () {
+    this._handlePrefChange();
     for (let propView of this.propertyViews) {
       propView.updateSourceLinks();
     }
@@ -734,9 +733,8 @@ CssComputedView.prototype = {
     this._viewedElement = null;
     this._outputParser = null;
 
-    gDevTools.off("pref-changed", this._handlePrefChange);
-
     this._prefObserver.off(PREF_ORIG_SOURCES, this._onSourcePrefChanged);
+    this._prefObserver.off("devtools.defaultColorUnit", this._handlePrefChange);
     this._prefObserver.destroy();
 
     
