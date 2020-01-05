@@ -7092,7 +7092,7 @@ js::wasm::BaselineCanCompile(const FunctionGenerator* fg)
     
     MOZ_RELEASE_ASSERT(wasm::HaveSignalHandlers());
 
-#if defined(JS_CODEGEN_X64)
+#if defined(JS_CODEGEN_X64) || defined(JS_CODEGEN_X86)
     if (fg->usesAtomics())
         return false;
 
