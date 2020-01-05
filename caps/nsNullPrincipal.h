@@ -54,7 +54,11 @@ public:
 
   static already_AddRefed<nsNullPrincipal> CreateWithInheritedAttributes(nsIPrincipal* aInheritFrom);
 
-  static already_AddRefed<nsNullPrincipal> CreateWithInheritedAttributes(nsIDocShell* aDocShell);
+  
+  
+  
+  
+  static already_AddRefed<nsNullPrincipal> CreateWithInheritedAttributes(nsIDocShell* aDocShell, bool aIsFirstParty = false);
 
   static already_AddRefed<nsNullPrincipal>
   Create(const mozilla::OriginAttributes& aOriginAttributes = mozilla::OriginAttributes(),

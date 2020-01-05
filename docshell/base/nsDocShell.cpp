@@ -1520,7 +1520,9 @@ nsDocShell::LoadURI(nsIURI* aURI,
 
   if (aLoadFlags & LOAD_FLAGS_DISALLOW_INHERIT_PRINCIPAL) {
     inheritPrincipal = false;
-    principalToInherit = nsNullPrincipal::CreateWithInheritedAttributes(this);
+    
+    
+    principalToInherit = nsNullPrincipal::CreateWithInheritedAttributes(this, aFirstParty);
   }
 
   
@@ -11019,8 +11021,25 @@ nsDocShell::DoURILoad(nsIURI* aURI,
                        (aContentPolicyType == nsIContentPolicy::TYPE_DOCUMENT ||
                         GetIsMozBrowser());
 
-  OriginAttributes attrs = GetOriginAttributes();
-  attrs.SetFirstPartyDomain(isTopLevelDoc, aURI);
+  OriginAttributes attrs;
+
+  
+  
+  
+  
+  
+  
+  
+  if (inherit) {
+    MOZ_ASSERT(aPrincipalToInherit, "We should have aPrincipalToInherit here.");
+    attrs = aPrincipalToInherit->OriginAttributesRef();
+    
+    
+    MOZ_ASSERT_IF(!OriginAttributes::IsFirstPartyEnabled(), attrs == GetOriginAttributes());
+  } else {
+    attrs = GetOriginAttributes();
+    attrs.SetFirstPartyDomain(isTopLevelDoc, aURI);
+  }
 
   rv = loadInfo->SetOriginAttributes(attrs);
   if (NS_WARN_IF(NS_FAILED(rv))) {
