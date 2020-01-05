@@ -606,7 +606,7 @@ nsMultiMixedConv::ConsumeToken(Token const & token)
   nsresult rv;
 
   switch (mParserState) {
-    case BOUNDARY:
+    case PREAMBLE:
       if (token.Equals(mBoundaryTokenWithDashes)) {
         
         
@@ -622,12 +622,6 @@ nsMultiMixedConv::ConsumeToken(Token const & token)
       }
 
       
-      
-      
-      mParserState = HEADER_NAME;
-      mResponseHeader = HEADER_UNKNOWN;
-      SetHeaderTokensEnabled(true);
-      mTokenizer.Rollback();
       break;
 
     case BOUNDARY_CRLF:

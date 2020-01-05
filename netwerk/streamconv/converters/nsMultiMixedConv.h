@@ -174,7 +174,7 @@ protected:
 
     
     enum EParserState {
-      BOUNDARY,
+      PREAMBLE,
       BOUNDARY_CRLF,
       HEADER_NAME,
       HEADER_SEP,
@@ -185,7 +185,7 @@ protected:
       TRAIL_DASH2,
       EPILOGUE,
 
-      INIT = BOUNDARY
+      INIT = PREAMBLE
     } mParserState;
 
     
