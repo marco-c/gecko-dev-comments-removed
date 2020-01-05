@@ -9,19 +9,95 @@
 
 
 
-#line 13 "./Tokenizer.cpp"
-
 #define  YY_INT_ALIGNED short int
+
+
+
+
+
+
+
+
+
+
 
 
 
 #define FLEX_SCANNER
 #define YY_FLEX_MAJOR_VERSION 2
-#define YY_FLEX_MINOR_VERSION 5
-#define YY_FLEX_SUBMINOR_VERSION 39
+#define YY_FLEX_MINOR_VERSION 6
+#define YY_FLEX_SUBMINOR_VERSION 1
 #if YY_FLEX_SUBMINOR_VERSION > 0
 #define FLEX_BETA
 #endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+        
+        
+    
+    
+
+
+    
+    
+
+
+
+    
+    
+
+
+
+    
+    
+    
+
+
+
+
+
 
 
 
@@ -56,7 +132,6 @@ typedef int16_t flex_int16_t;
 typedef uint16_t flex_uint16_t;
 typedef int32_t flex_int32_t;
 typedef uint32_t flex_uint32_t;
-typedef uint64_t flex_uint64_t;
 #else
 typedef signed char flex_int8_t;
 typedef short int flex_int16_t;
@@ -98,26 +173,21 @@ typedef unsigned int flex_uint32_t;
 
 #endif 
 
-#ifdef __cplusplus
 
 
-#define YY_USE_CONST
 
-#else	
-
-
-#if defined (__STDC__)
-
-#define YY_USE_CONST
-
-#endif	
-#endif	
-
-#ifdef YY_USE_CONST
 #define yyconst const
+
+#if defined(__GNUC__) && __GNUC__ >= 3
+#define yynoreturn __attribute__((__noreturn__))
 #else
-#define yyconst
+#define yynoreturn
 #endif
+
+
+    
+
+
 
 
 #define YY_NULL 0
@@ -127,13 +197,37 @@ typedef unsigned int flex_uint32_t;
 
 
 
+
+
 #define YY_SC_TO_UI(c) ((unsigned int) (unsigned char) c)
+
+
+
+
 
 
 #ifndef YY_TYPEDEF_YY_SCANNER_T
 #define YY_TYPEDEF_YY_SCANNER_T
 typedef void* yyscan_t;
 #endif
+
+
+
+
+
+
+
+
+
+    
+    
+
+
+
+
+
+
+
 
 
 
@@ -150,7 +244,24 @@ typedef void* yyscan_t;
 
 
 
+
+
+
+
+    
+    
+    
+    
+
+
+
+
+
+
+
 #define BEGIN yyg->yy_start = 1 + 2 *
+
+
 
 
 
@@ -160,21 +271,39 @@ typedef void* yyscan_t;
 #define YYSTATE YY_START
 
 
+
+
 #define YY_STATE_EOF(state) (YY_END_OF_BUFFER + state + 1)
+
+
 
 
 #define YY_NEW_FILE pprestart(yyin ,yyscanner )
 
+
+
 #define YY_END_OF_BUFFER_CHAR 0
 
 
+
 #ifndef YY_BUF_SIZE
+#ifdef __ia64__
+
+
+
+
+#define YY_BUF_SIZE 32768
+#else
 #define YY_BUF_SIZE 16384
+#endif 
 #endif
 
 
 
+
 #define YY_STATE_BUF_SIZE   ((YY_BUF_SIZE + 2) * sizeof(yy_state_type))
+
+
 
 #ifndef YY_TYPEDEF_YY_BUFFER_STATE
 #define YY_TYPEDEF_YY_BUFFER_STATE
@@ -186,18 +315,22 @@ typedef struct yy_buffer_state *YY_BUFFER_STATE;
 typedef size_t yy_size_t;
 #endif
 
-#ifndef YY_TYPEDEF_YY_SIZE_T
-#define YY_TYPEDEF_YY_SIZE_T
-typedef size_t yy_size_t;
-#endif
+
+
 
 #define EOB_ACT_CONTINUE_SCAN 0
 #define EOB_ACT_END_OF_FILE 1
 #define EOB_ACT_LAST_MATCH 2
 
+
+
+    
     #define YY_LESS_LINENO(n)
     #define YY_LINENO_REWIND_TO(ptr)
     
+
+
+
 
 #define yyless(n) \
 	do \
@@ -212,7 +345,10 @@ typedef size_t yy_size_t;
 		} \
 	while ( 0 )
 
+
+
 #define unput(c) yyunput( c, yyg->yytext_ptr , yyscanner )
+
 
 #ifndef YY_STRUCT_YY_BUFFER_STATE
 #define YY_STRUCT_YY_BUFFER_STATE
@@ -220,18 +356,20 @@ struct yy_buffer_state
 	{
 	FILE *yy_input_file;
 
+
+
 	char *yy_ch_buf;		
 	char *yy_buf_pos;		
 
 	
 
 
-	yy_size_t yy_buf_size;
+	int yy_buf_size;
 
 	
 
 
-	yy_size_t yy_n_chars;
+	int yy_n_chars;
 
 	
 
@@ -255,6 +393,7 @@ struct yy_buffer_state
     int yy_bs_lineno; 
     int yy_bs_column; 
     
+
 	
 
 
@@ -285,6 +424,10 @@ struct yy_buffer_state
 
 
 
+
+
+
+
 #define YY_CURRENT_BUFFER ( yyg->yy_buffer_stack \
                           ? yyg->yy_buffer_stack[yyg->yy_buffer_stack_top] \
                           : NULL)
@@ -292,7 +435,14 @@ struct yy_buffer_state
 
 
 
+
+
 #define YY_CURRENT_BUFFER_LVALUE yyg->yy_buffer_stack[yyg->yy_buffer_stack_top]
+
+
+
+
+
 
 void pprestart (FILE *input_file ,yyscan_t yyscanner );
 void pp_switch_to_buffer (YY_BUFFER_STATE new_buffer ,yyscan_t yyscanner );
@@ -302,21 +452,29 @@ void pp_flush_buffer (YY_BUFFER_STATE b ,yyscan_t yyscanner );
 void pppush_buffer_state (YY_BUFFER_STATE new_buffer ,yyscan_t yyscanner );
 void pppop_buffer_state (yyscan_t yyscanner );
 
+
 static void ppensure_buffer_stack (yyscan_t yyscanner );
 static void pp_load_buffer_state (yyscan_t yyscanner );
 static void pp_init_buffer (YY_BUFFER_STATE b,FILE *file ,yyscan_t yyscanner );
 
+
+
 #define YY_FLUSH_BUFFER pp_flush_buffer(YY_CURRENT_BUFFER ,yyscanner)
+
 
 YY_BUFFER_STATE pp_scan_buffer (char *base,yy_size_t size ,yyscan_t yyscanner );
 YY_BUFFER_STATE pp_scan_string (yyconst char *yy_str ,yyscan_t yyscanner );
-YY_BUFFER_STATE pp_scan_bytes (yyconst char *bytes,yy_size_t len ,yyscan_t yyscanner );
+YY_BUFFER_STATE pp_scan_bytes (yyconst char *bytes,int len ,yyscan_t yyscanner );
+
 
 void *ppalloc (yy_size_t ,yyscan_t yyscanner );
 void *pprealloc (void *,yy_size_t ,yyscan_t yyscanner );
 void ppfree (void * ,yyscan_t yyscanner );
 
+
 #define yy_new_buffer pp_create_buffer
+
+
 
 #define yy_set_interactive(is_interactive) \
 	{ \
@@ -328,6 +486,8 @@ void ppfree (void * ,yyscan_t yyscanner );
 	YY_CURRENT_BUFFER_LVALUE->yy_is_interactive = is_interactive; \
 	}
 
+
+
 #define yy_set_bol(at_bol) \
 	{ \
 	if ( ! YY_CURRENT_BUFFER ){\
@@ -338,33 +498,49 @@ void ppfree (void * ,yyscan_t yyscanner );
 	YY_CURRENT_BUFFER_LVALUE->yy_at_bol = at_bol; \
 	}
 
+
+
 #define YY_AT_BOL() (YY_CURRENT_BUFFER_LVALUE->yy_at_bol)
 
 
 
-#define ppwrap(yyscanner) 1
+
+#define ppwrap(yyscanner) (/*CONSTCOND*/1)
 #define YY_SKIP_YYWRAP
 
 typedef unsigned char YY_CHAR;
+
+
+
 
 typedef int yy_state_type;
 
 #define yytext_ptr yytext_r
 
+
+
+
+
+
 static yy_state_type yy_get_previous_state (yyscan_t yyscanner );
 static yy_state_type yy_try_NUL_trans (yy_state_type current_state  ,yyscan_t yyscanner);
 static int yy_get_next_buffer (yyscan_t yyscanner );
-static void yy_fatal_error (yyconst char msg[] ,yyscan_t yyscanner );
+static void yynoreturn yy_fatal_error (yyconst char* msg ,yyscan_t yyscanner );
+
+
+
 
 
 
 
 #define YY_DO_BEFORE_ACTION \
 	yyg->yytext_ptr = yy_bp; \
-	yyleng = (yy_size_t) (yy_cp - yy_bp); \
+	yyleng = (int) (yy_cp - yy_bp); \
 	yyg->yy_hold_char = *yy_cp; \
 	*yy_cp = '\0'; \
 	yyg->yy_c_buf_p = yy_cp;
+
+
 
 #define YY_NUM_RULES 38
 #define YY_END_OF_BUFFER 39
@@ -390,7 +566,7 @@ static yyconst flex_int16_t yy_accept[98] =
 
     } ;
 
-static yyconst flex_int32_t yy_ec[256] =
+static yyconst YY_CHAR yy_ec[256] =
     {   0,
         1,    1,    1,    1,    1,    1,    1,    1,    2,    3,
         2,    2,    4,    1,    1,    1,    1,    1,    1,    1,
@@ -422,14 +598,14 @@ static yyconst flex_int32_t yy_ec[256] =
         1,    1,    1,    1,    1
     } ;
 
-static yyconst flex_int32_t yy_meta[30] =
+static yyconst YY_CHAR yy_meta[30] =
     {   0,
         1,    1,    2,    2,    1,    1,    1,    1,    1,    3,
         1,    1,    4,    1,    5,    5,    5,    1,    1,    1,
         5,    5,    5,    5,    5,    5,    1,    1,    1
     } ;
 
-static yyconst flex_int16_t yy_base[103] =
+static yyconst flex_uint16_t yy_base[103] =
     {   0,
         0,    0,   27,   29,  137,  194,  133,  194,  117,  100,
       194,   98,   26,  194,   94,   24,   28,   33,   32,   39,
@@ -461,7 +637,7 @@ static yyconst flex_int16_t yy_def[103] =
        97,   97
     } ;
 
-static yyconst flex_int16_t yy_nxt[224] =
+static yyconst flex_uint16_t yy_nxt[224] =
     {   0,
         6,    7,    8,    9,   10,   11,   12,   13,   14,   15,
        16,   17,   18,   19,   20,   21,   21,   22,   23,   24,
@@ -544,10 +720,10 @@ static yyconst flex_int16_t yy_chk[224] =
 #pragma warning(disable: 4005)
 #endif
 
-#include "Tokenizer.h"
+#include "compiler/preprocessor/Tokenizer.h"
 
-#include "DiagnosticsBase.h"
-#include "Token.h"
+#include "compiler/preprocessor/DiagnosticsBase.h"
+#include "compiler/preprocessor/Token.h"
 
 #if defined(__GNUC__)
 
@@ -596,10 +772,22 @@ typedef pp::SourceLocation YYLTYPE;
 #define YY_INPUT(buf, result, maxSize) \
     result = yyextra->input.read(buf, maxSize, &yylineno);
 
+
+
+
+
 #define INITIAL 0
 #define COMMENT 1
 
+
+
+
+
+
 #define YY_EXTRA_TYPE pp::Tokenizer::Context*
+
+
+
 
 
 struct yyguts_t
@@ -614,8 +802,8 @@ struct yyguts_t
     size_t yy_buffer_stack_max; 
     YY_BUFFER_STATE * yy_buffer_stack; 
     char yy_hold_char;
-    yy_size_t yy_n_chars;
-    yy_size_t yyleng_r;
+    int yy_n_chars;
+    int yyleng_r;
     char *yy_c_buf_p;
     int yy_init;
     int yy_start;
@@ -629,24 +817,43 @@ struct yyguts_t
     int yylineno_r;
     int yy_flex_debug_r;
 
+
+
+
     char *yytext_r;
     int yy_more_flag;
     int yy_more_len;
 
+
+
     YYSTYPE * yylval_r;
+
+
 
     YYLTYPE * yylloc_r;
 
+
     }; 
+
+
+
 
 static int yy_init_globals (yyscan_t yyscanner );
 
+
+
+
+    
     
 
     #    define yylval yyg->yylval_r
     
+
+    
     #    define yylloc yyg->yylloc_r
     
+
+
 int pplex_init (yyscan_t* scanner);
 
 int pplex_init_extra (YY_EXTRA_TYPE user_defined,yyscan_t* scanner);
@@ -654,44 +861,88 @@ int pplex_init_extra (YY_EXTRA_TYPE user_defined,yyscan_t* scanner);
 
 
 
+
+
+
 int pplex_destroy (yyscan_t yyscanner );
+
+
 
 int ppget_debug (yyscan_t yyscanner );
 
+
+
 void ppset_debug (int debug_flag ,yyscan_t yyscanner );
+
+
 
 YY_EXTRA_TYPE ppget_extra (yyscan_t yyscanner );
 
+
+
 void ppset_extra (YY_EXTRA_TYPE user_defined ,yyscan_t yyscanner );
+
+
 
 FILE *ppget_in (yyscan_t yyscanner );
 
-void ppset_in  (FILE * in_str ,yyscan_t yyscanner );
+
+
+void ppset_in  (FILE * _in_str ,yyscan_t yyscanner );
+
+
 
 FILE *ppget_out (yyscan_t yyscanner );
 
-void ppset_out  (FILE * out_str ,yyscan_t yyscanner );
 
-yy_size_t ppget_leng (yyscan_t yyscanner );
+
+void ppset_out  (FILE * _out_str ,yyscan_t yyscanner );
+
+
+
+			int ppget_leng (yyscan_t yyscanner );
+
+
 
 char *ppget_text (yyscan_t yyscanner );
 
+
+
 int ppget_lineno (yyscan_t yyscanner );
 
-void ppset_lineno (int line_number ,yyscan_t yyscanner );
+
+
+void ppset_lineno (int _line_number ,yyscan_t yyscanner );
+
+
+
 
 int ppget_column  (yyscan_t yyscanner );
 
-void ppset_column (int column_no ,yyscan_t yyscanner );
+
+
+
+
+void ppset_column (int _column_no ,yyscan_t yyscanner );
+
+
+
 
 YYSTYPE * ppget_lval (yyscan_t yyscanner );
 
+
 void ppset_lval (YYSTYPE * yylval_param ,yyscan_t yyscanner );
 
+
+    
        YYLTYPE *ppget_lloc (yyscan_t yyscanner );
+    
+
     
         void ppset_lloc (YYLTYPE * yylloc_param ,yyscan_t yyscanner );
     
+
+
 
 
 
@@ -703,6 +954,12 @@ extern "C" int ppwrap (yyscan_t yyscanner );
 extern int ppwrap (yyscan_t yyscanner );
 #endif
 #endif
+
+
+#ifndef YY_NO_UNPUT
+    
+#endif
+
 
 #ifndef yytext_ptr
 static void yy_flex_strncpy (char *,yyconst char *,int ,yyscan_t yyscanner);
@@ -723,17 +980,32 @@ static int input (yyscan_t yyscanner );
 #endif
 
 
+
+
+
+
+
+
+
 #ifndef YY_READ_BUF_SIZE
+#ifdef __ia64__
+
+#define YY_READ_BUF_SIZE 16384
+#else
 #define YY_READ_BUF_SIZE 8192
+#endif 
 #endif
+
 
 
 #ifndef ECHO
 
 
 
-#define ECHO do { if (fwrite( yytext, yyleng, 1, yyout )) {} } while (0)
+#define ECHO do { if (fwrite( yytext, (size_t) yyleng, 1, yyout )) {} } while (0)
 #endif
+
+
 
 
 
@@ -756,7 +1028,7 @@ static int input (yyscan_t yyscanner );
 	else \
 		{ \
 		errno=0; \
-		while ( (result = fread(buf, 1, max_size, yyin))==0 && ferror(yyin)) \
+		while ( (result = (int) fread(buf, 1, max_size, yyin))==0 && ferror(yyin)) \
 			{ \
 			if( errno != EINTR) \
 				{ \
@@ -775,14 +1047,18 @@ static int input (yyscan_t yyscanner );
 
 
 
+
+
 #ifndef yyterminate
 #define yyterminate() return YY_NULL
 #endif
 
 
+
 #ifndef YY_START_STACK_INCR
 #define YY_START_STACK_INCR 25
 #endif
+
 
 
 #ifndef YY_FATAL_ERROR
@@ -794,8 +1070,30 @@ static int input (yyscan_t yyscanner );
 
 
 
+
+
+
+
+
+
 #ifndef YY_DECL
 #define YY_DECL_IS_OURS 1
+
+
+
+
+
+
+        
+    
+    
+
+
+
+    
+    
+    
+
 
 extern int pplex \
                (YYSTYPE * yylval_param,YYLTYPE * yylloc_param ,yyscan_t yyscanner);
@@ -807,30 +1105,43 @@ extern int pplex \
 
 
 
+
 #ifndef YY_USER_ACTION
 #define YY_USER_ACTION
 #endif
 
 
+
+
 #ifndef YY_BREAK
-#define YY_BREAK break;
+#define YY_BREAKbreak;
 #endif
+
+
 
 #define YY_RULE_SETUP \
 	YY_USER_ACTION
 
 
 
+
+
 YY_DECL
 {
-	register yy_state_type yy_current_state;
-	register char *yy_cp, *yy_bp;
-	register int yy_act;
+	yy_state_type yy_current_state;
+	char *yy_cp, *yy_bp;
+	int yy_act;
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
+
+
+
 
     yylval = yylval_param;
 
+
+
     yylloc = yylloc_param;
+
 
 	if ( !yyg->yy_init )
 		{
@@ -839,6 +1150,8 @@ YY_DECL
 #ifdef YY_USER_INIT
 		YY_USER_INIT;
 #endif
+
+
 
 		if ( ! yyg->yy_start )
 			yyg->yy_start = 1;	
@@ -860,6 +1173,7 @@ YY_DECL
 
 	{
 
+
     
 
 	while ( 1 )		
@@ -878,7 +1192,7 @@ YY_DECL
 yy_match:
 		do
 			{
-			register YY_CHAR yy_c = yy_ec[YY_SC_TO_UI(*yy_cp)] ;
+			YY_CHAR yy_c = yy_ec[YY_SC_TO_UI(*yy_cp)] ;
 			if ( yy_accept[yy_current_state] )
 				{
 				yyg->yy_last_accepting_state = yy_current_state;
@@ -890,7 +1204,7 @@ yy_match:
 				if ( yy_current_state >= 98 )
 					yy_c = yy_meta[(unsigned int) yy_c];
 				}
-			yy_current_state = yy_nxt[yy_base[yy_current_state] + (unsigned int) yy_c];
+			yy_current_state = yy_nxt[yy_base[yy_current_state] + (flex_int16_t) yy_c];
 			++yy_cp;
 			}
 		while ( yy_current_state != 97 );
@@ -902,7 +1216,10 @@ yy_find_action:
 
 		YY_DO_BEFORE_ACTION;
 
+
+
 do_action:	
+
 
 		switch ( yy_act )
 	{ 
@@ -1333,12 +1650,17 @@ ECHO;
 
 
 
+
+
+
+
+
 static int yy_get_next_buffer (yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
-	register char *dest = YY_CURRENT_BUFFER_LVALUE->yy_ch_buf;
-	register char *source = yyg->yytext_ptr;
-	register int number_to_move, i;
+	char *dest = YY_CURRENT_BUFFER_LVALUE->yy_ch_buf;
+	char *source = yyg->yytext_ptr;
+	yy_size_t number_to_move, i;
 	int ret_val;
 
 	if ( yyg->yy_c_buf_p > &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[yyg->yy_n_chars + 1] )
@@ -1367,7 +1689,7 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
 	
 
 	
-	number_to_move = (int) (yyg->yy_c_buf_p - yyg->yytext_ptr) - 1;
+	number_to_move = (yy_size_t) (yyg->yy_c_buf_p - yyg->yytext_ptr) - 1;
 
 	for ( i = 0; i < number_to_move; ++i )
 		*(dest++) = *(source++);
@@ -1380,8 +1702,8 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
 
 	else
 		{
-			yy_size_t num_to_read =
-			YY_CURRENT_BUFFER_LVALUE->yy_buf_size - number_to_move - 1;
+			int num_to_read =
+			static_cast<int>(YY_CURRENT_BUFFER_LVALUE->yy_buf_size - number_to_move - 1);
 
 		while ( num_to_read <= 0 )
 			{ 
@@ -1394,7 +1716,7 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
 
 			if ( b->yy_is_our_buffer )
 				{
-				yy_size_t new_size = b->yy_buf_size * 2;
+				int new_size = b->yy_buf_size * 2;
 
 				if ( new_size <= 0 )
 					b->yy_buf_size += b->yy_buf_size / 8;
@@ -1407,7 +1729,7 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
 				}
 			else
 				
-				b->yy_ch_buf = 0;
+				b->yy_ch_buf = NULL;
 
 			if ( ! b->yy_ch_buf )
 				YY_FATAL_ERROR(
@@ -1415,8 +1737,8 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
 
 			yyg->yy_c_buf_p = &b->yy_ch_buf[yy_c_buf_p_offset];
 
-			num_to_read = YY_CURRENT_BUFFER_LVALUE->yy_buf_size -
-						number_to_move - 1;
+			num_to_read = static_cast<int>(YY_CURRENT_BUFFER_LVALUE->yy_buf_size -
+						number_to_move - 1);
 
 			}
 
@@ -1424,8 +1746,10 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
 			num_to_read = YY_READ_BUF_SIZE;
 
 		
+		yy_size_t ret = 0;
 		YY_INPUT( (&YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[number_to_move]),
-			yyg->yy_n_chars, num_to_read );
+			ret, num_to_read );
+		yyg->yy_n_chars = static_cast<int>(ret);
 
 		YY_CURRENT_BUFFER_LVALUE->yy_n_chars = yyg->yy_n_chars;
 		}
@@ -1449,7 +1773,7 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
 	else
 		ret_val = EOB_ACT_CONTINUE_SCAN;
 
-	if ((yy_size_t) (yyg->yy_n_chars + number_to_move) > YY_CURRENT_BUFFER_LVALUE->yy_buf_size) {
+	if ((int) (yyg->yy_n_chars + number_to_move) > YY_CURRENT_BUFFER_LVALUE->yy_buf_size) {
 		
 		yy_size_t new_size = yyg->yy_n_chars + number_to_move + (yyg->yy_n_chars >> 1);
 		YY_CURRENT_BUFFER_LVALUE->yy_ch_buf = (char *) pprealloc((void *) YY_CURRENT_BUFFER_LVALUE->yy_ch_buf,new_size ,yyscanner );
@@ -1457,7 +1781,7 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
 			YY_FATAL_ERROR( "out of dynamic memory in yy_get_next_buffer()" );
 	}
 
-	yyg->yy_n_chars += number_to_move;
+	yyg->yy_n_chars += static_cast<int>(number_to_move);
 	YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[yyg->yy_n_chars] = YY_END_OF_BUFFER_CHAR;
 	YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[yyg->yy_n_chars + 1] = YY_END_OF_BUFFER_CHAR;
 
@@ -1468,17 +1792,19 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
 
 
 
+
+
     static yy_state_type yy_get_previous_state (yyscan_t yyscanner)
 {
-	register yy_state_type yy_current_state;
-	register char *yy_cp;
+	yy_state_type yy_current_state;
+	char *yy_cp;
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
 
 	yy_current_state = yyg->yy_start;
 
 	for ( yy_cp = yyg->yytext_ptr + YY_MORE_ADJ; yy_cp < yyg->yy_c_buf_p; ++yy_cp )
 		{
-		register YY_CHAR yy_c = (*yy_cp ? yy_ec[YY_SC_TO_UI(*yy_cp)] : 1);
+		YY_CHAR yy_c = (*yy_cp ? yy_ec[YY_SC_TO_UI(*yy_cp)] : 1);
 		if ( yy_accept[yy_current_state] )
 			{
 			yyg->yy_last_accepting_state = yy_current_state;
@@ -1490,7 +1816,7 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
 			if ( yy_current_state >= 98 )
 				yy_c = yy_meta[(unsigned int) yy_c];
 			}
-		yy_current_state = yy_nxt[yy_base[yy_current_state] + (unsigned int) yy_c];
+		yy_current_state = yy_nxt[yy_base[yy_current_state] + (flex_int16_t) yy_c];
 		}
 
 	return yy_current_state;
@@ -1501,13 +1827,14 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
 
 
 
+
     static yy_state_type yy_try_NUL_trans  (yy_state_type yy_current_state , yyscan_t yyscanner)
 {
-	register int yy_is_jam;
+	int yy_is_jam;
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner; 
-	register char *yy_cp = yyg->yy_c_buf_p;
+	char *yy_cp = yyg->yy_c_buf_p;
 
-	register YY_CHAR yy_c = 1;
+	YY_CHAR yy_c = 1;
 	if ( yy_accept[yy_current_state] )
 		{
 		yyg->yy_last_accepting_state = yy_current_state;
@@ -1519,12 +1846,17 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
 		if ( yy_current_state >= 98 )
 			yy_c = yy_meta[(unsigned int) yy_c];
 		}
-	yy_current_state = yy_nxt[yy_base[yy_current_state] + (unsigned int) yy_c];
+	yy_current_state = yy_nxt[yy_base[yy_current_state] + (flex_int16_t) yy_c];
 	yy_is_jam = (yy_current_state == 97);
 
 	(void)yyg;
 	return yy_is_jam ? 0 : yy_current_state;
 }
+
+
+#ifndef YY_NO_UNPUT
+
+#endif
 
 #ifndef YY_NO_INPUT
 #ifdef __cplusplus
@@ -1551,7 +1883,7 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
 
 		else
 			{ 
-			yy_size_t offset = yyg->yy_c_buf_p - yyg->yytext_ptr;
+			int offset = yyg->yy_c_buf_p - yyg->yytext_ptr;
 			++yyg->yy_c_buf_p;
 
 			switch ( yy_get_next_buffer( yyscanner ) )
@@ -1575,7 +1907,7 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
 				case EOB_ACT_END_OF_FILE:
 					{
 					if ( ppwrap(yyscanner ) )
-						return EOF;
+						return 0;
 
 					if ( ! yyg->yy_did_buffer_switch_on_eof )
 						YY_NEW_FILE;
@@ -1596,6 +1928,7 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
 	c = *(unsigned char *) yyg->yy_c_buf_p;	
 	*yyg->yy_c_buf_p = '\0';	
 	yyg->yy_hold_char = *++yyg->yy_c_buf_p;
+
 
 	return c;
 }
@@ -1619,6 +1952,7 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
 	pp_init_buffer(YY_CURRENT_BUFFER,input_file ,yyscanner);
 	pp_load_buffer_state(yyscanner );
 }
+
 
 
 
@@ -1656,6 +1990,7 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
 	yyg->yy_did_buffer_switch_on_eof = 1;
 }
 
+
 static void pp_load_buffer_state  (yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
@@ -1679,7 +2014,7 @@ static void pp_load_buffer_state  (yyscan_t yyscanner)
 	if ( ! b )
 		YY_FATAL_ERROR( "out of dynamic memory in pp_create_buffer()" );
 
-	b->yy_buf_size = size;
+	b->yy_buf_size = (yy_size_t)size;
 
 	
 
@@ -1694,6 +2029,7 @@ static void pp_load_buffer_state  (yyscan_t yyscanner)
 
 	return b;
 }
+
 
 
 
@@ -1719,6 +2055,7 @@ static void pp_load_buffer_state  (yyscan_t yyscanner)
 
 
 
+
     static void pp_init_buffer  (YY_BUFFER_STATE  b, FILE * file , yyscan_t yyscanner)
 
 {
@@ -1739,8 +2076,11 @@ static void pp_load_buffer_state  (yyscan_t yyscanner)
         b->yy_bs_column = 0;
     }
 
+
+    
         b->yy_is_interactive = 0;
     
+
 	errno = oerrno;
 }
 
@@ -1809,6 +2149,7 @@ void pppush_buffer_state (YY_BUFFER_STATE new_buffer , yyscan_t yyscanner)
 
 
 
+
 void pppop_buffer_state (yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
@@ -1829,6 +2170,7 @@ void pppop_buffer_state (yyscan_t yyscanner)
 
 
 
+
 static void ppensure_buffer_stack (yyscan_t yyscanner)
 {
 	yy_size_t num_to_alloc;
@@ -1840,13 +2182,14 @@ static void ppensure_buffer_stack (yyscan_t yyscanner)
 
 
 
-		num_to_alloc = 1;
+      num_to_alloc = 1; 
 		yyg->yy_buffer_stack = (struct yy_buffer_state**)ppalloc
 								(num_to_alloc * sizeof(struct yy_buffer_state*)
 								, yyscanner);
 		if ( ! yyg->yy_buffer_stack )
 			YY_FATAL_ERROR( "out of dynamic memory in ppensure_buffer_stack()" );
 								  
+		
 		memset(yyg->yy_buffer_stack, 0, num_to_alloc * sizeof(struct yy_buffer_state*));
 				
 		yyg->yy_buffer_stack_max = num_to_alloc;
@@ -1857,7 +2200,7 @@ static void ppensure_buffer_stack (yyscan_t yyscanner)
 	if (yyg->yy_buffer_stack_top >= (yyg->yy_buffer_stack_max) - 1){
 
 		
-		int grow_size = 8 ;
+		yy_size_t grow_size = 8 ;
 
 		num_to_alloc = yyg->yy_buffer_stack_max + grow_size;
 		yyg->yy_buffer_stack = (struct yy_buffer_state**)pprealloc
@@ -1879,6 +2222,10 @@ static void ppensure_buffer_stack (yyscan_t yyscanner)
 
 
 
+
+
+
+
 YY_BUFFER_STATE pp_scan_buffer  (char * base, yy_size_t  size , yyscan_t yyscanner)
 {
 	YY_BUFFER_STATE b;
@@ -1887,16 +2234,16 @@ YY_BUFFER_STATE pp_scan_buffer  (char * base, yy_size_t  size , yyscan_t yyscann
 	     base[size-2] != YY_END_OF_BUFFER_CHAR ||
 	     base[size-1] != YY_END_OF_BUFFER_CHAR )
 		
-		return 0;
+		return NULL;
 
 	b = (YY_BUFFER_STATE) ppalloc(sizeof( struct yy_buffer_state ) ,yyscanner );
 	if ( ! b )
 		YY_FATAL_ERROR( "out of dynamic memory in pp_scan_buffer()" );
 
-	b->yy_buf_size = size - 2;	
+	b->yy_buf_size = static_cast<int>(size - 2);	
 	b->yy_buf_pos = b->yy_ch_buf = base;
 	b->yy_is_our_buffer = 0;
-	b->yy_input_file = 0;
+	b->yy_input_file = NULL;
 	b->yy_n_chars = b->yy_buf_size;
 	b->yy_is_interactive = 0;
 	b->yy_at_bol = 1;
@@ -1916,10 +2263,13 @@ YY_BUFFER_STATE pp_scan_buffer  (char * base, yy_size_t  size , yyscan_t yyscann
 
 
 
+
+
+
 YY_BUFFER_STATE pp_scan_string (yyconst char * yystr , yyscan_t yyscanner)
 {
     
-	return pp_scan_bytes(yystr,strlen(yystr) ,yyscanner);
+	return pp_scan_bytes(yystr,(int) strlen(yystr) ,yyscanner);
 }
 
 
@@ -1929,7 +2279,10 @@ YY_BUFFER_STATE pp_scan_string (yyconst char * yystr , yyscan_t yyscanner)
 
 
 
-YY_BUFFER_STATE pp_scan_bytes  (yyconst char * yybytes, yy_size_t  _yybytes_len , yyscan_t yyscanner)
+
+
+
+YY_BUFFER_STATE pp_scan_bytes  (yyconst char * yybytes, int  _yybytes_len , yyscan_t yyscanner)
 {
 	YY_BUFFER_STATE b;
 	char *buf;
@@ -1937,12 +2290,12 @@ YY_BUFFER_STATE pp_scan_bytes  (yyconst char * yybytes, yy_size_t  _yybytes_len 
 	yy_size_t i;
     
 	
-	n = _yybytes_len + 2;
+	n = (yy_size_t) _yybytes_len + 2;
 	buf = (char *) ppalloc(n ,yyscanner );
 	if ( ! buf )
 		YY_FATAL_ERROR( "out of dynamic memory in pp_scan_bytes()" );
 
-	for ( i = 0; i < _yybytes_len; ++i )
+	for ( i = 0; i < static_cast<yy_size_t>(_yybytes_len); ++i )
 		buf[i] = yybytes[i];
 
 	buf[_yybytes_len] = buf[_yybytes_len+1] = YY_END_OF_BUFFER_CHAR;
@@ -1959,13 +2312,25 @@ YY_BUFFER_STATE pp_scan_bytes  (yyconst char * yybytes, yy_size_t  _yybytes_len 
 	return b;
 }
 
+
+
+
+
+
+
+
+
+
+
 #ifndef YY_EXIT_FAILURE
 #define YY_EXIT_FAILURE 2
 #endif
 
-static void yy_fatal_error (yyconst char* msg , yyscan_t yyscanner)
+static void yynoreturn yy_fatal_error (yyconst char* msg , yyscan_t yyscanner)
 {
-    	(void) fprintf( stderr, "%s\n", msg );
+	struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
+	(void)yyg;
+	(void) fprintf( stderr, "%s\n", msg );
 	exit( YY_EXIT_FAILURE );
 }
 
@@ -1991,6 +2356,9 @@ static void yy_fatal_error (yyconst char* msg , yyscan_t yyscanner)
 
 
 
+
+
+
 YY_EXTRA_TYPE ppget_extra  (yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
@@ -2000,9 +2368,12 @@ YY_EXTRA_TYPE ppget_extra  (yyscan_t yyscanner)
 
 
 
+
+
 int ppget_lineno  (yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
+    
     
         if (! YY_CURRENT_BUFFER)
             return 0;
@@ -2013,15 +2384,22 @@ int ppget_lineno  (yyscan_t yyscanner)
 
 
 
+
+
+
 int ppget_column  (yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
+    
     
         if (! YY_CURRENT_BUFFER)
             return 0;
     
     return yycolumn;
 }
+
+
+
 
 
 
@@ -2035,6 +2413,8 @@ FILE *ppget_in  (yyscan_t yyscanner)
 
 
 
+
+
 FILE *ppget_out  (yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
@@ -2044,11 +2424,14 @@ FILE *ppget_out  (yyscan_t yyscanner)
 
 
 
-yy_size_t ppget_leng  (yyscan_t yyscanner)
+
+
+int ppget_leng  (yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
     return yyleng;
 }
+
 
 
 
@@ -2064,6 +2447,8 @@ char *ppget_text  (yyscan_t yyscanner)
 
 
 
+
+
 void ppset_extra (YY_EXTRA_TYPE  user_defined , yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
@@ -2074,30 +2459,37 @@ void ppset_extra (YY_EXTRA_TYPE  user_defined , yyscan_t yyscanner)
 
 
 
-void ppset_lineno (int  line_number , yyscan_t yyscanner)
+
+
+void ppset_lineno (int  _line_number , yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
 
+    
         
         if (! YY_CURRENT_BUFFER )
            YY_FATAL_ERROR( "ppset_lineno called with no buffer" );
     
-    yylineno = line_number;
+    yylineno = _line_number;
 }
 
 
 
 
 
-void ppset_column (int  column_no , yyscan_t yyscanner)
+
+
+
+void ppset_column (int  _column_no , yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
 
+    
         
         if (! YY_CURRENT_BUFFER )
            YY_FATAL_ERROR( "ppset_column called with no buffer" );
     
-    yycolumn = column_no;
+    yycolumn = _column_no;
 }
 
 
@@ -2106,17 +2498,26 @@ void ppset_column (int  column_no , yyscan_t yyscanner)
 
 
 
-void ppset_in (FILE *  in_str , yyscan_t yyscanner)
+
+
+
+
+void ppset_in (FILE *  _in_str , yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
-    yyin = in_str ;
+    yyin = _in_str ;
 }
 
-void ppset_out (FILE *  out_str , yyscan_t yyscanner)
+
+
+void ppset_out (FILE *  _out_str , yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
-    yyout = out_str ;
+    yyout = _out_str ;
 }
+
+
+
 
 int ppget_debug  (yyscan_t yyscanner)
 {
@@ -2124,11 +2525,15 @@ int ppget_debug  (yyscan_t yyscanner)
     return yy_flex_debug;
 }
 
-void ppset_debug (int  bdebug , yyscan_t yyscanner)
+
+
+void ppset_debug (int  _bdebug , yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
-    yy_flex_debug = bdebug ;
+    yy_flex_debug = _bdebug ;
 }
+
+
 
 
 
@@ -2138,17 +2543,24 @@ YYSTYPE * ppget_lval  (yyscan_t yyscanner)
     return yylval;
 }
 
+
+
 void ppset_lval (YYSTYPE *  yylval_param , yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
     yylval = yylval_param;
 }
 
+
+
+    
 YYLTYPE *ppget_lloc  (yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
     return yylloc;
 }
+    
+
     
 void ppset_lloc (YYLTYPE *  yylloc_param , yyscan_t yyscanner)
 {
@@ -2156,6 +2568,10 @@ void ppset_lloc (YYLTYPE *  yylloc_param , yyscan_t yyscanner)
     yylloc = yylloc_param;
 }
     
+
+
+
+
 
 
 
@@ -2183,6 +2599,7 @@ int pplex_init(yyscan_t* ptr_yy_globals)
 
     return yy_init_globals ( *ptr_yy_globals );
 }
+
 
 
 
@@ -2220,6 +2637,7 @@ int pplex_init_extra(YY_EXTRA_TYPE yy_user_defined,yyscan_t* ptr_yy_globals )
     return yy_init_globals ( *ptr_yy_globals );
 }
 
+
 static int yy_init_globals (yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
@@ -2227,24 +2645,31 @@ static int yy_init_globals (yyscan_t yyscanner)
 
 
 
-    yyg->yy_buffer_stack = 0;
+
+    yyg->yy_buffer_stack = NULL;
     yyg->yy_buffer_stack_top = 0;
     yyg->yy_buffer_stack_max = 0;
-    yyg->yy_c_buf_p = (char *) 0;
+    yyg->yy_c_buf_p = NULL;
     yyg->yy_init = 0;
     yyg->yy_start = 0;
+
 
     yyg->yy_start_stack_ptr = 0;
     yyg->yy_start_stack_depth = 0;
     yyg->yy_start_stack =  NULL;
 
 
+
+
+
+
+
 #ifdef YY_STDINIT
     yyin = stdin;
     yyout = stdout;
 #else
-    yyin = (FILE *) 0;
-    yyout = (FILE *) 0;
+    yyin = NULL;
+    yyout = NULL;
 #endif
 
     
@@ -2252,6 +2677,7 @@ static int yy_init_globals (yyscan_t yyscanner)
 
     return 0;
 }
+
 
 
 int pplex_destroy  (yyscan_t yyscanner)
@@ -2269,9 +2695,13 @@ int pplex_destroy  (yyscan_t yyscanner)
 	ppfree(yyg->yy_buffer_stack ,yyscanner);
 	yyg->yy_buffer_stack = NULL;
 
+
     
         ppfree(yyg->yy_start_stack ,yyscanner );
         yyg->yy_start_stack = NULL;
+
+
+
 
     
 
@@ -2287,19 +2717,28 @@ int pplex_destroy  (yyscan_t yyscanner)
 
 
 
+
+
+
+
 #ifndef yytext_ptr
 static void yy_flex_strncpy (char* s1, yyconst char * s2, int n , yyscan_t yyscanner)
 {
-	register int i;
+	struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
+	(void)yyg;
+
+	int i;
 	for ( i = 0; i < n; ++i )
 		s1[i] = s2[i];
 }
 #endif
 
+
+
 #ifdef YY_NEED_STRLEN
 static int yy_flex_strlen (yyconst char * s , yyscan_t yyscanner)
 {
-	register int n;
+	int n;
 	for ( n = 0; s[n]; ++n )
 		;
 
@@ -2307,13 +2746,22 @@ static int yy_flex_strlen (yyconst char * s , yyscan_t yyscanner)
 }
 #endif
 
+
+
 void *ppalloc (yy_size_t  size , yyscan_t yyscanner)
 {
-	return (void *) malloc( size );
+	struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
+	(void)yyg;
+	return malloc(size);
 }
+
+
 
 void *pprealloc  (void * ptr, yy_size_t  size , yyscan_t yyscanner)
 {
+	struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
+	(void)yyg;
+
 	
 
 
@@ -2321,21 +2769,32 @@ void *pprealloc  (void * ptr, yy_size_t  size , yyscan_t yyscanner)
 
 
 
-	return (void *) realloc( (char *) ptr, size );
+	return realloc(ptr, size);
 }
+
+
 
 void ppfree (void * ptr , yyscan_t yyscanner)
 {
+	struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
+	(void)yyg;
 	free( (char *) ptr );	
 }
 
+
 #define YYTABLES_NAME "yytables"
+
+
+
+
+
+
+
+
 
 namespace pp {
 
-Tokenizer::Tokenizer(Diagnostics *diagnostics)
-    : mHandle(0),
-      mMaxTokenSize(256)
+Tokenizer::Tokenizer(Diagnostics *diagnostics) : mHandle(nullptr), mMaxTokenSize(256)
 {
     mContext.diagnostics = diagnostics;
 }
@@ -2392,7 +2851,7 @@ void Tokenizer::lex(Token *token)
 
 bool Tokenizer::initScanner()
 {
-    if ((mHandle == NULL) && pplex_init_extra(&mContext,&mHandle))
+    if ((mHandle == nullptr) && pplex_init_extra(&mContext, &mHandle))
         return false;
 
     pprestart(0,mHandle);
@@ -2401,12 +2860,13 @@ bool Tokenizer::initScanner()
 
 void Tokenizer::destroyScanner()
 {
-    if (mHandle == NULL)
+    if (mHandle == nullptr)
         return;
 
     pplex_destroy(mHandle);
-    mHandle = NULL;
+    mHandle = nullptr;
 }
 
 }  
+
 

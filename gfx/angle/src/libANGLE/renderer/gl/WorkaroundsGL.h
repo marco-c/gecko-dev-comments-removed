@@ -23,7 +23,11 @@ struct WorkaroundsGL
           alwaysCallUseProgramAfterLink(false),
           unpackOverlappingRowsSeparatelyUnpackBuffer(false),
           emulateAbsIntFunction(false),
-          addAndTrueToLoopCondition(false)
+          addAndTrueToLoopCondition(false),
+          emulateIsnanFloat(false),
+          useUnusedBlocksWithStandardOrSharedLayout(false),
+          dontRemoveInvariantForFragmentInput(false),
+          removeInvariantAndCentroidForESSL3(false)
     {
     }
 
@@ -69,6 +73,8 @@ struct WorkaroundsGL
 
     
     bool unpackOverlappingRowsSeparatelyUnpackBuffer;
+    
+    bool packOverlappingRowsSeparatelyPackBuffer;
 
     
     bool initializeCurrentVertexAttributes;
@@ -80,6 +86,40 @@ struct WorkaroundsGL
     
     
     bool addAndTrueToLoopCondition;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    bool unpackLastRowSeparatelyForPaddingInclusion;
+
+    
+    bool packLastRowSeparatelyForPaddingInclusion;
+
+    
+    
+    
+    bool emulateIsnanFloat;
+
+    
+    
+    
+    bool useUnusedBlocksWithStandardOrSharedLayout;
+
+    
+    
+    bool dontRemoveInvariantForFragmentInput;
+
+    
+    bool removeInvariantAndCentroidForESSL3;
 };
 }
 

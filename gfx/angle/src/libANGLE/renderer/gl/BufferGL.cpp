@@ -29,8 +29,10 @@ static const GLenum SourceBufferOperationTarget = GL_COPY_READ_BUFFER;
 
 static const GLenum DestBufferOperationTarget = GL_ARRAY_BUFFER;
 
-BufferGL::BufferGL(const FunctionsGL *functions, StateManagerGL *stateManager)
-    : BufferImpl(),
+BufferGL::BufferGL(const gl::BufferState &state,
+                   const FunctionsGL *functions,
+                   StateManagerGL *stateManager)
+    : BufferImpl(state),
       mIsMapped(false),
       mMapOffset(0),
       mMapSize(0),

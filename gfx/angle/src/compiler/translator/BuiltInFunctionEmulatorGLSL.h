@@ -9,6 +9,8 @@
 
 #include "GLSLANG/ShaderLang.h"
 
+namespace sh
+{
 class BuiltInFunctionEmulator;
 
 
@@ -20,7 +22,14 @@ void InitBuiltInAbsFunctionEmulatorForGLSLWorkarounds(BuiltInFunctionEmulator *e
 
 
 
+void InitBuiltInIsnanFunctionEmulatorForGLSLWorkarounds(BuiltInFunctionEmulator *emu,
+                                                        int targetGLSLVersion);
+
+
+
+
 void InitBuiltInFunctionEmulatorForGLSLMissingFunctions(BuiltInFunctionEmulator *emu, sh::GLenum shaderType,
                                                         int targetGLSLVersion);
+}  
 
 #endif  

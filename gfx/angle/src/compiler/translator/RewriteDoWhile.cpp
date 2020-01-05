@@ -11,6 +11,9 @@
 
 #include "compiler/translator/IntermNode.h"
 
+namespace sh
+{
+
 namespace
 {
 
@@ -43,15 +46,11 @@ class DoWhileRewriter : public TIntermTraverser
   public:
     DoWhileRewriter() : TIntermTraverser(true, false, false) {}
 
-    bool visitAggregate(Visit, TIntermAggregate *node) override
+    bool visitBlock(Visit, TIntermBlock *node) override
     {
         
         
         
-        if (node->getOp() != EOpSequence)
-        {
-            return true;
-        }
 
         TIntermSequence *statements = node->getSequence();
 
@@ -71,7 +70,7 @@ class DoWhileRewriter : public TIntermTraverser
             TType boolType = TType(EbtBool);
 
             
-            TIntermAggregate *tempDeclaration = nullptr;
+            TIntermDeclaration *tempDeclaration = nullptr;
             {
                 TConstantUnion *falseConstant = new TConstantUnion();
                 falseConstant->setBConst(false);
@@ -95,23 +94,22 @@ class DoWhileRewriter : public TIntermTraverser
             
             
             
-            TIntermSelection *breakIf = nullptr;
+            TIntermIfElse *breakIf = nullptr;
             {
                 TIntermBranch *breakStatement = new TIntermBranch(EOpBreak, nullptr);
 
-                TIntermAggregate *breakBlock = new TIntermAggregate(EOpSequence);
+                TIntermBlock *breakBlock = new TIntermBlock();
                 breakBlock->getSequence()->push_back(breakStatement);
 
                 TIntermUnary *negatedCondition =
                     new TIntermUnary(EOpLogicalNot, loop->getCondition());
 
-                TIntermSelection *innerIf =
-                    new TIntermSelection(negatedCondition, breakBlock, nullptr);
+                TIntermIfElse *innerIf = new TIntermIfElse(negatedCondition, breakBlock, nullptr);
 
-                TIntermAggregate *innerIfBlock = new TIntermAggregate(EOpSequence);
+                TIntermBlock *innerIfBlock = new TIntermBlock();
                 innerIfBlock->getSequence()->push_back(innerIf);
 
-                breakIf = new TIntermSelection(createTempSymbol(boolType), innerIfBlock, nullptr);
+                breakIf = new TIntermIfElse(createTempSymbol(boolType), innerIfBlock, nullptr);
             }
 
             
@@ -122,14 +120,10 @@ class DoWhileRewriter : public TIntermTraverser
                 trueConstant->setBConst(true);
                 TIntermTyped *trueValue = new TIntermConstantUnion(trueConstant, boolType);
 
-                TIntermAggregate *body = nullptr;
-                if (loop->getBody() != nullptr)
+                TIntermBlock *body = loop->getBody();
+                if (body == nullptr)
                 {
-                    body = loop->getBody()->getAsAggregate();
-                }
-                else
-                {
-                    body = new TIntermAggregate(EOpSequence);
+                    body = new TIntermBlock();
                 }
                 auto sequence = body->getSequence();
                 sequence->insert(sequence->begin(), assignTrue);
@@ -161,3 +155,5 @@ void RewriteDoWhile(TIntermNode *root, unsigned int *temporaryIndex)
 
     root->traverse(&rewriter);
 }
+
+}  

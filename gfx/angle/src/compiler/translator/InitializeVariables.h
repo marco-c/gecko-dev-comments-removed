@@ -9,11 +9,23 @@
 
 #include <GLSLANG/ShaderLang.h>
 
+namespace sh
+{
 class TIntermNode;
+class TSymbolTable;
 
 typedef std::vector<sh::ShaderVariable> InitVariableList;
 
 
-void InitializeVariables(TIntermNode *root, const InitVariableList &vars);
+
+
+
+
+
+
+void InitializeVariables(TIntermNode *root,
+                         const InitVariableList &vars,
+                         const TSymbolTable &symbolTable);
+}  
 
 #endif  

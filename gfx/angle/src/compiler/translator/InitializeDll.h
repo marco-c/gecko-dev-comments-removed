@@ -6,8 +6,11 @@
 #ifndef COMPILER_TRANSLATOR_INITIALIZEDLL_H_
 #define COMPILER_TRANSLATOR_INITIALIZEDLL_H_
 
+namespace sh
+{
 bool InitProcess();
 void DetachProcess();
+}  
 
 #endif 
 

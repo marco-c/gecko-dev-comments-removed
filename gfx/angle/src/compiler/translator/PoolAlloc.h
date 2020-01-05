@@ -157,7 +157,12 @@ public:
     void lock();
     void unlock();
 
-protected:
+  private:
+    size_t alignment;  
+                       
+    size_t alignmentMask;
+
+#if !defined(ANGLE_TRANSLATOR_DISABLE_POOL_ALLOC)
     friend struct tHeader;
     
     struct tHeader {
@@ -200,20 +205,21 @@ protected:
     }
 
     size_t pageSize;        
-    size_t alignment;       
-                            
-    size_t alignmentMask;
     size_t headerSkip;      
                             
                             
     size_t currentPageOffset;  
     tHeader* freeList;      
     tHeader* inUseList;     
-    tAllocStack stack;      
+    tAllocStack mStack;     
 
     int numCalls;           
     size_t totalBytes;      
-private:
+
+#else  
+    std::vector<std::vector<void *>> mStack;
+#endif
+
     TPoolAllocator& operator=(const TPoolAllocator&);  
     TPoolAllocator(const TPoolAllocator&);  
     bool mLocked;

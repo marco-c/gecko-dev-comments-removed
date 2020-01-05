@@ -24,7 +24,7 @@ struct Uniform;
 struct Varying;
 struct InterfaceBlock;
 
-struct COMPILER_EXPORT BlockMemberInfo
+struct BlockMemberInfo
 {
     BlockMemberInfo() : offset(-1), arrayStride(-1), matrixStride(-1), isRowMajorMatrix(false) {}
 
@@ -46,7 +46,7 @@ struct COMPILER_EXPORT BlockMemberInfo
     bool isRowMajorMatrix;
 };
 
-class COMPILER_EXPORT BlockLayoutEncoder
+class BlockLayoutEncoder
 {
   public:
     BlockLayoutEncoder();
@@ -77,7 +77,7 @@ class COMPILER_EXPORT BlockLayoutEncoder
 
 
 
-class COMPILER_EXPORT Std140BlockEncoder : public BlockLayoutEncoder
+class Std140BlockEncoder : public BlockLayoutEncoder
 {
   public:
     Std140BlockEncoder();

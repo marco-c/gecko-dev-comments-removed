@@ -15,6 +15,8 @@
 #include "compiler/translator/PoolAlloc.h"
 #include "compiler/translator/TranslatorESSL.h"
 
+using namespace sh;
+
 template <typename T>
 class ConstantFinder : public TIntermTraverser
 {
@@ -107,7 +109,7 @@ class ConstantFoldingTest : public testing::Test
         allocator.push();
         SetGlobalPoolAllocator(&allocator);
         ShBuiltInResources resources;
-        ShInitBuiltInResources(&resources);
+        InitBuiltInResources(&resources);
 
         mTranslatorESSL = new TranslatorESSL(GL_FRAGMENT_SHADER, SH_GLES3_SPEC);
         ASSERT_TRUE(mTranslatorESSL->Init(resources));
@@ -791,4 +793,272 @@ TEST_F(ConstantFoldingTest, FoldNonSquareOuterProduct)
     
     std::vector<float> result(outputElements, outputElements + 6);
     ASSERT_TRUE(constantColumnMajorMatrixFoundInAST(result));
+}
+
+
+TEST_F(ConstantFoldingTest, FoldBitShiftLeftDifferentSignedness)
+{
+    const std::string &shaderString =
+        "#version 300 es\n"
+        "precision mediump float;\n"
+        "out vec4 my_FragColor;\n"
+        "void main()\n"
+        "{\n"
+        "    uint u = 0xffffffffu << 31;\n"
+        "    my_FragColor = vec4(u);\n"
+        "}\n";
+    compile(shaderString);
+    ASSERT_TRUE(constantFoundInAST(0x80000000u));
+}
+
+
+TEST_F(ConstantFoldingTest, FoldBitShiftRightDifferentSignedness)
+{
+    const std::string &shaderString =
+        "#version 300 es\n"
+        "precision mediump float;\n"
+        "out vec4 my_FragColor;\n"
+        "void main()\n"
+        "{\n"
+        "    uint u = 0xffffffffu >> 30;\n"
+        "    my_FragColor = vec4(u);\n"
+        "}\n";
+    compile(shaderString);
+    ASSERT_TRUE(constantFoundInAST(0x3u));
+}
+
+
+
+TEST_F(ConstantFoldingTest, FoldBitShiftRightExtendSignBit)
+{
+    const std::string &shaderString =
+        "#version 300 es\n"
+        "precision mediump float;\n"
+        "out vec4 my_FragColor;\n"
+        "void main()\n"
+        "{\n"
+        "    const int i = 0x8fffe000 >> 6;\n"
+        "    uint u = uint(i);"
+        "    my_FragColor = vec4(u);\n"
+        "}\n";
+    compile(shaderString);
+    
+    
+    ASSERT_TRUE(constantFoundInAST(0xfe3fff80u));
+}
+
+
+
+
+TEST_F(ConstantFoldingTest, FoldBitShiftLeftInterpretedAsBitPattern)
+{
+    const std::string &shaderString =
+        "#version 300 es\n"
+        "precision mediump float;\n"
+        "out vec4 my_FragColor;\n"
+        "void main()\n"
+        "{\n"
+        "    const int i = 0x1fffffff << 3;\n"
+        "    uint u = uint(i);"
+        "    my_FragColor = vec4(u);\n"
+        "}\n";
+    compile(shaderString);
+    ASSERT_TRUE(constantFoundInAST(0xfffffff8u));
+}
+
+
+
+
+
+TEST_F(ConstantFoldingTest, FoldDivideMinimumIntegerByMinusOne)
+{
+    const std::string &shaderString =
+        "#version 300 es\n"
+        "precision mediump float;\n"
+        "out vec4 my_FragColor;\n"
+        "void main()\n"
+        "{\n"
+        "    int i = 0x80000000 / (-1);\n"
+        "    my_FragColor = vec4(i);\n"
+        "}\n";
+    compile(shaderString);
+    ASSERT_TRUE(constantFoundInAST(0x7fffffff) || constantFoundInAST(-0x7fffffff - 1));
+}
+
+
+
+
+
+
+TEST_F(ConstantFoldingTest, FoldUnsignedIntegerAddOverflow)
+{
+    const std::string &shaderString =
+        "#version 300 es\n"
+        "precision mediump float;\n"
+        "out vec4 my_FragColor;\n"
+        "void main()\n"
+        "{\n"
+        "    uint u = 0xffffffffu + 43u;\n"
+        "    my_FragColor = vec4(u);\n"
+        "}\n";
+    compile(shaderString);
+    ASSERT_TRUE(constantFoundInAST(42u));
+}
+
+
+
+
+
+
+TEST_F(ConstantFoldingTest, FoldSignedIntegerAddOverflow)
+{
+    const std::string &shaderString =
+        "#version 300 es\n"
+        "precision mediump float;\n"
+        "out vec4 my_FragColor;\n"
+        "void main()\n"
+        "{\n"
+        "    int i = 0x7fffffff + 4;\n"
+        "    my_FragColor = vec4(i);\n"
+        "}\n";
+    compile(shaderString);
+    ASSERT_TRUE(constantFoundInAST(-0x7ffffffd));
+}
+
+
+
+
+
+
+TEST_F(ConstantFoldingTest, FoldUnsignedIntegerDiffOverflow)
+{
+    const std::string &shaderString =
+        "#version 300 es\n"
+        "precision mediump float;\n"
+        "out vec4 my_FragColor;\n"
+        "void main()\n"
+        "{\n"
+        "    uint u = 0u - 5u;\n"
+        "    my_FragColor = vec4(u);\n"
+        "}\n";
+    compile(shaderString);
+    ASSERT_TRUE(constantFoundInAST(0xfffffffbu));
+}
+
+
+
+
+
+
+TEST_F(ConstantFoldingTest, FoldSignedIntegerDiffOverflow)
+{
+    const std::string &shaderString =
+        "#version 300 es\n"
+        "precision mediump float;\n"
+        "out vec4 my_FragColor;\n"
+        "void main()\n"
+        "{\n"
+        "    int i = -0x7fffffff - 7;\n"
+        "    my_FragColor = vec4(i);\n"
+        "}\n";
+    compile(shaderString);
+    ASSERT_TRUE(constantFoundInAST(0x7ffffffa));
+}
+
+
+
+
+
+
+TEST_F(ConstantFoldingTest, FoldUnsignedIntegerMultiplyOverflow)
+{
+    const std::string &shaderString =
+        "#version 300 es\n"
+        "precision mediump float;\n"
+        "out vec4 my_FragColor;\n"
+        "void main()\n"
+        "{\n"
+        "    uint u = 0xffffffffu * 10u;\n"
+        "    my_FragColor = vec4(u);\n"
+        "}\n";
+    compile(shaderString);
+    ASSERT_TRUE(constantFoundInAST(0xfffffff6u));
+}
+
+
+
+
+
+
+TEST_F(ConstantFoldingTest, FoldSignedIntegerMultiplyOverflow)
+{
+    const std::string &shaderString =
+        "#version 300 es\n"
+        "precision mediump float;\n"
+        "out vec4 my_FragColor;\n"
+        "void main()\n"
+        "{\n"
+        "    int i = 0x7fffffff * 42;\n"
+        "    my_FragColor = vec4(i);\n"
+        "}\n";
+    compile(shaderString);
+    ASSERT_TRUE(constantFoundInAST(-42));
+}
+
+
+
+
+
+
+
+TEST_F(ConstantFoldingTest, FoldMinimumSignedIntegerNegation)
+{
+    const std::string &shaderString =
+        "#version 300 es\n"
+        "precision mediump float;\n"
+        "out vec4 my_FragColor;\n"
+        "void main()\n"
+        "{\n"
+        "    int i = -0x80000000;\n"
+        "    my_FragColor = vec4(i);\n"
+        "}\n";
+    compile(shaderString);
+    
+    ASSERT_TRUE(constantFoundInAST(-0x7fffffff - 1));
+}
+
+
+TEST_F(ConstantFoldingTest, FoldMinimumSignedIntegerRightShift)
+{
+    const std::string &shaderString =
+        "#version 300 es\n"
+        "precision mediump float;\n"
+        "out vec4 my_FragColor;\n"
+        "void main()\n"
+        "{\n"
+        "    int i = (0x80000000 >> 1);\n"
+        "    int j = (0x80000000 >> 7);\n"
+        "    my_FragColor = vec4(i, j, i, j);\n"
+        "}\n";
+    compile(shaderString);
+    ASSERT_TRUE(constantFoundInAST(-0x40000000));
+    ASSERT_TRUE(constantFoundInAST(-0x01000000));
+}
+
+
+TEST_F(ConstantFoldingTest, FoldShiftByZero)
+{
+    const std::string &shaderString =
+        "#version 300 es\n"
+        "precision mediump float;\n"
+        "out vec4 my_FragColor;\n"
+        "void main()\n"
+        "{\n"
+        "    int i = (3 >> 0);\n"
+        "    int j = (73 << 0);\n"
+        "    my_FragColor = vec4(i, j, i, j);\n"
+        "}\n";
+    compile(shaderString);
+    ASSERT_TRUE(constantFoundInAST(3));
+    ASSERT_TRUE(constantFoundInAST(73));
 }

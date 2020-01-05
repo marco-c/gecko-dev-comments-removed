@@ -14,6 +14,9 @@
 #include "compiler/translator/IntermNode.h"
 #include "compiler/translator/IntermNodePatternMatcher.h"
 
+namespace sh
+{
+
 namespace
 {
 
@@ -57,7 +60,7 @@ void SplitSequenceOperatorTraverser::nextIteration()
     nextTemporaryIndex();
 }
 
-bool SplitSequenceOperatorTraverser::visitBinary(Visit visit, TIntermBinary *node)
+bool SplitSequenceOperatorTraverser::visitAggregate(Visit visit, TIntermAggregate *node)
 {
     if (mFoundExpressionToSplit)
         return false;
@@ -65,15 +68,14 @@ bool SplitSequenceOperatorTraverser::visitBinary(Visit visit, TIntermBinary *nod
     if (mInsideSequenceOperator > 0 && visit == PreVisit)
     {
         
-        mFoundExpressionToSplit =
-            mPatternToSplitMatcher.match(node, getParentNode(), isLValueRequiredHere());
+        mFoundExpressionToSplit = mPatternToSplitMatcher.match(node, getParentNode());
         return !mFoundExpressionToSplit;
     }
 
     return true;
 }
 
-bool SplitSequenceOperatorTraverser::visitAggregate(Visit visit, TIntermAggregate *node)
+bool SplitSequenceOperatorTraverser::visitBinary(Visit visit, TIntermBinary *node)
 {
     if (node->getOp() == EOpComma)
     {
@@ -92,18 +94,11 @@ bool SplitSequenceOperatorTraverser::visitAggregate(Visit visit, TIntermAggregat
             if (mFoundExpressionToSplit && mInsideSequenceOperator == 1)
             {
                 
-                
                 TIntermSequence insertions;
-                for (auto *sequenceChild : *node->getSequence())
-                {
-                    if (sequenceChild != node->getSequence()->back())
-                    {
-                        insertions.push_back(sequenceChild);
-                    }
-                }
+                insertions.push_back(node->getLeft());
                 insertStatementsInParentBlock(insertions);
                 
-                queueReplacement(node, node->getSequence()->back(), OriginalNode::IS_DROPPED);
+                queueReplacement(node, node->getRight(), OriginalNode::IS_DROPPED);
             }
             mInsideSequenceOperator--;
         }
@@ -116,7 +111,8 @@ bool SplitSequenceOperatorTraverser::visitAggregate(Visit visit, TIntermAggregat
     if (mInsideSequenceOperator > 0 && visit == PreVisit)
     {
         
-        mFoundExpressionToSplit = mPatternToSplitMatcher.match(node, getParentNode());
+        mFoundExpressionToSplit =
+            mPatternToSplitMatcher.match(node, getParentNode(), isLValueRequiredHere());
         return !mFoundExpressionToSplit;
     }
 
@@ -158,3 +154,5 @@ void SplitSequenceOperator(TIntermNode *root,
             traverser.updateTree();
     } while (traverser.foundExpressionToSplit());
 }
+
+}  

@@ -7,10 +7,15 @@
 #ifndef COMPILER_TRANSLATOR_VALIDATEGLOBALINITIALIZER_H_
 #define COMPILER_TRANSLATOR_VALIDATEGLOBALINITIALIZER_H_
 
+namespace sh
+{
+
 class TIntermTyped;
 class TParseContext;
 
 
 bool ValidateGlobalInitializer(TIntermTyped *initializer, const TParseContext *context, bool *warning);
+
+}  
 
 #endif 

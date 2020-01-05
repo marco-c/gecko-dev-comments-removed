@@ -4,45 +4,23 @@
 
 
 
+
+
+
+
 #ifndef COMPILER_TRANSLATOR_SCALARIZEVECANDMATCONSTRUCTORARGS_H_
 #define COMPILER_TRANSLATOR_SCALARIZEVECANDMATCONSTRUCTORARGS_H_
 
-#include "compiler/translator/IntermNode.h"
+#include "GLSLANG/ShaderLang.h"
 
-class ScalarizeVecAndMatConstructorArgs : public TIntermTraverser
+namespace sh
 {
-  public:
-    ScalarizeVecAndMatConstructorArgs(sh::GLenum shaderType,
-                                      bool fragmentPrecisionHigh)
-        : TIntermTraverser(true, false, false),
-          mTempVarCount(0),
-          mShaderType(shaderType),
-          mFragmentPrecisionHigh(fragmentPrecisionHigh) {}
+class TIntermBlock;
 
-  protected:
-    bool visitAggregate(Visit visit, TIntermAggregate *node) override;
-
-  private:
-    void scalarizeArgs(TIntermAggregate *aggregate,
-                       bool scalarizeVector, bool scalarizeMatrix);
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    TString createTempVariable(TIntermTyped *original);
-
-    std::vector<TIntermSequence> mSequenceStack;
-    int mTempVarCount;
-
-    sh::GLenum mShaderType;
-    bool mFragmentPrecisionHigh;
-};
+void ScalarizeVecAndMatConstructorArgs(TIntermBlock *root,
+                                       sh::GLenum shaderType,
+                                       bool fragmentPrecisionHigh,
+                                       unsigned int *temporaryIndex);
+}  
 
 #endif  

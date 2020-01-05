@@ -9,6 +9,9 @@
 
 #include "compiler/translator/LoopInfo.h"
 
+namespace sh
+{
+
 
 
 
@@ -49,5 +52,7 @@ class ForLoopUnrollMarker : public TIntermTraverser
     bool mVisitSamplerArrayIndexNodeInsideLoop;
     bool mHasRunLoopValidation;
 };
+
+}  
 
 #endif 

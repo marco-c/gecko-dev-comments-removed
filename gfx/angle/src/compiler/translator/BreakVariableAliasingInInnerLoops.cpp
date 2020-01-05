@@ -25,6 +25,9 @@
 
 
 
+namespace sh
+{
+
 namespace
 {
 
@@ -93,9 +96,6 @@ class AliasingBreaker : public TIntermTraverser
 };
 
 }  
-
-namespace sh
-{
 
 void BreakVariableAliasingInInnerLoops(TIntermNode *root)
 {

@@ -14,6 +14,9 @@
 
 #include "compiler/translator/IntermNode.h"
 
+namespace sh
+{
+
 
 
 class TExtensionGLSL : public TIntermTraverser
@@ -35,5 +38,7 @@ class TExtensionGLSL : public TIntermTraverser
     std::set<std::string> mEnabledExtensions;
     std::set<std::string> mRequiredExtensions;
 };
+
+}  
 
 #endif  

@@ -16,8 +16,11 @@
 #ifndef COMPILER_TRANSLATOR_RECORDCONSTANTPRECISION_H_
 #define COMPILER_TRANSLATOR_RECORDCONSTANTPRECISION_H_
 
+namespace sh
+{
 class TIntermNode;
 
 void RecordConstantPrecision(TIntermNode *root, unsigned int *temporaryIndex);
+}  
 
 #endif   

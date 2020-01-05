@@ -79,6 +79,13 @@ ANGLE_EXPORT EGLBoolean EGLAPIENTRY StreamPostD3DTextureNV12ANGLE(EGLDisplay dpy
                                                                   EGLStreamKHR stream,
                                                                   void *texture,
                                                                   const EGLAttrib *attrib_list);
+
+
+ANGLE_EXPORT EGLBoolean SwapBuffersWithDamageEXT(EGLDisplay dpy,
+                                                 EGLSurface surface,
+                                                 EGLint *rects,
+                                                 EGLint n_rects);
+
 }  
 
 #endif 

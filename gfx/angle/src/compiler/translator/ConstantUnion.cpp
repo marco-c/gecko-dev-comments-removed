@@ -7,7 +7,65 @@
 
 #include "compiler/translator/ConstantUnion.h"
 
+#include "base/numerics/safe_math.h"
+#include "common/mathutil.h"
 #include "compiler/translator/Diagnostics.h"
+
+namespace sh
+{
+
+namespace
+{
+
+template <typename T>
+T CheckedSum(base::CheckedNumeric<T> lhs,
+             base::CheckedNumeric<T> rhs,
+             TDiagnostics *diag,
+             const TSourceLoc &line)
+{
+    ASSERT(lhs.IsValid() && rhs.IsValid());
+    auto result = lhs + rhs;
+    if (!result.IsValid())
+    {
+        diag->error(line, "Addition out of range", "*", "");
+        return 0;
+    }
+    return result.ValueOrDefault(0);
+}
+
+template <typename T>
+T CheckedDiff(base::CheckedNumeric<T> lhs,
+              base::CheckedNumeric<T> rhs,
+              TDiagnostics *diag,
+              const TSourceLoc &line)
+{
+    ASSERT(lhs.IsValid() && rhs.IsValid());
+    auto result = lhs - rhs;
+    if (!result.IsValid())
+    {
+        diag->error(line, "Difference out of range", "*", "");
+        return 0;
+    }
+    return result.ValueOrDefault(0);
+}
+
+template <typename T>
+T CheckedMul(base::CheckedNumeric<T> lhs,
+             base::CheckedNumeric<T> rhs,
+             TDiagnostics *diag,
+             const TSourceLoc &line)
+{
+    ASSERT(lhs.IsValid() && rhs.IsValid());
+    auto result = lhs * rhs;
+    if (!result.IsValid())
+    {
+        diag->error(line, "Multiplication out of range", "*", "");
+        return 0;
+    }
+    return result.ValueOrDefault(0);
+}
+
+}  
 
 TConstantUnion::TConstantUnion()
 {
@@ -221,20 +279,21 @@ bool TConstantUnion::operator<(const TConstantUnion &constant) const
 
 TConstantUnion TConstantUnion::add(const TConstantUnion &lhs,
                                    const TConstantUnion &rhs,
-                                   TDiagnostics *diag)
+                                   TDiagnostics *diag,
+                                   const TSourceLoc &line)
 {
     TConstantUnion returnValue;
     ASSERT(lhs.type == rhs.type);
     switch (lhs.type)
     {
         case EbtInt:
-            returnValue.setIConst(lhs.iConst + rhs.iConst);
+            returnValue.setIConst(gl::WrappingSum<int>(lhs.iConst, rhs.iConst));
             break;
         case EbtUInt:
-            returnValue.setUConst(lhs.uConst + rhs.uConst);
+            returnValue.setUConst(gl::WrappingSum<unsigned int>(lhs.uConst, rhs.uConst));
             break;
         case EbtFloat:
-            returnValue.setFConst(lhs.fConst + rhs.fConst);
+            returnValue.setFConst(CheckedSum<float>(lhs.fConst, rhs.fConst, diag, line));
             break;
         default:
             UNREACHABLE();
@@ -246,20 +305,21 @@ TConstantUnion TConstantUnion::add(const TConstantUnion &lhs,
 
 TConstantUnion TConstantUnion::sub(const TConstantUnion &lhs,
                                    const TConstantUnion &rhs,
-                                   TDiagnostics *diag)
+                                   TDiagnostics *diag,
+                                   const TSourceLoc &line)
 {
     TConstantUnion returnValue;
     ASSERT(lhs.type == rhs.type);
     switch (lhs.type)
     {
         case EbtInt:
-            returnValue.setIConst(lhs.iConst - rhs.iConst);
+            returnValue.setIConst(gl::WrappingDiff<int>(lhs.iConst, rhs.iConst));
             break;
         case EbtUInt:
-            returnValue.setUConst(lhs.uConst - rhs.uConst);
+            returnValue.setUConst(gl::WrappingDiff<unsigned int>(lhs.uConst, rhs.uConst));
             break;
         case EbtFloat:
-            returnValue.setFConst(lhs.fConst - rhs.fConst);
+            returnValue.setFConst(CheckedDiff<float>(lhs.fConst, rhs.fConst, diag, line));
             break;
         default:
             UNREACHABLE();
@@ -271,20 +331,23 @@ TConstantUnion TConstantUnion::sub(const TConstantUnion &lhs,
 
 TConstantUnion TConstantUnion::mul(const TConstantUnion &lhs,
                                    const TConstantUnion &rhs,
-                                   TDiagnostics *diag)
+                                   TDiagnostics *diag,
+                                   const TSourceLoc &line)
 {
     TConstantUnion returnValue;
     ASSERT(lhs.type == rhs.type);
     switch (lhs.type)
     {
         case EbtInt:
-            returnValue.setIConst(lhs.iConst * rhs.iConst);
+            returnValue.setIConst(gl::WrappingMul(lhs.iConst, rhs.iConst));
             break;
         case EbtUInt:
+            
+            
             returnValue.setUConst(lhs.uConst * rhs.uConst);
             break;
         case EbtFloat:
-            returnValue.setFConst(lhs.fConst * rhs.fConst);
+            returnValue.setFConst(CheckedMul<float>(lhs.fConst, rhs.fConst, diag, line));
             break;
         default:
             UNREACHABLE();
@@ -312,44 +375,178 @@ TConstantUnion TConstantUnion::operator%(const TConstantUnion &constant) const
     return returnValue;
 }
 
-TConstantUnion TConstantUnion::operator>>(const TConstantUnion &constant) const
+
+TConstantUnion TConstantUnion::rshift(const TConstantUnion &lhs,
+                                      const TConstantUnion &rhs,
+                                      TDiagnostics *diag,
+                                      const TSourceLoc &line)
 {
     TConstantUnion returnValue;
-    ASSERT(type == constant.type);
-    switch (type)
+    ASSERT(lhs.type == EbtInt || lhs.type == EbtUInt);
+    ASSERT(rhs.type == EbtInt || rhs.type == EbtUInt);
+    if ((rhs.type == EbtInt && (rhs.iConst < 0 || rhs.iConst > 31)) ||
+        (rhs.type == EbtUInt && rhs.uConst > 31u))
+    {
+        diag->error(line, "Undefined shift (operand out of range)", ">>", "");
+        switch (lhs.type)
+        {
+            case EbtInt:
+                returnValue.setIConst(0);
+                break;
+            case EbtUInt:
+                returnValue.setUConst(0u);
+                break;
+            default:
+                UNREACHABLE();
+        }
+        return returnValue;
+    }
+
+    switch (lhs.type)
     {
         case EbtInt:
-            returnValue.setIConst(iConst >> constant.iConst);
+        {
+            unsigned int shiftOffset = 0;
+            switch (rhs.type)
+            {
+                case EbtInt:
+                    shiftOffset = static_cast<unsigned int>(rhs.iConst);
+                    break;
+                case EbtUInt:
+                    shiftOffset = rhs.uConst;
+                    break;
+                default:
+                    UNREACHABLE();
+            }
+            if (shiftOffset > 0)
+            {
+                
+                
+                
+                int lhsSafe        = lhs.iConst;
+                if (lhsSafe == std::numeric_limits<int>::min())
+                {
+                    
+                    
+                    
+                    lhsSafe = -0x40000000;
+                    --shiftOffset;
+                }
+                if (shiftOffset > 0)
+                {
+                    bool extendSignBit = false;
+                    if (lhsSafe < 0)
+                    {
+                        extendSignBit = true;
+                        
+                        lhsSafe &= 0x7fffffff;
+                        ASSERT(lhsSafe > 0);
+                    }
+                    returnValue.setIConst(lhsSafe >> shiftOffset);
+
+                    
+                    if (extendSignBit)
+                    {
+                        int extendedSignBit = static_cast<int>(0xffffffffu << (31 - shiftOffset));
+                        returnValue.setIConst(returnValue.getIConst() | extendedSignBit);
+                    }
+                }
+                else
+                {
+                    returnValue.setIConst(lhsSafe);
+                }
+            }
+            else
+            {
+                returnValue.setIConst(lhs.iConst);
+            }
             break;
+        }
         case EbtUInt:
-            returnValue.setUConst(uConst >> constant.uConst);
+            switch (rhs.type)
+            {
+                case EbtInt:
+                    returnValue.setUConst(lhs.uConst >> rhs.iConst);
+                    break;
+                case EbtUInt:
+                    returnValue.setUConst(lhs.uConst >> rhs.uConst);
+                    break;
+                default:
+                    UNREACHABLE();
+            }
             break;
+
         default:
             UNREACHABLE();
     }
-
     return returnValue;
 }
 
-TConstantUnion TConstantUnion::operator<<(const TConstantUnion &constant) const
+
+TConstantUnion TConstantUnion::lshift(const TConstantUnion &lhs,
+                                      const TConstantUnion &rhs,
+                                      TDiagnostics *diag,
+                                      const TSourceLoc &line)
 {
     TConstantUnion returnValue;
-    
-    
-    
-    ASSERT(constant.type == EbtInt || constant.type == EbtUInt);
-    switch (type)
+    ASSERT(lhs.type == EbtInt || lhs.type == EbtUInt);
+    ASSERT(rhs.type == EbtInt || rhs.type == EbtUInt);
+    if ((rhs.type == EbtInt && (rhs.iConst < 0 || rhs.iConst > 31)) ||
+        (rhs.type == EbtUInt && rhs.uConst > 31u))
+    {
+        diag->error(line, "Undefined shift (operand out of range)", "<<", "");
+        switch (lhs.type)
+        {
+            case EbtInt:
+                returnValue.setIConst(0);
+                break;
+            case EbtUInt:
+                returnValue.setUConst(0u);
+                break;
+            default:
+                UNREACHABLE();
+        }
+        return returnValue;
+    }
+
+    switch (lhs.type)
     {
         case EbtInt:
-            returnValue.setIConst(iConst << constant.iConst);
+            switch (rhs.type)
+            {
+                
+                
+                
+                case EbtInt:
+                    returnValue.setIConst(
+                        static_cast<int>(static_cast<uint32_t>(lhs.iConst) << rhs.iConst));
+                    break;
+                case EbtUInt:
+                    returnValue.setIConst(
+                        static_cast<int>(static_cast<uint32_t>(lhs.iConst) << rhs.uConst));
+                    break;
+                default:
+                    UNREACHABLE();
+            }
             break;
+
         case EbtUInt:
-            returnValue.setUConst(uConst << constant.uConst);
+            switch (rhs.type)
+            {
+                case EbtInt:
+                    returnValue.setUConst(lhs.uConst << rhs.iConst);
+                    break;
+                case EbtUInt:
+                    returnValue.setUConst(lhs.uConst << rhs.uConst);
+                    break;
+                default:
+                    UNREACHABLE();
+            }
             break;
+
         default:
             UNREACHABLE();
     }
-
     return returnValue;
 }
 
@@ -441,3 +638,5 @@ TConstantUnion TConstantUnion::operator||(const TConstantUnion &constant) const
 
     return returnValue;
 }
+
+}  

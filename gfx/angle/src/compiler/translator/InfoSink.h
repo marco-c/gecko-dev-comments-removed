@@ -11,6 +11,9 @@
 #include <stdlib.h>
 #include "compiler/translator/Common.h"
 
+namespace sh
+{
+
 
 inline float fractionalPart(float f) {
   float intPart = 0.0f;
@@ -112,5 +115,7 @@ public:
     TInfoSinkBase debug;
     TInfoSinkBase obj;
 };
+
+}  
 
 #endif 

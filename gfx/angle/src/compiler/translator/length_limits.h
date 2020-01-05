@@ -16,6 +16,11 @@
 
 
 
+namespace sh
+{
+
 size_t GetGlobalMaxTokenSize(ShShaderSpec spec);
+
+}  
 
 #endif 

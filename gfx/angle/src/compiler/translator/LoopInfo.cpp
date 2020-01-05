@@ -6,6 +6,9 @@
 
 #include "compiler/translator/LoopInfo.h"
 
+namespace sh
+{
+
 namespace
 {
 
@@ -93,8 +96,7 @@ void TLoopIndexInfo::fillInfo(TIntermLoop *node)
 
     
     
-    TIntermSequence *declSeq =
-        node->getInit()->getAsAggregate()->getSequence();
+    TIntermSequence *declSeq = node->getInit()->getAsDeclarationNode()->getSequence();
     TIntermBinary *declInit = (*declSeq)[0]->getAsBinaryNode();
     TIntermSymbol *symbol = declInit->getLeft()->getAsSymbolNode();
 
@@ -209,3 +211,4 @@ void TLoopStack::pop()
     pop_back();
 }
 
+}  

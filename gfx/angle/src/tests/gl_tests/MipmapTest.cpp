@@ -919,6 +919,8 @@ TEST_P(MipmapTestES3, GenerateMipmapBaseLevel)
 
     glBindTexture(GL_TEXTURE_2D, mTexture);
 
+    ASSERT(getWindowWidth() == getWindowHeight());
+
     
     std::vector<GLColor> pixelsBlue(getWindowWidth() * getWindowHeight(), GLColor::blue);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, getWindowWidth(), getWindowHeight(), 0, GL_RGBA,
@@ -948,14 +950,6 @@ TEST_P(MipmapTestES3, GenerateMipmapBaseLevel)
     
     clearAndDrawQuad(m2DProgram, getWindowWidth() / 4, getWindowHeight() / 4);
     EXPECT_PIXEL_COLOR_EQ(getWindowWidth() / 8, getWindowHeight() / 8, GLColor::red);
-
-    if (IsNVIDIA() && IsOpenGL())
-    {
-        
-        
-        std::cout << "Test partially skipped on NVIDIA OpenGL." << std::endl;
-        return;
-    }
 
     
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);

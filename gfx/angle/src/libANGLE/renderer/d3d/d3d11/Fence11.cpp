@@ -6,6 +6,7 @@
 
 
 
+
 #include "libANGLE/renderer/d3d/d3d11/Fence11.h"
 #include "libANGLE/renderer/d3d/d3d11/Renderer11.h"
 
@@ -20,19 +21,20 @@ static const int kDeviceLostCheckPeriod = 64;
 
 
 
-template<class FenceClass>
+template <class FenceClass>
 gl::Error FenceSetHelper(FenceClass *fence)
 {
     if (!fence->mQuery)
     {
         D3D11_QUERY_DESC queryDesc;
-        queryDesc.Query = D3D11_QUERY_EVENT;
+        queryDesc.Query     = D3D11_QUERY_EVENT;
         queryDesc.MiscFlags = 0;
 
         HRESULT result = fence->mRenderer->getDevice()->CreateQuery(&queryDesc, &fence->mQuery);
         if (FAILED(result))
         {
-            return gl::Error(GL_OUT_OF_MEMORY, "Failed to create event query, result: 0x%X.", result);
+            return gl::Error(GL_OUT_OF_MEMORY, "Failed to create event query, result: 0x%X.",
+                             result);
         }
     }
 
@@ -46,7 +48,8 @@ gl::Error FenceTestHelper(FenceClass *fence, bool flushCommandBuffer, GLboolean 
     ASSERT(fence->mQuery);
 
     UINT getDataFlags = (flushCommandBuffer ? 0 : D3D11_ASYNC_GETDATA_DONOTFLUSH);
-    HRESULT result = fence->mRenderer->getDeviceContext()->GetData(fence->mQuery, NULL, 0, getDataFlags);
+    HRESULT result =
+        fence->mRenderer->getDeviceContext()->GetData(fence->mQuery, NULL, 0, getDataFlags);
 
     if (FAILED(result))
     {
@@ -62,10 +65,7 @@ gl::Error FenceTestHelper(FenceClass *fence, bool flushCommandBuffer, GLboolean 
 
 
 
-FenceNV11::FenceNV11(Renderer11 *renderer)
-    : FenceNVImpl(),
-      mRenderer(renderer),
-      mQuery(NULL)
+FenceNV11::FenceNV11(Renderer11 *renderer) : FenceNVImpl(), mRenderer(renderer), mQuery(NULL)
 {
 }
 
@@ -92,11 +92,7 @@ gl::Error FenceNV11::finish()
     while (finished != GL_TRUE)
     {
         loopCount++;
-        gl::Error error = FenceTestHelper(this, true, &finished);
-        if (error.isError())
-        {
-            return error;
-        }
+        ANGLE_TRY(FenceTestHelper(this, true, &finished));
 
         if (loopCount % kDeviceLostCheckPeriod == 0 && mRenderer->testDeviceLost())
         {
@@ -107,7 +103,7 @@ gl::Error FenceNV11::finish()
         ScheduleYield();
     }
 
-    return gl::Error(GL_NO_ERROR);
+    return gl::NoError();
 }
 
 
@@ -125,14 +121,10 @@ gl::Error FenceNV11::finish()
 
 
 
-FenceSync11::FenceSync11(Renderer11 *renderer)
-    : FenceSyncImpl(),
-      mRenderer(renderer),
-      mQuery(NULL)
+FenceSync11::FenceSync11(Renderer11 *renderer) : FenceSyncImpl(), mRenderer(renderer), mQuery(NULL)
 {
     LARGE_INTEGER counterFreqency = {};
-    BOOL success = QueryPerformanceFrequency(&counterFreqency);
-    UNUSED_ASSERTION_VARIABLE(success);
+    BOOL success                  = QueryPerformanceFrequency(&counterFreqency);
     ASSERT(success);
 
     mCounterFrequency = counterFreqency.QuadPart;
@@ -156,7 +148,7 @@ gl::Error FenceSync11::clientWait(GLbitfield flags, GLuint64 timeout, GLenum *ou
     bool flushCommandBuffer = ((flags & GL_SYNC_FLUSH_COMMANDS_BIT) != 0);
 
     GLboolean result = GL_FALSE;
-    gl::Error error = FenceTestHelper(this, flushCommandBuffer, &result);
+    gl::Error error  = FenceTestHelper(this, flushCommandBuffer, &result);
     if (error.isError())
     {
         *outResult = GL_WAIT_FAILED;
@@ -176,12 +168,11 @@ gl::Error FenceSync11::clientWait(GLbitfield flags, GLuint64 timeout, GLenum *ou
     }
 
     LARGE_INTEGER currentCounter = {};
-    BOOL success = QueryPerformanceCounter(&currentCounter);
-    UNUSED_ASSERTION_VARIABLE(success);
+    BOOL success                 = QueryPerformanceCounter(&currentCounter);
     ASSERT(success);
 
     LONGLONG timeoutInSeconds = static_cast<LONGLONG>(timeout) * static_cast<LONGLONG>(1000000ll);
-    LONGLONG endCounter = currentCounter.QuadPart + mCounterFrequency * timeoutInSeconds;
+    LONGLONG endCounter       = currentCounter.QuadPart + mCounterFrequency * timeoutInSeconds;
 
     int loopCount = 0;
     while (currentCounter.QuadPart < endCounter && !result)
@@ -189,7 +180,6 @@ gl::Error FenceSync11::clientWait(GLbitfield flags, GLuint64 timeout, GLenum *ou
         loopCount++;
         ScheduleYield();
         success = QueryPerformanceCounter(&currentCounter);
-        UNUSED_ASSERTION_VARIABLE(success);
         ASSERT(success);
 
         error = FenceTestHelper(this, flushCommandBuffer, &result);
@@ -230,7 +220,7 @@ gl::Error FenceSync11::serverWait(GLbitfield flags, GLuint64 timeout)
 gl::Error FenceSync11::getStatus(GLint *outResult)
 {
     GLboolean result = GL_FALSE;
-    gl::Error error = FenceTestHelper(this, false, &result);
+    gl::Error error  = FenceTestHelper(this, false, &result);
     if (error.isError())
     {
         
@@ -244,4 +234,4 @@ gl::Error FenceSync11::getStatus(GLint *outResult)
     return gl::Error(GL_NO_ERROR);
 }
 
-} 
+}  

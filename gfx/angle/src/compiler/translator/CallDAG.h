@@ -16,6 +16,8 @@
 #include "compiler/translator/IntermNode.h"
 #include "compiler/translator/VariableInfo.h"
 
+namespace sh
+{
 
 
 
@@ -41,7 +43,7 @@ class CallDAG : angle::NonCopyable
     struct Record
     {
         std::string name;
-        TIntermAggregate *node;
+        TIntermFunctionDefinition *node;
         std::vector<int> callees;
     };
 
@@ -57,7 +59,7 @@ class CallDAG : angle::NonCopyable
     InitResult init(TIntermNode *root, TInfoSinkBase *info);
 
     
-    size_t findIndex(const TIntermAggregate *function) const;
+    size_t findIndex(const TFunctionSymbolInfo *functionInfo) const;
 
     const Record &getRecordFromIndex(size_t index) const;
     const Record &getRecord(const TIntermAggregate *function) const;
@@ -71,5 +73,7 @@ class CallDAG : angle::NonCopyable
 
     class CallDAGCreator;
 };
+
+}  
 
 #endif  

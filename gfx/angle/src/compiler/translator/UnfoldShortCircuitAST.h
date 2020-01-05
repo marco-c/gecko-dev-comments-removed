@@ -13,6 +13,9 @@
 #include "common/angleutils.h"
 #include "compiler/translator/IntermNode.h"
 
+namespace sh
+{
+
 
 
 
@@ -27,5 +30,7 @@ class UnfoldShortCircuitAST : public TIntermTraverser
 
     bool visitBinary(Visit visit, TIntermBinary *) override;
 };
+
+}  
 
 #endif  

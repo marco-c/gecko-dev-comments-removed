@@ -21,6 +21,7 @@
 #include "libANGLE/Sampler.h"
 #include "libANGLE/Texture.h"
 #include "libANGLE/TransformFeedback.h"
+#include "libANGLE/Version.h"
 #include "libANGLE/VertexAttribute.h"
 #include "libANGLE/angletypes.h"
 
@@ -41,8 +42,9 @@ class State : angle::NonCopyable
 
     void initialize(const Caps &caps,
                     const Extensions &extensions,
-                    GLuint clientVersion,
-                    bool debug);
+                    const Version &clientVersion,
+                    bool debug,
+                    bool bindGeneratesResource);
     void reset();
 
     
@@ -146,6 +148,9 @@ class State : angle::NonCopyable
     
     void setGenerateMipmapHint(GLenum hint);
     void setFragmentShaderDerivativeHint(GLenum hint);
+
+    
+    bool isBindGeneratesResourceEnabled() const;
 
     
     void setViewportParams(GLint x, GLint y, GLsizei width, GLsizei height);
@@ -287,6 +292,10 @@ class State : angle::NonCopyable
     GLuint getPathStencilMask() const;
 
     
+    void setFramebufferSRGB(bool sRGB);
+    bool getFramebufferSRGB() const;
+
+    
     void getBooleanv(GLenum pname, GLboolean *params);
     void getFloatv(GLenum pname, GLfloat *params);
     void getIntegerv(const ContextState &data, GLenum pname, GLint *params);
@@ -359,6 +368,7 @@ class State : angle::NonCopyable
         DIRTY_BIT_PATH_RENDERING_MATRIX_MV,    
         DIRTY_BIT_PATH_RENDERING_MATRIX_PROJ,  
         DIRTY_BIT_PATH_RENDERING_STENCIL_STATE,
+        DIRTY_BIT_FRAMEBUFFER_SRGB,  
         DIRTY_BIT_CURRENT_VALUE_0,
         DIRTY_BIT_CURRENT_VALUE_MAX = DIRTY_BIT_CURRENT_VALUE_0 + MAX_VERTEX_ATTRIBS,
         DIRTY_BIT_INVALID           = DIRTY_BIT_CURRENT_VALUE_MAX,
@@ -418,6 +428,8 @@ class State : angle::NonCopyable
     GLenum mGenerateMipmapHint;
     GLenum mFragmentShaderDerivativeHint;
 
+    bool mBindGeneratesResource;
+
     Rectangle mViewport;
     float mNearZ;
     float mFarZ;
@@ -472,6 +484,9 @@ class State : angle::NonCopyable
     GLenum mPathStencilFunc;
     GLint mPathStencilRef;
     GLuint mPathStencilMask;
+
+    
+    bool mFramebufferSRGB;
 
     DirtyBits mDirtyBits;
     DirtyObjects mDirtyObjects;

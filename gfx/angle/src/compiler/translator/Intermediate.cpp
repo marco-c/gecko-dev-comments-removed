@@ -15,6 +15,9 @@
 #include "compiler/translator/Intermediate.h"
 #include "compiler/translator/SymbolTable.h"
 
+namespace sh
+{
+
 
 
 
@@ -61,10 +64,6 @@ TIntermTyped *TIntermediate::addIndex(TOperator op,
 
     return node;
 }
-
-
-
-
 
 
 
@@ -142,11 +141,10 @@ TIntermAggregate *TIntermediate::growAggregate(
 
 
 
-TIntermAggregate *TIntermediate::makeAggregate(
-    TIntermNode *node, const TSourceLoc &line)
+TIntermAggregate *TIntermediate::MakeAggregate(TIntermNode *node, const TSourceLoc &line)
 {
-    if (node == NULL)
-        return NULL;
+    if (node == nullptr)
+        return nullptr;
 
     TIntermAggregate *aggNode = new TIntermAggregate;
     aggNode->getSequence()->push_back(node);
@@ -159,17 +157,18 @@ TIntermAggregate *TIntermediate::makeAggregate(
 
 
 
-TIntermAggregate *TIntermediate::ensureSequence(TIntermNode *node)
+TIntermBlock *TIntermediate::EnsureBlock(TIntermNode *node)
 {
     if (node == nullptr)
         return nullptr;
-    TIntermAggregate *aggNode = node->getAsAggregate();
-    if (aggNode != nullptr && aggNode->getOp() == EOpSequence)
-        return aggNode;
+    TIntermBlock *blockNode = node->getAsBlock();
+    if (blockNode != nullptr)
+        return blockNode;
 
-    aggNode = makeAggregate(node, node->getLine());
-    aggNode->setOp(EOpSequence);
-    return aggNode;
+    blockNode = new TIntermBlock();
+    blockNode->setLine(node->getLine());
+    blockNode->getSequence()->push_back(node);
+    return blockNode;
 }
 
 
@@ -177,50 +176,36 @@ TIntermAggregate *TIntermediate::ensureSequence(TIntermNode *node)
 
 
 
-
-
-TIntermNode *TIntermediate::addSelection(
-    TIntermTyped *cond, TIntermNodePair nodePair, const TSourceLoc &line)
+TIntermNode *TIntermediate::addIfElse(TIntermTyped *cond,
+                                      TIntermNodePair nodePair,
+                                      const TSourceLoc &line)
 {
-    
-    
-    
     
 
     if (cond->getAsConstantUnion())
     {
         if (cond->getAsConstantUnion()->getBConst(0) == true)
         {
-            return nodePair.node1 ? setAggregateOperator(
-                nodePair.node1, EOpSequence, nodePair.node1->getLine()) : NULL;
+            return EnsureBlock(nodePair.node1);
         }
         else
         {
-            return nodePair.node2 ? setAggregateOperator(
-                nodePair.node2, EOpSequence, nodePair.node2->getLine()) : NULL;
+            return EnsureBlock(nodePair.node2);
         }
     }
 
-    TIntermSelection *node = new TIntermSelection(
-        cond, ensureSequence(nodePair.node1), ensureSequence(nodePair.node2));
+    TIntermIfElse *node =
+        new TIntermIfElse(cond, EnsureBlock(nodePair.node1), EnsureBlock(nodePair.node2));
     node->setLine(line);
 
     return node;
 }
 
-TIntermTyped *TIntermediate::addComma(TIntermTyped *left,
+TIntermTyped *TIntermediate::AddComma(TIntermTyped *left,
                                       TIntermTyped *right,
                                       const TSourceLoc &line,
                                       int shaderVersion)
 {
-    TQualifier resultQualifier = EvqConst;
-    
-    if (shaderVersion >= 300 || left->getQualifier() != EvqConst ||
-        right->getQualifier() != EvqConst)
-    {
-        resultQualifier = EvqTemporary;
-    }
-
     TIntermTyped *commaNode = nullptr;
     if (!left->hasSideEffects())
     {
@@ -228,10 +213,10 @@ TIntermTyped *TIntermediate::addComma(TIntermTyped *left,
     }
     else
     {
-        commaNode = growAggregate(left, right, line);
-        commaNode->getAsAggregate()->setOp(EOpComma);
-        commaNode->setType(right->getType());
+        commaNode = new TIntermBinary(EOpComma, left, right);
+        commaNode->setLine(line);
     }
+    TQualifier resultQualifier = TIntermBinary::GetCommaQualifier(shaderVersion, left, right);
     commaNode->getTypePointer()->setQualifier(resultQualifier);
     return commaNode;
 }
@@ -272,8 +257,9 @@ TIntermTyped *TIntermediate::AddTernarySelection(TIntermTyped *cond,
     return node;
 }
 
-TIntermSwitch *TIntermediate::addSwitch(
-    TIntermTyped *init, TIntermAggregate *statementList, const TSourceLoc &line)
+TIntermSwitch *TIntermediate::addSwitch(TIntermTyped *init,
+                                        TIntermBlock *statementList,
+                                        const TSourceLoc &line)
 {
     TIntermSwitch *node = new TIntermSwitch(init, statementList);
     node->setLine(line);
@@ -306,25 +292,22 @@ TIntermConstantUnion *TIntermediate::addConstantUnion(const TConstantUnion *cons
     return node;
 }
 
-TIntermTyped *TIntermediate::addSwizzle(
-    TVectorFields &fields, const TSourceLoc &line)
+TIntermTyped *TIntermediate::AddSwizzle(TIntermTyped *baseExpression,
+                                        const TVectorFields &fields,
+                                        const TSourceLoc &dotLocation)
 {
-
-    TIntermAggregate *node = new TIntermAggregate(EOpSequence);
-    node->getTypePointer()->setQualifier(EvqConst);
-
-    node->setLine(line);
-    TIntermConstantUnion *constIntNode;
-    TIntermSequence *sequenceVector = node->getSequence();
-    TConstantUnion *unionArray;
-
-    for (int i = 0; i < fields.num; i++)
+    TVector<int> fieldsVector;
+    for (int i = 0; i < fields.num; ++i)
     {
-        unionArray = new TConstantUnion[1];
-        unionArray->setIConst(fields.offsets[i]);
-        constIntNode = addConstantUnion(
-            unionArray, TType(EbtInt, EbpUndefined, EvqConst), line);
-        sequenceVector->push_back(constIntNode);
+        fieldsVector.push_back(fields.offsets[i]);
+    }
+    TIntermSwizzle *node = new TIntermSwizzle(baseExpression, fieldsVector);
+    node->setLine(dotLocation);
+
+    TIntermTyped *folded = node->fold();
+    if (folded)
+    {
+        return folded;
     }
 
     return node;
@@ -337,7 +320,7 @@ TIntermNode *TIntermediate::addLoop(
     TLoopType type, TIntermNode *init, TIntermTyped *cond, TIntermTyped *expr,
     TIntermNode *body, const TSourceLoc &line)
 {
-    TIntermNode *node = new TIntermLoop(type, init, cond, expr, ensureSequence(body));
+    TIntermNode *node = new TIntermLoop(type, init, cond, expr, EnsureBlock(body));
     node->setLine(line);
 
     return node;
@@ -359,33 +342,6 @@ TIntermBranch* TIntermediate::addBranch(
     node->setLine(line);
 
     return node;
-}
-
-
-
-
-
-TIntermAggregate *TIntermediate::PostProcess(TIntermNode *root)
-{
-    if (root == nullptr)
-        return nullptr;
-
-    
-    
-    
-    TIntermAggregate *aggRoot = root->getAsAggregate();
-    if (aggRoot != nullptr && aggRoot->getOp() == EOpNull)
-    {
-        aggRoot->setOp(EOpSequence);
-    }
-    else if (aggRoot == nullptr || aggRoot->getOp() != EOpSequence)
-    {
-        aggRoot = new TIntermAggregate(EOpSequence);
-        aggRoot->setLine(root->getLine());
-        aggRoot->getSequence()->push_back(root);
-    }
-
-    return aggRoot;
 }
 
 TIntermTyped *TIntermediate::foldAggregateBuiltIn(TIntermAggregate *aggregate,
@@ -427,3 +383,5 @@ TIntermTyped *TIntermediate::foldAggregateBuiltIn(TIntermAggregate *aggregate,
             return nullptr;
     }
 }
+
+}  

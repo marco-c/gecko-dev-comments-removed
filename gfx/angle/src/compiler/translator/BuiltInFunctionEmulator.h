@@ -10,6 +10,9 @@
 #include "compiler/translator/InfoSink.h"
 #include "compiler/translator/IntermNode.h"
 
+namespace sh
+{
+
 
 
 
@@ -81,5 +84,7 @@ class BuiltInFunctionEmulator
     
     std::vector<FunctionId> mFunctions;
 };
+
+}  
 
 #endif  

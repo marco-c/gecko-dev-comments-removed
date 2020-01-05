@@ -29,7 +29,7 @@ enum InterpolationType
 };
 
 
-COMPILER_EXPORT bool InterpolationTypesMatch(InterpolationType a, InterpolationType b);
+bool InterpolationTypesMatch(InterpolationType a, InterpolationType b);
 
 
 enum BlockLayoutType
@@ -43,7 +43,7 @@ enum BlockLayoutType
 
 
 
-struct COMPILER_EXPORT ShaderVariable
+struct ShaderVariable
 {
     ShaderVariable();
     ShaderVariable(GLenum typeIn, unsigned int arraySizeIn);
@@ -92,7 +92,7 @@ struct COMPILER_EXPORT ShaderVariable
     }
 };
 
-struct COMPILER_EXPORT Uniform : public ShaderVariable
+struct Uniform : public ShaderVariable
 {
     Uniform();
     ~Uniform();
@@ -113,7 +113,7 @@ struct COMPILER_EXPORT Uniform : public ShaderVariable
 
 
 
-struct COMPILER_EXPORT InterfaceVariable : public ShaderVariable
+struct InterfaceVariable : public ShaderVariable
 {
     InterfaceVariable();
     ~InterfaceVariable();
@@ -125,7 +125,7 @@ struct COMPILER_EXPORT InterfaceVariable : public ShaderVariable
     int location;
 };
 
-struct COMPILER_EXPORT Attribute : public InterfaceVariable
+struct Attribute : public InterfaceVariable
 {
     Attribute();
     ~Attribute();
@@ -135,7 +135,7 @@ struct COMPILER_EXPORT Attribute : public InterfaceVariable
     bool operator!=(const Attribute &other) const { return !operator==(other); }
 };
 
-struct COMPILER_EXPORT OutputVariable : public InterfaceVariable
+struct OutputVariable : public InterfaceVariable
 {
     OutputVariable();
     ~OutputVariable();
@@ -145,7 +145,7 @@ struct COMPILER_EXPORT OutputVariable : public InterfaceVariable
     bool operator!=(const OutputVariable &other) const { return !operator==(other); }
 };
 
-struct COMPILER_EXPORT InterfaceBlockField : public ShaderVariable
+struct InterfaceBlockField : public ShaderVariable
 {
     InterfaceBlockField();
     ~InterfaceBlockField();
@@ -167,7 +167,7 @@ struct COMPILER_EXPORT InterfaceBlockField : public ShaderVariable
     bool isRowMajorLayout;
 };
 
-struct COMPILER_EXPORT Varying : public ShaderVariable
+struct Varying : public ShaderVariable
 {
     Varying();
     ~Varying();
@@ -193,7 +193,7 @@ struct COMPILER_EXPORT Varying : public ShaderVariable
     bool isInvariant;
 };
 
-struct COMPILER_EXPORT InterfaceBlock
+struct InterfaceBlock
 {
     InterfaceBlock();
     ~InterfaceBlock();
@@ -216,7 +216,7 @@ struct COMPILER_EXPORT InterfaceBlock
     std::vector<InterfaceBlockField> fields;
 };
 
-struct COMPILER_EXPORT WorkGroupSize
+struct WorkGroupSize
 {
     void fill(int fillValue);
     void setLocalSize(int localSizeX, int localSizeY, int localSizeZ);

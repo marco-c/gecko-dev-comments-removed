@@ -85,6 +85,26 @@ struct WorkaroundsD3D
     
     
     bool disableB5G6R5Support = false;
+
+    
+    
+    bool rewriteUnaryMinusOperator = false;
+
+    
+    
+    
+    bool emulateIsnanFloat = false;
+
+    
+    
+    
+    bool callClearTwiceOnSmallTarget = false;
+
+    
+    
+    
+    
+    bool useSystemMemoryForConstantBuffers = false;
 };
 
 }  

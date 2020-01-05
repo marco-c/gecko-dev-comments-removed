@@ -63,7 +63,7 @@ class GLImplFactory : angle::NonCopyable
     virtual RenderbufferImpl *createRenderbuffer() = 0;
 
     
-    virtual BufferImpl *createBuffer() = 0;
+    virtual BufferImpl *createBuffer(const gl::BufferState &state) = 0;
 
     
     virtual VertexArrayImpl *createVertexArray(const gl::VertexArrayState &data) = 0;

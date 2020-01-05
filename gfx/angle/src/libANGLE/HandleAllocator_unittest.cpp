@@ -91,12 +91,24 @@ TEST(HandleAllocatorTest, Reallocation)
 }
 
 
-
 TEST(HandleAllocatorTest, ReserveMaxUintHandle)
 {
     gl::HandleAllocator allocator;
 
     GLuint maxUintHandle = std::numeric_limits<GLuint>::max();
+    allocator.reserve(maxUintHandle);
+
+    GLuint normalHandle = allocator.allocate();
+    EXPECT_EQ(1u, normalHandle);
+}
+
+
+TEST(HandleAllocatorTest, ReserveMaxUintHandle2)
+{
+    gl::HandleAllocator allocator;
+
+    GLuint maxUintHandle = std::numeric_limits<GLuint>::max();
+    allocator.reserve(maxUintHandle - 1);
     allocator.reserve(maxUintHandle);
 
     GLuint normalHandle = allocator.allocate();

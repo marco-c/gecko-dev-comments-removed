@@ -29,8 +29,12 @@
 #include "compiler/translator/InfoSink.h"
 #include "compiler/translator/IntermNode.h"
 
-class ArrayBoundsClamper {
-public:
+namespace sh
+{
+
+class ArrayBoundsClamper
+{
+  public:
     ArrayBoundsClamper();
 
     
@@ -56,5 +60,7 @@ private:
     ShArrayIndexClampingStrategy mClampingStrategy;
     bool mArrayBoundsClampDefinitionNeeded;
 };
+
+}  
 
 #endif 

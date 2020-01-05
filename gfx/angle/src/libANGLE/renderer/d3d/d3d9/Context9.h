@@ -39,7 +39,7 @@ class Context9 : public ContextImpl
     RenderbufferImpl *createRenderbuffer() override;
 
     
-    BufferImpl *createBuffer() override;
+    BufferImpl *createBuffer(const gl::BufferState &state) override;
 
     
     VertexArrayImpl *createVertexArray(const gl::VertexArrayState &data) override;

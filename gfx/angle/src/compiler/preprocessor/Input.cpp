@@ -4,11 +4,12 @@
 
 
 
-#include "Input.h"
+#include "compiler/preprocessor/Input.h"
 
 #include <algorithm>
-#include <cassert>
 #include <cstring>
+
+#include "common/debug.h"
 
 namespace pp
 {
@@ -32,7 +33,7 @@ Input::Input(size_t count, const char *const string[], const int length[]) :
 const char *Input::skipChar()
 {
     
-    assert(mReadLoc.cIndex < mLength[mReadLoc.sIndex]);
+    ASSERT(mReadLoc.cIndex < mLength[mReadLoc.sIndex]);
     ++mReadLoc.cIndex;
     if (mReadLoc.cIndex == mLength[mReadLoc.sIndex])
     {

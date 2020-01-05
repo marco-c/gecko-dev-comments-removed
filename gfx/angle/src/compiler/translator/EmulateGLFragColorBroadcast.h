@@ -15,8 +15,6 @@
 namespace sh
 {
 struct OutputVariable;
-}
-
 class TIntermNode;
 
 
@@ -24,6 +22,7 @@ class TIntermNode;
 
 void EmulateGLFragColorBroadcast(TIntermNode *root,
                                  int maxDrawBuffers,
-                                 std::vector<sh::OutputVariable> *outputVariables);
+                                 std::vector<OutputVariable> *outputVariables);
+}
 
 #endif  

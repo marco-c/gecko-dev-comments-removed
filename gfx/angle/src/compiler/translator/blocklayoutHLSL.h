@@ -24,7 +24,7 @@ namespace sh
 
 
 
-class COMPILER_EXPORT HLSLBlockEncoder : public BlockLayoutEncoder
+class HLSLBlockEncoder : public BlockLayoutEncoder
 {
   public:
     enum HLSLBlockEncoderStrategy
@@ -54,9 +54,8 @@ class COMPILER_EXPORT HLSLBlockEncoder : public BlockLayoutEncoder
 
 
 
-COMPILER_EXPORT unsigned int HLSLVariableRegisterCount(const Varying &variable, bool transposeMatrices);
-COMPILER_EXPORT unsigned int HLSLVariableRegisterCount(const Uniform &variable, ShShaderOutput outputType);
-
+unsigned int HLSLVariableRegisterCount(const Varying &variable, bool transposeMatrices);
+unsigned int HLSLVariableRegisterCount(const Uniform &variable, ShShaderOutput outputType);
 }
 
 #endif 

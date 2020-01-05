@@ -13,12 +13,9 @@
 enum TOperator
 {
     EOpNull,            
-    EOpSequence,        
     EOpFunctionCall,
-    EOpFunction,        
     EOpParameters,      
 
-    EOpDeclaration,
     EOpInvariantDeclaration, 
     EOpPrototype,
 
@@ -76,8 +73,6 @@ enum TOperator
     EOpIndexIndirect,
     EOpIndexDirectStruct,
     EOpIndexDirectInterfaceBlock,
-
-    EOpVectorSwizzle,
 
     
     

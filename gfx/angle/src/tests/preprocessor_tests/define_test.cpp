@@ -939,3 +939,35 @@ TEST_F(DefineTest, NegativeShiftInLineDirective)
     EXPECT_CALL(mDiagnostics, print(pp::Diagnostics::PP_INVALID_LINE_NUMBER, _, _)).Times(2);
     preprocess(input, expected);
 }
+
+
+TEST_F(DefineTest, UndefineInInvocation)
+{
+    const char *input =
+        "#define G(a, b) a b\n"
+        "G(\n"
+        "#undef G\n"
+        "1, 2)\n";
+    const char *expected = "\n\n\n1 2\n";
+
+    EXPECT_CALL(mDiagnostics, print(pp::Diagnostics::PP_MACRO_UNDEFINED_WHILE_INVOKED,
+                                    pp::SourceLocation(0, 3), _));
+
+    preprocess(input, expected);
+}
+
+
+TEST_F(DefineTest, UndefineInInvocationPreLParen)
+{
+    const char *input =
+        "#define G(a, b) a b\n"
+        "G\n"
+        "#undef G\n"
+        "(1, 2)\n";
+    const char *expected = "\n\n\n1 2\n";
+
+    EXPECT_CALL(mDiagnostics, print(pp::Diagnostics::PP_MACRO_UNDEFINED_WHILE_INVOKED,
+                                    pp::SourceLocation(0, 3), _));
+
+    preprocess(input, expected);
+}

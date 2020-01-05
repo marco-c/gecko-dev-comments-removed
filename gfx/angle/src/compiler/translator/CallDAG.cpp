@@ -11,6 +11,9 @@
 #include "compiler/translator/CallDAG.h"
 #include "compiler/translator/InfoSink.h"
 
+namespace sh
+{
+
 
 
 class CallDAG::CallDAGCreator : public TIntermTraverser
@@ -44,6 +47,7 @@ class CallDAG::CallDAGCreator : public TIntermTraverser
                 skipped++;
             }
         }
+
         ASSERT(mFunctions.size() == mCurrentIndex + skipped);
         return INITDAG_SUCCESS;
     }
@@ -75,7 +79,8 @@ class CallDAG::CallDAGCreator : public TIntermTraverser
                 record.callees.push_back(static_cast<int>(callee->index));
             }
 
-            (*idToIndex)[data.node->getFunctionId()] = static_cast<int>(data.index);
+            (*idToIndex)[data.node->getFunctionSymbolInfo()->getId()] =
+                static_cast<int>(data.index);
         }
     }
 
@@ -92,12 +97,38 @@ class CallDAG::CallDAGCreator : public TIntermTraverser
         }
 
         std::set<CreatorFunctionData*> callees;
-        TIntermAggregate *node;
+        TIntermFunctionDefinition *node;
         TString name;
         size_t index;
         bool indexAssigned;
         bool visiting;
     };
+
+    bool visitFunctionDefinition(Visit visit, TIntermFunctionDefinition *node) override
+    {
+        
+        if (visit == PreVisit)
+        {
+            auto it = mFunctions.find(node->getFunctionSymbolInfo()->getName());
+
+            if (it == mFunctions.end())
+            {
+                mCurrentFunction = &mFunctions[node->getFunctionSymbolInfo()->getName()];
+            }
+            else
+            {
+                mCurrentFunction = &it->second;
+            }
+
+            mCurrentFunction->node = node;
+            mCurrentFunction->name = node->getFunctionSymbolInfo()->getName();
+        }
+        else if (visit == PostVisit)
+        {
+            mCurrentFunction = nullptr;
+        }
+        return true;
+    }
 
     
     bool visitAggregate(Visit visit, TIntermAggregate *node) override
@@ -108,36 +139,10 @@ class CallDAG::CallDAGCreator : public TIntermTraverser
             if (visit == PreVisit)
             {
                 
-                auto& record = mFunctions[node->getName()];
-                record.name = node->getName();
+                auto &record = mFunctions[node->getFunctionSymbolInfo()->getName()];
+                record.name  = node->getFunctionSymbolInfo()->getName();
             }
             break;
-          case EOpFunction:
-            {
-                
-                if (visit == PreVisit)
-                {
-                    auto it = mFunctions.find(node->getName());
-
-                    if (it == mFunctions.end())
-                    {
-                        mCurrentFunction = &mFunctions[node->getName()];
-                    }
-                    else
-                    {
-                        mCurrentFunction = &it->second;
-                    }
-
-                    mCurrentFunction->node = node;
-                    mCurrentFunction->name = node->getName();
-
-                }
-                else if (visit == PostVisit)
-                {
-                    mCurrentFunction = nullptr;
-                }
-                break;
-            }
           case EOpFunctionCall:
             {
                 
@@ -146,7 +151,7 @@ class CallDAG::CallDAGCreator : public TIntermTraverser
                     
                     if (node->isUserDefined())
                     {
-                        auto it = mFunctions.find(node->getName());
+                        auto it = mFunctions.find(node->getFunctionSymbolInfo()->getName());
                         ASSERT(it != mFunctions.end());
 
                         
@@ -165,52 +170,102 @@ class CallDAG::CallDAGCreator : public TIntermTraverser
     }
 
     
-    InitResult assignIndicesInternal(CreatorFunctionData *function)
+    InitResult assignIndicesInternal(CreatorFunctionData *root)
     {
-        ASSERT(function);
+        
+        
+        
+        
 
-        if (!function->node)
-        {
-            *mCreationInfo << "Undefined function '" << function->name
-                           << ")' used in the following call chain:";
-            return INITDAG_UNDEFINED;
-        }
+        ASSERT(root);
 
-        if (function->indexAssigned)
+        if (root->indexAssigned)
         {
             return INITDAG_SUCCESS;
         }
 
-        if (function->visiting)
-        {
-            if (mCreationInfo)
-            {
-                *mCreationInfo << "Recursive function call in the following call chain:" << function->name;
-            }
-            return INITDAG_RECURSION;
-        }
-        function->visiting = true;
+        
+        
+        
+        
+        
+        
+        
+        
+        TVector<CreatorFunctionData *> functionsToProcess;
+        functionsToProcess.push_back(root);
 
-        for (auto &callee : function->callees)
+        InitResult result = INITDAG_SUCCESS;
+
+        while (!functionsToProcess.empty())
         {
-            InitResult result = assignIndicesInternal(callee);
+            CreatorFunctionData *function = functionsToProcess.back();
+
+            if (function->visiting)
+            {
+                function->visiting      = false;
+                function->index         = mCurrentIndex++;
+                function->indexAssigned = true;
+
+                functionsToProcess.pop_back();
+                continue;
+            }
+
+            if (!function->node)
+            {
+                *mCreationInfo << "Undefined function '" << function->name
+                               << ")' used in the following call chain:";
+                result = INITDAG_UNDEFINED;
+                break;
+            }
+
+            if (function->indexAssigned)
+            {
+                functionsToProcess.pop_back();
+                continue;
+            }
+
+            function->visiting = true;
+
+            for (auto callee : function->callees)
+            {
+                functionsToProcess.push_back(callee);
+
+                
+                
+                if (callee->visiting)
+                {
+                    *mCreationInfo << "Recursive function call in the following call chain:";
+                    result = INITDAG_RECURSION;
+                    break;
+                }
+            }
+
             if (result != INITDAG_SUCCESS)
             {
-                
-                
-                if (mCreationInfo)
-                {
-                    *mCreationInfo << " <- " << function->name << ")";
-                }
-                return result;
+                break;
             }
         }
 
-        function->index = mCurrentIndex++;
-        function->indexAssigned = true;
+        
+        if (result != INITDAG_SUCCESS)
+        {
+            bool first = true;
+            for (auto function : functionsToProcess)
+            {
+                if (function->visiting)
+                {
+                    if (!first)
+                    {
+                        *mCreationInfo << " -> ";
+                    }
+                    *mCreationInfo << function->name << ")";
+                    first = false;
+                }
+            }
+        }
 
-        function->visiting = false;
-        return INITDAG_SUCCESS;
+        return result;
     }
 
     TInfoSinkBase *mCreationInfo;
@@ -232,13 +287,9 @@ CallDAG::~CallDAG()
 
 const size_t CallDAG::InvalidIndex = std::numeric_limits<size_t>::max();
 
-size_t CallDAG::findIndex(const TIntermAggregate *function) const
+size_t CallDAG::findIndex(const TFunctionSymbolInfo *functionInfo) const
 {
-    TOperator op = function->getOp();
-    ASSERT(op == EOpPrototype || op == EOpFunction || op == EOpFunctionCall);
-    UNUSED_ASSERTION_VARIABLE(op);
-
-    auto it = mFunctionIdToIndex.find(function->getFunctionId());
+    auto it = mFunctionIdToIndex.find(functionInfo->getId());
 
     if (it == mFunctionIdToIndex.end())
     {
@@ -258,7 +309,7 @@ const CallDAG::Record &CallDAG::getRecordFromIndex(size_t index) const
 
 const CallDAG::Record &CallDAG::getRecord(const TIntermAggregate *function) const
 {
-    size_t index = findIndex(function);
+    size_t index = findIndex(function->getFunctionSymbolInfo());
     ASSERT(index != InvalidIndex && index < mRecords.size());
     return mRecords[index];
 }
@@ -276,6 +327,8 @@ void CallDAG::clear()
 
 CallDAG::InitResult CallDAG::init(TIntermNode *root, TInfoSinkBase *info)
 {
+    ASSERT(info);
+
     CallDAGCreator creator(info);
 
     
@@ -291,3 +344,5 @@ CallDAG::InitResult CallDAG::init(TIntermNode *root, TInfoSinkBase *info)
     creator.fillDataStructures(&mRecords, &mFunctionIdToIndex);
     return INITDAG_SUCCESS;
 }
+
+}  

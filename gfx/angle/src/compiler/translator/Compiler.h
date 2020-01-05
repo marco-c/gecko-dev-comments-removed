@@ -24,6 +24,9 @@
 #include "compiler/translator/VariableInfo.h"
 #include "third_party/compiler/ArrayBoundsClamper.h"
 
+namespace sh
+{
+
 class TCompiler;
 #ifdef ANGLE_ENABLE_HLSL
 class TranslatorHLSL;
@@ -38,6 +41,16 @@ bool IsWebGLBasedSpec(ShShaderSpec spec);
 
 
 bool IsGLSL130OrNewer(ShShaderOutput output);
+bool IsGLSL420OrNewer(ShShaderOutput output);
+bool IsGLSL410OrOlder(ShShaderOutput output);
+
+
+
+
+bool RemoveInvariant(sh::GLenum shaderType,
+                     int shaderVersion,
+                     ShShaderOutput outputType,
+                     ShCompileOptions compileOptions);
 
 
 
@@ -73,9 +86,9 @@ class TCompiler : public TShHandleBase
     
     
     
-    TIntermNode *compileTreeForTesting(const char *const shaderStrings[],
-                                       size_t numStrings,
-                                       ShCompileOptions compileOptions);
+    TIntermBlock *compileTreeForTesting(const char *const shaderStrings[],
+                                        size_t numStrings,
+                                        ShCompileOptions compileOptions);
 
     bool compile(const char *const shaderStrings[],
                  size_t numStrings,
@@ -123,8 +136,6 @@ class TCompiler : public TShHandleBase
     
     bool validateLimitations(TIntermNode* root);
     
-    void collectVariables(TIntermNode* root);
-    
     virtual void initBuiltInFunctionEmulator(BuiltInFunctionEmulator *emu,
                                              ShCompileOptions compileOptions){};
     
@@ -132,6 +143,10 @@ class TCompiler : public TShHandleBase
     
     
     bool enforcePackingRestrictions();
+    
+    
+    
+    void useAllMembersInUnusedStandardAndSharedBlocks(TIntermNode *root);
     
     
     void initializeOutputVariables(TIntermNode *root);
@@ -155,20 +170,16 @@ class TCompiler : public TShHandleBase
     ShArrayIndexClampingStrategy getArrayIndexClampingStrategy() const;
     const BuiltInFunctionEmulator& getBuiltInFunctionEmulator() const;
 
-    virtual bool shouldCollectVariables(ShCompileOptions compileOptions)
-    {
-        return (compileOptions & SH_VARIABLES) != 0;
-    }
-
     virtual bool shouldFlattenPragmaStdglInvariantAll() = 0;
+    virtual bool shouldCollectVariables(ShCompileOptions compileOptions);
 
+    bool wereVariablesCollected() const;
     std::vector<sh::Attribute> attributes;
     std::vector<sh::OutputVariable> outputVariables;
     std::vector<sh::Uniform> uniforms;
     std::vector<sh::ShaderVariable> expandedUniforms;
     std::vector<sh::Varying> varyings;
     std::vector<sh::InterfaceBlock> interfaceBlocks;
-    bool variablesCollected;
 
   private:
     
@@ -180,12 +191,17 @@ class TCompiler : public TShHandleBase
     void initSamplerDefaultPrecision(TBasicType samplerType);
 
     
-    class UnusedPredicate;
-    bool pruneUnusedFunctions(TIntermNode *root);
+    void collectVariables(TIntermNode *root);
 
-    TIntermNode *compileTreeImpl(const char *const shaderStrings[],
-                                 size_t numStrings,
-                                 const ShCompileOptions compileOptions);
+    bool variablesCollected;
+
+    
+    class UnusedPredicate;
+    bool pruneUnusedFunctions(TIntermBlock *root);
+
+    TIntermBlock *compileTreeImpl(const char *const shaderStrings[],
+                                  size_t numStrings,
+                                  const ShCompileOptions compileOptions);
 
     sh::GLenum shaderType;
     ShShaderSpec shaderSpec;
@@ -252,5 +268,7 @@ class TCompiler : public TShHandleBase
 TCompiler* ConstructCompiler(
     sh::GLenum type, ShShaderSpec spec, ShShaderOutput output);
 void DeleteCompiler(TCompiler*);
+
+}  
 
 #endif 

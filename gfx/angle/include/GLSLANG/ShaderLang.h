@@ -6,23 +6,6 @@
 #ifndef GLSLANG_SHADERLANG_H_
 #define GLSLANG_SHADERLANG_H_
 
-#if defined(COMPONENT_BUILD) && !defined(ANGLE_TRANSLATOR_STATIC)
-#if defined(_WIN32) || defined(_WIN64)
-
-#if defined(ANGLE_TRANSLATOR_IMPLEMENTATION)
-#define COMPILER_EXPORT __declspec(dllexport)
-#else
-#define COMPILER_EXPORT __declspec(dllimport)
-#endif  
-
-#else  
-#define COMPILER_EXPORT __attribute__((visibility("default")))
-#endif
-
-#else  
-#define COMPILER_EXPORT
-#endif
-
 #include <stddef.h>
 
 #include "KHR/khrplatform.h"
@@ -49,9 +32,10 @@ typedef unsigned int GLenum;
 
 
 
-#define ANGLE_SH_VERSION 161
+#define ANGLE_SH_VERSION 167
 
-typedef enum {
+enum ShShaderSpec
+{
     SH_GLES2_SPEC,
     SH_WEBGL_SPEC,
 
@@ -60,10 +44,9 @@ typedef enum {
 
     SH_GLES3_1_SPEC,
     SH_WEBGL3_SPEC,
+};
 
-} ShShaderSpec;
-
-typedef enum
+enum ShShaderOutput
 {
     
     SH_ESSL_OUTPUT = 0x8B45,
@@ -83,19 +66,14 @@ typedef enum
     SH_GLSL_450_CORE_OUTPUT = 0x8B88,
 
     
-    
-    SH_HLSL_OUTPUT   = 0x8B48,
-    SH_HLSL9_OUTPUT  = 0x8B48,
-    SH_HLSL11_OUTPUT = 0x8B49,
-
-    
     SH_HLSL_3_0_OUTPUT       = 0x8B48,  
     SH_HLSL_4_1_OUTPUT       = 0x8B49,  
     SH_HLSL_4_0_FL9_3_OUTPUT = 0x8B4A   
-} ShShaderOutput;
+};
 
 
-typedef uint64_t ShCompileOptions;
+
+using ShCompileOptions = uint64_t;
 
 const ShCompileOptions SH_VALIDATE                           = 0;
 const ShCompileOptions SH_VALIDATE_LOOP_INDEXING             = UINT64_C(1) << 0;
@@ -200,35 +178,58 @@ const ShCompileOptions SH_REWRITE_TEXELFETCHOFFSET_TO_TEXELFETCH = UINT64_C(1) <
 const ShCompileOptions SH_ADD_AND_TRUE_TO_LOOP_CONDITION = UINT64_C(1) << 25;
 
 
-typedef enum {
-  
-  SH_CLAMP_WITH_CLAMP_INTRINSIC = 1,
 
-  
-  SH_CLAMP_WITH_USER_DEFINED_INT_CLAMP_FUNCTION
-} ShArrayIndexClampingStrategy;
+const ShCompileOptions SH_REWRITE_INTEGER_UNARY_MINUS_OPERATOR = UINT64_C(1) << 26;
 
+
+
+const ShCompileOptions SH_EMULATE_ISNAN_FLOAT_FUNCTION = UINT64_C(1) << 27;
 
 
 
 
 
-COMPILER_EXPORT bool ShInitialize();
 
 
-
-
-COMPILER_EXPORT bool ShFinalize();
-
-
-
-typedef khronos_uint64_t (*ShHashFunction64)(const char*, size_t);
+const ShCompileOptions SH_USE_UNUSED_STANDARD_SHARED_BLOCKS = UINT64_C(1) << 28;
 
 
 
 
 
-typedef struct
+
+
+
+const ShCompileOptions SH_DONT_REMOVE_INVARIANT_FOR_FRAGMENT_INPUT = UINT64_C(1) << 29;
+
+
+
+
+
+
+
+
+const ShCompileOptions SH_REMOVE_INVARIANT_AND_CENTROID_FOR_ESSL3 = UINT64_C(1) << 30;
+
+
+enum ShArrayIndexClampingStrategy
+{
+    
+    SH_CLAMP_WITH_CLAMP_INTRINSIC = 1,
+
+    
+    SH_CLAMP_WITH_USER_DEFINED_INT_CLAMP_FUNCTION
+};
+
+
+
+using ShHashFunction64 = khronos_uint64_t (*)(const char *, size_t);
+
+
+
+
+
+struct ShBuiltInResources
 {
     
     int MaxVertexAttribs;
@@ -360,34 +361,35 @@ typedef struct
 
     
     int MaxAtomicCounterBufferSize;
+};
 
-} ShBuiltInResources;
 
 
 
 
 
 
-COMPILER_EXPORT void ShInitBuiltInResources(ShBuiltInResources *resources);
 
+using ShHandle = void *;
 
 
 
 
 
 
+bool ShInitialize();
 
-typedef void *ShHandle;
 
 
 
+bool ShFinalize();
 
 
 
 
-COMPILER_EXPORT const std::string &ShGetBuiltInResourcesString(const ShHandle handle);
 
 
+void ShInitBuiltInResources(ShBuiltInResources *resources);
 
 
 
@@ -395,17 +397,12 @@ COMPILER_EXPORT const std::string &ShGetBuiltInResourcesString(const ShHandle ha
 
 
 
+const std::string &ShGetBuiltInResourcesString(const ShHandle handle);
 
 
 
 
 
-COMPILER_EXPORT ShHandle ShConstructCompiler(
-    sh::GLenum type,
-    ShShaderSpec spec,
-    ShShaderOutput output,
-    const ShBuiltInResources *resources);
-COMPILER_EXPORT void ShDestruct(ShHandle handle);
 
 
 
@@ -415,6 +412,11 @@ COMPILER_EXPORT void ShDestruct(ShHandle handle);
 
 
 
+ShHandle ShConstructCompiler(sh::GLenum type,
+                             ShShaderSpec spec,
+                             ShShaderOutput output,
+                             const ShBuiltInResources *resources);
+void ShDestruct(ShHandle handle);
 
 
 
@@ -431,57 +433,115 @@ COMPILER_EXPORT void ShDestruct(ShHandle handle);
 
 
 
-COMPILER_EXPORT bool ShCompile(const ShHandle handle,
-                               const char *const shaderStrings[],
-                               size_t numStrings,
-                               ShCompileOptions compileOptions);
 
 
-COMPILER_EXPORT void ShClearResults(const ShHandle handle);
 
 
-COMPILER_EXPORT int ShGetShaderVersion(const ShHandle handle);
 
 
-COMPILER_EXPORT ShShaderOutput ShGetShaderOutputType(
-    const ShHandle handle);
 
 
 
+bool ShCompile(const ShHandle handle,
+               const char *const shaderStrings[],
+               size_t numStrings,
+               ShCompileOptions compileOptions);
 
-COMPILER_EXPORT const std::string &ShGetInfoLog(const ShHandle handle);
 
+void ShClearResults(const ShHandle handle);
 
 
+int ShGetShaderVersion(const ShHandle handle);
 
-COMPILER_EXPORT const std::string &ShGetObjectCode(const ShHandle handle);
 
+ShShaderOutput ShGetShaderOutputType(const ShHandle handle);
 
 
 
 
+const std::string &ShGetInfoLog(const ShHandle handle);
 
-COMPILER_EXPORT const std::map<std::string, std::string> *ShGetNameHashingMap(
-    const ShHandle handle);
 
 
 
+const std::string &ShGetObjectCode(const ShHandle handle);
 
 
 
 
-COMPILER_EXPORT const std::vector<sh::Uniform> *ShGetUniforms(const ShHandle handle);
-COMPILER_EXPORT const std::vector<sh::Varying> *ShGetVaryings(const ShHandle handle);
-COMPILER_EXPORT const std::vector<sh::Attribute> *ShGetAttributes(const ShHandle handle);
-COMPILER_EXPORT const std::vector<sh::OutputVariable> *ShGetOutputVariables(const ShHandle handle);
-COMPILER_EXPORT const std::vector<sh::InterfaceBlock> *ShGetInterfaceBlocks(const ShHandle handle);
-COMPILER_EXPORT sh::WorkGroupSize ShGetComputeShaderLocalGroupSize(const ShHandle handle);
 
-typedef struct
+
+const std::map<std::string, std::string> *ShGetNameHashingMap(const ShHandle handle);
+
+
+
+
+
+
+
+const std::vector<sh::Uniform> *ShGetUniforms(const ShHandle handle);
+const std::vector<sh::Varying> *ShGetVaryings(const ShHandle handle);
+const std::vector<sh::Attribute> *ShGetAttributes(const ShHandle handle);
+const std::vector<sh::OutputVariable> *ShGetOutputVariables(const ShHandle handle);
+const std::vector<sh::InterfaceBlock> *ShGetInterfaceBlocks(const ShHandle handle);
+sh::WorkGroupSize ShGetComputeShaderLocalGroupSize(const ShHandle handle);
+
+
+
+
+
+
+
+
+bool ShCheckVariablesWithinPackingLimits(int maxVectors,
+                                         const std::vector<sh::ShaderVariable> &variables);
+
+
+
+
+
+
+
+
+bool ShGetInterfaceBlockRegister(const ShHandle handle,
+                                 const std::string &interfaceBlockName,
+                                 unsigned int *indexOut);
+
+
+
+
+const std::map<std::string, unsigned int> *ShGetUniformRegisterMap(const ShHandle handle);
+
+
+
+
+namespace sh
 {
-    sh::GLenum type;
-    int size;
-} ShVariableInfo;
+
+
+
+
+
+bool Initialize();
+
+
+
+
+bool Finalize();
+
+
+
+
+
+
+void InitBuiltInResources(ShBuiltInResources *resources);
+
+
+
+
+
+
+const std::string &GetBuiltInResourcesString(const ShHandle handle);
 
 
 
@@ -490,9 +550,15 @@ typedef struct
 
 
 
-COMPILER_EXPORT bool ShCheckVariablesWithinPackingLimits(
-    int maxVectors,
-    const std::vector<sh::ShaderVariable> &variables);
+
+
+
+
+ShHandle ConstructCompiler(sh::GLenum type,
+                           ShShaderSpec spec,
+                           ShShaderOutput output,
+                           const ShBuiltInResources *resources);
+void Destruct(ShHandle handle);
 
 
 
@@ -501,14 +567,91 @@ COMPILER_EXPORT bool ShCheckVariablesWithinPackingLimits(
 
 
 
-COMPILER_EXPORT bool ShGetInterfaceBlockRegister(const ShHandle handle,
-                                                 const std::string &interfaceBlockName,
-                                                 unsigned int *indexOut);
 
 
 
 
-COMPILER_EXPORT const std::map<std::string, unsigned int> *ShGetUniformRegisterMap(
-    const ShHandle handle);
+
+
+
+
+
+
+
+
+
+
+
+
+
+bool Compile(const ShHandle handle,
+             const char *const shaderStrings[],
+             size_t numStrings,
+             ShCompileOptions compileOptions);
+
+
+void ClearResults(const ShHandle handle);
+
+
+int GetShaderVersion(const ShHandle handle);
+
+
+ShShaderOutput GetShaderOutputType(const ShHandle handle);
+
+
+
+
+const std::string &GetInfoLog(const ShHandle handle);
+
+
+
+
+const std::string &GetObjectCode(const ShHandle handle);
+
+
+
+
+
+const std::map<std::string, std::string> *GetNameHashingMap(const ShHandle handle);
+
+
+
+
+
+
+
+const std::vector<sh::Uniform> *GetUniforms(const ShHandle handle);
+const std::vector<sh::Varying> *GetVaryings(const ShHandle handle);
+const std::vector<sh::Attribute> *GetAttributes(const ShHandle handle);
+const std::vector<sh::OutputVariable> *GetOutputVariables(const ShHandle handle);
+const std::vector<sh::InterfaceBlock> *GetInterfaceBlocks(const ShHandle handle);
+sh::WorkGroupSize GetComputeShaderLocalGroupSize(const ShHandle handle);
+
+
+
+
+
+
+
+
+bool CheckVariablesWithinPackingLimits(int maxVectors,
+                                       const std::vector<sh::ShaderVariable> &variables);
+
+
+
+
+
+
+
+
+bool GetInterfaceBlockRegister(const ShHandle handle,
+                               const std::string &interfaceBlockName,
+                               unsigned int *indexOut);
+
+
+
+const std::map<std::string, unsigned int> *GetUniformRegisterMap(const ShHandle handle);
+
+}  
 
 #endif 

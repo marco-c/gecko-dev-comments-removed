@@ -311,6 +311,13 @@ TEST_P(TimerQueriesTest, TimeElapsedValidationTest)
 
 TEST_P(TimerQueriesTest, TimeElapsedMulticontextTest)
 {
+    if (IsAMD() && IsOpenGL() && IsWindows() && IsDebug())
+    {
+        
+        std::cout << "Test skipped on Windows AMD OpenGL Debug." << std::endl;
+        return;
+    }
+
     if (!extensionEnabled("GL_EXT_disjoint_timer_query"))
     {
         std::cout << "Test skipped because GL_EXT_disjoint_timer_query is not available."

@@ -92,7 +92,7 @@ struct StaticDstRangeRelationToSrcRange<Dst,
     static const NumericRangeRepresentation value = NUMERIC_RANGE_NOT_CONTAINED;
 };
 
-enum RangeConstraint
+enum RangeConstraint : unsigned char
 {
     RANGE_VALID     = 0x0,  
     RANGE_UNDERFLOW = 0x1,  

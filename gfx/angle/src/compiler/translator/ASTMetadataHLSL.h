@@ -12,9 +12,12 @@
 #include <set>
 #include <vector>
 
+namespace sh
+{
+
 class CallDAG;
 class TIntermNode;
-class TIntermSelection;
+class TIntermIfElse;
 class TIntermLoop;
 
 struct ASTMetadataHLSL
@@ -30,7 +33,7 @@ struct ASTMetadataHLSL
     
     
     bool hasGradientInCallGraph(TIntermLoop *node);
-    bool hasGradientLoop(TIntermSelection *node);
+    bool hasGradientLoop(TIntermIfElse *node);
 
     
     bool mUsesGradient;
@@ -44,7 +47,7 @@ struct ASTMetadataHLSL
     bool mCalledInDiscontinuousLoop;
     bool mHasGradientLoopInCallGraph;
     std::set<TIntermLoop*> mDiscontinuousLoops;
-    std::set<TIntermSelection *> mIfsContainingGradientLoop;
+    std::set<TIntermIfElse *> mIfsContainingGradientLoop;
 
     
     bool mNeedsLod0;
@@ -54,5 +57,7 @@ typedef std::vector<ASTMetadataHLSL> MetadataList;
 
 
 MetadataList CreateASTMetadataHLSL(TIntermNode *root, const CallDAG &callDag);
+
+}  
 
 #endif 

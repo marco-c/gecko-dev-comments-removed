@@ -44,6 +44,15 @@ struct Vector4
     float w;
 };
 
+struct Vector2
+{
+    Vector2() {}
+    Vector2(float x, float y) : x(x), y(y) {}
+
+    float x;
+    float y;
+};
+
 inline bool isPow2(int x)
 {
     return (x & (x - 1)) == 0 && (x != 0);
@@ -754,6 +763,40 @@ template <unsigned int N>
 constexpr unsigned int iSquareRoot()
 {
     return priv::iSquareRoot<N, 1>::value;
+}
+
+
+
+
+
+
+template <typename T>
+inline T WrappingSum(T lhs, T rhs)
+{
+    uint32_t lhsUnsigned = static_cast<uint32_t>(lhs);
+    uint32_t rhsUnsigned = static_cast<uint32_t>(rhs);
+    return static_cast<T>(lhsUnsigned + rhsUnsigned);
+}
+
+template <typename T>
+inline T WrappingDiff(T lhs, T rhs)
+{
+    uint32_t lhsUnsigned = static_cast<uint32_t>(lhs);
+    uint32_t rhsUnsigned = static_cast<uint32_t>(rhs);
+    return static_cast<T>(lhsUnsigned - rhsUnsigned);
+}
+
+inline int32_t WrappingMul(int32_t lhs, int32_t rhs)
+{
+    int64_t lhsWide = static_cast<int64_t>(lhs);
+    int64_t rhsWide = static_cast<int64_t>(rhs);
+    
+    int64_t resultWide = lhsWide * rhsWide;
+    
+    resultWide = resultWide & 0xffffffffll;
+    
+    
+    return static_cast<int32_t>(resultWide);
 }
 
 }  

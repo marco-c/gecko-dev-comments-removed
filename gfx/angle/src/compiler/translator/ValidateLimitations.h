@@ -10,6 +10,9 @@
 #include "compiler/translator/IntermNode.h"
 #include "compiler/translator/LoopInfo.h"
 
+namespace sh
+{
+
 class TInfoSinkBase;
 
 
@@ -59,5 +62,7 @@ class ValidateLimitations : public TIntermTraverser
     bool mValidateIndexing;
     bool mValidateInnerLoops;
 };
+
+}  
 
 #endif 

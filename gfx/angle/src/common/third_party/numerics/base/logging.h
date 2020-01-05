@@ -16,7 +16,7 @@
 
 
 #ifndef NOTREACHED
-#define NOTREACHED() 0
+#define NOTREACHED() UNREACHABLE()
 #endif
 
 #endif  

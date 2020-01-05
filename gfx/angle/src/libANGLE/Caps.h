@@ -52,6 +52,7 @@ class TextureCapsMap
 
     void insert(GLenum internalFormat, const TextureCaps &caps);
     void remove(GLenum internalFormat);
+    void clear();
 
     const TextureCaps &get(GLenum internalFormat) const;
 
@@ -293,6 +294,24 @@ struct Extensions
     bool copyTexture;
 
     
+    bool copyCompressedTexture;
+
+    
+    bool webglCompatibility;
+
+    
+    bool bindGeneratesResource;
+
+    
+    bool robustClientMemory;
+
+    
+    bool textureSRGBDecode;
+
+    
+    bool sRGBWriteControl;
+
+    
 
     
     bool colorBufferFloat;
@@ -311,6 +330,19 @@ struct Extensions
     
     bool pathRendering;
 };
+
+struct ExtensionInfo
+{
+    
+    bool Enableable = false;
+
+    
+    typedef bool(Extensions::*ExtensionBool);
+    ExtensionBool ExtensionsMember = nullptr;
+};
+
+using ExtensionInfoMap = std::map<std::string, ExtensionInfo>;
+const ExtensionInfoMap &GetExtensionInfoMap();
 
 struct Limitations
 {
@@ -505,6 +537,9 @@ struct DisplayExtensions
     bool d3dShareHandleClientBuffer;
 
     
+    bool d3dTextureClientBuffer;
+
+    
     bool surfaceD3DTexture2DShareHandle;
 
     
@@ -572,6 +607,15 @@ struct DisplayExtensions
 
     
     bool streamProducerD3DTextureNV12;
+
+    
+    bool createContextWebGLCompatibility;
+
+    
+    bool createContextBindGeneratesResource;
+
+    
+    bool swapBuffersWithDamage;
 };
 
 struct DeviceExtensions
@@ -609,6 +653,9 @@ struct ClientExtensions
 
     
     bool platformANGLEOpenGL;
+
+    
+    bool platformANGLENULL;
 
     
     bool deviceCreation;

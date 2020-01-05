@@ -9,6 +9,9 @@
 
 #include "compiler/translator/IntermNode.h"
 
+namespace sh
+{
+
 namespace
 {
 
@@ -18,7 +21,7 @@ class PruneEmptyDeclarationsTraverser : private TIntermTraverser
     static void apply(TIntermNode *root);
   private:
     PruneEmptyDeclarationsTraverser();
-    bool visitAggregate(Visit, TIntermAggregate *node) override;
+    bool visitDeclaration(Visit, TIntermDeclaration *node) override;
 };
 
 void PruneEmptyDeclarationsTraverser::apply(TIntermNode *root)
@@ -33,65 +36,71 @@ PruneEmptyDeclarationsTraverser::PruneEmptyDeclarationsTraverser()
 {
 }
 
-bool PruneEmptyDeclarationsTraverser::visitAggregate(Visit, TIntermAggregate *node)
+bool PruneEmptyDeclarationsTraverser::visitDeclaration(Visit, TIntermDeclaration *node)
 {
-    if (node->getOp() == EOpDeclaration)
+    TIntermSequence *sequence = node->getSequence();
+    if (sequence->size() >= 1)
     {
-        TIntermSequence *sequence = node->getSequence();
-        if (sequence->size() >= 1)
+        TIntermSymbol *sym = sequence->front()->getAsSymbolNode();
+        
+        if (sym != nullptr && sym->getSymbol() == "" && !sym->isInterfaceBlock())
         {
-            TIntermSymbol *sym = sequence->front()->getAsSymbolNode();
-            
-            if (sym != nullptr && sym->getSymbol() == "" && !sym->isInterfaceBlock())
+            if (sequence->size() > 1)
             {
-                if (sequence->size() > 1)
+                
+                
+                
+                
+                
+                
+                TIntermSequence emptyReplacement;
+                mMultiReplacements.push_back(
+                    NodeReplaceWithMultipleEntry(node, sym, emptyReplacement));
+            }
+            else if (sym->getBasicType() != EbtStruct)
+            {
+                
+                
+                
+                
+                TIntermSequence emptyReplacement;
+                TIntermBlock *parentAsBlock = getParentNode()->getAsBlock();
+                
+                ASSERT(parentAsBlock != nullptr || getParentNode()->getAsLoopNode() != nullptr);
+                if (parentAsBlock)
                 {
-                    
-                    
-                    
-                    
-                    
-                    
-                    TIntermSequence emptyReplacement;
-                    mMultiReplacements.push_back(NodeReplaceWithMultipleEntry(node, sym, emptyReplacement));
+                    mMultiReplacements.push_back(
+                        NodeReplaceWithMultipleEntry(parentAsBlock, node, emptyReplacement));
                 }
-                else if (sym->getBasicType() != EbtStruct)
+                else
                 {
-                    
-                    
-                    
-                    
-                    TIntermSequence emptyReplacement;
-                    TIntermAggregate *parentAgg = getParentNode()->getAsAggregate();
-                    ASSERT(parentAgg != nullptr);
-                    mMultiReplacements.push_back(NodeReplaceWithMultipleEntry(parentAgg, node, emptyReplacement));
+                    queueReplacement(node, nullptr, OriginalNode::IS_DROPPED);
                 }
-                else if (sym->getType().getQualifier() != EvqGlobal &&
-                         sym->getType().getQualifier() != EvqTemporary)
-                {
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
+            }
+            else if (sym->getType().getQualifier() != EvqGlobal &&
+                     sym->getType().getQualifier() != EvqTemporary)
+            {
+                
+                
+                
+                
+                
+                
+                
+                
 
-                    if (mInGlobalScope)
-                    {
-                        sym->getTypePointer()->setQualifier(EvqGlobal);
-                    }
-                    else
-                    {
-                        sym->getTypePointer()->setQualifier(EvqTemporary);
-                    }
+                if (mInGlobalScope)
+                {
+                    sym->getTypePointer()->setQualifier(EvqGlobal);
+                }
+                else
+                {
+                    sym->getTypePointer()->setQualifier(EvqTemporary);
                 }
             }
         }
-        return false;
     }
-    return true;
+    return false;
 }
 
 } 
@@ -100,3 +109,5 @@ void PruneEmptyDeclarations(TIntermNode *root)
 {
     PruneEmptyDeclarationsTraverser::apply(root);
 }
+
+}  
