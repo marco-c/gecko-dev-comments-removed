@@ -396,7 +396,6 @@ private:
 
 
 
-
 class MediaDecoderStateMachine::DormantState
   : public MediaDecoderStateMachine::StateObject
 {
@@ -1295,7 +1294,8 @@ DormantState::HandlePlayStateChanged(MediaDecoder::PlayState aPlayState)
   if (aPlayState == MediaDecoder::PLAY_STATE_PLAYING) {
     
     MOZ_ASSERT(!Info().IsEncrypted() || mMaster->mCDMProxy);
-    SetState<DecodingFirstFrameState>(Move(mPendingSeek));
+    MOZ_ASSERT(mMaster->mSentFirstFrameLoadedEvent);
+    SetState<SeekingState>(Move(mPendingSeek));
   }
 }
 
