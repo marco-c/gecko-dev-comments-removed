@@ -102,39 +102,47 @@ FormSubmitObserver.prototype =
     }
 
     
-    
-    let element = aInvalidElements.queryElementAt(0, Ci.nsISupports);
-    if (this._content != element.ownerGlobal.top.document.defaultView) {
-      return;
-    }
+    for (let i = 0; i < aInvalidElements.length; i++) {
+      
+      
+      let element = aInvalidElements.queryElementAt(i, Ci.nsISupports);
+      if (this._content != element.ownerGlobal.top.document.defaultView) {
+        return;
+      }
 
-    if (!(element instanceof HTMLInputElement ||
-          element instanceof HTMLTextAreaElement ||
-          element instanceof HTMLSelectElement ||
-          element instanceof HTMLButtonElement)) {
-      return;
-    }
+      if (!(element instanceof HTMLInputElement ||
+            element instanceof HTMLTextAreaElement ||
+            element instanceof HTMLSelectElement ||
+            element instanceof HTMLButtonElement)) {
+        continue;
+      }
 
-    
-    this._validationMessage = element.validationMessage;
+      if (!Services.focus.elementIsFocusable(element, 0)) {
+        continue;
+      }
 
-    
-    if (this._element == element) {
+      
+      this._validationMessage = element.validationMessage;
+
+      
+      if (this._element == element) {
+        this._showPopup(element);
+        break;
+      }
+      this._element = element;
+
+      element.focus();
+
+      
+      element.addEventListener("input", this, false);
+
+      
+      
+      element.addEventListener("blur", this, false);
+
       this._showPopup(element);
-      return;
+      break;
     }
-    this._element = element;
-
-    element.focus();
-
-    
-    element.addEventListener("input", this, false);
-
-    
-    
-    element.addEventListener("blur", this, false);
-
-    this._showPopup(element);
   },
 
   
