@@ -217,6 +217,8 @@ pref("browser.shell.defaultBrowserCheckCount", 0);
 pref("browser.startup.page",                1);
 pref("browser.startup.homepage",            "chrome://branding/locale/browserconfig.properties");
 
+pref("browser.startup.firstrunSkipsHomepage", false);
+
 pref("browser.slowStartup.notificationDisabled", false);
 pref("browser.slowStartup.timeThreshold", 40000);
 pref("browser.slowStartup.maxSamples", 5);

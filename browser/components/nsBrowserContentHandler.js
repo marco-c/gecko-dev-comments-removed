@@ -551,8 +551,11 @@ nsBrowserContentHandler.prototype = {
     if (startPage == "about:blank")
       startPage = "";
 
+    let skipStartPage = override == OVERRIDE_NEW_PROFILE &&
+      prefb.getBoolPref("browser.startup.firstrunSkipsHomepage");
     
-    if (overridePage && startPage && !willRestoreSession)
+    
+    if (overridePage && startPage && !willRestoreSession && !skipStartPage)
       return overridePage + "|" + startPage;
 
     return overridePage || startPage || "about:blank";
