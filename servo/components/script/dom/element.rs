@@ -32,8 +32,8 @@ use dom::domrect::DOMRect;
 use dom::domrectlist::DOMRectList;
 use dom::document::{Document, DocumentHelpers, LayoutDocumentHelpers};
 use dom::domtokenlist::DOMTokenList;
-use dom::event::Event;
-use dom::eventtarget::{EventTarget, EventTargetTypeId, EventTargetHelpers};
+use dom::event::{Event, EventHelpers};
+use dom::eventtarget::{EventTarget, EventTargetTypeId};
 use dom::htmlbodyelement::{HTMLBodyElement, HTMLBodyElementHelpers};
 use dom::htmlcollection::HTMLCollection;
 use dom::htmlelement::HTMLElementTypeId;
@@ -1512,7 +1512,7 @@ impl<'a> ActivationElementHelpers<'a> for JSRef<'a, Element> {
                 Some(elem) => {
                     
                     elem.pre_click_activation();
-                    target.dispatch_event(event);
+                    event.fire(target);
                     if !event.DefaultPrevented() {
                         
                         elem.activation_behavior();
@@ -1521,10 +1521,10 @@ impl<'a> ActivationElementHelpers<'a> for JSRef<'a, Element> {
                     }
                 }
                 
-                None => {target.dispatch_event(event);}
+                None => {event.fire(target);}
             },
             
-            None => {target.dispatch_event(event);}
+            None => {event.fire(target);}
         }
         
         self.set_click_in_progress(false);
