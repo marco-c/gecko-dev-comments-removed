@@ -4,16 +4,12 @@
 
 "use strict";
 
-const {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
-
-Cu.import("resource://gre/modules/Log.jsm");
+const {utils: Cu} = Components;
 
 Cu.import("chrome://marionette/content/element.js");
 Cu.import("chrome://marionette/content/frame.js");
 
 this.EXPORTED_SYMBOLS = ["browser"];
-
-const logger = Log.repository.getLogger("Marionette");
 
 this.browser = {};
 
@@ -32,18 +28,30 @@ const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 
 browser.Context = class {
 
+  
+
+
+
+
+
   constructor(win, driver) {
-    this.browser = undefined;
     this.window = win;
     this.driver = driver;
+
+    
+    
+    this.browser = undefined;
+    this.setBrowser(win);
+
     this.knownFrames = [];
-    this.startPage = "about:blank";
+
     
     this.mainContentId = null;
+
     
     this.newSession = true;
+
     this.seenEls = new element.Store();
-    this.setBrowser(win);
 
     
     
@@ -56,6 +64,7 @@ browser.Context = class {
     this.pendingCommands = [];
 
     
+    
     this.frameManager = new frame.Manager(driver);
     this.frameRegsPending = 0;
 
@@ -67,6 +76,13 @@ browser.Context = class {
     this._browserWasRemote = null;
     this._hasRemotenessChange = false;
   }
+
+  
+
+
+
+
+
 
   get browserForTab() {
     if (this.browser.getBrowserForTab) {
