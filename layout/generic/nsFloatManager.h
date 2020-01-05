@@ -10,7 +10,7 @@
 #define nsFloatManager_h_
 
 #include "mozilla/Attributes.h"
-#include "mozilla/Maybe.h"
+#include "mozilla/UniquePtr.h"
 #include "mozilla/WritingModes.h"
 #include "nsCoord.h"
 #include "nsFrameList.h" 
@@ -331,6 +331,68 @@ public:
 #endif
 
 private:
+  
+  
+  
+  
+  
+  
+  
+  
+  static nscoord ComputeEllipseLineInterceptDiff(
+    const nscoord aShapeBoxBStart, const nscoord aShapeBoxBEnd,
+    const nscoord aBStartCornerRadiusL, const nscoord aBStartCornerRadiusB,
+    const nscoord aBEndCornerRadiusL, const nscoord aBEndCornerRadiusB,
+    const nscoord aBandBStart, const nscoord aBandBEnd);
+
+  static nscoord XInterceptAtY(const nscoord aY, const nscoord aRadiusX,
+                               const nscoord aRadiusY);
+
+  
+  
+  
+  class ShapeInfo
+  {
+  public:
+    virtual ~ShapeInfo() {}
+
+    virtual nscoord LineLeft(mozilla::WritingMode aWM,
+                             const nscoord aBStart,
+                             const nscoord aBEnd) const = 0;
+    virtual nscoord LineRight(mozilla::WritingMode aWM,
+                              const nscoord aBStart,
+                              const nscoord aBEnd) const = 0;
+    virtual nscoord BStart() const = 0;
+    virtual nscoord BEnd() const = 0;
+  };
+
+  
+  class BoxShapeInfo final : public ShapeInfo
+  {
+  public:
+    BoxShapeInfo(const nsRect& aShapeBoxRect, nsIFrame* const aFrame)
+      : mShapeBoxRect(aShapeBoxRect)
+      , mFrame(aFrame)
+    {
+    }
+
+    nscoord LineLeft(mozilla::WritingMode aWM,
+                     const nscoord aBStart,
+                     const nscoord aBEnd) const override;
+    nscoord LineRight(mozilla::WritingMode aWM,
+                      const nscoord aBStart,
+                      const nscoord aBEnd) const override;
+    nscoord BStart() const override { return mShapeBoxRect.y; }
+    nscoord BEnd() const override { return mShapeBoxRect.YMost(); }
+
+  private:
+    
+    
+    
+    const nsRect mShapeBoxRect;
+    
+    nsIFrame* const mFrame;
+  };
 
   struct FloatInfo {
     nsIFrame *const mFrame;
@@ -350,8 +412,6 @@ private:
     nscoord BSize() const { return mRect.height; }
     bool IsEmpty() const { return mRect.IsEmpty(); }
 
-    nsRect ShapeBoxRect() const { return mShapeBoxRect.valueOr(mRect); }
-
     
     
     
@@ -359,32 +419,8 @@ private:
                      const nscoord aBStart, const nscoord aBEnd) const;
     nscoord LineRight(mozilla::WritingMode aWM, ShapeType aShapeType,
                       const nscoord aBStart, const nscoord aBEnd) const;
-
-    nscoord BStart(ShapeType aShapeType) const
-    {
-      return aShapeType == ShapeType::Margin ? BStart() : ShapeBoxRect().y;
-    }
-    nscoord BEnd(ShapeType aShapeType) const
-    {
-      return aShapeType == ShapeType::Margin ? BEnd() : ShapeBoxRect().YMost();
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    static nscoord ComputeEllipseLineInterceptDiff(
-      const nscoord aShapeBoxBStart, const nscoord aShapeBoxBEnd,
-      const nscoord aBStartCornerRadiusL, const nscoord aBStartCornerRadiusB,
-      const nscoord aBEndCornerRadiusL, const nscoord aBEndCornerRadiusB,
-      const nscoord aBandBStart, const nscoord aBandBEnd);
-
-    static nscoord XInterceptAtY(const nscoord aY, const nscoord aRadiusX,
-                                 const nscoord aRadiusY);
+    nscoord BStart(ShapeType aShapeType) const;
+    nscoord BEnd(ShapeType aShapeType) const;
 
 #ifdef NS_BUILD_REFCNT_LOGGING
     FloatInfo(FloatInfo&& aOther);
@@ -400,8 +436,7 @@ private:
     nsRect mRect;
     
     
-    
-    mozilla::Maybe<nsRect> mShapeBoxRect;
+    mozilla::UniquePtr<ShapeInfo> mShapeInfo;
   };
 
 #ifdef DEBUG
