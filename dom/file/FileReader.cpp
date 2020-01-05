@@ -414,6 +414,12 @@ FileReader::ReadFileContent(Blob& aBlob,
   }
 
   if (mDataFormat == FILE_AS_ARRAYBUFFER) {
+    
+    if (mTotal > INT32_MAX) {
+      aRv.Throw(NS_ERROR_RANGE_ERR);
+      return;
+    }
+
     mFileData = js_pod_malloc<char>(mTotal);
     if (!mFileData) {
       NS_WARNING("Preallocation failed for ReadFileData");
