@@ -83,6 +83,11 @@ class CompartmentChecker
         check(handle.get());
     }
 
+    template<typename T>
+    void check(MutableHandle<T> handle) {
+        check(handle.get());
+    }
+
     void checkAtom(gc::Cell* cell) {
 #ifdef DEBUG
         
@@ -114,6 +119,20 @@ class CompartmentChecker
             check(v.toString());
         else if (v.isSymbol())
             check(v.toSymbol());
+    }
+
+    
+    
+    template <typename Container>
+    typename mozilla::EnableIf<
+        mozilla::IsSame<
+            decltype(((Container*)nullptr)->begin()),
+            decltype(((Container*)nullptr)->end())
+        >::value
+    >::Type
+    check(const Container& container) {
+        for (auto i : container)
+            check(i);
     }
 
     void check(const ValueArray& arr) {
