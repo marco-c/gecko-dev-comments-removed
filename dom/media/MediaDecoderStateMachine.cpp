@@ -219,6 +219,8 @@ public:
 
   virtual void HandleResumeVideoDecoding();
 
+  virtual void HandlePlayStateChanged(MediaDecoder::PlayState aPlayState) {}
+
   virtual void DumpDebugInfo() {}
 
 protected:
@@ -627,6 +629,14 @@ public:
       mMaster->mVideoDecodeSuspended = true;
       mMaster->mOnPlaybackEvent.Notify(MediaEventType::EnterVideoSuspend);
       Reader()->SetVideoBlankDecode(true);
+    }
+  }
+
+  void HandlePlayStateChanged(MediaDecoder::PlayState aPlayState) override
+  {
+    if (aPlayState == MediaDecoder::PLAY_STATE_PLAYING) {
+      
+      mMaster->ScheduleStateMachine();
     }
   }
 
@@ -1049,6 +1059,14 @@ public:
   void HandleVideoSuspendTimeout() override
   {
     
+  }
+
+  void HandlePlayStateChanged(MediaDecoder::PlayState aPlayState) override
+  {
+    if (aPlayState == MediaDecoder::PLAY_STATE_PLAYING) {
+      
+      mMaster->ScheduleStateMachine();
+    }
   }
 
 private:
@@ -2457,34 +2475,15 @@ void MediaDecoderStateMachine::PlayStateChanged()
 
   if (mPlayState != MediaDecoder::PLAY_STATE_PLAYING) {
     mVideoDecodeSuspendTimer.Reset();
-    return;
-  }
-
-  
-  
-  
-  if (mMinimizePreroll) {
+  } else if (mMinimizePreroll) {
+    
+    
+    
     mMinimizePreroll = false;
     DispatchDecodeTasksIfNeeded();
   }
 
-  
-  
-  
-  
-  
-  
-  
-  if (mState != DECODER_STATE_DECODING &&
-      mState != DECODER_STATE_DECODING_FIRSTFRAME &&
-      mState != DECODER_STATE_BUFFERING &&
-      mState != DECODER_STATE_COMPLETED)
-  {
-    DECODER_LOG("Unexpected state - Bailing out of PlayInternal()");
-    return;
-  }
-
-  ScheduleStateMachine();
+  mStateObj->HandlePlayStateChanged(mPlayState);
 }
 
 void MediaDecoderStateMachine::VisibilityChanged()
