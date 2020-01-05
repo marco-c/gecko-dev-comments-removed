@@ -790,25 +790,6 @@ NotificationTelemetryService::RecordDNDSupported()
     Telemetry::ALERTS_SERVICE_DND_SUPPORTED_FLAG, true);
 }
 
-nsresult
-NotificationTelemetryService::RecordSender(nsIPrincipal* aPrincipal)
-{
-  if (!Telemetry::CanRecordBase() || !Telemetry::CanRecordExtended() ||
-      !nsAlertsUtils::IsActionablePrincipal(aPrincipal)) {
-    return NS_OK;
-  }
-  nsAutoString origin;
-  nsresult rv = Notification::GetOrigin(aPrincipal, origin);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-  if (!mOrigins.Contains(origin)) {
-    mOrigins.PutEntry(origin);
-    Telemetry::Accumulate(Telemetry::WEB_NOTIFICATION_SENDERS, 1);
-  }
-  return NS_OK;
-}
-
 
 
 class NotificationObserver final : public nsIObserver
@@ -1399,10 +1380,6 @@ NotificationObserver::Observe(nsISupports* aSubject, const char* aTopic,
       
       
       telemetry->RecordDNDSupported();
-      if (!mInPrivateBrowsing) {
-        
-        Unused << NS_WARN_IF(NS_FAILED(telemetry->RecordSender(mPrincipal)));
-      }
     }
     Unused << NS_WARN_IF(NS_FAILED(AdjustPushQuota(aTopic)));
 

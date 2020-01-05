@@ -185,20 +185,6 @@ nsXULAlerts::ShowAlertWithIconURI(nsIAlertNotification* aAlert,
   NS_ENSURE_SUCCESS(rv, rv);
 
   if (mDoNotDisturb) {
-    if (!inPrivateBrowsing) {
-      RefPtr<NotificationTelemetryService> telemetry =
-        NotificationTelemetryService::GetInstance();
-      if (telemetry) {
-        
-        
-        
-        
-        nsCOMPtr<nsIPrincipal> principal;
-        if (NS_SUCCEEDED(aAlert->GetPrincipal(getter_AddRefs(principal)))) {
-          Unused << NS_WARN_IF(NS_FAILED(telemetry->RecordSender(principal)));
-        }
-      }
-    }
     if (aAlertListener)
       aAlertListener->Observe(nullptr, "alertfinished", cookie.get());
     return NS_OK;
