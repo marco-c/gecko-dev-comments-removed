@@ -255,6 +255,12 @@ public:
   
   
   
+  
+  void WillComposeStyle();
+
+  
+  
+  
   void ComposeStyle(AnimationRule& aStyleRule,
                     const nsCSSPropertyIDSet& aPropertiesToSkip);
 

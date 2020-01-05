@@ -312,6 +312,14 @@ public:
 
 
   bool CanThrottle() const;
+
+  
+
+
+
+
+  void WillComposeStyle();
+
   
 
 

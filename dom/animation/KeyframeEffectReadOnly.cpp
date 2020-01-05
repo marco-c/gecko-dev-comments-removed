@@ -502,6 +502,14 @@ KeyframeEffectReadOnly::EnsureBaseStyles(
 }
 
 void
+KeyframeEffectReadOnly::WillComposeStyle()
+{
+  ComputedTiming computedTiming = GetComputedTiming();
+  mProgressOnLastCompose = computedTiming.mProgress;
+  mCurrentIterationOnLastCompose = computedTiming.mCurrentIteration;
+}
+
+void
 KeyframeEffectReadOnly::ComposeStyle(
   AnimationRule& aStyleRule,
   const nsCSSPropertyIDSet& aPropertiesToSkip)
@@ -516,8 +524,6 @@ KeyframeEffectReadOnly::ComposeStyle(
   mIsComposingStyle = true;
 
   ComputedTiming computedTiming = GetComputedTiming();
-  mProgressOnLastCompose = computedTiming.mProgress;
-  mCurrentIterationOnLastCompose = computedTiming.mCurrentIteration;
 
   
   
