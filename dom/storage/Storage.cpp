@@ -228,7 +228,7 @@ Storage::BroadcastChangeNotification(const nsSubstring& aKey,
   }
 
   DispatchStorageEvent(GetType(), mDocumentURI, aKey, aOldValue, aNewValue,
-                       mPrincipal, mIsPrivate, this);
+                       mPrincipal, mIsPrivate, this, false);
 }
 
  void
@@ -239,7 +239,8 @@ Storage::DispatchStorageEvent(StorageType aStorageType,
                               const nsAString& aNewValue,
                               nsIPrincipal* aPrincipal,
                               bool aIsPrivate,
-                              Storage* aStorage)
+                              Storage* aStorage,
+                              bool aImmediateDispatch)
 {
   StorageEventInit dict;
   dict.mBubbles = false;
@@ -263,7 +264,12 @@ Storage::DispatchStorageEvent(StorageType aStorageType,
                                   ? u"localStorage"
                                   : u"sessionStorage",
                                 aIsPrivate);
-  NS_DispatchToMainThread(r);
+
+  if (aImmediateDispatch) {
+    Unused << r->Run();
+  } else {
+    NS_DispatchToMainThread(r);
+  }
 
   
   

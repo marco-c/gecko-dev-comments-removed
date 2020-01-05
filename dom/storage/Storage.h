@@ -131,6 +131,13 @@ public:
   }
 
   
+  
+  
+  
+  
+  
+  
+  
   static void
   DispatchStorageEvent(StorageType aStorageType,
                        const nsAString& aDocumentURI,
@@ -139,7 +146,8 @@ public:
                        const nsAString& aNewValue,
                        nsIPrincipal* aPrincipal,
                        bool aIsPrivate,
-                       Storage* aStorage);
+                       Storage* aStorage,
+                       bool aImmediateDispatch);
 
   void
   ApplyEvent(StorageEvent* aStorageEvent);
