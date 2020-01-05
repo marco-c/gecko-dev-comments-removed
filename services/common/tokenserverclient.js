@@ -99,7 +99,7 @@ TokenServerClientNetworkError.prototype._toStringFields = function() {
 
 
 this.TokenServerClientServerError =
- function TokenServerClientServerError(message, cause = "general") {
+ function TokenServerClientServerError(message, cause="general") {
   this.now = new Date().toISOString(); 
   this.name = "TokenServerClientServerError";
   this.message = message || "Server error.";
@@ -244,7 +244,7 @@ TokenServerClient.prototype = {
 
 
   getTokenFromBrowserIDAssertion:
-    function getTokenFromBrowserIDAssertion(url, assertion, cb, addHeaders = {}) {
+    function getTokenFromBrowserIDAssertion(url, assertion, cb, addHeaders={}) {
     if (!url) {
       throw new TokenServerClientError("url argument is not valid.");
     }
@@ -436,7 +436,7 @@ TokenServerClient.prototype = {
   observerPrefix: null,
 
   
-  _maybeNotifyBackoff(response, headerName) {
+  _maybeNotifyBackoff: function (response, headerName) {
     if (!this.observerPrefix) {
       return;
     }
@@ -456,7 +456,7 @@ TokenServerClient.prototype = {
   },
 
   
-  newRESTRequest(url) {
+  newRESTRequest: function(url) {
     return new RESTRequest(url);
   }
 };

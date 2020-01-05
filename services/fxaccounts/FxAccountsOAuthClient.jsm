@@ -116,7 +116,7 @@ this.FxAccountsOAuthClient.prototype = {
 
 
 
-  launchWebFlow() {
+  launchWebFlow: function () {
     if (!this._channelCallback) {
       this._registerChannel();
     }
@@ -132,7 +132,7 @@ this.FxAccountsOAuthClient.prototype = {
   
 
 
-  tearDown() {
+  tearDown: function() {
     this.onComplete = null;
     this.onError = null;
     this._complete = true;
@@ -145,7 +145,7 @@ this.FxAccountsOAuthClient.prototype = {
 
 
 
-  _configureChannel() {
+  _configureChannel: function() {
     this._webChannelId = "oauth_" + this.parameters.client_id;
 
     
@@ -160,7 +160,7 @@ this.FxAccountsOAuthClient.prototype = {
 
 
 
-  _registerChannel() {
+  _registerChannel: function() {
     
 
 
@@ -172,7 +172,7 @@ this.FxAccountsOAuthClient.prototype = {
 
 
 
-    let listener = function(webChannelId, message, sendingContext) {
+    let listener = function (webChannelId, message, sendingContext) {
       if (message) {
         let command = message.command;
         let data = message.data;
@@ -251,7 +251,7 @@ this.FxAccountsOAuthClient.prototype = {
 
 
 
-  _validateOptions(options) {
+  _validateOptions: function (options) {
     if (!options || !options.parameters) {
       throw new Error("Missing 'parameters' configuration option");
     }

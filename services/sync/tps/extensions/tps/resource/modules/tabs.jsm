@@ -23,7 +23,7 @@ var BrowserTabs = {
 
 
 
-  Add(uri, fn) {
+  Add: function(uri, fn) {
     
     
     let wm = Cc["@mozilla.org/appshell/window-mediator;1"]
@@ -46,7 +46,7 @@ var BrowserTabs = {
 
 
 
-  Find(uri, title, profile) {
+  Find: function(uri, title, profile) {
     
     let engine = Weave.Service.engineManager.get("tabs");
     for (let [guid, client] of Object.entries(engine.getAllClients())) {

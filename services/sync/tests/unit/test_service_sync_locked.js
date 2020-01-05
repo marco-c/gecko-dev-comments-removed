@@ -15,7 +15,7 @@ function run_test() {
     
     
     old.debug = function(m, p) { debug.push(p ? m + ": " + p : m); d.call(old, m, p); }
-    old.info  = function(m, p) { info.push(p ? m + ": " + p : m); i.call(old, m, p); }
+    old.info  = function(m, p) { info.push(p ? m + ": " + p : m);  i.call(old, m, p); }
     return old;
   }
 

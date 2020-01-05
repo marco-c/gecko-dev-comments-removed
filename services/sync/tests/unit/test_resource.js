@@ -1,5 +1,5 @@
-/* Any copyright is dedicated to the Public Domain.
- * http://creativecommons.org/publicdomain/zero/1.0/ */
+
+
 
 Cu.import("resource://gre/modules/Log.jsm");
 Cu.import("resource://services-common/observers.js");
@@ -98,7 +98,7 @@ const TIMESTAMP = 1274380461;
 
 function server_timestamp(metadata, response) {
   let body = "Thank you for your request";
-  response.setHeader("X-Weave-Timestamp", '' + TIMESTAMP, false);
+  response.setHeader("X-Weave-Timestamp", ''+TIMESTAMP, false);
   response.setStatusLine(metadata.httpVersion, 200, "OK");
   response.bodyOutputStream.write(body, body.length);
 }
@@ -171,10 +171,10 @@ function run_test() {
     "/quota-error": server_quota_error
   });
 
-  Svc.Prefs.set("network.numRetries", 1); // speed up test
+  Svc.Prefs.set("network.numRetries", 1); 
 
-  // This apparently has to come first in order for our PAC URL to be hit.
-  // Don't put any other HTTP requests earlier in the file!
+  
+  
   _("Testing handling of proxy auth redirection.");
   PACSystemSettings.PACURI = server.baseURI + "/pac1";
   installFakePAC();
@@ -193,8 +193,8 @@ function run_test() {
   do_check_eq(res.spec, server.baseURI + "/open");
   do_check_eq(typeof res.headers, "object");
   do_check_eq(typeof res.authenticator, "object");
-  // Initially res.data is null since we haven't performed a GET or
-  // PUT/POST request yet.
+  
+  
   do_check_eq(res.data, null);
 
   _("GET a non-password-protected resource");
@@ -202,21 +202,21 @@ function run_test() {
   do_check_eq(content, "This path exists");
   do_check_eq(content.status, 200);
   do_check_true(content.success);
-  // res.data has been updated with the result from the request
+  
   do_check_eq(res.data, content);
 
-  // Observe logging messages.
+  
   logger = res._log;
   let dbg    = logger.debug;
   let debugMessages = [];
-  logger.debug = function(msg) {
+  logger.debug = function (msg) {
     debugMessages.push(msg);
     dbg.call(this, msg);
   }
 
-  // Since we didn't receive proper JSON data, accessing content.obj
-  // will result in a SyntaxError from JSON.parse.
-  // Furthermore, we'll have logged.
+  
+  
+  
   let didThrow = false;
   try {
     content.obj;
@@ -259,7 +259,7 @@ function run_test() {
   do_check_eq(content.status, 404);
   do_check_false(content.success);
 
-  // Check some headers of the 404 response
+  
   do_check_eq(content.headers.connection, "close");
   do_check_eq(content.headers.server, "httpd.js");
   do_check_eq(content.headers["content-length"], 14);
@@ -331,8 +331,8 @@ function run_test() {
   do_check_eq(JSON.stringify(content.obj), JSON.stringify(sample_data));
 
   _("X-Weave-Timestamp header updates AsyncResource.serverTime");
-  // Before having received any response containing the
-  // X-Weave-Timestamp header, AsyncResource.serverTime is null.
+  
+  
   do_check_eq(AsyncResource.serverTime, null);
   let res8 = new Resource(server.baseURI + "/timestamp");
   content = res8.get();
@@ -402,7 +402,7 @@ function run_test() {
   res10 = new Resource(server.baseURI + "/quota-error");
   content = res10.get();
   do_check_eq(content.status, 400);
-  do_check_eq(quotaValue, undefined); // HTTP 400, so no observer notification.
+  do_check_eq(quotaValue, undefined); 
 
   res10 = new Resource(server.baseURI + "/quota-notice");
   content = res10.get();
@@ -415,7 +415,7 @@ function run_test() {
   let res11 = new Resource("http://localhost:12345/does/not/exist");
   try {
     content = res11.get();
-  } catch (ex) {
+  } catch(ex) {
     error = ex;
   }
   do_check_eq(error.result, Cr.NS_ERROR_CONNECTION_REFUSED);
@@ -425,7 +425,7 @@ function run_test() {
   _("Checking handling of errors in onProgress.");
   let res18 = new Resource(server.baseURI + "/json");
   let onProgress = function(rec) {
-    // Provoke an XPC exception without a Javascript wrapper.
+    
     Services.io.newURI("::::::::");
   };
   res18._onProgress = onProgress;
@@ -439,16 +439,16 @@ function run_test() {
     error = ex;
   }
 
-  // It throws and logs.
+  
   do_check_eq(error.result, Cr.NS_ERROR_MALFORMED_URI);
   do_check_eq(error, "Error: NS_ERROR_MALFORMED_URI");
-  // Note the strings haven't been formatted yet, but that's OK for this test.
+  
   do_check_eq(warnings.pop(), "${action} request to ${url} failed: ${ex}");
   do_check_eq(warnings.pop(),
               "Got exception calling onProgress handler during fetch of " +
               server.baseURI + "/json");
 
-  // And this is what happens if JS throws an exception.
+  
   res18 = new Resource(server.baseURI + "/json");
   onProgress = function(rec) {
     throw "BOO!";
@@ -464,7 +464,7 @@ function run_test() {
     error = ex;
   }
 
-  // It throws and logs.
+  
   do_check_eq(error.result, Cr.NS_ERROR_XPC_JS_THREW_STRING);
   do_check_eq(error, "Error: NS_ERROR_XPC_JS_THREW_STRING");
   do_check_eq(warnings.pop(), "${action} request to ${url} failed: ${ex}");

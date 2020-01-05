@@ -146,7 +146,7 @@ FormData.prototype = {
 
 
 
-  hours_to_us(hours) {
+  hours_to_us: function(hours) {
     return this.usSinceEpoch + (hours * 60 * 60 * 1000 * 1000);
   },
 
@@ -158,7 +158,7 @@ FormData.prototype = {
 
 
 
-  Create() {
+  Create: function() {
     Logger.AssertTrue(this.fieldname != null && this.value != null,
       "Must specify both fieldname and value");
 
@@ -184,7 +184,7 @@ FormData.prototype = {
 
 
 
-  Find() {
+  Find: function() {
     return FormDB.getDataForValue(this.fieldname, this.value).then(formdata => {
       let status = formdata != null;
       if (status) {
@@ -211,7 +211,7 @@ FormData.prototype = {
 
 
 
-  Remove() {
+  Remove: function() {
     
 
     return FormDB.remove(this.id);

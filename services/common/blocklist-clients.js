@@ -92,7 +92,7 @@ function kintoClient(connection, bucket) {
 
   let config = {
     remote: base,
-    bucket,
+    bucket: bucket,
     adapter: FirefoxAdapter,
     adapterOptions: {sqliteHandle: connection},
   };
@@ -280,7 +280,7 @@ function* updatePinningList(records) {
     
     for (let item of records) {
       try {
-        const {pinType, pins = [], versions} = item;
+        const {pinType, pins=[], versions} = item;
         if (versions.indexOf(appInfo.version) != -1) {
           if (pinType == "KeyPin" && pins.length) {
             siteSecurityService.setKeyPins(item.hostName,
@@ -301,6 +301,8 @@ function* updatePinningList(records) {
         
       }
     }
+  } else {
+    return;
   }
 }
 
@@ -318,9 +320,9 @@ function* updateJSONBlocklist(filename, records) {
     yield OS.File.writeAtomic(path, serialized, {tmpPath: path + ".tmp"});
 
     
-    const eventData = {filename};
+    const eventData = {filename: filename};
     Services.cpmm.sendAsyncMessage("Blocklist:reload-from-disk", eventData);
-  } catch (e) {
+  } catch(e) {
     Cu.reportError(e);
   }
 }

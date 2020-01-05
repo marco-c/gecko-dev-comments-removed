@@ -55,9 +55,9 @@ var reconciler = engine._reconciler;
 
 function createRecordForThisApp(id, addonId, enabled, deleted) {
   return {
-    id,
+    id:            id,
     addonID:       addonId,
-    enabled,
+    enabled:       enabled,
     deleted:       !!deleted,
     applicationID: Services.appinfo.ID,
     source:        "amo"

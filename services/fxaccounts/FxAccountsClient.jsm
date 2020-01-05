@@ -55,7 +55,7 @@ this.FxAccountsClient.prototype = {
 
 
 
-  now() {
+  now: function() {
     return this.hawk.now();
   },
 
@@ -87,12 +87,12 @@ this.FxAccountsClient.prototype = {
 
 
 
-  _createSession(path, email, password, getKeys = false,
-                 retryOK = true) {
+  _createSession: function(path, email, password, getKeys=false,
+                           retryOK=true) {
     return Credentials.setup(email, password).then((creds) => {
       let data = {
         authPW: CommonUtils.bytesAsHex(creds.authPW),
-        email,
+        email: email,
       };
       let keys = getKeys ? "?keys=true" : "";
 
@@ -151,7 +151,7 @@ this.FxAccountsClient.prototype = {
 
 
 
-  signUp(email, password, getKeys = false) {
+  signUp: function(email, password, getKeys=false) {
     return this._createSession(SIGNUP, email, password, getKeys,
                                false );
   },
@@ -178,7 +178,7 @@ this.FxAccountsClient.prototype = {
 
 
 
-  signIn: function signIn(email, password, getKeys = false) {
+  signIn: function signIn(email, password, getKeys=false) {
     return this._createSession(SIGNIN, email, password, getKeys,
                                true );
   },
@@ -191,7 +191,7 @@ this.FxAccountsClient.prototype = {
 
 
 
-  sessionStatus(sessionTokenHex) {
+  sessionStatus: function (sessionTokenHex) {
     return this._request("/session/status", "GET",
       deriveHawkCredentials(sessionTokenHex, "sessionToken")).then(
         () => Promise.resolve(true),
@@ -211,7 +211,7 @@ this.FxAccountsClient.prototype = {
 
 
 
-  signOut(sessionTokenHex, options = {}) {
+  signOut: function (sessionTokenHex, options = {}) {
     let path = "/session/destroy";
     if (options.service) {
       path += "?service=" + encodeURIComponent(options.service);
@@ -227,7 +227,7 @@ this.FxAccountsClient.prototype = {
 
 
 
-  recoveryEmailStatus(sessionTokenHex, options = {}) {
+  recoveryEmailStatus: function (sessionTokenHex, options = {}) {
     let path = "/recovery_email/status";
     if (options.reason) {
       path += "?reason=" + encodeURIComponent(options.reason);
@@ -244,7 +244,7 @@ this.FxAccountsClient.prototype = {
 
 
 
-  resendVerificationEmail(sessionTokenHex) {
+  resendVerificationEmail: function(sessionTokenHex) {
     return this._request("/recovery_email/resend_code", "POST",
       deriveHawkCredentials(sessionTokenHex, "sessionToken"));
   },
@@ -262,7 +262,7 @@ this.FxAccountsClient.prototype = {
 
 
 
-  accountKeys(keyFetchTokenHex) {
+  accountKeys: function (keyFetchTokenHex) {
     let creds = deriveHawkCredentials(keyFetchTokenHex, "keyFetchToken");
     let keyRequestKey = creds.extra.slice(0, 32);
     let morecreds = CryptoUtils.hkdf(keyRequestKey, undefined,
@@ -311,7 +311,7 @@ this.FxAccountsClient.prototype = {
 
 
 
-  signCertificate(sessionTokenHex, serializedPublicKey, lifetime) {
+  signCertificate: function (sessionTokenHex, serializedPublicKey, lifetime) {
     let creds = deriveHawkCredentials(sessionTokenHex, "sessionToken");
 
     let body = { publicKey: serializedPublicKey,
@@ -334,7 +334,7 @@ this.FxAccountsClient.prototype = {
 
 
 
-  accountExists(email) {
+  accountExists: function (email) {
     return this.signIn(email, "").then(
       (cantHappen) => {
         throw new Error("How did I sign in with an empty password?");
@@ -362,8 +362,8 @@ this.FxAccountsClient.prototype = {
 
 
 
-  accountStatus(uid) {
-    return this._request("/account/status?uid=" + uid, "GET").then(
+  accountStatus: function(uid) {
+    return this._request("/account/status?uid="+uid, "GET").then(
       (result) => {
         return result.exists;
       },
@@ -540,7 +540,7 @@ this.FxAccountsClient.prototype = {
     return this._request(path, "GET", creds, {});
   },
 
-  _clearBackoff() {
+  _clearBackoff: function() {
       this.backoffError = null;
   },
 

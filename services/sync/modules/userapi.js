@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 "use strict";
 
@@ -16,13 +16,13 @@ Cu.import("resource://services-common/utils.js");
 Cu.import("resource://services-sync/identity.js");
 Cu.import("resource://services-sync/util.js");
 
-
-
-
-
-
-
-
+/**
+ * A generic client for the user API 1.0 service.
+ *
+ * http://docs.services.mozilla.com/reg/apis.html
+ *
+ * Instances are constructed with the base URI of the service.
+ */
 this.UserAPI10Client = function UserAPI10Client(baseURI) {
   this._log = Log.repository.getLogger("Sync.UserAPI");
   this._log.level = Log.Level[Svc.Prefs.get("log.logger.userapi")];
@@ -39,15 +39,15 @@ UserAPI10Client.prototype = {
     12: "No email address on file.",
   },
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Determine whether a specified username exists.
+   *
+   * Callback receives the following arguments:
+   *
+   *   (Error) Describes error that occurred or null if request was
+   *           successful.
+   *   (boolean) True if user exists. False if not. null if there was an error.
+   */
   usernameExists: function usernameExists(username, cb) {
     if (typeof(cb) != "function") {
       throw new Error("cb must be a function.");
@@ -58,16 +58,16 @@ UserAPI10Client.prototype = {
     request.get(this._onUsername.bind(this, cb, request));
   },
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Obtain the Weave (Sync) node for a specified user.
+   *
+   * The callback receives the following arguments:
+   *
+   *   (Error)  Describes error that occurred or null if request was successful.
+   *   (string) Username request is for.
+   *   (string) URL of user's node. If null and there is no error, no node could
+   *            be assigned at the time of the request.
+   */
   getWeaveNode: function getWeaveNode(username, password, cb) {
     if (typeof(cb) != "function") {
       throw new Error("cb must be a function.");
@@ -77,16 +77,16 @@ UserAPI10Client.prototype = {
     request.get(this._onWeaveNode.bind(this, cb, request));
   },
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Change a password for the specified user.
+   *
+   * @param username
+   *        (string) The username whose password to change.
+   * @param oldPassword
+   *        (string) The old, current password.
+   * @param newPassword
+   *        (string) The new password to switch to.
+   */
   changePassword: function changePassword(username, oldPassword, newPassword, cb) {
     let request = this._getRequest(username, "/password", oldPassword);
     request.onComplete = this._onChangePassword.bind(this, cb, request);
@@ -114,7 +114,7 @@ UserAPI10Client.prototype = {
     request.put(body);
   },
 
-  _getRequest: function _getRequest(username, path, password = null) {
+  _getRequest: function _getRequest(username, path, password=null) {
     let url = this.baseURI + username + path;
     let request = new RESTRequest(url);
 
@@ -135,13 +135,13 @@ UserAPI10Client.prototype = {
     let body = request.response.body;
     if (body == "0") {
       cb(null, false);
-
+      return;
     } else if (body == "1") {
       cb(null, true);
-
+      return;
     } else {
       cb(new Error("Unknown response from server: " + body), null);
-
+      return;
     }
   },
 
@@ -178,7 +178,7 @@ UserAPI10Client.prototype = {
     }
 
     cb(error, null);
-
+    return;
   },
 
   _onChangePassword: function _onChangePassword(cb, request, error) {
@@ -218,7 +218,7 @@ UserAPI10Client.prototype = {
     error.body = response.body;
 
     cb(error, null);
-
+    return;
   },
 };
 Object.freeze(UserAPI10Client.prototype);

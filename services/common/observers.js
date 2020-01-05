@@ -33,7 +33,7 @@ this.Observers = {
 
 
 
-  add(topic, callback, thisObject) {
+  add: function(topic, callback, thisObject) {
     let observer = new Observer(topic, callback, thisObject);
     this._cache.push(observer);
     this._service.addObserver(observer, topic, true);
@@ -53,13 +53,13 @@ this.Observers = {
 
 
 
-  remove(topic, callback, thisObject) {
+  remove: function(topic, callback, thisObject) {
     
     
     
     
-    let [observer] = this._cache.filter(v => v.topic == topic &&
-                                             v.callback == callback &&
+    let [observer] = this._cache.filter(v => v.topic      == topic    &&
+                                             v.callback   == callback &&
                                              v.thisObject == thisObject);
     if (observer) {
       this._service.removeObserver(observer, topic);
@@ -83,9 +83,9 @@ this.Observers = {
 
 
 
-  notify(topic, subject, data) {
+  notify: function(topic, subject, data) {
     subject = (typeof subject == "undefined") ? null : new Subject(subject);
-       data = (typeof data == "undefined") ? null : data;
+       data = (typeof    data == "undefined") ? null : data;
     this._service.notifyObservers(subject, topic, data);
   },
 
@@ -114,7 +114,7 @@ function Observer(topic, callback, thisObject) {
 
 Observer.prototype = {
   QueryInterface: XPCOMUtils.generateQI([Ci.nsIObserver, Ci.nsISupportsWeakReference]),
-  observe(subject, topic, data) {
+  observe: function(subject, topic, data) {
     
     
     
@@ -128,7 +128,8 @@ Observer.prototype = {
         this.callback.call(this.thisObject, subject, data);
       else
         this.callback(subject, data);
-    } else 
+    }
+    else 
       this.callback.observe(subject, topic, data);
   }
 }
@@ -139,11 +140,11 @@ function Subject(object) {
   
   
   
-  this.wrappedJSObject = { observersModuleSubjectWrapper: true, object };
+  this.wrappedJSObject = { observersModuleSubjectWrapper: true, object: object };
 }
 
 Subject.prototype = {
   QueryInterface: XPCOMUtils.generateQI([]),
-  getScriptableHelper() {},
-  getInterfaces() {}
+  getScriptableHelper: function() {},
+  getInterfaces: function() {}
 };

@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 this.EXPORTED_SYMBOLS = ["JPAKEClient", "SendCredentialsController"];
 
@@ -11,7 +11,7 @@ Cu.import("resource://services-common/rest.js");
 Cu.import("resource://services-sync/constants.js");
 Cu.import("resource://services-sync/util.js");
 
-const REQUEST_TIMEOUT         = 60; 
+const REQUEST_TIMEOUT         = 60; // 1 minute
 const KEYEXCHANGE_VERSION     = 3;
 
 const JPAKE_SIGNERID_SENDER   = "sender";
@@ -21,96 +21,96 @@ const JPAKE_LENGTH_CLIENTID   = 256;
 const JPAKE_VERIFY_VALUE      = "0123456789ABCDEF";
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Client to exchange encrypted data using the J-PAKE algorithm.
+ * The exchange between two clients of this type looks like this:
+ * 
+ * 
+ *  Mobile                        Server                        Desktop
+ *  ===================================================================
+ *                                   |
+ *  retrieve channel <---------------|
+ *  generate random secret           |
+ *  show PIN = secret + channel      |                 ask user for PIN
+ *  upload Mobile's message 1 ------>|
+ *                                   |----> retrieve Mobile's message 1
+ *                                   |<----- upload Desktop's message 1
+ *  retrieve Desktop's message 1 <---|
+ *  upload Mobile's message 2 ------>|
+ *                                   |----> retrieve Mobile's message 2
+ *                                   |                      compute key
+ *                                   |<----- upload Desktop's message 2
+ *  retrieve Desktop's message 2 <---|
+ *  compute key                      |
+ *  encrypt known value ------------>|
+ *                                   |-------> retrieve encrypted value
+ *                                   | verify against local known value
+ *
+ *   At this point Desktop knows whether the PIN was entered correctly.
+ *   If it wasn't, Desktop deletes the session. If it was, the account
+ *   setup can proceed. If Desktop doesn't yet have an account set up,
+ *   it will keep the channel open and let the user connect to or
+ *   create an account.
+ *
+ *                                   |              encrypt credentials
+ *                                   |<------------- upload credentials
+ *  retrieve credentials <-----------|
+ *  verify HMAC                      |
+ *  decrypt credentials              |
+ *  delete session ----------------->|
+ *  start syncing                    |
+ * 
+ * 
+ * Create a client object like so:
+ * 
+ *   let client = new JPAKEClient(controller);
+ * 
+ * The 'controller' object must implement the following methods:
+ * 
+ *   displayPIN(pin) -- Called when a PIN has been generated and is ready to
+ *     be displayed to the user. Only called on the client where the pairing
+ *     was initiated with 'receiveNoPIN()'.
+ * 
+ *   onPairingStart() -- Called when the pairing has started and messages are
+ *     being sent back and forth over the channel. Only called on the client
+ *     where the pairing was initiated with 'receiveNoPIN()'.
+ * 
+ *   onPaired() -- Called when the device pairing has been established and
+ *     we're ready to send the credentials over. To do that, the controller
+ *     must call 'sendAndComplete()' while the channel is active.
+ * 
+ *   onComplete(data) -- Called after transfer has been completed. On
+ *     the sending side this is called with no parameter and as soon as the
+ *     data has been uploaded. This does not mean the receiving side has
+ *     actually retrieved them yet.
+ *
+ *   onAbort(error) -- Called whenever an error is encountered. All errors lead
+ *     to an abort and the process has to be started again on both sides.
+ * 
+ * To start the data transfer on the receiving side, call
+ * 
+ *   client.receiveNoPIN();
+ * 
+ * This will allocate a new channel on the server, generate a PIN, have it
+ * displayed and then do the transfer once the protocol has been completed
+ * with the sending side.
+ * 
+ * To initiate the transfer from the sending side, call
+ * 
+ *   client.pairWithPIN(pin, true);
+ * 
+ * Once the pairing has been established, the controller's 'onPaired()' method
+ * will be called. To then transmit the data, call
+ * 
+ *   client.sendAndComplete(data);
+ * 
+ * To abort the process, call
+ * 
+ *   client.abort();
+ * 
+ * Note that after completion or abort, the 'client' instance may not be reused.
+ * You will have to create a new one in case you'd like to restart the process.
+ */
 this.JPAKEClient = function JPAKEClient(controller) {
   this.controller = controller;
 
@@ -134,36 +134,36 @@ JPAKEClient.prototype = {
 
   _chain: Async.chain,
 
-  
+  /*
+   * Public API
+   */
 
-
-
-  
-
-
-
-
-
+  /**
+   * Initiate pairing and receive data without providing a PIN. The PIN will
+   * be generated and passed on to the controller to be displayed to the user.
+   * 
+   * This is typically called on mobile devices where typing is tedious.
+   */
   receiveNoPIN: function receiveNoPIN() {
     this._my_signerid = JPAKE_SIGNERID_RECEIVER;
     this._their_signerid = JPAKE_SIGNERID_SENDER;
 
     this._secret = this._createSecret();
 
-    
-    
+    // Allow a large number of tries first while we wait for the PIN
+    // to be entered on the other device.
     this._maxTries = Svc.Prefs.get("jpake.firstMsgMaxTries");
     this._chain(this._getChannel,
                 this._computeStepOne,
                 this._putStep,
                 this._getStep,
                 function(callback) {
-                  
-                  
+                  // We fetched the first response from the other client.
+                  // Notify controller of the pairing starting.
                   Utils.nextTick(this.controller.onPairingStart,
                                  this.controller);
 
-                  
+                  // Now we can switch back to the smaller timeout.
                   this._maxTries = Svc.Prefs.get("jpake.maxTries");
                   callback();
                 },
@@ -174,7 +174,7 @@ JPAKEClient.prototype = {
                 this._computeKeyVerification,
                 this._putStep,
                 function(callback) {
-                  
+                  // Allow longer time-out for the last message.
                   this._maxTries = Svc.Prefs.get("jpake.lastMsgMaxTries");
                   callback();
                 },
@@ -183,21 +183,21 @@ JPAKEClient.prototype = {
                 this._complete)();
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Initiate pairing based on the PIN entered by the user.
+   * 
+   * This is typically called on desktop devices where typing is easier than
+   * on mobile.
+   * 
+   * @param pin
+   *        12 character string (in human-friendly base32) containing the PIN
+   *        entered by the user.
+   * @param expectDelay
+   *        Flag that indicates that a significant delay between the pairing
+   *        and the sending should be expected. v2 and earlier of the protocol
+   *        did not allow for this and the pairing to a v2 or earlier client
+   *        will be aborted if this flag is 'true'.
+   */
   pairWithPIN: function pairWithPIN(pin, expectDelay) {
     this._my_signerid = JPAKE_SIGNERID_SENDER;
     this._their_signerid = JPAKE_SIGNERID_RECEIVER;
@@ -208,9 +208,9 @@ JPAKEClient.prototype = {
 
     this._chain(this._computeStepOne,
                 this._getStep,
-                function(callback) {
-                  
-                  
+                function (callback) {
+                  // Ensure that the other client can deal with a delay for
+                  // the last message if that's requested by the caller.
                   if (!expectDelay) {
                     return callback();
                   }
@@ -228,12 +228,12 @@ JPAKEClient.prototype = {
                 this._verifyPairing)();
   },
 
-  
-
-
-
-
-
+  /**
+   * Send data after a successful pairing.
+   * 
+   * @param obj
+   *        Object containing the data to send. It will be serialized as JSON.
+   */
   sendAndComplete: function sendAndComplete(obj) {
     if (!this._paired || this._finished) {
       this._log.error("Can't send data, no active pairing!");
@@ -245,21 +245,21 @@ JPAKEClient.prototype = {
                 this._complete)();
   },
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Abort the current pairing. The channel on the server will be deleted
+   * if the abort wasn't due to a network or server error. The controller's
+   * 'onAbort()' method is notified in all cases.
+   * 
+   * @param error [optional]
+   *        Error constant indicating the reason for the abort. Defaults to
+   *        user abort.
+   */
   abort: function abort(error) {
     this._log.debug("Aborting...");
     this._finished = true;
     let self = this;
 
-    
+    // Default to "user aborted".
     if (!error) {
       error = JPAKE_ERROR_USERABORT;
     }
@@ -273,9 +273,9 @@ JPAKEClient.prototype = {
     }
   },
 
-  
-
-
+  /*
+   * Utilities
+   */
 
   _setClientID: function _setClientID() {
     let rng = Cc["@mozilla.org/security/random-generator;1"]
@@ -285,7 +285,7 @@ JPAKEClient.prototype = {
   },
 
   _createSecret: function _createSecret() {
-    
+    // 0-9a-z without 1,l,o,0
     const key = "23456789abcdefghijkmnpqrstuvwxyz";
     let rng = Cc["@mozilla.org/security/random-generator;1"]
                 .createInstance(Ci.nsIRandomGenerator);
@@ -300,9 +300,9 @@ JPAKEClient.prototype = {
     return request;
   },
 
-  
-
-
+  /*
+   * Steps of J-PAKE procedure
+   */
 
   _getChannel: function _getChannel(callback) {
     this._log.trace("Requesting channel.");
@@ -334,14 +334,14 @@ JPAKEClient.prototype = {
       this._log.debug("Using channel " + this._channel);
       this._channelURL = this._serverURL + this._channel;
 
-      
+      // Don't block on UI code.
       let pin = this._secret + this._channel;
       Utils.nextTick(function() { this.controller.displayPIN(pin); }, this);
       callback();
     }));
   },
 
-  
+  // Generic handler for uploading data.
   _putStep: function _putStep(callback) {
     this._log.trace("Uploading message " + this._outgoing.type);
     let request = this._newRequest(this._channelURL);
@@ -350,7 +350,7 @@ JPAKEClient.prototype = {
     } else {
       request.setHeader("If-None-Match", "*");
     }
-    request.put(this._outgoing, Utils.bind2(this, function(error) {
+    request.put(this._outgoing, Utils.bind2(this, function (error) {
       if (this._finished) {
         return;
       }
@@ -366,15 +366,15 @@ JPAKEClient.prototype = {
         this.abort(JPAKE_ERROR_SERVER);
         return;
       }
-      
-      
+      // There's no point in returning early here since the next step will
+      // always be a GET so let's pause for twice the poll interval.
       this._my_etag = request.response.headers["etag"];
-      Utils.namedTimer(function() { callback(); }, this._pollInterval * 2,
+      Utils.namedTimer(function () { callback(); }, this._pollInterval * 2,
                        this, "_pollTimer");
     }));
   },
 
-  
+  // Generic handler for polling for and retrieving data.
   _pollTries: 0,
   _getStep: function _getStep(callback) {
     this._log.trace("Retrieving next message.");
@@ -383,7 +383,7 @@ JPAKEClient.prototype = {
       request.setHeader("If-None-Match", this._my_etag);
     }
 
-    request.get(Utils.bind2(this, function(error) {
+    request.get(Utils.bind2(this, function (error) {
       if (this._finished) {
         return;
       }
@@ -445,7 +445,7 @@ JPAKEClient.prototype = {
     let request = this._newRequest(this._serverURL + "report");
     request.setHeader("X-KeyExchange-Cid", this._channel);
     request.setHeader("X-KeyExchange-Log", reason);
-    request.post("", Utils.bind2(this, function(error) {
+    request.post("", Utils.bind2(this, function (error) {
       if (error) {
         this._log.warn("Report failed: " + error);
       } else if (request.response.status != 200) {
@@ -453,7 +453,7 @@ JPAKEClient.prototype = {
                        + request.response.status);
       }
 
-      
+      // Do not block on errors, we're done or aborted by now anyway.
       callback();
     }));
   },
@@ -572,7 +572,7 @@ JPAKEClient.prototype = {
     }
     this._outgoing = {type: this._my_signerid + "3",
                       version: KEYEXCHANGE_VERSION,
-                      payload: {ciphertext, IV: iv}};
+                      payload: {ciphertext: ciphertext, IV: iv}};
     this._log.trace("Generated message " + this._outgoing.type);
     callback();
   },
@@ -601,7 +601,7 @@ JPAKEClient.prototype = {
 
     this._log.debug("Verified pairing!");
     this._paired = true;
-    Utils.nextTick(function() { this.controller.onPaired(); }, this);
+    Utils.nextTick(function () { this.controller.onPaired(); }, this);
     callback();
   },
 
@@ -619,7 +619,7 @@ JPAKEClient.prototype = {
     }
     this._outgoing = {type: this._my_signerid + "3",
                       version: KEYEXCHANGE_VERSION,
-                      payload: {ciphertext, IV: iv, hmac}};
+                      payload: {ciphertext: ciphertext, IV: iv, hmac: hmac}};
     this._log.trace("Generated message " + this._outgoing.type);
     callback();
   },
@@ -647,7 +647,7 @@ JPAKEClient.prototype = {
 
     this._log.trace("Decrypting data.");
     let cleartext;
-    try {
+    try {      
       cleartext = Svc.Crypto.decrypt(step3.ciphertext, this._crypto_key,
                                      step3.IV);
     } catch (ex) {
@@ -671,31 +671,31 @@ JPAKEClient.prototype = {
   _complete: function _complete() {
     this._log.debug("Exchange completed.");
     this._finished = true;
-    Utils.nextTick(function() { this.controller.onComplete(this._newData); },
+    Utils.nextTick(function () { this.controller.onComplete(this._newData); },
                    this);
   }
 
 };
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Send credentials over an active J-PAKE channel.
+ *
+ * This object is designed to take over as the JPAKEClient controller,
+ * presumably replacing one that is UI-based which would either cause
+ * DOM objects to leak or the JPAKEClient to be GC'ed when the DOM
+ * context disappears. This object stays alive for the duration of the
+ * transfer by being strong-ref'ed as an nsIObserver.
+ *
+ * Credentials are sent after the first sync has been completed
+ * (successfully or not.)
+ *
+ * Usage:
+ *
+ *   jpakeclient.controller = new SendCredentialsController(jpakeclient,
+ *                                                          service);
+ *
+ */
 this.SendCredentialsController =
  function SendCredentialsController(jpakeclient, service) {
   this._log = Log.repository.getLogger("Sync.SendCredentialsController");
@@ -705,13 +705,13 @@ this.SendCredentialsController =
   this.jpakeclient = jpakeclient;
   this.service = service;
 
-  
-  
-  
-  
+  // Register ourselves as observers the first Sync finishing (either
+  // successfully or unsuccessfully, we don't care) or for removing
+  // this device's sync configuration, in case that happens while we
+  // haven't finished the first sync yet.
   Services.obs.addObserver(this, "weave:service:sync:finish", false);
-  Services.obs.addObserver(this, "weave:service:sync:error", false);
-  Services.obs.addObserver(this, "weave:service:start-over", false);
+  Services.obs.addObserver(this, "weave:service:sync:error",  false);
+  Services.obs.addObserver(this, "weave:service:start-over",  false);
 }
 SendCredentialsController.prototype = {
 
@@ -722,7 +722,7 @@ SendCredentialsController.prototype = {
       Services.obs.removeObserver(this, "weave:service:sync:error");
       Services.obs.removeObserver(this, "weave:service:start-over");
     } catch (ex) {
-      
+      // Ignore.
     }
   },
 
@@ -733,7 +733,7 @@ SendCredentialsController.prototype = {
         Utils.nextTick(this.sendCredentials, this);
         break;
       case "weave:service:start-over":
-        
+        // This will call onAbort which will call unload().
         this.jpakeclient.abort();
         break;
     }
@@ -748,25 +748,25 @@ SendCredentialsController.prototype = {
     this.jpakeclient.sendAndComplete(credentials);
   },
 
-  
+  // JPAKEClient controller API
 
   onComplete: function onComplete() {
     this._log.debug("Exchange was completed successfully!");
     this.unload();
 
-    
-    
+    // Schedule a Sync for soonish to fetch the data uploaded by the
+    // device with which we just paired.
     this.service.scheduler.scheduleNextSync(this.service.scheduler.activeInterval);
   },
 
   onAbort: function onAbort(error) {
-    
-    
+    // It doesn't really matter why we aborted, but the channel is closed
+    // for sure, so we won't be able to do anything with it.
     this._log.debug("Exchange was aborted with error: " + error);
     this.unload();
   },
 
-  
+  // Irrelevant methods for this controller:
   displayPIN: function displayPIN() {},
   onPairingStart: function onPairingStart() {},
   onPaired: function onPaired() {},

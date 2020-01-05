@@ -45,7 +45,7 @@ HistoryEngine.prototype = {
 
   syncPriority: 7,
 
-  _processIncoming(newitems) {
+  _processIncoming: function (newitems) {
     
     
     let observers = PlacesUtils.history.getObservers();
@@ -134,7 +134,7 @@ HistoryStore.prototype = {
   },
 
   _stmts: {},
-  _getStmt(query) {
+  _getStmt: function(query) {
     if (query in this._stmts) {
       return this._stmts[query];
     }
@@ -292,7 +292,7 @@ HistoryStore.prototype = {
       return failed;
     }
 
-    let updatePlacesCallback = {
+    let updatePlacesCallback = { 
       handleResult: function handleResult() {},
       handleError: function handleError(resultCode, placeInfo) {
         failed.push(placeInfo.guid);
@@ -420,7 +420,7 @@ HistoryStore.prototype = {
 
   wipe: function HistStore_wipe() {
     let cb = Async.makeSyncCallback();
-    PlacesUtils.history.clear().then(result => { cb(null, result) }, err => { cb(err) });
+    PlacesUtils.history.clear().then(result => {cb(null, result)}, err => {cb(err)});
     return Async.waitForSyncCallback(cb);
   }
 };
@@ -431,12 +431,12 @@ function HistoryTracker(name, engine) {
 HistoryTracker.prototype = {
   __proto__: Tracker.prototype,
 
-  startTracking() {
+  startTracking: function() {
     this._log.info("Adding Places observer.");
     PlacesUtils.history.addObserver(this, true);
   },
 
-  stopTracking() {
+  stopTracking: function() {
     this._log.info("Removing Places observer.");
     PlacesUtils.history.removeObserver(this);
   },
@@ -446,7 +446,7 @@ HistoryTracker.prototype = {
     Ci.nsISupportsWeakReference
   ]),
 
-  onDeleteAffectsGUID(uri, guid, reason, source, increment) {
+  onDeleteAffectsGUID: function (uri, guid, reason, source, increment) {
     if (this.ignoreAll || reason == Ci.nsINavHistoryObserver.REASON_EXPIRED) {
       return;
     }
@@ -456,15 +456,15 @@ HistoryTracker.prototype = {
     }
   },
 
-  onDeleteVisits(uri, visitTime, guid, reason) {
+  onDeleteVisits: function (uri, visitTime, guid, reason) {
     this.onDeleteAffectsGUID(uri, guid, reason, "onDeleteVisits", SCORE_INCREMENT_SMALL);
   },
 
-  onDeleteURI(uri, guid, reason) {
+  onDeleteURI: function (uri, guid, reason) {
     this.onDeleteAffectsGUID(uri, guid, reason, "onDeleteURI", SCORE_INCREMENT_XLARGE);
   },
 
-  onVisit(uri, vid, time, session, referrer, trans, guid) {
+  onVisit: function (uri, vid, time, session, referrer, trans, guid) {
     if (this.ignoreAll) {
       this._log.trace("ignoreAll: ignoring visit for " + guid);
       return;
@@ -476,7 +476,7 @@ HistoryTracker.prototype = {
     }
   },
 
-  onClearHistory() {
+  onClearHistory: function () {
     this._log.trace("onClearHistory");
     
     
@@ -484,9 +484,9 @@ HistoryTracker.prototype = {
     this.score += SCORE_INCREMENT_XLARGE;
   },
 
-  onBeginUpdateBatch() {},
-  onEndUpdateBatch() {},
-  onPageChanged() {},
-  onTitleChanged() {},
-  onBeforeDeleteURI() {},
+  onBeginUpdateBatch: function () {},
+  onEndUpdateBatch: function () {},
+  onPageChanged: function () {},
+  onTitleChanged: function () {},
+  onBeforeDeleteURI: function () {},
 };

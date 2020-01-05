@@ -25,11 +25,11 @@ this.initializeIdentityWithTokenServerResponse = function(response) {
   }
 
   
-  function MockRESTRequest(url) {}
+  function MockRESTRequest(url) {};
   MockRESTRequest.prototype = {
     _log: requestLog,
-    setHeader() {},
-    get(callback) {
+    setHeader: function() {},
+    get: function(callback) {
       this.response = response;
       callback.call(this);
     }
