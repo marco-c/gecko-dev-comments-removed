@@ -5071,8 +5071,7 @@ pref("dom.vr.openvr.enabled", false);
 
 
 
-
-pref("dom.vr.poseprediction.enabled", false);
+pref("dom.vr.poseprediction.enabled", true);
 
 
 
@@ -5617,7 +5616,11 @@ pref("dom.webkitBlink.dirPicker.enabled", true);
 pref("dom.webkitBlink.filesystem.enabled", true);
 #endif
 
+#ifdef RELEASE_OR_BETA
+pref("media.block-autoplay-until-in-foreground", false);
+#else
 pref("media.block-autoplay-until-in-foreground", true);
+#endif
 
 #ifdef MOZ_STYLO
 
