@@ -75,7 +75,7 @@ pub struct LayerMetadata {
     
     pub id: LayerId,
     
-    pub position: Rect<uint>,
+    pub position: Rect<i32>,
     
     pub background_color: Color,
     
