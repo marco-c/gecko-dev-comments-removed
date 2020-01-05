@@ -22,6 +22,9 @@ pub enum StorageTaskMsg {
     Key(IpcSender<Option<DOMString>>, Url, StorageType, u32),
 
     
+    Keys(IpcSender<Vec<DOMString>>, Url, StorageType),
+
+    
     GetItem(IpcSender<Option<DOMString>>, Url, StorageType, DOMString),
 
     
