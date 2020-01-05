@@ -2,6 +2,9 @@
 
 
 
+
+
+
 "use strict";
 
 this.EXPORTED_SYMBOLS = ["ExtensionStorageSync"];
@@ -12,7 +15,21 @@ const Cu = Components.utils;
 const Cr = Components.results;
 const global = this;
 
+Cu.import("resource://gre/modules/AppConstants.jsm");
+const KINTO_PROD_SERVER_URL = "https://webextensions.settings.services.mozilla.com/v1";
+const KINTO_DEV_SERVER_URL = "https://webextensions.dev.mozaws.net/v1";
+const KINTO_DEFAULT_SERVER_URL = AppConstants.RELEASE_OR_BETA ? KINTO_PROD_SERVER_URL : KINTO_DEV_SERVER_URL;
+
 const STORAGE_SYNC_ENABLED_PREF = "webextensions.storage.sync.enabled";
+const STORAGE_SYNC_SERVER_URL_PREF = "webextensions.storage.sync.serverURL";
+const STORAGE_SYNC_SCOPE = "sync:addon_storage";
+const STORAGE_SYNC_CRYPTO_COLLECTION_NAME = "storage-sync-crypto";
+const STORAGE_SYNC_CRYPTO_KEYRING_RECORD_ID = "keys";
+const FXA_OAUTH_OPTIONS = {
+  scope: STORAGE_SYNC_SCOPE,
+};
+
+const KINTO_REQUEST_TIMEOUT = 30000;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 const {
@@ -23,24 +40,39 @@ XPCOMUtils.defineLazyModuleGetter(this, "AppsUtils",
                                   "resource://gre/modules/AppsUtils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "AsyncShutdown",
                                   "resource://gre/modules/AsyncShutdown.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "CollectionKeyManager",
+                                  "resource://services-sync/record.js");
+XPCOMUtils.defineLazyModuleGetter(this, "EncryptionRemoteTransformer",
+                                  "resource://services-sync/engines/extension-storage.js");
 XPCOMUtils.defineLazyModuleGetter(this, "ExtensionStorage",
                                   "resource://gre/modules/ExtensionStorage.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "fxAccounts",
+                                  "resource://gre/modules/FxAccounts.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "loadKinto",
                                   "resource://services-common/kinto-offline-client.js");
+XPCOMUtils.defineLazyModuleGetter(this, "Log",
+                                  "resource://gre/modules/Log.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Observers",
                                   "resource://services-common/observers.js");
 XPCOMUtils.defineLazyModuleGetter(this, "Sqlite",
                                   "resource://gre/modules/Sqlite.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Task",
                                   "resource://gre/modules/Task.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "KeyRingEncryptionRemoteTransformer",
+                                  "resource://services-sync/engines/extension-storage.js");
 XPCOMUtils.defineLazyPreferenceGetter(this, "prefPermitsStorageSync",
                                       STORAGE_SYNC_ENABLED_PREF, false);
+XPCOMUtils.defineLazyPreferenceGetter(this, "prefStorageSyncServerURL",
+                                      STORAGE_SYNC_SERVER_URL_PREF,
+                                      KINTO_DEFAULT_SERVER_URL);
 
 
 
 
 
-const extensionContexts = new WeakMap();
+const extensionContexts = new Map();
+
+const log = Log.repository.getLogger("Sync.Engine.Extension-Storage");
 
 
 
@@ -65,6 +97,7 @@ const storageSyncInit = Task.spawn(function* () {
     kinto: new Kinto({
       adapter: Kinto.adapters.FirefoxAdapter,
       adapterOptions: {sqliteHandle: connection},
+      timeout: KINTO_REQUEST_TIMEOUT,
     }),
   };
 });
@@ -131,6 +164,109 @@ const storageSyncIdSchema = {
 
 
 
+const cryptoCollectionIdSchema = {
+  generate() {
+    throw new Error("cannot generate IDs for system collection");
+  },
+
+  validate(id) {
+    return true;
+  },
+};
+
+
+
+
+const cryptoCollection = this.cryptoCollection = {
+  getCollection: Task.async(function* () {
+    const {kinto} = yield storageSyncInit;
+    return kinto.collection(STORAGE_SYNC_CRYPTO_COLLECTION_NAME, {
+      idSchema: cryptoCollectionIdSchema,
+      remoteTransformers: [new KeyRingEncryptionRemoteTransformer()],
+    });
+  }),
+
+  
+
+
+
+
+
+
+
+  getKeyRingRecord: Task.async(function* () {
+    const collection = yield this.getCollection();
+    const cryptoKeyRecord = yield collection.getAny(STORAGE_SYNC_CRYPTO_KEYRING_RECORD_ID);
+    return cryptoKeyRecord.data;
+  }),
+
+  
+
+
+
+
+  getKeyRing: Task.async(function* () {
+    const cryptoKeyRecord = yield this.getKeyRingRecord();
+    const collectionKeys = new CollectionKeyManager();
+    if (cryptoKeyRecord) {
+      collectionKeys.setContents(cryptoKeyRecord.keys, cryptoKeyRecord.last_modified);
+    } else {
+      
+      
+      collectionKeys.generateDefaultKey();
+    }
+    return collectionKeys;
+  }),
+
+  upsert: Task.async(function* (record) {
+    const collection = yield this.getCollection();
+    yield collection.upsert(record);
+  }),
+
+  sync: Task.async(function* () {
+    const collection = yield this.getCollection();
+    return yield ExtensionStorageSync._syncCollection(collection, {
+      strategy: "server_wins",
+    });
+  }),
+
+  
+  _clear: Task.async(function* () {
+    const collection = yield this.getCollection();
+    yield collection.clear();
+  }),
+};
+
+
+
+
+
+
+
+class CollectionKeyEncryptionRemoteTransformer extends EncryptionRemoteTransformer {
+  constructor(extensionId) {
+    super();
+    this.extensionId = extensionId;
+  }
+
+  getKeys() {
+    const self = this;
+    return Task.spawn(function* () {
+      
+      const collectionKeys = yield cryptoCollection.getKeyRing();
+      if (!collectionKeys.hasKeysFor([self.extensionId])) {
+        
+        
+        throw new Error(`tried to encrypt records for ${this.extensionId}, but key is not present`);
+      }
+      return collectionKeys.keyForCollection(self.extensionId);
+    });
+  }
+}
+global.CollectionKeyEncryptionRemoteTransformer = CollectionKeyEncryptionRemoteTransformer;
+
+
+
 
 
 
@@ -166,16 +302,169 @@ const openCollection = Task.async(function* (extension, context) {
   
   
   let collectionId = extension.id;
-  
   const {kinto} = yield storageSyncInit;
   const coll = kinto.collection(collectionId, {
     idSchema: storageSyncIdSchema,
+    remoteTransformers: [new CollectionKeyEncryptionRemoteTransformer(extension.id)],
   });
   return coll;
 });
 
 this.ExtensionStorageSync = {
+  _fxaService: fxAccounts,
   listeners: new WeakMap(),
+
+  syncAll: Task.async(function* () {
+    const extensions = extensionContexts.keys();
+    const extIds = Array.from(extensions, extension => extension.id);
+    log.debug(`Syncing extension settings for ${JSON.stringify(extIds)}\n`);
+    if (extIds.length == 0) {
+      
+      return;
+    }
+    yield this.ensureKeysFor(extIds);
+    const promises = Array.from(extensionContexts.keys(), extension => {
+      return openCollection(extension).then(coll => {
+        return this.sync(extension, coll);
+      });
+    });
+    yield Promise.all(promises);
+  }),
+
+  sync: Task.async(function* (extension, collection) {
+    const signedInUser = yield this._fxaService.getSignedInUser();
+    if (!signedInUser) {
+      
+      log.info("User was not signed into FxA; cannot sync");
+      throw new Error("Not signed in to FxA");
+    }
+    
+    const collectionId = extension.id;
+    let syncResults;
+    try {
+      syncResults = yield this._syncCollection(collection, {
+        strategy: "client_wins",
+        collection: collectionId,
+      });
+    } catch (err) {
+      log.warn("Syncing failed", err);
+      throw err;
+    }
+
+    let changes = {};
+    for (const record of syncResults.created) {
+      changes[record.key] = {
+        newValue: record.data,
+      };
+    }
+    for (const record of syncResults.updated) {
+      
+      
+      const key = record.old.key;
+      changes[key] = {
+        oldValue: record.old.data,
+        newValue: record.new.data,
+      };
+    }
+    for (const record of syncResults.deleted) {
+      changes[record.key] = {
+        oldValue: record.data,
+      };
+    }
+    for (const conflict of syncResults.resolved) {
+      
+      
+      
+      
+      changes[conflict.remote.key] = {
+        oldValue: conflict.local.data,
+        newValue: conflict.remote.data,
+      };
+    }
+    if (Object.keys(changes).length > 0) {
+      this.notifyListeners(extension, changes);
+    }
+  }),
+
+  
+
+
+
+
+
+
+
+
+
+  _syncCollection: Task.async(function* (collection, options) {
+    
+    return yield this._requestWithToken(`Syncing ${collection.name}`, function* (token) {
+      const allOptions = Object.assign({}, {
+        remote: prefStorageSyncServerURL,
+        headers: {
+          Authorization: "Bearer " + token,
+        },
+      }, options);
+
+      return yield collection.sync(allOptions);
+    });
+  }),
+
+  
+  
+  
+  _requestWithToken: Task.async(function* (description, f) {
+    const fxaToken = yield this._fxaService.getOAuthToken(FXA_OAUTH_OPTIONS);
+    try {
+      return yield f(fxaToken);
+    } catch (e) {
+      log.error(`${description}: request failed`, e);
+      if (e && e.data && e.data.code == 401) {
+        
+        log.info("Token might have expired");
+        yield this._fxaService.removeCachedOAuthToken({token: fxaToken});
+        const newToken = yield this._fxaService.getOAuthToken(FXA_OAUTH_OPTIONS);
+
+        
+        return yield f(newToken);
+      }
+      
+      throw e;
+    }
+  }),
+
+  
+
+
+
+
+
+
+
+
+  ensureKeysFor: Task.async(function* (extIds) {
+    const collectionKeys = yield cryptoCollection.getKeyRing();
+    if (collectionKeys.hasKeysFor(extIds)) {
+      return collectionKeys;
+    }
+
+    const newKeys = yield collectionKeys.ensureKeysFor(extIds);
+    const newRecord = {
+      id: STORAGE_SYNC_CRYPTO_KEYRING_RECORD_ID,
+      keys: newKeys.asWBO().cleartext,
+    };
+    yield cryptoCollection.upsert(newRecord);
+    const result = yield cryptoCollection.sync();
+    if (result.resolved.length != 0) {
+      
+      
+      
+      return yield this.ensureKeysFor(extIds);
+    }
+
+    
+    return newKeys;
+  }),
 
   
 
@@ -303,10 +592,13 @@ this.ExtensionStorageSync = {
     return records;
   }),
 
-  addOnChangedListener(extension, listener) {
+  addOnChangedListener(extension, listener, context) {
     let listeners = this.listeners.get(extension) || new Set();
     listeners.add(listener);
     this.listeners.set(extension, listeners);
+
+    
+    return this.getCollection(extension, context);
   },
 
   removeOnChangedListener(extension, listener) {
