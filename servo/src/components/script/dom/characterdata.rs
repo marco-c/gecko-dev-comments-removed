@@ -1,13 +1,13 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-//! DOM bindings for `CharacterData`.
+
+
+
+
 
 use dom::bindings::codegen::InheritTypes::{CharacterDataDerived, NodeCast};
 use dom::bindings::error::{Fallible, ErrorResult, IndexSize};
 use dom::bindings::js::JSRef;
-use dom::bindings::trace::Untraceable;
+use dom::bindings::trace::Traceable;
 use dom::bindings::utils::{Reflectable, Reflector};
 use dom::document::Document;
 use dom::eventtarget::{EventTarget, NodeTargetTypeId};
@@ -19,7 +19,7 @@ use std::cell::RefCell;
 #[deriving(Encodable)]
 pub struct CharacterData {
     pub node: Node,
-    pub data: Untraceable<RefCell<DOMString>>,
+    pub data: Traceable<RefCell<DOMString>>,
 }
 
 impl CharacterDataDerived for EventTarget {
@@ -37,7 +37,7 @@ impl CharacterData {
     pub fn new_inherited(id: NodeTypeId, data: DOMString, document: &JSRef<Document>) -> CharacterData {
         CharacterData {
             node: Node::new_inherited(id, document),
-            data: Untraceable::new(RefCell::new(data)),
+            data: Traceable::new(RefCell::new(data)),
         }
     }
 }
@@ -99,11 +99,11 @@ impl<'a> CharacterDataMethods for JSRef<'a, CharacterData> {
         data.push_str(arg.as_slice());
         data.push_str(self.data.deref().borrow().as_slice().slice((offset + count) as uint, length as uint));
         *self.data.deref().borrow_mut() = data.into_owned();
-        // FIXME: Once we have `Range`, we should implement step7 to step11
+        
         Ok(())
     }
 
-    // http://dom.spec.whatwg.org/#dom-childnode-remove
+    
     fn Remove(&self) {
         let node: &JSRef<Node> = NodeCast::from_ref(self);
         node.remove_self();
