@@ -64,9 +64,6 @@ pref("extensions.hotfix.certs.2.sha1Fingerprint", "39:E7:2B:7A:5B:CF:37:78:F9:5D
 pref("extensions.systemAddon.update.url", "https://aus5.mozilla.org/update/3/SystemAddons/%VERSION%/%BUILD_ID%/%BUILD_TARGET%/%LOCALE%/%CHANNEL%/%OS_VERSION%/%DISTRIBUTION%/%DISTRIBUTION_VERSION%/update.xml");
 
 
-pref("extensions.screenshots.system-disabled", true);
-
-
 
 pref("extensions.autoDisableScopes", 15);
 
@@ -1516,11 +1513,6 @@ pref("browser.tabs.crashReporting.email", "");
 
 pref("extensions.interposition.enabled", true);
 pref("extensions.interposition.prefetching", true);
-
-
-#if defined(NIGHTLY_BUILD)
-pref("extensions.allow-non-mpc-extensions", false);
-#endif
 
 
 #ifdef RELEASE_OR_BETA
