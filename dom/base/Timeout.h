@@ -73,6 +73,9 @@ public:
   
   bool mIsInterval;
 
+  
+  bool mIsTracking;
+
   Reason mReason;
 
   
