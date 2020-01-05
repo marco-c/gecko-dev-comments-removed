@@ -709,13 +709,13 @@ continue_loading:
   printf_stderr("LdrLoadDll: continuing load... ('%S')\n", moduleFileName->Buffer);
 #endif
 
+#ifdef _M_AMD64
   
   
-  AcquireStackWalkWorkaroundLock();
-  NTSTATUS ret = stub_LdrLoadDll(filePath, flags, moduleFileName, handle);
-  ReleaseStackWalkWorkaroundLock();
+  AutoSuppressStackWalking suppress;
+#endif
 
-  return ret;
+  return stub_LdrLoadDll(filePath, flags, moduleFileName, handle);
 }
 
 WindowsDllInterceptor NtDllIntercept;

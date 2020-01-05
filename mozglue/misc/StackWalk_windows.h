@@ -3,25 +3,24 @@
 
 #include "mozilla/Types.h"
 
+#ifdef _M_AMD64
 
 
 
 
 
 
-MFBT_API void
-AcquireStackWalkWorkaroundLock();
-
-MFBT_API bool
-TryAcquireStackWalkWorkaroundLock();
-
-MFBT_API void
-ReleaseStackWalkWorkaroundLock();
+struct MOZ_RAII AutoSuppressStackWalking
+{
+  MFBT_API AutoSuppressStackWalking();
+  MFBT_API ~AutoSuppressStackWalking();
+};
 
 MFBT_API void
 RegisterJitCodeRegion(uint8_t* aStart, size_t size);
 
 MFBT_API void
 UnregisterJitCodeRegion(uint8_t* aStart, size_t size);
+#endif 
 
 #endif 

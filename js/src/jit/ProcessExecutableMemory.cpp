@@ -160,13 +160,8 @@ RegisterExecutableMemory(void* p, size_t bytes, size_t pageSize)
     
     
     
-    AcquireStackWalkWorkaroundLock();
-
-    bool success = RtlAddFunctionTable(&r->runtimeFunction, 1, reinterpret_cast<DWORD64>(p));
-
-    ReleaseStackWalkWorkaroundLock();
-
-    return success;
+    AutoSuppressStackWalking suppress;
+    return RtlAddFunctionTable(&r->runtimeFunction, 1, reinterpret_cast<DWORD64>(p));
 }
 
 static void
@@ -177,11 +172,8 @@ UnregisterExecutableMemory(void* p, size_t bytes, size_t pageSize)
     
     
     
-    AcquireStackWalkWorkaroundLock();
-
+    AutoSuppressStackWalking suppress;
     RtlDeleteFunctionTable(&r->runtimeFunction);
-
-    ReleaseStackWalkWorkaroundLock();
 }
 # endif
 

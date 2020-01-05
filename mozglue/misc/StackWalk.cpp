@@ -9,7 +9,6 @@
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/IntegerPrintfMacros.h"
-#include "mozilla/ScopeExit.h"
 #include "mozilla/StackWalk.h"
 
 #include <string.h>
@@ -189,6 +188,7 @@ StackWalkInitCriticalAddress()
 #include <stdio.h>
 #include <malloc.h>
 #include "mozilla/ArrayUtils.h"
+#include "mozilla/Atomics.h"
 #include "mozilla/StackWalk_windows.h"
 
 #include <imagehlp.h>
@@ -223,9 +223,60 @@ DWORD gStackWalkThread;
 CRITICAL_SECTION gDbgHelpCS;
 
 #ifdef _M_AMD64
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static Atomic<size_t> sStackWalkSuppressions;
+
+MFBT_API
+AutoSuppressStackWalking::AutoSuppressStackWalking()
+{
+  ++sStackWalkSuppressions;
+}
+
+MFBT_API
+AutoSuppressStackWalking::~AutoSuppressStackWalking()
+{
+  --sStackWalkSuppressions;
+}
+
 static uint8_t* sJitCodeRegionStart;
 static size_t sJitCodeRegionSize;
-#endif
+
+MFBT_API void
+RegisterJitCodeRegion(uint8_t* aStart, size_t aSize)
+{
+  
+  MOZ_RELEASE_ASSERT(!sJitCodeRegionStart);
+
+  sJitCodeRegionStart = aStart;
+  sJitCodeRegionSize = aSize;
+}
+
+MFBT_API void
+UnregisterJitCodeRegion(uint8_t* aStart, size_t aSize)
+{
+  
+  MOZ_RELEASE_ASSERT(sJitCodeRegionStart &&
+                     sJitCodeRegionStart == aStart &&
+                     sJitCodeRegionSize == aSize);
+
+  sJitCodeRegionStart = nullptr;
+  sJitCodeRegionSize = 0;
+}
+#endif 
 
 
 static void
@@ -359,12 +410,14 @@ WalkStackMain64(struct WalkStackData* aData)
   
   
   
-  if (!TryAcquireStackWalkWorkaroundLock()) {
+  
+  
+  
+  
+  
+  if (sStackWalkSuppressions) {
     return;
   }
-  auto releaseLock = mozilla::MakeScopeExit([] {
-    ReleaseStackWalkWorkaroundLock();
-  });
 
   bool firstFrame = true;
 
@@ -499,76 +552,6 @@ WalkStackMain64(struct WalkStackData* aData)
 #endif
   }
 }
-
-
-
-
-#ifdef _M_AMD64
-
-struct CriticalSectionAutoInitializer {
-    CRITICAL_SECTION lock;
-
-    CriticalSectionAutoInitializer() {
-      InitializeCriticalSection(&lock);
-    }
-};
-
-static CriticalSectionAutoInitializer gWorkaroundLock;
-
-#endif 
-
-MFBT_API void
-AcquireStackWalkWorkaroundLock()
-{
-#ifdef _M_AMD64
-  EnterCriticalSection(&gWorkaroundLock.lock);
-#endif
-}
-
-MFBT_API bool
-TryAcquireStackWalkWorkaroundLock()
-{
-#ifdef _M_AMD64
-  return TryEnterCriticalSection(&gWorkaroundLock.lock);
-#else
-  return true;
-#endif
-}
-
-MFBT_API void
-ReleaseStackWalkWorkaroundLock()
-{
-#ifdef _M_AMD64
-  LeaveCriticalSection(&gWorkaroundLock.lock);
-#endif
-}
-
-MFBT_API void
-RegisterJitCodeRegion(uint8_t* aStart, size_t aSize)
-{
-#ifdef _M_AMD64
-  
-  MOZ_RELEASE_ASSERT(!sJitCodeRegionStart);
-
-  sJitCodeRegionStart = aStart;
-  sJitCodeRegionSize = aSize;
-#endif
-}
-
-MFBT_API void
-UnregisterJitCodeRegion(uint8_t* aStart, size_t aSize)
-{
-#ifdef _M_AMD64
-  
-  MOZ_RELEASE_ASSERT(sJitCodeRegionStart &&
-                     sJitCodeRegionStart == aStart &&
-                     sJitCodeRegionSize == aSize);
-
-  sJitCodeRegionStart = nullptr;
-  sJitCodeRegionSize = 0;
-#endif
-}
-
 
 static unsigned int WINAPI
 WalkStackThread(void* aData)
