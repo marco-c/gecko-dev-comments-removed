@@ -160,7 +160,7 @@ PuppetWidget::InitIMEState()
   if (mNeedIMEStateInit) {
     mContentCache.Clear();
     mTabChild->SendUpdateContentCache(mContentCache);
-    mIMENotificationRequestsOfParent = IMENotificationRequests();
+    mIMEPreferenceOfParent = nsIMEUpdatePreference();
     mNeedIMEStateInit = false;
   }
 }
@@ -840,9 +840,9 @@ PuppetWidget::NotifyIMEOfFocusChange(const IMENotification& aIMENotification)
     mContentCache.Clear();
   }
 
-  mIMENotificationRequestsOfParent = IMENotificationRequests();
+  mIMEPreferenceOfParent = nsIMEUpdatePreference();
   if (!mTabChild->SendNotifyIMEFocus(mContentCache, aIMENotification,
-                                     &mIMENotificationRequestsOfParent)) {
+                                     &mIMEPreferenceOfParent)) {
     return NS_ERROR_FAILURE;
   }
   return NS_OK;
@@ -864,13 +864,12 @@ PuppetWidget::NotifyIMEOfCompositionUpdate(
   return NS_OK;
 }
 
-IMENotificationRequests
-PuppetWidget::GetIMENotificationRequests()
+nsIMEUpdatePreference
+PuppetWidget::GetIMEUpdatePreference()
 {
   if (mNativeTextEventDispatcherListener) {
     
-    
-    return mNativeTextEventDispatcherListener->GetIMENotificationRequests();
+    return mNativeTextEventDispatcherListener->GetIMEUpdatePreference();
   }
 
   
@@ -881,14 +880,12 @@ PuppetWidget::GetIMENotificationRequests()
     
     
     
-    return IMENotificationRequests(
-             mIMENotificationRequestsOfParent.mWantUpdates |
-             IMENotificationRequests::NOTIFY_POSITION_CHANGE);
+    return nsIMEUpdatePreference(mIMEPreferenceOfParent.mWantUpdates |
+                                 nsIMEUpdatePreference::NOTIFY_POSITION_CHANGE);
   }
-  return IMENotificationRequests(
-           mIMENotificationRequestsOfParent.mWantUpdates |
-           IMENotificationRequests::NOTIFY_TEXT_CHANGE |
-           IMENotificationRequests::NOTIFY_POSITION_CHANGE);
+  return nsIMEUpdatePreference(mIMEPreferenceOfParent.mWantUpdates |
+                               nsIMEUpdatePreference::NOTIFY_TEXT_CHANGE |
+                               nsIMEUpdatePreference::NOTIFY_POSITION_CHANGE );
 }
 
 nsresult
@@ -915,7 +912,7 @@ PuppetWidget::NotifyIMEOfTextChange(const IMENotification& aIMENotification)
 
   
   
-  if (mIMENotificationRequestsOfParent.WantTextChange()) {
+  if (mIMEPreferenceOfParent.WantTextChange()) {
     mTabChild->SendNotifyIMETextChange(mContentCache, aIMENotification);
   } else {
     mTabChild->SendUpdateContentCache(mContentCache);
@@ -993,7 +990,7 @@ PuppetWidget::NotifyIMEOfPositionChange(const IMENotification& aIMENotification)
       NS_WARN_IF(!mContentCache.CacheSelection(this, &aIMENotification))) {
     return NS_ERROR_FAILURE;
   }
-  if (mIMENotificationRequestsOfParent.WantPositionChanged()) {
+  if (mIMEPreferenceOfParent.WantPositionChanged()) {
     mTabChild->SendNotifyIMEPositionChange(mContentCache, aIMENotification);
   } else {
     mTabChild->SendUpdateContentCache(mContentCache);
@@ -1105,7 +1102,8 @@ PuppetWidget::Paint()
                          "PuppetWidget", 0);
 #endif
 
-    if (mozilla::layers::LayersBackend::LAYERS_CLIENT == mLayerManager->GetBackendType()) {
+    if (mLayerManager->GetBackendType() == mozilla::layers::LayersBackend::LAYERS_CLIENT ||
+        mLayerManager->GetBackendType() == mozilla::layers::LayersBackend::LAYERS_WR) {
       
       if (mTabChild) {
         mTabChild->NotifyPainted();
