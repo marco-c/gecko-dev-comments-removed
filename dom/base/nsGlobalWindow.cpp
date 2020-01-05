@@ -12338,13 +12338,6 @@ nsGlobalWindow::OpenInternal(const nsAString& aUrl, const nsAString& aName,
 
   NS_ASSERTION(mDocShell, "Must have docshell here");
 
-  
-  bool isApp = false;
-  if (mDoc) {
-    isApp = mDoc->NodePrincipal()->GetAppStatus() >=
-              nsIPrincipal::APP_STATUS_INSTALLED;
-  }
-
   bool forceNoOpener = aForceNoOpener;
   if (!forceNoOpener) {
     
@@ -12364,7 +12357,7 @@ nsGlobalWindow::OpenInternal(const nsAString& aUrl, const nsAString& aName,
   
   
   const bool checkForPopup = !nsContentUtils::LegacyIsCallerChromeOrNativeCode() &&
-    !isApp && !aDialog && !WindowExists(aName, forceNoOpener, !aCalledNoScript);
+    !aDialog && !WindowExists(aName, forceNoOpener, !aCalledNoScript);
 
   
   
