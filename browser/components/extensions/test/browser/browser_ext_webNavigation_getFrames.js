@@ -4,7 +4,7 @@
 
 add_task(function* testWebNavigationGetNonExistentTab() {
   let extension = ExtensionTestUtils.loadExtension({
-    background: "(" + function() {
+    background: async function() {
       let results = [
         
         
@@ -14,6 +14,7 @@ add_task(function* testWebNavigationGetNonExistentTab() {
           browser.test.assertEq("Invalid tab ID: 0", error.message,
                                 "getAllFrames rejected Promise should pass the expected error");
         }),
+
         
         
         browser.webNavigation.getFrame({tabId: 0, frameId: 15, processId: 20}).then(() => {
@@ -24,10 +25,10 @@ add_task(function* testWebNavigationGetNonExistentTab() {
         }),
       ];
 
-      Promise.all(results).then(() => {
-        browser.test.sendMessage("getNonExistentTab.done");
-      });
-    } + ")();",
+      await Promise.all(results);
+
+      browser.test.sendMessage("getNonExistentTab.done");
+    },
     manifest: {
       permissions: ["webNavigation"],
     },
@@ -45,11 +46,11 @@ add_task(function* testWebNavigationGetNonExistentTab() {
 
 add_task(function* testWebNavigationFrames() {
   let extension = ExtensionTestUtils.loadExtension({
-    background: "(" + function() {
+    background: async function() {
       let tabId;
       let collectedDetails = [];
 
-      browser.webNavigation.onCompleted.addListener((details) => {
+      browser.webNavigation.onCompleted.addListener(async details => {
         collectedDetails.push(details);
 
         if (details.frameId !== 0) {
@@ -57,46 +58,43 @@ add_task(function* testWebNavigationFrames() {
           return;
         }
 
-        browser.webNavigation.getAllFrames({tabId}).then((getAllFramesDetails) => {
-          let getFramePromises = getAllFramesDetails.map((frameDetail) => {
-            let {frameId} = frameDetail;
-            
-            return browser.webNavigation.getFrame({tabId, frameId, processId: 0});
-          });
+        let getAllFramesDetails = await browser.webNavigation.getAllFrames({tabId});
 
-          Promise.all(getFramePromises).then((getFrameResults) => {
-            browser.test.sendMessage("webNavigationFrames.done", {
-              collectedDetails, getAllFramesDetails, getFrameResults,
-            });
-          }, () => {
-            browser.test.assertTrue(false, "None of the getFrame promises should have been rejected");
-          });
-
+        let getFramePromises = getAllFramesDetails.map(({frameId}) => {
           
-          let nonExistentFrameId = Math.floor(Math.random() * 10000);
+          return browser.webNavigation.getFrame({tabId, frameId, processId: 0});
+        });
 
-          
-          while (getAllFramesDetails.filter((details) => details.frameId == nonExistentFrameId).length > 0) {
-            nonExistentFrameId += 1;
-          }
+        let getFrameResults = await Promise.all(getFramePromises);
+        browser.test.sendMessage("webNavigationFrames.done", {
+          collectedDetails, getAllFramesDetails, getFrameResults,
+        });
 
-          
-          browser.webNavigation.getFrame({tabId, frameId: nonExistentFrameId, processId: 20}).then(() => {
+        
+        let nonExistentFrameId = Math.floor(Math.random() * 10000);
+
+        
+        while (getAllFramesDetails.filter((details) => details.frameId == nonExistentFrameId).length > 0) {
+          nonExistentFrameId += 1;
+        }
+
+        
+        await browser.webNavigation.getFrame({tabId, frameId: nonExistentFrameId, processId: 20}).then(
+          () => {
             browser.test.fail("getFrame promise should be rejected for an unexistent frameId");
-          }, (error) => {
+          },
+          error => {
             browser.test.assertEq(`No frame found with frameId: ${nonExistentFrameId}`, error.message,
                                   "getFrame promise should be rejected with the expected error message on unexistent frameId");
-          }).then(() => {
-            browser.tabs.remove(tabId);
-            browser.test.sendMessage("webNavigationFrames.done");
           });
-        });
+
+        await browser.tabs.remove(tabId);
+        browser.test.sendMessage("webNavigationFrames.done");
       });
 
-      browser.tabs.create({url: "tab.html"}, (tab) => {
-        tabId = tab.id;
-      });
-    } + ")();",
+      let tab = await browser.tabs.create({url: "tab.html"});
+      tabId = tab.id;
+    },
     manifest: {
       permissions: ["webNavigation", "tabs"],
     },
