@@ -2927,7 +2927,7 @@ GetStackAndModules(const std::vector<uintptr_t>& aPCs)
     const SharedLibrary &info = rawModules.GetEntry(i);
     const std::string &name = info.GetName();
     std::string basename = name;
-#ifdef XP_MACOSX
+#if defined(XP_MACOSX) || defined(XP_LINUX)
     
     
     
