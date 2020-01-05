@@ -2438,7 +2438,8 @@ EditorBase::InsertTextIntoTextNodeImpl(const nsAString& aStringToInsert,
 {
   RefPtr<EditTransactionBase> transaction;
   bool isIMETransaction = false;
-  int32_t replacedOffset = 0;
+  RefPtr<Text> insertedTextNode = &aTextNode;
+  int32_t insertedOffset = aOffset;
   
   
   
@@ -2468,7 +2469,8 @@ EditorBase::InsertTextIntoTextNodeImpl(const nsAString& aStringToInsert,
     
     
     
-    replacedOffset = mIMETextOffset;
+    insertedTextNode = mIMETextNode;
+    insertedOffset = mIMETextOffset;
     mIMETextLength = aStringToInsert.Length();
   } else {
     transaction = CreateTxnForInsertText(aStringToInsert, aTextNode, aOffset);
@@ -2477,8 +2479,8 @@ EditorBase::InsertTextIntoTextNodeImpl(const nsAString& aStringToInsert,
   
   for (auto& listener : mActionListeners) {
     listener->WillInsertText(
-      static_cast<nsIDOMCharacterData*>(aTextNode.AsDOMNode()), aOffset,
-      aStringToInsert);
+      static_cast<nsIDOMCharacterData*>(insertedTextNode->AsDOMNode()),
+      insertedOffset, aStringToInsert);
   }
 
   
@@ -2490,8 +2492,8 @@ EditorBase::InsertTextIntoTextNodeImpl(const nsAString& aStringToInsert,
   
   for (auto& listener : mActionListeners) {
     listener->DidInsertText(
-      static_cast<nsIDOMCharacterData*>(aTextNode.AsDOMNode()),
-      aOffset, aStringToInsert, rv);
+      static_cast<nsIDOMCharacterData*>(insertedTextNode->AsDOMNode()),
+      insertedOffset, aStringToInsert, rv);
   }
 
   
