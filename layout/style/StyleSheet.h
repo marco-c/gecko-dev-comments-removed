@@ -41,8 +41,6 @@ public:
   css::SheetParsingMode ParsingMode() { return mParsingMode; }
   mozilla::dom::CSSStyleSheetParsingMode ParsingModeDOM();
 
-  nsINode* GetOwnerNode() const { return mOwningNode; }
-
   
   nsIDocument* GetDocument() const { return mDocument; }
 
@@ -74,6 +72,63 @@ public:
   inline StyleSheetHandle AsHandle();
   inline const CSSStyleSheet& AsGecko() const;
   inline const ServoStyleSheet& AsServo() const;
+
+  inline MozExternalRefCountType AddRef();
+  inline MozExternalRefCountType Release();
+
+  
+  inline bool IsInline() const;
+
+  inline nsIURI* GetSheetURI() const;
+  
+
+  inline nsIURI* GetOriginalURI() const;
+  inline nsIURI* GetBaseURI() const;
+  
+
+
+
+
+  inline void SetURIs(nsIURI* aSheetURI, nsIURI* aOriginalSheetURI,
+                      nsIURI* aBaseURI);
+
+  
+
+
+
+
+
+  inline bool IsApplicable() const;
+  inline bool HasRules() const;
+
+  
+  nsIDocument* GetOwningDocument() const { return mDocument; }
+  inline void SetOwningDocument(nsIDocument* aDocument);
+  nsINode* GetOwnerNode() const { return mOwningNode; }
+  inline StyleSheet* GetParentSheet() const;
+
+  inline void AppendStyleSheet(StyleSheet* aSheet);
+
+  
+  inline nsIPrincipal* Principal() const;
+  
+
+
+
+
+  inline void SetPrincipal(nsIPrincipal* aPrincipal);
+
+  
+  inline CORSMode GetCORSMode() const;
+  
+  inline net::ReferrerPolicy GetReferrerPolicy() const;
+  
+  inline void GetIntegrity(dom::SRIMetadata& aResult) const;
+
+  inline size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const;
+#ifdef DEBUG
+  inline void List(FILE* aOut = stdout, int32_t aIndex = 0) const;
+#endif
 
 protected:
   nsIDocument*          mDocument; 

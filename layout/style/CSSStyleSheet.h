@@ -125,19 +125,9 @@ public:
 
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_CSS_STYLE_SHEET_IMPL_CID)
 
-  nsIURI* GetSheetURI() const;
-  nsIURI* GetBaseURI() const;
   void GetTitle(nsString& aTitle) const;
   void GetType(nsString& aType) const;
   bool HasRules() const;
-
-  
-
-
-
-
-
-  bool IsApplicable() const;
 
   
 
@@ -152,7 +142,6 @@ public:
 
   
   CSSStyleSheet* GetParentSheet() const;  
-  nsIDocument* GetOwningDocument() const;  
   void SetOwningDocument(nsIDocument* aDocument);
 
   
@@ -171,23 +160,6 @@ public:
 
   nsresult DeleteRuleFromGroup(css::GroupRule* aGroup, uint32_t aIndex);
   nsresult InsertRuleIntoGroup(const nsAString& aRule, css::GroupRule* aGroup, uint32_t aIndex, uint32_t* _retval);
-
-  
-
-
-
-
-  void SetURIs(nsIURI* aSheetURI, nsIURI* aOriginalSheetURI, nsIURI* aBaseURI);
-
-  
-
-
-
-
-  void SetPrincipal(nsIPrincipal* aPrincipal);
-
-  
-  nsIPrincipal* Principal() const { return mInner->mPrincipal; }
 
   void SetTitle(const nsAString& aTitle) { mTitle = aTitle; }
   void SetMedia(nsMediaList* aMedia);
@@ -223,13 +195,6 @@ public:
                               uint32_t aIndex, uint32_t* aReturn);
 
   
-
-  nsIURI* GetOriginalURI() const { return mInner->mOriginalSheetURI; }
-
-  
-  bool IsInline() const { return mInner->IsInline(); }
-
-  
   NS_IMETHOD StyleSheetLoaded(StyleSheetHandle aSheet, bool aWasAlternate,
                               nsresult aStatus) override;
 
@@ -257,15 +222,6 @@ public:
 
   size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const;
 
-  
-  CORSMode GetCORSMode() const { return mInner->mCORSMode; }
-
-  
-  ReferrerPolicy GetReferrerPolicy() const { return mInner->mReferrerPolicy; }
-
-  
-  void GetIntegrity(dom::SRIMetadata& aResult) const { aResult = mInner->mIntegrity; }
-
   dom::Element* GetScopeElement() const { return mScopeElement; }
   void SetScopeElement(dom::Element* aScopeElement)
   {
@@ -279,7 +235,7 @@ public:
     const_cast<const CSSStyleSheet*>(this)->GetType(aType);
   }
   
-  nsINode* GetOwnerNode() const { return mOwningNode; }
+  using StyleSheet::GetOwnerNode;
   CSSStyleSheet* GetParentStyleSheet() const { return mParent; }
   
   
