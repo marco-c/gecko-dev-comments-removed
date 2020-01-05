@@ -322,7 +322,6 @@ class UpdateTestCase(PuppeteerMixin, MarionetteTestCase):
 
                 
                 self.download_update(dialog)
-                dialog.close()
 
             finally:
                 self.updates[self.current_update_index]['patch'] = self.patch_info
