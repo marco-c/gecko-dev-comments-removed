@@ -1032,23 +1032,6 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
 
   private:
     
-    typedef mozilla::LinkedList<js::jit::IonBuilder> IonBuilderList;
-
-    js::HelperThreadLockData<IonBuilderList> ionLazyLinkList_;
-    js::HelperThreadLockData<size_t> ionLazyLinkListSize_;
-
-  public:
-    IonBuilderList& ionLazyLinkList();
-
-    size_t ionLazyLinkListSize() {
-        return ionLazyLinkListSize_;
-    }
-
-    void ionLazyLinkListRemove(js::jit::IonBuilder* builder);
-    void ionLazyLinkListAdd(js::jit::IonBuilder* builder);
-
-  private:
-    
 
     mozilla::Atomic<js::StackFormat, mozilla::ReleaseAcquire> stackFormat_;
 
