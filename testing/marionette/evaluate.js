@@ -247,7 +247,7 @@ evaluate.fromJSON = function (obj, seenEls, win, shadowRoot = undefined) {
 
 
 evaluate.toJSON = function (obj, seenEls) {
-  let t = Object.prototype.toString.call(obj);
+  const t = Object.prototype.toString.call(obj);
 
   
   if (t == "[object Undefined]" || t == "[object Null]") {
@@ -268,6 +268,12 @@ evaluate.toJSON = function (obj, seenEls) {
   else if ("nodeType" in obj && obj.nodeType == 1) {
     let uuid = seenEls.add(obj);
     return element.makeWebElement(uuid);
+  }
+
+  
+  else if (typeof obj["toJSON"] == "function") {
+    let unsafeJSON = obj.toJSON();
+    return evaluate.toJSON(unsafeJSON, seenEls);
   }
 
   
