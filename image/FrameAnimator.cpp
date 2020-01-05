@@ -26,13 +26,55 @@ namespace image {
 
 
 void
-AnimationState::NotifyDecodeComplete()
+AnimationState::UpdateState(bool aAnimationFinished,
+                            RasterImage *aImage,
+                            const gfx::IntSize& aSize)
+{
+  LookupResult result =
+    SurfaceCache::Lookup(ImageKey(aImage),
+                         RasterSurfaceKey(aSize,
+                                          DefaultSurfaceFlags(),
+                                          PlaybackType::eAnimated));
+
+  UpdateStateInternal(result, aAnimationFinished);
+}
+
+void
+AnimationState::UpdateStateInternal(LookupResult& aResult,
+                                    bool aAnimationFinished)
 {
   
-  
-  if (!mDiscarded) {
-    mIsCurrentlyDecoded = true;
+  if (aResult.Type() == MatchType::NOT_FOUND) {
+    
+    mDiscarded = mHasBeenDecoded;
+    mIsCurrentlyDecoded = false;
+  } else if (aResult.Type() == MatchType::PENDING) {
+    
+    mDiscarded = false;
+    mIsCurrentlyDecoded = false;
+  } else {
+    MOZ_ASSERT(aResult.Type() == MatchType::EXACT);
+    mDiscarded = false;
 
+    
+    
+    
+    
+    
+    if (mHasBeenDecoded) {
+      Maybe<uint32_t> frameCount = FrameCount();
+      MOZ_ASSERT(frameCount.isSome());
+      aResult.Surface().Seek(*frameCount - 1);
+      if (aResult.Surface() && aResult.Surface()->IsFinished()) {
+        mIsCurrentlyDecoded = true;
+      } else {
+        mIsCurrentlyDecoded = false;
+      }
+    }
+  }
+
+  
+  if (mIsCurrentlyDecoded || aAnimationFinished) {
     
     
     
@@ -43,19 +85,21 @@ AnimationState::NotifyDecodeComplete()
     
     
     mCompositedFrameInvalid = false;
+  } else if (aResult.Type() == MatchType::NOT_FOUND ||
+             aResult.Type() == MatchType::PENDING) {
+    if (mHasBeenDecoded) {
+      MOZ_ASSERT(gfxPrefs::ImageMemAnimatedDiscardable());
+      mCompositedFrameInvalid = true;
+    }
   }
-  mHasBeenDecoded = true;
+  
+  
 }
 
 void
-AnimationState::SetDiscarded(bool aDiscarded)
+AnimationState::NotifyDecodeComplete()
 {
-  if (aDiscarded) {
-    MOZ_ASSERT(gfxPrefs::ImageMemAnimatedDiscardable());
-    mIsCurrentlyDecoded = false;
-    mCompositedFrameInvalid = true;
-  }
-  mDiscarded = aDiscarded;
+  mHasBeenDecoded = true;
 }
 
 void
@@ -307,7 +351,9 @@ FrameAnimator::AdvanceFrame(AnimationState& aState,
 }
 
 RefreshResult
-FrameAnimator::RequestRefresh(AnimationState& aState, const TimeStamp& aTime)
+FrameAnimator::RequestRefresh(AnimationState& aState,
+                              const TimeStamp& aTime,
+                              bool aAnimationFinished)
 {
   
   RefreshResult ret;
@@ -326,12 +372,8 @@ FrameAnimator::RequestRefresh(AnimationState& aState, const TimeStamp& aTime)
                                           DefaultSurfaceFlags(),
                                           PlaybackType::eAnimated));
 
-  if (!result) {
-    if (result.Type() == MatchType::NOT_FOUND) {
-      
-      
-      aState.SetDiscarded(true);
-    }
+  aState.UpdateStateInternal(result, aAnimationFinished);
+  if (aState.IsDiscarded() || !result) {
     return ret;
   }
 

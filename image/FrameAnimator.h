@@ -42,18 +42,25 @@ public:
   
 
 
+
+
+  void UpdateState(bool aAnimationFinished,
+                   RasterImage *aImage,
+                   const gfx::IntSize& aSize);
+private:
+  void UpdateStateInternal(LookupResult& aResult,
+                           bool aAnimationFinished);
+
+public:
+  
+
+
   void NotifyDecodeComplete();
 
   
 
 
   bool GetHasBeenDecoded() { return mHasBeenDecoded; }
-
-  
-
-
-
-  void SetDiscarded(bool aDiscarded);
 
   
 
@@ -276,7 +283,9 @@ public:
 
 
 
-  RefreshResult RequestRefresh(AnimationState& aState, const TimeStamp& aTime);
+  RefreshResult RequestRefresh(AnimationState& aState,
+                               const TimeStamp& aTime,
+                               bool aAnimationFinished);
 
   
 

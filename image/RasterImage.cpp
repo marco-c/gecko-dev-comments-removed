@@ -173,7 +173,7 @@ RasterImage::RequestRefresh(const TimeStamp& aTime)
   RefreshResult res;
   if (mAnimationState) {
     MOZ_ASSERT(mFrameAnimator);
-    res = mFrameAnimator->RequestRefresh(*mAnimationState, aTime);
+    res = mFrameAnimator->RequestRefresh(*mAnimationState, aTime, mAnimationFinished);
   }
 
   if (res.mFrameAdvanced) {
@@ -450,7 +450,7 @@ RasterImage::OnSurfaceDiscarded(const SurfaceKey& aSurfaceKey)
 
   if (animatedFramesDiscarded && NS_IsMainThread()) {
     MOZ_ASSERT(gfxPrefs::ImageMemAnimatedDiscardable());
-    mAnimationState->SetDiscarded(true);
+    mAnimationState->UpdateState(mAnimationFinished, this, mSize);
     
     
     animatedFramesDiscarded = false;
@@ -471,7 +471,7 @@ RasterImage::OnSurfaceDiscardedInternal(bool aAnimatedFramesDiscarded)
 
   if (aAnimatedFramesDiscarded && mAnimationState) {
     MOZ_ASSERT(gfxPrefs::ImageMemAnimatedDiscardable());
-    mAnimationState->SetDiscarded(true);
+    mAnimationState->UpdateState(mAnimationFinished, this, mSize);
   }
 
   if (mProgressTracker) {
@@ -1081,7 +1081,7 @@ RasterImage::Discard()
   SurfaceCache::RemoveImage(ImageKey(this));
 
   if (mAnimationState) {
-    mAnimationState->SetDiscarded(true);
+    mAnimationState->UpdateState(mAnimationFinished, this, mSize);
   }
 
   
@@ -1253,7 +1253,7 @@ RasterImage::Decode(const IntSize& aSize,
     task = DecoderFactory::CreateAnimationDecoder(mDecoderType, WrapNotNull(this),
                                                   mSourceBuffer, mSize,
                                                   decoderFlags, surfaceFlags);
-    mAnimationState->SetDiscarded(false);
+    mAnimationState->UpdateState(mAnimationFinished, this, mSize);
     
     
     
@@ -1717,6 +1717,7 @@ RasterImage::NotifyDecodeComplete(const DecoderFinalStatus& aStatus,
     
     
     mAnimationState->NotifyDecodeComplete();
+    mAnimationState->UpdateState(mAnimationFinished, this, mSize);
   }
 
   
