@@ -302,9 +302,6 @@ H264Converter::DecodeFirstSample(MediaRawData* aSample)
 
   mNeedKeyframe = false;
 
-  if (CanRecycleDecoder()) {
-    mDecoder->ConfigurationChanged(mCurrentConfig);
-  }
   RefPtr<H264Converter> self = this;
   mDecoder->Decode(aSample)
     ->Then(AbstractThread::GetCurrent()->AsTaskQueue(), __func__,
@@ -342,6 +339,9 @@ H264Converter::CheckForSPSChange(MediaRawData* aSample)
     
     
     RefPtr<H264Converter> self = this;
+    if (!sample->mTrackInfo) {
+      sample->mTrackInfo = new TrackInfoSharedPtr(mCurrentConfig, 0);
+    }
     mDecoder->Flush()
       ->Then(AbstractThread::GetCurrent()->AsTaskQueue(),
              __func__,

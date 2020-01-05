@@ -297,20 +297,6 @@ public:
   
   virtual bool SupportDecoderRecycling() const { return false; }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  virtual void ConfigurationChanged(const TrackInfo& aConfig)
-  {
-    MOZ_ASSERT(SupportDecoderRecycling(),
-               "Can only work with a decoder supporting recycling.");
-  }
-
   enum class ConversionRequired
   {
     kNeedNone = 0,
