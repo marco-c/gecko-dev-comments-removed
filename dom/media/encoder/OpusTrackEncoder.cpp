@@ -335,10 +335,14 @@ OpusTrackEncoder::GetEncodedTrack(EncodedFrameContainer& aData)
       AudioChunk chunk = *iter;
 
       
-      int frameToCopy = chunk.GetDuration();
-      if (frameCopied + frameToCopy > framesToFetch) {
+      StreamTime frameToCopy = chunk.GetDuration();
+      if (frameToCopy > framesToFetch - frameCopied) {
         frameToCopy = framesToFetch - frameCopied;
       }
+      
+      
+      
+      MOZ_ASSERT(frameToCopy <= 3844, "frameToCopy exceeded expected range");
 
       if (!chunk.IsNull()) {
         
@@ -349,7 +353,9 @@ OpusTrackEncoder::GetEncodedTrack(EncodedFrameContainer& aData)
                                        mChannels *
                                        sizeof(AudioDataValue);
         if (!memsetLength.isValid()) {
-          LOG(LogLevel::Error, ("Error calculating length of pcm buffer!"));
+          
+          
+          MOZ_ASSERT_UNREACHABLE("memsetLength invalid!");
           return NS_ERROR_FAILURE;
         }
         memset(pcm.Elements() + frameCopied * mChannels, 0,
@@ -359,6 +365,11 @@ OpusTrackEncoder::GetEncodedTrack(EncodedFrameContainer& aData)
       frameCopied += frameToCopy;
       iter.Next();
     }
+
+    
+    
+    
+    MOZ_ASSERT(frameCopied <= 3844, "frameCopied exceeded expected range");
 
     RefPtr<EncodedFrame> audiodata = new EncodedFrame();
     audiodata->SetFrameType(EncodedFrame::OPUS_AUDIO_FRAME);
