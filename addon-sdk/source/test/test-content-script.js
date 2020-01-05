@@ -425,7 +425,7 @@ exports["test Object Tag"] = createProxyTest("", function (helper) {
     'new ' + function ContentScriptScope() {
       
       let flash = document.createElement("object");
-      assert(typeof flash == "function", "<object> is typeof 'function'");
+      assert(typeof flash == "object", "<object> is typeof 'function'");
       assert(flash.toString().match(/\[object HTMLObjectElement.*\]/), "<object> is HTMLObjectElement");
       assert("setAttribute" in flash, "<object> has a setAttribute method");
       done();
