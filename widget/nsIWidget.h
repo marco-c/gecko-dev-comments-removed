@@ -1194,6 +1194,11 @@ class nsIWidget : public nsISupports
     
 
 
+    virtual already_AddRefed<nsIScreen> GetWidgetScreen() = 0;
+
+    
+
+
 
 
 

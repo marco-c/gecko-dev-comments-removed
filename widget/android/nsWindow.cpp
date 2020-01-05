@@ -3,6 +3,7 @@
 
 
 
+
 #include <android/log.h>
 #include <android/native_window.h>
 #include <android/native_window_jni.h>
@@ -346,7 +347,8 @@ public:
                      GeckoView::Window::Param aWindow,
                      GeckoView::Param aView, jni::Object::Param aCompositor,
                      jni::String::Param aChromeURI,
-                     int32_t aWidth, int32_t aHeight);
+                     int32_t aWidth, int32_t aHeight,
+                     int32_t screenId);
 
     
     void Close();
@@ -1321,7 +1323,8 @@ nsWindow::GeckoViewSupport::Open(const jni::Class::LocalRef& aCls,
                                  GeckoView::Param aView,
                                  jni::Object::Param aCompositor,
                                  jni::String::Param aChromeURI,
-                                 int32_t aWidth, int32_t aHeight)
+                                 int32_t aWidth, int32_t aHeight,
+                                 int32_t aScreenId)
 {
     MOZ_ASSERT(NS_IsMainThread());
 
@@ -1368,6 +1371,7 @@ nsWindow::GeckoViewSupport::Open(const jni::Class::LocalRef& aCls,
     MOZ_ASSERT(widget);
 
     const auto window = static_cast<nsWindow*>(widget.get());
+    window->SetScreenId(aScreenId);
 
     
     window->mGeckoViewSupport  = mozilla::MakeUnique<GeckoViewSupport>(
@@ -1510,6 +1514,7 @@ nsWindow::DumpWindows(const nsTArray<nsWindow*>& wins, int indent)
 }
 
 nsWindow::nsWindow() :
+    mScreenId(0), 
     mIsVisible(false),
     mParent(nullptr),
     mAwaitingFullScreen(false),
@@ -1671,19 +1676,11 @@ nsWindow::GetDPI()
 double
 nsWindow::GetDefaultScaleInternal()
 {
-    static double density = 0.0;
 
-    if (density != 0.0) {
-        return density;
-    }
-
-    density = GeckoAppShell::GetDensity();
-
-    if (!density) {
-        density = 1.0;
-    }
-
-    return density;
+    nsCOMPtr<nsIScreen> screen = GetWidgetScreen();
+    MOZ_ASSERT(screen);
+    RefPtr<nsScreenAndroid> screenAndroid = (nsScreenAndroid*) screen.get();
+    return screenAndroid->GetDensity();
 }
 
 NS_IMETHODIMP
@@ -3615,7 +3612,20 @@ nsWindow::UpdateZoomConstraints(const uint32_t& aPresShellId,
 CompositorBridgeParent*
 nsWindow::GetCompositorBridgeParent() const
 {
-  return mCompositorSession ? mCompositorSession->GetInProcessBridge() : nullptr;
+    return mCompositorSession ? mCompositorSession->GetInProcessBridge() : nullptr;
+}
+
+already_AddRefed<nsIScreen>
+nsWindow::GetWidgetScreen()
+{
+    nsCOMPtr<nsIScreenManager> screenMgr =
+        do_GetService("@mozilla.org/gfx/screenmanager;1");
+    MOZ_ASSERT(screenMgr, "Failed to get nsIScreenManager");
+
+    nsCOMPtr<nsIScreen> screen;
+    screenMgr->ScreenForId(mScreenId, getter_AddRefs(screen));
+
+    return screen.forget();
 }
 
 jni::DependentRef<java::GeckoLayerClient>
