@@ -82,7 +82,6 @@ public:
     
     MediaDecoderOwner* GetMediaOwner() const override;
     void SetInfinite(bool aInfinite) override;
-    void SetMediaSeekable(bool aMediaSeekable) override;
     void NotifyNetworkError() override;
     void NotifyDecodeError() override;
     void NotifyDataArrived() override;
@@ -253,16 +252,8 @@ protected:
 
 public:
   
-  void SetMediaSeekable(bool aMediaSeekable);
-  
-  void SetMediaSeekableOnlyInBufferedRanges(bool aMediaSeekableOnlyInBufferedRanges);
-
-  
   
   bool IsMediaSeekable();
-  
-  
-  bool IsMediaSeekableOnlyInBufferedRanges();
   
   
   bool IsTransportSeekable();
@@ -576,7 +567,7 @@ private:
 
   void OnMediaNotSeekable()
   {
-    SetMediaSeekable(false);
+    mMediaSeekable = false;
   }
 
   void FinishShutdown();
@@ -672,6 +663,13 @@ protected:
 
   
   bool mFiredMetadataLoaded;
+
+  
+  bool mMediaSeekable = true;
+
+  
+  
+  bool mMediaSeekableOnlyInBufferedRanges = false;
 
   
   
@@ -773,12 +771,6 @@ protected:
   Canonical<int64_t> mDecoderPosition;
 
   
-  Canonical<bool> mMediaSeekable;
-
-  
-  Canonical<bool> mMediaSeekableOnlyInBufferedRanges;
-
-  
   Canonical<bool> mIsVisible;
 
 public:
@@ -818,12 +810,6 @@ public:
   }
   AbstractCanonical<int64_t>* CanonicalDecoderPosition() {
     return &mDecoderPosition;
-  }
-  AbstractCanonical<bool>* CanonicalMediaSeekable() {
-    return &mMediaSeekable;
-  }
-  AbstractCanonical<bool>* CanonicalMediaSeekableOnlyInBufferedRanges() {
-    return &mMediaSeekableOnlyInBufferedRanges;
   }
   AbstractCanonical<bool>* CanonicalIsVisible() {
     return &mIsVisible;
