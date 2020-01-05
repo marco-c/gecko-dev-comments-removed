@@ -13,6 +13,7 @@
 #include "nsContentUtils.h"
 #include "nsIFrame.h"
 #include "nsPresContext.h"
+#include "nsStyleStruct.h"
 
 namespace mozilla {
 
@@ -30,6 +31,12 @@ SVGImageContext::MaybeStoreContextPaint(Maybe<SVGImageContext>& aContext,
     sEnabledForContentCached = true;
   }
 
+  if (!aFromFrame->StyleSVG()->ExposesContextProperties()) {
+    
+    
+    return;
+  }
+
   if (!sEnabledForContent &&
       !nsContentUtils::IsChromeDoc(aFromFrame->PresContext()->Document())) {
     
@@ -40,8 +47,6 @@ SVGImageContext::MaybeStoreContextPaint(Maybe<SVGImageContext>& aContext,
     
     return;
   }
-
-  
 
   bool haveContextPaint = false;
 
