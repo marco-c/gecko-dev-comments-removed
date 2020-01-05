@@ -2,8 +2,16 @@
 
 
 
-use bluetooth_scanfilter::RequestDeviceoptions;
+#![feature(proc_macro)]
+
+extern crate ipc_channel;
+#[macro_use]
+extern crate serde_derive;
+
+pub mod scanfilter;
+
 use ipc_channel::ipc::IpcSender;
+use scanfilter::RequestDeviceoptions;
 
 #[derive(Deserialize, Serialize)]
 pub enum BluetoothError {
