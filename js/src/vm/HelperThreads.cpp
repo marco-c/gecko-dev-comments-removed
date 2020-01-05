@@ -7,6 +7,7 @@
 #include "vm/HelperThreads.h"
 
 #include "mozilla/DebugOnly.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/Unused.h"
 
 #include "jsnativestack.h"
@@ -1155,7 +1156,9 @@ js::GCParallelTask::~GCParallelTask()
     
     
 #ifdef DEBUG
-    AutoLockHelperThreadState helperLock;
+    mozilla::Maybe<AutoLockHelperThreadState> helperLock;
+    if (!HelperThreadState().isLockedByCurrentThread())
+        helperLock.emplace();
     MOZ_ASSERT(state == NotStarted);
 #endif
 }
