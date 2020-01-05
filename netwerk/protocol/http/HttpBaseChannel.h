@@ -382,10 +382,8 @@ protected:
   
   bool ShouldIntercept(nsIURI* aURI = nullptr);
 
-#ifdef DEBUG
   
-  void AssertPrivateBrowsingId();
-#endif
+  void CheckPrivateBrowsing();
 
   friend class PrivateBrowsingChannel<HttpBaseChannel>;
   friend class InterceptFailedOnStop;
