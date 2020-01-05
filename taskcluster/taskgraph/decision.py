@@ -130,6 +130,12 @@ def get_decision_parameters(options):
 
     
     
+    parameters['filters'] = [
+        'target_tasks_method',
+    ]
+
+    
+    
     if '@' not in parameters['owner']:
         parameters['owner'] += '@noreply.mozilla.org'
 
