@@ -5,7 +5,7 @@
 
 function* runTests() {
   yield SpecialPowers.pushPrefEnv({
-    set: [["privacy.about_newtab_segregation.enabled", true]]
+    set: [["privacy.usercontext.about_newtab_segregation.enabled", true]]
   });
 
   let url = bgTestPageURL({
