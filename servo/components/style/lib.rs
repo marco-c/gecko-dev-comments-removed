@@ -26,6 +26,7 @@
 #![cfg_attr(feature = "servo", feature(proc_macro))]
 
 #![deny(warnings)]
+#![deny(missing_docs)]
 
 
 
@@ -88,7 +89,9 @@ extern crate time;
 extern crate unicode_segmentation;
 
 pub mod animation;
+#[allow(missing_docs)] 
 pub mod atomic_refcell;
+#[allow(missing_docs)] 
 pub mod attr;
 pub mod bezier;
 pub mod bloom;
@@ -105,8 +108,10 @@ pub mod font_metrics;
 #[cfg(feature = "gecko")] #[allow(unsafe_code)] pub mod gecko;
 #[cfg(feature = "gecko")] #[allow(unsafe_code)] pub mod gecko_bindings;
 pub mod keyframes;
+#[allow(missing_docs)] 
 pub mod logical_geometry;
 pub mod matching;
+#[allow(missing_docs)]
 pub mod media_queries;
 pub mod owning_handle;
 pub mod parallel;
@@ -148,12 +153,13 @@ use style_traits::ToCss;
 
 #[macro_use]
 #[allow(unsafe_code)]
+#[deny(missing_docs)]
 pub mod properties {
     include!(concat!(env!("OUT_DIR"), "/properties.rs"));
 }
 
 #[cfg(feature = "gecko")]
-#[allow(unsafe_code)]
+#[allow(unsafe_code, missing_docs)]
 pub mod gecko_properties {
     include!(concat!(env!("OUT_DIR"), "/gecko_properties.rs"));
 }

@@ -2,6 +2,9 @@
 
 
 
+
+
+
 use element_state::ElementState;
 use gecko::snapshot_helpers;
 use gecko::wrapper::{AttrSelectorHelpers, GeckoElement};
@@ -13,6 +16,10 @@ use selector_parser::SelectorImpl;
 use selectors::parser::AttrSelector;
 use std::ptr;
 use string_cache::Atom;
+
+
+
+
 
 #[derive(Debug)]
 pub struct GeckoElementSnapshot(bindings::ServoElementSnapshotOwned);
@@ -30,14 +37,17 @@ impl Drop for GeckoElementSnapshot {
 }
 
 impl GeckoElementSnapshot {
+    
     pub fn new<'le>(el: GeckoElement<'le>) -> Self {
         unsafe { GeckoElementSnapshot(bindings::Gecko_CreateElementSnapshot(el.0)) }
     }
 
+    
     pub fn borrow_mut_raw(&mut self) -> bindings::ServoElementSnapshotBorrowedMut {
         &mut *self.0
     }
 
+    
     pub fn ptr(&self) -> *const ServoElementSnapshot {
         &*self.0
     }
@@ -152,7 +162,6 @@ impl ElementSnapshot for GeckoElementSnapshot {
         }
     }
 
-    
     fn has_class(&self, name: &Atom) -> bool {
         snapshot_helpers::has_class(self.ptr(),
                                     name,

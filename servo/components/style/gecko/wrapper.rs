@@ -5,6 +5,15 @@
 #![allow(unsafe_code)]
 
 
+
+
+
+
+
+
+
+
+
 use atomic_refcell::AtomicRefCell;
 use data::ElementData;
 use dom::{LayoutIterator, NodeInfo, TElement, TNode, UnsafeNode};
@@ -41,6 +50,9 @@ use std::ptr;
 use std::sync::Arc;
 use string_cache::{Atom, Namespace, WeakAtom, WeakNamespace};
 use stylist::ApplicableDeclarationBlock;
+
+
+
 
 
 
@@ -176,8 +188,20 @@ impl<'ln> TNode for GeckoNode<'ln> {
 
 
 
+
+
+
+
+
+
+
+
+
 pub enum GeckoChildrenIterator<'a> {
+    
+    
     Current(Option<GeckoNode<'a>>),
+    
     GeckoIterator(bindings::StyleChildrenIteratorOwned),
 }
 
@@ -207,6 +231,7 @@ impl<'a> Iterator for GeckoChildrenIterator<'a> {
     }
 }
 
+
 #[derive(Clone, Copy)]
 pub struct GeckoElement<'le>(pub &'le RawGeckoElement);
 
@@ -221,6 +246,7 @@ impl<'le> fmt::Debug for GeckoElement<'le> {
 }
 
 impl<'le> GeckoElement<'le> {
+    
     pub fn parse_style_attribute(value: &str) -> PropertyDeclarationBlock {
         
         let base_url = &*DUMMY_BASE_URL;
@@ -250,6 +276,7 @@ impl<'le> GeckoElement<'le> {
         unsafe { Gecko_UnsetNodeFlags(self.as_node().0, flags) }
     }
 
+    
     pub fn clear_data(&self) {
         let ptr = self.0.mServoData.get();
         if !ptr.is_null() {
@@ -264,6 +291,10 @@ impl<'le> GeckoElement<'le> {
         }
     }
 
+    
+    
+    
+    
     
     pub unsafe fn ensure_data(&self) -> &AtomicRefCell<ElementData> {
         match self.get_data() {
@@ -284,6 +315,9 @@ impl<'le> GeckoElement<'le> {
 }
 
 lazy_static! {
+    /// A dummy base url in order to get it where we don't have any available.
+    ///
+    /// We need to get rid of this sooner than later.
     pub static ref DUMMY_BASE_URL: ServoUrl = {
         ServoUrl::parse("http://www.example.org").unwrap()
     };
@@ -387,7 +421,7 @@ impl<'le> PartialEq for GeckoElement<'le> {
 
 impl<'le> PresentationalHintsSynthetizer for GeckoElement<'le> {
     fn synthesize_presentational_hints_for_legacy_attributes<V>(&self, _hints: &mut V)
-        where V: Push<ApplicableDeclarationBlock>
+        where V: Push<ApplicableDeclarationBlock>,
     {
         
     }
@@ -522,8 +556,12 @@ impl<'le> ::selectors::Element for GeckoElement<'le> {
     }
 }
 
+
 pub trait AttrSelectorHelpers {
+    
     fn ns_or_null(&self) -> *mut nsIAtom;
+    
+    
     fn select_name(&self, is_html_element_in_html_document: bool) -> *mut nsIAtom;
 }
 

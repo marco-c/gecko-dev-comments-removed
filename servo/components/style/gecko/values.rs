@@ -4,6 +4,8 @@
 
 #![allow(unsafe_code)]
 
+
+
 use app_units::Au;
 use cssparser::RGBA;
 use gecko_bindings::structs::{nsStyleCoord, StyleShapeRadius};
@@ -14,20 +16,20 @@ use values::computed::{Angle, LengthOrPercentageOrNone, Number};
 use values::computed::{LengthOrPercentage, LengthOrPercentageOrAuto};
 use values::computed::basic_shape::ShapeRadius;
 
-pub trait StyleCoordHelpers {
-    fn set<T: GeckoStyleCoordConvertible>(&mut self, val: T);
-}
-
-impl StyleCoordHelpers for nsStyleCoord {
-    #[inline]
-    fn set<T: GeckoStyleCoordConvertible>(&mut self, val: T) {
-        val.to_gecko_style_coord(self);
-    }
-}
 
 pub trait GeckoStyleCoordConvertible : Sized {
+    
     fn to_gecko_style_coord<T: CoordDataMut>(&self, coord: &mut T);
+    
     fn from_gecko_style_coord<T: CoordData>(coord: &T) -> Option<Self>;
+}
+
+impl nsStyleCoord {
+    #[inline]
+    
+    pub fn set<T: GeckoStyleCoordConvertible>(&mut self, val: T) {
+        val.to_gecko_style_coord(self);
+    }
 }
 
 impl<A: GeckoStyleCoordConvertible, B: GeckoStyleCoordConvertible> GeckoStyleCoordConvertible for Either<A, B> {
@@ -221,12 +223,14 @@ impl GeckoStyleCoordConvertible for None_ {
     }
 }
 
+
 pub fn convert_rgba_to_nscolor(rgba: &RGBA) -> u32 {
     (((rgba.alpha * 255.0).round() as u32) << 24) |
     (((rgba.blue  * 255.0).round() as u32) << 16) |
     (((rgba.green * 255.0).round() as u32) << 8) |
      ((rgba.red   * 255.0).round() as u32)
 }
+
 
 pub fn convert_nscolor_to_rgba(color: u32) -> RGBA {
     RGBA {
@@ -237,11 +241,11 @@ pub fn convert_nscolor_to_rgba(color: u32) -> RGBA {
     }
 }
 
+
+
+
 #[inline]
 pub fn round_border_to_device_pixels(width: Au, au_per_device_px: Au) -> Au {
-    
-    
-    
     if width == Au(0) {
         Au(0)
     } else {

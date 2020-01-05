@@ -2,6 +2,8 @@
 
 
 
+
+
 use gecko_bindings::structs::nsIAtom;
 use std::borrow::{Borrow, Cow};
 use std::fmt;
@@ -13,8 +15,10 @@ macro_rules! ns {
     () => { $crate::string_cache::Namespace(atom!("")) }
 }
 
+
 #[derive(Debug, PartialEq, Eq, Clone, Default, Hash)]
 pub struct Namespace(pub Atom);
+
 
 #[derive(Hash)]
 pub struct WeakNamespace(WeakAtom);
@@ -51,11 +55,14 @@ impl Borrow<WeakNamespace> for Namespace {
 }
 
 impl WeakNamespace {
+    
     #[inline]
     pub unsafe fn new<'a>(atom: *mut nsIAtom) -> &'a Self {
         &*(atom as *const WeakNamespace)
     }
 
+    
+    
     #[inline]
     pub fn clone(&self) -> Namespace {
         Namespace(self.0.clone())

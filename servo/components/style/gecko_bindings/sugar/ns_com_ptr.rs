@@ -1,15 +1,20 @@
 
 
 
+
+
+
 use gecko_bindings::structs::nsCOMPtr;
 
 impl<T> nsCOMPtr<T> {
+    
     #[cfg(debug_assertions)]
     #[inline]
     pub fn raw(&self) -> *mut T {
         self.mRawPtr
     }
 
+    
     #[cfg(not(debug_assertions))]
     #[inline]
     pub fn raw(&self) -> *mut T {

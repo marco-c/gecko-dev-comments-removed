@@ -2,6 +2,8 @@
 
 
 
+
+
 use cssparser::ToCss;
 use element_state::ElementState;
 use selector_parser::{SelectorParser, PseudoElementCascadeType};
@@ -28,20 +30,31 @@ use string_cache::{Atom, Namespace, WeakAtom, WeakNamespace};
 
 
 
+
+
+
+
+
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct PseudoElement(Atom, bool);
 
 impl PseudoElement {
+    
     #[inline]
     pub fn as_atom(&self) -> &Atom {
         &self.0
     }
 
+    
     #[inline]
     fn is_anon_box(&self) -> bool {
         self.1
     }
 
+    
+    
+    
+    
     #[inline]
     pub fn from_atom_unchecked(atom: Atom, is_anon_box: bool) -> Self {
         if cfg!(debug_assertions) {
@@ -73,6 +86,13 @@ impl PseudoElement {
         None
     }
 
+    
+    
+    
+    
+    
+    
+    
     #[inline]
     fn from_slice(s: &str, in_ua_stylesheet: bool) -> Option<Self> {
         use std::ascii::AsciiExt;
@@ -102,20 +122,36 @@ impl ToCss for PseudoElement {
     }
 }
 
+
+
+
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum NonTSPseudoClass {
+    
     AnyLink,
+    
     Link,
+    
     Visited,
+    
     Active,
+    
     Focus,
+    
     Fullscreen,
+    
     Hover,
+    
     Enabled,
+    
     Disabled,
+    
     Checked,
+    
     Indeterminate,
+    
     ReadWrite,
+    
     ReadOnly,
 }
 
@@ -141,6 +177,7 @@ impl ToCss for NonTSPseudoClass {
 }
 
 impl NonTSPseudoClass {
+    
     pub fn state_flag(&self) -> ElementState {
         use element_state::*;
         use self::NonTSPseudoClass::*;
@@ -161,6 +198,7 @@ impl NonTSPseudoClass {
         }
     }
 }
+
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct SelectorImpl;
@@ -231,6 +269,13 @@ impl<'a> ::selectors::Parser for SelectorParser<'a> {
 
 impl SelectorImpl {
     #[inline]
+    
+    
+    
+    
+    
+    
+    
     pub fn pseudo_element_cascade_type(pseudo: &PseudoElement) -> PseudoElementCascadeType {
         if Self::pseudo_is_before_or_after(pseudo) {
             return PseudoElementCascadeType::Eager
@@ -244,8 +289,9 @@ impl SelectorImpl {
     }
 
     #[inline]
+    
     pub fn each_pseudo_element<F>(mut fun: F)
-        where F: FnMut(PseudoElement)
+        where F: FnMut(PseudoElement),
     {
         macro_rules! pseudo_element {
             ($pseudo_str_with_colon:expr, $atom:expr, $is_anon_box:expr) => {{
@@ -257,12 +303,15 @@ impl SelectorImpl {
     }
 
     #[inline]
+    
     pub fn pseudo_is_before_or_after(pseudo: &PseudoElement) -> bool {
         *pseudo.as_atom() == atom!(":before") ||
         *pseudo.as_atom() == atom!(":after")
     }
 
     #[inline]
+    
+    
     pub fn pseudo_class_state_flag(pc: &NonTSPseudoClass) -> ElementState {
         pc.state_flag()
     }

@@ -2,6 +2,8 @@
 
 
 
+
+
 use gecko_bindings::bindings;
 use gecko_bindings::structs;
 use gecko_bindings::structs::{nsChangeHint, nsStyleContext};
@@ -10,28 +12,42 @@ use properties::ComputedValues;
 use std::ops::{BitOr, BitOrAssign};
 use std::sync::Arc;
 
+
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct GeckoRestyleDamage(nsChangeHint);
 
 impl GeckoRestyleDamage {
+    
     pub fn new(raw: nsChangeHint) -> Self {
         GeckoRestyleDamage(raw)
     }
 
+    
     pub fn as_change_hint(&self) -> nsChangeHint {
         self.0
     }
 
+    
     pub fn empty() -> Self {
         GeckoRestyleDamage(nsChangeHint(0))
     }
 
+    
     pub fn is_empty(&self) -> bool {
         self.0 == nsChangeHint(0)
     }
 
+    
+    
+    
+    
+    
+    
+    
     pub fn compute(source: &nsStyleContext,
                    new_style: &Arc<ComputedValues>) -> Self {
+        
         let context = source as *const nsStyleContext as *mut nsStyleContext;
         let hint = unsafe {
             bindings::Gecko_CalcStyleDifference(context,
@@ -40,6 +56,8 @@ impl GeckoRestyleDamage {
         GeckoRestyleDamage(hint)
     }
 
+    
+    
     pub fn rebuild_and_reflow() -> Self {
         GeckoRestyleDamage(structs::nsChangeHint_nsChangeHint_ReconstructFrame)
     }

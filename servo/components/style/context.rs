@@ -3,6 +3,7 @@
 
 
 
+#![deny(missing_docs)]
 
 use animation::Animation;
 use app_units::Au;
@@ -24,6 +25,7 @@ pub struct ThreadLocalStyleContextCreationInfo {
 }
 
 impl ThreadLocalStyleContextCreationInfo {
+    
     pub fn new(animations_sender: Sender<Animation>) -> Self {
         ThreadLocalStyleContextCreationInfo {
             new_animations_sender: animations_sender,
@@ -31,13 +33,23 @@ impl ThreadLocalStyleContextCreationInfo {
     }
 }
 
+
+
+
 #[derive(PartialEq, Eq, Copy, Clone, Hash, Debug)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub enum QuirksMode {
+    
     Quirks,
+    
     LimitedQuirks,
+    
     NoQuirks,
 }
+
+
+
+
 
 pub struct SharedStyleContext {
     
@@ -72,8 +84,15 @@ pub struct SharedStyleContext {
     pub quirks_mode: QuirksMode,
 }
 
+
+
+
+
+
 pub struct ThreadLocalStyleContext<E: TElement> {
+    
     pub style_sharing_candidate_cache: StyleSharingCandidateCache<E>,
+    
     pub bloom_filter: StyleBloom<E>,
     
     
@@ -81,6 +100,7 @@ pub struct ThreadLocalStyleContext<E: TElement> {
 }
 
 impl<E: TElement> ThreadLocalStyleContext<E> {
+    
     pub fn new(shared: &SharedStyleContext) -> Self {
         ThreadLocalStyleContext {
             style_sharing_candidate_cache: StyleSharingCandidateCache::new(),
@@ -90,8 +110,12 @@ impl<E: TElement> ThreadLocalStyleContext<E> {
     }
 }
 
+
+
 pub struct StyleContext<'a, E: TElement + 'a> {
+    
     pub shared: &'a SharedStyleContext,
+    
     pub thread_local: &'a mut ThreadLocalStyleContext<E>,
 }
 

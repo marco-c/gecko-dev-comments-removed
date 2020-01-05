@@ -18,7 +18,11 @@ use std::sync::Arc;
 use style_traits::ToCss;
 
 
+
+
 pub type Name = Atom;
+
+
 
 
 pub fn parse_name(s: &str) -> Result<&str, ()> {
@@ -28,6 +32,10 @@ pub fn parse_name(s: &str) -> Result<&str, ()> {
         Err(())
     }
 }
+
+
+
+
 
 #[derive(Clone, PartialEq, Debug)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
@@ -47,12 +55,15 @@ impl ::values::HasViewportPercentage for SpecifiedValue {
     }
 }
 
+
 pub struct BorrowedSpecifiedValue<'a> {
     css: &'a str,
     first_token_type: TokenSerializationType,
     last_token_type: TokenSerializationType,
     references: Option<&'a HashSet<Name>>,
 }
+
+
 
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
@@ -63,16 +74,22 @@ pub struct ComputedValue {
 }
 
 impl ToCss for SpecifiedValue {
-    fn to_css<W>(&self, dest: &mut W) -> fmt::Result where W: fmt::Write {
+    fn to_css<W>(&self, dest: &mut W) -> fmt::Result
+        where W: fmt::Write,
+    {
         dest.write_str(&self.css)
     }
 }
 
 impl ToCss for ComputedValue {
-    fn to_css<W>(&self, dest: &mut W) -> fmt::Result where W: fmt::Write {
+    fn to_css<W>(&self, dest: &mut W) -> fmt::Result
+        where W: fmt::Write,
+    {
         dest.write_str(&self.css)
     }
 }
+
+
 
 pub type ComputedValuesMap = HashMap<Name, ComputedValue>;
 
@@ -275,11 +292,10 @@ fn parse_declaration_value_block(input: &mut Parser,
         };
 
         token_start = input.position();
-        token = if let Ok(token) = input.next_including_whitespace_and_comments() {
-            token
-        } else {
-            return Ok((first_token_type, last_token_type))
-        }
+        token = match input.next_including_whitespace_and_comments() {
+            Ok(token) => token,
+            Err(..) => return Ok((first_token_type, last_token_type)),
+        };
     }
 }
 
@@ -313,43 +329,51 @@ pub fn cascade<'a>(custom_properties: &mut Option<HashMap<&'a Name, BorrowedSpec
                    seen: &mut HashSet<&'a Name>,
                    name: &'a Name,
                    specified_value: &'a DeclaredValue<SpecifiedValue>) {
-    let was_not_already_present = seen.insert(name);
-    if was_not_already_present {
-        let map = match *custom_properties {
-            Some(ref mut map) => map,
-            None => {
-                *custom_properties = Some(match *inherited {
-                    Some(ref inherited) => inherited.iter().map(|(key, inherited_value)| {
-                        (key, BorrowedSpecifiedValue {
-                            css: &inherited_value.css,
-                            first_token_type: inherited_value.first_token_type,
-                            last_token_type: inherited_value.last_token_type,
-                            references: None
-                        })
-                    }).collect(),
-                    None => HashMap::new(),
-                });
-                custom_properties.as_mut().unwrap()
-            }
-        };
-        match *specified_value {
-            DeclaredValue::Value(ref specified_value) => {
-                map.insert(name, BorrowedSpecifiedValue {
-                    css: &specified_value.css,
-                    first_token_type: specified_value.first_token_type,
-                    last_token_type: specified_value.last_token_type,
-                    references: Some(&specified_value.references),
-                });
-            },
-            DeclaredValue::WithVariables { .. } => unreachable!(),
-            DeclaredValue::Initial => {
-                map.remove(&name);
-            }
-            DeclaredValue::Unset | 
-            DeclaredValue::Inherit => {}  
+    let was_already_present = !seen.insert(name);
+    if was_already_present {
+        return;
+    }
+
+    let map = match *custom_properties {
+        Some(ref mut map) => map,
+        None => {
+            *custom_properties = Some(match *inherited {
+                Some(ref inherited) => inherited.iter().map(|(key, inherited_value)| {
+                    (key, BorrowedSpecifiedValue {
+                        css: &inherited_value.css,
+                        first_token_type: inherited_value.first_token_type,
+                        last_token_type: inherited_value.last_token_type,
+                        references: None
+                    })
+                }).collect(),
+                None => HashMap::new(),
+            });
+            custom_properties.as_mut().unwrap()
         }
+    };
+    match *specified_value {
+        DeclaredValue::Value(ref specified_value) => {
+            map.insert(name, BorrowedSpecifiedValue {
+                css: &specified_value.css,
+                first_token_type: specified_value.first_token_type,
+                last_token_type: specified_value.last_token_type,
+                references: Some(&specified_value.references),
+            });
+        },
+        DeclaredValue::WithVariables { .. } => unreachable!(),
+        DeclaredValue::Initial => {
+            map.remove(&name);
+        }
+        DeclaredValue::Unset | 
+        DeclaredValue::Inherit => {}  
     }
 }
+
+
+
+
+
+
 
 pub fn finish_cascade(specified_values_map: Option<HashMap<&Name, BorrowedSpecifiedValue>>,
                       inherited: &Option<Arc<HashMap<Name, ComputedValue>>>)
@@ -361,6 +385,8 @@ pub fn finish_cascade(specified_values_map: Option<HashMap<&Name, BorrowedSpecif
         inherited.clone()
     }
 }
+
+
 
 
 
@@ -514,10 +540,9 @@ fn substitute_block<F>(input: &mut Parser,
             });
             set_position_at_next_iteration = false;
         }
-        let token = if let Ok(token) = next {
-            token
-        } else {
-            break
+        let token = match next {
+            Ok(token) => token,
+            Err(..) => break,
         };
         match token {
             Token::Function(ref name) if name.eq_ignore_ascii_case("var") => {

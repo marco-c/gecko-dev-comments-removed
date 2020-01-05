@@ -2,6 +2,8 @@
 
 
 
+
+
 use gecko_bindings::bindings::{Gecko_ResetStyleCoord, Gecko_SetStyleCoordCalcValue, Gecko_AddRefCalcArbitraryThread};
 use gecko_bindings::structs::{nsStyleCoord_Calc, nsStyleUnit, nsStyleUnion, nsStyleCoord, nsStyleSides, nsStyleCorners};
 use gecko_bindings::structs::{nsStyleCoord_CalcValue, nscoord};
@@ -9,6 +11,7 @@ use std::mem;
 
 impl nsStyleCoord {
     #[inline]
+    
     pub fn null() -> Self {
         
         let mut coord: Self = unsafe { mem::zeroed() };
@@ -41,6 +44,7 @@ impl CoordDataMut for nsStyleCoord {
 }
 
 impl nsStyleCoord_CalcValue {
+    
     pub fn new() -> Self {
         nsStyleCoord_CalcValue {
             mLength: 0,
@@ -51,6 +55,8 @@ impl nsStyleCoord_CalcValue {
 }
 
 impl nsStyleSides {
+    
+    
     #[inline]
     pub fn data_at(&self, index: usize) -> SidesData {
         SidesData {
@@ -58,6 +64,9 @@ impl nsStyleSides {
             index: index,
         }
     }
+
+    
+    
     #[inline]
     pub fn data_at_mut(&mut self, index: usize) -> SidesDataMut {
         SidesDataMut {
@@ -67,10 +76,15 @@ impl nsStyleSides {
     }
 }
 
+
+
 pub struct SidesData<'a> {
     sides: &'a nsStyleSides,
     index: usize,
 }
+
+
+
 pub struct SidesDataMut<'a> {
     sides: &'a mut nsStyleSides,
     index: usize,
@@ -113,6 +127,8 @@ impl<'a> CoordDataMut for SidesDataMut<'a> {
 }
 
 impl nsStyleCorners {
+    
+    
     #[inline]
     pub fn data_at(&self, index: usize) -> CornersData {
         CornersData {
@@ -120,6 +136,9 @@ impl nsStyleCorners {
             index: index,
         }
     }
+
+    
+    
     #[inline]
     pub fn data_at_mut(&mut self, index: usize) -> CornersDataMut {
         CornersDataMut {
@@ -129,10 +148,13 @@ impl nsStyleCorners {
     }
 }
 
+
 pub struct CornersData<'a> {
     corners: &'a nsStyleCorners,
     index: usize,
 }
+
+
 pub struct CornersDataMut<'a> {
     corners: &'a mut nsStyleCorners,
     index: usize,
@@ -174,26 +196,46 @@ impl<'a> CoordDataMut for CornersDataMut<'a> {
 
 
 
+
 pub enum CoordDataValue {
+    
     Null,
+    
     Normal,
+    
     Auto,
+    
     None,
+    
     Percent(f32),
+    
     Factor(f32),
+    
     Degree(f32),
+    
     Grad(f32),
+    
     Radian(f32),
+    
     Turn(f32),
+    
     FlexFraction(f32),
+    
     Coord(nscoord),
+    
     Integer(i32),
+    
     Enumerated(u32),
+    
     Calc(nsStyleCoord_CalcValue),
 }
 
 
+
 pub trait CoordDataMut : CoordData {
+    
+    
+    
     
     
     
@@ -213,23 +255,22 @@ pub trait CoordDataMut : CoordData {
     }
 
     #[inline]
+    
     fn copy_from<T: CoordData>(&mut self, other: &T) {
         unsafe {
             self.reset();
-            {
-                let (unit, union) = self.values_mut();
-                *unit = other.unit();
-                *union = other.union();
-            }
+            self.copy_from_unchecked(other);
             self.addref_if_calc();
         }
     }
 
     #[inline]
+    
+    
     unsafe fn copy_from_unchecked<T: CoordData>(&mut self, other: &T) {
-            let (unit, union) = self.values_mut();
-            *unit = other.unit();
-            *union = other.union();
+        let (unit, union) = self.values_mut();
+        *unit = other.unit();
+        *union = other.union();
     }
 
     
@@ -244,6 +285,7 @@ pub trait CoordDataMut : CoordData {
     }
 
     #[inline(always)]
+    
     fn set_value(&mut self, value: CoordDataValue) {
         use gecko_bindings::structs::nsStyleUnit::*;
         use self::CoordDataValue::*;
@@ -316,12 +358,16 @@ pub trait CoordDataMut : CoordData {
     }
 
     #[inline]
+    
+    
     unsafe fn as_calc_mut(&mut self) -> &mut nsStyleCoord_Calc {
         debug_assert!(self.unit() == nsStyleUnit::eStyleUnit_Calc);
         &mut *(*self.union().mPointer.as_mut() as *mut nsStyleCoord_Calc)
     }
 
     #[inline]
+    
+    
     fn addref_if_calc(&mut self) {
         unsafe {
             if self.unit() == nsStyleUnit::eStyleUnit_Calc {
@@ -330,12 +376,16 @@ pub trait CoordDataMut : CoordData {
         }
     }
 }
+
 pub trait CoordData {
+    
     fn unit(&self) -> nsStyleUnit;
+    
     fn union(&self) -> nsStyleUnion;
 
 
     #[inline(always)]
+    
     fn as_value(&self) -> CoordDataValue {
         use gecko_bindings::structs::nsStyleUnit::*;
         use self::CoordDataValue::*;
@@ -390,6 +440,7 @@ pub trait CoordData {
 
 
     #[inline]
+    
     unsafe fn as_calc(&self) -> &nsStyleCoord_Calc {
         debug_assert!(self.unit() == nsStyleUnit::eStyleUnit_Calc);
         &*(*self.union().mPointer.as_ref() as *const nsStyleCoord_Calc)

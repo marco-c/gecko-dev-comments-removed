@@ -3,6 +3,9 @@
 
 
 #![allow(unsafe_code)]
+#![deny(missing_docs)]
+
+
 
 use owning_ref::StableAddress;
 use std::ops::{Deref, DerefMut};
@@ -31,14 +34,16 @@ use std::ops::{Deref, DerefMut};
 
 
 pub struct OwningHandle<O, H>
-    where O: StableAddress, H: Deref,
+    where O: StableAddress,
+          H: Deref,
 {
     handle: H,
     _owner: O,
 }
 
 impl<O, H> Deref for OwningHandle<O, H>
-    where O: StableAddress, H: Deref,
+    where O: StableAddress,
+          H: Deref,
 {
     type Target = H::Target;
     fn deref(&self) -> &H::Target {
@@ -47,11 +52,13 @@ impl<O, H> Deref for OwningHandle<O, H>
 }
 
 unsafe impl<O, H> StableAddress for OwningHandle<O, H>
-    where O: StableAddress, H: StableAddress,
+    where O: StableAddress,
+          H: StableAddress,
 {}
 
 impl<O, H> DerefMut for OwningHandle<O, H>
-    where O: StableAddress, H: DerefMut,
+    where O: StableAddress,
+          H: DerefMut,
 {
     fn deref_mut(&mut self) -> &mut H::Target {
         self.handle.deref_mut()
@@ -59,14 +66,15 @@ impl<O, H> DerefMut for OwningHandle<O, H>
 }
 
 impl<O, H> OwningHandle<O, H>
-    where O: StableAddress, H: Deref,
+    where O: StableAddress,
+          H: Deref,
 {
     
     
     
     
     pub fn new<F>(o: O, f: F) -> Self
-        where F: Fn(*const O::Target) -> H
+        where F: Fn(*const O::Target) -> H,
     {
         let h: H;
         {

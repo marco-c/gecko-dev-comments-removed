@@ -2,6 +2,8 @@
 
 
 
+
+
 use atomic_refcell::AtomicRefCell;
 use context::{SharedStyleContext, StyleContext, ThreadLocalStyleContext};
 use data::ElementData;
@@ -9,11 +11,14 @@ use dom::{NodeInfo, TNode};
 use gecko::wrapper::{GeckoElement, GeckoNode};
 use traversal::{DomTraversal, PerLevelTraversalData, recalc_style_at};
 
+
+
 pub struct RecalcStyleOnly {
     shared: SharedStyleContext,
 }
 
 impl RecalcStyleOnly {
+    
     pub fn new(shared: SharedStyleContext) -> Self {
         RecalcStyleOnly {
             shared: shared,

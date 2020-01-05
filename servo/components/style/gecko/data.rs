@@ -2,6 +2,8 @@
 
 
 
+
+
 use animation::Animation;
 use atomic_refcell::{AtomicRef, AtomicRefCell, AtomicRefMut};
 use dom::OpaqueNode;
@@ -21,6 +23,8 @@ use style_traits::ViewportPx;
 use stylesheets::Stylesheet;
 use stylist::Stylist;
 
+
+
 pub struct PerDocumentStyleDataImpl {
     
     pub stylist: Arc<Stylist>,
@@ -32,20 +36,33 @@ pub struct PerDocumentStyleDataImpl {
     pub stylesheets_changed: bool,
 
     
+    
+    
     pub new_animations_sender: Sender<Animation>,
+    
+    
     pub new_animations_receiver: Receiver<Animation>,
+    
+    
     pub running_animations: Arc<RwLock<HashMap<OpaqueNode, Vec<Animation>>>>,
+    
+    
     pub expired_animations: Arc<RwLock<HashMap<OpaqueNode, Vec<Animation>>>>,
 
     
+    
     pub work_queue: Option<rayon::ThreadPool>,
 
+    
     pub num_threads: usize,
 }
+
+
 
 pub struct PerDocumentStyleData(AtomicRefCell<PerDocumentStyleDataImpl>);
 
 lazy_static! {
+    /// The number of layout threads, computed statically.
     pub static ref NUM_THREADS: usize = {
         match env::var("STYLO_THREADS").map(|s| s.parse::<usize>().expect("invalid STYLO_THREADS")) {
             Ok(num) => num,
@@ -55,6 +72,7 @@ lazy_static! {
 }
 
 impl PerDocumentStyleData {
+    
     pub fn new() -> Self {
         
         let window_size: TypedSize2D<f32, ViewportPx> = TypedSize2D::new(800.0, 600.0);
@@ -81,16 +99,19 @@ impl PerDocumentStyleData {
         }))
     }
 
+    
     pub fn borrow(&self) -> AtomicRef<PerDocumentStyleDataImpl> {
         self.0.borrow()
     }
 
+    
     pub fn borrow_mut(&self) -> AtomicRefMut<PerDocumentStyleDataImpl> {
         self.0.borrow_mut()
     }
 }
 
 impl PerDocumentStyleDataImpl {
+    
     pub fn flush_stylesheets(&mut self) {
         
         

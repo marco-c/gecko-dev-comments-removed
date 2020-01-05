@@ -2,6 +2,10 @@
 
 
 
+
+
+#![deny(missing_docs)]
+
 use cssparser::{AtRuleParser, Parser, QualifiedRuleParser, RuleListParser};
 use cssparser::{DeclarationListParser, DeclarationParser, parse_one_rule};
 use parking_lot::RwLock;
@@ -37,6 +41,7 @@ impl ToCss for KeyframePercentage {
 }
 
 impl KeyframePercentage {
+    
     #[inline]
     pub fn new(value: f32) -> KeyframePercentage {
         debug_assert!(value >= 0. && value <= 1.);
@@ -67,6 +72,7 @@ impl KeyframePercentage {
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct KeyframeSelector(Vec<KeyframePercentage>);
 impl KeyframeSelector {
+    
     #[inline]
     pub fn percentages(&self) -> &[KeyframePercentage] {
         &self.0
@@ -77,6 +83,7 @@ impl KeyframeSelector {
         KeyframeSelector(percentages)
     }
 
+    
     pub fn parse(input: &mut Parser) -> Result<Self, ()> {
         input.parse_comma_separated(KeyframePercentage::parse)
              .map(KeyframeSelector)
@@ -87,6 +94,7 @@ impl KeyframeSelector {
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct Keyframe {
+    
     pub selector: KeyframeSelector,
 
     
@@ -114,7 +122,10 @@ impl ToCss for Keyframe {
 
 
 impl Keyframe {
-    pub fn parse(css: &str, parent_stylesheet: &Stylesheet, extra_data: ParserContextExtraData)
+    
+    pub fn parse(css: &str,
+                 parent_stylesheet: &Stylesheet,
+                 extra_data: ParserContextExtraData)
                  -> Result<Arc<RwLock<Self>>, ()> {
         let error_reporter = Box::new(MemoryHoleReporter);
         let context = ParserContext::new_with_extra_data(parent_stylesheet.origin,
@@ -134,14 +145,18 @@ impl Keyframe {
 
 
 
+
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub enum KeyframesStepValue {
     
     Declarations {
+        
         #[cfg_attr(feature = "servo", ignore_heap_size_of = "Arc")]
         block: Arc<RwLock<PropertyDeclarationBlock>>
     },
+    
+    
     ComputedValues,
 }
 
@@ -162,7 +177,6 @@ pub struct KeyframesStep {
 }
 
 impl KeyframesStep {
-    #[allow(unsafe_code)]
     #[inline]
     fn new(percentage: KeyframePercentage,
            value: KeyframesStepValue) -> Self {
@@ -193,6 +207,7 @@ impl KeyframesStep {
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct KeyframesAnimation {
+    
     pub steps: Vec<KeyframesStep>,
     
     pub properties_changed: Vec<TransitionProperty>,
@@ -204,7 +219,6 @@ pub struct KeyframesAnimation {
 
 
 
-#[allow(unsafe_code)]
 fn get_animated_properties(keyframe: &Keyframe) -> Vec<TransitionProperty> {
     let mut ret = vec![];
     
@@ -219,6 +233,13 @@ fn get_animated_properties(keyframe: &Keyframe) -> Vec<TransitionProperty> {
 }
 
 impl KeyframesAnimation {
+    
+    
+    
+    
+    
+    
+    
     pub fn from_keyframes(keyframes: &[Arc<RwLock<Keyframe>>]) -> Option<Self> {
         if keyframes.is_empty() {
             return None;
@@ -272,6 +293,7 @@ impl KeyframesAnimation {
 struct KeyframeListParser<'a> {
     context: &'a ParserContext<'a>,
 }
+
 
 pub fn parse_keyframe_list(context: &ParserContext, input: &mut Parser) -> Vec<Arc<RwLock<Keyframe>>> {
     RuleListParser::new_for_nested_rule(input, KeyframeListParser { context: context })

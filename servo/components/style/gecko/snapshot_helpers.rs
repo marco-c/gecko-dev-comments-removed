@@ -8,7 +8,11 @@ use gecko_bindings::structs::nsIAtom;
 use std::{ptr, slice};
 use string_cache::Atom;
 
+
+
 pub type ClassOrClassList<T> = unsafe extern fn (T, *mut *mut nsIAtom, *mut *mut *mut nsIAtom) -> u32;
+
+
 
 pub fn has_class<T>(item: T,
                     name: &Atom,
@@ -28,6 +32,8 @@ pub fn has_class<T>(item: T,
         }
     }
 }
+
+
 
 
 pub fn each_class<F, T>(item: T,

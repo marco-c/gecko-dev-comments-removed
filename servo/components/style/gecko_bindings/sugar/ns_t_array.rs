@@ -2,6 +2,8 @@
 
 
 
+
+
 use gecko_bindings::bindings;
 use gecko_bindings::structs::{nsTArray, nsTArrayHeader};
 use std::mem;
@@ -78,6 +80,8 @@ impl<T> nsTArray<T> {
         unsafe { self.clear() }
     }
 
+    
+    
     
     
     

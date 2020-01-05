@@ -2,6 +2,11 @@
 
 
 
+
+
+
+#![deny(missing_docs)]
+
 use computed_values::display;
 use heapsize::HeapSizeOf;
 use properties::ServoComputedValues;
@@ -53,15 +58,13 @@ impl HeapSizeOf for ServoRestyleDamage {
 }
 
 impl ServoRestyleDamage {
+    
+    
     pub fn compute(old: &Arc<ServoComputedValues>,
                    new: &Arc<ServoComputedValues>) -> ServoRestyleDamage {
         compute_damage(old, new)
     }
 
-    
-    
-    
-    
     
     
     pub fn rebuild_and_reflow() -> ServoRestyleDamage {

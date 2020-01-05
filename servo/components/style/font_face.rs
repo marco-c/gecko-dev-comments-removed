@@ -6,6 +6,8 @@
 
 
 
+#![deny(missing_docs)]
+
 use computed_values::font_family::FontFamily;
 use cssparser::{AtRuleParser, DeclarationListParser, DeclarationParser, Parser};
 use parser::{ParserContext, log_css_error, Parse};
@@ -15,15 +17,20 @@ use std::iter;
 use style_traits::ToCss;
 use values::specified::url::SpecifiedUrl;
 
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf, Deserialize, Serialize))]
 pub enum Source {
+    
     Url(UrlSource),
+    
     Local(FontFamily),
 }
 
 impl ToCss for Source {
-    fn to_css<W>(&self, dest: &mut W) -> fmt::Result where W: fmt::Write {
+    fn to_css<W>(&self, dest: &mut W) -> fmt::Result
+        where W: fmt::Write,
+    {
         match *self {
             Source::Url(ref url) => {
                 try!(dest.write_str("url(\""));
@@ -38,29 +45,45 @@ impl ToCss for Source {
     }
 }
 
+
+
+
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf, Deserialize, Serialize))]
 pub struct UrlSource {
+    
     pub url: SpecifiedUrl,
+    
     pub format_hints: Vec<String>,
 }
 
 impl ToCss for UrlSource {
-    fn to_css<W>(&self, dest: &mut W) -> fmt::Result where W: fmt::Write {
+    fn to_css<W>(&self, dest: &mut W) -> fmt::Result
+        where W: fmt::Write,
+    {
         dest.write_str(self.url.as_str())
     }
 }
 
+
+
+
 #[derive(Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct FontFaceRule {
+    
     pub family: FontFamily,
+    
+    
     pub sources: Vec<Source>,
 }
 
 impl ToCss for FontFaceRule {
     
-    fn to_css<W>(&self, dest: &mut W) -> fmt::Result where W: fmt::Write {
+    fn to_css<W>(&self, dest: &mut W) -> fmt::Result
+        where W: fmt::Write,
+    {
         try!(dest.write_str("@font-face { font-family: "));
         try!(self.family.to_css(dest));
         try!(dest.write_str(";"));
@@ -79,6 +102,9 @@ impl ToCss for FontFaceRule {
         dest.write_str(" }")
     }
 }
+
+
+
 
 pub fn parse_font_face_block(context: &ParserContext, input: &mut Parser)
                              -> Result<FontFaceRule, ()> {
@@ -111,6 +137,7 @@ pub fn parse_font_face_block(context: &ParserContext, input: &mut Parser)
         _ => Err(())
     }
 }
+
 
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]

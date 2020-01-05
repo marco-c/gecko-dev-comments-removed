@@ -2,10 +2,20 @@
 
 
 
+
+#![deny(missing_docs)]
+
 use smallvec::{Array, SmallVec};
 use std::marker::PhantomData;
 
+
+
+
+
+
+
 pub trait Push<T> {
+    
     fn push(&mut self, value: T);
 }
 
@@ -21,13 +31,16 @@ impl<A: Array> Push<A::Item> for SmallVec<A> {
     }
 }
 
+
 pub struct ForgetfulSink<T>(bool, PhantomData<T>);
 
 impl<T> ForgetfulSink<T> {
+    
     pub fn new() -> Self {
         ForgetfulSink(true, PhantomData)
     }
 
+    
     pub fn is_empty(&self) -> bool {
         self.0
     }

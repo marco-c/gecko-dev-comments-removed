@@ -2,6 +2,8 @@
 
 
 
+
+
 use std::marker::PhantomData;
 use std::mem::{forget, transmute};
 use std::ops::{Deref, DerefMut};
@@ -9,10 +11,10 @@ use std::ptr;
 use std::sync::Arc;
 
 
-
-
-
 pub unsafe trait HasFFI : Sized {
+    
+    
+    
     type FFIType: Sized;
 }
 
@@ -57,6 +59,9 @@ pub unsafe trait HasSimpleFFI : HasFFI {
 
 pub unsafe trait HasBoxFFI : HasSimpleFFI {
     #[inline]
+    
+    
+    
     fn into_ffi(self: Box<Self>) -> Owned<Self::FFIType> {
         unsafe { transmute(self) }
     }
@@ -69,6 +74,7 @@ pub unsafe trait HasBoxFFI : HasSimpleFFI {
 
 
 pub unsafe trait HasArcFFI : HasFFI {
+    
     
     
     
@@ -109,6 +115,10 @@ pub unsafe trait HasArcFFI : HasFFI {
         }
     }
 
+    #[inline]
+    
+    
+    
     fn arc_as_borrowed<'a>(arc: &'a Arc<Self>) -> &'a &Self::FFIType {
         unsafe {
             transmute::<&Arc<Self>, &&Self::FFIType>(arc)
@@ -116,6 +126,9 @@ pub unsafe trait HasArcFFI : HasFFI {
     }
 
     #[inline]
+    
+    
+    
     fn arc_from_borrowed<'a>(ptr: &'a Option<&Self::FFIType>) -> Option<&'a Arc<Self>> {
         unsafe {
             if let Some(ref reference) = *ptr {
@@ -132,15 +145,17 @@ pub unsafe trait HasArcFFI : HasFFI {
 
 
 
-pub struct Strong<T> {
-    ptr: *const T,
-    _marker: PhantomData<T>,
+
+pub struct Strong<GeckoType> {
+    ptr: *const GeckoType,
+    _marker: PhantomData<GeckoType>,
 }
 
-impl<T> Strong<T> {
+impl<GeckoType> Strong<GeckoType> {
     #[inline]
+    
     pub fn is_null(&self) -> bool {
-        self.ptr == ptr::null()
+        self.ptr.is_null()
     }
 
     #[inline]
@@ -149,7 +164,10 @@ impl<T> Strong<T> {
     
     
     
-    pub fn into_arc<U>(self) -> Arc<U> where U: HasArcFFI<FFIType = T> {
+    
+    pub fn into_arc<ServoType>(self) -> Arc<ServoType>
+        where ServoType: HasArcFFI<FFIType = GeckoType>,
+    {
         self.into_arc_opt().unwrap()
     }
 
@@ -159,7 +177,9 @@ impl<T> Strong<T> {
     
     
     
-    pub fn into_arc_opt<U>(self) -> Option<Arc<U>> where U: HasArcFFI<FFIType = T> {
+    pub fn into_arc_opt<ServoType>(self) -> Option<Arc<ServoType>>
+        where ServoType: HasArcFFI<FFIType = GeckoType>,
+    {
         if self.is_null() {
             None
         } else {
@@ -173,7 +193,10 @@ impl<T> Strong<T> {
     
     
     
-    pub fn as_arc_opt<U>(&self) -> Option<&Arc<U>> where U: HasArcFFI<FFIType = T> {
+    
+    pub fn as_arc_opt<ServoType>(&self) -> Option<&Arc<ServoType>>
+        where ServoType: HasArcFFI<FFIType = GeckoType>,
+    {
         if self.is_null() {
             None
         } else {
@@ -184,16 +207,26 @@ impl<T> Strong<T> {
     #[inline]
     
     pub fn null() -> Self {
-        unsafe { transmute(ptr::null::<T>()) }
+        unsafe { transmute(ptr::null::<GeckoType>()) }
     }
 }
 
+
+
 pub unsafe trait FFIArcHelpers {
+    
     type Inner: HasArcFFI;
+
     
     
     
     fn into_strong(self) -> Strong<<Self::Inner as HasFFI>::FFIType>;
+
+    
+    
+    
+    
+    
     
     
     
@@ -202,10 +235,12 @@ pub unsafe trait FFIArcHelpers {
 
 unsafe impl<T: HasArcFFI> FFIArcHelpers for Arc<T> {
     type Inner = T;
+
     #[inline]
     fn into_strong(self) -> Strong<T::FFIType> {
         unsafe { transmute(self) }
     }
+
     #[inline]
     fn as_borrowed_opt(&self) -> Option<&T::FFIType> {
         let borrowedptr = self as *const Arc<T> as *const Option<&T::FFIType>;
@@ -218,30 +253,35 @@ unsafe impl<T: HasArcFFI> FFIArcHelpers for Arc<T> {
 
 
 
-pub struct Owned<T> {
-    ptr: *mut T,
-    _marker: PhantomData<T>,
+
+pub struct Owned<GeckoType> {
+    ptr: *mut GeckoType,
+    _marker: PhantomData<GeckoType>,
 }
 
-impl<T> Owned<T> {
+impl<GeckoType> Owned<GeckoType> {
     
-    pub fn into_box<U>(self) -> Box<U> where U: HasBoxFFI<FFIType = T> {
+    pub fn into_box<ServoType>(self) -> Box<ServoType>
+        where ServoType: HasBoxFFI<FFIType = GeckoType>,
+    {
         unsafe { transmute(self) }
     }
-    pub fn maybe(self) -> OwnedOrNull<T> {
+
+    
+    pub fn maybe(self) -> OwnedOrNull<GeckoType> {
         unsafe { transmute(self) }
     }
 }
 
-impl<T> Deref for Owned<T> {
-    type Target = T;
-    fn deref(&self) -> &T {
+impl<GeckoType> Deref for Owned<GeckoType> {
+    type Target = GeckoType;
+    fn deref(&self) -> &GeckoType {
         unsafe { &*self.ptr }
     }
 }
 
-impl<T> DerefMut for Owned<T> {
-    fn deref_mut(&mut self) -> &mut T {
+impl<GeckoType> DerefMut for Owned<GeckoType> {
+    fn deref_mut(&mut self) -> &mut GeckoType {
         unsafe { &mut *self.ptr }
     }
 }
@@ -249,17 +289,23 @@ impl<T> DerefMut for Owned<T> {
 #[repr(C)]
 
 
-pub struct OwnedOrNull<T> {
-    ptr: *mut T,
-    _marker: PhantomData<T>,
+
+pub struct OwnedOrNull<GeckoType> {
+    ptr: *mut GeckoType,
+    _marker: PhantomData<GeckoType>,
 }
 
-impl<T> OwnedOrNull<T> {
+impl<GeckoType> OwnedOrNull<GeckoType> {
+    
+    #[inline]
     pub fn is_null(&self) -> bool {
-        self.ptr == ptr::null_mut()
+        self.ptr.is_null()
     }
+
     
-    pub fn into_box_opt<U>(self) -> Option<Box<U>> where U: HasBoxFFI<FFIType = T> {
+    pub fn into_box_opt<ServoType>(self) -> Option<Box<ServoType>>
+        where ServoType: HasBoxFFI<FFIType = GeckoType>,
+    {
         if self.is_null() {
             None
         } else {
@@ -268,7 +314,7 @@ impl<T> OwnedOrNull<T> {
     }
 
     
-    pub fn into_owned_opt(self) -> Option<Owned<T>> {
+    pub fn into_owned_opt(self) -> Option<Owned<GeckoType>> {
         if self.is_null() {
             None
         } else {
@@ -276,11 +322,15 @@ impl<T> OwnedOrNull<T> {
         }
     }
 
-    pub fn borrow(&self) -> Option<&T> {
+    
+    
+    pub fn borrow(&self) -> Option<&GeckoType> {
         unsafe { transmute(self) }
     }
 
-    pub fn borrow_mut(&self) -> Option<&mut T> {
+    
+    
+    pub fn borrow_mut(&self) -> Option<&mut GeckoType> {
         unsafe { transmute(self) }
     }
 }

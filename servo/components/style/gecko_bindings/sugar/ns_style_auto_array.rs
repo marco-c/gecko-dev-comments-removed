@@ -2,18 +2,24 @@
 
 
 
+
+
 use gecko_bindings::structs::nsStyleAutoArray;
 use std::iter::{once, Chain, Once, IntoIterator};
 use std::slice::{Iter, IterMut};
 
 impl<T> nsStyleAutoArray<T> {
+    
     pub fn iter_mut(&mut self) -> Chain<Once<&mut T>, IterMut<T>> {
         once(&mut self.mFirstElement).chain(self.mOtherElements.iter_mut())
     }
+
+    
     pub fn iter(&self) -> Chain<Once<&T>, Iter<T>> {
         once(&self.mFirstElement).chain(self.mOtherElements.iter())
     }
 
+    
     
     
     

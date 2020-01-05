@@ -4,10 +4,11 @@
 
 
 
+#![deny(missing_docs)]
+
 use {Atom, LocalName};
 use data::ComputedStyle;
-use dom::PresentationalHintsSynthetizer;
-use element_state::*;
+use dom::{PresentationalHintsSynthetizer, TElement};
 use error_reporting::StdoutErrorReporter;
 use keyframes::KeyframesAnimation;
 use media_queries::{Device, MediaType};
@@ -28,7 +29,6 @@ use smallvec::VecLike;
 use std::borrow::Borrow;
 use std::collections::HashMap;
 use std::fmt;
-use std::hash::BuildHasherDefault;
 use std::hash::Hash;
 use std::slice;
 use std::sync::Arc;
@@ -36,7 +36,7 @@ use style_traits::viewport::ViewportConstraints;
 use stylesheets::{CssRule, Origin, StyleRule, Stylesheet, UserAgentStylesheets};
 use viewport::{self, MaybeNew, ViewportRule};
 
-pub type FnvHashMap<K, V> = HashMap<K, V, BuildHasherDefault<::fnv::FnvHasher>>;
+pub use ::fnv::FnvHashMap;
 
 
 
@@ -83,6 +83,8 @@ pub struct Stylist {
     
     precomputed_pseudo_element_decls: FnvHashMap<PseudoElement, Vec<ApplicableDeclarationBlock>>,
 
+    
+    
     rules_source_order: usize,
 
     
@@ -99,6 +101,7 @@ pub struct Stylist {
 }
 
 impl Stylist {
+    
     #[inline]
     pub fn new(device: Device) -> Self {
         let mut stylist = Stylist {
@@ -129,6 +132,12 @@ impl Stylist {
         stylist
     }
 
+    
+    
+    
+    
+    
+    
     pub fn update(&mut self,
                   doc_stylesheets: &[Arc<Stylesheet>],
                   ua_stylesheets: Option<&UserAgentStylesheets>,
@@ -252,28 +261,10 @@ impl Stylist {
                 _ => {}
             }
         });
-
-        debug!("Stylist stats:");
-        debug!(" - Got {} sibling-affecting selectors",
-               self.sibling_affecting_selectors.len());
-        debug!(" - Got {} non-common-style-attribute-affecting selectors",
-               self.non_common_style_affecting_attributes_selectors.len());
-        debug!(" - Got {} deps for style-hint calculation",
-               self.state_deps.len());
-
-        SelectorImpl::each_precomputed_pseudo_element(|pseudo| {
-            
-            
-            
-            if let Some(map) = self.pseudos_map.remove(&pseudo) {
-                let mut declarations = vec![];
-                map.user_agent.get_universal_rules(&mut declarations);
-                self.precomputed_pseudo_element_decls.insert(pseudo, declarations);
-            }
-        });
     }
 
 
+    
     
     
     
@@ -291,7 +282,7 @@ impl Stylist {
             
             let rule_node =
                 self.rule_tree.insert_ordered_rules(
-                    declarations.iter().map(|a| (a.source.clone(), a.importance)));
+                    declarations.into_iter().map(|a| (a.source.clone(), a.importance)));
 
             let mut flags = CascadeFlags::empty();
             if inherit_all {
@@ -339,6 +330,13 @@ impl Stylist {
             .values
     }
 
+    
+    
+    
+    
+    
+    
+    
     pub fn lazily_compute_pseudo_element_style<E>(&self,
                                                   element: &E,
                                                   pseudo: &PseudoElement,
@@ -363,7 +361,8 @@ impl Stylist {
                                           MatchingReason::ForStyling);
 
         let rule_node =
-            self.rule_tree.insert_ordered_rules(declarations.into_iter().map(|a| (a.source.clone(), a.importance)));
+            self.rule_tree.insert_ordered_rules(
+                declarations.into_iter().map(|a| (a.source, a.importance)));
 
         let computed =
             properties::cascade(self.device.au_viewport_size(),
@@ -376,6 +375,11 @@ impl Stylist {
         Some(ComputedStyle::new(rule_node, Arc::new(computed)))
     }
 
+    
+    
+    
+    
+    
     pub fn set_device(&mut self, mut device: Device, stylesheets: &[Arc<Stylesheet>]) {
         let cascaded_rule = ViewportRule {
             declarations: viewport::Cascade::from_stylesheets(stylesheets, &device).finish(),
@@ -383,6 +387,9 @@ impl Stylist {
 
         self.viewport_constraints = ViewportConstraints::maybe_new(device.viewport_size, &cascaded_rule);
         if let Some(ref constraints) = self.viewport_constraints {
+            
+            
+            
             device = Device::new(MediaType::Screen, constraints.size);
         }
 
@@ -408,15 +415,23 @@ impl Stylist {
         self.device = Arc::new(device);
     }
 
-    pub fn viewport_constraints(&self) -> &Option<ViewportConstraints> {
-        &self.viewport_constraints
-    }
-
-    pub fn set_quirks_mode(&mut self, enabled: bool) {
-        self.quirks_mode = enabled;
+    
+    
+    pub fn viewport_constraints(&self) -> Option<&ViewportConstraints> {
+        self.viewport_constraints.as_ref()
     }
 
     
+    pub fn set_quirks_mode(&mut self, enabled: bool) {
+        
+        
+        
+        
+        
+        
+        self.quirks_mode = enabled;
+    }
+
     
     
     
@@ -549,20 +564,28 @@ impl Stylist {
         relations
     }
 
+    
+    
     #[inline]
     pub fn is_device_dirty(&self) -> bool {
         self.is_device_dirty
     }
 
+    
     #[inline]
     pub fn animations(&self) -> &FnvHashMap<Atom, KeyframesAnimation> {
         &self.animations
     }
 
+    
+    
+    
+    
+    
     pub fn match_same_not_common_style_affecting_attributes_rules<E>(&self,
                                                                      element: &E,
                                                                      candidate: &E) -> bool
-    where E: ElementExt
+        where E: ElementExt,
     {
         use selectors::matching::StyleRelations;
         use selectors::matching::matches_complex_selector;
@@ -591,15 +614,19 @@ impl Stylist {
         true
     }
 
+    
     #[inline]
     pub fn rule_tree_root(&self) -> StrongRuleNode {
         self.rule_tree.root()
     }
 
+    
+    
+    
     pub fn match_same_sibling_affecting_rules<E>(&self,
                                                  element: &E,
                                                  candidate: &E) -> bool
-    where E: ElementExt
+        where E: ElementExt,
     {
         use selectors::matching::StyleRelations;
         use selectors::matching::matches_complex_selector;
@@ -629,22 +656,24 @@ impl Stylist {
         true
     }
 
-    pub fn compute_restyle_hint<E>(&self, element: &E,
-                                   snapshot: &Snapshot,
-                                   
-                                   
-                                   
-                                   
-                                   current_state: ElementState)
+    
+    
+    
+    pub fn compute_restyle_hint<E>(&self,
+                                   element: &E,
+                                   snapshot: &Snapshot)
                                    -> RestyleHint
-        where E: ElementExt + Clone
+        where E: TElement,
     {
-        self.state_deps.compute_hint(element, snapshot, current_state)
+        self.state_deps.compute_hint(element, snapshot)
     }
 }
 
 impl Drop for Stylist {
     fn drop(&mut self) {
+        
+        
+        
         
         
         
@@ -707,11 +736,15 @@ impl PerPseudoElementSelectorMap {
 
 
 
+
+
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct SelectorMap {
     
     pub id_hash: FnvHashMap<Atom, Vec<Rule>>,
+    
     pub class_hash: FnvHashMap<Atom, Vec<Rule>>,
+    
     pub local_name_hash: FnvHashMap<LocalName, Vec<Rule>>,
     
     
@@ -728,6 +761,7 @@ fn sort_by_key<T, F: Fn(&T) -> K, K: Ord>(v: &mut [T], f: F) {
 }
 
 impl SelectorMap {
+    
     pub fn new() -> Self {
         SelectorMap {
             id_hash: HashMap::default(),
@@ -960,17 +994,28 @@ impl SelectorMap {
     }
 }
 
+
+
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 #[derive(Clone, Debug)]
 pub struct Rule {
     
     
     
+    
+    
+    
+    
+    
+    
     #[cfg_attr(feature = "servo", ignore_heap_size_of = "Arc")]
     pub selector: Arc<ComplexSelector<SelectorImpl>>,
+    
     #[cfg_attr(feature = "servo", ignore_heap_size_of = "Arc")]
     pub style_rule: Arc<RwLock<StyleRule>>,
+    
     pub source_order: usize,
+    
     pub specificity: u32,
 }
 
@@ -987,17 +1032,26 @@ impl Rule {
 
 
 
+
+
+
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 #[derive(Debug, Clone)]
 pub struct ApplicableDeclarationBlock {
+    
     #[cfg_attr(feature = "servo", ignore_heap_size_of = "Arc")]
     pub source: StyleSource,
+    
     pub importance: Importance,
+    
     pub source_order: usize,
+    
     pub specificity: u32,
 }
 
 impl ApplicableDeclarationBlock {
+    
+    
     #[inline]
     pub fn from_declarations(declarations: Arc<RwLock<PropertyDeclarationBlock>>,
                              importance: Importance)
@@ -1010,6 +1064,8 @@ impl ApplicableDeclarationBlock {
         }
     }
 }
+
+
 
 pub struct ApplicableDeclarationBlockIter<'a> {
     iter: slice::Iter<'a, (PropertyDeclaration, Importance)>,

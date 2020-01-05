@@ -4,6 +4,8 @@
 
 
 
+#![deny(missing_docs)]
+
 use cssparser::{Parser, SourcePosition};
 use error_reporting::ParseErrorReporter;
 #[cfg(feature = "gecko")]
@@ -11,37 +13,52 @@ use gecko_bindings::sugar::refptr::{GeckoArcPrincipal, GeckoArcURI};
 use servo_url::ServoUrl;
 use stylesheets::Origin;
 
+
 #[cfg(not(feature = "gecko"))]
 pub struct ParserContextExtraData;
 
+
 #[cfg(feature = "gecko")]
 pub struct ParserContextExtraData {
+    
     pub base: Option<GeckoArcURI>,
+    
     pub referrer: Option<GeckoArcURI>,
+    
     pub principal: Option<GeckoArcPrincipal>,
 }
 
-impl ParserContextExtraData {
-    #[cfg(not(feature = "gecko"))]
-    pub fn default() -> ParserContextExtraData {
+#[cfg(not(feature = "gecko"))]
+impl Default for ParserContextExtraData {
+    fn default() -> Self {
         ParserContextExtraData
     }
+}
 
-    #[cfg(feature = "gecko")]
-    pub fn default() -> ParserContextExtraData {
+#[cfg(feature = "gecko")]
+impl Default for ParserContextExtraData {
+    fn default() -> Self {
         ParserContextExtraData { base: None, referrer: None, principal: None }
     }
 }
 
+
 pub struct ParserContext<'a> {
+    
+    
     pub stylesheet_origin: Origin,
+    
     pub base_url: &'a ServoUrl,
+    
     pub error_reporter: Box<ParseErrorReporter + Send>,
+    
     pub extra_data: ParserContextExtraData,
 }
 
 impl<'a> ParserContext<'a> {
-    pub fn new_with_extra_data(stylesheet_origin: Origin, base_url: &'a ServoUrl,
+    
+    pub fn new_with_extra_data(stylesheet_origin: Origin,
+                               base_url: &'a ServoUrl,
                                error_reporter: Box<ParseErrorReporter + Send>,
                                extra_data: ParserContextExtraData)
                                -> ParserContext<'a> {
@@ -53,10 +70,13 @@ impl<'a> ParserContext<'a> {
         }
     }
 
-    pub fn new(stylesheet_origin: Origin, base_url: &'a ServoUrl, error_reporter: Box<ParseErrorReporter + Send>)
+    
+    pub fn new(stylesheet_origin: Origin,
+               base_url: &'a ServoUrl,
+               error_reporter: Box<ParseErrorReporter + Send>)
                -> ParserContext<'a> {
         let extra_data = ParserContextExtraData::default();
-        ParserContext::new_with_extra_data(stylesheet_origin, base_url, error_reporter, extra_data)
+        Self::new_with_extra_data(stylesheet_origin, base_url, error_reporter, extra_data)
     }
 }
 
@@ -69,6 +89,11 @@ pub fn log_css_error(input: &mut Parser, position: SourcePosition, message: &str
 
 
 
-pub trait Parse {
-    fn parse(context: &ParserContext, input: &mut Parser) -> Result<Self, ()> where Self: Sized;
+
+
+pub trait Parse : Sized {
+    
+    
+    
+    fn parse(context: &ParserContext, input: &mut Parser) -> Result<Self, ()>;
 }

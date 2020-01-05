@@ -2,6 +2,8 @@
 
 
 
+
+
 use gecko_bindings::structs;
 use heapsize::HeapSizeOf;
 use std::{mem, ptr};
@@ -11,20 +13,22 @@ use std::ops::{Deref, DerefMut};
 
 
 pub unsafe trait RefCounted {
+    
     fn addref(&self);
+    
     unsafe fn release(&self);
 }
 
 
 pub unsafe trait ThreadSafeRefCounted: RefCounted {}
 
+
+
 #[derive(Debug)]
 pub struct RefPtr<T: RefCounted> {
     ptr: *mut T,
     _marker: PhantomData<T>,
 }
-
-
 
 
 
@@ -53,6 +57,8 @@ impl<T: RefCounted> RefPtr<T> {
     
     
     
+    
+    
     pub unsafe fn new(ptr: *mut T) -> Self {
         debug_assert!(!ptr.is_null());
         let ret = RefPtr {
@@ -66,7 +72,6 @@ impl<T: RefCounted> RefPtr<T> {
     
     
     
-    
     pub fn forget(self) -> structs::RefPtr<T> {
         let ret = structs::RefPtr {
             mRawPtr: self.ptr,
@@ -76,13 +81,10 @@ impl<T: RefCounted> RefPtr<T> {
     }
 
     
-    
     pub fn get(&self) -> *mut T {
         self.ptr
     }
 
-    
-    
     
     pub fn addref(&self) {
         unsafe { (*self.ptr).addref(); }
@@ -97,6 +99,9 @@ impl<T: RefCounted> RefPtr<T> {
 }
 
 impl<T: RefCounted> UniqueRefPtr<T> {
+    
+    
+    
     
     
     
@@ -144,6 +149,7 @@ impl<T: RefCounted> structs::RefPtr<T> {
         r
     }
     
+    
     pub unsafe fn into_safe(self) -> RefPtr<T> {
         debug_assert!(!self.mRawPtr.is_null());
         RefPtr {
@@ -152,6 +158,10 @@ impl<T: RefCounted> structs::RefPtr<T> {
         }
     }
 
+    
+    
+    
+    
     
     
     
@@ -244,5 +254,10 @@ impl_threadsafe_refcount!(::gecko_bindings::structs::nsStyleQuoteValues,
 impl_threadsafe_refcount!(::gecko_bindings::structs::nsCSSValueSharedList,
                           Gecko_AddRefCSSValueSharedListArbitraryThread,
                           Gecko_ReleaseCSSValueSharedListArbitraryThread);
+
+
 pub type GeckoArcPrincipal = RefPtr<::gecko_bindings::structs::ThreadSafePrincipalHolder>;
+
+
+
 pub type GeckoArcURI = RefPtr<::gecko_bindings::structs::ThreadSafeURIHolder>;

@@ -4,6 +4,8 @@
 
 #![allow(unsafe_code)]
 
+
+
 use gecko_bindings::bindings::Gecko_AddRefAtom;
 use gecko_bindings::bindings::Gecko_Atomize;
 use gecko_bindings::bindings::Gecko_ReleaseAtom;
@@ -19,7 +21,7 @@ use std::ops::Deref;
 use std::slice;
 
 #[macro_use]
-#[allow(improper_ctypes, non_camel_case_types)]
+#[allow(improper_ctypes, non_camel_case_types, missing_docs)]
 pub mod atom_macro;
 #[macro_use]
 pub mod namespace;
@@ -39,6 +41,8 @@ pub struct Atom(*mut WeakAtom);
 
 
 pub struct WeakAtom(nsIAtom);
+
+
 
 pub type BorrowedAtom<'a> = &'a WeakAtom;
 
@@ -75,21 +79,26 @@ unsafe impl Sync for Atom {}
 unsafe impl Sync for WeakAtom {}
 
 impl WeakAtom {
+    
     #[inline]
     pub unsafe fn new<'a>(atom: *mut nsIAtom) -> &'a mut Self {
         &mut *(atom as *mut WeakAtom)
     }
 
+    
     #[inline]
     pub fn clone(&self) -> Atom {
         Atom::from(self.as_ptr())
     }
 
+    
     #[inline]
     pub fn get_hash(&self) -> u32 {
         self.0.mHash
     }
 
+    
+    #[inline]
     pub fn as_slice(&self) -> &[u16] {
         unsafe {
             slice::from_raw_parts((*self.as_ptr()).mString, self.len() as usize)
@@ -101,20 +110,29 @@ impl WeakAtom {
         char::decode_utf16(self.as_slice().iter().cloned())
     }
 
+    
+    
+    
+    
     pub fn with_str<F, Output>(&self, cb: F) -> Output
         where F: FnOnce(&str) -> Output
     {
         
         
-        let owned = String::from_utf16(self.as_slice()).unwrap();
+        let owned = self.to_string();
         cb(&owned)
     }
 
+    
+    
+    
+    
     #[inline]
     pub fn to_string(&self) -> String {
         String::from_utf16(self.as_slice()).unwrap()
     }
 
+    
     #[inline]
     pub fn is_static(&self) -> bool {
         unsafe {
@@ -122,6 +140,7 @@ impl WeakAtom {
         }
     }
 
+    
     #[inline]
     pub fn len(&self) -> u32 {
         unsafe {
@@ -129,6 +148,7 @@ impl WeakAtom {
         }
     }
 
+    
     #[inline]
     pub fn as_ptr(&self) -> *mut nsIAtom {
         let const_ptr: *const nsIAtom = &self.0;
@@ -152,6 +172,7 @@ impl fmt::Display for WeakAtom {
 }
 
 impl Atom {
+    
     pub unsafe fn with<F>(ptr: *mut nsIAtom, callback: &mut F) where F: FnMut(&Atom) {
         let atom = Atom(WeakAtom::new(ptr));
         callback(&atom);

@@ -2,22 +2,31 @@
 
 
 
+
+
 #![allow(unsafe_code)]
+#![deny(missing_docs)]
 
 use rayon;
 use std::cell::{Ref, RefCell, RefMut};
 
 
 
-pub struct ScopedTLS<'a, T: Send> {
-    pool: &'a rayon::ThreadPool,
+
+
+pub struct ScopedTLS<'scope, T: Send> {
+    pool: &'scope rayon::ThreadPool,
     slots: Box<[RefCell<Option<T>>]>,
 }
 
-unsafe impl<'a, T: Send> Sync for ScopedTLS<'a, T> {}
 
-impl<'a, T: Send> ScopedTLS<'a, T> {
-    pub fn new(p: &'a rayon::ThreadPool) -> Self {
+
+unsafe impl<'scope, T: Send> Sync for ScopedTLS<'scope, T> {}
+
+impl<'scope, T: Send> ScopedTLS<'scope, T> {
+    
+    
+    pub fn new(p: &'scope rayon::ThreadPool) -> Self {
         let count = p.num_threads();
         let mut v = Vec::with_capacity(count);
         for _ in 0..count {
@@ -30,16 +39,20 @@ impl<'a, T: Send> ScopedTLS<'a, T> {
         }
     }
 
+    
     pub fn borrow(&self) -> Ref<Option<T>> {
         let idx = self.pool.current_thread_index().unwrap();
         self.slots[idx].borrow()
     }
 
+    
     pub fn borrow_mut(&self) -> RefMut<Option<T>> {
         let idx = self.pool.current_thread_index().unwrap();
         self.slots[idx].borrow_mut()
     }
 
+    
+    
     pub fn ensure<F: FnOnce() -> T>(&self, f: F) -> RefMut<T> {
         let mut opt = self.borrow_mut();
         if opt.is_none() {

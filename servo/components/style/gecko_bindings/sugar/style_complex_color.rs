@@ -2,6 +2,8 @@
 
 
 
+
+
 use cssparser::Color;
 use gecko::values::{convert_nscolor_to_rgba, convert_rgba_to_nscolor};
 use gecko_bindings::structs::{nscolor, StyleComplexColor};
@@ -17,6 +19,7 @@ impl From<nscolor> for StyleComplexColor {
 }
 
 impl StyleComplexColor {
+    
     pub fn current_color() -> Self {
         StyleComplexColor {
             mColor: 0,
@@ -25,6 +28,7 @@ impl StyleComplexColor {
         }
     }
 
+    
     pub fn auto() -> Self {
         StyleComplexColor {
             mColor: 0,

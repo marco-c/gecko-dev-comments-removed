@@ -2,6 +2,8 @@
 
 
 
+
+
 use gecko_bindings::bindings::Gecko_AddRefCSSShadowArrayArbitraryThread;
 use gecko_bindings::bindings::Gecko_NewCSSShadowArray;
 use gecko_bindings::bindings::Gecko_ReleaseCSSShadowArrayArbitraryThread;
@@ -10,6 +12,7 @@ use std::{ptr, slice};
 use std::ops::{Deref, DerefMut};
 
 impl RefPtr<nsCSSShadowArray> {
+    
     pub fn replace_with_new(&mut self, len: u32) {
         unsafe {
             if !self.mRawPtr.is_null() {
@@ -23,6 +26,12 @@ impl RefPtr<nsCSSShadowArray> {
             }
         }
     }
+
+    
+    
+    
+    
+    
     pub fn copy_from(&mut self, other: &Self) {
         unsafe {
             if !self.mRawPtr.is_null() {

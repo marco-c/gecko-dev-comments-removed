@@ -295,10 +295,8 @@ impl RestyleData {
         }
 
         
-        let state = element.get_state();
         let mut hint = stylist.compute_restyle_hint(&element,
-                                                    self.snapshot.as_ref().unwrap(),
-                                                    state);
+                                                    self.snapshot.as_ref().unwrap());
 
         
         

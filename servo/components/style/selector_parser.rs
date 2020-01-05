@@ -4,12 +4,16 @@
 
 
 
+#![deny(missing_docs)]
+
 use cssparser::Parser as CssParser;
 use matching::{common_style_affecting_attributes, CommonStyleAffectingAttributeMode};
 use selectors::Element;
 use selectors::parser::{AttrSelector, SelectorList};
 use std::fmt::Debug;
 use stylesheets::{Origin, Namespaces};
+
+
 
 pub type AttrValue = <SelectorImpl as ::selectors::SelectorImpl>::AttrValue;
 
@@ -31,19 +35,30 @@ pub use servo::restyle_damage::ServoRestyleDamage as RestyleDamage;
 #[cfg(feature = "gecko")]
 pub use gecko::restyle_damage::GeckoRestyleDamage as RestyleDamage;
 
+
+
 #[cfg(feature = "servo")]
 pub type PreExistingComputedValues = ::std::sync::Arc<::properties::ServoComputedValues>;
+
+
 
 #[cfg(feature = "gecko")]
 pub type PreExistingComputedValues = ::gecko_bindings::structs::nsStyleContext;
 
+
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct SelectorParser<'a> {
+    
     pub stylesheet_origin: Origin,
+    
     pub namespaces: &'a Namespaces,
 }
 
 impl<'a> SelectorParser<'a> {
+    
+    
+    
+    
     pub fn parse_author_origin_no_namespace(input: &str)
                                             -> Result<SelectorList<SelectorImpl>, ()> {
         let namespaces = Namespaces::default();
@@ -54,6 +69,7 @@ impl<'a> SelectorParser<'a> {
         SelectorList::parse(&parser, &mut CssParser::new(input))
     }
 
+    
     pub fn in_user_agent_stylesheet(&self) -> bool {
         matches!(self.stylesheet_origin, Origin::UserAgent)
     }
@@ -63,59 +79,69 @@ impl<'a> SelectorParser<'a> {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PseudoElementCascadeType {
+    
+    
+    
     Eager,
+    
+    
+    
+    
+    
+    
+    
     Lazy,
+    
+    
+    
+    
+    
+    
     Precomputed,
 }
 
 impl PseudoElementCascadeType {
+    
     #[inline]
     pub fn is_eager(&self) -> bool {
         *self == PseudoElementCascadeType::Eager
     }
 
+    
     #[inline]
     pub fn is_lazy(&self) -> bool {
         *self == PseudoElementCascadeType::Lazy
     }
 
+    
     #[inline]
     pub fn is_precomputed(&self) -> bool {
         *self == PseudoElementCascadeType::Precomputed
     }
 }
 
+
 pub trait ElementExt: Element<Impl=SelectorImpl> + Debug {
+    
     fn is_link(&self) -> bool;
 
+    
+    
+    
     fn matches_user_and_author_rules(&self) -> bool;
 }
 
 impl SelectorImpl {
+    
+    
+    
+    
+    
     #[inline]
     pub fn each_eagerly_cascaded_pseudo_element<F>(mut fun: F)
-        where F: FnMut(PseudoElement)
+        where F: FnMut(PseudoElement),
     {
         Self::each_pseudo_element(|pseudo| {
             if Self::pseudo_element_cascade_type(&pseudo).is_eager() {
@@ -124,9 +150,14 @@ impl SelectorImpl {
         })
     }
 
+    
+    
+    
+    
+    
     #[inline]
     pub fn each_precomputed_pseudo_element<F>(mut fun: F)
-        where F: FnMut(PseudoElement)
+        where F: FnMut(PseudoElement),
     {
         Self::each_pseudo_element(|pseudo| {
             if Self::pseudo_element_cascade_type(&pseudo).is_precomputed() {
@@ -135,6 +166,11 @@ impl SelectorImpl {
         })
     }
 }
+
+
+
+
+
 
 pub fn attr_exists_selector_is_shareable(attr_selector: &AttrSelector<SelectorImpl>) -> bool {
     
@@ -146,6 +182,12 @@ pub fn attr_exists_selector_is_shareable(attr_selector: &AttrSelector<SelectorIm
         }
     })
 }
+
+
+
+
+
+
 
 pub fn attr_equals_selector_is_shareable(attr_selector: &AttrSelector<SelectorImpl>,
                                          value: &AttrValue) -> bool {
