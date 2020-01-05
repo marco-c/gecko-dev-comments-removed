@@ -61,7 +61,7 @@ Interceptor::~Interceptor()
   MOZ_ASSERT(NS_IsMainThread());
   for (uint32_t index = 0, len = mInterceptorMap.Length(); index < len; ++index) {
     MapEntry& entry = mInterceptorMap[index];
-    entry.mInterceptor->Release();
+    entry.mInterceptor = nullptr;
     entry.mTargetInterface->Release();
   }
 }
@@ -234,9 +234,6 @@ Interceptor::GetInterceptorForIID(REFIID aIid, void** aOutInterceptor)
     if (entry && entry->mInterceptor) {
       unkInterceptor = entry->mInterceptor;
     } else {
-      
-      
-      unkInterceptor->AddRef();
       
       
       

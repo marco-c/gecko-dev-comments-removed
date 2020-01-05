@@ -100,8 +100,8 @@ DispatchForwarder::GetTypeInfo(UINT iTInfo, LCID lcid, ITypeInfo **ppTInfo)
   
   
   if (mTypeInfo) {
-    *ppTInfo = mTypeInfo.get();
-    mTypeInfo->AddRef();
+    RefPtr<ITypeInfo> copy(mTypeInfo);
+    copy.forget(ppTInfo);
     return S_OK;
   }
   HRESULT hr = E_UNEXPECTED;

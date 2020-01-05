@@ -173,7 +173,7 @@ MemoryDIBTextureData::Serialize(SurfaceDescriptor& aOutDescriptor)
   
   
   aOutDescriptor = SurfaceDescriptorDIB(reinterpret_cast<uintptr_t>(mSurface.get()));
-  mSurface->AddRef();
+  mSurface.get()->AddRef();
   return true;
 }
 
