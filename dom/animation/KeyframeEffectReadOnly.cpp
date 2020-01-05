@@ -915,26 +915,27 @@ KeyframeEffectReadOnly::GetKeyframes(JSContext*& aCx,
 
     JS::Rooted<JSObject*> keyframeObject(aCx, &keyframeJSValue.toObject());
     for (const PropertyValuePair& propertyValue : keyframe.mPropertyValues) {
-
-      const char* name = nsCSSProps::PropertyIDLName(propertyValue.mProperty);
-
-      
-      
-      
-      nsCSSPropertyID propertyForSerializing =
-        nsCSSProps::IsShorthand(propertyValue.mProperty)
-        ? eCSSProperty_UNKNOWN
-        : propertyValue.mProperty;
-
       nsAutoString stringValue;
       if (propertyValue.mServoDeclarationBlock) {
+        
+        
+        
+        nsIAtom* atom = nsCSSProps::AtomForProperty(propertyValue.mProperty);
         Servo_DeclarationBlock_SerializeOneValue(
-          propertyValue.mServoDeclarationBlock, &stringValue);
+          propertyValue.mServoDeclarationBlock, atom, false, &stringValue);
       } else {
+        
+        
+        
+        nsCSSPropertyID propertyForSerializing =
+          nsCSSProps::IsShorthand(propertyValue.mProperty)
+          ? eCSSProperty_UNKNOWN
+          : propertyValue.mProperty;
         propertyValue.mValue.AppendToString(
           propertyForSerializing, stringValue, nsCSSValue::eNormalized);
       }
 
+      const char* name = nsCSSProps::PropertyIDLName(propertyValue.mProperty);
       JS::Rooted<JS::Value> value(aCx);
       if (!ToJSValue(aCx, stringValue, &value) ||
           !JS_DefineProperty(aCx, keyframeObject, name, value,
