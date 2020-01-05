@@ -532,12 +532,14 @@ RTCPeerConnection.prototype = {
 
   _legacyCatchAndCloseGuard: function(onSuccess, onError, func) {
     if (!onSuccess) {
-      return func().then(v => (this._closed ? new Promise(() => {}) : v),
-                         e => (this._closed ? new Promise(() => {}) : Promise.reject(e)));
+      return this._win.Promise.resolve(func())
+        .then(v => (this._closed ? new Promise(() => {}) : v),
+              e => (this._closed ? new Promise(() => {}) : Promise.reject(e)));
     }
     try {
-      return func().then(this._wrapLegacyCallback(onSuccess),
-                         this._wrapLegacyCallback(onError));
+      return this._win.Promise.resolve(func())
+        .then(this._wrapLegacyCallback(onSuccess),
+              this._wrapLegacyCallback(onError));
     } catch (e) {
       this._wrapLegacyCallback(onError)(e);
       return this._win.Promise.resolve(); 
@@ -740,7 +742,7 @@ RTCPeerConnection.prototype = {
       let origin = Cu.getWebIDLCallerPrincipal().origin;
       return this._chain(() => {
         let p = Promise.all([this.getPermission(), this._certificateReady])
-          .then(() => new this._win.Promise((resolve, reject) => {
+          .then(() => new Promise((resolve, reject) => {
             this._onCreateOfferSuccess = resolve;
             this._onCreateOfferFailure = reject;
             this._impl.createOffer(options);
@@ -763,7 +765,7 @@ RTCPeerConnection.prototype = {
       let origin = Cu.getWebIDLCallerPrincipal().origin;
       return this._chain(() => {
         let p = Promise.all([this.getPermission(), this._certificateReady])
-          .then(() => new this._win.Promise((resolve, reject) => {
+          .then(() => new Promise((resolve, reject) => {
             
             
             
@@ -837,7 +839,7 @@ RTCPeerConnection.prototype = {
       }
 
       return this._chain(() => this.getPermission()
-          .then(() => new this._win.Promise((resolve, reject) => {
+          .then(() => new Promise((resolve, reject) => {
         this._onSetLocalDescriptionSuccess = resolve;
         this._onSetLocalDescriptionFailure = reject;
         this._impl.setLocalDescription(type, desc.sdp);
@@ -925,7 +927,7 @@ RTCPeerConnection.prototype = {
 
       return this._chain(() => {
         let setRem = this.getPermission()
-          .then(() => new this._win.Promise((resolve, reject) => {
+          .then(() => new Promise((resolve, reject) => {
             this._onSetRemoteDescriptionSuccess = resolve;
             this._onSetRemoteDescriptionFailure = reject;
             this._impl.setRemoteDescription(type, desc.sdp);
@@ -937,8 +939,7 @@ RTCPeerConnection.prototype = {
 
         
         let validId = this._validateIdentity(desc.sdp, origin);
-        return this._win.Promise.all([setRem, validId])
-          .then(() => {}); 
+        return Promise.all([setRem, validId]).then(() => {}); 
       });
     });
   },
@@ -1000,7 +1001,7 @@ RTCPeerConnection.prototype = {
         throw new this._win.DOMException("Invalid candidate (both sdpMid and sdpMLineIndex are null).",
                                          "TypeError");
       }
-      return this._chain(() => new this._win.Promise((resolve, reject) => {
+      return this._chain(() => new Promise((resolve, reject) => {
         this._onAddIceCandidateSuccess = resolve;
         this._onAddIceCandidateError = reject;
         this._impl.addIceCandidate(c.candidate, c.sdpMid || "", c.sdpMLineIndex);
@@ -1192,7 +1193,7 @@ RTCPeerConnection.prototype = {
 
   getStats: function(selector, onSuccess, onError) {
     return this._legacyCatchAndCloseGuard(onSuccess, onError, () => {
-      return this._chain(() => new this._win.Promise((resolve, reject) => {
+      return this._chain(() => new Promise((resolve, reject) => {
         this._onGetStatsSuccess = resolve;
         this._onGetStatsFailure = reject;
         this._impl.getStats(selector);
