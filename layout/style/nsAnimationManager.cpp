@@ -468,14 +468,6 @@ nsAnimationManager::UpdateAnimations(nsStyleContext* aStyleContext,
   for (size_t newAnimIdx = newAnimations.Length(); newAnimIdx-- != 0; ) {
     newAnimations[newAnimIdx]->CancelFromStyle();
   }
-
-  
-  
-  
-  
-  if (mEventDispatcher.HasQueuedEvents()) {
-    mPresContext->PresShell()->SetNeedStyleFlush();
-  }
 }
 
 void
