@@ -20,9 +20,9 @@ function getServerConnections(browser) {
   });
 }
 
-let checkServerConnectionCount = Task.async(function* (browser, expected) {
+let checkServerConnectionCount = Task.async(function* (browser, expected, msg) {
   let conns = yield getServerConnections(browser);
-  is(conns.length || 0, expected, "Server connection count");
+  is(conns.length || 0, expected, "Server connection count: " + msg);
 });
 
 let checkToolbox = Task.async(function* (tab, location) {
@@ -39,49 +39,85 @@ add_task(function* setup() {
 add_task(function* () {
   let tab = yield addTab(TEST_URL);
 
-  
+  info("Open toolbox outside RDM");
   {
     
-    yield checkServerConnectionCount(tab.linkedBrowser, 0);
+    yield checkServerConnectionCount(tab.linkedBrowser, 0,
+      "0: No DevTools connections yet");
     let { toolbox } = yield openInspector();
-    
-    
-    
-    yield checkServerConnectionCount(tab.linkedBrowser, 2);
+    if (E10S_MULTI_ENABLED) {
+      
+      yield checkServerConnectionCount(tab.linkedBrowser, 1,
+        "1: Two tabs open, but only one per content process");
+    } else {
+      
+      yield checkServerConnectionCount(tab.linkedBrowser, 2,
+        "2: One for each tab (starting tab plus the one we opened)");
+    }
     yield checkToolbox(tab, "outside RDM");
     let { ui } = yield openRDM(tab);
-    
-    yield checkServerConnectionCount(ui.getViewportBrowser(), 3);
+    if (E10S_MULTI_ENABLED) {
+      
+      yield checkServerConnectionCount(ui.getViewportBrowser(), 2,
+        "2: RDM UI uses an extra connection");
+    } else {
+      
+      yield checkServerConnectionCount(ui.getViewportBrowser(), 3,
+        "3: RDM UI uses an extra connection");
+    }
     yield checkToolbox(tab, "after opening RDM");
     yield closeRDM(tab);
-    
-    yield checkServerConnectionCount(tab.linkedBrowser, 2);
+    if (E10S_MULTI_ENABLED) {
+      
+      yield checkServerConnectionCount(tab.linkedBrowser, 1,
+        "1: RDM UI closed, return to previous connection count");
+    } else {
+      
+      yield checkServerConnectionCount(tab.linkedBrowser, 2,
+        "2: RDM UI closed, return to previous connection count");
+    }
     yield checkToolbox(tab, tab.linkedBrowser, "after closing RDM");
     yield toolbox.destroy();
     
-    yield checkServerConnectionCount(tab.linkedBrowser, 0);
+    yield checkServerConnectionCount(tab.linkedBrowser, 0,
+      "0: All DevTools usage closed");
   }
 
-  
+  info("Open toolbox inside RDM");
   {
     
-    yield checkServerConnectionCount(tab.linkedBrowser, 0);
+    yield checkServerConnectionCount(tab.linkedBrowser, 0,
+      "0: No DevTools connections yet");
     let { ui } = yield openRDM(tab);
     
-    yield checkServerConnectionCount(ui.getViewportBrowser(), 1);
+    yield checkServerConnectionCount(ui.getViewportBrowser(), 1,
+      "1: RDM UI uses an extra connection");
     let { toolbox } = yield openInspector();
-    
-    
-    
-    yield checkServerConnectionCount(ui.getViewportBrowser(), 3);
+    if (E10S_MULTI_ENABLED) {
+      
+      yield checkServerConnectionCount(ui.getViewportBrowser(), 2,
+        "2: Two tabs open, but only one per content process");
+    } else {
+      
+      yield checkServerConnectionCount(ui.getViewportBrowser(), 3,
+        "3: One for each tab (starting tab plus the one we opened)");
+    }
     yield checkToolbox(tab, ui.getViewportBrowser(), "inside RDM");
     yield closeRDM(tab);
-    
-    yield checkServerConnectionCount(tab.linkedBrowser, 2);
+    if (E10S_MULTI_ENABLED) {
+      
+      yield checkServerConnectionCount(tab.linkedBrowser, 1,
+        "1: RDM UI closed, one less connection");
+    } else {
+      
+      yield checkServerConnectionCount(tab.linkedBrowser, 2,
+        "2: RDM UI closed, one less connection");
+    }
     yield checkToolbox(tab, tab.linkedBrowser, "after closing RDM");
     yield toolbox.destroy();
     
-    yield checkServerConnectionCount(tab.linkedBrowser, 0);
+    yield checkServerConnectionCount(tab.linkedBrowser, 0,
+      "0: All DevTools usage closed");
   }
 
   yield removeTab(tab);
