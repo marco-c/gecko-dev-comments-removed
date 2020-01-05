@@ -34,7 +34,7 @@ pub enum RenderState {
 
 
 
-pub trait Compositor {
+pub trait RenderListener {
     fn get_gl_context(&self) -> AzGLContext;
     fn paint(&self, layer_buffer_set: LayerBufferSet, new_size: Size2D<uint>);
     fn set_render_state(&self, render_state: RenderState);

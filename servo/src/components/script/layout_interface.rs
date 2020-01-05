@@ -7,7 +7,7 @@
 
 
 use dom::node::{AbstractNode, ScriptView, LayoutView};
-use script_task::ScriptMsg;
+use script_task::{ScriptMsg, ScriptChan};
 
 use core::comm::{Chan, SharedChan};
 use geom::rect::Rect;
@@ -31,6 +31,9 @@ pub enum Msg {
     
     
     QueryMsg(LayoutQuery, Chan<Result<LayoutResponse,()>>),
+
+    
+    RouteScriptMsg(ScriptMsg),
 
     
     ExitMsg,
@@ -110,7 +113,7 @@ pub struct Reflow {
     
     url: Url,
     
-    script_chan: SharedChan<ScriptMsg>,
+    script_chan: ScriptChan,
     
     window_size: Size2D<uint>,
     
@@ -119,7 +122,17 @@ pub struct Reflow {
 
 
 #[deriving(Clone)]
-pub struct LayoutTask {
+pub struct LayoutChan {
     chan: SharedChan<Msg>,
 }
 
+impl LayoutChan {
+    pub fn new(chan: Chan<Msg>) -> LayoutChan {
+        LayoutChan {
+            chan: SharedChan::new(chan),
+        }
+    }
+    pub fn send(&self, msg: Msg) {
+        self.chan.send(msg);
+    }
+}
