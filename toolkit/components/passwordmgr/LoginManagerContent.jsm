@@ -130,7 +130,9 @@ var observer = {
       }
 
       case "contextmenu": {
-        gLastContextMenuEventTimeStamp = aEvent.timeStamp;
+        
+        
+        gLastContextMenuEventTimeStamp = Date.now();
         break;
       }
 
@@ -579,10 +581,14 @@ var LoginManagerContent = {
 
 
 
+
+
+    let timestamp = Date.now();
     setTimeout(function maybeOpenAutocompleteAfterFocus() {
       
       
-      let timeDiff = Math.abs(gLastContextMenuEventTimeStamp - event.timeStamp);
+      
+      let timeDiff = Math.abs(gLastContextMenuEventTimeStamp - timestamp);
       if (timeDiff < AUTOCOMPLETE_AFTER_CONTEXTMENU_THRESHOLD_MS) {
         log("Not opening autocomplete after focus since a context menu was opened within",
             timeDiff, "ms");
