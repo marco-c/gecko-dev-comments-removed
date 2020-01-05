@@ -72,14 +72,18 @@ public:
     mFireReorder(aFireReorder) { }
   ~EventTree() { Clear(); }
 
-  void Shown(Accessible* aChild);
-
-  void Hidden(Accessible* aChild, bool aNeedsShutdown = true);
+  void Shown(Accessible* aTarget);
+  void Hidden(Accessible*, bool);
 
   
 
 
   const EventTree* Find(const Accessible* aContainer) const;
+
+  
+
+
+  void Mutated(AccMutationEvent* aEv);
 
 #ifdef A11Y_LOG
   void Log(uint32_t aLevel = UINT32_MAX) const;
@@ -96,7 +100,6 @@ private:
 
   EventTree* FindOrInsert(Accessible* aContainer);
 
-  void Mutated(AccMutationEvent* aEv);
   void Clear();
 
   UniquePtr<EventTree> mFirst;
