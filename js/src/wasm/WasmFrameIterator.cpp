@@ -396,12 +396,10 @@ void
 wasm::GenerateFunctionPrologue(MacroAssembler& masm, unsigned framePushed, const SigIdDesc& sigId,
                                FuncOffsets* offsets)
 {
-#if defined(JS_CODEGEN_ARM)
     
     
     
     masm.flushBuffer();
-#endif
     masm.haltingAlign(CodeAlignment);
 
     
@@ -415,12 +413,17 @@ wasm::GenerateFunctionPrologue(MacroAssembler& masm, unsigned framePushed, const
         masm.branchPtr(Assembler::Condition::NotEqual, WasmTableCallSigReg, scratch, trap);
         break;
       }
-      case SigIdDesc::Kind::Immediate:
+      case SigIdDesc::Kind::Immediate: {
         masm.branch32(Assembler::Condition::NotEqual, WasmTableCallSigReg, Imm32(sigId.immediate()), trap);
         break;
+      }
       case SigIdDesc::Kind::None:
         break;
     }
+
+    
+    
+    masm.flushBuffer();
 
     
     masm.nopAlign(CodeAlignment);
