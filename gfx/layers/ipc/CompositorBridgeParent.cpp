@@ -31,6 +31,7 @@
 #include "mozilla/gfx/GPUChild.h"       
 #include "mozilla/gfx/Point.h"          
 #include "mozilla/gfx/Rect.h"          
+#include "mozilla/gfx/gfxVars.h"        
 #include "VRManager.h"                  
 #include "mozilla/ipc/Transport.h"      
 #include "mozilla/layers/APZCTreeManager.h"  

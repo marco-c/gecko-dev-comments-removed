@@ -16,6 +16,9 @@
 #include "nsPrintfCString.h"            
 #include "nsString.h"                   
 
+
+#define BIAS_TIME_MS 1.0
+
 namespace mozilla {
 
 using namespace gfx;
@@ -487,3 +490,5 @@ ImageHost::GenEffect(const gfx::SamplingFilter aSamplingFilter)
 
 } 
 } 
+
+#undef BIAS_TIME_MS

@@ -5,6 +5,7 @@
 
 #include "ImageComposite.h"
 
+
 #define BIAS_TIME_MS 1.0
 
 namespace mozilla {
@@ -119,3 +120,5 @@ ImageComposite::TimedImage* ImageComposite::ChooseImage()
 
 } 
 } 
+
+#undef BIAS_TIME_MS
