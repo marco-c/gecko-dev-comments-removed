@@ -479,7 +479,7 @@ protected:
                        nscoord aAnchorBegin, nscoord aAnchorEnd,
                        nscoord aMarginBegin, nscoord aMarginEnd,
                        nscoord aOffsetForContextMenu, FlipStyle aFlip,
-                       bool* aFlipSide);
+                       bool aIsOnEnd, bool* aFlipSide);
 
   
   

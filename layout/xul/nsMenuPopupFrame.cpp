@@ -1187,8 +1187,10 @@ nsMenuPopupFrame::FlipOrResize(nscoord& aScreenPoint, nscoord aSize,
                                nscoord aAnchorBegin, nscoord aAnchorEnd,
                                nscoord aMarginBegin, nscoord aMarginEnd,
                                nscoord aOffsetForContextMenu, FlipStyle aFlip,
-                               bool* aFlipSide)
+                               bool aEndAligned, bool* aFlipSide)
 {
+  
+  
   *aFlipSide = false;
 
   
@@ -1206,6 +1208,7 @@ nsMenuPopupFrame::FlipOrResize(nscoord& aScreenPoint, nscoord aSize,
       if (startpos - aScreenBegin >= aScreenEnd - endpos) {
         aScreenPoint = aScreenBegin;
         popupSize = startpos - aScreenPoint - aMarginEnd;
+        *aFlipSide = !aEndAligned;
       }
       else {
         
@@ -1214,7 +1217,7 @@ nsMenuPopupFrame::FlipOrResize(nscoord& aScreenPoint, nscoord aSize,
         
         nscoord newScreenPoint = endpos + aMarginEnd;
         if (newScreenPoint != aScreenPoint) {
-          *aFlipSide = true;
+          *aFlipSide = aEndAligned;
           aScreenPoint = newScreenPoint;
           
           
@@ -1239,6 +1242,7 @@ nsMenuPopupFrame::FlipOrResize(nscoord& aScreenPoint, nscoord aSize,
       
       
       if (aScreenEnd - endpos >= startpos - aScreenBegin) {
+        *aFlipSide = aEndAligned;
         if (mIsContextMenu) {
           aScreenPoint = aScreenEnd - aSize;
         }
@@ -1253,7 +1257,7 @@ nsMenuPopupFrame::FlipOrResize(nscoord& aScreenPoint, nscoord aSize,
         
         nscoord newScreenPoint = startpos - aSize - aMarginBegin - std::max(aOffsetForContextMenu, 0);
         if (newScreenPoint != aScreenPoint) {
-          *aFlipSide = true;
+          *aFlipSide = !aEndAligned;
           aScreenPoint = newScreenPoint;
 
           
@@ -1536,6 +1540,9 @@ nsMenuPopupFrame::SetPopupPosition(nsIFrame* aAnchorFrame, bool aIsMove, bool aS
     
     
     
+    bool endAligned = IsDirectionRTL() ?
+      mPopupAlignment == POPUPALIGNMENT_TOPLEFT || mPopupAlignment == POPUPALIGNMENT_BOTTOMLEFT :
+      mPopupAlignment == POPUPALIGNMENT_TOPRIGHT || mPopupAlignment == POPUPALIGNMENT_BOTTOMRIGHT;
     if (slideHorizontal) {
       mRect.width = SlideOrResize(screenPoint.x, mRect.width, screenRect.x,
                                   screenRect.XMost(), &mAlignmentOffset);
@@ -1543,8 +1550,11 @@ nsMenuPopupFrame::SetPopupPosition(nsIFrame* aAnchorFrame, bool aIsMove, bool aS
       mRect.width = FlipOrResize(screenPoint.x, mRect.width, screenRect.x,
                                  screenRect.XMost(), anchorRect.x, anchorRect.XMost(),
                                  margin.left, margin.right, offsetForContextMenu.x, hFlip,
-                                 &mHFlip);
+                                 endAligned, &mHFlip);
     }
+
+    endAligned = mPopupAlignment == POPUPALIGNMENT_BOTTOMLEFT ||
+                 mPopupAlignment == POPUPALIGNMENT_BOTTOMRIGHT;
     if (slideVertical) {
       mRect.height = SlideOrResize(screenPoint.y, mRect.height, screenRect.y,
                                   screenRect.YMost(), &mAlignmentOffset);
@@ -1552,7 +1562,7 @@ nsMenuPopupFrame::SetPopupPosition(nsIFrame* aAnchorFrame, bool aIsMove, bool aS
       mRect.height = FlipOrResize(screenPoint.y, mRect.height, screenRect.y,
                                   screenRect.YMost(), anchorRect.y, anchorRect.YMost(),
                                   margin.top, margin.bottom, offsetForContextMenu.y, vFlip,
-                                  &mVFlip);
+                                  endAligned, &mVFlip);
     }
 
     NS_ASSERTION(screenPoint.x >= screenRect.x && screenPoint.y >= screenRect.y &&
