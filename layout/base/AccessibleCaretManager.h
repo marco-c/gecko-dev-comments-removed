@@ -10,6 +10,7 @@
 #include "AccessibleCaret.h"
 #include "nsCOMPtr.h"
 #include "nsCoord.h"
+#include "nsIDOMMouseEvent.h"
 #include "nsIFrame.h"
 #include "nsISelectionListener.h"
 #include "mozilla/RefPtr.h"
@@ -101,6 +102,10 @@ public:
   
   
   virtual void OnFrameReconstruction();
+
+  
+  
+  void SetLastInputSource(uint16_t aInputSource);
 
 protected:
   
@@ -276,6 +281,12 @@ protected:
   AccessibleCaret::Appearance mSecondCaretAppearanceOnScrollStart =
                                  AccessibleCaret::Appearance::None;
 
+  
+  
+  
+  
+  uint16_t mLastInputSource = nsIDOMMouseEvent::MOZ_SOURCE_UNKNOWN;
+
   static const int32_t kAutoScrollTimerDelay = 30;
 
   
@@ -319,6 +330,10 @@ protected:
 
   
   static bool sHapticFeedback;
+
+  
+  
+  static bool sHideCaretsForMouseInput;
 };
 
 std::ostream& operator<<(std::ostream& aStream,

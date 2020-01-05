@@ -5259,6 +5259,9 @@ pref("layout.accessiblecaret.hapticfeedback", false);
 pref("layout.accessiblecaret.extend_selection_for_phone_number", false);
 
 
+pref("layout.accessiblecaret.hide_carets_for_mouse_input", true);
+
+
 pref("dom.wakelock.enabled", false);
 
 
