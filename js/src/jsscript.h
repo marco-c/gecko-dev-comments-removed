@@ -445,6 +445,14 @@ class ScriptSource
     const char16_t* chunkChars(JSContext* cx, UncompressedSourceCache::AutoHoldEntry& holder,
                                size_t chunk);
 
+    
+    
+    
+    
+    
+    
+    mozilla::TimeStamp parseEnded_;
+
   public:
     explicit ScriptSource()
       : refs(0),
@@ -603,6 +611,15 @@ class ScriptSource
     
     
     bool xdrFinalizeEncoder();
+
+    const mozilla::TimeStamp parseEnded() const {
+        return parseEnded_;
+    }
+    
+    void recordParseEnded() {
+        MOZ_ASSERT(parseEnded_.IsNull());
+        parseEnded_ = mozilla::TimeStamp::Now();
+    }
 };
 
 class ScriptSourceHolder

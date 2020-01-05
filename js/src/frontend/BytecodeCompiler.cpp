@@ -397,6 +397,10 @@ BytecodeCompiler::compileScript(HandleObject environment, SharedContext* sc)
     if (!maybeCompleteCompressSource())
         return nullptr;
 
+    
+    
+    script->scriptSource()->recordParseEnded();
+
     MOZ_ASSERT_IF(!cx->helperThread(), !cx->isExceptionPending());
 
     return script;
@@ -667,6 +671,24 @@ frontend::CompileLazyFunction(JSContext* cx, Handle<LazyScript*> lazy, const cha
            .setColumn(lazy->column())
            .setNoScriptRval(false)
            .setSelfHostingMode(false);
+
+    
+    
+    
+    
+    if (!lazy->scriptSource()->parseEnded().IsNull()) {
+        const mozilla::TimeDuration delta = mozilla::TimeStamp::Now() -
+            lazy->scriptSource()->parseEnded();
+
+        
+        
+        
+        
+        const int HISTOGRAM = cx->runningWithTrustedPrincipals()
+            ? JS_TELEMETRY_PRIVILEGED_PARSER_COMPILE_LAZY_AFTER_MS
+            : JS_TELEMETRY_WEB_PARSER_COMPILE_LAZY_AFTER_MS;
+        cx->runtime()->addTelemetry(HISTOGRAM, delta.ToMilliseconds());
+    }
 
     UsedNameTracker usedNames(cx);
     if (!usedNames.init())
