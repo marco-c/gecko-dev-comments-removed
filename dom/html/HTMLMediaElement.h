@@ -1231,7 +1231,9 @@ protected:
 
   
   
-  void CreateAudioChannelAgent();
+  
+  
+  bool MaybeCreateAudioChannelAgent();
 
   
   bool ShouldElementBePaused();
