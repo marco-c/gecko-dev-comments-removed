@@ -5,6 +5,7 @@
 
 
 #include "nsTArray.h"
+#include "mozilla/CheckedInt.h"
 
 
 
@@ -493,7 +494,7 @@ nsTString_CharT::ReplaceSubstring(const self_type& aTarget,
   
   AutoTArray<Segment, 16> nonMatching;
   uint32_t i = 0;
-  uint32_t newLength = 0;
+  mozilla::CheckedUint32 newLength;
   while (true)
   {
     int32_t r = FindSubstring(mData + i, mLength - i, static_cast<const char_type*>(aTarget.Data()), aTarget.Length(), false);
@@ -514,6 +515,10 @@ nsTString_CharT::ReplaceSubstring(const self_type& aTarget,
     }
   }
 
+  if (!newLength.isValid()) {
+    return false;
+  }
+
   
   
   if (nonMatching.Length() == 1) {
@@ -528,7 +533,7 @@ nsTString_CharT::ReplaceSubstring(const self_type& aTarget,
   
   char_type* oldData;
   uint32_t oldFlags;
-  if (!MutatePrep(XPCOM_MAX(mLength, newLength), &oldData, &oldFlags))
+  if (!MutatePrep(XPCOM_MAX(mLength, newLength.value()), &oldData, &oldFlags))
     return false;
   if (oldData) {
     
@@ -571,7 +576,7 @@ nsTString_CharT::ReplaceSubstring(const self_type& aTarget,
   }
 
   
-  mLength = newLength;
+  mLength = newLength.value();
   mData[mLength] = char_type(0);
 
   return true;
