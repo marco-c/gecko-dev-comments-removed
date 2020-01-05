@@ -26,6 +26,11 @@ var gBrowserThumbnails = {
   
 
 
+  _topSiteURLsRefreshTimer: null,
+
+  
+
+
   _tabEvents: ["TabClose", "TabSelect"],
 
   init: function Thumbnails_init() {
@@ -47,6 +52,10 @@ var gBrowserThumbnails = {
     PageThumbs.removeExpirationFilter(this);
     gBrowser.removeTabsProgressListener(this);
     Services.prefs.removeObserver(this.PREF_DISK_CACHE_SSL, this);
+    if (this._topSiteURLsRefreshTimer) {
+      this._topSiteURLsRefreshTimer.cancel();
+      this._topSiteURLsRefreshTimer = null;
+    }
 
     this._tabEvents.forEach(function(aEvent) {
       gBrowser.tabContainer.removeEventListener(aEvent, this);
@@ -73,6 +82,22 @@ var gBrowserThumbnails = {
   observe: function Thumbnails_observe() {
     this._sslDiskCacheEnabled =
       Services.prefs.getBoolPref(this.PREF_DISK_CACHE_SSL);
+  },
+
+  clearTopSiteURLCache: function Thumbnails_clearTopSiteURLCache() {
+    if (this._topSiteURLsRefreshTimer) {
+      this._topSiteURLsRefreshTimer.cancel();
+      this._topSiteURLsRefreshTimer = null;
+    }
+    
+    delete this._topSiteURLs;
+    XPCOMUtils.defineLazyGetter(this, "_topSiteURLs",
+                                Thumbnails_getTopSiteURLs);
+  },
+
+  notify: function Thumbnails_notify(timer) {
+    gBrowserThumbnails._topSiteURLsRefreshTimer = null;
+    gBrowserThumbnails.clearTopSiteURLCache();
   },
 
   filterForThumbnailExpiration:
@@ -125,14 +150,6 @@ var gBrowserThumbnails = {
     PageThumbs.shouldStoreThumbnail(aBrowser, aCallback);
   },
 
-  get _topSiteURLs() {
-    return NewTabUtils.links.getLinks().reduce((urls, link) => {
-      if (link)
-        urls.push(link.url);
-      return urls;
-    }, []);
-  },
-
   _clearTimeout: function Thumbnails_clearTimeout(aBrowser) {
     if (this._timeouts.has(aBrowser)) {
       aBrowser.removeEventListener("scroll", this);
@@ -141,3 +158,22 @@ var gBrowserThumbnails = {
     }
   }
 };
+
+function Thumbnails_getTopSiteURLs() {
+  
+  
+  
+  gBrowserThumbnails._topSiteURLsRefreshTimer =
+    Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
+  gBrowserThumbnails._topSiteURLsRefreshTimer.initWithCallback(gBrowserThumbnails,
+                                                               60 * 1000,
+                                                               Ci.nsITimer.TYPE_ONE_SHOT);
+  return NewTabUtils.links.getLinks().reduce((urls, link) => {
+    if (link)
+      urls.push(link.url);
+    return urls;
+  }, []);
+}
+
+XPCOMUtils.defineLazyGetter(gBrowserThumbnails, "_topSiteURLs",
+                            Thumbnails_getTopSiteURLs);
