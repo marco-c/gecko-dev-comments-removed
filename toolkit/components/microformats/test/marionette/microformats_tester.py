@@ -100,9 +100,9 @@ class BaseTestFrontendUnits(MarionetteTestCase):
 
         
         
-        self.marionette.set_search_timeout(120000)
+        self.marionette.timeout.implicit = 120
 
-        self.marionette.set_page_load_timeout(120000)
+        self.marionette.timeout.page_load = 120
 
     
     def set_server_prefix(self, srcdir_path):
