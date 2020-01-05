@@ -2,6 +2,8 @@
 
 
 
+#![allow(unsafe_code)]
+
 use app_units::Au;
 use euclid::Point2D;
 use font::{DISABLE_KERNING_SHAPING_FLAG, Font, FontTableMethods, FontTableTag};

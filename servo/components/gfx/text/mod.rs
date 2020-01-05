@@ -2,12 +2,6 @@
 
 
 
-
-
-
-
-
-
 pub use text::shaping::Shaper;
 pub use text::text_run::TextRun;
 
