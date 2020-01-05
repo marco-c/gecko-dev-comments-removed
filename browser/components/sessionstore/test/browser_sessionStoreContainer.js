@@ -2,6 +2,9 @@
 
 
 
+
+
+
 "use strict";
 
 add_task(function* () {
@@ -87,7 +90,6 @@ function* openTabInUserContext(userContextId) {
 function waitForNewCookie() {
   return new Promise(resolve => {
     Services.obs.addObserver(function observer(subj, topic, data) {
-      let cookie = subj.QueryInterface(Ci.nsICookie2);
       if (data == "added") {
         Services.obs.removeObserver(observer, topic);
         resolve();
@@ -122,7 +124,8 @@ add_task(function* test() {
 
     yield Promise.all([
       waitForNewCookie(),
-      ContentTask.spawn(browser, cookie, cookie => content.document.cookie = cookie)
+      ContentTask.spawn(browser, cookie,
+        passedCookie => content.document.cookie = passedCookie)
     ]);
 
     
@@ -138,4 +141,3 @@ add_task(function* test() {
   is(state.windows[0].cookies.length, USER_CONTEXTS.length,
     "session restore should have each container's cookie");
 });
-

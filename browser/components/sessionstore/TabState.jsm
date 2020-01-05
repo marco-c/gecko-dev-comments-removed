@@ -164,7 +164,6 @@ var TabStateInternal = {
 
     
     let includePrivateData = options && options.includePrivateData;
-    let isPinned = !!tabData.pinned;
 
     for (let key of Object.keys(data)) {
       let value = data[key];

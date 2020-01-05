@@ -35,6 +35,7 @@ add_task(function* () {
 });
 
 function promiseSHistoryCount(browser) {
+  
   return ContentTask.spawn(browser, null, function* () {
     return docShell.QueryInterface(Ci.nsIWebNavigation).sessionHistory.count;
   });

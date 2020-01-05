@@ -359,7 +359,7 @@ var CookieStore = {
 
 
 
-  getCookiesForHost(host) {
+  getCookiesForHost(mainHost) {
     let cookies = [];
 
     let appendCookiesForHost = host => {
@@ -381,7 +381,7 @@ var CookieStore = {
     
     
     
-    for (let variant of [host, ...getPossibleSubdomainVariants(host)]) {
+    for (let variant of [mainHost, ...getPossibleSubdomainVariants(mainHost)]) {
       appendCookiesForHost(variant);
     }
 

@@ -205,7 +205,7 @@ add_task(function* test_background_crash_multiple() {
       yield tabRestored;
 
       
-      let tabCrashedPagePromise =
+      tabCrashedPagePromise =
         BrowserTestUtils.waitForContentEvent(tab4.linkedBrowser,
                                              "AboutTabCrashedReady",
                                              false, null, true);

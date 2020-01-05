@@ -856,7 +856,7 @@ var SessionStoreInternal = {
           }
         }
         break;
-      case "SessionStore:restoreHistoryComplete":
+      case "SessionStore:restoreHistoryComplete": {
         
         let tabData = TabState.collect(tab);
 
@@ -900,6 +900,7 @@ var SessionStoreInternal = {
         event.initEvent("SSTabRestoring", true, false);
         tab.dispatchEvent(event);
         break;
+      }
       case "SessionStore:restoreTabContentStarted":
         if (browser.__SS_restoreState == TAB_STATE_NEEDS_RESTORE) {
           
@@ -945,7 +946,6 @@ var SessionStoreInternal = {
         break;
       default:
         throw new Error(`received unknown message '${aMessage.name}'`);
-        break;
     }
   },
 
@@ -1141,17 +1141,15 @@ var SessionStoreInternal = {
         
         Services.obs.notifyObservers(null, NOTIFY_WINDOWS_RESTORED, "");
       }
-    }
     
-    else if (!this._isWindowLoaded(aWindow)) {
+    } else if (!this._isWindowLoaded(aWindow)) {
       let state = this._statesToRestore[aWindow.__SS_restoreID];
       let options = {overwriteTabs: true, isFollowUp: state.windows.length == 1};
       this.restoreWindow(aWindow, state.windows[0], options);
-    }
     
     
     
-    else if (this._deferredInitialState && !isPrivateWindow &&
+    } else if (this._deferredInitialState && !isPrivateWindow &&
              aWindow.toolbar.visible) {
 
       
@@ -1198,9 +1196,8 @@ var SessionStoreInternal = {
           
           if (!normalTabsState.windows.length) {
             this._removeClosedWindow(closedWindowIndex);
-          }
           
-          else {
+          } else {
             delete normalTabsState.windows[0].__lastSessionWindowID;
             this._closedWindows[closedWindowIndex] = normalTabsState.windows[0];
           }
@@ -2455,7 +2452,7 @@ var SessionStoreInternal = {
 
   getWindowValue: function ssi_getWindowValue(aWindow, aKey) {
     if ("__SSi" in aWindow) {
-      var data = this._windows[aWindow.__SSi].extData || {};
+      let data = this._windows[aWindow.__SSi].extData || {};
       return data[aKey] || "";
     }
 
@@ -2786,10 +2783,10 @@ var SessionStoreInternal = {
         return;
       }
 
-      let window = tab.ownerGlobal;
+      let refreshedWindow = tab.ownerGlobal;
 
       
-      if (!window || !window.__SSi || window.closed) {
+      if (!refreshedWindow || !refreshedWindow.__SSi || refreshedWindow.closed) {
         return;
       }
 
@@ -2879,7 +2876,6 @@ var SessionStoreInternal = {
     let homePages = ["about:blank"];
     let removableTabs = [];
     let tabbrowser = aWindow.gBrowser;
-    let normalTabsLen = tabbrowser.tabs.length - tabbrowser._numPinnedTabs;
     let startupPref = this._prefBranch.getIntPref("startup.page");
     if (startupPref == 1)
       homePages = homePages.concat(aWindow.gHomeButton.getHomePage().split("|"));
@@ -3154,11 +3150,9 @@ var SessionStoreInternal = {
 
     if (!winData.tabs) {
       winData.tabs = [];
-    }
-
     
     
-    else if (firstWindow && !overwriteTabs && winData.tabs.length == 1 &&
+    } else if (firstWindow && !overwriteTabs && winData.tabs.length == 1 &&
              (!winData.tabs[0].entries || winData.tabs[0].entries.length == 0)) {
       winData.tabs = [];
     }
@@ -3742,14 +3736,13 @@ var SessionStoreInternal = {
       }
     }
 
-    var _this = this;
-    aWindow.setTimeout(function() {
-      _this.restoreDimensions.apply(_this, [aWindow,
+    aWindow.setTimeout(() => {
+      this.restoreDimensions(aWindow,
         +(aWinData.width || 0),
         +(aWinData.height || 0),
         "screenX" in aWinData ? +aWinData.screenX : NaN,
         "screenY" in aWinData ? +aWinData.screenY : NaN,
-        aWinData.sizemode || "", aWinData.sidebar || ""]);
+        aWinData.sizemode || "", aWinData.sidebar || "");
     }, 0);
   },
 

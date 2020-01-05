@@ -61,7 +61,7 @@ add_task(function* () {
   let resolveLocationChangePromise;
   let locationChangePromise = new Promise(r => resolveLocationChangePromise = r);
   let wpl = {
-    onStateChange(wpl, request, state, status) {
+    onStateChange(listener, request, state, status) {
       let location = request.QueryInterface(Ci.nsIChannel).originalURI;
       
       let docStop = Ci.nsIWebProgressListener.STATE_STOP |

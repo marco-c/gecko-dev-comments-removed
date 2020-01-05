@@ -49,7 +49,7 @@ function test() {
   promiseBrowserLoaded(tab.linkedBrowser).then(() => {
     
     
-    setTimeout(function step1(e) {
+    setTimeout(function step1() {
       let mtime1 = getSessionstorejsModificationTime();
       isnot(mtime1, mtime0, "initial sessionstore.js update");
 
@@ -57,7 +57,7 @@ function test() {
       
       gBrowser.selectedTab = tab;
       tab.linkedBrowser.contentWindow.scrollTo(1100, 1200);
-      setTimeout(function step2(e) {
+      setTimeout(function step2() {
         let mtime2 = getSessionstorejsModificationTime();
         is(mtime2, mtime1,
            "tab selection and scrolling: sessionstore.js not updated");

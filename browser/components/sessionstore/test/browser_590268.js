@@ -11,8 +11,6 @@ function test() {
   waitForExplicitFinish();
   requestLongerTimeout(2);
 
-  let startedTest = false;
-
   
   
   let wasLoaded = { };

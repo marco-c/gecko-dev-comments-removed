@@ -97,14 +97,14 @@ var testCookieCollection = async function(params) {
   }
 
   
-  let uri = `${params.host}${PATH}browser_cookies.sjs?${urlParams}`;
+  let requestUri = `${params.host}${PATH}browser_cookies.sjs?${urlParams}`;
 
   
   
   
   await Promise.all([
     waitForNewCookie(),
-    replaceCurrentURI(browser, uri)
+    replaceCurrentURI(browser, requestUri)
   ]);
 
   

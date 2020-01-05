@@ -1,5 +1,8 @@
 "use strict";
 
+
+
+
 const PAGE = "http://example.com/";
 
 
@@ -32,8 +35,8 @@ add_task(function* test_add_interesting_window() {
   
   
   
-  yield ContentTask.spawn(browser, PAGE, function*(PAGE) {
-    content.location = PAGE;
+  yield ContentTask.spawn(browser, PAGE, function*(newPage) {
+    content.location = newPage;
   });
 
   yield promiseContentMessage(browser, "ss-test:OnHistoryReplaceEntry");

@@ -32,7 +32,7 @@ function test() {
     }
   });
 
-  function test(aLambda) {
+  function checkNoThrow(aLambda) {
     try {
       return aLambda() || true;
     } catch (ex) { }
@@ -74,8 +74,8 @@ function test() {
   }
 
   
-  
-  
+
+
 
   let rootDir = getRootDirectory(gTestPath);
   const testURL = rootDir + "browser_248970_b_sample.html";
@@ -93,7 +93,6 @@ function test() {
       "getClosedTabCount should return zero or at most max_tabs_undo");
 
     
-    let key = "key";
     let value = "Value " + Math.random();
     let state = { entries: [{ url: testURL }], extData: { key: value } };
 
@@ -117,15 +116,15 @@ function test() {
          "getClosedTabCount has increased after closing a tab");
 
       
-      let tab_A_restored = test(() => ss.undoCloseTab(aWin, 0));
+      let tab_A_restored = checkNoThrow(() => ss.undoCloseTab(aWin, 0));
       ok(tab_A_restored, "a tab is in undo list");
       promiseTabRestored(tab_A_restored).then(() => {
         is(testURL, tab_A_restored.linkedBrowser.currentURI.spec,
            "it's the same tab that we expect");
         aWin.gBrowser.removeTab(tab_A_restored);
 
-        whenNewWindowLoaded({ private: true }, function(aWin) {
-          windowsToClose.push(aWin);
+        whenNewWindowLoaded({ private: true }, function(win) {
+          windowsToClose.push(win);
 
           
           
@@ -135,14 +134,14 @@ function test() {
             entries: [{ url: testURL2 }], extData: { key1: value1 }
           };
 
-          let tab_B = aWin.gBrowser.addTab(testURL2);
+          let tab_B = win.gBrowser.addTab(testURL2);
           promiseTabState(tab_B, state1).then(() => {
             
             for (let item in fieldList)
               setFormValue(tab_B, item, fieldList[item]);
 
             
-            let tab_C = aWin.gBrowser.duplicateTab(tab_B);
+            let tab_C = win.gBrowser.duplicateTab(tab_B);
             promiseTabRestored(tab_C).then(() => {
               
               is(ss.getTabValue(tab_C, key1), value1,
@@ -153,8 +152,8 @@ function test() {
                   "The value for \"" + item + "\" was correctly duplicated");
 
               
-              aWin.gBrowser.removeTab(tab_C);
-              aWin.gBrowser.removeTab(tab_B);
+              win.gBrowser.removeTab(tab_C);
+              win.gBrowser.removeTab(tab_B);
 
               finish();
             });

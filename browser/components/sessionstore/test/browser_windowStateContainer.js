@@ -1,3 +1,6 @@
+
+
+
 "use strict";
 
 requestLongerTimeout(2);
@@ -119,4 +122,3 @@ add_task(function* () {
   yield BrowserTestUtils.closeWindow(win);
   yield BrowserTestUtils.closeWindow(win2);
 });
-

@@ -33,12 +33,13 @@ function restoreClosedTabWithValue(rval) {
 }
 
 function promiseNewLocationAndHistoryEntryReplaced(browser, snippet) {
-  return ContentTask.spawn(browser, snippet, function* (snippet) {
+  
+  return ContentTask.spawn(browser, snippet, function* (codeSnippet) {
     let webNavigation = docShell.QueryInterface(Ci.nsIWebNavigation);
     let shistory = webNavigation.sessionHistory;
 
     
-    eval(snippet);
+    eval(codeSnippet);
 
     return new Promise(resolve => {
       let listener = {

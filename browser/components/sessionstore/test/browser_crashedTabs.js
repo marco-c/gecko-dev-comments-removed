@@ -1,6 +1,9 @@
 
 
 
+
+
+
 "use strict";
 
 requestLongerTimeout(10);
@@ -23,8 +26,8 @@ Services.prefs.clearUserPref("browser.sessionstore.restore_on_demand");
 function clickButton(browser, id) {
   info("Clicking " + id);
 
-  let frame_script = (id) => {
-    let button = content.document.getElementById(id);
+  let frame_script = (buttonId) => {
+    let button = content.document.getElementById(buttonId);
     button.click();
   };
 
