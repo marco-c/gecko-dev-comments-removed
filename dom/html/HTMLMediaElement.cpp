@@ -2949,7 +2949,6 @@ HTMLMediaElement::HTMLMediaElement(already_AddRefed<mozilla::dom::NodeInfo>& aNo
   mWatchManager.Watch(mReadyState, &HTMLMediaElement::UpdateReadyStateInternal);
 
   mShutdownObserver->Subscribe(this);
-  CreateAudioChannelAgent();
 }
 
 HTMLMediaElement::~HTMLMediaElement()
@@ -3030,11 +3029,6 @@ HTMLMediaElement::NotifyXPCOMShutdown()
 void
 HTMLMediaElement::Play(ErrorResult& aRv)
 {
-  if (!IsAllowedToPlay()) {
-    MaybeDoLoad();
-    return;
-  }
-
   nsresult rv = PlayInternal();
   if (NS_FAILED(rv)) {
     aRv.Throw(rv);
@@ -3044,13 +3038,19 @@ HTMLMediaElement::Play(ErrorResult& aRv)
 nsresult
 HTMLMediaElement::PlayInternal()
 {
+  if (!IsAllowedToPlay()) {
+    return NS_OK;
+  }
+
   
   mHasUserInteraction = true;
 
   StopSuspendingAfterFirstFrame();
   SetPlayedOrSeeked(true);
 
-  MaybeDoLoad();
+  if (mNetworkState == nsIDOMHTMLMediaElement::NETWORK_EMPTY) {
+    DoLoad();
+  }
   if (mSuspendedForPreloadNone) {
     ResumeLoad(PRELOAD_ENOUGH);
   }
@@ -3116,21 +3116,8 @@ HTMLMediaElement::PlayInternal()
   return NS_OK;
 }
 
-void
-HTMLMediaElement::MaybeDoLoad()
-{
-  if (mNetworkState == nsIDOMHTMLMediaElement::NETWORK_EMPTY) {
-    DoLoad();
-  }
-}
-
 NS_IMETHODIMP HTMLMediaElement::Play()
 {
-  if (!IsAllowedToPlay()) {
-    MaybeDoLoad();
-    return NS_OK;
-  }
-
   return PlayInternal();
 }
 
@@ -4991,10 +4978,6 @@ bool HTMLMediaElement::CanActivateAutoplay()
     return false;
   }
 
-  if (!IsAllowedToPlay()) {
-    return false;
-  }
-
   bool hasData =
     (mDecoder && mReadyState >= nsIDOMHTMLMediaElement::HAVE_ENOUGH_DATA) ||
     (mSrcStream && mSrcStream->Active()) ||
@@ -5020,7 +5003,9 @@ void HTMLMediaElement::CheckAutoplayDataReady()
     if (mCurrentPlayRangeStart == -1.0) {
       mCurrentPlayRangeStart = CurrentTime();
     }
-    mDecoder->Play();
+    if (!ShouldElementBePaused()) {
+      mDecoder->Play();
+    }
   } else if (mSrcStream) {
     SetPlayedOrSeeked(true);
   }
@@ -5822,13 +5807,19 @@ HTMLMediaElement::IsPlayingThroughTheAudioChannel() const
 }
 
 void
-HTMLMediaElement::UpdateAudioChannelPlayingState(bool aForcePlaying)
+HTMLMediaElement::UpdateAudioChannelPlayingState()
 {
-  bool playingThroughTheAudioChannel =
-    aForcePlaying || IsPlayingThroughTheAudioChannel();
+  bool playingThroughTheAudioChannel = IsPlayingThroughTheAudioChannel();
 
   if (playingThroughTheAudioChannel != mPlayingThroughTheAudioChannel) {
     mPlayingThroughTheAudioChannel = playingThroughTheAudioChannel;
+
+    
+    if (!mAudioChannelAgent && !mPlayingThroughTheAudioChannel) {
+       return;
+    }
+
+    CreateAudioChannelAgent();
     NotifyAudioChannelAgent(mPlayingThroughTheAudioChannel);
   }
 }
@@ -5859,6 +5850,7 @@ HTMLMediaElement::NotifyAudioChannelAgent(bool aPlaying)
     WindowSuspendChanged(config.mSuspend);
   } else {
     mAudioChannelAgent->NotifyStoppedPlaying();
+    mAudioChannelAgent = nullptr;
   }
 }
 
@@ -5943,7 +5935,7 @@ HTMLMediaElement::ResumeFromAudioChannelPaused(SuspendTypes aSuspend)
              mAudioChannelSuspended == nsISuspendedTypes::SUSPENDED_PAUSE_DISPOSABLE);
 
   SetAudioChannelSuspended(nsISuspendedTypes::NONE_SUSPENDED);
-  nsresult rv = Play();
+  nsresult rv = PlayInternal();
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return;
   }
@@ -5956,10 +5948,8 @@ HTMLMediaElement::ResumeFromAudioChannelBlocked()
   MOZ_ASSERT(mAudioChannelSuspended == nsISuspendedTypes::SUSPENDED_BLOCK);
 
   SetAudioChannelSuspended(nsISuspendedTypes::NONE_SUSPENDED);
-  nsresult rv = Play();
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return;
-  }
+  mPaused = false;
+  SuspendOrResumeElement(false , false);
 }
 
 void
@@ -5982,6 +5972,8 @@ HTMLMediaElement::BlockByAudioChannel()
   }
 
   SetAudioChannelSuspended(nsISuspendedTypes::SUSPENDED_BLOCK);
+  mPaused = true;
+  SuspendOrResumeElement(true , true );
 }
 
 void
@@ -6029,29 +6021,12 @@ HTMLMediaElement::IsAllowedToPlay()
   }
 
   
-  
   if (mAudioChannelSuspended == nsISuspendedTypes::SUSPENDED_PAUSE ||
       mAudioChannelSuspended == nsISuspendedTypes::SUSPENDED_BLOCK) {
     return false;
   }
 
-  
-  
-  
-  if (!IsTabActivated()) {
-    
-    
-    UpdateAudioChannelPlayingState(true );
-    return false;
-  }
-
   return true;
-}
-
-bool
-HTMLMediaElement::IsTabActivated() const
-{
-  return !mAudioChannelAgent->ShouldBlockMedia();
 }
 
 static const char* VisibilityString(Visibility aVisibility) {
@@ -6462,9 +6437,7 @@ HTMLMediaElement::SetAudibleState(bool aAudible)
 void
 HTMLMediaElement::NotifyAudioPlaybackChanged(AudibleChangedReasons aReason)
 {
-  MOZ_ASSERT(mAudioChannelAgent);
-
-  if (!mAudioChannelAgent->IsPlayingStarted()) {
+  if (!mAudioChannelAgent) {
     return;
   }
 
@@ -6566,6 +6539,11 @@ bool
 HTMLMediaElement::ShouldElementBePaused()
 {
   
+  if (mAudioChannelSuspended == nsISuspendedTypes::SUSPENDED_BLOCK) {
+    return true;
+  }
+
+  
   if (!IsActive()) {
     return true;
   }
@@ -6583,14 +6561,13 @@ HTMLMediaElement::SetMediaInfo(const MediaInfo& aInfo)
 void
 HTMLMediaElement::AudioCaptureStreamChangeIfNeeded()
 {
-  MOZ_ASSERT(mAudioChannelAgent);
-
   
-  if (!HasAudio()) {
+  if (!mAudioChannelAgent) {
     return;
   }
 
-  if (!mAudioChannelAgent->IsPlayingStarted()) {
+  
+  if (!HasAudio()) {
     return;
   }
 
