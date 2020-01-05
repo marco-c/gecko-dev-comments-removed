@@ -116,8 +116,10 @@ webpackConfig.plugins = mappings.map(([regex, res]) =>
   new NormalModuleReplacementPlugin(regex, res));
 
 
-webpackConfig.babelExcludes = new RegExp(
-  `^${path.join(__dirname, "../../")}(.(?!${path.basename(__dirname)}))*$`);
+const basePath = path.join(__dirname, "../../").replace(/\\/g, "\\\\");
+const baseName = path.basename(__dirname);
+webpackConfig.babelExcludes = new RegExp(`^${basePath}(.(?!${baseName}))*$`);
+
 let config = toolboxConfig(webpackConfig, getConfig());
 
 
