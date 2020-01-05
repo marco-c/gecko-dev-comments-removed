@@ -901,15 +901,6 @@ GMPParent::ReadGMPInfoFile(nsIFile* aFile)
         return GenericPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
       }
 #endif
-#ifdef XP_WIN
-      
-      
-      
-      if (cap.mAPITags.Contains(kEMEKeySystemPrimetime) &&
-          !mozilla::supports_sse2()) {
-        return GenericPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
-      }
-#endif 
     }
 
     mCapabilities.AppendElement(Move(cap));

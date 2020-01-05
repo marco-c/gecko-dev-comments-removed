@@ -46,7 +46,6 @@ class MediaContentType;
 
 extern const nsLiteralCString kEMEKeySystemClearkey;
 extern const nsLiteralCString kEMEKeySystemWidevine;
-extern const nsLiteralCString kEMEKeySystemPrimetime;
 
 
 
