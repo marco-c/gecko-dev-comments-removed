@@ -565,7 +565,7 @@ TabTarget.prototype = {
     
     
     
-    if (this._tab.isReponsiveDesignMode) {
+    if (this._tab.isResponsiveDesignMode) {
       return;
     }
 
