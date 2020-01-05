@@ -19,7 +19,7 @@
 #include "mozilla/plugins/PluginBridge.h"
 #include "mozilla/plugins/PluginInstanceParent.h"
 #include "mozilla/Preferences.h"
-#ifdef MOZ_ENABLE_PROFILER_SPS
+#ifdef MOZ_GECKO_PROFILER
 #include "mozilla/ProfileGatherer.h"
 #endif
 #include "mozilla/ProcessHangMonitor.h"
@@ -47,7 +47,7 @@
 #include "PluginUtilsWin.h"
 #endif
 
-#ifdef MOZ_ENABLE_PROFILER_SPS
+#ifdef MOZ_GECKO_PROFILER
 #include "nsIProfiler.h"
 #include "nsIProfileSaveEvent.h"
 #endif
@@ -62,7 +62,7 @@
 using base::KillProcess;
 
 using mozilla::PluginLibrary;
-#ifdef MOZ_ENABLE_PROFILER_SPS
+#ifdef MOZ_GECKO_PROFILER
 using mozilla::ProfileGatherer;
 #endif
 using mozilla::ipc::MessageChannel;
@@ -636,7 +636,7 @@ PluginModuleChromeParent::OnProcessLaunched(const bool aSucceeded)
 #endif
     }
 
-#ifdef MOZ_ENABLE_PROFILER_SPS
+#ifdef MOZ_GECKO_PROFILER
     nsCOMPtr<nsIProfiler> profiler(do_GetService("@mozilla.org/tools/profiler;1"));
     bool profilerActive = false;
     DebugOnly<nsresult> rv = profiler->IsActive(&profilerActive);
@@ -754,7 +754,7 @@ PluginModuleChromeParent::PluginModuleChromeParent(const char* aFilePath,
     mSandboxLevel = aSandboxLevel;
     mRunID = GeckoChildProcessHost::GetUniqueID();
 
-#ifdef MOZ_ENABLE_PROFILER_SPS
+#ifdef MOZ_GECKO_PROFILER
     InitPluginProfiling();
 #endif
 
@@ -767,7 +767,7 @@ PluginModuleChromeParent::~PluginModuleChromeParent()
         MOZ_CRASH("unsafe destruction");
     }
 
-#ifdef MOZ_ENABLE_PROFILER_SPS
+#ifdef MOZ_GECKO_PROFILER
     ShutdownPluginProfiling();
 #endif
 
@@ -3254,7 +3254,7 @@ PluginModuleChromeParent::OnCrash(DWORD processID)
 
 #endif 
 
-#ifdef MOZ_ENABLE_PROFILER_SPS
+#ifdef MOZ_GECKO_PROFILER
 class PluginProfilerObserver final : public nsIObserver,
                                      public nsSupportsWeakReference
 {
@@ -3373,7 +3373,7 @@ PluginModuleChromeParent::GatheredAsyncProfile(nsIProfileSaveEvent* aSaveEvent)
 mozilla::ipc::IPCResult
 PluginModuleChromeParent::RecvProfile(const nsCString& aProfile)
 {
-#ifdef MOZ_ENABLE_PROFILER_SPS
+#ifdef MOZ_GECKO_PROFILER
     if (NS_WARN_IF(!mGatherer)) {
         return IPC_OK();
     }

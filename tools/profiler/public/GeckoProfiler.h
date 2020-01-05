@@ -88,7 +88,7 @@ struct ProfilerBacktraceDestructor
 using UniqueProfilerBacktrace =
   mozilla::UniquePtr<ProfilerBacktrace, ProfilerBacktraceDestructor>;
 
-#if !defined(MOZ_ENABLE_PROFILER_SPS)
+#if !defined(MOZ_GECKO_PROFILER)
 
 
 
@@ -187,7 +187,7 @@ PROFILER_FUNC_VOID(profiler_get_backtrace_noalloc(char *output,
                                                   size_t outputSize))
 
 
-#if !defined(MOZ_ENABLE_PROFILER_SPS)
+#if !defined(MOZ_GECKO_PROFILER)
 inline void ProfilerBacktraceDestructor::operator()(ProfilerBacktrace* aBacktrace) {}
 #endif
 
@@ -289,7 +289,7 @@ PROFILER_FUNC_VOID(profiler_log(const char *fmt, va_list args))
 
 
 
-#if defined(MOZ_ENABLE_PROFILER_SPS)
+#if defined(MOZ_GECKO_PROFILER)
 
 #include <stdlib.h>
 #include <signal.h>

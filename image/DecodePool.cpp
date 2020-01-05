@@ -179,7 +179,7 @@ public:
         case Work::Type::SHUTDOWN:
           DecodePoolImpl::ShutdownThread(thisThread);
 
-#ifdef MOZ_ENABLE_PROFILER_SPS
+#ifdef MOZ_GECKO_PROFILER
           profiler_unregister_thread();
 #endif 
 

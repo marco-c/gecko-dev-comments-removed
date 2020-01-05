@@ -1039,7 +1039,7 @@ ShutdownXPCOM(nsIServiceManager* aServMgr)
     NS_WARNING("Component Manager was never created ...");
   }
 
-#ifdef MOZ_ENABLE_PROFILER_SPS
+#ifdef MOZ_GECKO_PROFILER
   
   
   

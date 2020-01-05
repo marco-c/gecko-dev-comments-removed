@@ -33,7 +33,7 @@
 
 #include "EventListenerService.h"
 #include "GeckoProfiler.h"
-#ifdef MOZ_ENABLE_PROFILER_SPS
+#ifdef MOZ_GECKO_PROFILER
 #include "ProfilerMarkers.h"
 #endif
 #include "nsCOMArray.h"
@@ -1289,7 +1289,7 @@ EventListenerManager::HandleEventInternal(nsPresContext* aPresContext,
 
             nsresult rv = NS_OK;
             if (profiler_is_active()) {
-#ifdef MOZ_ENABLE_PROFILER_SPS
+#ifdef MOZ_GECKO_PROFILER
               
               
               

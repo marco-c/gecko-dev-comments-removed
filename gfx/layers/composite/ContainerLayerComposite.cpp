@@ -35,7 +35,7 @@
 #include "TextRenderer.h"               
 #include <vector>
 #include "GeckoProfiler.h"              
-#ifdef MOZ_ENABLE_PROFILER_SPS
+#ifdef MOZ_GECKO_PROFILER
 #include "ProfilerMarkers.h"            
 #endif
 
@@ -80,7 +80,7 @@ DrawLayerInfo(const RenderTargetIntRect& aClipRect,
 static void
 PrintUniformityInfo(Layer* aLayer)
 {
-#ifdef MOZ_ENABLE_PROFILER_SPS
+#ifdef MOZ_GECKO_PROFILER
   if (!profiler_is_active()) {
     return;
   }

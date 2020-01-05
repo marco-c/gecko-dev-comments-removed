@@ -337,7 +337,7 @@ class ProcessedStack;
 
 
 
-#if defined(MOZ_ENABLE_PROFILER_SPS)
+#if defined(MOZ_GECKO_PROFILER)
 void RecordChromeHang(uint32_t aDuration,
                       ProcessedStack &aStack,
                       int32_t aSystemUptime,

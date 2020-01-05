@@ -2856,7 +2856,7 @@ ContentChild::RecvShutdown()
 
   GetIPCChannel()->SetAbortOnError(false);
 
-#ifdef MOZ_ENABLE_PROFILER_SPS
+#ifdef MOZ_GECKO_PROFILER
   if (profiler_is_active()) {
     
     

@@ -5,7 +5,7 @@ Cu.import("resource://gre/modules/TelemetryController.jsm", this);
 Cu.import("resource://gre/modules/AppConstants.jsm", this);
 
 
-const ENABLE_TESTS = AppConstants.MOZ_ENABLE_PROFILER_SPS;
+const ENABLE_TESTS = AppConstants.MOZ_GECKO_PROFILER;
 
 
 
