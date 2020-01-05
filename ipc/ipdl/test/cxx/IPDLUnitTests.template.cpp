@@ -98,21 +98,6 @@ ${STRING_TO_ENUMS}
 }
 
 
-const char*
-IPDLUnitTestToString(IPDLUnitTestType aTest)
-{
-    switch (aTest) {
-
-
-${ENUM_TO_STRINGS}
-
-
-    default:
-        return nullptr;
-    }
-}
-
-
 IPDLUnitTestType
 IPDLUnitTest()
 {
