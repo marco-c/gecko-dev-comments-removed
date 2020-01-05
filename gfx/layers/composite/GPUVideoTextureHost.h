@@ -35,6 +35,8 @@ public:
     return nullptr; 
   }
 
+  virtual YUVColorSpace GetYUVColorSpace() const override;
+
   virtual gfx::IntSize GetSize() const override;
 
 #ifdef MOZ_LAYERS_HAVE_LOG
