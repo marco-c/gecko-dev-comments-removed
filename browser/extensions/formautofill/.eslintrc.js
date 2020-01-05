@@ -116,10 +116,6 @@ module.exports = {
     
 
     
-    
-    "default-case": "off",
-
-    
     "dot-location": ["error", "property"],
 
     
@@ -127,65 +123,20 @@ module.exports = {
 
     
     
-    "eqeqeq": "off",
-
     
-    
-    
-    
-    
-    "func-names": "off",
-
-    
-    "func-style": "off",
-
-    
-    
-    "max-depth": "off",
-
-    
-    
-    "max-len": ["off", 80],
+    "max-len": ["error", 140],
 
     
     "max-nested-callbacks": ["error", 4],
 
     
-    "max-params": "off",
-
-    
-    
-    "max-statements": "off",
-
-    
-    
-    
-    "new-cap": ["off", {"capIsNew": false}],
-
-    
-    "no-bitwise": "off",
-
-    
     "no-caller": "error",
-
-    
-    
-    "no-catch-shadow": "off",
 
     
     "no-console": "error",
 
     
-    "no-constant-condition": "off",
-
-    
-    "no-continue": "off",
-
-    
     "no-control-regex": "error",
-
-    
-    "no-div-regex": "off",
 
     
     "no-eval": "error",
@@ -194,16 +145,7 @@ module.exports = {
     "no-extend-native": "error",
 
     
-    "no-extra-parens": "off",
-
-    
     "no-fallthrough": "error",
-
-    
-    "no-floating-decimal": "off",
-
-    
-    "no-inline-comments": "off",
 
     
     "no-multi-str": "warn",
@@ -212,67 +154,21 @@ module.exports = {
     "no-multiple-empty-lines": ["warn", {"max": 2}],
 
     
-    "no-param-reassign": "off",
-
-    
-    "no-path-concat": "off",
-
-    
-    "no-plusplus": "off",
-
-    
-    "no-process-env": "off",
-
-    
-    "no-process-exit": "off",
-
-    
     "no-proto": "error",
-
-    
-    "no-reserved-keys": "off",
-
-    
-    "no-restricted-modules": "off",
 
     
     
     "no-return-assign": "error",
 
     
-    "no-sync": "off",
-
-    
-    "no-ternary": "off",
-
-    
     
     "no-throw-literal": "error",
-
-    
-    "no-underscore-dangle": "off",
-
-    
-    "no-undefined": "off",
 
     
     "no-unneeded-ternary": "error",
 
     
-    
-    "no-var": "off",
-
-    
-    "no-warning-comments": "off",
-
-    
-    "one-var": "off",
-
-    
     "padded-blocks": ["warn", "never"],
-
-    
-    "quote-props": "off",
 
     
     "radix": "error",
@@ -281,21 +177,7 @@ module.exports = {
     "semi-spacing": ["error", {"before": false, "after": true}],
 
     
-    
-    "sort-vars": "off",
-
-    
     "strict": ["error", "global"],
-
-    
-    "vars-on-top": "off",
-
-    
-    "wrap-iife": "off",
-
-    
-    
-    "wrap-regex": "off",
 
     
     "yoda": "error",
