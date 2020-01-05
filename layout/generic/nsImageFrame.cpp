@@ -283,17 +283,9 @@ nsImageFrame::Init(nsIContent*       aContent,
   nsCOMPtr<imgIRequest> currentRequest;
   imageLoader->GetRequest(nsIImageLoadingContent::CURRENT_REQUEST,
                           getter_AddRefs(currentRequest));
-
-  if (currentRequest) {
-    uint32_t categoryToBoostPriority = imgIRequest::CATEGORY_FRAME_INIT;
-
-    
-    if (!HaveSpecifiedSize(StylePosition())) {
-      categoryToBoostPriority |= imgIRequest::CATEGORY_SIZE_QUERY;
-    }
-
-    currentRequest->BoostPriority(categoryToBoostPriority);
-  }
+  nsCOMPtr<nsISupportsPriority> p = do_QueryInterface(currentRequest);
+  if (p)
+    p->AdjustPriority(-1);
 }
 
 bool
@@ -1583,7 +1575,8 @@ nsDisplayImage::GetLayerState(nsDisplayListBuilder* aBuilder,
                               LayerManager* aManager,
                               const ContainerLayerParameters& aParameters)
 {
-  if (!nsDisplayItem::ForceActiveLayers() && !gfxPrefs::LayersAllowImageLayers()) {
+  if (!nsDisplayItem::ForceActiveLayers() &&
+      !ShouldUseAdvancedLayer(aManager, gfxPrefs::LayersAllowImageLayers)) {
     bool animated = false;
     if (!nsLayoutUtils::AnimatedImageLayersEnabled() ||
         mImage->GetType() != imgIContainer::TYPE_RASTER ||
@@ -1707,7 +1700,7 @@ nsImageFrame::PaintImage(nsRenderingContext& aRenderingContext, nsPoint aPt,
   }
 
   Maybe<SVGImageContext> svgContext;
-  SVGImageContext::MaybeStoreContextPaint(svgContext, this, aImage);
+  SVGImageContext::MaybeInitAndStoreContextPaint(svgContext, this, aImage);
 
   DrawResult result =
     nsLayoutUtils::DrawSingleImage(*aRenderingContext.ThebesContext(),
@@ -1791,10 +1784,6 @@ nsImageFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
         currentRequest->GetImageStatus(&status);
         if (!(status & imgIRequest::STATUS_DECODE_COMPLETE)) {
           MaybeDecodeForPredictedSize();
-        }
-        
-        if (!(status & imgIRequest::STATUS_LOAD_COMPLETE)){
-          currentRequest->BoostPriority(imgIRequest::CATEGORY_DISPLAY);
         }
       }
     } else {
