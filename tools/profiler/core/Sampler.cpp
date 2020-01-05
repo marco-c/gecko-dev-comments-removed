@@ -44,6 +44,10 @@
   #include "FennecJNIWrappers.h"
 #endif
 
+#ifdef MOZ_TASK_TRACER
+#include "GeckoTaskTracer.h"
+#endif 
+
 
 #include "jsfriendapi.h"
 #include "js/ProfilingFrameIterator.h"
