@@ -42,6 +42,9 @@ var gSynthesizeKeyCount = 0;
 var gSynthesizeCompositionCount = 0;
 var gSynthesizeCompositionChangeCount = 0;
 
+const kAboutPageRegistrationContentScript =
+  "chrome://mochikit/content/tests/BrowserTestUtils/content-about-page-utils.js";
+
 this.BrowserTestUtils = {
   
 
@@ -1267,5 +1270,63 @@ this.BrowserTestUtils = {
         })
       });
     });
+  },
+
+  _knownAboutPages: new Set(),
+  _loadedAboutContentScript: false,
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  registerAboutPage(registerCleanupFunction, aboutModule, pageURI, flags) {
+    
+    const kRegistrationMsgId = "browser-test-utils:about-registration:registered";
+    let rv = this.waitForMessage(Services.ppmm, kRegistrationMsgId, msg => {
+      return msg.data == aboutModule;
+    });
+    
+    if (!this._loadedAboutContentScript) {
+      Services.ppmm.loadProcessScript(kAboutPageRegistrationContentScript, true);
+      this._loadedAboutContentScript = true;
+      registerCleanupFunction(this._removeAboutPageRegistrations.bind(this));
+    }
+    Services.ppmm.broadcastAsyncMessage("browser-test-utils:about-registration:register",
+                                        {aboutModule, pageURI, flags});
+    return rv.then(() => {
+      this._knownAboutPages.add(aboutModule);
+    });
+  },
+
+  unregisterAboutPage(aboutModule) {
+    if (!this._knownAboutPages.has(aboutModule)) {
+      return Promise.reject(new Error("We don't think this about page exists!"));
+    }
+    const kUnregistrationMsgId = "browser-test-utils:about-registration:unregistered";
+    let rv = this.waitForMessage(Services.ppmm, kUnregistrationMsgId, msg => {
+      return msg.data == aboutModule;
+    });
+    Services.ppmm.broadcastAsyncMessage("browser-test-utils:about-registration:unregister",
+                                        aboutModule);
+    return rv.then(() => this._knownAboutPages.delete(aboutModule));
+  },
+
+  *_removeAboutPageRegistrations() {
+    for (let aboutModule of this._knownAboutPages) {
+      yield this.unregisterAboutPage(aboutModule);
+    }
+    Services.ppmm.removeDelayedProcessScript(kAboutPageRegistrationContentScript);
   },
 };
