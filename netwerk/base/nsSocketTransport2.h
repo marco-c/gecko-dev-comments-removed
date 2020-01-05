@@ -307,8 +307,7 @@ private:
     
     
     
-    
-    NeckoOriginAttributes mOriginAttributes;
+    nsCString    mFirstPartyDomain;
     
     uint16_t         SocketPort() { return (!mProxyHost.IsEmpty() && !mProxyTransparent) ? mProxyPort : mPort; }
     const nsCString &SocketHost() { return (!mProxyHost.IsEmpty() && !mProxyTransparent) ? mProxyHost : mHost; }
