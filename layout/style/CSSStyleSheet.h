@@ -15,7 +15,6 @@
 #include "mozilla/StyleSheet.h"
 #include "mozilla/StyleSheetInfo.h"
 #include "mozilla/css/SheetParsingMode.h"
-#include "mozilla/dom/Element.h"
 
 #include "nscore.h"
 #include "nsCOMPtr.h"
@@ -45,6 +44,7 @@ class GroupRule;
 } 
 namespace dom {
 class CSSRuleList;
+class Element;
 } 
 
   
@@ -168,10 +168,7 @@ public:
   size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const override;
 
   dom::Element* GetScopeElement() const { return mScopeElement; }
-  void SetScopeElement(dom::Element* aScopeElement)
-  {
-    mScopeElement = aScopeElement;
-  }
+  void SetScopeElement(dom::Element* aScopeElement);
 
   
   

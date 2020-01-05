@@ -14,6 +14,7 @@
 #include "mozilla/StyleSheetInlines.h"
 #include "mozilla/SheetType.h"
 #include "mozilla/UniquePtr.h"
+#include "MainThreadUtils.h"
 #include "nsCSSPseudoElements.h"
 #include "nsCSSAnonBoxes.h"
 #include "nsChangeHint.h"
@@ -30,6 +31,7 @@ class ServoStyleSheet;
 struct Keyframe;
 struct ServoComputedValuesWithParent;
 } 
+class nsIContent;
 class nsIDocument;
 class nsStyleContext;
 class nsPresContext;
@@ -224,7 +226,7 @@ public:
 
 
 
-  void StyleNewSubtree(Element* aRoot);
+  void StyleNewSubtree(dom::Element* aRoot);
 
   
 
@@ -232,7 +234,7 @@ public:
 
 
 
-  void StyleNewChildren(Element* aParent);
+  void StyleNewChildren(dom::Element* aParent);
 
   
 
