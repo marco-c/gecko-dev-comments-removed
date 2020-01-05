@@ -199,11 +199,13 @@ DecodedAudioDataSink::InitializeAudioStream(const PlaybackParams& aParams)
   mAudioStream = new AudioStream(*this);
   
   
+  uint32_t channelMap = mConverter
+                        ? mConverter->OutputConfig().Layout().Map()
+                        : AudioStream::GetPreferredChannelMap(mOutputChannels);
   
-  nsresult rv = mAudioStream->Init(mOutputChannels,
-                                   mConverter->OutputConfig().Layout().Map(),
-                                   mOutputRate,
-                                   mChannel);
+  
+  
+  nsresult rv = mAudioStream->Init(mOutputChannels, channelMap, mOutputRate, mChannel);
   if (NS_FAILED(rv)) {
     mAudioStream->Shutdown();
     mAudioStream = nullptr;

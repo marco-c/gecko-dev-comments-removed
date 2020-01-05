@@ -30,6 +30,9 @@ uint32_t MaxNumberOfChannels();
 
 uint32_t PreferredSampleRate();
 
+
+uint32_t PreferredChannelMap(uint32_t aChannels);
+
 void PrefChanged(const char* aPref, void* aClosure);
 double GetVolumeScale();
 bool GetFirstStream();
