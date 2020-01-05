@@ -799,7 +799,8 @@ public:
     eScrollInteraction
   };
 
-  void RecordInteractionTime(InteractionType aType);
+  void RecordInteractionTime(InteractionType aType,
+                             const mozilla::TimeStamp& aTimeStamp);
 
   void DisableInteractionTimeRecording()
   {
@@ -1361,7 +1362,7 @@ protected:
 
   
   
-  mozilla::TimeStamp    mFirstPaintTime;
+  mozilla::TimeStamp    mFirstNonBlankPaintTime;
   mozilla::TimeStamp    mFirstClickTime;
   mozilla::TimeStamp    mFirstKeyTime;
   mozilla::TimeStamp    mFirstMouseMoveTime;
