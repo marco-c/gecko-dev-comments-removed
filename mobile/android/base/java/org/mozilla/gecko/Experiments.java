@@ -60,6 +60,9 @@ public class Experiments {
     public static final String ACTIVITY_STREAM = "activity-stream";
 
     
+    public static final String COMPACT_TABS = "compact-tabs";
+
+    
 
 
 
