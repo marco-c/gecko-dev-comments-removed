@@ -8157,7 +8157,7 @@
     "expires_in_version": "60",
     "kind": "enumerated",
     "n_values": 16,
-    "description": "How often do we get back an HSTS priming result which upgrades the connection to HTTPS? 0=cached (no upgrade), 1=cached (do upgrade), 2=cached (blocked), 3=already upgraded, 4=priming succeeded, 5=priming succeeded (block due to pref), 6=priming succeeded (no upgrade due to pref), 7=priming failed (block), 8=priming failed (accept), 9=timeout (block), 10=timeout (accept)"
+    "description": "How often do we get back an HSTS priming result which upgrades the connection to HTTPS? 0=cached (no upgrade), 1=cached (do upgrade), 2=cached (blocked), 3=already upgraded, 4=priming succeeded, 5=priming succeeded (block due to pref), 6=priming succeeded (no upgrade due to pref), 7=priming failed (block), 8=priming failed (accept)"
   },
   "HSTS_PRIMING_REQUEST_DURATION": {
     "alert_emails": ["seceng-telemetry@mozilla.org"],
@@ -10778,5 +10778,14 @@
     "n_buckets": 50,
     "description": "Time spent painting the contents of a remote browser (ms).",
     "releaseChannelCollection": "opt-out"
+  },
+  "TIME_TO_NON_BLANK_PAINT_MS": {
+    "alert_emails": ["hkirschner@mozilla.com"],
+    "expires_in_version": "55",
+    "kind": "exponential",
+    "high": 100000,
+    "n_buckets": 100,
+    "bug_numbers": [1307242],
+    "description": "The time between navigation start and the first non-blank paint of a foreground root content document, in milliseconds. This only records documents that were in an active docshell throughout the whole time between navigation start and non-blank paint. The non-blank paint timestamp is taken during display list building and does not include rasterization or compositing of that paint."
   }
 }

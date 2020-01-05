@@ -1728,7 +1728,9 @@ nsDocShell::MaybeInitTiming()
     mTiming = new nsDOMNavigationTiming();
   }
 
-  mTiming->NotifyNavigationStart();
+  mTiming->NotifyNavigationStart(
+    mIsActive ? nsDOMNavigationTiming::DocShellState::eActive
+              : nsDOMNavigationTiming::DocShellState::eInactive);
 }
 
 
@@ -6217,6 +6219,20 @@ nsDocShell::SetIsActive(bool aIsActive)
 
       doc->PostVisibilityUpdateEvent();
     }
+  }
+
+  
+  RefPtr<nsDOMNavigationTiming> timing = mTiming;
+  if (!timing && mContentViewer) {
+    nsIDocument* doc = mContentViewer->GetDocument();
+    if (doc) {
+      timing = doc->GetNavigationTiming();
+    }
+  }
+  if (timing) {
+    timing->NotifyDocShellStateChanged(
+      aIsActive ? nsDOMNavigationTiming::DocShellState::eActive
+                : nsDOMNavigationTiming::DocShellState::eInactive);
   }
 
   
