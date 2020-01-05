@@ -34,6 +34,7 @@ use hyper::mime::{Attr, Mime};
 use ipc_channel::ipc::{self, IpcReceiver, IpcSender};
 use msg::constellation_msg::{PipelineId};
 use serde::{Deserializer, Serializer};
+use std::sync::mpsc::Sender;
 use std::thread;
 use url::Url;
 use websocket::header;
@@ -407,3 +408,8 @@ pub fn unwrap_websocket_protocol(wsp: Option<&header::WebSocketProtocol>) -> Opt
 
 #[derive(Clone, PartialEq, Eq, Copy, Hash, Debug, Deserialize, Serialize, HeapSizeOf)]
 pub struct ResourceId(pub u32);
+
+pub enum ConstellationMsg {
+    
+    IsPrivate(PipelineId, Sender<bool>),
+}

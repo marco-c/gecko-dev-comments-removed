@@ -58,6 +58,7 @@ pub struct Pipeline {
     
     pub running_animations: bool,
     pub children: Vec<FrameId>,
+    pub is_private: bool,
 }
 
 
@@ -275,6 +276,7 @@ impl Pipeline {
             children: vec!(),
             size: size,
             running_animations: false,
+            is_private: false,
         }
     }
 
