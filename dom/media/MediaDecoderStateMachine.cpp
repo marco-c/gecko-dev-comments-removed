@@ -400,7 +400,6 @@ public:
 
   void Enter() override
   {
-    mMaster->DiscardSeekTaskIfExist();
     if (mMaster->IsPlaying()) {
       mMaster->StopPlayback();
     }
@@ -673,9 +672,6 @@ public:
   void Enter() override
   {
     
-    mMaster->DiscardSeekTaskIfExist();
-
-    
     mMaster->CancelMediaDecoderReaderWrapperCallback();
 
     
@@ -737,6 +733,15 @@ public:
   void Exit() override
   {
     mSeekTaskRequest.DisconnectIfExists();
+
+    if (mMaster->mSeekTask) {
+      mMaster->mCurrentSeek.RejectIfExists(__func__);
+      mMaster->mSeekTask->Discard();
+      mMaster->mSeekTask = nullptr;
+
+      
+      mMaster->SetMediaDecoderReaderWrapperCallback();
+    }
   }
 
   State GetState() const override
@@ -828,8 +833,6 @@ private:
     }
 
     mMaster->DecodeError(aValue.mError);
-
-    mMaster->DiscardSeekTaskIfExist();
   }
 
   void SeekCompleted()
@@ -878,10 +881,6 @@ private:
     
     
     mMaster->mCurrentSeek.Resolve(nextState == DECODER_STATE_COMPLETED, __func__);
-
-    
-    
-    mMaster->DiscardSeekTaskIfExist();
 
     
     
@@ -1967,8 +1966,6 @@ MediaDecoderStateMachine::Shutdown()
 
   mQueuedSeek.RejectIfExists(__func__);
 
-  DiscardSeekTaskIfExist();
-
   
   
   mVideoDecodeSuspendTimer.Reset();
@@ -2314,19 +2311,6 @@ MediaDecoderStateMachine::InitiateSeek(SeekJob aSeekJob)
   mState = DECODER_STATE_SEEKING;
   mStateObj = MakeUnique<SeekingState>(this, Move(aSeekJob));
   mStateObj->Enter();
-}
-
-void
-MediaDecoderStateMachine::DiscardSeekTaskIfExist()
-{
-  if (mSeekTask) {
-    mCurrentSeek.RejectIfExists(__func__);
-    mSeekTask->Discard();
-    mSeekTask = nullptr;
-
-    
-    SetMediaDecoderReaderWrapperCallback();
-  }
 }
 
 void
