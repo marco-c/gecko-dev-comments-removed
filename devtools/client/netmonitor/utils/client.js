@@ -10,6 +10,8 @@ const Services = require("Services");
 const Actions = require("../actions/index");
 const { EVENTS } = require("../constants");
 
+let activeConsole;
+
 
 
 
@@ -45,6 +47,7 @@ function willNavigate(type) {
 
 
 function onFirefoxConnect(tabTarget) {
+  activeConsole = tabTarget.activeConsole;
   tabTarget.on("navigate", navigated);
   tabTarget.on("will-navigate", willNavigate);
 }
@@ -55,11 +58,22 @@ function onFirefoxConnect(tabTarget) {
 
 
 function onFirefoxDisconnect(tabTarget) {
+  activeConsole = null;
   tabTarget.off("navigate", navigated);
   tabTarget.off("will-navigate", willNavigate);
 }
 
+
+
+
+
+
+function getWebConsoleClient() {
+  return activeConsole;
+}
+
 module.exports = {
+  getWebConsoleClient,
   onFirefoxConnect,
   onFirefoxDisconnect,
 };
