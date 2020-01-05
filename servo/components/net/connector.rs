@@ -2,21 +2,56 @@
 
 
 
+use hosts::replace_host;
 use hyper::client::Pool;
-use hyper::net::HttpsConnector;
+use hyper::error::{Result as HyperResult, Error as HyperError};
+use hyper::net::{NetworkConnector, HttpsStream, HttpStream, SslClient};
 use hyper_openssl::OpensslClient;
 use openssl::ssl::{SSL_OP_NO_COMPRESSION, SSL_OP_NO_SSLV2, SSL_OP_NO_SSLV3};
 use openssl::ssl::{SslConnectorBuilder, SslMethod};
-use servo_config::resource_files::resources_dir_path;
+use std::io;
+use std::net::TcpStream;
+use std::path::PathBuf;
 use std::sync::Arc;
 
-pub type Connector = HttpsConnector<OpensslClient>;
+pub struct HttpsConnector {
+    ssl: OpensslClient,
+}
 
-pub fn create_ssl_client(certificate_file: &str) -> OpensslClient {
-    let ca_file = &resources_dir_path()
-        .expect("Need certificate file to make network requests")
-        .join(certificate_file);
+impl HttpsConnector {
+    fn new(ssl: OpensslClient) -> HttpsConnector {
+        HttpsConnector {
+            ssl: ssl,
+        }
+    }
+}
 
+impl NetworkConnector for HttpsConnector {
+    type Stream = HttpsStream<<OpensslClient as SslClient>::Stream>;
+
+    fn connect(&self, host: &str, port: u16, scheme: &str) -> HyperResult<Self::Stream> {
+        if scheme != "http" && scheme != "https" {
+            return Err(HyperError::Io(io::Error::new(io::ErrorKind::InvalidInput,
+                                                     "Invalid scheme for Http")));
+        }
+
+        
+        let addr = &(&*replace_host(host), port);
+        let stream = HttpStream(try!(TcpStream::connect(addr)));
+
+        if scheme == "http" {
+            Ok(HttpsStream::Http(stream))
+        } else {
+            
+            
+            self.ssl.wrap_client(stream, host).map(HttpsStream::Https)
+        }
+    }
+}
+
+pub type Connector = HttpsConnector;
+
+pub fn create_ssl_client(ca_file: &PathBuf) -> OpensslClient {
     let mut ssl_connector_builder = SslConnectorBuilder::new(SslMethod::tls()).unwrap();
     {
         let context = ssl_connector_builder.builder_mut();
