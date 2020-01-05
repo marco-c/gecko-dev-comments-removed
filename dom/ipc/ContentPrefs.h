@@ -7,6 +7,8 @@
 #ifndef mozilla_dom_ContentPrefs_h
 #define mozilla_dom_ContentPrefs_h
 
+
+
 namespace mozilla {
 namespace dom {
 
