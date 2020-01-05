@@ -602,16 +602,18 @@ extern bool
 Generator(JSContext* cx, unsigned argc, Value* vp);
 
 
+
 extern JSFunction*
 NewNativeFunction(ExclusiveContext* cx, JSNative native, unsigned nargs, HandleAtom atom,
                   gc::AllocKind allocKind = gc::AllocKind::FUNCTION,
-                  NewObjectKind newKind = GenericObject);
+                  NewObjectKind newKind = SingletonObject);
+
 
 
 extern JSFunction*
 NewNativeConstructor(ExclusiveContext* cx, JSNative native, unsigned nargs, HandleAtom atom,
                      gc::AllocKind allocKind = gc::AllocKind::FUNCTION,
-                     NewObjectKind newKind = GenericObject,
+                     NewObjectKind newKind = SingletonObject,
                      JSFunction::Flags flags = JSFunction::NATIVE_CTOR);
 
 
