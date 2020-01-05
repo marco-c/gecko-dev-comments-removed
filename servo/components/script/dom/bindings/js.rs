@@ -627,11 +627,11 @@ impl RootCollection {
     }
 
     
-    fn root<'b, T: Reflectable>(&self, untracked: &Root<T>) {
+    fn root<'b>(&self, untracked_js_ptr: *mut JSObject) {
         unsafe {
             let roots = self.roots.get();
-            (*roots).push(untracked.js_ptr);
-            debug!("  rooting {:?}", untracked.js_ptr);
+            (*roots).push(untracked_js_ptr);
+            debug!("  rooting {:?}", untracked_js_ptr);
             assert!(!(*roots).spilled());
         }
     }
@@ -668,15 +668,18 @@ impl<T: Reflectable> Root<T> {
     
     
     
+    #[inline]
     fn new(roots: &'static RootCollection, unrooted: NonZero<*const T>)
            -> Root<T> {
-        let root = Root {
+        let js_ptr = unsafe {
+            (**unrooted).reflector().get_jsobject()
+        };
+        roots.root(js_ptr);
+        Root {
             root_list: roots,
             ptr: unrooted,
-            js_ptr: unsafe { (**unrooted).reflector().get_jsobject() },
-        };
-        roots.root(&root);
-        root
+            js_ptr: js_ptr,
+        }
     }
 
     
