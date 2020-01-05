@@ -4,22 +4,25 @@
 
 use dom::bindings::codegen::Bindings::WorkerNavigatorBinding;
 use dom::bindings::codegen::Bindings::WorkerNavigatorBinding::WorkerNavigatorMethods;
-use dom::bindings::js::Root;
-use dom::bindings::reflector::{Reflector, reflect_dom_object};
+use dom::bindings::js::{MutNullableJS, Root};
+use dom::bindings::reflector::{DomObject, Reflector, reflect_dom_object};
 use dom::bindings::str::DOMString;
 use dom::navigatorinfo;
+use dom::permissions::Permissions;
 use dom::workerglobalscope::WorkerGlobalScope;
 
 
 #[dom_struct]
 pub struct WorkerNavigator {
     reflector_: Reflector,
+    permissions: MutNullableJS<Permissions>,
 }
 
 impl WorkerNavigator {
     fn new_inherited() -> WorkerNavigator {
         WorkerNavigator {
             reflector_: Reflector::new(),
+            permissions: Default::default(),
         }
     }
 
@@ -69,5 +72,10 @@ impl WorkerNavigatorMethods for WorkerNavigator {
     
     fn Language(&self) -> DOMString {
         navigatorinfo::Language()
+    }
+
+    
+    fn Permissions(&self) -> Root<Permissions> {
+        self.permissions.or_init(|| Permissions::new(&self.global()))
     }
 }

@@ -256,6 +256,9 @@ impl BluetoothManager {
                 BluetoothRequest::GetAvailability(sender) => {
                     let _ = sender.send(self.get_availability());
                 },
+                BluetoothRequest::MatchesFilter(id, filters, sender) => {
+                    let _ = sender.send(self.device_matches_filter(&id, &filters));
+                },
                 BluetoothRequest::Exit => {
                     break
                 },
@@ -425,6 +428,17 @@ impl BluetoothManager {
         self.cached_devices.contains_key(device_id) && self.address_to_id.values().any(|v| v == device_id)
     }
 
+    fn device_matches_filter(&mut self,
+                             device_id: &str,
+                             filters: &BluetoothScanfilterSequence)
+                             -> BluetoothResult<bool> {
+        let mut adapter = try!(self.get_adapter());
+        match self.get_device(&mut adapter, device_id) {
+            Some(ref device) => Ok(matches_filters(device, filters)),
+            None => Ok(false),
+        }
+    }
+
     
 
     fn get_and_cache_gatt_services(&mut self,
@@ -561,6 +575,9 @@ impl BluetoothManager {
                       -> BluetoothResponseResult {
         
         let mut adapter = try!(self.get_adapter());
+
+        
+        
         if let Ok(ref session) = adapter.create_discovery_session() {
             if session.start_discovery().is_ok() {
                 if !is_mock_adapter(&adapter) {
@@ -570,8 +587,6 @@ impl BluetoothManager {
             let _ = session.stop_discovery();
         }
 
-        
-        
         let mut matched_devices = self.get_and_cache_devices(&mut adapter);
 
         
@@ -581,8 +596,6 @@ impl BluetoothManager {
                                              .collect();
         }
 
-        
-        
         
         if let Some(address) = self.select_device(matched_devices, &adapter) {
             let device_id = match self.address_to_id.get(&address) {
