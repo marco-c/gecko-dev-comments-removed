@@ -78,12 +78,21 @@ CustomElementCallback::CustomElementCallback(Element* aThisObject,
 {
 }
 
+
+
+
 CustomElementData::CustomElementData(nsIAtom* aType)
-  : mType(aType),
-    mCurrentCallback(-1),
-    mElementIsBeingCreated(false),
-    mCreatedCallbackInvoked(true),
-    mAssociatedMicroTask(-1)
+  : CustomElementData(aType, CustomElementData::State::eUndefined)
+{
+}
+
+CustomElementData::CustomElementData(nsIAtom* aType, State aState)
+  : mType(aType)
+  , mCurrentCallback(-1)
+  , mElementIsBeingCreated(false)
+  , mCreatedCallbackInvoked(true)
+  , mAssociatedMicroTask(-1)
+  , mState(aState)
 {
 }
 
@@ -98,6 +107,9 @@ CustomElementData::RunCallbackQueue()
   mCallbackQueue.Clear();
   mCurrentCallback = -1;
 }
+
+
+
 
 
 NS_IMPL_CYCLE_COLLECTION_CLASS(CustomElementRegistry)
@@ -306,10 +318,15 @@ CustomElementRegistry::SetupCustomElement(Element* aElement,
     aElement->SetAttr(kNameSpaceID_None, nsGkAtoms::is, *aTypeExtension, true);
   }
 
-  CustomElementDefinition* data = LookupCustomElementDefinition(
+  
+  
+  
+  aElement->SetCustomElementData(new CustomElementData(typeAtom));
+
+  CustomElementDefinition* definition = LookupCustomElementDefinition(
     aElement->NodeInfo()->LocalName(), aTypeExtension);
 
-  if (!data) {
+  if (!definition) {
     
     
     
@@ -317,7 +334,7 @@ CustomElementRegistry::SetupCustomElement(Element* aElement,
     return;
   }
 
-  if (data->mLocalName != tagAtom) {
+  if (definition->mLocalName != tagAtom) {
     
     
     
@@ -326,7 +343,7 @@ CustomElementRegistry::SetupCustomElement(Element* aElement,
 
   
   
-  EnqueueLifecycleCallback(nsIDocument::eCreated, aElement, nullptr, data);
+  EnqueueLifecycleCallback(nsIDocument::eCreated, aElement, nullptr, definition);
 }
 
 void
@@ -335,7 +352,8 @@ CustomElementRegistry::EnqueueLifecycleCallback(nsIDocument::ElementCallbackType
                                                 LifecycleCallbackArgs* aArgs,
                                                 CustomElementDefinition* aDefinition)
 {
-  CustomElementData* elementData = aCustomElement->GetCustomElementData();
+  RefPtr<CustomElementData> elementData = aCustomElement->GetCustomElementData();
+  MOZ_ASSERT(elementData, "CustomElementData should exist");
 
   
   CustomElementDefinition* definition = aDefinition;
@@ -353,16 +371,6 @@ CustomElementRegistry::EnqueueLifecycleCallback(nsIDocument::ElementCallbackType
       
       return;
     }
-  }
-
-  if (!elementData) {
-    
-    
-    elementData = new CustomElementData(definition->mType);
-    
-    aCustomElement->SetCustomElementData(elementData);
-    MOZ_ASSERT(aType == nsIDocument::eCreated,
-               "First callback should be the created callback");
   }
 
   
@@ -885,8 +893,6 @@ CustomElementRegistry::Upgrade(Element* aElement,
     }
   } 
 
-  
-  
   EnqueueLifecycleCallback(nsIDocument::eCreated, aElement, nullptr, aDefinition);
 }
 

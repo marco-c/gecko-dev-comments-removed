@@ -72,7 +72,18 @@ struct CustomElementData
 {
   NS_INLINE_DECL_REFCOUNTING(CustomElementData)
 
+  
+  
+  
+  
+  enum class State {
+    eUndefined,
+    eFailed,
+    eCustom
+  };
+
   explicit CustomElementData(nsIAtom* aType);
+  CustomElementData(nsIAtom* aType, State aState);
   
   
   nsTArray<nsAutoPtr<CustomElementCallback>> mCallbackQueue;
@@ -90,6 +101,8 @@ struct CustomElementData
   
   
   int32_t mAssociatedMicroTask;
+  
+  State mState;
 
   
   void RunCallbackQueue();
