@@ -28,7 +28,7 @@ use servo_util::geometry::Au;
 use std::cmp::{max, min};
 use std::fmt;
 use style::{ComputedValues, CSSFloat};
-use style::computed_values::table_layout;
+use style::computed_values::{table_layout, LengthOrPercentageOrAuto};
 use std::sync::Arc;
 
 #[deriving(Copy, Encodable, Show)]
@@ -128,8 +128,18 @@ impl TableWrapperFlow {
         
         
         
-        let available_inline_size =
-            self.block_flow.get_shrink_to_fit_inline_size(available_inline_size);
+        let available_inline_size = match self.block_flow.fragment.style().content_inline_size() {
+            LengthOrPercentageOrAuto::Auto => self.block_flow
+                                                  .get_shrink_to_fit_inline_size(available_inline_size),
+            
+            
+            
+            
+            
+            
+            
+            _ => available_inline_size,
+        };
 
         
         let mut total_guess = AutoLayoutCandidateGuess::new();
