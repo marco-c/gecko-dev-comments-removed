@@ -267,6 +267,8 @@ protected:
   
   nsTArray<ogg_packet*> mUnstamped;
 
+  bool SetCodecSpecificConfig(MediaByteBuffer* aBuffer, OggPacketQueue& aHeaders);
+
 private:
   bool InternalInit();
 };
@@ -360,25 +362,29 @@ public:
   int64_t StartTime(int64_t granulepos) override;
   int64_t PacketDuration(ogg_packet* aPacket) override;
   bool Init() override;
+  nsresult Reset() override;
   bool IsHeader(ogg_packet* aPacket) override;
   bool IsKeyframe(ogg_packet* aPacket) override;
   nsresult PageIn(ogg_page* aPage) override;
+  const TrackInfo* GetInfo() const override { return &mInfo; }
 
   
   
   int64_t MaxKeyframeOffset();
+  
+  int32_t mKeyframe_granule_shift;
 
+private:
   
   static int64_t Time(th_info* aInfo, int64_t aGranulePos);
 
-  th_info mInfo;
+  th_info mTheoraInfo;
   th_comment mComment;
   th_setup_info* mSetup;
   th_dec_ctx* mCtx;
 
-  float mPixelAspectRatio;
-
-private:
+  VideoInfo mInfo;
+  OggPacketQueue mHeaders;
 
   
   
