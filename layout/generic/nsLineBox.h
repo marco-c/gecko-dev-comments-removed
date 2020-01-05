@@ -75,7 +75,7 @@ public:
   
   
   void Remove(nsFloatCache* aElement) { RemoveAndReturnPrev(aElement); }
-  
+
   
   
   void Append(nsFloatCacheFreeList& aList);
@@ -87,7 +87,7 @@ protected:
   
   
   nsFloatCache* RemoveAndReturnPrev(nsFloatCache* aElement);
-  
+
   friend class nsFloatCacheFreeList;
 };
 
@@ -116,7 +116,7 @@ public:
   nsFloatCache* Tail() const {
     return mTail;
   }
-  
+
   bool NotEmpty() const {
     return nullptr != mHead;
   }
@@ -134,7 +134,7 @@ public:
   
   
   nsFloatCache* Alloc(nsIFrame* aFloat);
-  
+
 protected:
   nsFloatCache* mTail;
 
@@ -204,7 +204,7 @@ class nsLineBox final : public nsLineLink {
 private:
   nsLineBox(nsIFrame* aFrame, int32_t aCount, bool aIsBlock);
   ~nsLineBox();
-  
+
   
   
   void* operator new(size_t sz, nsIPresShell* aPresShell);
@@ -729,7 +729,7 @@ protected:
 
 
 
- 
+
 class nsLineList_iterator {
   public:
     friend class nsLineList;
