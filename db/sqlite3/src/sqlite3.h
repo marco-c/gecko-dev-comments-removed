@@ -121,9 +121,9 @@ extern "C" {
 
 
 
-#define SQLITE_VERSION        "3.16.2"
-#define SQLITE_VERSION_NUMBER 3016002
-#define SQLITE_SOURCE_ID      "2017-01-06 16:32:41 a65a62893ca8319e89e48b8a38cf8a59c69a8209"
+#define SQLITE_VERSION        "3.17.0"
+#define SQLITE_VERSION_NUMBER 3017000
+#define SQLITE_SOURCE_ID      "2017-02-13 16:02:40 ada05cfa86ad7f5645450ac7a2a21c9aa6e57d2c"
 
 
 
@@ -259,7 +259,11 @@ typedef struct sqlite3 sqlite3;
 
 #ifdef SQLITE_INT64_TYPE
   typedef SQLITE_INT64_TYPE sqlite_int64;
-  typedef unsigned SQLITE_INT64_TYPE sqlite_uint64;
+# ifdef SQLITE_UINT64_TYPE
+    typedef SQLITE_UINT64_TYPE sqlite_uint64;
+# else  
+    typedef unsigned SQLITE_INT64_TYPE sqlite_uint64;
+# endif
 #elif defined(_MSC_VER) || defined(__BORLANDC__)
   typedef __int64 sqlite_int64;
   typedef unsigned __int64 sqlite_uint64;
@@ -650,6 +654,9 @@ typedef struct sqlite3_file sqlite3_file;
 struct sqlite3_file {
   const struct sqlite3_io_methods *pMethods;  
 };
+
+
+
 
 
 
@@ -6216,6 +6223,16 @@ typedef struct sqlite3_blob sqlite3_blob;
 
 
 
+
+
+
+
+
+
+
+
+
+
 SQLITE_API int sqlite3_blob_open(
   sqlite3*,
   const char *zDb,
@@ -8233,6 +8250,10 @@ SQLITE_API int sqlite3_db_cacheflush(sqlite3*);
 
 
 
+
+
+
+
 #if defined(SQLITE_ENABLE_PREUPDATE_HOOK)
 SQLITE_API void *sqlite3_preupdate_hook(
   sqlite3 *db,
@@ -8629,7 +8650,7 @@ typedef struct sqlite3_changeset_iter sqlite3_changeset_iter;
 
 
 
-int sqlite3session_create(
+SQLITE_API int sqlite3session_create(
   sqlite3 *db,                    
   const char *zDb,                
   sqlite3_session **ppSession     
@@ -8647,7 +8668,7 @@ int sqlite3session_create(
 
 
 
-void sqlite3session_delete(sqlite3_session *pSession);
+SQLITE_API void sqlite3session_delete(sqlite3_session *pSession);
 
 
 
@@ -8667,7 +8688,7 @@ void sqlite3session_delete(sqlite3_session *pSession);
 
 
 
-int sqlite3session_enable(sqlite3_session *pSession, int bEnable);
+SQLITE_API int sqlite3session_enable(sqlite3_session *pSession, int bEnable);
 
 
 
@@ -8696,7 +8717,7 @@ int sqlite3session_enable(sqlite3_session *pSession, int bEnable);
 
 
 
-int sqlite3session_indirect(sqlite3_session *pSession, int bIndirect);
+SQLITE_API int sqlite3session_indirect(sqlite3_session *pSession, int bIndirect);
 
 
 
@@ -8726,7 +8747,7 @@ int sqlite3session_indirect(sqlite3_session *pSession, int bIndirect);
 
 
 
-int sqlite3session_attach(
+SQLITE_API int sqlite3session_attach(
   sqlite3_session *pSession,      
   const char *zTab                
 );
@@ -8740,7 +8761,7 @@ int sqlite3session_attach(
 
 
 
-void sqlite3session_table_filter(
+SQLITE_API void sqlite3session_table_filter(
   sqlite3_session *pSession,      
   int(*xFilter)(
     void *pCtx,                   
@@ -8853,7 +8874,7 @@ void sqlite3session_table_filter(
 
 
 
-int sqlite3session_changeset(
+SQLITE_API int sqlite3session_changeset(
   sqlite3_session *pSession,      
   int *pnChangeset,               
   void **ppChangeset              
@@ -8914,7 +8935,8 @@ int sqlite3session_changeset(
 
 
 
-int sqlite3session_diff(
+
+SQLITE_API int sqlite3session_diff(
   sqlite3_session *pSession,
   const char *zFromDb,
   const char *zTbl,
@@ -8950,7 +8972,7 @@ int sqlite3session_diff(
 
 
 
-int sqlite3session_patchset(
+SQLITE_API int sqlite3session_patchset(
   sqlite3_session *pSession,      
   int *pnPatchset,                
   void **ppPatchset               
@@ -8971,7 +8993,7 @@ int sqlite3session_patchset(
 
 
 
-int sqlite3session_isempty(sqlite3_session *pSession);
+SQLITE_API int sqlite3session_isempty(sqlite3_session *pSession);
 
 
 
@@ -9006,7 +9028,7 @@ int sqlite3session_isempty(sqlite3_session *pSession);
 
 
 
-int sqlite3changeset_start(
+SQLITE_API int sqlite3changeset_start(
   sqlite3_changeset_iter **pp,    
   int nChangeset,                 
   void *pChangeset                
@@ -9035,7 +9057,7 @@ int sqlite3changeset_start(
 
 
 
-int sqlite3changeset_next(sqlite3_changeset_iter *pIter);
+SQLITE_API int sqlite3changeset_next(sqlite3_changeset_iter *pIter);
 
 
 
@@ -9063,7 +9085,7 @@ int sqlite3changeset_next(sqlite3_changeset_iter *pIter);
 
 
 
-int sqlite3changeset_op(
+SQLITE_API int sqlite3changeset_op(
   sqlite3_changeset_iter *pIter,  
   const char **pzTab,             
   int *pnCol,                     
@@ -9096,7 +9118,7 @@ int sqlite3changeset_op(
 
 
 
-int sqlite3changeset_pk(
+SQLITE_API int sqlite3changeset_pk(
   sqlite3_changeset_iter *pIter,  
   unsigned char **pabPK,          
   int *pnCol                      
@@ -9126,7 +9148,7 @@ int sqlite3changeset_pk(
 
 
 
-int sqlite3changeset_old(
+SQLITE_API int sqlite3changeset_old(
   sqlite3_changeset_iter *pIter,  
   int iVal,                       
   sqlite3_value **ppValue         
@@ -9159,7 +9181,7 @@ int sqlite3changeset_old(
 
 
 
-int sqlite3changeset_new(
+SQLITE_API int sqlite3changeset_new(
   sqlite3_changeset_iter *pIter,  
   int iVal,                       
   sqlite3_value **ppValue         
@@ -9186,7 +9208,7 @@ int sqlite3changeset_new(
 
 
 
-int sqlite3changeset_conflict(
+SQLITE_API int sqlite3changeset_conflict(
   sqlite3_changeset_iter *pIter,  
   int iVal,                       
   sqlite3_value **ppValue         
@@ -9202,7 +9224,7 @@ int sqlite3changeset_conflict(
 
 
 
-int sqlite3changeset_fk_conflicts(
+SQLITE_API int sqlite3changeset_fk_conflicts(
   sqlite3_changeset_iter *pIter,  
   int *pnOut                      
 );
@@ -9235,7 +9257,7 @@ int sqlite3changeset_fk_conflicts(
 
 
 
-int sqlite3changeset_finalize(sqlite3_changeset_iter *pIter);
+SQLITE_API int sqlite3changeset_finalize(sqlite3_changeset_iter *pIter);
 
 
 
@@ -9265,7 +9287,7 @@ int sqlite3changeset_finalize(sqlite3_changeset_iter *pIter);
 
 
 
-int sqlite3changeset_invert(
+SQLITE_API int sqlite3changeset_invert(
   int nIn, const void *pIn,       
   int *pnOut, void **ppOut        
 );
@@ -9294,7 +9316,7 @@ int sqlite3changeset_invert(
 
 
 
-int sqlite3changeset_concat(
+SQLITE_API int sqlite3changeset_concat(
   int nA,                         
   void *pA,                       
   int nB,                         
@@ -9594,7 +9616,13 @@ void sqlite3changegroup_delete(sqlite3_changegroup*);
 
 
 
-int sqlite3changeset_apply(
+
+
+
+
+
+
+SQLITE_API int sqlite3changeset_apply(
   sqlite3 *db,                    
   int nChangeset,                 
   void *pChangeset,               
@@ -9795,7 +9823,7 @@ int sqlite3changeset_apply(
 
 
 
-int sqlite3changeset_apply_strm(
+SQLITE_API int sqlite3changeset_apply_strm(
   sqlite3 *db,                    
   int (*xInput)(void *pIn, void *pData, int *pnData), 
   void *pIn,                                          
@@ -9810,7 +9838,7 @@ int sqlite3changeset_apply_strm(
   ),
   void *pCtx                      
 );
-int sqlite3changeset_concat_strm(
+SQLITE_API int sqlite3changeset_concat_strm(
   int (*xInputA)(void *pIn, void *pData, int *pnData),
   void *pInA,
   int (*xInputB)(void *pIn, void *pData, int *pnData),
@@ -9818,23 +9846,23 @@ int sqlite3changeset_concat_strm(
   int (*xOutput)(void *pOut, const void *pData, int nData),
   void *pOut
 );
-int sqlite3changeset_invert_strm(
+SQLITE_API int sqlite3changeset_invert_strm(
   int (*xInput)(void *pIn, void *pData, int *pnData),
   void *pIn,
   int (*xOutput)(void *pOut, const void *pData, int nData),
   void *pOut
 );
-int sqlite3changeset_start_strm(
+SQLITE_API int sqlite3changeset_start_strm(
   sqlite3_changeset_iter **pp,
   int (*xInput)(void *pIn, void *pData, int *pnData),
   void *pIn
 );
-int sqlite3session_changeset_strm(
+SQLITE_API int sqlite3session_changeset_strm(
   sqlite3_session *pSession,
   int (*xOutput)(void *pOut, const void *pData, int nData),
   void *pOut
 );
-int sqlite3session_patchset_strm(
+SQLITE_API int sqlite3session_patchset_strm(
   sqlite3_session *pSession,
   int (*xOutput)(void *pOut, const void *pData, int nData),
   void *pOut
