@@ -2492,6 +2492,21 @@ nsSSLIOLayerSetOptions(PRFileDesc* fd, bool forSTARTTLS,
     }
   }
 
+  
+  const SSLNamedGroup namedGroups[] = {
+    ssl_grp_ec_curve25519, ssl_grp_ec_secp256r1, ssl_grp_ec_secp384r1,
+    ssl_grp_ffdhe_2048, ssl_grp_ffdhe_3072
+  };
+  if (SECSuccess != SSL_NamedGroupConfig(fd, namedGroups,
+                                         mozilla::ArrayLength(namedGroups))) {
+    return NS_ERROR_FAILURE;
+  }
+  
+  
+  if (SECSuccess != SSL_SendAdditionalKeyShares(fd, 2)) {
+    return NS_ERROR_FAILURE;
+  }
+
   bool enabled = infoObject->SharedState().IsOCSPStaplingEnabled();
   if (SECSuccess != SSL_OptionSet(fd, SSL_ENABLE_OCSP_STAPLING, enabled)) {
     return NS_ERROR_FAILURE;
