@@ -1519,35 +1519,43 @@ MediaCache::AllocateAndWriteBlock(
     LOG("Allocated block %d to stream %p block %d(%" PRId64 ")",
         blockIndex, aStream, streamBlockIndex, streamBlockIndex*BLOCK_SIZE);
 
-    mFreeBlocks.RemoveBlock(blockIndex);
-
-    
     ResourceStreamIterator iter(aStream->mResourceID);
     while (MediaCacheStream* stream = iter.Next()) {
       BlockOwner* bo = block->mOwners.AppendElement();
-      if (!bo)
+      if (!bo) {
+        
+        block->mOwners.Clear();
         return;
-
+      }
       bo->mStream = stream;
-      bo->mStreamBlock = streamBlockIndex;
-      bo->mLastUseTime = now;
-      stream->mBlocks[streamBlockIndex] = blockIndex;
-      if (streamBlockIndex*BLOCK_SIZE < stream->mStreamOffset) {
-        bo->mClass = aMode == MediaCacheStream::MODE_PLAYBACK ? PLAYED_BLOCK
-                                                              : METADATA_BLOCK;
+    }
+
+    
+    for (auto& bo : block->mOwners) {
+      bo.mStreamBlock = streamBlockIndex;
+      bo.mLastUseTime = now;
+      bo.mStream->mBlocks[streamBlockIndex] = blockIndex;
+      if (streamBlockIndex*BLOCK_SIZE < bo.mStream->mStreamOffset) {
+        bo.mClass = aMode == MediaCacheStream::MODE_PLAYBACK ? PLAYED_BLOCK
+                                                             : METADATA_BLOCK;
         
         
         
-        GetListForBlock(bo)->AddFirstBlock(blockIndex);
+        GetListForBlock(&bo)->AddFirstBlock(blockIndex);
         Verify();
       } else {
         
         
         
-        bo->mClass = READAHEAD_BLOCK;
-        InsertReadaheadBlock(bo, blockIndex);
+        bo.mClass = READAHEAD_BLOCK;
+        InsertReadaheadBlock(&bo, blockIndex);
       }
     }
+
+    
+    
+    MOZ_DIAGNOSTIC_ASSERT(!block->mOwners.IsEmpty());
+    mFreeBlocks.RemoveBlock(blockIndex);
 
     nsresult rv = mFileCache->WriteBlock(blockIndex, aData1, aData2);
     if (NS_FAILED(rv)) {
