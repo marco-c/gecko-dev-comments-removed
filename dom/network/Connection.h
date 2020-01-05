@@ -7,14 +7,16 @@
 #ifndef mozilla_dom_network_Connection_h
 #define mozilla_dom_network_Connection_h
 
-#include "Types.h"
 #include "mozilla/DOMEventTargetHelper.h"
-#include "mozilla/Observer.h"
 #include "mozilla/dom/NetworkInformationBinding.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsINetworkProperties.h"
 
 namespace mozilla {
+
+namespace workers {
+class WorkerPrivate;
+} 
 
 namespace hal {
 class NetworkInformation;
@@ -23,40 +25,46 @@ class NetworkInformation;
 namespace dom {
 namespace network {
 
-class Connection final : public DOMEventTargetHelper
-                       , public NetworkObserver
-                       , public nsINetworkProperties
+class Connection : public DOMEventTargetHelper
+                 , public nsINetworkProperties
 {
 public:
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_NSINETWORKPROPERTIES
+  NS_DECL_OWNINGTHREAD
 
   NS_REALLY_FORWARD_NSIDOMEVENTTARGET(DOMEventTargetHelper)
 
-  explicit Connection(nsPIDOMWindowInner* aWindow);
+  static bool IsEnabled(JSContext* aCx, JSObject* aObj);
+
+  static Connection*
+  CreateForWindow(nsPIDOMWindowInner* aWindow);
+
+  static already_AddRefed<Connection>
+  CreateForWorker(workers::WorkerPrivate* aWorkerPrivate,
+                  ErrorResult& aRv);
 
   void Shutdown();
 
   
-  void Notify(const hal::NetworkInformation& aNetworkInfo) override;
 
-  
-
-  virtual JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
+  virtual JSObject* WrapObject(JSContext* aCx,
+                               JS::Handle<JSObject*> aGivenProto) override;
 
   ConnectionType Type() const { return mType; }
 
   IMPL_EVENT_HANDLER(typechange)
 
+protected:
+  Connection(nsPIDOMWindowInner* aWindow);
+  virtual ~Connection();
+
+  void Update(ConnectionType aType, bool aIsWifi, bool aDHCPGateway,
+              bool aNotify);
+
+  virtual void ShutdownInternal() = 0;
+
 private:
-  ~Connection() {}
-
-  
-
-
-
-  void UpdateFromNetworkInfo(const hal::NetworkInformation& aNetworkInfo);
-
   
 
 
@@ -71,6 +79,8 @@ private:
 
 
   uint32_t mDHCPGateway;
+
+  bool mBeenShutDown;
 };
 
 } 
