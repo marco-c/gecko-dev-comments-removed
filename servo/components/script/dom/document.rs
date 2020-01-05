@@ -176,7 +176,7 @@ pub struct Document {
     
     appropriate_template_contents_owner_document: MutNullableHeap<JS<Document>>,
     
-    element_state_changes: DOMRefCell<HashMap<JS<Element>, ElementState>>,
+    modified_elements: DOMRefCell<HashMap<JS<Element>, ElementState>>,
     
     active_touch_points: DOMRefCell<Vec<JS<Touch>>>,
 }
@@ -308,7 +308,7 @@ impl Document {
 
     pub fn needs_reflow(&self) -> bool {
         self.GetDocumentElement().is_some() &&
-        (self.upcast::<Node>().get_has_dirty_descendants() || !self.element_state_changes.borrow().is_empty())
+        (self.upcast::<Node>().get_has_dirty_descendants() || !self.modified_elements.borrow().is_empty())
     }
 
     
@@ -1239,7 +1239,7 @@ pub enum DocumentSource {
 #[allow(unsafe_code)]
 pub trait LayoutDocumentHelpers {
     unsafe fn is_html_document_for_layout(&self) -> bool;
-    unsafe fn drain_element_state_changes(&self) -> Vec<(LayoutJS<Element>, ElementState)>;
+    unsafe fn drain_modified_elements(&self) -> Vec<(LayoutJS<Element>, ElementState)>;
 }
 
 #[allow(unsafe_code)]
@@ -1251,9 +1251,9 @@ impl LayoutDocumentHelpers for LayoutJS<Document> {
 
     #[inline]
     #[allow(unrooted_must_root)]
-    unsafe fn drain_element_state_changes(&self) -> Vec<(LayoutJS<Element>, ElementState)> {
-        let mut changes = (*self.unsafe_get()).element_state_changes.borrow_mut_for_layout();
-        let drain = changes.drain();
+    unsafe fn drain_modified_elements(&self) -> Vec<(LayoutJS<Element>, ElementState)> {
+        let mut elements = (*self.unsafe_get()).modified_elements.borrow_mut_for_layout();
+        let drain = elements.drain();
         let layout_drain = drain.map(|(k, v)| (k.to_layout(), v));
         Vec::from_iter(layout_drain)
     }
@@ -1322,7 +1322,7 @@ impl Document {
             reflow_timeout: Cell::new(None),
             base_element: Default::default(),
             appropriate_template_contents_owner_document: Default::default(),
-            element_state_changes: DOMRefCell::new(HashMap::new()),
+            modified_elements: DOMRefCell::new(HashMap::new()),
             active_touch_points: DOMRefCell::new(Vec::new()),
         }
     }
@@ -1389,18 +1389,9 @@ impl Document {
         self.idmap.borrow().get(&id).map(|ref elements| Root::from_ref(&*(*elements)[0]))
     }
 
-    pub fn record_element_state_change(&self, el: &Element, which: ElementState) {
-        let mut map = self.element_state_changes.borrow_mut();
-        let empty;
-        {
-            let states = map.entry(JS::from_ref(el))
-                            .or_insert(ElementState::empty());
-            states.toggle(which);
-            empty = states.is_empty();
-        }
-        if empty {
-            map.remove(&JS::from_ref(el));
-        }
+    pub fn element_state_will_change(&self, el: &Element) {
+        let mut map = self.modified_elements.borrow_mut();
+        map.entry(JS::from_ref(el)).or_insert(el.get_state());
     }
 }
 
