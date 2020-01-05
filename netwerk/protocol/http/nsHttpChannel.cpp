@@ -5873,6 +5873,84 @@ nsHttpChannel::AsyncOpen(nsIStreamListener *listener, nsISupports *context)
     return NS_OK;
 }
 
+namespace {
+
+class InitLocalBlockListXpcCallback final : public nsIURIClassifierCallback {
+public:
+  using CallbackType = nsHttpChannel::InitLocalBlockListCallback;
+
+  explicit InitLocalBlockListXpcCallback(const CallbackType& aCallback)
+    : mCallback(aCallback)
+  {
+  }
+
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSIURICLASSIFIERCALLBACK
+
+private:
+  ~InitLocalBlockListXpcCallback() = default;
+
+  CallbackType mCallback;
+};
+
+NS_IMPL_ISUPPORTS(InitLocalBlockListXpcCallback, nsIURIClassifierCallback)
+
+ nsresult
+InitLocalBlockListXpcCallback::OnClassifyComplete(nsresult ,
+                                               const nsACString& aLists, 
+                                               const nsACString& ,
+                                               const nsACString& )
+{
+    bool localBlockList = !aLists.IsEmpty();
+    mCallback(localBlockList);
+    return NS_OK;
+}
+
+} 
+
+bool
+nsHttpChannel::InitLocalBlockList(const InitLocalBlockListCallback& aCallback)
+{
+    mLocalBlocklist = false;
+
+    if (!(mLoadFlags & LOAD_CLASSIFY_URI)) {
+        return false;
+    }
+
+    
+    nsCOMPtr<nsIURIClassifier> classifier = do_GetService(NS_URICLASSIFIERSERVICE_CONTRACTID);
+    RefPtr<nsChannelClassifier> channelClassifier = new nsChannelClassifier(this);
+    bool tpEnabled = false;
+    channelClassifier->ShouldEnableTrackingProtection(&tpEnabled);
+    if (!classifier || !tpEnabled) {
+        return false;
+    }
+
+    
+    
+    
+    
+    
+    nsCOMPtr<nsIURI> uri;
+    nsresult rv = GetURI(getter_AddRefs(uri));
+    if (NS_FAILED(rv) || !uri) {
+        return false;
+    }
+
+    nsAutoCString tables;
+    Preferences::GetCString("urlclassifier.trackingTable", &tables);
+    nsTArray<nsCString> results;
+
+    RefPtr<InitLocalBlockListXpcCallback> xpcCallback
+        = new InitLocalBlockListXpcCallback(aCallback);
+    rv = classifier->AsyncClassifyLocalWithTables(uri, tables, xpcCallback);
+    if (NS_FAILED(rv)) {
+        return false;
+    }
+
+    return true;
+}
+
 NS_IMETHODIMP
 nsHttpChannel::AsyncOpen2(nsIStreamListener *aListener)
 {
@@ -6027,42 +6105,6 @@ nsHttpChannel::BeginConnect()
     if (mAPIRedirectToURI) {
         return AsyncCall(&nsHttpChannel::HandleAsyncAPIRedirect);
     }
-    
-    RefPtr<nsChannelClassifier> channelClassifier = new nsChannelClassifier(this);
-    if (mLoadFlags & LOAD_CLASSIFY_URI) {
-        nsCOMPtr<nsIURIClassifier> classifier = do_GetService(NS_URICLASSIFIERSERVICE_CONTRACTID);
-        bool tpEnabled = false;
-        channelClassifier->ShouldEnableTrackingProtection(&tpEnabled);
-        if (classifier && tpEnabled) {
-            
-            
-            
-            
-            
-
-            
-            
-            
-            
-            nsCOMPtr<nsIURI> uri;
-            rv = GetURI(getter_AddRefs(uri));
-            if (NS_SUCCEEDED(rv) && uri) {
-                nsAutoCString tables;
-                Preferences::GetCString("urlclassifier.trackingTable", &tables);
-                nsTArray<nsCString> results;
-                rv = classifier->ClassifyLocalWithTables(uri, tables, results);
-                if (NS_SUCCEEDED(rv) && !results.IsEmpty()) {
-                    LOG(("nsHttpChannel::ClassifyLocalWithTables found "
-                         "uri on local tracking blocklist [this=%p]",
-                         this));
-                    mLocalBlocklist = true;
-                } else {
-                    LOG(("nsHttpChannel::ClassifyLocalWithTables no result "
-                         "found [this=%p]", this));
-                }
-            }
-        }
-    }
 
     
     
@@ -6074,28 +6116,6 @@ nsHttpChannel::BeginConnect()
 
     if (mLoadFlags & VALIDATE_ALWAYS || BYPASS_LOCAL_CACHE(mLoadFlags))
         mCaps |= NS_HTTP_REFRESH_DNS;
-
-    if (!mLocalBlocklist && !mConnectionInfo->UsingHttpProxy() &&
-        !(mLoadFlags & (LOAD_NO_NETWORK_IO | LOAD_ONLY_FROM_CACHE))) {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        LOG(("nsHttpChannel::BeginConnect [this=%p] prefetching%s\n",
-             this, mCaps & NS_HTTP_REFRESH_DNS ? ", refresh requested" : ""));
-        mDNSPrefetch = new nsDNSPrefetch(mURI, originAttributes,
-                                         this, mTimingEnabled);
-        mDNSPrefetch->PrefetchHigh(mCaps & NS_HTTP_REFRESH_DNS);
-    }
 
     
     
@@ -6153,12 +6173,71 @@ nsHttpChannel::BeginConnect()
     
     
     
+    RefPtr<nsHttpChannel> self = this;
+    bool willCallback = InitLocalBlockList([self](bool aLocalBlockList) -> void  {
+        self->mLocalBlocklist = aLocalBlockList;
+        nsresult rv = self->BeginConnectActual();
+        if (NS_FAILED(rv)) {
+            
+            
+            
+            self->CloseCacheEntry(false);
+            Unused << self->AsyncAbort(rv);
+        }
+    });
+
+    if (!willCallback) {
+        
+        
+        
+        
+        return BeginConnectActual();
+    }
+
+    return NS_OK;
+}
+
+nsresult
+nsHttpChannel::BeginConnectActual()
+{
+    if (mCanceled) {
+        return mStatus;
+    }
+
+    if (!mLocalBlocklist && !mConnectionInfo->UsingHttpProxy() &&
+        !(mLoadFlags & (LOAD_NO_NETWORK_IO | LOAD_ONLY_FROM_CACHE))) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        LOG(("nsHttpChannel::BeginConnect [this=%p] prefetching%s\n",
+             this, mCaps & NS_HTTP_REFRESH_DNS ? ", refresh requested" : ""));
+        OriginAttributes originAttributes;
+        NS_GetOriginAttributes(this, originAttributes);
+        mDNSPrefetch = new nsDNSPrefetch(mURI, originAttributes,
+                                         this, mTimingEnabled);
+        mDNSPrefetch->PrefetchHigh(mCaps & NS_HTTP_REFRESH_DNS);
+    }
+
+    
+    
+    
+    
     bool callContinueBeginConnect = true;
     if (!mLocalBlocklist) {
         
         
         
-        rv = ContinueBeginConnectWithResult();
+        nsresult rv = ContinueBeginConnectWithResult();
         if (NS_FAILED(rv)) {
             return rv;
         }
@@ -6168,6 +6247,7 @@ nsHttpChannel::BeginConnect()
     
     
     
+    RefPtr<nsChannelClassifier> channelClassifier = new nsChannelClassifier(this);
     LOG(("nsHttpChannel::Starting nsChannelClassifier %p [this=%p]",
          channelClassifier.get(), this));
     channelClassifier->Start();
