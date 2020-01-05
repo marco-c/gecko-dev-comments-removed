@@ -32,7 +32,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "Schemas",
                                   "resource://gre/modules/Schemas.jsm");
 
 const CATEGORY_EXTENSION_SCRIPTS_ADDON = "webextension-scripts-addon";
-const CATEGORY_EXTENSION_SCRIPTS_DEVTOOLS = "webextension-scripts-devtools";
 
 Cu.import("resource://gre/modules/ExtensionCommon.jsm");
 Cu.import("resource://gre/modules/ExtensionUtils.jsm");
@@ -47,6 +46,7 @@ const {
   getMessageManager,
   getUniqueId,
   injectAPI,
+  promiseEvent,
 } = ExtensionUtils;
 
 const {
@@ -464,29 +464,6 @@ var apiManager = new class extends SchemaAPIManager {
   }
 }();
 
-var devtoolsAPIManager = new class extends SchemaAPIManager {
-  constructor() {
-    super("devtools");
-    this.initialized = false;
-  }
-
-  generateAPIs(...args) {
-    if (!this.initialized) {
-      this.initialized = true;
-      for (let [, value] of XPCOMUtils.enumerateCategoryEntries(CATEGORY_EXTENSION_SCRIPTS_DEVTOOLS)) {
-        this.loadScript(value);
-      }
-    }
-    return super.generateAPIs(...args);
-  }
-
-  registerSchemaAPI(namespace, envType, getAPI) {
-    if (envType == "devtools_child") {
-      super.registerSchemaAPI(namespace, envType, getAPI);
-    }
-  }
-}();
-
 
 
 
@@ -710,19 +687,6 @@ class ChildAPIManager {
     if (allowedContexts.includes("addon_parent_only")) {
       return false;
     }
-
-    
-    if (this.context.envType === "devtools_child" &&
-        !allowedContexts.includes("devtools")) {
-      return false;
-    }
-
-    
-    if (this.context.envType !== "devtools_child" &&
-        allowedContexts.includes("devtools_only")) {
-      return false;
-    }
-
     return true;
   }
 
@@ -748,7 +712,7 @@ class ChildAPIManager {
   }
 }
 
-class ExtensionBaseContextChild extends BaseContext {
+class ExtensionPageContextChild extends BaseContext {
   
 
 
@@ -761,18 +725,18 @@ class ExtensionBaseContextChild extends BaseContext {
 
 
 
-  constructor(extension, params) {
-    if (!params.envType) {
-      throw new Error("Missing envType");
-    }
 
+
+
+
+
+  constructor(extension, params) {
+    super("addon_child", extension);
     if (Services.appinfo.processType != Services.appinfo.PROCESS_TYPE_DEFAULT) {
       
       
-      throw new Error("ExtensionContext cannot be created in child processes");
+      throw new Error("ExtensionPageContextChild cannot be created in child processes");
     }
-
-    super(params.envType, extension);
 
     let {viewType, uri, contentWindow, tabId} = params;
     this.viewType = viewType;
@@ -806,6 +770,8 @@ class ExtensionBaseContextChild extends BaseContext {
       Schemas.inject(chromeObj, chromeApiWrapper);
       return chromeObj;
     });
+
+    this.extension.views.add(this);
   }
 
   get cloneScope() {
@@ -843,10 +809,11 @@ class ExtensionBaseContextChild extends BaseContext {
     }
 
     super.unload();
+    this.extension.views.delete(this);
   }
 }
 
-defineLazyGetter(ExtensionBaseContextChild.prototype, "messenger", function() {
+defineLazyGetter(ExtensionPageContextChild.prototype, "messenger", function() {
   let filter = {extensionId: this.extension.id};
   let optionalFilter = {};
   
@@ -857,89 +824,16 @@ defineLazyGetter(ExtensionBaseContextChild.prototype, "messenger", function() {
                        filter, optionalFilter);
 });
 
-class ExtensionPageContextChild extends ExtensionBaseContextChild {
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  constructor(extension, params) {
-    super(extension, Object.assign(params, {envType: "addon_child"}));
-
-    this.extension.views.add(this);
-  }
-
-  unload() {
-    super.unload();
-    this.extension.views.delete(this);
-  }
-}
-
 defineLazyGetter(ExtensionPageContextChild.prototype, "childManager", function() {
   let localApis = {};
   apiManager.generateAPIs(this, localApis);
-
-  let childManager = new ChildAPIManager(this, this.messageManager, localApis, {
-    envType: "addon_parent",
-    viewType: this.viewType,
-    url: this.uri.spec,
-    incognito: this.incognito,
-  });
-
-  this.callOnClose(childManager);
 
   if (this.viewType == "background") {
     apiManager.global.initializeBackgroundPage(this.contentWindow);
   }
 
-  return childManager;
-});
-
-class DevtoolsContextChild extends ExtensionBaseContextChild {
-  
-
-
-
-
-
-
-
-
-
-
-
-  constructor(extension, params) {
-    super(extension, Object.assign(params, {envType: "devtools_child"}));
-
-    this.devtoolsToolboxInfo = params.devtoolsToolboxInfo;
-
-    this.extension.devtoolsViews.add(this);
-  }
-
-  unload() {
-    super.unload();
-    this.extension.devtoolsViews.delete(this);
-  }
-}
-
-defineLazyGetter(DevtoolsContextChild.prototype, "childManager", function() {
-  let localApis = {};
-  devtoolsAPIManager.generateAPIs(this, localApis);
-
   let childManager = new ChildAPIManager(this, this.messageManager, localApis, {
-    envType: "devtools_parent",
+    envType: "addon_parent",
     viewType: this.viewType,
     url: this.uri.spec,
     incognito: this.incognito,
@@ -969,16 +863,14 @@ class ContentGlobal {
     this.tabId = -1;
     this.windowId = -1;
     this.initialized = false;
+
     this.global.addMessageListener("Extension:InitExtensionView", this);
     this.global.addMessageListener("Extension:SetTabAndWindowId", this);
-
-    this.initialDocuments = new WeakSet();
   }
 
   uninit() {
     this.global.removeMessageListener("Extension:InitExtensionView", this);
     this.global.removeMessageListener("Extension:SetTabAndWindowId", this);
-    this.global.removeEventListener("DOMContentLoaded", this);
   }
 
   ensureInitialized() {
@@ -996,22 +888,12 @@ class ContentGlobal {
       case "Extension:InitExtensionView":
         
         this.global.removeMessageListener("Extension:InitExtensionView", this);
-        let {viewType, url} = data;
-        this.viewType = viewType;
+        this.viewType = data.viewType;
 
-        if (data.devtoolsToolboxInfo) {
-          this.devtoolsToolboxInfo = data.devtoolsToolboxInfo;
-        }
+        promiseEvent(this.global, "DOMContentLoaded", true).then(() => {
+          this.global.sendAsyncMessage("Extension:ExtensionViewLoaded");
+        });
 
-        this.global.addEventListener("DOMContentLoaded", this);
-        if (url) {
-          
-          
-          
-          let {document} = this.global.content;
-          this.initialDocuments.add(document);
-          document.location.replace(url);
-        }
         
       case "Extension:SetTabAndWindowId":
         this.handleSetTabAndWindowId(data);
@@ -1021,6 +903,7 @@ class ContentGlobal {
 
   handleSetTabAndWindowId(data) {
     let {tabId, windowId} = data;
+
     if (tabId) {
       
       if (this.tabId !== -1 && tabId !== this.tabId) {
@@ -1028,6 +911,7 @@ class ContentGlobal {
       }
       this.tabId = tabId;
     }
+
     if (windowId !== undefined) {
       
       
@@ -1035,21 +919,6 @@ class ContentGlobal {
       this.windowId = windowId;
     }
     this.initialized = true;
-  }
-
-  
-  handleEvent(event) {
-    let {document} = this.global.content;
-    if (event.target === document) {
-      
-      
-      if (this.initialDocuments.has(document)) {
-        this.initialDocuments.delete(document);
-        return;
-      }
-      this.global.removeEventListener("DOMContentLoaded", this);
-      this.global.sendAsyncMessage("Extension:ExtensionViewLoaded");
-    }
   }
 }
 
@@ -1103,21 +972,11 @@ ExtensionChild = {
       .getInterface(Ci.nsIDocShell)
       .QueryInterface(Ci.nsIInterfaceRequestor)
       .getInterface(Ci.nsIContentFrameMessageManager);
-    let {
-      viewType, tabId,
-      devtoolsToolboxInfo,
-    } = this.contentGlobals.get(mm).ensureInitialized();
+    let {viewType, tabId} = this.contentGlobals.get(mm).ensureInitialized();
 
     let uri = contentWindow.document.documentURIObject;
 
-    if (devtoolsToolboxInfo) {
-      context = new DevtoolsContextChild(extension, {
-        viewType, contentWindow, uri, tabId, devtoolsToolboxInfo,
-      });
-    } else {
-      context = new ExtensionPageContextChild(extension, {viewType, contentWindow, uri, tabId});
-    }
-
+    context = new ExtensionPageContextChild(extension, {viewType, contentWindow, uri, tabId});
     this.extensionContexts.set(windowId, context);
   },
 
