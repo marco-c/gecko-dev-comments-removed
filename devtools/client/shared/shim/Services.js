@@ -584,6 +584,22 @@ const Services = {
       }
     },
   },
+
+  
+
+
+
+  wm: {
+    getMostRecentWindow: function () {
+      
+      
+      return {
+        openUILinkIn: function (url) {
+          window.open(url, "_blank");
+        },
+      };
+    },
+  },
 };
 
 
