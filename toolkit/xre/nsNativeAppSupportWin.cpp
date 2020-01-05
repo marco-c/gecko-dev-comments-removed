@@ -338,110 +338,56 @@ NS_IMPL_RELEASE_INHERITED(nsNativeAppSupportWin, nsNativeAppSupportBase)
 void
 UseParentConsole()
 {
-    
-    
-    
     if (AttachConsole(ATTACH_PARENT_PROCESS)) {
         
         
         
         
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        if (_fileno(stdout) == -2 ||
-            _get_osfhandle(fileno(stdout)) == -2)
+        if (_fileno(stdout) == -2) {
             freopen("CONOUT$", "w", stdout);
+        }
         
-        
-        if (_fileno(stderr) == -2 ||
-            _get_osfhandle(fileno(stderr)) == -2)
+        if (_fileno(stderr) == -2) {
             freopen("CONOUT$", "w", stderr);
-        if (_fileno(stdin) == -2 || _get_osfhandle(fileno(stdin)) == -2)
+        }
+        if (_fileno(stdin) == -2) {
             freopen("CONIN$", "r", stdin);
+        }
     }
 }
 
 void
-nsNativeAppSupportWin::CheckConsole() {
-    for ( int i = 1; i < gArgc; i++ ) {
-        if ( strcmp( "-console", gArgv[i] ) == 0 ||
-             strcmp( "--console", gArgv[i] ) == 0 ||
-             strcmp( "/console", gArgv[i] ) == 0 ) {
-            
-            
-            BOOL rc = ::AllocConsole();
-            if ( rc ) {
+nsNativeAppSupportWin::CheckConsole()
+{
+    for (int i = 1; i < gArgc; ++i) {
+        if (strcmp("-console", gArgv[i]) == 0 ||
+            strcmp("--console", gArgv[i]) == 0 ||
+            strcmp("/console", gArgv[i]) == 0)
+        {
+            if (AllocConsole()) {
                 
                 
-
                 
-                int hCrt = ::_open_osfhandle( (intptr_t)GetStdHandle( STD_OUTPUT_HANDLE ),
-                                            _O_TEXT );
-                if ( hCrt != -1 ) {
-                    FILE *hf = ::_fdopen( hCrt, "w" );
-                    if ( hf ) {
-                        *stdout = *hf;
-#ifdef DEBUG
-                        ::fprintf( stdout, "stdout directed to dynamic console\n" );
-#endif
-                    }
+                
+                if (_fileno(stdout) == -2) {
+                    freopen("CONOUT$", "w", stdout);
                 }
-
                 
-                hCrt = ::_open_osfhandle( (intptr_t)::GetStdHandle( STD_ERROR_HANDLE ),
-                                          _O_TEXT );
-                if ( hCrt != -1 ) {
-                    FILE *hf = ::_fdopen( hCrt, "w" );
-                    if ( hf ) {
-                        *stderr = *hf;
-#ifdef DEBUG
-                        ::fprintf( stderr, "stderr directed to dynamic console\n" );
-#endif
-                    }
+                if (_fileno(stderr) == -2) {
+                    freopen("CONOUT$", "w", stderr);
                 }
-
-                
-                
-
-
-
-
-
-
-
-
-
-            } else {
-                
-                
+                if (_fileno(stdin) == -2) {
+                    freopen("CONIN$", "r", stdin);
+                }
             }
-            
-            do {
-                gArgv[i] = gArgv[i + 1];
-                ++i;
-            } while (gArgv[i]);
-
-            --gArgc;
-
-        } else if ( strcmp( "-attach-console", gArgv[i] ) == 0
-                    ||
-                    strcmp( "/attach-console", gArgv[i] ) == 0 ) {
+        } else if (strcmp("-attach-console", gArgv[i]) == 0 ||
+                   strcmp("--attach-console", gArgv[i]) == 0 ||
+                   strcmp("/attach-console", gArgv[i]) == 0)
+        {
             UseParentConsole();
         }
     }
-
-    return;
 }
-
 
 
 nsresult
