@@ -1281,6 +1281,9 @@ impl<Window: WindowMethods> IOCompositor<Window> {
                 
                 
                 
+                
+                
+                self.ready_to_save_state = ReadyState::Unknown;
                 true
             }
         }
