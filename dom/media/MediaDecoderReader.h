@@ -194,11 +194,10 @@ public:
   virtual size_t SizeOfVideoQueueInFrames();
   virtual size_t SizeOfAudioQueueInFrames();
 
-  void NotifyDataArrived()
+  virtual void NotifyDataArrived()
   {
     MOZ_ASSERT(OnTaskQueue());
     NS_ENSURE_TRUE_VOID(!mShutdown);
-    NotifyDataArrivedInternal();
     UpdateBuffered();
   }
 
@@ -253,24 +252,6 @@ protected:
 
   
   virtual void UpdateBuffered();
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  virtual media::TimeIntervals GetBuffered();
 
   RefPtr<MediaDataPromise> DecodeToFirstVideoData();
 
@@ -344,8 +325,6 @@ private:
 
   virtual void VisibilityChanged();
 
-  virtual void NotifyDataArrivedInternal() {}
-
   
   
   
@@ -365,6 +344,24 @@ private:
   {
     return false;
   }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  media::TimeIntervals GetBuffered();
 
   
   
