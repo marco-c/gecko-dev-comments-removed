@@ -258,6 +258,12 @@ public class BrowserApp extends GeckoApp
     private static final int ADDON_MENU_OFFSET = 1000;
     public static final String TAB_HISTORY_FRAGMENT_TAG = "tabHistoryFragment";
 
+    
+    
+    
+    
+    private boolean mShowingToolbarChromeForActionBar;
+
     private static class MenuItemInfo {
         public int id;
         public String label;
@@ -386,7 +392,10 @@ public class BrowserApp extends GeckoApp
                     updateHomePagerForTab(tab);
                 }
 
-                mDynamicToolbar.persistTemporaryVisibility();
+                if (mShowingToolbarChromeForActionBar) {
+                    mDynamicToolbar.setVisible(true, VisibilityTransition.IMMEDIATE);
+                    mShowingToolbarChromeForActionBar = false;
+                }
                 break;
             case START:
                 if (Tabs.getInstance().isSelectedTab(tab)) {
@@ -4036,6 +4045,7 @@ public class BrowserApp extends GeckoApp
         return this;
     }
 
+
     
     @Override
     public void startActionMode(final ActionModeCompat.Callback callback) {
@@ -4045,8 +4055,10 @@ public class BrowserApp extends GeckoApp
             DynamicToolbarAnimator toolbar = mLayerView.getDynamicToolbarAnimator();
 
             
+            
             if (mDynamicToolbar.isEnabled() && toolbar.getCurrentToolbarHeight() == 0) {
-                mDynamicToolbar.setTemporarilyVisible(true, VisibilityTransition.ANIMATE);
+                toggleToolbarChrome(true);
+                mShowingToolbarChromeForActionBar = true;
             }
             mDynamicToolbar.setPinned(true, PinReason.ACTION_MODE);
 
@@ -4077,7 +4089,10 @@ public class BrowserApp extends GeckoApp
 
         
         
-        mDynamicToolbar.setTemporarilyVisible(false, VisibilityTransition.IMMEDIATE);
+        if (mShowingToolbarChromeForActionBar) {
+            toggleToolbarChrome(false);
+            mShowingToolbarChromeForActionBar = false;
+        }
     }
 
     public static interface TabStripInterface {
