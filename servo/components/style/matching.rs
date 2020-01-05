@@ -433,7 +433,7 @@ trait PrivateMatchMethods: TElement {
                                                    &pseudo_style);
 
         
-        if animate {
+        if animate && !context.shared.traversal_flags.for_animation_only() {
             self.process_animations(context,
                                     &mut old_values,
                                     &mut new_values,
@@ -906,11 +906,11 @@ pub trait MatchMethods : TElement {
 
     
     
-    fn cascade_with_replacements(&self,
-                                 hint: RestyleHint,
-                                 context: &StyleContext<Self>,
-                                 data: &mut AtomicRefMut<ElementData>)
-                                 -> bool {
+    fn replace_rules(&self,
+                     hint: RestyleHint,
+                     context: &StyleContext<Self>,
+                     data: &mut AtomicRefMut<ElementData>)
+                     -> bool {
         use properties::PropertyDeclarationBlock;
         use shared_lock::Locked;
 
