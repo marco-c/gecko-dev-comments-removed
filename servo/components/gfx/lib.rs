@@ -4,7 +4,7 @@
 
 
 #![cfg_attr(any(target_arch = "x86_64", target_arch = "aarch64"), feature(convert))]
-#![cfg_attr(any(target_os = "linux", target_os = "android"), feature(heap_api))]
+#![cfg_attr(any(target_os = "linux", target_os = "android", target_os = "windows"), feature(heap_api))]
 
 #![feature(alloc)]
 #![feature(box_syntax)]
@@ -35,9 +35,9 @@ extern crate euclid;
 extern crate fnv;
 
 
-#[cfg(any(target_os = "linux", target_os = "android"))]
+#[cfg(any(target_os = "linux", target_os = "android", target_os = "windows"))]
 extern crate fontconfig;
-#[cfg(any(target_os = "linux", target_os = "android"))]
+#[cfg(any(target_os = "linux", target_os = "android", target_os = "windows"))]
 extern crate freetype;
 
 extern crate gfx_traits;
@@ -74,7 +74,6 @@ extern crate unicode_script;
 extern crate url;
 #[macro_use]
 extern crate util;
-
 
 pub use paint_context::PaintContext;
 

@@ -7,7 +7,11 @@
 
 
 
+#[cfg(windows)]
+extern crate kernel32;
+
 use deque::{Abort, BufferPool, Data, Empty, Stealer, Worker};
+#[cfg(not(windows))]
 use libc::usleep;
 use rand::{Rng, XorShiftRng, weak_rng};
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -92,6 +96,20 @@ fn next_power_of_two(mut v: u32) -> u32 {
     v
 }
 
+#[cfg(not(windows))]
+fn sleep_microseconds(usec: u32) {
+    unsafe {
+        usleep(usec);
+    }
+}
+
+#[cfg(windows)]
+fn sleep_microseconds(_: u32) {
+    unsafe {
+        kernel32::Sleep(0);
+    }
+}
+
 impl<QueueData: Sync, WorkData: Send> WorkerThread<QueueData, WorkData> {
     
     
@@ -151,9 +169,8 @@ impl<QueueData: Sync, WorkData: Send> WorkerThread<QueueData, WorkData> {
                                     }
                                 }
 
-                                unsafe {
-                                    usleep(back_off_sleep as u32);
-                                }
+                                sleep_microseconds(back_off_sleep);
+
                                 back_off_sleep += BACKOFF_INCREMENT_IN_US;
                                 i = 0
                             } else {
