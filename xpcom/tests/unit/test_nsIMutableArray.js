@@ -146,6 +146,26 @@ function test_nssupportsarray_interop() {
   do_check_eq(iarray.length, i);
 }
 
+function test_nsiarrayextensions() {
+  
+  
+  
+  
+
+  let fake_nsisupports_array = create_n_element_array(5);
+
+  
+  do_check_eq(5, fake_nsisupports_array.Count());
+
+  for (let i = 0; i < fake_nsisupports_array.Count(); i++) {
+    
+    let elm = fake_nsisupports_array.GetElementAt(i);
+    do_check_neq(elm, null);
+    let str = elm.QueryInterface(Ci.nsISupportsString);
+    do_check_neq(str, null);
+    do_check_eq(str.data, "element " + i);
+  }
+}
 
 var tests = [
   test_appending_null_actually_inserts,
@@ -155,6 +175,7 @@ var tests = [
   test_clear,
   test_enumerate,
   test_nssupportsarray_interop,
+  test_nsiarrayextensions,
 ];
 
 function run_test() {
