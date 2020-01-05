@@ -58,7 +58,6 @@
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/ShadowRoot.h"
-#include "mozilla/ServoStyleSet.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -419,14 +418,6 @@ nsXBLBinding::GenerateAnonymousContent()
     
     if (mContent)
       mContent->UnsetAttr(namespaceID, name, false);
-  }
-
-  
-  
-  nsIPresShell* presShell = mBoundElement->OwnerDoc()->GetShell();
-  ServoStyleSet* servoSet = presShell->StyleSet()->GetAsServo();
-  if (servoSet) {
-    servoSet->StyleNewChildren(mBoundElement->AsElement());
   }
 }
 
