@@ -416,9 +416,9 @@ pub struct TrackScaledTime(pub u64, pub usize);
 #[derive(Debug, Default)]
 pub struct EmptySampleTableBoxes {
     
-    pub empty_stts : bool,
-    pub empty_stsc : bool,
-    pub empty_stco : bool,
+    pub empty_stts: bool,
+    pub empty_stsc: bool,
+    pub empty_stco: bool,
 }
 
 
