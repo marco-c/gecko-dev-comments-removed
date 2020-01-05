@@ -73,6 +73,14 @@ struct ShapeUtils final
     const nsRect& aInsetRect,
     const nsRect& aRefBox,
     nscoord aRadii[8]);
+
+  
+  
+  
+  
+  static nsTArray<nsPoint> ComputePolygonVertices(
+    const StyleBasicShape* aBasicShape,
+    const nsRect& aRefBox);
 };
 
 } 
