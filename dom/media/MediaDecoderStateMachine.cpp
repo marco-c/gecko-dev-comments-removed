@@ -1456,13 +1456,6 @@ private:
     return Reader()->IsRequestingVideoData() || Reader()->IsWaitingVideoData();
   }
 
-  bool IsVideoSeekComplete() const
-  {
-    
-    
-    return !IsVideoRequestPending() && !NeedMoreVideo();
-  }
-
   
   
   void UpdateSeekTargetTime()
@@ -1479,7 +1472,7 @@ private:
 
   void MaybeFinishSeek()
   {
-    if (IsVideoSeekComplete()) {
+    if (!NeedMoreVideo()) {
       UpdateSeekTargetTime();
 
       auto time = mSeekJob.mTarget->GetTime().ToMicroseconds();
