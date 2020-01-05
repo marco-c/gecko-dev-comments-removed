@@ -594,8 +594,8 @@ impl<'le> ::selectors::Element for ServoLayoutElement<'le> {
         self.element.namespace()
     }
 
-    fn match_non_ts_pseudo_class(&self, pseudo_class: NonTSPseudoClass) -> bool {
-        match pseudo_class {
+    fn match_non_ts_pseudo_class(&self, pseudo_class: &NonTSPseudoClass) -> bool {
+        match *pseudo_class {
             
             NonTSPseudoClass::Link |
             NonTSPseudoClass::AnyLink => unsafe {
@@ -1092,7 +1092,7 @@ impl<'le> ::selectors::Element for ServoThreadSafeLayoutElement<'le> {
         self.element.get_namespace()
     }
 
-    fn match_non_ts_pseudo_class(&self, _: NonTSPseudoClass) -> bool {
+    fn match_non_ts_pseudo_class(&self, _: &NonTSPseudoClass) -> bool {
         
         warn!("ServoThreadSafeLayoutElement::match_non_ts_pseudo_class called");
         false
