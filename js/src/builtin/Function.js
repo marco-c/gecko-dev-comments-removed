@@ -8,7 +8,7 @@ function FunctionBind(thisArg, ...boundArgs) {
     var target = this;
     
     if (!IsCallable(target))
-        ThrowTypeError(JSMSG_INCOMPATIBLE_PROTO, 'Function', 'bind', target);
+        ThrowTypeError(JSMSG_INCOMPATIBLE_PROTO, "Function", "bind", target);
 
     
     

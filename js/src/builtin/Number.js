@@ -56,7 +56,7 @@ function Number_isNaN(num) {
 
 function Number_isSafeInteger(number) {
     
-    if (typeof number !== 'number')
+    if (typeof number !== "number")
         return false;
 
     
