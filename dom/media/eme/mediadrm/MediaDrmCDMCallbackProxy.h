@@ -17,6 +17,9 @@ class CDMProxy;
 
 class MediaDrmCDMCallbackProxy : public DecryptorProxyCallback {
 public:
+
+  void SetDecryptorId(uint32_t aId) override {}
+
   void SetSessionId(uint32_t aCreateSessionToken,
                     const nsCString& aSessionId) override;
 
