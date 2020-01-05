@@ -5,6 +5,8 @@
 
 
 #include "mozilla/ServoStyleSheet.h"
+
+#include "mozilla/css/Rule.h"
 #include "mozilla/StyleBackendType.h"
 #include "mozilla/ServoBindings.h"
 #include "mozilla/ServoCSSRuleList.h"
