@@ -170,9 +170,6 @@ pref("dom.enable_performance", true);
 pref("dom.enable_resource_timing", true);
 
 
-pref("dom.enable_user_timing", true);
-
-
 pref("dom.performance.enable_user_timing_logging", false);
 
 
