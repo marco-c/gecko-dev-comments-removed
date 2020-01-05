@@ -13,12 +13,12 @@ use gecko_bindings::sugar::ownership::{HasBoxFFI, HasFFI, HasSimpleFFI};
 use media_queries::Device;
 use parking_lot::RwLock;
 use properties::ComputedValues;
-use shared_lock::{StylesheetGuards, SharedRwLockReadGuard};
+use shared_lock::{Locked, StylesheetGuards, SharedRwLockReadGuard};
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::mpsc::{Receiver, Sender, channel};
-use stylesheets::Stylesheet;
-use stylist::Stylist;
+use stylesheets::{FontFaceRule, Origin, Stylesheet};
+use stylist::{ExtraStyleData, Stylist};
 
 
 
@@ -45,6 +45,9 @@ pub struct PerDocumentStyleDataImpl {
     
     
     pub expired_animations: Arc<RwLock<HashMap<OpaqueNode, Vec<Animation>>>>,
+
+    
+    pub font_faces: Vec<(Arc<Locked<FontFaceRule>>, Origin)>,
 }
 
 
@@ -66,6 +69,7 @@ impl PerDocumentStyleData {
             new_animations_receiver: new_anims_receiver,
             running_animations: Arc::new(RwLock::new(HashMap::new())),
             expired_animations: Arc::new(RwLock::new(HashMap::new())),
+            font_faces: vec![],
         }))
     }
 
@@ -97,7 +101,11 @@ impl PerDocumentStyleDataImpl {
     pub fn flush_stylesheets(&mut self, guard: &SharedRwLockReadGuard) {
         if self.stylesheets_changed {
             let mut stylist = Arc::get_mut(&mut self.stylist).unwrap();
-            stylist.update(&self.stylesheets, &StylesheetGuards::same(guard), None, true);
+            let mut extra_data = ExtraStyleData {
+                font_faces: &mut self.font_faces,
+            };
+            stylist.update(&self.stylesheets, &StylesheetGuards::same(guard),
+                           None, true, &mut extra_data);
             self.stylesheets_changed = false;
         }
     }
