@@ -24,6 +24,7 @@ mod servo {
 mod gecko {
     use cssparser::{Color as CSSParserColor, Parser, RGBA};
     use parser::{Parse, ParserContext};
+    use properties::longhands::color::SystemColor;
     use std::fmt;
     use style_traits::ToCss;
     use values::HasViewportPercentage;
@@ -35,7 +36,8 @@ mod gecko {
         CurrentColor,
         
         RGBA(RGBA),
-
+        
+        System(SystemColor),
         
         MozDefaultColor,
         
@@ -57,6 +59,8 @@ mod gecko {
                     CSSParserColor::CurrentColor => Ok(Color::CurrentColor),
                     CSSParserColor::RGBA(x) => Ok(Color::RGBA(x)),
                 }
+            } else if let Ok(system) = input.try(SystemColor::parse) {
+                Ok(Color::System(system))
             } else {
                 let ident = input.expect_ident()?;
                 match_ignore_ascii_case! { &ident,
@@ -77,6 +81,7 @@ mod gecko {
                 
                 Color::CurrentColor => CSSParserColor::CurrentColor.to_css(dest),
                 Color::RGBA(rgba) => rgba.to_css(dest),
+                Color::System(system) => system.to_css(dest),
 
                 
                 Color::MozDefaultColor => dest.write_str("-moz-default-color"),
