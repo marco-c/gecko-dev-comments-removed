@@ -16,6 +16,9 @@ const kAutoMigrateBrowserPref = "browser.migrate.automigrate.browser";
 const kAutoMigrateLastUndoPromptDateMsPref = "browser.migrate.automigrate.lastUndoPromptDateMs";
 const kAutoMigrateDaysToOfferUndoPref = "browser.migrate.automigrate.daysToOfferUndo";
 
+const kAutoMigrateUndoSurveyPref = "browser.migrate.automigrate.undo-survey";
+const kAutoMigrateUndoSurveyLocalePref = "browser.migrate.automigrate.undo-survey-locales";
+
 const kNotificationId = "automigration-undo";
 
 Cu.import("resource:///modules/MigrationUtils.jsm");
@@ -355,6 +358,7 @@ const AutoMigrate = {
         label: MigrationUtils.getLocalizedString("automigration.undo.dontkeep.label"),
         accessKey: MigrationUtils.getLocalizedString("automigration.undo.dontkeep.accesskey"),
         callback: () => {
+          this._maybeOpenUndoSurveyTab(win);
           this.undo();
         },
       },
@@ -550,6 +554,49 @@ const AutoMigrate = {
       }
     }
   }),
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  _maybeOpenUndoSurveyTab(chromeWindow) {
+    let canDoSurveyInLocale = false;
+    try {
+      let surveyLocales = Preferences.get(kAutoMigrateUndoSurveyLocalePref, "");
+      surveyLocales = surveyLocales.split(",").map(str => str.trim());
+      
+      
+      surveyLocales = new Set(surveyLocales.filter(str => !!str));
+      let chromeRegistry = Cc["@mozilla.org/chrome/chrome-registry;1"]
+                             .getService(Ci.nsIXULChromeRegistry);
+      canDoSurveyInLocale =
+        surveyLocales.has(chromeRegistry.getSelectedLocale("global"));
+    } catch (ex) {
+      
+    }
+
+    let migrationBrowser = this.getBrowserUsedForMigration();
+    let rawURL = Preferences.get(kAutoMigrateUndoSurveyPref, "");
+    if (!canDoSurveyInLocale || !migrationBrowser || !rawURL) {
+      return;
+    }
+
+    let url = Services.urlFormatter.formatURL(rawURL);
+    url = url.replace("%IMPORTEDBROWSER%", encodeURIComponent(migrationBrowser));
+    chromeWindow.openUILinkIn(url, "tab");
+  },
 
   QueryInterface: XPCOMUtils.generateQI(
     [Ci.nsIObserver, Ci.nsINavBookmarkObserver, Ci.nsISupportsWeakReference]
