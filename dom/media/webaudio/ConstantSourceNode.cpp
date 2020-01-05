@@ -275,7 +275,7 @@ ConstantSourceNode::NotifyMainThreadStreamFinished()
     RefPtr<ConstantSourceNode> mNode;
   };
 
-  NS_DispatchToMainThread(new EndedEventDispatcher(this));
+  Context()->Dispatch(do_AddRef(new EndedEventDispatcher(this)));
 
   
   

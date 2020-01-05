@@ -598,7 +598,7 @@ OscillatorNode::NotifyMainThreadStreamFinished()
     RefPtr<OscillatorNode> mNode;
   };
 
-  NS_DispatchToMainThread(new EndedEventDispatcher(this));
+  Context()->Dispatch(do_AddRef(new EndedEventDispatcher(this)));
 
   
   
