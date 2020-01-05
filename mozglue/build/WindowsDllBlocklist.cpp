@@ -79,19 +79,19 @@ static DllBlockInfo sWindowsDllBlocklist[] = {
   
   
   
-  
+
   
   { "npffaddon.dll", ALL_VERSIONS},
 
   
   {"avgrsstx.dll", MAKE_VERSION(8,5,0,401)},
-  
+
   
   {"calc.dll", MAKE_VERSION(1,0,0,1)},
 
   
   {"hook.dll", ALL_VERSIONS},
-  
+
   
   
   {"googledesktopnetwork3.dll", UNVERSIONED},
@@ -101,7 +101,7 @@ static DllBlockInfo sWindowsDllBlocklist[] = {
 
   
   {"fgjk4wvb.dll", MAKE_VERSION(8,8,8,8)},
-  
+
   
   {"radhslib.dll", UNVERSIONED},
 
@@ -218,6 +218,9 @@ static DllBlockInfo sWindowsDllBlocklist[] = {
   { "prls64.dll", ALL_VERSIONS },
   { "rlls.dll", ALL_VERSIONS },
   { "rlls64.dll", ALL_VERSIONS },
+
+  
+  { "vorbis.acm", MAKE_VERSION(0, 0, 3, 6) },
 
   { nullptr, 0 }
 };
@@ -397,7 +400,7 @@ public:
     mReentered = mPreviousDllName && !stricmp(mPreviousDllName, dllName);
     (*sThreadMap)[currentThreadId] = dllName;
   }
-    
+
   ~ReentrancySentinel()
   {
     DWORD currentThreadId = GetCurrentThreadId();
@@ -409,7 +412,7 @@ public:
   {
     return mReentered;
   };
-    
+
   static void InitializeStatics()
   {
     InitializeCriticalSection(&sLock);
