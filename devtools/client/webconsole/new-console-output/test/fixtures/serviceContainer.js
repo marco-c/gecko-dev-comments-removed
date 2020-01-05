@@ -13,6 +13,11 @@ module.exports = {
   openNetworkPanel: () => {},
   sourceMapService: {
     subscribe: () => {},
+    originalPositionFor: () => {
+      return new Promise(resolve => {
+        resolve();
+      });
+    },
   },
   openLink: () => {},
   
