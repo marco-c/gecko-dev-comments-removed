@@ -74,6 +74,8 @@ public class GlobalSession implements HttpResponseObserver {
   protected final Context context;
   protected final ClientsDataDelegate clientsDelegate;
 
+  private long syncDeadline;
+
   
 
 
@@ -234,6 +236,10 @@ public class GlobalSession implements HttpResponseObserver {
     return out;
   }
 
+  public long getSyncDeadline() {
+    return syncDeadline;
+  }
+
   
 
 
@@ -293,10 +299,14 @@ public class GlobalSession implements HttpResponseObserver {
 
 
 
-  public void start() throws AlreadySyncingException {
+  public void start(final long syncDeadline) throws AlreadySyncingException {
     if (this.currentState != GlobalSyncStage.Stage.idle) {
       throw new AlreadySyncingException(this.currentState);
     }
+
+    
+    this.syncDeadline = syncDeadline;
+
     installAsHttpResponseObserver(); 
     this.advance();
   }
@@ -311,7 +321,8 @@ public class GlobalSession implements HttpResponseObserver {
       this.callback.handleAborted(this, "Told to back off.");
       return;
     }
-    this.start();
+    
+    this.start(syncDeadline);
   }
 
   
