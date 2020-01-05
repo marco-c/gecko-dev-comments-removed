@@ -707,23 +707,20 @@ MacroAssembler::storeUncanonicalizedFloat32(FloatRegister src, const BaseIndex& 
 
 template <class L>
 void
-MacroAssembler::wasmBoundsCheck(Condition cond, Register index, L label)
+MacroAssembler::wasmBoundsCheck(Condition cond, Register index, Register boundsCheckLimit, L label)
 {
-    BufferOffset bo = ma_BoundsCheck(ScratchRegister);
-    append(wasm::BoundsCheck(bo.getOffset()));
-
-    ma_b(index, ScratchRegister, label, cond);
-}
-
-void
-MacroAssembler::wasmPatchBoundsCheck(uint8_t* patchAt, uint32_t limit)
-{
-    Instruction* inst = (Instruction*) patchAt;
-    InstImm* i0 = (InstImm*) inst;
-    InstImm* i1 = (InstImm*) i0->next();
+    MOZ_CRASH("NYI - patching is no longer available");
+    
+    
 
     
-    AssemblerMIPSShared::UpdateLuiOriValue(i0, i1, limit);
+}
+
+template <class L>
+void
+MacroAssembler::wasmBoundsCheck(Condition cond, Register index, Address boundsCheckLimit, L label)
+{
+    MOZ_CRASH("NYI - patching is no longer available");
 }
 
 
