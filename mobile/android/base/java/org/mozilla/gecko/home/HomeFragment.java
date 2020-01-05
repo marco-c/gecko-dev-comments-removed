@@ -77,7 +77,7 @@ public abstract class HomeFragment extends Fragment {
     protected OnUrlOpenListener mUrlOpenListener;
 
     
-    private OnUrlOpenInBackgroundListener mUrlOpenInBackgroundListener;
+    protected OnUrlOpenInBackgroundListener mUrlOpenInBackgroundListener;
 
     protected PanelStateChangeListener mPanelStateChangeListener = null;
 
