@@ -1852,6 +1852,14 @@ pref("network.dns.localDomains", "");
 pref("network.dns.offline-localhost", true);
 
 
+
+pref("network.standard-url.escape-utf8", true);
+
+
+
+pref("network.standard-url.encode-utf8", true);
+
+
 pref("network.standard-url.max-length", 1048576);
 
 
