@@ -946,17 +946,17 @@ public:
 
     
     
-    if (mSeekJob.mTarget->IsVideoOnly()) {
-      mMaster->mOnPlaybackEvent.Notify(MediaEventType::VideoOnlySeekBegin);
-    }
-
-    
-    
     
     if (mMaster->mVideoDecodeSuspended) {
       mMaster->mVideoDecodeSuspended = false;
       mMaster->mOnPlaybackEvent.Notify(MediaEventType::ExitVideoSuspend);
       Reader()->SetVideoBlankDecode(false);
+    }
+
+    
+    
+    if (mSeekJob.mTarget->IsVideoOnly()) {
+      mMaster->mOnPlaybackEvent.Notify(MediaEventType::VideoOnlySeekBegin);
     }
 
     
