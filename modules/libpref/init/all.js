@@ -624,9 +624,6 @@ pref("layers.geometry.opengl.enabled", true);
 pref("layers.geometry.basic.enabled", true);
 
 
-pref("layers.geometry.d3d11.enabled", true);
-
-
 
 pref("apz.allow_checkerboarding", true);
 pref("apz.allow_immediate_handoff", true);
@@ -2559,7 +2556,7 @@ pref("layout.css.convertFromNode.enabled", true);
 pref("layout.css.text-align-unsafe-value.enabled", false);
 
 
-pref("layout.css.text-justify.enabled", true);
+pref("layout.css.text-justify.enabled", false);
 
 
 
@@ -2684,9 +2681,6 @@ pref("layout.css.control-characters.visible", false);
 #else
 pref("layout.css.control-characters.visible", true);
 #endif
-
-
-pref("layout.css.column-span.enabled", false);
 
 
 
@@ -3240,12 +3234,12 @@ pref("ui.mouse.radius.inputSource.touchOnly", true);
 pref("font.name.serif.ar", "Times New Roman");
 pref("font.name.sans-serif.ar", "Segoe UI");
 pref("font.name-list.sans-serif.ar", "Segoe UI, Tahoma, Arial");
-pref("font.name.monospace.ar", "Courier New");
+pref("font.name.monospace.ar", "Consolas");
 pref("font.name.cursive.ar", "Comic Sans MS");
 
 pref("font.name.serif.el", "Times New Roman");
 pref("font.name.sans-serif.el", "Arial");
-pref("font.name.monospace.el", "Courier New");
+pref("font.name.monospace.el", "Consolas");
 pref("font.name.cursive.el", "Comic Sans MS");
 
 pref("font.name.serif.he", "Narkisim");
@@ -3280,17 +3274,17 @@ pref("font.name.cursive.th", "Tahoma");
 
 pref("font.name.serif.x-cyrillic", "Times New Roman");
 pref("font.name.sans-serif.x-cyrillic", "Arial");
-pref("font.name.monospace.x-cyrillic", "Courier New");
+pref("font.name.monospace.x-cyrillic", "Consolas");
 pref("font.name.cursive.x-cyrillic", "Comic Sans MS");
 
 pref("font.name.serif.x-unicode", "Times New Roman");
 pref("font.name.sans-serif.x-unicode", "Arial");
-pref("font.name.monospace.x-unicode", "Courier New");
+pref("font.name.monospace.x-unicode", "Consolas");
 pref("font.name.cursive.x-unicode", "Comic Sans MS");
 
 pref("font.name.serif.x-western", "Times New Roman");
 pref("font.name.sans-serif.x-western", "Arial");
-pref("font.name.monospace.x-western", "Courier New");
+pref("font.name.monospace.x-western", "Consolas");
 pref("font.name.cursive.x-western", "Comic Sans MS");
 
 pref("font.name.serif.zh-CN", "SimSun");
@@ -3435,7 +3429,7 @@ pref("font.default.x-devanagari", "sans-serif");
 pref("font.name.serif.x-math", "Latin Modern Math");
 pref("font.name-list.serif.x-math", "Latin Modern Math, STIX Two Math, XITS Math, Cambria Math, Libertinus Math, DejaVu Math TeX Gyre, TeX Gyre Bonum Math, TeX Gyre Pagella Math, TeX Gyre Schola, TeX Gyre Termes Math, STIX Math, Asana Math, STIXGeneral, DejaVu Serif, DejaVu Sans, Times New Roman");
 pref("font.name.sans-serif.x-math", "Arial");
-pref("font.name.monospace.x-math", "Courier New");
+pref("font.name.monospace.x-math", "Consolas");
 pref("font.name.cursive.x-math", "Comic Sans MS");
 
 
@@ -4778,7 +4772,6 @@ pref("extensions.webextensions.keepUuidOnUninstall", false);
 pref("extensions.webextensions.identity.redirectDomain", "extensions.allizom.org");
 
 pref("extensions.webextensions.themes.enabled", false);
-pref("extensions.webextensions.themes.icons.enabled", false);
 pref("extensions.webextensions.remote", false);
 
 
