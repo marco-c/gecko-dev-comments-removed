@@ -50,8 +50,7 @@ const Observer = Class({
 
 
   handleEvent(event) {
-    emit(this, event.type, event, event.target.ownerDocument ? event.target.ownerDocument.defaultView
-                                                             : undefined);
+    emit(this, event.type, event, event.target.ownerGlobal || undefined);
   }
 });
 
