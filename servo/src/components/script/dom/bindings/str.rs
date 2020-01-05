@@ -94,7 +94,21 @@ impl ByteString {
                         false
                     }
                 },
-                32 | 9 => { 
+                32 => { 
+                    if prev == LF || prev == SPHT {
+                        prev = SPHT;
+                        true
+                    } else if prev == Other {
+                        
+                        
+                        
+                        
+                        true
+                    } else {
+                        false
+                    }
+                },
+                9 => { 
                     if prev == LF || prev == SPHT {
                         prev = SPHT;
                         true
