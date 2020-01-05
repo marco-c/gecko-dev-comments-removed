@@ -1,9 +1,9 @@
 
 
-var release = getBuildConfiguration().release;
+var release_or_beta = getBuildConfiguration().release_or_beta;
 
 function testWarn(code) {
-  if (release) {
+  if (release_or_beta) {
     
     testPass(code);
     return;
