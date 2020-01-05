@@ -1843,10 +1843,6 @@ nsPluginHost::GetSpecialType(const nsACString & aMIMEType)
     return eSpecialType_Flash;
   }
 
-  if (aMIMEType.LowerCaseEqualsASCII("application/vnd.unity")) {
-    return eSpecialType_Unity;
-  }
-
   
   
   const nsACString &noParam = Substring(aMIMEType, 0, aMIMEType.FindChar(';'));

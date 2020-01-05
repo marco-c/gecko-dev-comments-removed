@@ -42,8 +42,6 @@ enum PluginQuirks {
   
   QUIRK_FLASH_RETURN_EMPTY_DOCUMENT_ORIGIN        = 1 << 10,
   
-  QUIRK_UNITY_FIXUP_MOUSE_CAPTURE                 = 1 << 11,
-  
   QUIRK_WINLESS_HOOK_IME                          = 1 << 12,
   
   QUIRK_FLASH_HOOK_GETKEYSTATE                    = 1 << 13,
