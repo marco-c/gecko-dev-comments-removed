@@ -1447,43 +1447,44 @@ class ADBDevice(ADBCommand):
         path = posixpath.normpath(path.strip())
         self._logger.debug('chmod: path=%s, recursive=%s, mask=%s, root=%s' %
                            (path, recursive, mask, root))
-        if recursive and self._chmod_R:
+        if not recursive:
+            self.shell_output("chmod %s %s" % (mask, path),
+                              timeout=timeout, root=root)
+            return
+
+        if self._chmod_R:
             try:
                 self.shell_output("chmod -R %s %s" % (mask, path),
                                   timeout=timeout, root=root)
-            except ADBError, e:
-                if e.message.find('No such file or directory') != -1:
-                    self._logger.warning('chmod -R %s %s: Ignoring Error: %s' %
-                                         (mask, path, e.message))
-                else:
+            except ADBError as e:
+                if e.message.find('No such file or directory') == -1:
                     raise
+                self._logger.warning('chmod -R %s %s: Ignoring Error: %s' %
+                                     (mask, path, e.message))
             return
-
-        self.shell_output("chmod %s %s" % (mask, path),
-                          timeout=timeout, root=root)
-        if recursive and self.is_dir(path, timeout=timeout, root=root):
-            files = self.list_files(path, timeout=timeout, root=root)
-            for f in files:
-                entry = path + "/" + f
-                self._logger.debug('chmod: entry=%s' % entry)
-                if self.is_dir(entry, timeout=timeout, root=root):
-                    self._logger.debug('chmod: recursion entry=%s' % entry)
-                    self.chmod(entry, recursive=recursive, mask=mask,
-                               timeout=timeout, root=root)
-                elif self.is_file(entry, timeout=timeout, root=root):
-                    try:
-                        self.shell_output("chmod %s %s" % (mask, entry),
-                                          timeout=timeout, root=root)
-                        self._logger.debug('chmod: file entry=%s' % entry)
-                    except ADBError as e:
-                        if e.message.find('No such file or directory'):
-                            
-                            
-                            self._logger.warning('chmod: File %s vanished!: %s' %
-                                                 (entry, e))
-                else:
-                    self._logger.warning('chmod: entry %s does not exist' %
-                                         entry)
+        
+        
+        
+        entries = self.ls(path, recursive=recursive, timeout=timeout,
+                          root=root)
+        tmpf = None
+        chmodsh = None
+        try:
+            tmpf = tempfile.NamedTemporaryFile(delete=False)
+            for entry in entries:
+                tmpf.write('chmod %s %s\n' % (mask, entry))
+            tmpf.close()
+            chmodsh = '/data/local/tmp/%s' % os.path.basename(tmpf.name)
+            self.push(tmpf.name, chmodsh)
+            self.shell_output('chmod 777 %s' % chmodsh, timeout=timeout,
+                              root=root)
+            self.shell_output('sh -c %s' % chmodsh, timeout=timeout,
+                              root=root)
+        finally:
+            if tmpf:
+                os.unlink(tmpf.name)
+            if chmodsh:
+                self.rm(chmodsh, timeout=timeout, root=root)
 
     def exists(self, path, timeout=None, root=False):
         """Returns True if the path exists on the device.
