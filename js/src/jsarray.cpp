@@ -486,6 +486,37 @@ struct ReverseIndexComparator
     }
 };
 
+static bool
+MaybeInIteration(HandleObject obj, JSContext* cx)
+{
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    if (MOZ_LIKELY(!cx->compartment()->objectMaybeInIteration(obj)))
+        return false;
+
+    ObjectGroup* group = JSObject::getGroup(cx, obj);
+    if (MOZ_UNLIKELY(!group)) {
+        cx->recoverFromOutOfMemory();
+        return true;
+    }
+
+    if (MOZ_UNLIKELY(group->hasAllFlags(OBJECT_FLAG_ITERATED)))
+        return true;
+
+    return false;
+}
+
 bool
 js::CanonicalizeArrayLengthValue(JSContext* cx, HandleValue v, uint32_t* newLen)
 {
@@ -587,10 +618,7 @@ js::ArraySetLength(JSContext* cx, Handle<ArrayObject*> arr, HandleId id,
         
         
         
-        ObjectGroup* arrGroup = JSObject::getGroup(cx, arr);
-        if (MOZ_UNLIKELY(!arrGroup))
-            return false;
-        if (!arr->isIndexed() && !MOZ_UNLIKELY(arrGroup->hasAllFlags(OBJECT_FLAG_ITERATED))) {
+        if (!arr->isIndexed() && !MaybeInIteration(arr, cx)) {
             if (!arr->maybeCopyElementsForWrite(cx))
                 return false;
 
@@ -2205,34 +2233,6 @@ js::ArrayShiftMoveElements(JSObject* obj)
     JS_ALWAYS_TRUE(CallBoxedOrUnboxedSpecialization(functor, obj) == DenseElementResult::Success);
 }
 
-static JS::Result<bool, JS::OOM&>
-MaybeInIteration(JSContext* cx, HandleObject obj)
-{
-    
-
-
-
-
-
-
-
-    ObjectGroup* group = JSObject::getGroup(cx, obj);
-    if (MOZ_UNLIKELY(!group))
-        return cx->alreadyReportedOOM();
-
-    if (MOZ_UNLIKELY(group->hasAllFlags(OBJECT_FLAG_ITERATED)))
-        return true;
-
-    
-
-
-
-    if (obj->isDelegate())
-        return true;
-
-    return false;
-}
-
 template <JSValueType Type>
 DenseElementResult
 ArrayShiftDenseKernel(JSContext* cx, HandleObject obj, MutableHandleValue rval)
@@ -2240,11 +2240,7 @@ ArrayShiftDenseKernel(JSContext* cx, HandleObject obj, MutableHandleValue rval)
     if (ObjectMayHaveExtraIndexedProperties(obj))
         return DenseElementResult::Incomplete;
 
-    auto possiblyBeingIterated = MaybeInIteration(cx, obj);
-    if (possiblyBeingIterated.isErr())
-        return DenseElementResult::Failure;
-
-    if (possiblyBeingIterated.unwrap())
+    if (MaybeInIteration(obj, cx))
         return DenseElementResult::Incomplete;
 
     size_t initlen = GetBoxedOrUnboxedInitializedLength<Type>(obj);
@@ -2370,9 +2366,7 @@ js::array_unshift(JSContext* cx, unsigned argc, Value* vp)
                     break;
                 if (ObjectMayHaveExtraIndexedProperties(obj))
                     break;
-                bool possiblyBeingIterated;
-                JS_TRY_VAR_OR_RETURN_FALSE(cx, possiblyBeingIterated, MaybeInIteration(cx, obj));
-                if (possiblyBeingIterated)
+                if (MaybeInIteration(obj, cx))
                     break;
                 ArrayObject* aobj = &obj->as<ArrayObject>();
                 if (!aobj->lengthIsWritable())
@@ -2437,8 +2431,8 @@ js::array_unshift(JSContext* cx, unsigned argc, Value* vp)
 
 
 
-static JS::Result<bool, JS::OOM&>
-CanOptimizeForDenseStorage(JSContext* cx, HandleObject arr, uint32_t startingIndex, uint32_t count)
+static bool
+CanOptimizeForDenseStorage(HandleObject arr, uint32_t startingIndex, uint32_t count, JSContext* cx)
 {
     
     if (UINT32_MAX - startingIndex < count)
@@ -2453,9 +2447,7 @@ CanOptimizeForDenseStorage(JSContext* cx, HandleObject arr, uint32_t startingInd
         return false;
 
     
-    bool possiblyBeingIterated;
-    MOZ_TRY_VAR(possiblyBeingIterated, MaybeInIteration(cx, arr));
-    if (possiblyBeingIterated)
+    if (MaybeInIteration(arr, cx))
         return false;
 
     
@@ -2556,10 +2548,7 @@ js::array_splice_impl(JSContext* cx, unsigned argc, Value* vp, bool returnValueI
 
     RootedObject arr(cx);
     if (IsArraySpecies(cx, obj)) {
-        bool canOptimize;
-        JS_TRY_VAR_OR_RETURN_FALSE(cx, canOptimize,
-            CanOptimizeForDenseStorage(cx, obj, actualStart, actualDeleteCount));
-        if (canOptimize) {
+        if (CanOptimizeForDenseStorage(obj, actualStart, actualDeleteCount, cx)) {
             if (returnValueIsUsed) {
                 
                 arr = NewFullyAllocatedArrayTryReuseGroup(cx, obj, actualDeleteCount);
@@ -2602,10 +2591,7 @@ js::array_splice_impl(JSContext* cx, unsigned argc, Value* vp, bool returnValueI
         uint32_t targetIndex = actualStart + itemCount;
         uint32_t finalLength = len - actualDeleteCount + itemCount;
 
-        bool canOptimize;
-        JS_TRY_VAR_OR_RETURN_FALSE(cx, canOptimize,
-            CanOptimizeForDenseStorage(cx, obj, 0, len));
-        if (canOptimize) {
+        if (CanOptimizeForDenseStorage(obj, 0, len, cx)) {
             
             DenseElementResult result =
                 MoveAnyBoxedOrUnboxedDenseElements(cx, obj, targetIndex, sourceIndex,
@@ -2693,10 +2679,7 @@ js::array_splice_impl(JSContext* cx, unsigned argc, Value* vp, bool returnValueI
             }
         }
 
-        bool canOptimize;
-        JS_TRY_VAR_OR_RETURN_FALSE(cx, canOptimize,
-            CanOptimizeForDenseStorage(cx, obj, len, itemCount - actualDeleteCount));
-        if (canOptimize) {
+        if (CanOptimizeForDenseStorage(obj, len, itemCount - actualDeleteCount, cx)) {
             DenseElementResult result =
                 MoveAnyBoxedOrUnboxedDenseElements(cx, obj, actualStart + itemCount,
                                                    actualStart + actualDeleteCount,
