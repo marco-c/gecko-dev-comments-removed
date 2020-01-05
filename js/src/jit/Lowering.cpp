@@ -3641,16 +3641,24 @@ LIRGenerator::visitGetPropertyCache(MGetPropertyCache* ins)
     
     bool useConstId = id->type() == MIRType::String || id->type() == MIRType::Symbol;
 
+    
+    
+    LDefinition maybeTemp = LDefinition::BogusTemp();
+    if (EnableIonCacheIR && ins->type() == MIRType::Double)
+        maybeTemp = temp();
+
     if (ins->type() == MIRType::Value) {
         LGetPropertyCacheV* lir =
             new(alloc()) LGetPropertyCacheV(useRegister(ins->object()),
-                                            useBoxOrTypedOrConstant(id, useConstId));
+                                            useBoxOrTypedOrConstant(id, useConstId),
+                                            maybeTemp);
         defineBox(lir, ins);
         assignSafepoint(lir, ins);
     } else {
         LGetPropertyCacheT* lir =
             new(alloc()) LGetPropertyCacheT(useRegister(ins->object()),
-                                            useBoxOrTypedOrConstant(id, useConstId));
+                                            useBoxOrTypedOrConstant(id, useConstId),
+                                            maybeTemp);
         define(lir, ins);
         assignSafepoint(lir, ins);
     }
