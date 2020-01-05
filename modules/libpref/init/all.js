@@ -578,7 +578,6 @@ pref("media.mediasource.webm.enabled", true);
 pref("media.mediasource.webm.audio.enabled", true);
 
 
-pref("media.format-reader.ogg", true);
 pref("media.flac.enabled", true);
 pref("media.ogg.flac.enabled", true);
 
