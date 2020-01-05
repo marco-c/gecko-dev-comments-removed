@@ -221,7 +221,7 @@ BrowserAction.prototype = {
           
           
           if (this.pendingPopup) {
-            let {node} = this.widget.forWindow(window);
+            let node = window.gBrowser && this.widget.forWindow(window).node;
             if (isAncestorOrSelf(node, event.originalTarget)) {
               this.pendingPopupTimeout = setTimeout(() => this.clearPopup(),
                                                     POPUP_PRELOAD_TIMEOUT_MS);
