@@ -113,8 +113,6 @@ public:
     }
 #endif
 
-    static bool UseFcFontList() { return sUseFcFontList; }
-
     bool UseImageOffscreenSurfaces();
 
     virtual gfxImageFormat GetOffscreenFormat() override;
@@ -158,10 +156,6 @@ private:
 #ifdef MOZ_X11
     Display* mCompositorDisplay;
 #endif
-
-    
-    
-    static bool sUseFcFontList;
 };
 
 #endif 
