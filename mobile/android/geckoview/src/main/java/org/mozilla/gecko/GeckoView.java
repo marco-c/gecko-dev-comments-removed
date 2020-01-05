@@ -14,7 +14,9 @@ import org.mozilla.gecko.annotation.ReflectionTarget;
 import org.mozilla.gecko.annotation.WrapForJNI;
 import org.mozilla.gecko.gfx.LayerView;
 import org.mozilla.gecko.mozglue.JNIObject;
+import org.mozilla.gecko.util.BundleEventListener;
 import org.mozilla.gecko.util.EventCallback;
+import org.mozilla.gecko.util.GeckoBundle;
 
 import android.app.Activity;
 import android.content.Context;
@@ -39,10 +41,12 @@ public class GeckoView extends LayerView
     private static final String DEFAULT_SHARED_PREFERENCES_FILE = "GeckoView";
     private static final String LOGTAG = "GeckoView";
 
+    private static final boolean DEBUG = false;
+
     private final EventDispatcher eventDispatcher = new EventDispatcher();
 
     private ChromeDelegate mChromeDelegate;
-    private ContentDelegate mContentDelegate;
+     ContentListener mContentListener;
 
     private InputConnectionListener mInputConnectionListener;
 
@@ -108,8 +112,31 @@ public class GeckoView extends LayerView
             };
     }
 
+    private class Listener implements BundleEventListener {
+         void registerListeners() {
+            getEventDispatcher().registerUiThreadListener(this,
+                "GeckoView:DOMTitleChanged",
+                null);
+        }
+
+        @Override
+        public void handleMessage(final String event, final GeckoBundle message,
+                                  final EventCallback callback) {
+            if (DEBUG) {
+                Log.d(LOGTAG, "handleMessage: event = " + event);
+            }
+
+            if ("GeckoView:DOMTitleChanged".equals(event)) {
+                if (mContentListener != null) {
+                    mContentListener.onTitleChanged(GeckoView.this, message.getString("title"));
+                }
+            }
+        }
+    }
+
     protected Window window;
     private boolean stateSaved;
+    private final Listener listener = new Listener();
 
     public GeckoView(Context context) {
         super(context);
@@ -137,6 +164,7 @@ public class GeckoView extends LayerView
         GeckoAppShell.setLayerView(this);
 
         initializeView();
+        listener.registerListeners();
     }
 
     @Override
@@ -344,8 +372,16 @@ public class GeckoView extends LayerView
 
 
 
-    public void setContentDelegate(ContentDelegate content) {
-        mContentDelegate = content;
+    public void setContentListener(ContentListener content) {
+        mContentListener = content;
+    }
+
+    
+
+
+
+    public ContentListener getContentListener() {
+        return mContentListener;
     }
 
     public static void setGeckoInterface(final BaseGeckoInterface geckoInterface) {
@@ -435,43 +471,13 @@ public class GeckoView extends LayerView
         public void onDebugRequest(GeckoView view, GeckoView.PromptResult result);
     }
 
-    public interface ContentDelegate {
-        
-
-
-
-
-        public void onPageStart(GeckoView view, String url);
-
-        
-
-
-
-
-        public void onPageStop(GeckoView view, boolean success);
-
-        
-
-
-
-
-        public void onPageShow(GeckoView view);
-
+    public interface ContentListener {
         
 
 
 
 
 
-        public void onReceivedTitle(GeckoView view, String title);
-
-        
-
-
-
-
-
-
-        public void onReceivedFavicon(GeckoView view, String url, int size);
+        public void onTitleChanged(GeckoView view, String title);
     }
 }
