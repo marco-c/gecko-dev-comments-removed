@@ -104,7 +104,7 @@ WebRenderImageLayer::RenderLayer(wr::DisplayListBuilder& aBuilder)
     
     
     Holder holder(this);
-    Manager()->AllocPipelineId()
+    WrManager()->AllocPipelineId()
       ->Then(AbstractThread::GetCurrent(), __func__,
       [holder] (const wr::PipelineId& aPipelineId) {
         holder->mPipelineIdRequest.Complete();
@@ -149,7 +149,7 @@ WebRenderImageLayer::RenderLayer(wr::DisplayListBuilder& aBuilder)
     
     WrImageKey key = GetImageKey();
     WrBridge()->AddWebRenderParentCommand(OpAddExternalImage(mExternalImageId.value(), key));
-    Manager()->AddImageKeyForDiscard(key);
+    WrManager()->AddImageKeyForDiscard(key);
     mKey = Some(key);
   } else {
     

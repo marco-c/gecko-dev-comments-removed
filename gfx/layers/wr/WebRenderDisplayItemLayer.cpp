@@ -52,7 +52,7 @@ WebRenderDisplayItemLayer::RenderLayer(wr::DisplayListBuilder& aBuilder)
   } else {
     
     
-    WebRenderLayerManager* manager = static_cast<WebRenderLayerManager*>(Manager());
+    WebRenderLayerManager* manager = WrManager();
     MOZ_ASSERT(manager);
 
     
