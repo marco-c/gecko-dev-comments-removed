@@ -2514,15 +2514,26 @@ HTMLEditRules::InsertBRIfNeeded(Selection* aSelection)
 
 
 
+
 EditorDOMPoint
 HTMLEditRules::GetGoodSelPointForNode(nsINode& aNode,
                                       nsIEditor::EDirection aAction)
 {
+  MOZ_ASSERT(aAction == nsIEditor::eNext ||
+             aAction == nsIEditor::eNextWord ||
+             aAction == nsIEditor::ePrevious ||
+             aAction == nsIEditor::ePreviousWord ||
+             aAction == nsIEditor::eToBeginningOfLine ||
+             aAction == nsIEditor::eToEndOfLine);
+
+  bool isPreviousAction = (aAction == nsIEditor::ePrevious ||
+                           aAction == nsIEditor::ePreviousWord ||
+                           aAction == nsIEditor::eToBeginningOfLine);
+
   NS_ENSURE_TRUE(mHTMLEditor, EditorDOMPoint());
   if (aNode.GetAsText() || mHTMLEditor->IsContainer(&aNode) ||
       NS_WARN_IF(!aNode.GetParentNode())) {
-    return EditorDOMPoint(&aNode,
-                          aAction == nsIEditor::ePrevious ? aNode.Length() : 0);
+    return EditorDOMPoint(&aNode, isPreviousAction ? aNode.Length() : 0);
   }
 
   EditorDOMPoint ret;
@@ -2530,8 +2541,7 @@ HTMLEditRules::GetGoodSelPointForNode(nsINode& aNode,
   ret.offset = ret.node ? ret.node->IndexOf(&aNode) : -1;
   NS_ENSURE_TRUE(mHTMLEditor, EditorDOMPoint());
   if ((!aNode.IsHTMLElement(nsGkAtoms::br) ||
-       mHTMLEditor->IsVisBreak(&aNode)) &&
-      aAction == nsIEditor::ePrevious) {
+       mHTMLEditor->IsVisBreak(&aNode)) && isPreviousAction) {
     ret.offset++;
   }
   return ret;
@@ -4842,7 +4852,8 @@ HTMLEditRules::CheckForEmptyBlock(nsINode* aStartNode,
         
       }
     } else {
-      if (aAction == nsIEditor::eNext) {
+      if (aAction == nsIEditor::eNext || aAction == nsIEditor::eNextWord ||
+          aAction == nsIEditor::eToEndOfLine) {
         
         nsCOMPtr<nsIContent> nextNode = htmlEditor->GetNextNode(blockParent,
                                                                 offset + 1, true);
@@ -4855,7 +4866,9 @@ HTMLEditRules::CheckForEmptyBlock(nsINode* aStartNode,
           nsresult rv = aSelection->Collapse(blockParent, offset + 1);
           NS_ENSURE_SUCCESS(rv, rv);
         }
-      } else {
+      } else if (aAction == nsIEditor::ePrevious ||
+                 aAction == nsIEditor::ePreviousWord ||
+                 aAction == nsIEditor::eToBeginningOfLine) {
         
         nsCOMPtr<nsIContent> priorNode = htmlEditor->GetPriorNode(blockParent,
                                                                   offset,
@@ -4868,6 +4881,8 @@ HTMLEditRules::CheckForEmptyBlock(nsINode* aStartNode,
           nsresult rv = aSelection->Collapse(blockParent, offset + 1);
           NS_ENSURE_SUCCESS(rv, rv);
         }
+      } else {
+        NS_RUNTIMEABORT("CheckForEmptyBlock doesn't support this action yet");
       }
     }
     NS_ENSURE_STATE(htmlEditor);
