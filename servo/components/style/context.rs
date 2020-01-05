@@ -65,13 +65,7 @@ pub struct SharedStyleContext {
     pub viewport_size: Size2D<Au>,
 
     
-    pub screen_size_changed: bool,
-
-    
     pub stylist: Arc<Stylist>,
-
-    
-    pub goal: ReflowGoal,
 
     
     pub running_animations: Arc<RwLock<HashMap<OpaqueNode, Vec<Animation>>>>,
