@@ -634,13 +634,6 @@ public:
 #endif 
 
   
-  
-  InfallibleTArray<mozilla::dom::FontFamilyListEntry>&
-  SystemFontFamilyList() {
-    return mFontFamilies;
-  }
-
-  
 
 
 
@@ -664,11 +657,6 @@ private:
   nsTHashtable<nsPtrHashKey<nsIObserver>> mIdleObservers;
 
   InfallibleTArray<nsString> mAvailableDictionaries;
-
-  
-  
-  
-  InfallibleTArray<mozilla::dom::FontFamilyListEntry> mFontFamilies;
 
   
 

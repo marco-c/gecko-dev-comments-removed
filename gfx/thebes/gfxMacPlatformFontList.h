@@ -108,17 +108,6 @@ public:
                           gfxFontStyle &aFontStyle,
                           float aDevPixPerCSSPixel);
 
-    
-    
-    enum FontFamilyEntryType {
-        kStandardFontFamily = 0, 
-        kHiddenSystemFontFamily = 1, 
-        kTextSizeSystemFontFamily = 2, 
-        kDisplaySizeSystemFontFamily = 3 
-    };
-    void GetSystemFontFamilyList(
-        InfallibleTArray<mozilla::dom::FontFamilyListEntry>* aList);
-
 protected:
     virtual gfxFontFamily*
     GetDefaultFontForPlatform(const gfxFontStyle* aStyle) override;
@@ -164,8 +153,6 @@ private:
     
     
     void AddFamily(CFStringRef aFamily);
-
-    void AddFamily(const nsAString& aFamilyName, bool aSystemFont);
 
 #ifdef MOZ_BUNDLED_FONTS
     void ActivateBundledFonts();

@@ -62,9 +62,6 @@ BackendTypeBit(BackendType b)
 }
 
 } 
-namespace dom {
-class FontFamilyListEntry;
-}
 } 
 
 #define MOZ_PERFORMANCE_WARNING(module, ...) \
@@ -320,15 +317,6 @@ public:
     virtual nsresult GetFontList(nsIAtom *aLangGroup,
                                  const nsACString& aGenericFamily,
                                  nsTArray<nsString>& aListOfFonts);
-
-    
-
-
-
-
-    virtual void GetSystemFontFamilyList(
-      InfallibleTArray<mozilla::dom::FontFamilyListEntry>* aFontFamilies)
-    { }
 
     
 
