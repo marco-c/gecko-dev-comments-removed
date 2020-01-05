@@ -35,6 +35,8 @@ use string_cache::Atom;
 use task_source::TaskSource;
 use time::{self, Timespec, Duration};
 use url::Url;
+#[cfg(not(any(target_os = "android", target_arch = "arm", target_arch = "aarch64")))]
+use video_metadata;
 
 struct HTMLMediaElementContext {
     
@@ -75,12 +77,11 @@ impl AsyncResponseListener for HTMLMediaElementContext {
         }
     }
 
-    fn data_available(&mut self, payload: Vec<u8>) {
+    fn data_available(&mut self, mut payload: Vec<u8>) {
         if self.ignore_response {
             return;
         }
 
-        let mut payload = payload;
         self.data.append(&mut payload);
 
         let elem = self.elem.root();
@@ -88,11 +89,7 @@ impl AsyncResponseListener for HTMLMediaElementContext {
         
         
         if !self.have_metadata {
-            
-
-            
-            elem.change_ready_state(HAVE_METADATA);
-            self.have_metadata = true;
+            self.check_metadata(&elem);
         } else {
             elem.change_ready_state(HAVE_CURRENT_DATA);
         }
@@ -162,6 +159,46 @@ impl HTMLMediaElementContext {
             ignore_response: false,
         }
     }
+
+    #[cfg(not(any(target_os = "android", target_arch = "arm", target_arch = "aarch64")))]
+    fn check_metadata(&mut self, elem: &HTMLMediaElement) {
+        match video_metadata::get_format_from_slice(&self.data) {
+            Ok(meta) => {
+                let dur = meta.duration.unwrap_or(::std::time::Duration::new(0, 0));
+                *elem.video.borrow_mut() = Some(VideoMedia {
+                    format: format!("{:?}", meta.format),
+                    duration: Duration::seconds(dur.as_secs() as i64) +
+                              Duration::nanoseconds(dur.subsec_nanos() as i64),
+                    width: meta.size.width,
+                    height: meta.size.height,
+                    video: meta.video,
+                    audio: meta.audio,
+                });
+                
+                elem.change_ready_state(HAVE_METADATA);
+                self.have_metadata = true;
+            }
+            _ => {}
+        }
+    }
+
+    #[cfg(any(target_os = "android", target_arch = "arm", target_arch = "aarch64"))]
+    fn check_metadata(&mut self, elem: &HTMLMediaElement) {
+        
+        elem.change_ready_state(HAVE_METADATA);
+        self.have_metadata = true;
+    }
+}
+
+#[derive(JSTraceable, HeapSizeOf)]
+pub struct VideoMedia {
+    format: String,
+    #[ignore_heap_size_of = "defined in time"]
+    duration: Duration,
+    width: u32,
+    height: u32,
+    video: String,
+    audio: Option<String>,
 }
 
 #[dom_struct]
@@ -175,6 +212,7 @@ pub struct HTMLMediaElement {
     error: MutNullableHeap<JS<MediaError>>,
     paused: Cell<bool>,
     autoplaying: Cell<bool>,
+    video: DOMRefCell<Option<VideoMedia>>,
 }
 
 impl HTMLMediaElement {
@@ -192,6 +230,7 @@ impl HTMLMediaElement {
             error: Default::default(),
             paused: Cell::new(true),
             autoplaying: Cell::new(true),
+            video: DOMRefCell::new(None),
         }
     }
 
