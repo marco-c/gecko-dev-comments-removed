@@ -12,25 +12,37 @@ var FindHelper = {
 
   
 
-  observe: function(aMessage, aTopic, aData) {
-    switch(aTopic) {
+  onEvent: function(event, data, callback) {
+    switch (event) {
       case "FindInPage:Opened": {
         this._findOpened();
         break;
       }
 
-      case "FindInPage:Closed":
+      case "FindInPage:Closed": {
         this._uninit();
         this._findClosed();
         break;
-    }
-  },
+      }
 
-  onEvent: function(event, message, callback) {
-    switch (event) {
       case "Tab:Selected": {
         
         this._uninit();
+        break;
+      }
+
+      case "FindInPage:Find": {
+        this.doFind(data.searchString);
+        break;
+      }
+
+      case "FindInPage:Next": {
+        this.findAgain(data.searchString, false);
+        break;
+      }
+
+      case "FindInPage:Prev": {
+        this.findAgain(data.searchString, true);
         break;
       }
     }
@@ -42,9 +54,11 @@ var FindHelper = {
 
 
   _findOpened: function() {
-    Messaging.addListener(data => this.doFind(data), "FindInPage:Find");
-    Messaging.addListener(data => this.findAgain(data, false), "FindInPage:Next");
-    Messaging.addListener(data => this.findAgain(data, true), "FindInPage:Prev");
+    GlobalEventDispatcher.registerListener(this, [
+      "FindInPage:Find",
+      "FindInPage:Next",
+      "FindInPage:Prev",
+    ]);
 
     
     this._init();
@@ -104,9 +118,11 @@ var FindHelper = {
 
 
   _findClosed: function() {
-    Messaging.removeListener("FindInPage:Find");
-    Messaging.removeListener("FindInPage:Next");
-    Messaging.removeListener("FindInPage:Prev");
+    GlobalEventDispatcher.unregisterListener(this, [
+      "FindInPage:Find",
+      "FindInPage:Next",
+      "FindInPage:Prev",
+    ]);
   },
 
   
@@ -162,7 +178,7 @@ var FindHelper = {
   onMatchesCountResult: function(result) {
     this._result = result;
 
-    Messaging.sendRequest(Object.assign({
+    GlobalEventDispatcher.sendRequest(Object.assign({
       type: "FindInPage:MatchesCountResult"
     }, this._result));
   },

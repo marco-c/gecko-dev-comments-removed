@@ -4,12 +4,11 @@
 
 package org.mozilla.gecko;
 
-import org.mozilla.gecko.util.GeckoEventListener;
-import org.mozilla.gecko.util.GeckoRequest;
+import org.mozilla.gecko.util.BundleEventListener;
+import org.mozilla.gecko.util.EventCallback;
+import org.mozilla.gecko.util.GeckoBundle;
 import org.mozilla.gecko.util.NativeJSObject;
 import org.mozilla.gecko.util.ThreadUtils;
-
-import org.json.JSONObject;
 
 import android.content.Context;
 import android.text.Editable;
@@ -24,12 +23,13 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-public class FindInPageBar extends LinearLayout implements TextWatcher, View.OnClickListener, GeckoEventListener  {
+public class FindInPageBar extends LinearLayout
+        implements TextWatcher, View.OnClickListener, BundleEventListener {
     private static final String LOGTAG = "GeckoFindInPageBar";
     private static final String REQUEST_ID = "FindInPageBar";
 
     private final Context mContext;
-    private CustomEditText mFindText;
+     CustomEditText mFindText;
     private TextView mStatusText;
     private boolean mInflated;
 
@@ -67,9 +67,8 @@ public class FindInPageBar extends LinearLayout implements TextWatcher, View.OnC
         mStatusText = (TextView) content.findViewById(R.id.find_status);
 
         mInflated = true;
-        EventDispatcher.getInstance().registerGeckoThreadListener(this,
-            "FindInPage:MatchesCountResult",
-            "TextSelection:Data");
+        EventDispatcher.getInstance().registerUiThreadListener(this,
+            "FindInPage:MatchesCountResult");
     }
 
     public void show() {
@@ -80,8 +79,20 @@ public class FindInPageBar extends LinearLayout implements TextWatcher, View.OnC
         mFindText.requestFocus();
 
         
-        GeckoAppShell.notifyObservers("TextSelection:Get", REQUEST_ID);
-        GeckoAppShell.notifyObservers("FindInPage:Opened", null);
+
+        GeckoApp.getEventDispatcher().dispatch("TextSelection:Get", null, new EventCallback() {
+            @Override
+            public void sendSuccess(final Object result) {
+                onTextSelectionData((String) result);
+            }
+
+            @Override
+            public void sendError(final Object error) {
+                Log.e(LOGTAG, "TextSelection:Get failed: " + error);
+            }
+        });
+
+        EventDispatcher.getInstance().dispatch("FindInPage:Opened", null);
     }
 
     public void hide() {
@@ -100,7 +111,7 @@ public class FindInPageBar extends LinearLayout implements TextWatcher, View.OnC
 
         
         setVisibility(GONE);
-        GeckoAppShell.notifyObservers("FindInPage:Closed", null);
+        EventDispatcher.getInstance().dispatch("FindInPage:Closed", null);
     }
 
     private InputMethodManager getInputMethodManager(View view) {
@@ -112,9 +123,8 @@ public class FindInPageBar extends LinearLayout implements TextWatcher, View.OnC
         if (!mInflated) {
             return;
         }
-        EventDispatcher.getInstance().unregisterGeckoThreadListener(this,
-            "FindInPage:MatchesCountResult",
-            "TextSelection:Data");
+        EventDispatcher.getInstance().unregisterUiThreadListener(this,
+            "FindInPage:MatchesCountResult");
     }
 
     private void onMatchesCountResult(final int total, final int current, final int limit, final String searchString) {
@@ -133,13 +143,8 @@ public class FindInPageBar extends LinearLayout implements TextWatcher, View.OnC
     }
 
     private void updateResult(final String statusText) {
-        ThreadUtils.postToUiThread(new Runnable() {
-            @Override
-            public void run() {
-                mStatusText.setVisibility(statusText.isEmpty() ? View.GONE : View.VISIBLE);
-                mStatusText.setText(statusText);
-            }
-        });
+        mStatusText.setVisibility(statusText.isEmpty() ? View.GONE : View.VISIBLE);
+        mStatusText.setText(statusText);
     }
 
     
@@ -185,33 +190,23 @@ public class FindInPageBar extends LinearLayout implements TextWatcher, View.OnC
         }
     }
 
-    
-
-    @Override
-    public void handleMessage(String event, JSONObject message) {
-        if (event.equals("FindInPage:MatchesCountResult")) {
-            onMatchesCountResult(message.optInt("total", 0),
-                message.optInt("current", 0),
-                message.optInt("limit", 0),
-                message.optString("searchString"));
+    @Override 
+    public void handleMessage(final String event, final GeckoBundle message,
+                              final EventCallback callback) {
+        if ("FindInPage:MatchesCountResult".equals(event)) {
+            onMatchesCountResult(message.getInt("total", 0),
+                message.getInt("current", 0),
+                message.getInt("limit", 0),
+                message.getString("searchString"));
             return;
         }
+    }
 
-        if (!event.equals("TextSelection:Data") || !REQUEST_ID.equals(message.optString("requestId"))) {
-            return;
-        }
-
-        final String text = message.optString("text");
-
+     void onTextSelectionData(final String text) {
         
         if (!TextUtils.isEmpty(text)) {
             
-            ThreadUtils.postToUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    mFindText.setText(text);
-                }
-            });
+            mFindText.setText(text);
             return;
         }
 
@@ -237,20 +232,8 @@ public class FindInPageBar extends LinearLayout implements TextWatcher, View.OnC
 
 
     private void sendRequestToFinderHelper(final String request, final String searchString) {
-        GeckoAppShell.sendRequestToGecko(new GeckoRequest(request, searchString) {
-            @Override
-            public void onResponse(NativeJSObject nativeJSObject) {
-                
-                
-            }
-
-            @Override
-            public void onError(NativeJSObject error) {
-                
-                Log.d(LOGTAG, "No response from Gecko on request to match string: [" +
-                    searchString + "]");
-                updateResult("");
-            }
-        });
+        final GeckoBundle data = new GeckoBundle(1);
+        data.putString("searchString", searchString);
+        EventDispatcher.getInstance().dispatch(request, data);
     }
 }
