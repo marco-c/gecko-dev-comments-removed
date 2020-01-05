@@ -103,6 +103,7 @@ use style::values::specified::{self, CSSColor, CSSRGBA, LengthOrPercentage};
 pub struct Element {
     node: Node,
     local_name: Atom,
+    tag_name: TagName,
     namespace: Namespace,
     prefix: Option<DOMString>,
     attrs: DOMRefCell<Vec<JS<Attr>>>,
@@ -165,6 +166,7 @@ impl Element {
         Element {
             node: Node::new_inherited(document),
             local_name: local_name,
+            tag_name: TagName::new(),
             namespace: namespace,
             prefix: prefix,
             attrs: DOMRefCell::new(vec![]),
@@ -1367,17 +1369,20 @@ impl ElementMethods for Element {
 
     // https://dom.spec.whatwg.org/#dom-element-tagname
     fn TagName(&self) -> DOMString {
-        let qualified_name = match self.prefix {
-            Some(ref prefix) => {
-                Cow::Owned(format!("{}:{}", &**prefix, &*self.local_name))
-            },
-            None => Cow::Borrowed(&*self.local_name)
-        };
-        DOMString::from(if self.html_element_in_html_document() {
-            qualified_name.to_ascii_uppercase()
-        } else {
-            qualified_name.into_owned()
-        })
+        let name = self.tag_name.or_init(|| {
+            let qualified_name = match self.prefix {
+                Some(ref prefix) => {
+                    Cow::Owned(format!("{}:{}", &**prefix, &*self.local_name))
+                },
+                None => Cow::Borrowed(&*self.local_name)
+            };
+            if self.html_element_in_html_document() {
+                Atom::from(qualified_name.to_ascii_uppercase())
+            } else {
+                Atom::from(qualified_name)
+            }
+        });
+        DOMString::from(&*name)
     }
 
     // https://dom.spec.whatwg.org/#dom-element-id
@@ -2219,6 +2224,14 @@ impl VirtualMethods for Element {
             }
         }
     }
+
+    fn adopting_steps(&self, old_doc: &Document) {
+        self.super_type().unwrap().adopting_steps(old_doc);
+
+        if document_from_node(self).is_html_document() != old_doc.is_html_document() {
+            self.tag_name.clear();
+        }
+    }
 }
 
 impl<'a> ::selectors::MatchAttrGeneric for Root<Element> {
@@ -2656,12 +2669,12 @@ impl Element {
 
 #[derive(Clone, Copy, PartialEq)]
 pub enum AttributeMutation<'a> {
-    
-    
+    /// The attribute is set, keep track of old value.
+    /// https://dom.spec.whatwg.org/#attribute-is-set
     Set(Option<&'a AttrValue>),
 
-    
-    
+    /// The attribute is removed.
+    /// https://dom.spec.whatwg.org/#attribute-is-removed
     Removed,
 }
 
@@ -2674,7 +2687,7 @@ impl<'a> AttributeMutation<'a> {
     }
 }
 
-
+/// Thread-safe wrapper for ElementFlags set during selector matching
 #[derive(JSTraceable, HeapSizeOf)]
 struct AtomicElementFlags(AtomicUsize);
 
@@ -2689,5 +2702,40 @@ impl AtomicElementFlags {
 
     fn insert(&self, flags: ElementFlags) {
         self.0.fetch_or(flags.bits() as usize, Ordering::Relaxed);
+    }
+}
+
+/// A holder for an element's "tag name", which will be lazily
+
+
+#[derive(JSTraceable, HeapSizeOf)]
+struct TagName {
+    ptr: DOMRefCell<Option<Atom>>,
+}
+
+impl TagName {
+    fn new() -> TagName {
+        TagName { ptr: DOMRefCell::new(None) }
+    }
+
+    
+    
+    fn or_init<F>(&self, cb: F) -> Atom
+        where F: FnOnce() -> Atom
+    {
+        match &mut *self.ptr.borrow_mut() {
+            &mut Some(ref name) => name.clone(),
+            ptr => {
+                let name = cb();
+                *ptr = Some(name.clone());
+                name
+            }
+        }
+    }
+
+    
+    
+    fn clear(&self) {
+        *self.ptr.borrow_mut() = None;
     }
 }
