@@ -17,12 +17,27 @@ import android.widget.FrameLayout;
 import org.mozilla.gecko.R;
 import org.mozilla.gecko.db.BrowserContract;
 import org.mozilla.gecko.home.HomePager;
-import org.mozilla.gecko.home.activitystream.model.TopSite;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class TopSitesPageAdapter extends RecyclerView.Adapter<TopSitesCard> {
+    static final class TopSite {
+        public final long id;
+        public final String url;
+        public final String title;
+        @Nullable public final Boolean isBookmarked;
+        public final int type;
+
+        TopSite(long id, String url, String title, @Nullable Boolean isBookmarked, int type) {
+            this.id = id;
+            this.url = url;
+            this.title = title;
+            this.isBookmarked = isBookmarked;
+            this.type = type;
+        }
+    }
+
     private List<TopSite> topSites;
     private int tiles;
     private int tilesWidth;
@@ -50,6 +65,8 @@ public class TopSitesPageAdapter extends RecyclerView.Adapter<TopSitesCard> {
 
 
 
+
+
     public void swapCursor(Cursor cursor, int startIndex) {
         topSites.clear();
 
@@ -60,7 +77,19 @@ public class TopSitesPageAdapter extends RecyclerView.Adapter<TopSitesCard> {
         for (int i = 0; i < tiles && startIndex + i < cursor.getCount(); i++) {
             cursor.moveToPosition(startIndex + i);
 
-            topSites.add(TopSite.fromCursor(cursor));
+            
+            
+            final long id = cursor.getLong(cursor.getColumnIndexOrThrow(BrowserContract.Combined.HISTORY_ID));
+            final String url = cursor.getString(cursor.getColumnIndexOrThrow(BrowserContract.Combined.URL));
+            final String title = cursor.getString(cursor.getColumnIndexOrThrow(BrowserContract.Combined.TITLE));
+            final int type = cursor.getInt(cursor.getColumnIndexOrThrow(BrowserContract.TopSites.TYPE));
+
+            
+            Boolean isBookmarked = null;
+            if (type != BrowserContract.TopSites.TYPE_PINNED) {
+                isBookmarked = !cursor.isNull(cursor.getColumnIndexOrThrow(BrowserContract.Combined.BOOKMARK_ID));
+            }
+            topSites.add(new TopSite(id, url, title, isBookmarked, type));
         }
 
         notifyDataSetChanged();
@@ -94,6 +123,6 @@ public class TopSitesPageAdapter extends RecyclerView.Adapter<TopSitesCard> {
     @Override
     @UiThread
     public long getItemId(int position) {
-        return topSites.get(position).getId();
+        return topSites.get(position).id;
     }
 }
