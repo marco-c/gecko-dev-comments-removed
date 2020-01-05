@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+async function f() {
+    let
+    await 0;
+}
+
+reportCompare(true, f instanceof Function);

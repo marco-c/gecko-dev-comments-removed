@@ -7245,6 +7245,11 @@ Parser<ParseHandler>::nextTokenContinuesLetDeclaration(TokenKind next, YieldHand
         return yieldHandling == YieldIsName;
 
     
+    
+    if (next == TOK_AWAIT)
+        return !awaitIsKeyword();
+
+    
     if (TokenKindIsPossibleIdentifier(next)) {
         
         
