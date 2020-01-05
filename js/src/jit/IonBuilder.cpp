@@ -10797,6 +10797,15 @@ IonBuilder::getPropTryCommonGetter(bool* emitted, MDefinition* obj, PropertyName
                 if (!obj)
                     return abort(AbortReason::Alloc);
             }
+        } else if (inspector->megamorphicGetterSetterFunction(pc,  true,
+                                                              &commonGetter))
+        {
+            
+            if (!testCommonGetterSetter(objTypes, name,  true,
+                                        commonGetter, &guard))
+            {
+                return Ok();
+            }
         } else {
             
             return Ok();
@@ -11348,6 +11357,15 @@ IonBuilder::setPropTryCommonSetter(bool* emitted, MDefinition* obj,
                                                     isOwnProperty);
                 if (!obj)
                     return abort(AbortReason::Alloc);
+            }
+        } else if (inspector->megamorphicGetterSetterFunction(pc,  false,
+                                                              &commonSetter))
+        {
+            
+            if (!testCommonGetterSetter(objTypes, name,  false,
+                                        commonSetter, &guard))
+            {
+                return Ok();
             }
         } else {
             

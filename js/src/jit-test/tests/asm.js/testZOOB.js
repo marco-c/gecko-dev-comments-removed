@@ -5,6 +5,11 @@ load(libdir + "asserts.js");
 if (!isAsmJSCompilationAvailable())
     quit();
 
+
+
+if (getJitCompilerOptions()["ion.warmup.trigger"] < 5)
+    setJitCompilerOption("ion.warmup.trigger", 5);
+
 var ab = new ArrayBuffer(BUF_MIN);
 
 

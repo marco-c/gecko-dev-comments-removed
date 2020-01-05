@@ -51,6 +51,7 @@ namespace jit {
     _(LoadDenseElementHoleExistsResult)   \
     _(LoadUnboxedArrayElementResult)      \
     _(LoadTypedElementResult)             \
+    _(MegamorphicLoadSlotByValueResult)   \
     _(WrapResult)
 
 
