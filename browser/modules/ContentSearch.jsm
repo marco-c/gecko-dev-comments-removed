@@ -533,7 +533,7 @@ this.ContentSearch = {
         
         xhr.send();
       } catch (err) {
-        return Promise.resolve(null);
+        resolve(null);
       }
     });
   },
