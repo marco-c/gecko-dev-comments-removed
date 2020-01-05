@@ -89,7 +89,7 @@ impl NamedNodeMapMethods for NamedNodeMap {
     
     fn SupportedPropertyNames(&self) -> Vec<DOMString> {
         self.owner.attrs().iter().map(|attr| {
-            DOMString((**attr.name()).to_owned())
+            DOMString::from(&**attr.name()) 
         }).collect()
     }
 }

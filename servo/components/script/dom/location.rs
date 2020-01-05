@@ -135,7 +135,7 @@ impl LocationMethods for Location {
 
     
     fn Stringifier(&self) -> DOMString {
-        DOMString(self.Href().0)
+        DOMString::from(self.Href().0)
     }
 
     

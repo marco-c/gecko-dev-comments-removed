@@ -119,7 +119,7 @@ impl URLSearchParamsMethods for URLSearchParams {
 
     
     fn Stringifier(&self) -> DOMString {
-        DOMString(self.serialize(None))
+        DOMString::from(self.serialize(None))
     }
 }
 

@@ -66,7 +66,7 @@ impl TextEncoder {
 impl TextEncoderMethods for TextEncoder {
     
     fn Encoding(&self) -> DOMString {
-        DOMString(self.encoder.name().to_owned())
+        DOMString::from(self.encoder.name())
     }
 
     #[allow(unsafe_code)]

@@ -9,7 +9,6 @@ use dom::event::{Event, EventBubbles, EventCancelable};
 use dom::eventtarget::EventTarget;
 use dom::mouseevent::MouseEvent;
 use dom::node::window_from_node;
-use std::borrow::ToOwned;
 use util::str::DOMString;
 
 
@@ -47,7 +46,7 @@ pub trait Activatable {
         
         let win = window_from_node(element);
         let target = element.upcast();
-        let mouse = MouseEvent::new(win.r(), DOMString("click".to_owned()),
+        let mouse = MouseEvent::new(win.r(), DOMString::from("click"),
                                     EventBubbles::DoesNotBubble, EventCancelable::NotCancelable, Some(win.r()), 1,
                                     0, 0, 0, 0, ctrlKey, shiftKey, altKey, metaKey,
                                     0, None);

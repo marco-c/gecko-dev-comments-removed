@@ -4,7 +4,6 @@
 
 use ipc_channel::ipc::IpcSender;
 use url::Url;
-use util::str::DOMString;
 
 #[derive(Copy, Clone, Deserialize, Serialize, HeapSizeOf)]
 pub enum StorageType {
@@ -19,19 +18,19 @@ pub enum StorageTaskMsg {
     Length(IpcSender<usize>, Url, StorageType),
 
     
-    Key(IpcSender<Option<DOMString>>, Url, StorageType, u32),
+    Key(IpcSender<Option<String>>, Url, StorageType, u32),
 
     
-    Keys(IpcSender<Vec<DOMString>>, Url, StorageType),
+    Keys(IpcSender<Vec<String>>, Url, StorageType),
 
     
-    GetItem(IpcSender<Option<DOMString>>, Url, StorageType, DOMString),
+    GetItem(IpcSender<Option<String>>, Url, StorageType, String),
 
     
-    SetItem(IpcSender<Result<(bool, Option<DOMString>), ()>>, Url, StorageType, DOMString, DOMString),
+    SetItem(IpcSender<Result<(bool, Option<String>), ()>>, Url, StorageType, String, String),
 
     
-    RemoveItem(IpcSender<Option<DOMString>>, Url, StorageType, DOMString),
+    RemoveItem(IpcSender<Option<String>>, Url, StorageType, String),
 
     
     Clear(IpcSender<bool>, Url, StorageType),

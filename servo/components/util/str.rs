@@ -24,11 +24,20 @@ use std::slice;
 use std::str::{CharIndices, FromStr, Split, from_utf8};
 
 #[derive(Clone, PartialOrd, Ord, PartialEq, Eq, Deserialize, Serialize, Hash, Debug)]
-pub struct DOMString(pub String);
+pub struct DOMString(String);
+
+impl !Send for DOMString {}
 
 impl DOMString {
     pub fn new() -> DOMString {
         DOMString(String::new())
+    }
+    // FIXME(ajeffrey): implement more of the String methods on DOMString?
+    pub fn push_str(&mut self, string: &str) {
+        self.0.push_str(string)
+    }
+    pub fn clear(&mut self) {
+        self.0.clear()
     }
 }
 
@@ -79,30 +88,48 @@ impl<'a> PartialEq<&'a str> for DOMString {
     }
 }
 
+impl From<String> for DOMString {
+    fn from(contents: String) -> DOMString {
+        DOMString(contents)
+    }
+}
+
+impl<'a> From<&'a str> for DOMString {
+    fn from(contents: &str) -> DOMString {
+        DOMString::from(String::from(contents))
+    }
+}
+
+impl From<DOMString> for String {
+    fn from(contents: DOMString) -> String {
+        contents.0
+    }
+}
+
 impl Into<Vec<u8>> for DOMString {
     fn into(self) -> Vec<u8> {
         self.0.into()
     }
 }
 
-
+// https://heycam.github.io/webidl/#es-DOMString
 impl ToJSValConvertible for DOMString {
     unsafe fn to_jsval(&self, cx: *mut JSContext, rval: MutableHandleValue) {
         (**self).to_jsval(cx, rval);
     }
 }
 
-
+/// Behavior for stringification of `JSVal`s.
 #[derive(PartialEq)]
 pub enum StringificationBehavior {
-    
+    /// Convert `null` to the string `"null"`.
     Default,
-    
+    /// Convert `null` to the empty string.
     Empty,
 }
 
-
-
+/// Convert the given `JSString` to a `DOMString`. Fails if the string does not
+/// contain valid UTF-16.
 pub unsafe fn jsstring_to_str(cx: *mut JSContext, s: *mut JSString) -> DOMString {
     let latin1 = JS_StringHasLatin1Chars(s);
     DOMString(if latin1 {
@@ -117,7 +144,7 @@ pub unsafe fn jsstring_to_str(cx: *mut JSContext, s: *mut JSString) -> DOMString
             match item {
                 Ok(c) => s.push(c),
                 Err(_) => {
-                    
+                    // FIXME: Add more info like document URL in the message?
                     macro_rules! message {
                         () => {
                             "Found an unpaired surrogate in a DOM string. \
@@ -139,7 +166,7 @@ pub unsafe fn jsstring_to_str(cx: *mut JSContext, s: *mut JSString) -> DOMString
     })
 }
 
-
+// https://heycam.github.io/webidl/#es-DOMString
 impl FromJSValConvertible for DOMString {
     type Config = StringificationBehavior;
     unsafe fn from_jsval(cx: *mut JSContext,
@@ -161,11 +188,17 @@ impl FromJSValConvertible for DOMString {
     }
 }
 
+impl Extend<char> for DOMString {
+    fn extend<I>(&mut self, iterable: I) where I: IntoIterator<Item=char> {
+        self.0.extend(iterable)
+    }
+}
+
 pub type StaticCharVec = &'static [char];
 pub type StaticStringVec = &'static [&'static str];
 
-
-
+/// Whitespace as defined by HTML5 § 2.4.1.
+// TODO(SimonSapin) Maybe a custom Pattern can be more efficient?
 const WHITESPACE: &'static [char] = &[' ', '\t', '\x0a', '\x0c', '\x0d'];
 
 pub fn is_whitespace(s: &str) -> bool {
@@ -177,9 +210,9 @@ pub fn char_is_whitespace(c: char) -> bool {
     WHITESPACE.contains(&c)
 }
 
-
-
-
+/// A "space character" according to:
+///
+/// https://html.spec.whatwg.org/multipage/#space-character
 pub static HTML_SPACE_CHARACTERS: StaticCharVec = &[
     '\u{0020}',
     '\u{0009}',
@@ -221,9 +254,9 @@ fn read_numbers<I: Iterator<Item=char>>(mut iter: Peekable<I>) -> Option<i64> {
 }
 
 
-
-
-
+/// Shared implementation to parse an integer according to
+/// <https://html.spec.whatwg.org/multipage/#rules-for-parsing-integers> or
+/// <https://html.spec.whatwg.org/multipage/#rules-for-parsing-non-negative-integers>
 fn do_parse_integer<T: Iterator<Item=char>>(input: T) -> Option<i64> {
     let mut input = input.skip_while(|c| {
         HTML_SPACE_CHARACTERS.iter().any(|s| s == c)
@@ -247,16 +280,16 @@ fn do_parse_integer<T: Iterator<Item=char>>(input: T) -> Option<i64> {
     value.and_then(|value| value.checked_mul(sign))
 }
 
-
-
+/// Parse an integer according to
+/// <https://html.spec.whatwg.org/multipage/#rules-for-parsing-integers>.
 pub fn parse_integer<T: Iterator<Item=char>>(input: T) -> Option<i32> {
     do_parse_integer(input).and_then(|result| {
         result.to_i32()
     })
 }
 
-
-
+/// Parse an integer according to
+/// <https://html.spec.whatwg.org/multipage/#rules-for-parsing-non-negative-integers>
 pub fn parse_unsigned_integer<T: Iterator<Item=char>>(input: T) -> Option<u32> {
     do_parse_integer(input).and_then(|result| {
         result.to_u32()
@@ -270,7 +303,7 @@ pub enum LengthOrPercentageOrAuto {
     Length(Au),
 }
 
-
+/// Parses a length per HTML5 § 2.4.4.4. If unparseable, `Auto` is returned.
 pub fn parse_length(mut value: &str) -> LengthOrPercentageOrAuto {
     value = value.trim_left_matches(WHITESPACE);
     if value.is_empty() {
@@ -320,11 +353,11 @@ pub fn parse_length(mut value: &str) -> LengthOrPercentageOrAuto {
     }
 }
 
-
+/// https://html.spec.whatwg.org/multipage/#rules-for-parsing-a-legacy-font-size
 pub fn parse_legacy_font_size(mut input: &str) -> Option<&'static str> {
-    
+    // Steps 1 & 2 are not relevant
 
-    
+    // Step 3
     input = input.trim_matches(WHITESPACE);
 
     enum ParseMode {
@@ -334,35 +367,35 @@ pub fn parse_legacy_font_size(mut input: &str) -> Option<&'static str> {
     }
     let mut input_chars = input.chars().peekable();
     let parse_mode = match input_chars.peek() {
-        
+        // Step 4
         None => return None,
 
-        
+        // Step 5
         Some(&'+') => {
-            let _ = input_chars.next();  
+            let _ = input_chars.next();  // consume the '+'
             ParseMode::RelativePlus
         }
         Some(&'-') => {
-            let _ = input_chars.next();  
+            let _ = input_chars.next();  // consume the '-'
             ParseMode::RelativeMinus
         }
         Some(_) => ParseMode::Absolute,
     };
 
-    
+    // Steps 6, 7, 8
     let mut value = match read_numbers(input_chars) {
         Some(v) => v,
         None => return None,
     };
 
-    
+    // Step 9
     match parse_mode {
         ParseMode::RelativePlus => value = 3 + value,
         ParseMode::RelativeMinus => value = 3 - value,
         ParseMode::Absolute => (),
     }
 
-    
+    // Steps 10, 11, 12
     Some(match value {
         n if n >= 7 => "xxx-large",
         6 => "xx-large",
@@ -375,27 +408,27 @@ pub fn parse_legacy_font_size(mut input: &str) -> Option<&'static str> {
     })
 }
 
-
+/// Parses a legacy color per HTML5 § 2.4.6. If unparseable, `Err` is returned.
 pub fn parse_legacy_color(mut input: &str) -> Result<RGBA, ()> {
-    
+    // Steps 1 and 2.
     if input.is_empty() {
         return Err(())
     }
 
-    
+    // Step 3.
     input = input.trim_matches(WHITESPACE);
 
-    
+    // Step 4.
     if input.eq_ignore_ascii_case("transparent") {
         return Err(())
     }
 
-    
+    // Step 5.
     if let Ok(Color::RGBA(rgba)) = cssparser::parse_color_keyword(input) {
         return Ok(rgba);
     }
 
-    
+    // Step 6.
     if input.len() == 4 {
         match (input.as_bytes()[0],
                hex(input.as_bytes()[1] as char),
@@ -413,7 +446,7 @@ pub fn parse_legacy_color(mut input: &str) -> Result<RGBA, ()> {
         }
     }
 
-    
+    // Step 7.
     let mut new_input = String::new();
     for ch in input.chars() {
         if ch as u32 > 0xffff {
@@ -424,7 +457,7 @@ pub fn parse_legacy_color(mut input: &str) -> Result<RGBA, ()> {
     }
     let mut input = &*new_input;
 
-    
+    // Step 8.
     for (char_count, (index, _)) in input.char_indices().enumerate() {
         if char_count == 128 {
             input = &input[..index];
@@ -432,12 +465,12 @@ pub fn parse_legacy_color(mut input: &str) -> Result<RGBA, ()> {
         }
     }
 
-    
+    // Step 9.
     if input.as_bytes()[0] == b'#' {
         input = &input[1..]
     }
 
-    
+    // Step 10.
     let mut new_input = Vec::new();
     for ch in input.chars() {
         if hex(ch).is_ok() {
@@ -448,18 +481,18 @@ pub fn parse_legacy_color(mut input: &str) -> Result<RGBA, ()> {
     }
     let mut input = new_input;
 
-    
+    // Step 11.
     while input.is_empty() || (input.len() % 3) != 0 {
         input.push(b'0')
     }
 
-    
+    // Step 12.
     let mut length = input.len() / 3;
     let (mut red, mut green, mut blue) = (&input[..length],
                                           &input[length..length * 2],
                                           &input[length * 2..]);
 
-    
+    // Step 13.
     if length > 8 {
         red = &red[length - 8..];
         green = &green[length - 8..];
@@ -467,7 +500,7 @@ pub fn parse_legacy_color(mut input: &str) -> Result<RGBA, ()> {
         length = 8
     }
 
-    
+    // Step 14.
     while length > 2 && red[0] == b'0' && green[0] == b'0' && blue[0] == b'0' {
         red = &red[1..];
         green = &green[1..];
@@ -475,7 +508,7 @@ pub fn parse_legacy_color(mut input: &str) -> Result<RGBA, ()> {
         length -= 1
     }
 
-    
+    // Steps 15-20.
     return Ok(RGBA {
         red: hex_string(red).unwrap() as f32 / 255.0,
         green: hex_string(green).unwrap() as f32 / 255.0,
@@ -528,8 +561,8 @@ impl Deref for LowercaseString {
     }
 }
 
-
-
+/// Creates a String from the given null-terminated buffer.
+/// Panics if the buffer does not contain UTF-8.
 pub unsafe fn c_str_to_string(s: *const c_char) -> String {
     from_utf8(CStr::from_ptr(s).to_bytes()).unwrap().to_owned()
 }
@@ -544,15 +577,15 @@ pub fn str_join<I, T>(strs: I, join: &str) -> String
     })
 }
 
-
+// Lifted from Rust's StrExt implementation, which is being removed.
 pub fn slice_chars(s: &str, begin: usize, end: usize) -> &str {
     assert!(begin <= end);
     let mut count = 0;
     let mut begin_byte = None;
     let mut end_byte = None;
 
-    
-    
+    // This could be even more efficient by not decoding,
+    // only finding the char boundaries
     for (idx, _) in s.char_indices() {
         if count == begin { begin_byte = Some(idx); }
         if count == end { end_byte = Some(idx); break; }
