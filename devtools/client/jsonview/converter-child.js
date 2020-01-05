@@ -308,8 +308,11 @@ Converter.prototype = {
         break;
 
       case "save":
+        
+        let windowID = win.QueryInterface(Ci.nsIInterfaceRequestor)
+          .getInterface(Ci.nsIDOMWindowUtils).outerWindowID;
         childProcessMessageManager.sendAsyncMessage(
-          "devtools:jsonview:save", value);
+          "devtools:jsonview:save", {url: value, windowID: windowID});
     }
   },
 
