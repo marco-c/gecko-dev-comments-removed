@@ -299,6 +299,7 @@ module.exports = {
     "CSSPrimitiveValue": false,
     "CSSValueList": false,
     "dump": true,
+    "ImageDocument": false,
     
     
     

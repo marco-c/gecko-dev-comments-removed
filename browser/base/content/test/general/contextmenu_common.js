@@ -1,3 +1,6 @@
+
+
+
 var lastElement;
 
 function openContextMenuFor(element, shiftkey, waitForSpellCheck) {
