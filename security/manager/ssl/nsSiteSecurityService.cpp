@@ -730,7 +730,9 @@ nsSiteSecurityService::ProcessPKPHeader(nsIURI* aSourceURI,
   
   CertVerifier::Flags flags = CertVerifier::FLAG_LOCAL_ONLY |
                               CertVerifier::FLAG_TLS_IGNORE_STATUS_REQUEST;
-  if (certVerifier->VerifySSLServerCert(nssCert, nullptr, 
+  if (certVerifier->VerifySSLServerCert(nssCert,
+                                        nullptr, 
+                                        nullptr, 
                                         now, nullptr, 
                                         host.get(), 
                                         certList,
