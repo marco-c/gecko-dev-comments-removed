@@ -1,4 +1,4 @@
 
 
 
-document.removeChild(document.firstChild);
+document.firstChild.remove();

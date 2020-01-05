@@ -330,7 +330,7 @@ var gFxAccounts = {
   populateSendTabToDevicesMenu(devicesPopup, url, title) {
     
     while (devicesPopup.hasChildNodes()) {
-      devicesPopup.removeChild(devicesPopup.firstChild);
+      devicesPopup.firstChild.remove();
     }
 
     const fragment = document.createDocumentFragment();

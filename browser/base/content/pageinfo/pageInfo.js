@@ -418,7 +418,7 @@ function resetPageInfo(args) {
   
   var feedListbox = document.getElementById("feedListbox");
   while (feedListbox.firstChild)
-    feedListbox.removeChild(feedListbox.firstChild);
+    feedListbox.firstChild.remove();
 
   
   onResetRegistry.forEach(function(func) { func(); });

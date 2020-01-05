@@ -157,7 +157,7 @@ addAccessibleTask(`
   yield ContentTask.spawn(browser, {}, () => {
     
     let docNode = content.document.getElementById('iframe').contentDocument;
-    docNode.removeChild(docNode.firstChild);
+    docNode.firstChild.remove();
   });
   let event = yield reorderEventPromise;
 
@@ -235,7 +235,7 @@ addAccessibleTask(`
     let docEl =
       content.document.getElementById('iframe').contentDocument.documentElement;
     
-    docEl.removeChild(docEl.firstChild);
+    docEl.firstChild.remove();
   });
   
   yield reorderEventPromise;

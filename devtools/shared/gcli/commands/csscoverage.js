@@ -156,7 +156,7 @@ exports.items = [
         onback: () => {
           
           while (host.hasChildNodes()) {
-            host.removeChild(host.firstChild);
+            host.firstChild.remove();
           }
           host.hidden = true;
         }

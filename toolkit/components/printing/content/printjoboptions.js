@@ -81,7 +81,7 @@ paperListElement.prototype =
   {
     clearPaperList() {
           
-          this.paperListElement.removeChild(this.paperListElement.firstChild);
+          this.paperListElement.firstChild.remove();
         },
 
     appendPaperNames(aDataObject) {

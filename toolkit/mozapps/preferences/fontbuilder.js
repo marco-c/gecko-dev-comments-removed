@@ -19,7 +19,7 @@ var FontBuilder = {
   buildFontList(aLanguage, aFontType, aMenuList) {
     
     while (aMenuList.hasChildNodes())
-      aMenuList.removeChild(aMenuList.firstChild);
+      aMenuList.firstChild.remove();
 
     var defaultFont = null;
     

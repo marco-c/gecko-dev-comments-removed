@@ -185,7 +185,7 @@ var MigrationWizard = {
 
     var profiles = document.getElementById("profiles");
     while (profiles.hasChildNodes())
-      profiles.removeChild(profiles.firstChild);
+      profiles.firstChild.remove();
 
     
     
@@ -225,7 +225,7 @@ var MigrationWizard = {
   onImportItemsPageShow() {
     var dataSources = document.getElementById("dataSources");
     while (dataSources.hasChildNodes())
-      dataSources.removeChild(dataSources.firstChild);
+      dataSources.firstChild.remove();
 
     var items = this._migrator.getMigrateData(this._selectedProfile, this._autoMigrate);
     for (var i = 0; i < 16; ++i) {
@@ -367,7 +367,7 @@ var MigrationWizard = {
   _listItems(aID) {
     var items = document.getElementById(aID);
     while (items.hasChildNodes())
-      items.removeChild(items.firstChild);
+      items.firstChild.remove();
 
     var itemID;
     for (var i = 0; i < 16; ++i) {

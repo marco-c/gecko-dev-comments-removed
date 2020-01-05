@@ -492,7 +492,7 @@ const PanelUI = {
 
     
     while (items.firstChild) {
-      items.removeChild(items.firstChild);
+      items.firstChild.remove();
     }
 
     

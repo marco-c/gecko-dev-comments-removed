@@ -31,7 +31,7 @@
 
   function showSequence(node){
     while(node.firstChild) {
-      node.removeChild(node.firstChild);
+      node.firstChild.remove();
     }
     var sequence = [];
     for (var p in moments) {

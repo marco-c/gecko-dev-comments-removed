@@ -1236,7 +1236,7 @@ this.UITour = {
       
       
       while (notice.firstChild) {
-        notice.removeChild(notice.firstChild);
+        notice.firstChild.remove();
       }
 
       

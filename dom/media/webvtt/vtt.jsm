@@ -889,7 +889,7 @@ Cu.import('resource://gre/modules/Services.jsm');
 
     
     while (overlay.firstChild) {
-      overlay.removeChild(overlay.firstChild);
+      overlay.firstChild.remove();
     }
 
     var controlBar;

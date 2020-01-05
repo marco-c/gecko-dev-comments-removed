@@ -78,7 +78,7 @@
 
   function clear(node) {
     while (node.hasChildNodes()) {
-      node.removeChild(node.firstChild);
+      node.firstChild.remove();
     }
   }
 

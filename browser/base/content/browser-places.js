@@ -746,7 +746,7 @@ HistoryMenu.prototype = {
 
     
     while (undoPopup.hasChildNodes())
-      undoPopup.removeChild(undoPopup.firstChild);
+      undoPopup.firstChild.remove();
 
     
     if (this._getClosedTabCount() == 0) {
@@ -782,7 +782,7 @@ HistoryMenu.prototype = {
 
     
     while (undoPopup.hasChildNodes())
-      undoPopup.removeChild(undoPopup.firstChild);
+      undoPopup.firstChild.remove();
 
     
     if (SessionStore.getClosedWindowCount() == 0) {
