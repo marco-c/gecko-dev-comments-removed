@@ -50,10 +50,9 @@ function makeWindow() {
 
 
 function listenOnce(node, eventName, callback) {
-  node.addEventListener(eventName, function onevent(event) {
-    node.removeEventListener(eventName, onevent, true);
+  node.addEventListener(eventName, function(event) {
     callback(node);
-  }, true);
+  }, {capture: true, once: true});
 }
 
 
