@@ -47,18 +47,11 @@ registerCleanupFunction(() => {
 });
 
 registerCleanupFunction(function* () {
-  let target = TargetFactory.forTab(gBrowser.selectedTab);
-  yield gDevTools.closeToolbox(target);
-
   
   
   
   
   EventUtils.synthesizeMouseAtPoint(1, 1, {type: "mousemove"}, window);
-
-  while (gBrowser.tabs.length > 1) {
-    gBrowser.removeCurrentTab();
-  }
 });
 
 var navigateTo = function (toolbox, url) {
