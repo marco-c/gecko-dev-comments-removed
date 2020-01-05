@@ -481,6 +481,11 @@ protected:
   
 
 
+  nsEventStatus OnSecondTap(const TapGestureInput& aEvent);
+
+  
+
+
 
 
 

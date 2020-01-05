@@ -44,9 +44,15 @@ public:
 
 
 
+
+
+
+
+
   enum class TapType {
     eSingleTap,
     eDoubleTap,
+    eSecondTap,
     eLongTap,
     eLongTapUp,
 

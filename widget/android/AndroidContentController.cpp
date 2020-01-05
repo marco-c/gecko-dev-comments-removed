@@ -93,7 +93,8 @@ AndroidContentController::HandleTap(TapType aType, const LayoutDevicePoint& aPoi
     
     
     
-    if (NS_IsMainThread() && aType == TapType::eSingleTap) {
+    if (NS_IsMainThread() &&
+        (aType == TapType::eSingleTap || aType == TapType::eSecondTap)) {
         DispatchSingleTapToObservers(aPoint, aGuid);
     }
 

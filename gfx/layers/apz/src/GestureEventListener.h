@@ -231,6 +231,15 @@ private:
   RefPtr<CancelableRunnable> mMaxTapTimeoutTask;
   void CancelMaxTapTimeoutTask();
   void CreateMaxTapTimeoutTask();
+
+  
+
+
+
+
+
+
+  Maybe<bool> mSingleTapSent;
 };
 
 } 
