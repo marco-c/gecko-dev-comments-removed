@@ -239,30 +239,30 @@ void
 TimeoutManager::ClearTimeout(int32_t aTimerId, Timeout::Reason aReason)
 {
   uint32_t timerId = (uint32_t)aTimerId;
-  Timeout* timeout;
 
-  for (timeout = mTimeouts.GetFirst(); timeout; timeout = timeout->getNext()) {
-    if (timeout->mTimeoutId == timerId && timeout->mReason == aReason) {
-      if (timeout->mRunning) {
+  ForEachTimeoutAbortable([&](Timeout* aTimeout) {
+    if (aTimeout->mTimeoutId == timerId && aTimeout->mReason == aReason) {
+      if (aTimeout->mRunning) {
         
 
 
-        timeout->mIsInterval = false;
+        aTimeout->mIsInterval = false;
       }
       else {
         
-        timeout->remove();
+        aTimeout->remove();
 
-        if (timeout->mTimer) {
-          timeout->mTimer->Cancel();
-          timeout->mTimer = nullptr;
-          timeout->Release();
+        if (aTimeout->mTimer) {
+          aTimeout->mTimer->Cancel();
+          aTimeout->mTimer = nullptr;
+          aTimeout->Release();
         }
-        timeout->Release();
+        aTimeout->Release();
       }
-      break;
+      return true; 
     }
-  }
+    return false;
+  });
 }
 
 void
@@ -717,36 +717,37 @@ TimeoutManager::ResetTimersForThrottleReduction(int32_t aPreviousThrottleDelayMS
 void
 TimeoutManager::ClearAllTimeouts()
 {
-  Timeout* timeout;
-  Timeout* nextTimeout;
+  bool seenRunningTimeout = false;
 
-  for (timeout = mTimeouts.GetFirst(); timeout; timeout = nextTimeout) {
+  ForEachTimeout([&](Timeout* aTimeout) {
     
 
 
 
 
-    if (mRunningTimeout == timeout) {
-      mTimeouts.SetInsertionPoint(nullptr);
+    if (mRunningTimeout == aTimeout) {
+      seenRunningTimeout = true;
     }
 
-    nextTimeout = timeout->getNext();
-
-    if (timeout->mTimer) {
-      timeout->mTimer->Cancel();
-      timeout->mTimer = nullptr;
+    if (aTimeout->mTimer) {
+      aTimeout->mTimer->Cancel();
+      aTimeout->mTimer = nullptr;
 
       
       
-      timeout->Release();
+      aTimeout->Release();
     }
 
     
     
-    timeout->mCleared = true;
+    aTimeout->mCleared = true;
 
     
-    timeout->Release();
+    aTimeout->Release();
+  });
+
+  if (seenRunningTimeout) {
+    mTimeouts.SetInsertionPoint(nullptr);
   }
 
   
@@ -808,33 +809,31 @@ TimeoutManager::EndRunningTimeout(Timeout* aTimeout)
 void
 TimeoutManager::UnmarkGrayTimers()
 {
-  for (Timeout* timeout = mTimeouts.GetFirst();
-       timeout;
-       timeout = timeout->getNext()) {
-    if (timeout->mScriptHandler) {
-      timeout->mScriptHandler->MarkForCC();
+  ForEachTimeout([](Timeout* aTimeout) {
+    if (aTimeout->mScriptHandler) {
+      aTimeout->mScriptHandler->MarkForCC();
     }
-  }
+  });
 }
 
 void
 TimeoutManager::Suspend()
 {
-  for (Timeout* t = mTimeouts.GetFirst(); t; t = t->getNext()) {
+  ForEachTimeout([](Timeout* aTimeout) {
     
     
     
 
     
-    if (t->mTimer) {
-      t->mTimer->Cancel();
-      t->mTimer = nullptr;
+    if (aTimeout->mTimer) {
+      aTimeout->mTimer->Cancel();
+      aTimeout->mTimer = nullptr;
 
       
       
-      t->Release();
+      aTimeout->Release();
     }
-  }
+  });
 }
 
 void
@@ -843,17 +842,17 @@ TimeoutManager::Resume()
   TimeStamp now = TimeStamp::Now();
   DebugOnly<bool> _seenDummyTimeout = false;
 
-  for (Timeout* t = mTimeouts.GetFirst(); t; t = t->getNext()) {
+  ForEachTimeout([&](Timeout* aTimeout) {
     
     
     
-    if (!t->mWindow) {
+    if (!aTimeout->mWindow) {
       NS_ASSERTION(!_seenDummyTimeout, "More than one dummy timeout?!");
       _seenDummyTimeout = true;
-      continue;
+      return;
     }
 
-    MOZ_ASSERT(!t->mTimer);
+    MOZ_ASSERT(!aTimeout->mTimer);
 
     
     
@@ -862,48 +861,48 @@ TimeoutManager::Resume()
     
     
     int32_t remaining = 0;
-    if (t->mWhen > now) {
-      remaining = static_cast<int32_t>((t->mWhen - now).ToMilliseconds());
+    if (aTimeout->mWhen > now) {
+      remaining = static_cast<int32_t>((aTimeout->mWhen - now).ToMilliseconds());
     }
     uint32_t delay = std::max(remaining, DOMMinTimeoutValue());
 
-    t->mTimer = do_CreateInstance("@mozilla.org/timer;1");
-    if (!t->mTimer) {
-      t->remove();
-      continue;
+    aTimeout->mTimer = do_CreateInstance("@mozilla.org/timer;1");
+    if (!aTimeout->mTimer) {
+      aTimeout->remove();
+      return;
     }
 
-    nsresult rv = t->InitTimer(mWindow.GetThrottledEventQueue(), delay);
+    nsresult rv = aTimeout->InitTimer(mWindow.GetThrottledEventQueue(), delay);
     if (NS_FAILED(rv)) {
-      t->mTimer = nullptr;
-      t->remove();
-      continue;
+      aTimeout->mTimer = nullptr;
+      aTimeout->remove();
+      return;
     }
 
     
-    t->AddRef();
-  }
+    aTimeout->AddRef();
+  });
 }
 
 void
 TimeoutManager::Freeze()
 {
   TimeStamp now = TimeStamp::Now();
-  for (Timeout *t = mTimeouts.GetFirst(); t; t = t->getNext()) {
+  ForEachTimeout([&](Timeout* aTimeout) {
     
     
     
     
-    if (t->mWhen > now) {
-      t->mTimeRemaining = t->mWhen - now;
+    if (aTimeout->mWhen > now) {
+      aTimeout->mTimeRemaining = aTimeout->mWhen - now;
     } else {
-      t->mTimeRemaining = TimeDuration(0);
+      aTimeout->mTimeRemaining = TimeDuration(0);
     }
 
     
     
-    MOZ_ASSERT(!t->mTimer);
-  }
+    MOZ_ASSERT(!aTimeout->mTimer);
+  });
 }
 
 void
@@ -912,19 +911,19 @@ TimeoutManager::Thaw()
   TimeStamp now = TimeStamp::Now();
   DebugOnly<bool> _seenDummyTimeout = false;
 
-  for (Timeout *t = mTimeouts.GetFirst(); t; t = t->getNext()) {
+  ForEachTimeout([&](Timeout* aTimeout) {
     
     
     
-    if (!t->mWindow) {
+    if (!aTimeout->mWindow) {
       NS_ASSERTION(!_seenDummyTimeout, "More than one dummy timeout?!");
       _seenDummyTimeout = true;
-      continue;
+      return;
     }
 
     
-    t->mWhen = now + t->mTimeRemaining;
+    aTimeout->mWhen = now + aTimeout->mTimeRemaining;
 
-    MOZ_ASSERT(!t->mTimer);
-  }
+    MOZ_ASSERT(!aTimeout->mTimer);
+  });
 }
