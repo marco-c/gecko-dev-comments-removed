@@ -1501,33 +1501,35 @@ CodeGeneratorShared::emitWasmCallBase(LWasmCallBase* ins)
 
     
     
-    if (mir->saveTls())
-        masm.storePtr(WasmTlsReg, Address(masm.getStackPointer(), mir->tlsStackOffset()));
+    
+    bool reloadRegs = true;
 
     const wasm::CallSiteDesc& desc = mir->desc();
     const wasm::CalleeDesc& callee = mir->callee();
     switch (callee.which()) {
       case wasm::CalleeDesc::Func:
         masm.call(desc, callee.funcIndex());
+        reloadRegs = false;
         break;
       case wasm::CalleeDesc::Import:
         masm.wasmCallImport(desc, callee);
         break;
-      case wasm::CalleeDesc::WasmTable:
       case wasm::CalleeDesc::AsmJSTable:
+      case wasm::CalleeDesc::WasmTable:
         masm.wasmCallIndirect(desc, callee, ins->needsBoundsCheck());
+        reloadRegs = callee.which() == wasm::CalleeDesc::WasmTable && callee.wasmTableIsExternal();
         break;
       case wasm::CalleeDesc::Builtin:
         masm.call(callee.builtin());
+        reloadRegs = false;
         break;
       case wasm::CalleeDesc::BuiltinInstanceMethod:
         masm.wasmCallBuiltinInstanceMethod(mir->instanceArg(), callee.builtin());
         break;
     }
 
-    
-    if (mir->saveTls()) {
-        masm.loadPtr(Address(masm.getStackPointer(), mir->tlsStackOffset()), WasmTlsReg);
+    if (reloadRegs) {
+        masm.loadWasmTlsRegFromFrame();
         masm.loadWasmPinnedRegsFromTls();
     }
 

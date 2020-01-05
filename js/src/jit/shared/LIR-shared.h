@@ -8683,6 +8683,7 @@ class LWasmCallBase : public LInstruction
         
         
         
+        
         return !reg.isFloat() && reg.gpr() == WasmTlsReg;
     }
 
