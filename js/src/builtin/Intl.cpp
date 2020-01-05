@@ -983,6 +983,12 @@ static const JSFunctionSpec collator_methods[] = {
     JS_FS_END
 };
 
+static const JSPropertySpec collator_properties[] = {
+    JS_SELF_HOSTED_GET("compare", "Intl_Collator_compare_get", 0),
+    JS_STRING_SYM_PS(toStringTag, "Object", JSPROP_READONLY),
+    JS_PS_END
+};
+
 
 
 
@@ -1108,19 +1114,8 @@ CreateCollatorPrototype(JSContext* cx, HandleObject Intl, Handle<GlobalObject*> 
         return nullptr;
 
     
-
-
-
-
-    RootedValue getter(cx);
-    if (!GlobalObject::getIntrinsicValue(cx, cx->global(), cx->names().CollatorCompareGet, &getter))
+    if (!JS_DefineProperties(cx, proto, collator_properties))
         return nullptr;
-    if (!DefineProperty(cx, proto, cx->names().compare, UndefinedHandleValue,
-                        JS_DATA_TO_FUNC_PTR(JSGetterOp, &getter.toObject()),
-                        nullptr, JSPROP_GETTER | JSPROP_SHARED))
-    {
-        return nullptr;
-    }
 
     RootedValue options(cx);
     if (!CreateDefaultOptions(cx, &options))
@@ -1488,6 +1483,12 @@ static const JSFunctionSpec numberFormat_methods[] = {
     JS_FS_END
 };
 
+static const JSPropertySpec numberFormat_properties[] = {
+    JS_SELF_HOSTED_GET("format", "Intl_NumberFormat_format_get", 0),
+    JS_STRING_SYM_PS(toStringTag, "Object", JSPROP_READONLY),
+    JS_PS_END
+};
+
 
 
 
@@ -1615,22 +1616,8 @@ CreateNumberFormatPrototype(JSContext* cx, HandleObject Intl, Handle<GlobalObjec
         return nullptr;
 
     
-
-
-
-
-    RootedValue getter(cx);
-    if (!GlobalObject::getIntrinsicValue(cx, cx->global(), cx->names().NumberFormatFormatGet,
-                                         &getter))
-    {
+    if (!JS_DefineProperties(cx, proto, numberFormat_properties))
         return nullptr;
-    }
-    if (!DefineProperty(cx, proto, cx->names().format, UndefinedHandleValue,
-                        JS_DATA_TO_FUNC_PTR(JSGetterOp, &getter.toObject()),
-                        nullptr, JSPROP_GETTER | JSPROP_SHARED))
-    {
-        return nullptr;
-    }
 
 #if defined(ICU_UNUM_HAS_FORMATDOUBLEFORFIELDS)
     
@@ -2507,6 +2494,12 @@ static const JSFunctionSpec dateTimeFormat_methods[] = {
     JS_FS_END
 };
 
+static const JSPropertySpec dateTimeFormat_properties[] = {
+    JS_SELF_HOSTED_GET("format", "Intl_DateTimeFormat_format_get", 0),
+    JS_STRING_SYM_PS(toStringTag, "Object", JSPROP_READONLY),
+    JS_PS_END
+};
+
 
 
 
@@ -2634,20 +2627,8 @@ CreateDateTimeFormatPrototype(JSContext* cx, HandleObject Intl, Handle<GlobalObj
         return nullptr;
 
     
-    
-    
-    RootedValue getter(cx);
-    if (!GlobalObject::getIntrinsicValue(cx, cx->global(), cx->names().DateTimeFormatFormatGet,
-                                         &getter))
-    {
+    if (!JS_DefineProperties(cx, proto, dateTimeFormat_properties))
         return nullptr;
-    }
-    if (!DefineProperty(cx, proto, cx->names().format, UndefinedHandleValue,
-                        JS_DATA_TO_FUNC_PTR(JSGetterOp, &getter.toObject()),
-                        nullptr, JSPROP_GETTER | JSPROP_SHARED))
-    {
-        return nullptr;
-    }
 
     RootedValue options(cx);
     if (!CreateDefaultOptions(cx, &options))
