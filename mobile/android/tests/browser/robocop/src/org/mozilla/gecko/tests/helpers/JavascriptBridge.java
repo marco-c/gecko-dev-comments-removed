@@ -9,14 +9,11 @@ import java.lang.reflect.Method;
 
 import junit.framework.AssertionFailedError;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import org.mozilla.gecko.Actions;
 import org.mozilla.gecko.Actions.EventExpecter;
 import org.mozilla.gecko.Assert;
 import org.mozilla.gecko.tests.UITestContext;
+import org.mozilla.gecko.util.GeckoBundle;
 
 
 
@@ -82,7 +79,8 @@ public final class JavascriptBridge {
         }
     }
 
-    public static final String EVENT_TYPE = "Robocop:JS";
+    public static final String EVENT_TYPE = "Robocop:Java";
+    public static final String JS_EVENT_TYPE = "Robocop:JS";
 
     private static Actions sActions;
     private static Assert sAsserter;
@@ -96,7 +94,7 @@ public final class JavascriptBridge {
     
     private final EventExpecter mExpecter;
     
-    private JSONObject mSavedAsyncMessage;
+    private GeckoBundle mSavedAsyncMessage;
     
     private int mCallStackDepth;
     
@@ -110,7 +108,7 @@ public final class JavascriptBridge {
     public JavascriptBridge(final Object target) {
         mTarget = target;
         mMethods = target.getClass().getMethods();
-        mExpecter = sActions.expectGeckoEvent(EVENT_TYPE);
+        mExpecter = sActions.expectGlobalEvent(Actions.EventType.GECKO, EVENT_TYPE);
         
         
         mLogParser = new JavascriptMessageParser(sAsserter, true);
@@ -174,12 +172,7 @@ public final class JavascriptBridge {
         
         
         
-        try {
-            final String message = mExpecter.blockForEventData();
-            return processMessage(new JSONObject(message));
-        } catch (final JSONException e) {
-            throw new IllegalStateException("Invalid message", e);
-        }
+        return processMessage(mExpecter.blockForBundle());
     }
 
     
@@ -189,13 +182,9 @@ public final class JavascriptBridge {
 
     private MessageStatus maybeProcessPendingMessage() {
         
-        final String message = mExpecter.blockForEventDataWithTimeout(0);
+        final GeckoBundle message = mExpecter.blockForBundleWithTimeout(0);
         if (message != null) {
-            try {
-                return processMessage(new JSONObject(message));
-            } catch (final JSONException e) {
-                throw new IllegalStateException("Invalid message", e);
-            }
+            return processMessage(message);
         }
         if (mSavedAsyncMessage != null) {
             
@@ -227,89 +216,82 @@ public final class JavascriptBridge {
         ensureJavaBridgeLoaded();
 
         
-        final JSONObject message = new JSONObject();
-        final JSONArray jsonArgs = new JSONArray();
-        try {
-            if (args != null) {
-                for (final Object arg : args) {
-                    jsonArgs.put(convertToJSONValue(arg));
-                }
+        final GeckoBundle message = new GeckoBundle();
+        final GeckoBundle bundleArgs = new GeckoBundle();
+        if (args == null) {
+            bundleArgs.putInt("length", 0);
+        } else {
+            for (int i = 0; i < args.length; i++) {
+                putInBundle(bundleArgs, String.valueOf(i), args[i]);
             }
-            message.put("type", EVENT_TYPE)
-                   .put("innerType", innerType)
-                   .put("method", method)
-                   .put("args", jsonArgs);
-        } catch (final JSONException e) {
-            throw new IllegalStateException("Unable to create JSON message", e);
+            bundleArgs.putInt("length", args.length);
         }
-        sActions.sendGeckoEvent(EVENT_TYPE, message.toString());
+        message.putString("type", JS_EVENT_TYPE);
+        message.putString("innerType", innerType);
+        message.putString("method", method);
+        message.putBundle("args", bundleArgs);
+
+        sActions.sendGlobalEvent(JS_EVENT_TYPE, message);
     }
 
-    private MessageStatus processMessage(JSONObject message) {
+    private MessageStatus processMessage(GeckoBundle message) {
         final String type;
         final String methodName;
-        final JSONArray argsArray;
+        final GeckoBundle argsArray;
         final Object[] args;
-        try {
-            if (!EVENT_TYPE.equals(message.getString("type"))) {
-                throw new IllegalStateException("Message type is not " + EVENT_TYPE);
-            }
-            type = message.getString("innerType");
 
-            switch (type) {
-                case "progress":
+        type = message.getString("innerType");
+
+        switch (type) {
+            case "progress":
+                
+                mLogParser.logMessage(message.getString("message"));
+                return MessageStatus.PROCESSED;
+
+            case "notify-loaded":
+                mJavaBridgeLoaded = true;
+                return MessageStatus.PROCESSED;
+
+            case "sync-reply":
+                
+                return MessageStatus.REPLIED;
+
+            case "sync-call":
+            case "async-call":
+
+                if ("async-call".equals(type)) {
                     
-                    mLogParser.logMessage(message.getString("message"));
-                    return MessageStatus.PROCESSED;
-
-                case "notify-loaded":
-                    mJavaBridgeLoaded = true;
-                    return MessageStatus.PROCESSED;
-
-                case "sync-reply":
                     
-                    return MessageStatus.REPLIED;
-
-                case "sync-call":
-                case "async-call":
-
-                    if ("async-call".equals(type)) {
+                    
+                    
+                    
+                    
+                    final GeckoBundle newSavedMessage =
+                            (message != mSavedAsyncMessage ? message : null);
+                    message = mSavedAsyncMessage;
+                    mSavedAsyncMessage = newSavedMessage;
+                    if (message == null) {
                         
-                        
-                        
-                        
-                        
-                        
-                        final JSONObject newSavedMessage =
-                                (message != mSavedAsyncMessage ? message : null);
-                        message = mSavedAsyncMessage;
-                        mSavedAsyncMessage = newSavedMessage;
-                        if (message == null) {
-                            
-                            return MessageStatus.SAVED;
-                        }
+                        return MessageStatus.SAVED;
                     }
+                }
 
-                    methodName = message.getString("method");
-                    argsArray = message.getJSONArray("args");
-                    args = new Object[argsArray.length()];
-                    for (int i = 0; i < args.length; i++) {
-                        args[i] = convertFromJSONValue(argsArray.get(i));
-                    }
-                    invokeMethod(methodName, args);
+                methodName = message.getString("method");
+                argsArray = message.getBundle("args");
+                args = new Object[argsArray.getInt("length")];
+                for (int i = 0; i < args.length; i++) {
+                    args[i] = argsArray.get(String.valueOf(i));
+                }
+                invokeMethod(methodName, args);
 
-                    if ("sync-call".equals(type)) {
-                        
-                        sendMessage("sync-reply", methodName, null);
-                    }
-                    return MessageStatus.PROCESSED;
-            }
-
-            throw new IllegalStateException("Message type is unexpected");
-
-        } catch (final JSONException e) {
-            throw new IllegalStateException("Unable to retrieve JSON message", e);
+                if ("sync-call".equals(type)) {
+                    
+                    sendMessage("sync-reply", methodName, null);
+                }
+                return MessageStatus.PROCESSED;
         }
+
+        throw new IllegalStateException("Message type is unexpected");
     }
 
     
@@ -378,17 +360,31 @@ public final class JavascriptBridge {
         }
     }
 
-    private Object convertFromJSONValue(final Object value) {
-        if (value == JSONObject.NULL) {
-            return null;
-        }
-        return value;
-    }
-
-    private Object convertToJSONValue(final Object value) {
+    private void putInBundle(final GeckoBundle bundle, final String key, final Object value) {
         if (value == null) {
-            return JSONObject.NULL;
+            bundle.putBundle(key, null);
+        } else if (value instanceof Boolean) {
+            bundle.putBoolean(key, (Boolean) value);
+        } else if (value instanceof boolean[]) {
+            bundle.putBooleanArray(key, (boolean[]) value);
+        } else if (value instanceof Double) {
+            bundle.putDouble(key, (Double) value);
+        } else if (value instanceof double[]) {
+            bundle.putDoubleArray(key, (double[]) value);
+        } else if (value instanceof Integer) {
+            bundle.putInt(key, (Integer) value);
+        } else if (value instanceof int[]) {
+            bundle.putIntArray(key, (int[]) value);
+        } else if (value instanceof CharSequence) {
+            bundle.putString(key, value.toString());
+        } else if (value instanceof String[]) {
+            bundle.putStringArray(key, (String[]) value);
+        } else if (value instanceof GeckoBundle) {
+            bundle.putBundle(key, (GeckoBundle) value);
+        } else if (value instanceof GeckoBundle[]) {
+            bundle.putBundleArray(key, (GeckoBundle[]) value);
+        } else {
+            throw new UnsupportedOperationException();
         }
-        return value;
     }
 }

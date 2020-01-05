@@ -768,10 +768,11 @@ function run_next_test()
 function JavaBridge(obj) {
 
   this._EVENT_TYPE = "Robocop:JS";
+  this._JAVA_EVENT_TYPE = "Robocop:Java";
   this._target = obj;
   
   this._repliesNeeded = 0;
-  this._Services.obs.addObserver(this, this._EVENT_TYPE, false);
+  this._EventDispatcher.registerListener(this, this._EVENT_TYPE);
 
   this._sendMessage("notify-loaded", []);
 };
@@ -781,20 +782,31 @@ JavaBridge.prototype = {
   _Services: Components.utils.import(
     "resource://gre/modules/Services.jsm", {}).Services,
 
-  _sendMessageToJava: Components.utils.import(
-    "resource://gre/modules/Messaging.jsm", {}).Messaging.sendRequest,
+  _EventDispatcher: Components.utils.import(
+    "resource://gre/modules/Messaging.jsm", {}).EventDispatcher.instance,
+
+  _getArgs: function (args) {
+    let out = {
+      length: Math.max(0, args.length - 1),
+    };
+    for (let i = 1; i < args.length; i++) {
+      out[i - 1] = args[i];
+    }
+    return out;
+  },
 
   _sendMessage: function (innerType, args) {
-    this._sendMessageToJava({
-      type: this._EVENT_TYPE,
+    this._EventDispatcher.dispatch(this._JAVA_EVENT_TYPE, {
       innerType: innerType,
       method: args[0],
-      args: Array.prototype.slice.call(args, 1),
+      args: this._getArgs(args),
     });
   },
 
-  observe: function(subject, topic, data) {
-    let message = JSON.parse(data);
+  onEvent: function(event, message, callback) {
+    if (typeof SpecialPowers === 'object') {
+      message = SpecialPowers.wrap(message);
+    }
     if (message.innerType === "sync-reply") {
       
       this._repliesNeeded--;
@@ -843,6 +855,6 @@ JavaBridge.prototype = {
 
 
   disconnect: function () {
-    this._Services.obs.removeObserver(this, this._EVENT_TYPE);
+    this._EventDispatcher.unregisterListener(this, this._EVENT_TYPE);
   },
 };

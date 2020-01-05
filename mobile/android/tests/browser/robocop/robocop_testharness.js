@@ -4,7 +4,7 @@
 
 
 function sendMessageToJava(message) {
-  SpecialPowers.Services.androidBridge.handleGeckoMessage(message);
+  SpecialPowers.Services.androidBridge.dispatch(message.type, message);
 }
 
 function _evalURI(uri, sandbox) {
@@ -59,7 +59,7 @@ function testOneFile(uri) {
   
   
   testScope.dump = function (str) {
-    let message = { type: "Robocop:JS",
+    let message = { type: "Robocop:Java",
                     innerType: "progress",
                     message: str,
                   };

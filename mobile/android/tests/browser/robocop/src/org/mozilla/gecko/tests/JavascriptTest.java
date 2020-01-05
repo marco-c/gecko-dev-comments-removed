@@ -4,10 +4,10 @@
 
 package org.mozilla.gecko.tests;
 
-import org.json.JSONObject;
 import org.mozilla.gecko.Actions;
 import org.mozilla.gecko.tests.helpers.JavascriptBridge;
 import org.mozilla.gecko.tests.helpers.JavascriptMessageParser;
+import org.mozilla.gecko.util.GeckoBundle;
 
 import android.util.Log;
 
@@ -44,7 +44,8 @@ public class JavascriptTest extends BaseTest {
         
         
         
-        final Actions.EventExpecter expecter = mActions.expectGeckoEvent(EVENT_TYPE);
+        final Actions.EventExpecter expecter =
+                mActions.expectGlobalEvent(Actions.EventType.GECKO, EVENT_TYPE);
         mAsserter.dumpLog("Registered listener for " + EVENT_TYPE);
 
         final String url = getAbsoluteUrl(mStringHelper.getHarnessUrlForJavascript(javascriptUrl));
@@ -58,12 +59,11 @@ public class JavascriptTest extends BaseTest {
                 if (logVerbose) {
                     Log.v(LOGTAG, "Waiting for " + EVENT_TYPE);
                 }
-                String data = expecter.blockForEventData();
+                final GeckoBundle o = expecter.blockForBundle();
                 if (logVerbose) {
-                    Log.v(LOGTAG, "Got event with data '" + data + "'");
+                    Log.v(LOGTAG, "Got event with data '" + o + "'");
                 }
 
-                JSONObject o = new JSONObject(data);
                 String innerType = o.getString("innerType");
                 if (!"progress".equals(innerType)) {
                     throw new Exception("Unexpected event innerType " + innerType);

@@ -21,7 +21,7 @@ public final class JavascriptMessageParser {
 
 
 
-    public static final String EVENT_TYPE = "Robocop:JS";
+    public static final String EVENT_TYPE = "Robocop:Java";
 
     
     
