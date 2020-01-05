@@ -295,6 +295,14 @@ struct ParamTraits<mozilla::layers::DiagnosticTypes>
              mozilla::layers::DiagnosticTypes::ALL_BITS>
 {};
 
+template <>
+struct ParamTraits<mozilla::layers::ScrollDirection>
+  : public ContiguousEnumSerializer<
+            mozilla::layers::ScrollDirection,
+            mozilla::layers::ScrollDirection::NONE,
+            mozilla::layers::ScrollDirection::SENTINEL>
+{};
+
 
 
 
@@ -1298,7 +1306,6 @@ struct ParamTraits<mozilla::layers::AsyncDragMetrics>
     WriteParam(aMsg, aParam.mDragStartSequenceNumber);
     WriteParam(aMsg, aParam.mScrollbarDragOffset);
     WriteParam(aMsg, aParam.mScrollTrack);
-    WriteParam(aMsg, aParam.mScrollThumbLength);
     WriteParam(aMsg, aParam.mDirection);
   }
 
@@ -1309,7 +1316,6 @@ struct ParamTraits<mozilla::layers::AsyncDragMetrics>
             ReadParam(aMsg, aIter, &aResult->mDragStartSequenceNumber) &&
             ReadParam(aMsg, aIter, &aResult->mScrollbarDragOffset) &&
             ReadParam(aMsg, aIter, &aResult->mScrollTrack) &&
-            ReadParam(aMsg, aIter, &aResult->mScrollThumbLength) &&
             ReadParam(aMsg, aIter, &aResult->mDirection));
   }
 };
