@@ -62,7 +62,6 @@ XPCOMUtils.defineLazyServiceGetter(this, "AlertsService", "@mozilla.org/alerts-s
   ["ShellService", "resource:///modules/ShellService.jsm"],
   ["SimpleServiceDiscovery", "resource://gre/modules/SimpleServiceDiscovery.jsm"],
   ["TabCrashHandler", "resource:///modules/ContentCrashHandlers.jsm"],
-  ["TabGroupsMigrator", "resource:///modules/TabGroupsMigrator.jsm"],
   ["Task", "resource://gre/modules/Task.jsm"],
   ["UITour", "resource:///modules/UITour.jsm"],
   ["URLBarZoom", "resource:///modules/URLBarZoom.jsm"],
@@ -655,9 +654,6 @@ BrowserGlue.prototype = {
       try {
         currentUIVersion = Services.prefs.getIntPref("browser.migration.version");
       } catch (ex) {}
-      if (currentUIVersion < 35) {
-        this._maybeMigrateTabGroups();
-      }
       Services.ww.openWindow(null, "chrome://browser/content/safeMode.xul",
                              "_blank", "chrome,centerscreen,modal,resizable=no", null);
     }
@@ -1255,14 +1251,6 @@ BrowserGlue.prototype = {
         });
       }
     }
-  },
-
-  _maybeMigrateTabGroups() {
-    let migrationObserver = (stateAsSupportsString, topic) => {
-      Services.obs.removeObserver(migrationObserver, "sessionstore-state-read");
-      TabGroupsMigrator.migrate(stateAsSupportsString);
-    };
-    Services.obs.addObserver(migrationObserver, "sessionstore-state-read", false);
   },
 
   _onQuitRequest: function BG__onQuitRequest(aCancelQuit, aQuitType) {
@@ -2070,9 +2058,6 @@ BrowserGlue.prototype = {
     }
 
     
-    if (currentUIVersion < 35 && !Services.appinfo.inSafeMode) {
-      this._maybeMigrateTabGroups();
-    }
 
     if (currentUIVersion < 36) {
       xulStore.removeValue("chrome://passwordmgr/content/passwordManager.xul",
