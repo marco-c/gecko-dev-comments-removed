@@ -593,18 +593,6 @@ XPCOMUtils.defineLazyGetter(this, "ProfileAgeCreatedPromise", () => {
 
 
 
-function fixupSearchText(spec) {
-  return textURIService.unEscapeURIForUI("UTF-8", stripPrefix(spec));
-}
-
-
-
-
-
-
-
-
-
 
 
 function getUnfilteredSearchTokens(searchString) {
@@ -642,14 +630,16 @@ function stripPrefix(spec) {
 
 
 
-function stripHttpAndTrim(spec) {
+
+
+function stripHttpAndTrim(spec, trimSlash = true) {
   if (spec.startsWith("http://")) {
     spec = spec.slice(7);
   }
   if (spec.endsWith("?")) {
     spec = spec.slice(0, -1);
   }
-  if (spec.endsWith("/")) {
+  if (trimSlash && spec.endsWith("/")) {
     spec = spec.slice(0, -1);
   }
   return spec;
@@ -742,7 +732,16 @@ function Search(searchString, searchParam, autocompleteListener,
   
   this._originalSearchString = searchString;
   this._trimmedOriginalSearchString = searchString.trim();
-  this._searchString = fixupSearchText(this._trimmedOriginalSearchString.toLowerCase());
+  let strippedOriginalSearchString =
+    stripPrefix(this._trimmedOriginalSearchString.toLowerCase());
+  this._searchString =
+    textURIService.unEscapeURIForUI("UTF-8", strippedOriginalSearchString);
+
+  
+  
+  this._strippedPrefix = this._trimmedOriginalSearchString.slice(
+    0, this._trimmedOriginalSearchString.length - strippedOriginalSearchString.length
+  ).toLowerCase();
 
   this._matchBehavior = Prefs.matchBehavior;
   
@@ -762,19 +761,6 @@ function Search(searchString, searchParam, autocompleteListener,
 
   this._searchTokens =
     this.filterTokens(getUnfilteredSearchTokens(this._searchString));
-  
-  
-  this._strippedPrefix = this._trimmedOriginalSearchString.slice(
-    0, this._trimmedOriginalSearchString.length - this._searchString.length
-  ).toLowerCase();
-  
-  
-  let pathIndex =
-    this._trimmedOriginalSearchString.indexOf("/", this._strippedPrefix.length);
-  this._autofillUrlSearchString = fixupSearchText(
-    this._trimmedOriginalSearchString.slice(0, pathIndex).toLowerCase() +
-    this._trimmedOriginalSearchString.slice(pathIndex)
-  );
 
   this._prohibitSearchSuggestions = prohibitSearchSuggestions;
 
@@ -1089,7 +1075,6 @@ Search.prototype = {
       if (site.uri.host.startsWith(this._searchString)) {
         let match = {
           value: stripPrefix(site.uri.spec),
-          comment: site.title,
           style: "autofill",
           finalCompleteValue: site.uri.spec,
           frecency: FRECENCY_DEFAULT,
@@ -1626,6 +1611,20 @@ Search.prototype = {
       return;
 
     
+    
+    
+    
+    
+    if (match.hasOwnProperty("style") && match.style.includes("autofill")) {
+      
+      
+      
+      
+      match.comment = stripHttpAndTrim(match.finalCompleteValue || match.value,
+                                       !this._searchString.includes("/"));
+    }
+
+    
     let urlMapKey = makeKeyForURL(match);
     if ((match.placeId && this._usedPlaceIds.has(match.placeId)) ||
         this._usedURLs.has(urlMapKey)) {
@@ -1698,28 +1697,19 @@ Search.prototype = {
 
   _processHostRow(row) {
     let match = {};
-    let trimmedHost = row.getResultByIndex(QUERYINDEX_URL);
-    let untrimmedHost = row.getResultByIndex(QUERYINDEX_TITLE);
+    let strippedHost = row.getResultByIndex(QUERYINDEX_URL);
+    let unstrippedHost = row.getResultByIndex(QUERYINDEX_TITLE);
     let frecency = row.getResultByIndex(QUERYINDEX_FRECENCY);
     let faviconUrl = row.getResultByIndex(QUERYINDEX_ICONURL);
 
     
     
-    if (untrimmedHost &&
-        !untrimmedHost.toLowerCase().includes(this._trimmedOriginalSearchString.toLowerCase())) {
-      untrimmedHost = null;
+    if (!unstrippedHost.toLowerCase().includes(this._trimmedOriginalSearchString.toLowerCase())) {
+      unstrippedHost = null;
     }
 
-    match.value = this._strippedPrefix + trimmedHost;
-    match.finalCompleteValue = untrimmedHost;
-
-    
-    
-    
-    
-    
-    
-    match.comment = stripHttpAndTrim(match.finalCompleteValue || match.value);
+    match.value = this._strippedPrefix + strippedHost;
+    match.finalCompleteValue = unstrippedHost;
 
     if (faviconUrl) {
       match.icon = PlacesUtils.favicons
@@ -1733,44 +1723,43 @@ Search.prototype = {
   },
 
   _processUrlRow(row) {
-    let match = {};
-    let value = row.getResultByIndex(QUERYINDEX_URL);
-    let url = fixupSearchText(value);
+    let url = row.getResultByIndex(QUERYINDEX_URL);
+    let strippedUrl = stripPrefix(url);
+    let prefix = url.substr(0, url.length - strippedUrl.length);
     let frecency = row.getResultByIndex(QUERYINDEX_FRECENCY);
     let faviconUrl = row.getResultByIndex(QUERYINDEX_ICONURL);
 
-    let prefix = value.slice(0, value.length - stripPrefix(value).length);
-
     
-    let separatorIndex = url.slice(this._searchString.length)
-                            .search(/[\/\?\#]/);
+    let searchString = stripPrefix(this._trimmedOriginalSearchString);
+    let separatorIndex = strippedUrl.slice(searchString.length)
+                                    .search(/[\/\?\#]/);
     if (separatorIndex != -1) {
-      separatorIndex += this._searchString.length;
-      if (url[separatorIndex] == "/") {
+      separatorIndex += searchString.length;
+      if (strippedUrl[separatorIndex] == "/") {
         separatorIndex++; 
       }
-      url = url.slice(0, separatorIndex);
+      strippedUrl = strippedUrl.slice(0, separatorIndex);
     }
 
-    
-    
-    let untrimmedURL = prefix + url;
-    if (untrimmedURL &&
-        !untrimmedURL.toLowerCase().includes(this._trimmedOriginalSearchString.toLowerCase())) {
-      untrimmedURL = null;
-     }
+    let match = {
+      value: this._strippedPrefix + strippedUrl,
+      
+      
+      frecency,
+      style: "autofill"
+    };
 
-    match.value = this._strippedPrefix + url;
-    match.comment = url;
-    match.finalCompleteValue = untrimmedURL;
     if (faviconUrl) {
       match.icon = PlacesUtils.favicons
                               .getFaviconLinkForIcon(NetUtil.newURI(faviconUrl)).spec;
     }
+
     
     
-    match.frecency = frecency;
-    match.style = "autofill";
+    if (url.toLowerCase().includes(this._trimmedOriginalSearchString.toLowerCase())) {
+      match.finalCompleteValue = prefix + strippedUrl;
+    }
+
     return match;
   },
 
@@ -2019,9 +2008,16 @@ Search.prototype = {
     
     
     
-    let slashIndex = this._autofillUrlSearchString.indexOf("/");
-    let revHost = this._autofillUrlSearchString.substring(0, slashIndex).toLowerCase()
-                      .split("").reverse().join("") + ".";
+    
+    
+    let pathIndex = this._trimmedOriginalSearchString.indexOf("/", this._strippedPrefix.length);
+    let revHost = this._trimmedOriginalSearchString
+                      .substring(this._strippedPrefix.length, pathIndex)
+                      .toLowerCase().split("").reverse().join("") + ".";
+    let searchString = stripPrefix(
+      this._trimmedOriginalSearchString.slice(0, pathIndex).toLowerCase() +
+      this._trimmedOriginalSearchString.slice(pathIndex)
+    );
 
     let typed = Prefs.autofillTyped || this.hasBehavior("typed");
     let bookmarked = this.hasBehavior("bookmark") && !this.hasBehavior("history");
@@ -2037,7 +2033,7 @@ Search.prototype = {
 
     query.push({
       query_type: QUERYTYPE_AUTOFILL_URL,
-      searchString: this._autofillUrlSearchString,
+      searchString,
       revHost
     });
 
