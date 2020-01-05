@@ -1,20 +1,20 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 "use strict";
 
 this.EXPORTED_SYMBOLS = ["Extension", "ExtensionData"];
 
-/* globals Extension ExtensionData */
 
-/*
- * This file is the main entry point for extensions. When an extension
- * loads, its bootstrap.js file creates a Extension instance
- * and calls .startup() on it. It calls .shutdown() when the extension
- * unloads. Extension manages any extension-specific state in
- * the chrome process.
- */
+
+
+
+
+
+
+
+
 
 const Ci = Components.interfaces;
 const Cc = Components.classes;
@@ -101,12 +101,12 @@ const COMMENT_REGEXP = new RegExp(String.raw`
     //.*
   `.replace(/\s+/g, ""), "gm");
 
-// All moz-extension URIs use a machine-specific UUID rather than the
-// extension's own ID in the host component. This makes it more
-// difficult for web pages to detect whether a user has a given add-on
-// installed (by trying to load a moz-extension URI referring to a
-// web_accessible_resource from the extension). UUIDMap.get()
-// returns the UUID for a given add-on ID.
+
+
+
+
+
+
 var UUIDMap = {
   _read() {
     let pref = Preferences.get(UUID_MAP_PREF, "{}");
@@ -132,7 +132,7 @@ var UUIDMap = {
     let uuid = null;
     if (create) {
       uuid = uuidGen.generateUUID().number;
-      uuid = uuid.slice(1, -1); // Strip { and } off the UUID.
+      uuid = uuid.slice(1, -1); 
 
       map[id] = uuid;
       this._write(map);
@@ -147,15 +147,15 @@ var UUIDMap = {
   },
 };
 
-// This is the old interface that UUIDMap replaced, to be removed when
-// the references listed in bug 1291399 are updated.
-/* exported getExtensionUUID */
+
+
+
 function getExtensionUUID(id) {
   return UUIDMap.get(id, true);
 }
 
-// For extensions that have called setUninstallURL(), send an event
-// so the browser can display the URL.
+
+
 var UninstallObserver = {
   initialized: false,
 
@@ -171,8 +171,8 @@ var UninstallObserver = {
   onUninstalling(addon) {
     let extension = GlobalManager.extensionMap.get(addon.id);
     if (extension) {
-      // Let any other interested listeners respond
-      // (e.g., display the uninstall URL)
+      
+      
       Management.emit("uninstall", extension);
     }
   },
@@ -184,23 +184,23 @@ var UninstallObserver = {
     }
 
     if (!this.leaveStorage) {
-      // Clear browser.local.storage
+      
       ExtensionStorage.clear(addon.id);
 
-      // Clear any IndexedDB storage created by the extension
+      
       let baseURI = NetUtil.newURI(`moz-extension://${uuid}/`);
       let principal = Services.scriptSecurityManager.createCodebasePrincipal(
         baseURI, {addonId: addon.id}
       );
       Services.qms.clearStoragesForPrincipal(principal);
 
-      // Clear localStorage created by the extension
+      
       let attrs = JSON.stringify({addonId: addon.id});
       Services.obs.notifyObservers(null, "clear-origin-attributes-data", attrs);
     }
 
     if (!this.leaveUuid) {
-      // Clear the entry in the UUID map
+      
       UUIDMap.remove(addon.id);
     }
   },
@@ -208,14 +208,14 @@ var UninstallObserver = {
 
 UninstallObserver.init();
 
-// Represents the data contained in an extension, contained either
-// in a directory or a zip file, which may or may not be installed.
-// This class implements the functionality of the Extension class,
-// primarily related to manifest parsing and localization, which is
-// useful prior to extension installation or initialization.
-//
-// No functionality of this class is guaranteed to work before
-// |readManifest| has been called, and completed.
+
+
+
+
+
+
+
+
 this.ExtensionData = class {
   constructor(rootURI) {
     this.rootURI = rootURI;
@@ -242,27 +242,27 @@ this.ExtensionData = class {
     return Log.repository.getLogger(LOGGER_ID_BASE + id);
   }
 
-  // Report an error about the extension's manifest file.
+  
   manifestError(message) {
     this.packagingError(`Reading manifest: ${message}`);
   }
 
-  // Report an error about the extension's general packaging.
+  
   packagingError(message) {
     this.errors.push(message);
     this.logger.error(`Loading extension '${this.id}': ${message}`);
   }
 
-  /**
-   * Returns the moz-extension: URL for the given path within this
-   * extension.
-   *
-   * Must not be called unless either the `id` or `uuid` property has
-   * already been set.
-   *
-   * @param {string} path The path portion of the URL.
-   * @returns {string}
-   */
+  
+
+
+
+
+
+
+
+
+
   getURL(path = "") {
     if (!(this.id || this.uuid)) {
       throw new Error("getURL may not be called before an `id` or `uuid` has been set");
@@ -287,15 +287,15 @@ this.ExtensionData = class {
             results.push(entry);
           });
         } catch (e) {
-          // Always return a list, even if the directory does not exist (or is
-          // not a directory) for symmetry with the ZipReader behavior.
+          
+          
         }
         iter.close();
 
         return results;
       }
 
-      // FIXME: We need a way to do this without main thread IO.
+      
 
       let uri = this.rootURI.QueryInterface(Ci.nsIJARURI);
 
@@ -305,11 +305,11 @@ this.ExtensionData = class {
       try {
         let results = [];
 
-        // Normalize the directory path.
+        
         path = `${uri.JAREntry}/${path}`;
         path = path.replace(/\/\/+/g, "/").replace(/^\/|\/$/g, "") + "/";
 
-        // Escape pattern metacharacters.
+        
         let pattern = path.replace(/[[\]()?*~|$\\]/g, "\\$&");
 
         let enumerator = zipReader.findEntries(pattern + "*");
@@ -319,9 +319,9 @@ this.ExtensionData = class {
             throw new Error("Unexpected ZipReader entry");
           }
 
-          // The enumerator returns the full path of all entries.
-          // Trim off the leading path, and filter out entries from
-          // subdirectories.
+          
+          
+          
           name = name.slice(path.length);
           if (name && !/\/./.test(name)) {
             results.push({
@@ -344,7 +344,7 @@ this.ExtensionData = class {
 
       NetUtil.asyncFetch({uri, loadUsingSystemPrincipal: true}, (inputStream, status) => {
         if (!Components.isSuccessCode(status)) {
-          // Convert status code to a string
+          
           let e = Components.Exception("", status);
           reject(new Error(`Error while loading '${uri}' (${e.name})`));
           return;
@@ -363,8 +363,24 @@ this.ExtensionData = class {
     });
   }
 
-  // Reads the extension's |manifest.json| file, and stores its
-  // parsed contents in |this.manifest|.
+  
+  
+  
+  
+  
+  userPermissions() {
+    let result = {
+      hosts: this.whiteListedHosts.pat,
+      apis: [...this.apiNames],
+    };
+    const EXP_PATTERN = /^experiments\.\w+/;
+    result.permissions = [...this.permissions]
+      .filter(p => !result.hosts.includes(p) && !EXP_PATTERN.test(p));
+    return result;
+  }
+
+  
+  
   readManifest() {
     return Promise.all([
       this.readJSON("manifest.json"),
@@ -401,12 +417,12 @@ this.ExtensionData = class {
       }
 
       try {
-        // Do not override the add-on id that has been already assigned.
+        
         if (!this.id && this.manifest.applications.gecko.id) {
           this.id = this.manifest.applications.gecko.id;
         }
       } catch (e) {
-        // Errors are handled by the type checks above.
+        
       }
 
       let permissions = this.manifest.permissions || [];
@@ -440,8 +456,8 @@ this.ExtensionData = class {
     return this.localeData.localize(...args);
   }
 
-  // If a "default_locale" is specified in that manifest, returns it
-  // as a Gecko-compatible locale string. Otherwise, returns null.
+  
+  
   get defaultLocale() {
     if (this.manifest.default_locale != null) {
       return this.normalizeLocaleCode(this.manifest.default_locale);
@@ -450,15 +466,15 @@ this.ExtensionData = class {
     return null;
   }
 
-  // Normalizes a Chrome-compatible locale code to the appropriate
-  // Gecko-compatible variant. Currently, this means simply
-  // replacing underscores with hyphens.
+  
+  
+  
   normalizeLocaleCode(locale) {
     return String.replace(locale, /_/g, "-");
   }
 
-  // Reads the locale file for the given Gecko-compatible locale code, and
-  // stores its parsed contents in |this.localeMessages.get(locale)|.
+  
+  
   readLocaleFile(locale) {
     return Task.spawn(function* () {
       let locales = yield this.promiseLocales();
@@ -475,12 +491,12 @@ this.ExtensionData = class {
     }.bind(this));
   }
 
-  // Reads the list of locales available in the extension, and returns a
-  // Promise which resolves to a Map upon completion.
-  // Each map key is a Gecko-compatible locale code, and each value is the
-  // "_locales" subdirectory containing that locale:
-  //
-  // Map(gecko-locale-code -> locale-directory-name)
+  
+  
+  
+  
+  
+  
   promiseLocales() {
     if (!this._promiseLocales) {
       this._promiseLocales = Task.spawn(function* () {
@@ -507,10 +523,10 @@ this.ExtensionData = class {
     return this._promiseLocales;
   }
 
-  // Reads the locale messages for all locales, and returns a promise which
-  // resolves to a Map of locale messages upon completion. Each key in the map
-  // is a Gecko-compatible locale code, and each value is a locale data object
-  // as returned by |readLocaleFile|.
+  
+  
+  
+  
   initAllLocales() {
     return Task.spawn(function* () {
       let locales = yield this.promiseLocales();
@@ -534,14 +550,14 @@ this.ExtensionData = class {
     }.bind(this));
   }
 
-  // Reads the locale file for the given Gecko-compatible locale code, or the
-  // default locale if no locale code is given, and sets it as the currently
-  // selected locale on success.
-  //
-  // Pre-loads the default locale for fallback message processing, regardless
-  // of the locale specified.
-  //
-  // If no locales are unavailable, resolves to |null|.
+  
+  
+  
+  
+  
+  
+  
+  
   initLocale(locale = this.defaultLocale) {
     return Task.spawn(function* () {
       if (locale == null) {
@@ -567,8 +583,8 @@ let _browserUpdated = false;
 
 const PROXIED_EVENTS = new Set(["test-harness-message"]);
 
-// We create one instance of this class per extension. |addonData|
-// comes directly from bootstrap.js when initializing.
+
+
 this.Extension = class extends ExtensionData {
   constructor(addonData, startupReason) {
     super(addonData.resourceURI);
@@ -657,7 +673,7 @@ this.Extension = class extends ExtensionData {
       uri, {addonId: this.id});
   }
 
-  // Checks that the given URL is a child of our baseURI.
+  
   isExtensionURL(url) {
     let uri = Services.io.newURI(url, null, null);
 
@@ -671,7 +687,7 @@ this.Extension = class extends ExtensionData {
         return manifest;
       }
 
-      // Load Experiments APIs that this extension depends on.
+      
       return Promise.all(
         Array.from(this.apiNames, api => ExtensionAPIs.load(api))
       ).then(apis => {
@@ -684,9 +700,9 @@ this.Extension = class extends ExtensionData {
     });
   }
 
-  // Representation of the extension to send to content
-  // processes. This should include anything the content process might
-  // need.
+  
+  
+  
   serialize() {
     return {
       id: this.id,
@@ -695,7 +711,7 @@ this.Extension = class extends ExtensionData {
       manifest: this.manifest,
       resourceURL: this.addonData.resourceURI.spec,
       baseURL: this.baseURI.spec,
-      content_scripts: this.manifest.content_scripts || [],  // eslint-disable-line camelcase
+      content_scripts: this.manifest.content_scripts || [],  
       webAccessibleResources: this.webAccessibleResources.serialize(),
       whiteListedHosts: this.whiteListedHosts.serialize(),
       localeData: this.localeData.serialize(),
@@ -719,7 +735,7 @@ this.Extension = class extends ExtensionData {
   }
 
   runManifest(manifest) {
-    // Strip leading slashes from web_accessible_resources.
+    
     let strippedWebAccessibleResources = [];
     if (manifest.web_accessible_resources) {
       strippedWebAccessibleResources = manifest.web_accessible_resources.map(path => path.replace(/^\/+/, ""));
@@ -760,11 +776,11 @@ this.Extension = class extends ExtensionData {
     ]);
   }
 
-  // Reads the locale file for the given Gecko-compatible locale code, or if
-  // no locale is given, the available locale closest to the UI locale.
-  // Sets the currently selected locale on success.
+  
+  
+  
   initLocale(locale = undefined) {
-    // Ugh.
+    
     let super_ = super.initLocale.bind(this);
 
     return Task.spawn(function* () {
@@ -803,10 +819,10 @@ this.Extension = class extends ExtensionData {
 
       GlobalManager.init(this);
 
-      // The "startup" Management event sent on the extension instance itself
-      // is emitted just before the Management "startup" event,
-      // and it is used to run code that needs to be executed before
-      // any of the "startup" listeners.
+      
+      
+      
+      
       this.emit("startup", this);
       Management.emit("startup", this);
 
@@ -838,10 +854,10 @@ this.Extension = class extends ExtensionData {
     Services.obs.removeObserver(this, "xpcom-shutdown");
 
     this.broadcast("Extension:FlushJarCache", {path: file.path}).then(() => {
-      // We can't delete this file until everyone using it has
-      // closed it (because Windows is dumb). So we wait for all the
-      // child processes (including the parent) to flush their JAR
-      // caches. These caches may keep the file open.
+      
+      
+      
+      
       file.remove(false);
     });
   }

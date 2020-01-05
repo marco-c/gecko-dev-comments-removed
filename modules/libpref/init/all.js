@@ -2496,7 +2496,11 @@ pref("layout.css.scroll-snap.prediction-max-velocity", 2000);
 pref("layout.css.scroll-snap.prediction-sensitivity", "0.750");
 
 
+#ifdef RELEASE_OR_BETA
 pref("layout.css.clip-path-shapes.enabled", false);
+#else
+pref("layout.css.clip-path-shapes.enabled", true);
+#endif
 
 
 pref("layout.css.DOMPoint.enabled", true);
@@ -5411,9 +5415,6 @@ pref("media.gmp.insecure.allow", false);
 #endif
 
 pref("dom.audiochannel.mutedByDefault", false);
-
-
-pref("dom.details_element.enabled", true);
 
 
 #ifdef MOZ_SECUREELEMENT
