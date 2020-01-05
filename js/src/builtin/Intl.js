@@ -1231,14 +1231,11 @@ function GetOption(options, property, type, values, fallback) {
 
 
 
-function GetNumberOption(options, property, minimum, maximum, fallback) {
-    assert(typeof minimum === "number" && (minimum | 0) === minimum, "GetNumberOption");
-    assert(typeof maximum === "number" && (maximum | 0) === maximum, "GetNumberOption");
-    assert(typeof fallback === "number" && (fallback | 0) === fallback, "GetNumberOption");
-    assert(minimum <= fallback && fallback <= maximum, "GetNumberOption");
-
-    
-    var value = options[property];
+function DefaultNumberOption(value, minimum, maximum, fallback) {
+    assert(typeof minimum === "number" && (minimum | 0) === minimum, "DefaultNumberOption");
+    assert(typeof maximum === "number" && (maximum | 0) === maximum, "DefaultNumberOption");
+    assert(typeof fallback === "number" && (fallback | 0) === fallback, "DefaultNumberOption");
+    assert(minimum <= fallback && fallback <= maximum, "DefaultNumberOption");
 
     
     if (value !== undefined) {
@@ -1253,6 +1250,18 @@ function GetNumberOption(options, property, minimum, maximum, fallback) {
 
     
     return fallback;
+}
+
+
+
+
+
+
+
+
+function GetNumberOption(options, property, minimum, maximum, fallback) {
+    
+    return DefaultNumberOption(options[property], minimum, maximum, fallback);
 }
 
 
@@ -1956,8 +1965,8 @@ function SetNumberFormatDigitOptions(lazyData, options, mnfdDefault, mxfdDefault
 
     
     if (mnsd !== undefined || mxsd !== undefined) {
-        mnsd = GetNumberOption(options, "minimumSignificantDigits", 1, 21, 1);
-        mxsd = GetNumberOption(options, "maximumSignificantDigits", mnsd, 21, 21);
+        mnsd = DefaultNumberOption(mnsd, 1, 21, 1);
+        mxsd = DefaultNumberOption(mxsd, mnsd, 21, 21);
         lazyData.minimumSignificantDigits = mnsd;
         lazyData.maximumSignificantDigits = mxsd;
     }
