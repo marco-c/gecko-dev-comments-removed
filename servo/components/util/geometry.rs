@@ -32,16 +32,10 @@ known_heap_size!(0, ScreenPx);
 
 
 
-pub static MAX_RECT: Rect<Au> = Rect {
-    origin: Point2D {
-        x: Au(i32::MIN / 2),
-        y: Au(i32::MIN / 2),
-    },
-    size: Size2D {
-        width: MAX_AU,
-        height: MAX_AU,
-    }
-};
+#[inline(always)]
+pub fn max_rect() -> Rect<Au> {
+    Rect::new(Point2D::new(Au(i32::MIN / 2), Au(i32::MIN / 2)), Size2D::new(MAX_AU, MAX_AU))
+}
 
 
 pub fn f32_rect_to_au_rect(rect: Rect<f32>) -> Rect<Au> {

@@ -365,9 +365,9 @@ pub enum Milliseconds {}
 pub enum Nanoseconds {}
 
 
-pub type MsDuration = Length<Milliseconds, u64>;
+pub type MsDuration = Length<u64, Milliseconds>;
 
-pub type NsDuration = Length<Nanoseconds, u64>;
+pub type NsDuration = Length<u64, Nanoseconds>;
 
 
 pub fn precise_time_ms() -> MsDuration {
@@ -568,13 +568,13 @@ pub struct StackingContextScrollState {
 pub struct WindowSizeData {
     
     
-    pub initial_viewport: TypedSize2D<ViewportPx, f32>,
+    pub initial_viewport: TypedSize2D<f32, ViewportPx>,
 
     
-    pub visible_viewport: TypedSize2D<PagePx, f32>,
+    pub visible_viewport: TypedSize2D<f32, PagePx>,
 
     
-    pub device_pixel_ratio: ScaleFactor<ViewportPx, DevicePixel, f32>,
+    pub device_pixel_ratio: ScaleFactor<f32, ViewportPx, DevicePixel>,
 }
 
 

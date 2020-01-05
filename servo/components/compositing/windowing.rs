@@ -21,9 +21,9 @@ use util::geometry::ScreenPx;
 
 #[derive(Clone)]
 pub enum MouseWindowEvent {
-    Click(MouseButton, TypedPoint2D<DevicePixel, f32>),
-    MouseDown(MouseButton, TypedPoint2D<DevicePixel, f32>),
-    MouseUp(MouseButton, TypedPoint2D<DevicePixel, f32>),
+    Click(MouseButton, TypedPoint2D<f32, DevicePixel>),
+    MouseDown(MouseButton, TypedPoint2D<f32, DevicePixel>),
+    MouseUp(MouseButton, TypedPoint2D<f32, DevicePixel>),
 }
 
 #[derive(Clone)]
@@ -49,22 +49,22 @@ pub enum WindowEvent {
     
     InitializeCompositing,
     
-    Resize(TypedSize2D<DevicePixel, u32>),
+    Resize(TypedSize2D<u32, DevicePixel>),
     
-    TouchpadPressure(TypedPoint2D<DevicePixel, f32>, f32, TouchpadPressurePhase),
+    TouchpadPressure(TypedPoint2D<f32, DevicePixel>, f32, TouchpadPressurePhase),
     
-    Viewport(TypedPoint2D<DevicePixel, u32>, TypedSize2D<DevicePixel, u32>),
+    Viewport(TypedPoint2D<u32, DevicePixel>, TypedSize2D<u32, DevicePixel>),
     
     LoadUrl(String),
     
     MouseWindowEventClass(MouseWindowEvent),
     
-    MouseWindowMoveEventClass(TypedPoint2D<DevicePixel, f32>),
+    MouseWindowMoveEventClass(TypedPoint2D<f32, DevicePixel>),
     
-    Touch(TouchEventType, TouchId, TypedPoint2D<DevicePixel, f32>),
+    Touch(TouchEventType, TouchId, TypedPoint2D<f32, DevicePixel>),
     
     
-    Scroll(TypedPoint2D<DevicePixel, f32>, TypedPoint2D<DevicePixel, i32>, TouchEventType),
+    Scroll(TypedPoint2D<f32, DevicePixel>, TypedPoint2D<i32, DevicePixel>, TouchEventType),
     
     Zoom(f32),
     
@@ -108,9 +108,9 @@ impl Debug for WindowEvent {
 
 pub trait WindowMethods {
     
-    fn framebuffer_size(&self) -> TypedSize2D<DevicePixel, u32>;
+    fn framebuffer_size(&self) -> TypedSize2D<u32, DevicePixel>;
     
-    fn size(&self) -> TypedSize2D<ScreenPx, f32>;
+    fn size(&self) -> TypedSize2D<f32, ScreenPx>;
     
     fn present(&self);
 
@@ -137,7 +137,7 @@ pub trait WindowMethods {
     fn head_parsed(&self);
 
     
-    fn scale_factor(&self) -> ScaleFactor<ScreenPx, DevicePixel, f32>;
+    fn scale_factor(&self) -> ScaleFactor<f32, ScreenPx, DevicePixel>;
 
     
     fn native_display(&self) -> NativeDisplay;

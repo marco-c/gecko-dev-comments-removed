@@ -2,7 +2,6 @@
 
 
 
-use euclid::Size2D;
 use euclid::size::TypedSize2D;
 use gecko_bindings::bindings::RawServoStyleSet;
 use num_cpus;
@@ -56,7 +55,7 @@ lazy_static! {
 impl PerDocumentStyleData {
     pub fn new() -> PerDocumentStyleData {
         
-        let window_size: TypedSize2D<ViewportPx, f32> = Size2D::typed(800.0, 600.0);
+        let window_size: TypedSize2D<f32, ViewportPx> = TypedSize2D::new(800.0, 600.0);
         let device = Device::new(MediaType::Screen, window_size);
 
         let (new_anims_sender, new_anims_receiver) = channel();

@@ -62,7 +62,7 @@ pub struct Pipeline {
     pub url: Url,
     
     pub title: Option<String>,
-    pub size: Option<TypedSize2D<PagePx, f32>>,
+    pub size: Option<TypedSize2D<f32, PagePx>>,
     
     
     pub running_animations: bool,
@@ -112,9 +112,9 @@ pub struct InitialPipelineState {
     
     pub mem_profiler_chan: profile_mem::ProfilerChan,
     
-    pub window_size: Option<TypedSize2D<PagePx, f32>>,
+    pub window_size: Option<TypedSize2D<f32, PagePx>>,
     
-    pub device_pixel_ratio: ScaleFactor<ViewportPx, DevicePixel, f32>,
+    pub device_pixel_ratio: ScaleFactor<f32, ViewportPx, DevicePixel>,
     
     
     pub script_chan: Option<IpcSender<ConstellationControlMsg>>,
@@ -280,7 +280,7 @@ impl Pipeline {
            chrome_to_paint_chan: Sender<ChromeToPaintMsg>,
            is_private: bool,
            url: Url,
-           size: Option<TypedSize2D<PagePx, f32>>,
+           size: Option<TypedSize2D<f32, PagePx>>,
            visible: bool)
            -> Pipeline {
         Pipeline {
