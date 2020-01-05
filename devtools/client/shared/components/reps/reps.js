@@ -61,7 +61,8 @@ return  (function(modules) {
 	  parseURLEncodedText,
 	  parseURLParams,
 	  getSelectableInInspectorGrips,
-	  maybeEscapePropertyName
+	  maybeEscapePropertyName,
+	  getGripPreviewItems
 	} = __webpack_require__(3);
 	
 	module.exports = {
@@ -72,7 +73,8 @@ return  (function(modules) {
 	  maybeEscapePropertyName,
 	  parseURLEncodedText,
 	  parseURLParams,
-	  getSelectableInInspectorGrips
+	  getSelectableInInspectorGrips,
+	  getGripPreviewItems
 	};
 
  },
@@ -576,12 +578,22 @@ return  (function(modules) {
 	
 	  
 	  if (grip.preview && grip.preview.target) {
-	    return [grip.preview.target];
+	    let keys = Object.keys(grip.preview.properties);
+	    let values = Object.values(grip.preview.properties);
+	    return [grip.preview.target, ...keys, ...values];
+	  }
+	
+	  
+	  if (grip.displayString) {
+	    return [grip.displayString];
 	  }
 	
 	  
 	  if (grip.preview && grip.preview.ownProperties) {
 	    let propertiesValues = Object.values(grip.preview.ownProperties).map(property => property.value || property);
+	
+	    let propertyKeys = Object.keys(grip.preview.ownProperties);
+	    propertiesValues = propertiesValues.concat(propertyKeys);
 	
 	    
 	    if (grip.preview.safeGetterValues) {
@@ -639,7 +651,8 @@ return  (function(modules) {
 	  getURLDisplayString,
 	  getSelectableInInspectorGrips,
 	  maybeEscapePropertyName,
-	  safeObjectLink
+	  safeObjectLink,
+	  getGripPreviewItems
 	};
 
  },
