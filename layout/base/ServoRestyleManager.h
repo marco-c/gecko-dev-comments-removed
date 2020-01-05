@@ -92,12 +92,6 @@ public:
 
   static void ClearServoDataFromSubtree(Element* aElement);
 
-  
-
-
-
-  static void ClearDirtyDescendantsFromSubtree(Element* aElement);
-
 protected:
   ~ServoRestyleManager() override
   {
