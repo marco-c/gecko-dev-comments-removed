@@ -130,14 +130,14 @@ namespace detail {
 
 
 
-static const int64_t LOW_DATA_THRESHOLD_USECS = 5000000;
+static const int64_t LOW_BUFFER_THRESHOLD_USECS = 5000000;
 
-static constexpr auto LOW_BUFFER_THRESHOLD = TimeUnit::FromMicroseconds(LOW_DATA_THRESHOLD_USECS);
+static constexpr auto LOW_BUFFER_THRESHOLD = TimeUnit::FromMicroseconds(LOW_BUFFER_THRESHOLD_USECS);
 
 
 
-static_assert(LOW_DATA_THRESHOLD_USECS > AMPLE_AUDIO_USECS,
-              "LOW_DATA_THRESHOLD_USECS is too small");
+static_assert(LOW_BUFFER_THRESHOLD_USECS > AMPLE_AUDIO_USECS,
+              "LOW_BUFFER_THRESHOLD_USECS is too small");
 
 } 
 
