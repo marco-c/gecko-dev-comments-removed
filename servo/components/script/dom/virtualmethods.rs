@@ -124,6 +124,14 @@ pub trait VirtualMethods {
             s.cloning_steps(copy, maybe_doc, clone_children);
         }
     }
+
+    
+    
+    fn pop(&self) {
+        if let Some(ref s) = self.super_type() {
+            s.pop();
+        }
+    }
 }
 
 

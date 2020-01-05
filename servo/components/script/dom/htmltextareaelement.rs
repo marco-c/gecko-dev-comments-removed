@@ -425,6 +425,13 @@ impl VirtualMethods for HTMLTextAreaElement {
             }
         }
     }
+
+    fn pop(&self) {
+        self.super_type().unwrap().pop();
+
+        
+        self.reset();
+    }
 }
 
 impl FormControl for HTMLTextAreaElement {}
