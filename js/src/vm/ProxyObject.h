@@ -93,11 +93,8 @@ class ProxyObject : public ShapedObject
 
         
         
-
-        
-        
         return clasp->isProxy() &&
-               clasp->isTrace(proxy_Trace) &&
+               clasp->isTrace(ProxyObject::trace) &&
                !clasp->getCall() && !clasp->getConstruct();
     }
 
