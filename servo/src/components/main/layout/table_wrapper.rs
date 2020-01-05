@@ -40,7 +40,7 @@ impl TableWrapperFlow {
                              box_: Box)
                              -> TableWrapperFlow {
         let mut block_flow = BlockFlow::from_node_and_box(node, box_);
-        let table_layout = if block_flow.box_().style().Table.get().table_layout ==
+        let table_layout = if block_flow.box_().style().get_table().table_layout ==
                               table_layout::fixed {
             FixedLayout
         } else {
@@ -57,7 +57,7 @@ impl TableWrapperFlow {
                      node: &ThreadSafeLayoutNode)
                      -> TableWrapperFlow {
         let mut block_flow = BlockFlow::from_node(constructor, node);
-        let table_layout = if block_flow.box_().style().Table.get().table_layout ==
+        let table_layout = if block_flow.box_().style().get_table().table_layout ==
                               table_layout::fixed {
             FixedLayout
         } else {
@@ -75,7 +75,7 @@ impl TableWrapperFlow {
                            float_kind: FloatKind)
                            -> TableWrapperFlow {
         let mut block_flow = BlockFlow::float_from_node(constructor, node, float_kind);
-        let table_layout = if block_flow.box_().style().Table.get().table_layout ==
+        let table_layout = if block_flow.box_().style().get_table().table_layout ==
                               table_layout::fixed {
             FixedLayout
         } else {
@@ -237,12 +237,12 @@ impl TableWrapper {
                 
                 
                 
-                let padding_left = specified(style.Padding.get().padding_left,
+                let padding_left = specified(style.get_padding().padding_left,
                                              input.available_width);
-                let padding_right = specified(style.Padding.get().padding_right,
+                let padding_right = specified(style.get_padding().padding_right,
                                               input.available_width);
-                let border_left = style.Border.get().border_left_width;
-                let border_right = style.Border.get().border_right_width;
+                let border_left = style.get_border().border_left_width;
+                let border_right = style.get_border().border_right_width;
                 let padding_and_borders = padding_left + padding_right + border_left + border_right;
                 
                 
