@@ -1055,10 +1055,16 @@ Gecko_LoadStyleSheet(css::Loader* aLoader,
 
   nsDependentCSubstring urlSpec(reinterpret_cast<const char*>(aURLString),
                                 aURLStringLength);
-
-  
   nsCOMPtr<nsIURI> uri;
-  MOZ_ALWAYS_SUCCEEDS(NS_NewURI(getter_AddRefs(uri), urlSpec));
+  nsresult rv = NS_NewURI(getter_AddRefs(uri), urlSpec);
+
+  if (NS_FAILED(rv)) {
+    
+    
+    
+    
+    return;
+  }
 
   aLoader->LoadChildSheet(aParent, uri, media, nullptr, aImportRule, nullptr);
 }
