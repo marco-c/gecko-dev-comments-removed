@@ -1767,10 +1767,10 @@ SessionStore.prototype = {
       .filter(tab => tab.isPrivate == isPrivate)
       .map(function (tab) {
         
-        let lastEntry = tab.entries[tab.entries.length - 1];
+        let entry = tab.entries[tab.index - 1];
         return {
-          url: lastEntry.url,
-          title: lastEntry.title || "",
+          url: entry.url,
+          title: entry.title || "",
           data: JSON.stringify(tab),
         };
       });
