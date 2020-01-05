@@ -145,9 +145,6 @@ add_task(function* testSetDetectionIntervalBeforeAddingListener() {
   idleService._fireObservers("idle");
   yield extension.awaitMessage("listenerFired");
   checkActivity({expectedAdd: [99], expectedRemove: [], expectedFires: ["idle"]});
-  
-  
-  yield new Promise(resolve => setTimeout(resolve, 0));
   yield extension.unload();
 });
 
@@ -174,10 +171,6 @@ add_task(function* testSetDetectionIntervalAfterAddingListener() {
   idleService._fireObservers("idle");
   yield extension.awaitMessage("listenerFired");
   checkActivity({expectedAdd: [60, 99], expectedRemove: [60], expectedFires: ["idle"]});
-
-  
-  
-  yield new Promise(resolve => setTimeout(resolve, 0));
   yield extension.unload();
 });
 
@@ -205,9 +198,5 @@ add_task(function* testOnlyAddingListener() {
   
   idleService._fireObservers("idle-daily");
   checkActivity({expectedAdd: [60], expectedRemove: [], expectedFires: ["active", "idle-daily"]});
-
-  
-  
-  yield new Promise(resolve => setTimeout(resolve, 0));
   yield extension.unload();
 });

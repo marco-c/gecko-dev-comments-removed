@@ -20,7 +20,7 @@ var {
 
 function WebRequestEventManager(context, eventName) {
   let name = `webRequest.${eventName}`;
-  let register = (fire, filter, info) => {
+  let register = (callback, filter, info) => {
     let listener = data => {
       
       
@@ -65,7 +65,7 @@ function WebRequestEventManager(context, eventName) {
         }
       }
 
-      return fire.sync(data2);
+      return context.runSafe(callback, data2);
     };
 
     let filter2 = {};
