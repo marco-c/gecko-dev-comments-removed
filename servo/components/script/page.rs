@@ -13,9 +13,9 @@ use dom::node::{Node, NodeHelpers};
 use dom::window::Window;
 use layout_interface::{
     ContentBoxQuery, ContentBoxResponse, ContentBoxesQuery, ContentBoxesResponse,
-    GetRPCMsg, HitTestResponse, LayoutChan, LayoutRPC, MouseOverResponse, NoQuery,
-    Reflow, ReflowForDisplay, ReflowForScriptQuery, ReflowGoal, ReflowMsg,
-    ReflowQueryType, TrustedNodeAddress
+    GetRPCMsg, HitTestResponse, LayoutChan, LayoutRPC, MouseOverResponse, Reflow,
+    ReflowForScriptQuery, ReflowGoal, ReflowMsg, ReflowQueryType,
+    TrustedNodeAddress
 };
 use script_traits::{UntrustedNodeAddress, ScriptControlChan};
 
@@ -29,7 +29,7 @@ use servo_net::storage_task::StorageTask;
 use servo_util::geometry::{Au, MAX_RECT};
 use servo_util::geometry;
 use servo_util::str::DOMString;
-use servo_util::smallvec::{SmallVec1, SmallVec};
+use servo_util::smallvec::SmallVec;
 use std::cell::{Cell, Ref, RefMut};
 use std::comm::{channel, Receiver, Empty, Disconnected};
 use std::mem::replace;
@@ -78,9 +78,6 @@ pub struct Page {
     pub resize_event: Cell<Option<WindowSizeData>>,
 
     
-    pub pending_dirty_nodes: DOMRefCell<SmallVec1<UntrustedNodeAddress>>,
-
-    
     pub fragment_name: DOMRefCell<Option<String>>,
 
     
@@ -94,15 +91,6 @@ pub struct Page {
 
     
     pub children: DOMRefCell<Vec<Rc<Page>>>,
-
-    
-    pub damaged: Cell<bool>,
-
-    
-    pub pending_reflows: Cell<int>,
-
-    
-    pub avoided_reflows: Cell<int>,
 
     
     
@@ -165,57 +153,35 @@ impl Page {
             url: DOMRefCell::new(None),
             next_subpage_id: Cell::new(SubpageId(0)),
             resize_event: Cell::new(None),
-            pending_dirty_nodes: DOMRefCell::new(SmallVec1::new()),
             fragment_name: DOMRefCell::new(None),
             last_reflow_id: Cell::new(0),
             resource_task: resource_task,
             storage_task: storage_task,
             constellation_chan: constellation_chan,
             children: DOMRefCell::new(vec!()),
-            damaged: Cell::new(false),
-            pending_reflows: Cell::new(0),
-            avoided_reflows: Cell::new(0),
             page_clip_rect: Cell::new(MAX_RECT),
         }
     }
 
-    pub fn flush_layout(&self, query: ReflowQueryType) {
-        
-        
-        let (reflow_goal, force_reflow) = if self.damaged.get() {
-            (ReflowForDisplay, true)
-        } else {
-            match query {
-                ContentBoxQuery(_) | ContentBoxesQuery(_) => (ReflowForScriptQuery, true),
-                NoQuery => (ReflowForDisplay, false),
-            }
-        };
-
-        if force_reflow {
-            let frame = self.frame();
-            let window = frame.as_ref().unwrap().window.root();
-            self.reflow(reflow_goal, window.control_chan().clone(), &mut **window.compositor(), query);
-        } else {
-            self.avoided_reflows.set(self.avoided_reflows.get() + 1);
-        }
+    pub fn flush_layout(&self, goal: ReflowGoal, query: ReflowQueryType) {
+        let frame = self.frame();
+        let window = frame.as_ref().unwrap().window.root();
+        self.reflow(goal, window.control_chan().clone(), &mut **window.compositor(), query);
     }
 
-     pub fn layout(&self) -> &LayoutRPC {
-        self.flush_layout(NoQuery);
-        self.join_layout(); 
-        let layout_rpc: &LayoutRPC = &*self.layout_rpc;
-        layout_rpc
+    pub fn layout(&self) -> &LayoutRPC {
+        &*self.layout_rpc
     }
 
     pub fn content_box_query(&self, content_box_request: TrustedNodeAddress) -> Rect<Au> {
-        self.flush_layout(ContentBoxQuery(content_box_request));
+        self.flush_layout(ReflowForScriptQuery, ContentBoxQuery(content_box_request));
         self.join_layout(); 
         let ContentBoxResponse(rect) = self.layout_rpc.content_box();
         rect
     }
 
     pub fn content_boxes_query(&self, content_boxes_request: TrustedNodeAddress) -> Vec<Rect<Au>> {
-        self.flush_layout(ContentBoxesQuery(content_boxes_request));
+        self.flush_layout(ReflowForScriptQuery, ContentBoxesQuery(content_boxes_request));
         self.join_layout(); 
         let ContentBoxesResponse(rects) = self.layout_rpc.content_boxes();
         rects
@@ -276,6 +242,13 @@ impl Page {
             }
         }
     }
+
+    pub fn dirty_all_nodes(&self) {
+        match *self.frame.borrow() {
+            None => {}
+            Some(ref frame) => frame.document.root().dirty_all_nodes(),
+        }
+    }
 }
 
 impl Iterator<Rc<Page>> for PageIterator {
@@ -334,7 +307,7 @@ impl Page {
 
     
     
-    pub fn join_layout(&self) {
+    fn join_layout(&self) {
         let mut layout_join_port = self.layout_join_port.borrow_mut();
         if layout_join_port.is_some() {
             let join_port = replace(&mut *layout_join_port, None);
@@ -375,54 +348,54 @@ impl Page {
             }
         };
 
-        match root.root() {
-            None => {},
-            Some(root) => {
-                debug!("avoided {:d} reflows", self.avoided_reflows.get());
-                self.avoided_reflows.set(0);
+        let root = match root.root() {
+            None => return,
+            Some(root) => root,
+        };
 
-                debug!("script: performing reflow for goal {}", goal);
+        debug!("script: performing reflow for goal {}", goal);
 
-                
-                self.join_layout();
-
-                
-                let (join_chan, join_port) = channel();
-                let mut layout_join_port = self.layout_join_port.borrow_mut();
-                *layout_join_port = Some(join_port);
-
-                let last_reflow_id = &self.last_reflow_id;
-                last_reflow_id.set(last_reflow_id.get() + 1);
-
-                let root: JSRef<Node> = NodeCast::from_ref(*root);
-
-                let window_size = self.window_size.get();
-                self.damaged.set(false);
-
-                
-                let reflow = box Reflow {
-                    document_root: root.to_trusted_node_address(),
-                    url: self.get_url(),
-                    iframe: self.subpage_id.is_some(),
-                    goal: goal,
-                    window_size: window_size,
-                    script_chan: script_chan,
-                    script_join_chan: join_chan,
-                    id: last_reflow_id.get(),
-                    query_type: query_type,
-                    page_clip_rect: self.page_clip_rect.get(),
-                };
-
-                let LayoutChan(ref chan) = self.layout_chan;
-                chan.send(ReflowMsg(reflow));
-
-                debug!("script: layout forked")
-            }
+        let root: JSRef<Node> = NodeCast::from_ref(*root);
+        if !root.get_has_dirty_descendants() {
+            debug!("root has no dirty descendants; avoiding reflow");
+            return
         }
-    }
 
-    pub fn damage(&self) {
-        self.damaged.set(true);
+        debug!("script: performing reflow for goal {}", goal);
+
+        
+        let (join_chan, join_port) = channel();
+
+        {
+            let mut layout_join_port = self.layout_join_port.borrow_mut();
+            *layout_join_port = Some(join_port);
+        }
+
+        let last_reflow_id = &self.last_reflow_id;
+        last_reflow_id.set(last_reflow_id.get() + 1);
+
+        let window_size = self.window_size.get();
+
+        
+        let reflow = box Reflow {
+            document_root: root.to_trusted_node_address(),
+            url: self.get_url(),
+            iframe: self.subpage_id.is_some(),
+            goal: goal,
+            window_size: window_size,
+            script_chan: script_chan,
+            script_join_chan: join_chan,
+            id: last_reflow_id.get(),
+            query_type: query_type,
+            page_clip_rect: self.page_clip_rect.get(),
+        };
+
+        let LayoutChan(ref chan) = self.layout_chan;
+        chan.send(ReflowMsg(reflow));
+
+        debug!("script: layout forked");
+
+        self.join_layout();
     }
 
     
