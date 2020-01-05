@@ -270,10 +270,17 @@ add_task(function* test_context_menu_username_login_fill() {
 
 
 function* openPasswordContextMenu(browser, passwordInput, assertCallback = null) {
-  
   let contextMenuShownPromise = BrowserTestUtils.waitForEvent(CONTEXT_MENU, "popupshown");
-  let eventDetails = {type: "contextmenu", button: 2};
-  BrowserTestUtils.synthesizeMouseAtCenter(passwordInput, eventDetails, browser);
+
+  
+  
+  
+  let eventDetails = {type: "mousedown", button: 2};
+  yield BrowserTestUtils.synthesizeMouseAtCenter(passwordInput, eventDetails, browser);
+  
+  eventDetails = {type: "contextmenu", button: 2};
+  yield BrowserTestUtils.synthesizeMouseAtCenter(passwordInput, eventDetails, browser);
+
   yield contextMenuShownPromise;
 
   if (assertCallback) {
@@ -284,7 +291,7 @@ function* openPasswordContextMenu(browser, passwordInput, assertCallback = null)
   }
 
   
-  let popupShownPromise = BrowserTestUtils.waitForEvent(POPUP_HEADER, "popupshown");
+  let popupShownPromise = BrowserTestUtils.waitForCondition(() => POPUP_HEADER.open);
   EventUtils.synthesizeMouseAtCenter(POPUP_HEADER, {});
   yield popupShownPromise;
 }
