@@ -1226,13 +1226,9 @@ PluginModuleChromeParent::TakeFullMinidump(base::ProcessId aContentPid,
     
     
     
-    bool exists;
     nsCOMPtr<nsIFile> browserDumpFile;
-    if (!aBrowserDumpId.IsEmpty() &&
-        CrashReporter::GetMinidumpForID(aBrowserDumpId, getter_AddRefs(browserDumpFile)) &&
-        browserDumpFile &&
-        NS_SUCCEEDED(browserDumpFile->Exists(&exists)) && exists)
-    {
+    if (CrashReporter::GetMinidumpForID(aBrowserDumpId,
+                                        getter_AddRefs(browserDumpFile))) {
         
         
         reportsReady = mCrashReporter->GenerateMinidumpAndPair(
@@ -1264,8 +1260,7 @@ PluginModuleChromeParent::TakeFullMinidump(base::ProcessId aContentPid,
                  NS_ConvertUTF16toUTF8(aDumpId).get()));
         nsAutoCString additionalDumps("browser");
         nsCOMPtr<nsIFile> pluginDumpFile;
-        if (GetMinidumpForID(aDumpId, getter_AddRefs(pluginDumpFile)) &&
-            pluginDumpFile) {
+        if (GetMinidumpForID(aDumpId, getter_AddRefs(pluginDumpFile))) {
 #ifdef MOZ_CRASHREPORTER_INJECTOR
             
             

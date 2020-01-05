@@ -164,7 +164,8 @@ CreateMetadataNode(StringTable& strings)
 
 
 static Json::Value
-CreatePayloadNode(StringTable& strings, const string& aSessionId)
+CreatePayloadNode(StringTable& strings, const string& aHash,
+                  const string& aSessionId)
 {
   Json::Value payload;
 
@@ -174,6 +175,7 @@ CreatePayloadNode(StringTable& strings, const string& aSessionId)
   payload["crashTime"] = CurrentDate(kISO8601DateHours);
   payload["hasCrashEnvironment"] = true;
   payload["crashId"] = GetDumpLocalID();
+  payload["minidumpSha256Hash"] = aHash;
   payload["processType"] = "main"; 
 
   
@@ -219,7 +221,7 @@ CreateApplicationNode(const string& aVendor, const string& aName,
 
 
 static Json::Value
-CreateRootNode(StringTable& strings, const string& aUuid,
+CreateRootNode(StringTable& strings, const string& aUuid, const string& aHash,
                const string& aClientId, const string& aSessionId,
                const string& aName, const string& aVersion,
                const string& aChannel, const string& aBuildId)
@@ -252,7 +254,7 @@ CreateRootNode(StringTable& strings, const string& aUuid,
     root["environment"] = environment;
   }
 
-  root["payload"] = CreatePayloadNode(strings, aSessionId);
+  root["payload"] = CreatePayloadNode(strings, aHash, aSessionId);
   root["application"] = CreateApplicationNode(strings["Vendor"], aName,
                                               aVersion, aChannel, aBuildId,
                                               architecture, xpcomAbi);
@@ -282,7 +284,7 @@ GenerateSubmissionUrl(const string& aUrl, const string& aId,
 
 
 bool
-SendCrashPing(StringTable& strings, string& pingUuid)
+SendCrashPing(StringTable& strings, const string& aHash, string& pingUuid)
 {
   string clientId    = strings[kTelemetryClientId];
   string serverUrl   = strings[kTelemetryUrl];
@@ -305,7 +307,7 @@ SendCrashPing(StringTable& strings, string& pingUuid)
     return false;
   }
 
-  Json::Value root = CreateRootNode(strings, uuid, clientId, sessionId,
+  Json::Value root = CreateRootNode(strings, uuid, aHash, clientId, sessionId,
                                     name, version, channel, buildId);
 
   

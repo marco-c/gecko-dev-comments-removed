@@ -47,23 +47,37 @@ function dateToDays(date) {
 
 
 
-
-
-
-function parseAndRemoveField(obj, field, parseAsJson = true) {
+function getAndRemoveField(obj, field) {
   let value = null;
 
   if (field in obj) {
-    if (!parseAsJson) {
-      
-      
-      value = obj[field].trim();
-    } else {
-      try {
-        value = JSON.parse(obj[field]);
-      } catch (e) {
-        Cu.reportError(e);
-      }
+    
+    
+    value = obj[field].trim();
+
+    delete obj[field];
+  }
+
+  return value;
+}
+
+
+
+
+
+
+
+
+
+
+function parseAndRemoveField(obj, field) {
+  let value = null;
+
+  if (field in obj) {
+    try {
+      value = JSON.parse(obj[field]);
+    } catch (e) {
+      Cu.reportError(e);
     }
 
     delete obj[field];
@@ -459,7 +473,7 @@ this.CrashManager.prototype = Object.freeze({
       if (processType === this.PROCESS_TYPE_CONTENT) {
         this._sendCrashPing(id, processType, date, metadata);
       }
-   }.bind(this));
+    }.bind(this));
 
     return promise;
   },
@@ -637,12 +651,12 @@ this.CrashManager.prototype = Object.freeze({
     let reportMeta = Cu.cloneInto(metadata, myScope);
     let crashEnvironment = parseAndRemoveField(reportMeta,
                                                "TelemetryEnvironment");
-    let sessionId = parseAndRemoveField(reportMeta, "TelemetrySessionId",
-                                         false);
+    let sessionId = getAndRemoveField(reportMeta, "TelemetrySessionId");
     let stackTraces = parseAndRemoveField(reportMeta, "StackTraces");
+    let minidumpSha256Hash = getAndRemoveField(reportMeta,
+                                               "MinidumpSha256Hash");
     
-    let pingId = parseAndRemoveField(reportMeta, "CrashPingUUID",
-                                      false);
+    let pingId = getAndRemoveField(reportMeta, "CrashPingUUID");
 
     
     reportMeta = this._filterAnnotations(reportMeta);
@@ -654,6 +668,7 @@ this.CrashManager.prototype = Object.freeze({
         crashTime: date.toISOString().slice(0, 13) + ":00:00.000Z", 
         sessionId,
         crashId,
+        minidumpSha256Hash,
         processType: type,
         stackTraces,
         metadata: reportMeta,
