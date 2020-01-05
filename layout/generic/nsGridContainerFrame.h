@@ -194,6 +194,13 @@ public:
     GridItemCSSOrderIterator;
   typedef GridItemCSSOrderIteratorT<nsFrameList::reverse_iterator>
     ReverseGridItemCSSOrderIterator;
+  struct FindItemInGridOrderResult
+  {
+    
+    const GridItemInfo* mItem;
+    
+    bool mIsInEdgeTrack;
+  };
 protected:
   static const uint32_t kAutoLine;
   
@@ -253,6 +260,34 @@ protected:
   void MergeSortedOverflow(nsFrameList& aList);
   
   void MergeSortedExcessOverflowContainers(nsFrameList& aList);
+
+  
+
+
+
+
+
+  static FindItemInGridOrderResult
+  FindFirstItemInGridOrder(GridItemCSSOrderIterator& aIter,
+                           const nsTArray<GridItemInfo>& aGridItems,
+                           LineRange GridArea::* aMajor,
+                           LineRange GridArea::* aMinor,
+                           uint32_t aFragmentStartTrack);
+  
+
+
+
+
+
+
+
+  static FindItemInGridOrderResult
+  FindLastItemInGridOrder(ReverseGridItemCSSOrderIterator& aIter,
+                          const nsTArray<GridItemInfo>& aGridItems,
+                          LineRange GridArea::* aMajor,
+                          LineRange GridArea::* aMinor,
+                          uint32_t aFragmentStartTrack,
+                          uint32_t aFirstExcludedTrack);
 
 #ifdef DEBUG
   void SanityCheckGridItemsBeforeReflow() const;
