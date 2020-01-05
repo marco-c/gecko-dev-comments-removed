@@ -2608,6 +2608,23 @@ MainAxisPositionTracker::
   }
 
   
+  if (mJustifyContent == NS_STYLE_ALIGN_LEFT ||
+      mJustifyContent == NS_STYLE_ALIGN_RIGHT) {
+    if (aAxisTracker.IsColumnOriented()) {
+      
+      
+      mJustifyContent = NS_STYLE_ALIGN_START;
+    } else {
+      
+      
+      const bool isLTR = aAxisTracker.GetWritingMode().IsBidiLTR();
+      const bool isAlignLeft = (mJustifyContent == NS_STYLE_ALIGN_LEFT);
+      mJustifyContent = (isAlignLeft == isLTR) ? NS_STYLE_ALIGN_START
+                                               : NS_STYLE_ALIGN_END;
+    }
+  }
+
+  
   if (mJustifyContent == NS_STYLE_JUSTIFY_START) {
     mJustifyContent = NS_STYLE_JUSTIFY_FLEX_START;
   } else if (mJustifyContent == NS_STYLE_JUSTIFY_END) {
@@ -2630,8 +2647,6 @@ MainAxisPositionTracker::
       mPackingSpaceRemaining != 0 &&
       !aLine->IsEmpty()) {
     switch (mJustifyContent) {
-      case NS_STYLE_JUSTIFY_LEFT:
-      case NS_STYLE_JUSTIFY_RIGHT:
       case NS_STYLE_JUSTIFY_BASELINE:
       case NS_STYLE_JUSTIFY_LAST_BASELINE:
       case NS_STYLE_JUSTIFY_SPACE_EVENLY:
@@ -2808,6 +2823,23 @@ CrossAxisPositionTracker::
   }
 
   
+  if (mAlignContent == NS_STYLE_ALIGN_LEFT ||
+      mAlignContent == NS_STYLE_ALIGN_RIGHT) {
+    if (aAxisTracker.IsRowOriented()) {
+      
+      
+      mAlignContent = NS_STYLE_ALIGN_START;
+    } else {
+      
+      
+      const bool isLTR = aAxisTracker.GetWritingMode().IsBidiLTR();
+      const bool isAlignLeft = (mAlignContent == NS_STYLE_ALIGN_LEFT);
+      mAlignContent = (isAlignLeft == isLTR) ? NS_STYLE_ALIGN_START
+                                             : NS_STYLE_ALIGN_END;
+    }
+  }
+
+  
   if (mAlignContent == NS_STYLE_ALIGN_START) {
     mAlignContent = NS_STYLE_ALIGN_FLEX_START;
   } else if (mAlignContent == NS_STYLE_ALIGN_END) {
@@ -2828,8 +2860,6 @@ CrossAxisPositionTracker::
   
   if (mPackingSpaceRemaining != 0) {
     switch (mAlignContent) {
-      case NS_STYLE_JUSTIFY_LEFT:
-      case NS_STYLE_JUSTIFY_RIGHT:
       case NS_STYLE_ALIGN_SELF_START:
       case NS_STYLE_ALIGN_SELF_END:
       case NS_STYLE_ALIGN_SPACE_EVENLY:
