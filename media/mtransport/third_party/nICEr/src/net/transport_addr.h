@@ -66,6 +66,7 @@ typedef struct nr_transport_addr_ {
   
 
   char as_string[56];
+  char tls_host[256];
 } nr_transport_addr;
 
 typedef struct nr_transport_addr_mask_ {

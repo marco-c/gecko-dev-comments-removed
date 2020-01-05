@@ -1903,6 +1903,33 @@ function createHTML(options) {
 var iceServerWebsocket;
 var iceServersArray = [];
 
+var addTurnsSelfsignedCerts = () => {
+  var gUrl = SimpleTest.getTestFileURL('addTurnsSelfsignedCert.js');
+  var gScript = SpecialPowers.loadChromeScript(gUrl);
+  var certs = [];
+  
+  
+  
+  iceServersArray.forEach(iceServer => {
+    if (iceServer.hasOwnProperty("cert")) {
+      iceServer.urls.forEach(url => {
+        if (url.startsWith("turns:")) {
+          
+          certs.push({"cert": iceServer.cert, "hostname": url.substr(6)});
+        }
+      });
+    }
+  });
+
+  return new Promise((resolve, reject) => {
+    gScript.addMessageListener('certs-added', () => {
+      resolve();
+    });
+
+    gScript.sendAsyncMessage('add-turns-certs', certs);
+  });
+};
+
 var setupIceServerConfig = useIceServer => {
   
   
@@ -1942,7 +1969,8 @@ var setupIceServerConfig = useIceServer => {
 
   return enableHttpProxy(false)
     .then(spawnIceServer)
-    .then(iceServersStr => { iceServersArray = JSON.parse(iceServersStr); });
+    .then(iceServersStr => { iceServersArray = JSON.parse(iceServersStr); })
+    .then(addTurnsSelfsignedCerts);
 };
 
 function runNetworkTest(testFunction, fixtureOptions) {

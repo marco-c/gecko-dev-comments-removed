@@ -138,6 +138,7 @@ class TestNat {
       refresh_on_ingress_(false),
       block_udp_(false),
       block_stun_(false),
+      block_tcp_(false),
       delay_stun_resp_ms_(0),
       sockets_() {}
 
@@ -169,6 +170,7 @@ class TestNat {
     bool refresh_on_ingress_;
     bool block_udp_;
     bool block_stun_;
+    bool block_tcp_;
     
     uint32_t delay_stun_resp_ms_;
 
@@ -320,6 +322,7 @@ class TestNrSocket : public NrSocketBase {
     
     RefPtr<NrSocketBase> internal_socket_;
     RefPtr<TestNat> nat_;
+    bool tls_;
     
     
     
