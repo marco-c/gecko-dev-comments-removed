@@ -211,18 +211,12 @@ AnimationTimeBlock.prototype = {
     }
 
     
-    
-    
     createNode({
       parent: createNode({
         parent: this.containerEl,
         attributes: {
           "class": "name",
-          "title": this.getTooltipText(state),
-          
-          
-          "style": `left:${x + negativeDelayW}%;
-                    width:${iterationW - negativeDelayW}%;`
+          "title": this.getTooltipText(state)
         },
       }),
       textContent: state.name
