@@ -11,8 +11,6 @@ const { Task } = require("devtools/shared/task");
 
 loader.lazyRequireGetter(this, "PerformanceIO",
   "devtools/client/performance/modules/io");
-loader.lazyRequireGetter(this, "LegacyPerformanceFront",
-  "devtools/client/performance/legacy/front", true);
 loader.lazyRequireGetter(this, "getSystemInfo",
   "devtools/shared/system", true);
 
@@ -136,13 +134,5 @@ const PerformanceFront = FrontClassWithSpec(performanceSpec, {
 exports.PerformanceFront = PerformanceFront;
 
 exports.createPerformanceFront = function createPerformanceFront(target) {
-  
-  
-  
-  if (target.TEST_PERFORMANCE_LEGACY_FRONT || !target.form.performanceActor) {
-    return new LegacyPerformanceFront(target);
-  }
-  
-  
   return new PerformanceFront(target.client, target.form);
 };

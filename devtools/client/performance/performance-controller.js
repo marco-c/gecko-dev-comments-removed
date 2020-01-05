@@ -235,11 +235,6 @@ var PerformanceController = {
 
 
   canCurrentlyRecord: Task.async(function* () {
-    
-    
-    if (gFront.LEGACY_FRONT) {
-      return true;
-    }
     let hasActor = yield gTarget.hasActor("performance");
     if (!hasActor) {
       return true;
