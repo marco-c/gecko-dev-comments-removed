@@ -63,7 +63,7 @@
  	__webpack_require__.p = "";
 
  	
- 	return __webpack_require__(__webpack_require__.s = 10);
+ 	return __webpack_require__(__webpack_require__.s = 15);
  })
 
  ([
@@ -71,12 +71,6 @@
  (function(module, exports) {
 
 module.exports = React;
-
- }),
-
- (function(module, exports) {
-
-module.exports = ReactRedux;
 
  }),
 
@@ -88,10 +82,22 @@ module.exports = ReactRedux;
 
 
 
-const MAIN_MESSAGE_TYPE = "ActivityStream:Main";
-const CONTENT_MESSAGE_TYPE = "ActivityStream:Content";
+var MAIN_MESSAGE_TYPE = "ActivityStream:Main";
+var CONTENT_MESSAGE_TYPE = "ActivityStream:Content";
+var UI_CODE = 1;
+var BACKGROUND_PROCESS = 2;
 
-const actionTypes = ["INIT", "UNINIT", "NEW_TAB_INITIAL_STATE", "NEW_TAB_LOAD", "NEW_TAB_UNLOAD", "PERFORM_SEARCH", "SCREENSHOT_UPDATED", "SEARCH_STATE_UPDATED", "TOP_SITES_UPDATED"
+
+
+
+
+
+
+const globalImportContext = typeof Window === "undefined" ? BACKGROUND_PROCESS : UI_CODE;
+
+
+
+const actionTypes = ["BLOCK_URL", "BOOKMARK_URL", "DELETE_BOOKMARK_BY_ID", "DELETE_HISTORY_URL", "INIT", "LOCALE_UPDATED", "NEW_TAB_INITIAL_STATE", "NEW_TAB_LOAD", "NEW_TAB_UNLOAD", "NEW_TAB_VISIBLE", "OPEN_NEW_WINDOW", "OPEN_PRIVATE_WINDOW", "PERFORM_SEARCH", "PLACES_BOOKMARK_ADDED", "PLACES_BOOKMARK_CHANGED", "PLACES_BOOKMARK_REMOVED", "PLACES_HISTORY_CLEARED", "PLACES_LINK_BLOCKED", "PLACES_LINK_DELETED", "SCREENSHOT_UPDATED", "SEARCH_STATE_UPDATED", "TELEMETRY_PERFORMANCE_EVENT", "TELEMETRY_UNDESIRED_EVENT", "TELEMETRY_USER_EVENT", "TOP_SITES_UPDATED", "UNINIT"
 
 
 
@@ -129,13 +135,11 @@ function _RouteMessage(action, options) {
 
 
 
-function SendToMain(action) {
-  let options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-
+function SendToMain(action, fromTarget) {
   return _RouteMessage(action, {
     from: CONTENT_MESSAGE_TYPE,
     to: MAIN_MESSAGE_TYPE,
-    fromTarget: options.fromTarget
+    fromTarget
   });
 }
 
@@ -170,10 +174,61 @@ function SendToContent(action, target) {
   });
 }
 
+
+
+
+
+
+
+
+function UserEvent(data) {
+  return SendToMain({
+    type: actionTypes.TELEMETRY_USER_EVENT,
+    data
+  });
+}
+
+
+
+
+
+
+
+
+function UndesiredEvent(data) {
+  let importContext = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : globalImportContext;
+
+  const action = {
+    type: actionTypes.TELEMETRY_UNDESIRED_EVENT,
+    data
+  };
+  return importContext === UI_CODE ? SendToMain(action) : action;
+}
+
+
+
+
+
+
+
+
+function PerfEvent(data) {
+  let importContext = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : globalImportContext;
+
+  const action = {
+    type: actionTypes.TELEMETRY_PERFORMANCE_EVENT,
+    data
+  };
+  return importContext === UI_CODE ? SendToMain(action) : action;
+}
+
 var actionCreators = {
-  SendToMain,
+  BroadcastToContent,
+  UserEvent,
+  UndesiredEvent,
+  PerfEvent,
   SendToContent,
-  BroadcastToContent
+  SendToMain
 };
 
 
@@ -203,15 +258,33 @@ var actionUtils = {
     }
     return false;
   },
+  getPortIdOfSender(action) {
+    return action.meta && action.meta.fromTarget || null;
+  },
   _RouteMessage
 };
 module.exports = {
   actionTypes,
   actionCreators,
   actionUtils,
+  globalImportContext,
+  UI_CODE,
+  BACKGROUND_PROCESS,
   MAIN_MESSAGE_TYPE,
   CONTENT_MESSAGE_TYPE
 };
+
+ }),
+
+ (function(module, exports) {
+
+module.exports = ReactRedux;
+
+ }),
+
+ (function(module, exports) {
+
+module.exports = ReactIntl;
 
  }),
 
@@ -221,21 +294,144 @@ module.exports = {
 
 
 const React = __webpack_require__(0);
-const TopSites = __webpack_require__(8);
-const Search = __webpack_require__(7);
 
-const Base = () => React.createElement(
-  "div",
-  { className: "outer-wrapper" },
-  React.createElement(
-    "main",
-    null,
-    React.createElement(Search, null),
-    React.createElement(TopSites, null)
-  )
-);
+var _require = __webpack_require__(2);
 
-module.exports = Base;
+const connect = _require.connect;
+
+var _require2 = __webpack_require__(3);
+
+const addLocaleData = _require2.addLocaleData,
+      IntlProvider = _require2.IntlProvider;
+
+const TopSites = __webpack_require__(12);
+const Search = __webpack_require__(11);
+
+
+const RTL_LIST = ["ar", "he", "fa", "ur"];
+
+
+
+
+function addLocaleDataForReactIntl(_ref) {
+  let locale = _ref.locale;
+
+  addLocaleData([{ locale, parentLocale: "en" }]);
+  document.documentElement.lang = locale;
+  document.documentElement.dir = RTL_LIST.indexOf(locale.split("-")[0]) >= 0 ? "rtl" : "ltr";
+}
+
+class Base extends React.Component {
+  componentDidMount() {
+    
+    addEventListener("visibilitychange", () => this.updateTitle(this.props.App), { once: true });
+  }
+  componentWillUpdate(_ref2) {
+    let App = _ref2.App;
+
+    if (App.locale !== this.props.App.locale) {
+      addLocaleDataForReactIntl(App);
+      this.updateTitle(App);
+    }
+  }
+
+  updateTitle(_ref3) {
+    let strings = _ref3.strings;
+
+    document.title = strings.newtab_page_title;
+  }
+
+  render() {
+    var _props$App = this.props.App;
+    let locale = _props$App.locale,
+        strings = _props$App.strings,
+        initialized = _props$App.initialized;
+
+    if (!initialized) {
+      return null;
+    }
+
+    return React.createElement(
+      IntlProvider,
+      { key: locale, locale: locale, messages: strings },
+      React.createElement(
+        "div",
+        { className: "outer-wrapper" },
+        React.createElement(
+          "main",
+          null,
+          React.createElement(Search, null),
+          React.createElement(TopSites, null)
+        )
+      )
+    );
+  }
+}
+
+module.exports = connect(state => ({ App: state.App }))(Base);
+
+ }),
+
+ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var _require = __webpack_require__(1);
+
+const at = _require.actionTypes;
+
+
+const VISIBLE = "visible";
+const VISIBILITY_CHANGE_EVENT = "visibilitychange";
+
+module.exports = class DetectUserSessionStart {
+  constructor() {
+    let options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+
+    
+    this.sendAsyncMessage = options.sendAsyncMessage || window.sendAsyncMessage;
+    this.document = options.document || document;
+
+    this._onVisibilityChange = this._onVisibilityChange.bind(this);
+  }
+
+  
+
+
+
+
+
+  sendEventOrAddListener() {
+    if (this.document.visibilityState === VISIBLE) {
+      
+      
+      this._sendEvent();
+    } else {
+      
+      this.document.addEventListener(VISIBILITY_CHANGE_EVENT, this._onVisibilityChange);
+    }
+  }
+
+  
+
+
+
+  _sendEvent() {
+    this.sendAsyncMessage("ActivityStream:ContentToMain", { type: at.NEW_TAB_VISIBLE });
+  }
+
+  
+
+
+
+  _onVisibilityChange() {
+    if (this.document.visibilityState === VISIBLE) {
+      this._sendEvent();
+      this.document.removeEventListener(VISIBILITY_CHANGE_EVENT, this._onVisibilityChange);
+    }
+  }
+};
 
  }),
 
@@ -246,13 +442,13 @@ module.exports = Base;
 
 
 
-var _require = __webpack_require__(9);
+var _require = __webpack_require__(14);
 
 const createStore = _require.createStore,
       combineReducers = _require.combineReducers,
       applyMiddleware = _require.applyMiddleware;
 
-var _require2 = __webpack_require__(2);
+var _require2 = __webpack_require__(1);
 
 const au = _require2.actionUtils;
 
@@ -327,25 +523,64 @@ module.exports.INCOMING_MESSAGE_NAME = INCOMING_MESSAGE_NAME;
 
 
 
-var _require = __webpack_require__(2);
+var _require = __webpack_require__(1);
 
 const at = _require.actionTypes;
 
 
 const INITIAL_STATE = {
+  App: {
+    
+    initialized: false,
+    
+    locale: "",
+    
+    strings: {},
+    
+    version: null
+  },
   TopSites: {
-    init: false,
+    
+    initialized: false,
+    
     rows: []
   },
   Search: {
+    
     currentEngine: {
       name: "",
       icon: ""
     },
+    
     engines: []
   }
 };
 
+function App() {
+  let prevState = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : INITIAL_STATE.App;
+  let action = arguments[1];
+
+  switch (action.type) {
+    case at.INIT:
+      return Object.assign({}, action.data || {}, { initialized: true });
+    case at.LOCALE_UPDATED:
+      {
+        if (!action.data) {
+          return prevState;
+        }
+        var _action$data = action.data;
+        let locale = _action$data.locale,
+            strings = _action$data.strings;
+
+        return Object.assign({}, prevState, {
+          locale,
+          strings
+        });
+      }
+    default:
+      return prevState;
+  }
+}
 
 function TopSites() {
   let prevState = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : INITIAL_STATE.TopSites;
@@ -358,7 +593,7 @@ function TopSites() {
       if (!action.data) {
         return prevState;
       }
-      return Object.assign({}, prevState, { init: true, rows: action.data });
+      return Object.assign({}, prevState, { initialized: true, rows: action.data });
     case at.SCREENSHOT_UPDATED:
       newRows = prevState.rows.map(row => {
         if (row.url === action.data.url) {
@@ -368,6 +603,35 @@ function TopSites() {
         return row;
       });
       return hasMatch ? Object.assign({}, prevState, { rows: newRows }) : prevState;
+    case at.PLACES_BOOKMARK_ADDED:
+      newRows = prevState.rows.map(site => {
+        if (site.url === action.data.url) {
+          var _action$data2 = action.data;
+          const bookmarkGuid = _action$data2.bookmarkGuid,
+                bookmarkTitle = _action$data2.bookmarkTitle,
+                lastModified = _action$data2.lastModified;
+
+          return Object.assign({}, site, { bookmarkGuid, bookmarkTitle, bookmarkDateCreated: lastModified });
+        }
+        return site;
+      });
+      return Object.assign({}, prevState, { rows: newRows });
+    case at.PLACES_BOOKMARK_REMOVED:
+      newRows = prevState.rows.map(site => {
+        if (site.url === action.data.url) {
+          const newSite = Object.assign({}, site);
+          delete newSite.bookmarkGuid;
+          delete newSite.bookmarkTitle;
+          delete newSite.bookmarkDateCreated;
+          return newSite;
+        }
+        return site;
+      });
+      return Object.assign({}, prevState, { rows: newRows });
+    case at.PLACES_LINK_DELETED:
+    case at.PLACES_LINK_BLOCKED:
+      newRows = prevState.rows.filter(val => val.url !== action.data.url);
+      return Object.assign({}, prevState, { rows: newRows });
     default:
       return prevState;
   }
@@ -383,9 +647,9 @@ function Search() {
         if (!action.data) {
           return prevState;
         }
-        var _action$data = action.data;
-        let currentEngine = _action$data.currentEngine,
-            engines = _action$data.engines;
+        var _action$data3 = action.data;
+        let currentEngine = _action$data3.currentEngine,
+            engines = _action$data3.engines;
 
         return Object.assign({}, prevState, {
           currentEngine,
@@ -396,7 +660,7 @@ function Search() {
       return prevState;
   }
 }
-var reducers = { TopSites, Search };
+var reducers = { TopSites, App, Search };
 module.exports = {
   reducers,
   INITIAL_STATE
@@ -417,55 +681,79 @@ module.exports = ReactDOM;
 
 const React = __webpack_require__(0);
 
-var _require = __webpack_require__(1);
-
-const connect = _require.connect;
-
-var _require2 = __webpack_require__(2);
-
-const actionTypes = _require2.actionTypes,
-      actionCreators = _require2.actionCreators;
-
-
-const Search = React.createClass({
-  displayName: "Search",
-
-  getInitialState() {
-    return { searchString: "" };
-  },
-  performSearch(options) {
-    let searchData = {
-      engineName: options.engineName,
-      searchString: options.searchString,
-      searchPurpose: "newtab",
-      healthReportKey: "newtab"
-    };
-    this.props.dispatch(actionCreators.SendToMain({ type: actionTypes.PERFORM_SEARCH, data: searchData }));
-  },
-  onClick(event) {
-    const currentEngine = this.props.Search.currentEngine;
-
-    event.preventDefault();
-    this.performSearch({ engineName: currentEngine.name, searchString: this.state.searchString });
-  },
-  onChange(event) {
-    this.setState({ searchString: event.target.value });
-  },
+class ContextMenu extends React.Component {
+  constructor(props) {
+    super(props);
+    this.hideContext = this.hideContext.bind(this);
+  }
+  hideContext() {
+    this.props.onUpdate(false);
+  }
+  componentWillMount() {
+    this.hideContext();
+  }
+  componentDidUpdate(prevProps) {
+    if (this.props.visible && !prevProps.visible) {
+      setTimeout(() => {
+        window.addEventListener("click", this.hideContext);
+      }, 0);
+    }
+    if (!this.props.visible && prevProps.visible) {
+      window.removeEventListener("click", this.hideContext);
+    }
+  }
+  componentDidUnmount() {
+    window.removeEventListener("click", this.hideContext);
+  }
+  onKeyDown(event, option) {
+    switch (event.key) {
+      case "Tab":
+        
+        
+        
+        if (event.shiftKey && option.first || !event.shiftKey && option.last) {
+          this.hideContext();
+        }
+        break;
+      case "Enter":
+        this.hideContext();
+        option.onClick();
+        break;
+    }
+  }
   render() {
     return React.createElement(
-      "form",
-      { className: "search-wrapper" },
-      React.createElement("span", { className: "search-label" }),
-      React.createElement("input", { value: this.state.searchString, type: "search",
-        onChange: this.onChange,
-        maxLength: "256", title: "Submit search",
-        placeholder: "Search the Web" }),
-      React.createElement("button", { onClick: this.onClick })
+      "span",
+      { hidden: !this.props.visible, className: "context-menu" },
+      React.createElement(
+        "ul",
+        { role: "menu", className: "context-menu-list" },
+        this.props.options.map((option, i) => {
+          if (option.type === "separator") {
+            return React.createElement("li", { key: i, className: "separator" });
+          }
+          return React.createElement(
+            "li",
+            { role: "menuitem", className: "context-menu-item", key: i },
+            React.createElement(
+              "a",
+              { tabIndex: "0",
+                onKeyDown: e => this.onKeyDown(e, option),
+                onClick: () => {
+                  this.hideContext();
+                  option.onClick();
+                } },
+              option.icon && React.createElement("span", { className: `icon icon-spacer icon-${option.icon}` }),
+              option.label
+            )
+          );
+        })
+      )
     );
   }
-});
+}
 
-module.exports = connect(state => ({ Search: state.Search }))(Search);
+module.exports = ContextMenu;
 
  }),
 
@@ -476,13 +764,275 @@ module.exports = connect(state => ({ Search: state.Search }))(Search);
 
 const React = __webpack_require__(0);
 
-var _require = __webpack_require__(1);
+var _require = __webpack_require__(3);
+
+const injectIntl = _require.injectIntl;
+
+const ContextMenu = __webpack_require__(9);
+
+var _require2 = __webpack_require__(1);
+
+const actionTypes = _require2.actionTypes,
+      actionCreators = _require2.actionCreators;
+
+
+class LinkMenu extends React.Component {
+  getBookmarkStatus(site) {
+    return site.bookmarkGuid ? {
+      id: "menu_action_remove_bookmark",
+      icon: "bookmark-remove",
+      action: "DELETE_BOOKMARK_BY_ID",
+      data: site.bookmarkGuid
+    } : {
+      id: "menu_action_bookmark",
+      icon: "bookmark",
+      action: "BOOKMARK_URL",
+      data: site.url
+    };
+  }
+  getDefaultContextMenu(site) {
+    return [{
+      id: "menu_action_open_new_window",
+      icon: "new-window",
+      action: "OPEN_NEW_WINDOW",
+      data: { url: site.url }
+    }, {
+      id: "menu_action_open_private_window",
+      icon: "new-window-private",
+      action: "OPEN_PRIVATE_WINDOW",
+      data: { url: site.url }
+    }];
+  }
+  getOptions() {
+    var _props = this.props;
+    const dispatch = _props.dispatch,
+          site = _props.site;
+
+    
+
+    let options = this.getDefaultContextMenu(site);
+
+    
+    if (!site.isDefault) {
+      options = [this.getBookmarkStatus(site), { type: "separator" }, ...options, { type: "separator" }, {
+        id: "menu_action_dismiss",
+        icon: "dismiss",
+        action: "BLOCK_URL",
+        data: site.url
+      }, {
+        id: "menu_action_delete",
+        icon: "delete",
+        action: "DELETE_HISTORY_URL",
+        data: site.url
+      }];
+    }
+    options.forEach(option => {
+      let action = option.action,
+          data = option.data,
+          id = option.id,
+          type = option.type;
+      
+
+      if (!type && id) {
+        option.label = this.props.intl.formatMessage(option);
+        option.onClick = () => dispatch(actionCreators.SendToMain({ type: actionTypes[action], data }));
+      }
+    });
+
+    
+    
+    options[0].first = true;
+    options[options.length - 1].last = true;
+    return options;
+  }
+  render() {
+    return React.createElement(ContextMenu, {
+      visible: this.props.visible,
+      onUpdate: this.props.onUpdate,
+      options: this.getOptions() });
+  }
+}
+
+module.exports = injectIntl(LinkMenu);
+module.exports._unconnected = LinkMenu;
+
+ }),
+
+ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+const React = __webpack_require__(0);
+
+var _require = __webpack_require__(2);
 
 const connect = _require.connect;
 
+var _require2 = __webpack_require__(3);
 
-function displayURL(url) {
-  return new URL(url).hostname.replace(/^www./, "");
+const FormattedMessage = _require2.FormattedMessage,
+      injectIntl = _require2.injectIntl;
+
+var _require3 = __webpack_require__(1);
+
+const actionTypes = _require3.actionTypes,
+      actionCreators = _require3.actionCreators;
+
+
+class Search extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { searchString: "" };
+    this.onClick = this.onClick.bind(this);
+    this.onChange = this.onChange.bind(this);
+  }
+
+  componentWillMount() {
+    
+    dispatchEvent(new CustomEvent("ContentSearchClient", { detail: {} }));
+  }
+
+  performSearch(options) {
+    let searchData = {
+      engineName: options.engineName,
+      searchString: options.searchString,
+      searchPurpose: "newtab",
+      healthReportKey: "newtab"
+    };
+    this.props.dispatch(actionCreators.SendToMain({ type: actionTypes.PERFORM_SEARCH, data: searchData }));
+  }
+  onClick(event) {
+    const currentEngine = this.props.Search.currentEngine;
+
+    event.preventDefault();
+    this.performSearch({ engineName: currentEngine.name, searchString: this.state.searchString });
+  }
+  onChange(event) {
+    this.setState({ searchString: event.target.value });
+  }
+  render() {
+    return React.createElement(
+      "form",
+      { className: "search-wrapper" },
+      React.createElement(
+        "label",
+        { htmlFor: "search-input", className: "search-label" },
+        React.createElement(
+          "span",
+          { className: "sr-only" },
+          React.createElement(FormattedMessage, { id: "search_web_placeholder" })
+        )
+      ),
+      React.createElement("input", {
+        id: "search-input",
+        maxLength: "256",
+        onChange: this.onChange,
+        placeholder: this.props.intl.formatMessage({ id: "search_web_placeholder" }),
+        title: this.props.intl.formatMessage({ id: "search_web_placeholder" }),
+        type: "search",
+        value: this.state.searchString }),
+      React.createElement(
+        "button",
+        {
+          className: "search-button",
+          onClick: this.onClick,
+          title: this.props.intl.formatMessage({ id: "search_button" }) },
+        React.createElement(
+          "span",
+          { className: "sr-only" },
+          React.createElement(FormattedMessage, { id: "search_button" })
+        )
+      )
+    );
+  }
+}
+
+module.exports = connect(state => ({ Search: state.Search }))(injectIntl(Search));
+module.exports._unconnected = Search;
+
+ }),
+
+ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+const React = __webpack_require__(0);
+
+var _require = __webpack_require__(2);
+
+const connect = _require.connect;
+
+var _require2 = __webpack_require__(3);
+
+const FormattedMessage = _require2.FormattedMessage;
+
+const shortURL = __webpack_require__(13);
+const LinkMenu = __webpack_require__(10);
+
+class TopSite extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { showContextMenu: false, activeTile: null };
+  }
+  toggleContextMenu(event, index) {
+    this.setState({ showContextMenu: true, activeTile: index });
+  }
+  render() {
+    var _props = this.props;
+    const link = _props.link,
+          index = _props.index,
+          dispatch = _props.dispatch;
+
+    const isContextMenuOpen = this.state.showContextMenu && this.state.activeTile === index;
+    const title = shortURL(link);
+    const screenshotClassName = `screenshot${link.screenshot ? " active" : ""}`;
+    const topSiteOuterClassName = `top-site-outer${isContextMenuOpen ? " active" : ""}`;
+    const style = { backgroundImage: link.screenshot ? `url(${link.screenshot})` : "none" };
+    return React.createElement(
+      "li",
+      { className: topSiteOuterClassName, key: link.url },
+      React.createElement(
+        "a",
+        { href: link.url },
+        React.createElement(
+          "div",
+          { className: "tile", "aria-hidden": true },
+          React.createElement(
+            "span",
+            { className: "letter-fallback" },
+            title[0]
+          ),
+          React.createElement("div", { className: screenshotClassName, style: style })
+        ),
+        React.createElement(
+          "div",
+          { className: "title" },
+          title
+        )
+      ),
+      React.createElement(
+        "button",
+        { className: "context-menu-button",
+          onClick: e => {
+            e.preventDefault();
+            this.toggleContextMenu(e, index);
+          } },
+        React.createElement(
+          "span",
+          { className: "sr-only" },
+          `Open context menu for ${title}`
+        )
+      ),
+      React.createElement(LinkMenu, {
+        dispatch: dispatch,
+        visible: isContextMenuOpen,
+        onUpdate: val => this.setState({ showContextMenu: val }),
+        site: link,
+        index: index })
+    );
+  }
 }
 
 const TopSites = props => React.createElement(
@@ -491,43 +1041,53 @@ const TopSites = props => React.createElement(
   React.createElement(
     "h3",
     { className: "section-title" },
-    "Top Sites"
+    React.createElement(FormattedMessage, { id: "header_top_sites" })
   ),
   React.createElement(
     "ul",
     { className: "top-sites-list" },
-    props.TopSites.rows.map(link => {
-      const title = displayURL(link.url);
-      const className = `screenshot${link.screenshot ? " active" : ""}`;
-      const style = { backgroundImage: link.screenshot ? `url(${link.screenshot})` : "none" };
-      return React.createElement(
-        "li",
-        { key: link.url },
-        React.createElement(
-          "a",
-          { href: link.url },
-          React.createElement(
-            "div",
-            { className: "tile" },
-            React.createElement(
-              "span",
-              { className: "letter-fallback", ariaHidden: true },
-              title[0]
-            ),
-            React.createElement("div", { className: className, style: style })
-          ),
-          React.createElement(
-            "div",
-            { className: "title" },
-            title
-          )
-        )
-      );
-    })
+    props.TopSites.rows.map((link, index) => React.createElement(TopSite, { dispatch: props.dispatch, key: link.url, link: link, index: index }))
   )
 );
 
 module.exports = connect(state => ({ TopSites: state.TopSites }))(TopSites);
+module.exports._unconnected = TopSites;
+module.exports.TopSite = TopSite;
+
+ }),
+
+ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+module.exports = function shortURL(link) {
+  if (!link.url && !link.hostname) {
+    return "";
+  }
+  const eTLD = link.eTLD;
+
+  const hostname = (link.hostname || new URL(link.url).hostname).replace(/^www\./i, "");
+
+  
+  const eTLDLength = (eTLD || "").length || hostname.match(/\.com$/) && 3;
+  const eTLDExtra = eTLDLength > 0 ? -(eTLDLength + 1) : Infinity;
+  return hostname.slice(0, eTLDExtra).toLowerCase();
+};
 
  }),
 
@@ -542,21 +1102,23 @@ module.exports = Redux;
 "use strict";
 
 
-
 const React = __webpack_require__(0);
-const ReactDOM = __webpack_require__(6);
-const Base = __webpack_require__(3);
+const ReactDOM = __webpack_require__(8);
+const Base = __webpack_require__(4);
 
-var _require = __webpack_require__(1);
+var _require = __webpack_require__(2);
 
 const Provider = _require.Provider;
 
-const initStore = __webpack_require__(4);
+const initStore = __webpack_require__(6);
 
-var _require2 = __webpack_require__(5);
+var _require2 = __webpack_require__(7);
 
 const reducers = _require2.reducers;
 
+const DetectUserSessionStart = __webpack_require__(5);
+
+new DetectUserSessionStart().sendEventOrAddListener();
 
 const store = initStore(reducers);
 

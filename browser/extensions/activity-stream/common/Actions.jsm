@@ -3,19 +3,47 @@
 
 "use strict";
 
-const MAIN_MESSAGE_TYPE = "ActivityStream:Main";
-const CONTENT_MESSAGE_TYPE = "ActivityStream:Content";
+this.MAIN_MESSAGE_TYPE = "ActivityStream:Main";
+this.CONTENT_MESSAGE_TYPE = "ActivityStream:Content";
+this.UI_CODE = 1;
+this.BACKGROUND_PROCESS = 2;
+
+
+
+
+
+
+const globalImportContext = typeof Window === "undefined" ? BACKGROUND_PROCESS : UI_CODE;
+
+this.globalImportContext = globalImportContext;
 
 const actionTypes = [
+  "BLOCK_URL",
+  "BOOKMARK_URL",
+  "DELETE_BOOKMARK_BY_ID",
+  "DELETE_HISTORY_URL",
   "INIT",
-  "UNINIT",
+  "LOCALE_UPDATED",
   "NEW_TAB_INITIAL_STATE",
   "NEW_TAB_LOAD",
   "NEW_TAB_UNLOAD",
+  "NEW_TAB_VISIBLE",
+  "OPEN_NEW_WINDOW",
+  "OPEN_PRIVATE_WINDOW",
   "PERFORM_SEARCH",
+  "PLACES_BOOKMARK_ADDED",
+  "PLACES_BOOKMARK_CHANGED",
+  "PLACES_BOOKMARK_REMOVED",
+  "PLACES_HISTORY_CLEARED",
+  "PLACES_LINK_BLOCKED",
+  "PLACES_LINK_DELETED",
   "SCREENSHOT_UPDATED",
   "SEARCH_STATE_UPDATED",
-  "TOP_SITES_UPDATED"
+  "TELEMETRY_PERFORMANCE_EVENT",
+  "TELEMETRY_UNDESIRED_EVENT",
+  "TELEMETRY_USER_EVENT",
+  "TOP_SITES_UPDATED",
+  "UNINIT"
 
 
 
@@ -51,11 +79,11 @@ function _RouteMessage(action, options) {
 
 
 
-function SendToMain(action, options = {}) {
+function SendToMain(action, fromTarget) {
   return _RouteMessage(action, {
     from: CONTENT_MESSAGE_TYPE,
     to: MAIN_MESSAGE_TYPE,
-    fromTarget: options.fromTarget
+    fromTarget
   });
 }
 
@@ -90,12 +118,59 @@ function SendToContent(action, target) {
   });
 }
 
+
+
+
+
+
+
+
+function UserEvent(data) {
+  return SendToMain({
+    type: actionTypes.TELEMETRY_USER_EVENT,
+    data
+  });
+}
+
+
+
+
+
+
+
+
+function UndesiredEvent(data, importContext = globalImportContext) {
+  const action = {
+    type: actionTypes.TELEMETRY_UNDESIRED_EVENT,
+    data
+  };
+  return importContext === UI_CODE ? SendToMain(action) : action;
+}
+
+
+
+
+
+
+
+
+function PerfEvent(data, importContext = globalImportContext) {
+  const action = {
+    type: actionTypes.TELEMETRY_PERFORMANCE_EVENT,
+    data
+  };
+  return importContext === UI_CODE ? SendToMain(action) : action;
+}
+
 this.actionTypes = actionTypes;
 
 this.actionCreators = {
-  SendToMain,
+  BroadcastToContent,
+  UserEvent,
+  UndesiredEvent,
+  PerfEvent,
   SendToContent,
-  BroadcastToContent
+  SendToMain
 };
 
 
@@ -124,6 +199,9 @@ this.actionUtils = {
     }
     return false;
   },
+  getPortIdOfSender(action) {
+    return (action.meta && action.meta.fromTarget) || null;
+  },
   _RouteMessage
 };
 
@@ -131,6 +209,9 @@ this.EXPORTED_SYMBOLS = [
   "actionTypes",
   "actionCreators",
   "actionUtils",
+  "globalImportContext",
+  "UI_CODE",
+  "BACKGROUND_PROCESS",
   "MAIN_MESSAGE_TYPE",
   "CONTENT_MESSAGE_TYPE"
 ];
