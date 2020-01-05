@@ -70,14 +70,11 @@ function clickMainAction() {
 
 
 
-
-
-function clickSecondaryAction(index) {
+function clickSecondaryAction() {
   let removePromise =
     BrowserTestUtils.waitForEvent(PopupNotifications.panel, "popuphidden");
   let popupNotification = getPopupNotificationNode();
-  let menuitems = popupNotification.children;
-  menuitems[index].click();
+  popupNotification.secondaryButton.click();
   return removePromise;
 }
 
@@ -274,7 +271,7 @@ add_task(function* test_with_permission_key() {
     
     Assert.equal(notification.secondaryActions.length, 1,
                  "There should only be 1 secondary action");
-    yield clickSecondaryAction(0);
+    yield clickSecondaryAction();
     curPerm = Services.perms.testPermissionFromPrincipal(principal,
                                                          kTestPermissionKey);
     Assert.equal(curPerm, Ci.nsIPermissionManager.DENY_ACTION,
@@ -429,7 +426,7 @@ add_task(function* test_no_request() {
     
     Assert.equal(notification.secondaryActions.length, 1,
                  "There should only be 1 secondary action");
-    yield clickSecondaryAction(0);
+    yield clickSecondaryAction();
     Assert.ok(denied, "The secondaryAction callback should have fired");
     Assert.ok(!allowed, "The mainAction callback should not have fired");
 

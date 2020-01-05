@@ -110,11 +110,6 @@ notification[type="info"]:not([value="translation"]) .close-icon:not(:hover) {
   outline-offset: -2px;
 }
 
-
-.popup-notification-button-wrapper {
-  --panel-separator-color: white;
-}
-
 .popup-notification-warning {
   color: #aa1b08;
 }

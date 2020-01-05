@@ -161,23 +161,6 @@ var tests = [
     }
   },
   
-  { id: "Test#7",
-    run: function() {
-      this.notifyObj = new BasicNotification(this.id);
-      this.notifyObj.options.hideNotNow = true;
-      this.notifyObj.mainAction.dismiss = true;
-      this.notification = showNotification(this.notifyObj);
-    },
-    onShown: function(popup) {
-      
-      checkPopup(popup, this.notifyObj);
-      triggerMainCommand(popup);
-    },
-    onHidden: function(popup) {
-      this.notification.remove();
-    }
-  },
-  
   { id: "Test#8",
     run: function() {
       this.notifyObj = new BasicNotification(this.id);

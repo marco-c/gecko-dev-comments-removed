@@ -101,7 +101,7 @@ var tests = [
       ok(false, "Should have removed the notification after navigation");
       
       this.complete = true;
-      triggerSecondaryCommand(popup, 1);
+      triggerSecondaryCommand(popup, 0);
     },
     onHidden: function(popup) {
       ok(!this.complete, "Should have hidden the notification after navigation");
@@ -133,7 +133,7 @@ var tests = [
 
       
       this.complete = true;
-      triggerSecondaryCommand(popup, 1);
+      triggerSecondaryCommand(popup, 0);
     },
     onHidden: function(popup) {
       ok(this.complete, "Should have hidden the notification after clicking Not Now");
