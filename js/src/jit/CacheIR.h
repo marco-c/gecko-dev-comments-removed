@@ -48,6 +48,14 @@ namespace jit {
 
 
 
+
+
+
+
+
+
+
+
 class OperandId
 {
   protected:
@@ -377,6 +385,13 @@ class MOZ_RAII CacheIRWriter : public JS::CustomAutoRooter
     uint32_t codeLength() const {
         MOZ_ASSERT(!failed());
         return buffer_.length();
+    }
+
+    
+    
+    StubField readStubFieldForIon(size_t i, StubField::Type type) const {
+        MOZ_ASSERT(stubFields_[i].type() == type);
+        return stubFields_[i];
     }
 
     ObjOperandId guardIsObject(ValOperandId val) {
