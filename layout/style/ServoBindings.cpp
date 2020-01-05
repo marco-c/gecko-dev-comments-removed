@@ -650,7 +650,7 @@ Gecko_MatchStringArgPseudo(RawGeckoElementBorrowed aElement,
   EventStates dummyMask; 
   return nsCSSRuleProcessor::StringPseudoMatches(aElement, aType, aIdent,
                                                  aElement->OwnerDoc(), true,
-                                                 dummyMask, false, aSetSlowSelectorFlag, nullptr);
+                                                 dummyMask, aSetSlowSelectorFlag, nullptr);
 }
 
 nsIAtom*
