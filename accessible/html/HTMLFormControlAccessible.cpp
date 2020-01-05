@@ -463,11 +463,6 @@ HTMLTextFieldAccessible::GetEditor() const
   if (!editableElt)
     return nullptr;
 
-  
-  
-  
-  mozilla::dom::AutoNoJSAPI nojsapi;
-
   nsCOMPtr<nsIEditor> editor;
   editableElt->GetEditor(getter_AddRefs(editor));
 

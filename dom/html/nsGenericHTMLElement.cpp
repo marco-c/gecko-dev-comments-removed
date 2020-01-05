@@ -2413,7 +2413,7 @@ nsGenericHTMLFormElement::IsLabelable() const
 
 
 void
-nsGenericHTMLElement::Click()
+nsGenericHTMLElement::Click(CallerType aCallerType)
 {
   if (HandlingClick())
     return;
@@ -2433,9 +2433,7 @@ nsGenericHTMLElement::Click()
   SetHandlingClick();
 
   
-  
-  
-  WidgetMouseEvent event(nsContentUtils::IsCallerChrome(),
+  WidgetMouseEvent event(aCallerType == CallerType::System,
                          eMouseClick, nullptr, WidgetMouseEvent::eReal);
   event.inputSource = nsIDOMMouseEvent::MOZ_SOURCE_UNKNOWN;
 
@@ -2567,13 +2565,6 @@ nsGenericHTMLElement::DispatchSimulatedClick(nsGenericHTMLElement* aElement,
 nsresult
 nsGenericHTMLElement::GetEditor(nsIEditor** aEditor)
 {
-  *aEditor = nullptr;
-
-  
-  if (!nsContentUtils::LegacyIsCallerChromeOrNativeCode()) {
-    return NS_ERROR_DOM_SECURITY_ERR;
-  }
-
   NS_IF_ADDREF(*aEditor = GetEditorInternal());
   return NS_OK;
 }
