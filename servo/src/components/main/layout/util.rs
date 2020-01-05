@@ -3,6 +3,7 @@
 
 
 use layout::construct::{ConstructionResult, NoConstructionResult};
+use layout::incremental::RestyleDamage;
 use layout::parallel::DomParallelInfo;
 use layout::wrapper::{LayoutNode, TLayoutNode, ThreadSafeLayoutNode};
 
@@ -28,7 +29,7 @@ pub struct PrivateLayoutData {
     pub after_style: Option<Arc<ComputedValues>>,
 
     
-    pub restyle_damage: Option<int>,
+    pub restyle_damage: Option<RestyleDamage>,
 
     
     
