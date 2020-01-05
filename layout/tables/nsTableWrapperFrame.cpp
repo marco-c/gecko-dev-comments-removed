@@ -228,22 +228,33 @@ nsTableWrapperFrame::GetParentStyleContext(nsIFrame** aProviderFrame) const
 
 
 void
-nsTableWrapperFrame::InitChildReflowInput(nsPresContext&     aPresContext,
-                                          ReflowInput& aReflowInput)
+nsTableWrapperFrame::InitChildReflowInput(nsPresContext& aPresContext,
+                                          ReflowInput&   aReflowInput)
 {
   nsMargin collapseBorder;
   nsMargin collapsePadding(0,0,0,0);
   nsMargin* pCollapseBorder  = nullptr;
   nsMargin* pCollapsePadding = nullptr;
-  if (aReflowInput.mFrame == InnerTableFrame() &&
-      InnerTableFrame()->IsBorderCollapse()) {
+  Maybe<LogicalSize> cbSize;
+  if (aReflowInput.mFrame == InnerTableFrame()) {
     WritingMode wm = aReflowInput.GetWritingMode();
-    LogicalMargin border = InnerTableFrame()->GetIncludedOuterBCBorder(wm);
-    collapseBorder = border.GetPhysicalMargin(wm);
-    pCollapseBorder = &collapseBorder;
-    pCollapsePadding = &collapsePadding;
+    if (InnerTableFrame()->IsBorderCollapse()) {
+      LogicalMargin border = InnerTableFrame()->GetIncludedOuterBCBorder(wm);
+      collapseBorder = border.GetPhysicalMargin(wm);
+      pCollapseBorder = &collapseBorder;
+      pCollapsePadding = &collapsePadding;
+    }
+    
+    if (!HasAnyStateBits(NS_FRAME_OUT_OF_FLOW)) {
+      LogicalSize* cb = Properties().Get(GridItemCBSizeProperty());
+      if (cb) {
+        cbSize.emplace(*cb);
+        *cbSize -= aReflowInput.ComputedLogicalMargin().Size(wm);
+      }
+    }
   }
-  aReflowInput.Init(&aPresContext, nullptr, pCollapseBorder, pCollapsePadding);
+  aReflowInput.Init(&aPresContext, cbSize.ptrOr(nullptr), pCollapseBorder,
+                    pCollapsePadding);
 }
 
 

@@ -179,8 +179,12 @@ public:
     return map->GetEffectiveRowSpan(aRowIdx, aColIdx);
   }
 
-protected:
+  
 
+
+  NS_DECLARE_FRAME_PROPERTY_DELETABLE(GridItemCBSizeProperty, mozilla::LogicalSize);
+
+protected:
 
   explicit nsTableWrapperFrame(nsStyleContext* aContext);
   virtual ~nsTableWrapperFrame();
