@@ -40,7 +40,6 @@ use servo_util::time::ProfilerChan;
 
 use extra::future::from_value;
 use extra::time::precise_time_s;
-use extra::arc;
 
 use constellation::SendableFrameTree;
 use compositing::compositor_layer::CompositorLayer;
@@ -79,7 +78,7 @@ impl RenderListener for CompositorChan {
         port.recv()
     }
 
-    fn paint(&self, id: PipelineId, layer_buffer_set: arc::Arc<LayerBufferSet>, epoch: Epoch) {
+    fn paint(&self, id: PipelineId, layer_buffer_set: ~LayerBufferSet, epoch: Epoch) {
         self.chan.send(Paint(id, layer_buffer_set, epoch))
     }
 
@@ -127,37 +126,37 @@ impl CompositorChan {
     }
 }
 
-
+/// Messages to the compositor.
 pub enum Msg {
-    
+    /// Requests that the compositor shut down.
     Exit,
-    
+    /// Requests the window size
     GetSize(Chan<Size2D<int>>),
-    
+    /// Requests the compositors GL context.
     GetGLContext(Chan<AzGLContext>),
 
-    
+    /// Alerts the compositor that there is a new layer to be rendered.
     NewLayer(PipelineId, Size2D<f32>),
-    
+    /// Alerts the compositor that the specified layer's page has changed size.
     SetLayerPageSize(PipelineId, Size2D<f32>, Epoch),
-    
+    /// Alerts the compositor that the specified layer's clipping rect has changed.
     SetLayerClipRect(PipelineId, Rect<f32>),
-    
+    /// Alerts the compositor that the specified layer has been deleted.
     DeleteLayer(PipelineId),
-    
+    /// Invalidate a rect for a given layer
     InvalidateRect(PipelineId, Rect<uint>),
 
-    
-    Paint(PipelineId, arc::Arc<LayerBufferSet>, Epoch),
-    
+    /// Requests that the compositor paint the given layer buffer set for the given page size.
+    Paint(PipelineId, ~LayerBufferSet, Epoch),
+    /// Alerts the compositor to the current status of page loading.
     ChangeReadyState(ReadyState),
-    
+    /// Alerts the compositor to the current status of rendering.
     ChangeRenderState(RenderState),
-    
+    /// Sets the channel to the current layout and render tasks, along with their id
     SetIds(SendableFrameTree, Chan<()>, ConstellationChan),
 }
 
-
+/// Azure surface wrapping to work with the layers infrastructure.
 struct AzureDrawTargetImageData {
     draw_target: DrawTarget,
     data_source_surface: DataSourceSurface,
@@ -172,7 +171,7 @@ impl ImageData for AzureDrawTargetImageData {
         self.data_source_surface.stride() as uint
     }
     fn format(&self) -> Format {
-        
+        // FIXME: This is not always correct. We should query the Azure draw target for the format.
         ARGB32Format
     }
     fn with_data(&self, f: WithDataFn) {
@@ -203,7 +202,7 @@ impl CompositorTask {
         }
     }
 
-    
+    /// Starts the compositor, which listens for messages on the specified port. 
     pub fn run(&self) {
         let app: Application = ApplicationMethods::new();
         let window: @mut Window = WindowMethods::new(&app);
@@ -338,7 +337,7 @@ impl CompositorTask {
 
                         match compositor_layer {
                             Some(ref mut layer) => {
-                                assert!(layer.add_buffers(id, new_layer_buffer_set.get(), epoch));
+                                assert!(layer.add_buffers(id, new_layer_buffer_set, epoch));
                                 recomposite = true;
                             }
                             None => {
