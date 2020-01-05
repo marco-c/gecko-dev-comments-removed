@@ -11,63 +11,19 @@ printBugNumber(BUGNUMBER);
 printStatus (summary);
 
 
+const RECORDLOOP = 8;
 
-
-
-
-
-
-
-const haveTracemonkey = !!(this.tracemonkey)
-const HOTLOOP = haveTracemonkey ? tracemonkey.HOTLOOP : 2;
+const RUNLOOP = RECORDLOOP + 1;
 
 var testName = null;
 if ("arguments" in this && arguments.length > 0)
   testName = arguments[0];
 var fails = [], passes=[];
 
-function jitstatHandler(f)
-{
-  if (!haveTracemonkey) 
-    return;
-
-  
-  
-  f("recorderStarted");
-  f("recorderAborted");
-  f("traceCompleted");
-  f("sideExitIntoInterpreter");
-  f("typeMapMismatchAtEntry");
-  f("returnToDifferentLoopHeader");
-  f("traceTriggered");
-  f("globalShapeMismatchAtEntry");
-  f("treesTrashed");
-  f("slotPromoted");
-  f("unstableLoopVariable");
-  f("noCompatInnerTrees");
-  f("breakLoopExits");
-  f("returnLoopExits");
-}
-
 function test(f)
 {
   if (!testName || testName == f.name) {
-    
-    var localJITstats = {};
-    jitstatHandler(function(prop, local, global) {
-        localJITstats[prop] = tracemonkey[prop];
-      });
-    check(f.name, f(), f.expected, localJITstats, f.jitstats);
-  }
-}
-
-function map_test(t, cases)
-{
-  for (var i = 0; i < cases.length; i++) {
-    function c() { return t(cases[i].input); }
-    c.expected = cases[i].expected;
-    c.name = t.name + "(" + uneval(cases[i].input) + ")";
-    test(c);
+    check(f.name, f(), f.expected);
   }
 }
 
@@ -103,37 +59,16 @@ function close_enough(expected, actual)
   return true;
 }
 
-function check(desc, actual, expected, oldJITstats, expectedJITstats)
+function check(desc, actual, expected,  expectedJITstats)
 {
-  var pass = false;
   if (close_enough(expected, actual)) {
-    pass = true;
-    jitstatHandler(function(prop) {
-        if (expectedJITstats && prop in expectedJITstats &&
-            expectedJITstats[prop] !=
-            tracemonkey[prop] - oldJITstats[prop]) {
-          pass = false;
-        }
-      });
-    if (pass) {
-      reportCompare(expected, actual, desc);
-      passes.push(desc);
-      return print(desc, ": passed");
-    }
+    reportCompare(expected, actual, desc);
+    passes.push(desc);
+    return print(desc, ": passed");
   }
 
   if (expected instanceof RegExp) {
-    pass = reportMatch(expected, actual + '', desc);
-    if (pass) {
-      jitstatHandler(function(prop) {
-          if (expectedJITstats && prop in expectedJITstats &&
-              expectedJITstats[prop] !=
-              tracemonkey[prop] - oldJITstats[prop]) {
-            pass = false;
-          }
-        });
-    }
-    if (pass) {
+    if (reportMatch(expected, actual + '', desc)) {
       passes.push(desc);
       return print(desc, ": passed");
     }
@@ -142,35 +77,12 @@ function check(desc, actual, expected, oldJITstats, expectedJITstats)
   reportCompare(expected, actual, desc);
 
   fails.push(desc);
-  var expectedStats = "";
-  if (expectedJITstats) {
-    jitstatHandler(function(prop) {
-        if (prop in expectedJITstats) {
-          if (expectedStats)
-            expectedStats += " ";
-          expectedStats +=
-            prop + ": " + expectedJITstats[prop];
-        }
-      });
-  }
-  var actualStats = "";
-  if (expectedJITstats) {
-    jitstatHandler(function(prop) {
-        if (prop in expectedJITstats) {
-          if (actualStats)
-            actualStats += " ";
-          actualStats += prop + ": " + (tracemonkey[prop]-oldJITstats[prop]);
-        }
-      });
-  }
+
   print(desc, ": FAILED: expected", typeof(expected), 
         "(", uneval(expected), ")",
-        (expectedStats ? " [" + expectedStats + "] " : ""),
         "!= actual",
-        typeof(actual), "(", uneval(actual), ")",
-        (actualStats ? " [" + actualStats + "] " : ""));
+        typeof(actual), "(", uneval(actual), ")");
 }
-
 
 
 
@@ -221,16 +133,6 @@ function testmath(funcname, args, expected) {
     }
     testfunc.name = funcname + "(" + args + ")";
     testfunc.expected = expected;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
 
     test(testfunc);
 }
