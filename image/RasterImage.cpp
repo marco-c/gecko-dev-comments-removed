@@ -415,9 +415,16 @@ RasterImage::WillDrawOpaqueNow()
     return false;
   }
 
-  if (mAnimationState && !gfxPrefs::ImageMemAnimatedDiscardable()) {
-    
-    return true;
+  if (mAnimationState) {
+    if (!gfxPrefs::ImageMemAnimatedDiscardable()) {
+      
+      return true;
+    } else {
+      if (mAnimationState->GetCompositedFrameInvalid()) {
+        
+        return false;
+      }
+    }
   }
 
   
