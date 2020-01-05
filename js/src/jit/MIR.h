@@ -5440,7 +5440,6 @@ class MWasmTruncateToInt64
     {
         setResultType(MIRType::Int64);
         setGuard(); 
-        setMovable();
     }
 
   public:
@@ -5473,7 +5472,6 @@ class MWasmTruncateToInt32
     {
         setResultType(MIRType::Int32);
         setGuard(); 
-        setMovable();
     }
 
   public:
@@ -7032,8 +7030,10 @@ class MDiv : public MBinaryArithInstruction
         div->unsigned_ = unsignd;
         div->trapOnError_ = trapOnError;
         div->trapOffset_ = trapOffset;
-        if (trapOnError)
+        if (trapOnError) {
             div->setGuard(); 
+            div->setNotMovable();
+        }
         div->setMustPreserveNaN(mustPreserveNaN);
         if (type == MIRType::Int32)
             div->setTruncateKind(Truncate);
@@ -7166,8 +7166,10 @@ class MMod : public MBinaryArithInstruction
         mod->unsigned_ = unsignd;
         mod->trapOnError_ = trapOnError;
         mod->trapOffset_ = trapOffset;
-        if (trapOnError)
+        if (trapOnError) {
             mod->setGuard(); 
+            mod->setNotMovable();
+        }
         if (type == MIRType::Int32)
             mod->setTruncateKind(Truncate);
         return mod;
