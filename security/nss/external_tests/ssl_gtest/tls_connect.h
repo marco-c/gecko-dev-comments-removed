@@ -72,8 +72,13 @@ class TlsConnectTestBase : public ::testing::Test {
   
   void ConnectExpectFail();
   void ConnectWithCipherSuite(uint16_t cipher_suite);
-  void CheckKeys(SSLKEAType kea_type, SSLAuthType auth_type,
-                 size_t kea_size = 0) const;
+  
+  void CheckKeys(SSLKEAType kea_type, SSLNamedGroup kea_group,
+                 SSLAuthType auth_type, SSLSignatureScheme sig_scheme) const;
+  
+  void CheckKeys(SSLKEAType kea_type, SSLAuthType auth_type) const;
+  
+  void CheckKeys() const;
   void CheckGroups(const DataBuffer& groups,
                    std::function<void(SSLNamedGroup)> check_group);
   void CheckShares(const DataBuffer& shares,
@@ -249,6 +254,9 @@ class TlsKeyExchangeTest : public TlsConnectGeneric {
                        const std::vector<SSLNamedGroup>& expectedShares,
                        bool expect_hrr = false);
 };
+
+class TlsKeyExchangeTest13 : public TlsKeyExchangeTest {};
+class TlsKeyExchangeTestPre13 : public TlsKeyExchangeTest {};
 
 }  
 

@@ -1150,8 +1150,10 @@ struct sslSecurityInfoStr {
 
     SSLAuthType authType;
     PRUint32 authKeyBits;
+    SSLSignatureScheme signatureScheme;
     SSLKEAType keaType;
     PRUint32 keaKeyBits;
+    const sslNamedGroupDef *keaGroup;
     
     const sslServerCert *serverCert;
 

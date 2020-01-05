@@ -1958,10 +1958,11 @@ DPCache_SelectCRL(CRLDPCache* cache)
         qsort(cache->crls, cache->ncrls, sizeof(CachedCrl*), SortImperfectCRLs);
         return SECSuccess;
     }
-    
-    qsort(cache->crls, cache->ncrls, sizeof(CachedCrl*), SortCRLsByThisUpdate);
 
     if (cache->ncrls) {
+        
+        qsort(cache->crls, cache->ncrls, sizeof(CachedCrl*), SortCRLsByThisUpdate);
+
         
         selected = cache->crls[cache->ncrls - 1];
 

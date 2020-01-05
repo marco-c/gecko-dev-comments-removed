@@ -9,7 +9,6 @@
 #include "basicutil.h"
 #include "pkcs11.h"
 #include "nspr.h"
-#include "certt.h" 
 #include <stdio.h>
 
 #define __PASTE(x, y) x##y

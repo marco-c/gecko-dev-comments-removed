@@ -1411,7 +1411,9 @@ lg_cmpAttribute(LGObjectCache *obj, const CK_ATTRIBUTE *attribute)
     
     crv = lg_GetSingleAttribute(obj, &testAttr);
     
-    if ((crv != CKR_OK) || (attribute->ulValueLen != testAttr.ulValueLen) ||
+    if ((crv != CKR_OK) ||
+        (attribute->pValue == NULL) ||
+        (attribute->ulValueLen != testAttr.ulValueLen) ||
         (PORT_Memcmp(attribute->pValue, testAttr.pValue, testAttr.ulValueLen) != 0)) {
         
         match = PR_FALSE;
