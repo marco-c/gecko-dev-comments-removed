@@ -725,6 +725,11 @@ const DownloadsView = {
   
 
 
+  contextMenuOpen: false,
+
+  
+
+
   loading: false,
 
   
@@ -1002,18 +1007,44 @@ const DownloadsView = {
   
 
 
+
+  onContextPopupShown(aEvent) {
+    
+    if (aEvent.target != aEvent.currentTarget) {
+      return;
+    }
+
+    DownloadsCommon.log("Context menu has shown.");
+    this.contextMenuOpen = true;
+  },
+
+  onContextPopupHidden(aEvent) {
+    
+    if (aEvent.target != aEvent.currentTarget) {
+      return;
+    }
+
+    DownloadsCommon.log("Context menu has hidden.");
+    this.contextMenuOpen = false;
+  },
+
+  
+
+
   onDownloadMouseOver(aEvent) {
-    if (aEvent.originalTarget.parentNode == this.richListBox) {
-      this.richListBox.selectedItem = aEvent.originalTarget;
+    if (!this.contextMenuOpen &&
+        aEvent.target.parentNode == this.richListBox) {
+      this.richListBox.selectedItem = aEvent.target;
     }
   },
 
   onDownloadMouseOut(aEvent) {
-    if (aEvent.originalTarget.parentNode == this.richListBox) {
+    if (!this.contextMenuOpen &&
+        aEvent.target.parentNode == this.richListBox) {
       
       
       let element = aEvent.relatedTarget;
-      while (element && element != aEvent.originalTarget) {
+      while (element && element != aEvent.target) {
         element = element.parentNode;
       }
       if (!element) {
