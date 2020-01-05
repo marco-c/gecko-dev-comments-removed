@@ -101,7 +101,7 @@
 #endif
 
 #if defined(VAR_ARRAYS)
-#define VARDECL(var) 
+#define VARDECL(var)
 #define ALLOC(var, size, type) type var[size]
 #elif defined(USE_ALLOCA)
 #define VARDECL(var) var

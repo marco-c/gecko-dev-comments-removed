@@ -54,7 +54,7 @@
 
 #define CAT_PREFIX2(a,b) a ## b
 #define CAT_PREFIX(a,b) CAT_PREFIX2(a, b)
-      
+
 #define speex_resampler_init CAT_PREFIX(RANDOM_PREFIX,_resampler_init)
 #define speex_resampler_init_frac CAT_PREFIX(RANDOM_PREFIX,_resampler_init_frac)
 #define speex_resampler_destroy CAT_PREFIX(RANDOM_PREFIX,_resampler_destroy)
@@ -83,7 +83,9 @@
 #define spx_int32_t int
 #define spx_uint16_t unsigned short
 #define spx_uint32_t unsigned int
-      
+
+#define speex_assert(cond)
+
 #else 
 
 #include "speexdsp_types.h"
@@ -123,9 +125,9 @@ typedef struct SpeexResamplerState_ SpeexResamplerState;
 
 
 
-SpeexResamplerState *speex_resampler_init(spx_uint32_t nb_channels, 
-                                          spx_uint32_t in_rate, 
-                                          spx_uint32_t out_rate, 
+SpeexResamplerState *speex_resampler_init(spx_uint32_t nb_channels,
+                                          spx_uint32_t in_rate,
+                                          spx_uint32_t out_rate,
                                           int quality,
                                           int *err);
 
@@ -142,11 +144,11 @@ SpeexResamplerState *speex_resampler_init(spx_uint32_t nb_channels,
 
 
 
-SpeexResamplerState *speex_resampler_init_frac(spx_uint32_t nb_channels, 
-                                               spx_uint32_t ratio_num, 
-                                               spx_uint32_t ratio_den, 
-                                               spx_uint32_t in_rate, 
-                                               spx_uint32_t out_rate, 
+SpeexResamplerState *speex_resampler_init_frac(spx_uint32_t nb_channels,
+                                               spx_uint32_t ratio_num,
+                                               spx_uint32_t ratio_den,
+                                               spx_uint32_t in_rate,
+                                               spx_uint32_t out_rate,
                                                int quality,
                                                int *err);
 
@@ -165,11 +167,11 @@ void speex_resampler_destroy(SpeexResamplerState *st);
 
 
 
-int speex_resampler_process_float(SpeexResamplerState *st, 
-                                   spx_uint32_t channel_index, 
-                                   const float *in, 
-                                   spx_uint32_t *in_len, 
-                                   float *out, 
+int speex_resampler_process_float(SpeexResamplerState *st,
+                                   spx_uint32_t channel_index,
+                                   const float *in,
+                                   spx_uint32_t *in_len,
+                                   float *out,
                                    spx_uint32_t *out_len);
 
 
@@ -182,11 +184,11 @@ int speex_resampler_process_float(SpeexResamplerState *st,
 
 
 
-int speex_resampler_process_int(SpeexResamplerState *st, 
-                                 spx_uint32_t channel_index, 
-                                 const spx_int16_t *in, 
-                                 spx_uint32_t *in_len, 
-                                 spx_int16_t *out, 
+int speex_resampler_process_int(SpeexResamplerState *st,
+                                 spx_uint32_t channel_index,
+                                 const spx_int16_t *in,
+                                 spx_uint32_t *in_len,
+                                 spx_int16_t *out,
                                  spx_uint32_t *out_len);
 
 
@@ -198,10 +200,10 @@ int speex_resampler_process_int(SpeexResamplerState *st,
 
 
 
-int speex_resampler_process_interleaved_float(SpeexResamplerState *st, 
-                                               const float *in, 
-                                               spx_uint32_t *in_len, 
-                                               float *out, 
+int speex_resampler_process_interleaved_float(SpeexResamplerState *st,
+                                               const float *in,
+                                               spx_uint32_t *in_len,
+                                               float *out,
                                                spx_uint32_t *out_len);
 
 
@@ -213,10 +215,10 @@ int speex_resampler_process_interleaved_float(SpeexResamplerState *st,
 
 
 
-int speex_resampler_process_interleaved_int(SpeexResamplerState *st, 
-                                             const spx_int16_t *in, 
-                                             spx_uint32_t *in_len, 
-                                             spx_int16_t *out, 
+int speex_resampler_process_interleaved_int(SpeexResamplerState *st,
+                                             const spx_int16_t *in,
+                                             spx_uint32_t *in_len,
+                                             spx_int16_t *out,
                                              spx_uint32_t *out_len);
 
 
@@ -224,8 +226,8 @@ int speex_resampler_process_interleaved_int(SpeexResamplerState *st,
 
 
 
-int speex_resampler_set_rate(SpeexResamplerState *st, 
-                              spx_uint32_t in_rate, 
+int speex_resampler_set_rate(SpeexResamplerState *st,
+                              spx_uint32_t in_rate,
                               spx_uint32_t out_rate);
 
 
@@ -233,8 +235,8 @@ int speex_resampler_set_rate(SpeexResamplerState *st,
 
 
 
-void speex_resampler_get_rate(SpeexResamplerState *st, 
-                              spx_uint32_t *in_rate, 
+void speex_resampler_get_rate(SpeexResamplerState *st,
+                              spx_uint32_t *in_rate,
                               spx_uint32_t *out_rate);
 
 
@@ -245,10 +247,10 @@ void speex_resampler_get_rate(SpeexResamplerState *st,
 
 
 
-int speex_resampler_set_rate_frac(SpeexResamplerState *st, 
-                                   spx_uint32_t ratio_num, 
-                                   spx_uint32_t ratio_den, 
-                                   spx_uint32_t in_rate, 
+int speex_resampler_set_rate_frac(SpeexResamplerState *st,
+                                   spx_uint32_t ratio_num,
+                                   spx_uint32_t ratio_den,
+                                   spx_uint32_t in_rate,
                                    spx_uint32_t out_rate);
 
 
@@ -257,8 +259,8 @@ int speex_resampler_set_rate_frac(SpeexResamplerState *st,
 
 
 
-void speex_resampler_get_ratio(SpeexResamplerState *st, 
-                               spx_uint32_t *ratio_num, 
+void speex_resampler_get_ratio(SpeexResamplerState *st,
+                               spx_uint32_t *ratio_num,
                                spx_uint32_t *ratio_den);
 
 
@@ -266,7 +268,7 @@ void speex_resampler_get_ratio(SpeexResamplerState *st,
 
 
 
-int speex_resampler_set_quality(SpeexResamplerState *st, 
+int speex_resampler_set_quality(SpeexResamplerState *st,
                                  int quality);
 
 
@@ -274,35 +276,35 @@ int speex_resampler_set_quality(SpeexResamplerState *st,
 
 
 
-void speex_resampler_get_quality(SpeexResamplerState *st, 
+void speex_resampler_get_quality(SpeexResamplerState *st,
                                  int *quality);
 
 
 
 
 
-void speex_resampler_set_input_stride(SpeexResamplerState *st, 
+void speex_resampler_set_input_stride(SpeexResamplerState *st,
                                       spx_uint32_t stride);
 
 
 
 
 
-void speex_resampler_get_input_stride(SpeexResamplerState *st, 
+void speex_resampler_get_input_stride(SpeexResamplerState *st,
                                       spx_uint32_t *stride);
 
 
 
 
 
-void speex_resampler_set_output_stride(SpeexResamplerState *st, 
+void speex_resampler_set_output_stride(SpeexResamplerState *st,
                                       spx_uint32_t stride);
 
 
 
 
 
-void speex_resampler_get_output_stride(SpeexResamplerState *st, 
+void speex_resampler_get_output_stride(SpeexResamplerState *st,
                                       spx_uint32_t *stride);
 
 
