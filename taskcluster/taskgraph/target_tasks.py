@@ -285,7 +285,12 @@ def target_tasks_pine(full_task_graph, parameters):
         
         if str(platform).startswith('android'):
             return False
-        return True
+        
+        if platform == 'linux64-asan':
+            return False
+        
+        if standard_filter(task, parameters):
+            return True
     return [l for l, t in full_task_graph.tasks.iteritems() if filter(t)]
 
 
