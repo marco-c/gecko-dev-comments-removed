@@ -365,7 +365,8 @@ protocol.ActorClassWithSpec(serviceWorkerRegistrationSpec, {
     
     
     
-    Services.perms.broadcastPermissionsForPrincipalToAllContentProcesses(this._registration.principal);
+    Services.perms.broadcastPermissionsForPrincipalToAllContentProcesses(
+      this._registration.principal);
 
     Services.ppmm.broadcastAsyncMessage("serviceWorkerRegistration:start", {
       scope: this._registration.scope
