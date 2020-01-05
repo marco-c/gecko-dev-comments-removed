@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 <%namespace name="helpers" file="/helpers.mako.rs" />
 <% from data import Method %>
@@ -526,7 +526,7 @@ ${helpers.single_keyword("font-variant-position",
                          spec="https://drafts.csswg.org/css-fonts/#propdef-font-variant-position",
                          animatable=False)}
 
-<%helpers:longhand name="font-feature-settings" products="none" animatable="False"
+<%helpers:longhand name="font-feature-settings" products="none" animatable="False" extra_prefixes="moz"
                    spec="https://drafts.csswg.org/css-fonts/#propdef-font-feature-settings">
     use std::fmt;
     use style_traits::ToCss;
@@ -637,7 +637,7 @@ ${helpers.single_keyword("font-variant-position",
 </%helpers:longhand>
 
 // https://www.w3.org/TR/css-fonts-3/#propdef-font-language-override
-<%helpers:longhand name="font-language-override" products="none" animatable="False"
+<%helpers:longhand name="font-language-override" products="none" animatable="False" extra_prefixes="moz"
                    spec="https://drafts.csswg.org/css-fonts-3/#propdef-font-language-override">
     use values::NoViewportPercentage;
     use values::computed::ComputedValueAsSpecified;

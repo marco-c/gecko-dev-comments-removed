@@ -1,6 +1,6 @@
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import re
 
@@ -9,14 +9,22 @@ LOGICAL_SIDES = ["block-start", "block-end", "inline-start", "inline-end"]
 PHYSICAL_SIZES = ["width", "height"]
 LOGICAL_SIZES = ["block-size", "inline-size"]
 
-
+# bool is True when logical
 ALL_SIDES = [(side, False) for side in PHYSICAL_SIDES] + [(side, True) for side in LOGICAL_SIDES]
 ALL_SIZES = [(size, False) for size in PHYSICAL_SIZES] + [(size, True) for size in LOGICAL_SIZES]
 
 
+def maybe_moz_logical_alias(product, side, prop):
+    if product == "gecko" and side[1]:
+        axis, dir = side[0].split("-")
+        if axis == "inline":
+            return prop % dir
+    return None
+
+
 def to_rust_ident(name):
     name = name.replace("-", "_")
-    if name in ["static", "super", "box", "move"]:  
+    if name in ["static", "super", "box", "move"]:  # Rust keywords
         name += "_"
     return name
 
@@ -88,7 +96,7 @@ class Longhand(object):
                  predefined_type=None, custom_cascade=False, experimental=False, internal=False,
                  need_clone=False, need_index=False, gecko_ffi_name=None, depend_on_viewport_size=False,
                  allowed_in_keyframe_block=True, complex_color=False, cast_type='u8',
-                 has_uncacheable_values=False, logical=False, alias=None):
+                 has_uncacheable_values=False, logical=False, alias=None, extra_prefixes=None):
         self.name = name
         if not spec:
             raise TypeError("Spec should be specified for %s" % name)
@@ -110,32 +118,33 @@ class Longhand(object):
         self.cast_type = cast_type
         self.logical = arg_to_bool(logical)
         self.alias = alias.split() if alias else []
+        self.extra_prefixes = extra_prefixes.split() if extra_prefixes else []
 
-        
-        
-        
-        
+        # https://drafts.csswg.org/css-animations/#keyframes
+        # > The <declaration-list> inside of <keyframe-block> accepts any CSS property
+        # > except those defined in this specification,
+        # > but does accept the `animation-play-state` property and interprets it specially.
         self.allowed_in_keyframe_block = allowed_in_keyframe_block \
             and allowed_in_keyframe_block != "False"
 
-        
-        
+        # This is done like this since just a plain bool argument seemed like
+        # really random.
         if animatable is None:
             raise TypeError("animatable should be specified for " + name + ")")
         self.animatable = arg_to_bool(animatable)
         if self.logical:
-            
+            # Logical properties don't animate separately
             self.animatable = False
-        
-        
-        
-        
+        # NB: Animatable implies clone because a property animation requires a
+        # copy of the computed value.
+        #
+        # See components/style/helpers/animated_properties.mako.rs.
         self.need_clone = need_clone or self.animatable
 
 
 class Shorthand(object):
     def __init__(self, name, sub_properties, spec=None, experimental=False, internal=False,
-                 allowed_in_keyframe_block=True, alias=None):
+                 allowed_in_keyframe_block=True, alias=None, extra_prefixes=None):
         self.name = name
         if not spec:
             raise TypeError("Spec should be specified for %s" % name)
@@ -147,11 +156,12 @@ class Shorthand(object):
         self.sub_properties = sub_properties
         self.internal = internal
         self.alias = alias.split() if alias else []
+        self.extra_prefixes = extra_prefixes.split() if extra_prefixes else []
 
-        
-        
-        
-        
+        # https://drafts.csswg.org/css-animations/#keyframes
+        # > The <declaration-list> inside of <keyframe-block> accepts any CSS property
+        # > except those defined in this specification,
+        # > but does accept the `animation-play-state` property and interprets it specially.
         self.allowed_in_keyframe_block = allowed_in_keyframe_block \
             and allowed_in_keyframe_block != "False"
 
@@ -220,12 +230,20 @@ class PropertiesData(object):
     def active_style_structs(self):
         return [s for s in self.style_structs if s.additional_methods or s.longhands]
 
+    def add_prefixed_aliases(self, property):
+        # FIXME Servo's DOM architecture doesn't support vendor-prefixed properties.
+        #       See servo/servo#14941.
+        if self.product == "gecko":
+            for prefix in property.extra_prefixes:
+                property.alias.append('-%s-%s' % (prefix, property.name))
+
     def declare_longhand(self, name, products="gecko servo", disable_when_testing=False, **kwargs):
         products = products.split()
         if self.product not in products and not (self.testing and not disable_when_testing):
             return
 
         longhand = Longhand(self.current_style_struct, name, **kwargs)
+        self.add_prefixed_aliases(longhand)
         self.current_style_struct.longhands.append(longhand)
         self.longhands.append(longhand)
         self.longhands_by_name[name] = longhand
@@ -243,5 +261,6 @@ class PropertiesData(object):
 
         sub_properties = [self.longhands_by_name[s] for s in sub_properties]
         shorthand = Shorthand(name, sub_properties, *args, **kwargs)
+        self.add_prefixed_aliases(shorthand)
         self.shorthands.append(shorthand)
         return shorthand
