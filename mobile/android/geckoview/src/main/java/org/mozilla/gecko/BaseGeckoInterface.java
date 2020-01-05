@@ -6,6 +6,7 @@
 package org.mozilla.gecko;
 
 import org.mozilla.gecko.util.HardwareUtils;
+import org.mozilla.geckoview.BuildConfig;
 
 import android.app.Activity;
 import android.content.Context;
@@ -50,8 +51,8 @@ public class BaseGeckoInterface implements GeckoAppShell.GeckoInterface {
 
     @Override
     public String getDefaultUAString() {
-        return HardwareUtils.isTablet() ? AppConstants.USER_AGENT_FENNEC_TABLET :
-                                          AppConstants.USER_AGENT_FENNEC_MOBILE;
+        return HardwareUtils.isTablet() ? BuildConfig.USER_AGENT_GECKOVIEW_TABLET :
+                                          BuildConfig.USER_AGENT_GECKOVIEW_MOBILE;
     }
 
     
@@ -160,6 +161,12 @@ public class BaseGeckoInterface implements GeckoAppShell.GeckoInterface {
 
     @Override
     public boolean isForegrounded() {
+        return false;
+    }
+
+    @Override
+    public boolean isOfficial() {
+        
         return false;
     }
 }

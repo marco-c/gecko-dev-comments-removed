@@ -227,9 +227,6 @@ public final class GeckoProfile {
         } else if (profileName == null) {
             
             profileName = CUSTOM_PROFILE;
-
-        } else if (AppConstants.DEBUG_BUILD) {
-            Log.v(LOGTAG, "Fetching profile: '" + profileName + "', '" + profileDir + "'");
         }
 
         
@@ -266,11 +263,6 @@ public final class GeckoProfile {
                 if (!sAcceptDirectoryChanges || !profileDir.isDirectory()) {
                     throw new IllegalStateException(
                             "Refusing to reuse profile with a different directory.");
-                }
-
-                if (AppConstants.RELEASE_OR_BETA) {
-                    Log.e(LOGTAG, "Release build trying to switch out profile dir. " +
-                                  "This is an error, but let's do what we can.");
                 }
                 profile.setDir(profileDir);
             }
