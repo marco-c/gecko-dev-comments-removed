@@ -3005,9 +3005,13 @@ js::DefineTypedArrayElement(JSContext* cx, HandleObject obj, uint64_t index,
     MOZ_ASSERT(obj->is<TypedArrayObject>());
 
     
+
+    
+
     
     
-    if (index >= obj->as<TypedArrayObject>().length())
+    uint32_t length = obj->as<TypedArrayObject>().length();
+    if (index >= length)
         return result.succeed();
 
     
@@ -3028,12 +3032,22 @@ js::DefineTypedArrayElement(JSContext* cx, HandleObject obj, uint64_t index,
 
     
     if (desc.hasValue()) {
-        double d;
-        if (!ToNumber(cx, desc.value(), &d))
+        
+        
+
+        
+
+        
+        double numValue;
+        if (!ToNumber(cx, desc.value(), &numValue))
             return false;
 
-        if (obj->is<TypedArrayObject>())
-            TypedArrayObject::setElement(obj->as<TypedArrayObject>(), index, d);
+        
+        if (obj->as<TypedArrayObject>().hasDetachedBuffer())
+            return result.fail(JSMSG_TYPED_ARRAY_DETACHED);
+
+        
+        TypedArrayObject::setElement(obj->as<TypedArrayObject>(), index, numValue);
     }
 
     
