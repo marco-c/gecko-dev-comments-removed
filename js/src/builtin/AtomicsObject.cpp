@@ -50,7 +50,6 @@
 #include "mozilla/Atomics.h"
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/Maybe.h"
-#include "mozilla/ScopeExit.h"
 #include "mozilla/Unused.h"
 
 #include "jsapi.h"
@@ -973,11 +972,6 @@ js::FutexRuntime::wait(JSContext* cx, js::UniqueLock<js::Mutex>& locked,
         return false;
     }
 
-    
-    auto onFinish = mozilla::MakeScopeExit([&] {
-        state_ = Idle;
-    });
-
     const bool isTimed = timeout.isSome();
 
     auto finalEnd = timeout.map([](mozilla::TimeDuration& timeout) {
@@ -988,6 +982,8 @@ js::FutexRuntime::wait(JSContext* cx, js::UniqueLock<js::Mutex>& locked,
     
     
     auto maxSlice = mozilla::TimeDuration::FromSeconds(4000.0);
+
+    bool retval = true;
 
     for (;;) {
         
@@ -1014,14 +1010,14 @@ js::FutexRuntime::wait(JSContext* cx, js::UniqueLock<js::Mutex>& locked,
                 auto now = mozilla::TimeStamp::Now();
                 if (now >= *finalEnd) {
                     *result = FutexTimedOut;
-                    return true;
+                    goto finished;
                 }
             }
             break;
 
           case FutexRuntime::Woken:
             *result = FutexOK;
-            return true;
+            goto finished;
 
           case FutexRuntime::WaitingNotifiedForInterrupt:
             
@@ -1056,12 +1052,13 @@ js::FutexRuntime::wait(JSContext* cx, js::UniqueLock<js::Mutex>& locked,
             state_ = WaitingInterrupted;
             {
                 UnlockGuard<Mutex> unlock(locked);
-                if (!cx->runtime()->handleInterrupt(cx))
-                    return false;
+                retval = cx->runtime()->handleInterrupt(cx);
             }
+            if (!retval)
+                goto finished;
             if (state_ == Woken) {
                 *result = FutexOK;
-                return true;
+                goto finished;
             }
             break;
 
@@ -1069,6 +1066,9 @@ js::FutexRuntime::wait(JSContext* cx, js::UniqueLock<js::Mutex>& locked,
             MOZ_CRASH("Bad FutexState in wait()");
         }
     }
+finished:
+    state_ = Idle;
+    return retval;
 }
 
 void
