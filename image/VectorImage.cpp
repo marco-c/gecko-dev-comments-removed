@@ -879,6 +879,13 @@ VectorImage::Draw(gfxContext* aContext,
     return DrawResult::SUCCESS;
   }
 
+  Maybe<AutoSetRestoreSVGContextPaint> autoContextPaint;
+  if (aSVGContext &&
+      aSVGContext->GetContextPaint()) {
+    autoContextPaint.emplace(aSVGContext->GetContextPaint(),
+                             mSVGDocumentWrapper->GetDocument());
+  }
+
   
   CreateSurfaceAndShow(params, aContext->GetDrawTarget()->GetBackendType());
   return DrawResult::SUCCESS;
