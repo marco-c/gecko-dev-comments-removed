@@ -667,10 +667,6 @@ nsCSSRendering::PaintBorder(nsPresContext* aPresContext,
   }
 
   nsStyleBorder newStyleBorder(*styleBorder);
-  
-  
-  
-  newStyleBorder.TrackImage(aPresContext->Document()->ImageTracker());
 
   NS_FOR_CSS_SIDES(side) {
     nscolor color = aStyleContext->GetVisitedDependentColor(
@@ -681,11 +677,6 @@ nsCSSRendering::PaintBorder(nsPresContext* aPresContext,
     PaintBorderWithStyleBorder(aPresContext, aRenderingContext, aForFrame,
                                aDirtyRect, aBorderArea, newStyleBorder,
                                aStyleContext, aFlags, aSkipSides);
-
-  
-  
-  
-  newStyleBorder.UntrackImage(aPresContext->Document()->ImageTracker());
 
   return result;
 }
@@ -5032,8 +5023,13 @@ ShouldTreatAsCompleteDueToSyncDecode(const nsStyleImage* aImage,
     return false;
   }
 
+  imgRequestProxy* req = aImage->GetImageData();
+  if (!req) {
+    return false;
+  }
+
   uint32_t status = 0;
-  if (NS_FAILED(aImage->GetImageData()->GetImageStatus(&status))) {
+  if (NS_FAILED(req->GetImageStatus(&status))) {
     return false;
   }
 
@@ -5041,7 +5037,7 @@ ShouldTreatAsCompleteDueToSyncDecode(const nsStyleImage* aImage,
     
     
     nsCOMPtr<imgIContainer> image;
-    aImage->GetImageData()->GetImage(getter_AddRefs(image));
+    req->GetImage(getter_AddRefs(image));
     return bool(image);
   }
 
@@ -5078,8 +5074,9 @@ nsImageRenderer::PrepareImage()
   }
 
   switch (mType) {
-    case eStyleImageType_Image:
-    {
+    case eStyleImageType_Image: {
+      MOZ_ASSERT(mImage->GetImageData(),
+                 "must have image data, since we checked IsEmpty above");
       nsCOMPtr<imgIContainer> srcImage;
       DebugOnly<nsresult> rv =
         mImage->GetImageData()->GetImage(getter_AddRefs(srcImage));
