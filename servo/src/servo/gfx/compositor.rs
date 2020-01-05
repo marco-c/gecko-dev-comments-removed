@@ -1,5 +1,16 @@
 use dom::event::Event;
-use gfx::render_task::LayerBuffer;
+use azure::cairo_hl::ImageSurface;
+use azure::azure_hl::{DrawTarget};
+use geom::size::Size2D;
+
+struct LayerBuffer {
+    
+    
+    cairo_surface: ImageSurface,
+
+    draw_target: DrawTarget,
+    size: Size2D<uint>
+}
 
 
 
