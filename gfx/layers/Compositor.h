@@ -123,7 +123,6 @@ namespace layers {
 struct Effect;
 struct EffectChain;
 class Image;
-class ImageHostOverlay;
 class Layer;
 class TextureSource;
 class DataTextureSource;
@@ -142,10 +141,6 @@ enum SurfaceInitMode
   INIT_MODE_NONE,
   INIT_MODE_CLEAR
 };
-
-
-
-
 
 
 
@@ -437,13 +432,6 @@ public:
   
 
 
-
-
-  virtual void EndFrameForExternalComposition(const gfx::Matrix& aTransform) = 0;
-
-  
-
-
   virtual bool SupportsPartialTextureUpdate() = 0;
 
   void SetDiagnosticTypes(DiagnosticTypes aDiagnostics)
@@ -522,12 +510,6 @@ public:
   virtual void FinishPendingComposite() {}
 
   widget::CompositorWidget* GetWidget() const { return mWidget; }
-
-  virtual bool HasImageHostOverlays() { return false; }
-
-  virtual void AddImageHostOverlay(ImageHostOverlay* aOverlay) {}
-
-  virtual void RemoveImageHostOverlay(ImageHostOverlay* aOverlay) {}
 
   
 
