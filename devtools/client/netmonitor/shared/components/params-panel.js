@@ -63,14 +63,25 @@ function ParamsPanel({
           name ? Object.assign(acc, { [name]: value }) : acc
         , {});
   }
+
   
   if (formDataSections && formDataSections.length > 0) {
     let sections = formDataSections.filter((str) => /\S/.test(str)).join("&");
     object[PARAMS_FORM_DATA] =
       parseQueryString(sections)
-        .reduce((acc, { name, value }) =>
-          name ? Object.assign(acc, { [name]: value }) : acc
-        , {});
+        .reduce((map, obj) => {
+          let value = map[obj.name];
+          
+          if (value) {
+            if (typeof value !== "object") {
+              map[obj.name] = [value];
+            }
+            map[obj.name].push(obj.value);
+          } else {
+            map[obj.name] = obj.value;
+          }
+          return map;
+        }, {});
   }
 
   
