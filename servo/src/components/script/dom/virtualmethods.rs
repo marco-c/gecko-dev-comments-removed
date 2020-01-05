@@ -61,17 +61,19 @@ pub trait VirtualMethods {
     }
 
     
-    fn bind_to_tree(&self) {
+    
+    fn bind_to_tree(&self, tree_in_doc: bool) {
         match self.super_type() {
-            Some(ref s) => s.bind_to_tree(),
+            Some(ref s) => s.bind_to_tree(tree_in_doc),
             _ => (),
         }
     }
 
     
-    fn unbind_from_tree(&self) {
+    
+    fn unbind_from_tree(&self, tree_in_doc: bool) {
         match self.super_type() {
-            Some(ref s) => s.unbind_from_tree(),
+            Some(ref s) => s.unbind_from_tree(tree_in_doc),
             _ => (),
         }
     }
