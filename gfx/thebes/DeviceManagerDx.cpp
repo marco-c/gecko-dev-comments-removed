@@ -328,7 +328,6 @@ DeviceManagerDx::CreateCompositorDevice(FeatureState& d3d11)
   
   
   bool textureSharingWorks = D3D11Checks::DoesTextureSharingWork(device);
-  bool alphaTextureSharingWorks = D3D11Checks::DoesAlphaTextureSharingWork(device);
 
   DXGI_ADAPTER_DESC desc;
   PodZero(&desc);
@@ -356,7 +355,6 @@ DeviceManagerDx::CreateCompositorDevice(FeatureState& d3d11)
     mDeviceStatus = Some(D3D11DeviceStatus(
       false,
       textureSharingWorks,
-      alphaTextureSharingWorks,
       featureLevel,
       DxgiAdapterDesc::From(desc)));
   }
@@ -411,10 +409,8 @@ DeviceManagerDx::CreateWARPCompositorDevice()
   
   
   bool textureSharingWorks = false;
-  bool alphaTextureSharingWorks = false;
   if (IsWin8OrLater()) {
     textureSharingWorks = D3D11Checks::DoesTextureSharingWork(device);
-    alphaTextureSharingWorks = D3D11Checks::DoesAlphaTextureSharingWork(device);
   }
 
   DxgiAdapterDesc nullAdapter;
@@ -427,7 +423,6 @@ DeviceManagerDx::CreateWARPCompositorDevice()
     mDeviceStatus = Some(D3D11DeviceStatus(
       true,
       textureSharingWorks,
-      alphaTextureSharingWorks,
       featureLevel,
       nullAdapter));
   }
@@ -673,16 +668,6 @@ DeviceManagerDx::TextureSharingWorks()
     return false;
   }
   return mDeviceStatus->textureSharingWorks();
-}
-
-bool
-DeviceManagerDx::AlphaTextureSharingWorks()
-{
-  MutexAutoLock lock(mDeviceLock);
-  if (!mDeviceStatus) {
-    return false;
-  }
-  return mDeviceStatus->alphaTextureSharingWorks();
 }
 
 bool
