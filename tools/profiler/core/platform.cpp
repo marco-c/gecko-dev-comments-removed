@@ -33,6 +33,7 @@
 #include "nsIXULRuntime.h"
 #include "nsDirectoryServiceUtils.h"
 #include "nsDirectoryServiceDefs.h"
+#include "nsMemoryReporterManager.h"
 #include "nsXULAppAPI.h"
 #include "nsProfilerStartParams.h"
 #include "mozilla/Services.h"
@@ -74,10 +75,12 @@
 #endif
 
 #if defined(GP_OS_windows)
-typedef CONTEXT tickcontext_t;
+typedef CONTEXT tick_context_t;
+#elif defined(GP_OS_darwin)
+typedef void tick_context_t;   
 #elif defined(GP_OS_linux) || defined(GP_OS_android)
 #include <ucontext.h>
-typedef ucontext_t tickcontext_t;
+typedef ucontext_t tick_context_t;
 #endif
 
 using namespace mozilla;
@@ -365,31 +368,32 @@ CanNotifyObservers()
 
 class TickSample {
 public:
-  TickSample()
-    : pc(NULL)
-    , sp(NULL)
-    , fp(NULL)
-    , lr(NULL)
-    , context(NULL)
-    , isSamplingCurrentThread(false)
-    , threadInfo(nullptr)
-    , rssMemory(0)
-    , ussMemory(0)
+  explicit TickSample(ThreadInfo* aThreadInfo)
+    : mPC(nullptr)
+    , mSP(nullptr)
+    , mFP(nullptr)
+    , mLR(nullptr)
+    , mContext(nullptr)
+    , mIsSamplingCurrentThread(false)
+    , mThreadInfo(aThreadInfo)
+    , mTimeStamp(mozilla::TimeStamp::Now())
+    , mRSSMemory(0)
+    , mUSSMemory(0)
   {}
 
-  void PopulateContext(void* aContext);
+  void PopulateContext(tick_context_t* aContext);
 
-  Address pc;  
-  Address sp;  
-  Address fp;  
-  Address lr;  
-  void* context;   
-                   
-  bool isSamplingCurrentThread;
-  ThreadInfo* threadInfo;
-  mozilla::TimeStamp timestamp;
-  int64_t rssMemory;
-  int64_t ussMemory;
+  Address mPC;    
+  Address mSP;    
+  Address mFP;    
+  Address mLR;    
+  void* mContext; 
+                  
+  bool mIsSamplingCurrentThread;
+  ThreadInfo* mThreadInfo;
+  mozilla::TimeStamp mTimeStamp;
+  int64_t mRSSMemory;
+  int64_t mUSSMemory;
 };
 
 static void
@@ -518,7 +522,7 @@ static void
 MergeStacksIntoProfile(ProfileBuffer* aBuffer, TickSample* aSample,
                        NativeStack& aNativeStack)
 {
-  NotNull<PseudoStack*> pseudoStack = aSample->threadInfo->Stack();
+  NotNull<PseudoStack*> pseudoStack = aSample->mThreadInfo->Stack();
   volatile js::ProfileEntry* pseudoFrames = pseudoStack->mStack;
   uint32_t pseudoCount = pseudoStack->stackSize();
 
@@ -531,7 +535,7 @@ MergeStacksIntoProfile(ProfileBuffer* aBuffer, TickSample* aSample,
   
   
   uint32_t startBufferGen;
-  startBufferGen = aSample->isSamplingCurrentThread
+  startBufferGen = aSample->mIsSamplingCurrentThread
                  ? UINT32_MAX
                  : aBuffer->mGeneration;
   uint32_t jsCount = 0;
@@ -545,17 +549,17 @@ MergeStacksIntoProfile(ProfileBuffer* aBuffer, TickSample* aSample,
 
     if (aSample && autoWalkJSStack.walkAllowed) {
       JS::ProfilingFrameIterator::RegisterState registerState;
-      registerState.pc = aSample->pc;
-      registerState.sp = aSample->sp;
-      registerState.lr = aSample->lr;
-      registerState.fp = aSample->fp;
+      registerState.pc = aSample->mPC;
+      registerState.sp = aSample->mSP;
+      registerState.lr = aSample->mLR;
+      registerState.fp = aSample->mFP;
 
       JS::ProfilingFrameIterator jsIter(pseudoStack->mContext,
                                         registerState,
                                         startBufferGen);
       for (; jsCount < maxFrames && !jsIter.done(); ++jsIter) {
         
-        if (aSample->isSamplingCurrentThread || jsIter.isWasm()) {
+        if (aSample->mIsSamplingCurrentThread || jsIter.isWasm()) {
           uint32_t extracted =
             jsIter.extractStack(jsFrames, jsCount, maxFrames);
           jsCount += extracted;
@@ -670,7 +674,7 @@ MergeStacksIntoProfile(ProfileBuffer* aBuffer, TickSample* aSample,
       
       
       
-      if (aSample->isSamplingCurrentThread ||
+      if (aSample->mIsSamplingCurrentThread ||
           jsFrame.kind == JS::ProfilingFrameIterator::Frame_Wasm) {
         AddDynamicCodeLocationTag(aBuffer, jsFrame.label);
       } else {
@@ -700,7 +704,7 @@ MergeStacksIntoProfile(ProfileBuffer* aBuffer, TickSample* aSample,
   
   
   
-  if (!aSample->isSamplingCurrentThread && pseudoStack->mContext) {
+  if (!aSample->mIsSamplingCurrentThread && pseudoStack->mContext) {
     MOZ_ASSERT(aBuffer->mGeneration >= startBufferGen);
     uint32_t lapCount = aBuffer->mGeneration - startBufferGen;
     JS::UpdateJSContextProfilerSampleBufferGen(pseudoStack->mContext,
@@ -741,21 +745,21 @@ DoNativeBacktrace(PS::LockRef aLock, ProfileBuffer* aBuffer,
   
   
   
-  StackWalkCallback( 0, aSample->pc, aSample->sp, &nativeStack);
+  StackWalkCallback( 0, aSample->mPC, aSample->mSP, &nativeStack);
 
   uint32_t maxFrames = uint32_t(nativeStack.size - nativeStack.count);
 
 #if defined(GP_OS_darwin) || (defined(GP_PLAT_x86_windows))
-  void* stackEnd = aSample->threadInfo->StackTop();
-  if (aSample->fp >= aSample->sp && aSample->fp <= stackEnd) {
+  void* stackEnd = aSample->mThreadInfo->StackTop();
+  if (aSample->mFP >= aSample->mSP && aSample->mFP <= stackEnd) {
     FramePointerStackWalk(StackWalkCallback,  0, maxFrames,
-                          &nativeStack, reinterpret_cast<void**>(aSample->fp),
+                          &nativeStack, reinterpret_cast<void**>(aSample->mFP),
                           stackEnd);
   }
 #else
   
   
-  uintptr_t thread = GetThreadHandle(aSample->threadInfo->GetPlatformData());
+  uintptr_t thread = GetThreadHandle(aSample->mThreadInfo->GetPlatformData());
   MOZ_ASSERT(thread);
   MozStackWalk(StackWalkCallback,  0, maxFrames, &nativeStack,
                thread,  nullptr);
@@ -780,9 +784,9 @@ DoNativeBacktrace(PS::LockRef aLock, ProfileBuffer* aBuffer,
   };
 
   const mcontext_t* mcontext =
-    &reinterpret_cast<ucontext_t*>(aSample->context)->uc_mcontext;
+    &reinterpret_cast<ucontext_t*>(aSample->mContext)->uc_mcontext;
   mcontext_t savedContext;
-  NotNull<PseudoStack*> pseudoStack = aSample->threadInfo->Stack();
+  NotNull<PseudoStack*> pseudoStack = aSample->mThreadInfo->Stack();
 
   
   
@@ -826,7 +830,7 @@ DoNativeBacktrace(PS::LockRef aLock, ProfileBuffer* aBuffer,
   
   
   nativeStack.count += EHABIStackWalk(*mcontext,
-                                      aSample->threadInfo->StackTop(),
+                                      aSample->mThreadInfo->StackTop(),
                                       sp_array + nativeStack.count,
                                       pc_array + nativeStack.count,
                                       nativeStack.size - nativeStack.count);
@@ -841,7 +845,7 @@ DoNativeBacktrace(PS::LockRef aLock, ProfileBuffer* aBuffer,
                   TickSample* aSample)
 {
   const mcontext_t* mc =
-    &reinterpret_cast<ucontext_t*>(aSample->context)->uc_mcontext;
+    &reinterpret_cast<ucontext_t*>(aSample->mContext)->uc_mcontext;
 
   lul::UnwindRegs startRegs;
   memset(&startRegs, 0, sizeof(startRegs));
@@ -885,7 +889,7 @@ DoNativeBacktrace(PS::LockRef aLock, ProfileBuffer* aBuffer,
 #else
 #   error "Unknown plat"
 #endif
-    uintptr_t end = reinterpret_cast<uintptr_t>(aSample->threadInfo->StackTop());
+    uintptr_t end = reinterpret_cast<uintptr_t>(aSample->mThreadInfo->StackTop());
     uintptr_t ws  = sizeof(void*);
     start &= ~(ws-1);
     end   &= ~(ws-1);
@@ -949,7 +953,7 @@ DoSampleStackTrace(PS::LockRef aLock, ProfileBuffer* aBuffer,
   MergeStacksIntoProfile(aBuffer, aSample, nativeStack);
 
   if (gPS->FeatureLeaf(aLock)) {
-    aBuffer->addTag(ProfileBufferEntry::NativeLeafAddr((void*)aSample->pc));
+    aBuffer->addTag(ProfileBufferEntry::NativeLeafAddr((void*)aSample->mPC));
   }
 }
 
@@ -958,12 +962,12 @@ DoSampleStackTrace(PS::LockRef aLock, ProfileBuffer* aBuffer,
 static void
 Tick(PS::LockRef aLock, ProfileBuffer* aBuffer, TickSample* aSample)
 {
-  ThreadInfo& threadInfo = *aSample->threadInfo;
+  ThreadInfo& threadInfo = *aSample->mThreadInfo;
 
   MOZ_ASSERT(threadInfo.LastSample().mThreadId == threadInfo.ThreadId());
   aBuffer->addTagThreadId(threadInfo.LastSample());
 
-  mozilla::TimeDuration delta = aSample->timestamp - gPS->StartTime(aLock);
+  mozilla::TimeDuration delta = aSample->mTimeStamp - gPS->StartTime(aLock);
   aBuffer->addTag(ProfileBufferEntry::Time(delta.ToMilliseconds()));
 
   NotNull<PseudoStack*> stack = threadInfo.Stack();
@@ -981,7 +985,7 @@ Tick(PS::LockRef aLock, ProfileBuffer* aBuffer, TickSample* aSample)
 
   
   
-  if (!aSample->isSamplingCurrentThread) {
+  if (!aSample->mIsSamplingCurrentThread) {
     ProfilerMarkerLinkedList* pendingMarkersList = stack->getPendingMarkers();
     while (pendingMarkersList && pendingMarkersList->peek()) {
       ProfilerMarker* marker = pendingMarkersList->popHead();
@@ -993,19 +997,19 @@ Tick(PS::LockRef aLock, ProfileBuffer* aBuffer, TickSample* aSample)
   if (threadInfo.GetThreadResponsiveness()->HasData()) {
     mozilla::TimeDuration delta =
       threadInfo.GetThreadResponsiveness()->GetUnresponsiveDuration(
-        aSample->timestamp);
+        aSample->mTimeStamp);
     aBuffer->addTag(ProfileBufferEntry::Responsiveness(delta.ToMilliseconds()));
   }
 
   
-  if (aSample->rssMemory != 0) {
-    double rssMemory = static_cast<double>(aSample->rssMemory);
+  if (aSample->mRSSMemory != 0) {
+    double rssMemory = static_cast<double>(aSample->mRSSMemory);
     aBuffer->addTag(ProfileBufferEntry::ResidentMemory(rssMemory));
   }
 
   
-  if (aSample->ussMemory != 0) {
-    double ussMemory = static_cast<double>(aSample->ussMemory);
+  if (aSample->mUSSMemory != 0) {
+    double ussMemory = static_cast<double>(aSample->mUSSMemory);
     aBuffer->addTag(ProfileBufferEntry::UnsharedMemory(ussMemory));
   }
 
@@ -1559,9 +1563,7 @@ public:
 
   
   
-  void SuspendAndSampleAndResumeThread(PS::LockRef aLock,
-                                       ThreadInfo* aThreadInfo,
-                                       bool aIsFirstProfiledThread);
+  void SuspendAndSampleAndResumeThread(PS::LockRef aLock, TickSample* aSample);
 
   
   void Run();
@@ -1637,8 +1639,6 @@ SamplerThread::Run()
       gPS->Buffer(lock)->deleteExpiredStoredMarkers();
 
       if (!gPS->IsPaused(lock)) {
-        bool isFirstProfiledThread = true;
-
         const PS::ThreadVector& threads = gPS->Threads(lock);
         for (uint32_t i = 0; i < threads.size(); i++) {
           ThreadInfo* info = threads[i];
@@ -1662,9 +1662,17 @@ SamplerThread::Run()
 
           info->UpdateThreadResponsiveness();
 
-          SuspendAndSampleAndResumeThread(lock, info, isFirstProfiledThread);
+          TickSample sample(info);
 
-          isFirstProfiledThread = false;
+          
+          if (i == 0 && gPS->FeatureMemory(lock)) {
+            sample.mRSSMemory = nsMemoryReporterManager::ResidentFast();
+#if defined(GP_OS_linux) || defined(GP_OS_android)
+            sample.mUSSMemory = nsMemoryReporterManager::ResidentUnique();
+#endif
+          }
+
+          SuspendAndSampleAndResumeThread(lock, &sample);
         }
 
 #if defined(USE_LUL_STACKWALK)
@@ -2943,12 +2951,12 @@ profiler_get_backtrace()
                     nullptr);
   threadInfo->SetHasProfile();
 
-  TickSample sample;
-  sample.threadInfo = threadInfo;
+  TickSample sample(threadInfo);
+  sample.mIsSamplingCurrentThread = true;
 
 #if defined(HAVE_NATIVE_UNWIND)
 #if defined(GP_OS_windows) || defined(GP_OS_linux) || defined(GP_OS_android)
-  tickcontext_t context;
+  tick_context_t context;
   sample.PopulateContext(&context);
 #elif defined(GP_OS_darwin)
   sample.PopulateContext(nullptr);
@@ -2956,9 +2964,6 @@ profiler_get_backtrace()
 # error "unknown platform"
 #endif
 #endif
-
-  sample.isSamplingCurrentThread = true;
-  sample.timestamp = mozilla::TimeStamp::Now();
 
   Tick(lock, buffer, &sample);
 

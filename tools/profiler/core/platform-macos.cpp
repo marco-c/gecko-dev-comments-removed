@@ -32,9 +32,6 @@
 #include <math.h>
 
 
-#include "nsMemoryReporterManager.h"
-
-
 
  Thread::tid_t
 Thread::GetCurrentId()
@@ -130,25 +127,11 @@ SamplerThread::Stop(PS::LockRef aLock)
 }
 
 void
-SamplerThread::SuspendAndSampleAndResumeThread(
-  PS::LockRef aLock, ThreadInfo* aThreadInfo, bool aIsFirstProfiledThread)
+SamplerThread::SuspendAndSampleAndResumeThread(PS::LockRef aLock,
+                                               TickSample* aSample)
 {
   thread_act_t samplee_thread =
-    aThreadInfo->GetPlatformData()->profiled_thread();
-
-  
-  
-  
-
-  TickSample sample;
-  sample.threadInfo = aThreadInfo;
-  sample.timestamp = mozilla::TimeStamp::Now();
-
-  
-  sample.rssMemory = (aIsFirstProfiledThread && gPS->FeatureMemory(aLock))
-                   ? nsMemoryReporterManager::ResidentFast()
-                   : 0;
-  sample.ussMemory = 0;
+    aSample->mThreadInfo->GetPlatformData()->profiled_thread();
 
   
   
@@ -199,11 +182,11 @@ SamplerThread::SuspendAndSampleAndResumeThread(
                        flavor,
                        reinterpret_cast<natural_t*>(&state),
                        &count) == KERN_SUCCESS) {
-    sample.pc = reinterpret_cast<Address>(state.REGISTER_FIELD(ip));
-    sample.sp = reinterpret_cast<Address>(state.REGISTER_FIELD(sp));
-    sample.fp = reinterpret_cast<Address>(state.REGISTER_FIELD(bp));
+    aSample->mPC = reinterpret_cast<Address>(state.REGISTER_FIELD(ip));
+    aSample->mSP = reinterpret_cast<Address>(state.REGISTER_FIELD(sp));
+    aSample->mFP = reinterpret_cast<Address>(state.REGISTER_FIELD(bp));
 
-    Tick(aLock, gPS->Buffer(aLock), &sample);
+    Tick(aLock, gPS->Buffer(aLock), aSample);
   }
 
 #undef REGISTER_FIELD
@@ -239,8 +222,8 @@ TickSample::PopulateContext(void* aContext)
       
       "movq (%%rbp), %1\n\t"
       :
-      "=r"(sp),
-      "=r"(fp)
+      "=r"(mSP),
+      "=r"(mFP)
   );
 #elif defined(GP_ARCH_x86)
   asm (
@@ -251,13 +234,13 @@ TickSample::PopulateContext(void* aContext)
       
       "movl (%%ebp), %1\n\t"
       :
-      "=r"(sp),
-      "=r"(fp)
+      "=r"(mSP),
+      "=r"(mFP)
   );
 #else
 # error "Unsupported architecture"
 #endif
-  pc = reinterpret_cast<Address>(__builtin_extract_return_addr(
+  mPC = reinterpret_cast<Address>(__builtin_extract_return_addr(
                                     __builtin_return_address(0)));
 }
 
