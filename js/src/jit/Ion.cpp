@@ -416,14 +416,11 @@ JitZoneGroup::JitZoneGroup(ZoneGroup* group)
 JitCompartment::JitCompartment()
   : stubCodes_(nullptr),
     cacheIRStubCodes_(nullptr),
-    baselineGetPropReturnAddr_(nullptr),
-    baselineSetPropReturnAddr_(nullptr),
     stringConcatStub_(nullptr),
     regExpMatcherStub_(nullptr),
     regExpSearcherStub_(nullptr),
     regExpTesterStub_(nullptr)
 {
-    baselineCallReturnAddrs_[0] = baselineCallReturnAddrs_[1] = nullptr;
 }
 
 JitCompartment::~JitCompartment()
@@ -648,16 +645,10 @@ JitCompartment::sweep(FreeOp* fop, JSCompartment* compartment)
     cacheIRStubCodes_->sweep();
 
     
-    if (!stubCodes_->lookup(ICCall_Fallback::Compiler::BASELINE_CALL_KEY))
-        baselineCallReturnAddrs_[0] = nullptr;
-    if (!stubCodes_->lookup(ICCall_Fallback::Compiler::BASELINE_CONSTRUCT_KEY))
-        baselineCallReturnAddrs_[1] = nullptr;
-
-    
-    if (!stubCodes_->lookup(ICGetProp_Fallback::Compiler::BASELINE_KEY))
-        baselineGetPropReturnAddr_ = nullptr;
-    if (!stubCodes_->lookup(ICSetProp_Fallback::Compiler::BASELINE_KEY))
-        baselineSetPropReturnAddr_ = nullptr;
+    for (auto& it : bailoutReturnStubInfo_) {
+        if (!stubCodes_->lookup(it.key))
+           it = BailoutReturnStubInfo();
+    }
 
     JSRuntime* rt = fop->runtime();
     if (stringConcatStub_ && !IsMarkedUnbarriered(rt, &stringConcatStub_))

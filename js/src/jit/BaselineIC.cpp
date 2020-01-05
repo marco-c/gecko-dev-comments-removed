@@ -1645,7 +1645,7 @@ ICSetProp_Fallback::Compiler::generateStubCode(MacroAssembler& masm)
     
     
     assumeStubFrame(masm);
-    returnOffset_ = masm.currentOffset();
+    bailoutReturnOffset_.bind(masm.currentOffset());
 
     leaveStubFrame(masm, true);
     EmitReturnFromIC(masm);
@@ -1656,7 +1656,9 @@ ICSetProp_Fallback::Compiler::generateStubCode(MacroAssembler& masm)
 void
 ICSetProp_Fallback::Compiler::postGenerateStubCode(MacroAssembler& masm, Handle<JitCode*> code)
 {
-    cx->compartment()->jitCompartment()->initBaselineSetPropReturnAddr(code->raw() + returnOffset_);
+    BailoutReturnStub kind = BailoutReturnStub::SetProp;
+    void* address = code->raw() + bailoutReturnOffset_.offset();
+    cx->compartment()->jitCompartment()->initBailoutReturnAddr(address, getKey(), kind);
 }
 
 
@@ -2817,7 +2819,7 @@ ICCall_Fallback::Compiler::generateStubCode(MacroAssembler& masm)
     
     
     assumeStubFrame(masm);
-    returnOffset_ = masm.currentOffset();
+    bailoutReturnOffset_.bind(masm.currentOffset());
 
     
     
@@ -2858,8 +2860,10 @@ ICCall_Fallback::Compiler::postGenerateStubCode(MacroAssembler& masm, Handle<Jit
     if (MOZ_UNLIKELY(isSpread_))
         return;
 
-    cx->compartment()->jitCompartment()->initBaselineCallReturnAddr(code->raw() + returnOffset_,
-                                                                    isConstructing_);
+    void* address = code->raw() + bailoutReturnOffset_.offset();
+    BailoutReturnStub kind = isConstructing_ ? BailoutReturnStub::New
+                                             : BailoutReturnStub::Call;
+    cx->compartment()->jitCompartment()->initBailoutReturnAddr(address, getKey(), kind);
 }
 
 typedef bool (*CreateThisFn)(JSContext* cx, HandleObject callee, HandleObject newTarget,
