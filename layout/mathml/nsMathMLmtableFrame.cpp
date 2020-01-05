@@ -204,13 +204,13 @@ ApplyBorderToStyle(const nsMathMLmtdFrame* aFrame,
     
     int32_t listLength = rowLinesList->Length();
     if (rowIndex < listLength) {
-      aStyleBorder.SetBorderStyle(eSideTop,
+      aStyleBorder.SetBorderStyle(NS_SIDE_TOP,
                     rowLinesList->ElementAt(rowIndex - 1));
     } else {
-      aStyleBorder.SetBorderStyle(eSideTop,
+      aStyleBorder.SetBorderStyle(NS_SIDE_TOP,
                     rowLinesList->ElementAt(listLength - 1));
     }
-    aStyleBorder.SetBorderWidth(eSideTop, borderWidth);
+    aStyleBorder.SetBorderWidth(NS_SIDE_TOP, borderWidth);
   }
 
   
@@ -219,13 +219,13 @@ ApplyBorderToStyle(const nsMathMLmtdFrame* aFrame,
     
     int32_t listLength = columnLinesList->Length();
     if (columnIndex < listLength) {
-      aStyleBorder.SetBorderStyle(eSideLeft,
+      aStyleBorder.SetBorderStyle(NS_SIDE_LEFT,
                     columnLinesList->ElementAt(columnIndex - 1));
     } else {
-      aStyleBorder.SetBorderStyle(eSideLeft,
+      aStyleBorder.SetBorderStyle(NS_SIDE_LEFT,
                     columnLinesList->ElementAt(listLength - 1));
     }
-    aStyleBorder.SetBorderWidth(eSideLeft, borderWidth);
+    aStyleBorder.SetBorderWidth(NS_SIDE_LEFT, borderWidth);
   }
 }
 
@@ -301,7 +301,7 @@ public:
     nsStyleBorder styleBorder = *mFrame->StyleBorder();
     nsMathMLmtdFrame* frame = static_cast<nsMathMLmtdFrame*>(mFrame);
     ApplyBorderToStyle(frame, styleBorder);
-    nsRect bounds = CalculateBounds(styleBorder);
+    nsRect bounds = CalculateBounds(styleBorder).GetBounds();
     nsMargin overflow = ComputeBorderOverflow(frame, styleBorder);
     bounds.Inflate(overflow);
     return bounds;

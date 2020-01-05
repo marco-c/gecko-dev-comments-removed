@@ -1427,6 +1427,13 @@ public:
     *aSnap = false;
     return nsRect(ToReferenceFrame(), Frame()->GetSize());
   }
+
+  virtual nsRegion GetTightBounds(nsDisplayListBuilder* aBuilder, bool* aSnap)
+  {
+    *aSnap = false;
+    return nsRegion();
+  }
+
   
 
 
@@ -2574,8 +2581,14 @@ public:
                                          const nsDisplayItemGeometry* aGeometry,
                                          nsRegion* aInvalidRegion) override;
 
+  virtual nsRegion GetTightBounds(nsDisplayListBuilder* aBuilder, bool* aSnap) override
+  {
+    *aSnap = true;
+    return CalculateBounds(*mFrame->StyleBorder());
+  }
+
 protected:
-  nsRect CalculateBounds(const nsStyleBorder& aStyleBorder);
+  nsRegion CalculateBounds(const nsStyleBorder& aStyleBorder);
 
   mozilla::Array<mozilla::gfx::Color, 4> mColors;
   mozilla::Array<mozilla::LayerCoord, 4> mWidths;
