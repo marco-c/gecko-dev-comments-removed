@@ -5355,37 +5355,6 @@ Parser<ParseHandler>::matchInOrOf(bool* isForInp, bool* isForOfp)
 
 template <class ParseHandler>
 bool
-Parser<ParseHandler>::validateForInOrOfLHSExpression(Node target, PossibleError* possibleError)
-{
-    if (handler.isUnparenthesizedDestructuringPattern(target))
-        return checkDestructuringPattern(target, Nothing(), possibleError);
-
-    
-    if (!reportIfNotValidSimpleAssignmentTarget(target, ForInOrOfTarget))
-        return false;
-
-    if (handler.isPropertyAccess(target))
-        return true;
-
-    if (handler.isNameAnyParentheses(target)) {
-        
-        
-        if (!reportIfArgumentsEvalTarget(target))
-            return false;
-
-        handler.adjustGetToSet(target);
-        return true;
-    }
-
-    if (handler.isFunctionCall(target))
-        return checkAssignmentToCall(target, JSMSG_BAD_FOR_LEFTSIDE);
-
-    reportWithNode(ParseError, false, target, JSMSG_BAD_FOR_LEFTSIDE);
-    return false;
-}
-
-template <class ParseHandler>
-bool
 Parser<ParseHandler>::forHeadStart(YieldHandling yieldHandling,
                                    ParseNodeKind* forHeadKind,
                                    Node* forInitialPart,
@@ -5464,6 +5433,10 @@ Parser<ParseHandler>::forHeadStart(YieldHandling yieldHandling,
         return *forInitialPart != null();
     }
 
+    uint32_t exprOffset;
+    if (!tokenStream.peekOffset(&exprOffset, TokenStream::Operand))
+        return false;
+
     
     
     
@@ -5507,8 +5480,29 @@ Parser<ParseHandler>::forHeadStart(YieldHandling yieldHandling,
 
     *forHeadKind = isForIn ? PNK_FORIN : PNK_FOROF;
 
-    if (!validateForInOrOfLHSExpression(*forInitialPart, &possibleError))
+    
+    if (handler.isUnparenthesizedDestructuringPattern(*forInitialPart)) {
+        if (!checkDestructuringPattern(*forInitialPart, Nothing(), &possibleError))
+            return false;
+    } else if (handler.isNameAnyParentheses(*forInitialPart)) {
+        const char* chars = handler.nameIsArgumentsEvalAnyParentheses(*forInitialPart, context);
+        if (chars) {
+            
+            if (!strictModeErrorAt(exprOffset, JSMSG_BAD_STRICT_ASSIGN, chars))
+                return false;
+        }
+
+        handler.adjustGetToSet(*forInitialPart);
+    } else if (handler.isPropertyAccess(*forInitialPart)) {
+        
+    } else if (handler.isFunctionCall(*forInitialPart)) {
+        if (!strictModeErrorAt(exprOffset, JSMSG_BAD_FOR_LEFTSIDE))
+            return false;
+    } else {
+        errorAt(exprOffset, JSMSG_BAD_FOR_LEFTSIDE);
         return false;
+    }
+
     if (!possibleError.checkForExpressionError())
         return false;
 
@@ -7809,10 +7803,6 @@ Parser<ParseHandler>::reportIfNotValidSimpleAssignmentTarget(Node target, Assign
       case PlainAssignment:
       case CompoundAssignment:
         errnum = JSMSG_BAD_LEFTSIDE_OF_ASS;
-        break;
-
-      case ForInOrOfTarget:
-        errnum = JSMSG_BAD_FOR_LEFTSIDE;
         break;
     }
 
