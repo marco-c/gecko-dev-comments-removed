@@ -659,7 +659,7 @@ protected:
                  LineIterator aLine,
                  nsFloatManager::SavedState* aFloatStateBeforeLine,
                  mozilla::LogicalRect& aFloatAvailableSpace, 
-                 nscoord& aAvailableSpaceHeight, 
+                 nscoord& aAvailableSpaceBSize, 
                  bool* aKeepReflowGoing);
 
   
@@ -705,9 +705,8 @@ protected:
                             nsLineLayout& aLineLayout,
                             LineIterator aLine,
                             nsFlowAreaRect& aFloatAvailableSpace,
-                            nscoord& aAvailableSpaceHeight,
-                            nsFloatManager::SavedState*
-                            aFloatStateBeforeLine,
+                            nscoord& aAvailableSpaceBSize,
+                            nsFloatManager::SavedState* aFloatStateBeforeLine,
                             bool* aKeepReflowGoing,
                             LineReflowStatus* aLineReflowStatus,
                             bool aAllowPullUp);

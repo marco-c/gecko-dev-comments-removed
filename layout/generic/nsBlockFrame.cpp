@@ -3765,7 +3765,7 @@ nsBlockFrame::ReflowInlineFrames(BlockReflowInput& aState,
 
   LineReflowStatus lineReflowStatus;
   do {
-    nscoord availableSpaceHeight = 0;
+    nscoord availableSpaceBSize = 0;
     do {
       bool allowPullUp = true;
       nsIFrame* forceBreakInFrame = nullptr;
@@ -3790,7 +3790,7 @@ nsBlockFrame::ReflowInlineFrames(BlockReflowInput& aState,
           lineLayout.ForceBreakAtPosition(forceBreakInFrame, forceBreakOffset);
         }
         DoReflowInlineFrames(aState, lineLayout, aLine,
-                             floatAvailableSpace, availableSpaceHeight,
+                             floatAvailableSpace, availableSpaceBSize,
                              &floatManagerState, aKeepReflowGoing,
                              &lineReflowStatus, allowPullUp);
         lineLayout.EndLineReflow();
@@ -3837,7 +3837,7 @@ nsBlockFrame::DoReflowInlineFrames(BlockReflowInput& aState,
                                    nsLineLayout& aLineLayout,
                                    LineIterator aLine,
                                    nsFlowAreaRect& aFloatAvailableSpace,
-                                   nscoord& aAvailableSpaceHeight,
+                                   nscoord& aAvailableSpaceBSize,
                                    nsFloatManager::SavedState*
                                      aFloatStateBeforeLine,
                                    bool* aKeepReflowGoing,
@@ -4044,7 +4044,7 @@ nsBlockFrame::DoReflowInlineFrames(BlockReflowInput& aState,
     
     if (!NS_INLINE_IS_BREAK_BEFORE(aState.mReflowStatus)) {
       if (!PlaceLine(aState, aLineLayout, aLine, aFloatStateBeforeLine,
-                     aFloatAvailableSpace.mRect, aAvailableSpaceHeight,
+                     aFloatAvailableSpace.mRect, aAvailableSpaceBSize,
                      aKeepReflowGoing)) {
         lineReflowStatus = LineReflowStatus::RedoMoreFloats;
         
@@ -4432,12 +4432,12 @@ nsBlockFrame::IsLastLine(BlockReflowInput& aState,
 
 bool
 nsBlockFrame::PlaceLine(BlockReflowInput& aState,
-                        nsLineLayout&       aLineLayout,
-                        LineIterator       aLine,
+                        nsLineLayout& aLineLayout,
+                        LineIterator aLine,
                         nsFloatManager::SavedState *aFloatStateBeforeLine,
-                        LogicalRect&        aFloatAvailableSpace,
-                        nscoord&            aAvailableSpaceHeight,
-                        bool*             aKeepReflowGoing)
+                        LogicalRect& aFloatAvailableSpace,
+                        nscoord& aAvailableSpaceBSize,
+                        bool* aKeepReflowGoing)
 {
   
   aLineLayout.TrimTrailingWhiteSpace();
@@ -4477,10 +4477,10 @@ nsBlockFrame::PlaceLine(BlockReflowInput& aState,
   LogicalRect oldFloatAvailableSpace(aFloatAvailableSpace);
   
   
-  aAvailableSpaceHeight = std::max(aAvailableSpaceHeight, aLine->BSize());
+  aAvailableSpaceBSize = std::max(aAvailableSpaceBSize, aLine->BSize());
   aFloatAvailableSpace =
     aState.GetFloatAvailableSpaceForBSize(aLine->BStart(),
-                                          aAvailableSpaceHeight,
+                                          aAvailableSpaceBSize,
                                           aFloatStateBeforeLine).mRect;
   NS_ASSERTION(aFloatAvailableSpace.BStart(wm) ==
                oldFloatAvailableSpace.BStart(wm), "yikes");
