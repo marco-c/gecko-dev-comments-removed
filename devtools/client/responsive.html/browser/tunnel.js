@@ -143,7 +143,6 @@ function tunnelToInnerBrowser(outer, inner) {
       
       
       outer.setAttribute("remote", "true");
-      outer.setAttribute("remoteType", inner.remoteType);
 
       
       
@@ -270,7 +269,6 @@ function tunnelToInnerBrowser(outer, inner) {
 
       
       outer.setAttribute("remote", "false");
-      outer.removeAttribute("remoteType");
 
       
       delete inner.ownerGlobal.PopupNotifications;

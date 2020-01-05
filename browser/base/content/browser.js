@@ -830,13 +830,14 @@ function _loadURIWithFlags(browser, uri, params) {
                         Ci.nsIHttpChannel.REFERRER_POLICY_DEFAULT);
   let postData = params.postData;
 
-  let currentRemoteType = browser.remoteType;
-  let requiredRemoteType =
-    E10SUtils.getRemoteTypeForURI(uri, gMultiProcessBrowser, currentRemoteType);
-  let mustChangeProcess = requiredRemoteType != currentRemoteType;
+  let wasRemote = browser.isRemoteBrowser;
 
-  
-  if (!requiredRemoteType) {
+  let process = browser.isRemoteBrowser ? Ci.nsIXULRuntime.PROCESS_TYPE_CONTENT
+                                        : Ci.nsIXULRuntime.PROCESS_TYPE_DEFAULT;
+  let mustChangeProcess = gMultiProcessBrowser &&
+                          !E10SUtils.canLoadURIInProcess(uri, process);
+  if ((!wasRemote && !mustChangeProcess) ||
+      (wasRemote && mustChangeProcess)) {
     browser.inLoadURI = true;
   }
   try {
@@ -887,7 +888,8 @@ function _loadURIWithFlags(browser, uri, params) {
       throw e;
     }
   } finally {
-    if (!requiredRemoteType) {
+    if ((!wasRemote && !mustChangeProcess) ||
+        (wasRemote && mustChangeProcess)) {
       browser.inLoadURI = false;
     }
   }
@@ -1143,12 +1145,22 @@ var gBrowserInit = {
           gBrowser.selectedBrowser.setAttribute("usercontextid", usercontextid);
         }
 
+        
+        
+        
         try {
-          
-          
-          gBrowser.updateBrowserRemoteness(gBrowser.selectedBrowser,
-                                           tabToOpen.linkedBrowser.isRemoteBrowser,
-                                           tabToOpen.linkedBrowser.remoteType);
+          if (tabToOpen.linkedBrowser.isRemoteBrowser) {
+            if (!gMultiProcessBrowser) {
+              throw new Error("Cannot drag a remote browser into a window " +
+                              "without the remote tabs load context.");
+            }
+            gBrowser.updateBrowserRemoteness(gBrowser.selectedBrowser, true);
+          } else if (gBrowser.selectedBrowser.isRemoteBrowser) {
+            
+            
+            
+            gBrowser.updateBrowserRemoteness(gBrowser.selectedBrowser, false);
+          }
           gBrowser.swapBrowsersAndCloseOther(gBrowser.selectedTab, tabToOpen);
         } catch (e) {
           Cu.reportError(e);
@@ -2259,22 +2271,24 @@ function BrowserViewSourceOfDocument(aArgsOrDocument) {
     let inTab = Services.prefs.getBoolPref("view_source.tab");
     if (inTab) {
       let tabBrowser = gBrowser;
-      let preferredRemoteType;
+      let forceNotRemote = false;
       if (!tabBrowser) {
         if (!args.browser) {
           throw new Error("BrowserViewSourceOfDocument should be passed the " +
                           "subject browser if called from a window without " +
                           "gBrowser defined.");
         }
-        preferredRemoteType = args.browser.remoteType;
+        forceNotRemote = !args.browser.isRemoteBrowser;
       } else {
         
         
         
         
         
-        preferredRemoteType =
-          E10SUtils.getRemoteTypeForURI(args.URL, gMultiProcessBrowser);
+        let contentProcess = Ci.nsIXULRuntime.PROCESS_TYPE_CONTENT
+        forceNotRemote =
+          gMultiProcessBrowser &&
+          !E10SUtils.canLoadURIInProcess(args.URL, contentProcess)
       }
 
       
@@ -2292,7 +2306,7 @@ function BrowserViewSourceOfDocument(aArgsOrDocument) {
       let tab = tabBrowser.loadOneTab("about:blank", {
         relatedToCurrent: true,
         inBackground: false,
-        preferredRemoteType,
+        forceNotRemote,
         relatedBrowser: args.browser
       });
       args.viewSourceBrowser = tabBrowser.getBrowserForTab(tab);
@@ -3251,11 +3265,11 @@ var PrintPreviewListener = {
   getPrintPreviewBrowser: function() {
     if (!this._printPreviewTab) {
       let browser = gBrowser.selectedTab.linkedBrowser;
-      let preferredRemoteType = browser.remoteType;
+      let forceNotRemote = gMultiProcessBrowser && !browser.isRemoteBrowser;
       this._tabBeforePrintPreview = gBrowser.selectedTab;
       this._printPreviewTab = gBrowser.loadOneTab("about:blank",
                                                   { inBackground: false,
-                                                    preferredRemoteType,
+                                                    forceNotRemote,
                                                     relatedBrowser: browser });
       gBrowser.selectedTab = this._printPreviewTab;
     }
@@ -4218,7 +4232,7 @@ var XULBrowserWindow = {
   forceInitialBrowserNonRemote: function(aOpener) {
     let initBrowser =
       document.getAnonymousElementByAttribute(gBrowser, "anonid", "initialBrowser");
-    gBrowser.updateBrowserRemoteness(initBrowser, false, E10SUtils.NOT_REMOTE, aOpener);
+    gBrowser.updateBrowserRemoteness(initBrowser, false, aOpener);
   },
 
   setDefaultStatus: function(status) {

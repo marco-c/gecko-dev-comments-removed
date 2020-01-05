@@ -3543,8 +3543,13 @@ var SessionStoreInternal = {
     
     this.markTabAsRestoring(aTab);
 
-    let isRemotenessUpdate =
-      tabbrowser.updateBrowserRemotenessByURL(browser, uri, aReloadInFreshProcess);
+    let isRemotenessUpdate = false;
+    if (aReloadInFreshProcess) {
+      isRemotenessUpdate = tabbrowser.switchBrowserIntoFreshProcess(browser);
+    } else {
+      isRemotenessUpdate = tabbrowser.updateBrowserRemotenessByURL(browser, uri);
+    }
+
     if (isRemotenessUpdate) {
       
       
