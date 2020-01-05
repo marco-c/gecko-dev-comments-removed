@@ -680,11 +680,7 @@ SampleAnimations(Layer* aLayer, TimeStamp aPoint)
           timing.mIterationStart = animation.iterationStart();
           timing.mDirection =
             static_cast<dom::PlaybackDirection>(animation.direction());
-          
-          
-          
-          
-          timing.mFill = dom::FillMode::Both;
+          timing.mFill = static_cast<dom::FillMode>(animation.fillMode());
           timing.mFunction =
             AnimationUtils::TimingFunctionToComputedTimingFunction(
               animation.easingFunction());
