@@ -73,9 +73,8 @@ MOZ_EXPORT int gSeccompTsyncBroadcastSignum = 0;
 
 namespace mozilla {
 
-#ifdef ANDROID
+
 SandboxCrashFunc gSandboxCrashFunc;
-#endif
 
 #ifdef MOZ_GMP_SANDBOX
 

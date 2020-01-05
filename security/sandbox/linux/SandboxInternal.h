@@ -17,8 +17,6 @@ namespace mozilla {
 
 
 
-
-
 typedef void (*SandboxCrashFunc)(int, siginfo_t*, void*);
 extern MOZ_EXPORT SandboxCrashFunc gSandboxCrashFunc;
 

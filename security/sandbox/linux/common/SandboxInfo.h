@@ -68,7 +68,7 @@ public:
   
   
   
-  static void ThreadingCheck();
+  static MOZ_EXPORT void ThreadingCheck();
 private:
   enum Flags mFlags;
   

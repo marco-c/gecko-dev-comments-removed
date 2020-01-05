@@ -14,32 +14,24 @@
 
 
 
-#ifdef ANDROID
-
-#define MOZ_SANDBOX_EXPORT MOZ_EXPORT
-#else
-
-#define MOZ_SANDBOX_EXPORT MOZ_EXPORT __attribute__((weak))
-#endif
-
 namespace mozilla {
 
 
-MOZ_SANDBOX_EXPORT void SandboxEarlyInit(GeckoProcessType aType);
+MOZ_EXPORT void SandboxEarlyInit(GeckoProcessType aType);
 
 #ifdef MOZ_CONTENT_SANDBOX
 
 
 
 
-MOZ_SANDBOX_EXPORT bool SetContentProcessSandbox(int aBrokerFd);
+MOZ_EXPORT bool SetContentProcessSandbox(int aBrokerFd);
 #endif
 
 #ifdef MOZ_GMP_SANDBOX
 
 
 
-MOZ_SANDBOX_EXPORT void SetMediaPluginSandbox(const char *aFilePath);
+MOZ_EXPORT void SetMediaPluginSandbox(const char *aFilePath);
 #endif
 
 } 

@@ -210,6 +210,7 @@
 @RESPATH@/components/dom_sidebar.xpt
 @RESPATH@/components/dom_storage.xpt
 @RESPATH@/components/dom_stylesheets.xpt
+@RESPATH@/components/dom_telephony.xpt
 @RESPATH@/components/dom_traversal.xpt
 #ifdef MOZ_WEBSPEECH
 @RESPATH@/components/dom_webspeechrecognition.xpt
@@ -747,6 +748,12 @@
 #if defined(WOW_HELPER)
 @BINPATH@/wow_helper.exe
 #endif
+#endif
+#endif
+
+#if defined(MOZ_SANDBOX)
+#if defined(XP_LINUX)
+@BINPATH@/@DLL_PREFIX@mozsandbox@DLL_SUFFIX@
 #endif
 #endif
 
