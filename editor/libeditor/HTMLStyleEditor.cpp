@@ -778,22 +778,25 @@ HTMLEditor::RemoveStyleInside(nsIContent& aNode,
     
     
     
-    nsCOMPtr<nsIAtom> attribute =
-      aAttribute ? NS_Atomize(*aAttribute) : nullptr;
-    nsAutoString propertyValue;
-    bool isSet = mCSSEditUtils->IsCSSEquivalentToHTMLInlineStyleSet(&aNode,
-      aProperty, attribute, propertyValue, CSSEditUtils::eSpecified);
-    if (isSet && aNode.IsElement()) {
-      
-      
-      mCSSEditUtils->RemoveCSSEquivalentToHTMLStyle(aNode.AsElement(),
-                                                    aProperty,
-                                                    attribute,
-                                                    &propertyValue,
-                                                    false);
-      
-      
-      RemoveElementIfNoStyleOrIdOrClass(*aNode.AsElement());
+    if (aNode.IsElement()) {
+      nsCOMPtr<nsIAtom> attribute =
+        aAttribute ? NS_Atomize(*aAttribute) : nullptr;
+      bool hasAttribute =
+        mCSSEditUtils->HaveCSSEquivalentStyles(
+                         aNode, aProperty, attribute, CSSEditUtils::eSpecified);
+      if (hasAttribute) {
+        
+        
+        
+        mCSSEditUtils->RemoveCSSEquivalentToHTMLStyle(aNode.AsElement(),
+                                                      aProperty,
+                                                      attribute,
+                                                      nullptr,
+                                                      false);
+        
+        
+        RemoveElementIfNoStyleOrIdOrClass(*aNode.AsElement());
+      }
     }
   }
 

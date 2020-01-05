@@ -253,6 +253,29 @@ public:
 
 
 
+
+
+
+
+  bool HaveCSSEquivalentStyles(nsINode& aNode,
+                               nsIAtom* aProperty,
+                               nsIAtom* aAttribute,
+                               StyleType aStyleType);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
   int32_t SetCSSEquivalentToHTMLStyle(dom::Element* aElement,
                                       nsIAtom* aProperty,
                                       nsIAtom* aAttribute,

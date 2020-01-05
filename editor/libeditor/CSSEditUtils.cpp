@@ -1243,6 +1243,44 @@ CSSEditUtils::IsCSSEquivalentToHTMLInlineStyleSet(
   return isSet;
 }
 
+bool
+CSSEditUtils::HaveCSSEquivalentStyles(
+                nsINode& aNode,
+                nsIAtom* aHTMLProperty,
+                nsIAtom* aHTMLAttribute,
+                StyleType aStyleType)
+{
+  nsAutoString valueString;
+  nsCOMPtr<nsINode> node = &aNode;
+  do {
+    
+    nsresult rv =
+      GetCSSEquivalentToHTMLInlineStyleSet(node, aHTMLProperty, aHTMLAttribute,
+                                           valueString, aStyleType);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return false;
+    }
+
+    if (!valueString.IsEmpty()) {
+      return true;
+    }
+
+    if (nsGkAtoms::u != aHTMLProperty && nsGkAtoms::strike != aHTMLProperty) {
+      return false;
+    }
+
+    
+    
+    
+    
+
+    
+    node = node->GetParentElement();
+  } while (node);
+
+  return false;
+}
+
 void
 CSSEditUtils::SetCSSEnabled(bool aIsCSSPrefChecked)
 {
