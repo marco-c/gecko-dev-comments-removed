@@ -1529,7 +1529,11 @@ pref("browser.esedbreader.loglevel", "Error");
 
 pref("browser.laterrun.enabled", false);
 
+#ifdef EARLY_BETA_OR_EARLIER
+pref("browser.migrate.automigrate.enabled", true);
+#else
 pref("browser.migrate.automigrate.enabled", false);
+#endif
 
 
 pref("browser.migrate.automigrate.daysToOfferUndo", 4);
