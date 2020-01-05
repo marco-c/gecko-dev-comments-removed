@@ -2743,6 +2743,16 @@ public:
       nsIDocument* aDocument,
       nsTArray<nsIContent*>& aElements);
 
+  
+
+
+
+
+  static void
+  GetContentPolicyTypeForUIImageLoading(nsIContent* aLoadingNode,
+                                        nsIPrincipal** aLoadingPrincipal,
+                                        nsContentPolicyType& aContentPolicyType);
+
 private:
   static bool InitializeEventTable();
 

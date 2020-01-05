@@ -189,6 +189,7 @@
 #include "nsReferencedElement.h"
 #include "nsSandboxFlags.h"
 #include "nsScriptSecurityManager.h"
+#include "nsSerializationHelper.h"
 #include "nsStreamUtils.h"
 #include "nsTextEditorState.h"
 #include "nsTextFragment.h"
@@ -9778,4 +9779,34 @@ nsContentUtils::AppendDocumentLevelNativeAnonymousContentTo(
       creator->AppendAnonymousContentTo(aElements, 0);
     }
   }
+}
+
+ void
+nsContentUtils::GetContentPolicyTypeForUIImageLoading(nsIContent* aLoadingNode,
+                                                      nsIPrincipal** aLoadingPrincipal,
+                                                      nsContentPolicyType& aContentPolicyType)
+{
+  
+  
+  aContentPolicyType = nsIContentPolicy::TYPE_INTERNAL_IMAGE;
+  nsCOMPtr<nsIPrincipal> loadingPrincipal = aLoadingNode->NodePrincipal();
+  nsAutoString imageLoadingPrincipal;
+  aLoadingNode->GetAttr(kNameSpaceID_None, nsGkAtoms::loadingprincipal,
+                        imageLoadingPrincipal);
+  if (!imageLoadingPrincipal.IsEmpty()) {
+    nsCOMPtr<nsISupports> serializedPrincipal;
+    NS_DeserializeObject(NS_ConvertUTF16toUTF8(imageLoadingPrincipal),
+                         getter_AddRefs(serializedPrincipal));
+    loadingPrincipal = do_QueryInterface(serializedPrincipal);
+
+    if (loadingPrincipal) {
+      
+      
+      aContentPolicyType = nsIContentPolicy::TYPE_INTERNAL_IMAGE_FAVICON;
+    } else {
+      
+      loadingPrincipal = aLoadingNode->NodePrincipal();
+    }
+  }
+  loadingPrincipal.forget(aLoadingPrincipal);
 }
