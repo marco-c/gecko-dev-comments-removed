@@ -427,15 +427,23 @@ impl StrongRuleNode {
     }
 
     unsafe fn pop_from_free_list(&self) -> Option<WeakRuleNode> {
-        debug_assert!(thread_state::get().is_layout() &&
-                      !thread_state::get().is_worker());
-
         
         
         let me = &*self.ptr;
+
         debug_assert!(me.is_root());
 
+        
+        
+        
+        
+        
+        debug_assert!(!thread_state::get().is_worker() &&
+                      (thread_state::get().is_layout() ||
+                       (thread_state::get().is_script() &&
+                        me.refcount.load(Ordering::SeqCst) == 0)));
         let current = me.next_free.load(Ordering::SeqCst);
+
         if current == FREE_LIST_SENTINEL {
             return None;
         }
