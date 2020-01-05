@@ -20,9 +20,6 @@ def test(mod, path, entity = None):
     
     if mod == "extensions/spellcheck":
       return "ignore"
-    
-    if (re.match(r"searchplugins\/.+\.xml", path)):
-      return "ignore"
     return "error"
   if mod == "extensions/spellcheck":
     
