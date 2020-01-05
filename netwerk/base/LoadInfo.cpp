@@ -21,6 +21,7 @@
 #include "nsContentUtils.h"
 #include "nsDocShell.h"
 #include "nsGlobalWindow.h"
+#include "nsNullPrincipal.h"
 
 using namespace mozilla::dom;
 
@@ -544,6 +545,14 @@ LoadInfo::GetForceInheritPrincipal(bool* aInheritPrincipal)
 }
 
 NS_IMETHODIMP
+LoadInfo::GetForceInheritPrincipalOverruleOwner(bool* aInheritPrincipal)
+{
+  *aInheritPrincipal =
+    (mSecurityFlags & nsILoadInfo::SEC_FORCE_INHERIT_PRINCIPAL_OVERRULE_OWNER);
+  return NS_OK;
+}
+
+NS_IMETHODIMP
 LoadInfo::GetLoadingSandboxed(bool* aLoadingSandboxed)
 {
   *aLoadingSandboxed = (mSecurityFlags & nsILoadInfo::SEC_SANDBOXED);
@@ -683,6 +692,34 @@ LoadInfo::GetScriptableOriginAttributes(JSContext* aCx,
   if (NS_WARN_IF(!ToJSValue(aCx, mOriginAttributes, aOriginAttributes))) {
     return NS_ERROR_FAILURE;
   }
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+LoadInfo::ResetPrincipalsToNullPrincipal()
+{
+  
+  
+  PrincipalOriginAttributes pAttrs;
+  pAttrs.InheritFromNecko(mOriginAttributes);
+  nsCOMPtr<nsIPrincipal> newNullPrincipal = nsNullPrincipal::Create(pAttrs);
+
+  MOZ_ASSERT(mInternalContentPolicyType != nsIContentPolicy::TYPE_DOCUMENT ||
+             !mLoadingPrincipal,
+             "LoadingPrincipal should be null for toplevel loads");
+
+  
+  if (mInternalContentPolicyType != nsIContentPolicy::TYPE_DOCUMENT) {
+    mLoadingPrincipal = newNullPrincipal;
+  }
+  mTriggeringPrincipal = newNullPrincipal;
+  mPrincipalToInherit = newNullPrincipal;
+
+  
+  
+  
+  mSecurityFlags |= SEC_FORCE_INHERIT_PRINCIPAL_OVERRULE_OWNER;
+
   return NS_OK;
 }
 
