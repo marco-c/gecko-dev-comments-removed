@@ -291,19 +291,20 @@ interaction.selectOption = function (el) {
 
 
 interaction.flushEventLoop = function* (win) {
-  return new Promise(resolve => {
-    let handleEvent = event => {
-      win.removeEventListener("beforeunload", this);
-      resolve();
-    };
+  let unloadEv;
 
+  return new Promise((resolve, reject) => {
     if (win.closed) {
-      resolve();
+      reject();
       return;
     }
 
-    win.addEventListener("beforeunload", handleEvent);
-    win.requestAnimationFrame(handleEvent);
+    unloadEv = reject;
+    win.addEventListener("unload", unloadEv, {once: true});
+
+    win.requestAnimationFrame(resolve);
+  }).then(() => {
+    win.removeEventListener("unload", unloadEv);
   });
 };
 
