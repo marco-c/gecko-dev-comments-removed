@@ -1131,17 +1131,24 @@ wasm::GenerateThrowStub(MacroAssembler& masm, Label* throwLabel)
     Offsets offsets;
     offsets.begin = masm.currentOffset();
 
+    
     masm.andToStackPtr(Imm32(~(ABIStackAlignment - 1)));
     if (ShadowStackSpace)
         masm.subFromStackPtr(Imm32(ShadowStackSpace));
-    masm.call(SymbolicAddress::HandleDebugThrow);
+    masm.call(SymbolicAddress::HandleThrow);
 
-    
-    
-    
     Register scratch = ABINonArgReturnReg0;
     masm.loadWasmActivationFromSymbolicAddress(scratch);
-    masm.storePtr(ImmWord(0), Address(scratch, WasmActivation::offsetOfFP()));
+
+#ifdef DEBUG
+    
+    
+    
+    Label ok;
+    masm.branchPtr(Assembler::Equal, Address(scratch, WasmActivation::offsetOfFP()), ImmWord(0), &ok);
+    masm.breakpoint();
+    masm.bind(&ok);
+#endif
 
     masm.setFramePushed(FramePushedForEntrySP);
     masm.loadStackPtr(Address(scratch, WasmActivation::offsetOfEntrySP()));

@@ -1717,6 +1717,9 @@ class WasmActivation : public Activation
     
     void setResumePC(void* pc) { resumePC_ = pc; }
     void* resumePC() const { return resumePC_; }
+
+    
+    void unwindFP(uint8_t* fp) { fp_ = fp; }
 };
 
 
