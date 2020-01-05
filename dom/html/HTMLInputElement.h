@@ -1056,7 +1056,11 @@ protected:
   
 
 
-  bool DoesStepApply() const { return DoesMinMaxApply(); }
+  bool DoesStepApply() const
+  {
+    
+    return DoesMinMaxApply() && mType != NS_FORM_INPUT_DATETIME_LOCAL;
+  }
 
   
 
@@ -1066,7 +1070,11 @@ protected:
   
 
 
-  bool DoesValueAsNumberApply() const { return DoesMinMaxApply(); }
+  bool DoesValueAsNumberApply() const
+  {
+    
+    return DoesMinMaxApply() && mType != NS_FORM_INPUT_DATETIME_LOCAL;
+  }
 
   
 
