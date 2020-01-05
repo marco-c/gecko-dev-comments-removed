@@ -1943,10 +1943,9 @@ function focusAndSelectUrlBar() {
   
   
   if (CustomizationHandler.isExitingCustomizeMode) {
-    gNavToolbox.addEventListener("aftercustomization", function afterCustomize() {
-      gNavToolbox.removeEventListener("aftercustomization", afterCustomize);
+    gNavToolbox.addEventListener("aftercustomization", function() {
       focusAndSelectUrlBar();
-    });
+    }, {once: true});
 
     return true;
   }
