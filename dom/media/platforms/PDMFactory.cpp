@@ -46,6 +46,10 @@
 #include "MP4Decoder.h"
 #include "mozilla/dom/RemoteVideoDecoder.h"
 
+#ifdef XP_WIN
+#include "mozilla/WindowsVersion.h"
+#endif
+
 #include "mp4_demuxer/H264.h"
 
 namespace mozilla {
@@ -318,7 +322,14 @@ PDMFactory::CreatePDMs()
   }
 #endif
 #ifdef XP_WIN
-  if (MediaPrefs::PDMWMFEnabled()) {
+  if (MediaPrefs::PDMWMFEnabled() && IsVistaOrLater()) {
+    
+    
+    
+    
+    
+    
+    
     m = new WMFDecoderModule();
     RefPtr<PlatformDecoderModule> remote = new dom::RemoteDecoderModule(m);
     mWMFFailedToLoad = !StartupPDM(remote);

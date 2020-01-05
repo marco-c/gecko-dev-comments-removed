@@ -202,6 +202,15 @@ LoadDLLs()
 HRESULT
 MFStartup()
 {
+  if (!IsVistaOrLater()) {
+    
+    
+    
+    
+    
+    return E_FAIL;
+  }
+
   HRESULT hr = LoadDLLs();
   if (FAILED(hr)) {
     return hr;
