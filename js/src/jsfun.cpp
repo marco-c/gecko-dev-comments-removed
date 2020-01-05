@@ -910,6 +910,76 @@ const Class JSFunction::class_ = {
 
 const Class* const js::FunctionClassPtr = &JSFunction::class_;
 
+
+bool
+js::FindBody(JSContext* cx, HandleFunction fun, HandleLinearString src, size_t* bodyStart,
+             size_t* bodyEnd)
+{
+    
+    CompileOptions options(cx);
+    options.setFileAndLine("internal-findBody", 0);
+
+    
+    if (fun->hasScript())
+        options.setVersion(fun->nonLazyScript()->getVersion());
+
+    AutoKeepAtoms keepAtoms(cx->perThreadData);
+
+    AutoStableStringChars stableChars(cx);
+    if (!stableChars.initTwoByte(cx, src))
+        return false;
+
+    const mozilla::Range<const char16_t> srcChars = stableChars.twoByteRange();
+    TokenStream ts(cx, options, srcChars.begin().get(), srcChars.length(), nullptr);
+    int nest = 0;
+    bool onward = true;
+    
+    do {
+        TokenKind tt;
+        if (!ts.getToken(&tt))
+            return false;
+        switch (tt) {
+          case TOK_NAME:
+          case TOK_YIELD:
+            if (nest == 0)
+                onward = false;
+            break;
+          case TOK_LP:
+            nest++;
+            break;
+          case TOK_RP:
+            if (--nest == 0)
+                onward = false;
+            break;
+          default:
+            break;
+        }
+    } while (onward);
+    TokenKind tt;
+    if (!ts.getToken(&tt))
+        return false;
+    if (tt == TOK_ARROW) {
+        if (!ts.getToken(&tt))
+            return false;
+    }
+    bool braced = tt == TOK_LC;
+    MOZ_ASSERT_IF(fun->isExprBody(), !braced);
+    *bodyStart = ts.currentToken().pos.begin;
+    if (braced)
+        *bodyStart += 1;
+    mozilla::RangedPtr<const char16_t> end = srcChars.end();
+    if (end[-1] == '}') {
+        end--;
+    } else {
+        MOZ_ASSERT(!braced);
+        for (; unicode::IsSpaceOrBOM2(end[-1]); end--)
+            ;
+    }
+    *bodyEnd = end - srcChars.begin();
+    MOZ_ASSERT(*bodyStart <= *bodyEnd);
+    return true;
+}
+
 JSString*
 js::FunctionToString(JSContext* cx, HandleFunction fun, bool lambdaParen)
 {
@@ -2173,13 +2243,18 @@ js::CloneFunctionAndScript(JSContext* cx, HandleFunction fun, HandleObject enclo
 
 
 
+
 JSAtom*
 js::IdToFunctionName(JSContext* cx, HandleId id, const char* prefix )
 {
     if (JSID_IS_ATOM(id) && !prefix)
         return JSID_TO_ATOM(id);
 
-    if (JSID_IS_SYMBOL(id) && !prefix) {
+    
+    MOZ_ASSERT_IF(prefix, !JSID_IS_SYMBOL(id));
+
+    
+    if (JSID_IS_SYMBOL(id)) {
         RootedAtom desc(cx, JSID_TO_SYMBOL(id)->description());
         StringBuffer sb(cx);
         if (!sb.append('[') || !sb.append(desc) || !sb.append(']'))
@@ -2187,6 +2262,7 @@ js::IdToFunctionName(JSContext* cx, HandleId id, const char* prefix )
         return sb.finishAtom();
     }
 
+    
     RootedValue idv(cx, IdToValue(id));
     if (!prefix)
         return ToAtom<CanGC>(cx, idv);
