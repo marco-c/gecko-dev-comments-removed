@@ -87,6 +87,13 @@ impl<T: Reflectable> JS<T> {
     }
 }
 
+impl<'root, T: Reflectable + 'root> RootedReference<'root> for JS<T> {
+    type Ref = &'root T;
+    fn r(&'root self) -> &'root T {
+        &self
+    }
+}
+
 impl<T: Reflectable> Deref for JS<T> {
     type Target = T;
 
@@ -447,53 +454,31 @@ impl<T: Reflectable> LayoutJS<T> {
 }
 
 
-pub trait RootedRcReference<T> {
+pub trait RootedReference<'root> {
     
-    fn r(&self) -> &T;
+    type Ref: 'root;
+    
+    fn r(&'root self) -> Self::Ref;
 }
 
-impl<T: Reflectable> RootedRcReference<T> for Rc<T> {
-    fn r(&self) -> &T {
-        &*self
+impl<'root, T: JSTraceable + Reflectable + 'root> RootedReference<'root> for [JS<T>] {
+    type Ref = &'root [&'root T];
+    fn r(&'root self) -> &'root [&'root T] {
+        unsafe { mem::transmute(self) }
     }
 }
 
-
-pub trait RootedReference<T> {
-    
-    
-    fn r(&self) -> Option<&T>;
-}
-
-impl<T: Reflectable> RootedReference<T> for Option<Rc<T>> {
-    fn r(&self) -> Option<&T> {
-        self.as_ref().map(|root| &**root)
+impl<'root, T: Reflectable + 'root> RootedReference<'root> for Rc<T> {
+    type Ref = &'root T;
+    fn r(&'root self) -> &'root T {
+        self
     }
 }
 
-impl<T: Reflectable> RootedReference<T> for Option<Root<T>> {
-    fn r(&self) -> Option<&T> {
-        self.as_ref().map(|root| root.r())
-    }
-}
-
-
-impl<T: Reflectable> RootedReference<T> for Option<JS<T>> {
-    fn r(&self) -> Option<&T> {
-        self.as_ref().map(|inner| &**inner)
-    }
-}
-
-
-pub trait OptionalRootedReference<T> {
-    
-    
-    fn r(&self) -> Option<Option<&T>>;
-}
-
-impl<T: Reflectable> OptionalRootedReference<T> for Option<Option<Root<T>>> {
-    fn r(&self) -> Option<Option<&T>> {
-        self.as_ref().map(|inner| inner.r())
+impl<'root, T: RootedReference<'root> + 'root> RootedReference<'root> for Option<T> {
+    type Ref = Option<T::Ref>;
+    fn r(&'root self) -> Option<T::Ref> {
+        self.as_ref().map(RootedReference::r)
     }
 }
 
@@ -615,11 +600,12 @@ impl<T: Reflectable> Root<T> {
     pub fn from_ref(unrooted: &T) -> Root<T> {
         Root::new(unsafe { NonZero::new(&*unrooted) })
     }
+}
 
-    
-    
-    pub fn r(&self) -> &T {
-        &**self
+impl<'root, T: Reflectable + 'root> RootedReference<'root> for Root<T> {
+    type Ref = &'root T;
+    fn r(&'root self) -> &'root T {
+        self
     }
 }
 

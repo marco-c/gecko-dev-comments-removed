@@ -107,12 +107,12 @@ impl NodeIteratorMethods for NodeIterator {
             before_node = false;
 
             
-            let result = try!(self.accept_node(node.r()));
+            let result = try!(self.accept_node(&node));
 
             
             if result == NodeFilterConstants::FILTER_ACCEPT {
                 
-                self.reference_node.set(node.r());
+                self.reference_node.set(&node);
                 self.pointer_before_reference_node.set(before_node);
 
                 return Ok(Some(node));
@@ -122,12 +122,12 @@ impl NodeIteratorMethods for NodeIterator {
         
         for following_node in node.following_nodes(&self.root_node) {
             
-            let result = try!(self.accept_node(following_node.r()));
+            let result = try!(self.accept_node(&following_node));
 
             
             if result == NodeFilterConstants::FILTER_ACCEPT {
                 
-                self.reference_node.set(following_node.r());
+                self.reference_node.set(&following_node);
                 self.pointer_before_reference_node.set(before_node);
 
                 return Ok(Some(following_node));
@@ -151,12 +151,12 @@ impl NodeIteratorMethods for NodeIterator {
             before_node = true;
 
             
-            let result = try!(self.accept_node(node.r()));
+            let result = try!(self.accept_node(&node));
 
             
             if result == NodeFilterConstants::FILTER_ACCEPT {
                 
-                self.reference_node.set(node.r());
+                self.reference_node.set(&node);
                 self.pointer_before_reference_node.set(before_node);
 
                 return Ok(Some(node));
@@ -166,12 +166,12 @@ impl NodeIteratorMethods for NodeIterator {
         
         for preceding_node in node.preceding_nodes(&self.root_node) {
             
-            let result = try!(self.accept_node(preceding_node.r()));
+            let result = try!(self.accept_node(&preceding_node));
 
             
             if result == NodeFilterConstants::FILTER_ACCEPT {
                 
-                self.reference_node.set(preceding_node.r());
+                self.reference_node.set(&preceding_node);
                 self.pointer_before_reference_node.set(before_node);
 
                 return Ok(Some(preceding_node));
