@@ -521,6 +521,14 @@ ContentChild::RecvSetXPCOMProcessAttributes(const XPCOMInitData& aXPCOMInit,
   mLookAndFeelCache = aLookAndFeelIntCache;
   InitXPCOM(aXPCOMInit, aInitialData);
   InitGraphicsDeviceData(aXPCOMInit.contentDeviceData());
+
+#ifdef NS_PRINTING
+  
+  
+  
+  RefPtr<nsPrintingProxy> printingProxy = nsPrintingProxy::GetInstance();
+#endif
+
   return IPC_OK();
 }
 
@@ -601,12 +609,6 @@ ContentChild::Init(MessageLoop* aIOLoop,
 
   mID = aChildID;
   mIsForBrowser = aIsForBrowser;
-
-#ifdef NS_PRINTING
-  
-  
-  RefPtr<nsPrintingProxy> printingProxy = nsPrintingProxy::GetInstance();
-#endif
 
   SetProcessName(NS_LITERAL_STRING("Web Content"), true);
 
@@ -2548,8 +2550,8 @@ ContentChild::RecvPauseProfiler(const bool& aPause)
   return IPC_OK();
 }
 
-void
-ContentChild::GatherProfile(bool aIsExitProfile)
+mozilla::ipc::IPCResult
+ContentChild::RecvGatherProfile()
 {
   nsCString profileCString;
   UniquePtr<char[]> profile = profiler_get_profile();
@@ -2559,13 +2561,7 @@ ContentChild::GatherProfile(bool aIsExitProfile)
     profileCString = EmptyCString();
   }
 
-  Unused << SendProfile(profileCString, aIsExitProfile);
-}
-
-mozilla::ipc::IPCResult
-ContentChild::RecvGatherProfile()
-{
-  GatherProfile(false);
+  Unused << SendProfile(profileCString);
   return IPC_OK();
 }
 
@@ -2739,7 +2735,7 @@ ContentChild::RecvShutdown()
     
     
     
-    GatherProfile(true);
+    Unused << RecvGatherProfile();
   }
 #endif
 
