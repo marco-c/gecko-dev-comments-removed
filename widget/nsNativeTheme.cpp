@@ -376,7 +376,7 @@ nsNativeTheme::IsDisabled(nsIFrame* aFrame, EventStates aEventStates)
                               NS_LITERAL_STRING("true"), eCaseMatters);
 }
 
-bool
+ bool
 nsNativeTheme::IsFrameRTL(nsIFrame* aFrame)
 {
   if (!aFrame) {

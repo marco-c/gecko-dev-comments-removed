@@ -149,19 +149,15 @@ static void SetWidgetStateSafe(uint8_t *aSafeVector,
   aSafeVector[key >> 3] |= (1 << (key & 7));
 }
 
-static GtkTextDirection GetTextDirection(nsIFrame* aFrame)
+ GtkTextDirection
+nsNativeThemeGTK::GetTextDirection(nsIFrame* aFrame)
 {
-  if (!aFrame)
-    return GTK_TEXT_DIR_NONE;
-
-  switch (aFrame->StyleVisibility()->mDirection) {
-    case NS_STYLE_DIRECTION_RTL:
-      return GTK_TEXT_DIR_RTL;
-    case NS_STYLE_DIRECTION_LTR:
-      return GTK_TEXT_DIR_LTR;
-  }
-
-  return GTK_TEXT_DIR_NONE;
+  
+  
+  
+  
+  
+  return IsFrameRTL(aFrame) ? GTK_TEXT_DIR_RTL : GTK_TEXT_DIR_LTR;
 }
 
 
@@ -1119,14 +1115,7 @@ nsNativeThemeGTK::DrawWidgetBackground(nsRenderingContext* aContext,
 {
   GtkWidgetState state;
   WidgetNodeType gtkWidgetType;
-  
-  
-  
-  
-  GtkTextDirection direction =
-    aWidgetType == NS_THEME_RESIZER
-    ? (IsFrameRTL(aFrame) ? GTK_TEXT_DIR_RTL : GTK_TEXT_DIR_LTR)
-    : GetTextDirection(aFrame);
+  GtkTextDirection direction = GetTextDirection(aFrame);
   gint flags;
   if (!GetGtkWidgetAndState(aWidgetType, aFrame, gtkWidgetType, &state,
                             &flags))
