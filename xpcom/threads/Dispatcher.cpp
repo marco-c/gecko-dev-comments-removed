@@ -10,6 +10,8 @@
 #include "mozilla/Move.h"
 #include "nsINamed.h"
 #include "nsQueryObject.h"
+#include "mozilla/dom/ScriptSettings.h"
+#include "nsThreadUtils.h"
 
 using namespace mozilla;
 
@@ -21,13 +23,13 @@ namespace {
 
 class DispatcherEventTarget final : public nsIEventTarget
 {
-  RefPtr<Dispatcher> mDispatcher;
+  RefPtr<ValidatingDispatcher> mDispatcher;
   TaskCategory mCategory;
 
 public:
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_DISPATCHEREVENTTARGET_IID)
 
-  DispatcherEventTarget(Dispatcher* aDispatcher, TaskCategory aCategory)
+  DispatcherEventTarget(ValidatingDispatcher* aDispatcher, TaskCategory aCategory)
    : mDispatcher(aDispatcher)
    , mCategory(aCategory)
   {}
@@ -35,7 +37,7 @@ public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIEVENTTARGET
 
-  Dispatcher* Dispatcher() const { return mDispatcher; }
+  ValidatingDispatcher* Dispatcher() const { return mDispatcher; }
 
 private:
   ~DispatcherEventTarget() {}
@@ -82,16 +84,97 @@ Dispatcher::AbstractMainThreadFor(TaskCategory aCategory)
   return AbstractMainThreadForImpl(aCategory);
 }
 
+ nsresult
+Dispatcher::UnlabeledDispatch(const char* aName,
+                              TaskCategory aCategory,
+                              already_AddRefed<nsIRunnable>&& aRunnable)
+{
+  nsCOMPtr<nsIRunnable> runnable(aRunnable);
+  if (aName) {
+    if (nsCOMPtr<nsINamed> named = do_QueryInterface(runnable)) {
+      named->SetName(aName);
+    }
+  }
+  if (NS_IsMainThread()) {
+    return NS_DispatchToCurrentThread(runnable.forget());
+  } else {
+    return NS_DispatchToMainThread(runnable.forget());
+  }
+}
+
+ValidatingDispatcher::ValidatingDispatcher()
+{
+}
+
+nsresult
+ValidatingDispatcher::Dispatch(const char* aName,
+                               TaskCategory aCategory,
+                               already_AddRefed<nsIRunnable>&& aRunnable)
+{
+  return UnlabeledDispatch(aName, aCategory, Move(aRunnable));
+}
+
+nsIEventTarget*
+ValidatingDispatcher::EventTargetFor(TaskCategory aCategory) const
+{
+  MOZ_ASSERT(aCategory != TaskCategory::Count);
+  return mEventTargets[size_t(aCategory)];
+}
+
+AbstractThread*
+ValidatingDispatcher::AbstractMainThreadForImpl(TaskCategory aCategory)
+{
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(aCategory != TaskCategory::Count);
+
+  if (!mAbstractThreads[size_t(aCategory)]) {
+    mAbstractThreads[size_t(aCategory)] =
+      AbstractThread::CreateEventTargetWrapper(mEventTargets[size_t(aCategory)],
+                                                true);
+  }
+
+  return mAbstractThreads[size_t(aCategory)];
+}
+
+void
+ValidatingDispatcher::CreateEventTargets(bool aNeedValidation)
+{
+  for (size_t i = 0; i < size_t(TaskCategory::Count); i++) {
+    TaskCategory category = static_cast<TaskCategory>(i);
+    if (!aNeedValidation) {
+      
+      
+      
+      mEventTargets[i] = do_GetMainThread();
+    } else {
+      mEventTargets[i] = CreateEventTargetFor(category);
+    }
+  }
+}
+
+void
+ValidatingDispatcher::Shutdown()
+{
+  
+  
+  
+  
+  for (size_t i = 0; i < size_t(TaskCategory::Count); i++) {
+    mEventTargets[i] = do_GetMainThread();
+    mAbstractThreads[i] = nullptr;
+  }
+}
+
 already_AddRefed<nsIEventTarget>
-Dispatcher::CreateEventTargetFor(TaskCategory aCategory)
+ValidatingDispatcher::CreateEventTargetFor(TaskCategory aCategory)
 {
   RefPtr<DispatcherEventTarget> target =
     new DispatcherEventTarget(this, aCategory);
   return target.forget();
 }
 
- Dispatcher*
-Dispatcher::FromEventTarget(nsIEventTarget* aEventTarget)
+ ValidatingDispatcher*
+ValidatingDispatcher::FromEventTarget(nsIEventTarget* aEventTarget)
 {
   RefPtr<DispatcherEventTarget> target = do_QueryObject(aEventTarget);
   if (!target) {

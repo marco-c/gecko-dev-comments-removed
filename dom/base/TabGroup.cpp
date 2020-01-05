@@ -28,17 +28,7 @@ TabGroup::TabGroup(bool aIsChrome)
  , mThrottledQueuesInitialized(false)
  , mIsChrome(aIsChrome)
 {
-  for (size_t i = 0; i < size_t(TaskCategory::Count); i++) {
-    TaskCategory category = static_cast<TaskCategory>(i);
-    if (aIsChrome) {
-      
-      
-      
-      mEventTargets[i] = do_GetMainThread();
-    } else {
-      mEventTargets[i] = CreateEventTargetFor(category);
-    }
-  }
+  CreateEventTargets( !aIsChrome);
 
   
   
@@ -113,7 +103,8 @@ TabGroup::GetFromWindowActor(mozIDOMWindowProxy* aWindow)
 
   
   
-  RefPtr<Dispatcher> dispatcher = Dispatcher::FromEventTarget(target);
+  RefPtr<ValidatingDispatcher> dispatcher =
+    ValidatingDispatcher::FromEventTarget(target);
   MOZ_RELEASE_ASSERT(dispatcher);
   auto tabGroup = dispatcher->AsTabGroup();
   MOZ_RELEASE_ASSERT(tabGroup);
@@ -176,15 +167,7 @@ TabGroup::Leave(nsPIDOMWindowOuter* aWindow)
   
   if (!mIsChrome && mWindows.IsEmpty()) {
     mLastWindowLeft = true;
-
-    
-    
-    
-    
-    for (size_t i = 0; i < size_t(TaskCategory::Count); i++) {
-      mEventTargets[i] = nullptr;
-      mAbstractThreads[i] = nullptr;
-    }
+    Shutdown();
   }
 }
 
@@ -247,48 +230,18 @@ TabGroup::HashEntry::HashEntry(const nsACString* aKey)
   : nsCStringHashKey(aKey), mDocGroup(nullptr)
 {}
 
-nsresult
-TabGroup::Dispatch(const char* aName,
-                   TaskCategory aCategory,
-                   already_AddRefed<nsIRunnable>&& aRunnable)
-{
-  nsCOMPtr<nsIRunnable> runnable(aRunnable);
-  if (aName) {
-    if (nsCOMPtr<nsINamed> named = do_QueryInterface(runnable)) {
-      named->SetName(aName);
-    }
-  }
-  if (NS_IsMainThread()) {
-    return NS_DispatchToCurrentThread(runnable.forget());
-  } else {
-    return NS_DispatchToMainThread(runnable.forget());
-  }
-}
-
 nsIEventTarget*
 TabGroup::EventTargetFor(TaskCategory aCategory) const
 {
-  MOZ_ASSERT(aCategory != TaskCategory::Count);
   if (aCategory == TaskCategory::Worker || aCategory == TaskCategory::Timer) {
     MOZ_RELEASE_ASSERT(mThrottledQueuesInitialized || mIsChrome);
   }
-
-  if (NS_WARN_IF(mLastWindowLeft)) {
-    
-    
-    nsCOMPtr<nsIEventTarget> main = do_GetMainThread();
-    return main;
-  }
-
-  return mEventTargets[size_t(aCategory)];
+  return ValidatingDispatcher::EventTargetFor(aCategory);
 }
 
 AbstractThread*
 TabGroup::AbstractMainThreadForImpl(TaskCategory aCategory)
 {
-  MOZ_RELEASE_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(aCategory != TaskCategory::Count);
-
   
   
   
@@ -297,14 +250,8 @@ TabGroup::AbstractMainThreadForImpl(TaskCategory aCategory)
     return AbstractThread::MainThread();
   }
 
-  if (!mAbstractThreads[size_t(aCategory)]) {
-    mAbstractThreads[size_t(aCategory)] =
-      AbstractThread::CreateEventTargetWrapper(mEventTargets[size_t(aCategory)],
-                                                true);
-  }
-
-  return mAbstractThreads[size_t(aCategory)];
+  return ValidatingDispatcher::AbstractMainThreadForImpl(aCategory);
 }
 
-}
-}
+} 
+} 
