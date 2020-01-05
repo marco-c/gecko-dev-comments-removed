@@ -880,6 +880,13 @@ nsMenuPopupFrame::ShowPopup(bool aIsContextMenu)
 
     
     if (mPopupType == ePopupTypeMenu) {
+      EventStateManager* activeESM =
+        static_cast<EventStateManager*>(
+          EventStateManager::GetActiveEventStateManager());
+      if (activeESM) {
+        EventStateManager::ClearGlobalActiveContent(activeESM);
+      }
+
       nsIPresShell::SetCapturingContent(nullptr, 0);
     }
 
