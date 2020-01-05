@@ -16,8 +16,10 @@ Cu.importGlobalProperties(["fetch"]);
 let yahoooURI = NetUtil.newURI("https://yahooo.com/");
 let gooogleURI = NetUtil.newURI("https://gooogle.com/");
 
-autocompleteObject.addPrefillSite(yahoooURI.spec, "Yahooo");
-autocompleteObject.addPrefillSite(gooogleURI.spec, "Gooogle");
+autocompleteObject.populatePrefillSiteStorage([
+  [yahoooURI.spec, "Yahooo"],
+  [gooogleURI.spec, "Gooogle"],
+]);
 
 function *assert_feature_works(condition) {
   do_print("List Results do appear " + condition);
@@ -116,6 +118,182 @@ add_task(function* test_sorting_against_history() {
   yield cleanup();
 });
 
+add_task(function* test_scheme_and_www() {
+  
+  let sites = [
+    ["https://www.ooops-https-www.com/", "Ooops"],
+    ["https://ooops-https.com/",         "Ooops"],
+    ["HTTP://ooops-HTTP.com/",           "Ooops"],
+    ["HTTP://www.ooops-HTTP-www.com/",   "Ooops"],
+    ["https://foo.com/",     "Title with www"],
+    ["https://www.bar.com/", "Tile"],
+  ];
+
+  let titlesMap = new Map(sites)
+
+  autocompleteObject.populatePrefillSiteStorage(sites);
+
+  let tests =
+  [
+    
+    
+    
+    
+    
+    
+
+    [
+    "https://",
+    "https://",
+    "https://",
+      []
+    ],
+
+    [
+    "www.",
+    "www.",
+    "www.",
+      []
+    ],
+
+    [
+    "http://www.",
+    "http://www.",
+    "http://www.",
+      []
+    ],
+
+    [
+    "ftp://ooops",
+    "ftp://ooops",
+    "ftp://ooops",
+      []
+    ],
+
+    [
+    "ww",
+    "www.ooops-https-www.com/",
+    "https://www.ooops-https-www.com/", 
+      [
+      ["https://www.ooops-https-www.com/", "https://www.ooops-https-www.com"],
+      "HTTP://www.ooops-HTTP-www.com/",
+      ["https://foo.com/", "Title with www", ["prefill-site"]],
+      "https://www.bar.com/",
+      ]
+    ],
+
+    [
+    "ooops",
+    "ooops-https.com/",
+    "https://ooops-https.com/", 
+      [
+       
+      ["https://ooops-https.com/", "https://ooops-https.com"],
+      "https://www.ooops-https-www.com/",
+      "HTTP://ooops-HTTP.com/",
+      "HTTP://www.ooops-HTTP-www.com/",
+      ]
+    ],
+
+    [
+    "www.ooops",
+    "www.ooops-https-www.com/",
+    "https://www.ooops-https-www.com/",
+      [
+      ["https://www.ooops-https-www.com/", "https://www.ooops-https-www.com"],
+      "HTTP://www.ooops-HTTP-www.com/",
+      "https://ooops-https.com/",
+      "HTTP://ooops-HTTP.com/",
+      ]
+    ],
+
+    [
+    "ooops-https-www",
+    "ooops-https-www.com/",
+    "https://www.ooops-https-www.com/",
+      [
+      ["https://www.ooops-https-www.com/", "https://www.ooops-https-www.com"],
+      ]
+    ],
+
+    [
+    "www.ooops-https.",
+    "www.ooops-https.com/",
+    "https://www.ooops-https.com/",
+      [
+      ["https://www.ooops-https.com/", "https://www.ooops-https.com"],
+      "https://ooops-https.com/", 
+      ]
+    ],
+
+    [
+    "https://ooops",
+    "https://ooops-https.com/",
+    "https://ooops-https.com/",
+      [
+      ["https://ooops-https.com/", "https://ooops-https.com"],
+      "https://www.ooops-https-www.com/",
+      ]
+    ],
+
+    [
+    "https://www.ooops",
+    "https://www.ooops-https-www.com/",
+    "https://www.ooops-https-www.com/",
+      [
+      ["https://www.ooops-https-www.com/", "https://www.ooops-https-www.com"],
+      "https://ooops-https.com/",
+      ]
+    ],
+
+    [
+    "http://www.ooops-http.",
+    "http://www.ooops-http.com/",
+    "http://www.ooops-http.com/",
+      [
+      ["HTTP://www.ooops-HTTP.com/", "www.ooops-http.com"],
+      "HTTP://ooops-HTTP.com/",
+      ]
+    ],
+
+    [
+    "http://ooops-https",
+    "http://ooops-https",
+    "http://ooops-https",
+      []
+    ],
+  ];
+
+  function toMatch(entry, index) {
+    if (Array.isArray(entry)) {
+      return {
+        uri: NetUtil.newURI(entry[0]),
+        title: entry[1],
+        style: entry[2] || ["autofill", "heuristic"],
+      };
+    }
+    return {
+      uri: NetUtil.newURI(entry),
+      title: titlesMap.get(entry),
+      style: ["prefill-site"],
+    };
+  }
+
+  for (let test of tests) {
+    let matches = test[3] ? test[3].map(toMatch) : null;
+    do_print("User types: " + test[0]);
+    yield check_autocomplete({
+      checkSorting: true,
+      search: test[0],
+      autofilled: test[1].toLowerCase(),
+      completed: test[2].toLowerCase(),
+      matches,
+    });
+  }
+
+  yield cleanup();
+});
+
 add_task(function* test_data_file() {
   let response = yield fetch("chrome://global/content/unifiedcomplete-top-urls.json");
 
@@ -134,7 +312,7 @@ add_task(function* test_data_file() {
   do_print("Storage is populated from JSON correctly");
   yield check_autocomplete({
     search: uri.host,
-    autofilled: stripPrefix(uri.spec),
+    autofilled: uri.host + "/",
     completed: uri.spec,
   });
 
