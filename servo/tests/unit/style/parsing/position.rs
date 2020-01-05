@@ -3,6 +3,7 @@
 
 
 use parsing::parse;
+use style::parser::Parse;
 use style::values::specified::position::*;
 use style_traits::ToCss;
 

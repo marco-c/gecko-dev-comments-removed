@@ -7,7 +7,6 @@
 
 
 pub use cssparser::{RGBA, Parser};
-
 use parser::Parse;
 use std::fmt::{self, Debug};
 use style_traits::ToCss;
