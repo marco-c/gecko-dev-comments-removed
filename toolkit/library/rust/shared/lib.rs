@@ -2,6 +2,9 @@
 
 
 
+#[cfg(feature="servo")]
+extern crate geckoservo;
+
 extern crate mp4parse_capi;
 extern crate nsstring;
 extern crate rust_url_capi;
