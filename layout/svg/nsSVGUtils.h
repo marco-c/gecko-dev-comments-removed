@@ -609,6 +609,11 @@ public:
 
   static gfxMatrix
   GetCSSPxToDevPxMatrix(nsIFrame* aNonSVGFrame);
+
+  static bool IsInSVGTextSubtree(const nsIFrame* aFrame) {
+    
+    return aFrame->GetStateBits() & NS_FRAME_IS_SVG_TEXT;
+  }
 };
 
 #endif
