@@ -331,7 +331,8 @@ protected:
   
   
   
-  nsTArray<AnimationProperty> BuildProperties(nsStyleContext* aStyleContext);
+  template<typename StyleType>
+  nsTArray<AnimationProperty> BuildProperties(StyleType&& aStyle);
 
   
   

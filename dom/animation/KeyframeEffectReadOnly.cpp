@@ -18,6 +18,7 @@
 #include "mozilla/LookAndFeel.h" 
 #include "mozilla/KeyframeUtils.h"
 #include "mozilla/ServoBindings.h"
+#include "mozilla/TypeTraits.h"
 #include "Layers.h" 
 #include "nsComputedDOMStyle.h" 
 #include "nsContentUtils.h"  
@@ -283,7 +284,7 @@ KeyframeEffectReadOnly::UpdateProperties(nsStyleContext* aStyleContext)
     return;
   }
 
-  nsTArray<AnimationProperty> properties = BuildProperties(aStyleContext);
+  nsTArray<AnimationProperty> properties = BuildProperties(Move(aStyleContext));
 
   
   
@@ -853,10 +854,16 @@ KeyframeEffectReadOnly::ConstructKeyframeEffect(const GlobalObject& aGlobal,
   return effect.forget();
 }
 
+template<typename StyleType>
 nsTArray<AnimationProperty>
-KeyframeEffectReadOnly::BuildProperties(nsStyleContext* aStyleContext)
+KeyframeEffectReadOnly::BuildProperties(StyleType&& aStyle)
 {
-  MOZ_ASSERT(aStyleContext);
+  static_assert(IsSame<StyleType, nsStyleContext*>::value ||
+                IsSame<StyleType, const ServoComputedStyleValues&>::value,
+                "StyleType should be nsStyleContext* or "
+                "const ServoComputedStyleValues&");
+
+  MOZ_ASSERT(aStyle);
 
   nsTArray<AnimationProperty> result;
   
@@ -875,15 +882,15 @@ KeyframeEffectReadOnly::BuildProperties(nsStyleContext* aStyleContext)
   nsTArray<ComputedKeyframeValues> computedValues =
     KeyframeUtils::GetComputedKeyframeValues(keyframesCopy,
                                              mTarget->mElement,
-                                             aStyleContext);
+                                             aStyle);
 
   
   
   if (mEffectOptions.mSpacingMode == SpacingMode::paced &&
-      aStyleContext->PresContext()->StyleSet()->IsGecko()) {
+      !mDocument->IsStyledByServo()) {
     KeyframeUtils::ApplySpacing(keyframesCopy, SpacingMode::paced,
                                 mEffectOptions.mPacedProperty,
-                                computedValues, aStyleContext);
+                                computedValues, aStyle);
   }
 
   result =
