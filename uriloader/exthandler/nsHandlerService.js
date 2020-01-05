@@ -118,9 +118,9 @@ HandlerService.prototype = {
 
     
     this._observerSvc.addObserver(this, "profile-do-change", false);
+
     
-    
-    this._updateDB();
+    this._observerSvc.addObserver(this, "handlersvc-rdf-replace", false);
   },
 
   _updateDB: function HS__updateDB() {
@@ -160,6 +160,7 @@ HandlerService.prototype = {
     this._observerSvc.removeObserver(this, "profile-before-change");
     this._observerSvc.removeObserver(this, "xpcom-shutdown");
     this._observerSvc.removeObserver(this, "profile-do-change");
+    this._observerSvc.removeObserver(this, "handlersvc-rdf-replace");
 
     
     
@@ -289,7 +290,14 @@ HandlerService.prototype = {
         break;
       case "profile-do-change":
         this._updateDB();
-        break;  
+        break;
+      case "handlersvc-rdf-replace":
+        if (this.__ds) {
+          this._rdf.UnregisterDataSource(this.__ds);
+          this.__ds = null;
+        }
+        this._observerSvc.notifyObservers(null, "handlersvc-rdf-replace-complete", null);
+        break;
     }
   },
 
@@ -313,7 +321,8 @@ HandlerService.prototype = {
     
     
     if (!this._hasValue(typeID, NC_VALUE))
-      throw Cr.NS_ERROR_NOT_AVAILABLE;
+      throw new Components.Exception("handlerSvc fillHandlerInfo: don't know this type",
+                                     Cr.NS_ERROR_NOT_AVAILABLE);
 
     
     if (this._hasValue(typeID, NC_DESCRIPTION))
@@ -688,6 +697,17 @@ HandlerService.prototype = {
     }
   },
 
+  _handlerAppIsUnknownType: function HS__handlerAppIsUnknownType(aHandlerApp) {
+    if (aHandlerApp instanceof Ci.nsILocalHandlerApp ||
+        aHandlerApp instanceof Ci.nsIWebHandlerApp ||
+        aHandlerApp instanceof Ci.nsIDBusHandlerApp) {
+      return false;
+    } else {
+      return true;
+    }
+  },
+
+
   _storePreferredHandler: function HS__storePreferredHandler(aHandlerInfo) {
     var infoID = this._getInfoID(this._getClass(aHandlerInfo), aHandlerInfo.type);
     var handlerID =
@@ -696,6 +716,11 @@ HandlerService.prototype = {
     var handler = aHandlerInfo.preferredApplicationHandler;
 
     if (handler) {
+      
+      
+      if (this._handlerAppIsUnknownType(handler)) {
+        return;
+      }
       this._storeHandlerApp(handlerID, handler);
 
       
@@ -744,6 +769,11 @@ HandlerService.prototype = {
     while (newHandlerApps.hasMoreElements()) {
       let handlerApp =
         newHandlerApps.getNext().QueryInterface(Ci.nsIHandlerApp);
+      
+      
+      if (this._handlerAppIsUnknownType(handlerApp)) {
+        continue;
+      }
       let handlerAppID = this._getPossibleHandlerAppID(handlerApp);
       if (!this._hasResourceAssertion(infoID, NC_POSSIBLE_APP, handlerAppID)) {
         this._storeHandlerApp(handlerAppID, handlerApp);
@@ -912,6 +942,8 @@ HandlerService.prototype = {
                         QueryInterface(Ci.nsIFileProtocolHandler);
       this.__ds =
         this._rdf.GetDataSourceBlocking(fileHandler.getURLSpecFromFile(file));
+      
+      this._updateDB();
     }
 
     return this.__ds;
