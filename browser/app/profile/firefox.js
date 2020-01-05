@@ -70,6 +70,8 @@ pref("extensions.screenshots.system-disabled", true);
 
 pref("extensions.autoDisableScopes", 15);
 
+pref("extensions.startupScanScopes", 0);
+
 
 
 pref("extensions.geckoProfiler.symbols.url", "http://symbols.mozilla.org/");
@@ -1634,12 +1636,12 @@ pref("browser.crashReports.unsubmittedCheck.autoSubmit", false);
 
 
 #ifdef NIGHTLY_BUILD
-pref("extensions.formautofill.experimental", true);
+pref("browser.formautofill.experimental", true);
 #else
-pref("extensions.formautofill.experimental", false);
+pref("browser.formautofill.experimental", false);
 #endif
-pref("extensions.formautofill.addresses.enabled", true);
-pref("extensions.formautofill.loglevel", "Warn");
+pref("browser.formautofill.enabled", true);
+pref("browser.formautofill.loglevel", "Warn");
 
 
 pref("browser.sessionstore.restore_tabs_lazily", true);
