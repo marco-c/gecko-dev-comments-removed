@@ -13,6 +13,8 @@
 #include "nsUnicharUtils.h"
 #include <algorithm>
 
+using namespace mozilla;
+
 static bool IsDiscardable(char16_t ch, uint32_t* aFlags)
 {
   

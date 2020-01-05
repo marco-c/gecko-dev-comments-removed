@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 #include "nsPageContentFrame.h"
 #include "nsCSSFrameConstructor.h"
 #include "nsPresContext.h"
@@ -9,8 +9,7 @@
 #include "nsIPresShell.h"
 #include "nsSimplePageSequenceFrame.h"
 
-using mozilla::LogicalSize;
-using mozilla::WritingMode;
+using namespace mozilla;
 
 nsPageContentFrame*
 NS_NewPageContentFrame(nsIPresShell* aPresShell, nsStyleContext* aContext)
@@ -29,7 +28,7 @@ nsPageContentFrame::Reflow(nsPresContext*           aPresContext,
   MarkInReflow();
   DO_GLOBAL_REFLOW_COUNT("nsPageContentFrame");
   DISPLAY_REFLOW(aPresContext, this, aReflowInput, aDesiredSize, aStatus);
-  aStatus = NS_FRAME_COMPLETE;  
+  aStatus = NS_FRAME_COMPLETE;  // initialize out parameter
 
   if (GetPrevInFlow() && (GetStateBits() & NS_FRAME_FIRST_REFLOW)) {
     nsresult rv = aPresContext->PresShell()->FrameConstructor()
@@ -39,16 +38,16 @@ nsPageContentFrame::Reflow(nsPresContext*           aPresContext,
     }
   }
 
-  
-  
-  
+  // Set our size up front, since some parts of reflow depend on it
+  // being already set.  Note that the computed height may be
+  // unconstrained; that's ok.  Consumers should watch out for that.
   nsSize  maxSize(aReflowInput.ComputedWidth(),
                   aReflowInput.ComputedHeight());
   SetSize(maxSize);
  
-  
-  
-  
+  // A PageContentFrame must always have one child: the canvas frame.
+  // Resize our frame allowing it only to be as big as we are
+  // XXX Pay attention to the page's border and padding...
   if (mFrames.NotEmpty()) {
     nsIFrame* frame = mFrames.FirstChild();
     WritingMode wm = frame->GetWritingMode();
@@ -57,25 +56,25 @@ nsPageContentFrame::Reflow(nsPresContext*           aPresContext,
                                      frame, logicalSize);
     kidReflowInput.SetComputedBSize(logicalSize.BSize(wm));
 
-    
+    // Reflow the page content area
     ReflowChild(frame, aPresContext, aDesiredSize, kidReflowInput, 0, 0, 0, aStatus);
 
-    
-    
-    
+    // The document element's background should cover the entire canvas, so
+    // take into account the combined area and any space taken up by
+    // absolutely positioned elements
     nsMargin padding(0,0,0,0);
 
-    
-    
+    // XXXbz this screws up percentage padding (sets padding to zero
+    // in the percentage padding case)
     kidReflowInput.mStylePadding->GetPadding(padding);
 
-    
-    
-    
-    
+    // This is for shrink-to-fit, and therefore we want to use the
+    // scrollable overflow, since the purpose of shrink to fit is to
+    // make the content that ought to be reachable (represented by the
+    // scrollable overflow) fit in the page.
     if (frame->HasOverflowAreas()) {
-      
-      
+      // The background covers the content area and padding area, so check
+      // for children sticking outside the child frame's padding edge
       nscoord xmost = aDesiredSize.ScrollableOverflow().XMost();
       if (xmost > aDesiredSize.Width()) {
         nscoord widthToFit = xmost + padding.right +
@@ -86,19 +85,19 @@ nsPageContentFrame::Reflow(nsPresContext*           aPresContext,
       }
     }
 
-    
+    // Place and size the child
     FinishReflowChild(frame, aPresContext, aDesiredSize, &kidReflowInput, 0, 0, 0);
 
     NS_ASSERTION(aPresContext->IsDynamic() || !NS_FRAME_IS_FULLY_COMPLETE(aStatus) ||
                   !frame->GetNextInFlow(), "bad child flow list");
   }
 
-  
+  // Reflow our fixed frames
   nsReflowStatus fixedStatus = NS_FRAME_COMPLETE;
   ReflowAbsoluteFrames(aPresContext, aDesiredSize, aReflowInput, fixedStatus);
   NS_ASSERTION(NS_FRAME_IS_COMPLETE(fixedStatus), "fixed frames can be truncated, but not incomplete");
 
-  
+  // Return our desired size
   WritingMode wm = aReflowInput.GetWritingMode();
   aDesiredSize.ISize(wm) = aReflowInput.ComputedISize();
   if (aReflowInput.ComputedBSize() != NS_UNCONSTRAINEDSIZE) {
