@@ -213,7 +213,7 @@ ThrowStopIteration(JSContext* cx);
 
 
 extern JSObject*
-CreateIterResultObject(JSContext* cx, HandleValue value, bool done);
+CreateItrResultObject(JSContext* cx, HandleValue value, bool done);
 
 extern JSObject*
 InitLegacyIteratorClass(JSContext* cx, HandleObject obj);

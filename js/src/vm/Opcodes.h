@@ -1967,15 +1967,7 @@
 
  \
     macro(JSOP_CHECKTHISREINIT,191,"checkthisreinit",NULL,1,  1,  1,  JOF_BYTE) \
-    
-
-
-
-
-
-
- \
-    macro(JSOP_TOASYNCGEN,    192, "toasyncgen", NULL,    1,  1,  1, JOF_BYTE) \
+    macro(JSOP_UNUSED192,     192,"unused192",   NULL,    1,  0,  0,  JOF_BYTE) \
     \
     
 
