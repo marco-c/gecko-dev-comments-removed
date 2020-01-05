@@ -7,10 +7,6 @@
 
 
 
-pub use self::GlobalRef::*;
-pub use self::GlobalRoot::*;
-pub use self::GlobalField::*;
-
 use dom::bindings::conversions::FromJSValConvertible;
 use dom::bindings::js::{JS, JSRef, Root};
 use dom::bindings::utils::{Reflectable, Reflector};
@@ -37,8 +33,8 @@ pub enum GlobalRef<'a> {
 
 
 pub enum GlobalRoot<'a, 'b> {
-    WindowRoot(Root<'a, 'b, window::Window>),
-    WorkerRoot(Root<'a, 'b, WorkerGlobalScope>),
+    Window(Root<'a, 'b, window::Window>),
+    Worker(Root<'a, 'b, WorkerGlobalScope>),
 }
 
 
@@ -46,8 +42,8 @@ pub enum GlobalRoot<'a, 'b> {
 #[jstraceable]
 #[must_root]
 pub enum GlobalField {
-    WindowField(JS<window::Window>),
-    WorkerField(JS<WorkerGlobalScope>),
+    Window(JS<window::Window>),
+    Worker(JS<WorkerGlobalScope>),
 }
 
 impl<'a> GlobalRef<'a> {
@@ -55,8 +51,8 @@ impl<'a> GlobalRef<'a> {
     
     pub fn get_cx(&self) -> *mut JSContext {
         match *self {
-            Window(ref window) => window.get_cx(),
-            Worker(ref worker) => worker.get_cx(),
+            GlobalRef::Window(ref window) => window.get_cx(),
+            GlobalRef::Worker(ref worker) => worker.get_cx(),
         }
     }
 
@@ -64,22 +60,22 @@ impl<'a> GlobalRef<'a> {
     
     pub fn as_window<'b>(&'b self) -> JSRef<'b, window::Window> {
         match *self {
-            Window(window) => window,
-            Worker(_) => panic!("expected a Window scope"),
+            GlobalRef::Window(window) => window,
+            GlobalRef::Worker(_) => panic!("expected a Window scope"),
         }
     }
 
     pub fn resource_task(&self) -> ResourceTask {
         match *self {
-            Window(ref window) => window.page().resource_task.clone(),
-            Worker(ref worker) => worker.resource_task().clone(),
+            GlobalRef::Window(ref window) => window.page().resource_task.clone(),
+            GlobalRef::Worker(ref worker) => worker.resource_task().clone(),
         }
     }
 
     pub fn get_url(&self) -> Url {
         match *self {
-            Window(ref window) => window.get_url(),
-            Worker(ref worker) => worker.get_url().clone(),
+            GlobalRef::Window(ref window) => window.get_url(),
+            GlobalRef::Worker(ref worker) => worker.get_url().clone(),
         }
     }
 
@@ -87,8 +83,8 @@ impl<'a> GlobalRef<'a> {
     
     pub fn script_chan<'b>(&'b self) -> &'b ScriptChan {
         match *self {
-            Window(ref window) => window.script_chan(),
-            Worker(ref worker) => worker.script_chan(),
+            GlobalRef::Window(ref window) => window.script_chan(),
+            GlobalRef::Worker(ref worker) => worker.script_chan(),
         }
     }
 }
@@ -96,8 +92,8 @@ impl<'a> GlobalRef<'a> {
 impl<'a> Reflectable for GlobalRef<'a> {
     fn reflector<'b>(&'b self) -> &'b Reflector {
         match *self {
-            Window(ref window) => window.reflector(),
-            Worker(ref worker) => worker.reflector(),
+            GlobalRef::Window(ref window) => window.reflector(),
+            GlobalRef::Worker(ref worker) => worker.reflector(),
         }
     }
 }
@@ -107,8 +103,8 @@ impl<'a, 'b> GlobalRoot<'a, 'b> {
     
     pub fn root_ref<'c>(&'c self) -> GlobalRef<'c> {
         match *self {
-            WindowRoot(ref window) => Window(window.root_ref()),
-            WorkerRoot(ref worker) => Worker(worker.root_ref()),
+            GlobalRoot::Window(ref window) => GlobalRef::Window(window.root_ref()),
+            GlobalRoot::Worker(ref worker) => GlobalRef::Worker(worker.root_ref()),
         }
     }
 }
@@ -117,16 +113,16 @@ impl GlobalField {
     
     pub fn from_rooted(global: &GlobalRef) -> GlobalField {
         match *global {
-            Window(window) => WindowField(JS::from_rooted(window)),
-            Worker(worker) => WorkerField(JS::from_rooted(worker)),
+            GlobalRef::Window(window) => GlobalField::Window(JS::from_rooted(window)),
+            GlobalRef::Worker(worker) => GlobalField::Worker(JS::from_rooted(worker)),
         }
     }
 
     
     pub fn root(&self) -> GlobalRoot {
         match *self {
-            WindowField(ref window) => WindowRoot(window.root()),
-            WorkerField(ref worker) => WorkerRoot(worker.root()),
+            GlobalField::Window(ref window) => GlobalRoot::Window(window.root()),
+            GlobalField::Worker(ref worker) => GlobalRoot::Worker(worker.root()),
         }
     }
 }
@@ -139,12 +135,12 @@ pub fn global_object_for_js_object(obj: *mut JSObject) -> GlobalField {
         let clasp = JS_GetClass(global);
         assert!(((*clasp).flags & (JSCLASS_IS_DOMJSCLASS | JSCLASS_IS_GLOBAL)) != 0);
         match FromJSValConvertible::from_jsval(ptr::null_mut(), ObjectOrNullValue(global), ()) {
-            Ok(window) => return WindowField(window),
+            Ok(window) => return GlobalField::Window(window),
             Err(_) => (),
         }
 
         match FromJSValConvertible::from_jsval(ptr::null_mut(), ObjectOrNullValue(global), ()) {
-            Ok(worker) => return WorkerField(worker),
+            Ok(worker) => return GlobalField::Worker(worker),
             Err(_) => (),
         }
 

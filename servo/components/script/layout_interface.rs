@@ -6,10 +6,6 @@
 
 
 
-pub use self::Msg::*;
-pub use self::ReflowGoal::*;
-pub use self::ReflowQueryType::*;
-
 use dom::node::LayoutDataRef;
 
 use geom::point::Point2D;
@@ -28,33 +24,33 @@ pub use dom::node::TrustedNodeAddress;
 
 pub enum Msg {
     
-    AddStylesheetMsg(Stylesheet),
+    AddStylesheet(Stylesheet),
 
     
-    LoadStylesheetMsg(Url),
+    LoadStylesheet(Url),
 
     
-    SetQuirksModeMsg,
+    SetQuirksMode,
 
     
-    ReflowMsg(Box<Reflow>),
+    Reflow(Box<Reflow>),
 
     
-    GetRPCMsg(Sender<Box<LayoutRPC + Send>>),
-
-    
-    
-    
-    ReapLayoutDataMsg(LayoutDataRef),
+    GetRPC(Sender<Box<LayoutRPC + Send>>),
 
     
     
     
-    PrepareToExitMsg(Sender<()>),
+    ReapLayoutData(LayoutDataRef),
 
     
     
-    ExitNowMsg,
+    
+    PrepareToExit(Sender<()>),
+
+    
+    
+    ExitNow,
 }
 
 
@@ -84,9 +80,9 @@ pub struct MouseOverResponse(pub Vec<UntrustedNodeAddress>);
 #[deriving(PartialEq, Show)]
 pub enum ReflowGoal {
     
-    ReflowForDisplay,
+    ForDisplay,
     
-    ReflowForScriptQuery,
+    ForScriptQuery,
 }
 
 
