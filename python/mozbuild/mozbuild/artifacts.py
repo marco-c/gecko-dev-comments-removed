@@ -251,6 +251,7 @@ class LinuxArtifactJob(ArtifactJob):
         'firefox/dependentlibs.list',
         'firefox/firefox',
         'firefox/firefox-bin',
+        'firefox/minidump-analyzer',
         'firefox/platform.ini',
         'firefox/plugin-container',
         'firefox/updater',
@@ -320,6 +321,7 @@ class MacArtifactJob(ArtifactJob):
             
             paths_no_keep_path = ('Contents/MacOS', [
                 'crashreporter.app/Contents/MacOS/crashreporter',
+                'crashreporter.app/Contents/MacOS/minidump-analyzer',
                 'firefox',
                 'firefox-bin',
                 'libfreebl3.dylib',
@@ -434,7 +436,7 @@ class WinArtifactJob(ArtifactJob):
 
 
 JOB_DETAILS = {
-    'android-api-15-opt': (AndroidArtifactJob, ('(public/build/fennec-(.*)\.android-arm.apk|public/build/target.apk)',
+    'android-api-15-opt': (AndroidArtifactJob, ('public/build/target.apk',
                                                 None)),
     'android-api-15-debug': (AndroidArtifactJob, ('public/build/target.apk',
                                                   None)),
