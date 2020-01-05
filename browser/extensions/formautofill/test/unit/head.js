@@ -45,21 +45,6 @@ Components.manager.addBootstrappedManifestLocation(extensionDir);
 
 let gFileCounter = Math.floor(Math.random() * 1000000);
 
-function loadFormAutofillContent() {
-  let facGlobal = {
-    addEventListener() {},
-    addMessageListener() {},
-    sendAsyncMessage() {},
-  };
-  let loader = Cc["@mozilla.org/moz/jssubscript-loader;1"]
-               .getService(Ci.mozIJSSubScriptLoader);
-  loader.loadSubScriptWithOptions("chrome://formautofill/content/FormAutofillContent.js", {
-    target: facGlobal,
-  });
-
-  return facGlobal;
-}
-
 
 
 

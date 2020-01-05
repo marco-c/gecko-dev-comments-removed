@@ -10,12 +10,17 @@
 
 "use strict";
 
+this.EXPORTED_SYMBOLS = ["FormAutofillContent"];
+
 const {classes: Cc, interfaces: Ci, utils: Cu, results: Cr, manager: Cm} = Components;
 
+Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "ProfileAutoCompleteResult",
                                   "resource://formautofill/ProfileAutoCompleteResult.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "FormAutofillHandler",
+                                  "resource://formautofill/FormAutofillHandler.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "FormLikeFactory",
                                   "resource://gre/modules/FormLikeFactory.jsm");
 
@@ -23,153 +28,6 @@ const formFillController = Cc["@mozilla.org/satchel/form-fill-controller;1"]
                              .getService(Ci.nsIFormFillController);
 
 const AUTOFILL_FIELDS_THRESHOLD = 3;
-
-
-
-
-let FormAutofillHeuristics = {
-  VALID_FIELDS: [
-    "organization",
-    "street-address",
-    "address-level2",
-    "address-level1",
-    "postal-code",
-    "country",
-    "tel",
-    "email",
-  ],
-
-  getInfo(element) {
-    if (!(element instanceof Ci.nsIDOMHTMLInputElement)) {
-      return null;
-    }
-
-    let info = element.getAutocompleteInfo();
-    if (!info || !info.fieldName ||
-        !this.VALID_FIELDS.includes(info.fieldName)) {
-      return null;
-    }
-
-    return info;
-  },
-};
-
-
-
-
-
-function FormAutofillHandler(form) {
-  this.form = form;
-  this.fieldDetails = [];
-}
-
-FormAutofillHandler.prototype = {
-  
-
-
-  form: null,
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  fieldDetails: null,
-
-  
-
-
-
-
-
-
-
-  collectFormFields() {
-    let autofillData = [];
-
-    for (let element of this.form.elements) {
-      
-      let info = FormAutofillHeuristics.getInfo(element);
-      if (!info) {
-        continue;
-      }
-
-      
-      if (this.fieldDetails.some(f => f.section == info.section &&
-                                      f.addressType == info.addressType &&
-                                      f.contactType == info.contactType &&
-                                      f.fieldName == info.fieldName)) {
-        
-        return null;
-      }
-
-      let inputFormat = {
-        section: info.section,
-        addressType: info.addressType,
-        contactType: info.contactType,
-        fieldName: info.fieldName,
-      };
-      
-      let formatWithElement = Object.assign({}, inputFormat);
-
-      inputFormat.index = autofillData.length;
-      autofillData.push(inputFormat);
-
-      formatWithElement.element = element;
-      this.fieldDetails.push(formatWithElement);
-    }
-
-    return autofillData;
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  autofillFormFields(autofillResult) {
-    for (let field of autofillResult) {
-      
-      let fieldDetail = this.fieldDetails[field.index];
-
-      
-      if (!fieldDetail || !field.value) {
-        continue;
-      }
-
-      let info = FormAutofillHeuristics.getInfo(fieldDetail.element);
-      if (!info ||
-          field.section != info.section ||
-          field.addressType != info.addressType ||
-          field.contactType != info.contactType ||
-          field.fieldName != info.fieldName) {
-        Cu.reportError("Autocomplete tokens mismatched");
-        continue;
-      }
-
-      fieldDetail.element.setUserInput(field.value);
-    }
-  },
-};
 
 
 function AutocompleteFactory() {}
@@ -267,12 +125,12 @@ AutofillProfileAutoCompleteSearch.prototype = {
 
   getProfiles(data) {
     return new Promise((resolve) => {
-      addMessageListener("FormAutofill:Profiles", function getResult(result) {
-        removeMessageListener("FormAutofill:Profiles", getResult);
+      Services.cpmm.addMessageListener("FormAutofill:Profiles", function getResult(result) {
+        Services.cpmm.removeMessageListener("FormAutofill:Profiles", getResult);
         resolve(result.data);
       });
 
-      sendAsyncMessage("FormAutofill:GetProfiles", data);
+      Services.cpmm.sendAsyncMessage("FormAutofill:GetProfiles", data);
     });
   },
 
@@ -333,33 +191,19 @@ let ProfileAutocomplete = {
 
 
 var FormAutofillContent = {
-  init() {
-    addEventListener("DOMContentLoaded", this);
+  _formsDetails: [],
 
-    addMessageListener("FormAutofill:enabledStatus", (result) => {
+  init() {
+    Services.cpmm.addMessageListener("FormAutofill:enabledStatus", (result) => {
       if (result.data) {
         ProfileAutocomplete.ensureRegistered();
       } else {
         ProfileAutocomplete.ensureUnregistered();
       }
     });
-    sendAsyncMessage("FormAutofill:getEnabledStatus");
-  },
-
-  handleEvent(evt) {
-    if (!evt.isTrusted) {
-      return;
-    }
-
-    switch (evt.type) {
-      case "DOMContentLoaded":
-        let doc = evt.target;
-        if (!(doc instanceof Ci.nsIDOMHTMLDocument)) {
-          return;
-        }
-        this._identifyAutofillFields(doc);
-        break;
-    }
+    Services.cpmm.sendAsyncMessage("FormAutofill:getEnabledStatus");
+    
+    
   },
 
   
@@ -415,7 +259,6 @@ var FormAutofillContent = {
 
   _identifyAutofillFields(doc) {
     let forms = [];
-    this._formsDetails = [];
 
     
     for (let field of doc.getElementsByTagName("input")) {
