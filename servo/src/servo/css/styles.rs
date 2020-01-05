@@ -74,13 +74,13 @@ impl NodeKind : DefaultStyleMethods {
     }
 }
 
-/**
- * Create a specified style that can be used to initialize a node before selector matching.
- *
- * Everything is initialized to none except the display style. The default value of the display
- * style is computed so that it can be used to short-circuit selector matching to avoid computing
- * style for children of display:none objects.
- */
+
+
+
+
+
+
+
 #[allow(non_implicitly_copyable_typarams)]
 fn empty_style_for_node_kind(kind: &NodeKind) -> SpecifiedStyle {
     let display_type = kind.default_display_type();
@@ -104,16 +104,14 @@ fn empty_style_for_node_kind(kind: &NodeKind) -> SpecifiedStyle {
 
 trait StyleMethods {
     fn initialize_layout_data() -> Option<@LayoutData>;
-
-    fn style() -> &self/SelectResults;
     fn initialize_style_for_subtree(ctx: &LayoutContext, refs: &DVec<@LayoutData>);
     fn recompute_style_for_subtree(ctx: &LayoutContext, styles : &SelectCtx);
 }
 
 impl Node : StyleMethods {
-    /** If none exists, creates empty layout data for the node (the reader-auxiliary
-     * box in the COW model) and populates it with an empty style object.
-     */
+    
+
+
     fn initialize_layout_data() -> Option<@LayoutData> {
         match self.has_aux() {
             false => {
@@ -126,30 +124,11 @@ impl Node : StyleMethods {
             true => None
         }
     }
-        
-    /** 
-     * Provides the computed style for the given node. If CSS selector
-     * Returns the style results for the given node. If CSS selector
-     * matching has not yet been performed, fails.
-     * FIXME: This isn't completely memory safe since the style is
-     * stored in a box that can be overwritten
-     */
-    fn style() -> &self/SelectResults {
-        if !self.has_aux() {
-            fail ~"style() called on a node without aux data!";
-        }
-        unsafe { &*self.aux( |x| {
-            match x.style {
-                Some(ref style) => ptr::to_unsafe_ptr(style),
-                None => fail ~"style() called on node without a style!"
-            }
-        })}
-    }
 
-    /**
-     * Initializes layout data and styles for a Node tree, if any nodes do not have
-     * this data already. Append created layout data to the task's GC roots.
-     */
+    
+
+
+
     fn initialize_style_for_subtree(_ctx: &LayoutContext, refs: &DVec<@LayoutData>) {
         do self.traverse_preorder |n| {
             match n.initialize_layout_data() {
@@ -159,13 +138,13 @@ impl Node : StyleMethods {
         }
     }
 
-    /**
-     * Performs CSS selector matching on a subtree.
+    
 
-     * This is, importantly, the function that updates the layout data for
-     * the node (the reader-auxiliary box in the COW model) with the
-     * computed style.
-     */
+
+
+
+
+
     fn recompute_style_for_subtree(ctx: &LayoutContext, styles : &SelectCtx) {
         let mut i = 0u;
         
