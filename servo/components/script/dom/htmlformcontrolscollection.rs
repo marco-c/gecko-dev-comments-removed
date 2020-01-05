@@ -56,6 +56,7 @@ impl HTMLFormControlsCollectionMethods for HTMLFormControlsCollection {
     
     
     
+    
     fn IndexedGetter(&self, index: u32, found: &mut bool) -> Option<Root<Element>> {
         self.collection.IndexedGetter(index, found)
     }
