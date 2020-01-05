@@ -526,15 +526,22 @@ AddAnimationForProperty(nsIFrame* aFrame, const AnimationProperty& aProperty,
       UpdateStartValueFromReplacedTransition();
   }
 
-  const ComputedTiming computedTiming =
-    aAnimation->GetEffect()->GetComputedTiming();
+  animation->originTime() = !aAnimation->GetTimeline()
+                            ? TimeStamp()
+                            : aAnimation->GetTimeline()->
+                                ToTimeStamp(TimeDuration());
+
   Nullable<TimeDuration> startTime = aAnimation->GetCurrentOrPendingStartTime();
-  animation->startTime() = startTime.IsNull() || !aAnimation->GetTimeline()
-                           ? TimeStamp()
-                           : aAnimation->GetTimeline()->
-                              ToTimeStamp(startTime.Value());
+  if (startTime.IsNull()) {
+    animation->startTime() = null_t();
+  } else {
+    animation->startTime() = startTime.Value();
+  }
+
   animation->holdTime() = aAnimation->GetCurrentTime().Value();
 
+  const ComputedTiming computedTiming =
+    aAnimation->GetEffect()->GetComputedTiming();
   animation->delay() = timing.mDelay;
   animation->endDelay() = timing.mEndDelay;
   animation->duration() = computedTiming.mDuration;
@@ -1022,8 +1029,8 @@ nsDisplayListBuilder::FindAnimatedGeometryRootFor(nsDisplayItem* aItem)
     
     
     
-    nsIFrame* viewportFrame = nsLayoutUtils::GetClosestFrameOfType(
-      aItem->Frame(), LayoutFrameType::Viewport, RootReferenceFrame());
+    nsIFrame* viewportFrame =
+      nsLayoutUtils::GetClosestFrameOfType(aItem->Frame(), FrameType::Viewport, RootReferenceFrame());
     if (viewportFrame) {
       return FindAnimatedGeometryRootFor(viewportFrame);
     }
@@ -1503,10 +1510,10 @@ nsDisplayListBuilder::IsAnimatedGeometryRoot(nsIFrame* aFrame, nsIFrame** aParen
   if (!parent)
     return true;
 
-  LayoutFrameType parentType = parent->Type();
+  FrameType parentType = parent->Type();
   
   
-  if (parentType == LayoutFrameType::Slider &&
+  if (parentType == FrameType::Slider &&
       nsLayoutUtils::IsScrollbarThumbLayerized(aFrame)) {
     return true;
   }
@@ -1517,8 +1524,7 @@ nsDisplayListBuilder::IsAnimatedGeometryRoot(nsIFrame* aFrame, nsIFrame** aParen
     return true;
   }
 
-  if (parentType == LayoutFrameType::Scroll ||
-      parentType == LayoutFrameType::ListControl) {
+  if (parentType == FrameType::Scroll || parentType == FrameType::ListControl) {
     nsIScrollableFrame* sf = do_QueryFrame(parent);
     if (sf->IsScrollingActive(this) && sf->GetScrolledFrame() == aFrame) {
       return true;
