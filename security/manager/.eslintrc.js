@@ -27,16 +27,7 @@ module.exports = {
     "dot-notation": "error",
 
     
-    "eol-last": "error",
-
-    
-    "func-call-spacing": ["error", "never"],
-
-    
     "generator-star-spacing": ["error", {"before": false, "after": true}],
-
-    
-    "key-spacing": ["error", { "beforeColon": false, "afterColon": true, "mode": "minimum" }],
 
     
     "new-parens": "error",
@@ -86,9 +77,6 @@ module.exports = {
     "no-global-assign": "error",
 
     
-    "no-implied-eval": "error",
-
-    
     
     "no-new-wrappers": "error",
 
@@ -110,9 +98,6 @@ module.exports = {
     
     
     "no-throw-literal": "error",
-
-    
-    "no-undef": "error",
 
     
     "no-unmodified-loop-condition": "error",
@@ -150,9 +135,6 @@ module.exports = {
     "space-in-parens": ["error", "never"],
 
     
-    "space-infix-ops": "error",
-
-    
     "space-unary-ops": ["error", { "words": true, "nonwords": false }],
 
     
@@ -167,10 +149,5 @@ module.exports = {
 
     
     "yoda": ["error", "never"],
-  },
-
-  "globals": {
-    "Components": false,
-    "dump": false
   }
 };
