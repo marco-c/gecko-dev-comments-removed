@@ -407,8 +407,8 @@ nsresult nsZipArchive::Test(const char *aEntryName)
   }
 
   
-  for (int i = 0; i < ZIP_TABSIZE; i++) {
-    for (currItem = mFiles[i]; currItem; currItem = currItem->next) {
+  for (auto* item : mFiles) {
+    for (currItem = item; currItem; currItem = currItem->next) {
       
       if (currItem->IsDirectory())
         continue;
@@ -802,13 +802,13 @@ nsresult nsZipArchive::BuildSynthetics()
 MOZ_WIN_MEM_TRY_BEGIN
   
   
-  for (int i = 0; i < ZIP_TABSIZE; ++i)
+  for (auto* item : mFiles)
   {
-    for (nsZipItem* item = mFiles[i]; item != nullptr; item = item->next)
+    for (; item != nullptr; item = item->next)
     {
       if (item->isSynthetic)
         continue;
-    
+
       
       
       
