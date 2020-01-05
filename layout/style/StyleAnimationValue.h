@@ -576,11 +576,7 @@ struct AnimationValue
   StyleAnimationValue mGecko;
   RefPtr<RawServoAnimationValue> mServo;
 
-  bool operator==(const AnimationValue& aOther) const
-  {
-    
-    return mGecko == aOther.mGecko && mServo == aOther.mServo;
-  }
+  inline bool operator==(const AnimationValue& aOther) const;
 
   bool IsNull() const { return mGecko.IsNull() && !mServo; }
 
