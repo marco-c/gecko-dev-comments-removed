@@ -460,6 +460,7 @@ const gStoragePressureObserver = {
     let buttons = [];
     let usage = parseInt(data);
     let prefStrBundle = document.getElementById("bundle_preferences");
+    let brandShortName = document.getElementById("bundle_brand").getString("brandShortName");
     let notificationBox = document.getElementById("high-priority-global-notificationbox");
     buttons.push({
       label: prefStrBundle.getString("spaceAlert.learnMoreButton.label"),
@@ -474,7 +475,7 @@ const gStoragePressureObserver = {
       
       
       
-      msg = prefStrBundle.getString("spaceAlert.under5GB.description");
+      msg = prefStrBundle.getFormattedString("spaceAlert.under5GB.message", [brandShortName]);
       buttons.push({
         label: prefStrBundle.getString("spaceAlert.under5GB.okButton.label"),
         accessKey: prefStrBundle.getString("spaceAlert.under5GB.okButton.accesskey"),
@@ -483,15 +484,15 @@ const gStoragePressureObserver = {
     } else {
       
       
-      let descriptionStringID = "spaceAlert.over5GB.description";
+      let descriptionStringID = "spaceAlert.over5GB.message";
       let prefButtonLabelStringID = "spaceAlert.over5GB.prefButton.label";
       let prefButtonAccesskeyStringID = "spaceAlert.over5GB.prefButton.accesskey";
       if (AppConstants.platform == "win") {
-        descriptionStringID = "spaceAlert.over5GB.descriptionWin";
+        descriptionStringID = "spaceAlert.over5GB.messageWin";
         prefButtonLabelStringID = "spaceAlert.over5GB.prefButtonWin.label";
         prefButtonAccesskeyStringID = "spaceAlert.over5GB.prefButtonWin.accesskey";
       }
-      msg = prefStrBundle.getString(descriptionStringID);
+      msg = prefStrBundle.getFormattedString(descriptionStringID, [brandShortName]);
       buttons.push({
         label: prefStrBundle.getString(prefButtonLabelStringID),
         accessKey: prefStrBundle.getString(prefButtonAccesskeyStringID),
