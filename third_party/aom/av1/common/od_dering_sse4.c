@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+
+
+#include "aom_dsp/aom_simd.h"
+#define SIMD_FUNC(name) name##_sse4_1
+#include "./od_dering_simd.h"
