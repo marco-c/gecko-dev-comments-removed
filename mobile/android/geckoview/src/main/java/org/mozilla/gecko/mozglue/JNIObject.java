@@ -7,5 +7,10 @@ public abstract class JNIObject
     private long mHandle;
 
     
+    
+    
+    
+    
+    
     protected abstract void disposeNative();
 }
