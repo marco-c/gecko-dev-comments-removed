@@ -141,7 +141,7 @@ pub enum Msg {
     
     ChangeRunningAnimationsState(PipelineId, AnimationState),
     
-    SetFrameTree(SendableFrameTree, IpcSender<()>, Sender<ConstellationMsg>),
+    SetFrameTree(SendableFrameTree, IpcSender<()>),
     
     LoadStart(bool, bool),
     
