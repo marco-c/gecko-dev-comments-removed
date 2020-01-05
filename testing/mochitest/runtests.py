@@ -2218,7 +2218,6 @@ toolbar#nav-bar {
             skip_leak_conditions = [
                 (info['debug'] and options.flavor == 'plain' and d.startswith('toolkit/components/extensions/test/mochitest') and info['os'] == 'mac', 'bug 1326456'),  
                 (info['debug'] and options.flavor == 'plain' and d == 'toolkit/components/prompts/test' and info['os'] == 'mac', 'bug 1325275'),  
-                (info['debug'] and options.flavor == 'plain' and d == 'tests/dom/xhr/tests', 'bug 1325438'),  
             ]
 
             for condition, reason in skip_leak_conditions:
