@@ -92,6 +92,7 @@ def run_tests(config, browser_config):
 
     paths = ['profile_path', 'tpmanifest', 'extensions', 'setup', 'cleanup']
     for test in tests:
+
         
         
         
