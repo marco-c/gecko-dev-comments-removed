@@ -9,9 +9,13 @@
 #include "nsIURI.h"
 #include "MainThreadUtils.h"
 #include "nsNetUtil.h"
+#include "mozilla/HashFunctions.h"
+#include "nsHashKeys.h"
 
 namespace mozilla {
 namespace image {
+
+class ImageCacheKey;
 
 
 
@@ -113,6 +117,22 @@ public:
   }
 
 private:
+  friend class ImageCacheKey;
+
+  uint32_t ComputeHash(const Maybe<uint64_t>& aBlobSerial) const
+  {
+    if (aBlobSerial) {
+      
+      
+      
+      
+      
+      return HashGeneric(*aBlobSerial, HashString(mRef));
+    }
+    
+    return HashString(mSpec);
+  }
+
   
   
   
