@@ -588,7 +588,7 @@ enum LogLevel {
   LOGLEVEL_DFATAL = LOGLEVEL_FATAL
 #endif
 
-#ifdef ERROR
+#ifdef _WIN32
   
   
   
@@ -596,6 +596,10 @@ enum LogLevel {
   
   
   
+  
+  
+  
+#define ERROR 0
   , LOGLEVEL_0 = LOGLEVEL_ERROR
 #endif
 };
