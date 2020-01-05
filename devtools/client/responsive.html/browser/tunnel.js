@@ -431,6 +431,8 @@ MessageManagerTunnel.prototype = {
     
     "PageInfo:",
     
+    "Printing:",
+    
     "Social:",
     "PageMetadata:",
     
@@ -448,6 +450,8 @@ MessageManagerTunnel.prototype = {
     "Finder:",
     
     "PageInfo:",
+    
+    "Printing:",
     
     "Social:",
     "PageMetadata:",
