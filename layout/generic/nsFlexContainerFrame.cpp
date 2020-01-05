@@ -3100,6 +3100,22 @@ SingleLineCrossAxisPositionTracker::
   }
 
   
+  if (alignSelf == NS_STYLE_ALIGN_LEFT || alignSelf == NS_STYLE_ALIGN_RIGHT) {
+    if (aAxisTracker.IsRowOriented()) {
+      
+      
+      alignSelf = NS_STYLE_ALIGN_START;
+    } else {
+      
+      
+      const bool isLTR = aAxisTracker.GetWritingMode().IsBidiLTR();
+      const bool isAlignLeft = (alignSelf == NS_STYLE_ALIGN_LEFT);
+      alignSelf = (isAlignLeft == isLTR) ? NS_STYLE_ALIGN_START
+                                         : NS_STYLE_ALIGN_END;
+    }
+  }
+
+  
   if (alignSelf == NS_STYLE_ALIGN_START) {
     alignSelf = NS_STYLE_ALIGN_FLEX_START;
   } else if (alignSelf == NS_STYLE_ALIGN_END) {
@@ -3117,8 +3133,6 @@ SingleLineCrossAxisPositionTracker::
   }
 
   switch (alignSelf) {
-    case NS_STYLE_JUSTIFY_LEFT:
-    case NS_STYLE_JUSTIFY_RIGHT:
     case NS_STYLE_ALIGN_SELF_START:
     case NS_STYLE_ALIGN_SELF_END:
     case NS_STYLE_ALIGN_LAST_BASELINE:
