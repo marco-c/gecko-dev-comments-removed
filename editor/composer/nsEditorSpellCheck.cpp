@@ -326,6 +326,11 @@ nsEditorSpellCheck::InitSpellChecker(nsIEditor* aEditor, bool aEnableSelectionCh
   NS_ENSURE_TRUE(aEditor, NS_ERROR_NULL_POINTER);
   mEditor = aEditor;
 
+  nsCOMPtr<nsIDOMDocument> domDoc;
+  mEditor->GetDocument(getter_AddRefs(domDoc));
+  nsCOMPtr<nsIDocument> doc = do_QueryInterface(domDoc);
+  NS_ENSURE_STATE(doc);
+
   nsresult rv;
 
   
@@ -401,8 +406,8 @@ nsEditorSpellCheck::InitSpellChecker(nsIEditor* aEditor, bool aEnableSelectionCh
     
     
     RefPtr<CallbackCaller> caller = new CallbackCaller(aCallback);
-    NS_ENSURE_STATE(caller);
-    rv = NS_DispatchToMainThread(caller);
+    rv = doc->Dispatch("nsEditorSpellCheck::CallbackCaller",
+                       TaskCategory::Other, caller.forget());
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
