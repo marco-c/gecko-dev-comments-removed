@@ -49,10 +49,12 @@ var gTests = [
     
     
     gBrowser.selectedBrowser.messageManager.loadFrameScript(CONTENT_SCRIPT_HELPER, true);
-    yield BrowserTestUtils.closeWindow(win);
 
-    yield expectObserverCalled("recording-window-ended");
-    yield expectObserverCalled("recording-device-events");
+    let promises = [promiseObserverCalled("recording-device-events"),
+                    promiseObserverCalled("recording-window-ended")];
+    yield BrowserTestUtils.closeWindow(win);
+    yield Promise.all(promises);
+
     yield expectNoObserverCalled();
     yield checkNotSharing();
   }
