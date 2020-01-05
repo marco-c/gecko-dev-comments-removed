@@ -443,7 +443,7 @@ var Printing = {
     let data = message.data;
     switch (message.name) {
       case "Printing:Preview:Enter": {
-        this.enterPrintPreview(Services.wm.getOuterWindowWithId(data.windowID), data.simplifiedMode);
+        this.enterPrintPreview(Services.wm.getOuterWindowWithId(data.windowID), data.simplifiedMode, data.defaultPrinterName);
         break;
       }
 
@@ -468,20 +468,20 @@ var Printing = {
       }
 
       case "Printing:Print": {
-        this.print(Services.wm.getOuterWindowWithId(data.windowID), data.simplifiedMode);
+        this.print(Services.wm.getOuterWindowWithId(data.windowID), data.simplifiedMode, data.defaultPrinterName);
         break;
       }
     }
   },
 
-  getPrintSettings() {
+  getPrintSettings(defaultPrinterName) {
     try {
       let PSSVC = Cc["@mozilla.org/gfx/printsettings-service;1"]
                     .getService(Ci.nsIPrintSettingsService);
 
       let printSettings = PSSVC.globalPrintSettings;
       if (!printSettings.printerName) {
-        printSettings.printerName = PSSVC.defaultPrinterName;
+        printSettings.printerName = defaultPrinterName;
       }
       
       PSSVC.initPrintSettingsFromPrinter(printSettings.printerName,
@@ -620,7 +620,7 @@ var Printing = {
     });
   },
 
-  enterPrintPreview(contentWindow, simplifiedMode) {
+  enterPrintPreview(contentWindow, simplifiedMode, defaultPrinterName) {
     
     
     
@@ -643,7 +643,7 @@ var Printing = {
     addEventListener("printPreviewUpdate", onPrintPreviewReady);
 
     try {
-      let printSettings = this.getPrintSettings();
+      let printSettings = this.getPrintSettings(defaultPrinterName);
 
       
       
@@ -664,8 +664,8 @@ var Printing = {
     docShell.printPreview.exitPrintPreview();
   },
 
-  print(contentWindow, simplifiedMode) {
-    let printSettings = this.getPrintSettings();
+  print(contentWindow, simplifiedMode, defaultPrinterName) {
+    let printSettings = this.getPrintSettings(defaultPrinterName);
 
     
     
