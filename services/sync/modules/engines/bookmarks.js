@@ -40,8 +40,6 @@ const {
   SOURCE_IMPORT_REPLACE,
 } = Ci.nsINavBookmarksService;
 
-const SQLITE_MAX_VARIABLE_NUMBER = 999;
-
 const ORGANIZERQUERY_ANNO = "PlacesOrganizer/OrganizerQuery";
 const ALLBOOKMARKS_ANNO = "AllBookmarks";
 const MOBILE_ANNO = "MobileBookmarks";
@@ -62,6 +60,13 @@ const FORBIDDEN_INCOMING_PARENT_IDS = ["pinned", "readinglist"];
 
 
 const IGNORED_SOURCES = [SOURCE_SYNC, SOURCE_IMPORT, SOURCE_IMPORT_REPLACE];
+
+function isSyncedRootNode(node) {
+  return node.root == "bookmarksMenuFolder" ||
+         node.root == "unfiledBookmarksFolder" ||
+         node.root == "toolbarFolder" ||
+         node.root == "mobileFolder";
+}
 
 
 function getTypeObject(type) {
@@ -302,9 +307,8 @@ BookmarksEngine.prototype = {
   _buildGUIDMap: function _buildGUIDMap() {
     let store = this._store;
     let guidMap = {};
-    let tree = Async.promiseSpinningly(PlacesUtils.promiseBookmarksTree("", {
-      includeItemIds: true
-    }));
+    let tree = Async.promiseSpinningly(PlacesUtils.promiseBookmarksTree(""));
+
     function* walkBookmarksTree(tree, parent=null) {
       if (tree) {
         
@@ -320,19 +324,15 @@ BookmarksEngine.prototype = {
       }
     }
 
-    function* walkBookmarksRoots(tree, rootIDs) {
-      for (let id of rootIDs) {
-        let bookmarkRoot = tree.children.find(child => child.id === id);
-        if (bookmarkRoot === null) {
-          continue;
+    function* walkBookmarksRoots(tree) {
+      for (let child of tree.children) {
+        if (isSyncedRootNode(child)) {
+          yield* walkBookmarksTree(child, tree);
         }
-        yield* walkBookmarksTree(bookmarkRoot, tree);
       }
     }
 
-    let rootsToWalk = getChangeRootIds();
-
-    for (let [node, parent] of walkBookmarksRoots(tree, rootsToWalk)) {
+    for (let [node, parent] of walkBookmarksRoots(tree)) {
       let {guid, id, type: placeType} = node;
       guid = PlacesSyncUtils.bookmarks.guidToSyncId(guid);
       let key;
@@ -570,6 +570,11 @@ BookmarksEngine.prototype = {
     if (entry != null && entry.hasDupe) {
       record.hasDupe = true;
     }
+    if (record.deleted) {
+      
+      
+      this._modified.setTombstone(record.id);
+    }
     return record;
   },
 
@@ -590,83 +595,26 @@ BookmarksEngine.prototype = {
   },
 
   pullAllChanges() {
-    return new BookmarksChangeset(this._store.getAllIDs());
+    return this.pullNewChanges();
   },
 
   pullNewChanges() {
-    let modifiedGUIDs = this._getModifiedGUIDs();
-    if (!modifiedGUIDs.length) {
-      return new BookmarksChangeset(this._tracker.changedIDs);
-    }
-
-    
-    
-    
-    
-    let db = PlacesUtils.history.QueryInterface(Ci.nsPIPlacesDatabase)
-                        .DBConnection;
-
-    
-    
-    
-    for (let startIndex = 0;
-         startIndex < modifiedGUIDs.length;
-         startIndex += SQLITE_MAX_VARIABLE_NUMBER) {
-
-      let chunkLength = Math.min(SQLITE_MAX_VARIABLE_NUMBER,
-                                 modifiedGUIDs.length - startIndex);
-
-      let query = `
-        WITH RECURSIVE
-        modifiedGuids(guid) AS (
-          VALUES ${new Array(chunkLength).fill("(?)").join(", ")}
-        ),
-        syncedItems(id) AS (
-          VALUES ${getChangeRootIds().map(id => `(${id})`).join(", ")}
-          UNION ALL
-          SELECT b.id
-          FROM moz_bookmarks b
-          JOIN syncedItems s ON b.parent = s.id
-        )
-        SELECT b.guid
-        FROM modifiedGuids m
-        JOIN moz_bookmarks b ON b.guid = m.guid
-        LEFT JOIN syncedItems s ON b.id = s.id
-        WHERE s.id IS NULL
-      `;
-
-      let statement = db.createAsyncStatement(query);
-      try {
-        for (let i = 0; i < chunkLength; i++) {
-          statement.bindByIndex(i, modifiedGUIDs[startIndex + i]);
-        }
-        let results = Async.querySpinningly(statement, ["guid"]);
-        for (let { guid } of results) {
-          let syncID = PlacesSyncUtils.bookmarks.guidToSyncId(guid);
-          this._tracker.removeChangedID(syncID);
-        }
-      } finally {
-        statement.finalize();
-      }
-    }
-
-    return new BookmarksChangeset(this._tracker.changedIDs);
+    let changes = Async.promiseSpinningly(this._tracker.promiseChangedIDs());
+    return new BookmarksChangeset(changes);
   },
 
-  
-  
-  _getModifiedGUIDs() {
-    let guids = [];
-    for (let syncID in this._tracker.changedIDs) {
-      if (this._tracker.changedIDs[syncID].deleted === true) {
-        
-        
-        continue;
-      }
-      let guid = PlacesSyncUtils.bookmarks.syncIdToGuid(syncID);
-      guids.push(guid);
-    }
-    return guids;
+  trackRemainingChanges() {
+    let changes = this._modified.changes;
+    Async.promiseSpinningly(PlacesSyncUtils.bookmarks.pushChanges(changes));
+  },
+
+  _deleteId(id) {
+    this._noteDeletedId(id);
+  },
+
+  resetClient() {
+    SyncEngine.prototype.resetClient.call(this);
+    Async.promiseSpinningly(PlacesSyncUtils.bookmarks.reset());
   },
 
   
@@ -1054,49 +1002,27 @@ BookmarksStore.prototype = {
     return index;
   },
 
-  getAllIDs: function BStore_getAllIDs() {
-    let items = {};
-
-    let query = `
-      WITH RECURSIVE
-      changeRootContents(id) AS (
-        VALUES ${getChangeRootIds().map(id => `(${id})`).join(", ")}
-        UNION ALL
-        SELECT b.id
-        FROM moz_bookmarks b
-        JOIN changeRootContents c ON b.parent = c.id
-      )
-      SELECT guid
-      FROM changeRootContents
-      JOIN moz_bookmarks USING (id)
-    `;
-
-    let statement = this._getStmt(query);
-    let results = Async.querySpinningly(statement, ["guid"]);
-    for (let { guid } of results) {
-      let syncID = PlacesSyncUtils.bookmarks.guidToSyncId(guid);
-      items[syncID] = { modified: 0, deleted: false };
-    }
-
-    return items;
-  },
-
   wipe: function BStore_wipe() {
     this.clearPendingDeletions();
     Async.promiseSpinningly(Task.spawn(function* () {
       
       yield PlacesBackups.create(null, true);
-      yield PlacesUtils.bookmarks.eraseEverything({
-        source: SOURCE_SYNC,
-      });
+      yield PlacesSyncUtils.bookmarks.wipe();
     }));
   }
 };
+
+
+
+
+
 
 function BookmarksTracker(name, engine) {
   this._batchDepth = 0;
   this._batchSawScoreIncrement = false;
   Tracker.call(this, name, engine);
+
+  delete this.changedIDs; 
 
   Svc.Obs.add("places-shutdown", this);
 }
@@ -1113,6 +1039,10 @@ BookmarksTracker.prototype = {
   
   set ignoreAll(value) {},
 
+  
+  
+  persistChangedIDs: false,
+
   startTracking: function() {
     PlacesUtils.bookmarks.addObserver(this, true);
     Svc.Obs.add("bookmarks-restore-begin", this);
@@ -1125,6 +1055,46 @@ BookmarksTracker.prototype = {
     Svc.Obs.remove("bookmarks-restore-begin", this);
     Svc.Obs.remove("bookmarks-restore-success", this);
     Svc.Obs.remove("bookmarks-restore-failed", this);
+  },
+
+  
+  addChangedID(id, when) {
+    throw new Error("Don't add IDs to the bookmarks tracker");
+  },
+
+  removeChangedID(id) {
+    throw new Error("Don't remove IDs from the bookmarks tracker");
+  },
+
+  
+  
+  clearChangedIDs() {},
+
+  saveChangedIDs(cb) {
+    if (cb) {
+      cb();
+    }
+  },
+
+  loadChangedIDs(cb) {
+    if (cb) {
+      cb();
+    }
+  },
+
+  promiseChangedIDs() {
+    return PlacesSyncUtils.bookmarks.pullChanges();
+  },
+
+  get changedIDs() {
+    throw new Error("Use promiseChangedIDs");
+  },
+
+  set changedIDs(obj) {
+    
+    if (Object.keys(obj).length != 0) {
+      throw new Error("Don't set initial changed bookmark IDs");
+    }
   },
 
   observe: function observe(subject, topic, data) {
@@ -1154,52 +1124,6 @@ BookmarksTracker.prototype = {
     Ci.nsISupportsWeakReference
   ]),
 
-  addChangedID(id, change) {
-    if (!id) {
-      this._log.warn("Attempted to add undefined ID to tracker");
-      return false;
-    }
-    if (this._ignored.includes(id)) {
-      return false;
-    }
-    let shouldSaveChange = false;
-    let currentChange = this.changedIDs[id];
-    if (currentChange) {
-      if (typeof currentChange == "number") {
-        
-        
-        shouldSaveChange = currentChange < change.modified;
-      } else {
-        shouldSaveChange = currentChange.modified < change.modified ||
-                           currentChange.deleted != change.deleted;
-      }
-    } else {
-      shouldSaveChange = true;
-    }
-    if (shouldSaveChange) {
-      this._saveChangedID(id, change);
-    }
-    return true;
-  },
-
-  
-
-
-
-
-
-
-
-
-
-  _add: function BMT__add(itemId, guid, isTombstone = false) {
-    let syncID = PlacesSyncUtils.bookmarks.guidToSyncId(guid);
-    let info = { modified: Date.now() / 1000, deleted: isTombstone };
-    if (this.addChangedID(syncID, info)) {
-      this._upScore();
-    }
-  },
-
   
 
   _upScore: function BMT__upScore() {
@@ -1218,8 +1142,7 @@ BookmarksTracker.prototype = {
     }
 
     this._log.trace("onItemAdded: " + itemId);
-    this._add(itemId, guid);
-    this._add(folder, parentGuid);
+    this._upScore();
   },
 
   onItemRemoved: function (itemId, parentId, index, type, uri,
@@ -1228,47 +1151,8 @@ BookmarksTracker.prototype = {
       return;
     }
 
-    
-    if (parentId == PlacesUtils.tagsFolderId) {
-      return;
-    }
-
-    let grandParentId = -1;
-    try {
-      grandParentId = PlacesUtils.bookmarks.getFolderIdForItem(parentId);
-    } catch (ex) {
-      
-      
-      return;
-    }
-
-    
-    if (grandParentId == PlacesUtils.tagsFolderId) {
-      return;
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     this._log.trace("onItemRemoved: " + itemId);
-    this._add(itemId, guid,  true);
-    this._add(parentId, parentGuid);
+    this._upScore();
   },
 
   _ensureMobileQuery: function _ensureMobileQuery() {
@@ -1340,7 +1224,7 @@ BookmarksTracker.prototype = {
     this._log.trace("onItemChanged: " + itemId +
                     (", " + property + (isAnno? " (anno)" : "")) +
                     (value ? (" = \"" + value + "\"") : ""));
-    this._add(itemId, guid);
+    this._upScore();
   },
 
   onItemMoved: function BMT_onItemMoved(itemId, oldParent, oldIndex,
@@ -1352,15 +1236,7 @@ BookmarksTracker.prototype = {
     }
 
     this._log.trace("onItemMoved: " + itemId);
-    this._add(oldParent, oldParentGuid);
-    if (oldParent != newParent) {
-      this._add(itemId, guid);
-      this._add(newParent, newParentGuid);
-    }
-
-    
-    PlacesUtils.annotations.removeItemAnnotation(itemId,
-      PlacesSyncUtils.bookmarks.SYNC_PARENT_ANNO, SOURCE_SYNC);
+    this._upScore();
   },
 
   onBeginUpdateBatch: function () {
@@ -1375,21 +1251,34 @@ BookmarksTracker.prototype = {
   onItemVisited: function () {}
 };
 
-
-
-
-function getChangeRootIds() {
-  return [
-    PlacesUtils.bookmarksMenuFolderId,
-    PlacesUtils.toolbarFolderId,
-    PlacesUtils.unfiledBookmarksFolderId,
-    PlacesUtils.mobileFolderId,
-  ];
-}
-
 class BookmarksChangeset extends Changeset {
   getModifiedTimestamp(id) {
     let change = this.changes[id];
-    return change ? change.modified : Number.NaN;
+    if (!change || change.synced) {
+      
+      
+      return Number.NaN;
+    }
+    return change.modified;
+  }
+
+  has(id) {
+    return id in this.changes && !this.changes[id].synced;
+  }
+
+  setTombstone(id) {
+    let change = this.changes[id];
+    if (change) {
+      change.tombstone = true;
+    }
+  }
+
+  delete(id) {
+    let change = this.changes[id];
+    if (change) {
+      
+      
+      change.synced = true;
+    }
   }
 }

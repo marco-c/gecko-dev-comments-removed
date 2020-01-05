@@ -1303,8 +1303,11 @@ SyncEngine.prototype = {
 
   _deleteId: function (id) {
     this._tracker.removeChangedID(id);
+    this._noteDeletedId(id);
+  },
 
-    
+  
+  _noteDeletedId(id) {
     if (this._delete.ids == null)
       this._delete.ids = [id];
     else
@@ -1631,9 +1634,12 @@ SyncEngine.prototype = {
       return;
     }
 
-    
-    this.trackRemainingChanges();
-    this._modified.clear();
+    try {
+      
+      this.trackRemainingChanges();
+    } finally {
+      this._modified.clear();
+    }
   },
 
   _sync: function () {
