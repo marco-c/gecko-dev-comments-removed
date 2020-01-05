@@ -907,7 +907,11 @@ nsViewSourceChannel::GetResponseHeader(const nsACString & aHeader,
                         nsCaseInsensitiveCStringComparator()) &&
         !aHeader.Equals(NS_LITERAL_CSTRING("X-Frame-Options"),
                         nsCaseInsensitiveCStringComparator())) {
-        return NS_OK;
+        
+        
+        
+        
+        return NS_ERROR_NOT_AVAILABLE;
     }
 
     return mHttpChannel->GetResponseHeader(aHeader, aValue);
