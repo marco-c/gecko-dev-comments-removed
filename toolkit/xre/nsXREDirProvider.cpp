@@ -46,6 +46,7 @@
 #include <stdlib.h>
 
 #ifdef XP_WIN
+#include "city.h"
 #include <windows.h>
 #include <shlobj.h>
 #endif
@@ -1439,12 +1440,26 @@ nsXREDirProvider::GetUpdateRootDir(nsIFile* *aResult)
     }
   }
 
+  if (!pathHashResult) {
+    
+    uint64_t hash = CityHash64(static_cast<const char *>(appDirPath.get()),
+                               appDirPath.Length() * sizeof(nsAutoString::char_type));
+    pathHash.AppendInt((int)(hash >> 32), 16);
+    pathHash.AppendInt((int)hash, 16);
+    
+    
+    
+    
+    ToUpperCase(pathHash);
+  }
+
+  
   
   
   
   
   nsCOMPtr<nsIFile> localDir;
-  if (pathHashResult && (hasVendor || gAppData->name) &&
+  if ((hasVendor || gAppData->name) &&
       NS_SUCCEEDED(GetUserDataDirectoryHome(getter_AddRefs(localDir), true)) &&
       NS_SUCCEEDED(localDir->AppendNative(nsDependentCString(hasVendor ?
                                           gAppData->vendor : gAppData->name))) &&
