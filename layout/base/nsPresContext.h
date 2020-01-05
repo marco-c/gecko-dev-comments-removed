@@ -1525,6 +1525,8 @@ public:
 
 
 
+
+
   void ComputePluginGeometryUpdates(nsIFrame* aFrame,
                                     nsDisplayListBuilder* aBuilder,
                                     nsDisplayList* aList);

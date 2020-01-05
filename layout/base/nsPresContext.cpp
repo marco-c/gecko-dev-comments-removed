@@ -2963,19 +2963,22 @@ nsRootPresContext::ComputePluginGeometryUpdates(nsIFrame* aFrame,
     f->SetEmptyWidgetConfiguration();
   }
 
-  nsIFrame* rootFrame = FrameManager()->GetRootFrame();
+  if (aBuilder) {
+    MOZ_ASSERT(aList);
+    nsIFrame* rootFrame = FrameManager()->GetRootFrame();
 
-  if (rootFrame && aBuilder->ContainsPluginItem()) {
-    aBuilder->SetForPluginGeometry();
-    aBuilder->SetAccurateVisibleRegions();
-    
-    
-    
-    aBuilder->SetAllowMergingAndFlattening(false);
-    nsRegion region = rootFrame->GetVisualOverflowRectRelativeToSelf();
-    
-    
-    aList->ComputeVisibilityForRoot(aBuilder, &region);
+    if (rootFrame && aBuilder->ContainsPluginItem()) {
+      aBuilder->SetForPluginGeometry();
+      aBuilder->SetAccurateVisibleRegions();
+      
+      
+      
+      aBuilder->SetAllowMergingAndFlattening(false);
+      nsRegion region = rootFrame->GetVisualOverflowRectRelativeToSelf();
+      
+      
+      aList->ComputeVisibilityForRoot(aBuilder, &region);
+    }
   }
 
 #ifdef XP_MACOSX
