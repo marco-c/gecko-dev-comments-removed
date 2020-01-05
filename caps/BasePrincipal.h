@@ -10,6 +10,7 @@
 #include "nsJSPrincipals.h"
 
 #include "mozilla/Attributes.h"
+#include "mozilla/dom/ChromeUtils.h"
 #include "mozilla/dom/ChromeUtilsBinding.h"
 #include "nsIScriptSecurityManager.h"
 
@@ -250,7 +251,7 @@ public:
   CreateCodebasePrincipal(nsIURI* aURI, const OriginAttributes& aAttrs);
   static already_AddRefed<BasePrincipal> CreateCodebasePrincipal(const nsACString& aOrigin);
 
-  const OriginAttributes& OriginAttributesRef() override { return mOriginAttributes; }
+  const OriginAttributes& OriginAttributesRef() final { return mOriginAttributes; }
   uint32_t AppId() const { return mOriginAttributes.mAppId; }
   uint32_t UserContextId() const { return mOriginAttributes.mUserContextId; }
   uint32_t PrivateBrowsingId() const { return mOriginAttributes.mPrivateBrowsingId; }
@@ -266,11 +267,11 @@ public:
   bool AddonAllowsLoad(nsIURI* aURI, bool aExplicit = false);
 
   
-  bool FastEquals(nsIPrincipal* aOther);
-  bool FastEqualsConsideringDomain(nsIPrincipal* aOther);
-  bool FastSubsumes(nsIPrincipal* aOther);
-  bool FastSubsumesConsideringDomain(nsIPrincipal* aOther);
-  bool FastSubsumesConsideringDomainIgnoringFPD(nsIPrincipal* aOther);
+  inline bool FastEquals(nsIPrincipal* aOther);
+  inline bool FastEqualsConsideringDomain(nsIPrincipal* aOther);
+  inline bool FastSubsumes(nsIPrincipal* aOther);
+  inline bool FastSubsumesConsideringDomain(nsIPrincipal* aOther);
+  inline bool FastSubsumesConsideringDomainIgnoringFPD(nsIPrincipal* aOther);
 
 protected:
   virtual ~BasePrincipal();
@@ -299,6 +300,101 @@ protected:
   PrincipalKind mKind;
   bool mDomainSet;
 };
+
+inline bool
+BasePrincipal::FastEquals(nsIPrincipal* aOther)
+{
+  auto other = Cast(aOther);
+  if (Kind() != other->Kind()) {
+    
+    return false;
+  }
+
+  
+  
+  
+  
+  
+  if (Kind() == eNullPrincipal || Kind() == eSystemPrincipal) {
+    return this == other;
+  }
+
+  if (mOriginNoSuffix) {
+    if (Kind() == eCodebasePrincipal) {
+      return mOriginNoSuffix == other->mOriginNoSuffix &&
+             mOriginSuffix == other->mOriginSuffix;
+    }
+
+    MOZ_ASSERT(Kind() == eExpandedPrincipal);
+    return mOriginNoSuffix == other->mOriginNoSuffix;
+  }
+
+  
+  
+  return Subsumes(aOther, DontConsiderDocumentDomain) &&
+         other->Subsumes(this, DontConsiderDocumentDomain);
+}
+
+inline bool
+BasePrincipal::FastEqualsConsideringDomain(nsIPrincipal* aOther)
+{
+  
+  
+  auto other = Cast(aOther);
+  if (!mDomainSet && !other->mDomainSet) {
+    return FastEquals(aOther);
+  }
+
+  return Subsumes(aOther, ConsiderDocumentDomain) &&
+         other->Subsumes(this, ConsiderDocumentDomain);
+}
+
+inline bool
+BasePrincipal::FastSubsumes(nsIPrincipal* aOther)
+{
+  
+  
+  
+  
+  
+  
+  
+  auto other = Cast(aOther);
+  if (Kind() == eNullPrincipal && other->Kind() == eNullPrincipal) {
+    return this == other;
+  }
+  if (mOriginNoSuffix && FastEquals(aOther)) {
+    return true;
+  }
+
+  
+  return Subsumes(aOther, DontConsiderDocumentDomain);
+}
+
+inline bool
+BasePrincipal::FastSubsumesConsideringDomain(nsIPrincipal* aOther)
+{
+  
+  
+  
+  if (!mDomainSet && !Cast(aOther)->mDomainSet) {
+    return FastSubsumes(aOther);
+  }
+
+  return Subsumes(aOther, ConsiderDocumentDomain);
+}
+
+inline bool
+BasePrincipal::FastSubsumesConsideringDomainIgnoringFPD(nsIPrincipal* aOther)
+{
+  if (Kind() == eCodebasePrincipal &&
+      !dom::ChromeUtils::IsOriginAttributesEqualIgnoringFPD(
+            mOriginAttributes, Cast(aOther)->mOriginAttributes)) {
+    return false;
+  }
+
+ return SubsumesInternal(aOther, ConsiderDocumentDomain);
+}
 
 } 
 

@@ -335,40 +335,6 @@ BasePrincipal::Subsumes(nsIPrincipal* aOther, DocumentDomainConsideration aConsi
   return SubsumesInternal(aOther, aConsideration);
 }
 
-bool
-BasePrincipal::FastEquals(nsIPrincipal* aOther)
-{
-  auto other = Cast(aOther);
-  if (Kind() != other->Kind()) {
-    
-    return false;
-  }
-
-  
-  
-  
-  
-  
-  if (Kind() == eNullPrincipal || Kind() == eSystemPrincipal) {
-    return this == other;
-  }
-
-  if (mOriginNoSuffix) {
-    if (Kind() == eCodebasePrincipal) {
-      return mOriginNoSuffix == other->mOriginNoSuffix &&
-             mOriginSuffix == other->mOriginSuffix;
-    }
-
-    MOZ_ASSERT(Kind() == eExpandedPrincipal);
-    return mOriginNoSuffix == other->mOriginNoSuffix;
-  }
-
-  
-  
-  return Subsumes(aOther, DontConsiderDocumentDomain) &&
-         other->Subsumes(this, DontConsiderDocumentDomain);
-}
-
 NS_IMETHODIMP
 BasePrincipal::Equals(nsIPrincipal *aOther, bool *aResult)
 {
@@ -377,20 +343,6 @@ BasePrincipal::Equals(nsIPrincipal *aOther, bool *aResult)
   *aResult = FastEquals(aOther);
 
   return NS_OK;
-}
-
-bool
-BasePrincipal::FastEqualsConsideringDomain(nsIPrincipal* aOther)
-{
-  
-  
-  auto other = Cast(aOther);
-  if (!mDomainSet && !other->mDomainSet) {
-    return FastEquals(aOther);
-  }
-
-  return Subsumes(aOther, ConsiderDocumentDomain) &&
-         other->Subsumes(this, ConsiderDocumentDomain);
 }
 
 NS_IMETHODIMP
@@ -403,28 +355,6 @@ BasePrincipal::EqualsConsideringDomain(nsIPrincipal *aOther, bool *aResult)
   return NS_OK;
 }
 
-bool
-BasePrincipal::FastSubsumes(nsIPrincipal* aOther)
-{
-  
-  
-  
-  
-  
-  
-  
-  auto other = Cast(aOther);
-  if (Kind() == eNullPrincipal && other->Kind() == eNullPrincipal) {
-    return this == other;
-  }
-  if (mOriginNoSuffix && FastEquals(aOther)) {
-    return true;
-  }
-
-  
-  return Subsumes(aOther, DontConsiderDocumentDomain);
-}
-
 NS_IMETHODIMP
 BasePrincipal::Subsumes(nsIPrincipal *aOther, bool *aResult)
 {
@@ -435,19 +365,6 @@ BasePrincipal::Subsumes(nsIPrincipal *aOther, bool *aResult)
   return NS_OK;
 }
 
-bool
-BasePrincipal::FastSubsumesConsideringDomain(nsIPrincipal* aOther)
-{
-  
-  
-  
-  if (!mDomainSet && !Cast(aOther)->mDomainSet) {
-    return FastSubsumes(aOther);
-  }
-
-  return Subsumes(aOther, ConsiderDocumentDomain);
-}
-
 NS_IMETHODIMP
 BasePrincipal::SubsumesConsideringDomain(nsIPrincipal *aOther, bool *aResult)
 {
@@ -456,18 +373,6 @@ BasePrincipal::SubsumesConsideringDomain(nsIPrincipal *aOther, bool *aResult)
   *aResult = FastSubsumesConsideringDomain(aOther);
 
   return NS_OK;
-}
-
-bool
-BasePrincipal::FastSubsumesConsideringDomainIgnoringFPD(nsIPrincipal* aOther)
-{
-  if (Kind() == eCodebasePrincipal &&
-      !dom::ChromeUtils::IsOriginAttributesEqualIgnoringFPD(
-            OriginAttributesRef(), aOther->OriginAttributesRef())) {
-    return false;
-  }
-
- return SubsumesInternal(aOther, ConsiderDocumentDomain);
 }
 
 NS_IMETHODIMP
