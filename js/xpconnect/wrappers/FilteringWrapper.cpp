@@ -16,6 +16,29 @@ using namespace js;
 
 namespace xpc {
 
+static JS::SymbolCode sCrossOriginWhitelistedSymbolCodes[] = {
+    JS::SymbolCode::toStringTag,
+    JS::SymbolCode::hasInstance,
+    JS::SymbolCode::isConcatSpreadable
+};
+
+bool
+IsCrossOriginWhitelistedSymbol(JSContext* cx, JS::HandleId id)
+{
+    if (!JSID_IS_SYMBOL(id)) {
+        return false;
+    }
+
+    JS::Symbol* symbol = JSID_TO_SYMBOL(id);
+    for (auto code : sCrossOriginWhitelistedSymbolCodes) {
+        if (symbol == JS::GetWellKnownSymbol(cx, code)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 template <typename Policy>
 static bool
 Filter(JSContext* cx, HandleObject wrapper, AutoIdVector& props)
@@ -189,6 +212,12 @@ CrossOriginXrayWrapper::getPropertyDescriptor(JSContext* cx,
         return false;
     if (desc.object()) {
         
+        
+        MOZ_ASSERT(!JSID_IS_SYMBOL(id),
+                   "What's this symbol-named property that appeared on a "
+                   "Window or Location instance?");
+
+        
         desc.object().set(wrapper);
 
         
@@ -197,7 +226,16 @@ CrossOriginXrayWrapper::getPropertyDescriptor(JSContext* cx,
         desc.attributesRef() &= ~JSPROP_PERMANENT;
         if (!desc.getter() && !desc.setter())
             desc.attributesRef() |= JSPROP_READONLY;
+    } else if (IsCrossOriginWhitelistedSymbol(cx, id)) {
+        
+        
+        
+        
+        
+        desc.setDataDescriptor(JS::UndefinedHandleValue, JSPROP_READONLY);
+        desc.object().set(wrapper);
     }
+
     return true;
 }
 
@@ -218,7 +256,27 @@ CrossOriginXrayWrapper::ownPropertyKeys(JSContext* cx, JS::Handle<JSObject*> wra
     
     
     
-    return SecurityXrayDOM::getPropertyKeys(cx, wrapper, JSITER_HIDDEN, props);
+    if (!SecurityXrayDOM::getPropertyKeys(cx, wrapper, JSITER_HIDDEN, props)) {
+        return false;
+    }
+
+    
+#ifdef DEBUG
+    for (size_t n = 0; n < props.length(); ++n) {
+        MOZ_ASSERT(!JSID_IS_SYMBOL(props[n]),
+                   "Unexpected existing symbol-name prop");
+    }
+#endif
+    if (!props.reserve(props.length() +
+                       ArrayLength(sCrossOriginWhitelistedSymbolCodes))) {
+        return false;
+    }
+
+    for (auto code : sCrossOriginWhitelistedSymbolCodes) {
+        props.infallibleAppend(SYMBOL_TO_JSID(JS::GetWellKnownSymbol(cx, code)));
+    }
+
+    return true;
 }
 
 bool
