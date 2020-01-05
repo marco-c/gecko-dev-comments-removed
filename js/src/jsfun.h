@@ -497,11 +497,13 @@ class JSFunction : public js::NativeObject
     }
 
     void setUnlazifiedScript(JSScript* script) {
-        
-        
         MOZ_ASSERT(isInterpretedLazy());
-        if (lazyScriptOrNull() && !lazyScript()->maybeScript())
-            lazyScript()->initScript(script);
+        if (lazyScriptOrNull()) {
+            
+            js::LazyScript::writeBarrierPre(lazyScriptOrNull());
+            if (!lazyScript()->maybeScript())
+                lazyScript()->initScript(script);
+        }
         flags_ &= ~INTERPRETED_LAZY;
         flags_ |= INTERPRETED;
         initScript(script);
