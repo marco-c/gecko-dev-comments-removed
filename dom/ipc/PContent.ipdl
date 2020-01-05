@@ -516,6 +516,11 @@ child:
                   nsCString ID, nsCString vendor);
 
     /**
+     * Send the remote type associated with the content process.
+     */
+    async RemoteType(nsString aRemoteType);
+
+    /**
      * Send ServiceWorkerRegistrationData to child process.
      */
     async InitServiceWorkers(ServiceWorkerConfiguration aConfig);
@@ -667,8 +672,7 @@ parent:
                  DomainPolicyClone domainPolicy,
                  StructuredCloneData initialData,
                  FontFamilyListEntry[] fontFamilies /* used on MacOSX only */,
-                 OptionalURIParams userContentSheetURL,
-                 LookAndFeelInt[] lookAndFeelIntCache);
+                 OptionalURIParams userContentSheetURL);
 
     sync CreateChildProcess(IPCTabContext context,
                             ProcessPriority priority,
@@ -768,6 +772,9 @@ parent:
         returns (bool isSecureURI);
 
     async AccumulateMixedContentHSTS(URIParams uri, bool active, bool hasHSTSPriming);
+
+    sync GetLookAndFeelCache()
+        returns (LookAndFeelInt[] lookAndFeelIntCache);
 
     nested(inside_cpow) async PHal();
 

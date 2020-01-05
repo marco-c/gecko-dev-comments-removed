@@ -642,7 +642,7 @@ ContentParent::JoinAllSubprocesses()
 }
 
  already_AddRefed<ContentParent>
-ContentParent::GetNewOrUsedBrowserProcess(bool aForBrowserElement,
+ContentParent::GetNewOrUsedBrowserProcess(const nsAString& aRemoteType,
                                           ProcessPriority aPriority,
                                           ContentParent* aOpener,
                                           bool aLargeAllocationProcess)
@@ -687,8 +687,7 @@ ContentParent::GetNewOrUsedBrowserProcess(bool aForBrowserElement,
     } while (currIdx != startIdx);
   }
 
-  RefPtr<ContentParent> p = new ContentParent(aOpener,
-                                              aForBrowserElement);
+  RefPtr<ContentParent> p = new ContentParent(aOpener, aRemoteType);
 
   if (!p->LaunchSubprocess(aPriority)) {
     return nullptr;
@@ -770,8 +769,7 @@ ContentParent::RecvCreateChildProcess(const IPCTabContext& aContext,
     return IPC_FAIL_NO_REASON(this);
   }
 
-  cp = GetNewOrUsedBrowserProcess( true,
-                                  aPriority, this);
+  cp = GetNewOrUsedBrowserProcess(DEFAULT_REMOTE_TYPE, aPriority, this);
 
   if (!cp) {
     *aCpId = 0;
@@ -963,9 +961,15 @@ ContentParent::CreateBrowser(const TabContext& aContext,
     if (aOpenerContentParent) {
       constructorSender = aOpenerContentParent;
     } else {
+      nsAutoString remoteType;
+      if (!aFrameElement->GetAttr(kNameSpaceID_None, nsGkAtoms::RemoteType,
+                                  remoteType)) {
+        remoteType.Assign(DEFAULT_REMOTE_TYPE);
+      }
+
       constructorSender =
-        GetNewOrUsedBrowserProcess(aContext.IsMozBrowserElement(),
-                                   initialPriority, nullptr, aFreshProcess);
+        GetNewOrUsedBrowserProcess(remoteType, initialPriority, nullptr,
+                                   aFreshProcess);
       if (!constructorSender) {
         return nullptr;
       }
@@ -1092,6 +1096,8 @@ ContentParent::Init()
     cpId.AppendInt(static_cast<uint64_t>(this->ChildID()));
     obs->NotifyObservers(static_cast<nsIObserver*>(this), "ipc:content-created", cpId.get());
   }
+
+  Unused << SendRemoteType(mRemoteType);
 
 #ifdef ACCESSIBILITY
   
@@ -1767,10 +1773,11 @@ ContentParent::LaunchSubprocess(ProcessPriority aInitialPriority )
 }
 
 ContentParent::ContentParent(ContentParent* aOpener,
-                             bool aIsForBrowser)
+                             const nsAString& aRemoteType)
   : nsIContentParent()
   , mOpener(aOpener)
-  , mIsForBrowser(aIsForBrowser)
+  , mRemoteType(aRemoteType)
+  , mIsForBrowser(!mRemoteType.IsEmpty())
   , mLargeAllocationProcess(false)
 {
   InitializeMembers();  
@@ -2479,8 +2486,7 @@ ContentParent::RecvGetXPCOMProcessAttributes(bool* aIsOffline,
                                              DomainPolicyClone* domainPolicy,
                                              StructuredCloneData* aInitialData,
                                              InfallibleTArray<FontFamilyListEntry>* fontFamilies,
-                                             OptionalURIParams* aUserContentCSSURL,
-                                             nsTArray<LookAndFeelInt>* aLookAndFeelIntCache)
+                                             OptionalURIParams* aUserContentCSSURL)
 {
   nsCOMPtr<nsIIOService> io(do_GetIOService());
   MOZ_ASSERT(io, "No IO service?");
@@ -2545,7 +2551,6 @@ ContentParent::RecvGetXPCOMProcessAttributes(bool* aIsOffline,
 
   
   gfxPlatform::GetPlatform()->GetSystemFontFamilyList(fontFamilies);
-  *aLookAndFeelIntCache = LookAndFeel::GetIntCache();
 
   
   
@@ -3234,6 +3239,13 @@ ContentParent::RecvNSSU2FTokenSign(nsTArray<uint8_t>&& aApplication,
   if (NS_FAILED(rv)) {
     return IPC_FAIL_NO_REASON(this);
   }
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult
+ContentParent::RecvGetLookAndFeelCache(nsTArray<LookAndFeelInt>* aLookAndFeelIntCache)
+{
+  *aLookAndFeelIntCache = LookAndFeel::GetIntCache();
   return IPC_OK();
 }
 

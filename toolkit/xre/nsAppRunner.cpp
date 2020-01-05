@@ -888,6 +888,19 @@ nsXULAppInfo::GetUniqueProcessID(uint64_t* aResult)
   return NS_OK;
 }
 
+NS_IMETHODIMP
+nsXULAppInfo::GetRemoteType(nsAString& aRemoteType)
+{
+  if (XRE_IsContentProcess()) {
+    ContentChild* cc = ContentChild::GetSingleton();
+    aRemoteType.Assign(cc->GetRemoteType());
+  } else {
+    SetDOMStringToNull(aRemoteType);
+  }
+
+  return NS_OK;
+}
+
 static bool gBrowserTabsRemoteAutostart = false;
 static uint64_t gBrowserTabsRemoteStatus = 0;
 static bool gBrowserTabsRemoteAutostartInitialized = false;
@@ -2748,18 +2761,18 @@ static struct SavedVar {
 
 static void SaveStateForAppInitiatedRestart()
 {
-  for (auto & savedVar : gSavedVars) {
-    const char *s = PR_GetEnv(savedVar.name);
+  for (size_t i = 0; i < ArrayLength(gSavedVars); ++i) {
+    const char *s = PR_GetEnv(gSavedVars[i].name);
     if (s)
-      savedVar.value = PR_smprintf("%s=%s", savedVar.name, s);
+      gSavedVars[i].value = PR_smprintf("%s=%s", gSavedVars[i].name, s);
   }
 }
 
 static void RestoreStateForAppInitiatedRestart()
 {
-  for (auto & savedVar : gSavedVars) {
-    if (savedVar.value)
-      PR_SetEnv(savedVar.value);
+  for (size_t i = 0; i < ArrayLength(gSavedVars); ++i) {
+    if (gSavedVars[i].value)
+      PR_SetEnv(gSavedVars[i].value);
   }
 }
 

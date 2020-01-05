@@ -922,9 +922,7 @@ ContentChild::InitXPCOM()
                                 &isLangRTL, &haveBidiKeyboards,
                                 &mAvailableDictionaries,
                                 &clipboardCaps, &domainPolicy, &initialData,
-                                &mFontFamilies, &userContentSheetURL,
-                                &mLookAndFeelCache);
-
+                                &mFontFamilies, &userContentSheetURL);
   RecvSetOffline(isOffline);
   RecvSetConnectivity(isConnected);
   RecvSetCaptivePortalState(captivePortalState);
@@ -2376,6 +2374,21 @@ ContentChild::RecvAppInfo(const nsCString& version, const nsCString& buildID,
   mAppInfo.vendor.Assign(vendor);
 
   return IPC_OK();
+}
+
+mozilla::ipc::IPCResult
+ContentChild::RecvRemoteType(const nsString& aRemoteType)
+{
+  MOZ_ASSERT(DOMStringIsNull(mRemoteType));
+
+  mRemoteType.Assign(aRemoteType);
+  return IPC_OK();
+}
+
+const nsAString&
+ContentChild::GetRemoteType() const
+{
+  return mRemoteType;
 }
 
 mozilla::ipc::IPCResult
