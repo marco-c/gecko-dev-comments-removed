@@ -202,9 +202,6 @@ PROFILER_FUNC(bool profiler_is_active(), false)
 PROFILER_FUNC(bool profiler_feature_active(const char*), false)
 
 
-PROFILER_FUNC_VOID(profiler_responsiveness(const mozilla::TimeStamp& aTime))
-
-
 PROFILER_FUNC_VOID(profiler_set_frame_number(int frameNumber))
 
 

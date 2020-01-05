@@ -167,7 +167,6 @@ void TracerThread(void *arg)
 
   while (!sExit) {
     TimeStamp start(TimeStamp::Now());
-    profiler_responsiveness(start);
     PRIntervalTime next_sleep = interval;
 
     

@@ -72,8 +72,6 @@ Sampler* gSampler;
 
 bool stack_key_initialized;
 
-static mozilla::TimeStamp   sLastTracerEvent; 
-
 
 
 
@@ -956,14 +954,6 @@ profiler_is_active()
   
 
   return sIsProfiling;
-}
-
-void
-profiler_responsiveness(const mozilla::TimeStamp& aTime)
-{
-  MOZ_RELEASE_ASSERT(NS_IsMainThread());
-
-  sLastTracerEvent = aTime;
 }
 
 void
