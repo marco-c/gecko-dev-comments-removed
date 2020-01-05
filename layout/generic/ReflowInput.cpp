@@ -327,8 +327,8 @@ ReflowInput::SetComputedWidth(nscoord aComputedWidth)
   NS_PRECONDITION(aComputedWidth >= 0, "Invalid computed width");
   if (ComputedWidth() != aComputedWidth) {
     ComputedWidth() = aComputedWidth;
-    LayoutFrameType frameType = mFrame->Type();
-    if (frameType != LayoutFrameType::Viewport || 
+    FrameType frameType = mFrame->Type();
+    if (frameType != FrameType::Viewport || 
         mWritingMode.IsVertical()) {
       InitResizeFlags(mFrame->PresContext(), frameType);
     }
@@ -351,8 +351,8 @@ ReflowInput::SetComputedHeight(nscoord aComputedHeight)
   NS_PRECONDITION(aComputedHeight >= 0, "Invalid computed height");
   if (ComputedHeight() != aComputedHeight) {
     ComputedHeight() = aComputedHeight;
-    LayoutFrameType frameType = mFrame->Type();
-    if (frameType != LayoutFrameType::Viewport || !mWritingMode.IsVertical()) {
+    FrameType frameType = mFrame->Type();
+    if (frameType != FrameType::Viewport || !mWritingMode.IsVertical()) {
       InitResizeFlags(mFrame->PresContext(), frameType);
     }
   }
@@ -390,7 +390,7 @@ ReflowInput::Init(nsPresContext*     aPresContext,
   mStylePadding = mFrame->StylePadding();
   mStyleText = mFrame->StyleText();
 
-  LayoutFrameType type = mFrame->Type();
+  FrameType type = mFrame->Type();
 
   InitFrameType(type);
   InitCBReflowInput();
@@ -410,7 +410,7 @@ ReflowInput::Init(nsPresContext*     aPresContext,
       !(parent->IsScrollFrame() &&
         parent->StyleDisplay()->mOverflowY != NS_STYLE_OVERFLOW_HIDDEN)) {
     mFrame->AddStateBits(NS_FRAME_IN_CONSTRAINED_BSIZE);
-  } else if (type == LayoutFrameType::SVGForeignObject) {
+  } else if (type == FrameType::SVGForeignObject) {
     
     mFrame->AddStateBits(NS_FRAME_IN_CONSTRAINED_BSIZE);
   } else {
@@ -466,7 +466,7 @@ ReflowInput::Init(nsPresContext*     aPresContext,
     
     
     
-    if (type == LayoutFrameType::ColumnSet &&
+    if (type == FrameType::ColumnSet &&
         eStyleUnit_Auto == mStylePosition->ISize(mWritingMode).GetUnit()) {
       ComputedISize() = NS_UNCONSTRAINEDSIZE;
     } else {
@@ -476,7 +476,7 @@ ReflowInput::Init(nsPresContext*     aPresContext,
 
   LAYOUT_WARN_IF_FALSE((mFrameType == NS_CSS_FRAME_TYPE_INLINE &&
                         !mFrame->IsFrameOfType(nsIFrame::eReplaced)) ||
-                       type == LayoutFrameType::Text ||
+                       type == FrameType::Text ||
                        ComputedISize() != NS_UNCONSTRAINEDSIZE,
                        "have unconstrained inline-size; this should only "
                        "result from very large sizes, not attempts at "
@@ -516,13 +516,13 @@ void ReflowInput::InitCBReflowInput()
 
 
 static bool
-IsQuirkContainingBlockHeight(const ReflowInput* rs, LayoutFrameType aFrameType)
+IsQuirkContainingBlockHeight(const ReflowInput* rs, FrameType aFrameType)
 {
-  if (LayoutFrameType::Block == aFrameType ||
+  if (FrameType::Block == aFrameType ||
 #ifdef MOZ_XUL
-      LayoutFrameType::XULLabel == aFrameType ||
+      FrameType::XULLabel == aFrameType ||
 #endif
-      LayoutFrameType::Scroll == aFrameType) {
+      FrameType::Scroll == aFrameType) {
     
     
     if (NS_AUTOHEIGHT == rs->ComputedHeight()) {
@@ -535,8 +535,7 @@ IsQuirkContainingBlockHeight(const ReflowInput* rs, LayoutFrameType aFrameType)
 }
 
 void
-ReflowInput::InitResizeFlags(nsPresContext* aPresContext,
-                             LayoutFrameType aFrameType)
+ReflowInput::InitResizeFlags(nsPresContext* aPresContext, FrameType aFrameType)
 {
   SetBResize(false);
   SetIResize(false);
@@ -810,7 +809,7 @@ ReflowInput::GetContainingBlockContentISize(WritingMode aWritingMode) const
 }
 
 void
-ReflowInput::InitFrameType(LayoutFrameType aFrameType)
+ReflowInput::InitFrameType(FrameType aFrameType)
 {
   const nsStyleDisplay *disp = mStyleDisplay;
   nsCSSFrameType frameType;
@@ -824,7 +823,7 @@ ReflowInput::InitFrameType(LayoutFrameType aFrameType)
 
   DISPLAY_INIT_TYPE(mFrame, this);
 
-  if (aFrameType == LayoutFrameType::Table) {
+  if (aFrameType == FrameType::Table) {
     mFrameType = NS_CSS_FRAME_TYPE_BLOCK;
     return;
   }
@@ -1122,7 +1121,7 @@ struct nsHypotheticalPosition {
 static bool
 GetIntrinsicSizeFor(nsIFrame* aFrame,
                     nsSize& aIntrinsicSize,
-                    LayoutFrameType aFrameType)
+                    FrameType aFrameType)
 {
   
   bool success = false;
@@ -1131,7 +1130,7 @@ GetIntrinsicSizeFor(nsIFrame* aFrame,
   
   
   
-  if (aFrameType == LayoutFrameType::Image) {
+  if (aFrameType == FrameType::Image) {
     nsImageFrame* imageFrame = (nsImageFrame*)aFrame;
 
     if (NS_SUCCEEDED(imageFrame->GetIntrinsicImageSize(aIntrinsicSize))) {
@@ -1259,7 +1258,7 @@ ReflowInput::CalculateHypotheticalPosition(
   nsIFrame* aPlaceholderFrame,
   const ReflowInput* cbrs,
   nsHypotheticalPosition& aHypotheticalPos,
-  LayoutFrameType aFrameType) const
+  FrameType aFrameType) const
 {
   NS_ASSERTION(mStyleDisplay->mOriginalDisplay != StyleDisplay::None,
                "mOriginalDisplay has not been properly initialized");
@@ -1558,14 +1557,14 @@ void
 ReflowInput::InitAbsoluteConstraints(nsPresContext* aPresContext,
                                      const ReflowInput* cbrs,
                                      const LogicalSize& aCBSize,
-                                     LayoutFrameType aFrameType)
+                                     FrameType aFrameType)
 {
   WritingMode wm = GetWritingMode();
   WritingMode cbwm = cbrs->GetWritingMode();
   NS_PRECONDITION(aCBSize.BSize(cbwm) != NS_AUTOHEIGHT,
                   "containing block bsize must be constrained");
 
-  NS_ASSERTION(aFrameType != LayoutFrameType::Table,
+  NS_ASSERTION(aFrameType != FrameType::Table,
                "InitAbsoluteConstraints should not be called on table frames");
   NS_ASSERTION(mFrame->GetStateBits() & NS_FRAME_OUT_OF_FLOW,
                "Why are we here?");
@@ -1963,14 +1962,14 @@ CalcQuirkContainingBlockHeight(const ReflowInput* aCBReflowInput)
 
   const ReflowInput* rs = aCBReflowInput;
   for (; rs; rs = rs->mParentReflowInput) {
-    LayoutFrameType frameType = rs->mFrame->Type();
+    FrameType frameType = rs->mFrame->Type();
     
     
-    if (LayoutFrameType::Block == frameType ||
+    if (FrameType::Block == frameType ||
 #ifdef MOZ_XUL
-        LayoutFrameType::XULLabel == frameType ||
+        FrameType::XULLabel == frameType ||
 #endif
-        LayoutFrameType::Scroll == frameType) {
+        FrameType::Scroll == frameType) {
 
       secondAncestorRI = firstAncestorRI;
       firstAncestorRI = rs;
@@ -1986,9 +1985,9 @@ CalcQuirkContainingBlockHeight(const ReflowInput* aCBReflowInput)
           continue;
         }
       }
-    } else if (LayoutFrameType::Canvas == frameType) {
+    } else if (FrameType::Canvas == frameType) {
       
-    } else if (LayoutFrameType::PageContent == frameType) {
+    } else if (FrameType::PageContent == frameType) {
       nsIFrame* prevInFlow = rs->mFrame->GetPrevInFlow();
       
       if (prevInFlow) 
@@ -2000,15 +1999,15 @@ CalcQuirkContainingBlockHeight(const ReflowInput* aCBReflowInput)
 
     
     
-    result = (LayoutFrameType::PageContent == frameType) ? rs->AvailableHeight()
-                                                         : rs->ComputedHeight();
+    result = (FrameType::PageContent == frameType) ? rs->AvailableHeight()
+                                                   : rs->ComputedHeight();
     
     if (NS_AUTOHEIGHT == result) return result;
 
     
     
-    if ((LayoutFrameType::Canvas == frameType) ||
-        (LayoutFrameType::PageContent == frameType)) {
+    if ((FrameType::Canvas == frameType) ||
+        (FrameType::PageContent == frameType)) {
 
       result -= GetBlockMarginBorderPadding(firstAncestorRI);
       result -= GetBlockMarginBorderPadding(secondAncestorRI);
@@ -2033,7 +2032,7 @@ CalcQuirkContainingBlockHeight(const ReflowInput* aCBReflowInput)
 
     }
     
-    else if (LayoutFrameType::Block == frameType && rs->mParentReflowInput &&
+    else if (FrameType::Block == frameType && rs->mParentReflowInput &&
              rs->mParentReflowInput->mFrame->IsCanvasFrame()) {
       
       result -= GetBlockMarginBorderPadding(secondAncestorRI);
@@ -2162,7 +2161,7 @@ ReflowInput::InitConstraints(nsPresContext* aPresContext,
                              const LogicalSize& aContainingBlockSize,
                              const nsMargin* aBorder,
                              const nsMargin* aPadding,
-                             LayoutFrameType aFrameType)
+                             FrameType aFrameType)
 {
   WritingMode wm = GetWritingMode();
   DISPLAY_INIT_CONSTRAINTS(mFrame, this,
@@ -2201,7 +2200,8 @@ ReflowInput::InitConstraints(nsPresContext* aPresContext,
   } else {
     
     const ReflowInput* cbrs = mCBReflowInput;
-    NS_ASSERTION(nullptr != cbrs, "no containing block");
+    MOZ_ASSERT(cbrs, "no containing block");
+    MOZ_ASSERT(mFrame->GetParent());
 
     
     
@@ -2211,7 +2211,7 @@ ReflowInput::InitConstraints(nsPresContext* aPresContext,
 
     
     
-    LayoutFrameType fType;
+    FrameType fType;
     if (NS_AUTOHEIGHT == cbSize.BSize(wm)) {
       
       
@@ -2398,7 +2398,7 @@ ReflowInput::InitConstraints(nsPresContext* aPresContext,
       }
 
       nsIFrame* alignCB = mFrame->GetParent();
-      if (alignCB && alignCB->IsTableWrapperFrame() && alignCB->GetParent()) {
+      if (alignCB->IsTableWrapperFrame() && alignCB->GetParent()) {
         
         if (alignCB->GetParent()->IsGridContainerFrame()) {
           alignCB = alignCB->GetParent();
@@ -2423,9 +2423,9 @@ ReflowInput::InitConstraints(nsPresContext* aPresContext,
         
         
         if (isBlock &&
-            ((aFrameType == LayoutFrameType::Legend &&
+            ((aFrameType == FrameType::Legend &&
               mFrame->StyleContext()->GetPseudo() != nsCSSAnonBoxes::scrolledContent) ||
-             (aFrameType == LayoutFrameType::Scroll &&
+             (aFrameType == FrameType::Scroll &&
               mFrame->GetContentInsertionFrame()->IsLegendFrame()) ||
              (mCBReflowInput &&
               mCBReflowInput->GetWritingMode().IsOrthogonalTo(mWritingMode)))) {
@@ -2433,7 +2433,7 @@ ReflowInput::InitConstraints(nsPresContext* aPresContext,
             ComputeSizeFlags(computeSizeFlags | ComputeSizeFlags::eShrinkWrap);
         }
 
-        if (alignCB && alignCB->IsFlexContainerFrame()) {
+        if (alignCB->IsFlexContainerFrame()) {
           computeSizeFlags =
             ComputeSizeFlags(computeSizeFlags | ComputeSizeFlags::eShrinkWrap);
 
@@ -2474,8 +2474,7 @@ ReflowInput::InitConstraints(nsPresContext* aPresContext,
       
       if (isBlock && !IsSideCaption(mFrame, mStyleDisplay, cbwm) &&
           mStyleDisplay->mDisplay != StyleDisplay::InlineTable &&
-          (!alignCB || (!alignCB->IsFlexContainerFrame() &&
-                        !alignCB->IsGridContainerFrame()))) {
+          !alignCB->IsFlexOrGridContainer()) {
         CalculateBlockSideMargins(aFrameType);
       }
     }
@@ -2503,7 +2502,7 @@ UpdateProp(FrameProperties& aProps,
 void
 SizeComputationInput::InitOffsets(WritingMode aWM,
                                   const LogicalSize& aPercentBasis,
-                                  LayoutFrameType aFrameType,
+                                  FrameType aFrameType,
                                   ReflowInputFlags aFlags,
                                   const nsMargin* aBorder,
                                   const nsMargin* aPadding)
@@ -2608,7 +2607,7 @@ SizeComputationInput::InitOffsets(WritingMode aWM,
   }
   ComputedPhysicalBorderPadding() += ComputedPhysicalPadding();
 
-  if (aFrameType == LayoutFrameType::Table) {
+  if (aFrameType == FrameType::Table) {
     nsTableFrame *tableFrame = static_cast<nsTableFrame*>(mFrame);
 
     if (tableFrame->IsBorderCollapse()) {
@@ -2624,7 +2623,7 @@ SizeComputationInput::InitOffsets(WritingMode aWM,
     
     
     ComputedPhysicalMargin().SizeTo(0, 0, 0, 0);
-  } else if (aFrameType == LayoutFrameType::Scrollbar) {
+  } else if (aFrameType == FrameType::Scrollbar) {
     
     
     
@@ -2646,7 +2645,7 @@ SizeComputationInput::InitOffsets(WritingMode aWM,
 
 
 void
-ReflowInput::CalculateBlockSideMargins(LayoutFrameType aFrameType)
+ReflowInput::CalculateBlockSideMargins(FrameType aFrameType)
 {
   
   
@@ -2709,7 +2708,7 @@ ReflowInput::CalculateBlockSideMargins(LayoutFrameType aFrameType)
     
     
     const ReflowInput* prs = mParentReflowInput;
-    if (aFrameType == LayoutFrameType::Table) {
+    if (aFrameType == FrameType::Table) {
       NS_ASSERTION(prs->mFrame->IsTableWrapperFrame(),
                    "table not inside table wrapper");
       
@@ -2922,17 +2921,17 @@ SizeComputationInput::ComputeMargin(WritingMode aWM,
 bool
 SizeComputationInput::ComputePadding(WritingMode aWM,
                                      const LogicalSize& aPercentBasis,
-                                     LayoutFrameType aFrameType)
+                                     FrameType aFrameType)
 {
   
   const nsStylePadding *stylePadding = mFrame->StylePadding();
   bool isCBDependent = !stylePadding->GetPadding(ComputedPhysicalPadding());
   
   
-  if (LayoutFrameType::TableRowGroup == aFrameType ||
-      LayoutFrameType::TableColGroup == aFrameType ||
-      LayoutFrameType::TableRow      == aFrameType ||
-      LayoutFrameType::TableCol      == aFrameType) {
+  if (FrameType::TableRowGroup == aFrameType ||
+      FrameType::TableColGroup == aFrameType ||
+      FrameType::TableRow      == aFrameType ||
+      FrameType::TableCol      == aFrameType) {
     ComputedPhysicalPadding().SizeTo(0,0,0,0);
   }
   else if (isCBDependent) {
