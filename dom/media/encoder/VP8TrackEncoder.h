@@ -53,6 +53,17 @@ private:
   nsresult PrepareRawFrame(VideoChunk &aChunk);
 
   
+  nsresult Reconfigure(int32_t aWidth, int32_t aHeight,
+                       int32_t aDisplayWidth, int32_t aDisplayHeight);
+
+  
+  void Destroy();
+
+  
+  nsresult SetConfigurationValues(int32_t aWidth, int32_t aHeight, int32_t aDisplayWidth,
+                                  int32_t aDisplayHeight, vpx_codec_enc_cfg_t& config);
+
+  
   StreamTime mEncodedTimestamp;
 
   
