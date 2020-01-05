@@ -128,26 +128,38 @@ nsSMILCompositor::ClearAnimationEffects()
 UniquePtr<nsISMILAttr>
 nsSMILCompositor::CreateSMILAttr()
 {
-  nsCSSPropertyID propID =
-    nsCSSProps::LookupProperty(nsDependentAtomString(mKey.mAttributeName),
-                               CSSEnabledState::eForAllContent);
-  if (nsSMILCSSProperty::IsPropertyAnimatable(propID)) {
-    
-    
-    
-    
-    
-    bool animateAsAttr = (mKey.mAttributeName == nsGkAtoms::width ||
-                          mKey.mAttributeName == nsGkAtoms::height) &&
-                         mKey.mElement->GetNameSpaceID() == kNameSpaceID_SVG &&
-                         !mKey.mElement->IsAttributeMapped(mKey.mAttributeName);
-    if (!animateAsAttr) {
-      return MakeUnique<nsSMILCSSProperty>(propID, mKey.mElement.get());
-    }
+  nsCSSPropertyID propID = GetCSSPropertyToAnimate();
+
+  if (propID != eCSSProperty_UNKNOWN) {
+    return MakeUnique<nsSMILCSSProperty>(propID, mKey.mElement.get());
   }
 
   return mKey.mElement->GetAnimatedAttr(mKey.mAttributeNamespaceID,
                                         mKey.mAttributeName);
+}
+
+nsCSSPropertyID
+nsSMILCompositor::GetCSSPropertyToAnimate() const
+{
+  nsCSSPropertyID propID =
+    nsCSSProps::LookupProperty(nsDependentAtomString(mKey.mAttributeName),
+                               CSSEnabledState::eForAllContent);
+
+  if (!nsSMILCSSProperty::IsPropertyAnimatable(propID)) {
+    return eCSSProperty_UNKNOWN;
+  }
+
+  
+  
+  
+  
+  
+  bool animateAsAttr = (mKey.mAttributeName == nsGkAtoms::width ||
+                        mKey.mAttributeName == nsGkAtoms::height) &&
+                       mKey.mElement->GetNameSpaceID() == kNameSpaceID_SVG &&
+                       !mKey.mElement->IsAttributeMapped(mKey.mAttributeName);
+
+  return animateAsAttr ? eCSSProperty_UNKNOWN : propID;
 }
 
 uint32_t
