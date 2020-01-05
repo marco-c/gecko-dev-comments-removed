@@ -5,6 +5,7 @@
 from __future__ import absolute_import, unicode_literals
 
 import gyp
+import gyp.msvs_emulation
 import sys
 import os
 import types
@@ -12,6 +13,7 @@ import mozpack.path as mozpath
 from mozpack.files import FileFinder
 from .sandbox import alphabetical_sorted
 from .context import (
+    ObjDirPath,
     SourcePath,
     TemplateContext,
     VARIABLES,
@@ -39,12 +41,19 @@ chrome_src = mozpath.abspath(mozpath.join(mozpath.dirname(gyp.__file__),
 script_dir = mozpath.join(chrome_src, 'build')
 
 
+def encode(value):
+    if isinstance(value, unicode):
+        return value.encode('utf-8')
+    return value
+
+
+
 generator_default_variables = {
 }
-for dirname in ['INTERMEDIATE_DIR', 'SHARED_INTERMEDIATE_DIR', 'PRODUCT_DIR',
-                'LIB_DIR', 'SHARED_LIB_DIR']:
+for dirname in [b'INTERMEDIATE_DIR', b'SHARED_INTERMEDIATE_DIR', b'PRODUCT_DIR',
+                b'LIB_DIR', b'SHARED_LIB_DIR']:
   
-  generator_default_variables[dirname] = b'dir'
+  generator_default_variables[dirname] = b'$' + dirname
 
 for unused in ['RULE_INPUT_PATH', 'RULE_INPUT_ROOT', 'RULE_INPUT_NAME',
                'RULE_INPUT_DIRNAME', 'RULE_INPUT_EXT',
@@ -68,13 +77,37 @@ class GypContext(TemplateContext):
             allowed_variables=VARIABLES, config=config)
 
 
-def encode(value):
-    if isinstance(value, unicode):
-        return value.encode('utf-8')
-    return value
+def handle_actions(actions, context, action_overrides):
+  idir = '$INTERMEDIATE_DIR/'
+  for action in actions:
+    name = action['action_name']
+    if name not in action_overrides:
+      raise RuntimeError('GYP action %s not listed in action_overrides' % name)
+    outputs = action['outputs']
+    if len(outputs) > 1:
+      raise NotImplementedError('GYP actions with more than one output not supported: %s' % name)
+    output = outputs[0]
+    if not output.startswith(idir):
+      raise NotImplementedError('GYP actions outputting to somewhere other than <(INTERMEDIATE_DIR) not supported: %s' % output)
+    output = output[len(idir):]
+    context['GENERATED_FILES'] += [output]
+    g = context['GENERATED_FILES'][output]
+    g.script = action_overrides[name]
+    g.inputs = action['inputs']
 
+def handle_copies(copies, context):
+  dist = '$PRODUCT_DIR/dist/'
+  for copy in copies:
+    dest = copy['destination']
+    if not dest.startswith(dist):
+      raise NotImplementedError('GYP copies to somewhere other than <(PRODUCT_DIR)/dist not supported: %s' % dest)
+    dest_paths = dest[len(dist):].split('/')
+    exports = context['EXPORTS']
+    while dest_paths:
+      exports = getattr(exports, dest_paths.pop(0))
+    exports += sorted(copy['files'], key=lambda x: x.lower())
 
-def read_from_gyp(config, path, output, vars, non_unified_sources = set()):
+def read_from_gyp(config, path, output, vars, no_chromium, no_unified, action_overrides, non_unified_sources = set()):
     """Read a gyp configuration and emits GypContexts for the backend to
     process.
 
@@ -84,10 +117,17 @@ def read_from_gyp(config, path, output, vars, non_unified_sources = set()):
     processor.
     """
 
+    is_win = config.substs['OS_TARGET'] == 'WINNT'
+    is_msvc = bool(config.substs['_MSC_VER'])
     
     
     path = encode(path)
     str_vars = dict((name, encode(value)) for name, value in vars.items())
+    if is_msvc:
+        
+        
+        os.environ['GYP_MSVS_OVERRIDE_PATH'] = 'fake_path'
+        os.environ['GYP_MSVS_VERSION'] = config.substs['MSVS_VERSION']
 
     params = {
         b'parallel': False,
@@ -96,18 +136,23 @@ def read_from_gyp(config, path, output, vars, non_unified_sources = set()):
         b'root_targets': None,
     }
 
-    
-    includes = [encode(mozpath.join(script_dir, 'common.gypi'))]
-    finder = FileFinder(chrome_src, find_executables=False)
-    includes.extend(encode(mozpath.join(chrome_src, name))
-        for name, _ in finder.find('*/supplement.gypi'))
+    if no_chromium:
+      includes = []
+      depth = mozpath.dirname(path)
+    else:
+      depth = chrome_src
+      
+      includes = [encode(mozpath.join(script_dir, 'common.gypi'))]
+      finder = FileFinder(chrome_src, find_executables=False)
+      includes.extend(encode(mozpath.join(chrome_src, name))
+          for name, _ in finder.find('*/supplement.gypi'))
 
     
     generator, flat_list, targets, data = \
         gyp.Load([path], format=b'mozbuild',
             default_variables=str_vars,
             includes=includes,
-            depth=encode(chrome_src),
+            depth=encode(depth),
             params=params)
 
     
@@ -146,60 +191,134 @@ def read_from_gyp(config, path, output, vars, non_unified_sources = set()):
                                'in %s' % (c, target_name, build_file))
         target_conf = spec['configurations'][c]
 
+        if 'actions' in spec:
+          handle_actions(spec['actions'], context, action_overrides)
+        if 'copies' in spec:
+          handle_copies(spec['copies'], context)
+
+        use_libs = []
+        libs = []
+        def add_deps(s):
+            for t in s.get('dependencies', []) + s.get('dependencies_original', []):
+                ty = targets[t]['type']
+                if ty in ('static_library', 'shared_library'):
+                    use_libs.append(targets[t]['target_name'])
+                
+                
+                if ty in ('static_library', 'none'):
+                    add_deps(targets[t])
+            libs.extend(spec.get('libraries', []))
+        
+        
+        
+        if no_chromium:
+            add_deps(spec)
+
+        os_libs = []
+        for l in libs:
+          if l.startswith('-'):
+              os_libs.append(l)
+          elif l.endswith('.lib'):
+              os_libs.append(l[:-4])
+          elif l:
+            
+            use_libs.append(os.path.basename(l))
+
         if spec['type'] == 'none':
+          if not ('actions' in spec or 'copies' in spec):
             continue
-        elif spec['type'] == 'static_library':
+        elif spec['type'] in ('static_library', 'shared_library', 'executable'):
             
             
             name = spec['target_name']
-            if name.startswith('lib'):
-                name = name[3:]
-            
-            context['LIBRARY_NAME'] = name.decode('utf-8')
+            if spec['type'] in ('static_library', 'shared_library'):
+                if name.startswith('lib'):
+                    name = name[3:]
+                
+                context['LIBRARY_NAME'] = name.decode('utf-8')
+            else:
+                context['PROGRAM'] = name.decode('utf-8')
+            if spec['type'] == 'shared_library':
+                context['FORCE_SHARED_LIB'] = True
+            elif spec['type'] == 'static_library' and spec.get('variables', {}).get('no_expand_libs', '0') == '1':
+                
+                
+                
+                
+                context['NO_EXPAND_LIBS'] = True
+            if use_libs:
+                context['USE_LIBS'] = sorted(use_libs, key=lambda s: s.lower())
+            if os_libs:
+                context['OS_LIBS'] = os_libs
             
             sources = []
             unified_sources = []
             extensions = set()
+            use_defines_in_asflags = False
             for f in spec.get('sources', []):
                 ext = mozpath.splitext(f)[-1]
                 extensions.add(ext)
-                s = SourcePath(context, f)
+                if f.startswith('$INTERMEDIATE_DIR/'):
+                  s = ObjDirPath(context, f.replace('$INTERMEDIATE_DIR/', '!'))
+                else:
+                  s = SourcePath(context, f)
                 if ext == '.h':
                     continue
-                if ext != '.S' and s not in non_unified_sources:
+                if ext == '.def':
+                    context['SYMBOLS_FILE'] = s
+                elif ext != '.S' and not no_unified and s not in non_unified_sources:
                     unified_sources.append(s)
                 else:
                     sources.append(s)
+                
+                
+                if ext == '.s':
+                    use_defines_in_asflags = True
 
             
             context['SOURCES'] = alphabetical_sorted(sources)
             context['UNIFIED_SOURCES'] = alphabetical_sorted(unified_sources)
 
-            for define in target_conf.get('defines', []):
+            defines = target_conf.get('defines', [])
+            if is_msvc and no_chromium:
+                msvs_settings = gyp.msvs_emulation.MsvsSettings(spec, {})
+                defines.extend(msvs_settings.GetComputedDefines(c))
+            for define in defines:
                 if '=' in define:
                     name, value = define.split('=', 1)
                     context['DEFINES'][name] = value
                 else:
                     context['DEFINES'][define] = True
 
+            product_dir_dist = '$PRODUCT_DIR/dist/'
             for include in target_conf.get('include_dirs', []):
-                
-                
-                
-                
-                
-                
-                
-                
-                if include.startswith('/'):
-                    resolved = mozpath.abspath(mozpath.join(config.topsrcdir, include[1:]))
+                if include.startswith(product_dir_dist):
+                    
+                    
+                    include = '!/dist/include/' + include[len(product_dir_dist):]
+                elif include.startswith(config.topobjdir):
+                    
+                    include = '!/' + mozpath.relpath(include, config.topobjdir)
                 else:
-                    resolved = mozpath.abspath(mozpath.join(mozpath.dirname(build_file), include))
-                if not os.path.exists(resolved):
-                    continue
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  if include.startswith('/'):
+                      resolved = mozpath.abspath(mozpath.join(config.topsrcdir, include[1:]))
+                  else:
+                      resolved = mozpath.abspath(mozpath.join(mozpath.dirname(build_file), include))
+                  if not os.path.exists(resolved):
+                      continue
                 context['LOCAL_INCLUDES'] += [include]
 
             context['ASFLAGS'] = target_conf.get('asflags_mozilla', [])
+            if use_defines_in_asflags and defines:
+                context['ASFLAGS'] += ['-D' + d for d in defines]
             flags = target_conf.get('cflags_mozilla', [])
             if flags:
                 suffix_map = {
@@ -232,17 +351,18 @@ def read_from_gyp(config, path, output, vars, non_unified_sources = set()):
             
             raise NotImplementedError('Unsupported gyp target type: %s' % spec['type'])
 
-        
-        
-        context['LOCAL_INCLUDES'] += [
-            '!/ipc/ipdl/_ipdlheaders',
-            '/ipc/chromium/src',
-            '/ipc/glue',
-        ]
-        
-        if config.substs['OS_TARGET'] == 'WINNT':
-            context['DEFINES']['UNICODE'] = True
-            context['DEFINES']['_UNICODE'] = True
+        if not no_chromium:
+          
+          
+          context['LOCAL_INCLUDES'] += [
+              '!/ipc/ipdl/_ipdlheaders',
+              '/ipc/chromium/src',
+              '/ipc/glue',
+          ]
+          
+          if is_win:
+              context['DEFINES']['UNICODE'] = True
+              context['DEFINES']['_UNICODE'] = True
         context['DISABLE_STL_WRAPPING'] = True
 
         yield context
