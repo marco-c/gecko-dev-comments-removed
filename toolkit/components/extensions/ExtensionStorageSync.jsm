@@ -272,7 +272,26 @@ if (AppConstants.platform != "android") {
 
 
 
-    extensionIdToCollectionId: Task.async(function* (extensionId) {
+    extensionIdToCollectionId(extensionId) {
+      return this.hashWithExtensionSalt(CommonUtils.encodeUTF8(extensionId), extensionId)
+        .then(hash => `ext-${hash}`);
+    },
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+    hashWithExtensionSalt: Task.async(function* (value, extensionId) {
       const salts = yield this.getSalts();
       const saltBase64 = salts && salts[extensionId];
       if (!saltBase64) {
@@ -286,9 +305,9 @@ if (AppConstants.platform != "android") {
       hasher.init(hasher.SHA256);
 
       const salt = atob(saltBase64);
-      const message = `${salt}\x00${CommonUtils.encodeUTF8(extensionId)}`;
+      const message = `${salt}\x00${value}`;
       const hash = CryptoUtils.digestBytes(message, hasher);
-      return `ext-${CommonUtils.encodeBase64URL(hash, false)}`;
+      return CommonUtils.encodeBase64URL(hash, false);
     }),
 
     
@@ -352,6 +371,12 @@ if (AppConstants.platform != "android") {
 
 
 
+
+
+
+
+
+
   CollectionKeyEncryptionRemoteTransformer = class extends EncryptionRemoteTransformer {
     constructor(extensionId) {
       super();
@@ -370,6 +395,18 @@ if (AppConstants.platform != "android") {
         }
         return collectionKeys.keyForCollection(self.extensionId);
       });
+    }
+
+    getEncodedRecordId(record) {
+      
+      
+      
+      const id = CommonUtils.encodeUTF8(record.id);
+      
+      
+      
+      return cryptoCollection.hashWithExtensionSalt(id, this.extensionId)
+        .then(hash => `id-${hash}`);
     }
   };
   global.CollectionKeyEncryptionRemoteTransformer = CollectionKeyEncryptionRemoteTransformer;
