@@ -48,7 +48,7 @@ WebRenderDisplayItemLayer::RenderLayer(wr::DisplayListBuilder& aBuilder,
     wr::DisplayListBuilder builder(WrBridge()->GetPipeline());
     
     mParentCommands.Clear();
-    mItem->CreateWebRenderCommands(builder, mParentCommands, this);
+    mItem->CreateWebRenderCommands(builder, aSc, mParentCommands, this);
     mBuiltDisplayList = builder.Finalize();
   } else {
     

@@ -44,6 +44,7 @@ public:
                                              LayerManager* aManager,
                                              const ContainerLayerParameters& aContainerParameters) override;
   virtual void CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBuilder,
+                                       const StackingContextHelper& aSc,
                                        nsTArray<WebRenderParentCommand>& aParentCommands,
                                        mozilla::layers::WebRenderDisplayItemLayer* aLayer) override;
   virtual void Paint(nsDisplayListBuilder* aBuilder,
@@ -101,6 +102,7 @@ nsDisplayColumnRule::BuildLayer(nsDisplayListBuilder* aBuilder,
 
 void
 nsDisplayColumnRule::CreateWebRenderCommands(wr::DisplayListBuilder& aBuilder,
+                                             const StackingContextHelper& aSc,
                                              nsTArray<WebRenderParentCommand>& aParentCommands,
                                              WebRenderDisplayItemLayer* aLayer)
 {
@@ -129,7 +131,7 @@ NS_NewColumnSetFrame(nsIPresShell* aPresShell, nsStyleContext* aContext, nsFrame
 NS_IMPL_FRAMEARENA_HELPERS(nsColumnSetFrame)
 
 nsColumnSetFrame::nsColumnSetFrame(nsStyleContext* aContext)
-  : nsContainerFrame(aContext, LayoutFrameType::ColumnSet)
+  : nsContainerFrame(aContext, FrameType::ColumnSet)
   , mLastBalanceBSize(NS_INTRINSICSIZE)
 {
 }
