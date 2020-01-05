@@ -50,6 +50,17 @@ const MOBILE_ANNO = "MobileBookmarks";
 
 
 
+const FORBIDDEN_INCOMING_IDS = ["pinned", "places", "readinglist"];
+
+
+
+
+const FORBIDDEN_INCOMING_PARENT_IDS = ["pinned", "readinglist"];
+
+
+
+
+
 const IGNORED_SOURCES = [SOURCE_SYNC, SOURCE_IMPORT, SOURCE_IMPORT_REPLACE];
 
 
@@ -706,6 +717,14 @@ BookmarksEngine.prototype = {
     
     this._modified.set(localDupeGUID, { modified: now, deleted: true });
   },
+
+  
+  
+  _shouldDeleteRemotely(incomingItem) {
+    return FORBIDDEN_INCOMING_IDS.includes(incomingItem.id) ||
+           FORBIDDEN_INCOMING_PARENT_IDS.includes(incomingItem.parentid);
+  },
+
   getValidator() {
     return new BookmarkValidator();
   }
