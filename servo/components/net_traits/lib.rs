@@ -119,6 +119,12 @@ pub enum LoadConsumer {
 
 pub type ResourceTask = Sender<ControlMsg>;
 
+#[derive(PartialEq, Copy, Clone)]
+pub enum IncludeSubdomains {
+    Included,
+    NotIncluded
+}
+
 pub enum ControlMsg {
     
     Load(LoadData, LoadConsumer),
@@ -126,6 +132,8 @@ pub enum ControlMsg {
     SetCookiesForUrl(Url, String, CookieSource),
     
     GetCookiesForUrl(Url, Sender<Option<String>>, CookieSource),
+    
+    SetHSTSEntryForHost(String, IncludeSubdomains, Option<u64>),
     Exit
 }
 
