@@ -25,6 +25,9 @@
 
 
 
+
+
+
 #define NS_FRAME_TRACE_CALLS        0x1
 #define NS_FRAME_TRACE_PUSH_PULL    0x2
 #define NS_FRAME_TRACE_CHILD_REFLOW 0x4
@@ -36,7 +39,7 @@
 #define NS_FRAME_LOG(_bit,_args)                                \
   PR_BEGIN_MACRO                                                \
     if (NS_FRAME_LOG_TEST(nsFrame::sFrameLogModule,_bit)) {  \
-      PR_LogPrint _args;                                        \
+      printf_stderr _args; \
     }                                                           \
   PR_END_MACRO
 #else
