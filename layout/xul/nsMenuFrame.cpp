@@ -525,6 +525,8 @@ nsMenuFrame::HandleEvent(nsPresContext* aPresContext,
 
       
       mOpenTimer = do_CreateInstance("@mozilla.org/timer;1");
+      mOpenTimer->SetTarget(
+          mContent->OwnerDoc()->EventTargetFor(TaskCategory::Other));
       mOpenTimer->InitWithCallback(mTimerMediator, menuDelay, nsITimer::TYPE_ONE_SHOT);
     }
   }
@@ -1237,6 +1239,8 @@ nsMenuFrame::StartBlinking(WidgetGUIEvent* aEvent, bool aFlipChecked)
 
   
   mBlinkTimer = do_CreateInstance("@mozilla.org/timer;1");
+  mBlinkTimer->SetTarget(
+      mContent->OwnerDoc()->EventTargetFor(TaskCategory::Other));
   mBlinkTimer->InitWithCallback(mTimerMediator, kBlinkDelay, nsITimer::TYPE_ONE_SHOT);
   mBlinkState = 1;
 }
@@ -1480,8 +1484,8 @@ NS_IMPL_ISUPPORTS(nsMenuTimerMediator, nsITimerCallback)
 
 
 
-nsMenuTimerMediator::nsMenuTimerMediator(nsMenuFrame *aFrame) :
-  mFrame(aFrame)
+nsMenuTimerMediator::nsMenuTimerMediator(nsMenuFrame *aFrame)
+  : mFrame(aFrame)
 {
   NS_ASSERTION(mFrame, "Must have frame");
 }
@@ -1510,4 +1514,26 @@ NS_IMETHODIMP nsMenuTimerMediator::Notify(nsITimer* aTimer)
 void nsMenuTimerMediator::ClearFrame()
 {
   mFrame = nullptr;
+}
+
+
+
+
+
+NS_IMETHODIMP
+nsMenuTimerMediator::GetName(nsACString& aName)
+{
+  aName.AssignLiteral("nsMenuTimerMediator");
+  return NS_OK;
+}
+
+
+
+
+
+NS_IMETHODIMP
+nsMenuTimerMediator::SetName(const char* aName)
+{
+  
+  return NS_ERROR_NOT_IMPLEMENTED;
 }
