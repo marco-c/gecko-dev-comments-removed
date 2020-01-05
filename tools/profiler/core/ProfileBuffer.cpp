@@ -3,6 +3,7 @@
 
 
 
+
 #include "ProfileBuffer.h"
 
 ProfileBuffer::ProfileBuffer(int aEntrySize)
@@ -39,12 +40,14 @@ void ProfileBuffer::addTag(const ProfileBufferEntry& aTag)
   }
 }
 
-void ProfileBuffer::addTagThreadId(LastSample& aLS)
+void ProfileBuffer::addTagThreadId(int aThreadId, LastSample* aLS)
 {
-  
-  aLS.mGeneration = mGeneration;
-  aLS.mPos = mWritePos;
-  addTag(ProfileBufferEntry::ThreadId(aLS.mThreadId));
+  if (aLS) {
+    
+    aLS->mGeneration = mGeneration;
+    aLS->mPos = mWritePos;
+  }
+  addTag(ProfileBufferEntry::ThreadId(aThreadId));
 }
 
 void ProfileBuffer::addStoredMarker(ProfilerMarker *aStoredMarker) {

@@ -96,8 +96,6 @@ private:
 
   
   
-  
-  
   ProfileBuffer::LastSample mLastSample;
 };
 
