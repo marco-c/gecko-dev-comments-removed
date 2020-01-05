@@ -14,11 +14,6 @@ const { NetUtil } = Cu.import("resource://gre/modules/NetUtil.jsm", {});
 
 
 this.requireRawId = function (id, require) {
-  
-  if (id.endsWith(".properties") && !id.startsWith("raw!chrome://")) {
-    id = id.replace("raw!", "raw!chrome://");
-  }
-
   let uri = require.resolve(id.slice(4));
   
   
