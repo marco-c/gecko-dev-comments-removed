@@ -88,6 +88,7 @@ class ContainerLayer;
 class ImageLayer;
 class DisplayItemLayer;
 class ColorLayer;
+class CompositorAnimations;
 class CompositorBridgeChild;
 class TextLayer;
 class CanvasLayer;
@@ -1223,7 +1224,7 @@ public:
   void ClearAnimations();
   
   
-  void SetAnimations(const AnimationArray& aAnimations);
+  void SetCompositorAnimations(const CompositorAnimations& aCompositorAnimations);
   
   
   
@@ -1415,6 +1416,7 @@ public:
   
   
   AnimationArray& GetAnimations() { return mAnimations; }
+  uint64_t GetCompositorAnimationsId() { return mCompositorAnimationsId; }
   InfallibleTArray<AnimData>& GetAnimationData() { return mAnimationData; }
 
   uint64_t GetAnimationGeneration() { return mAnimationGeneration; }
@@ -1921,6 +1923,7 @@ protected:
   nsAutoPtr<gfx::Matrix4x4> mPendingTransform;
   gfx::Matrix4x4 mEffectiveTransform;
   AnimationArray mAnimations;
+  uint64_t mCompositorAnimationsId;
   
   nsAutoPtr<AnimationArray> mPendingAnimations;
   InfallibleTArray<AnimData> mAnimationData;
