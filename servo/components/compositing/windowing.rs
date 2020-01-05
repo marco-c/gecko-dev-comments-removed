@@ -65,6 +65,8 @@ pub enum WindowEvent {
     
     PinchZoom(f32),
     
+    ResetZoom,
+    
     Navigation(WindowNavigateMsg),
     
     Quit,
@@ -86,6 +88,7 @@ impl Debug for WindowEvent {
             WindowEvent::Scroll(..) => write!(f, "Scroll"),
             WindowEvent::Zoom(..) => write!(f, "Zoom"),
             WindowEvent::PinchZoom(..) => write!(f, "PinchZoom"),
+            WindowEvent::ResetZoom => write!(f, "ResetZoom"),
             WindowEvent::Navigation(..) => write!(f, "Navigation"),
             WindowEvent::Quit => write!(f, "Quit"),
         }
