@@ -747,35 +747,28 @@ SdpHelper::AddCommonExtmaps(
 
   UniquePtr<SdpExtmapAttributeList> localExtmap(new SdpExtmapAttributeList);
   auto& theirExtmap = remoteMsection.GetAttributeList().GetExtmap().mExtmaps;
-  for (auto i = theirExtmap.begin(); i != theirExtmap.end(); ++i) {
-    for (auto j = localExtensions.begin(); j != localExtensions.end(); ++j) {
-      
-      
-      if (i->extensionname == j->extensionname &&
-          (((i->direction == SdpDirectionAttribute::Direction::kSendrecv ||
-             i->direction == SdpDirectionAttribute::Direction::kSendonly) &&
-            (j->direction == SdpDirectionAttribute::Direction::kSendrecv ||
-             j->direction == SdpDirectionAttribute::Direction::kRecvonly)) ||
-
-           ((i->direction == SdpDirectionAttribute::Direction::kSendrecv ||
-             i->direction == SdpDirectionAttribute::Direction::kRecvonly) &&
-            (j->direction == SdpDirectionAttribute::Direction::kSendrecv ||
-             j->direction == SdpDirectionAttribute::Direction::kSendonly)))) {
-        auto k = *i; 
-        if (j->direction == SdpDirectionAttribute::Direction::kSendonly) {
-          k.direction = SdpDirectionAttribute::Direction::kRecvonly;
-        } else if (j->direction == SdpDirectionAttribute::Direction::kRecvonly) {
-          k.direction = SdpDirectionAttribute::Direction::kSendonly;
-        }
-        localExtmap->mExtmaps.push_back(k);
-
-        
-        
-        
-        if (localExtmap->mExtmaps.back().entry >= 4096) {
-          localExtmap->mExtmaps.back().entry = j->entry;
-        }
+  for (const auto& theirExt : theirExtmap) {
+    for (const auto& ourExt : localExtensions) {
+      if (theirExt.extensionname != ourExt.extensionname) {
+        continue;
       }
+
+      auto negotiatedExt = theirExt;
+
+      negotiatedExt.direction = ~negotiatedExt.direction & ourExt.direction;
+      if (negotiatedExt.direction ==
+            SdpDirectionAttribute::Direction::kInactive) {
+        continue;
+      }
+
+      
+      
+      
+      if (negotiatedExt.entry >= 4096) {
+        negotiatedExt.entry = ourExt.entry;
+      }
+
+      localExtmap->mExtmaps.push_back(negotiatedExt);
     }
   }
 
