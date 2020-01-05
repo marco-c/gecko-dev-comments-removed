@@ -1637,6 +1637,17 @@ nsScriptLoader::ProcessScriptElement(nsIScriptElement *aElement)
   }
 
   
+  
+  
+  
+  if (ModuleScriptsEnabled() &&
+      scriptKind == nsScriptKind::Classic &&
+      scriptContent->IsHTMLElement() &&
+      scriptContent->HasAttr(kNameSpaceID_None, nsGkAtoms::nomodule)) {
+    return false;
+  }
+
+  
   nsresult rv = NS_OK;
   RefPtr<nsScriptLoadRequest> request;
   if (aElement->GetScriptExternal()) {
