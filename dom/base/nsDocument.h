@@ -19,7 +19,7 @@
 #include "nsWeakReference.h"
 #include "nsWeakPtr.h"
 #include "nsTArray.h"
-#include "nsIDOMDocument.h"
+#include "nsIDOMXMLDocument.h"
 #include "nsIDOMDocumentXBL.h"
 #include "nsStubDocumentObserver.h"
 #include "nsIScriptGlobalObject.h"
@@ -485,8 +485,16 @@ protected:
 };
 
 
+
+
+
+
+
+
+
+
 class nsDocument : public nsIDocument,
-                   public nsIDOMDocument,
+                   public nsIDOMXMLDocument, 
                    public nsIDOMDocumentXBL,
                    public nsSupportsWeakReference,
                    public nsIScriptObjectPrincipal,
@@ -789,6 +797,9 @@ public:
 
   
   NS_DECL_NSIDOMDOCUMENT
+
+  
+  NS_DECL_NSIDOMXMLDOCUMENT
 
   
   NS_DECL_NSIDOMDOCUMENTXBL
