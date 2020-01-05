@@ -559,6 +559,10 @@ NewPropertyIteratorObject(JSContext* cx, unsigned flags)
 
         PropertyIteratorObject* res = &obj->as<PropertyIteratorObject>();
 
+        
+        
+        MOZ_ASSERT(!js::gc::IsInsideNursery(res));
+
         MOZ_ASSERT(res->numFixedSlots() == JSObject::ITER_CLASS_NFIXED_SLOTS);
         return res;
     }
