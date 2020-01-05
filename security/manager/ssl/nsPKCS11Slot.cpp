@@ -4,6 +4,8 @@
 
 #include "nsPKCS11Slot.h"
 
+#include <string.h>
+
 #include "mozilla/Casting.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Telemetry.h"
@@ -45,9 +47,7 @@ nsPKCS11Slot::refreshSlotInfo(const nsNSSShutDownPreventionLock& )
   
   const char* ccDesc =
     mozilla::BitwiseCast<char*, CK_UTF8CHAR*>(slotInfo.slotDescription);
-  
-  
-  mSlotDesc.Assign(ccDesc, PL_strnlen(ccDesc, sizeof(slotInfo.slotDescription)));
+  mSlotDesc.Assign(ccDesc, strnlen(ccDesc, sizeof(slotInfo.slotDescription)));
   mSlotDesc.Trim(" ", false, true);
 
   
@@ -55,7 +55,7 @@ nsPKCS11Slot::refreshSlotInfo(const nsNSSShutDownPreventionLock& )
     mozilla::BitwiseCast<char*, CK_UTF8CHAR*>(slotInfo.manufacturerID);
   mSlotManufacturerID.Assign(
     ccManID,
-    PL_strnlen(ccManID, sizeof(slotInfo.manufacturerID)));
+    strnlen(ccManID, sizeof(slotInfo.manufacturerID)));
   mSlotManufacturerID.Trim(" ", false, true);
 
   
