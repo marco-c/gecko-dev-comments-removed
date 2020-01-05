@@ -1248,8 +1248,7 @@ public:
                      const char* aTopic,
                      const char16_t* aData) override
   {
-    if (!mTabParent || !mObserverId) {
-      
+    if (!mTabParent) {
       
       return NS_OK;
     }
