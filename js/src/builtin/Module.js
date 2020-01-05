@@ -66,11 +66,11 @@ function ModuleGetExportedNames(exportStarSet = [])
 }
 
 
-function ModuleResolveExport(exportName, resolveSet = [], exportStarSet = [])
+function ModuleResolveExport(exportName, resolveSet = [])
 {
     if (!IsObject(this) || !IsModule(this)) {
         return callFunction(CallModuleMethodIfWrapped, this, exportName, resolveSet,
-                            exportStarSet, "ModuleResolveExport");
+                            "ModuleResolveExport");
     }
 
     
@@ -101,25 +101,16 @@ function ModuleResolveExport(exportName, resolveSet = [], exportStarSet = [])
         if (exportName === e.exportName) {
             let importedModule = CallModuleResolveHook(module, e.moduleRequest,
                                                        MODULE_STATE_INSTANTIATED);
-            let indirectResolution = callFunction(importedModule.resolveExport, importedModule,
-                                                  e.importName, resolveSet, exportStarSet);
-            if (indirectResolution !== null)
-                return indirectResolution;
+            return callFunction(importedModule.resolveExport, importedModule, e.importName,
+                                resolveSet);
         }
     }
 
     
     if (exportName === "default") {
         
-        ThrowSyntaxError(JSMSG_BAD_DEFAULT_EXPORT);
-    }
-
-    
-    if (callFunction(ArrayIncludes, exportStarSet, module))
         return null;
-
-    
-    _DefineDataProperty(exportStarSet, exportStarSet.length, module);
+    }
 
     
     let starResolution = null;
@@ -131,7 +122,7 @@ function ModuleResolveExport(exportName, resolveSet = [], exportStarSet = [])
         let importedModule = CallModuleResolveHook(module, e.moduleRequest,
                                                    MODULE_STATE_INSTANTIATED);
         let resolution = callFunction(importedModule.resolveExport, importedModule,
-                                      exportName, resolveSet, exportStarSet);
+                                      exportName, resolveSet);
         if (resolution === "ambiguous")
             return resolution;
 
@@ -148,6 +139,7 @@ function ModuleResolveExport(exportName, resolveSet = [], exportStarSet = [])
         }
     }
 
+    
     return starResolution;
 }
 
