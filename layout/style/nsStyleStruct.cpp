@@ -3306,6 +3306,31 @@ nsStyleDisplay::nsStyleDisplay(const nsStyleDisplay& aSource)
   MOZ_COUNT_CTOR(nsStyleDisplay);
 }
 
+nsStyleDisplay::~nsStyleDisplay()
+{
+  
+  
+  
+  
+  if (mSpecifiedTransform && ServoStyleSet::IsInServoTraversal()) {
+    
+    
+    
+    
+    
+    
+    bool alwaysProxy =
+#ifdef DEBUG
+      true;
+#else
+      false;
+#endif
+    NS_ReleaseOnMainThread(mSpecifiedTransform.forget(), alwaysProxy);
+  }
+
+  MOZ_COUNT_DTOR(nsStyleDisplay);
+}
+
 nsChangeHint
 nsStyleDisplay::CalcDifference(const nsStyleDisplay& aNewData) const
 {
