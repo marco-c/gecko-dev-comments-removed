@@ -20,7 +20,6 @@
 #include "nsIAtom.h"
 #include "nsString.h"
 #include "nsStyleUtil.h"
-#include "nsICSSStyleRuleDOMWrapper.h"
 #include "nsDOMCSSDeclaration.h"
 #include "nsNameSpaceManager.h"
 #include "nsXMLNameSpaceMap.h"
@@ -1047,28 +1046,24 @@ nsCSSSelectorList::SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) cons
 
 
 
-namespace mozilla {
-namespace css {
-class DOMCSSStyleRule;
-} 
-} 
-
 class DOMCSSDeclarationImpl : public nsDOMCSSDeclaration
 {
 protected:
+  
   virtual ~DOMCSSDeclarationImpl(void);
+
+  
+  friend class mozilla::DefaultDelete<DOMCSSDeclarationImpl>;
 
 public:
   explicit DOMCSSDeclarationImpl(css::StyleRule *aRule);
 
   NS_IMETHOD GetParentRule(nsIDOMCSSRule **aParent) override;
-  void DropReference(void);
   virtual DeclarationBlock* GetCSSDeclaration(Operation aOperation) override;
   virtual nsresult SetCSSDeclaration(DeclarationBlock* aDecl) override;
   virtual void GetCSSParsingEnvironment(CSSParsingEnvironment& aCSSParseEnv) override;
   virtual nsIDocument* DocToUpdate() override;
 
-  
   
   
   NS_DECL_ISUPPORTS_INHERITED
@@ -1078,54 +1073,11 @@ public:
     return mRule ? mRule->GetDocument() : nullptr;
   }
 
-  friend class css::DOMCSSStyleRule;
-
 protected:
   
   
   css::StyleRule *mRule;
-
-  inline css::DOMCSSStyleRule* DomRule();
-
-private:
-  
-  
-  
-  void* operator new(size_t size) CPP_THROW_NEW;
 };
-
-namespace mozilla {
-namespace css {
-
-class DOMCSSStyleRule : public nsICSSStyleRuleDOMWrapper
-{
-public:
-  explicit DOMCSSStyleRule(StyleRule *aRule);
-
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(DOMCSSStyleRule)
-  NS_DECL_NSIDOMCSSRULE
-  NS_DECL_NSIDOMCSSSTYLERULE
-
-  
-  NS_IMETHOD GetCSSStyleRule(StyleRule **aResult) override;
-
-  DOMCSSDeclarationImpl* DOMDeclaration() { return &mDOMDeclaration; }
-
-  friend class ::DOMCSSDeclarationImpl;
-
-protected:
-  virtual ~DOMCSSStyleRule();
-
-  DOMCSSDeclarationImpl mDOMDeclaration;
-
-  StyleRule* Rule() {
-    return mDOMDeclaration.mRule;
-  }
-};
-
-} 
-} 
 
 DOMCSSDeclarationImpl::DOMCSSDeclarationImpl(css::StyleRule *aRule)
   : mRule(aRule)
@@ -1134,18 +1086,10 @@ DOMCSSDeclarationImpl::DOMCSSDeclarationImpl(css::StyleRule *aRule)
 
 DOMCSSDeclarationImpl::~DOMCSSDeclarationImpl(void)
 {
-  NS_ASSERTION(!mRule, "DropReference not called.");
 }
 
-inline css::DOMCSSStyleRule* DOMCSSDeclarationImpl::DomRule()
-{
-  return reinterpret_cast<css::DOMCSSStyleRule*>
-                         (reinterpret_cast<char*>(this) -
-           offsetof(css::DOMCSSStyleRule, mDOMDeclaration));
-}
-
-NS_IMPL_ADDREF_USING_AGGREGATOR(DOMCSSDeclarationImpl, DomRule())
-NS_IMPL_RELEASE_USING_AGGREGATOR(DOMCSSDeclarationImpl, DomRule())
+NS_IMPL_ADDREF_USING_AGGREGATOR(DOMCSSDeclarationImpl, mRule)
+NS_IMPL_RELEASE_USING_AGGREGATOR(DOMCSSDeclarationImpl, mRule)
 
 NS_INTERFACE_MAP_BEGIN(DOMCSSDeclarationImpl)
   NS_WRAPPERCACHE_INTERFACE_MAP_ENTRY
@@ -1153,31 +1097,21 @@ NS_INTERFACE_MAP_BEGIN(DOMCSSDeclarationImpl)
   
   if (aIID.Equals(NS_GET_IID(nsCycleCollectionISupports)) ||
       aIID.Equals(NS_GET_IID(nsXPCOMCycleCollectionParticipant))) {
-    return DomRule()->QueryInterface(aIID, aInstancePtr);
+    return mRule->QueryInterface(aIID, aInstancePtr);
   }
   else
 NS_IMPL_QUERY_TAIL_INHERITING(nsDOMCSSDeclaration)
 
-void
-DOMCSSDeclarationImpl::DropReference(void)
-{
-  mRule = nullptr;
-}
-
 DeclarationBlock*
 DOMCSSDeclarationImpl::GetCSSDeclaration(Operation aOperation)
 {
-  if (mRule) {
-    if (aOperation != eOperation_Read) {
-      RefPtr<CSSStyleSheet> sheet = mRule->GetStyleSheet();
-      if (sheet) {
-        sheet->WillDirty();
-      }
+  if (aOperation != eOperation_Read) {
+    RefPtr<CSSStyleSheet> sheet = mRule->GetStyleSheet();
+    if (sheet) {
+      sheet->WillDirty();
     }
-    return mRule->GetDeclaration();
-  } else {
-    return nullptr;
   }
+  return mRule->GetDeclaration();
 }
 
 void
@@ -1190,11 +1124,6 @@ NS_IMETHODIMP
 DOMCSSDeclarationImpl::GetParentRule(nsIDOMCSSRule **aParent)
 {
   NS_ENSURE_ARG_POINTER(aParent);
-
-  if (!mRule) {
-    *aParent = nullptr;
-    return NS_OK;
-  }
 
   NS_IF_ADDREF(*aParent = mRule->GetDOMRule());
   return NS_OK;
@@ -1232,50 +1161,13 @@ DOMCSSDeclarationImpl::DocToUpdate()
   return nullptr;
 }
 
+
+
 namespace mozilla {
 namespace css {
 
-DOMCSSStyleRule::DOMCSSStyleRule(StyleRule* aRule)
-  : mDOMDeclaration(aRule)
-{
-}
-
-DOMCSSStyleRule::~DOMCSSStyleRule()
-{
-}
-
-NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(DOMCSSStyleRule)
-  NS_INTERFACE_MAP_ENTRY(nsICSSStyleRuleDOMWrapper)
-  NS_INTERFACE_MAP_ENTRY(nsIDOMCSSStyleRule)
-  NS_INTERFACE_MAP_ENTRY(nsIDOMCSSRule)
-  NS_INTERFACE_MAP_ENTRY(nsISupports)
-  NS_DOM_INTERFACE_MAP_ENTRY_CLASSINFO(CSSStyleRule)
-NS_INTERFACE_MAP_END
-
-NS_IMPL_CYCLE_COLLECTING_ADDREF(DOMCSSStyleRule)
-NS_IMPL_CYCLE_COLLECTING_RELEASE(DOMCSSStyleRule)
-
-NS_IMPL_CYCLE_COLLECTION_CLASS(DOMCSSStyleRule)
-
-NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN(DOMCSSStyleRule)
-  
-  
-  
-  tmp->DOMDeclaration()->TraceWrapper(aCallbacks, aClosure);
-NS_IMPL_CYCLE_COLLECTION_TRACE_END
-
-NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(DOMCSSStyleRule)
-  
-  
-  
-  tmp->DOMDeclaration()->ReleaseWrapper(static_cast<nsISupports*>(p));
-NS_IMPL_CYCLE_COLLECTION_UNLINK_END
-
-NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(DOMCSSStyleRule)
-NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
-
 NS_IMETHODIMP
-DOMCSSStyleRule::GetType(uint16_t* aType)
+StyleRule::GetType(uint16_t* aType)
 {
   *aType = nsIDOMCSSRule::STYLE_RULE;
   
@@ -1283,94 +1175,41 @@ DOMCSSStyleRule::GetType(uint16_t* aType)
 }
 
 NS_IMETHODIMP
-DOMCSSStyleRule::GetCssText(nsAString& aCssText)
+StyleRule::GetParentStyleSheet(nsIDOMCSSStyleSheet** aSheet)
 {
-  if (!Rule()) {
-    aCssText.Truncate();
-  } else {
-    Rule()->GetCssText(aCssText);
-  }
-  return NS_OK;
+  return Rule::GetParentStyleSheet(aSheet);
 }
 
 NS_IMETHODIMP
-DOMCSSStyleRule::SetCssText(const nsAString& aCssText)
+StyleRule::GetParentRule(nsIDOMCSSRule** aParentRule)
 {
-  if (Rule()) {
-    Rule()->SetCssText(aCssText);
-  }
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-DOMCSSStyleRule::GetParentStyleSheet(nsIDOMCSSStyleSheet** aSheet)
-{
-  if (!Rule()) {
-    *aSheet = nullptr;
-    return NS_OK;
-  }
-  return Rule()->GetParentStyleSheet(aSheet);
-}
-
-NS_IMETHODIMP
-DOMCSSStyleRule::GetParentRule(nsIDOMCSSRule** aParentRule)
-{
-  if (!Rule()) {
-    *aParentRule = nullptr;
-    return NS_OK;
-  }
-  return Rule()->GetParentRule(aParentRule);
+  return Rule::GetParentRule(aParentRule);
 }
 
 css::Rule*
-DOMCSSStyleRule::GetCSSRule()
+StyleRule::GetCSSRule()
 {
-  return Rule();
+  return this;
 }
 
 NS_IMETHODIMP
-DOMCSSStyleRule::GetSelectorText(nsAString& aSelectorText)
+StyleRule::GetStyle(nsIDOMCSSStyleDeclaration** aStyle)
 {
-  if (!Rule()) {
-    aSelectorText.Truncate();
-  } else {
-    Rule()->GetSelectorText(aSelectorText);
+  if (!mDOMDeclaration) {
+    mDOMDeclaration.reset(new DOMCSSDeclarationImpl(this));
   }
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-DOMCSSStyleRule::SetSelectorText(const nsAString& aSelectorText)
-{
-  if (Rule()) {
-    Rule()->SetSelectorText(aSelectorText);
-  }
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-DOMCSSStyleRule::GetStyle(nsIDOMCSSStyleDeclaration** aStyle)
-{
-  *aStyle = &mDOMDeclaration;
+  *aStyle = mDOMDeclaration.get();
   NS_ADDREF(*aStyle);
   return NS_OK;
 }
 
 NS_IMETHODIMP
-DOMCSSStyleRule::GetCSSStyleRule(StyleRule **aResult)
+StyleRule::GetCSSStyleRule(StyleRule **aResult)
 {
-  *aResult = Rule();
-  NS_IF_ADDREF(*aResult);
+  *aResult = this;
+  NS_ADDREF(*aResult);
   return NS_OK;
 }
-
-} 
-} 
-
-
-
-namespace mozilla {
-namespace css {
 
 StyleRule::StyleRule(nsCSSSelectorList* aSelector,
                      Declaration* aDeclaration,
@@ -1406,11 +1245,6 @@ StyleRule::~StyleRule()
 void
 StyleRule::DropReferences()
 {
-  if (mDOMRule) {
-    mDOMRule->DOMDeclaration()->DropReference();
-    mDOMRule = nullptr;
-  }
-
   if (mDeclaration) {
     mDeclaration->SetOwningRule(nullptr);
     mDeclaration = nullptr;
@@ -1425,17 +1259,35 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION_INHERITED(StyleRule)
     return NS_OK;
   }
   else
+  NS_INTERFACE_MAP_ENTRY(nsICSSStyleRuleDOMWrapper)
+  NS_INTERFACE_MAP_ENTRY(nsIDOMCSSStyleRule)
+  NS_INTERFACE_MAP_ENTRY(nsIDOMCSSRule)
+  NS_DOM_INTERFACE_MAP_ENTRY_CLASSINFO(CSSStyleRule)
 NS_INTERFACE_MAP_END_INHERITING(Rule)
 
 NS_IMPL_ADDREF_INHERITED(StyleRule, Rule)
 NS_IMPL_RELEASE_INHERITED(StyleRule, Rule)
 
 NS_IMPL_CYCLE_COLLECTION_CLASS(StyleRule)
+NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN_INHERITED(StyleRule, Rule)
+  
+  
+  
+  if (tmp->mDOMDeclaration) {
+    tmp->mDOMDeclaration->TraceWrapper(aCallbacks, aClosure);
+  }
+NS_IMPL_CYCLE_COLLECTION_TRACE_END
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(StyleRule, Rule)
+  
+  
+  
+  if (tmp->mDOMDeclaration) {
+    tmp->mDOMDeclaration->ReleaseWrapper(static_cast<nsISupports*>(p));
+  }
   tmp->DropReferences();
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(StyleRule, Rule)
-NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDeclaration, mDOMRule)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDeclaration)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
  int32_t
@@ -1454,16 +1306,7 @@ StyleRule::Clone() const
  nsIDOMCSSRule*
 StyleRule::GetDOMRule()
 {
-  if (!mDOMRule) {
-    if (!GetStyleSheet()) {
-      
-      
-      
-      return nullptr;
-    }
-    mDOMRule = new DOMCSSStyleRule(this);
-  }
-  return mDOMRule;
+  return this;
 }
 
 void
@@ -1520,7 +1363,7 @@ StyleRule::List(FILE* out, int32_t aIndent) const
 }
 #endif
 
-void
+NS_IMETHODIMP
 StyleRule::GetCssText(nsAString& aCssText)
 {
   if (mSelector) {
@@ -1537,29 +1380,33 @@ StyleRule::GetCssText(nsAString& aCssText)
   }
   aCssText.Append(char16_t(' '));
   aCssText.Append(char16_t('}'));
+  return NS_OK;
 }
 
-void
+NS_IMETHODIMP
 StyleRule::SetCssText(const nsAString& aCssText)
 {
   
+  return NS_OK;
 }
 
-void
+NS_IMETHODIMP
 StyleRule::GetSelectorText(nsAString& aSelectorText)
 {
   if (mSelector)
     mSelector->ToString(aSelectorText, GetStyleSheet());
   else
     aSelectorText.Truncate();
+  return NS_OK;
 }
 
-void
+NS_IMETHODIMP
 StyleRule::SetSelectorText(const nsAString& aSelectorText)
 {
   
   
   
+  return NS_OK;
 }
 
  size_t
