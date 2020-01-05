@@ -15,10 +15,12 @@ OSPreferences::ReadSystemLocales(nsTArray<nsCString>& aLocaleList)
   
   
   
-  nsAutoCString locale;
-  if (!NS_SUCCEEDED(Preferences::GetCString("intl.locale.os", &locale)) ||
-      locale.IsEmpty()) {
-    locale.AssignLiteral("en-US");
+  
+  
+  
+  
+  nsAdoptingCString locale = Preferences::GetCString("intl.locale.os");
+  if (!locale.IsEmpty()) {
     aLocaleList.AppendElement(locale);
   }
   return true;
