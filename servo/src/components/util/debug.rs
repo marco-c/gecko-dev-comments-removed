@@ -2,8 +2,8 @@
 
 
 
-use std::rt::io;
-use std::rt::io::Writer;
+use std::io;
+use std::io::Writer;
 use std::vec::raw::buf_as_slice;
 use std::cast::transmute;
 use std::mem::size_of;

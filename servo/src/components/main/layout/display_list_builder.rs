@@ -4,7 +4,7 @@
 
 
 
-use layout::box::Box;
+use layout::box_::Box;
 use layout::context::LayoutContext;
 use layout::util::OpaqueNode;
 
@@ -12,14 +12,14 @@ use gfx;
 use style;
 
 pub trait ExtraDisplayListData {
-    fn new(box: &Box) -> Self;
+    fn new(box_: &Box) -> Self;
 }
 
 pub type Nothing = ();
 
 impl ExtraDisplayListData for OpaqueNode {
-    fn new(box: &Box) -> OpaqueNode {
-        box.node
+    fn new(box_: &Box) -> OpaqueNode {
+        box_.node
     }
 }
 
@@ -35,8 +35,8 @@ impl ExtraDisplayListData for Nothing {
 
 
 
-pub struct DisplayListBuilder<'self> {
-    ctx: &'self LayoutContext,
+pub struct DisplayListBuilder<'a> {
+    ctx: &'a LayoutContext,
 }
 
 

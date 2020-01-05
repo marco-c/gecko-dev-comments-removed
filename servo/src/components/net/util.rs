@@ -2,14 +2,13 @@
 
 
 
-use std::comm;
 use std::comm::{Chan, Port};
 use std::task;
 
-pub fn spawn_listener<A: Send>(f: ~fn(Port<A>)) -> Chan<A> {
-    let (setup_port, setup_chan) = comm::stream();
+pub fn spawn_listener<A: Send>(f: proc(Port<A>)) -> SharedChan<A> {
+    let (setup_port, setup_chan) = Chan::new();
     do task::spawn {
-        let (port, chan) = comm::stream();
+        let (port, chan) = SharedChan::new();
         setup_chan.send(chan);
         f(port);
     }

@@ -2,7 +2,7 @@
 
 
 
-use std::rt::io::{io_error, IoError};
+use std::io::{io_error, IoError};
 
 
 
@@ -10,7 +10,7 @@ use std::rt::io::{io_error, IoError};
 
 
 
-pub fn result<T>(cb: &fn() -> T) -> Result<T, IoError> {
+pub fn result<T>(cb: || -> T) -> Result<T, IoError> {
     let mut err = None;
     let ret = io_error::cond.trap(|e| err = Some(e)).inside(cb);
     match err {

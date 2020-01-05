@@ -38,7 +38,10 @@ impl NullCompositor {
     fn handle_message(&self) {
         loop {
             match self.port.recv() {
-                Exit => break,
+                Exit(chan) => {
+                    chan.send(());
+                    break
+                }
 
                 GetGraphicsMetadata(chan) => {
                     chan.send(None);
@@ -52,9 +55,9 @@ impl NullCompositor {
                 
                 
 
-                NewLayer(*) | SetLayerPageSize(*) | SetLayerClipRect(*) | DeleteLayer(*) |
-                Paint(*) | InvalidateRect(*) | ChangeReadyState(*) | ChangeRenderState(*)|
-                ScrollFragmentPoint(*) | SetUnRenderedColor(*)
+                NewLayer(..) | SetLayerPageSize(..) | SetLayerClipRect(..) | DeleteLayer(..) |
+                Paint(..) | InvalidateRect(..) | ChangeReadyState(..) | ChangeRenderState(..)|
+                ScrollFragmentPoint(..) | SetUnRenderedColor(..)
                     => ()
             }
         }

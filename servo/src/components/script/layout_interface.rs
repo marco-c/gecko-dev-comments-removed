@@ -122,9 +122,11 @@ pub struct Reflow {
 
 #[deriving(Clone)]
 pub struct LayoutChan(SharedChan<Msg>);
+
 impl LayoutChan {
-    pub fn new(chan: Chan<Msg>) -> LayoutChan {
-        LayoutChan(SharedChan::new(chan))
+    pub fn new() -> (Port<Msg>, LayoutChan) {
+        let (port, chan) = SharedChan::new();
+        (port, LayoutChan(chan))
     }
 }
 
