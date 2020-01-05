@@ -2,11 +2,8 @@
 
 
 
-function testBody() {
+async function testBody() {
   
   
-  checkWatchdog(isWatchdogEnabled(), continueTest);
-  yield;
-  do_test_finished();
-  yield;
+  await checkWatchdog(isWatchdogEnabled());
 }

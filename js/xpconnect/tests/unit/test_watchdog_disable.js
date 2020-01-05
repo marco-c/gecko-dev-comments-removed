@@ -2,10 +2,7 @@
 
 
 
-function testBody() {
+async function testBody() {
   setWatchdogEnabled(false);
-  checkWatchdog(false, continueTest);
-  yield;
-  do_test_finished();
-  yield;
+  await checkWatchdog(false);
 }

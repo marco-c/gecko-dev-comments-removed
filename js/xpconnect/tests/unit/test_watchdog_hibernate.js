@@ -2,7 +2,7 @@
 
 
 
-function testBody() {
+async function testBody() {
 
   setWatchdogEnabled(true);
 
@@ -23,10 +23,11 @@ function testBody() {
   
   
   
-  var timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
-  timer.initWithCallback(continueTest, 10000, Ci.nsITimer.TYPE_ONE_SHOT);
-  simulateActivityCallback(false);
-  yield;
+  await new Promise(resolve => {
+    var timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
+    timer.initWithCallback(resolve, 10000, Ci.nsITimer.TYPE_ONE_SHOT);
+    simulateActivityCallback(false);
+  });
 
   simulateActivityCallback(true);
   busyWait(1000); 
@@ -47,7 +48,4 @@ function testBody() {
   do_check_true(startHibernation > now + 2*1000*1000 - FUZZ_FACTOR);
   do_check_true(startHibernation < now + 5*1000*1000 + FUZZ_FACTOR);
   do_check_true(stopHibernation > now + 10*1000*1000 - FUZZ_FACTOR);
-
-  do_test_finished();
-  yield;
 }
