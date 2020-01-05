@@ -1886,17 +1886,15 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
             
             self.revoke_paint_permission(old_pipeline_id);
 
-            
-            self.pipelines
-                .get(&old_pipeline_id)
-                .and_then(|pipeline| pipeline.frame)
-                .map(|frame_id| {
-                    self.pipelines.get_mut(&frame_change.new_pipeline_id)
-                                  .map(|pipeline| pipeline.frame = Some(frame_id));
-                    self.frames.get_mut(&frame_id).map(|frame| frame.load(frame_change.new_pipeline_id));
-                    frame_id
-                })
+            self.pipelines.get(&old_pipeline_id).and_then(|pipeline| pipeline.frame)
         });
+
+        if let Some(frame_id) = frame_id {
+            
+            self.pipelines.get_mut(&frame_change.new_pipeline_id)
+                          .map(|pipeline| pipeline.frame = Some(frame_id));
+            self.frames.get_mut(&frame_id).map(|frame| frame.load(frame_change.new_pipeline_id));
+        }
 
         if let None = frame_id {
             
