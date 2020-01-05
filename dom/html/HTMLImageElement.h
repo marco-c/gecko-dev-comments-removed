@@ -293,6 +293,9 @@ protected:
   bool InResponsiveMode();
 
   
+  bool SelectedSourceMatchesLast(nsIURI* aSelectedSource, double aSelectedDensity);
+
+  
   
   nsresult LoadSelectedImage(bool aForce, bool aNotify, bool aAlwaysLoad);
 
@@ -363,6 +366,11 @@ private:
 
   bool mInDocResponsiveContent;
   RefPtr<ImageLoadTask> mPendingImageLoadTask;
+
+  
+  nsCOMPtr<nsIURI> mLastSelectedSource;
+  
+  double mCurrentDensity;
 };
 
 } 
