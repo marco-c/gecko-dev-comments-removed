@@ -111,7 +111,7 @@ impl MIMEClassifier {
         self.binary_or_plaintext.classify(data)
     }
     fn is_xml(tp: &str, sub_tp: &str) -> bool {
-        let suffix = &sub_tp[(max((sub_tp.len() as int) - ("+xml".len() as int), 0i) as uint)..];
+        let suffix = &sub_tp[(max(sub_tp.len() as isize - "+xml".len() as isize, 0) as usize)..];
         match (tp, sub_tp, suffix) {
             (_, _, "+xml") | ("application", "xml",_) | ("text", "xml",_) => {true}
             _ => {false}
@@ -126,7 +126,7 @@ fn as_string_option(tup: Option<(&'static str, &'static str)>) -> Option<(String
     tup.map(|(a, b)| (a.to_owned(), b.to_owned()))
 }
 
-//Interface used for composite types
+
 trait MIMEChecker {
     fn classify(&self, data: &Vec<u8>)->Option<(String, String)>;
 }
@@ -137,20 +137,20 @@ trait Matches {
 
 impl <'a, T: Iterator<Item=&'a u8> + Clone> Matches for T {
 
-    // Matching function that works on an iterator.
-    // see if the next matches.len() bytes in data_iterator equal matches
-    // move iterator and return true or just return false
-    //
-    // Params
-    // self: an iterator
-    // matches: a vector of bytes to match
-    //
-    // Return
-    // true if the next n elements of self match n elements of matches
-    // false otherwise
-    //
-    // Side effects
-    // moves the iterator when match is found
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     fn matches(&mut self, matches: &[u8]) -> bool {
         for (byte_a, byte_b) in self.clone().take(matches.len()).zip(matches.iter()) {
             if byte_a != byte_b {
@@ -170,13 +170,13 @@ struct ByteMatcher {
 }
 
 impl ByteMatcher {
-    fn matches(&self, data: &Vec<u8>) -> Option<uint> {
+    fn matches(&self, data: &Vec<u8>) -> Option<usize> {
 
         if data.len() < self.pattern.len() {
             return None;
         }
-        //TODO replace with iterators if I ever figure them out...
-        let mut i = 0u;
+        
+        let mut i: usize = 0;
         let max_i = data.len()-self.pattern.len();
 
         loop {
@@ -184,12 +184,12 @@ impl ByteMatcher {
                 break;
             }
 
-            i=i + 1;
+            i = i + 1;
             if i > max_i {
                 return None;
             }
         }
-        for j in range(0u,self.pattern.len()) {
+        for j in 0..self.pattern.len() {
             if (data[i] & self.mask[j]) != (self.pattern[j] & self.mask[j]) {
                 return None;
             }
@@ -231,22 +231,22 @@ impl Mp4Matcher {
             return false;
         }
         let box_size = ((data[0] as u32) << 3 | (data[1] as u32) << 2 |
-                        (data[2] as u32) << 1 | (data[3] as u32)) as uint;
+                        (data[2] as u32) << 1 | (data[3] as u32)) as usize;
         if (data.len() < box_size) || (box_size % 4 != 0) {
             return false;
         }
-        //TODO replace with iterators
+        
         let ftyp = [0x66, 0x74, 0x79, 0x70];
         let mp4 =  [0x6D, 0x70, 0x34];
 
-        for i in range(4u,8u) {
+        for i in 4..8 {
             if data[i] != ftyp[i - 4] {
                 return false;
             }
         }
         let mut all_match = true;
-        for i in range(8u,11u) {
-            if data[i]!=mp4[i - 8u] {
+        for i in 8..11 {
+            if data[i]!=mp4[i - 8] {
                 all_match = false;
                 break;
             }
@@ -255,11 +255,11 @@ impl Mp4Matcher {
             return true;
         }
 
-        let mut bytes_read = 16u;
+        let mut bytes_read: usize = 16;
 
         while bytes_read < box_size {
             all_match = true;
-            for i in range(0u,3u) {
+            for i in 0..3 {
                 if mp4[i] != data[i + bytes_read] {
                     all_match = false;
                     break;
@@ -391,7 +391,7 @@ impl GroupedClassifier {
         }
     }
 
-    // TODO: Use this in font context classifier
+    
     #[allow(dead_code)]
     fn font_classifier() -> GroupedClassifier {
         GroupedClassifier {
@@ -420,31 +420,31 @@ impl FeedsClassifier {
         let length = data.len();
         let mut data_iterator = data.iter();
 
-        // acceptable byte sequences
+        
         let utf8_bom = &[0xEFu8, 0xBBu8, 0xBFu8];
 
-        // can not be feed unless length is > 3
+        
         if length < 3 {
             return None;
         }
 
-        // eat the first three bytes if they are equal to UTF-8 BOM
+        
         data_iterator.matches(utf8_bom);
 
-        // continuously search for next "<" until end of data_iterator
-        // TODO: need max_bytes to prevent inadvertently examining html document
-        //       eg. an html page with a feed example
+        
+        
+        
         while !data_iterator.find(|&data_iterator| *data_iterator == b'<').is_none() {
 
             if data_iterator.matches(b"?") {
-                // eat until ?>
+                
                 while !data_iterator.matches(b"?>") {
                     if data_iterator.next().is_none() {
                         return None;
                     }
                 }
             } else if data_iterator.matches(b"!--") {
-                // eat until -->
+                
                 while !data_iterator.matches(b"-->") {
                     if data_iterator.next().is_none() {
                         return None;
@@ -485,10 +485,10 @@ impl MIMEChecker for FeedsClassifier {
     }
 }
 
-//Contains hard coded byte matchers
-//TODO: These should be configured and not hard coded
+
+
 impl ByteMatcher {
-    //A Windows Icon signature
+    
     fn image_x_icon()->ByteMatcher {
         ByteMatcher{
             pattern: b"\x00\x00\x01\x00",
@@ -497,7 +497,7 @@ impl ByteMatcher {
             leading_ignore: &[]
         }
     }
-    //A Windows Cursor signature.
+    
     fn image_x_icon_cursor()->ByteMatcher {
         ByteMatcher{
             pattern: b"\x00\x00\x02\x00",
@@ -506,7 +506,7 @@ impl ByteMatcher {
             leading_ignore: &[]
         }
     }
-    //The string "BM", a BMP signature.
+    
     fn image_bmp()->ByteMatcher {
         ByteMatcher{
             pattern: b"BM",
@@ -515,7 +515,7 @@ impl ByteMatcher {
             leading_ignore: &[]
         }
     }
-    //The string "GIF89a", a GIF signature.
+    
     fn image_gif89a()->ByteMatcher {
         ByteMatcher{
             pattern: b"GIF89a",
@@ -524,7 +524,7 @@ impl ByteMatcher {
             leading_ignore: &[]
         }
     }
-    //The string "GIF87a", a GIF signature.
+    
     fn image_gif87a()->ByteMatcher {
         ByteMatcher{
             pattern: b"GIF87a",
@@ -533,7 +533,7 @@ impl ByteMatcher {
             leading_ignore: &[]
         }
     }
-    //The string "RIFF" followed by four bytes followed by the string "WEBPVP".
+    
     fn image_webp()->ByteMatcher {
         ByteMatcher{
             pattern: b"RIFF\x00\x00\x00\x00WEBPVP",
@@ -542,8 +542,8 @@ impl ByteMatcher {
             leading_ignore: &[]
         }
     }
-    //An error-checking byte followed by the string "PNG" followed by CR LF SUB LF, the PNG
-    //signature.
+    
+    
     fn image_png()->ByteMatcher {
         ByteMatcher{
             pattern: b"\x89PNG\r\n\x1A\n",
@@ -552,7 +552,7 @@ impl ByteMatcher {
             leading_ignore: &[]
         }
     }
-    // The JPEG Start of Image marker followed by the indicator byte of another marker.
+    
     fn image_jpeg()->ByteMatcher {
         ByteMatcher{
             pattern: b"\xFF\xD8\xFF",
@@ -561,7 +561,7 @@ impl ByteMatcher {
             leading_ignore: &[]
         }
     }
-    //The WebM signature. [TODO: Use more bytes?]
+    
     fn video_webm()->ByteMatcher {
         ByteMatcher{
             pattern: b"\x1A\x45\xDF\xA3",
@@ -570,7 +570,7 @@ impl ByteMatcher {
             leading_ignore: &[]
         }
     }
-    //The string ".snd", the basic audio signature.
+    
     fn audio_basic()->ByteMatcher {
         ByteMatcher{
             pattern: b".snd",
@@ -579,7 +579,7 @@ impl ByteMatcher {
             leading_ignore: &[]
         }
     }
-    //The string "FORM" followed by four bytes followed by the string "AIFF", the AIFF signature.
+    
     fn audio_aiff()->ByteMatcher {
         ByteMatcher{
             pattern:  b"FORM\x00\x00\x00\x00AIFF",
@@ -588,7 +588,7 @@ impl ByteMatcher {
             leading_ignore: &[]
         }
     }
-    //The string "ID3", the ID3v2-tagged MP3 signature.
+    
     fn audio_mpeg()->ByteMatcher {
         ByteMatcher{
             pattern: b"ID3",
@@ -597,7 +597,7 @@ impl ByteMatcher {
             leading_ignore: &[]
         }
     }
-    //The string "OggS" followed by NUL, the Ogg container signature.
+    
     fn application_ogg()->ByteMatcher {
         ByteMatcher{
             pattern: b"OggS",
@@ -606,8 +606,8 @@ impl ByteMatcher {
             leading_ignore: &[]
         }
     }
-    //The string "MThd" followed by four bytes representing the number 6 in 32 bits (big-endian),
-    //the MIDI signature.
+    
+    
     fn audio_midi()->ByteMatcher {
         ByteMatcher{
             pattern: b"MThd\x00\x00\x00\x06",
@@ -616,7 +616,7 @@ impl ByteMatcher {
             leading_ignore: &[]
         }
     }
-    //The string "RIFF" followed by four bytes followed by the string "AVI ", the AVI signature.
+    
     fn video_avi()->ByteMatcher {
         ByteMatcher{
             pattern: b"RIFF\x00\x00\x00\x00AVI ",
@@ -625,7 +625,7 @@ impl ByteMatcher {
             leading_ignore: &[]
         }
     }
-    // The string "RIFF" followed by four bytes followed by the string "WAVE", the WAVE signature.
+    
     fn audio_wave()->ByteMatcher {
         ByteMatcher{
             pattern: b"RIFF\x00\x00\x00\x00WAVE",
@@ -634,7 +634,7 @@ impl ByteMatcher {
             leading_ignore: &[]
         }
     }
-    // doctype terminated with Tag terminating (TT) Byte
+    
     fn text_html_doctype()->TagTerminatedByteMatcher {
         TagTerminatedByteMatcher {
             matcher: ByteMatcher{
@@ -646,7 +646,7 @@ impl ByteMatcher {
         }
     }
 
-    // HTML terminated with Tag terminating (TT) Byte: 0x20 (SP)
+    
     fn text_html_page()->TagTerminatedByteMatcher {
         TagTerminatedByteMatcher {
             matcher: ByteMatcher{
@@ -658,7 +658,7 @@ impl ByteMatcher {
         }
     }
 
-    // head terminated with Tag Terminating (TT) Byte
+    
     fn text_html_head()->TagTerminatedByteMatcher {
          TagTerminatedByteMatcher {
             matcher: ByteMatcher{
@@ -670,7 +670,7 @@ impl ByteMatcher {
         }
     }
 
-    // script terminated with Tag Terminating (TT) Byte
+    
     fn text_html_script()->TagTerminatedByteMatcher {
         TagTerminatedByteMatcher {
             matcher: ByteMatcher {
@@ -682,7 +682,7 @@ impl ByteMatcher {
         }
     }
 
-    // iframe terminated with Tag Terminating (TT) Byte
+    
     fn text_html_iframe()->TagTerminatedByteMatcher {
         TagTerminatedByteMatcher {
             matcher: ByteMatcher{
@@ -694,7 +694,7 @@ impl ByteMatcher {
         }
     }
 
-    // h1 terminated with Tag Terminating (TT) Byte
+    
     fn text_html_h1()->TagTerminatedByteMatcher {
         TagTerminatedByteMatcher {
             matcher: ByteMatcher{
@@ -706,7 +706,7 @@ impl ByteMatcher {
         }
     }
 
-    // div terminated with Tag Terminating (TT) Byte
+    
     fn text_html_div()->TagTerminatedByteMatcher {
         TagTerminatedByteMatcher {
             matcher: ByteMatcher{
@@ -718,7 +718,7 @@ impl ByteMatcher {
         }
     }
 
-    // font terminated with Tag Terminating (TT) Byte
+    
     fn text_html_font()->TagTerminatedByteMatcher {
         TagTerminatedByteMatcher {
             matcher: ByteMatcher{
@@ -730,7 +730,7 @@ impl ByteMatcher {
         }
     }
 
-    // table terminated with Tag Terminating (TT) Byte
+    
     fn text_html_table()->TagTerminatedByteMatcher {
         TagTerminatedByteMatcher {
             matcher: ByteMatcher{
@@ -742,7 +742,7 @@ impl ByteMatcher {
         }
     }
 
-    // a terminated with Tag Terminating (TT) Byte
+    
     fn text_html_a()->TagTerminatedByteMatcher {
         TagTerminatedByteMatcher {
             matcher: ByteMatcher{
@@ -754,7 +754,7 @@ impl ByteMatcher {
         }
     }
 
-    // style terminated with Tag Terminating (TT) Byte
+    
     fn text_html_style()->TagTerminatedByteMatcher {
         TagTerminatedByteMatcher {
             matcher: ByteMatcher{
@@ -766,7 +766,7 @@ impl ByteMatcher {
         }
     }
 
-    // title terminated with Tag Terminating (TT) Byte
+    
     fn text_html_title()->TagTerminatedByteMatcher {
         TagTerminatedByteMatcher {
             matcher: ByteMatcher{
@@ -778,7 +778,7 @@ impl ByteMatcher {
         }
     }
 
-    // b terminated with Tag Terminating (TT) Byte
+    
     fn text_html_b()->TagTerminatedByteMatcher {
         TagTerminatedByteMatcher {
             matcher: ByteMatcher{
@@ -790,7 +790,7 @@ impl ByteMatcher {
         }
     }
 
-    // body terminated with Tag Terminating (TT) Byte
+    
     fn text_html_body()->TagTerminatedByteMatcher {
         TagTerminatedByteMatcher {
             matcher: ByteMatcher{
@@ -802,7 +802,7 @@ impl ByteMatcher {
         }
     }
 
-    // br terminated with Tag Terminating (TT) Byte
+    
     fn text_html_br()->TagTerminatedByteMatcher {
         TagTerminatedByteMatcher {
             matcher: ByteMatcher{
@@ -814,7 +814,7 @@ impl ByteMatcher {
         }
     }
 
-    // p terminated with Tag Terminating (TT) Byte
+    
     fn text_html_p()->TagTerminatedByteMatcher {
         TagTerminatedByteMatcher {
             matcher: ByteMatcher{
@@ -826,7 +826,7 @@ impl ByteMatcher {
         }
     }
 
-    // comment terminated with Tag Terminating (TT) Byte
+    
     fn text_html_comment()->TagTerminatedByteMatcher {
         TagTerminatedByteMatcher {
             matcher: ByteMatcher{
@@ -838,7 +838,7 @@ impl ByteMatcher {
         }
     }
 
-    //The string "<?xml".
+    
     fn text_xml()->ByteMatcher {
         ByteMatcher{
             pattern: b"<?xml",
@@ -847,7 +847,7 @@ impl ByteMatcher {
             leading_ignore: b"\t\n\x0C\r "
      }
     }
-    //The string "%PDF-", the PDF signature.
+    
     fn application_pdf()->ByteMatcher {
         ByteMatcher{
             pattern: b"%PDF",
@@ -856,8 +856,8 @@ impl ByteMatcher {
             leading_ignore: &[]
         }
     }
-    //34 bytes followed by the string "LP", the Embedded OpenType signature.
-    // TODO: Use this in font context classifier
+    
+    
     #[allow(dead_code)]
     fn application_vnd_ms_font_object()->ByteMatcher {
         ByteMatcher{
@@ -871,8 +871,8 @@ impl ByteMatcher {
             leading_ignore: &[]
         }
     }
-    //4 bytes representing the version number 1.0, a TrueType signature.
-    // TODO: Use this in font context classifier
+    
+    
     #[allow(dead_code)]
     fn true_type()->ByteMatcher {
         ByteMatcher{
@@ -882,8 +882,8 @@ impl ByteMatcher {
             leading_ignore: &[]
         }
     }
-    //The string "OTTO", the OpenType signature.
-    // TODO: Use this in font context classifier
+    
+    
     #[allow(dead_code)]
     fn open_type()->ByteMatcher {
         ByteMatcher{
@@ -893,8 +893,8 @@ impl ByteMatcher {
             leading_ignore: &[]
         }
     }
-    // The string "ttcf", the TrueType Collection signature.
-    // TODO: Use this in font context classifier
+    
+    
     #[allow(dead_code)]
     fn true_type_collection()->ByteMatcher {
         ByteMatcher{
@@ -904,8 +904,8 @@ impl ByteMatcher {
             leading_ignore: &[]
         }
     }
-    // The string "wOFF", the Web Open Font Format signature.
-    // TODO: Use this in font context classifier
+    
+    
     #[allow(dead_code)]
     fn application_font_woff()->ByteMatcher {
         ByteMatcher{
@@ -915,7 +915,7 @@ impl ByteMatcher {
             leading_ignore: &[]
         }
     }
-    //The GZIP archive signature.
+    
     fn application_x_gzip()->ByteMatcher {
         ByteMatcher{
             pattern: b"\x1F\x8B\x08",
@@ -924,7 +924,7 @@ impl ByteMatcher {
             leading_ignore: &[]
         }
     }
-    //The string "PK" followed by ETX EOT, the ZIP archive signature.
+    
     fn application_zip()->ByteMatcher {
         ByteMatcher{
             pattern: b"PK\x03\x04",
@@ -933,7 +933,7 @@ impl ByteMatcher {
             leading_ignore: &[]
         }
     }
-    //The string "Rar " followed by SUB BEL NUL, the RAR archive signature.
+    
     fn application_x_rar_compressed()->ByteMatcher {
         ByteMatcher{
             pattern: b"Rar \x1A\x07\x00",
@@ -942,7 +942,7 @@ impl ByteMatcher {
             leading_ignore: &[]
         }
     }
-    // The string "%!PS-Adobe-", the PostScript signature.
+    
     fn application_postscript()->ByteMatcher {
         ByteMatcher{
             pattern: b"%!PS-Adobe-",
@@ -951,7 +951,7 @@ impl ByteMatcher {
             leading_ignore: &[]
         }
     }
-    // UTF-16BE BOM
+    
     fn text_plain_utf_16be_bom()->ByteMatcher {
         ByteMatcher{
             pattern: b"\xFE\xFF\x00\x00",
@@ -960,7 +960,7 @@ impl ByteMatcher {
             leading_ignore: &[]
         }
     }
-    //UTF-16LE BOM
+    
     fn text_plain_utf_16le_bom()->ByteMatcher {
         ByteMatcher{
             pattern: b"\xFF\xFE\x00\x00",
@@ -969,7 +969,7 @@ impl ByteMatcher {
             leading_ignore: &[]
         }
     }
-    //UTF-8 BOM
+    
     fn text_plain_utf_8_bom()->ByteMatcher {
         ByteMatcher{
             pattern: b"\xEF\xBB\xBF\x00",
