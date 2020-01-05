@@ -148,10 +148,6 @@ add_task(function* detect_touches() {
   let manifest = ueDir.clone();
   manifest.append("install.rdf");
   checkChange(XS, manifest, true);
-  
-  let otherFile = ueDir.clone();
-  otherFile.append("extraFile.js");
-  checkChange(XS, otherFile, true);
 
   
   let udDir = profileDir.clone();
@@ -161,7 +157,7 @@ add_task(function* detect_touches() {
   checkChange(XS, manifest, true);
   
   
-  otherFile = udDir.clone();
+  let otherFile = udDir.clone();
   otherFile.append("extraFile.js");
   checkChange(XS, otherFile, false);
 
