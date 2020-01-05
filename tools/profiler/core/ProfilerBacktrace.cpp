@@ -9,19 +9,20 @@
 #include "ProfileJSONWriter.h"
 #include "ThreadInfo.h"
 
-ProfilerBacktrace::ProfilerBacktrace(const char* aName, int aThreadId,
-                                     ProfileBuffer* aBuffer)
-  : mName(strdup(aName))
-  , mThreadId(aThreadId)
-  , mBuffer(aBuffer)
+ProfilerBacktrace::ProfilerBacktrace(ProfileBuffer* aBuffer,
+                                     ThreadInfo* aThreadInfo)
+  : mBuffer(aBuffer)
+  , mThreadInfo(aThreadInfo)
 {
   MOZ_COUNT_CTOR(ProfilerBacktrace);
+  MOZ_ASSERT(aThreadInfo && aThreadInfo->HasProfile());
 }
 
 ProfilerBacktrace::~ProfilerBacktrace()
 {
   MOZ_COUNT_DTOR(ProfilerBacktrace);
   delete mBuffer;
+  delete mThreadInfo;
 }
 
 void
@@ -33,7 +34,7 @@ ProfilerBacktrace::StreamJSON(SpliceableJSONWriter& aWriter,
   
   
   
-  StreamSamplesAndMarkers(mName.get(), mThreadId,
+  StreamSamplesAndMarkers(mThreadInfo->Name(), mThreadInfo->ThreadId(),
                           mBuffer, aWriter, aStartTime,
                            0,  nullptr,
                            nullptr,
