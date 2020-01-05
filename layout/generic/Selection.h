@@ -178,7 +178,7 @@ public:
   
   
   
-  void CollapseJS(nsINode& aNode, uint32_t aOffset,
+  void CollapseJS(nsINode* aNode, uint32_t aOffset,
                   mozilla::ErrorResult& aRv);
   void CollapseToStartJS(mozilla::ErrorResult& aRv);
   void CollapseToEndJS(mozilla::ErrorResult& aRv);
