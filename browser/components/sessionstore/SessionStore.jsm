@@ -132,26 +132,6 @@ const TAB_EVENTS = [
 
 const NS_XUL = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 
-
-
-
-
-const RESTORE_TAB_CONTENT_REASON = {
-  
-
-
-
-
-
-  SET_STATE: 0,
-  
-
-
-
-
-  NAVIGATE_AND_RESTORE: 1,
-};
-
 Cu.import("resource://gre/modules/PrivateBrowsingUtils.jsm", this);
 Cu.import("resource://gre/modules/Promise.jsm", this);
 Cu.import("resource://gre/modules/Services.jsm", this);
@@ -926,11 +906,7 @@ var SessionStoreInternal = {
           
           
           this.markTabAsRestoring(tab);
-        } else if (data.reason != RESTORE_TAB_CONTENT_REASON.NAVIGATE_AND_RESTORE) {
-          
-          
-          
-          
+        } else if (!data.isRemotenessUpdate) {
           
           
           
@@ -2821,9 +2797,6 @@ var SessionStoreInternal = {
         
         
         reloadInFreshProcess: !!recentLoadArguments.reloadInFreshProcess,
-        
-        
-        restoreContentReason: RESTORE_TAB_CONTENT_REASON.NAVIGATE_AND_RESTORE,
       };
 
       if (historyIndex >= 0) {
@@ -3485,7 +3458,6 @@ var SessionStoreInternal = {
     let tabbrowser = window.gBrowser;
     let forceOnDemand = options.forceOnDemand;
     let reloadInFreshProcess = options.reloadInFreshProcess;
-    let restoreContentReason = options.restoreContentReason;
 
     let willRestoreImmediately = restoreImmediately ||
                                  tabbrowser.selectedBrowser == browser ||
@@ -3610,8 +3582,7 @@ var SessionStoreInternal = {
     
     
     if (willRestoreImmediately) {
-      this.restoreTabContent(tab, loadArguments, reloadInFreshProcess,
-                             restoreContentReason);
+      this.restoreTabContent(tab, loadArguments, reloadInFreshProcess);
     } else if (!forceOnDemand) {
       this.restoreNextTab();
     }
@@ -3630,12 +3601,7 @@ var SessionStoreInternal = {
 
 
 
-
-
-
-
-  restoreTabContent(aTab, aLoadArguments = null, aReloadInFreshProcess = false,
-                    aReason = RESTORE_TAB_CONTENT_REASON.SET_STATE) {
+  restoreTabContent(aTab, aLoadArguments = null, aReloadInFreshProcess = false) {
     if (aTab.hasAttribute("customizemode") && !aLoadArguments) {
       return;
     }
@@ -3695,8 +3661,7 @@ var SessionStoreInternal = {
     }
 
     browser.messageManager.sendAsyncMessage("SessionStore:restoreTabContent",
-      {loadArguments: aLoadArguments, isRemotenessUpdate,
-       reason: aReason});
+      {loadArguments: aLoadArguments, isRemotenessUpdate});
   },
 
   
