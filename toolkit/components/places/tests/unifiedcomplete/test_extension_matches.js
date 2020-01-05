@@ -42,21 +42,20 @@ add_task(function* test_correct_errors_are_thrown() {
   ExtensionSearchHandler.handleSearch(keyword, `${keyword} test`, () => {});
 
   
+  Assert.throws(() => ExtensionSearchHandler.addSuggestions(unregisteredKeyword, 0, []));
+
+  
+  Assert.throws(() => ExtensionSearchHandler.addSuggestions(anotherKeyword, 0, []));
+
+  
   Assert.throws(() => ExtensionSearchHandler.handleSearch(anotherKeyword, `${anotherKeyword} `, () => {}));
 
   
-  Assert.throws(() => ExtensionSearchHandler.addSuggestions(unregisteredKeyword, 1, []));
+  Assert.ok(!ExtensionSearchHandler.addSuggestions(keyword, 0, []));
+  Assert.ok(!ExtensionSearchHandler.addSuggestions(keyword, 2, []));
 
   
-  Assert.throws(() => ExtensionSearchHandler.addSuggestions(anotherKeyword, 1, []));
-
-  
-  Assert.throws(() => ExtensionSearchHandler.addSuggestions(keyword, 0, []));
-
-  
-  Assert.throws(() => ExtensionSearchHandler.addSuggestions(keyword, 2, []));
-
-  ExtensionSearchHandler.addSuggestions(keyword, 1, []);
+  Assert.ok(ExtensionSearchHandler.addSuggestions(keyword, 1, []));
 
   
   ExtensionSearchHandler.handleInputCancelled();
