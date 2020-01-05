@@ -2514,7 +2514,7 @@ nsSSLIOLayerSetOptions(PRFileDesc* fd, bool forSTARTTLS,
   }
   
   
-  if (SECSuccess != SSL_SendAdditionalKeyShares(fd, 2)) {
+  if (SECSuccess != SSL_SendAdditionalKeyShares(fd, 1)) {
     return NS_ERROR_FAILURE;
   }
 
