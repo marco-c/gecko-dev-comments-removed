@@ -262,6 +262,9 @@ function RegExpLocalMatchOpt(rx, S, sticky) {
 
 
 function IsRegExpMethodOptimizable(rx) {
+    if (!IsRegExpObject(rx))
+        return false;
+
     var RegExpProto = GetBuiltinPrototype("RegExp");
     
     
