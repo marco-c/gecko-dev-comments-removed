@@ -61,11 +61,6 @@ public class DataReportingNotification {
             }
             return;
         }
-
-        if (currentVersion >= DATA_REPORTING_VERSION) {
-            
-            return;
-        }
     }
 
     
