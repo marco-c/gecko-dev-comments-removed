@@ -433,7 +433,8 @@ nsAppStartup::Quit(uint32_t aMode)
         mediator->GetEnumerator(nullptr, getter_AddRefs(windowEnumerator));
         if (windowEnumerator) {
           bool more;
-          while (windowEnumerator->HasMoreElements(&more), more) {
+          while (NS_SUCCEEDED(windowEnumerator->HasMoreElements(&more)) &&
+                 more) {
             
 
             ferocity = eAttemptQuit;
