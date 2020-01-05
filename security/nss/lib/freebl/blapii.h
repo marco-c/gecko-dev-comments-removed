@@ -58,4 +58,11 @@ SEC_END_PROTOS
 
 #undef HAVE_NO_SANITIZE_ATTR
 
+SECStatus RSA_Init();
+
+
+PRBool aesni_support();
+PRBool clmul_support();
+PRBool avx_support();
+
 #endif 
