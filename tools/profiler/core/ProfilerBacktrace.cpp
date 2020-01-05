@@ -30,6 +30,14 @@ ProfilerBacktrace::StreamJSON(SpliceableJSONWriter& aWriter,
                               const TimeStamp& aStartTime,
                               UniqueStacks& aUniqueStacks)
 {
-  mThreadInfo->StreamSamplesAndMarkers(mBuffer, aWriter, aStartTime,
-                                        0, aUniqueStacks);
+  
+  
+  
+  
+  StreamSamplesAndMarkers(mThreadInfo->Name(), mThreadInfo->ThreadId(),
+                          mBuffer, aWriter, aStartTime,
+                           0,  nullptr,
+                           nullptr,
+                           nullptr,
+                          aUniqueStacks);
 }
