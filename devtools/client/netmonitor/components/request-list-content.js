@@ -40,14 +40,16 @@ const RequestListContent = createClass({
     this.refs.contentEl.addEventListener("scroll", this.onScroll, true);
   },
 
-  componentWillUpdate() {
+  componentWillUpdate(nextProps) {
     
-    this.shouldScrollBottom = this.isScrolledToBottom();
+    
+    const delta = nextProps.displayedRequests.size - this.props.displayedRequests.size;
+    this.shouldScrollBottom = delta > 0 && this.isScrolledToBottom();
   },
 
   componentDidUpdate(prevProps) {
     
-    this.setScalingStyles();
+    this.setScalingStyles(prevProps);
 
     
     if (this.shouldScrollBottom) {
@@ -72,11 +74,9 @@ const RequestListContent = createClass({
 
   setScalingStyles(prevProps) {
     const { scale } = this.props;
-    if (scale == this.currentScale) {
+    if (prevProps && prevProps.scale === scale) {
       return;
     }
-
-    this.currentScale = scale;
 
     const { style } = this.refs.contentEl;
     style.removeProperty("--timings-scale");
