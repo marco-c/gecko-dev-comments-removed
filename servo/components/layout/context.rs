@@ -179,46 +179,26 @@ impl<'a> LayoutContext<'a> {
     pub fn get_or_request_image_or_meta(&self, url: Url, use_placeholder: UsePlaceholder)
                                 -> Option<ImageOrMetadataAvailable> {
         
+        if opts::get().output_file.is_some() || opts::get().exit_after_load {
+            return self.get_or_request_image(url, use_placeholder)
+                       .map(|img| ImageOrMetadataAvailable::ImageAvailable(img));
+        }
+        
         let result = self.shared.image_cache_thread.find_image_or_metadata(url.clone(),
-                                                                         use_placeholder);
-
+                                                                           use_placeholder);
         match result {
             Ok(image_or_metadata) => Some(image_or_metadata),
-            Err(state) => {
-                
-                
-                let is_sync = opts::get().output_file.is_some() ||
-                              opts::get().exit_after_load;
-
-                match (state, is_sync) {
-                    
-                    (ImageState::LoadError, _) => None,
-                    
-                    (_, true) => {
-                        let (sync_tx, sync_rx) = ipc::channel().unwrap();
-                        self.shared.image_cache_thread.request_image(url,
-                                                                   ImageCacheChan(sync_tx),
-                                                                   None);
-                        match sync_rx.recv().unwrap().image_response {
-                            ImageResponse::Loaded(image) |
-                            ImageResponse::PlaceholderLoaded(image) =>
-                                Some(ImageOrMetadataAvailable::ImageAvailable(image)),
-                            ImageResponse::None | ImageResponse::MetadataLoaded(_) =>
-                                None,
-                        }
-                    }
-                    
-                    (ImageState::NotRequested, false) => {
-                        let sender = self.shared.image_cache_sender.lock().unwrap().clone();
-                        self.shared.image_cache_thread.request_image_and_metadata(url, sender, None);
-                        None
-                    }
-                    
-                    
-                    
-                    (ImageState::Pending, false) => None,
-                }
+            
+            Err(ImageState::LoadError) => None,
+            
+            Err(ImageState::NotRequested) => {
+                let sender = self.shared.image_cache_sender.lock().unwrap().clone();
+                self.shared.image_cache_thread.request_image_and_metadata(url, sender, None);
+                None
             }
+            
+            
+            Err(ImageState::Pending) => None,
         }
     }
 
