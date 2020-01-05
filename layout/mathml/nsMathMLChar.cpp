@@ -735,11 +735,7 @@ InitCharGlobals()
   
   
   
-  if (!glyphTableList->AddGlyphTable(NS_LITERAL_STRING("STIXGeneral"))
-#ifdef XP_WIN
-      || !glyphTableList->AddGlyphTable(NS_LITERAL_STRING("Symbol"))
-#endif
-      ) {
+  if (!glyphTableList->AddGlyphTable(NS_LITERAL_STRING("STIXGeneral"))) {
     rv = NS_ERROR_OUT_OF_MEMORY;
   }
 
