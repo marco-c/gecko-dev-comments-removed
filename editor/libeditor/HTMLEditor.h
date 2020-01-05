@@ -1098,6 +1098,25 @@ private:
                               const nsAString& aTagName, nsINode* aNode);
   already_AddRefed<Element> CreateElementWithDefaults(
                               const nsAString& aTagName);
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  already_AddRefed<Element> CreateAnonymousElement(
+                              nsIAtom* aTag,
+                              nsIDOMNode* aParentNode,
+                              const nsAString& aAnonClass,
+                              bool aIsCreatedHidden);
 };
 
 } 
