@@ -1704,6 +1704,15 @@ void nsWindow::SetThemeRegion()
 
 
 void nsWindow::RegisterTouchWindow() {
+  if (!WinUtils::IsTouchDeviceSupportPresent() &&
+      !Preferences::GetBool("test.force_register_touch_windows", false)) {
+    
+    
+    
+    
+    
+    return;
+  }
   mTouchWindow = true;
   mGesture.RegisterTouchWindow(mWnd);
   ::EnumChildWindows(mWnd, nsWindow::RegisterTouchForDescendants, 0);
