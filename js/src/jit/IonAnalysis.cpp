@@ -196,8 +196,6 @@ FlagPhiInputsAsHavingRemovedUses(MIRGenerator* mir, MBasicBlock* block, MBasicBl
 static bool
 FlagAllOperandsAsHavingRemovedUses(MIRGenerator* mir, MBasicBlock* block)
 {
-    const CompileInfo& info = block->info();
-
     
     MInstructionIterator end = block->end();
     for (MInstructionIterator it = block->begin(); it != end; it++) {
@@ -212,10 +210,8 @@ FlagAllOperandsAsHavingRemovedUses(MIRGenerator* mir, MBasicBlock* block)
         if (MResumePoint* rp = ins->resumePoint()) {
             
             
-            for (size_t i = 0, e = rp->numOperands(); i < e; i++) {
-                if (info.isObservableSlot(i))
-                    rp->getOperand(i)->setUseRemovedUnchecked();
-            }
+            for (size_t i = 0, e = rp->numOperands(); i < e; i++)
+                rp->getOperand(i)->setUseRemovedUnchecked();
         }
     }
 
@@ -225,10 +221,8 @@ FlagAllOperandsAsHavingRemovedUses(MIRGenerator* mir, MBasicBlock* block)
         if (mir->shouldCancel("FlagAllOperandsAsHavingRemovedUses loop 2"))
             return false;
 
-        for (size_t i = 0, e = rp->numOperands(); i < e; i++) {
-            if (info.isObservableSlot(i))
-                rp->getOperand(i)->setUseRemovedUnchecked();
-        }
+        for (size_t i = 0, e = rp->numOperands(); i < e; i++)
+            rp->getOperand(i)->setUseRemovedUnchecked();
 
         rp = rp->caller();
     }
