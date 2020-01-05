@@ -124,11 +124,11 @@ public:
 
 
 
-  static void InitSameProcess();
+  static void InitSameProcess(uint32_t aNamespace);
 
-  static void InitWithGPUProcess(Endpoint<PImageBridgeChild>&& aEndpoint);
-  static bool InitForContent(Endpoint<PImageBridgeChild>&& aEndpoint);
-  static bool ReinitForContent(Endpoint<PImageBridgeChild>&& aEndpoint);
+  static void InitWithGPUProcess(Endpoint<PImageBridgeChild>&& aEndpoint, uint32_t aNamespace);
+  static bool InitForContent(Endpoint<PImageBridgeChild>&& aEndpoint, uint32_t aNamespace);
+  static bool ReinitForContent(Endpoint<PImageBridgeChild>&& aEndpoint, uint32_t aNamespace);
 
   
 
@@ -339,8 +339,10 @@ public:
 
   virtual void HandleFatalError(const char* aName, const char* aMsg) const override;
 
+  uint64_t GetNextExternalImageId();
+
 protected:
-  ImageBridgeChild();
+  explicit ImageBridgeChild(uint32_t aNamespace);
   bool DispatchAllocShmemInternal(size_t aSize,
                                   SharedMemory::SharedMemoryType aType,
                                   Shmem* aShmem,
@@ -365,6 +367,8 @@ protected:
   static void ShutdownSingleton();
 
 private:
+  uint32_t mNamespace;
+
   CompositableTransaction* mTxn;
 
   bool mCanSend;

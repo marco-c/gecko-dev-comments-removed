@@ -111,16 +111,7 @@ WebRenderBridgeChild::DPEnd(wr::DisplayListBuilder &aBuilder, const gfx::IntSize
 uint64_t
 WebRenderBridgeChild::GetNextExternalImageId()
 {
-  static uint32_t sNextID = 1;
-  ++sNextID;
-  MOZ_RELEASE_ASSERT(sNextID != UINT32_MAX);
-
-  
-  
-  uint32_t procId = static_cast<uint32_t>(base::GetCurrentProcId());
-  uint64_t imageId = procId;
-  imageId = imageId << 32 | sNextID;
-  return imageId;
+  return GetCompositorBridgeChild()->GetNextExternalImageId();
 }
 
 uint64_t

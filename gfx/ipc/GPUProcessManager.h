@@ -95,7 +95,8 @@ public:
     ipc::Endpoint<PCompositorBridgeChild>* aOutCompositor,
     ipc::Endpoint<PImageBridgeChild>* aOutImageBridge,
     ipc::Endpoint<PVRManagerChild>* aOutVRBridge,
-    ipc::Endpoint<dom::PVideoDecoderManagerChild>* aOutVideoManager);
+    ipc::Endpoint<dom::PVideoDecoderManagerChild>* aOutVideoManager,
+    nsTArray<uint32_t>* aNamespaces);
 
   
   
@@ -118,6 +119,10 @@ public:
   
   
   uint64_t AllocateLayerTreeId();
+
+  
+  
+  uint32_t AllocateNamespace();
 
   
   
@@ -235,12 +240,11 @@ private:
   friend class Observer;
 
 private:
-  bool mDecodeVideoOnGpuProcess = true;
-
   RefPtr<Observer> mObserver;
   ipc::TaskFactory<GPUProcessManager> mTaskFactory;
   RefPtr<VsyncIOThreadHolder> mVsyncIOThread;
   uint64_t mNextLayerTreeId;
+  uint32_t mNextNamespace;
   uint64_t mNextResetSequenceNo;
   uint32_t mNumProcessAttempts;
 

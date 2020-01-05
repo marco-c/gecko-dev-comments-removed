@@ -51,7 +51,7 @@ class CompositorBridgeChild final : public PCompositorBridgeChild,
 public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(CompositorBridgeChild, override);
 
-  explicit CompositorBridgeChild(LayerManager *aLayerManager);
+  explicit CompositorBridgeChild(LayerManager *aLayerManager, uint32_t aNamespace);
 
   void Destroy();
 
@@ -65,13 +65,14 @@ public:
   
 
 
-  static bool InitForContent(Endpoint<PCompositorBridgeChild>&& aEndpoint);
-  static bool ReinitForContent(Endpoint<PCompositorBridgeChild>&& aEndpoint);
+  static bool InitForContent(Endpoint<PCompositorBridgeChild>&& aEndpoint, uint32_t aNamespace);
+  static bool ReinitForContent(Endpoint<PCompositorBridgeChild>&& aEndpoint, uint32_t aNamespace);
 
   static RefPtr<CompositorBridgeChild> CreateRemote(
     const uint64_t& aProcessToken,
     LayerManager* aLayerManager,
-    Endpoint<PCompositorBridgeChild>&& aEndpoint);
+    Endpoint<PCompositorBridgeChild>&& aEndpoint,
+    uint32_t aNamespace);
 
   
 
@@ -233,6 +234,8 @@ public:
     return mDeviceResetSequenceNumber;
   }
 
+  uint64_t GetNextExternalImageId();
+
 private:
   
   virtual ~CompositorBridgeChild();
@@ -295,6 +298,9 @@ private:
   };
 
   RefPtr<LayerManager> mLayerManager;
+
+  uint32_t mNamespace;
+
   
   
   RefPtr<CompositorBridgeParent> mCompositorBridgeParent;

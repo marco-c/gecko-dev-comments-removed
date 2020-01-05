@@ -158,19 +158,20 @@ public:
     Endpoint<PCompositorBridgeChild>&& aCompositor,
     Endpoint<PImageBridgeChild>&& aImageBridge,
     Endpoint<PVRManagerChild>&& aVRBridge,
-    Endpoint<PVideoDecoderManagerChild>&& aVideoManager) override;
+    Endpoint<PVideoDecoderManagerChild>&& aVideoManager,
+    nsTArray<uint32_t>&& namespaces) override;
 
   mozilla::ipc::IPCResult
   RecvReinitRendering(
     Endpoint<PCompositorBridgeChild>&& aCompositor,
     Endpoint<PImageBridgeChild>&& aImageBridge,
     Endpoint<PVRManagerChild>&& aVRBridge,
-    Endpoint<PVideoDecoderManagerChild>&& aVideoManager) override;
+    Endpoint<PVideoDecoderManagerChild>&& aVideoManager,
+    nsTArray<uint32_t>&& namespaces) override;
 
   virtual mozilla::ipc::IPCResult RecvSetProcessSandbox(const MaybeFileDesc& aBroker) override;
 
   virtual PBrowserChild* AllocPBrowserChild(const TabId& aTabId,
-                                            const TabId& aSameTabGroupAs,
                                             const IPCTabContext& aContext,
                                             const uint32_t& aChromeFlags,
                                             const ContentParentId& aCpID,
@@ -510,7 +511,6 @@ public:
 
   virtual bool SendPBrowserConstructor(PBrowserChild* actor,
                                        const TabId& aTabId,
-                                       const TabId& aSameTabGroupAs,
                                        const IPCTabContext& context,
                                        const uint32_t& chromeFlags,
                                        const ContentParentId& aCpID,
@@ -518,7 +518,6 @@ public:
 
   virtual mozilla::ipc::IPCResult RecvPBrowserConstructor(PBrowserChild* aCctor,
                                                           const TabId& aTabId,
-                                                          const TabId& aSameTabGroupAs,
                                                           const IPCTabContext& aContext,
                                                           const uint32_t& aChromeFlags,
                                                           const ContentParentId& aCpID,
@@ -664,8 +663,6 @@ private:
 
   virtual already_AddRefed<nsIEventTarget>
   GetConstructedEventTarget(const Message& aMsg) override;
-
-  void GatherProfile(bool aIsExitProfile);
 
   InfallibleTArray<nsAutoPtr<AlertObserver> > mAlertObservers;
   RefPtr<ConsoleListener> mConsoleListener;

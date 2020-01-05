@@ -521,14 +521,6 @@ ContentChild::RecvSetXPCOMProcessAttributes(const XPCOMInitData& aXPCOMInit,
   mLookAndFeelCache = aLookAndFeelIntCache;
   InitXPCOM(aXPCOMInit, aInitialData);
   InitGraphicsDeviceData(aXPCOMInit.contentDeviceData());
-
-#ifdef NS_PRINTING
-  
-  
-  
-  RefPtr<nsPrintingProxy> printingProxy = nsPrintingProxy::GetInstance();
-#endif
-
   return IPC_OK();
 }
 
@@ -609,6 +601,12 @@ ContentChild::Init(MessageLoop* aIOLoop,
 
   mID = aChildID;
   mIsForBrowser = aIsForBrowser;
+
+#ifdef NS_PRINTING
+  
+  
+  RefPtr<nsPrintingProxy> printingProxy = nsPrintingProxy::GetInstance();
+#endif
 
   SetProcessName(NS_LITERAL_STRING("Web Content"), true);
 
@@ -777,19 +775,8 @@ ContentChild::ProvideWindowCommon(TabChild* aTabOpener,
                     GetID(),
                     &tabId);
 
-  
-  
-  
-  RefPtr<TabGroup> tabGroup;
-  if (aTabOpener && !aForceNoOpener) {
-    
-    tabGroup = aTabOpener->TabGroup();
-  } else {
-    tabGroup = new TabGroup();
-  }
-
   TabContext newTabContext = aTabOpener ? *aTabOpener : TabContext();
-  RefPtr<TabChild> newChild = new TabChild(this, tabId, tabGroup,
+  RefPtr<TabChild> newChild = new TabChild(this, tabId,
                                            newTabContext, aChromeFlags);
   if (NS_FAILED(newChild->Init())) {
     return NS_ERROR_ABORT;
@@ -800,13 +787,23 @@ ContentChild::ProvideWindowCommon(TabChild* aTabOpener,
     ipcContext->get_PopupIPCTabContext().opener() = aTabOpener;
   }
 
+  
+  
+  
+  RefPtr<TabGroup> tabGroup;
+  if (aTabOpener && !aForceNoOpener) {
+    
+    tabGroup = aTabOpener->TabGroup();
+  } else {
+    tabGroup = new TabGroup();
+  }
   nsCOMPtr<nsIEventTarget> target = tabGroup->EventTargetFor(TaskCategory::Other);
   SetEventTargetForActor(newChild, target);
 
   Unused << SendPBrowserConstructor(
     
     RefPtr<TabChild>(newChild).forget().take(),
-    tabId, TabId(0), *ipcContext, aChromeFlags,
+    tabId, *ipcContext, aChromeFlags,
     GetID(), IsForBrowser());
 
   nsString name(aName);
@@ -1132,12 +1129,15 @@ mozilla::ipc::IPCResult
 ContentChild::RecvInitRendering(Endpoint<PCompositorBridgeChild>&& aCompositor,
                                 Endpoint<PImageBridgeChild>&& aImageBridge,
                                 Endpoint<PVRManagerChild>&& aVRBridge,
-                                Endpoint<PVideoDecoderManagerChild>&& aVideoManager)
+                                Endpoint<PVideoDecoderManagerChild>&& aVideoManager,
+                                nsTArray<uint32_t>&& namespaces)
 {
-  if (!CompositorBridgeChild::InitForContent(Move(aCompositor))) {
+  MOZ_ASSERT(namespaces.Length() == 2);
+
+  if (!CompositorBridgeChild::InitForContent(Move(aCompositor), namespaces[0])) {
     return IPC_FAIL_NO_REASON(this);
   }
-  if (!ImageBridgeChild::InitForContent(Move(aImageBridge))) {
+  if (!ImageBridgeChild::InitForContent(Move(aImageBridge), namespaces[1])) {
     return IPC_FAIL_NO_REASON(this);
   }
   if (!gfx::VRManagerChild::InitForContent(Move(aVRBridge))) {
@@ -1151,8 +1151,10 @@ mozilla::ipc::IPCResult
 ContentChild::RecvReinitRendering(Endpoint<PCompositorBridgeChild>&& aCompositor,
                                   Endpoint<PImageBridgeChild>&& aImageBridge,
                                   Endpoint<PVRManagerChild>&& aVRBridge,
-                                  Endpoint<PVideoDecoderManagerChild>&& aVideoManager)
+                                  Endpoint<PVideoDecoderManagerChild>&& aVideoManager,
+                                  nsTArray<uint32_t>&& namespaces)
 {
+  MOZ_ASSERT(namespaces.Length() == 2);
   nsTArray<RefPtr<TabChild>> tabs = TabChild::GetAll();
 
   
@@ -1163,10 +1165,10 @@ ContentChild::RecvReinitRendering(Endpoint<PCompositorBridgeChild>&& aCompositor
   }
 
   
-  if (!CompositorBridgeChild::ReinitForContent(Move(aCompositor))) {
+  if (!CompositorBridgeChild::ReinitForContent(Move(aCompositor), namespaces[0])) {
     return IPC_FAIL_NO_REASON(this);
   }
-  if (!ImageBridgeChild::ReinitForContent(Move(aImageBridge))) {
+  if (!ImageBridgeChild::ReinitForContent(Move(aImageBridge), namespaces[1])) {
     return IPC_FAIL_NO_REASON(this);
   }
   if (!gfx::VRManagerChild::ReinitForContent(Move(aVRBridge))) {
@@ -1444,14 +1446,12 @@ ContentChild::DeallocPJavaScriptChild(PJavaScriptChild *aChild)
 
 PBrowserChild*
 ContentChild::AllocPBrowserChild(const TabId& aTabId,
-                                 const TabId& aSameTabGroupAs,
                                  const IPCTabContext& aContext,
                                  const uint32_t& aChromeFlags,
                                  const ContentParentId& aCpID,
                                  const bool& aIsForBrowser)
 {
   return nsIContentChild::AllocPBrowserChild(aTabId,
-                                             aSameTabGroupAs,
                                              aContext,
                                              aChromeFlags,
                                              aCpID,
@@ -1461,7 +1461,6 @@ ContentChild::AllocPBrowserChild(const TabId& aTabId,
 bool
 ContentChild::SendPBrowserConstructor(PBrowserChild* aActor,
                                       const TabId& aTabId,
-                                      const TabId& aSameTabGroupAs,
                                       const IPCTabContext& aContext,
                                       const uint32_t& aChromeFlags,
                                       const ContentParentId& aCpID,
@@ -1473,7 +1472,6 @@ ContentChild::SendPBrowserConstructor(PBrowserChild* aActor,
 
   return PContentChild::SendPBrowserConstructor(aActor,
                                                 aTabId,
-                                                aSameTabGroupAs,
                                                 aContext,
                                                 aChromeFlags,
                                                 aCpID,
@@ -1483,7 +1481,6 @@ ContentChild::SendPBrowserConstructor(PBrowserChild* aActor,
 mozilla::ipc::IPCResult
 ContentChild::RecvPBrowserConstructor(PBrowserChild* aActor,
                                       const TabId& aTabId,
-                                      const TabId& aSameTabGroupAs,
                                       const IPCTabContext& aContext,
                                       const uint32_t& aChromeFlags,
                                       const ContentParentId& aCpID,
@@ -1500,13 +1497,8 @@ ContentChild::RecvPBrowserConstructor(PBrowserChild* aActor,
     NS_IdleDispatchToCurrentThread(firstIdleTask.forget());
   }
 
-  return nsIContentChild::RecvPBrowserConstructor(aActor,
-                                                  aTabId,
-                                                  aSameTabGroupAs,
-                                                  aContext,
-                                                  aChromeFlags,
-                                                  aCpID,
-                                                  aIsForBrowser);
+  return nsIContentChild::RecvPBrowserConstructor(aActor, aTabId, aContext,
+                                                  aChromeFlags, aCpID, aIsForBrowser);
 }
 
 void
@@ -2550,8 +2542,8 @@ ContentChild::RecvPauseProfiler(const bool& aPause)
   return IPC_OK();
 }
 
-void
-ContentChild::GatherProfile(bool aIsExitProfile)
+mozilla::ipc::IPCResult
+ContentChild::RecvGatherProfile()
 {
   nsCString profileCString;
   UniquePtr<char[]> profile = profiler_get_profile();
@@ -2561,13 +2553,7 @@ ContentChild::GatherProfile(bool aIsExitProfile)
     profileCString = EmptyCString();
   }
 
-  Unused << SendProfile(profileCString, aIsExitProfile);
-}
-
-mozilla::ipc::IPCResult
-ContentChild::RecvGatherProfile()
-{
-  GatherProfile(false);
+  Unused << SendProfile(profileCString);
   return IPC_OK();
 }
 
@@ -2741,7 +2727,7 @@ ContentChild::RecvShutdown()
     
     
     
-    GatherProfile(true);
+    Unused << RecvGatherProfile();
   }
 #endif
 
@@ -3186,32 +3172,6 @@ ContentChild::GetConstructedEventTarget(const Message& aMsg)
 {
   
   if (aMsg.type() != PContent::Msg_PBrowserConstructor__ID) {
-    return nullptr;
-  }
-
-  ActorHandle handle;
-  TabId tabId, sameTabGroupAs;
-  PickleIterator iter(aMsg);
-  if (!IPC::ReadParam(&aMsg, &iter, &handle)) {
-    return nullptr;
-  }
-  aMsg.IgnoreSentinel(&iter);
-  if (!IPC::ReadParam(&aMsg, &iter, &tabId)) {
-    return nullptr;
-  }
-  aMsg.IgnoreSentinel(&iter);
-  if (!IPC::ReadParam(&aMsg, &iter, &sameTabGroupAs)) {
-    return nullptr;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  if (sameTabGroupAs) {
     return nullptr;
   }
 

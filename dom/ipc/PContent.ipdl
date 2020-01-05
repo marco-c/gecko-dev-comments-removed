@@ -324,13 +324,8 @@ both:
     // type PopupIPCTabContext.  The parent checks that if the opener is a
     // browser element, the context is also for a browser element.
     //
-    // If |sameTabGroupAs| is non-zero, the new tab should go in the same
-    // TabGroup as |sameTabGroupAs|. This parameter should always be zero
-    // for PBrowser messages sent from the child to the parent.
-    //
     // Keep the last 3 attributes in sync with GetProcessAttributes!
-    async PBrowser(TabId tabId, TabId sameTabGroupAs,
-                   IPCTabContext context, uint32_t chromeFlags,
+    async PBrowser(TabId tabId, IPCTabContext context, uint32_t chromeFlags,
                    ContentParentId cpId, bool isForBrowser);
 
     async PBlob(BlobConstructorParams params);
@@ -354,7 +349,8 @@ child:
       Endpoint<PCompositorBridgeChild> compositor,
       Endpoint<PImageBridgeChild> imageBridge,
       Endpoint<PVRManagerChild> vr,
-      Endpoint<PVideoDecoderManagerChild> video);
+      Endpoint<PVideoDecoderManagerChild> video,
+      uint32_t[] namespaces);
 
     // Re-create the rendering stack using the given endpoints. This is sent
     // after the compositor process has crashed. The new endpoints may be to a
@@ -363,7 +359,8 @@ child:
       Endpoint<PCompositorBridgeChild> compositor,
       Endpoint<PImageBridgeChild> bridge,
       Endpoint<PVRManagerChild> vr,
-      Endpoint<PVideoDecoderManagerChild> video);
+      Endpoint<PVideoDecoderManagerChild> video,
+      uint32_t[] namespaces);
 
     /**
      * Enable system-level sandboxing features, if available.  Can
@@ -983,7 +980,7 @@ parent:
     async PContentPermissionRequest(PermissionRequest[] aRequests, Principal aPrincipal,
                                     TabId tabId);
 
-    async Profile(nsCString aProfile, bool aIsExitProfile);
+    async Profile(nsCString aProfile);
 
     /**
      * Request graphics initialization information from the parent.

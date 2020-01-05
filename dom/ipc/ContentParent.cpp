@@ -1162,8 +1162,7 @@ ContentParent::RecvFindPlugins(const uint32_t& aPluginEpoch,
  TabParent*
 ContentParent::CreateBrowser(const TabContext& aContext,
                              Element* aFrameElement,
-                             ContentParent* aOpenerContentParent,
-                             TabParent* aSameTabGroupAs)
+                             ContentParent* aOpenerContentParent)
 {
   PROFILER_LABEL_FUNC(js::ProfileEntry::Category::OTHER);
 
@@ -1244,7 +1243,6 @@ ContentParent::CreateBrowser(const TabContext& aContext,
     constructorSender->SendPBrowserConstructor(
       
       tp.forget().take(), tabId,
-      aSameTabGroupAs ? aSameTabGroupAs->GetTabId() : TabId(0),
       aContext.AsIPCTabContext(),
       chromeFlags,
       constructorSender->ChildID(),
@@ -2301,20 +2299,23 @@ ContentParent::InitInternal(ProcessPriority aInitialPriority,
       Endpoint<PImageBridgeChild> imageBridge;
       Endpoint<PVRManagerChild> vrBridge;
       Endpoint<PVideoDecoderManagerChild> videoManager;
+      nsTArray<uint32_t> namespaces;
 
       DebugOnly<bool> opened = gpm->CreateContentBridges(
         OtherPid(),
         &compositor,
         &imageBridge,
         &vrBridge,
-        &videoManager);
+        &videoManager,
+        &namespaces);
       MOZ_ASSERT(opened);
 
       Unused << SendInitRendering(
         Move(compositor),
         Move(imageBridge),
         Move(vrBridge),
-        Move(videoManager));
+        Move(videoManager),
+        Move(namespaces));
 
       gpm->AddListener(this);
     }
@@ -2449,20 +2450,23 @@ ContentParent::OnCompositorUnexpectedShutdown()
   Endpoint<PImageBridgeChild> imageBridge;
   Endpoint<PVRManagerChild> vrBridge;
   Endpoint<PVideoDecoderManagerChild> videoManager;
+  nsTArray<uint32_t> namespaces;
 
   DebugOnly<bool> opened = gpm->CreateContentBridges(
     OtherPid(),
     &compositor,
     &imageBridge,
     &vrBridge,
-    &videoManager);
+    &videoManager,
+    &namespaces);
   MOZ_ASSERT(opened);
 
   Unused << SendReinitRendering(
     Move(compositor),
     Move(imageBridge),
     Move(vrBridge),
-    Move(videoManager));
+    Move(videoManager),
+    Move(namespaces));
 }
 
 void
@@ -2799,14 +2803,12 @@ ContentParent::DeallocPJavaScriptParent(PJavaScriptParent *parent)
 
 PBrowserParent*
 ContentParent::AllocPBrowserParent(const TabId& aTabId,
-                                   const TabId& aSameTabGroupAs,
                                    const IPCTabContext& aContext,
                                    const uint32_t& aChromeFlags,
                                    const ContentParentId& aCpId,
                                    const bool& aIsForBrowser)
 {
   return nsIContentParent::AllocPBrowserParent(aTabId,
-                                               aSameTabGroupAs,
                                                aContext,
                                                aChromeFlags,
                                                aCpId,
@@ -3843,7 +3845,6 @@ ContentParent::SendPBlobConstructor(PBlobParent* aActor,
 PBrowserParent*
 ContentParent::SendPBrowserConstructor(PBrowserParent* aActor,
                                        const TabId& aTabId,
-                                       const TabId& aSameTabGroupAs,
                                        const IPCTabContext& aContext,
                                        const uint32_t& aChromeFlags,
                                        const ContentParentId& aCpId,
@@ -3851,7 +3852,6 @@ ContentParent::SendPBrowserConstructor(PBrowserParent* aActor,
 {
   return PContentParent::SendPBrowserConstructor(aActor,
                                                  aTabId,
-                                                 aSameTabGroupAs,
                                                  aContext,
                                                  aChromeFlags,
                                                  aCpId,
@@ -4678,11 +4678,11 @@ ContentParent::RecvCreateWindowInDifferentProcess(
 }
 
 mozilla::ipc::IPCResult
-ContentParent::RecvProfile(const nsCString& aProfile, const bool& aIsExitProfile)
+ContentParent::RecvProfile(const nsCString& aProfile)
 {
 #ifdef MOZ_GECKO_PROFILER
   if (mProfilerController) {
-    mProfilerController->RecvProfile(aProfile, aIsExitProfile);
+    mProfilerController->RecvProfile(aProfile);
   }
 #endif
   return IPC_OK();
