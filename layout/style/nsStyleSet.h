@@ -181,9 +181,15 @@ class nsStyleSet final
   
   
   already_AddRefed<nsStyleContext>
-    ResolveStyleWithoutAnimation(mozilla::dom::Element* aElement,
-                                 nsStyleContext* aStyleContext,
-                                 nsRestyleHint aWhichToRemove);
+    ResolveStyleByRemovingAnimation(mozilla::dom::Element* aElement,
+                                    nsStyleContext* aStyleContext,
+                                    nsRestyleHint aWhichToRemove);
+
+  
+  
+  already_AddRefed<nsStyleContext>
+    ResolveStyleWithoutAnimation(mozilla::dom::Element* aTarget,
+                                 nsStyleContext* aParentContext);
 
   
   
@@ -525,6 +531,16 @@ private:
              mozilla::CSSPseudoElementType aPseudoType,
              mozilla::dom::Element* aElementForAnimation,
              uint32_t aFlags);
+
+  enum AnimationFlag {
+    eWithAnimation,
+    eWithoutAnimation,
+  };
+  already_AddRefed<nsStyleContext>
+  ResolveStyleForInternal(mozilla::dom::Element* aElement,
+                          nsStyleContext* aParentContext,
+                          TreeMatchContext& aTreeMatchContext,
+                          AnimationFlag aAnimationFlag);
 
   nsPresContext* PresContext() { return mRuleTree->PresContext(); }
 
