@@ -28,7 +28,14 @@ TabGroup::TabGroup(bool aIsChrome)
 {
   for (size_t i = 0; i < size_t(TaskCategory::Count); i++) {
     TaskCategory category = static_cast<TaskCategory>(i);
-    mEventTargets[i] = CreateEventTargetFor(category);
+    if (aIsChrome) {
+      
+      
+      
+      mEventTargets[i] = do_GetMainThread();
+    } else {
+      mEventTargets[i] = CreateEventTargetFor(category);
+    }
   }
 
   
@@ -76,7 +83,7 @@ TabGroup::EnsureThrottledEventQueues()
   }
 }
 
-TabGroup*
+ TabGroup*
 TabGroup::GetChromeTabGroup()
 {
   if (!sChromeTabGroup) {
@@ -162,7 +169,10 @@ TabGroup::Leave(nsPIDOMWindowOuter* aWindow)
   MOZ_ASSERT(mWindows.Contains(aWindow));
   mWindows.RemoveElement(aWindow);
 
-  if (mWindows.IsEmpty()) {
+  
+  
+  
+  if (sChromeTabGroup != this && mWindows.IsEmpty()) {
     mLastWindowLeft = true;
 
     
