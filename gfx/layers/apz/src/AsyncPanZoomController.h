@@ -45,6 +45,7 @@ namespace layers {
 class AsyncDragMetrics;
 struct ScrollableLayerGuid;
 class CompositorBridgeParent;
+class CompositorController;
 class GestureEventListener;
 class PCompositorBridgeParent;
 struct AsyncTransform;
@@ -189,6 +190,8 @@ public:
   
 
 
+
+  void SetCompositorController(CompositorController* aCompositorController);
 
   void SetCompositorBridgeParent(CompositorBridgeParent* aCompositorBridgeParent);
 
@@ -516,7 +519,6 @@ protected:
   
 
 
-
   void ScheduleComposite();
 
   
@@ -647,6 +649,7 @@ protected:
   void OnTouchEndOrCancel();
 
   uint64_t mLayersId;
+  RefPtr<CompositorController> mCompositorController;
   RefPtr<CompositorBridgeParent> mCompositorBridgeParent;
 
   
