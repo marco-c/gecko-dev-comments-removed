@@ -155,7 +155,7 @@ nsContentDLF::CreateInstance(const char* aCommand,
     
     
     nsAutoCString type;
-    viewSourceChannel->GetOriginalContentType(type);
+    mozilla::Unused << viewSourceChannel->GetOriginalContentType(type);
     bool knownType =
       (!type.EqualsLiteral(VIEWSOURCE_CONTENT_TYPE) &&
         IsTypeInList(type, gHTMLTypes)) ||

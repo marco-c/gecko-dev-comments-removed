@@ -25,11 +25,11 @@ public:
 
     
     
-    nsresult NewSrcdocChannel(nsIURI *aURI,
-                              nsIURI *aBaseURI,
-                              const nsAString &aSrcdoc,
-                              nsILoadInfo *aLoadInfo,
-                              nsIChannel** outChannel);
+    MOZ_MUST_USE nsresult NewSrcdocChannel(nsIURI *aURI,
+                                           nsIURI *aBaseURI,
+                                           const nsAString &aSrcdoc,
+                                           nsILoadInfo *aLoadInfo,
+                                           nsIChannel** outChannel);
 
     static nsViewSourceHandler* GetInstance();
 
