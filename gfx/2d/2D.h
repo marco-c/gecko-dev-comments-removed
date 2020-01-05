@@ -26,6 +26,7 @@
 
 
 #include "mozilla/RefPtr.h"
+#include "mozilla/ServoUtils.h"
 #include "mozilla/WeakPtr.h"
 
 #include "mozilla/DebugOnly.h"
@@ -61,6 +62,23 @@ struct CGContext;
 typedef struct CGContext *CGContextRef;
 
 namespace mozilla {
+
+namespace gfx {
+class UnscaledFont;
+}
+
+template<>
+struct WeakPtrTraits<gfx::UnscaledFont>
+{
+  static void AssertSafeToAccessFromNonOwningThread()
+  {
+    
+    
+    
+    
+    AssertIsMainThreadOrServoFontMetricsLocked();
+  }
+};
 
 namespace gfx {
 
