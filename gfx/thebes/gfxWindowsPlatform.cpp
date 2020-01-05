@@ -365,10 +365,6 @@ gfxWindowsPlatform::InitAcceleration()
   DeviceManagerDx::Init();
   DeviceManagerD3D9::Init();
 
-  
-  
-  UpdateCanUseHardwareVideoDecoding();
-
   InitializeConfig();
   InitializeDevices();
   UpdateANGLEConfig();
@@ -378,6 +374,10 @@ gfxWindowsPlatform::InitAcceleration()
   if (!mDWriteFactory && GetDefaultContentBackend() == BackendType::SKIA) {
     InitDWriteSupport();
   }
+
+  
+  
+  UpdateCanUseHardwareVideoDecoding();
 }
 
 bool
