@@ -2,9 +2,6 @@
 
 
 
-#![feature(custom_derive, plugin)]
-#![plugin(serde_macros)]
-
 #![deny(unsafe_code)]
 
 extern crate gfx;
@@ -13,7 +10,6 @@ extern crate msg;
 extern crate net_traits;
 extern crate profile_traits;
 extern crate script_traits;
-extern crate serde;
 extern crate url;
 extern crate util;
 extern crate webrender_traits;
@@ -34,10 +30,6 @@ use script_traits::{LayoutControlMsg, ConstellationControlMsg};
 use std::sync::mpsc::{Sender, Receiver};
 use url::Url;
 use util::ipc::OptionalIpcSender;
-
-
-#[derive(Clone, Deserialize, Serialize)]
-pub struct LayoutControlChan(pub IpcSender<LayoutControlMsg>);
 
 
 
