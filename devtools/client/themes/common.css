@@ -32,11 +32,7 @@
 }
 
 :root[platform="linux"] .devtools-monospace {
-  font-size: 80%;
-}
-
-:root[platform="linux"].theme-firebug .devtools-monospace {
-  font-size: 11px; 
+  font-size: 11px;
 }
 
 
