@@ -34,7 +34,3 @@ source.element;
 source.displayURL;
 source.introductionOffset;
 source.elementAttributeName;
-
-
-
-assertThrowsInstanceOf(() => source.canonicalId, Error);
