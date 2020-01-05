@@ -24,7 +24,7 @@ const SHOW_INFINITE_LINES_PREF = "devtools.gridinspector.showInfiniteLines";
 
 
 const GRID_COLORS = [
-  "#05E4EE",
+  "#4B0082",
   "#BB9DFF",
   "#FFB53B",
   "#71F362",
