@@ -63,7 +63,9 @@ public:
   
   
   CVStatus wait_until(UniqueLock<Mutex>& lock,
-                      const mozilla::TimeStamp& abs_time);
+                      const mozilla::TimeStamp& abs_time) {
+    return wait_for(lock, abs_time - mozilla::TimeStamp::Now());
+  }
 
   
   
