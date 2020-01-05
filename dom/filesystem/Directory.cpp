@@ -7,7 +7,6 @@
 #include "mozilla/dom/Directory.h"
 
 #include "CreateDirectoryTask.h"
-#include "CreateFileTask.h"
 #include "FileSystemPermissionRequest.h"
 #include "GetDirectoryListingTask.h"
 #include "GetFileOrDirectoryTask.h"
@@ -27,11 +26,6 @@
 
 #ifdef CreateDirectory
 #undef CreateDirectory
-#endif
-
-
-#ifdef CreateFile
-#undef CreateFile
 #endif
 
 namespace mozilla {
@@ -192,57 +186,6 @@ Directory::GetName(nsAString& aRetval, ErrorResult& aRv)
   }
 
   fs->GetDirectoryName(mFile, aRetval, aRv);
-}
-
-already_AddRefed<Promise>
-Directory::CreateFile(const nsAString& aPath, const CreateFileOptions& aOptions,
-                      ErrorResult& aRv)
-{
-  
-  MOZ_ASSERT(NS_IsMainThread());
-
-  RefPtr<Blob> blobData;
-  InfallibleTArray<uint8_t> arrayData;
-  bool replace = (aOptions.mIfExists == CreateIfExistsMode::Replace);
-
-  
-  if (aOptions.mData.WasPassed()) {
-    auto& data = aOptions.mData.Value();
-    if (data.IsString()) {
-      NS_ConvertUTF16toUTF8 str(data.GetAsString());
-      arrayData.AppendElements(reinterpret_cast<const uint8_t *>(str.get()),
-                               str.Length());
-    } else if (data.IsArrayBuffer()) {
-      const ArrayBuffer& buffer = data.GetAsArrayBuffer();
-      buffer.ComputeLengthAndData();
-      arrayData.AppendElements(buffer.Data(), buffer.Length());
-    } else if (data.IsArrayBufferView()){
-      const ArrayBufferView& view = data.GetAsArrayBufferView();
-      view.ComputeLengthAndData();
-      arrayData.AppendElements(view.Data(), view.Length());
-    } else {
-      blobData = data.GetAsBlob();
-    }
-  }
-
-  nsCOMPtr<nsIFile> realPath;
-  nsresult error = DOMPathToRealPath(aPath, getter_AddRefs(realPath));
-
-  RefPtr<FileSystemBase> fs = GetFileSystem(aRv);
-  if (NS_WARN_IF(aRv.Failed())) {
-    return nullptr;
-  }
-
-  RefPtr<CreateFileTaskChild> task =
-    CreateFileTaskChild::Create(fs, realPath, blobData, arrayData, replace,
-                                aRv);
-  if (NS_WARN_IF(aRv.Failed())) {
-    return nullptr;
-  }
-
-  task->SetError(error);
-  FileSystemPermissionRequest::RequestForTask(task);
-  return task->GetPromise();
 }
 
 already_AddRefed<Promise>
