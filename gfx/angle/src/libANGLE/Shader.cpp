@@ -243,9 +243,9 @@ void Shader::compile(Compiler *compiler)
     std::stringstream sourceStream;
 
     std::string sourcePath;
-    ShCompileOptions additionalOptions =
+    int additionalOptions =
         mImplementation->prepareSourceAndReturnOptions(&sourceStream, &sourcePath);
-    ShCompileOptions compileOptions = (SH_OBJECT_CODE | SH_VARIABLES | additionalOptions);
+    int compileOptions    = (SH_OBJECT_CODE | SH_VARIABLES | additionalOptions);
 
     
     

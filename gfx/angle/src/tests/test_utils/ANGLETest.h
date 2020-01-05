@@ -280,15 +280,4 @@ bool IsWindows();
 
 void IgnoreANGLEPlatformMessages();
 
-
-#define ANGLE_SKIP_TEST_IF(COND)                              \
-    \
-if(COND)                                                      \
-    \
-{                                                      \
-        std::cout << "Test skipped: " #COND "." << std::endl; \
-        return;                                               \
-    \
-}
-
 #endif  

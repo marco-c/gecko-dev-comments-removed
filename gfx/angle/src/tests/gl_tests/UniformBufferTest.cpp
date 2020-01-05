@@ -77,6 +77,13 @@ class UniformBufferTest : public ANGLETest
 
 TEST_P(UniformBufferTest, Simple)
 {
+    
+    if (IsIntel() && GetParam().getRenderer() == EGL_PLATFORM_ANGLE_TYPE_D3D11_ANGLE)
+    {
+        std::cout << "Test skipped on Intel." << std::endl;
+        return;
+    }
+
     glClear(GL_COLOR_BUFFER_BIT);
     float floatData[4] = {0.5f, 0.75f, 0.25f, 1.0f};
 
@@ -175,6 +182,13 @@ TEST_P(UniformBufferTest, UniformBufferRange)
 
 TEST_P(UniformBufferTest, UniformBufferBindings)
 {
+    
+    if (IsIntel() && GetParam().getRenderer() == EGL_PLATFORM_ANGLE_TYPE_D3D11_ANGLE)
+    {
+        std::cout << "Test skipped on Intel." << std::endl;
+        return;
+    }
+
     int px = getWindowWidth() / 2;
     int py = getWindowHeight() / 2;
 
@@ -232,9 +246,10 @@ TEST_P(UniformBufferTest, UnboundUniformBuffer)
 TEST_P(UniformBufferTest, UniformBufferManyUpdates)
 {
     
-    if (IsIntel() && IsOpenGL())
+    if (IsIntel() && (getPlatformRenderer() == EGL_PLATFORM_ANGLE_TYPE_D3D11_ANGLE ||
+                      getPlatformRenderer() == EGL_PLATFORM_ANGLE_TYPE_OPENGL_ANGLE))
     {
-        std::cout << "Test skipped on Intel OpenGL." << std::endl;
+        std::cout << "Test skipped on Intel." << std::endl;
         return;
     }
 
@@ -277,6 +292,7 @@ TEST_P(UniformBufferTest, ManyUniformBufferRange)
         std::cout << "Test skipped on Intel." << std::endl;
         return;
     }
+
     int px = getWindowWidth() / 2;
     int py = getWindowHeight() / 2;
 

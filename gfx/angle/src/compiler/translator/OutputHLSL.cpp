@@ -80,14 +80,11 @@ const TConstantUnion *WriteConstantUnionArray(TInfoSinkBase &out,
 namespace sh
 {
 
-OutputHLSL::OutputHLSL(sh::GLenum shaderType,
-                       int shaderVersion,
-                       const TExtensionBehavior &extensionBehavior,
-                       const char *sourcePath,
-                       ShShaderOutput outputType,
-                       int numRenderTargets,
-                       const std::vector<Uniform> &uniforms,
-                       ShCompileOptions compileOptions)
+OutputHLSL::OutputHLSL(sh::GLenum shaderType, int shaderVersion,
+    const TExtensionBehavior &extensionBehavior,
+    const char *sourcePath, ShShaderOutput outputType,
+    int numRenderTargets, const std::vector<Uniform> &uniforms,
+    int compileOptions)
     : TIntermTraverser(true, true, true),
       mShaderType(shaderType),
       mShaderVersion(shaderVersion),
@@ -1459,8 +1456,9 @@ bool OutputHLSL::visitAggregate(Visit visit, TIntermAggregate *node)
                 
                 
                 
-                if ((*sit)->getAsCaseNode() == nullptr && (*sit)->getAsSelectionNode() == nullptr &&
-                    !IsSequence(*sit))
+                TIntermSelection *asSelection = (*sit)->getAsSelectionNode();
+                ASSERT(asSelection == nullptr || !asSelection->usesTernaryOperator());
+                if ((*sit)->getAsCaseNode() == nullptr && asSelection == nullptr && !IsSequence(*sit))
                     out << ";\n";
             }
 
@@ -1984,18 +1982,11 @@ void OutputHLSL::writeSelection(TInfoSinkBase &out, TIntermSelection *node)
     }
 }
 
-bool OutputHLSL::visitTernary(Visit, TIntermTernary *)
-{
-    
-    
-    UNREACHABLE();
-    return false;
-}
-
 bool OutputHLSL::visitSelection(Visit visit, TIntermSelection *node)
 {
     TInfoSinkBase &out = getInfoSink();
 
+    ASSERT(!node->usesTernaryOperator());
     ASSERT(mInsideFunction);
 
     

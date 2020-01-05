@@ -419,139 +419,129 @@ gl::Error Clear11::clearFramebuffer(const ClearParameters &clearParams,
         }
     }
 
-    if (maskedClearRenderTargets.empty() && !maskedClearDepthStencil)
+    if (maskedClearRenderTargets.size() > 0 || maskedClearDepthStencil)
     {
-        return gl::NoError();
-    }
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    
-    ASSERT(maskedClearRenderTargets.size() <= mRenderer->getNativeCaps().maxDrawBuffers);
-    std::vector<ID3D11RenderTargetView *> rtvs(maskedClearRenderTargets.size());
-    for (unsigned int i = 0; i < maskedClearRenderTargets.size(); i++)
-    {
-        RenderTarget11 *renderTarget = maskedClearRenderTargets[i].renderTarget;
-        ID3D11RenderTargetView *rtv  = renderTarget->getRenderTargetView();
-        if (!rtv)
+        
+        ASSERT(maskedClearRenderTargets.size() <= mRenderer->getNativeCaps().maxDrawBuffers);
+        std::vector<ID3D11RenderTargetView*> rtvs(maskedClearRenderTargets.size());
+        for (unsigned int i = 0; i < maskedClearRenderTargets.size(); i++)
         {
-            return gl::Error(GL_OUT_OF_MEMORY,
-                             "Internal render target view pointer unexpectedly null.");
+            RenderTarget11 *renderTarget = maskedClearRenderTargets[i].renderTarget;
+            ID3D11RenderTargetView *rtv = renderTarget->getRenderTargetView();
+            if (!rtv)
+            {
+                return gl::Error(GL_OUT_OF_MEMORY, "Internal render target view pointer unexpectedly null.");
+            }
+
+            rtvs[i] = rtv;
+        }
+        ID3D11DepthStencilView *dsv = maskedClearDepthStencil ? maskedClearDepthStencil->getDepthStencilView() : nullptr;
+
+        ID3D11BlendState *blendState = getBlendState(maskedClearRenderTargets);
+        const FLOAT blendFactors[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
+        const UINT sampleMask = 0xFFFFFFFF;
+
+        ID3D11DepthStencilState *dsState = getDepthStencilState(clearParams);
+        const UINT stencilClear = clearParams.stencilClearValue & 0xFF;
+
+        
+        UINT vertexStride = 0;
+        const UINT startIdx = 0;
+        ClearShader *shader = nullptr;
+        D3D11_MAPPED_SUBRESOURCE mappedResource;
+        HRESULT result = deviceContext->Map(mVertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+        if (FAILED(result))
+        {
+            return gl::Error(GL_OUT_OF_MEMORY, "Failed to map internal masked clear vertex buffer, HRESULT: 0x%X.", result);
         }
 
-        rtvs[i] = rtv;
-    }
-    ID3D11DepthStencilView *dsv =
-        maskedClearDepthStencil ? maskedClearDepthStencil->getDepthStencilView() : nullptr;
-
-    ID3D11BlendState *blendState = getBlendState(maskedClearRenderTargets);
-    const FLOAT blendFactors[4]  = {1.0f, 1.0f, 1.0f, 1.0f};
-    const UINT sampleMask        = 0xFFFFFFFF;
-
-    ID3D11DepthStencilState *dsState = getDepthStencilState(clearParams);
-    const UINT stencilClear          = clearParams.stencilClearValue & 0xFF;
-
-    
-    UINT vertexStride   = 0;
-    const UINT startIdx = 0;
-    ClearShader *shader = nullptr;
-    D3D11_MAPPED_SUBRESOURCE mappedResource;
-    HRESULT result =
-        deviceContext->Map(mVertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-    if (FAILED(result))
-    {
-        return gl::Error(GL_OUT_OF_MEMORY,
-                         "Failed to map internal masked clear vertex buffer, HRESULT: 0x%X.",
-                         result);
-    }
-
-    const gl::Rectangle *scissorPtr = clearParams.scissorEnabled ? &clearParams.scissor : nullptr;
-    switch (clearParams.colorClearType)
-    {
-        case GL_FLOAT:
-            ApplyVertices(framebufferSize, scissorPtr, clearParams.colorFClearValue,
-                          clearParams.depthClearValue, mappedResource.pData);
+        const gl::Rectangle *scissorPtr = clearParams.scissorEnabled ? &clearParams.scissor : nullptr;
+        switch (clearParams.colorClearType)
+        {
+          case GL_FLOAT:
+            ApplyVertices(framebufferSize, scissorPtr, clearParams.colorFClearValue, clearParams.depthClearValue, mappedResource.pData);
             vertexStride = sizeof(d3d11::PositionDepthColorVertex<float>);
-            shader       = mFloatClearShader;
+            shader = mFloatClearShader;
             break;
 
-        case GL_UNSIGNED_INT:
-            ApplyVertices(framebufferSize, scissorPtr, clearParams.colorUIClearValue,
-                          clearParams.depthClearValue, mappedResource.pData);
+          case GL_UNSIGNED_INT:
+            ApplyVertices(framebufferSize, scissorPtr, clearParams.colorUIClearValue, clearParams.depthClearValue, mappedResource.pData);
             vertexStride = sizeof(d3d11::PositionDepthColorVertex<unsigned int>);
-            shader       = mUintClearShader;
+            shader = mUintClearShader;
             break;
 
-        case GL_INT:
-            ApplyVertices(framebufferSize, scissorPtr, clearParams.colorIClearValue,
-                          clearParams.depthClearValue, mappedResource.pData);
+          case GL_INT:
+            ApplyVertices(framebufferSize, scissorPtr, clearParams.colorIClearValue, clearParams.depthClearValue, mappedResource.pData);
             vertexStride = sizeof(d3d11::PositionDepthColorVertex<int>);
-            shader       = mIntClearShader;
+            shader = mIntClearShader;
             break;
 
-        default:
+          default:
             UNREACHABLE();
             break;
+        }
+
+        deviceContext->Unmap(mVertexBuffer, 0);
+
+        
+        D3D11_VIEWPORT viewport;
+        viewport.TopLeftX = 0;
+        viewport.TopLeftY = 0;
+        viewport.Width = static_cast<FLOAT>(framebufferSize.width);
+        viewport.Height = static_cast<FLOAT>(framebufferSize.height);
+        viewport.MinDepth = 0;
+        viewport.MaxDepth = 1;
+        deviceContext->RSSetViewports(1, &viewport);
+
+        
+        deviceContext->OMSetBlendState(blendState, blendFactors, sampleMask);
+        deviceContext->OMSetDepthStencilState(dsState, stencilClear);
+        deviceContext->RSSetState(mRasterizerState);
+
+        
+        deviceContext->IASetInputLayout(shader->inputLayout->resolve(device));
+        deviceContext->VSSetShader(shader->vertexShader.resolve(device), nullptr, 0);
+        deviceContext->PSSetShader(shader->pixelShader.resolve(device), nullptr, 0);
+        deviceContext->GSSetShader(nullptr, nullptr, 0);
+
+        
+        deviceContext->IASetVertexBuffers(0, 1, &mVertexBuffer, &vertexStride, &startIdx);
+        deviceContext->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+
+        
+        mRenderer->getStateManager()->setOneTimeRenderTargets(rtvs, dsv);
+
+        
+        deviceContext->Draw(4, 0);
+
+        
+        mRenderer->markAllStateDirty();
     }
 
-    deviceContext->Unmap(mVertexBuffer, 0);
-
-    
-    D3D11_VIEWPORT viewport;
-    viewport.TopLeftX = 0;
-    viewport.TopLeftY = 0;
-    viewport.Width    = static_cast<FLOAT>(framebufferSize.width);
-    viewport.Height   = static_cast<FLOAT>(framebufferSize.height);
-    viewport.MinDepth = 0;
-    viewport.MaxDepth = 1;
-    deviceContext->RSSetViewports(1, &viewport);
-
-    
-    deviceContext->OMSetBlendState(blendState, blendFactors, sampleMask);
-    deviceContext->OMSetDepthStencilState(dsState, stencilClear);
-    deviceContext->RSSetState(mRasterizerState);
-
-    
-    deviceContext->IASetInputLayout(shader->inputLayout->resolve(device));
-    deviceContext->VSSetShader(shader->vertexShader.resolve(device), nullptr, 0);
-    deviceContext->PSSetShader(shader->pixelShader.resolve(device), nullptr, 0);
-    deviceContext->GSSetShader(nullptr, nullptr, 0);
-
-    
-    deviceContext->IASetVertexBuffers(0, 1, &mVertexBuffer, &vertexStride, &startIdx);
-    deviceContext->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-
-    
-    mRenderer->getStateManager()->setOneTimeRenderTargets(rtvs, dsv);
-
-    
-    deviceContext->Draw(4, 0);
-
-    
-    mRenderer->markAllStateDirty();
-
-    return gl::NoError();
+    return gl::Error(GL_NO_ERROR);
 }
 
 ID3D11BlendState *Clear11::getBlendState(const std::vector<MaskedRenderTarget>& rts)

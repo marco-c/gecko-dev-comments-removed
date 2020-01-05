@@ -8,7 +8,6 @@
 
 #include "compiler/translator/AddDefaultReturnStatements.h"
 #include "compiler/translator/ArrayReturnValueToOutParameter.h"
-#include "compiler/translator/BreakVariableAliasingInInnerLoops.h"
 #include "compiler/translator/EmulatePrecision.h"
 #include "compiler/translator/ExpandIntegerPowExpressions.h"
 #include "compiler/translator/IntermNodePatternMatcher.h"
@@ -28,7 +27,7 @@ TranslatorHLSL::TranslatorHLSL(sh::GLenum type, ShShaderSpec spec, ShShaderOutpu
 {
 }
 
-void TranslatorHLSL::translate(TIntermNode *root, ShCompileOptions compileOptions)
+void TranslatorHLSL::translate(TIntermNode *root, int compileOptions)
 {
     const ShBuiltInResources &resources = getResources();
     int numRenderTargets = resources.EXT_draw_buffers ? resources.MaxDrawBuffers : 1;
@@ -75,12 +74,6 @@ void TranslatorHLSL::translate(TIntermNode *root, ShCompileOptions compileOption
     {
         sh::RewriteElseBlocks(root, getTemporaryIndex());
     }
-
-    
-    
-    
-    
-    sh::BreakVariableAliasingInInnerLoops(root);
 
     bool precisionEmulation =
         getResources().WEBGL_debug_shader_precision && getPragma().debugShaderPrecision;

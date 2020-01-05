@@ -22,8 +22,8 @@ class ShaderImpl : angle::NonCopyable
     virtual ~ShaderImpl() { }
 
     
-    virtual ShCompileOptions prepareSourceAndReturnOptions(std::stringstream *sourceStream,
-                                                           std::string *sourcePath) = 0;
+    virtual int prepareSourceAndReturnOptions(std::stringstream *sourceStream,
+                                              std::string *sourcePath) = 0;
     
     virtual bool postTranslateCompile(gl::Compiler *compiler, std::string *infoLog) = 0;
 

@@ -14,8 +14,7 @@ class BuiltInFunctionEmulator;
 
 
 
-void InitBuiltInAbsFunctionEmulatorForGLSLWorkarounds(BuiltInFunctionEmulator *emu,
-                                                      sh::GLenum shaderType);
+void InitBuiltInFunctionEmulatorForGLSLWorkarounds(BuiltInFunctionEmulator *emu, sh::GLenum shaderType);
 
 
 

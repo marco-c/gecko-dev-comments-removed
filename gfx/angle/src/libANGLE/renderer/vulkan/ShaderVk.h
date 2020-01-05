@@ -22,8 +22,8 @@ class ShaderVk : public ShaderImpl
     ~ShaderVk() override;
 
     
-    ShCompileOptions prepareSourceAndReturnOptions(std::stringstream *sourceStream,
-                                                   std::string *sourcePath) override;
+    int prepareSourceAndReturnOptions(std::stringstream *sourceStream,
+                                      std::string *sourcePath) override;
     
     bool postTranslateCompile(gl::Compiler *compiler, std::string *infoLog) override;
 

@@ -25,9 +25,11 @@
 #include "third_party/compiler/ArrayBoundsClamper.h"
 
 class TCompiler;
+class TDependencyGraph;
 #ifdef ANGLE_ENABLE_HLSL
 class TranslatorHLSL;
 #endif 
+
 
 
 
@@ -73,13 +75,11 @@ class TCompiler : public TShHandleBase
     
     
     
-    TIntermNode *compileTreeForTesting(const char *const shaderStrings[],
-                                       size_t numStrings,
-                                       ShCompileOptions compileOptions);
+    TIntermNode *compileTreeForTesting(const char* const shaderStrings[],
+        size_t numStrings, int compileOptions);
 
-    bool compile(const char *const shaderStrings[],
-                 size_t numStrings,
-                 ShCompileOptions compileOptions);
+    bool compile(const char* const shaderStrings[],
+        size_t numStrings, int compileOptions);
 
     
     int getShaderVersion() const { return shaderVersion; }
@@ -104,7 +104,7 @@ class TCompiler : public TShHandleBase
     ShShaderOutput getOutputType() const { return outputType; }
     const std::string &getBuiltInResourcesString() const { return builtInResourcesString; }
 
-    bool shouldRunLoopAndIndexingValidation(ShCompileOptions compileOptions) const;
+    bool shouldRunLoopAndIndexingValidation(int compileOptions) const;
 
     
     const ShBuiltInResources& getResources() const;
@@ -120,15 +120,16 @@ class TCompiler : public TShHandleBase
     
     bool validateOutputs(TIntermNode* root);
     
+    void rewriteCSSShader(TIntermNode* root);
+    
     
     bool validateLimitations(TIntermNode* root);
     
     void collectVariables(TIntermNode* root);
     
-    virtual void initBuiltInFunctionEmulator(BuiltInFunctionEmulator *emu,
-                                             ShCompileOptions compileOptions){};
+    virtual void initBuiltInFunctionEmulator(BuiltInFunctionEmulator *emu, int compileOptions) {};
     
-    virtual void translate(TIntermNode *root, ShCompileOptions compileOptions) = 0;
+    virtual void translate(TIntermNode *root, int compileOptions) = 0;
     
     
     bool enforcePackingRestrictions();
@@ -141,12 +142,19 @@ class TCompiler : public TShHandleBase
     
     void initializeGLPosition(TIntermNode* root);
     
+    bool enforceTimingRestrictions(TIntermNode* root, bool outputGraph);
+    
+    bool enforceVertexShaderTimingRestrictions(TIntermNode* root);
+    
+    
+    bool enforceFragmentShaderTimingRestrictions(const TDependencyGraph& graph);
+    
     bool limitExpressionComplexity(TIntermNode* root);
     
     const TExtensionBehavior& getExtensionBehavior() const;
     const char *getSourcePath() const;
     const TPragma& getPragma() const { return mPragma; }
-    void writePragma(ShCompileOptions compileOptions);
+    void writePragma(int compileOptions);
     unsigned int *getTemporaryIndex() { return &mTemporaryIndex; }
     
     bool isVaryingDefined(const char *varyingName);
@@ -155,7 +163,7 @@ class TCompiler : public TShHandleBase
     ShArrayIndexClampingStrategy getArrayIndexClampingStrategy() const;
     const BuiltInFunctionEmulator& getBuiltInFunctionEmulator() const;
 
-    virtual bool shouldCollectVariables(ShCompileOptions compileOptions)
+    virtual bool shouldCollectVariables(int compileOptions)
     {
         return (compileOptions & SH_VARIABLES) != 0;
     }
@@ -185,7 +193,7 @@ class TCompiler : public TShHandleBase
 
     TIntermNode *compileTreeImpl(const char *const shaderStrings[],
                                  size_t numStrings,
-                                 const ShCompileOptions compileOptions);
+                                 const int compileOptions);
 
     sh::GLenum shaderType;
     ShShaderSpec shaderSpec;

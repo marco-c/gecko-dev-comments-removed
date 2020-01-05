@@ -49,7 +49,11 @@ SeparateExpressionsTraverser::SeparateExpressionsTraverser()
 
 TIntermBinary *CopyAssignmentNode(TIntermBinary *node)
 {
-    return new TIntermBinary(node->getOp(), node->getLeft(), node->getRight());
+    TIntermBinary *copyNode = new TIntermBinary(node->getOp());
+    copyNode->setLeft(node->getLeft());
+    copyNode->setRight(node->getRight());
+    copyNode->setType(node->getType());
+    return copyNode;
 }
 
 

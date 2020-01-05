@@ -13,7 +13,6 @@ class TIntermNode;
 
 typedef std::vector<sh::ShaderVariable> InitVariableList;
 
-
 void InitializeVariables(TIntermNode *root, const InitVariableList &vars);
 
 #endif  
