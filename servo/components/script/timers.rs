@@ -5,7 +5,7 @@
 use dom::bindings::callback::ExceptionHandling::Report;
 use dom::bindings::cell::DOMRefCell;
 use dom::bindings::codegen::Bindings::FunctionBinding::Function;
-use dom::bindings::reflector::Reflectable;
+use dom::bindings::reflector::DomObject;
 use dom::bindings::str::DOMString;
 use dom::eventsource::EventSourceTimeoutCallback;
 use dom::globalscope::GlobalScope;
@@ -74,7 +74,7 @@ pub enum OneshotTimerCallback {
 }
 
 impl OneshotTimerCallback {
-    fn invoke<T: Reflectable>(self, this: &T, js_timers: &JsTimers) {
+    fn invoke<T: DomObject>(self, this: &T, js_timers: &JsTimers) {
         match self {
             OneshotTimerCallback::XhrTimeout(callback) => callback.invoke(),
             OneshotTimerCallback::EventSourceTimeout(callback) => callback.invoke(),
@@ -482,7 +482,7 @@ fn clamp_duration(nesting_level: u32, unclamped: MsDuration) -> MsDuration {
 impl JsTimerTask {
     
     #[allow(unsafe_code)]
-    pub fn invoke<T: Reflectable>(self, this: &T, timers: &JsTimers) {
+    pub fn invoke<T: DomObject>(self, this: &T, timers: &JsTimers) {
         
         
 

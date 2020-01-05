@@ -18,7 +18,7 @@ pub fn reflect_dom_object<T, U>(
         global: &U,
         wrap_fn: unsafe fn(*mut JSContext, &GlobalScope, Box<T>) -> Root<T>)
         -> Root<T>
-    where T: Reflectable, U: DerivedFrom<GlobalScope>
+    where T: DomObject, U: DerivedFrom<GlobalScope>
 {
     let global_scope = global.upcast();
     unsafe {
@@ -77,7 +77,7 @@ impl Reflector {
 }
 
 
-pub trait Reflectable {
+pub trait DomObject {
     
     fn reflector(&self) -> &Reflector;
 
@@ -88,7 +88,7 @@ pub trait Reflectable {
 }
 
 
-pub trait MutReflectable: Reflectable {
+pub trait MutDomObject: DomObject {
     
     fn init_reflector(&mut self, obj: *mut JSObject);
 }

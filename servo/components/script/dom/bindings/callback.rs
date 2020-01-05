@@ -5,7 +5,7 @@
 
 
 use dom::bindings::error::{Error, Fallible, report_pending_exception};
-use dom::bindings::reflector::Reflectable;
+use dom::bindings::reflector::DomObject;
 use dom::globalscope::GlobalScope;
 use js::jsapi::{Heap, MutableHandleObject, RootedObject};
 use js::jsapi::{IsCallable, JSContext, JSObject, JS_WrapObject};
@@ -132,9 +132,9 @@ impl CallbackInterface {
 }
 
 
-pub fn wrap_call_this_object<T: Reflectable>(cx: *mut JSContext,
-                                             p: &T,
-                                             rval: MutableHandleObject) {
+pub fn wrap_call_this_object<T: DomObject>(cx: *mut JSContext,
+                                           p: &T,
+                                           rval: MutableHandleObject) {
     rval.set(p.reflector().get_jsobject().get());
     assert!(!rval.get().is_null());
 

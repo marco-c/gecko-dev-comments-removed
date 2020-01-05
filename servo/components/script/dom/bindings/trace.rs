@@ -38,7 +38,7 @@ use dom::abstractworker::SharedRt;
 use dom::bindings::cell::DOMRefCell;
 use dom::bindings::js::{JS, Root};
 use dom::bindings::refcounted::{Trusted, TrustedPromise};
-use dom::bindings::reflector::{Reflectable, Reflector};
+use dom::bindings::reflector::{DomObject, Reflector};
 use dom::bindings::str::{DOMString, USVString};
 use dom::bindings::utils::WindowProxyHandler;
 use dom::document::PendingRestyle;
@@ -426,7 +426,7 @@ unsafe impl<T> JSTraceable for IpcReceiver<T> where T: Deserialize + Serialize {
     }
 }
 
-unsafe impl<T: Reflectable> JSTraceable for Trusted<T> {
+unsafe impl<T: DomObject> JSTraceable for Trusted<T> {
     #[inline]
     unsafe fn trace(&self, _: *mut JSTracer) {
         
@@ -690,7 +690,7 @@ pub struct RootedVec<'a, T: 'a + JSTraceable> {
     root: &'a mut RootableVec<T>,
 }
 
-impl<'a, T: JSTraceable + Reflectable> RootedVec<'a, JS<T>> {
+impl<'a, T: JSTraceable + DomObject> RootedVec<'a, JS<T>> {
     
     
     pub fn new<I: Iterator<Item = Root<T>>>(root: &'a mut RootableVec<JS<T>>, iter: I)
