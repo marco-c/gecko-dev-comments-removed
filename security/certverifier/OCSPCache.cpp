@@ -75,9 +75,10 @@ DigestLength(UniquePK11Context& context, uint32_t length)
 
 
 
+
 static SECStatus
 CertIDHash(SHA384Buffer& buf, const CertID& certID,
-           const char* firstPartyDomain)
+           const NeckoOriginAttributes& originAttributes)
 {
   UniquePK11Context context(PK11_CreateDigestContext(SEC_OID_SHA384));
   if (!context) {
@@ -110,15 +111,17 @@ CertIDHash(SHA384Buffer& buf, const CertID& certID,
   if (rv != SECSuccess) {
     return rv;
   }
-  if (firstPartyDomain) {
-    uint32_t firstPartyDomainLen = strlen(firstPartyDomain);
-    rv = DigestLength(context, firstPartyDomainLen);
+
+  
+  NS_ConvertUTF16toUTF8 firstPartyDomain(originAttributes.mFirstPartyDomain);
+  if (!firstPartyDomain.IsEmpty()) {
+    rv = DigestLength(context, firstPartyDomain.Length());
     if (rv != SECSuccess) {
       return rv;
     }
     rv = PK11_DigestOp(context.get(),
-                       BitwiseCast<const unsigned char*>(firstPartyDomain),
-                       firstPartyDomainLen);
+                       BitwiseCast<const unsigned char*>(firstPartyDomain.get()),
+                       firstPartyDomain.Length());
     if (rv != SECSuccess) {
       return rv;
     }
@@ -132,9 +135,10 @@ CertIDHash(SHA384Buffer& buf, const CertID& certID,
 }
 
 Result
-OCSPCache::Entry::Init(const CertID& aCertID, const char* aFirstPartyDomain)
+OCSPCache::Entry::Init(const CertID& aCertID,
+                       const NeckoOriginAttributes& aOriginAttributes)
 {
-  SECStatus srv = CertIDHash(mIDHash, aCertID, aFirstPartyDomain);
+  SECStatus srv = CertIDHash(mIDHash, aCertID, aOriginAttributes);
   if (srv != SECSuccess) {
     return MapPRErrorCodeToResult(PR_GetError());
   }
@@ -154,7 +158,8 @@ OCSPCache::~OCSPCache()
 
 
 bool
-OCSPCache::FindInternal(const CertID& aCertID, const char* aFirstPartyDomain,
+OCSPCache::FindInternal(const CertID& aCertID,
+                        const NeckoOriginAttributes& aOriginAttributes,
                          size_t& index,
                         const MutexAutoLock& )
 {
@@ -163,7 +168,7 @@ OCSPCache::FindInternal(const CertID& aCertID, const char* aFirstPartyDomain,
   }
 
   SHA384Buffer idHash;
-  SECStatus rv = CertIDHash(idHash, aCertID, aFirstPartyDomain);
+  SECStatus rv = CertIDHash(idHash, aCertID, aOriginAttributes);
   if (rv != SECSuccess) {
     return false;
   }
@@ -182,10 +187,11 @@ OCSPCache::FindInternal(const CertID& aCertID, const char* aFirstPartyDomain,
 
 static inline void
 LogWithCertID(const char* aMessage, const CertID& aCertID,
-              const char* aFirstPartyDomain)
+              const NeckoOriginAttributes& aOriginAttributes)
 {
+  NS_ConvertUTF16toUTF8 firstPartyDomain(aOriginAttributes.mFirstPartyDomain);
   MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
-          (aMessage, &aCertID, aFirstPartyDomain));
+          (aMessage, &aCertID, firstPartyDomain.get()));
 }
 
 void
@@ -202,19 +208,20 @@ OCSPCache::MakeMostRecentlyUsed(size_t aIndex,
 }
 
 bool
-OCSPCache::Get(const CertID& aCertID, const char* aFirstPartyDomain,
+OCSPCache::Get(const CertID& aCertID,
+               const NeckoOriginAttributes& aOriginAttributes,
                Result& aResult, Time& aValidThrough)
 {
   MutexAutoLock lock(mMutex);
 
   size_t index;
-  if (!FindInternal(aCertID, aFirstPartyDomain, index, lock)) {
+  if (!FindInternal(aCertID, aOriginAttributes, index, lock)) {
     LogWithCertID("OCSPCache::Get(%p,\"%s\") not in cache", aCertID,
-                  aFirstPartyDomain);
+                  aOriginAttributes);
     return false;
   }
   LogWithCertID("OCSPCache::Get(%p,\"%s\") in cache", aCertID,
-                aFirstPartyDomain);
+                aOriginAttributes);
   aResult = mEntries[index]->mResult;
   aValidThrough = mEntries[index]->mValidThrough;
   MakeMostRecentlyUsed(index, lock);
@@ -222,17 +229,18 @@ OCSPCache::Get(const CertID& aCertID, const char* aFirstPartyDomain,
 }
 
 Result
-OCSPCache::Put(const CertID& aCertID, const char* aFirstPartyDomain,
+OCSPCache::Put(const CertID& aCertID,
+               const NeckoOriginAttributes& aOriginAttributes,
                Result aResult, Time aThisUpdate, Time aValidThrough)
 {
   MutexAutoLock lock(mMutex);
 
   size_t index;
-  if (FindInternal(aCertID, aFirstPartyDomain, index, lock)) {
+  if (FindInternal(aCertID, aOriginAttributes, index, lock)) {
     
     if (mEntries[index]->mResult == Result::ERROR_REVOKED_CERTIFICATE) {
       LogWithCertID("OCSPCache::Put(%p, \"%s\") already in cache as revoked - "
-                    "not replacing", aCertID, aFirstPartyDomain);
+                    "not replacing", aCertID, aOriginAttributes);
       MakeMostRecentlyUsed(index, lock);
       return Success;
     }
@@ -243,7 +251,7 @@ OCSPCache::Put(const CertID& aCertID, const char* aFirstPartyDomain,
         aResult != Result::ERROR_REVOKED_CERTIFICATE) {
       LogWithCertID("OCSPCache::Put(%p, \"%s\") already in cache with more "
                     "recent validity - not replacing", aCertID,
-                    aFirstPartyDomain);
+                    aOriginAttributes);
       MakeMostRecentlyUsed(index, lock);
       return Success;
     }
@@ -255,13 +263,13 @@ OCSPCache::Put(const CertID& aCertID, const char* aFirstPartyDomain,
         aResult != Result::ERROR_REVOKED_CERTIFICATE) {
       LogWithCertID("OCSPCache::Put(%p, \"%s\") already in cache - not "
                     "replacing with less important status", aCertID,
-                    aFirstPartyDomain);
+                    aOriginAttributes);
       MakeMostRecentlyUsed(index, lock);
       return Success;
     }
 
     LogWithCertID("OCSPCache::Put(%p, \"%s\") already in cache - replacing",
-                  aCertID, aFirstPartyDomain);
+                  aCertID, aOriginAttributes);
     mEntries[index]->mResult = aResult;
     mEntries[index]->mThisUpdate = aThisUpdate;
     mEntries[index]->mValidThrough = aValidThrough;
@@ -271,7 +279,7 @@ OCSPCache::Put(const CertID& aCertID, const char* aFirstPartyDomain,
 
   if (mEntries.length() == MaxEntries) {
     LogWithCertID("OCSPCache::Put(%p, \"%s\") too full - evicting an entry",
-                  aCertID, aFirstPartyDomain);
+                  aCertID, aOriginAttributes);
     for (Entry** toEvict = mEntries.begin(); toEvict != mEntries.end();
          toEvict++) {
       
@@ -303,7 +311,7 @@ OCSPCache::Put(const CertID& aCertID, const char* aFirstPartyDomain,
   if (!newEntry) {
     return Result::FATAL_ERROR_NO_MEMORY;
   }
-  Result rv = newEntry->Init(aCertID, aFirstPartyDomain);
+  Result rv = newEntry->Init(aCertID, aOriginAttributes);
   if (rv != Success) {
     delete newEntry;
     return rv;
@@ -313,7 +321,7 @@ OCSPCache::Put(const CertID& aCertID, const char* aFirstPartyDomain,
     return Result::FATAL_ERROR_NO_MEMORY;
   }
   LogWithCertID("OCSPCache::Put(%p, \"%s\") added to cache", aCertID,
-                aFirstPartyDomain);
+                aOriginAttributes);
   return Success;
 }
 
