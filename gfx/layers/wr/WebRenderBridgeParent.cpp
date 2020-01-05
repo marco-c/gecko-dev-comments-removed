@@ -11,11 +11,17 @@
 #include "GLContextProvider.h"
 #include "mozilla/layers/Compositor.h"
 #include "mozilla/layers/CompositorBridgeParent.h"
+#include "mozilla/layers/CompositorThread.h"
 #include "mozilla/layers/CompositorVsyncScheduler.h"
 #include "mozilla/layers/ImageDataSerializer.h"
 #include "mozilla/layers/TextureHost.h"
 #include "mozilla/layers/WebRenderCompositorOGL.h"
 #include "mozilla/widget/CompositorWidget.h"
+
+bool is_in_compositor_thread()
+{
+  return mozilla::layers::CompositorThreadHolder::IsInCompositorThread();
+}
 
 namespace mozilla {
 namespace layers {
@@ -43,12 +49,14 @@ WebRenderBridgeParent::WebRenderBridgeParent(CompositorBridgeParentBase* aCompos
 {
   MOZ_ASSERT(mGLContext);
   MOZ_ASSERT(mCompositor);
+
   if (!mWRWindowState) {
     
     
     
     MOZ_ASSERT(mWidget);
-    mWRWindowState = wr_init_window(mPipelineId, gfxPrefs::WebRenderProfilerEnabled());
+    mWRWindowState = wr_init_window(mPipelineId,
+                                    gfxPrefs::WebRenderProfilerEnabled());
   }
   if (mWidget) {
     mCompositorScheduler = new CompositorVsyncScheduler(this, mWidget);
