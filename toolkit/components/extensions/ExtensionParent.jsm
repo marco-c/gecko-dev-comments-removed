@@ -806,48 +806,10 @@ function promiseExtensionViewLoaded(browser) {
   });
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function watchExtensionProxyContextLoad({extension, viewType, browser}, onExtensionProxyContextLoaded) {
-  if (typeof onExtensionProxyContextLoaded !== "function") {
-    throw new Error("Missing onExtensionProxyContextLoaded handler");
-  }
-
-  const listener = (event, context) => {
-    if (context.viewType == viewType && context.xulBrowser == browser) {
-      onExtensionProxyContextLoaded(context);
-    }
-  };
-
-  extension.on("extension-proxy-context-load", listener);
-
-  return () => {
-    extension.off("extension-proxy-context-load", listener);
-  };
-}
-
 const ExtensionParent = {
   GlobalManager,
   HiddenExtensionPage,
   ParentAPIManager,
   apiManager,
   promiseExtensionViewLoaded,
-  watchExtensionProxyContextLoad,
 };
