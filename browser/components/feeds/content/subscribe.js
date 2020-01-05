@@ -8,7 +8,7 @@ var SubscribeHandler = {
 
 
   _feedWriter: null,
-  
+
   init: function SH_init() {
     this._feedWriter = new BrowserFeedWriter();
   },

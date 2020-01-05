@@ -1,4 +1,4 @@
- 
+
 
 
 
@@ -227,7 +227,7 @@ FeedConverter.prototype = {
                 let feedReader = safeGetCharPref(getPrefActionForType(feedType), "bookmarks");
                 feedService.addToClientReader(result.uri.spec, title, desc, feed.type, feedReader);
                 return;
-              } catch(ex) {  }
+              } catch (ex) {  }
           }
         }
       }
