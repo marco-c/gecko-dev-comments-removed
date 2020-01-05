@@ -859,11 +859,7 @@ pref("canvas.path.enabled", true);
 pref("canvas.capturestream.enabled", true);
 
 
-#ifdef RELEASE_OR_BETA
 pref("canvas.imagebitmap_extensions.enabled", false);
-#else
-pref("canvas.imagebitmap_extensions.enabled", true);
-#endif
 
 
 
@@ -5286,6 +5282,10 @@ pref("layout.accessiblecaret.bar.enabled", false);
 
 
 pref("layout.accessiblecaret.caret_shown_when_long_tapping_on_empty_content", false);
+
+
+
+pref("layout.accessiblecaret.timeout_ms", 0);
 
 
 
