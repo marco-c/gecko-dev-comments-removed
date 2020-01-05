@@ -206,9 +206,6 @@ pref("dom.keyboardevent.code.enabled", true);
 pref("dom.keyboardevent.dispatch_during_composition", false);
 
 
-pref("dom.undo_manager.enabled", false);
-
-
 
 pref("dom.url.encode_decode_hash", true);
 

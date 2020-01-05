@@ -275,10 +275,6 @@ protected:
   virtual ~nsGenericHTMLElement() {}
 
 public:
-  virtual already_AddRefed<mozilla::dom::UndoManager> GetUndoManager() override;
-  virtual bool UndoScope() override;
-  virtual void SetUndoScope(bool aUndoScope, mozilla::ErrorResult& aError) override;
-
   
 
 
@@ -1150,8 +1146,6 @@ protected:
 
 
   bool IsEditableRoot() const;
-
-  nsresult SetUndoScopeInternal(bool aUndoScope);
 
 private:
   void ChangeEditableState(int32_t aChange);

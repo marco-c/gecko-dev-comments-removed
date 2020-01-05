@@ -101,7 +101,6 @@ namespace mozilla {
 namespace dom {
 
 class ShadowRoot;
-class UndoManager;
 
 class FragmentOrElement : public nsIContent
 {
@@ -271,12 +270,6 @@ public:
 
 
     nsDOMStringMap* mDataset; 
-
-    
-
-
-
-    RefPtr<UndoManager> mUndoManager;
 
     
 
