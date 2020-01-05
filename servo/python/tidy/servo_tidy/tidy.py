@@ -42,6 +42,9 @@ ignored_files = [
     os.path.join(".", "tests", "wpt", "metadata-css", "MANIFEST.json"),
     os.path.join(".", "components", "script", "dom", "webidls", "ForceTouchEvent.webidl"),
     
+    
+    os.path.join(".", "components", "servo", "platform", "macos", "mod.rs"),
+    
     os.path.join(".", "."),
 ]
 
