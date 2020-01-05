@@ -3,6 +3,7 @@
 
 
 use cssparser::ast::*;
+use cssparser::ast::ComponentValue::*;
 use std::collections::HashMap;
 use servo_util::namespace;
 use errors::log_css_error;

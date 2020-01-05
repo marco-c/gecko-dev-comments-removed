@@ -61,7 +61,7 @@ impl<'a> PrivateHTMLImageElementHelpers for JSRef<'a, HTMLImageElement> {
 
                 
                 
-                image_cache.send(image_cache_task::Prefetch(img_url));
+                image_cache.send(image_cache_task::Msg::Prefetch(img_url));
             }
         }
     }

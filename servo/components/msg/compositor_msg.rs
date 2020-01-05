@@ -16,8 +16,8 @@ use constellation_msg::PipelineId;
 
 #[deriving(PartialEq, Clone)]
 pub enum PaintState {
-    IdlePaintState,
-    PaintingPaintState,
+    Idle,
+    Painting,
 }
 
 #[deriving(Eq, Ord, PartialEq, PartialOrd, Clone, Show)]

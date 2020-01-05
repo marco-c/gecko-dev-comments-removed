@@ -50,23 +50,23 @@ pub struct NewLayoutInfo {
 
 pub enum ConstellationControlMsg {
     
-    LoadMsg(PipelineId, LoadData),
+    Load(PipelineId, LoadData),
     
-    AttachLayoutMsg(NewLayoutInfo),
+    AttachLayout(NewLayoutInfo),
     
-    ResizeMsg(PipelineId, WindowSizeData),
+    Resize(PipelineId, WindowSizeData),
     
-    ResizeInactiveMsg(PipelineId, WindowSizeData),
+    ResizeInactive(PipelineId, WindowSizeData),
     
-    ExitPipelineMsg(PipelineId, PipelineExitType),
+    ExitPipeline(PipelineId, PipelineExitType),
     
-    SendEventMsg(PipelineId, CompositorEvent),
+    SendEvent(PipelineId, CompositorEvent),
     
-    ReflowCompleteMsg(PipelineId, uint),
+    ReflowComplete(PipelineId, uint),
     
-    ViewportMsg(PipelineId, Rect<f32>),
+    Viewport(PipelineId, Rect<f32>),
     
-    GetTitleMsg(PipelineId),
+    GetTitle(PipelineId),
 }
 
 
