@@ -78,7 +78,7 @@ public:
   
   
   
-  nsresult ProcessRestyledFrames(nsStyleChangeList& aChangeList);
+  void ProcessRestyledFrames(nsStyleChangeList& aChangeList);
 
   bool IsInStyleRefresh() const { return mInStyleRefresh; }
 
