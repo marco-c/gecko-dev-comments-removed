@@ -42,8 +42,12 @@ button:-moz-focusring > .button-box {
 @media (-moz-windows-default-theme: 0) {
   @media (-moz-windows-compositor) {
     
-    button[default="true"],
-    button:hover {
+
+
+
+
+
+    button:-moz-any([default="true"],:hover,:focus):not(:-moz-any(:active,[disabled="true"],[open="true"],[checked="true"])) {
       color: HighlightText;
     }
   }
