@@ -2806,7 +2806,6 @@ FindMatchingElements(nsINode* aRoot, nsCSSSelectorList* aSelectorList, T &aList,
 
   TreeMatchContext matchingContext(false, nsRuleWalker::eRelevantLinkUnvisited,
                                    doc, TreeMatchContext::eNeverMatchVisited);
-  doc->FlushPendingLinkUpdates();
   AddScopeElements(matchingContext, aRoot);
 
   

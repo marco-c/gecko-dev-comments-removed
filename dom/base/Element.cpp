@@ -3210,7 +3210,6 @@ Element::Closest(const nsAString& aSelector, ErrorResult& aResult)
     
     return nullptr;
   }
-  OwnerDoc()->FlushPendingLinkUpdates();
   TreeMatchContext matchingContext(false,
                                    nsRuleWalker::eRelevantLinkUnvisited,
                                    OwnerDoc(),
@@ -3238,7 +3237,6 @@ Element::Matches(const nsAString& aSelector, ErrorResult& aError)
     return false;
   }
 
-  OwnerDoc()->FlushPendingLinkUpdates();
   TreeMatchContext matchingContext(false,
                                    nsRuleWalker::eRelevantLinkUnvisited,
                                    OwnerDoc(),

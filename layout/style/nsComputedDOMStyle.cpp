@@ -758,8 +758,6 @@ nsComputedDOMStyle::UpdateCurrentStyleSources(bool aNeedsLayoutFlush)
     return;
   }
 
-  document->FlushPendingLinkUpdates();
-
   
   
   

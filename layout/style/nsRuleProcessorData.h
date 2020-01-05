@@ -370,6 +370,13 @@ struct MOZ_STACK_CLASS TreeMatchContext {
   
   bool mForScopedStyle;
 
+  
+  
+  
+  
+  
+  
+  
   enum MatchVisited {
     eNeverMatchVisited,
     eMatchVisitedDefault
@@ -404,6 +411,9 @@ struct MOZ_STACK_CLASS TreeMatchContext {
       if (loadContext) {
         mUsingPrivateBrowsing = loadContext->UsePrivateBrowsing();
       }
+    } else {
+      MOZ_ASSERT(aVisitedHandling == nsRuleWalker::eRelevantLinkUnvisited,
+                 "You promised you'd never try to match :visited!");
     }
   }
 

@@ -513,7 +513,7 @@ inDOMUtils::SelectorMatchesElement(nsIDOMElement* aElement,
     sel->RemoveRightmostSelector();
   }
 
-  element->OwnerDoc()->FlushPendingLinkUpdates();
+  
   
   TreeMatchContext matchingContext(false,
                                    nsRuleWalker::eRelevantLinkUnvisited,
