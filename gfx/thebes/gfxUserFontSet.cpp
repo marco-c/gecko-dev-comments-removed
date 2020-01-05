@@ -423,8 +423,8 @@ gfxUserFontEntry::LoadNextSrc()
 
         if (currSrc.mSourceType == gfxFontFaceSrc::eSourceType_Local) {
             
-            gfxFontEntry* fe = gfxPlatformFontList::PlatformFontList()->
-                                 IsFontFamilyWhitelistActive() ?
+            gfxPlatformFontList* pfl = gfxPlatformFontList::PlatformFontList();
+            gfxFontEntry* fe = pfl && pfl->IsFontFamilyWhitelistActive() ?
                 nullptr :
                 gfxPlatform::GetPlatform()->LookupLocalFont(currSrc.mLocalName,
                                                             mWeight,
