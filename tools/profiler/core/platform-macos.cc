@@ -75,66 +75,6 @@ void OS::SleepMicro(int microseconds) {
   usleep(microseconds);
 }
 
-Thread::Thread(const char* name)
-    : stack_size_(0) {
-  set_name(name);
-}
-
-
-Thread::~Thread() {
-}
-
-
-static void SetThreadName(const char* name) {
-  
-  
-  int (*dynamic_pthread_setname_np)(const char*);
-  *reinterpret_cast<void**>(&dynamic_pthread_setname_np) =
-    dlsym(RTLD_DEFAULT, "pthread_setname_np");
-  if (!dynamic_pthread_setname_np)
-    return;
-
-  
-  static const int kMaxNameLength = 63;
-  USE(kMaxNameLength);
-  ASSERT(Thread::kMaxThreadNameLength <= kMaxNameLength);
-  dynamic_pthread_setname_np(name);
-}
-
-
-static void* ThreadEntry(void* arg) {
-  Thread* thread = reinterpret_cast<Thread*>(arg);
-
-  thread->thread_ = pthread_self();
-  SetThreadName(thread->name());
-  ASSERT(thread->thread_ != kNoThread);
-  thread->Run();
-  return NULL;
-}
-
-
-void Thread::set_name(const char* name) {
-  strncpy(name_, name, sizeof(name_));
-  name_[sizeof(name_) - 1] = '\0';
-}
-
-
-void Thread::Start() {
-  pthread_attr_t* attr_ptr = NULL;
-  pthread_attr_t attr;
-  if (stack_size_ > 0) {
-    pthread_attr_init(&attr);
-    pthread_attr_setstacksize(&attr, static_cast<size_t>(stack_size_));
-    attr_ptr = &attr;
-  }
-  pthread_create(&thread_, attr_ptr, ThreadEntry, this);
-  ASSERT(thread_ != kNoThread);
-}
-
-void Thread::Join() {
-  pthread_join(thread_, NULL);
-}
-
 class PlatformData {
  public:
   PlatformData() : profiled_thread_(mach_thread_self())
@@ -173,36 +113,71 @@ Sampler::PlatformDataDestructor::operator()(PlatformData* aData)
   delete aData;
 }
 
-class SamplerThread : public Thread {
- public:
+
+
+
+
+class SamplerThread
+{
+public:
   explicit SamplerThread(double interval)
-      : Thread("SamplerThread")
-      , intervalMicro_(floor(interval * 1000 + 0.5))
+    : mIntervalMicro(floor(interval * 1000 + 0.5))
   {
-    if (intervalMicro_ <= 0) {
-      intervalMicro_ = 1;
+    if (mIntervalMicro <= 0) {
+      mIntervalMicro = 1;
     }
+  }
+
+  static void SetThreadName() {
+    
+    
+    int (*dynamic_pthread_setname_np)(const char*);
+    *reinterpret_cast<void**>(&dynamic_pthread_setname_np) =
+      dlsym(RTLD_DEFAULT, "pthread_setname_np");
+    if (!dynamic_pthread_setname_np)
+      return;
+
+    dynamic_pthread_setname_np("SamplerThread");
+  }
+
+  static void* ThreadEntry(void* aArg) {
+    SamplerThread* thread = reinterpret_cast<SamplerThread*>(aArg);
+
+    thread->mThread = pthread_self();
+    SetThreadName();
+    ASSERT(thread->mThread != kNoThread);
+    thread->Run();
+    return NULL;
+  }
+
+  void Start() {
+    pthread_attr_t* attr_ptr = NULL;
+    pthread_create(&mThread, attr_ptr, ThreadEntry, this);
+    ASSERT(mThread != kNoThread);
+  }
+
+  void Join() {
+    pthread_join(mThread, NULL);
   }
 
   static void AddActiveSampler(Sampler* sampler) {
     SamplerRegistry::AddActiveSampler(sampler);
-    if (instance_ == NULL) {
-      instance_ = new SamplerThread(sampler->interval());
-      instance_->Start();
+    if (mInstance == NULL) {
+      mInstance = new SamplerThread(sampler->interval());
+      mInstance->Start();
     }
   }
 
   static void RemoveActiveSampler(Sampler* sampler) {
-    instance_->Join();
+    mInstance->Join();
     
     
     SamplerRegistry::RemoveActiveSampler(sampler);
-    delete instance_;
-    instance_ = NULL;
+    delete mInstance;
+    mInstance = NULL;
   }
 
-  
-  virtual void Run() {
+  void Run() {
     TimeDuration lastSleepOverhead = 0;
     TimeStamp sampleStart = TimeStamp::Now();
     while (SamplerRegistry::sampler->IsActive()) {
@@ -235,7 +210,7 @@ class SamplerThread : public Thread {
         }
       }
 
-      TimeStamp targetSleepEndTime = sampleStart + TimeDuration::FromMicroseconds(intervalMicro_);
+      TimeStamp targetSleepEndTime = sampleStart + TimeDuration::FromMicroseconds(mIntervalMicro);
       TimeStamp beforeSleep = TimeStamp::Now();
       TimeDuration targetSleepDuration = targetSleepEndTime - beforeSleep;
       double sleepTime = std::max(0.0, (targetSleepDuration - lastSleepOverhead).ToMicroseconds());
@@ -306,17 +281,19 @@ class SamplerThread : public Thread {
     thread_resume(profiled_thread);
   }
 
-  int intervalMicro_;
-  
+private:
+  pthread_t mThread;
 
-  static SamplerThread* instance_;
+  int mIntervalMicro;
+
+  static SamplerThread* mInstance;
 
   DISALLOW_COPY_AND_ASSIGN(SamplerThread);
 };
 
 #undef REGISTER_FIELD
 
-SamplerThread* SamplerThread::instance_ = NULL;
+SamplerThread* SamplerThread::mInstance = NULL;
 
 Sampler::Sampler(double interval, bool profiling, int entrySize)
     : 
@@ -328,18 +305,15 @@ Sampler::Sampler(double interval, bool profiling, int entrySize)
  {
 }
 
-
 Sampler::~Sampler() {
   ASSERT(!IsActive());
 }
-
 
 void Sampler::Start() {
   ASSERT(!IsActive());
   SetActive(true);
   SamplerThread::AddActiveSampler(this);
 }
-
 
 void Sampler::Stop() {
   ASSERT(IsActive());

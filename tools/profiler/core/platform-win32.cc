@@ -85,50 +85,90 @@ Sampler::GetThreadHandle(PlatformData* aData)
   return (uintptr_t) aData->profiled_thread();
 }
 
-class SamplerThread : public Thread {
+static const HANDLE kNoThread = INVALID_HANDLE_VALUE;
+
+
+
+
+
+class SamplerThread
+{
  public:
+  
+  
   SamplerThread(double interval, Sampler* sampler)
-      : Thread("SamplerThread")
-      , sampler_(sampler)
-      , interval_(interval)
+    : mStackSize(0)
+    , mThread(kNoThread)
+    , mSampler(sampler)
+    , mInterval(interval)
   {
-    interval_ = floor(interval + 0.5);
-    if (interval_ <= 0) {
-      interval_ = 1;
+    mInterval = floor(interval + 0.5);
+    if (mInterval <= 0) {
+      mInterval = 1;
+    }
+  }
+
+  ~SamplerThread() {
+    
+    if (mThread != kNoThread) {
+      CloseHandle(mThread);
+    }
+  }
+
+  static unsigned int __stdcall ThreadEntry(void* aArg) {
+    SamplerThread* thread = reinterpret_cast<SamplerThread*>(aArg);
+    thread->Run();
+    return 0;
+  }
+
+  
+  
+  
+  void Start() {
+    mThread = reinterpret_cast<HANDLE>(
+        _beginthreadex(NULL,
+                       static_cast<unsigned>(mStackSize),
+                       ThreadEntry,
+                       this,
+                       0,
+                       (unsigned int*) &mThreadId));
+  }
+
+  void Join() {
+    if (mThreadId != Thread::GetCurrentId()) {
+      WaitForSingleObject(mThread, INFINITE);
     }
   }
 
   static void StartSampler(Sampler* sampler) {
-    if (instance_ == NULL) {
-      instance_ = new SamplerThread(sampler->interval(), sampler);
-      instance_->Start();
+    if (mInstance == NULL) {
+      mInstance = new SamplerThread(sampler->interval(), sampler);
+      mInstance->Start();
     } else {
-      ASSERT(instance_->interval_ == sampler->interval());
+      ASSERT(mInstance->mInterval == sampler->interval());
     }
   }
 
   static void StopSampler() {
-    instance_->Join();
-    delete instance_;
-    instance_ = NULL;
+    mInstance->Join();
+    delete mInstance;
+    mInstance = NULL;
   }
 
-  
-  virtual void Run() {
-
+  void Run() {
     
     
     
-    if (interval_ < 10)
-        ::timeBeginPeriod(interval_);
+    if (mInterval < 10)
+        ::timeBeginPeriod(mInterval);
 
-    while (sampler_->IsActive()) {
-      sampler_->DeleteExpiredMarkers();
+    while (mSampler->IsActive()) {
+      mSampler->DeleteExpiredMarkers();
 
-      if (!sampler_->IsPaused()) {
+      if (!mSampler->IsPaused()) {
         mozilla::MutexAutoLock lock(*Sampler::sRegisteredThreadsMutex);
         const std::vector<ThreadInfo*>& threads =
-          sampler_->GetRegisteredThreads();
+          mSampler->GetRegisteredThreads();
         bool isFirstProfiledThread = true;
         for (uint32_t i = 0; i < threads.size(); i++) {
           ThreadInfo* info = threads[i];
@@ -147,16 +187,16 @@ class SamplerThread : public Thread {
 
           ThreadProfile* thread_profile = info->Profile();
 
-          SampleContext(sampler_, thread_profile, isFirstProfiledThread);
+          SampleContext(mSampler, thread_profile, isFirstProfiledThread);
           isFirstProfiledThread = false;
         }
       }
-      OS::Sleep(interval_);
+      OS::Sleep(mInterval);
     }
 
     
-    if (interval_ < 10)
-        ::timeEndPeriod(interval_);
+    if (mInterval < 10)
+        ::timeEndPeriod(mInterval);
   }
 
   void SampleContext(Sampler* sampler, ThreadProfile* thread_profile,
@@ -248,16 +288,21 @@ class SamplerThread : public Thread {
     ResumeThread(profiled_thread);
   }
 
-  Sampler* sampler_;
-  int interval_; 
+private:
+  int mStackSize;
+  HANDLE mThread;
+  Thread::tid_t mThreadId;
+
+  Sampler* mSampler;
+  int mInterval; 
 
   
-  static SamplerThread* instance_;
+  static SamplerThread* mInstance;
 
   DISALLOW_COPY_AND_ASSIGN(SamplerThread);
 };
 
-SamplerThread* SamplerThread::instance_ = NULL;
+SamplerThread* SamplerThread::mInstance = NULL;
 
 
 Sampler::Sampler(double interval, bool profiling, int entrySize)
@@ -282,53 +327,6 @@ void Sampler::Stop() {
   ASSERT(IsActive());
   SetActive(false);
   SamplerThread::StopSampler();
-}
-
-
-static const HANDLE kNoThread = INVALID_HANDLE_VALUE;
-
-static unsigned int __stdcall ThreadEntry(void* arg) {
-  Thread* thread = reinterpret_cast<Thread*>(arg);
-  thread->Run();
-  return 0;
-}
-
-
-
-Thread::Thread(const char* name)
-    : stack_size_(0) {
-  thread_ = kNoThread;
-  set_name(name);
-}
-
-void Thread::set_name(const char* name) {
-  strncpy(name_, name, sizeof(name_));
-  name_[sizeof(name_) - 1] = '\0';
-}
-
-
-Thread::~Thread() {
-  if (thread_ != kNoThread) CloseHandle(thread_);
-}
-
-
-
-
-void Thread::Start() {
-  thread_ = reinterpret_cast<HANDLE>(
-      _beginthreadex(NULL,
-                     static_cast<unsigned>(stack_size_),
-                     ThreadEntry,
-                     this,
-                     0,
-                     (unsigned int*) &thread_id_));
-}
-
-
-void Thread::Join() {
-  if (thread_id_ != GetCurrentId()) {
-    WaitForSingleObject(thread_, INFINITE);
-  }
 }
 
  Thread::tid_t
