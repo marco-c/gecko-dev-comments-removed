@@ -873,7 +873,9 @@ TextPropertyEditor.prototype = {
 
 
   isDisplayGrid: function () {
-    return this.prop.name === "display" && this.prop.value === "grid";
+    return this.prop.name === "display" &&
+      (this.prop.value === "grid" ||
+       this.prop.value === "inline-grid");
   }
 };
 
