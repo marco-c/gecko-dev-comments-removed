@@ -49,6 +49,21 @@ namespace jit {
 
 
 
+
+class BaselineFrameSlot
+{
+    uint32_t slot_;
+
+  public:
+    explicit BaselineFrameSlot(uint32_t slot) : slot_(slot) {}
+    uint32_t slot() const { return slot_; }
+
+    bool operator==(const BaselineFrameSlot& other) const { return slot_ == other.slot_; }
+    bool operator!=(const BaselineFrameSlot& other) const { return slot_ != other.slot_; }
+};
+
+
+
 class OperandLocation
 {
   public:
@@ -58,6 +73,7 @@ class OperandLocation
         ValueReg,
         PayloadStack,
         ValueStack,
+        BaselineFrame,
         Constant,
     };
 
@@ -75,6 +91,7 @@ class OperandLocation
             JSValueType type;
         } payloadStack;
         uint32_t valueStackPushed;
+        BaselineFrameSlot baselineFrameSlot;
         Value constant;
 
         Data() : valueStackPushed(0) {}
@@ -116,6 +133,10 @@ class OperandLocation
         MOZ_ASSERT(kind_ == Constant);
         return data_.constant;
     }
+    BaselineFrameSlot baselineFrameSlot() const {
+        MOZ_ASSERT(kind_ == BaselineFrame);
+        return data_.baselineFrameSlot;
+    }
 
     void setPayloadReg(Register reg, JSValueType type) {
         kind_ = PayloadReg;
@@ -138,6 +159,10 @@ class OperandLocation
     void setConstant(const Value& v) {
         kind_ = Constant;
         data_.constant = v;
+    }
+    void setBaselineFrame(BaselineFrameSlot slot) {
+        kind_ = BaselineFrame;
+        data_.baselineFrameSlot = slot;
     }
 
     bool isInRegister() const { return kind_ == PayloadReg || kind_ == ValueReg; }
@@ -286,6 +311,10 @@ class MOZ_RAII CacheRegisterAllocator
         origInputLocations_[i].setConstant(v);
         operandLocations_[i].setConstant(v);
     }
+    void initInputLocation(size_t i, BaselineFrameSlot slot) {
+        origInputLocations_[i].setBaselineFrame(slot);
+        operandLocations_[i].setBaselineFrame(slot);
+    }
 
     void initInputLocation(size_t i, const TypedOrValueRegister& reg);
     void initInputLocation(size_t i, const ConstantOrRegister& value);
@@ -337,6 +366,8 @@ class MOZ_RAII CacheRegisterAllocator
     
     
     void discardStack(MacroAssembler& masm);
+
+    Address addressOf(MacroAssembler& masm, BaselineFrameSlot slot) const;
 
     
     
