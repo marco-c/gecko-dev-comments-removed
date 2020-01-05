@@ -296,6 +296,7 @@ GROUP_NAMES = {
     'tc-Fxfn-r-e10s': 'Firefox functional tests (remote) executed by TaskCluster with e10s',
     'tc-M': 'Mochitests executed by TaskCluster',
     'tc-M-e10s': 'Mochitests executed by TaskCluster with e10s',
+    'tc-M-V': 'Mochitests on Valgrind executed by TaskCluster',
     'tc-R': 'Reftests executed by TaskCluster',
     'tc-R-e10s': 'Reftests executed by TaskCluster with e10s',
     'tc-VP': 'VideoPuppeteer tests executed by TaskCluster',
@@ -470,17 +471,6 @@ def build_macosx_engine_payload(config, task, task_def):
         'env': worker['env'],
         'artifacts': artifacts,
     }
-
-
-@payload_builder('buildbot-bridge')
-def build_buildbot_bridge_payload(config, task, task_def):
-    worker = task['worker']
-    task_def['payload'] = {
-        'buildername': worker['buildername'],
-        'sourcestamp': worker['sourcestamp'],
-        'properties': worker['properties'],
-    }
-
 
 transforms = TransformSequence()
 
