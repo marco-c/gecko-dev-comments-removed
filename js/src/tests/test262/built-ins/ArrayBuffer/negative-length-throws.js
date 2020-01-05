@@ -1,0 +1,34 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(RangeError, function() {
+  new ArrayBuffer(-1);
+});
+
+assert.throws(RangeError, function() {
+  new ArrayBuffer(-1.1);
+});
+
+assert.throws(RangeError, function() {
+  new ArrayBuffer(-Infinity);
+});
