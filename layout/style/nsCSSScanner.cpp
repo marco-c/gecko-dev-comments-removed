@@ -260,25 +260,13 @@ nsCSSToken::AppendToString(nsString& aBuffer) const
     case eCSSToken_Bad_URL:
       aBuffer.AppendLiteral("url(");
       if (mSymbol != char16_t(0)) {
-        if (mType == eCSSToken_URL) {
-          nsStyleUtil::AppendEscapedCSSString(mIdent, aBuffer, mSymbol);
-        } else {
-          
-          nsStyleUtil::AppendEscapedCSSString(StringHead(mIdent, mInteger),
-                                              aBuffer, mSymbol);
-          MOZ_ASSERT(mInteger2 == 0 || mInteger2 == 1);
-          if (mInteger2 == 1) {
-            
-            aBuffer.Truncate(aBuffer.Length() - 1);
-          }
-
-          
-          aBuffer.Append(Substring(mIdent, mInteger));
-        }
+        nsStyleUtil::AppendEscapedCSSString(mIdent, aBuffer, mSymbol);
       } else {
         aBuffer.Append(mIdent);
       }
-      aBuffer.Append(char16_t(')'));
+      if (mType == eCSSToken_URL) {
+        aBuffer.Append(char16_t(')'));
+      }
       break;
 
     case eCSSToken_Number:
@@ -1182,9 +1170,6 @@ nsCSSScanner::NextURL(nsCSSToken& aToken)
     ScanString(aToken);
     if (MOZ_UNLIKELY(aToken.mType == eCSSToken_Bad_String)) {
       aToken.mType = eCSSToken_Bad_URL;
-      
-      aToken.mInteger2 = 1;
-      ConsumeBadURLRemnants(aToken);
       return;
     }
     MOZ_ASSERT(aToken.mType == eCSSToken_String, "unexpected token type");
@@ -1208,44 +1193,7 @@ nsCSSScanner::NextURL(nsCSSToken& aToken)
   } else {
     mSeenBadToken = true;
     aToken.mType = eCSSToken_Bad_URL;
-    if (aToken.mSymbol != 0) {
-      
-      aToken.mInteger2 = 0;
-    }
-    ConsumeBadURLRemnants(aToken);
   }
-}
-
-void
-nsCSSScanner::ConsumeBadURLRemnants(nsCSSToken& aToken)
-{
-  aToken.mInteger = aToken.mIdent.Length();
-  int32_t ch = Peek();
-  do {
-    if (ch < 0) {
-      AddEOFCharacters(eEOFCharacters_CloseParen);
-      break;
-    }
-
-    if (ch == '\\' && GatherEscape(aToken.mIdent, false)) {
-      
-      
-    } else {
-      
-      if (IsVertSpace(ch)) {
-        AdvanceLine();
-      } else {
-        Advance();
-      }
-      if (ch == 0) {
-        aToken.mIdent.Append(UCS2_REPLACEMENT_CHAR);
-      } else {
-        aToken.mIdent.Append(ch);
-      }
-    }
-
-    ch = Peek();
-  } while (ch != ')');
 }
 
 

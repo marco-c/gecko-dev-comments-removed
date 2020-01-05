@@ -60,18 +60,9 @@ enum nsCSSTokenType {
   
   
   
-  
   eCSSToken_String,         
   eCSSToken_Bad_String,     
   eCSSToken_URL,            
-  
-  
-  
-  
-  
-  
-  
-  
   eCSSToken_Bad_URL,        
 
   
@@ -263,10 +254,6 @@ class nsCSSScanner {
   
   
   void NextURL(nsCSSToken& aTokenResult);
-
-  
-  
-  void ConsumeBadURLRemnants(nsCSSToken& aToken);
 
   
   

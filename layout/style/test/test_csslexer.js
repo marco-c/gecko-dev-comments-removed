@@ -56,8 +56,7 @@ var LEX_TESTS = [
   
   ["url(http://example.com", ["url:http://example.com"]],
   
-  
-  ["url(http://example.com @", ["bad_url:http://example.com@"]],
+  ["url(http://example.com @", ["bad_url:http://example.com", "symbol:@"]],
   ["quo\\ting", ["ident:quoting"]],
   ["'bad string\n", ["bad_string:bad string", "whitespace"]],
   ["~=", ["includes"]],
