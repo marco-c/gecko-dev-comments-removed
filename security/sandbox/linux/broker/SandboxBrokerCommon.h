@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_SandboxBrokerTypes_h
-#define mozilla_SandboxBrokerTypes_h
+#ifndef mozilla_SandboxBrokerCommon_h
+#define mozilla_SandboxBrokerCommon_h
 
 #include <sys/types.h>
 
