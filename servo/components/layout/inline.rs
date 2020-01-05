@@ -680,7 +680,7 @@ impl InlineFragments {
 
     
     pub fn push_all(&mut self, fragments: InlineFragments) {
-        self.fragments.push_all_move(fragments.fragments);
+        self.fragments.extend(fragments.fragments.into_iter());
     }
 
     
