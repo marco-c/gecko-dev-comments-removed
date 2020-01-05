@@ -14,6 +14,7 @@ use layers::geometry::DevicePixel;
 use util::cursor::Cursor;
 use util::geometry::{PagePx, ViewportPx};
 use std::sync::mpsc::{channel, Sender, Receiver};
+use webdriver_traits::WebDriverScriptCommand;
 use url::Url;
 
 #[derive(Clone)]
@@ -231,6 +232,8 @@ pub enum Msg {
     FocusMsg(PipelineId),
     
     GetClipboardContents(Sender<String>),
+    
+    WebDriverCommandMsg(PipelineId, WebDriverScriptCommand)
 }
 
 

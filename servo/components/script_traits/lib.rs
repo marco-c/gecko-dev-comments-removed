@@ -9,6 +9,7 @@ extern crate msg;
 extern crate net_traits;
 extern crate util;
 extern crate url;
+extern crate webdriver_traits;
 
 
 
@@ -26,6 +27,7 @@ use net_traits::image_cache_task::ImageCacheTask;
 use net_traits::storage_task::StorageTask;
 use std::any::Any;
 use std::sync::mpsc::{Sender, Receiver};
+use webdriver_traits::WebDriverScriptCommand;
 
 use geom::point::Point2D;
 use geom::rect::Rect;
@@ -75,6 +77,8 @@ pub enum ConstellationControlMsg {
     UpdateSubpageId(PipelineId, SubpageId, SubpageId),
     
     FocusIFrameMsg(PipelineId, SubpageId),
+    
+    WebDriverCommandMsg(PipelineId, WebDriverScriptCommand)
 }
 
 
