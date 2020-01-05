@@ -27,8 +27,12 @@ pub trait ParseErrorReporter : Sync + Send {
 
 
 
-pub struct StdoutErrorReporter;
-impl ParseErrorReporter for StdoutErrorReporter {
+
+
+
+pub struct RustLogReporter;
+
+impl ParseErrorReporter for RustLogReporter {
     fn report_error(&self,
                     input: &mut Parser,
                     position: SourcePosition,
@@ -40,5 +44,19 @@ impl ParseErrorReporter for StdoutErrorReporter {
             let line_offset = location.line + line_number_offset as usize;
             info!("Url:\t{}\n{}:{} {}", url.as_str(), line_offset, location.column, message)
         }
+    }
+}
+
+
+pub struct NullReporter;
+
+impl ParseErrorReporter for NullReporter {
+    fn report_error(&self,
+            _: &mut Parser,
+            _: SourcePosition,
+            _: &str,
+            _: &UrlExtraData,
+            _: u64) {
+        
     }
 }
