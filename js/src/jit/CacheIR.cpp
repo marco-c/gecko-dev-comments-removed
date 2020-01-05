@@ -1906,17 +1906,6 @@ SetPropIRGenerator::tryAttachStub()
                 return true;
             if (tryAttachSetArrayLength(obj, objId, id, rhsValId))
                 return true;
-            return false;
-        }
-
-        uint32_t index;
-        Int32OperandId indexId;
-        if (maybeGuardInt32Index(idVal_, setElemKeyValueId(), &index, &indexId)) {
-            if (tryAttachSetDenseElement(obj, objId, index, indexId, rhsValId))
-                return true;
-            if (tryAttachSetUnboxedArrayElement(obj, objId, index, indexId, rhsValId))
-                return true;
-            return false;
         }
         return false;
     }
@@ -2224,8 +2213,12 @@ bool
 SetPropIRGenerator::tryAttachSetArrayLength(HandleObject obj, ObjOperandId objId, HandleId id,
                                             ValOperandId rhsId)
 {
-    if (!obj->is<ArrayObject>() || !JSID_IS_ATOM(id, cx_->names().length))
+    if (!obj->is<ArrayObject>() ||
+        !JSID_IS_ATOM(id, cx_->names().length) ||
+        !obj->as<ArrayObject>().lengthIsWritable())
+    {
         return false;
+    }
 
     maybeEmitIdGuard(id);
     writer.guardClass(objId, GuardClassKind::Array);
@@ -2233,58 +2226,6 @@ SetPropIRGenerator::tryAttachSetArrayLength(HandleObject obj, ObjOperandId objId
     writer.returnFromIC();
 
     trackAttached("SetArrayLength");
-    return true;
-}
-
-bool
-SetPropIRGenerator::tryAttachSetDenseElement(HandleObject obj, ObjOperandId objId, uint32_t index,
-                                             Int32OperandId indexId, ValOperandId rhsId)
-{
-    if (!obj->isNative())
-        return false;
-
-    NativeObject* nobj = &obj->as<NativeObject>();
-    if (!nobj->containsDenseElement(index) || nobj->getElementsHeader()->isFrozen())
-        return false;
-
-    writer.guardGroup(objId, nobj->group());
-    writer.guardShape(objId, nobj->shape());
-
-    writer.storeDenseElement(objId, indexId, rhsId);
-    writer.returnFromIC();
-
-    
-    setUpdateStubInfo(nobj->group(), JSID_VOID);
-
-    trackAttached("SetDenseElement");
-    return true;
-}
-
-bool
-SetPropIRGenerator::tryAttachSetUnboxedArrayElement(HandleObject obj, ObjOperandId objId, uint32_t index,
-                                                    Int32OperandId indexId, ValOperandId rhsId)
-{
-    if (!obj->is<UnboxedArrayObject>())
-        return false;
-
-    if (!cx_->runtime()->jitSupportsFloatingPoint)
-        return false;
-
-    if (index >= obj->as<UnboxedArrayObject>().initializedLength())
-        return false;
-
-    writer.guardGroup(objId, obj->group());
-
-    JSValueType elementType = obj->group()->unboxedLayoutDontCheckGeneration().elementType();
-    EmitGuardUnboxedPropertyType(writer, elementType, rhsId);
-
-    writer.storeUnboxedArrayElement(objId, indexId, rhsId, elementType);
-    writer.returnFromIC();
-
-    
-    setUpdateStubInfo(obj->group(), JSID_VOID);
-
-    trackAttached("SetUnboxedArrayElement");
     return true;
 }
 
