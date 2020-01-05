@@ -203,7 +203,7 @@ GCRuntime::checkAllocatorState(JSContext* cx, AllocKind kind)
 
     
     if (allowGC && !rt->mainThread.suppressGC)
-        JS::AutoAssertOnGC::VerifyIsSafeToGC(rt);
+        rt->gc.verifyIsSafeToGC();
 
     
     if (js::oom::ShouldFailWithOOM()) {
