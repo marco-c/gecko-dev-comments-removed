@@ -2,11 +2,12 @@
 
 
 
+use rustc::ast_map;
 use rustc::lint::Context;
 use rustc::middle::{ty, def};
 
 use syntax::ptr::P;
-use syntax::{ast, ast_map};
+use syntax::ast;
 use syntax::ast::{TyPath, Path, AngleBracketedParameters, PathSegment, Ty};
 use syntax::attr::mark_used;
 
