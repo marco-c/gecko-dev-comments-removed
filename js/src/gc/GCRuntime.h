@@ -790,14 +790,6 @@ class GCRuntime
 
     void setFullCompartmentChecks(bool enable);
 
-    bool isManipulatingDeadZones() { return manipulatingDeadZones; }
-    void setManipulatingDeadZones(bool value) { manipulatingDeadZones = value; }
-    unsigned objectsMarkedInDeadZonesCount() { return objectsMarkedInDeadZones; }
-    void incObjectsMarkedInDeadZone() {
-        MOZ_ASSERT(manipulatingDeadZones);
-        ++objectsMarkedInDeadZones;
-    }
-
     JS::Zone* getCurrentZoneGroup() { return currentZoneGroup; }
     void setFoundBlackGrayEdges(TenuredCell& target) {
         AutoEnterOOMUnsafeRegion oomUnsafe;
@@ -1286,23 +1278,6 @@ class GCRuntime
 
 
     unsigned compactingDisabledCount;
-
-    
-
-
-
-
-    bool manipulatingDeadZones;
-
-    
-
-
-
-
-
-
-
-    unsigned objectsMarkedInDeadZones;
 
     bool poked;
 
