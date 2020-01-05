@@ -111,7 +111,7 @@ AutoCompleteInput.prototype = {
 
 
 function _check_autocomplete_matches(match, result) {
-  let { uri, title, tags, style } = match;
+  let { uri, title, tags, searchEngine, style } = match;
   if (tags)
     title += " \u2013 " + tags.sort().join(", ");
   if (style)
@@ -167,21 +167,20 @@ function* check_autocomplete(test) {
     do_print("onSearchBegin received");
     numSearchesStarted++;
   };
-  let searchCompletePromise = new Promise(resolve => {
-    input.onSearchComplete = () => {
-      do_print("onSearchComplete received");
-      resolve();
-    }
-  });
+  let deferred = Promise.defer();
+  input.onSearchComplete = () => {
+    do_print("onSearchComplete received");
+    deferred.resolve();
+  }
+
   let expectedSearches = 1;
   if (test.incompleteSearch) {
     controller.startSearch(test.incompleteSearch);
     expectedSearches++;
   }
-
   do_print("Searching for: '" + test.search + "'");
   controller.startSearch(test.search);
-  yield searchCompletePromise;
+  yield deferred.promise;
 
   Assert.equal(numSearchesStarted, expectedSearches, "All searches started");
 
@@ -272,7 +271,7 @@ var addBookmark = Task.async(function* (aBookmarkObj) {
     title: aBookmarkObj.title || "A bookmark",
     url: aBookmarkObj.uri
   });
-  yield PlacesUtils.promiseItemId(bm.guid);
+  let itemId = yield PlacesUtils.promiseItemId(bm.guid);
 
   if (aBookmarkObj.keyword) {
     yield PlacesUtils.keywords.insert({ keyword: aBookmarkObj.keyword,
@@ -286,19 +285,19 @@ var addBookmark = Task.async(function* (aBookmarkObj) {
   }
 });
 
-function addOpenPages(aUri, aCount=1) {
+function addOpenPages(aUri, aCount=1, aUserContextId=0) {
   let ac = Cc["@mozilla.org/autocomplete/search;1?name=unifiedcomplete"]
              .getService(Ci.mozIPlacesAutoComplete);
   for (let i = 0; i < aCount; i++) {
-    ac.registerOpenPage(aUri);
+    ac.registerOpenPage(aUri, aUserContextId);
   }
 }
 
-function removeOpenPages(aUri, aCount=1) {
+function removeOpenPages(aUri, aCount=1, aUserContextId=0) {
   let ac = Cc["@mozilla.org/autocomplete/search;1?name=unifiedcomplete"]
              .getService(Ci.mozIPlacesAutoComplete);
   for (let i = 0; i < aCount; i++) {
-    ac.unregisterOpenPage(aUri);
+    ac.unregisterOpenPage(aUri, aUserContextId);
   }
 }
 
@@ -414,22 +413,6 @@ function makeSwitchToTabMatch(url, extra = {}) {
     title: extra.title || url,
     style: [ "action", "switchtab" ],
   }
-}
-
-function makeExtensionMatch(extra = {}) {
-  let style = [ "action", "extension" ];
-  if (extra.heuristic) {
-    style.push("heuristic");
-  }
-
-  return {
-    uri: makeActionURI("extension", {
-      content: extra.content,
-      keyword: extra.keyword,
-    }),
-    title: extra.description,
-    style,
-  };
 }
 
 function setFaviconForHref(href, iconHref) {
