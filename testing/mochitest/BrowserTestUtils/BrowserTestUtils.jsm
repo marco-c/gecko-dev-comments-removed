@@ -183,6 +183,13 @@ this.BrowserTestUtils = {
 
 
   browserLoaded(browser, includeSubFrames=false, wantLoad=null) {
+    
+    
+    let tabbrowser = browser.ownerGlobal.gBrowser;
+    if (tabbrowser && tabbrowser.getTabForBrowser) {
+      tabbrowser._insertBrowser(tabbrowser.getTabForBrowser(browser));
+    }
+
     function isWanted(url) {
       if (!wantLoad) {
         return true;
