@@ -1482,6 +1482,7 @@ internal_JSHistogram_Add(JSContext *cx, unsigned argc, JS::Value *vp)
       return true;
     }
 
+    
     nsresult rv = gHistograms[id].label_id(NS_ConvertUTF16toUTF8(label).get(), &value);
     if (NS_FAILED(rv)) {
       LogToBrowserConsole(nsIScriptError::errorFlag,
@@ -1728,22 +1729,47 @@ internal_JSKeyedHistogram_Add(JSContext *cx, unsigned argc, JS::Value *vp)
 
   
   
-  int32_t value = 1;
-  if ((type != base::CountHistogram::COUNT_HISTOGRAM) || (args.length() == 2)) {
+  uint32_t value = 1;
+  if ((type != nsITelemetry::HISTOGRAM_COUNT) || (args.length() == 2)) {
     if (args.length() < 2) {
       LogToBrowserConsole(nsIScriptError::errorFlag,
                           NS_LITERAL_STRING("Expected two arguments for this histogram type"));
       return true;
     }
 
-    if (!(args[1].isNumber() || args[1].isBoolean())) {
-      LogToBrowserConsole(nsIScriptError::errorFlag, NS_LITERAL_STRING("Not a number"));
-      return true;
-    }
+    if (type == nsITelemetry::HISTOGRAM_CATEGORICAL && args[1].isString()) {
+      
+      mozilla::Telemetry::HistogramID id;
+      if (NS_FAILED(keyed->GetEnumId(id))) {
+        LogToBrowserConsole(nsIScriptError::errorFlag, NS_LITERAL_STRING("Failed to get histogram id."));
+        return true;
+      }
 
-    if (!JS::ToInt32(cx, args[1], &value)) {
-      LogToBrowserConsole(nsIScriptError::errorFlag, NS_LITERAL_STRING("Failed to convert argument"));
-      return true;
+      
+      nsAutoJSString label;
+      if (!label.init(cx, args[1])) {
+        LogToBrowserConsole(nsIScriptError::errorFlag, NS_LITERAL_STRING("Invalid string parameter"));
+        return true;
+      }
+
+      
+      nsresult rv = gHistograms[id].label_id(NS_ConvertUTF16toUTF8(label).get(), &value);
+      if (NS_FAILED(rv)) {
+        LogToBrowserConsole(nsIScriptError::errorFlag,
+                            NS_LITERAL_STRING("Unknown label for categorical histogram"));
+        return true;
+      }
+    } else {
+      
+      if (!(args[1].isNumber() || args[1].isBoolean())) {
+        LogToBrowserConsole(nsIScriptError::errorFlag, NS_LITERAL_STRING("Not a number"));
+        return true;
+      }
+
+      if (!JS::ToUint32(cx, args[1], &value)) {
+        LogToBrowserConsole(nsIScriptError::errorFlag, NS_LITERAL_STRING("Failed to convert argument"));
+        return true;
+      }
     }
   }
 
