@@ -26,7 +26,7 @@ use ipc_channel::ipc::IpcSender;
 use layout_debug;
 use model::{self, IntrinsicISizes, IntrinsicISizesContribution, MaybeAuto, SizeConstraint};
 use model::{style_length, ToGfxMatrix};
-use msg::constellation_msg::PipelineId;
+use msg::constellation_msg::{FrameId, PipelineId};
 use net_traits::image::base::{Image, ImageMetadata};
 use net_traits::image_cache::{ImageOrMetadataAvailable, UsePlaceholder};
 use range::*;
@@ -472,14 +472,18 @@ impl ImageFragmentInfo {
 #[derive(Clone)]
 pub struct IframeFragmentInfo {
     
+    pub frame_id: FrameId,
+    
     pub pipeline_id: PipelineId,
 }
 
 impl IframeFragmentInfo {
     
     pub fn new<N: ThreadSafeLayoutNode>(node: &N) -> IframeFragmentInfo {
+        let frame_id = node.iframe_frame_id();
         let pipeline_id = node.iframe_pipeline_id();
         IframeFragmentInfo {
+            frame_id: frame_id,
             pipeline_id: pipeline_id,
         }
     }

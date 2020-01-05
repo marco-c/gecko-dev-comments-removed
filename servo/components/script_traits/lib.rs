@@ -135,6 +135,8 @@ pub struct LoadData {
     
     pub url: ServoUrl,
     
+    pub creator_pipeline_id: Option<PipelineId>,
+    
     #[serde(deserialize_with = "::hyper_serde::deserialize",
             serialize_with = "::hyper_serde::serialize")]
     pub method: Method,
@@ -152,9 +154,14 @@ pub struct LoadData {
 
 impl LoadData {
     
-    pub fn new(url: ServoUrl, referrer_policy: Option<ReferrerPolicy>, referrer_url: Option<ServoUrl>) -> LoadData {
+    pub fn new(url: ServoUrl,
+               creator_pipeline_id: Option<PipelineId>,
+               referrer_policy: Option<ReferrerPolicy>,
+               referrer_url: Option<ServoUrl>)
+               -> LoadData {
         LoadData {
             url: url,
+            creator_pipeline_id: creator_pipeline_id,
             method: Method::Get,
             headers: Headers::new(),
             data: None,
@@ -212,6 +219,15 @@ pub enum DocumentActivity {
 }
 
 
+#[derive(Copy, Clone, PartialEq, Eq, Hash, HeapSizeOf, Debug, Deserialize, Serialize)]
+pub enum UpdatePipelineIdReason {
+    
+    Navigation,
+    
+    Traversal,
+}
+
+
 #[derive(Deserialize, Serialize)]
 pub enum ConstellationControlMsg {
     
@@ -249,7 +265,7 @@ pub enum ConstellationControlMsg {
     MozBrowserEvent(PipelineId, Option<FrameId>, MozBrowserEvent),
     
     
-    UpdatePipelineId(PipelineId, FrameId, PipelineId),
+    UpdatePipelineId(PipelineId, FrameId, PipelineId, UpdatePipelineIdReason),
     
     
     FocusIFrame(PipelineId, FrameId),
@@ -274,9 +290,6 @@ pub enum ConstellationControlMsg {
     
     
     DispatchStorageEvent(PipelineId, StorageType, ServoUrl, Option<String>, Option<String>, Option<String>),
-    
-    
-    FramedContentChanged(PipelineId, FrameId),
     
     ReportCSSError(PipelineId, String, usize, usize, String),
     
@@ -312,7 +325,6 @@ impl fmt::Debug for ConstellationControlMsg {
             WebFontLoaded(..) => "WebFontLoaded",
             DispatchFrameLoadEvent { .. } => "DispatchFrameLoadEvent",
             DispatchStorageEvent(..) => "DispatchStorageEvent",
-            FramedContentChanged(..) => "FramedContentChanged",
             ReportCSSError(..) => "ReportCSSError",
             Reload(..) => "Reload",
             WebVREvents(..) => "WebVREvents",

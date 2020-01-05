@@ -35,7 +35,7 @@ pub enum LayoutMsg {
     
     ChangeRunningAnimationsState(PipelineId, AnimationState),
     
-    FrameSizes(Vec<(PipelineId, TypedSize2D<f32, CSSPixel>)>),
+    FrameSizes(Vec<(FrameId, TypedSize2D<f32, CSSPixel>)>),
     
     SetCursor(Cursor),
     
@@ -121,7 +121,7 @@ pub enum ScriptMsg {
     
     ScriptLoadedURLInIFrame(IFrameLoadInfoWithData),
     
-    ScriptLoadedAboutBlankInIFrame(IFrameLoadInfo, IpcSender<LayoutControlMsg>),
+    ScriptNewIFrame(IFrameLoadInfo, IpcSender<LayoutControlMsg>),
     
     SetClipboardContents(String),
     

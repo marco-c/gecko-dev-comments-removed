@@ -2,6 +2,7 @@
 
 
 
+use euclid::size::TypedSize2D;
 use msg::constellation_msg::{FrameId, PipelineId};
 use pipeline::Pipeline;
 use script_traits::LoadData;
@@ -9,6 +10,7 @@ use std::collections::HashMap;
 use std::iter::once;
 use std::mem::replace;
 use std::time::Instant;
+use style_traits::CSSPixel;
 
 
 
@@ -21,6 +23,9 @@ use std::time::Instant;
 pub struct Frame {
     
     pub id: FrameId,
+
+    
+    pub size: Option<TypedSize2D<f32, CSSPixel>>,
 
     
     pub instant: Instant,
@@ -44,6 +49,7 @@ impl Frame {
     pub fn new(id: FrameId, pipeline_id: PipelineId, load_data: LoadData) -> Frame {
         Frame {
             id: id,
+            size: None,
             pipeline_id: pipeline_id,
             instant: Instant::now(),
             load_data: load_data,
