@@ -71,6 +71,15 @@ public class IconRequestBuilder {
 
 
     @CheckResult
+    public IconRequestBuilder skipNetworkIf(boolean shouldSkipNetwork) {
+        request.skipNetwork = shouldSkipNetwork;
+        return this;
+    }
+
+    
+
+
+    @CheckResult
     public IconRequestBuilder skipDisk() {
         request.skipDisk = true;
         return this;
