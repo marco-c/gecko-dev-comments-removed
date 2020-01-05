@@ -93,6 +93,10 @@ pub enum ImageCacheCommand {
     GetImageOrMetadataIfAvailable(Url, UsePlaceholder, IpcSender<Result<ImageOrMetadataAvailable, ImageState>>),
 
     
+    
+    StoreDecodeImage(Url, Vec<u8>),
+
+    
     Exit(IpcSender<()>),
 }
 
@@ -158,10 +162,17 @@ impl ImageCacheThread {
     }
 
     
+    pub fn store_complete_image_bytes(&self,
+                                   url: Url,
+                                   image_data: Vec<u8>) {
+        let msg = ImageCacheCommand::StoreDecodeImage(url, image_data);
+        self.chan.send(msg).unwrap();
+    }
+
+    
     pub fn exit(&self) {
         let (response_chan, response_port) = ipc::channel().unwrap();
         self.chan.send(ImageCacheCommand::Exit(response_chan)).unwrap();
         response_port.recv().unwrap();
     }
 }
-
