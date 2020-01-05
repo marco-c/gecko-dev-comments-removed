@@ -1450,8 +1450,6 @@ class CheckTypes(TcheckVisitor):
 
 
     def visitManager(self, mgr):
-        
-
         pdecl = mgr.of.decl
         ptype, pname = pdecl.type, pdecl.shortname
 
