@@ -562,7 +562,7 @@ AddAnimationForProperty(nsIFrame* aFrame, const AnimationProperty& aProperty,
     
     
     SetAnimatable(aProperty.mProperty,
-                  { baseStyle, nullptr },
+                  AnimationValue(baseStyle),
                   aFrame, refBox,
                   animation->baseStyle());
   } else {
@@ -2679,17 +2679,6 @@ nsDisplayItem::FuseClipChainUpTo(nsDisplayListBuilder* aBuilder, const ActiveScr
   }
 }
 
-bool
-nsDisplayItem::ShouldUseAdvancedLayer(LayerManager* aManager, PrefFunc aFunc)
-{
-  if (!gfxPrefs::LayersAdvancedBasicLayerEnabled() &&
-      aManager && aManager->GetBackendType() == layers::LayersBackend::LAYERS_BASIC) {
-    return false;
-  }
-
-  return aFunc();
-}
-
 static const DisplayItemClipChain*
 FindCommonAncestorClipForIntersection(const DisplayItemClipChain* aOne,
                                       const DisplayItemClipChain* aTwo)
@@ -2778,7 +2767,7 @@ nsDisplaySolidColor::GetLayerState(nsDisplayListBuilder* aBuilder,
                                    LayerManager* aManager,
                                    const ContainerLayerParameters& aParameters)
 {
-  if (ForceActiveLayers() || ShouldUseAdvancedLayer(aManager, gfxPrefs::LayersAllowSolidColorLayers)) {
+  if (ForceActiveLayers() || gfxPrefs::LayersAllowSolidColorLayers()) {
     return LAYER_ACTIVE;
   }
   return LAYER_NONE;
@@ -3345,8 +3334,7 @@ nsDisplayBackgroundImage::GetLayerState(nsDisplayListBuilder* aBuilder,
                                         LayerManager* aManager,
                                         const ContainerLayerParameters& aParameters)
 {
-  if (ShouldUseAdvancedLayer(aManager, gfxPrefs::LayersAllowBackgroundImage) &&
-      CanBuildWebRenderDisplayItems()) {
+  if (gfxPrefs::LayersAllowBackgroundImage() && CanBuildWebRenderDisplayItems()) {
     return LAYER_ACTIVE;
   }
 
@@ -3397,7 +3385,7 @@ nsDisplayBackgroundImage::BuildLayer(nsDisplayListBuilder* aBuilder,
                                      LayerManager* aManager,
                                      const ContainerLayerParameters& aParameters)
 {
-  if (ShouldUseAdvancedLayer(aManager, gfxPrefs::LayersAllowBackgroundImage)) {
+  if (gfxPrefs::LayersAllowBackgroundImage()) {
     return BuildDisplayItemLayer(aBuilder, aManager, aParameters);
   }
 
@@ -3436,10 +3424,7 @@ nsDisplayBackgroundImage::CreateWebRenderCommands(wr::DisplayListBuilder& aBuild
                                                   CompositionOp::OP_OVER);
   params.bgClipRect = &mBounds;
 
-  image::DrawResult result =
-    nsCSSRendering::BuildWebRenderDisplayItemsForStyleImageLayer(params, aBuilder, aParentCommands, aLayer);
-
-  nsDisplayBackgroundGeometry::UpdateDrawResult(this, result);
+  nsCSSRendering::BuildWebRenderDisplayItemsForStyleImageLayer(params, aBuilder, aParentCommands, aLayer);
 }
 
 void
@@ -3998,7 +3983,7 @@ nsDisplayBackgroundColor::GetLayerState(nsDisplayListBuilder* aBuilder,
                                         const ContainerLayerParameters& aParameters)
 {
   StyleGeometryBox clip = mBackgroundStyle->mImage.mLayers[0].mClip;
-  if ((ForceActiveLayers() || ShouldUseAdvancedLayer(aManager, gfxPrefs::LayersAllowBackgroundColorLayers)) &&
+  if ((ForceActiveLayers() || gfxPrefs::LayersAllowBackgroundColorLayers()) &&
       clip != StyleGeometryBox::Text) {
     return LAYER_ACTIVE;
   }
@@ -4182,7 +4167,7 @@ nsDisplayOutline::GetLayerState(nsDisplayListBuilder* aBuilder,
                                 LayerManager* aManager,
                                 const ContainerLayerParameters& aParameters)
 {
-  if (!ShouldUseAdvancedLayer(aManager, gfxPrefs::LayersAllowOutlineLayers)) {
+  if (!gfxPrefs::LayersAllowOutlineLayers()) {
     return LAYER_NONE;
   }
 
@@ -4230,8 +4215,7 @@ nsDisplayOutline::CreateWebRenderCommands(wr::DisplayListBuilder& aBuilder,
   gfx::Rect clip(0, 0, 0, 0);
   if (GetClip().HasClip()) {
     int32_t appUnitsPerDevPixel = mFrame->PresContext()->AppUnitsPerDevPixel();
-    clip = LayoutDeviceRect::FromAppUnits(
-        GetClip().GetClipRect(), appUnitsPerDevPixel).ToUnknownRect();
+    clip = NSRectToRect(GetClip().GetClipRect(), appUnitsPerDevPixel);
   }
   mBorderRenderer->CreateWebRenderCommands(aBuilder, aLayer, clip);
 }
@@ -4511,16 +4495,16 @@ nsDisplayCaret::CreateWebRenderCommands(wr::DisplayListBuilder& aBuilder,
   mCaret->ComputeCaretRects(frame, contentOffset, &caretRect, &hookRect);
 
   gfx::Color color = ToDeviceColor(frame->GetCaretColorAt(contentOffset));
-  LayoutDeviceRect devCaretRect = LayoutDeviceRect::FromAppUnits(
-    caretRect + ToReferenceFrame(), appUnitsPerDevPixel);
-  LayoutDeviceRect devHookRect = LayoutDeviceRect::FromAppUnits(
-    hookRect + ToReferenceFrame(), appUnitsPerDevPixel);
+  Rect devCaretRect =
+    NSRectToRect(caretRect + ToReferenceFrame(), appUnitsPerDevPixel);
+  Rect devHookRect =
+    NSRectToRect(hookRect + ToReferenceFrame(), appUnitsPerDevPixel);
 
-  LayerRect caretTransformedRect = aLayer->RelativeToParent(devCaretRect);
-  LayerRect hookTransformedRect = aLayer->RelativeToParent(devHookRect);
+  Rect caretTransformedRect = aLayer->RelativeToParent(devCaretRect);
+  Rect hookTransformedRect = aLayer->RelativeToParent(devHookRect);
 
-  LayerIntRect caret = RoundedToInt(caretTransformedRect);
-  LayerIntRect hook = RoundedToInt(hookTransformedRect);
+  IntRect caret = RoundedToInt(caretTransformedRect);
+  IntRect hook = RoundedToInt(hookTransformedRect);
 
   
   aBuilder.PushRect(wr::ToWrRect(caret),
@@ -4539,7 +4523,7 @@ nsDisplayCaret::GetLayerState(nsDisplayListBuilder* aBuilder,
                               LayerManager* aManager,
                               const ContainerLayerParameters& aParameters)
 {
-  if (ShouldUseAdvancedLayer(aManager, gfxPrefs::LayersAllowCaretLayers)) {
+  if (gfxPrefs::LayersAllowCaretLayers()) {
     return LAYER_ACTIVE;
   }
 
@@ -4616,7 +4600,7 @@ nsDisplayBorder::GetLayerState(nsDisplayListBuilder* aBuilder,
                                LayerManager* aManager,
                                const ContainerLayerParameters& aParameters)
 {
-  if (!ShouldUseAdvancedLayer(aManager, gfxPrefs::LayersAllowBorderLayers)) {
+  if (!gfxPrefs::LayersAllowBorderLayers()) {
     return LAYER_NONE;
   }
 
@@ -4728,7 +4712,7 @@ nsDisplayBorder::BuildLayer(nsDisplayListBuilder* aBuilder,
                             LayerManager* aManager,
                             const ContainerLayerParameters& aContainerParameters)
 {
-  if (ShouldUseAdvancedLayer(aManager, gfxPrefs::LayersAllowBorderLayers)) {
+  if (aManager->GetBackendType() == layers::LayersBackend::LAYERS_WR) {
     return BuildDisplayItemLayer(aBuilder, aManager, aContainerParameters);
   } else {
     RefPtr<BorderLayer> layer = static_cast<BorderLayer*>
@@ -4769,16 +4753,16 @@ nsDisplayBorder::CreateBorderImageWebRenderCommands(mozilla::wr::DisplayListBuil
     outset[i] = (float)(mBorderImageRenderer->mImageOutset.Side(i)) / appUnitsPerDevPixel;
   }
 
-  LayoutDeviceRect destRect = LayoutDeviceRect::FromAppUnits(
-    mBorderImageRenderer->mArea, appUnitsPerDevPixel);
-  LayerRect destRectTransformed = aLayer->RelativeToParent(destRect);
-  LayerIntRect dest = RoundedToInt(destRectTransformed);
+  Rect destRect =
+    NSRectToRect(mBorderImageRenderer->mArea, appUnitsPerDevPixel);
+  Rect destRectTransformed = aLayer->RelativeToParent(destRect);
+  IntRect dest = RoundedToInt(destRectTransformed);
 
-  LayerIntRect clip = dest;
+  IntRect clip = dest;
   if (!mBorderImageRenderer->mClip.IsEmpty()) {
-    LayoutDeviceRect clipRect = LayoutDeviceRect::FromAppUnits(
-      mBorderImageRenderer->mClip, appUnitsPerDevPixel);
-    LayerRect clipRectTransformed = aLayer->RelativeToParent(clipRect);
+    Rect clipRect =
+      NSRectToRect(mBorderImageRenderer->mClip, appUnitsPerDevPixel);
+    Rect clipRectTransformed = aLayer->RelativeToParent(clipRect);
     clip = RoundedToInt(clipRectTransformed);
   }
 
@@ -4829,10 +4813,10 @@ nsDisplayBorder::CreateBorderImageWebRenderCommands(mozilla::wr::DisplayListBuil
       renderer.BuildWebRenderParameters(1.0, extendMode, stops, lineStart, lineEnd, gradientRadius);
 
       if (gradientData->mShape == NS_STYLE_GRADIENT_SHAPE_LINEAR) {
-        LayerPoint startPoint = dest.TopLeft();
-        startPoint = startPoint + ViewAs<LayerPixel>(lineStart, PixelCastJustification::WebRenderHasUnitResolution);
-        LayerPoint endPoint = dest.TopLeft();
-        endPoint = endPoint + ViewAs<LayerPixel>(lineEnd, PixelCastJustification::WebRenderHasUnitResolution);
+        Point startPoint = dest.TopLeft();
+        startPoint = startPoint + Point(lineStart.x, lineStart.y);
+        Point endPoint = dest.TopLeft();
+        endPoint = endPoint + Point(lineEnd.x, lineEnd.y);
 
         aBuilder.PushBorderGradient(wr::ToWrRect(dest),
                                     aBuilder.BuildClipRegion(wr::ToWrRect(clip)),
@@ -4869,14 +4853,7 @@ nsDisplayBorder::CreateWebRenderCommands(wr::DisplayListBuilder& aBuilder,
   if (mBorderImageRenderer) {
     CreateBorderImageWebRenderCommands(aBuilder, aParentCommands, aLayer);
   } else if (mBorderRenderer) {
-    gfx::Rect clip(0, 0, 0, 0);
-    if (GetClip().HasClip()) {
-      int32_t appUnitsPerDevPixel = mFrame->PresContext()->AppUnitsPerDevPixel();
-      clip = LayoutDeviceRect::FromAppUnits(
-          GetClip().GetClipRect(), appUnitsPerDevPixel).ToUnknownRect();
-    }
-
-    mBorderRenderer->CreateWebRenderCommands(aBuilder, aLayer, clip);
+    mBorderRenderer->CreateWebRenderCommands(aBuilder, aLayer);
   }
 }
 
@@ -5052,7 +5029,7 @@ nsDisplayBoxShadowOuter::GetLayerState(nsDisplayListBuilder* aBuilder,
                                        LayerManager* aManager,
                                        const ContainerLayerParameters& aParameters)
 {
-  if (ShouldUseAdvancedLayer(aManager, gfxPrefs::LayersAllowOuterBoxShadow) &&
+  if (gfxPrefs::LayersAllowOuterBoxShadow() &&
       CanBuildWebRenderDisplayItems()) {
     return LAYER_ACTIVE;
   }
@@ -5155,8 +5132,7 @@ nsDisplayBoxShadowOuter::CreateWebRenderCommands(wr::DisplayListBuilder& aBuilde
 
   
   for (uint32_t i = 0; i < rects.Length(); ++i) {
-    LayoutDeviceRect clipRect = LayoutDeviceRect::FromAppUnits(
-        rects[i], appUnitsPerDevPixel);
+    Rect clipRect = NSRectToRect(rects[i], appUnitsPerDevPixel);
     nsCSSShadowArray* shadows = mFrame->StyleEffects()->mBoxShadow;
     MOZ_ASSERT(shadows);
 
@@ -5174,11 +5150,10 @@ nsDisplayBoxShadowOuter::CreateWebRenderCommands(wr::DisplayListBuilder& aBuilde
       shadowOffset.x = (shadow->mXOffset / appUnitsPerDevPixel);
       shadowOffset.y = (shadow->mYOffset / appUnitsPerDevPixel);
 
-      LayoutDeviceRect deviceBox = LayoutDeviceRect::FromAppUnits(
-          shadowRect, appUnitsPerDevPixel);
-      LayerRect deviceBoxRect = aLayer->RelativeToParent(deviceBox);
+      Rect deviceBoxRect = NSRectToRect(shadowRect, appUnitsPerDevPixel);
+      deviceBoxRect = aLayer->RelativeToParent(deviceBoxRect);
       deviceBoxRect.Round();
-      LayerRect deviceClipRect = aLayer->RelativeToParent(clipRect);
+      Rect deviceClipRect = aLayer->RelativeToParent(clipRect);
 
       
       float borderRadius = hasBorderRadius ? borderRadii.TopLeft().width
@@ -5312,7 +5287,7 @@ nsDisplayBoxShadowInner::GetLayerState(nsDisplayListBuilder* aBuilder,
                                        LayerManager* aManager,
                                        const ContainerLayerParameters& aParameters)
 {
-  if (ShouldUseAdvancedLayer(aManager, gfxPrefs::LayersAllowInsetBoxShadow) &&
+  if (gfxPrefs::LayersAllowInsetBoxShadow() &&
       CanCreateWebRenderCommands(aBuilder, mFrame, ToReferenceFrame())) {
     return LAYER_ACTIVE;
   }
@@ -5347,8 +5322,7 @@ nsDisplayBoxShadowInner::CreateInsetBoxShadowWebRenderCommands(mozilla::wr::Disp
   nsCSSShadowArray* shadows = aFrame->StyleEffects()->mBoxShadow;
 
   for (uint32_t i = 0; i < rects.Length(); ++i) {
-    LayoutDeviceRect clipRect = LayoutDeviceRect::FromAppUnits(
-        rects[i], appUnitsPerDevPixel);
+    Rect clipRect = NSRectToRect(rects[i], appUnitsPerDevPixel);
 
     for (uint32_t i = shadows->Length(); i > 0; --i) {
       nsCSSShadowItem* shadowItem = shadows->ShadowAt(i - 1);
@@ -5362,9 +5336,8 @@ nsDisplayBoxShadowInner::CreateInsetBoxShadowWebRenderCommands(mozilla::wr::Disp
       nsCSSRendering::GetShadowInnerRadii(aFrame, aBorderRect, innerRadii);
 
       
-      Rect deviceBoxRect = LayoutDeviceRect::FromAppUnits(
-          shadowRect, appUnitsPerDevPixel).ToUnknownRect();
-      LayerRect deviceClipRect = aLayer->RelativeToParent(clipRect);
+      Rect deviceBoxRect = NSRectToRect(shadowRect, appUnitsPerDevPixel);
+      Rect deviceClipRect = aLayer->RelativeToParent(clipRect);
       Color shadowColor = nsCSSRendering::GetShadowColor(shadowItem, aFrame, 1.0);
 
       Point shadowOffset;

@@ -596,7 +596,8 @@ GetMinAndMaxScaleForAnimationProperty(const nsIFrame* aFrame,
       if (!baseStyle.IsNull()) {
         
         
-        UpdateMinMaxScale(aFrame, { baseStyle, nullptr }, aMinScale, aMaxScale);
+        UpdateMinMaxScale(aFrame, AnimationValue(baseStyle),
+                          aMinScale, aMaxScale);
       }
 
       for (const AnimationPropertySegment& segment : prop.mSegments) {
