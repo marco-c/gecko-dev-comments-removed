@@ -25,6 +25,8 @@ public class testInputConnection extends JavascriptBridgeTest {
 
     private static final String INITIAL_TEXT = "foo";
 
+    private String mEventsLog;
+
     public void testInputConnection() throws InterruptedException {
         GeckoHelper.blockForReady();
 
@@ -69,6 +71,14 @@ public class testInputConnection extends JavascriptBridgeTest {
             .testInputConnection(new HidingInputConnectionTest());
 
         getJS().syncCall("finish_test");
+    }
+
+    public void setEventsLog(final String log) {
+        mEventsLog = log;
+    }
+
+    public String getEventsLog() {
+        return mEventsLog;
     }
 
     private class BasicInputConnectionTest extends InputConnectionTest {
@@ -267,6 +277,46 @@ public class testInputConnection extends JavascriptBridgeTest {
             }
 
             ic.deleteSurroundingText(2, 1);
+            assertTextAndSelectionAt("Can clear text", ic, "", 0);
+
+            
+            
+            getJS().syncCall("start_events_log");
+            ic.setComposingText("f", 1);
+            processGeckoEvents();
+            ic.setComposingText("fo", 1);
+            processGeckoEvents();
+            ic.setComposingText("foo", 1);
+            processGeckoEvents();
+            ic.finishComposingText();
+            assertTextAndSelectionAt("Can reuse composition in Java", ic, "foo", 3);
+
+            getJS().syncCall("end_events_log");
+            if (mType.equals("textarea")) {
+                
+                fAssertEquals("Can reuse composition in Gecko", "<=|==", getEventsLog());
+            } else {
+                
+                fAssertEquals("Can reuse composition in Gecko", "<=|=|=|", getEventsLog());
+            }
+
+            ic.deleteSurroundingText(3, 0);
+            assertTextAndSelectionAt("Can clear text", ic, "", 0);
+
+            
+            
+            getJS().syncCall("start_events_log");
+            ic.setComposingText("foo", 1);
+            assertTextAndSelectionAt("Can set composition before selection", ic, "foo", 3);
+            ic.setSelection(0, 0);
+            assertTextAndSelectionAt("Can set selection after composition", ic, "foo", 0);
+
+            getJS().syncCall("end_events_log");
+            
+            fAssertEquals("Can update composition caret", "<=||", getEventsLog());
+
+            ic.finishComposingText();
+            ic.deleteSurroundingText(0, 3);
             assertTextAndSelectionAt("Can clear text", ic, "", 0);
 
             
