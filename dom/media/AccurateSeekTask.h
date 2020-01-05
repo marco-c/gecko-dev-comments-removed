@@ -43,8 +43,6 @@ public:
 
   ~AccurateSeekTask();
 
-  void MaybeFinishSeek();
-
   
 
 
