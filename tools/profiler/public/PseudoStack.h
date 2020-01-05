@@ -444,7 +444,6 @@ private:
   
   
   
-  
   static const int AWAKE = 0;
   static const int SLEEPING_NOT_OBSERVED = 1;
   static const int SLEEPING_OBSERVED = 2;
