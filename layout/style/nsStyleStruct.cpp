@@ -2012,7 +2012,7 @@ nsStyleImage::TrackImage(nsPresContext* aContext)
   
   nsIDocument* doc = aContext->Document();
   if (doc) {
-    doc->ImageTracker()->AddImage(mImage);
+    doc->ImageTracker()->Add(mImage);
   }
 
   
@@ -2032,7 +2032,7 @@ nsStyleImage::UntrackImage(nsPresContext* aContext)
   
   nsIDocument* doc = aContext->Document();
   if (doc) {
-    doc->ImageTracker()->RemoveImage(mImage);
+    doc->ImageTracker()->Remove(mImage);
   }
 
   
@@ -3439,7 +3439,7 @@ nsStyleContentData::TrackImage(nsPresContext* aContext)
   
   nsIDocument* doc = aContext->Document();
   if (doc) {
-    doc->ImageTracker()->AddImage(mContent.mImage);
+    doc->ImageTracker()->Add(mContent.mImage);
   }
 
   
@@ -3461,7 +3461,7 @@ nsStyleContentData::UntrackImage(nsPresContext* aContext)
   
   nsIDocument* doc = aContext->Document();
   if (doc) {
-    doc->ImageTracker()->RemoveImage(mContent.mImage);
+    doc->ImageTracker()->Remove(mContent.mImage);
   }
 
   

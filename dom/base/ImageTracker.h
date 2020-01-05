@@ -39,28 +39,28 @@ public:
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(ImageTracker)
 
-  nsresult AddImage(imgIRequest* aImage);
+  nsresult Add(imgIRequest* aImage);
 
   enum { REQUEST_DISCARD = 0x1 };
-  nsresult RemoveImage(imgIRequest* aImage, uint32_t aFlags = 0);
+  nsresult Remove(imgIRequest* aImage, uint32_t aFlags = 0);
 
   
   
-  nsresult SetImageLockingState(bool aLocked);
+  nsresult SetLockingState(bool aLocked);
 
   
   
   
-  void SetImagesNeedAnimating(bool aAnimating);
+  void SetAnimatingState(bool aAnimating);
 
   void RequestDiscardAll();
 
 private:
   ~ImageTracker();
 
-  nsDataHashtable<nsPtrHashKey<imgIRequest>, uint32_t> mImageTracker;
-  bool mLockingImages;
-  bool mAnimatingImages;
+  nsDataHashtable<nsPtrHashKey<imgIRequest>, uint32_t> mImages;
+  bool mLocking;
+  bool mAnimating;
 };
 
 } 

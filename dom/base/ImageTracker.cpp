@@ -13,39 +13,39 @@ namespace mozilla {
 namespace dom {
 
 ImageTracker::ImageTracker()
-  : mLockingImages(false)
-  , mAnimatingImages(true)
+  : mLocking(false)
+  , mAnimating(true)
 {
 }
 
 ImageTracker::~ImageTracker()
 {
-  SetImageLockingState(false);
+  SetLockingState(false);
 }
 
 nsresult
-ImageTracker::AddImage(imgIRequest* aImage)
+ImageTracker::Add(imgIRequest* aImage)
 {
   MOZ_ASSERT(aImage);
 
   
   uint32_t oldCount = 0;
-  mImageTracker.Get(aImage, &oldCount);
+  mImages.Get(aImage, &oldCount);
 
   
-  mImageTracker.Put(aImage, oldCount + 1);
+  mImages.Put(aImage, oldCount + 1);
 
   nsresult rv = NS_OK;
 
   
   
-  if (oldCount == 0 && mLockingImages) {
+  if (oldCount == 0 && mLocking) {
     rv = aImage->LockImage();
   }
 
   
   
-  if (oldCount == 0 && mAnimatingImages) {
+  if (oldCount == 0 && mAnimating) {
     nsresult rv2 = aImage->IncrementAnimationConsumers();
     rv = NS_SUCCEEDED(rv) ? rv2 : rv;
   }
@@ -54,13 +54,13 @@ ImageTracker::AddImage(imgIRequest* aImage)
 }
 
 nsresult
-ImageTracker::RemoveImage(imgIRequest* aImage, uint32_t aFlags)
+ImageTracker::Remove(imgIRequest* aImage, uint32_t aFlags)
 {
   NS_ENSURE_ARG_POINTER(aImage);
 
   
   uint32_t count = 0;
-  DebugOnly<bool> found = mImageTracker.Get(aImage, &count);
+  DebugOnly<bool> found = mImages.Get(aImage, &count);
   MOZ_ASSERT(found, "Removing image that wasn't in the tracker!");
   MOZ_ASSERT(count > 0, "Entry in the cache tracker with count 0!");
 
@@ -70,22 +70,22 @@ ImageTracker::RemoveImage(imgIRequest* aImage, uint32_t aFlags)
   
   
   if (count != 0) {
-    mImageTracker.Put(aImage, count);
+    mImages.Put(aImage, count);
     return NS_OK;
   }
 
-  mImageTracker.Remove(aImage);
+  mImages.Remove(aImage);
 
   nsresult rv = NS_OK;
 
   
   
-  if (mLockingImages) {
+  if (mLocking) {
     rv = aImage->UnlockImage();
   }
 
   
-  if (mAnimatingImages) {
+  if (mAnimating) {
     nsresult rv2 = aImage->DecrementAnimationConsumers();
     rv = NS_SUCCEEDED(rv) ? rv2 : rv;
   }
@@ -101,7 +101,7 @@ ImageTracker::RemoveImage(imgIRequest* aImage, uint32_t aFlags)
 }
 
 nsresult
-ImageTracker::SetImageLockingState(bool aLocked)
+ImageTracker::SetLockingState(bool aLocked)
 {
   if (XRE_IsContentProcess() &&
       !Preferences::GetBool("image.mem.allow_locking_in_content_processes", true)) {
@@ -109,11 +109,11 @@ ImageTracker::SetImageLockingState(bool aLocked)
   }
 
   
-  if (mLockingImages == aLocked)
+  if (mLocking == aLocked)
     return NS_OK;
 
   
-  for (auto iter = mImageTracker.Iter(); !iter.Done(); iter.Next()) {
+  for (auto iter = mImages.Iter(); !iter.Done(); iter.Next()) {
     imgIRequest* image = iter.Key();
     if (aLocked) {
       image->LockImage();
@@ -123,20 +123,20 @@ ImageTracker::SetImageLockingState(bool aLocked)
   }
 
   
-  mLockingImages = aLocked;
+  mLocking = aLocked;
 
   return NS_OK;
 }
 
 void
-ImageTracker::SetImagesNeedAnimating(bool aAnimating)
+ImageTracker::SetAnimatingState(bool aAnimating)
 {
   
-  if (mAnimatingImages == aAnimating)
+  if (mAnimating == aAnimating)
     return;
 
   
-  for (auto iter = mImageTracker.Iter(); !iter.Done(); iter.Next()) {
+  for (auto iter = mImages.Iter(); !iter.Done(); iter.Next()) {
     imgIRequest* image = iter.Key();
     if (aAnimating) {
       image->IncrementAnimationConsumers();
@@ -146,13 +146,13 @@ ImageTracker::SetImagesNeedAnimating(bool aAnimating)
   }
 
   
-  mAnimatingImages = aAnimating;
+  mAnimating = aAnimating;
 }
 
 void
 ImageTracker::RequestDiscardAll()
 {
-  for (auto iter = mImageTracker.Iter(); !iter.Done(); iter.Next()) {
+  for (auto iter = mImages.Iter(); !iter.Done(); iter.Next()) {
     iter.Key()->RequestDiscard();
   }
 }

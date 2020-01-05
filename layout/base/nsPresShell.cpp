@@ -10943,7 +10943,7 @@ PresShell::UpdateImageLockingState()
   
   bool locked = !mFrozen && mIsActive;
 
-  nsresult rv = mDocument->ImageTracker()->SetImageLockingState(locked);
+  nsresult rv = mDocument->ImageTracker()->SetLockingState(locked);
 
   if (locked) {
     
