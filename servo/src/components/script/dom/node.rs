@@ -1734,12 +1734,6 @@ impl Node {
     }
 
     
-    pub fn GetNamespaceURI(&self, abstract_self: &JS<Node>) -> Option<DOMString> {
-        let element: Option<JS<Element>> = ElementCast::to(abstract_self);
-        element.map(|element| element.get().namespace.to_str().to_owned())
-    }
-
-    
     pub fn GetPrefix(&self) -> Option<DOMString> {
         None
     }
