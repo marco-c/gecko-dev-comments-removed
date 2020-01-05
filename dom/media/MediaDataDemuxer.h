@@ -132,7 +132,7 @@ public:
 
   
   
-  virtual RefPtr<SeekPromise> Seek(media::TimeUnit aTime) = 0;
+  virtual RefPtr<SeekPromise> Seek(const media::TimeUnit& aTime) = 0;
 
   
   
@@ -176,7 +176,8 @@ public:
   
   
   
-  virtual RefPtr<SkipAccessPointPromise> SkipToNextRandomAccessPoint(media::TimeUnit aTimeThreshold) = 0;
+  virtual RefPtr<SkipAccessPointPromise>
+  SkipToNextRandomAccessPoint(const media::TimeUnit& aTimeThreshold) = 0;
 
   
   
