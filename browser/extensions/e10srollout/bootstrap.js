@@ -17,7 +17,7 @@ const TEST_THRESHOLD = {
 };
 
 const ADDON_ROLLOUT_POLICY = {
-  "beta"    : "50allmpc", 
+  "beta"    : "51alladdons", 
   "release" : "50allmpc", 
 };
 
