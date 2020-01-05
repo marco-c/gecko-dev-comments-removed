@@ -133,7 +133,7 @@ private:
   FillRule mFillRule;
 
   
-  std::vector<DrawEventRecorderPrivate*> mStoredRecorders;
+  std::vector<RefPtr<DrawEventRecorderPrivate>> mStoredRecorders;
 };
 
 } 
