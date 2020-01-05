@@ -504,7 +504,6 @@ class IonBuilder
     AbortReasonOr<Ok> jsop_funapply(uint32_t argc);
     AbortReasonOr<Ok> jsop_funapplyarguments(uint32_t argc);
     AbortReasonOr<Ok> jsop_funapplyarray(uint32_t argc);
-    AbortReasonOr<Ok> jsop_spreadcall();
     AbortReasonOr<Ok> jsop_call(uint32_t argc, bool constructing, bool ignoresReturnValue);
     AbortReasonOr<Ok> jsop_eval(uint32_t argc);
     AbortReasonOr<Ok> jsop_label();
@@ -631,6 +630,9 @@ class IonBuilder
     InliningResult inlineArrayPush(CallInfo& callInfo);
     InliningResult inlineArraySlice(CallInfo& callInfo);
     InliningResult inlineArrayJoin(CallInfo& callInfo);
+
+    
+    InliningResult inlineNewArrayIterator(CallInfo& callInfo);
 
     
     InliningResult inlineMathAbs(CallInfo& callInfo);
