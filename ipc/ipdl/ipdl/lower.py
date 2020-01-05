@@ -1665,7 +1665,6 @@ class _GenerateProtocolCode(ipdl.ast.Visitor):
 
         
         
-        fromvar = ExprVar('from')
         msgtypevar = ExprVar('msg')
         nextvar = ExprVar('next')
 
@@ -1675,7 +1674,7 @@ class _GenerateProtocolCode(ipdl.ast.Visitor):
                      Decl(Type('State', ptr=1), nextvar.name) ],
             ret=Type.VOID))
 
-        fromswitch = StmtSwitch(fromvar)
+        fromswitch = StmtSwitch(ExprDeref(nextvar))
 
         
         nullerrorblock = Block()
@@ -1714,8 +1713,6 @@ class _GenerateProtocolCode(ipdl.ast.Visitor):
             StmtBreak() ])
         fromswitch.addcase(DefaultLabel(), unreachedblock)
 
-        transitionfunc.addstmt(StmtDecl(Decl(Type('State'), fromvar.name),
-                                        init=ExprDeref(nextvar)))
         transitionfunc.addstmt(fromswitch)
 
         return transitionfunc
