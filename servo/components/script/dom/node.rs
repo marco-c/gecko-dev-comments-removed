@@ -1936,7 +1936,7 @@ impl NodeMethods for Node {
     }
 
     
-    fn RootNode(&self) -> Root<Node> {
+    fn GetRootNode(&self) -> Root<Node> {
         self.inclusive_ancestors().last().unwrap()
     }
 
@@ -2704,3 +2704,4 @@ impl Into<LayoutElementType> for ElementTypeId {
         }
     }
 }
+
