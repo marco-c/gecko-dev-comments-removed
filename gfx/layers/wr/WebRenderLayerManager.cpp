@@ -263,10 +263,6 @@ WebRenderLayerManager::EndTransaction(DrawPaintedLayerCallback aCallback,
   WRBridge()->DPEnd(sync, mLatestTransactionId);
 
   MakeSnapshotIfRequired(size);
-
-  
-  
-  mKeepAlive.Clear();
 }
 
 void
@@ -344,12 +340,6 @@ WebRenderLayerManager::DiscardImages()
       WRBridge()->SendDeleteImage(key);
   }
   mImageKeys.clear();
-}
-
-void
-WebRenderLayerManager::Hold(Layer* aLayer)
-{
-  mKeepAlive.AppendElement(aLayer);
 }
 
 void
