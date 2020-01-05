@@ -327,10 +327,7 @@ impl Stylist {
 
         SelectorImpl::each_precomputed_pseudo_element(|pseudo| {
             if let Some(map) = self.pseudos_map.remove(&pseudo) {
-                let declarations =
-                    map.user_agent.get_universal_rules(
-                        guards.ua_or_user, CascadeLevel::UANormal, CascadeLevel::UAImportant
-                    );
+                let declarations = map.user_agent.get_universal_rules(CascadeLevel::UANormal);
                 self.precomputed_pseudo_element_decls.insert(pseudo, declarations);
             }
         });
@@ -376,7 +373,7 @@ impl Stylist {
                     self.num_declarations += style_rule.block.read_with(&guard).len();
                     for selector in &style_rule.selectors.0 {
                         self.num_selectors += 1;
-                        self.add_rule_to_map(guard, selector, locked, stylesheet);
+                        self.add_rule_to_map(selector, locked, stylesheet);
                         self.dependencies.note_selector(selector);
                         self.note_for_revalidation(selector);
                     }
@@ -412,7 +409,6 @@ impl Stylist {
 
     #[inline]
     fn add_rule_to_map(&mut self,
-                       guard: &SharedRwLockReadGuard,
                        selector: &Selector<SelectorImpl>,
                        rule: &Arc<Locked<StyleRule>>,
                        stylesheet: &Stylesheet)
@@ -426,8 +422,7 @@ impl Stylist {
             self.element_map.borrow_for_origin(&stylesheet.origin)
         };
 
-        map.insert(Rule::new(guard,
-                             selector.inner.clone(),
+        map.insert(Rule::new(selector.inner.clone(),
                              rule.clone(),
                              self.rules_source_order,
                              selector.specificity));
@@ -460,8 +455,9 @@ impl Stylist {
             Some(declarations) => {
                 
                 
-                self.rule_tree.insert_ordered_rules(
-                    declarations.into_iter().map(|a| (a.source.clone(), a.level)))
+                self.rule_tree.insert_ordered_rules_with_important(
+                    declarations.into_iter().map(|a| (a.source.clone(), a.level)),
+                    guards)
             }
             None => self.rule_tree.root(),
         };
@@ -622,17 +618,21 @@ impl Stylist {
                                           None,
                                           AnimationRules(None, None),
                                           Some(pseudo),
-                                          guards,
                                           &mut declarations,
                                           &mut set_selector_flags);
         if declarations.is_empty() {
             return None
         }
 
-        let rule_node = self.rule_tree.insert_ordered_rules(declarations.into_iter().map(|a| {
-            (a.source, a.level)
-        }));
-        Some(rule_node)
+        let rule_node =
+            self.rule_tree.insert_ordered_rules_with_important(
+                declarations.into_iter().map(|a| (a.source, a.level)),
+                guards);
+        if rule_node == self.rule_tree.root() {
+            None
+        } else {
+            Some(rule_node)
+        }
     }
 
     
@@ -740,7 +740,6 @@ impl Stylist {
                                         smil_override: Option<&Arc<Locked<PropertyDeclarationBlock>>>,
                                         animation_rules: AnimationRules,
                                         pseudo_element: Option<&PseudoElement>,
-                                        guards: &StylesheetGuards,
                                         applicable_declarations: &mut V,
                                         flags_setter: &mut F)
                                         -> StyleRelations
@@ -810,13 +809,11 @@ impl Stylist {
 
             
             if let Some(sa) = style_attribute {
-                if sa.read_with(guards.author).any_normal() {
-                    relations |= AFFECTED_BY_STYLE_ATTRIBUTE;
-                    Push::push(
-                        applicable_declarations,
-                        ApplicableDeclarationBlock::from_declarations(sa.clone(),
-                                                                      CascadeLevel::StyleAttributeNormal));
-                }
+                relations |= AFFECTED_BY_STYLE_ATTRIBUTE;
+                Push::push(
+                    applicable_declarations,
+                    ApplicableDeclarationBlock::from_declarations(sa.clone(),
+                                                                  CascadeLevel::StyleAttributeNormal));
             }
 
             debug!("style attr: {:?}", relations);
@@ -841,52 +838,14 @@ impl Stylist {
                                                                   CascadeLevel::Animations));
             }
             debug!("animation: {:?}", relations);
-
-            
-            map.author.get_all_matching_rules(element,
-                                              parent_bf,
-                                              applicable_declarations,
-                                              &mut relations,
-                                              flags_setter,
-                                              CascadeLevel::AuthorImportant);
-
-            debug!("author important: {:?}", relations);
-
-            
-            if let Some(sa) = style_attribute {
-                if sa.read_with(guards.author).any_important() {
-                    relations |= AFFECTED_BY_STYLE_ATTRIBUTE;
-                    Push::push(
-                        applicable_declarations,
-                        ApplicableDeclarationBlock::from_declarations(sa.clone(),
-                                                                      CascadeLevel::StyleAttributeImportant));
-                }
-            }
-
-            debug!("style attr important: {:?}", relations);
-
-            
-            map.user.get_all_matching_rules(element,
-                                            parent_bf,
-                                            applicable_declarations,
-                                            &mut relations,
-                                            flags_setter,
-                                            CascadeLevel::UserImportant);
-
-            debug!("user important: {:?}", relations);
         } else {
             debug!("skipping non-agent rules");
         }
 
         
-        map.user_agent.get_all_matching_rules(element,
-                                              parent_bf,
-                                              applicable_declarations,
-                                              &mut relations,
-                                              flags_setter,
-                                              CascadeLevel::UAImportant);
-
-        debug!("UA important: {:?}", relations);
+        
+        
+        
 
         
         
@@ -1256,45 +1215,24 @@ impl SelectorMap<Rule> {
     
     
     pub fn get_universal_rules(&self,
-                               guard: &SharedRwLockReadGuard,
-                               cascade_level: CascadeLevel,
-                               important_cascade_level: CascadeLevel)
+                               cascade_level: CascadeLevel)
                                -> Vec<ApplicableDeclarationBlock> {
         debug_assert!(!cascade_level.is_important());
-        debug_assert!(important_cascade_level.is_important());
         if self.is_empty() {
             return vec![];
         }
 
-        let mut matching_rules_list = vec![];
-
-        
-        
-        let mut important = vec![];
+        let mut rules_list = vec![];
         for rule in self.other.iter() {
             if rule.selector.complex.iter_raw().next().is_none() {
-                let style_rule = rule.style_rule.read_with(guard);
-                let block = style_rule.block.read_with(guard);
-                if block.any_normal() {
-                    matching_rules_list.push(
-                        rule.to_applicable_declaration_block(cascade_level));
-                }
-                if block.any_important() {
-                    important.push(
-                        rule.to_applicable_declaration_block(important_cascade_level));
-                }
+                rules_list.push(rule.to_applicable_declaration_block(cascade_level));
             }
         }
 
-        let normal_len = matching_rules_list.len();
-        matching_rules_list.extend(important.into_iter());
-
-        sort_by_key(&mut matching_rules_list[0..normal_len],
-                    |block| (block.specificity, block.source_order));
-        sort_by_key(&mut matching_rules_list[normal_len..],
+        sort_by_key(&mut rules_list,
                     |block| (block.specificity, block.source_order));
 
-        matching_rules_list
+        rules_list
     }
 
     fn get_matching_rules_from_hash<E, Str, BorrowedStr: ?Sized, Vector, F>(
@@ -1336,13 +1274,7 @@ impl SelectorMap<Rule> {
               F: FnMut(&E, ElementSelectorFlags),
     {
         for rule in rules.iter() {
-            let any_declaration_for_importance = if cascade_level.is_important() {
-                rule.any_important_declarations()
-            } else {
-                rule.any_normal_declarations()
-            };
-            if any_declaration_for_importance &&
-               matches_selector(&rule.selector, element, parent_bf,
+            if matches_selector(&rule.selector, element, parent_bf,
                                 relations, flags_setter) {
                 matching_rules.push(
                     rule.to_applicable_declaration_block(cascade_level));
@@ -1559,7 +1491,8 @@ pub struct Rule {
     
     
     
-    specificity_and_bits: u32,
+    
+    specificity: u32,
 }
 
 impl Borrow<SelectorInner<SelectorImpl>> for Rule {
@@ -1568,23 +1501,10 @@ impl Borrow<SelectorInner<SelectorImpl>> for Rule {
     }
 }
 
-
-const SPECIFICITY_MASK: u32 = 0x3fffffff;
-const ANY_IMPORTANT_DECLARATIONS_BIT: u32 = 1 << 30;
-const ANY_NORMAL_DECLARATIONS_BIT: u32 = 1 << 31;
-
 impl Rule {
     
     pub fn specificity(&self) -> u32 {
-        self.specificity_and_bits & SPECIFICITY_MASK
-    }
-
-    fn any_important_declarations(&self) -> bool {
-        (self.specificity_and_bits & ANY_IMPORTANT_DECLARATIONS_BIT) != 0
-    }
-
-    fn any_normal_declarations(&self) -> bool {
-        (self.specificity_and_bits & ANY_NORMAL_DECLARATIONS_BIT) != 0
+        self.specificity
     }
 
     fn to_applicable_declaration_block(&self, level: CascadeLevel) -> ApplicableDeclarationBlock {
@@ -1597,31 +1517,17 @@ impl Rule {
     }
 
     
-    pub fn new(guard: &SharedRwLockReadGuard,
-               selector: SelectorInner<SelectorImpl>,
+    pub fn new(selector: SelectorInner<SelectorImpl>,
                style_rule: Arc<Locked<StyleRule>>,
                source_order: usize,
                specificity: u32)
                -> Self
     {
-        let (any_important, any_normal) = {
-            let block = style_rule.read_with(guard).block.read_with(guard);
-            (block.any_important(), block.any_normal())
-        };
-        debug_assert!(specificity & (ANY_IMPORTANT_DECLARATIONS_BIT | ANY_NORMAL_DECLARATIONS_BIT) == 0);
-        let mut specificity_and_bits = specificity;
-        if any_important {
-            specificity_and_bits |= ANY_IMPORTANT_DECLARATIONS_BIT;
-        }
-        if any_normal {
-            specificity_and_bits |= ANY_NORMAL_DECLARATIONS_BIT;
-        }
-
         Rule {
             selector: selector,
             style_rule: style_rule,
             source_order: source_order,
-            specificity_and_bits: specificity_and_bits,
+            specificity: specificity,
         }
     }
 }

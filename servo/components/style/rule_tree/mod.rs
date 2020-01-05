@@ -10,6 +10,7 @@
 use heapsize::HeapSizeOf;
 use properties::{Importance, PropertyDeclarationBlock};
 use shared_lock::{Locked, StylesheetGuards, SharedRwLockReadGuard};
+use smallvec::SmallVec;
 use std::io::{self, Write};
 use std::ptr;
 use std::sync::atomic::{AtomicPtr, AtomicUsize, Ordering};
@@ -122,6 +123,96 @@ impl RuleTree {
     pub fn dump_stdout(&self, guards: &StylesheetGuards) {
         let mut stdout = io::stdout();
         self.dump(guards, &mut stdout);
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn insert_ordered_rules_with_important<'a, I>(&self,
+                                                      iter: I,
+                                                      guards: &StylesheetGuards)
+                                                      -> StrongRuleNode
+        where I: Iterator<Item=(StyleSource, CascadeLevel)>,
+    {
+        use self::CascadeLevel::*;
+        let mut current = self.root.clone();
+        let mut last_level = current.get().level;
+
+        let mut found_important = false;
+        let mut important_style_attr = None;
+        let mut important_author = SmallVec::<[StyleSource; 4]>::new();
+        let mut important_user = SmallVec::<[StyleSource; 4]>::new();
+        let mut important_ua = SmallVec::<[StyleSource; 4]>::new();
+        let mut transition = None;
+
+        for (source, level) in iter {
+            debug_assert!(last_level <= level, "Not really ordered");
+            debug_assert!(!level.is_important(), "Important levels handled internally");
+            let (any_normal, any_important) = {
+                let pdb = source.read(level.guard(guards));
+                (pdb.any_normal(), pdb.any_important())
+            };
+            if any_important {
+                found_important = true;
+                match level {
+                    AuthorNormal => important_author.push(source.clone()),
+                    UANormal => important_ua.push(source.clone()),
+                    UserNormal => important_user.push(source.clone()),
+                    StyleAttributeNormal => {
+                        debug_assert!(important_style_attr.is_none());
+                        important_style_attr = Some(source.clone());
+                    },
+                    _ => {},
+                };
+            }
+            if any_normal {
+                if matches!(level, Transitions) && found_important {
+                    
+                    
+                    
+                    debug_assert!(transition.is_none());
+                    transition = Some(source);
+                } else {
+                    current = current.ensure_child(self.root.downgrade(), source, level);
+                }
+            }
+            last_level = level;
+        }
+
+        
+        if !found_important {
+            return current;
+        }
+
+        
+        
+        
+        
+
+        for source in important_author.into_iter() {
+            current = current.ensure_child(self.root.downgrade(), source, AuthorImportant);
+        }
+
+        if let Some(source) = important_style_attr {
+            current = current.ensure_child(self.root.downgrade(), source, StyleAttributeImportant);
+        }
+
+        for source in important_user.into_iter() {
+            current = current.ensure_child(self.root.downgrade(), source, UserImportant);
+        }
+
+        for source in important_ua.into_iter() {
+            current = current.ensure_child(self.root.downgrade(), source, UAImportant);
+        }
+
+        if let Some(source) = transition {
+            current = current.ensure_child(self.root.downgrade(), source, Transitions);
+        }
+
+        current
     }
 
     
