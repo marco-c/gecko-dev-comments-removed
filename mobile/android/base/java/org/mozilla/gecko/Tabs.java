@@ -283,7 +283,9 @@ public class Tabs implements BundleEventListener {
         }
 
         
-        GeckoAppShell.notifyObservers("Tab:Selected", String.valueOf(tab.getId()));
+        final GeckoBundle data = new GeckoBundle(1);
+        data.putInt("id", tab.getId());
+        EventDispatcher.getInstance().dispatch("Tab:Selected", data);
         return tab;
     }
 
@@ -403,16 +405,11 @@ public class Tabs implements BundleEventListener {
 
         tab.onDestroy();
 
-        final JSONObject args = new JSONObject();
-        try {
-            args.put("tabId", String.valueOf(tabId));
-            args.put("showUndoToast", showUndoToast);
-        } catch (JSONException e) {
-            Log.e(LOGTAG, "Error building Tab:Closed arguments: " + e);
-        }
-
         
-        GeckoAppShell.notifyObservers("Tab:Closed", args.toString());
+        final GeckoBundle data = new GeckoBundle(2);
+        data.putInt("tabId", tabId);
+        data.putBoolean("showUndoToast", showUndoToast);
+        EventDispatcher.getInstance().dispatch("Tab:Closed", data);
     }
 
     
@@ -884,89 +881,85 @@ public class Tabs implements BundleEventListener {
 
     public Tab loadUrl(final String url, final String searchEngine, final int parentId,
                    final SafeIntent intent, final int flags) {
-        JSONObject args = new JSONObject();
+        final GeckoBundle data = new GeckoBundle();
         Tab tabToSelect = null;
         boolean delayLoad = (flags & LOADURL_DELAY_LOAD) != 0;
 
         
         boolean background = delayLoad || (flags & LOADURL_BACKGROUND) != 0;
 
-        try {
-            boolean isPrivate = (flags & LOADURL_PRIVATE) != 0;
-            boolean userEntered = (flags & LOADURL_USER_ENTERED) != 0;
-            boolean desktopMode = (flags & LOADURL_DESKTOP) != 0;
-            boolean external = (flags & LOADURL_EXTERNAL) != 0;
-            final boolean isFirstShownAfterActivityUnhidden = (flags & LOADURL_FIRST_AFTER_ACTIVITY_UNHIDDEN) != 0;
+        boolean isPrivate = (flags & LOADURL_PRIVATE) != 0;
+        boolean userEntered = (flags & LOADURL_USER_ENTERED) != 0;
+        boolean desktopMode = (flags & LOADURL_DESKTOP) != 0;
+        boolean external = (flags & LOADURL_EXTERNAL) != 0;
+        final boolean isFirstShownAfterActivityUnhidden = (flags & LOADURL_FIRST_AFTER_ACTIVITY_UNHIDDEN) != 0;
 
-            args.put("url", url);
-            args.put("engine", searchEngine);
-            args.put("parentId", parentId);
-            args.put("userEntered", userEntered);
-            args.put("isPrivate", isPrivate);
-            args.put("pinned", (flags & LOADURL_PINNED) != 0);
-            args.put("desktopMode", desktopMode);
+        data.putString("url", url);
+        data.putString("engine", searchEngine);
+        data.putInt("parentId", parentId);
+        data.putBoolean("userEntered", userEntered);
+        data.putBoolean("isPrivate", isPrivate);
+        data.putBoolean("pinned", (flags & LOADURL_PINNED) != 0);
+        data.putBoolean("desktopMode", desktopMode);
 
-            final boolean needsNewTab;
-            final String applicationId = (intent == null) ? null :
-                    intent.getStringExtra(Browser.EXTRA_APPLICATION_ID);
-            if (applicationId == null) {
-                needsNewTab = (flags & LOADURL_NEW_TAB) != 0;
+        final boolean needsNewTab;
+        final String applicationId = (intent == null) ? null :
+                intent.getStringExtra(Browser.EXTRA_APPLICATION_ID);
+        if (applicationId == null) {
+            needsNewTab = (flags & LOADURL_NEW_TAB) != 0;
+        } else {
+            
+            final boolean extraCreateNewTab = intent.getBooleanExtra(Browser.EXTRA_CREATE_NEW_TAB, false);
+            final Tab applicationTab = getTabForApplicationId(applicationId);
+            if (applicationTab == null || extraCreateNewTab) {
+                needsNewTab = true;
             } else {
+                needsNewTab = false;
+                delayLoad = false;
+                background = false;
+
+                tabToSelect = applicationTab;
+                final int tabToSelectId = tabToSelect.getId();
+                data.putInt("tabID", tabToSelectId);
+
                 
-                final boolean extraCreateNewTab = intent.getBooleanExtra(Browser.EXTRA_CREATE_NEW_TAB, false);
-                final Tab applicationTab = getTabForApplicationId(applicationId);
-                if (applicationTab == null || extraCreateNewTab) {
-                    needsNewTab = true;
-                } else {
-                    needsNewTab = false;
-                    delayLoad = false;
-                    background = false;
-
-                    tabToSelect = applicationTab;
-                    final int tabToSelectId = tabToSelect.getId();
-                    args.put("tabID", tabToSelectId);
-
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    selectTab(tabToSelect.getId());
-                }
+                
+                
+                
+                
+                
+                
+                selectTab(tabToSelect.getId());
             }
-
-            args.put("newTab", needsNewTab);
-            args.put("delayLoad", delayLoad);
-            args.put("selected", !background);
-
-            if (needsNewTab) {
-                int tabId = getNextTabId();
-                args.put("tabID", tabId);
-
-                
-                
-                
-                String tabUrl = (url != null && Uri.parse(url).getScheme() != null) ? url : null;
-
-                
-                final int tabIndex = -1;
-
-                tabToSelect = addTab(tabId, tabUrl, external, parentId, url, isPrivate, tabIndex);
-                tabToSelect.setDesktopMode(desktopMode);
-                tabToSelect.setApplicationId(applicationId);
-                if (isFirstShownAfterActivityUnhidden) {
-                    
-                    
-                    tabToSelect.setShouldShowToolbarWithoutAnimationOnFirstSelection(true);
-                }
-            }
-        } catch (Exception e) {
-            Log.w(LOGTAG, "Error building JSON arguments for loadUrl.", e);
         }
 
-        GeckoAppShell.notifyObservers("Tab:Load", args.toString());
+        data.putBoolean("newTab", needsNewTab);
+        data.putBoolean("delayLoad", delayLoad);
+        data.putBoolean("selected", !background);
+
+        if (needsNewTab) {
+            int tabId = getNextTabId();
+            data.putInt("tabID", tabId);
+
+            
+            
+            
+            String tabUrl = (url != null && Uri.parse(url).getScheme() != null) ? url : null;
+
+            
+            final int tabIndex = -1;
+
+            tabToSelect = addTab(tabId, tabUrl, external, parentId, url, isPrivate, tabIndex);
+            tabToSelect.setDesktopMode(desktopMode);
+            tabToSelect.setApplicationId(applicationId);
+            if (isFirstShownAfterActivityUnhidden) {
+                
+                
+                tabToSelect.setShouldShowToolbarWithoutAnimationOnFirstSelection(true);
+            }
+        }
+
+        EventDispatcher.getInstance().dispatch("Tab:Load", data);
 
         if (tabToSelect == null) {
             return null;
