@@ -331,7 +331,60 @@ private:
 Maybe<TimeStamp> CurrentWindowsTimeGetter::sBackwardsSkewStamp;
 DWORD CurrentWindowsTimeGetter::sLastPostTime = 0;
 
-#if defined(ACCESSIBILITY)
+} 
+
+
+
+
+
+
+
+static const char *sScreenManagerContractID       = "@mozilla.org/gfx/screenmanager;1";
+
+extern mozilla::LazyLogModule gWindowsLog;
+
+
+static bool     gWindowsVisible                   = false;
+
+
+static bool     gIsSleepMode                      = false;
+
+static NS_DEFINE_CID(kCClipboardCID, NS_CLIPBOARD_CID);
+
+
+static WindowsDllInterceptor sUser32Intercept;
+
+
+
+
+static const int32_t kGlassMarginAdjustment = 2;
+
+
+
+
+
+static const int32_t kResizableBorderMinSize = 3;
+
+
+static bool gIsPointerEventsEnabled = false;
+
+
+
+
+
+
+#define MAX_ACCELERATED_DIMENSION 8192
+
+
+
+
+
+#define HITTEST_CACHE_LIFETIME_MS 50
+
+#if defined(ACCESSIBILITY) && defined(_M_IX86)
+
+namespace mozilla {
+
 
 
 
@@ -399,7 +452,6 @@ private:
                                ::GetCurrentThreadId());
     MOZ_ASSERT(mHook);
 
-#if defined(_M_IX86)
     if (!IsWin10OrLater()) {
       
       sTipTsfInterceptor.Init("tiptsf.dll");
@@ -408,7 +460,13 @@ private:
           (void**) &sProcessCaretEventsStub);
       MOZ_ASSERT(ok);
     }
-#endif 
+
+    MOZ_ASSERT(!sSendMessageTimeoutWStub);
+    sUser32Intercept.Init("user32.dll");
+    DebugOnly<bool> hooked = sUser32Intercept.AddHook("SendMessageTimeoutW",
+        reinterpret_cast<intptr_t>(&SendMessageTimeoutWHook),
+        (void**) &sSendMessageTimeoutWStub);
+    MOZ_ASSERT(hooked);
   }
 
   class MOZ_RAII A11yInstantiationBlocker
@@ -453,7 +511,6 @@ private:
     return ::CallNextHookEx(nullptr, aCode, aWParam, aLParam);
   }
 
-#if defined(_M_IX86)
   static void CALLBACK ProcessCaretEventsHook(HWINEVENTHOOK aWinEventHook,
                                               DWORD aEvent, HWND aHwnd,
                                               LONG aObjectId, LONG aChildId,
@@ -465,10 +522,34 @@ private:
                             aGeneratingTid, aEventTime);
   }
 
+  static LRESULT WINAPI SendMessageTimeoutWHook(HWND aHwnd, UINT aMsgCode,
+                                                WPARAM aWParam, LPARAM aLParam,
+                                                UINT aFlags, UINT aTimeout,
+                                                PDWORD_PTR aMsgResult)
+  {
+    
+    
+    
+    if (!aMsgResult || aMsgCode != WM_GETOBJECT || aLParam != OBJID_CLIENT ||
+        !WinUtils::GetNSWindowPtr(aHwnd) ||
+        ::GetWindowThreadProcessId(aHwnd, nullptr) != ::GetCurrentThreadId() ||
+        !IsA11yBlocked()) {
+      return sSendMessageTimeoutWStub(aHwnd, aMsgCode, aWParam, aLParam,
+                                      aFlags, aTimeout, aMsgResult);
+    }
+
+    
+    
+    
+    *aMsgResult = static_cast<DWORD_PTR>(::DefWindowProcW(aHwnd, aMsgCode,
+                                                          aWParam, aLParam));
+
+    return static_cast<LRESULT>(TRUE);
+  }
+
   static WindowsDllInterceptor sTipTsfInterceptor;
   static WINEVENTPROC sProcessCaretEventsStub;
-#endif 
-
+  static decltype(&SendMessageTimeoutW) sSendMessageTimeoutWStub;
   static StaticAutoPtr<TIPMessageHandler> sInstance;
 
   HHOOK                 mHook;
@@ -476,65 +557,14 @@ private:
   uint32_t              mA11yBlockCount;
 };
 
-#if defined(_M_IX86)
 WindowsDllInterceptor TIPMessageHandler::sTipTsfInterceptor;
 WINEVENTPROC TIPMessageHandler::sProcessCaretEventsStub;
-#endif 
-
+decltype(&SendMessageTimeoutW) TIPMessageHandler::sSendMessageTimeoutWStub;
 StaticAutoPtr<TIPMessageHandler> TIPMessageHandler::sInstance;
-
-#endif 
 
 } 
 
-
-
-
-
-
-
-static const char *sScreenManagerContractID       = "@mozilla.org/gfx/screenmanager;1";
-
-extern mozilla::LazyLogModule gWindowsLog;
-
-
-static bool     gWindowsVisible                   = false;
-
-
-static bool     gIsSleepMode                      = false;
-
-static NS_DEFINE_CID(kCClipboardCID, NS_CLIPBOARD_CID);
-
-
-static WindowsDllInterceptor sUser32Intercept;
-
-
-
-
-static const int32_t kGlassMarginAdjustment = 2;
-
-
-
-
-
-static const int32_t kResizableBorderMinSize = 3;
-
-
-static bool gIsPointerEventsEnabled = false;
-
-
-
-
-
-
-#define MAX_ACCELERATED_DIMENSION 8192
-
-
-
-
-
-#define HITTEST_CACHE_LIFETIME_MS 50
-
+#endif 
 
 
 
@@ -612,7 +642,7 @@ nsWindow::nsWindow()
     
     mozilla::widget::WinTaskbar::RegisterAppUserModelID();
     KeyboardLayout::GetInstance()->OnLayoutChange(::GetKeyboardLayout(0));
-#if defined(ACCESSIBILITY)
+#if defined(ACCESSIBILITY) && defined(_M_IX86)
     mozilla::TIPMessageHandler::Initialize();
 #endif 
     IMEHandler::Initialize();
@@ -5794,7 +5824,7 @@ nsWindow::ProcessMessage(UINT msg, WPARAM& wParam, LPARAM& lParam,
       
       
       int32_t objId = static_cast<DWORD>(lParam);
-      if (!TIPMessageHandler::IsA11yBlocked() && objId == OBJID_CLIENT) { 
+      if (objId == OBJID_CLIENT) { 
         a11y::Accessible* rootAccessible = GetAccessible(); 
         if (rootAccessible) {
           IAccessible *msaaAccessible = nullptr;
