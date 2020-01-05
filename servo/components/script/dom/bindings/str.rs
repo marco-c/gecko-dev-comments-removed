@@ -15,7 +15,7 @@ use std::str::{Bytes, FromStr};
 use string_cache::Atom;
 
 
-#[derive(JSTraceable, Clone, Eq, PartialEq, HeapSizeOf)]
+#[derive(JSTraceable, Clone, Eq, PartialEq, HeapSizeOf, Debug)]
 pub struct ByteString(Vec<u8>);
 
 impl ByteString {
