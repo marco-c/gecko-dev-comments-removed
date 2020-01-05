@@ -322,6 +322,13 @@ gfxUserFontData::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
     
 }
 
+
+gfxUserFontFamily::~gfxUserFontFamily()
+{
+  
+  MOZ_ASSERT(NS_IsMainThread());
+}
+
 void
 gfxUserFontEntry::GetFamilyNameAndURIForLogging(nsACString& aFamilyName,
                                                 nsACString& aURI)

@@ -1118,6 +1118,13 @@ gfxFontconfigFontFamily::FindAllFontsForStyle(const gfxFontStyle& aFontStyle,
     }
 }
 
+
+gfxFontconfigFontFamily::~gfxFontconfigFontFamily()
+ {
+    
+    MOZ_ASSERT(NS_IsMainThread());
+}
+
 gfxFontconfigFont::gfxFontconfigFont(const RefPtr<UnscaledFontFontconfig>& aUnscaledFont,
                                      cairo_scaled_font_t *aScaledFont,
                                      FcPattern *aPattern,

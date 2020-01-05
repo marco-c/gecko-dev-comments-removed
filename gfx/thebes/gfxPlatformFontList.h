@@ -122,6 +122,9 @@ public:
 
     void UpdateFontList();
 
+    
+    void InitLangService();
+
     virtual void ClearLangGroupPrefFonts();
 
     virtual void GetFontFamilyList(nsTArray<RefPtr<gfxFontFamily> >& aFamilyArray);

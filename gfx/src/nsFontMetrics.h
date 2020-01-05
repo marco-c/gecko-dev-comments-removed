@@ -61,7 +61,8 @@ public:
     nsFontMetrics(const nsFont& aFont, const Params& aParams,
                   nsDeviceContext *aContext);
 
-    NS_INLINE_DECL_REFCOUNTING(nsFontMetrics)
+    
+    NS_INLINE_DECL_THREADSAFE_REFCOUNTING(nsFontMetrics)
 
     
 

@@ -59,6 +59,12 @@ public:
 
 
 
+    void InitFontCache();
+
+    
+
+
+
 
     nsresult InitForPrinting(nsIDeviceContextSpec *aDevSpec);
 

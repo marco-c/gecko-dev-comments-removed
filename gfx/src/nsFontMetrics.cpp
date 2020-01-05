@@ -146,6 +146,8 @@ nsFontMetrics::nsFontMetrics(const nsFont& aFont, const Params& aParams,
 
 nsFontMetrics::~nsFontMetrics()
 {
+    
+    MOZ_ASSERT(NS_IsMainThread());
     if (mDeviceContext) {
         mDeviceContext->FontMetricsDeleted(this);
     }

@@ -1720,6 +1720,8 @@ gfxFontGroup::gfxFontGroup(const FontFamilyList& aFontFamilyList,
 
 gfxFontGroup::~gfxFontGroup()
 {
+    
+    MOZ_ASSERT(NS_IsMainThread());
 }
 
 void
