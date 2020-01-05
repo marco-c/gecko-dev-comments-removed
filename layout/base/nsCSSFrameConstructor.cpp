@@ -8411,6 +8411,30 @@ nsCSSFrameConstructor::ContentRemoved(nsIContent*  aContainer,
     *aDestroyedFramesFor = aChild;
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (aFlags == REMOVE_DESTROY_FRAMES && aChild->IsElement() && aChild->IsStyledByServo()) {
+    ServoRestyleManager::ClearServoDataFromSubtree(aChild->AsElement());
+  }
+
   if (aChild->IsHTMLElement(nsGkAtoms::body) ||
       (!aContainer && aChild->IsElement())) {
     
