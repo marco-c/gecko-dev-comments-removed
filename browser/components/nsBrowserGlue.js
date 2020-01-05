@@ -598,6 +598,21 @@ BrowserGlue.prototype = {
     
     this._migrateUI();
 
+    
+    
+    
+    
+    
+    
+    try {
+      let urlbarPrefs = Services.prefs.getBranch("browser.urlbar.");
+      if (!urlbarPrefs.prefHasUserValue("searchSuggestionsChoice") &&
+          urlbarPrefs.getBoolPref("userMadeSearchSuggestionsChoice")) {
+        urlbarPrefs.setBoolPref("searchSuggestionsChoice",
+                                urlbarPrefs.getBoolPref("suggest.searches"));
+      }
+    } catch (ex) {  }
+
     listeners.init();
 
     PageThumbs.init();
