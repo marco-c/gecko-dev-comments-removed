@@ -9,8 +9,20 @@
 #include "nsLayoutUtils.h"
 #include "nsStyleStruct.h"
 #include "Units.h"
+#include "mozilla/Maybe.h"
 
 namespace mozilla {
+
+
+
+struct ColorStop {
+  ColorStop(): mPosition(0), mIsMidpoint(false) {}
+  ColorStop(double aPosition, bool aIsMidPoint, const Color& aColor) :
+    mPosition(aPosition), mIsMidpoint(aIsMidPoint), mColor(aColor) {}
+  double mPosition; 
+  bool mIsMidpoint;
+  Color mColor;
+};
 
 class nsCSSGradientRenderer final {
 public:
@@ -24,16 +36,33 @@ public:
 
 
 
-  static void Paint(nsPresContext* aPresContext,
-                    gfxContext& aContext,
-                    nsStyleGradient* aGradient,
-                    const nsRect& aDirtyRect,
-                    const nsRect& aDest,
-                    const nsRect& aFill,
-                    const nsSize& aRepeatSize,
-                    const mozilla::CSSIntRect& aSrc,
-                    const nsSize& aIntrinsiceSize,
-                    float aOpacity = 1.0);
+  static Maybe<nsCSSGradientRenderer> Create(nsPresContext* aPresContext,
+                                             nsStyleGradient* aGradient,
+                                             const nsRect& aDest,
+                                             const nsRect& aFill,
+                                             const nsSize& aRepeatSize,
+                                             const mozilla::CSSIntRect& aSrc,
+                                             const nsSize& aIntrinsiceSize);
+
+  void Paint(gfxContext& aContext,
+             const nsRect& aDirtyRect,
+             float aOpacity = 1.0);
+
+private:
+  nsCSSGradientRenderer() {}
+
+  nsPresContext* mPresContext;
+  nsStyleGradient* mGradient;
+  CSSIntRect mSrc;
+  nsRect mDest;
+  nsRect mDirtyRect;
+  nsRect mFillArea;
+  nsSize mRepeatSize;
+  nsTArray<ColorStop> mStops;
+  gfxPoint mLineStart, mLineEnd;
+  double mRadiusX, mRadiusY;   
+  bool mForceRepeatToCoverTiles;
+  bool mForceRepeatToCoverTilesFlip;
 };
 
 } 
