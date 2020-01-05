@@ -60,6 +60,8 @@ private:
                                                     bool *result);
 
     bool AddonMayLoad(nsIChannel *aChannel, nsIURI *aUri);
+    void AddShutdownObserver();
+    void RemoveShutdownObserver();
 public:
     
     
