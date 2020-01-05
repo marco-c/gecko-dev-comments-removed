@@ -9,12 +9,12 @@
 #include "cms.h"
 #include "cryptohi.h"
 #include "keyhi.h"
+#include "mozilla/Base64.h"
 #include "mozilla/Casting.h"
 #include "mozilla/Unused.h"
 #include "nsCOMPtr.h"
 #include "nsNSSComponent.h"
 #include "nsString.h"
-#include "nssb64.h"
 #include "pkix/pkixnss.h"
 #include "pkix/pkixtypes.h"
 #include "secerr.h"
@@ -69,15 +69,22 @@ nsDataSignatureVerifier::VerifyData(const nsACString& aData,
   }
 
   
-  SECItem keyItem;
-  PORT_Memset(&keyItem, 0, sizeof(SECItem));
-  if (!NSSBase64_DecodeBuffer(arena.get(), &keyItem,
-                              PromiseFlatCString(aPublicKey).get(),
-                              aPublicKey.Length())) {
-    return NS_ERROR_FAILURE;
+  
+  
+  nsAutoCString b64KeyNoWhitespace(aPublicKey);
+  b64KeyNoWhitespace.StripWhitespace();
+  nsAutoCString key;
+  nsresult rv = Base64Decode(b64KeyNoWhitespace, key);
+  if (NS_FAILED(rv)) {
+    return rv;
   }
 
   
+  SECItem keyItem = {
+    siBuffer,
+    BitwiseCast<unsigned char*, const char*>(key.get()),
+    key.Length(),
+  };
   UniqueCERTSubjectPublicKeyInfo pki(
     SECKEY_DecodeDERSubjectPublicKeyInfo(&keyItem));
   if (!pki) {
@@ -90,17 +97,24 @@ nsDataSignatureVerifier::VerifyData(const nsACString& aData,
   }
 
   
-  SECItem signatureItem;
-  PORT_Memset(&signatureItem, 0, sizeof(SECItem));
-  if (!NSSBase64_DecodeBuffer(arena.get(), &signatureItem,
-                              PromiseFlatCString(aSignature).get(),
-                              aSignature.Length())) {
-    return NS_ERROR_FAILURE;
+  
+  
+  nsAutoCString b64SignatureNoWhitespace(aSignature);
+  b64SignatureNoWhitespace.StripWhitespace();
+  nsAutoCString signature;
+  rv = Base64Decode(b64SignatureNoWhitespace, signature);
+  if (NS_FAILED(rv)) {
+    return rv;
   }
 
   
   CERTSignedData sigData;
   PORT_Memset(&sigData, 0, sizeof(CERTSignedData));
+  SECItem signatureItem = {
+    siBuffer,
+    BitwiseCast<unsigned char*, const char*>(signature.get()),
+    signature.Length(),
+  };
   SECStatus srv = SEC_QuickDERDecodeItem(arena.get(), &sigData,
                                          CERT_SignatureDataTemplate,
                                          &signatureItem);

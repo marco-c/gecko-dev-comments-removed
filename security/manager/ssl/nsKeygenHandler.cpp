@@ -4,16 +4,19 @@
 
 
 
-#include "base64.h"
+#include "nsKeygenHandler.h"
+
 #include "cryptohi.h"
 #include "keyhi.h"
 #include "mozilla/Assertions.h"
+#include "mozilla/Base64.h"
+#include "mozilla/Casting.h"
+#include "nsDependentString.h"
 #include "nsIContent.h"
 #include "nsIDOMHTMLSelectElement.h"
 #include "nsIGenKeypairInfoDlg.h"
 #include "nsIServiceManager.h"
 #include "nsITokenDialogs.h"
-#include "nsKeygenHandler.h"
 #include "nsKeygenHandlerContent.h"
 #include "nsKeygenThread.h"
 #include "nsNSSComponent.h" 
@@ -406,7 +409,7 @@ nsKeygenFormProcessor::GetPublicKey(const nsAString& aValue,
     }
 
     nsresult rv = NS_ERROR_FAILURE;
-    UniquePORTString keystring;
+    nsAutoCString keystring;
     char *keyparamsString = nullptr;
     uint32_t keyGenMechanism;
     PK11SlotInfo *slot = nullptr;
@@ -422,6 +425,7 @@ nsKeygenFormProcessor::GetPublicKey(const nsAString& aValue,
     SECItem spkiItem;
     SECItem pkacItem;
     SECItem signedItem;
+    nsDependentCSubstring signedItemStr;
     CERTPublicKeyAndChallenge pkac;
     pkac.challenge.data = nullptr;
     nsCOMPtr<nsIGeneratingKeypairInfoDialogs> dialogs;
@@ -620,14 +624,15 @@ nsKeygenFormProcessor::GetPublicKey(const nsAString& aValue,
     
 
 
-    keystring = UniquePORTString(
-      BTOA_DataToAscii(signedItem.data, signedItem.len));
-    if (!keystring) {
-        rv = NS_ERROR_OUT_OF_MEMORY;
+    signedItemStr.Assign(
+        mozilla::BitwiseCast<char*, unsigned char*>(signedItem.data),
+        signedItem.len);
+    rv = mozilla::Base64Encode(signedItemStr, keystring);
+    if (NS_FAILED(rv)) {
         goto loser;
     }
 
-    CopyASCIItoUTF16(keystring.get(), aOutPublicKey);
+    CopyASCIItoUTF16(keystring, aOutPublicKey);
 
     rv = NS_OK;
 

@@ -120,7 +120,13 @@ const signatures = [
 "bQp9Z2/M",
 
 
-"Zm9vYmFy"
+"Zm9vYmFy",
+
+
+`MIGTMA0GCSqGSIb3DQEBDQUAA4GBAF0+XYD/r0Annz1GJ24GTkAlWY/OixCSV6Ix
+   OMM7P2d/jgOP+ICKIpxqaSE0CbkLiegUiidIOWvFqDxQJWlAAukDUWISGFfJMFxX
+ 3jzJ0bBfeNY/1Qo8jMQopcNco/NlNgoSKAUOBtk31aFgNoVC3kWUk6pO97KEiJ+e
+   bQp9Z2/M`,
 ];
 
 const tests = [
@@ -169,6 +175,9 @@ const tests = [
   [0,     1,         2,    false,     true],  
   [0,     16,        0,    false,     true],  
   [1,     16,        0,    false,     true],  
+  
+  
+  [1,     17,        1,    true,      false],
 ];
 
 function run_test() {
