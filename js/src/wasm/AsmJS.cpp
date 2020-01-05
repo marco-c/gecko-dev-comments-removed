@@ -8537,7 +8537,13 @@ LookupAsmJSModuleInCache(JSContext* cx, AsmJSParser& parser, bool* loadedFromCac
     if (!moduleChars.match(parser))
         return true;
 
+    
+    
+#ifdef NIGHTLY_BUILD
     MOZ_RELEASE_ASSERT(cursor == entry.memory + entry.serializedSize);
+#endif
+    if (cursor != entry.memory + entry.serializedSize)
+        return true;
 
     
     asmJSMetadata->preludeStart = parser.pc->functionBox()->preludeStart;
