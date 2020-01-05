@@ -12,6 +12,8 @@
 
 namespace mozilla {
 
+class DecoderDoctorDiagnostics;
+
 
 
 
@@ -76,12 +78,7 @@ private:
   void OnDecoderInitDone(const TrackType aTrackType);
   void OnDecoderInitFailed(const MediaResult& aError);
 
-  bool CanRecycleDecoder() const
-  {
-    MOZ_ASSERT(mDecoder);
-    return MediaPrefs::MediaDecoderCheckRecycling()
-           && mDecoder->SupportDecoderRecycling();
-  }
+  bool CanRecycleDecoder() const;
 
   void DecodeFirstSample(MediaRawData* aSample);
 
