@@ -22,7 +22,7 @@ ChromiumCDMParent::ChromiumCDMParent(GMPContentParent* aContentParent,
                                      uint32_t aPluginId)
   : mPluginId(aPluginId)
   , mContentParent(aContentParent)
-  , mVideoShmemCount(MediaPrefs::EMEChromiumAPIVideoShmemCount())
+  , mVideoShmemLimit(MediaPrefs::EMEChromiumAPIVideoShmemCount())
 {
   GMP_LOG(
     "ChromiumCDMParent::ChromiumCDMParent(this=%p, contentParent=%p, id=%u)",
@@ -600,37 +600,131 @@ ChromiumCDMParent::RecvDecrypted(const uint32_t& aId,
   return IPC_OK();
 }
 
+bool
+ChromiumCDMParent::PurgeShmems()
+{
+  GMP_LOG("ChromiumCDMParent::PurgeShmems(this=%p) frame_size=%" PRIuSIZE
+          " limit=%" PRIu32 " active=%" PRIu32,
+          this,
+          mVideoFrameBufferSize,
+          mVideoShmemLimit,
+          mVideoShmemsActive);
+
+  if (mVideoShmemsActive == 0) {
+    
+    return true;
+  }
+  if (!SendPurgeShmems()) {
+    return false;
+  }
+  mVideoShmemsActive = 0;
+  return true;
+}
+
+bool
+ChromiumCDMParent::EnsureSufficientShmems(size_t aVideoFrameSize)
+{
+  GMP_LOG("ChromiumCDMParent::EnsureSufficientShmems(this=%p) "
+          "size=%" PRIuSIZE " expected_size=%" PRIuSIZE " limit=%" PRIu32
+          " active=%" PRIu32,
+          this,
+          aVideoFrameSize,
+          mVideoFrameBufferSize,
+          mVideoShmemLimit,
+          mVideoShmemsActive);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  if (mVideoFrameBufferSize < aVideoFrameSize) {
+    if (!PurgeShmems()) {
+      return false;
+    }
+    mVideoFrameBufferSize = aVideoFrameSize;
+  } else {
+    
+    
+    
+    
+    
+    
+    if (mVideoShmemLimit > 50) {
+      return false;
+    }
+    mVideoShmemLimit++;
+  }
+
+  while (mVideoShmemsActive < mVideoShmemLimit) {
+    if (!SendBufferToCDM(mVideoFrameBufferSize)) {
+      return false;
+    }
+    mVideoShmemsActive++;
+  }
+  return true;
+}
+
 ipc::IPCResult
 ChromiumCDMParent::RecvDecodedData(const CDMVideoFrame& aFrame,
                                    nsTArray<uint8_t>&& aData)
 {
-  GMP_LOG("ChromiumCDMParent::RecvDecodedData(this=%p) "
-          "mVideoShmemCount=%" PRIu32,
-          this,
-          mVideoShmemCount);
-  
-  
-  
-  
-  
-  Shmem shmem;
-  if (mVideoShmemCount >= 50 || !AllocShmem(mVideoFrameBufferSize,
-                                            Shmem::SharedMemory::TYPE_BASIC,
-                                            &shmem)) {
-    GMP_LOG("ChromiumCDMParent::RecvDecodedData(this=%p) "
-            "failed to allocate shmem for CDM.",
-            this);
-    mVideoDecoderInitialized = false;
+  GMP_LOG("ChromiumCDMParent::RecvDecodedData(this=%p)", this);
+
+  if (mIsShutdown || mDecodePromise.IsEmpty()) {
+    return IPC_OK();
+  }
+
+  if (!EnsureSufficientShmems(aData.Length())) {
     mDecodePromise.RejectIfExists(
-      MediaResult(
-        NS_ERROR_DOM_MEDIA_FATAL_ERR,
-        RESULT_DETAIL("Failled to send shmems to CDM after decode init.")),
+      MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
+                  RESULT_DETAIL("Failled to ensure CDM has enough shmems.")),
       __func__);
     return IPC_OK();
   }
-  mVideoShmemCount++;
 
-  ProcessDecoded(aFrame, aData, Move(shmem));
+  RefPtr<VideoData> v = CreateVideoFrame(aFrame, aData);
+  if (!v) {
+    mDecodePromise.RejectIfExists(
+      MediaResult(NS_ERROR_OUT_OF_MEMORY,
+                  RESULT_DETAIL("Can't create VideoData")),
+      __func__);
+    return IPC_OK();
+  }
+
+  mDecodePromise.ResolveIfExists({ Move(v) }, __func__);
 
   return IPC_OK();
 }
@@ -639,26 +733,50 @@ ipc::IPCResult
 ChromiumCDMParent::RecvDecodedShmem(const CDMVideoFrame& aFrame,
                                     ipc::Shmem&& aShmem)
 {
-  ProcessDecoded(
-    aFrame,
-    MakeSpan<uint8_t>(aShmem.get<uint8_t>(), aShmem.Size<uint8_t>()),
-    Move(aShmem));
-  return IPC_OK();
-}
+  GMP_LOG("ChromiumCDMParent::RecvDecodedShmem(this=%p)", this);
 
-void
-ChromiumCDMParent::ProcessDecoded(const CDMVideoFrame& aFrame,
-                                  Span<uint8_t> aData,
-                                  ipc::Shmem&& aGiftShmem)
-{
   
   
   auto autoDeallocateShmem =
-    MakeScopeExit([&, this] { this->DeallocShmem(aGiftShmem); });
+    MakeScopeExit([&, this] { this->DeallocShmem(aShmem); });
 
   if (mIsShutdown || mDecodePromise.IsEmpty()) {
-    return;
+    return IPC_OK();
   }
+
+  RefPtr<VideoData> v = CreateVideoFrame(
+    aFrame, MakeSpan<uint8_t>(aShmem.get<uint8_t>(), aShmem.Size<uint8_t>()));
+  if (!v) {
+    mDecodePromise.RejectIfExists(
+      MediaResult(NS_ERROR_OUT_OF_MEMORY,
+                  RESULT_DETAIL("Can't create VideoData")),
+      __func__);
+    return IPC_OK();
+  }
+
+  
+  
+  if (!SendGiveBuffer(aShmem)) {
+    mDecodePromise.RejectIfExists(
+      MediaResult(NS_ERROR_OUT_OF_MEMORY,
+                  RESULT_DETAIL("Can't return shmem to CDM process")),
+      __func__);
+    return IPC_OK();
+  }
+
+  
+  
+  autoDeallocateShmem.release();
+
+  mDecodePromise.ResolveIfExists({ Move(v) }, __func__);
+
+  return IPC_OK();
+}
+
+already_AddRefed<VideoData>
+ChromiumCDMParent::CreateVideoFrame(const CDMVideoFrame& aFrame,
+                                    Span<uint8_t> aData)
+{
   VideoData::YCbCrBuffer b;
   MOZ_ASSERT(aData.Length() > 0);
 
@@ -695,27 +813,7 @@ ChromiumCDMParent::ProcessDecoded(const CDMVideoFrame& aFrame,
     media::TimeUnit::FromMicroseconds(-1),
     pictureRegion);
 
-  
-  
-  if (!SendGiveBuffer(aGiftShmem)) {
-    mDecodePromise.RejectIfExists(
-      MediaResult(NS_ERROR_OUT_OF_MEMORY,
-                  RESULT_DETAIL("Can't return shmem to CDM process")),
-      __func__);
-    return;
-  }
-  
-  
-  autoDeallocateShmem.release();
-
-  if (v) {
-    mDecodePromise.ResolveIfExists({ Move(v) }, __func__);
-  } else {
-    mDecodePromise.RejectIfExists(
-      MediaResult(NS_ERROR_OUT_OF_MEMORY,
-                  RESULT_DETAIL("CallBack::CreateAndCopyData")),
-      __func__);
-  }
+  return v.forget();
 }
 
 ipc::IPCResult
@@ -787,12 +885,19 @@ ChromiumCDMParent::InitializeVideoDecoder(
       __func__);
   }
 
-  const int32_t bufferSize =
+  const size_t bufferSize =
     I420FrameBufferSizePadded(aInfo.mImage.width, aInfo.mImage.height);
   if (bufferSize <= 0) {
     return MediaDataDecoder::InitPromise::CreateAndReject(
       MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
                   RESULT_DETAIL("Video frame buffer size is invalid.")),
+      __func__);
+  }
+
+  if (!EnsureSufficientShmems(bufferSize)) {
+    return MediaDataDecoder::InitPromise::CreateAndReject(
+      MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
+                  RESULT_DETAIL("Failed to init shmems for video decoder")),
       __func__);
   }
 
@@ -822,51 +927,6 @@ ChromiumCDMParent::RecvOnDecoderInitDone(const uint32_t& aStatus)
     return IPC_OK();
   }
   if (aStatus == static_cast<uint32_t>(cdm::kSuccess)) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    for (uint32_t i = 0; i < mVideoShmemCount; i++) {
-      if (!SendBufferToCDM(mVideoFrameBufferSize)) {
-        mVideoDecoderInitialized = false;
-        mInitVideoDecoderPromise.RejectIfExists(
-          MediaResult(
-            NS_ERROR_DOM_MEDIA_FATAL_ERR,
-            RESULT_DETAIL("Failled to send shmems to CDM after decode init.")),
-          __func__);
-        return IPC_OK();
-      }
-    }
     mInitVideoDecoderPromise.ResolveIfExists(TrackInfo::kVideoTrack, __func__);
   } else {
     mVideoDecoderInitialized = false;
@@ -988,6 +1048,12 @@ ChromiumCDMParent::ShutdownVideoDecoder()
     return ShutdownPromise::CreateAndResolve(true, __func__);
   }
   mVideoDecoderInitialized = false;
+
+  
+  
+  
+  mVideoShmemsActive = 0;
+  mVideoFrameBufferSize = 0;
   return ShutdownPromise::CreateAndResolve(true, __func__);
 }
 
