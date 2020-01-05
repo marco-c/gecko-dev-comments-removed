@@ -4,6 +4,7 @@
 
 
 
+
 "use strict";
 
 
@@ -53,31 +54,35 @@ var openNewTabAndConsole = Task.async(function* (url) {
 
 
 
+
 function waitForMessages({ hud, messages }) {
   return new Promise(resolve => {
     let numMatched = 0;
-    let receivedLog = hud.ui.on("new-messages", function messagesReceieved(e, newMessages) {
-      for (let message of messages) {
-        if (message.matched) {
-          continue;
-        }
+    let receivedLog = hud.ui.on("new-messages",
+      function messagesReceieved(e, newMessages) {
+        for (let message of messages) {
+          if (message.matched) {
+            continue;
+          }
 
-        for (let newMessage of newMessages) {
-          if (newMessage.node.querySelector(".message-body").textContent == message.text) {
-            numMatched++;
-            message.matched = true;
-            info("Matched a message with text: " + message.text + ", still waiting for " + (messages.length - numMatched) + " messages");
-            break;
+          for (let newMessage of newMessages) {
+            let messageBody = newMessage.node.querySelector(".message-body");
+            if (messageBody.textContent == message.text) {
+              numMatched++;
+              message.matched = true;
+              info("Matched a message with text: " + message.text +
+                ", still waiting for " + (messages.length - numMatched) + " messages");
+              break;
+            }
+          }
+
+          if (numMatched === messages.length) {
+            hud.ui.off("new-messages", messagesReceieved);
+            resolve(receivedLog);
+            return;
           }
         }
-
-        if (numMatched === messages.length) {
-          hud.ui.off("new-messages", messagesReceieved);
-          resolve(receivedLog);
-          return;
-        }
-      }
-    });
+      });
   });
 }
 
