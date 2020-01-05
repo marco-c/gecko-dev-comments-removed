@@ -128,13 +128,6 @@ pub trait PostorderDomTraversal {
 pub trait PostorderNodeMutTraversal {
     
     fn process<'a>(&'a mut self, node: &ThreadSafeLayoutNode<'a>) -> bool;
-
-    
-    
-    
-    fn should_prune<'a>(&'a self, _node: &ThreadSafeLayoutNode<'a>) -> bool {
-        false
-    }
 }
 
 
