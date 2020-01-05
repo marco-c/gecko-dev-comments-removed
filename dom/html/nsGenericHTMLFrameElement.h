@@ -36,6 +36,7 @@ public:
     , mIsPrerendered(false)
     , mBrowserFrameListenersRegistered(false)
     , mFrameLoaderCreationDisallowed(false)
+    , mReallyIsBrowser(false)
   {
   }
 
@@ -125,6 +126,7 @@ protected:
   bool mIsPrerendered;
   bool mBrowserFrameListenersRegistered;
   bool mFrameLoaderCreationDisallowed;
+  bool mReallyIsBrowser;
 
   
   

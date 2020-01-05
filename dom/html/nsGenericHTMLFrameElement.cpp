@@ -372,6 +372,17 @@ nsGenericHTMLFrameElement::MapScrollingAttribute(const nsAttrValue* aValue)
   return mappedValue;
 }
 
+static bool
+PrincipalAllowsBrowserFrame(nsIPrincipal* aPrincipal)
+{
+  nsCOMPtr<nsIPermissionManager> permMgr = mozilla::services::GetPermissionManager();
+  NS_ENSURE_TRUE(permMgr, false);
+  uint32_t permission = nsIPermissionManager::DENY_ACTION;
+  nsresult rv = permMgr->TestPermissionFromPrincipal(aPrincipal, "browser", &permission);
+  NS_ENSURE_SUCCESS(rv, false);
+  return permission == nsIPermissionManager::ALLOW_ACTION;
+}
+
  nsresult
 nsGenericHTMLFrameElement::AfterSetAttr(int32_t aNameSpaceID, nsIAtom* aName,
                                         const nsAttrValue* aValue,
@@ -399,6 +410,11 @@ nsGenericHTMLFrameElement::AfterSetAttr(int32_t aNameSpaceID, nsIAtom* aName,
         }
       }
     }
+  }
+
+  if (aName == nsGkAtoms::mozbrowser && aNameSpaceID == kNameSpaceID_None) {
+    mReallyIsBrowser = !!aValue && BrowserFramesEnabled() &&
+                       PrincipalAllowsBrowserFrame(NodePrincipal());
   }
 
   return nsGenericHTMLElement::AfterSetAttr(aNameSpaceID, aName, aValue,
@@ -486,28 +502,7 @@ nsGenericHTMLFrameElement::BrowserFramesEnabled()
  nsresult
 nsGenericHTMLFrameElement::GetReallyIsBrowser(bool *aOut)
 {
-  *aOut = false;
-
-  
-  if (!nsGenericHTMLFrameElement::BrowserFramesEnabled()) {
-    return NS_OK;
-  }
-
-  
-  if (!GetBoolAttr(nsGkAtoms::mozbrowser)) {
-    return NS_OK;
-  }
-
-  
-  nsIPrincipal *principal = NodePrincipal();
-  nsCOMPtr<nsIPermissionManager> permMgr =
-    services::GetPermissionManager();
-  NS_ENSURE_TRUE(permMgr, NS_OK);
-
-  uint32_t permission = nsIPermissionManager::DENY_ACTION;
-  nsresult rv = permMgr->TestPermissionFromPrincipal(principal, "browser", &permission);
-  NS_ENSURE_SUCCESS(rv, NS_OK);
-  *aOut = permission == nsIPermissionManager::ALLOW_ACTION;
+  *aOut = mReallyIsBrowser;
   return NS_OK;
 }
 
