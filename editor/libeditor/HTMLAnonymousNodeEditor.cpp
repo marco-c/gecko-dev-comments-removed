@@ -161,32 +161,6 @@ ElementDeletionObserver::NodeWillBeDestroyed(const nsINode* aNode)
   NS_RELEASE_THIS();
 }
 
-
-
-
-
-NS_IMETHODIMP
-HTMLEditor::CreateAnonymousElement(const nsAString& aTag,
-                                   nsIDOMNode* aParentNode,
-                                   const nsAString& aAnonClass,
-                                   bool aIsCreatedHidden,
-                                   nsIDOMElement** aReturn)
-{
-  NS_ENSURE_ARG_POINTER(aReturn);
-  *aReturn = nullptr;
-
-  nsCOMPtr<nsIAtom> atom = NS_Atomize(aTag);
-  RefPtr<Element> element =
-    CreateAnonymousElement(atom, aParentNode, aAnonClass, aIsCreatedHidden);
-  if (NS_WARN_IF(!element)) {
-    return NS_ERROR_FAILURE;
-  }
-  nsCOMPtr<nsIDOMElement> newElement =
-    static_cast<nsIDOMElement*>(GetAsDOMNode(element));
-  newElement.forget(aReturn);
-  return NS_OK;
-}
-
 already_AddRefed<Element>
 HTMLEditor::CreateAnonymousElement(nsIAtom* aTag,
                                    nsIDOMNode* aParentNode,
