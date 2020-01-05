@@ -1,17 +1,17 @@
-'use strict';
+"use strict";
 
 
 (function(window) {
-  var gLanguage = '';
+  var gLanguage = "";
   var gExternalLocalizerServices = null;
-  var gReadyState = 'loading';
+  var gReadyState = "loading";
 
   
   function getL10nData(key) {
     var response = gExternalLocalizerServices.getStrings(key);
     var data = JSON.parse(response);
     if (!data) {
-      console.warn('[l10n] #' + key + ' missing for [' + gLanguage + ']');
+      console.warn("[l10n] #" + key + " missing for [" + gLanguage + "]");
     }
     return data;
   }
@@ -22,25 +22,25 @@
       return text;
     }
     return text.replace(/\{\{\s*(\w+)\s*\}\}/g, function(all, name) {
-      return (name in args ? args[name] : '{{' + name + '}}');
+      return (name in args ? args[name] : "{{" + name + "}}");
     });
   }
 
   
   function translateString(key, args, fallback) {
-    var i = key.lastIndexOf('.');
+    var i = key.lastIndexOf(".");
     var name, property;
     if (i >= 0) {
       name = key.substring(0, i);
       property = key.substring(i + 1);
     } else {
       name = key;
-      property = 'textContent';
+      property = "textContent";
     }
     var data = getL10nData(name);
     var value = (data && data[property]) || fallback;
     if (!value) {
-      return '{{' + key + '}}';
+      return "{{" + key + "}}";
     }
     return substArguments(value, args);
   }
@@ -65,7 +65,7 @@
       try {
         args = JSON.parse(element.dataset.l10nArgs);
       } catch (e) {
-        console.warn('[l10n] could not parse arguments for #' + key + '');
+        console.warn("[l10n] could not parse arguments for #" + key + "");
       }
     }
 
@@ -79,10 +79,10 @@
 
   
   function translateFragment(element) {
-    element = element || document.querySelector('html');
+    element = element || document.querySelector("html");
 
     
-    var children = element.querySelectorAll('*[data-l10n-id]');
+    var children = element.querySelectorAll("*[data-l10n-id]");
     var elementCount = children.length;
     for (var i = 0; i < elementCount; i++) {
       translateElement(children[i]);
@@ -99,16 +99,16 @@
 
     translateFragment();
 
-    gReadyState = 'complete';
+    gReadyState = "complete";
 
     
-    var evtObject = document.createEvent('Event');
-    evtObject.initEvent('localized', false, false);
+    var evtObject = document.createEvent("Event");
+    evtObject.initEvent("localized", false, false);
     evtObject.language = gLanguage;
     window.dispatchEvent(evtObject);
   }
 
-  window.addEventListener('DOMContentLoaded', function() {
+  window.addEventListener("DOMContentLoaded", function() {
     if (gExternalLocalizerServices) {
       translateDocument();
     }
@@ -129,12 +129,12 @@
     getDirection() {
       
       
-      var rtlList = ['ar', 'he', 'fa', 'ps', 'ur'];
+      var rtlList = ["ar", "he", "fa", "ps", "ur"];
 
       
-      var shortCode = gLanguage.split('-')[0];
+      var shortCode = gLanguage.split("-")[0];
 
-      return (rtlList.indexOf(shortCode) >= 0) ? 'rtl' : 'ltr';
+      return (rtlList.indexOf(shortCode) >= 0) ? "rtl" : "ltr";
     },
 
     getReadyState() {
@@ -145,8 +145,8 @@
       gExternalLocalizerServices = externalLocalizerServices;
 
       
-      if (window.document.readyState === 'interactive' ||
-          window.document.readyState === 'complete') {
+      if (window.document.readyState === "interactive" ||
+          window.document.readyState === "complete") {
         translateDocument();
       }
     },
