@@ -72,7 +72,8 @@ mod imp {
     pub fn get() -> ThreadState {
         let state = STATE.with(|ref k| {
             match *k.borrow() {
-                None => panic!("Thread state not initialized"),
+                
+                None => super::LAYOUT | super::IN_WORKER,
                 Some(s) => s,
             }
         });
