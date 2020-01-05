@@ -200,8 +200,10 @@ var PrintUtils = {
       
       
       
-      let ppBrowser = this._listener.getPrintPreviewBrowser();
-      ppBrowser.collapsed = true;
+      
+      
+      this._sourceBrowser = this._listener.getPrintPreviewBrowser();
+      this._sourceBrowser.collapsed = true;
 
       
       
@@ -522,7 +524,7 @@ var PrintUtils = {
         
         
         spMM.sendAsyncMessage("Printing:Preview:ParseDocument", {
-          URL: this._sourceBrowser.currentURI.spec,
+          URL: this._originalURL,
           windowID: this._sourceBrowser.outerWindowID,
         });
 
