@@ -84,7 +84,8 @@
 #include "nsAboutProtocolUtils.h"
 #include "nsCharTraits.h" 
 #include "PostMessageEvent.h"
-#include "DocGroup.h"
+#include "mozilla/dom/DocGroup.h"
+#include "mozilla/dom/TabGroup.h"
 
 
 #include "nsIFrame.h"
