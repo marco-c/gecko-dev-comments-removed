@@ -7,6 +7,7 @@
 #define mozilla_EditorBase_h
 
 #include "mozilla/Assertions.h"         
+#include "mozilla/FlushType.h"          
 #include "mozilla/OwningNonNull.h"      
 #include "mozilla/SelectionState.h"     
 #include "mozilla/StyleSheet.h"   
@@ -951,6 +952,14 @@ public:
 
 
   void HideCaret(bool aHide);
+
+  void FlushFrames()
+  {
+    nsCOMPtr<nsIDocument> doc = GetDocument();
+    if (doc) {
+      doc->FlushPendingNotifications(FlushType::Frames);
+    }
+  }
 
 protected:
   enum Tristate
