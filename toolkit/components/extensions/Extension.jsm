@@ -627,7 +627,7 @@ var UninstallObserver = {
 
       
       let attrs = JSON.stringify({addonId: addon.id});
-      Services.obs.notifyObservers(null, "clear-origin-data", attrs);
+      Services.obs.notifyObservers(null, "clear-origin-attributes-data", attrs);
     }
 
     if (!this.leaveUuid) {

@@ -12,15 +12,12 @@ const Cr = Components.results;
 
 Cu.import("resource://gre/modules/AppConstants.jsm");
 Cu.import("resource://gre/modules/Preferences.jsm");
+Cu.import("resource://gre/modules/Promise.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/Timer.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
-const {
-  PushCrypto,
-  getCryptoParams,
-  CryptoError,
-} = Cu.import("resource://gre/modules/PushCrypto.jsm");
+const {PushCrypto} = Cu.import("resource://gre/modules/PushCrypto.jsm");
 const {PushDB} = Cu.import("resource://gre/modules/PushDB.jsm");
 
 const CONNECTION_PROTOCOLS = (function() {
@@ -37,6 +34,9 @@ const CONNECTION_PROTOCOLS = (function() {
 XPCOMUtils.defineLazyServiceGetter(this, "gPushNotifier",
                                    "@mozilla.org/push/Notifier;1",
                                    "nsIPushNotifier");
+
+XPCOMUtils.defineLazyGetter(this, "gDOMBundle", () =>
+  Services.strings.createBundle("chrome://global/locale/dom/dom.properties"));
 
 this.EXPORTED_SYMBOLS = ["PushService"];
 
@@ -340,7 +340,7 @@ this.PushService = {
         })
         break;
 
-      case "clear-origin-data":
+      case "clear-origin-attributes-data":
         this._clearOriginData(aData).catch(error => {
           console.error("clearOriginData: Error clearing origin data:", error);
         });
@@ -517,7 +517,7 @@ this.PushService = {
       return;
     }
 
-    Services.obs.addObserver(this, "clear-origin-data", false);
+    Services.obs.addObserver(this, "clear-origin-attributes-data", false);
 
     
     
@@ -611,7 +611,7 @@ this.PushService = {
     prefs.ignore("connection.enabled", this);
 
     Services.obs.removeObserver(this, "network:offline-status-changed");
-    Services.obs.removeObserver(this, "clear-origin-data");
+    Services.obs.removeObserver(this, "clear-origin-attributes-data");
     Services.obs.removeObserver(this, "idle-daily");
     Services.obs.removeObserver(this, "perm-changed");
   },
@@ -762,11 +762,14 @@ this.PushService = {
 
 
 
-  receivedPushMessage(keyID, messageID, headers, data, updateFunc) {
+  receivedPushMessage(keyID, messageID, data, cryptoParams, updateFunc) {
     console.debug("receivedPushMessage()");
     Services.telemetry.getHistogramById("PUSH_API_NOTIFICATION_RECEIVED").add();
 
     return this._updateRecordAfterPush(keyID, updateFunc).then(record => {
+      if (!record) {
+        throw new Error("Ignoring update for key ID " + keyID);
+      }
       if (record.quotaApplies()) {
         
         
@@ -779,7 +782,7 @@ this.PushService = {
           }, prefs.get("quotaUpdateDelay"));
         this._updateQuotaTimeouts.add(timeoutID);
       }
-      return this._decryptAndNotifyApp(record, messageID, headers, data);
+      return this._decryptAndNotifyApp(record, messageID, data, cryptoParams);
     }).catch(error => {
       console.error("receivedPushMessage: Error notifying app", error);
       return Ci.nsIPushErrorReporter.ACK_NOT_DELIVERED;
@@ -829,11 +832,10 @@ this.PushService = {
         });
       });
     }).then(record => {
-      if (!record) {
-        throw new Error("Ignoring update for key ID " + keyID);
+      if (record) {
+        gPushNotifier.notifySubscriptionModified(record.scope,
+                                                 record.principal);
       }
-      gPushNotifier.notifySubscriptionModified(record.scope,
-                                               record.principal);
       return record;
     });
   },
@@ -846,17 +848,38 @@ this.PushService = {
 
 
 
+  _decryptMessage(data, record, cryptoParams) {
+    if (!cryptoParams) {
+      return Promise.resolve(null);
+    }
+    return PushCrypto.decodeMsg(
+      data,
+      record.p256dhPrivateKey,
+      record.p256dhPublicKey,
+      cryptoParams.dh,
+      cryptoParams.salt,
+      cryptoParams.rs,
+      record.authenticationSecret,
+      cryptoParams.padSize
+    );
+  },
 
-  _decryptAndNotifyApp(record, messageID, headers, data) {
-    return PushCrypto.decrypt(record.p256dhPrivateKey, record.p256dhPublicKey,
-                              record.authenticationSecret, headers, data)
+  
+
+
+
+
+
+
+
+
+  _decryptAndNotifyApp(record, messageID, data, cryptoParams) {
+    return this._decryptMessage(data, record, cryptoParams)
       .then(
         message => this._notifyApp(record, messageID, message),
         error => {
-          console.warn("decryptAndNotifyApp: Error decrypting message",
-            record.scope, messageID, error);
-
-          let message = error.format(record.scope);
+          let message = gDOMBundle.formatStringFromName(
+            "PushMessageDecryptionFailure", [record.scope, String(error)], 2);
           gPushNotifier.notifyError(record.scope, record.principal, message,
                                     Ci.nsIScriptError.errorFlag);
           return Ci.nsIPushErrorReporter.ACK_DECRYPTION_ERROR;

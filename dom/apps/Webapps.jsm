@@ -4692,7 +4692,7 @@ this.DOMApplicationRegistry = {
     if (browserOnly) {
       attributes.inIsolatedMozBrowser = true;
     }
-    this._notifyCategoryAndObservers(null, "clear-origin-data", JSON.stringify(attributes));
+    this._notifyCategoryAndObservers(null, "clear-origin-attributes-data", JSON.stringify(attributes));
   }
 };
 

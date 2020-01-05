@@ -32,7 +32,7 @@ function test(aEntries, aData, aResults)
     do_check_eq(pm.testPermissionFromPrincipal(principal, "test/clear-origin"), pm.ALLOW_ACTION);
   }
 
-  Services.obs.notifyObservers(null, 'clear-origin-data', aData);
+  Services.obs.notifyObservers(null, 'clear-origin-attributes-data', aData);
 
   var length = aEntries.length;
   for (let i=0; i<length; ++i) {
