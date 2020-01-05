@@ -455,10 +455,6 @@ public:
     }
 
     
-    void SetClassName(const nsAString& aValue, mozilla::ErrorResult& rv)
-    {
-        SetXULAttr(nsGkAtoms::_class, aValue, rv);
-    }
     void GetAlign(DOMString& aValue) const
     {
         GetXULAttr(nsGkAtoms::align, aValue);
