@@ -279,8 +279,15 @@ protected:
   virtual bool MayLoadInternal(nsIURI* aURI) = 0;
   friend class ::nsExpandedPrincipal;
 
+  
+  
+  
+  void FinishInit();
+
   nsCOMPtr<nsIContentSecurityPolicy> mCSP;
   nsCOMPtr<nsIContentSecurityPolicy> mPreloadCSP;
+  nsCOMPtr<nsIAtom> mOriginNoSuffix;
+  nsCOMPtr<nsIAtom> mOriginSuffix;
   OriginAttributes mOriginAttributes;
   PrincipalKind mKind;
 };
