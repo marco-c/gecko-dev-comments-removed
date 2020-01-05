@@ -122,6 +122,10 @@ impl RenderListener for CompositorChan {
         }
     }
 
+    fn rerendermsg_discarded(&self) {
+        self.chan.send(ReRenderMsgDiscarded);
+    }
+
     fn set_layer_clip_rect(&self,
                            pipeline_id: PipelineId,
                            layer_id: LayerId,
@@ -184,6 +188,8 @@ pub enum Msg {
     ChangeReadyState(ReadyState),
     
     ChangeRenderState(RenderState),
+    
+    ReRenderMsgDiscarded,
     
     SetIds(SendableFrameTree, Sender<()>, ConstellationChan),
     
