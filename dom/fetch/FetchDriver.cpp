@@ -30,6 +30,7 @@
 
 #include "mozilla/dom/File.h"
 #include "mozilla/dom/workers/Workers.h"
+#include "mozilla/EventStateManager.h"
 #include "mozilla/ipc/PBackgroundSharedTypes.h"
 #include "mozilla/Unused.h"
 
@@ -254,6 +255,13 @@ FetchDriver::HttpFetch()
   }
 #endif
   chan->SetNotificationCallbacks(this);
+
+  nsCOMPtr<nsIClassOfService> cos(do_QueryInterface(chan));
+  
+  
+  if (cos && EventStateManager::IsHandlingUserInput()) {
+    cos->AddClassFlags(nsIClassOfService::UrgentStart);
+  }
 
   
   

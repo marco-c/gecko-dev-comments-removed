@@ -27,6 +27,7 @@
 #include "mozilla/dom/PromiseNativeHandler.h"
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/EventListenerManager.h"
+#include "mozilla/EventStateManager.h"
 #include "mozilla/LoadInfo.h"
 #include "mozilla/LoadContext.h"
 #include "mozilla/MemoryReporting.h"
@@ -2652,6 +2653,12 @@ XMLHttpRequestMainThread::InitiateFetch(nsIInputStream* aUploadStream,
   nsCOMPtr<nsIClassOfService> cos(do_QueryInterface(mChannel));
   if (cos) {
     cos->AddClassFlags(nsIClassOfService::Unblocked);
+
+    
+    
+    if (EventStateManager::IsHandlingUserInput()) {
+      cos->AddClassFlags(nsIClassOfService::UrgentStart);
+    }
   }
 
   
