@@ -66,6 +66,26 @@ var TexImageUtils = (function() {
 
   
   
+  var simpleIntTextureFragmentShaderES3 = [
+    '#version 300 es',
+    'precision mediump float;',
+    'uniform mediump isampler2D tex;',
+    'in vec2 texCoord;',
+    'out vec4 fragData;',
+    'void main() {',
+    '    ivec4 data = texture(tex, texCoord);',
+    '    fragData = vec4(float(data[0])/255.0,',
+    '                    float(data[1])/255.0,',
+    '                    float(data[2])/255.0,',
+    '                    1.0);',
+    '}'].join('\n');
+
+  
+
+
+
+  
+  
   var simpleCubeMapUintTextureFragmentShaderES3 = [
     '#version 300 es',
     'precision mediump float;',
@@ -103,14 +123,53 @@ var TexImageUtils = (function() {
 
 
   
+  
+  var simpleCubeMapIntTextureFragmentShaderES3 = [
+    '#version 300 es',
+    'precision mediump float;',
+    'uniform mediump isamplerCube tex;',
+    'uniform int face;',
+    'in vec2 texCoord;',
+    'out vec4 fragData;',
+    'void main() {',
+    
+    '    vec2 texC2 = (texCoord * 2.) - 1.;',
+    
+    '    vec3 texCube = vec3(0., 0., 0.);',
+    '    if (face == 34069) {',         
+    '        texCube = vec3(1., -texC2.y, -texC2.x);',
+    '    } else if (face == 34070) {',  
+    '        texCube = vec3(-1., -texC2.y, texC2.x);',
+    '    } else if (face == 34071) {',  
+    '        texCube = vec3(texC2.x, 1., texC2.y);',
+    '    } else if (face == 34072) {',  
+    '        texCube = vec3(texC2.x, -1., -texC2.y);',
+    '    } else if (face == 34073) {',  
+    '        texCube = vec3(texC2.x, -texC2.y, 1.);',
+    '    } else if (face == 34074) {',  
+    '        texCube = vec3(-texC2.x, -texC2.y, -1.);',
+    '    }',
+    '    ivec4 data = texture(tex, texCube);',
+    '    fragData = vec4(float(data[0])/255.0,',
+    '                    float(data[1])/255.0,',
+    '                    float(data[2])/255.0,',
+    '                    1.0);',
+    '}'].join('\n');
+
+  
+
+
+
+  
   var simple3DTextureFragmentShaderES3 = [
     '#version 300 es',
     'precision mediump float;',
     'uniform mediump sampler3D tex;',
     'in vec2 texCoord;',
+    'uniform float uRCoord;',
     'out vec4 fragData;',
     'void main() {',
-    '    fragData = vec4(texture(tex, vec3(texCoord, 0.0)).rgb, 1.0);',
+    '    fragData = vec4(texture(tex, vec3(texCoord, uRCoord)).rgb, 1.0);',
     '}'].join('\n');
 
   
@@ -125,9 +184,10 @@ var TexImageUtils = (function() {
     'precision mediump float;',
     'uniform mediump usampler3D tex;',
     'in vec2 texCoord;',
+    'uniform float uRCoord;',
     'out vec4 fragData;',
     'void main() {',
-    '    vec4 data = vec4(texture(tex, vec3(texCoord, 0.0)).rgb, 1.0);',
+    '    uvec4 data = texture(tex, vec3(texCoord, uRCoord));',
     '    fragData = vec4(float(data[0])/255.0,',
     '                    float(data[1])/255.0,',
     '                    float(data[2])/255.0,',
@@ -139,14 +199,38 @@ var TexImageUtils = (function() {
 
 
   
+  
+  
+  var simple3DIntTextureFragmentShaderES3 = [
+    '#version 300 es',
+    'precision mediump float;',
+    'uniform mediump isampler3D tex;',
+    'in vec2 texCoord;',
+    'uniform float uRCoord;',
+    'out vec4 fragData;',
+    'void main() {',
+    '    ivec4 data = texture(tex, vec3(texCoord, uRCoord));',
+    '    fragData = vec4(float(data[0])/255.0,',
+    '                    float(data[1])/255.0,',
+    '                    float(data[2])/255.0,',
+    '                    1.0);',
+    '}'].join('\n');
+
+  
+
+
+
+  
+  
   var simple2DArrayTextureFragmentShaderES3 = [
     '#version 300 es',
     'precision mediump float;',
     'uniform mediump sampler2DArray tex;',
     'in vec2 texCoord;',
+    'uniform float uRCoord;',
     'out vec4 fragData;',
     'void main() {',
-    '    fragData = vec4(texture(tex, vec3(texCoord, 0.0)).rgb, 1.0);',
+    '    fragData = vec4(texture(tex, vec3(texCoord, uRCoord)).rgb, 1.0);',
     '}'].join('\n');
 
   
@@ -156,14 +240,39 @@ var TexImageUtils = (function() {
   
   
   
+  
   var simple2DArrayUintTextureFragmentShaderES3 = [
     '#version 300 es',
     'precision mediump float;',
     'uniform mediump usampler2DArray tex;',
     'in vec2 texCoord;',
+    'uniform float uRCoord;',
     'out vec4 fragData;',
     'void main() {',
-    '    vec4 data = vec4(texture(tex, vec3(texCoord, 0.0)).rgb, 1.0);',
+    '    uvec4 data = texture(tex, vec3(texCoord, uRCoord));',
+    '    fragData = vec4(float(data[0])/255.0,',
+    '                    float(data[1])/255.0,',
+    '                    float(data[2])/255.0,',
+    '                    1.0);',
+    '}'].join('\n');
+
+  
+
+
+
+  
+  
+  
+  
+  var simple2DArrayIntTextureFragmentShaderES3 = [
+    '#version 300 es',
+    'precision mediump float;',
+    'uniform mediump isampler2DArray tex;',
+    'in vec2 texCoord;',
+    'uniform float uRCoord;',
+    'out vec4 fragData;',
+    'void main() {',
+    '    ivec4 data = texture(tex, vec3(texCoord, uRCoord));',
     '    fragData = vec4(float(data[0])/255.0,',
     '                    float(data[1])/255.0,',
     '                    float(data[2])/255.0,',
@@ -195,8 +304,27 @@ var TexImageUtils = (function() {
 
 
 
+
+  var setupSimpleIntTextureFragmentShader = function(gl) {
+    return WebGLTestUtils.loadShader(gl, simpleIntTextureFragmentShaderES3, gl.FRAGMENT_SHADER);
+  };
+
+  
+
+
+
+
   var setupSimpleCubeMapUintTextureFragmentShader = function(gl) {
     return WebGLTestUtils.loadShader(gl, simpleCubeMapUintTextureFragmentShaderES3, gl.FRAGMENT_SHADER);
+  };
+
+  
+
+
+
+
+  var setupSimpleCubeMapIntTextureFragmentShader = function(gl) {
+    return WebGLTestUtils.loadShader(gl, simpleCubeMapIntTextureFragmentShaderES3, gl.FRAGMENT_SHADER);
   };
 
   
@@ -215,6 +343,15 @@ var TexImageUtils = (function() {
 
   var setupSimple3DUintTextureFragmentShader = function(gl) {
     return WebGLTestUtils.loadShader(gl, simple3DUintTextureFragmentShaderES3, gl.FRAGMENT_SHADER);
+  };
+
+  
+
+
+
+
+  var setupSimple3DIntTextureFragmentShader = function(gl) {
+    return WebGLTestUtils.loadShader(gl, simple3DIntTextureFragmentShaderES3, gl.FRAGMENT_SHADER);
   };
 
   
@@ -271,11 +408,68 @@ var TexImageUtils = (function() {
 
 
 
+  var setupSimpleIntTextureProgram = function(gl, opt_positionLocation, opt_texcoordLocation)
+  {
+    opt_positionLocation = opt_positionLocation || 0;
+    opt_texcoordLocation = opt_texcoordLocation || 1;
+    var vs = setupSimpleTextureVertexShader(gl),
+        fs = setupSimpleIntTextureFragmentShader(gl);
+    if (!vs || !fs) {
+      return null;
+    }
+    var program = WebGLTestUtils.setupProgram(
+      gl,
+      [vs, fs],
+      ['vPosition', 'texCoord0'],
+      [opt_positionLocation, opt_texcoordLocation]);
+    if (!program) {
+      gl.deleteShader(fs);
+      gl.deleteShader(vs);
+    }
+    gl.useProgram(program);
+    return program;
+  };
+
+  
+
+
+
+
+
+
   var setupSimpleCubeMapUintTextureProgram = function(gl, opt_positionLocation, opt_texcoordLocation) {
     opt_positionLocation = opt_positionLocation || 0;
     opt_texcoordLocation = opt_texcoordLocation || 1;
     var vs = setupSimpleTextureVertexShader(gl);
     var fs = setupSimpleCubeMapUintTextureFragmentShader(gl);
+    if (!vs || !fs) {
+      return null;
+    }
+    var program = WebGLTestUtils.setupProgram(
+      gl,
+      [vs, fs],
+      ['vPosition', 'texCoord0'],
+      [opt_positionLocation, opt_texcoordLocation]);
+    if (!program) {
+      gl.deleteShader(fs);
+      gl.deleteShader(vs);
+    }
+    gl.useProgram(program);
+    return program;
+  };
+
+  
+
+
+
+
+
+
+  var setupSimpleCubeMapIntTextureProgram = function(gl, opt_positionLocation, opt_texcoordLocation) {
+    opt_positionLocation = opt_positionLocation || 0;
+    opt_texcoordLocation = opt_texcoordLocation || 1;
+    var vs = setupSimpleTextureVertexShader(gl);
+    var fs = setupSimpleCubeMapIntTextureFragmentShader(gl);
     if (!vs || !fs) {
       return null;
     }
@@ -357,6 +551,35 @@ var TexImageUtils = (function() {
 
 
 
+  var setupSimple3DIntTextureProgram = function(gl, opt_positionLocation, opt_texcoordLocation)
+  {
+    opt_positionLocation = opt_positionLocation || 0;
+    opt_texcoordLocation = opt_texcoordLocation || 1;
+    var vs = setupSimpleTextureVertexShader(gl),
+        fs = setupSimple3DIntTextureFragmentShader(gl);
+    if (!vs || !fs) {
+      return null;
+    }
+    var program = WebGLTestUtils.setupProgram(
+      gl,
+      [vs, fs],
+      ['vPosition', 'texCoord0'],
+      [opt_positionLocation, opt_texcoordLocation]);
+    if (!program) {
+      gl.deleteShader(fs);
+      gl.deleteShader(vs);
+    }
+    gl.useProgram(program);
+    return program;
+  };
+
+  
+
+
+
+
+
+
   var setupSimple2DArrayTextureProgram = function(gl, opt_positionLocation, opt_texcoordLocation)
   {
     opt_positionLocation = opt_positionLocation || 0;
@@ -413,8 +636,48 @@ var TexImageUtils = (function() {
 
 
 
+
+
+  var setupSimple2DArrayIntTextureProgram = function(gl, opt_positionLocation, opt_texcoordLocation)
+  {
+    opt_positionLocation = opt_positionLocation || 0;
+    opt_texcoordLocation = opt_texcoordLocation || 1;
+    var vs = setupSimpleTextureVertexShader(gl),
+        fs = setupSimple2DArrayIntTextureFragmentShader(gl);
+    if (!vs || !fs) {
+      return null;
+    }
+    var program = WebGLTestUtils.setupProgram(
+      gl,
+      [vs, fs],
+      ['vPosition', 'texCoord0'],
+      [opt_positionLocation, opt_texcoordLocation]);
+    if (!program) {
+      gl.deleteShader(fs);
+      gl.deleteShader(vs);
+    }
+    gl.useProgram(program);
+    return program;
+  };
+
+  
+
+
+
+
   var setupUintTexturedQuad = function(gl) {
     var program = setupSimpleUintTextureProgram(gl);
+    wtu.setupUnitQuad(gl);
+    return program;
+  };
+
+  
+
+
+
+
+  var setupIntTexturedQuad = function(gl) {
+    var program = setupSimpleIntTextureProgram(gl);
     wtu.setupUnitQuad(gl);
     return program;
   };
@@ -437,12 +700,36 @@ var TexImageUtils = (function() {
 
 
 
+
+  var setupIntTexturedQuadWithCubeMap = function(gl)
+  {
+    var program = setupSimpleCubeMapIntTextureProgram(gl);
+    wtu.setupUnitQuad(gl);
+    return program;
+  };
+
+  
+
+
+
+
   var isUintFormat = function(internalFormat)
   {
-    return (internalFormat == "R8UI" ||
-            internalFormat == "RG8UI" ||
-            internalFormat == "RGB8UI" ||
-            internalFormat == "RGBA8UI");
+    return (internalFormat == "R8UI" || internalFormat == "RG8UI" || internalFormat == "RGB8UI" || internalFormat == "RGBA8UI" ||
+            internalFormat == "R16UI" || internalFormat == "RG16UI" || internalFormat == "RGB16UI" || internalFormat == "RGBA16UI" ||
+            internalFormat == "R32UI" || internalFormat == "RG32UI" || internalFormat == "RGB32UI" || internalFormat == "RGBA32UI");
+  };
+
+  
+
+
+
+
+  var isIntFormat = function(internalFormat)
+  {
+    return (internalFormat == "R8I" || internalFormat == "RG8I" || internalFormat == "RGB8I" || internalFormat == "RGBA8I" ||
+            internalFormat == "R16I" || internalFormat == "RG16I" || internalFormat == "RGB16I" || internalFormat == "RGBA16I" ||
+            internalFormat == "R32I" || internalFormat == "RG32I" || internalFormat == "RGB32I" || internalFormat == "RGBA32I");
   };
 
   
@@ -456,7 +743,8 @@ var TexImageUtils = (function() {
   {
     if (isUintFormat(internalFormat))
       return setupUintTexturedQuad(gl);
-
+    if (isIntFormat(internalFormat))
+      return setupIntTexturedQuad(gl);
     return wtu.setupTexturedQuad(gl);
   };
 
@@ -471,7 +759,8 @@ var TexImageUtils = (function() {
   {
     if (isUintFormat(internalFormat))
       return setupUintTexturedQuadWithCubeMap(gl);
-
+    if (isIntFormat(internalFormat))
+      return setupIntTexturedQuadWithCubeMap(gl);
     return wtu.setupTexturedQuadWithCubeMap(gl);
   }
 
@@ -487,8 +776,12 @@ var TexImageUtils = (function() {
     var program;
     if (isUintFormat(internalFormat))
       program = setupSimple3DUintTextureProgram(gl);
+    else if (isIntFormat(internalFormat))
+      program = setupSimple3DIntTextureProgram(gl);
     else
       program = setupSimple3DTextureProgram(gl);
+    var uRCoordLoc = gl.getUniformLocation(program, 'uRCoord');
+    gl.uniform1f(uRCoordLoc, 0.0);
     wtu.setupUnitQuad(gl);
     return program;
   };
@@ -505,8 +798,12 @@ var TexImageUtils = (function() {
     var program;
     if (isUintFormat(internalFormat))
       program = setupSimple2DArrayUintTextureProgram(gl);
+    else if (isIntFormat(internalFormat))
+      program = setupSimple2DArrayIntTextureProgram(gl);
     else
       program = setupSimple2DArrayTextureProgram(gl);
+    var uRCoordLoc = gl.getUniformLocation(program, 'uRCoord');
+    gl.uniform1f(uRCoordLoc, 0.0);
     wtu.setupUnitQuad(gl);
     return program;
   };

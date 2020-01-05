@@ -1410,6 +1410,12 @@ CSSProperties.prototype.marginLeft;
 
 
 
+CSSProperties.prototype.markerOffset;
+
+
+
+
+
 CSSProperties.prototype.marks;
 
 

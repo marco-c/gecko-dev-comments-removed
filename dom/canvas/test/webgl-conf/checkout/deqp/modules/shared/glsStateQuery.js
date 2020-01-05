@@ -346,21 +346,21 @@ glsStateQuery.verifyActiveUniformBlock = function(program, index, param, referen
 
 
 glsStateQuery.verifyMask = function(param, reference, enableRef) {
-	var intVector4 =  (gl.getParameter(param));
+    var intVector4 =  (gl.getParameter(param));
 
-	if ((enableRef[0] && (intVector4[0] != reference[0])) ||
-		(enableRef[1] && (intVector4[1] != reference[1])) ||
-		(enableRef[2] && (intVector4[2] != reference[2])) ||
-		(enableRef[3] && (intVector4[3] != reference[3])))
-	{
-		bufferedLogToConsole("// ERROR: expected " +
-			(enableRef[0] ? "" : "(") + reference[0] + (enableRef[0] ? "" : ")") + ", " +
-			(enableRef[1] ? "" : "(") + reference[1] + (enableRef[1] ? "" : ")") + ", " +
-			(enableRef[2] ? "" : "(") + reference[2] + (enableRef[2] ? "" : ")") + ", " +
-			(enableRef[3] ? "" : "(") + reference[3] + (enableRef[3] ? "" : ")"));
+    if ((enableRef[0] && (intVector4[0] != reference[0])) ||
+        (enableRef[1] && (intVector4[1] != reference[1])) ||
+        (enableRef[2] && (intVector4[2] != reference[2])) ||
+        (enableRef[3] && (intVector4[3] != reference[3])))
+    {
+        bufferedLogToConsole("// ERROR: expected " +
+                             (enableRef[0] ? "" : "(") + reference[0] + (enableRef[0] ? "" : ")") + ", " +
+                             (enableRef[1] ? "" : "(") + reference[1] + (enableRef[1] ? "" : ")") + ", " +
+                             (enableRef[2] ? "" : "(") + reference[2] + (enableRef[2] ? "" : ")") + ", " +
+                             (enableRef[3] ? "" : "(") + reference[3] + (enableRef[3] ? "" : ")"));
 
-		return false;
-	}
+        return false;
+    }
     return true;
 };
 

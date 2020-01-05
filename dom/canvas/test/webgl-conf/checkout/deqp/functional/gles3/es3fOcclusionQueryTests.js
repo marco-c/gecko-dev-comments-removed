@@ -486,7 +486,7 @@ es3fOcclusionQueryTests.OcclusionQueryTests.prototype.init = function() {
 
 
 
-es3fOcclusionQueryTests.run = function(context) {
+es3fOcclusionQueryTests.run = function(context, range) {
     gl = context;
     
     var state = tcuTestCase.runner;
@@ -497,6 +497,8 @@ es3fOcclusionQueryTests.run = function(context) {
     description(state.testCases.getDescription());
 
     try {
+        if (range)
+            state.setRange(range);
         
         tcuTestCase.runTestCases();
     }

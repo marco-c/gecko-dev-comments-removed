@@ -598,8 +598,6 @@ glsTextureTestUtil.ProgramLibrary.prototype.getProgram = function(program) {
 
     var vertSrc = tcuStringTemplate.specialize(vertShaderTemplate, params);
     var fragSrc = tcuStringTemplate.specialize(fragShaderTemplate, params);
-    
-    
     var progObj = new gluShaderProgram.ShaderProgram(gl, gluShaderProgram.makeVtxFragSources(vertSrc, fragSrc));
     
     
@@ -821,8 +819,6 @@ glsTextureTestUtil.TextureRenderer.prototype.renderQuad = function(texUnit, texC
     
     
     var vertexArrays = [];
-    
-    
 
     var posLoc = gl.getAttribLocation(prog, 'a_position');
     if (posLoc === -1) {
@@ -1411,8 +1407,9 @@ glsTextureTestUtil.sampleTexture3D = function(dst, src, texCoord, params) {
 
 
 
-glsTextureTestUtil.compareImages = function(reference, rendered, threshold) {
-    return tcuImageCompare.pixelThresholdCompare('Result', 'Image comparison result', reference, rendered, threshold, undefined );
+
+glsTextureTestUtil.compareImages = function(reference, rendered, threshold, skipPixels) {
+    return tcuImageCompare.pixelThresholdCompare('Result', 'Image comparison result', reference, rendered, threshold, undefined , skipPixels);
 };
 
 

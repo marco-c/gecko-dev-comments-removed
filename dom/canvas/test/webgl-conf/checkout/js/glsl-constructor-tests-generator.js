@@ -23,7 +23,7 @@
 
 
 var GLSLConstructorTestsGenerator = (function() {
-  
+
 var wtu = WebGLTestUtils;
 
 
@@ -38,20 +38,20 @@ var constructorVertexTemplate = [
   "const vec4 red   = vec4(1.0, 0.0, 0.0, 1.0);",
 
   
-  "$(errorBound)", 
+  "$(errorBound)",
 
   "varying vec4 vColor;",
-  
+
   "void main() {",
   "  $(argsList)",
-  
+
   "  $(type) v = $(type)($(argsConstr));",
-  
+
   "  if ($(checkCompVals))",
   "    vColor = green;",
   "  else",
   "    vColor = red;",
-  
+
   "  gl_Position = vPosition;",
   "}"
 ].join("\n");
@@ -59,9 +59,9 @@ var constructorVertexTemplate = [
 
 var passThroughColorFragmentShader = [
   "precision mediump float;",
-  
+
   "varying vec4 vColor;",
-  
+
   "void main() {",
   "    gl_FragColor = vColor;",
   "}"
@@ -75,15 +75,15 @@ var constructorFragmentTemplate = [
   
   "const vec4 green = vec4(0.0, 1.0, 0.0, 1.0); ",
   "const vec4 red   = vec4(1.0, 0.0, 0.0, 1.0); ",
+
   
-  
-  "$(errorBound)", 
+  "$(errorBound)",
 
   "void main() {",
   "  $(argsList)",
-    
+
   "  $(type) v = $(type)($(argsConstr));",
-  
+
   "  if ($(checkCompVals))",
   "    gl_FragColor = green;",
   "  else",
@@ -112,18 +112,18 @@ function getTypeCodeDimensions(typeCode) {
     case "m2": return [2, 2];
     case "m3": return [3, 3];
     case "m4": return [4, 4];
-    
+
     default:
-      wtu.error("GLSLConstructorTestsGenerator.getTypeCodeDimensions(), unknown type code");        
+      wtu.error("GLSLConstructorTestsGenerator.getTypeCodeDimensions(), unknown type code");
       debugger;
-  }    
+  }
 };
 
 
 
 function getTypeCodeComponentCount(typeCode) {
   var dim = getTypeCodeDimensions(typeCode);
-  
+
   return dim[0] * dim[1];
 }
 
@@ -140,7 +140,7 @@ function getGLSLBaseTypeName(typeCode) {
     case "m4": return "mat4";
 
     default:
-      wtu.error("GLSLConstructorTestsGenerator.getGLSLBaseTypeName(), unknown type code");        
+      wtu.error("GLSLConstructorTestsGenerator.getGLSLBaseTypeName(), unknown type code");
       debugger;
   }
 }
@@ -151,13 +151,13 @@ function getGLSLScalarType(targetType) {
   switch(targetType[0]) {
     case 'i': return "int";
     case 'b': return "bool";
-    
+
     case 'v':
     case 'm':
       return "float";
-        
+
     default:
-      wtu.error("GLSLConstructorTestsGenerator.getGLSLScalarType(), unknown target type");        
+      wtu.error("GLSLConstructorTestsGenerator.getGLSLScalarType(), unknown target type");
       debugger;
   }
 }
@@ -166,16 +166,16 @@ function getGLSLScalarType(targetType) {
 
 function getGLSLScalarPrefix(targetType) {
   switch(targetType[0]) {
-    case 'i': 
-    case 'b': 
+    case 'i':
+    case 'b':
       return targetType[0];
-            
+
     case 'v':
     case 'm':
       return '';
-            
+
     default:
-      wtu.error("GLSLConstructorTestsGenerator.getGLSLScalarPrefix(), unknown target type");        
+      wtu.error("GLSLConstructorTestsGenerator.getGLSLScalarPrefix(), unknown target type");
       debugger;
   }
 }
@@ -192,7 +192,7 @@ function getGLSLArgumentType(typeCode, targetType) {
     else
       return baseType;
   }
-  else 
+  else
     return getGLSLScalarType(targetType);
 }
 
@@ -205,9 +205,9 @@ function getGLSLArgumentComponentType(argTypeCode, targetType) {
     
     scalarType = "float";
   }
-  else 
+  else
     scalarType = getGLSLScalarType(targetType);
-  
+
   return scalarType;
 }
 
@@ -217,24 +217,24 @@ function getGLSLColumnSize(targetType) {
 
   if (!isNaN(colSize))
     return colSize;
-    
-  wtu.error("GLSLConstructorTestsGenerator.getGLSLColumnSize(), invalid target type");        
+
+  wtu.error("GLSLConstructorTestsGenerator.getGLSLColumnSize(), invalid target type");
     debugger;
 }
-  
-  
+
+
 
 function getScalarTypeValStr(val, scalarType) {
   if (val == null)
     debugger;
-    
+
   switch (scalarType) {
     case "float": return val.toFixed(1);
     case "int":   return val;
     case "bool":  return (val === 0) ? "false" : "true";
-       
+
     default:
-      wtu.error("GLSLConstructorTestsGenerator.getScalarTypeValStr(), unknown scalar type");        
+      wtu.error("GLSLConstructorTestsGenerator.getScalarTypeValStr(), unknown scalar type");
       debugger;
   }
 }
@@ -251,15 +251,15 @@ function isGLSLTypeVector(type) {
   return (type.indexOf("vec") !== -1);
 }
 
- 
+
 
 function getGLSLTypeComponentCount(type) {
   var colSize = getGLSLColumnSize(type);
-      
+
   if (isGLSLTypeMatrix(type))
     return colSize * colSize;
   else
-    return colSize;    
+    return colSize;
 }
 
 
@@ -267,19 +267,19 @@ function getGLSLTypeComponentCount(type) {
 
 function getComponentSequenceConstructorExpression(typeCode, firstCompValue, targetType) {
   var scalarType = getGLSLArgumentComponentType(typeCode, targetType);
-    
+
   if (typeCode === "s") {
     
     return getScalarTypeValStr(firstCompValue, scalarType) + ";";
-  } 
+  }
   else {
     
     compCount = getTypeCodeComponentCount(typeCode);
     var constrExpParts = new Array(compCount);
-    for (var aa = 0; aa < compCount; ++aa) 
-        constrExpParts[aa] = getScalarTypeValStr(firstCompValue + aa, scalarType);  
-    
-    return getGLSLArgumentType(typeCode, targetType) + "(" + constrExpParts.join(", ") + ");"; 
+    for (var aa = 0; aa < compCount; ++aa)
+        constrExpParts[aa] = getScalarTypeValStr(firstCompValue + aa, scalarType);
+
+    return getGLSLArgumentType(typeCode, targetType) + "(" + constrExpParts.join(", ") + ");";
   }
 }
 
@@ -290,17 +290,17 @@ function getComponentSelectorExpStr(targetType, compIx) {
     var colRowIx = getColRowIndexFromLinearIndex(compIx, getGLSLColumnSize(targetType));
     return "v[" + colRowIx.colIx + "][" + colRowIx.rowIx + "]";
   }
-  else 
+  else
     return "v[" + compIx + "]";
 }
-    
-    
+
+
 
 function getComponentValidationExpression(refCompVals, targetType) {
   
-  if (refCompVals.length === 0) 
+  if (refCompVals.length === 0)
     return "false";
-    
+
   var scalarType = getGLSLScalarType(targetType);
   var checkComponentValueParts = new Array(refCompVals.length);
   for (var cc = 0; cc < refCompVals.length; ++cc) {
@@ -314,8 +314,8 @@ function getComponentValidationExpression(refCompVals, targetType) {
       
       checkComponentValueParts[cc] = comp_sel_exp + " == " + val_str;
     }
-  }       
-  
+  }
+
   return checkComponentValueParts.join(" && ");
 }
 
@@ -327,30 +327,30 @@ function getTestShaderParts(targetType, argExp, firstCompValue) {
 
   
   var argsConstrParts = new Array(argExp.length);
-  
+
   
   var typeExpParts = new Array(argExp.length);
   for (var aa = 0; aa < argExp.length; ++aa) {
     var typeCode     = argExp[aa];
     var argCompCount = getTypeCodeComponentCount(typeCode);
-    var argName      = "a" + aa; 
+    var argName      = "a" + aa;
     var argType      = getGLSLArgumentType(typeCode, targetType);
     var argConstrExp = argType + " " + argName + " = " + getComponentSequenceConstructorExpression(typeCode, firstCompValue, targetType);
-    
+
     
     
     argsListParts[aa] = ((aa > 0) ? "  " : "") + argConstrExp;
-      
+
     
     argsConstrParts[aa] = argName;
-    
+
     
     typeExpParts[aa] = argType;
 
     
     firstCompValue += argCompCount;
   }
-  
+
   return {
     argsList:   argsListParts.join("\n") + "\n",
     argsConstr: argsConstrParts.join(", "),
@@ -366,7 +366,7 @@ function getArrayWithIdenticalValues(size, val) {
   var matArray = new Array(size);
   for (var aa = 0; aa < size; ++aa)
     matArray[aa] = val;
-  
+
   return matArray;
 }
 
@@ -376,7 +376,7 @@ function getArrayWithIncreasingValues(size, start) {
   var matArray = new Array(size);
   for (var aa = 0; aa < size; ++aa)
     matArray[aa] = start + aa;
-  
+
   return matArray;
 }
 
@@ -394,7 +394,7 @@ function matCompArraySetDiagonal(matArray, diagVal) {
     dIx += (colSize + 1);
   }
   while (dIx < colSize * colSize);
-  
+
   return matArray;
 }
 
@@ -405,46 +405,46 @@ function matCompArrayCreateDiagonalMatrix(colSize, diagVal) {
   var matArray = new Array(size);
   for (var aa = 0; aa < size; ++aa)
     matArray[aa] = 0;
-  
-  return matCompArraySetDiagonal(matArray, diagVal);  
+
+  return matCompArraySetDiagonal(matArray, diagVal);
 }
 
 
 
 
 function getColRowIndexFromLinearIndex(linIx, colSize) {
-  return { 
+  return {
     colIx: Math.floor(linIx / colSize),
     rowIx: linIx % colSize
   };
-}     
-  
-  
+}
+
+
 
 function getLinearIndexFromColRowIndex(rowColIx, colSize) {
   return rowColIx.colIx * colSize + rowColIx.rowIx;
 }
-  
-  
+
+
 
 function matCompArraySetMatrixFromMatrix(dstColSize, srcMatArray) {
   
   var dstMatArray = matCompArrayCreateDiagonalMatrix(dstColSize, 1);
-  
+
   var srcColSize = Math.round(Math.sqrt(srcMatArray.length));
-      
+
   for (var c_ix = 0; c_ix < srcMatArray.length; ++c_ix) {
     var srcMatIx = getColRowIndexFromLinearIndex(c_ix, srcColSize);
-    if (srcMatIx.colIx < dstColSize && srcMatIx.rowIx < dstColSize) { 
+    if (srcMatIx.colIx < dstColSize && srcMatIx.rowIx < dstColSize) {
       
       dstMatArray[getLinearIndexFromColRowIndex(srcMatIx, dstColSize)] = srcMatArray[c_ix];
-    } 
-  }      
-     
-  return dstMatArray;    
+    }
+  }
+
+  return dstMatArray;
 }
 
-  
+
 
 
 function getConstructorExpressionInfo(targetType, argExp, firstCompValue) {
@@ -452,15 +452,15 @@ function getConstructorExpressionInfo(targetType, argExp, firstCompValue) {
   var argCompCounts = new Array(argExp.length);
   for (var aa = 0; aa < argExp.length; ++aa) {
     argCompCounts[aa] = getTypeCodeComponentCount(argExp[aa]);
-    argCompCountsSum += argCompCounts[aa]; 
+    argCompCountsSum += argCompCounts[aa];
   }
-  
-  var targetCompCount = getGLSLTypeComponentCount(targetType); 
+
+  var targetCompCount = getGLSLTypeComponentCount(targetType);
 
   var refCompVals;
   var testMsg;
-  var valid;  
-  
+  var valid;
+
   if (argCompCountsSum === 0) {
     
     refCompVals = [];
@@ -468,7 +468,7 @@ function getConstructorExpressionInfo(targetType, argExp, firstCompValue) {
     valid       = false;
   }
   else {
-    if (isGLSLTypeVector(targetType)) {  
+    if (isGLSLTypeVector(targetType)) {
       if (argCompCountsSum === 1) {
         
         
@@ -488,22 +488,22 @@ function getConstructorExpressionInfo(targetType, argExp, firstCompValue) {
           
           
           var lastArgFirstCompIx = argCompCountsSum - argCompCounts[argCompCounts.length - 1];
-          
+
           if (lastArgFirstCompIx < targetCompCount) {
             
             refCompVals = getArrayWithIncreasingValues(targetCompCount, firstCompValue);
             testMsg     = "valid";
             valid       = true;
           }
-          else { 
+          else {
             
             refCompVals = [];
             testMsg     = "invalid (unused argument)";
             valid       = false;
-          }      
+          }
         }
       }
-    }    
+    }
     else {
       
       if (argCompCountsSum === 1) {
@@ -512,14 +512,14 @@ function getConstructorExpressionInfo(targetType, argExp, firstCompValue) {
         
         refCompVals = matCompArrayCreateDiagonalMatrix(Math.round(Math.sqrt(targetCompCount)), firstCompValue);
         testMsg     = "valid (diagonal components set to the same value, off-diagonal components set to zero)";
-        valid       = true;    
+        valid       = true;
       }
       else {
         
         if (argExp.length === 1 && argExp[0][0] === "m") {
           
           var dstColSize = getGLSLColumnSize(targetType);
-          refCompVals = matCompArraySetMatrixFromMatrix(dstColSize, getArrayWithIncreasingValues(getTypeCodeComponentCount(argExp[0]), firstCompValue)); 
+          refCompVals = matCompArraySetMatrixFromMatrix(dstColSize, getArrayWithIncreasingValues(getTypeCodeComponentCount(argExp[0]), firstCompValue));
           testMsg     = "valid, components at corresponding col, row indices are set from argument, other components are set from identity matrix";
           valid       = true;
         }
@@ -528,10 +528,10 @@ function getConstructorExpressionInfo(targetType, argExp, firstCompValue) {
           
           
           var matFound = false;
-          for (var aa = 0; aa < argExp.length; ++aa) 
+          for (var aa = 0; aa < argExp.length; ++aa)
             if (argExp[aa][0] === "m")
               matFound = true;
-          
+
           if (matFound) {
             refCompVals = [];
             testMsg     = "invalid, argument list greater than one contains matrix type";
@@ -547,32 +547,32 @@ function getConstructorExpressionInfo(targetType, argExp, firstCompValue) {
               
               
               var lastArgFirstCompIx = argCompCountsSum - argCompCounts[argCompCounts.length - 1];
-              
+
               if (lastArgFirstCompIx < targetCompCount) {
                 
                 refCompVals = getArrayWithIncreasingValues(targetCompCount, firstCompValue);
                 testMsg     = "valid";
                 valid       = true;
               }
-              else { 
+              else {
                 
                 refCompVals = [];
                 testMsg     = "invalid (unused argument)";
                 valid       = false;
-              }      
+              }
             }
           }
         }
       }
     }
   }
-    
+
   
   if (testMsg == null || valid == null) {
-    wtu.error("GLSLConstructorTestsGenerator.getConstructorExpressionInfo(), info not set");        
+    wtu.error("GLSLConstructorTestsGenerator.getConstructorExpressionInfo(), info not set");
     debugger;
   }
-  
+
   return {
     refCompVals: refCompVals,
     testMsg:     testMsg,
@@ -589,18 +589,18 @@ function getVertexAndFragmentShaderTestCase(targetType, argExp) {
     
     firstCompValue = 2;
   }
-   
+
   var argCode = getTestShaderParts          (targetType, argExp, firstCompValue);
   var expInfo = getConstructorExpressionInfo(targetType, argExp, firstCompValue);
-    
+
   var substitutions = {
-    type:          targetType, 
+    type:          targetType,
     errorBound:    (getGLSLScalarType(targetType) === "float") ? "const float errorBound = 1.0E-5;" : "",
     argsList:      argCode.argsList,
-    argsConstr:    argCode.argsConstr, 
+    argsConstr:    argCode.argsConstr,
     checkCompVals: getComponentValidationExpression(expInfo.refCompVals, targetType)
   };
-    
+
   return [ {
       
       vShaderSource:  wtu.replaceParams(constructorVertexTemplate, substitutions),
@@ -618,7 +618,7 @@ function getVertexAndFragmentShaderTestCase(targetType, argExp) {
       passMsg:        "Fragment shader : " + argCode.typeExp + ", " + expInfo.testMsg,
       render:         expInfo.valid
     }
-  ];  
+  ];
 }
 
 
@@ -659,25 +659,25 @@ function getNextArgumentSequence(inSeq) {
         nextSeq[aa] = currArg;
       }
     }
-        
+
     if (overflow) {
-      nextSeq.push(typeCodeIncrementer.first);                        
-    }    
+      nextSeq.push(typeCodeIncrementer.first);
+    }
   }
-     
-  return nextSeq;            
+
+  return nextSeq;
 }
- 
+
 
 
 function areArgExpEqual(expA, expB) {
   if (expA.length !== expB.length)
     return false;
-        
-  for (var aa = 0; aa < expA.length; ++aa) 
+
+  for (var aa = 0; aa < expA.length; ++aa)
     if (expA[aa] !== expB[aa])
       return false;
-            
+
   return true;
 }
 
@@ -687,7 +687,7 @@ function areArgExpEqual(expA, expB) {
 
 function isArgExpSmallerOrEqual(argExpA, argExpB) {
   var aLen = argExpA.length;
-  var bLen = argExpB.length; 
+  var bLen = argExpB.length;
   if (aLen !== bLen)
     return (aLen < bLen);
 
@@ -695,7 +695,7 @@ function isArgExpSmallerOrEqual(argExpA, argExpB) {
   for (var aa = aLen - 1; aa >= 0; --aa) {
     var argA = argExpA[aa];
     var argB = argExpB[aa];
-       
+
     if (argA !== argB) {
       var aOrder = typeCodeIncrementer[argA].order;
       var bOrder = typeCodeIncrementer[argB].order;
@@ -703,7 +703,7 @@ function isArgExpSmallerOrEqual(argExpA, argExpB) {
         return (aOrder < bOrder);
     }
   }
-  
+
   
   return true;
 }
@@ -713,7 +713,7 @@ function isArgExpSmallerOrEqual(argExpA, argExpB) {
 
 function getNextArgumentExpression(testExp, testSet) {
   var testInterval = testSet[testExp.ix];
-    
+
   if (areArgExpEqual(testExp.argExp, testInterval[1])) {
     
     if (testExp.ix === testSet.length - 1) {
@@ -723,7 +723,7 @@ function getNextArgumentExpression(testExp, testSet) {
     else {
       
       var nextIx = testExp.ix + 1;
-      return { ix: nextIx, argExp: testSet[nextIx][0] };              
+      return { ix: nextIx, argExp: testSet[nextIx][0] };
     }
   }
   else {
@@ -739,21 +739,21 @@ function convertCsvToArray(str) {
   function checkInput(el, ix, arr) {
     var typeCode = el.trim();
     if (!(typeCode in typeCodeIncrementer) && typeCode !== "first") {
-      wtu.error("GLSLConstructorTestsGenerator.convertCsvToArray(), unknown type code" + typeCode);        
-      debugger;      
+      wtu.error("GLSLConstructorTestsGenerator.convertCsvToArray(), unknown type code" + typeCode);
+      debugger;
     }
 
-    arr[ix] = typeCode;    
-  }  
-  
+    arr[ix] = typeCode;
+  }
+
   var spArr = str.split(",");
-  
+
   
   if (spArr.length === 1 && spArr[0].trim() === "")
     spArr = [];
-    
+
   spArr.forEach(checkInput);
-  
+
   return spArr;
 }
 
@@ -769,13 +769,13 @@ function processInputs(testSequences) {
 
     
     if (!isArgExpSmallerOrEqual(begin, end)) {
-      wtu.error("GLSLConstructorTestsGenerator.processInputs(), interval not valid");        
-      debugger;      
+      wtu.error("GLSLConstructorTestsGenerator.processInputs(), interval not valid");
+      debugger;
     }
-    
-    testSet[tt] = [ begin, end ];    
+
+    testSet[tt] = [ begin, end ];
   }
-  
+
   return testSet;
 }
 
@@ -793,11 +793,11 @@ function getConstructorTests(targetType, testSequences) {
   
   var testSet = processInputs(testSequences);
   var testExp = { ix: 0, argExp: testSet[0][0] };
-  
+
   do {
     
     testInfos = testInfos.concat(getVertexAndFragmentShaderTestCase(targetType, testExp.argExp));
-     
+
     
     testExp = getNextArgumentExpression(testExp, testSet);
   }
@@ -805,7 +805,7 @@ function getConstructorTests(targetType, testSequences) {
 
   return testInfos;
 }
-  
+
 
 
 
@@ -816,14 +816,14 @@ function getDefaultTestSet(targetType) {
     case "bvec2":
       return [
         
-        " - m4", 
-        
+        " - m4",
+
         
         "s, s - m4, s",
-        
+
         
         "s, v2", "s, v3", "s, v4", "s, m2", "s, m3", "s, m4",
-        
+
         
         "s, s, s"
       ];
@@ -833,20 +833,20 @@ function getDefaultTestSet(targetType) {
     case "bvec3":
       return [
         
-        " - m4", 
-        
+        " - m4",
+
         
         "s, s - m4, s",
-        
+
         
         "s, v2", "s, v3", "s, v4", "s, m2", "s, m3", "s, m4",
-        
+
         
         "s, s, s - m4, s, s",
-        
+
         
         "s, s, v2", "s, s, v3", "s, s, v4", "s, s, m2", "s, s, m3", "s, s, m4",
-        
+
         
         "s, s, s, s"
       ];
@@ -857,26 +857,26 @@ function getDefaultTestSet(targetType) {
     case "mat2":
       return [
         
-        " - m4", 
-        
+        " - m4",
+
         
         "s, s - m4, s",
-        
+
         
         "s, v2", "s, v3", "s, v4", "s, m2", "s, m3", "s, m4",
-        
+
         
         "s, s, s - m4, s, s",
-        
+
         
         "s, s, v2", "s, s, v3", "s, s, v4", "s, s, m2", "s, s, m3", "s, s, m4",
 
         
         "s, s, s, s - m4, s, s, s",
-        
+
         
         "s, s, s, v2", "s, s, s, v3", "s, s, s, v4", "s, s, s, m2", "s, s, s, m3", "s, s, s, m4",
-        
+
         
         "s, s, s, s, s"
       ];
@@ -885,17 +885,17 @@ function getDefaultTestSet(targetType) {
     case "mat4":
       return [
         
-        " - m4", 
-        
+        " - m4",
+
         
         "s, s - m4, s",
-        
+
         
         "s, v2", "s, v3", "s, v4", "s, m2", "s, m3", "s, m4",
 
         
         "v4, s, v4", "v4, s, v3, v2", "v4, v4, v3, v2", "v4, v4, v4, v4", "v2, v2, v2, v2, v2", "v2, v2, v2, v2, v2, v2, v2, v2",
-        "v3, v3, v3", "v3, v3, v3, s", "v3, v3, v3, v3, v3, s", "v3, v3, v3, v3, v3, s, s",         
+        "v3, v3, v3", "v3, v3, v3, s", "v3, v3, v3, v3, v3, s", "v3, v3, v3, v3, v3, s, s",
       ];
   }
 }

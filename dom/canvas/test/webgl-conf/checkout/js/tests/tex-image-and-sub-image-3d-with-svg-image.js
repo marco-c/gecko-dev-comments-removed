@@ -79,7 +79,8 @@ function generateTest(internalFormat, pixelFormat, pixelType, prologue, resource
         
         gl.texImage3D(bindingTarget, 0, gl[internalFormat], image.width, image.height, 1 , 0,
                       gl[pixelFormat], gl[pixelType], null);
-        gl.texSubImage3D(bindingTarget, 0, 0, 0, 0, gl[pixelFormat], gl[pixelType], image);
+        gl.texSubImage3D(bindingTarget, 0, 0, 0, 0, image.width, image.height, 1 ,
+                         gl[pixelFormat], gl[pixelType], image);
 
         
         wtu.clearAndDrawUnitQuad(gl, [0, 0, 0, 255]);

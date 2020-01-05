@@ -372,6 +372,14 @@ var deMath = framework.delibs.debase.deMath;
         }
     };
 
+    es3fInstancedRenderingTests.InstancedRenderingCase.prototype.deinit = function() {
+        var numVertexAttribArrays =  (gl.getParameter(gl.MAX_VERTEX_ATTRIBS));
+        for (var idx = 0; idx < numVertexAttribArrays; idx++) {
+            gl.disableVertexAttribArray(idx);
+            gl.vertexAttribDivisor(idx, 0);
+        }
+    };
+
     es3fInstancedRenderingTests.InstancedRenderingCase.prototype.iterate = function() {
          var width = Math.min(gl.drawingBufferWidth, es3fInstancedRenderingTests.MAX_RENDER_WIDTH);
          var height = Math.min(gl.drawingBufferHeight, es3fInstancedRenderingTests.MAX_RENDER_HEIGHT);

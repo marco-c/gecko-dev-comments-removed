@@ -202,7 +202,7 @@ goog.scope(function() {
             'int', 
             'unsigned_int', 
             'half', 
-            'usigned_int2_10_10_10', 
+            'unsigned_int2_10_10_10', 
             'int2_10_10_10' 
         ];
         DE_ASSERT(types.length == Object.keys(glsVertexArrayTests.deArray.InputType).length);

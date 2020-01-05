@@ -480,7 +480,7 @@ goog.scope(function() {
 
         
         var result = new ArrayBuffer(outputBufferStride * numValues);
-        gl.getBufferSubData(gl.TRANSFORM_FEEDBACK_BUFFER, 0, result);
+        gl.getBufferSubData(gl.TRANSFORM_FEEDBACK_BUFFER, 0, new Uint8Array(result));
          var curOffset = 0; 
 
         for (var outputNdx = 0; outputNdx < this.m_outputs.length; outputNdx++) {

@@ -134,9 +134,17 @@ var DE_ASSERT = function(x) {
             
              var supportedSampleCounts = es3fFboTestCase.querySampleCounts(sizedFormat);
             var supported = Array.prototype.slice.call(supportedSampleCounts);
-            if (supported.indexOf(numSamples) == -1)
-                throw new Error('Sample count not supported');
+            if (supported.indexOf(numSamples) == -1) {
+                if (minSampleCount == 0 || numSamples > gl.getParameter(gl.MAX_SAMPLES)) {
+                    checkMessage(false, "Sample count not supported, but it is allowed.");
+                    return false;
+                } else {
+                    throw new Error('Sample count not supported');
+                }
+            }
+            return true;
         }
+        return true;
     };
 
     
@@ -202,8 +210,8 @@ var DE_ASSERT = function(x) {
          var result = new tcuSurface.Surface(width, height);
 
         
-        if (this.preCheck)
-            this.preCheck();
+        if (this.preCheck && !this.preCheck())
+            return tcuTestCase.IterateResult.STOP;
 
         
         try {
@@ -292,7 +300,9 @@ var DE_ASSERT = function(x) {
             gl.clearColor(0.0, 0.0, 0.0, 0.0);
             gl.clearDepth(1.0);
             gl.clearStencil(0.0);
-            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
+            
+            
+            
         }
     };
 

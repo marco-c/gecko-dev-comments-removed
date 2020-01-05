@@ -3999,36 +3999,6 @@ WebGL2RenderingContextBase.TRANSFORM_FEEDBACK_ACTIVE;
 WebGL2RenderingContextBase.TRANSFORM_FEEDBACK_BINDING;
 
 
-WebGL2RenderingContextBase.COMPRESSED_R11_EAC;
-
-
-WebGL2RenderingContextBase.COMPRESSED_SIGNED_R11_EAC;
-
-
-WebGL2RenderingContextBase.COMPRESSED_RG11_EAC;
-
-
-WebGL2RenderingContextBase.COMPRESSED_SIGNED_RG11_EAC;
-
-
-WebGL2RenderingContextBase.COMPRESSED_RGB8_ETC2;
-
-
-WebGL2RenderingContextBase.COMPRESSED_SRGB8_ETC2;
-
-
-WebGL2RenderingContextBase.COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_ETC2;
-
-
-WebGL2RenderingContextBase.COMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_ETC2;
-
-
-WebGL2RenderingContextBase.COMPRESSED_RGBA8_ETC2_EAC;
-
-
-WebGL2RenderingContextBase.COMPRESSED_SRGB8_ALPHA8_ETC2_EAC;
-
-
 WebGL2RenderingContextBase.TEXTURE_IMMUTABLE_FORMAT;
 
 
@@ -4826,36 +4796,6 @@ WebGL2RenderingContextBase.prototype.TRANSFORM_FEEDBACK_ACTIVE;
 
 
 WebGL2RenderingContextBase.prototype.TRANSFORM_FEEDBACK_BINDING;
-
-
-WebGL2RenderingContextBase.prototype.COMPRESSED_R11_EAC;
-
-
-WebGL2RenderingContextBase.prototype.COMPRESSED_SIGNED_R11_EAC;
-
-
-WebGL2RenderingContextBase.prototype.COMPRESSED_RG11_EAC;
-
-
-WebGL2RenderingContextBase.prototype.COMPRESSED_SIGNED_RG11_EAC;
-
-
-WebGL2RenderingContextBase.prototype.COMPRESSED_RGB8_ETC2;
-
-
-WebGL2RenderingContextBase.prototype.COMPRESSED_SRGB8_ETC2;
-
-
-WebGL2RenderingContextBase.prototype.COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_ETC2;
-
-
-WebGL2RenderingContextBase.prototype.COMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_ETC2;
-
-
-WebGL2RenderingContextBase.prototype.COMPRESSED_RGBA8_ETC2_EAC;
-
-
-WebGL2RenderingContextBase.prototype.COMPRESSED_SRGB8_ALPHA8_ETC2_EAC;
 
 
 WebGL2RenderingContextBase.prototype.TEXTURE_IMMUTABLE_FORMAT;

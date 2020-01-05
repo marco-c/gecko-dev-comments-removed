@@ -673,7 +673,7 @@ var gluTextureUtil = framework.opengl.gluTextureUtil;
         }
     };
 
-    es3fPrimitiveRestartTests.run = function(context) {
+    es3fPrimitiveRestartTests.run = function(context, range) {
         gl = context;
         
         var testName = 'primitive_restart';
@@ -690,6 +690,8 @@ var gluTextureUtil = framework.opengl.gluTextureUtil;
         try {
             
             es3fPrimitiveRestartTests.init();
+            if (range)
+                state.setRange(range);
             
             tcuTestCase.runTestCases();
         }

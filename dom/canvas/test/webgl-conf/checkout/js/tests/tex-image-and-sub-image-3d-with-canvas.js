@@ -129,7 +129,8 @@ function generateTest(internalFormat, pixelFormat, pixelType, prologue, resource
         
         gl.texImage3D(bindingTarget, 0, gl[internalFormat], canvas.width, canvas.height, 1 , 0,
                       gl[pixelFormat], gl[pixelType], null);
-        gl.texSubImage3D(bindingTarget, 0, 0, 0, 0, gl[pixelFormat], gl[pixelType], canvas);
+        gl.texSubImage3D(bindingTarget, 0, 0, 0, 0, canvas.width, canvas.height, 1 ,
+                         gl[pixelFormat], gl[pixelType], canvas);
 
         var width = gl.canvas.width;
         var height = gl.canvas.height;

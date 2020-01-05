@@ -618,7 +618,7 @@ goog.scope(function() {
          var rounded = (q > 0.5) ? (truncated + 1) : 
             (q == 0.5 && (truncated % 2 != 0)) ? (truncated + 1) : 
             truncated; 
-        return rounded === 0 && v < 0 ? -0 : rounded;
+        return rounded;
     };
 
     
@@ -689,7 +689,6 @@ goog.scope(function() {
     es3fShaderCommonFunctionTests.RoundEvenCase.prototype.compare = function(inputs, outputs) {
          var type = this.m_spec.inputs[0].varType.getBasicType();
          var precision = this.m_spec.inputs[0].varType.getPrecision();
-         var hasSignedZero = es3fShaderCommonFunctionTests.supportsSignedZero(precision);
          var scalarSize = gluShaderUtil.getDataTypeScalarSize(type);
          var in0;
          var out0;
@@ -701,9 +700,7 @@ goog.scope(function() {
                 out0 = outputs[0][compNdx];
                  var ref = es3fShaderCommonFunctionTests.roundEven(in0);
 
-                 var ulpDiff = hasSignedZero ?
-                    es3fShaderCommonFunctionTests.getUlpDiff(out0, ref) :
-                    es3fShaderCommonFunctionTests.getUlpDiffIgnoreZeroSign(out0, ref);
+                 var ulpDiff = es3fShaderCommonFunctionTests.getUlpDiffIgnoreZeroSign(out0, ref);
 
                 if (ulpDiff > 0) {
                     this.m_failMsg += 'Expected [' + compNdx + '] = ' + ref + ', got ULP diff ' + ulpDiff;
