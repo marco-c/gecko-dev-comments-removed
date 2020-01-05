@@ -2,6 +2,8 @@
 
 
 
+use std::rc::Rc;
+
 extern mod freetype;
 extern mod fontconfig;
 
@@ -34,7 +36,7 @@ impl Drop for FreeTypeLibraryHandle {
 }
 
 pub struct FreeTypeFontContextHandle {
-    ctx: @FreeTypeLibraryHandle,
+    ctx: Rc<FreeTypeLibraryHandle>,
 }
 
 pub impl FreeTypeFontContextHandle {
@@ -44,7 +46,7 @@ pub impl FreeTypeFontContextHandle {
         if !result.succeeded() { fail!(); }
 
         FreeTypeFontContextHandle {
-            ctx: @FreeTypeLibraryHandle { ctx: ctx },
+            ctx: Rc::new(FreeTypeLibraryHandle { ctx: ctx }),
         }
     }
 }

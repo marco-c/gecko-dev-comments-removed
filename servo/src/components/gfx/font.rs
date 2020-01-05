@@ -381,7 +381,7 @@ impl Font {
         }
 
         let azglyph_buf_len = azglyphs.len();
-        if azglyph_buf_len == 0 { return; } // Otherwise the Quartz backend will assert.
+        if azglyph_buf_len == 0 { return; } 
 
         let glyphbuf = struct__AzGlyphBuffer {
             mGlyphs: azglyphs.as_ptr(),
@@ -389,7 +389,7 @@ impl Font {
         };
 
         unsafe {
-            // TODO(Issue #64): this call needs to move into azure_hl.rs
+            
             AzDrawTargetFillGlyphs(target.azure_draw_target,
                                    azfontref,
                                    &glyphbuf,
@@ -400,8 +400,8 @@ impl Font {
     }
 
     pub fn measure_text(&self, run: &TextRun, range: &Range) -> RunMetrics {
-        // TODO(Issue #199): alter advance direction for RTL
-        // TODO(Issue #98): using inter-char and inter-word spacing settings  when measuring text
+        
+        
         let mut advance = Au(0);
         for (glyphs, _offset, slice_range) in run.iter_slices_for_range(range) {
             for (_i, glyph) in glyphs.iter_glyphs_for_char_range(&slice_range) {
@@ -424,7 +424,7 @@ impl Font {
 
     pub fn shape_text(&mut self, text: ~str, is_whitespace: bool) -> Arc<GlyphStore> {
 
-        //FIXME (ksh8281)
+        
         self.make_shaper();
         let shaper = &self.shaper;
         self.shape_cache.find_or_create(&text, |txt| {
@@ -447,78 +447,9 @@ impl Font {
         self.glyph_advance_cache.find_or_create(&glyph, |glyph| {
             match handle.glyph_h_advance(*glyph) {
                 Some(adv) => adv,
-                None => /* FIXME: Need fallback strategy */ 10f64 as FractionalPixel
+                None =>  10f64 as FractionalPixel
             }
         })
     }
 }
 
-/*fn should_destruct_on_fail_without_leaking() {
-    #[test];
-    #[should_fail];
-
-    let fctx = @FontContext();
-    let matcher = @FontMatcher(fctx);
-    let _font = matcher.get_test_font();
-    fail;
-}
-
-fn should_get_glyph_indexes() {
-    #[test];
-
-    let fctx = @FontContext();
-    let matcher = @FontMatcher(fctx);
-    let font = matcher.get_test_font();
-    let glyph_idx = font.glyph_index('w');
-    assert!(glyph_idx == Some(40u as GlyphIndex));
-}
-
-fn should_get_glyph_advance() {
-    #[test];
-    #[ignore];
-
-    let fctx = @FontContext();
-    let matcher = @FontMatcher(fctx);
-    let font = matcher.get_test_font();
-    let x = font.glyph_h_advance(40u as GlyphIndex);
-    assert!(x == 15f || x == 16f);
-}
-
-// Testing thread safety
-fn should_get_glyph_advance_stress() {
-    #[test];
-    #[ignore];
-
-    let mut ports = ~[];
-
-    for iter::repeat(100) {
-        let (chan, port) = pipes::stream();
-        ports += [@port];
-        spawn_named("should_get_glyph_advance_stress") {
-            let fctx = @FontContext();
-            let matcher = @FontMatcher(fctx);
-            let _font = matcher.get_test_font();
-            let x = font.glyph_h_advance(40u as GlyphIndex);
-            assert!(x == 15f || x == 16f);
-            chan.send(());
-        }
-    }
-
-    for ports.each |port| {
-        port.recv();
-    }
-}
-
-fn should_be_able_to_create_instances_in_multiple_threads() {
-    #[test];
-
-    for iter::repeat(10u) {
-        do task::spawn {
-            let fctx = @FontContext();
-            let matcher = @FontMatcher(fctx);
-            let _font = matcher.get_test_font();
-        }
-    }
-}
-
-*/
