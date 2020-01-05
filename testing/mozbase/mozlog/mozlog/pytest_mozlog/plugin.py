@@ -73,27 +73,24 @@ class MozLog(object):
         status = expected = 'PASS'
         message = stack = None
         if hasattr(report, 'wasxfail'):
-            
-            
-            
-            
-            
-            
             expected = 'FAIL'
-            if report.skipped:  
-                status = 'FAIL'
-        elif report.failed:
+        if report.failed:
             status = 'FAIL' if report.when == 'call' else 'ERROR'
-            try:
-                crash = report.longrepr.reprcrash  
-                message = "{0} (line {1})".format(crash.message, crash.lineno)
-                stack = report.longrepr.reprtraceback
-            except AttributeError:
+        if report.skipped:
+            status = 'SKIP' if not hasattr(report, 'wasxfail') else 'FAIL'
+        if report.longrepr is not None:
+            if isinstance(report.longrepr, basestring):
                 
                 message = stack = report.longrepr
-        elif report.skipped:  
-            status = expected = 'SKIP'
-            message = report.longrepr[-1]  
+            else:
+                try:
+                    
+                    crash = report.longrepr.reprcrash
+                    message = "{0} (line {1})".format(crash.message, crash.lineno)
+                    stack = report.longrepr.reprtraceback
+                except AttributeError:
+                    
+                    message = report.longrepr[-1]
         if status != expected or expected != 'PASS':
             self.results[test] = (status, expected, message, stack)
         if report.when == 'teardown':
