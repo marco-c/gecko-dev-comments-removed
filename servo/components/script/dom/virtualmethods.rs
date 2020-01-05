@@ -35,7 +35,8 @@ use dom::document::Document;
 use dom::element::ElementTypeId;
 use dom::event::Event;
 use dom::htmlelement::HTMLElementTypeId;
-use dom::node::{Node, NodeHelpers, NodeTypeId, CloneChildrenFlag};
+use dom::node::{ChildrenMutation, CloneChildrenFlag, Node, NodeHelpers};
+use dom::node::NodeTypeId;
 
 use util::str::DOMString;
 
@@ -98,9 +99,9 @@ pub trait VirtualMethods {
     }
 
     
-    fn child_inserted(&self, child: &Node) {
+    fn children_changed(&self, mutation: &ChildrenMutation) {
         if let Some(ref s) = self.super_type() {
-            s.child_inserted(child);
+            s.children_changed(mutation);
         }
     }
 
