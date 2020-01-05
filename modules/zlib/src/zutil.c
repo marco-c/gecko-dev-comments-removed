@@ -10,21 +10,18 @@
 #  include "gzguts.h"
 #endif
 
-#ifndef NO_DUMMY_DECL
-struct internal_state      {int dummy;}; 
-#endif
-
 z_const char * const z_errmsg[10] = {
-"need dictionary",     
-"stream end",          
-"",                    
-"file error",          
-"stream error",        
-"data error",          
-"insufficient memory", 
-"buffer error",        
-"incompatible version",
-""};
+    (z_const char *)"need dictionary",     
+    (z_const char *)"stream end",          
+    (z_const char *)"",                    
+    (z_const char *)"file error",          
+    (z_const char *)"stream error",        
+    (z_const char *)"data error",          
+    (z_const char *)"insufficient memory", 
+    (z_const char *)"buffer error",        
+    (z_const char *)"incompatible version",
+    (z_const char *)""
+};
 
 
 const char * ZEXPORT zlibVersion()
@@ -61,7 +58,7 @@ uLong ZEXPORT zlibCompileFlags()
     case 8:     flags += 2 << 6;        break;
     default:    flags += 3 << 6;
     }
-#ifdef DEBUG
+#ifdef ZLIB_DEBUG
     flags += 1 << 8;
 #endif
 #if defined(ASMV) || defined(ASMINF)
@@ -115,8 +112,8 @@ uLong ZEXPORT zlibCompileFlags()
     return flags;
 }
 
-#ifdef DEBUG
-
+#ifdef ZLIB_DEBUG
+#include <stdlib.h>
 #  ifndef verbose
 #    define verbose 0
 #  endif
@@ -219,8 +216,10 @@ local ptr_table table[MAX_PTR];
 
 voidpf ZLIB_INTERNAL zcalloc (voidpf opaque, unsigned items, unsigned size)
 {
-    voidpf buf = opaque; 
+    voidpf buf;
     ulg bsize = (ulg)items*size;
+
+    (void)opaque;
 
     
 
@@ -244,6 +243,9 @@ voidpf ZLIB_INTERNAL zcalloc (voidpf opaque, unsigned items, unsigned size)
 void ZLIB_INTERNAL zcfree (voidpf opaque, voidpf ptr)
 {
     int n;
+
+    (void)opaque;
+
     if (*(ush*)&ptr != 0) { 
         farfree(ptr);
         return;
@@ -259,7 +261,6 @@ void ZLIB_INTERNAL zcfree (voidpf opaque, voidpf ptr)
         next_ptr--;
         return;
     }
-    ptr = opaque; 
     Assert(0, "zcfree: ptr not found");
 }
 
@@ -278,13 +279,13 @@ void ZLIB_INTERNAL zcfree (voidpf opaque, voidpf ptr)
 
 voidpf ZLIB_INTERNAL zcalloc (voidpf opaque, uInt items, uInt size)
 {
-    if (opaque) opaque = 0; 
+    (void)opaque;
     return _halloc((long)items, size);
 }
 
 void ZLIB_INTERNAL zcfree (voidpf opaque, voidpf ptr)
 {
-    if (opaque) opaque = 0; 
+    (void)opaque;
     _hfree(ptr);
 }
 
@@ -306,7 +307,7 @@ voidpf ZLIB_INTERNAL zcalloc (opaque, items, size)
     unsigned items;
     unsigned size;
 {
-    if (opaque) items += size - size; 
+    (void)opaque;
     return sizeof(uInt) > 2 ? (voidpf)malloc(items * size) :
                               (voidpf)calloc(items, size);
 }
@@ -315,8 +316,8 @@ void ZLIB_INTERNAL zcfree (opaque, ptr)
     voidpf opaque;
     voidpf ptr;
 {
+    (void)opaque;
     free(ptr);
-    if (opaque) return; 
 }
 
 #endif 

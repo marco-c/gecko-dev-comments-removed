@@ -5,7 +5,7 @@
 
 #include "gzguts.h"
 
-#if defined(_WIN32) && !defined(__BORLANDC__)
+#if defined(_WIN32) && !defined(__BORLANDC__) && !defined(__MINGW32__)
 #  define LSEEK _lseeki64
 #else
 #if defined(_LARGEFILE64_SOURCE) && _LFS64_LARGEFILE-0
@@ -94,7 +94,7 @@ local gzFile gz_open(path, fd, mode)
     const char *mode;
 {
     gz_statep state;
-    size_t len;
+    z_size_t len;
     int oflag;
 #ifdef O_CLOEXEC
     int cloexec = 0;
@@ -188,10 +188,10 @@ local gzFile gz_open(path, fd, mode)
     }
 
     
-#ifdef _WIN32
+#ifdef WIDECHAR
     if (fd == -2) {
         len = wcstombs(NULL, path, 0);
-        if (len == (size_t)-1)
+        if (len == (z_size_t)-1)
             len = 0;
     }
     else
@@ -202,7 +202,7 @@ local gzFile gz_open(path, fd, mode)
         free(state);
         return NULL;
     }
-#ifdef _WIN32
+#ifdef WIDECHAR
     if (fd == -2)
         if (len)
             wcstombs(state->path, path, len + 1);
@@ -211,7 +211,7 @@ local gzFile gz_open(path, fd, mode)
     else
 #endif
 #if !defined(NO_snprintf) && !defined(NO_vsnprintf)
-        snprintf(state->path, len + 1, "%s", (const char *)path);
+        (void)snprintf(state->path, len + 1, "%s", (const char *)path);
 #else
         strcpy(state->path, path);
 #endif
@@ -239,7 +239,7 @@ local gzFile gz_open(path, fd, mode)
 
     
     state->fd = fd > -1 ? fd : (
-#ifdef _WIN32
+#ifdef WIDECHAR
         fd == -2 ? _wopen(path, oflag, 0666) :
 #endif
         open((const char *)path, oflag, 0666));
@@ -248,8 +248,10 @@ local gzFile gz_open(path, fd, mode)
         free(state);
         return NULL;
     }
-    if (state->mode == GZ_APPEND)
+    if (state->mode == GZ_APPEND) {
+        LSEEK(state->fd, 0, SEEK_END);  
         state->mode = GZ_WRITE;         
+    }
 
     
     if (state->mode == GZ_READ) {
@@ -291,7 +293,7 @@ gzFile ZEXPORT gzdopen(fd, mode)
     if (fd == -1 || (path = (char *)malloc(7 + 3 * sizeof(int))) == NULL)
         return NULL;
 #if !defined(NO_snprintf) && !defined(NO_vsnprintf)
-    snprintf(path, 7 + 3 * sizeof(int), "<fd:%d>", fd); 
+    (void)snprintf(path, 7 + 3 * sizeof(int), "<fd:%d>", fd);
 #else
     sprintf(path, "<fd:%d>", fd);   
 #endif
@@ -301,7 +303,7 @@ gzFile ZEXPORT gzdopen(fd, mode)
 }
 
 
-#ifdef _WIN32
+#ifdef WIDECHAR
 gzFile ZEXPORT gzopen_w(path, mode)
     const wchar_t *path;
     const char *mode;
@@ -329,6 +331,8 @@ int ZEXPORT gzbuffer(file, size)
         return -1;
 
     
+    if ((size << 1) < size)
+        return -1;              
     if (size < 2)
         size = 2;               
     state->want = size;
@@ -604,14 +608,13 @@ void ZLIB_INTERNAL gz_error(state, err, msg)
         return;
     }
 #if !defined(NO_snprintf) && !defined(NO_vsnprintf)
-    snprintf(state->msg, strlen(state->path) + strlen(msg) + 3,
-             "%s%s%s", state->path, ": ", msg);
+    (void)snprintf(state->msg, strlen(state->path) + strlen(msg) + 3,
+                   "%s%s%s", state->path, ": ", msg);
 #else
     strcpy(state->msg, state->path);
     strcat(state->msg, ": ");
     strcat(state->msg, msg);
 #endif
-    return;
 }
 
 #ifndef INT_MAX

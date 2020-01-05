@@ -25,6 +25,10 @@
 #  include <stdlib.h>
 #  include <limits.h>
 #endif
+
+#ifndef _POSIX_SOURCE
+#  define _POSIX_SOURCE
+#endif
 #include <fcntl.h>
 
 #ifdef _WIN32
@@ -33,6 +37,10 @@
 
 #if defined(__TURBOC__) || defined(_MSC_VER) || defined(_WIN32)
 #  include <io.h>
+#endif
+
+#if defined(_WIN32) || defined(__CYGWIN__)
+#  define WIDECHAR
 #endif
 
 #ifdef WINAPI_FAMILY
@@ -98,14 +106,15 @@
 
 
 
-
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && _MSC_VER < 1900
 #  define snprintf _snprintf
 #endif
 
 #ifndef local
 #  define local static
 #endif
+
+
 
 
 

@@ -52,7 +52,7 @@
 #include "deflate.h"
 
 const char deflate_copyright[] =
-   " deflate 1.2.8 Copyright 1995-2013 Jean-loup Gailly and Mark Adler ";
+   " deflate 1.2.11 Copyright 1995-2017 Jean-loup Gailly and Mark Adler ";
 
 
 
@@ -73,6 +73,8 @@ typedef enum {
 typedef block_state (*compress_func) OF((deflate_state *s, int flush));
 
 
+local int deflateStateCheck      OF((z_streamp strm));
+local void slide_hash     OF((deflate_state *s));
 local void fill_window    OF((deflate_state *s));
 local block_state deflate_stored OF((deflate_state *s, int flush));
 local block_state deflate_fast   OF((deflate_state *s, int flush));
@@ -84,15 +86,16 @@ local block_state deflate_huff   OF((deflate_state *s, int flush));
 local void lm_init        OF((deflate_state *s));
 local void putShortMSB    OF((deflate_state *s, uInt b));
 local void flush_pending  OF((z_streamp strm));
-local int read_buf        OF((z_streamp strm, Bytef *buf, unsigned size));
+local unsigned read_buf   OF((z_streamp strm, Bytef *buf, unsigned size));
 #ifdef ASMV
+#  pragma message("Assembler code may have bugs -- use at your own risk")
       void match_init OF((void)); 
       uInt longest_match  OF((deflate_state *s, IPos cur_match));
 #else
 local uInt longest_match  OF((deflate_state *s, IPos cur_match));
 #endif
 
-#ifdef DEBUG
+#ifdef ZLIB_DEBUG
 local  void check_match OF((deflate_state *s, IPos start, IPos match,
                             int length));
 #endif
@@ -148,15 +151,8 @@ local const config configuration_table[10] = {
 
 
 
-#define EQUAL 0
 
-
-#ifndef NO_DUMMY_DECL
-struct static_tree_desc_s {int dummy;}; 
-#endif
-
-
-#define RANK(f) (((f) << 1) - ((f) > 4 ? 9 : 0))
+#define RANK(f) (((f) * 2) - ((f) > 4 ? 9 : 0))
 
 
 
@@ -196,6 +192,37 @@ struct static_tree_desc_s {int dummy;};
 #define CLEAR_HASH(s) \
     s->head[s->hash_size-1] = NIL; \
     zmemzero((Bytef *)s->head, (unsigned)(s->hash_size-1)*sizeof(*s->head));
+
+
+
+
+
+
+local void slide_hash(s)
+    deflate_state *s;
+{
+    unsigned n, m;
+    Posf *p;
+    uInt wsize = s->w_size;
+
+    n = s->hash_size;
+    p = &s->head[n];
+    do {
+        m = *--p;
+        *p = (Pos)(m >= wsize ? m - wsize : NIL);
+    } while (--n);
+    n = wsize;
+#ifndef FASTEST
+    p = &s->prev[n];
+    do {
+        m = *--p;
+        *p = (Pos)(m >= wsize ? m - wsize : NIL);
+        
+
+
+    } while (--n);
+#endif
+}
 
 
 int ZEXPORT deflateInit_(strm, level, version, stream_size)
@@ -270,7 +297,7 @@ int ZEXPORT deflateInit2_(strm, level, method, windowBits, memLevel, strategy,
 #endif
     if (memLevel < 1 || memLevel > MAX_MEM_LEVEL || method != Z_DEFLATED ||
         windowBits < 8 || windowBits > 15 || level < 0 || level > 9 ||
-        strategy < 0 || strategy > Z_FIXED) {
+        strategy < 0 || strategy > Z_FIXED || (windowBits == 8 && wrap != 1)) {
         return Z_STREAM_ERROR;
     }
     if (windowBits == 8) windowBits = 9;  
@@ -278,14 +305,15 @@ int ZEXPORT deflateInit2_(strm, level, method, windowBits, memLevel, strategy,
     if (s == Z_NULL) return Z_MEM_ERROR;
     strm->state = (struct internal_state FAR *)s;
     s->strm = strm;
+    s->status = INIT_STATE;     
 
     s->wrap = wrap;
     s->gzhead = Z_NULL;
-    s->w_bits = windowBits;
+    s->w_bits = (uInt)windowBits;
     s->w_size = 1 << s->w_bits;
     s->w_mask = s->w_size - 1;
 
-    s->hash_bits = memLevel + 7;
+    s->hash_bits = (uInt)memLevel + 7;
     s->hash_size = 1 << s->hash_bits;
     s->hash_mask = s->hash_size - 1;
     s->hash_shift =  ((s->hash_bits+MIN_MATCH-1)/MIN_MATCH);
@@ -320,6 +348,31 @@ int ZEXPORT deflateInit2_(strm, level, method, windowBits, memLevel, strategy,
 }
 
 
+
+
+local int deflateStateCheck (strm)
+    z_streamp strm;
+{
+    deflate_state *s;
+    if (strm == Z_NULL ||
+        strm->zalloc == (alloc_func)0 || strm->zfree == (free_func)0)
+        return 1;
+    s = strm->state;
+    if (s == Z_NULL || s->strm != strm || (s->status != INIT_STATE &&
+#ifdef GZIP
+                                           s->status != GZIP_STATE &&
+#endif
+                                           s->status != EXTRA_STATE &&
+                                           s->status != NAME_STATE &&
+                                           s->status != COMMENT_STATE &&
+                                           s->status != HCRC_STATE &&
+                                           s->status != BUSY_STATE &&
+                                           s->status != FINISH_STATE))
+        return 1;
+    return 0;
+}
+
+
 int ZEXPORT deflateSetDictionary (strm, dictionary, dictLength)
     z_streamp strm;
     const Bytef *dictionary;
@@ -331,7 +384,7 @@ int ZEXPORT deflateSetDictionary (strm, dictionary, dictLength)
     unsigned avail;
     z_const unsigned char *next;
 
-    if (strm == Z_NULL || strm->state == Z_NULL || dictionary == Z_NULL)
+    if (deflateStateCheck(strm) || dictionary == Z_NULL)
         return Z_STREAM_ERROR;
     s = strm->state;
     wrap = s->wrap;
@@ -389,13 +442,34 @@ int ZEXPORT deflateSetDictionary (strm, dictionary, dictLength)
 }
 
 
+int ZEXPORT deflateGetDictionary (strm, dictionary, dictLength)
+    z_streamp strm;
+    Bytef *dictionary;
+    uInt  *dictLength;
+{
+    deflate_state *s;
+    uInt len;
+
+    if (deflateStateCheck(strm))
+        return Z_STREAM_ERROR;
+    s = strm->state;
+    len = s->strstart + s->lookahead;
+    if (len > s->w_size)
+        len = s->w_size;
+    if (dictionary != Z_NULL && len)
+        zmemcpy(dictionary, s->window + s->strstart + s->lookahead - len, len);
+    if (dictLength != Z_NULL)
+        *dictLength = len;
+    return Z_OK;
+}
+
+
 int ZEXPORT deflateResetKeep (strm)
     z_streamp strm;
 {
     deflate_state *s;
 
-    if (strm == Z_NULL || strm->state == Z_NULL ||
-        strm->zalloc == (alloc_func)0 || strm->zfree == (free_func)0) {
+    if (deflateStateCheck(strm)) {
         return Z_STREAM_ERROR;
     }
 
@@ -410,7 +484,11 @@ int ZEXPORT deflateResetKeep (strm)
     if (s->wrap < 0) {
         s->wrap = -s->wrap; 
     }
-    s->status = s->wrap ? INIT_STATE : BUSY_STATE;
+    s->status =
+#ifdef GZIP
+        s->wrap == 2 ? GZIP_STATE :
+#endif
+        s->wrap ? INIT_STATE : BUSY_STATE;
     strm->adler =
 #ifdef GZIP
         s->wrap == 2 ? crc32(0L, Z_NULL, 0) :
@@ -440,8 +518,8 @@ int ZEXPORT deflateSetHeader (strm, head)
     z_streamp strm;
     gz_headerp head;
 {
-    if (strm == Z_NULL || strm->state == Z_NULL) return Z_STREAM_ERROR;
-    if (strm->state->wrap != 2) return Z_STREAM_ERROR;
+    if (deflateStateCheck(strm) || strm->state->wrap != 2)
+        return Z_STREAM_ERROR;
     strm->state->gzhead = head;
     return Z_OK;
 }
@@ -452,7 +530,7 @@ int ZEXPORT deflatePending (strm, pending, bits)
     int *bits;
     z_streamp strm;
 {
-    if (strm == Z_NULL || strm->state == Z_NULL) return Z_STREAM_ERROR;
+    if (deflateStateCheck(strm)) return Z_STREAM_ERROR;
     if (pending != Z_NULL)
         *pending = strm->state->pending;
     if (bits != Z_NULL)
@@ -469,7 +547,7 @@ int ZEXPORT deflatePrime (strm, bits, value)
     deflate_state *s;
     int put;
 
-    if (strm == Z_NULL || strm->state == Z_NULL) return Z_STREAM_ERROR;
+    if (deflateStateCheck(strm)) return Z_STREAM_ERROR;
     s = strm->state;
     if ((Bytef *)(s->d_buf) < s->pending_out + ((Buf_size + 7) >> 3))
         return Z_BUF_ERROR;
@@ -494,9 +572,8 @@ int ZEXPORT deflateParams(strm, level, strategy)
 {
     deflate_state *s;
     compress_func func;
-    int err = Z_OK;
 
-    if (strm == Z_NULL || strm->state == Z_NULL) return Z_STREAM_ERROR;
+    if (deflateStateCheck(strm)) return Z_STREAM_ERROR;
     s = strm->state;
 
 #ifdef FASTEST
@@ -510,13 +587,22 @@ int ZEXPORT deflateParams(strm, level, strategy)
     func = configuration_table[s->level].func;
 
     if ((strategy != s->strategy || func != configuration_table[level].func) &&
-        strm->total_in != 0) {
+        s->high_water) {
         
-        err = deflate(strm, Z_BLOCK);
-        if (err == Z_BUF_ERROR && s->pending == 0)
-            err = Z_OK;
+        int err = deflate(strm, Z_BLOCK);
+        if (err == Z_STREAM_ERROR)
+            return err;
+        if (strm->avail_out == 0)
+            return Z_BUF_ERROR;
     }
     if (s->level != level) {
+        if (s->level == 0 && s->matches != 0) {
+            if (s->matches == 1)
+                slide_hash(s);
+            else
+                CLEAR_HASH(s);
+            s->matches = 0;
+        }
         s->level = level;
         s->max_lazy_match   = configuration_table[level].max_lazy;
         s->good_match       = configuration_table[level].good_length;
@@ -524,7 +610,7 @@ int ZEXPORT deflateParams(strm, level, strategy)
         s->max_chain_length = configuration_table[level].max_chain;
     }
     s->strategy = strategy;
-    return err;
+    return Z_OK;
 }
 
 
@@ -537,12 +623,12 @@ int ZEXPORT deflateTune(strm, good_length, max_lazy, nice_length, max_chain)
 {
     deflate_state *s;
 
-    if (strm == Z_NULL || strm->state == Z_NULL) return Z_STREAM_ERROR;
+    if (deflateStateCheck(strm)) return Z_STREAM_ERROR;
     s = strm->state;
-    s->good_match = good_length;
-    s->max_lazy_match = max_lazy;
+    s->good_match = (uInt)good_length;
+    s->max_lazy_match = (uInt)max_lazy;
     s->nice_match = nice_length;
-    s->max_chain_length = max_chain;
+    s->max_chain_length = (uInt)max_chain;
     return Z_OK;
 }
 
@@ -569,14 +655,13 @@ uLong ZEXPORT deflateBound(strm, sourceLen)
 {
     deflate_state *s;
     uLong complen, wraplen;
-    Bytef *str;
 
     
     complen = sourceLen +
               ((sourceLen + 7) >> 3) + ((sourceLen + 63) >> 6) + 5;
 
     
-    if (strm == Z_NULL || strm->state == Z_NULL)
+    if (deflateStateCheck(strm))
         return complen + 6;
 
     
@@ -588,9 +673,11 @@ uLong ZEXPORT deflateBound(strm, sourceLen)
     case 1:                                 
         wraplen = 6 + (s->strstart ? 4 : 0);
         break;
+#ifdef GZIP
     case 2:                                 
         wraplen = 18;
         if (s->gzhead != Z_NULL) {          
+            Bytef *str;
             if (s->gzhead->extra != Z_NULL)
                 wraplen += 2 + s->gzhead->extra_len;
             str = s->gzhead->name;
@@ -607,6 +694,7 @@ uLong ZEXPORT deflateBound(strm, sourceLen)
                 wraplen += 2;
         }
         break;
+#endif
     default:                                
         wraplen = 6;
     }
@@ -654,12 +742,22 @@ local void flush_pending(strm)
     strm->next_out  += len;
     s->pending_out  += len;
     strm->total_out += len;
-    strm->avail_out  -= len;
-    s->pending -= len;
+    strm->avail_out -= len;
+    s->pending      -= len;
     if (s->pending == 0) {
         s->pending_out = s->pending_buf;
     }
 }
+
+
+
+
+#define HCRC_UPDATE(beg) \
+    do { \
+        if (s->gzhead->hcrc && s->pending > (beg)) \
+            strm->adler = crc32(strm->adler, s->pending_buf + (beg), \
+                                s->pending - (beg)); \
+    } while (0)
 
 
 int ZEXPORT deflate (strm, flush)
@@ -669,202 +767,20 @@ int ZEXPORT deflate (strm, flush)
     int old_flush; 
     deflate_state *s;
 
-    if (strm == Z_NULL || strm->state == Z_NULL ||
-        flush > Z_BLOCK || flush < 0) {
+    if (deflateStateCheck(strm) || flush > Z_BLOCK || flush < 0) {
         return Z_STREAM_ERROR;
     }
     s = strm->state;
 
     if (strm->next_out == Z_NULL ||
-        (strm->next_in == Z_NULL && strm->avail_in != 0) ||
+        (strm->avail_in != 0 && strm->next_in == Z_NULL) ||
         (s->status == FINISH_STATE && flush != Z_FINISH)) {
         ERR_RETURN(strm, Z_STREAM_ERROR);
     }
     if (strm->avail_out == 0) ERR_RETURN(strm, Z_BUF_ERROR);
 
-    s->strm = strm; 
     old_flush = s->last_flush;
     s->last_flush = flush;
-
-    
-    if (s->status == INIT_STATE) {
-#ifdef GZIP
-        if (s->wrap == 2) {
-            strm->adler = crc32(0L, Z_NULL, 0);
-            put_byte(s, 31);
-            put_byte(s, 139);
-            put_byte(s, 8);
-            if (s->gzhead == Z_NULL) {
-                put_byte(s, 0);
-                put_byte(s, 0);
-                put_byte(s, 0);
-                put_byte(s, 0);
-                put_byte(s, 0);
-                put_byte(s, s->level == 9 ? 2 :
-                            (s->strategy >= Z_HUFFMAN_ONLY || s->level < 2 ?
-                             4 : 0));
-                put_byte(s, OS_CODE);
-                s->status = BUSY_STATE;
-            }
-            else {
-                put_byte(s, (s->gzhead->text ? 1 : 0) +
-                            (s->gzhead->hcrc ? 2 : 0) +
-                            (s->gzhead->extra == Z_NULL ? 0 : 4) +
-                            (s->gzhead->name == Z_NULL ? 0 : 8) +
-                            (s->gzhead->comment == Z_NULL ? 0 : 16)
-                        );
-                put_byte(s, (Byte)(s->gzhead->time & 0xff));
-                put_byte(s, (Byte)((s->gzhead->time >> 8) & 0xff));
-                put_byte(s, (Byte)((s->gzhead->time >> 16) & 0xff));
-                put_byte(s, (Byte)((s->gzhead->time >> 24) & 0xff));
-                put_byte(s, s->level == 9 ? 2 :
-                            (s->strategy >= Z_HUFFMAN_ONLY || s->level < 2 ?
-                             4 : 0));
-                put_byte(s, s->gzhead->os & 0xff);
-                if (s->gzhead->extra != Z_NULL) {
-                    put_byte(s, s->gzhead->extra_len & 0xff);
-                    put_byte(s, (s->gzhead->extra_len >> 8) & 0xff);
-                }
-                if (s->gzhead->hcrc)
-                    strm->adler = crc32(strm->adler, s->pending_buf,
-                                        s->pending);
-                s->gzindex = 0;
-                s->status = EXTRA_STATE;
-            }
-        }
-        else
-#endif
-        {
-            uInt header = (Z_DEFLATED + ((s->w_bits-8)<<4)) << 8;
-            uInt level_flags;
-
-            if (s->strategy >= Z_HUFFMAN_ONLY || s->level < 2)
-                level_flags = 0;
-            else if (s->level < 6)
-                level_flags = 1;
-            else if (s->level == 6)
-                level_flags = 2;
-            else
-                level_flags = 3;
-            header |= (level_flags << 6);
-            if (s->strstart != 0) header |= PRESET_DICT;
-            header += 31 - (header % 31);
-
-            s->status = BUSY_STATE;
-            putShortMSB(s, header);
-
-            
-            if (s->strstart != 0) {
-                putShortMSB(s, (uInt)(strm->adler >> 16));
-                putShortMSB(s, (uInt)(strm->adler & 0xffff));
-            }
-            strm->adler = adler32(0L, Z_NULL, 0);
-        }
-    }
-#ifdef GZIP
-    if (s->status == EXTRA_STATE) {
-        if (s->gzhead->extra != Z_NULL) {
-            uInt beg = s->pending;  
-
-            while (s->gzindex < (s->gzhead->extra_len & 0xffff)) {
-                if (s->pending == s->pending_buf_size) {
-                    if (s->gzhead->hcrc && s->pending > beg)
-                        strm->adler = crc32(strm->adler, s->pending_buf + beg,
-                                            s->pending - beg);
-                    flush_pending(strm);
-                    beg = s->pending;
-                    if (s->pending == s->pending_buf_size)
-                        break;
-                }
-                put_byte(s, s->gzhead->extra[s->gzindex]);
-                s->gzindex++;
-            }
-            if (s->gzhead->hcrc && s->pending > beg)
-                strm->adler = crc32(strm->adler, s->pending_buf + beg,
-                                    s->pending - beg);
-            if (s->gzindex == s->gzhead->extra_len) {
-                s->gzindex = 0;
-                s->status = NAME_STATE;
-            }
-        }
-        else
-            s->status = NAME_STATE;
-    }
-    if (s->status == NAME_STATE) {
-        if (s->gzhead->name != Z_NULL) {
-            uInt beg = s->pending;  
-            int val;
-
-            do {
-                if (s->pending == s->pending_buf_size) {
-                    if (s->gzhead->hcrc && s->pending > beg)
-                        strm->adler = crc32(strm->adler, s->pending_buf + beg,
-                                            s->pending - beg);
-                    flush_pending(strm);
-                    beg = s->pending;
-                    if (s->pending == s->pending_buf_size) {
-                        val = 1;
-                        break;
-                    }
-                }
-                val = s->gzhead->name[s->gzindex++];
-                put_byte(s, val);
-            } while (val != 0);
-            if (s->gzhead->hcrc && s->pending > beg)
-                strm->adler = crc32(strm->adler, s->pending_buf + beg,
-                                    s->pending - beg);
-            if (val == 0) {
-                s->gzindex = 0;
-                s->status = COMMENT_STATE;
-            }
-        }
-        else
-            s->status = COMMENT_STATE;
-    }
-    if (s->status == COMMENT_STATE) {
-        if (s->gzhead->comment != Z_NULL) {
-            uInt beg = s->pending;  
-            int val;
-
-            do {
-                if (s->pending == s->pending_buf_size) {
-                    if (s->gzhead->hcrc && s->pending > beg)
-                        strm->adler = crc32(strm->adler, s->pending_buf + beg,
-                                            s->pending - beg);
-                    flush_pending(strm);
-                    beg = s->pending;
-                    if (s->pending == s->pending_buf_size) {
-                        val = 1;
-                        break;
-                    }
-                }
-                val = s->gzhead->comment[s->gzindex++];
-                put_byte(s, val);
-            } while (val != 0);
-            if (s->gzhead->hcrc && s->pending > beg)
-                strm->adler = crc32(strm->adler, s->pending_buf + beg,
-                                    s->pending - beg);
-            if (val == 0)
-                s->status = HCRC_STATE;
-        }
-        else
-            s->status = HCRC_STATE;
-    }
-    if (s->status == HCRC_STATE) {
-        if (s->gzhead->hcrc) {
-            if (s->pending + 2 > s->pending_buf_size)
-                flush_pending(strm);
-            if (s->pending + 2 <= s->pending_buf_size) {
-                put_byte(s, (Byte)(strm->adler & 0xff));
-                put_byte(s, (Byte)((strm->adler >> 8) & 0xff));
-                strm->adler = crc32(0L, Z_NULL, 0);
-                s->status = BUSY_STATE;
-            }
-        }
-        else
-            s->status = BUSY_STATE;
-    }
-#endif
 
     
     if (s->pending != 0) {
@@ -895,14 +811,196 @@ int ZEXPORT deflate (strm, flush)
     }
 
     
+    if (s->status == INIT_STATE) {
+        
+        uInt header = (Z_DEFLATED + ((s->w_bits-8)<<4)) << 8;
+        uInt level_flags;
+
+        if (s->strategy >= Z_HUFFMAN_ONLY || s->level < 2)
+            level_flags = 0;
+        else if (s->level < 6)
+            level_flags = 1;
+        else if (s->level == 6)
+            level_flags = 2;
+        else
+            level_flags = 3;
+        header |= (level_flags << 6);
+        if (s->strstart != 0) header |= PRESET_DICT;
+        header += 31 - (header % 31);
+
+        putShortMSB(s, header);
+
+        
+        if (s->strstart != 0) {
+            putShortMSB(s, (uInt)(strm->adler >> 16));
+            putShortMSB(s, (uInt)(strm->adler & 0xffff));
+        }
+        strm->adler = adler32(0L, Z_NULL, 0);
+        s->status = BUSY_STATE;
+
+        
+        flush_pending(strm);
+        if (s->pending != 0) {
+            s->last_flush = -1;
+            return Z_OK;
+        }
+    }
+#ifdef GZIP
+    if (s->status == GZIP_STATE) {
+        
+        strm->adler = crc32(0L, Z_NULL, 0);
+        put_byte(s, 31);
+        put_byte(s, 139);
+        put_byte(s, 8);
+        if (s->gzhead == Z_NULL) {
+            put_byte(s, 0);
+            put_byte(s, 0);
+            put_byte(s, 0);
+            put_byte(s, 0);
+            put_byte(s, 0);
+            put_byte(s, s->level == 9 ? 2 :
+                     (s->strategy >= Z_HUFFMAN_ONLY || s->level < 2 ?
+                      4 : 0));
+            put_byte(s, OS_CODE);
+            s->status = BUSY_STATE;
+
+            
+            flush_pending(strm);
+            if (s->pending != 0) {
+                s->last_flush = -1;
+                return Z_OK;
+            }
+        }
+        else {
+            put_byte(s, (s->gzhead->text ? 1 : 0) +
+                     (s->gzhead->hcrc ? 2 : 0) +
+                     (s->gzhead->extra == Z_NULL ? 0 : 4) +
+                     (s->gzhead->name == Z_NULL ? 0 : 8) +
+                     (s->gzhead->comment == Z_NULL ? 0 : 16)
+                     );
+            put_byte(s, (Byte)(s->gzhead->time & 0xff));
+            put_byte(s, (Byte)((s->gzhead->time >> 8) & 0xff));
+            put_byte(s, (Byte)((s->gzhead->time >> 16) & 0xff));
+            put_byte(s, (Byte)((s->gzhead->time >> 24) & 0xff));
+            put_byte(s, s->level == 9 ? 2 :
+                     (s->strategy >= Z_HUFFMAN_ONLY || s->level < 2 ?
+                      4 : 0));
+            put_byte(s, s->gzhead->os & 0xff);
+            if (s->gzhead->extra != Z_NULL) {
+                put_byte(s, s->gzhead->extra_len & 0xff);
+                put_byte(s, (s->gzhead->extra_len >> 8) & 0xff);
+            }
+            if (s->gzhead->hcrc)
+                strm->adler = crc32(strm->adler, s->pending_buf,
+                                    s->pending);
+            s->gzindex = 0;
+            s->status = EXTRA_STATE;
+        }
+    }
+    if (s->status == EXTRA_STATE) {
+        if (s->gzhead->extra != Z_NULL) {
+            ulg beg = s->pending;   
+            uInt left = (s->gzhead->extra_len & 0xffff) - s->gzindex;
+            while (s->pending + left > s->pending_buf_size) {
+                uInt copy = s->pending_buf_size - s->pending;
+                zmemcpy(s->pending_buf + s->pending,
+                        s->gzhead->extra + s->gzindex, copy);
+                s->pending = s->pending_buf_size;
+                HCRC_UPDATE(beg);
+                s->gzindex += copy;
+                flush_pending(strm);
+                if (s->pending != 0) {
+                    s->last_flush = -1;
+                    return Z_OK;
+                }
+                beg = 0;
+                left -= copy;
+            }
+            zmemcpy(s->pending_buf + s->pending,
+                    s->gzhead->extra + s->gzindex, left);
+            s->pending += left;
+            HCRC_UPDATE(beg);
+            s->gzindex = 0;
+        }
+        s->status = NAME_STATE;
+    }
+    if (s->status == NAME_STATE) {
+        if (s->gzhead->name != Z_NULL) {
+            ulg beg = s->pending;   
+            int val;
+            do {
+                if (s->pending == s->pending_buf_size) {
+                    HCRC_UPDATE(beg);
+                    flush_pending(strm);
+                    if (s->pending != 0) {
+                        s->last_flush = -1;
+                        return Z_OK;
+                    }
+                    beg = 0;
+                }
+                val = s->gzhead->name[s->gzindex++];
+                put_byte(s, val);
+            } while (val != 0);
+            HCRC_UPDATE(beg);
+            s->gzindex = 0;
+        }
+        s->status = COMMENT_STATE;
+    }
+    if (s->status == COMMENT_STATE) {
+        if (s->gzhead->comment != Z_NULL) {
+            ulg beg = s->pending;   
+            int val;
+            do {
+                if (s->pending == s->pending_buf_size) {
+                    HCRC_UPDATE(beg);
+                    flush_pending(strm);
+                    if (s->pending != 0) {
+                        s->last_flush = -1;
+                        return Z_OK;
+                    }
+                    beg = 0;
+                }
+                val = s->gzhead->comment[s->gzindex++];
+                put_byte(s, val);
+            } while (val != 0);
+            HCRC_UPDATE(beg);
+        }
+        s->status = HCRC_STATE;
+    }
+    if (s->status == HCRC_STATE) {
+        if (s->gzhead->hcrc) {
+            if (s->pending + 2 > s->pending_buf_size) {
+                flush_pending(strm);
+                if (s->pending != 0) {
+                    s->last_flush = -1;
+                    return Z_OK;
+                }
+            }
+            put_byte(s, (Byte)(strm->adler & 0xff));
+            put_byte(s, (Byte)((strm->adler >> 8) & 0xff));
+            strm->adler = crc32(0L, Z_NULL, 0);
+        }
+        s->status = BUSY_STATE;
+
+        
+        flush_pending(strm);
+        if (s->pending != 0) {
+            s->last_flush = -1;
+            return Z_OK;
+        }
+    }
+#endif
+
+    
 
     if (strm->avail_in != 0 || s->lookahead != 0 ||
         (flush != Z_NO_FLUSH && s->status != FINISH_STATE)) {
         block_state bstate;
 
-        bstate = s->strategy == Z_HUFFMAN_ONLY ? deflate_huff(s, flush) :
-                    (s->strategy == Z_RLE ? deflate_rle(s, flush) :
-                        (*(configuration_table[s->level].func))(s, flush));
+        bstate = s->level == 0 ? deflate_stored(s, flush) :
+                 s->strategy == Z_HUFFMAN_ONLY ? deflate_huff(s, flush) :
+                 s->strategy == Z_RLE ? deflate_rle(s, flush) :
+                 (*(configuration_table[s->level].func))(s, flush);
 
         if (bstate == finish_started || bstate == finish_done) {
             s->status = FINISH_STATE;
@@ -944,7 +1042,6 @@ int ZEXPORT deflate (strm, flush)
             }
         }
     }
-    Assert(strm->avail_out > 0, "bug2");
 
     if (flush != Z_FINISH) return Z_OK;
     if (s->wrap <= 0) return Z_STREAM_END;
@@ -981,18 +1078,9 @@ int ZEXPORT deflateEnd (strm)
 {
     int status;
 
-    if (strm == Z_NULL || strm->state == Z_NULL) return Z_STREAM_ERROR;
+    if (deflateStateCheck(strm)) return Z_STREAM_ERROR;
 
     status = strm->state->status;
-    if (status != INIT_STATE &&
-        status != EXTRA_STATE &&
-        status != NAME_STATE &&
-        status != COMMENT_STATE &&
-        status != HCRC_STATE &&
-        status != BUSY_STATE &&
-        status != FINISH_STATE) {
-      return Z_STREAM_ERROR;
-    }
 
     
     TRY_FREE(strm, strm->state->pending_buf);
@@ -1023,7 +1111,7 @@ int ZEXPORT deflateCopy (dest, source)
     ushf *overlay;
 
 
-    if (source == Z_NULL || dest == Z_NULL || source->state == Z_NULL) {
+    if (deflateStateCheck(source) || dest == Z_NULL) {
         return Z_STREAM_ERROR;
     }
 
@@ -1073,7 +1161,7 @@ int ZEXPORT deflateCopy (dest, source)
 
 
 
-local int read_buf(strm, buf, size)
+local unsigned read_buf(strm, buf, size)
     z_streamp strm;
     Bytef *buf;
     unsigned size;
@@ -1097,7 +1185,7 @@ local int read_buf(strm, buf, size)
     strm->next_in  += len;
     strm->total_in += len;
 
-    return (int)len;
+    return len;
 }
 
 
@@ -1151,9 +1239,9 @@ local uInt longest_match(s, cur_match)
 {
     unsigned chain_length = s->max_chain_length;
     register Bytef *scan = s->window + s->strstart; 
-    register Bytef *match;                       
+    register Bytef *match;                      
     register int len;                           
-    int best_len = s->prev_length;              
+    int best_len = (int)s->prev_length;         
     int nice_match = s->nice_match;             
     IPos limit = s->strstart > (IPos)MAX_DIST(s) ?
         s->strstart - (IPos)MAX_DIST(s) : NIL;
@@ -1188,7 +1276,7 @@ local uInt longest_match(s, cur_match)
     
 
 
-    if ((uInt)nice_match > s->lookahead) nice_match = s->lookahead;
+    if ((uInt)nice_match > s->lookahead) nice_match = (int)s->lookahead;
 
     Assert((ulg)s->strstart <= s->window_size-MIN_LOOKAHEAD, "need lookahead");
 
@@ -1349,7 +1437,11 @@ local uInt longest_match(s, cur_match)
 
 #endif 
 
-#ifdef DEBUG
+#ifdef ZLIB_DEBUG
+
+#define EQUAL 0
+
+
 
 
 
@@ -1390,8 +1482,7 @@ local void check_match(s, start, match, length)
 local void fill_window(s)
     deflate_state *s;
 {
-    register unsigned n, m;
-    register Posf *p;
+    unsigned n;
     unsigned more;    
     uInt wsize = s->w_size;
 
@@ -1418,35 +1509,11 @@ local void fill_window(s)
 
         if (s->strstart >= wsize+MAX_DIST(s)) {
 
-            zmemcpy(s->window, s->window+wsize, (unsigned)wsize);
+            zmemcpy(s->window, s->window+wsize, (unsigned)wsize - more);
             s->match_start -= wsize;
             s->strstart    -= wsize; 
             s->block_start -= (long) wsize;
-
-            
-
-
-
-
-
-            n = s->hash_size;
-            p = &s->head[n];
-            do {
-                m = *--p;
-                *p = (Pos)(m >= wsize ? m-wsize : NIL);
-            } while (--n);
-
-            n = wsize;
-#ifndef FASTEST
-            p = &s->prev[n];
-            do {
-                m = *--p;
-                *p = (Pos)(m >= wsize ? m-wsize : NIL);
-                
-
-
-            } while (--n);
-#endif
+            slide_hash(s);
             more += wsize;
         }
         if (s->strm->avail_in == 0) break;
@@ -1553,6 +1620,18 @@ local void fill_window(s)
 }
 
 
+#define MAX_STORED 65535
+
+
+#define MIN(a, b) ((a) > (b) ? (b) : (a))
+
+
+
+
+
+
+
+
 
 
 
@@ -1568,54 +1647,171 @@ local block_state deflate_stored(s, flush)
     
 
 
-    ulg max_block_size = 0xffff;
-    ulg max_start;
 
-    if (max_block_size > s->pending_buf_size - 5) {
-        max_block_size = s->pending_buf_size - 5;
+    unsigned min_block = MIN(s->pending_buf_size - 5, s->w_size);
+
+    
+
+
+
+    unsigned len, left, have, last = 0;
+    unsigned used = s->strm->avail_in;
+    do {
+        
+
+
+
+        len = MAX_STORED;       
+        have = (s->bi_valid + 42) >> 3;         
+        if (s->strm->avail_out < have)          
+            break;
+            
+        have = s->strm->avail_out - have;
+        left = s->strstart - s->block_start;    
+        if (len > (ulg)left + s->strm->avail_in)
+            len = left + s->strm->avail_in;     
+        if (len > have)
+            len = have;                         
+
+        
+
+
+
+
+        if (len < min_block && ((len == 0 && flush != Z_FINISH) ||
+                                flush == Z_NO_FLUSH ||
+                                len != left + s->strm->avail_in))
+            break;
+
+        
+
+
+        last = flush == Z_FINISH && len == left + s->strm->avail_in ? 1 : 0;
+        _tr_stored_block(s, (char *)0, 0L, last);
+
+        
+        s->pending_buf[s->pending - 4] = len;
+        s->pending_buf[s->pending - 3] = len >> 8;
+        s->pending_buf[s->pending - 2] = ~len;
+        s->pending_buf[s->pending - 1] = ~len >> 8;
+
+        
+        flush_pending(s->strm);
+
+#ifdef ZLIB_DEBUG
+        
+        s->compressed_len += len << 3;
+        s->bits_sent += len << 3;
+#endif
+
+        
+        if (left) {
+            if (left > len)
+                left = len;
+            zmemcpy(s->strm->next_out, s->window + s->block_start, left);
+            s->strm->next_out += left;
+            s->strm->avail_out -= left;
+            s->strm->total_out += left;
+            s->block_start += left;
+            len -= left;
+        }
+
+        
+
+
+        if (len) {
+            read_buf(s->strm, s->strm->next_out, len);
+            s->strm->next_out += len;
+            s->strm->avail_out -= len;
+            s->strm->total_out += len;
+        }
+    } while (last == 0);
+
+    
+
+
+
+
+
+    used -= s->strm->avail_in;      
+    if (used) {
+        
+
+
+        if (used >= s->w_size) {    
+            s->matches = 2;         
+            zmemcpy(s->window, s->strm->next_in - s->w_size, s->w_size);
+            s->strstart = s->w_size;
+        }
+        else {
+            if (s->window_size - s->strstart <= used) {
+                
+                s->strstart -= s->w_size;
+                zmemcpy(s->window, s->window + s->w_size, s->strstart);
+                if (s->matches < 2)
+                    s->matches++;   
+            }
+            zmemcpy(s->window + s->strstart, s->strm->next_in - used, used);
+            s->strstart += used;
+        }
+        s->block_start = s->strstart;
+        s->insert += MIN(used, s->w_size - s->insert);
+    }
+    if (s->high_water < s->strstart)
+        s->high_water = s->strstart;
+
+    
+    if (last)
+        return finish_done;
+
+    
+    if (flush != Z_NO_FLUSH && flush != Z_FINISH &&
+        s->strm->avail_in == 0 && (long)s->strstart == s->block_start)
+        return block_done;
+
+    
+    have = s->window_size - s->strstart - 1;
+    if (s->strm->avail_in > have && s->block_start >= (long)s->w_size) {
+        
+        s->block_start -= s->w_size;
+        s->strstart -= s->w_size;
+        zmemcpy(s->window, s->window + s->w_size, s->strstart);
+        if (s->matches < 2)
+            s->matches++;           
+        have += s->w_size;          
+    }
+    if (have > s->strm->avail_in)
+        have = s->strm->avail_in;
+    if (have) {
+        read_buf(s->strm, s->window + s->strstart, have);
+        s->strstart += have;
+    }
+    if (s->high_water < s->strstart)
+        s->high_water = s->strstart;
+
+    
+
+
+
+
+    have = (s->bi_valid + 42) >> 3;         
+        
+    have = MIN(s->pending_buf_size - have, MAX_STORED);
+    min_block = MIN(have, s->w_size);
+    left = s->strstart - s->block_start;
+    if (left >= min_block ||
+        ((left || flush == Z_FINISH) && flush != Z_NO_FLUSH &&
+         s->strm->avail_in == 0 && left <= have)) {
+        len = MIN(left, have);
+        last = flush == Z_FINISH && s->strm->avail_in == 0 &&
+               len == left ? 1 : 0;
+        _tr_stored_block(s, (charf *)s->window + s->block_start, len, last);
+        s->block_start += len;
+        flush_pending(s->strm);
     }
 
     
-    for (;;) {
-        
-        if (s->lookahead <= 1) {
-
-            Assert(s->strstart < s->w_size+MAX_DIST(s) ||
-                   s->block_start >= (long)s->w_size, "slide too late");
-
-            fill_window(s);
-            if (s->lookahead == 0 && flush == Z_NO_FLUSH) return need_more;
-
-            if (s->lookahead == 0) break; 
-        }
-        Assert(s->block_start >= 0L, "block gone");
-
-        s->strstart += s->lookahead;
-        s->lookahead = 0;
-
-        
-        max_start = s->block_start + max_block_size;
-        if (s->strstart == 0 || (ulg)s->strstart >= max_start) {
-            
-            s->lookahead = (uInt)(s->strstart - max_start);
-            s->strstart = (uInt)max_start;
-            FLUSH_BLOCK(s, 0);
-        }
-        
-
-
-        if (s->strstart - (uInt)s->block_start >= MAX_DIST(s)) {
-            FLUSH_BLOCK(s, 0);
-        }
-    }
-    s->insert = 0;
-    if (flush == Z_FINISH) {
-        FLUSH_BLOCK(s, 1);
-        return finish_done;
-    }
-    if ((long)s->strstart > s->block_start)
-        FLUSH_BLOCK(s, 0);
-    return block_done;
+    return last ? finish_started : need_more;
 }
 
 
@@ -1892,7 +2088,7 @@ local block_state deflate_rle(s, flush)
                          prev == *++scan && prev == *++scan &&
                          prev == *++scan && prev == *++scan &&
                          scan < strend);
-                s->match_length = MAX_MATCH - (int)(strend - scan);
+                s->match_length = MAX_MATCH - (uInt)(strend - scan);
                 if (s->match_length > s->lookahead)
                     s->match_length = s->lookahead;
             }

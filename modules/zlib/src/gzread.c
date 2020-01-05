@@ -12,6 +12,7 @@ local int gz_look OF((gz_statep));
 local int gz_decomp OF((gz_statep));
 local int gz_fetch OF((gz_statep));
 local int gz_skip OF((gz_statep, z_off64_t));
+local z_size_t gz_read OF((gz_statep, voidp, z_size_t));
 
 
 
@@ -24,13 +25,17 @@ local int gz_load(state, buf, len, have)
     unsigned *have;
 {
     int ret;
+    unsigned get, max = ((unsigned)-1 >> 2) + 1;
 
     *have = 0;
     do {
-        ret = read(state->fd, buf + *have, len - *have);
+        get = len - *have;
+        if (get > max)
+            get = max;
+        ret = read(state->fd, buf + *have, get);
         if (ret <= 0)
             break;
-        *have += ret;
+        *have += (unsigned)ret;
     } while (*have < len);
     if (ret < 0) {
         gz_error(state, Z_ERRNO, zstrerror());
@@ -94,10 +99,8 @@ local int gz_look(state)
         state->in = (unsigned char *)malloc(state->want);
         state->out = (unsigned char *)malloc(state->want << 1);
         if (state->in == NULL || state->out == NULL) {
-            if (state->out != NULL)
-                free(state->out);
-            if (state->in != NULL)
-                free(state->in);
+            free(state->out);
+            free(state->in);
             gz_error(state, Z_MEM_ERROR, "out of memory");
             return -1;
         }
@@ -285,32 +288,16 @@ local int gz_skip(state, len)
 }
 
 
-int ZEXPORT gzread(file, buf, len)
-    gzFile file;
-    voidp buf;
-    unsigned len;
-{
-    unsigned got, n;
+
+
+
+local z_size_t gz_read(state, buf, len)
     gz_statep state;
-    z_streamp strm;
-
-    
-    if (file == NULL)
-        return -1;
-    state = (gz_statep)file;
-    strm = &(state->strm);
-
-    
-    if (state->mode != GZ_READ ||
-            (state->err != Z_OK && state->err != Z_BUF_ERROR))
-        return -1;
-
-    
-
-    if ((int)len < 0) {
-        gz_error(state, Z_DATA_ERROR, "requested length does not fit in int");
-        return -1;
-    }
+    voidp buf;
+    z_size_t len;
+{
+    z_size_t got;
+    unsigned n;
 
     
     if (len == 0)
@@ -320,32 +307,38 @@ int ZEXPORT gzread(file, buf, len)
     if (state->seek) {
         state->seek = 0;
         if (gz_skip(state, state->skip) == -1)
-            return -1;
+            return 0;
     }
 
     
     got = 0;
     do {
         
+        n = -1;
+        if (n > len)
+            n = len;
+
+        
         if (state->x.have) {
-            n = state->x.have > len ? len : state->x.have;
+            if (state->x.have < n)
+                n = state->x.have;
             memcpy(buf, state->x.next, n);
             state->x.next += n;
             state->x.have -= n;
         }
 
         
-        else if (state->eof && strm->avail_in == 0) {
+        else if (state->eof && state->strm.avail_in == 0) {
             state->past = 1;        
             break;
         }
 
         
 
-        else if (state->how == LOOK || len < (state->size << 1)) {
+        else if (state->how == LOOK || n < (state->size << 1)) {
             
             if (gz_fetch(state) == -1)
-                return -1;
+                return 0;
             continue;       
             
 
@@ -353,16 +346,16 @@ int ZEXPORT gzread(file, buf, len)
 
         
         else if (state->how == COPY) {      
-            if (gz_load(state, (unsigned char *)buf, len, &n) == -1)
-                return -1;
+            if (gz_load(state, (unsigned char *)buf, n, &n) == -1)
+                return 0;
         }
 
         
         else {  
-            strm->avail_out = len;
-            strm->next_out = (unsigned char *)buf;
+            state->strm.avail_out = n;
+            state->strm.next_out = (unsigned char *)buf;
             if (gz_decomp(state) == -1)
-                return -1;
+                return 0;
             n = state->x.have;
             state->x.have = 0;
         }
@@ -375,7 +368,74 @@ int ZEXPORT gzread(file, buf, len)
     } while (len);
 
     
-    return (int)got;
+    return got;
+}
+
+
+int ZEXPORT gzread(file, buf, len)
+    gzFile file;
+    voidp buf;
+    unsigned len;
+{
+    gz_statep state;
+
+    
+    if (file == NULL)
+        return -1;
+    state = (gz_statep)file;
+
+    
+    if (state->mode != GZ_READ ||
+            (state->err != Z_OK && state->err != Z_BUF_ERROR))
+        return -1;
+
+    
+
+    if ((int)len < 0) {
+        gz_error(state, Z_STREAM_ERROR, "request does not fit in an int");
+        return -1;
+    }
+
+    
+    len = gz_read(state, buf, len);
+
+    
+    if (len == 0 && state->err != Z_OK && state->err != Z_BUF_ERROR)
+        return -1;
+
+    
+    return (int)len;
+}
+
+
+z_size_t ZEXPORT gzfread(buf, size, nitems, file)
+    voidp buf;
+    z_size_t size;
+    z_size_t nitems;
+    gzFile file;
+{
+    z_size_t len;
+    gz_statep state;
+
+    
+    if (file == NULL)
+        return 0;
+    state = (gz_statep)file;
+
+    
+    if (state->mode != GZ_READ ||
+            (state->err != Z_OK && state->err != Z_BUF_ERROR))
+        return 0;
+
+    
+    len = nitems * size;
+    if (size && len / size != nitems) {
+        gz_error(state, Z_STREAM_ERROR, "request does not fit in a size_t");
+        return 0;
+    }
+
+    
+    return len ? gz_read(state, buf, len) / size : 0;
 }
 
 
@@ -409,7 +469,7 @@ int ZEXPORT gzgetc(file)
     }
 
     
-    ret = gzread(file, buf, 1);
+    ret = gz_read(state, buf, 1);
     return ret < 1 ? -1 : buf[0];
 }
 
@@ -451,7 +511,7 @@ int ZEXPORT gzungetc(c, file)
     if (state->x.have == 0) {
         state->x.have = 1;
         state->x.next = state->out + (state->size << 1) - 1;
-        state->x.next[0] = c;
+        state->x.next[0] = (unsigned char)c;
         state->x.pos--;
         state->past = 0;
         return c;
@@ -473,7 +533,7 @@ int ZEXPORT gzungetc(c, file)
     }
     state->x.have++;
     state->x.next--;
-    state->x.next[0] = c;
+    state->x.next[0] = (unsigned char)c;
     state->x.pos--;
     state->past = 0;
     return c;

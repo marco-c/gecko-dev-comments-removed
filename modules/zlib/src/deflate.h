@@ -51,13 +51,16 @@
 #define Buf_size 16
 
 
-#define INIT_STATE    42
-#define EXTRA_STATE   69
-#define NAME_STATE    73
-#define COMMENT_STATE 91
-#define HCRC_STATE   103
-#define BUSY_STATE   113
-#define FINISH_STATE 666
+#define INIT_STATE    42    /* zlib header -> BUSY_STATE */
+#ifdef GZIP
+#  define GZIP_STATE  57    /* gzip header -> BUSY_STATE | EXTRA_STATE */
+#endif
+#define EXTRA_STATE   69    /* gzip extra block -> NAME_STATE */
+#define NAME_STATE    73    /* gzip file name -> COMMENT_STATE */
+#define COMMENT_STATE 91    /* gzip comment -> HCRC_STATE */
+#define HCRC_STATE   103    /* gzip header CRC -> BUSY_STATE */
+#define BUSY_STATE   113    /* deflate -> FINISH_STATE */
+#define FINISH_STATE 666    /* stream complete */
 
 
 
@@ -83,7 +86,7 @@ typedef struct static_tree_desc_s  static_tree_desc;
 typedef struct tree_desc_s {
     ct_data *dyn_tree;           
     int     max_code;            
-    static_tree_desc *stat_desc; 
+    const static_tree_desc *stat_desc;  
 } FAR tree_desc;
 
 typedef ush Pos;
@@ -100,10 +103,10 @@ typedef struct internal_state {
     Bytef *pending_buf;  
     ulg   pending_buf_size; 
     Bytef *pending_out;  
-    uInt   pending;      
+    ulg   pending;       
     int   wrap;          
     gz_headerp  gzhead;  
-    uInt   gzindex;      
+    ulg   gzindex;       
     Byte  method;        
     int   last_flush;    
 
@@ -249,7 +252,7 @@ typedef struct internal_state {
     uInt matches;       
     uInt insert;        
 
-#ifdef DEBUG
+#ifdef ZLIB_DEBUG
     ulg compressed_len; 
     ulg bits_sent;      
 #endif
@@ -275,7 +278,7 @@ typedef struct internal_state {
 
 
 
-#define put_byte(s, c) {s->pending_buf[s->pending++] = (c);}
+#define put_byte(s, c) {s->pending_buf[s->pending++] = (Bytef)(c);}
 
 
 #define MIN_LOOKAHEAD (MAX_MATCH+MIN_MATCH+1)
@@ -309,7 +312,7 @@ void ZLIB_INTERNAL _tr_stored_block OF((deflate_state *s, charf *buf,
 
 
 
-#ifndef DEBUG
+#ifndef ZLIB_DEBUG
 
 
 #if defined(GEN_TREES_H) || !defined(STDC)
@@ -328,8 +331,8 @@ void ZLIB_INTERNAL _tr_stored_block OF((deflate_state *s, charf *buf,
     flush = (s->last_lit == s->lit_bufsize-1); \
    }
 # define _tr_tally_dist(s, distance, length, flush) \
-  { uch len = (length); \
-    ush dist = (distance); \
+  { uch len = (uch)(length); \
+    ush dist = (ush)(distance); \
     s->d_buf[s->last_lit] = dist; \
     s->l_buf[s->last_lit++] = len; \
     dist--; \
