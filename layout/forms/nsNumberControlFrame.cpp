@@ -691,7 +691,14 @@ nsNumberControlFrame::SetValueOfAnonTextControl(const nsAString& aValue)
   
   
   
-  HTMLInputElement::FromContent(mTextField)->SetValue(localizedValue);
+  
+  
+  
+  
+  IgnoredErrorResult rv;
+  HTMLInputElement::FromContent(mTextField)->SetValue(localizedValue,
+                                                      CallerType::NonSystem,
+                                                      rv);
 }
 
 void
