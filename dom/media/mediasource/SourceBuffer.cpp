@@ -23,12 +23,6 @@
 #include <time.h>
 #include "TimeUnits.h"
 
-
-
-#ifdef GetCurrentTime
-#undef GetCurrentTime
-#endif
-
 struct JSContext;
 class JSObject;
 

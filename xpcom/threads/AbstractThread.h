@@ -67,16 +67,6 @@ public:
   virtual TaskDispatcher& TailDispatcher() = 0;
 
   
-  
-  virtual bool MightHaveTailTasks() { return true; }
-
-  
-  
-  
-  void TailDispatchTasksFor(AbstractThread* aThread);
-  bool HasTailTasksFor(AbstractThread* aThread);
-
-  
   bool SupportsTailDispatch() const { return mSupportsTailDispatch; }
 
   

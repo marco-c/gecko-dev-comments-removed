@@ -692,9 +692,6 @@ NS_InitXPCOM2(nsIServiceManager** aResult,
     NS_RUNTIMEABORT(jsInitFailureReason);
   }
   sInitializedJS = true;
-  
-  
-  AbstractThread::InitStatics();
 
   rv = nsComponentManagerImpl::gComponentManager->Init();
   if (NS_FAILED(rv)) {
@@ -717,6 +714,9 @@ NS_InitXPCOM2(nsIServiceManager** aResult,
 
   
   SharedThreadPool::InitStatics();
+
+  
+  AbstractThread::InitStatics();
 
   
   
@@ -800,8 +800,6 @@ NS_InitMinimalXPCOM()
   if (!nsCycleCollector_init()) {
     return NS_ERROR_UNEXPECTED;
   }
-
-  AbstractThread::InitStatics();
 
   return NS_OK;
 }
