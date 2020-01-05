@@ -136,20 +136,6 @@ this.CommonUtils = {
 
 
 
-
-  waitForNextTick: function waitForNextTick() {
-    let cb = Async.makeSyncCallback();
-    this.nextTick(cb);
-    Async.waitForSyncCallback(cb);
-
-
-  },
-
-  
-
-
-
-
   namedTimer: function namedTimer(callback, wait, thisObj, name) {
     if (!thisObj || !name) {
       throw "You must provide both an object and a property name for the timer!";
