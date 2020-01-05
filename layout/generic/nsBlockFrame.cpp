@@ -4486,6 +4486,21 @@ nsBlockFrame::PlaceLine(BlockReflowInput& aState,
                oldFloatAvailableSpace.BStart(wm), "yikes");
   
   aFloatAvailableSpace.BSize(wm) = oldFloatAvailableSpace.BSize(wm);
+
+  
+  
+  const nscoord iStartDiff =
+    aFloatAvailableSpace.IStart(wm) - oldFloatAvailableSpace.IStart(wm);
+  const nscoord iEndDiff =
+    aFloatAvailableSpace.IEnd(wm) - oldFloatAvailableSpace.IEnd(wm);
+  if (iStartDiff < 0) {
+    aFloatAvailableSpace.IStart(wm) -= iStartDiff;
+    aFloatAvailableSpace.ISize(wm) += iStartDiff;
+  }
+  if (iEndDiff > 0) {
+    aFloatAvailableSpace.ISize(wm) -= iEndDiff;
+  }
+
   
   
   
