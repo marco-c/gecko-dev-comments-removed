@@ -85,12 +85,45 @@ function sendMouseEvent(int_win, elemId, mouseEventType, params) {
   if(!!elem) {
     var rect = elem.getBoundingClientRect();
     var eventObj = {type: mouseEventType};
-    if(params && "button" in params)
-      eventObj.button = params.button;
+
     if(params && "inputSource" in params)
       eventObj.inputSource = params.inputSource;
-    if(params && "buttons" in params)
-      eventObj.buttons = params.buttons;
+
+    
+    var isButtonEvent = mouseEventType === "mouseup" ||
+                        mouseEventType === "mousedown";
+
+    
+    eventObj.button = isButtonEvent ? MouseEventHelper.BUTTON_LEFT
+                                    : MouseEventHelper.BUTTON_NONE;
+
+    
+    if (params && "button" in params) {
+      var hasButtonValue = (params.button !== MouseEventHelper.BUTTON_NONE);
+      ok(!isButtonEvent || hasButtonValue,
+         "Inappropriate |button| value caught.");
+      eventObj.button = params.button;
+    }
+
+    
+    var buttonsMask = MouseEventHelper.computeButtonsMaskFromButton(eventObj.button);
+    switch(mouseEventType) {
+      case "mousedown":
+        MouseEventHelper.BUTTONS_STATE |= buttonsMask; 
+        break;
+      case "mouseup":
+        MouseEventHelper.BUTTONS_STATE &= ~buttonsMask; 
+        break;
+    }
+    eventObj.buttons = MouseEventHelper.BUTTONS_STATE;
+
+    
+    
+    
+    
+    if (mouseEventType === "mousemove") {
+      eventObj.button = MouseEventHelper.BUTTON_LEFT;
+    }
 
     
     
@@ -125,6 +158,16 @@ function sendTouchEvent(int_win, elemId, touchEventType, params) {
     var eventObj = {type: touchEventType};
 
     
+    switch(touchEventType) {
+      case "touchstart":
+        TouchEventHelper.TOUCH_STATE = true; 
+        break;
+      case "touchend":
+        TouchEventHelper.TOUCH_STATE = false; 
+        break;
+    }
+
+    
     
     var offsetX = params && "offsetX" in params ? params.offsetX : rect.width / 2;
     var offsetY = params && "offsetY" in params ? params.offsetY : rect.height / 2;
@@ -152,6 +195,8 @@ function runTestInNewWindow(aFile) {
         ok(aEvent.data.result, aEvent.data.message);
         return;
       case "FIN":
+        MouseEventHelper.checkExitState();
+        TouchEventHelper.checkExitState();
         testWindow.close();
         SimpleTest.finish();
         return;
