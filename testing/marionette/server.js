@@ -124,6 +124,9 @@ const RECOMMENDED_PREFS = new Map([
   ["browser.startup.page", 0],
 
   
+  ["browser.startup.homepage_override.mstone", "ignore"],
+
+  
   ["browser.tabs.animate", false],
 
   
