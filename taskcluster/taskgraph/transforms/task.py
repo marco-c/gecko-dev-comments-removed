@@ -247,7 +247,7 @@ task_description_schema = Schema({
             Extra: basestring,  
         },
     }, {
-        'implementation': 'native-engine',
+        Required('implementation'): 'native-engine',
 
         
         Optional('context'): basestring,
@@ -257,7 +257,7 @@ task_description_schema = Schema({
         Optional('reboot'): bool,
 
         
-        Required('command'): [taskref_or_string],
+        Optional('command'): [taskref_or_string],
 
         
         Optional('env'): {basestring: taskref_or_string},
