@@ -107,8 +107,15 @@ BuildDisplayListForTopLayerFrame(nsDisplayListBuilder* aBuilder,
     savedOutOfFlowData = nsDisplayListBuilder::GetOutOfFlowData(aFrame);
   if (savedOutOfFlowData) {
     dirty = savedOutOfFlowData->mDirtyRect;
+    
+    
+    
+    
+    
+    
+    
     clipState.SetClipChainForContainingBlockDescendants(
-      savedOutOfFlowData->mContainingBlockClipChain);
+      savedOutOfFlowData->mCombinedClipChain);
     clipState.ClipContainingBlockDescendantsExtra(
       dirty + aBuilder->ToReferenceFrame(aFrame), nullptr);
     asrSetter.SetCurrentActiveScrolledRoot(

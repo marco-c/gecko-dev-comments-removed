@@ -1211,13 +1211,16 @@ public:
 
   struct OutOfFlowDisplayData {
     OutOfFlowDisplayData(const DisplayItemClipChain* aContainingBlockClipChain,
+                         const DisplayItemClipChain* aCombinedClipChain,
                          const ActiveScrolledRoot* aContainingBlockActiveScrolledRoot,
                          const nsRect &aDirtyRect)
       : mContainingBlockClipChain(aContainingBlockClipChain)
+      , mCombinedClipChain(aCombinedClipChain)
       , mContainingBlockActiveScrolledRoot(aContainingBlockActiveScrolledRoot)
       , mDirtyRect(aDirtyRect)
     {}
     const DisplayItemClipChain* mContainingBlockClipChain;
+    const DisplayItemClipChain* mCombinedClipChain; 
     const ActiveScrolledRoot* mContainingBlockActiveScrolledRoot;
     nsRect mDirtyRect;
   };
