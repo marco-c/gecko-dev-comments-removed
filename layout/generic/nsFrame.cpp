@@ -5071,7 +5071,7 @@ nsFrame::ComputeSize(nsRenderingContext* aRenderingContext,
       ComputeISizeValue(aRenderingContext, aCBSize.ISize(aWM),
                         boxSizingAdjust.ISize(aWM), boxSizingToMarginEdgeISize,
                         minISizeCoord, aFlags);
-  } else if (MOZ_UNLIKELY(isGridItem)) {
+  } else if (MOZ_UNLIKELY(aFlags & eIApplyAutoMinSize)) {
     
     
     minISize = std::min(maxISize, GetMinISize(aRenderingContext));
