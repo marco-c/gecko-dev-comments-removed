@@ -51,6 +51,7 @@ use std::comm::Port;
 use std::task;
 use std::util;
 use style::{AuthorOrigin, Stylesheet, Stylist};
+use style::{Before, After};
 
 
 struct LayoutTask {
@@ -81,15 +82,15 @@ struct LayoutTask {
     
     display_list: Option<Arc<DisplayList<OpaqueNode>>>,
 
-    stylist: RWArc<Stylist>,
+    stylists: ~[RWArc<Stylist>],
 
-    
+    /// The channel on which messages can be sent to the profiler.
     profiler_chan: ProfilerChan,
 
     opts: Opts
 }
 
-
+/// The damage computation traversal.
 #[deriving(Clone)]
 struct ComputeDamageTraversal;
 
@@ -105,9 +106,9 @@ impl PostorderFlowTraversal for ComputeDamageTraversal {
     }
 }
 
-
-
-
+/// Propagates restyle damage up and down the tree as appropriate.
+///
+/// FIXME(pcwalton): Merge this with flow tree building and/or other traversals.
 struct PropagateDamageTraversal {
     all_style_damage: bool,
 }
@@ -130,8 +131,8 @@ impl PreorderFlowTraversal for PropagateDamageTraversal {
     }
 }
 
-
-
+/// The bubble-widths traversal, the first part of layout computation. This computes preferred
+/// and intrinsic widths and bubbles them up the tree.
 struct BubbleWidthsTraversal<'self>(&'self mut LayoutContext);
 
 impl<'self> PostorderFlowTraversal for BubbleWidthsTraversal<'self> {
@@ -141,16 +142,16 @@ impl<'self> PostorderFlowTraversal for BubbleWidthsTraversal<'self> {
         true
     }
 
-    
-    
-
-
-
-
-
+    // FIXME: We can't prune until we start reusing flows
+    /*
+    #[inline]
+    fn should_prune(&mut self, flow: &mut Flow) -> bool {
+        flow::mut_base(flow).restyle_damage.lacks(BubbleWidths)
+    }
+    */
 }
 
-
+/// The assign-widths traversal. In Gecko this corresponds to `Reflow`.
 struct AssignWidthsTraversal<'self>(&'self mut LayoutContext);
 
 impl<'self> PreorderFlowTraversal for AssignWidthsTraversal<'self> {
@@ -161,9 +162,9 @@ impl<'self> PreorderFlowTraversal for AssignWidthsTraversal<'self> {
     }
 }
 
-
-
-
+/// The assign-heights-and-store-overflow traversal, the last (and most expensive) part of layout
+/// computation. Determines the final heights for all layout objects, computes positions, and
+/// computes overflow regions. In Gecko this corresponds to `FinishAndStoreOverflow`.
 struct AssignHeightsAndStoreOverflowTraversal<'self>(&'self mut LayoutContext);
 
 impl<'self> PostorderFlowTraversal for AssignHeightsAndStoreOverflowTraversal<'self> {
@@ -236,6 +237,14 @@ impl LayoutTask {
            profiler_chan: ProfilerChan)
            -> LayoutTask {
 
+        let mut stylists = ~[];
+        // We implemented parsing/selector-matching only for Before and After.
+        // FirstLine and FirstLetter have to be added later.
+        let stylist_owners = ~[Some(Before), Some(After), None];
+        for pseudo_element in stylist_owners.iter() {
+            stylists.push(RWArc::new(new_stylist(*pseudo_element)));
+        }
+
         LayoutTask {
             id: id,
             port: port,
@@ -248,7 +257,7 @@ impl LayoutTask {
 
             display_list: None,
 
-            stylist: RWArc::new(new_stylist()),
+            stylists: stylists,
             profiler_chan: profiler_chan,
             opts: opts.clone()
         }
@@ -347,8 +356,12 @@ impl LayoutTask {
 
     fn handle_add_stylesheet(&mut self, sheet: Stylesheet) {
         let sheet = Cell::new(sheet);
-        do self.stylist.write |stylist| {
-            stylist.add_stylesheet(sheet.take(), AuthorOrigin)
+        for stylist in self.stylists.iter() {
+            do stylist.write |stylist| {
+                sheet.with_ref(|sheet|{
+                    stylist.add_stylesheet(sheet, AuthorOrigin);
+                });
+            }
         }
     }
 
@@ -445,7 +458,7 @@ impl LayoutTask {
             ReflowDocumentDamage => {}
             _ => {
                 do profile(time::LayoutSelectorMatchCategory, self.profiler_chan.clone()) {
-                    node.match_subtree(self.stylist.clone());
+                    node.match_subtree(self.stylists.clone());
                     node.cascade_subtree(None);
                 }
             }
