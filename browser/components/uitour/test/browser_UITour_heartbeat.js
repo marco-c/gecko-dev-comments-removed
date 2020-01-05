@@ -105,11 +105,10 @@ function checkTelemetry(aPayload, aFlowId, aExpectedFields) {
 
 
 function promiseWaitHeartbeatNotification(aEventName) {
-  return ContentTask.spawn(gTestTab.linkedBrowser, { aEventName },
-      function({ aEventName }) {
+  return ContentTask.spawn(gTestTab.linkedBrowser, aEventName, (aContentEventName) => {
         return new Promise(resolve => {
           addEventListener("mozUITourNotification", function listener(event) {
-            if (event.detail.event !== aEventName) {
+            if (event.detail.event !== aContentEventName) {
               return;
             }
             removeEventListener("mozUITourNotification", listener, false);
@@ -130,9 +129,8 @@ function promiseWaitHeartbeatNotification(aEventName) {
 
 
 function promiseWaitExpectedNotifications(events) {
-  return ContentTask.spawn(gTestTab.linkedBrowser, { events },
-      function({ events }) {
-        let stillToReceive = events;
+  return ContentTask.spawn(gTestTab.linkedBrowser, events, contentEvents => {
+        let stillToReceive = contentEvents;
         return new Promise((res, rej) => {
           addEventListener("mozUITourNotification", function listener(event) {
             if (stillToReceive.includes(event.detail.event)) {

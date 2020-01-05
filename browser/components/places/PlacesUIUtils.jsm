@@ -1210,12 +1210,12 @@ this.PlacesUIUtils = {
       delete this.leftPaneQueries;
       this.leftPaneQueries = {};
 
-      let items = as.getItemsWithAnnotation(this.ORGANIZER_QUERY_ANNO);
+      let queryItems = as.getItemsWithAnnotation(this.ORGANIZER_QUERY_ANNO);
       
       let queriesCount = 0;
       let corrupt = false;
-      for (let i = 0; i < items.length; i++) {
-        let queryName = as.getItemAnnotation(items[i], this.ORGANIZER_QUERY_ANNO);
+      for (let i = 0; i < queryItems.length; i++) {
+        let queryName = as.getItemAnnotation(queryItems[i], this.ORGANIZER_QUERY_ANNO);
 
         
         
@@ -1223,7 +1223,7 @@ this.PlacesUIUtils = {
           continue;
 
         let query = queries[queryName];
-        query.itemId = items[i];
+        query.itemId = queryItems[i];
 
         if (!itemExists(query.itemId)) {
           
@@ -1233,7 +1233,7 @@ this.PlacesUIUtils = {
 
         
         let parentId = bs.getFolderIdForItem(query.itemId);
-        if (!items.includes(parentId) && parentId != leftPaneRoot) {
+        if (!queryItems.includes(parentId) && parentId != leftPaneRoot) {
           
           
           corrupt = true;
@@ -1262,7 +1262,7 @@ this.PlacesUIUtils = {
         
         
         
-        items.forEach(safeRemoveItem);
+        queryItems.forEach(safeRemoveItem);
         safeRemoveItem(leftPaneRoot);
       }
       else {

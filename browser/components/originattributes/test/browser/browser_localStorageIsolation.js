@@ -10,12 +10,12 @@ const key = Math.random().toString();
 
 
 function* doTest(aBrowser) {
-  return yield ContentTask.spawn(aBrowser, key, function (key) {
-    let value = content.localStorage.getItem(key);
+  return yield ContentTask.spawn(aBrowser, key, function (contentKey) {
+    let value = content.localStorage.getItem(contentKey);
     if (value === null) {
       
       value = Math.random().toString();
-      content.localStorage.setItem(key, value);
+      content.localStorage.setItem(contentKey, value);
     }
     return value;
   });
