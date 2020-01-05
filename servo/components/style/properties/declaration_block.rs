@@ -7,7 +7,6 @@ use cssparser::{Parser, AtRuleParser, DeclarationParser, Delimiter};
 use error_reporting::ParseErrorReporter;
 use parser::{ParserContext, ParserContextExtraData, log_css_error};
 use servo_url::ServoUrl;
-use std::ascii::AsciiExt;
 use std::boxed::Box as StdBox;
 use std::fmt;
 use style_traits::ToCss;
@@ -65,90 +64,94 @@ impl PropertyDeclarationBlock {
         self.declarations.len() > self.important_count as usize
     }
 
-    pub fn get(&self, property_name: &str) -> Option< &(PropertyDeclaration, Importance)> {
-        self.declarations.iter().find(|&&(ref decl, _)| decl.matches(property_name))
+    pub fn get(&self, property: PropertyDeclarationId) -> Option< &(PropertyDeclaration, Importance)> {
+        self.declarations.iter().find(|&&(ref decl, _)| decl.id() == property)
     }
 
     
     
     
-    pub fn property_value_to_css<W>(&self, property_name: &str, dest: &mut W) -> fmt::Result
+    pub fn property_value_to_css<W>(&self, property: &PropertyId, dest: &mut W) -> fmt::Result
     where W: fmt::Write {
         
-        let property = property_name.to_ascii_lowercase();
 
         
-        if let Some(shorthand) = Shorthand::from_name(&property) {
-            
-            let mut list = Vec::new();
-            let mut important_count = 0;
-
-            
-            for longhand in shorthand.longhands() {
+        match property.as_shorthand() {
+            Ok(shorthand) => {
                 
-                let declaration = self.get(longhand);
+                let mut list = Vec::new();
+                let mut important_count = 0;
 
                 
-                match declaration {
-                    Some(&(ref declaration, importance)) => {
-                        list.push(declaration);
-                        if importance.important() {
-                            important_count += 1;
-                        }
-                    },
-                    None => return Ok(()),
+                for &longhand in shorthand.longhands() {
+                    
+                    let declaration = self.get(PropertyDeclarationId::Longhand(longhand));
+
+                    
+                    match declaration {
+                        Some(&(ref declaration, importance)) => {
+                            list.push(declaration);
+                            if importance.important() {
+                                important_count += 1;
+                            }
+                        },
+                        None => return Ok(()),
+                    }
+                }
+
+                
+                
+                
+                if important_count > 0 && important_count != list.len() {
+                    return Ok(());
+                }
+
+                
+                
+                
+                let importance = Importance::Normal;
+                let appendable_value = shorthand.get_shorthand_appendable_value(list).unwrap();
+                append_declaration_value(dest, appendable_value, importance)
+            }
+            Err(longhand_or_custom) => {
+                if let Some(&(ref value, _importance)) = self.get(longhand_or_custom) {
+                    
+                    value.to_css(dest)
+                } else {
+                    
+                    Ok(())
                 }
             }
-
-            
-            
-            
-            if important_count > 0 && important_count != list.len() {
-                return Ok(());
-            }
-
-            
-            
-            
-            let importance = Importance::Normal;
-            let appendable_value = shorthand.get_shorthand_appendable_value(list).unwrap();
-            return append_declaration_value(dest, appendable_value, importance)
-        }
-
-        if let Some(&(ref value, _importance)) = self.get(property_name) {
-            
-            value.to_css(dest)
-        } else {
-            
-            Ok(())
         }
     }
 
     
-    pub fn property_priority(&self, property_name: &str) -> Importance {
+    pub fn property_priority(&self, property: &PropertyId) -> Importance {
         
-        let property = property_name.to_ascii_lowercase();
 
         
-        if let Some(shorthand) = Shorthand::from_name(&property) {
-            
-            if shorthand.longhands().iter().all(|l| {
-                self.get(l).map_or(false, |&(_, importance)| importance.important())
-            }) {
-                Importance::Important
-            } else {
-                Importance::Normal
+        match property.as_shorthand() {
+            Ok(shorthand) => {
+                
+                if shorthand.longhands().iter().all(|&l| {
+                    self.get(PropertyDeclarationId::Longhand(l))
+                        .map_or(false, |&(_, importance)| importance.important())
+                }) {
+                    Importance::Important
+                } else {
+                    Importance::Normal
+                }
             }
-        } else {
-            
-            self.get(&property).map_or(Importance::Normal, |&(_, importance)| importance)
+            Err(longhand_or_custom) => {
+                
+                self.get(longhand_or_custom).map_or(Importance::Normal, |&(_, importance)| importance)
+            }
         }
     }
 
-    pub fn set_parsed_declaration(&mut self, declaration: PropertyDeclaration,
-                                  importance: Importance) {
+    pub fn set_parsed_declaration(&mut self, declaration: PropertyDeclaration, importance: Importance) {
         for slot in &mut *self.declarations {
-            if slot.0.name() == declaration.name() {
+            if slot.0.id() == declaration.id() {
                 match (slot.1, importance) {
                     (Importance::Normal, Importance::Important) => {
                         self.important_count += 1;
@@ -169,9 +172,9 @@ impl PropertyDeclarationBlock {
         }
     }
 
-    pub fn set_importance(&mut self, property_names: &[&str], new_importance: Importance) {
+    pub fn set_importance(&mut self, property: &PropertyId, new_importance: Importance) {
         for &mut (ref declaration, ref mut importance) in &mut self.declarations {
-            if property_names.iter().any(|p| declaration.matches(p)) {
+            if declaration.id().is_or_is_longhand_of(property) {
                 match (*importance, new_importance) {
                     (Importance::Normal, Importance::Important) => {
                         self.important_count += 1;
@@ -187,44 +190,34 @@ impl PropertyDeclarationBlock {
     }
 
     
-    pub fn remove_property(&mut self, property_name: &str) {
-        
-        let property = property_name.to_ascii_lowercase();
-
-        match Shorthand::from_name(&property) {
-            
-            Some(shorthand) => self.remove_longhands(shorthand.longhands()),
-            
-            None => self.remove_longhands(&[&*property]),
-        }
-    }
-
-    fn remove_longhands(&mut self, names: &[&str]) {
+    pub fn remove_property(&mut self, property: &PropertyId) {
         let important_count = &mut self.important_count;
         self.declarations.retain(|&(ref declaration, importance)| {
-            let retain = !names.iter().any(|n| declaration.matches(n));
-            if !retain && importance.important() {
+            let remove = declaration.id().is_or_is_longhand_of(property);
+            if remove && importance.important() {
                 *important_count -= 1
             }
-            retain
+            !remove
         })
     }
 
     
-    pub fn single_value_to_css<W>(&self, property_name: &str, dest: &mut W) -> fmt::Result
+    pub fn single_value_to_css<W>(&self, property: &PropertyId, dest: &mut W) -> fmt::Result
     where W: fmt::Write {
-        match self.declarations.len() {
-            0 => Err(fmt::Error),
-            1 if self.declarations[0].0.name().eq_str_ignore_ascii_case(property_name) => {
-                self.declarations[0].0.to_css(dest)
+        match property.as_shorthand() {
+            Err(_longhand_or_custom) => {
+                if self.declarations.len() == 1 {
+                    self.declarations[0].0.to_css(dest)
+                } else {
+                    Err(fmt::Error)
+                }
             }
-            _ => {
+            Ok(shorthand) => {
                 
                 fn get_declaration(dec: &(PropertyDeclaration, Importance))
                     -> &PropertyDeclaration {
                     &dec.0
                 }
-                let shorthand = try!(Shorthand::from_name(property_name).ok_or(fmt::Error));
                 if !self.declarations.iter().all(|decl| decl.0.shorthands().contains(&shorthand)) {
                     return Err(fmt::Error)
                 }
@@ -254,7 +247,7 @@ impl ToCss for PropertyDeclarationBlock {
         
         for &(ref declaration, importance) in &*self.declarations {
             
-            let property = declaration.name();
+            let property = declaration.id();
 
             
             if already_serialized.contains(&property) {
@@ -266,11 +259,11 @@ impl ToCss for PropertyDeclarationBlock {
             if !shorthands.is_empty() {
                 
                 let mut longhands = self.declarations.iter()
-                    .filter(|d| !already_serialized.contains(&d.0.name()))
+                    .filter(|d| !already_serialized.contains(&d.0.id()))
                     .collect::<Vec<_>>();
 
                 
-                for shorthand in shorthands {
+                for &shorthand in shorthands {
                     let properties = shorthand.longhands();
 
                     
@@ -278,8 +271,7 @@ impl ToCss for PropertyDeclarationBlock {
                     let mut important_count = 0;
 
                     for &&(ref longhand, longhand_importance) in longhands.iter() {
-                        let longhand_name = longhand.name();
-                        if properties.iter().any(|p| &longhand_name == *p) {
+                        if longhand.id().is_longhand_of(shorthand) {
                             current_longhands.push(longhand);
                             if longhand_importance.important() {
                                 important_count += 1;
@@ -325,7 +317,7 @@ impl ToCss for PropertyDeclarationBlock {
 
                     for current_longhand in current_longhands {
                         
-                        already_serialized.push(current_longhand.name());
+                        already_serialized.push(current_longhand.id());
                         let index_to_remove = longhands.iter().position(|l| l.0 == *current_longhand);
                         if let Some(index) = index_to_remove {
                             
@@ -348,9 +340,9 @@ impl ToCss for PropertyDeclarationBlock {
             
             
             
-            try!(append_serialization::<W, Cloned<slice::Iter< &PropertyDeclaration>>>(
+            try!(append_serialization::<W, Cloned<slice::Iter< &PropertyDeclaration>>, _>(
                 dest,
-                &property.to_string(),
+                &property,
                 AppendableValue::Declaration(declaration),
                 importance,
                 &mut is_first_serialization));
@@ -367,7 +359,7 @@ impl ToCss for PropertyDeclarationBlock {
 pub enum AppendableValue<'a, I>
 where I: Iterator<Item=&'a PropertyDeclaration> {
     Declaration(&'a PropertyDeclaration),
-    DeclarationsForShorthand(Shorthand, I),
+    DeclarationsForShorthand(ShorthandId, I),
     Css(&'a str)
 }
 
@@ -407,13 +399,15 @@ pub fn append_declaration_value<'a, W, I>
   Ok(())
 }
 
-pub fn append_serialization<'a, W, I>(dest: &mut W,
-                                  property_name: &str,
+pub fn append_serialization<'a, W, I, N>(dest: &mut W,
+                                  property_name: &N,
                                   appendable_value: AppendableValue<'a, I>,
                                   importance: Importance,
                                   is_first_serialization: &mut bool)
                                   -> fmt::Result
-                                  where W: fmt::Write, I: Iterator<Item=&'a PropertyDeclaration> {
+                                  where W: fmt::Write,
+                                        I: Iterator<Item=&'a PropertyDeclaration>,
+                                        N: ToCss {
     try!(handle_first_serialization(dest, is_first_serialization));
 
     
@@ -422,7 +416,8 @@ pub fn append_serialization<'a, W, I>(dest: &mut W,
         return append_declaration_value(dest, appendable_value, importance);
     }
 
-    try!(write!(dest, "{}:", property_name));
+    try!(property_name.to_css(dest));
+    try!(dest.write_char(':'));
 
     
     match &appendable_value {
@@ -451,7 +446,7 @@ pub fn parse_style_attribute(input: &str,
     parse_property_declaration_list(&context, &mut Parser::new(input))
 }
 
-pub fn parse_one_declaration(name: &str,
+pub fn parse_one_declaration(id: PropertyId,
                              input: &str,
                              base_url: &ServoUrl,
                              error_reporter: StdBox<ParseErrorReporter + Send>,
@@ -459,7 +454,7 @@ pub fn parse_one_declaration(name: &str,
                              -> Result<Vec<PropertyDeclaration>, ()> {
     let context = ParserContext::new_with_extra_data(Origin::Author, base_url, error_reporter, extra_data);
     let mut results = vec![];
-    match PropertyDeclaration::parse(name, &context, &mut Parser::new(input), &mut results, false) {
+    match PropertyDeclaration::parse(id, &context, &mut Parser::new(input), &mut results, false) {
         PropertyDeclarationParseResult::ValidOrIgnoredDeclaration => Ok(results),
         _ => Err(())
     }
@@ -482,9 +477,10 @@ impl<'a, 'b> DeclarationParser for PropertyDeclarationParser<'a, 'b> {
 
     fn parse_value(&mut self, name: &str, input: &mut Parser)
                    -> Result<(Vec<PropertyDeclaration>, Importance), ()> {
+        let id = try!(PropertyId::parse(name.into()));
         let mut results = vec![];
         try!(input.parse_until_before(Delimiter::Bang, |input| {
-            match PropertyDeclaration::parse(name, self.context, input, &mut results, false) {
+            match PropertyDeclaration::parse(id, self.context, input, &mut results, false) {
                 PropertyDeclarationParseResult::ValidOrIgnoredDeclaration => Ok(()),
                 _ => Err(())
             }
