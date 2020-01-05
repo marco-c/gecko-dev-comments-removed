@@ -1376,7 +1376,10 @@ nsIFrame::Combines3DTransformWithAncestors(const nsStyleDisplay* aStyleDisplay) 
 bool
 nsIFrame::In3DContextAndBackfaceIsHidden() const
 {
-  return Combines3DTransformWithAncestors() && BackfaceIsHidden();
+  
+  
+  const nsStyleDisplay* disp = StyleDisplay();
+  return BackfaceIsHidden(disp) && Combines3DTransformWithAncestors(disp);
 }
 
 bool
