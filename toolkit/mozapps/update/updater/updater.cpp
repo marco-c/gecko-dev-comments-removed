@@ -2738,6 +2738,17 @@ int NS_main(int argc, NS_tchar **argv)
     return 1;
   }
 
+#if defined(TEST_UPDATER) && defined(XP_WIN)
+  
+  
+  
+  
+  if (EnvHasValue("CURWORKDIRPATH")) {
+    const WCHAR *val = _wgetenv(L"CURWORKDIRPATH");
+    NS_tchdir(val);
+  }
+#endif
+
   
   
   if (!IsValidFullPath(argv[1])) {

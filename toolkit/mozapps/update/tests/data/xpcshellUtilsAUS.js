@@ -3906,6 +3906,14 @@ function runUpdateUsingApp(aExpectedStatus) {
 
 
 function setEnvironment() {
+  if (IS_WIN) {
+    
+    
+    
+    
+    gEnv.set("CURWORKDIRPATH", getApplyDirFile().path);
+  }
+
   
   if (gShouldResetEnv !== undefined) {
     return;
