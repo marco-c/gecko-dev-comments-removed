@@ -265,7 +265,16 @@ impl MemoryProfiler {
             memory_profiler.start();
         });
 
-        MemoryProfilerChan(chan)
+        let memory_profiler_chan = MemoryProfilerChan(chan);
+
+        
+        
+        
+        let system_reporter = Box::new(SystemMemoryReporter);
+        memory_profiler_chan.send(MemoryProfilerMsg::RegisterMemoryReporter("system".to_owned(),
+                                                                            system_reporter));
+
+        memory_profiler_chan
     }
 
     pub fn new(port: Receiver<MemoryProfilerMsg>) -> MemoryProfiler {
@@ -319,58 +328,11 @@ impl MemoryProfiler {
         }
     }
 
-    fn print_measurement(path: &str, nbytes: Option<u64>) {
-        match nbytes {
-            Some(nbytes) => {
-                let mebi = 1024f64 * 1024f64;
-                println!("{:12.2}: {}", (nbytes as f64) / mebi, path);
-            }
-            None => {
-                println!("{:>12}: {}", "???", path);
-            }
-        }
-    }
-
     fn handle_print_msg(&self) {
-
         println!("{:12}: {}", "_size (MiB)_", "_category_");
 
         
-
         
-        MemoryProfiler::print_measurement("vsize", get_vsize());
-        MemoryProfiler::print_measurement("resident", get_resident());
-
-        for seg in get_resident_segments().iter() {
-            MemoryProfiler::print_measurement(seg.0.as_slice(), Some(seg.1));
-        }
-
-        
-        
-        MemoryProfiler::print_measurement("system-heap-allocated",
-                                          get_system_heap_allocated());
-
-        
-        
-
-        
-        MemoryProfiler::print_measurement("jemalloc-heap-allocated",
-                                          get_jemalloc_stat("stats.allocated"));
-
-        
-        
-        
-        MemoryProfiler::print_measurement("jemalloc-heap-active",
-                                          get_jemalloc_stat("stats.active"));
-
-        
-        
-        
-        MemoryProfiler::print_measurement("jemalloc-heap-mapped",
-                                          get_jemalloc_stat("stats.mapped"));
-
-        
-
         
         
         
@@ -380,8 +342,8 @@ impl MemoryProfiler {
             if reporter.collect_reports(MemoryReportsChan(chan)) {
                 if let Ok(reports) = port.recv() {
                     for report in reports {
-                        MemoryProfiler::print_measurement(report.name.as_slice(),
-                                                          Some(report.size));
+                        let mebi = 1024f64 * 1024f64;
+                        println!("{:12.2}: {}", (report.size as f64) / mebi, report.name);
                     }
                 }
             }
@@ -390,6 +352,55 @@ impl MemoryProfiler {
         println!("");
     }
 }
+
+
+struct SystemMemoryReporter;
+
+impl MemoryReporter for SystemMemoryReporter {
+    fn collect_reports(&self, reports_chan: MemoryReportsChan) -> bool {
+        let mut reports = vec![];
+        {
+            let mut report = |name: &str, size| {
+                if let Some(size) = size {
+                    reports.push(MemoryReport { name: name.to_owned(), size: size });
+                }
+            };
+
+            
+            report("vsize", get_vsize());
+            report("resident", get_resident());
+
+            
+            for seg in get_resident_segments().iter() {
+                report(seg.0.as_slice(), Some(seg.1));
+            }
+
+            
+            
+            report("system-heap-allocated", get_system_heap_allocated());
+
+            
+            
+
+            
+            report("jemalloc-heap-allocated", get_jemalloc_stat("stats.allocated"));
+
+            
+            
+            
+            report("jemalloc-heap-active", get_jemalloc_stat("stats.active"));
+
+            
+            
+            
+            report("jemalloc-heap-mapped", get_jemalloc_stat("stats.mapped"));
+        }
+        reports_chan.send(reports);
+
+        true
+    }
+}
+
 
 #[cfg(target_os="linux")]
 extern {
