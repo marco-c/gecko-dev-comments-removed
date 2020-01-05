@@ -153,14 +153,14 @@ WebRenderLayer::GetWrBoundTransform()
 gfx::Rect
 WebRenderLayer::GetWrRelBounds()
 {
-  gfx::Rect relBounds = VisibleBoundsRelativeToParent();
+  gfx::Rect bounds = IntRectToRect(GetLayer()->GetVisibleRegion().GetBounds().ToUnknownRect());
   gfx::Matrix4x4 transform = GetWrBoundTransform();
   if (!transform.IsIdentity()) {
     
-    relBounds.MoveTo(transform.TransformPoint(relBounds.TopLeft()));
+    bounds.MoveTo(transform.TransformPoint(bounds.TopLeft()));
   }
 
-  return relBounds;
+  return RelativeToParent(bounds);
 }
 
 void
