@@ -57,7 +57,7 @@ public:
 class AutoSourceEvent : public AutoSaveCurTraceInfo
 {
 public:
-  AutoSourceEvent(SourceEventType aType);
+  explicit AutoSourceEvent(SourceEventType aType);
   ~AutoSourceEvent();
 };
 
@@ -73,7 +73,7 @@ void StopLogging();
 UniquePtr<nsTArray<nsCString>> GetLoggedData(TimeStamp aStartTime);
 
 
-const PRTime GetStartTime();
+PRTime GetStartTime();
 
 
 
