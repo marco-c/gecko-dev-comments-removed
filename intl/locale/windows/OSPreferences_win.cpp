@@ -5,7 +5,9 @@
 
 
 #include "OSPreferences.h"
+#include "mozilla/intl/LocaleService.h"
 #include "nsWin32Locale.h"
+#include "nsReadableUtils.h"
 
 using namespace mozilla::intl;
 
@@ -70,6 +72,28 @@ ToTimeLCType(OSPreferences::DateTimeFormatStyle aFormatStyle)
   }
 }
 
+LPWSTR
+GetWindowsLocaleFor(const nsACString& aLocale, LPWSTR aBuffer)
+{
+  nsAutoCString reqLocale;
+  nsAutoCString systemLocale;
+  OSPreferences::GetInstance()->GetSystemLocale(systemLocale);
+
+  if (aLocale.IsEmpty()) {
+    LocaleService::GetInstance()->GetAppLocaleAsBCP47(reqLocale);
+  } else {
+    reqLocale.Assign(aLocale);
+  }
+
+  bool match = LocaleService::LanguagesMatch(reqLocale, systemLocale);
+  if (match || reqLocale.Length() >= LOCALE_NAME_MAX_LENGTH) {
+    return LOCALE_NAME_USER_DEFAULT;
+  }
+
+  UTF8ToUnicodeBuffer(reqLocale, (char16_t*)aBuffer);
+  return aBuffer;
+}
+
 
 
 
@@ -92,12 +116,9 @@ OSPreferences::ReadDateTimePattern(DateTimeFormatStyle aDateStyle,
                                    DateTimeFormatStyle aTimeStyle,
                                    const nsACString& aLocale, nsAString& aRetVal)
 {
-  LPWSTR localeName = LOCALE_NAME_USER_DEFAULT;
-  nsAutoString localeNameBuffer;
-  if (!aLocale.IsEmpty()) {
-    localeNameBuffer.AppendASCII(aLocale.BeginReading(), aLocale.Length());
-    localeName = (LPWSTR)localeNameBuffer.BeginReading();
-  }
+  WCHAR buffer[LOCALE_NAME_MAX_LENGTH];
+
+  LPWSTR localeName = GetWindowsLocaleFor(aLocale, buffer);
 
   bool isDate = aDateStyle != DateTimeFormatStyle::None &&
                 aDateStyle != DateTimeFormatStyle::Invalid;
@@ -112,7 +133,7 @@ OSPreferences::ReadDateTimePattern(DateTimeFormatStyle aDateStyle,
   nsAutoString tmpStr;
   nsAString* str;
   if (isDate && isTime) {
-    if (!GetDateTimeConnectorPattern(aLocale, aRetVal)) {
+    if (!GetDateTimeConnectorPattern(NS_ConvertUTF16toUTF8(localeName), aRetVal)) {
       NS_WARNING("failed to get date/time connector");
       aRetVal.AssignLiteral(u"{1} {0}");
     }
