@@ -4524,6 +4524,7 @@ class MOZ_STACK_CLASS IfThenElseEmitter
     enum State {
         Start,
         If,
+        Cond,
         IfElse,
         Else,
         End
@@ -4544,20 +4545,21 @@ class MOZ_STACK_CLASS IfThenElseEmitter
   private:
     bool emitIf(State nextState) {
         MOZ_ASSERT(state_ == Start || state_ == Else);
-        MOZ_ASSERT(nextState == If || nextState == IfElse);
+        MOZ_ASSERT(nextState == If || nextState == IfElse || nextState == Cond);
 
         
         if (state_ == Else)
             jumpAroundThen_ = JumpList();
 
         
-        if (!bce_->newSrcNote(nextState == If ? SRC_IF : SRC_IF_ELSE, &noteIndex_))
+        SrcNoteType type = nextState == If ? SRC_IF : nextState == IfElse ? SRC_IF_ELSE : SRC_COND;
+        if (!bce_->newSrcNote(type, &noteIndex_))
             return false;
         if (!bce_->emitJump(JSOP_IFEQ, &jumpAroundThen_))
             return false;
 
         
-        if (nextState == IfElse)
+        if (nextState == IfElse || nextState == Cond)
             thenDepth_ = bce_->stackDepth;
         state_ = nextState;
         return true;
@@ -4568,12 +4570,16 @@ class MOZ_STACK_CLASS IfThenElseEmitter
         return emitIf(If);
     }
 
+    bool emitCond() {
+        return emitIf(Cond);
+    }
+
     bool emitIfElse() {
         return emitIf(IfElse);
     }
 
     bool emitElse() {
-        MOZ_ASSERT(state_ == IfElse);
+        MOZ_ASSERT(state_ == IfElse || state_ == Cond);
 
         
         
@@ -8402,40 +8408,20 @@ BytecodeEmitter::emitConditionalExpression(ConditionalExpression& conditional)
     if (!emitTree(&conditional.condition()))
         return false;
 
-    unsigned noteIndex;
-    if (!newSrcNote(SRC_COND, &noteIndex))
-        return false;
-
-    JumpList beq;
-    if (!emitJump(JSOP_IFEQ, &beq))
+    IfThenElseEmitter ifThenElse(this);
+    if (!ifThenElse.emitCond())
         return false;
 
     if (!emitConditionallyExecutedTree(&conditional.thenExpression()))
         return false;
 
-    
-    JumpList jmp;
-    if (!emitJump(JSOP_GOTO, &jmp))
-        return false;
-    if (!emitJumpTargetAndPatch(beq))
-        return false;
-    if (!setSrcNoteOffset(noteIndex, 0, jmp.offset - beq.offset))
+    if (!ifThenElse.emitElse())
         return false;
 
-    
-
-
-
-
-
-
-
-
-    MOZ_ASSERT(stackDepth > 0);
-    stackDepth--;
     if (!emitConditionallyExecutedTree(&conditional.elseExpression()))
         return false;
-    if (!emitJumpTargetAndPatch(jmp))
+
+    if (!ifThenElse.emitEnd())
         return false;
 
     return true;
