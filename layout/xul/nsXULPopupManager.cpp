@@ -205,6 +205,10 @@ bool
 nsXULPopupManager::Rollup(uint32_t aCount, bool aFlush,
                           const nsIntPoint* pos, nsIContent** aLastRolledUp)
 {
+  if (aLastRolledUp) {
+    *aLastRolledUp = nullptr;
+  }
+
   
   if (nsXULPopupManager::sDevtoolsDisableAutoHide) {
     
