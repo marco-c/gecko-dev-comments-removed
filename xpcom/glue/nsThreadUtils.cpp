@@ -448,23 +448,6 @@ nsThreadPoolNaming::GetNextThreadName(const nsACString& aPoolName)
   name.AppendInt(++mCounter, 10); 
   return name;
 }
- 
-void
-nsThreadPoolNaming::SetThreadPoolName(const nsACString& aPoolName,
-                                      nsIThread* aThread)
-{
-  nsCString name = GetNextThreadName(aPoolName);
-
-  if (aThread) {
-    
-    NS_SetThreadName(aThread, name);
-  } else {
-    
-#ifndef XPCOM_GLUE_AVOID_NSPR
-    PR_SetCurrentThreadName(name.BeginReading());
-#endif
-  }
-}
 
 
 nsAutoLowPriorityIO::nsAutoLowPriorityIO()
