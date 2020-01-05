@@ -38,6 +38,7 @@
 #include "nsIContentPolicy.h"
 #include "nsIDocument.h"
 #include "nsPIDOMWindow.h"
+#include "nsRFPService.h"
 
 #if defined(XP_WIN)
 
@@ -2178,7 +2179,7 @@ public:
   static bool ResistFingerprinting(mozilla::dom::CallerType aCallerType)
   {
     return aCallerType != mozilla::dom::CallerType::System &&
-           sPrivacyResistFingerprinting;
+           mozilla::nsRFPService::IsResistFingerprintingEnabled();
   }
 
   
@@ -2934,13 +2935,6 @@ public:
   static bool
   SkipCursorMoveForSameValueSet() { return sSkipCursorMoveForSameValueSet; }
 
-  
-
-
-
-  static bool
-  GetUserIsInteracting();
-
 private:
   static bool InitializeEventTable();
 
@@ -3059,7 +3053,6 @@ private:
   static bool sIsExperimentalAutocompleteEnabled;
   static bool sIsWebComponentsEnabled;
   static bool sIsCustomElementsEnabled;
-  static bool sPrivacyResistFingerprinting;
   static bool sSendPerformanceTimingNotifications;
   static bool sUseActivityCursor;
   static bool sAnimationsAPICoreEnabled;
@@ -3072,9 +3065,6 @@ private:
 
   static int32_t sPrivacyMaxInnerWidth;
   static int32_t sPrivacyMaxInnerHeight;
-
-  class UserInteractionObserver;
-  static UserInteractionObserver* sUserInteractionObserver;
 
   static nsHtml5StringParser* sHTMLFragmentParser;
   static nsIParser* sXMLFragmentParser;
