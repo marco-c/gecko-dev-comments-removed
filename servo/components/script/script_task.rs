@@ -1669,12 +1669,21 @@ impl ScriptTask {
     }
 
     fn scroll_fragment_point(&self, pipeline_id: PipelineId, element: &Element) {
+        
+        
+        
+        
         let rect = element.upcast::<Node>().get_bounding_content_box();
-        let point = Point2D::new(rect.origin.x.to_f32_px(), rect.origin.y.to_f32_px());
+
         
         
         
         
+        
+        
+        let point = Point2D::new(rect.origin.x.to_nearest_px() as f32,
+                                 rect.origin.y.to_nearest_px() as f32);
+
         self.compositor.borrow_mut().send(ScriptToCompositorMsg::ScrollFragmentPoint(
                                                  pipeline_id, LayerId::null(), point, false)).unwrap();
     }
