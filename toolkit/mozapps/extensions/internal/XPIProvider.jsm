@@ -1003,7 +1003,8 @@ var loadManifestFromWebManifest = Task.async(function*(aUri) {
     
     let rawManifest = extension.rawManifest;
 
-    let creator = rawManifest.author;
+    
+    let creator = typeof(rawManifest.author) === 'string' ? rawManifest.author : null;
     let homepageURL = rawManifest.homepage_url;
 
     
