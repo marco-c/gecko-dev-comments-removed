@@ -4,10 +4,6 @@ use dom::event::Event;
 use geom::rect::Rect;
 
 struct LayerBuffer {
-    
-    
-    cairo_surface: ImageSurface,
-
     draw_target: DrawTarget,
 
     
