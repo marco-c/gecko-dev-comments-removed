@@ -18,7 +18,7 @@ pub fn spawn_named<F>(name: String, f: F)
 }
 
 
-pub fn spawn_named_with_send_on_failure<F, T>(name: &'static str,
+pub fn spawn_named_with_send_on_failure<F, T>(name: String,
                                               state: task_state::TaskState,
                                               f: F,
                                               msg: T,

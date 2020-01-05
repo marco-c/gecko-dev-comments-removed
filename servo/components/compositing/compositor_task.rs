@@ -94,7 +94,13 @@ impl PaintListener for Box<CompositorProxy+'static+Send> {
     fn get_graphics_metadata(&mut self) -> Option<NativeGraphicsMetadata> {
         let (chan, port) = channel();
         self.send(Msg::GetGraphicsMetadata(chan));
-        port.recv().unwrap()
+        
+        
+        
+        
+        
+        
+        port.recv().unwrap_or(None)
     }
 
     fn assign_painted_buffers(&mut self,

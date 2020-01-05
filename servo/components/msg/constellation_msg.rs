@@ -366,7 +366,7 @@ pub struct SubpageId(pub u32);
 
 
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub enum PipelineExitType {
     PipelineOnly,
     Complete,
