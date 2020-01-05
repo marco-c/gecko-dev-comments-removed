@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::callback::ExceptionHandling::ReportExceptions;
+use dom::bindings::callback::ExceptionHandling::Report;
 use dom::bindings::codegen::Bindings::EventBinding::EventMethods;
 use dom::bindings::codegen::InheritTypes::{EventTargetCast, NodeCast, NodeDerived};
 use dom::bindings::js::{JS, JSRef, OptionalRootable, Root};
@@ -48,7 +48,7 @@ pub fn dispatch_event<'a, 'b>(target: JSRef<'a, EventTarget>,
                 event.set_current_target(cur_target.r());
                 for listener in listeners.iter() {
                     
-                    let _ = listener.HandleEvent_(cur_target.r(), event, ReportExceptions);
+                    let _ = listener.HandleEvent_(cur_target.r(), event, Report);
 
                     if event.stop_immediate() {
                         break;
@@ -74,7 +74,7 @@ pub fn dispatch_event<'a, 'b>(target: JSRef<'a, EventTarget>,
         for listeners in opt_listeners.iter() {
             for listener in listeners.iter() {
                 
-                let _ = listener.HandleEvent_(target, event, ReportExceptions);
+                let _ = listener.HandleEvent_(target, event, Report);
 
                 if event.stop_immediate() {
                     break;
@@ -93,7 +93,7 @@ pub fn dispatch_event<'a, 'b>(target: JSRef<'a, EventTarget>,
                     event.set_current_target(cur_target.r());
                     for listener in listeners.iter() {
                         
-                        let _ = listener.HandleEvent_(cur_target.r(), event, ReportExceptions);
+                        let _ = listener.HandleEvent_(cur_target.r(), event, Report);
 
                         if event.stop_immediate() {
                             break;
