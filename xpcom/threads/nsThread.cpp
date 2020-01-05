@@ -432,14 +432,29 @@ SetupCurrentThreadForChaosMode()
   }
 }
 
+namespace {
+
+struct ThreadInitData {
+  nsThread* thread;
+  const nsACString& name;
+};
+
+}
+
  void
 nsThread::ThreadFunc(void* aArg)
 {
   using mozilla::ipc::BackgroundChild;
 
-  nsThread* self = static_cast<nsThread*>(aArg);  
+  ThreadInitData* initData = static_cast<ThreadInitData*>(aArg);
+  nsThread* self = initData->thread;  
+
   self->mThread = PR_GetCurrentThread();
   SetupCurrentThreadForChaosMode();
+
+  if (initData->name.Length() > 0) {
+    PR_SetCurrentThreadName(initData->name.BeginReading());
+  }
 
   
   nsThreadManager::get().RegisterCurrentThread(*self);
@@ -455,6 +470,9 @@ nsThread::ThreadFunc(void* aArg)
       return;
     }
   }
+
+  initData = nullptr; 
+
   event->Run();  
   event = nullptr;
 
@@ -628,7 +646,7 @@ nsThread::~nsThread()
 }
 
 nsresult
-nsThread::Init()
+nsThread::Init(const nsACString& aName)
 {
   
   RefPtr<nsThreadStartupEvent> startup = new nsThreadStartupEvent();
@@ -639,8 +657,10 @@ nsThread::Init()
 
   mShutdownRequired = true;
 
+  ThreadInitData initData = { this, aName };
+
   
-  if (!PR_CreateThread(PR_USER_THREAD, ThreadFunc, this,
+  if (!PR_CreateThread(PR_USER_THREAD, ThreadFunc, &initData,
                        PR_PRIORITY_NORMAL, PR_GLOBAL_THREAD,
                        PR_JOINABLE_THREAD, mStackSize)) {
     NS_RELEASE_THIS();
