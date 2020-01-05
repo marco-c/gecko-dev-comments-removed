@@ -395,6 +395,10 @@ def mozharness_test_buildbot_bridge(config, job, taskdesc):
         if m and m.group(1):
             variant = m.group(1) + ' '
         
+        
+        if variant == 'nightly ':
+            variant = ''
+        
         if variant == 'stylo ':
             buildername = '{} {}{} talos {}'.format(
                 BUILDER_NAME_PREFIX[platform],
