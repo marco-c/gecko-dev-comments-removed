@@ -546,6 +546,18 @@ NS_INLINE_DECL_THREADSAFE_REFCOUNTING_META(_class, NS_IMETHOD_, __VA_ARGS__)
 
 
 
+
+
+#define NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING                               \
+public:                                                                       \
+  NS_IMETHOD_(MozExternalRefCountType) AddRef(void) = 0;                      \
+  NS_IMETHOD_(MozExternalRefCountType) Release(void) = 0;                     \
+public:
+
+
+
+
+
 #define NS_IMPL_ADDREF(_class)                                                \
 NS_IMETHODIMP_(MozExternalRefCountType) _class::AddRef(void)                  \
 {                                                                             \

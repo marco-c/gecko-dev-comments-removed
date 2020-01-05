@@ -32,8 +32,7 @@ public:
 
   
   
-  NS_IMETHOD_(MozExternalRefCountType) AddRef(void) = 0;
-  NS_IMETHOD_(MozExternalRefCountType) Release(void) = 0;
+  NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
 
   
   virtual void Notify(int32_t aType, const nsIntRect* aRect = nullptr) = 0;
