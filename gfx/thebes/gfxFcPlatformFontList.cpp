@@ -796,6 +796,35 @@ PreparePattern(FcPattern* aPattern, bool aIsPrinterFont)
     FcDefaultSubstitute(aPattern);
 }
 
+static inline gfxFloat
+SizeForStyle(gfxFontconfigFontEntry* aEntry, const gfxFontStyle& aStyle)
+{
+    return aStyle.sizeAdjust >= 0.0 ?
+                aStyle.GetAdjustedSize(aEntry->GetAspect()) :
+                aStyle.size;
+}
+
+static double
+ChooseFontSize(gfxFontconfigFontEntry* aEntry,
+               const gfxFontStyle& aStyle)
+{
+    double requestedSize = SizeForStyle(aEntry, aStyle);
+    double bestDist = -1.0;
+    double bestSize = requestedSize;
+    double size;
+    int v = 0;
+    while (FcPatternGetDouble(aEntry->GetPattern(),
+                              FC_PIXEL_SIZE, v, &size) == FcResultMatch) {
+        ++v;
+        double dist = fabs(size - requestedSize);
+        if (bestDist < 0.0 || dist < bestDist) {
+            bestDist = dist;
+            bestSize = size;
+        }
+    }
+    return bestSize;
+}
+
 gfxFont*
 gfxFontconfigFontEntry::CreateFontInstance(const gfxFontStyle *aFontStyle,
                                            bool aNeedsBold)
@@ -805,7 +834,9 @@ gfxFontconfigFontEntry::CreateFontInstance(const gfxFontStyle *aFontStyle,
         NS_WARNING("Failed to create Fontconfig pattern for font instance");
         return nullptr;
     }
-    FcPatternAddDouble(pattern, FC_PIXEL_SIZE, aFontStyle->size);
+
+    double size = ChooseFontSize(this, *aFontStyle);
+    FcPatternAddDouble(pattern, FC_PIXEL_SIZE, size);
 
     PreparePattern(pattern, aFontStyle->printerFont);
     nsAutoRef<FcPattern> renderPattern
@@ -815,15 +846,10 @@ gfxFontconfigFontEntry::CreateFontInstance(const gfxFontStyle *aFontStyle,
         return nullptr;
     }
 
-    double adjustedSize = aFontStyle->size;
-    if (aFontStyle->sizeAdjust >= 0.0) {
-        adjustedSize = aFontStyle->GetAdjustedSize(GetAspect());
-    }
-
     cairo_scaled_font_t* scaledFont =
-        CreateScaledFont(renderPattern, adjustedSize, aFontStyle, aNeedsBold);
+        CreateScaledFont(renderPattern, size, aFontStyle, aNeedsBold);
     gfxFont* newFont =
-        new gfxFontconfigFont(scaledFont, renderPattern, adjustedSize,
+        new gfxFontconfigFont(scaledFont, renderPattern, size,
                               this, aFontStyle, aNeedsBold);
     cairo_scaled_font_destroy(scaledFont);
 
@@ -931,8 +957,114 @@ gfxFontconfigFontFamily::AddFontPattern(FcPattern* aFontPattern)
     NS_ASSERTION(!mHasStyles,
                  "font patterns must not be added to already enumerated families");
 
+    FcBool scalable;
+    if (FcPatternGetBool(aFontPattern, FC_SCALABLE, 0, &scalable) != FcResultMatch ||
+        !scalable) {
+        mHasNonScalableFaces = true;
+    }
+
     nsCountedRef<FcPattern> pattern(aFontPattern);
     mFontPatterns.AppendElement(pattern);
+}
+
+static const double kRejectDistance = 10000.0;
+
+
+
+static double
+SizeDistance(gfxFontconfigFontEntry* aEntry, const gfxFontStyle& aStyle)
+{
+    double requestedSize = SizeForStyle(aEntry, aStyle);
+    double bestDist = -1.0;
+    double size;
+    int v = 0;
+    while (FcPatternGetDouble(aEntry->GetPattern(),
+                              FC_PIXEL_SIZE, v, &size) == FcResultMatch) {
+        ++v;
+        double dist = fabs(size - requestedSize);
+        if (bestDist < 0.0 || dist < bestDist) {
+            bestDist = dist;
+        }
+    }
+    if (bestDist < 0.0) {
+        
+        return -1.0;
+    } else if (5.0 * bestDist < requestedSize) {
+        
+        
+        return bestDist;
+    } else {
+        
+        return kRejectDistance;
+    }
+}
+
+void
+gfxFontconfigFontFamily::FindAllFontsForStyle(const gfxFontStyle& aFontStyle,
+                                              nsTArray<gfxFontEntry*>& aFontEntryList,
+                                              bool& aNeedsSyntheticBold)
+{
+    gfxFontFamily::FindAllFontsForStyle(aFontStyle,
+                                        aFontEntryList,
+                                        aNeedsSyntheticBold);
+
+    if (!mHasNonScalableFaces) {
+        return;
+    }
+
+    
+    
+    
+    
+    
+    size_t skipped = 0;
+    gfxFontconfigFontEntry* bestEntry = nullptr;
+    double bestDist = -1.0;
+    for (size_t i = 0; i < aFontEntryList.Length(); i++) {
+        gfxFontconfigFontEntry* entry =
+            static_cast<gfxFontconfigFontEntry*>(aFontEntryList[i]);
+        double dist = SizeDistance(entry, aFontStyle);
+        
+        
+        if (dist < 0.0 ||
+            !bestEntry ||
+            bestEntry->Stretch() != entry->Stretch() ||
+            bestEntry->Weight() != entry->Weight() ||
+            bestEntry->mStyle != entry->mStyle) {
+            
+            
+            if (bestDist >= kRejectDistance) {
+                skipped++;
+            }
+            
+            if (skipped) {
+                i -= skipped;
+                aFontEntryList.RemoveElementsAt(i, skipped);
+                skipped = 0;
+            }
+            
+            bestEntry = entry;
+            bestDist = dist;
+        } else {
+            
+            
+            if (dist < bestDist) {
+                aFontEntryList[i-1-skipped] = entry;
+                bestEntry = entry;
+                bestDist = dist;
+            }
+            skipped++;
+        }
+    }
+    
+    
+    if (bestDist >= kRejectDistance) {
+        skipped++;
+    }
+    
+    if (skipped) {
+        aFontEntryList.TruncateLength(aFontEntryList.Length() - skipped);
+    }
 }
 
 gfxFontconfigFont::gfxFontconfigFont(cairo_scaled_font_t *aScaledFont,
@@ -1005,13 +1137,6 @@ gfxFcPlatformFontList::AddFontSetFamilies(FcFontSet* aFontSet, bool aAppFonts)
     nsAutoString familyName;
     for (int f = 0; f < aFontSet->nfont; f++) {
         FcPattern* font = aFontSet->fonts[f];
-
-        
-        FcBool scalable;
-        if (FcPatternGetBool(font, FC_SCALABLE, 0, &scalable) != FcResultMatch ||
-            !scalable) {
-            continue;
-        }
 
         
         uint32_t cIndex = FindCanonicalNameIndex(font, FC_FAMILYLANG);
@@ -1125,9 +1250,6 @@ GetSystemFontList(nsTArray<nsString>& aListOfFonts, nsIAtom *aLangGroup)
     if (!fcLang.IsEmpty()) {
         FcPatternAddString(pat, FC_LANG, ToFcChar8Ptr(fcLang.get()));
     }
-
-    
-    FcPatternAddBool(pat, FC_SCALABLE, FcTrue);
 
     nsAutoRef<FcFontSet> fs(FcFontList(nullptr, pat, os));
     if (!fs) {
@@ -1377,9 +1499,6 @@ gfxFcPlatformFontList::GetStandardFamilyName(const nsAString& aFontName,
     }
 
     
-    FcPatternAddBool(pat, FC_SCALABLE, FcTrue);
-
-    
     NS_ConvertUTF16toUTF8 familyName(aFontName);
     FcPatternAddString(pat, FC_FAMILY, ToFcChar8Ptr(familyName.get()));
 
@@ -1614,13 +1733,6 @@ gfxFcPlatformFontList::FindGenericFamilies(const nsAString& aGeneric,
     for (int i = 0; i < faces->nfont; i++) {
         FcPattern* font = faces->fonts[i];
         FcChar8* mappedGeneric = nullptr;
-
-        
-        FcBool scalable;
-        if (FcPatternGetBool(font, FC_SCALABLE, 0, &scalable) != FcResultMatch ||
-            !scalable) {
-            continue;
-        }
 
         FcPatternGetString(font, FC_FAMILY, 0, &mappedGeneric);
         if (mappedGeneric) {
