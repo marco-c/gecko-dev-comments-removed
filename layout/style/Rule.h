@@ -80,16 +80,16 @@ public:
 
   virtual int32_t GetType() const = 0;
 
-  CSSStyleSheet* GetStyleSheet() const { return mSheet; }
+  StyleSheet* GetStyleSheet() const { return mSheet; }
 
   
   nsIDocument* GetDocument() const
   {
-    CSSStyleSheet* sheet = GetStyleSheet();
+    StyleSheet* sheet = GetStyleSheet();
     return sheet ? sheet->GetDocument() : nullptr;
   }
 
-  virtual void SetStyleSheet(CSSStyleSheet* aSheet);
+  virtual void SetStyleSheet(StyleSheet* aSheet);
 
   void SetParentRule(GroupRule* aRule) {
     
@@ -125,7 +125,7 @@ public:
 
 protected:
   
-  CSSStyleSheet*    mSheet;
+  StyleSheet* mSheet;
   
   
   GroupRule* MOZ_NON_OWNING_REF mParentRule;
