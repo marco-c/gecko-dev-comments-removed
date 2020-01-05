@@ -6,8 +6,19 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "nsISupportsArray.h"
 #include "gtest/gtest.h"
+
+
+
+#if defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#elif defined(_MSC_VER)
+#pragma warning (push)
+#pragma warning (disable : 4996)
+#endif
+
+#include "nsISupportsArray.h"
 
 
 #define NS_IFOO_IID \
@@ -150,3 +161,9 @@ TEST(Array, main)
     NS_RELEASE(array);
   }
 }
+
+#if defined(__GNUC__)
+#pragma GCC diagnostic pop
+#elif defined(_MSC_VER)
+#pragma warning (pop)
+#endif

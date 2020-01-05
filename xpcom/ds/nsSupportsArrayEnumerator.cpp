@@ -5,6 +5,17 @@
 
 
 #include "nsSupportsArrayEnumerator.h"
+
+
+
+#if defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#elif defined(_MSC_VER)
+#pragma warning (push)
+#pragma warning (disable : 4996)
+#endif
+
 #include "nsISupportsArray.h"
 
 nsSupportsArrayEnumerator::nsSupportsArrayEnumerator(nsISupportsArray* array)
@@ -113,3 +124,8 @@ nsSupportsArrayEnumerator::Prev()
   }
 }
 
+#if defined(__GNUC__)
+#pragma GCC diagnostic pop
+#elif defined(_MSC_VER)
+#pragma warning (pop)
+#endif
