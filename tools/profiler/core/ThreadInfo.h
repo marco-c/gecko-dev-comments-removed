@@ -28,7 +28,9 @@ public:
 
   mozilla::NotNull<PseudoStack*> Stack() const { return mPseudoStack; }
 
-  void SetHasProfile() { mHasProfile = true; }
+  void StartProfiling();
+  void StopProfiling();
+  bool IsBeingProfiled() { return mIsBeingProfiled; }
 
   PlatformData* GetPlatformData() const { return mPlatformData.get(); }
   void* StackTop() const { return mStackTop; }
@@ -57,8 +59,6 @@ private:
   
 
 public:
-  bool HasProfile() { return mHasProfile; }
-
   void StreamJSON(ProfileBuffer* aBuffer, SpliceableJSONWriter& aWriter,
                   const mozilla::TimeStamp& aStartTime, double aSinceTime);
 
@@ -76,7 +76,7 @@ public:
   }
 
 private:
-  bool mHasProfile;
+  bool mIsBeingProfiled;
 
   
   
