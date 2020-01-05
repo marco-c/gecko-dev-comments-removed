@@ -1729,6 +1729,20 @@ class BaseCompiler
         }
     }
 
+    void maybeReserveJoinRegI(ExprType type) {
+        if (type == ExprType::I32)
+            needI32(joinRegI32);
+        else if (type == ExprType::I64)
+            needI64(joinRegI64);
+    }
+
+    void maybeUnreserveJoinRegI(ExprType type) {
+        if (type == ExprType::I32)
+            freeI32(joinRegI32);
+        else if (type == ExprType::I64)
+            freeI64(joinRegI64);
+    }
+
     
     
 
@@ -4922,15 +4936,12 @@ BaseCompiler::emitBrIf()
     
 
     
-    
-    if (type == ExprType::I32 || type == ExprType::I64)
-        needI32(joinRegI32);
+    maybeReserveJoinRegI(type);
 
     
     RegI32 rc = popI32();
 
-    if (type == ExprType::I32 || type == ExprType::I64)
-        freeI32(joinRegI32);
+    maybeUnreserveJoinRegI(type);
 
     
     
@@ -4982,15 +4993,12 @@ BaseCompiler::emitBrTable()
         return true;
 
     
-    
-    if (type == ExprType::I32 || type == ExprType::I64)
-        needI32(joinRegI32);
+    maybeReserveJoinRegI(type);
 
     
     RegI32 rc = popI32();
 
-    if (type == ExprType::I32 || type == ExprType::I64)
-        freeI32(joinRegI32);
+    maybeUnreserveJoinRegI(type);
 
     AnyReg r;
     if (!IsVoid(type))
