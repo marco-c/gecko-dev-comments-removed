@@ -84,3 +84,9 @@ notification[type="critical"] {
     color: #aa1b08;
   }
 }
+
+
+
+.popup-notification-button[default] {
+  order: -1;
+}
