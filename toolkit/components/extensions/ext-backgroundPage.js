@@ -101,11 +101,7 @@ BackgroundPage.prototype = {
                   .then(addon => addon.setDebugGlobal(window));
     }
 
-    
-    
-    if (this.extension.onStartup) {
-      this.extension.onStartup();
-    }
+    this.extension.emit("startup");
   }),
 
   shutdown() {
