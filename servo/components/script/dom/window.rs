@@ -8,7 +8,7 @@ use dom::bindings::codegen::Bindings::EventHandlerBinding::{OnErrorEventHandlerN
 use dom::bindings::codegen::Bindings::DocumentBinding::DocumentMethods;
 use dom::bindings::codegen::Bindings::FunctionBinding::Function;
 use dom::bindings::codegen::Bindings::WindowBinding::{self, WindowMethods, FrameRequestCallback};
-use dom::bindings::codegen::InheritTypes::{NodeCast, ElementCast, EventTargetCast};
+use dom::bindings::codegen::InheritTypes::{NodeCast, ElementCast, EventTargetCast, WindowDerived};
 use dom::bindings::global::global_object_for_js_object;
 use dom::bindings::error::{report_pending_exception, Fallible};
 use dom::bindings::error::Error::InvalidCharacter;
@@ -81,7 +81,7 @@ use std::sync::mpsc::{channel, Receiver};
 use time;
 
 
-#[derive(JSTraceable, Copy, Clone, Debug, PartialEq)]
+#[derive(JSTraceable, Copy, Clone, Debug, PartialEq, HeapSizeOf)]
 enum WindowState {
     Alive,
     Zombie,     
@@ -106,15 +106,21 @@ pub enum ReflowReason {
 }
 
 #[dom_struct]
+#[derive(HeapSizeOf)]
 pub struct Window {
     eventtarget: EventTarget,
+    #[ignore_heap_size_of = "trait objects are hard"]
     script_chan: Box<ScriptChan+Send>,
+    #[ignore_heap_size_of = "channels are hard"]
     control_chan: ScriptControlChan,
     console: MutNullableHeap<JS<Console>>,
     crypto: MutNullableHeap<JS<Crypto>>,
     navigator: MutNullableHeap<JS<Navigator>>,
+    #[ignore_heap_size_of = "channels are hard"]
     image_cache_task: ImageCacheTask,
+    #[ignore_heap_size_of = "channels are hard"]
     image_cache_chan: ImageCacheChan,
+    #[ignore_heap_size_of = "TODO(#6911) newtypes containing unmeasurable types are hard"]
     compositor: DOMRefCell<ScriptListener>,
     browsing_context: DOMRefCell<Option<BrowsingContext>>,
     page: Rc<Page>,
@@ -129,13 +135,17 @@ pub struct Window {
     next_worker_id: Cell<WorkerId>,
 
     
+    #[ignore_heap_size_of = "channels are hard"]
     mem_profiler_chan: mem::ProfilerChan,
 
     
+    #[ignore_heap_size_of = "channels are hard"]
     devtools_chan: Option<IpcSender<ScriptToDevtoolsControlMsg>>,
     
     
+    #[ignore_heap_size_of = "TODO(#6909) need to measure HashSet"]
     devtools_markers: RefCell<HashSet<TimelineMarkerType>>,
+    #[ignore_heap_size_of = "channels are hard"]
     devtools_marker_sender: RefCell<Option<IpcSender<TimelineMarker>>>,
 
     
@@ -160,27 +170,34 @@ pub struct Window {
     dom_static: GlobalStaticData,
 
     
+    #[ignore_heap_size_of = "Rc<T> is hard"]
     js_runtime: DOMRefCell<Option<Rc<Runtime>>>,
 
     
+    #[ignore_heap_size_of = "channels are hard"]
     layout_chan: LayoutChan,
 
     
+    #[ignore_heap_size_of = "trait objects are hard"]
     layout_rpc: Box<LayoutRPC+'static>,
 
     
+    #[ignore_heap_size_of = "channels are hard"]
     layout_join_port: DOMRefCell<Option<Receiver<()>>>,
 
     
     window_size: Cell<Option<WindowSizeData>>,
 
     
+    #[ignore_heap_size_of = "channels are hard"]
     resource_task: Arc<ResourceTask>,
 
     
+    #[ignore_heap_size_of = "channels are hard"]
     storage_task: StorageTask,
 
     
+    #[ignore_heap_size_of = "channels are hard"]
     constellation_chan: ConstellationChan,
 
     
@@ -194,6 +211,7 @@ pub struct Window {
     pending_reflow_count: Cell<u32>,
 
     
+    #[ignore_heap_size_of = "channels are hard"]
     webdriver_script_chan: RefCell<Option<IpcSender<WebDriverJSResult>>>,
 
     
@@ -1181,4 +1199,10 @@ fn debug_reflow_events(goal: &ReflowGoal, query_type: &ReflowQueryType, reason: 
     });
 
     println!("{}", debug_msg);
+}
+
+impl WindowDerived for EventTarget {
+    fn is_window(&self) -> bool {
+        self.type_id() == &EventTargetTypeId::Window
+    }
 }

@@ -78,6 +78,7 @@ use string_cache::{Atom, Namespace, QualName};
 
 
 #[dom_struct]
+#[derive(HeapSizeOf)]
 pub struct Node {
     
     eventtarget: EventTarget,
@@ -135,7 +136,7 @@ impl NodeDerived for EventTarget {
 
 bitflags! {
     #[doc = "Flags for node items."]
-    #[derive(JSTraceable)]
+    #[derive(JSTraceable, HeapSizeOf)]
     flags NodeFlags: u16 {
         #[doc = "Specifies whether this node is in a document."]
         const IS_IN_DOC = 0x01,
@@ -206,20 +207,25 @@ enum SuppressObserver {
 }
 
 
+#[derive(HeapSizeOf)]
 pub struct SharedLayoutData {
     
     pub style: Option<Arc<ComputedValues>>,
 }
 
 
+#[allow(raw_pointer_derive)]
+#[derive(HeapSizeOf)]
 pub struct LayoutData {
     _shared_data: SharedLayoutData,
+    #[ignore_heap_size_of = "TODO(#6910) Box value that should be counted but the type lives in layout"]
     _data: NonZero<*const ()>,
 }
 
 #[allow(unsafe_code)]
 unsafe impl Send for LayoutData {}
 
+#[derive(HeapSizeOf)]
 pub struct LayoutDataRef {
     data_cell: RefCell<Option<LayoutData>>,
 }
@@ -274,6 +280,7 @@ impl LayoutDataRef {
 
 
 #[derive(JSTraceable, Copy, Clone, PartialEq, Debug)]
+#[derive(HeapSizeOf)]
 pub enum NodeTypeId {
     CharacterData(CharacterDataTypeId),
     DocumentType,

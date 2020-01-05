@@ -13,7 +13,7 @@ use std::cell::Cell;
 use std::rc::Rc;
 
 
-#[derive(JSTraceable)]
+#[derive(JSTraceable, HeapSizeOf)]
 #[allow(unrooted_must_root)] 
 pub struct Page {
     
@@ -127,7 +127,7 @@ impl Page {
 }
 
 
-#[derive(JSTraceable)]
+#[derive(JSTraceable, HeapSizeOf)]
 #[must_root]
 pub struct Frame {
     

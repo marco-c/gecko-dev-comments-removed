@@ -110,6 +110,7 @@ pub enum IsHTMLDocument {
 
 
 #[dom_struct]
+#[derive(HeapSizeOf)]
 pub struct Document {
     node: Node,
     window: JS<Window>,
@@ -144,6 +145,7 @@ pub struct Document {
     animation_frame_ident: Cell<i32>,
     
     
+    #[ignore_heap_size_of = "closures are hard"]
     animation_frame_list: RefCell<HashMap<i32, Box<Fn(f64)>>>,
     
     loader: DOMRefCell<DocumentLoader>,
