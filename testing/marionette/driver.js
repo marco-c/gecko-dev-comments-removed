@@ -1252,12 +1252,18 @@ GeckoDriver.prototype.getChromeWindowHandles = function (cmd, resp) {
 
 
 
-GeckoDriver.prototype.getWindowPosition = function (cmd, resp) {
-  let win = assert.window(this.getCurrentWindow());
 
+
+
+
+
+GeckoDriver.prototype.getWindowRect = function (cmd, resp) {
+  let win = assert.window(this.getCurrentWindow());
   return {
     x: win.screenX,
     y: win.screenY,
+    width: win.outerWidth,
+    height: win.outerHeight,
   };
 };
 
@@ -2586,21 +2592,6 @@ GeckoDriver.prototype.setScreenOrientation = function (cmd, resp) {
 
 
 
-
-GeckoDriver.prototype.getWindowSize = function (cmd, resp) {
-  let win = assert.window(this.getCurrentWindow());
-  return {
-    width: win.outerWidth,
-    height: win.outerHeight,
-  };
-};
-
-
-
-
-
-
-
 GeckoDriver.prototype.maximizeWindow = function (cmd, resp) {
   assert.firefox()
   let win = assert.window(this.getCurrentWindow());
@@ -3014,9 +3005,10 @@ GeckoDriver.prototype.commands = {
   "getCurrentChromeWindowHandle": GeckoDriver.prototype.getChromeWindowHandle,
   "getWindowHandles": GeckoDriver.prototype.getWindowHandles,
   "getChromeWindowHandles": GeckoDriver.prototype.getChromeWindowHandles,
-  "getWindowPosition": GeckoDriver.prototype.getWindowPosition,
+  "getWindowPosition": GeckoDriver.prototype.getWindowRect, 
   "setWindowPosition": GeckoDriver.prototype.setWindowRect, 
   "setWindowRect": GeckoDriver.prototype.setWindowRect,
+  "getWindowRect": GeckoDriver.prototype.getWindowRect,
   "getActiveFrame": GeckoDriver.prototype.getActiveFrame,
   "switchToFrame": GeckoDriver.prototype.switchToFrame,
   "switchToParentFrame": GeckoDriver.prototype.switchToParentFrame,
@@ -3037,7 +3029,7 @@ GeckoDriver.prototype.commands = {
   "getActiveElement": GeckoDriver.prototype.getActiveElement,
   "getScreenOrientation": GeckoDriver.prototype.getScreenOrientation,
   "setScreenOrientation": GeckoDriver.prototype.setScreenOrientation,
-  "getWindowSize": GeckoDriver.prototype.getWindowSize,
+  "getWindowSize": GeckoDriver.prototype.getWindowRect, 
   "setWindowSize": GeckoDriver.prototype.setWindowRect, 
   "maximizeWindow": GeckoDriver.prototype.maximizeWindow,
   "dismissDialog": GeckoDriver.prototype.dismissDialog,
