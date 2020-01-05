@@ -12,13 +12,12 @@ use script::dom::bindings::utils::Reflectable;
 use script::dom::node::AbstractNode;
 use script::layout_interface::{LayoutChan, UntrustedNodeAddress};
 use servo_util::range::Range;
-use servo_util::smallvec::{SmallVec0, SmallVec16};
 use std::cast;
 use std::cell::{Ref, RefMut};
 use std::iter::Enumerate;
 use std::libc::uintptr_t;
 use std::vec::VecIterator;
-use style::{ComputedValues, PropertyDeclaration};
+use style::ComputedValues;
 
 
 pub struct NodeRange {
@@ -131,17 +130,12 @@ impl ElementMapping {
 
 pub struct PrivateLayoutData {
     
-    applicable_declarations: SmallVec16<Arc<~[PropertyDeclaration]>>,
-
-    before_applicable_declarations: SmallVec0<Arc<~[PropertyDeclaration]>>,
-
-    after_applicable_declarations: SmallVec0<Arc<~[PropertyDeclaration]>>,
+    style: Option<Arc<ComputedValues>>,
 
     
     before_style: Option<Arc<ComputedValues>>,
 
-    style: Option<Arc<ComputedValues>>,
-
+    
     after_style: Option<Arc<ComputedValues>>,
 
     
@@ -159,9 +153,6 @@ impl PrivateLayoutData {
     
     pub fn new() -> PrivateLayoutData {
         PrivateLayoutData {
-            applicable_declarations: SmallVec16::new(),
-            before_applicable_declarations: SmallVec0::new(),
-            after_applicable_declarations: SmallVec0::new(),
             before_style: None,
             style: None,
             after_style: None,
@@ -169,14 +160,6 @@ impl PrivateLayoutData {
             flow_construction_result: NoConstructionResult,
             parallel: DomParallelInfo::new(),
         }
-    }
-
-    
-    pub fn init_applicable_declarations(&mut self) {
-        
-        self.applicable_declarations = SmallVec16::new();
-        self.before_applicable_declarations = SmallVec0::new();
-        self.after_applicable_declarations = SmallVec0::new();
     }
 }
 
