@@ -4,14 +4,173 @@
 
 "use strict";
 
+const { ConsoleCommand } = require("devtools/client/webconsole/new-console-output/types");
+
 function JSTerm(webConsoleFrame) {
   this.hud = webConsoleFrame;
   this.hudId = this.hud.hudId;
   this.historyLoaded = new Promise(r => {
     r();
   });
-  this.openVariablesView = () => { };
-  this.init = () => { };
 }
+
+JSTerm.prototype = {
+  SELECTED_FRAME: -1,
+
+  get webConsoleClient() {
+    return this.hud.webConsoleClient;
+  },
+
+  openVariablesView() { },
+  clearOutput() { },
+
+  init() {
+    this.doc = this.hud.window.document;
+    this.root = this.doc.createElement("div");
+    this.root.className = "jsterm-input-container";
+    this.inputNode = this.doc.createElement("input");
+    this.inputNode.className = "jsterm-input-node jsterm-input-node-html";
+    this.root.appendChild(this.inputNode);
+    this.doc.querySelector("#app-wrapper").appendChild(this.root);
+
+    this.inputNode.onkeypress = (e) => {
+      if (e.key === "Enter") {
+        this.execute();
+      }
+    };
+  },
+
+  
+
+
+
+
+
+
+
+
+  setInputValue(newValue) {
+    this.inputNode.value = newValue;
+    
+  },
+
+  
+
+
+
+  getInputValue() {
+    return this.inputNode.value || "";
+  },
+
+  execute(executeString) {
+    return new Promise(resolve => {
+      
+      executeString = executeString || this.getInputValue();
+      if (!executeString) {
+        return;
+      }
+
+      let message = new ConsoleCommand({
+        messageText: executeString,
+      });
+      this.hud.proxy.dispatchMessageAdd(message);
+
+      let selectedNodeActor = null;
+      let inspectorSelection = this.hud.owner.getInspectorSelection();
+      if (inspectorSelection && inspectorSelection.nodeFront) {
+        selectedNodeActor = inspectorSelection.nodeFront.actorID;
+      }
+
+      let onResult = (response) => {
+        if (response.error) {
+          console.error("Evaluation error " + response.error + ": " +
+                        response.message);
+          return;
+        }
+        this.hud.newConsoleOutput.dispatchMessageAdd(response, true).then(resolve);
+      };
+
+      let options = {
+        frame: this.SELECTED_FRAME,
+        selectedNodeActor: selectedNodeActor,
+      };
+
+      this.requestEvaluation(executeString, options).then(onResult, onResult);
+      this.setInputValue("");
+    });
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  requestEvaluation(str, options = {}) {
+    return new Promise((resolve, reject) => {
+      let frameActor = null;
+      if ("frame" in options) {
+        frameActor = this.getFrameActor(options.frame);
+      }
+      let evalOptions = {
+        bindObjectActor: options.bindObjectActor,
+        frameActor: frameActor,
+        selectedNodeActor: options.selectedNodeActor,
+        selectedObjectActor: options.selectedObjectActor,
+      };
+      let onResponse = response => {
+        if (!response.error) {
+          resolve(response);
+        } else {
+          reject(response);
+        }
+      };
+
+      this.webConsoleClient.evaluateJSAsync(str, onResponse, evalOptions);
+    });
+  },
+
+  
+
+
+
+
+
+
+
+  getFrameActor(frame) {
+    let state = this.hud.owner.getDebuggerFrames();
+    if (!state) {
+      return null;
+    }
+
+    let grip;
+    if (frame == this.SELECTED_FRAME) {
+      grip = state.frames[state.selected];
+    } else {
+      grip = state.frames[frame];
+    }
+
+    return grip ? grip.actor : null;
+  },
+};
 
 module.exports.JSTerm = JSTerm;

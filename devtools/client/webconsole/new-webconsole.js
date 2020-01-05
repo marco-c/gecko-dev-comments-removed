@@ -114,13 +114,17 @@ NewWebConsoleFrame.prototype = {
 
   },
 
+  handleNetworkEventUpdate() {
+
+  },
+
   
 
 
 
 
 
-  setSaveRequestAndResponseBodies: function (value) {
+  setSaveRequestAndResponseBodies(value) {
     if (!this.webConsoleClient) {
       
       return promise.resolve(null);
@@ -252,7 +256,7 @@ NewWebConsoleFrame.prototype = {
         packet._type = true;
         this.newConsoleOutput.dispatchMessageAdd(packet);
       } else {
-        this.jsterm.clearOutput();
+        this.clearOutput(false);
       }
     }
 
@@ -262,6 +266,14 @@ NewWebConsoleFrame.prototype = {
 
     if (event == "navigate" && !packet.nativeConsoleAPI) {
       this.logWarningAboutReplacedAPI();
+    }
+  },
+
+  clearOutput(clearStorage) {
+    this.newConsoleOutput.dispatchMessagesClear();
+    this.webConsoleClient.clearNetworkRequests();
+    if (clearStorage) {
+      this.webConsoleClient.clearMessagesCache();
     }
   },
 };

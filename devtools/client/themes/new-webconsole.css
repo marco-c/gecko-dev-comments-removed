@@ -473,6 +473,10 @@ body {
   color: var(--theme-comment);
 }
 
+.jsterm-input-node-html {
+  width: 100%;
+}
+
 .jsterm-input-node {
   
 
