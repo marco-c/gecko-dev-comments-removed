@@ -455,20 +455,36 @@ SVGUseElement::PrependLocalTransformsTo(
   const gfxMatrix &aMatrix, SVGTransformTypes aWhich) const
 {
   
-  gfxMatrix fromUserSpace =
-    SVGUseElementBase::PrependLocalTransformsTo(aMatrix, aWhich);
-  if (aWhich == eUserSpaceToParent) {
-    return fromUserSpace;
+  gfxMatrix userToParent;
+
+  if (aWhich == eUserSpaceToParent || aWhich == eAllTransforms) {
+    userToParent = GetUserToParentTransform(mAnimateMotionTransform,
+                                            mTransforms);
+    if (aWhich == eUserSpaceToParent) {
+      return userToParent * aMatrix;
+    }
   }
+
   
   float x, y;
   const_cast<SVGUseElement*>(this)->GetAnimatedLengthValues(&x, &y, nullptr);
-  gfxMatrix toUserSpace = gfxMatrix::Translation(x, y);
-  if (aWhich == eChildToUserSpace) {
-    return toUserSpace * aMatrix;
+
+  gfxMatrix childToUser = gfxMatrix::Translation(x, y);
+
+  if (aWhich == eAllTransforms) {
+    return childToUser * userToParent * aMatrix;
   }
-  MOZ_ASSERT(aWhich == eAllTransforms, "Unknown TransformTypes");
-  return toUserSpace * fromUserSpace;
+
+  MOZ_ASSERT(aWhich == eChildToUserSpace, "Unknown TransformTypes");
+
+  
+  
+  
+  
+  
+  
+  
+  return childToUser * aMatrix;
 }
 
  bool

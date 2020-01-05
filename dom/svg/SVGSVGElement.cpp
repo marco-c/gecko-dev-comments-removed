@@ -954,39 +954,52 @@ SVGSVGElement::GetLength(uint8_t aCtxType)
 
 
  gfxMatrix
-SVGSVGElement::PrependLocalTransformsTo(
-  const gfxMatrix &aMatrix, SVGTransformTypes aWhich) const
+SVGSVGElement::PrependLocalTransformsTo(const gfxMatrix& aMatrix,
+                                        SVGTransformTypes aWhich) const
 {
   
-  gfxMatrix fromUserSpace =
-    SVGContentUtils::PrependLocalTransformsTo(
-      aMatrix, aWhich, mAnimateMotionTransform,
-      mSVGView && mSVGView->mTransforms ? mSVGView->mTransforms : mTransforms);
+  gfxMatrix userToParent;
 
-  if (aWhich == eUserSpaceToParent) {
-    return fromUserSpace;
+  if (aWhich == eUserSpaceToParent || aWhich == eAllTransforms) {
+    userToParent = GetUserToParentTransform(mAnimateMotionTransform,
+                                            mSVGView && mSVGView->mTransforms
+                                              ? mSVGView->mTransforms
+                                              : mTransforms);
+    if (aWhich == eUserSpaceToParent) {
+      return userToParent * aMatrix;
+    }
   }
+
+  gfxMatrix childToUser;
 
   if (IsInner()) {
     float x, y;
     const_cast<SVGSVGElement*>(this)->GetAnimatedLengthValues(&x, &y, nullptr);
-    if (aWhich == eAllTransforms) {
-      
-      return ThebesMatrix(GetViewBoxTransform()) * gfxMatrix::Translation(x, y) * fromUserSpace;
-    }
-    MOZ_ASSERT(aWhich == eChildToUserSpace, "Unknown TransformTypes");
-    return ThebesMatrix(GetViewBoxTransform()) * gfxMatrix::Translation(x, y) * aMatrix;
+    childToUser = ThebesMatrix(GetViewBoxTransform().PostTranslate(x, y));
+  } else if (IsRoot()) {
+    childToUser = ThebesMatrix(GetViewBoxTransform()
+                                 .PostScale(mCurrentScale, mCurrentScale)
+                                 .PostTranslate(mCurrentTranslate.GetX(),
+                                                mCurrentTranslate.GetY()));
+  } else {
+    
+    childToUser = ThebesMatrix(GetViewBoxTransform());
   }
 
-  if (IsRoot()) {
-    gfxMatrix zoomPanTM;
-    zoomPanTM.Translate(gfxPoint(mCurrentTranslate.GetX(), mCurrentTranslate.GetY()));
-    zoomPanTM.Scale(mCurrentScale, mCurrentScale);
-    return ThebesMatrix(GetViewBoxTransform()) * zoomPanTM * fromUserSpace;
+  if (aWhich == eAllTransforms) {
+    return childToUser * userToParent * aMatrix;
   }
+
+  MOZ_ASSERT(aWhich == eChildToUserSpace, "Unknown TransformTypes");
 
   
-  return ThebesMatrix(GetViewBoxTransform()) * fromUserSpace;
+  
+  
+  
+  
+  
+  
+  return childToUser * aMatrix;
 }
 
 nsSVGAnimatedTransformList*

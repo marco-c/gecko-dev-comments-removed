@@ -69,6 +69,17 @@ public:
   virtual bool IsTransformable() override { return true; }
 
 protected:
+  
+
+
+
+
+
+
+  static gfxMatrix GetUserToParentTransform(
+                     const gfx::Matrix* aAnimateMotionTransform,
+                     const nsSVGAnimatedTransformList* aTransforms);
+
   nsAutoPtr<nsSVGAnimatedTransformList> mTransforms;
 
   

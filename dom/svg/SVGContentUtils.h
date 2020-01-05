@@ -384,17 +384,6 @@ public:
 
 
   static bool ShapeTypeHasNoCorners(const nsIContent* aContent);
-
-  
-
-
-
-
-  static gfxMatrix PrependLocalTransformsTo(
-    const gfxMatrix &aMatrix,
-    SVGTransformTypes aWhich,
-    const Matrix* aAnimateMotionTransform,
-    const mozilla::nsSVGAnimatedTransformList* aTransforms);
 };
 
 #endif
