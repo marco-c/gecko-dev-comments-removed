@@ -564,8 +564,9 @@ impl RangeMethods for Range {
         } else {
             
             let reference_node = start_node.ancestors()
-                                           .find(|n| n.is_inclusive_ancestor_of(end_node.r()))
-                                           .unwrap();
+                                           .take_while(|n| !n.is_inclusive_ancestor_of(&end_node))
+                                           .last()
+                                           .unwrap_or(Root::from_ref(&start_node));
             
             (reference_node.GetParentNode().unwrap(), reference_node.index() + 1)
         };
