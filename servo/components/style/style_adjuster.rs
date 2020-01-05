@@ -11,23 +11,20 @@ use properties::longhands::display::computed_value::T as display;
 use properties::longhands::float::computed_value::T as float;
 use properties::longhands::overflow_x::computed_value::T as overflow;
 use properties::longhands::position::computed_value::T as position;
-use selector_parser::PseudoElement;
 
 
-#[allow(dead_code)] 
+
 pub struct StyleAdjuster<'a> {
     style: &'a mut ComputedValues,
     is_root_element: bool,
-    pseudo: Option<&'a PseudoElement>,
 }
 
 impl<'a> StyleAdjuster<'a> {
     
-    pub fn new(style: &'a mut ComputedValues, is_root_element: bool, pseudo: Option<&'a PseudoElement>) -> Self {
+    pub fn new(style: &'a mut ComputedValues, is_root_element: bool) -> Self {
         StyleAdjuster {
             style: style,
             is_root_element: is_root_element,
-            pseudo: pseudo,
         }
     }
 
@@ -93,20 +90,34 @@ impl<'a> StyleAdjuster<'a> {
     
     
     
+    
+    
+    
     #[cfg(feature = "gecko")]
-    fn adjust_for_text_combine_upright(&mut self,
-                                       layout_parent_style: &ComputedValues) {
-        if let Some(p) = self.pseudo {
-            if *p.as_atom() == atom!(":-moz-text") {
-                use computed_values::text_combine_upright::T as text_combine_upright;
-                use computed_values::writing_mode::T as writing_mode;
-                let parent_writing_mode = layout_parent_style.get_inheritedbox().clone_writing_mode();
-                let parent_text_combine_upright = layout_parent_style.get_inheritedtext().clone_text_combine_upright();
-                if parent_writing_mode != writing_mode::horizontal_tb &&
-                   parent_text_combine_upright == text_combine_upright::all {
-                    self.style.mutate_inheritedbox().set_writing_mode(writing_mode::horizontal_tb);
-                }
-            }
+    pub fn adjust_for_text(&mut self) {
+        self.adjust_for_text_combine_upright();
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "gecko")]
+    fn adjust_for_text_combine_upright(&mut self) {
+        use computed_values::text_combine_upright::T as text_combine_upright;
+        use computed_values::writing_mode::T as writing_mode;
+
+        let writing_mode =
+            self.style.get_inheritedbox().clone_writing_mode();
+        let text_combine_upright =
+            self.style.get_inheritedtext().clone_text_combine_upright();
+
+        if writing_mode != writing_mode::horizontal_tb &&
+           text_combine_upright == text_combine_upright::all {
+            self.style.mutate_inheritedbox().set_writing_mode(writing_mode::horizontal_tb);
         }
     }
 
@@ -250,13 +261,12 @@ impl<'a> StyleAdjuster<'a> {
 
     
     
+    
+    
+    
     pub fn adjust(mut self,
                   layout_parent_style: &ComputedValues,
                   skip_root_and_element_display_fixup: bool) {
-        #[cfg(feature = "gecko")]
-        {
-            self.adjust_for_text_combine_upright(layout_parent_style);
-        }
         self.adjust_for_top_layer();
         self.blockify_if_necessary(layout_parent_style,
                                    skip_root_and_element_display_fixup);
