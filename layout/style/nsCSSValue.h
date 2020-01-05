@@ -102,11 +102,11 @@ protected:
   
   
   
-  URLValueData(nsStringBuffer* aString,
+  URLValueData(const nsAString& aString,
                already_AddRefed<URLExtraData> aExtraData);
   
   URLValueData(already_AddRefed<PtrHolder<nsIURI>> aURI,
-               nsStringBuffer* aString,
+               const nsAString& aString,
                already_AddRefed<URLExtraData> aExtraData);
 
 public:
@@ -161,7 +161,7 @@ private:
   
   mutable PtrHandle<nsIURI> mURI;
 public:
-  RefPtr<nsStringBuffer> mString;
+  nsString mString;
   RefPtr<URLExtraData> mExtraData;
 private:
   mutable bool mURIResolved;
@@ -182,13 +182,13 @@ private:
 struct URLValue final : public URLValueData
 {
   
-  URLValue(nsStringBuffer* aString, nsIURI* aBaseURI, nsIURI* aReferrer,
+  URLValue(const nsAString& aString, nsIURI* aBaseURI, nsIURI* aReferrer,
            nsIPrincipal* aOriginPrincipal);
-  URLValue(nsIURI* aURI, nsStringBuffer* aString, nsIURI* aBaseURI,
+  URLValue(nsIURI* aURI, const nsAString& aString, nsIURI* aBaseURI,
            nsIURI* aReferrer, nsIPrincipal* aOriginPrincipal);
 
   
-  URLValue(nsStringBuffer* aString,
+  URLValue(const nsAString& aString,
            already_AddRefed<URLExtraData> aExtraData)
     : URLValueData(aString, Move(aExtraData)) {}
 
@@ -205,14 +205,13 @@ struct ImageValue final : public URLValueData
   
   
   
-  
-  ImageValue(nsIURI* aURI, nsStringBuffer* aString,
+  ImageValue(nsIURI* aURI, const nsAString& aString,
              already_AddRefed<URLExtraData> aExtraData,
              nsIDocument* aDocument);
 
   
   
-  ImageValue(nsStringBuffer* aString,
+  ImageValue(const nsAString& aString,
              already_AddRefed<URLExtraData> aExtraData);
 
   ImageValue(const ImageValue&) = delete;
@@ -856,9 +855,9 @@ public:
   {
     MOZ_ASSERT(mUnit == eCSSUnit_URL || mUnit == eCSSUnit_Image,
                "not a URL value");
-    return GetBufferValue(mUnit == eCSSUnit_URL ?
-                            mValue.mURL->mString :
-                            mValue.mImage->mString);
+    return mUnit == eCSSUnit_URL ?
+             mValue.mURL->mString.get() :
+             mValue.mImage->mString.get();
   }
 
   
