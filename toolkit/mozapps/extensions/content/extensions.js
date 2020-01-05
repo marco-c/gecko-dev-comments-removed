@@ -1894,7 +1894,7 @@ var gCategories = {
         continue;
       
       
-      if (String.localeCompare(aName, node.getAttribute("name")) < 0)
+      if (String(aName).localeCompare(node.getAttribute("name")) < 0)
         break;
     }
 
