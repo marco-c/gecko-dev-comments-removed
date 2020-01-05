@@ -525,7 +525,9 @@ js::XDRScript(XDRState<mode>* xdr, HandleScope scriptEnclosingScope,
 
 
 
-            ss->initFromOptions(cx, *options);
+            if (!ss->initFromOptions(cx, *options))
+                return false;
+
             sourceObject = ScriptSourceObject::create(cx, ss);
             if (xdr->hasScriptSourceObjectOut()) {
                 
