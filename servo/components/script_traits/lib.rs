@@ -130,7 +130,7 @@ pub enum LayoutControlMsg {
 
 
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct LoadData {
     
     pub url: ServoUrl,
