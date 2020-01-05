@@ -33,9 +33,6 @@ public:
     , mFirstFrameTimeout(FrameTimeout::FromRawMilliseconds(0))
     , mAnimationMode(aAnimationMode)
     , mHasBeenDecoded(false)
-    , mIsCurrentlyDecoded(false)
-    , mCompositedFrameInvalid(false)
-    , mDiscarded(false)
   { }
 
   
@@ -47,40 +44,6 @@ public:
 
 
   bool GetHasBeenDecoded() { return mHasBeenDecoded; }
-
-  
-
-
-
-  void SetDiscarded(bool aDiscarded);
-
-  
-
-
-
-  bool IsDiscarded() { return mDiscarded; }
-
-  
-
-
-  void SetCompositedFrameInvalid(bool aInvalid) {
-    MOZ_ASSERT(!aInvalid || gfxPrefs::ImageMemAnimatedDiscardable());
-    mCompositedFrameInvalid = aInvalid;
-  }
-
-  
-
-
-  bool GetCompositedFrameInvalid() {
-    return mCompositedFrameInvalid;
-  }
-
-  
-
-
-  bool GetIsCurrentlyDecoded() {
-    return mIsCurrentlyDecoded;
-  }
 
   
 
@@ -183,43 +146,7 @@ private:
   uint16_t mAnimationMode;
 
   
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  
   bool mHasBeenDecoded;
-
-  
-  bool mIsCurrentlyDecoded;
-
-  
-  
-  
-  bool mCompositedFrameInvalid;
-
-  
-  
-  bool mDiscarded;
 };
 
 
