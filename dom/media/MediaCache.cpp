@@ -679,8 +679,6 @@ MediaCache::ReadCacheFile(
   {
     
     
-    
-    
     ReentrantMonitorAutoExit unlock(mReentrantMonitor);
     return fileCache->Read(aOffset,
       reinterpret_cast<uint8_t*>(aData), aLength, aBytes);
@@ -2336,13 +2334,16 @@ nsresult
 MediaCacheStream::ReadFromCache(char* aBuffer, int64_t aOffset, int64_t aCount)
 {
   ReentrantMonitorAutoEnter mon(gMediaCache->GetReentrantMonitor());
-  if (mClosed)
-    return NS_ERROR_FAILURE;
 
   
   uint32_t count = 0;
   int64_t streamOffset = aOffset;
   while (count < aCount) {
+    if (mClosed) {
+      
+      
+      return NS_ERROR_FAILURE;
+    }
     uint32_t streamBlock = uint32_t(streamOffset/BLOCK_SIZE);
     uint32_t offsetInStreamBlock =
       uint32_t(streamOffset - streamBlock*BLOCK_SIZE);
