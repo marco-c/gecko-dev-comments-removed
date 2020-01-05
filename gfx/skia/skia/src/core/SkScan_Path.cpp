@@ -596,26 +596,31 @@ static bool clip_to_limit(const SkRegion& orig, SkRegion* reduced) {
 
 
 
-static inline int round_down_to_int(SkScalar x) {
-    double xx = x;
-    xx += 0.5;
-    double floorXX = floor(xx);
-    return (int)floorXX - (xx == floorXX);
-}
-
 #ifdef SK_RASTERIZE_EVEN_ROUNDING
-
-
-
-
-
-static inline int round_biased_to_int(SkScalar x, SkScalar bias) {
-    double xx = x;
-    xx += 0.5 + bias;
-    return (int)floor(xx);
-}
+static const double kRoundBias = 0.5 / SK_FDot6One;
+#else
+static const double kRoundBias = 0.0;
 #endif
 
+
+
+
+
+static inline int round_down_to_int(SkScalar x) {
+    double xx = x;
+    xx -= 0.5 + kRoundBias;
+    return (int)ceil(xx);
+}
+
+
+
+
+
+static inline int round_up_to_int(SkScalar x) {
+    double xx = x;
+    xx += 0.5 + kRoundBias;
+    return (int)floor(xx);
+}
 
 
 
@@ -650,11 +655,7 @@ static inline int round_biased_to_int(SkScalar x, SkScalar bias) {
 static void round_asymmetric_to_int(const SkRect& src, SkIRect* dst) {
     SkASSERT(dst);
     dst->set(round_down_to_int(src.fLeft), round_down_to_int(src.fTop),
-#ifdef SK_RASTERIZE_EVEN_ROUNDING
-             round_biased_to_int(src.fRight, 0.5f / SK_FDot6One), round_biased_to_int(src.fBottom, 0.5f / SK_FDot6One));
-#else
-             SkDScalarRoundToInt(src.fRight), SkDScalarRoundToInt(src.fBottom));
-#endif
+             round_up_to_int(src.fRight), round_up_to_int(src.fBottom));
 }
 
 void SkScan::FillPath(const SkPath& path, const SkRegion& origClip,
