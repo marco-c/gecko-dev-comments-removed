@@ -81,7 +81,15 @@ private:
 
   nsCOMPtr<nsIChannel> mChannel;
   nsCOMPtr<nsIUrlClassifierDBService> mDBService;
-  nsCOMPtr<nsITimer> mTimer;
+
+  
+  
+  nsCOMPtr<nsITimer> mFetchIndirectUpdatesTimer;
+
+  
+  
+  
+  nsCOMPtr<nsITimer> mFetchNextRequestTimer;
 
   struct PendingRequest {
     nsCString mTables;
