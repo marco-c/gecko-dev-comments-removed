@@ -136,6 +136,7 @@ static bool IsEventTargetChrome(EventTarget* aEventTarget,
 #define NS_TARGET_CHAIN_MAY_HAVE_MANAGER        (1 << 2)
 #define NS_TARGET_CHAIN_CHECKED_IF_CHROME       (1 << 3)
 #define NS_TARGET_CHAIN_IS_CHROME_CONTENT       (1 << 4)
+#define NS_TARGET_CHAIN_WANTS_PRE_HANDLE_EVENT  (1 << 5)
 
 
 class EventTargetChainItem
@@ -209,6 +210,20 @@ public:
     return !!(mFlags & NS_TARGET_CHAIN_WANTS_WILL_HANDLE_EVENT);
   }
 
+  void SetWantsPreHandleEvent(bool aWants)
+  {
+    if (aWants) {
+      mFlags |= NS_TARGET_CHAIN_WANTS_PRE_HANDLE_EVENT;
+    } else {
+      mFlags &= ~NS_TARGET_CHAIN_WANTS_PRE_HANDLE_EVENT;
+    }
+  }
+
+  bool WantsPreHandleEvent()
+  {
+    return !!(mFlags & NS_TARGET_CHAIN_WANTS_PRE_HANDLE_EVENT);
+  }
+
   void SetMayHaveListenerManager(bool aMayHave)
   {
     if (aMayHave) {
@@ -244,6 +259,11 @@ public:
 
 
   void GetEventTargetParent(EventChainPreVisitor& aVisitor);
+
+  
+
+
+  void PreHandleEvent(EventChainVisitor& aVisitor);
 
   
 
@@ -324,8 +344,18 @@ EventTargetChainItem::GetEventTargetParent(EventChainPreVisitor& aVisitor)
   SetForceContentDispatch(aVisitor.mForceContentDispatch);
   SetWantsWillHandleEvent(aVisitor.mWantsWillHandleEvent);
   SetMayHaveListenerManager(aVisitor.mMayHaveListenerManager);
+  SetWantsPreHandleEvent(aVisitor.mWantsPreHandleEvent);
   mItemFlags = aVisitor.mItemFlags;
   mItemData = aVisitor.mItemData;
+}
+
+void
+EventTargetChainItem::PreHandleEvent(EventChainVisitor& aVisitor)
+{
+  if (!WantsPreHandleEvent()) {
+    return;
+  }
+  Unused << mTarget->PreHandleEvent(aVisitor);
 }
 
 void
@@ -706,6 +736,10 @@ EventDispatcher::Dispatch(nsISupports* aTarget,
           targets[i] = chain[i].CurrentTarget()->GetTargetForDOMEvent();
         }
       } else {
+        
+        for (uint32_t i = 0; i < chain.Length(); ++i) {
+          chain[i].PreHandleEvent(preVisitor);
+        }
         
         EventChainPostVisitor postVisitor(preVisitor);
         EventTargetChainItem::HandleEventTargetChain(chain, postVisitor,

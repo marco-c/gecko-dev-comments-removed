@@ -123,6 +123,7 @@ public:
     , mOriginalTargetIsInAnon(aIsInAnon)
     , mWantsWillHandleEvent(false)
     , mMayHaveListenerManager(true)
+    , mWantsPreHandleEvent(false)
     , mParentTarget(nullptr)
     , mEventTargetAtParent(nullptr)
   {
@@ -137,6 +138,7 @@ public:
     mForceContentDispatch = false;
     mWantsWillHandleEvent = false;
     mMayHaveListenerManager = true;
+    mWantsPreHandleEvent = false;
     mParentTarget = nullptr;
     mEventTargetAtParent = nullptr;
   }
@@ -185,6 +187,12 @@ public:
 
 
   bool                  mMayHaveListenerManager;
+
+  
+
+
+
+  bool mWantsPreHandleEvent;
 
   
 
