@@ -163,8 +163,7 @@ NetRequest.prototype = {
     
     
     let body = NetInfoBody({
-      actions: this,
-      sourceMapService: this.owner.sourceMapURLService,
+      actions: this
     });
 
     
