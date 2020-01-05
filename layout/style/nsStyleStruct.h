@@ -1162,6 +1162,14 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleBorder
     }
   }
 
+  void CopyBorderColorsFrom(const nsBorderColors* aSrcBorderColors, mozilla::Side aSide) {
+    if (aSrcBorderColors) {
+      EnsureBorderColors();
+      ClearBorderColors(aSide);
+      mBorderColors[aSide] = aSrcBorderColors->Clone();
+    }
+  }
+
   
   
   
