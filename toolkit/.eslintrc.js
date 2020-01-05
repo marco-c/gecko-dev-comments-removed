@@ -241,6 +241,10 @@ module.exports = {
 
     
     "valid-typeof": "error",
+
+    
+    
+    "no-useless-concat": "error",
   },
   "env": {
     "es6": true,

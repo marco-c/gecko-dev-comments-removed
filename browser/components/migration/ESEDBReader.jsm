@@ -432,7 +432,7 @@ ESEDB.prototype = {
         
         buffer = null;
       } else {
-        Cu.reportError("Unexpected JET error: " + err + ";" + " retrieving value for column " + column.name);
+        Cu.reportError("Unexpected JET error: " + err + "; retrieving value for column " + column.name);
         throw new Error(convertESEError(err));
       }
     }

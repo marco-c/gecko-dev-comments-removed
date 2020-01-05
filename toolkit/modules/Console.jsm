@@ -151,7 +151,7 @@ function stringify(aThing, aAllowNewLines) {
       json = JSON.stringify(aThing);
     } catch (ex) {
       
-      json = "{" + Object.keys(aThing).join(":..,") + ":.., " + "}";
+      json = "{" + Object.keys(aThing).join(":..,") + ":.., }";
     }
     return type + json;
   }
