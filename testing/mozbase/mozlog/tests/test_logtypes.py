@@ -10,6 +10,7 @@ from mozlog.logtypes import (
     Dict,
     Int,
     List,
+    TestList,
     Tuple,
     Unicode,
 )
@@ -93,6 +94,22 @@ class TestContainerTypes(unittest.TestCase):
             t(({'foo': ['bar']}, ['foo'], 'foo'))
 
         t(({'foo': ['bar']}, [{'foo': 'bar'}], 'foo'))  
+
+
+class TestDataTypes(unittest.TestCase):
+
+    def test_test_list(self):
+        t = TestList('name')
+        with self.assertRaises(ValueError):
+            t('foo')
+
+        with self.assertRaises(ValueError):
+            t({'foo': 1})
+
+        d1 = t({'default': ['bar']})  
+        d2 = t(['bar'])  
+
+        self.assertDictContainsSubset(d1, d2)
 
 
 if __name__ == '__main__':
