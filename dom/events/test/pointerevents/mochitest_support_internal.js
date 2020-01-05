@@ -2,21 +2,34 @@
 
 
 
+const PARENT_ORIGIN = "http://mochi.test:8888/";
 
-addEventListener("load", function(event) {
+addEventListener("load", function() {
+  
   console.log("OnLoad internal document");
   addListeners(document.getElementById("target0"));
   addListeners(document.getElementById("target1"));
-  preExecute();
-}, false);
 
+  
+  
+  
+  add_result_callback((aTestObj) => {
+    var message = aTestObj["name"] + " (";
+    message += "Get: " + JSON.stringify(aTestObj["status"]) + ", ";
+    message += "Expect: " + JSON.stringify(aTestObj["PASS"]) + ")";
+    window.opener.postMessage({type: "RESULT",
+                               message: message,
+                               result: aTestObj["status"] === aTestObj["PASS"]},
+                              PARENT_ORIGIN);
+  });
 
+  add_completion_callback(() => {
+    window.opener.postMessage({type: "FIN"}, PARENT_ORIGIN);
+  });
 
-function preExecute() {
-  add_result_callback(testContext.result_callback);
-  add_completion_callback(testContext.completion_callback);
-  testContext.execute(window);
-}
+  
+  window.opener.postMessage({type: "START"}, PARENT_ORIGIN);
+});
 
 function addListeners(elem) {
   if(!elem)
