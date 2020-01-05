@@ -353,7 +353,7 @@ struct png_struct_def
 
 
 #ifdef PNG_SET_OPTION_SUPPORTED
-   png_byte options;           
+   png_uint_32 options;           
 #endif
 
 #if PNG_LIBPNG_VER < 10700
