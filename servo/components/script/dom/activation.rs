@@ -10,6 +10,9 @@ use dom::event::{Event, EventBubbles, EventCancelable};
 use dom::eventtarget::EventTarget;
 use dom::mouseevent::MouseEvent;
 use dom::node::window_from_node;
+use dom::window::ReflowReason;
+use script_layout_interface::message::ReflowQueryType;
+use style::context::ReflowGoal;
 
 
 pub trait Activatable {
@@ -29,6 +32,25 @@ pub trait Activatable {
 
     
     fn implicit_submission(&self, ctrlKey: bool, shiftKey: bool, altKey: bool, metaKey: bool);
+
+    
+    fn enter_formal_activation_state(&self) {
+        self.as_element().set_active_state(true);
+
+        let win = window_from_node(self.as_element());
+        win.reflow(ReflowGoal::ForDisplay,
+                   ReflowQueryType::NoQuery,
+                   ReflowReason::ElementStateChanged);
+    }
+
+    fn exit_formal_activation_state(&self) {
+        self.as_element().set_active_state(false);
+
+        let win = window_from_node(self.as_element());
+        win.reflow(ReflowGoal::ForDisplay,
+                   ReflowQueryType::NoQuery,
+                   ReflowReason::ElementStateChanged);
+    }
 }
 
 
