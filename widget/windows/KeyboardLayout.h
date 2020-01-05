@@ -60,8 +60,6 @@ class KeyboardLayout;
 class UniCharsAndModifiers final
 {
 public:
-  uint32_t  mLength;
-
   UniCharsAndModifiers() : mLength(0) {}
   UniCharsAndModifiers operator+(const UniCharsAndModifiers& aOther) const;
   UniCharsAndModifiers& operator+=(const UniCharsAndModifiers& aOther);
@@ -83,6 +81,8 @@ public:
     MOZ_ASSERT(aIndex < mLength);
     return mModifiers[aIndex];
   }
+  size_t Length() const { return mLength; }
+
   void FillModifiers(Modifiers aModifiers);
   
 
@@ -100,6 +100,7 @@ private:
   
   char16_t mChars[5];
   Modifiers mModifiers[5];
+  size_t mLength;
 };
 
 struct DeadKeyEntry;
