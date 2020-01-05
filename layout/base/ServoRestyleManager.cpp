@@ -128,21 +128,50 @@ ServoRestyleManager::ClearDirtyDescendantsFromSubtree(Element* aElement)
   aElement->UnsetHasDirtyDescendantsForServo();
 }
 
+static void
+UpdateStyleContextForTableWrapper(nsIFrame* aTableWrapper,
+                                  nsStyleContext* aTableStyleContext,
+                                  ServoStyleSet* aStyleSet)
+{
+  MOZ_ASSERT(aTableWrapper->GetType() == nsGkAtoms::tableWrapperFrame);
+  MOZ_ASSERT(aTableWrapper->StyleContext()->GetPseudo() ==
+             nsCSSAnonBoxes::tableWrapper);
+  RefPtr<nsStyleContext> newContext =
+    aStyleSet->ResolveAnonymousBoxStyle(nsCSSAnonBoxes::tableWrapper,
+                                        aTableStyleContext);
+  aTableWrapper->SetStyleContext(newContext);
+}
+
 void
 ServoRestyleManager::RecreateStyleContexts(Element* aElement,
                                            nsStyleContext* aParentContext,
                                            ServoStyleSet* aStyleSet,
                                            nsStyleChangeList& aChangeListToProcess)
 {
-  nsIFrame* primaryFrame = aElement->GetPrimaryFrame();
+  nsIFrame* styleFrame = nsLayoutUtils::GetStyleFrame(aElement);
+  bool isTable = styleFrame != aElement->GetPrimaryFrame();
 
   nsChangeHint changeHint = Servo_TakeChangeHint(aElement);
   
   
   
   
-  if ((primaryFrame || changeHint & nsChangeHint_ReconstructFrame) && changeHint) {
-    aChangeListToProcess.AppendChange(primaryFrame, aElement, changeHint);
+  if ((styleFrame || (changeHint & nsChangeHint_ReconstructFrame)) && changeHint) {
+    if (isTable) {
+      
+      
+      
+      
+      MOZ_ASSERT(styleFrame, "Or else GetPrimaryFrame() would be null too");
+      MOZ_ASSERT(styleFrame->GetParent() == aElement->GetPrimaryFrame(),
+                 "How did that happen?");
+      aChangeListToProcess.AppendChange(aElement->GetPrimaryFrame(), aElement,
+                                        changeHint);
+      aChangeListToProcess.AppendChange(styleFrame, aElement,
+                                        NS_HintsNotHandledForDescendantsIn(changeHint));
+    } else {
+      aChangeListToProcess.AppendChange(styleFrame, aElement, changeHint);
+    }
   }
 
   
@@ -163,7 +192,7 @@ ServoRestyleManager::RecreateStyleContexts(Element* aElement,
   
   
   RefPtr<nsStyleContext> oldStyleContext =
-    primaryFrame ? primaryFrame->StyleContext() : nullptr;
+    styleFrame ? styleFrame->StyleContext() : nullptr;
 
   RefPtr<ServoComputedValues> computedValues =
     aStyleSet->ResolveServoStyle(aElement);
@@ -189,9 +218,17 @@ ServoRestyleManager::RecreateStyleContexts(Element* aElement,
     
     
     
-    for (nsIFrame* f = primaryFrame; f;
+    for (nsIFrame* f = styleFrame; f;
          f = GetNextContinuationWithSameStyle(f, oldStyleContext)) {
       f->SetStyleContext(newContext);
+    }
+
+    if (isTable) {
+      nsIFrame* primaryFrame = aElement->GetPrimaryFrame();
+      MOZ_ASSERT(primaryFrame->StyleContext()->GetPseudo() ==
+                   nsCSSAnonBoxes::tableWrapper,
+                 "What sort of frame is this?");
+      UpdateStyleContextForTableWrapper(primaryFrame, newContext, aStyleSet);
     }
 
     
@@ -235,7 +272,7 @@ ServoRestyleManager::RecreateStyleContexts(Element* aElement,
     StyleChildrenIterator it(aElement);
     for (nsIContent* n = it.GetNextChild(); n; n = it.GetNextChild()) {
       if (traverseElementChildren && n->IsElement()) {
-        if (!primaryFrame) {
+        if (!styleFrame) {
           
           
           
@@ -244,11 +281,11 @@ ServoRestyleManager::RecreateStyleContexts(Element* aElement,
                      "Only display:contents should do this, and we don't handle that yet");
           ClearDirtyDescendantsFromSubtree(n->AsElement());
         } else {
-          RecreateStyleContexts(n->AsElement(), primaryFrame->StyleContext(),
+          RecreateStyleContexts(n->AsElement(), styleFrame->StyleContext(),
                                 aStyleSet, aChangeListToProcess);
         }
       } else if (traverseTextChildren && n->IsNodeOfType(nsINode::eTEXT)) {
-        RecreateStyleContextsForText(n, primaryFrame->StyleContext(),
+        RecreateStyleContextsForText(n, styleFrame->StyleContext(),
                                      aStyleSet);
       }
     }
