@@ -455,7 +455,7 @@ Enqueuer.prototype = {
 
 
   enqueue(aFunc) {
-    let promise = this._promise.then(Task.async(aFunc));
+    let promise = this._promise.then(aFunc);
 
     
     this._promise = promise.catch(console.error);

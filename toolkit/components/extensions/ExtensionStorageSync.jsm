@@ -743,6 +743,7 @@ function cleanUpForContext(extension, context) {
 
 
 
+
 const openCollection = Task.async(function* (cryptoCollection, extension, context) {
   let collectionId = extension.id;
   const {kinto} = yield storageSyncInit;
