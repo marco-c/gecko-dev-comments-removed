@@ -18,34 +18,34 @@ registerCleanupFunction(function() {
 
 add_task(function*() {
   function* checkPrefSwitch(val1, val2) {
-    Services.prefs.setBoolPref("browser.safebrowsing.phishing.enabled", val1);
-    Services.prefs.setBoolPref("browser.safebrowsing.malware.enabled", val2);
+    Services.prefs.setBoolPref("browser.safebrowsing.downloads.remote.block_potentially_unwanted", val1);
+    Services.prefs.setBoolPref("browser.safebrowsing.downloads.remote.block_uncommon", val2);
 
     yield openPreferencesViaOpenPreferencesAPI("security", undefined, { leaveOpen: true });
 
     let doc = gBrowser.selectedBrowser.contentDocument;
-    let checkbox = doc.getElementById("enableSafeBrowsing");
-    let blockDownloads = doc.getElementById("blockDownloads");
-    let blockUncommon = doc.getElementById("blockUncommonUnwanted");
+    let checkbox = doc.getElementById("blockUncommonUnwanted");
     let checked = checkbox.checked;
-    is(checked, val1 && val2, "safebrowsing preference is initialized correctly");
-    
-    is(blockDownloads.hasAttribute("disabled"), !checked, "block downloads checkbox is set correctly");
-    is(blockUncommon.hasAttribute("disabled"), !checked, "block uncommon checkbox is set correctly");
+    is(checked, val1 && val2, "unwanted/uncommon preference is initialized correctly");
 
     
     EventUtils.synthesizeMouseAtCenter(checkbox, {}, gBrowser.selectedBrowser.contentWindow);
 
     
-    is(Services.prefs.getBoolPref("browser.safebrowsing.phishing.enabled"), !checked,
-       "safebrowsing.enabled is set correctly");
-    is(Services.prefs.getBoolPref("browser.safebrowsing.malware.enabled"), !checked,
-       "safebrowsing.malware.enabled is set correctly");
+    is(Services.prefs.getBoolPref("browser.safebrowsing.downloads.remote.block_potentially_unwanted"), !checked,
+       "block_potentially_unwanted is set correctly");
+    is(Services.prefs.getBoolPref("browser.safebrowsing.downloads.remote.block_uncommon"), !checked,
+       "block_uncommon is set correctly");
 
     
-    checked = checkbox.checked;
-    is(blockDownloads.hasAttribute("disabled"), !checked, "block downloads checkbox is set correctly");
-    is(blockUncommon.hasAttribute("disabled"), !checked || !blockDownloads.checked, "block uncommon checkbox is set correctly");
+    let malwareTable = Services.prefs.getCharPref("urlclassifier.malwareTable").split(",");
+    is(malwareTable.includes("goog-unwanted-shavar"), !checked,
+       "malware table doesn't include goog-unwanted-shavar");
+    is(malwareTable.includes("test-unwanted-simple"), !checked,
+       "malware table doesn't include test-unwanted-simple");
+    let sortedMalware = malwareTable.slice(0);
+    sortedMalware.sort();
+    Assert.deepEqual(malwareTable, sortedMalware, "malware table has been sorted");
 
     yield BrowserTestUtils.removeTab(gBrowser.selectedTab);
   }
