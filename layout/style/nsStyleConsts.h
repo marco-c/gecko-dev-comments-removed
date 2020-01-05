@@ -166,6 +166,13 @@ enum class StyleFloatEdge : uint8_t {
 };
 
 
+enum class StyleHyphens : uint8_t {
+  None,
+  Manual,
+  Auto,
+};
+
+
 enum class StyleShapeOutsideShapeBox : uint8_t {
   NoBox,
   Content,
@@ -970,11 +977,6 @@ enum class StyleDisplay : uint8_t {
 
 #define NS_STYLE_OVERFLOWWRAP_NORMAL            0
 #define NS_STYLE_OVERFLOWWRAP_BREAK_WORD        1
-
-
-#define NS_STYLE_HYPHENS_NONE                   0
-#define NS_STYLE_HYPHENS_MANUAL                 1
-#define NS_STYLE_HYPHENS_AUTO                   2
 
 
 #define NS_STYLE_RUBY_ALIGN_START               0

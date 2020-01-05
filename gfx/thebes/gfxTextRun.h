@@ -35,6 +35,7 @@ class gfxMissingFontRecorder;
 
 namespace mozilla {
 class SVGContextPaint;
+enum class StyleHyphens : uint8_t;
 };
 
 
@@ -193,7 +194,7 @@ public:
         
         
         
-        virtual int8_t GetHyphensOption() = 0;
+        virtual mozilla::StyleHyphens GetHyphensOption() = 0;
 
         
         

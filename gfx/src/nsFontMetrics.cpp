@@ -87,9 +87,9 @@ public:
                                       bool* aBreakBefore) {
         NS_ERROR("This shouldn't be called because we never call BreakAndMeasureText");
     }
-    virtual int8_t GetHyphensOption() {
+    virtual mozilla::StyleHyphens GetHyphensOption() {
         NS_ERROR("This shouldn't be called because we never call BreakAndMeasureText");
-        return NS_STYLE_HYPHENS_NONE;
+        return mozilla::StyleHyphens::None;
     }
     virtual gfxFloat GetHyphenWidth() {
         NS_ERROR("This shouldn't be called because we never enable hyphens");
