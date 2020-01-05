@@ -87,6 +87,7 @@ class nsIControllers;
 class nsIJSID;
 class nsIScriptContext;
 class nsIScriptTimeoutHandler;
+class nsITabChild;
 class nsITimeoutHandler;
 class nsIWebBrowserChrome;
 class mozIDOMWindowProxy;
@@ -459,6 +460,8 @@ public:
 
   using EventTarget::EventListenerAdded;
   virtual void EventListenerAdded(nsIAtom* aType) override;
+  using EventTarget::EventListenerRemoved;
+  virtual void EventListenerRemoved(nsIAtom* aType) override;
 
   
   NS_DECL_NSIINTERFACEREQUESTOR
@@ -1952,6 +1955,8 @@ protected:
 
   
   nsCOMPtr<nsIPrincipal> mDocumentPrincipal;
+  
+  nsCOMPtr<nsITabChild>  mTabChild;
 
   uint32_t mSuspendDepth;
   uint32_t mFreezeDepth;
@@ -2040,6 +2045,7 @@ protected:
   
   
   uint32_t mAutoActivateVRDisplayID; 
+  int64_t mBeforeUnloadListenerCount; 
 
 #ifdef ENABLE_INTL_API
   RefPtr<mozilla::dom::IntlUtils> mIntlUtils;
