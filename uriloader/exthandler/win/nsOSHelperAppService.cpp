@@ -504,7 +504,8 @@ already_AddRefed<nsIMIMEInfo> nsOSHelperAppService::GetMIMEInfoFromOS(const nsAC
 
 
 
-  if (!aMIMEType.LowerCaseEqualsLiteral(APPLICATION_OCTET_STREAM)) {
+  if (!aMIMEType.IsEmpty() &&
+      !aMIMEType.LowerCaseEqualsLiteral(APPLICATION_OCTET_STREAM)) {
     
     
     GetExtensionFromWindowsMimeDatabase(aMIMEType, fileExtension);
