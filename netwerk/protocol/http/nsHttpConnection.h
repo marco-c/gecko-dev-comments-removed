@@ -82,6 +82,7 @@ public:
     
     
 
+    bool SupportsPipelining();
     bool IsKeepAlive()
     {
         return mUsingSpdyVersion || (mKeepAliveMask && mKeepAlive);
@@ -176,6 +177,12 @@ public:
     
     static void UpdateTCPKeepalive(nsITimer *aTimer, void *aClosure);
 
+    nsAHttpTransaction::Classifier Classification() { return mClassification; }
+    void Classify(nsAHttpTransaction::Classifier newclass)
+    {
+        mClassification = newclass;
+    }
+
     
     void  ReadTimeoutTick();
 
@@ -231,6 +238,7 @@ private:
 
     PRIntervalTime IdleTime();
     bool     IsAlive();
+    bool     SupportsPipelining(nsHttpResponseHead *);
 
     
     
@@ -300,6 +308,7 @@ private:
     bool                            mKeepAlive;
     bool                            mKeepAliveMask;
     bool                            mDontReuse;
+    bool                            mSupportsPipelining;
     bool                            mIsReused;
     bool                            mCompletedProxyConnect;
     bool                            mLastTransactionExpectedNoContent;
@@ -321,6 +330,8 @@ private:
     
     
     uint32_t                        mRemainingConnectionUses;
+
+    nsAHttpTransaction::Classifier  mClassification;
 
     
     bool                            mNPNComplete;

@@ -135,6 +135,14 @@ public:
 
     
     
+    virtual uint32_t CancelPipeline(nsresult originalReason) = 0;
+
+    
+    virtual nsAHttpTransaction::Classifier Classification() = 0;
+    virtual void Classify(nsAHttpTransaction::Classifier newclass) = 0;
+
+    
+    
     virtual int64_t BytesWritten() = 0;
 
     
@@ -158,6 +166,8 @@ NS_DEFINE_STATIC_IID_ACCESSOR(nsAHttpConnection, NS_AHTTPCONNECTION_IID)
     void DontReuse() override;                            \
     nsresult PushBack(const char *, uint32_t) override;   \
     already_AddRefed<nsHttpConnection> TakeHttpConnection() override; \
+    uint32_t CancelPipeline(nsresult originalReason) override; \
+    nsAHttpTransaction::Classifier Classification() override; \
     /*                                                    \
        Thes methods below have automatic definitions that just forward the \
        function to a lower level connection object        \
@@ -231,6 +241,12 @@ NS_DEFINE_STATIC_IID_ACCESSOR(nsAHttpConnection, NS_AHTTPCONNECTION_IID)
     {                                                       \
       if (fwdObject)                                        \
         (fwdObject)->SetLastTransactionExpectedNoContent(val); \
+    }                                                       \
+    void Classify(nsAHttpTransaction::Classifier newclass)  \
+      override                                              \
+    {                                                       \
+    if (fwdObject)                                          \
+        (fwdObject)->Classify(newclass);                    \
     }                                                       \
     int64_t BytesWritten() override                         \
     {     return fwdObject ? (fwdObject)->BytesWritten() : 0; } \

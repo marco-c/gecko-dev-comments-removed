@@ -19,6 +19,7 @@ class nsAHttpConnection;
 class nsAHttpSegmentReader;
 class nsAHttpSegmentWriter;
 class nsHttpTransaction;
+class nsHttpPipeline;
 class nsHttpRequestHead;
 class nsHttpConnectionInfo;
 class NullHttpTransaction;
@@ -118,8 +119,28 @@ public:
     
     
     
+    virtual nsresult AddTransaction(nsAHttpTransaction *transaction) = 0;
+
     
     
+    virtual uint32_t PipelineDepth() = 0;
+
+    
+    
+    
+    virtual nsresult SetPipelinePosition(int32_t) = 0;
+    virtual int32_t  PipelinePosition() = 0;
+
+    
+    
+    
+    
+    
+
+    
+    
+    
+    virtual nsHttpPipeline *QueryPipeline() { return nullptr; }
 
     
     
@@ -146,6 +167,29 @@ public:
     
     virtual bool ResponseTimeoutEnabled() const;
     virtual PRIntervalTime ResponseTimeout();
+
+    
+    
+    
+    enum Classifier  {
+        
+        CLASS_REVALIDATION,
+
+        
+        CLASS_SCRIPT,
+
+        
+        CLASS_IMAGE,
+
+        
+        CLASS_SOLO,
+
+        
+        
+        CLASS_GENERAL,
+
+        CLASS_MAX
+    };
 
     
     
@@ -201,7 +245,11 @@ NS_DEFINE_STATIC_IID_ACCESSOR(nsAHttpTransaction, NS_AHTTPTRANSACTION_IID)
     void     SetProxyConnectFailed() override;                                   \
     virtual nsHttpRequestHead *RequestHead() override;                                   \
     uint32_t Http1xTransactionCount() override;                                  \
-    nsresult TakeSubTransactions(nsTArray<RefPtr<nsAHttpTransaction> > &outTransactions) override;
+    nsresult TakeSubTransactions(nsTArray<RefPtr<nsAHttpTransaction> > &outTransactions) override; \
+    nsresult AddTransaction(nsAHttpTransaction *) override;                      \
+    uint32_t PipelineDepth() override;                                           \
+    nsresult SetPipelinePosition(int32_t) override;                              \
+    int32_t  PipelinePosition() override;
 
 
 

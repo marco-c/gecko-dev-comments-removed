@@ -1519,6 +1519,27 @@ pref("network.http.redirection-limit", 20);
 pref("network.http.accept-encoding", "gzip, deflate");
 pref("network.http.accept-encoding.secure", "gzip, deflate, br");
 
+pref("network.http.pipelining"      , false);
+pref("network.http.pipelining.ssl"  , false); 
+pref("network.http.pipelining.abtest", false);
+pref("network.http.proxy.pipelining", false);
+
+
+pref("network.http.pipelining.maxrequests" , 32);
+
+
+
+pref("network.http.pipelining.max-optimistic-requests" , 4);
+
+pref("network.http.pipelining.aggressive", false);
+pref("network.http.pipelining.maxsize" , 300000);
+pref("network.http.pipelining.reschedule-on-timeout", true);
+pref("network.http.pipelining.reschedule-timeout", 1500);
+
+
+
+pref("network.http.pipelining.read-timeout", 30000);
+
 
 pref("network.http.prompt-temp-redirect", false);
 

@@ -51,7 +51,7 @@ typedef uint8_t nsHttpVersion;
 
 
 #define NS_HTTP_ALLOW_KEEPALIVE      (1<<0)
-
+#define NS_HTTP_ALLOW_PIPELINING     (1<<1)
 
 
 

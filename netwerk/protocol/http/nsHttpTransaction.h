@@ -119,11 +119,14 @@ public:
     void    SetPriority(int32_t priority) { mPriority = priority; }
     int32_t    Priority()                 { return mPriority; }
 
+    enum Classifier Classification() { return mClassification; }
+
     void PrintDiagnostics(nsCString &log);
 
     
     void SetPendingTime(bool now = true) { mPendingTime = now ? TimeStamp::Now() : TimeStamp(); }
     const TimeStamp GetPendingTime() { return mPendingTime; }
+    bool UsesPipelining() const { return mCaps & NS_HTTP_ALLOW_PIPELINING; }
 
     
     nsIRequestContext *RequestContext() override { return mRequestContext.get(); }
@@ -171,6 +174,7 @@ private:
     virtual ~nsHttpTransaction();
 
     nsresult Restart();
+    nsresult RestartInProgress();
     char    *LocateHttpStart(char *buf, uint32_t len,
                              bool aAllowPartialMatch);
     nsresult ParseLine(nsACString &line);
@@ -181,6 +185,9 @@ private:
     nsresult ProcessData(char *, uint32_t, uint32_t *);
     void     DeleteSelfOnConsumerThread();
     void     ReleaseBlockingTransaction();
+
+    Classifier Classify();
+    void       CancelPipeline(uint32_t reason);
 
     static nsresult ReadRequestSegment(nsIInputStream *, void *, const char *,
                                        uint32_t, uint32_t, uint32_t *);
@@ -272,6 +279,9 @@ private:
 
     uint16_t                        mRestartCount;        
     uint32_t                        mCaps;
+    enum Classifier                 mClassification;
+    int32_t                         mPipelinePosition;
+    int64_t                         mMaxPipelineObjectSize;
 
     nsHttpVersion                   mHttpVersion;
     uint16_t                        mHttpResponseCode;
@@ -327,6 +337,68 @@ private:
 
     
     TimeStamp                       mPendingTime;
+
+    class RestartVerifier
+    {
+
+        
+        
+        
+        
+        
+        
+        
+
+    public:
+        RestartVerifier()
+            : mContentLength(-1)
+            , mAlreadyProcessed(0)
+            , mToReadBeforeRestart(0)
+            , mSetup(false)
+        {}
+        ~RestartVerifier() {}
+
+        void Set(int64_t contentLength, nsHttpResponseHead *head);
+        bool Verify(int64_t contentLength, nsHttpResponseHead *head);
+        bool IsDiscardingContent() { return mToReadBeforeRestart != 0; }
+        bool IsSetup() { return mSetup; }
+        int64_t AlreadyProcessed() { return mAlreadyProcessed; }
+        void SetAlreadyProcessed(int64_t val) {
+            mAlreadyProcessed = val;
+            mToReadBeforeRestart = val;
+        }
+        int64_t ToReadBeforeRestart() { return mToReadBeforeRestart; }
+        void HaveReadBeforeRestart(uint32_t amt)
+        {
+            MOZ_ASSERT(amt <= mToReadBeforeRestart,
+                       "too large of a HaveReadBeforeRestart deduction");
+            mToReadBeforeRestart -= amt;
+        }
+
+    private:
+        
+        
+
+        int64_t                         mContentLength;
+        nsCString                       mETag;
+        nsCString                       mLastModified;
+        nsCString                       mContentRange;
+        nsCString                       mContentEncoding;
+        nsCString                       mTransferEncoding;
+
+        
+        
+        
+        int64_t                         mAlreadyProcessed;
+
+        
+        
+        
+        int64_t                         mToReadBeforeRestart;
+
+        
+        bool                            mSetup;
+    } mRestartInProgressVerifier;
 
 
 public:

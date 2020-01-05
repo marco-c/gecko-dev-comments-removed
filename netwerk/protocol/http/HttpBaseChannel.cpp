@@ -162,6 +162,7 @@ HttpBaseChannel::HttpBaseChannel()
   , mWasOpened(false)
   , mRequestObserversCalled(false)
   , mResponseHeadersModified(false)
+  , mAllowPipelining(true)
   , mAllowSTS(true)
   , mThirdPartyFlags(0)
   , mUploadStreamHasHeaders(false)
@@ -1953,7 +1954,7 @@ NS_IMETHODIMP
 HttpBaseChannel::GetAllowPipelining(bool *value)
 {
   NS_ENSURE_ARG_POINTER(value);
-  *value = false;
+  *value = mAllowPipelining;
   return NS_OK;
 }
 
@@ -1961,7 +1962,8 @@ NS_IMETHODIMP
 HttpBaseChannel::SetAllowPipelining(bool value)
 {
   ENSURE_CALLED_BEFORE_CONNECT();
-  
+
+  mAllowPipelining = value;
   return NS_OK;
 }
 
@@ -3231,6 +3233,7 @@ HttpBaseChannel::SetupReplacementChannel(nsIURI       *newURI,
   if (mReferrer)
     httpChannel->SetReferrerWithPolicy(mReferrer, mReferrerPolicy);
   
+  httpChannel->SetAllowPipelining(mAllowPipelining);
   httpChannel->SetAllowSTS(mAllowSTS);
   
   

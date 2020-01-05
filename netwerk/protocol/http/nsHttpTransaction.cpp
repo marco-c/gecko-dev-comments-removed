@@ -104,6 +104,8 @@ nsHttpTransaction::nsHttpTransaction()
     , mPriority(0)
     , mRestartCount(0)
     , mCaps(0)
+    , mClassification(CLASS_GENERAL)
+    , mPipelinePosition(0)
     , mHttpVersion(NS_HTTP_VERSION_UNKNOWN)
     , mHttpResponseCode(0)
     , mCurrentHttpResponseHeaderSize(0)
@@ -143,6 +145,7 @@ nsHttpTransaction::nsHttpTransaction()
     , mTransportStatus(NS_OK)
 {
     LOG(("Creating nsHttpTransaction @%p\n", this));
+    gHttpHandler->GetMaxPipelineObjectSize(&mMaxPipelineObjectSize);
 
 #ifdef MOZ_VALGRIND
     memset(&mSelfAddr, 0, sizeof(NetAddr));
@@ -176,6 +179,45 @@ nsHttpTransaction::~nsHttpTransaction()
     delete mForTakeResponseHead;
     delete mChunkedDecoder;
     ReleaseBlockingTransaction();
+}
+
+nsHttpTransaction::Classifier
+nsHttpTransaction::Classify()
+{
+    if (!(mCaps & NS_HTTP_ALLOW_PIPELINING))
+        return (mClassification = CLASS_SOLO);
+
+    if (mRequestHead->HasHeader(nsHttp::If_Modified_Since) ||
+        mRequestHead->HasHeader(nsHttp::If_None_Match))
+        return (mClassification = CLASS_REVALIDATION);
+
+    nsAutoCString accept;
+    bool hasAccept = NS_SUCCEEDED(mRequestHead->GetHeader(nsHttp::Accept, accept));
+    if (hasAccept && StringBeginsWith(accept, NS_LITERAL_CSTRING("image/"))) {
+        return (mClassification = CLASS_IMAGE);
+    }
+
+    if (hasAccept && StringBeginsWith(accept, NS_LITERAL_CSTRING("text/css"))) {
+        return (mClassification = CLASS_SCRIPT);
+    }
+
+    mClassification = CLASS_GENERAL;
+
+    nsAutoCString requestURI;
+    mRequestHead->RequestURI(requestURI);
+    int32_t queryPos = requestURI.FindChar('?');
+    if (queryPos == kNotFound) {
+        if (StringEndsWith(requestURI,
+                           NS_LITERAL_CSTRING(".js")))
+            mClassification = CLASS_SCRIPT;
+    }
+    else if (queryPos >= 3 &&
+             Substring(requestURI, queryPos - 3, 3).
+             EqualsLiteral(".js")) {
+        mClassification = CLASS_SCRIPT;
+    }
+
+    return mClassification;
 }
 
 nsresult
@@ -372,6 +414,8 @@ nsHttpTransaction::Init(uint32_t caps,
     uint32_t * vtable = (uint32_t *) mPipeOut.get();
     MOZ_DIAGNOSTIC_ASSERT(*vtable != 0);
 #endif 
+
+    Classify();
 
     nsCOMPtr<nsIAsyncInputStream> tmp(mPipeIn);
     tmp.forget(responseBody);
@@ -582,15 +626,16 @@ nsHttpTransaction::OnTransportStatus(nsITransport* transport,
                 PR_Now(), 0, EmptyCString());
 
         
-        mActivityDistributor->ObserveActivity(
-            mChannel,
-            NS_HTTP_ACTIVITY_TYPE_SOCKET_TRANSPORT,
-            static_cast<uint32_t>(status),
-            PR_Now(),
-            progress,
-            EmptyCString());
+        if (!mRestartInProgressVerifier.IsDiscardingContent())
+            mActivityDistributor->ObserveActivity(
+                mChannel,
+                NS_HTTP_ACTIVITY_TYPE_SOCKET_TRANSPORT,
+                static_cast<uint32_t>(status),
+                PR_Now(),
+                progress,
+                EmptyCString());
     }
-    
+
     
     if (status == NS_NET_STATUS_RECEIVING_FROM)
         return;
@@ -984,7 +1029,22 @@ nsHttpTransaction::Close(nsresult reason)
             
             
 
+            if (mPipelinePosition) {
+                gHttpHandler->ConnMgr()->PipelineFeedbackInfo(
+                    mConnInfo, nsHttpConnectionMgr::RedCanceledPipeline,
+                    nullptr, 0);
+            }
             if (NS_SUCCEEDED(Restart()))
+                return;
+        }
+        else if (!mResponseIsComplete && mPipelinePosition &&
+                 reason == NS_ERROR_NET_RESET) {
+            
+            
+
+            gHttpHandler->ConnMgr()->PipelineFeedbackInfo(
+                mConnInfo, nsHttpConnectionMgr::RedCorruptedContent, nullptr, 0);
+            if (NS_SUCCEEDED(RestartInProgress()))
                 return;
         }
     }
@@ -1017,6 +1077,20 @@ nsHttpTransaction::Close(nsresult reason)
 
     bool relConn = true;
     if (NS_SUCCEEDED(reason)) {
+        if (!mResponseIsComplete) {
+            
+            
+            
+            gHttpHandler->ConnMgr()->PipelineFeedbackInfo(
+                mConnInfo, nsHttpConnectionMgr::BadInsufficientFraming,
+                nullptr, mClassification);
+        }
+        else if (mPipelinePosition) {
+            
+            gHttpHandler->ConnMgr()->PipelineFeedbackInfo(
+                mConnInfo, nsHttpConnectionMgr::GoodCompletedOK,
+                nullptr, mPipelinePosition);
+        }
 
         
         
@@ -1085,6 +1159,31 @@ nsHttpTransaction::ConnectionInfo()
     return mConnInfo.get();
 }
 
+nsresult
+nsHttpTransaction::AddTransaction(nsAHttpTransaction *trans)
+{
+    return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+uint32_t
+nsHttpTransaction::PipelineDepth()
+{
+    return IsDone() ? 0 : 1;
+}
+
+nsresult
+nsHttpTransaction::SetPipelinePosition(int32_t position)
+{
+    mPipelinePosition = position;
+    return NS_OK;
+}
+
+int32_t
+nsHttpTransaction::PipelinePosition()
+{
+    return mPipelinePosition;
+}
+
 bool 
 nsAHttpTransaction::ResponseTimeoutEnabled() const
 {
@@ -1106,6 +1205,71 @@ nsHttpTransaction::ResponseTimeoutEnabled() const
 
 
 
+
+nsresult
+nsHttpTransaction::RestartInProgress()
+{
+    MOZ_ASSERT(PR_GetCurrentThread() == gSocketThread);
+
+    if ((mRestartCount + 1) >= gHttpHandler->MaxRequestAttempts()) {
+        LOG(("nsHttpTransaction::RestartInProgress() "
+             "reached max request attempts, failing transaction %p\n", this));
+        return NS_ERROR_NET_RESET;
+    }
+
+    
+    MutexAutoLock lock(*nsHttp::GetLock());
+
+    
+    
+    
+    if (!mHaveAllHeaders)
+        return NS_ERROR_NET_RESET;
+
+    if (mCaps & NS_HTTP_STICKY_CONNECTION) {
+        return NS_ERROR_NET_RESET;
+    }
+
+    
+    if (!mRestartInProgressVerifier.IsSetup())
+        return NS_ERROR_NET_RESET;
+
+    LOG(("Will restart transaction %p and skip first %" PRId64 " bytes, "
+         "old Content-Length %" PRId64,
+         this, mContentRead, mContentLength));
+
+    mRestartInProgressVerifier.SetAlreadyProcessed(
+        std::max(mRestartInProgressVerifier.AlreadyProcessed(), mContentRead));
+
+    if (!mResponseHeadTaken && !mForTakeResponseHead) {
+        
+        
+        
+        
+        
+        mForTakeResponseHead = mResponseHead;
+        mResponseHead = nullptr;
+    }
+
+    if (mResponseHead) {
+        mResponseHead->Reset();
+    }
+
+    mContentRead = 0;
+    mContentLength = -1;
+    delete mChunkedDecoder;
+    mChunkedDecoder = nullptr;
+    mHaveStatusLine = false;
+    mHaveAllHeaders = false;
+    mHttpResponseMatched = false;
+    mResponseIsComplete = false;
+    mDidContentStart = false;
+    mNoContent = false;
+    mSentData = false;
+    mReceivedData = false;
+
+    return Restart();
+}
 
 nsresult
 nsHttpTransaction::Restart()
@@ -1139,6 +1303,12 @@ nsHttpTransaction::Restart()
     
     
     mReuseOnRestart = false;
+
+    
+    
+    
+    mCaps &= ~NS_HTTP_ALLOW_PIPELINING;
+    SetPipelinePosition(0);
 
     if (!mConnInfo->GetRoutedHost().IsEmpty()) {
         MutexAutoLock lock(*nsHttp::GetLock());
@@ -1269,6 +1439,9 @@ nsHttpTransaction::ParseLineSegment(char *segment, uint32_t len)
             nsresult rv = ParseLine(mLineBuf);
             mLineBuf.Truncate();
             if (NS_FAILED(rv)) {
+                gHttpHandler->ConnMgr()->PipelineFeedbackInfo(
+                    mConnInfo, nsHttpConnectionMgr::RedCorruptedContent,
+                    nullptr, 0);
                 return rv;
             }
         }
@@ -1447,7 +1620,8 @@ nsHttpTransaction::HandleContentStart()
 
         
         bool reset = false;
-        mConnection->OnHeadersAvailable(this, mRequestHead, mResponseHead, &reset);
+        if (!mRestartInProgressVerifier.IsSetup())
+            mConnection->OnHeadersAvailable(this, mRequestHead, mResponseHead, &reset);
 
         
         if (reset) {
@@ -1492,12 +1666,20 @@ nsHttpTransaction::HandleContentStart()
             mNoContent = true;
         }
         mConnection->SetLastTransactionExpectedNoContent(mNoContent);
+        if (mInvalidResponseBytesRead)
+            gHttpHandler->ConnMgr()->PipelineFeedbackInfo(
+                mConnInfo, nsHttpConnectionMgr::BadInsufficientFraming,
+                nullptr, mClassification);
 
-        if (mNoContent) {
+        if (mNoContent)
             mContentLength = 0;
-        } else {
+        else {
             
             mContentLength = mResponseHead->ContentLength();
+
+            if ((mClassification != CLASS_SOLO) &&
+                (mContentLength > mMaxPipelineObjectSize))
+                CancelPipeline(nsHttpConnectionMgr::BadUnexpectedLarge);
 
             
             
@@ -1520,9 +1702,20 @@ nsHttpTransaction::HandleContentStart()
             else if (mContentLength == int64_t(-1))
                 LOG(("waiting for the server to close the connection.\n"));
         }
+        if (mRestartInProgressVerifier.IsSetup() &&
+            !mRestartInProgressVerifier.Verify(mContentLength, mResponseHead)) {
+            LOG(("Restart in progress subsequent transaction failed to match"));
+            return NS_ERROR_ABORT;
+        }
     }
 
     mDidContentStart = true;
+
+    
+    
+    if (mRequestHead->IsGet())
+        mRestartInProgressVerifier.Set(mContentLength, mResponseHead);
+
     return NS_OK;
 }
 
@@ -1583,6 +1776,21 @@ nsHttpTransaction::HandleContent(char *buf,
         *contentRead = count;
     }
 
+    int64_t toReadBeforeRestart =
+        mRestartInProgressVerifier.ToReadBeforeRestart();
+
+    if (toReadBeforeRestart && *contentRead) {
+        uint32_t ignore =
+            static_cast<uint32_t>(std::min<int64_t>(toReadBeforeRestart, UINT32_MAX));
+        ignore = std::min(*contentRead, ignore);
+        LOG(("Due To Restart ignoring %d of remaining %" PRId64,
+             ignore, toReadBeforeRestart));
+        *contentRead -= ignore;
+        mContentRead += ignore;
+        mRestartInProgressVerifier.HaveReadBeforeRestart(ignore);
+        memmove(buf, buf + ignore, *contentRead + *contentRemaining);
+    }
+
     if (*contentRead) {
         
         mContentRead += *contentRead;
@@ -1590,6 +1798,15 @@ nsHttpTransaction::HandleContent(char *buf,
 
     LOG(("nsHttpTransaction::HandleContent [this=%p count=%u read=%u mContentRead=%" PRId64 " mContentLength=%" PRId64 "]\n",
         this, count, *contentRead, mContentRead, mContentLength));
+
+    
+    
+    if ((mClassification != CLASS_SOLO) &&
+        mChunkedDecoder &&
+        ((mContentRead + mChunkedDecoder->GetChunkRemaining()) >
+         mMaxPipelineObjectSize)) {
+        CancelPipeline(nsHttpConnectionMgr::BadUnexpectedLarge);
+    }
 
     
     if ((mContentRead == mContentLength) ||
@@ -1706,6 +1923,24 @@ nsHttpTransaction::ProcessData(char *buf, uint32_t count, uint32_t *countRead)
 
     return NS_OK;
 }
+
+void
+nsHttpTransaction::CancelPipeline(uint32_t reason)
+{
+    
+    gHttpHandler->ConnMgr()->PipelineFeedbackInfo(
+        mConnInfo,
+        static_cast<nsHttpConnectionMgr::PipelineFeedbackInfoType>(reason),
+        nullptr, mClassification);
+
+    mConnection->CancelPipeline(NS_ERROR_ABORT);
+
+    
+    
+    
+    mClassification = CLASS_SOLO;
+}
+
 
 void
 nsHttpTransaction::SetRequestContext(nsIRequestContext *aRequestContext)
@@ -2090,6 +2325,95 @@ nsHttpTransaction::OnOutputStreamReady(nsIAsyncOutputStream *out)
             NS_ERROR("ResumeRecv failed");
     }
     return NS_OK;
+}
+
+
+
+static bool
+matchOld(nsHttpResponseHead *newHead, nsCString &old,
+         nsHttpAtom headerAtom)
+{
+    nsAutoCString val;
+
+    newHead->GetHeader(headerAtom, val);
+    if (!val.IsEmpty() && old.IsEmpty())
+        return false;
+    if (val.IsEmpty() && !old.IsEmpty())
+        return false;
+    if (!val.IsEmpty() && !old.Equals(val))
+        return false;
+    return true;
+}
+
+bool
+nsHttpTransaction::RestartVerifier::Verify(int64_t contentLength,
+                                           nsHttpResponseHead *newHead)
+{
+    if (mContentLength != contentLength)
+        return false;
+
+    if (newHead->Status() != 200)
+        return false;
+
+    if (!matchOld(newHead, mContentRange, nsHttp::Content_Range))
+        return false;
+
+    if (!matchOld(newHead, mLastModified, nsHttp::Last_Modified))
+        return false;
+
+    if (!matchOld(newHead, mETag, nsHttp::ETag))
+        return false;
+
+    if (!matchOld(newHead, mContentEncoding, nsHttp::Content_Encoding))
+        return false;
+
+    if (!matchOld(newHead, mTransferEncoding, nsHttp::Transfer_Encoding))
+        return false;
+
+    return true;
+}
+
+void
+nsHttpTransaction::RestartVerifier::Set(int64_t contentLength,
+                                        nsHttpResponseHead *head)
+{
+    if (mSetup)
+        return;
+
+    
+    
+
+    
+    if (!head || (head->Status() != 200)) {
+        return;
+    }
+
+    mContentLength = contentLength;
+
+    nsAutoCString val;
+    if (NS_SUCCEEDED(head->GetHeader(nsHttp::ETag, val))) {
+        mETag = val;
+    }
+    if (NS_SUCCEEDED(head->GetHeader(nsHttp::Last_Modified, val))) {
+        mLastModified = val;
+    }
+    if (NS_SUCCEEDED(head->GetHeader(nsHttp::Content_Range, val))) {
+        mContentRange = val;
+    }
+    if (NS_SUCCEEDED(head->GetHeader(nsHttp::Content_Encoding, val))) {
+        mContentEncoding = val;
+    }
+    if (NS_SUCCEEDED(head->GetHeader(nsHttp::Transfer_Encoding, val))) {
+        mTransferEncoding = val;
+    }
+
+    
+    
+    if (mETag.IsEmpty() && mLastModified.IsEmpty()) {
+        return;
+    }
+
+    mSetup = true;
 }
 
 void
